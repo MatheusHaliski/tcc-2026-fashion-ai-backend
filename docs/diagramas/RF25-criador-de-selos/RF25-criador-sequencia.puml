@@ -1,5 +1,5 @@
 @startuml RF25_Criador_Sequencia
-title RF25 — Criador de selo: sugestão "Com IA", upload do núcleo e salvamento\nDiagrama de sequência
+title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de sequência — criador: sugestão "Com IA", upload do núcleo e salvamento do selo
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam sequence {
@@ -10,62 +10,86 @@ skinparam sequence {
   ActorBackgroundColor #F8F4FF
   GroupBackgroundColor #FFF5F8
 }
+autonumber
 actor "Emissor\n(marca/celebridade)" as E
 participant "SealWizard\n(seal-wizard.tsx)" as W
 participant "SealArt +\nSealCoreEditor" as A
 participant "SealMedallion\n(prévia)" as M
 participant "SealController" as C
 participant "SealService" as S
+participant "Guard" as G
 participant "SealDrafts" as D
 participant "SealDesignService" as U
-participant "SealDesigns" as N
+participant "SealDesigns ·\nSealPolicies" as N
 participant "OwnMedia" as O
-database "MySQL\nseals" as DB
-database "Storage\nusers/{id}/seals" as ST
+database "MySQL\nseals · wardrobe_items" as DB
+database "MediaStoragePort\nusers/{id}/seals" as ST
 
 E -> W : "Novo selo"
 group Passo 1 — Com IA
   E -> W : escolhe "Com IA"
   W -> C : POST /api/seals/draft {tier}
   C -> S : draft(user, tier)
-  S -> S : requireIssuer (perfil aprovado)
-  S -> DB : perfil emissor + peças do emissor
-  S -> D : suggest(nome, celebridade?, tier, peças)
-  D -> N : nearestCircular(cor dominante) / labelFrom(nome)
-  D -> N : normalize(design sugerido)
-  D --> S : {name, tier, policy, design, reasons}
-  S --> W : 200 sugestão (nada salvo)
-  W -> W : preenche dados e arte; mostra o porquê
+  S -> G : requireApprovedInstitutional
+  alt perfil não aprovado / não institucional
+    G --> W : 403 → toast, volta ao passo 1
+  else aprovado
+    S -> DB : brand_profiles.brandName | celebrity_profiles.stageName\n+ wardrobe_items do emissor (até 300)
+    S -> D : suggest(nome, celebridade?, tier, peças)
+    D -> N : nearestCircular(cor dominante) | labelFrom(nome)
+    D --> S : {name, tier, policy, design, reasons}
+    S -> DB : audit SELO_EDITADO (op = draft)
+    S --> W : 200 sugestão (nada salvo)
+    W -> W : preenche dados e arte; mostra os motivos
+  end
 end
 group Passo 3 — Arte
   E -> A : tipo (Circular | Folha | Padrão FashionAI) e modelo
-  A -> M : design {kind, mode, template, texts, core}
-  M --> E : prévia 200/44/36 px
-  opt núcleo com imagem
+  A -> M : design {kind, mode, template, label, texts, core, element}
+  M --> E : prévia 200 / 44 / 36 px
+  opt núcleo ou emblema com imagem
     E -> A : escolhe arquivo
-    A -> A : valida no cliente (≥ 64 px, ≤ 4:1)
+    A -> A : confere no cliente (≥ 64 px, proporção ≤ 4:1)
     A -> C : POST /api/seals/uploads?purpose=core (multipart)
     C -> U : uploadCore(user, bytes)
-    U -> U : perfil MARCA/CELEBRIDADE; decodifica; reduz a ≤ 640 px
-    U -> ST : put(users/{id}/seals/core-{uuid}.png)
-    U --> A : {url, width, height}
-    A -> M : core {mode: IMAGE, imageUrl, zoom, text?}
+    alt perfil não é MARCA/CELEBRIDADE
+      U --> A : 403
+    else imagem pequena ou alongada
+      U --> A : 400 NUCLEO_PEQUENO | NUCLEO_PROPORCAO
+    else ok
+      U -> ST : put(users/{id}/seals/core-{uuid}.png) (≤ 640 px)
+      U --> A : 200 {url, width, height}
+      A -> M : core {mode: IMAGE, imageUrl, zoom 1–3, text?}
+    end
+  end
+  opt circular personalizado com selo pronto
+    A -> C : POST /api/seals/uploads (multipart)
+    C -> U : upload(user, bytes) — 1:1, 256–4096 px → PNG 512 px
+    U -> ST : put(users/{id}/seals/upload-{uuid}.png)
+    U --> A : {url, circular, warning}
   end
 end
 group Passo 4 — Revisar e salvar
-  E -> W : "Salvar selo"
-  W -> C : POST /api/seals {name, tier, policy, design, validade, limite}
+  E -> W : "Salvar selo" (nome ≥ 2)
+  W -> C : POST /api/seals {name, tier, policy, design,\navailableFrom, availableUntil, usageLimit, status}
   C -> S : createSeal(user, form)
-  S -> N : normalize(design)
+  S -> G : requireApprovedInstitutional
+  S -> N : SealPolicies.normalize/parse/describe → policyText
+  S -> N : SealDesigns.normalize(design)
   alt desenho inválido
-    N --> S : ApiException 400 SELO_DESIGN_INVALIDO {fields}
-    S --> W : 400 (campos apontados)
+    N --> W : 400 SELO_DESIGN_INVALIDO {fields}
   else válido
-    S -> O : require(owner, core.imageUrl) — só arquivo do próprio emissor
-    S -> S : SealPolicies.normalize/describe → policyText
-    S -> DB : INSERT seals (background_config_json = {design, policy})
-    S --> W : 201 sealView
-    W --> E : selo na aba "Selos"
+    S -> O : require(owner, core.imageUrl) /\nrequireOrUnchanged(owner, uploadUrl | iconUrl)
+    alt arquivo de outra pessoa ou de terceiros
+      O --> W : 400 MIDIA_INVALIDA {field}
+    else período ou limite inválidos
+      S --> W : 400 PERIODO_INVALIDO | LIMITE_INVALIDO
+    else ok
+      S -> DB : INSERT seals (background_config_json = {design, policy},\npremium = celebridade, status ACTIVE)
+      S -> DB : audit SELO_EDITADO (op = create)
+      S --> W : 201 sealView (com "Hype do selo" vazio)
+      W --> E : selo na aba "Selos"
+    end
   end
 end
 @enduml

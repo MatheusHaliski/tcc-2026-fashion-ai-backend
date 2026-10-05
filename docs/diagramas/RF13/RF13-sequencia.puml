@@ -1,5 +1,5 @@
 @startuml RF13_Sequencia
-title RF13 — Criar um esquema de identidade pessoal de moda na página "DNA de Estilo"\nDiagrama de sequência — endpoints reais
+title RF13 — Esquema de identidade pessoal na página "DNA de Estilo"\nDiagrama de sequência — construtor do Esquema de DNA: dados, propostas da IA, prévia e salvar
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,60 +8,78 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor "Usuário" as U
-participant "Frontend\n/dna · DnaBuilder" as FE
+actor "Pessoa" as U
+participant "dna/page.tsx\nDnaBuilder" as FE
+participant "api\n(lib/api/client)" as API
 participant "DnaController" as C
 participant "DnaService" as S
-participant "AiEngine (RF24)\nDNA Synthesizer" as AI
-participant "MediaService\n(MediaStoragePort)" as M
+participant "SchemeService" as SS
+participant "AiEngine (RF24)\nDNA_SYNTHESIZER" as AI
+participant "HypeScoreCurrentRepository\n(HypeScore v2)" as HR
 database "MySQL" as DB
-U -> FE: abre "DNA de Estilo"
-FE -> C: GET /api/me/dna
-C -> S: overview(user)
-S -> DB: SELECT style_dna, wardrobe_items, daily_looks
-alt sem DNA sintetizado
-  S -> AI: local(DNA_SYNTHESIZER) · LocalDnaSynthesizer
-  AI --> S: arquétipo, ousadia, paleta, silhueta
-  S -> AI: text(DNA_SYNTHESIZER) · frase de identidade
-  AI --> S: frase (ou fallback local)
-  S -> DB: INSERT style_dna + style_dna_versions ("GERACAO")
-else interações desde a síntese >= 10
-  S -> DB: UPDATE style_dna + INSERT style_dna_versions ("EVOLUCAO")
-  S -> DB: INSERT notifications (AI_JOB_FINISHED)
-end
-S --> FE: 200 {prerequisites, dna, versions, lifeForm}
-FE -> C: GET /api/dna-schemes/builder
+
+U -> FE: abre /dna
+FE -> API: GET /api/dna-schemes/builder
+API -> C: builder(user)
 C -> S: builder(user)
-S -> DB: SELECT schemes (não ARCHIVED), scheme_items
-S --> FE: 200 {schemes, layouts, narratives}
-opt Modo IA
-  U -> FE: descreve o DNA desejado
-  FE -> C: POST /api/dna-schemes/compositions
-  C -> S: compositions(user, DnaComposeRequest)
-  S -> AI: text(DNA_SYNTHESIZER) · até 3 propostas
-  AI --> S: propostas (ou localProposals)
-  S --> FE: 200 {compositions, fallbackUsed, provider}
+S -> S: ensureDna(user)
+alt ainda sem StyleDna sintetizado
+  S -> DB: SELECT schemes (≠ ARCHIVED), scheme_items, daily_looks ("adorei"), wardrobe_items
+  S -> AI: local(DNA_SYNTHESIZER) → LocalDnaSynthesizer.synthesize
+  AI --> S: arquétipo, paleta, estilos, ocasiões
+  S -> AI: text(DNA_SYNTHESIZER) — frase de identidade
+  AI --> S: frase (ou fallback local)
+  S -> DB: INSERT style_dna · style_dna_versions ("GERACAO")
 end
-U -> FE: escolhe 2 a 6 esquemas, layout e narrativa
-loop a cada alteração (debounce 250 ms)
-  FE -> C: POST /api/dna-schemes/preview
-  C -> S: preview(user, DnaSchemeForm)
-  S --> FE: 200 card pré-visualizado
+S -> DB: SELECT schemes do usuário (≠ ARCHIVED) + scheme_items
+S -> SS: view(user, scheme, items)
+S --> FE: 200 {status PRONTO | INSUFICIENTE (< 2 looks), schemes, dna,\nlayouts, narratives, seasons, minCells 2, maxCells 6}
+
+opt Etapa 1 — modo IA
+  U -> FE: pedido livre + ocasião, estilo, narrativa, estação
+  FE -> API: POST /api/dna-schemes/compositions
+  API -> C: compositions(user, DnaComposeRequest)
+  C -> S: compositions(...)
+  alt menos de 2 looks
+    S --> FE: 422 ESQUEMAS_INSUFICIENTES {action: /schemes/new}
+  else
+    S -> HR: findByEntityTypeAndEntityIdInAndAlgorithmVersion(SCHEME, looks, v2)
+    HR -> DB: SELECT hype_scores
+    S -> AI: text(system, prompt com até 40 looks, Hype v2 pessoal,\nDNA sintetizado e orientações; parser; localProposals)
+    AI --> S: até 3 DnaProposal (ou propostas do motor local)
+    S --> FE: 200 {compositions, fallbackUsed, provider, message}
+    U -> FE: escolhe uma proposta (células, narrativa, layout)
+  end
 end
-U -> FE: salva (ou publica)
-FE -> C: POST /api/dna-schemes
-C -> S: createDnaScheme(user, DnaSchemeForm)
-S -> S: guard.requireCanCreate · ensureDna · stamp
-S -> DB: INSERT dna_schemes (DRAFT ou PUBLISHED) + dna_scheme_items
-S -> DB: UPDATE style_dna.latest_dna_scheme_id
-S --> FE: 201 dnaSchemeView
-opt compartilhar o card
-  FE -> C: POST /api/me/dna/share-card
-  C -> S: shareCard(user)
-  S -> S: renderCard (PNG 1080x1350, marca d'água)
-  S -> M: put("dna/{userId}/card-*.png")
-  M --> S: url
-  S -> DB: UPDATE style_dna (card_image_url, card_expires_at +30d)
-  S --> FE: 200 {url, expiresAt, hiddenFields}
+
+loop Etapas 2 a 4 — cada alteração (debounce 250 ms)
+  FE -> API: POST /api/dna-schemes/preview (DnaSchemeForm)
+  API -> C: preview(user, form)
+  C -> S: preview → stamp + apply + células transitórias
+  S -> HR: Hype v2 das células (dono = Hype pessoal)
+  S -> S: narrativeData (ex.: HYPE_FOCUS → medidores, basis HYPE_V2)
+  S --> FE: 200 DnaView (nada gravado)
+end
+
+U -> FE: Salvar ou Publicar (etapa 5)
+FE -> API: POST /api/dna-schemes | PUT /api/dna-schemes/{id}\n{title, cells, cardLayout, targetElement, narrativeType, occasion, style,\nseasonalTheme, visibility, background {..., skin}, publish, creationMode}
+API -> C: create(user, form) | update(user, id, form)
+C -> S: createDnaScheme | updateDnaScheme
+alt e-mail não confirmado / conta bloqueada (create)
+  S --> FE: 403 EMAIL_NAO_CONFIRMADO | CONTA_SUSPENSA
+else editar DNA de outra pessoa
+  S --> FE: 403 (Guard.requireOwner, auditado)
+else título, layout, alvo ou narrativa inválidos
+  S --> FE: 400 CAMPO_INVALIDO | LAYOUT_INVALIDO | ALVO_INVALIDO | NARRATIVA_INDISPONIVEL
+else células fora de 2–6, look repetido ou mais de um marco
+  S --> FE: 400 CELULAS_INVALIDAS | ESQUEMA_REPETIDO | MARCO_UNICO
+else válido
+  S -> S: ensureDna · stamp (arquétipo, ousadia, frase, paleta)
+  S -> DB: INSERT dna_schemes (DRAFT) · INSERT dna_scheme_items (CELL_1..CELL_n)
+  S -> DB: UPDATE style_dna.latest_dna_scheme_id
+  opt publish = true
+    S -> DB: UPDATE dna_schemes SET status = PUBLISHED, published_at = agora
+  end
+  S --> FE: 201/200 DnaView
 end
 @enduml

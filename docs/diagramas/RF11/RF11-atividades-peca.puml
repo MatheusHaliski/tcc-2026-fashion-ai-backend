@@ -1,0 +1,106 @@
+@startuml RF11_Atividades_Peca
+title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de atividades — arte do card da peça (cadastro e "Editar arte" com revisão baseRev)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+if (Onde edita a arte da peça?) then (cadastro)
+  :Em /pieces/new chega à etapa "Arte de fundo";
+else (detalhe da peça, só o dono)
+  :Clica em "Editar arte do card"\n(PieceArtDialog abre um rascunho);
+endif
+|Frontend (piece-art-editor · background-studio)|
+:readPieceArt(config): lê o modelo v2\n(template, composition, surface, effects);\nconfig antigo sem "v" vira v2 com valores padrão;
+note right
+  O config é o JSON livre de
+  wardrobe_items.background_config_json:
+  campos do Studio (cor, gradiente, cartela,
+  aura, material, skin, animação) + v2.
+end note
+|Pessoa|
+repeat
+  switch (Segmento?)
+  case (Cor)
+    :Cor lisa ou gradiente AURA;
+  case (Aura & Material)
+    :Preset AURA, variação, material e formato;
+  case (Layout & Estilo)
+    :Família (classic, bento, blocks, seasonal, xray, runway)\ne variação A/B, composição, skin e efeitos;
+    if (Mais de 3 efeitos ou efeito que não combina com a família?) then (sim)
+      :constrainEffects corta o excesso;\naura limitada a 0,8; movimento só com\npartículas ou aura;
+    else (não)
+    endif
+    note right: família "seasonal" abre o modal da\nCartela sazonal (RF11_Atividades_Cartela)
+  case (Container)
+    :Cor do container, sólido ou vidro fosco\ne fundo da área da foto;
+  case (Restaurar padrão)
+    :restoredArt: template Clássico, sem arte\ne sem efeitos (só no rascunho);
+  endswitch
+  |Frontend (piece-art-editor · background-studio)|
+  :Prévia no próprio PieceCard do feed\nou na moldura do card ampliado (ArtStage);
+  |Pessoa|
+repeat while (Continua ajustando?) is (sim)
+->não;
+if (Cadastro ou detalhe?) then (cadastro)
+  |Frontend (piece-art-editor · background-studio)|
+  :Salvar a peça: POST /api/pieces com background\n(WardrobeService grava o config, sem revisão);
+  stop
+else (detalhe)
+endif
+|Pessoa|
+switch (Botão do modal?)
+case (Cancelar)
+  :Fecha sem gravar;
+  stop
+case (Aplicar (só com alteração))
+endswitch
+|Frontend (piece-art-editor · background-studio)|
+:PUT /api/pieces/{id}/background\n{...rascunho, baseRev = rev lido};
+|API (BackgroundController)|
+:BackgroundStudioService.savePiece;
+if (E-mail não confirmado ou conta bloqueada?) then (sim)
+  #FFE3E3:403 EMAIL_NAO_CONFIRMADO / CONTA_SUSPENSA;
+  stop
+elseif (Peça não existe?) then (sim)
+  #FFE3E3:404 Peça;
+  stop
+elseif (Não é o dono?) then (sim)
+  #FFE3E3:403 (acesso negado, auditado);
+  stop
+else (ok)
+endif
+:withRevision(configAtual, rascunho);
+if (baseRev diferente da rev gravada?) then (sim)
+  #FFE3E3:409 ARTE_ALTERADA\n(outra aba ou aparelho aplicou antes);
+  |Frontend (piece-art-editor · background-studio)|
+  :Mostra o aviso no modal e não sobrescreve;
+  stop
+else (igual ou ausente)
+endif
+|Banco (MySQL)|
+:Grava wardrobe_items.background_config_json\ncom rev + 1;
+|Frontend (piece-art-editor · background-studio)|
+:200 {pieceId, background} → card atualizado,\naviso "arte aplicada" e o modal fecha;
+stop
+@enduml

@@ -1,0 +1,81 @@
+@startuml RF11_Atividades_Video
+title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de atividades — Aura animada do card sem travar (ArtVideo: carga perto da tela e plano B)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre uma tela com cards que usam Aura em vídeo\n(feed, perfil, DNA, peça, prévia do Background Studio);
+|Card (SchemeCard · DnaCard · ArtStage)|
+:resolveCardArt(background) lê o card-art-index.json:\nvariante AURA com vídeo, ou combo Aura + material\n(IMAGEM_UNICA ou MOSAICO) → CardArt {video {src, poster}, still};
+note right
+  Os MP4 ficam em /public (aura_com_GIF,
+  aura_com_material_mosaico_com_GIF) e são
+  servidos pelo Next.js; o servidor só grava a
+  escolha (studio_config_json e, no look,
+  background_video_url)
+end note
+|ArtVideo (components/card-art.tsx)|
+:CardArtLayer monta o <video> sem src, mudo, playsinline,\nloop e sem autoplay, com o pôster visível;
+if (Navegador tem IntersectionObserver?) then (não)
+  :autoplay = true e src = arquivo\n(o navegador decide);
+  stop
+else (sim)
+endif
+:Observa "perto da tela" (300 px) e "visível";\nescuta visibilitychange, pageshow e canplay;
+|Pessoa|
+:Rola a página;
+|ArtVideo (components/card-art.tsx)|
+:Card a até 300 px da tela → src = arquivo\n(só agora o MP4 é baixado);
+repeat
+  if (Card visível e aba visível?) then (sim)
+    :play();
+    |Navegador|
+    :Aplica a política de reprodução automática\n(Pouca Energia do iOS, economia de bateria,\nvídeos demais tocando);
+    |ArtVideo (components/card-art.tsx)|
+    switch (Resultado de play()?)
+    case (tocou)
+      :Remove a nova tentativa;\nonStuck(false) tira o plano B;
+    case (NotAllowedError)
+      :onStuck(true): o pôster ganha a animação CSS\ndo preset (anim-<still>, padrão "drift");
+      :Arma nova tentativa no 1º toque ou tecla\n(pointerdown/keydown em captura);
+    case (AbortError ou outro)
+      :Ignora (pausa ou troca de arquivo no meio);
+    endswitch
+  else (não)
+    :pause() (o arquivo continua carregado);
+  endif
+  |Pessoa|
+  :Toca na tela, volta para a aba, volta pelo histórico\nou o card reaparece;
+  |ArtVideo (components/card-art.tsx)|
+repeat while (Card ainda a até 300 px?) is (sim)
+->não;
+:pause(), remove o src e chama load()\n(libera rede e decodificador);
+if (Aura trocada ou card desmontado?) then (sim)
+  :Limpeza: desconecta os observadores, remove ouvintes\ne a nova tentativa, solta o arquivo, onStuck(false);
+  note right: com outra Aura o ciclo recomeça\ncom o vídeo novo
+else (não)
+  :Ao voltar para perto da tela,\no arquivo é carregado de novo;
+endif
+stop
+@enduml

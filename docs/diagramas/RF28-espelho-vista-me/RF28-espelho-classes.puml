@@ -1,5 +1,5 @@
 @startuml RF28_Espelho_Classes
-title RF28 — Vista-me: classes\nDiagrama de classes
+title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de classes — reflexo do Avatar 3D (frontend) e os seis números do look (backend)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam class {
@@ -8,50 +8,108 @@ skinparam class {
   FontColor #2D2438
   ArrowColor #52606D
 }
-class MirrorState <<Entity mirror_states>> {
-  userId : UUID
-  slotsJson  «upper, lower, dress, shoes,\nouter_layer, accessory»
-  shownCombinationsJson
-  lastPrompt
+hide empty methods
+
+package "Frontend (TypeScript / React)" {
+class MirrorStage <<React>> {
+  slots: Record<string, MirrorPiece | MirrorPiece[] | null>
+  kelvin?: number
+  -glassTint(kelvin): string
 }
-class MirrorService {
-  +SLOTS
-  +state(user) / place / remove / clear
-  +suggest(user, slot)
-  +vistaMe(user, prompt, anchors, focus, keep)
-  +another / swap / takeOneOff
-  +useLook / save / draft / grwmStoryboard
-}
-class Interpretation <<record>> {
-  occasion, mood, anchors, constraints, season
+class "mirrorPieces(slots)" as MP <<function>> {
+  +retorna Look3dPiece[]
 }
 class MirrorPiece <<TS>> {
-  id, name, imageUrl, thumbnailUrl
-  category, subcategory, colorHex
+  id, name, imageUrl?, thumbnailUrl?
+  category?, subcategory?, colorHex?
 }
 class Look3dPiece <<TS>> {
-  id, name, slot, category, subcategory
-  imageUrl, colorHex, model3dUrl
-}
-class MirrorStage <<React>> {
-  slots, kelvin
-  +mirrorPieces(slots) : Look3dPiece[]
-  -glassTint(kelvin)
+  id, name, slot, category?, subcategory?
+  imageUrl?, colorHex?, model3dUrl?
 }
 class AvatarViewer <<React>> {
   avatar, sex, body, pieces
-  framing : bust|upper|full
+  framing: "bust" | "upper" | "full"
   view, controls, background
 }
-class UserAvatar3d <<Entity user_avatar3d>> {
+class Mannequin <<React>> {
+  mannequin: Mannequin3d
+  pieces: Look3dPiece[]
+}
+class Mannequin3d <<TS>> {
+  sex: "FEMININO" | "MASCULINO"
+  head?: "FOTO" | "PADRAO" | "AVATAR"
+  avatar?: Avatar3dRef
+}
+class HumanAvatar <<React>> {
+  body, stature, skin, face, atlas, hair
+  pieces, motion
+}
+class HumanOutfit <<React>> {
+  parts: HumanParts
+  pieces: Look3dPiece[]
+}
+class "withDefaultOutfit(pieces)" as WDO <<function>> {
+  DEFAULT_PIECES por zona: upper · lower · feet
+}
+class LookScores <<React>> {
+  scores: LookScoreValues
+}
+class LookScoreValues <<TS>> {
+  compatibility?, hype?, novelty?
+  reuse?, usage?, sustainability?
+}
+}
+
+package "Backend (fai-application · fai-domain)" {
+class MirrorService {
+  +{static} SLOTS
+  +state(user): Map
+  +vistaMe(user, prompt, anchorIds, focusPieceId, keepMirror): Map
+  ~lookScores(userId, look): Map
+}
+class LookScorer {
+  ~context(userId): Context
+  ~scoreLooks(userId, looks): List<Scores>
+}
+class "LookScorer.Context" as Ctx <<record>> {
+  userId: UUID
+  dna: StyleCompatibility.Profile
+  seenPairs: Set<String>
+  today: LocalDate
+}
+class "RecommendationScoring.Scores" as Scores <<record>> {
+  compatibility, hype, novelty: Integer
+  reuse, usage, sustainability: Integer
+  +toMap(): Map
+}
+class MirrorState <<Entity mirror_states>> {
+  userId: UUID
+  slotsJson «upper, lower, dress, shoes,\nouter_layer, accessory[≤4]»
+  shownCombinationsJson
+  lastPrompt
+}
+class UserAvatar3d <<Entity user_avatars_3d>> {
   modelVersion, modelJson, adjustJson
   textureKey, textureModeration
   publicOnRunway, consentAt
 }
-MirrorService --> MirrorState
-MirrorService ..> Interpretation
+}
+
 MirrorStage ..> MirrorPiece
-MirrorStage ..> Look3dPiece : converte
+MirrorStage ..> MP
+MP ..> Look3dPiece : converte
 MirrorStage --> AvatarViewer
-AvatarViewer ..> UserAvatar3d : GET /api/me/avatar3d
+AvatarViewer --> Mannequin
+Mannequin ..> Mannequin3d
+Mannequin ..> WDO : veste o que falta
+Mannequin --> HumanAvatar
+HumanAvatar --> HumanOutfit
+LookScores ..> LookScoreValues
+MirrorStage ..> UserAvatar3d : GET /api/me/avatar3d
+MirrorService --> MirrorState
+MirrorService *-- LookScorer
+LookScorer ..> Ctx
+LookScorer ..> Scores
+Scores ..> LookScoreValues : JSON "scores"\nem GET /api/me/mirror
 @enduml

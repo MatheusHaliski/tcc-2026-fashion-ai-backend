@@ -7,31 +7,41 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-title RF37 — Combinação da loja no FLAIR (flair_combinations) e cupom gerado (flair_redemptions)
-[*] --> Ativa : POST /api/flair/brand/combinations\n(gameType COMBINACAO | COLECAO | DUELO_PATROCINADO)
+title RF37 — FLAIR: jogo de cartas de moda com 15 modos e combinações de lojas que rendem cupons\nDiagrama de máquina de estados — combinação da loja (flair_combinations) e cupom FLR (flair_redemptions)
 state "Combinação da loja" as Comb {
-  state "active = true\n(dentro de startsAt/endsAt, redeemed < stock)" as Ativa
-  state "Indisponível\n(inativa, fora da janela ou estoque esgotado)" as Indisponivel
-  Ativa --> Indisponivel : PUT /api/flair/brand/combinations/{id} {active:false}\n· passa endsAt · redeemed = stock
-  Indisponivel --> Ativa : PUT …/combinations/{id} {active:true}\nou repõe stock
-  Ativa --> [*] : DELETE /api/flair/brand/combinations/{id}
+  state "Ativa (active = true)" as Ativa {
+    state "Disponível\n(FlairService.available: loja ACTIVE e aprovada,\nentre startsAt e endsAt, redeemed < stock)" as Disp
+    state "Indisponível\n(antes de startsAt, depois de endsAt,\nestoque esgotado ou loja suspensa)" as Indisp
+    [*] --> Disp
+    [*] --> Indisp : startsAt no futuro
+    Disp --> Indisp : passa endsAt · redeemed = stock\n· conta da loja deixa de estar ACTIVE
+    Indisp --> Disp : chega startsAt · PUT aumenta stock\nou estende endsAt
+  }
+  state "Desativada (active = false)" as Desativada
+  [*] --> Ativa : POST /api/flair/brand/combinations\n(gameType COMBINACAO | COLECAO | DUELO_PATROCINADO)
+  Ativa -down-> Desativada : PUT …/combinations/{id} {active: false}\n· DELETE com cupons já emitidos
+  Desativada -up-> Ativa : PUT {active: true}
+  Ativa --> [*] : DELETE sem cupons emitidos
+  Desativada --> [*] : DELETE sem cupons emitidos
 }
 state "Deck do jogador" as Deck {
-  state "Incompleto\n(422 COMBINACAO_INCOMPLETA — checks[])" as Incompleto
-  state "Completo\n(categorias, estilos, ocasiões, minBrandPieces,\nminDeckPower, minRarity, minWins OK)" as Completo
-  Incompleto --> Completo : joga modos / monta look (RF5)\n→ GET /api/flair/combinations/{id}/check
-  Completo --> Incompleto : peça sai do look
+  state "Incompleto\n(checks com ok = false)" as Incompleto
+  state "Completo\n(CATEGORY, STYLE, OCCASION, BRAND,\nPOWER, RARITY e WINS ok)" as Completo
+  [*] --> Incompleto : GET /api/flair/combinations\n(melhor deck + checklist)
+  Incompleto --> Completo : monta look (RF5), cadastra peça,\nvence partidas com peças da marca
+  Completo --> Incompleto : peça sai do look ou é arquivada
 }
-state "Cupom FLAIR (flair_redemptions)" as Cupom {
-  state "EMITIDO\n(code, expiresAt = agora + validDays)" as Emitido
+state "Cupom FLR (flair_redemptions)" as Cupom {
+  state "EMITIDO\n(code FLR-XXXX-XXXX,\nexpiresAt = agora + validDays)" as Emitido
   state "USADO\n(usedAt)" as Usado
-  state "EXPIRADO" as Expirado
-  Emitido --> Usado : POST /api/flair/brand/redemptions/validate {code}
+  state "EXPIRADO\n(calculado na leitura,\nnão gravado)" as Expirado
+  Emitido --> Usado : POST /api/flair/brand/redemptions/validate\nou POST /api/me/coupons/validate (RF38)
   Emitido --> Expirado : passa expiresAt
 }
-Ativa --> Incompleto : jogador abre GET /api/flair/combinations
-Completo --> Emitido : POST /api/flair/combinations/{id}/redeem\n(409 COMBINACAO_INDISPONIVEL se a loja desativou;\n409 CUPOM_JA_EMITIDO se repetir)
-Emitido --> [*] : aparece em GET /api/flair/vouchers e\nem Meus cupons resgatados (RF38)
-note right of Cupom : o direito ao cupom passa pelo fluxo único do RF38\n(coupon_rights → redeem/dismiss)
-note bottom of Deck : cartas (EDGE, RANGE, CLOUT, GLOW, ART, SYNC) e decks\n(HYPE, STYLE, …, AI) vêm de GET /api/flair/cards e /decks
+Disp --> Incompleto : jogador vê a combinação
+Completo --> Emitido : POST /api/flair/combinations/{id}/redeem\nou resgate do direito no RF38\n(409 COMBINACAO_INDISPONIVEL · 409 CUPOM_JA_EMITIDO\n· 422 COMBINACAO_INCOMPLETA)
+Usado --> [*]
+Expirado --> [*]
+note left of Cupom : um cupom por pessoa e combinação;\naparece em GET /api/flair/vouchers\ne em Meus cupons resgatados (RF38)
+note bottom of Deck : cartas e looks usam o HypeScore v2 PÚBLICO\n(raridade e atributo HYPE), lido de hype_scores
 @enduml

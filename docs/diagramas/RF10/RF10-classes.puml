@@ -1,5 +1,5 @@
 @startuml RF10_Classes
-title RF10 — Possibilitar que o usuário gere recomendações de esquemas de vestimenta & de peças de roupa através da aba "Copilot"\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF10 — Gerar recomendações de esquemas e peças na aba Copilot\nDiagrama de classes — CopilotService, intenções, LookScorer/RecommendationScoring (seis números, três modos) e HypeScore v2 como contexto
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -11,204 +11,218 @@ skinparam class {
 skinparam packageStyle rectangle
 hide empty methods
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-}
-class WardrobeItem {
-  +user: User
-  +name: String
-  +category: String
-  +subcategory: String
-  +color: String
-  +material: String
-  +styleTags: String
-  +occasionTags: String
-  +disponivel: boolean
-  +availabilityStatus: AvailabilityStatus
-  +wearCount: int
-  +lastWornDate: LocalDate
-}
-class Scheme {
-  +user: User
-  +title: String
-  +occasion: String
-  +style: String
-  +origin: SchemeOrigin
-  +status: SchemeStatus
-  +favorite: boolean
-  +lookDoDiaCount: int
-  +hypeScore: BigDecimal
-}
-class WeekPlan {
-  +user: User
-  +weekStart: LocalDate
-  +status: WeekPlanStatus
-  +gapsJson: String
-}
-class WeekPlanDay {
-  +weekPlan: WeekPlan
-  +dayDate: LocalDate
-  +eventLabel: String
-  +occasion: String
-  +scheme: Scheme
-  +pieceIdsJson: String
-  +combinationKey: String
-  +rationale: String
-  +editedManually: boolean
-}
-class DailyLook {
-  +user: User
-  +scheme: Scheme
-  +source: DailyLookSource
-  +weekPlanDayId: UUID
-}
-class PieceUsageDiaryEntry {
-  +wardrobeItemId: UUID
-  +userId: UUID
-  +usedOn: LocalDate
-  +occasion: String
-  +source: String
-  +schemeId: UUID
-}
-class HypeScoreCurrent <<RF53>> {
-  +entityType: HypeEntityType
-  +entityId: UUID
-  +ownerId: UUID
-  +algorithmVersion: String
-  +status: HypeStatus
-  +score: BigDecimal
-  +dimensions: HypeDimensions
-  +deltaPoints: BigDecimal
-  +publicEligible: boolean
-}
-}
-package "fai-domain · enums" {
-enum WeekPlanStatus {
-  ACTIVE
-  DISCARDED
-  COMPLETED
-}
-enum SchemeOrigin {
-  CRIAR_LOOK
-  PROVADOR
-  REMIX
-  COPILOT
-  DNA_DUPLICATE
-  SMART_MIRROR
-  VISTA_ME
-  AUTOPILOTO
-}
-enum DailyLookSource {
-  MANUAL
-  AUTOPILOTO
-  COPILOT
-  VISTA_ME
-  SMART_MIRROR
-}
-}
 package "fai-application · service" {
-class CopilotService {
-  +context(user, view, selection, city, lat, lon)
-  +suggestions(user, city, lat, lon)
-  +ask(user, AskRequest)
-  +accept(user, pieceIds, title, occasion, style, mood, season, description, background)
-  ~hypeAnswer(user, message) <<RF53>>
-  ~scoreLooks(user, cards, mode) <<RF53>>
+  class CopilotService {
+    {static} +MIN_PIECES = 3
+    +context(user, view, selection, city, lat, lon): Map
+    +suggestions(user, city, lat, lon): Map
+    +ask(user, AskRequest): Map
+    +accept(user, pieceIds, title, occasion, style, mood,\nseason, description, background): Map
+    {static} ~intent(message): Intent
+    ~looks(user, req, message): Map
+    ~hypeAnswer(user, message): Map
+    ~scoreLooks(user, cards, Mode): List<Map>
+    ~general(user, message, view): Map
+    ~whereIs() · forgotten() · different() · diagnosis() · improveInventory(): Map
+  }
+  class "CopilotService.AskRequest" as AskRequest <<record>> {
+    +message: String
+    +view: String
+    +selection: List<UUID>
+    +occasion: List<String>
+    +mood: String
+    +city: String
+    +latitude: Double
+    +longitude: Double
+    +excludeKeys: List<String>
+    +mode: String
+  }
+  enum "CopilotService.Intent" as Intent {
+    WHERE_IS
+    HYPE
+    FORGOTTEN
+    DIFFERENT
+    IMPROVE_INVENTORY
+    DIAGNOSIS
+    LOOKS
+    GENERAL
+  }
+  class CopilotLexicon {
+    {static} ~matches(vocabulary, text): List<String>
+    {static} ~weatherBand(text): String
+    {static} ~seasonOfBand(band): String
+    {static} ~signalsLook(text): boolean
+  }
+  class LookScorer {
+    ~context(userId): Context
+    ~hypeOf(pieceIds): Map<UUID, HypeScoreCurrent>
+    {static} ~scores(ctx, ids, look, hypeById): Scores
+    ~scoreLooks(userId, looks): List<Scores>
+    ~scoreCards(user, cards, Mode): List<Map>
+  }
+  class "LookScorer.Context" as LSContext <<record>> {
+    +userId: UUID
+    +dna: StyleCompatibility.Profile
+    +seenPairs: Set<String>
+    +today: LocalDate
+  }
+  class AutopilotService {
+    {static} +MIN_PIECES = 3
+    +daily(user, DailyRequest, requiredPieceIds, weatherBand): Map
+    ~createScheme(user, pieceIds, title, occasion, origin,\nstyle, mood, season, description, background): Scheme
+  }
+  class DailyLookService {
+    +register(user, scheme, source, date): DailyLook
+    +view(dailyLook): Map
+  }
+  class WeatherService {
+    +resolve(latitude, longitude, city): Context
+    {static} +band(t): String
+    {static} +unsuitable(subcategory, band): boolean
+    {static} +isLayer(subcategory): boolean
+  }
+  class RoomService {
+    {static} +FORGOTTEN_DAYS = 60
+    {static} +forgotten(piece, last, today): boolean
+    +locateAll(userId): Map<UUID, Location>
+  }
 }
-class "CopilotService.AskRequest" as AskRequest <<record>> {
-  +message: String
-  +view: String
-  +selection: List<UUID>
-  +occasion: List<String>
-  +mood: String
-  +city: String
-  +latitude: Double
-  +longitude: Double
-  +excludeKeys: List<String>
-  +mode: String <<RF53>>
+
+package "fai-application · hype" {
+  class RecommendationScoring <<final>> {
+    {static} ~WEIGHTS: Map<Mode, double[6]>
+    {static} +rankValue(Mode, Scores): double
+    {static} +pair(a, b): String
+    {static} +novelty(pieces, seenPairs): Integer
+    {static} +reuse(idleDays): Integer
+    {static} +usage(wearCounts): Integer
+    {static} +sustainability(wearCounts, owned, total): Integer
+  }
+  enum "RecommendationScoring.Mode" as Mode {
+    SAFE
+    DISCOVERY
+    EXPERIMENTAL
+    {static} +parse(raw): Mode
+  }
+  class "RecommendationScoring.Scores" as Scores <<record>> {
+    +compatibility: Integer
+    +hype: Integer
+    +novelty: Integer
+    +reuse: Integer
+    +usage: Integer
+    +sustainability: Integer
+    +toMap(): Map
+  }
+  class StyleCompatibility {
+    {static} +profile(styles, colors, occasions): Profile
+    {static} +score(dna, item): Map
+  }
+  class HypeQueryService {
+    +currentOf(type, ids): Map<UUID, HypeScoreCurrent>
+    +wardrobe(user): Map
+    {static} +profileOf(StyleDna | WardrobeItem): Profile
+    {static} +idleDays(piece, today): long
+  }
 }
-class CopilotLexicon {
-  {static} +matches(vocab, message)
-  {static} +first(vocab, message)
-  {static} +weatherBand(message)
-  {static} +seasonOfBand(band)
+
+package "fai-application · insights" {
+  class InsightService {
+    +itemsOrEmpty(user, InsightContext.COPILOT): List<Map>
+  }
 }
-class WeatherService {
-  +resolve(lat, lon, city): Context
-  {static} +band(t)
-  {static} +season(t)
-  {static} +unsuitable(subcategory, band)
+
+package "fai-domain" {
+  class WardrobeItem <<table wardrobe_items>> {
+    +subcategory: String
+    +color: String
+    +styleTags: String
+    +occasionTags: String
+    +disponivel: boolean
+    +availabilityStatus: AvailabilityStatus
+    +wearCount: int
+    +lastWornDate: LocalDate
+  }
+  class Scheme <<table schemes>> {
+    +title: String
+    +origin: SchemeOrigin
+    +creationMode: CreationMode
+    +favorite: boolean
+    +lookDoDiaCount: int
+  }
+  class StyleDna <<table style_dna>> {
+    +styleKeywords: String
+  }
+  class DailyLook <<table daily_looks>> {
+    +lookDate: LocalDate
+    +source: DailyLookSource
+  }
+  class HypeScoreCurrent <<table hype_scores>> {
+    +entityType: HypeEntityType
+    +score: BigDecimal
+    +dimensions: HypeDimensions
+    +deltaPoints: BigDecimal
+    +signalsJson: String
+    +publicEligible: boolean
+  }
+  enum SchemeOrigin {
+    CRIAR_LOOK
+    PROVADOR
+    REMIX
+    COPILOT
+    DNA_DUPLICATE
+    SMART_MIRROR
+    VISTA_ME
+    AUTOPILOTO
+  }
+  enum DailyLookSource {
+    MANUAL
+    AUTOPILOTO
+    COPILOT
+    VISTA_ME
+    SMART_MIRROR
+  }
 }
-class AutopilotService {
-  +daily(user, DailyRequest)
-  +planWeek(user, WeekRequest)
-  +currentWeek(user)
-  +editDay(user, dayId, pieceIds)
-  +useDay(user, dayId)
-  +discardWeek(user)
-}
-}
-package "fai-application · hype <<RF53>>" {
-class HypeQueryService {
-  +currentOf(type, ids): Map<UUID, HypeScoreCurrent>
-  +wardrobe(user)
-}
-class RecommendationScoring {
-  {static} WEIGHTS: Map<Mode, double[]>
-  {static} +rankValue(mode, Scores): double
-  {static} +novelty(pieces, seenPairs): Integer
-  {static} +reuse(idleDays): Integer
-  {static} +pair(a, b): String
-}
-enum "RecommendationScoring.Mode" as Mode {
-  SAFE
-  DISCOVERY
-  EXPERIMENTAL
-  {static} +parse(raw)
-}
-class "RecommendationScoring.Scores" as Scores <<record>> {
-  +compatibility: Integer
-  +hype: Integer
-  +novelty: Integer
-  +reuse: Integer
-}
-class StyleCompatibility {
-  {static} +score(dna, item): Map
-  {static} +profile(styles, colors, occasions): Profile
-}
-}
-WardrobeItem "*" --> "1" User : user
-Scheme "*" --> "1" User : user
-Scheme --> SchemeOrigin
-WeekPlan "*" --> "1" User : user
-WeekPlan --> WeekPlanStatus
-WeekPlanDay "*" --> "1" WeekPlan : weekPlan
-WeekPlanDay "*" --> "0..1" Scheme : scheme
-DailyLook "*" --> "1" Scheme : scheme
-DailyLook --> DailyLookSource
-PieceUsageDiaryEntry ..> WardrobeItem : wardrobeItemId
-CopilotService ..> CopilotLexicon
-CopilotService ..> WeatherService
-CopilotService ..> AutopilotService : createScheme (COPILOT)
-CopilotService ..> WardrobeItem : eligible / forgotten
-AutopilotService ..> WeekPlan
-AutopilotService ..> WeekPlanDay
-AutopilotService ..> DailyLook
-AskRequest ..> Mode : mode (parse)
+
 CopilotService ..> AskRequest
-CopilotService ..> HypeQueryService : currentOf (HYPE, scoreLooks,\ntrendingLooks)
-CopilotService ..> RecommendationScoring : scoreLooks
-CopilotService ..> StyleCompatibility : DNA × peça/look
+CopilotService ..> Intent
+CopilotService ..> CopilotLexicon
+CopilotService *-- "1" LookScorer : cria (mesma régua\ndo Autopiloto)
+CopilotService --> AutopilotService : daily (LOOKS) · createScheme (aceite)
+CopilotService --> DailyLookService : register(COPILOT)
+CopilotService --> WeatherService
+CopilotService --> RoomService : esquecidas · endereço
+CopilotService --> HypeQueryService : currentOf (HYPE, em alta)
+CopilotService --> InsightService
+CopilotService ..> StyleCompatibility : DNA × peça (HYPE)
+AskRequest ..> Mode : mode (parse)
+LookScorer ..> LSContext
+LookScorer --> HypeQueryService : currentOf(PIECE)
+LookScorer ..> RecommendationScoring
+LookScorer ..> StyleCompatibility
 RecommendationScoring ..> Mode
 RecommendationScoring ..> Scores
-HypeQueryService ..> HypeScoreCurrent
-note top of WeekPlan : tabela week_plans
-note top of WeekPlanDay : tabela week_plan_days
-note top of DailyLook : tabela daily_looks
-note top of PieceUsageDiaryEntry : tabela piece_usage_diary\n(gravada por WardrobeEventListeners; base de "peças esquecidas")
-note top of WardrobeItem : tabela wardrobe_items
-note top of HypeScoreCurrent : tabela hype_scores\nnovo (RF53 · HypeScore v2)
-note bottom of Mode : pesos [compat, hype, novidade, reuso]\nSAFE 0,60/0,10/0,10/0,20\nDISCOVERY 0,35/0,20/0,25/0,20\nEXPERIMENTAL 0,15/0,20/0,45/0,20\nparse aceita SEGURO · DESCOBERTA · EXPERIMENTAL
+HypeQueryService ..> HypeScoreCurrent : lê
+LSContext ..> StyleDna : perfil do DNA
+Scheme --> SchemeOrigin
+DailyLook "*" --> "1" Scheme : scheme
+DailyLook --> DailyLookSource
+LookScorer ..> WardrobeItem : wearCount · lastWornDate
+
+note bottom of Mode
+  Pesos [compat, hype, novidade, reuso, uso, sustent.]
+  SAFE .50/.10/.05/.10/.15/.10
+  DISCOVERY .30/.20/.20/.10/.10/.10
+  EXPERIMENTAL .15/.20/.40/.10/.05/.10
+  parse aceita SEGURO · DESCOBERTA · EXPERIMENTACAO;
+  valor desconhecido = sem modo (ordem do motor)
+end note
+note bottom of Scores
+  0–100 cada; nulo = sem base (sem DNA,
+  peças sem Hype). Na ordenação, nulo = 50.
+  Hype do look = média do Hype v2 das peças.
+end note
+note top of Intent
+  HYPE = HYPE_QUESTION e não BUILD_REQUEST
+  ("monte um look em alta" é LOOKS)
+end note
 @enduml

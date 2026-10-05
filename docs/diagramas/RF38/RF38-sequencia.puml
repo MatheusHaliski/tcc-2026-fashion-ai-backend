@@ -1,5 +1,5 @@
 @startuml RF38_Sequencia
-title RF38 — Cupons Fashion AI: "Meus cupons promocionais" (marca/celebridade) e "Meus cupons resgatados" (lookbook)\nDiagrama de sequência — endpoints reais
+title RF38 — Meus cupons promocionais (marca/celebridade) e Meus cupons resgatados\nDiagrama de sequência — direito ao cupom, resgate, carteira e validação no caixa
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,37 +8,90 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor Usuário as U
-actor Loja as L
-participant "Frontend" as FE
+actor Pessoa as U
+actor "Loja\n(marca/celebridade)" as L
+participant "coupons/page.tsx\n→ MyCoupons · FaiCoupon" as FE
+participant "brands/[slug]/page.tsx\n→ BrandCouponsTab" as BFE
 participant "CouponController" as C
 participant "CouponService" as S
-participant "SealService / FlairService" as SRC
+participant "SealService" as SEAL
+participant "FlairService" as FL
 participant "NotificationService" as N
 database "MySQL" as DB
-SRC ->> S: CouponRightsCheck(userId) (AFTER_COMMIT)
-S -> SRC: eligiblePromotions(userId)
-S -> DB: INSERT coupon_rights (sem duplicar)
-S -> N: COUPON_AVAILABLE
-N -> DB: INSERT notifications
-U -> FE: notificação → "Sim, resgatar"
+== Conquista do direito (assíncrono, após o commit) ==
+SEAL ->> S: CouponRightsCheck(userId) — selo aprovado no look
+FL ->> S: CouponRightsCheck(userId) — duelo, arena, equipes, modo competitivo
+note over S: também reage a SchemeSaved e PieceCreated;\n@TransactionalEventListener(AFTER_COMMIT) + REQUIRES_NEW
+S -> SEAL: eligiblePromotions(userId)
+SEAL -> DB: SELECT seal_bonds (APPROVED) · promotions (AVAILABLE)\n· promotion_redemptions (limite por pessoa)
+S -> FL: combinationsFor(user) — complete, available, sem cupom
+loop cada fonte nova (SELO ou FLAIR, que não seja da própria pessoa)
+  S -> DB: SELECT coupon_rights WHERE (user, source_type, source_id)
+  alt já existe
+    S -> S: não duplica
+  else novo
+    S -> DB: INSERT coupon_rights (PENDENTE)
+    S -> N: notify(COUPON_AVAILABLE, actions RESGATAR · AGORA_NAO,\nhref /coupons?right={id})
+    N -> DB: INSERT notifications
+  end
+end
+== Meus cupons resgatados ==
+U -> FE: abre /coupons (ou toca a notificação)
+FE -> C: GET /api/me/coupons
+C -> S: mine(user)
+S -> S: scan(userId) + concilia pendentes já resgatados
+S -> DB: SELECT coupon_rights (PENDENTE) · promotion_redemptions · flair_redemptions
+S --> FE: {pending[], coupons[] (EMITIDO · USADO · EXPIRADO), note}
+U -> FE: "Sim, resgatar"
 FE -> C: POST /api/me/coupon-rights/{id}/redeem
 C -> S: redeem(user, id)
+S -> DB: SELECT coupon_rights (Guard.requireOwner)
 alt status != PENDENTE
   S --> FE: 409 DIREITO_DECIDIDO
+else SELO
+  S -> SEAL: redeem(user, promotionId)
+  SEAL -> DB: INSERT promotion_redemptions (ISSUED, código com prefixo da loja)\nUPDATE promotions.redeemed_count (cota cheia → REDEEMED)
+  alt promoção indisponível · selo inválido/revogado · limite
+    SEAL --> FE: 409 PROMOCAO_INDISPONIVEL · SELO_INVALIDO · LIMITE_POR_USUARIO
+  end
+else FLAIR
+  S -> FL: redeem(user, combinationId, schemeId)
+  FL -> DB: INSERT flair_redemptions (EMITIDO, FLR-XXXX-XXXX)
 end
-S -> SRC: SealService.redeem / FlairService.redeem
-SRC -> DB: INSERT promotion_redemptions / flair_redemptions
-S -> DB: UPDATE coupon_rights (RESGATADO, couponRef)
-S --> FE: cupom (código, desconto, validade, storeUrl)
-U -> FE: Meus cupons resgatados
-FE -> C: GET /api/me/coupons
-C -> S: mine(user) → scan + pending + coupons
-U -> FE: toca no cupom → abre storeUrl (nova aba)
-L -> FE: Meus cupons promocionais
-FE -> C: GET /api/me/coupons/admin
-L -> FE: valida código no caixa
-FE -> C: POST /api/me/coupons/validate
+S -> DB: UPDATE coupon_rights SET status = RESGATADO, coupon_ref, decided_at
+S --> FE: cupom (código, desconto, validade, storeUrl https, accentColor)
+U -> FE: "Agora não"
+FE -> C: POST /api/me/coupon-rights/{id}/dismiss
+C -> S: dismiss(user, id) → DISPENSADO
+U -> FE: toca no cupom EMITIDO
+FE -> FE: abre storeUrl em outra aba (loja externa, fora do app)
+== Meus cupons promocionais (loja) ==
+L -> BFE: perfil → aba CUPONS
+BFE -> C: GET /api/me/coupons/admin
+C -> S: admin(user)
+alt não é marca/celebridade aprovada e ativa
+  S --> BFE: 403
+else
+  S -> DB: SELECT promotion_redemptions (emissor ou parceira) · flair_redemptions\n· promotions · flair_combinations · coupon_rights pendentes
+  S --> BFE: {owner, stats (issued, used, pendingRights, active, useRate),\ncoupons[], promotions[] (SELO + FLAIR), sources}
+end
+L -> BFE: liga/desliga promoção
+BFE -> BFE: PUT /api/promotions/{id}/status {AVAILABLE | REVOKED} (SealController, RF25)
+L -> BFE: valida o código no caixa
+BFE -> C: POST /api/me/coupons/validate {code}
 C -> S: validate(user, code)
-S -> DB: UPDATE promotion_redemptions.status = USED\n(código FLR-… → FlairService.validateCode)
+alt código começa com FLR-
+  S -> FL: validateCode(user, code)
+  FL -> DB: UPDATE flair_redemptions SET status = USADO, used_at
+else código de promoção
+  S -> DB: SELECT promotion_redemptions WHERE code
+  alt de outra loja
+    S --> BFE: 404 Cupom
+  else já usado · expirado
+    S --> BFE: 409 CUPOM_USADO · 409 CUPOM_EXPIRADO
+  else válido
+    S -> DB: UPDATE promotion_redemptions SET status = USED
+  end
+end
+S --> BFE: cupom + holder (quem resgatou)
 @enduml

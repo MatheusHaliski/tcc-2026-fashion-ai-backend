@@ -1,6 +1,6 @@
 @startuml RF13_MaquinaDeEstados_Esquema
 !pragma layout smetana
-title RF13 — DnaScheme: ciclo de vida do Esquema de DNA (SchemeStatus) e versões do StyleDna
+title RF13 — Esquema de identidade pessoal na página "DNA de Estilo"\nDiagrama de máquina de estados — DnaScheme (SchemeStatus) e versões do StyleDna
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -9,23 +9,37 @@ skinparam state {
   ArrowColor #52606D
 }
 state "StyleDna (1 por conta)" as Dna {
-  [*] --> Sintetizado : GET /api/me/dna (ensureDna)\nou POST /api/me/dna — snapshot "GERACAO"
-  Sintetizado --> Sintetizado : >= 10 interações novas\nre-síntese — snapshot "EVOLUCAO"
-  Sintetizado --> Sintetizado : PUT /api/me/dna/life\nnova frase — snapshot "EDICAO_VIDA"
+  state "Sem DNA" as SemDna
+  state "Sintetizado" as Sintetizado
+  Sintetizado : arquétipo, paleta, estilos, silhueta, frase
+  state "Card compartilhável válido" as Card
+  Card : card_image_url + card_expires_at (30 dias)
+  [*] --> SemDna
+  SemDna --> Sintetizado : ensureDna (builder, preview, criar)\nou POST /api/me/dna — versão "GERACAO"
+  Sintetizado --> Sintetizado : GET /api/me/dna com 10+ interações novas\n— versão "EVOLUCAO" + notificação
+  Sintetizado --> Sintetizado : PUT /api/me/dna/life — nova frase,\nversão "EDICAO_VIDA"
+  Sintetizado --> Card : POST /api/me/dna/share-card
+  Card --> Sintetizado : nova síntese, edição de vida ou campos\nprivados (card_image_url = null)
 }
 state "DnaScheme" as Esq {
-  [*] --> Rascunho : POST /api/dna-schemes (publish=false)
-  [*] --> Publicado : POST /api/dna-schemes (publish=true)
   state "DRAFT" as Rascunho
+  Rascunho : só o dono vê; visitante recebe\n403 em GET /api/dna-schemes/{id}
   state "PUBLISHED" as Publicado
+  Publicado : visível conforme Visibility (PRIVATE,\nFOLLOWERS, PUBLIC) × privacidade do perfil
   state "ARCHIVED" as Arquivado
-  Rascunho --> Publicado : PUT /api/dna-schemes/{id} (publish=true)\npublishedAt = agora
+  Arquivado : visibility = PRIVATE; some de\nGET /api/me/dna-schemes
+  [*] --> Rascunho : POST /api/dna-schemes (publish ausente/false)
+  [*] --> Publicado : POST /api/dna-schemes (publish = true)
+  Rascunho --> Rascunho : PUT /api/dna-schemes/{id}\n(dono edita células, layout, fundo)
+  Rascunho --> Publicado : PUT /api/dna-schemes/{id} (publish = true)\npublished_at = agora
+  Publicado --> Publicado : PUT /api/dna-schemes/{id} (continua publicado)
   Rascunho --> Arquivado : DELETE /api/dna-schemes/{id}
-  Publicado --> Arquivado : DELETE /api/dna-schemes/{id}\nvisibility = PRIVATE
-  Arquivado --> [*]
+  Publicado --> Arquivado : DELETE /api/dna-schemes/{id}
 }
-Dna --> Esq : stamp(arquétipo, ousadia, frase, paleta)\nno momento da criação
-note right of Publicado : visível a terceiros conforme Visibility\n(PRIVATE / FOLLOWERS / PUBLIC);\nDRAFT nunca é exibido a visitantes
-note right of Arquivado : sai de GET /api/me/dna-schemes;\nexclusão lógica, sem DELETE físico
-note bottom of Dna : cada snapshot vira uma linha em\nstyle_dna_versions (até 20 exibidas)
+Dna --> Esq : stamp na criação: arquétipo, ousadia,\nfrase e paleta copiados
+note bottom of Arquivado
+  Exclusão lógica (sem DELETE físico). A API não
+  bloqueia PUT com publish = true num DNA arquivado,
+  mas a interface não lista arquivados.
+end note
 @enduml

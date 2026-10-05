@@ -1,6 +1,6 @@
 @startuml RF6_MaquinaDeEstados_LookDoDia
 !pragma layout smetana
-title RF6 — DailyLook (source · feedback): o Look do Dia de uma data, da marcação à avaliação
+title RF6 — Acessar e gerenciar o Perfil Lookbook\nDiagrama de máquina de estados — aba Look do dia: carregamento, painel HypeScore v2 (só leitura), capa e avaliação
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,43 +8,60 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-state "Sem Look do Dia" as Vazio
-state "Registrado" as Reg {
-  state "MANUAL" as Manual
-  state "AUTOPILOTO" as Auto
+state "Carregando\n(GET /api/me/daily-look-tab)" as Carregando
+state "Sem Look do Dia\n(empty: /looks · /autopilot · /mirror)" as Vazio
+state "Com Look do Dia de hoje" as Com {
+  state "Painel HypeScore v2 do look" as Painel {
+    state "NOT_CALCULATED\n(sem linha em hype_scores)" as NaoCalc
+    state "INSUFFICIENT_DATA\n(Dados insuficientes, score nulo)" as Insuf
+    state "AVAILABLE\n(score + faixa em texto)" as Disp
+    state "AVAILABLE desatualizado\n(stale: calculado há > 24 h)" as Stale
+    [*] --> NaoCalc
+    [*] --> Insuf
+    [*] --> Disp
+    NaoCalc --> Insuf : job grava a primeira linha\n(menos de 3 eventos)
+    NaoCalc --> Disp : job grava com sinais suficientes
+    Insuf --> Disp : novos sinais (LOOK_WORN, curtidas…)\n+ recálculo
+    Disp --> Stale : passam 24 h sem recálculo
+    Stale --> Disp : HypeSnapshotService (6 em 6 h)\nou HypeLiveRecalc (≤ 1 a cada 120 s)
+  }
+  state "Capa FAI Magazine bloqueada" as CapaB
+  state "Capa FAI Magazine liberada\n(faixa ≥ TRENDING)" as CapaL
+  state "Dica local (tip)\npela dimensão v2 mais fraca" as DicaL
+  state "Dica do Style Advisor\n(AiEngine STYLE_ADVISOR)" as DicaIA
+  state "Aguardando avaliação" as Aguard
+  state "Lembrete de avaliação\n(feedbackReminder.show:\npendente e depois das 18 h)" as Lembrete
+  state "Avaliado\n(ADOREI | NAO_USEI | NAO_GOSTEI)" as Aval
+  [*] --> Painel
+  Painel --> CapaB : panel.magazineCover
+  CapaB --> CapaL : faixa do look sobe para\nTRENDING ou VIRAL
+  CapaL --> CapaB : faixa cai abaixo de TRENDING
+  [*] --> DicaL
+  DicaL --> DicaIA : marca "Dica com IA"\n(GET ?withAi=true)
+  DicaIA --> DicaL : IA indisponível ou sem cota\n(volta a dica local)
+  [*] --> Aguard
+  Aguard --> Lembrete : relógio passa das 18 h
+  Aguard --> Aval : PUT /api/me/daily-looks/{date}/feedback
+  Lembrete --> Aval : PUT /api/me/daily-looks/{date}/feedback
+  Aval --> Aval : nova avaliação substitui a anterior
 }
-state "Materializado\n(materializedFrom = look anterior)" as Mat
-state "Avaliado" as Aval {
-  state "ADOREI" as Adorei
-  state "NAO_USEI" as NaoUsei
-  state "NAO_GOSTEI" as NaoGostei
-}
-
-[*] --> Vazio
-Vazio --> Manual : POST /api/me/daily-look\nDailyLookService.register(MANUAL)
-Vazio --> Auto : Autopiloto (RF10)\nregister(AUTOPILOTO)
-Vazio --> Mat : virada do dia: GET /api/me/daily-look-tab\ntoday() copia o último look não arquivado
-Vazio --> Vazio : register com peça indisponível\n409 PECA_INDISPONIVEL
-Reg --> Reg : novo register na mesma data\n(substitui o esquema)
-Mat --> Reg : register na mesma data
-Reg --> Aval : PUT /api/me/daily-looks/{date}/feedback
-Mat --> Aval : PUT /api/me/daily-looks/{date}/feedback
-Aval --> Aval : novo feedback (sobrescreve)
-Aval --> [*]
-
-note right of Reg
-  A cada registro: schemes.lookDoDia = true,
-  lookDoDiaCount++, wardrobe_items.lastWornDate;
-  publica DomainEvents.DailyLookRegistered;
-  HypeScoreService.panel grava hype_score_metrics
-  ..novo (RF53 · HypeScore v2)..
-  após o commit, HypeSignalRecorder.onDailyLook grava
-  LOOK_WORN (look) e PIECE_USED (peças) em hype_signal_daily
-  (a cópia materializada por today() não gera sinal)
+[*] --> Carregando
+Carregando --> Vazio : today() sem registro e\nsem look anterior não arquivado
+Carregando --> Com : registro de hoje existe
+Carregando --> Com : today() materializa cópia do\nlook anterior (materializedFrom)
+Vazio --> Carregando : marca um look (POST /api/me/daily-look,\nAutopiloto, Copilot ou Vista-me) e recarrega
+Com --> Carregando : PUT /api/me/hype-panel-version\n(troca só a versão visual; o número é o mesmo)
+Com --> Carregando : virada do dia (00 h America/Sao_Paulo)
+note right of Painel
+  HypeScoreService.panel só LÊ hype_scores:
+  nenhum GET recalcula nem grava o Hype.
+  As 6 versões do painel (SPOTLIGHT_CLASSICO,
+  PASSARELA, RAIO_X_ESTILO, BENTO_DIA,
+  EDITORIAL_MINIMAL, COACH_ESTILO) mudam só a
+  apresentação. "Sem dados" nunca vira 0.
 end note
-note left of Aval
-  A partir das 18 h, sem feedback,
-  GET /api/me/daily-looks/pending-feedback
-  devolve show = true (lembrete)
+note bottom of Vazio
+  O v1 (hype_score_metrics, faixas de juízo,
+  HypeGroups) não existe mais (P3-16).
 end note
 @enduml

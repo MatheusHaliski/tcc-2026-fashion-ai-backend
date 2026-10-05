@@ -1,5 +1,5 @@
 @startuml RF6_Sequencia
-title RF6 — Acessar e gerenciar o Perfil Lookbook (Closet Digital + Looks Salvos)\nDiagrama de sequência — endpoints reais
+title RF6 — Acessar e gerenciar o Perfil Lookbook\nDiagrama de sequência — abrir o Lookbook, abas Peças/Looks/Salvos, cards com HypeScore v2 e aba Insights
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -9,103 +9,112 @@ skinparam sequence {
 }
 autonumber
 actor "Pessoa" as P
-participant "Frontend\n/lookbook → /u/[username]\n(lookbook-tabs)" as FE
+participant "lookbook/page.tsx\nu/[username]/page.tsx\nLookbookTabs" as FE
+participant "lib/hype/use-hype.ts\n(lote + cache 5 min)" as UH
+participant "ProfileController\nProfileService" as PC
 participant "LookbookController" as LC
-participant "SocialController" as SC
-participant "HypeController" as HC <<RF53>>
 participant "LookbookService" as LS
-participant "DailyLookService" as DS
-participant "HypeScoreService" as HS
-participant "HypeQueryService" as HQ <<RF53>>
-participant "AiEngine (RF24)" as AI
+participant "WardrobeController\nWardrobeService" as WC
+participant "SocialService" as SO
+participant "HypeController" as HC
+participant "HypeQueryService" as HQ
 database "MySQL" as DB
 
 P -> FE: abre /lookbook
-FE -> FE: router.replace(/u/{username}?tab=)
-opt ?tab=cupons|coupons (dono)
-  FE -> FE: CouponsRedirect → router.replace(/coupons)
-  note right of FE: alterado (RF53 · HypeScore v2):\na aba de cupons saiu do Lookbook
+FE -> FE: RequireAuth → router.replace(/u/{username}?tab=)
+FE -> PC: GET /api/profiles/{idOrUsername}
+PC -> DB: users · follows (relação e bloqueio)
+alt conta excluída ou o dono bloqueou quem vê
+  PC --> FE: 404 Perfil
+else perfil institucional
+  PC --> FE: 200 {layout: INSTITUCIONAL}
+  FE -> FE: router.replace(/brands/{slug})
+else perfil pessoal
+  PC --> FE: 200 {user, counters, relation, contentVisible, visibility}
+end
+opt ?tab=cupons|coupons e é o dono
+  FE -> FE: CouponsRedirect → /coupons (a aba saiu do Lookbook)
 end
 FE -> LC: GET /api/users/{ownerId}/lookbook
 LC -> LS: overview(viewer, ownerId)
-LS -> DB: wardrobe_items · schemes (sem ARCHIVED) · saved_items (contagens)
-LS -> DS: today(ownerId)
-LC --> FE: 200 {owner, self, visible, tabs[], emptyCloset, panelVersion}
-FE -> FE: abas closet · looks · groups (+ dono: saved · dna · daily\n· capsule · insights); ?tab=saved_looks|saved_pieces → saved
-== Salvos (SegmentPicker: looks | peças) ==
-FE -> LC: GET /api/me/saved-looks?occasion=&page=&size=
-LC -> LS: savedLooks(user, occasion, page, size)
-LS -> DB: saved_items (targetType SCHEME)
-LC --> FE: 200 Page
-FE -> LC: PUT /api/me/saved-looks/{schemeId}/favorite {favorite}
-LC -> LS: favorite(user, schemeId, favorite)
-FE -> LC: DELETE /api/me/saved-looks/{schemeId}
-LC -> LS: removeSaved(user, schemeId)
-FE -> SC: POST /api/interactions/PIECE/{id}/saves
-SC --> FE: 200 {saved} (toggleSave)
-== Cards de peça e look com Hype (FashionCard) — novo (RF53 · HypeScore v2) ==
-FE -> HC: GET /api/hype/summaries?type=PIECE|SCHEME&ids=\n(use-hype.ts: ids do mesmo tick, até 100; cache com TTL)
-HC -> HQ: summaries(viewer, type, ids)
-HQ -> DB: hype_scores (só ids visíveis para quem vê)
-HC --> FE: 200 {items: id → summary} (HypeBadge na frente)
-P -> FE: ↻ vira o card (verso HypeCardBack, mesmo cache)
-opt "Ver análise completa" (HypeAnalyticsDrawer)
-  FE -> HC: GET /api/hype/pieces/{id} (ou /looks/{id})
-  HC -> HQ: detail(viewer, type, id)
-  HQ -> DB: hype_scores
-  HC --> FE: 200 {status, score, level, dimensions, reasons, compatibility}
-  FE -> HC: GET /api/hype/pieces/{id}/history?days=90
-  HC -> HQ: history(viewer, type, id, days)
-  HQ -> DB: hype_score_snapshots
-  HC --> FE: 200 {points[]}
-end
-== Look do Dia ==
-FE -> LC: GET /api/me/daily-look-tab?withAi=
-LC -> LS: dailyLookTab(user, withAi)
-LS -> DS: today(userId)
-alt sem registro hoje, mas há look anterior não arquivado
-  DS -> DB: INSERT daily_looks (cópia, materializedFrom)
-end
-opt há Look do Dia
-  LS -> HS: panel(dailyLook, withAi)
-  HS -> DB: UPSERT hype_score_metrics (hypeScore, band, trendsetterSeal)
-end
-LC --> FE: 200 {today, scheme, panel, history, feedbackReminder}
-note right of FE: histórico mostra title e hypeScore\nde cada dia (ajuste RF53)
-opt marcar um esquema
-  FE -> LC: POST /api/me/daily-look {schemeId}
-  LC -> LS: markDailyLook(user, schemeId)
-  LS -> DS: register(user, scheme, MANUAL, hoje)
-  alt peça indisponível
-    DS --> FE: 409 PECA_INDISPONIVEL
-  else
-    DS -> DB: UPSERT daily_looks · schemes.lookDoDiaCount · wardrobe_items.lastWornDate
-    LC --> FE: 200 DailyLook
+LS -> DB: wardrobe_items e schemes do dono (sem ARCHIVED)
+LS -> LS: visitante: Guard.canView (item × perfil) e só looks PUBLISHED
+LS -> DB: saved_items (contagens) · daily_looks (today, só o dono)
+LC --> FE: 200 {owner, self, visible, tabs[], emptyCloset, panelVersion,\ngroupingSuggestionsAvailable}
+FE -> FE: abas Peças · Looks · Publicações · Favoritos · Agrupamentos\n(+ dono: Salvos · DNA · Look do dia · Cápsula · Insights)
+
+== Peças (ordenar e filtrar pelo Hype) ==
+FE -> WC: GET /api/users/{ownerId}/closet?category&state&sort&hypeLevel&page&size=24
+WC -> DB: wardrobe_items + hype_scores (ordem/faixa)
+note right of WC: dono = Hype pessoal; visitante = só Hype\npúblico (publicEligible); sem Hype = no fim
+WC --> FE: 200 Page<PieceView>
+FE -> FE: GET /api/pieces/seals?ids= (SealController: selos de marca na frente do card)
+
+== Looks ==
+FE -> PC: GET /api/profiles/{ownerId}?sort=recent|hype_desc|growth
+PC -> PC: publishedLooks: LookbookService.rankable + hypeOrder
+PC --> FE: 200 {schemes (até 60), sort}
+
+== Publicações e Favoritos ==
+FE -> LC: GET /api/users/{ownerId}/publications?page&size=24
+LC -> LS: publications(viewer, ownerId, page, size)
+LC --> FE: 200 Page {type: LOOK|PIECE, at, scheme|piece}
+FE -> LC: GET /api/users/{ownerId}/favorites
+LC --> FE: 200 {looks, pieces}
+
+== Salvos (dono) ==
+FE -> LC: GET /api/me/saved-looks?occasion&sort&page&size
+LC -> LS: savedLooks(user, occasion, sort, page, size)
+LS -> DB: schemes próprios + saved_items (SCHEME) + hype_scores
+LC --> FE: 200 Page {origin PROPRIO|SALVO, scheme, favorite, canEdit}
+FE -> LC: GET /api/me/saved-pieces?category&page&size
+LC --> FE: 200 Page {piece, author, favorite, snapshot}
+opt favoritar um look salvo
+  FE -> LC: PUT /api/me/saved-looks/{schemeId}/favorite {favorite}
+  LC -> LS: favorite(user, schemeId, favorite)
+  alt look próprio
+    LS -> LS: SchemeService.toggles (schemes.favorite)
+  else look de terceiro
+    LS -> SO: favoriteSaved(user, SCHEME, id, favorite)
+    SO -> DB: UPDATE saved_items.favorite
+    SO ->> SO: favorite = true → HypeSignal FAVORITE_CREATED (ver RF19)
   end
 end
-FE -> LC: PUT /api/me/daily-looks/{date}/feedback {feedback}
-LC -> DS: feedback(user, date, ADOREI | NAO_USEI | NAO_GOSTEI)
-LC --> FE: 200
-== Insights (dono) — novo (RF53 · HypeScore v2) ==
+opt remover dos salvos
+  FE -> LC: DELETE /api/me/saved-looks/{schemeId}
+  alt não estava salvo
+    LC --> FE: 404 Look salvo
+  else
+    LS -> SO: toggleSave(user, SCHEME, id) → DELETE saved_items
+    LC --> FE: 200 {saved: false}
+  end
+end
+
+== Cards de peça e look (FashionCard) ==
+FE -> UH: useHypeSummary(PIECE|SCHEME, id) por card
+UH -> HC: GET /api/hype/summaries?type=PIECE|SCHEME&ids=a,b… (até 100)
+HC -> HQ: summaries(viewer, type, ids)
+HQ -> DB: pieces/schemes visíveis + hype_scores (HYPE_V2)
+HQ --> UH: 200 {items: id → {status, score, level, direction,\ndeltaPoints, momentum, dimensions, seals, stale}}
+note right of UH: id fora da resposta = sem permissão ou\nsem cálculo → "não calculado", nunca 0
+P -> FE: ↻ vira o card (HypeCardBack, mesmo cache)
+opt "Ver análise completa" (HypeAnalyticsDrawer)
+  FE -> HC: GET /api/hype/pieces|looks/{id}
+  HC -> HQ: detail(viewer, type, id)
+  alt item privado de terceiro
+    HQ --> FE: 404
+  else
+    HQ --> FE: 200 {score, level, reasons, signals, weights,\nsealProgress, compatibility (DNA à parte)}
+  end
+  FE -> HC: GET /api/hype/pieces|looks/{id}/history?days=90
+  HC -> HQ: history(...) → hype_score_snapshots
+  FE -> HC: GET /api/hype/pieces|looks/{id}/positions
+end
+
+== Insights (dono) ==
+FE -> FE: InsightStrip CLOSET → GET /api/insights?context=CLOSET
 FE -> HC: GET /api/me/hype/wardrobe (HypeWardrobeInsights)
 HC -> HQ: wardrobe(user)
-HQ -> DB: hype_scores das peças e looks do dono
-HC --> FE: 200 {averageHype, averageDeltaPoints, highlights, rediscoveries}
-== Agrupamentos ==
-FE -> LC: POST /api/me/hype-groups/suggestions?type=SCHEME
-LC -> LS: suggestGroups(user, type)
-alt acervo abaixo do mínimo
-  LS --> FE: 422 ACERVO_PEQUENO {pieces, missing}
-else
-  LS -> AI: local(userId, ACERVO_GROUPING, ..., HypeScoreService.cluster)
-  LS -> DB: DELETE + INSERT acervo_groups
-  LC --> FE: 200 {groups, explanation, note}
-end
-FE -> LC: POST /api/groupings {type, label, coverUrl, atmospherePrompt, periodFrom, periodTo}
-LC -> LS: createGrouping(user, GroupingForm)
-LS -> DB: INSERT scheme_groupings
-LC --> FE: 201
-FE -> LC: POST /api/groupings/{id}/items {schemeIds, pieceIds}
-LC -> LS: assignToGrouping(user, id, schemeIds, pieceIds)
-LC --> FE: 200
+HQ -> DB: peças e looks do dono + hype_scores
+HC --> FE: 200 {averageHype, averageDeltaPoints, highlights\n(topPiece, biggestGrowth, classic, rare, forgotten,\ntopLook, mostRemixed), rediscoveries}
 @enduml

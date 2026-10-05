@@ -1,5 +1,5 @@
 @startuml RF2_Sequencia
-title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de sequência — endpoints reais
+title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de sequência — login com bloqueio por conta, limite por IP e segundo fator
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -9,75 +9,73 @@ skinparam sequence {
 }
 autonumber
 actor "Pessoa" as P
-participant "Frontend\n(auth)/login · forgot-password · reset-password" as FE
-participant "BFF Next\n/bff/auth/[action]" as BFF
+participant "login/page.tsx\n(useAuth · lib/api/client.ts)" as FE
+participant "BFF\n/bff/auth/[action]" as BFF
+participant "AuthRateLimitFilter\n+ ClientIpResolver" as RLF
 participant "AuthController" as AC
 participant "IdentityService" as IS
+participant "RateLimitPort\n(memória / Redis)" as RL
 participant "Argon2PasswordHasher" as H
-participant "RateLimitPort" as RL
 participant "JwtTokenIssuer" as JWT
 participant "EmailSenderPort\n(Resend)" as EM
-participant "SessionActiveFilter" as SF
+participant "NotificationService" as NS
 database "MySQL" as DB
 
-P -> FE: e-mail ou username + senha (+ lembrar-me)
-FE -> BFF: POST /bff/auth/login
-BFF -> AC: POST /api/auth/login (LoginCommand)
-AC -> IS: login(cmd, ip, userAgent)
-IS -> DB: findByEmailHash | findByUsernameIgnoreCase
-IS -> RL: status(userId, "login-fail", 5, 15 min)
-IS -> H: matches(password, passwordHash)
-alt conta inexistente, bloqueada ou senha errada
-  IS -> DB: audit LOGIN_FALHO / LOGIN_BLOQUEADO_TENTATIVAS
-  AC --> BFF: 401 NAO_AUTENTICADO (resposta idêntica nos três casos)
-else twoFactorEnabled e sem código
-  IS -> DB: INSERT verification_codes (TWO_FACTOR, 10 min)
-  IS -> EM: send("Seu código de acesso")
-  AC --> BFF: 401 DOIS_FATORES_NECESSARIO {twoFactorRequired: true}
-  P -> FE: digita o código → novo POST /api/auth/login com twoFactorCode
-else credenciais válidas
-  IS -> RL: reset(userId, "login-fail")
-  IS -> DB: users.lastLoginAt · audit LOGIN_SUCESSO · notifications NEW_LOGIN_DEVICE (se dispositivo novo)
-  IS -> DB: INSERT refresh_tokens (familyId novo, tokenHash, 30 d | 1 d)
-  IS -> JWT: issueAccessToken(user, familyId)
-  JWT --> IS: JWT RS256 (15 min; sid, user_id, role, profile_type)
-  AC --> BFF: 200 Session {accessToken, expiresInSeconds, refreshToken, user, status, warnings}
-  BFF --> FE: 200 Session sem refreshToken + Set-Cookie fai_rt (HttpOnly, SameSite=Strict)
-  FE -> FE: access token em memória; vai para ?next= ou /verify-email
+P -> FE: e-mail ou @ + senha (+ lembrar-me)
+FE -> BFF: POST /bff/auth/login {identifier, password, rememberMe, deviceName, twoFactorCode}
+BFF -> BFF: mesma origem? corpo ≤ 64 KB? (senão 403 ORIGEM_INVALIDA / 413 CORPO_GRANDE)
+BFF -> RLF: POST /api/auth/login\nX-Dev-Gate · X-Fai-Client-Ip/Ts/Sig (HMAC)
+RLF -> RLF: IP do cliente (assinatura do BFF › X-Real-IP › TCP)
+alt mais de 30 logins em 10 min do mesmo IP
+  RLF --> BFF: 429 MUITAS_TENTATIVAS (Retry-After)
+else sem vaga no teto de hashes em 2 s
+  RLF --> BFF: 503 AUTENTICACAO_OCUPADA (Retry-After: 2)
+else segue
+  RLF -> AC: login
+  AC -> IS: login(cmd, ip, userAgent)
+  IS -> DB: findByEmailHash | findByUsernameIgnoreCase
+  alt conta inexistente
+    IS -> H: matches(senha, hash falso) — mesmo tempo
+    IS -> DB: audit_log LOGIN_FALHO (usuario_inexistente)
+    IS --> BFF: 401 NAO_AUTENTICADO
+  else conta encontrada
+    IS -> RL: tryAcquire(userId, "login-fail", 5, 15 min) — reserva antes do hash
+    IS -> H: matches(password, passwordHash)
+    alt balde cheio (bloqueio) ou senha errada
+      IS -> DB: audit_log LOGIN_BLOQUEADO_TENTATIVAS | LOGIN_FALHO
+      IS --> BFF: 401 NAO_AUTENTICADO (mesma resposta nos três casos)
+    else senha certa
+      IS -> RL: release(userId, "login-fail")
+      alt status DELETED ou SUSPENDED
+        IS --> BFF: 403 CONTA_INDISPONIVEL
+      else twoFactorEnabled e sem código
+        IS -> DB: INSERT verification_codes (TWO_FACTOR, 10 min)
+        IS -> EM: send("Seu código de acesso")
+        IS --> BFF: 401 DOIS_FATORES_NECESSARIO {twoFactorRequired: true}
+        note right of FE: a tela espera 2FA_OBRIGATORIO /\nCODIGO_2FA — o campo do código\nnão aparece (divergência)
+      else código 2FA errado ou vencido
+        IS -> DB: attempts + 1 (5º erro expira o código)
+        IS -> RL: tryAcquire(userId, "login-fail", 5, 15 min)
+        IS --> BFF: 401 NAO_AUTENTICADO
+      else credenciais (e código) válidos
+        opt hash com parâmetros antigos
+          IS -> H: hash(password) (needsRehash)
+        end
+        IS -> RL: reset(userId, "login-fail")
+        IS -> DB: refresh_tokens ativos (User-Agent já visto?)
+        IS -> DB: users.lastLoginAt · audit_log LOGIN_SUCESSO
+        opt dispositivo novo
+          IS -> NS: notify(NEW_LOGIN_DEVICE, ip)
+        end
+        IS -> DB: INSERT refresh_tokens (familyId novo, tokenHash SHA-256,\n30 dias | 1 dia, createdIp, userAgent, deviceName)
+        IS -> JWT: issueAccessToken(user, familyId)
+        JWT --> IS: JWT RS256 (15 min; iss, aud, sub, user_id, sid, username, role, profile_type)
+        AC --> BFF: 200 Session {accessToken, refreshToken, refreshExpiresAt, user, status, emailVerified, warnings}
+        BFF --> FE: 200 Session sem refreshToken\nSet-Cookie fai_rt (HttpOnly, Secure, SameSite=Strict, Path=/bff/auth) + fai_rt_h
+        FE -> FE: tokenStore.set(access) em memória · BroadcastChannel "fai-auth"
+        FE -> FE: /verify-email (e-mail não confirmado) ou safeNext(next, "/feed")
+      end
+    end
+  end
 end
-== Requisições autenticadas ==
-FE -> SF: GET /api/... (Authorization: Bearer)
-SF -> IS: sessionActive(sid)
-IS -> DB: refresh_tokens.findByFamilyId (revokedAt null, não expirado)
-alt família revogada
-  SF --> FE: 401 SESSAO_ENCERRADA
-end
-== Renovação (access expirado) ==
-FE -> BFF: POST /bff/auth/refresh (cookie fai_rt)
-BFF -> AC: POST /api/auth/refresh {refreshToken}
-AC -> IS: refresh(raw, ip, userAgent)
-IS -> DB: findByTokenHash
-alt token já rotacionado (reuso)
-  IS -> DB: revoga a família inteira · audit REFRESH_REUTILIZADO
-  AC --> BFF: 401 sessão encerrada por segurança
-else token válido
-  IS -> DB: revokedAt = agora · INSERT refresh_tokens (rotatedFromId, mesma família)
-  AC --> BFF: 200 Session (novo par)
-end
-== Sair ==
-FE -> BFF: POST /bff/auth/logout
-BFF -> AC: POST /api/auth/logout (Bearer)
-AC -> IS: logout(user, sid)
-IS -> DB: revokedAt em toda a família · audit LOGOUT
-BFF --> FE: 204 + cookies apagados
-== Esqueci a senha (RF2.CA06) ==
-FE -> AC: POST /api/auth/password-reset/request {email}
-AC -> IS: requestPasswordReset(email, ip, userAgent)
-IS -> DB: INSERT verification_codes (PASSWORD_RESET, 30 min) (só se a conta existir)
-IS -> EM: send(link com token) — após o commit, em thread própria
-AC --> FE: 202 mensagem uniforme (não revela se o e-mail existe)
-FE -> AC: POST /api/auth/password-reset/confirm {token, newPassword, confirmPassword}
-AC -> IS: confirmPasswordReset(token, newPassword, confirm)
-IS -> DB: users.passwordHash · consome o código · revoga as outras sessões · audit TROCA_SENHA
-AC --> FE: 204
 @enduml

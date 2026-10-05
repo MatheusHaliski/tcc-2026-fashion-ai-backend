@@ -1,5 +1,5 @@
 @startuml RF25_Componentes
-title RF25 — Criar & editar selo de marca/celebridade (formulário + arte) e política de promoção\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de componentes — perfil emissor → SealController/CouponController → SealService → domínio, Hype v2, eventos e MySQL
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -16,37 +16,71 @@ skinparam database {
 }
 left to right direction
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "brands/[slug] — aba Selos" as FE0
-  component "brands/[slug] — aba Promoções" as FE1
-  component "SealCreator + SealMedallion" as FE2
+package "Frontend (Next.js)" {
+  component "app/(site)/(app)/brands/[slug]/page.tsx\n(abas Selos · Promoções · Meus cupons promocionais ·\nfila de revisão de vínculos)" as FE0
+  component "components/seal-wizard.tsx\n(SealWizard · SealArt · SealReview)" as FE1
+  component "components/seal-policy-editor.tsx ·\nseal-core-editor.tsx · seal-creator.tsx" as FE2
+  component "components/seal-medallion.tsx\n+ lib/seals/templates.ts(.json)" as FE3
+  component "components/hype/hype-seals.tsx\n(SealHypeStat · selos de Hype nos cards)" as FE4
+  component "components/coupons/brand-coupons-tab.tsx\n(criar promoção · validar código)" as FE5
 }
-package "fai-web (REST)" {
-  [SealController] as SealController
+package "fai-web · controllers" {
+  component "SealController\n/api/seals · /draft · /uploads · /design-catalog\n/api/users/{ownerId}/seals · /api/me/seals\n/api/promotions · /{id}/status · /{id}/redemptions\n/api/users/{ownerId}/promotions · /api/me/issuer-metrics" as SC
+  component "CouponController\n/api/me/coupons · /admin · /validate\n/api/me/coupon-rights/{id}/redeem|dismiss" as CC
+  component "HypeController\n/api/hype/summaries · /pieces/{id} · /looks/{id}" as HC
 }
-package "fai-application (casos de uso)" {
-  [SealService] as SealService
-  [SealDesignService] as SealDesignService
-  [MediaStoragePort] as MediaStoragePort #FAFAFA
+package "fai-application" {
+  component "SealService" as SS
+  component "SealDesignService\n(upload do selo pronto e do núcleo)" as SDS
+  component "seal.SealDesigns · seal.SealDrafts ·\nservice.SealPolicies · OwnMedia" as RULES
+  component "CouponService\n(@TransactionalEventListener AFTER_COMMIT)" as CS
+  component "hype.HypeQueryService · hype.HypeCache ·\nhype.HypeSeals" as HY
+  component "Guard\n(requireApprovedInstitutional · requireOwner)" as G
+  component "NotificationService · Audit" as NA
+  component "AiEngine.local\n(SEALBOND_MATCHER — RF20/RF21)" as AI
 }
-package "fai-domain (repositórios JPA)" {
-  [BrandProfileRepository\nCelebrityProfileRepository\nPromotionRedemptionRepository\nPromotionRepository\nSchemeItemRepository\nSchemeRepository\nSealBondRepository\nSealRepository\nUserRepository] as REPOS
+package "Portas" {
+  component "MediaStoragePort <<port>>" as MSP
+  component "RenderCachePort <<port>>" as RCP
+  component "ApplicationEventPublisher\n(DomainEvents.CouponRightsCheck)" as EV
 }
-database "MySQL · fashionai_app\n• brand_profiles\n• celebrity_profiles\n• promotion_redemptions\n• promotions\n• scheme_items\n• schemes\n• seal_bonds\n• seals\n• users" as DB
-cloud "Motor de IA transversal (RF24)\nprovedores externos + fallback local" as P_ai
-[Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
-[NotificationService\n(RNF10)] as P_notif
+package "fai-domain · repositórios" {
+  component "SealRepository · SealBondRepository ·\nPromotionRepository · PromotionRedemptionRepository ·\nCouponRightRepository · BrandProfileRepository ·\nCelebrityProfileRepository · HypeScoreCurrentRepository" as REPOS
+}
+database "MySQL\n• seals · seal_bonds\n• promotions · promotion_redemptions\n• coupon_rights · notifications\n• hype_scores · audit_log" as DB
+database "Storage S3/R2/local\nusers/{id}/seals/*.png" as ST
+database "Redis | memória\n(chaves hype:g{geração}:…)" as RED
 
-FE0 --> SealController : HTTPS/JSON
-FE1 --> SealController : HTTPS/JSON
-FE2 --> SealController : HTTPS/JSON
-SealController --> SealService
-SealController --> SealDesignService
-SealService --> REPOS
-SealService --> P_notif
-SealService --> P_ai
-SealService --> P_events
-SealDesignService ..> MediaStoragePort
-SealDesignService --> REPOS
+FE0 --> FE1
+FE1 --> FE2
+FE1 --> FE3
+FE0 --> FE4
+FE0 --> FE5
+FE4 --> FE3
+FE0 --> SC : HTTPS/JSON
+FE1 --> SC : POST /api/seals/draft · POST/PUT /api/seals
+FE2 --> SC : POST /api/seals/uploads
+FE5 --> SC : POST/PUT /api/promotions
+FE5 --> CC
+FE4 --> HC
+SC --> SS
+SC --> SDS
+CC --> CS
+HC --> HY
+SS --> RULES
+SS --> G
+SS --> NA
+SS --> AI
+SS --> HY : Hype do selo · critério de Hype
+SS --> EV : issue() publica
+EV ..> CS : AFTER_COMMIT
+CS --> SS : eligiblePromotions · redeem
+SDS --> MSP
+MSP --> ST
+HY --> RCP
+RCP --> RED
+SS --> REPOS
+CS --> REPOS
+HY --> REPOS
 REPOS --> DB : JPA/Flyway
 @enduml

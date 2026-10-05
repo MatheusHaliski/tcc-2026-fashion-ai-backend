@@ -1,5 +1,5 @@
 @startuml RF28_Sequencia
-title RF28 — Montar looks no Smart Mirror e pedir sugestões ao "Vista-me" (só com peças do próprio guarda-roupa)\nDiagrama de sequência — endpoints reais
+title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de sequência — abrir o espelho, vestir uma peça e pedir ao Vista-me
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,29 +8,74 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor Usuário as U
-participant "Frontend\nmirror" as FE
-participant "MirrorController" as C
+actor "Pessoa" as U
+participant "mirror/page.tsx" as FE
+participant "lib/api/client\n(api)" as API
+participant "MirrorController\n/api/me/mirror" as C
 participant "MirrorService" as S
+participant "LookScorer" as LS
+participant "RoomService" as RS
 participant "AiEngine (RF24)" as AI
-participant "DailyLookService" as DL
+participant "Repositórios JPA\n(MirrorState, WardrobeItem,\nScheme, SchemeItem, StyleDna)" as R
 database "MySQL" as DB
-U -> FE: abre o espelho
-FE -> C: GET /api/me/mirror
+
+== Abrir o espelho ==
+U -> FE: abre /mirror
+FE -> API: GET /api/me/mirror
+API -> C: state(user)
 C -> S: state(user)
-S -> DB: SELECT mirror_state
-U -> FE: "Vista-me: jantar sexta, frio"
-FE -> C: POST /api/me/mirror/vista-me
-C -> S: vistaMe(user, prompt, ...)
-S -> AI: interpretar pedido + DNA (opt-in)
-AI --> S: ocasião, clima, paleta\n(ou fallback local)
-S -> DB: SELECT wardrobe_items disponíveis
-S --> FE: look completo + explicação
-U -> FE: trocar só o calçado
-FE -> C: POST /api/me/mirror/slots/SHOES/swap
-U -> FE: Usar hoje
-FE -> C: POST /api/me/mirror/use
-C -> S: useLook(user)
-S -> DL: marca Look do Dia
-DL -> DB: INSERT daily_looks + piece_usage_diary
+S -> R: MirrorStateRepository.findByUserId
+R -> DB: SELECT mirror_states
+opt primeiro acesso
+  S -> R: save(MirrorState{slotsJson = "{}", shownCombinationsJson = "[]"})
+end
+S -> R: WardrobeItemRepository.findByIdIn(ids dos slots)
+S -> S: tira peças apagadas/de terceiros;\ncomplete(), missing(), silhouette(), restriction()
+S -> RS: locateAll(userId) — endereço de cada peça
+S -> LS: scoreLooks(userId, [look])
+LS -> R: DNA (StyleDna), pares já combinados (schemes, scheme_items)
+LS -> LS: Hype v2 das peças (HypeQueryService.currentOf → hype_scores)
+LS --> S: Scores(compatibility, hype, novelty, reuse, usage, sustainability)
+S --> FE: 200 {slots, complete, missing, warnings, actions,\nsilhouette, postIt, light, restriction, shownCount, scores}
+note right of FE: espelho vazio → scores = null;\ndimensão sem base → "—"
+
+== Vestir uma peça ==
+U -> FE: escolhe uma peça sugerida
+FE -> API: POST /api/me/mirror/pieces {pieceId}
+API -> C: place(user, body)
+C -> S: place(user, pieceId)
+S -> S: WardrobeService.owned (404 / 403)\nslotOf(peça) → upper, lower, dress, shoes,\nouter_layer ou accessory (até 4)
+S -> R: save(MirrorState) — origin vista_me vira smart_mirror
+R -> DB: UPDATE mirror_states.slots_json
+S ->> S: MirrorAction("PLACE")
+S --> FE: 200 novo estado + placed + returned\n(+ notice se a peça está no cesto)
+
+== Vista-me ==
+U -> FE: "algo confortável para trabalhar"
+FE -> API: POST /api/me/mirror/vista-me {prompt, keepMirror}
+API -> C: vistaMe(user, body)
+C -> S: vistaMe(user, prompt, anchorIds, focusPieceId, keepMirror)
+S -> S: eligible(): disponíveis − à venda − fora de estação\n(RoomService.outOfSeason) ∩ peças do desafio ativo
+alt sem peça superior nem vestido elegível
+  S --> FE: 422 ACERVO_SEM_SUPERIOR {href: /pieces/new}
+end
+S -> AI: text(COPILOT) — interpretar o pedido
+AI --> S: Interpretation(occasion, mood, anchors, constraints, season)\nou interpretação local (fallback)
+S -> AI: text(SCHEME_COMPOSER) — refs do acervo elegível
+alt ref fora do conjunto elegível ou âncora ausente
+  S -> S: audita VISTA_ME_SUGESTAO_DESCARTADA\ne monta localmente
+else IA indisponível / cota
+  S -> S: LocalSchemeComposer (fallbackUsed = true)
+end
+alt nenhuma combinação nova
+  S --> FE: 422 SEM_COMBINACAO_NOVA
+else look montado
+  S -> R: save(MirrorState: slots, origin = vista_me, prompt,\ninterpretation, shownCombinations ≤ 50, lastPrompt)
+  R -> DB: UPDATE mirror_states
+  S ->> S: MirrorAction("VISTA_ME" | "VISTA_ME_MADRUGADA")
+  S -> RS: locateAll → sequência "{peça} — {endereço}"
+  S -> LS: scoreLooks (seis números)
+  S --> FE: 200 estado + sequence + legend + fallbackUsed\n+ explanation + challengeNotice + actions
+end
+FE -> U: reflexo veste o look; no quarto, os módulos acendem
 @enduml

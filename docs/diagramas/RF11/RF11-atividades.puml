@@ -1,5 +1,5 @@
 @startuml RF11_Atividades
-title RF11 — Compor a arte de fundo (Background Studio) do card de um esquema ou de uma peça\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de atividades — arte do card do look (etapa 4 do Criar Look) até salvar na etapa 5
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,78 +25,96 @@ skinparam note {
 }
 |Pessoa|
 start
-:Chega à etapa 4 do Criar Look (RF5)\nou abre "Editar arte do card" no detalhe (dono);
-|Frontend (scheme-builder · background-studio)|
-:GET /api/backgrounds/catalog (auras, materiais,\ngradientes, mosaicos, skins);
-:GET /api/backgrounds/recommendations?styles=&occasions=\n(direção recomendada);
+:Abre Criar Look (/schemes/new) ou Editar (/schemes/[id]/edit)\ne avança até a etapa 4 "Aparência";
 note right
-  Os três modos COEXISTEM e nada grava sozinho:
-  tudo fica no rascunho do modal até "salvar"
+  A etapa 4 só abre com 2 ou mais peças e título
+  (canGo do SchemeBuilder). O DNA de Estilo (RF13)
+  usa o mesmo BackgroundStudio; a peça tem editor
+  próprio (ver RF11_Atividades_Peca).
 end note
-fork
-  |Pessoa|
-  :4.1 Modo 1 · Cor & Gradiente\n(cor sólida, gradiente, cartela sazonal, AURA × material);
-  |Frontend (scheme-builder · background-studio)|
-  :GET /api/backgrounds/combination?aura=&material=\n&animated=&mosaic=;
-fork again
-  |Pessoa|
-  :4.1 Modo 2 · Arte com AI: descreve o cenário\ne escolhe a direção (EDITORIAL_SPREAD, LUXURY_GLASS,\nATELIER, SHOW_NOTES);
-  |Backend (BackgroundController · BackgroundStudioService)|
-  :POST /api/backgrounds/art {prompt, direction, celebrityId, era, passePartout, target};
-  if (Prompt vazio?) then (sim)
-    #FFE3E3:400 PROMPT_VAZIO;
-    detach
-  endif
-  :AiEngine.execute(BACKGROUND_GENERATOR) com nomes\nde celebridades protegidos;
-  if (Prompt cita pessoa real / rosto / corpo?) then (sim)
-    #FFE3E3:422 PROMPT_REJEITADO antes do envio;\nai_inference_log PROMPT_REJECTED\n(CelebrityPromptValidator — HU-RF6.CA19 / RF24.CA16);
-    detach
-  endif
-  if (Provedor de imagem respondeu?) then (sim)
-    :Recorta 900 × 2160 (esquema) ou 900 × 2080 (peça),\ngrava users/{id}/backgrounds/*.png e registra\nPhoto origem BACKGROUND_STUDIO → status READY;
-  else (não / sem cota)
-    :status FALLBACK_GALLERY com sugestões\nde presets AURA coerentes com o prompt;
-  endif
-fork again
-  |Pessoa|
-  :4.2 Modo 3 · Background das peças\n(fundo de cada card de peça);
-  |Frontend (scheme-builder · background-studio)|
-  :Opcional: POST /api/backgrounds/uploads?target=card|PIECE\n(imagem própria validada e recortada);
-end fork
 |Frontend (scheme-builder · background-studio)|
-:Pré-visualiza o card: POST /api/schemes/preview (PNG);
+:useBgCatalog: GET /api/backgrounds/catalog (anônimo)\ncores, gradientes, cartelas, presets AURA, materiais,\nskins, direções, anatomias e animações;
+:GET /api/backgrounds/recommendations?styles=&occasions=\n(direção recomendada e skins recomendadas);
+note right
+  Os segmentos coexistem e NADA grava sozinho:
+  o rascunho (bg, skin, anatomia) fica no estado
+  do construtor até Salvar/Publicar na etapa 5.
+  "Desfazer" e "Limpar arte" mexem só no rascunho.
+end note
+if (O look veio de uma composição da IA (etapa 1, modo IA)?) then (sim)
+  :applyComposition: pede a direção recomendada\ne POST /api/backgrounds/art {prompt, direction, passePartout};
+  |API (BackgroundController · SchemeController)|
+  :BackgroundStudioService.generateArt;
+  if (E-mail não confirmado, conta bloqueada ou prompt vazio?) then (sim)
+    #FFE3E3:403 EMAIL_NAO_CONFIRMADO / CONTA_SUSPENSA\nou 400 PROMPT_VAZIO;
+  else (não)
+    |Banco/IA (AiEngine · Replicate · MySQL)|
+    :AiEngine.execute(BACKGROUND_GENERATOR)\ncom os nomes das celebridades protegidos;
+    if (Prompt cita pessoa real, rosto ou corpo?) then (sim)
+      #FFE3E3:422 PROMPT_REJEITADO antes do envio\n(ai_inference_log = PROMPT_REJECTED);
+    else (não)
+      if (Há provedor, orçamento e cota do dia?) then (sim)
+        :ImageGenerationPort.generate 896 × 1344\n(prompt negativo: sem pessoas e sem rostos);
+        :Recorta 900 × 2160, grava users/{id}/backgrounds/*.png\ne registra photos (origem BACKGROUND_STUDIO);
+        :200 READY {url, provider, costUsd};
+      else (não)
+        :Motor local não gera imagem\n→ 200 FALLBACK_GALLERY (6 sugestões AURA);
+      endif
+    endif
+  endif
+  |Frontend (scheme-builder · background-studio)|
+  if (status = READY?) then (sim)
+    :Rascunho recebe aiArt {url}\n(aura e material saem);
+  else (não ou erro)
+    :Fica o preset recomendado\n(aura, material e skin da direção);
+  endif
+else (não)
+endif
 |Pessoa|
-if (Decisão no modal?) then (cancelar)
-  :Fecha sem gravar (0 pedidos);
-  stop
-elseif (restaurar padrão)
-  |Backend (BackgroundController · BackgroundStudioService)|
-  :DELETE /api/schemes/{id}/background → fundo #F4F2EF,\nsem gradiente/arte, NONE (CA05);
-  stop
-else (salvar)
-endif
-|Backend (BackgroundController · BackgroundStudioService)|
-if (Esquema ou peça?) then (esquema)
-  :Etapa 5 do RF5: POST/PUT /api/schemes com form.background\n(ou PUT /api/schemes/{id}/background);
-  :applyToScheme valida presets, skin, anatomia, cor hex;
-  if (Direção recomendada aplicada?) then (sim)
-    :cardSkin da direção; containerOrigin AUTO e containerMandatory = true;
-  elseif (cor de container manual em container travado?)
-    #FFE3E3:409 CONTAINER_TRAVADO;
-    stop
-  else (manual)
-    :containerOrigin MANUAL (ou INDEFINIDA se limpou);
-  endif
-  :Grava studioConfigJson + config.pieces em cada peça;
-else (peça)
-  :PUT /api/pieces/{id}/background com baseRev;
-  if (baseRev diferente da revisão atual?) then (sim)
-    #FFE3E3:409 ARTE_ALTERADA (outra janela aplicou antes);
-    stop
-  endif
-  :Grava backgroundConfigJson com rev + 1;
-endif
+repeat
+  :Escolhe um segmento: Cor · Aura & Material ·\nLayout & Estilo · Container;
+  switch (Segmento?)
+  case (Cor)
+    :Cor lisa ou gradiente AURA;
+  case (Aura & Material)
+    if (Anatomia com arte própria (seções B/C)?) then (sim)
+      :Segmento desativado, com explicação;
+    else (não)
+      :Preset AURA, variação, material e formato\n(IMAGEM_UNICA ou MOSAICO) ou "Aplicar recomendada";
+    endif
+  case (Layout & Estilo)
+    :Anatomia do card (13), layout das peças (seção C),\nsilhueta e skin do card;
+    note right: "Cartela sazonal" abre um modal próprio\n(ver RF11_Atividades_Cartela)
+  case (Container)
+    :Cor do container e cor dos textos\n(nativa do skin ou escolhida);
+  endswitch
+  |Frontend (scheme-builder · background-studio)|
+  :Prévia ao vivo no SchemeCard\n(resolveCardArt + CardArtLayer; vídeo de Aura via ArtVideo);
+  |Pessoa|
+repeat while (Continua ajustando?) is (sim)
+->não;
+:Etapa 5: revisa as peças, pede o PNG (opcional)\ne clica em Salvar ou Publicar;
 |Frontend (scheme-builder · background-studio)|
-:Card renderizado com a nova arte\n(GET /api/schemes/{id}/card.png);
+if (Pediu o PNG?) then (sim)
+  :POST /api/schemes/preview (nada é gravado);
+else (não)
+endif
+:POST /api/schemes ou PUT /api/schemes/{id}\ncom background {scheme: {...bg, layoutAnatomy, photo},\npieces: {anatomy}}, cardSkin e layoutAnatomy;
+|API (BackgroundController · SchemeController)|
+:SchemeService.create/update chama\nBackgroundStudioService.applyToScheme;
+if (Alguma regra do Studio falhou?) then (sim)
+  #FFE3E3:400 com o código da regra:\nCOR_INVALIDA (cor fora de #RRGGBB) · PRESET_INVALIDO\n(gradiente, cartela, aura ou material desconhecido) ·\nMATERIAL_INDISPONIVEL (LEGO + material) · FORMATO_INVALIDO ·\nSKIN_INVALIDA · ANATOMIA_INVALIDA · SILHUETA_INVALIDA ·\nESTACAO_OBRIGATORIA (cartela automática sem estação) ·\nMIDIA_INVALIDA (arte que não é da pessoa nem do catálogo);
+  stop
+else (não)
+endif
+if (Container travado pela direção e cor diferente?) then (sim)
+  #FFE3E3:409 CONTAINER_TRAVADO;
+  stop
+else (não)
+endif
+|Banco/IA (AiEngine · Replicate · MySQL)|
+:Grava em schemes: background_color, background_gradient,\nbackground_art_url, background_video_url (combo animado),\nbackground_animation_type, card_skin, layout_anatomy,\ncontainer_*, studio_config_json (+ "resolved");
+|Frontend (scheme-builder · background-studio)|
+:201/200 SchemeView → tela de sucesso;\no card do feed lê o background gravado;
 stop
 @enduml

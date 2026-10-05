@@ -1,5 +1,5 @@
 @startuml RF27_Sequencia
-title RF27 — Visualizar e organizar o guarda-roupa num quarto 3D interativo ("Meu Quarto")\nDiagrama de sequência — endpoints reais
+title RF27 — Meu Quarto (guarda-roupa num quarto 3D interativo)\nDiagrama de sequência — abrir o quarto, mover uma peça e visitar com a chave
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,29 +8,81 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor Usuário as U
-participant "Frontend\nroom/page + RoomScene" as FE
+actor "Pessoa" as U
+participant "room/page.tsx\n(RoomScene · 2.5D · Lista)" as FE
+participant "lib/api/client\n(api)" as API
 participant "RoomController" as C
 participant "RoomService" as S
-participant "AiEngine (RF24)" as AI
+participant "InventoryScoreService" as ISS
+participant "ChallengeService\n(DecorationsProvider)" as CH
+participant "Repositórios JPA\n(RoomLayout, RoomStorageEntry,\nWardrobeItem, DailyLook,\nPieceUsageDiaryEntry, StyleDna,\nRoomInventoryItem)" as R
 database "MySQL" as DB
-U -> FE: abre Meu Quarto
-FE -> C: GET /api/me/room
-C -> S: room(user)
-S -> DB: SELECT room_layouts, wardrobe_items,\nschemes, daily_looks, room_inventory
-S --> FE: módulos (acabamentos), peças por endereço,\nnível, decorações, unboxing, luz
-U -> FE: abre a Porta 2
-FE -> C: GET /api/me/room/modules/door:2
-C --> FE: peças do módulo
-U -> FE: Organizar
-FE -> C: GET /api/me/room/organization/preview?useAi=true
-C -> S: preview
-S -> AI: sugere rótulos/agrupamentos (opt-in)
-S --> FE: movimentos + explicação
-U -> FE: Aplicar
-FE -> C: POST /api/me/room/organization
-S -> DB: UPDATE room_layouts (+ previous_map_json)
-U -> FE: renomeia gaveta
-FE -> C: PUT /api/me/room/drawers/{n}
-S -> DB: UPDATE room_layouts.drawer_labels_json
+
+== Abrir o quarto ==
+U -> FE: abre /room
+FE -> API: GET /api/me/room
+API -> C: room(user)
+C -> S: room(user) → render(userId, owner = true)
+S -> R: RoomLayoutRepository.findByUserId
+R -> DB: SELECT room_layouts
+alt primeiro acesso
+  S -> R: save(RoomLayout) — nível = Level.of(lifetime), 6 rótulos padrão
+  R -> DB: INSERT room_layouts
+end
+S -> R: RoomStorageEntryRepository.findByUserId
+R -> DB: SELECT room_storage_map
+opt peça sem endereço
+  S -> S: place(): porta, gaveta pela categoria, base,\nsapateira… ou Cadeira (sem vaga)
+  S -> R: save(RoomStorageEntry, assignedBy = AUTO)
+  R -> DB: INSERT room_storage_map
+end
+S -> R: peças, diário (60 dias), Look do Dia, DNA (Peça Ícone),\nesquemas não arquivados (caixas no maleiro)
+R -> DB: SELECT wardrobe_items, piece_usage_diary, daily_looks,\nstyle_dna, schemes, scheme_items
+S -> S: statesOf(): INDISPONIVEL, ESQUECIDA, FAVORITA,\nICONE, A_VENDA, LOOK_DO_DIA, CADEIRA…
+S -> ISS: compute(userId, true) — luzes do closet
+note right: falha da nota não quebra a cena:\nas luzes ficam apagadas
+S -> CH: decorations(userId) — desafios ativos
+S -> R: RoomInventoryItemRepository.findByUserId (unboxing)
+S --> C: módulos, peças por endereço, cesto, arara,\nvitrine, cadeira, nível, luzes, unboxing, ambiente
+C --> API: 200 JSON
+API --> FE: dados do quarto
+FE -> FE: WebGL? Quarto 3D : 2.5D (câmera 3/4 limitada)
+FE -> API: GET /api/me/room/list
+API -> C: listView(user)
+C --> FE: 200 linhas por módulo (rótulo acessível e ações)
+
+== Mover uma peça ==
+U -> FE: escolhe "Gaveta 4"
+FE -> API: PUT /api/pieces/{pieceId}/room-address {address: "drawer:4"}
+API -> C: move(user, pieceId, body)
+C -> S: move(user, pieceId, address)
+S -> R: WardrobeItemRepository.findById + Guard.requireOwner
+alt endereço não segue door:n/hanger:k, drawer:n, shoe:n…
+  S --> FE: 400 ENDERECO_INVALIDO
+else módulo não existe no nível
+  S --> FE: 409 MODULO_INDISPONIVEL
+else gaveta com 6 peças
+  S --> FE: 409 GAVETA_CHEIA
+else posição fora da capacidade / ocupada
+  S --> FE: 400 POSICAO_INVALIDA / 409 POSICAO_OCUPADA
+else ok
+  S -> R: save(RoomStorageEntry, assignedBy = USER)
+  R -> DB: UPDATE room_storage_map
+  S --> FE: 200 {address, label "Gaveta 4 · Jeans", moduleId, coherent}
+end
+FE -> API: GET /api/me/room (recarrega)
+
+== Chave do quarto e visita ==
+U -> FE: dá a chave a @convidado
+FE -> API: GET /api/profiles/{username} → POST /api/me/room/keys {guestId}
+API -> C: giveKey(user, body)
+C -> S: giveKey(user, guestId)
+alt guestId = o próprio usuário
+  S --> FE: 400 CHAVE_INVALIDA
+else ok
+  S -> R: módulo "keys" em modules_json
+  R -> DB: UPDATE room_layouts
+  S --> FE: 200 {keys}
+end
+note over C, S: GET /api/users/{ownerId}/room-tour mostra a versão pública\n(sem estados nem preços); sem a chave → 403 do Guard.\nA rota existe no servidor, mas nenhuma tela a chama ainda.
 @enduml

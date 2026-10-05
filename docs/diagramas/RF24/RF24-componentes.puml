@@ -1,5 +1,5 @@
 @startuml RF24_Componentes
-title RF24 — Usar a IA do sistema (motor transversal de inteligência artificial do Fashion AI)\nDiagrama de componentes — arquitetura do motor (gerado do código: serviços → AiEngine → provedores/ports)
+title RF24 — Usar a IA do sistema\nDiagrama de componentes — telas → controllers → serviços hospedeiros → AiEngine → portas → provedores, Redis e MySQL
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -17,60 +17,78 @@ skinparam database {
 left to right direction
 
 package "Frontend (Next.js)" {
-  component "settings/page.tsx — aba Privacidade\n(consentimentos por finalidade)" as FE0
-  component "admin/system/page.tsx\n(providers · catalog · recent · remoteEnabled)" as FE1
-  component "Telas dos RFs hospedeiros\n(pieces/new · copilot · explorer · room · photos · autopilot)" as FE2
+  component "settings/page.tsx — aba Privacidade\n(um Switch por finalidade)" as FE0
+  component "admin/system/page.tsx\n(provedores · catálogo · inferências recentes)" as FE1
+  component "Telas dos RFs hospedeiros\n(pieces/new · schemes · mirror · copilot · autopilot ·\ndna · photos · room · explorer · brands · try-on…)\nmostram provedor ou \"motor local\" e o \"por quê?\"" as FE2
 }
 package "fai-web · controllers" {
-  [MeController] as MC
-  [AdminController] as AC
-  [Controllers dos RFs hospedeiros\n(WardrobeController, SchemeController, DnaController,\nBackgroundController, TryOnController, SealController…)] as HC
+  component "MeController\nGET /api/me/consents\nPUT /api/me/consents/{purpose}" as MC
+  component "AdminController\nGET /api/admin/ai" as AC
+  component "Controllers dos RFs hospedeiros\n(WardrobeController, SchemeController (+ Copilot),\nMirrorController, DnaController, AutopilotController,\nRoomController, PhotoController, DiscoveryController…)" as HC
 }
 package "fai-application · services" {
-  [AccountService] as AS
-  [AdminService] as ADS
-  [Serviços hospedeiros\n(WardrobeService, SchemeService, DnaService, CopilotService,\nBackgroundStudioService, TryOnService, SealService, PhotoService,\nMirrorService, Avatar3dService, HypeScoreService…)] as HS
+  component "AccountService\n(setConsent · consents)" as AS
+  component "AdminService · DashboardService\n(aiOverview · providerAvailability)" as ADS
+  component "Serviços hospedeiros — ai.text / ai.execute:\nWardrobeService · MultiPieceService · SchemeService ·\nMirrorService · DnaService · CopilotService ·\nAutopilotService · RoomService · HypeScoreService ·\nExplorerService · InsightService · BackgroundStudioService ·\nTryOnService · Model3dService · Avatar3dService ·\nBrandLogoService · BrandWebSearchService ·\nCatalogTextInterpreter · OfficialCatalogDiscovery" as HS
+  component "Serviços com motor local primário — ai.local:\nSealService · LookbookService · InstitutionalService ·\nPhotoService · DnaService" as HSL
 }
 package "fai-application · ai (motor RF24)" {
-  [AiEngine\n(text · execute · remoteAllowed)] as AI
-  [AiCatalog\n(CapabilitySpec: primário · alternativo · local · cota · timeout)] as CAT
-  [AiCapability\n(25 capacidades · hostRf · consentPurpose)] as CAP
-  [AiBudget\n(teto diário US$ global e por usuário)] as BUD
-  [CelebrityPromptValidator] as VAL
-  [ai.local\n(LocalAdvisors · LocalSchemeComposer ·\nLocalDnaSynthesizer · Similarity · ColorMath)] as LOC
+  component "AiEngine\n(text · execute · local · remoteAllowed)" as AI
+  component "AiCatalog\n(CapabilitySpec: primário · alternativo ·\nlocal · cota diária · timeout 30 s)" as CAT
+  component "AiCapability\n(26 capacidades · hostRf · consentPurpose)" as CAP
+  component "AiBudget\n(teto diário US$ global e por usuário)" as BUD
+  component "CelebrityPromptValidator" as VAL
+  component "ai.local\n(LocalAdvisors · LocalSchemeComposer ·\nLocalDnaSynthesizer · Similarity · ColorMath)" as LOC
 }
-package "fai-infrastructure · adapters" {
-  [ai-providers\nGeminiProvider (id gemini)\nClaudeProvider (id claude)] as PROV
-  [ai-providers · image\nMeshyModel3dAdapter · StabilityFast3dAdapter] as PROV3D
-  [platform · InMemoryRateLimit\n(RateLimitPort)] as RL
-  [AiInferenceLogRepository\nUserConsentRepository\nAiReviewItemRepository] as REPOS
+package "Portas" {
+  component "AiProviderPort <<port>>" as PP
+  component "AuditService <<port>>\n(record: CHAMADA_IA)" as AUD
+  component "RateLimitPort <<port>>" as RLP
+  component "ImageProviderPorts <<port>>\n(TryOn · BackgroundRemoval · StudioShot ·\nUpscale · ImageGeneration · ImageEdit · Model3d)" as IPP
 }
-database "MySQL · fashionai_app\n• ai_inference_log\n• user_consents\n• ai_review_items\n• audit_log" as DB
+package "fai-infrastructure" {
+  component "ai-providers\nGeminiProvider (gemini) · ClaudeProvider (claude)\n+ ProviderCircuit (1 retry · abre 60 s após 5 falhas)" as PROV
+  component "ai-providers · image\nFashnTryOnAdapter · RembgAdapter · RemoveBgAdapter ·\nPhotoroomStudioAdapter · StabilityUpscaleAdapter ·\nReplicateImageGenerationAdapter · ReplicateImageEditAdapter ·\nGeminiImageEditAdapter · MeshyModel3dAdapter · StabilityFast3dAdapter" as IMG
+  component "platform · InMemoryRateLimit\n(padrão)\ncache-redis · RedisAdapters.redisRateLimit\n(fashionai.redis.enabled=true)" as RL
+  component "persistence-mysql\nAiInferenceLogRepository · UserConsentRepository\n+ MysqlAuditService (AuditService)" as REPOS
+}
+database "MySQL\n• ai_inference_log\n• user_consents\n• audit_log" as DB
+database "Redis\n(baldes ai:CAPACIDADE)" as REDIS
 cloud "Google Gemini API\n(generativelanguage.googleapis.com)" as GEM
-cloud "Anthropic API\n(Claude)" as CLA
+cloud "Anthropic API (Claude)" as CLA
+cloud "Imagem/3D: FASHN · remove.bg · Photoroom ·\nReplicate · Stability · Meshy · rembg próprio" as IMGC
 
-FE0 --> MC : GET/PUT /api/me/consents/{purpose}
-FE1 --> AC : GET /api/admin/ai
-FE2 --> HC : rotas dos RFs hospedeiros
-MC --> AS : chama
-AC --> ADS : chama
-HC --> HS : chama
+FE0 --> MC
+FE1 --> AC
+FE2 --> HC
+MC --> AS
+AC --> ADS
+HC --> HS
+HC --> HSL
 AS --> REPOS : grava consentimento
 ADS --> AI : providerAvailability · remoteEnabled
 ADS --> CAT : AiCatalog.all()
-ADS --> REPOS : lê ai_inference_log
-HS --> AI : text(TextCall) / execute(...)
+ADS --> REPOS : últimas inferências
+HS --> AI : text(TextCall) / execute(RemoteSteps)
+HSL --> AI : local(engine)
+HS --> LOC : valor de fallback
 AI --> CAT : spec(capability)
-CAT --> CAP : usa
-AI --> VAL : valida prompt
-AI --> BUD : check(userId, custo)
-AI --> RL : tryAcquire / status
-AI --> PROV : invoke(AiRequest)
-HS --> LOC : fallback local
-HS --> PROV3D : RF16 (feature flag)
-AI --> REPOS : lê consentimento · grava inferência
-BUD --> REPOS : soma custo do dia
-PROV --> GEM : HTTPS
-PROV --> CLA : HTTPS
+CAT --> CAP
+AI --> VAL
+AI --> BUD
+AI --> RLP
+AI --> PP
+AI --> AUD
+AI --> REPOS : consentimento · ai_inference_log
+BUD --> REPOS : soma o custo do dia
+HS ..> IPP : passos remotos de imagem/3D
+PROV ..|> PP
+IMG ..|> IPP
+RL ..|> RLP
+RL --> REDIS
+REPOS ..|> AUD
 REPOS --> DB : JPA/Flyway
+PROV --> GEM : HTTPS
+PROV --> CLA : HTTPS (SDK oficial)
+IMG --> IMGC : HTTPS
 @enduml

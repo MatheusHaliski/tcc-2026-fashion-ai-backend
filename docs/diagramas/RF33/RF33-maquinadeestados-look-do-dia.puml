@@ -7,28 +7,44 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-title RF33 — DailyLook (daily_looks): do Look do Dia à Passarela 3D que se renova a cada dia
-[*] --> Registrado : POST /api/me/daily-look · POST /api/me/mirror/use\n· Copilot / Autopiloto (source MANUAL | SMART_MIRROR | VISTA_ME | COPILOT | AUTOPILOTO)
-state "Registrado hoje\n(lookDate = hoje, 1 por usuário/dia)" as Registrado
+title RF33 — Passarela 3D: o Look do Dia de cada usuário desfilando num manequim\nDiagrama de máquina de estados — Look do Dia (daily_looks) na passarela que se renova a cada dia
+state "Sem look hoje" as Sem
+state "Registrado hoje\n(lookDate = hoje · source MANUAL | SMART_MIRROR |\nVISTA_ME | COPILOT | AUTOPILOTO)" as Registrado
+state "Materializado\n(materializedFrom = último look da semana)" as Materializado
 state "Na Passarela 3D\n(GET /api/explorer/runway)" as Passarela {
-  state "TOP100_GLOBAL" as Global
-  state "TOP100_REGIONAL\n(WorldRegions.of(users.country))" as Regional
-  state "TOP100_PAIS" as Pais
-  state "SEGUINDO · EM_ALTA · RECENTES" as Outros
+  state "Fora do recorte\n(filtro de região, país, cor,\nocasião, estilo ou sexo)" as Filtrado
+  state "No ranking (até o Top 100)" as Ranking {
+    state "Top 100 Global / Seguindo\n(score público v2; sem Hype público = no fim)" as Top
+    state "Top 100 Regional / País\n(WorldRegions.of(users.country))" as Regional
+    state "Em alta\n(momentum RISING/EMERGING → TREND)" as Alta
+    state "Recentes\n(hora do Look do Dia)" as Recentes
+  }
+  Ranking --> Filtrado : pessoa aplica filtros
+  Filtrado --> Ranking : pessoa limpa filtros
 }
-state "Fora da passarela" as Oculto
-state "Materializado\n(materializedFrom = dia anterior)" as Materializado
-state "Avaliado\n(feedback ADOREI | NAO_USEI | NAO_GOSTEI)" as Avaliado
-Registrado --> Registrado : novo registro no mesmo dia\nsubstitui o esquema (replaced)
-Registrado --> Passarela : esquema visível ao viewer\n(canView, status != ARCHIVED)
-Registrado --> Oculto : visibility PRIVATE para quem não segue\nou esquema arquivado
-Passarela --> Passarela : filtros region/country/colors/\noccasions/styles/sex reordenam
-Registrado --> Materializado : vira o dia sem novo registro\n(DailyLookService.today copia o anterior)
-Materializado --> Passarela : continua desfilando no novo dia
-Materializado --> Registrado : POST /api/me/daily-look (novo look)
-Registrado --> Avaliado : PUT /api/me/daily-looks/{date}/feedback
-Avaliado --> [*]
-Oculto --> [*]
-note right of Passarela : manequim montado no cliente: corpo por sexo (RF1)\ne cabeça com users.avatar_url quando existe
-note bottom of Materializado : se o esquema do dia anterior foi ARCHIVED,\nnão materializa (sem look → sai da passarela)
+state "Fora da passarela" as Fora
+state "Histórico\n(dia passado)" as Historico
+
+[*] --> Sem
+Sem --> Registrado : POST /api/me/daily-look · POST /api/me/mirror/use\n· Copilot / Autopiloto (DailyLookService.register)
+Sem --> Sem : register recusa — 409 PECA_INDISPONIVEL
+Sem --> Materializado : GET /api/explorer/runway vira o dia\n(DailyLookService.today) e houve look nos últimos 7 dias
+Registrado --> Registrado : novo registro no mesmo dia troca o esquema
+Materializado --> Registrado : novo registro hoje
+Registrado --> Passarela : conta ACTIVE, sem runwayOptOut, sem conta de teste,\nesquema não ARCHIVED e canView(viewer)
+Materializado --> Passarela : mesmas regras\n(cartão mostra "continua de ontem")
+Passarela --> Fora : PATCH /api/me/profile {runwayOptOut: true}\n· esquema arquivado · conta suspensa
+Fora --> Registrado : PATCH /api/me/profile {runwayOptOut: false}\n(o look de hoje volta às regras da passarela)
+Registrado --> Fora : esquema privado para quem não pode ver
+Passarela --> Historico : vira o dia
+Fora --> Historico : vira o dia
+Historico --> Historico : PUT /api/me/daily-looks/{date}/feedback\n(ADOREI | NAO_USEI | NAO_GOSTEI;\nvale também no próprio dia)
+Historico --> [*]
+note right of Passarela
+Cada viewer vê o seu recorte: o ranking e os filtros
+não mudam o registro, só a posição na tabela.
+Manequim montado no cliente: sexo do RF1 e cabeça
+AVATAR quando o Avatar 3D (RF40) é visível.
+end note
+note bottom of Materializado : esquema ARCHIVED no dia anterior não materializa:\na pessoa fica sem look e sai da passarela
 @enduml

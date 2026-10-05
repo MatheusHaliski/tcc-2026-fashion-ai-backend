@@ -1,6 +1,6 @@
 @startuml RF24_MaquinaDeEstados_Inferencia
 !pragma layout smetana
-title RF24 — Inferência (AiEngine.execute): resultado registrado em ai_inference_log (AiCallResult)
+title RF24 — Usar a IA do sistema\nDiagrama de máquina de estados — uma inferência no AiEngine e o resultado gravado em ai_inference_log (AiCallResult)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,42 +8,73 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-state "Solicitada\n(TextCall do RF hospedeiro)" as Pedida
-state "Validando funil\n(prompt → escopo → consentimento → teto US$ → cota)" as Funil
-state "Chamando provedor\n(primário → alternativo)" as Remoto
-state "PROMPT_REJECTED" as PromptRejected
-state "CONSENT_DENIED" as ConsentDenied
-state "RATE_LIMITED" as RateLimited
-state "TIMEOUT" as Timeout
-state "CIRCUIT_OPEN" as CircuitOpen
-state "ERROR" as Error
-state "SUCCESS" as Success
-state "FALLBACK_LOCAL" as FallbackLocal
-[*] --> Pedida : serviço hospedeiro chama AiEngine.text(...)
-Pedida --> Funil : AiCatalog.spec(capability)
-Funil --> PromptRejected : CelebrityPromptValidator recusa\n(422 PROMPT_REJEITADO)
-Funil --> FallbackLocal : capacidade fora de escopo\nou nenhum provedor disponível
-Funil --> ConsentDenied : user_consents.granted = false\npara a finalidade da capacidade
-Funil --> RateLimited : AiBudget USER_EXHAUSTED ou\ncota diária ai:CAPABILITY esgotada
-Funil --> FallbackLocal : AiBudget GLOBAL_EXHAUSTED
-Funil --> Remoto : tudo liberado (consentState CONCEDIDO ou n/a)
-Remoto --> Success : AiProviderPort.invoke respondeu\ndentro do contrato JSON
-Remoto --> Timeout : latência > timeoutSeconds
-Remoto --> CircuitOpen : circuito do provedor aberto
-Remoto --> RateLimited : provedor devolveu 429
-Remoto --> Error : exceção / resposta fora do contrato
-Timeout --> Remoto : há provedor alternativo
-CircuitOpen --> Remoto : há provedor alternativo
-Error --> Remoto : há provedor alternativo
-Timeout --> FallbackLocal : sem alternativo
-CircuitOpen --> FallbackLocal : sem alternativo
-Error --> FallbackLocal : sem alternativo
-Success --> [*]
-FallbackLocal --> [*]
-ConsentDenied --> [*]
-RateLimited --> [*]
-PromptRejected --> [*]
-note right of Success : INSERT ai_inference_log (fallbackUsed=false)\ncom Explanation "por quê?" (CA12/RNF6)
-note bottom of FallbackLocal : o valor vem de ai.local (LocalAdvisors, LocalSchemeComposer…);\ncada falha remota também fica registrada (fallbackUsed=true)
-note left of ConsentDenied : consentimento gerido no RF23\n(PUT /api/me/consents/{purpose}); revogável a qualquer momento
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Pedida\n(text / execute / local)" as Pedida
+state "Funil de governança" as Funil {
+  state "Validando prompt\n(CelebrityPromptValidator)" as Prompt
+  state "Checando escopo\n(inScope · flag rf16-3d)" as Escopo
+  state "Lendo consentimento\n(consentState)" as Consent
+  state "Checando provedores\n(remoteEnabled · available())" as Disp
+  state "Teto em US$\n(AiBudget.check)" as Teto
+  state "Cota diária\n(RateLimitPort, balde ai:CAPACIDADE)" as Cota
+  [*] --> Prompt
+  Prompt --> Escopo : aceito ou sem validação
+  Escopo --> Consent : em escopo
+  Consent --> Disp
+  Disp --> Teto : algum disponível e\nconsentState ≠ NEGADO
+  Teto --> Cota : OK (userId presente)
+}
+state "Chamando provedor\n(RemoteStep atual)" as Remoto
+state "Falha registrada\n(TIMEOUT · CIRCUIT_OPEN ·\nRATE_LIMITED · ERROR)" as Falha
+state "PROMPT_REJECTED" as PR
+state "CONSENT_DENIED" as CD
+state "RATE_LIMITED\n(local)" as RL
+state "FALLBACK_LOCAL" as FL
+state "SUCCESS\n(provedor remoto)" as OK
+state "SUCCESS\n(provider = local)" as OKL
+
+[*] --> Pedida : serviço hospedeiro chama o AiEngine
+Pedida --> OKL : local(engine)\n(motor local primário)
+Pedida --> Funil : text(TextCall) → execute(RemoteSteps)
+Prompt --> PR : prompt cita nome protegido\n→ 422 PROMPT_REJEITADO
+Escopo --> FL : fora de escopo
+Disp --> FL : remoto desligado ou\nnenhum provedor disponível
+Disp --> CD : consentState = NEGADO
+Teto --> RL : USER_EXHAUSTED
+Teto --> FL : GLOBAL_EXHAUSTED
+Teto --> Remoto : OK sem userId (sistema/job)
+Cota --> RL : cota esgotada\n(Quota limit/used/resetAt)
+Cota --> Remoto : vaga reservada (tryAcquire)
+Remoto --> OK : resposta dentro do contrato
+Remoto --> Falha : exceção / parser nulo
+Falha --> Remoto : próximo RemoteStep disponível\n(alternativo)
+Falha --> FL : acabaram os provedores
+
+OK --> [*]
+OKL --> [*]
+FL --> [*]
+CD --> [*]
+RL --> [*]
+PR --> [*]
+
+note right of OK
+  Cada estado final grava UMA linha em
+  ai_inference_log (+ audit_log CHAMADA_IA);
+  cada falha remota grava a sua linha
+  (fallbackUsed = true).
+end note
+note bottom of FL
+  Valor vem do fallback local (ai.local) e o
+  RF hospedeiro segue funcionando (RNF8);
+  AiOutcome leva fallbackUsed e a explicação.
+end note
+note left of CD
+  Consentimento é gerido no RF23
+  (PUT /api/me/consents/{purpose})
+  e pode ser revogado a qualquer momento.
+end note
 @enduml

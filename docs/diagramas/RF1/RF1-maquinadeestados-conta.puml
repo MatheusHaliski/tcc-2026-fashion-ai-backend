@@ -1,12 +1,17 @@
 @startuml RF1_MaquinaDeEstados_Conta
 !pragma layout smetana
-title RF1 — Conta (User.status · AccountStatus): do cadastro à ativação, suspensão e exclusão
+title RF1 — Cadastrar conta na plataforma (Pessoal, Marca ou Celebridade)\nDiagrama de máquina de estados — conta (User.status · AccountStatus)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
   ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
 state "PENDING_EMAIL_VERIFICATION" as PendEmail
 state "PENDING_VALIDATION" as PendVal
@@ -15,34 +20,47 @@ state "SUSPENDED" as Susp
 state "DELETION_SCHEDULED" as DelSched
 state "DELETED" as Del
 
-[*] --> PendEmail : POST /api/auth/register\n(sessão aberta com warnings)
+[*] --> PendEmail : POST /api/auth/register\n(201 Session com warnings)
 PendEmail --> Ativa : POST /api/auth/email-verification\n(PESSOAL, ou perfil já APROVADO)
-PendEmail --> PendVal : POST /api/auth/email-verification\n(MARCA/CELEBRIDADE com ApprovalStatus PENDENTE)
-PendVal --> Ativa : POST /api/admin/approvals/{userId}\napprove = true (CA07/CA10)
-PendVal --> PendVal : POST /api/admin/approvals/{userId}\napprove = false → perfil RECUSADO,\nnotificação com o motivo
-Ativa --> Susp : PUT /api/admin/users/{userId}/status\nsuspend = true
+PendEmail --> PendVal : POST /api/auth/email-verification\n(MARCA/CELEBRIDADE ainda não APROVADO)
+PendVal --> Ativa : POST /api/admin/approvals/{userId}\ndecision = APROVAR (CA07/CA10)
+PendVal --> PendVal : decision = AJUSTES ou RECUSAR\n· POST /api/me/issuer-review/resubmit
+Ativa --> Susp : PUT /api/admin/users/{userId}/status\nsuspend = true (revoga as sessões)
 Susp --> Ativa : PUT /api/admin/users/{userId}/status\nsuspend = false
-Ativa --> DelSched : POST /api/me/deletion (RF3.CA13)\ndeletionScheduledFor = +30 dias
-DelSched --> Ativa : DELETE /api/me/deletion\n(volta ao estado anterior)
-DelSched --> Del : job purgeScheduledDeletions\n(anonimização irreversível)
+Ativa --> DelSched : POST /api/me/deletion {password}\ndeletionScheduledFor = +30 dias (RF3)
+DelSched --> Ativa : DELETE /api/me/deletion\n(e-mail confirmado e perfil aprovado)
+DelSched --> PendEmail : DELETE /api/me/deletion\n(e-mail não confirmado)
+DelSched --> PendVal : DELETE /api/me/deletion\n(perfil institucional não aprovado)
+DelSched --> Del : AccountService.purgeScheduledDeletions()\n(anonimização irreversível)
 Del --> [*]
 
 note right of PendEmail
   CA05 — acesso limitado: Guard.requireCanCreate
-  responde 403 EMAIL_NAO_CONFIRMADO; só navega e vê.
-  Reenvio do código: POST /api/auth/email-verification/resend
+  responde 403 EMAIL_NAO_CONFIRMADO; a pessoa só
+  navega e vê. Reenvio: POST /api/auth/email-verification/resend
 end note
 note right of PendVal
-  Sessão emite o aviso "seu perfil aguarda a validação".
-  Marca e celebridade não vendem nem emitem selos
-  (Guard.requireApprovedInstitutional)
+  Sessão com o aviso "seu perfil aguarda a validação".
+  Guard.requireApprovedProfile → 403 PERFIL_EM_VALIDACAO;
+  marca e celebridade não vendem nem emitem selos.
+  Ciclo da análise: RF1_MaquinaDeEstados_Verificacao.
 end note
 note left of Susp
-  Login e refresh respondem
-  403 CONTA_INDISPONIVEL / 401
+  Login → 403 CONTA_INDISPONIVEL;
+  refresh → 401; criar/editar → 403 CONTA_SUSPENSA.
+  O PUT de status vale para qualquer estado:
+  reativar sempre grava ACTIVE.
+end note
+note right of DelSched
+  POST /api/me/deletion não confere o estado atual:
+  qualquer conta logada pode agendar a exclusão.
+  Criar/editar → 403 EXCLUSAO_AGENDADA.
 end note
 note bottom of Del
-  username → deleted_xxxx, e-mail → fashionai.invalid,
-  peças ARCHIVED, looks ARCHIVED, sessões revogadas
+  username → deleted_xxxxxxxx, e-mail → deleted+…@fashionai.invalid,
+  peças e looks ARCHIVED e privados, fotos, avatar 3D, scans do Lens
+  e marcos de Hype apagados, sessões revogadas.
+  <<planejado>> agendamento: o método existe, mas não tem @Scheduled
+  nem chamada no código — hoje nenhuma conta chega a DELETED sozinha.
 end note
 @enduml

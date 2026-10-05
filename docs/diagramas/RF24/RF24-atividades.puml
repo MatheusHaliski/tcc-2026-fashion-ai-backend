@@ -1,5 +1,5 @@
 @startuml RF24_Atividades
-title RF24 — Usar a IA do sistema (motor transversal de inteligência artificial do Fashion AI)\nDiagrama de atividades — funil de governança do AiEngine.execute
+title RF24 — Usar a IA do sistema\nDiagrama de atividades — funil de governança do AiEngine (text → execute, e local)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,59 +25,99 @@ skinparam note {
 }
 |Pessoa|
 start
-:Usa um recurso de um RF hospedeiro\n(RF4 detectar peça, RF5 criar look, RF10 Copilot,\nRF13 DNA, RF11 arte de fundo, RF18 provador…);
-|Serviço hospedeiro (fai-application)|
-:Monta AiEngine.TextCall (capability, prompt,\nimagens, parser, fallback local);
-|AiEngine (RF24)|
-:AiCatalog.spec(capability): primário, alternativo,\nlocal, cota diária, timeout;
-if (Prompt viola nomes protegidos?\n(CelebrityPromptValidator)) then (sim)
-  :Registra PROMPT_REJECTED;
-  #FFE3E3:422 PROMPT_REJEITADO;
+:Usa um recurso com IA num RF hospedeiro\n(RF4 peça, RF5 look, RF10 Copilot, RF13 DNA,\nRF11 fundo, RF26 insights, RF47 catálogo…);
+|Serviço hospedeiro|
+if (Motor primário da capacidade é local?\n(SealBond Matcher, Acervo Grouping, Affinity,\nPhoto Curator, Style Insight…)) then (sim)
+  |AiEngine|
+  :local(userId, capability, inputsUsed, engine);
+  :Roda o motor local e registra SUCCESS\n(provider = local, custo 0);
+  |Banco|
+  :INSERT ai_inference_log + audit_log (CHAMADA_IA);
+  |Serviço hospedeiro|
+  :Usa o valor + Explanation "por quê?";
   stop
 endif
-if (Capacidade fora de escopo?\n(RF16 atrás de feature flag)) then (sim)
-  :Resultado local (FALLBACK_LOCAL);
+if (Chamada textual/multimodal?) then (sim)
+  :Monta AiEngine.TextCall\n(capability, system, prompt, imagens,\nparser JSON, fallback local, protectedNames);
+  |AiEngine|
+  :text(): para cada opção primária/alternativa do\nAiCatalog.spec(capability) que não é "local"\ne tem AiProviderPort registrado → RemoteStep;
+else (imagem / 3D)
+  :Monta RemoteSteps próprios\n(ex.: FASHN no provador, Meshy/Stability no RF16,\ngeração e edição de imagem);
+endif
+|AiEngine|
+:execute(): correlationId novo;
+if (Fundo (BACKGROUND_GENERATOR) ou nomes protegidos\ne o prompt cita nome protegido?\n(CelebrityPromptValidator)) then (sim)
+  |Banco|
+  :INSERT ai_inference_log (PROMPT_REJECTED);
+  |Serviço hospedeiro|
+  #FFE3E3:422 PROMPT_REJEITADO {violations, inferenceId};
   stop
 endif
-|Bancos-serviços|
-:Lê user_consents (finalidade da capacidade);
-|AiEngine (RF24)|
-if (Algum provedor remoto disponível?) then (não)
-  :Resultado local (FALLBACK_LOCAL);
+|AiEngine|
+if (Capacidade fora de escopo?\n(RF16 sem fashionai.features.rf16-3d)) then (sim)
+  :Resultado local · FALLBACK_LOCAL\n("tema futuro, recurso desligado")\n→ AiOutcome local (fallbackUsed = true);
   stop
 endif
-if (Consentimento NEGADO?) then (sim)
-  :Resultado local (CONSENT_DENIED);
-  note right : RF24.CA15 — sem consentimento a capacidade\ndegrada para o processamento local, nunca viola.\nConsentimento vem do RF23 (PUT /api/me/consents/{purpose}).
+|Banco|
+:consentState: NAO_APLICAVEL (finalidade nula) ·\nSISTEMA (sem usuário) · CONCEDIDO/NEGADO (user_consents);
+|AiEngine|
+if (remoteEnabled e algum RemoteStep disponível?\n(chave no ambiente e circuito fechado)) then (não)
+  :Resultado local · FALLBACK_LOCAL\n→ AiOutcome local (fallbackUsed = true);
   stop
 endif
-if (AiBudget.check: teto diário em US$\n(global 5,00 · usuário 0,50)) then (estourado)
-  :Resultado local (RATE_LIMITED ou FALLBACK_LOCAL);
+if (consentState = NEGADO?) then (sim)
+  :Resultado local · CONSENT_DENIED\n(nunca envia dado sem consentimento)\n→ AiOutcome local (fallbackUsed = true);
   stop
 endif
-if (Cota diária da capacidade por usuário\n(RateLimitPort, bucket ai:CAPABILITY)) then (esgotada)
-  :Resultado local (RATE_LIMITED) com Quota {limit, used, resetAt};
+|Banco|
+:AiBudget.check(userId, custo estimado):\nsoma de ai_inference_log no dia UTC\n(global US$ 5,00 · por usuário US$ 0,50);
+|AiEngine|
+if (Veredito do teto?) then (USER_EXHAUSTED)
+  :Resultado local · RATE_LIMITED\n→ AiOutcome local (fallbackUsed = true);
   stop
+elseif (GLOBAL_EXHAUSTED\n(ou soma indisponível)) then
+  :Resultado local · FALLBACK_LOCAL\n→ AiOutcome local (fallbackUsed = true);
+  stop
+else (OK)
+endif
+if (Há userId?) then (sim)
+  |Cache|
+  :RateLimitPort.tryAcquire(userId, "ai:CAPACIDADE",\ndailyQuotaPerUser, 1 dia)\n(Redis ou memória);
+  |AiEngine|
+  if (Cota diária esgotada?) then (sim)
+    :Resultado local · RATE_LIMITED\ncom Quota {limit, used, resetAt}\n→ AiOutcome local (fallbackUsed = true);
+    stop
+  endif
 endif
 repeat
-  |Provedor externo|
-  :Chama provedor (gemini / claude) com AiRequest;
-  |AiEngine (RF24)|
-  if (Respondeu dentro do contrato JSON?) then (sim)
-    |Bancos-serviços|
-    :INSERT ai_inference_log (SUCCESS, provider, model,\nlatência, custo estimado, consentState, correlationId);
-    |AiEngine (RF24)|
-    :AiOutcome com Explanation "por quê?"\n(capability, hostRf, provider, inputsUsed);
-    stop
-  else (falhou)
-    |Bancos-serviços|
-    :INSERT ai_inference_log (TIMEOUT / CIRCUIT_OPEN /\nRATE_LIMITED / ERROR, fallbackUsed=true);
+  if (RemoteStep disponível?) then (sim)
+    |Provedor externo|
+    :call(): provedor com timeout 30 s,\n1 nova tentativa (500 ms) e circuito\n(abre 60 s após 5 falhas — ProviderCircuit);
+    |AiEngine|
+    if (Respondeu dentro do contrato?) then (sim)
+      |Banco|
+      :INSERT ai_inference_log (SUCCESS, custo real)\n+ audit_log;
+      |Serviço hospedeiro|
+      :AiOutcome(SUCCESS, Explanation, Quota);
+      stop
+    else (exceção)
+      |AiEngine|
+      :classify(): CIRCUIT_OPEN · TIMEOUT ·\nRATE_LIMITED (429) · ERROR;
+      |Banco|
+      :INSERT ai_inference_log (falha, fallbackUsed = true);
+    endif
   endif
-  |AiEngine (RF24)|
-repeat while (Há provedor alternativo?) is (sim) not (não)
-:Resultado local (FALLBACK_LOCAL) com a razão da falha;
-note right : RNF8 — degradação controlada:\no RF hospedeiro continua funcionando\ncom LocalAdvisors / LocalSchemeComposer / LocalDnaSynthesizer.
+  |AiEngine|
+repeat while (Há outro RemoteStep (alternativo)?) is (sim) not (não)
+:Resultado local · FALLBACK_LOCAL\n("serviço externo indisponível: <motivo>");
+note right
+  RNF8 — degradação controlada: o RF hospedeiro
+  continua com ai.local (LocalAdvisors,
+  LocalSchemeComposer, LocalDnaSynthesizer…).
+  Todo resultado local também vira uma linha
+  em ai_inference_log (provider = local).
+end note
 |Pessoa|
-:Vê o resultado e, se quiser, a explicação "por quê?";
+:Vê o resultado; quando a tela mostra,\no provedor ou "motor local" e o "por quê?";
 stop
 @enduml
