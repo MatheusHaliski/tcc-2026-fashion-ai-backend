@@ -1,5 +1,5 @@
 @startuml DEMO_Atividades_Reset
-title Fashion AI — Atividades: reset do universo demo (PROPOSTA · docs/banco/integridade)
+title Fashion AI — Atividades: reset do universo demo (planejado sobre a base já no código: V34/V35 e MysqlDemoDataAdminAdapter)
 !include ../seguranca/_estilo.iuml
 start
 :python scripts/demo/reset_demo_environment.py;
@@ -33,7 +33,7 @@ partition "Transação MySQL" {
   endif
   :DELETE explícito das linhas polimórficas que apontam\npara conteúdo demo (reações, comentários, salvos,\ncompartilhamentos, notificações, moderação);
   :DELETE FROM users WHERE account_origin IN (TEST_SEED, DEMO);
-  note right: as cascatas (V29) levam peças, looks,\nfollows, perfis, sessões...\nSEM FOREIGN_KEY_CHECKS = 0
+  note right: as cascatas (V34) levam peças, looks,\nfollows, perfis, sessões...\nSEM FOREIGN_KEY_CHECKS = 0
   :COMMIT;
 }
 :Limpa feed (Cassandra) e busca (OpenSearch) das contas demo\n(idempotente; o verify aponta sobras);

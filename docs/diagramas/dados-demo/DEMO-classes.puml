@@ -1,5 +1,5 @@
 @startuml DEMO_Classes
-title Fashion AI — Classes: pipeline demo e integridade por domínio (PROPOSTA)
+title Fashion AI — Classes: pipeline demo e integridade por domínio (V34/V35 aplicadas · serviço e controller planejados)
 !include ../seguranca/_estilo.iuml
 left to right direction
 
@@ -17,7 +17,7 @@ enum CatalogOrigin {
 class User {
   -accountOrigin : AccountOrigin
   -fixtureKey : String «único»
-  -testAccount : boolean «gerada: origem ∈ {TEST_SEED, DEMO}»
+  -testAccountColumn : Boolean «gerada (V35): origem ∈ {TEST_SEED, DEMO}»
 }
 class Brand {
   -catalogOrigin : CatalogOrigin
@@ -26,13 +26,13 @@ class Brand {
 User --> AccountOrigin
 Brand --> CatalogOrigin
 
-class DemoAdminController {
+class "DemoAdminController (planejado)" as DemoAdminController {
   +seed(profile) : DemoReport
   +verify() : VerifyReport
   +reset(dryRun, confirm) : ResetPlan | DemoReport
   +resetCatalog(dryRun) : ResetPlan
 }
-class DemoDataService {
+class "DemoDataService (planejado)" as DemoDataService {
   -guard : DemoEnvironmentGuard
   +seed(profile) : DemoReport
   +plan() : ResetPlan
@@ -44,7 +44,7 @@ class DemoEnvironmentGuard {
   -- FASHIONAI_DEMO_ENABLED
   -- produção: FASHIONAI_DEMO_ALLOW_PRODUCTION
 }
-class DemoFixtures {
+class DemoFixtures <<@Lazy>> {
   +personas() : List<Persona>
   +seed : long = 2026
 }
@@ -63,7 +63,7 @@ class ResetPlan <<record>> {
 class DemoReport <<record>> {
   lines : List<String> «[CREATED] [FOUND] [UPDATED] [DELETE] [CASCADE] [KEEP]»
 }
-class "V29__integridade_referencial_por_dominio" as V29 <<Flyway Java>> {
+class "V34__integridade_referencial_por_dominio" as V34 <<Flyway Java>> {
   +POLICY : List<Fk>
   +migrate(ctx) «INFORMATION_SCHEMA · órfãos · idempotente»
 }
@@ -71,6 +71,7 @@ class Fk <<record>> {
   table : String
   column : String
   refTable : String
+  refColumn : String = "id"
   onDelete : CASCADE | RESTRICT | SET NULL
 }
 
@@ -81,5 +82,5 @@ DemoFixtures *-- Persona
 DemoDataService ..> ResetPlan
 DemoDataService ..> DemoReport
 DemoDataService ..> User
-V29 *-- Fk
+V34 *-- Fk
 @enduml
