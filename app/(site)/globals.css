@@ -2576,7 +2576,8 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 :root[data-reduce-motion="true"] .lens-hotspot:hover, :root[data-reduce-motion="true"] .lens-hotspot.is-focused { transform: none; }
 
 /* RF20/RF21 · Estado do selo que promoveu o look no perfil de marca/celebridade (texto + ícone, nunca só cor) */
-.promo-note { display: inline-flex; align-items: center; gap: .35rem; color: var(--muted); }
+.promo-note { display: flex; align-items: flex-start; gap: .35rem; color: var(--muted); white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
+.fai-card .c-extra .caption.promo-note { white-space: normal; overflow: visible; text-overflow: clip; }   /* a data de validade não pode sumir */
 .promo-note::before { content: "✓"; font-weight: 700; color: var(--thread-ink); }
 .promo-note.is-expired::before { content: "⏱"; color: var(--muted); }
 .promo-note.is-review::before { content: "↻"; color: var(--status-warning, var(--mark-ink)); }
