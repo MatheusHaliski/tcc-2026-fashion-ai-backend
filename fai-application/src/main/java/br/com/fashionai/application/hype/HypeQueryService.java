@@ -143,9 +143,12 @@ public class HypeQueryService {
         Map<String, Object> m = new LinkedHashMap<>();
         if (c == null) {
             m.put("status", "NOT_CALCULATED");
+            m.put("seals", List.of());   // RF53: selos de Hype (derivados) — sem Hype, nenhum
             return m;
         }
         m.put("status", c.getStatus().name());
+        // RF53 — selos de Hype FashionAI derivados do estado atual (cards, detalhe, ranking e trending reusam este resumo)
+        m.put("seals", HypeSeals.of(c));
         m.put("stale", c.getCalculatedAt().isBefore(now.minus(config.staleAfterHours(), ChronoUnit.HOURS)));
         m.put("score", num(c.getScore()));
         m.put("level", c.getLevel() == null ? null : c.getLevel().name());
@@ -209,6 +212,8 @@ public class HypeQueryService {
         out.put("signals", row.map(r -> Json.map(r.getSignalsJson())).orElse(Map.of()));
         out.put("publicEligible", row.map(HypeScoreCurrent::isPublicEligible).orElse(false));
         out.put("weights", config.describe().get("weights") instanceof Map<?, ?> w ? w.get(type.name()) : null);
+        // RF53 — selos de Hype conquistados e o que falta para cada um (drawer "Selos de Hype")
+        out.put("sealProgress", HypeSeals.progress(row.orElse(null), config.levelThresholds()));
         // compatibilidade PESSOAL — separada do Hype (nunca entra no score)
         out.put("compatibility", viewer == null ? null : dnas.findByUserId(viewer.id()).map(d -> StyleCompatibility.score(profileOf(d), item)).orElse(null));
         if (type == HypeEntityType.PIECE) {
@@ -1044,5 +1049,252 @@ public class HypeQueryService {
 
     private static String norm(String s) {
         return blank(s) ? "" : s.trim().toLowerCase(Locale.ROOT);
+    }
+
+    // ================================================================== globo (Explorador → Painel global, camadas de Hype)
+    /*
+     * RF53 × RF26 — o globo do Painel global com camadas de Hype: um agregado por país (o país do dono gravado em
+     * hype_scores.country, V39) da população pública elegível com score, no recorte de tipo, janela, categoria,
+     * subcategoria e nível mínimo. Item sem país entra só no "mundo". A métrica da janela é a do ranking (1 = trend,
+     * 7 = score, 30 = média do mês) para escolher o item de destaque; o Hype médio e o máximo usam o score atual (1 e 7)
+     * ou a média do mês (30). Os agregados não dependem de quem vê (bloqueio não se aplica a contagens) e vão para o
+     * HypeCache; o destaque ("top") respeita a visibilidade de quem vê: se o primeiro não for visível, vale o próximo.
+     */
+    /** Itens públicos mínimos para o país acender no globo (abaixo disso ele aparece apagado e sem card). */
+    public static final int GLOBE_MIN_ITEMS = 3;
+    /** Candidatos ao destaque guardados por país (o primeiro visível para quem vê vira o "top"). */
+    static final int GLOBE_TOP_CANDIDATES = 8;
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> globe(CurrentUser viewer, HypeEntityType type, int window, String category, String subcategory, String minLevel) {
+        int win = window <= 1 ? 1 : window >= 30 ? 30 : 7;
+        String cat = norm(category);
+        String sub = norm(subcategory);
+        br.com.fashionai.domain.model.enums.HypeLevel min = globeLevel(minLevel);
+        String key = "globe:" + type + ":" + win + ":" + cat + ":" + sub + ":" + (min == null ? "" : min.name());
+        Map<String, Object> agg = cache.get(key, () -> globeAggregate(type, win, cat, sub, min));
+        List<Map<String, Object>> rows = agg.get("countries") instanceof List<?> l ? l.stream().filter(Map.class::isInstance)
+                .map(x -> {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> m = (Map<String, Object>) x;
+                    return m;
+                }).toList() : List.of();
+        // candidatos de todos os países numa leitura só; o estado fresco confirma que ainda são públicos
+        List<UUID> candidates = rows.stream().flatMap(r -> globeCandidates(r).stream()).distinct().toList();
+        Map<UUID, HypeScoreCurrent> fresh = currentOf(type, candidates);
+        Map<UUID, Map<String, Object>> cards = globeCards(viewer, type, candidates);
+        Instant now = Instant.now();
+        List<Map<String, Object>> countries = new ArrayList<>();
+        for (Map<String, Object> r : rows) {
+            Map<String, Object> m = new LinkedHashMap<>(r);
+            m.remove("candidates");
+            Map<String, Object> top = null;
+            for (UUID id : globeCandidates(r)) {
+                HypeScoreCurrent c = fresh.get(id);
+                Map<String, Object> card = cards.get(id);
+                if (c == null || !c.isPublicEligible() || c.getStatus() != HypeStatus.AVAILABLE || card == null) {
+                    continue;   // deixou de ser público depois do cálculo, bloqueio entre as contas ou sem permissão de ver
+                }
+                top = new LinkedHashMap<>(card);
+                if (top.get("category") == null) {
+                    top.put("category", categoriesOf(c).stream().findFirst().orElse(null));   // look: a primeira categoria das peças
+                }
+                top.put("hype", summary(c, now));
+                break;
+            }
+            m.put("top", top);
+            // "sufficient" fica por último, como no contrato (o globo desenha apagado e sem card abaixo do mínimo)
+            Object sufficient = m.remove("sufficient");
+            m.put("sufficient", sufficient);
+            countries.add(m);
+        }
+        Map<String, Object> filters = new LinkedHashMap<>();
+        filters.put("category", cat.isEmpty() ? null : cat);
+        filters.put("subcategory", sub.isEmpty() ? null : sub);
+        filters.put("minLevel", min == null ? null : min.name());
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("type", type.name());
+        out.put("window", win);
+        out.put("algorithmVersion", config.algorithmVersion());
+        out.put("filters", filters);
+        out.put("minItems", GLOBE_MIN_ITEMS);
+        out.put("world", agg.get("world"));
+        out.put("countries", countries);
+        out.put("regions", agg.getOrDefault("regions", List.of()));
+        return out;
+    }
+
+    /** Nível mínimo do filtro: vazio = qualquer um; valor fora da escala = 400 (como o tipo inválido). */
+    static br.com.fashionai.domain.model.enums.HypeLevel globeLevel(String raw) {
+        if (blank(raw)) {
+            return null;
+        }
+        try {
+            return br.com.fashionai.domain.model.enums.HypeLevel.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw ApiException.badRequest("NIVEL_INVALIDO", "minLevel: " + java.util.Arrays.stream(br.com.fashionai.domain.model.enums.HypeLevel.values())
+                    .map(Enum::name).collect(Collectors.joining(" | ")));
+        }
+    }
+
+    static List<UUID> globeCandidates(Map<String, Object> row) {
+        return row.get("candidates") instanceof List<?> l ? l.stream().map(String::valueOf).map(UUID::fromString).toList() : List.of();
+    }
+
+    /** Agregado do recorte (independe de quem vê; vai para o HypeCache). */
+    Map<String, Object> globeAggregate(HypeEntityType type, int win, String category, String subcategory, br.com.fashionai.domain.model.enums.HypeLevel min) {
+        List<HypeScoreCurrent> pool = publicPool(type).stream()
+                .filter(c -> hasCategory(c, category) && hasSubcategory(c, subcategory))
+                .filter(c -> min == null || (c.getLevel() != null && c.getLevel().compareTo(min) >= 0)).toList();
+        Map<UUID, Double> month = win == 30 ? monthAverage(type, pool.stream().map(HypeScoreCurrent::getEntityId).collect(Collectors.toSet())) : Map.of();
+        // Hype exibido: o score atual (1 e 7 dias) ou a média do mês (30); a ordem do destaque segue a métrica do ranking
+        ToDoubleFunction<HypeScoreCurrent> hype = c -> month.getOrDefault(c.getEntityId(), c.getScore().doubleValue());
+        ToDoubleFunction<HypeScoreCurrent> metric = win == 1 ? c -> trendOf(c) * 1000 + c.getScore().doubleValue() : hype;
+        Map<UUID, List<String>> colors = globeColors(type, pool);
+
+        Map<String, List<HypeScoreCurrent>> byCountry = new TreeMap<>();
+        for (HypeScoreCurrent c : pool) {
+            if (!blank(c.getCountry())) {
+                byCountry.computeIfAbsent(c.getCountry().trim().toUpperCase(Locale.ROOT), k -> new ArrayList<>()).add(c);
+            }
+        }
+        List<Map<String, Object>> countries = new ArrayList<>();
+        byCountry.forEach((co, list) -> countries.add(globeCountry(co, list, hype, metric, colors)));
+        countries.sort(Comparator.comparingInt((Map<String, Object> m) -> ((Number) m.get("count")).intValue()).reversed()
+                .thenComparing(m -> String.valueOf(m.get("country"))));
+
+        Map<String, Object> world = new LinkedHashMap<>();
+        java.util.DoubleSummaryStatistics all = pool.stream().mapToDouble(hype).summaryStatistics();
+        world.put("count", pool.size());
+        world.put("avgHype", pool.isEmpty() ? null : round1(all.getAverage()));
+        world.put("maxHype", pool.isEmpty() ? null : round1(all.getMax()));
+        world.put("creators", (int) pool.stream().map(HypeScoreCurrent::getOwnerId).filter(Objects::nonNull).distinct().count());
+        world.put("countries", countries.size());
+
+        // regiões do mundo só com quem tem país (sem país = só no "mundo", nunca em "Outras regiões" no globo)
+        List<HypeScoreCurrent> located = byCountry.values().stream().flatMap(List::stream).toList();
+        List<Map<String, Object>> regions = new ArrayList<>();
+        for (String code : br.com.fashionai.application.taxonomy.WorldRegions.codes()) {
+            List<HypeScoreCurrent> in = located.stream().filter(c -> code.equals(regionOf(c))).toList();
+            if (!in.isEmpty() && !NO_REGION.equals(code)) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("key", code);
+                m.put("label", br.com.fashionai.application.taxonomy.WorldRegions.label(code));
+                m.put("count", in.size());
+                m.put("avgHype", round1(in.stream().mapToDouble(hype).average().orElse(0)));
+                regions.add(m);
+            }
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("world", world);
+        out.put("countries", countries);
+        out.put("regions", regions);
+        return out;
+    }
+
+    Map<String, Object> globeCountry(String co, List<HypeScoreCurrent> list, ToDoubleFunction<HypeScoreCurrent> hype,
+                                     ToDoubleFunction<HypeScoreCurrent> metric, Map<UUID, List<String>> colors) {
+        String region = br.com.fashionai.application.taxonomy.WorldRegions.of(co);
+        java.util.DoubleSummaryStatistics st = list.stream().mapToDouble(hype).summaryStatistics();
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("country", co);
+        m.put("region", region);
+        m.put("regionLabel", br.com.fashionai.application.taxonomy.WorldRegions.label(region));
+        m.put("count", list.size());
+        m.put("creators", (int) list.stream().map(HypeScoreCurrent::getOwnerId).filter(Objects::nonNull).distinct().count());
+        m.put("avgHype", round1(st.getAverage()));
+        m.put("maxHype", round1(st.getMax()));
+        // faixa do número exibido (a régua configurada do HypeScoreConfig, a mesma do card) — a cor do globo é sempre a faixa
+        m.put("avgLevel", config.level(round1(st.getAverage())).name());
+        m.put("maxLevel", config.level(round1(st.getMax())).name());
+        m.put("trend", round1(list.stream().mapToDouble(HypeQueryService::trendOf).average().orElse(0)));   // crescimento, não volume
+        m.put("rising", (int) list.stream().filter(c -> c.getMomentum() == HypeMomentum.RISING || c.getMomentum() == HypeMomentum.EMERGING).count());
+        Map<String, Object> levels = new LinkedHashMap<>();
+        for (br.com.fashionai.domain.model.enums.HypeLevel l : br.com.fashionai.domain.model.enums.HypeLevel.values()) {
+            levels.put(l.name(), (int) list.stream().filter(c -> c.getLevel() == l).count());
+        }
+        m.put("levels", levels);
+        m.put("topLevel", list.stream().map(HypeScoreCurrent::getLevel).filter(Objects::nonNull).max(Comparator.naturalOrder()).map(Enum::name).orElse(null));
+        m.put("dominantColorHex", mostFrequent(list.stream().flatMap(c -> colors.getOrDefault(c.getEntityId(), List.of()).stream()).toList(),
+                Comparator.naturalOrder()).map(Taxonomy::hex).orElse(null));
+        m.put("topCategory", mostFrequent(list.stream().flatMap(c -> categoriesOf(c).stream().map(x -> x.toLowerCase(Locale.ROOT)).distinct()).toList(),
+                Comparator.comparingInt(HypeQueryService::categoryOrder).thenComparing(Comparator.naturalOrder())).orElse(null));
+        m.put("candidates", list.stream().sorted(Comparator.comparingDouble(metric).reversed().thenComparing(c -> c.getEntityId().toString()))
+                .limit(GLOBE_TOP_CANDIDATES).map(c -> c.getEntityId().toString()).toList());
+        m.put("sufficient", list.size() >= GLOBE_MIN_ITEMS);
+        return m;
+    }
+
+    /** O valor mais frequente (empate: a ordem dada). */
+    static Optional<String> mostFrequent(List<String> values, Comparator<String> tie) {
+        Map<String, Long> n = values.stream().filter(v -> !blank(v)).collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+        return n.entrySet().stream().min(Map.Entry.<String, Long>comparingByValue().reversed().thenComparing(Map.Entry.comparingByKey(tie))).map(Map.Entry::getKey);
+    }
+
+    /** Cores (taxonomia) de cada item do recorte: a da peça; no look, as das peças dele. Uma leitura só. */
+    Map<UUID, List<String>> globeColors(HypeEntityType type, List<HypeScoreCurrent> pool) {
+        if (pool.isEmpty()) {
+            return Map.of();
+        }
+        List<UUID> ids = pool.stream().map(HypeScoreCurrent::getEntityId).toList();
+        Map<UUID, List<String>> out = new HashMap<>();
+        if (type == HypeEntityType.PIECE) {
+            pieces.findByIdIn(ids).stream().filter(w -> !blank(w.getColor())).forEach(w -> out.put(w.getId(), List.of(w.getColor())));
+        } else {
+            schemeItems.findBySchemeIdIn(ids).stream().filter(si -> si.getWardrobeItem() != null && !blank(si.getWardrobeItem().getColor()))
+                    .forEach(si -> out.computeIfAbsent(si.getScheme().getId(), k -> new ArrayList<>()).add(si.getWardrobeItem().getColor()));
+        }
+        return out;
+    }
+
+    /** Mini card do destaque (nome, imagem, categoria e @dono) só dos itens que quem vê pode ver. */
+    Map<UUID, Map<String, Object>> globeCards(CurrentUser viewer, HypeEntityType type, List<UUID> ids) {
+        Map<UUID, Map<String, Object>> out = new HashMap<>();
+        if (ids.isEmpty()) {
+            return out;
+        }
+        if (type == HypeEntityType.PIECE) {
+            for (WardrobeItem w : pieces.findByIdIn(ids)) {
+                if (canView(viewer, w)) {
+                    out.put(w.getId(), globeCard(w.getId(), type, w.getName(),
+                            w.getStudioImageUrl() != null ? Views.studioThumb(w.getStudioImageUrl()) : w.getThumbnailUrl() != null ? w.getThumbnailUrl() : w.getImageUrl(),
+                            w.getCategory(), w.getUser()));
+                }
+            }
+            return out;
+        }
+        List<Scheme> list = schemes.findByIdIn(ids).stream().filter(s -> canView(viewer, s)).toList();
+        // look sem capa: a imagem da primeira peça visível dele
+        List<UUID> bare = list.stream().filter(s -> blank(s.getCoverImageUrl()) && blank(s.getMannequinImageUrl())).map(Scheme::getId).toList();
+        Map<UUID, String> firstPiece = new HashMap<>();
+        if (!bare.isEmpty()) {
+            schemeItems.findBySchemeIdIn(bare).stream().sorted(Comparator.comparingInt(SchemeItem::getSortOrder))
+                    .filter(si -> si.getWardrobeItem() != null && canView(viewer, si.getWardrobeItem()))
+                    .forEach(si -> {
+                        WardrobeItem w = si.getWardrobeItem();
+                        String img = w.getStudioImageUrl() != null ? Views.studioThumb(w.getStudioImageUrl()) : w.getThumbnailUrl() != null ? w.getThumbnailUrl() : w.getImageUrl();
+                        if (img != null) {
+                            firstPiece.putIfAbsent(si.getScheme().getId(), img);
+                        }
+                    });
+        }
+        for (Scheme s : list) {
+            String img = !blank(s.getCoverImageUrl()) ? s.getCoverImageUrl() : !blank(s.getMannequinImageUrl()) ? s.getMannequinImageUrl() : firstPiece.get(s.getId());
+            out.put(s.getId(), globeCard(s.getId(), type, s.getTitle(), img, null, s.getUser()));
+        }
+        return out;
+    }
+
+    static Map<String, Object> globeCard(UUID id, HypeEntityType type, String name, String imageUrl, String category, br.com.fashionai.domain.model.User owner) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", id.toString());
+        m.put("type", type.name());
+        m.put("name", name);
+        m.put("imageUrl", imageUrl);
+        m.put("category", category);
+        Map<String, Object> o = new LinkedHashMap<>();
+        o.put("username", owner == null ? null : owner.getUsername());
+        m.put("owner", o);
+        return m;
     }
 }

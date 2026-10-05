@@ -70,6 +70,25 @@ public class SealController {
         return seals.sealsOf(viewer, ownerId);
     }
 
+    @GetMapping("/api/pieces/seals")
+    @Operation(summary = "RF53 — Selos de marca/celebridade das peças (vínculos APROVADOS de tier PEÇA), em lote: ids=a,b,c (até 60; respeita visibilidade)")
+    public Map<String, Object> pieceSeals(CurrentUser viewer, @RequestParam(value = "ids", required = false) String ids) {
+        List<UUID> out = new java.util.ArrayList<>();
+        if (ids != null) {
+            for (String part : ids.split(",")) {
+                try {
+                    out.add(UUID.fromString(part.trim()));
+                } catch (IllegalArgumentException ignored) {
+                    // id malformado: ignorado (o lote continua)
+                }
+                if (out.size() >= SealService.MAX_PIECE_SEALS) {
+                    break;
+                }
+            }
+        }
+        return seals.pieceSeals(viewer, out);
+    }
+
     @GetMapping("/api/me/seals")
     @Operation(summary = "RF21 — Meus selos conquistados e vínculos pendentes")
     public Map<String, Object> mySeals(CurrentUser user) {

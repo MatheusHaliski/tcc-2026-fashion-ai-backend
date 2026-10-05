@@ -140,6 +140,14 @@ public class WardrobeService {
         this.brandReader = brandReader;
     }
 
+    /** RF53 — vínculos de selo (filtro "com selo de marca/celebridade" do closet). Opcional nos testes. */
+    private br.com.fashionai.domain.repository.SealBondRepository sealBonds;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setSealBonds(br.com.fashionai.domain.repository.SealBondRepository sealBonds) {
+        this.sealBonds = sealBonds;
+    }
+
     public WardrobeService(WardrobeItemRepository pieces, UserRepository users, BrandRepository brands,
                            PipelineJobRepository jobs, ProcessingJobLogRepository processingLogs,
                            QualityScoreRepository qualityScores, ModerationQueueRepository moderationQueue,
@@ -1428,13 +1436,33 @@ public class WardrobeService {
     /**
      * Filtros do closet. {@code hypeLevel} é FILTRO (faixa mínima: NICHE, RELEVANT, HOT, TRENDING, VIRAL), não aba.
      * Ordenações: recent, name, price, worn (mais usada), least_worn, idle (mais tempo sem uso) e, do HypeScore v2,
-     * hype/hype_desc, hype_asc, growth (maior crescimento) e rarity (mais rara).
+     * hype/hype_desc, hype_asc, growth (maior crescimento) e rarity (mais rara). {@code seal} (RF53) também é FILTRO:
+     * {@code hype} (peças com selo de Hype FashionAI), {@code brand} (com selo de marca/celebridade aprovado na peça) ou
+     * {@code any} (qualquer um dos dois).
      */
     public record ClosetFilter(String category, String color, String season, String occasion, String style, String state,
-                               String q, String sort, int page, int size, String hypeLevel) {
+                               String q, String sort, int page, int size, String hypeLevel, String seal) {
         public ClosetFilter(String category, String color, String season, String occasion, String style, String state, String q, String sort, int page, int size) {
-            this(category, color, season, occasion, style, state, q, sort, page, size, null);
+            this(category, color, season, occasion, style, state, q, sort, page, size, null, null);
         }
+
+        public ClosetFilter(String category, String color, String season, String occasion, String style, String state, String q, String sort,
+                            int page, int size, String hypeLevel) {
+            this(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel, null);
+        }
+    }
+
+    /** RF53 — valor do filtro "com selo": hype, brand ou any (nulo = sem filtro; valor desconhecido é ignorado). */
+    static String sealFilter(String raw) {
+        if (blank(raw)) {
+            return null;
+        }
+        return switch (raw.trim().toLowerCase(Locale.ROOT)) {
+            case "hype" -> "hype";
+            case "brand", "marca", "celebrity", "celebridade" -> "brand";
+            case "any", "qualquer", "all" -> "any";
+            default -> null;
+        };
     }
 
     static final java.util.Set<String> HYPE_SORTS = java.util.Set.of("hype", "hype_desc", "hype_asc", "growth", "rarity");
@@ -1476,10 +1504,28 @@ public class WardrobeService {
                         || contains(w.getSubcategory(), f.q()))
                 .collect(Collectors.toCollection(ArrayList::new));
         String sort = SORT_ALIASES.getOrDefault(f.sort() == null ? "recent" : f.sort(), f.sort() == null ? "recent" : f.sort());
-        Map<UUID, br.com.fashionai.domain.model.HypeScoreCurrent> hype = HYPE_SORTS.contains(sort) || !blank(f.hypeLevel()) ? hypeOf(all) : Map.of();
+        String seal = sealFilter(f.seal());
+        Map<UUID, br.com.fashionai.domain.model.HypeScoreCurrent> hype = HYPE_SORTS.contains(sort) || !blank(f.hypeLevel())
+                || (seal != null && !"brand".equals(seal)) ? hypeOf(all) : Map.of();
         if (!blank(f.hypeLevel()) && hypeConfig != null) {
             int min = hypeMinimum(f.hypeLevel());
             all.removeIf(w -> hype.get(w.getId()) == null || hype.get(w.getId()).getScore() == null || hype.get(w.getId()).getScore().doubleValue() < min - 0.5);
+        }
+        if (seal != null) {
+            // RF53 — selo de Hype: derivado do Hype atual (peça privada não tem: só item público elegível); selo de marca:
+            // vínculo APROVADO de tier PEÇA vindo de um look que quem vê consegue ver
+            Set<UUID> branded = "hype".equals(seal) ? Set.of()
+                    : SealService.approvedPieceBonds(all.stream().map(WardrobeItem::getId).toList(), schemeItems, sealBonds,
+                    sc -> SealService.canViewScheme(guard, viewer, sc)).keySet();
+            all.removeIf(w -> {
+                boolean hasHype = !br.com.fashionai.application.hype.HypeSeals.of(hype.get(w.getId())).isEmpty();
+                boolean hasBrand = branded.contains(w.getId());
+                return switch (seal) {
+                    case "hype" -> !hasHype;
+                    case "brand" -> !hasBrand;
+                    default -> !hasHype && !hasBrand;
+                };
+            });
         }
         java.util.function.Function<WardrobeItem, BigDecimal> score = w -> hype.containsKey(w.getId()) ? hype.get(w.getId()).getScore() : null;
         LocalDate today = LocalDate.now(br.com.fashionai.application.hype.HypeSignalRecorder.ZONE);

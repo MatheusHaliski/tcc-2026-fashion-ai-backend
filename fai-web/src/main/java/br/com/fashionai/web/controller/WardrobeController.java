@@ -96,8 +96,10 @@ public class WardrobeController {
                                                @RequestParam(required = false) String sort,
                                                @RequestParam(defaultValue = "0") int page,
                                                @RequestParam(defaultValue = "24") int size,
-                                               @RequestParam(required = false) String hypeLevel) {
-        return wardrobe.closet(user, user.id(), new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel));
+                                               @RequestParam(required = false) String hypeLevel,
+                                               @RequestParam(required = false) String seal) {
+        // seal (RF53): hype | brand | any — peças com selo de Hype, com selo de marca/celebridade, ou qualquer um
+        return wardrobe.closet(user, user.id(), new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel, seal));
     }
 
     @GetMapping("/api/users/{ownerId}/closet")
