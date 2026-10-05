@@ -42,10 +42,10 @@ entrega fecha com testes, métricas, documentação, commit e push no ramo `clau
 | 4 | **CATALOG-IMG V2**: pipeline profissional das fotos oficiais da Busca Catalogada (seção 4) — **com o FRAME e o relatório de 79 perguntas (seção 5.1)** | Alimenta cards, IA, 2D, 3D e Hype Score |
 | 4b | **RF4-FOTO**: etapa opcional "Fotografia" no criador de peça (seção 5.1) | Definição nova do RF4 no Trello; o editor completo é o RF15 (Tema Futuro) |
 | 5 | **QUARTO-REAL**: quarto, guarda-roupa e espelho coerentes e realistas, avatar dentro do quarto, looks do Copilot (seção 3.5) | Depende de 2 e 3 |
-| 6 | **PASSARELA-REAL**: plateia semi-realista e caminhada profissional do avatar da pessoa (seção 3.2) | Depende de 2 e 3 |
-| 7 | **PROVADOR-MARCA**: provador 3D ultra-realista da marca escolhida (seção 3.1) | Depende de 3 e 4 |
-| 8 | **PALCOS-ARTISTAS**: estudo a fundo + mini-palcos e mini-lojas únicos por artista ou marca (seção 3.3) | Estudo primeiro, depois implementação |
-| 9 | **LOJA-EXCLUSIVOS**: itens, consumíveis, peças e looks exclusivos de celebridades, marcas e do FashionAI com FAI Points (seção 3.4) | Usa os itens 5 e 8 |
+| 6 | **ENV3D**: ecossistema Palco + Passarela + Loja 3D — auditoria primeiro, depois base comum, passarela, loja, palco (seção 7). Absorve **PASSARELA-REAL** (3.2) e **PALCOS-ARTISTAS** (3.3) | Depende de 2 e 3; a auditoria (E0) pode começar já |
+| 7 | **PROVADOR-BUSCA**: Provador com a Busca Catalogada embarcada controlando a Loja 3D (seção 8). Absorve **PROVADOR-MARCA** (3.1) | Depende de 3, 4 e da base comum do ENV3D (E1) |
+| 8 | *(incorporado ao item 6: os palcos por artista são a fase E4 do ENV3D, com o estudo da seção 3.3)* | — |
+| 9 | **LOJA-EXCLUSIVOS**: itens, consumíveis, peças e looks exclusivos de celebridades, marcas e do FashionAI com FAI Points (seção 3.4), vendidos no Store Mode da Loja 3D | Usa os itens 5, 6 e 7 |
 | 10 | **SEC-A** e **SEC-B**: auditoria do gate de desenvolvedor e planilha RF × entidade × banco calculada das fontes (seção 5.1) | Pedidos anteriores ainda abertos; o SEC-A protege a produção pública |
 | 11 | **MOD-1**: plano estratégico de moderação das imagens enviadas (seção 5.1) | A fila de moderação já existe; falta o plano e a verificação central |
 | 12 | **FRONT-10**: telas, imagens, desempenho, qualidade do código e medição; listas; marca por logo no card (seção 5.1) | Fecha o "Frontend nota 10" |
@@ -477,3 +477,49 @@ liga cada grupo de requisitos à seção da auditoria, à fase e ao estado confe
 **Aceite (requisito 76):** a fase I7 só fecha quando o sistema produz "uma representação 3D reconhecível daquela pessoa
 específica", e não "um avatar humano parecido". Isso vale nas métricas do gate, nas 6 vistas e na revisão da própria
 pessoa.
+
+---
+
+## 7. ENV3D — ecossistema de Palco, Passarela e Loja 3D (pedido de 05/10/2026)
+
+Especificação completa, agrupada (59 requisitos, 22 entregáveis, fases E0–E5):
+[ENV3D_Palco_Passarela_Loja3D.md](ENV3D_Palco_Passarela_Loja3D.md).
+
+- **Princípio:** o Palco é "onde eu apresento", a Passarela é "onde eu avalio e exibo looks em movimento" e a Loja 3D é
+  "onde eu descubro, experimento e compro". Os três usam o mesmo avatar canônico, o mesmo catálogo e inventário e a
+  mesma linguagem visual.
+- **Primeiro passo (E0):** auditoria do que existe, com matriz de utilidade e decisão KEEP/IMPROVE/MERGE/MOVE/RENAME/
+  REDESIGN/REMOVE por área. A justificativa de cada ambiente responde "por que existe? vale o custo?". Nada de tela ou
+  objeto novo antes da auditoria.
+- **Achados iniciais da conferência:**
+  - `runway-scene.tsx` e `stage-scene.tsx` usam o manequim genérico (`mannequin.tsx`), não o avatar canônico;
+  - `store-street-scene.tsx` (mini lojas das Coleções) não tem avatar nem compra;
+  - a loja do quarto (`room-store.tsx`) já separa prova, compra e aplicação, base para PREVIEW ≠ OWNED ≠ EQUIPPED.
+- **Relação com itens anteriores:**
+  - PASSARELA-REAL (3.2) vira a fase E2;
+  - PALCOS-ARTISTAS (3.3) vira a fase E4, com o estudo;
+  - a Loja 3D (E3) é a mesma do PROVADOR-BUSCA (seção 8);
+  - os exclusivos (3.4) são vendidos no Store Mode.
+
+## 8. PROVADOR-BUSCA — Provador com a Busca Catalogada embarcada (pedido de 05/10/2026)
+
+Especificação completa, agrupada (108 requisitos, 22 entregáveis, fases P1–P8):
+[PROVADOR_Busca_Catalogada_Embarcada.md](PROVADOR_Busca_Catalogada_Embarcada.md).
+
+- **Mudança central:** o formulário da Busca Catalogada, dentro do Provador, é o controle semântico da Loja 3D.
+  - a marca muda o contexto;
+  - a categoria muda a área;
+  - a subcategoria muda os expositores;
+  - o produto vira o hero;
+  - o Vista-me acontece sem sair da cena e sem perder a busca.
+- **Estado e camadas:**
+  - estados separados: `CatalogSearchState`, `StoreSceneState` e `TryOnSession`;
+  - `StoreSceneResolver` com `BrandSceneProfile` e `CategorySceneProfile` centralizados (sem `if marca` espalhado);
+  - o backend devolve só dados de catálogo; câmera, luz e layout ficam no frontend.
+- **Achados iniciais da conferência:**
+  - o `/try-on` já embute o `CatalogSearch` e usa os 4 slots certos;
+  - o ambiente de marca é resolvido pelas **peças vestidas** (`resolveEnvironment`), não pela **busca**: esta é a
+    primeira mudança de arquitetura;
+  - as abas `stores | wardrobe | saved` devem ser reavaliadas como modos ou painéis.
+- **Teste crítico:** Nike → Sneakers → Air Max → Vista-me → Voltar retorna exatamente ao mesmo contexto.
+
