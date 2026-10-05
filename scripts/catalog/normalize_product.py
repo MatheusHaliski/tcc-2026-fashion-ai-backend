@@ -49,6 +49,9 @@ class Normalizer:
         self.version = data.get("version")
         self.taxonomy: dict[str, list[str]] = data["taxonomy"]["subcategories"]
         self.sub_category = {s: c for c, subs in self.taxonomy.items() for s in subs}
+        # subcategorias LEGACY (bermuda_shorts…): continuam reconhecidas e viram a nova + o que implicam
+        self.legacy: dict[str, dict] = data.get("legacySubcategories", {})
+        self.sub_category.update({code: x["category"] for code, x in self.legacy.items()})
         self.categories = {key(c): c for c in self.taxonomy}
         self.subcategories = {key(s): s for s in self.sub_category}
         self.colors = {key(c): c for c in data["taxonomy"]["colors"]}
@@ -76,6 +79,14 @@ class Normalizer:
     def subcategory(self, raw):
         return self.subcategories.get(key(raw))
 
+    def resolve(self, sub):
+        """(subcategoria nova, variação implícita, atributos implícitos) — bermuda_shorts → (shorts, None, {LENGTH: KNEE})."""
+        x = self.legacy.get(sub)
+        if not x:
+            return sub, None, {}
+        implies = dict(x.get("implies") or {})
+        return x["replacedBy"], implies.pop("VARIATION", None), implies
+
     def color(self, raw):
         k = key(raw)
         if k in self.colors:
@@ -89,7 +100,8 @@ class Normalizer:
         k = key(raw)
         if k in self.materials:
             return self.materials[k]
-        return next((self.materials[t] for t in k.split() if t in self.materials), None)
+        # palavra solta de 1–2 letras não decide ("lã" sem acento vira "la": "de la marca" não é lã) — igual ao Java
+        return next((self.materials[t] for t in k.split() if len(t) > 2 and t in self.materials), None)
 
     def gender(self, raw):
         return self.genders.get(key(raw))
@@ -138,6 +150,8 @@ class Product:
     color: Optional[str] = None
     color_name: Optional[str] = None
     material: Optional[str] = None
+    variation: Optional[str] = None
+    attributes: dict = field(default_factory=dict)   # dimensão → [códigos] (LENGTH, FINISH, RISE…), ver taxonomy.json
     collection: Optional[str] = None
     gender: Optional[str] = None
     official_product_url: Optional[str] = None
@@ -173,7 +187,12 @@ def normalize_product(raw: dict, n: Normalizer) -> Product:
     if not sub:
         raise ValidationError(f"subcategoria fora da taxonomia: {s('subcategory')}")
     cat = n.sub_category[sub]
-    p = Product(brand=s("brand"), category=cat, subcategory=sub, product_name=re.sub(r"\s+", " ", s("product_name")))
+    new_sub, implied_variation, implied = n.resolve(sub)     # legado → padrão novo (docs/taxonomia, C.3)
+    p = Product(brand=s("brand"), category=cat, subcategory=new_sub, product_name=re.sub(r"\s+", " ", s("product_name")))
+    p.variation = implied_variation
+    for dim, code in implied.items():
+        if dim != "MATERIAL":
+            p.attributes[dim] = [code]
     if s("category") and n.category(s("category")) not in (None, cat):
         p.warnings.append(f"categoria {s('category')} corrigida para {cat} pela subcategoria")
     elif s("category") and n.category(s("category")) is None:
@@ -187,7 +206,7 @@ def normalize_product(raw: dict, n: Normalizer) -> Product:
     p.color = n.color(s("color")) if s("color") else (n.color(s("color_name")) if s("color_name") else None)
     if s("color") and not p.color:
         p.warnings.append(f"cor fora da taxonomia ignorada: {s('color')}")
-    p.material = n.material(s("material")) if s("material") else None
+    p.material = n.material(s("material")) if s("material") else implied.get("MATERIAL")
     p.gender = n.gender(s("gender")) if s("gender") else None
     url = s("official_product_url")
     if url:

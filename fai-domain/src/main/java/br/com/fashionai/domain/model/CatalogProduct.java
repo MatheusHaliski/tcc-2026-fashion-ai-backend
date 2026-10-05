@@ -3,16 +3,24 @@ package br.com.fashionai.domain.model;
 import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
 import br.com.fashionai.domain.model.enums.CatalogSourceStatus;
 import br.com.fashionai.domain.model.enums.CatalogSourceType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
 /** RF47 · Produto global conhecido pelo FashionAI (≠ WardrobeItem, a posse por uma pessoa). */
 @Getter
@@ -29,6 +37,26 @@ public class CatalogProduct extends VersionedAuditableEntity {
 
     @Column(name = "subcategory", nullable = false, length = 120)
     private String subcategory;
+
+    /** Variação (corte/silhueta/construção) — docs/taxonomia; lida do nome oficial por alias ou da curadoria. */
+    @Column(name = "variation_code", length = 60)
+    private String variationCode;
+
+    @Column(name = "variation_status", length = 16)
+    private String variationStatus;
+
+    @Column(name = "variation_confidence", precision = 4, scale = 3)
+    private BigDecimal variationConfidence;
+
+    /** Quem escreveu a variação: CATALOG (dado oficial) · RULE · AI · USER (curadoria) — V45. */
+    @Column(name = "variation_source", length = 12)
+    private String variationSource;
+
+    /** Atributos por dimensão (acabamento, comprimento, estilo, ocasião…), tabela catalog_product_attributes (V44). */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "catalog_product_attributes", joinColumns = @JoinColumn(name = "product_id"))
+    @BatchSize(size = 200)
+    private Set<TaxonomyAttribute> attributes = new HashSet<>();
 
     @Column(name = "product_name", nullable = false, length = 255)
     private String productName;
@@ -65,6 +93,38 @@ public class CatalogProduct extends VersionedAuditableEntity {
 
     @Column(name = "gender", length = 20)
     private String gender;
+
+    /** ADULT · TEEN · KIDS · BABY */
+    @Column(name = "age_group", length = 10)
+    private String ageGroup;
+
+    /** Preço oficial (JSON-LD offers da página do produto): Offer = min = max; AggregateOffer = lowPrice..highPrice. */
+    @Column(name = "price_min", precision = 12, scale = 2)
+    private BigDecimal priceMin;
+
+    @Column(name = "price_max", precision = 12, scale = 2)
+    private BigDecimal priceMax;
+
+    /** Preço "de" (StrikethroughPrice), quando a página mostra desconto. */
+    @Column(name = "list_price", precision = 12, scale = 2)
+    private BigDecimal listPrice;
+
+    @Column(name = "price_currency", length = 3)
+    private String priceCurrency;
+
+    /** JSONLD_OFFER · JSONLD_AGGREGATE · META · MANUAL */
+    @Column(name = "price_source", length = 20)
+    private String priceSource;
+
+    @Column(name = "price_checked_at")
+    private Instant priceCheckedAt;
+
+    /** Versão das regras do enriquecimento (job fora do Flyway) que derivou variação/atributos; null = nunca rodou. */
+    @Column(name = "enrichment_version", length = 40)
+    private String enrichmentVersion;
+
+    @Column(name = "enriched_at")
+    private Instant enrichedAt;
 
     @Column(name = "official_product_url", length = 1024)
     private String officialProductUrl;

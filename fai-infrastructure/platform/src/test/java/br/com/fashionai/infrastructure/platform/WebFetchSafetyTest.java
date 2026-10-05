@@ -30,4 +30,14 @@ class WebFetchSafetyTest {
         assertThat(safe("https://metadata.google.internal/x")).isFalse();
         assertThat(safe("file:///etc/passwd")).isFalse();
     }
+
+    /** Nome que não resolve no DNS local: sem proxy de saída é recusa (fail-closed), com proxy quem decide é o proxy. */
+    @Test
+    void unresolvableHostIsRefusedWithoutProxy() throws Exception {
+        Method m = JdkWebFetchAdapter.class.getDeclaredMethod("safe", URI.class, boolean.class);
+        m.setAccessible(true);
+        URI unresolvable = URI.create("https://nao-existe-" + System.nanoTime() + ".invalid/logo.png");
+        assertThat((boolean) m.invoke(null, unresolvable, false)).isFalse();
+        assertThat((boolean) m.invoke(null, unresolvable, true)).isTrue();
+    }
 }

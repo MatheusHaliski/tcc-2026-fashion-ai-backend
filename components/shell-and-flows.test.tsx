@@ -64,14 +64,15 @@ describe("abas do perfil (Lookbook)", () => {
   }
 });
 
-describe("adicionar peça (RF4/RF47) — etapa única Peça, sem envio de foto", () => {
-  it("não há seção de foto: tipo, busca catalogada e dados ficam na mesma etapa", async () => {
+describe("adicionar peça (RF4/RF47) — etapa única Peça, foto opcional", () => {
+  it("tipo, busca catalogada e dados na mesma etapa; a foto é opcional e aceita várias fotos", async () => {
     loggedAs(ME, { "GET /api/taxonomy": TAXONOMY, "GET /api/catalog/brands": { brands: [] } });
     const { container } = renderApp(<NewPiecePage />);
     expect(await screen.findByRole("heading", { name: "Buscar no catálogo" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Dados" })).toBeTruthy();
-    expect(container.querySelector("input[type=file]")).toBeNull();
-    expect(screen.queryByRole("button", { name: /Enviar foto/ })).toBeNull();
+    expect(screen.getByRole("heading", { name: "Prefere fotografar?" })).toBeTruthy();
+    const input = container.querySelector("input[type=file]")!;
+    expect(input.hasAttribute("multiple")).toBe(true);
   });
 
   it("sem produto do catálogo, salva a peça com os dados do formulário e a ilustração da categoria", async () => {
