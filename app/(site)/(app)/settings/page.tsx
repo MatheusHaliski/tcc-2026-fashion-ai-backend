@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
-import { api, mediaUrl } from "@/lib/api/client";
+import Link from "next/link";
+import { API_BASE, api, mediaUrl } from "@/lib/api/client";
 import type { Me, UserCard } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -35,6 +36,7 @@ function Settings() {
   }
   const call = async (fn: () => Promise<unknown>, ok?: string) => { try { await fn(); if (ok) notice.success(ok); await refreshMe(); } catch (e) { notice.fromError(e); } };
   if (!me) return <Skeleton className="h-96" />;
+  const profileVisibility = (me as Me & { profileVisibility?: string }).profileVisibility ?? (me.user.privateAccount ? "PRIVATE" : "PUBLIC");
   return (
     <>
       <PageHeader title={t("settings.title")} kicker={t("settings.rf3_rf23")} />
@@ -106,13 +108,30 @@ function Settings() {
             {consents.loading && <Skeleton className="h-32" />}
             <ul className="fai-list">{(consents.data ?? []).map((c) => <li key={c.purpose}><Switch checked={c.granted} onChange={async (v) => { try { consents.setData(await api.put<Consent[]>(`/api/me/consents/${c.purpose}`, { granted: v })); } catch (e) { notice.fromError(e); } }} label={c.label ?? c.purpose.replace(/_/g, " ").toLowerCase()} />{c.description && <p className="type-caption text-muted -mt-1 pb-2">{c.description}</p>}</li>)}</ul>
           </Card>
+          {/* RF53 · P2-19 — como o HypeScore usa os dados da pessoa: o que entra no público, Hype pessoal, perfil privado
+              fora dos rankings, patrocínio nunca entra; marcos só de subida; método técnico aberto (GET /api/hype/method) */}
+          <Card className="lg:col-span-2">
+            <h2 className="type-h3 mb-2">{t("hypePrivacy.title")}</h2>
+            <p className="type-body text-muted mb-2">{t("hypePrivacy.lead")}</p>
+            <p className="type-body-sm mb-2 rounded bg-surface-2 p-2">{profileVisibility === "PRIVATE" ? t("hypePrivacy.status_private") : t("hypePrivacy.status_open")}</p>
+            <ul className="fai-list type-body-sm">
+              <li className="py-1.5">{t("hypePrivacy.public")}</li>
+              <li className="py-1.5">{t("hypePrivacy.personal")}</li>
+              <li className="py-1.5">{t("hypePrivacy.private_profile")}</li>
+              <li className="py-1.5">{t("hypePrivacy.sponsorship")}</li>
+              <li className="py-1.5">{t("hypePrivacy.signals")}</li>
+              <li className="py-1.5">{rich("hypePrivacy.notifications", undefined, { 0: ($c) => <Link className="underline" href="/notifications">{$c}</Link> })}</li>
+            </ul>
+            <a className="mt-2 inline-block type-body-sm underline" href={`${API_BASE}/api/hype/method`} target="_blank" rel="noopener noreferrer">{t("hypePrivacy.method")}</a>
+          </Card>
         </div>
       )}
       {tab === "data" && (
         <div className="grid gap-4 lg:grid-cols-2">
           <Card>
             <h2 className="type-h3 mb-2">{t("settings.export")}</h2>
-            <p className="type-body text-muted mb-3">{t("settings.geramos_um_pacote_com_todos")}</p>
+            <p className="type-body text-muted mb-1">{t("settings.geramos_um_pacote_com_todos")}</p>
+            <p className="type-caption text-muted mb-3">{t("hypePrivacy.export_hint")}</p>
             <Button variant="primary" onClick={() => call(() => api.post("/api/me/exports"), t("settings.exportacao_solicitada")).then(exports.reload)}>{t("settings.export")}</Button>
             <ul className="fai-list mt-3">{(exports.data ?? []).map((x) => <li key={x.id} className="flex items-center justify-between py-2 type-body-sm"><span>{x.status} · {x.requestedAt?.slice(0, 10)}</span>{x.status === "READY" && <a className="btn btn-sm" href={`${process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080"}/api/me/exports/${x.id}/file`} onClick={async (e) => { e.preventDefault(); const u = await api.blobUrl(`/api/me/exports/${x.id}/file`); window.open(u); }}>{t("settings.baixar")}</a>}</li>)}</ul>
           </Card>

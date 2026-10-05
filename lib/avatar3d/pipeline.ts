@@ -6,6 +6,7 @@
 import { detectFace, segmentHair } from "./detect";
 import { N, faceMetrics, fitView, fuseShape, type Landmark, type Role, type ViewFit } from "./geometry";
 import { faceStats, fit2D, hairStats, occlusion, sampleSkin, type FaceStats, type HairStats, type Pt } from "./image-stats";
+import { applyGains, balanceRaster, estimateIlluminant, type Gains, type Illuminant } from "./skin-tone";
 import { checkPhoto, checkSet, blocking, type Issue } from "./quality";
 import { bakeAtlas } from "./atlas";
 import { MODEL_VERSION, roundShape, type AvatarModel } from "./model";
@@ -120,29 +121,34 @@ export function buildAvatar(photos: AnalyzedPhoto[], opts: { sex?: Sex | null; p
   const ok = photos.filter((p) => p.fit && p.px && !blocking(p.issues));
   const front = ok.find((p) => p.role === "front");
   const sides = ok.filter((p) => p.role !== "front").slice(0, 2);
-  const g0 = front?.canvas.getContext("2d", { willReadFrequently: true });
+  // AVATAR-ID I3: cada foto com a cor da luz corrigida (esclera; senão gray-world fraco) antes de medir pele, cabelo e atlas
+  const fixed = new Map<AnalyzedPhoto, { canvas: HTMLCanvasElement; wb: Illuminant }>();
+  for (const v of [front, ...sides]) if (v) fixed.set(v, whiteBalanced(v));
+  const wb0 = front ? fixed.get(front)!.wb : null;
+  const g0 = front ? fixed.get(front)!.canvas.getContext("2d", { willReadFrequently: true }) : null;
   const toCanon = front?.fit && front.px ? fit2D(front.px.slice(0, N), Array.from({ length: N }, (_, i) => [front.fit!.shape[i * 3], front.fit!.shape[i * 3 + 1]] as Pt)) : null;
   const img0 = front && g0 ? g0.getImageData(0, 0, front.width, front.height) : null;
+  const skin0 = front?.skin && wb0 ? applyGains(front.skin, wb0.gains) : front?.skin ?? undefined;
   let hairMask = front?.hairMask ?? null;
-  let hair = front && img0 && hairMask && toCanon ? hairStats(img0, hairMask, front.px!, toCanon, front.fit!.shape[10 * 3 + 1], front.skin ?? undefined) : null;
+  let hair = front && img0 && hairMask && toCanon ? hairStats(img0, hairMask, front.px!, toCanon, front.fit!.shape[10 * 3 + 1], skin0) : null;
   // o segmentador fino não viu cabelo (escuro sobre fundo escuro, claro sobre claro): a classe "cabelo" do segmentador
   // de classes dá a segunda opinião, com a mesma medida (comprimento, silhueta) — antes isso virava "raspado" ou careca
   if (front && img0 && toCanon && front.classMask && (!hair || !hair.present)) {
     const alt = classHairMask(front.classMask, front.width, front.height);
-    const h2 = hairStats(img0, alt, front.px!, toCanon, front.fit!.shape[10 * 3 + 1], front.skin ?? undefined);
+    const h2 = hairStats(img0, alt, front.px!, toCanon, front.fit!.shape[10 * 3 + 1], skin0);
     if (h2.present) { hair = h2; hairMask = alt; }
   }
   // sem máscara nenhuma (segmentador indisponível): o perfil ainda decide pelas classes e pelo corpo base, nunca careca à toa
-  if (front && img0 && toCanon && !hair) { hairMask = new Float32Array(front.width * front.height); hair = hairStats(img0, hairMask, front.px!, toCanon, front.fit!.shape[10 * 3 + 1], front.skin ?? undefined); }
+  if (front && img0 && toCanon && !hair) { hairMask = new Float32Array(front.width * front.height); hair = hairStats(img0, hairMask, front.px!, toCanon, front.fit!.shape[10 * 3 + 1], skin0); }
   const sexGuess = front?.sex ?? null;
   const sex: Sex = opts.sex ?? bodySex(sexGuess, opts.profileSex);
-  const profile: HairProfile | null = hair && img0 && toCanon && front?.skin ? hairProfile(img0, hairMask!, front.classMask, front.px!, toCanon, front.fit!.shape[10 * 3 + 1], front.skin, hair, HAIR_FALLBACK[sex].length) : null;
+  const profile: HairProfile | null = hair && img0 && toCanon && skin0 ? hairProfile(img0, hairMask!, front!.classMask, front!.px!, toCanon, front!.fit!.shape[10 * 3 + 1], skin0, hair, HAIR_FALLBACK[sex].length) : null;
   const set = checkSet(photos.map((p) => ({ role: p.role, issues: p.issues })), hair);
   if (!front || !g0) return null;
   const views = [front, ...sides];
   const shape = fuseShape(views.map((v) => v.fit!));
   const skin = sampleSkin(g0.getImageData(0, 0, front.width, front.height), front.px!);
-  const baked = bakeAtlas(views.map((v) => ({ role: v.role, canvas: v.canvas, px: v.px!, sim: v.fit!.sim })), skin.hex);
+  const baked = bakeAtlas(views.map((v) => ({ role: v.role, canvas: fixed.get(v)?.canvas ?? v.canvas, px: v.px!, sim: v.fit!.sim })), skin.hex);
   // cabelo presente: o que o perfil decidiu (cabelo medido, raspado visto pela classe, ou suposto sem evidência de
   // careca). Antes valia só o segmentador fino — e cabelo que ele não via virava cabeça careca.
   const hairColor = profile ? profile.color ?? (profile.estimated && profile.tone ? renderColor(profile.tone) : null) : hair?.color ?? null;
@@ -156,9 +162,24 @@ export function buildAvatar(photos: AnalyzedPhoto[], opts: { sex?: Sex | null; p
       : { present: false, color: null, top: 0, side: 0, bottom: null, fringe: 0, cut: false },
     metrics: faceMetrics(shape),
     views: views.map((v) => ({ role: v.role, yaw: +v.fit!.pose.yaw.toFixed(1), pitch: +v.fit!.pose.pitch.toFixed(1), roll: +v.fit!.pose.roll.toFixed(1) })),
-    warnings: [...new Set([...set.issues.filter((i) => i.severity === "warn").map((i) => i.code), ...views.flatMap((v) => v.issues.filter((i) => i.severity === "warn").map((i) => i.code)), ...(profile?.estimated ? ["HAIR_ESTIMATED"] : [])])],
+    warnings: [...new Set([...set.issues.filter((i) => i.severity === "warn").map((i) => i.code), ...views.flatMap((v) => v.issues.filter((i) => i.severity === "warn").map((i) => i.code)), ...(profile?.estimated ? ["HAIR_ESTIMATED"] : []),
+      ...(wb0?.source === "GRAY_WORLD" ? ["WB_GRAY_WORLD"] : wb0?.source === "NONE" && SKIN_WB ? ["WB_NONE"] : [])])],
   };
   return { model, atlas: baked.canvas, hair, hairProfile: profile, set, lightEvened: baked.light.applied, sexGuess };
+}
+
+/** Balanço de branco da pele (AVATAR-ID I3); NEXT_PUBLIC_SKIN_WB=off volta à cor da foto sem correção. */
+const SKIN_WB = process.env.NEXT_PUBLIC_SKIN_WB !== "off";
+
+/** Cópia da foto com a cor da luz corrigida (AVATAR-ID I3). A original não muda. */
+function whiteBalanced(v: AnalyzedPhoto): { canvas: HTMLCanvasElement; wb: Illuminant } {
+  if (!SKIN_WB) return { canvas: v.canvas, wb: { gains: [1, 1, 1], source: "NONE", confidence: 0, samples: 0 } };
+  const c = document.createElement("canvas"); c.width = v.width; c.height = v.height;
+  const g = c.getContext("2d", { willReadFrequently: true })!; g.drawImage(v.canvas, 0, 0);
+  const id = g.getImageData(0, 0, v.width, v.height);
+  const wb = v.px ? estimateIlluminant(id, v.px) : { gains: [1, 1, 1] as Gains, source: "NONE" as const, confidence: 0, samples: 0 };
+  if (wb.source !== "NONE") { balanceRaster(id, wb.gains); g.putImageData(id, 0, 0); }
+  return { canvas: c, wb };
 }
 
 export const atlasBlob = (c: HTMLCanvasElement) => new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error("atlas"))), "image/jpeg", 0.9));

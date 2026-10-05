@@ -57,7 +57,7 @@ public class CatalogImage extends VersionedAuditableEntity {
     @Column(name = "stored_url", length = 1024)
     private String storedUrl;
 
-    // ── pipeline de imagens (V38): metadados da análise; nível B também grava o master em stored_url/assets_json ──
+    // ── pipeline de imagens (V43): metadados da análise; nível B também grava o master em stored_url/assets_json ──
     @Column(name = "width")
     private Integer width;
 

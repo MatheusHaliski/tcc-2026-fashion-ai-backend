@@ -34,7 +34,7 @@
   - somando a descrição, 29,5% (2.827), com confiança menor;
   - em `jeans`, 66% (486 de 733).
 - **Validação do seed SQL.**
-  - Rodado num schema descartável em **MySQL 8.0.46 local**, incluindo o bloco V40 (colunas + FK composta) e o rollback.
+  - Rodado num schema descartável em **MySQL 8.0.46 local**, incluindo o bloco V45 (colunas + FK composta) e o rollback.
   - A FK recusou `casual_sneakers + CHELSEA`, como esperado.
   - O container `fai-mysql` não estava disponível (daemon Docker desligado).
 
@@ -613,12 +613,12 @@ Tabelas (DDL completo em `proposta/seed_piece_variations.sql`):
 
 ## F. Plano de migration e impacto por módulo
 
-### F.1 Migrations (só aditivas, a partir da V39 — a V38 é o pipeline de imagens do catálogo)
+### F.1 Migrations (só aditivas, a partir da V44 — V38–V43 já existem no main)
 
 | Versão | Conteúdo | Rollback |
 |---|---|---|
-| **V39** `taxonomia_variacoes_referencia.sql` | `CREATE TABLE` das 9 tabelas de referência + 2 EAV; seed gerado: categorias, subcategorias, 394 variações, 541 vínculos, ~1,9 mil aliases, 30 dimensões, 387 valores, ~1,4 mil aliases de valor, ~1,65 mil linhas de aplicabilidade | `DROP` das tabelas novas (nenhum dado legado envolvido) |
-| **V40** `variacao_e_preco_nas_pecas.sql` | `ALTER TABLE ... ADD COLUMN` NULL em `wardrobe_items` e `catalog_products` (variação, origem, confiança, preço); índices; FKs compostas; FKs das tabelas EAV | `DROP FOREIGN KEY` + `DROP COLUMN` (testado no schema descartável) |
+| **V44** `taxonomia_variacoes_referencia.sql` | `CREATE TABLE` das 9 tabelas de referência + 2 EAV; seed gerado: categorias, subcategorias, 394 variações, 541 vínculos, ~1,9 mil aliases, 30 dimensões, 387 valores, ~1,4 mil aliases de valor, ~1,65 mil linhas de aplicabilidade | `DROP` das tabelas novas (nenhum dado legado envolvido) |
+| **V45** `variacao_e_preco_nas_pecas.sql` | `ALTER TABLE ... ADD COLUMN` NULL em `wardrobe_items` e `catalog_products` (variação, origem, confiança, preço); índices; FKs compostas; FKs das tabelas EAV | `DROP FOREIGN KEY` + `DROP COLUMN` (testado no schema descartável) |
 | **Backfill** (job idempotente, **fora** do Flyway) | Ver passos abaixo | `UPDATE ... SET variation_code=NULL WHERE variation_source='ALIAS'` + `DELETE FROM *_attribute WHERE source IN ('ALIAS','RULE')` |
 
 Passos do backfill:
@@ -660,7 +660,7 @@ Estimativa no acervo atual:
   - alias `wide` em `jeans` → `WIDE_LEG`;
   - `pantalona` em `casual_pants` → `PALAZZO`;
   - zero vínculos `casual_sneakers × CHELSEA`.
-- Bloco V40 (comentado no fim do arquivo), aplicado sobre `wardrobe_items`/`catalog_products` simuladas:
+- Bloco V45 (comentado no fim do arquivo), aplicado sobre `wardrobe_items`/`catalog_products` simuladas:
   - a FK composta aceitou `jeans/WIDE_LEG` e `t_shirt/NULL` e recusou `casual_sneakers/CHELSEA`;
   - o rollback devolveu as tabelas ao estado original.
 - O container `fai-mysql` **não** foi usado: o daemon Docker não estava rodando.
@@ -683,7 +683,7 @@ Estimativa no acervo atual:
 | Select | Fonte no banco | Como obter |
 |---|---|---|
 | Categoria / Subcategoria | `catalog_products.category/subcategory` | Já existe. |
-| Variação | `catalog_products.variation_code` (V40) | Alias no nome → alias na descrição → IA (vocabulário fechado) → usuário/admin. |
+| Variação | `catalog_products.variation_code` (V45) | Alias no nome → alias na descrição → IA (vocabulário fechado) → usuário/admin. |
 | Cor | `catalog_products.color` + `catalog_variants.color` | Já existe (paleta). |
 | Material (família) / Tecido | `material` + `catalog_product_attribute(MATERIAL_DETAIL)` | JSON-LD `material`; alias na descrição oficial; IA. |
 | Estampa | `design_json.pattern` → espelho em `catalog_product_attribute(PATTERN)` | `CatalogDesignInterpreter` (já existe). |

@@ -96,19 +96,94 @@ public class HypeController {
     }
 
     @GetMapping("/api/hype/trending")
-    @Operation(summary = "Em alta — ranking com recortes (janela 1/7/30 dias, tipo, categoria, estilo, ocasião); só conteúdo público")
+    @Operation(summary = "Em alta — ranking com recortes (janela 1/7/30 dias; tipo PIECE, LOOK, BRAND ou CREATOR; categoria, estilo, ocasião); só conteúdo público")
     public Map<String, Object> trending(CurrentUser viewer, @RequestParam(defaultValue = "PIECE") String type,
                                         @RequestParam(defaultValue = "7") int window,
                                         @RequestParam(required = false) String category,
                                         @RequestParam(required = false) String style,
                                         @RequestParam(required = false) String occasion,
                                         @RequestParam(defaultValue = "24") int limit) {
+        HypeQueryService.RankGroup group = HypeQueryService.RankGroup.parse(type);
+        if (group != null) {
+            // Marcas em alta / Criadores em alta: agregados de itens públicos elegíveis (mínimo de itens por grupo)
+            return hype.trendingGroups(viewer, group, window, category, style, occasion, limit);
+        }
         return hype.trending(viewer, type(type), window, category, style, occasion, limit);
+    }
+
+    /**
+     * Lote A1 (P2-02, P2-03, P2-10): Hype agregado de várias marcas (chave = nome normalizado) ou pessoas (chave = id)
+     * numa requisição — chips da busca, do perfil e de /brands. Só itens públicos elegíveis; {@code sufficient} = ≥ 3.
+     * Substitui o antigo GET /api/hype/groups (agrupamentos por similaridade, v1), que foi para /api/similarity-groups/global.
+     */
+    @GetMapping("/api/hype/groups")
+    @Operation(summary = "Hype agregado em lote de marcas (BRAND, chave = nome) ou criadores (CREATOR, chave = id): faixa, valor, itens públicos, suficiente (≥ 3) e posição; só conteúdo público")
+    public Map<String, Object> groups(CurrentUser viewer, @RequestParam String type, @RequestParam(required = false) String keys,
+                                      @RequestParam(defaultValue = "7") int window) {
+        HypeQueryService.RankGroup group = HypeQueryService.RankGroup.parse(type);
+        if (group == null) {
+            throw ApiException.badRequest("TIPO_INVALIDO", "type: BRAND | CREATOR");
+        }
+        return hype.groups(viewer, group, keys == null ? List.of() : List.of(keys.split(",")), window);
+    }
+
+    @GetMapping("/api/hype/ranking")
+    @Operation(summary = "Ranking de HypeScore por região do mundo, país, categoria e subcategoria (peças ou looks; o look entra pelas peças dele); só conteúdo público")
+    public Map<String, Object> ranking(CurrentUser viewer, @RequestParam(defaultValue = "PIECE") String type,
+                                       @RequestParam(defaultValue = "7") int window,
+                                       @RequestParam(required = false) String region,
+                                       @RequestParam(required = false) String country,
+                                       @RequestParam(required = false) String category,
+                                       @RequestParam(required = false) String subcategory,
+                                       @RequestParam(defaultValue = "0") int page,
+                                       @RequestParam(defaultValue = "24") int size) {
+        return hype.ranking(viewer, type(type), window, region, country, category, subcategory, page, size);
+    }
+
+    @GetMapping("/api/hype/ranking/facets")
+    @Operation(summary = "Contagens dos filtros do ranking (regiões com o Hype médio, países, categorias, subcategorias); só conteúdo público")
+    public Map<String, Object> rankingFacets(@RequestParam(defaultValue = "PIECE") String type,
+                                             @RequestParam(defaultValue = "7") int window,
+                                             @RequestParam(required = false) String region,
+                                             @RequestParam(required = false) String category) {
+        return hype.rankingFacets(type(type), window, region, category);
+    }
+
+    @GetMapping("/api/hype/globe")
+    @Operation(summary = "Globo do Painel global: Hype por país (médio, máximo, crescimento, faixas, criadores e o item de destaque) no recorte de tipo, janela, categoria e nível mínimo; só conteúdo público")
+    public Map<String, Object> globe(CurrentUser viewer, @RequestParam(defaultValue = "PIECE") String type,
+                                     @RequestParam(defaultValue = "7") int window,
+                                     @RequestParam(required = false) String category,
+                                     @RequestParam(required = false) String subcategory,
+                                     @RequestParam(required = false) String minLevel) {
+        return hype.globe(viewer, type(type), window, category, subcategory, minLevel);
+    }
+
+    @GetMapping("/api/hype/pieces/{id}/positions")
+    @Operation(summary = "Posições da peça no ranking público: mundo, categoria, subcategoria, região e país")
+    public Map<String, Object> piecePositions(CurrentUser viewer, @PathVariable UUID id) {
+        return hype.positions(viewer, HypeEntityType.PIECE, id);
+    }
+
+    @GetMapping("/api/hype/looks/{id}/positions")
+    @Operation(summary = "Posições do look no ranking público: mundo, região e país")
+    public Map<String, Object> lookPositions(CurrentUser viewer, @PathVariable UUID id) {
+        return hype.positions(viewer, HypeEntityType.SCHEME, id);
     }
 
     @GetMapping("/api/me/hype/wardrobe")
     @Operation(summary = "Seu guarda-roupa: Hype médio, destaques (maior Hype, crescimento, clássica, rara, esquecida) e redescobertas")
     public Map<String, Object> wardrobe(CurrentUser user) {
+        return hype.wardrobe(user);
+    }
+
+    @GetMapping("/api/hype/me/wardrobe")
+    @Operation(summary = "Alias de /api/me/hype/wardrobe (forma citada na especificação do HypeScore)")
+    public Map<String, Object> wardrobeAlias(CurrentUser user) {
+        if (user == null) {
+            // /api/hype/** é GET público na SecurityConfig: o painel pessoal exige login aqui
+            throw ApiException.unauthorized("login");
+        }
         return hype.wardrobe(user);
     }
 

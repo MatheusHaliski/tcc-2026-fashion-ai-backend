@@ -2,15 +2,18 @@
 import { mediaUrl } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
+import { LookScores, type LookScoreValues } from "@/components/hype/look-scores";
 
 export interface CompositionPiece { wardrobeItemId: string; slot: string; piece?: PieceView | null }
 
 /**
  * Proposta de conjunto gerada pela IA (Criar Look · "Gerar com IA"): em vez de uma lista de nomes em texto, o card
  * mostra as fotos das peças, a paleta de cores do conjunto (cor de cada peça) e a marca — a pessoa escolhe olhando.
+ * RF53 (P2-14): `scores` = os seis números da combinação (RecommendationScoring, a mesma régua do Copilot), lado a lado;
+ * o Hype é a média do v2 das peças e só uma das leituras. Sem `scores`, o card fica como antes.
  */
-export function AiCompositionCard({ title, items, why, slotLabel, onApply }: {
-  title: string; items: CompositionPiece[]; why?: string | null; slotLabel: (slot: string) => string; onApply: () => void;
+export function AiCompositionCard({ title, items, why, slotLabel, onApply, scores }: {
+  title: string; items: CompositionPiece[]; why?: string | null; slotLabel: (slot: string) => string; onApply: () => void; scores?: LookScoreValues | null;
 }) {
   const { t } = useI18n();
   const palette = items.map((it) => it.piece?.colorHex).filter((c): c is string => !!c && /^#[0-9a-f]{6}$/i.test(c));
@@ -35,6 +38,7 @@ export function AiCompositionCard({ title, items, why, slotLabel, onApply }: {
         })}
       </div>
       {why && <p className="type-caption text-muted">{why}</p>}
+      {scores && <LookScores scores={scores} />}
     </button>
   );
 }

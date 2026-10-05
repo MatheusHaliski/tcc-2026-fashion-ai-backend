@@ -57,7 +57,7 @@ public final class Views {
                             boolean notAvailableAnymore, Instant createdAt, Instant updatedAt, String studioImageUrl,
                             String studioBackdrop, String studioThumbUrl, String studioDetailUrl,
                             String mannequinImageUrl, String mannequinImageFace, String brandSource, String studioFeedUrl,
-                            boolean aiGeneratedImage) {
+                            boolean aiGeneratedImage, boolean forDonation) {
     }
 
     /** A miniatura do estúdio (640 px, para grades) fica ao lado da foto grande: {@code studio-x.jpg} → {@code studio-x.thumb.jpg}. */
@@ -105,7 +105,8 @@ public final class Views {
                 w.getRemixesCount(), w.getViewCount(), 0, reactions == null ? Map.of() : reactions),
                 viewer == null ? ViewerState.NONE : viewer, w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED,
                 w.getCreatedAt(), w.getUpdatedAt(), w.getStudioImageUrl(), w.getStudioBackdrop(), studioThumb(w.getStudioImageUrl()), w.getStudioDetailUrl(),
-                w.getMannequinImageUrl(), w.getMannequinImageFace(), w.getBrandSource(), studioFeed(w), w.isAiGeneratedImage());
+                w.getMannequinImageUrl(), w.getMannequinImageFace(), w.getBrandSource(), studioFeed(w), w.isAiGeneratedImage(),
+                w.isForDonation());
     }
 
     /**

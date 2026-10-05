@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @RestController
-@Tag(name = "RF6 — Lookbook, Look do Dia e Hype Score")
+@Tag(name = "RF6 — Lookbook, Look do Dia e HypeScore (painel em v2; agrupamentos por similaridade)")
 public class LookbookController {
     private final LookbookService lookbook;
     private final DailyLookService dailyLooks;
@@ -43,6 +43,20 @@ public class LookbookController {
         return lookbook.overview(viewer, ownerId);
     }
 
+    @GetMapping("/api/users/{ownerId}/publications")
+    @Operation(summary = "RF6/RF53 — Publicações do Lookbook: looks publicados e peças visíveis, em ordem cronológica")
+    public Views.Page<Map<String, Object>> publications(CurrentUser viewer, @PathVariable UUID ownerId,
+                                                       @RequestParam(defaultValue = "0") int page,
+                                                       @RequestParam(defaultValue = "24") int size) {
+        return lookbook.publications(viewer, ownerId, page, size);
+    }
+
+    @GetMapping("/api/users/{ownerId}/favorites")
+    @Operation(summary = "RF6/RF53 — Favoritos do Lookbook: peças e looks marcados como favoritos, visíveis para quem vê")
+    public Map<String, Object> favorites(CurrentUser viewer, @PathVariable UUID ownerId) {
+        return lookbook.favorites(viewer, ownerId);
+    }
+
     @GetMapping("/api/me/saved-pieces")
     @Operation(summary = "RF6 — Peças salvas (aba própria, separada dos looks salvos)")
     public Views.Page<Map<String, Object>> savedPieces(CurrentUser user, @RequestParam(required = false) String category,
@@ -52,11 +66,12 @@ public class LookbookController {
     }
 
     @GetMapping("/api/me/saved-looks")
-    @Operation(summary = "RF6.CA03 — Looks salvos (com filtro por ocasião)")
+    @Operation(summary = "RF6.CA03 — Looks salvos (filtro por ocasião; sort = recent | hype_desc | hype_asc | growth pelo HypeScore v2)")
     public Views.Page<Map<String, Object>> savedLooks(CurrentUser user, @RequestParam(required = false) String occasion,
+                                                     @RequestParam(required = false) String sort,
                                                      @RequestParam(defaultValue = "0") int page,
                                                      @RequestParam(defaultValue = "20") int size) {
-        return lookbook.savedLooks(user, occasion, page, size);
+        return lookbook.savedLooks(user, occasion, sort, page, size);
     }
 
     public record FavoriteRequest(boolean favorite) {
@@ -132,21 +147,23 @@ public class LookbookController {
         return lookbook.capsule(user, category);
     }
 
-    @PostMapping("/api/me/hype-groups/suggestions")
-    @Operation(summary = "RF6 — Sugerir HypeGroups (similaridade ≥ 0,70)")
+    // Agrupamentos sugeridos do acervo (P3-04): são clusters por SIMILARIDADE (estilo, ocasião, cor, marca e tipo), não
+    // Hype. As rotas novas têm o nome honesto; /api/me/hype-groups* ficam como apelidos deprecados (mesma resposta).
+    @PostMapping({"/api/me/similarity-groups/suggestions", "/api/me/hype-groups/suggestions"})
+    @Operation(summary = "RF6 — Sugerir agrupamentos por similaridade (≥ 0,70); /api/me/hype-groups/suggestions é o nome legado (deprecado)")
     public Map<String, Object> suggestGroups(CurrentUser user, @RequestParam HypeEntityType type) {
         return lookbook.suggestGroups(user, type);
     }
 
-    @GetMapping("/api/me/hype-groups")
-    @Operation(summary = "RF6 — HypeGroups do usuário")
+    @GetMapping({"/api/me/similarity-groups", "/api/me/hype-groups"})
+    @Operation(summary = "RF6 — Agrupamentos sugeridos por similaridade, com o Hype médio v2 dos membros à parte; /api/me/hype-groups é o nome legado (deprecado)")
     public List<Map<String, Object>> groups(CurrentUser user, @RequestParam HypeEntityType type) {
         return lookbook.groups(user, type);
     }
 
-    @DeleteMapping("/api/me/hype-groups/{groupId}")
+    @DeleteMapping({"/api/me/similarity-groups/{groupId}", "/api/me/hype-groups/{groupId}"})
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "RF6 — Descartar HypeGroup")
+    @Operation(summary = "RF6 — Descartar agrupamento sugerido; /api/me/hype-groups/{groupId} é o nome legado (deprecado)")
     public void discardGroup(CurrentUser user, @PathVariable UUID groupId) {
         lookbook.discardGroup(user, groupId);
     }
@@ -200,8 +217,14 @@ public class LookbookController {
         return out;
     }
 
-    @GetMapping("/api/hype/groups")
-    @Operation(summary = "RF6 — HypeGroups globais por tipo")
+    /**
+     * @deprecated legado v1: agrupamentos globais por SIMILARIDADE com a média v1 ({@code hypeScoreGlobal}); nenhuma tela
+     * usa. Saiu de GET /api/hype/groups (Lote A1), que agora é o Hype agregado de marcas e criadores no HypeController;
+     * o nome novo diz o que é (similaridade, não Hype).
+     */
+    @Deprecated
+    @GetMapping("/api/similarity-groups/global")
+    @Operation(summary = "RF6 — Agrupamentos globais por similaridade (legado v1 \"HypeGroups\", antes em /api/hype/groups; deprecado)", deprecated = true)
     public List<Map<String, Object>> hypeGroups(@RequestParam HypeEntityType type) {
         return hype.hypeGroups(type);
     }

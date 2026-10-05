@@ -15,19 +15,26 @@ import { PieceCard } from "@/components/piece-card";
 import { FaiIcon } from "@/components/fai-icon";
 import { InfiniteSentinel, mergeById } from "@/components/infinite-sentinel";
 import { BrandLogo } from "@/components/brand-logo";
+import { HypeGroupBadge } from "@/components/hype/hype-group-badge";
+import { hypeLevelFilter } from "@/components/hype/hype-filters";
+import { InsightStrip } from "@/components/insights/insight-strip";
 
 type Tab = "LOOKS" | "PECAS" | "PESSOAS" | "MARCAS" | "CELEBRIDADES";
 interface Brand { id?: string; userId?: string; slug?: string; name?: string; logoUrl?: string | null; registered?: boolean; publicPieces?: number; avatarUrl?: string | null; }
 type Row = SchemeView | PieceView | (UserCard & { relation?: string }) | Brand;
 interface Page { items: Row[]; nextCursor: string | null; empty?: { message?: string; alternatives?: string[]; trending?: SchemeView[] }; engine?: string; }
-type Filters = { style: string; occasion: string; color: string; brand: string; category: string };
-const NO_FILTERS: Filters = { style: "", occasion: "", color: "", brand: "", category: "" };
+/** hypeLevel = "Em alta" como faixa mínima do Hype público (P2-01: filtro, nunca ordenação nem aba) — só Looks e Peças. */
+type Filters = { style: string; occasion: string; color: string; brand: string; category: string; hypeLevel: string };
+const NO_FILTERS: Filters = { style: "", occasion: "", color: "", brand: "", category: "", hypeLevel: "" };
 const keyOf = (r: Row, i: number) => (r as { id?: string }).id ?? (r as Brand).slug ?? String(i);
 
 /**
  * RF8 — Buscar / Explorar. Sem termo, a aba mostra o feed comunitário (looks por relevância e recência; peças públicas);
  * com termo, resultados em abas. Filtros combináveis viram chips removíveis, a rolagem carrega a próxima página pelo
  * cursor sem repetir itens e a busca vazia nunca fica em branco (termos alternativos + looks em alta).
+ * RF53 · Lote A1: Pessoas, Marcas e Celebridades ganham o chip "Criador/Marca em alta" (agregado público, ≥ 3 itens;
+ * sem base = nada) — o chip só informa: a ordem dos resultados continua a da busca. Looks e Peças ganham o filtro de faixa
+ * mínima do Hype ("Em alta" = HOT), que o backend aplica só sobre o Hype público elegível.
  */
 function SearchInner() {
   const devRefs = useDevRefs();
@@ -73,6 +80,8 @@ function SearchInner() {
         {term && <Button type="button" onClick={() => submit("")}>{t("search.limpar_busca")}</Button>}
       </form>
       <Tabs tabs={tabs} value={tab} onChange={(v) => setTab(v)} />
+      {/* RF53 · Lote A5 (P3-15): o que cresce entre peças e looks públicos e o que o filtro Em alta alcança (no recorte de categoria) */}
+      {filterable && <InsightStrip context="SEARCH" params={{ window: 7, category: f.category }} collapsible className="mb-3" />}
       {filterable && (
         <FilterBar
           filters={[
@@ -81,8 +90,10 @@ function SearchInner() {
             { key: "color", label: t("common.color"), options: Object.entries(tax?.colors ?? {}).map(([x, hex]) => ({ value: x, label: label(x), swatch: /^#[0-9a-f]{3,8}$/i.test(hex) ? hex : undefined })) },
             { key: "brand", label: t("common.brand"), options: (tax?.brands ?? []).map((b) => ({ value: b.name, label: b.name })) },
             { key: "category", label: t("common.category"), options: Object.keys(tax?.subcategories ?? {}).map((x) => ({ value: x, label: label(x) })) },
+            hypeLevelFilter(),
           ]}
-          values={f} onChange={(k, v) => setF({ ...f, [k]: v })} />
+          values={f} onChange={(k, v) => setF({ ...f, [k]: v })}
+          extra={<Chip active={f.hypeLevel === "HOT"} onClick={() => setF({ ...f, hypeLevel: f.hypeLevel === "HOT" ? "" : "HOT" })} title={t("hypeGroups.search_hot_hint")}>{t("feed.hot_chip")}</Chip>} />
       )}
       {error ? <ErrorState error={error} onRetry={() => setNonce((n) => n + 1)} /> : null}
       {loading && items.length === 0 && <SkeletonGrid n={6} />}
@@ -96,10 +107,10 @@ function SearchInner() {
       {items.length > 0 && (
         tab === "LOOKS" ? <div className="grid-looks">{(items as SchemeView[]).map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>
         : tab === "PECAS" ? <div className="grid-cards">{(items as PieceView[]).map((p) => <PieceCard key={p.id} piece={p} />)}</div>
-        : tab === "PESSOAS" ? <ul className="fai-list surface">{(items as (UserCard & { relation?: string })[]).map((u) => <li key={u.id} className="flex items-center gap-3 p-3"><Avatar src={mediaUrl(u.avatarUrl)} name={u.displayName} size={40} /><div className="min-w-0 flex-1"><p className="type-body truncate"><b>{u.displayName}</b> · @{u.username}</p><p className="type-caption text-muted">{u.country ?? ""}{u.relation ? ` · ${u.relation}` : ""}</p></div><Link href={`/u/${u.username}`} className="btn btn-sm">{t("common.ver_perfil")}</Link></li>)}</ul>
+        : tab === "PESSOAS" ? <ul className="fai-list surface">{(items as (UserCard & { relation?: string })[]).map((u) => <li key={u.id} className="flex items-center gap-3 p-3"><Avatar src={mediaUrl(u.avatarUrl)} name={u.displayName} size={40} /><div className="min-w-0 flex-1"><p className="type-body truncate"><b>{u.displayName}</b> · @{u.username}</p><HypeGroupBadge type="CREATOR" groupKey={u.id} /><p className="type-caption text-muted">{u.country ?? ""}{u.relation ? ` · ${u.relation}` : ""}</p></div><Link href={`/u/${u.username}`} className="btn btn-sm">{t("common.ver_perfil")}</Link></li>)}</ul>
         : <ul className="fai-list surface">{(items as Brand[]).map((b, i) => (
             <li key={keyOf(b, i)} className="flex items-center gap-3 p-3">{tab === "MARCAS" ? <BrandLogo name={b.name} src={b.logoUrl} size={40} /> : <Avatar src={mediaUrl(b.logoUrl ?? b.avatarUrl)} name={b.name} size={40} />}
-              <div className="min-w-0 flex-1"><p className="type-body truncate"><b>{b.name}</b></p><p className="type-caption text-muted">{tab === "CELEBRIDADES" ? t("search.celebridade_verificada") : b.registered === false ? t("search.marca_do_catalogo_sem_perfil", { value: b.publicPieces ?? 0 }) : t("search.perfil_de_marca_no_fashion")}</p></div>
+              <div className="min-w-0 flex-1"><p className="type-body truncate"><b>{b.name}</b></p>{tab === "CELEBRIDADES" ? <HypeGroupBadge type="CREATOR" groupKey={b.userId} /> : <HypeGroupBadge type="BRAND" groupKey={b.name} />}<p className="type-caption text-muted">{tab === "CELEBRIDADES" ? t("search.celebridade_verificada") : b.registered === false ? t("search.marca_do_catalogo_sem_perfil", { value: b.publicPieces ?? 0 }) : t("search.perfil_de_marca_no_fashion")}</p></div>
               {b.registered === false ? <Button size="sm" onClick={() => { setTab("PECAS"); setF({ ...NO_FILTERS, brand: b.name ?? "" }); }}>{t("search.ver_pecas")}</Button> : b.slug ? <Link href={tab === "CELEBRIDADES" ? `/u/${b.slug}` : `/brands/${b.slug}`} className="btn btn-sm">{t("search.abrir_perfil")}</Link> : null}
             </li>))}</ul>
       )}

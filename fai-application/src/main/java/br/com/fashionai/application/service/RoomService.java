@@ -11,6 +11,7 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.application.hype.HypeQueryService;
 import br.com.fashionai.application.room.RoomAddress;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
@@ -28,6 +29,7 @@ import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.UserAchievement;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
+import br.com.fashionai.domain.model.enums.HypeEntityType;
 import br.com.fashionai.domain.model.enums.PhotoProcessingStatus;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
@@ -132,6 +134,8 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     private final RoomInventoryItemRepository roomInventory;
     private final RoomCatalogItemRepository roomCatalog;
     private final ApplicationEventPublisher events;
+    /** RF53 · P3-06: Hype v2 dos looks na ilha (preguiçoso: o HypeQueryService depende de serviços que não podem depender deste). */
+    private final ObjectProvider<HypeQueryService> hype;
 
     public RoomService(RoomLayoutRepository layouts, RoomStorageEntryRepository storage, WardrobeItemRepository pieces,
                        SchemeRepository schemes, SchemeItemRepository schemeItems, DailyLookRepository dailyLooks,
@@ -139,7 +143,8 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                        UserPreferencesRepository preferences, UserRepository users, FaiPointsLedgerEntryRepository ledger,
                        ObjectProvider<DecorationsProvider> decorations, AiEngine ai, Guard guard, ApplicationEventPublisher events,
             SideEffectRunner sideEffects, ObjectProvider<InventoryScoreService> inventoryScore, RoomInventoryItemRepository roomInventory,
-            RoomCatalogItemRepository roomCatalog) {
+            RoomCatalogItemRepository roomCatalog, ObjectProvider<HypeQueryService> hype) {
+        this.hype = hype;
         this.sideEffects = sideEffects;
         this.inventoryScore = inventoryScore;
         this.roomInventory = roomInventory;
@@ -1407,10 +1412,16 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         if (schemeIds == null || schemeIds.size() < 2 || schemeIds.size() > 3) {
             throw ApiException.badRequest("QUANTIDADE_INVALIDA", Msg.t("room.compare_2_ou_3_looks"));
         }
-        List<Map<String, Object>> looks = new ArrayList<>();
+        List<Scheme> owned = new ArrayList<>();
         for (UUID id : schemeIds) {
             Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound("Esquema"));
             guard.requireOwner(user, s.getUser().getId(), "scheme:" + id);
+            owned.add(s);
+        }
+        Map<String, Object> hypeOf = islandHype(user, schemeIds);
+        List<Map<String, Object>> looks = new ArrayList<>();
+        for (Scheme s : owned) {
+            UUID id = s.getId();
             List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(id);
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("id", s.getId());
@@ -1419,11 +1430,24 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
             m.put("occasion", Json.csv(s.getOccasion()));
             m.put("style", Json.csv(s.getStyle()));
             m.put("totalPrice", s.getTotalPrice());
-            m.put("hypeScore", s.getHypeScore());
+            m.put("hypeScore", s.getHypeScore());   // v1 legado (deprecado): mantido para clientes antigos; use "hype"
+            // RF53 · P3-06: HypeScore v2 do look (Hype pessoal do dono, também de look privado); sem cálculo = NOT_CALCULATED, nunca 0
+            m.put("hype", hypeOf.getOrDefault(id.toString(), Map.of("status", "NOT_CALCULATED")));
             m.put("pieces", items.stream().map(si -> Map.of("id", si.getWardrobeItem().getId(), "name", String.valueOf(si.getWardrobeItem().getName()),
                     "slot", si.getSlot().name(), "imageUrl", String.valueOf(si.getWardrobeItem().getImageUrl()))).toList());
             looks.add(m);
         }
         return Map.of("looks", looks, "module", "island");
+    }
+
+    /** Resumos v2 em lote (mesmo formato dos cards); a ilha só compara looks do próprio dono, então lê o Hype pessoal. */
+    @SuppressWarnings("unchecked")
+    Map<String, Object> islandHype(CurrentUser user, List<UUID> schemeIds) {
+        HypeQueryService q = hype == null ? null : hype.getIfAvailable();
+        if (q == null) {
+            return Map.of();
+        }
+        Object items = q.summaries(user, HypeEntityType.SCHEME, schemeIds).get("items");
+        return items instanceof Map<?, ?> m ? (Map<String, Object>) m : Map.of();
     }
 }

@@ -1,0 +1,189 @@
+// Harness de auditoria (temporário, fora do commit): mede o pipeline atual de roupas exatamente como o provador monta.
+import { readFileSync, writeFileSync } from "node:fs";
+import { it } from "vitest";
+import { parseBodyAsset, type BodyMeta } from "./asset";
+import { compose, fitBody, type Composed } from "./compose";
+import { buildHuman, baseNormals } from "./three-human";
+import { applyIdle, applyRestPose, setArmOut } from "./pose";
+import { SPECS, armOutFor, bodyParam, collarBand, garmentGeometry, necklineH, posedPositions, texturedGeometry, underLayer, type BodyParam, type GarmentGeometry, type GarmentKind, type GarmentSpec, type PhotoInfo } from "./garments";
+import { relaxGarment, foldGarment, smoothBody } from "./garment-relax";
+import { garmentTrims } from "./garment-trims";
+import { DEFAULT_BODY, BODY_KEYS, type BodyParams, type BodySources } from "../body-spec";
+
+const OUT = process.env.AUDIT_OUT!;
+const dir = new URL("../../../public/avatar3d/body/", import.meta.url);
+const meta = JSON.parse(readFileSync(new URL("fai-body-v1.json", dir), "utf-8")) as BodyMeta;
+const bin = readFileSync(new URL("fai-body-v1.bin", dir));
+const asset = parseBodyAsset(meta, bin.buffer.slice(bin.byteOffset, bin.byteOffset + bin.byteLength));
+type Sex = "FEMININO" | "MASCULINO";
+
+function grid(body: Float32Array) {
+  const cell = 0.025; const g = new Map<string, number[]>();
+  const key = (x: number, y: number, z: number) => `${Math.floor(x / cell)},${Math.floor(y / cell)},${Math.floor(z / cell)}`;
+  for (let v = 0; v < body.length / 3; v++) { const k = key(body[v * 3], body[v * 3 + 1], body[v * 3 + 2]); (g.get(k) ?? g.set(k, []).get(k)!).push(v); }
+  return (x: number, y: number, z: number) => {
+    let best = -1, bd = Infinity; const cx = Math.floor(x / cell), cy = Math.floor(y / cell), cz = Math.floor(z / cell);
+    for (let a = -2; a <= 2; a++) for (let b = -2; b <= 2; b++) for (let c = -2; c <= 2; c++) for (const v of g.get(`${cx + a},${cy + b},${cz + c}`) ?? []) {
+      const d = (body[v * 3] - x) ** 2 + (body[v * 3 + 1] - y) ** 2 + (body[v * 3 + 2] - z) ** 2; if (d < bd) { bd = d; best = v; }
+    }
+    return best;
+  };
+}
+/** distância com sinal até a pele (pela normal do vértice mais próximo): negativa = dentro */
+function signedDist(body: Float32Array, normals: Float32Array, near: ReturnType<typeof grid>, x: number, y: number, z: number) {
+  const v = near(x, y, z); if (v < 0) return { d: Infinity, v };
+  return { d: (x - body[v * 3]) * normals[v * 3] + (y - body[v * 3 + 1]) * normals[v * 3 + 1] + (z - body[v * 3 + 2]) * normals[v * 3 + 2], v };
+}
+const pct = (a: number[], q: number) => { if (!a.length) return NaN; const s = [...a].sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(q * (s.length - 1)))]; };
+const mean = (a: number[]) => a.length ? a.reduce((s, x) => s + x, 0) / a.length : NaN;
+const std = (a: number[]) => { const m = mean(a); return Math.sqrt(mean(a.map((x) => (x - m) ** 2))); };
+const mm = (x: number) => Math.round(x * 10000) / 10;   // m → mm, 1 casa
+
+function region(sp: GarmentSpec, P: BodyParam, c: Composed, s: number): string {
+  if (s < 0) return "SKIRT_TUBE";
+  const g = P.group[s], h = P.h[s], x = c.body[s * 3], z = c.body[s * 3 + 2];
+  if (sp.kind === "shoes" || sp.kind === "boots") return g === 4 ? "FOOT" : "SHAFT";
+  const upper = !Number.isNaN(sp.hem);
+  if (upper && g === 2) return P.arm[s] < 0.12 ? "SHOULDER" : P.arm[s] > sp.sleeve - 0.08 && sp.sleeve > 0 ? "CUFF" : "SLEEVE";
+  if (upper && g === 1 && h > necklineH(sp, x, z - P.neckZ) - 0.06) return "COLLAR";
+  if (upper && (g === 1 || g === 3) && h < sp.hem + 0.06 && Number.isNaN(sp.waist)) return "HEM";
+  if (upper && g === 1 && h > 0.85 && Math.abs(x) > 0.07) return "SHOULDER";
+  if (!Number.isNaN(sp.waist) && g === 1 && h > sp.waist - 0.06) return "WAISTBAND";
+  if (g === 3) {
+    const l = P.leg[s];
+    if (sp.leg > 0 && l > sp.leg - 0.06) return "LEG_HEM";
+    if (l < 0.12 && Math.abs(x) < 0.05) return "CROTCH";
+    return l < 0.4 ? "THIGH" : l < 0.6 ? "KNEE" : "LOWER_LEG";
+  }
+  if (g === 1) return h > 0.55 ? (z > P.torsoZ ? "CHEST" : "BACK") : "WAIST_HIP";
+  return "OTHER";
+}
+
+function photo(): PhotoInfo {   // foto retangular sintética (peça sem recortes) para medir a projeção
+  return { width: 1000, height: 1200, box: { x0: 20, y0: 20, x1: 980, y1: 1180 }, widthAt: () => ({ x0: 20, x1: 980 }), collarRow: 0.07 };
+}
+
+function build(sex: Sex, params: BodyParams | null) {
+  const sources = params ? (Object.fromEntries(BODY_KEYS.map((k) => [k, "user"])) as BodySources) : null;
+  const c = compose(asset, fitBody(asset, { sex, params, sources }).z, null, params?.stature ?? DEFAULT_BODY[sex].stature);
+  const h = buildHuman(asset, c, { skin: "#c99a6e" }); const st = applyRestPose(h);
+  return { c, h, st, P: bodyParam(asset, c) };
+}
+
+interface Report { [k: string]: unknown }
+function measure(sex: Sex, params: BodyParams | null, kinds: GarmentKind[], label: string): Report[] {
+  const { c, h, st, P } = build(sex, params);
+  const soft = { ...c, body: smoothBody(asset, c, 12) };
+  const restN = baseNormals(c.body, asset.body.index, asset.body.renderVertex);
+  const near = grid(c.body);
+  setArmOut(h, st, armOutFor(kinds.map((k) => SPECS[k]))); applyIdle(h, st, 0, 0);
+  const bodyPosed = posedPositions(h.skeleton, h.body.bindMatrix, c.body, asset.body.skinIndex, Float32Array.from(asset.body.skinWeight, (w) => w / 255));
+  const posedN = baseNormals(bodyPosed, asset.body.index, asset.body.renderVertex); const nearP = grid(bodyPosed);
+  const below: GarmentSpec[] = []; const out: Report[] = [];
+  for (const k of kinds) {
+    const sp = SPECS[k]; const shoe = k === "shoes" || k === "boots"; const cc = shoe ? c : soft;
+    const t0 = performance.now();
+    const under = below.length ? underLayer(cc, P, below) : null;
+    const gg0 = garmentGeometry(asset, cc, h.rest.normals, P, sp, under); below.push(sp);
+    if (!gg0) { out.push({ label, sex, kind: k, error: "molde vazio" }); continue; }
+    const mold = gg0.position.slice();
+    relaxGarment(gg0, cc, h.rest.normals, P, under); foldGarment(gg0, cc, h.rest.normals, P);
+    const trims = shoe ? [] : garmentTrims(asset, cc, P, gg0); const cb = shoe ? null : collarBand(asset, cc, P, sp, under);
+    const buildMs = performance.now() - t0;
+    const gg: GarmentGeometry = gg0; const n = gg.position.length / 3;
+    // ---- folga e interseção em repouso, contra o corpo REAL (não o suavizado)
+    const byRegion = new Map<string, number[]>(); let inside = 0, cnt = 0; const insideByRegion = new Map<string, number>();
+    for (let i = 0; i < n; i++) {
+      if (gg.alpha[i] < 0.5) continue; cnt++;
+      const { d } = signedDist(c.body, restN, near, gg.position[i * 3], gg.position[i * 3 + 1], gg.position[i * 3 + 2]);
+      const r = region(sp, P, c, gg.source[i]);
+      (byRegion.get(r) ?? byRegion.set(r, []).get(r)!).push(d);
+      if (d < -0.002) { inside++; insideByRegion.set(r, (insideByRegion.get(r) ?? 0) + 1); }
+    }
+    const regions: Record<string, unknown> = {};
+    for (const [r, ds] of byRegion) regions[r] = { n: ds.length, meanMm: mm(mean(ds)), stdMm: mm(std(ds)), p5Mm: mm(pct(ds, 0.05)), p95Mm: mm(pct(ds, 0.95)), floatingPct: Math.round(1000 * ds.filter((d) => d > 0.03).length / ds.length) / 10, insidePct: Math.round(1000 * (insideByRegion.get(r) ?? 0) / ds.length) / 10 };
+    // ---- interseção na pose de exibição (braços abertos), como o provador mostra
+    const gp = posedPositions(h.skeleton, h.body.bindMatrix, gg.position, gg.skinIndex, gg.skinWeight);
+    let insP = 0, cntP = 0;
+    for (let i = 0; i < n; i++) { if (gg.alpha[i] < 0.5) continue; cntP++; if (signedDist(bodyPosed, posedN, nearP, gp[i * 3], gp[i * 3 + 1], gp[i * 3 + 2]).d < -0.002) insP++; }
+    // ---- deformação do molde: arestas da peça × arestas da pele de origem
+    const ratios: number[] = []; const relaxShift: number[] = [];
+    for (let t = 0; t < gg.index.length; t += 3) for (let e = 0; e < 3; e++) {
+      const a = gg.index[t + e], b = gg.index[t + (e + 1) % 3]; const sa = gg.source[a], sb = gg.source[b]; if (sa < 0 || sb < 0) continue;
+      const lg = Math.hypot(gg.position[a * 3] - gg.position[b * 3], gg.position[a * 3 + 1] - gg.position[b * 3 + 1], gg.position[a * 3 + 2] - gg.position[b * 3 + 2]);
+      const lb = Math.hypot(c.body[sa * 3] - c.body[sb * 3], c.body[sa * 3 + 1] - c.body[sb * 3 + 1], c.body[sa * 3 + 2] - c.body[sb * 3 + 2]);
+      if (lb > 1e-5) ratios.push(lg / lb);
+    }
+    for (let i = 0; i < n; i++) relaxShift.push(Math.hypot(gg.position[i * 3] - mold[i * 3], gg.position[i * 3 + 1] - mold[i * 3 + 1], gg.position[i * 3 + 2] - mold[i * 3 + 2]));
+    // ---- gola: borda do decote × pescoço
+    let collar: Record<string, unknown> | null = null;
+    if (!Number.isNaN(sp.hem) && !shoe) {
+      const edges = new Map<string, number>();
+      for (let t = 0; t < gg.index.length; t += 3) for (let e = 0; e < 3; e++) { const a = gg.index[t + e], b = gg.index[t + (e + 1) % 3]; const key = a < b ? `${a}_${b}` : `${b}_${a}`; edges.set(key, (edges.get(key) ?? 0) + 1); }
+      const border = new Set<number>(); for (const [key, k2] of edges) if (k2 === 1) for (const v of key.split("_").map(Number)) border.add(v);
+      const loop = [...border].filter((v) => { const s = gg.source[v]; return s >= 0 && P.group[s] === 1 && P.h[s] > 0.8; });
+      if (loop.length > 8) {
+        const gaps: number[] = []; let cx = 0, cz = 0; const radii: number[] = [];
+        for (const v of loop) {
+          const x = gg.position[v * 3], y = gg.position[v * 3 + 1], z = gg.position[v * 3 + 2]; cx += x; cz += z - P.neckZ;
+          const { d } = signedDist(c.body, restN, near, x, y, z); gaps.push(d); radii.push(Math.hypot(x, z - P.neckZ));
+        }
+        cx /= loop.length; cz /= loop.length;
+        let bandMin = Infinity; const bandGaps: number[] = [];
+        if (cb) for (let i = 0; i < cb.position.length / 3; i++) {
+          const ring = Math.floor(i / 72); if (ring < 2) continue;   // anéis internos (2 e 3)
+          const { d } = signedDist(c.body, restN, near, cb.position[i * 3], cb.position[i * 3 + 1], cb.position[i * 3 + 2]); bandGaps.push(d); bandMin = Math.min(bandMin, d);
+        }
+        const target = 0.005;
+        collar = {
+          loopVertices: loop.length, gapMeanMm: mm(mean(gaps)), gapMinMm: mm(Math.min(...gaps)), gapMaxMm: mm(Math.max(...gaps)), gapStdMm: mm(std(gaps)),
+          collarFitErrorMm: mm(mean(gaps.map((g) => Math.abs(g - target)))), centerOffsetXmm: mm(cx), centerOffsetZmm: mm(cz),
+          circularity: Math.round(1000 * std(radii) / mean(radii)) / 1000,
+          bandInnerMinMm: cb ? mm(bandMin) : null, bandInnerMeanMm: cb ? mm(mean(bandGaps)) : null,
+          verdict: { centered: Math.abs(cx) < 0.004, intersection: Math.min(...gaps) < -0.001 || (cb ? bandMin < -0.001 : false), clearanceOk: mean(gaps) > 0.002 && mean(gaps) < 0.008 },
+        };
+      }
+    }
+    // ---- estampa: projeção frontal da foto (distorção de área por triângulo)
+    let uv: Record<string, unknown> | null = null;
+    if (!shoe) {
+      const geo = texturedGeometry(gg, gp, photo(), sp.sleeve > 0 ? (v) => gg.source[v] >= 0 && P.group[gg.source[v]] === 2 : undefined);
+      const pos = geo.getAttribute("position"), uva = geo.getAttribute("uv"), idx = geo.getIndex()!;
+      const r: number[] = [];
+      for (let t = 0; t < idx.count; t += 3) {
+        const a = idx.getX(t), b = idx.getX(t + 1), d = idx.getX(t + 2);
+        if (uva.getX(a) < 0.01 && uva.getY(a) > 0.99) continue;                       // canto liso (costas/laterais)
+        const ab = [pos.getX(b) - pos.getX(a), pos.getY(b) - pos.getY(a), pos.getZ(b) - pos.getZ(a)], ad = [pos.getX(d) - pos.getX(a), pos.getY(d) - pos.getY(a), pos.getZ(d) - pos.getZ(a)];
+        const A3 = Math.hypot(ab[1] * ad[2] - ab[2] * ad[1], ab[2] * ad[0] - ab[0] * ad[2], ab[0] * ad[1] - ab[1] * ad[0]) / 2;
+        const A2 = Math.abs((uva.getX(b) - uva.getX(a)) * (uva.getY(d) - uva.getY(a)) - (uva.getY(b) - uva.getY(a)) * (uva.getX(d) - uva.getX(a))) / 2;
+        if (A3 > 1e-9 && A2 > 1e-12) r.push(A3 / A2);
+      }
+      const med = pct(r, 0.5); const lr = r.map((x) => Math.abs(Math.log2(x / med)));
+      uv = { printedTriangles: r.length, uvDistortionP95: Math.round(100 * pct(lr, 0.95)) / 100, stretchedOver2xPct: Math.round(1000 * r.filter((x) => x / med > 2).length / Math.max(1, r.length)) / 10, compressedUnderHalfPct: Math.round(1000 * r.filter((x) => x / med < 0.5).length / Math.max(1, r.length)) / 10 };
+    }
+    out.push({
+      label, sex, kind: k, layer: sp.layer, vertices: n, triangles: gg.index.length / 3, trims: trims.length, collarBand: !!cb, buildMs: Math.round(buildMs),
+      intersectionRestPct: Math.round(1000 * inside / Math.max(1, cnt)) / 10, intersectionDisplayPosePct: Math.round(1000 * insP / Math.max(1, cntP)) / 10,
+      edgeStretchOver10Pct: Math.round(1000 * ratios.filter((x) => x > 1.1).length / ratios.length) / 10, edgeCompressUnder10Pct: Math.round(1000 * ratios.filter((x) => x < 0.9).length / ratios.length) / 10,
+      edgeRatioP95: Math.round(100 * pct(ratios, 0.95)) / 100, relaxShiftP95Mm: mm(pct(relaxShift, 0.95)),
+      regions, collar, uv,
+    });
+  }
+  return out;
+}
+
+it("auditoria do pipeline de roupas", () => {
+  const all: Report[] = [];
+  const looks: [string, GarmentKind[]][] = [["camiseta+calca+tenis", ["pants", "tee", "shoes"]], ["manga_longa", ["longsleeve"]], ["camisa", ["shirt"]], ["moletom", ["hoodie"]], ["jaqueta_sobre_camiseta", ["tee", "jacket"]], ["vestido", ["dress"]], ["saia+blusa", ["skirt", "tee"]], ["shorts", ["shorts"]], ["regata", ["tank"]]];
+  for (const sex of ["FEMININO", "MASCULINO"] as Sex[]) for (const [l, ks] of looks) all.push(...measure(sex, null, ks, l));
+  // corpos extremos (dentro do espaço de corpos do modelo)
+  const ext: [string, (p: BodyParams) => BodyParams][] = [
+    ["ombros_estreitos", (p) => ({ ...p, shoulderW: p.shoulderW * 0.88 })], ["ombros_largos", (p) => ({ ...p, shoulderW: p.shoulderW * 1.12 })],
+    ["peito_menor", (p) => ({ ...p, chestW: p.chestW * 0.88 })], ["peito_maior", (p) => ({ ...p, chestW: p.chestW * 1.15 })],
+    ["compleicao_magra", (p) => ({ ...p, build: -1 })], ["compleicao_forte", (p) => ({ ...p, build: 1 })],
+    ["torso_curto", (p) => ({ ...p, legLen: p.legLen * 1.06 })], ["torso_longo", (p) => ({ ...p, legLen: p.legLen * 0.94 })],
+    ["bracos_curtos", (p) => ({ ...p, armLen: p.armLen * 0.92 })], ["bracos_longos", (p) => ({ ...p, armLen: p.armLen * 1.08 })],
+  ];
+  for (const sex of ["FEMININO", "MASCULINO"] as Sex[]) for (const [l, f] of ext) all.push(...measure(sex, f(DEFAULT_BODY[sex]), ["pants", "tee"], "extremo:" + l));
+  writeFileSync(OUT, JSON.stringify(all, null, 1));
+}, 600000);

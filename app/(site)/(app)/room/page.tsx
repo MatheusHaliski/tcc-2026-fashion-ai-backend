@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api, mediaUrl } from "@/lib/api/client";
@@ -15,9 +15,12 @@ import { useDetailModal } from "@/components/detail-modal";
 import type { MirrorOverlay, RoomData3D } from "@/components/room3d/room-scene";
 import { feel, fabricOf } from "@/lib/sensory";
 import { newCanvas, saveCanvas } from "@/lib/export/canvas";
+import { mirrorPieces as lookOf, useMirrorAvatar, type MirrorPiece } from "@/components/mirror/mirror-stage";
 
 // three.js só no navegador (RF32 · cena 3D); o SSR recebe um marcador leve
 const RoomScene = dynamic(() => import("@/components/room3d/room-scene"), { ssr: false, loading: () => <div className="room3d-loading">{tr("room.montando_o_quarto_em_3d")}</div> });
+// Prévia 2D (PROV-2D): o mesmo Avatar 3D do espelho, parado e de frente, como imagem (reflexo no vidro e no Vista-me)
+const AvatarStill = dynamic(() => import("@/components/three/avatar-still"), { ssr: false, loading: () => <Skeleton className="h-full w-full" /> });
 /** RF32.CA08 — sem WebGL (ou aparelho muito fraco) o quarto abre em 2.5D com as mesmas interações. */
 function webglOk(): boolean {
   if (typeof window === "undefined") return false;
@@ -60,6 +63,12 @@ function RoomInner() {
   const [tag, setTag] = useState<PieceTag | null>(null); const [keysOpen, setKeysOpen] = useState(false); const [guest, setGuest] = useState("");
   const [photo, setPhoto] = useState<{ framing: Framing; filter: PhotoFilter; dof: boolean } | null>(null); const [shooting, setShooting] = useState(false);
   const [unboxing, setUnboxing] = useState(false); const [addTo, setAddTo] = useState<string | null>(null); const [addPiece, setAddPiece] = useState("");
+  // reflexo do espelho 3D e prévia do Vista-me: o mesmo avatar (perfil, espelho, provador) vestindo o look do espelho
+  const me3d = useMirrorAvatar(); const [reflection, setReflection] = useState<string | null>(null);
+  const slotsOf = (m?: MirrorState | null) => (m?.slots ?? {}) as unknown as Record<string, MirrorPiece | MirrorPiece[] | null>;
+  const mirrorLook = useMemo(() => lookOf(slotsOf(mirror.data)), [mirror.data?.slots]); // eslint-disable-line react-hooks/exhaustive-deps
+  const vistaLook = useMemo(() => (vista.result ? lookOf(slotsOf(vista.result)) : []), [vista.result]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { setReflection(null); }, [mirrorLook, me3d.avatar]);
   // Luzes do closet: um marco novo do Inventory Score acende uma luz e faz a animação de conquista no espelho
   useEffect(() => {
     const cl = (data as unknown as RoomData3D | null)?.closetLights; if (!cl) return;
@@ -189,11 +198,14 @@ function RoomInner() {
             <RoomScene data={data as unknown as RoomData3D} open={openSet} highlight={highlight} focusModule={focusModule} onReady={setCanvas}
               onToggle={(id) => { if (!openSet.has(id)) touch(id); setOpenSet((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); setFocusModule(id); }}
               onPick={openTag} lit={lit} dark={dark} onToggleTheme={toggleTheme}
-              mirror={{ pieces: mirrorPieces(mirror.data).map((p) => ({ id: p.id, imageUrl: p.imageUrl ?? p.thumbnailUrl })), postIt: mirror.data?.postIt, closingKey, celebrate,
+              mirror={{ pieces: mirrorPieces(mirror.data).map((p) => ({ id: p.id, imageUrl: p.imageUrl ?? p.thumbnailUrl })), postIt: mirror.data?.postIt, closingKey, celebrate, reflectionUrl: reflection,
                 onUse: acceptLook, onAnother: () => runVistaMe("/api/me/mirror/another"), onTakeOneOff: () => act(async () => mirror.setData(await api.post<MirrorState>("/api/me/mirror/take-one-off"))) } satisfies MirrorOverlay}
               onVistaMe={() => setVista((v) => ({ ...v, open: true }))} onCopilot={() => setCopilot((c) => ({ ...c, open: true }))} copilotPoint={copilot.point} copilotTalking={copilot.busy || copilot.open}
               onKeys={() => setKeysOpen(true)} onUnbox={unbox} unboxing={unboxing} onAddToDrawer={(m) => { setAddTo(m); setAddPiece(""); }} />
             {photo?.dof && <div className="room3d-dof" aria-hidden />}
+            {!me3d.loading && mirror.data && (me3d.avatar || mirrorLook.length > 0) && (
+              <AvatarStill hidden avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={mirrorLook} background="#c9d2d8" onStill={setReflection} />
+            )}
             <p className="room3d-hint">{t("room.arraste_para_girar_enquadramento_3")}</p>
           </div>
           <nav className="room3d-positions" aria-label={t("room.posicoes_do_quarto")}>
@@ -252,11 +264,16 @@ function RoomInner() {
           : <Button variant="primary" loading={vista.busy} onClick={() => runVistaMe()}>{t("room.montar_look")}</Button>}>
         <Field label={t("room.o_que_voce_vai_fazer")} id="vm-prompt"><Input id="vm-prompt" value={vista.prompt} placeholder={t("room.reuniao_as_10h_e_jantar")} onChange={(e) => setVista((v) => ({ ...v, prompt: e.target.value }))} /></Field>
         <p className="type-caption text-muted">{t("room.o_vista_me_usa_so")}</p>
-        {vista.result && <>
-          {vista.result.message && <p className="type-body-sm mt-2">{vista.result.message}</p>}
-          <ul className="fai-list mt-2">{(vista.result.sequence ?? []).map((x) => <li key={x.pieceId} className="flex items-center gap-2 type-body-sm"><span className="inline-block h-2 w-2 rounded-full bg-mark" />{x.legend}</li>)}</ul>
-          {vista.result.postIt && <p className="mt-2 rounded bg-chalk-soft p-2 type-caption">📝 {vista.result.postIt}</p>}
-        </>}
+        {vista.result && <div className="mt-2 flex flex-wrap items-start gap-4">
+          {!me3d.loading && <figure className="vista-still shrink-0" aria-label={t("room.previa_do_look")}>
+            <AvatarStill avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={vistaLook} background="#EEEAE2" alt={t("mirror.previa_2d_alt", { n: vistaLook.length })} />
+          </figure>}
+          <div className="min-w-0 flex-1 basis-56">
+            {vista.result.message && <p className="type-body-sm">{vista.result.message}</p>}
+            <ul className="fai-list mt-2">{(vista.result.sequence ?? []).map((x) => <li key={x.pieceId} className="flex items-center gap-2 type-body-sm"><span className="inline-block h-2 w-2 rounded-full bg-mark" />{x.legend}</li>)}</ul>
+            {vista.result.postIt && <p className="mt-2 rounded bg-chalk-soft p-2 type-caption">📝 {vista.result.postIt}</p>}
+          </div>
+        </div>}
       </Dialog>
       <Dialog open={copilot.open} onClose={() => setCopilot((c) => ({ ...c, open: false, point: null }))} title={t("room.busto_de_costura_copilot")}
         footer={<Button variant="primary" loading={copilot.busy} disabled={!copilot.q.trim()} onClick={askCopilot}>{t("room.perguntar")}</Button>}>

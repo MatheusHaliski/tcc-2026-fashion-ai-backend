@@ -3,7 +3,7 @@
 -- Gerado a partir de docs/taxonomia/proposta/taxonomia_variacoes.json. MySQL 8.0+/9.x, InnoDB, utf8mb4.
 -- Categorias/subcategorias reaproveitam os códigos existentes (lower_snake_case) como chave natural: wardrobe_items.subcategory
 -- e catalog_products.subcategory já guardam exatamente esses códigos, então nada é renomeado.
--- Na migration real (V39+): mesmas tabelas, sem DROP; o bloco final (colunas em wardrobe_items/catalog_products) entra em V40+.
+-- Na migration real (V44+): mesmas tabelas, sem DROP; o bloco final (colunas em wardrobe_items/catalog_products) entra em V45+.
 -- ============================================================================================================
 SET NAMES utf8mb4;
 
@@ -6535,7 +6535,7 @@ INSERT INTO attribute_applicability (dimension_code, value_code, subcategory_cod
   ('WATCH_STRAP', '*', 'watch');
 
 
--- ───────────── V40+ (NÃO executar neste rascunho: depende das tabelas reais) — só aditivo, tudo NULL
+-- ───────────── V45+ (NÃO executar neste rascunho: depende das tabelas reais) — só aditivo, tudo NULL
 -- ALTER TABLE wardrobe_items   ADD COLUMN variation_code VARCHAR(60) NULL AFTER subcategory,
 --                              ADD COLUMN variation_source VARCHAR(20) NULL AFTER variation_code,
 --                              ADD COLUMN variation_confidence DECIMAL(4,3) NULL AFTER variation_source,

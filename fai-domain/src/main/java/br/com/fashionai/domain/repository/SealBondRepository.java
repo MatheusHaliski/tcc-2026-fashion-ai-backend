@@ -38,4 +38,10 @@ public interface SealBondRepository extends JpaRepository<SealBond, UUID> {
     long countByTargetOwnerIdAndStatus(UUID targetOwnerId, SealBondStatus status);
 
     long countByTargetOwnerId(UUID targetOwnerId);
+
+    /** RF53 — vínculos de vários selos num estado ("Hype do selo": média do Hype dos itens com vínculo aprovado). */
+    List<SealBond> findBySealIdInAndStatus(Collection<UUID> sealIds, SealBondStatus status);
+
+    /** RF53 — vínculos de vários looks num estado (selos de marca/celebridade das peças, em lote). */
+    List<SealBond> findBySchemeIdInAndStatus(Collection<UUID> schemeIds, SealBondStatus status);
 }

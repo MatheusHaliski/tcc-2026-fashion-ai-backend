@@ -26,7 +26,8 @@ public final class Msg {
     /** Marcador de texto adiado: {@code §i18n:chave\u001Farg1\u001Farg2§} — resolvido na serialização JSON (I18nJsonModule) no idioma de quem lê. */
     public static final String MARK = "§i18n:";
     private static final char SEP = '\u001F';
-    private static final Pattern MARK_RE = Pattern.compile("§i18n:([A-Za-z0-9_.\\-]+)((?:\u001F[^§]*)*)§");
+    /** Corpo de um marcador (entre {@code §i18n:} e o {@code §} que o fecha): chave e, opcionalmente, argumentos. */
+    private static final Pattern BODY_RE = Pattern.compile("([A-Za-z0-9_.\\-]+)((?:\u001F[^§]*)*)");
     private static final ResourceBundle.Control NO_FALLBACK = ResourceBundle.Control.getNoFallbackControl(ResourceBundle.Control.FORMAT_PROPERTIES);
 
     private Msg() {
@@ -82,8 +83,19 @@ public final class Msg {
      */
     public static String k(String key, Object... args) {
         StringBuilder sb = new StringBuilder(MARK).append(key);
-        if (args != null) for (Object a : args) sb.append(SEP).append(a == null ? "" : String.valueOf(a).replace(SEP, ' '));   // um marcador pode ser argumento de outro
+        if (args != null) for (Object a : args) sb.append(SEP).append(arg(a));
         return sb.append('§').toString();
+    }
+
+    /**
+     * Argumento de um marcador. Outro marcador entra inteiro, com os separadores dele: o {@link #resolve} resolve de dentro
+     * para fora, então os argumentos do marcador de dentro nunca se misturam com os do de fora (antes o separador virava
+     * espaço e o marcador de dentro se perdia). Em texto comum, o separador vira espaço para não quebrar o marcador.
+     */
+    private static String arg(Object a) {
+        if (a == null) return "";
+        String s = String.valueOf(a);
+        return hasMark(s) ? s : s.replace(SEP, ' ');
     }
 
     public static boolean hasMark(String s) {
@@ -93,23 +105,27 @@ public final class Msg {
     /** Troca todos os marcadores de um texto pelo texto no idioma pedido (texto sem marcador volta igual). */
     public static String resolve(Locale locale, String s) {
         if (!hasMark(s)) return s;
-        String cur = s;
-        for (int pass = 0; pass < 4 && hasMark(cur); pass++) {   // marcadores aninhados (argumento de outro) resolvem de dentro para fora
-            Matcher m = MARK_RE.matcher(cur);
-            StringBuilder out = new StringBuilder();
-            boolean any = false;
-            while (m.find()) {
-                any = true;
-                String key = m.group(1);
+        StringBuilder cur = new StringBuilder(s);
+        // De dentro para fora: o ÚLTIMO marcador aberto nunca tem outro marcador dentro, então o primeiro '§' depois da
+        // abertura é o fechamento dele. Resolvido, o texto entra no lugar e o marcador de fora (se houver) passa a ser o
+        // último aberto — aninhamento em qualquer nível ({@code Msg.k("a", Msg.k("b", x))}), cada um no idioma de quem lê.
+        // Antes um regex casava o de fora até a abertura do de dentro e a resposta saía com "i18n:chave§§".
+        // Marcador malformado (chave inválida ou sem fechamento) fica como está; `from` só diminui, então o laço termina.
+        int from = cur.length();
+        while (from >= 0) {
+            int start = cur.lastIndexOf(MARK, from);
+            if (start < 0) break;
+            int bodyStart = start + MARK.length();
+            int end = cur.indexOf("§", bodyStart);
+            Matcher m = end < 0 ? null : BODY_RE.matcher(cur.substring(bodyStart, end));
+            if (m != null && m.matches()) {
                 String rawArgs = m.group(2);
                 Object[] args = rawArgs == null || rawArgs.isEmpty() ? new Object[0] : rawArgs.substring(1).split(String.valueOf(SEP), -1);
-                m.appendReplacement(out, Matcher.quoteReplacement(t(locale, key, args)));
+                cur.replace(start, end + 1, t(locale, m.group(1), args));
             }
-            m.appendTail(out);
-            if (!any) break;
-            cur = out.toString();
+            from = start - 1;
         }
-        return cur;
+        return cur.toString();
     }
 
     public static String resolve(String s) {

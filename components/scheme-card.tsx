@@ -22,11 +22,13 @@ import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "
 import { HypeAnalyticsDrawer } from "@/components/hype/hype-analytics-drawer";
 import { HypeBadge } from "@/components/hype/hype-badge";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
+import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { hypeViewState } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
 
 
-export interface SealBadge { label: string; premium?: boolean; iconUrl?: string | null; tier?: string; owner?: string; name?: string | null; design?: SealDesign | null; linkedPieceIds?: string[]; kind?: "BRAND" | "CELEBRITY" | "LOOK"; }
+/** `kind: "HYPE"` = Selo de Hype FashionAI (RF53): automático, derivado do Hype atual — sem emissor nem vínculo. */
+export interface SealBadge { label: string; premium?: boolean; iconUrl?: string | null; tier?: string; owner?: string; name?: string | null; design?: SealDesign | null; linkedPieceIds?: string[]; kind?: "BRAND" | "CELEBRITY" | "LOOK" | "HYPE"; }
 /** Converte o "badge" que a API devolve nos vínculos aprovados (tier, owner, premium, name, iconUrl, design) em SealBadge. */
 export function toSealBadges(list?: { tier: string; owner: string; premium: boolean; name?: string | null; iconUrl?: string | null; design?: SealDesign | null; linkedPieceIds?: string[] }[] | null): SealBadge[] {
   return (list ?? []).map((b) => ({ label: b.tier === "PECA" ? tr("schemeCard.peca") : "LOOK", premium: b.premium, owner: b.owner, tier: b.tier, name: b.name ?? null, iconUrl: b.iconUrl ?? null, design: b.design ?? null, linkedPieceIds: b.linkedPieceIds ?? [], kind: b.premium ? "CELEBRITY" : "BRAND" }));
@@ -41,20 +43,20 @@ export function SealSlot({ seals, size, inline, px }: { seals?: SealBadge[]; siz
     <span className={`seal-slot ${inline ? "inline" : ""} ${list.length > 1 ? "many" : ""}`} role="img" aria-label={t("schemeCard.selos", { join: list.map((s) => s.name ?? s.label).join(", ") })}>
       {list.map((s, i) => {
         const title = `${s.name ?? s.label}${s.owner ? ` · @${s.owner}` : ""}${s.tier ? ` · ${s.tier}` : ""}`;
-        if (s.design) return <SealMedallion key={i} design={s.design} size={dim} premium={s.premium} title={title} />;
+        if (s.design) return <SealMedallion key={i} design={s.design} size={dim} premium={s.premium} title={title} className={s.kind === "HYPE" ? "is-hype" : undefined} />;
         return <span key={i} className={`seal-medallion relative ${s.premium ? "premium" : ""}`} title={title}>{s.iconUrl ? <img src={mediaUrl(s.iconUrl)} alt="" /> : s.label.replace(/[^A-Za-z0-9]/g, "").slice(0, 3).toUpperCase() || "FAI"}</span>;
       })}
     </span>
   );
 }
 
-/** Blocos: selos como placas redondas 1×1 nas cores de sistema — verde marca, vermelho celebridade, amarelo look. */
+/** Blocos: selos como placas redondas 1×1 nas cores de sistema — verde marca, vermelho celebridade, amarelo look, laranja Hype. */
 export function SealStuds({ seals }: { seals: SealBadge[] }) {
   const { t } = useI18n();
-  const color = (s: SealBadge) => (s.kind === "CELEBRITY" || s.premium ? "#C8102E" : s.tier === "LOOK" && !s.owner ? "#F2C200" : "#237841");
+  const color = (s: SealBadge) => (s.kind === "HYPE" ? "#F58220" : s.kind === "CELEBRITY" || s.premium ? "#C8102E" : s.tier === "LOOK" && !s.owner ? "#F2C200" : "#237841");
   return (
     <div className="seal-studs" aria-label={t("schemeCard.selos_2", { sealsCount: seals.length })}>
-      {seals.length === 0 ? <span className="seal-stud empty" aria-hidden title={t("schemeCard.espaco_reservado_para_selo")} /> : seals.slice(0, 4).map((s, i) => <span key={i} className="seal-stud" style={{ ["--stud" as string]: color(s) }} title={`${s.name ?? s.label}${s.owner ? ` · @${s.owner}` : ""}`}>{s.design ? <SealMedallion design={s.design} size={30} premium={s.premium} /> : null}</span>)}
+      {seals.length === 0 ? <span className="seal-stud empty" aria-hidden title={t("schemeCard.espaco_reservado_para_selo")} /> : seals.slice(0, 4).map((s, i) => <span key={i} className="seal-stud" style={{ ["--stud" as string]: color(s) }} title={`${s.name ?? s.label}${s.owner ? ` · @${s.owner}` : ""}`}>{s.design ? <SealMedallion design={s.design} size={30} premium={s.premium} className={s.kind === "HYPE" ? "is-hype" : undefined} /> : null}</span>)}
       <span className="seal-stud-tile">{t("schemeCard.selo", { sealsCount: seals.length })}</span>
     </div>
   );
@@ -206,6 +208,8 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const placement = sealPlacement(anatomy === "LISTA_VERTICAL" && l !== "lista" ? (l === "grade" ? "GRADE_PECAS" : "HERO_LISTA") : anatomy);
   const badges: SealBadge[] = seals ?? (scheme.sealBadges?.length ? toSealBadges(scheme.sealBadges) : (scheme.seals ?? []).filter((x) => /^[A-Z0-9_]+:/.test(x)).map((x) => ({ label: x.split(":")[1] ?? x })));
   const pieceSeals = (id?: string) => (id ? badges.filter((b) => b.tier === "PECA" && (b.linkedPieceIds ?? []).includes(id)) : []);
+  // RF53: os Selos de Hype do look (do resumo de Hype já carregado) entram no mesmo espaço dos selos de marca, no máx. 2
+  const lookSeals = withHypeSeals(badges, hypeSealCodes(hype.summary)) ?? badges;
   // Arte do Background Studio fica no palco do card, atrás do container (passe-partout) — nunca sobre a foto do conjunto.
   const studio = studioOf(scheme.background);
   const art = ownArt ? null : resolveCardArt(scheme.background, { season: scheme.season });
@@ -224,7 +228,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const titleText = preview ? <span>{scheme.title}</span> : <Link href={link} onClick={openModal} className="c-link">{scheme.title}</Link>;
   const priceLine = (
     <p className="c-priceline">
-      {placement.zone === "TITLE_ROW" && <SealSlot inline px={28} seals={badges} />}
+      {placement.zone === "TITLE_ROW" && <SealSlot inline px={28} seals={lookSeals} />}
       <span className="c-total tabular">{total != null ? fmtMoney(total, "BRL") : t("anatomy.noPrice")}</span>
       {!preview && <HypeBadge state={hypeState} summary={hype.summary} className="c-hype" />}
       {flippable && <CardFlipButton side="front" className="c-flip" />}
@@ -262,7 +266,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
           </div>
         ) : (
           <div className="scheme-container" data-anatomy={anatomy} data-piece-anatomy={pieceAnatomy} style={boxTone} data-label={scheme.origin === "AUTOPILOTO" ? t("schemeCard.madeByAutopilot") : scheme.creationMode === "AI_ASSISTED" ? t("schemeCard.madeWithAi") : undefined}>
-            {(placement.zone === "COVER_CORNER" || placement.zone === "HEADER") && <SealSlot seals={badges} />}
+            {(placement.zone === "COVER_CORNER" || placement.zone === "HEADER") && <SealSlot seals={lookSeals} />}
             {ownArt ? (
               <AnatomyBody scheme={scheme} pieces={detailPieces} />
             ) : l === "lateral" && !expanded ? (
@@ -286,8 +290,8 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
                 {pieceSeals(p.id).length > 0 && <SealSlot inline px={22} seals={pieceSeals(p.id)} />}
               </div>
             ))}
-            {placement.zone === "STUDS" && <SealStuds seals={badges} />}
-            {(chips.length > 0 || placement.zone === "META_BLOCK") && <div className="c-chips">{chips.map((c) => <span key={c} className="c-chip">{c}</span>)}{placement.zone === "META_BLOCK" && <SealSlot inline px={28} seals={badges} />}</div>}
+            {placement.zone === "STUDS" && <SealStuds seals={lookSeals} />}
+            {(chips.length > 0 || placement.zone === "META_BLOCK") && <div className="c-chips">{chips.map((c) => <span key={c} className="c-chip">{c}</span>)}{placement.zone === "META_BLOCK" && <SealSlot inline px={28} seals={lookSeals} />}</div>}
           </div>
         )}
       </div>

@@ -5,6 +5,7 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.CopilotService;
+import br.com.fashionai.application.service.LookPreviewService;
 import br.com.fashionai.application.service.SchemeService;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.enums.Visibility;
@@ -19,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -27,10 +29,12 @@ import java.util.UUID;
 public class SchemeController {
     private final SchemeService schemes;
     private final CopilotService copilot;
+    private final LookPreviewService previews;
 
-    public SchemeController(SchemeService schemes, CopilotService copilot) {
+    public SchemeController(SchemeService schemes, CopilotService copilot, LookPreviewService previews) {
         this.schemes = schemes;
         this.copilot = copilot;
+        this.previews = previews;
     }
 
     @GetMapping("/api/schemes/builder")
@@ -47,8 +51,22 @@ public class SchemeController {
     @Operation(summary = "RF5.CA04 — Gerar combinações com IA (ou motor local em fallback)")
     public SchemeService.ComposeResult compose(CurrentUser user, @RequestBody SchemeService.ComposeRequest body) {
         // a orientação livre também vira arte de background, ocasião, estilo, estação e humor (vocabulário do Copilot)
-        return schemes.compose(user, body, AiCapability.SCHEME_COMPOSER)
+        SchemeService.ComposeResult result = schemes.compose(user, body, AiCapability.SCHEME_COMPOSER)
                 .withOrientation(copilot.orientation(body.prompt(), body.style(), body.occasion()));
+        // RF53 (P2-14) — os seis números de cada composição; se a pontuação falhar, as sugestões saem sem eles
+        List<Map<String, Object>> scores;
+        try {
+            scores = previews.compositions(user, result.compositions());
+        } catch (RuntimeException ex) {
+            scores = null;
+        }
+        return result.withScores(scores);
+    }
+
+    @PostMapping("/api/schemes/scores")
+    @Operation(summary = "RF53 — Prévia do look no editor: os seis números (compatibilidade, Hype médio das peças, novidade, reutilização, uso, sustentabilidade) a partir das peças e da ocasião/estilo; nada é gravado e nenhum sinal de Hype é emitido")
+    public Map<String, Object> scores(CurrentUser user, @RequestBody LookPreviewService.PreviewRequest body) {
+        return previews.scores(user, body);
     }
 
     @PostMapping("/api/schemes")
@@ -83,13 +101,16 @@ public class SchemeController {
     }
 
     @GetMapping("/api/me/schemes")
-    @Operation(summary = "RF6 — Meus esquemas (filtros por ocasião e estado)")
+    @Operation(summary = "RF6/RF53 — Meus esquemas: ocasião, estado (favoritos, disponível, indisponível, publicados, rascunhos, arquivados), origem (ia, manual, remix), ordenação (recent, hype_desc, hype_asc, growth) e faixa mínima de Hype (hypeLevel = NICHE, RELEVANT, HOT, TRENDING, VIRAL)")
     public Views.Page<Views.SchemeView> mine(CurrentUser user,
                                             @RequestParam(required = false) String occasion,
                                             @RequestParam(required = false) String state,
+                                            @RequestParam(required = false) String kind,
+                                            @RequestParam(required = false) String sort,
+                                            @RequestParam(required = false) String hypeLevel,
                                             @RequestParam(defaultValue = "0") int page,
                                             @RequestParam(defaultValue = "20") int size) {
-        return schemes.mine(user, occasion, state, page, size);
+        return schemes.mine(user, occasion, state, kind, sort, hypeLevel, page, size);
     }
 
     @PutMapping("/api/schemes/{id}")

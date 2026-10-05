@@ -2,7 +2,7 @@
 
 > 05/10/2026 · RF47 (Acervo & Busca Catalogada). Transforma cada foto oficial (marca, loja oficial, página oficial do
 > produto) numa foto de catálogo consistente e **validada por métricas automáticas**, ou a recusa com motivo.
-> Código: `fai-application/.../catalog/image/` · Registro: `catalog/semantic-regions.json` · Migração: `V38`.
+> Código: `fai-application/.../catalog/image/` · Registro: `catalog/semantic-regions.json` · Migração: `V43`.
 
 ## 1. Decisão de licenciamento: dois níveis
 
@@ -118,7 +118,7 @@ aprovada, não há canônica e o card segue com a foto principal inteira. Escolh
 `GET /api/catalog/products/{id}` lista cada foto como CatalogProductImage (viewType, qualityScore, sourceUrl,
 processedUrl, viewRole, canonical).
 
-## 10. Modelo de dados (V38, sem duplicar estrutura)
+## 10. Modelo de dados (V43, sem duplicar estrutura)
 
 `catalog_images` + `width, height, mime, source_sha256, phash, processing_status, pipeline_version, quality_score,
 gate_reasons, view_role, is_canonical, review_status, crop_json, metrics_json, assets_json, attempts, processed_at`.
@@ -176,7 +176,7 @@ A canônica também alimenta a peça criada do catálogo (`from-catalog`) e, por
 ## 16. Plano incremental
 
 1. ✅ Núcleo puro + registro + estratégias + gate + ranker + testes.
-2. ✅ V38, worker desligado por padrão, endpoints admin, card 4:5 com recorte, fix de SSRF.
+2. ✅ V43, worker desligado por padrão, endpoints admin, card 4:5 com recorte, fix de SSRF.
 3. Importar o acervo no MySQL do Railway; ligar `CATALOG_IMAGE_PIPELINE_ENABLED` em homologação; acompanhar o painel.
 4. Calibrar limiares com uma amostra real rotulada (100 fotos por piece_type) e versionar como V3 se mudar o veredito.
 5. Fixtures reais de marcas parceiras (nível B) quando houver contrato de persistência.

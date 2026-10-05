@@ -18,6 +18,7 @@ import { CardHeader } from "@/components/card-header";
 import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "@/components/fashion-card";
 import { HypeBadge } from "@/components/hype/hype-badge";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
+import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { hypeViewState } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
 
@@ -35,14 +36,14 @@ export function pieceCardImage(piece: PieceView): { src?: string; srcSet?: strin
 /**
  * Card de peça no feed e nas grades (leitura rápida, como um post): (1) cabeçalho compacto com quem publicou — e
  * visibilidade só quando é informação útil (peça privada ou só para seguidores, vista pelo dono); (2) a foto de produto
- * dominando o card; (3) as ações sociais numa linha, cada uma com a sua contagem; (4) nome e marca — preço só quando a
- * peça está à venda. Categoria, material, tamanho, ocasião, estilo, usos, processamento e os controles do dono ficam no
- * detalhe da peça: o card convida a abrir, o detalhe permite investigar.
+ * dominando o card; (3) as ações sociais numa linha, cada uma com a sua contagem; (4) nome, marca, até duas tags de estilo
+ * (as "tags essenciais") e o Hype compacto — preço só quando a peça está à venda. Categoria, material, tamanho, ocasião,
+ * usos, processamento e os controles do dono ficam no detalhe da peça: o card convida a abrir, o detalhe permite investigar.
  *
  * Camadas (RF11): superfície externa (o article) → área artística visível nas quatro laterais ({@link ArtStage}) →
  * container com o conteúdo acima → área da peça com fundo próprio. A arte é decorativa: não recebe clique nem foco.
  */
-export function PieceCard({ piece, href, selectable, selected, onSelect, seals, anatomy, extra, flip = true }: {
+export function PieceCard({ piece, href, selectable, selected, onSelect, seals: brandSeals, anatomy, extra, flip = true }: {
   piece: PieceView; href?: string; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void; seals?: SealBadge[]; anatomy?: string | null;
   /** legendas e ações extras da lista — renderizadas DENTRO do card (nunca soltas abaixo dele) */
   extra?: ReactNode;
@@ -55,6 +56,8 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals, 
   const flippable = flip && !preview && !selectable;
   const hype = useHypeSummary("PIECE", piece.id, !preview && !selectable);
   const hypeState = hypeViewState(hype.summary, hype);
+  // RF53: selos de marca/celebridade + Selos de Hype (do resumo já carregado, sem pedido extra), no máx. 2 de Hype
+  const seals = withHypeSeals(brandSeals, hypeSealCodes(hype.summary));
   const openModal = (e: React.MouseEvent) => { if (!detail || href || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); detail.openPiece(piece.id); };
   // Seção C: a posição do selo segue a anatomia da peça (padrão: "Categoria · marca · sexo · selos").
   const zone = pieceSealPlacement(anatomy ?? (piece as { background?: { anatomy?: string } }).background?.anatomy).zone;
@@ -65,6 +68,8 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals, 
   const mine = !!user && piece.owner?.id === user.id;
   const visibility = mine && piece.visibility && piece.visibility !== "PUBLIC" ? (piece.visibility === "FOLLOWERS" ? t("common.followers") : t("common.private")) : null;
   const link = href ?? `/pieces/${piece.id}`;
+  // tags essenciais: no máximo dois estilos, numa linha discreta (a foto continua protagonista)
+  const tags = (piece.style ?? []).filter(Boolean).slice(0, 2).map((s) => label(s)).join(" · ");
   const secondary = piece.brandName
     ? <BrandLogo name={piece.brandName} src={piece.brandLogoUrl} size={18} withName />
     : <span>{label(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>;
@@ -72,11 +77,13 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals, 
     <>
       {img.src ? <img src={img.src} srcSet={img.srcSet} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
       {(zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
-      {(!piece.disponivel || (mine && piece.favorite) || piece.aiGeneratedImage) && (
+      {(!piece.disponivel || piece.forDonation || (mine && piece.favorite) || piece.aiGeneratedImage) && (
         <span className="pc-flags">
           {/* foto recriada por IA: o selo aparece para todos, não só para o dono */}
           {piece.aiGeneratedImage && <span className="pc-flag" title={t("pieceCard.gerada_por_ia")}><span aria-hidden>{t("multiPiece.selo_ia_curto")}</span><span className="sr-only">{t("pieceCard.gerada_por_ia")}</span></span>}
           {!piece.disponivel && <span className="pc-flag">{t("common.unavailable")}</span>}
+          {/* "para doar" é estado público, como "à venda": aparece para todos */}
+          {piece.forDonation && <span className="pc-flag is-donate">{t("common.forDonation")}</span>}
           {mine && piece.favorite && <span className="pc-flag is-fav"><span aria-hidden>★</span><span className="sr-only">{t("pieceCard.favorita")}</span></span>}
         </span>
       )}
@@ -107,6 +114,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals, 
                   {zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}
                 </span>
                 <span className="pc-sub">{secondary}{zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</span>
+                {tags && <span className="pc-tags" title={tags}><span className="sr-only">{t("common.style")}: </span>{tags}</span>}
                 {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{fmtMoney(piece.price, "BRL")}</b></span>}
                 {/* no feed, o espaço do selo só aparece quando há selo (o lugar reservado vazio fica na prévia) */}
                 {zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}

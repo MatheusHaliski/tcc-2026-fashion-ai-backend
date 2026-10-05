@@ -1,3 +1,4 @@
+-- Renumerada para V43: nasceu V38 em paralelo com V38__peca_para_doar (main); o Flyway recusa versões repetidas.
 -- Pipeline de imagens da Busca Catalogada (CATALOG_IMAGE_PIPELINE_V2 · docs/catalogo/PIPELINE_IMAGENS_CATALOGO.md).
 -- Dois níveis (RN47.03): sem permissão de persistência a foto continua só como URL (REFERENCE_ONLY) e aqui ficam só os
 -- metadados da análise — recorte semântico 4:5, região de foco, métricas e veredito —; o card mostra a URL original

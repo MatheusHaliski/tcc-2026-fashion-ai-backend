@@ -1,10 +1,12 @@
 package br.com.fashionai.application.hype;
 
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.events.DomainEvents;
 import br.com.fashionai.application.hype.HypeCalculator.Baseline;
 import br.com.fashionai.application.hype.HypeResult.HypeReason;
 import br.com.fashionai.application.hype.HypeScoreConfig.Dimension;
 import br.com.fashionai.domain.model.HypeDimensions;
+import br.com.fashionai.domain.model.HypeMilestone;
 import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.HypeScoreSnapshot;
 import br.com.fashionai.domain.model.Scheme;
@@ -12,6 +14,8 @@ import br.com.fashionai.domain.model.SchemeItem;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
+import br.com.fashionai.domain.model.enums.HypeLevel;
+import br.com.fashionai.domain.model.enums.HypeMomentum;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
@@ -23,6 +27,7 @@ import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,10 +72,12 @@ public class HypeSnapshotService {
     private final HypeScoreCurrentRepository current;
     private final HypeScoreSnapshotRepository snapshots;
     private final HypeCache cache;
+    /** RF53 · P1-10: marcos de Hype (subida de faixa / emergente) saem como evento depois de gravar o estado. */
+    private final ApplicationEventPublisher events;
 
     public HypeSnapshotService(HypeScoreConfig config, WardrobeItemRepository pieces, SchemeRepository schemes, SchemeItemRepository schemeItems,
                                HypeSignalDailyRepository signals, HypeScoreCurrentRepository current, HypeScoreSnapshotRepository snapshots,
-                               HypeCache cache) {
+                               HypeCache cache, ApplicationEventPublisher events) {
         this.config = config;
         this.calculator = new HypeCalculator(config);
         this.pieces = pieces;
@@ -80,15 +87,63 @@ public class HypeSnapshotService {
         this.current = current;
         this.snapshots = snapshots;
         this.cache = cache;
+        this.events = events;
     }
 
     /** Entrada de uma entidade + metadados que vão para o read model (recortes do ranking, dono, elegibilidade). */
-    record Entry(UUID id, UUID ownerId, HypeInputs inputs, boolean publicEligible, String category, String styles, String occasions) {
+    record Entry(UUID id, UUID ownerId, HypeInputs inputs, boolean publicEligible, String category, String styles, String occasions,
+                 String country, String region, String categories, String subcategories) {
+        /** Forma curta (sem recortes regionais e de subcategoria). */
+        Entry(UUID id, UUID ownerId, HypeInputs inputs, boolean publicEligible, String category, String styles, String occasions) {
+            this(id, ownerId, inputs, publicEligible, category, styles, occasions, null, null, null, null);
+        }
+    }
+
+    /** País (ISO-2, maiúsculo) e região do mundo do dono — a mesma tabela WorldRegions do Painel global. */
+    static String[] place(br.com.fashionai.domain.model.User u) {
+        String country = u == null || u.getCountry() == null || u.getCountry().isBlank() ? null : u.getCountry().trim().toUpperCase(Locale.ROOT);
+        return new String[]{country, country == null ? null : br.com.fashionai.application.taxonomy.WorldRegions.of(country)};
+    }
+
+    static String csvOf(java.util.stream.Stream<String> values, int max) {
+        String joined = values.filter(v -> v != null && !v.isBlank()).distinct().sorted().collect(Collectors.joining(","));
+        if (joined.isEmpty()) {
+            return null;
+        }
+        if (joined.length() <= max) {
+            return joined;
+        }
+        int cut = joined.lastIndexOf(',', max);   // corta numa vírgula: nunca deixa um valor pela metade
+        return cut > 0 ? joined.substring(0, cut) : null;
+    }
+
+    /** Contagens por tipo de sinal da execução corrente (preenchido no início do recálculo, lido no persist). */
+    private final Map<HypeEntityType, Map<UUID, Map<String, Map<String, Object>>>> byType = new java.util.EnumMap<>(HypeEntityType.class);
+
+    /**
+     * Sinais reais de cada entidade por tipo (curtidas, salvos, usos…): eventos na janela atual, na anterior e no
+     * horizonte inteiro. É o que a análise completa mostra ao lado das dimensões — números de verdade, não só o score.
+     */
+    static Map<UUID, Map<String, Map<String, Object>>> signalCounts(List<br.com.fashionai.domain.model.HypeSignalDaily> rows, LocalDate today, int windowDays) {
+        Map<UUID, Map<String, Map<String, Object>>> out = new HashMap<>();
+        for (br.com.fashionai.domain.model.HypeSignalDaily row : rows) {
+            long age = ChronoUnit.DAYS.between(row.getSignalDate(), today);
+            Map<String, Object> c = out.computeIfAbsent(row.getEntityId(), k -> new java.util.TreeMap<>())
+                    .computeIfAbsent(row.getSignalType().name(), k -> new LinkedHashMap<>(Map.of("current", 0L, "previous", 0L, "total", 0L)));
+            long n = row.getEventCount();
+            c.put("total", (Long) c.get("total") + n);
+            if (age >= 0 && age < windowDays) {
+                c.put("current", (Long) c.get("current") + n);
+            } else if (age >= windowDays && age < 2L * windowDays) {
+                c.put("previous", (Long) c.get("previous") + n);
+            }
+        }
+        return out;
     }
 
     @Transactional
     @Scheduled(cron = "${fashionai.hype.cron:0 20 */6 * * *}", zone = "America/Sao_Paulo")
-    public Map<String, Object> recalculate() {
+    public synchronized Map<String, Object> recalculate() {
         Instant now = Instant.now();
         LocalDate today = LocalDate.now(HypeSignalRecorder.ZONE);
         LocalDate since = today.minusDays(config.horizonDays() - 1L);
@@ -97,8 +152,12 @@ public class HypeSnapshotService {
         Map<UUID, List<SchemeItem>> itemsBy = allSchemes.isEmpty() ? Map.of()
                 : schemeItems.findBySchemeIdIn(allSchemes.stream().map(Scheme::getId).toList()).stream()
                 .collect(Collectors.groupingBy(si -> si.getScheme().getId()));
-        Map<UUID, HypeSignalSeries> pieceSeries = HypeSignalSeries.build(signals.findByEntityTypeAndSignalDateGreaterThanEqual(HypeEntityType.PIECE, since), today, config);
-        Map<UUID, HypeSignalSeries> schemeSeries = HypeSignalSeries.build(signals.findByEntityTypeAndSignalDateGreaterThanEqual(HypeEntityType.SCHEME, since), today, config);
+        List<br.com.fashionai.domain.model.HypeSignalDaily> pieceRows = signals.findByEntityTypeAndSignalDateGreaterThanEqual(HypeEntityType.PIECE, since);
+        List<br.com.fashionai.domain.model.HypeSignalDaily> schemeRows = signals.findByEntityTypeAndSignalDateGreaterThanEqual(HypeEntityType.SCHEME, since);
+        Map<UUID, HypeSignalSeries> pieceSeries = HypeSignalSeries.build(pieceRows, today, config);
+        Map<UUID, HypeSignalSeries> schemeSeries = HypeSignalSeries.build(schemeRows, today, config);
+        byType.put(HypeEntityType.PIECE, signalCounts(pieceRows, today, config.windowDays()));
+        byType.put(HypeEntityType.SCHEME, signalCounts(schemeRows, today, config.windowDays()));
 
         List<Entry> pieceEntries = pieceEntries(allPieces, pieceSeries, now);
         Map<UUID, Entry> pieceById = pieceEntries.stream().collect(Collectors.toMap(Entry::id, Function.identity()));
@@ -174,7 +233,9 @@ public class HypeSnapshotService {
             HypeInputs in = new HypeInputs(HypeEntityType.PIECE, s.activity(), s.interactions(), s.views(), s.windows(), lifetime, p.getViewCount(),
                     s.totalEvents(), ageDays(p.getCreatedAt(), now), presence, cohortGrowth, surprise(attributeKeys(p), freq, all.size()), null,
                     limitedEdition(p.getTags()));
-            out.add(new Entry(p.getId(), p.getUser().getId(), in, pub, p.getCategory(), trim(p.getStyleTags()), trim(p.getOccasionTags())));
+            String[] place = place(p.getUser());
+            out.add(new Entry(p.getId(), p.getUser().getId(), in, pub, p.getCategory(), trim(p.getStyleTags()), trim(p.getOccasionTags()),
+                    place[0], place[1], p.getCategory(), p.getSubcategory()));
         }
         return out;
     }
@@ -236,7 +297,11 @@ public class HypeSnapshotService {
             HypeInputs in = new HypeInputs(HypeEntityType.SCHEME, ss.activity(), ss.interactions(), ss.views(), ss.windows(), lifetime, s.getViewCount(),
                     ss.totalEvents(), ageDays(s.getPublishedAt() != null ? s.getPublishedAt() : s.getCreatedAt(), now), presence, null,
                     surprise(keysBy.get(s.getId()), freq, all.size()), influence, limited);
-            out.add(new Entry(s.getId(), s.getUser().getId(), in, publicScheme(s), null, trim(s.getStyle()), trim(s.getOccasion())));
+            String[] place = place(s.getUser());
+            // o look entra nos recortes de categoria/subcategoria das peças que o compõem
+            out.add(new Entry(s.getId(), s.getUser().getId(), in, publicScheme(s), null, trim(s.getStyle()), trim(s.getOccasion()), place[0], place[1],
+                    csvOf(items.stream().map(si -> si.getWardrobeItem().getCategory()), 255),
+                    csvOf(items.stream().map(si -> si.getWardrobeItem().getSubcategory()), 1000)));
         }
         return out;
     }
@@ -270,11 +335,19 @@ public class HypeSnapshotService {
         Instant windowStart = now.minus(config.horizonDays(), ChronoUnit.DAYS);
         List<HypeScoreCurrent> toSave = new ArrayList<>();
         List<HypeScoreSnapshot> toSnap = new ArrayList<>();
+        List<DomainEvents.HypeMilestone> reached = new ArrayList<>();
         Set<UUID> seen = new HashSet<>();
         for (Entry e : entries) {
             HypeResult r = calculator.compute(e.inputs(), base);
             seen.add(e.id());
             HypeScoreCurrent c = existing.getOrDefault(e.id(), new HypeScoreCurrent());
+            // RF53 · P1-10: estado ANTERIOR (antes de sobrescrever) para detectar subida de faixa / emergente
+            boolean hadPrevious = existing.containsKey(e.id());
+            HypeLevel levelBefore = c.getLevel();
+            HypeMomentum momentumBefore = c.getMomentum();
+            for (HypeMilestone.Kind k : milestones(hadPrevious, levelBefore, momentumBefore, r.level(), r.momentum())) {
+                reached.add(new DomainEvents.HypeMilestone(type, e.id(), e.ownerId(), k, r.level(), r.momentum(), r.score(), e.publicEligible()));
+            }
             c.setEntityType(type);
             c.setEntityId(e.id());
             c.setOwnerId(e.ownerId());
@@ -298,8 +371,14 @@ public class HypeSnapshotService {
             c.setCategory(e.category());
             c.setStyles(e.styles());
             c.setOccasions(e.occasions());
+            c.setCountry(e.country());
+            c.setRegion(e.region());
+            c.setCategories(e.categories());
+            c.setSubcategories(e.subcategories());
             Map<String, Object> sig = new LinkedHashMap<>(r.signals());
             sig.put("ageDays", e.inputs().ageDays());
+            // contagem real por tipo de sinal (janela atual × anterior × horizonte): o que a análise completa lista
+            sig.put("byType", byType.getOrDefault(type, Map.of()).getOrDefault(e.id(), Map.of()));
             c.setSignalsJson(Json.write(sig));
             c.setReasonsJson(Json.write(r.reasons().stream().map(HypeSnapshotService::reason).toList()));
             c.setWindowStart(windowStart);
@@ -324,10 +403,37 @@ public class HypeSnapshotService {
         }
         current.saveAll(toSave);
         snapshots.saveAll(toSnap);
+        // só depois de gravar: o HypeMilestoneNotifier ouve AFTER_COMMIT (rollback do job = nenhum aviso)
+        if (events != null) {
+            reached.forEach(events::publishEvent);
+        }
         // entidade arquivada/excluída sai do estado atual (e, portanto, de qualquer ranking); o histórico fica
         List<HypeScoreCurrent> gone = existing.values().stream().filter(c -> !seen.contains(c.getEntityId())).toList();
         current.deleteAll(gone);
         return toSave.size();
+    }
+
+    /**
+     * RF53 · P1-10 — marcos de Hype entre o estado anterior e o novo. Só SUBIDA: a faixa nova precisa ser Em alta,
+     * Tendência ou Viral e estar acima da anterior (queda ou permanência nunca contam); EMERGING conta quando surge (não
+     * estava emergente antes). Sem estado anterior (primeiro cálculo da entidade ou troca de {@code algorithmVersion})
+     * não há marco: não se compara com o nada, e uma nova versão do algoritmo não dispara avisos em massa. "Dados
+     * insuficientes" (faixa nula) → Em alta conta como subida. A 1ª vez (dedupe) fica com o notifier, que conhece o histórico.
+     */
+    static List<HypeMilestone.Kind> milestones(boolean hadPrevious, HypeLevel levelBefore, HypeMomentum momentumBefore,
+                                               HypeLevel levelAfter, HypeMomentum momentumAfter) {
+        if (!hadPrevious) {
+            return List.of();
+        }
+        List<HypeMilestone.Kind> out = new ArrayList<>(2);
+        HypeMilestone.Kind level = HypeMilestone.Kind.ofLevel(levelAfter);
+        if (level != null && (levelBefore == null || levelAfter.ordinal() > levelBefore.ordinal())) {
+            out.add(level);
+        }
+        if (momentumAfter == HypeMomentum.EMERGING && momentumBefore != HypeMomentum.EMERGING) {
+            out.add(HypeMilestone.Kind.EMERGING);
+        }
+        return out;
     }
 
     /** Score de referência para o delta: o snapshot mais recente com data ≤ hoje − janela (até 3 dias antes disso). */

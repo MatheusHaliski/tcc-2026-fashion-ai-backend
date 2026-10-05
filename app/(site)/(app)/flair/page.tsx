@@ -215,7 +215,7 @@ function FlairInner() {
           <div className="flex flex-wrap items-baseline justify-between gap-2"><h2 className="type-h3">{t("flair.album_de_raridades")}</h2><span className="type-caption tabular">{t("flair.figurinhas", { collected: cards.data.album.collected, slots: cards.data.album.slots })}</span></div>
           <div className="mt-2 overflow-x-auto"><table className="flair-album"><thead><tr><th />{Object.keys(RARITY_META).map((r) => <th key={r}>{RARITY_META[r].label}</th>)}</tr></thead>
             <tbody>{cards.data.album.rows.map((row) => <tr key={row.category}><th>{label(row.category)}</th>{Object.entries(row.rarities).map(([r, ok]) => <td key={r}><span className={ok ? "flair-slot on" : "flair-slot"} style={ok ? { background: RARITY_META[r].frame } : undefined} aria-label={ok ? t("flair.coletada") : t("flair.faltando")}>{ok ? "✓" : ""}</span></td>)}</tr>)}</tbody></table></div>
-          <p className="type-caption text-muted mt-2">{t("flair.raridade_rare_hype_80_ou")}</p>
+          <p className="type-caption text-muted mt-2">{t("hypeFlair.raridade_regra")}</p>
         </Card>
         {cards.data.cards.length === 0 ? <EmptyState title={t("flair.nenhuma_carta_ainda")} hint={t("flair.cada_peca_do_seu_guarda")} action={<Link className="btn btn-sm" href="/pieces/new">{t("common.cadastrar_peca")}</Link>} /> :
           <div className="flair-grid">{cards.data.cards.map((c) => <FlairCardView key={c.id} card={c} skin={skin} />)}</div>}
