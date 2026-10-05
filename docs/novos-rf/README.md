@@ -43,6 +43,13 @@ Meu Guarda-Roupa foram implementados antes de o time reordenar o board. A tabela
 |---|---|---|
 | RF18 | Provador virtual de lojas: prova peças de várias marcas do catálogo (RF47) no Avatar 3D, combinando com o guarda-roupa; ambiente 3D muda conforme a marca (faixa do logo, letreiro, paredes, piso, luz); provas salvas, foto, link, troca de cor, "Já tenho esta peça" | [RF18_Provador_Virtual_Lojas.md](RF18_Provador_Virtual_Lojas.md) |
 
+## Mudanças em RF antigos (2026-10-05)
+
+| RF | Mudança | Documento |
+|---|---|---|
+| RF4 | A foto da peça volta como **opcional** (para um item mais personalizado); catálogo + formulário seguem como caminho principal. Ao enviar a foto, no cadastro ou numa edição, abre-se o RF15 | [RF15_Editor_de_Fotografias.md](RF15_Editor_de_Fotografias.md) §1 e §8.1 |
+| RF15 *(Tema Futuro, sprint 4)* | Plano do Editor Canvas Interativo 2D: receita não destrutiva, classes de fidelidade (Fiel, Vitrine, Criativa) medidas por ΔE₀₀, coach de qualidade, modo Look, versões, API e fases | [RF15_Editor_de_Fotografias.md](RF15_Editor_de_Fotografias.md) |
+
 ## Mudanças em RF antigos (2026-09-26)
 
 | RF | Mudança | Documento |
