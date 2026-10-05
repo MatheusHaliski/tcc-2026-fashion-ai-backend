@@ -11,6 +11,7 @@ duplicates_found, errors). Lê em streaming e confirma por item (transação por
 from __future__ import annotations
 
 import csv
+import gzip
 import json
 import sys
 from pathlib import Path
@@ -28,8 +29,9 @@ def read_items(path: Path) -> Iterator[tuple[str, dict]]:
         with path.open(newline="", encoding="utf-8-sig") as fh:
             for i, row in enumerate(csv.DictReader(fh), 2):
                 yield f"{path.name}:{i}", {k.strip(): (v.strip() if isinstance(v, str) else v) for k, v in row.items() if k}
-    elif path.suffix.lower() == ".jsonl":
-        with path.open(encoding="utf-8") as fh:                   # saída do collect_official.py: um produto por linha
+    elif path.suffix.lower() == ".jsonl" or path.name.lower().endswith(".jsonl.gz"):
+        opener = gzip.open if path.name.lower().endswith(".gz") else open
+        with opener(path, "rt", encoding="utf-8") as fh:          # saída do collect_official.py: um produto por linha
             for i, line in enumerate(fh, 1):
                 if line.strip():
                     yield f"{path.name}:{i}", json.loads(line)
@@ -42,7 +44,7 @@ def read_items(path: Path) -> Iterator[tuple[str, dict]]:
 
 def main(argv=None) -> int:
     ap = parser("Importa produtos (JSON/CSV) no catálogo FashionAI")
-    ap.add_argument("files", nargs="+", help="arquivos .json, .jsonl ou .csv")
+    ap.add_argument("files", nargs="+", help="arquivos .json, .jsonl, .jsonl.gz ou .csv")
     ap.add_argument("--batch-size", type=int, default=100, help="itens entre linhas de progresso")
     ap.add_argument("--no-create-brands", action="store_true", help="recusa itens de marcas que ainda não existem")
     ap.add_argument("--overwrite", action="store_true", help="curadoria: sobrescreve campos já preenchidos (padrão: só preenche vazios)")
