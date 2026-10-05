@@ -160,3 +160,49 @@ describe("estados do Hype", () => {
     expect(api.calls.filter((c) => c.path.startsWith("/api/hype/summaries"))).toHaveLength(1);
   });
 });
+
+describe("fase 9: rede, tema e ações sociais", () => {
+  it("salvar continua salvando e não vira o card", async () => {
+    const api = loggedAs(undefined, { "GET /api/hype/summaries": summaries({ p1: AVAILABLE }), "POST /api/interactions/PIECE/p1/saves": { active: true } });
+    const { container } = renderApp(<PieceCard piece={PIECE} />);
+    await settle();
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(api.calls.some((c) => c.method === "POST" && c.path === "/api/interactions/PIECE/p1/saves")).toBe(true));
+    expect(card(container).dataset.flipped).toBe("front");
+  });
+
+  it("offline: a frente continua inteira (sem Hype falso) e o verso explica a falha", async () => {
+    mockApi({ "GET /api/hype/summaries": () => { throw new TypeError("Failed to fetch"); } });
+    const { container } = renderApp(<PieceCard piece={PIECE} />);
+    expect(screen.getAllByText("Camiseta branca lisa").length).toBeGreaterThan(0);   // identidade e foto seguem na frente
+    fireEvent.click(screen.getByRole("button", { name: /Ver o Hype de Camiseta branca lisa/ }));
+    expect(await screen.findByText("Não foi possível carregar o Hype.")).toBeTruthy();
+    expect(container.querySelector(".fcard-face.is-front .hype-badge:not(.is-loading)")).toBeNull();   // nenhum "🔥 0" inventado
+  });
+
+  it("rede lenta: a frente mostra o carregamento e o valor chega depois, sem trocar de face", async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((r) => { release = r; });
+    const api = mockApi({ "GET /api/hype/summaries": summaries({ p1: AVAILABLE }) });
+    const original = api.fetchMock.getMockImplementation()!;
+    api.fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (String(input instanceof Request ? input.url : input).includes("/api/hype/summaries")) await gate;
+      return original(input, init);
+    });
+    const { container } = renderApp(<PieceCard piece={PIECE} />);
+    await waitFor(() => expect(container.querySelector(".hype-badge.is-loading[aria-busy='true']")).toBeTruthy());
+    expect(screen.queryByText("82")).toBeNull();
+    release();
+    expect(await screen.findByText("82")).toBeTruthy();
+    expect(card(container).dataset.flipped).toBe("front");
+  });
+
+  it("a faixa do Hype sempre tem texto (cor nunca é o único sinal, em qualquer tema)", () => {
+    for (const [level, name] of [["LOW_SIGNAL", "Sinal baixo"], ["VIRAL", "Viral"]] as const) {
+      const { container, unmount } = renderApp(<HypeBadge state={{ kind: "available", score: level === "VIRAL" ? 95 : 5, level, direction: null, stale: false }} />);
+      expect(container.textContent).toContain(name);
+      unmount();
+    }
+  });
+});
+

@@ -2,7 +2,7 @@
  * HypeScore v2 — tipos espelhando o backend (HypeQueryService). O Hype mede a relevância de uma peça ou look dentro do
  * FashionAI e como ela evolui; NUNCA a qualidade nem a compatibilidade com o estilo de quem vê (campo separado).
  */
-import type { PieceView, SchemeView } from "@/lib/api/types";
+import type { PieceView, SchemeView, UserCard } from "@/lib/api/types";
 
 /** PIECE = peça; SCHEME = look (esquema de vestimenta). A API também aceita "LOOK". */
 export type HypeEntity = "PIECE" | "SCHEME";
@@ -71,4 +71,10 @@ export interface HypeMovers {
 export interface HypeTrending {
   type: HypeEntity; window: 1 | 7 | 30; algorithmVersion: string;
   items: { rank: number; id: string; hype: HypeSummary; piece?: PieceView; scheme?: SchemeView }[];
+}
+/** Recortes agregados do "Em alta": marca (peças) ou pessoa criadora (peças + looks). */
+export type HypeRankGroup = "BRAND" | "CREATOR";
+export interface HypeTrendingGroups {
+  type: HypeRankGroup; window: 1 | 7 | 30; algorithmVersion: string; minItems: number;
+  items: { rank: number; key: string; name?: string; logoUrl?: string | null; ownerId?: string; user?: UserCard; value: number; items: number; pieces: number; looks: number; top: { type: HypeEntity; id: string; hype: HypeSummary } }[];
 }

@@ -35,9 +35,9 @@ export function pieceCardImage(piece: PieceView): { src?: string; srcSet?: strin
 /**
  * Card de peça no feed e nas grades (leitura rápida, como um post): (1) cabeçalho compacto com quem publicou — e
  * visibilidade só quando é informação útil (peça privada ou só para seguidores, vista pelo dono); (2) a foto de produto
- * dominando o card; (3) as ações sociais numa linha, cada uma com a sua contagem; (4) nome e marca — preço só quando a
- * peça está à venda. Categoria, material, tamanho, ocasião, estilo, usos, processamento e os controles do dono ficam no
- * detalhe da peça: o card convida a abrir, o detalhe permite investigar.
+ * dominando o card; (3) as ações sociais numa linha, cada uma com a sua contagem; (4) nome, marca, até duas tags de estilo
+ * (as "tags essenciais") e o Hype compacto — preço só quando a peça está à venda. Categoria, material, tamanho, ocasião,
+ * usos, processamento e os controles do dono ficam no detalhe da peça: o card convida a abrir, o detalhe permite investigar.
  *
  * Camadas (RF11): superfície externa (o article) → área artística visível nas quatro laterais ({@link ArtStage}) →
  * container com o conteúdo acima → área da peça com fundo próprio. A arte é decorativa: não recebe clique nem foco.
@@ -65,6 +65,8 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals, 
   const mine = !!user && piece.owner?.id === user.id;
   const visibility = mine && piece.visibility && piece.visibility !== "PUBLIC" ? (piece.visibility === "FOLLOWERS" ? t("common.followers") : t("common.private")) : null;
   const link = href ?? `/pieces/${piece.id}`;
+  // tags essenciais: no máximo dois estilos, numa linha discreta (a foto continua protagonista)
+  const tags = (piece.style ?? []).filter(Boolean).slice(0, 2).map((s) => label(s)).join(" · ");
   const secondary = piece.brandName
     ? <BrandLogo name={piece.brandName} src={piece.brandLogoUrl} size={18} withName />
     : <span>{label(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>;
@@ -72,11 +74,13 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals, 
     <>
       {img.src ? <img src={img.src} srcSet={img.srcSet} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
       {(zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
-      {(!piece.disponivel || (mine && piece.favorite) || piece.aiGeneratedImage) && (
+      {(!piece.disponivel || piece.forDonation || (mine && piece.favorite) || piece.aiGeneratedImage) && (
         <span className="pc-flags">
           {/* foto recriada por IA: o selo aparece para todos, não só para o dono */}
           {piece.aiGeneratedImage && <span className="pc-flag" title={t("pieceCard.gerada_por_ia")}><span aria-hidden>{t("multiPiece.selo_ia_curto")}</span><span className="sr-only">{t("pieceCard.gerada_por_ia")}</span></span>}
           {!piece.disponivel && <span className="pc-flag">{t("common.unavailable")}</span>}
+          {/* "para doar" é estado público, como "à venda": aparece para todos */}
+          {piece.forDonation && <span className="pc-flag is-donate">{t("common.forDonation")}</span>}
           {mine && piece.favorite && <span className="pc-flag is-fav"><span aria-hidden>★</span><span className="sr-only">{t("pieceCard.favorita")}</span></span>}
         </span>
       )}
@@ -107,6 +111,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals, 
                   {zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}
                 </span>
                 <span className="pc-sub">{secondary}{zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</span>
+                {tags && <span className="pc-tags" title={tags}><span className="sr-only">{t("common.style")}: </span>{tags}</span>}
                 {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{fmtMoney(piece.price, "BRL")}</b></span>}
                 {/* no feed, o espaço do selo só aparece quando há selo (o lugar reservado vazio fica na prévia) */}
                 {zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}

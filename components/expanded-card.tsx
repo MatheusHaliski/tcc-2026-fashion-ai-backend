@@ -161,7 +161,8 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const [artRef, inView] = useInView<HTMLElement>();
   useEffect(() => { if (startEditing && p && mine && !editing) startEdit(); }, [startEditing, p?.id, mine]); // eslint-disable-line react-hooks/exhaustive-deps
   const setPiece = (np: PieceView) => { setData((d) => (d ? { ...d, piece: np } : d)); emitPieceUpdate(np); };
-  async function flag(field: "favorite" | "disponivel") { if (!p) return; try { setPiece(await api.patch<PieceView>(`/api/pieces/${p.id}/flags`, { [field]: !p[field] })); } catch (e) { toast.fromError(e); } }
+  // "à venda" e "para doar" são exclusivos: marcar um limpa o outro no backend, que devolve a peça já atualizada
+  async function flag(field: "favorite" | "disponivel" | "forSale" | "forDonation") { if (!p) return; try { setPiece(await api.patch<PieceView>(`/api/pieces/${p.id}/flags`, { [field]: !p[field] })); } catch (e) { toast.fromError(e); } }
   async function studioShot(backdrop: string) {
     setStudioBusy(true);
     try {
@@ -223,7 +224,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
     [t("common.style"), (p.style ?? []).map(label).join(", ") || null],
     [t("common.price"), p.price != null && !p.forSale ? fmtMoney(p.price, "BRL") : null],
     [t("pieceDetail.usos"), mine ? t("pieceDetail.usos_valor", { count: p.wearCount, last: p.lastWornDate ? fmtDate(p.lastWornDate) : "" }) : null],
-    [t("pieceDetail.situacao"), !p.disponivel ? t("common.unavailable") : null],
+    [t("pieceDetail.situacao"), [!p.disponivel && t("common.unavailable"), p.forDonation && t("common.forDonation")].filter(Boolean).join(" · ") || null],
     [t("pieceDetail.onde_esta"), mine ? data?.location?.label ?? null : null],
   ] as [string, ReactNode][]).filter(([, v]) => v !== null && v !== undefined && v !== "");
   // UMA ação principal, conforme o contexto, e a alternativa em posição secundária (texto-link logo abaixo):
@@ -240,6 +241,8 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
     { label: t("closet.replaceImage"), onSelect: () => replaceRef.current?.click(), hidden: !mine },
     { label: p.disponivel ? t("pieceCard.markUnavailable") : t("pieceCard.markAvailable"), onSelect: () => flag("disponivel"), hidden: !mine },
     { label: p.favorite ? t("pieceCard.unfavorite") : t("pieceCard.favorite"), onSelect: () => flag("favorite"), hidden: !mine },
+    { label: p.forSale ? t("pieceCard.unmarkForSale") : t("pieceCard.markForSale"), onSelect: () => flag("forSale"), hidden: !mine },
+    { label: p.forDonation ? t("pieceCard.unmarkForDonation") : t("pieceCard.markForDonation"), onSelect: () => flag("forDonation"), hidden: !mine },
     { label: p.mannequinImageUrl ? t("mannequinPhoto.refazer_foto_com_meu_manequim") : t("mannequinPhoto.foto_com_meu_manequim"), onSelect: () => setMannequinPhoto(true), hidden: !mine || !MANNEQUIN_PHOTO_CATEGORIES.has(p.category) },
     { label: t("pieces.id.mostrar_no_quarto"), href: `/room?piece=${p.id}`, hidden: !mine },
     { label: t("common.delete"), onSelect: askDelete, hidden: !mine, danger: true },

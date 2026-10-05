@@ -274,6 +274,10 @@ h1, h2, h3, h4 { margin: 0; }
 .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 176px), 1fr)); gap: .9rem; }
 @media (max-width: 639px) { .grid-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; } }
 .grid-looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 1rem; }
+/* Lookbook › Looks: atalho discreto do dono para a gestão dos looks (/looks), à direita, acima da vitrine */
+.lookbook-manage { display: flex; justify-content: flex-end; margin: -4px 0 12px; }
+.lookbook-manage-link { display: inline-flex; align-items: center; min-height: 32px; padding: 0 2px; font-size: 13px; font-weight: 600; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; }
+.lookbook-manage-link:hover { color: var(--ink); }
 /* cabeçalho de página: título + ações; no celular as ações descem para baixo do título */
 .page-header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 16px; margin-bottom: 20px; }
 .page-header-actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -1521,6 +1525,9 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .piece-card .pc-flags { position: absolute; z-index: 2; left: 8px; top: 8px; display: flex; gap: 4px; }
 .piece-card .pc-flag { display: inline-flex; align-items: center; min-height: 22px; padding: 0 8px; border-radius: 999px; background: rgba(255,255,255,.92); color: #191A19; font-family: var(--font-data); font-size: 11px; font-weight: 700; letter-spacing: .03em; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
 .piece-card .pc-flag.is-fav { color: #B8862B; font-size: 13px; }
+/* até quatro selos (IA, indisponível, para doar, favorita): quebram linha em vez de vazar do card estreito */
+.piece-card .pc-flags { flex-wrap: wrap; max-width: calc(100% - 16px); }
+.piece-card .pc-flag.is-donate { color: #165C58; }
 .piece-card .pc-seal { position: absolute; z-index: 2; right: 6px; top: 6px; }
 .piece-card .pc-id { display: grid; gap: 3px; padding: 2px 12px 12px; min-width: 0; }
 .piece-card .pc-name { font-family: var(--font-editorial); font-weight: var(--card-title-weight, 600); font-size: 15px; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
@@ -1528,6 +1535,8 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .piece-card .pc-name-link:hover { text-decoration: underline; text-underline-offset: 3px; }
 .piece-card .pc-name-link:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
 .piece-card .pc-sub { display: flex; align-items: center; gap: 6px; min-width: 0; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* tags essenciais (até dois estilos): uma linha pequena e discreta, cortada com reticências — nunca disputa com a foto */
+.piece-card .pc-tags { display: block; min-width: 0; font-size: 11px; line-height: 1.3; letter-spacing: .02em; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pc-price { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; }
 .pc-sale { font-family: var(--font-data); font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 1px 6px; border-radius: 999px; background: var(--thread-soft); color: var(--thread-ink); }
 .piece-card .pc-select { display: block; width: 100%; }
@@ -2180,6 +2189,14 @@ input[type="range"]:not(.before-after-range):disabled { opacity: .45; cursor: no
 .copilot-scores dt { color: var(--muted); }
 .copilot-scores dd { margin: 0; font-family: var(--font-data); font-weight: 700; }
 .trend-rank { display: inline-flex; align-items: center; font-family: var(--font-data); font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--ink); color: var(--surface); }
+/* Em alta › marcas e criadores (lista ranqueada, não cards: a unidade é o grupo, não um item) */
+.trend-groups { display: grid; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.trend-group { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 12px; border: 1px solid var(--line-soft); border-radius: var(--radius); background: var(--surface); color: inherit; text-decoration: none; }
+a.trend-group:hover { background: var(--surface-2); }
+a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2px; }
+.trend-group-id { display: grid; min-width: 0; }
+.trend-group-id b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.trend-group-value { font-family: var(--font-data); font-size: 15px; }
 .hype-inline { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); }
 
 /* RF18 · Provador virtual de lojas: palco 3D com o ambiente da marca, lugares do corpo, lojas em destaque e provas salvas */
