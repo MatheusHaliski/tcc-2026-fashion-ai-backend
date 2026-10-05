@@ -1,6 +1,6 @@
 @startuml RF4_Sequencia_v3
 !pragma layout smetana
-title RF4 — Criar Peça (v3) — campo marca com buscador web e logo filtrado
+title RF4 — Criar Peça (v3)\nDiagrama de sequência — campo marca com buscador web e logo filtrado · análise por foto só em /batch e /multi
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -9,8 +9,8 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 actor Usuário as U
-participant "Formulário da peça\n(PieceForm + BrandSearchInput)" as App
-participant "WardrobeController /\nWardrobeService" as WS
+participant "Formulário da peça\n(PieceForm + BrandSearchInput\n· MultiPieceUpload)" as App
+participant "WardrobeController /\nWardrobeService ·\nMultiPieceService" as WS
 participant "BrandLogoController /\nBrandWebSearchService" as BS
 participant "Wikidata" as WD
 participant "Simple Icons\n(raw.githubusercontent.com)" as SI
@@ -20,9 +20,25 @@ participant "MediaStorage\n(local / S3)" as ST
 participant "BrandLogoService" as BL
 database "MySQL" as DB
 
-U -> App: envia a foto (opcional)
-App -> WS: POST /api/pieces/analysis
-WS --> App: rascunho + pré-preenchimento\n(marca identificada, se houver)
+opt foto da peça (opcional)
+  alt 1 a 10 fotos, uma peça por foto (cliente da API)
+    U -> App: envia as fotos
+    App -> WS: POST /api/pieces/analysis/batch (files, category)\n→ WardrobeService.analyzeBatch
+    WS --> App: List<Draft> — rascunho + prefill\n(marca identificada, se houver)
+  else uma foto com várias peças (MultiPieceUpload)
+    U -> App: envia a foto
+    App -> WS: POST /api/pieces/analysis/multi (file)\n→ MultiPieceService.detect
+    WS --> App: Detection (peças + caixas em % da foto)
+    App -> WS: POST /api/pieces/analysis/multi/{draftId}/pieces\n(file, index) → MultiPieceService.pieceDraft
+    WS --> App: PieceDraft (draftId + imagens)
+  end
+end
+note over App, WS
+  POST /api/pieces/analysis (foto única) foi REMOVIDO:
+  a análise por foto segue só em /api/pieces/analysis/batch
+  e /api/pieces/analysis/multi (o criador catalog-first, RF47,
+  não pede foto: imagem = foto oficial ou ilustração).
+end note
 
 U -> App: digita a marca (≥ 2 letras)
 App -> BS: GET /api/brand-search?q=zar

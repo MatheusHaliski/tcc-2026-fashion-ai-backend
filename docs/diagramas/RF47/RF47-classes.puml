@@ -1,5 +1,5 @@
 @startuml RF47_Classes
-title RF47 — Acervo & Busca Catalogada\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF47 — Acervo & Busca Catalogada\nDiagrama de classes — entidades JPA reais (fai-domain), repositório de busca e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -47,7 +47,7 @@ class CatalogProduct {
   +dedupKey: String
   +searchText: String
   +description: String
-  +designJson: String (JSON)
+  {field} +designJson: String (JSON)
   +ownersCount: int
   +firstSeenAt / lastVerifiedAt: Instant
 }
@@ -135,7 +135,13 @@ enum ImageOrigin {
 }
 package "fai-application · catalog" {
 class CatalogService {
+  {static} +MIN_SCORE = 0.35
+  {static} ~NO_PHOTO_PENALTY = 0.10
+  --
   +search(SearchRequest): Map
+  ~patternTerms(String): String
+  ~rank(Resolved, List<CatalogProduct>, int): List<Map>
+  {static} ~orderScore(Map): double
   +suggestions(SearchRequest): Map
   +brandSuggestions(String): Map
   +product(UUID): Map
@@ -170,6 +176,17 @@ class CatalogIngestService {
   +upsert(ProductInput, CatalogIngestionStatus, boolean): Result
 }
 }
+package "fai-domain · repository" {
+interface CatalogProductRepository {
+  List<CatalogProduct> · LIMIT 200 · MATCH(search_text)
+  pool: subtipo+cor (produto ou variante) → subtipo
+  → estampa (patternTerms) → geral; reforço se < 8
+  --
+  +findByDedupKey(String): Optional<CatalogProduct>
+  +candidates(brandId, category, subcategory, terms)
+  +candidatesWithColor(brandId, category, subcategory, color, terms)
+}
+}
 BrandAlias "*" ..> "1" Brand : brandId
 CatalogSource "*" ..> "1" Brand : brandId
 CatalogProduct "*" ..> "1" Brand : brandId
@@ -186,6 +203,9 @@ CatalogService --> CatalogTextInterpreter : interpreta o texto
 CatalogTextInterpreter --> CatalogDesignInterpreter : leitura local
 CatalogTextInterpreter ..> DesignTraits
 CatalogService --> CatalogMatchScorer : ranqueia
+CatalogService --> CatalogProductRepository : candidatesWithColor › candidates
+CatalogProductRepository ..> CatalogProduct : FULLTEXT ngram (search_text)
+CatalogDesignInterpreter -[hidden]down- CatalogProductRepository
 CatalogMatchScorer ..> DesignTraits : intenção × produto
 CatalogIngestService ..> CatalogDesignInterpreter : design da descrição
 CatalogProduct ..> DesignTraits : designJson
@@ -195,7 +215,7 @@ WardrobeItem --> ImageOrigin
 CatalogService ..> CatalogIngestService : upsert(DISCOVERED)
 CatalogIngestService ..> CatalogProduct : grava
 CatalogIngestService ..> CatalogIngestionRun
-note top of CatalogProduct : tabela catalog_products\ndedup_key UNIQUE (gtin > ean > upc > sku > código >\nURL canônica > marca+modelo+variante > marca+título+cor)
+note bottom of CatalogProduct : tabela catalog_products\ndedup_key UNIQUE (gtin > ean > upc > sku > código >\nURL canônica > marca+subtipo+modelo+variante > marca+subtipo+título+cor)
 note top of WardrobeItem : tabela wardrobe_items\nposse do produto global, por referência
 note bottom of CatalogIngestionRun : tabela catalog_ingestion_runs\n(gravada pelo pipeline Python scripts/catalog)
 note bottom of CatalogImage : tabela catalog_images — REFERENCE_ONLY guarda só a URL;\nPERSISTED só se CatalogSource.allowsImagePersistence

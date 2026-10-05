@@ -29,7 +29,7 @@ C --> FE: 200 {brands} ("Levis" → Levi's)
 U -> FE: digita "501 preto"
 FE -> C: GET /api/catalog/search?category&subcategory&brand&q&color
 C -> S: search(userId, SearchRequest)
-S -> TI: interpret(userId, q) — características únicas da peça
+S -> TI: resolve() → interpret(userId, q) — características únicas da peça
 note right of TI
   Leitura local sempre (normalization.json → design):
   estampa, posição/tamanho do logo, lados,
@@ -42,9 +42,19 @@ opt descrição com 4+ palavras e IA disponível
   AI --> TI: JSON {pattern, logoPlacement, sides, baseColors, printColors}
 end
 TI --> S: DesignTraits (+ palavras consumidas)
-S -> M: resolve intenção (slug, cor, tokens restantes, design)
-S -> DB: candidates(brandId, category, subcategory, terms)\nMATCH(search_text) AGAINST (BOOLEAN MODE)
-S -> M: score(Intent, Candidate com design_json/descrição)\n— componente design (peso 0,45) + motivos ✓/✗; descarta < 0,35
+S -> M: resolve() com CatalogNormalizer: subtipo pela frase mais longa\n("moletom com capuz" = hoodie), cor, tokens restantes (+ marca, design)
+note right of S
+  Pool com milhares de produtos (LIMIT 200 por consulta, sem repetir id),
+  começando pelo que a pessoa descreveu:
+  1) candidatesWithColor: subtipo + cor no produto OU numa variante
+  2) candidates(subtipo)
+  3) candidates(palavras da estampa — patternTerms)
+  4) candidates geral (subtipo lido do texto só pontua)
+  + reforço sem termos se o pool tiver < 8
+end note
+S -> DB: CatalogProductRepository: candidatesWithColor(brandId, category, subcategory, color, terms)\n→ candidates(brandId, category, subcategory, terms | patternTerms) → candidates(…, subFilter, terms)\nMATCH(search_text) AGAINST (BOOLEAN MODE) · ORDER BY owners_count DESC · LIMIT 200
+S -> M: score(Intent, Candidate com variantes/design_json/description — V36__catalogo_design_da_peca)\n— componente design (peso 0,45) + motivos ✓/✗; CatalogService descarta total < MIN_SCORE (0,35)
+S -> S: orderScore(): produto sem foto cede NO_PHOTO_PENALTY = 0,10 só na ordem\n("% compatível" mostrado igual) · desempate por owners_count
 C --> FE: 200 {intent.design, results, matchScore.reasons, canSearchOfficial}\n(chips "Entendemos: …" e cards "% compatível")
 alt nada encontrado e canSearchOfficial
   U -> FE: "Pesquisar em lojas oficiais"
@@ -82,6 +92,9 @@ else com produto do catálogo
 end
 note over FE, C
   O criador de peça não tem envio de foto: imagem = foto oficial ou ilustração da categoria.
-  As rotas do antigo guia de fotografia (/api/me/capture-tutorial) e POST /api/pieces/analysis foram removidas.
+  Removidas: GET /api/me/capture-tutorial e PUT /api/me/capture-tutorial/{guide} (V32__remove_tutorial_de_captura
+  apaga user_preferences.capture_tutorial_json) e POST /api/pieces/analysis (foto única);
+  a análise por foto segue em POST /api/pieces/analysis/batch e /api/pieces/analysis/multi.
+  Acervo em escala (coleta oficial, importação idempotente, busca): RF49.
 end note
 @enduml
