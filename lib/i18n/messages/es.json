@@ -367,6 +367,7 @@
   "auth.registerTitle": "Crear cuenta",
   "auth.remember": "Mantener sesión",
   "auth.resend": "Reenviar código",
+  "auth.resetDone": "¡Tu contraseña se restableció con éxito! Puedes cerrar esta página.",
   "auth.resetLead": "Elige una contraseña fuerte (8+ caracteres, letras, números y símbolo).",
   "auth.resetTitle": "Nueva contraseña",
   "auth.send": "Enviar",
