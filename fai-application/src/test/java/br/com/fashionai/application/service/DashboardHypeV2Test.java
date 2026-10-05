@@ -156,7 +156,7 @@ class DashboardHypeV2Test {
         when(analytics.hypeLevelsV2(any(), eq("HYPE_V2"))).thenReturn(List.of(row("entity_type", "SCHEME", "level", "VIRAL", "total", 1L)));
         CurrentUser admin = new CurrentUser(UUID.randomUUID(), "admin", "ADMIN", ProfileType.PESSOAL, true, AccountStatus.ACTIVE, null, null);
         Map<String, Object> dash = svc.admin(admin, null);
-        assertThat(dash).containsKeys("hypeBands", "hypeV2");                 // v1 continua (deprecado) ao lado do v2
+        assertThat(dash).containsKey("hypeV2").doesNotContainKey("hypeBands");   // o v1 saiu na limpeza do v1 (P3-16)
         @SuppressWarnings("unchecked")
         Map<String, Object> v2 = (Map<String, Object>) dash.get("hypeV2");
         assertThat(v2).containsEntry("algorithmVersion", "HYPE_V2");

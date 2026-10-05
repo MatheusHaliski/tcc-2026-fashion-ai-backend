@@ -39,7 +39,6 @@ import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
@@ -180,7 +179,6 @@ public class ShowcaseService {
         out.put("schemeId", s.getId());
         out.put("title", s.getTitle());
         out.put("owner", Views.user(s.getUser()));
-        out.put("hypeScore", s.getHypeScore());   // DEPRECADO (v1): use "hype"
         out.put("hype", SearchService.hypeSummary(hype, own, hypeConfig));
         out.put("likes", s.getLikeCount());       // popularidade, à parte do Hype
         out.put("mannequin", mannequin(s.getUser(), ws, viewer));
@@ -509,7 +507,6 @@ public class ShowcaseService {
             row.put("schemeId", e.dl().getScheme().getId());
             row.put("title", e.dl().getScheme().getTitle());
             row.put("owner", Views.user(e.dl().getUser()));
-            row.put("hypeScore", e.dl().getScheme().getHypeScore());   // DEPRECADO (v1): use "hype"
             row.put("hype", SearchService.hypeSummary(hype.get(e.dl().getScheme().getId()), you, hypeConfig));
             row.put("likes", e.dl().getScheme().getLikeCount());       // popularidade, exibida à parte
             row.put("country", e.country());
@@ -581,10 +578,6 @@ public class ShowcaseService {
         values.forEach(v -> c.merge(v, 1L, Long::sum));
         return c.entrySet().stream().sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .map(e -> Map.<String, Object>of("value", e.getKey(), "count", e.getValue())).toList();
-    }
-
-    private static double hype(BigDecimal b) {
-        return b == null ? 0 : b.doubleValue();
     }
 
     // ================================================================== Eras (celebridade) e Coleções (marca) — RF22
@@ -813,14 +806,11 @@ public class ShowcaseService {
             List<Scheme> gs = ss.stream().filter(s -> g.getId().equals(s.getGroupingId())).toList();
             List<WardrobeItem> gp = ps.stream().filter(w -> g.getId().equals(w.getGroupingId())).toList();
             long likes = gs.stream().mapToLong(Scheme::getLikeCount).sum() + gp.stream().mapToLong(WardrobeItem::getLikesCount).sum();
-            double topHypeV1 = java.util.stream.Stream.concat(gs.stream().map(Scheme::getHypeScore), gp.stream().map(WardrobeItem::getHypeScore))
-                    .mapToDouble(ShowcaseService::hype).max().orElse(0);
             List<HypeScoreCurrent> groupRows = new ArrayList<>();
             gs.forEach(s -> groupRows.add(schemeHype.get(s.getId())));
             gp.forEach(w -> groupRows.add(pieceHype.get(w.getId())));
             Map<String, Object> r = groupingCard(g, ss, ps, schemeHype, self);
             r.put("likes", likes);
-            r.put("topHype", Math.round(topHypeV1 * 10) / 10.0);   // DEPRECADO (v1): use "hype"
             r.put("hype", groupHype(groupRows, self, hypeConfig));
             r.put("items", gs.size() + gp.size());
             r.put("comments", gs.stream().mapToLong(Scheme::getCommentCount).sum());

@@ -11,6 +11,8 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.application.hype.HypeQueryService;
+import br.com.fashionai.application.hype.RecommendationScoring;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.application.view.Views;
@@ -57,6 +59,9 @@ import java.util.stream.Collectors;
  * cópia dele: montagem manual por slots (§2.1), completude determinística sem IA, Vista-me com interpretação,
  * elegibilidade, validação anti-alucinação (CA09), localização no quarto (CA10), "Usar este look" que sempre
  * materializa um Esquema (§2.3) e entrega para o RF5 via RoomLookDraft (§2.4).
+ * <p>
+ * RF53 · P3-07 — o look no espelho traz os mesmos seis números do Copilot e do Autopiloto ({@link LookScorer}):
+ * compatibilidade com o DNA, Hype, novidade, reutilização, uso comprovado e sustentabilidade, lado a lado e nunca somados.
  */
 @Service
 public class MirrorService {
@@ -89,11 +94,13 @@ public class MirrorService {
     private final AiEngine ai;
     private final Audit audit;
     private final ApplicationEventPublisher events;
+    /** P3-07 — a mesma régua de looks do Copilot e do Autopiloto (só lê o Hype gravado; nada recalcula nem vira sinal). */
+    private final LookScorer scorer;
 
     public MirrorService(MirrorStateRepository mirrors, WardrobeItemRepository pieces, WardrobeService wardrobe, RoomService room,
                          SchemeService schemeService, SchemeRepository schemes, SchemeItemRepository schemeItems,
                          DailyLookService dailyLooks, StyleDnaRepository dnas, ObjectProvider<PieceRestrictionProvider> restrictions,
-                         AiEngine ai, Audit audit, ApplicationEventPublisher events) {
+                         AiEngine ai, Audit audit, ApplicationEventPublisher events, HypeQueryService hype) {
         this.mirrors = mirrors;
         this.pieces = pieces;
         this.wardrobe = wardrobe;
@@ -107,6 +114,7 @@ public class MirrorService {
         this.ai = ai;
         this.audit = audit;
         this.events = events;
+        this.scorer = new LookScorer(pieces, schemes, schemeItems, dnas, hype);
     }
 
     // ================================================================== slots
@@ -334,8 +342,25 @@ public class MirrorService {
         }, "colorSeason", String.valueOf(colorSeason)));
         out.put("restriction", restriction(user.id()).map(r -> Map.of("challenge", r.challengeName(), "allowed", r.allowedPieceIds().size())).orElse(null));
         out.put("shownCount", Json.strings(s.getShownCombinationsJson()).size());
+        out.put("scores", lookScores(user.id(), look));
         out.putAll(extra);
         return out;
+    }
+
+    /**
+     * RF53 · P3-07 — os seis números do look no espelho ({@link LookScorer}, a mesma régua do Copilot e do Autopiloto):
+     * compatibilidade com o DNA, Hype, novidade, reutilização, uso comprovado e sustentabilidade. Só entram as peças do
+     * próprio dono (o {@link #load} já descarta as de terceiros), então o Hype é o pessoal dele — a média do v2 das peças,
+     * lida do estado gravado: nada é recalculado nem vira sinal de Hype. Sem modo escolhido, nada é reordenado (o Hype não
+     * pesa nada aqui; nos modos do Copilot nunca passa de 20%). Dimensão sem base fica nula ("—" na tela, nunca 0);
+     * espelho vazio não tem números.
+     */
+    Map<String, Object> lookScores(UUID userId, List<WardrobeItem> look) {
+        if (look.isEmpty()) {
+            return null;
+        }
+        List<RecommendationScoring.Scores> scored = scorer.scoreLooks(userId, List.of(look));
+        return scored.isEmpty() ? null : scored.get(0).toMap();
     }
 
     // ================================================================== montagem manual (CA01/CA02/CA05)

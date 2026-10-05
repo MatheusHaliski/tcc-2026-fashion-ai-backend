@@ -18,8 +18,6 @@ interface Dash {
   filter: { from: string; to: string; country?: string | null; profileType?: string | null };
   kpis: Record<string, number>; kpisPrevious?: Record<string, number>; series: Record<string, Row[]>;
   aiUsage: Row[]; aiByCountry: Row[]; aiProviders: Record<string, boolean>; brands: Row[]; countries: Row[]; inventoryBands: Row[];
-  /** @deprecated faixas v1 (juízo de qualidade); o widget hype_bands lê `hypeV2` (RF53 · P2-21). Sai em P3-16. */
-  hypeBands: Row[];
   hypeV2?: AdminHypeV2 | null;
   sealFunnel: Row[]; challenges: Row[]; points: Row[]; profiles: Row[]; alerts: { level: string; title: string; action?: string }[];
   funnel?: Row[]; heatmap?: { dow: number; hour: number; total: number }[]; topUsers?: Row[]; categories?: Row[];
@@ -123,7 +121,7 @@ function AdminDashboard() {
         return card(w, steps.length && steps[0].value > 0 ? <Funnel steps={steps} /> : empty("adminDash.funil_vazio"), t("adminDash.funil_nota")); }
       case "countries": { const max = Math.max(1, ...data.countries.map((c) => num(c.users) + num(c.public_schemes)));
         return card(w, <div className="grid items-start gap-3 lg:grid-cols-[340px_1fr]">
-          <Globe size={320} points={data.countries.map((c) => ({ country: String(c.country), schemes: num(c.public_schemes), pieces: 0, total: num(c.users) + num(c.public_schemes), avg_hype: c.avg_hype == null ? null : num(c.avg_hype), sufficient: num(c.users) > 0, dominantColorHex: null }))} selected={f.country || undefined} onSelect={(c) => { const next = { ...f, country: c }; setF(next); setApplied(next); }} />
+          <Globe size={320} points={data.countries.map((c) => ({ country: String(c.country), schemes: num(c.public_schemes), pieces: 0, total: num(c.users) + num(c.public_schemes), avg_hype: null, sufficient: num(c.users) > 0, dominantColorHex: null }))} selected={f.country || undefined} onSelect={(c) => { const next = { ...f, country: c }; setF(next); setApplied(next); }} />
           <ul className="fai-list">{data.countries.slice(0, 12).map((c) => <li key={String(c.country)}><button type="button" className="grid w-full grid-cols-[120px_minmax(0,1fr)_auto] items-center gap-3 rounded px-1 py-1 text-left type-caption hover:bg-surface-2" onClick={() => { const next = { ...f, country: String(c.country) }; setF(next); setApplied(next); }}>
             <span>{countryName(String(c.country))}</span><span className="h-2 rounded" style={{ width: `${((num(c.users) + num(c.public_schemes)) / max) * 100}%`, background: SERIES[0] }} /><span className="whitespace-nowrap text-right tabular">{t("admin.dashboard.usuarios_looks", { number: fmtNumber(num(c.users)), number2: fmtNumber(num(c.public_schemes)) })}</span></button></li>)}</ul>
         </div>, t("admin.dashboard.clique_num_pais_no_globo")); }
@@ -134,7 +132,7 @@ function AdminDashboard() {
       case "categories": { const rows = agg(data.categories ?? [], "category", "total");
         return card(w, rows.length ? <><Bars data={rows} x="name" y="value" horizontal height={Math.max(160, rows.length * 34)} /><DataTable columns={[{ key: "name", label: t("common.category") }, { key: "value", label: t("common.pieces"), align: "right" }]} rows={rows} /></> : empty("adminDash.sem_pecas")); }
       case "brands": { const max = Math.max(1, ...data.brands.map((r) => num(r.pieces)));
-        return card(w, data.brands.length === 0 ? empty("adminDash.sem_marcas") : <ul className="fai-list">{data.brands.map((r) => <li key={String(r.brand)} className="grid grid-cols-[minmax(0,170px)_minmax(0,1fr)_auto] items-center gap-3 type-caption"><BrandLogo name={String(r.brand)} size={24} withName /><span className="h-2.5 rounded bg-surface-2"><span className="block h-full rounded" style={{ width: `${(num(r.pieces) / max) * 100}%`, background: SERIES[0] }} /></span><span className="whitespace-nowrap text-right tabular">{t("admin.dashboard.pecas_donos_hype", { number: fmtNumber(num(r.pieces)), number2: fmtNumber(num(r.owners)), value: r.avg_hype != null ? Math.round(num(r.avg_hype)) : "—" })}</span></li>)}</ul>); }
+        return card(w, data.brands.length === 0 ? empty("adminDash.sem_marcas") : <ul className="fai-list">{data.brands.map((r) => <li key={String(r.brand)} className="grid grid-cols-[minmax(0,170px)_minmax(0,1fr)_auto] items-center gap-3 type-caption"><BrandLogo name={String(r.brand)} size={24} withName /><span className="h-2.5 rounded bg-surface-2"><span className="block h-full rounded" style={{ width: `${(num(r.pieces) / max) * 100}%`, background: SERIES[0] }} /></span><span className="whitespace-nowrap text-right tabular">{t("admin.dashboard.pecas_donos", { number: fmtNumber(num(r.pieces)), number2: fmtNumber(num(r.owners)) })}</span></li>)}</ul>); }
       // RF53 · P2-21: faixas v2 de peças e looks (só públicas) + cobertura + versão e último cálculo; o v1 de juízo saiu da tela
       case "hype_bands": return card(w, <AdminHypeLevels data={data.hypeV2} />);
       case "moderation": { const m = data.moderation ?? { byStatus: [], pending: [] };

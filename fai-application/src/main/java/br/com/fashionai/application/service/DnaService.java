@@ -783,7 +783,6 @@ public class DnaService {
             c.put("dominantBrand", ranking.isEmpty() ? null : ranking.get(0).get("brand"));
             c.put("dominantBrandLogoUrl", ranking.isEmpty() ? null : ranking.get(0).get("logoUrl"));
             c.put("dominantColor", dominantColor(sItems));
-            c.put("hypeScoreGlobal", hypeOf(s));   // @deprecated v1 (escala legada, 0 = sem dados); use "hype" (v2)
             c.put("hype", hypeByScheme.getOrDefault(s.getId(), HypeScoreService.v2Summary(null, hypeV2Config, null)));
             c.put("pieces", sItems.stream().map(si -> pieceBrief(si.getWardrobeItem())).toList());
             cells.add(c);
@@ -831,16 +830,6 @@ public class DnaService {
         return schemeItems.findBySchemeIdIn(list.stream().map(Scheme::getId).distinct().toList()).stream()
                 .sorted(Comparator.comparingInt(SchemeItem::getSortOrder))
                 .collect(Collectors.groupingBy(si -> si.getScheme().getId(), LinkedHashMap::new, Collectors.toList()));
-    }
-
-    /**
-     * @deprecated v1 legado ({@code hypeScoreGlobal} → {@code hypeScore}, 0 quando não há dado). Só alimenta o campo
-     * deprecado {@code hypeScoreGlobal} das células; a narrativa HYPE_FOCUS e o contexto da IA usam o v2 (P2-12).
-     */
-    @Deprecated
-    static double hypeOf(Scheme s) {
-        java.math.BigDecimal h = s.getHypeScoreGlobal() != null ? s.getHypeScoreGlobal() : s.getHypeScore();
-        return h == null ? 0 : h.doubleValue();
     }
 
     /** Estado v2 atual dos looks (uma consulta). Sem linha = ainda não calculado. Só lê o que o job gravou. */
@@ -1439,7 +1428,6 @@ public class DnaService {
                     m.put("status", v2.get("status"));
                     m.put("score", v2.get("score"));
                     m.put("level", v2.get("level"));
-                    m.put("hype", hypeOf(i.scheme()));   // @deprecated v1
                     meters.add(m);
                 }
                 meters.sort(Comparator.comparing((Map<String, Object> m) -> hypeScoreOf(m), Comparator.nullsLast(Comparator.reverseOrder())));

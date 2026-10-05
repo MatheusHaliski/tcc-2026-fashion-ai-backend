@@ -1,6 +1,6 @@
 package br.com.fashionai.domain.model.enums;
 
-/** RF6 §9 — HypeGroup/AcervoGroup por tipo de entidade. */
+/** Tipo de entidade (peça ou esquema) do HypeScore v2 e dos agrupamentos por similaridade. */
 public enum HypeEntityType {
     PIECE,
     SCHEME
