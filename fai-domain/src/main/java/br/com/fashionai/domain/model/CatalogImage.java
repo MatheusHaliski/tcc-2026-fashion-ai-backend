@@ -57,6 +57,61 @@ public class CatalogImage extends VersionedAuditableEntity {
     @Column(name = "stored_url", length = 1024)
     private String storedUrl;
 
+    // ── pipeline de imagens (V38): metadados da análise; nível B também grava o master em stored_url/assets_json ──
+    @Column(name = "width")
+    private Integer width;
+
+    @Column(name = "height")
+    private Integer height;
+
+    @Column(name = "mime", length = 20)
+    private String mime;
+
+    @Column(name = "source_sha256", length = 64)
+    private String sourceSha256;
+
+    @Column(name = "phash", length = 16)
+    private String phash;
+
+    /** estado do job: PENDING, DOWNLOADING, APPROVED, NEEDS_REPROCESSING, REJECTED, FAILED */
+    @Column(name = "processing_status", nullable = false, length = 24)
+    private String processingStatus = "PENDING";
+
+    @Column(name = "pipeline_version", length = 40)
+    private String pipelineVersion;
+
+    @Column(name = "quality_score", precision = 5, scale = 4)
+    private java.math.BigDecimal qualityScore;
+
+    @Column(name = "gate_reasons", length = 500)
+    private String gateReasons;
+
+    /** CANONICAL, ALTERNATE, DETAIL, DUPLICATE, REJECTED, REVIEW */
+    @Column(name = "view_role", length = 20)
+    private String viewRole;
+
+    @Column(name = "is_canonical", nullable = false)
+    private boolean canonical;
+
+    /** NONE, PENDING, APPROVED, REJECTED (CatalogImageReviewQueue) */
+    @Column(name = "review_status", nullable = false, length = 20)
+    private String reviewStatus = "NONE";
+
+    @Column(name = "crop_json", columnDefinition = "json")
+    private String cropJson;
+
+    @Column(name = "metrics_json", columnDefinition = "json")
+    private String metricsJson;
+
+    @Column(name = "assets_json", columnDefinition = "json")
+    private String assetsJson;
+
+    @Column(name = "attempts", nullable = false)
+    private int attempts;
+
+    @Column(name = "processed_at")
+    private Instant processedAt;
+
     @Column(name = "retrieved_at", nullable = false)
     private Instant retrievedAt;
 

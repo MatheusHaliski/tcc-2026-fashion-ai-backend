@@ -4269,7 +4269,6 @@
   "hypeTrending.empty": "Nada en alza en este recorte",
   "hypeTrending.empty_hint": "Cambia la ventana o los filtros. Solo el contenido público entra en el ranking.",
   "showcase.showcaseTabs.visoes": "Vistas",
-
   "issuerReview.central": "Centro del emisor",
   "issuerReview.status.AJUSTES": "Ajustes solicitados",
   "issuerReview.decisao.AJUSTES": "Ajustes solicitados",
@@ -4552,5 +4551,24 @@
   "sealWizard.texto.year": "Año (sello redondo)",
   "sealWizard.texto.emblem": "Texto del emblema",
   "sealWizard.texto_dica": "Vacío = texto del modelo · hasta {n} caracteres",
-  "dnaBuilder.estacao_real_do_card_escolher": "<0>Estación real de la tarjeta</0> — elegir la Paleta estacional sobrescribe el arte de fondo manual (etapas 2–3 del Background Studio)."
+  "dnaBuilder.estacao_real_do_card_escolher": "<0>Estación real de la tarjeta</0> — elegir la Paleta estacional sobrescribe el arte de fondo manual (etapas 2–3 del Background Studio).",
+  "admin.catalogImages.titulo": "Fotos del catálogo",
+  "admin.catalogImages.kicker": "Admin · Pipeline de imágenes",
+  "admin.catalogImages.lead": "Fotos oficiales que el control de calidad envió a revisión. Antes: la foto de la marca con la caja de la prenda, el foco, las regiones críticas y el recorte final. Después: cómo la muestra la tarjeta.",
+  "admin.catalogImages.painel": "Panel de calidad",
+  "admin.catalogImages.worker_ligado": "procesamiento activado",
+  "admin.catalogImages.worker_desligado": "procesamiento desactivado (CATALOG_IMAGE_PIPELINE_ENABLED)",
+  "admin.catalogImages.canonicas": "{n} canónicas",
+  "admin.catalogImages.na_fila": "{n} en la cola",
+  "admin.catalogImages.qualidade": "calidad {pct}%",
+  "admin.catalogImages.motivos": "Motivos más comunes",
+  "admin.catalogImages.fila_vazia": "Ninguna foto esperando revisión",
+  "admin.catalogImages.antes": "Antes (foto oficial + depuración)",
+  "admin.catalogImages.depois": "Después (tarjeta 4:5)",
+  "admin.catalogImages.sem_recorte": "Sin recorte",
+  "admin.catalogImages.reprocessar": "Reprocesar",
+  "admin.catalogImages.escolher_outra": "Elegir otra foto oficial",
+  "admin.catalogImages.sem_alternativas": "Este producto no tiene otra foto oficial.",
+  "admin.catalogImages.decidido": "Decisión registrada",
+  "adminDash.abrir_fotos_catalogo": "Fotos del catálogo"
 }

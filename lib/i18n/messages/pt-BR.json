@@ -4269,7 +4269,6 @@
   "hypeTrending.empty": "Nada em alta neste recorte",
   "hypeTrending.empty_hint": "Mude a janela ou os filtros. Só conteúdo público entra no ranking.",
   "showcase.showcaseTabs.visoes": "Visões",
-
   "issuerReview.central": "Central do emissor",
   "issuerReview.status.AJUSTES": "Ajustes solicitados",
   "issuerReview.decisao.AJUSTES": "Ajustes solicitados",
@@ -4552,5 +4551,24 @@
   "sealWizard.texto.year": "Ano (selo redondo)",
   "sealWizard.texto.emblem": "Texto do emblema",
   "sealWizard.texto_dica": "Vazio = texto do modelo · até {n} caracteres",
-  "dnaBuilder.estacao_real_do_card_escolher": "<0>Estação real do card</0> — escolher a Cartela sazonal sobrescreve a arte de fundo manual (etapas 2–3 do Background Studio)."
+  "dnaBuilder.estacao_real_do_card_escolher": "<0>Estação real do card</0> — escolher a Cartela sazonal sobrescreve a arte de fundo manual (etapas 2–3 do Background Studio).",
+  "admin.catalogImages.titulo": "Fotos do catálogo",
+  "admin.catalogImages.kicker": "Admin · Pipeline de imagens",
+  "admin.catalogImages.lead": "Fotos oficiais que o controle de qualidade mandou para revisão. Antes: a foto da marca com a caixa da peça, o foco, as regiões críticas e o recorte final. Depois: como o card mostra.",
+  "admin.catalogImages.painel": "Painel de qualidade",
+  "admin.catalogImages.worker_ligado": "processamento ligado",
+  "admin.catalogImages.worker_desligado": "processamento desligado (CATALOG_IMAGE_PIPELINE_ENABLED)",
+  "admin.catalogImages.canonicas": "{n} canônicas",
+  "admin.catalogImages.na_fila": "{n} na fila",
+  "admin.catalogImages.qualidade": "qualidade {pct}%",
+  "admin.catalogImages.motivos": "Motivos mais comuns",
+  "admin.catalogImages.fila_vazia": "Nenhuma foto aguardando revisão",
+  "admin.catalogImages.antes": "Antes (foto oficial + depuração)",
+  "admin.catalogImages.depois": "Depois (card 4:5)",
+  "admin.catalogImages.sem_recorte": "Sem recorte",
+  "admin.catalogImages.reprocessar": "Reprocessar",
+  "admin.catalogImages.escolher_outra": "Escolher outra foto oficial",
+  "admin.catalogImages.sem_alternativas": "Este produto não tem outra foto oficial.",
+  "admin.catalogImages.decidido": "Decisão registrada",
+  "adminDash.abrir_fotos_catalogo": "Fotos do catálogo"
 }

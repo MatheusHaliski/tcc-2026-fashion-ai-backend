@@ -4269,7 +4269,6 @@
   "hypeTrending.empty": "Nothing trending in this slice",
   "hypeTrending.empty_hint": "Change the window or the filters. Only public content enters the ranking.",
   "showcase.showcaseTabs.visoes": "Views",
-
   "issuerReview.central": "Issuer center",
   "issuerReview.status.AJUSTES": "Changes requested",
   "issuerReview.decisao.AJUSTES": "Changes requested",
@@ -4552,5 +4551,24 @@
   "sealWizard.texto.year": "Year (round badge)",
   "sealWizard.texto.emblem": "Emblem text",
   "sealWizard.texto_dica": "Empty = template text · up to {n} characters",
-  "dnaBuilder.estacao_real_do_card_escolher": "<0>The card's real season</0> — choosing the Seasonal palette overrides the manual background art (Background Studio steps 2–3)."
+  "dnaBuilder.estacao_real_do_card_escolher": "<0>The card's real season</0> — choosing the Seasonal palette overrides the manual background art (Background Studio steps 2–3).",
+  "admin.catalogImages.titulo": "Catalog photos",
+  "admin.catalogImages.kicker": "Admin · Image pipeline",
+  "admin.catalogImages.lead": "Official photos the quality gate sent for review. Before: the brand photo with the product box, focus, critical regions and final crop. After: how the card shows it.",
+  "admin.catalogImages.painel": "Quality dashboard",
+  "admin.catalogImages.worker_ligado": "processing on",
+  "admin.catalogImages.worker_desligado": "processing off (CATALOG_IMAGE_PIPELINE_ENABLED)",
+  "admin.catalogImages.canonicas": "{n} canonical",
+  "admin.catalogImages.na_fila": "{n} in queue",
+  "admin.catalogImages.qualidade": "quality {pct}%",
+  "admin.catalogImages.motivos": "Most common reasons",
+  "admin.catalogImages.fila_vazia": "No photos awaiting review",
+  "admin.catalogImages.antes": "Before (official photo + debug)",
+  "admin.catalogImages.depois": "After (4:5 card)",
+  "admin.catalogImages.sem_recorte": "No crop",
+  "admin.catalogImages.reprocessar": "Reprocess",
+  "admin.catalogImages.escolher_outra": "Pick another official photo",
+  "admin.catalogImages.sem_alternativas": "This product has no other official photo.",
+  "admin.catalogImages.decidido": "Decision saved",
+  "adminDash.abrir_fotos_catalogo": "Catalog photos"
 }
