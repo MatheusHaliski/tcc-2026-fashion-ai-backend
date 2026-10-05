@@ -2131,6 +2131,70 @@ input[type="range"]:not(.before-after-range):disabled { opacity: .45; cursor: no
 .hype-back-more:hover { background: var(--surface-2); }
 .fai-card.hype-back { container-type: inline-size; }
 
+/* RF53 · Arte dinâmica do verso por faixa do Hype — do tímido (poucas estrelas lentas) ao viral (dourado, halo, muitas
+   estrelas). CSS puro; decorativa; pausa fora do verso; parada com movimento reduzido; some no alto contraste. */
+.hype-back { position: relative; isolation: isolate; }
+.hype-back > :not(.hype-art) { position: relative; z-index: 1; }
+.hype-back.art-low-signal, .hype-back.art-niche, .hype-back.art-relevant, .hype-back.art-hot, .hype-back.art-trending, .hype-back.art-viral, .hype-back.art-none { background: var(--card-bg, var(--surface)); }
+.hype-art { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; contain: paint;
+  --sky-a: #F4F3EF; --sky-b: #EAE8E1; --sky-c: transparent; --star: #B9B5AA; --star-hi: #FFFFFF; --veil: color-mix(in srgb, var(--surface) 62%, transparent); }
+.hype-art-sky { position: absolute; inset: -20%; background:
+  radial-gradient(70% 55% at 85% 0%, var(--sky-c), transparent 70%),
+  linear-gradient(160deg, var(--sky-a), var(--sky-b)); }
+/* véu no miolo: número e barras sempre legíveis sobre a arte */
+.hype-art-veil { position: absolute; inset: 22% 10% 0; background: radial-gradient(80% 70% at 50% 45%, var(--veil), transparent 80%); }
+.hype-art-star { position: absolute; transform: translate(-50%, -50%) scale(.6); opacity: .25; background: var(--star);
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+  animation-name: hype-twinkle; animation-iteration-count: infinite; animation-timing-function: ease-in-out; }
+.hype-art-star.is-bright { background: var(--star-hi); filter: drop-shadow(0 0 3px var(--star)); }
+@keyframes hype-twinkle { 0%, 100% { opacity: .18; transform: translate(-50%, -50%) scale(.55) rotate(0deg); } 50% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(20deg); } }
+.hype-art-sheen { position: absolute; inset: -40% -60%; background: linear-gradient(115deg, transparent 42%, color-mix(in srgb, var(--star-hi) 55%, transparent) 50%, transparent 58%);
+  animation: hype-sheen 5.5s ease-in-out infinite; mix-blend-mode: soft-light; }
+@keyframes hype-sheen { 0% { transform: translateX(-35%); } 60%, 100% { transform: translateX(35%); } }
+.hype-art-halo { position: absolute; left: 50%; top: 30%; width: 70%; aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, #F5C842 45%, transparent), transparent 65%); animation: hype-halo 3.2s ease-in-out infinite; }
+@keyframes hype-halo { 0%, 100% { opacity: .45; transform: translate(-50%, -50%) scale(.9); } 50% { opacity: .9; transform: translate(-50%, -50%) scale(1.06); } }
+/* paletas por faixa (claro) — tímida → super dinâmica */
+.hype-art.is-none { --sky-a: #F5F4F0; --sky-b: #EEEDE8; --star: #CFCBC0; }
+.hype-art.is-low-signal { --sky-a: #F4F3EF; --sky-b: #E9E7E0; --sky-c: color-mix(in srgb, #9A96A8 18%, transparent); --star: #A9A59A; }
+.hype-art.is-niche { --sky-a: #EEF7F4; --sky-b: #D9EEE7; --sky-c: color-mix(in srgb, #3E9C86 22%, transparent); --star: #4FA592; }
+.hype-art.is-relevant { --sky-a: #EEF2FF; --sky-b: #DEDBFF; --sky-c: color-mix(in srgb, #5B67E8 24%, transparent); --star: #6A74EE; }
+.hype-art.is-hot { --sky-a: #FFF1E8; --sky-b: #FFD6C4; --sky-c: color-mix(in srgb, #FF6A2B 30%, transparent); --star: #F26A2E; }
+.hype-art.is-trending { --sky-a: #FCEBFF; --sky-b: #E6D4FF; --sky-c: color-mix(in srgb, #B43CF0 34%, transparent); --star: #B246EE; }
+.hype-art.is-viral { --sky-a: #FFF6D2; --sky-b: #F6D777; --sky-c: color-mix(in srgb, #E2A517 55%, transparent); --star: #C9930F; --star-hi: #FFF8DC; }
+.hype-art.is-viral .hype-art-sky { background:
+  radial-gradient(70% 55% at 85% 0%, var(--sky-c), transparent 70%),
+  linear-gradient(130deg, #FFF8DE, #F7DC86 30%, #EDBE45 52%, #F9E4A0 74%, #FFF3C9); background-size: 100% 100%, 260% 260%; animation: hype-gold 7s ease-in-out infinite alternate; }
+@keyframes hype-gold { from { background-position: 0 0, 0% 50%; } to { background-position: 0 0, 100% 50%; } }
+.hype-back.art-viral .hype-back-number { background: linear-gradient(180deg, #8A5A00, #C99212 55%, #8A5A00); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hype-back.art-trending .hype-back-number { color: #7B22B5; }
+.hype-back.art-hot .hype-back-number { color: #B8430F; }
+/* escuro: os mesmos céus, mais profundos (texto claro do tema continua legível) */
+:root[data-theme="dark"] .hype-art { --veil: color-mix(in srgb, var(--surface) 70%, transparent); }
+:root[data-theme="dark"] .hype-art.is-none { --sky-a: #1E1F1C; --sky-b: #23241F; --star: #55534C; }
+:root[data-theme="dark"] .hype-art.is-low-signal { --sky-a: #1F2020; --sky-b: #272726; --star: #6E6B63; }
+:root[data-theme="dark"] .hype-art.is-niche { --sky-a: #112A25; --sky-b: #173A33; --star: #5DC0A9; }
+:root[data-theme="dark"] .hype-art.is-relevant { --sky-a: #161C38; --sky-b: #221F46; --star: #8A93FF; }
+:root[data-theme="dark"] .hype-art.is-hot { --sky-a: #36190F; --sky-b: #4A2216; --star: #FF8A55; }
+:root[data-theme="dark"] .hype-art.is-trending { --sky-a: #2A1240; --sky-b: #3B1A55; --star: #D27BFF; }
+:root[data-theme="dark"] .hype-art.is-viral { --star: #F5C842; --star-hi: #FFF1B8; }
+:root[data-theme="dark"] .hype-art.is-viral .hype-art-sky { background:
+  radial-gradient(70% 55% at 85% 0%, color-mix(in srgb, #F5C842 30%, transparent), transparent 70%),
+  linear-gradient(130deg, #2E2205, #5A400A 35%, #7A5A12 55%, #4A3508); background-size: 100% 100%, 260% 260%; }
+:root[data-theme="dark"] .hype-back.art-viral .hype-back-number { background: linear-gradient(180deg, #FFE9A3, #F5C842 55%, #C99212); -webkit-background-clip: text; background-clip: text; }
+:root[data-theme="dark"] .hype-back.art-trending .hype-back-number { color: #E2A8FF; }
+:root[data-theme="dark"] .hype-back.art-hot .hype-back-number { color: #FFA57A; }
+/* só anima com o verso à mostra; fora dele, pausa (nenhuma animação contínua escondida) */
+.fcard:not(.is-flipped) .hype-art *, .fcard:not(.is-flipped) .hype-art { animation-play-state: paused !important; }
+@media (prefers-reduced-motion: reduce) {
+  .hype-art *, .hype-art { animation: none !important; }
+  .hype-art-star { opacity: .7; transform: translate(-50%, -50%) scale(.85); }
+}
+:root[data-reduce-motion="true"] .hype-art *, :root[data-reduce-motion="true"] .hype-art { animation: none !important; }
+:root[data-theme="contrast"] .hype-art { display: none; }
+:root[data-theme="contrast"] .hype-back.art-viral .hype-back-number { background: none; color: inherit; }
+@media (forced-colors: active) { .hype-art { display: none; } .hype-back.art-viral .hype-back-number { background: none; color: CanvasText; } }
+
 .hype-breakdown { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
 .hype-metric { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "label value" "bar bar"; gap: 2px 8px; align-items: baseline; }
 .hype-metric-label { grid-area: label; font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -2144,6 +2208,22 @@ input[type="range"]:not(.before-after-range):disabled { opacity: .45; cursor: no
 
 /* análise completa */
 .hype-drawer { display: grid; gap: 18px; }
+/* análise completa conectada aos dados (RF53): peso de cada dimensão, sinais reais, peças do look, posição no ranking */
+.hype-metric-weight { margin-left: 6px; font-family: var(--font-data); font-size: 10px; font-weight: 600; color: var(--muted); padding: 0 5px; border: 1px solid var(--line-soft); border-radius: 999px; }
+.hype-signals { width: 100%; border-collapse: collapse; font-size: 13px; }
+.hype-signals th, .hype-signals td { padding: 5px 6px; border-bottom: 1px solid var(--line-soft); text-align: right; }
+.hype-signals th:first-child { text-align: left; font-weight: 600; }
+.hype-signals tbody th::first-letter { text-transform: uppercase; }
+.hype-signals thead th { font-family: var(--font-data); font-size: 11px; color: var(--muted); font-weight: 600; }
+.hype-look-pieces { display: grid; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.hype-look-pieces > li { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 6px 8px; border: 1px solid var(--line-soft); border-radius: var(--radius); background: var(--surface); }
+.hype-look-piece-ph { width: 44px; height: 44px; border-radius: 6px; background: var(--surface-2); overflow: hidden; display: block; }
+.hype-look-piece-ph img { width: 100%; height: 100%; object-fit: contain; }
+.hype-look-pieces .min-w-0 { display: grid; }
+.hype-look-piece-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hype-positions { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin: 0 0 6px; padding: 0; }
+.hype-positions > li { padding: 4px 10px; border-radius: 999px; background: var(--surface-2); font-size: 13px; }
+.hype-positions b { font-family: var(--font-data); }
 .hype-drawer-head { display: flex; align-items: center; gap: 14px; }
 .hype-vs { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .hype-vs-tile { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: var(--radius); background: var(--surface-2); }
@@ -2257,3 +2337,35 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .seal-review dd { margin: 0; }
 .seal-review .link { margin-left: 6px; color: var(--muted); text-decoration: underline; background: none; border: 0; padding: 0; cursor: pointer; }
 .seal-core-thumb { width: 48px; height: 48px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line-soft); background: var(--surface-2); }
+
+/* RF53 · Insights dinâmicos: faixa no topo das abas com análise (Explorador, Cápsula, Copilot, Autopiloto, Histórico,
+   guarda-roupa). 2–5 cards curtos; o tom vem por ícone + texto (a cor só reforça) e o número aparece sempre em texto. */
+.insight-strip { display: grid; gap: 10px; min-width: 0; padding: 12px 14px; border: 1px solid var(--line-soft); border-radius: var(--radius); background: var(--surface); }
+.insight-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.insight-heading { margin: 0; font-family: var(--font-data); font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+.insight-hint { margin: 2px 0 0; font-size: 12px; line-height: 1.4; color: var(--muted); }
+.insight-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 8px; margin: 0; padding: 0; list-style: none; }
+.insight-card { display: flex; flex-direction: column; gap: 4px; min-width: 0; padding: 10px 12px; border-radius: var(--radius-sm); border-left: 3px solid var(--line-soft); background: var(--surface-2); }
+.insight-card.is-positive { border-left-color: var(--thread); }
+.insight-card.is-attention { border-left-color: var(--chalk); }
+.insight-card.is-skeleton { gap: 8px; border-left-color: transparent; }
+.insight-tone { display: inline-flex; align-items: center; gap: 4px; margin: 0; font-family: var(--font-data); font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.insight-card.is-positive .insight-tone { color: var(--thread-ink); }
+.insight-card.is-attention .insight-tone { color: var(--chalk-ink); }
+.insight-title { margin: 0; font-size: 14px; font-weight: 600; line-height: 1.3; }
+.insight-text { margin: 0; font-size: 13px; line-height: 1.45; color: var(--ink); }
+.insight-metric { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 2px 0 0; padding-top: 4px; border-top: 1px solid var(--line-soft); font-size: 12px; color: var(--muted); }
+.insight-metric b { font-family: var(--font-data); font-size: 13px; color: var(--ink); white-space: nowrap; }
+.insight-cta { display: inline-flex; align-items: center; gap: 2px; width: fit-content; min-height: 28px; margin-top: auto; font-size: 13px; font-weight: 600; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.insight-cta:hover { color: var(--thread-ink); }
+.insight-cta:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.insight-basis { margin: 0; font-size: 11px; color: var(--faint); }
+.insight-empty { margin: 0; font-size: 13px; color: var(--muted); }
+.insight-error { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 13px; }
+.insight-error p { margin: 0; }
+.insight-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; margin-top: 8px; font-size: 11px; color: var(--faint); }
+.insight-ai { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); cursor: pointer; }
+:root[data-theme="contrast"] .insight-card { border: 1px solid var(--line-soft); border-left-width: 3px; }
+:root[data-theme="contrast"] .insight-card.is-positive { border-left-color: var(--thread); }
+:root[data-theme="contrast"] .insight-card.is-attention { border-left-color: var(--chalk); }
+@media (pointer: coarse) { .insight-cta, .insight-ai { min-height: var(--touch); } }

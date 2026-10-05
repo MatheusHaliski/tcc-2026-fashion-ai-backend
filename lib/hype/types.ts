@@ -36,10 +36,20 @@ export interface HypeDetail extends HypeSummary {
   entityType: HypeEntity;
   entityId: string;
   reasons: HypeReason[];
-  signals: Record<string, unknown>;
+  /** métricas do cálculo + `byType`: contagem real por tipo de sinal (janela atual, anterior e horizonte) */
+  signals: Record<string, unknown> & { byType?: Record<string, { current: number; previous: number; total: number }> };
   publicEligible: boolean;
   weights?: Partial<Record<HypeDimension, number>>;
   compatibility?: StyleCompatibility | null;
+  /** peça: em quantos looks aparece */
+  inLooks?: number;
+  /** look: cada peça com o próprio Hype */
+  pieces?: { id: string; name: string; category?: string | null; subcategory?: string | null; imageUrl?: string | null; hype: HypeSummary }[];
+}
+/** Posição da entidade no ranking público (só itens públicos elegíveis). */
+export interface HypePositions {
+  eligible: boolean; window: number;
+  positions: { scope: "GLOBAL" | "CATEGORY" | "SUBCATEGORY" | "REGION" | "COUNTRY"; key: string | null; label: string | null; rank: number; total: number }[];
 }
 
 export interface HypeHistoryPoint { date: string; status: "AVAILABLE" | "INSUFFICIENT_DATA"; score?: number | null; level?: HypeLevel | null; dimensions?: Partial<Record<HypeDimension, number>> }

@@ -9,6 +9,8 @@ import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "
 import { HypeBadge } from "@/components/hype/hype-badge";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
 import { HypeHistoryChart } from "@/components/hype/hype-history-chart";
+import { HypeAnalyticsDrawer, signalRows } from "@/components/hype/hype-analytics-drawer";
+import { artStars, STARS_BY_LEVEL } from "@/components/hype/hype-back-art";
 import { hypeViewState } from "@/lib/hype/model";
 import { __resetHypeStore } from "@/lib/hype/use-hype";
 import type { HypeSummary } from "@/lib/hype/types";
@@ -203,6 +205,72 @@ describe("fase 9: rede, tema e ações sociais", () => {
       expect(container.textContent).toContain(name);
       unmount();
     }
+  });
+});
+
+describe("verso com arte dinâmica por faixa", () => {
+  it("viral: céu dourado, halo, brilho e muitas estrelas; sinal baixo: arte tímida", async () => {
+    mockApi({ "GET /api/hype/summaries": summaries({ v1: { ...AVAILABLE, score: 95, level: "VIRAL" }, l1: { ...AVAILABLE, score: 8, level: "LOW_SIGNAL" } }) });
+    const { container: viral } = renderApp(<HypeCardBack type="PIECE" id="v1" name="Tênis" />);
+    await waitFor(() => expect(viral.querySelector(".hype-art.is-viral")).toBeTruthy());
+    expect(viral.querySelectorAll(".hype-art-star")).toHaveLength(STARS_BY_LEVEL.VIRAL);
+    expect(viral.querySelector(".hype-art-halo")).toBeTruthy();
+    expect(viral.querySelector(".hype-art-sheen")).toBeTruthy();
+    expect(viral.querySelector(".hype-art")?.getAttribute("aria-hidden")).toBe("true");   // decorativa
+    cleanup();
+    const { container: low } = renderApp(<HypeCardBack type="PIECE" id="l1" name="Meia" />);
+    await waitFor(() => expect(low.querySelector(".hype-art.is-low-signal")).toBeTruthy());
+    expect(low.querySelectorAll(".hype-art-star")).toHaveLength(STARS_BY_LEVEL.LOW_SIGNAL);
+    expect(low.querySelector(".hype-art-sheen, .hype-art-halo")).toBeNull();
+  });
+
+  it("cada faixa tem mais estrelas que a anterior, e o mesmo card tem sempre o mesmo céu, nas bordas", () => {
+    const order = ["LOW_SIGNAL", "NICHE", "RELEVANT", "HOT", "TRENDING", "VIRAL"] as const;
+    order.slice(1).forEach((lv, i) => expect(STARS_BY_LEVEL[lv]).toBeGreaterThan(STARS_BY_LEVEL[order[i]]));
+    expect(artStars("p1", "HOT")).toEqual(artStars("p1", "HOT"));
+    expect(artStars("p1", "HOT")).not.toEqual(artStars("p2", "HOT"));
+    for (const s of artStars("p1", "VIRAL")) expect(s.y < 25 || s.x < 17 || s.x > 83).toBe(true);   // miolo livre para os dados
+  });
+
+  it("o CSS pausa a arte fora do verso, para com movimento reduzido e some no alto contraste", () => {
+    const css = readFileSync("app/(site)/globals.css", "utf8");
+    expect(css).toMatch(/\.fcard:not\(\.is-flipped\) \.hype-art[^{]*\{[^}]*animation-play-state: paused/);
+    expect(css).toMatch(/prefers-reduced-motion: reduce\)\s*\{\s*\.hype-art \*, \.hype-art \{ animation: none/);
+    expect(css).toMatch(/data-theme="contrast"\] \.hype-art \{ display: none; \}/);
+  });
+});
+
+describe("análise completa conectada aos dados", () => {
+  const DETAIL = { ...AVAILABLE, entityType: "SCHEME", entityId: "s1", reasons: [], publicEligible: true, weights: { POPULARITY: 0.2 },
+    signals: { byType: { LIKE_CREATED: { current: 5, previous: 2, total: 9 }, LOOK_REMIXED: { current: 1, previous: 0, total: 1 }, PIECE_REMIXED: { current: 1, previous: 1, total: 2 }, SAVE_CREATED: { current: 0, previous: 0, total: 0 } } },
+    pieces: [{ id: "p1", name: "Tênis branco", category: "shoes_piece", subcategory: null, imageUrl: null, hype: { ...AVAILABLE, score: 77, level: "TRENDING" } }] };
+
+  it("sinais reais por tipo (remixes somados, sem linha zerada), peso de cada dimensão, peças do look e posição", async () => {
+    mockApi({
+      "GET /api/hype/looks/s1": DETAIL,
+      "GET /api/hype/looks/s1/history": { entityType: "SCHEME", entityId: "s1", points: [] },
+      "GET /api/hype/looks/s1/positions": { eligible: true, window: 7, positions: [{ scope: "REGION", key: "AMERICA_DO_SUL", label: "América do Sul", rank: 3, total: 40 }] },
+    });
+    renderApp(<HypeAnalyticsDrawer type="SCHEME" id="s1" name="Look de sábado" open onClose={() => {}} />);
+    expect(await screen.findByText("Sinais que alimentam o Hype")).toBeTruthy();
+    expect(screen.getByRole("rowheader", { name: "curtidas" })).toBeTruthy();
+    expect(screen.getByRole("rowheader", { name: "remixes" }).closest("tr")?.textContent).toContain("2");   // 1 + 1 na janela atual
+    expect(screen.queryByRole("rowheader", { name: "salvamentos" })).toBeNull();
+    expect(screen.getByText("peso 20%")).toBeTruthy();
+    expect(screen.getByText("Tênis branco")).toBeTruthy();
+    expect(await screen.findByText("de 40 na região América do Sul")).toBeTruthy();
+  });
+
+  it("peça recém-criada: avisa que o cálculo entra em minutos (sem barras zeradas)", async () => {
+    mockApi({ "GET /api/hype/pieces/n1": { status: "NOT_CALCULATED" }, "GET /api/hype/pieces/n1/history": { points: [] }, "GET /api/hype/pieces/n1/positions": { eligible: false, window: 7, positions: [] } });
+    const { container } = renderApp(<HypeAnalyticsDrawer type="PIECE" id="n1" name="Peça nova" open onClose={() => {}} />);
+    expect(await screen.findByText(/entram no cálculo em até 2 minutos/)).toBeTruthy();
+    expect(container.ownerDocument.querySelector(".hype-breakdown")).toBeNull();
+  });
+
+  it("signalRows agrupa por rótulo e ordena pelos mais ativos", () => {
+    expect(signalRows(DETAIL.signals.byType).map(([k]) => k)).toEqual(["LIKES", "REMIXES"]);
+    expect(signalRows(undefined)).toEqual([]);
   });
 });
 

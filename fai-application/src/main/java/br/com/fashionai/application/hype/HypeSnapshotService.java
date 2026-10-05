@@ -109,9 +109,33 @@ public class HypeSnapshotService {
         return cut > 0 ? joined.substring(0, cut) : null;
     }
 
+    /** Contagens por tipo de sinal da execução corrente (preenchido no início do recálculo, lido no persist). */
+    private final Map<HypeEntityType, Map<UUID, Map<String, Map<String, Object>>>> byType = new java.util.EnumMap<>(HypeEntityType.class);
+
+    /**
+     * Sinais reais de cada entidade por tipo (curtidas, salvos, usos…): eventos na janela atual, na anterior e no
+     * horizonte inteiro. É o que a análise completa mostra ao lado das dimensões — números de verdade, não só o score.
+     */
+    static Map<UUID, Map<String, Map<String, Object>>> signalCounts(List<br.com.fashionai.domain.model.HypeSignalDaily> rows, LocalDate today, int windowDays) {
+        Map<UUID, Map<String, Map<String, Object>>> out = new HashMap<>();
+        for (br.com.fashionai.domain.model.HypeSignalDaily row : rows) {
+            long age = ChronoUnit.DAYS.between(row.getSignalDate(), today);
+            Map<String, Object> c = out.computeIfAbsent(row.getEntityId(), k -> new java.util.TreeMap<>())
+                    .computeIfAbsent(row.getSignalType().name(), k -> new LinkedHashMap<>(Map.of("current", 0L, "previous", 0L, "total", 0L)));
+            long n = row.getEventCount();
+            c.put("total", (Long) c.get("total") + n);
+            if (age >= 0 && age < windowDays) {
+                c.put("current", (Long) c.get("current") + n);
+            } else if (age >= windowDays && age < 2L * windowDays) {
+                c.put("previous", (Long) c.get("previous") + n);
+            }
+        }
+        return out;
+    }
+
     @Transactional
     @Scheduled(cron = "${fashionai.hype.cron:0 20 */6 * * *}", zone = "America/Sao_Paulo")
-    public Map<String, Object> recalculate() {
+    public synchronized Map<String, Object> recalculate() {
         Instant now = Instant.now();
         LocalDate today = LocalDate.now(HypeSignalRecorder.ZONE);
         LocalDate since = today.minusDays(config.horizonDays() - 1L);
@@ -120,8 +144,12 @@ public class HypeSnapshotService {
         Map<UUID, List<SchemeItem>> itemsBy = allSchemes.isEmpty() ? Map.of()
                 : schemeItems.findBySchemeIdIn(allSchemes.stream().map(Scheme::getId).toList()).stream()
                 .collect(Collectors.groupingBy(si -> si.getScheme().getId()));
-        Map<UUID, HypeSignalSeries> pieceSeries = HypeSignalSeries.build(signals.findByEntityTypeAndSignalDateGreaterThanEqual(HypeEntityType.PIECE, since), today, config);
-        Map<UUID, HypeSignalSeries> schemeSeries = HypeSignalSeries.build(signals.findByEntityTypeAndSignalDateGreaterThanEqual(HypeEntityType.SCHEME, since), today, config);
+        List<br.com.fashionai.domain.model.HypeSignalDaily> pieceRows = signals.findByEntityTypeAndSignalDateGreaterThanEqual(HypeEntityType.PIECE, since);
+        List<br.com.fashionai.domain.model.HypeSignalDaily> schemeRows = signals.findByEntityTypeAndSignalDateGreaterThanEqual(HypeEntityType.SCHEME, since);
+        Map<UUID, HypeSignalSeries> pieceSeries = HypeSignalSeries.build(pieceRows, today, config);
+        Map<UUID, HypeSignalSeries> schemeSeries = HypeSignalSeries.build(schemeRows, today, config);
+        byType.put(HypeEntityType.PIECE, signalCounts(pieceRows, today, config.windowDays()));
+        byType.put(HypeEntityType.SCHEME, signalCounts(schemeRows, today, config.windowDays()));
 
         List<Entry> pieceEntries = pieceEntries(allPieces, pieceSeries, now);
         Map<UUID, Entry> pieceById = pieceEntries.stream().collect(Collectors.toMap(Entry::id, Function.identity()));
@@ -333,6 +361,8 @@ public class HypeSnapshotService {
             c.setSubcategories(e.subcategories());
             Map<String, Object> sig = new LinkedHashMap<>(r.signals());
             sig.put("ageDays", e.inputs().ageDays());
+            // contagem real por tipo de sinal (janela atual × anterior × horizonte): o que a análise completa lista
+            sig.put("byType", byType.getOrDefault(type, Map.of()).getOrDefault(e.id(), Map.of()));
             c.setSignalsJson(Json.write(sig));
             c.setReasonsJson(Json.write(r.reasons().stream().map(HypeSnapshotService::reason).toList()));
             c.setWindowStart(windowStart);

@@ -80,4 +80,27 @@ class HypeLiveRecalcTest {
         assertThat(HypeSnapshotService.csvOf(Stream.of("aaaa", "bbbb", "cccc"), 10)).isEqualTo("aaaa,bbbb");   // corta numa vírgula
         assertThat(HypeSnapshotService.csvOf(Stream.of(), 10)).isNull();
     }
+
+    @Test
+    void signalCountsSplitCurrentAndPreviousWindowPerType() {
+        java.time.LocalDate today = java.time.LocalDate.parse("2026-10-05");
+        UUID piece = UUID.randomUUID();
+        java.util.List<br.com.fashionai.domain.model.HypeSignalDaily> rows = java.util.List.of(
+                row(piece, br.com.fashionai.domain.model.enums.HypeSignalType.LIKE_CREATED, today, 3),
+                row(piece, br.com.fashionai.domain.model.enums.HypeSignalType.LIKE_CREATED, today.minusDays(9), 2),
+                row(piece, br.com.fashionai.domain.model.enums.HypeSignalType.SAVE_CREATED, today.minusDays(30), 1));
+        var counts = HypeSnapshotService.signalCounts(rows, today, 7).get(piece);
+        assertThat(counts.get("LIKE_CREATED")).containsEntry("current", 3L).containsEntry("previous", 2L).containsEntry("total", 5L);
+        assertThat(counts.get("SAVE_CREATED")).containsEntry("current", 0L).containsEntry("previous", 0L).containsEntry("total", 1L);
+    }
+
+    static br.com.fashionai.domain.model.HypeSignalDaily row(UUID id, br.com.fashionai.domain.model.enums.HypeSignalType t, java.time.LocalDate day, int n) {
+        br.com.fashionai.domain.model.HypeSignalDaily r = new br.com.fashionai.domain.model.HypeSignalDaily();
+        r.setEntityType(br.com.fashionai.domain.model.enums.HypeEntityType.PIECE);
+        r.setEntityId(id);
+        r.setSignalType(t);
+        r.setSignalDate(day);
+        r.setEventCount(n);
+        return r;
+    }
 }

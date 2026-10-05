@@ -154,6 +154,10 @@ com a checagem de login no controller, porque `/api/hype/**` é público para GE
 * No backend, `HypeCache` (Redis quando ligado, memória no fallback) com **geração**: o job incrementa a geração e
   todas as chaves antigas expiram sozinhas (TTL 10 min). Usado no ranking.
 * O verso do card só é montado no primeiro giro; o drawer de análise só busca dados quando abre.
+* **Hype ao vivo** (`HypeLiveRecalc`): criar/editar/excluir peça, salvar look, qualquer sinal, uso, look do dia e
+  mudança de disponibilidade só MARCAM o Hype como sujo; uma verificação a cada 30 s recalcula tudo de uma vez, no
+  máximo a cada 120 s (`fashionai.hype.live-recalc-seconds`). Rajadas de curtidas viram um recálculo só; peça nova tem
+  Hype em ~2 minutos em vez de esperar o job de 6 h. `recalculate()` é `synchronized` (job e ao vivo nunca se sobrepõem).
 
 ## 9. Privacidade
 
@@ -185,6 +189,17 @@ Hype**: conteúdo patrocinado deve ter rótulo próprio e ficar fora de `hype_si
   `HypeStateNotice`, `HypeAnalyticsDrawer` (em portal), `HypeCardBack`, `HypeInline`, `HypeItemRow`,
   `HypeRediscoveryCard`, `HypeWardrobeInsights`, `HypeTrendingPanel`, `hypeSortOptions`/`hypeLevelFilter` (HypeSort/HypeFilter).
 * **Estados**: carregando · Hype ainda não calculado · Dados insuficientes · disponível · desatualizado (> 24 h) · erro.
+* **Arte dinâmica do verso** (`HypeBackArt`): o fundo do verso acompanha a faixa — sinal baixo é tímido (céu discreto,
+  3 estrelas lentas), nicho 6, relevante 10, em alta 16 com brilho atravessando, tendência 24, viral 36 estrelas com
+  gradiente dourado em movimento e halo pulsando atrás do número. CSS puro (gradientes, estrelas de quatro pontas por
+  `clip-path` em posições determinísticas pela semente = id do item, só nas bordas; véu no miolo para os dados). Pausa
+  quando o card volta para a frente, para com movimento reduzido, some no alto contraste e em `forced-colors`.
+* **Análise completa conectada** (`HypeAnalyticsDrawer`): além de score, faixa, histórico e explicação, mostra o peso de
+  cada dimensão (do `HypeScoreConfig`), os **sinais reais por tipo** (curtidas, salvos, compartilhamentos, remixes,
+  visualizações, usos, aparições em looks — janela atual × anterior × horizonte, gravados pelo job em
+  `signals_json.byType`), em quantos looks a peça aparece, as **peças do look com o Hype de cada uma**, a **posição no
+  ranking público** (categoria, subcategoria, região, país — só itens elegíveis) e, com poucos sinais, as dimensões
+  estruturais que já existem (raridade, originalidade, novidade) em vez de esconder tudo.
 * **Telas**: cards de peça e look; detalhe ampliado; Guarda-roupa (ordenações + filtro); Lookbook → Insights;
   Histórico (novo: Timeline, Evolução do estilo, Uso de peças, Hype, Insights da IA); Explorador → Em alta; Copilot
   (modos, seções, quatro números por look, perguntas de Hype).

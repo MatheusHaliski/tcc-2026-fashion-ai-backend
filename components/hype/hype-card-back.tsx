@@ -10,10 +10,12 @@ import { HypeBreakdown } from "./hype-breakdown";
 import { HypeStateNotice } from "./hype-state-notice";
 import { HypeTrendIndicator } from "./hype-trend-indicator";
 import { HypeAnalyticsDrawer } from "./hype-analytics-drawer";
+import { HypeBackArt } from "./hype-back-art";
 
 /**
  * Verso do card (HYPE ANALYTICS): objetivo analítico — score grande, faixa, movimento, dimensões, leitura do momento,
- * quando foi calculado e o caminho para a análise completa. Sem ações sociais (elas ficam na frente).
+ * quando foi calculado e o caminho para a análise completa. Sem ações sociais (elas ficam na frente). O fundo é uma arte
+ * dinâmica da faixa (HypeBackArt): tímida no sinal baixo, dourada e cintilante no viral — sempre atrás dos dados.
  */
 export function HypeCardBack({ type, id, name }: { type: HypeEntity; id: string; name: string }) {
   const { t, relative } = useI18n();
@@ -21,7 +23,8 @@ export function HypeCardBack({ type, id, name }: { type: HypeEntity; id: string;
   const [open, setOpen] = useState(false);
   const state = hypeViewState(summary, { loading, error });
   return (
-    <article className="fai-card hype-back" aria-label={t("hype.card.back_label", { name })}>
+    <article className={cn("fai-card hype-back", `art-${state.kind === "available" ? state.level.toLowerCase().replace("_", "-") : "none"}`)} aria-label={t("hype.card.back_label", { name })}>
+      <HypeBackArt level={state.kind === "available" ? state.level : "NONE"} seed={id} />
       <header className="hype-back-head">
         <span className="min-w-0">
           <span className="hype-back-kicker">{t("hype.card.title")}</span>
