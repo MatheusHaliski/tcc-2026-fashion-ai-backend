@@ -12,7 +12,7 @@ package "Vercel · fai-network.com (Next.js 15)" {
   component "App (React)\nlib/api/client.ts · token em memória" as APP
 }
 
-package "Railway · api (Spring Boot 3, rede privada)" {
+package "Railway · api (Spring Boot 4.1 · JVM 25 LTS, rede privada)" {
   component "DevGateFilter\nga · v1 legado · Cloudflare JWT" as DGF
   component "ClientIpResolver\nIP assinado (HMAC)" as CIR
   component "AuthRateLimitFilter\ncaminho normalizado" as ARL
@@ -53,6 +53,12 @@ SVC --> RD : AUTH usuário ACL
 MED --> S3
 BKP --> MY : fai_backup
 BKP --> S3 : restricted/backups/
+
+note top of SEC
+  Evolução (v6, com teto de hashes, bloqueio
+  por reserva atômica, Flyway V34/V35 e entrega
+  contínua): docs/diagramas/RF49/RF49_Componentes.png
+end note
 
 note bottom of MY
   Cada banco sobe por um start.sh versionado

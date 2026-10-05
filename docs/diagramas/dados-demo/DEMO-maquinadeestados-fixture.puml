@@ -1,5 +1,5 @@
 @startuml DEMO_MaquinaDeEstados_Fixture
-title Fashion AI — Máquina de estados: uma fixture (fixture_key) e o plano de reset (PROPOSTA)
+title Fashion AI — Máquina de estados: uma fixture (fixture_key) e o plano de reset (planejado; V35 já aplicada)
 !include ../seguranca/_estilo.iuml
 state "Fixture (ex.: USER_PUBLIC)" as F {
   [*] --> Ausente
