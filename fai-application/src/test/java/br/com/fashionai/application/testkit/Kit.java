@@ -26,12 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Monta um service para teste de unidade com tudo de que ele depende: repositórios JPA viram {@link MemoryRepository}
- * (salvam e consultam de verdade, em memória), os outros colaboradores viram mocks do Mockito que devolvem vazio, e o
- * teste pode trocar qualquer um por um objeto real. Cada dependência fica guardada pelo tipo, para o teste programar
- * ({@code when(kit.mock(X.class)…)}) ou semear ({@code kit.save(entidade)}).
- */
+
 public final class Kit {
     private static final ReturnsEmptyValues EMPTY = new ReturnsEmptyValues();
     private final Map<Class<?>, Object> deps = new LinkedHashMap<>();
