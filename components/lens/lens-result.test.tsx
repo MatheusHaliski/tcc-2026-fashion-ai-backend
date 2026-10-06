@@ -200,7 +200,7 @@ describe("Lens › Recriar", () => {
     // alternativa com as setas → o link passa a levar a peça escolhida
     const top = screen.getByRole("region", { name: "Parte de cima" });
     fireEvent.click(within(top).getByRole("button", { name: "Próxima alternativa para Parte de cima" }));
-    expect(screen.getByRole("link", { name: "Salvar como look" }).getAttribute("href")).toBe("/schemes/new?pieces=p3,p2");
+    await waitFor(() => expect(screen.getByRole("link", { name: "Salvar como look" }).getAttribute("href")).toBe("/schemes/new?pieces=p3,p2"));
     fireEvent.click(within(top).getByRole("button", { name: "Fixar" }));
     fireEvent.click(screen.getByRole("radio", { name: "Experimental" }));
     await waitFor(() => expect(api.calls.filter((c) => c.path === "/api/lens/scans/s1/recreate")).toHaveLength(2));
