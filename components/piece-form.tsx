@@ -2,7 +2,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { api, mediaUrl, type ApiError } from "@/lib/api/client";
 import { tr, useI18n } from "@/lib/i18n/i18n";
-import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
+import { CATEGORY_LABEL, label, useTaxonomy, subcategoryLabel } from "@/lib/api/taxonomy";
 import { Button, ChipMultiSelect, Field, Input, Select, Spinner } from "@/components/ui";
 import { BrandSearchInput } from "@/components/brand-search-input";
 import { FaiIcon } from "@/components/fai-icon";
@@ -104,7 +104,7 @@ export function PieceFields({ value, onChange, error, fieldErrors }: { value: Pi
         <Select id="category" value={value.category} onChange={(e) => onChange({ ...value, category: e.target.value, subcategory: "", occasion: keepAllowed(value.occasion, allowedOccasions(e.target.value)) })}><option value="">—</option>{categories.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c] ?? c}</option>)}</Select>
       </Field>
       <Field label={t("common.subcategory")} id="subcategory" required error={err.subcategory}>
-        <Select id="subcategory" value={value.subcategory} onChange={(e) => set("subcategory", e.target.value)} disabled={!value.category}><option value="">—</option>{(tax?.subcategories?.[value.category] ?? []).map((s) => <option key={s} value={s}>{label(s)}</option>)}</Select>
+        <Select id="subcategory" value={value.subcategory} onChange={(e) => set("subcategory", e.target.value)} disabled={!value.category}><option value="">—</option>{(tax?.subcategories?.[value.category] ?? []).map((s) => <option key={s} value={s}>{subcategoryLabel(s)}</option>)}</Select>
       </Field>
       <Field label={t("common.color")} id="color" required error={err.color} hint={value.color ? `${label(value.color)}${tax?.colors?.[value.color] ? ` (${tax.colors[value.color]})` : ""}` : undefined}>
         <div className="flex items-center gap-2">

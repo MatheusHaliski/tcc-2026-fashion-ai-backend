@@ -61,6 +61,7 @@ class PieceTaxonomyTest {
         WardrobeService.applyTaxonomy(w, f);
         assertThat(w.getVariationCode()).isEqualTo("MOM");
         assertThat(w.getVariationStatus()).isEqualTo("USER_CONFIRMED");
+        assertThat(w.getVariationSource()).isEqualTo("USER");
         Map<String, List<String>> all = TaxonomyAttribute.toMap(w.getAttributes(), java.util.Set.of());
         assertThat(all).containsEntry("RISE", List.of("HIGH_RISE")).containsEntry("FINISH", List.of("RIPPED", "LIGHT_WASH"))
                 .containsEntry("STYLE", List.of("streetwear")).containsEntry("OCCASION", List.of("casual"));
@@ -84,5 +85,48 @@ class PieceTaxonomyTest {
         // mudou de subcategoria com formulário antigo: a variação que não vale mais sai
         WardrobeService.applyTaxonomy(w, form("skirt", "DENIM", null, null));
         assertThat(w.getVariationCode()).isNull();
+    }
+
+    private static WardrobeService.PieceForm confirming(WardrobeService.PieceForm f, List<String> confirmed) {
+        return new WardrobeService.PieceForm(f.draftId(), f.useDefaultImage(), f.name(), f.category(), f.subcategory(), f.sex(),
+                f.brandId(), f.brandName(), f.color(), f.material(), f.size(), f.market(), f.occasion(), f.style(), f.seals(),
+                f.price(), f.visibility(), f.tags(), f.notes(), f.condition(), f.purchaseDate(), f.purchaseLocation(), f.sku(),
+                f.careInstructions(), f.forSale(), f.studio(), f.brandLogoUrl(), f.brandSource(), f.brandRef(), f.background(),
+                f.captureSessionId(), f.variation(), f.attributes(), confirmed);
+    }
+
+    @Test
+    void variacaoSugeridaPelaIaSoViraDaPessoaQuandoConfirmadaOuTrocada() {
+        Map<String, Object> prefill = Map.of("variation", "MOM", "variationConfidence", 0.82);
+
+        // volta igual à sugestão, sem confirmação: continua sugestão da IA, com a confiança dela
+        WardrobeItem untouched = piece();
+        WardrobeService.applyTaxonomy(untouched, form("jeans", "DENIM", "MOM", null), prefill);
+        assertThat(untouched.getVariationStatus()).isEqualTo("AI_SUGGESTED");
+        assertThat(untouched.getVariationSource()).isEqualTo("AI");
+        assertThat(untouched.getVariationConfidence()).isEqualByComparingTo("0.82");
+
+        // reenviada sem mudança na edição: a proveniência fica como está
+        WardrobeService.applyTaxonomy(untouched, form("jeans", "DENIM", "MOM", null));
+        assertThat(untouched.getVariationStatus()).isEqualTo("AI_SUGGESTED");
+
+        // confirmada depois, na edição: vira da pessoa
+        WardrobeService.applyTaxonomy(untouched, confirming(form("jeans", "DENIM", "MOM", null), List.of("variation")));
+        assertThat(untouched.getVariationStatus()).isEqualTo("USER_CONFIRMED");
+        assertThat(untouched.getVariationSource()).isEqualTo("USER");
+        assertThat(untouched.getVariationConfidence()).isNull();
+
+        // confirmada já no cadastro
+        WardrobeItem confirmed = piece();
+        WardrobeService.applyTaxonomy(confirmed, confirming(form("jeans", "DENIM", "MOM", null), List.of("variation")), prefill);
+        assertThat(confirmed.getVariationStatus()).isEqualTo("USER_CONFIRMED");
+        assertThat(confirmed.getVariationSource()).isEqualTo("USER");
+
+        // trocada pela pessoa: é escolha dela
+        WardrobeItem changed = piece();
+        WardrobeService.applyTaxonomy(changed, form("jeans", "DENIM", "WIDE_LEG", null), prefill);
+        assertThat(changed.getVariationStatus()).isEqualTo("USER_CONFIRMED");
+        assertThat(changed.getVariationSource()).isEqualTo("USER");
+        assertThat(changed.getVariationConfidence()).isNull();
     }
 }
