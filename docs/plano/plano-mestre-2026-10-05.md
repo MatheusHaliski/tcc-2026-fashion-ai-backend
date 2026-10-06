@@ -45,9 +45,9 @@ entrega fecha com testes, métricas, documentação, commit e push no ramo `clau
 | 4 | **CATALOG-IMG V2**: pipeline profissional das fotos oficiais da Busca Catalogada (seção 4) — **com o FRAME e o relatório de 79 perguntas (seção 5.1)** | Alimenta cards, IA, 2D, 3D e Hype Score |
 | 4b | **RF4-FOTO**: etapa opcional "Fotografia" no criador de peça (seção 5.1) | Definição nova do RF4 no Trello; o editor completo é o RF15 (Tema Futuro) |
 | 5 | **QUARTO-REAL**: quarto, guarda-roupa e espelho coerentes e realistas, avatar dentro do quarto, looks do Copilot (seção 3.5) | Depende de 2 e 3 |
-| 6 | **ENV3D**: ecossistema Palco + Passarela + Loja 3D — auditoria primeiro, depois base comum, passarela, loja, palco (seção 7). Absorve **PASSARELA-REAL** (3.2) e **PALCOS-ARTISTAS** (3.3) | Depende de 2 e 3; a auditoria (E0) pode começar já |
-| 7 | **PROVADOR-BUSCA**: Provador com a Busca Catalogada embarcada controlando a Loja 3D (seção 8). Absorve **PROVADOR-MARCA** (3.1) | Depende de 3, 4 e da base comum do ENV3D (E1) |
-| 8 | *(incorporado ao item 6: os palcos por artista são a fase E4 do ENV3D, com o estudo da seção 3.3)* | — |
+| 6 | **ENV3D**: ecossistema Palco + Passarela + Loja 3D (seção 7), **revisto em 06/10 (seção 9)**: auditoria (6.0), motor de cenas e plateia comum (6.1), **Passarela 3D** com caminhada real e cena configurada pelos filtros (6.2), **mini lojas** como porta do provador (6.3), **mini palcos** depois do estudo (6.4), polimento (6.5). Absorve **PASSARELA-REAL** (3.2) e **PALCOS-ARTISTAS** (3.3) | 6.0–6.2 não esperam o GARMENT (seção 9.6); 6.3 depende de 7.1 |
+| 7 | **PROVADOR-BUSCA**: **provadores 3D dinâmicos**, gerados pela Busca Catalogada embarcada (seção 8, **revista em 06/10 na seção 9.3**): P1–P5 (7.1) e P6–P8 (7.2). Absorve **PROVADOR-MARCA** (3.1) | 7.1 depende só do motor de cenas (6.1); 7.2 depende do GARMENT F0–F3 |
+| 8 | *(incorporado ao item 6: mini palcos por artista no passo 6.4 e mini lojas no 6.3, seção 9.4)* | — |
 | 9 | **LOJA-EXCLUSIVOS**: itens, consumíveis, peças e looks exclusivos de celebridades, marcas e do FashionAI com FAI Points (seção 3.4), vendidos no Store Mode da Loja 3D | Usa os itens 5, 6 e 7 |
 | 10 | **SEC-A** e **SEC-B**: auditoria do gate de desenvolvedor e planilha RF × entidade × banco calculada das fontes (seção 5.1) | Pedidos anteriores ainda abertos; o SEC-A protege a produção pública |
 | 11 | **MOD-1**: plano estratégico de moderação das imagens enviadas (seção 5.1) | A fila de moderação já existe; falta o plano e a verificação central |
@@ -71,6 +71,8 @@ As decisões padrão das auditorias continuam valendo até a pessoa responsável
 
 ### 3.1 Provador de marcas 3D ultra-realista
 
+*Revisto em 06/10: os provadores passam a ser gerados pela busca (seção 9.3).*
+
 - **Só a marca escolhida:** o provador da Adidas mostra só a marca Adidas (logo, letreiro, materiais e detalhes da
   loja). Hoje há painéis de outras marcas vestidas e temas genéricos.
 - **Ambiente da loja da marca:**
@@ -82,6 +84,8 @@ As decisões padrão das auditorias continuam valendo até a pessoa responsável
 - **Avatar:** o mesmo da pessoa, com as roupas vestidas pelo fitting novo (item 3 da ordem).
 
 ### 3.2 Passarela 3D profissional
+
+*Revista em 06/10 (seção 9.5): o RF33 fica; a cena, a caminhada e a plateia mudam.*
 
 - **Plateia:**
   - avatares semi-realistas coerentes (corpo humano do mesmo sistema, roupas padrão variadas, poses sentadas,
@@ -97,6 +101,8 @@ As decisões padrão das auditorias continuam valendo até a pessoa responsável
   - roupa acompanhando o movimento.
 
 ### 3.3 Mini-palcos e mini-lojas 3D de artistas e marcas
+
+*Revisto em 06/10 (seção 9.4): recomendação provisória (d) híbrido; a mini loja vira porta do provador.*
 
 - **Fim do genérico:**
   - nada de nomes genéricos estampados nem cores aleatórias;
@@ -526,3 +532,175 @@ Especificação completa, agrupada (108 requisitos, 22 entregáveis, fases P1–
   - as abas `stores | wardrobe | saved` devem ser reavaliadas como modos ou painéis.
 - **Teste crítico:** Nike → Sneakers → Air Max → Vista-me → Voltar retorna exatamente ao mesmo contexto.
 
+
+## 9. Revisão de 06/10/2026 — provadores 3D dinâmicos, mini palcos e mini lojas, Passarela 3D
+
+Pedidos de 06/10/2026: "Provadores 3D dinâmicos de ambientes configurados através da busca catalogada; mini palcos &
+lojas 3D" e "Passarela 3D". Esta seção revê as seções 3.1–3.3, 7 e 8 contra o código de hoje e reorganiza os itens 6 e
+7 da ordem. Os documentos [ENV3D](ENV3D_Palco_Passarela_Loja3D.md) e [PROVADOR-BUSCA](PROVADOR_Busca_Catalogada_Embarcada.md)
+continuam valendo como especificação; onde houver conflito, vale esta seção.
+
+### 9.1 O que a reconferência do código mudou
+
+| Área | O plano dizia (05/10) | Conferido em 06/10 |
+|---|---|---|
+| Avatar na passarela e no palco | "usam o manequim genérico" | Desatualizado. `Mannequin` já desenha o `HumanAvatar` com o avatar canônico do dono do look quando quem vê tem permissão (`ShowcaseService` só envia `avatar` nesse caso; regra em `Avatar3dService`). Sem permissão, corpo padrão do sexo. O problema real é outro: na passarela o corpo **desliza** (o `Walker` de `runway-scene.tsx` só translada e gira o grupo, sem passos) e cada um dos 12 do lote monta um `HumanAvatar` completo |
+| Plateia (passarela, palco, rua das lojas) | — | Cápsula + esfera instanciadas nos três lugares: é o "boneco genérico" que a seção 3.2 proíbe |
+| Provador | "o ambiente segue as peças vestidas" | Confirmado: `resolveEnvironment(items, mode)` em `/try-on`. Além disso, `CatalogSearch` usa `key={store}`: trocar de loja **remonta** a busca, e a busca não altera a cena |
+| Mini lojas (Coleções) | "sem avatar nem compra" | Confirmado. Letreiro com o nome em canvas e toldo listrado na cor; nada liga a mini loja ao provador |
+| Mini palcos (Eras) | "palco por celebridade com manequim" | `StageScene`: telão LED com nome e era em canvas, plateia de cápsulas e o look girando num pedestal. Sem logo, selos, cortina, fogos nem confete |
+| Passarela: dados e filtros | — | O RF33 já entrega Top 100 Global, Regional e do País, Seguindo, Em alta e Recentes; filtros de região, país, cores, ocasiões, estilos e sexo; lote de 12; tabela até 100; Hype v2; 2D primeiro no celular e 3D sob pedido (`runway-panel.tsx`). **Tudo isso fica**: a revisão é da cena, não do ranking |
+
+### 9.2 Um motor de cenas para os quatro ambientes
+
+Provador, mini loja, mini palco e passarela são a mesma coisa em escalas diferentes. Um **contexto** vira um **perfil de
+cena**, e a cena troca só os módulos que mudaram. O contexto pode ser:
+
+- a busca do catálogo;
+- os filtros da passarela;
+- o perfil do artista ou da marca.
+
+```
+CONTEXTO                     RESOLVEDOR (puro, testado)        PERFIL DE CENA          CENA PERSISTENTE
+busca do catálogo     ─┐     BrandSceneProfile                 layout, zonas,          shell, luz base e câmera
+filtros da passarela  ─┼──►  CategorySceneProfile        ──►   expositores, câmera, ──► ficam; marca, produtos,
+perfil artista/marca  ─┘     ArtistStageProfile                luz, marca, efeitos     plateia e efeitos trocam
+                             RunwaySceneProfile                                        com transição curta
+```
+
+- **Módulo novo `lib/scene3d/`:**
+  - puro, sem React nem three, como `lib/tryon/fitting-room.ts`;
+  - contém `SceneContext`, `SceneProfile`, os quatro registros e `resolveScene(context)`;
+  - testes de unidade cobrem cada caminho e o fallback neutro.
+- **Componentes 3D só leem o perfil.** É proibido `if (brand === …)` em componente; uma busca no CI verifica.
+- **Identidade de marca e de artista só com assets aprovados:**
+  - logo e paleta vêm do cadastro do perfil MARCA ou CELEBRIDADE, já revisado pelo examinador (EXAM-1), ou do catálogo
+    oficial;
+  - sem asset aprovado, o nome aparece em tipografia neutra;
+  - nunca inventar identidade; nenhuma marca de terceiros sem autorização.
+- **Plateia comum (`CrowdKit`):**
+  - pessoas do mesmo corpo humano (MakeHuman CC0) em nível de detalhe baixo;
+  - 6 a 8 variações de forma e de tom de pele, pré-compostas;
+  - sentadas ou em pé, com roupas padrão variadas;
+  - `InstancedMesh` com reação discreta por atributo de instância;
+  - substitui as cápsulas nos três lugares de uma vez.
+
+### 9.3 Provadores 3D dinâmicos configurados pela Busca Catalogada (item 7, PROVADOR-BUSCA)
+
+- **"Provadores", no plural:** não há um provador por marca desenhado à mão. Cada combinação de busca **gera** o seu:
+
+  | Busca | Provador gerado |
+  |---|---|
+  | vazia | FashionAI Multi-Brand Store (neutra); as peças vestidas definem só o destaque, como hoje |
+  | marca | loja-contexto da marca: sinalização, paleta aprovada, estilo de expositor, luz de destaque |
+  | categoria sem marca | zona multimarca da categoria (ex.: Denim Zone) |
+  | marca + categoria ou subcategoria | zona da categoria dentro do contexto da marca (ex.: parede de tênis da marca) |
+  | produto | Hero Product no pedestal central, com Vista-me a um toque |
+
+- **Primeira mudança de arquitetura:** o ambiente passa a seguir a **busca** (`CatalogSearchState`). O
+  `resolveEnvironment` atual vira o caso "busca vazia" do resolvedor.
+- **A busca não remonta:**
+  - `CatalogSearch` deixa de usar `key={store}`; a loja escolhida vira o campo marca da busca;
+  - o estado vai para a URL (`/try-on?brand=&category=&subcategory=&product=`);
+  - o "Voltar" do Vista-me e um link compartilhado reabrem a mesma cena.
+- **Um canvas por sessão:** trocar de marca troca módulos com transição de até 600 ms, sem recriar o contexto WebGL
+  nem o avatar.
+- **Fases revistas (P1–P8 do documento):**
+  - P1 a P5 (estado, busca embarcada, resolvedor, perfis de marca e de categoria, Hero Product) **não dependem do
+    GARMENT** e andam com as roupas atuais;
+  - P4 usa as fotos do CATALOG-IMG V2 quando existirem, com a foto atual como fallback;
+  - P6 (Vista-me integrado) espera o GARMENT F0–F3.
+- **Aceite mensurável, além dos testes do documento:**
+  - Nike → Sneakers → Air Max → Vista-me → Voltar: mesma URL, mesmos resultados, mesma câmera (teste e2e);
+  - Nike → Adidas: um único contexto WebGL na sessão, avatar visível em todos os quadros da transição, troca em até
+    600 ms;
+  - marca sem perfil abre a loja neutra sem erro; marca sem logo aprovado mostra o nome em tipografia neutra;
+  - pelo menos 30 qps em desktop e 24 qps em celular intermediário, com 24 produtos em cena.
+
+### 9.4 Mini lojas e mini palcos 3D (item 6, fases E3 e E4)
+
+**Mini lojas (Coleções da marca, `store-street-scene.tsx`):**
+
+- **Cada mini loja é o `BrandSceneProfile` em miniatura:**
+  - fachada com o logo aprovado e a paleta da marca;
+  - vitrine com até 3 produtos hero da coleção (fotos normalizadas);
+  - sem nome genérico, sem cor aleatória.
+- **Função:** a mini loja é a porta do provador dinâmico. Tocar na vitrine abre
+  `/try-on?brand=<marca>&collection=<coleção>` com a busca preenchida: a pessoa entra na cena da marca, não numa lista.
+- **Rua:** passantes do `CrowdKit` no lugar das cápsulas.
+
+**Mini palcos (Eras da celebridade, My Stage 3D, `stage-scene.tsx`):**
+
+- **Primeiro o estudo da seção 3.3**, entregue antes do código. Recomendação provisória: **(d) híbrido**.
+  - Base por regras a partir do perfil: paleta da foto de perfil e das eras, gênero musical, selos.
+  - Editor de palco no próprio perfil: tema, paleta, logo enviado e efeitos ligados ou desligados. O logo enviado passa
+    pela moderação (MOD-1) e pelo examinador.
+  - Curadoria manual só para os maiores perfis, sem marca de terceiros.
+- **`ArtistStageProfile`:**
+  - nome, logo aprovado e selos do perfil;
+  - cortina (cor e tecido) e luzes (cor e padrão);
+  - efeitos (fogos, confete, fumaça baixa) com intensidade regulável, desligados com "reduzir movimento";
+  - plateia na paleta do artista (bastões de luz e camisetas na cor);
+  - telão com a era.
+- **Quem sobe no palco:** o look da era no avatar do perfil, quando o perfil tem avatar e permite. A animação de
+  apresentação (pose e giro) é a mesma da passarela; o pedestal giratório sai.
+
+### 9.5 Passarela 3D (item 6, fase E2): revisão completa
+
+- **Fica do RF33:** rankings, filtros, lote de 12, tabela até o Top 100, Hype v2, 2D primeiro no celular e 3D sob pedido.
+- **A passarela também é configurada pela busca.** Os filtros que já existem viram o contexto da cena
+  (`RunwaySceneProfile`), como a busca no provador:
+  - ranking → cenografia:
+    - Top 100 Global: telão com mapa-múndi abstrato e a contagem do dia;
+    - Regional e País: paleta e luz da região, com a bandeira só como faixa de cor, sem monumentos nem marcas;
+    - Seguindo, Em alta e Recentes: tema editorial neutro;
+  - cores filtradas → cor da luz de destaque e do piso;
+  - ocasião → tema controlado (festa: luz de show; trabalho: minimalista);
+  - estilo → um dos temas do ENV3D (minimalista, editorial, futurista, neon, luxury, monochrome);
+  - sem filtro → passarela FashionAI padrão;
+  - mudar um filtro troca a cenografia sem recarregar o desfile.
+- **Quem desfila:**
+  - o avatar canônico de cada perfil, na versão aprovada da identidade (a mesma do Meu Avatar), quando quem vê tem
+    permissão;
+  - sem permissão, corpo padrão com as medidas do perfil e cabeça neutra; nunca a foto de outra pessoa.
+- **Caminhada de verdade, no lugar do deslize:**
+  - clipe de caminhada de passarela no esqueleto Mixamo (52 ossos + olhos): passo cruzado, balanço de quadril e ombro,
+    braços soltos, 110 a 120 passos por minuto;
+  - sequência WALK → STOP → POSE (2 s) → TURN → RETURN; o próximo entra enquanto o anterior volta;
+  - pé apoiado preso ao chão: deslize de no máximo 2 cm por passo, medido no esqueleto em teste;
+  - roupa acompanhando: hoje pelo skinning das roupas atuais; tecido com balanço quando o GARMENT F4 (XPBD) chegar.
+- **Desempenho:**
+  - no máximo 3 avatares completos em cena (o que caminha, o que pousa e o que volta);
+  - os outros do lote esperam como cartões na fila e na tabela;
+  - plateia do `CrowdKit` com pelo menos 150 lugares, em níveis de detalhe;
+  - meta de 30 qps em desktop e 24 qps em celular intermediário.
+- **Plateia e fotógrafos:**
+  - fileiras dos dois lados, sentadas, em escala correta (olhos a cerca de 1,2 m do chão);
+  - reação discreta quando o modelo pousa;
+  - fotógrafos no fim da passarela, com flashes desligados em "reduzir movimento".
+- **Câmeras:** fim da passarela (padrão), lateral acompanhando, frontal baixa (editorial) e livre, com troca suave.
+- **Comparação e snapshot:**
+  - A × B lado a lado: dois looks do lote, ou o meu Look do Dia contra um do ranking;
+  - replay da caminhada;
+  - snapshot PNG da pose com o selo FashionAI e o Hype; sem o rosto de outra pessoa quando quem vê não tem permissão.
+- **Aceite:**
+  - testes de unidade do clipe: deslize do pé, cadência e giro de 180° no fim;
+  - e2e de filtro → cena: mudar a cor muda a luz sem recarregar o desfile;
+  - qps medido no laboratório;
+  - `runway-hype.test.tsx` continua verde.
+
+### 9.6 Ordem revista dentro dos itens 6 e 7
+
+| Passo | O quê | Depende de |
+|---|---|---|
+| 6.0 | ENV3D E0: auditoria e matriz de utilidade, já com a reconferência 9.1 | — |
+| 6.1 | Motor de cenas `lib/scene3d/`, `CrowdKit` e shell com canvas único (9.2) | 6.0 |
+| 6.2 | Passarela 3D (9.5): caminhada, fila, câmeras, cena pelos filtros, comparação e snapshot | 6.1 e o avatar atual (I4 entregue); tecido com movimento depois do GARMENT F4 |
+| 7.1 | Provadores dinâmicos, fases P1 a P5 (9.3) | 6.1 |
+| 6.3 | Mini lojas como porta do provador (9.4) | 7.1 |
+| 6.4 | Estudo da seção 3.3 e mini palcos (9.4) | 6.1; MOD-1 para o logo enviado |
+| 7.2 | PROVADOR-BUSCA P6 a P8: Vista-me integrado, comparação, desempenho | GARMENT F0–F3 |
+| 6.5 | ENV3D E5: polimento, temas, níveis de detalhe e analytics | 6.2 a 6.4 e 7.2 |
+
+Na ordem geral, os itens 6 e 7 continuam depois dos itens 2 a 5. O que muda: os passos 6.0 a 6.2 e 7.1 não esperam o
+GARMENT. Se a pessoa responsável quiser a passarela e os provadores antes, eles podem subir na fila sem retrabalho.
