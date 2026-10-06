@@ -1,0 +1,178 @@
+@startuml FashionAI_Componentes_v5
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title Fashion AI — Diagrama de Componentes v5: da tela aos bancos\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)\n52 páginas · 37 controllers · 437 rotas · 84 serviços · 107 repositórios · 31 ports
+
+package "Frontend (Next.js · Vercel)" {
+  component "app/ · 52 páginas\n(site)/(app), (auth), (gate), lab" as PAGES
+  component "BFF /bff/* · 6 rotas\n(login, register, refresh, logout)" as BFF
+  component "lib/api/client.ts" as APIC
+  component "middleware.ts\n(gate de desenvolvedor)" as MW
+}
+package "fai-web (REST · Spring Boot · Railway)" {
+  package "Conta, perfil e social" {
+    component "AccountController\n1 rotas" as AccountController
+    component "AdminController\n16 rotas" as AdminController
+    component "AuthController\n14 rotas" as AuthController
+    component "CommentController\n2 rotas" as CommentController
+    component "DashboardController\n3 rotas" as DashboardController
+    component "IssuerReviewController\n2 rotas" as IssuerReviewController
+    component "MeController\n11 rotas" as MeController
+    component "MediaProxyController\n1 rotas" as MediaProxyController
+    component "NotificationController\n6 rotas" as NotificationController
+    component "PreferencesController\n9 rotas" as PreferencesController
+    component "ProfileController\n14 rotas" as ProfileController
+    component "SocialController\n8 rotas" as SocialController
+  }
+  package "Guarda-roupa, looks e fotos" {
+    component "AutopilotController\n11 rotas" as AutopilotController
+    component "BackgroundController\n13 rotas" as BackgroundController
+    component "DnaController\n15 rotas" as DnaController
+    component "LookbookController\n26 rotas" as LookbookController
+    component "MirrorController\n13 rotas" as MirrorController
+    component "PhotoController\n10 rotas" as PhotoController
+    component "RoomController\n17 rotas" as RoomController
+    component "RoomCreatorController\n6 rotas" as RoomCreatorController
+    component "SchemeController\n17 rotas" as SchemeController
+    component "WardrobeController\n28 rotas" as WardrobeController
+  }
+  package "Catálogo, marcas, provador e 3D" {
+    component "Avatar3dController\n8 rotas" as Avatar3dController
+    component "BrandLogoController\n7 rotas" as BrandLogoController
+    component "CatalogController\n7 rotas" as CatalogController
+    component "DiscoveryController\n7 rotas" as DiscoveryController
+    component "InsightsController\n1 rotas" as InsightsController
+    component "LensController\n14 rotas" as LensController
+    component "ShowcaseController\n12 rotas" as ShowcaseController
+    component "TryOnController\n4 rotas" as TryOnController
+  }
+  package "Selos, cupons, jogos e Hype" {
+    component "ChallengeController\n20 rotas" as ChallengeController
+    component "CouponController\n5 rotas" as CouponController
+    component "FlairController\n24 rotas" as FlairController
+    component "FlairModesController\n31 rotas" as FlairModesController
+    component "HighlightsController\n14 rotas" as HighlightsController
+    component "HypeController\n16 rotas" as HypeController
+    component "SealController\n24 rotas" as SealController
+  }
+}
+package "fai-application (casos de uso)" {
+  component "AccountService, AdminService, AiEngine,\nDashboardService, IdentityService,\nInstitutionalService, IssuerReviewService,\nNotificationService, PreferencesService,\nProfileService, SocialService" as SVC_Conta__perfil_e_social
+  component "AssetCatalogService, AutopilotService,\nBackgroundStudioService, CopilotService,\nDailyLookService, DnaService, HypeScoreService,\nLookPreviewService, LookbookService,\nMirrorService, MultiPieceService, PhotoService,\nRoomService, SchemeService,\nWardrobeCreatorService, WardrobeService" as SVC_Guarda_roupa__looks_e_fotos
+  component "Avatar3dService, BrandLogoService,\nCatalogService, ExplorerService, Guard,\nInsightService, LensService, SearchService,\nShowcaseService, TryOnService" as SVC_Cat_logo__marcas__provador_e_3D
+  component "AchievementService, ChallengeService,\nCouponService, FaiPointsService,\nFlairModesService, FlairService, Guard,\nHypeQueryService, HypeSnapshotService,\nInventoryScoreService, SealDesignService,\nSealService" as SVC_Selos__cupons__jogos_e_Hype
+  component "AiEngine\n(RF24: provedores + reserva local, orçamento, consentimento)" as AI
+  component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+}
+package "fai-domain (JPA) e fai-infrastructure" {
+  component "Repositórios MySQL\n107 interfaces" as REPO_MySQL
+  component "Anthropic\nAiProviderPort" as AD_Anthropic
+  component "Adaptadores locais\nBackgroundRemovalPort, CounterStorePort,\nDomainEventPublisherPort, EmailSenderPort,\nGeocodingPort, JobQueuePort,\nMediaStoragePort, PasswordHasherPort,\nPersonSegmentationPort, RateLimitPort,\nRenderCachePort, StudioShotPort,\nTextReaderPort, TokenIssuerPort,\nTryOnProviderPort, UpscalePort, WeatherPort,\nWebFetchPort" as AD_Adaptadores_locais
+  component "Gemini\nImageEditPort" as AD_Gemini
+  component "Meshy\nModel3dPort" as AD_Meshy
+  component "Replicate\nImageGenerationPort" as AD_Replicate
+  component "Google Vision\nRemoteClassifierPort" as AD_Google_Vision
+  component "Cassandra\nNotificationProjectionPort,\nTimelineProjectionPort" as AD_Cassandra
+  component "MySQL\nAnalyticsQueryPort, BackupPort,\nDemoDataAdminPort" as AD_MySQL
+  component "OpenSearch\nSearchIndexPort" as AD_OpenSearch
+}
+database "MySQL\n107 tabelas" as DB_MySQL
+cloud "Anthropic" as CL_Anthropic
+cloud "Gemini" as CL_Gemini
+cloud "Meshy" as CL_Meshy
+cloud "Replicate" as CL_Replicate
+cloud "Google Vision" as CL_Google_Vision
+cloud "Cassandra" as CL_Cassandra
+cloud "OpenSearch" as CL_OpenSearch
+PAGES --> APIC
+PAGES --> BFF
+MW ..> PAGES : protege
+APIC --> AccountController : HTTPS/JSON
+AdminController --> SVC_Conta__perfil_e_social
+AuthController --> SVC_Conta__perfil_e_social
+CommentController --> SVC_Conta__perfil_e_social
+DashboardController --> SVC_Conta__perfil_e_social
+IssuerReviewController --> SVC_Conta__perfil_e_social
+MeController --> SVC_Conta__perfil_e_social
+NotificationController --> SVC_Conta__perfil_e_social
+PreferencesController --> SVC_Conta__perfil_e_social
+ProfileController --> SVC_Conta__perfil_e_social
+SocialController --> SVC_Conta__perfil_e_social
+SVC_Conta__perfil_e_social --> AI
+SVC_Conta__perfil_e_social --> EV
+SVC_Conta__perfil_e_social --> REPO_MySQL
+APIC --> AutopilotController : HTTPS/JSON
+AutopilotController --> SVC_Guarda_roupa__looks_e_fotos
+BackgroundController --> SVC_Guarda_roupa__looks_e_fotos
+DnaController --> SVC_Guarda_roupa__looks_e_fotos
+LookbookController --> SVC_Guarda_roupa__looks_e_fotos
+MirrorController --> SVC_Guarda_roupa__looks_e_fotos
+PhotoController --> SVC_Guarda_roupa__looks_e_fotos
+RoomController --> SVC_Guarda_roupa__looks_e_fotos
+RoomCreatorController --> SVC_Guarda_roupa__looks_e_fotos
+SchemeController --> SVC_Guarda_roupa__looks_e_fotos
+WardrobeController --> SVC_Guarda_roupa__looks_e_fotos
+SVC_Guarda_roupa__looks_e_fotos --> AI
+SVC_Guarda_roupa__looks_e_fotos --> EV
+SVC_Guarda_roupa__looks_e_fotos --> REPO_MySQL
+APIC --> Avatar3dController : HTTPS/JSON
+Avatar3dController --> SVC_Cat_logo__marcas__provador_e_3D
+BrandLogoController --> SVC_Cat_logo__marcas__provador_e_3D
+CatalogController --> SVC_Cat_logo__marcas__provador_e_3D
+DiscoveryController --> SVC_Cat_logo__marcas__provador_e_3D
+InsightsController --> SVC_Cat_logo__marcas__provador_e_3D
+LensController --> SVC_Cat_logo__marcas__provador_e_3D
+ShowcaseController --> SVC_Cat_logo__marcas__provador_e_3D
+TryOnController --> SVC_Cat_logo__marcas__provador_e_3D
+SVC_Cat_logo__marcas__provador_e_3D --> AI
+SVC_Cat_logo__marcas__provador_e_3D --> EV
+SVC_Cat_logo__marcas__provador_e_3D --> REPO_MySQL
+APIC --> ChallengeController : HTTPS/JSON
+ChallengeController --> SVC_Selos__cupons__jogos_e_Hype
+CouponController --> SVC_Selos__cupons__jogos_e_Hype
+FlairController --> SVC_Selos__cupons__jogos_e_Hype
+FlairModesController --> SVC_Selos__cupons__jogos_e_Hype
+HighlightsController --> SVC_Selos__cupons__jogos_e_Hype
+HypeController --> SVC_Selos__cupons__jogos_e_Hype
+SealController --> SVC_Selos__cupons__jogos_e_Hype
+SVC_Selos__cupons__jogos_e_Hype --> AI
+SVC_Selos__cupons__jogos_e_Hype --> EV
+SVC_Selos__cupons__jogos_e_Hype --> REPO_MySQL
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+AD_Anthropic --> CL_Anthropic
+AD_Gemini --> CL_Gemini
+AD_Meshy --> CL_Meshy
+AD_Replicate --> CL_Replicate
+AD_Google_Vision --> CL_Google_Vision
+AD_Cassandra --> CL_Cassandra
+AD_MySQL --> DB_MySQL
+AD_OpenSearch --> CL_OpenSearch
+@enduml

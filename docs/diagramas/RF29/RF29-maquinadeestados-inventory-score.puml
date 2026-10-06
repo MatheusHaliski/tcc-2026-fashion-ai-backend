@@ -1,32 +1,60 @@
 @startuml RF29_MaquinaDeEstados_InventoryScore
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-title RF29 — FAI Inventory Score: elegibilidade, faixas e participação nos rankings (InventoryScoreService)
-[*] --> Inelegivel : usuário com < 10 peças (MIN_PIECES)
-state "Inelegível\n(eligible = false — 'faltam N peças')" as Inelegivel
-state "Elegível\n(score 0–1000, snapshot DAY/MONTH)" as Elegivel {
-  state "EM_MONTAGEM / ORGANIZADO" as Baixa
-  state "VERSATIL (500–649)\nBEM_CURADO (650–799)" as Media
-  state "CLOSET_INTELIGENTE (800–899)\nSIGNATURE / MAISON CLOSET" as Alta
-  Baixa --> Media : recálculo sobe a nota
-  Media --> Alta : recálculo sobe a nota
-  Alta --> Media : recálculo desce (rubrica absoluta)
-  Media --> Baixa : recálculo desce
+title RF29 — InventoryScoreService: elegibilidade e faixas de score\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nInventoryScoreService.BANDS · 7 faixas · calculado em computeNow()
+
+state "Inelegível\neligible = false (n < 10)" as INELEGIVEL
+state "Elegível — eligible = true (n ≥ MIN_PIECES = 10)" as ELEGIVEL {
+  state "Em Montagem\nscore 0–299" as F0
+  state "Organizado\nscore 300–499" as F1
+  state "Versátil\nscore 500–649" as F2
+  state "Bem Curado\nscore 650–799" as F3
+  state "Closet Inteligente\nscore 800–899" as F4
+  state "Signature Closet\nscore 900–959" as F5
+  state "Maison Closet\nscore 960–1000" as F6
+  [*] --> F0
+  F0 --> F1 : score ≥ 300
+  F1 --> F2 : score ≥ 500
+  F2 --> F3 : score ≥ 650
+  F3 --> F4 : score ≥ 800
+  F4 --> F5 : score ≥ 900
+  F5 --> F6 : score ≥ 960
 }
-state "Fora dos rankings\n(ranking_opt_ins.optedIn = false)" as ForaRanking
-state "Nos rankings\n(ranking_positions: GLOBAL, PAIS, CIDADE, FAIXA,\nESTILO, SUSTENTAVEL, VERSATEIS, RISING)" as NoRanking
-Inelegivel --> Elegivel : 10ª peça cadastrada (RF4)\n→ GET /api/me/highlights calcula
-Elegivel --> Inelegivel : peças arquivadas abaixo de 10
-Elegivel --> ForaRanking : padrão (sem opt-in)
-ForaRanking --> NoRanking : PUT /api/me/rankings/opt-in {optedIn:true, shareCity?}
-NoRanking --> ForaRanking : PUT /api/me/rankings/opt-in {optedIn:false}
-NoRanking --> NoRanking : GET /api/me/rankings\n(CIDADE só com ≥ 50 pessoas — k-anonimato)
-note right of Elegivel : fator de confiança satura em 20 peças;\nIdentidade omitida sem DNA de Estilo (RF13);\nconquistas (user_achievements) concedidas no recálculo
-note bottom of Inelegivel : sem nota parcial; mostra progresso\n{missing, target}
+[*] --> INELEGIVEL
+INELEGIVEL --> ELEGIVEL : computeNow()\nn ≥ 10
+ELEGIVEL --> INELEGIVEL : computeNow()\nn < 10
+note right of ELEGIVEL
+  A cada cálculo a faixa é a que contém o score
+  (sobe ou desce com o recálculo);
+  as setas mostram a ordem crescente.
+end note
+state "RankingOptIn.optedIn" as B_RankingOptIn_optedIn {
+  state "optedIn = true" as B_RankingOptIn_optedIn_T
+  state "optedIn = false" as B_RankingOptIn_optedIn_F
+  [*] --> B_RankingOptIn_optedIn_F : criação\n(valor inicial false)
+  B_RankingOptIn_optedIn_T --> B_RankingOptIn_optedIn_F : optIn()\nPUT /api/me/rankings/opt-in\n(optedIn)
+  B_RankingOptIn_optedIn_F --> B_RankingOptIn_optedIn_T : optIn()\nPUT /api/me/rankings/opt-in\n(optedIn)
+}
+note bottom of B_RankingOptIn_optedIn
+  Consultas que filtram por optedIn:
+  findByOptedInTrue
+end note
 @enduml

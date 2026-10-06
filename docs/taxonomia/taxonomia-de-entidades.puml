@@ -1,6 +1,6 @@
 @startuml Taxonomia_Entidades
 !pragma layout smetana
-title Taxonomia de entidades do FashionAI — 99 entidades em 12 áreas (relações JPA)
+title Taxonomia de entidades do FashionAI — 107 entidades em 14 áreas (relações JPA)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 hide empty members
@@ -121,6 +121,7 @@ package "Quarto 3D e avatar" {
   class RoomLayout <<room_layouts>>
   class RoomStorageEntry <<room_storage_map>>
   class UserAvatar3d <<user_avatars_3d>>
+  class AvatarIdentityVersion <<avatar_identity_versions>>
 }
 package "IA, visão computacional e pipelines" {
   class AiInferenceLog <<ai_inference_log>>
@@ -134,13 +135,24 @@ package "IA, visão computacional e pipelines" {
   class MetricSnapshot <<metric_snapshots>>
   class AssetPreset <<asset_presets>>
 }
+package "HypeScore v2 (sinais, recortes e marcos)" {
+  class HypeSignalDaily <<hype_signal_daily>>
+  class HypeScoreCurrent <<hype_scores>>
+  class HypeScoreSnapshot <<hype_score_snapshots>>
+  class HypeMilestone <<hype_milestones>>
+}
+package "FashionAI Lens" {
+  class LensScan <<lens_scans>>
+  class LensDetection <<lens_detections>>
+  class LensFeedback <<lens_feedback>>
+}
 package "Moderação, auditoria e operação" {
   class ModerationQueueItem <<moderation_queue>>
   class AuditLog <<audit_log>>
   class BackupRecord <<backup_records>>
 }
 note as N
-  Relações com **User** (dono/autor) omitidas: 45.
+  Relações com **User** (dono/autor) omitidas: 46.
   Setas: ManyToOne/OneToOne (→), coleções (o–).
 end note
 Brand --> BrandProfile

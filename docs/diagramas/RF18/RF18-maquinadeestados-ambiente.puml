@@ -1,36 +1,39 @@
 @startuml RF18_MaquinaDeEstados_Ambiente
 !pragma layout smetana
-title RF18 — Ambiente 3D do provador: neutro, marca, multimarca e marca fixada (resolveEnvironment)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-[*] --> Neutro : provador vazio ou peças sem marca
-state "neutral (FashionAI)" as Neutro
-state "brand (uma marca)" as Marca
-state "multibrand (destaque + painéis)" as Multi
-state "pinned (marca fixada)" as Fixada
-Neutro --> Marca : prova peça com marca
-Marca --> Marca : prova outra peça da mesma marca
-Marca --> Multi : prova peça de outra marca\n(a nova vira destaque)
-Multi --> Multi : prova peça de outra marca\n(destaque = última escolha; até 3 painéis)
-Multi --> Marca : remove as peças das outras marcas
-Marca --> Neutro : remove a última peça com marca / Limpar
-Multi --> Neutro : Limpar
-Marca --> Fixada : fixa a marca (chip do ambiente)
-Multi --> Fixada : fixa uma das marcas vestidas
-Fixada --> Fixada : continua provando\n(o destaque não muda)
-Fixada --> Marca : volta para Automático
-Fixada --> Multi : volta para Automático
-Marca --> Neutro : escolhe "Neutro"
-Multi --> Neutro : escolhe "Neutro"
-Neutro --> Marca : volta para Automático (há marca vestida)
-note right of Multi
-  Cada troca anima as cores e o painel entra
-  com escala suave; "reduzir movimento"
-  troca na hora.
+title RF18 — resolveEnvironment(): estado calculado\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nlib/tryon/fitting-room.ts · vale a primeira regra verdadeira
+
+state "resolveEnvironment()" as C_resolveEnvironment {
+  state C_resolveEnvironment_avaliar <<choice>>
+  state "neutral" as C_resolveEnvironment_neutral
+  state "multibrand" as C_resolveEnvironment_multibrand
+  state "brand" as C_resolveEnvironment_brand
+}
+[*] --> C_resolveEnvironment_avaliar : a cada mudança das peças vestidas
+C_resolveEnvironment_avaliar --> C_resolveEnvironment_neutral : [1] mode === 'neutral' || !brands.length
+C_resolveEnvironment_avaliar --> C_resolveEnvironment_multibrand : [2] others.length
+C_resolveEnvironment_avaliar --> C_resolveEnvironment_brand : [3] senão
+note right of C_resolveEnvironment
+  mode: 'auto' | 'neutral' | { pinned: string }
+  chamado por: page.tsx
+  Não é gravado: recalculado a cada chamada.
 end note
 @enduml

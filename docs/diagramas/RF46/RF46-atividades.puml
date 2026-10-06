@@ -1,9 +1,16 @@
 @startuml RF46_Atividades
-title RF46 — Gerar assets criativos do FashionAI por meio do FAI Creative Engine e serviços Adobe\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,69 +19,43 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF46 — Gerar assets criativos do FashionAI por meio do FAI Creative Engine e serviços Adobe\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre o Background Studio (RF11) no card\nde esquema ou de peça, ou o criador de selo (RF25);
-if (Tipo de asset?) then (fundo / arte)
-  :Descreve o cenário (prompt), direção de arte,\nera e alvo (SCHEME | PIECE);
-  |Frontend|
-  :background-studio.tsx\nPOST /api/backgrounds/art;
-  |Backend|
-  if (Prompt vazio?) then (sim)
-    #FFE3E3:400 PROMPT_VAZIO;
-    stop
-  endif
-  :BackgroundStudioService.generateArt\nmonta prompt + negativo "no people, no faces";
-  note right
-    RN46.04 — nomes de celebridades protegidos
-    (protectedNames) são validados no prompt
-  end note
-  :AiEngine.execute(BACKGROUND_GENERATOR)\npercorre ImageGenerationPort[] com fallback;
-  note right
-    RN46.10 — provider abstraído pela porta.
-    Implementado: ReplicateImageGenerationAdapter.
-    Adobe Firefly: opção no AiCatalog,
-    adapter <<planejado>>
-  end note
-  if (Algum provedor devolveu imagem?) then (não)
-    :status FALLBACK_GALLERY\n(sugestões de asset_presets AURA);
-  else (sim)
-    |Bancos-serviços|
-    :Recorta 900×2160 / 900×2080 e grava PNG\n(MediaService → photos, PhotoOrigin.BACKGROUND_STUDIO);
-  endif
-  |Pessoa|
-  :Aplica o fundo ao card;
-  |Backend|
-  :PUT /api/schemes/{id}/background ou\nPUT /api/pieces/{id}/background\n(só a config do fundo muda);
-  note right
-    Fronteira RF45 × RF46 (RN46.01/RN46.08):
-    o card compõe fundo criativo + asset canônico
-    da peça (RF45); a foto canônica não é alterada
-  end note
-else (selo)
-  :Monta o medalhão (catálogo de desenhos)\nou envia a arte;
-  |Backend|
-  :GET /api/seals/design-catalog\nPOST /api/seals/uploads (SealDesignService);
+:Abre /brands/[slug], /pieces/new,\n/schemes/[id]/edit;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/seals/design-catalog;
+|Pessoa usuária|
+:Gerar arte de fundo por prompt\n(Background Generator);
+|Tela (Next.js)|
+:POST /api/backgrounds/art;
+|API (Spring Boot)|
+:BackgroundController.art\n→ BackgroundStudioService.generateArt;
+if (prompt vazio?) then (sim)
+  :400 PROMPT_VAZIO\n«Descreva o cenário da arte de\nfundo.»\n→ a tela mostra o aviso;
+  stop
 endif
-|Backend|
-:<<planejado>> CreativeRequest → TemplateResolver\n→ provider criativo → validação → CreativeAsset\n+ AssetVersion (variantes de tamanho/formato);
-note right
-  não implementado — conforme Trello:
-  templates versionados (BADGE_CIRCULAR_V3…),
-  provenance por asset (source, template, provider),
-  revisão antes da publicação, job assíncrono
-  PipelineJob (RN46.05)
-end note
+|Dados e serviços|
+:Lê: celebrity_profiles\nusers;
+:Usa: Guard.requireCanCreate\nAssetCatalogService.list\nMediaService.put\nMediaService.register;
+:IA: BACKGROUND_GENERATOR;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Enviar selo pronto [1:1, circular…)
+    :POST /api/seals/uploads\n→ SealDesignService.uploadCore\nvalida: ACESSO_NEGADO, NUCLEO_PEQUENO,\nNUCLEO_PROPORCAO\nlê: users\nusa: MediaStoragePort.put;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

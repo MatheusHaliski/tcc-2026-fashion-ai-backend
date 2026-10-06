@@ -1,44 +1,88 @@
 @startuml RF28_Espelho_Sequencia
-title RF28 — Vista-me: estado do espelho, avatar 3D e "Vista-me" por prompt\nDiagrama de sequência
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam sequence {
-  ArrowColor #52606D
-  LifeLineBorderColor #B695F5
-  ParticipantBackgroundColor #F8F4FF
-  ParticipantBorderColor #B695F5
-  ActorBackgroundColor #F8F4FF
-  GroupBackgroundColor #FFF5F8
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
-actor "Pessoa usuária" as P
-participant "mirror/page.tsx" as Pg
-participant "MirrorStage" as St
-participant "AvatarViewer\n(Three.js)" as V
-participant "HumanOutfit" as O
-participant "MirrorController" as C
-participant "MirrorService" as S
-participant "Avatar3dController" as AC
-database "MySQL\nmirror_states ·\nwardrobe_items ·\nuser_avatar3d" as DB
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+title RF28 — Vista-me: estado do espelho, avatar 3D e 'Vista-me' por prompt\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-P -> Pg : abre /mirror
-Pg -> C : GET /api/me/mirror
-C -> S : state(user)
-S -> DB : MirrorState + peças
-S --> Pg : {slots, complete, missing, light}
-Pg -> St : <MirrorStage slots kelvin>
-St -> AC : GET /api/me/avatar3d
-AC --> St : {exists, model, adjust, textureUrl}
-St -> V : avatar, sexo, corpo, pieces=mirrorPieces(slots), framing=full
-V -> O : veste as peças (padrão FAI no que faltar)
-O --> V : malhas presas ao esqueleto
-V --> P : reflexo em pose natural
-P -> Pg : "Vista-me: jantar de sexta"
-Pg -> C : POST /api/me/mirror/vista-me {prompt, keepMirror}
-C -> S : vistaMe(user, prompt, anchors, focus, keep)
-S -> S : interpreta (ocasião, humor, âncoras, restrições, estação)
-S -> DB : escolhe peças elegíveis por slot e salva o estado
-S --> Pg : novo estado
-Pg -> St : novos slots
-St -> V : pieces atualizadas
-V --> P : reflexo com o look novo
+actor "Pessoa usuária" as U
+boundary "c/mirror/mirror-stage.tsx" as c_mirror_mirror_stage_tsx
+participant "lib/i18n/i18n.tsx" as lib_i18n_i18n_tsx
+participant "lib/auth/session.tsx" as lib_auth_session_tsx
+participant "lib/hooks/use-api.ts" as lib_hooks_use_api_ts
+participant "API (Spring Boot)" as API
+participant "lib/avatar3d/body-spec.ts" as lib_avatar3d_body_spec_ts
+participant "MirrorService" as MirrorService
+database "MySQL" as DB_MySQL
+participant "RoomService" as RoomService
+participant "WardrobeService" as WardrobeService
+participant "AiEngine" as AI
+participant "Audit" as Audit
+queue "Eventos de domínio" as EV
+== c/mirror/mirror-stage.tsx · MirrorStage() ==
+U -> c_mirror_mirror_stage_tsx : MirrorStage()
+activate c_mirror_mirror_stage_tsx
+c_mirror_mirror_stage_tsx -> lib_i18n_i18n_tsx : useI18n()
+c_mirror_mirror_stage_tsx -> lib_auth_session_tsx : useAuth()
+c_mirror_mirror_stage_tsx -> lib_hooks_use_api_ts : useApi()
+c_mirror_mirror_stage_tsx -> API : GET /api/me/avatar3d\nAvatar3dController.get
+API --> c_mirror_mirror_stage_tsx : JSON
+c_mirror_mirror_stage_tsx -> lib_avatar3d_body_spec_ts : validateBody()
+opt !kelvin
+c_mirror_mirror_stage_tsx --> U : encerra
+end
+opt kelvin < 3500
+c_mirror_mirror_stage_tsx --> U : encerra
+end
+opt kelvin > 5000
+c_mirror_mirror_stage_tsx --> U : encerra
+end
+deactivate c_mirror_mirror_stage_tsx
+c_mirror_mirror_stage_tsx --> U : resultado
+== MirrorService · another() ==
+U -> MirrorService : another()
+activate MirrorService
+MirrorService -> DB_MySQL : SELECT mirror_states
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService -> DB_MySQL : SELECT mirror_states
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService -> RoomService : outOfSeason()
+MirrorService -> WardrobeService : eligible()
+alt acervo sem superior
+MirrorService --> U : 422 ACERVO_SEM_SUPERIOR
+end
+MirrorService -> DB_MySQL : SELECT wardrobe_items
+MirrorService -> AI : COPILOT
+MirrorService -> Audit : log() (×2)
+MirrorService -> AI : SCHEME_COMPOSER
+alt sem combinação nova
+MirrorService --> U : 422 SEM_COMBINACAO_NOVA
+end
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService ->> EV : MirrorAction
+MirrorService -> RoomService : locateAll()
+MirrorService -> DB_MySQL : SELECT wardrobe_items
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService -> RoomService : locateAll()
+MirrorService -> DB_MySQL : SELECT style_dna
+deactivate MirrorService
+MirrorService --> U : resultado
 @enduml

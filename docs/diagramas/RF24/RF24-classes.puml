@@ -1,177 +1,100 @@
 @startuml RF24_Classes
-title RF24 — Usar a IA do sistema (motor transversal de inteligência artificial do Fashion AI)\nDiagrama de classes — motor (fai-application · ai), entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF24 — Usar a IA do sistema (motor transversal de inteligência artificial do Fashion AI)\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-application · ai" {
-class AiEngine {
-  -providers: Map<String, AiProviderPort>
-  -rateLimit: RateLimitPort
-  -consents: UserConsentRepository
-  -inferenceLogs: AiInferenceLogRepository
-  -budget: AiBudget
-  -remoteEnabled: boolean
-  +text(TextCall<T>): AiOutcome<T>
-  +execute(userId, capability, inputsUsed, prompt, protectedNames, remotes, local): AiOutcome<T>
-  +remoteAllowed(userId, capability): boolean
-  +providerAvailability(): Map
+package "Backend (Java)" {
+  class AiBudget <<service>> {
+    -globalDaily: BigDecimal
+    -userDaily: BigDecimal
+    -clock: Clock
+    +check()
+    +globalDaily()
+    +userDaily()
+    +capped()
+    +exceeds()
+    +startOfUtcDay()
+    +orZero()
+  }
+  class AiCatalog  {
+    +envOr()
+    +spec()
+    +all()
+    +put()
+    +claude()
+    +gemini()
+    +local()
+    +option()
+  }
+  class AiEngine <<service>> {
+    -providers: Map<String,AiProviderPort>
+    -budget: AiBudget
+    -remoteEnabled: boolean
+    -feature3d: boolean
+    +text()
+    +execute()
+    +estimatedCost()
+    +remoteAllowed()
+    +localOutcome()
+    +explanation()
+    +classify()
+    +consentState()
+  }
+  class AiOutcome  {
+    -value: T
+    -inferenceId: UUID
+    -result: AiCallResult
+    -fallbackUsed: boolean
+    -provider: String
+    -model: String
+  }
+  class AiProviderPort <<interface>> {
+    +providerId()
+    +available()
+    +invoke()
+  }
+  class AiRequest  {
+    -userId: UUID
+    -capability: AiCapability
+    -model: String
+    -system: String
+    -prompt: String
+    -images: List<AiImage>
+  }
+  class AiResponse  {
+    -provider: String
+    -model: String
+    -latencyMs: long
+    -estimatedCostUsd: BigDecimal
+    -text: String
+    -inputTokens: long
+  }
+  class RateLimitPort <<interface>> {
+    +tryAcquire()
+    +status()
+    +reset()
+    +release()
+  }
 }
-class AiCatalog {
-  {static} +CLAUDE_DEFAULT_MODEL: String
-  {static} +GEMINI_DEFAULT_MODEL: String
-  {static} +spec(AiCapability): CapabilitySpec
-  {static} +all(): Collection<CapabilitySpec>
-  {static} +tokenCost(model, in, out): BigDecimal
-}
-class "AiCatalog.CapabilitySpec" as Spec <<record>> {
-  +capability: AiCapability
-  +primary: ProviderOption
-  +alternative: ProviderOption
-  +local: ProviderOption
-  +fallbackBehavior: String
-  +dailyQuotaPerUser: int
-  +timeoutSeconds: int
-}
-class AiBudget {
-  +check(userId, pending): Verdict
-  +globalDaily(): BigDecimal
-  +userDaily(): BigDecimal
-}
-interface AiProviderPort {
-  +providerId(): String
-  +available(): boolean
-  +invoke(AiRequest): AiResponse
-}
-class AiOutcome<T> <<record>> {
-  +value: T
-  +inferenceId: UUID
-  +result: AiCallResult
-  +fallbackUsed: boolean
-  +provider: String
-  +model: String
-  +latencyMs: long
-  +costUsd: BigDecimal
-  +explanation: Explanation
-  +quota: Quota
-}
-enum AiCapability {
-  PIECE_ANALYZER (RF4)
-  CONTENT_MODERATOR (RF4)
-  SCHEME_COMPOSER (RF5)
-  DNA_SYNTHESIZER (RF13)
-  BACKGROUND_GENERATOR (RF11)
-  SEALBOND_MATCHER (RF20/RF21)
-  STYLE_ADVISOR (RF6)
-  INSIGHT_GENERATOR (RF26)
-  BRAND_RESOLVER (RF4/RF5/RF13)
-  COPILOT (RF10)
-  STYLE_INSIGHT (RF12)
-  EDIT_ASSISTANT (RF9)
-  ACERVO_GROUPING (RF6)
-  AFFINITY (RF8)
-  THREE_D_GENERATOR (RF16)
-  TRY_ON (RF18)
-  TRY_ON_POLISH (RF18)
-  CATEGORY_FALLBACK_COMPOSITOR (RF18)
-  PHOTO_CURATOR (RF12)
-  FLAT_LAY_STANDARDIZER (RF4)
-  BRAND_LOGO_FINDER (RF4/RF14/RF26)
-  STUDIO_ENHANCER (RF4)
-  MULTI_PIECE_DETECTOR (RF4)
-  PIECE_IMAGE_RECREATOR (RF4)
-  CATALOG_DISCOVERY (RF47)
-  --
-  +number(): int
-  +hostRf(): String
-  +consentPurpose(): ConsentPurpose
-  +inScope(): boolean
-}
-}
-package "fai-domain · model" {
-class AiInferenceLog {
-  +id: UUID
-  +userId: UUID
-  +capability: String
-  +hostRf: String
-  +provider: String
-  +model: String
-  +latencyMs: long
-  +estimatedCostUsd: BigDecimal
-  +result: AiCallResult
-  +fallbackUsed: boolean
-  +inputSummaryJson: String
-  +outputSummary: String
-  +consentState: String
-  +correlationId: String
-  +createdAt: Instant
-}
-class UserConsent {
-  +user: User
-  +purpose: ConsentPurpose
-  +granted: boolean
-  +legalBasis: String
-  +policyVersion: String
-  +grantedAt: Instant
-  +revokedAt: Instant
-}
-class AiReviewItem {
-  +kind: AiReviewKind
-  +status: AiReviewStatus
-  +pieceId: UUID
-  +field: String
-  +aiValue: String
-  +aiConfidence: BigDecimal
-  +userValue: String
-  +adminDecision: AiReviewDecision
-  +finalValue: String
-  +addToTraining: boolean
-}
-}
-package "fai-domain · enums" {
-enum AiCallResult {
-  SUCCESS
-  FALLBACK_LOCAL
-  TIMEOUT
-  CIRCUIT_OPEN
-  RATE_LIMITED
-  CONSENT_DENIED
-  PROMPT_REJECTED
-  ERROR
-}
-enum ConsentPurpose {
-  AI_RECOMMENDATION
-  AI_EXTERNAL_PHOTO_PROCESSING
-  HISTORY_FOR_RECOMMENDATION
-  PERSONALIZED_ADS
-  PARTNER_SHARING
-  BODY_MEASUREMENTS
-  FACIAL_RECOGNITION
-  LOCATION_HISTORY
-  AI_MODEL_TRAINING
-}
-}
-AiEngine --> "*" AiProviderPort : providers (gemini, claude)
-AiEngine ..> AiCatalog : spec()
+AiEngine --> RateLimitPort
 AiEngine --> AiBudget
-AiEngine ..> AiOutcome : devolve
-AiEngine ..> AiInferenceLog : grava
-AiEngine ..> UserConsent : lê consentState
-AiCatalog ..> Spec
-Spec --> AiCapability
-AiCapability --> ConsentPurpose : consentPurpose
-AiOutcome --> AiCallResult
-AiInferenceLog --> AiCallResult
-UserConsent --> ConsentPurpose
-AiReviewItem ..> AiInferenceLog : revisão humana (RF4)
-note top of AiInferenceLog : tabela ai_inference_log (RNF5)
-note top of UserConsent : tabela user_consents (RF23 grava, RF24 lê)
-note top of AiReviewItem : tabela ai_review_items
 @enduml

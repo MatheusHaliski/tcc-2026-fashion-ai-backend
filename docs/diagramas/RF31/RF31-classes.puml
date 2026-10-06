@@ -1,124 +1,179 @@
 @startuml RF31_Classes
-title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +email: String
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String
-  +birthDate: String
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  .. +20 campos ..
+package "fai-domain (entidades JPA)" {
+  class Brand <<brands>> {
+    +id: UUID
+    +name: String
+    +slug: String
+    +logoUrl: String
+    +website: String
+    +source: BrandSource
+    +catalogOrigin: CatalogOrigin
+    +fixtureKey: String
+    +sourceConfidence: BigDecimal
+    +verifiedAt: Instant
+    .. +2 campos ..
+  }
+  class BrandProfile <<brand_profiles>> {
+    +id: UUID
+    +owner: User
+    +brandName: String
+    +slug: String
+    +logoUrl: String
+    +coverUrl: String
+    +bio: String
+    +storeUrl: String
+    +cnpj: String
+    +razaoSocial: String
+    .. +21 campos ..
+  }
+  class HypeScoreCurrent <<hype_scores>> {
+    +id: UUID
+    +entityType: HypeEntityType
+    +entityId: UUID
+    +ownerId: UUID
+    +algorithmVersion: String
+    +status: HypeStatus
+    +score: BigDecimal
+    +level: HypeLevel
+    +dimensions: HypeDimensions
+    +deltaPoints: BigDecimal
+    .. +16 campos ..
+  }
+  class PieceUsageDiaryEntry <<piece_usage_diary>> {
+    +id: UUID
+    +wardrobeItemId: UUID
+    +userId: UUID
+    +usedOn: LocalDate
+    +occasion: String
+    +note: String
+    +source: String
+    +schemeId: UUID
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class WardrobeAvailabilityChange <<wardrobe_availability_log>> {
+    +id: UUID
+    +wardrobeItemId: UUID
+    +userId: UUID
+    +available: boolean
+    +changedAt: Instant
+  }
+  class WardrobeItem <<wardrobe_items>> {
+    +id: UUID
+    +user: User
+    +brandProfile: BrandProfile
+    +brand: Brand
+    +name: String
+    +category: String
+    +subcategory: String
+    +sex: String
+    +brandName: String
+    +brandLogoUrl: String
+    .. +70 campos ..
+  }
 }
-class WardrobeItem {
-  +user: User
-  +brandProfile: BrandProfile
-  +brand: Brand
-  +name: String
-  +category: String
-  +subcategory: String
-  +sex: String
-  +brandName: String
-  +color: String
-  +material: String
-  +sizeLabel: String
-  +market: String
-  +styleTags: String
-  +occasionTags: String
-  .. +54 campos ..
+package "fai-domain (enums)" {
+  enum ApprovalStatus {
+    PENDENTE
+    AJUSTES
+    APROVADO
+    RECUSADO
+    SUSPENSO
+  }
+  enum HypeStatus {
+    AVAILABLE
+    INSUFFICIENT_DATA
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
+  enum PhotoProcessingStatus {
+    NEW
+    MODERATING
+    PROCESSING
+    COMPLETED
+    NEEDS_REUPLOAD
+    FAILED
+  }
 }
-class WardrobeAvailabilityChange {
-  +id: UUID
-  +wardrobeItemId: UUID
-  +userId: UUID
-  +available: boolean
-  +changedAt: Instant
+package "fai-application" {
+  class WardrobeService <<service>> {
+    +closet()
+    +detail()
+    +update()
+    +toggles()
+    +markWorn()
+    +deletionImpact()
+    +delete()
+  }
 }
-class PieceUsageDiaryEntry {
-  +id: UUID
-  +wardrobeItemId: UUID
-  +userId: UUID
-  +usedOn: LocalDate
-  +occasion: String
-  +note: String
-  +source: String
-  +schemeId: UUID
-  +createdAt: Instant
-}
-class HypeScoreCurrent <<RF53>> {
-  +entityType: HypeEntityType
-  +entityId: UUID
-  +algorithmVersion: String
-  +status: HypeStatus
-  +score: BigDecimal
-  +level: HypeLevel
-  +dimensions: HypeDimensions
-  +deltaPoints: BigDecimal
-  +calculatedAt: Instant
-  .. +12 campos ..
-}
-}
-package "fai-domain · enums" {
-enum HypeLevel <<RF53>> {
-  LOW_SIGNAL
-  NICHE
-  RELEVANT
-  HOT
-  TRENDING
-  VIRAL
-}
-}
-package "fai-application · service" {
-class "WardrobeService.ClosetFilter" as ClosetFilter <<record>> {
-  +category, color, season, occasion, style: String
-  +state: String
-  +q: String
-  +sort: String
-  +page, size: int
-  +hypeLevel: String
-}
-class WardrobeService {
-  ~{static} HYPE_SORTS = hype, hype_desc, hype_asc, growth, rarity
-  ~{static} SORT_ALIASES: Map<String, String>
-  +closet(viewer, ownerId, ClosetFilter): Page<PieceView>
-  ~hypeMinimum(level): int
-  ~{static} stateMatches(w, state): boolean
-}
-}
+WardrobeService ..> Brand : usa
+WardrobeService ..> User : usa
+WardrobeService ..> WardrobeItem : usa
+Brand "*" --> "1" BrandProfile : brandProfile
+BrandProfile "1" --> "1" User : owner
+BrandProfile --> ApprovalStatus
+HypeScoreCurrent --> HypeStatus
+HypeScoreCurrent ..> User : ownerId
 PieceUsageDiaryEntry ..> User : userId
 PieceUsageDiaryEntry ..> WardrobeItem : wardrobeItemId
+User --> AccountStatus
 WardrobeAvailabilityChange ..> User : userId
 WardrobeAvailabilityChange ..> WardrobeItem : wardrobeItemId
+WardrobeItem "*" --> "1" Brand : brand
+WardrobeItem "*" --> "1" BrandProfile : brandProfile
 WardrobeItem "*" --> "1" User : user
-HypeScoreCurrent ..> WardrobeItem : entityId (PIECE)
-HypeScoreCurrent --> HypeLevel
-WardrobeService ..> ClosetFilter
-WardrobeService ..> WardrobeItem : filtra/ordena
-WardrobeService ..> HypeScoreCurrent : lê (sort Hype · hypeLevel)
-note top of User : tabela users
-note top of WardrobeItem : tabela wardrobe_items
-note top of WardrobeAvailabilityChange : tabela wardrobe_availability_log
-note top of PieceUsageDiaryEntry : tabela piece_usage_diary
-note top of HypeScoreCurrent : tabela hype_scores — novo (RF53 · HypeScore v2)
-note bottom of ClosetFilter : hypeLevel = faixa mínima (filtro, não aba) — novo (RF53)
-note top of WardrobeService
-  novo (RF53) — SORT_ALIASES: recentes→recent · mais_usadas→worn
-  menos_usadas→least_worn · nome→name · preco→price · mais_tempo_sem_uso→idle
-  (sort Hype e hypeLevel leem hype_scores; sem Hype fica por último)
-end note
+WardrobeItem --> AvailabilityStatus
+WardrobeItem --> ModerationStatus
+WardrobeItem --> PhotoProcessingStatus
 @enduml

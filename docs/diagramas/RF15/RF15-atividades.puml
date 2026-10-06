@@ -1,9 +1,16 @@
 @startuml RF15_Atividades
-title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,77 +19,52 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre a foto de uma peça já cadastrada (RF4):\nem "Minhas Fotos" (/photos) ou no card expandido da peça;
-:Toca em "Editar" → abre o Editor Canvas 2D (PhotoEditor);
-|Frontend (photo-editor.tsx)|
-if (Veio de "Minhas Fotos"?) then (sim)
-  :GET /api/photos/{id}/file (original, só o dono);
-else (não)
-  :Baixa originalImageUrl / imageUrl da peça;
+:Abre /photos, /pieces/[id], /pieces/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/pieces/{id}\nGET /api/photos/{id}/file\nGET /api/me/photos/insights\nGET /api/me/photos;
+|Pessoa usuária|
+:RF12.CA02 / RF15.CA02 — Salvar a\nedição do Editor Canvas 2D…;
+|Tela (Next.js)|
+:POST /api/photos/{id}/edits;
+|API (Spring Boot)|
+:PhotoController.saveEdit\n→ PhotoService.saveEdit;
+|Dados e serviços|
+:Lê: photos\nwardrobe_items;
+:Usa: Guard.requireOwner\nGuard.requireCanCreate\nWardrobeService.replaceImage\nMediaService.put\nMediaService.register;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Remoção de fundo sob demanda para…)
+    :POST /api/photos/background-removal\n→ PhotoService.removeBackground\nusa: Guard.requireCanCreate,\nWardrobeService.governedFlatLay;
+  case (Adicionar uma peça pública ao meu…)
+    :POST /api/pieces/{id}/copy\n→ WardrobeService.addToWardrobe\nvalida: JA_E_SUA, NAO_ENCONTRADO\nlê: wardrobe_items, users, reactions\nusa: Guard.requireCanCreate, Guard.requireView,\nProjectionService.piece\ngrava: wardrobe_items;
+  case (Editar a peça)
+    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
+  case (Excluir foto [pede confirmação qu…)
+    :DELETE /api/photos/{id}\n→ PhotoService.delete\nvalida: CONFIRMACAO_NECESSARIA\nlê: photos, wardrobe_items\nusa: Guard.requireOwner\nestado: deletedAt → set;
+  case (Excluir a peça)
+    :DELETE /api/pieces/{id}\n→ WardrobeService.delete\nlê: wardrobe_items, scheme_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.removePiece …\nestado: availabilityStatus → ARCHIVED, disponivel →\nfalse, visibility → PRIVATE;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Cadastrar a peça a partir do…, Excluir várias
+  fotos, Curadoria: duplicatas, baixa…,
+  Marcar/desmarcar momento-chave
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-:Desenha o passo inicial no <canvas>\n(histórico: fonte, giro, recorte, brilho, contraste);
-|Pessoa|
-repeat
-  :Escolhe uma ferramenta;
-  if (Ferramenta) then (recortar)
-    |Frontend (photo-editor.tsx)|
-    :Arrasta a área (>= 3% da largura) e aplica o recorte;
-  elseif (girar 90°)
-    :Gira o canvas e o recorte acumulado;
-  elseif (brilho / contraste)
-    :Aplica filtro CSS 2D e registra o passo;
-  else (remover fundo)
-    :POST /api/photos/background-removal (PNG atual);
-    |Backend (PhotoService)|
-    :guard.requireCanCreate → wardrobe.governedFlatLay\n(AiEngine FLAT_LAY_STANDARDIZER: cota diária e teto de gasto);
-    if (Fundo removido?) then (sim)
-      :Devolve PNG base64 + provedor (remove.bg / local);
-    else (não)
-      :ok=false — mensagem; demais ferramentas seguem (CA04);
-    endif
-    note right: ver RF4 (FlatLayPipeline) e RF24 (motor de IA)
-  endif
-  |Frontend (photo-editor.tsx)|
-  :Empilha o passo (desfazer/refazer, Ctrl+Z / Ctrl+Shift+Z);
-  |Pessoa|
-repeat while (Continua editando?) is (sim)
-->não;
-if (Fechar com edições pendentes?) then (sim)
-  :Confirma descarte (CA05);
-  stop
-else (não)
-endif
-:Toca em "Salvar";
-|Frontend (photo-editor.tsx)|
-:canvas.toBlob("image/png");
-if (Foto de "Minhas Fotos" (photoId)?) then (sim)
-  :POST /api/photos/{id}/edits (multipart file);
-  |Backend (PhotoService)|
-  if (Foto é a imagem de uma peça ativa do dono?) then (sim)
-    :WardrobeService.replaceImage: nova imagem + thumb,\nregistra Photo EDITOR, mantém o selo de IA;
-  else (não)
-    :Grava cópia editada (Photo origin=EDITOR,\neditedFromPhotoId, ModerationStatus APPROVED);
-  endif
-  note right: CA02 — a original é preservada em "Minhas Fotos"
-else (não)
-  :PUT /api/pieces/{pieceId}/image (multipart file);
-  |Backend (WardrobeService)|
-  :replaceImage: substitui imageUrl/thumbnailUrl da peça,\nphotoProcessingStatus = COMPLETED;
-endif
-|Frontend (photo-editor.tsx)|
-:Mensagem de sucesso e recarrega a galeria / o card;
+|Pessoa usuária|
 stop
 @enduml

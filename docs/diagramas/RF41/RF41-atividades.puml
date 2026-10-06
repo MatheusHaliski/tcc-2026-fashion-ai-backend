@@ -1,9 +1,16 @@
 @startuml RF41_Atividades
-title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,81 +19,64 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-if (O que a pessoa faz?) then (joga)
-  :Duelo FLAIR, Arena do dia, um dos 15 modos,\nduelo de times 3×3 ou inscreve look em Desafio;
-  |Backend|
-  :FlairService / FlairModesService / ChallengeService\nencerra a partida;
-  :FaiPointsService.game(userId, jogo, partida, resultado);
-  :award(GAME_PLAYED, ref = jogo:partida) +5;
-  if (resultado = WIN?) then (sim)
-    :award(GAME_WON, mesma ref) +10;
-  endif
+:Abre /challenges/[id], /challenges,\n/flair;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/flair/me\nGET /api/me/points\nGET /api/me/room\nGET /api/pieces/{id};
+|Pessoa usuária|
+:FLAIR — inscreve um deck na batalha\ndo dia (um por pessoa p…;
+|Tela (Next.js)|
+:POST /api/flair/arena;
+|API (Spring Boot)|
+:FlairController.joinArena\n→ FlairService.joinArena;
+if (já na arena?) then (sim)
+  :409 JA_NA_ARENA\n«Você já inscreveu um deck na\nbatalha de hoje. Volte amanhã para\no novo tema.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (deck arquivado?) then (sim)
+  :400 DECK_ARQUIVADO\n«Esse esquema está arquivado.»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: scheme_items\nhype_scores\nflair_match_entries\nusers\nflair_coin_entries\nflair_profiles;
+:Usa: Guard.requireCanCreate\nSchemeService.owned\nHypeScoreConfig.algorithmVersion\nFaiPointsService.game;
+:Grava: flair_matches\nflair_match_entries\nflair_coin_entries\nflair_profiles;
+:Estado: status → OPEN;
+:Evento: CouponRightsCheck;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Editar esquema)
+    :PUT /api/schemes/{id}\n→ SchemeService.update\nvalida: FORMULARIO_INVALIDO, FOTO_INVALIDA,\nPECA_DE_OUTRO_USUARIO, PECA_INDISPONIVEL …\nlê: schemes, scheme_items, wardrobe_items …\nusa: Guard.requireCanCreate, Guard.requireOwner,\nBackgroundStudioService.applyToScheme …\ngrava: scheme_items;
+  case (Salvar esquema [manual, IA, autop…)
+    :POST /api/schemes\n→ SchemeService.create\nvalida: FORMULARIO_INVALIDO, FOTO_INVALIDA,\nINDISPONIVEL, NAO_ENCONTRADO …\nlê: users, schemes, wardrobe_items …\nusa: Guard.requireCanCreate, Guard.requireView,\nBackgroundStudioService.applyToScheme …\ngrava: schemes, scheme_items;
+  case (FLAIR — duelo de estilo 1×1 [5 ro…)
+    :POST /api/flair/duels\n→ FlairService.duel\nvalida: DECK_ARQUIVADO, DECK_VAZIO, DUELO_CONSIGO\nlê: scheme_items, hype_scores, wardrobe_items …\nusa: Guard.requireCanCreate, SchemeService.owned,\nHypeScoreConfig.algorithmVersion …\ngrava: flair_matches, flair_match_entries,\nflair_profiles …;
+  case (Iniciar desafio [solo, duelo, gru…)
+    :POST /api/challenges\n→ ChallengeService.start\nvalida: ERRO, LIMITE_DESAFIOS, MODO_INDISPONIVEL,\nPARTICIPANTES_DEMAIS …\nlê: challenge_templates, challenge_instances,\nchallenge_participants …\nusa: Guard.requireCanCreate,\nRoomService.lastDiaryDates,\nNotificationService.notify\ngrava: challenge_instances, challenge_participants;
+  case (Editar a peça)
+    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
+  endswitch
   note right
-    Quest do FLAIR resgatada → FLAIR_QUEST +10
-    Desafio concluído → CHALLENGE_COMPLETED
-    (valor do desafio)
+  Outras ações deste RF:
+  FLAIR — duelo de equipes 3×3…, FLAIR — cria uma
+  equipe (até…, Excluir a peça, Cadastrar a peça a
+  partir do…, Enviar look como entrada, Recado no
+  mural do desafio
   end note
-else (cria)
-  |Pessoa|
-  :Cria esquema (RF5, Smart Mirror/Vista-me, DNA, remix)\nou cadastra/edita/completa peça ou gera o 3D;
-  |Backend|
-  :Serviço publica DomainEvents\n(SchemeSaved, PieceCreated, PieceUpdated, Model3dGenerated);
-  :WardrobeEventListeners (AFTER_COMMIT);
-  if (Qual evento?) then (esquema criado)
-    :award(SCHEME_CREATED) +40;
-  elseif (peça pronta para o catálogo) then (sim)
-    :award(PIECE_CATALOGED) +25;
-  elseif (completude >= 90%) then (sim)
-    :award(PIECE_COMPLETED) +10;
-  else (3D gerado — RF16)
-    :award(PIECE_3D) +15;
-  endif
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-|Backend|
-:Lê fai_points_rules[actionCode];
-if (regra existe e está ativa?) then (sim)
-  if (idempotency_key usuário:ação:ref já existe?) then (sim)
-    :Não paga (evento já pontuado);
-  elseif (teto diário/semanal atingido?) then (sim)
-    :Não paga, mas o jogo/ação segue normalmente;
-    note right
-      Tetos dos jogos: 6 partidas, 4 vitórias,
-      3 quests = 100 pts/dia (V26).
-      Sem apostas: os pontos saem do sistema,
-      nunca do oponente.
-    end note
-  else (não)
-    |Bancos-serviços|
-    :INSERT fai_points_ledger (delta, actionCode, refType, refId);
-    |Backend|
-    if (pontos vitalícios passaram do limiar do próximo nível?) then (sim)
-      :RoomService.setLevel + notificação ROOM_LEVEL_UP;
-    endif
-  endif
-else (não)
-  :Não paga (ação sem regra);
-endif
-if (foi uma partida de duelo, modos ou times?) then (sim)
-  |Frontend|
-  :Resultado mostra "+N FAI Pts"\nao lado das FLAIR Coins (flair/page.tsx);
-else (não)
-  |Frontend|
-  :Lançamento aparece só no extrato\n(selo na Arena/Desafio: planejado);
-endif
-|Pessoa|
-:Abre a aba Pontos (points) → GET /api/me/points\n(saldo, nível, regras e extrato);
+|Pessoa usuária|
 stop
 @enduml

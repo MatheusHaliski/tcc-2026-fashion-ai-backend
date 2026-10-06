@@ -1,121 +1,162 @@
 @startuml RF11_Classes
-title RF11 — Compor a arte de fundo (Background Studio) do card de um esquema ou de uma peça\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF11 — Compor a arte de fundo (Background Studio) do card de um esquema ou de uma peça\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class Scheme {
-  +backgroundColor: String = "#F4F2EF"
-  +backgroundGradient: String
-  +backgroundArtUrl: String
-  +backgroundVideoUrl: String
-  +backgroundAnimationType: BackgroundAnimation
-  +studioConfigJson: String
-  +cardSkin: String = "atelier"
-  +containerOrigin: ContainerOrigin
-  +containerMandatory: boolean
-  +containerColor: String
-  +recommendedDirection: String
+package "fai-domain (entidades JPA)" {
+  class AssetPreset <<asset_presets>> {
+    +id: String
+    +kind: AssetKind
+    +label: String
+    +presetGroup: String
+    +previewUrl: String
+    +animatedUrl: String
+    +posterUrl: String
+    +paletteJson: String
+    +metadataJson: String
+    +status: String
+    .. +3 campos ..
+  }
+  class Photo <<photos>> {
+    +id: UUID
+    +user: User
+    +origin: PhotoOrigin
+    +sourceEntityId: UUID
+    +storageKey: String
+    +publicUrl: String
+    +originalUrl: String
+    +thumbnailUrl: String
+    +contentHash: String
+    +mimeType: String
+    .. +10 campos ..
+  }
+  class Scheme <<schemes>> {
+    +id: UUID
+    +user: User
+    +originalScheme: Scheme
+    +title: String
+    +description: String
+    +creationMode: CreationMode
+    +origin: SchemeOrigin
+    +style: String
+    +occasion: String
+    +season: Season
+    .. +46 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class WardrobeItem <<wardrobe_items>> {
+    +id: UUID
+    +user: User
+    +brandProfile: BrandProfile
+    +brand: Brand
+    +name: String
+    +category: String
+    +subcategory: String
+    +sex: String
+    +brandName: String
+    +brandLogoUrl: String
+    .. +70 campos ..
+  }
 }
-class WardrobeItem {
-  +backgroundConfigJson: String
-  .. {rev, template, composition, surface, effects} ..
+package "fai-domain (enums)" {
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
+  enum SchemeStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+  }
+  enum RenderStatus {
+    PENDING
+    RENDERING
+    ENHANCING
+    COMPOSITING
+    CACHED
+    COMPLETED
+    FAILED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  enum PhotoProcessingStatus {
+    NEW
+    MODERATING
+    PROCESSING
+    COMPLETED
+    NEEDS_REUPLOAD
+    FAILED
+  }
 }
-class AssetPreset {
-  +id: String
-  +kind: AssetKind
-  +label: String
-  +presetGroup: String
-  +staticUrl: String
-  +animatedUrl: String
-  +posterUrl: String
-  +paletteJson: String
-  +metadataJson: String
-  +status: String
-  +rfTags: String
-  +syncedAt: Instant
+package "fai-application" {
+  class BackgroundStudioService <<service>> {
+    +catalog()
+    +combination()
+    +recommend()
+    +generateArt()
+    +upload()
+    +saveScheme()
+    +resetScheme()
+    +savePiece()
+    +generateSkinThumbnail()
+  }
 }
-class Photo {
-  +user: User
-  +origin: PhotoOrigin
-  +storageKey: String
-  +publicUrl: String
-  +width: Integer
-  +height: Integer
-}
-}
-package "fai-domain · enums" {
-enum ContainerOrigin {
-  INDEFINIDA
-  MANUAL
-  AUTO
-}
-enum BackgroundAnimation {
-  NONE
-  SNOW
-  PETALS
-  LEAVES
-  SHIMMER
-}
-enum AssetKind {
-  CHROME_BACKGROUND
-  AURA_PRESET
-  AURA_VARIANT
-  MATERIAL
-  AURA_MATERIAL_STATIC
-  AURA_MATERIAL_ANIMATED
-  AURA_MATERIAL_MOSAIC
-  GRADIENT_AURA
-  SEASONAL
-  CARD_SKIN
-}
-}
-package "fai-application · service" {
-class BackgroundStudioService {
-  +catalog(): Map
-  +combination(aura, material, animated, mosaic): Map
-  +recommend(styles, occasions): Map
-  +generateArt(user, ArtRequest): Map
-  +upload(user, bytes, target): Map
-  +applyToScheme(scheme, config, applyDirection)
-  +saveScheme(user, schemeId, config, applyDirection): Map
-  +resetScheme(user, schemeId): Map
-  +savePiece(user, pieceId, cfg): Map
-  +rendererBackground(scheme): Background
-}
-class ArtRequest <<record>> {
-  +prompt: String
-  +direction: String
-  +celebrityId: UUID
-  +era: String
-  +passePartout: boolean
-  +target: String
-}
-enum AiCapability {
-  BACKGROUND_GENERATOR
-  .. outras capacidades (RF24) ..
-}
-}
-Scheme --> ContainerOrigin
-Scheme --> BackgroundAnimation
-AssetPreset --> AssetKind
-BackgroundStudioService ..> Scheme : applyToScheme / reset
-BackgroundStudioService ..> WardrobeItem : savePiece (rev)
-BackgroundStudioService ..> AssetPreset : via AssetCatalogService
-BackgroundStudioService ..> Photo : registra BACKGROUND_STUDIO
-BackgroundStudioService ..> ArtRequest
-BackgroundStudioService ..> AiCapability : BACKGROUND_GENERATOR
-note top of Scheme : tabela schemes (só os campos do RF11)
-note top of WardrobeItem : tabela wardrobe_items
-note top of AssetPreset : tabela asset_presets
-note bottom of Photo : tabela photos (Minhas Fotos — RF12)
-note bottom of ArtRequest : direction ∈ EDITORIAL_SPREAD, LUXURY_GLASS,\nATELIER, SHOW_NOTES (DIRECTIONS)
+BackgroundStudioService ..> AssetPreset : usa
+BackgroundStudioService ..> Scheme : usa
+BackgroundStudioService ..> User : usa
+BackgroundStudioService ..> WardrobeItem : usa
+Photo "*" --> "1" User : user
+Photo --> ModerationStatus
+Scheme "*" --> "1" User : user
+Scheme --> RenderStatus
+Scheme --> SchemeStatus
+User --> AccountStatus
+WardrobeItem "*" --> "1" User : user
+WardrobeItem --> AvailabilityStatus
+WardrobeItem --> ModerationStatus
+WardrobeItem --> PhotoProcessingStatus
 @enduml

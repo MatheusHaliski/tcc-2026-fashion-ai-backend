@@ -1,39 +1,136 @@
 @startuml RF40_Roupa_Sequencia
-title RF40 — Avatar 3D: do look às malhas vestidas\nDiagrama de sequência
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam sequence {
-  ArrowColor #52606D
-  LifeLineBorderColor #B695F5
-  ParticipantBackgroundColor #F8F4FF
-  ParticipantBorderColor #B695F5
-  ActorBackgroundColor #F8F4FF
-  GroupBackgroundColor #FFF5F8
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
-participant "AvatarViewer" as V
-participant "HumanAvatar" as H
-participant "HumanOutfit" as O
-participant "garments.ts" as G
-participant "garment-relax.ts" as R
-participant "garment-trims.ts" as T
-participant "shoes.ts" as S
-participant "Three.js\n(SkinnedMesh)" as X
-V -> H : avatar, corpo, pieces
-H -> O : asset, composed, skeleton, pieces
-O -> G : kindOf(piece) / SPECS[kind]
-O -> G : bodyParam(asset, composed)
-O -> R : smoothBody(asset, composed)
-loop camadas, de dentro para fora
-  O -> G : garmentGeometry(asset, composed, normals, P, spec, under)
-  O -> R : relaxGarment(gg, composed, normals, P, under)
-  O -> R : foldGarment(gg, composed, normals, P)
-  O -> G : collarBand(...)
-  O -> T : garmentTrims(asset, composed, P, gg)
-  O -> G : photoInfo(img) / texturedGeometry / garmentMaterial
-  O -> G : underLayer(composed, P, [specs até aqui])
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+title RF40 — Avatar 3D: do look às malhas vestidas\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+participant "lib/avatar3d/human/garments.ts" as lib_avatar3d_human_garments_ts
+participant "lib/avatar3d/human/garment-relax.ts" as lib_avatar3d_human_garment_relax_ts
+== lib/avatar3d/human/garments.ts · kindOf() ==
+U -> lib_avatar3d_human_garments_ts : kindOf()
+activate lib_avatar3d_human_garments_ts
+opt is('legging'
+lib_avatar3d_human_garments_ts --> U : encerra
 end
-O -> G : shoeColors(img)
-O -> S : shoeParts(asset, composed, P, spec, cores, estilo)
-O -> X : malhas com skinIndex/skinWeight do corpo
-X --> V : avatar vestido, animado
+opt is('skirt', 'saia') && !is('short'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('short', 'bermuda'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('pant', 'jean', 'trouser', 'calca', 'calça', '…
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('dress', 'vestido'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('jumpsuit', 'macac', 'overall', 'romper', 'pla…
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('boot', 'bota', 'coturno'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('sneaker', 'tenis', 'tênis', 'shoe', 'sapato',…
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('coat', 'casaco', 'parka', 'trench', 'overcoat'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('jacket', 'jaqueta', 'blazer', 'windbreaker',…
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('hoodie', 'capuz'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('sweater', 'sueter', 'suéter', 'sweatshirt', '…
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('tank', 'regata', 'camisole', 'bodysuit', 'bod…
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('crop'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('shirt', 'camisa', 'blouse', 'blusa'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('long_sleeve', 'manga_longa', 'longsleeve'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('tee', 'camiseta', 'polo', 'top'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt any('OUTER_LAYER', 'OUTERWEAR'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt any('FULL_BODY', 'CORPO_INTEIRO', 'DRESS'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt any('UPPER', 'TOP', 'PARTE_SUPERIOR'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt any('LOWER', 'BOTTOM', 'PARTE_INFERIOR'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt any('SHOES', 'FOOTWEAR', 'CALCADOS'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+deactivate lib_avatar3d_human_garments_ts
+lib_avatar3d_human_garments_ts --> U : resultado
+== lib/avatar3d/human/garments.ts · garmentGeometry() ==
+U -> lib_avatar3d_human_garments_ts : garmentGeometry()
+activate lib_avatar3d_human_garments_ts
+opt g === 4
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt used[v] >= 0
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt f < 0 || f > tb.r.length - 1 + 1.5
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt f < 0 || f > tb.r.length - 1 + 1.5
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt index.length < 30
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+deactivate lib_avatar3d_human_garments_ts
+lib_avatar3d_human_garments_ts --> U : resultado
+== lib/avatar3d/human/garment-relax.ts · smoothBody() ==
+U -> lib_avatar3d_human_garment_relax_ts : smoothBody()
+activate lib_avatar3d_human_garment_relax_ts
+opt hit
+lib_avatar3d_human_garment_relax_ts --> U : encerra
+end
+deactivate lib_avatar3d_human_garment_relax_ts
+lib_avatar3d_human_garment_relax_ts --> U : resultado
+== lib/avatar3d/human/garment-relax.ts · relaxGarment() ==
+U -> lib_avatar3d_human_garment_relax_ts : relaxGarment()
+activate lib_avatar3d_human_garment_relax_ts
+opt !it
+lib_avatar3d_human_garment_relax_ts --> U : encerra
+end
+deactivate lib_avatar3d_human_garment_relax_ts
+lib_avatar3d_human_garment_relax_ts --> U : resultado
 @enduml

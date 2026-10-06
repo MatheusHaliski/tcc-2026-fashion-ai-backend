@@ -1,29 +1,71 @@
 @startuml RF29_Sequencia
-title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings do guarda-roupa\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor Usuário as U
-participant "Frontend\nhighlights" as FE
-participant "HighlightsController" as C
-participant "InventoryScoreService" as S
-database "MySQL" as DB
-U -> FE: abre Destaques
-FE -> C: GET /api/me/highlights
-C -> S: highlightsTab(user)
-S -> DB: SELECT wardrobe_items, piece_usage_diary,\navailability_changes, schemes
-S -> DB: INSERT inventory_score_snapshots
-S --> FE: score, dimensões, dicas, álbum
-U -> FE: explicar uma dimensão
-FE -> C: GET /api/me/inventory-score/dimensions/{code}
-U -> FE: entrar nos rankings
-FE -> C: PUT /api/me/rankings/opt-in
-S -> DB: UPSERT ranking_opt_in
-FE -> C: GET /api/me/rankings
-S -> DB: SELECT ranking_positions (k ≥ 50)
+autonumber "<b>0."
+title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings do guarda-roupa\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /highlights" as P
+control "HighlightsController" as HighlightsController
+participant "InventoryScoreService" as InventoryScoreService
+database "MySQL" as DB_MySQL
+participant "RoomService" as RoomService
+participant "AchievementService" as AchievementService
+== Aba Destaques: Inventory Score, dimensões, dicas e álbum ==
+U -> P : Aba Destaques: Inventory Score, dimensões, dicas…
+P -> HighlightsController : GET /api/me/highlights
+HighlightsController -> InventoryScoreService : highlightsTab()
+activate InventoryScoreService
+InventoryScoreService -> DB_MySQL : SELECT wardrobe_items
+InventoryScoreService -> DB_MySQL : SELECT schemes
+InventoryScoreService -> DB_MySQL : SELECT scheme_items
+InventoryScoreService -> DB_MySQL : SELECT piece_usage_diary (×3)
+InventoryScoreService -> DB_MySQL : SELECT wardrobe_availability_log
+InventoryScoreService -> RoomService : layout()
+RoomService -> DB_MySQL : SELECT room_layouts
+RoomService -> DB_MySQL : SELECT users
+RoomService -> DB_MySQL : SELECT fai_points_ledger
+RoomService -> DB_MySQL : INSERT/UPDATE room_layouts
+RoomService --> InventoryScoreService
+InventoryScoreService -> RoomService : labels()
+InventoryScoreService -> RoomService : labelSources()
+InventoryScoreService -> RoomService : locateAll()
+RoomService -> DB_MySQL : SELECT room_layouts
+RoomService -> DB_MySQL : SELECT users
+RoomService -> DB_MySQL : SELECT fai_points_ledger
+RoomService -> DB_MySQL : INSERT/UPDATE room_layouts
+RoomService --> InventoryScoreService
+InventoryScoreService -> DB_MySQL : SELECT style_dna
+InventoryScoreService -> DB_MySQL : SELECT inventory_score_snapshots
+InventoryScoreService -> InventoryScoreService : computedAt = set
+InventoryScoreService -> DB_MySQL : INSERT/UPDATE inventory_score_snapshots
+InventoryScoreService -> AchievementService : grant()
+AchievementService -> DB_MySQL : SELECT user_achievements
+AchievementService -> DB_MySQL : INSERT/UPDATE user_achievements
+AchievementService --> InventoryScoreService
+InventoryScoreService -> AchievementService : grant() (×2)
+note over InventoryScoreService : … e mais 15 passos no código
+deactivate InventoryScoreService
+InventoryScoreService --> HighlightsController : resultado
+HighlightsController --> P : 200 JSON
+P --> U : atualiza a tela
 @enduml

@@ -1,76 +1,77 @@
 @startuml RF1_Sequencia
-title RF1 — Cadastrar conta na plataforma (perfil Pessoal, Marca ou Celebridade)\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as P
-participant "Frontend\n(auth)/register · verify-email" as FE
-participant "AuthController" as AC
-participant "IdentityService" as IS
-participant "MediaStoragePort\n(S3 / local)" as ST
-participant "EmailSenderPort\n(Resend)" as EM
-participant "NotificationService" as NS
-database "MySQL" as DB
-actor "Administrador" as ADM
-participant "AdminController" as ADC
-participant "AdminService" as ADS
+autonumber "<b>0."
+title RF1 — Cadastrar conta na plataforma (perfil Pessoal, Marca ou Celebridade)\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-P -> FE: escolhe o tipo de perfil e preenche o formulário
-opt foto de perfil / logo / documento / foto oficial
-  FE -> AC: POST /api/auth/uploads?kind=... (multipart)
-  AC -> IS: preRegistrationUpload(bytes, kind, ip)
-  IS -> ST: put("pending/{uuid}/{kind}.jpg" | "restricted/pending/...")
-  AC --> FE: 201 {url, kind, width, height}
+actor "Pessoa usuária" as U
+boundary "Tela (Next.js)" as P
+control "AuthController" as AuthController
+participant "IdentityService" as IdentityService
+participant "MediaStoragePort\n(LocalFileMediaStorage, S3MediaStorageAdapter)" as MediaStoragePort
+database "MySQL" as DB_MySQL
+participant "PasswordHasherPort\n(Argon2PasswordHasher)" as PasswordHasherPort
+== Cadastrar conta (pessoal, marca ou celebridade) e abrir sessão ==
+U -> P : Cadastrar conta (pessoal, marca ou celebridade) e…
+P -> AuthController : POST /api/auth/register
+AuthController -> IdentityService : register()
+activate IdentityService
+alt tipo inválido
+IdentityService --> AuthController : 400 TIPO_INVALIDO
+AuthController --> P : 400 + mensagem
 end
-FE -> AC: GET /api/auth/username-suggestions?name=
-AC --> FE: 200 {suggested, suggestions}
-FE -> AC: POST /api/auth/register (RegisterCommand: profileType, fullName,\nemail, password, confirmPassword, acceptTerms, brand | celebrity, avatarUrl, sex)
-AC -> IS: register(cmd, ip, userAgent)
-IS -> IS: validatePassword / validCnpj / termos / idade ≥ 13 (CA01, CA03)
-alt formulário inválido
-  IS --> FE: 400 FORMULARIO_INVALIDO {errors}
-else e-mail já cadastrado (CA02)
-  IS -> DB: existsByEmailHash
-  IS --> FE: 409 EMAIL_EM_USO (sem dados da conta existente)
-else cadastro aceito
-  IS -> DB: INSERT users (passwordHash Argon2, status PENDING_EMAIL_VERIFICATION)
-  IS -> DB: INSERT user_preferences (language, mannequinSex)
-  opt MARCA ou CELEBRIDADE
-    IS -> DB: INSERT brand_profiles | celebrity_profiles (PENDENTE)
-    IS -> EM: send("Cadastro recebido — pendente de validação") (CA06/CA09)
-  end
-  IS -> ST: copia uploads pendentes para users/{id}/profile ou restricted/users/{id}/documents
-  IS -> DB: INSERT verification_codes (EMAIL_VERIFICATION, 24 h)
-  IS -> EM: send("Confirme seu e-mail", código de 6 dígitos)
-  IS -> NS: notify(WELCOME) · notify(EMAIL_CONFIRMATION)
-  IS -> DB: INSERT refresh_tokens (família nova) · audit CADASTRO_CONTA
-  AC --> FE: 201 Session {accessToken, refreshToken, user, status, emailVerified=false, warnings}
+IdentityService -> MediaStoragePort : get()
+alt formulario inválido
+IdentityService --> AuthController : 400 FORMULARIO_INVALIDO
+AuthController --> P : 400 + mensagem
 end
-FE -> FE: redireciona para /verify-email (CA05: acesso limitado)
-P -> FE: digita o código
-FE -> AC: POST /api/auth/email-verification {code}
-AC -> IS: verifyEmail(user, code)
-IS -> DB: verification_codes (consumedAt, attempts) · users.emailVerified = true
-alt PESSOAL
-  IS -> DB: users.status = ACTIVE
-else MARCA / CELEBRIDADE aguardando aprovação
-  IS -> DB: users.status = PENDING_VALIDATION
+alt e-mail em uso
+IdentityService --> AuthController : 409 EMAIL_EM_USO
+AuthController --> P : 409 + mensagem
 end
-AC --> FE: 200 UserCard
-ADM -> ADC: GET /api/admin/approvals
-ADC -> ADS: approvals(admin)
-ADC --> ADM: 200 {brands[], celebrities[]} (PENDENTE)
-ADM -> ADC: POST /api/admin/approvals/{userId} {approve, notes}
-ADC -> ADS: decide(admin, userId, approve, notes)
-ADS -> DB: brand_profiles.approvalStatus | celebrity_profiles.verificationStatus = APROVADO | RECUSADO
-opt aprovado (CA07/CA10)
-  ADS -> DB: users.status = ACTIVE · ensureDefaultSeals
+IdentityService -> DB_MySQL : SELECT users
+alt username em uso
+IdentityService --> AuthController : 400 USERNAME_EM_USO
+AuthController --> P : 400 + mensagem
 end
-ADS -> NS: notify(ACCOUNT_APPROVAL, motivo quando recusado)
-ADC --> ADM: 200 {userId, approved}
+IdentityService -> IdentityService : new User()
+IdentityService -> PasswordHasherPort : hash()
+IdentityService -> IdentityService : profileType = ?type
+IdentityService -> IdentityService : privateAccount = true
+IdentityService -> IdentityService : termsAcceptedAt = set
+IdentityService -> IdentityService : status = PENDING_EMAIL_VERIFICATION
+IdentityService -> DB_MySQL : INSERT/UPDATE users
+IdentityService -> MediaStoragePort : put()
+IdentityService -> IdentityService : avatarUrl = set (×3)
+IdentityService -> IdentityService : new UserPreferences()
+IdentityService -> DB_MySQL : INSERT/UPDATE user_preferences
+IdentityService -> IdentityService : new BrandProfile()
+IdentityService -> DB_MySQL : SELECT brand_profiles
+IdentityService -> IdentityService : logoUrl = set
+IdentityService -> IdentityService : storeUrl = set
+IdentityService -> IdentityService : activityProofUrl = set
+note over IdentityService : … e mais 33 passos no código
+deactivate IdentityService
+IdentityService --> AuthController : resultado
+AuthController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

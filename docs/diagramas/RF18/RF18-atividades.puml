@@ -1,9 +1,16 @@
 @startuml RF18_Atividades
-title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,74 +19,59 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre /try-on (Provador virtual);
-|Frontend (try-on/page.tsx)|
-fork
-  :GET /api/try-on\n(identidade do Avatar 3D + guarda-roupa por lugar);
-fork again
-  :GET /api/catalog/stores\n(lojas em destaque);
-end fork
-if (Link da prova? (?provar=c.<produto>.<variante>,w.<peça>)) then (sim)
-  :GET /api/catalog/products/{id} para cada peça de loja;
-  :Veste as peças do link;
-elseif (Prova da sessão?) then (sim)
-  :Restaura as peças (sessionStorage);
-else (não)
-  :Provador vazio · ambiente neutro FashionAI;
+:Abre /try-on, /pieces/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/catalog/stores\nGET /api/try-on\nGET /api/catalog/products/{id}\nGET /api/catalog/search;
+|Pessoa usuária|
+:Renderizar look no manequim (FASHN →\ncompositor local em fa…;
+|Tela (Next.js)|
+:POST /api/try-on/renders;
+|API (Spring Boot)|
+:TryOnController.render\n→ TryOnService.render;
+if (sem peças?) then (sim)
+  :400 SEM_PECAS\n«Leve ao menos uma peça ao\nmanequim.»\n→ a tela mostra o aviso;
+  stop
 endif
-note right
-  Guarda-roupa vazio NÃO bloqueia:
-  o provador prova peças das lojas (RF47).
-end note
-|Pessoa|
-repeat
-  if (De onde provar?) then (Lojas)
-    :Toca numa loja em destaque e/ou\nfiltra o tipo (cima, baixo, calçados…);
-    |Frontend (try-on/page.tsx)|
-    :CatalogSearch em modo navegação\nGET /api/catalog/search (só a marca já lista);
-    |Pessoa|
-    :Toca "Provar" num produto;
-  else (Meu guarda-roupa)
-    :Toca numa peça própria para combinar;
-  endif
-  |Frontend (try-on/page.tsx)|
-  :wearItem(): a peça toma o lugar dela\n(cima, baixo, calçado, acessório);
-  note right: peça inteira (FULL_BODY) cobre a parte de baixo
-  :resolveEnvironment(): marca da última peça = destaque;\noutras marcas vestidas = painéis laterais;
-  if (Marca fixada ou modo neutro?) then (sim)
-    :Mantém o ambiente escolhido;
-  else (não)
-    :Troca o ambiente 3D (cores animadas,\npainel entra com escala suave);
-  endif
-  :FittingRoomScene: Avatar 3D + faixa do logo, letreiro,\nparedes/piso no estilo da loja, cortina, espelho, arara;
-  |Pessoa|
-  if (Quer algo mais?) then (trocar a cor)
-    :Escolhe outra variante da peça vestida;
-  elseif (já tenho esta peça) then
-    |Frontend (try-on/page.tsx)|
-    :POST /api/pieces/from-catalog\n(peça entra no guarda-roupa por referência);
-  elseif (ver na loja) then
-    :Abre o domínio oficial registrado no produto;
-  elseif (foto / link / salvar) then
-    :PNG do palco · link ?provar= · prova salva (navegador);
-  else (só provar)
-  endif
-repeat while (Continua provando?) is (sim)
--> não;
-|Pessoa|
-:Limpar (opcional): peças saem do provador,\no guarda-roupa não muda;
+if (sexo incompativel?) then (sim)
+  :400 SEXO_INCOMPATIVEL\n««…» não é compatível com o\nmanequim ….»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: user_preferences\nusers;
+:Usa: Avatar3dService.forMannequin\nWardrobeService.owned\nMediaService.read\nTryOnCompositor.render\nMediaService.put\nMediaService.register;
+:IA: TRY_ON;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Salvar o look provado como esquema)
+    :POST /api/try-on/schemes\n→ TryOnService.saveAsScheme\nvalida: SEM_PECAS\nlê: schemes\nusa: OwnMedia.require, WardrobeService.owned,\nSchemeService.create\nestado: virtualTryOnUrl → set;
+  case (Salvar manequim [sexo, tom de pel…)
+    :PUT /api/try-on/preferences\n→ TryOnService.savePreferences\nvalida: TOM_INVALIDO\nlê: user_preferences\ngrava: user_preferences\nestado: mannequinSex → ?sex, mannequinBuild → ?build;
+  case (Editar a peça)
+    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
+  case (Adiciona ao guarda-roupa a peça e…)
+    :POST /api/pieces/from-catalog\n→ CatalogService.addToWardrobe\nvalida: PRODUTO_RECUSADO\nlê: catalog_products, brands, catalog_variants …\nusa: WardrobeService.createFromCatalog,\nWardrobeService.toggles\ngrava: catalog_products;
+  case (Excluir a peça)
+    :DELETE /api/pieces/{id}\n→ WardrobeService.delete\nlê: wardrobe_items, scheme_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.removePiece …\nestado: availabilityStatus → ARCHIVED, disponivel →\nfalse, visibility → PRIVATE;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Cadastrar a peça a partir do…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

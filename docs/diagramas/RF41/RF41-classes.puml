@@ -1,104 +1,69 @@
 @startuml RF41_Classes
-title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class FaiPointsLedgerEntry <<@Table fai_points_ledger>> {
-  +id: UUID
-  +userId: UUID
-  +delta: int
-  +actionCode: String
-  +refType: String
-  +refId: String
-  +idempotencyKey: String
-  +countsLifetime: boolean
-  +createdAt: Instant
+package "fai-domain (entidades JPA)" {
+  class FaiPointsLedgerEntry <<fai_points_ledger>> {
+    +id: UUID
+    +userId: UUID
+    +delta: int
+    +actionCode: String
+    +refType: String
+    +refId: String
+    +idempotencyKey: String
+    +countsLifetime: boolean
+  }
+  class FaiPointsRule <<fai_points_rules>> {
+    +actionCode: String
+    +points: int
+    +dailyCap: Integer
+    +weeklyCap: Integer
+    +oncePerRef: boolean
+    +active: boolean
+    +description: String
+  }
+  class RoomLayout <<room_layouts>> {
+    +id: UUID
+    +user: User
+    +level: String
+    +modulesJson: String
+    +drawerLabelsJson: String
+    +previousMapJson: String
+  }
+  class UserAchievement <<user_achievements>> {
+    +id: UUID
+    +userId: UUID
+    +achievementCode: String
+    +secret: boolean
+    +grantedAt: Instant
+  }
 }
-class FaiPointsRule <<@Table fai_points_rules>> {
-  +actionCode: String  <<@Id>>
-  +points: int
-  +dailyCap: Integer
-  +weeklyCap: Integer
-  +oncePerRef: boolean
-  +active: boolean
-  +description: String
+package "fai-application" {
+  class ChallengeService <<service>> {
+    +start()
+    +detail()
+    +submitEntry()
+    +note()
+  }
 }
-class UserAchievement <<@Table user_achievements>> {
-  +userId: UUID
-  +achievementCode: String
-  +secret: boolean
-  +grantedAt: Instant
-}
-class RoomLayout <<@Table room_layouts>> {
-  +level: String = "ESTREIA"
-}
-}
-package "fai-application · service" {
-class FaiPointsService {
-  +game(userId, game, matchRef, outcome): int
-  +award(userId, actionCode, refType, refId, pointsOverride): Award
-  +awardIsolated(...): Award
-  +balance(userId): long
-  +lifetime(userId): long
-  +level(userId): Level
-  +account(user): Map
-}
-enum "FaiPointsService.Level" as Level {
-  ESTREIA (0)
-  STUDIO (300)
-  LOFT (900)
-  CLOSET (2000)
-  ATELIER (4000)
-  PENTHOUSE (7500)
-  MAISON (12000)
-}
-class "FaiPointsService.Award" as Award <<record>> {
-  +granted: boolean
-  +points: int
-  +capReached: boolean
-  +level: Level
-  +levelUp: boolean
-}
-class FlairService {
-  +duel(user, schemeId, opponent): Map
-  +joinArena(user, schemeId): Map
-  +teamBattle(user, opponentCode): Map
-  +claimQuest(user, code): Map
-}
-class ChallengeService {
-  +submitEntry(user, id, schemeId): Map
-}
-class WardrobeEventListeners {
-  +onSchemeSaved(SchemeSaved)
-  +onPieceCreated(PieceCreated)
-  +onPieceUpdated(PieceUpdated)
-  +onModel3d(Model3dGenerated)
-}
-class AchievementService {
-  +grant(userId, code): boolean
-  +list(user): List
-}
-}
-FaiPointsLedgerEntry "*" ..> "1" FaiPointsRule : actionCode
-FaiPointsService --> FaiPointsLedgerEntry : grava (append-only)
-FaiPointsService --> FaiPointsRule : lê
-FaiPointsService --> Award
-FaiPointsService --> Level
-FaiPointsService ..> RoomLayout : setLevel (RoomLayoutAccess)
-FlairService --> FaiPointsService
-ChallengeService --> FaiPointsService
-WardrobeEventListeners --> FaiPointsService
-AchievementService --> FaiPointsService
-AchievementService --> UserAchievement
-note bottom of FaiPointsRule : V26: GAME_PLAYED 5 (6/dia), GAME_WON 10 (4/dia),\nFLAIR_QUEST 10 (3/dia); SCHEME_CREATED 40 (5/dia),\nPIECE_CATALOGED 25 (10/dia), PIECE_COMPLETED 10, PIECE_3D 15
-note right of FaiPointsLedgerEntry : idempotencyKey = usuário:ação:ref\n(ref jogo:partida paga 1×)
 @enduml

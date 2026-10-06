@@ -1,41 +1,46 @@
 @startuml RF11_MaquinaDeEstados_Arte
 !pragma layout smetana
-title RF11 — Arte do card do esquema (Scheme · containerOrigin): do padrão ao rascunho do modal e à arte aplicada
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "Padrão\n(#F4F2EF, sem arte, NONE)" as Padrao
-state "Rascunho no modal\n(só no frontend, nada gravado)" as Rascunho
-state "Aplicada" as Aplicada {
-  state "INDEFINIDA" as Indef
-  state "MANUAL" as Manual
-  state "AUTO\n(containerMandatory = true)" as Auto
+title RF11 — ciclo de vida de Scheme.status e containerOrigin\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum SchemeStatus · enum ContainerOrigin · tabela schemes
+
+state "Scheme.status" as Ciclo_Scheme {
+  state Ciclo_Scheme_DRAFT as "DRAFT"
+  state Ciclo_Scheme_PUBLISHED as "PUBLISHED"
+  state Ciclo_Scheme_ARCHIVED as "ARCHIVED"
 }
-
-[*] --> Padrao : esquema criado sem fundo
-Padrao --> Rascunho : abre o Background Studio\n(etapa 4 ou "Editar arte")
-Aplicada --> Rascunho : reabre o Background Studio
-Rascunho --> Rascunho : modos 1 · 2 · 3 em qualquer ordem\nPOST /api/backgrounds/art · uploads\nPOST /api/schemes/preview
-Rascunho --> Padrao : cancelar (0 pedidos)
-Rascunho --> Indef : salvar sem cor de container\nPOST/PUT /api/schemes · PUT /api/schemes/{id}/background
-Rascunho --> Manual : salvar com container.color
-Rascunho --> Auto : salvar com applyRecommendedDirection = true
-Manual --> Indef : container.color vazio
-Auto --> Auto : cor diferente no container\n409 CONTAINER_TRAVADO
-Aplicada --> Padrao : DELETE /api/schemes/{id}/background\n(resetScheme — CA05)
-
-note right of Auto
-  A direção recomendada define cardSkin e a cor
-  nativa do container; resetScheme mantém o
-  container travado (containerMandatory)
-end note
-note left of Rascunho
-  Peça (modo 3): PUT /api/pieces/{id}/background
-  grava backgroundConfigJson com rev + 1;
-  baseRev antigo → 409 ARTE_ALTERADA
+[*] --> Ciclo_Scheme_DRAFT : criação
+Ciclo_Scheme --> Ciclo_Scheme_ARCHIVED : purgeScheduledDeletions(), archive()
+Ciclo_Scheme --> Ciclo_Scheme_PUBLISHED : create(), publish(),\npublishInternal(), update()
+state "Scheme.containerOrigin" as Ciclo_Scheme_containerOrigin {
+  state Ciclo_Scheme_containerOrigin_INDEFINIDA as "INDEFINIDA"
+  state Ciclo_Scheme_containerOrigin_MANUAL as "MANUAL"
+  state Ciclo_Scheme_containerOrigin_AUTO as "AUTO"
+}
+[*] --> Ciclo_Scheme_containerOrigin_INDEFINIDA : criação
+Ciclo_Scheme_containerOrigin --> Ciclo_Scheme_containerOrigin_AUTO : applyToScheme(), saveScheme()
+Ciclo_Scheme_containerOrigin --> Ciclo_Scheme_containerOrigin_INDEFINIDA : applyToScheme(), resetScheme(),\nsaveScheme()
+Ciclo_Scheme_containerOrigin --> Ciclo_Scheme_containerOrigin_MANUAL : applyToScheme(), saveScheme()
+note right of Ciclo_Scheme
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
 end note
 @enduml

@@ -22,4 +22,11 @@ state GateLiberado {
   }
 }
 GateLiberado --> SemGate : gp vence (12 h) · identidade revogada\n· segredo trocado
+' v5: diagrama do time mantido (sem alvo no código)
+legend bottom right
+  <b>Diagrama escrito pelo time e mantido como está.</b>
+  O código atual não tem um campo, enum ou método de estado equivalente
+  que scripts/diagramas/v5 consiga ler — não foi gerado nem verificado
+  contra o código em 2026-10-06.
+endlegend
 @enduml

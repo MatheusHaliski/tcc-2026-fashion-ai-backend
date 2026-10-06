@@ -1,9 +1,16 @@
 @startuml RF30_Atividades
-title RF30 — Ganhar e usar FAI Points, evoluir o nível do "Meu Quarto" e comprar na loja do quarto\nDiagrama de atividades
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,46 +19,60 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Usuário|
+title RF30 — Ganhar e usar FAI Points, evoluir o nível do 'Meu Quarto' e comprar na loja do quarto\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Usa o app (cadastra bem, gera 3D,\ncria looks, resgata peças esquecidas…);
-|Sistema (FaiPointsService)|
-:Credita no ledger append-only e idempotente\n(limite diário por regra);
-:Recalcula nível pelo acumulado vitalício\n(Estreia → Studio → Loft → Closet →\nAtelier → Penthouse → Maison);
-|Usuário|
-:Abre FAI Points → Loja do quarto;
-:Filtra por tipo, bloco, material,\norigem, marca e cor;
-if (Provar antes?) then (sim)
-  :Prévia no módulo (nada é cobrado);
-endif
-:Comprar;
-|Sistema (FaiPointsService)|
-if (Nível, estoque, janela, limite\npor pessoa e selo OK?) then (sim)
-  if (Saldo suficiente?) then (sim)
-    :Debita (SHOP_PURCHASE, não conta no vitalício);
-    :Cria unidade no inventário (serial se limitada);
-  else (não)
-    #FFE3E3:409 SALDO_INSUFICIENTE;
-    stop
-  endif
-else (não)
-  #FFE3E3:409 com o motivo do bloqueio;
+:Abre /brands/[slug], /points, /room;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/points\nGET /api/points/shop;
+|Pessoa usuária|
+:Comprar com FAI Points;
+|Tela (Next.js)|
+:POST /api/points/shop/{sku}/purchase;
+|API (Spring Boot)|
+:HighlightsController.buy\n→ FaiPointsService.buy;
+if (nível insuficiente?) then (sim)
+  :409 NIVEL_INSUFICIENTE\n«Disponível a partir do nível ….»\n→ a tela mostra o aviso;
   stop
 endif
-|Usuário|
-:Escolhe o módulo (ou "guarda-roupa inteiro");
-|Sistema (RoomService)|
-:Aplica o acabamento no módulo;
+if (esgotado?) then (sim)
+  :409 ESGOTADO\n«Edição limitada esgotada (item\ncosmético — ETI-01).»\n→ a tela mostra o aviso;
+  stop
+endif
+if (condicao de compra?) then (sim)
+  :409 CONDICAO_DE_COMPRA\n→ a tela mostra o aviso;
+  stop
+endif
+if (saldo insuficiente?) then (sim)
+  :409 SALDO_INSUFICIENTE\n«Saldo de … FAI pts; o item custa\n….»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: fai_points_ledger\nroom_catalog;
+:Usa: WardrobeCreatorService.blocker\nNotificationService.notify;
+:Grava: fai_points_ledger\nroom_inventory;
+:Estado: idempotencyKey → set\ncountsLifetime → false\nacquiredAt → set;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Experimentar item no módulo antes…)
+    :POST /api/points/shop/{sku}/try-on\n→ FaiPointsService.tryOn\nvalida: ENCAIXE_INCOMPATIVEL\nlê: room_catalog, fai_points_ledger\nusa: RoomLayoutAccess.compatibleModules;
+  case (Iluminação guiada [nível Studio]:…)
+    :PUT /api/me/room/light\n→ RoomService.setLight\nvalida: NIVEL_INSUFICIENTE\nlê: room_layouts, users, fai_points_ledger\ngrava: room_layouts;
+  case (Aplicar item comprado a um módulo…)
+    :POST /api/me/room-inventory/{inventoryId}/apply\n→ FaiPointsService.apply\nvalida: ACESSO_NEGADO, ENCAIXE_INCOMPATIVEL\nlê: room_inventory, room_catalog\nusa: RoomLayoutAccess.compatibleModules,\nRoomLayoutAccess.applyFinish;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

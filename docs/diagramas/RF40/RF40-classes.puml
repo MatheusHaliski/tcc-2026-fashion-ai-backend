@@ -1,102 +1,134 @@
 @startuml RF40_Classes
-title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba "Meu Avatar 3D", e usá-lo no manequim da Passarela 3D, do Meu Quarto e do Espelho\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba 'Meu Avatar 3D', e usá-lo no manequim da Passarela 3D, do Meu Quarto e d…\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +avatarUrl: String
-  +profileType: ProfileType
-  +mannequinSex: MannequinSex
-  .. +campos do RF1/RF3 ..
+package "components/ui/index.tsx" {
+  class FieldProps as "FieldProps" <<interface>> {
+    +label: string
+    +hint: string
+    +error: string
+    +required: boolean
+    +children: ReactNode
+    +id: string
+    +className: string
+  }
+  class MenuItem as "MenuItem" <<interface>> {
+    +label: string
+    +onSelect: () => void
+    +href: string
+    +danger: boolean
+    +icon: ReactNode
+    +hidden: boolean
+    +disabled: boolean
+  }
+  class NoticeOptions as "NoticeOptions" <<interface>> {
+    +title: string
+    +details: string[]
+    +action: { label: string; href?: string; onSelec…
+    +onClose: () => void
+  }
+  class NoticeItem as "NoticeItem" <<interface>> {
+    +id: number
+    +kind: NoticeKind
+    +text: string
+  }
+  class Toast as "Toast" <<interface>> {
+    +id: number
+    +kind: 'info' | 'success' | 'error'
+    +text: string
+  }
+  enum Variant as "Variant" {
+    default
+    primary
+    accent
+    ghost
+    danger
+  }
+  enum NoticeKind as "NoticeKind" {
+    info
+    success
+    warning
+    error
+  }
+  class mod_index_tsx as "index.tsx" <<módulo>> {
+    +cn()
+    +Button()
+    +FileButton()
+    +Spinner()
+    +Field()
+    +Input()
+    +Textarea()
+    +Select()
+  }
 }
-class UserAvatar3d {
-  +user: User
-  +modelVersion: int
-  +modelJson: String
-  +adjustJson: String
-  +textureKey: String
-  +photosCount: int
-  +warningsJson: String
-  +publicOnRunway: boolean
-  +consentAt: Instant
-  +textureModeration: ModerationStatus
+package "Backend (Java)" {
+  class AiEngine <<service>> {
+    -providers: Map<String,AiProviderPort>
+    -budget: AiBudget
+    -remoteEnabled: boolean
+    -feature3d: boolean
+    +text()
+    +execute()
+    +estimatedCost()
+    +remoteAllowed()
+    +localOutcome()
+    +explanation()
+    +classify()
+    +consentState()
+  }
+  class AiOutcome  {
+    -value: T
+    -inferenceId: UUID
+    -result: AiCallResult
+    -fallbackUsed: boolean
+    -provider: String
+    -model: String
+  }
+  class Avatar3dService <<service>> {
+    -audit: Audit
+    -ai: AiEngine
+    +get()
+    +save()
+    +listVersions()
+    +approve()
+    +restore()
+    +update()
+    +delete()
+    +deleteAllFor()
+  }
+  class ShowcaseService <<service>> {
+    -guard: Guard
+    -hypeConfig: HypeScoreConfig
+    +hypeOf()
+    +self()
+    +look3d()
+    +piece3d()
+    +look()
+    +canRequest()
+    +piece()
+  }
 }
-class AiInferenceLog {
-  +userId: UUID
-  +capability: String
-  +provider: String
-  +result: AiCallResult
-  +fallbackUsed: boolean
-}
-}
-package "fai-domain · enums" {
-enum ModerationStatus {
-  PENDING
-  APPROVED
-  REJECTED_POLICY
-  REJECTED_NOT_CLOTHING
-}
-enum ProfileType {
-  PESSOAL
-  MARCA
-  CELEBRIDADE
-}
-}
-package "fai-application · service" {
-class Avatar3dService {
-  +get(user): Map
-  +save(user, SaveCommand, texture): Map
-  +update(user, SettingsCommand): Map
-  +delete(user): void
-  +deleteAllFor(userId): void
-  +texture(viewer, ownerId): byte[]
-  +forMannequin(ownerId, viewerId): Optional<Map>
-  ~moderateTexture(userId, jpeg): ModerationStatus
-  {static} ~publicTexture(a): boolean
-}
-class "Avatar3dService.SaveCommand" as SaveCmd <<record>> {
-  +model: Map
-  +adjust: Map
-  +photos: Integer
-  +warnings: List<String>
-  +consent: Boolean
-  +publicOnRunway: Boolean
-}
-class "Avatar3dService.SettingsCommand" as SetCmd <<record>> {
-  +adjust: Map
-  +publicOnRunway: Boolean
-  +body: Map
-  +sex: String
-}
-class ShowcaseService {
-  ~mannequin(user, peças, viewer): Map
-}
-class AiEngine {
-  +text(TextCall): AiOutcome
-}
-}
-UserAvatar3d "1" --> "1" User : user
-UserAvatar3d --> ModerationStatus : textureModeration
-User --> ProfileType
-Avatar3dService ..> UserAvatar3d
-Avatar3dService ..> SaveCmd
-Avatar3dService ..> SetCmd
-Avatar3dService --> AiEngine : CONTENT_MODERATOR
-AiEngine ..> AiInferenceLog : grava
-ShowcaseService --> Avatar3dService : forMannequin
-note top of UserAvatar3d : tabela user_avatars_3d (V25)\num avatar por pessoa; textura em chave privada
-note top of User : tabela users
-note top of AiInferenceLog : tabela ai_inference_log — ver RF24 (motor de IA)
-note bottom of ShowcaseService : head=AVATAR na Passarela 3D e na Foto com meu manequim;\nMeu Quarto e Espelho: não implementado — conforme Trello (CA10)
+Avatar3dService --> AiEngine
+ShowcaseService --> Avatar3dService
+NoticeItem --> NoticeKind : kind
 @enduml

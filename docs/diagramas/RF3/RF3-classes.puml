@@ -1,157 +1,169 @@
 @startuml RF3_Classes
-title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class User {
-  +email: String
-  +phone: String
-  +birthDate: String
-  +bio: String
-  +coverUrl: String
-  +twoFactorEnabled: boolean
-  +privateAccount: boolean
-  +profileVisibility: Visibility
-  +status: AccountStatus
-  +deletionRequestedAt: Instant
-  +deletionScheduledFor: Instant
-  .. demais campos em RF1 ..
+package "fai-domain (entidades JPA)" {
+  class AuditLog <<audit_log>> {
+    +id: UUID
+    +actor: String
+    +acao: String
+    +recurso: String
+    +resultado: String
+    +ip: String
+    +userAgent: String
+    +timestamp: Instant
+    +correlationId: String
+    +metadataJson: String
+  }
+  class DataExportRequest <<data_export_requests>> {
+    +id: UUID
+    +user: User
+    +status: ExportStatus
+    +fileKey: String
+    +readyAt: Instant
+    +expiresAt: Instant
+  }
+  class Notification <<notifications>> {
+    +id: UUID
+    +recipient: User
+    +actor: User
+    +type: NotificationType
+    +category: NotificationCategory
+    +resourceType: String
+    +resourceId: UUID
+    +title: String
+    +body: String
+    +payloadJson: String
+    .. +3 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class UserConsent <<user_consents>> {
+    +id: UUID
+    +user: User
+    +purpose: ConsentPurpose
+    +granted: boolean
+    +legalBasis: String
+    +policyVersion: String
+    +grantedAt: Instant
+    +revokedAt: Instant
+  }
+  class UserPreferences <<user_preferences>> {
+    +id: UUID
+    +user: User
+    +theme: ThemeMode
+    +language: UiLanguage
+    +density: UiDensity
+    +fontScale: int
+    +highContrast: boolean
+    +reduceMotion: boolean
+    +chromeBackgroundId: String
+    +sizeSystem: SizeSystem
+    .. +16 campos ..
+  }
 }
-class UserPreferences {
-  +user: User
-  +notificationPushMaster: boolean
-  +notificationPrefsJson: String
-  .. tema, idioma, densidade ..
+package "fai-domain (enums)" {
+  enum ExportStatus {
+    REQUESTED
+    PROCESSING
+    READY
+    EXPIRED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum NotificationType {
+    PASSWORD_RESET
+    TWO_FACTOR_CODE
+    NEW_LOGIN_DEVICE
+    EMAIL_CONFIRMATION
+    DATA_EXPORT_READY
+    FOLLOW_REQUEST
+    FOLLOW_ACCEPTED
+    NEW_FOLLOWER
+    NEW_COMMENT
+    NEW_LIKE
+    ..
+  }
+  enum NotificationCategory {
+    SECURITY
+    SOCIAL
+    ACHIEVEMENT
+    SYSTEM
+    POINTS
+  }
+  enum Visibility {
+    PRIVATE
+    FOLLOWERS
+    PUBLIC
+  }
+  enum ConsentPurpose {
+    AI_RECOMMENDATION
+    AI_EXTERNAL_PHOTO_PROCESSING
+    HISTORY_FOR_RECOMMENDATION
+    PERSONALIZED_ADS
+    PARTNER_SHARING
+    BODY_MEASUREMENTS
+    FACIAL_RECOGNITION
+    LOCATION_HISTORY
+    AI_MODEL_TRAINING
+  }
 }
-class UserConsent {
-  +user: User
-  +purpose: ConsentPurpose
-  +granted: boolean
-  +legalBasis: String
-  +policyVersion: String
-  +grantedAt: Instant
-  +revokedAt: Instant
+package "fai-application" {
+  class IdentityService <<service>> {
+    +changePassword()
+    +sessions()
+    +revokeSession()
+    +revokeOtherSessions()
+  }
 }
-class DataExportRequest {
-  +user: User
-  +status: ExportStatus
-  +fileKey: String
-  +readyAt: Instant
-  +expiresAt: Instant
-}
-class Notification {
-  +recipient: User
-  +actor: User
-  +type: NotificationType
-  +category: NotificationCategory
-  +resourceType: String
-  +resourceId: UUID
-  +title: String
-  +body: String
-  +read: boolean
-  +readAt: Instant
-  +delivered: boolean
-}
-class AuditLog {
-  +actor: String
-  +acao: String
-  +recurso: String
-  +resultado: String
-  +ip: String
-  +timestamp: Instant
-  +correlationId: String
-}
-}
-package "fai-domain · enums" {
-enum ExportStatus {
-  REQUESTED
-  PROCESSING
-  READY
-  EXPIRED
-}
-enum ConsentPurpose {
-  AI_RECOMMENDATION
-  AI_EXTERNAL_PHOTO_PROCESSING
-  HISTORY_FOR_RECOMMENDATION
-  PERSONALIZED_ADS
-  PARTNER_SHARING
-  BODY_MEASUREMENTS
-  FACIAL_RECOGNITION
-  LOCATION_HISTORY
-  AI_MODEL_TRAINING
-}
-enum Visibility {
-  PRIVATE
-  FOLLOWERS
-  PUBLIC
-}
-enum NotificationCategory {
-  SECURITY
-  SOCIAL
-  ACHIEVEMENT
-  SYSTEM
-}
-}
-package "fai-application · service" {
-class AccountService {
-  +me(user): Map
-  +updateSensitive(user, SensitiveUpdate): Map
-  +confirmEmailChange(user, code): UserCard
-  +updatePrivacy(user, visibility): Map
-  +consents(user): List
-  +setConsent(user, purpose, granted): List
-  +requestExport(user): Map
-  +exportsOf(user): List
-  +downloadExport(user, exportId): byte[]
-  +purgeExpiredExports(): int
-  +requestDeletion(user, password): Map
-  +cancelDeletion(user): Map
-  +purgeScheduledDeletions(): int
-}
-class NotificationService {
-  +notify(recipientId, actorId, type, ...): Notification
-  +inbox(user): Map
-  +markRead(user, ids)
-  +markAllRead(user): int
-  +preferences(user): List
-  +updatePreferences(user, changes, master): List
-  +purgeExpired(): int
-}
-class IdentityService {
-  +reauthenticate(userId, password)
-  +sessions(user, currentSession): List
-  +revokeSession(user, sessionId)
-  +revokeOtherSessions(userId, keep): int
-  +changePassword(user, sid, ...): int
-  +requestPasswordReset(email, ip, ua)
-}
-}
-UserPreferences "1" --> "1" User : user
-UserConsent "*" --> "1" User : user
+IdentityService ..> User : usa
+IdentityService ..> UserPreferences : usa
 DataExportRequest "*" --> "1" User : user
-Notification "*" --> "1" User : recipient
-Notification "*" --> "0..1" User : actor
-User --> Visibility
-UserConsent --> ConsentPurpose
 DataExportRequest --> ExportStatus
+Notification "*" --> "1" User : actor
+Notification "*" --> "1" User : recipient
 Notification --> NotificationCategory
-AccountService ..> UserConsent : grava
-AccountService ..> DataExportRequest : cria/expira
-AccountService ..> AuditLog : audita
-AccountService ..> IdentityService : reautentica
-NotificationService ..> Notification : grava
-NotificationService ..> UserPreferences : preferências por tipo
-note top of UserConsent : tabela user_consents\n(único: user_id + purpose)
-note top of DataExportRequest : tabela data_export_requests
-note top of Notification : tabela notifications\n(type: NotificationType com 27 valores;\nSECURITY não pode ser desligado)
-note top of AuditLog : tabela audit_log
+Notification --> NotificationType
+User --> AccountStatus
+User --> Visibility
+UserConsent "*" --> "1" User : user
+UserConsent --> ConsentPurpose
+UserPreferences "1" --> "1" User : user
 @enduml

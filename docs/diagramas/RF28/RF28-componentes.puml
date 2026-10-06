@@ -1,51 +1,67 @@
 @startuml RF28_Componentes
-title RF28 — Montar looks no Smart Mirror e pedir sugestões ao "Vista-me" (só com peças do próprio guarda-roupa)\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF28 — Montar looks no Smart Mirror e pedir sugestões ao 'Vista-me' (só com peças do próprio guarda-roupa)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "mirror — Smart Mirror" as FE0
-  component "room — Vista-me no espelho do quarto" as FE1
+package "Frontend (Next.js)" {
+  component "/mirror\n(site)/(app)/mirror/page.tsx" as FE0
+  component "/room\n(site)/(app)/room/page.tsx" as FE1
+  component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  [MirrorController] as MirrorController
+  component "MirrorController\n/api/me/mirror\n/api/me/mirror/another\n/api/me/mirror/draft\n/api/me/mirror/grwm\n(+8 rotas)" as MirrorController
 }
 package "fai-application (casos de uso)" {
-  [MirrorService] as MirrorService
-  [WardrobeService] as WardrobeService #FAFAFA
-  [RoomService] as RoomService #FAFAFA
-  [SchemeService] as SchemeService #FAFAFA
-  [DailyLookService] as DailyLookService #FAFAFA
+  component "MirrorService" as MirrorService
+  component "WardrobeService" as WardrobeService <<apoio>>
+  component "RoomService" as RoomService <<apoio>>
+  component "SchemeService" as SchemeService <<apoio>>
+  component "DailyLookService" as DailyLookService <<apoio>>
 }
-package "fai-domain (repositórios JPA)" {
-  [MirrorStateRepository\nSchemeItemRepository\nSchemeRepository\nStyleDnaRepository\nWardrobeItemRepository] as REPOS
+package "fai-domain (repositórios)" {
+  component "MirrorStateRepository\nWardrobeItemRepository\nSchemeRepository\nSchemeItemRepository\nStyleDnaRepository" as REPO_MySQL
 }
-database "MySQL · fashionai_app\n• mirror_states\n• scheme_items\n• schemes\n• style_dna\n• wardrobe_items" as DB
-cloud "Motor de IA transversal (RF24)\nprovedores externos + fallback local" as P_ai
-[Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
-
-FE0 --> MirrorController : HTTPS/JSON
-FE1 --> MirrorController : HTTPS/JSON
+database "MySQL\n• mirror_states\n• scheme_items\n• schemes\n• style_dna\n• wardrobe_items" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+APIC --> MirrorController : HTTPS/JSON
+FE0 --> APIC
+FE1 --> APIC
 MirrorController --> MirrorService
-MirrorService ..> WardrobeService
+MirrorService --> AI
+MirrorService --> EV
+MirrorService --> REPO_MySQL
+MirrorService ..> DailyLookService
 MirrorService ..> RoomService
 MirrorService ..> SchemeService
-MirrorService ..> DailyLookService
-MirrorService --> REPOS
-MirrorService --> P_ai
-MirrorService --> P_events
-REPOS --> DB : JPA/Flyway
+MirrorService ..> WardrobeService
+REPO_MySQL --> DB_MySQL : JPA/Flyway
 @enduml

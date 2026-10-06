@@ -1,122 +1,109 @@
 @startuml RF49_Classes
-!include ../seguranca/_estilo.iuml
-title RF49 — Segurança, integridade e operação\nDiagrama de classes: freios de autenticação, contadores, origem da conta, integridade por domínio e dados demo
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF49 — Segurança, integridade e operação\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-web · support" {
-  class AuthRateLimitFilter <<OncePerRequestFilter · @Order(-102)>> {
-    ~RULES : List<Rule>
-    -hashing : Semaphore «teto de hashes Argon2»
-    -hashWaitMillis : long = 2000
-    ~ruleFor(method, path) : Optional<Rule>
-    ~bucketKey(ip) : String «IPv6 → prefixo /64»
-    ~defaultHashPermits(cores, dbPool) : int
-    #doFilterInternal(req, res, chain) «429 · 503 + Retry-After»
+package "Backend (Java)" {
+  class DemoEnvironmentGuard <<service>> {
+    -enabled: boolean
+    -allowProduction: boolean
+    -environment: String
+    +production()
+    +environment()
+    +requireEnabled()
   }
-  class Rule <<record>> {
-    method : String
-    path : String «* = um segmento»
-    limit : int
-    window : Duration
-    hashes : boolean
+  class DemoFixtures <<service>> {
+    -personas: List<Persona>
+    -followers: JsonNode
+    -pieces: List<PieceTemplate>
+    -colors: List<String>
+    -materials: List<String>
+    -sizes: List<String>
+    +validate()
+    +personas()
+    +fixtureKeys()
+    +pieces()
+    +colors()
+    +materials()
+    +sizes()
+    +priceMin()
   }
-  class ClientIpResolver {
-    ~MAX_SKEW_SECONDS = 60
-    ~MIN_SECRET_LENGTH = 32
-    +resolve(request) : String
-    ~signedIp(ip, ts, sig) : String «HMAC-SHA256, tempo constante»
+  class DemoDataAdminPort <<interface>> {
+    +testAccountIds()
+    +realAccountsAmong()
+    +plan()
+    +lockAccounts()
+    +pieceIdsOf()
+    +schemeIdsOf()
+    +storageKeysOf()
+    +interactionsOnRealContent()
+  }
+  class RateLimitPort <<interface>> {
+    +tryAcquire()
+    +status()
+    +reset()
+    +release()
+  }
+  class IdentityService <<service>> {
+    -audit: Audit
+    -frontendUrl: String
+    -dummyHash: String
+    -mailExecutor: Executor
+    +setIssuerReview()
+    +preRegistrationUpload()
+    +pendingUpload()
+    +purgeStalePendingUploads()
+    +pendingReferenced()
+    +register()
+    +readQuietly()
+    +claimPendingUpload()
+  }
+  class RedisAdapters  {
+    +redisRateLimit()
+    +redisCounterStore()
+    +redisRenderCache()
+    +redisJobQueue()
+  }
+  class MysqlDemoDataAdminAdapter  {
+    -jdbc: NamedParameterJdbcTemplate
+    +edges()
+    +deletedRows()
+    +condition()
+    +ids()
+    +count()
+    +uuids()
+    +testAccountIds()
+    +realAccountsAmong()
+  }
+  class V34__integridade_referencial_por_dominio  {
+    +canExecuteInTransaction()
+    +migrate()
+    +sameRule()
+    +norm()
+    +existing()
+    +problem()
+    +column()
+    +sha()
   }
 }
-
-package "fai-application" {
-  interface RateLimitPort {
-    +tryAcquire(owner, bucket, limit, window) : boolean
-    +status(owner, bucket, limit, window) : QuotaStatus
-    +reset(owner, bucket)
-    +release(owner, bucket) «nunca abaixo de 0»
-  }
-  class IdentityService {
-    ~LOGIN_FAIL = "login-fail"
-    -MAX_LOGIN_FAILURES = 5
-    -LOCK_WINDOW = 15 min
-    +login(cmd, ip, userAgent) : Session
-    +changePassword(user, sessão, atual, nova, confirma) : int
-    +reauthenticate(userId, senha)
-    -passwordMatchesWithLockout(user, senha, via) : boolean «429 MUITAS_TENTATIVAS»
-  }
-  class DemoEnvironmentGuard {
-    +requireEnabled() «FASHIONAI_DEMO_ENABLED; produção exige ALLOW_PRODUCTION»
-    +production() : boolean
-  }
-  class DemoFixtures <<@Component @Lazy>> {
-    +SEED = 2026
-    +personas(profile) : List<Persona>
-    +fixtureKeys(profile) : List<String>
-    «campo omitido = 0 · validado contra a taxonomia»
-  }
-  interface DemoDataAdminPort {
-    +testAccountIds() : List<UUID>
-    +realAccountsAmong(ids) : long
-    +plan(ids) : ResetCounts
-    +interactionsOnRealContent(ids) : List<CounterDelta>
-    +deletePolymorphicTargeting(ids) : Map
-    +deleteTestAccounts(ids) : long «só TEST_SEED/DEMO»
-    +integrityProblems(fixtureKeys) : List<String>
-  }
-  class "DemoDataService\n(planejado)" as DDS #FFFFFF {
-    +seed(profile) · plan() · reset(planHash) · verify()
-  }
-}
-
-package "fai-infrastructure" {
-  class InMemoryRateLimit {
-    -windows : ConcurrentHashMap «teto 100 mil, varredura»
-  }
-  class RedisRateLimit <<RedisAdapters>> {
-    «INCR + TTL · RELEASE em script Lua»
-  }
-  class MysqlDemoDataAdminAdapter {
-    ~edges() : List<Edge> «FKs reais do INFORMATION_SCHEMA»
-    ~deletedRows(edges) : Map<tabela, condição> «CASCADE recursivo»
-  }
-  class "V34__integridade_referencial_por_dominio" as V34 <<Flyway Java>> {
-    +POLICY : List<Fk> «131 FKs»
-    +sameRule(atual, política) : boolean
-    +migrate(ctx) «uma ALTER por FK · órfão adia só aquela»
-  }
-  class Fk <<record>> {
-    table · column · refTable · refColumn
-    onDelete : CASCADE | RESTRICT | SET NULL
-  }
-}
-
-package "fai-domain" {
-  class User {
-    -accountOrigin : AccountOrigin = REAL
-    -fixtureKey : String «único»
-    -testAccountColumn : Boolean «gerada (V35)»
-    +isTestAccount() : boolean
-    +isTestUsername(username) : boolean «e2e_ · demo_»
-  }
-  enum AccountOrigin {
-    REAL
-    TEST_SEED
-    DEMO
-    SYSTEM
-  }
-}
-
-AuthRateLimitFilter *-- Rule
-AuthRateLimitFilter --> ClientIpResolver
-AuthRateLimitFilter --> RateLimitPort : balde por IP
-IdentityService --> RateLimitPort : balde por conta
-RateLimitPort <|.. InMemoryRateLimit
-RateLimitPort <|.. RedisRateLimit
-DemoDataAdminPort <|.. MysqlDemoDataAdminAdapter
-MysqlDemoDataAdminAdapter ..> V34 : confere desvio da política
-V34 *-- Fk
-DDS ..> DemoEnvironmentGuard
-DDS ..> DemoFixtures
-DDS ..> DemoDataAdminPort
-User --> AccountOrigin
-IdentityService ..> User
+IdentityService --> RateLimitPort
 @enduml

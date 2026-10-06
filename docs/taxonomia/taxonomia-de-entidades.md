@@ -1,6 +1,6 @@
 # Taxonomia de entidades do FashionAI
 
-> Gerado por `scripts/docs/taxonomia_entidades.py` a partir do código em 2026-10-04. As contagens são calculadas; o único conteúdo manual é o agrupamento por área. Para atualizar, rode o script de novo.
+> Gerado por `scripts/docs/taxonomia_entidades.py` a partir do código em 2026-10-05. As contagens são calculadas; o único conteúdo manual é o agrupamento por área. Para atualizar, rode o script de novo.
 
 Numeração de RF = a do **Trello** (código RF32→RF27, RF33 do espelho→RF28, RF34→RF29, RF35→RF30, RF36→RF32, RF4 da captura V29→RF45; tabela em [`docs/novos-rf/README.md`](../novos-rf/README.md)). Visão complementar, por contexto delimitado, com migração de origem e enum de ciclo de vida de cada entidade: [`docs/entidades/TAXONOMIA_ENTIDADES.md`](../entidades/TAXONOMIA_ENTIDADES.md). Esta aqui traz contagens, campos, relações JPA, enums com valores e as entidades embutidas em JSON.
 
@@ -8,11 +8,11 @@ Numeração de RF = a do **Trello** (código RF32→RF27, RF33 do espelho→RF28
 
 | Medida | Valor |
 |---|---|
-| Entidades persistidas (JPA, MySQL) | 99 |
-| Áreas de negócio | 12 |
-| Campos (somados) | 1187 |
-| Relações JPA (ManyToOne/OneToOne/…) | 70 |
-| Enums de domínio | 87 |
+| Entidades persistidas (JPA, MySQL) | 107 |
+| Áreas de negócio | 14 |
+| Campos (somados) | 1315 |
+| Relações JPA (ManyToOne/OneToOne/…) | 71 |
+| Enums de domínio | 97 |
 | Categorias de peça · subcategorias | 5 · 78 |
 | Cores · famílias | 59 · 12 |
 | Ocasiões · estilos | 20 · 25 |
@@ -44,7 +44,7 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 
 | Entidade | Tabela | Base | Campos | Relações | Papel (Javadoc) |
 |---|---|---|---|---|---|
-| **WardrobeItem** | `wardrobe_items` | versionada | 74 | user → User, brandProfile → BrandProfile, brand → Brand | ClothesPiece (taxonomia §02) — peça do guarda-roupa (RF4, RF6, RF7, RF9, RF18). Campos de formulário, de sistema (pipeline Flat Lay, moderação, contadores sociais, hype score) e de lineage de remix. Listas curtas (occasi… |
+| **WardrobeItem** | `wardrobe_items` | versionada | 75 | user → User, brandProfile → BrandProfile, brand → Brand | ClothesPiece (taxonomia §02) — peça do guarda-roupa (RF4, RF6, RF7, RF9, RF18). Campos de formulário, de sistema (pipeline Flat Lay, moderação, contadores sociais, hype score) e de lineage de remix. Listas curtas (occasi… |
 | **PieceImage** | `piece_images` | versionada | 28 | — | RF4 · Asset de imagem da peça. ORIGINAL nunca é sobrescrito (chave única); os demais derivam dele. |
 | **PieceUsageDiaryEntry** | `piece_usage_diary` | — | 9 | — | DET-C07 / DET-M04 — Diário da Peça: cada uso com data, ocasião e nota (1× por dia). |
 | **WardrobeAvailabilityChange** | `wardrobe_availability_log` | — | 5 | — | RF34 §3.3 — histórico de transições disponível/indisponível (população de exposição da Utilização). |
@@ -148,7 +148,7 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 | **FlairTerritory** | `flair_territories` | versionada | 6 | owner → User | FLAIR — território do Fashion Monopoly (distritos e boutiques) e do Conquest (regiões de estilo). |
 | **FlairTrophy** | `flair_trophies` | versionada | 5 | user → User | FLAIR — troféu exibido no perfil (FLAIR Runway Winner, campeão da liga, território conquistado…). |
 
-### Quarto 3D e avatar  ·  RF27, RF30, RF39, RF40  ·  5 entidades
+### Quarto 3D e avatar  ·  RF27, RF30, RF39, RF40  ·  6 entidades
 
 | Entidade | Tabela | Base | Campos | Relações | Papel (Javadoc) |
 |---|---|---|---|---|---|
@@ -156,7 +156,8 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 | **RoomInventoryItem** | `room_inventory` | — | 7 | — | RF35 — itens da loja adquiridos pelo usuário (compra com saldo ou recompensa). |
 | **RoomLayout** | `room_layouts` | versionada | 5 | user → User | RF32/RF35 — layout do quarto: nível, módulos aplicados e rótulos das gavetas. |
 | **RoomStorageEntry** | `room_storage_map` | auditável | 4 | — | RF32 §1.1 — endereço estável de cada peça no quarto (door:{n}/hanger:{n}, drawer:{n}, top:{n}, base:{n}, shoe:{n}, chair, basket). |
-| **UserAvatar3d** | `user_avatars_3d` | versionada | 10 | user → User | RF40 — Meu Avatar 3D: o rosto/busto da própria pessoa (forma em pose neutra + pele + cabelo medidos na foto), confirmado por ela. A textura do rosto (atlas) é biométrica: fica em chave privada do storage e só sai pela AP… |
+| **UserAvatar3d** | `user_avatars_3d` | versionada | 15 | user → User | RF40 — Meu Avatar 3D: o rosto/busto da própria pessoa (forma em pose neutra + pele + cabelo medidos na foto), confirmado por ela. A textura do rosto (atlas) é biométrica: fica em chave privada do storage e só sai pela AP… |
+| **AvatarIdentityVersion** | `avatar_identity_versions` | versionada | 15 | user → User | AVATAR-ID I1 — uma versão da identidade do avatar (o CanonicalAvatarIdentity versionado da auditoria de identidade). Cada reconstrução ou correção cria uma versão nova; refazer não apaga a versão aprovada. A textura do r… |
 
 ### IA, visão computacional e pipelines  ·  RF4, RF11, RF16, RF18, RF24, RF45  ·  10 entidades
 
@@ -172,6 +173,23 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 | **RenderJobLog** | `render_jobs_log` | — | 16 | — | RFC RF18 — render_jobs_log: linha append-only por renderização do provador 2D (custo por provedor). |
 | **MetricSnapshot** | `metric_snapshots` | — | 6 | — | Agregados periódicos (RFC RF4 quality_metrics e RF18 rendering_costs) unificados por #kind: QUALITY (aceite/tempo/score médio do Flat Lay) ou RENDER_COST (renders, custo por provedor, média). |
 | **AssetPreset** | `asset_presets` | — | 14 | — | Catálogo visual do RF11/RF23 (presets AURA, materiais, combinações, mosaicos, fundos do chrome, gradientes Aura, presets sazonais, skins). Semeado a partir de catalog/asset-manifest.json (scripts/assets/build_asset_catal… |
+
+### HypeScore v2 (sinais, recortes e marcos)  ·  RF26, RF53  ·  4 entidades
+
+| Entidade | Tabela | Base | Campos | Relações | Papel (Javadoc) |
+|---|---|---|---|---|---|
+| **HypeSignalDaily** | `hype_signal_daily` | — | 8 | — | HypeScore v2 — agregado diário de um sinal por entidade (EntityInteractionAggregate). weightedCount aplica o peso da política de integridade (ex.: conta nova pesa menos); eventCount é a contagem bruta aceita. |
+| **HypeScoreCurrent** | `hype_scores` | — | 26 | — | HypeScore v2 — estado atual de uma entidade para uma versão do algoritmo (read model). Os cards leem esta tabela em lote; o histórico fica em HypeScoreSnapshot. publicEligible = a entidade pode entrar em ranking, tendênc… |
+| **HypeScoreSnapshot** | `hype_score_snapshots` | — | 13 | — | HypeScore v2 — ponto da série histórica (1 por entidade, versão do algoritmo e dia). Nunca é sobrescrito por outra versão: trocar pesos ou fórmula gera uma nova algorithmVersion (HYPE_V2, HYPE_V3…) e séries separadas. |
+| **HypeMilestone** | `hype_milestones` | — | 14 | — | RF53 · P1-10 — marco de Hype já alcançado por uma peça ou look (tabela hype_milestones). Serve de dedupe: cada entidade notifica cada marco no máximo uma vez, então a oscilação na borda de uma faixa (o recálculo ao vivo … |
+
+### FashionAI Lens  ·  RF54  ·  3 entidades
+
+| Entidade | Tabela | Base | Campos | Relações | Papel (Javadoc) |
+|---|---|---|---|---|---|
+| **LensScan** | `lens_scans` | versionada | 19 | — | RF54 · FashionAI Lens — um scan por imagem (camada estável: a foto e o que foi lido nela). É sempre privado: só o dono vê, nunca entra em ranking, Hype nem estatística pública. A imagem fica em chave privada (restricted/… |
+| **LensDetection** | `lens_detections` | versionada | 20 | — | RF54 · Uma peça encontrada no scan (caixa em % da imagem + atributos da taxonomia). Correções da pessoa sobrescrevem os atributos (o antes/depois fica em lens_feedback); o embedding visual do recorte fica, para a semelha… |
+| **LensFeedback** | `lens_feedback` | auditável | 7 | — | RF54 · Correção de uma peça detectada: o que a leitura disse e o que a pessoa corrigiu. Só entra no conjunto de avaliação com training_consent (consentimento AI_MODEL_TRAINING no momento da correção). |
 
 ### Moderação, auditoria e operação  ·  RN11, RNF4, RNF5  ·  3 entidades
 
@@ -205,7 +223,7 @@ Lista completa dos campos de cada entidade (além de `id`, datas e autoria herda
 
 <details><summary><b>Guarda-roupa e peças</b></summary>
 
-- **WardrobeItem** — `user`: User ⟶; `brandProfile`: BrandProfile ⟶; `brand`: Brand ⟶; `name`: String; `category`: String; `subcategory`: String; `sex`: String; `brandName`: String; `brandLogoUrl`: String; `brandSource`: String; `brandRef`: String; `color`: String; `material`: String; `sizeLabel`: String; `market`: String; `styleTags`: String; `occasionTags`: String; `sealIdsJson`: String; `imageUrl`: String; `originalImageUrl`: String; `thumbnailUrl`: String; `defaultImage`: boolean; `aiGeneratedImage`: boolean; `imageHash`: String; `imageMimetype`: String; `imageFileSize`: Long; `price`: BigDecimal; `visibility`: Visibility ◆; `disponivel`: boolean; `availabilityStatus`: AvailabilityStatus ◆; `condition`: ItemCondition ◆; `favorite`: boolean; `forSale`: boolean; `wearCount`: int; `lastWornDate`: LocalDate; `lookDoDiaCount`: int; `schemeUsageCount`: int; `likesCount`: long; `sharesCount`: long; `remixesCount`: long; `commentCount`: long; `viewCount`: long; `moderationStatus`: ModerationStatus ◆; `moderationConfidence`: BigDecimal; `moderationReasonsJson`: String; `photoProcessingStatus`: PhotoProcessingStatus ◆; `photoQualityScoresJson`: String; `processingJobId`: UUID; `processingTimeMs`: Integer; `flatLayMetadataJson`: String; `backgroundConfigJson`: String; `hypeScore`: BigDecimal; `hypeScoreGlobal`: BigDecimal; `hypeGroupId`: UUID; `remixedFromPieceId`: UUID; `groupingId`: UUID; `tags`: String; `notes`: String; `purchaseDate`: LocalDate; `purchaseLocation`: String; `sku`: String; `careInstructions`: String; `model3dStatus`: Model3dStatus ◆; `model3dUrl`: String; `studioImageUrl`: String; `studioBackdrop`: String; `studioDetailUrl`: String; `canonicalImageUrl`: String; `userImageUrl`: String; `model3dGeneratedAt`: Instant; `lastViewedAt`: Instant; `pieceOrigin`: String; `mannequinImageUrl`: String; `mannequinImageFace`: String
+- **WardrobeItem** — `user`: User ⟶; `brandProfile`: BrandProfile ⟶; `brand`: Brand ⟶; `name`: String; `category`: String; `subcategory`: String; `sex`: String; `brandName`: String; `brandLogoUrl`: String; `brandSource`: String; `brandRef`: String; `color`: String; `material`: String; `sizeLabel`: String; `market`: String; `styleTags`: String; `occasionTags`: String; `sealIdsJson`: String; `imageUrl`: String; `originalImageUrl`: String; `thumbnailUrl`: String; `defaultImage`: boolean; `aiGeneratedImage`: boolean; `imageHash`: String; `imageMimetype`: String; `imageFileSize`: Long; `price`: BigDecimal; `visibility`: Visibility ◆; `disponivel`: boolean; `availabilityStatus`: AvailabilityStatus ◆; `condition`: ItemCondition ◆; `favorite`: boolean; `forSale`: boolean; `forDonation`: boolean; `wearCount`: int; `lastWornDate`: LocalDate; `lookDoDiaCount`: int; `schemeUsageCount`: int; `likesCount`: long; `sharesCount`: long; `remixesCount`: long; `commentCount`: long; `viewCount`: long; `moderationStatus`: ModerationStatus ◆; `moderationConfidence`: BigDecimal; `moderationReasonsJson`: String; `photoProcessingStatus`: PhotoProcessingStatus ◆; `photoQualityScoresJson`: String; `processingJobId`: UUID; `processingTimeMs`: Integer; `flatLayMetadataJson`: String; `backgroundConfigJson`: String; `hypeScore`: BigDecimal; `hypeScoreGlobal`: BigDecimal; `hypeGroupId`: UUID; `remixedFromPieceId`: UUID; `groupingId`: UUID; `tags`: String; `notes`: String; `purchaseDate`: LocalDate; `purchaseLocation`: String; `sku`: String; `careInstructions`: String; `model3dStatus`: Model3dStatus ◆; `model3dUrl`: String; `studioImageUrl`: String; `studioBackdrop`: String; `studioDetailUrl`: String; `canonicalImageUrl`: String; `userImageUrl`: String; `model3dGeneratedAt`: Instant; `lastViewedAt`: Instant; `pieceOrigin`: String; `mannequinImageUrl`: String; `mannequinImageFace`: String
 - **PieceImage** — `sessionId`: UUID; `pieceId`: UUID; `userId`: UUID; `imageType`: PieceImageType ◆; `viewType`: CaptureView ◆; `captureRole`: CaptureRole ◆; `capturePurpose`: CapturePurpose ◆; `captureSource`: CaptureSource ◆; `storageKey`: String; `url`: String; `mimeType`: String; `width`: int; `height`: int; `orientation`: String; `bytesSize`: Long; `sha256`: String; `qualityScore`: Integer; `blurScore`: BigDecimal; `lightingScore`: BigDecimal; `garmentCoverage`: BigDecimal; `detectedCategory`: String; `detectedSubcategory`: String; `photographySpec`: String; `derivedFromId`: UUID; `processingStatus`: PieceImageStatus ◆; `modelVersion`: String; `analysisJson`: String; `superseded`: boolean
 - **PieceUsageDiaryEntry** — `id`: UUID; `wardrobeItemId`: UUID; `userId`: UUID; `usedOn`: LocalDate; `occasion`: String; `note`: String; `source`: String; `schemeId`: UUID; `createdAt`: Instant
 - **WardrobeAvailabilityChange** — `id`: UUID; `wardrobeItemId`: UUID; `userId`: UUID; `available`: boolean; `changedAt`: Instant
@@ -317,7 +335,8 @@ Lista completa dos campos de cada entidade (além de `id`, datas e autoria herda
 - **RoomInventoryItem** — `id`: UUID; `userId`: UUID; `sku`: String; `serial`: Integer; `source`: String; `appliedModule`: String; `acquiredAt`: Instant
 - **RoomLayout** — `user`: User ⟶; `level`: String; `modulesJson`: String; `drawerLabelsJson`: String; `previousMapJson`: String
 - **RoomStorageEntry** — `userId`: UUID; `wardrobeItemId`: UUID; `address`: String; `assignedBy`: String
-- **UserAvatar3d** — `user`: User ⟶; `modelVersion`: int; `modelJson`: String; `adjustJson`: String; `textureKey`: String; `photosCount`: int; `warningsJson`: String; `publicOnRunway`: boolean; `consentAt`: Instant; `textureModeration`: ModerationStatus ◆
+- **UserAvatar3d** — `user`: User ⟶; `modelVersion`: int; `modelJson`: String; `adjustJson`: String; `textureKey`: String; `photosCount`: int; `warningsJson`: String; `publicOnRunway`: boolean; `consentAt`: Instant; `textureModeration`: ModerationStatus ◆; `identityId`: UUID; `currentVersion`: int; `approvedVersion`: Integer; `identityStatus`: IdentityStatus ◆; `qualityJson`: String
+- **AvatarIdentityVersion** — `user`: User ⟶; `identityId`: UUID; `versionNo`: int; `status`: IdentityStatus ◆; `basedOn`: Integer; `modelVersion`: int; `modelJson`: String; `adjustJson`: String; `textureKey`: String; `photosCount`: int; `warningsJson`: String; `qualityJson`: String; `textureModeration`: ModerationStatus ◆; `approvedAt`: Instant; `approvedWithWarnings`: boolean
 
 </details>
 
@@ -333,6 +352,23 @@ Lista completa dos campos de cada entidade (além de `id`, datas e autoria herda
 - **RenderJobLog** — `id`: UUID; `pipelineJobId`: UUID; `schemeId`: UUID; `userId`: UUID; `renderingType`: String; `status`: String; `totalProcessingTimeMs`: Integer; `stageTimesJson`: String; `finalQualityScore`: BigDecimal; `costFashnAi`: BigDecimal; `costCleanupAi`: BigDecimal; `costRembg`: BigDecimal; `totalCost`: BigDecimal; `retryCount`: int; `createdAt`: Instant; `completedAt`: Instant
 - **MetricSnapshot** — `id`: UUID; `kind`: String; `periodStart`: Instant; `periodEnd`: Instant; `valuesJson`: String; `createdAt`: Instant
 - **AssetPreset** — `id`: String; `kind`: AssetKind ◆; `label`: String; `presetGroup`: String; `staticUrl`: String; `previewUrl`: String; `animatedUrl`: String; `posterUrl`: String; `paletteJson`: String; `metadataJson`: String; `status`: String; `sortOrder`: int; `rfTags`: String; `syncedAt`: Instant
+
+</details>
+
+<details><summary><b>HypeScore v2 (sinais, recortes e marcos)</b></summary>
+
+- **HypeSignalDaily** — `id`: UUID; `entityType`: HypeEntityType ◆; `entityId`: UUID; `signalType`: HypeSignalType ◆; `signalDate`: LocalDate; `eventCount`: int; `weightedCount`: BigDecimal; `updatedAt`: Instant
+- **HypeScoreCurrent** — `id`: UUID; `entityType`: HypeEntityType ◆; `entityId`: UUID; `ownerId`: UUID; `algorithmVersion`: String; `status`: HypeStatus ◆; `score`: BigDecimal; `level`: HypeLevel ◆; `dimensions`: HypeDimensions; `deltaPoints`: BigDecimal; `deltaPercent`: BigDecimal; `direction`: String; `momentum`: HypeMomentum ◆; `publicEligible`: boolean; `category`: String; `styles`: String; `occasions`: String; `country`: String; `region`: String; `categories`: String; `subcategories`: String; `signalsJson`: String; `reasonsJson`: String; `windowStart`: Instant; `windowEnd`: Instant; `calculatedAt`: Instant
+- **HypeScoreSnapshot** — `id`: UUID; `entityType`: HypeEntityType ◆; `entityId`: UUID; `algorithmVersion`: String; `snapshotDate`: LocalDate; `status`: HypeStatus ◆; `score`: BigDecimal; `level`: HypeLevel ◆; `dimensions`: HypeDimensions; `publicEligible`: boolean; `windowStart`: Instant; `windowEnd`: Instant; `calculatedAt`: Instant
+- **HypeMilestone** — `level`: final HypeLevel ◆; `id`: UUID; `entityType`: HypeEntityType ◆; `entityId`: UUID; `ownerId`: UUID; `milestone`: Kind ◆; `level`: HypeLevel ◆; `momentum`: HypeMomentum ◆; `score`: BigDecimal; `publicEligible`: boolean; `algorithmVersion`: String; `achievedAt`: Instant; `digestDate`: LocalDate; `notificationId`: UUID
+
+</details>
+
+<details><summary><b>FashionAI Lens</b></summary>
+
+- **LensScan** — `userId`: UUID; `source`: LensSource ◆; `sourceRefId`: UUID; `intent`: LensIntent ◆; `status`: LensScanStatus ◆; `errorCode`: String; `imageKey`: String; `thumbKey`: String; `width`: int; `height`: int; `facesRedacted`: int; `redactionConfirmed`: boolean; `aiSource`: String; `modelVersion`: String; `algorithmVersion`: String; `aiInferenceId`: UUID; `savedAt`: Instant; `expiresAt`: Instant; `processedAt`: Instant
+- **LensDetection** — `scanId`: UUID; `ordinal`: int; `boxJson`: String; `label`: String; `category`: String; `subcategory`: String; `material`: String; `sex`: String; `colorsJson`: String; `pattern`: String; `styleTags`: String; `occasionTags`: String; `confidence`: BigDecimal; `attributeConfidenceJson`: String; `embeddingJson`: String; `embeddingModel`: String; `status`: LensDetectionStatus ◆; `dismissedAt`: Instant; `wantedAt`: Instant; `ownedItemId`: UUID
+- **LensFeedback** — `scanId`: UUID; `detectionId`: UUID; `userId`: UUID; `kind`: LensFeedbackKind ◆; `beforeJson`: String; `afterJson`: String; `trainingConsent`: boolean
 
 </details>
 
@@ -443,11 +479,21 @@ Estruturas que vivem dentro de colunas JSON (validadas no backend, renderizadas 
 | FollowStatus | 3 | PENDENTE, ACEITO, BLOQUEADO |
 | GroupingType | 9 | COLLECTION, PROMOTION, SIGNATURE_SERIES, EVOLUTION, STYLE_LINE, ERA, PHASE, SEASON, TOUR |
 | HypeEntityType | 2 | PIECE, SCHEME |
+| HypeLevel | 6 | LOW_SIGNAL, NICHE, RELEVANT, HOT, TRENDING, VIRAL |
+| HypeMomentum | 5 | EMERGING, RISING, STABLE, COOLING, CLASSIC |
 | HypeScoreBand | 7 | DESPRETENSIOSO, EM_CONSTRUCAO, NOTADO, COM_ESTILO, MUITO_ESTILOSO, ARRASANDO_NO_LOOK, ICONE_DE_ESTILO |
 | HypeScorePanelVersion | 6 | SPOTLIGHT_CLASSICO, PASSARELA, RAIO_X_ESTILO, BENTO_DIA, EDITORIAL_MINIMAL, COACH_ESTILO |
+| HypeSignalType | 12 | LIKE_CREATED, COMMENT_CREATED, SAVE_CREATED, SHARE_CREATED, FAVORITE_CREATED, LOOK_REMIXED, PIECE_REMIXED, LOOK_VIEWED, PIECE_VIEWED, PIECE_USED, PIECE_IN_LOOK, LOOK_WORN |
+| HypeStatus | 2 | AVAILABLE, INSUFFICIENT_DATA |
 | IdentificationLevel | 6 | CATEGORY, SUBCATEGORY, BRAND, PRODUCT_LINE, MODEL, VARIANT |
+| IdentityStatus | 3 | DRAFT, NEEDS_REFINEMENT, APPROVED |
 | ImageOrigin | 3 | CATALOG, USER_PHOTO, DEFAULT |
 | ItemCondition | 4 | NEW, GOOD, WORN, DAMAGED |
+| LensDetectionStatus | 4 | DETECTED, CORRECTED, ADDED_BY_USER, DISMISSED |
+| LensFeedbackKind | 8 | WRONG_CATEGORY, WRONG_COLOR, WRONG_ATTRIBUTE, NOT_CLOTHING, MISSING_PIECE, BAD_BOX, WRONG_MATCH, GOOD_MATCH |
+| LensIntent | 2 | IDENTIFY, RECREATE |
+| LensScanStatus | 4 | READY, PARTIAL, NO_FASHION_FOUND, FAILED |
+| LensSource | 5 | CAMERA, GALLERY, UPLOAD, IN_APP_PIECE, IN_APP_LOOK |
 | MannequinSex | 2 | MASCULINO, FEMININO |
 | Model3dStatus | 4 | QUEUED, PROCESSING, COMPLETED, FAILED |
 | ModelDeploymentStatus | 5 | CANDIDATE, SHADOW, CANARY, PRODUCTION, RETIRED |
@@ -455,8 +501,8 @@ Estruturas que vivem dentro de colunas JSON (validadas no backend, renderizadas 
 | ModerationStatus | 4 | PENDING, APPROVED, REJECTED_POLICY, REJECTED_NOT_CLOTHING |
 | Mood | 4 | ENERGETIC, ELEGANT, COMFORTABLE, SOPHISTICATED |
 | NarrativeType | 12 | TIMELINE, MOMENTOS_MARCANTES, PRIMEIRA_VEZ, CAPSULA_VERSATILIDADE, POR_OCASIAO, MOOD_BOARD, PALETA_DOMINANTE, HARMONIA_CROMATICA, MARCAS_FAVORITAS, HYPE_FOCUS, CARTELA_SAZONAL, LEGO |
-| NotificationCategory | 4 | SECURITY, SOCIAL, ACHIEVEMENT, SYSTEM |
-| NotificationType | 28 | PASSWORD_RESET, TWO_FACTOR_CODE, NEW_LOGIN_DEVICE, EMAIL_CONFIRMATION, DATA_EXPORT_READY, FOLLOW_REQUEST, FOLLOW_ACCEPTED, NEW_FOLLOWER, NEW_COMMENT, NEW_LIKE, NEW_REACTION, NEW_REMIX, SEAL_GRANTED, FEATURED_SCHEME, SEAL_BOND_REVIEW, WELCOME, PIECE_CREATED, SCHEME_CREATED, AI_JOB_FINISHED, ACCOUNT_APPROVAL, ISSUER_REVIEW_REQUEST, CONTENT_REVIEW, DAILY_LOOK, CHALLENGE_INVITE, CHALLENGE_RESULT, ACHIEVEMENT_UNLOCKED, ROOM_LEVEL_UP, COUPON_AVAILABLE |
+| NotificationCategory | 5 | SECURITY, SOCIAL, ACHIEVEMENT, SYSTEM, POINTS |
+| NotificationType | 30 | PASSWORD_RESET, TWO_FACTOR_CODE, NEW_LOGIN_DEVICE, EMAIL_CONFIRMATION, DATA_EXPORT_READY, FOLLOW_REQUEST, FOLLOW_ACCEPTED, NEW_FOLLOWER, NEW_COMMENT, NEW_LIKE, NEW_REACTION, NEW_REMIX, SEAL_GRANTED, FEATURED_SCHEME, SEAL_BOND_REVIEW, WELCOME, PIECE_CREATED, SCHEME_CREATED, AI_JOB_FINISHED, ACCOUNT_APPROVAL, ISSUER_REVIEW_REQUEST, CONTENT_REVIEW, DAILY_LOOK, CHALLENGE_INVITE, CHALLENGE_RESULT, ACHIEVEMENT_UNLOCKED, ROOM_LEVEL_UP, HYPE_MILESTONE, COUPON_AVAILABLE, FAI_POINTS |
 | PhotoOrigin | 8 | WARDROBE_ITEM, SCHEME, TRY_ON, STYLE_DNA, PROFILE, BACKGROUND_STUDIO, LOOSE, EDITOR |
 | PhotoProcessingStatus | 6 | NEW, MODERATING, PROCESSING, COMPLETED, NEEDS_REUPLOAD, FAILED |
 | PieceImageStatus | 5 | PENDING, PROCESSING, COMPLETED, NEEDS_REVIEW, FAILED |

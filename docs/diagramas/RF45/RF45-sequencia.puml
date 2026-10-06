@@ -1,70 +1,114 @@
 @startuml RF45_Sequencia
-title RF45 — Processar e padronizar imagens canônicas de peças, calçados e acessórios (pipeline de validação e padronização)\nDiagrama de sequência — endpoints reais e motores de visão (fai-application · vision)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as U
-participant "Frontend\npieces/new" as FE
-participant "WardrobeController" as C
-participant "CaptureSessionService\n<<planejado>>" as CS #FAFAFA
-participant "WardrobeService" as W
-participant "AiEngine (RF24)" as AI
-participant "LandmarkDetector\nBrandEnsembleResolver\nIdentificationHierarchy" as V
-participant "PhotographyQualityGate" as Q
-participant "AdaptiveCaptureEngine" as A
-participant "CanonicalPhotographer\n+ PhotographySpecs" as CP
-participant "MediaStoragePort\n(S3 / local)" as ST
-database "MySQL" as DB
+autonumber "<b>0."
+title RF45 — Processar e padronizar imagens canônicas de peças, calçados e acessórios (pipeline de validação e padronização)\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-note over U, FE
-  O criador de peça (pieces/new) não envia mais foto:
-  POST /api/pieces/analysis segue no backend, sem tela que o chame nesse fluxo
-end note
-U -> FE: escolhe o tipo e envia a foto principal
-alt fluxo implementado hoje
-  FE -> C: POST /api/pieces/analysis (file, category)
-  C -> W: analyze(user, bytes, category)
-else fluxo de captura adaptativa
-  FE -> CS: POST /api/capture/sessions (file, category, viewType, identifyModel)
-  note right of CS: <<planejado>> não há controller /api/capture/**\nnão implementado — conforme Trello
-  CS -> ST: put(piece_original_{vista}.jpg) — ORIGINAL imutável
-  CS -> W: analyzeForCapture(user, bytes, category, lenient=true)
+actor "Pessoa usuária" as U
+boundary "Tela /pieces/new" as P
+control "WardrobeController" as WardrobeController
+participant "WardrobeService" as WardrobeService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+participant "MediaService" as MediaService
+participant "AiEngine\n(provedor de IA + reserva local)" as AI
+participant "OwnMedia" as OwnMedia
+participant "BrandLogoService" as BrandLogoService
+participant "AssetCatalogService" as AssetCatalogService
+== RF4 · Estúdio — gera/refaz a foto de estúdio de uma peça cadastrada ==
+U -> P : RF4 · Estúdio — gera/refaz a foto de estúdio de u…
+P -> WardrobeController : POST /api/pieces/{id}/studio
+WardrobeController -> WardrobeService : studioPiece()
+activate WardrobeService
+WardrobeService -> Guard : requireCanCreate()
+WardrobeService -> DB_MySQL : SELECT wardrobe_items
+WardrobeService -> Guard : requireOwner()
+alt sem recorte
+WardrobeService --> WardrobeController : 422 SEM_RECORTE
+WardrobeController --> P : 422 + mensagem
 end
-W -> AI: FLAT_LAY_STANDARDIZER (rembg → remove.bg → local)
-AI --> W: recorte + studioSource
-W -> AI: CONTENT_MODERATOR / PIECE_ANALYZER
-AI --> W: PieceGuess (categoria, subcategoria, marca, confianças)
-W --> CS: CaptureAnalysis (draft, studioSource, logoBox, ocr, failedChecks)
-CS -> V: detect(cutout, family) · resolve(evidências) · reconcile()
-V --> CS: landmarks + BrandPrediction por IdentificationLevel
-CS -> Q: evaluate(profile, view, Signals)
-Q --> CS: Report(score, ACCEPT | ACCEPT_WITH_GUIDANCE | RETAKE_SUGGESTED)
-CS -> A: decide(Context)
-A --> CS: Decision(next, alternatives, done, doneReason)
-opt Decision.done = false
-  CS -> DB: INSERT capture_requests (PENDING, expected_gain, confidence_before)
-  CS --> FE: 201 sessão AWAITING_CAPTURE + próxima vista
-  alt pessoa envia a vista complementar
-    FE -> CS: POST /api/capture/sessions/{id}/images <<planejado>>
-    CS -> DB: UPDATE capture_requests FULFILLED (confidence_after)
-  else pessoa pula
-    FE -> CS: POST /api/capture/sessions/{id}/requests/{requestId}/skip <<planejado>>
-    CS -> DB: UPDATE capture_requests SKIPPED
-  end
+WardrobeService -> MediaService : read() (×2)
+alt Foto da peça não encontrado(a)
+WardrobeService --> WardrobeController : 404 NAO_ENCONTRADO
+WardrobeController --> P : 404 + mensagem
 end
-CS -> CP: render(cutout, PhotographySpecs.get(specId), landmarks, clipped)
-CP --> CS: Result(image, Report: specId, rotação, escala, cobertura)
-CS -> ST: put(piece_product_front.png, piece_logo_detail.png…)
-CS -> DB: INSERT piece_images (CANONICAL/DETAIL, derived_from_id), brand_predictions,\ngarment_landmarks, model_inferences
-CS --> FE: sessão READY_FOR_REVIEW (identificação, qualidade, canônicos)
-U -> FE: confirma
-FE -> C: POST /api/pieces (PieceForm.captureSessionId)
-C -> W: create(user, form)
-W -> DB: INSERT wardrobe_items (capture_session_id, canonical_image_url)
-C --> FE: 201 PieceView
+WardrobeService -> AI : STUDIO_ENHANCER
+AI --> WardrobeService : resposta (ou reserva local)
+WardrobeService -> MediaService : put() (×5)
+alt estudio indisponível
+WardrobeService --> WardrobeController : 503 ESTUDIO_INDISPONIVEL
+WardrobeController --> P : 503 + mensagem
+end
+WardrobeService -> WardrobeService : studioImageUrl = set
+WardrobeService -> WardrobeService : studioDetailUrl = set
+WardrobeService -> MediaService : deleteUrl()
+WardrobeService -> WardrobeService : studioImageUrl = set
+WardrobeService -> WardrobeService : studioDetailUrl = set
+WardrobeService -> DB_MySQL : SELECT reactions
+deactivate WardrobeService
+WardrobeService --> WardrobeController : resultado
+WardrobeController --> P : 201 JSON
+P --> U : atualiza a tela
+== Cadastrar a peça a partir do rascunho analisado ==
+U -> P : Cadastrar a peça a partir do rascunho analisado
+P -> WardrobeController : POST /api/pieces
+WardrobeController -> WardrobeService : create()
+activate WardrobeService
+WardrobeService -> Guard : requireCanCreate()
+WardrobeService -> DB_MySQL : SELECT users
+alt formulario inválido
+WardrobeService --> WardrobeController : 400 FORMULARIO_INVALIDO
+WardrobeController --> P : 400 + mensagem
+end
+WardrobeService -> DB_MySQL : SELECT pipeline_jobs
+alt erro
+WardrobeService --> WardrobeController : 500 ERRO
+WardrobeController --> P : 500 + mensagem
+end
+WardrobeService -> DB_MySQL : SELECT wardrobe_items
+WardrobeService -> DB_MySQL : SELECT reactions
+WardrobeService -> WardrobeService : new WardrobeItem()
+WardrobeService -> DB_MySQL : SELECT brands
+WardrobeService -> WardrobeService : brandLogoUrl = null
+WardrobeService -> OwnMedia : accepts()
+WardrobeService -> MediaService : read()
+WardrobeService -> WardrobeService : brandLogoUrl = set
+WardrobeService -> BrandLogoService : acceptWebLogo()
+BrandLogoService -> DB_MySQL : SELECT brand_logos (×2)
+BrandLogoService -> DB_MySQL : SELECT brands
+BrandLogoService -> DB_MySQL : INSERT/UPDATE brands
+BrandLogoService --> WardrobeService
+WardrobeService -> WardrobeService : brandLogoUrl = null (×2)
+alt foto obrigatória
+WardrobeService --> WardrobeController : 400 FOTO_OBRIGATORIA
+WardrobeController --> P : 400 + mensagem
+end
+WardrobeService -> AssetCatalogService : defaultPieceImage()
+WardrobeService -> WardrobeService : imageUrl = set
+WardrobeService -> WardrobeService : thumbnailUrl = set
+WardrobeService -> WardrobeService : originalImageUrl = null
+note over WardrobeService : … e mais 62 passos no código
+deactivate WardrobeService
+WardrobeService --> WardrobeController : resultado
+WardrobeController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

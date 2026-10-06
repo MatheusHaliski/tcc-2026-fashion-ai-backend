@@ -1,34 +1,39 @@
 @startuml RF34_MaquinaDeEstados_Era
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-title RF34 — Era da celebridade (scheme_groupings, type = ERA): da criação ao palco com plateia lotada
-[*] --> Criada : POST /api/groupings {type: ERA, label, periodFrom, periodTo}\n(só perfil CELEBRIDADE; tipos permitidos por profileType)
-state "Criada\n(sem itens)" as Criada
-state "Com foto da era\n(coverUrl)" as ComCapa
-state "Com itens\n(schemes/wardrobe_items.grouping_id)" as ComItens
-state "Ranqueada em Insights de Eras\n(0,5·curtidas + 0,35·hype + 0,15·itens)" as Ranqueada {
-  state "rank 1 — plateia lotada\n(audienceFraction = 1)" as Top
-  state "rank n — plateia proporcional" as Resto
-  Resto --> Top : passa a 1ª em curtidas/hype
-  Top --> Resto : outra era ultrapassa
+title RF34 — ciclo de vida de WardrobeItem.model3dStatus\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum Model3dStatus · tabela wardrobe_items
+
+state "WardrobeItem.model3dStatus" as Ciclo_WardrobeItem {
+  state Ciclo_WardrobeItem_QUEUED as "QUEUED"
+  state Ciclo_WardrobeItem_PROCESSING as "PROCESSING"
+  state Ciclo_WardrobeItem_COMPLETED as "COMPLETED"
+  state Ciclo_WardrobeItem_FAILED as "FAILED"
 }
-state "No My Stage 3D\n(GET /api/institutional/{slug}/stage?era)" as Palco
-Criada --> ComCapa : POST /api/groupings/{id}/cover (foto da era)
-Criada --> ComItens : POST /api/groupings/{id}/items {schemeIds, pieceIds}
-ComCapa --> ComItens : POST /api/groupings/{id}/items
-ComItens --> ComItens : PUT /api/groupings/{id} (label, período, descrição)
-ComItens --> Ranqueada : GET /api/institutional/{slug}/showcase/eras/insights
-Ranqueada --> Palco : escolhe a era → look mais curtido\nvestido no manequim com a foto oficial (RF1 CA09)
-Palco --> Ranqueada : troca de era
-ComItens --> Criada : POST /api/groupings/{id}/items com groupingId=null\n(desvincula tudo)
-Criada --> [*] : DELETE /api/groupings/{id}
-ComItens --> [*] : DELETE /api/groupings/{id}\n(itens ficam, grouping_id = null)
-note right of Ranqueada : ranking calculado na hora a partir de likes_count\ne hype_score — sem tabela de ranking nova
-note bottom of ComItens : busca por era: GET /api/institutional/{slug}/showcase/eras/items?grouping&q&year
+Ciclo_WardrobeItem --> Ciclo_WardrobeItem_COMPLETED : complete(), follow(), start()
+Ciclo_WardrobeItem --> Ciclo_WardrobeItem_FAILED : complete(), fail(), follow(),\nsafely(), start() +1
+Ciclo_WardrobeItem --> Ciclo_WardrobeItem_PROCESSING : start()
+Ciclo_WardrobeItem --> Ciclo_WardrobeItem_QUEUED : request()
+note right of Ciclo_WardrobeItem
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
+end note
 @enduml

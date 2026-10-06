@@ -1,65 +1,36 @@
 @startuml RF53_MaquinaDeEstados_Marco
 !pragma layout smetana
-title RF53 — Marcos de Hype de uma peça ou look (hype_milestones, V41) e o resumo diário do dono\nsó subida, uma vez por item e marco, nunca queda
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
+title RF53 — ciclo de vida de HypeMilestone.level\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum HypeLevel · tabela hype_milestones
 
-state "Marcos de faixa (ordenados)" as Faixa {
-  state "Sem marco\n(nunca passou de Relevante\nou ainda sem estado anterior)" as M0
-  state "HOT alcançado\n(Em alta, ≥ 60)" as M1
-  state "TRENDING alcançado\n(Tendência, ≥ 75)" as M2
-  state "VIRAL alcançado\n(≥ 90)" as M3
-  [*] --> M0
-  M0 --> M1 : recálculo: faixa sobe para HOT
-  M0 --> M2 : sobe direto para TRENDING
-  M0 --> M3 : sobe direto para VIRAL
-  M1 --> M2 : sobe para TRENDING
-  M1 --> M3 : sobe para VIRAL
-  M2 --> M3 : sobe para VIRAL
-  M3 --> M3 : cai e volta / oscila na borda\n(sem novo aviso)
-  M2 --> M2 : cai para HOT e volta\n(sem novo aviso)
+state "HypeMilestone.level" as Ciclo_HypeMilestone {
+  state Ciclo_HypeMilestone_LOW_SIGNAL as "LOW_SIGNAL"
+  state Ciclo_HypeMilestone_NICHE as "NICHE"
+  state Ciclo_HypeMilestone_RELEVANT as "RELEVANT"
+  state Ciclo_HypeMilestone_HOT as "HOT"
+  state Ciclo_HypeMilestone_TRENDING as "TRENDING"
+  state Ciclo_HypeMilestone_VIRAL as "VIRAL"
 }
-note right of Faixa
-  detecção (HypeSnapshotService.milestones):
-  • compara o estado anterior com o novo
-    depois de gravar; sem estado anterior
-    (1º cálculo ou nova algorithmVersion)
-    não há marco
-  • queda nunca grava nem avisa (ETI-02)
-  • atingir VIRAL já cobre HOT e TRENDING
-  • dedupe: UNIQUE (entity_type, entity_id,
-    milestone) em hype_milestones
+note bottom of Ciclo_HypeMilestone
+  Sem mudança explícita no código para: LOW_SIGNAL, NICHE, RELEVANT, HOT, TRENDING, VIRAL
+  (valor vindo de importação, regra calculada ou dado legado)
 end note
-
-state "Marco de momento" as Mom {
-  state "Sem EMERGING" as E0
-  state "EMERGING alcançado\n(crescimento acelerado\na partir de base pequena)" as E1
-  [*] --> E0
-  E0 --> E1 : momento passa a ser EMERGING
-  E1 --> E1 : deixa de ser e volta\n(sem novo aviso)
-}
-
-state "Resumo do dia do dono\n(America/Sao_Paulo)" as Dia {
-  state "Nenhuma notificação hoje" as D0
-  state "Notificação HYPE_MILESTONE\n(ACHIEVEMENT, não lida)\nlink: o item ou /history?tab=hype" as D1
-  [*] --> D0
-  D0 --> D1 : 1º marco novo do dia\n(cria a notificação)
-  D1 --> D1 : outro marco no mesmo dia\n(atualiza o texto: até 3 nomes + "e mais N";\nvolta a ficar não lida)
-  D1 --> D0 : vira o dia
-}
-note bottom of Dia
-  HypeMilestoneNotifier (AFTER_COMMIT, transação própria):
-  só o dono é avisado (conferido no banco); item privado
-  é Hype pessoal; tipo desativável em Preferências (o marco
-  é gravado mesmo assim, para não reaparecer); nada daqui
-  é sinal de Hype; marcos saem na exportação LGPD
-end note
-
-Faixa -[hidden]right-> Mom
-Mom -[hidden]down-> Dia
 @enduml

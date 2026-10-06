@@ -1,9 +1,16 @@
 @startuml RF29_Atividades
-title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings do guarda-roupa\nDiagrama de atividades
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,55 +19,40 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Usuário|
+title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings do guarda-roupa\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Meu Guarda-Roupa → "Destaques";
-|Sistema (InventoryScoreService)|
-if (Tem ao menos 10 peças?) then (não)
-  :Mostra o progresso ("faltam N peças"),\nsem nota parcial;
-  stop
+:Abre /highlights;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/inventory-score/dimensions/{code}\nGET /api/inventory-score/method\nGET /api/me/album;
+|Pessoa usuária|
+:Aba Destaques: Inventory Score,\ndimensões, dicas e álbum;
+|Tela (Next.js)|
+:GET /api/me/highlights;
+|API (Spring Boot)|
+:HighlightsController.highlights\n→ InventoryScoreService.highlightsTab;
+|Dados e serviços|
+:Lê: wardrobe_items\nschemes\nscheme_items\npiece_usage_diary\nwardrobe_availability_log\nstyle_dna (+3);
+:Usa: RoomService.layout\nRoomService.labels\nRoomService.labelSources\nRoomService.locateAll\nAchievementService.grant\nAchievementService.list;
+:Grava: inventory_score_snapshots;
+:Estado: computedAt → set;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Entrar/sair dos rankings [k-anoni…)
+    :PUT /api/me/rankings/opt-in\n→ InventoryScoreService.optIn\nlê: ranking_opt_ins, ranking_positions\ngrava: ranking_opt_ins\nestado: optedIn → ?optedIn;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-:Calcula o FAI Inventory Score (0–1000) pelas\ndimensões Catalogação, Utilização, Versatilidade,\nDescoberta, Diversidade, Organização e Identidade;
-:Faixa: Em Montagem → Organizado → Versátil →\nBem Curado → Closet Inteligente →\nSignature Closet → Maison Closet;
-:Grava snapshots do dia e do mês\n(inventory_score_snapshots) e confere conquistas;
-|Usuário|
-split
-  :Abre uma dimensão;
-  |Sistema (InventoryScoreService)|
-  :Explica o que puxa a nota para baixo;
-split again
-  |Usuário|
-  :Pede dicas;
-  |Sistema (InventoryScoreService)|
-  :Dicas acionáveis (resgatar esquecidas etc.);
-split again
-  |Usuário|
-  :Álbum / retrospectiva anual;
-split again
-  |Usuário|
-  :Rankings;
-  if (Entrou nos rankings (opt-in)?) then (sim)
-    |Sistema (InventoryScoreService)|
-    if (Segmento de cidade com ≥ 50 pessoas (k-anonimato)?) then (sim)
-      :Mostra posição e percentil;
-    else (não)
-      :Oculta até haver 50 pessoas;
-    endif
-  else (não)
-    |Usuário|
-    :Convite para entrar (opt-in);
-  endif
-end split
+|Pessoa usuária|
 stop
 @enduml

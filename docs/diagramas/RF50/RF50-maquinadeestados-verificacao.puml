@@ -1,66 +1,42 @@
 @startuml RF50_MaquinaDeEstados_Verificacao
 !pragma layout smetana
-title RF50 — Pedido de verificação do perfil emissor (ApprovalStatus) e conta (AccountStatus)\nMáquina de estados — política v1.0
 skinparam backgroundColor #FFFFFF
-skinparam state {
-  BackgroundColor #F8F4FF
-  BorderColor #B695F5
-  FontColor #2D2438
-  ArrowColor #52606D
-}
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
 skinparam note {
   BackgroundColor #FFFDEB
   BorderColor #D8CE78
   FontColor #554F24
 }
-state "Perfil (ApprovalStatus)" as Perfil {
-  [*] --> PENDENTE : cadastro (1º envio)\nadmins avisados (app + e-mail)
-  state PENDENTE {
-    state "Aguardando e-mail" as AguardandoEmail
-    state "Prazo correndo" as Prazo
-    [*] --> AguardandoEmail
-    AguardandoEmail : na fila, reviewableSince nulo
-    AguardandoEmail : aprovação bloqueada (409 EMAIL_NAO_CONFIRMADO)
-    AguardandoEmail --> Prazo : e-mail confirmado\n(emailConfirmed grava reviewSubmittedAt)
-    Prazo : 3 dias úteis (1º envio) ou 2 dias úteis (reenvio)
-  }
-  PENDENTE --> APROVADO : APROVAR (1)
-  PENDENTE --> AJUSTES : AJUSTES (2)
-  PENDENTE --> RECUSADO : RECUSAR (2)
-  AJUSTES --> RECUSADO : RECUSAR (2)\n(a fila sugere após 30 dias sem resposta)
-  state Reenvio <<choice>>
-  AJUSTES --> Reenvio : reenvio pela Central
-  RECUSADO --> Reenvio : reenvio pela Central
-  Reenvio --> PENDENTE : envios < 5 e campos válidos (3)\n→ admins avisados de novo
-  RECUSADO --> Encerrado : 5 envios usados
-  state "Encerrado" as Encerrado
-  Encerrado : só a administração reabre
-  state SUSPENSO
-  SUSPENSO : valor reservado no enum;
-  SUSPENSO : nenhuma transição no código
-  APROVADO --> [*]
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "Conta (AccountStatus)" as Conta {
-  state PENDING_EMAIL_VERIFICATION
-  state PENDING_VALIDATION
-  state ACTIVE
-  state SUSPENDED
-  [*] --> PENDING_EMAIL_VERIFICATION : cadastro
-  PENDING_EMAIL_VERIFICATION --> PENDING_VALIDATION : e-mail confirmado\n(perfil ainda não aprovado)
-  PENDING_VALIDATION --> ACTIVE : perfil APROVADO\n(verified = true, selos padrão)
-  ACTIVE --> SUSPENDED : administração suspende a conta
-  PENDING_VALIDATION : ações de emissor → 403 PERFIL_EM_VALIDACAO
-  PENDING_VALIDATION : dashboard mostra a Central (PendingReview)
+title RF50 — ciclo de vida de BrandProfile.approvalStatus\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum ApprovalStatus · tabela brand_profiles
+
+state "BrandProfile.approvalStatus" as Ciclo_BrandProfile {
+  state Ciclo_BrandProfile_PENDENTE as "PENDENTE"
+  state Ciclo_BrandProfile_AJUSTES as "AJUSTES"
+  state Ciclo_BrandProfile_APROVADO as "APROVADO"
+  state Ciclo_BrandProfile_RECUSADO as "RECUSADO"
+  state Ciclo_BrandProfile_SUSPENSO as "SUSPENSO"
 }
-note bottom of Perfil
-(1) e-mail confirmado, todos os critérios obrigatórios atendidos
-    (automático OK ou conferido pelo analista) e analista ≠ dono
-(2) ao menos um motivo padronizado; OUTRO exige observação;
-    {approve: false} antigo vira OUTRO ou DADOS_INCOMPLETOS
-(3) link válido, nome civil efetivo da celebridade preenchido e
-    documento enviado pelo formulário: attempts + 1,
-    reviewSubmittedAt = agora, reviewOwnerMessage.
-    Inválido: 400 FORMULARIO_INVALIDO e o pedido fica
-    no estado em que estava (nada é gravado)
+[*] --> Ciclo_BrandProfile_PENDENTE : criação
+Ciclo_BrandProfile --> Ciclo_BrandProfile_PENDENTE : register()\nPOST /api/auth/register
+note bottom of Ciclo_BrandProfile
+  Sem mudança explícita no código para: AJUSTES, APROVADO, RECUSADO, SUSPENSO
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
+note right of Ciclo_BrandProfile
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
 end note
 @enduml

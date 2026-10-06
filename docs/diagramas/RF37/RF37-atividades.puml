@@ -1,9 +1,16 @@
 @startuml RF37_Atividades
-title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de atividades
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,50 +19,64 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Jogador|
+title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre o FLAIR;
-|Sistema (FlairService)|
-:Gera cartas das peças (EDGE, RANGE, CLOUT,\nGLOW, ART, SYNC) e decks dos esquemas;
-|Sistema (FlairLooks)|
-:Look = 10 atributos (HYPE, STYLE, COLOR, OCCASION,\nORIGINALITY, BRAND, RARITY, TREND, COMMUNITY, AI)\n+ sinergias (Streetwear, Classic Formal,\nMonocromático, Brand Loyalty, Mix & Match, Vintage);
-|Jogador|
-:Escolhe um dos 15 modos;
-note right
-Battle of Looks · Squad · League · Runway ·
-World Tour · Monopoly · Conquest · Draft ·
-Deck Battle · Combo · Tag Team · Boss ·
-Wardrobe Wars · Chess · Ultimate Team
-end note
-:Monta a escalação (looks, deck, time, tabuleiro…);
-|Sistema (FlairModesService)|
-:Pontua pelo tema de ocasião (18 temas com pesos);
-:Registra a partida e o estado do modo;
-if (Partida premiada do dia (até 3 por modo)?) then (sim)
-  :Credita coins: vitória 20 · empate 8 · derrota 3\n(sem apostas);
+:Abre /brands/[slug], /flair;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/flair/combinations/{id}/check\nGET /api/flair/combinations\nGET /api/flair/modes/deck\nGET /api/flair/decks/{schemeId};
+|Pessoa usuária|
+:FLAIR — troca o deck que completa a\ncombinação pelo cupom d…;
+|Tela (Next.js)|
+:POST /api/flair/combinations/{id}/redeem;
+|API (Spring Boot)|
+:FlairController.redeem\n→ FlairService.redeem;
+if (combinação indisponível?) then (sim)
+  :409 COMBINACAO_INDISPONIVEL\n«Esta combinação não está mais\ndisponível.»\n→ a tela mostra o aviso;
+  stop
 endif
-if (Conquista?) then (sim)
-  :Troféu (Runway Winner, Boss derrotado,\nregião conquistada…);
-  :CouponRightsCheck → direito a cupom (RF38);
+if (cupom já emitido?) then (sim)
+  :409 CUPOM_JA_EMITIDO\n«Você já completou esta combinação.»\n→ a tela mostra o aviso;
+  stop
 endif
-|Loja (marca/celebridade)|
-:Publica combinação (requisitos + cupom + link);
-|Jogador|
-:Confere o melhor deck contra o checklist;
-if (Completa a combinação?) then (sim)
-  |Sistema (FlairService)|
-  :Troca o deck pelo cupom da loja;
+if (deck arquivado?) then (sim)
+  :400 DECK_ARQUIVADO\n«Esse esquema está arquivado.»\n→ a tela mostra o aviso;
+  stop
 endif
+if (combinação incompleta?) then (sim)
+  :422 COMBINACAO_INCOMPLETA\n«O deck ainda não completa a\ncombinação.»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: flair_combinations\nscheme_items\nhype_scores\nwardrobe_items\nbrand_profiles\nflair_match_entries (+4);
+:Usa: Guard.requireCanCreate\nSchemeService.owned\nHypeScoreConfig.algorithmVersion;
+:Grava: flair_redemptions\nflair_coin_entries\nflair_profiles;
+:Estado: status → EMITIDO\nexpiresAt → set;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (FLAIR — a loja edita uma combinaç…)
+    :PUT /api/flair/brand/combinations/{id}\n→ FlairService.saveCombination\nvalida: DESCONTO_OBRIGATORIO, ERRO, SEM_REQUISITOS,\nTIPO_INVALIDO\nlê: users, flair_combinations, brand_profiles …\nusa: Guard.requireApprovedInstitutional\ngrava: flair_combinations;
+  case (FLAIR — a loja cria uma combinaçã…)
+    :POST /api/flair/brand/combinations\n→ FlairService.saveCombination\nvalida: DESCONTO_OBRIGATORIO, ERRO, SEM_REQUISITOS,\nTIPO_INVALIDO\nlê: users, flair_combinations, brand_profiles …\nusa: Guard.requireApprovedInstitutional\ngrava: flair_combinations;
+  case (FLAIR Runway — desfila um look: q…)
+    :POST /api/flair/modes/runway\n→ FlairModesService.enterRunway\nvalida: JA_NA_RUNWAY, LOOK_ARQUIVADO\nlê: scheme_items, schemes, flair_trophies …\nusa: Guard.requireCanCreate, SchemeService.owned,\nFlairService.publicLookHype …\ngrava: flair_trophies, flair_mode_states,\nflair_matches …;
+  case (FLAIR — no caixa, a loja confere…)
+    :POST /api/flair/brand/redemptions/validate\n→ FlairService.validateCode\nvalida: CUPOM_EXPIRADO, CUPOM_USADO, NAO_ENCONTRADO\nlê: users, flair_redemptions, brand_profiles\nusa: Guard.requireApprovedInstitutional\nestado: status → USADO, usedAt → set;
+  case (FLAIR — a loja remove a combinaçã…)
+    :DELETE /api/flair/brand/combinations/{id}\n→ FlairService.deleteCombination\nvalida: ERRO\nlê: users, flair_combinations\nusa: Guard.requireApprovedInstitutional\ngrava: flair_combinations;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

@@ -1,68 +1,70 @@
 @startuml RF17_Sequencia
-title RF17 — Permitir que o Usuário visualize a página de perfil de outros Usuários cadastrados dentro da rede social do FashionAI\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Visitante" as V
-actor "Dono do perfil" as O
-participant "Frontend\nu/[username]" as FE
-participant "ProfileController" as PC
-participant "ProfileService" as PS
-participant "Guard" as G
-participant "WardrobeController" as WC
-participant "WardrobeService" as WS
-participant "NotificationService" as NS
-participant "NotificationController" as NC
-database "MySQL" as DB
-V -> FE: abre /u/{username}
-FE -> PC: GET /api/profiles/{idOrUsername}
-PC -> PS: profile(viewer, idOrUsername)
-PS -> DB: users (findById / findByUsernameIgnoreCase)
-PS -> DB: follows (relação nos dois sentidos)
-alt dono bloqueou o visitante / conta excluída
-  PS --> FE: 404 Perfil
-else
-  PS -> G: canView(viewer, ownerId, profileVisibility)
-  alt pode ver
-    PS -> DB: schemes PUBLISHED + wardrobe_items
-    PS --> FE: 200 {user, bio, counters, relation, contentVisible=true, schemes, pieces}
-    FE -> WC: GET /api/users/{ownerId}/closet?category&state&page
-    WC -> WS: closet(viewer, ownerId, ClosetFilter)
-    WS -> G: canView por peça (visibilidade efetiva, APPROVED)
-    WS --> FE: 200 Page<PieceView>
-  else privado
-    PS --> FE: 200 {counters, relation, contentVisible=false, invite: SEGUIR}
-  end
+autonumber "<b>0."
+title RF17 — Permitir que o Usuário visualize a página de perfil de outros Usuários cadastrados dentro da rede social do FashionAI\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /u/[username]" as P
+control "ProfileController" as ProfileController
+participant "ProfileService" as ProfileService
+database "MySQL" as DB_MySQL
+participant "NotificationService" as NotificationService
+== Perfil público (por id ou @username); sort = recent | hype_desc | hyp… ==
+U -> P : Perfil público (por id ou @username); sort = rece…
+P -> ProfileController : GET /api/profiles/{idOrUsername}
+ProfileController -> ProfileService : profile()
+activate ProfileService
+deactivate ProfileService
+ProfileService --> ProfileController : resultado
+ProfileController --> P : 200 JSON
+P --> U : atualiza a tela
+== Seguir (ou pedir para seguir perfil privado) ==
+U -> P : Seguir (ou pedir para seguir perfil privado)
+P -> ProfileController : POST /api/users/{targetId}/followers
+ProfileController -> ProfileService : follow()
+activate ProfileService
+alt seguir a si
+ProfileService --> ProfileController : 400 SEGUIR_A_SI
+ProfileController --> P : 400 + mensagem
 end
-V -> FE: Seguir
-FE -> PC: POST /api/users/{targetId}/followers
-PC -> PS: follow(viewer, targetId)
-alt privateAccount e não PUBLIC (PESSOAL)
-  PS -> DB: INSERT follows (PENDENTE)
-  PS -> NS: notify(FOLLOW_REQUEST)
-else público
-  PS -> DB: INSERT follows (ACEITO)
-  PS -> NS: notify(NEW_FOLLOWER)
+ProfileService -> DB_MySQL : SELECT users
+alt Perfil não encontrado(a)
+ProfileService --> ProfileController : 404 NAO_ENCONTRADO
+ProfileController --> P : 404 + mensagem
 end
-PS --> FE: 200 {relation, followers, following}
-O -> NC: GET /api/notifications
-NC --> O: caixa SOCIAL com o pedido
-O -> PC: GET /api/me/follow-requests
-O -> PC: POST /api/follow-requests/{followId} {accept}
-PC -> PS: respond(user, followId, accept)
-alt aceita
-  PS -> DB: UPDATE follows SET status = ACEITO, responded_at
-  PS -> NS: notify(FOLLOW_ACCEPTED)
-else recusa
-  PS -> DB: DELETE follows
-end
-opt deixar de seguir / bloquear
-  FE -> PC: DELETE /api/users/{targetId}/followers/me
-  FE -> PC: PUT /api/users/{targetId}/block {blocked}
-end
+ProfileService -> DB_MySQL : SELECT follows
+ProfileService -> ProfileService : new Follow()
+ProfileService -> DB_MySQL : SELECT users
+ProfileService -> DB_MySQL : SELECT follows (×3)
+ProfileService -> DB_MySQL : INSERT/UPDATE follows
+ProfileService -> NotificationService : notify()
+NotificationService -> DB_MySQL : SELECT users (×2)
+NotificationService -> DB_MySQL : SELECT user_preferences
+NotificationService -> DB_MySQL : INSERT/UPDATE notifications
+NotificationService --> ProfileService
+ProfileService -> DB_MySQL : SELECT follows (×3)
+deactivate ProfileService
+ProfileService --> ProfileController : resultado
+ProfileController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

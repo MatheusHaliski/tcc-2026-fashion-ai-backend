@@ -1,118 +1,184 @@
 @startuml RF18_Classes
-title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de classes — tipos do provador (frontend) e entidades JPA usadas
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
 package "lib/tryon/fitting-room.ts" {
-  class FittingItem {
+  class FittingItem as "FittingItem" <<interface>> {
     +key: string
-    +source: "catalog" | "wardrobe"
+    +source: 'catalog' | 'wardrobe'
     +slot: FittingSlot
     +wear: Wear
     +name: string
-    +brand: FittingBrand
-    +imageUrl, colorHex, colorName
-    +productId, variantId, pieceId
-    +officialUrl, sourceDomain
-    +addedAt: number
+    +brand: FittingBrand | null
+    +category: string
+    +subcategory: string | null
+    +imageUrl: string | null
+    +colorHex: string | null
+    .. +7 ..
   }
-  class FittingBrand {
+  class BrandEnvironment as "BrandEnvironment" <<interface>> {
+    +key: string
     +name: string
-    +slug: string
-    +logoUrl: string
-  }
-  class BrandEnvironment {
-    +key, name, logoUrl
+    +logoUrl: string | null
     +style: RoomStyle
     +motif: WallMotif
-    +wall, floor, accent, ink
+    +wall: string
+    +floor: string
+    +accent: string
+    +ink: string
     +curated: boolean
   }
-  class ResolvedEnvironment {
-    +kind: neutral | brand | multibrand
+  class ResolvedEnvironment as "ResolvedEnvironment" <<interface>> {
+    +kind: 'neutral' | 'brand' | 'multibrand'
     +featured: BrandEnvironment
-    +others: BrandEnvironment[0..3]
+    +others: BrandEnvironment[]
     +brands: BrandEnvironment[]
   }
-  class "funções" as F <<module>> {
-    +wearItem(items, item)
-    +visibleItems(items)
-    +resolveEnvironment(items, mode)
-    +environmentFor(brand)
-    +encodeTryOn(items) / decodeTryOn(raw)
+  class FittingBrand as "FittingBrand" <<interface>> {
+    +name: string
+    +slug: string | null
+    +logoUrl: string | null
   }
-  enum FittingSlot {
+  enum FittingSlot as "FittingSlot" {
     upper_piece
     lower_piece
     shoes_piece
     accessory_piece
   }
-  enum Wear {
-    TOP
-    OUTERWEAR
-    BOTTOM
-    FULL_BODY
-    SHOES
-    ACCESSORY
-  }
-  enum RoomStyle {
-    arena
-    heritage
-    gallery
-    street
-    boutique
-    atelier
-  }
-  enum LightMode {
-    store
-    daylight
-    night
+  class mod_fitting_room_ts as "fitting-room.ts" <<módulo>> {
+    +wearOf()
+    +slotOf()
+    +wearItem()
+    +removeSlot()
+    +visibleItems()
+    +brandKey()
+    +environmentFor()
+    +resolveEnvironment()
   }
 }
-package "fai-domain · model" {
-  class CatalogProduct {
-    +brandId: UUID
-    +category, subcategory
-    +productName, color, colorName
-    +officialProductUrl, sourceDomain
-    +description, designJson
+package "components/ui/index.tsx" {
+  enum Variant as "Variant" {
+    default
+    primary
+    accent
+    ghost
+    danger
   }
-  class CatalogVariant {
-    +productId: UUID
-    +color, colorName, variantCode
+  class FieldProps as "FieldProps" <<interface>> {
+    +label: string
+    +hint: string
+    +error: string
+    +required: boolean
+    +children: ReactNode
+    +id: string
+    +className: string
   }
-  class WardrobeItem {
-    +category, subcategory, brandName
-    +catalogProductId: UUID
-    +catalogVariantId: UUID
-    +imageOrigin: ImageOrigin
+  class MenuItem as "MenuItem" <<interface>> {
+    +label: string
+    +onSelect: () => void
+    +href: string
+    +danger: boolean
+    +icon: ReactNode
+    +hidden: boolean
+    +disabled: boolean
   }
-  class UserAvatar3d
-  class Brand {
-    +name, slug, logoUrl
+  class mod_index_tsx as "index.tsx" <<módulo>> {
+    +cn()
+    +Button()
+    +FileButton()
+    +Spinner()
+    +Field()
+    +Input()
+    +Textarea()
+    +Select()
   }
 }
-FittingItem --> FittingSlot
-FittingItem --> Wear
-FittingItem --> FittingBrand
-ResolvedEnvironment --> "1..*" BrandEnvironment
-BrandEnvironment --> RoomStyle
-F ..> FittingItem
-F ..> ResolvedEnvironment
-FittingItem ..> CatalogProduct : source = catalog
-FittingItem ..> WardrobeItem : source = wardrobe
-CatalogVariant "*" --> "1" CatalogProduct
-CatalogProduct "*" --> "1" Brand
-WardrobeItem ..> CatalogProduct : por referência (Já tenho)
-note bottom of BrandEnvironment
-  10 marcas do seed com tema escolhido à mão;
-  as demais: tema estável derivado do nome
-end note
+package "lib/api/catalog.ts" {
+  class CatalogProduct as "CatalogProduct" <<interface>> {
+    +id: string
+    +brand: CatalogBrandRef | null
+    +productName: string
+    +modelName: string | null
+    +category: string
+    +subcategory: string
+    +color: string | null
+    +colorName: string | null
+    +colorHex: string | null
+    +material: string | null
+    .. +17 ..
+  }
+  class CatalogVariant as "CatalogVariant" <<interface>> {
+    +id: string
+    +key: string
+    +color: string | null
+    +colorName: string | null
+    +code: string | null
+    +sku: string | null
+  }
+  class MatchScore as "MatchScore" <<interface>> {
+    +total: number
+    +brandMatch: number
+    +categoryMatch: number
+    +subcategoryMatch: number
+    +textSimilarity: number
+    +colorMatch: number
+    +visualSimilarity: number | null
+    +designMatch: number | null
+    +reasons: MatchReason[]
+  }
+  class mod_catalog_ts as "catalog.ts" <<módulo>> {
+    +enoughToSearch()
+  }
+}
+package "app/(site)/(app)/search/page.tsx" {
+  class Brand as "Brand" <<interface>> {
+    +id: string
+    +userId: string
+    +slug: string
+    +name: string
+    +logoUrl: string | null
+    +registered: boolean
+    +publicPieces: number
+    +avatarUrl: string | null
+  }
+  class Filters as "Filters" <<type>> {
+    +style: string
+    +occasion: string
+    +color: string
+    +brand: string
+    +category: string
+    +hypeLevel: string
+  }
+  class mod_page_tsx as "page.tsx" <<módulo>> {
+    +SearchPage()
+  }
+}
+CatalogProduct --> CatalogVariant : selectedVariant
+CatalogProduct --> CatalogVariant : variants
+CatalogProduct --> MatchScore : matchScore
+FittingItem --> FittingBrand : brand
+FittingItem --> FittingSlot : slot
+ResolvedEnvironment --> BrandEnvironment : brands
+ResolvedEnvironment --> BrandEnvironment : featured
+ResolvedEnvironment --> BrandEnvironment : others
 @enduml

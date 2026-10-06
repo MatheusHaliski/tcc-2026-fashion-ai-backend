@@ -1,25 +1,43 @@
 @startuml RF45_MaquinaDeEstados_Pedido
 !pragma layout smetana
-title RF45 — CaptureRequest: pedido de foto complementar (vista + propósito)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "PENDING" as Pendente
-state "FULFILLED" as Atendido
-state "SKIPPED" as Pulado
-state "SUPERSEDED" as Substituido
+title RF45 — ciclo de vida de CaptureRequest.status e need\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum CaptureRequestStatus · enum CaptureNeed · tabela capture_requests
 
-[*] --> Pendente : AdaptiveCaptureEngine.decide\n(view, purpose, need, expectedGain, confidenceBefore)
-Pendente --> Atendido : POST /api/capture/sessions/{id}/images <<planejado>>\n(fulfilledImageId, confidenceAfter)
-Pendente --> Pulado : POST .../requests/{requestId}/skip <<planejado>>
-Pendente --> Substituido : nova decisão torna o pedido inútil\n(ex.: marca chegou a >= 0,90)
-Atendido --> [*]
-Pulado --> [*]
-Substituido --> [*]
-note right of Pendente : CaptureNeed STRONGLY_RECOMMENDED | RECOMMENDED | OPTIONAL\nnenhum bloqueia o cadastro (RN45.03)
-note right of Atendido : ganho realizado = confidenceAfter − confidenceBefore\nrecalibra os pesos informs(v, sinal)
+state "CaptureRequest.status" as Ciclo_CaptureRequest {
+  state Ciclo_CaptureRequest_PENDING as "PENDING"
+  state Ciclo_CaptureRequest_FULFILLED as "FULFILLED"
+  state Ciclo_CaptureRequest_SKIPPED as "SKIPPED"
+  state Ciclo_CaptureRequest_SUPERSEDED as "SUPERSEDED"
+}
+note bottom of Ciclo_CaptureRequest
+  Sem mudança explícita no código para: PENDING, FULFILLED, SKIPPED, SUPERSEDED
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
+state "CaptureRequest.need" as Ciclo_CaptureRequest_need {
+  state Ciclo_CaptureRequest_need_STRONGLY_RECOMMENDED as "STRONGLY_RECOMMENDED"
+  state Ciclo_CaptureRequest_need_RECOMMENDED as "RECOMMENDED"
+  state Ciclo_CaptureRequest_need_OPTIONAL as "OPTIONAL"
+}
+note bottom of Ciclo_CaptureRequest_need
+  Sem mudança explícita no código para: STRONGLY_RECOMMENDED, RECOMMENDED, OPTIONAL
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
 @enduml

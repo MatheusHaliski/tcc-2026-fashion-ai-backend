@@ -1,9 +1,16 @@
 @startuml RF10_Atividades
-title RF10 — Possibilitar que o usuário gere recomendações de esquemas de vestimenta & de peças de roupa através da aba "Copilot"\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,87 +19,65 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF10 — Possibilitar que o usuário gere recomendações de esquemas de vestimenta & de peças de roupa através da aba 'Copilot'\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre a aba "Copilot" (copilot);
-|Frontend (Next.js)|
-:GET /api/copilot/context?view=copilot\nGET /api/copilot/suggestions?city=&lat=&lon=;
-|Backend (CopilotService)|
-:WeatherService.resolve(lat, lon, city)\n→ faixa de temperatura (band) e estação;
-note right: OpenMeteoAdapter (WeatherPort/GeocodingPort);\nsem clima → Context.none
-:Lista peças elegíveis (WardrobeService.eligible:\ndisponíveis do acervo real);
-:Monta 5 blocos: looks prontos, combinações novas\n(LocalSchemeComposer), peças esquecidas (30+ dias sem uso),\npeças para o clima, looks em alta na rede;
-:Looks em alta ordenados pelo HypeScore v2\n(HypeQueryService.currentOf(SCHEME); sem Hype = por último);
-note right: novo (RF53 · HypeScore v2)
-|Frontend (Next.js)|
-:Renderiza SchemeCard / PieceCard + prompts sugeridos\nem abas (Tabs): Recomendações · Descoberta ·\nExperimentação · Redescoberta · Insights;
-note right
-  novo (RF53 · HypeScore v2):
-  Redescoberta e Insights leem
-  GET /api/me/hype/wardrobe (HypeController)
-end note
-|Pessoa|
-:Escolhe o modo (SegmentPicker): Seguro (SAFE, padrão)\n· Descoberta (DISCOVERY) · Experimental (EXPERIMENTAL);
-note right
-  novo (RF53 · HypeScore v2)
-  pesos [compat, hype, novidade, reuso]:
-  SAFE 0,60/0,10/0,10/0,20
-  DISCOVERY 0,35/0,20/0,25/0,20
-  EXPERIMENTAL 0,15/0,20/0,45/0,20
-  (Mode.parse aceita SEGURO/DESCOBERTA/EXPERIMENTAL)
-end note
-:Escreve um pedido ("look para jantar", "onde está meu tênis"...)\nou confirma a pergunta pré-preenchida por ?ask=;
-|Frontend (Next.js)|
-:POST /api/copilot/messages {message, view, mode}\n(selection e city opcionais);
-|Backend (CopilotService)|
-if (Mensagem vazia?) then (sim)
-  #FFE3E3:400 MENSAGEM_VAZIA;
+:Abre /autopilot, /copilot,\n/u/[username];
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/copilot/suggestions\nGET /api/copilot/context\nGET /api/me/daily-looks/pending-feedback\nGET /api/autopilot/weeks/current;
+|Pessoa usuária|
+:Perguntar ao Copilot (roteamento de\nintenção, chips de peça…;
+|Tela (Next.js)|
+:POST /api/copilot/messages;
+|API (Spring Boot)|
+:AutopilotController.ask\n→ CopilotService.ask;
+if (mensagem vazia?) then (sim)
+  :400 MENSAGEM_VAZIA\n«Escreva o que você precisa.»\n→ a tela mostra o aviso;
   stop
 endif
-:Roteia a intenção (Intent): WHERE_IS, HYPE, FORGOTTEN,\nDIFFERENT, IMPROVE_INVENTORY, DIAGNOSIS, LOOKS, GENERAL;
-note right: CopilotLexicon extrai ocasião, estilo, humor,\nestação, cor, tipo, material e faixa de clima do texto;\nHYPE = HYPE_QUESTION e não BUILD_REQUEST ("monte um look em alta" → LOOKS)
-if (Intenção) then (LOOKS)
-  :Compõe looks com as peças do acervo\n(respeita desafio ativo, se houver);
-  :scoreLooks(user, cards, mode) <<RF53>>:\nscores {compatibility, hype, novelty, reuse}\n(0–100 ou nulo); com modo, reordena\npor RecommendationScoring.rankValue;
-elseif (HYPE)
-  :hypeAnswer(user, message) <<RF53>>:\nHypeQueryService.currentOf (peças ou\nlooks próprios) → maior Hype, crescendo,\nraras, voltando ou potencial de trend;
-  :StyleCompatibility.score(DNA, peça)\nao lado do Hype (nunca misturada);\nchips com hype e compatibility;
-  :Anexa sempre o aviso copilot.hype.aviso;
-elseif (GENERAL)
-  :AiEngine.text(AiCapability.COPILOT) com refs [[pN]]\nsó das peças listadas; fallback texto local;
-  note right: ver RF24 (motor de IA) — nunca cita marca para compra
-else (demais)
-  :Resposta local: localização no quarto (RoomService),\nesquecidas, diagnóstico do acervo;
+if (acervo insuficiente?) then (sim)
+  :422 ACERVO_INSUFICIENTE\n«Cadastre ao menos 3 peças\ndisponíveis.»\n→ a tela mostra o aviso;
+  stop
 endif
-:Responde text + chips de peças + actions + intent\n(+ looks com scores e mode, quando LOOKS);
-|Pessoa|
-if (Aceita um look sugerido?) then (sim)
-  |Frontend (Next.js)|
-  :POST /api/copilot/looks {pieceIds, title, occasion, style, mood, background};
-  |Backend (CopilotService)|
-  :AutopilotService.createScheme(origin = COPILOT)\n+ DailyLookService.register(source = COPILOT);
-  note right: esquema salvo em schemes; Look do Dia em daily_looks (RF6)
+if (acervo insuficiente?) then (sim)
+  :422 ACERVO_INSUFICIENTE\n«O Copilot precisa de ao menos 3\npeças disponíveis para sugerir\nlooks. Cadastre suas peças.»\n→ a tela mostra o aviso;
+  stop
 endif
-if (Quer planejar a semana?) then (sim)
-  |Frontend (Next.js)|
-  :POST /api/autopilot/weeks {weekStart, days[], city};
-  |Backend (AutopilotService)|
-  if (Acervo com menos que o mínimo?) then (sim)
-    #FFE3E3:422 ACERVO_INSUFICIENTE;
-    stop
-  endif
-  :Plano anterior ACTIVE → DISCARDED;\nnovo WeekPlan ACTIVE com 7 WeekPlanDay\nsem repetir combinação (combination_key);
+|Dados e serviços|
+:Lê: style_dna\nschemes\nscheme_items\nwardrobe_items\nuser_preferences;
+:Usa: RoomService.locateAll\nRoomService.locate\nHypeQueryService.currentOf\nHypeQueryService.config\nRoomService.lastDiaryDates\nInventoryScoreService.improvementHints (+8);
+:IA: COPILOT;
+:Estado: category → ?cat\ndisponivel → true\navailabilityStatus → AVAILABLE;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Planejar a semana [um look por di…)
+    :POST /api/autopilot/weeks\n→ AutopilotService.planWeek\nvalida: ACERVO_INSUFICIENTE\nlê: week_plans, users, wardrobe_items …\nusa: WardrobeService.eligible,\nWeatherService.resolve,\nLookScorer.scoreLooks\ngrava: week_plans, week_plan_days;
+  case (Aceitar um look sugerido pelo Cop…)
+    :POST /api/copilot/looks\n→ CopilotService.accept\nusa: AutopilotService.createScheme,\nDailyLookService.register,\nDailyLookService.view;
+  case (Sugerir o look de hoje [ocasião,…)
+    :POST /api/autopilot/daily\n→ AutopilotService.daily\nusa: InsightService.itemsOrEmpty;
+  case (Confirmar a sugestão como esquema…)
+    :POST /api/autopilot/daily/confirmation\n→ AutopilotService.confirmDaily\nusa: DailyLookService.register,\nDailyLookService.view;
+  case (Trocar as peças de um dia)
+    :PUT /api/autopilot/days/{dayId}\n→ AutopilotService.editDay\nvalida: COMBINACAO_REPETIDA, SEM_PECAS\nlê: week_plan_days, wardrobe_items\nusa: Guard.requireOwner, LookScorer.scoreLooks\ngrava: week_plan_days;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Feedback do look (ADOREI / OK…, Usar o look do dia
+  planejado…, Descartar a semana planejada
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
+|Pessoa usuária|
 stop
 @enduml

@@ -29,6 +29,7 @@ entrega fecha com testes, métricas, documentação, commit e push no ramo `clau
 | AVATAR-ID I1 | Identidade versionada: refazer não apaga a aprovada; aprovar, restaurar, histórico | V42 + `Avatar3dService` |
 | AVATAR-ID I2 | Camada de resíduo assimétrico + medidas nomeadas: SFace de frente 0,369 → 0,476, top-1 15/15 | `face-residual.ts`, `face-profile.ts` |
 | AVATAR-ID I3 | Pele com balanço de branco pela esclera, rosto casado com o corpo: erro de cor 0,2, sem costura, gate 14/15 | `skin-tone.ts` |
+| DIAG-ALL | Todos os diagramas de atividades, sequência, componentes, estados e classes reescritos a partir do código (319 gerados; 7 de estados mantidos do time com legenda, porque o código não tem o estado equivalente) + globais v5 + índice | `scripts/diagramas/v5`, `docs/diagramas/INDICE-2026-10.md` |
 
 ---
 

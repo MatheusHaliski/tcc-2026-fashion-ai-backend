@@ -1,100 +1,48 @@
 @startuml RF26_Sequencia
-title RF26 — Realizar busca global de esquemas de vestimenta & peças por estação, região, clima e gênero, através da aba "Explorador Global"\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as U
-participant "Frontend\n/explorer (Tabs + Globe)" as FE
-participant "DiscoveryController" as C
-participant "ExplorerService" as S
-participant "AnalyticsQueryPort\n(MysqlAnalyticsAdapter)" as A
-participant "BrandProfileRepository" as R
-participant "AiEngine (RF24)" as AI
-participant "HypeController\n<<RF53>>" as HC
-participant "HypeQueryService\n<<RF53>>" as HQ
-participant "HypeCache\n<<RF53>>\n(RenderCachePort)" as HCA
-participant "HypeScoreCurrentRepository\n<<RF53>>" as HSR
-database "MySQL" as DB
+autonumber "<b>0."
+title RF26 — Realizar busca global de esquemas de vestimenta & peças por estação, região, clima e gênero, através da aba 'Explorador Global'\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-== Painel global (CA01) ==
-U -> FE : sub-aba "Painel global" + filtros
-FE -> C : GET /api/explorer/global?country&season&color&hypeBand
-C -> S : globalPanel(viewer, country, season, color, hypeBand)
-alt filtro inválido
-  S --> C : 400 ESTACAO_INVALIDA | COR_INVALIDA | FAIXA_INVALIDA
-  C --> FE : 400 {code, message}
-else filtros válidos
-  S -> A : countryColors()
-  A -> DB : SELECT cor × país (wardrobe_items PUBLIC)
-  S -> A : schemesByCountry(GlobalFilter) / piecesByCountry(GlobalFilter)
-  A -> DB : agrega schemes/wardrobe_items por users.country
-  S -> S : total por país, sufficient = total >= 3,\ndominantColor, intensity = avg_hype
-  opt country informado
-    S -> A : hypeBySeason(country), colorRanking(country, 5)
-  end
-  S --> C : {countries[], minData, filters, facets, selected?, legend}
-  C --> FE : 200 JSON
-  FE --> U : globo com um ponto por país + lista
-end
-
-== Buscar marcas & lojas (CA02) ==
-U -> FE : sub-aba "Buscar marcas & lojas" + filtros
-FE -> C : GET /api/explorer/brands?term&country&category&sort&color&season&hypeMin
-C -> S : brandsAndStores(viewer, term, country, category, sort, color, season, hypeMin)
-S -> A : brandFacets(), brandUsage(500)
-S -> R : findByApprovalStatusOrderByCreatedAtDesc(APROVADO)
-R -> DB : SELECT brand_profiles
-S -> S : filtra por país/categoria/cor/estação/hypeMin\ne ordena por hypeScore
-S --> C : {brands[], facets{countries, categories}}
-C --> FE : 200 JSON
-FE --> U : grade de perfis BRAND (→ RF14)
-
-== Em alta (novo · RF53 · HypeScore v2) ==
-U -> FE : sub-aba "Em alta" (HypeTrendingPanel): tipo Peças | Looks,\njanela Hoje | 7 dias | 30 dias, categoria (só peças), estilo, ocasião
-FE -> HC : GET /api/hype/trending?type&window&category&style&occasion&limit=24
-HC -> HQ : trending(viewer, type, window,\ncategory, style, occasion, limit)
-HQ -> HQ : window → 1 | 7 | 30; limit 1..50
-HQ -> HCA : get("trending:{type}:{window}:…", rank)\n(chave com a geração do job)
-alt chave da geração atual em cache (TTL 10 min)
-  HCA --> HQ : ranking em cache
-else cache vazio
-  HCA -> HQ : rank(type, window, category, style, occasion, limit)
-  HQ -> HSR : findByEntityTypeAndAlgorithmVersion\nAndPublicEligibleTrueAndStatus(type, versão, AVAILABLE)
-  HSR -> DB : SELECT hype_scores (só itens públicos elegíveis)
-  HQ -> HQ : filtra categoria / estilo / ocasião
-  alt window = 1 (Hoje)
-    HQ -> HQ : ordena pela dimensão trend (desempate: score)
-  else window = 7
-    HQ -> HQ : ordena pelo score atual
-  else window = 30
-    HQ -> DB : SELECT hype_score_snapshots (últimos 30 dias)
-    HQ -> HQ : ordena pela média mensal dos snapshots
-  end
-  HCA -> HCA : put(chave, ranking, TTL 10 min)
-end
-HQ -> HQ : views(viewer, type, ids) — descarta\no que quem vê não pode ver\n(bloqueio / visibilidade mudou)
-HQ --> HC : {type, window, algorithmVersion,\nitems[rank, id, hype, piece|scheme]}
-HC --> FE : 200 JSON
-FE --> U : grade de PieceCard / SchemeCard com #posição
-
-== Insights globais (CA03) ==
-U -> FE : sub-aba "Insights globais"
-FE -> C : GET /api/explorer/insights
-C -> S : insights(viewer)
-S -> A : brandUsage(5), hypeBySeason(null), colorRanking(null,5),\nhypeByColor(5), hypeByBrand(5), countries()
-A -> DB : agregados
-alt viewer autenticado
-  S -> AI : text(INSIGHT_GENERATOR, rankings)
-  AI --> S : AiOutcome<String> (valor ou fallback local)
-else anônimo
-  S -> S : LocalAdvisors.insightText(rankings)
-end
-S --> C : {rankings, aiInsight, explanation, fallbackUsed, note}
-C --> FE : 200 JSON
-FE --> U : rankings em barras + leitura textual
+actor "Pessoa usuária" as U
+boundary "Tela /explorer" as P
+control "DiscoveryController" as DiscoveryController
+participant "ExplorerService" as ExplorerService
+== Painel global por país (cores, hype, marcas) ==
+U -> P : Painel global por país (cores, hype, marcas)
+P -> DiscoveryController : GET /api/explorer/global
+DiscoveryController -> ExplorerService : globalPanel()
+activate ExplorerService
+deactivate ExplorerService
+ExplorerService --> DiscoveryController : resultado
+DiscoveryController --> P : 200 JSON
+P --> U : atualiza a tela
+== Marcas e lojas por país/categoria (hype v2 agregado; minLevel = faixa… ==
+U -> P : Marcas e lojas por país/categoria (hype v2 agrega…
+P -> DiscoveryController : GET /api/explorer/brands
+DiscoveryController -> ExplorerService : brandsAndStores()
+activate ExplorerService
+deactivate ExplorerService
+ExplorerService --> DiscoveryController : resultado
+DiscoveryController --> P : 200 JSON
+P --> U : atualiza a tela
 @enduml

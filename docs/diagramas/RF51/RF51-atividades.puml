@@ -1,9 +1,16 @@
 @startuml RF51_Atividades
-title RF51 — Escolher a Cartela sazonal e a animação num modal do Background Studio (look, DNA e peça)\nDiagrama de atividades — rascunho com Aplicar/Cancelar, prévia no card e gravação
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,92 +19,82 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF51 — Escolher a Cartela sazonal e a animação num modal do Background Studio (look, DNA e peça)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre a arte do card: etapa 4 do Criar Look,\nDNA de Estilo ou editor de arte da peça;
-|Background Studio (frontend)|
-:Carrega o catálogo (GET /api/backgrounds/catalog):\ncartelas (Frost, Solstice, Ember, Bloom) e animações;
-note right
-  Cartela e animação não ficam mais no
-  segmento "Cor": só no modal do layout
-end note
-|Pessoa|
-:Em "Layout & Estilo", clica em Cartela sazonal\n(look: layout · DNA: narrativa B11 · peça: família "seasonal");
-|Background Studio (frontend)|
-if (Cartela sazonal já é o layout?) then (sim)
-  :Abre o modal em modo edição;
-else (não)
-  :Guarda enter() e o patch que limpa a arte própria\n(aura, material, arte com IA, upload) e abre o modal;
-  note right: o layout do card ainda não muda
-endif
-:SeasonalDraft cria o rascunho a partir do valor atual\n{seasonalPresetId, seasonalAuto, animation};
-|Pessoa|
-repeat
-  :Escolhe uma cartela (clicar de novo desmarca);
-  if (Look/DNA com estação?) then (sim)
-    :Pode ligar "cartela automática"\n(segue a estação dos dados);
-  else (não)
-    :Look sem estação: aviso para escolher uma cartela\nou preencher a estação · peça: sem opção automática;
+|Lógica no navegador (lib)|
+partition "lib/card-art.ts · cartelaSeason()" {
+  if (!bg?) then (sim)
+    :encerra este passo;
+    stop
   endif
-  :Escolhe a animação:\nSem animação · Neve · Pétalas · Folhas · Brilho;
-repeat while (Continua ajustando?) is (sim)
-->não;
-if (Aplicar?) then (Cancelar, X, Esc ou fundo)
-  |Background Studio (frontend)|
-  :Descarta o rascunho: layout, narrativa e arte\nficam como estavam;
-else (Aplicar)
-  |Background Studio (frontend)|
-  :enter(): layout = CARTELA_SAZONAL\n(DNA: narrativa B11 · peça: família seasonal);
-  :onChange({...valor, ...patch, ...rascunho});
-  :Resumo "Cartela sazonal: <cartela> · <animação>"\n+ botão "Escolher cartela e animação" (reabre o modal);
-endif
-:Prévia do card: cartelaSeason(bg, estação);
-if (Há estação (cartela, automática ou do look)?) then (sim)
-  :SeasonCard / faixa B11: gradiente da estação,\ndecoração e animação (MotionFall ou brilho);
+}
+|Tela (React)|
+partition "c/card-art.tsx · ArtVideo()" {
+  if (!v?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  if (!seen || document.visibilityState === 'hidden' ||…?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  if (e?.name !== 'NotAllowedError'?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+}
+|API (Spring Boot)|
+partition "BackgroundStudioService.saveScheme()" {
+  :Guard.requireCanCreate();
+  :lê schemes;
+  :Guard.requireOwner();
+  if (cor inválida?) then (sim)
+    :400 COR_INVALIDA\n«Use cor hexadecimal (#RRGGBB).»;
+    stop
+  endif
+  if (preset inválido?) then (sim)
+    :400 PRESET_INVALIDO\n«Gradiente desconhecido: …»;
+    stop
+  endif
+  if (preset inválido?) then (sim)
+    :400 PRESET_INVALIDO\n«Preset sazonal desconhecido: …»;
+    stop
+  endif
+  if (preset inválido?) then (sim)
+    :400 PRESET_INVALIDO\n«Preset AURA desconhecido: …»;
+    stop
+  endif
+  :backgroundVideoUrl → null;
+  :AssetCatalogService.resolveCombination();
+  :backgroundVideoUrl → set;
+  :MediaService.requireOwnedMedia();
+  :backgroundArtUrl → set;
+  :AssetCatalogService.gradient();
+  :lê wardrobe_items;
+  :containerOrigin → AUTO;
+  :containerMandatory → true;
+  :AssetCatalogService.nativeContainer();
+  :containerOrigin → MANUAL;
+  :containerOrigin → INDEFINIDA;
+  :AssetCatalogService.resolveCombination();
+  :AssetCatalogService.auraVariant();
+  :AssetCatalogService.material();
+  :lê wardrobe_items;
+  :Guard.requireOwner();
+  :… e mais 26 passos no código;
   note right
-    com movimento reduzido (sistema ou
-    preferência do app) as animações param
+  e mais 12 condições que encerram cedo:
+  PRESET_INVALIDO, MATERIAL_INDISPONIVEL, FORMATO_INVALIDO, ESTACAO_OBRIGATORIA, SILHUETA_I…
   end note
-else (não)
-  :O card cai para Lista vertical até haver estação;
-endif
-|Pessoa|
-if (Troca para outro layout?) then (sim)
-  |Background Studio (frontend)|
-  :Aplica CLEAR_CARTELA\n{seasonalPresetId: null, seasonalAuto: false, animation: "NONE"};
-  note right
-    No DNA, useLeaveCartela limpa em qualquer
-    saída da B11: outra narrativa, layout base,
-    outro alvo ou proposta da IA
-  end note
-else (não)
-endif
-|Pessoa|
-:Salva o look, o DNA ou a peça;
-|Servidor (Spring Boot)|
-:Look: POST/PUT /api/schemes · DNA: POST/PUT /api/dna-schemes\n(seasonalTheme = cartelaSeason ?? AUTUMN) · peça: PUT /api/pieces/{id}/background (baseRev);
-:BackgroundStudioService.applyToScheme;
-if (Preset sazonal desconhecido?) then (sim)
-  :400 PRESET_INVALIDO;
-  stop
-else (não)
-endif
-if (seasonalAuto sem estação no look?) then (sim)
-  :400 ESTACAO_OBRIGATORIA;
-  stop
-else (não)
-endif
-:animation presente → enum (null → NONE); ausente → mantém a gravada;\ngrava studioConfigJson (+ gradiente do preset quando automática);
+}
+|Pessoa usuária|
+:Vê o resultado;
 stop
 @enduml

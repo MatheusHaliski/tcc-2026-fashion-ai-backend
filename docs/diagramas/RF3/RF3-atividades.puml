@@ -1,9 +1,16 @@
 @startuml RF3_Atividades
-title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,88 +19,63 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre /settings (abas Conta · Privacidade · Aparência · Idioma · Seus dados);
-|Frontend (settings)|
-:GET /api/me · /api/me/preferences · /api/me/consents\n· /api/auth/sessions · /api/me/exports;
-|Pessoa|
-if (O que deseja gerenciar?) then (dados do perfil)
-  |Frontend (settings)|
-  :PATCH /api/me/profile (nome, bio, país)\nPOST /api/me/avatar · /api/me/cover;
-  |Backend (PreferencesController · PreferencesService)|
-  :updateProfile / uploadProfileImage;\naudita ALTERACAO_PERFIL;
-elseif (dado sensível)
-  |Frontend (settings)|
-  :PATCH /api/me/sensitive {password, email, phone,\nbirthDate, twoFactorEnabled};
-  |Backend (MeController · AccountService)|
-  :identity.reauthenticate(senha atual) — CA01;
-  if (Senha correta?) then (não)
-    #FFE3E3:401/403 reautenticação recusada;
-    stop
-  endif
-  if (Trocou o e-mail?) then (sim)
-    :VerificationCode EMAIL_CHANGE (6 dígitos, 2 h)\ne-mail ao novo endereço + aviso ao antigo (CA02);
-    |Pessoa|
-    :Digita o código;
-    |Backend (MeController · AccountService)|
-    :POST /api/me/email-change/confirm\n(5 tentativas; 409 EMAIL_EM_USO se tomado);
-  endif
-  :Audita ALTERACAO_DADO_PESSOAL_SENSIVEL;
-elseif (senha e sessões)
-  |Backend (AuthController · IdentityService)|
-  :PUT /api/auth/password — changePassword\n(revoga as outras sessões — CA11);
-  :GET /api/auth/sessions; DELETE /api/auth/sessions/{id}\nou DELETE /api/auth/sessions (CA10);
-  note right
-    CA07 recuperação: POST /api/auth/password-reset/request
-    e /confirm; CA08 logout: POST /api/auth/logout
-  end note
-elseif (privacidade e consentimentos)
-  |Backend (MeController · AccountService)|
-  :PUT /api/me/privacy {PUBLIC | FOLLOWERS | PRIVATE}\n(privateAccount = visibility != PUBLIC — CA12);
-  :PUT /api/me/consents/{purpose} {granted}\n(concessão e revogação com o mesmo gesto);
-  note right
-    CA19–CA22 Privacy by Default: conta nasce PRIVATE,
-    nenhum consentimento pré-marcado; FACIAL_RECOGNITION
-    concedido → 400 FINALIDADE_NAO_UTILIZADA;
-    audita CONSENTIMENTO_CONCEDIDO / REVOGADO
-  end note
-elseif (notificações)
-  |Backend (NotificationController · NotificationService)|
-  :GET /api/notifications · POST /read · POST /read-all (CA15–CA16);
-  :PUT /api/notifications/preferences {changes, master} (CA17);
-  if (Desligar tipo SECURITY/obrigatório?) then (sim)
-    #FFE3E3:400 TIPO_OBRIGATORIO;
-    stop
-  endif
-else (seus dados — LGPD)
-  |Backend (MeController · AccountService)|
-  if (Exportar ou excluir?) then (exportar)
-    :POST /api/me/exports → 202 (CA04/CA24);
-    :Gera JSON (perfil, peças, esquemas, comentários,\nconsentimentos, fotos, inferências de IA);
-    :Grava em restricted/users/{id}/exports/{exportId}.json\nstatus READY, expira em 7 dias;
-    :Notificação DATA_EXPORT_READY; audita EXPORTACAO_CONTA;
-    |Pessoa|
-    :GET /api/me/exports/{id}/file (só o dono; 410 se expirou);
-  else (excluir conta)
-    |Backend (MeController · AccountService)|
-    :POST /api/me/deletion {password} → reautentica;
-    :status DELETION_SCHEDULED, deletionScheduledFor = +30 dias (CA05);\ne-mail de aviso; audita EXCLUSAO_CONTA;
-    note right: DELETE /api/me/deletion cancela na carência; ver RF1 (ciclo da conta)
-  endif
+:Abre /settings, /notifications,\n/u/[username];
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/auth/sessions\nGET /api/me/exports\nGET /api/me\nGET /api/me/consents;
+|Pessoa usuária|
+:Alterar senha, e-mail, telefone,\nnascimento ou 2FA (pede re…;
+|Tela (Next.js)|
+:PATCH /api/me/sensitive;
+|API (Spring Boot)|
+:MeController.updateSensitive\n→ AccountService.updateSensitive;
+if (e-mail inválido?) then (sim)
+  :400 EMAIL_INVALIDO\n«Formato de e-mail inválido.»\n→ a tela mostra o aviso;
+  stop
 endif
-|Frontend (settings)|
-:Atualiza a seção e exibe o aviso de sucesso;
+if (e-mail em uso?) then (sim)
+  :409 EMAIL_EM_USO\n«Este e-mail já está em uso.»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: users\nuser_preferences;
+:Usa: IdentityService.reauthenticate\nIdentityService.invalidateCodes\nEmailSenderPort.send;
+:Grava: verification_codes;
+:Estado: purpose → EMAIL_CHANGE\nexpiresAt → set\nlastSentAt → set;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Editar nome de exibição, bio, paí…)
+    :PATCH /api/me/profile\n→ PreferencesService.updateProfile\nvalida: LINKS_DEMAIS, LINK_INVALIDO, PAIS_INVALIDO\nlê: users, user_preferences\nusa: MediaService.requireOwnedMedia\nestado: avatarUrl → set, coverUrl → set;
+  case (Enviar foto de perfil)
+    :POST /api/me/avatar\n→ PreferencesService.uploadProfileImage\nlê: users\nusa: MediaService.put, MediaService.register\nestado: coverUrl → set, avatarUrl → set;
+  case (Encerrar uma sessão específica)
+    :DELETE /api/auth/sessions/{sessionId}\n→ IdentityService.revokeSession\nvalida: NAO_ENCONTRADO\nlê: refresh_tokens\nestado: revokedAt → set;
+  case (Trocar senha [encerra as outras s…)
+    :PUT /api/auth/password\n→ IdentityService.changePassword\nvalida: FORMULARIO_INVALIDO, SENHA_ATUAL_INCORRETA\nlê: users, verification_codes, refresh_tokens\nusa: PasswordHasherPort.hash\nestado: consumedAt → set, revokedAt → set;
+  case (Confirmar troca de e-mail com o c…)
+    :POST /api/me/email-change/confirm\n→ AccountService.confirmEmailChange\nvalida: CODIGO_INVALIDO, EMAIL_EM_USO, ERRO\nlê: users, verification_codes\nusa: IdentityService.requireCodeAttemptQuota\nestado: consumedAt → set, emailVerified → true;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Solicitar exportação dos meus…, Enviar imagem de
+  capa, Sair de todos os outros dispo…, Visibilidade
+  padrão do perfil…, Agendar exclusão da conta (ja…,
+  Girar a foto de perfil em 90°
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

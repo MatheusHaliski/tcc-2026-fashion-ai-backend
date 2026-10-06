@@ -1,9 +1,16 @@
 @startuml RF38_Atividades
-title RF38 — Cupons Fashion AI: "Meus cupons promocionais" (marca/celebridade) e "Meus cupons resgatados" (lookbook)\nDiagrama de atividades
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,46 +19,45 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Loja (marca/celebridade)|
+title RF38 — Cupons Fashion AI: 'Meus cupons promocionais' (marca/celebridade) e 'Meus cupons resgatados' (lookbook)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Cadastra selo com promoção (RF25)\nou jogo/combinação FLAIR (RF37);
-|Usuário|
-:Conquista direitos usando o app\n(selo aprovado num look, vitória no FLAIR…);
-|Sistema (CouponService)|
-:CouponRightsCheck (após o commit)\n→ procura promoções elegíveis;
-if (Já existe direito para esta fonte?) then (sim)
-  :Não duplica;
+:Abre /brands/[slug], /coupons;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/coupons/admin\nGET /api/me/coupons;
+|Pessoa usuária|
+:sim, resgatar: emite o cupom Fashion\nAI da marca/celebridade;
+|Tela (Next.js)|
+:POST /api/me/coupon-rights/{id}/redeem;
+|API (Spring Boot)|
+:CouponController.redeem\n→ CouponService.redeem;
+if (direito decidido?) then (sim)
+  :409 DIREITO_DECIDIDO\n«Este cupom já foi …»\n→ a tela mostra o aviso;
   stop
 endif
-:Cria o direito (coupon_rights PENDENTE);
-:Notifica COUPON_AVAILABLE:\n"Parabéns! Deseja resgatar o CUPOM?";
-|Usuário|
-if (Resgatar?) then (sim)
-  |Sistema (CouponService)|
-  :Emite o cupom Fashion AI\n(código único, desconto, validade, storeUrl);
-  |Usuário|
-  :Cupom aparece em "Meus cupons resgatados"\n(desenho sempre com o logo do FAI);
-  :Toca no cupom → abre a loja externa\n(fora do app);
-  |Loja (marca/celebridade)|
-  :Confere o código no caixa;
-  |Sistema (CouponService)|
-  :Marca o cupom como usado;
-else (não)
-  |Sistema (CouponService)|
-  :Direito dispensado;
+|Dados e serviços|
+:Lê: coupon_rights\npromotion_redemptions\nusers\nbrand_profiles\nflair_redemptions;
+:Usa: Guard.requireOwner\nSealService.redeem\nFlairService.redeem;
+:Estado: status → RESGATADO\ndecidedAt → set;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (confere o código de um cupom Fash…)
+    :POST /api/me/coupons/validate\n→ CouponService.validate\nvalida: CUPOM_EXPIRADO, CUPOM_USADO, NAO_ENCONTRADO\nlê: users, flair_redemptions, brand_profiles …\nusa: Guard.requireApprovedInstitutional,\nFlairService.validateCode\nestado: status → USED;
+  case (dispensar o cupom conquistado)
+    :POST /api/me/coupon-rights/{id}/dismiss\n→ CouponService.dismiss\nlê: coupon_rights, celebrity_profiles,\nbrand_profiles\nusa: Guard.requireOwner\nestado: status → DISPENSADO, decidedAt → set;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-|Loja (marca/celebridade)|
-:"Meus cupons promocionais":\ncupons emitidos, direitos pendentes\ne "Todas as promoções" (ativas/inativas);
+|Pessoa usuária|
 stop
 @enduml
