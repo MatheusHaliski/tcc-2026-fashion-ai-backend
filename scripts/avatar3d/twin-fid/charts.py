@@ -42,7 +42,7 @@ open(f"{outdir}/twin-fid-semelhanca.svg", "w").write(svg(W, ly + 16, "".join(b),
 conds = [("orig", "Foto original"), ("warm", "Luz quente"), ("cool", "Luz fria"), ("dark", "Exposição −38%"), ("half", "Meia resolução"), ("tilt", "Cabeça inclinada 5°"), ("oculos", "Armação de grau")]
 lo, hi = 0.0, 0.8; X = lambda v: x0 + (v - lo) / (hi - lo) * (x1 - x0); rh = 40; top = 80
 b = [f'<text class="t" x="20" y="30">Mesmo gêmeo sob luz, resolução, inclinação e óculos diferentes</text>',
-     f'<text class="s" x="20" y="50">Cosseno SFace do avatar (frente) com a foto ORIGINAL da pessoa; 6 pessoas por condição, traço = mediana</text>']
+     f'<text class="s" x="20" y="50">SFace do avatar (frente) × foto ORIGINAL; até 6 pessoas por condição (recusadas ficam fora); traço = mediana</text>']
 for t in [i / 10 for i in range(0, 9, 2)]:
     b.append(f'<line class="g" x1="{X(t):.1f}" x2="{X(t):.1f}" y1="{top}" y2="{top + rh * len(conds)}"/><text class="m" x="{X(t):.1f}" y="{top + rh * len(conds) + 16}" text-anchor="middle">{f2(t)}</text>')
 for i, (c, lab) in enumerate(conds):
