@@ -20,7 +20,7 @@ const ILLUSTRATION: Record<string, "tshirt" | "pants_back" | "sneaker_side" | "b
  * certeza de que a peça física é aquela — quem confirma é a pessoa). Sem resultado: refinar, procurar nas lojas oficiais
  * da marca ou cair para a própria foto.
  */
-export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext, pickLabel, noResultHint, browse }: {
+export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext, pickLabel, noResultHint, browse, onResults }: {
   initial?: Partial<CatalogSearchContext>; onPick: (p: CatalogProduct, v: CatalogVariant | null) => void;
   /** Sem ele, a busca não oferece "usar minha foto" (modo embutido no criador de peça, onde a foto fica logo abaixo). */
   onUsePhoto?: (ctx: CatalogSearchContext) => void;
@@ -34,6 +34,8 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   noResultHint?: string;
   /** Navegar pela loja: só a marca (ou só o tipo) já lista produtos — o provador mostra a vitrine da marca. */
   browse?: boolean;
+  /** Contexto + resultados visíveis a cada busca (o provador monta a loja, a zona e os expositores com eles). */
+  onResults?: (ctx: CatalogSearchContext, results: CatalogProduct[]) => void;
 }) {
   const { t } = useI18n();
   const tax = useTaxonomy();
@@ -52,6 +54,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   const [color, setColor] = useState("");
   const [gender, setGender] = useState("");
   const [res, setRes] = useState<SearchResponse | null>(null);
+  const [ranWith, setRanWith] = useState<{ category?: string; subcategory?: string; brand?: string; q?: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -85,7 +88,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
     setLoading(true); setError(null); setDiscover({ busy: false, result: null });
     try {
       const r = await catalogApi.search({ ...params, limit: 24 }, signal);
-      if (n === seq.current) setRes(r);
+      if (n === seq.current) { setRes(r); setRanWith(params); }
     } catch (e) {
       if ((e as Error).name === "AbortError") return;
       if (n === seq.current) setError(e instanceof ApiError ? e.message : t("catalog.erro_busca"));
@@ -105,6 +108,12 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   const colors = Array.from(new Set(shown.flatMap((p) => [p.color, ...(p.variants ?? []).map((v) => v.color)]).filter((c): c is string => !!c)));
   const genders = Array.from(new Set(shown.map((p) => p.gender).filter((g): g is string => !!g)));
   const canSearchOfficial = !!res?.canSearchOfficial && !discover.busy && !discover.result;
+  const reportRef = useRef(onResults); reportRef.current = onResults;
+  // relata o contexto da última busca EXECUTADA (não o texto a cada tecla), para a cena não piscar enquanto se digita
+  useEffect(() => {
+    const p = enough && res ? ranWith : null;
+    reportRef.current?.({ category: p?.category ?? "", subcategory: p?.subcategory ?? "", brand: p?.brand ?? "", query: p?.q ?? "" }, p ? filtered : []);
+  }, [res, ranWith, discover.result, gender, enough]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="grid gap-4">

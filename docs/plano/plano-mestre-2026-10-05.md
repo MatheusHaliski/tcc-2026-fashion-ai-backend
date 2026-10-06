@@ -33,6 +33,7 @@ entrega fecha com testes, métricas, documentação, commit e push no ramo `clau
 | AVATAR-ID I4 | Olhos, óculos e sobrancelhas: cor da íris medida na foto corrigida (11 classes por matiz; a malha usa a cor contínua), textura do olho recolorida, córnea e linha d'água só de reflexo, ossos `LeftEye`/`RightEye`; óculos escuros saem da textura (íris padrão), os de grau saem da textura e voltam como acessório 3D afastado do rosto (≥ 4 mm), com liga/desliga; sobrancelhas medidas (cor, espessura, arco, densidade); `eyes`/`brows` validados no app e no backend | `iris.ts`, `glasses.ts`, `identity/brows.ts`, `human/eyes.ts`, `human/glasses-3d.ts`; seção 23 da auditoria de identidade |
 | DIAG-ALL | Todos os diagramas de atividades, sequência, componentes, estados e classes reescritos a partir do código (319 gerados; 7 de estados mantidos do time com legenda, porque o código não tem o estado equivalente) + globais v5 + índice | `scripts/diagramas/v5`, `docs/diagramas/INDICE-2026-10.md` |
 | TWIN-FID | Bateria de fidelidade do digital twin: 16 pessoas, 6 × 6 capturas variadas, 6 corpos. De frente, 15/15 gêmeos identificados entre 16 fotos pelos dois reconhecedores (SFace 0,471); forma do rosto muda < 0,6 mm com luz, resolução e inclinação (4,6 mm entre pessoas). Corrigiu o balanço de branco do I3 (pele fora da faixa humana 7 → 1 de 16) e o peso do ajuste de corpo da pessoa (erro máx. 1,74 → 0,81 cm) | `docs/avatar3d/fidelidade-digital-twin-2026-10-06.md` |
+| SCENE-1 | Primeiro incremento do motor de cenas (9.2): `lib/scene3d/scene.ts` puro e testado (busca → loja, zona, expositores e produto em destaque; regras do mini palco). Provador pela Busca Catalogada na tela `/try-on` (parede de calçados, arara, mesa de denim, vitrine de acessórios, placa da zona, destaque com nome e preço; busca sem marca abre a loja multimarca FashionAI). Mini lojas das Coleções com fachada, letreiro e vitrine da marca do perfil. Mini palco com cortinas, logo e selos no telão, confete, fogos, lightsticks e plateia em silhueta. Corrigiu o ambiente procedural de marca que ficava sem estilo, e quebrava o provador, quando o hash do nome passava de 2³¹ | `docs/plano/img/scene-1/`, `/lab/scenes` (dev) |
 
 ---
 
@@ -702,6 +703,15 @@ perfil artista/marca  ─┘     ArtistStageProfile                luz, marca, e
 | 6.4 | Estudo da seção 3.3 e mini palcos (9.4) | 6.1; MOD-1 para o logo enviado |
 | 7.2 | PROVADOR-BUSCA P6 a P8: Vista-me integrado, comparação, desempenho | GARMENT F0–F3 |
 | 6.5 | ENV3D E5: polimento, temas, níveis de detalhe e analytics | 6.2 a 6.4 e 7.2 |
+
+**Andamento (06/10, SCENE-1):** a parte pura de 6.1 (resolvedor de cena e regras do palco), um primeiro corte de 7.1
+(P1–P3: contexto da busca → loja, zona e expositores; destaque no pedestal) e a fachada de 6.3 e o palco de 6.4 por
+regras estão entregues, com fotos antes/depois em `docs/plano/img/scene-1/`. Continuam abertos: `CrowdKit` e canvas
+único (6.1), câmera por zona e transição animada entre zonas (P4–P5), produtos das coleções na vitrine das mini lojas
+(o ranking ainda não traz produtos por coleção), logo do artista aprovado pelo examinador no palco (depende do MOD-1) e
+a Passarela 6.2.
+
+![SCENE-1 antes e depois](img/scene-1/scene-1-antes-depois.jpg)
 
 Na ordem geral, os itens 6 e 7 continuam depois dos itens 2 a 5. O que muda: os passos 6.0 a 6.2 e 7.1 não esperam o
 GARMENT. Se a pessoa responsável quiser a passarela e os provadores antes, eles podem subir na fila sem retrabalho.
