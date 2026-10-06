@@ -1,8 +1,5 @@
 // @vitest-environment jsdom
-/**
- * Tela do Meu Quarto (RF27/RF28/RF32): com o quarto carregado, a lista por módulo, a etiqueta da peça, o espelho, a
- * organização automática e as ações de cada módulo. A cena 3D (carregada sob demanda) não desenha nos testes.
- */
+
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, loggedAs, renderApp, screen } from "@/test-utils/render";
 import { ME } from "@/test-utils/render";
