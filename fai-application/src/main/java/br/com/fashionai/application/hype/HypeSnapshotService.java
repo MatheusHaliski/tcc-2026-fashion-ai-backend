@@ -159,8 +159,8 @@ public class HypeSnapshotService {
         Map<UUID, HypeSignalSeries> schemeSeries = HypeSignalSeries.build(schemeRows, today, config);
         byType.put(HypeEntityType.PIECE, signalCounts(pieceRows, today, config.windowDays()));
         byType.put(HypeEntityType.SCHEME, signalCounts(schemeRows, today, config.windowDays()));
-        Map<UUID, Lifetime> pieceLifetime = lifetime(signals.totalsBefore(HypeEntityType.PIECE, since));
-        Map<UUID, Lifetime> schemeLifetime = lifetime(signals.totalsBefore(HypeEntityType.SCHEME, since));
+        Map<UUID, Lifetime> pieceLifetime = lifetime(signals.totalsBefore(HypeEntityType.PIECE, since), config);
+        Map<UUID, Lifetime> schemeLifetime = lifetime(signals.totalsBefore(HypeEntityType.SCHEME, since), config);
 
         List<Entry> pieceEntries = pieceEntries(allPieces, pieceSeries, pieceLifetime, now);
         Map<UUID, Entry> pieceById = pieceEntries.stream().collect(Collectors.toMap(Entry::id, Function.identity()));
@@ -181,29 +181,36 @@ public class HypeSnapshotService {
     }
 
     /**
-     * Histórico anterior ao horizonte, vindo do agregado de sinais (já filtrado pela {@link HypeIntegrityPolicy}): interações
-     * ponderadas e visualizações aceitas. Nunca os contadores brutos da entidade (likesCount, viewCount…), que contam
-     * auto-interação, repetição e visitante.
+     * Histórico anterior ao horizonte, vindo do agregado de sinais (já filtrado pela {@link HypeIntegrityPolicy}). Nunca os
+     * contadores brutos da entidade (likesCount, viewCount…), que contam auto-interação, repetição e visitante.
+     *
+     * @param interactions interações com o peso da integridade × o peso do tipo de sinal — a mesma unidade da atividade
+     *                     diária, para um evento não mudar de valor só por ter saído do horizonte
+     * @param events       interações aceitas (contagem bruta) — entram em "dados insuficientes" como os eventos do horizonte
+     * @param views        visualizações aceitas (contagem)
      */
-    record Lifetime(double interactions, double views) {
-        static final Lifetime NONE = new Lifetime(0, 0);
+    record Lifetime(double interactions, double events, double views) {
+        static final Lifetime NONE = new Lifetime(0, 0, 0);
     }
 
-    static Map<UUID, Lifetime> lifetime(List<HypeSignalDailyRepository.SignalTotal> totals) {
+    static Map<UUID, Lifetime> lifetime(List<HypeSignalDailyRepository.SignalTotal> totals, HypeScoreConfig config) {
         Map<UUID, double[]> acc = new HashMap<>();
         for (HypeSignalDailyRepository.SignalTotal t : totals) {
             if (t.getEntityId() == null || t.getSignalType() == null) {
                 continue;
             }
-            double[] a = acc.computeIfAbsent(t.getEntityId(), k -> new double[2]);
+            double[] a = acc.computeIfAbsent(t.getEntityId(), k -> new double[3]);
+            double events = t.getEvents() == null ? 0 : t.getEvents();
             if (HypeCalculator.isInteraction(t.getSignalType())) {
-                a[0] += t.getWeighted() != null ? t.getWeighted().doubleValue() : t.getEvents() == null ? 0 : t.getEvents();
+                double weighted = t.getWeighted() != null ? t.getWeighted().doubleValue() : events;
+                a[0] += weighted * config.signalWeight(t.getSignalType());
+                a[1] += events;
             } else if (t.getSignalType() == HypeSignalType.LOOK_VIEWED || t.getSignalType() == HypeSignalType.PIECE_VIEWED) {
-                a[1] += t.getEvents() == null ? 0 : t.getEvents();
+                a[2] += events;
             }
         }
         Map<UUID, Lifetime> out = new HashMap<>();
-        acc.forEach((id, a) -> out.put(id, new Lifetime(a[0], a[1])));
+        acc.forEach((id, a) -> out.put(id, new Lifetime(a[0], a[1], a[2])));
         return out;
     }
 
@@ -261,7 +268,7 @@ public class HypeSnapshotService {
             Double cohortGrowth = cw[0] + cw[1] >= 3 ? ((cw[0] + config.growthSmoothing()) / (cw[1] + config.growthSmoothing()) - 1) * 100 : null;
             Lifetime lifetime = lifetimes.getOrDefault(p.getId(), Lifetime.NONE);
             HypeInputs in = new HypeInputs(HypeEntityType.PIECE, s.activity(), s.interactions(), s.views(), s.windows(), lifetime.interactions(), lifetime.views(),
-                    s.totalEvents(), ageDays(p.getCreatedAt(), now), presence, cohortGrowth, surprise(attributeKeys(p), freq, all.size()), null,
+                    s.totalEvents() + lifetime.events(), ageDays(p.getCreatedAt(), now), presence, cohortGrowth, surprise(attributeKeys(p), freq, all.size()), null,
                     limitedEdition(p.getTags()));
             String[] place = place(p.getUser());
             out.add(new Entry(p.getId(), p.getUser().getId(), in, pub, p.getCategory(), trim(p.getStyleTags()), trim(p.getOccasionTags()),
@@ -326,7 +333,7 @@ public class HypeSnapshotService {
             double influence = direct + 0.5 * second;
             Lifetime lifetime = lifetimes.getOrDefault(s.getId(), Lifetime.NONE);
             HypeInputs in = new HypeInputs(HypeEntityType.SCHEME, ss.activity(), ss.interactions(), ss.views(), ss.windows(), lifetime.interactions(), lifetime.views(),
-                    ss.totalEvents(), ageDays(s.getPublishedAt() != null ? s.getPublishedAt() : s.getCreatedAt(), now), presence, null,
+                    ss.totalEvents() + lifetime.events(), ageDays(s.getPublishedAt() != null ? s.getPublishedAt() : s.getCreatedAt(), now), presence, null,
                     surprise(keysBy.get(s.getId()), freq, all.size()), influence, limited);
             String[] place = place(s.getUser());
             // o look entra nos recortes de categoria/subcategoria das peças que o compõem

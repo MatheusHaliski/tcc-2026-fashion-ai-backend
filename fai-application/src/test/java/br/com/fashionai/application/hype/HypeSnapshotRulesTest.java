@@ -90,14 +90,39 @@ class HypeSnapshotRulesTest {
 
     @Test
     void lifetimeComesFromTheIntegrityFilteredAggregate() {
+        HypeScoreConfig config = HypeScoreConfig.defaults();
         UUID id = UUID.randomUUID();
         Map<UUID, HypeSnapshotService.Lifetime> out = HypeSnapshotService.lifetime(List.of(
                 new Total(id, HypeSignalType.LIKE_CREATED, 4L, new BigDecimal("3.500")),
                 new Total(id, HypeSignalType.COMMENT_CREATED, 1L, new BigDecimal("1.000")),
                 new Total(id, HypeSignalType.PIECE_VIEWED, 7L, new BigDecimal("7.000")),
-                new Total(id, HypeSignalType.PIECE_USED, 9L, new BigDecimal("9.000"))));   // uso não é interação nem visualização
-        assertThat(out.get(id).interactions()).isEqualTo(4.5);
+                new Total(id, HypeSignalType.PIECE_USED, 9L, new BigDecimal("9.000"))), config);   // uso não é interação nem visualização
+        double expected = 3.5 * config.signalWeight(HypeSignalType.LIKE_CREATED) + 1.0 * config.signalWeight(HypeSignalType.COMMENT_CREATED);
+        assertThat(out.get(id).interactions()).isEqualTo(expected);
+        assertThat(out.get(id).events()).isEqualTo(5.0);
         assertThat(out.get(id).views()).isEqualTo(7.0);
+    }
+
+    /** Um evento vale o mesmo dentro e fora do horizonte: o peso do tipo de sinal não some quando ele envelhece. */
+    @Test
+    void lifetimeKeepsTheSignalWeightOfTheDailySeries() {
+        HypeScoreConfig config = HypeScoreConfig.defaults();
+        UUID id = UUID.randomUUID();
+        double inside = HypeSignalSeries.build(List.of(row(id, HypeSignalType.SHARE_CREATED, java.time.LocalDate.now())),
+                java.time.LocalDate.now(), config).get(id).activityBetween(0, config.horizonDays());
+        double outside = HypeSnapshotService.lifetime(List.of(new Total(id, HypeSignalType.SHARE_CREATED, 1L, BigDecimal.ONE)), config)
+                .get(id).interactions();
+        assertThat(outside).isEqualTo(inside).isEqualTo(config.signalWeight(HypeSignalType.SHARE_CREATED));
+    }
+
+    private static br.com.fashionai.domain.model.HypeSignalDaily row(UUID id, HypeSignalType type, java.time.LocalDate day) {
+        br.com.fashionai.domain.model.HypeSignalDaily r = new br.com.fashionai.domain.model.HypeSignalDaily();
+        r.setEntityId(id);
+        r.setSignalType(type);
+        r.setSignalDate(day);
+        r.setEventCount(1);
+        r.setWeightedCount(BigDecimal.ONE);
+        return r;
     }
 
     /**
@@ -123,9 +148,10 @@ class HypeSnapshotRulesTest {
         assertThat(raw.lifetimeViews()).isZero();
         assertThat(new HypeCalculator(config).compute(raw, HypeCalculator.Baseline.empty()).status()).isEqualTo(HypeStatus.INSUFFICIENT_DATA);
 
-        HypeInputs filtered = job.pieceEntries(List.of(p), Map.of(), Map.of(p.getId(), new HypeSnapshotService.Lifetime(4, 20)), now).get(0).inputs();
-        assertThat(filtered.lifetimeInteractions()).isEqualTo(4.0);
+        HypeInputs filtered = job.pieceEntries(List.of(p), Map.of(), Map.of(p.getId(), new HypeSnapshotService.Lifetime(12, 4, 20)), now).get(0).inputs();
+        assertThat(filtered.lifetimeInteractions()).isEqualTo(12.0);
         assertThat(filtered.lifetimeViews()).isEqualTo(20.0);
+        assertThat(filtered.totalEvents()).as("eventos aceitos antes do horizonte contam 1 cada, não pelo peso").isEqualTo(4.0);
     }
 
     @Test
