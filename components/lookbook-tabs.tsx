@@ -26,6 +26,7 @@ import { usePieceSeals } from "@/lib/pieces/use-piece-seals";
 import { FaiIcon } from "@/components/fai-icon";
 import { LookExports } from "@/components/look-exports";
 import { SavedLooks } from "@/components/looks/saved-looks";
+import { MomentsTimelineSection } from "@/components/moments/moment-timeline";
 
 interface Overview { owner: UserCard; self: boolean; visible: boolean; institutional: boolean; tabs: { id: string; label: string; count: number }[]; emptyCloset?: { message: string; action: { label: string; href: string } } | null; panelVersion?: string; groupingSuggestionsAvailable?: boolean; }
 /**
@@ -38,7 +39,7 @@ interface Overview { owner: UserCard; self: boolean; visible: boolean; instituti
  * - Salvos: looks e peças salvos (SegmentPicker; ids antigos saved_looks/saved_pieces viram alias).
  * "Meus cupons resgatados" saiu (era o mesmo componente de /coupons).
  */
-export type TabId = "closet" | "looks" | "publications" | "favorites" | "dna" | "saved" | "daily" | "capsule" | "groups" | "insights";
+export type TabId = "closet" | "looks" | "publications" | "favorites" | "dna" | "saved" | "daily" | "capsule" | "groups" | "insights" | "moments";
 export type SavedView = "looks" | "pieces";
 /** categorias das peças (RF4): só as quatro — peça única não existe mais no formulário */
 const CATEGORIES = ["upper_piece", "lower_piece", "shoes_piece", "accessory_piece"];
@@ -62,7 +63,7 @@ export function LookbookTabs({ ownerId, initialTab = "closet", initialSaved = "l
   const tabs = [{ id: "closet" as TabId, label: t("lookbook.closet"), count: count("closet") }, { id: "looks" as TabId, label: t("lookbook.looks"), count: ov.self ? undefined : count("looks") },
     { id: "publications" as TabId, label: t("lookbook.publications"), count: count("publications") }, { id: "favorites" as TabId, label: t("lookbook.favorites"), count: count("favorites") },
     ...(ov.self ? [{ id: "saved" as TabId, label: t("lookbook.saved"), count: saved }, { id: "dna" as TabId, label: t("lookbook.dna") },
-      { id: "daily" as TabId, label: t("lookbook.daily") }, { id: "capsule" as TabId, label: t("lookbook.capsule"), count: count("capsule") }] : []), { id: "groups" as TabId, label: t("lookbook.groups") },
+      { id: "daily" as TabId, label: t("lookbook.daily") }, { id: "capsule" as TabId, label: t("lookbook.capsule"), count: count("capsule") }] : []), { id: "groups" as TabId, label: t("lookbook.groups") }, { id: "moments" as TabId, label: t("nav.moments") },
     ...(ov.self ? [{ id: "insights" as TabId, label: t("lookbook.insights") }] : [])];
   return (
     <>
@@ -77,6 +78,7 @@ export function LookbookTabs({ ownerId, initialTab = "closet", initialSaved = "l
       {tab === "capsule" && ov.self && <CapsuleTab />}
       {tab === "insights" && ov.self && <><InsightStrip context="CLOSET" className="mb-4" /><HypeWardrobeInsights /></>}
       {tab === "groups" && <GroupsTab ownerId={ownerId} self={ov.self} suggestions={!!ov.groupingSuggestionsAvailable} />}
+      {tab === "moments" && <MomentsTimelineSection userId={ownerId} self={ov.self} />}
     </>
   );
 }

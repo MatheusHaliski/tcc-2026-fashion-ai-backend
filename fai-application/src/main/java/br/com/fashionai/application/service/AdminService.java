@@ -285,6 +285,14 @@ public class AdminService {
         new BackupJob(backups, backupPort.getIfAvailable(), backupRetention).run("agendado");
     }
 
+    private br.com.fashionai.application.moments.MomentService moments;
+
+    /** Momentos: job de status/avisos pelo painel (injeção opcional para não alterar o construtor usado nos testes). */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setMoments(br.com.fashionai.application.moments.MomentService moments) {
+        this.moments = moments;
+    }
+
     @Transactional
     public Map<String, Object> runJob(CurrentUser admin, String job) {
         guard.requireAdmin(admin);
@@ -292,6 +300,7 @@ public class AdminService {
             case "hype" -> Map.of("v1", hype.recalibrate(), "v2", hypeV2.recalculate());
             case "rankings" -> inventory.recomputeRankings();
             case "challenges" -> challenges.tick();
+            case "moments" -> moments == null ? Map.of() : moments.tick();
             case "assets" -> assets.syncPresets();
             case "notifications" -> analytics.purgeNotifications((int) NotificationService.RETENTION.toDays());
             default -> throw ApiException.badRequest("JOB_INVALIDO", Msg.t("admin.jobs_hype_rankings_challenges_assets"));

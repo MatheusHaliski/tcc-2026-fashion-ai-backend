@@ -10,7 +10,7 @@ const arg = (n, d) => (process.argv.includes(n) ? process.argv[process.argv.inde
 const BASE = arg("--base", "http://localhost:3000"); const OUT = arg("--out", path.join(process.cwd(), "i18n-qa"));
 const LOCALES = arg("--locales", "pt-BR,en,es,qps-ploc").split(","); const USER = arg("--user", process.env.FAI_QA_USER || "demo_matheus3@example.com"); const PASS = arg("--pass", process.env.FAI_QA_PASS || "SenhaForte#2026");
 const ROUTES = ["/login", "/register", "/feed", "/search", "/explorer", "/brands", "/lookbook", "/closet", "/photos", "/room", "/mirror", "/avatar", "/try-on", "/schemes/new", "/dna", "/dna-schemes/new",
-  "/autopilot", "/copilot", "/challenges", "/flair", "/points", "/coupons", "/highlights", "/notifications", "/settings", "/dashboard", "/pieces/new"];
+  "/autopilot", "/copilot", "/moments", "/challenges", "/flair", "/points", "/coupons", "/highlights", "/notifications", "/settings", "/dashboard", "/pieces/new"];
 // só vocabulário do pt-BR que não existe igual em espanhol nem em inglês (nomes de peças e títulos vindos do banco também caem aqui: revisar a amostra)
 const PT_ONLY = /\b(você|voce|senha|cadastr\w*|também|guarda-roupa|roupas?|ontem|ainda|hoje|pelo|pela|seus|suas|sua|seu|então|olá|sair|curtir|curtidas?|compartilhar|esquecidas?|peças|meu|minha|minhas|meus|tênis|sapatos?|casaco|configurações|notificações|nenhum|nenhuma|carregando|voltar|fechar a|nova peça|novo look)\b/i;
 const ACCENTS = /[ãõçêôà]/i;

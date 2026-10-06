@@ -105,6 +105,10 @@ public class User extends VersionedAuditableEntity {
     @Column(length = 2)
     private String country;
 
+    /** Momentos §4/§54 — fuso IANA da pessoa (opcional); sem ele vale o fuso do Momento, nunca o do cliente. */
+    @Column(length = 50)
+    private String timezone;
+
     @Column(name = "interface_background_preset_id", length = 80)
     private String interfaceBackgroundPresetId;
 
