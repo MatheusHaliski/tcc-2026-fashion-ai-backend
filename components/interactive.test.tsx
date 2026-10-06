@@ -23,7 +23,6 @@ const TAXONOMY = { subcategories: { upper_piece: ["t_shirt"], lower_piece: ["jea
 const BADGES = [{ tier: "GOLD", owner: "BRAND", premium: true, name: "Nike", iconUrl: null, linkedPieceIds: ["p1"] }, { tier: "SILVER", owner: "CELEBRITY", premium: false, name: "Anitta" }];
 const mockApiNone = () => mockApi({});
 const settle = () => act(async () => { await new Promise((r) => setTimeout(r, 40)); });
-/** Clica nos primeiros botões habilitados (abre/fecha painéis, troca abas, alterna opções). */
 const clickAround = (n = 15) => { for (const b of screen.queryAllByRole("button").slice(0, n)) { if (!(b as HTMLButtonElement).disabled) fireEvent.click(b); } };
 
 describe("card do look e selos (RF5/RF20)", () => {
