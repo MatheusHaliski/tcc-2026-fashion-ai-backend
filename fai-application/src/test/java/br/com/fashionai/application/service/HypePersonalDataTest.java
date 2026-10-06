@@ -77,7 +77,7 @@ class HypePersonalDataTest {
         c.setEntityType(type);
         c.setEntityId(UUID.randomUUID());
         c.setOwnerId(owner);
-        c.setAlgorithmVersion("HYPE_V2");
+        c.setAlgorithmVersion(HypeScoreConfig.DEFAULT_VERSION);
         c.setStatus(score == null ? HypeStatus.INSUFFICIENT_DATA : HypeStatus.AVAILABLE);
         c.setScore(score == null ? null : BigDecimal.valueOf(score));
         c.setLevel(level);

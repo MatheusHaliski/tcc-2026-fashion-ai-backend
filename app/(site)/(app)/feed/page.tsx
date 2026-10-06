@@ -12,6 +12,7 @@ import { SchemeCard } from "@/components/scheme-card";
 import { InfiniteSentinel, mergeById } from "@/components/infinite-sentinel";
 import { OnboardingChecklist } from "@/components/onboarding";
 import { InsightStrip } from "@/components/insights/insight-strip";
+import { MomentNowBanner } from "@/components/moments/moment-banner";
 
 type Chips = { label?: string; key: string; value: string }[];
 type Feed = { items: SchemeView[]; nextCursor: string | null; chips?: Chips; order?: string };
@@ -48,6 +49,8 @@ export default function FeedPage() {
     <>
       <PageHeader title={t("feed.title")} kicker="RF8" lead={t("feed.lead")} />
       <OnboardingChecklist />
+      {/* Momentos §43 — só aparece quando há um Momento ativo relevante (nunca um banner permanente) */}
+      <MomentNowBanner />
       <Tabs tabs={[{ id: "feed", label: t("feed.title") }, { id: "runway", label: t("feed.runway") }]} value={tab} onChange={(v) => { setTab(v); setCursor(null); }} />
       {tab === "runway" && !user && <EmptyState title={t("common.loginRequired")} action={<Link href="/login" className="btn btn-primary">{t("nav.login")}</Link>} />}
       {/* RF53 · Lote A5 (P3-15): leitura do feed da comunidade — só looks públicos; crescimento ≠ popularidade */}

@@ -10,7 +10,7 @@ import java.util.Map;
  * ImageCandidateScore e escolha da CANONICAL_PRODUCT_IMAGE entre as fotos oficiais do produto.
  * Score = 0,6 qualidade + 0,3 preferência de vista (FRONT/PACKSHOT › TOP › SIDE › BACK › SOLE › OTHER) + 0,1 aprovado.
  * Só foto APPROVED e que não é de detalhe vira canônica; detalhe vira DETAIL; a mesma foto em outra URL (pHash ≤ 6)
- * vira DUPLICATE. Sem nenhuma aprovada, não há canônica: o card segue com a foto principal antiga e o produto entra
+ * vira DUPLICATE (só de uma CANONICAL/ALTERNATE já escolhida). Sem nenhuma aprovada, não há canônica: o card segue com a foto principal antiga e o produto entra
  * na fila de revisão (fallback: outra foto → outra vista → revisão manual → rejeição).
  */
 public final class ImageCandidateRanker {
@@ -54,7 +54,9 @@ public final class ImageCandidateRanker {
             } else {
                 role = Role.ALTERNATE;
             }
-            if (role != Role.REJECTED && role != Role.DUPLICATE && c.phash() != null) {
+            // só quem pode ser canônica/alternativa ancora duplicatas: um detalhe ou uma foto em revisão com score alto
+            // não pode transformar a vista principal aprovada em DUPLICATE e deixar o produto sem canônica
+            if ((role == Role.CANONICAL || role == Role.ALTERNATE) && c.phash() != null) {
                 kept.put(c.id(), c.phash());
             }
             out.add(new Ranked(c, score(c), role));

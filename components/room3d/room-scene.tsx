@@ -83,11 +83,13 @@ function useReflection(url?: string | null) {
   const [t, setT] = useState<THREE.Texture | null>(null);
   const cur = useRef<THREE.Texture | null>(null);
   useEffect(() => {
-    if (!url) return; let alive = true;
+    // sem foto (look trocado ou captura falhou): larga o reflexo anterior para as peças de reserva aparecerem
+    if (!url) { cur.current?.dispose(); cur.current = null; setT(null); return; }
+    let alive = true;
     new THREE.TextureLoader().load(url, (x) => {
       if (!alive) { x.dispose(); return; }
       x.colorSpace = THREE.SRGBColorSpace; cur.current?.dispose(); cur.current = x; setT(x);
-    });
+    }, undefined, () => { if (alive) { cur.current?.dispose(); cur.current = null; setT(null); } });
     return () => { alive = false; };
   }, [url]);
   useEffect(() => () => { cur.current?.dispose(); cur.current = null; }, []);

@@ -75,7 +75,7 @@ class ShowcaseHypeV2Test {
         when(schemeService.canView(any(), any())).thenReturn(true);
         Guard guard = mock(Guard.class);
         when(guard.canView(any(), any(), any())).thenReturn(true);
-        when(hype.findByEntityTypeAndEntityIdInAndAlgorithmVersion(any(), anyCollection(), eq("HYPE_V2"))).thenAnswer(a -> {
+        when(hype.findByEntityTypeAndEntityIdInAndAlgorithmVersion(any(), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION))).thenAnswer(a -> {
             Collection<UUID> ids = a.getArgument(1);
             return rows.stream().filter(r -> r.getEntityType() == a.getArgument(0) && ids.contains(r.getEntityId())).toList();
         });
@@ -194,7 +194,7 @@ class ShowcaseHypeV2Test {
         assertThat(table.get(1)).containsKey("likes");   // popularidade continua, à parte
         Map<String, Object> look = (Map<String, Object>) ((List<Map<String, Object>>) visitor.get("looks")).get(1).get("look");
         assertThat((Map<String, Object>) look.get("hype")).containsEntry("status", "NOT_CALCULATED");
-        verify(hype, times(1)).findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.SCHEME), anyCollection(), eq("HYPE_V2"));
+        verify(hype, times(1)).findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.SCHEME), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION));
 
         // o dono vê o próprio Hype pessoal, mas a posição continua a do ranking público (último)
         CurrentUser me = new CurrentUser(b.getId(), b.getUsername(), "USER", ProfileType.PESSOAL, true, AccountStatus.ACTIVE, null, null);

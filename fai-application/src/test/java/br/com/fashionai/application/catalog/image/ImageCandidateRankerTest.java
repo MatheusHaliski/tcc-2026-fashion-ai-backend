@@ -36,6 +36,15 @@ class ImageCandidateRankerTest {
     }
 
     @Test
+    void detalheOuRevisaoParecidosNaoTiramACanonicaDaVistaPrincipal() {
+        Map<String, Role> r = roles(List.of(
+                new Candidate("detail", "FRONT", Outcome.APPROVED, 0.99, true, "ffff0000ffff0000"),
+                new Candidate("review", "PACKSHOT", Outcome.NEEDS_REPROCESSING, 0.98, false, "ffff0000ffff0001"),
+                new Candidate("front", "FRONT", Outcome.APPROVED, 0.70, false, "ffff0000ffff0003")));
+        assertThat(r).containsEntry("detail", Role.DETAIL).containsEntry("review", Role.REVIEW).containsEntry("front", Role.CANONICAL);
+    }
+
+    @Test
     void semAprovadaNaoHaCanonicaEOProdutoVaiParaRevisao() {
         Map<String, Role> r = roles(List.of(new Candidate("m", "FRONT", Outcome.NEEDS_REPROCESSING, 0.7, false, null)));
         assertThat(r).containsEntry("m", Role.REVIEW).doesNotContainValue(Role.CANONICAL);

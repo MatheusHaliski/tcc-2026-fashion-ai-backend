@@ -17,7 +17,7 @@ Requisito e critérios de aceite: [`RF53_HypeScore_v2.md`](../novos-rf/RF53_Hype
  curtir / comentar / salvar  ─┐                                ┌─ HypeSignalSeries (séries)       /api/hype/summaries  (lote, cards)
  compartilhar / remixar       │  DomainEvents.HypeSignal       │  HypeCalculator (puro)           /api/hype/pieces|looks/{id}[/history]
  visualizar peça/look         ├─► HypeIntegrityPolicy ──► hype_signal_daily ─► HypeSnapshotService ─► hype_scores (estado atual)
- vestir peça (diário)         │  (antimanipulação)             │  algorithm_version = HYPE_V2      hype_score_snapshots (1/dia)
+ vestir peça (diário)         │  (antimanipulação)             │  algorithm_version = HYPE_V2_1    hype_score_snapshots (1/dia)
  look salvo / look do dia   ──┘  HypeSignalRecorder (AFTER_COMMIT)                                 /api/hype/trending · /api/me/hype/*
                                                                                                     + HypeCache (geração)
  qualquer evento acima ──► HypeLiveRecalc.markDirty() ──(verificação 30 s, ≤ 1 recálculo / 120 s)──► HypeSnapshotService
@@ -60,6 +60,11 @@ semanal e HypeGroups com `hypeScoreGlobal`) **saiu do código** no lote Final da
   foi removido; o job "hype" do admin e o atalho `POST /api/admin/hype/recalibration` (RF6.CA10) recalculam só o v2.
 
 O v2 grava só nas tabelas próprias, sempre com `algorithm_version`; uma calibração futura entra como `HYPE_V3` (§15).
+
+`HYPE_V2_1` (versão atual) é uma revisão do v2 com a mesma régua: o histórico anterior ao horizonte sai do agregado
+filtrado pela integridade (nunca dos contadores brutos da entidade) e mantém o peso do tipo de sinal, o uso retroativo
+conta na data real e só perfis `PUBLIC` entram na população pública. É uma série nova: os pontos `HYPE_V2` ficam como
+histórico e não entram nos deltas, e a troca de versão não dispara marcos (sem estado anterior não há "subida").
 
 ## 2. Dimensões (cada uma 0–100, nunca soma de contagens brutas)
 
@@ -205,7 +210,7 @@ com a checagem de login no controller, porque `/api/hype/**` é público para GE
 
 ## 9. Privacidade
 
-* Só peças/looks **públicos**, aprovados, de perfis não privados e de contas fora do modo de teste entram na régua
+* Só peças/looks **públicos**, aprovados, de perfis públicos (perfil "só seguidores" não entra) e de contas fora do modo de teste entram na régua
   (percentis), no ranking, na tendência pública, nas "novas tendências" e no `public_eligible`.
 * Item privado tem Hype **pessoal** (visível só para o dono), calculado contra a régua pública; para terceiros, a
   leitura em lote simplesmente não o devolve, e o detalhe responde 404.

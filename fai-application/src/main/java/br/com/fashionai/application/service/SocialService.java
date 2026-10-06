@@ -63,6 +63,7 @@ public class SocialService {
     private final br.com.fashionai.domain.repository.SchemeItemRepository schemeItems;
     private final UserRepository users;
     private final SchemeService schemeService;
+    private final WardrobeService wardrobe;
     private final NotificationService notifications;
     private final CounterStorePort counters;
     private final MediaService media;
@@ -72,7 +73,7 @@ public class SocialService {
     public SocialService(ReactionRepository reactions, CommentRepository comments, SavedItemRepository saved,
                          ShareRepository shares, SchemeRepository schemes, WardrobeItemRepository pieces,
                          DnaSchemeRepository dnas, br.com.fashionai.domain.repository.SchemeItemRepository schemeItems,
-                         UserRepository users, SchemeService schemeService,
+                         UserRepository users, SchemeService schemeService, WardrobeService wardrobe,
                          NotificationService notifications, CounterStorePort counters, MediaService media, Guard guard,
                          ApplicationEventPublisher events) {
         this.reactions = reactions;
@@ -85,6 +86,7 @@ public class SocialService {
         this.schemeItems = schemeItems;
         this.users = users;
         this.schemeService = schemeService;
+        this.wardrobe = wardrobe;
         this.notifications = notifications;
         this.counters = counters;
         this.media = media;
@@ -368,18 +370,30 @@ public class SocialService {
             return schemeService.remix(user, id);
         }
         if (type == TargetType.PIECE) {
+            WardrobeItem w = (WardrobeItem) t.entity();
+            // o criador de looks só aceita peças do acervo de quem compõe (wardrobe.eligible): a peça de outra
+            // pessoa é importada (ou reaproveitada, se já foi importada antes) ANTES de contar o remix
+            UUID seedId = ownPiece ? id : importedCopy(user, w);
             bump(t, "remixes", 1);
             hypeSignal(t, user.id(), HypeSignalType.PIECE_REMIXED);
-            WardrobeItem w = (WardrobeItem) t.entity();
             notifications.notify(t.owner().getId(), user.id(), NotificationType.NEW_REMIX, "PIECE", id,
                     Msg.k("social.remixou_a_peca", user.username(), w.getName()), null, null);
             // a peça entra como semente no criador de looks (scheme-builder lê ?pieces=)
-            return Map.of("next", "/schemes/new?pieces=" + id, "sourcePiece", Views.piece(w, null, null),
-                    "hint", w.getUser().getId().equals(user.id()) ? Msg.t("social.a_peca_entra_como_semente")
-                            : Msg.t("social.adicione_a_peca_ao_seu"));
+            return Map.of("next", "/schemes/new?pieces=" + seedId, "sourcePiece", Views.piece(w, null, null),
+                    "seedPieceId", seedId,
+                    "hint", ownPiece ? Msg.t("social.a_peca_entra_como_semente") : Msg.t("social.peca_importada_para_o_remix"));
         }
         bump(t, "remixes", 1);
         return Map.of("next", "/dna/new?remix=" + id);
+    }
+
+    /** Cópia da peça alheia no acervo de quem remixa: reaproveita uma cópia elegível já existente, senão importa. */
+    private UUID importedCopy(CurrentUser user, WardrobeItem source) {
+        return wardrobe.eligible(user.id()).stream()
+                .filter(c -> source.getId().equals(c.getRemixedFromPieceId()))
+                .map(WardrobeItem::getId)
+                .findFirst()
+                .orElseGet(() -> wardrobe.addToWardrobe(user, source.getId()).id());
     }
 
     /** CA14 — a partir de uma peça da lista, abre o esquema de ORIGEM que usou aquela peça (o mais antigo visível). */

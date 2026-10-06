@@ -1197,8 +1197,13 @@ public class WardrobeService {
     /**
      * RF47 · produto escolhido no catálogo global: a peça pessoal referencia o produto (sem copiar foto nem metadados)
      * e usa a foto oficial (proveniência no catálogo) como imagem principal até a pessoa adicionar a própria foto.
+     * {@code catalogImage}: a imagem do card ({@code CatalogImagePipelineService.cardImage}) — com o recorte semântico
+     * da canônica (nível A, a foto não é copiada) ou os assets processados (nível B); null = foto inteira.
      */
-    public record CatalogPick(UUID productId, UUID variantId, String imageUrl) {
+    public record CatalogPick(UUID productId, UUID variantId, String imageUrl, String thumbnailUrl, Map<String, Object> catalogImage) {
+        public CatalogPick(UUID productId, UUID variantId, String imageUrl) {
+            this(productId, variantId, imageUrl, null, null);
+        }
     }
 
     @Transactional
@@ -1226,7 +1231,9 @@ public class WardrobeService {
         }
         WardrobeItem w = new WardrobeItem();
         w.setUser(owner);
-        apply(w, form, true);
+        // a origem da variação (IA × pessoa) é deduzida do pré-preenchimento guardado no rascunho, nunca declarada
+        Map<?, ?> aiPrefill = draft != null && Json.map(draft.getResultJson()).get("prefill") instanceof Map<?, ?> prefill ? prefill : null;
+        apply(w, form, true, aiPrefill);
         w.setVisibility(form.visibility() != null ? form.visibility() : AccountService.defaultVisibility(owner));
         if (draft == null && !form.useDefaultImage() && pick == null) {
             throw ApiException.badRequest("FOTO_OBRIGATORIA", Msg.t("wardrobe.envie_uma_foto_ou_escolha"));
@@ -1237,8 +1244,12 @@ public class WardrobeService {
             boolean hasImage = pick.imageUrl() != null && !pick.imageUrl().isBlank();
             String url = hasImage ? pick.imageUrl() : assets.defaultPieceImage(w.getCategory(), w.getSubcategory());
             w.setImageUrl(url);
-            w.setThumbnailUrl(url);
+            w.setThumbnailUrl(hasImage && pick.thumbnailUrl() != null && !pick.thumbnailUrl().isBlank() ? pick.thumbnailUrl() : url);
             w.setOriginalImageUrl(null);
+            if (hasImage && pick.catalogImage() != null) {
+                // o recorte semântico vai junto da peça: quem mostra a foto aplica o mesmo enquadramento do card
+                w.setFlatLayMetadataJson(Json.write(Map.of("catalogImage", pick.catalogImage())));
+            }
             w.setDefaultImage(!hasImage);
             w.setImageOrigin(hasImage ? br.com.fashionai.domain.model.enums.ImageOrigin.CATALOG
                     : br.com.fashionai.domain.model.enums.ImageOrigin.DEFAULT);
@@ -1425,10 +1436,14 @@ public class WardrobeService {
     }
 
     private void apply(WardrobeItem w, PieceForm f, boolean creating) {
+        apply(w, f, creating, null);
+    }
+
+    private void apply(WardrobeItem w, PieceForm f, boolean creating, Map<?, ?> aiPrefill) {
         w.setName(InputSanitizer.moderated("name", f.name(), 120));
         w.setCategory(f.category());
         w.setSubcategory(f.subcategory());
-        applyTaxonomy(w, f);
+        applyTaxonomy(w, f, aiPrefill);
         w.setSex(f.sex());
         w.setColor(f.color());
         w.setMaterial(f.material());
@@ -1463,23 +1478,48 @@ public class WardrobeService {
      * Estilo e ocasião também vão para os atributos (as colunas CSV continuam, para compatibilidade).
      */
     static void applyTaxonomy(WardrobeItem w, PieceForm f) {
+        applyTaxonomy(w, f, null);
+    }
+
+    /**
+     * @param aiPrefill pré-preenchimento da IA guardado no rascunho da foto (só no cadastro). A variação que volta igual
+     *                  à sugerida e que a pessoa não confirmou ({@code confirmed} sem "variation") continua AI_SUGGESTED/AI,
+     *                  com a confiança da IA; só a troca ou a confirmação explícita vira USER_CONFIRMED/USER.
+     */
+    static void applyTaxonomy(WardrobeItem w, PieceForm f, Map<?, ?> aiPrefill) {
         boolean full = f.attributes() != null || f.variation() != null;
         if (full) {
+            boolean confirmedByUser = f.confirmed() != null && f.confirmed().contains("variation");
             if (!java.util.Objects.equals(w.getVariationCode(), f.variation())) {
                 w.setVariationCode(f.variation());
-                w.setVariationStatus(f.variation() == null ? null : "USER_CONFIRMED");
-                w.setVariationConfidence(null);
+                String suggested = aiPrefill == null || aiPrefill.get("variation") == null ? null
+                        : String.valueOf(aiPrefill.get("variation")).trim().toUpperCase(java.util.Locale.ROOT);
+                if (f.variation() == null) {
+                    setVariationProvenance(w, null, null, null);
+                } else if (f.variation().equals(suggested) && !confirmedByUser) {
+                    setVariationProvenance(w, "AI_SUGGESTED", "AI", aiPrefill.get("variationConfidence") instanceof Number n
+                            ? BigDecimal.valueOf(n.doubleValue()) : null);
+                } else {
+                    setVariationProvenance(w, "USER_CONFIRMED", "USER", null);
+                }
+            } else if (confirmedByUser && f.variation() != null && !"USER_CONFIRMED".equals(w.getVariationStatus())) {
+                setVariationProvenance(w, "USER_CONFIRMED", "USER", null);     // a pessoa confirmou a sugestão da IA
             }
             Map<String, List<String>> attrs = f.attributes() == null ? Map.of() : f.attributes();
             w.getAttributes().removeIf(a -> !Taxonomy.FIELD_DIMENSIONS.contains(a.getDimensionCode()) && !attrs.containsKey(a.getDimensionCode()));
             attrs.forEach((dim, codes) -> TaxonomyAttribute.replace(w.getAttributes(), dim, codes, "USER", null));
         } else if (w.getVariationCode() != null && !TaxonomyRegistry.get().isVariationOf(f.subcategory(), w.getVariationCode())) {
             w.setVariationCode(null);
-            w.setVariationStatus(null);
-            w.setVariationConfidence(null);
+            setVariationProvenance(w, null, null, null);
         }
         TaxonomyAttribute.replace(w.getAttributes(), "STYLE", Taxonomy.canonicalTags(f.style()), "USER", null);
         TaxonomyAttribute.replace(w.getAttributes(), "OCCASION", Taxonomy.canonicalTags(f.occasion()), "USER", null);
+    }
+
+    private static void setVariationProvenance(WardrobeItem w, String status, String source, BigDecimal confidence) {
+        w.setVariationStatus(status);
+        w.setVariationSource(source);
+        w.setVariationConfidence(confidence);
     }
 
     /**

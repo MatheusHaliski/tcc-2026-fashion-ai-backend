@@ -27,7 +27,12 @@ public class HypeScoreConfig {
         POPULARITY, ENGAGEMENT, TREND, TREND_VELOCITY, ORIGINALITY, RARITY, LONGEVITY, NOVELTY, INFLUENCE
     }
 
-    public static final String DEFAULT_VERSION = "HYPE_V2";
+    /**
+     * HYPE_V2_1: mesma régua do v2, com os insumos de histórico vindos do agregado filtrado pela integridade (com o peso
+     * do tipo de sinal), uso retroativo na data real e só perfis PUBLIC na população pública. Série nova: não se mistura
+     * com os pontos HYPE_V2 (deltas e marcos começam do zero, sem avisos em massa).
+     */
+    public static final String DEFAULT_VERSION = "HYPE_V2_1";
     static final String DEFAULT_PIECE_WEIGHTS = "popularity=0.20,engagement=0.18,trend=0.18,trend_velocity=0.12,originality=0.10,rarity=0.08,longevity=0.08,novelty=0.06";
     /** look: mesmos pesos base + influência (remixes e looks derivados); a média renormaliza pela soma dos pesos presentes */
     static final String DEFAULT_LOOK_WEIGHTS = DEFAULT_PIECE_WEIGHTS + ",influence=0.08";

@@ -278,6 +278,26 @@ class IssuerReviewServiceTest {
     }
 
     @Test
+    void perfilAntigoSemLinkNaoReenviaSemInformarUm() {
+        User owner = user("atelier_lume", ProfileType.MARCA, "contato@atelierlume.com.br", true);
+        BrandProfile b = brand(owner, ApprovalStatus.AJUSTES);
+        b.setStoreUrl(null);
+        b.setReviewAttempts(1);
+
+        ApiException e = assertThrows(ApiException.class, () -> service("").resubmit(me(owner),
+                new ResubmitCommand("Corrigi o contato", null, "comercial@atelierlume.com.br", null, null, null, null)));
+        assertEquals("FORMULARIO_INVALIDO", e.code());
+        assertTrue(e.details().containsKey("storeUrl"));
+        // nada aplicado: nem status, nem tentativa
+        assertEquals(ApprovalStatus.AJUSTES, b.getApprovalStatus());
+        assertEquals(1, b.getReviewAttempts());
+
+        service("").resubmit(me(owner), new ResubmitCommand(null, "atelierlume.com.br", null, null, null, null, null));
+        assertEquals(ApprovalStatus.PENDENTE, b.getApprovalStatus());
+        assertEquals("https://atelierlume.com.br", b.getStoreUrl());
+    }
+
+    @Test
     void documentoValidoComLinkInvalidoNaoCopiaODocumento() {
         User owner = user("atelier_lume", ProfileType.MARCA, "contato@atelierlume.com.br", true);
         BrandProfile b = brand(owner, ApprovalStatus.AJUSTES);
@@ -312,6 +332,7 @@ class IssuerReviewServiceTest {
         Map<String, IssuerVerificationPolicy.Auto> auto = new java.util.HashMap<>();
         policy.checks(owner, c).forEach(ch -> auto.put(ch.code(), ch.auto()));
         assertEquals(IssuerVerificationPolicy.Auto.FALHA, auto.get("NOME_CONFERE"));   // sem nome civil, nunca aprovável
+        c.setVerificationUrl("https://instagram.com/mclume");
 
         service("").resubmit(me(owner), new ResubmitCommand(null, null, null, null, null, null, "Maria Clara Lume"));
 
@@ -343,6 +364,7 @@ class IssuerReviewServiceTest {
         User owner = user("mc_lume", ProfileType.CELEBRIDADE, "mc@lume.com", true);
         CelebrityProfile c = celebrity(owner, ApprovalStatus.AJUSTES);
         c.setRealName("Maria Clara Lume");
+        c.setVerificationUrl("https://instagram.com/mclume");
 
         service("").resubmit(me(owner), new ResubmitCommand(null, null, null, null, null, null, null));
 

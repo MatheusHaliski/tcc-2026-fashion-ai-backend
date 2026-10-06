@@ -283,7 +283,9 @@ public class LensService {
                                int faces, boolean redactionConfirmed) {
         MultiPieceService.PieceDetection det = null;
         try {
-            det = multiPiece.detectPieces(user.id(), photo);
+            // foto enviada sem a confirmação do borrão de rostos (cliente antigo, direto ou com falha) nunca vai para a IA
+            // externa: a leitura fica local. As fotos do próprio app já passaram pelo cadastro e pela moderação.
+            det = redactionConfirmed || source.inApp() ? multiPiece.detectPieces(user.id(), photo) : localDetection();
         } catch (RuntimeException ex) {
             log.warn("Lens: detecção falhou ({})", ex.toString());
         }
@@ -337,6 +339,11 @@ public class LensService {
             rateLimit.release(user.id(), QUOTA_BUCKET);          // falha nossa não consome a cota da pessoa
         }
         return view(new Ctx(user), scan, saved);
+    }
+
+    /** Leitura sem IA externa: uma peça cobrindo a foto, como quando a IA não está disponível. */
+    static MultiPieceService.PieceDetection localDetection() {
+        return new MultiPieceService.PieceDetection(List.of(MultiPieceService.localPiece()), "local", null);
     }
 
     /** Por que a leitura ficou local (a UI explica): consentimento ou cota da IA. Nulo quando não há o que explicar. */
@@ -419,7 +426,10 @@ public class LensService {
         int sz = Math.max(1, Math.min(50, size <= 0 ? 12 : size));
         int pg = Math.max(0, page);
         PageRequest req = PageRequest.of(pg, sz);
-        Page<LensScan> result = saved == null ? scans.findByUserIdOrderByCreatedAtDesc(user.id(), req)
+        boolean onlyWanted = Boolean.TRUE.equals(wanted);
+        // "Quero" filtrado na consulta: a página, o total e o hasMore contam só os scans que casam
+        Page<LensScan> result = onlyWanted ? scans.findWanted(user.id(), saved, req)
+                : saved == null ? scans.findByUserIdOrderByCreatedAtDesc(user.id(), req)
                 : saved ? scans.findByUserIdAndSavedAtIsNotNullOrderByCreatedAtDesc(user.id(), req)
                 : scans.findByUserIdAndSavedAtIsNullOrderByCreatedAtDesc(user.id(), req);
         List<LensScan> rows = result.getContent();
@@ -432,9 +442,6 @@ public class LensService {
         for (LensScan s : rows) {
             List<LensDetection> ds = byScan.getOrDefault(s.getId(), List.of()).stream()
                     .sorted(Comparator.comparingInt(LensDetection::getOrdinal)).toList();
-            if (Boolean.TRUE.equals(wanted) && ds.stream().noneMatch(d -> d.getWantedAt() != null)) {
-                continue;
-            }
             int owned = 0, gaps = 0;
             for (LensDetection d : ds) {
                 if (closetMatches(ctx, d).isEmpty()) {
@@ -447,8 +454,7 @@ public class LensService {
             items.add(new LensViews.ScanCard(s.getId(), s.getCreatedAt(), s.getSavedAt(), s.getStatus().name(), ds.size(),
                     st.isEmpty() ? null : st.get(0).key(), owned, gaps));
         }
-        long total = Boolean.TRUE.equals(wanted) ? items.size() : result.getTotalElements();
-        return new Views.Page<>(items, pg, sz, total, Boolean.TRUE.equals(wanted) ? false : result.hasNext());
+        return new Views.Page<>(items, pg, sz, result.getTotalElements(), result.hasNext());
     }
 
     /**

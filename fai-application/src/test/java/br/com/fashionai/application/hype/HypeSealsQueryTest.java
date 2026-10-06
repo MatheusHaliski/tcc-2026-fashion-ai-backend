@@ -71,7 +71,7 @@ class HypeSealsQueryTest {
     void lotePorCardsTambemTrazOsSelos() {
         HypeScoreCurrent c = HypeSealsTest.row(91, HypeLevel.VIRAL, HypeMomentum.RISING, null, null);
         c.setEntityId(piece.getId());
-        when(current.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.PIECE), anyCollection(), eq("HYPE_V2"))).thenReturn(List.of(c));
+        when(current.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.PIECE), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION))).thenReturn(List.of(c));
         Map<String, Object> out = query.summaries(null, HypeEntityType.PIECE, List.of(piece.getId()));
         @SuppressWarnings("unchecked")
         Map<String, Map<String, Object>> items = (Map<String, Map<String, Object>>) out.get("items");
@@ -82,7 +82,7 @@ class HypeSealsQueryTest {
     void detalheTrazOProgressoDosSelos() {
         HypeScoreCurrent c = HypeSealsTest.row(45, HypeLevel.RELEVANT, HypeMomentum.EMERGING, null, 80.0);
         c.setEntityId(piece.getId());
-        when(current.findByEntityTypeAndEntityIdAndAlgorithmVersion(HypeEntityType.PIECE, piece.getId(), "HYPE_V2")).thenReturn(Optional.of(c));
+        when(current.findByEntityTypeAndEntityIdAndAlgorithmVersion(HypeEntityType.PIECE, piece.getId(), HypeScoreConfig.DEFAULT_VERSION)).thenReturn(Optional.of(c));
         Map<String, Object> out = query.detail(null, HypeEntityType.PIECE, piece.getId());
         assertThat(out.get("seals")).isEqualTo(List.of("EMERGING", "RARE"));
         @SuppressWarnings("unchecked")
