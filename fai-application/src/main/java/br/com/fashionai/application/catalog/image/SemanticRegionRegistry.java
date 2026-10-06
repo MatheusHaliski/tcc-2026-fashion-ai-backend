@@ -1,5 +1,6 @@
 package br.com.fashionai.application.catalog.image;
 
+import br.com.fashionai.application.taxonomy.TaxonomyRegistry;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -84,6 +85,12 @@ public final class SemanticRegionRegistry {
     public Profile profile(PieceType type, String subcategory) {
         JsonNode base = types.get(type);
         JsonNode sub = subcategory == null ? null : base.path("subcategories").get(subcategory);
+        if (sub == null && subcategory != null) {
+            // subcategoria antiga da taxonomia (ex.: denim_shorts → shorts): usa o enquadramento da que a substituiu, para
+            // as peças já gravadas com o código antigo não caírem no enquadramento genérico do tipo
+            sub = TaxonomyRegistry.get().subcategory(subcategory).filter(TaxonomyRegistry.Subcategory::legacy)
+                    .map(TaxonomyRegistry.Subcategory::replacedBy).map(r -> base.path("subcategories").get(r)).orElse(null);
+        }
         JsonNode focus = pick(sub, base, "focus");
         List<Region> critical = new ArrayList<>();
         pick(sub, base, "critical").forEach(c -> critical.add(region(c)));

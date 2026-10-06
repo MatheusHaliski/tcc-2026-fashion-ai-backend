@@ -1,6 +1,7 @@
 package br.com.fashionai.application.catalog.image;
 
-import br.com.fashionai.application.catalog.CatalogNormalizer;
+import br.com.fashionai.application.taxonomy.TaxonomyRegistry;
+
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -31,6 +32,16 @@ class SemanticRegionRegistryTest {
     }
 
     @Test
+    void subcategoriaAntigaUsaOEnquadramentoDaQueASubstituiu() {
+        // denim_shorts virou LEGACY na taxonomia (substituída por shorts + material DENIM): a peça antiga continua com o
+        // enquadramento do short, não com o genérico da parte de baixo
+        assertThat(registry.profile(PieceType.LOWER_PIECE, "denim_shorts").focus())
+                .isEqualTo(registry.profile(PieceType.LOWER_PIECE, "shorts").focus());
+        assertThat(registry.profile(PieceType.LOWER_PIECE, "denim_shorts").focus())
+                .isNotEqualTo(registry.profile(PieceType.LOWER_PIECE, null).focus());
+    }
+
+    @Test
     void calcadoSemCadarcoTemRegiaoEquivalente() {
         assertThat(registry.profile(PieceType.SHOES_PIECE, "loafers").laceless()).isTrue();
         assertThat(registry.profile(PieceType.SHOES_PIECE, "running_shoes").laceless()).isFalse();
@@ -40,7 +51,10 @@ class SemanticRegionRegistryTest {
     void subcategoriasDoRegistroExistemNaTaxonomiaDoMesmoPieceType() throws Exception {
         tools.jackson.databind.JsonNode root = new tools.jackson.databind.ObjectMapper()
                 .readTree(getClass().getResourceAsStream(SemanticRegionRegistry.RESOURCE));
-        CatalogNormalizer n = CatalogNormalizer.get();
+        // a taxonomia (TaxonomyRegistry) conhece as subcategorias ativas e as LEGACY: o registro pode guardar o
+        // enquadramento próprio de uma subcategoria antiga (bota de cano curto, tênis cano alto…) para as peças já gravadas;
+        // o normalizador do catálogo só indexa as ativas
+        TaxonomyRegistry n = TaxonomyRegistry.get();
         int checked = 0;
         for (PieceType t : PieceType.values()) {
             for (String sub : root.path("pieceTypes").path(t.name()).path("subcategories").propertyNames()) {
