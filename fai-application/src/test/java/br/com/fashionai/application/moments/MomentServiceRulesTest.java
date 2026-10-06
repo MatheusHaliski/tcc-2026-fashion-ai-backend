@@ -8,8 +8,11 @@ import br.com.fashionai.domain.model.FlairTeamMember;
 import br.com.fashionai.domain.model.Moment;
 import br.com.fashionai.domain.model.MomentParticipation;
 import br.com.fashionai.domain.model.MomentSubmission;
+import br.com.fashionai.domain.model.MomentChallenge;
 import br.com.fashionai.domain.model.MomentVote;
+import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.User;
+import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.MomentNature;
 import br.com.fashionai.domain.model.enums.MomentParticipationStatus;
@@ -20,7 +23,10 @@ import br.com.fashionai.domain.model.enums.MomentVisibility;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.repository.FlairTeamMemberRepository;
 import br.com.fashionai.domain.repository.FlairTeamRepository;
+import br.com.fashionai.domain.repository.MomentChallengeRepository;
 import br.com.fashionai.domain.repository.MomentParticipationRepository;
+import br.com.fashionai.domain.repository.SchemeItemRepository;
+import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.MomentRepository;
 import br.com.fashionai.domain.repository.MomentSubmissionRepository;
 import br.com.fashionai.domain.repository.MomentVoteRepository;
@@ -53,12 +59,15 @@ class MomentServiceRulesTest {
     private final List<MomentVote> voteRows = new ArrayList<>();
     private final List<FlairTeamMember> memberRows = new ArrayList<>();
     private final List<User> userRows = new ArrayList<>();
+    private final List<Scheme> schemeRows = new ArrayList<>();
+    private final List<MomentChallenge> challengeRows = new ArrayList<>();
     private MomentService service;
     private final Instant now = Instant.parse("2026-10-25T12:00:00Z");
     private final UUID teamId = UUID.randomUUID();
     private final CurrentUser ana = user("ana", "USER");
     private final CurrentUser bia = user("bia", "USER");
     private final CurrentUser admin = user("root", "ADMIN");
+    private final CurrentUser carla = user("carla", "USER");
 
     private static CurrentUser user(String name, String role) {
         return new CurrentUser(UUID.randomUUID(), name, role, ProfileType.PESSOAL, true, AccountStatus.ACTIVE, null, null);
@@ -115,11 +124,13 @@ class MomentServiceRulesTest {
             case "countByMomentIdAndWithdrawnFalse" -> subRows.stream().filter(s -> s.getMomentId().equals(a[0])).count();
             case "findByMomentIdAndUserIdAndWithdrawnFalse" -> subRows.stream().filter(s -> s.getMomentId().equals(a[0]) && s.getUserId().equals(a[1])).toList();
             case "save" -> a[0];
+            case "findByMomentIdAndSchemeId" -> subRows.stream().filter(s -> s.getMomentId().equals(a[0]) && s.getSchemeId().equals(a[1])).findFirst();
             default -> throw new UnsupportedOperationException(n);
         });
         MomentVoteRepository votes = proxy(MomentVoteRepository.class, (n, a) -> switch (n) {
             case "findBySubmissionIdAndVoterIdAndDimension" -> voteRows.stream().filter(v -> v.getSubmissionId().equals(a[0]) && v.getVoterId().equals(a[1]) && v.getDimension() == a[2]).findFirst();
             case "findByMomentId" -> voteRows.stream().filter(v -> v.getMomentId().equals(a[0])).toList();
+            case "findByMomentIdAndVoterId" -> voteRows.stream().filter(v -> v.getMomentId().equals(a[0]) && v.getVoterId().equals(a[1])).toList();
             case "save" -> {
                 voteRows.add((MomentVote) a[0]);
                 yield a[0];
@@ -158,6 +169,19 @@ class MomentServiceRulesTest {
             }).toList();
             default -> throw new UnsupportedOperationException(n);
         });
+        SchemeRepository schemes = proxy(SchemeRepository.class, (n, a) -> switch (n) {
+            case "findById" -> schemeRows.stream().filter(x -> x.getId().equals(a[0])).findFirst();
+            case "findByIdIn" -> schemeRows.stream().filter(x -> ((Collection<?>) a[0]).contains(x.getId())).toList();
+            default -> throw new UnsupportedOperationException(n);
+        });
+        SchemeItemRepository schemeItems = proxy(SchemeItemRepository.class, (n, a) -> switch (n) {
+            case "findBySchemeIdOrderBySortOrder", "findBySchemeIdIn" -> List.of();
+            default -> throw new UnsupportedOperationException(n);
+        });
+        MomentChallengeRepository challenges = proxy(MomentChallengeRepository.class, (n, a) -> switch (n) {
+            case "findByMomentIdOrderBySortOrderAsc" -> challengeRows.stream().filter(c -> c.getMomentId().equals(a[0])).toList();
+            default -> throw new UnsupportedOperationException(n);
+        });
         Guard guard = new Guard(null, null) {
             @Override
             public void requireCanCreate(CurrentUser user) {
@@ -167,8 +191,14 @@ class MomentServiceRulesTest {
             public ApiException deny(CurrentUser user, String resource, String message) {
                 return ApiException.forbidden(message);
             }
+
+            /** Regra do Guard sem seguidores: dono e administração veem tudo; os demais, só PUBLIC. */
+            @Override
+            public boolean canView(CurrentUser viewer, UUID ownerId, Visibility visibility) {
+                return (viewer != null && (viewer.id().equals(ownerId) || viewer.admin())) || visibility == Visibility.PUBLIC;
+            }
         };
-        service = new MomentService(moments, null, parts, subs, votes, null, null, null, users, teams, members, null, null, null, null, guard);
+        service = new MomentService(moments, challenges, parts, subs, votes, schemes, schemeItems, null, users, teams, members, null, null, null, null, guard, null);
         service.useClock(Clock.fixed(now, ZoneOffset.UTC));
         member(ana.id());
     }
@@ -178,6 +208,8 @@ class MomentServiceRulesTest {
         t.assignId(teamId);
         User u = new User();
         u.assignId(userId);
+        u.setUsername("ana");
+        u.setProfileType(ProfileType.PESSOAL);
         FlairTeamMember m = new FlairTeamMember();
         m.setTeam(t);
         m.setUser(u);
@@ -220,13 +252,7 @@ class MomentServiceRulesTest {
     @Test
     void naoVotaNoProprioLookNemForaDoPeriodo() {
         Moment m = moment("halloween-2026", MomentVisibility.PUBLIC, null, MomentStatus.ACTIVE);
-        MomentSubmission own = new MomentSubmission();
-        own.assignId(UUID.randomUUID());
-        own.setMomentId(m.getId());
-        own.setUserId(ana.id());
-        own.setSchemeId(UUID.randomUUID());
-        own.setSubmittedAt(now);
-        subRows.add(own);
+        MomentSubmission own = submit(m, ana, "Meu look", Visibility.PUBLIC, 0, 80);
         assertThatThrownBy(() -> service.vote(ana, m.getSlug(), new MomentService.VoteRequest(own.getId(), "creative")))
                 .isInstanceOf(ApiException.class).hasMessageContaining("próprio");
         Map<String, Object> r = service.vote(bia, m.getSlug(), new MomentService.VoteRequest(own.getId(), "creative"));
@@ -287,5 +313,156 @@ class MomentServiceRulesTest {
         Map<String, Object> g = service.groupMoments(ana, teamId);
         assertThat((List<?>) g.get("active")).hasSize(1);
         assertThat(g.get("name")).isEqualTo("Turma SI");
+    }
+
+    // ------------------------------------------------------------------ review do PR: looks privados, datas, estação
+    private User userOf(CurrentUser c) {
+        return userRows.stream().filter(u -> u.getId().equals(c.id())).findFirst().orElseGet(() -> {
+            User u = new User();
+            u.assignId(c.id());
+            u.setUsername(c.username());
+            u.setProfileType(ProfileType.PESSOAL);
+            userRows.add(u);
+            return u;
+        });
+    }
+
+    private MomentSubmission submit(Moment m, CurrentUser who, String title, Visibility vis, int votes, int match) {
+        Scheme sc = new Scheme();
+        sc.assignId(UUID.randomUUID());
+        sc.setUser(userOf(who));
+        sc.setTitle(title);
+        sc.setCoverImageUrl("/media/" + title + ".png");
+        sc.setVisibility(vis);
+        schemeRows.add(sc);
+        MomentSubmission s = new MomentSubmission();
+        s.assignId(UUID.randomUUID());
+        s.setMomentId(m.getId());
+        s.setUserId(who.id());
+        s.setSchemeId(sc.getId());
+        s.setVoteCount(votes);
+        s.setMatchScore(match);
+        s.setSubmittedAt(now.minusSeconds(votes));
+        subRows.add(s);
+        return s;
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void rankingPublicoNaoExpoeLookPrivado() {
+        Moment m = moment("halloween-2026", MomentVisibility.PUBLIC, null, MomentStatus.ACTIVE);
+        submit(m, bia, "Dark minimal", Visibility.PUBLIC, 3, 80);
+        MomentSubmission secret = submit(m, carla, "Look secreto", Visibility.PRIVATE, 9, 95);
+        // visitante anônimo (rota pública): só o look público, e nada do privado (título, capa, dono, ids)
+        Map<String, Object> anon = service.leaderboard(null, m.getSlug());
+        List<Map<String, Object>> items = (List<Map<String, Object>>) anon.get("items");
+        assertThat(items).extracting(r -> r.get("title")).containsExactly("Dark minimal");
+        assertThat(anon.toString()).doesNotContain("Look secreto").doesNotContain(secret.getSchemeId().toString()).doesNotContain(secret.getId().toString());
+        assertThat(items.get(0).get("position")).isEqualTo(1);
+        // o mesmo filtro no feed e no trending
+        assertThat(service.feed(null, m.getSlug()).toString()).doesNotContain("Look secreto");
+        assertThat(service.trending(null, m.getSlug(), 8).toString()).doesNotContain(secret.getSchemeId().toString());
+        // a dona vê o próprio look; outra pessoa logada, não
+        assertThat((List<Map<String, Object>>) service.leaderboard(carla, m.getSlug()).get("items")).extracting(r -> r.get("title")).contains("Look secreto");
+        assertThat(service.leaderboard(bia, m.getSlug()).toString()).doesNotContain("Look secreto");
+        // e não dá para votar (nem confirmar a existência) num look que não se pode ver
+        assertThatThrownBy(() -> service.vote(bia, m.getSlug(), new MomentService.VoteRequest(secret.getId(), "theme")))
+                .isInstanceOf(ApiException.class).satisfies(e -> assertThat(((ApiException) e).status()).isEqualTo(404));
+    }
+
+    @Test
+    void memoriaDeMomentoPublicoSoDestacaLooksPublicos() {
+        Moment m = moment("primavera-2025", MomentVisibility.PUBLIC, null, MomentStatus.ACTIVE);
+        m.setStartAt(Instant.parse("2025-09-22T03:00:00Z"));
+        m.setEndAt(Instant.parse("2025-12-21T02:59:59Z"));
+        submit(m, bia, "Florais", Visibility.PUBLIC, 2, 70);
+        submit(m, carla, "Look secreto", Visibility.PRIVATE, 9, 95);
+        service.tick();
+        assertThat(m.getStatus()).isEqualTo(MomentStatus.ENDED);
+        assertThat(m.getMemoryJson()).contains("Florais").doesNotContain("Look secreto").contains("\"looks\":2");
+    }
+
+    @Test
+    void momentoDeGrupoGuardaAHoraEscolhidaNoFusoDoPedido() {
+        Map<String, Object> created = service.createGroupMoment(ana, teamId, new MomentService.GroupMomentRequest("Halloween Night", null, "Halloween reinterpretado",
+                "2026-10-30T18:30", "2026-10-30T23:59", "America/Sao_Paulo", "GROUP", "BATTLE", 1, true, true, true, true, true, true, List.of(150, 100, 50),
+                null, List.of(), List.of(), List.of(), null, null));
+        Moment m = momentRows.stream().filter(x -> x.getId().equals(created.get("id"))).findFirst().orElseThrow();
+        assertThat(m.getStartAt()).isEqualTo(Instant.parse("2026-10-30T21:30:00Z"));   // 18:30 em São Paulo, não 00:00
+        assertThat(m.getEndAt()).isEqualTo(Instant.parse("2026-10-31T02:59:00Z"));
+        assertThat(m.getTimezone()).isEqualTo("America/Sao_Paulo");
+        assertThat(m.getStatus()).isEqualTo(MomentStatus.SCHEDULED);                    // ainda não começou (agora = 25/10)
+        assertThat(m.getVisibility()).isEqualTo(MomentVisibility.GROUP);
+    }
+
+    @Test
+    void parseDeDataHoraRespeitaOffsetOuFusoDoMomento() {
+        java.time.ZoneId sp = java.time.ZoneId.of("America/Sao_Paulo");
+        assertThat(MomentService.parseInstant("2026-11-09T18:30", "startAt", sp)).isEqualTo(Instant.parse("2026-11-09T21:30:00Z"));
+        assertThat(MomentService.parseInstant("2026-11-09T18:30:15", "startAt", sp)).isEqualTo(Instant.parse("2026-11-09T21:30:15Z"));
+        assertThat(MomentService.parseInstant("2026-11-09T18:30", "startAt", java.time.ZoneId.of("Asia/Tokyo"))).isEqualTo(Instant.parse("2026-11-09T09:30:00Z"));
+        assertThat(MomentService.parseInstant("2026-11-09T18:30:00Z", "startAt", sp)).isEqualTo(Instant.parse("2026-11-09T18:30:00Z"));
+        assertThat(MomentService.parseInstant("2026-11-09T18:30-03:00", "startAt", java.time.ZoneId.of("UTC"))).isEqualTo(Instant.parse("2026-11-09T21:30:00Z"));
+        assertThat(MomentService.parseInstant("2026-11-09", "startAt", sp)).isEqualTo(Instant.parse("2026-11-09T03:00:00Z"));
+        assertThatThrownBy(() -> MomentService.parseInstant("09/11/2026 18:30", "startAt", sp)).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> MomentService.parseInstant(" ", "startAt", sp)).isInstanceOf(ApiException.class);
+    }
+
+    private MomentService.AdminMomentRequest adminRequest(String season, String start, String end, String tz) {
+        return new MomentService.AdminMomentRequest(null, "Denim Week 2027", null, "Jeans que você já tem.", null, "COMMUNITY", "FASHIONAI", null,
+                start, end, tz, "GLOBAL", "PUBLIC", "", "", "", season, Map.of("accent", "#2D55C9"), null, null, false, false, "", "", "", true, 20, 1.0,
+                null, List.of("streetwear"), List.of(), List.of("blue"), null, null, null, null, null, "", null);
+    }
+
+    @Test
+    void adminSalvaComEstacaoVaziaELimpaEstacaoExistente() {
+        Map<String, Object> created = service.adminSave(admin, null, adminRequest("", "2027-11-08T00:00", "2027-11-15T00:00", "America/Sao_Paulo"));
+        Moment m = momentRows.stream().filter(x -> x.getId().equals(created.get("id"))).findFirst().orElseThrow();
+        assertThat(m.getSeason()).isNull();
+        assertThat(m.getStartAt()).isEqualTo(Instant.parse("2027-11-08T03:00:00Z"));
+        service.adminSave(admin, m.getId(), adminRequest("winter", "2027-11-08T00:00", "2027-11-15T00:00", "America/Sao_Paulo"));
+        assertThat(m.getSeason()).isEqualTo(br.com.fashionai.domain.model.enums.Season.WINTER);
+        service.adminSave(admin, m.getId(), adminRequest("", "2027-11-08T00:00", "2027-11-15T00:00", "America/Sao_Paulo"));
+        assertThat(m.getSeason()).isNull();
+        // valor desconhecido vira 400 (antes: IllegalArgumentException → 500)
+        assertThatThrownBy(() -> service.adminSave(admin, m.getId(), adminRequest("MONSOON", "2027-11-08T00:00", "2027-11-15T00:00", "America/Sao_Paulo")))
+                .isInstanceOf(ApiException.class).satisfies(e -> assertThat(((ApiException) e).status()).isEqualTo(400));
+    }
+
+    @Test
+    void adminEditarSemMexerNasDatasNaoDeslocaOsHorarios() {
+        // o formulário devolve a hora de parede no fuso do Momento (03:00Z = 00:00 em São Paulo) junto com o fuso
+        Map<String, Object> created = service.adminSave(admin, null, adminRequest("", "2027-11-08T00:00", "2027-11-15T00:00", "America/Sao_Paulo"));
+        Moment m = momentRows.stream().filter(x -> x.getId().equals(created.get("id"))).findFirst().orElseThrow();
+        for (int i = 0; i < 3; i++) {
+            service.adminSave(admin, m.getId(), adminRequest("", "2027-11-08T00:00", "2027-11-15T00:00", "America/Sao_Paulo"));
+        }
+        assertThat(m.getStartAt()).isEqualTo(Instant.parse("2027-11-08T03:00:00Z"));
+        assertThat(m.getEndAt()).isEqualTo(Instant.parse("2027-11-15T03:00:00Z"));
+        // trocar o fuso no mesmo save reinterpreta a hora de parede no fuso novo
+        service.adminSave(admin, m.getId(), adminRequest("", "2027-11-08T00:00", "2027-11-15T00:00", "Europe/Lisbon"));
+        assertThat(m.getStartAt()).isEqualTo(Instant.parse("2027-11-08T00:00:00Z"));
+    }
+
+    /** Hype v2 no Momento: o dono vê o próprio Hype pessoal; os demais, só o público elegível. Sem score = fora do mapa. */
+    @Test
+    void hypeDoMomentoNaoVazaOHypePessoal() {
+        br.com.fashionai.application.hype.HypeQueryService query = org.mockito.Mockito.mock(br.com.fashionai.application.hype.HypeQueryService.class);
+        MomentService withHype = new MomentService(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, query);
+        UUID owner = UUID.randomUUID(), other = UUID.randomUUID(), personal = UUID.randomUUID(), open = UUID.randomUUID(), thin = UUID.randomUUID();
+        org.mockito.Mockito.when(query.currentOf(org.mockito.ArgumentMatchers.eq(br.com.fashionai.domain.model.enums.HypeEntityType.SCHEME), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(Map.of(personal, hypeRow(owner, 72, false), open, hypeRow(owner, 55, true), thin, hypeRow(owner, null, true)));
+        List<UUID> ids = List.of(personal, open, thin);
+        assertThat(withHype.hypeScores(br.com.fashionai.domain.model.enums.HypeEntityType.SCHEME, ids, owner)).containsOnly(Map.entry(personal, 72.0), Map.entry(open, 55.0));
+        assertThat(withHype.hypeScores(br.com.fashionai.domain.model.enums.HypeEntityType.SCHEME, ids, other)).containsOnly(Map.entry(open, 55.0));
+        assertThat(withHype.hypeScores(br.com.fashionai.domain.model.enums.HypeEntityType.SCHEME, ids, null)).containsOnly(Map.entry(open, 55.0));
+    }
+
+    private static br.com.fashionai.domain.model.HypeScoreCurrent hypeRow(UUID owner, Integer score, boolean publicEligible) {
+        br.com.fashionai.domain.model.HypeScoreCurrent c = new br.com.fashionai.domain.model.HypeScoreCurrent();
+        c.setOwnerId(owner);
+        c.setScore(score == null ? null : java.math.BigDecimal.valueOf(score));
+        c.setPublicEligible(publicEligible);
+        return c;
     }
 }

@@ -6,6 +6,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { useTaxonomy, label as taxLabel } from "@/lib/api/taxonomy";
 import type { MomentCard as MomentCardData, MomentChallenge, MomentNature, MomentType } from "@/lib/moments/types";
 import { CHALLENGE_KINDS, MOMENT_NATURES, MOMENT_TYPES } from "@/lib/moments/types";
+import { instantToLocalInput, isValidTimeZone } from "@/lib/moments/time";
 import { RequireAuth } from "@/components/app-shell";
 import { Badge, Button, Card, ChipMultiSelect, Dialog, Dropdown, ErrorState, Field, Input, PageHeader, Skeleton, Switch, Textarea, useToast } from "@/components/ui";
 
@@ -19,8 +20,6 @@ const EMPTY: Form = { id: null, slug: "", name: "", nameEn: "", nameEs: "", desc
   accent: "#1F7A76", background: "#F7F6F2", gradient: "", icon: "✨", tone: "", featured: false, sponsored: false, sponsorName: "", sourceUrl: "", sourceNote: "", pointsEnabled: true, basePoints: "20", pointsMultiplier: "1",
   bonusWardrobe: "25", bonusRediscovery: "15", bonusRemix: "10", bonusNewStyle: "15", bonusPublish: "10", styleTags: [], occasionTags: [], colorTags: [], interpretations: "", badgeCode: "", challenges: [] };
 
-const toLocal = (iso?: string) => (iso ? iso.slice(0, 16) : "");
-
 /** Momentos §56 — a administração cria, edita, agenda, destaca, cancela e arquiva sem deploy (Halloween 2027 é uma linha). */
 function AdminMoments() {
   const { t, fmtDate } = useI18n(); const toast = useToast(); const tax = useTaxonomy();
@@ -32,7 +31,7 @@ function AdminMoments() {
     try {
       const d = await api.get<Detail>(`/api/admin/moments/${id}`);
       const b = d.bonusRules ?? {}; const th = d.theme ?? {};
-      setForm({ id: d.id, slug: d.slug, name: d.names?.["pt-BR"] ?? d.name, nameEn: d.names?.en ?? "", nameEs: d.names?.es ?? "", description: d.descriptions?.["pt-BR"] ?? d.description ?? "", descriptionEn: d.descriptions?.en ?? "", descriptionEs: d.descriptions?.es ?? "", type: d.type, nature: d.nature, startAt: toLocal(d.time.startAt), endAt: toLocal(d.time.endAt), timezone: d.time.timezone, scope: d.scope, country: d.country ?? "", visibility: d.visibility, season: d.season ?? "",
+      setForm({ id: d.id, slug: d.slug, name: d.names?.["pt-BR"] ?? d.name, nameEn: d.names?.en ?? "", nameEs: d.names?.es ?? "", description: d.descriptions?.["pt-BR"] ?? d.description ?? "", descriptionEn: d.descriptions?.en ?? "", descriptionEs: d.descriptions?.es ?? "", type: d.type, nature: d.nature, startAt: instantToLocalInput(d.time.startAt, d.time.timezone), endAt: instantToLocalInput(d.time.endAt, d.time.timezone), timezone: d.time.timezone, scope: d.scope, country: d.country ?? "", visibility: d.visibility, season: d.season ?? "",
         accent: th.accent ?? "", background: th.background ?? "", gradient: th.gradient ?? "", icon: th.icon ?? "", tone: th.tone ?? "", featured: d.featured, sponsored: d.sponsored, sponsorName: d.sponsorName ?? "", sourceUrl: d.sourceUrl ?? "", sourceNote: d.sourceNote ?? "", pointsEnabled: d.pointsEnabled, basePoints: String(d.basePoints), pointsMultiplier: String(d.pointsMultiplier),
         bonusWardrobe: String(b.wardrobe ?? ""), bonusRediscovery: String(b.rediscovery ?? ""), bonusRemix: String(b.remix ?? ""), bonusNewStyle: String(b.newStyle ?? ""), bonusPublish: String(b.publish ?? ""), styleTags: d.styleTags, occasionTags: d.occasionTags, colorTags: d.colorTags, interpretations: JSON.stringify(d.interpretations ?? [], null, 1), badgeCode: d.badgeCode ?? "",
         challenges: (d.challenges ?? []).map((c) => ({ code: c.code, name: c.name, kind: c.kind, points: String(c.points), styleTags: c.styleTags, colorTags: c.colorTags, description: c.description ?? "", params: JSON.stringify(c.params ?? {}) })) });
@@ -40,12 +39,13 @@ function AdminMoments() {
   }
   async function save() {
     if (!form) return;
+    if (!isValidTimeZone(form.timezone)) { toast.error(t("adminMoments.timezone_invalid", { tz: form.timezone })); return; }
     let interpretations: unknown; let challenges: unknown[];
     try { interpretations = form.interpretations.trim() ? JSON.parse(form.interpretations) : []; } catch { toast.error(t("adminMoments.interpretations_invalid")); return; }
     try { challenges = form.challenges.map((c) => ({ code: c.code, name: c.name, kind: c.kind, points: Number(c.points) || 0, styleTags: c.styleTags, colorTags: c.colorTags, description: c.description || null, params: c.params.trim() ? JSON.parse(c.params) : {} })); } catch { toast.error(t("adminMoments.params_invalid")); return; }
     const num = (s: string) => (s.trim() === "" ? undefined : Number(s));
     const body = { slug: form.slug || null, name: form.name, names: { "pt-BR": form.name, ...(form.nameEn ? { en: form.nameEn } : {}), ...(form.nameEs ? { es: form.nameEs } : {}) }, description: form.description, descriptions: { "pt-BR": form.description, ...(form.descriptionEn ? { en: form.descriptionEn } : {}), ...(form.descriptionEs ? { es: form.descriptionEs } : {}) },
-      type: form.type, nature: form.nature, startAt: form.startAt ? new Date(form.startAt).toISOString() : null, endAt: form.endAt ? new Date(form.endAt).toISOString() : null, timezone: form.timezone, scope: form.scope, country: form.country, visibility: form.visibility, season: form.season,
+      type: form.type, nature: form.nature, startAt: form.startAt || null, endAt: form.endAt || null, timezone: form.timezone, scope: form.scope, country: form.country, visibility: form.visibility, season: form.season.trim(),
       theme: { accent: form.accent || null, background: form.background || null, gradient: form.gradient || null, icon: form.icon || null, animation: "none", ...(form.tone ? { tone: form.tone } : {}) }, featured: form.featured, sponsored: form.sponsored, sponsorName: form.sponsorName, sourceUrl: form.sourceUrl, sourceNote: form.sourceNote,
       pointsEnabled: form.pointsEnabled, basePoints: num(form.basePoints), pointsMultiplier: num(form.pointsMultiplier), bonusRules: { wardrobe: num(form.bonusWardrobe), rediscovery: num(form.bonusRediscovery), remix: num(form.bonusRemix), newStyle: num(form.bonusNewStyle), publish: num(form.bonusPublish) },
       styleTags: form.styleTags, occasionTags: form.occasionTags, colorTags: form.colorTags, interpretations, badgeCode: form.badgeCode, challenges };
@@ -85,8 +85,8 @@ function AdminMoments() {
               <Field label={t("adminMoments.slug")} id="am-slug" hint={t("adminMoments.slug_hint")}><Input id="am-slug" value={form.slug} onChange={(e) => set("slug", e.target.value)} /></Field>
               <Field label={t("common.tipo")} id="am-type"><Dropdown id="am-type" label={t("common.tipo")} value={form.type} onChange={(v) => set("type", v)} options={MOMENT_TYPES.map((x) => ({ id: x, label: t(`moments.type.${x}`) }))} /></Field>
               <Field label={t("adminMoments.nature")} id="am-nature" hint={t("adminMoments.nature_hint")}><Dropdown id="am-nature" label={t("adminMoments.nature")} value={form.nature} onChange={(v) => set("nature", v)} options={MOMENT_NATURES.map((x) => ({ id: x, label: t(`moments.nature.${x}`) }))} /></Field>
-              <Field label={t("moments.flair.start")} id="am-start" required><Input id="am-start" type="datetime-local" value={form.startAt} onChange={(e) => set("startAt", e.target.value)} /></Field>
-              <Field label={t("moments.flair.end")} id="am-end" required><Input id="am-end" type="datetime-local" value={form.endAt} onChange={(e) => set("endAt", e.target.value)} /></Field>
+              <Field label={t("moments.flair.start")} id="am-start" required hint={t("adminMoments.times_in_tz", { tz: form.timezone })}><Input id="am-start" type="datetime-local" value={form.startAt} onChange={(e) => set("startAt", e.target.value)} /></Field>
+              <Field label={t("moments.flair.end")} id="am-end" required hint={t("adminMoments.times_in_tz", { tz: form.timezone })}><Input id="am-end" type="datetime-local" value={form.endAt} onChange={(e) => set("endAt", e.target.value)} /></Field>
               <Field label={t("adminMoments.timezone")} id="am-tz"><Input id="am-tz" value={form.timezone} onChange={(e) => set("timezone", e.target.value)} /></Field>
               <Field label={t("adminMoments.scope")} id="am-scope"><Dropdown id="am-scope" label={t("adminMoments.scope")} value={form.scope} onChange={(v) => set("scope", v)} options={["GLOBAL", "COUNTRY", "REGION"].map((x) => ({ id: x, label: t(`adminMoments.scope_${x}`) }))} /></Field>
               <Field label={t("adminMoments.country")} id="am-country" hint={t("adminMoments.country_hint")}><Input id="am-country" value={form.country} onChange={(e) => set("country", e.target.value.toUpperCase())} maxLength={2} /></Field>

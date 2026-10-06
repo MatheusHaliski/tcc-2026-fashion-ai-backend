@@ -76,7 +76,7 @@ class ClosetSealFilterTest {
         c.setLevel(level);
         c.setMomentum(HypeMomentum.STABLE);
         c.setPublicEligible(publicEligible);
-        c.setAlgorithmVersion("HYPE_V2");
+        c.setAlgorithmVersion(HypeScoreConfig.DEFAULT_VERSION);
         c.setCalculatedAt(Instant.now());
         return c;
     }
@@ -103,7 +103,7 @@ class ClosetSealFilterTest {
         when(pieces.findByUserIdOrderByCreatedAtDesc(owner.getId())).thenReturn(List.of(viral, branded, plain, privateViral));
 
         HypeScoreCurrentRepository hypeRepo = mock(HypeScoreCurrentRepository.class);
-        when(hypeRepo.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.PIECE), anyCollection(), eq("HYPE_V2"))).thenReturn(List.of(
+        when(hypeRepo.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.PIECE), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION))).thenReturn(List.of(
                 hype(viral, 93, HypeLevel.VIRAL, true),
                 hype(branded, 30, HypeLevel.NICHE, true),
                 hype(privateViral, 95, HypeLevel.VIRAL, false)));   // peça privada: Hype estrutural, sem selo de Hype

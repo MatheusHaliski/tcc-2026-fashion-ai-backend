@@ -71,9 +71,9 @@ class ExplorerBrandsHypeV2Test {
         pieces = mock(WardrobeItemRepository.class);
         schemes = mock(SchemeRepository.class);
         explorer = new ExplorerService(analytics, brands, bonds, mock(AiEngine.class), hype, config, pieces, schemes);
-        when(hype.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(any(), eq("HYPE_V2"), eq(HypeStatus.AVAILABLE)))
+        when(hype.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(any(), eq(HypeScoreConfig.DEFAULT_VERSION), eq(HypeStatus.AVAILABLE)))
                 .thenAnswer(a -> rows.stream().filter(r -> r.getEntityType() == a.getArgument(0)).toList());
-        when(hype.findByEntityTypeAndEntityIdInAndAlgorithmVersion(any(), anyCollection(), eq("HYPE_V2"))).thenAnswer(a -> {
+        when(hype.findByEntityTypeAndEntityIdInAndAlgorithmVersion(any(), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION))).thenAnswer(a -> {
             Collection<UUID> ids = a.getArgument(1);
             return rows.stream().filter(r -> r.getEntityType() == a.getArgument(0) && ids.contains(r.getEntityId())).toList();
         });

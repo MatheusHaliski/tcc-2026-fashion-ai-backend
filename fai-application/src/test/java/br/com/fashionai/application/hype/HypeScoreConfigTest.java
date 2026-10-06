@@ -40,7 +40,7 @@ class HypeScoreConfigTest {
         assertThat(config.weights(HypeEntityType.SCHEME)).containsEntry(Dimension.INFLUENCE, 0.08);
         double sum = config.weights(HypeEntityType.PIECE).values().stream().mapToDouble(Double::doubleValue).sum();
         assertThat(sum).isCloseTo(1.0, org.assertj.core.data.Offset.offset(1e-9));
-        assertThat(config.algorithmVersion()).isEqualTo("HYPE_V2");
+        assertThat(config.algorithmVersion()).isEqualTo("HYPE_V2_1");
     }
 
     @Test

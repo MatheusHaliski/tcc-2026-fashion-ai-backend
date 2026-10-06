@@ -74,7 +74,7 @@ class LookbookClosetHypePrivacyTest {
         c.setMomentum(HypeMomentum.STABLE);
         c.setPublicEligible(publicEligible);
         c.setDeltaPoints(delta == null ? null : BigDecimal.valueOf(delta));
-        c.setAlgorithmVersion("HYPE_V2");
+        c.setAlgorithmVersion(HypeScoreConfig.DEFAULT_VERSION);
         c.setCalculatedAt(Instant.now());
         return c;
     }
@@ -105,7 +105,7 @@ class LookbookClosetHypePrivacyTest {
         when(pieces.findByUserIdOrderByCreatedAtDesc(anaId)).thenReturn(List.of(followers95, notEligible99, private97, pub50, noHype, pub80, rounds));
 
         HypeScoreCurrentRepository hypeRepo = mock(HypeScoreCurrentRepository.class);
-        when(hypeRepo.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.PIECE), anyCollection(), eq("HYPE_V2"))).thenReturn(List.of(
+        when(hypeRepo.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.PIECE), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION))).thenReturn(List.of(
                 hype(followers95, 95, HypeLevel.VIRAL, false, 30.0),       // só para seguidores: Hype pessoal
                 hype(notEligible99, 99, HypeLevel.VIRAL, false, 40.0),     // pública, mas fora da régua (ex.: conta em modo de teste)
                 hype(private97, 97, HypeLevel.VIRAL, false, 25.0),

@@ -26,7 +26,7 @@ Nenhum deles vira uma métrica única: um look mostra **Hype**, **Seu estilo**, 
 | Área | Antes | Decisão |
 |---|---|---|
 | Desafios (RF36) | `ChallengeTemplate`/`ChallengeInstance`, catálogo fixo, estados em português, `tick()` a cada 15 min | Mantidos intactos em `/challenges` ("desafios de rotina": Espelho de Verdade, Vista-me…). "Desafio" passa a ser **um tipo** de Momento (`MomentType.CHALLENGE`, `MomentChallenge` dentro de um Momento). A navegação aponta para **Momentos**; a home dos Momentos linka a área antiga. |
-| FAI Points | `fai_points_ledger` append-only, chave de idempotência `usuário:ação:referência`, tetos diário/semanal, extrato nas notificações | Reutilizado como está. Só regras novas (`MOMENT_*`) na V42; referência sempre `momento(:look|:desafio)` → paga 1× (anti-farming). |
+| FAI Points | `fai_points_ledger` append-only, chave de idempotência `usuário:ação:referência`, tetos diário/semanal, extrato nas notificações | Reutilizado como está. Só regras novas (`MOMENT_*`) na V53; referência sempre `momento(:look|:desafio)` → paga 1× (anti-farming). |
 | FLAIR / grupos | `FlairTeam` + `FlairTeamMember` (entra por código) | Grupo = `FlairTeam`. Momento privado = `Moment` com `scope=GROUP`, `group_id`, `visibility≠PUBLIC`. |
 | Notificações | `NotificationType` por tipo, opt-out por tipo, `Msg.k` adiado | 4 tipos novos (`MOMENT_STARTING`, `MOMENT_GROUP_CREATED`, `MOMENT_DEADLINE`, `MOMENT_COMPLETED`), dedupe por participação (`remind_sent`, `deadline_notified`). |
 | HypeScore v2 | fatias por região/país/categoria/estilo/ocasião; nada temporal | **Hype contextual** derivado: `clamp(hype + (match − 50) · 0,5)` — nunca sobrescreve o global; "em alta no Momento" vem dos envios. |
@@ -34,7 +34,7 @@ Nenhum deles vira uma métrica única: um look mostra **Hype**, **Seu estilo**, 
 | Perfil | `profileVisibility`, `Guard.canView` | Linha do tempo pública só do que a pessoa marcou (`public_on_profile`) e em Momentos públicos. |
 | Conquistas | `user_achievements` (idempotente) | Badges de Momento = `achievement_code` do Momento (`MOMENT_<SLUG>`), 1 por Momento. |
 | Calendário | só `WeekPlanDay.eventLabel` | Novo: `/api/moments/calendar` (ano/mês no fuso do Momento). |
-| Fuso | servidor fixo em `America/Sao_Paulo`, sem campo do usuário | `moments.timezone` por Momento + `users.timezone` (opcional) na V42. |
+| Fuso | servidor fixo em `America/Sao_Paulo`, sem campo do usuário | `moments.timezone` por Momento + `users.timezone` (opcional) na V53. |
 
 ## Modelo
 
@@ -57,6 +57,11 @@ gravado; **toda consulta calcula o status efetivo pelo relógio do servidor** (`
 `startsInSeconds`, `endsInSeconds` e `daysLeft`: o cliente formata, nunca decide. Dias do calendário saem no fuso do
 Momento (`localStart`/`localEnd`), não no do navegador.
 
+Entrada de datas: com offset ou `Z`, vale o instante. Sem offset (o que um `<input type="datetime-local">` envia, ex.:
+`2026-11-09T18:30`), é a hora de parede **no fuso IANA do Momento** enviado no mesmo pedido; só a data vira 00:00 nesse
+fuso. O admin preenche os campos com a hora de parede no fuso do Momento e devolve o mesmo texto com o fuso, então
+editar sem mexer nas datas nunca desloca os horários.
+
 ## MomentMatch (§13–§15)
 
 `MomentMatch.score(contexto, look)` → 0–100 com partes (`styleMatch` 0,30 · `colorMatch` 0,25 · `occasionMatch` 0,15 ·
@@ -64,6 +69,14 @@ Momento (`localStart`/`localEnd`), não no do navegador.
 existentes, sem IA no caminho da pontuação. Não existe "HalloweenLook = true/false": a interface explica
 ("forte associação ao tema pela combinação de preto, laranja e elementos dark"). `creativeInterpretation` premia
 estilos **fora** do tema combinados com o tema (descoberta ≠ uniformização, §18).
+
+## Visibilidade dos looks enviados (§28)
+
+Um look PRIVATE (ou só para seguidores) pode participar de um Momento público e pontuar para quem o enviou, mas feed,
+ranking, trending e votação passam pelo mesmo filtro (`MomentService.visibleSubmissions`): o próprio dono, membros do
+grupo/administração, e para os demais só o que `Guard.canView` libera. Votar num look que não se pode ver devolve o
+mesmo 404 de envio inexistente. O ranking final, o vencedor e os destaques da Memória de um Momento público usam só
+looks PUBLIC, porque são lidos sem filtro de quem olha.
 
 ## FAI Points sazonais (§10–§11, §39)
 
@@ -90,7 +103,7 @@ apagar/recriar looks ou entrar/sair não gera pontos novos; tetos diários segur
 
 Leituras públicas estão em `SecurityConfig.PUBLIC_GET`; Momentos não públicos são filtrados por membro no serviço.
 
-## Conteúdo oficial (V42)
+## Conteúdo oficial (V53)
 
 Primavera 2026, Halloween 2026 (destaque, ×1,5, 7 desafios), Denim Week, Natal e Festas (RELIGIOUS: sem pontos nem
 votação), Réveillon, Verão 2027, No-Buy Week (7 dias / 7 looks), Carnaval 2027 (×1,5), Festa Junina 2027, Inverno 2027.

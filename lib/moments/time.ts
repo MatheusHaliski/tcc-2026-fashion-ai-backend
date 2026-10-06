@@ -91,3 +91,27 @@ export function todayIn(tz: string | undefined, nowMs: number = Date.now()): str
     return dayKey(d.getFullYear(), d.getMonth() + 1, d.getDate());
   }
 }
+
+/** O fuso IANA existe neste navegador? (valida o campo do admin antes de salvar) */
+export function isValidTimeZone(tz: string | undefined | null): boolean {
+  if (!tz) return false;
+  try { new Intl.DateTimeFormat("en-US", { timeZone: tz }); return true; } catch { return false; }
+}
+
+/**
+ * Instante ISO → valor de `<input type="datetime-local">` ("AAAA-MM-DDTHH:mm") na hora de parede do fuso informado (o
+ * do Momento), e não no fuso do navegador nem em UTC. O mesmo texto volta ao servidor junto com o fuso, que o lê nesse
+ * fuso: editar um Momento sem mexer nas datas nunca desloca os horários.
+ */
+export function instantToLocalInput(iso: string | undefined | null, tz: string): string {
+  if (!iso) return "";
+  const at = new Date(iso);
+  if (Number.isNaN(at.getTime())) return "";
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(at);
+    const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "00";
+    return `${get("year")}-${get("month")}-${get("day")}T${get("hour") === "24" ? "00" : get("hour")}:${get("minute")}`;
+  } catch {
+    return at.toISOString().slice(0, 16);   // fuso inválido: UTC, e o formulário avisa antes de salvar
+  }
+}
