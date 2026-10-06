@@ -10,7 +10,6 @@ if (typeof window !== "undefined") {
     (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = ResizeObserverStub;
   }
   // contexto 2D falso: texturas desenhadas em canvas (rótulos 3D, passarela, cartazes) rodam sem desenhar nada.
-  // WebGL continua indisponível (null), como num navegador sem GPU; as cenas 3D usam o renderizador de teste.
   const realGetContext = HTMLCanvasElement.prototype.getContext;
   HTMLCanvasElement.prototype.getContext = function getContext(this: HTMLCanvasElement, kind: string, ...rest: unknown[]) {
     if (kind !== "2d") return null;
