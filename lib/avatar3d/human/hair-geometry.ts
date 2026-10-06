@@ -53,7 +53,10 @@ function hairlineBase(fr: HeadFrame, hair: AvatarHair, phi: number, covered: boo
   // o ponto 10 do MediaPipe (topo da malha do rosto) fica só ~3 cm acima da sobrancelha; a linha do cabelo de verdade,
   // ~5–6 cm: nascendo no ponto 10 a testa ficava curta e o cabelo virava "cuia". A franja medida desce a linha até a
   // sobrancelha (canônico ≈ 5,1)
-  const front = covered ? fr.toY(CANON_FOREHEAD + 1.2) : fr.toY(CANON_FOREHEAD + 2 - Math.min(1, hair.fringe) * 4.8);
+  // franja escolhida (reta, lateral, cortina, nenhuma): a franja é feita de fios caindo sobre a testa; a linha da base
+  // fica no lugar — descer a base até a sobrancelha deixava uma superfície lisa na testa (o "capacete")
+  const baseFringe = hair.fringeStyle && hair.fringeStyle !== "wispy" ? 0 : Math.min(1, hair.fringe);
+  const front = covered ? fr.toY(CANON_FOREHEAD + 1.2) : fr.toY(CANON_FOREHEAD + 2 - baseFringe * 4.8);
   const temple = fr.toY(covered ? 5.5 : 6.2);
   const long = hair.length === "medium" || hair.length === "long";
   // sobre a orelha: o cabelo desce até onde a foto mostra (médio/longo cobre a orelha toda; curto pode cobrir o alto dela)
@@ -114,11 +117,13 @@ function finish(pos: number[], uv: number[], col: number[], si: number[], sw: nu
   g.setAttribute("skinWeight", new THREE.Float32BufferAttribute(w, 4));
   g.setIndex(index); g.computeVertexNormals();
   // com fios por cima (hair-strands.ts) esta malha é a base: mais escura, é o "fundo" entre as mechas
-  const baseHex = base && !covered ? `#${new THREE.Color(colHex).multiplyScalar(0.72).getHexString()}` : colHex;
+  const baseHex = base && !covered ? `#${new THREE.Color(colHex).multiplyScalar(0.62).getHexString()}` : colHex;
   const tex = typeof document !== "undefined" ? strandTexture(baseHex, texture, covered) : null;
   const mat = new THREE.MeshPhysicalMaterial({
-    color: "#ffffff", map: tex, vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide,
-    roughness: covered ? 0.9 : base ? 0.75 : 0.58, sheen: covered ? 0.2 : base ? 0.15 : 0.35, sheenRoughness: 0.55, sheenColor: new THREE.Color(baseHex).lerp(new THREE.Color("#ffffff"), 0.25),
+    // base sob os fios: fosca e escura (a profundidade entre as mechas, não uma superfície com brilho), e a linha do
+    // cabelo some aos poucos (alpha-to-coverage com MSAA) em vez do recorte duro que serrilhava nos triângulos da testa
+    color: "#ffffff", map: tex, vertexColors: true, alphaTest: base && !covered ? 0.3 : 0.5, alphaToCoverage: base && !covered, side: THREE.DoubleSide,
+    roughness: covered ? 0.9 : base ? 0.92 : 0.58, sheen: covered ? 0.2 : base ? 0.05 : 0.35, sheenRoughness: 0.55, sheenColor: new THREE.Color(baseHex).lerp(new THREE.Color("#ffffff"), 0.25),
     // fio: o brilho é uma faixa em anel em volta da cabeça (reflexo anisotrópico ao longo de u), não um ponto de plástico
     anisotropy: covered || base ? 0 : 0.3,
     // por cima da roupa: as peças puxam a profundidade (polygonOffset −camada, até −6) e "engoliam" o cabelo longo

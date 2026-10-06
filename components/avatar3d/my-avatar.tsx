@@ -19,7 +19,7 @@ import { ADJUST_RANGE, DEFAULT_ADJUST, SLIDER_ADJUSTS, clampAdjust, type AvatarA
 import type { AvatarEyes } from "@/lib/avatar3d/iris";
 import type { AvatarBrows } from "@/lib/avatar3d/identity/brows";
 import { HAIR_TONES, paletteId } from "@/lib/avatar3d/hair-tone";
-import { HAIR_CUTS } from "@/lib/avatar3d/hair-cut";
+import { HAIR_CUTS, HAIR_FRINGES } from "@/lib/avatar3d/hair-cut";
 import { SEX_CONFIDENT, type SexGuess } from "@/lib/avatar3d/sex-detect";
 import type { Sex } from "@/lib/avatar3d/body-spec";
 import type { Issue } from "@/lib/avatar3d/quality";
@@ -78,6 +78,7 @@ function AdjustSliders({ value, onChange, hair, eyes, brows }: { value: AvatarAd
         );
       })}
       {hair && !hair.cover && <HairCutPicker value={value.hairCut} onChange={(v) => onChange({ ...value, hairCut: v })} hair={hair} />}
+      {hair && !hair.cover && (hair.present || value.hairCut > 0) && <HairFringePicker value={value.hairFringe} onChange={(v) => onChange({ ...value, hairFringe: v })} />}
       {hair && !hair.cover && (hair.color || value.hairCut > 0) && <HairTonePicker value={value.hairTone} onChange={(v) => onChange({ ...value, hairTone: v })} hair={hair} />}
       {eyes && <EyesInfo eyes={eyes} brows={brows} value={value.glasses} onChange={(v) => onChange({ ...value, glasses: v })} />}
       <Button size="sm" variant="ghost" onClick={() => onChange({ ...DEFAULT_ADJUST })}>{t("avatar3d.adjust.reset")}</Button>
@@ -162,6 +163,23 @@ function HairCutPicker({ value, onChange, hair }: { value: number; onChange: (v:
         <Chip role="radio" aria-checked={value === 0} active={value === 0} onClick={() => onChange(0)}>{t("avatar3d.hairCut.0")}</Chip>
         {HAIR_CUTS.map((c) => <Chip key={c.id} role="radio" aria-checked={value === c.id} active={value === c.id} onClick={() => onChange(c.id)}>{t(`avatar3d.hairCut.${c.id}`)}</Chip>)}
       </div>
+    </div>
+  );
+}
+
+/**
+ * Franja (HAIR-MOTION): a da foto ou uma escolhida — sem franja, reta (cobre a testa até a sobrancelha, corte reto e
+ * simétrico), lateral, cortina ou desfiada. Feita de fios sobre a testa (não de uma superfície), com o mesmo tom.
+ */
+function HairFringePicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const { t } = useI18n();
+  return (
+    <div className="grid gap-1">
+      <span className="flex justify-between gap-2 type-body-sm"><span id="adj-hairFringe">{t("avatar3d.adjust.hairFringe")}</span><span className="type-caption text-muted">{t(`avatar3d.hairFringe.${value}`)}</span></span>
+      <div role="radiogroup" aria-labelledby="adj-hairFringe" aria-describedby="adj-hairFringe-hint" className="flex flex-wrap gap-1.5">
+        {[0, ...HAIR_FRINGES.map((f) => f.id)].map((id) => <Chip key={id} role="radio" aria-checked={value === id} active={value === id} onClick={() => onChange(id)}>{t(`avatar3d.hairFringe.${id}`)}</Chip>)}
+      </div>
+      <span id="adj-hairFringe-hint" className="type-caption text-muted">{t("avatar3d.hairFringe.hint")}</span>
     </div>
   );
 }

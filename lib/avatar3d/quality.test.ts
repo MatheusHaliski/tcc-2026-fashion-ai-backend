@@ -96,8 +96,10 @@ describe("modelo salvo", () => {
     expect(validateModel({ ...model, brows: { ...brows, shape: "ONDA" } })).not.toHaveProperty("brows");
   });
   test("ajustes ficam nas faixas pequenas; ausentes voltam ao padrão", () => {
-    expect(clampAdjust({ headScale: 3, neck: -1, hairVolume: 0, skinLight: 0.5 })).toEqual({ headScale: 1.06, neck: -0.02, hairVolume: 0.6, skinLight: 0.08, hairTone: 0, hairCut: 0, glasses: 1 });
-    expect(clampAdjust({ headScale: NaN })).toEqual({ headScale: 1, neck: 0, hairVolume: 1, skinLight: 0, hairTone: 0, hairCut: 0, glasses: 1 });
+    expect(clampAdjust({ headScale: 3, neck: -1, hairVolume: 0, skinLight: 0.5 })).toEqual({ headScale: 1.06, neck: -0.02, hairVolume: 0.6, skinLight: 0.08, hairTone: 0, hairCut: 0, glasses: 1, hairFringe: 0 });
+    expect(clampAdjust({ headScale: NaN })).toEqual({ headScale: 1, neck: 0, hairVolume: 1, skinLight: 0, hairTone: 0, hairCut: 0, glasses: 1, hairFringe: 0 });
+    // franja escolhida (HAIR-MOTION): 0 = a medida; 1–5 = nenhuma, reta, lateral, cortina, desfiada; inteiro
+    expect(clampAdjust({ hairFringe: 2.4 }).hairFringe).toBe(2); expect(clampAdjust({ hairFringe: 9 }).hairFringe).toBe(5);
     expect(clampAdjust({ hairTone: 7.6 }).hairTone).toBe(8); expect(clampAdjust({ hairTone: 40 }).hairTone).toBe(14);
     expect(clampAdjust(null).headScale).toBe(1);
     // óculos de grau (I4): 1 = mostra os da foto (padrão), 0 = sem; inteiro

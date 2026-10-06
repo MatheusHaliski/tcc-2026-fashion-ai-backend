@@ -8,7 +8,7 @@ import { N } from "./geometry";
 import type { BodyModel, Sex } from "./body-spec";
 import { HAIR_LENGTHS, HAIR_TEXTURES, HAIR_VOLUMES, type HairLength, type HairTexture, type HairVolume } from "./hair";
 import { HAIR_TONE_MAX, type HairFamily, type HairTone } from "./hair-tone";
-import { HAIR_CUT_MAX } from "./hair-cut";
+import { HAIR_CUT_MAX, HAIR_FRINGE_MAX } from "./hair-cut";
 import { GLASSES_KINDS, IRIS_CLASSES, IRIS_PATTERNS, type AvatarEyes, type IrisColor } from "./iris";
 import { BROW_SHAPES, type AvatarBrows } from "./identity/brows";
 
@@ -24,7 +24,14 @@ export interface AvatarHair {
   tone?: HairTone | null;                                // tom medido: nível 1–10 + família (lib/avatar3d/hair-tone.ts)
   volume?: number;                                       // volume medido como fator da geometria (0,7 rente … 1,9 muito volumoso)
   volumeLevel?: HairVolume;                              // o mesmo em classe: rente, normal, volumoso, muito volumoso
+  fringeStyle?: FringeStyle;                             // franja escolhida pela pessoa (ajuste "Franja", hair-cut.ts); ausente = a medida
 }
+/**
+ * Franja: nenhuma; reta (cobre a testa até a sobrancelha, corte reto e simétrico); lateral (varrida para um lado, corte
+ * em diagonal); cortina (aberta ao meio, emoldura o rosto, mais longa nas laterais); desfiada (leve, pontas irregulares).
+ */
+export type FringeStyle = "none" | "blunt" | "side" | "curtain" | "wispy";
+export const FRINGE_STYLES: FringeStyle[] = ["none", "blunt", "side", "curtain", "wispy"];
 export interface AvatarModel {
   v: number;
   shape: number[];                          // 468×3 em cm canônicos
@@ -43,21 +50,21 @@ export interface AvatarModel {
  * hairCut: 0 = o corte medido na foto; 1–7 = um corte (HAIR_CUTS, lib/avatar3d/hair-cut.ts).
  * glasses: 1 = mostra os óculos de grau vistos na foto (acessório 3D); 0 = sem óculos. Sem óculos na foto, não faz nada.
  */
-export interface AvatarAdjust { headScale: number; neck: number; hairVolume: number; skinLight: number; hairTone: number; hairCut: number; glasses: number }
-export const DEFAULT_ADJUST: AvatarAdjust = { headScale: 1, neck: 0, hairVolume: 1, skinLight: 0, hairTone: 0, hairCut: 0, glasses: 1 };
+export interface AvatarAdjust { headScale: number; neck: number; hairVolume: number; skinLight: number; hairTone: number; hairCut: number; glasses: number; hairFringe: number }
+export const DEFAULT_ADJUST: AvatarAdjust = { headScale: 1, neck: 0, hairVolume: 1, skinLight: 0, hairTone: 0, hairCut: 0, glasses: 1, hairFringe: 0 };
 /** Faixas dos ajustes: pequenas de propósito (ajuste fino, não outra pessoa). */
 export const ADJUST_RANGE: Record<keyof AvatarAdjust, [number, number, number]> = {
   headScale: [0.94, 1.06, 0.01], neck: [-0.02, 0.02, 0.002], hairVolume: [0.6, 1.6, 0.05], skinLight: [-0.08, 0.08, 0.01],
-  hairTone: [0, HAIR_TONE_MAX, 1], hairCut: [0, HAIR_CUT_MAX, 1], glasses: [0, 1, 1],
+  hairTone: [0, HAIR_TONE_MAX, 1], hairCut: [0, HAIR_CUT_MAX, 1], glasses: [0, 1, 1], hairFringe: [0, HAIR_FRINGE_MAX, 1],
 };
 /** Ajustes desenhados como controle deslizante (o tom do cabelo é uma paleta de amostras; o corte, uma lista; os óculos, liga/desliga). */
-export const SLIDER_ADJUSTS = (Object.keys(ADJUST_RANGE) as (keyof AvatarAdjust)[]).filter((k) => k !== "hairTone" && k !== "hairCut" && k !== "glasses");
+export const SLIDER_ADJUSTS = (Object.keys(ADJUST_RANGE) as (keyof AvatarAdjust)[]).filter((k) => k !== "hairTone" && k !== "hairCut" && k !== "glasses" && k !== "hairFringe");
 
 const clamp = (v: unknown, lo: number, hi: number, d: number) => (typeof v === "number" && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d);
 export function clampAdjust(a?: Partial<AvatarAdjust> | null): AvatarAdjust {
   const out = { ...DEFAULT_ADJUST };
   (Object.keys(ADJUST_RANGE) as (keyof AvatarAdjust)[]).forEach((k) => { out[k] = clamp(a?.[k], ADJUST_RANGE[k][0], ADJUST_RANGE[k][1], DEFAULT_ADJUST[k]); });
-  out.hairTone = Math.round(out.hairTone); out.hairCut = Math.round(out.hairCut); out.glasses = Math.round(out.glasses);
+  out.hairTone = Math.round(out.hairTone); out.hairCut = Math.round(out.hairCut); out.glasses = Math.round(out.glasses); out.hairFringe = Math.round(out.hairFringe);
   return out;
 }
 
@@ -78,6 +85,7 @@ export function validateModel(x: unknown): AvatarModel | null {
   if (hair.tone !== undefined && hair.tone !== null && !(typeof hair.tone === "object" && Number.isInteger(hair.tone.level) && hair.tone.level >= 1 && hair.tone.level <= 10 && HAIR_FAMILIES.includes(hair.tone.family))) delete hair.tone;
   if (hair.volume !== undefined && !(typeof hair.volume === "number" && Number.isFinite(hair.volume) && hair.volume >= 0.5 && hair.volume <= 2.5)) delete hair.volume;
   if (hair.volumeLevel !== undefined && !HAIR_VOLUMES.includes(hair.volumeLevel)) delete hair.volumeLevel;
+  if (hair.fringeStyle !== undefined && !FRINGE_STYLES.includes(hair.fringeStyle)) delete hair.fringeStyle;
   if (hair.outline !== undefined && (!Array.isArray(hair.outline) || hair.outline.length > 32 || !hair.outline.every((v) => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 30))) delete hair.outline;
   const out: AvatarModel = { ...m, hair };
   if (out.sex !== undefined && out.sex !== "FEMININO" && out.sex !== "MASCULINO") delete out.sex;

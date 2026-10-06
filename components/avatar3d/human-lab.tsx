@@ -34,6 +34,11 @@ const HAIR_PRESETS: Record<string, AvatarHair> = {
   cacheado: { ...H0, color: "#24170f", length: "medium", texture: "curly", bottom: -12, volume: 1.4 },
   crespo: { ...H0, color: "#1c130d", length: "short", texture: "coily", volume: 1.6 },
   loiro_longo: { ...H0, color: "#b8925a", length: "long", texture: "wavy", bottom: -22 },
+  // franjas escolhidas (ajuste "Franja"): reta simétrica, lateral, cortina
+  longo_franja_reta: { ...H0, color: "#2a1c14", length: "long", texture: "straight", bottom: -24, fringe: 0.9, fringeStyle: "blunt" },
+  chanel_franja_reta: { ...H0, color: "#3b2416", length: "medium", texture: "straight", bottom: -9.8, fringe: 0.9, fringeStyle: "blunt" },
+  medio_franja_lateral: { ...H0, color: "#5a3a22", length: "medium", texture: "wavy", bottom: -15, fringe: 0.7, fringeStyle: "side" },
+  longo_franja_cortina: { ...H0, color: "#8a6440", length: "long", texture: "wavy", bottom: -22, fringe: 0.6, fringeStyle: "curtain" },
 };
 
 /**
@@ -60,14 +65,17 @@ function drawSynthGlasses(src: HTMLCanvasElement, px: Pt[], kind: "frame" | "sun
   return c;
 }
 
-type View = "front" | "left34" | "profile" | "back" | "face" | "face34" | "faceback" | "faceside" | "feet" | "feet34" | "torso" | "torso34" | "torsoback";
-const ANGLE: Record<View, number> = { front: 0, left34: -35, profile: 90, back: 180, face: 0, face34: -35, faceback: 180, faceside: 90, feet: 0, feet34: -40, torso: 0, torso34: -35, torsoback: 180 };
+type View = "front" | "left34" | "profile" | "back" | "face" | "face34" | "faceback" | "faceside" | "feet" | "feet34" | "torso" | "torso34" | "torsoback" | "eyes" | "eyes34";
+const ANGLE: Record<View, number> = { front: 0, left34: -35, profile: 90, back: 180, face: 0, face34: -35, faceback: 180, faceside: 90, feet: 0, feet34: -40, torso: 0, torso34: -35, torsoback: 180, eyes: 0, eyes34: -30 };
 
 function Cam({ view, H }: { view: View; H: number }) {
   const { camera, scene } = useThree();
   useEffect(() => { (window as unknown as { __labScene: THREE.Scene }).__labScene = scene; }, [scene]);   // capturas: inspecionar materiais
   useEffect(() => {
     const a = (ANGLE[view] * Math.PI) / 180; const face = view.startsWith("face");                  // face* = rosto, gola e cabelo de perto
+    if (view.startsWith("eyes")) {                                                                    // olhos bem de perto (pálpebra, córnea, íris)
+      const ey = H * 0.934, d = 0.42; camera.position.set(Math.sin(a) * d, ey + 0.004, Math.cos(a) * d); camera.lookAt(0, ey, 0); camera.updateProjectionMatrix(); return;
+    }
     const neck = view === "faceback" || view === "faceside";   // cabeça + gola
     const feet = view.startsWith("feet"), torso = view.startsWith("torso");   // calçado e tecido de perto
     const ty = feet ? 0.07 : torso ? H * 0.68 : neck ? H * 0.9 : face ? H * 0.925 : H * 0.52; const d = feet ? 0.75 : torso ? 1.5 : neck ? 1.05 : face ? 0.8 : H * 2.4;
@@ -90,6 +98,7 @@ export default function HumanLab() {
   const [bodyParams, setBodyParams] = useState<BodyParams | null>(null);
   const [hairPreset, setHairPreset] = useState<string | null>(null); const [hairLod, setHairLod] = useState<HairLod | undefined>(undefined);
   const [still, setStill] = useState(false); const [stillBytes, setStillBytes] = useState(0);   // Prévia 2D (avatar da foto ou manequim)
+  const [wind, setWind] = useState(0.15);                   // vento no cabelo (HAIR-MOTION), 0–1
   const bodySex = built?.model.sex ?? sex;                  // corpo base estimado pelo rosto (ou o botão, sem foto)
   const H = bodyParams?.stature ?? DEFAULT_BODY[bodySex].stature;
   const parts = useRef<HumanParts | null>(null);
@@ -107,7 +116,7 @@ export default function HumanLab() {
     catch (e) { setStatus("error: " + (e as Error).message); }
   }
   useEffect(() => {
-    (window as unknown as { __humanLab: unknown }).__humanLab = { setSex, setView, setMotion, setOutfit, setCut, setHairPreset, setHairLod, setStill: (v: boolean) => { setStillBytes(0); setStill(v); }, stillBytes: () => stillBytes,
+    (window as unknown as { __humanLab: unknown }).__humanLab = { setSex, setView, setMotion, setWind, setOutfit, setCut, setHairPreset, setHairLod, setStill: (v: boolean) => { setStillBytes(0); setStill(v); }, stillBytes: () => stillBytes,
       // métricas agregadas do gate de identidade (números, nunca forma nem cor): fidelidade do rosto e relatório da pele
       identity: () => parts.current?.identity ?? null, skinReport: () => parts.current?.human.root.userData.skinReport ?? null,
       warnings: () => built?.model.warnings ?? [],
@@ -131,8 +140,9 @@ export default function HumanLab() {
       <h1>Corpo humano — lab</h1>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         <button id="human-sex" onClick={() => setSex(sex === "FEMININO" ? "MASCULINO" : "FEMININO")}>{sex}</button>
-        {(["front", "left34", "profile", "back", "face", "face34", "faceback", "faceside"] as View[]).map((v) => <button key={v} onClick={() => setView(v)}>{v}</button>)}
+        {(["front", "left34", "profile", "back", "face", "face34", "faceback", "faceside", "eyes", "eyes34"] as View[]).map((v) => <button key={v} onClick={() => setView(v)}>{v}</button>)}
         <button onClick={() => setMotion(!motion)}>motion {String(motion)}</button>
+        <button onClick={() => setWind(wind > 0.5 ? 0.15 : 0.9)}>vento {wind}</button>
         {Object.keys(OUTFITS).map((o) => <button key={o} onClick={() => setOutfit(o)}>{o}</button>)}
         {Object.keys(HAIR_PRESETS).map((h) => <button key={h} onClick={() => setHairPreset(h)}>{h}</button>)}
         {([0, 1, 2, 3] as HairLod[]).map((l) => <button key={l} onClick={() => setHairLod(l)}>LOD {l}</button>)}
@@ -150,7 +160,7 @@ export default function HumanLab() {
             <directionalLight position={[-1.6, 2.0, 1.8]} intensity={0.45} />
             <directionalLight position={[0, 2.2, -2.5]} intensity={0.4} />
             <HumanAvatar key={bodySex + (model ? "a" : "") + (bodyParams ? JSON.stringify(bodyParams) : "")} hairLod={hairLod} body={bodyParams ? { sex: bodySex, params: bodyParams, sources: Object.fromEntries(Object.keys(bodyParams).map((k) => [k, "user"])) as BodySources } : { sex: bodySex }} stature={H} adjust={{ hairCut: cut, glasses: glassesOn }} skin={model?.skin ?? (bodySex === "FEMININO" ? "#c99a6e" : "#a97c50")}
-              face={model} atlas={built?.atlas ?? null} hair={(hairPreset ? HAIR_PRESETS[hairPreset] : null) ?? model?.hair ?? null} motion={motion}
+              face={model} atlas={built?.atlas ?? null} hair={(hairPreset ? HAIR_PRESETS[hairPreset] : null) ?? model?.hair ?? null} motion={motion} wind={wind}
               debugHair={typeof window !== "undefined" && location.hash === "#hair"} onReady={(p) => { parts.current = p; setReady((r) => r + 1); }}
               pieces={OUTFITS[outfit] ?? []} />
             <Cam view={view} H={H} />

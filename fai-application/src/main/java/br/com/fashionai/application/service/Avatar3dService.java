@@ -65,12 +65,14 @@ public class Avatar3dService {
     static final int HAIR_TONES = 14;
     /** Cortes de cabelo (lib/avatar3d/hair-cut.ts, HAIR_CUTS): 0 = o medido na foto, 1–7 = escolhido. */
     static final int HAIR_CUTS = 7;
+    /** Franjas (lib/avatar3d/hair-cut.ts, HAIR_FRINGES): 0 = a medida na foto, 1–5 = nenhuma, reta, lateral, cortina, desfiada. */
+    static final int HAIR_FRINGES = 5;
     /** Ajustes finos: faixas pequenas de propósito (ajuste, não outra pessoa). Iguais a ADJUST_RANGE do cliente. */
     private static final Map<String, double[]> ADJUST = Map.of(
             "headScale", new double[]{0.94, 1.06, 1}, "neck", new double[]{-0.02, 0.02, 0},
             "hairVolume", new double[]{0.6, 1.6, 1}, "skinLight", new double[]{-0.08, 0.08, 0},
             "hairTone", new double[]{0, HAIR_TONES, 0}, "hairCut", new double[]{0, HAIR_CUTS, 0},
-            "glasses", new double[]{0, 1, 1});
+            "glasses", new double[]{0, 1, 1}, "hairFringe", new double[]{0, HAIR_FRINGES, 0});
 
     /** Moderação da textura do rosto (mesma capacidade CONTENT_MODERATOR, com critério de rosto em vez de peça). */
     static final String TEXTURE_MODERATION_SYSTEM = "Você é o moderador de conteúdo do Fashion AI. A imagem é a textura (atlas) do "
@@ -792,7 +794,7 @@ public class Avatar3dService {
     }
 
     /** Ajustes inteiros: tom e corte do cabelo (índices) e óculos (1 = mostra os de grau vistos na foto, 0 = sem). */
-    static final java.util.Set<String> INT_ADJUSTS = java.util.Set.of("hairTone", "hairCut", "glasses");
+    static final java.util.Set<String> INT_ADJUSTS = java.util.Set.of("hairTone", "hairCut", "glasses", "hairFringe");
 
     static Map<String, Object> clampAdjust(Map<String, Object> a) {
         Map<String, Object> out = new LinkedHashMap<>();

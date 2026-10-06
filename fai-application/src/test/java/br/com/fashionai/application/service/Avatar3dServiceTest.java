@@ -275,6 +275,10 @@ class Avatar3dServiceTest {
         assertEquals(1, Avatar3dService.clampAdjust(Map.of()).get("glasses"));
         assertEquals(0, Avatar3dService.clampAdjust(Map.of("glasses", -3)).get("glasses"));
         assertEquals(1, Avatar3dService.clampAdjust(Map.of("glasses", 0.7)).get("glasses"));
+        // franja escolhida (HAIR-MOTION): 0 = a da foto; 1–5 inteiros, fora da faixa é limitado
+        assertEquals(0, Avatar3dService.clampAdjust(Map.of()).get("hairFringe"));
+        assertEquals(2, Avatar3dService.clampAdjust(Map.of("hairFringe", 2.4)).get("hairFringe"));
+        assertEquals(5, Avatar3dService.clampAdjust(Map.of("hairFringe", 9)).get("hairFringe"));
     }
 
     @Test

@@ -79,3 +79,32 @@ export function recolorIris(img: Raster, colors: { left: IrisColor; right: IrisC
     }
   }
 }
+
+/**
+ * Esclera com volume (HAIR-MOTION, olhos "riscados"): a textura do MakeHuman é um branco chapado até a borda do globo,
+ * e o olho parecia colado no rosto. Escurece a esclera do anel da íris para fora (a parte vista perto das pálpebras é a
+ * que fica na sombra delas) e puxa a borda para um tom levemente rosado/quente, como o olho de verdade. Íris e pupila
+ * não mudam. Radial, então não depende de para onde a UV de cada globo aponta.
+ */
+export function shadeSclera(img: Raster, opts: { depth?: number } = {}): void {
+  const depth = opts.depth ?? 0.24;
+  const k = img.width / EYE_TEX.size; const R = EYE_TEX.iris * k;
+  const warm = [0.86, 0.72, 0.68];                                     // canto do olho: rosado (linear, relativo)
+  for (const side of ["left", "right"] as const) {
+    const [cx, cy] = IRIS_CIRCLES[side].map((v) => v * k);
+    const r1 = R * 2.55;
+    for (let y = Math.max(0, Math.floor(cy - r1)); y <= Math.min(img.height - 1, Math.ceil(cy + r1)); y++) {
+      for (let x = Math.max(0, Math.floor(cx - r1)); x <= Math.min(img.width - 1, Math.ceil(cx + r1)); x++) {
+        const r = Math.hypot(x + 0.5 - cx, y + 0.5 - cy); if (r < R * 1.06 || r > r1) continue;
+        const t = smooth(R * 1.15, R * 2.45, r);                       // 0 junto da íris → 1 na borda vista
+        const fade = 1 - smooth(R * 2.35, r1, r);                      // some antes de encostar no outro globo
+        const o = (y * img.width + x) * 4;
+        for (let ch = 0; ch < 3; ch++) {
+          const v = lin(img.data[o + ch]);
+          const shaded = v * (1 - depth * t) * (1 - 0.5 * t + 0.5 * t * warm[ch] / 0.86);
+          img.data[o + ch] = gam(v + (shaded - v) * fade);
+        }
+      }
+    }
+  }
+}

@@ -116,11 +116,14 @@ export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
   };
   const isCornea = (t: number) => !!(rig.cornea[e.index[t]] && rig.cornea[e.index[t + 1]] && rig.cornea[e.index[t + 2]]);
   const eg = eyeGeo((t) => !isCornea(t)), cg = eyeGeo(isCornea);
-  const eyeMat = new THREE.MeshPhysicalMaterial({ map: look.eyeMap ?? null, color: look.eyeMap ? "#ffffff" : "#f2eee8", roughness: 0.25, clearcoat: 1, clearcoatRoughness: 0.05 });
+  // globo fosco: o brilho do olho é só o da córnea. Com verniz (clearcoat) no próprio globo, de poucos polígonos, o
+  // reflexo esticava numa faixa vertical sobre íris e pupila (o olho "riscado")
+  const eyeMat = new THREE.MeshPhysicalMaterial({ map: look.eyeMap ?? null, color: look.eyeMap ? "#ffffff" : "#ece6df", roughness: 0.55, specularIntensity: 0.25, envMapIntensity: 0.35 });
   eyeMat.name = "olhos";
   const eyes = new THREE.SkinnedMesh(eg, eyeMat); eyes.name = "olhos";
   // córnea: cor preta + mistura aditiva = só o brilho especular (IOR 1,376), a íris aparece por baixo como está
-  const corneaMat = new THREE.MeshPhysicalMaterial({ color: "#000000", roughness: 0.04, metalness: 0, ior: 1.376, specularIntensity: 1, clearcoat: 1, clearcoatRoughness: 0.02,
+  // um lóbulo só (sem verniz por cima): reflexo pequeno e nítido, sem dobrar a mancha branca
+  const corneaMat = new THREE.MeshPhysicalMaterial({ color: "#000000", roughness: 0.06, metalness: 0, ior: 1.376, specularIntensity: 0.8, envMapIntensity: 0.6,
     transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
   corneaMat.name = "córnea";
   const cornea = new THREE.SkinnedMesh(cg, corneaMat); cornea.name = "córnea"; cornea.renderOrder = 1;

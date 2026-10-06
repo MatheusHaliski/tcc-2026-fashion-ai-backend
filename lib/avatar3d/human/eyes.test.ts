@@ -106,3 +106,24 @@ describe("ossos dos olhos no esqueleto (I4)", async () => {
     expect(h.tearLines.parent).toBe(h.bone("Head"));
   });
 });
+
+describe("esclera com volume (olhos sem aspecto colado)", () => {
+  const fake = () => {
+    const w = 512, data = new Uint8ClampedArray(w * w * 4);
+    for (let i = 0; i < data.length; i += 4) { data[i] = 240; data[i + 1] = 238; data[i + 2] = 235; data[i + 3] = 255; }
+    return { width: w, height: w, data };
+  };
+  const lum = (img: { width: number; data: Uint8ClampedArray }, x: number, y: number) => { const o = (y * img.width + x) * 4; return img.data[o] + img.data[o + 1] + img.data[o + 2]; };
+  it("escurece a borda da esclera, mantém a íris e o anel junto dela; a borda fica mais quente (R > B)", async () => {
+    const { shadeSclera } = await import("./eyes");
+    const img = fake(); const before = fake(); shadeSclera(img);
+    const [cx, cy] = IRIS_CIRCLES.left; const R = EYE_TEX.iris;
+    expect(lum(img, cx, cy)).toBe(lum(before, cx, cy));                                         // íris intacta
+    expect(lum(img, cx + Math.round(R * 1.1), cy)).toBeGreaterThan(lum(before, cx, cy) * 0.97);  // junto da íris quase igual
+    const edge = lum(img, cx + Math.round(R * 2.2), cy) / lum(before, cx + Math.round(R * 2.2), cy);
+    expect(edge).toBeLessThan(0.9); expect(edge).toBeGreaterThan(0.6);
+    const o = (cy * 512 + cx + Math.round(R * 2.2)) * 4; expect(img.data[o]).toBeGreaterThan(img.data[o + 2] + 8);
+    // o canto da córnea (outra parte da textura) não muda
+    const [kx, ky] = EYE_TEX.cornea.c; expect(lum(img, kx, ky)).toBe(lum(before, kx, ky));
+  });
+});
