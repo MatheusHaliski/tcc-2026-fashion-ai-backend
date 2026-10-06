@@ -1,6 +1,5 @@
 /**
  * Cenas 3D nos testes: o renderizador de teste do React Three Fiber monta a cena em memória (sem GPU). O que só uma
- * GPU de verdade faz — gerar o mapa de ambiente da luz de estúdio (PMREM) — vira uma textura vazia.
  * Cada arquivo de teste 3D ainda precisa trocar o <Canvas> por um repasse (vi.mock de "@react-three/fiber").
  */
 import type { ReactNode } from "react";
