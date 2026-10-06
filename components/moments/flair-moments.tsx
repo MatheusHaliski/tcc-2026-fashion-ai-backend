@@ -56,13 +56,14 @@ export function CreateGroupMomentDialog({ groupId, open, onClose, onCreated }: {
   async function save() {
     setBusy(true);
     try {
-      const body = { name: f.name, description: f.description || null, theme: f.theme || null, startAt: f.startAt, endAt: f.endAt, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, visibility: f.visibility, flairMode: f.flairMode,
+      const body = { name: f.name, description: f.description || null, theme: f.theme || null, startAt: f.startAt, endAt: f.endAt, timezone: tz, visibility: f.visibility, flairMode: f.flairMode,
         looksPerUser: Number(f.looksPerUser) || 0, allowRemix: f.allowRemix, allowVoting: f.allowVoting, allowComments: f.allowComments, allowAi: f.allowAi, allowExternalPieces: f.allowExternalPieces, anonymousVoting: f.anonymousVoting,
         prizes: f.prizes.split(",").map((x) => Number(x.trim())).filter((x) => Number.isFinite(x) && x > 0), cooperativeGoal: Number(f.cooperativeGoal) || null, styleTags: f.styleTags, colorTags: f.colorTags, rules: f.rules || null };
       await api.post(`/api/flair/groups/${encodeURIComponent(groupId)}/moments`, body);
       toast.success(t("moments.flair.created")); setF(EMPTY); onCreated(); onClose();
     } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const valid = f.name.trim().length > 1 && !!f.startAt && !!f.endAt && f.endAt > f.startAt;
   const styles = (tax?.styles ?? []).map((s) => ({ id: s, label: taxLabel(s) })); const colors = Object.keys(tax?.colors ?? {}).map((c) => ({ id: c, label: taxLabel(c) }));
   return (
@@ -70,8 +71,8 @@ export function CreateGroupMomentDialog({ groupId, open, onClose, onCreated }: {
       <div className="grid gap-2 sm:grid-cols-2">
         <Field label={t("common.nome")} id="gm-name" required><Input id="gm-name" value={f.name} onChange={(e) => set("name", e.target.value)} maxLength={120} /></Field>
         <Field label={t("moments.theme_label")} id="gm-theme" hint={t("moments.flair.theme_hint")}><Input id="gm-theme" value={f.theme} onChange={(e) => set("theme", e.target.value)} maxLength={120} /></Field>
-        <Field label={t("moments.flair.start")} id="gm-start" required><Input id="gm-start" type="datetime-local" value={f.startAt} onChange={(e) => set("startAt", e.target.value)} /></Field>
-        <Field label={t("moments.flair.end")} id="gm-end" required><Input id="gm-end" type="datetime-local" value={f.endAt} onChange={(e) => set("endAt", e.target.value)} /></Field>
+        <Field label={t("moments.flair.start")} id="gm-start" required hint={t("moments.flair.times_in_tz", { tz })}><Input id="gm-start" type="datetime-local" value={f.startAt} onChange={(e) => set("startAt", e.target.value)} /></Field>
+        <Field label={t("moments.flair.end")} id="gm-end" required hint={t("moments.flair.times_in_tz", { tz })}><Input id="gm-end" type="datetime-local" value={f.endAt} onChange={(e) => set("endAt", e.target.value)} /></Field>
         <Field label={t("moments.flair.mode")} id="gm-mode" hint={t(`moments.flair_mode_hint.${f.flairMode}`)}><Dropdown id="gm-mode" label={t("moments.flair.mode")} value={f.flairMode} onChange={(v) => set("flairMode", v)} options={FLAIR_MODES.map((x) => ({ id: x, label: t(`moments.flair_mode.${x}`) }))} /></Field>
         <Field label={t("moments.flair.privacy")} id="gm-vis"><Dropdown id="gm-vis" label={t("moments.flair.privacy")} value={f.visibility} onChange={(v) => set("visibility", v)} options={(["GROUP", "INVITE_ONLY", "PRIVATE"] as const).map((x) => ({ id: x, label: t(`moments.visibility.${x}`) }))} /></Field>
         {f.flairMode === "COOPERATIVE" ? <Field label={t("moments.coop.goal_field")} id="gm-goal" hint={t("moments.coop.hint")}><Input id="gm-goal" type="number" min={1} max={500} value={f.cooperativeGoal} onChange={(e) => set("cooperativeGoal", e.target.value)} /></Field>

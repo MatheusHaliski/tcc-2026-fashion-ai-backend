@@ -114,13 +114,15 @@ public class MomentService {
     private final FaiPointsService points;
     private final NotificationService notifications;
     private final Guard guard;
+    /** HypeScore v2 (hype_scores): fonte única do Hype; peças e looks não guardam mais cópia desnormalizada. */
+    private final HypeQueryService hypeQuery;
     private Clock clock = Clock.systemUTC();
 
     public MomentService(MomentRepository moments, MomentChallengeRepository challenges, MomentParticipationRepository participations,
                          MomentSubmissionRepository submissions, MomentVoteRepository votes, SchemeRepository schemes, SchemeItemRepository schemeItems,
                          WardrobeItemRepository pieces, UserRepository users, FlairTeamRepository teams, FlairTeamMemberRepository members,
                          UserAchievementRepository achievements, PieceUsageDiaryEntryRepository diary, FaiPointsService points,
-                         NotificationService notifications, Guard guard) {
+                         NotificationService notifications, Guard guard, HypeQueryService hypeQuery) {
         this.moments = moments;
         this.challenges = challenges;
         this.participations = participations;
@@ -137,6 +139,29 @@ public class MomentService {
         this.points = points;
         this.notifications = notifications;
         this.guard = guard;
+        this.hypeQuery = hypeQuery;
+    }
+
+    /** HypeScore v2 atual de várias entidades (ids sem cálculo ficam fora do mapa: "sem base", nunca 0). */
+    Map<UUID, Double> hypeScores(HypeEntityType type, Collection<UUID> ids) {
+        if (hypeQuery == null || ids == null || ids.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, Double> out = new HashMap<>();
+        hypeQuery.currentOf(type, ids).forEach((id, c) -> {
+            if (c.getScore() != null) {
+                out.put(id, c.getScore().doubleValue());
+            }
+        });
+        return out;
+    }
+
+    Double hypeScore(HypeEntityType type, UUID id) {
+        return id == null ? null : hypeScores(type, List.of(id)).get(id);
+    }
+
+    static Integer rounded(Double v) {
+        return v == null ? null : (int) Math.round(v);
     }
 
     /** Testes: relógio fixo. */
@@ -337,7 +362,13 @@ public class MomentService {
             out.put("mySubmissions", submissions.findByMomentIdAndUserIdAndWithdrawnFalse(m.getId(), viewer.id()).stream().map(s -> submissionView(s, viewer, Map.of(), false)).toList());
         }
         if (m.getGroupId() != null && member) {
-            teams.findById(m.getGroupId()).ifPresent(t -> out.put("group", Map.of("id", t.getId(), "name", t.getName(), "color", t.getColor())));
+            teams.findById(m.getGroupId()).ifPresent(t -> {
+                Map<String, Object> g = new LinkedHashMap<>();   // cor do grupo é opcional: Map.of recusaria o nulo
+                g.put("id", t.getId());
+                g.put("name", t.getName());
+                g.put("color", t.getColor());
+                out.put("group", g);
+            });
             out.put("participants", participants(m));
         }
         out.put("trending", trending(viewer, m, 6));
@@ -536,13 +567,13 @@ public class MomentService {
             ownerId = w.getUser().getId();
             vis = w.getVisibility();
             subject = subjectOf(w);
-            hype = w.getHypeScore() == null ? null : w.getHypeScore().doubleValue();
+            hype = hypeScore(HypeEntityType.PIECE, w.getId());
         } else {
             Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("moment.look")));
             ownerId = s.getUser().getId();
             vis = s.getVisibility();
             subject = subjectOf(s, schemeItems.findBySchemeIdOrderBySortOrder(id));
-            hype = s.getHypeScore() == null ? null : s.getHypeScore().doubleValue();
+            hype = hypeScore(HypeEntityType.SCHEME, s.getId());
         }
         if (!guard.canView(viewer, ownerId, vis)) {
             throw guard.deny(viewer, type.name().toLowerCase(Locale.ROOT) + ":" + id, Msg.t("guard.este_conteudo_nao_esta_visivel"));
@@ -666,7 +697,7 @@ public class MomentService {
         MomentParticipation p = participations.findByMomentIdAndUserId(m.getId(), user.id()).orElseGet(() -> fresh(m, user.id()));
         boolean first = p.getJoinedAt() == null;
         if (req != null && req.approach() != null) {
-            p.setApproach(MomentApproach.valueOf(req.approach().toUpperCase(Locale.ROOT)));
+            p.setApproach(enumOf(MomentApproach.class, req.approach(), "approach"));
         }
         if (req != null && req.wardrobeOnly() != null) {
             p.setWardrobeOnly(req.wardrobeOnly());
@@ -770,7 +801,7 @@ public class MomentService {
         sub.setMatchJson(ev.match == null ? null : Json.write(ev.match.toMap()));
         sub.setWardrobeOnly(ev.facts.wardrobeOnly());
         sub.setRediscoveredJson(Json.write(ev.facts.rediscoveredPieces()));
-        sub.setHypeAtSubmission(s.getHypeScore() == null ? null : (int) Math.round(s.getHypeScore().doubleValue()));
+        sub.setHypeAtSubmission(rounded(hypeScore(HypeEntityType.SCHEME, s.getId())));
         sub.setSubmittedAt(now);
         // pontos: cada linha paga 1× pelo ledger (idempotência por usuário:ação:referência)
         int earned = 0;
@@ -963,8 +994,9 @@ public class MomentService {
         List<MomentPointsPolicy.Line> lines = MomentPointsPolicy.compute(m, cs, facts);
         Map<String, Object> scores = new LinkedHashMap<>();
         scores.put("moment", match == null ? null : match.score());
-        scores.put("hype", s.getHypeScore() == null ? null : (int) Math.round(s.getHypeScore().doubleValue()));
-        scores.put("contextualHype", contextualHype(s.getHypeScore() == null ? null : s.getHypeScore().doubleValue(), match == null ? null : match.score()));
+        Double lookHype = hypeScore(HypeEntityType.SCHEME, s.getId());
+        scores.put("hype", rounded(lookHype));
+        scores.put("contextualHype", contextualHype(lookHype, match == null ? null : match.score()));
         scores.put("reuse", look.isEmpty() ? null : (int) Math.round(100.0 * look.stream().filter(w -> w.getCreatedAt() != null && w.getCreatedAt().isBefore(m.getStartAt())).count() / look.size()));
         scores.put("rediscovery", look.isEmpty() ? null : (int) Math.round(100.0 * rediscovered.size() / look.size()));
         return new Evaluation(match, facts, lines, scores);
@@ -1017,28 +1049,52 @@ public class MomentService {
     }
 
     // ================================================================== comunidade: feed, ranking, votação, trending
-    /** Feed do Momento: looks enviados; só públicos para quem não é membro, tudo para membros de um Momento de grupo. */
-    @Transactional(readOnly = true)
-    public Map<String, Object> feed(CurrentUser viewer, String idOrSlug) {
-        Moment m = visible(viewer, idOrSlug);
+    /**
+     * Envios que QUEM OLHA pode ver, na ordem do repositório (mais recentes primeiro): o próprio look, tudo para
+     * administração e membros de um Momento de grupo, e para os demais só looks liberados pela regra de visibilidade do
+     * Guard (PUBLIC; FOLLOWERS para quem segue). Feed, ranking e trending passam por aqui — um look PRIVATE enviado a um
+     * Momento público nunca aparece (título, capa, dono ou ids) para quem não poderia abri-lo.
+     */
+    List<MomentSubmission> visibleSubmissions(CurrentUser viewer, Moment m, Map<UUID, Scheme> schemesOut) {
         boolean member = viewer != null && (viewer.admin() || (m.getGroupId() != null && isMember(viewer.id(), m.getGroupId())));
         List<MomentSubmission> subs = submissions.findByMomentIdAndWithdrawnFalseOrderBySubmittedAtDesc(m.getId());
-        Map<UUID, Scheme> byId = schemes.findByIdIn(subs.stream().map(MomentSubmission::getSchemeId).toList()).stream().collect(Collectors.toMap(Scheme::getId, x -> x));
-        Set<UUID> myVotes = viewer == null ? Set.of() : votes.findByMomentIdAndVoterId(m.getId(), viewer.id()).stream().map(MomentVote::getSubmissionId).collect(Collectors.toSet());
-        List<Map<String, Object>> items = new ArrayList<>();
+        Map<UUID, Scheme> byId = schemes.findByIdIn(subs.stream().map(MomentSubmission::getSchemeId).toList()).stream()
+                .collect(Collectors.toMap(Scheme::getId, x -> x, (a, b) -> a));
+        List<MomentSubmission> out = new ArrayList<>();
         for (MomentSubmission s : subs) {
             Scheme sc = byId.get(s.getSchemeId());
             if (sc == null) {
                 continue;
             }
             boolean own = viewer != null && viewer.id().equals(s.getUserId());
-            if (!own && !member && !guard.canView(viewer, sc.getUser().getId(), sc.getVisibility())) {
-                continue;
+            if (own || member || guard.canView(viewer, sc.getUser().getId(), sc.getVisibility())) {
+                out.add(s);
+                schemesOut.put(sc.getId(), sc);
             }
-            items.add(submissionView(s, viewer, Map.of(), myVotes.contains(s.getId())));
-            if (items.size() >= FEED_MAX) {
-                break;
-            }
+        }
+        return out;
+    }
+
+    /**
+     * Elegível para o que fica PÚBLICO sem um observador (ranking final, vencedor e destaques da Memória): em Momentos
+     * públicos, só looks PUBLIC; em Momentos de grupo ou não descobríveis, todos (só membros/administração os veem).
+     */
+    static boolean publiclyListed(Moment m, Scheme sc) {
+        return sc != null && (m.getGroupId() != null || !m.getVisibility().discoverable() || sc.getVisibility() == Visibility.PUBLIC);
+    }
+
+    /** Feed do Momento: looks enviados; só públicos para quem não é membro, tudo para membros de um Momento de grupo. */
+    @Transactional(readOnly = true)
+    public Map<String, Object> feed(CurrentUser viewer, String idOrSlug) {
+        Moment m = visible(viewer, idOrSlug);
+        Map<UUID, Scheme> byId = new HashMap<>();
+        List<MomentSubmission> subs = visibleSubmissions(viewer, m, byId);
+        Set<UUID> myVotes = viewer == null ? Set.of() : votes.findByMomentIdAndVoterId(m.getId(), viewer.id()).stream().map(MomentVote::getSubmissionId).collect(Collectors.toSet());
+        List<MomentSubmission> page = subs.stream().limit(FEED_MAX).toList();
+        Map<UUID, Double> hypes = hypeScores(HypeEntityType.SCHEME, page.stream().map(MomentSubmission::getSchemeId).toList());
+        List<Map<String, Object>> items = new ArrayList<>();
+        for (MomentSubmission s : page) {
+            items.add(submissionView(s, viewer, byId, myVotes.contains(s.getId()), hypes));
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("items", items);
@@ -1047,6 +1103,11 @@ public class MomentService {
     }
 
     Map<String, Object> submissionView(MomentSubmission s, CurrentUser viewer, Map<UUID, Scheme> cache, boolean votedByMe) {
+        return submissionView(s, viewer, cache, votedByMe, null);
+    }
+
+    /** {@code hypes}: HypeScore v2 já lido em lote (feed); nulo = lê só o deste look. */
+    Map<String, Object> submissionView(MomentSubmission s, CurrentUser viewer, Map<UUID, Scheme> cache, boolean votedByMe, Map<UUID, Double> hypes) {
         Scheme sc = cache.containsKey(s.getSchemeId()) ? cache.get(s.getSchemeId()) : schemes.findById(s.getSchemeId()).orElse(null);
         Map<String, Object> v = new LinkedHashMap<>();
         v.put("id", s.getId());
@@ -1062,7 +1123,9 @@ public class MomentService {
         v.put("mine", viewer != null && viewer.id().equals(s.getUserId()));
         if (sc != null) {
             v.put("scheme", Views.scheme(sc, schemeItems.findBySchemeIdOrderBySortOrder(sc.getId()), Views.ViewerState.NONE, Map.of()));
-            v.put("contextualHype", contextualHype(sc.getHypeScore() == null ? null : sc.getHypeScore().doubleValue(), s.getMatchScore()));
+            Double h = hypes == null ? hypeScore(HypeEntityType.SCHEME, sc.getId()) : hypes.get(sc.getId());
+            v.put("hype", rounded(h));
+            v.put("contextualHype", contextualHype(h, s.getMatchScore()));
         }
         return v;
     }
@@ -1081,7 +1144,9 @@ public class MomentService {
             }
             return out;
         }
-        List<MomentSubmission> subs = submissions.findByMomentIdAndWithdrawnFalseOrderBySubmittedAtDesc(m.getId());
+        // só o que quem olha pode ver: um look PRIVATE num Momento público não entra no ranking público
+        Map<UUID, Scheme> byScheme = new HashMap<>();
+        List<MomentSubmission> subs = visibleSubmissions(viewer, m, byScheme);
         Map<UUID, Map<MomentVoteDimension, Integer>> byDim = new HashMap<>();
         for (MomentVote v : votes.findByMomentId(m.getId())) {
             byDim.computeIfAbsent(v.getSubmissionId(), k -> new java.util.EnumMap<>(MomentVoteDimension.class)).merge(v.getDimension(), 1, Integer::sum);
@@ -1103,10 +1168,9 @@ public class MomentService {
             row.put("byDimension", byDim.getOrDefault(s.getId(), Map.of()).entrySet().stream().collect(Collectors.toMap(e -> e.getKey().name(), Map.Entry::getValue)));
             row.put("you", viewer != null && viewer.id().equals(s.getUserId()));
             row.put("user", anonymous && !(viewer != null && viewer.id().equals(s.getUserId())) ? null : Views.user(owners.get(s.getUserId())));
-            schemes.findById(s.getSchemeId()).ifPresent(sc -> {
-                row.put("title", sc.getTitle());
-                row.put("coverImageUrl", sc.getCoverImageUrl());
-            });
+            Scheme sc = byScheme.get(s.getSchemeId());
+            row.put("title", sc.getTitle());
+            row.put("coverImageUrl", sc.getCoverImageUrl());
             items.add(row);
         }
         out.put("competitive", true);
@@ -1137,7 +1201,12 @@ public class MomentService {
         if (s.getUserId().equals(user.id())) {
             throw ApiException.conflict("VOTO_PROPRIO", Msg.t("moment.nao_da_para_votar_no_proprio"));
         }
-        MomentVoteDimension dim = MomentVoteDimension.valueOf(req.dimension().toUpperCase(Locale.ROOT));
+        boolean member = user.admin() || (m.getGroupId() != null && isMember(user.id(), m.getGroupId()));
+        Scheme target = schemes.findById(s.getSchemeId()).orElse(null);
+        if (target == null || (!member && !guard.canView(user, target.getUser().getId(), target.getVisibility()))) {
+            throw ApiException.notFound(Msg.t("moment.envio"));   // mesmo 404 de envio inexistente: não confirma que o look existe
+        }
+        MomentVoteDimension dim = enumOf(MomentVoteDimension.class, req.dimension() == null ? "" : req.dimension(), "dimension");
         Optional<MomentVote> existing = votes.findBySubmissionIdAndVoterIdAndDimension(s.getId(), user.id(), dim);
         boolean voted;
         if (existing.isPresent()) {
@@ -1165,16 +1234,13 @@ public class MomentService {
     }
 
     Map<String, Object> trending(CurrentUser viewer, Moment m, int limit) {
-        List<MomentSubmission> subs = submissions.findByMomentIdAndWithdrawnFalseOrderBySubmittedAtDesc(m.getId());
-        boolean member = viewer != null && (viewer.admin() || (m.getGroupId() != null && isMember(viewer.id(), m.getGroupId())));
+        Map<UUID, Scheme> byId = new HashMap<>();
+        List<MomentSubmission> subs = visibleSubmissions(viewer, m, byId);
         Map<String, Integer> styles = new HashMap<>(), colors = new HashMap<>(), interps = new HashMap<>();
         List<Map<String, Object>> looks = new ArrayList<>();
-        Map<UUID, Scheme> byId = schemes.findByIdIn(subs.stream().map(MomentSubmission::getSchemeId).toList()).stream().collect(Collectors.toMap(Scheme::getId, x -> x));
+        Map<UUID, Double> hypes = hypeScores(HypeEntityType.SCHEME, byId.keySet());
         for (MomentSubmission s : subs) {
             Scheme sc = byId.get(s.getSchemeId());
-            if (sc == null || (!member && !guard.canView(viewer, sc.getUser().getId(), sc.getVisibility()))) {
-                continue;
-            }
             Map<String, Object> match = Json.map(s.getMatchJson());
             if (match.get("interpretation") != null) {
                 interps.merge(String.valueOf(match.get("interpretation")), 1, Integer::sum);
@@ -1191,7 +1257,7 @@ public class MomentService {
             l.put("coverImageUrl", sc.getCoverImageUrl());
             l.put("votes", s.getVoteCount());
             l.put("match", s.getMatchScore());
-            l.put("contextualHype", contextualHype(sc.getHypeScore() == null ? null : sc.getHypeScore().doubleValue(), s.getMatchScore()));
+            l.put("contextualHype", contextualHype(hypes.get(sc.getId()), s.getMatchScore()));
             looks.add(l);
         }
         looks.sort(Comparator.comparing((Map<String, Object> l) -> (Integer) l.get("votes")).reversed()
@@ -1311,8 +1377,9 @@ public class MomentService {
         if (req == null || req.name() == null || req.name().isBlank()) {
             throw ApiException.badRequest("NOME_OBRIGATORIO", Msg.t("moment.de_um_nome_ao_momento"));
         }
-        Instant start = parseInstant(req.startAt(), "startAt");
-        Instant end = parseInstant(req.endAt(), "endAt");
+        ZoneId zone = MomentTime.zone(req.timezone());
+        Instant start = parseInstant(req.startAt(), "startAt", zone);
+        Instant end = parseInstant(req.endAt(), "endAt", zone);
         if (!end.isAfter(start)) {
             throw ApiException.badRequest("PERIODO_INVALIDO", Msg.t("moment.o_fim_precisa_ser_depois"));
         }
@@ -1329,9 +1396,9 @@ public class MomentService {
         m.setStatus(start.isAfter(now()) ? MomentStatus.SCHEDULED : MomentStatus.ACTIVE);
         m.setStartAt(start);
         m.setEndAt(end);
-        m.setTimezone(MomentTime.zone(req.timezone()).getId());
+        m.setTimezone(zone.getId());
         m.setScope(MomentScope.GROUP);
-        MomentVisibility vis = req.visibility() == null ? MomentVisibility.GROUP : MomentVisibility.valueOf(req.visibility().toUpperCase(Locale.ROOT));
+        MomentVisibility vis = req.visibility() == null ? MomentVisibility.GROUP : enumOf(MomentVisibility.class, req.visibility(), "visibility");
         if (vis == MomentVisibility.PUBLIC) {
             vis = MomentVisibility.GROUP;   // Momento de grupo nunca é público (§28)
         }
@@ -1342,7 +1409,7 @@ public class MomentService {
         m.setPointsEnabled(true);
         m.setBasePoints(0);
         m.setPointsMultiplier(BigDecimal.ONE);
-        m.setFlairMode(req.flairMode() == null ? FlairMomentMode.MOMENT : FlairMomentMode.valueOf(req.flairMode().toUpperCase(Locale.ROOT)));
+        m.setFlairMode(req.flairMode() == null ? FlairMomentMode.MOMENT : enumOf(FlairMomentMode.class, req.flairMode(), "flairMode"));
         m.setCooperativeGoal(m.getFlairMode() == FlairMomentMode.COOPERATIVE ? Optional.ofNullable(req.cooperativeGoal()).filter(g -> g > 0).orElse(10) : null);
         m.setStyleTags(Json.csv(req.styleTags() == null || req.styleTags().isEmpty() ? (base == null ? List.of() : Json.csv(base.getStyleTags())) : req.styleTags()));
         m.setColorTags(Json.csv(req.colorTags() == null || req.colorTags().isEmpty() ? (base == null ? List.of() : Json.csv(base.getColorTags())) : req.colorTags()));
@@ -1395,18 +1462,39 @@ public class MomentService {
         return slug;
     }
 
-    static Instant parseInstant(String v, String field) {
+    /**
+     * Data/hora do pedido → instante. Com offset ou "Z" (ISO-8601), vale o instante informado. Sem offset — o que um
+     * {@code <input type="datetime-local">} envia, ex.: {@code 2026-11-09T18:30} —, é a hora de parede no fuso IANA do
+     * Momento ({@code zone}); só a data vira 00:00 nesse fuso. Nunca trunca a hora nem assume o fuso do servidor.
+     */
+    static Instant parseInstant(String v, String field, ZoneId zone) {
         if (v == null || v.isBlank()) {
             throw ApiException.badRequest("DATA_OBRIGATORIA", Msg.t("moment.informe_a_data", field));
         }
+        String s = v.trim();
         try {
-            return Instant.parse(v);
+            return java.time.OffsetDateTime.parse(s).toInstant();
+        } catch (java.time.format.DateTimeParseException ignored) {
+            // sem offset: hora de parede no fuso do Momento
+        }
+        try {
+            return java.time.LocalDateTime.parse(s).atZone(zone).toInstant();
+        } catch (java.time.format.DateTimeParseException ignored) {
+            // só a data
+        }
+        try {
+            return LocalDate.parse(s).atStartOfDay(zone).toInstant();
         } catch (java.time.format.DateTimeParseException e) {
-            try {
-                return LocalDate.parse(v.length() > 10 ? v.substring(0, 10) : v).atStartOfDay(ZoneId.of("America/Sao_Paulo")).toInstant();
-            } catch (java.time.format.DateTimeParseException e2) {
-                throw ApiException.badRequest("DATA_INVALIDA", Msg.t("moment.data_invalida", field));
-            }
+            throw ApiException.badRequest("DATA_INVALIDA", Msg.t("moment.data_invalida", field));
+        }
+    }
+
+    /** Enum do pedido sem 500: valor desconhecido vira 400 com o campo e o valor recebido. */
+    static <E extends Enum<E>> E enumOf(Class<E> type, String raw, String field) {
+        try {
+            return Enum.valueOf(type, raw.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw ApiException.badRequest("VALOR_INVALIDO", Msg.t("moment.valor_invalido", field, raw));
         }
     }
 
@@ -1469,9 +1557,13 @@ public class MomentService {
         for (MomentVote v : allVotes) {
             byDim.computeIfAbsent(v.getSubmissionId(), k -> new java.util.EnumMap<>(MomentVoteDimension.class)).merge(v.getDimension(), 1, Integer::sum);
         }
-        // melhor envio por pessoa → ranking
+        // melhor envio por pessoa → ranking. Em Momento público, só looks PUBLIC disputam ranking, prêmio e destaque:
+        // a Memória e o ranking final são lidos por qualquer pessoa, sem filtro de quem olha.
+        Map<UUID, Scheme> subSchemes = schemes.findByIdIn(subs.stream().map(MomentSubmission::getSchemeId).toList()).stream()
+                .collect(Collectors.toMap(Scheme::getId, x -> x, (a, b) -> a));
+        List<MomentSubmission> listed = subs.stream().filter(s -> publiclyListed(m, subSchemes.get(s.getSchemeId()))).toList();
         Map<UUID, MomentSubmission> best = new LinkedHashMap<>();
-        for (MomentSubmission s : subs) {
+        for (MomentSubmission s : listed) {
             best.merge(s.getUserId(), s, (a, b) -> a.getVoteCount() != b.getVoteCount() ? (a.getVoteCount() > b.getVoteCount() ? a : b)
                     : (nz(a.getMatchScore()) >= nz(b.getMatchScore()) ? a : b));
         }
@@ -1518,7 +1610,7 @@ public class MomentService {
         memory.put("goalReached", goalReached);
         memory.put("winner", competitive && !ranked.isEmpty() ? memoryLook(ranked.get(0), m) : null);
         for (MomentVoteDimension d : List.of(MomentVoteDimension.CREATIVE, MomentVoteDimension.ELEGANT, MomentVoteDimension.TREND, MomentVoteDimension.ORIGINAL, MomentVoteDimension.THEME)) {
-            MomentSubmission top = subs.stream().filter(s -> byDim.getOrDefault(s.getId(), Map.of()).getOrDefault(d, 0) > 0)
+            MomentSubmission top = listed.stream().filter(s -> byDim.getOrDefault(s.getId(), Map.of()).getOrDefault(d, 0) > 0)
                     .max(Comparator.comparingInt(s -> byDim.get(s.getId()).get(d))).orElse(null);
             memory.put("most" + d.name().charAt(0) + d.name().substring(1).toLowerCase(Locale.ROOT), top == null ? null : memoryLook(top, m));
         }
@@ -1624,20 +1716,23 @@ public class MomentService {
         if (r.names() != null) m.setNamesJson(Json.write(r.names()));
         if (r.description() != null) m.setDescription(r.description());
         if (r.descriptions() != null) m.setDescriptionsJson(Json.write(r.descriptions()));
-        if (r.type() != null) m.setType(MomentType.valueOf(r.type().toUpperCase(Locale.ROOT)));
-        if (r.nature() != null) m.setNature(MomentNature.valueOf(r.nature().toUpperCase(Locale.ROOT)));
-        if (r.startAt() != null) m.setStartAt(parseInstant(r.startAt(), "startAt"));
-        if (r.endAt() != null) m.setEndAt(parseInstant(r.endAt(), "endAt"));
+        if (r.type() != null) m.setType(enumOf(MomentType.class, r.type(), "type"));
+        if (r.nature() != null) m.setNature(enumOf(MomentNature.class, r.nature(), "nature"));
+        // o fuso vem antes das datas: hora de parede sem offset é lida no fuso do Momento
+        if (r.timezone() != null) m.setTimezone(MomentTime.zone(r.timezone()).getId());
+        ZoneId zone = MomentTime.zone(m.getTimezone());
+        if (r.startAt() != null) m.setStartAt(parseInstant(r.startAt(), "startAt", zone));
+        if (r.endAt() != null) m.setEndAt(parseInstant(r.endAt(), "endAt", zone));
         if (m.getStartAt() == null || m.getEndAt() == null || !m.getEndAt().isAfter(m.getStartAt())) {
             throw ApiException.badRequest("PERIODO_INVALIDO", Msg.t("moment.o_fim_precisa_ser_depois"));
         }
-        if (r.timezone() != null) m.setTimezone(MomentTime.zone(r.timezone()).getId());
-        if (r.scope() != null) m.setScope(MomentScope.valueOf(r.scope().toUpperCase(Locale.ROOT)));
-        if (r.visibility() != null) m.setVisibility(MomentVisibility.valueOf(r.visibility().toUpperCase(Locale.ROOT)));
+        if (r.scope() != null) m.setScope(enumOf(MomentScope.class, r.scope(), "scope"));
+        if (r.visibility() != null) m.setVisibility(enumOf(MomentVisibility.class, r.visibility(), "visibility"));
         if (r.country() != null) m.setCountry(r.country().isBlank() ? null : r.country().toUpperCase(Locale.ROOT));
         if (r.region() != null) m.setRegion(r.region().isBlank() ? null : r.region());
         if (r.locale() != null) m.setLocale(r.locale().isBlank() ? null : r.locale());
-        if (r.season() != null) m.setSeason(r.season().isBlank() ? null : br.com.fashionai.domain.model.enums.Season.valueOf(r.season().toUpperCase(Locale.ROOT)));
+        // o formulário manda a estação sempre; vazio (ou só espaços) = "sem estação", inclusive para limpar uma existente
+        if (r.season() != null) m.setSeason(r.season().isBlank() ? null : enumOf(br.com.fashionai.domain.model.enums.Season.class, r.season(), "season"));
         if (r.theme() != null) m.setThemeJson(Json.write(r.theme()));
         if (r.coverUrl() != null) m.setCoverUrl(r.coverUrl().isBlank() ? null : r.coverUrl());
         if (r.bannerUrl() != null) m.setBannerUrl(r.bannerUrl().isBlank() ? null : r.bannerUrl());
@@ -1688,7 +1783,7 @@ public class MomentService {
                 mc.setName(c.name() == null ? code : c.name());
                 mc.setNamesJson(c.names() == null ? null : Json.write(c.names()));
                 mc.setDescription(c.description());
-                mc.setKind(c.kind() == null ? br.com.fashionai.domain.model.enums.MomentChallengeKind.STYLE : br.com.fashionai.domain.model.enums.MomentChallengeKind.valueOf(c.kind().toUpperCase(Locale.ROOT)));
+                mc.setKind(c.kind() == null ? br.com.fashionai.domain.model.enums.MomentChallengeKind.STYLE : enumOf(br.com.fashionai.domain.model.enums.MomentChallengeKind.class, c.kind(), "kind"));
                 mc.setPoints(c.points() == null ? 15 : Math.max(0, Math.min(100, c.points())));
                 mc.setStyleTags(Json.csv(c.styleTags() == null ? List.of() : c.styleTags()));
                 mc.setColorTags(Json.csv(c.colorTags() == null ? List.of() : c.colorTags()));
@@ -1742,7 +1837,7 @@ public class MomentService {
     public Map<String, Object> list(CurrentUser viewer, String status, Integer year) {
         Instant now = now();
         String country = countryOf(viewer);
-        List<MomentStatus> wanted = status == null ? VISIBLE : List.of(MomentStatus.valueOf(status.toUpperCase(Locale.ROOT)));
+        List<MomentStatus> wanted = status == null ? VISIBLE : List.of(enumOf(MomentStatus.class, status, "status"));
         List<Map<String, Object>> items = moments.findByStatusIn(wanted).stream().filter(m -> canSee(viewer, m)).filter(m -> inScope(m, country))
                 .filter(m -> year == null || MomentTime.localStart(m).getYear() == year || MomentTime.localEnd(m).getYear() == year)
                 .sorted(Comparator.comparing(Moment::getStartAt).reversed()).map(m -> MomentViews.card(m, now)).toList();

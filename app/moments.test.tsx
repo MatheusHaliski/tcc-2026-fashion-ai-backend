@@ -5,9 +5,10 @@
  * card lista a relevância por Momento.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, loggedAs, mockApi, renderApp, screen, waitFor } from "@/test-utils/render";
+import { ME, cleanup, fireEvent, loggedAs, mockApi, renderApp, screen, waitFor } from "@/test-utils/render";
 import { nav } from "@/test-utils/setup";
 import MomentsPage from "@/app/(site)/(app)/moments/page";
+import AdminMomentsPage from "@/app/(site)/(app)/admin/moments/page";
 import { MomentNowBanner } from "@/components/moments/moment-banner";
 import { MomentPage } from "@/components/moments/moment-page";
 import { MomentContextRows } from "@/components/moments/moment-scores";
@@ -92,5 +93,23 @@ describe("Momentos — a aba do tempo da moda", () => {
     expect(screen.getByText("Hype 86")).toBeTruthy();
     expect(screen.getByText("leitura: dark")).toBeTruthy();
     expect(screen.getByText("Primavera 2026")).toBeTruthy();
+  });
+
+  it("admin: editar sem mexer nas datas devolve a mesma hora de parede, com o fuso, e estação vazia", async () => {
+    const row = { ...HALLOWEEN, season: null, storedStatus: "ACTIVE", challenges: 0 };
+    const detail = { ...row, names: { "pt-BR": "Halloween 2026" }, descriptions: {}, interpretations: [], bonusRules: { wardrobe: 25 }, challenges: [], settings: {}, rules: {}, sourceUrl: null, sourceNote: null };
+    const { calls } = loggedAs({ ...ME, role: "ADMIN" }, { "GET /api/admin/moments": [row], "GET /api/admin/moments/m1": detail, "PUT /api/admin/moments/m1": detail });
+    renderApp(<AdminMomentsPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Editar" }));
+    const start = await screen.findByLabelText(/Início/) as HTMLInputElement;
+    expect(start.value).toBe("2026-10-20T00:00");   // 03:00Z em São Paulo — nunca o relógio UTC
+    expect((screen.getByLabelText(/^Fim/) as HTMLInputElement).value).toBe("2026-10-31T23:59");
+    fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(calls.some((c) => c.method === "PUT" && c.path === "/api/admin/moments/m1")).toBe(true));
+    const body = calls.find((c) => c.method === "PUT")!.body as Record<string, unknown>;
+    expect(body.startAt).toBe("2026-10-20T00:00");
+    expect(body.endAt).toBe("2026-10-31T23:59");
+    expect(body.timezone).toBe("America/Sao_Paulo");
+    expect(body.season).toBe("");   // vazio = sem estação (o servidor limpa)
   });
 });
