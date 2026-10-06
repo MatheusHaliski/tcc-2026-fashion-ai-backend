@@ -9,6 +9,30 @@ if (typeof window !== "undefined") {
     (window as unknown as { ResizeObserver: unknown }).ResizeObserver = ResizeObserverStub;
     (globalThis as unknown as { ResizeObserver: unknown }).ResizeObserver = ResizeObserverStub;
   }
+  // contexto 2D falso: texturas desenhadas em canvas (rótulos 3D, passarela, cartazes) rodam sem desenhar nada.
+  // WebGL continua indisponível (null), como num navegador sem GPU; as cenas 3D usam o renderizador de teste.
+  const realGetContext = HTMLCanvasElement.prototype.getContext;
+  HTMLCanvasElement.prototype.getContext = function getContext(this: HTMLCanvasElement, kind: string, ...rest: unknown[]) {
+    if (kind !== "2d") return null;
+    const canvas = this;
+    const state: Record<string, unknown> = { canvas, fillStyle: "#000", strokeStyle: "#000", font: "10px sans-serif", globalAlpha: 1, lineWidth: 1 };
+    const noop = () => undefined;
+    return new Proxy(state, {
+      get(target, key: string) {
+        if (key in target) return target[key];
+        if (key === "measureText") return (t: string) => ({ width: String(t).length * 6, actualBoundingBoxAscent: 8, actualBoundingBoxDescent: 2 });
+        if (key === "getImageData" || key === "createImageData") return (_x: number, _y: number, w = 1, h = 1) => ({ width: w, height: h, data: new Uint8ClampedArray(Math.max(1, w * h * 4)) });
+        if (key === "createLinearGradient" || key === "createRadialGradient" || key === "createPattern" || key === "createConicGradient") return () => ({ addColorStop: noop });
+        if (key === "isPointInPath") return () => false;
+        return noop;
+      },
+      set(target, key: string, value) { target[key] = value; return true; },
+    }) as unknown as CanvasRenderingContext2D;
+    void realGetContext; void rest;
+  } as typeof HTMLCanvasElement.prototype.getContext;
+  if (!HTMLCanvasElement.prototype.toDataURL || HTMLCanvasElement.prototype.toDataURL.length >= 0) {
+    HTMLCanvasElement.prototype.toDataURL = function toDataURL() { return "data:image/png;base64,"; };
+  }
   if (!window.matchMedia) {
     window.matchMedia = (query: string) => ({ matches: false, media: query, onchange: null, addListener() {}, removeListener() {},
       addEventListener() {}, removeEventListener() {}, dispatchEvent: () => false }) as MediaQueryList;
