@@ -69,7 +69,7 @@ class HypeRankGroupsTest {
         c.setEntityType(HypeEntityType.PIECE);
         c.setEntityId(w.getId());
         c.setOwnerId(owner.getId());
-        c.setAlgorithmVersion("HYPE_V2");
+        c.setAlgorithmVersion(HypeScoreConfig.DEFAULT_VERSION);
         c.setStatus(HypeStatus.AVAILABLE);
         c.setScore(BigDecimal.valueOf(score));
         HypeDimensions d = new HypeDimensions();
@@ -97,8 +97,8 @@ class HypeRankGroupsTest {
         piece(ana, null, 95);
         piece(bia, "Zara", 99);
         piece(bia, "Zara", 98);
-        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, "HYPE_V2", HypeStatus.AVAILABLE)).thenReturn(rows);
-        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.SCHEME, "HYPE_V2", HypeStatus.AVAILABLE)).thenReturn(List.of());
+        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE)).thenReturn(rows);
+        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.SCHEME, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE)).thenReturn(List.of());
         when(pieces.findByIdIn(anyCollection())).thenReturn(catalog);
         when(guard.canView(any(), any(), eq(Visibility.PUBLIC))).thenReturn(true);
     }

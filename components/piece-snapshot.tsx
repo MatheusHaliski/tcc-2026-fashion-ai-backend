@@ -1,6 +1,6 @@
 "use client";
 import { mediaUrl } from "@/lib/api/client";
-import { CATEGORY_LABEL, label } from "@/lib/api/taxonomy";
+import { CATEGORY_LABEL, label, subcategoryLabel } from "@/lib/api/taxonomy";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { Badge } from "@/components/ui";
 import { BrandLogo } from "@/components/brand-logo";
@@ -22,7 +22,7 @@ export function PieceSnapshot({ snapshot }: { snapshot: Record<string, unknown> 
         <Badge tone="chalk" className="absolute left-3 top-3">{t("pieceSnapshot.peca_nao_mais_disponivel")}</Badge>
       </div>
       <div>
-        <p className="type-label text-muted">{CATEGORY_LABEL[s.category ?? ""] ?? label(s.category)} · {label(s.subcategory)}</p>
+        <p className="type-label text-muted">{CATEGORY_LABEL[s.category ?? ""] ?? label(s.category)} · {subcategoryLabel(s.subcategory)}</p>
         <h2 className="type-display">{s.name ?? t("common.peca")}</h2>
         <p className="type-body text-muted">{t("pieceSnapshot.o_autor_removeu_esta_peca", { value: s.capturedAt ? ` (${fmtDate(s.capturedAt)})` : "" })}</p>
         <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 type-body sm:grid-cols-3">

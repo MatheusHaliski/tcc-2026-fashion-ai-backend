@@ -26,6 +26,7 @@ import { usePieceSeals } from "@/lib/pieces/use-piece-seals";
 import { FaiIcon } from "@/components/fai-icon";
 import { LookExports } from "@/components/look-exports";
 import { SavedLooks } from "@/components/looks/saved-looks";
+import { MomentsTimelineSection } from "@/components/moments/moment-timeline";
 
 interface Overview { owner: UserCard; self: boolean; visible: boolean; institutional: boolean; tabs: { id: string; label: string; count: number }[]; emptyCloset?: { message: string; action: { label: string; href: string } } | null; panelVersion?: string; groupingSuggestionsAvailable?: boolean; }
 /**
@@ -38,7 +39,7 @@ interface Overview { owner: UserCard; self: boolean; visible: boolean; instituti
  * - Salvos: looks e peças salvos (SegmentPicker; ids antigos saved_looks/saved_pieces viram alias).
  * "Meus cupons resgatados" saiu (era o mesmo componente de /coupons).
  */
-export type TabId = "closet" | "looks" | "publications" | "favorites" | "dna" | "saved" | "daily" | "capsule" | "groups" | "insights";
+export type TabId = "closet" | "looks" | "publications" | "favorites" | "dna" | "saved" | "daily" | "capsule" | "groups" | "insights" | "moments";
 export type SavedView = "looks" | "pieces";
 /** categorias das peças (RF4): só as quatro — peça única não existe mais no formulário */
 const CATEGORIES = ["upper_piece", "lower_piece", "shoes_piece", "accessory_piece"];
@@ -62,7 +63,7 @@ export function LookbookTabs({ ownerId, initialTab = "closet", initialSaved = "l
   const tabs = [{ id: "closet" as TabId, label: t("lookbook.closet"), count: count("closet") }, { id: "looks" as TabId, label: t("lookbook.looks"), count: ov.self ? undefined : count("looks") },
     { id: "publications" as TabId, label: t("lookbook.publications"), count: count("publications") }, { id: "favorites" as TabId, label: t("lookbook.favorites"), count: count("favorites") },
     ...(ov.self ? [{ id: "saved" as TabId, label: t("lookbook.saved"), count: saved }, { id: "dna" as TabId, label: t("lookbook.dna") },
-      { id: "daily" as TabId, label: t("lookbook.daily") }, { id: "capsule" as TabId, label: t("lookbook.capsule"), count: count("capsule") }] : []), { id: "groups" as TabId, label: t("lookbook.groups") },
+      { id: "daily" as TabId, label: t("lookbook.daily") }, { id: "capsule" as TabId, label: t("lookbook.capsule"), count: count("capsule") }] : []), { id: "groups" as TabId, label: t("lookbook.groups") }, { id: "moments" as TabId, label: t("nav.moments") },
     ...(ov.self ? [{ id: "insights" as TabId, label: t("lookbook.insights") }] : [])];
   return (
     <>
@@ -77,6 +78,7 @@ export function LookbookTabs({ ownerId, initialTab = "closet", initialSaved = "l
       {tab === "capsule" && ov.self && <CapsuleTab />}
       {tab === "insights" && ov.self && <><InsightStrip context="CLOSET" className="mb-4" /><HypeWardrobeInsights /></>}
       {tab === "groups" && <GroupsTab ownerId={ownerId} self={ov.self} suggestions={!!ov.groupingSuggestionsAvailable} />}
+      {tab === "moments" && <MomentsTimelineSection userId={ownerId} self={ov.self} />}
     </>
   );
 }
@@ -229,11 +231,12 @@ function SavedPiecesTab() {
 
 /**
  * Painel do Look do Dia (HypeScoreService.panel): `v2` = HypeScore v2 do look (P2-13, Hype pessoal do dono — o Look do
- * Dia é sempre dele) e `magazineCover` = capa liberada pela faixa v2. Os demais campos são v1 (deprecados) e não aparecem.
+ * Dia é sempre dele), `magazineCover` = capa liberada pela faixa v2 e `tip` = dica pela dimensão v2 mais fraca (local ou
+ * da IA). O v1 do RF6 saiu do painel na limpeza do v1 (P3-16).
  */
-interface DailyPanel { v2?: HypeSummary | null; magazineCover?: { unlocked: boolean; minLevel: HypeLevel } | null; tip?: unknown; advice?: unknown; [legacyV1: string]: unknown }
-/** Linha do histórico (DailyLookService.view): `schemeId` é a chave do Hype v2 (P1-06); `hypeScore` é o v1 legado. */
-interface DailyHistoryRow { date: string; schemeId?: string; title?: string; scheme?: SchemeView; feedback?: string | null; /** @deprecated v1 */ hypeScore?: number | null }
+interface DailyPanel { v2?: HypeSummary | null; magazineCover?: { unlocked: boolean; minLevel: HypeLevel } | null; tip?: string | null; aiExplanation?: unknown }
+/** Linha do histórico (DailyLookService.view): `schemeId` é a chave do Hype v2 (P1-06). */
+interface DailyHistoryRow { date: string; schemeId?: string; title?: string; scheme?: SchemeView; feedback?: string | null }
 interface DailyTabData { panelVersion: string; panelVersions: { code: string; name: string; emphasis?: string; hype?: string; bestFor?: string }[]; today?: { date?: string; feedback?: string | null; source?: string } | null; scheme?: SchemeView; panel?: DailyPanel; empty?: { message: string; actions?: { label: string; href: string }[] }; history?: DailyHistoryRow[]; feedbackReminder?: { show?: boolean; message?: string }; feedbackOptions?: string[] }
 
 /** HypeBadge v2 de uma linha do histórico (lote: todas as linhas viram uma requisição a /api/hype/summaries). */
@@ -283,7 +286,6 @@ function DailyTab() {
                 {version === "RAIO_X_ESTILO" && score != null && <HypeBreakdown type="SCHEME" dimensions={v2?.dimensions} list={DIMENSION_ORDER} />}
                 <p className="mt-2 type-caption text-muted">{t("hypeLookbook.painel_v2_dica")}</p>
                 {typeof data.panel?.tip === "string" && <p className="mt-3 rounded bg-chalk-soft p-2 type-body-sm">💡 {data.panel.tip}</p>}
-                {typeof data.panel?.advice === "string" && <p className="mt-3 rounded bg-chalk-soft p-2 type-body-sm">💡 {data.panel.advice}</p>}
                 <label className="mt-2 flex items-center gap-2 type-caption"><input type="checkbox" checked={withAi} onChange={(e) => setWithAi(e.target.checked)} />{" "}{t("lookbookTabs.dica_com_ia_style_advisor")}</label>
                 <HypeInline type="SCHEME" id={data.scheme.id} name={data.scheme.title} />
               </div>

@@ -175,6 +175,8 @@ public class Avatar3dService {
         makeCurrent(a, v);
         a.setConsentAt(Instant.now());
         avatars.save(a);
+        // versão nova reprovada no gate num avatar público: quem os outros veem continua sendo a aprovada anterior
+        moderateApproved(u.getId(), a);
         prune(a);
         audit.log(user, "AVATAR3D_SALVO", "avatar3d:" + u.getId(), auditDetails(v, quality));
         return view(a);
@@ -303,16 +305,20 @@ public class Avatar3dService {
             v.setTextureModeration(a.getTextureModeration());
             versions.save(v);
         });
-        // tornar público: a versão aprovada (a que outras pessoas veem) também passa pela moderação
+        moderateApproved(user.id(), a);
+        return view(a);
+    }
+
+    /** Avatar público: a versão aprovada (a que outras pessoas veem), se não for a atual, também passa pela moderação. */
+    private void moderateApproved(UUID userId, UserAvatar3d a) {
         if (a.isPublicOnRunway() && a.getApprovedVersion() != null && a.getApprovedVersion() != a.getCurrentVersion()) {
-            versions.findByUserIdAndVersionNo(user.id(), a.getApprovedVersion())
+            versions.findByUserIdAndVersionNo(userId, a.getApprovedVersion())
                     .filter(v -> v.getTextureModeration() == ModerationStatus.PENDING)
                     .ifPresent(v -> {
-                        v.setTextureModeration(moderateTexture(user.id(), storage.get(v.getTextureKey())));
+                        v.setTextureModeration(moderateTexture(userId, storage.get(v.getTextureKey())));
                         versions.save(v);
                     });
         }
-        return view(a);
     }
 
     @Transactional

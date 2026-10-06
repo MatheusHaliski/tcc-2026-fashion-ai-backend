@@ -1,0 +1,114 @@
+@startuml RF3_Sequencia_LGPD
+title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de sequência — privacidade, consentimentos, exportação, exclusão e notificações
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as P
+participant "settings/page.tsx\nnotifications/page.tsx" as FE
+participant "MeController" as MC
+participant "NotificationController" as NC
+participant "AccountService" as AS
+participant "IdentityService" as IS
+participant "NotificationService" as NS
+participant "MediaStoragePort\n(S3 / local)" as ST
+participant "EmailSenderPort" as EM
+participant "NotificationProjectionPort\n(Cassandra, opcional)" as PROJ
+database "MySQL" as DB
+
+== Privacidade e consentimentos ==
+FE -> MC: PUT /api/me/privacy {visibility}
+MC -> AS: updatePrivacy(user, visibility)
+AS -> DB: users.profileVisibility · privateAccount = (visibility ≠ PUBLIC) · audit_log ALTERACAO_PERFIL
+MC --> FE: 200 {profileVisibility, privateAccount, defaultSchemeVisibility}
+FE -> MC: GET /api/me/consents
+MC -> AS: consents(user)
+MC --> FE: 200 [{purpose, title, description, legalBasis, lgpdArticle, sensitive, granted, grantedAt, revokedAt, policyVersion}]
+P -> FE: liga ou desliga uma finalidade
+FE -> MC: PUT /api/me/consents/{purpose} {granted}
+MC -> AS: setConsent(user, purpose, granted)
+alt FACIAL_RECOGNITION com granted = true
+  AS --> FE: 400 FINALIDADE_NAO_UTILIZADA
+else
+  AS -> DB: UPSERT user_consents (único user_id + purpose; legalBasis, policyVersion, grantedAt | revokedAt)
+  AS -> DB: audit_log CONSENTIMENTO_CONCEDIDO | CONSENTIMENTO_REVOGADO
+  MC --> FE: 200 lista atualizada
+end
+
+== Exportação (JSON, 7 dias) ==
+FE -> MC: POST /api/me/exports
+MC -> AS: requestExport(user)
+AS -> DB: INSERT data_export_requests (PROCESSING)
+AS -> DB: lê perfil, preferências, consentimentos, peças, looks, comentários, salvos,\nseguindo, fotos, notificações, DNA, inferências de IA e Hype pessoal
+AS -> ST: put(restricted/users/{id}/exports/{exportId}.json) — no idioma preferido
+AS -> DB: status READY · readyAt · expiresAt = +7 dias
+AS -> NS: notify(DATA_EXPORT_READY)
+AS -> DB: audit_log EXPORTACAO_CONTA
+MC --> FE: 202 {id, status, readyAt, expiresAt, bytes}
+FE -> MC: GET /api/me/exports/{exportId}/file
+MC -> AS: downloadExport(user, exportId)
+alt de outra pessoa
+  AS --> FE: 403
+else vencida ou sem arquivo
+  AS --> FE: 410 EXPORTACAO_EXPIRADA
+else
+  AS -> ST: get(fileKey)
+  MC --> FE: 200 octet-stream "fashionai-dados-{id}.zip" (conteúdo JSON)
+end
+group job purgeExpiredExports (@Scheduled 0 50 * * * *, de hora em hora)
+  AS -> DB: findByExpiresAtBeforeAndFileKeyIsNotNull
+  AS -> ST: delete(fileKey)
+  AS -> DB: fileKey = null · status EXPIRED
+end
+
+== Exclusão da conta (carência de 30 dias) ==
+P -> FE: confirma com a senha
+FE -> MC: POST /api/me/deletion {password}
+MC -> AS: requestDeletion(user, password)
+AS -> IS: reauthenticate(userId, password) (401 / 429)
+AS -> DB: deletionRequestedAt · deletionScheduledFor = +30 dias · status DELETION_SCHEDULED
+AS -> EM: send("Exclusão de conta agendada")
+AS -> DB: audit_log EXCLUSAO_CONTA
+MC --> FE: 200 {status, deletionScheduledFor}
+opt desistiu dentro da carência
+  FE -> MC: DELETE /api/me/deletion
+  MC -> AS: cancelDeletion(user)
+  AS -> DB: status PENDING_EMAIL_VERIFICATION | PENDING_VALIDATION | ACTIVE · audit_log EXCLUSAO_CANCELADA
+  MC --> FE: 200 {status}
+end
+note over AS, DB
+  <<planejado>> AccountService.purgeScheduledDeletions() faz a anonimização
+  (DELETED), mas não tem @Scheduled nem chamada no código.
+end note
+
+== Notificações ==
+FE -> NC: GET /api/notifications
+NC -> NS: inbox(user)
+NS -> DB: até 100 entregues (fora POINTS) + até 100 de POINTS · contagem de não lidas
+NC --> FE: 200 {unread, items}
+FE -> NC: POST /api/notifications/read {ids} | POST /api/notifications/read-all
+NC -> NS: markRead(user, ids) | markAllRead(user)
+alt notificação de outra pessoa
+  NS --> FE: 403
+else
+  NS -> DB: read = true · readAt
+  NC --> FE: 200
+end
+FE -> NC: PUT /api/notifications/preferences {changes, master}
+NC -> NS: updatePreferences(user, changes, master)
+alt tipo desconhecido ou desligar tipo obrigatório (optOutAllowed = false)
+  NS --> FE: 400 TIPO_INVALIDO | TIPO_OBRIGATORIO
+else
+  NS -> DB: user_preferences.notificationPrefsJson · notificationPushMaster
+  NC --> FE: 200 [{type, category, optOutAllowed, enabled}]
+end
+note over NS, PROJ
+  Na criação (notify, chamado por outros RF): delivered = enabled(tipo);
+  entregue → projection.appendNotification (falha só gera aviso no log).
+  Expurgo de 90 dias: só pelo job manual POST /api/admin/jobs/notifications.
+end note
+@enduml

@@ -20,8 +20,8 @@ import type { HypeSummary } from "@/lib/hype/types";
 const RunwayScene = dynamic(() => retryImport(() => import("@/components/three/runway-scene")), { ssr: false, loading: () => <div className="showcase-3d-loading">{tr("showcase.runwayPanel.acendendo_a_passarela")}</div> });
 
 interface Facet { value: string; count: number; }
-/** Linha do Top 100. `hype` = resumo v2 (público; pessoal só para o dono); `hypeScore` é o v1 legado (DEPRECADO, não exibir). */
-interface Row { position: number; schemeId: string; title: string; owner: { username: string; displayName: string; avatarUrl?: string | null }; /** @deprecated v1 */ hypeScore?: number | null; hype?: HypeSummary | null; likes: number; country?: string | null; region: string; you: boolean; }
+/** Linha do Top 100. `hype` = resumo v2 (público; pessoal só para o dono). */
+interface Row { position: number; schemeId: string; title: string; owner: { username: string; displayName: string; avatarUrl?: string | null }; hype?: HypeSummary | null; likes: number; country?: string | null; region: string; you: boolean; }
 interface Runway {
   date: string; nextUpdate: string; total: number; totalToday: number; ranking: string; rankings: string[]; looks: (RunwayEntry & { country?: string | null; region?: string })[];
   table: Row[]; batch: { offset: number; limit: number; from: number; to: number; hasNext: boolean; hasPrev: boolean };
@@ -39,7 +39,7 @@ const ORDER_HINT: Record<string, string> = { get EM_ALTA() { return tr("hypeRunw
  * ocasiões, estilos e manequim. Como é inviável desfilar todo mundo, a passarela mostra um lote de 12 por vez e a
  * tabela ao lado vai até o Top 100.
  * RF53 (Lote 1): a tabela e o card do look mostram o HypeScore v2 (`HypeBadge` + faixa em texto, "—" sem Hype público)
- * e as curtidas à parte; o v1 (`hypeScore`) não aparece mais.
+ * e as curtidas à parte.
  */
 export function RunwayPanel() {
   const { user } = useAuth(); const { fmtDate, t } = useI18n(); const webgl = useWebGL();

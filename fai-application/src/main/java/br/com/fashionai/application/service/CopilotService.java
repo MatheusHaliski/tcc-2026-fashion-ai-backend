@@ -110,15 +110,15 @@ public class CopilotService {
         TYPE_WORDS.put("tênis", Taxonomy.SNEAKERS);
         TYPE_WORDS.put("tenis", Taxonomy.SNEAKERS);
         TYPE_WORDS.put("sapato", Set.of("loafers", "moccasins", "oxford_shoes", "derby_shoes", "flats"));
-        TYPE_WORDS.put("bota", Set.of("ankle_boots", "long_boots", "combat_boots"));
+        TYPE_WORDS.put("bota", Set.of("boots"));
         TYPE_WORDS.put("sandália", Set.of("sandals", "flip_flops", "espadrilles"));
         TYPE_WORDS.put("salto", Set.of("heels"));
         TYPE_WORDS.put("calça", Set.of("jeans", "tailored_pants", "casual_pants", "chino_pants", "cargo_pants", "jogger_pants", "sweatpants"));
-        TYPE_WORDS.put("jeans", Set.of("jeans", "denim_shorts"));
+        TYPE_WORDS.put("jeans", Set.of("jeans", "denim_shorts", "shorts"));
         TYPE_WORDS.put("saia", Set.of("skirt", "skort"));
-        TYPE_WORDS.put("short", Set.of("shorts", "bermuda_shorts", "denim_shorts"));
-        TYPE_WORDS.put("bermuda", Set.of("bermuda_shorts"));
-        TYPE_WORDS.put("camiseta", Set.of("t_shirt", "tank_top", "crop_top"));
+        TYPE_WORDS.put("short", Set.of("shorts"));
+        TYPE_WORDS.put("bermuda", Set.of("bermuda_shorts", "shorts"));
+        TYPE_WORDS.put("camiseta", Set.of("t_shirt", "tank_top", "top"));
         TYPE_WORDS.put("camisa", Set.of("shirt", "polo_shirt"));
         TYPE_WORDS.put("blusa", Set.of("blouse", "sweater"));
         TYPE_WORDS.put("moletom", Set.of("sweatshirt", "hoodie"));
@@ -127,7 +127,7 @@ public class CopilotService {
         TYPE_WORDS.put("blazer", Set.of("blazer"));
         TYPE_WORDS.put("vestido", Set.of("dress"));
         TYPE_WORDS.put("macacão", Set.of("jumpsuit", "overalls", "romper"));
-        TYPE_WORDS.put("bolsa", Set.of("handbag", "crossbody_bag", "tote_bag", "clutch"));
+        TYPE_WORDS.put("bolsa", Set.of("handbag", "tote_bag", "clutch"));
         TYPE_WORDS.put("mochila", Set.of("backpack"));
         TYPE_WORDS.put("boné", Set.of("cap"));
         TYPE_WORDS.put("chapéu", Set.of("hat"));
@@ -138,19 +138,19 @@ public class CopilotService {
         // inglês e espanhol (RF23)
         TYPE_WORDS.put("sneaker", Taxonomy.SNEAKERS); TYPE_WORDS.put("zapatilla", Taxonomy.SNEAKERS); TYPE_WORDS.put("tenis", Taxonomy.SNEAKERS);
         TYPE_WORDS.put("shoe", Set.of("loafers", "moccasins", "oxford_shoes", "derby_shoes", "flats")); TYPE_WORDS.put("zapato", Set.of("loafers", "moccasins", "oxford_shoes", "derby_shoes", "flats"));
-        TYPE_WORDS.put("boot", Set.of("ankle_boots", "long_boots", "combat_boots")); TYPE_WORDS.put("bota", Set.of("ankle_boots", "long_boots", "combat_boots"));
+        TYPE_WORDS.put("boot", Set.of("boots")); TYPE_WORDS.put("bota", Set.of("boots"));
         TYPE_WORDS.put("sandal", Set.of("sandals", "flip_flops", "espadrilles")); TYPE_WORDS.put("sandalia", Set.of("sandals", "flip_flops", "espadrilles")); TYPE_WORDS.put("sandália", Set.of("sandals", "flip_flops", "espadrilles"));
         TYPE_WORDS.put("heel", Set.of("heels")); TYPE_WORDS.put("tacón", Set.of("heels")); TYPE_WORDS.put("tacon", Set.of("heels"));
         TYPE_WORDS.put("pants", Set.of("jeans", "tailored_pants", "casual_pants", "chino_pants", "cargo_pants", "jogger_pants", "sweatpants")); TYPE_WORDS.put("trousers", Set.of("tailored_pants", "casual_pants", "chino_pants"));
         TYPE_WORDS.put("pantal", Set.of("jeans", "tailored_pants", "casual_pants", "chino_pants", "cargo_pants", "jogger_pants", "sweatpants"));
         TYPE_WORDS.put("skirt", Set.of("skirt", "skort")); TYPE_WORDS.put("falda", Set.of("skirt", "skort"));
-        TYPE_WORDS.put("t-shirt", Set.of("t_shirt", "tank_top", "crop_top")); TYPE_WORDS.put("tee", Set.of("t_shirt")); TYPE_WORDS.put("camiseta", Set.of("t_shirt", "tank_top", "crop_top"));
+        TYPE_WORDS.put("t-shirt", Set.of("t_shirt", "tank_top", "top")); TYPE_WORDS.put("tee", Set.of("t_shirt")); TYPE_WORDS.put("camiseta", Set.of("t_shirt", "tank_top", "top"));
         TYPE_WORDS.put("shirt", Set.of("shirt", "polo_shirt")); TYPE_WORDS.put("camisa", Set.of("shirt", "polo_shirt"));
         TYPE_WORDS.put("blouse", Set.of("blouse", "sweater")); TYPE_WORDS.put("sweater", Set.of("sweater")); TYPE_WORDS.put("blusa", Set.of("blouse", "sweater")); TYPE_WORDS.put("suéter", Set.of("sweater"));
         TYPE_WORDS.put("hoodie", Set.of("sweatshirt", "hoodie")); TYPE_WORDS.put("sweatshirt", Set.of("sweatshirt", "hoodie")); TYPE_WORDS.put("sudadera", Set.of("sweatshirt", "hoodie"));
         TYPE_WORDS.put("jacket", Set.of("jacket", "windbreaker", "parka")); TYPE_WORDS.put("chaqueta", Set.of("jacket", "windbreaker", "parka")); TYPE_WORDS.put("coat", Set.of("coat", "parka", "jacket")); TYPE_WORDS.put("abrigo", Set.of("coat", "parka", "jacket"));
         TYPE_WORDS.put("dress", Set.of("dress")); TYPE_WORDS.put("vestido", Set.of("dress")); TYPE_WORDS.put("jumpsuit", Set.of("jumpsuit", "overalls", "romper")); TYPE_WORDS.put("mono", Set.of("jumpsuit", "overalls", "romper"));
-        TYPE_WORDS.put("bag", Set.of("handbag", "crossbody_bag", "tote_bag", "clutch")); TYPE_WORDS.put("bolso", Set.of("handbag", "crossbody_bag", "tote_bag", "clutch")); TYPE_WORDS.put("backpack", Set.of("backpack")); TYPE_WORDS.put("mochila", Set.of("backpack"));
+        TYPE_WORDS.put("bag", Set.of("handbag", "tote_bag", "clutch")); TYPE_WORDS.put("bolso", Set.of("handbag", "tote_bag", "clutch")); TYPE_WORDS.put("backpack", Set.of("backpack")); TYPE_WORDS.put("mochila", Set.of("backpack"));
         TYPE_WORDS.put("cap", Set.of("cap")); TYPE_WORDS.put("gorra", Set.of("cap")); TYPE_WORDS.put("hat", Set.of("hat")); TYPE_WORDS.put("sombrero", Set.of("hat"));
         TYPE_WORDS.put("belt", Set.of("belt")); TYPE_WORDS.put("cinturón", Set.of("belt")); TYPE_WORDS.put("cinturon", Set.of("belt"));
         TYPE_WORDS.put("glasses", Set.of("sunglasses", "eyeglasses")); TYPE_WORDS.put("gafas", Set.of("sunglasses", "eyeglasses")); TYPE_WORDS.put("necklace", Set.of("necklace")); TYPE_WORDS.put("collar", Set.of("necklace"));
@@ -174,6 +174,14 @@ public class CopilotService {
      */
     public record AskRequest(String message, String view, List<UUID> selection, List<String> occasion, String mood, String city,
                              Double latitude, Double longitude, List<String> excludeKeys, String mode) {
+    }
+
+    /** Momentos §17 — o Copilot conhece os Momentos ativos (injeção opcional: o construtor dos testes não muda). */
+    private br.com.fashionai.application.moments.MomentService moments;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setMoments(br.com.fashionai.application.moments.MomentService moments) {
+        this.moments = moments;
     }
 
     private final WardrobeService wardrobe;
@@ -262,6 +270,7 @@ public class CopilotService {
         out.put("selection", selection == null ? List.of() : selection);
         out.put("suggestedPrompts", promptsFor(view));
         out.put("activeChallenges", challenges.activeSummary(user.id()));
+        out.put("activeMoments", activeMoments(user.id()));
         return out;
     }
 
@@ -419,7 +428,7 @@ public class CopilotService {
         if (HYPE_QUESTION.matcher(t).matches() && !BUILD_REQUEST.matcher(t).matches()) {
             return Intent.HYPE;
         }
-        if (t.matches(".*(não uso|nao uso|esquecid|parad[ao]s?|há muito tempo|ha muito tempo|nunca usei|haven't worn|never worn|not worn|forgotten|unused|long time|no uso|olvidad|nunca usé|nunca use|mucho tiempo).*")) {
+        if (t.matches(".*(não uso|nao uso|esquecid|parad[ao]s?|há muito tempo|ha muito tempo|nunca usei|haven't worn|never worn|not worn|forgotten|unused|long time|no uso|olvidad|nunca usé|nunca use|mucho tiempo|redescobert|rediscover|redescubr).*")) {
             return Intent.FORGOTTEN;
         }
         if (t.matches(".*(melhorar (o |meu )?invent|inventory score|como melhorar|minha utiliza|meu score|improve (my )?invent|my utilization|my score|mejorar (el |mi )?invent|mi utiliza|mi puntuaci).*")) {
@@ -469,7 +478,7 @@ public class CopilotService {
         return pieces.findByUserIdOrderByCreatedAtDesc(userId).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
                 .filter(w -> !availableOnly || (w.isDisponivel() && w.getAvailabilityStatus() == AvailabilityStatus.AVAILABLE))
                 .filter(w -> colors.isEmpty() || colors.contains(w.getColor()))
-                .filter(w -> subs.isEmpty() || subs.contains(w.getSubcategory()))
+                .filter(w -> subs.isEmpty() || subs.contains(Taxonomy.activeSubcategory(w.getSubcategory())) || subs.contains(w.getSubcategory()))
                 .filter(w -> materials.isEmpty() || materials.contains(w.getMaterial()))
                 .filter(w -> !(colors.isEmpty() && subs.isEmpty() && materials.isEmpty()) || nameMatch(w, t))
                 .limit(8).toList();
@@ -945,6 +954,11 @@ public class CopilotService {
         if (occasions.isEmpty()) {
             MirrorService.localInterpretation(message, List.of()).occasion().stream().filter(Taxonomy.OCCASIONS::contains).limit(3).forEach(occasions::add);
         }
+        // Momentos §17: "monte um look para o Halloween…" — o Momento ativo mencionado empresta ocasiões e tema
+        Map<String, Object> moment = detectMoment(user.id(), message);
+        if (moment != null && occasions.isEmpty()) {
+            strings(moment.get("occasionTags")).stream().filter(Taxonomy.OCCASIONS::contains).limit(2).forEach(occasions::add);
+        }
         Set<UUID> requiredPieceIds = Set.of();
         if (hasPieceConstraints(message)) {
             requiredPieceIds = searchPieces(user.id(), message, true).stream().map(WardrobeItem::getId).collect(Collectors.toSet());
@@ -1006,11 +1020,93 @@ public class CopilotService {
             return card;
         }).toList();
         RecommendationScoring.Mode mode = RecommendationScoring.Mode.parse(req.mode());
-        out.put("looks", scoreLooks(user, lookCards, mode));
+        List<Map<String, Object>> scored = scoreLooks(user, lookCards, mode);
+        if (moment != null) {
+            scored = withMomentMatch(scored, moment, occasions);
+            out.put("momentNotice", momentNotice(moment, scored));
+            out.put("moment", Map.of("id", moment.get("id"), "slug", moment.get("slug"), "name", moment.get("name")));
+        }
+        out.put("looks", scored);
         out.put("mode", mode == null ? null : mode.name());
         if (hasPieceConstraints(message)) out.put("requestedFilters", Map.of("pieceIds", requiredPieceIds));
         out.put("tools", List.of("buscar_pecas", "listar_looks", "montar_no_espelho", "abrir_criar_look"));
         return out;
+    }
+
+    // ================================================================== Momentos como contexto (§17–§18)
+    List<Map<String, Object>> activeMoments(UUID userId) {
+        try {
+            return moments == null ? List.of() : moments.activeSummary(userId);
+        } catch (RuntimeException ex) {
+            return List.of();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    static List<String> strings(Object v) {
+        return v instanceof List<?> l ? ((List<Object>) l).stream().map(String::valueOf).toList() : List.of();
+    }
+
+    /** O Momento ativo que a mensagem menciona (nome, slug ou tag de estilo/cor exclusiva dele); nulo se nenhum. */
+    Map<String, Object> detectMoment(UUID userId, String message) {
+        List<Map<String, Object>> active = activeMoments(userId);
+        for (Map<String, Object> m : active) {
+            String name = String.valueOf(m.get("name"));
+            String slug = String.valueOf(m.get("slug")).replace('-', ' ').replaceAll("\\d{4}", "").trim();
+            if (mentions(message, name) || (!slug.isBlank() && mentions(message, slug)) || mentions(message, name.replaceAll("\\d{4}", "").trim())) {
+                return m;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * MomentMatch de cada sugestão (sobre as tags das peças, determinístico) e reordenação: a leitura do Momento mais
+     * compatível com o DNA sobe, sem apagar as demais — descoberta e identidade convivem (§18).
+     */
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> withMomentMatch(List<Map<String, Object>> cards, Map<String, Object> moment, List<String> occasions) {
+        List<br.com.fashionai.application.moments.MomentMatch.Interpretation> interps = new ArrayList<>();
+        for (Object o : (List<Object>) moment.getOrDefault("interpretations", List.of())) {
+            if (o instanceof Map<?, ?> im) {
+                Map<String, Object> i = (Map<String, Object>) im;
+                interps.add(br.com.fashionai.application.moments.MomentMatch.interpretation(String.valueOf(i.get("key")), strings(i.get("styleTags")), strings(i.get("colorTags"))));
+            }
+        }
+        br.com.fashionai.application.moments.MomentMatch.Context ctx = br.com.fashionai.application.moments.MomentMatch.context(
+                strings(moment.get("styleTags")), strings(moment.get("colorTags")), strings(moment.get("occasionTags")), List.of(), interps);
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map<String, Object> card : cards) {
+            Map<String, Object> c = new LinkedHashMap<>(card);
+            List<UUID> ids = (List<UUID>) c.get("pieceIds");
+            List<WardrobeItem> look = ids == null ? List.of() : pieces.findByIdIn(ids);
+            Set<String> styles = new LinkedHashSet<>(strings(c.get("style")));
+            Set<String> colors = new LinkedHashSet<>();
+            List<String> subs = new ArrayList<>();
+            for (WardrobeItem w : look) {
+                styles.addAll(Json.csv(w.getStyleTags()));
+                colors.addAll(HypeQueryService.colorsOf(w));
+                if (w.getSubcategory() != null) subs.add(w.getSubcategory());
+            }
+            br.com.fashionai.application.moments.MomentMatch.Result r = br.com.fashionai.application.moments.MomentMatch.score(ctx,
+                    br.com.fashionai.application.moments.MomentMatch.subject(styles, colors, occasions, subs));
+            Map<String, Object> scores = new LinkedHashMap<>((Map<String, Object>) c.getOrDefault("scores", Map.of()));
+            scores.put("moment", r == null ? null : r.score());
+            c.put("scores", scores);
+            c.put("moment", Map.of("slug", moment.get("slug"), "name", moment.get("name"), "match", r == null ? 0 : r.score(),
+                    "interpretation", r == null || r.interpretation() == null ? "" : r.interpretation()));
+            out.add(c);
+        }
+        out.sort(Comparator.comparingInt((Map<String, Object> c) -> (Integer) ((Map<?, ?>) c.get("moment")).get("match")).reversed());
+        return out;
+    }
+
+    @SuppressWarnings("unchecked")
+    String momentNotice(Map<String, Object> moment, List<Map<String, Object>> cards) {
+        String name = String.valueOf(moment.get("name"));
+        String interpretation = cards.stream().map(c -> (Map<String, Object>) c.get("moment")).map(m -> String.valueOf(m.get("interpretation")))
+                .filter(x -> !x.isBlank()).findFirst().orElse(null);
+        return interpretation == null ? Msg.t("copilot.momento_sem_interpretacao", name) : Msg.t("copilot.momento_interpretacao", name, interpretation);
     }
 
     // ================================================================== HypeScore v2 como contexto
@@ -1303,6 +1399,7 @@ public class CopilotService {
             m.put("inventoryScore", null);
         }
         m.put("activeChallenges", challenges.activeSummary(user.id()));
+        m.put("activeMoments", activeMoments(user.id()));
         return m;
     }
 }

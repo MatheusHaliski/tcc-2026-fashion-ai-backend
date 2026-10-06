@@ -13,9 +13,10 @@ import java.util.Map;
  * @param dailyInteractions    interações sociais ponderadas por dia (curtir, comentar, salvar, compartilhar, favoritar, remixar)
  * @param dailyViews           visualizações por dia (contagem)
  * @param windows              por sinal: [contagem na janela atual, contagem na janela anterior] — base das explicações
- * @param lifetimeInteractions contadores acumulados da entidade (inclui o que é anterior ao horizonte)
- * @param lifetimeViews        visualizações acumuladas
- * @param totalEvents          eventos aceitos no horizonte (contagem bruta) — define "dados insuficientes"
+ * @param lifetimeInteractions interações ANTERIORES ao horizonte, do agregado filtrado pela integridade (nunca contadores brutos),
+ *                             com o peso da integridade e o do tipo de sinal (mesma unidade de {@code dailyActivity})
+ * @param lifetimeViews        visualizações aceitas anteriores ao horizonte, do mesmo agregado
+ * @param totalEvents          eventos aceitos (contagem bruta) no horizonte mais as interações aceitas antes dele — define "dados insuficientes"
  * @param ageDays              idade da entidade em dias
  * @param cohortPresence       fração da população (donos/peças) com o mesmo "modelo" (catálogo ou categoria+marca); nulo = desconhecida
  * @param cohortGrowthPercent  crescimento recente das peças semelhantes (janela atual × anterior); nulo = desconhecido

@@ -99,7 +99,7 @@ class SearchHypeV2Test {
         return u;
     }
 
-    private Scheme look(String title, BigDecimal v1) {
+    private Scheme look(String title) {
         Scheme s = new Scheme();
         s.assignId(UUID.randomUUID());
         s.setUser(owner());
@@ -110,7 +110,6 @@ class SearchHypeV2Test {
         s.setStatus(SchemeStatus.PUBLISHED);
         s.setPublishedAt(published);
         s.markCreatedAt(published);
-        s.setHypeScore(v1);
         return s;
     }
 
@@ -128,7 +127,7 @@ class SearchHypeV2Test {
         HypeScoreCurrent c = new HypeScoreCurrent();
         c.setEntityType(type);
         c.setEntityId(id);
-        c.setAlgorithmVersion("HYPE_V2");
+        c.setAlgorithmVersion(HypeScoreConfig.DEFAULT_VERSION);
         c.setStatus(HypeStatus.AVAILABLE);
         c.setScore(BigDecimal.valueOf(score));
         c.setLevel(HypeScoreConfig.defaults().level(score));
@@ -138,7 +137,7 @@ class SearchHypeV2Test {
     }
 
     private void hypeOf(HypeScoreCurrent... rows) {
-        when(hype.findByEntityTypeAndEntityIdInAndAlgorithmVersion(any(), anyCollection(), eq("HYPE_V2"))).thenAnswer(a -> {
+        when(hype.findByEntityTypeAndEntityIdInAndAlgorithmVersion(any(), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION))).thenAnswer(a -> {
             Collection<UUID> ids = a.getArgument(1);
             return List.of(rows).stream().filter(r -> r.getEntityType() == a.getArgument(0) && ids.contains(r.getEntityId())).toList();
         });
@@ -152,8 +151,8 @@ class SearchHypeV2Test {
 
     @Test
     void relevanceUsesThePublicV2ScoreAndNeverTheV1Column() {
-        Scheme a = look("a", BigDecimal.valueOf(100));
-        Scheme b = look("b", null);
+        Scheme a = look("a");
+        Scheme b = look("b");
         // o v1 (100 × nulo) não muda nada: o que entra é o Hype público passado
         assertThat(SearchService.relevance(a, List.of(), Set.of(), 80.0)).isEqualTo(SearchService.relevance(b, List.of(), Set.of(), 80.0));
         // sem Hype público = neutro (0,5), igual a um score 50 — nunca 0
@@ -163,10 +162,10 @@ class SearchHypeV2Test {
 
     @Test
     void feedOrdersByPublicHypeAndKeepsLooksWithoutPublicHypeNeutral() {
-        Scheme hot = look("hot", null);
-        Scheme privateHype = look("private", BigDecimal.valueOf(99));   // v1 alto e Hype v2 só pessoal: não pode subir
-        Scheme fresh = look("fresh", null);                              // sem cálculo: neutro, não último
-        Scheme low = look("low", BigDecimal.valueOf(95));
+        Scheme hot = look("hot");
+        Scheme privateHype = look("private");   // v1 alto e Hype v2 só pessoal: não pode subir
+        Scheme fresh = look("fresh");                              // sem cálculo: neutro, não último
+        Scheme low = look("low");
         when(schemes.findPublicFeed(any())).thenReturn(new ArrayList<>(List.of(low, fresh, privateHype, hot)));
         hypeOf(row(HypeEntityType.SCHEME, hot.getId(), 90, true), row(HypeEntityType.SCHEME, privateHype.getId(), 99, false),
                 row(HypeEntityType.SCHEME, low.getId(), 10, true));
@@ -178,17 +177,17 @@ class SearchHypeV2Test {
         assertThat(order.get(3)).isEqualTo(low.getId());
         assertThat(order.subList(1, 3)).containsExactlyInAnyOrder(fresh.getId(), privateHype.getId());
         // uma consulta de Hype por página (antes do sort), nunca uma por look
-        verify(hype, times(1)).findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.SCHEME), anyCollection(), eq("HYPE_V2"));
+        verify(hype, times(1)).findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.SCHEME), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION));
         assertThat(out.get("items")).asList().hasSize(4);
     }
 
     @Test
     void hotFilterKeepsOnlyPublicHypeFromTheBandUpWithTheDisplayedRounding() {
-        Scheme hot = look("hot", null);
-        Scheme borderline = look("59.6", null);   // aparece como 60 = Em alta
-        Scheme below = look("59.4", null);
-        Scheme privateHype = look("private", null);
-        Scheme none = look("none", BigDecimal.valueOf(99));
+        Scheme hot = look("hot");
+        Scheme borderline = look("59.6");   // aparece como 60 = Em alta
+        Scheme below = look("59.4");
+        Scheme privateHype = look("private");
+        Scheme none = look("none");
         when(schemes.findPublicFeed(any())).thenReturn(new ArrayList<>(List.of(hot, borderline, below, privateHype, none)));
         hypeOf(row(HypeEntityType.SCHEME, hot.getId(), 82, true), row(HypeEntityType.SCHEME, borderline.getId(), 59.6, true),
                 row(HypeEntityType.SCHEME, below.getId(), 59.4, true), row(HypeEntityType.SCHEME, privateHype.getId(), 95, false));
@@ -228,11 +227,11 @@ class SearchHypeV2Test {
 
     @Test
     void emptySearchShowsTheV2PublicTrendingNotTheV1Column() {
-        Scheme v1Star = look("v1", BigDecimal.valueOf(100));
-        Scheme first = look("first", null);
-        Scheme second = look("second", null);
+        Scheme v1Star = look("v1");
+        Scheme first = look("first");
+        Scheme second = look("second");
         when(schemes.searchPublic(any(), any())).thenReturn(List.of());
-        when(hype.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.SCHEME, "HYPE_V2", HypeStatus.AVAILABLE))
+        when(hype.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.SCHEME, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE))
                 .thenReturn(List.of(row(HypeEntityType.SCHEME, second.getId(), 61, true), row(HypeEntityType.SCHEME, first.getId(), 88, true)));
         when(schemes.findByIdIn(anyCollection())).thenReturn(List.of(second, first, v1Star));
 

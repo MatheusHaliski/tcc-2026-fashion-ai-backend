@@ -47,6 +47,12 @@ function qualityReport(f: FaceFidelity | null | undefined, skin?: { skinColorErr
   };
 }
 
+/** A prévia já foi medida: fidelidade do rosto calculada e pele assada (com o relatório de cor e costura). */
+function isMeasured(p: HumanParts) {
+  const ud = p.human.root.userData;
+  return p.identity != null && ud.skin === "baked" && ud.skinReport != null;
+}
+
 const VIEWS: AvatarView[] = ["front", "left34", "right34", "profile"];
 /** Avisos cujo texto na hora da foto leva um número (px, graus, %): o avatar salvo guarda só o código. */
 const SAVED_TEXT = new Set(["FACE_SMALL", "LOOK_AT_CAMERA", "HEAD_UP_DOWN", "HEAD_TILT", "FACE_OCCLUDED", "MULTIPLE_FACES", "TURN_MORE", "TURN_LESS"]);
@@ -233,8 +239,21 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
   const [consent, setConsent] = useState(false);
   const [pub, setPub] = useState(initialPublic);
   const [sexChoice, setSexChoice] = useState<Sex | null>(null);        // null = automático (rosto; senão o cadastro)
-  const fidelity = useRef<FaceFidelity | null>(null);                    // medida pelo corpo da prévia (gate de identidade)
-  const human = useRef<HumanParts | null>(null);                          // a pele (erro de cor, costura) sai depois do bake
+  // medidas da prévia (fidelidade do rosto e, depois do bake, a pele): presas à prévia que as mediu, para o gate de
+  // identidade nunca receber o relatório da prévia anterior nem sair sem ele
+  const measured = useRef<{ built: BuiltAvatar; parts: HumanParts } | null>(null);
+  const [ready, setReady] = useState<BuiltAvatar | null>(null);         // a prévia cujas medidas já estão prontas
+  const bakeWait = useRef(0);
+  useEffect(() => () => cancelAnimationFrame(bakeWait.current), []);
+  function onHuman(b: BuiltAvatar, p: HumanParts) {
+    measured.current = { built: b, parts: p }; setReady(null); cancelAnimationFrame(bakeWait.current);
+    const wait = () => {
+      if (measured.current?.parts !== p) return;
+      if (isMeasured(p)) setReady(b); else bakeWait.current = requestAnimationFrame(wait);
+    };
+    wait();
+  }
+  const qualityReady = !!built && ready === built;
   const texture = useMemo(() => {
     if (!built) return null;
     const tex = new THREE.CanvasTexture(built.atlas); tex.colorSpace = THREE.SRGBColorSpace; return tex;
@@ -276,11 +295,12 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
   }
 
   async function save() {
-    if (!built || !consent) return;
+    const m = measured.current;
+    if (!built || !consent || m?.built !== built || !isMeasured(m.parts)) return;
     setBusy("save");
     try {
       const fd = new FormData();
-      fd.append("meta", JSON.stringify({ model: built.model, adjust: clampAdjust(adjust), photos: 1, warnings: built.model.warnings, consent: true, publicOnRunway: pub, quality: qualityReport(fidelity.current, human.current?.human.root.userData.skinReport) }));
+      fd.append("meta", JSON.stringify({ model: built.model, adjust: clampAdjust(adjust), photos: 1, warnings: built.model.warnings, consent: true, publicOnRunway: pub, quality: qualityReport(m.parts.identity, m.parts.human.root.userData.skinReport) }));
       fd.append("texture", await atlasBlob(built.atlas), "avatar.jpg");
       await api.upload("/api/me/avatar3d", fd);
       toast.success(t("avatar3d.page.salvo"));
@@ -332,7 +352,7 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
       <div className="grid content-start gap-3">
         <Card>
           <div className="aspect-[4/5] w-full overflow-hidden rounded-md bg-surface-2 sm:aspect-[5/4]">
-            {built && texture ? <AvatarViewer avatar={{ model: built.model, adjust, texture }} sex={built.model.sex ?? sex} view={view} onHuman={(p) => { fidelity.current = p.identity ?? null; human.current = p; }} />
+            {built && texture ? <AvatarViewer avatar={{ model: built.model, adjust, texture }} sex={built.model.sex ?? sex} view={view} onHuman={(p) => onHuman(built, p)} />
               : <p className="grid h-full place-items-center p-6 text-center type-body text-muted">{t("avatar3d.page.previa_vazia")}</p>}
           </div>
           {built && <div className="mt-3"><ViewButtons view={view} onView={setView} /></div>}
@@ -346,7 +366,8 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
             </label>
             <div className="mt-3"><Switch checked={pub} onChange={setPub} label={t("avatar3d.page.publico")} hint={t("avatar3d.page.publico_hint")} /></div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <Button variant="primary" loading={busy === "save"} disabled={!consent || !!busy} onClick={save}>{t("avatar3d.page.salvar")}</Button>
+              <Button variant="primary" loading={busy === "save"} disabled={!consent || !!busy || !qualityReady} onClick={save}>{t("avatar3d.page.salvar")}</Button>
+              {!qualityReady && <span className="flex items-center gap-2 type-caption text-muted"><Spinner size={14} />{t("avatar3d.page.medindo")}</span>}
             </div>
           </Card>
         )}

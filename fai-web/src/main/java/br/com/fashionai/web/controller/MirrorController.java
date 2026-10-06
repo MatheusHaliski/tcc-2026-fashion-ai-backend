@@ -22,7 +22,7 @@ public class MirrorController {
     }
 
     @GetMapping
-    @Operation(summary = "RF33.CA01 — Estado do espelho (slots, peças vestidas, restrições de desafio)")
+    @Operation(summary = "RF33.CA01 — Estado do espelho (slots, peças vestidas, restrições de desafio e os seis números do look, P3-07)")
     public Map<String, Object> state(CurrentUser user) {
         return mirror.state(user);
     }

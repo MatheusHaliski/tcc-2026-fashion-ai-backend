@@ -71,9 +71,9 @@ class ExplorerBrandsHypeV2Test {
         pieces = mock(WardrobeItemRepository.class);
         schemes = mock(SchemeRepository.class);
         explorer = new ExplorerService(analytics, brands, bonds, mock(AiEngine.class), hype, config, pieces, schemes);
-        when(hype.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(any(), eq("HYPE_V2"), eq(HypeStatus.AVAILABLE)))
+        when(hype.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(any(), eq(HypeScoreConfig.DEFAULT_VERSION), eq(HypeStatus.AVAILABLE)))
                 .thenAnswer(a -> rows.stream().filter(r -> r.getEntityType() == a.getArgument(0)).toList());
-        when(hype.findByEntityTypeAndEntityIdInAndAlgorithmVersion(any(), anyCollection(), eq("HYPE_V2"))).thenAnswer(a -> {
+        when(hype.findByEntityTypeAndEntityIdInAndAlgorithmVersion(any(), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION))).thenAnswer(a -> {
             Collection<UUID> ids = a.getArgument(1);
             return rows.stream().filter(r -> r.getEntityType() == a.getArgument(0) && ids.contains(r.getEntityId())).toList();
         });
@@ -144,11 +144,11 @@ class ExplorerBrandsHypeV2Test {
         piece("Nike", "black", "upper_piece", 50, true);
         piece("Nike", "black", "upper_piece", 99, false);   // privada: mesmo se a consulta devolvesse, fica fora
 
-        Map<String, Object> card = cards(explorer.brandsAndStores(null, null, null, null, "HYPE", null, null, null, null)).get(0);
+        Map<String, Object> card = cards(explorer.brandsAndStores(null, null, null, null, "HYPE", null, null, null)).get(0);
 
         assertThat(hypeOf(card)).containsEntry("value", null).containsEntry("level", null).containsEntry("sufficient", false)
                 .containsEntry("items", 2).containsEntry("minItems", 3);
-        assertThat(card).containsEntry("hypeScore", null).containsEntry("stars", null).containsEntry("pieces", 2L);
+        assertThat(card).doesNotContainKeys("hypeScore", "stars").containsEntry("pieces", 2L);   // campos deprecados saíram (P3-16)
         verify(hype, never()).findByEntityTypeAndAlgorithmVersion(any(), any());   // nunca lê a população inteira (privados inclusive)
     }
 
@@ -161,7 +161,7 @@ class ExplorerBrandsHypeV2Test {
         piece("Nike", "black", "lower_piece", 80, true);
         piece("Nike", "black", "lower_piece", 100, false);   // privada
 
-        Map<String, Object> h = hypeOf(cards(explorer.brandsAndStores(null, null, null, null, null, null, null, null, null)).get(0));
+        Map<String, Object> h = hypeOf(cards(explorer.brandsAndStores(null, null, null, null, null, null, null, null)).get(0));
         assertThat(h).containsEntry("value", 70.0).containsEntry("level", "HOT").containsEntry("basis", "BRAND_GROUP").containsEntry("items", 3);
     }
 
@@ -180,9 +180,9 @@ class ExplorerBrandsHypeV2Test {
         approved.add(bond(lookWith(5, true), Instant.now().minusSeconds(60)));      // vínculo vencido
         when(bonds.findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(brand.getOwner().getId(), SealBondStatus.APPROVED)).thenReturn(approved);
 
-        Map<String, Object> card = cards(explorer.brandsAndStores(null, null, null, null, null, null, null, null, null)).get(0);
+        Map<String, Object> card = cards(explorer.brandsAndStores(null, null, null, null, null, null, null, null)).get(0);
         assertThat(hypeOf(card)).containsEntry("value", 70.0).containsEntry("basis", "BONDED_LOOKS").containsEntry("items", 3).containsEntry("level", "HOT");
-        assertThat(card).containsEntry("schemes", 5L).containsEntry("hypeScore", 70L);
+        assertThat(card).containsEntry("schemes", 5L);
     }
 
     private Scheme lookWith(double score, boolean eligible) {
@@ -212,15 +212,12 @@ class ExplorerBrandsHypeV2Test {
             piece("Quente", "black", "upper_piece", 59.6, true);   // 60 na tela = Em alta
         }
 
-        List<Map<String, Object>> all = cards(explorer.brandsAndStores(null, null, null, null, "HYPE", null, null, null, null));
+        List<Map<String, Object>> all = cards(explorer.brandsAndStores(null, null, null, null, "HYPE", null, null, null));
         assertThat(all).extracting(m -> m.get("name")).containsExactly("Quente", "Baixa", "Sem dados");
 
-        List<Map<String, Object>> onlyHot = cards(explorer.brandsAndStores(null, null, null, null, null, null, null, null, "HOT"));
+        List<Map<String, Object>> onlyHot = cards(explorer.brandsAndStores(null, null, null, null, null, null, null, "HOT"));
         assertThat(onlyHot).extracting(m -> m.get("name")).containsExactly("Quente");
-        // hypeMin (deprecado) compara com o número v2 exibido; sem dado nunca passa
-        List<Map<String, Object>> min30 = cards(explorer.brandsAndStores(null, null, null, null, null, null, null, 30, null));
-        assertThat(min30).extracting(m -> m.get("name")).containsExactlyInAnyOrder("Quente", "Baixa");
-        assertThatThrownBy(() -> explorer.brandsAndStores(null, null, null, null, null, null, null, null, "ICONE_DE_ESTILO"))
+        assertThatThrownBy(() -> explorer.brandsAndStores(null, null, null, null, null, null, null, "ICONE_DE_ESTILO"))
                 .isInstanceOf(ApiException.class);
     }
 
@@ -265,8 +262,5 @@ class ExplorerBrandsHypeV2Test {
         assertThat((List<Map<String, Object>>) v2.get("byCategory")).extracting(m -> m.get("label")).containsExactly("upper_piece", "lower_piece");
         assertThat((List<Map<String, Object>>) v2.get("growthByCategory")).first().satisfies(m -> assertThat(m).containsKey("value").doesNotContainKey("level"));
         assertThat(String.valueOf(out.get("aiInsight"))).contains("cresce");
-        verify(analytics, never()).hypeByColor(anyInt());
-        verify(analytics, never()).hypeByBrand(anyInt());
-        verify(analytics, never()).hypeBySeason(any());
     }
 }

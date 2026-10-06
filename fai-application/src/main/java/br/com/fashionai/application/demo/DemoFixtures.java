@@ -121,13 +121,12 @@ public class DemoFixtures {
             }
         }
         for (PieceTemplate t : pieces) {
-            List<String> subs = Taxonomy.SUBCATEGORIES.get(t.category());
-            if (subs == null || !subs.contains(t.subcategory())) {
+            if (!Taxonomy.isSubcategoryOf(t.category(), t.subcategory())) {
                 errors.add("peça fora da taxonomia: " + t.category() + "/" + t.subcategory());
             }
         }
         colors.stream().filter(c -> !Taxonomy.COLORS.containsKey(c)).forEach(c -> errors.add("cor fora da taxonomia: " + c));
-        materials.stream().filter(m -> !Taxonomy.MATERIALS.contains(m)).forEach(m -> errors.add("material fora da taxonomia: " + m));
+        materials.stream().filter(m -> !Taxonomy.isMaterial(m)).forEach(m -> errors.add("material fora da taxonomia: " + m));
         for (LookTemplate l : looks) {
             if (!Taxonomy.STYLES.contains(l.style()) || !Taxonomy.OCCASIONS.contains(l.occasion())) {
                 errors.add("look fora da taxonomia: " + l.title());

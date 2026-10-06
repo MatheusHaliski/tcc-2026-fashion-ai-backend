@@ -63,18 +63,28 @@ public final class LocalVision {
      */
     public record Insights(String name, List<String> occasion, List<String> style, String brandZone, String brandEvidence,
                            Boolean matchesCategory, String detectedCategory, Boolean fullyVisible, String viewAngle,
-                           Boolean singlePiece, double photoConfidence, List<SubtypeReferences.Match> ranking) {
+                           Boolean singlePiece, double photoConfidence, List<SubtypeReferences.Match> ranking,
+                           String variation, double variationConfidence, Map<String, List<String>> attributes) {
         public static final Insights NONE = new Insights(null, List.of(), List.of(), null, null, null, null, null, null, null, 0, List.of());
 
         public Insights {
             occasion = occasion == null ? List.of() : occasion;
             style = style == null ? List.of() : style;
             ranking = ranking == null ? List.of() : ranking;
+            attributes = attributes == null ? Map.of() : attributes;
+        }
+
+        /** Sem variação/atributos (motor local e respostas antigas). */
+        public Insights(String name, List<String> occasion, List<String> style, String brandZone, String brandEvidence,
+                        Boolean matchesCategory, String detectedCategory, Boolean fullyVisible, String viewAngle,
+                        Boolean singlePiece, double photoConfidence, List<SubtypeReferences.Match> ranking) {
+            this(name, occasion, style, brandZone, brandEvidence, matchesCategory, detectedCategory, fullyVisible, viewAngle,
+                    singlePiece, photoConfidence, ranking, null, 0, Map.of());
         }
 
         public Insights withRanking(List<SubtypeReferences.Match> r) {
             return new Insights(name, occasion, style, brandZone, brandEvidence, matchesCategory, detectedCategory, fullyVisible,
-                    viewAngle, singlePiece, photoConfidence, r);
+                    viewAngle, singlePiece, photoConfidence, r, variation, variationConfidence, attributes);
         }
     }
 

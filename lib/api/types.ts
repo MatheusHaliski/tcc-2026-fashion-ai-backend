@@ -24,8 +24,10 @@ export interface PieceView {
   /** RF4 · a foto da peça foi recriada por IA a pedido da pessoa: o card mostra o selo "IA" */ aiGeneratedImage?: boolean;
   visibility: string; disponivel: boolean; availabilityStatus: string; condition?: string; favorite: boolean; forSale: boolean; wearCount: number;
   /** "Para doar" (estado público, como "à venda"; os dois são exclusivos — o backend limpa o outro) */ forDonation?: boolean;
+  /** variação da subcategoria e quem a escreveu: AI_SUGGESTED/AI até a pessoa trocar ou confirmar (USER_CONFIRMED/USER) */
+  variation?: string | null; variationStatus?: string | null; variationSource?: string | null; attributes?: Record<string, string[]>;
   lastWornDate?: string | null; moderationStatus?: string; photoProcessingStatus?: string; photoQuality?: Record<string, unknown>;
-  flatLayMetadata?: Record<string, unknown>; background?: Record<string, unknown>; hypeScore?: number | null; hypeScoreGlobal?: number | null;
+  flatLayMetadata?: Record<string, unknown>; background?: Record<string, unknown>;
   /** curtidas da peça (vem na linha resumida da peça dentro de um look) */
   likes?: number;
   tags: string[]; notes?: string | null; purchaseDate?: string | null; model3dStatus?: string | null; model3dUrl?: string | null;
@@ -43,7 +45,8 @@ export interface SchemeView {
   season?: string | null; mood?: string | null; visibility: string; status: string; displayMode?: string; disponivel: boolean; lookDoDia: boolean;
   coverImageUrl?: string | null; mannequinImageUrl?: string | null; mannequinImageFace?: string | null; background?: Record<string, unknown>; cardSkin?: string | null; layoutAnatomy?: string | null; containerOrigin?: string;
   containerColor?: string; items: SchemeItemView[]; totalPrice?: number | null; seals: string[]; sealBadges?: { tier: string; owner: string; premium: boolean; name?: string | null; iconUrl?: string | null; design?: import("@/components/seal-medallion").SealDesign | null; linkedPieceIds?: string[] }[]; tags: string[]; renderingStatus?: string;
-  virtualTryOnUrl?: string | null; hypeScore?: number | null; hypeScoreGlobal?: number | null; remixedFromId?: string | null; revalidationPending: boolean;
+  virtualTryOnUrl?: string | null; remixedFromId?: string | null; revalidationPending: boolean;
+  hypeScore?: number | null; hypeScoreGlobal?: number | null;
   counters: Counters; viewer: ViewerState; publishedAt?: string | null; createdAt: string; updatedAt: string;
 }
 export interface Page<T> { items: T[]; page: number; size: number; total: number; hasMore: boolean; }

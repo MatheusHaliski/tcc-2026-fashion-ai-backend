@@ -1,0 +1,72 @@
+@startuml RF11_Sequencia_Peca
+title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de sequência — arte do card da peça: cadastro e "Editar arte" com revisão (baseRev)
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa (dona da peça)" as P
+participant "pieces/new/page.tsx ·\nexpanded-card.tsx\nPieceArtEditor / PieceArtDialog" as FE
+participant "api\n(lib/api/client)" as API
+participant "WardrobeController" as WC
+participant "WardrobeService" as WS
+participant "BackgroundController" as BC
+participant "BackgroundStudioService" as BS
+participant "Guard" as G
+database "MySQL\nwardrobe_items" as DB
+
+== Cadastro (/pieces/new, etapa "Arte de fundo") ==
+P -> FE: monta a arte nos 4 segmentos (rascunho local)
+FE -> FE: readPieceArt / writePieceArt (v2: template,\ncomposition, surface, effects + campos do Studio)
+P -> FE: Salvar a peça
+FE -> API: POST /api/pieces {..., background}
+API -> WC: create(user, form)
+WC -> WS: create → apply(w, form, true)
+WS -> DB: INSERT wardrobe_items (background_config_json = config, sem rev)
+WC --> FE: 201 PieceView
+
+== Detalhe da peça: "Editar arte do card" ==
+P -> FE: abre o PieceArtDialog (rascunho = piece.background)
+loop ajustes no rascunho
+  P -> FE: cor, aura, família, efeitos, container
+  FE -> FE: constrainEffects (até 3 efeitos; aura ≤ 0,8)\nprévia no PieceCard ou no card ampliado
+end
+alt Cancelar
+  FE -> FE: fecha sem gravar
+else Aplicar (só com alteração)
+  FE -> API: PUT /api/pieces/{id}/background {...rascunho, baseRev}
+  API -> BC: savePiece(user, id, config)
+  BC -> BS: savePiece(user, id, config)
+  BS -> G: requireCanCreate(user)
+  alt e-mail não confirmado / conta bloqueada
+    G --> FE: 403 EMAIL_NAO_CONFIRMADO | CONTA_SUSPENSA
+  else
+    BS -> DB: SELECT wardrobe_items WHERE id
+    alt peça não existe
+      BS --> FE: 404 Peça
+    else não é a dona
+      BS -> G: requireOwner → deny (audit_log ACESSO_NEGADO_403)
+      G --> FE: 403
+    else
+      BS -> BS: withRevision(atual, config): rev atual × baseRev
+      alt baseRev ≠ rev (outra janela aplicou antes)
+        BS --> FE: 409 ARTE_ALTERADA
+        FE -> FE: mostra o aviso no modal e não fecha
+      else baseRev igual ou ausente
+        BS -> DB: UPDATE background_config_json (rev + 1)
+        BC --> FE: 200 {pieceId, background}
+        FE -> FE: onSaved: card atualizado, "arte aplicada", fecha o modal
+      end
+    end
+  end
+end
+note over BS, DB
+  O config da peça é JSON livre: savePiece não valida presets
+  (diferente do look, que passa por applyToScheme).
+  PUT /api/schemes/{id}/background também grava peças
+  (config.pieces.{pieceId}) pela mesma regra de revisão.
+end note
+@enduml

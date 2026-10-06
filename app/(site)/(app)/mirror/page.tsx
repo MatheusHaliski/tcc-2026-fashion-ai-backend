@@ -9,9 +9,10 @@ import { RequireAuth } from "@/components/app-shell";
 import { Button, Card, Dialog, ErrorState, Field, Input, PageHeader, SegmentPicker, Skeleton, Switch, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { MirrorStage, MirrorWornStrip, type MirrorMode } from "@/components/mirror/mirror-stage";
+import { LookScores, type LookScoreValues } from "@/components/hype/look-scores";
 
 interface MPiece { id: string; name: string; imageUrl?: string; thumbnailUrl?: string; category?: string; subcategory?: string; color?: string; colorHex?: string; addressLabel?: string; inMirror?: boolean; }
-interface State { slots: Record<string, MPiece | MPiece[] | null>; complete: boolean; missing: { slot: string; action: string; message: string }[]; warnings?: string[]; origin?: string; prompt?: string | null; interpretation?: Record<string, unknown> | null; actions?: string[]; silhouette?: string | null; postIt?: string | null; light?: { kelvin: number; label?: string }; restriction?: { challenge: string } | null; shownCount?: number; }
+interface State { slots: Record<string, MPiece | MPiece[] | null>; complete: boolean; missing: { slot: string; action: string; message: string }[]; warnings?: string[]; origin?: string; prompt?: string | null; interpretation?: Record<string, unknown> | null; actions?: string[]; silhouette?: string | null; postIt?: string | null; light?: { kelvin: number; label?: string }; restriction?: { challenge: string } | null; shownCount?: number; scores?: LookScoreValues | null; }
 const SLOT_LABEL: Record<string, string> = { get outer_layer() { return tr("common.camada_externa"); }, get upper() { return tr("common.superior"); }, get dress() { return tr("mirror.vestido"); }, get lower() { return tr("common.inferior"); }, get shoes() { return tr("mirror.calcados"); }, get accessory() { return tr("mirror.acessorios"); } };
 
 function MirrorInner() {
@@ -70,6 +71,13 @@ function MirrorInner() {
             <ul className="fai-list">{Object.entries(SLOT_LABEL).map(([slot, lbl]) => { const v = data.slots[slot]; const items = Array.isArray(v) ? v : v ? [v] : []; const miss = data.missing.find((m) => m.slot === slot); return <li key={slot} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2"><span className="w-28 type-label text-muted">{lbl}</span><span className="min-w-[12rem] flex-1 type-body">{items.length ? items.map((p) => p.name).join(", ") : <span className="text-faint">{miss?.message ?? "—"}</span>}</span><span className="flex flex-wrap gap-2"><Button size="sm" onClick={async () => { setBusy("pick"); try { setPick(await api.get(`/api/me/mirror/wardrobe?slot=${slot}`)); } catch (e) { toast.fromError(e); } finally { setBusy(null); } }} disabled={busy === "pick"}><FaiIcon id="ACT-32" size={24} decorative />{t("mirror.do_guarda_roupa")}</Button><Button size="sm" onClick={async () => { const r = await run("sug", () => api.get(`/api/me/mirror/suggestions?slot=${slot}`)); if (r) setSuggest(r as typeof suggest); }}><FaiIcon id={slot === "shoes" ? "ACT-35" : "ACT-34"} size={24} decorative />{miss?.action ?? t("mirror.sugerir")}</Button></span></li>; })}</ul>
             {data.warnings?.length ? <ul className="fai-list mt-2 type-caption text-chalk">{data.warnings.map((w) => <li key={w}>⚠ {w}</li>)}</ul> : null}
           </Card>
+          {worn.length > 0 && data.scores && (
+            <Card>
+              <h2 className="type-h3 mb-2">{t("mirror.scoresTitle")}</h2>
+              <LookScores scores={data.scores} />
+              <p className="mt-2 type-caption text-faint">{t("mirror.scoresNote")}</p>
+            </Card>
+          )}
           <div className="flex flex-wrap gap-2">
             <Button variant="accent" disabled={!data.complete} onClick={() => run("use", () => api.post("/api/me/mirror/use"), t("mirror.look_do_dia_registrado"))}><FaiIcon id="ACT-36" size={24} decorative />{t("mirror.usar_este_look_hoje")}</Button>
             <Button variant="primary" disabled={worn.length === 0} onClick={() => setSaveTitle("")}><FaiIcon id="ACT-10" size={24} decorative />{t("common.salvar_como_look")}</Button>
