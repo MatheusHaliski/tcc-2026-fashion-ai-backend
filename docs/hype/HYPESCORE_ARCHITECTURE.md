@@ -205,7 +205,7 @@ com a checagem de login no controller, porque `/api/hype/**` é público para GE
 
 ## 9. Privacidade
 
-* Só peças/looks **públicos**, aprovados, de perfis não privados e de contas fora do modo de teste entram na régua
+* Só peças/looks **públicos**, aprovados, de perfis públicos (perfil "só seguidores" não entra) e de contas fora do modo de teste entram na régua
   (percentis), no ranking, na tendência pública, nas "novas tendências" e no `public_eligible`.
 * Item privado tem Hype **pessoal** (visível só para o dono), calculado contra a régua pública; para terceiros, a
   leitura em lote simplesmente não o devolve, e o detalhe responde 404.

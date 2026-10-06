@@ -16,6 +16,7 @@ import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
 import br.com.fashionai.domain.model.enums.HypeLevel;
 import br.com.fashionai.domain.model.enums.HypeMomentum;
+import br.com.fashionai.domain.model.enums.HypeSignalType;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
@@ -158,10 +159,12 @@ public class HypeSnapshotService {
         Map<UUID, HypeSignalSeries> schemeSeries = HypeSignalSeries.build(schemeRows, today, config);
         byType.put(HypeEntityType.PIECE, signalCounts(pieceRows, today, config.windowDays()));
         byType.put(HypeEntityType.SCHEME, signalCounts(schemeRows, today, config.windowDays()));
+        Map<UUID, Lifetime> pieceLifetime = lifetime(signals.totalsBefore(HypeEntityType.PIECE, since));
+        Map<UUID, Lifetime> schemeLifetime = lifetime(signals.totalsBefore(HypeEntityType.SCHEME, since));
 
-        List<Entry> pieceEntries = pieceEntries(allPieces, pieceSeries, now);
+        List<Entry> pieceEntries = pieceEntries(allPieces, pieceSeries, pieceLifetime, now);
         Map<UUID, Entry> pieceById = pieceEntries.stream().collect(Collectors.toMap(Entry::id, Function.identity()));
-        List<Entry> schemeEntries = schemeEntries(allSchemes, itemsBy, schemeSeries, pieceById, now);
+        List<Entry> schemeEntries = schemeEntries(allSchemes, itemsBy, schemeSeries, schemeLifetime, pieceById, now);
 
         int pieceCount = persist(HypeEntityType.PIECE, pieceEntries, today, now);
         int schemeCount = persist(HypeEntityType.SCHEME, schemeEntries, today, now);
@@ -177,9 +180,36 @@ public class HypeSnapshotService {
         return out;
     }
 
+    /**
+     * Histórico anterior ao horizonte, vindo do agregado de sinais (já filtrado pela {@link HypeIntegrityPolicy}): interações
+     * ponderadas e visualizações aceitas. Nunca os contadores brutos da entidade (likesCount, viewCount…), que contam
+     * auto-interação, repetição e visitante.
+     */
+    record Lifetime(double interactions, double views) {
+        static final Lifetime NONE = new Lifetime(0, 0);
+    }
+
+    static Map<UUID, Lifetime> lifetime(List<HypeSignalDailyRepository.SignalTotal> totals) {
+        Map<UUID, double[]> acc = new HashMap<>();
+        for (HypeSignalDailyRepository.SignalTotal t : totals) {
+            if (t.getEntityId() == null || t.getSignalType() == null) {
+                continue;
+            }
+            double[] a = acc.computeIfAbsent(t.getEntityId(), k -> new double[2]);
+            if (HypeCalculator.isInteraction(t.getSignalType())) {
+                a[0] += t.getWeighted() != null ? t.getWeighted().doubleValue() : t.getEvents() == null ? 0 : t.getEvents();
+            } else if (t.getSignalType() == HypeSignalType.LOOK_VIEWED || t.getSignalType() == HypeSignalType.PIECE_VIEWED) {
+                a[1] += t.getEvents() == null ? 0 : t.getEvents();
+            }
+        }
+        Map<UUID, Lifetime> out = new HashMap<>();
+        acc.forEach((id, a) -> out.put(id, new Lifetime(a[0], a[1])));
+        return out;
+    }
+
     // ================================================================== peças
     static boolean publicPiece(WardrobeItem w) {
-        return w.getVisibility() == Visibility.PUBLIC && w.getUser().getProfileVisibility() != Visibility.PRIVATE
+        return w.getVisibility() == Visibility.PUBLIC && w.getUser().getProfileVisibility() == Visibility.PUBLIC
                 && w.getModerationStatus() == ModerationStatus.APPROVED && !w.getUser().isTestAccount();
     }
 
@@ -199,7 +229,7 @@ public class HypeSnapshotService {
         return t.contains("limitad") || t.contains("limited") || t.contains("exclusiv");
     }
 
-    List<Entry> pieceEntries(List<WardrobeItem> all, Map<UUID, HypeSignalSeries> series, Instant now) {
+    List<Entry> pieceEntries(List<WardrobeItem> all, Map<UUID, HypeSignalSeries> series, Map<UUID, Lifetime> lifetimes, Instant now) {
         int w = config.windowDays();
         // presença do modelo entre os donos (agregado não identificável)
         Map<String, Set<UUID>> owners = new HashMap<>();
@@ -229,8 +259,8 @@ public class HypeSnapshotService {
                 cw[1] -= s.activityBetween(w, 2 * w);
             }
             Double cohortGrowth = cw[0] + cw[1] >= 3 ? ((cw[0] + config.growthSmoothing()) / (cw[1] + config.growthSmoothing()) - 1) * 100 : null;
-            double lifetime = p.getLikesCount() + p.getCommentCount() + p.getSharesCount() + p.getRemixesCount();
-            HypeInputs in = new HypeInputs(HypeEntityType.PIECE, s.activity(), s.interactions(), s.views(), s.windows(), lifetime, p.getViewCount(),
+            Lifetime lifetime = lifetimes.getOrDefault(p.getId(), Lifetime.NONE);
+            HypeInputs in = new HypeInputs(HypeEntityType.PIECE, s.activity(), s.interactions(), s.views(), s.windows(), lifetime.interactions(), lifetime.views(),
                     s.totalEvents(), ageDays(p.getCreatedAt(), now), presence, cohortGrowth, surprise(attributeKeys(p), freq, all.size()), null,
                     limitedEdition(p.getTags()));
             String[] place = place(p.getUser());
@@ -263,10 +293,11 @@ public class HypeSnapshotService {
     // ================================================================== looks
     static boolean publicScheme(Scheme s) {
         return s.getVisibility() == Visibility.PUBLIC && s.getStatus() == SchemeStatus.PUBLISHED
-                && s.getUser().getProfileVisibility() != Visibility.PRIVATE && !s.getUser().isTestAccount();
+                && s.getUser().getProfileVisibility() == Visibility.PUBLIC && !s.getUser().isTestAccount();
     }
 
-    List<Entry> schemeEntries(List<Scheme> all, Map<UUID, List<SchemeItem>> itemsBy, Map<UUID, HypeSignalSeries> series, Map<UUID, Entry> pieceById, Instant now) {
+    List<Entry> schemeEntries(List<Scheme> all, Map<UUID, List<SchemeItem>> itemsBy, Map<UUID, HypeSignalSeries> series, Map<UUID, Lifetime> lifetimes,
+                              Map<UUID, Entry> pieceById, Instant now) {
         // influência: remixes diretos + looks derivados dos remixes (segunda geração)
         Map<UUID, List<UUID>> children = new HashMap<>();
         all.forEach(s -> {
@@ -293,8 +324,8 @@ public class HypeSnapshotService {
             long direct = s.getRemixCount();
             long second = children.getOrDefault(s.getId(), List.of()).stream().mapToLong(c -> children.getOrDefault(c, List.of()).size()).sum();
             double influence = direct + 0.5 * second;
-            double lifetime = s.getLikeCount() + s.getCommentCount() + s.getShareCount() + s.getSaveCount() + s.getRemixCount();
-            HypeInputs in = new HypeInputs(HypeEntityType.SCHEME, ss.activity(), ss.interactions(), ss.views(), ss.windows(), lifetime, s.getViewCount(),
+            Lifetime lifetime = lifetimes.getOrDefault(s.getId(), Lifetime.NONE);
+            HypeInputs in = new HypeInputs(HypeEntityType.SCHEME, ss.activity(), ss.interactions(), ss.views(), ss.windows(), lifetime.interactions(), lifetime.views(),
                     ss.totalEvents(), ageDays(s.getPublishedAt() != null ? s.getPublishedAt() : s.getCreatedAt(), now), presence, null,
                     surprise(keysBy.get(s.getId()), freq, all.size()), influence, limited);
             String[] place = place(s.getUser());
