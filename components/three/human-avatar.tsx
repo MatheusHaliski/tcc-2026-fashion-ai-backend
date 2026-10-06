@@ -17,6 +17,9 @@ import { hairWithCut } from "@/lib/avatar3d/hair-cut";
 import { growGroom, strandContext, strandsFromGroom, withStrands } from "@/lib/avatar3d/human/hair-strands";
 import { GLB_HAIR_LOD, HairFrameBudget, chooseHairLod, deviceInfo, type HairLod } from "@/lib/avatar3d/human/hair-lod";
 import { EYE_TEXTURE, bakeSkin } from "@/lib/avatar3d/human/skin-bake";
+import { recolorIris } from "@/lib/avatar3d/human/eyes";
+import { buildGlasses, fitGlasses } from "@/lib/avatar3d/human/glasses-3d";
+import { defaultEyes, irisColorOf, type AvatarEyes } from "@/lib/avatar3d/iris";
 import type { AvatarHair, AvatarModel } from "@/lib/avatar3d/model";
 import { loadTexture, type Look3dPiece } from "@/components/three/common";
 import { HumanOutfit } from "@/components/three/human-outfit";
@@ -90,7 +93,20 @@ export interface HumanAvatarProps {
   fallback?: React.ReactNode;
   debugHair?: boolean;
   hairLod?: HairLod;                 // força o nível de detalhe do cabelo (laboratório); sem ele, o do aparelho
-  adjust?: { headScale?: number; neck?: number; hairVolume?: number; hairTone?: number; hairCut?: number } | null;   // ajustes finos do Avatar 3D
+  adjust?: { headScale?: number; neck?: number; hairVolume?: number; hairTone?: number; hairCut?: number; glasses?: number } | null;   // ajustes finos do Avatar 3D
+}
+
+/**
+ * Textura do olho com a íris na cor medida na foto (AVATAR-ID I4). Sem cor medida (óculos escuros, avatar antigo,
+ * manequim), o castanho médio padrão — a textura original do MakeHuman é avermelhada demais. null = fica a original.
+ */
+function irisTexture(src: CanvasImageSource & { width: number; height: number }, eyes: AvatarEyes): THREE.CanvasTexture | null {
+  if (!src.width) return null;
+  const c = document.createElement("canvas"); c.width = src.width; c.height = src.height;
+  const g = c.getContext("2d", { willReadFrequently: true }); if (!g) return null;
+  g.drawImage(src, 0, 0); const id = g.getImageData(0, 0, c.width, c.height);
+  recolorIris(id, { left: irisColorOf(eyes, "left"), right: irisColorOf(eyes, "right") }); g.putImageData(id, 0, 0);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 
 function imageOf(src: Img): HTMLCanvasElement {
@@ -182,14 +198,26 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
     }, 0);
     return () => { alive = false; window.clearTimeout(id); };
   }, [built, atlas, skin]);
+  // olhos: a textura do MakeHuman com a íris recolorida na cor medida na foto (AVATAR-ID I4); a original fica no cache
+  const eyes = face?.eyes ?? null; const eyesKey = JSON.stringify(eyes ? [eyes.source, eyes.color, eyes.secondary, eyes.left ?? null, eyes.right ?? null] : null);
   useEffect(() => {
-    if (!built) return; let alive = true;
+    if (!built) return; let alive = true; let own: THREE.Texture | null = null;
     loadTexture(EYE_TEXTURE).then((t) => {
       if (!alive) return; built.h.root.userData.eyesReady = true; if (!t) return;
-      const m = built.h.eyes.material as THREE.MeshPhysicalMaterial; m.map = t; m.alphaTest = 0.5; m.color.set("#ffffff"); m.needsUpdate = true;
+      own = irisTexture(t.image as HTMLImageElement, eyes ?? defaultEyes());
+      const m = built.h.eyes.material as THREE.MeshPhysicalMaterial; m.map = own ?? t; m.alphaTest = 0.5; m.color.set("#ffffff"); m.needsUpdate = true;
     });
-    return () => { alive = false; };
-  }, [built]);
+    return () => { alive = false; own?.dispose(); };
+  }, [built, eyesKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // óculos de grau vistos na foto: acessório preso ao osso Head, afastado do rosto; a pessoa pode tirar (ajuste "glasses")
+  const showGlasses = eyes?.glasses === "PRESCRIPTION" && (adjust?.glasses ?? 1) !== 0;
+  useLayoutEffect(() => {
+    if (!built || !showGlasses) return;
+    const head = built.h.bone("Head"); const hj = built.h.bones.indexOf(head);
+    const g = buildGlasses(fitGlasses(built.asset, built.c), [built.c.joints[hj * 3], built.c.joints[hj * 3 + 1], built.c.joints[hj * 3 + 2]], eyes?.frame);
+    head.add(g);
+    return () => { g.removeFromParent(); g.userData.dispose?.(); };
+  }, [built, showGlasses, eyes?.frame]); // eslint-disable-line react-hooks/exhaustive-deps
   const parts = useMemo<HumanParts | null>(() => (built ? { human: built.h, pose: built.st, composed: built.c, asset: built.asset, hair: hairMesh, exportHair: () => { const m = makeHair(GLB_HAIR_LOD); return m && attach(m); }, hairLod: (hairMesh?.userData.hairLod ?? 3) as HairLod, identity: built.identity } : null), [built, hairMesh]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (parts) onReady?.(parts); }, [parts]); // eslint-disable-line react-hooks/exhaustive-deps
   const t0 = useRef(Math.random() * 20);

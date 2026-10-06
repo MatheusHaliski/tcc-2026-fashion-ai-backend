@@ -9,6 +9,8 @@ import type { BodyModel, Sex } from "./body-spec";
 import { HAIR_LENGTHS, HAIR_TEXTURES, HAIR_VOLUMES, type HairLength, type HairTexture, type HairVolume } from "./hair";
 import { HAIR_TONE_MAX, type HairFamily, type HairTone } from "./hair-tone";
 import { HAIR_CUT_MAX } from "./hair-cut";
+import { GLASSES_KINDS, IRIS_CLASSES, IRIS_PATTERNS, type AvatarEyes, type IrisColor } from "./iris";
+import { BROW_SHAPES, type AvatarBrows } from "./identity/brows";
 
 const HAIR_FAMILIES: HairFamily[] = ["natural", "ash", "golden", "copper", "red", "gray", "white"];
 
@@ -33,26 +35,29 @@ export interface AvatarModel {
   warnings: string[];                       // o que ficou estimado (ex.: DEPTH_ESTIMATED)
   body?: BodyModel | null;                  // corpo: proporções com a origem de cada uma (lib/avatar3d/body-spec.ts)
   sex?: Sex;                                // corpo base: estimado pelo rosto (sex-detect.ts) ou escolhido pela pessoa
+  eyes?: AvatarEyes;                        // cor da íris medida e óculos vistos na foto (lib/avatar3d/iris.ts); antigos não têm
+  brows?: AvatarBrows;                      // sobrancelhas medidas: cor, espessura, arco, densidade (identity/brows.ts)
 }
 /**
  * hairTone: 0 = o tom medido na foto; 1–14 = um tom da paleta (HAIR_TONES), escolhido pela pessoa.
  * hairCut: 0 = o corte medido na foto; 1–7 = um corte (HAIR_CUTS, lib/avatar3d/hair-cut.ts).
+ * glasses: 1 = mostra os óculos de grau vistos na foto (acessório 3D); 0 = sem óculos. Sem óculos na foto, não faz nada.
  */
-export interface AvatarAdjust { headScale: number; neck: number; hairVolume: number; skinLight: number; hairTone: number; hairCut: number }
-export const DEFAULT_ADJUST: AvatarAdjust = { headScale: 1, neck: 0, hairVolume: 1, skinLight: 0, hairTone: 0, hairCut: 0 };
+export interface AvatarAdjust { headScale: number; neck: number; hairVolume: number; skinLight: number; hairTone: number; hairCut: number; glasses: number }
+export const DEFAULT_ADJUST: AvatarAdjust = { headScale: 1, neck: 0, hairVolume: 1, skinLight: 0, hairTone: 0, hairCut: 0, glasses: 1 };
 /** Faixas dos ajustes: pequenas de propósito (ajuste fino, não outra pessoa). */
 export const ADJUST_RANGE: Record<keyof AvatarAdjust, [number, number, number]> = {
   headScale: [0.94, 1.06, 0.01], neck: [-0.02, 0.02, 0.002], hairVolume: [0.6, 1.6, 0.05], skinLight: [-0.08, 0.08, 0.01],
-  hairTone: [0, HAIR_TONE_MAX, 1], hairCut: [0, HAIR_CUT_MAX, 1],
+  hairTone: [0, HAIR_TONE_MAX, 1], hairCut: [0, HAIR_CUT_MAX, 1], glasses: [0, 1, 1],
 };
-/** Ajustes desenhados como controle deslizante (o tom do cabelo é uma paleta de amostras; o corte, uma lista). */
-export const SLIDER_ADJUSTS = (Object.keys(ADJUST_RANGE) as (keyof AvatarAdjust)[]).filter((k) => k !== "hairTone" && k !== "hairCut");
+/** Ajustes desenhados como controle deslizante (o tom do cabelo é uma paleta de amostras; o corte, uma lista; os óculos, liga/desliga). */
+export const SLIDER_ADJUSTS = (Object.keys(ADJUST_RANGE) as (keyof AvatarAdjust)[]).filter((k) => k !== "hairTone" && k !== "hairCut" && k !== "glasses");
 
 const clamp = (v: unknown, lo: number, hi: number, d: number) => (typeof v === "number" && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : d);
 export function clampAdjust(a?: Partial<AvatarAdjust> | null): AvatarAdjust {
   const out = { ...DEFAULT_ADJUST };
   (Object.keys(ADJUST_RANGE) as (keyof AvatarAdjust)[]).forEach((k) => { out[k] = clamp(a?.[k], ADJUST_RANGE[k][0], ADJUST_RANGE[k][1], DEFAULT_ADJUST[k]); });
-  out.hairTone = Math.round(out.hairTone); out.hairCut = Math.round(out.hairCut);
+  out.hairTone = Math.round(out.hairTone); out.hairCut = Math.round(out.hairCut); out.glasses = Math.round(out.glasses);
   return out;
 }
 
@@ -76,6 +81,31 @@ export function validateModel(x: unknown): AvatarModel | null {
   if (hair.outline !== undefined && (!Array.isArray(hair.outline) || hair.outline.length > 32 || !hair.outline.every((v) => typeof v === "number" && Number.isFinite(v) && v >= 0 && v <= 30))) delete hair.outline;
   const out: AvatarModel = { ...m, hair };
   if (out.sex !== undefined && out.sex !== "FEMININO" && out.sex !== "MASCULINO") delete out.sex;
+  if (out.eyes !== undefined) { const e = validateEyes(out.eyes); if (e) out.eyes = e; else delete out.eyes; }
+  if (out.brows !== undefined) { const b = validateBrows(out.brows); if (b) out.brows = b; else delete out.brows; }
+  return out;
+}
+
+/** Sobrancelhas: cor "#rrggbb", medidas nas faixas, forma da lista. Fora disso são descartadas (o avatar fica). */
+export function validateBrows(x: unknown): AvatarBrows | null {
+  const b = x as AvatarBrows;
+  const inRange = (v: unknown, lo: number, hi: number) => typeof v === "number" && Number.isFinite(v) && v >= lo && v <= hi;
+  if (!b || typeof b !== "object" || !HEX.test(String(b.color)) || !BROW_SHAPES.includes(b.shape)) return null;
+  if (!inRange(b.thickness, 0, 1) || !inRange(b.arch, 0, 0.5) || !inRange(b.density, 0, 1) || !inRange(b.confidence, 0, 1)) return null;
+  return { color: b.color, thickness: b.thickness, arch: b.arch, shape: b.shape, density: b.density, confidence: b.confidence };
+}
+
+/** Olhos: só cores "#rrggbb", valores das listas e confiança 0–1. Fora disso os olhos são descartados (o avatar fica). */
+export function validateEyes(x: unknown): AvatarEyes | null {
+  const e = x as AvatarEyes;
+  if (!e || typeof e !== "object" || !HEX.test(String(e.color)) || !HEX.test(String(e.secondary))) return null;
+  if (!IRIS_CLASSES.includes(e.cls) || !IRIS_PATTERNS.includes(e.pattern) || !GLASSES_KINDS.includes(e.glasses)) return null;
+  if ((e.source !== "IMAGE_ANALYSIS" && e.source !== "DEFAULT") || !(typeof e.confidence === "number" && e.confidence >= 0 && e.confidence <= 1)) return null;
+  const iris = (i: unknown): IrisColor | null => { const c = i as IrisColor; return c && typeof c === "object" && HEX.test(String(c.color)) && HEX.test(String(c.secondary)) ? { color: c.color, secondary: c.secondary } : null; };
+  const out: AvatarEyes = { color: e.color, secondary: e.secondary, cls: e.cls, pattern: e.pattern, confidence: e.confidence, source: e.source, glasses: e.glasses };
+  if (e.frame !== undefined && HEX.test(String(e.frame))) out.frame = e.frame;
+  const r = iris(e.right), l = iris(e.left);
+  if (r && l) { out.right = r; out.left = l; }
   return out;
 }
 

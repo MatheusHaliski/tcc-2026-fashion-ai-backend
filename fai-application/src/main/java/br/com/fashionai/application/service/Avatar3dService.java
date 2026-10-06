@@ -69,7 +69,8 @@ public class Avatar3dService {
     private static final Map<String, double[]> ADJUST = Map.of(
             "headScale", new double[]{0.94, 1.06, 1}, "neck", new double[]{-0.02, 0.02, 0},
             "hairVolume", new double[]{0.6, 1.6, 1}, "skinLight", new double[]{-0.08, 0.08, 0},
-            "hairTone", new double[]{0, HAIR_TONES, 0}, "hairCut", new double[]{0, HAIR_CUTS, 0});
+            "hairTone", new double[]{0, HAIR_TONES, 0}, "hairCut", new double[]{0, HAIR_CUTS, 0},
+            "glasses", new double[]{0, 1, 1});
 
     /** Moderação da textura do rosto (mesma capacidade CONTENT_MODERATOR, com critério de rosto em vez de peça). */
     static final String TEXTURE_MODERATION_SYSTEM = "Você é o moderador de conteúdo do Fashion AI. A imagem é a textura (atlas) do "
@@ -605,7 +606,83 @@ public class Avatar3dService {
             out.put("sex", m.get("sex"));
         }
         out.put("hair", h);
+        // olhos (AVATAR-ID I4): opcionais; fora das regras são descartados, o avatar continua (como no app)
+        Map<String, Object> eyes = validEyes(m.get("eyes"));
+        if (eyes != null) {
+            out.put("eyes", eyes);
+        }
+        Map<String, Object> brows = validBrows(m.get("brows"));
+        if (brows != null) {
+            out.put("brows", brows);
+        }
         return out;
+    }
+
+    /** Sobrancelhas (lib/avatar3d/identity/brows.ts): cor "#rrggbb", medidas nas faixas, forma da lista. */
+    static final List<String> BROW_SHAPES = List.of("STRAIGHT", "SOFT_ARCH", "HIGH_ARCH");
+
+    static Map<String, Object> validBrows(Object o) {
+        if (!(o instanceof Map<?, ?> b) || !isHex(b.get("color")) || !BROW_SHAPES.contains(b.get("shape"))) {
+            return null;
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("color", b.get("color"));
+        for (Map.Entry<String, Double> e : Map.of("thickness", 1.0, "arch", 0.5, "density", 1.0, "confidence", 1.0).entrySet()) {
+            if (!(b.get(e.getKey()) instanceof Number n) || !Double.isFinite(n.doubleValue()) || n.doubleValue() < 0 || n.doubleValue() > e.getValue()) {
+                return null;
+            }
+            out.put(e.getKey(), n.doubleValue());
+        }
+        out.put("shape", b.get("shape"));
+        return out;
+    }
+
+    /** Olhos (lib/avatar3d/iris.ts, AvatarEyes): cores "#rrggbb", valores das listas, confiança 0–1. */
+    static final List<String> IRIS_CLASSES = List.of("DARK_BROWN", "MEDIUM_BROWN", "LIGHT_BROWN", "HAZEL", "AMBER", "GREEN", "GREEN_GRAY", "GRAY", "GRAY_BLUE", "BLUE", "BLUE_GRAY");
+    static final List<String> IRIS_PATTERNS = List.of("RADIAL", "CRYPT", "RING", "UNIFORM");
+    static final List<String> GLASSES_KINDS = List.of("NONE", "PRESCRIPTION", "SUNGLASSES");
+
+    static Map<String, Object> validEyes(Object o) {
+        if (!(o instanceof Map<?, ?> e) || !isHex(e.get("color")) || !isHex(e.get("secondary"))) {
+            return null;
+        }
+        if (!IRIS_CLASSES.contains(e.get("cls")) || !IRIS_PATTERNS.contains(e.get("pattern")) || !GLASSES_KINDS.contains(e.get("glasses"))) {
+            return null;
+        }
+        if (!"IMAGE_ANALYSIS".equals(e.get("source")) && !"DEFAULT".equals(e.get("source"))) {
+            return null;
+        }
+        if (!(e.get("confidence") instanceof Number c) || !Double.isFinite(c.doubleValue()) || c.doubleValue() < 0 || c.doubleValue() > 1) {
+            return null;
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        for (String k : List.of("color", "secondary", "cls", "pattern")) {
+            out.put(k, e.get(k));
+        }
+        out.put("confidence", c.doubleValue());
+        out.put("source", e.get("source"));
+        out.put("glasses", e.get("glasses"));
+        if (isHex(e.get("frame"))) {
+            out.put("frame", e.get("frame"));
+        }
+        // heterocromia: a cor de cada olho, só quando os dois vêm certos
+        Map<String, Object> r = irisColor(e.get("right")), l = irisColor(e.get("left"));
+        if (r != null && l != null) {
+            out.put("right", r);
+            out.put("left", l);
+        }
+        return out;
+    }
+
+    private static boolean isHex(Object o) {
+        return o instanceof String s && HEX.matcher(s).matches();
+    }
+
+    private static Map<String, Object> irisColor(Object o) {
+        if (!(o instanceof Map<?, ?> m) || !isHex(m.get("color")) || !isHex(m.get("secondary"))) {
+            return null;
+        }
+        return new LinkedHashMap<>(Map.of("color", m.get("color"), "secondary", m.get("secondary")));
     }
 
     /** Cabelo: comprimento e textura medidos na foto (lib/avatar3d/hair.ts) e a silhueta por altura. */
@@ -714,12 +791,15 @@ public class Avatar3dService {
         return n.doubleValue();
     }
 
+    /** Ajustes inteiros: tom e corte do cabelo (índices) e óculos (1 = mostra os de grau vistos na foto, 0 = sem). */
+    static final java.util.Set<String> INT_ADJUSTS = java.util.Set.of("hairTone", "hairCut", "glasses");
+
     static Map<String, Object> clampAdjust(Map<String, Object> a) {
         Map<String, Object> out = new LinkedHashMap<>();
         ADJUST.forEach((k, r) -> {
             Object v = a == null ? null : a.get(k);
             double d = v instanceof Number n && Double.isFinite(n.doubleValue()) ? Math.min(r[1], Math.max(r[0], n.doubleValue())) : r[2];
-            out.put(k, "hairTone".equals(k) || "hairCut".equals(k) ? (Object) (int) Math.round(d) : (Object) d);
+            out.put(k, INT_ADJUSTS.contains(k) ? (Object) (int) Math.round(d) : (Object) d);
         });
         return out;
     }

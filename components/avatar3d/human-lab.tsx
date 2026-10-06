@@ -7,7 +7,8 @@ import { FileButton } from "@/components/ui";
 import { exportAvatarGlb } from "@/lib/avatar3d/human/export-glb";
 import { StudioLight, type Look3dPiece } from "@/components/three/common";
 import { DEFAULT_BODY } from "@/lib/avatar3d/body-spec";
-import { analyzePhoto, buildAvatar, type BuiltAvatar } from "@/lib/avatar3d/pipeline";
+import { analyzePhoto, buildAvatar, type AnalyzedPhoto, type BuiltAvatar } from "@/lib/avatar3d/pipeline";
+import type { Pt } from "@/lib/avatar3d/image-stats";
 import type { AvatarHair } from "@/lib/avatar3d/model";
 import type { HairLod } from "@/lib/avatar3d/human/hair-lod";
 import AvatarStill from "@/components/three/avatar-still";
@@ -35,6 +36,30 @@ const HAIR_PRESETS: Record<string, AvatarHair> = {
   loiro_longo: { ...H0, color: "#b8925a", length: "long", texture: "wavy", bottom: -22 },
 };
 
+/**
+ * Óculos sintéticos desenhados sobre a foto (só no laboratório): avaliam a detecção e a remoção de óculos (I4) sem
+ * precisar de fotos de pessoas de óculos. Armação escura de grau ou lente escura com armação.
+ */
+function drawSynthGlasses(src: HTMLCanvasElement, px: Pt[], kind: "frame" | "sun"): HTMLCanvasElement {
+  const c = document.createElement("canvas"); c.width = src.width; c.height = src.height;
+  const g = c.getContext("2d")!; g.drawImage(src, 0, 0);
+  const eye = (o: number, i: number) => { const [ox, oy] = px[o], [ix, iy] = px[i]; const ew = Math.hypot(ox - ix, oy - iy); return { cx: (ox + ix) / 2, cy: (oy + iy) / 2 + ew * 0.12, ew, a: Math.atan2(oy - iy, ox - ix) }; };
+  const R = eye(33, 133), L = eye(263, 362);
+  const lw = Math.max(2, ((R.ew + L.ew) / 2) * 0.08);
+  for (const e of [R, L]) {
+    g.save(); g.translate(e.cx, e.cy); g.rotate(e.a > Math.PI / 2 || e.a < -Math.PI / 2 ? e.a + Math.PI : e.a);
+    g.beginPath(); g.roundRect(-e.ew * 0.88, -e.ew * 0.62, e.ew * 1.76, e.ew * 1.24, e.ew * 0.35);
+    if (kind === "sun") { g.fillStyle = "rgba(18,18,22,0.93)"; g.fill(); }
+    g.lineWidth = lw; g.strokeStyle = "#1e1c20"; g.stroke(); g.restore();
+  }
+  g.lineWidth = lw; g.strokeStyle = "#1e1c20"; g.beginPath();
+  g.moveTo(R.cx + (L.cx > R.cx ? 1 : -1) * R.ew * 0.86, R.cy - R.ew * 0.25); g.quadraticCurveTo((R.cx + L.cx) / 2, (R.cy + L.cy) / 2 - R.ew * 0.45, L.cx - (L.cx > R.cx ? 1 : -1) * L.ew * 0.86, L.cy - L.ew * 0.25); g.stroke();
+  for (const [e, edge] of [[R, px[234]], [L, px[454]]] as const) {
+    const sx = e.cx + Math.sign(edge[0] - e.cx) * e.ew * 0.88; g.beginPath(); g.moveTo(sx, e.cy - e.ew * 0.45); g.lineTo(edge[0], edge[1] - e.ew * 0.55); g.stroke();
+  }
+  return c;
+}
+
 type View = "front" | "left34" | "profile" | "back" | "face" | "face34" | "faceback" | "faceside" | "feet" | "feet34" | "torso" | "torso34" | "torsoback";
 const ANGLE: Record<View, number> = { front: 0, left34: -35, profile: 90, back: 180, face: 0, face34: -35, faceback: 180, faceside: 90, feet: 0, feet34: -40, torso: 0, torso34: -35, torsoback: 180 };
 
@@ -59,7 +84,8 @@ export default function HumanLab() {
   const [sex, setSex] = useState<"FEMININO" | "MASCULINO">("FEMININO");
   const [view, setView] = useState<View>("front"); const [motion, setMotion] = useState(false); const [ready, setReady] = useState(0);
   const [built, setBuilt] = useState<BuiltAvatar | null>(null); const [status, setStatus] = useState("idle"); const [outfit, setOutfit] = useState("none");
-  const [cut, setCut] = useState(0);
+  const [cut, setCut] = useState(0); const [synth, setSynth] = useState<"none" | "frame" | "sun">("none");
+  const [analyzed, setAnalyzed] = useState<AnalyzedPhoto | null>(null); const [glassesOn, setGlassesOn] = useState(1);
   const [hairPreset, setHairPreset] = useState<string | null>(null); const [hairLod, setHairLod] = useState<HairLod | undefined>(undefined);
   const [still, setStill] = useState(false); const [stillBytes, setStillBytes] = useState(0);   // Prévia 2D (avatar da foto ou manequim)
   const bodySex = built?.model.sex ?? sex;                  // corpo base estimado pelo rosto (ou o botão, sem foto)
@@ -71,14 +97,26 @@ export default function HumanLab() {
   }
   async function run(file: File) {
     setStatus("running"); setBuilt(null); setReady(0);
-    try { const p = await analyzePhoto(file, "front"); const b = buildAvatar([p], { profileSex: sex }); setBuilt(b); setStatus(b ? "built" : "rejected"); }
+    try {
+      let p = await analyzePhoto(file, "front");
+      if (synth !== "none" && p.px) p = await analyzePhoto(drawSynthGlasses(p.canvas, p.px, synth), "front");
+      setAnalyzed(p); const b = buildAvatar([p], { profileSex: sex }); setBuilt(b); setStatus(b ? "built" : "rejected");
+    }
     catch (e) { setStatus("error: " + (e as Error).message); }
   }
   useEffect(() => {
     (window as unknown as { __humanLab: unknown }).__humanLab = { setSex, setView, setMotion, setOutfit, setCut, setHairPreset, setHairLod, setStill: (v: boolean) => { setStillBytes(0); setStill(v); }, stillBytes: () => stillBytes,
       // métricas agregadas do gate de identidade (números, nunca forma nem cor): fidelidade do rosto e relatório da pele
       identity: () => parts.current?.identity ?? null, skinReport: () => parts.current?.human.root.userData.skinReport ?? null,
-      warnings: () => built?.model.warnings ?? [], hairLod: () => parts.current?.hairLod ?? null, hairStats: () => { const h = parts.current?.hair; if (!h) return null; const g = h.geometry; return { lod: h.userData.hairLod, vertices: g.getAttribute("position").count, triangles: (g.getIndex()?.count ?? 0) / 3, groups: g.groups.map((x) => x.count / 3) }; }, glb, hairVisible: (v: boolean) => { if (parts.current?.hair) parts.current.hair.visible = v; }, sex: () => ({ body: built?.model.sex ?? null, guess: built?.sexGuess ?? null }), ready: () => ready, status: () => status, hair: () => built?.model.hair ?? null, skin: () => built?.model.skin ?? null, profile: () => built?.hairProfile ?? null };
+      warnings: () => built?.model.warnings ?? [],
+      // olhos e óculos (I4): classe, confiança e o que foi detectado (números agregados)
+      eyes: () => built?.model.eyes ?? null, atlas: () => built?.atlas.toDataURL("image/png") ?? null, photo: () => analyzed ? { png: analyzed.canvas.toDataURL("image/png"), px: analyzed.px, skin: analyzed.skin } : null,
+      // só a análise (sem montar o avatar): foto com óculos sintéticos opcionais, pontos e avisos, para avaliar fora do navegador
+      analyze: async (url: string, kind: "none" | "frame" | "sun") => {
+        const blob = await (await fetch(url)).blob(); let p = await analyzePhoto(blob, "front");
+        if (kind !== "none" && p.px) p = await analyzePhoto(drawSynthGlasses(p.canvas, p.px, kind), "front");
+        return { png: p.canvas.toDataURL("image/png"), px: p.px, skin: p.skin, issues: p.issues.map((i) => i.code + ":" + i.severity), glasses: p.glasses };
+      }, glasses: () => analyzed?.glasses ?? null, setSynth, setGlassesOn, issues: () => analyzed?.issues.map((i) => i.code + ":" + i.severity) ?? [], hairLod: () => parts.current?.hairLod ?? null, hairStats: () => { const h = parts.current?.hair; if (!h) return null; const g = h.geometry; return { lod: h.userData.hairLod, vertices: g.getAttribute("position").count, triangles: (g.getIndex()?.count ?? 0) / 3, groups: g.groups.map((x) => x.count / 3) }; }, glb, hairVisible: (v: boolean) => { if (parts.current?.hair) parts.current.hair.visible = v; }, sex: () => ({ body: built?.model.sex ?? null, guess: built?.sexGuess ?? null }), ready: () => ready, status: () => status, hair: () => built?.model.hair ?? null, skin: () => built?.model.skin ?? null, profile: () => built?.hairProfile ?? null };
   });
   const model = built?.model ?? null;
   // Prévia 2D do avatar da foto (mesmo caminho do espelho: Avatar3dRef com a textura do atlas)
@@ -106,7 +144,7 @@ export default function HumanLab() {
             <directionalLight position={[1.2, 2.6, 2.4]} intensity={0.9} />
             <directionalLight position={[-1.6, 2.0, 1.8]} intensity={0.45} />
             <directionalLight position={[0, 2.2, -2.5]} intensity={0.4} />
-            <HumanAvatar key={bodySex + (model ? "a" : "")} hairLod={hairLod} body={{ sex: bodySex }} stature={H} adjust={{ hairCut: cut }} skin={model?.skin ?? (bodySex === "FEMININO" ? "#c99a6e" : "#a97c50")}
+            <HumanAvatar key={bodySex + (model ? "a" : "")} hairLod={hairLod} body={{ sex: bodySex }} stature={H} adjust={{ hairCut: cut, glasses: glassesOn }} skin={model?.skin ?? (bodySex === "FEMININO" ? "#c99a6e" : "#a97c50")}
               face={model} atlas={built?.atlas ?? null} hair={(hairPreset ? HAIR_PRESETS[hairPreset] : null) ?? model?.hair ?? null} motion={motion}
               debugHair={typeof window !== "undefined" && location.hash === "#hair"} onReady={(p) => { parts.current = p; setReady((r) => r + 1); }}
               pieces={OUTFITS[outfit] ?? []} />

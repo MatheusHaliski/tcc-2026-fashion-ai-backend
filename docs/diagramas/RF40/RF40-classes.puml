@@ -64,12 +64,6 @@ package "components/ui/index.tsx" {
     ghost
     danger
   }
-  enum NoticeKind as "NoticeKind" {
-    info
-    success
-    warning
-    error
-  }
   class mod_index_tsx as "index.tsx" <<módulo>> {
     +cn()
     +Button()
@@ -79,6 +73,73 @@ package "components/ui/index.tsx" {
     +Input()
     +Textarea()
     +Select()
+  }
+}
+package "lib/avatar3d/iris.ts" {
+  class AvatarEyes as "AvatarEyes" <<interface>> {
+    +color: string
+    +secondary: string
+    +cls: IrisClass
+    +pattern: IrisPattern
+    +confidence: number
+    +source: 'IMAGE_ANALYSIS' | 'DEFAULT'
+    +right: IrisColor
+    +left: IrisColor
+    +glasses: GlassesKind
+    +frame: string
+  }
+  class IrisSample as "IrisSample" <<interface>> {
+    +base: Lab
+    +inner: Lab
+    +outer: Lab
+    +pattern: IrisPattern
+    +diameterPx: number
+    +openness: number
+    +visible: number
+    +samples: number
+    +confidence: number
+  }
+  class IrisColor as "IrisColor" <<interface>> {
+    +color: string
+    +secondary: string
+  }
+  class mod_iris_ts as "iris.ts" <<módulo>> {
+    +irisClass()
+    +measureIris()
+    +defaultEyes()
+    +eyesProfile()
+    +irisColorOf()
+  }
+}
+package "lib/avatar3d/glasses.ts" {
+  class GlassesDetection as "GlassesDetection" <<interface>> {
+    +kind: GlassesKind
+    +confidence: number
+    +scores: { bridge: number; lowerR: number; lower…
+    +frame: string | null
+  }
+  class EyeFrame as "EyeFrame" <<interface>> {
+    +side: EyeSide
+    +c: Pt
+    +u: Pt
+    +v: Pt
+    +ew: number
+    +inner: Pt
+    +outer: Pt
+  }
+  class Band as "Band" <<interface>> {
+    +pos: number
+    +px: number
+    +rgb: [number, number, number]
+  }
+  class mod_glasses_ts as "glasses.ts" <<módulo>> {
+    +narrowBand()
+    +detectGlasses()
+    +glassesMask()
+    +erode()
+    +dilate()
+    +inpaint()
+    +removeGlasses()
   }
 }
 package "Backend (Java)" {
@@ -130,5 +191,6 @@ package "Backend (Java)" {
 }
 Avatar3dService --> AiEngine
 ShowcaseService --> Avatar3dService
-NoticeItem --> NoticeKind : kind
+AvatarEyes --> IrisColor : left
+AvatarEyes --> IrisColor : right
 @enduml

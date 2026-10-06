@@ -5,8 +5,11 @@
  */
 import { detectFace, segmentHair } from "./detect";
 import { N, faceMetrics, fitView, fuseShape, type Landmark, type Role, type ViewFit } from "./geometry";
-import { faceStats, fit2D, hairStats, occlusion, sampleSkin, type FaceStats, type HairStats, type Pt } from "./image-stats";
+import { faceStats, fit2D, hairStats, hex, occlusion, rgbOf, sampleSkin, type FaceStats, type HairStats, type Pt } from "./image-stats";
 import { applyGains, balanceRaster, estimateIlluminant, type Gains, type Illuminant } from "./skin-tone";
+import { detectGlasses, NO_GLASSES, removeGlasses, type GlassesDetection } from "./glasses";
+import { eyesProfile, type AvatarEyes } from "./iris";
+import { browsProfile, type AvatarBrows } from "./identity/brows";
 import { checkPhoto, checkSet, blocking, type Issue } from "./quality";
 import { bakeAtlas } from "./atlas";
 import { MODEL_VERSION, roundShape, type AvatarModel } from "./model";
@@ -34,6 +37,7 @@ export interface AnalyzedPhoto {
   blend: Record<string, number>; issues: Issue[]; hairMask: Float32Array | null;
   skin: [number, number, number] | null; occlusion: number | null; classMask: ClassMask | null;
   sex: SexGuess | null;                                   // sexo estimado pelo rosto (lib/avatar3d/sex-detect.ts)
+  glasses: GlassesDetection | null;                       // óculos vistos na foto (AVATAR-ID I4, glasses.ts)
 }
 
 /**
@@ -85,7 +89,7 @@ export async function analyzePhoto(src: Blob | HTMLCanvasElement, role: Role | "
   const { width, height } = canvas;
   const det = await detectFace(canvas);
   let fit: ViewFit | null = null, stats: FaceStats | null = null, px: Pt[] | null = null; let r: Role = role === "side" ? "left" : role;
-  let skin: [number, number, number] | null = null, occ: number | null = null;
+  let skin: [number, number, number] | null = null, occ: number | null = null; let glasses: GlassesDetection | null = null;
   if (det.lm && det.faces === 1) {
     px = det.lm.map((p) => [p.x * width, p.y * height] as Pt);
     fit = fitView(det.lm, width, height, "front");
@@ -93,12 +97,13 @@ export async function analyzePhoto(src: Blob | HTMLCanvasElement, role: Role | "
     fit.role = r;
     const g = canvas.getContext("2d", { willReadFrequently: true })!; const img = g.getImageData(0, 0, width, height);
     stats = faceStats(img, px); skin = sampleSkin(img, px).rgb; occ = occlusion(img, px, skin);
+    glasses = GLASSES ? detectGlasses(img, px, skin) : NO_GLASSES;
   }
   const inFrame = det.lm ? det.lm.slice(0, N).every((p) => p.x > 0.005 && p.x < 0.995 && p.y > 0.005 && p.y < 0.995) : undefined;
-  const issues = checkPhoto({ role: r, faces: det.faces, width, height, inFrame, pose: fit?.pose, stats: stats ?? undefined, blend: det.blend, rms: fit?.rms, occlusion: occ ?? undefined });
+  const issues = checkPhoto({ role: r, faces: det.faces, width, height, inFrame, pose: fit?.pose, stats: stats ?? undefined, blend: det.blend, rms: fit?.rms, occlusion: occ ?? undefined, glasses: glasses?.kind });
   const masks = r === "front" && det.faces === 1 && px ? await headMasks(canvas, px) : { hair: null, classes: null };
   const sex = r === "front" && det.faces === 1 && px ? await detectSex(canvas, px) : null;
-  return { role: r, canvas, width, height, faces: det.faces, lm: det.lm, px, fit, stats, blend: det.blend, issues, hairMask: masks.hair, skin, occlusion: occ, classMask: masks.classes, sex };
+  return { role: r, canvas, width, height, faces: det.faces, lm: det.lm, px, fit, stats, blend: det.blend, issues, hairMask: masks.hair, skin, occlusion: occ, classMask: masks.classes, sex, glasses };
 }
 
 /** Máscara de cabelo (0/1, do tamanho da foto) a partir da classe "cabelo" do segmentador de classes. */
@@ -125,6 +130,23 @@ export function buildAvatar(photos: AnalyzedPhoto[], opts: { sex?: Sex | null; p
   const fixed = new Map<AnalyzedPhoto, { canvas: HTMLCanvasElement; wb: Illuminant }>();
   for (const v of [front, ...sides]) if (v) fixed.set(v, whiteBalanced(v));
   const wb0 = front ? fixed.get(front)!.wb : null;
+  // AVATAR-ID I4: a íris é medida na foto corrigida; depois os óculos saem da cópia que vira textura (a original fica)
+  const glasses = front?.glasses ?? NO_GLASSES;
+  let eyes: AvatarEyes | null = null, brows: AvatarBrows | null = null;
+  if (front?.px) {
+    const fc = fixed.get(front)!.canvas; const id = fc.getContext("2d", { willReadFrequently: true })!.getImageData(0, 0, front.width, front.height);
+    eyes = eyesProfile(id, front.px, { glasses: glasses.kind, frame: glasses.frame, wb: wb0?.source });
+    // lente escura costuma cobrir a sobrancelha; armação de grau pode cruzar com ela
+    brows = glasses.kind === "SUNGLASSES" ? null : browsProfile(id, front.px, front.hairMask);
+    if (brows && glasses.kind === "PRESCRIPTION") brows = { ...brows, confidence: Math.round(brows.confidence * 0.6 * 100) / 100 };
+  }
+  if (glasses.kind !== "NONE") for (const v of [front, ...sides]) {
+    if (!v?.px || !v.skin) continue;
+    const c = fixed.get(v)!.canvas; const g = c.getContext("2d", { willReadFrequently: true })!; const id = g.getImageData(0, 0, v.width, v.height);
+    // a cor da armação foi medida na foto original; a cópia corrigida tem os ganhos da luz aplicados
+    const fr = glasses.frame ? hex(applyGains(rgbOf(glasses.frame), fixed.get(v)!.wb.gains)) : null;
+    if (removeGlasses(id, v.px, applyGains(v.skin, fixed.get(v)!.wb.gains), glasses.kind, fr) > 0) g.putImageData(id, 0, 0);
+  }
   const g0 = front ? fixed.get(front)!.canvas.getContext("2d", { willReadFrequently: true }) : null;
   const toCanon = front?.fit && front.px ? fit2D(front.px.slice(0, N), Array.from({ length: N }, (_, i) => [front.fit!.shape[i * 3], front.fit!.shape[i * 3 + 1]] as Pt)) : null;
   const img0 = front && g0 ? g0.getImageData(0, 0, front.width, front.height) : null;
@@ -163,10 +185,16 @@ export function buildAvatar(photos: AnalyzedPhoto[], opts: { sex?: Sex | null; p
     metrics: faceMetrics(shape),
     views: views.map((v) => ({ role: v.role, yaw: +v.fit!.pose.yaw.toFixed(1), pitch: +v.fit!.pose.pitch.toFixed(1), roll: +v.fit!.pose.roll.toFixed(1) })),
     warnings: [...new Set([...set.issues.filter((i) => i.severity === "warn").map((i) => i.code), ...views.flatMap((v) => v.issues.filter((i) => i.severity === "warn").map((i) => i.code)), ...(profile?.estimated ? ["HAIR_ESTIMATED"] : []),
-      ...(wb0?.source === "GRAY_WORLD" ? ["WB_GRAY_WORLD"] : wb0?.source === "NONE" && SKIN_WB ? ["WB_NONE"] : [])])],
+      ...(wb0?.source === "GRAY_WORLD" ? ["WB_GRAY_WORLD"] : wb0?.source === "NONE" && SKIN_WB ? ["WB_NONE"] : []),
+      ...(glasses.kind === "SUNGLASSES" ? ["GLASSES_SUNGLASSES"] : glasses.kind === "PRESCRIPTION" ? ["GLASSES_PRESCRIPTION"] : []),
+      ...(eyes && eyes.source === "IMAGE_ANALYSIS" && eyes.confidence < 0.5 ? ["IRIS_LOW_CONFIDENCE"] : [])])],
+    ...(eyes ? { eyes } : {}), ...(brows ? { brows } : {}),
   };
   return { model, atlas: baked.canvas, hair, hairProfile: profile, set, lightEvened: baked.light.applied, sexGuess };
 }
+
+/** Óculos na foto (AVATAR-ID I4); NEXT_PUBLIC_AVATAR_GLASSES=off não procura óculos (nem tira da textura). */
+const GLASSES = process.env.NEXT_PUBLIC_AVATAR_GLASSES !== "off";
 
 /** Balanço de branco da pele (AVATAR-ID I3); NEXT_PUBLIC_SKIN_WB=off volta à cor da foto sem correção. */
 const SKIN_WB = process.env.NEXT_PUBLIC_SKIN_WB !== "off";

@@ -37,6 +37,8 @@ describe("uma foto", () => {
   });
   test("olhos fechados bloqueia; boca aberta e rosto tampado avisam", () => {
     expect(codes(checkPhoto({ ...front, blend: { eyeBlinkLeft: 0.8, eyeBlinkRight: 0.7 } }))).toContain("EYES_CLOSED:block");
+    // óculos escuros (I4): o detector "vê" olhos fechados atrás da lente; a foto segue (a lente sai da textura)
+    expect(codes(checkPhoto({ ...front, glasses: "SUNGLASSES", blend: { eyeBlinkLeft: 0.8, eyeBlinkRight: 0.7 } }))).not.toContain("EYES_CLOSED:block");
     expect(codes(checkPhoto({ ...front, blend: { eyeBlinkLeft: 0.8, eyeBlinkRight: 0.1 } }))).toEqual([]);   // piscada de um olho só não é "fechados"
     expect(codes(checkPhoto({ ...front, blend: { jawOpen: 0.5 } }))).toContain("MOUTH_OPEN:warn");
     expect(codes(checkPhoto({ ...front, rms: 1.5 }))).toContain("FACE_OCCLUDED:warn");
@@ -82,12 +84,24 @@ describe("modelo salvo", () => {
     expect(validateModel({ ...model, hair: { ...model.hair, color: "#12" } })).toBeNull();
     expect(validateModel({ ...model, v: 99 })).toBeNull();
     expect(validateModel(null)).toBeNull();
+    // olhos (I4): opcionais; inválidos saem sem derrubar o avatar
+    const eyes = { color: "#5a7896", secondary: "#6b5a3a", cls: "BLUE", pattern: "RING", confidence: 0.8, source: "IMAGE_ANALYSIS", glasses: "PRESCRIPTION", frame: "#1c1a1e" } as const;
+    expect(validateModel({ ...model, eyes })?.eyes).toEqual(eyes);
+    expect(validateModel({ ...model, eyes: { ...eyes, cls: "ROXO" } })).not.toHaveProperty("eyes");
+    expect(validateModel({ ...model, eyes: { ...eyes, confidence: 2 } })).not.toHaveProperty("eyes");
+    expect(validateModel({ ...model, eyes: { ...eyes, frame: "preto" } })?.eyes).not.toHaveProperty("frame");
+    expect(validateModel({ ...model, eyes: { ...eyes, right: { color: "#5a7896", secondary: "#6b5a3a" } } })?.eyes).not.toHaveProperty("right");   // só com os dois
+    const brows = { color: "#3a2a1e", thickness: 0.22, arch: 0.06, shape: "SOFT_ARCH", density: 0.8, confidence: 0.8 } as const;
+    expect(validateModel({ ...model, brows })?.brows).toEqual(brows);
+    expect(validateModel({ ...model, brows: { ...brows, shape: "ONDA" } })).not.toHaveProperty("brows");
   });
   test("ajustes ficam nas faixas pequenas; ausentes voltam ao padrão", () => {
-    expect(clampAdjust({ headScale: 3, neck: -1, hairVolume: 0, skinLight: 0.5 })).toEqual({ headScale: 1.06, neck: -0.02, hairVolume: 0.6, skinLight: 0.08, hairTone: 0, hairCut: 0 });
-    expect(clampAdjust({ headScale: NaN })).toEqual({ headScale: 1, neck: 0, hairVolume: 1, skinLight: 0, hairTone: 0, hairCut: 0 });
+    expect(clampAdjust({ headScale: 3, neck: -1, hairVolume: 0, skinLight: 0.5 })).toEqual({ headScale: 1.06, neck: -0.02, hairVolume: 0.6, skinLight: 0.08, hairTone: 0, hairCut: 0, glasses: 1 });
+    expect(clampAdjust({ headScale: NaN })).toEqual({ headScale: 1, neck: 0, hairVolume: 1, skinLight: 0, hairTone: 0, hairCut: 0, glasses: 1 });
     expect(clampAdjust({ hairTone: 7.6 }).hairTone).toBe(8); expect(clampAdjust({ hairTone: 40 }).hairTone).toBe(14);
     expect(clampAdjust(null).headScale).toBe(1);
+    // óculos de grau (I4): 1 = mostra os da foto (padrão), 0 = sem; inteiro
+    expect(clampAdjust({ glasses: 0 }).glasses).toBe(0); expect(clampAdjust({ glasses: 0.4 }).glasses).toBe(0); expect(clampAdjust({ glasses: 7 }).glasses).toBe(1);
   });
   test("tom de pele: só muda com ajuste explícito, e pouco", () => {
     expect(skinWithLight("#c8966e", 0)).toBe("#c8966e");

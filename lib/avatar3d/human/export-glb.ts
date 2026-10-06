@@ -23,6 +23,8 @@ export async function exportAvatarGlb(human: Human, pose: PoseState, opts: { ani
   if (opts.animation !== false) clips.push(idleClip(human, pose));
   applyIdle(human, pose, 0, 0);                              // o arquivo guarda a pose de exibição como pose inicial
   const live = opts.hair?.live ?? null; const wasVisible = live?.visible ?? false;
+  // a córnea é só reflexo em cena (mistura aditiva, que o glTF não tem): fica fora do arquivo; o globo já tem verniz
+  const corneaVisible = human.cornea.visible, tearVisible = human.tearLines.visible; human.cornea.visible = false; human.tearLines.visible = false;
   const fileHair = opts.hair?.build?.() ?? null;            // já preso ao esqueleto (HumanParts.exportHair)
   if (fileHair && live) live.visible = false;
   try {
@@ -36,6 +38,7 @@ export async function exportAvatarGlb(human: Human, pose: PoseState, opts: { ani
       for (const m of ([] as THREE.Material[]).concat(fileHair.material)) { (m as THREE.MeshPhysicalMaterial).map?.dispose(); m.dispose(); }
     }
     if (live) live.visible = wasVisible;
+    human.cornea.visible = corneaVisible; human.tearLines.visible = tearVisible;
   }
 }
 

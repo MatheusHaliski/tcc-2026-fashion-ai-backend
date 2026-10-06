@@ -26653,7 +26653,11 @@
 "implementado",
 "conforme",
 "Trello",
-"enduml"
+"enduml",
+"analyzePhoto",
+"detectGlasses",
+"eyesProfile",
+"removeGlasses"
 ]
 },
 "docs/diagramas/RF40/RF40-classes.puml": {
@@ -26804,7 +26808,10 @@
 "conforme",
 "Trello",
 "CA10",
-"enduml"
+"enduml",
+"AvatarEyes",
+"GlassesDetection",
+"IrisSample"
 ]
 },
 "docs/diagramas/RF40/RF40-componentes.puml": {
@@ -26955,7 +26962,11 @@
 "textura",
 "lê/grava",
 "JPA/Flyway",
-"enduml"
+"enduml",
+"lib/avatar3d/iris.ts",
+"lib/avatar3d/glasses.ts",
+"lib/avatar3d/human/eyes.ts",
+"lib/avatar3d/human/glasses-3d.ts"
 ]
 },
 "docs/diagramas/RF40/RF40-maquinadeestados-avatar.puml": {
@@ -27274,7 +27285,13 @@
 "delete(user",
 "delete(textureKey",
 "204",
-"enduml"
+"enduml",
+"analyzePhoto",
+"buildAvatar",
+"detectGlasses",
+"eyesProfile",
+"removeGlasses",
+"validEyes"
 ]
 },
 "docs/diagramas/RF41/RF41-atividades.puml": {

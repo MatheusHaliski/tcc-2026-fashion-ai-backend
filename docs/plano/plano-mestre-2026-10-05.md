@@ -30,6 +30,7 @@ entrega fecha com testes, métricas, documentação, commit e push no ramo `clau
 | AVATAR-ID I2 | Camada de resíduo assimétrico + medidas nomeadas: SFace de frente 0,369 → 0,476, top-1 15/15 | `face-residual.ts`, `face-profile.ts` |
 | AVATAR-ID I3 | Pele com balanço de branco pela esclera, rosto casado com o corpo: erro de cor 0,2, sem costura, gate 14/15 | `skin-tone.ts` |
 | WARDROBE-FIX | Espelho: botão "Do guarda-roupa" em cada parte do look lista todas as peças elegíveis do slot, sem IA (`GET /api/me/mirror/wardrobe`), com as que já estão no espelho marcadas; "Levar ao espelho" no quarto fecha a etiqueta e foca o espelho; `POST /api/me/mirror/pieces` sem peça devolve 400 (era 500); o snapshot e as conquistas do Inventory Score passam a gravar em transação própria — duas leituras simultâneas do quarto davam 500 por chave duplicada (`uq_inv_snap`) | `MirrorService.wardrobe`, `InventoryScoreService`, `mirror/page.tsx`, `room/page.tsx` |
+| AVATAR-ID I4 | Olhos, óculos e sobrancelhas: cor da íris medida na foto corrigida (11 classes por matiz; a malha usa a cor contínua), textura do olho recolorida, córnea e linha d'água só de reflexo, ossos `LeftEye`/`RightEye`; óculos escuros saem da textura (íris padrão), os de grau saem da textura e voltam como acessório 3D afastado do rosto (≥ 4 mm), com liga/desliga; sobrancelhas medidas (cor, espessura, arco, densidade); `eyes`/`brows` validados no app e no backend | `iris.ts`, `glasses.ts`, `identity/brows.ts`, `human/eyes.ts`, `human/glasses-3d.ts`; seção 23 da auditoria de identidade |
 | DIAG-ALL | Todos os diagramas de atividades, sequência, componentes, estados e classes reescritos a partir do código (319 gerados; 7 de estados mantidos do time com legenda, porque o código não tem o estado equivalente) + globais v5 + índice | `scripts/diagramas/v5`, `docs/diagramas/INDICE-2026-10.md` |
 
 ---
@@ -39,7 +40,7 @@ entrega fecha com testes, métricas, documentação, commit e push no ramo `clau
 | # | Item | Por que nesta posição |
 |---|---|---|
 | 1 | ~~**WARDROBE-FIX**~~ — entregue (seção 1) | — |
-| 2 | **AVATAR-ID I4–I7**: olhos (cor da íris, shader, ossos), cabelo e barba, rig facial, revisão visual, níveis de detalhe — **mais os itens de rosto e cabelo da lista de 29/09 (seção 5.2) e os acréscimos da especificação completa (seção 6)** | Continua a cadeia de identidade; o desfile e o quarto usam o mesmo avatar |
+| 2 | **AVATAR-ID I5–I7** (o I4 — olhos, óculos e sobrancelhas — está entregue, seção 1): cabelo e barba, rig facial, revisão visual, níveis de detalhe — **mais os itens de rosto e cabelo da lista de 29/09 (seção 5.2) e os acréscimos da especificação completa (seção 6)** | Continua a cadeia de identidade; o desfile e o quarto usam o mesmo avatar |
 | 3 | **GARMENT F0–F6**: moldes paramétricos, passes com restrições, XPBD, camadas, detalhes — **mais os itens de roupa da lista de 29/09 (seção 5.2) e o PROV-3D (seção 5.1)** | Base de "roupa que veste" e de "tecido com movimento natural" (itens 5 e 6) |
 | 4 | **CATALOG-IMG V2**: pipeline profissional das fotos oficiais da Busca Catalogada (seção 4) — **com o FRAME e o relatório de 79 perguntas (seção 5.1)** | Alimenta cards, IA, 2D, 3D e Hype Score |
 | 4b | **RF4-FOTO**: etapa opcional "Fotografia" no criador de peça (seção 5.1) | Definição nova do RF4 no Trello; o editor completo é o RF15 (Tema Futuro) |
@@ -408,16 +409,16 @@ a rodada de 05/10. Abaixo está o que tinha ficado de fora, com o estado conferi
 |---|---|---|---|
 | 1 | Cabelo sempre com o mesmo formato e a mesma franja | Parcial: fios por padrão (HAIR-F2), volume pela foto; falta variedade de forma e franja | AVATAR-ID I5 |
 | 2 | Orelhas quebradas | Aberto: orelha genérica do MakeHuman, a malha do MediaPipe não cobre orelha | AVATAR-ID I6 (detalhes individuais; acréscimo à fase) e I7 (revisão visual) |
-| 3 | Óculos escuros devem ser removidos; óculos de grau ficam | Aberto | AVATAR-ID I4 (junto dos olhos; acréscimo à fase: detectar o tipo de óculos na foto) |
+| 3 | Óculos escuros devem ser removidos; óculos de grau ficam | **Entregue (I4)**: tipo detectado na foto; escuros saem da textura; de grau saem da textura e voltam como acessório 3D, com liga/desliga | — |
 | 4 | Cabelo parece capacete, sem movimento | Parcial: fios com volume; falta o movimento (física leve do cabelo) | AVATAR-ID I5 + GARMENT F4 (XPBD) |
 | 5 | Braços travados | Parcial: pose de repouso e respiração (A2); falta movimento natural dos braços | PASSARELA-REAL (ciclo de caminhada) e QUARTO-REAL (animações por comando) |
 | 6 | Golas e mangas sem polimento | Medido na auditoria de roupas (P4) | GARMENT F2–F3 |
-| 7 | Óculos grudados no rosto | Aberto | AVATAR-ID I4 (armação com afastamento do rosto; acréscimo à fase) |
+| 7 | Óculos grudados no rosto | **Entregue (I4)**: armação presa à cabeça, lente 12 mm à frente da córnea e ≥ 4 mm de qualquer ponto do rosto, hastes por fora da cabeça | — |
 | 8 | Rostos parecidos demais | Melhorou: SFace 0,369 → 0,476, top-1 15/15 (I2) | AVATAR-ID I4–I7 (gate continua medindo) |
 | 9 | Bochechas no mesmo padrão | Parcial: medidas nomeadas (I2), cor da bochecha (I3) | AVATAR-ID I6 (detalhes individuais por máscara) |
-| 10 | Pouca variação de olhos e cor de olhos | Aberto | AVATAR-ID I4 (íris, shader, ossos) |
+| 10 | Pouca variação de olhos e cor de olhos | **Entregue (I4)**: cor da íris medida e aplicada à textura, córnea, ossos dos olhos; a forma do olho já vinha da malha (468 pontos) | Pálpebras e olhar: I6 |
 | 11 | Pouca variação de nariz | Parcial: `NOSE_WIDTH`, `NOSE_LENGTH`, `NOSE_PROJECTION` (I2) | AVATAR-ID I6 |
-| 11b | Detecção automática de cor e tipo de olhos, tipo de rosto, tipo e cor de cabelo, franja | Parcial: sexo, cabelo, pele, altura, peso e volume já detectados | AVATAR-ID I4–I5 |
+| 11b | Detecção automática de cor e tipo de olhos, tipo de rosto, tipo e cor de cabelo, franja | Parcial: sexo, cabelo, pele, altura, peso, volume, **cor e padrão dos olhos, óculos e sobrancelhas (I4)** já detectados | AVATAR-ID I5 (franja, risca, linha do cabelo) |
 | 12 | Moletons e casacos estufados, como armadura | Medido: folga de 13–18 mm (auditoria de roupas) | GARMENT F2–F3 |
 | 13 | Avatar descalço | Feito: tênis 3D de verdade (7d3d83f); conferir em todos os ambientes | GARMENT F0 (teste de regressão) |
 
@@ -449,8 +450,8 @@ liga cada grupo de requisitos à seção da auditoria, à fase e ao estado confe
 | 1 | Auditoria do pipeline e ponto de perda de identidade | §1 | — | Entregue (c15f507) |
 | 2–3, 36–37 | Identidade separada do estilo; perfil persistente; identidade canônica única; versões sem sobrescrever a aprovada | §2, §4 | I1 | Versões, aprovação e histórico entregues (V42). **Falta** o campo `renderStyle` separado da identidade |
 | 4–6, 62–63 | Formato do rosto com medidas contínuas, assimetria preservada, estrutura craniofacial, topologia canônica e morphs nomeados | §5, §9 | I2 | Entregue (resíduo assimétrico, 19 morphs nomeados) |
-| 7–9, 44 | Olhos: forma, medidas, diferença entre os dois, cor detalhada e contínua, shader com córnea, ossos dos olhos | §6 | I4 | Aberto |
-| 10 | Sobrancelhas: espessura, curvatura, densidade, cor | §5 | I4 | Parcial (medidas de posição no I2; falta a forma própria da sobrancelha) |
+| 7–9, 44 | Olhos: forma, medidas, diferença entre os dois, cor detalhada e contínua, shader com córnea, ossos dos olhos | §6 | I4 | **Entregue**: cor contínua por olho (heterocromia), padrão, confiança, córnea e linha d'água, ossos; forma e medidas pela malha. Ficam para o I6: parallax da íris e sombra das pálpebras |
+| 10 | Sobrancelhas: espessura, curvatura, densidade, cor | §5 | I4 | **Entregue**: `identity/brows.ts` (cor, espessura, arco, densidade, confiança); forma na malha e pelos na textura |
 | 11–13 | Nariz, boca e lábios, mandíbula e queixo, sem embelezar | §5, §9 | I2 | Entregue nas medidas e morphs; o gate mede a boca (1 retrato reprova na reprojeção da boca) |
 | 14 | Orelhas | §5 | I6 | Aberto (genéricas; ver 5.2, item 2) |
 | 15–17 | Pele: tom, subtom, melanina, rugosidade, subsuperfície; luz separada da cor | §7 | I3 | Entregue (balanço pela esclera, ΔE 0,2, sem costura) |
@@ -470,7 +471,7 @@ liga cada grupo de requisitos à seção da auditoria, à fase e ao estado confe
 | 60–61 | Módulos separados (`FaceAnalyzer` … `AvatarAssembler`) e pipeline recomendado | §2, §3 | I1–I7 | Parcial (`face-profile`, `face-residual`, `skin-tone`, `identity/*` separados; `pipeline.ts` ainda concentra etapas) |
 | 65 | Passes progressivos 1–11, cada um preservando os anteriores | §22 | I2–I7 | Seguido na ordem das fases; **acréscimo**: o gate roda depois de cada passe e a regressão não pode piorar mais que 0,03 |
 | 66 | Casos de teste obrigatórios (tipos de cabelo, tons de pele, detalhes, barba, óculos) | §17 | I0 + cada fase | Parcial (15 retratos autorizados, só agregados no repositório) |
-| 66, 3 do 29/09 | Óculos como acessório externo, nunca parte do rosto; óculos escuros removidos, de grau mantidos | §5 | I4 | Aberto (**acréscimo ao I4**) |
+| 66, 3 do 29/09 | Óculos como acessório externo, nunca parte do rosto; óculos escuros removidos, de grau mantidos | §5 | I4 | **Entregue** (`glasses.ts`, `human/glasses-3d.ts`) |
 | 68–69 | Qualidade da foto antes do pipeline e captura guiada (olhar para a câmera, expressão neutra, luz frontal, sem filtro, sem mão no rosto) | §1, §11 | I7 | Aberto (**acréscimo ao I7**: `ImageQualityGate` + instruções visuais na tela Meu Avatar 3D) |
 | 71 | Mesmo `CanonicalAvatar` no FashionAI e no Scores, com perfil de render, LOD e rig próprios | §20 | I7 | Aberto |
 | 72–74 | Esqueleto, medidas e âncoras compatíveis com o provador; cabeça e corpo da mesma pessoa; pescoço sem costura | §19 | I3 + GARMENT F1 | Costura resolvida no I3; âncoras do pescoço na GARMENT F1 |

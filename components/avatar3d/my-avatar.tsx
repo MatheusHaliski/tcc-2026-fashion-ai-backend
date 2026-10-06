@@ -16,6 +16,8 @@ import type { HumanParts } from "@/components/three/human-avatar";
 import { AVATAR_NOT_DRESSED, downloadBlob, exportAvatarGlb } from "@/lib/avatar3d/human/export-glb";
 import { analyzePhoto, atlasBlob, buildAvatar, type AnalyzedPhoto, type BuiltAvatar } from "@/lib/avatar3d/pipeline";
 import { ADJUST_RANGE, DEFAULT_ADJUST, SLIDER_ADJUSTS, clampAdjust, type AvatarAdjust, type AvatarHair, type AvatarModel } from "@/lib/avatar3d/model";
+import type { AvatarEyes } from "@/lib/avatar3d/iris";
+import type { AvatarBrows } from "@/lib/avatar3d/identity/brows";
 import { HAIR_TONES, paletteId } from "@/lib/avatar3d/hair-tone";
 import { HAIR_CUTS } from "@/lib/avatar3d/hair-cut";
 import { SEX_CONFIDENT, type SexGuess } from "@/lib/avatar3d/sex-detect";
@@ -60,7 +62,7 @@ function useIssueText() {
 }
 
 /** Ajustes finos: faixas pequenas de propósito (ajuste fino, não outra pessoa). */
-function AdjustSliders({ value, onChange, hair }: { value: AvatarAdjust; onChange: (a: AvatarAdjust) => void; hair?: AvatarHair | null }) {
+function AdjustSliders({ value, onChange, hair, eyes, brows }: { value: AvatarAdjust; onChange: (a: AvatarAdjust) => void; hair?: AvatarHair | null; eyes?: AvatarEyes | null; brows?: AvatarBrows | null }) {
   const { t, fmtNumber } = useI18n();
   return (
     <div className="grid gap-3">
@@ -77,7 +79,45 @@ function AdjustSliders({ value, onChange, hair }: { value: AvatarAdjust; onChang
       })}
       {hair && !hair.cover && <HairCutPicker value={value.hairCut} onChange={(v) => onChange({ ...value, hairCut: v })} hair={hair} />}
       {hair && !hair.cover && (hair.color || value.hairCut > 0) && <HairTonePicker value={value.hairTone} onChange={(v) => onChange({ ...value, hairTone: v })} hair={hair} />}
+      {eyes && <EyesInfo eyes={eyes} brows={brows} value={value.glasses} onChange={(v) => onChange({ ...value, glasses: v })} />}
       <Button size="sm" variant="ghost" onClick={() => onChange({ ...DEFAULT_ADJUST })}>{t("avatar3d.adjust.reset")}</Button>
+    </div>
+  );
+}
+
+/**
+ * Olhos (AVATAR-ID I4): a cor da íris lida na foto (amostra + nome; a cor nunca é o único sinal) e, quando a foto tinha
+ * óculos de grau, mostrar ou tirar a armação do avatar. Óculos escuros não voltam: só o aviso de que saíram.
+ */
+function EyesInfo({ eyes, brows, value, onChange }: { eyes: AvatarEyes; brows?: AvatarBrows | null; value: number; onChange: (v: number) => void }) {
+  const { t } = useI18n();
+  const name = eyes.source === "DEFAULT" ? t("avatar3d.eyes.padrao") : t(`avatar3d.eyes.cls.${eyes.cls}`);
+  const density = brows ? (brows.density >= 0.6 ? "cheias" : brows.density >= 0.35 ? "medias" : "ralas") : null;
+  return (
+    <div className="grid gap-1.5">
+      {brows && (
+        <span className="flex justify-between gap-2 type-body-sm">
+          <span>{t("avatar3d.brows.titulo")}</span>
+          <span className="flex items-center gap-1.5 type-caption text-muted" data-testid="avatar-brows">
+            <span aria-hidden className="inline-block h-3 w-3 rounded-full border border-[var(--border)]" style={{ background: brows.color }} />
+            {t("avatar3d.brows.resumo", { shape: t(`avatar3d.brows.shape.${brows.shape}`), density: t(`avatar3d.brows.density.${density}`) })}
+          </span>
+        </span>
+      )}
+      <span className="flex justify-between gap-2 type-body-sm">
+        <span>{t("avatar3d.eyes.titulo")}</span>
+        <span className="flex items-center gap-1.5 type-caption text-muted" data-testid="avatar-eyes">
+          <span aria-hidden className="inline-block h-3 w-3 rounded-full border border-[var(--border)]" style={{ background: eyes.color }} />
+          {eyes.right && eyes.left ? t("avatar3d.eyes.heterocromia", { name }) : name}
+        </span>
+      </span>
+      {eyes.glasses === "PRESCRIPTION" && (
+        <div role="radiogroup" aria-label={t("avatar3d.adjust.glasses")} className="flex flex-wrap items-center gap-1.5">
+          <span className="type-body-sm mr-1">{t("avatar3d.adjust.glasses")}</span>
+          <Chip role="radio" aria-checked={value !== 0} active={value !== 0} onClick={() => onChange(1)}>{t("avatar3d.glasses.com")}</Chip>
+          <Chip role="radio" aria-checked={value === 0} active={value === 0} onClick={() => onChange(0)}>{t("avatar3d.glasses.sem")}</Chip>
+        </div>
+      )}
     </div>
   );
 }
@@ -267,7 +307,7 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
           <Card>
             <p className="label">{t("avatar3d.page.ajustes")}</p>
             <div className="mb-3"><BodySexPicker value={built.model.sex ?? sex} guess={built.sexGuess} chosen={!!sexChoice} onChange={chooseSex} /></div>
-            <AdjustSliders value={adjust} onChange={setAdjust} hair={built?.model.hair} />
+            <AdjustSliders value={adjust} onChange={setAdjust} hair={built?.model.hair} eyes={built?.model.eyes} brows={built?.model.brows} />
           </Card>
         )}
       </div>
@@ -349,7 +389,7 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
         <Card>
           <p className="label">{t("avatar3d.page.ajustes")}</p>
           <div className="mb-3"><BodySexPicker value={bodySex} guess={null} chosen={!!saved.model?.sex} onChange={(v) => { if (v !== bodySex) void patch({ sex: v }); }} /></div>
-          <AdjustSliders value={adjust} onChange={setAdjust} hair={saved.model?.hair} />
+          <AdjustSliders value={adjust} onChange={setAdjust} hair={saved.model?.hair} eyes={saved.model?.eyes} brows={saved.model?.brows} />
           <Button className="mt-3" variant="primary" size="sm" loading={busy === "patch"} disabled={!dirty || !!busy} onClick={() => patch({ adjust })}>{t("avatar3d.page.salvar_ajustes")}</Button>
         </Card>
       </div>

@@ -37,7 +37,6 @@ package "app/(site)/lab/avatar" {
 package "components/avatar3d" {
   component "my-avatar.tsx" as m_components_avatar3d_my_avatar_tsx
   component "lab.tsx" as m_components_avatar3d_lab_tsx
-  component "body-editor.tsx" as m_components_avatar3d_body_editor_tsx <<apoio>>
 }
 package "lib/avatar3d" {
   component "pipeline.ts" as m_lib_avatar3d_pipeline_ts
@@ -46,12 +45,18 @@ package "lib/avatar3d" {
   component "image-stats.ts" as m_lib_avatar3d_image_stats_ts
   component "quality.ts" as m_lib_avatar3d_quality_ts
   component "atlas.ts" as m_lib_avatar3d_atlas_ts
+  component "iris.ts" as m_lib_avatar3d_iris_ts
+  component "glasses.ts" as m_lib_avatar3d_glasses_ts
 }
 package "lib/hype" {
   component "model.ts" as m_lib_hype_model_ts
 }
 package "components/three" {
   component "avatar-bust.tsx" as m_components_three_avatar_bust_tsx
+}
+package "lib/avatar3d/human" {
+  component "eyes.ts" as m_lib_avatar3d_human_eyes_ts
+  component "glasses-3d.ts" as m_lib_avatar3d_human_glasses_3d_ts
 }
 package "Backend (Spring Boot)" {
   component "Avatar3dController" as Avatar3dController
@@ -84,20 +89,27 @@ TryOnService --> AiEngine
 TryOnService --> Avatar3dService
 TryOnService --> DB_MySQL : schemes, user_preferences, users, wardrobe_items
 m_app__site__lab_avatar_page_tsx --> m_components_avatar3d_lab_tsx
-m_components_avatar3d_body_editor_tsx --> m_lib_avatar3d_pipeline_ts
 m_components_avatar3d_lab_tsx --> m_lib_avatar3d_pipeline_ts
 m_components_avatar3d_my_avatar_tsx --> Avatar3dController : HTTPS
-m_components_avatar3d_my_avatar_tsx --> m_components_avatar3d_body_editor_tsx
+m_components_avatar3d_my_avatar_tsx --> m_lib_avatar3d_iris_ts
 m_components_avatar3d_my_avatar_tsx --> m_lib_avatar3d_pipeline_ts
 m_components_avatar3d_my_avatar_tsx --> m_lib_avatar3d_quality_ts
 m_components_three_avatar_bust_tsx --> m_lib_avatar3d_geometry_ts
 m_lib_avatar3d_atlas_ts --> m_lib_avatar3d_geometry_ts
 m_lib_avatar3d_atlas_ts --> m_lib_avatar3d_image_stats_ts
 m_lib_avatar3d_detect_ts --> m_lib_avatar3d_geometry_ts
+m_lib_avatar3d_glasses_ts --> m_lib_avatar3d_image_stats_ts
+m_lib_avatar3d_glasses_ts --> m_lib_avatar3d_iris_ts
+m_lib_avatar3d_human_eyes_ts --> m_lib_avatar3d_image_stats_ts
+m_lib_avatar3d_human_eyes_ts --> m_lib_avatar3d_iris_ts
+m_lib_avatar3d_human_glasses_3d_ts --> m_lib_avatar3d_human_eyes_ts
+m_lib_avatar3d_iris_ts --> m_lib_avatar3d_image_stats_ts
 m_lib_avatar3d_pipeline_ts --> m_lib_avatar3d_atlas_ts
 m_lib_avatar3d_pipeline_ts --> m_lib_avatar3d_detect_ts
 m_lib_avatar3d_pipeline_ts --> m_lib_avatar3d_geometry_ts
+m_lib_avatar3d_pipeline_ts --> m_lib_avatar3d_glasses_ts
 m_lib_avatar3d_pipeline_ts --> m_lib_avatar3d_image_stats_ts
+m_lib_avatar3d_pipeline_ts --> m_lib_avatar3d_iris_ts
 m_lib_avatar3d_pipeline_ts --> m_lib_avatar3d_quality_ts
 m_lib_avatar3d_quality_ts --> m_lib_avatar3d_geometry_ts
 m_lib_avatar3d_quality_ts --> m_lib_avatar3d_image_stats_ts

@@ -231,6 +231,53 @@ class Avatar3dServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void olhosMedidosSaoValidadosEDescartadosSemDerrubarOAvatar() {
+        // AVATAR-ID I4: cor da íris, classe, padrão, confiança, óculos; heterocromia com a cor de cada olho
+        Map<String, Object> m = model();
+        Map<String, Object> eyes = new LinkedHashMap<>(Map.of("color", "#5a7896", "secondary", "#6b5a3a", "cls", "BLUE", "pattern", "RING",
+                "confidence", 0.82, "source", "IMAGE_ANALYSIS", "glasses", "PRESCRIPTION", "frame", "#1c1a1e"));
+        eyes.put("right", Map.of("color", "#5a7896", "secondary", "#6b5a3a"));
+        eyes.put("left", Map.of("color", "#4a2f1f", "secondary", "#3a2418"));
+        eyes.put("photoUrl", "https://x");
+        m.put("eyes", eyes);
+        Map<String, Object> ok = (Map<String, Object>) Avatar3dService.validateModel(m).get("eyes");
+        assertEquals("BLUE", ok.get("cls"));
+        assertEquals("PRESCRIPTION", ok.get("glasses"));
+        assertEquals("#1c1a1e", ok.get("frame"));
+        assertEquals("#4a2f1f", ((Map<String, Object>) ok.get("left")).get("color"));
+        assertFalse(ok.containsKey("photoUrl"));                              // só os campos conhecidos
+        // um olho só não basta para heterocromia; cor inválida da armação some
+        eyes.remove("left");
+        eyes.put("frame", "preto");
+        ok = (Map<String, Object>) Avatar3dService.validateModel(m).get("eyes");
+        assertFalse(ok.containsKey("right"));
+        assertFalse(ok.containsKey("frame"));
+        // valor fora das listas, cor que não é #rrggbb ou confiança fora de 0–1: os olhos saem, o avatar fica
+        for (Map.Entry<String, Object> bad : List.of(Map.entry("cls", (Object) "ROXO"), Map.entry("color", (Object) "azul"),
+                Map.entry("confidence", (Object) 1.5), Map.entry("glasses", (Object) "MONOCULO"), Map.entry("source", (Object) "USER"))) {
+            Map<String, Object> e2 = new LinkedHashMap<>(eyes);
+            e2.put(bad.getKey(), bad.getValue());
+            m.put("eyes", e2);
+            Map<String, Object> v = Avatar3dService.validateModel(m);
+            assertFalse(v.containsKey("eyes"), bad.getKey());
+            assertEquals("#c8966e", v.get("skin"));
+        }
+        // sobrancelhas: medidas nas faixas; fora delas saem sem derrubar o avatar
+        m.remove("eyes");
+        m.put("brows", new LinkedHashMap<>(Map.of("color", "#3a2a1e", "thickness", 0.22, "arch", 0.06, "shape", "SOFT_ARCH", "density", 0.8, "confidence", 0.8, "extra", 1)));
+        Map<String, Object> brows = (Map<String, Object>) Avatar3dService.validateModel(m).get("brows");
+        assertEquals("SOFT_ARCH", brows.get("shape"));
+        assertFalse(brows.containsKey("extra"));
+        ((Map<String, Object>) m.get("brows")).put("arch", 3);
+        assertFalse(Avatar3dService.validateModel(m).containsKey("brows"));
+        // óculos: 1 = mostra os de grau vistos na foto (padrão), 0 = sem; inteiro e limitado
+        assertEquals(1, Avatar3dService.clampAdjust(Map.of()).get("glasses"));
+        assertEquals(0, Avatar3dService.clampAdjust(Map.of("glasses", -3)).get("glasses"));
+        assertEquals(1, Avatar3dService.clampAdjust(Map.of("glasses", 0.7)).get("glasses"));
+    }
+
+    @Test
     void texturaPrecisaSerQuadradaEDeTamanhoRazoavel() {
         assertEquals("TEXTURA_INVALIDA", code(() -> Avatar3dService.normalizeTexture(texture(512, 300))));
         assertEquals("TEXTURA_INVALIDA", code(() -> Avatar3dService.normalizeTexture(texture(128, 128))));
