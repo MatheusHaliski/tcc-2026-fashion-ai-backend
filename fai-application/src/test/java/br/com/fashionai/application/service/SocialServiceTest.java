@@ -137,8 +137,12 @@ class SocialServiceTest {
     @Test
     void remixarEVoltarAoLookDeOrigem() {
         assertThat(social.remix(ana, TargetType.SCHEME, look.getId())).containsEntry("next", "/create-look");
+        // peça de outra pessoa: entra no acervo de quem remixa como cópia, e a cópia é a semente do look
+        WardrobeItem copy = Kit.piece(world.me, piece.getName(), piece.getCategory(), piece.getSubcategory(), piece.getColor());
+        when(kit.dep(WardrobeService.class).addToWardrobe(any(), any())).thenReturn(br.com.fashionai.application.view.Views.piece(copy, null, null));
         Map<String, Object> p = social.remix(ana, TargetType.PIECE, piece.getId());
-        assertThat(String.valueOf(p.get("next"))).contains(piece.getId().toString());
+        assertThat(String.valueOf(p.get("next"))).contains(copy.getId().toString());
+        assertThat(p.get("seedPieceId")).isEqualTo(copy.getId());
         assertThat(social.remix(bia, TargetType.PIECE, piece.getId())).containsKey("hint");
         assertThat(social.remix(ana, TargetType.DNA, dna.getId())).containsEntry("next", "/dna/new?remix=" + dna.getId());
         piece.setDisponivel(false);
