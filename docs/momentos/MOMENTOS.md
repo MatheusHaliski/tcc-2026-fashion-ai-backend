@@ -26,7 +26,7 @@ Nenhum deles vira uma métrica única: um look mostra **Hype**, **Seu estilo**, 
 | Área | Antes | Decisão |
 |---|---|---|
 | Desafios (RF36) | `ChallengeTemplate`/`ChallengeInstance`, catálogo fixo, estados em português, `tick()` a cada 15 min | Mantidos intactos em `/challenges` ("desafios de rotina": Espelho de Verdade, Vista-me…). "Desafio" passa a ser **um tipo** de Momento (`MomentType.CHALLENGE`, `MomentChallenge` dentro de um Momento). A navegação aponta para **Momentos**; a home dos Momentos linka a área antiga. |
-| FAI Points | `fai_points_ledger` append-only, chave de idempotência `usuário:ação:referência`, tetos diário/semanal, extrato nas notificações | Reutilizado como está. Só regras novas (`MOMENT_*`) na V42; referência sempre `momento(:look|:desafio)` → paga 1× (anti-farming). |
+| FAI Points | `fai_points_ledger` append-only, chave de idempotência `usuário:ação:referência`, tetos diário/semanal, extrato nas notificações | Reutilizado como está. Só regras novas (`MOMENT_*`) na V53; referência sempre `momento(:look|:desafio)` → paga 1× (anti-farming). |
 | FLAIR / grupos | `FlairTeam` + `FlairTeamMember` (entra por código) | Grupo = `FlairTeam`. Momento privado = `Moment` com `scope=GROUP`, `group_id`, `visibility≠PUBLIC`. |
 | Notificações | `NotificationType` por tipo, opt-out por tipo, `Msg.k` adiado | 4 tipos novos (`MOMENT_STARTING`, `MOMENT_GROUP_CREATED`, `MOMENT_DEADLINE`, `MOMENT_COMPLETED`), dedupe por participação (`remind_sent`, `deadline_notified`). |
 | HypeScore v2 | fatias por região/país/categoria/estilo/ocasião; nada temporal | **Hype contextual** derivado: `clamp(hype + (match − 50) · 0,5)` — nunca sobrescreve o global; "em alta no Momento" vem dos envios. |
@@ -34,7 +34,7 @@ Nenhum deles vira uma métrica única: um look mostra **Hype**, **Seu estilo**, 
 | Perfil | `profileVisibility`, `Guard.canView` | Linha do tempo pública só do que a pessoa marcou (`public_on_profile`) e em Momentos públicos. |
 | Conquistas | `user_achievements` (idempotente) | Badges de Momento = `achievement_code` do Momento (`MOMENT_<SLUG>`), 1 por Momento. |
 | Calendário | só `WeekPlanDay.eventLabel` | Novo: `/api/moments/calendar` (ano/mês no fuso do Momento). |
-| Fuso | servidor fixo em `America/Sao_Paulo`, sem campo do usuário | `moments.timezone` por Momento + `users.timezone` (opcional) na V42. |
+| Fuso | servidor fixo em `America/Sao_Paulo`, sem campo do usuário | `moments.timezone` por Momento + `users.timezone` (opcional) na V53. |
 
 ## Modelo
 
@@ -90,7 +90,7 @@ apagar/recriar looks ou entrar/sair não gera pontos novos; tetos diários segur
 
 Leituras públicas estão em `SecurityConfig.PUBLIC_GET`; Momentos não públicos são filtrados por membro no serviço.
 
-## Conteúdo oficial (V42)
+## Conteúdo oficial (V53)
 
 Primavera 2026, Halloween 2026 (destaque, ×1,5, 7 desafios), Denim Week, Natal e Festas (RELIGIOUS: sem pontos nem
 votação), Réveillon, Verão 2027, No-Buy Week (7 dias / 7 looks), Carnaval 2027 (×1,5), Festa Junina 2027, Inverno 2027.

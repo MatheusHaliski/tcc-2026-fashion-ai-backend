@@ -4,6 +4,7 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.hype.HypeQueryService;
+import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.service.FaiPointsService;
@@ -24,6 +25,7 @@ import br.com.fashionai.domain.model.UserAchievement;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.FlairMomentMode;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
+import br.com.fashionai.domain.model.enums.HypeStatus;
 import br.com.fashionai.domain.model.enums.MomentApproach;
 import br.com.fashionai.domain.model.enums.MomentNature;
 import br.com.fashionai.domain.model.enums.MomentParticipationStatus;
@@ -37,6 +39,7 @@ import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.repository.FlairTeamMemberRepository;
 import br.com.fashionai.domain.repository.FlairTeamRepository;
+import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
 import br.com.fashionai.domain.repository.MomentChallengeRepository;
 import br.com.fashionai.domain.repository.MomentParticipationRepository;
 import br.com.fashionai.domain.repository.MomentRepository;
@@ -114,13 +117,16 @@ public class MomentService {
     private final FaiPointsService points;
     private final NotificationService notifications;
     private final Guard guard;
+    /** HypeScore v2: estado atual gravado pelo job de snapshots (as entidades não guardam mais o score). */
+    private final HypeScoreCurrentRepository hype;
+    private final HypeScoreConfig hypeConfig;
     private Clock clock = Clock.systemUTC();
 
     public MomentService(MomentRepository moments, MomentChallengeRepository challenges, MomentParticipationRepository participations,
                          MomentSubmissionRepository submissions, MomentVoteRepository votes, SchemeRepository schemes, SchemeItemRepository schemeItems,
                          WardrobeItemRepository pieces, UserRepository users, FlairTeamRepository teams, FlairTeamMemberRepository members,
                          UserAchievementRepository achievements, PieceUsageDiaryEntryRepository diary, FaiPointsService points,
-                         NotificationService notifications, Guard guard) {
+                         NotificationService notifications, Guard guard, HypeScoreCurrentRepository hype, HypeScoreConfig hypeConfig) {
         this.moments = moments;
         this.challenges = challenges;
         this.participations = participations;
@@ -137,6 +143,8 @@ public class MomentService {
         this.points = points;
         this.notifications = notifications;
         this.guard = guard;
+        this.hype = hype;
+        this.hypeConfig = hypeConfig;
     }
 
     /** Testes: relógio fixo. */
@@ -536,13 +544,13 @@ public class MomentService {
             ownerId = w.getUser().getId();
             vis = w.getVisibility();
             subject = subjectOf(w);
-            hype = w.getHypeScore() == null ? null : w.getHypeScore().doubleValue();
+            hype = hypeOf(HypeEntityType.PIECE, id, isOwner(viewer, ownerId));
         } else {
             Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("moment.look")));
             ownerId = s.getUser().getId();
             vis = s.getVisibility();
             subject = subjectOf(s, schemeItems.findBySchemeIdOrderBySortOrder(id));
-            hype = s.getHypeScore() == null ? null : s.getHypeScore().doubleValue();
+            hype = hypeOf(HypeEntityType.SCHEME, id, isOwner(viewer, ownerId));
         }
         if (!guard.canView(viewer, ownerId, vis)) {
             throw guard.deny(viewer, type.name().toLowerCase(Locale.ROOT) + ":" + id, Msg.t("guard.este_conteudo_nao_esta_visivel"));
@@ -770,7 +778,8 @@ public class MomentService {
         sub.setMatchJson(ev.match == null ? null : Json.write(ev.match.toMap()));
         sub.setWardrobeOnly(ev.facts.wardrobeOnly());
         sub.setRediscoveredJson(Json.write(ev.facts.rediscoveredPieces()));
-        sub.setHypeAtSubmission(s.getHypeScore() == null ? null : (int) Math.round(s.getHypeScore().doubleValue()));
+        Double hypeNow = hypeOf(HypeEntityType.SCHEME, s.getId(), true);
+        sub.setHypeAtSubmission(hypeNow == null ? null : (int) Math.round(hypeNow));
         sub.setSubmittedAt(now);
         // pontos: cada linha paga 1× pelo ledger (idempotência por usuário:ação:referência)
         int earned = 0;
@@ -963,8 +972,9 @@ public class MomentService {
         List<MomentPointsPolicy.Line> lines = MomentPointsPolicy.compute(m, cs, facts);
         Map<String, Object> scores = new LinkedHashMap<>();
         scores.put("moment", match == null ? null : match.score());
-        scores.put("hype", s.getHypeScore() == null ? null : (int) Math.round(s.getHypeScore().doubleValue()));
-        scores.put("contextualHype", contextualHype(s.getHypeScore() == null ? null : s.getHypeScore().doubleValue(), match == null ? null : match.score()));
+        Double hypeScore = hypeOf(HypeEntityType.SCHEME, s.getId(), true);   // avaliação do próprio look
+        scores.put("hype", hypeScore == null ? null : (int) Math.round(hypeScore));
+        scores.put("contextualHype", contextualHype(hypeScore, match == null ? null : match.score()));
         scores.put("reuse", look.isEmpty() ? null : (int) Math.round(100.0 * look.stream().filter(w -> w.getCreatedAt() != null && w.getCreatedAt().isBefore(m.getStartAt())).count() / look.size()));
         scores.put("rediscovery", look.isEmpty() ? null : (int) Math.round(100.0 * rediscovered.size() / look.size()));
         return new Evaluation(match, facts, lines, scores);
@@ -991,6 +1001,23 @@ public class MomentService {
     @SuppressWarnings("unchecked")
     static List<String> strings(Object v) {
         return v instanceof List<?> l ? ((List<Object>) l).stream().map(String::valueOf).toList() : List.of();
+    }
+
+    /**
+     * HypeScore v2 gravado pelo job (nada é recalculado aqui): só com dados suficientes; de terceiros, só o público
+     * elegível — o Hype pessoal de item privado ou de perfil restrito é só do dono. Sem score = nulo, nunca 0.
+     */
+    Double hypeOf(HypeEntityType type, UUID id, boolean owner) {
+        if (hype == null || hypeConfig == null || id == null) {
+            return null;
+        }
+        return hype.findByEntityTypeAndEntityIdAndAlgorithmVersion(type, id, hypeConfig.algorithmVersion())
+                .filter(c -> c.getStatus() == HypeStatus.AVAILABLE && c.getScore() != null && (owner || c.isPublicEligible()))
+                .map(c -> c.getScore().doubleValue()).orElse(null);
+    }
+
+    private static boolean isOwner(CurrentUser viewer, UUID ownerId) {
+        return viewer != null && ownerId != null && ownerId.equals(viewer.id());
     }
 
     static MomentMatch.Subject subjectOf(Scheme s, List<SchemeItem> items) {
@@ -1062,7 +1089,7 @@ public class MomentService {
         v.put("mine", viewer != null && viewer.id().equals(s.getUserId()));
         if (sc != null) {
             v.put("scheme", Views.scheme(sc, schemeItems.findBySchemeIdOrderBySortOrder(sc.getId()), Views.ViewerState.NONE, Map.of()));
-            v.put("contextualHype", contextualHype(sc.getHypeScore() == null ? null : sc.getHypeScore().doubleValue(), s.getMatchScore()));
+            v.put("contextualHype", contextualHype(hypeOf(HypeEntityType.SCHEME, sc.getId(), isOwner(viewer, s.getUserId())), s.getMatchScore()));
         }
         return v;
     }
@@ -1191,7 +1218,7 @@ public class MomentService {
             l.put("coverImageUrl", sc.getCoverImageUrl());
             l.put("votes", s.getVoteCount());
             l.put("match", s.getMatchScore());
-            l.put("contextualHype", contextualHype(sc.getHypeScore() == null ? null : sc.getHypeScore().doubleValue(), s.getMatchScore()));
+            l.put("contextualHype", contextualHype(hypeOf(HypeEntityType.SCHEME, sc.getId(), isOwner(viewer, s.getUserId())), s.getMatchScore()));
             looks.add(l);
         }
         looks.sort(Comparator.comparing((Map<String, Object> l) -> (Integer) l.get("votes")).reversed()

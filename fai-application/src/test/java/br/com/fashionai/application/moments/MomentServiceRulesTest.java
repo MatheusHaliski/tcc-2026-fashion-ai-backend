@@ -1,16 +1,20 @@
 package br.com.fashionai.application.moments;
 
 import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.domain.model.FlairTeam;
 import br.com.fashionai.domain.model.FlairTeamMember;
+import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.Moment;
 import br.com.fashionai.domain.model.MomentParticipation;
 import br.com.fashionai.domain.model.MomentSubmission;
 import br.com.fashionai.domain.model.MomentVote;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.enums.AccountStatus;
+import br.com.fashionai.domain.model.enums.HypeEntityType;
+import br.com.fashionai.domain.model.enums.HypeStatus;
 import br.com.fashionai.domain.model.enums.MomentNature;
 import br.com.fashionai.domain.model.enums.MomentParticipationStatus;
 import br.com.fashionai.domain.model.enums.MomentScope;
@@ -20,6 +24,7 @@ import br.com.fashionai.domain.model.enums.MomentVisibility;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.repository.FlairTeamMemberRepository;
 import br.com.fashionai.domain.repository.FlairTeamRepository;
+import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
 import br.com.fashionai.domain.repository.MomentParticipationRepository;
 import br.com.fashionai.domain.repository.MomentRepository;
 import br.com.fashionai.domain.repository.MomentSubmissionRepository;
@@ -29,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -41,6 +47,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * Momentos §28, §39, §45, §54 — privacidade de Momento de grupo, voto no próprio look, envio fora do período e o job
@@ -168,7 +176,7 @@ class MomentServiceRulesTest {
                 return ApiException.forbidden(message);
             }
         };
-        service = new MomentService(moments, null, parts, subs, votes, null, null, null, users, teams, members, null, null, null, null, guard);
+        service = new MomentService(moments, null, parts, subs, votes, null, null, null, users, teams, members, null, null, null, null, guard, null, null);
         service.useClock(Clock.fixed(now, ZoneOffset.UTC));
         member(ana.id());
     }
@@ -287,5 +295,33 @@ class MomentServiceRulesTest {
         Map<String, Object> g = service.groupMoments(ana, teamId);
         assertThat((List<?>) g.get("active")).hasSize(1);
         assertThat(g.get("name")).isEqualTo("Turma SI");
+    }
+
+    /** O Hype vem do estado v2 gravado pelo job: sem dados suficientes = nulo; de terceiros, só o público elegível. */
+    @Test
+    void hypeVemDoEstadoV2ERespeitaAPrivacidade() {
+        HypeScoreConfig config = HypeScoreConfig.defaults();
+        HypeScoreCurrentRepository current = mock(HypeScoreCurrentRepository.class);
+        MomentService withHype = new MomentService(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, current, config);
+        UUID personal = UUID.randomUUID(), open = UUID.randomUUID(), thin = UUID.randomUUID();
+        when(current.findByEntityTypeAndEntityIdAndAlgorithmVersion(HypeEntityType.SCHEME, personal, config.algorithmVersion()))
+                .thenReturn(Optional.of(row(HypeStatus.AVAILABLE, 72, false)));
+        when(current.findByEntityTypeAndEntityIdAndAlgorithmVersion(HypeEntityType.SCHEME, open, config.algorithmVersion()))
+                .thenReturn(Optional.of(row(HypeStatus.AVAILABLE, 55, true)));
+        when(current.findByEntityTypeAndEntityIdAndAlgorithmVersion(HypeEntityType.SCHEME, thin, config.algorithmVersion()))
+                .thenReturn(Optional.of(row(HypeStatus.INSUFFICIENT_DATA, null, true)));
+        assertThat(withHype.hypeOf(HypeEntityType.SCHEME, personal, true)).isEqualTo(72.0);
+        assertThat(withHype.hypeOf(HypeEntityType.SCHEME, personal, false)).as("Hype pessoal não vaza para terceiros").isNull();
+        assertThat(withHype.hypeOf(HypeEntityType.SCHEME, open, false)).isEqualTo(55.0);
+        assertThat(withHype.hypeOf(HypeEntityType.SCHEME, thin, true)).as("sem dados nunca vira 0").isNull();
+        assertThat(withHype.hypeOf(HypeEntityType.SCHEME, UUID.randomUUID(), true)).isNull();
+    }
+
+    private static HypeScoreCurrent row(br.com.fashionai.domain.model.enums.HypeStatus status, Integer score, boolean publicEligible) {
+        HypeScoreCurrent c = new HypeScoreCurrent();
+        c.setStatus(status);
+        c.setScore(score == null ? null : BigDecimal.valueOf(score));
+        c.setPublicEligible(publicEligible);
+        return c;
     }
 }
