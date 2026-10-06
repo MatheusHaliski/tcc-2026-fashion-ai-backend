@@ -88,6 +88,8 @@ function DossierCard({ d, reasons, sla, onDecided }: { d: Dossier; reasons: stri
     if (!found) {
       setPicked((p) => (p.includes(linkCheck.reason) ? p : [...p, linkCheck.reason]));
       toast.info(t("adminApprovals.motivo_marcado", { motivo: t(`issuerPolicy.motivo_curto.${linkCheck.reason}`) }));
+    } else {
+      setPicked((p) => p.filter((x) => x !== linkCheck.reason));   // "Não confere" revertido: o motivo não vai mais ao emissor
     }
     setVerify(null);
   }
