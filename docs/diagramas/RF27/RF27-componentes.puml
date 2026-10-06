@@ -1,5 +1,5 @@
 @startuml RF27_Componentes
-title RF27 — Visualizar e organizar o guarda-roupa num quarto 3D interativo ("Meu Quarto")\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF27 — Meu Quarto (guarda-roupa num quarto 3D interativo)\nDiagrama de componentes — tela do quarto → RoomController → RoomService → portas e MySQL
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -17,31 +17,62 @@ skinparam database {
 left to right direction
 
 package "Frontend (Next.js · React Three Fiber)" {
-  component "room — Quarto 3D (RoomScene)" as FE0
-  component "room — 2.5D e Lista" as FE1
-  component "RoomProps (espelho, cesto, cadeira, arara)" as FE2
+  component "app/(site)/(app)/room/page.tsx\n(abas Quarto 3D · 2.5D · Lista)" as FE0
+  component "components/room3d/room-scene.tsx\n(RoomScene, câmera 3/4)" as FE1
+  component "components/room3d/room-props.tsx\n(ClosetLights, FaiBox, KeyHook,\nCorkBoard, DressForm…)" as FE2
+  component "lib/api/client (api)\nlib/hooks/use-api" as FEAPI
 }
 package "fai-web (REST)" {
-  [RoomController] as RoomController
+  [RoomController\n/api/me/room/*\n/api/pieces/{id}/room-address · /tag] as RC
+  [MirrorController (RF28)] as MC
+  [HighlightsController\n(apply do item comprado, RF30)] as HC
+  [AutopilotController\n(/api/copilot/messages:\nonde está a peça, RF10)] as CC
 }
-package "fai-application (casos de uso)" {
-  [RoomService] as RoomService
+package "fai-application" {
+  [RoomService] as RS
+  [InventoryScoreService\n(luzes do closet, RF29)] as ISS
+  [ChallengeService\n(decorações, RF32)] as CHS
+  [HypeQueryService\n(Hype v2 na ilha, RF46)] as HQ
+  [AiEngine (RF24)] as AI
+  [SideEffectRunner] as SE
+  [WardrobeEventListeners] as WL
+  interface "RoomService.DecorationsProvider" as DP <<port>>
+  interface "FaiPointsService.RoomLayoutAccess" as RLA <<port>>
+  interface "AiProviderPort" as APP <<port>>
+  interface "RateLimitPort" as RLP <<port>>
 }
 package "fai-domain (repositórios JPA)" {
-  [DailyLookRepository\nFaiPointsLedgerEntryRepository\nPieceUsageDiaryEntryRepository\nRoomCatalogItemRepository\nRoomInventoryItemRepository\nRoomLayoutRepository\nRoomStorageEntryRepository\nSchemeItemRepository\nSchemeRepository\nStyleDnaRepository\nUserAchievementRepository\nUserPreferencesRepository\nUserRepository\nWardrobeItemRepository] as REPOS
+  [RoomLayoutRepository\nRoomStorageEntryRepository\nRoomInventoryItemRepository\nRoomCatalogItemRepository\nWardrobeItemRepository\nSchemeRepository · SchemeItemRepository\nDailyLookRepository\nPieceUsageDiaryEntryRepository\nStyleDnaRepository\nUserAchievementRepository\nUserPreferencesRepository\nFaiPointsLedgerEntryRepository\nUserRepository] as REPOS
 }
-database "MySQL · fashionai_app\n• daily_looks\n• fai_points_ledger\n• piece_usage_diary\n• room_catalog\n• room_inventory\n• room_layouts\n• room_storage_map\n• scheme_items\n• schemes\n• style_dna\n• user_achievements\n• user_preferences\n• users\n• wardrobe_items" as DB
-cloud "Motor de IA transversal (RF24)\nprovedores externos + fallback local" as P_ai
-[Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
-[SideEffectRunner\n(efeitos colaterais isolados)] as P_side
+package "fai-infrastructure" {
+  [persistence-mysql\n(Spring Data JPA + Flyway V5)] as MYSQL
+  [ai-providers\n(ClaudeProvider, GeminiProvider)] as PROV
+  [cache-redis / platform\n(RateLimitPort: Redis ou memória)] as REDIS
+}
+database "MySQL · fashionai_app\n• room_layouts\n• room_storage_map\n• room_inventory · room_catalog\n• wardrobe_items · schemes · scheme_items\n• daily_looks · piece_usage_diary\n• style_dna · user_achievements\n• user_preferences · fai_points_ledger" as DB
 
-FE0 --> RoomController : HTTPS/JSON
-FE1 --> RoomController : HTTPS/JSON
-FE2 --> RoomController : HTTPS/JSON
-RoomController --> RoomService
-RoomService --> REPOS
-RoomService --> P_ai
-RoomService --> P_events
-RoomService --> P_side
-REPOS --> DB : JPA/Flyway
+FE0 --> FE1
+FE1 --> FE2
+FE0 --> FEAPI
+FEAPI --> RC : HTTPS/JSON
+FEAPI --> MC : Vista-me no espelho do quarto
+FEAPI --> HC : POST /api/me/room-inventory/{id}/apply
+FEAPI --> CC : POST /api/copilot/messages (view ROOM)
+RC --> RS
+RS ..|> RLA
+CHS ..|> DP
+RS --> DP
+RS --> ISS : compute (closetLights)
+RS --> HQ : summaries (ilha)
+RS --> AI : organizar com IA
+RS --> SE : PieceCreated → autoAssign
+RS ..> WL : RoomOrganized (evento)
+WL --> SE
+RS --> REPOS
+AI --> APP
+AI --> RLP
+APP <.. PROV
+RLP <.. REDIS
+REPOS <.. MYSQL
+MYSQL --> DB : JDBC
 @enduml

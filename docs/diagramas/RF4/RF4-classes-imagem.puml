@@ -1,0 +1,229 @@
+@startuml RF4_Classes_Imagem
+!pragma layout smetana
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de classes — pipeline de imagem da peça (Flat Lay, Estúdio, asset canônico e piece_images V29)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #F8F4FF
+  BorderColor #7C5FC0
+  ArrowColor #52606D
+}
+skinparam packageStyle rectangle
+hide empty members
+
+package "fai-application · service" {
+  class WardrobeService <<Service>> {
+    +replaceImage(user, id, bytes, editedFromPhotoId) : PieceView
+    +removeBackground(user, id) : Map
+    +studioPiece(user, id, backdrop) : PieceView
+    +approveStudio(user, id) : PieceView
+    +discardStudio(user, id) : PieceView
+    +studioAll(user, backdrop) : Map
+    +studioBackdrops() : List<Map>
+    +governedFlatLay(userId, bytes) : FlatLayPipeline.Result
+    +reprocessPending() : int
+    +backfillDefaultStudio() «@Scheduled 10 min»
+    ~offerStudio(w, info, sourceChanged) : String
+    ~studioShot(userId, cutout, backdrop, basePath, hints) : Map
+  }
+  class MediaService <<Service>> {
+    +put(key, bytes, contentType) : StoredObject
+    +read(url) : Optional<byte[]>
+    +register(owner, origin, sourceEntityId, stored, ...) : Photo
+    +retire(userId, sourceEntityId, origins, urls) : int
+  }
+}
+package "fai-application · ai" {
+  class AiEngine {
+    +execute(userId, capability, inputs, ..., remoteSteps, local) : AiOutcome
+  }
+  enum AiCapability {
+    FLAT_LAY_STANDARDIZER
+    STUDIO_ENHANCER
+    CONTENT_MODERATOR
+    PIECE_ANALYZER
+  }
+}
+package "fai-application · imaging" {
+  class FlatLayPipeline <<Component>> {
+    +CANVAS = 1024 ; +THUMB = 300
+    +STUDIO_SOURCE_MAX = 2400
+    +run(bytes, allowExternal) : Result
+    +externalAvailable() : boolean
+    +truncatedSides(cut) : Set<String>
+  }
+  class "FlatLayPipeline.Result" as FLR <<record>> {
+    processedPng, thumbnailPng : byte[]
+    quality : QualityMetrics.Report
+    stages : List<Stage>
+    backgroundRemoved, fallbackUsed : boolean
+    studioSource : BufferedImage
+    truncated : Set<String>
+  }
+  class StudioPipeline <<Component>> {
+    +SIZE = 1600 ; +THUMB = 640
+    +BACKDROPS : List<Backdrop>
+    +run(cutout, backdropId, allowExternal, Hints) : Result
+    +externalAvailable() : boolean
+  }
+  class "StudioPipeline.Hints" as Hints <<record>> {
+    kind : String ; truncated : Set<String>
+    logoBox : double[] ; feed : FeedFraming.Template
+  }
+  class QualityMetrics {
+    +evaluate(original, composed, bgConfidence, ...) : Report
+    +sharpness(img) : double
+    +exposure(img) : double
+  }
+  class ImageOps {
+    +MAX_UPLOAD_BYTES = 10 MB
+    +requireAcceptedImage(bytes) : String
+    +decode(bytes) : BufferedImage
+  }
+  interface "ImageProviderPorts.BackgroundRemovalPort" as BGP <<port>>
+  interface "ImageProviderPorts.StudioShotPort" as SSP <<port>>
+  interface "ImageProviderPorts.UpscalePort" as UPP <<port>>
+}
+package "fai-application · vision (biblioteca, sem endpoint)" {
+  class CanonicalPhotographer {
+    +MODEL : ModelRef
+    +render(cutout, PhotographySpec, landmarks, clippedRegions) : Result
+    +detail(cutout, PhotographySpec, logoBox) : Result
+  }
+  class PhotographySpecs {
+    +GENERIC_FRONT, SHOE_SINGLE, SHOE_PAIR
+    +LOGO_DETAIL, TEXTURE_DETAIL, LABEL_DETAIL
+    +get(id) : PhotographySpec
+    +find(id) : Optional
+    +all() : Collection
+  }
+  class PhotographySpec <<record>> {
+    id : String ; version : int
+    view : CaptureView ; aspectRatio : String
+    canvasWidth, canvasHeight : int
+    coverageTarget, allowedRotationDeg : double
+    backgroundMode : BackgroundMode
+    maxUpscale : double ; detailRegion : DetailRegion
+  }
+  class LandmarkDetector {
+    +detect(cutout, family) : Result
+  }
+  class AdaptiveCaptureEngine {
+    +decide(Context) : Decision
+  }
+}
+package "fai-infrastructure · ai-providers" {
+  class RembgAdapter
+  class RemoveBgAdapter
+  class PhotoroomStudioAdapter
+  class StabilityUpscaleAdapter
+}
+package "fai-domain · model" {
+  class WardrobeItem <<Entity>> <<table wardrobe_items>> {
+    imageUrl, thumbnailUrl, originalImageUrl : String
+    defaultImage, aiGeneratedImage : boolean
+    studioImageUrl, studioBackdrop, studioDetailUrl : String
+    flatLayMetadataJson : String «studio{version, approved, pending, previous}»
+    photoProcessingStatus : PhotoProcessingStatus
+    canonicalImageUrl : String «V29, não gravado»
+    captureSessionId : UUID «V29»
+  }
+  class Photo <<Entity>> <<table photos>> {
+    origin : PhotoOrigin ; sourceEntityId : UUID
+    publicUrl, originalUrl, thumbnailUrl : String
+    editedFromPhotoId : UUID ; deletedAt : Instant
+  }
+  class PipelineJob <<Entity>> <<table pipeline_jobs>> {
+    type : PipelineJobType ; status : PipelineJobStatus
+    targetType : String «PIECE_DRAFT · PIECE_REPROCESS»
+    inputResourceId : UUID ; attempts : int
+  }
+  class PieceImage <<Entity>> <<table piece_images>> {
+    sessionId, pieceId, userId : UUID
+    imageType : PieceImageType ; viewType : CaptureView
+    url, storageKey, photographySpec : String
+    qualityScore : Integer ; derivedFromId : UUID
+    processingStatus : PieceImageStatus
+    superseded : boolean
+  }
+  class CaptureSession <<Entity>> <<table capture_sessions>> {
+    userId, draftJobId, pieceId : UUID
+    profileId : String ; primaryView : CaptureView
+    status : CaptureSessionStatus
+  }
+}
+package "fai-domain · enums" {
+  enum PhotoProcessingStatus {
+    NEW
+    MODERATING
+    PROCESSING
+    COMPLETED
+    NEEDS_REUPLOAD
+    FAILED
+  }
+  enum PieceImageType {
+    ORIGINAL
+    CANONICAL
+    DETAIL
+    LOGO_DETAIL
+    TEXTURE_DETAIL
+    SEGMENTATION_MASK
+  }
+  enum PieceImageStatus {
+    PENDING
+    PROCESSING
+    COMPLETED
+    NEEDS_REVIEW
+    FAILED
+  }
+}
+
+WardrobeService --> AiEngine : cota + teto de gasto
+AiEngine ..> AiCapability
+WardrobeService --> FlatLayPipeline
+WardrobeService --> StudioPipeline
+WardrobeService --> MediaService
+FlatLayPipeline ..> FLR
+FlatLayPipeline --> BGP
+FlatLayPipeline ..> QualityMetrics
+FlatLayPipeline ..> ImageOps
+StudioPipeline ..> Hints
+StudioPipeline --> SSP
+StudioPipeline --> UPP
+RembgAdapter ..|> BGP
+RemoveBgAdapter ..|> BGP
+PhotoroomStudioAdapter ..|> SSP
+StabilityUpscaleAdapter ..|> UPP
+CanonicalPhotographer ..> PhotographySpec
+PhotographySpecs ..> PhotographySpec
+CanonicalPhotographer ..> LandmarkDetector
+WardrobeService ..> WardrobeItem
+WardrobeService ..> PipelineJob : PIECE_REPROCESS
+MediaService ..> Photo : register (EDITOR)
+WardrobeItem --> PhotoProcessingStatus
+PieceImage --> PieceImageType
+PieceImage --> PieceImageStatus
+PieceImage "*" --> "0..1" CaptureSession : sessionId
+PieceImage ..> PieceImage : derivedFromId
+PieceImage ..> PhotographySpec : photographySpec (id)
+BGP -[hidden]down-> Photo
+SSP -[hidden]down-> WardrobeItem
+QualityMetrics -[hidden]down-> PipelineJob
+AiCapability -[hidden]down-> PieceImage
+note bottom of CanonicalPhotographer
+  CanonicalPhotographer, PhotographySpecs, LandmarkDetector e
+  AdaptiveCaptureEngine só são usados nos testes: as rotas
+  /api/capture/** do plano RF04 não existem no código.
+end note
+note bottom of PieceImage
+  piece_images (V29): só lida pelo LensService
+  (imagens dos embeddings); nenhum serviço grava.
+  Base proposta para as versões do RF15.
+end note
+note right of PipelineJob
+  PIECE_REPROCESS é enfileirado (JobQueuePort
+  "flatlay-reprocess"), mas reprocessPending()
+  não tem agendador: nada consome a fila.
+end note
+@enduml

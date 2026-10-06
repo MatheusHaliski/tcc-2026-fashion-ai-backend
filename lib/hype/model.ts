@@ -76,9 +76,3 @@ export function levelForScore(score: number | null | undefined): HypeLevel | nul
 /** A faixa `level` alcança a mínima `min`? (ex.: capa da FAI Magazine a partir de Tendência). Sem faixa = não. */
 export const levelAtLeast = (level: HypeLevel | null | undefined, min: HypeLevel) => !!level && LEVELS.indexOf(level) >= LEVELS.indexOf(min);
 
-/**
- * @deprecated Escala legada v1 (painel do Look do Dia v1, DNA "Hype Focus" v1), sem uso desde o Lote 4 (P2-12/P2-13):
- * use a faixa v2 (`levelTone` + rótulo `hype.level.*`). Sai na limpeza do v1 (P3-16). Sem vermelho — nota baixa não é
- * erro, é conteúdo novo ou pouco visto.
- */
-export const hypeColor = (h?: number | null) => ((h ?? 0) >= 70 ? "var(--thread)" : (h ?? 0) >= 40 ? "var(--chalk)" : "var(--muted)");

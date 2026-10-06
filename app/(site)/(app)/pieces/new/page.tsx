@@ -16,6 +16,7 @@ import { PieceArtEditor } from "@/components/piece-art-editor";
 import { FaiIcon } from "@/components/fai-icon";
 import { keepAllowed } from "@/lib/pieces/tags";
 import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
+import { MultiPieceUpload } from "@/components/multi-piece-review";
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
 import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePrefillParams } from "@/lib/pieces/prefill";
@@ -191,6 +192,12 @@ function PieceCreator({ initial, prefill = {} }: { initial: Partial<CatalogSearc
                 <h2 id="piece-form-label" className="type-h3 mb-2">{t("pieces.new.etapa_dados")}</h2>
                 {pick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("catalog.preenchido_do_catalogo")}</p>}
                 <PieceFields value={value} onChange={(v) => { setValue(v); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors} />
+              </section>
+              {/* RF4 · fotografia opcional, para um item mais personalizado: uma ou várias fotos, cada peça detectada vira uma
+                  peça no guarda-roupa (revisão foto por foto). Independe do tipo escolhido acima. */}
+              <section className="creator-section" aria-labelledby="piece-photo-label">
+                <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-photo-label" className="type-h3">{t("pieces.new.foto_opcional")}</h2><Badge tone="chalk">{t("common.optional")}</Badge></div>
+                <MultiPieceUpload onSaved={(count) => { toast.success(t("multiPiece.salvas", { count })); window.location.href = user ? `/u/${user.username}` : "/closet"; }} />
               </section>
               {nav}
             </Card>

@@ -1,5 +1,5 @@
 @startuml RF25_Classes
-title RF25 — Criar & editar selo de marca/celebridade (formulário + arte) e política de promoção\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de classes — selo, vínculo, promoção, resgate e direito a cupom (fai-domain) + serviços (fai-application)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -10,173 +10,205 @@ skinparam class {
 }
 skinparam packageStyle rectangle
 hide empty methods
+set separator none
+
+package "fai-application" {
+  class SealService <<service>> {
+    {static} +DEFAULT_SEAL_VALIDITY = 365 dias
+    +createSeal(user, SealForm): Map
+    +updateSeal(user, sealId, SealForm): Map
+    +draft(user, tier): Map
+    +sealsOf(viewer, ownerId): List<Map>
+    +ensureDefaultSeals(owner)
+    {static} +available(seal, now): boolean
+    {static} +unavailableReason(seal, now): String
+    ~sealHype(seals): Map<UUID, Map>  «Hype do selo»
+    +createPromotion(user, PromotionForm): Map
+    +updatePromotion(user, id, PromotionForm): Map
+    +setPromotionStatus(user, id, status): Map
+    +promotionsOf(viewer, ownerId): List<Map>
+    +eligiblePromotions(userId): List<Promotion>
+    +redeem(user, promotionId): Map
+    +issuerMetrics(user): Map
+    -applySeal(seal, form, owner)
+    -applyPromotion(user, promotion, form)
+    -issue(bond, decidedBy)  «emite o selo»
+  }
+  class "SealService.SealForm" as SealForm <<record>> {
+    +name: String
+    +tier: SealTier
+    +policyText, iconUrl: String
+    +background, design, policy: Map
+    +availableFrom, availableUntil: Instant
+    +usageLimit: Integer
+    +status: SealStatus
+  }
+  class "SealService.PromotionForm" as PromotionForm <<record>> {
+    +type: PromotionType
+    +title, description, rules: String
+    +discountPercent: Integer
+    +sealId: UUID
+    +requiredSealKind: String
+    +startsAt, expiresAt: Instant
+    +totalQuota, perUserLimit: Integer
+    +partnerBrandUserId: UUID
+    +visibility: Visibility
+    +storeUrl: String
+  }
+  class SealPolicies <<final>> {
+    +MAX_RULES = 6 · MAX_TAGS = 4
+    {static} +normalize(raw): Map
+    {static} +parse(stored): Policy
+    {static} +evaluate(policy, tier, pieces, occasions, styles, hype): Verdict
+    {static} +describe(policy, tier): String
+  }
+  class HypeSeals <<final>> {
+    +CODES = VIRAL, TRENDING, EMERGING, CLASSIC, RARE
+    +CARD_MAX = 2
+    {static} +of(HypeScoreCurrent): List<String>
+    {static} +forCard(HypeScoreCurrent): List<String>
+    {static} +progress(c, levelThresholds): List<Map>
+  }
+  class CouponService <<service>> {
+    +onCheck(CouponRightsCheck)  «AFTER_COMMIT»
+    +scan(userId): int
+    +mine(user) · redeem(user, rightId)
+    +dismiss(user, rightId) · validate(user, code)
+  }
+}
 
 package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +email: String
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String
-  +birthDate: String
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  .. +20 campos ..
+  class Seal <<entity>> {
+    +owner: User
+    +name: String
+    +tier: SealTier
+    +policyText: String
+    +status: SealStatus
+    +iconUrl: String
+    +premium: boolean
+    +backgroundConfigJson: String  «{design, policy, …}»
+    +availableFrom, availableUntil: Instant
+    +usageLimit: Integer
+    +usageCount: int
+    +autoIssued: boolean
+  }
+  class SealBond <<entity>> {
+    +scheme: Scheme
+    +targetOwner, requestedBy: User
+    +seal: Seal
+    +tier: SealTier
+    +linkedPieceIdsJson: String
+    +status: SealBondStatus
+    +origin: SealBondOrigin
+    +basis: SealBondBasis
+    +sealCode: String
+    +issuedAt, expiresAt: Instant
+    +aiInferenceId: UUID
+  }
+  class Promotion <<entity>> {
+    +seal: Seal
+    +ownerUserId: UUID
+    +type: PromotionType
+    +title, description, rules: String
+    +discountPercent: Integer
+    +requiredSealKind: String
+    +startsAt, expiresAt: Instant
+    +totalQuota: Integer
+    +perUserLimit: int
+    +redeemedCount: int
+    +partnerBrandUserId: UUID
+    +status: PromotionStatus
+    +visibility: Visibility
+    +storeUrl: String
+  }
+  class PromotionRedemption <<entity>> {
+    +promotion: Promotion
+    +sealBond: SealBond
+    +user: User
+    +code: String
+    +issuerUserId, partnerBrandUserId: UUID
+    +status: RedemptionStatus
+    +redeemedAt, expiresAt: Instant
+  }
+  class CouponRight <<entity>> {
+    +user, owner: User
+    +sourceType: String  «SELO | FLAIR»
+    +sourceId: UUID
+    +title, detail: String
+    +status: String  «PENDENTE | RESGATADO | DISPENSADO»
+    +couponRef: UUID
+    +decidedAt: Instant
+  }
+  class User <<entity>> {
+    +profileType: ProfileType
+    +status: AccountStatus
+  }
+  class HypeScoreCurrent <<entity>> {
+    +entityType, entityId
+    +status: HypeStatus
+    +score: BigDecimal
+    +level: HypeLevel
+    +momentum: HypeMomentum
+    +publicEligible: boolean
+  }
 }
-class Seal {
-  +owner: User
-  +name: String
-  +tier: SealTier
-  +policyText: String
-  +status: SealStatus
-  +iconUrl: String
-  +premium: boolean
-  +backgroundConfigJson: String
-  +availableFrom: Instant
-  +availableUntil: Instant
-  +usageLimit: Integer
-  +usageCount: int
-  +autoIssued: boolean
-}
-class SealBond {
-  +scheme: Scheme
-  +targetOwner: User
-  +requestedBy: User
-  +tier: SealTier
-  +linkedPieceIdsJson: String
-  +confidence: BigDecimal
-  +justification: String
-  +basis: SealBondBasis
-  +status: SealBondStatus
-  +requiresReview: boolean
-  +seal: Seal
-  +imageRightsConsent: Boolean
-  +aiInferenceId: UUID
-  +respondedAt: Instant
-  .. +8 campos ..
-}
-class Promotion {
-  +seal: Seal
-  +sealBond: SealBond
-  +type: PromotionType
-  +code: String
-  +description: String
-  +discountPercent: Integer
-  +partnerBrandUserId: UUID
-  +campaignId: UUID
-  +campaignLimit: Integer
-  +status: PromotionStatus
-  +visibility: Visibility
-  +ownerUserId: UUID
-  +expiresAt: Instant
-  +redeemedAt: Instant
-  .. +8 campos ..
-}
-class PromotionRedemption {
-  +promotion: Promotion
-  +sealBond: SealBond
-  +user: User
-  +code: String
-  +issuerUserId: UUID
-  +partnerBrandUserId: UUID
-  +status: RedemptionStatus
-  +redeemedAt: Instant
-  +expiresAt: Instant
-}
-class CouponRight {
-  +user: User
-  +owner: User
-  +sourceType: String
-  +sourceId: UUID
-  +title: String
-  +detail: String
-  +status: String
-  +schemeId: UUID
-  +couponRef: UUID
-  +decidedAt: Instant
-}
-class Notification {
-  +recipient: User
-  +actor: User
-  +type: NotificationType
-  +category: NotificationCategory
-  +resourceType: String
-  +resourceId: UUID
-  +title: String
-  +body: String
-  +payloadJson: String
-  +read: boolean
-  +readAt: Instant
-  +delivered: boolean
-}
-}
+
 package "fai-domain · enums" {
-enum SealTier {
-  PECA
-  LOOK
+  enum SealTier {
+    PECA
+    LOOK
+  }
+  enum SealStatus {
+    ACTIVE
+    INACTIVE
+  }
+  enum SealBondStatus {
+    SUGGESTED · ACCEPTED · EDITED · REFUSED
+    PENDING_REVIEW · APPROVED · REJECTED · REVOKED
+  }
+  enum PromotionType {
+    DESCONTO_ECOMMERCE · CUPOM_LOJA · EVENTO
+    FRETE_GRATIS · BRINDE · ACESSO_ANTECIPADO
+    SHOW · MEET_GREET · PRE_VENDA · CONTEUDO_EXCLUSIVO
+  }
+  enum PromotionStatus {
+    AVAILABLE
+    REDEEMED
+    EXPIRED
+    REVOKED
+  }
+  enum RedemptionStatus {
+    ISSUED
+    USED
+    EXPIRED
+  }
 }
-enum SealStatus {
-  ACTIVE
-  INACTIVE
-}
-enum SealBondStatus {
-  SUGGESTED
-  ACCEPTED
-  EDITED
-  REFUSED
-  PENDING_REVIEW
-  APPROVED
-  REJECTED
-  REVOKED
-}
-enum PromotionType {
-  DESCONTO_ECOMMERCE
-  CUPOM_LOJA
-  EVENTO
-  SHOW
-  FRETE_GRATIS
-  BRINDE
-  ACESSO_ANTECIPADO
-  MEET_GREET
-  PRE_VENDA
-  CONTEUDO_EXCLUSIVO
-}
-enum PromotionStatus {
-  AVAILABLE
-  REDEEMED
-  EXPIRED
-  REVOKED
-}
-}
-CouponRight "*" --> "1" User : owner
-CouponRight "*" --> "1" User : user
-Notification "*" --> "1" User : actor
-Notification "*" --> "1" User : recipient
-Promotion "*" --> "1" Seal : seal
-Promotion "*" --> "1" SealBond : sealBond
-Promotion --> PromotionStatus
-Promotion --> PromotionType
-Promotion ..> User : partnerBrandUserId
-PromotionRedemption "*" --> "1" Promotion : promotion
-PromotionRedemption "*" --> "1" SealBond : sealBond
-PromotionRedemption "*" --> "1" User : user
-PromotionRedemption ..> User : issuerUserId
-PromotionRedemption ..> User : partnerBrandUserId
+
+SealService ..> SealForm
+SealService ..> PromotionForm
+SealService ..> SealPolicies
+SealService ..> HypeScoreCurrent : Hype do selo\n(via HypeQueryService)
+HypeSeals ..> HypeScoreCurrent
+CouponService --> SealService : eligiblePromotions · redeem
 Seal "*" --> "1" User : owner
-Seal --> SealStatus
 Seal --> SealTier
-SealBond "*" --> "1" Seal : seal
-SealBond "*" --> "1" User : requestedBy
-SealBond "*" --> "1" User : targetOwner
+Seal --> SealStatus
+SealBond "*" --> "0..1" Seal
 SealBond --> SealBondStatus
-SealBond --> SealTier
-note top of User : tabela users
-note top of Seal : tabela seals
-note top of SealBond : tabela seal_bonds
-note top of Promotion : tabela promotions
-note top of PromotionRedemption : tabela promotion_redemptions
-note top of CouponRight : tabela coupon_rights
-note top of Notification : tabela notifications
+Promotion "*" --> "0..1" Seal : selo exigido
+Promotion --> PromotionType
+Promotion --> PromotionStatus
+PromotionRedemption "*" --> "1" Promotion
+PromotionRedemption "*" --> "1" SealBond : selo que deu direito
+PromotionRedemption --> RedemptionStatus
+CouponRight ..> Promotion : sourceId (SELO)
+CouponRight "*" --> "1" User : user
+
+note bottom of Seal
+  tabelas: seals, seal_bonds, promotions,
+  promotion_redemptions, coupon_rights.
+  Marca: só DESCONTO_ECOMMERCE, CUPOM_LOJA,
+  FRETE_GRATIS, BRINDE, ACESSO_ANTECIPADO, EVENTO;
+  celebridade: todos os tipos.
+end note
 @enduml

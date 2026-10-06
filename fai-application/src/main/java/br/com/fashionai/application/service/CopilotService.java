@@ -110,15 +110,15 @@ public class CopilotService {
         TYPE_WORDS.put("tênis", Taxonomy.SNEAKERS);
         TYPE_WORDS.put("tenis", Taxonomy.SNEAKERS);
         TYPE_WORDS.put("sapato", Set.of("loafers", "moccasins", "oxford_shoes", "derby_shoes", "flats"));
-        TYPE_WORDS.put("bota", Set.of("ankle_boots", "long_boots", "combat_boots"));
+        TYPE_WORDS.put("bota", Set.of("boots"));
         TYPE_WORDS.put("sandália", Set.of("sandals", "flip_flops", "espadrilles"));
         TYPE_WORDS.put("salto", Set.of("heels"));
         TYPE_WORDS.put("calça", Set.of("jeans", "tailored_pants", "casual_pants", "chino_pants", "cargo_pants", "jogger_pants", "sweatpants"));
-        TYPE_WORDS.put("jeans", Set.of("jeans", "denim_shorts"));
+        TYPE_WORDS.put("jeans", Set.of("jeans", "denim_shorts", "shorts"));
         TYPE_WORDS.put("saia", Set.of("skirt", "skort"));
-        TYPE_WORDS.put("short", Set.of("shorts", "bermuda_shorts", "denim_shorts"));
-        TYPE_WORDS.put("bermuda", Set.of("bermuda_shorts"));
-        TYPE_WORDS.put("camiseta", Set.of("t_shirt", "tank_top", "crop_top"));
+        TYPE_WORDS.put("short", Set.of("shorts"));
+        TYPE_WORDS.put("bermuda", Set.of("bermuda_shorts", "shorts"));
+        TYPE_WORDS.put("camiseta", Set.of("t_shirt", "tank_top", "top"));
         TYPE_WORDS.put("camisa", Set.of("shirt", "polo_shirt"));
         TYPE_WORDS.put("blusa", Set.of("blouse", "sweater"));
         TYPE_WORDS.put("moletom", Set.of("sweatshirt", "hoodie"));
@@ -127,7 +127,7 @@ public class CopilotService {
         TYPE_WORDS.put("blazer", Set.of("blazer"));
         TYPE_WORDS.put("vestido", Set.of("dress"));
         TYPE_WORDS.put("macacão", Set.of("jumpsuit", "overalls", "romper"));
-        TYPE_WORDS.put("bolsa", Set.of("handbag", "crossbody_bag", "tote_bag", "clutch"));
+        TYPE_WORDS.put("bolsa", Set.of("handbag", "tote_bag", "clutch"));
         TYPE_WORDS.put("mochila", Set.of("backpack"));
         TYPE_WORDS.put("boné", Set.of("cap"));
         TYPE_WORDS.put("chapéu", Set.of("hat"));
@@ -138,19 +138,19 @@ public class CopilotService {
         // inglês e espanhol (RF23)
         TYPE_WORDS.put("sneaker", Taxonomy.SNEAKERS); TYPE_WORDS.put("zapatilla", Taxonomy.SNEAKERS); TYPE_WORDS.put("tenis", Taxonomy.SNEAKERS);
         TYPE_WORDS.put("shoe", Set.of("loafers", "moccasins", "oxford_shoes", "derby_shoes", "flats")); TYPE_WORDS.put("zapato", Set.of("loafers", "moccasins", "oxford_shoes", "derby_shoes", "flats"));
-        TYPE_WORDS.put("boot", Set.of("ankle_boots", "long_boots", "combat_boots")); TYPE_WORDS.put("bota", Set.of("ankle_boots", "long_boots", "combat_boots"));
+        TYPE_WORDS.put("boot", Set.of("boots")); TYPE_WORDS.put("bota", Set.of("boots"));
         TYPE_WORDS.put("sandal", Set.of("sandals", "flip_flops", "espadrilles")); TYPE_WORDS.put("sandalia", Set.of("sandals", "flip_flops", "espadrilles")); TYPE_WORDS.put("sandália", Set.of("sandals", "flip_flops", "espadrilles"));
         TYPE_WORDS.put("heel", Set.of("heels")); TYPE_WORDS.put("tacón", Set.of("heels")); TYPE_WORDS.put("tacon", Set.of("heels"));
         TYPE_WORDS.put("pants", Set.of("jeans", "tailored_pants", "casual_pants", "chino_pants", "cargo_pants", "jogger_pants", "sweatpants")); TYPE_WORDS.put("trousers", Set.of("tailored_pants", "casual_pants", "chino_pants"));
         TYPE_WORDS.put("pantal", Set.of("jeans", "tailored_pants", "casual_pants", "chino_pants", "cargo_pants", "jogger_pants", "sweatpants"));
         TYPE_WORDS.put("skirt", Set.of("skirt", "skort")); TYPE_WORDS.put("falda", Set.of("skirt", "skort"));
-        TYPE_WORDS.put("t-shirt", Set.of("t_shirt", "tank_top", "crop_top")); TYPE_WORDS.put("tee", Set.of("t_shirt")); TYPE_WORDS.put("camiseta", Set.of("t_shirt", "tank_top", "crop_top"));
+        TYPE_WORDS.put("t-shirt", Set.of("t_shirt", "tank_top", "top")); TYPE_WORDS.put("tee", Set.of("t_shirt")); TYPE_WORDS.put("camiseta", Set.of("t_shirt", "tank_top", "top"));
         TYPE_WORDS.put("shirt", Set.of("shirt", "polo_shirt")); TYPE_WORDS.put("camisa", Set.of("shirt", "polo_shirt"));
         TYPE_WORDS.put("blouse", Set.of("blouse", "sweater")); TYPE_WORDS.put("sweater", Set.of("sweater")); TYPE_WORDS.put("blusa", Set.of("blouse", "sweater")); TYPE_WORDS.put("suéter", Set.of("sweater"));
         TYPE_WORDS.put("hoodie", Set.of("sweatshirt", "hoodie")); TYPE_WORDS.put("sweatshirt", Set.of("sweatshirt", "hoodie")); TYPE_WORDS.put("sudadera", Set.of("sweatshirt", "hoodie"));
         TYPE_WORDS.put("jacket", Set.of("jacket", "windbreaker", "parka")); TYPE_WORDS.put("chaqueta", Set.of("jacket", "windbreaker", "parka")); TYPE_WORDS.put("coat", Set.of("coat", "parka", "jacket")); TYPE_WORDS.put("abrigo", Set.of("coat", "parka", "jacket"));
         TYPE_WORDS.put("dress", Set.of("dress")); TYPE_WORDS.put("vestido", Set.of("dress")); TYPE_WORDS.put("jumpsuit", Set.of("jumpsuit", "overalls", "romper")); TYPE_WORDS.put("mono", Set.of("jumpsuit", "overalls", "romper"));
-        TYPE_WORDS.put("bag", Set.of("handbag", "crossbody_bag", "tote_bag", "clutch")); TYPE_WORDS.put("bolso", Set.of("handbag", "crossbody_bag", "tote_bag", "clutch")); TYPE_WORDS.put("backpack", Set.of("backpack")); TYPE_WORDS.put("mochila", Set.of("backpack"));
+        TYPE_WORDS.put("bag", Set.of("handbag", "tote_bag", "clutch")); TYPE_WORDS.put("bolso", Set.of("handbag", "tote_bag", "clutch")); TYPE_WORDS.put("backpack", Set.of("backpack")); TYPE_WORDS.put("mochila", Set.of("backpack"));
         TYPE_WORDS.put("cap", Set.of("cap")); TYPE_WORDS.put("gorra", Set.of("cap")); TYPE_WORDS.put("hat", Set.of("hat")); TYPE_WORDS.put("sombrero", Set.of("hat"));
         TYPE_WORDS.put("belt", Set.of("belt")); TYPE_WORDS.put("cinturón", Set.of("belt")); TYPE_WORDS.put("cinturon", Set.of("belt"));
         TYPE_WORDS.put("glasses", Set.of("sunglasses", "eyeglasses")); TYPE_WORDS.put("gafas", Set.of("sunglasses", "eyeglasses")); TYPE_WORDS.put("necklace", Set.of("necklace")); TYPE_WORDS.put("collar", Set.of("necklace"));
@@ -478,7 +478,7 @@ public class CopilotService {
         return pieces.findByUserIdOrderByCreatedAtDesc(userId).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
                 .filter(w -> !availableOnly || (w.isDisponivel() && w.getAvailabilityStatus() == AvailabilityStatus.AVAILABLE))
                 .filter(w -> colors.isEmpty() || colors.contains(w.getColor()))
-                .filter(w -> subs.isEmpty() || subs.contains(w.getSubcategory()))
+                .filter(w -> subs.isEmpty() || subs.contains(Taxonomy.activeSubcategory(w.getSubcategory())) || subs.contains(w.getSubcategory()))
                 .filter(w -> materials.isEmpty() || materials.contains(w.getMaterial()))
                 .filter(w -> !(colors.isEmpty() && subs.isEmpty() && materials.isEmpty()) || nameMatch(w, t))
                 .limit(8).toList();

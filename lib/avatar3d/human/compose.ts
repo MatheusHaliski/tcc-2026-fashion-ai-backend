@@ -12,6 +12,7 @@
  * medida dela − a referência desse sexo). O que a foto diz é "3% mais larga que o típico", e isso se aplica à malha.
  */
 import type { BodyAsset } from "./asset";
+import { applyResidual, applyResidualToEyes, buildResidual, type FaceResidual, type ResidualOptions } from "./face-residual";
 import { DEFAULT_BODY, type BodyParams, type BodySources, type Sex, type Source } from "../body-spec";
 import { similarity } from "../geometry";
 import { FACE_OVAL } from "../canonical-face";
@@ -128,7 +129,7 @@ export function faceDelta(a: BodyAsset, fz: ArrayLike<number> | null): { body: F
 }
 
 /** Corpo + rosto + esqueleto na estatura pedida, pés no chão. */
-export function compose(a: BodyAsset, z: ArrayLike<number>, fz: ArrayLike<number> | null, stature: number): Composed {
+export function compose(a: BodyAsset, z: ArrayLike<number>, fz: ArrayLike<number> | null, stature: number, residual: FaceResidual | null = null): Composed {
   const { body: nb, eye: ne, hair: nh, bones: nj } = a.meta.counts;
   const body = Float32Array.from(a.body.position), eye = Float32Array.from(a.eye.position), hair = Float32Array.from(a.hair.position);
   addShape(body, a.body.shape, a.body.shapeScale, z, nb); addShape(eye, a.eye.shape, a.eye.shapeScale, z, ne); addShape(hair, a.hair.shape, a.hair.shapeScale, z, nh);
@@ -141,6 +142,8 @@ export function compose(a: BodyAsset, z: ArrayLike<number>, fz: ArrayLike<number
   for (let k = 0; k < z.length; k++) { const o = k * nj * 3; for (let i = 0; i < nj * 3; i++) { joints[i] += z[k] * a.shapeJoints[o + i]; tails[i] += z[k] * a.shapeTails[o + i]; } }
   // chão: a sola mais baixa; estatura: o topo da cabeça
   let floor = Infinity; for (const v of a.meta.vertices.sole) floor = Math.min(floor, body[v * 3 + 1]);
+  // AVATAR-ID I2: resíduo assimétrico do rosto (o campo foi montado com y relativo ao chão, como no fitFace)
+  if (residual) { applyResidual(residual, body, -floor); applyResidual(residual, hair, -floor); applyResidualToEyes(residual, eye, -floor); }
   let top = -Infinity; for (const v of a.meta.vertices.top) top = Math.max(top, body[v * 3 + 1]);
   const k = stature / Math.max(0.5, top - floor);
   for (const arr of [body, eye, hair, joints, tails]) for (let i = 0; i < arr.length; i += 3) { arr[i] *= k; arr[i + 1] = (arr[i + 1] - floor) * k; arr[i + 2] *= k; }
@@ -158,7 +161,11 @@ export function landmarksOn(a: BodyAsset, body: ArrayLike<number>): Float64Array
   return out;
 }
 
-export interface FaceFit { z: Float64Array; rmsMm: number; scale: number }
+export interface FaceFit {
+  z: Float64Array; rmsMm: number; scale: number;
+  /** AVATAR-ID I2: o que o espaço de rostos (simétrico) não alcançou, como campo suave na cabeça; null = desligado */
+  residual: FaceResidual | null;
+}
 
 /**
  * Rosto da pessoa: coeficientes do espaço de rostos que levam os marcos da cabeça aos 468 pontos medidos (forma
@@ -166,7 +173,7 @@ export interface FaceFit { z: Float64Array; rmsMm: number; scale: number }
  * tamanho real): a cada passo o rosto medido é alinhado por semelhança à cabeça atual. A profundidade (z) pesa menos —
  * numa foto de frente ela é estimada.
  */
-export function fitFace(a: BodyAsset, bodyUnscaled: Float32Array, shapeCm: ArrayLike<number>, iterations = 4): FaceFit {
+export function fitFace(a: BodyAsset, bodyUnscaled: Float32Array, shapeCm: ArrayLike<number>, iterations = 4, opts: { residual?: boolean | ResidualOptions } = {}): FaceFit {
   const n = a.meta.counts.landmarks; const Kf = a.meta.counts.faceShape; const nb = a.meta.counts.body;
   const f = a.face; const ns = f.support.length;
   const sup = new Int32Array(nb).fill(-1); for (let s = 0; s < ns; s++) if (f.support[s] < nb) sup[f.support[s]] = s;
@@ -200,5 +207,13 @@ export function fitFace(a: BodyAsset, bodyUnscaled: Float32Array, shapeCm: Array
     for (let row = 0; row < n * 3; row++) { let v = L0[row]; const o = row * Kf; for (let k = 0; k < Kf; k++) v += B[o + k] * z[k]; cur[row] = v; if (row % 3 < 2) e += (v - T[row]) ** 2; }
     rms = Math.sqrt(e / (n * 2)) * 1000;
   }
-  return { z, rmsMm: rms, scale };
+  // resíduo: o medido, alinhado à cabeça já ajustada, menos a cabeça ajustada (espaço sem escala, y relativo ao chão)
+  let residual: FaceResidual | null = null;
+  if (opts.residual !== false) {
+    const sim = similarity(U, cur, n, wPts);
+    const T = new Float64Array(n * 3);
+    for (let i = 0; i < n; i++) for (let r = 0; r < 3; r++) T[i * 3 + r] = sim.s * (sim.R[r * 3] * U[i * 3] + sim.R[r * 3 + 1] * U[i * 3 + 1] + sim.R[r * 3 + 2] * U[i * 3 + 2]) + sim.t[r];
+    residual = buildResidual(cur, T, n, typeof opts.residual === "object" ? opts.residual : {});
+  }
+  return { z, rmsMm: rms, scale, residual };
 }

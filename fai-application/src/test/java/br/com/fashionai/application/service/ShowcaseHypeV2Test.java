@@ -95,7 +95,7 @@ class ShowcaseHypeV2Test {
         return u;
     }
 
-    private static Scheme look(User owner, String title, long likes, BigDecimal v1, Instant created) {
+    private static Scheme look(User owner, String title, long likes, Instant created) {
         Scheme s = new Scheme();
         s.assignId(UUID.randomUUID());
         s.setUser(owner);
@@ -106,7 +106,6 @@ class ShowcaseHypeV2Test {
         s.setStatus(SchemeStatus.PUBLISHED);
         s.setLikeCount(likes);
         s.setSaveCount(likes);
-        s.setHypeScore(v1);
         s.markCreatedAt(created);
         return s;
     }
@@ -134,10 +133,10 @@ class ShowcaseHypeV2Test {
     void top100UsesThePublicV2ScoreAndSendsLooksWithoutPublicHypeToTheEnd() {
         User a = user(ProfileType.PESSOAL);
         Instant t = Instant.now();
-        Scheme v1Star = look(a, "v1", 999, BigDecimal.valueOf(100), t);     // v1 e curtidas altos, sem Hype v2
-        Scheme personal = look(a, "personal", 0, null, t);                 // Hype só pessoal (privado/seguidores)
-        Scheme best = look(a, "best", 0, null, t.minusSeconds(60));
-        Scheme mid = look(a, "mid", 0, null, t.minusSeconds(60));
+        Scheme v1Star = look(a, "v1", 999, t);     // v1 e curtidas altos, sem Hype v2
+        Scheme personal = look(a, "personal", 0, t);                 // Hype só pessoal (privado/seguidores)
+        Scheme best = look(a, "best", 0, t.minusSeconds(60));
+        Scheme mid = look(a, "mid", 0, t.minusSeconds(60));
         score(personal, 99, false);
         score(best, 88, true);
         score(mid, 41, true);
@@ -151,9 +150,9 @@ class ShowcaseHypeV2Test {
     void emAltaIsGrowthNotLikes() {
         User a = user(ProfileType.PESSOAL);
         Instant t = Instant.now();
-        Scheme popular = look(a, "popular", 5_000, BigDecimal.valueOf(99), t);    // muito curtido, sem crescimento
-        Scheme rising = look(a, "rising", 3, null, t);
-        Scheme growing = look(a, "growing", 1, null, t);
+        Scheme popular = look(a, "popular", 5_000, t);    // muito curtido, sem crescimento
+        Scheme rising = look(a, "rising", 3, t);
+        Scheme growing = look(a, "growing", 1, t);
         HypeScoreCurrent p = score(popular, 95, true);
         p.setDimensions(dims(30));
         p.setMomentum(HypeMomentum.COOLING);
@@ -181,8 +180,8 @@ class ShowcaseHypeV2Test {
         User a = user(ProfileType.PESSOAL);
         User b = user(ProfileType.PESSOAL);
         Instant t = Instant.now();
-        Scheme pub = look(a, "pub", 1, BigDecimal.valueOf(10), t);
-        Scheme followers = look(b, "followers", 1, BigDecimal.valueOf(90), t);
+        Scheme pub = look(a, "pub", 1, t);
+        Scheme followers = look(b, "followers", 1, t);
         score(pub, 77, true);
         score(followers, 93, false);
         when(dailyLooks.findByLookDate(any())).thenReturn(List.of(daily(followers, t), daily(pub, t)));
@@ -211,10 +210,10 @@ class ShowcaseHypeV2Test {
     void groupingSortHypeUsesV2WithMissingLastAndGrowthUsesTheWeeklyDelta() {
         User celeb = user(ProfileType.CELEBRIDADE);
         Instant t = Instant.now();
-        Scheme a = look(celeb, "a", 0, BigDecimal.valueOf(100), t);
-        Scheme b = look(celeb, "b", 0, null, t.minusSeconds(10));
-        Scheme c = look(celeb, "c", 0, null, t.minusSeconds(20));
-        Scheme d = look(celeb, "d", 0, null, t.minusSeconds(30));
+        Scheme a = look(celeb, "a", 0, t);
+        Scheme b = look(celeb, "b", 0, t.minusSeconds(10));
+        Scheme c = look(celeb, "c", 0, t.minusSeconds(20));
+        Scheme d = look(celeb, "d", 0, t.minusSeconds(30));
         HypeScoreCurrent hb = score(b, 70, true);
         hb.setDeltaPoints(BigDecimal.valueOf(-4));
         HypeScoreCurrent hc = score(c, 52, true);
@@ -245,13 +244,13 @@ class ShowcaseHypeV2Test {
         SchemeGrouping hyped = era(celeb, "Em alta", 2);
         when(groupings.findByOwnerIdOrderByCreatedAtDesc(celeb.getId())).thenReturn(List.of(loved, hyped));
         Instant t = Instant.now();
-        Scheme l1 = look(celeb, "l1", 900, BigDecimal.valueOf(100), t);
+        Scheme l1 = look(celeb, "l1", 900, t);
         l1.setGroupingId(loved.getId());
-        Scheme h1 = look(celeb, "h1", 1, null, t);
+        Scheme h1 = look(celeb, "h1", 1, t);
         h1.setGroupingId(hyped.getId());
-        Scheme h2 = look(celeb, "h2", 1, null, t);
+        Scheme h2 = look(celeb, "h2", 1, t);
         h2.setGroupingId(hyped.getId());
-        Scheme hidden = look(celeb, "hidden", 0, null, t);
+        Scheme hidden = look(celeb, "hidden", 0, t);
         hidden.setGroupingId(loved.getId());
         score(l1, 20, true);
         score(h1, 80, true);
@@ -290,9 +289,9 @@ class ShowcaseHypeV2Test {
         when(institutional.institutionalUser("diva")).thenReturn(celeb);
         when(groupings.findByOwnerIdOrderByCreatedAtDesc(celeb.getId())).thenReturn(List.of());
         Instant t = Instant.now();
-        Scheme recentV1 = look(celeb, "recente v1", 0, BigDecimal.valueOf(100), t);
-        Scheme privateHype = look(celeb, "pessoal", 0, null, t.minusSeconds(5));
-        Scheme top = look(celeb, "topo v2", 0, null, t.minusSeconds(10));
+        Scheme recentV1 = look(celeb, "recente v1", 0, t);
+        Scheme privateHype = look(celeb, "pessoal", 0, t.minusSeconds(5));
+        Scheme top = look(celeb, "topo v2", 0, t.minusSeconds(10));
         score(privateHype, 99, false);
         score(top, 74, true);
         when(schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(eq(celeb.getId()), any())).thenReturn(List.of(recentV1, privateHype, top));

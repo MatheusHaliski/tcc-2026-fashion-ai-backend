@@ -1,5 +1,5 @@
 @startuml RF29_Atividades
-title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings do guarda-roupa\nDiagrama de atividades
+title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings ("Destaques")\nDiagrama de atividades — abrir Destaques, ver a nota e agir sobre ela
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,44 +23,53 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Usuário|
+|Pessoa|
 start
-:Meu Guarda-Roupa → "Destaques";
-|Sistema (InventoryScoreService)|
-if (Tem ao menos 10 peças?) then (não)
-  :Mostra o progresso ("faltam N peças"),\nsem nota parcial;
-  stop
-endif
-:Calcula o FAI Inventory Score (0–1000) pelas\ndimensões Catalogação, Utilização, Versatilidade,\nDescoberta, Diversidade, Organização e Identidade;
-:Faixa: Em Montagem → Organizado → Versátil →\nBem Curado → Closet Inteligente →\nSignature Closet → Maison Closet;
-:Grava snapshots do dia e do mês\n(inventory_score_snapshots) e confere conquistas;
-|Usuário|
-split
-  :Abre uma dimensão;
-  |Sistema (InventoryScoreService)|
-  :Explica o que puxa a nota para baixo;
-split again
-  |Usuário|
-  :Pede dicas;
-  |Sistema (InventoryScoreService)|
-  :Dicas acionáveis (resgatar esquecidas etc.);
-split again
-  |Usuário|
-  :Álbum / retrospectiva anual;
-split again
-  |Usuário|
-  :Rankings;
-  if (Entrou nos rankings (opt-in)?) then (sim)
-    |Sistema (InventoryScoreService)|
-    if (Segmento de cidade com ≥ 50 pessoas (k-anonimato)?) then (sim)
-      :Mostra posição e percentil;
-    else (não)
-      :Oculta até haver 50 pessoas;
-    endif
-  else (não)
-    |Usuário|
-    :Convite para entrar (opt-in);
+:Abre o menu **Destaques** (/highlights);
+|Frontend (highlights/page.tsx)|
+:GET /api/me/highlights;
+|Serviço (InventoryScoreService)|
+if (Nota em cache há menos de 1 h?) then (sim)
+  :Usa o resultado em memória;
+else (não)
+  :computeNow(): peças não arquivadas, esquemas, diário de uso\n(janela de 90 dias) e histórico de disponibilidade;
+  :7 dimensões de 0 a 100 (rubrica absoluta):\nCatalogação 20% · Utilização 20% · Versatilidade 15%\n· Descoberta 13% · Diversidade 12% · Organização 10%\n· Identidade 10% (omitida sem DNA de Estilo);
+  :k = min(1, peças / 20); nota = 10 × média ponderada × k\n(volume não pesa acima de 20 peças);
+  :Grava snapshots DAY e MONTH\n(inventory_score_snapshots);
+  if (Elegível (10+ peças)?) then (sim)
+    :Confere conquistas: CURADOR, SIGNATURE_CLOSET,\nSEGUNDA_CHANCE, CAMALEAO, STYLIST, HIDDEN_GEM\n(AchievementService.grant: 1× cada, FAI Points e aviso);
   endif
-end split
+endif
+if (Elegível (10+ peças)?) then (não)
+  :Devolve progresso {missing, target = 10, steps}\ne o manifesto, sem nota parcial;
+  |Frontend (highlights/page.tsx)|
+  :Checklist "faltam N peças"\n+ botão para cadastrar peça;
+  stop
+else (sim)
+  :Devolve nota, faixa (Em Montagem → Maison Closet),\ndimensões, variação do mês, até 6 destaques,\nevolução, recordes, conquistas, desafios sugeridos\ne se a pessoa está nos rankings;
+endif
+|Frontend (highlights/page.tsx)|
+:Mostra a nota e a barra de faixas, as 7 dimensões,\nos destaques do mês, a evolução e as conquistas;
+:Card "Maior crescimento de Hype" (GET /api/me/hype/wardrobe)\ne InsightStrip (GET /api/insights) — Hype não entra na nota;
+switch (Ação da pessoa)
+case (abre uma dimensão)
+  :GET /api/me/inventory-score/dimensions/{code}\n→ regra em linguagem simples + itens que puxam para baixo\n(404 se o código não existe);
+case (entra ou sai dos rankings)
+  :PUT /api/me/rankings/opt-in {optedIn, shareCity, city};
+  :Sair apaga as posições da pessoa;\ncidade só com consentimento (shareCity);
+case (vê os rankings)
+  :GET /api/me/rankings;
+  if (Tem opt-in?) then (sim)
+    :Posições por segmento (GLOBAL, PAIS, CIDADE, FAIXA,\nESTILO, SUSTENTAVEL, VERSATEIS, RISING) e top 5;
+  else (não)
+    :Convite para participar + segmentos disponíveis;
+  endif
+  note right: a tela mostra a resposta como JSON bruto num diálogo
+case (abre um desafio sugerido)
+  :/challenges?start={code} (RF32);
+case ("Como melhorar meu inventário?")
+  :Pergunta no Copilot (/copilot) → intenção IMPROVE_INVENTORY\n→ improvementHints: as 2 dimensões mais fracas + ações;
+  note right: não há botão na tela Destaques
+endswitch
 stop
 @enduml

@@ -1,5 +1,5 @@
 @startuml RF30_Atividades
-title RF30 — Ganhar e usar FAI Points, evoluir o nível do "Meu Quarto" e comprar na loja do quarto\nDiagrama de atividades
+title RF30 — Ganhar e usar FAI Points e evoluir o nível do "Meu Quarto"\nDiagrama de atividades — ganhar pontos, subir de nível e comprar/aplicar na loja do quarto
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,35 +23,70 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Usuário|
+|Pessoa|
 start
-:Usa o app (cadastra bem, gera 3D,\ncria looks, resgata peças esquecidas…);
-|Sistema (FaiPointsService)|
-:Credita no ledger append-only e idempotente\n(limite diário por regra);
-:Recalcula nível pelo acumulado vitalício\n(Estreia → Studio → Loft → Closet →\nAtelier → Penthouse → Maison);
-|Usuário|
-:Abre FAI Points → Loja do quarto;
-:Filtra por tipo, bloco, material,\norigem, marca e cor;
-if (Provar antes?) then (sim)
-  :Prévia no módulo (nada é cobrado);
-endif
-:Comprar;
-|Sistema (FaiPointsService)|
-if (Nível, estoque, janela, limite\npor pessoa e selo OK?) then (sim)
-  if (Saldo suficiente?) then (sim)
-    :Debita (SHOP_PURCHASE, não conta no vitalício);
-    :Cria unidade no inventário (serial se limitada);
-  else (não)
-    #FFE3E3:409 SALDO_INSUFICIENTE;
-    stop
+:Usa o app: cadastra peça, gera 3D, cria esquema,\nresgata peça esquecida, organiza o quarto, joga (RF41)…;
+|Serviço (FaiPointsService)|
+:award(userId, actionCode, refType, refId);
+if (Regra ativa, chave nova e abaixo dos tetos?) then (sim)
+  :INSERT fai_points_ledger (+pontos, countsLifetime = true);
+  :Extrato: notificação FAI_POINTS ("+40 FAI Points · Esquema criado");
+  if (Vitalício passou do limiar do próximo nível?) then (sim)
+    |Quarto (RoomService)|
+    :setLevel(): room_layouts.level e novos módulos\n(LOFT +2 portas, CLOSET sapateira, ATELIER ilha…);
+    :Notificação ROOM_LEVEL_UP ("Seu quarto evoluiu");
   endif
 else (não)
-  #FFE3E3:409 com o motivo do bloqueio;
-  stop
+  :Não lança (sem regra, já pontuado ou no teto);\na ação da pessoa segue normalmente;
 endif
-|Usuário|
-:Escolhe o módulo (ou "guarda-roupa inteiro");
-|Sistema (RoomService)|
-:Aplica o acabamento no módulo;
+|Pessoa|
+:Abre **FAI Points** (/points);
+|Frontend (points/page.tsx · RoomStore)|
+:GET /api/me/points → saldo, vitalício, nível, próximo nível,\n7 níveis com o que liberam e regras de ganho;
+:GET /api/points/shop → itens ativos com levelOk, affordable,\nowned, inventory, compatibleModules e condições;
+:Filtros: tipo (componente / guarda-roupa), bloco, material,\norigem (FAI, marca, celebridade), criador, busca,\n"só os que posso comprar" e ordenação por preço;
+|Pessoa|
+if (Provar antes?) then (sim)
+  |Frontend (points/page.tsx · RoomStore)|
+  :POST /api/points/shop/{sku}/try-on;
+  if (Cabe em algum módulo do nível?) then (sim)
+    :Aviso "Prévia em Porta 1 — nada foi comprado"\n(saldo intacto);
+  else (não)
+    #FFE3E3:409 ENCAIXE_INCOMPATIVEL;
+  endif
+  note right: a prévia não é aplicada na cena 3D; só vira aviso
+endif
+|Frontend (points/page.tsx · RoomStore)|
+:Comprar → POST /api/points/shop/{sku}/purchase;
+|Serviço (FaiPointsService)|
+:Trava a linha da pessoa e depois a do item\n(lockOwner → lockBySku);
+if (Nível ≥ requiredLevel?) then (não)
+  #FFE3E3:409 NIVEL_INSUFICIENTE;
+  stop
+elseif (Estoque da edição limitada?) then (esgotado)
+  #FFE3E3:409 ESGOTADO;
+  stop
+elseif (blocker(): janela, vendedor ativo, limite\npor pessoa, selo exigido?) then (bloqueado)
+  #FFE3E3:409 CONDICAO_DE_COMPRA (motivo);
+  stop
+elseif (Saldo ≥ preço?) then (não)
+  #FFE3E3:409 SALDO_INSUFICIENTE;
+  stop
+else (sim)
+  :INSERT fai_points_ledger (−preço, SHOP_PURCHASE,\ncountsLifetime = false: o nível não cai);
+  :soldCount + 1; INSERT room_inventory\n(serial se edição limitada, source = PURCHASE);
+endif
+|Pessoa|
+:Escolhe o módulo (ou abre a caixa de entrega no quarto);
+|Frontend (points/page.tsx · RoomStore)|
+:POST /api/me/room-inventory/{inventoryId}/apply {moduleId};
+|Serviço (FaiPointsService)|
+if (Item é da pessoa e o módulo é compatível?) then (sim)
+  |Quarto (RoomService)|
+  :applyFinish(): acabamento no módulo\n(guarda-roupa inteiro: em todos os blocos do tipo, "ALL");
+  :appliedModule gravado; quarto recarrega com o acabamento;
+else (não)
+  #FFE3E3:403 item de outro usuário\nou 409 ENCAIXE_INCOMPATIVEL;
+endif
 stop
 @enduml

@@ -1,6 +1,6 @@
 # Taxonomia de entidades do FashionAI
 
-> Gerado por `scripts/docs/taxonomia_entidades.py` a partir do código em 2026-10-04. As contagens são calculadas; o único conteúdo manual é o agrupamento por área. Para atualizar, rode o script de novo.
+> Gerado por `scripts/docs/taxonomia_entidades.py` a partir do código em 2026-10-05. As contagens são calculadas; o único conteúdo manual é o agrupamento por área. Para atualizar, rode o script de novo.
 
 Numeração de RF = a do **Trello** (código RF32→RF27, RF33 do espelho→RF28, RF34→RF29, RF35→RF30, RF36→RF32, RF4 da captura V29→RF45; tabela em [`docs/novos-rf/README.md`](../novos-rf/README.md)). Visão complementar, por contexto delimitado, com migração de origem e enum de ciclo de vida de cada entidade: [`docs/entidades/TAXONOMIA_ENTIDADES.md`](../entidades/TAXONOMIA_ENTIDADES.md). Esta aqui traz contagens, campos, relações JPA, enums com valores e as entidades embutidas em JSON.
 
@@ -8,15 +8,15 @@ Numeração de RF = a do **Trello** (código RF32→RF27, RF33 do espelho→RF28
 
 | Medida | Valor |
 |---|---|
-| Entidades persistidas (JPA, MySQL) | 99 |
+| Entidades persistidas (JPA, MySQL) | 103 |
 | Áreas de negócio | 12 |
-| Campos (somados) | 1187 |
-| Relações JPA (ManyToOne/OneToOne/…) | 70 |
-| Enums de domínio | 87 |
+| Campos (somados) | 1250 |
+| Relações JPA (ManyToOne/OneToOne/…) | 67 |
+| Enums de domínio | 95 |
 | Categorias de peça · subcategorias | 5 · 78 |
 | Cores · famílias | 59 · 12 |
 | Ocasiões · estilos | 20 · 25 |
-| Entidades sem área (devem ser 0) | 0 |
+| Entidades sem área (devem ser 0) | 7 |
 
 Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) e `VersionedAuditableEntity` (+ `@Version`, concorrência otimista para agregados mutáveis). Mapa visual: `taxonomia-de-entidades.puml/.png`.
 
@@ -27,7 +27,7 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 | Entidade | Tabela | Base | Campos | Relações | Papel (Javadoc) |
 |---|---|---|---|---|---|
 | **User** | `users` | versionada | 32 | — | Conta do usuário (RF1/RF2/RF3/RF23). Dados pessoais identificadores ficam cifrados em repouso (RNF3); e-mail tem hash determinístico para unicidade e login sem expor o valor. |
-| **UserPreferences** | `user_preferences` | versionada | 25 | user → User | RF23 — preferências de interface e de uso. Não são dado pessoal (doc LGPD do RNF6): salvam direto, sem reautenticação, persistidas no servidor e replicadas entre dispositivos (CA16-CA18, last-write-wins por #clientUpdate… |
+| **UserPreferences** | `user_preferences` | versionada | 26 | user → User | RF23 — preferências de interface e de uso. Não são dado pessoal (doc LGPD do RNF6): salvam direto, sem reautenticação, persistidas no servidor e replicadas entre dispositivos (CA16-CA18, last-write-wins por #clientUpdate… |
 | **UserConsent** | `user_consents` | versionada | 7 | user → User | RF3.CA16-CA21 e RF24.CA15 — consentimento por finalidade. Estado atual por (usuário, finalidade); cada manifestação/revogação também vira evento em audit_log (CA18: data e hora da manifestação). |
 | **VerificationCode** | `verification_codes` | versionada | 9 | user → User | Código/link transacional (confirmação de e-mail, troca de e-mail, 2FA, redefinição de senha). Só o hash do código é persistido; o destino novo (troca de e-mail) fica cifrado (RNF3). |
 | **RefreshToken** | `refresh_tokens` | versionada | 12 | user → User | RNF2 — refresh token rotativo (armazenado só como hash). Cada família representa uma sessão ativa exibida em "Sessões ativas" (RF3.CA32); logout invalida no servidor (RF3.CA31). |
@@ -44,7 +44,7 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 
 | Entidade | Tabela | Base | Campos | Relações | Papel (Javadoc) |
 |---|---|---|---|---|---|
-| **WardrobeItem** | `wardrobe_items` | versionada | 74 | user → User, brandProfile → BrandProfile, brand → Brand | ClothesPiece (taxonomia §02) — peça do guarda-roupa (RF4, RF6, RF7, RF9, RF18). Campos de formulário, de sistema (pipeline Flat Lay, moderação, contadores sociais, hype score) e de lineage de remix. Listas curtas (occasi… |
+| **WardrobeItem** | `wardrobe_items` | versionada | 72 | user → User, brandProfile → BrandProfile, brand → Brand | ClothesPiece (taxonomia §02) — peça do guarda-roupa (RF4, RF6, RF7, RF9, RF18). Campos de formulário, de sistema (pipeline Flat Lay, moderação, contadores sociais, hype score) e de lineage de remix. Listas curtas (occasi… |
 | **PieceImage** | `piece_images` | versionada | 28 | — | RF4 · Asset de imagem da peça. ORIGINAL nunca é sobrescrito (chave única); os demais derivam dele. |
 | **PieceUsageDiaryEntry** | `piece_usage_diary` | — | 9 | — | DET-C07 / DET-M04 — Diário da Peça: cada uso com data, ocasião e nota (1× por dia). |
 | **WardrobeAvailabilityChange** | `wardrobe_availability_log` | — | 5 | — | RF34 §3.3 — histórico de transições disponível/indisponível (população de exposição da Utilização). |
@@ -78,19 +78,17 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 
 | Entidade | Tabela | Base | Campos | Relações | Papel (Javadoc) |
 |---|---|---|---|---|---|
-| **Scheme** | `schemes` | versionada | 55 | user → User, originalScheme → Scheme | ClothesScheme (taxonomia §03) — esquema de vestimenta (RF5, RF6, RF7, RF9, RF11, RF18, RF19, RF20/21). occasion/style guardam até 3 valores (CSV), sealIds até 4 (JSON). A configuração completa do Background Studio (RF11:… |
+| **Scheme** | `schemes` | versionada | 52 | user → User, originalScheme → Scheme | ClothesScheme (taxonomia §03) — esquema de vestimenta (RF5, RF6, RF7, RF9, RF11, RF18, RF19, RF20/21). occasion/style guardam até 3 valores (CSV), sealIds até 4 (JSON). A configuração completa do Background Studio (RF11:… |
 | **SchemeItem** | `scheme_items` | auditável | 13 | scheme → Scheme, wardrobeItem → WardrobeItem | Peça posicionada no esquema (taxonomia §03 — SchemeItem): slot, transformação (zIndex, posição, escala, rotação, opacidade) e filtros de imagem do pipeline RF5 (blur, saturation, brightness, contrast, hue_shift) em filte… |
 | **SchemeGrouping** | `scheme_groupings` | versionada | 10 | owner → User | SchemeGrouping (taxonomia §07, RF14/RF22) — coleção/promoção/série/era/fase/temporada/turnê. |
-| **DnaScheme** | `dna_schemes` | versionada | 34 | user → User | DNAScheme (taxonomia §04, RF13) — conjunto de 2 a 6 esquemas do próprio usuário com uma narrativa de exibição (11 variações). archetype é sintetizado pela IA e restrito aos 5 arquétipos de Kibbe. |
+| **DnaScheme** | `dna_schemes` | versionada | 33 | user → User | DNAScheme (taxonomia §04, RF13) — conjunto de 2 a 6 esquemas do próprio usuário com uma narrativa de exibição (11 variações). archetype é sintetizado pela IA e restrito aos 5 arquétipos de Kibbe. |
 | **DnaSchemeItem** | `dna_scheme_items` | auditável | 8 | dnaScheme → DnaScheme, scheme → Scheme | Célula do DNA (taxonomia §04 — DNASchemeItem): referencia um ClothesScheme inteiro, não uma peça. |
 | **StyleDna** | `style_dna` | versionada | 16 | user → User | Resumo vigente do DNA de Estilo do usuário (um por conta): arquétipo, paleta e frase de identidade sintetizados a partir do DNA mais recente. Alimenta a ordenação por afinidade (RF24.CA6) e o Copilot. |
 | **StyleDnaVersion** | `style_dna_versions` | — | 4 | — | HU20 — versionamento do DNA por data de geração (sem a Camada 2, que fica só cifrada em style_dna). |
 | **DailyLook** | `daily_looks` | versionada | 6 | user → User, scheme → Scheme, materializedFrom → DailyLook | saiDailyLooks (RF6 §1) — registro datado do Look do Dia: fonte de verdade para histórico, continuidade na virada do dia (materialização lazy) e comparação com o dia anterior. |
-| **HypeScoreMetric** | `hype_score_metrics` | versionada | 23 | dailyLook → DailyLook, scheme → Scheme, user → User | — |
 | **WeekPlan** | `week_plans` | versionada | 4 | user → User | HU18 — Semana Planejada: sete looks sem repetição de combinação, com lacunas sugeridas. |
 | **WeekPlanDay** | `week_plan_days` | auditável | 9 | weekPlan → WeekPlan, scheme → Scheme | HU18 — um dia da semana planejada (evento, ocasião e combinação de peças). |
 | **AcervoGroup** | `acervo_groups` | versionada | 7 | user → User | AcervoGroup (RF6 — Acervo Grouping AI): cluster local do acervo de UM usuário, nunca cruza donos (RNF6). |
-| **HypeGroup** | `hype_groups` | versionada | 10 | — | HypeGroup (RF6 §8/§9) — itens semelhantes entre usuários (Sim ≥ 0,70) e média do Hype Score pessoal. |
 | **MirrorState** | `mirror_states` | auditável | 4 | — | RF33 / DET-D05 — look pendurado no espelho entre sessões e combinações já exibidas (RF33.CA13). |
 
 ### Selos, promoções e cupons  ·  RF20, RF21, RF25, RF38  ·  5 entidades
@@ -170,7 +168,6 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 | **PipelineJob** | `pipeline_jobs` | versionada | 22 | user → User | Job assíncrono (RF4 Flat Lay, RF18 render híbrido, RF5 render do card, RF11 geração de arte, RF24). Estado canônico no MySQL (máquina de estados); o disparo vai para a fila (Redis Streams). Cada etapa registra provedor, … |
 | **ProcessingJobLog** | `processing_jobs_log` | — | 15 | — | RFC RF4 — processing_jobs_log: linha append-only por job de padronização concluído (auditoria/custo). |
 | **RenderJobLog** | `render_jobs_log` | — | 16 | — | RFC RF18 — render_jobs_log: linha append-only por renderização do provador 2D (custo por provedor). |
-| **MetricSnapshot** | `metric_snapshots` | — | 6 | — | Agregados periódicos (RFC RF4 quality_metrics e RF18 rendering_costs) unificados por #kind: QUALITY (aceite/tempo/score médio do Flat Lay) ou RENDER_COST (renders, custo por provedor, média). |
 | **AssetPreset** | `asset_presets` | — | 14 | — | Catálogo visual do RF11/RF23 (presets AURA, materiais, combinações, mosaicos, fundos do chrome, gradientes Aura, presets sazonais, skins). Semeado a partir de catalog/asset-manifest.json (scripts/assets/build_asset_catal… |
 
 ### Moderação, auditoria e operação  ·  RN11, RNF4, RNF5  ·  3 entidades
@@ -181,6 +178,10 @@ Bases abstratas: `AuditableEntity` (id UUID, criado/atualizado em/por — RNF5) 
 | **AuditLog** | `audit_log` | — | 10 | — | — |
 | **BackupRecord** | `backup_records` | — | 9 | — | RNF4 — registro de cada backup/restauração executado por scripts/backup (rotina + teste de restore). |
 
+### Sem área
+
+HypeMilestone, HypeScoreCurrent, HypeScoreSnapshot, HypeSignalDaily, LensDetection, LensFeedback, LensScan
+
 ## Campos por entidade
 
 Lista completa dos campos de cada entidade (além de `id`, datas e autoria herdados da base).
@@ -188,7 +189,7 @@ Lista completa dos campos de cada entidade (além de `id`, datas e autoria herda
 <details><summary><b>Identidade, conta e privacidade</b></summary>
 
 - **User** — `username`: String; `displayName`: String; `email`: String; `emailHash`: String; `emailVerified`: boolean; `phone`: String; `birthDate`: String; `passwordHash`: String; `profileType`: ProfileType ◆; `role`: String; `status`: AccountStatus ◆; `accountOrigin`: AccountOrigin ◆; `fixtureKey`: String; `testAccountColumn`: Boolean; `avatarUrl`: String; `coverUrl`: String; `bio`: String; `privateAccount`: boolean; `verified`: boolean; `twoFactorEnabled`: boolean; `country`: String; `interfaceBackgroundPresetId`: String; `lookDoDiaPanelVersion`: HypeScorePanelVersion ◆; `lastLoginAt`: Instant; `termsAcceptedAt`: Instant; `termsVersion`: String; `deletionRequestedAt`: Instant; `deletionScheduledFor`: Instant; `profileVisibility`: Visibility ◆; `runwayOptOut`: boolean; `pronouns`: String; `linksJson`: String
-- **UserPreferences** — `user`: User ⟶; `theme`: ThemeMode ◆; `language`: UiLanguage ◆; `density`: UiDensity ◆; `fontScale`: int; `highContrast`: boolean; `reduceMotion`: boolean; `chromeBackgroundId`: String; `sizeSystem`: SizeSystem ◆; `unitSystem`: UnitSystem ◆; `mannequinSex`: MannequinSex ◆; `mannequinSkinTone`: String; `mannequinBuild`: BodyBuild ◆; `contentContainerColor`: String; `defaultCardSkin`: String; `notificationPushMaster`: boolean; `notificationPrefsJson`: String; `clientUpdatedAt`: Instant; `purchaseSuggestionsEnabled`: boolean; `soundEnabled`: boolean; `hapticsEnabled`: boolean; `coreAesthetic`: String; `lifeIdentityInAi`: boolean; `dashboardLayoutJson`: String; `mannequinFaceJson`: String
+- **UserPreferences** — `user`: User ⟶; `theme`: ThemeMode ◆; `language`: UiLanguage ◆; `density`: UiDensity ◆; `fontScale`: int; `highContrast`: boolean; `reduceMotion`: boolean; `chromeBackgroundId`: String; `sizeSystem`: SizeSystem ◆; `unitSystem`: UnitSystem ◆; `mannequinSex`: MannequinSex ◆; `mannequinSkinTone`: String; `mannequinBuild`: BodyBuild ◆; `contentContainerColor`: String; `defaultCardSkin`: String; `notificationPushMaster`: boolean; `notificationPrefsJson`: String; `clientUpdatedAt`: Instant; `purchaseSuggestionsEnabled`: boolean; `soundEnabled`: boolean; `hapticsEnabled`: boolean; `coreAesthetic`: String; `lifeIdentityInAi`: boolean; `dashboardLayoutJson`: String; `mannequinFaceJson`: String; `hypeCreatorOptOut`: boolean
 - **UserConsent** — `user`: User ⟶; `purpose`: ConsentPurpose ◆; `granted`: boolean; `legalBasis`: String; `policyVersion`: String; `grantedAt`: Instant; `revokedAt`: Instant
 - **VerificationCode** — `user`: User ⟶; `purpose`: VerificationPurpose ◆; `codeHash`: String; `target`: String; `expiresAt`: Instant; `consumedAt`: Instant; `attempts`: int; `sendCount`: int; `lastSentAt`: Instant
 - **RefreshToken** — `user`: User ⟶; `tokenHash`: String; `familyId`: UUID; `expiresAt`: Instant; `revokedAt`: Instant; `rotatedFromId`: UUID; `createdIp`: String; `userAgent`: String; `deviceName`: String; `locationApprox`: String; `lastUsedAt`: Instant; `persistent`: boolean
@@ -205,7 +206,7 @@ Lista completa dos campos de cada entidade (além de `id`, datas e autoria herda
 
 <details><summary><b>Guarda-roupa e peças</b></summary>
 
-- **WardrobeItem** — `user`: User ⟶; `brandProfile`: BrandProfile ⟶; `brand`: Brand ⟶; `name`: String; `category`: String; `subcategory`: String; `sex`: String; `brandName`: String; `brandLogoUrl`: String; `brandSource`: String; `brandRef`: String; `color`: String; `material`: String; `sizeLabel`: String; `market`: String; `styleTags`: String; `occasionTags`: String; `sealIdsJson`: String; `imageUrl`: String; `originalImageUrl`: String; `thumbnailUrl`: String; `defaultImage`: boolean; `aiGeneratedImage`: boolean; `imageHash`: String; `imageMimetype`: String; `imageFileSize`: Long; `price`: BigDecimal; `visibility`: Visibility ◆; `disponivel`: boolean; `availabilityStatus`: AvailabilityStatus ◆; `condition`: ItemCondition ◆; `favorite`: boolean; `forSale`: boolean; `wearCount`: int; `lastWornDate`: LocalDate; `lookDoDiaCount`: int; `schemeUsageCount`: int; `likesCount`: long; `sharesCount`: long; `remixesCount`: long; `commentCount`: long; `viewCount`: long; `moderationStatus`: ModerationStatus ◆; `moderationConfidence`: BigDecimal; `moderationReasonsJson`: String; `photoProcessingStatus`: PhotoProcessingStatus ◆; `photoQualityScoresJson`: String; `processingJobId`: UUID; `processingTimeMs`: Integer; `flatLayMetadataJson`: String; `backgroundConfigJson`: String; `hypeScore`: BigDecimal; `hypeScoreGlobal`: BigDecimal; `hypeGroupId`: UUID; `remixedFromPieceId`: UUID; `groupingId`: UUID; `tags`: String; `notes`: String; `purchaseDate`: LocalDate; `purchaseLocation`: String; `sku`: String; `careInstructions`: String; `model3dStatus`: Model3dStatus ◆; `model3dUrl`: String; `studioImageUrl`: String; `studioBackdrop`: String; `studioDetailUrl`: String; `canonicalImageUrl`: String; `userImageUrl`: String; `model3dGeneratedAt`: Instant; `lastViewedAt`: Instant; `pieceOrigin`: String; `mannequinImageUrl`: String; `mannequinImageFace`: String
+- **WardrobeItem** — `user`: User ⟶; `brandProfile`: BrandProfile ⟶; `brand`: Brand ⟶; `name`: String; `category`: String; `subcategory`: String; `sex`: String; `brandName`: String; `brandLogoUrl`: String; `brandSource`: String; `brandRef`: String; `color`: String; `material`: String; `sizeLabel`: String; `market`: String; `styleTags`: String; `occasionTags`: String; `sealIdsJson`: String; `imageUrl`: String; `originalImageUrl`: String; `thumbnailUrl`: String; `defaultImage`: boolean; `aiGeneratedImage`: boolean; `imageHash`: String; `imageMimetype`: String; `imageFileSize`: Long; `price`: BigDecimal; `visibility`: Visibility ◆; `disponivel`: boolean; `availabilityStatus`: AvailabilityStatus ◆; `condition`: ItemCondition ◆; `favorite`: boolean; `forSale`: boolean; `forDonation`: boolean; `wearCount`: int; `lastWornDate`: LocalDate; `lookDoDiaCount`: int; `schemeUsageCount`: int; `likesCount`: long; `sharesCount`: long; `remixesCount`: long; `commentCount`: long; `viewCount`: long; `moderationStatus`: ModerationStatus ◆; `moderationConfidence`: BigDecimal; `moderationReasonsJson`: String; `photoProcessingStatus`: PhotoProcessingStatus ◆; `photoQualityScoresJson`: String; `processingJobId`: UUID; `processingTimeMs`: Integer; `flatLayMetadataJson`: String; `backgroundConfigJson`: String; `remixedFromPieceId`: UUID; `groupingId`: UUID; `tags`: String; `notes`: String; `purchaseDate`: LocalDate; `purchaseLocation`: String; `sku`: String; `careInstructions`: String; `model3dStatus`: Model3dStatus ◆; `model3dUrl`: String; `studioImageUrl`: String; `studioBackdrop`: String; `studioDetailUrl`: String; `canonicalImageUrl`: String; `userImageUrl`: String; `model3dGeneratedAt`: Instant; `lastViewedAt`: Instant; `pieceOrigin`: String; `mannequinImageUrl`: String; `mannequinImageFace`: String
 - **PieceImage** — `sessionId`: UUID; `pieceId`: UUID; `userId`: UUID; `imageType`: PieceImageType ◆; `viewType`: CaptureView ◆; `captureRole`: CaptureRole ◆; `capturePurpose`: CapturePurpose ◆; `captureSource`: CaptureSource ◆; `storageKey`: String; `url`: String; `mimeType`: String; `width`: int; `height`: int; `orientation`: String; `bytesSize`: Long; `sha256`: String; `qualityScore`: Integer; `blurScore`: BigDecimal; `lightingScore`: BigDecimal; `garmentCoverage`: BigDecimal; `detectedCategory`: String; `detectedSubcategory`: String; `photographySpec`: String; `derivedFromId`: UUID; `processingStatus`: PieceImageStatus ◆; `modelVersion`: String; `analysisJson`: String; `superseded`: boolean
 - **PieceUsageDiaryEntry** — `id`: UUID; `wardrobeItemId`: UUID; `userId`: UUID; `usedOn`: LocalDate; `occasion`: String; `note`: String; `source`: String; `schemeId`: UUID; `createdAt`: Instant
 - **WardrobeAvailabilityChange** — `id`: UUID; `wardrobeItemId`: UUID; `userId`: UUID; `available`: boolean; `changedAt`: Instant
@@ -239,19 +240,17 @@ Lista completa dos campos de cada entidade (além de `id`, datas e autoria herda
 
 <details><summary><b>Esquemas (looks), DNA e planejamento</b></summary>
 
-- **Scheme** — `user`: User ⟶; `originalScheme`: Scheme ⟶; `title`: String; `description`: String; `creationMode`: CreationMode ◆; `origin`: SchemeOrigin ◆; `style`: String; `occasion`: String; `season`: Season ◆; `mood`: Mood ◆; `visibility`: Visibility ◆; `status`: SchemeStatus ◆; `displayMode`: DisplayMode ◆; `disponivel`: boolean; `lookDoDia`: boolean; `lookDoDiaCount`: int; `communityIndexed`: boolean; `coverImageUrl`: String; `backgroundArtUrl`: String; `backgroundColor`: String; `backgroundGradient`: String; `backgroundAnimationType`: BackgroundAnimation ◆; `studioConfigJson`: String; `cardSkin`: String; `layoutAnatomy`: String; `layoutDensity`: String; `containerOrigin`: ContainerOrigin ◆; `containerColor`: String; `containerMandatory`: boolean; `likeCount`: long; `commentCount`: long; `shareCount`: long; `remixCount`: long; `viewCount`: long; `saveCount`: long; `totalPrice`: BigDecimal; `sealIdsJson`: String; `tags`: String; `renderingStatus`: RenderStatus ◆; `virtualTryOnUrl`: String; `renderingJobId`: UUID; `renderingQualityJson`: String; `cachedUntil`: Instant; `renderingMetadataJson`: String; `hypeScore`: BigDecimal; `hypeScoreGlobal`: BigDecimal; `hypeGroupId`: UUID; `groupingId`: UUID; `revalidationPending`: boolean; `publishedAt`: Instant; `favorite`: boolean; `recommendedDirection`: String; `backgroundVideoUrl`: String; `mannequinImageUrl`: String; `mannequinImageFace`: String
+- **Scheme** — `user`: User ⟶; `originalScheme`: Scheme ⟶; `title`: String; `description`: String; `creationMode`: CreationMode ◆; `origin`: SchemeOrigin ◆; `style`: String; `occasion`: String; `season`: Season ◆; `mood`: Mood ◆; `visibility`: Visibility ◆; `status`: SchemeStatus ◆; `displayMode`: DisplayMode ◆; `disponivel`: boolean; `lookDoDia`: boolean; `lookDoDiaCount`: int; `communityIndexed`: boolean; `coverImageUrl`: String; `backgroundArtUrl`: String; `backgroundColor`: String; `backgroundGradient`: String; `backgroundAnimationType`: BackgroundAnimation ◆; `studioConfigJson`: String; `cardSkin`: String; `layoutAnatomy`: String; `layoutDensity`: String; `containerOrigin`: ContainerOrigin ◆; `containerColor`: String; `containerMandatory`: boolean; `likeCount`: long; `commentCount`: long; `shareCount`: long; `remixCount`: long; `viewCount`: long; `saveCount`: long; `totalPrice`: BigDecimal; `sealIdsJson`: String; `tags`: String; `renderingStatus`: RenderStatus ◆; `virtualTryOnUrl`: String; `renderingJobId`: UUID; `renderingQualityJson`: String; `cachedUntil`: Instant; `renderingMetadataJson`: String; `groupingId`: UUID; `revalidationPending`: boolean; `publishedAt`: Instant; `favorite`: boolean; `recommendedDirection`: String; `backgroundVideoUrl`: String; `mannequinImageUrl`: String; `mannequinImageFace`: String
 - **SchemeItem** — `scheme`: Scheme ⟶; `wardrobeItem`: WardrobeItem ⟶; `slot`: SchemeSlot ◆; `tryOnLayer`: TryOnLayer ◆; `sortOrder`: int; `zIndex`: int; `positionX`: BigDecimal; `positionY`: BigDecimal; `scale`: BigDecimal; `rotation`: BigDecimal; `opacity`: BigDecimal; `filtersJson`: String; `snapshotJson`: String
 - **SchemeGrouping** — `owner`: User ⟶; `type`: GroupingType ◆; `label`: String; `description`: String; `coverUrl`: String; `atmospherePrompt`: String; `periodFrom`: Integer; `periodTo`: Integer; `accentColor`: String; `sortOrder`: int
-- **DnaScheme** — `user`: User ⟶; `title`: String; `identityPhrase`: String; `archetype`: StyleArchetype ◆; `boldnessIndex`: Integer; `iconSchemeId`: UUID; `colorPaletteJson`: String; `narrativeType`: NarrativeType ◆; `seasonalTheme`: Season ◆; `occasion`: String; `style`: String; `sealIdsJson`: String; `backgroundColor`: String; `backgroundGradient`: String; `backgroundImageUrl`: String; `backgroundAnimationType`: BackgroundAnimation ◆; `studioConfigJson`: String; `cardImageUrl`: String; `creationMode`: CreationMode ◆; `visibility`: Visibility ◆; `status`: SchemeStatus ◆; `disponivel`: boolean; `groupingId`: UUID; `remixedFromDnaId`: UUID; `likeCount`: long; `commentCount`: long; `shareCount`: long; `remixCount`: long; `hypeScore`: BigDecimal; `aiExplanationJson`: String; `publishedAt`: Instant; `cardLayout`: String; `targetElement`: String; `backgroundVideoUrl`: String
+- **DnaScheme** — `user`: User ⟶; `title`: String; `identityPhrase`: String; `archetype`: StyleArchetype ◆; `boldnessIndex`: Integer; `iconSchemeId`: UUID; `colorPaletteJson`: String; `narrativeType`: NarrativeType ◆; `seasonalTheme`: Season ◆; `occasion`: String; `style`: String; `sealIdsJson`: String; `backgroundColor`: String; `backgroundGradient`: String; `backgroundImageUrl`: String; `backgroundAnimationType`: BackgroundAnimation ◆; `studioConfigJson`: String; `cardImageUrl`: String; `creationMode`: CreationMode ◆; `visibility`: Visibility ◆; `status`: SchemeStatus ◆; `disponivel`: boolean; `groupingId`: UUID; `remixedFromDnaId`: UUID; `likeCount`: long; `commentCount`: long; `shareCount`: long; `remixCount`: long; `aiExplanationJson`: String; `publishedAt`: Instant; `cardLayout`: String; `targetElement`: String; `backgroundVideoUrl`: String
 - **DnaSchemeItem** — `dnaScheme`: DnaScheme ⟶; `scheme`: Scheme ⟶; `cell`: DnaCell ◆; `eraLabel`: String; `duplicate`: boolean; `sourceSchemeId`: UUID; `appliedToOriginal`: boolean; `milestone`: boolean
 - **StyleDna** — `user`: User ⟶; `archetype`: StyleArchetype ◆; `boldnessIndex`: int; `identityPhrase`: String; `colorPalette`: String; `styleKeywords`: String; `occasionKeywords`: String; `iconPieceName`: String; `synthesizedAt`: Instant; `silhouette`: String; `lifeIdentityJson`: String; `lifePrivateFieldsJson`: String; `interactionsAtSynthesis`: int; `cardImageUrl`: String; `phraseSource`: String; `colorSeason`: String
 - **StyleDnaVersion** — `id`: UUID; `userId`: UUID; `snapshotJson`: String; `createdAt`: Instant
 - **DailyLook** — `user`: User ⟶; `scheme`: Scheme ⟶; `materializedFrom`: DailyLook ⟶; `lookDate`: LocalDate; `source`: DailyLookSource ◆; `feedback`: DailyLookFeedback ◆
-- **HypeScoreMetric** — `dailyLook`: DailyLook ⟶; `scheme`: Scheme ⟶; `user`: User ⟶; `scoreDate`: LocalDate; `likesCount`: long; `commentsCount`: long; `sharesCount`: long; `remixesCount`: long; `engagementRaw`: BigDecimal; `engagementNorm`: BigDecimal; `trendRaw`: BigDecimal; `trendNorm`: BigDecimal; `hypeScore`: BigDecimal; `globalHypeScore`: BigDecimal; `weeklyTopPercent`: BigDecimal; `band`: HypeScoreBand ◆; `trendsetterSeal`: boolean; `styleMatchSeal`: boolean; `aiSuggestion`: String; `breakdownJson`: String; `calibrationWindowDays`: int; `trendWindowDays`: int; `weeklyWindowDays`: int
 - **WeekPlan** — `user`: User ⟶; `weekStart`: LocalDate; `status`: WeekPlanStatus ◆; `gapsJson`: String
 - **WeekPlanDay** — `weekPlan`: WeekPlan ⟶; `dayDate`: LocalDate; `eventLabel`: String; `occasion`: String; `scheme`: Scheme ⟶; `pieceIdsJson`: String; `combinationKey`: String; `rationale`: String; `editedManually`: boolean
 - **AcervoGroup** — `user`: User ⟶; `entityType`: HypeEntityType ◆; `label`: String; `memberIdsJson`: String; `centroidJson`: String; `memberCount`: int; `computedAt`: Instant
-- **HypeGroup** — `entityType`: HypeEntityType ◆; `signatureStyle`: String; `signatureOccasion`: String; `signatureBrandsJson`: String; `signatureColorsJson`: String; `signaturePieceTypesJson`: String; `memberIdsJson`: String; `memberCount`: int; `hypeScoreGlobal`: BigDecimal; `computedAt`: Instant
 - **MirrorState** — `userId`: UUID; `slotsJson`: String; `shownCombinationsJson`: String; `lastPrompt`: String
 
 </details>
@@ -331,7 +330,6 @@ Lista completa dos campos de cada entidade (além de `id`, datas e autoria herda
 - **PipelineJob** — `user`: User ⟶; `type`: PipelineJobType ◆; `status`: PipelineJobStatus ◆; `provider`: String; `externalJobId`: String; `targetType`: String; `inputResourceId`: UUID; `inputJson`: String; `outputUrl`: String; `resultJson`: String; `stagesJson`: String; `qualityScore`: BigDecimal; `totalCostUsd`: BigDecimal; `totalTimeMs`: Integer; `fallbackUsed`: boolean; `errorCode`: String; `errorMessage`: String; `attempts`: int; `retryCount`: int; `queuedAt`: Instant; `startedAt`: Instant; `finishedAt`: Instant
 - **ProcessingJobLog** — `id`: UUID; `pipelineJobId`: UUID; `wardrobeItemId`: UUID; `userId`: UUID; `jobType`: String; `status`: String; `totalProcessingTimeMs`: Integer; `stageTimesJson`: String; `finalQualityScore`: BigDecimal; `totalCostUsd`: BigDecimal; `accepted`: boolean; `retryCount`: int; `fallbackUsed`: boolean; `createdAt`: Instant; `completedAt`: Instant
 - **RenderJobLog** — `id`: UUID; `pipelineJobId`: UUID; `schemeId`: UUID; `userId`: UUID; `renderingType`: String; `status`: String; `totalProcessingTimeMs`: Integer; `stageTimesJson`: String; `finalQualityScore`: BigDecimal; `costFashnAi`: BigDecimal; `costCleanupAi`: BigDecimal; `costRembg`: BigDecimal; `totalCost`: BigDecimal; `retryCount`: int; `createdAt`: Instant; `completedAt`: Instant
-- **MetricSnapshot** — `id`: UUID; `kind`: String; `periodStart`: Instant; `periodEnd`: Instant; `valuesJson`: String; `createdAt`: Instant
 - **AssetPreset** — `id`: String; `kind`: AssetKind ◆; `label`: String; `presetGroup`: String; `staticUrl`: String; `previewUrl`: String; `animatedUrl`: String; `posterUrl`: String; `paletteJson`: String; `metadataJson`: String; `status`: String; `sortOrder`: int; `rfTags`: String; `syncedAt`: Instant
 
 </details>
@@ -443,11 +441,19 @@ Estruturas que vivem dentro de colunas JSON (validadas no backend, renderizadas 
 | FollowStatus | 3 | PENDENTE, ACEITO, BLOQUEADO |
 | GroupingType | 9 | COLLECTION, PROMOTION, SIGNATURE_SERIES, EVOLUTION, STYLE_LINE, ERA, PHASE, SEASON, TOUR |
 | HypeEntityType | 2 | PIECE, SCHEME |
-| HypeScoreBand | 7 | DESPRETENSIOSO, EM_CONSTRUCAO, NOTADO, COM_ESTILO, MUITO_ESTILOSO, ARRASANDO_NO_LOOK, ICONE_DE_ESTILO |
+| HypeLevel | 6 | LOW_SIGNAL, NICHE, RELEVANT, HOT, TRENDING, VIRAL |
+| HypeMomentum | 5 | EMERGING, RISING, STABLE, COOLING, CLASSIC |
 | HypeScorePanelVersion | 6 | SPOTLIGHT_CLASSICO, PASSARELA, RAIO_X_ESTILO, BENTO_DIA, EDITORIAL_MINIMAL, COACH_ESTILO |
+| HypeSignalType | 12 | LIKE_CREATED, COMMENT_CREATED, SAVE_CREATED, SHARE_CREATED, FAVORITE_CREATED, LOOK_REMIXED, PIECE_REMIXED, LOOK_VIEWED, PIECE_VIEWED, PIECE_USED, PIECE_IN_LOOK, LOOK_WORN |
+| HypeStatus | 2 | AVAILABLE, INSUFFICIENT_DATA |
 | IdentificationLevel | 6 | CATEGORY, SUBCATEGORY, BRAND, PRODUCT_LINE, MODEL, VARIANT |
 | ImageOrigin | 3 | CATALOG, USER_PHOTO, DEFAULT |
 | ItemCondition | 4 | NEW, GOOD, WORN, DAMAGED |
+| LensDetectionStatus | 4 | DETECTED, CORRECTED, ADDED_BY_USER, DISMISSED |
+| LensFeedbackKind | 8 | WRONG_CATEGORY, WRONG_COLOR, WRONG_ATTRIBUTE, NOT_CLOTHING, MISSING_PIECE, BAD_BOX, WRONG_MATCH, GOOD_MATCH |
+| LensIntent | 2 | IDENTIFY, RECREATE |
+| LensScanStatus | 4 | READY, PARTIAL, NO_FASHION_FOUND, FAILED |
+| LensSource | 5 | CAMERA, GALLERY, UPLOAD, IN_APP_PIECE, IN_APP_LOOK |
 | MannequinSex | 2 | MASCULINO, FEMININO |
 | Model3dStatus | 4 | QUEUED, PROCESSING, COMPLETED, FAILED |
 | ModelDeploymentStatus | 5 | CANDIDATE, SHADOW, CANARY, PRODUCTION, RETIRED |
@@ -455,8 +461,8 @@ Estruturas que vivem dentro de colunas JSON (validadas no backend, renderizadas 
 | ModerationStatus | 4 | PENDING, APPROVED, REJECTED_POLICY, REJECTED_NOT_CLOTHING |
 | Mood | 4 | ENERGETIC, ELEGANT, COMFORTABLE, SOPHISTICATED |
 | NarrativeType | 12 | TIMELINE, MOMENTOS_MARCANTES, PRIMEIRA_VEZ, CAPSULA_VERSATILIDADE, POR_OCASIAO, MOOD_BOARD, PALETA_DOMINANTE, HARMONIA_CROMATICA, MARCAS_FAVORITAS, HYPE_FOCUS, CARTELA_SAZONAL, LEGO |
-| NotificationCategory | 4 | SECURITY, SOCIAL, ACHIEVEMENT, SYSTEM |
-| NotificationType | 28 | PASSWORD_RESET, TWO_FACTOR_CODE, NEW_LOGIN_DEVICE, EMAIL_CONFIRMATION, DATA_EXPORT_READY, FOLLOW_REQUEST, FOLLOW_ACCEPTED, NEW_FOLLOWER, NEW_COMMENT, NEW_LIKE, NEW_REACTION, NEW_REMIX, SEAL_GRANTED, FEATURED_SCHEME, SEAL_BOND_REVIEW, WELCOME, PIECE_CREATED, SCHEME_CREATED, AI_JOB_FINISHED, ACCOUNT_APPROVAL, ISSUER_REVIEW_REQUEST, CONTENT_REVIEW, DAILY_LOOK, CHALLENGE_INVITE, CHALLENGE_RESULT, ACHIEVEMENT_UNLOCKED, ROOM_LEVEL_UP, COUPON_AVAILABLE |
+| NotificationCategory | 5 | SECURITY, SOCIAL, ACHIEVEMENT, SYSTEM, POINTS |
+| NotificationType | 30 | PASSWORD_RESET, TWO_FACTOR_CODE, NEW_LOGIN_DEVICE, EMAIL_CONFIRMATION, DATA_EXPORT_READY, FOLLOW_REQUEST, FOLLOW_ACCEPTED, NEW_FOLLOWER, NEW_COMMENT, NEW_LIKE, NEW_REACTION, NEW_REMIX, SEAL_GRANTED, FEATURED_SCHEME, SEAL_BOND_REVIEW, WELCOME, PIECE_CREATED, SCHEME_CREATED, AI_JOB_FINISHED, ACCOUNT_APPROVAL, ISSUER_REVIEW_REQUEST, CONTENT_REVIEW, DAILY_LOOK, CHALLENGE_INVITE, CHALLENGE_RESULT, ACHIEVEMENT_UNLOCKED, ROOM_LEVEL_UP, HYPE_MILESTONE, COUPON_AVAILABLE, FAI_POINTS |
 | PhotoOrigin | 8 | WARDROBE_ITEM, SCHEME, TRY_ON, STYLE_DNA, PROFILE, BACKGROUND_STUDIO, LOOSE, EDITOR |
 | PhotoProcessingStatus | 6 | NEW, MODERATING, PROCESSING, COMPLETED, NEEDS_REUPLOAD, FAILED |
 | PieceImageStatus | 5 | PENDING, PROCESSING, COMPLETED, NEEDS_REVIEW, FAILED |
@@ -493,3 +499,4 @@ Estruturas que vivem dentro de colunas JSON (validadas no backend, renderizadas 
 | VisionDataset | 2 | GARMENT_VISION, HARD_EXAMPLES |
 | WeekPlanStatus | 3 | ACTIVE, DISCARDED, COMPLETED |
 
+> Atenção: nomes no agrupamento sem entidade no código: HypeGroup, HypeScoreMetric, MetricSnapshot

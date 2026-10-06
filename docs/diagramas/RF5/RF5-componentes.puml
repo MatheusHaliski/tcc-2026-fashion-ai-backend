@@ -1,5 +1,5 @@
 @startuml RF5_Componentes
-title RF5 — Criar um esquema de vestimenta na aba "Criar Look"\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF5 — Criar um esquema de vestimenta na aba "Criar Look"\nDiagrama de componentes — frontend → controllers → serviços → portas → infraestrutura
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -14,55 +14,93 @@ skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #4A4852
+}
 left to right direction
 
 package "Frontend (Next.js)" {
-  component "schemes/new — Criar Look" as FE0
-  component "SchemeBuilder\n(components/scheme-builder.tsx)" as FE1
-  component "SchemeCard + scheme-anatomies" as FE2
+  component "(app)/schemes/new/page.tsx" as FE0
+  component "scheme-builder.tsx\nSchemeBuilder · SlotBrand · onePerType" as FE1
+  component "ai-compositions.tsx\n(AiCompositionCard)" as FE2
+  component "hype/look-hype-preview.tsx\n(LookHypePreview · PieceHypeTag)" as FE3
+  component "background-studio.tsx (RF11)" as FE4
+  component "scheme-card.tsx + scheme-anatomies.tsx" as FE5
 }
 package "fai-web · controllers" {
-  [SchemeController] as SchemeController
-  [BackgroundController\n(RF11)] as BackgroundController
+  [SchemeController\nGET /api/schemes/builder\nPOST /api/schemes/compositions · /scores\nPOST /api/schemes · /photos · /preview] as SC
+  [SealController\nPOST /api/seal-suggestions/preview\nPOST /api/schemes/{id}/seal-bonds] as SEALC
+  [BackgroundController\nGET /api/backgrounds/recommendations\nPOST /api/backgrounds/art] as BGC
 }
-package "fai-application · services" {
-  [SchemeService] as SchemeService
-  [WardrobeService\n(eligible: só peças disponíveis)] as WardrobeService
-  [BackgroundStudioService\n(RF11)] as BackgroundStudioService
-  [SealService\n(RF20/RF21)] as SealService
-  [SchemeCardRenderer\n(imaging)] as Renderer
-  [LocalSchemeComposer\n(fallback local)] as LocalComposer
-  [AiEngine (RF24)] as AiEngine #FAFAFA
+package "fai-application · serviços" {
+  [SchemeService] as SS
+  [WardrobeService\n(eligible)] as WS
+  [CopilotService\n(orientation)] as CP
+  [LookPreviewService\n(seis números · HypeScore v2)] as LP
+  [BackgroundStudioService] as BG
+  [SealService] as SEAL
+  [DailyLookService] as DL
+  [SchemeCardRenderer\n(imaging)] as REN
+  [LocalSchemeComposer\n(plano B local)] as LOC
+  [AiEngine (RF24)\nSCHEME_COMPOSER] as AI
+  [ProjectionService · NotificationService\nGuard · Audit · MediaService] as X
+  [Listeners de SchemeSaved (AFTER_COMMIT)\nWardrobeEventListeners · HypeSignalRecorder\nHypeLiveRecalc · ChallengeService\nAchievementService · InventoryScoreService\nCouponService] as EV
 }
-package "fai-domain · repository (JPA)" {
-  [SchemeRepository\nSchemeItemRepository\nWardrobeItemRepository\nUserRepository\nStyleDnaRepository] as REPOS
+package "portas" {
+  interface SearchIndexPort as P1
+  interface TimelineProjectionPort as P2
+  interface MediaStoragePort as P3
+  interface CounterStorePort as P4
 }
-database "MySQL\n• schemes\n• scheme_items\n• wardrobe_items\n• users\n• style_dna" as DB
-cloud "Provedores de IA\n(fai-infrastructure · ai-providers)" as P_ai
-component "Storage de mídia\n(MediaService / storage-s3)" as P_storage
-[Eventos de domínio\nSchemeSaved (AFTER_COMMIT)\n→ FAI Points (RF30), Inventory Score (RF29)] as P_events
+package "fai-infrastructure" {
+  [Repositórios JPA\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · UserRepository\nHypeScoreCurrentRepository · SealBondRepository] as REPOS
+  [OpenSearchIndexAdapter] as OS
+  [CassandraProjectionAdapter] as CAS
+  [S3MediaStorageAdapter / LocalFileMediaStorage] as S3
+  [RedisAdapters (contadores) /\nInMemoryCounterStore] as RED
+  [Provedores de IA\n(ai-providers)] as PROV
+}
+database "MySQL\n• schemes · scheme_items\n• wardrobe_items · users\n• hype_scores · seal_bonds\n• notifications · audit_log" as DB
 
-FE0 --> FE1 : renderiza
-FE1 --> SchemeController : GET /api/schemes/builder\nPOST /api/schemes/compositions\nPOST /api/schemes/preview\nPOST /api/schemes
-FE1 --> BackgroundController : GET /api/backgrounds/recommendations\nPOST /api/backgrounds/art
-FE2 --> SchemeController : GET /api/schemes/{id}/card.png
-SchemeController --> SchemeService : chama
-BackgroundController --> BackgroundStudioService : chama
-SchemeService --> WardrobeService : lê peças elegíveis (CA01/CA07b)
-SchemeService --> BackgroundStudioService : aplica arte (etapa 4)
-SchemeService --> SealService : suggestSealsAfterSave (RF20)
-SchemeService --> Renderer : renderiza card/preview
-SchemeService --> AiEngine : compor 3 looks (CA04)
-SchemeService --> LocalComposer : fallback sem IA
-SchemeService --> REPOS : grava schemes + scheme_items
-SchemeService --> P_storage : foto do look (POST /api/schemes/photos)
-SchemeService --> P_events : publica SchemeSaved
-AiEngine ..> P_ai : chama
-REPOS --> DB : JPA/Flyway
-
-note bottom of SchemeService
-  CA02: eligible < 2 → status INSUFICIENTE e ação /pieces/new (RF4)
-  CA06: items vazio → 400 SEM_PECAS
-  CA05: publish=true → status PUBLISHED e feed (RF8), ver /publication
+FE0 --> FE1
+FE1 --> FE2
+FE1 --> FE3
+FE1 --> FE4
+FE1 --> FE5
+FE1 --> SC : builder · compositions · preview · salvar
+FE3 --> SC : POST /api/schemes/scores
+FE1 --> SEALC : selos possíveis e pedidos
+FE4 --> BGC : arte de fundo
+SC --> SS
+SC --> CP
+SC --> LP
+SEALC --> SEAL
+BGC --> BG
+SS --> WS : peças elegíveis (CA01/CA07b)
+SS --> AI : 3 looks só do acervo (CA04)
+SS --> LOC : sem IA
+SS --> BG : applyToScheme
+SS --> SEAL : suggestSealsAfterSave
+SS --> DL : Look do Dia
+SS --> REN : prévia / card.png
+SS --> X
+SS ..> EV : publica SchemeSaved
+AI --> PROV
+X --> P1
+X --> P2
+X --> P3
+SS --> P4 : remixes
+OS ..|> P1
+CAS ..|> P2
+S3 ..|> P3
+RED ..|> P4
+SS --> REPOS
+LP --> REPOS
+REPOS --> DB : JPA / Flyway
+note bottom of SS
+  CA02: < 2 elegíveis → INSUFICIENTE (/pieces/new) e 422 ACERVO_INSUFICIENTE
+  CA06: items vazio → 400 SEM_PECAS · CA05: publish → PUBLISHED e feed (RF8)
+  CA03: visibilidade herdada do perfil (AccountService.defaultVisibility)
 end note
 @enduml

@@ -1,4 +1,4 @@
-# Novos RF (RF25–RF50): índice e mapa de numeração
+# Novos RF (RF25–RF54): índice e mapa de numeração
 
 A **numeração oficial é a do Trello** (board "TCC 2026 (Fashion AI) - Bryan,Matheus", lista *Requisitos Funcionais*).
 Parte do código anterior usa outra numeração nos comentários e nos `@Operation` do Swagger, porque os requisitos do
@@ -29,6 +29,8 @@ Meu Guarda-Roupa foram implementados antes de o time reordenar o board. A tabela
 | RF48 *(proposta; confirmar no Trello)* | FAI Points: resgate em dinheiro (Fundo de Criadores) e doações entre usuários ("Apoiar com FAI Points" no Look do dia) | — | [RF48_FAI_Points_Resgate_e_Doacoes.md](RF48_FAI_Points_Resgate_e_Doacoes.md) · concessão em todos os RFs: [RF41_v2_Concessao_FAI_Points_Todos_RFs.md](RF41_v2_Concessao_FAI_Points_Todos_RFs.md) · negócio: [PLANO_DE_ASSINATURA_E_MONETIZACAO.md](../negocio/PLANO_DE_ASSINATURA_E_MONETIZACAO.md) | `docs/diagramas/RF48/` |
 | RF49 | Proteger contas e a plataforma: sessão segura, limites contra força bruta, bancos endurecidos, dados demo isolados e entrega confiável | RF1–RF3 (autenticação), `infra/railway`, `demo/` | [RF49_Seguranca_Integridade_Operacao.md](RF49_Seguranca_Integridade_Operacao.md) | `docs/diagramas/RF49/` (+ `seguranca/`, `dados-demo/`) |
 | RF50 | Criar selos em três tipos (Circular, Folha, Padrão FashionAI) num criador em 4 passos (Com IA/Sem IA), com folha e núcleo editáveis e política padronizada usada na detecção — evolução do RF25 | RF25 (comentários de `SealService`/`SealDesigns`) | [RF50_Criador_de_Selos.md](RF50_Criador_de_Selos.md) | `docs/diagramas/RF50/criador-de-selos/` |
+| RF53 | HypeScore v2: Hype analítico de peças e looks (verso dos cards com flip, Histórico › Hype, Em alta, ordenações do Guarda-roupa, Copilot com modos) + navegação por domínios | `application/hype/*`, `HypeController` (V31) | [RF53_HypeScore_v2.md](RF53_HypeScore_v2.md) · arquitetura: [HYPESCORE_ARCHITECTURE.md](../hype/HYPESCORE_ARCHITECTURE.md) | `docs/diagramas/RF53/` |
+| RF54 *(proposta; confirmar no Trello)* | FashionAI Lens: foto do mundo real → peças, estilo, guarda-roupa, DNA, Hype e Copilot (closet-first) | — (ainda não implementado) | [RF54_FashionAI_Lens.md](RF54_FashionAI_Lens.md) | diagramas no próprio documento (Mermaid) |
 
 ## Mudanças em RF antigos (2026-09-24)
 
@@ -36,12 +38,26 @@ Meu Guarda-Roupa foram implementados antes de o time reordenar o board. A tabela
 |---|---|---|---|
 | RF4 | Campo marca = buscador web de marcas (Wikidata, Simple Icons no GitHub, IA com busca na web), sem catálogo pré-cadastrado; logo filtrado (fundo branco, letras pretas nítidas) no slot | [RF4_Buscador_Web_Marcas.md](RF4_Buscador_Web_Marcas.md) | `docs/diagramas/RF4/` (v3) |
 | RF5 / RF13 | Sem campo de marca no esquema/DNA: a marca de cada slot vem da peça inserida (somente leitura) | [RF4_Buscador_Web_Marcas.md](RF4_Buscador_Web_Marcas.md) | `docs/diagramas/RF5/` (v4) |
+| RF4 → RF15 *(Tema Futuro, 2026-10-05)* | RF4 passa a ser busca catalogada, formulário & fotografia, com a foto **opcional** para itens mais personalizados; a foto própria (no cadastro ou depois) gera o RF15 — estudo e plano do Editor de Fotografia da Peça (receita não destrutiva, verdade do produto × apresentação, 3 modos, fases E0–E7) | [RF15_Editor_de_Fotografia_da_Peca.md](RF15_Editor_de_Fotografia_da_Peca.md) | diagramas Mermaid no próprio documento |
+
+## Mudanças em RF antigos (2026-10-05)
+
+| RF | Mudança | Documento |
+|---|---|---|
+| RF28 | CA17–CA22: Prévia 2D no Espelho e no Vista-me com o **mesmo** Avatar 3D (foto parada da mesma cena, sem boneco genérico); reflexo do avatar no vidro do espelho do Meu Quarto 3D | [RF28_Previa_2D_Espelho_Vista-me.md](RF28_Previa_2D_Espelho_Vista-me.md) |
 
 ## Mudanças em RF antigos (2026-10-04)
 
 | RF | Mudança | Documento |
 |---|---|---|
 | RF18 | Provador virtual de lojas: prova peças de várias marcas do catálogo (RF47) no Avatar 3D, combinando com o guarda-roupa; ambiente 3D muda conforme a marca (faixa do logo, letreiro, paredes, piso, luz); provas salvas, foto, link, troca de cor, "Já tenho esta peça" | [RF18_Provador_Virtual_Lojas.md](RF18_Provador_Virtual_Lojas.md) |
+
+## Mudanças em RF antigos (2026-10-05)
+
+| RF | Mudança | Documento |
+|---|---|---|
+| RF4 | A foto da peça volta como **opcional** (para um item mais personalizado); catálogo + formulário seguem como caminho principal. Ao enviar a foto, no cadastro ou numa edição, abre-se o RF15 | [RF15_Editor_de_Fotografias.md](RF15_Editor_de_Fotografias.md) §1 e §8.1 |
+| RF15 *(Tema Futuro, sprint 4)* | Plano do Editor Canvas Interativo 2D: receita não destrutiva, classes de fidelidade (Fiel, Vitrine, Criativa) medidas por ΔE₀₀, coach de qualidade, modo Look, versões, API e fases | [RF15_Editor_de_Fotografias.md](RF15_Editor_de_Fotografias.md) |
 
 ## Mudanças em RF antigos (2026-09-26)
 

@@ -21,7 +21,7 @@ import { globeQuery, hypeShown } from "@/lib/hype/globe";
 import { displayScore, levelForScore, levelTone, LEVELS } from "@/lib/hype/model";
 import type { HypeGlobe, HypeGlobeCountry, HypeGlobeTop, HypeLevel } from "@/lib/hype/types";
 
-interface Global { countries: (GlobePoint & { dominantColor?: string | null })[]; minData?: number; facets?: { seasons: string[]; colors: string[] }; selected?: { country: string; hypeBySeason?: { season: string; total?: number }[]; topColors?: { color: string; total: number }[] }; legend?: string; }
+interface Global { countries: (GlobePoint & { dominantColor?: string | null })[]; minData?: number; facets?: { seasons: string[]; colors: string[] }; selected?: { country: string; looksBySeason?: { season: string; total?: number }[]; topColors?: { color: string; total: number }[] }; legend?: string; }
 
 /** Base do Hype da marca (P1-04): média dos looks vinculados por selo ou das peças públicas da marca. */
 type BrandHypeBasis = "BONDED_LOOKS" | "BRAND_GROUP";
@@ -30,7 +30,6 @@ interface BrandHype { value?: number | null; level?: HypeLevel | null; items?: n
 interface BrandCard {
   userId?: string | null; slug?: string; /** RF47 · marca que existe só no catálogo global (sem perfil) */ catalog?: boolean; catalogProducts?: number; name: string; logoUrl?: string | null;
   country?: string | null; category?: string | null; schemes?: number | null; /** peças públicas (no catálogo, os produtos) */ pieces?: number | null;
-  /** @deprecated espelha `hype.value` arredondado (nulo = sem dado); a tela lê `hype` */ hypeScore?: number | null;
   hype?: BrandHype | null; storeUrl?: string | null; colors?: { color: string; hex: string }[]; seasons?: string[];
 }
 interface Brands { brands: BrandCard[]; countries?: string[]; categories?: string[]; seasons?: string[]; levels?: HypeLevel[]; minItems?: number; algorithmVersion?: string | null; }
@@ -117,7 +116,7 @@ function Explorer() {
                     {global.data?.selected && (<>
                       {/* volume (popularidade) por estação: o Hype v1 por estação saiu desta aba */}
                       <p className="label mt-3">{t("explorer.hype.looks_by_season")}</p>
-                      <ul className="fai-list mb-3 type-body-sm">{(global.data.selected.hypeBySeason ?? []).filter((s) => s.total != null).sort((a, b) => (b.total ?? 0) - (a.total ?? 0)).map((s) => <li key={s.season} className="flex justify-between"><span>{label(String(s.season).toLowerCase())}</span><span className="type-data tabular">{s.total}</span></li>)}{!(global.data.selected.hypeBySeason ?? []).some((s) => s.total != null) && <li className="text-muted">{t("explorer.sem_looks_com_estacao")}</li>}</ul>
+                      <ul className="fai-list mb-3 type-body-sm">{(global.data.selected.looksBySeason ?? []).filter((s) => s.total != null).sort((a, b) => (b.total ?? 0) - (a.total ?? 0)).map((s) => <li key={s.season} className="flex justify-between"><span>{label(String(s.season).toLowerCase())}</span><span className="type-data tabular">{s.total}</span></li>)}{!(global.data.selected.looksBySeason ?? []).some((s) => s.total != null) && <li className="text-muted">{t("explorer.sem_looks_com_estacao")}</li>}</ul>
                       <p className="label">{t("explorer.cores_mais_usadas")}</p>
                       <ul className="fai-list type-body-sm">{(global.data.selected.topColors ?? []).map((c) => <li key={c.color} className="flex items-center gap-2"><span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: tax?.colors?.[c.color] ?? "#999" }} /><span className="flex-1">{label(c.color)}</span><span className="type-data">{c.total}</span></li>)}</ul>
                     </>)}

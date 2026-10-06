@@ -1,0 +1,106 @@
+@startuml RF11_Atividades_Cartela
+title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de atividades — Cartela sazonal e animação no modal (look, DNA B11 e peça)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:No segmento "Layout & Estilo", clica em Cartela sazonal\n(look: anatomia CARTELA_SAZONAL · DNA: narrativa B11 ·\npeça: família "seasonal", variação A ou B);
+|Frontend (background-studio · SeasonalDialog)|
+if (A cartela já é o layout atual?) then (sim)
+  :Abre o modal em modo edição\n(nada muda ao entrar);
+else (não)
+  :Guarda enter() (entrar no layout) e, no look,\no patch que limpa aura, material, arte com IA e upload;\nabre o modal — o layout ainda não muda;
+endif
+:SeasonalDraft copia o valor atual para um rascunho\n{seasonalPresetId, seasonalAuto, animation};
+note right
+  Cartelas do catálogo (GET /api/backgrounds/catalog):
+  Frost (inverno, neve) · Solstice (verão, brilho) ·
+  Ember (outono, folhas) · Bloom (primavera, pétalas)
+end note
+|Pessoa|
+repeat
+  :Escolhe uma cartela\n(clicar de novo na escolhida desmarca);
+  if (Look/DNA com estação nos dados?) then (sim)
+    :Pode ligar a "cartela automática"\n(segue a estação do look);
+  else (não)
+    :Aviso: escolha uma cartela ou preencha a estação;\nna peça não existe a opção automática;
+  endif
+  :Escolhe a animação: Sem animação (NONE) ·\nNeve · Pétalas · Folhas · Brilho;
+repeat while (Continua ajustando?) is (sim)
+->não;
+if (Como fecha o modal?) then (Cancelar, X, Esc ou fundo)
+  |Frontend (background-studio · SeasonalDialog)|
+  :Descarta o rascunho: layout, narrativa,\nfamília e arte ficam como estavam;
+  stop
+else (Aplicar cartela)
+  |Frontend (background-studio · SeasonalDialog)|
+  :enter(): look → layout CARTELA_SAZONAL ·\nDNA → narrativa B11 · peça → família seasonal\n(a estação da paisagem = a da cartela escolhida);
+  :onChange({...valor, ...patch, ...rascunho});
+  :Resumo "Cartela sazonal: <cartela> · <animação>"\ne botão "Escolher cartela e animação";
+endif
+:Prévia: cartelaSeason(bg, estação) =\nestação dos dados (automática) › estação da cartela › estação do look;
+if (Há estação?) then (sim)
+  :SeasonCard (look) ou faixa B11 (DNA):\ngradiente, decoração e animação (MotionFall ou brilho);
+  note right
+    Com "reduzir movimento" (sistema ou
+    preferência do app) o CSS para as animações
+  end note
+else (não)
+  :O card do look cai para Lista vertical\naté haver estação;
+endif
+|Pessoa|
+if (Troca para outro layout, narrativa ou família?) then (sim)
+  |Frontend (background-studio · SeasonalDialog)|
+  :Aplica CLEAR_CARTELA\n{seasonalPresetId: null, seasonalAuto: false, animation: "NONE"};
+  note right
+    No DNA, useLeaveCartela limpa em qualquer saída
+    da B11: outra narrativa, anatomia base, alvo que
+    não é o DNA completo ou proposta da IA
+  end note
+else (não)
+endif
+|Pessoa|
+:Salva o look, o DNA ou a peça;
+|API (SchemeController · DnaController · BackgroundController)|
+switch (O que salvou?)
+case (look)
+  :POST/PUT /api/schemes → applyToScheme;
+  if (Cartela desconhecida?) then (sim)
+    #FFE3E3:400 PRESET_INVALIDO;
+    stop
+  elseif (Cartela automática sem estação no look?) then (sim)
+    #FFE3E3:400 ESTACAO_OBRIGATORIA;
+    stop
+  else (ok)
+    :animation presente → enum (null → NONE);\nautomática: grava o gradiente frost/solstice/ember/bloom\nda estação e a animação dele;
+  endif
+case (DNA)
+  :POST/PUT /api/dna-schemes com seasonalTheme =\ncartelaSeason(...) ?? AUTUMN; o fundo vai\npara studio_config_json sem validação de preset;
+case (peça)
+  :PUT /api/pieces/{id}/background com baseRev\n(ou POST /api/pieces no cadastro);
+endswitch
+|Banco (MySQL)|
+:Grava schemes · dna_schemes · wardrobe_items;
+stop
+@enduml

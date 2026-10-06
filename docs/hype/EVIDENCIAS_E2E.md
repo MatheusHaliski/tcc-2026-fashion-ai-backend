@@ -168,3 +168,26 @@ da leitura local não tem categoria); "Descobrir" não achou peça pública pare
 - Detecção do Lens por IA externa (sem chave no ambiente) e borrão de rosto com o MediaPipe carregado.
 - Telas dos lotes 1–9 da auditoria de abas fora das listadas acima (feed, busca, Passarela 3D, painéis, FLAIR): cobertas
   pelos testes de componente e de serviço listados no RF53 §4.
+
+## Rodada final (código em `c66ba71d`, banco migrado para V41 sobre os mesmos dados)
+
+A API foi reconstruída com todos os lotes da revisão de abas. Ao subir, o Flyway aplicou a V41 (`hype_milestones`) sobre
+o banco já populado. O teste de interface rodou de novo: 13 de 13 etapas OK, sem erro de página e sem resposta 5xx.
+
+- **Marco de Hype ao vivo:** novos sinais levaram "Jeans Bia" de Relevante para Tendência (74,6). Depois do job, só a
+  dona (`bia.hype`) recebeu "Seu Hype subiu — Jeans Bia chegou à faixa Tendência pela primeira vez", com link para a
+  peça; `ana.hype` não recebeu nada.
+- **`GET /api/hype/groups?type=BRAND`:** marcas com menos de 3 itens públicos voltaram `sufficient: false`, com valor,
+  faixa e posição nulos, nunca 0.
+- **`GET /api/insights?context=FEED`:** voltaram insights públicos de crescimento de estilo e de ocasião, com a base
+  `HYPE_V2` e `PUBLIC_RANKING`.
+- **Correção desta rodada:** a aba Insights globais mostrava ao usuário uma nota interna de design ("Cores de status do
+  dataviz…"). Ela foi trocada por uma nota sobre a base pública do HypeScore v2 e sobre crescimento × volume.
+
+| # | Tela |
+|---|---|
+| 13 | ![Globo com colunas em pé, bonecos e cards](evidencias-e2e/13-globo-camadas-final.webp) |
+| 14 | ![Insights globais: Hype atual, Crescimento e Volume separados](evidencias-e2e/14-explorador-insights-v2.webp) |
+| 15 | ![Buscar marcas & lojas sem estrelas e com Hype v2](evidencias-e2e/15-explorador-marcas-v2.webp) |
+| 16 | ![Notificação de marco de Hype](evidencias-e2e/16-notificacao-marco-de-hype.webp) |
+| 17 | ![Editor de look com prévia e insights](evidencias-e2e/17-editor-previa-e-insights.webp) |

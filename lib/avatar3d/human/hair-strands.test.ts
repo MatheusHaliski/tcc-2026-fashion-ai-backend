@@ -4,7 +4,8 @@ import { parseBodyAsset, type BodyMeta } from "./asset";
 import { compose, fitBody } from "./compose";
 import { baseNormals } from "./three-human";
 import { buildHair, headFrame } from "./hair-geometry";
-import { strandGeometry, withStrands } from "./hair-strands";
+import { groomFromJSON, groomToJSON, growGroom, strandContext, strandGeometry, strandMaterial, strandsFromGroom, withStrands } from "./hair-strands";
+import { HAIR_LODS, HairFrameBudget, chooseHairLod } from "./hair-lod";
 import { DEFAULT_BODY } from "../body-spec";
 import type { AvatarHair } from "../model";
 
@@ -85,5 +86,91 @@ describe("cabelo em fios (fase 2 do plano)", () => {
       const base = buildHair(asset, c, normals, h, 1, { base: true });
       expect(base ? strandGeometry(asset, c, h, base, 1) : null).toBeNull();
     }
+  });
+});
+
+describe("cabelo em fios — penteado, níveis de detalhe e sombreamento (fase 2)", () => {
+  const h = hairOf({ length: "medium", bottom: -14, texture: "wavy" });
+  const base = buildHair(asset, c, normals, h, 1, { base: true })!;
+  const ctx = strandContext(asset, c, h, base, 1)!;
+  const groom = growGroom(ctx, h, base)!;
+  const lods = [0, 1, 2].map((l) => strandsFromGroom(ctx, groom, l as 0 | 1 | 2)!);
+
+  it("o penteado é um formato próprio (guias) que vai e volta em JSON e gera as mesmas fitas", () => {
+    expect(groom.kind.length).toBeGreaterThan(400);
+    expect(groom.start[groom.start.length - 1] * 3).toBe(groom.points.length);
+    const back = groomFromJSON(JSON.parse(JSON.stringify(groomToJSON(groom))));
+    expect(back.kind.length).toBe(groom.kind.length);
+    let maxErr = 0; for (let i = 0; i < groom.points.length; i++) maxErr = Math.max(maxErr, Math.abs(back.points[i] - groom.points[i]));
+    expect(maxErr).toBeLessThanOrEqual(0.0005);                            // 0,5 mm
+    expect(strandsFromGroom(ctx, back, 1)!.ribbons).toBe(lods[1].ribbons);
+    expect(() => groomFromJSON({ ...groomToJSON(groom), start: [0] })).toThrow();
+  });
+
+  it("níveis: o 0 tem ≈3× as fitas do 1, mais finas; o 2 são cards com no máximo 8 mil triângulos", () => {
+    expect(lods[0].ribbons).toBeGreaterThan(lods[1].ribbons * 2.5);
+    expect(lods[1].ribbons).toBeGreaterThan(lods[2].ribbons * 3);
+    expect(lods[2].triangles).toBeLessThanOrEqual(HAIR_LODS[2].maxTriangles!);
+    expect(lods[2].triangles).toBeGreaterThan(2000);
+    for (const l of lods) { expect(l.position.every(Number.isFinite)).toBe(true); expect(inside(l.position)).toBeLessThan(0.01); }
+    expect(strandGeometry(asset, c, h, base, 1, { lod: 3 })).toBeNull();     // nível 3 = só a casca
+  });
+
+  it("3–5% de fios soltos nos níveis de fios, nenhum nos cards", () => {
+    for (const l of [lods[0], lods[1]]) { const f = l.stray / l.ribbons; expect(f).toBeGreaterThan(0.015); expect(f).toBeLessThan(0.06); }
+    expect(lods[2].stray).toBe(0);
+  });
+
+  it("tangente do fio unitária ao longo da fita; raiz mais escura que a ponta; tom por fio dentro de ±5% (com oclusão)", () => {
+    const t = lods[1].tangent; for (let i = 0; i < t.length; i += 4 * 97) expect(Math.abs(Math.hypot(t[i], t[i + 1], t[i + 2]) - 1)).toBeLessThan(1e-3);
+    const col = lods[1].color; let max = 0; for (let i = 0; i < col.length; i += 4) max = Math.max(max, col[i]);
+    expect(max).toBeLessThanOrEqual(1.05 * 1.06 + 1e-6);
+    // primeira fita: o primeiro par de vértices (raiz) é mais escuro que o último (ponta)
+    expect(col[0]).toBeLessThan(col[(lods[1].index[lods[1].index.length - 1]) * 4] + 1);
+  });
+
+  it("material com brilho de fio (Kajiya-Kay) sobre a tangente, e a malha leva o atributo tangent", () => {
+    const m = strandMaterial("#33241a", 1);
+    expect(m.userData.hairShading).toBe("kajiya-kay"); expect(m.anisotropy).toBeGreaterThan(0);
+    const shader = { uniforms: {} as Record<string, unknown>, fragmentShader: "#include <lights_fragment_end>\nvoid main(){}", vertexShader: "" };
+    m.onBeforeCompile(shader as never, undefined as never);
+    expect(shader.fragmentShader).toContain("hairShift1"); expect(shader.fragmentShader).toContain("tbn[ 0 ]");
+    expect(Object.keys(shader.uniforms)).toEqual(expect.arrayContaining(["hairExp1", "hairExp2", "hairSpec1", "hairSpec2"]));
+    const w = withStrands(base, lods[1], "#33241a");
+    expect(w.geometry.getAttribute("tangent").count).toBe(w.geometry.getAttribute("position").count);
+  });
+
+  it("rosto livre: nenhum fio na frente do rosto nem deitado na pele nua; franja para na sobrancelha", () => {
+    for (const o of [{ fringe: 0.5 }, { texture: "curly" as const, volume: 1.4 }, { length: "short" as const, texture: "coily" as const, volume: 1.6 }]) {
+      const hh = hairOf({ length: "medium", bottom: -14, texture: "wavy", ...o });
+      const bb = buildHair(asset, c, normals, hh, 1, { base: true })!; const cx = strandContext(asset, c, hh, bb, 1)!;
+      const gg = growGroom(cx, hh, bb)!;
+      for (const lod of [1, 2] as const) {
+        const st = strandsFromGroom(cx, gg, lod)!; const p = st.position; let bad = 0;
+        for (let i = 0; i < p.length; i += 3) { const q: [number, number, number] = [p[i], p[i + 1], p[i + 2]]; if (cx.inFace(q) || cx.onSkin(q)) bad++; }
+        expect(bad / (p.length / 3)).toBeLessThan(0.003);
+      }
+      let bangs = 0;
+      for (let g = 0; g < gg.kind.length; g++) if (gg.kind[g] === 1) {
+        bangs++; const last = gg.start[g + 1] - 1; expect(gg.points[last * 3 + 1]).toBeGreaterThan(cx.browY - 0.004);
+      }
+      if ("fringe" in o) expect(bangs).toBeGreaterThan(10);
+    }
+  });
+
+  it("escolha do nível pelo aparelho e rebaixamento pelo tempo de quadro", () => {
+    expect(chooseHairLod({ mobile: false, webgl2: true, cores: 12, memoryGb: 16 })).toBe(0);
+    expect(chooseHairLod({ mobile: false, webgl2: true })).toBe(1);              // padrão: sem dezenas de milhares de fios
+    expect(chooseHairLod({ mobile: true, webgl2: true, cores: 8, memoryGb: 6 })).toBe(1);
+    expect(chooseHairLod({ mobile: true, webgl2: true, cores: 4, memoryGb: 2 })).toBe(2);
+    expect(chooseHairLod({ mobile: false, webgl2: false })).toBe(2);
+    expect(chooseHairLod({ mobile: false, webgl2: true }, "2")).toBe(2);
+    expect(chooseHairLod({ mobile: false, webgl2: true }, null, "0")).toBe(3);
+    const b = new HairFrameBudget(30, 5); let got: number | null = null;
+    for (let i = 0; i < 40 && got === null; i++) got = b.push(16, 0);
+    expect(got).toBeNull();                                                      // 60 qps no nível 0: fica
+    for (let i = 0; i < 80 && got === null; i++) got = b.push(40, 0);
+    expect(got).toBe(1);                                                         // 25 qps: desce para o 1
+    expect(new HairFrameBudget(1, 0).push(500, 2)).toBeNull();                   // cards nunca descem sozinhos
   });
 });

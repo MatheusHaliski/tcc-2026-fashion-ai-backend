@@ -23,12 +23,26 @@ import type { Sex } from "@/lib/avatar3d/body-spec";
 import type { Issue } from "@/lib/avatar3d/quality";
 import { validateBody, type BodyModel } from "@/lib/avatar3d/body-spec";
 import { BodyEditor } from "@/components/avatar3d/body-editor";
+import type { FaceFidelity } from "@/lib/avatar3d/identity/metrics";
 
 const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full" /> });
 
+interface GateView { passed: boolean; failed: string[]; notMeasured?: string[] }
+/** AVATAR-ID I1: identidade versionada (versão atual, status do gate, versão aprovada que outras pessoas veem). */
+interface IdentityView { identityId?: string; version: number; status: "DRAFT" | "NEEDS_REFINEMENT" | "APPROVED"; approvedVersion?: number | null; quality?: { gate?: GateView } | null }
 interface Saved {
   exists: boolean; model?: AvatarModel; adjust?: Partial<AvatarAdjust>; textureUrl?: string; photos?: number;
-  warnings?: string[]; publicOnRunway?: boolean; updatedAt?: string;
+  warnings?: string[]; publicOnRunway?: boolean; updatedAt?: string; identity?: IdentityView;
+}
+interface VersionRow { version: number; status: IdentityView["status"]; basedOn?: number | null; current: boolean; approved: boolean; approvedWithWarnings?: boolean; createdAt?: string; gate?: GateView | null }
+
+/** Relatório de qualidade que vai com o avatar: só números agregados (lib/avatar3d/identity), nunca forma ou cor. */
+function qualityReport(f: FaceFidelity | null | undefined, skin?: { skinColorError: number | null; seams: number } | null) {
+  if (!f) return undefined;
+  return {
+    reprojectionMm: f.reprojectionMm, asymmetry: f.asymmetry, capture: f.capture, shapePreservation: f.shapePreservation, proportionErrorPct: f.proportionErrorPct,
+    ...(skin?.skinColorError != null ? { skinColorError: skin.skinColorError, seams: skin.seams } : {}),
+  };
 }
 
 const VIEWS: AvatarView[] = ["front", "left34", "right34", "profile"];
@@ -161,6 +175,8 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
   const [consent, setConsent] = useState(false);
   const [pub, setPub] = useState(initialPublic);
   const [sexChoice, setSexChoice] = useState<Sex | null>(null);        // null = automático (rosto; senão o cadastro)
+  const fidelity = useRef<FaceFidelity | null>(null);                    // medida pelo corpo da prévia (gate de identidade)
+  const human = useRef<HumanParts | null>(null);                          // a pele (erro de cor, costura) sai depois do bake
   const texture = useMemo(() => {
     if (!built) return null;
     const tex = new THREE.CanvasTexture(built.atlas); tex.colorSpace = THREE.SRGBColorSpace; return tex;
@@ -206,7 +222,7 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
     setBusy("save");
     try {
       const fd = new FormData();
-      fd.append("meta", JSON.stringify({ model: built.model, adjust: clampAdjust(adjust), photos: 1, warnings: built.model.warnings, consent: true, publicOnRunway: pub }));
+      fd.append("meta", JSON.stringify({ model: built.model, adjust: clampAdjust(adjust), photos: 1, warnings: built.model.warnings, consent: true, publicOnRunway: pub, quality: qualityReport(fidelity.current, human.current?.human.root.userData.skinReport) }));
       fd.append("texture", await atlasBlob(built.atlas), "avatar.jpg");
       await api.upload("/api/me/avatar3d", fd);
       toast.success(t("avatar3d.page.salvo"));
@@ -258,7 +274,7 @@ function Create({ sex, onSaved, onCancel, initialPublic }: { sex: "FEMININO" | "
       <div className="grid content-start gap-3">
         <Card>
           <div className="aspect-[4/5] w-full overflow-hidden rounded-md bg-surface-2 sm:aspect-[5/4]">
-            {built && texture ? <AvatarViewer avatar={{ model: built.model, adjust, texture }} sex={built.model.sex ?? sex} view={view} />
+            {built && texture ? <AvatarViewer avatar={{ model: built.model, adjust, texture }} sex={built.model.sex ?? sex} view={view} onHuman={(p) => { fidelity.current = p.identity ?? null; human.current = p; }} />
               : <p className="grid h-full place-items-center p-6 text-center type-body text-muted">{t("avatar3d.page.previa_vazia")}</p>}
           </div>
           {built && <div className="mt-3"><ViewButtons view={view} onView={setView} /></div>}
@@ -307,7 +323,7 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
   async function downloadGlb() {
     const p = human.current; if (!p) return;
     setBusy("glb");
-    try { downloadBlob(await exportAvatarGlb(p.human, p.pose), "fashionai-avatar.glb"); }
+    try { downloadBlob(await exportAvatarGlb(p.human, p.pose, { hair: { live: p.hair, build: p.exportHair } }), "fashionai-avatar.glb"); }
     catch (e) { if (e instanceof Error && e.message === AVATAR_NOT_DRESSED) toast.info(t("avatar3d.page.glb_aguarde_roupa")); else toast.fromError(e); } finally { setBusy(""); }
   }
   async function remove() {
@@ -323,6 +339,7 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
           <p className="label">{t("avatar3d.page.seu_avatar")}</p>
           <p className="type-body-sm">{t("avatar3d.page.feito_com", { n: saved.photos ?? 1 })}{saved.updatedAt ? ` · ${fmtDateTime(saved.updatedAt)}` : ""}</p>
           {(saved.warnings ?? []).length > 0 && <ul className="fai-list mt-2">{saved.warnings!.map((c) => <li key={c} className="type-caption text-muted">⚠ {SAVED_TEXT.has(c) ? t(`avatar3d.saved.${c}`) : issueText({ code: c })}</li>)}</ul>}
+          {saved.identity && <IdentityPanel identity={saved.identity} onChanged={onChanged} />}
           <div className="mt-3"><Switch checked={pub} onChange={(v) => { setPub(v); void patch({ publicOnRunway: v }); }} label={t("avatar3d.page.publico")} hint={t("avatar3d.page.publico_hint")} /></div>
           <div className="mt-3 flex flex-wrap gap-2">
             <Button onClick={onRedo} disabled={!!busy}>{t("avatar3d.page.refazer")}</Button>
@@ -355,6 +372,58 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
         footer={<><Button variant="ghost" onClick={() => setConfirm(false)}>{t("common.cancel")}</Button><Button variant="danger" loading={busy === "delete"} onClick={remove}>{t("avatar3d.page.excluir")}</Button></>}>
         <p className="type-body">{t("avatar3d.page.excluir_texto")}</p>
       </Dialog>
+    </div>
+  );
+}
+
+/**
+ * AVATAR-ID I1 — estado da identidade: versão atual, se passou no gate, o que reprovou (em palavras, nunca números do
+ * rosto), aprovar mesmo assim e voltar para uma versão anterior. Outras pessoas veem sempre a última versão aprovada.
+ */
+function IdentityPanel({ identity, onChanged }: { identity: IdentityView; onChanged: () => void }) {
+  const { t, fmtDateTime } = useI18n(); const toast = useToast();
+  const versions = useApi<VersionRow[]>((signal) => api.get("/api/me/avatar3d/versions", { signal }), [identity.version, identity.status]);
+  const [busy, setBusy] = useState<string>(""); const [open, setOpen] = useState(false);
+  const failed = identity.quality?.gate?.failed ?? [];
+  const checks = failed.map((c) => t(`avatar3d.identity.check.${c}`)).join(", ");
+  async function act(key: string, path: string, body: unknown, ok: string) {
+    setBusy(key);
+    try { await api.post(path, body); toast.success(ok); onChanged(); versions.reload(); }
+    catch (e) { toast.fromError(e); } finally { setBusy(""); }
+  }
+  const tone = identity.status === "APPROVED" ? "thread" : identity.status === "NEEDS_REFINEMENT" ? "chalk" : undefined;
+  return (
+    <div className="mt-3 grid gap-2" data-identity-status={identity.status}>
+      <p className="flex flex-wrap items-center gap-2 type-body-sm">
+        <span>{t("avatar3d.identity.versao", { n: identity.version })}</span>
+        <Badge tone={tone}>{t(`avatar3d.identity.status.${identity.status}`)}</Badge>
+      </p>
+      {identity.status === "NEEDS_REFINEMENT" && (
+        <div role="note" className="rounded-md bg-surface-2 p-2 type-caption">
+          <p>{checks ? t("avatar3d.identity.aviso_refinar", { checks }) : t("avatar3d.identity.aviso_refinar_geral")}</p>
+          <p className="mt-1 text-muted">{identity.approvedVersion ? t("avatar3d.identity.outros_veem", { n: identity.approvedVersion }) : t("avatar3d.identity.outros_veem_manequim")}</p>
+          <Button className="mt-2" size="sm" loading={busy === "approve"} disabled={!!busy}
+            onClick={() => act("approve", `/api/me/avatar3d/versions/${identity.version}/approve`, { acceptWarnings: true }, t("avatar3d.identity.aprovada_ok"))}>
+            {t("avatar3d.identity.aprovar_mesmo_assim")}
+          </Button>
+        </div>
+      )}
+      <Button size="sm" variant="ghost" aria-expanded={open} onClick={() => setOpen(!open)}>{t("avatar3d.identity.versoes")}{versions.data ? ` · ${versions.data.length}` : ""}</Button>
+      {open && (
+        <ul className="fai-list" aria-label={t("avatar3d.identity.versoes")}>
+          {(versions.data ?? []).map((v) => (
+            <li key={v.version} className="flex flex-wrap items-center gap-2 py-1 type-caption">
+              <span className="type-data">v{v.version}</span>
+              <span>{t(`avatar3d.identity.status.${v.status}`)}{v.approvedWithWarnings ? ` (${t("avatar3d.identity.com_avisos")})` : ""}</span>
+              {v.current && <Badge tone="mark">{t("avatar3d.identity.atual")}</Badge>}
+              {v.approved && <Badge tone="thread">{t("avatar3d.identity.vista_pelos_outros")}</Badge>}
+              {v.createdAt && <span className="text-faint">{fmtDateTime(v.createdAt)}</span>}
+              {!v.current && <Button size="sm" variant="ghost" loading={busy === `r${v.version}`} disabled={!!busy}
+                onClick={() => act(`r${v.version}`, `/api/me/avatar3d/versions/${v.version}/restore`, {}, t("avatar3d.identity.restaurada"))}>{t("avatar3d.identity.restaurar")}</Button>}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

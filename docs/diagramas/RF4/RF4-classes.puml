@@ -1,0 +1,189 @@
+@startuml RF4_Classes
+!pragma layout smetana
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de classes — criador catalog-first: catálogo global (V30/V36), peça pessoal e serviços
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #F8F4FF
+  BorderColor #7C5FC0
+  ArrowColor #52606D
+}
+skinparam packageStyle rectangle
+hide empty members
+
+package "fai-web" {
+  class CatalogController <<RestController>> {
+    +search(user, category, subcategory, brand, q, color, limit) «GET /api/catalog/search»
+    +suggestions(...) «GET /api/catalog/suggestions»
+    +brands(q) «GET /api/catalog/brands»
+    +product(id) «GET /api/catalog/products/{id}»
+    +discover(user, SearchRequest) «POST /api/catalog/discover»
+    +fromCatalog(user, AddRequest) «POST /api/pieces/from-catalog» 201
+  }
+  class WardrobeController <<RestController>> {
+    +create(user, PieceForm) «POST /api/pieces» 201
+    +taxonomy() «GET /api/taxonomy»
+  }
+}
+
+package "fai-application · catalog" {
+  class CatalogService <<Service>> {
+    +MIN_SCORE = 0.35
+    +search(userId, SearchRequest) : Map
+    +suggestions(SearchRequest) : Map
+    +brandSuggestions(term) : Map
+    +product(id) : Map
+    +discover(user, SearchRequest) : Map
+    +addToWardrobe(user, AddRequest) : PieceView
+  }
+  class "CatalogService.SearchRequest" as SearchRequest <<record>> {
+    category, subcategory, brand
+    query, color : String
+    limit : Integer
+  }
+  class "CatalogService.AddRequest" as AddRequest <<record>> {
+    productId, variantId : UUID
+    size, condition, price, purchaseDate
+    visibility, occasion, style, color
+    material, sex, name, background
+  }
+  class CatalogMatchScorer {
+    +score(Intent, Candidate, visual) : Score
+  }
+  class OfficialCatalogDiscovery {
+    +discover(userId, brandName, subcategoryLabel,\n  query, officialDomains) : List<Found>
+  }
+  class CatalogIngestService {
+    +upsert(ProductInput, CatalogIngestionStatus, createBrand) : Result
+  }
+}
+
+package "fai-application · service" {
+  class WardrobeService <<Service>> {
+    +create(user, PieceForm) : PieceView
+    +createFromCatalog(user, PieceForm, CatalogPick) : PieceView
+    +createBatch(user, List<PieceForm>) : List<PieceView>
+    +update(user, id, PieceForm) : PieceView
+    +taxonomy() : Map
+    -createInternal(user, form, pick)
+    -validate(PieceForm)
+    -resolveBrand(w, brandId, brandName)
+    -brandFromWebSearch(w, form, previousBrand)
+    ~defaultStudio(w)
+  }
+  class "WardrobeService.PieceForm" as PieceForm <<record>> {
+    draftId : UUID
+    useDefaultImage : boolean
+    name, category, subcategory, sex : String
+    brandId : UUID ; brandName : String
+    color, material, size, market : String
+    occasion, style, seals : List<String>
+    price : BigDecimal ; visibility : Visibility
+    brandLogoUrl, brandSource, brandRef : String
+    background : Map ; captureSessionId : UUID
+  }
+  class "WardrobeService.CatalogPick" as CatalogPick <<record>> {
+    productId, variantId : UUID
+    imageUrl : String
+  }
+  class AssetCatalogService <<Service>> {
+    +defaultPieceImage(category, subcategory) : String
+  }
+  class Guard {
+    +requireCanCreate(user)
+    +requireOwner(user, ownerId, resource)
+  }
+}
+
+package "fai-domain · model" {
+  class CatalogProduct <<Entity>> <<table catalog_products>> {
+    brandId : UUID
+    category, subcategory : String
+    productName, modelName, sku, gtin : String
+    color, material, gender, collection : String
+    designJson, searchText : String
+    ingestionStatus : CatalogIngestionStatus
+    ownersCount : int
+  }
+  class CatalogVariant <<Entity>> <<table catalog_variants>> {
+    productId : UUID
+    color, colorName, sku, gtin : String
+  }
+  class CatalogImage <<Entity>> <<table catalog_images>> {
+    productId, variantId : UUID
+    imageUrl, storedUrl : String
+    primary : boolean
+    usageStatus : CatalogImageUsage
+  }
+  class CatalogSource <<Entity>> <<table catalog_sources>> {
+    brandId : UUID ; domain : String
+    allowsImagePersistence, active : boolean
+  }
+  class Brand <<Entity>> <<table brands>> {
+    name, slug, logoUrl, website : String
+    brandProfile : BrandProfile
+  }
+  class WardrobeItem <<Entity>> <<table wardrobe_items>> {
+    user : User ; brand : Brand
+    name, category, subcategory, sex : String
+    brandName, brandLogoUrl, brandSource, brandRef : String
+    color, material, sizeLabel : String
+    occasionTags, styleTags, sealIdsJson : String
+    imageUrl, thumbnailUrl, originalImageUrl : String
+    defaultImage, aiGeneratedImage : boolean
+    imageOrigin : ImageOrigin
+    catalogProductId, catalogVariantId : UUID
+    moderationStatus : ModerationStatus
+    photoProcessingStatus : PhotoProcessingStatus
+    visibility : Visibility ; price : BigDecimal
+    backgroundConfigJson : String
+  }
+}
+package "fai-domain · enums" {
+  enum CatalogIngestionStatus {
+    DISCOVERED
+    VALIDATED
+    PERSISTABLE
+    REFERENCE_ONLY
+    REJECTED
+  }
+  enum ImageOrigin {
+    CATALOG
+    USER_PHOTO
+    DEFAULT
+  }
+}
+
+CatalogController --> CatalogService
+WardrobeController --> WardrobeService
+CatalogService ..> SearchRequest
+CatalogService ..> AddRequest
+CatalogService --> CatalogMatchScorer : re-rank
+CatalogService --> OfficialCatalogDiscovery : sem resultado
+CatalogService --> CatalogIngestService : DISCOVERED
+CatalogService --> WardrobeService : createFromCatalog
+WardrobeService ..> PieceForm
+WardrobeService ..> CatalogPick
+WardrobeService --> AssetCatalogService : ilustração da subcategoria
+WardrobeService --> Guard
+CatalogProduct "1" *-- "0..*" CatalogVariant
+CatalogProduct "1" *-- "0..*" CatalogImage
+CatalogProduct "*" --> "1" Brand : brandId
+CatalogSource "*" --> "1" Brand : brandId
+CatalogProduct --> CatalogIngestionStatus
+WardrobeItem "*" ..> "0..1" CatalogProduct : catalogProductId\n(referência, sem copiar)
+WardrobeItem "*" --> "0..1" Brand
+WardrobeItem --> ImageOrigin
+WardrobeService ..> WardrobeItem : cria
+note bottom of ImageOrigin
+  Hoje só CATALOG e DEFAULT são gravados (createInternal,
+  caminho do catálogo). USER_PHOTO existe no enum, mas
+  replaceImage não atualiza imageOrigin.
+end note
+note right of PieceForm
+  useDefaultImage = true no criador (sem foto).
+  draftId e captureSessionId só vêm da análise por
+  foto (lote/várias peças, RF12) — o criador não envia.
+end note
+@enduml

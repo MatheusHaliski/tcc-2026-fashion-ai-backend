@@ -1,5 +1,5 @@
 @startuml RF11_Componentes
-title RF11 — Compor a arte de fundo (Background Studio) do card de um esquema ou de uma peça\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de componentes — telas, API, serviços, portas e infraestrutura da arte do card
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -17,57 +17,94 @@ skinparam database {
 left to right direction
 
 package "Frontend (Next.js)" {
-  component "scheme-builder.tsx\n(etapa 4 do Criar Look — RF5)" as FE0
-  component "background-studio.tsx\n(modos 1 · 2 · 3, rascunho do modal)" as FE1
-  component "piece-art-editor.tsx\n(Editar arte do card da peça)" as FE2
-  component "scheme-anatomies.tsx\n(anatomias v19 · seção 7)" as FE3
+  component "schemes/new · schemes/[id]/edit\n(page.tsx → SchemeBuilder, etapa 4)" as FE_SB
+  component "dna · dna-schemes/new|[id]/edit\n(DnaBuilder — RF13)" as FE_DNA
+  component "pieces/new (etapa Arte de fundo)\nexpanded-card (PieceArtDialog)" as FE_PC
+  component "components/background-studio.tsx\nBackgroundStudio · SeasonalDialog ·\nColorPanel · AuraMaterialPanel" as FE_BS
+  component "components/piece-art-editor.tsx\nlib/piece-art.ts" as FE_PAE
+  component "components/card-art.tsx\nCardArtLayer · ArtVideo · MotionFall" as FE_CA
+  component "lib/card-art.ts\n+ lib/assets/card-art-index.json" as FE_LIB
+  component "scheme-card · dna-card · piece-art\n(cards do feed)" as FE_CARDS
+  component "lib/api/client.ts (api)" as FE_API
+  component "/public: MP4 de Aura, pôsteres,\ntexturas (servidos pelo Next.js)" as FE_PUB
 }
 package "fai-web · controllers" {
-  [BackgroundController\n/api/backgrounds/catalog · combination\nrecommendations · art · uploads\n/api/schemes/{id}/background · /api/pieces/{id}/background] as BackgroundController
-  [SchemeController\nPOST/PUT /api/schemes · /api/schemes/preview\n/api/schemes/{id}/card.png] as SchemeController
+  [BackgroundController\nGET /api/backgrounds/catalog · combination · recommendations\nPOST /api/backgrounds/art · uploads\nPUT|DELETE /api/schemes/{id}/background\nPUT /api/pieces/{id}/background] as BC
+  [SchemeController\nPOST /api/schemes · PUT /api/schemes/{id}\nPOST /api/schemes/preview · GET /api/schemes/{id}/card.png] as SC
+  [WardrobeController\nPOST /api/pieces] as WC
+  [DnaController\nPOST|PUT /api/dna-schemes] as DC
 }
-package "fai-application · services" {
-  [BackgroundStudioService] as BackgroundStudioService
-  [SchemeService] as SchemeService
-  [AssetCatalogService] as AssetCatalogService
-  [AiEngine (RF24)\nBACKGROUND_GENERATOR\nCelebrityPromptValidator] as AiEngine
-  [MediaService] as MediaService
-  [SchemeCardRenderer] as Renderer
-  [ImageGenerationPort] as ImgPort #FAFAFA
-  [MediaStoragePort] as MediaPort #FAFAFA
+package "fai-application · serviços" {
+  [BackgroundStudioService] as BS
+  [SchemeService] as SS
+  [WardrobeService] as WS
+  [DnaService (RF13)] as DS
+  [AssetCatalogService\n(catalog/asset-manifest.json)] as AC
+  [MediaService] as MS
+  [AiEngine (RF24)\nCelebrityPromptValidator · AiBudget] as AI
+  [SchemeCardRenderer] as REN
 }
-package "fai-domain · repositórios JPA" {
-  [AssetPresetRepository\nSchemeRepository\nWardrobeItemRepository\nCelebrityProfileRepository\nPhotoRepository · AiInferenceLogRepository] as REPOS
+package "fai-application · portas" {
+  interface "ImageGenerationPort" as P_IMG
+  interface "MediaStoragePort" as P_ST
+  interface "RateLimitPort" as P_RL
 }
-package "fai-infrastructure · adapters" {
-  [ReplicateImageGenerationAdapter] as Replicate
-  [S3MediaStorageAdapter / LocalFileMediaStorage] as S3
+package "fai-infrastructure" {
+  [ReplicateImageGenerationAdapter\n(ai-providers)] as A_REP
+  [S3MediaStorageAdapter (storage-s3)\nLocalFileMediaStorage (platform)] as A_ST
+  [RedisAdapters (cache-redis)\nInMemoryRateLimit (platform)] as A_RL
+  [Repositórios JPA (persistence-mysql)\nSchemeRepository · WardrobeItemRepository\nAssetPresetRepository · PhotoRepository\nCelebrityProfileRepository · AiInferenceLogRepository] as REPOS
 }
-database "MySQL · fashionai_app\n• asset_presets\n• schemes (background*, studioConfigJson)\n• wardrobe_items (backgroundConfigJson)\n• photos\n• ai_inference_log" as DB
-cloud "Replicate (geração de imagem)" as C_rep
-cloud "S3 / storage de mídia\n(users/{id}/backgrounds)" as C_s3
+database "MySQL\n• schemes (background_*, studio_config_json,\n  card_skin, container_*)\n• wardrobe_items (background_config_json)\n• dna_schemes · asset_presets\n• photos · ai_inference_log" as DB
+cloud "Replicate\n(texto → imagem)" as C_REP
+cloud "S3 / R2 ou disco local\n(users/{id}/backgrounds/*)" as C_ST
+database "Redis\n(cota diária por capacidade)" as C_REDIS
 
-FE0 --> FE1 : abre o modal
-FE1 --> BackgroundController : catálogo · combinação · arte · upload
-FE0 --> SchemeController : preview · salvar (form.background)
-FE2 --> BackgroundController : PUT /api/pieces/{id}/background
-FE3 ..> FE1 : anatomias / skins
-BackgroundController --> BackgroundStudioService : chama
-SchemeController --> SchemeService : chama
-SchemeService --> BackgroundStudioService : applyToScheme
-SchemeController --> Renderer : card.png · preview
-Renderer ..> BackgroundStudioService : rendererBackground
-BackgroundStudioService --> AssetCatalogService : presets · skins · direções
-BackgroundStudioService --> AiEngine : execute(BACKGROUND_GENERATOR)
-BackgroundStudioService --> MediaService : put · register(BACKGROUND_STUDIO)
-AiEngine ..> ImgPort
-MediaService ..> MediaPort
-AssetCatalogService --> REPOS : lê asset_presets
-BackgroundStudioService --> REPOS : grava
-AiEngine --> REPOS : registra inferência
-ImgPort <.. Replicate
-MediaPort <.. S3
-REPOS --> DB : JPA/Flyway
-Replicate --> C_rep : gera
-S3 --> C_s3 : put/get
+FE_SB --> FE_BS : etapa 4
+FE_DNA --> FE_BS : etapa 4 do DNA
+FE_PC --> FE_PAE
+FE_PAE --> FE_BS : reaproveita os painéis
+FE_BS --> FE_API
+FE_PAE --> FE_API
+FE_SB --> FE_API
+FE_CARDS --> FE_LIB : resolveCardArt
+FE_CARDS --> FE_CA : CardArtLayer
+FE_BS ..> FE_LIB : ART_INDEX · prévia
+FE_CA --> FE_PUB : vídeo perto da tela
+FE_API --> BC : HTTPS/JSON
+FE_API --> SC : HTTPS/JSON
+FE_API --> WC : HTTPS/JSON
+FE_API --> DC : HTTPS/JSON
+BC --> BS
+BC --> AC : manifest · skins · mosaics
+SC --> SS
+WC --> WS
+DC --> DS
+SS --> BS : applyToScheme · rendererBackground
+SS --> REN : preview · card.png
+BS --> AC
+BS --> MS
+BS --> AI : execute(BACKGROUND_GENERATOR)
+BS ..> P_IMG : generators
+AI --> P_RL
+AI --> REPOS : ai_inference_log
+MS --> P_ST
+MS --> REPOS : photos
+BS --> REPOS
+WS --> REPOS
+DS --> REPOS
+AC --> REPOS : syncPresets
+P_IMG <|.. A_REP
+P_ST <|.. A_ST
+P_RL <|.. A_RL
+A_REP --> C_REP : HTTPS
+A_ST --> C_ST
+A_RL --> C_REDIS
+REPOS --> DB : JPA / Flyway
+note bottom of FE_BS
+  O frontend atual não chama POST /api/backgrounds/uploads,
+  PUT nem DELETE /api/schemes/{id}/background: a arte do look
+  vai junto do POST/PUT /api/schemes (etapa 5).
+end note
+note bottom of DS : o DNA grava o fundo em dna_schemes.studio_config_json\nsem passar por applyToScheme (ver RF13)
 @enduml

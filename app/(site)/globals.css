@@ -1548,6 +1548,7 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
   .fai-card.piece-card .c-post .c-actions .grow { display: none; }
   .fai-card.piece-card .c-post .c-act { padding: 0 3px; gap: 2px; min-width: 26px; font-size: 12px; }
   .fai-card.piece-card .c-post .c-act.is-share .c-act-n { display: none; }
+  .fai-card.piece-card .c-post .c-act.is-remix .c-act-n { display: none; }
   .piece-card .c-act-icon { width: 20px; height: 20px; }
   .piece-card .pc-id { padding: 0 10px 10px; }
 }
@@ -1992,10 +1993,21 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .brand-ac-item { display: flex; align-items: center; gap: .6rem; padding: .45rem .6rem; border-radius: var(--radius-sm); cursor: pointer; font-size: var(--text-body-sm); }
 .brand-ac-item.is-active, .brand-ac-item:hover { background: var(--surface-2); }
 .catalog-card { display: flex; flex-direction: column; overflow: hidden; height: 100%; }
-.catalog-card-media { position: relative; display: grid; place-items: center; aspect-ratio: 1 / 1; background: var(--surface-2); }
-.catalog-card-media img { width: 100%; height: 100%; object-fit: contain; display: block; }
-.catalog-card-match { position: absolute; left: .5rem; top: .5rem; }
-.catalog-card-new { position: absolute; right: .5rem; top: .5rem; }
+/* Quadro 4:5 igual aos cards de peça. Foto canônica do pipeline: recorte semântico da foto original (posição calculada
+   em semanticCropStyle, nunca esticada) ou master processado; sem canônica, a foto inteira contida com folga. */
+.catalog-card-media { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 5; overflow: hidden; background: var(--surface-2); }
+.catalog-photo { position: absolute; inset: 0; display: block; overflow: hidden; }
+.catalog-photo img { display: block; }
+.catalog-photo.is-contained img, .catalog-photo.is-processed img { width: 100%; height: 100%; object-fit: contain; }
+.catalog-photo.is-contained { padding: 9%; }
+.catalog-card-match { position: absolute; left: .5rem; top: .5rem; z-index: 1; }
+.catalog-card-new { position: absolute; right: .5rem; top: .5rem; z-index: 1; }
+/* Admin · pipeline de imagens: antes/depois e depuração visual sobre a foto original */
+.cip-compare { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+.cip-stage { position: relative; display: block; width: 100%; background: var(--surface-2); border-radius: 12px; overflow: hidden; }
+.cip-stage img { display: block; width: 100%; height: auto; }
+.cip-stage svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.cip-frame { position: relative; aspect-ratio: 4 / 5; border-radius: 12px; overflow: hidden; background: var(--surface-2); }
 .catalog-card-body { display: flex; flex-direction: column; gap: .15rem; padding: .7rem .8rem .8rem; }
 .catalog-swatch { width: 18px; height: 18px; border-radius: 999px; border: 1.5px solid var(--line-soft); cursor: pointer; }
 .catalog-swatch.is-active { outline: 2px solid var(--ink); outline-offset: 2px; }
@@ -2314,6 +2326,10 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .mirror-empty { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(280px, 86%); padding: 12px 14px; text-align: center; border-radius: 14px; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(6px); box-shadow: 0 6px 20px -10px rgba(0,0,0,.4); }
 .mirror-note { margin-top: 10px; text-align: center; font-size: 13px; color: #3b2f17; }
 @media (max-width: 480px) { .mirror-frame { padding: 10px; border-radius: 140px 140px 18px 18px; } .mirror-glass { border-radius: 130px 130px 10px 10px; } }
+/* PROV-2D — Prévia 2D: a foto parada do mesmo avatar ocupa o vidro inteiro, sem distorcer */
+.mirror-still { display: block; width: 100%; height: 100%; object-fit: contain; user-select: none; }
+.vista-still { width: 100%; max-width: 220px; aspect-ratio: 1 / 2; border-radius: 12px; overflow: hidden; background: var(--surface-2); }
+.vista-still img { display: block; width: 100%; height: 100%; object-fit: contain; }
 
 /* ---------- RF25 · criador de selo em etapas (modo → dados → arte → revisar e salvar) ---------- */
 .seal-mode { display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 16px; border-radius: 10px; border: 1.5px solid var(--line-soft); background: var(--surface); color: var(--ink); cursor: pointer; transition: border-color .15s, box-shadow .15s; }

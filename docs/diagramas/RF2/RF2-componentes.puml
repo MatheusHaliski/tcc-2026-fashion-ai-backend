@@ -1,5 +1,5 @@
 @startuml RF2_Componentes
-title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de componentes — login, BFF da sessão, filtros da API e portas de autenticação
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -14,63 +14,80 @@ skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
-left to right direction
 
-package "Frontend (Next.js)" {
-  component "(auth)/login/page.tsx\n(auth)/forgot-password · reset-password" as FE0
-  component "lib/api/client.ts\n(access em memória; renovação\nserializada por Web Locks)" as FE1
-  component "lib/auth/session.tsx\n(useAuth · RequireAuth)" as FE2
-  component "BFF /bff/auth/[action]\n(cookie HttpOnly fai_rt)" as FE3
+package "Frontend (Next.js 16)" {
+  component "(auth)/login/page.tsx\n+ auth-form.tsx" as FE0
+  component "lib/auth/session.tsx\n(AuthProvider · useAuth)\ncomponents/app-shell.tsx (RequireAuth)" as FE2
+  component "lib/api/client.ts\n(tokenStore em memória · tryRefresh com\nWeb Lock · BroadcastChannel · renewGate)" as FE1
+  component "app/bff/auth/[action]/route.ts\n(cookie HttpOnly fai_rt · IP assinado · X-Dev-Gate)" as BFF
+  component "middleware.ts\n(dev gate + CSP com nonce)" as MW
 }
-package "fai-web · controllers / security" {
-  [AuthController\n/api/auth/login · refresh · logout\npassword-reset/request · confirm] as AuthController
-  [SecurityConfig\n(oauth2ResourceServer JWT, permitAll)] as Sec
-  [SessionActiveFilter\n(sid ativo?)] as SF
-  [JwtTokenIssuer\n(TokenIssuerPort, RS256, 15 min)] as Jwt
-  [Argon2PasswordHasher\n(PasswordHasherPort)] as Hasher
-  [CurrentUserResolver\nAuditAuthenticationEntryPoint] as Res
+package "fai-web" {
+  [DevGateFilter (-103)] as DGF
+  [AuthRateLimitFilter (-102)\nlimite por IP + teto de hashes] as RLF
+  [ClientIpResolver] as CIR
+  [SecurityConfig\n(oauth2ResourceServer JWT, STATELESS)] as Sec
+  [JwtConfig\n(JwtDecoder: iss + aud)] as JCfg
+  [SessionActiveFilter\n(sid ainda ativo?)] as SF
+  [AuthController\n/api/auth/login · refresh · logout] as AC
+  [CurrentUserResolver] as CUR
+  [AuditAuthenticationEntryPoint\nAuditAccessDeniedHandler] as AEP
+  [JwtTokenIssuer] as Jwt
+  [Argon2PasswordHasher] as Hasher
 }
-package "fai-application · services" {
-  [IdentityService] as IdentityService
-  [NotificationService] as NotificationService
-  [RateLimitPort] as RatePort #FAFAFA
-  [EmailSenderPort] as EmailPort #FAFAFA
-  [AuditService] as AuditPort #FAFAFA
+package "fai-application" {
+  [IdentityService] as IS
+  [NotificationService] as NS
+  [Audit → AuditService] as AUD
+  [TokenIssuerPort] <<port>> as P_TOK
+  [PasswordHasherPort] <<port>> as P_HASH
+  [RateLimitPort] <<port>> as P_RATE
+  [EmailSenderPort] <<port>> as P_MAIL
 }
-package "fai-domain · repositórios JPA" {
-  [UserRepository\nRefreshTokenRepository\nVerificationCodeRepository\nUserPreferencesRepository\nNotificationRepository] as REPOS
+package "fai-domain · repositórios" {
+  [UserRepository · RefreshTokenRepository\nVerificationCodeRepository · UserPreferencesRepository] as REPOS
 }
-package "fai-infrastructure · adapters" {
+package "fai-infrastructure" {
   [InMemoryRateLimit / RedisAdapters] as Rate
   [ResendEmailSender / LoggingEmailSender] as Resend
-  [MysqlAuditService] as Audit
+  [MysqlAuditService] as MAudit
 }
-database "MySQL · fashionai_app\n• users\n• refresh_tokens\n• verification_codes\n• notifications\n• audit_log" as DB
-cloud "Resend (e-mail transacional)" as C_mail
-cloud "Redis (opcional)\ncontadores de bloqueio" as C_redis
+database "MySQL · fashionai_app\n• users · refresh_tokens\n• verification_codes\n• notifications · audit_log" as DB
+cloud "Redis (opcional)\nchaves rate:*" as C_redis
+cloud "Resend\n(código 2FA)" as C_mail
 
-FE0 --> FE3 : login · logout
-FE0 --> AuthController : password-reset/*
-FE1 --> FE3 : refresh
-FE2 --> FE1 : sessão
-FE3 --> AuthController : HTTPS/JSON
-FE1 --> SF : Bearer em todo request
-Sec --> SF : addFilterAfter(BearerTokenAuthenticationFilter)
-Sec ..> Res
-SF --> IdentityService : sessionActive(sid)
-AuthController --> IdentityService : chama
-IdentityService --> Hasher : matches / needsRehash
-IdentityService --> Jwt : issueAccessToken
-IdentityService --> NotificationService : NEW_LOGIN_DEVICE · PASSWORD_RESET
-IdentityService ..> RatePort
-IdentityService ..> EmailPort
-IdentityService ..> AuditPort
-IdentityService --> REPOS : grava/lê
-RatePort <.. Rate
-EmailPort <.. Resend
-AuditPort <.. Audit
-REPOS --> DB : JPA/Flyway
-Audit --> DB : grava audit_log
-Resend --> C_mail : envia
-Rate --> C_redis : INCR/TTL
+FE0 --> FE2 : signIn
+FE2 --> FE1 : restoreSession · signOut
+FE1 --> BFF : login · refresh · logout (mesma origem)
+FE1 --> DGF : /api/** (Bearer + X-Dev-Gate)
+MW ..> BFF : sem gate → 403 DEV_GATE
+BFF --> DGF : HTTPS/JSON\nX-Fai-Client-Ip/Ts/Sig
+DGF --> RLF
+RLF --> CIR
+RLF --> P_RATE
+RLF --> Sec
+Sec --> JCfg
+Sec --> SF : depois do BearerTokenAuthenticationFilter
+Sec ..> AEP : 401/403 auditados
+SF --> IS : sessionActive(sid)
+SF --> AC
+AC --> IS
+AC ..> CUR
+IS --> P_TOK
+IS --> P_HASH
+IS --> P_RATE
+IS --> P_MAIL
+IS --> NS : NEW_LOGIN_DEVICE
+IS --> AUD
+IS --> REPOS
+NS --> REPOS
+P_TOK <|.. Jwt
+P_HASH <|.. Hasher
+P_RATE <|.. Rate
+P_MAIL <|.. Resend
+AUD --> MAudit
+REPOS --> DB : JPA / Flyway
+MAudit --> DB
+Rate --> C_redis : INCR / TTL
+Resend --> C_mail
 @enduml

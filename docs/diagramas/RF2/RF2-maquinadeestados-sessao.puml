@@ -1,6 +1,6 @@
 @startuml RF2_MaquinaDeEstados_Sessao
 !pragma layout smetana
-title RF2 — Sessão (família de RefreshToken): emissão, rotação, revogação e expiração
+title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de máquina de estados — sessão (família de RefreshToken = sid do JWT)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,32 +8,40 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-state "Ativa\n(revokedAt = null, expiresAt > agora)" as Ativa {
-  state "Access token válido\n(JWT 15 min, claim sid)" as AccessOk
-  state "Access token expirado\n(refresh ainda usável)" as AccessExp
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Ativa\n(algum token da família sem revokedAt\ne com expiresAt > agora)" as Ativa {
+  state "Access token válido\n(JWT 15 min em memória)" as AccessOk
+  state "Access token vencido\n(refresh ainda usável no cookie fai_rt)" as AccessExp
   [*] --> AccessOk
   AccessOk --> AccessExp : passam 15 min
-  AccessExp --> AccessOk : POST /api/auth/refresh\n(rotação: revokedAt no antigo,\nnovo token com rotatedFromId)
+  AccessExp --> AccessOk : POST /bff/auth/refresh → POST /api/auth/refresh\n(rotação: revokedAt no antigo, novo token\ncom rotatedFromId na mesma família)
 }
-state "Revogada\n(revokedAt preenchido em toda a família)" as Revogada
-state "Expirada\n(expiresAt < agora: 30 d persistente / 1 d)" as Expirada
+state "Revogada\n(revokedAt em toda a família)" as Revogada
+state "Expirada\n(expiresAt < agora: 30 dias com\n«lembrar-me», senão 1 dia)" as Expirada
 
-[*] --> Ativa : POST /api/auth/login\nou POST /api/auth/register\n(familyId novo)
+[*] --> Ativa : POST /api/auth/login\nou POST /api/auth/register (familyId novo)
 Ativa --> Revogada : POST /api/auth/logout
-Ativa --> Revogada : DELETE /api/auth/sessions/{sessionId}\nDELETE /api/auth/sessions (outras) — RF3
-Ativa --> Revogada : PUT /api/auth/password ·\nPOST /api/auth/password-reset/confirm\n(encerra as outras sessões)
-Ativa --> Revogada : reuso de refresh token já rotacionado\n(audit REFRESH_REUTILIZADO)
+Ativa --> Revogada : DELETE /api/auth/sessions/{sessionId}\nou DELETE /api/auth/sessions (as outras) — RF3
+Ativa --> Revogada : PUT /api/auth/password (as outras)\n· POST /api/auth/password-reset/confirm (todas) — RF3
+Ativa --> Revogada : reuso de refresh já rotacionado\n(audit REFRESH_REUTILIZADO)
+Ativa --> Revogada : PUT /api/admin/users/{userId}/status\nsuspend = true (todas)
 Ativa --> Expirada : expiresAt alcançado sem renovação
-Revogada --> [*] : SessionActiveFilter → 401 SESSAO_ENCERRADA
+Revogada --> [*] : SessionActiveFilter → 401 SESSAO_ENCERRADA\nBFF apaga fai_rt e fai_rt_h
 Expirada --> [*] : POST /api/auth/refresh → 401\n"sessão expirada, faça login novamente"
 
 note right of Ativa
-  Não há enum: o estado deriva de
-  RefreshToken.revokedAt / expiresAt (isUsable).
+  Não há enum: o estado vem de RefreshToken.revokedAt
+  e expiresAt (IdentityService.sessionActive).
   GET /api/auth/sessions lista uma linha por família ativa.
+  Conta DELETED ou SUSPENDED: o refresh responde 401.
 end note
 note bottom of Revogada
-  Conta DELETED ou SUSPENDED também
-  invalida o refresh (401 conta indisponível)
+  O access token já emitido continua assinado até vencer,
+  mas o SessionActiveFilter confere o sid a cada requisição
+  e responde 401 — a revogação vale na hora.
 end note
 @enduml

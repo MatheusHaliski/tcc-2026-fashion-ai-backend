@@ -17,4 +17,8 @@ public interface AiReviewItemRepository extends JpaRepository<AiReviewItem, UUID
     List<AiReviewItem> findByCreatedAtAfter(Instant after);
 
     List<AiReviewItem> findByPieceId(UUID pieceId);
+
+    List<AiReviewItem> findByProductId(UUID productId);
+
+    List<AiReviewItem> findByTargetTypeAndStatusOrderByCreatedAtAsc(String targetType, AiReviewStatus status);
 }

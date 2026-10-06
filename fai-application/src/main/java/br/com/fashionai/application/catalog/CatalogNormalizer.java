@@ -155,7 +155,8 @@ public final class CatalogNormalizer {
             return Optional.of(materials.get(k));
         }
         for (String token : k.split(" ")) {
-            if (materials.containsKey(token)) {
+            // palavra solta de 1–2 letras não decide: "lã" sem acento vira "la" ("camiseta de la marca" não é de lã)
+            if (token.length() > 2 && materials.containsKey(token)) {
                 return Optional.of(materials.get(token));
             }
         }

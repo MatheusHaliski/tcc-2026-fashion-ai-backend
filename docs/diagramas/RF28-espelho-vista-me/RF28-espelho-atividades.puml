@@ -1,5 +1,5 @@
 @startuml RF28_Espelho_Atividades
-title RF28 — Vista-me: o espelho mostra o reflexo do Avatar 3D da pessoa vestindo as peças, em pose natural\nDiagrama de atividades
+title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de atividades — o reflexo do Avatar 3D vestindo o look e os seis números do look
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -26,35 +26,44 @@ skinparam note {
 |Pessoa usuária|
 start
 :Abre /mirror (ou "Vestir no espelho" numa peça);
-|Sistema (MirrorService)|
-:GET /api/me/mirror → slots, faltas, luz (kelvin);
-|Frontend (MirrorStage)|
-:GET /api/me/avatar3d;
-if (Tem avatar 3D salvo?) then (sim)
-  :Usa o mesmo avatar do perfil e do provador\n(corpo medido, pele, rosto, cabelo);
+|Frontend (mirror/page.tsx · MirrorStage)|
+fork
+  :GET /api/me/mirror;
+  |Serviço (MirrorService · LookScorer)|
+  :Estado do espelho: slots, complete, missing,\nluz (kelvin pela estação de cor do DNA);
+  if (Há peças no espelho?) then (sim)
+    :LookScorer.scoreLooks → seis números:\ncompatibilidade com o DNA, Hype (média v2 das peças),\nnovidade, reutilização, uso comprovado, sustentabilidade;
+  else (não)
+    :scores = null (espelho vazio não tem números);
+  endif
+  |Frontend (mirror/page.tsx · MirrorStage)|
+fork again
+  :GET /api/me/avatar3d (Avatar3dController, RF40);
+end fork
+if (Tem avatar 3D salvo (exists = true)?) then (sim)
+  :Usa o mesmo avatar do perfil e do provador\n(corpo medido, pele, rosto, cabelo; textura\nem /api/avatar3d/{userId}/texture);
 else (não)
-  :Manequim de referência (sexo do perfil)\n+ convite "Criar meu avatar";
+  :Manequim de referência pelo sexo do perfil\n+ convite "Criar meu avatar" (/avatar);
 endif
-:mirrorPieces(slots) → peças 3D por slot;
-:Completa o que falta com as peças padrão FAI\n(nunca sem roupa, nunca descalço);
-:AvatarViewer framing="full", sem controles,\nfundo no tom da luz do quarto;
-:Pose natural: respiração e apoio parado;
+:mirrorPieces(slots) → peças 3D por slot (Look3dPiece);
+:withDefaultOutfit(): completa tronco, pernas e pés\ncom as peças padrão FAI (nunca sem roupa nem descalço);
+:AvatarViewer framing = "full", sem controles, visão frontal,\nfundo no tom da luz (glassTint); imagem não espelhada;
+:HumanAvatar + HumanOutfit: pose natural\n(respiração e apoio; parado com "reduzir movimento");
+if (Há peças e scores?) then (sim)
+  :Card **Os seis números do look** (LookScores):\nlado a lado, nunca somados; "—" = sem base, nunca 0;
+else (não)
+  :Card oculto;
+endif
 |Pessoa usuária|
 repeat
-  :Ação no espelho: colocar peça, sugerir por slot,\n"Tira uma coisa", trocar, "Vista-me" com prompt;
-  |Sistema (MirrorService)|
-  :Atualiza MirrorState (MySQL · mirror_states);
-  |Frontend (MirrorStage)|
-  :Reflexo se veste com as novas peças;
+  :Ação no espelho: vestir peça, sugerir por slot, trocar,\n"Tira uma coisa", Vista-me com pedido (ver RF28_Atividades);
+  |Serviço (MirrorService · LookScorer)|
+  :Atualiza mirror_states e recalcula os seis números\n(lê o Hype gravado; nada é recalculado nem vira sinal de Hype);
+  |Frontend (mirror/page.tsx · MirrorStage)|
+  :O reflexo se veste com as novas peças\ne o card mostra os números novos;
+  |Pessoa usuária|
 repeat while (Continua experimentando?) is (sim)
 ->não;
-|Pessoa usuária|
-if (O que fazer com o look?) then (usar hoje)
-  :POST /api/me/mirror/use → look do dia;
-elseif (salvar)
-  :POST /api/me/mirror/save → esquema;
-else (abrir no editor)
-  :POST /api/me/mirror/draft → /schemes/{id}/edit;
-endif
+:Usar hoje (POST /use) · Salvar (POST /save)\n· Abrir no editor (POST /draft);
 stop
 @enduml

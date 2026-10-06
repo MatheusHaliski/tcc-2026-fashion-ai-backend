@@ -122,8 +122,9 @@ function finish(pos: number[], uv: number[], col: number[], si: number[], sw: nu
     // fio: o brilho é uma faixa em anel em volta da cabeça (reflexo anisotrópico ao longo de u), não um ponto de plástico
     anisotropy: covered || base ? 0 : 0.3,
     // por cima da roupa: as peças puxam a profundidade (polygonOffset −camada, até −6) e "engoliam" o cabelo longo
-    // caído sobre a camiseta; o cabelo puxa mais
-    polygonOffset: true, polygonOffsetFactor: -8, polygonOffsetUnits: -8,
+    // caído sobre a camiseta; o cabelo puxa mais no deslocamento fixo (units). O fator (proporcional à inclinação) fica
+    // baixo: alto, ele trazia triângulos inclinados de trás da cabeça para a frente da pele (riscos no rosto)
+    polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -8,
   });
   mat.name = covered ? "cobertura" : "cabelo";
   return { geometry: g, material: mat, kind: covered ? "cover" : "hair" };

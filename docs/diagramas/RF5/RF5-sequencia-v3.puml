@@ -1,6 +1,6 @@
 @startuml RF5_Sequencia_v3
 !pragma layout smetana
-title RF5 — Criar Look (v3) — marca do slot vem da peça (sem campo de marca no esquema)
+title RF5 — Criar um esquema de vestimenta na aba "Criar Look"\nDiagrama de sequência — builder, composição com IA, prévia de Hype, salvar e pedidos de selo
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,43 +8,89 @@ skinparam sequence {
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
 }
-actor Usuário as U
-participant "Construtor de looks\n(SchemeBuilder + SlotBrand)" as App
-participant "SchemeController /\nSchemeService" as SS
-participant "Scheme Composer (IA)" as AI
-participant "Background Studio" as BG
+autonumber
+actor "Pessoa" as U
+participant "schemes/new/page.tsx\nSchemeBuilder · LookHypePreview\nBackgroundStudio" as FE
+participant "SchemeController" as SC
+participant "SchemeService" as SS
+participant "WardrobeService" as WS
+participant "AiEngine (RF24)\nSCHEME_COMPOSER" as AI
+participant "LookPreviewService\n(HypeScore v2)" as LP
+participant "SealController ·\nSealService" as SEAL
+participant "BackgroundStudioService" as BG
 database "MySQL" as DB
 
-U -> App: Etapa 1 — modo (manual ou IA)
-App -> SS: GET /api/schemes/builder
-SS -> DB: SELECT wardrobe_items do usuário\n(brand_name, brand_logo_url, brand_source)
-SS --> App: peças elegíveis por categoria\n(cada PieceView já traz brandName + brandLogoUrl do RF4)
-
-alt modo manual
-  U -> App: Etapa 2 — insere uma peça em cada slot
-else modo IA
-  U -> App: ocasião, estilo, orientações
-  App -> SS: POST /api/schemes/compositions
-  SS -> AI: compor só com "Minhas Peças"
-  AI --> SS: peças por slot
-  SS --> App: até 3 composições
-  U -> App: escolhe uma composição
+U -> FE: abre /schemes/new
+FE -> SC: GET /api/schemes/builder
+SC -> SS: builder(user)
+SS -> WS: eligible(userId) — só disponíveis do próprio acervo
+WS -> DB: wardrobe_items (AVAILABLE, moderação não reprovada)
+alt < 2 elegíveis (CA02)
+  SS --> FE: 200 {status: INSUFICIENTE, action: /pieces/new}
+  FE --> U: estado vazio "Adicionar nova peça"
+else
+  SS --> FE: 200 {status: PRONTO, lists por tipo, defaultVisibility, steps}
 end
-App -> App: SlotBrand: marca do slot = marca da peça\n(nome + logo, 🔒 somente leitura; sem requisição)
-App --> U: slots com peça + marca preenchida
 
-U -> App: Etapa 3 — título, ocasião, estilo, estação,\nhumor, selos (nenhum campo de marca)
-U -> App: Etapa 4 — Background Studio
-App -> BG: arte de fundo do card
-U -> App: Etapa 5 — revisar (cada linha: peça, marca da peça, slot)
-App -> SS: POST /api/schemes {title, items[wardrobeItemId, slot], ...}
-note right
-  O payload não tem marca: ela é lida
-  das peças (scheme_items → wardrobe_items)
-  sempre que o card é montado.
-end note
-SS -> DB: INSERT schemes + scheme_items
-SS -> DB: SELECT wardrobe_items (marcas das peças)\npara sugerir vínculo de selo (RF20)
-SS --> App: 201 {scheme, sealSuggestions}
-App --> U: card do look com as marcas das peças
+opt modo IA (CA04)
+  U -> FE: ocasião, estilo, orientação
+  FE -> SC: POST /api/schemes/compositions {occasion, style, mood, season, prompt}
+  SC -> SS: compose(user, req, SCHEME_COMPOSER)
+  alt < 2 elegíveis
+    SS --> FE: 422 ACERVO_INSUFICIENTE
+  else
+    SS -> DB: hype_scores das peças (HypeScoreCurrent)
+    SS -> AI: text(TextCall: 3 looks só com refs do acervo)
+    AI --> SS: compositions (ou LocalSchemeComposer.compose, plano B)
+    SC -> LP: compositions(user, list) — seis números por look
+    SC --> FE: 200 ComposeResult {compositions, orientation, scores, fallbackUsed, provider}
+    U -> FE: escolhe uma composição (uma peça por tipo)
+  end
+end
+
+U -> FE: seleciona/ajusta peças (SlotBrand: marca vem da peça)
+FE -> SC: POST /api/schemes/scores {pieceIds, occasion, style}
+SC -> LP: scores(user, PreviewRequest)
+LP --> FE: 200 seis números (nada gravado, sem sinal de Hype)
+U -> FE: dados (título, ocasião ≤ 3, estilo ≤ 3, estação, humor, visibilidade)
+FE -> SEAL: POST /api/seal-suggestions/preview {pieceIds, occasion, style}
+SEAL --> FE: 200 {suggestions, message}
+U -> FE: Background Studio (skin, anatomia, cor, arte com IA)
+FE -> BG: GET /api/backgrounds/recommendations · POST /api/backgrounds/art\n(via BackgroundController)
+opt prévia em PNG
+  FE -> SC: POST /api/schemes/preview (SchemeForm)
+  SC -> SS: preview(user, form) → SchemeCardRenderer
+  SS --> FE: 200 image/png
+end
+
+U -> FE: Salvar ou Publicar
+FE -> SC: POST /api/schemes {title, items[wardrobeItemId, slot, sortOrder],\nbackground, publish, visibility, lookDoDia}
+SC -> SS: create(user, form)
+SS -> SS: Guard.requireCanCreate
+alt items vazio (CA06)
+  SS --> FE: 400 SEM_PECAS
+else peça de outra pessoa / indisponível / campos inválidos
+  SS --> FE: 400 PECA_DE_OUTRO_USUARIO | PECA_INDISPONIVEL | FORMULARIO_INVALIDO
+else ok
+  SS -> DB: INSERT schemes (DRAFT, origin CRIAR_LOOK, visibilidade do\nformulário ou AccountService.defaultVisibility — CA03)
+  SS -> DB: INSERT scheme_items (slot, tryOnLayer, sortOrder)
+  SS -> BG: applyToScheme(s, background)
+  opt publish = true (CA05)
+    SS -> DB: status PUBLISHED, publishedAt, communityIndexed,\nscheme_items.snapshot_json
+  end
+  SS -> DB: projeções · notifications (SCHEME_CREATED) · audit_log (CRIACAO_ESQUEMA)
+  SS ->> SS: SchemeSaved (AFTER_COMMIT): FAI Points, Hype, desafios, conquistas
+  opt lookDoDia
+    SS -> SS: DailyLookService.register (erro → dailyLookWarning)
+  end
+  SC -> SS: suggestSealsAfterSave(user, id) — depois do commit (≥ 2 peças)
+  SS -> SEAL: suggest(user, schemeId) (falha → lista vazia)
+  SC --> FE: 201 {scheme, sealSuggestions[, dailyLookWarning]}
+  loop cada selo marcado na etapa de dados
+    FE -> SEAL: POST /api/schemes/{id}/seal-bonds {targetOwnerId, imageRightsConsent}
+    SEAL -> DB: seal_bonds (EDITED → route: aprovado pela política ou PENDING_REVIEW)
+    SEAL --> FE: 201 (ou 400 MARCA_NAO_VALIDADA, CELEBRIDADE_NAO_VERIFICADA)
+  end
+  FE --> U: look criado
+end
 @enduml

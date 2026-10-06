@@ -1,4 +1,5 @@
 @startuml RF28_MaquinaDeEstados_Espelho
+title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de máquina de estados — o look no espelho (mirror_states.slots_json)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam state {
@@ -7,31 +8,48 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-title RF28 — Smart Mirror: look no espelho (mirror_states.slots_json → origin, completude, Look do Dia)
-[*] --> Vazio : GET /api/me/mirror (primeiro acesso)\nou DELETE /api/me/mirror (limpar)
-state "Vazio\n(slots sem peça)" as Vazio
-state "Incompleto\n(missing[] — ex.: 'Esse look ainda não possui calçado.')" as Incompleto
-state "Completo\n(upper+lower ou dress) + shoes" as Completo {
-  state "origin = manual / smart_mirror" as Manual
-  state "origin = vista_me\n(prompt + interpretation)" as VistaMe
-  Manual --> VistaMe : POST /api/me/mirror/vista-me
-  VistaMe --> Manual : POST /api/me/mirror/pieces\n(edita à mão: origin volta a smart_mirror)
-}
+[*] --> Vazio : GET /api/me/mirror (1º acesso cria slots = {})
+state "Vazio\n(nenhuma peça; scores = null)" as Vazio
+state "Incompleto\n(missing[]: falta superior, inferior ou calçado;\nações SUGERIR_*; post-it)" as Incompleto
+state "Completo — origin manual / smart_mirror\n((upper + lower) ou dress, + shoes)" as Manual
+state "Completo — origin vista_me\n(prompt + interpretation gravados)" as VistaMe
 state "Look do Dia registrado\n(daily_looks.source = SMART_MIRROR | VISTA_ME)" as LookDoDia
 state "Salvo como esquema\n(schemes.origin = SMART_MIRROR | VISTA_ME)" as Salvo
+
 Vazio --> Incompleto : POST /api/me/mirror/pieces {pieceId}
-Vazio --> Completo : POST /api/me/mirror/vista-me {prompt}\n(só peças disponíveis; IDs validados no servidor)
-Incompleto --> Incompleto : POST /api/me/mirror/pieces · GET /suggestions?slot
-Incompleto --> Completo : veste a categoria que faltava\n([Sugerir calçado] → GET /api/me/mirror/suggestions)
-Completo --> Incompleto : DELETE /api/me/mirror/pieces/{pieceId}
-Completo --> Completo : POST /another · POST /slots/{slot}/swap\n· POST /take-one-off (Remixar / Trocar uma peça)
-Completo --> LookDoDia : POST /api/me/mirror/use (CA10)\n(409 PECA_INDISPONIVEL se alguma peça saiu do acervo)
-Completo --> Salvo : POST /api/me/mirror/save (CA11)
-Completo --> [*] : POST /api/me/mirror/draft\n(abre o RF5 com os slots preenchidos)
+Vazio --> VistaMe : POST /api/me/mirror/vista-me {prompt}\n(peças elegíveis; refs validados no servidor)
+Incompleto --> Incompleto : POST /pieces · DELETE /pieces/{id}\n· GET /suggestions?slot
+Incompleto --> Manual : veste a categoria que faltava\n([Sugerir calçado] → GET /suggestions?slot=shoes)
+Incompleto --> VistaMe : POST /vista-me {keepMirror}
+Manual --> VistaMe : POST /vista-me · POST /another
+VistaMe --> VistaMe : POST /another (sem repetir as 50 últimas)
+VistaMe --> Manual : POST /pieces (edição à mão:\norigin vira smart_mirror)
+Manual --> Incompleto : DELETE /pieces/{id} de peça obrigatória
+VistaMe --> Incompleto : DELETE /pieces/{id} de peça obrigatória
+Manual --> Manual : POST /take-one-off (tira acessório\nou camada externa) · POST /slots/{slot}/swap
 Incompleto --> Vazio : DELETE /api/me/mirror
-Completo --> Vazio : DELETE /api/me/mirror
-LookDoDia --> Completo : espelho continua montado
-Salvo --> Completo : espelho continua montado
-note right of Incompleto : completude determinística (MirrorService.missing), sem IA
-note bottom of LookDoDia : alimenta a Passarela 3D (RF33) e o diário de uso (RF27/RF29)
+Manual --> Vazio : DELETE /api/me/mirror
+VistaMe --> Vazio : DELETE /api/me/mirror
+Manual --> LookDoDia : POST /use\n(409 PECA_INDISPONIVEL se peça no cesto)
+VistaMe --> LookDoDia : POST /use (+15 FAI Points, 1 por dia)
+Manual --> Salvo : POST /save (2+ peças)
+VistaMe --> Salvo : POST /save
+Incompleto --> Salvo : POST /save (2+ peças;\nsenão 400 SEM_PECAS)
+LookDoDia --> Manual : o espelho continua montado
+Salvo --> Manual : o espelho continua montado
+note right of Incompleto
+  completude determinística, sem IA (MirrorService.missing):
+  "Esse look ainda não possui calçado."
+  POST /use e POST /take-one-off → 409 LOOK_INCOMPLETO
+end note
+note bottom of LookDoDia
+  alimenta o diário de uso (RF27/RF29),
+  os desafios (RF32) e a Passarela 3D (RF33)
+end note
+note left of VistaMe
+  a IA é instruída a montar look completo, mas o servidor só
+  exige 2+ peças: se faltar calçado, o look fica Incompleto
+  (com origin vista_me). POST /draft devolve o RoomLookDraft
+  em qualquer estado com peças, sem mudar o espelho.
+end note
 @enduml

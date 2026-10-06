@@ -1,6 +1,6 @@
 @startuml RF4_Pipeline_Filtro_Logo
 !pragma layout smetana
-title RF4 — Pipeline de filtro do logo da marca\n(LogoFilter · SvgPathRenderer) — fundo branco, letras pretas nítidas; borrado é recusado
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de atividades — filtro do logo da marca (LogoFilter · SvgPathRenderer): fundo branco, letras pretas nítidas; borrado é recusado
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 16
@@ -18,7 +18,7 @@ skinparam note {
 }
 
 start
-:Baixar o logo do resultado\n(WebFetchPort: só https, host público,\naté 3 MB, 8 s, 3 redirecionamentos);
+:Baixar o logo de um dos 6 primeiros resultados\n(WebFetchPort → JdkWebFetchAdapter: só https,\nhost público, até 3 MB, 8 s, 3 redirecionamentos);
 if (Baixou?) then (Não)
   :Recusar — LOGO_NAO_BAIXOU;
   stop
@@ -46,6 +46,10 @@ if (Contraste do desenho ≥ 0,35?) then (Não)
   stop
 endif
 :Limiar de Otsu separa desenho e fundo;
+if (Sobrou desenho depois do limiar?) then (não)
+  :Recusar — SEM_DESENHO;
+  stop
+endif
 :Medir a nitidez no contorno:\nlargura da transição (pixels de meio-tom\npor pixel de contorno) e gradiente;
 if (Borda ≤ 2,2 px e gradiente ≥ 0,30?) then (Não)
   :Recusar — SEM_NITIDEZ\n(logo borrado não é exibido);

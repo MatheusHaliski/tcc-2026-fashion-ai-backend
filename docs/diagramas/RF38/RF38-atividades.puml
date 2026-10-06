@@ -1,5 +1,5 @@
 @startuml RF38_Atividades
-title RF38 — Cupons Fashion AI: "Meus cupons promocionais" (marca/celebridade) e "Meus cupons resgatados" (lookbook)\nDiagrama de atividades
+title RF38 — Meus cupons promocionais (marca/celebridade) e Meus cupons resgatados\nDiagrama de atividades — da conquista do direito ao cupom usado no caixa
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,33 +25,73 @@ skinparam note {
 }
 |Loja (marca/celebridade)|
 start
-:Cadastra selo com promoção (RF25)\nou jogo/combinação FLAIR (RF37);
-|Usuário|
-:Conquista direitos usando o app\n(selo aprovado num look, vitória no FLAIR…);
-|Sistema (CouponService)|
-:CouponRightsCheck (após o commit)\n→ procura promoções elegíveis;
-if (Já existe direito para esta fonte?) then (sim)
-  :Não duplica;
+:Cadastra a fonte do cupom:\npromoção ligada a selo (POST /api/promotions, RF25)\nou combinação FLAIR (POST /api/flair/brand/combinations, RF37);
+|Pessoa|
+:Conquista o direito usando o app:\nlook com selo aprovado da loja (SealBond APPROVED)\nou deck que completa a combinação FLAIR;
+|API (CouponService)|
+:Evento após o commit (CouponRightsCheck,\nSchemeSaved ou PieceCreated) → scan(userId)\nem transação própria; falha só vira log;
+:Fontes elegíveis:\nSELO = SealService.eligiblePromotions (promoção AVAILABLE,\nno período, com cota, abaixo do limite por pessoa, loja ativa)\nFLAIR = combinationsFor (completa, disponível, sem cupom);
+if (loja é a própria pessoa\nou já existe direito (pessoa, fonte, id)?) then (sim)
+  :Não cria outro direito;
   stop
 endif
-:Cria o direito (coupon_rights PENDENTE);
-:Notifica COUPON_AVAILABLE:\n"Parabéns! Deseja resgatar o CUPOM?";
-|Usuário|
+:INSERT coupon_rights (status PENDENTE);
+:notify COUPON_AVAILABLE "Parabéns! Você conquistou um cupom"\n(ações RESGATAR · AGORA_NAO, href /coupons?right={id});
+|Pessoa|
+:Toca a notificação ou abre "Meus cupons" (/coupons);
+|Frontend (coupons/page.tsx · MyCoupons)|
+:GET /api/me/coupons;
+|API (CouponService)|
+:scan de novo + concilia: direito cujo cupom já saiu\n(troca direta no FLAIR ou limite da promoção) vira RESGATADO;
+:Devolve pending[] e coupons[] (carteira: promotion_redemptions\n+ flair_redemptions, status EMITIDO · USADO · EXPIRADO);
+|Frontend (coupons/page.tsx · MyCoupons)|
+if (sem cupons?) then (sim)
+  :EmptyState "Nenhum cupom por aqui"\n+ atalho para os jogos FLAIR;
+endif
+:Diálogo "Parabéns! Deseja resgatar o CUPOM?"\ncom prévia do FaiCoupon;
+|Pessoa|
 if (Resgatar?) then (sim)
-  |Sistema (CouponService)|
-  :Emite o cupom Fashion AI\n(código único, desconto, validade, storeUrl);
-  |Usuário|
-  :Cupom aparece em "Meus cupons resgatados"\n(desenho sempre com o logo do FAI);
-  :Toca no cupom → abre a loja externa\n(fora do app);
-  |Loja (marca/celebridade)|
-  :Confere o código no caixa;
-  |Sistema (CouponService)|
-  :Marca o cupom como usado;
-else (não)
-  |Sistema (CouponService)|
-  :Direito dispensado;
+  |API (CouponService)|
+  :POST /api/me/coupon-rights/{id}/redeem;
+  if (direito ainda PENDENTE?) then (não)
+    #FFE3E3:409 DIREITO_DECIDIDO;
+    stop
+  endif
+  :SELO → SealService.redeem (código com prefixo da loja)\nFLAIR → FlairService.redeem (código FLR-XXXX-XXXX);
+  note right
+  Erros da fonte sobem como estão:
+  409 PROMOCAO_INDISPONIVEL · SELO_INVALIDO
+  · LIMITE_POR_USUARIO · COMBINACAO_INDISPONIVEL
+  · CUPOM_JA_EMITIDO · 422 COMBINACAO_INCOMPLETA
+  end note
+  :Direito RESGATADO com couponRef e decidedAt;
+  |Pessoa|
+  :Vê o cupom em "Meus cupons resgatados"\n(FaiCoupon: canhoto com o logo FAI e corpo na cor\nda loja, com valor, código e validade);
+  :Cupom EMITIDO com storeUrl (só https): tocar abre a loja\nexterna em outra aba; sem link, "mostre o código na loja";
+else (agora não)
+  |API (CouponService)|
+  :POST /api/me/coupon-rights/{id}/dismiss\n→ DISPENSADO;
+  stop
 endif
 |Loja (marca/celebridade)|
-:"Meus cupons promocionais":\ncupons emitidos, direitos pendentes\ne "Todas as promoções" (ativas/inativas);
+:Perfil → aba CUPONS (BrandCouponsTab)\nGET /api/me/coupons/admin;
+|API (CouponService)|
+if (marca/celebridade aprovada e ativa?) then (não)
+  #FFE3E3:403 (Guard.requireApprovedInstitutional);
+  stop
+endif
+:Cupons emitidos (com quem tem), direitos pendentes, taxa de uso\ne "Todas as promoções" (SELO + FLAIR: ATIVA · FORA_DO_PERIODO\n· DESATIVADA · REVOKED);
+|Loja (marca/celebridade)|
+:Confere o código no caixa\n(POST /api/me/coupons/validate);
+|API (CouponService)|
+if (código FLR-…?) then (sim)
+  :FlairService.validateCode → flair_redemptions USADO;
+else (não)
+  :promotion_redemptions → RedemptionStatus.USED;
+endif
+note right
+404 se o código é de outra loja;
+409 CUPOM_USADO · 409 CUPOM_EXPIRADO
+end note
 stop
 @enduml

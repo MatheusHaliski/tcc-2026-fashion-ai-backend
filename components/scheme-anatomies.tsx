@@ -110,10 +110,6 @@ export function effectiveAnatomy(s: Pick<SchemeView, "layoutAnatomy" | "season" 
 
 export interface AnatomyPiece {
   id: string; name: string; img?: string; brand?: string | null; material?: string | null; price?: number | null; colorHex?: string | null; color?: string | null; wearCount?: number; likes?: number;
-  /** @deprecated v1 (hypeScore/hypeScoreGlobal da peça): a anatomia Hype Focus lê o HypeScore v2 por `useHypeSummary`; não é mais preenchido */
-  hype?: number | null;
-  /** @deprecated v1 — ver `hype` */
-  hypeGlobal?: number | null;
   slot: string; category?: string; size?: string;
 }
 export const toAnatomyPieces = (s: SchemeView): AnatomyPiece[] => (s.items ?? []).map((it) => ({

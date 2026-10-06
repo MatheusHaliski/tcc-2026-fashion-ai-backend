@@ -1,6 +1,6 @@
 @startuml RF4_Classes_Buscador_Marcas
 !pragma layout smetana
-title RF4 — Classes do buscador web de marcas e do filtro de logo (código real)
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de classes — campo marca: buscador web de marcas e filtro de logo
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam classAttributeIconSize 0
@@ -9,97 +9,151 @@ skinparam class {
   BorderColor #7C5FC0
   ArrowColor #52606D
 }
+hide empty members
+
+package "Frontend (Next.js)" {
+  class BrandSearchInput <<component>> {
+    components/brand-search-input.tsx
+    --
+    debounce 380 ms ; 2 a 60 letras
+    "usar o texto sem logo"
+  }
+  class BrandAutocomplete <<component>> {
+    components/catalog/brand-autocomplete.tsx
+    --
+    marcas do catálogo (RF47)
+  }
+}
 package "fai-web" {
   class BrandLogoController <<RestController>> {
     +searchBrands(user, q) : Map  «GET /api/brand-search»
-    +logo(name) : Map  «GET /api/brand-logos»
-    +batch(names) : Map  «GET /api/brand-logos/batch»
+    +logo(user, name) : Map  «GET /api/brand-logos»
+    +batch(user, names) : Map  «GET /api/brand-logos/batch»
+    +refresh / upload / refreshPending  «/api/admin/brand-logos/**»
+  }
+  class CatalogController <<RestController>> {
+    +brands(q) : Map  «GET /api/catalog/brands»
   }
   class WardrobeController <<RestController>> {
-    +create(form) «POST /api/pieces»
-    +update(id, form) «PUT /api/pieces/{id}»
+    +create(user, PieceForm)  «POST /api/pieces»
+    +update(user, id, PieceForm)  «PUT /api/pieces/{id}»
   }
 }
 package "fai-application" {
   class BrandWebSearchService <<Service>> {
-    -queries : cache em memória (30 min)
-    -simpleIcons : índice em memória (12 h)
-    +search(userId, q, allowAi) : Map
+    ~QUERY_TTL = 30 min (cache em memória)
+    ~INDEX_TTL = 12 h (índice Simple Icons)
+    ~MAX_RESULTS = 8
+    ~MAX_LOGOS_PER_SEARCH = 6
+    +search(userId, rawQuery, allowAi) : Map
+    +remember(name, logoUrl, source, domain, originUrl) : Map
     ~wikidata(q) : List<Hit>
     ~simpleIcons(q) : List<Hit>
     ~aiSearch(userId, q) : List<Hit>
     ~merge(hits) : List<Hit>
     ~logoOf(hit) : Map
   }
+  class "BrandWebSearchService.Hit" as Hit <<record>> {
+    name, description, source, ref : String
+    domain, officialUrl, logoUrl : String
+    vector : boolean ; fashion : Boolean ; match : int
+  }
   class LogoFilter <<pipeline>> {
-    +SQUARE = 320
-    +WIDE_H = 160
-    +fromVector(vector) : Result
-    +fromRaster(image) : Result
-    ~sharpness(ink, w, h, t) : Sharpness
-    ~otsu(values) : double
+    +SQUARE = 320 ; +WIDE_H = 160
+    ~MIN_SOURCE_SIDE = 96 ; ~MIN_CONTRAST = 0.35
+    ~MAX_EDGE_WIDTH = 2.2 ; ~MIN_EDGE_GRADIENT = 0.30
+    ~MAX_UPSCALE = 2.0
+    +fromVector(Vector) : Result
+    +fromRaster(BufferedImage) : Result
+  }
+  class "LogoFilter.Result" as LFR <<record>> {
+    accepted : boolean ; reason : String
+    square, wide : BufferedImage
+    metrics : Map ; steps : List<String>
   }
   class SvgPathRenderer {
     +parse(svg) : Vector
-    +render(vector, longSide, margin) : BufferedImage
-    ~path(d) : Path2D
-    ~arc(...)
+    +render(Vector, longSide, margin) : BufferedImage
   }
   class BrandLogoService <<Service>> {
-    +logo(name, force) : Map
-    +acceptWebLogo(name, url, source, domain, origin)
+    +RETRY_AFTER = 3 dias
+    +logo(userId, name, force) : Map
+    +batch(userId, names, syncBudget) : Map
+    +acceptWebLogo(name, url, source, domain, originUrl)
+    +refreshPending() : int «@Scheduled a cada 2 h»
+    +keyOf(name) : String
   }
   class WardrobeService <<Service>> {
-    +create(user, form) : PieceView
+    ~WEB_BRAND_SOURCES = {WIKIDATA, SIMPLE_ICONS, IA_BUSCA_WEB}
     -resolveBrand(w, brandId, brandName)
     -brandFromWebSearch(w, form, previousBrand)
   }
-  class "PieceForm" as PieceForm <<record>> {
-    brandName : String
-    brandLogoUrl : String
-    brandSource : String
-    brandRef : String
+  class "WardrobeService.PieceForm" as PieceForm <<record>> {
+    brandId : UUID
+    brandName, brandLogoUrl : String
+    brandSource, brandRef : String
   }
-  interface WebFetchPort {
+  interface WebFetchPort <<port>> {
     +get(url, maxBytes, acceptPrefix) : Optional<Fetched>
   }
   class MediaService {
-    +put(key, bytes, type)
+    +put(key, bytes, type) : StoredObject
     +read(url) : Optional<byte[]>
   }
   class AiEngine {
     +text(TextCall) : AiOutcome
   }
 }
+package "fai-infrastructure · platform" {
+  class JdkWebFetchAdapter {
+    só https · host público (anti-SSRF)
+    timeout 8 s · até 3 redirecionamentos
+  }
+}
 package "fai-domain" {
-  class WardrobeItem <<Entity>> {
+  class WardrobeItem <<Entity>> <<table wardrobe_items>> {
+    brand : Brand ; brandProfile : BrandProfile
     brandName : String
     brandLogoUrl : String  «V21»
     brandSource : String  «V21»
     brandRef : String  «V21»
   }
-  class BrandLogo <<Entity>> {
-    nameKey : String
-    logoUrl : String
-    source : String
-    status : String
+  class BrandLogo <<Entity>> <<table brand_logos>> {
+    nameKey, displayName : String
+    logoUrl, source, status, domain : String
+    confidence : BigDecimal ; attempts : int
+  }
+  class BrandProfile <<Entity>> {
+    nomeFantasia, brandName, slug : String
+    approvalStatus : ApprovalStatus
   }
 }
+BrandSearchInput --> BrandLogoController : GET /api/brand-search?q=
+BrandAutocomplete --> CatalogController : GET /api/catalog/brands?q=
 BrandLogoController --> BrandWebSearchService
+BrandLogoController --> BrandLogoService
 WardrobeController --> WardrobeService
 WardrobeService ..> PieceForm
-BrandWebSearchService --> WebFetchPort : Wikidata · GitHub · URLs de logo
-BrandWebSearchService --> AiEngine : BRAND_LOGO_FINDER\n(com busca na web)
+BrandWebSearchService ..> Hit
+BrandWebSearchService --> WebFetchPort : Wikidata · GitHub · URL do logo
+BrandWebSearchService --> AiEngine : BRAND_LOGO_FINDER\n(busca na web)
 BrandWebSearchService --> LogoFilter
+LogoFilter ..> LFR
 LogoFilter ..> SvgPathRenderer
-BrandWebSearchService --> MediaService : logo filtrado
-WardrobeService --> MediaService : valida o logo (storage próprio)
+BrandWebSearchService --> MediaService : brands/logos/web/*.png
+JdkWebFetchAdapter ..|> WebFetchPort
+WardrobeService --> MediaService : o logo está no storage próprio?
 WardrobeService --> BrandLogoService : acceptWebLogo
 BrandLogoService --> BrandLogo
 WardrobeService --> WardrobeItem
+WardrobeItem "*" --> "0..1" BrandProfile : marca com perfil APROVADO\n(mesmo nome normalizado)
 note bottom of BrandWebSearchService
-  Sem catálogo de marcas pré-cadastrado:
-  toda busca vai à internet; só a marca
-  escolhida é gravada (peça + brand_logos).
+  Sem catálogo de marcas pré-cadastrado: cada termo vai à internet;
+  só a marca escolhida é gravada (peça + brand_logos).
+  Fonte fora do ar não trava o campo: "sources" traz o status de cada uma.
+end note
+note bottom of WardrobeItem
+  brandSource: WIKIDATA · SIMPLE_ICONS · IA_BUSCA_WEB (logo da web aceito),
+  WEB (outra fonte), PLATAFORMA (marca/perfil cadastrado) ou TEXTO_LIVRE.
 end note
 @enduml
