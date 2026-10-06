@@ -21,8 +21,12 @@ export const MEASURE_KEYS = ["shoulderW", "chestW", "waistW", "hipW", "legLen", 
 export type MeasureKey = (typeof MEASURE_KEYS)[number];
 /** Incerteza de cada medida (fração da estatura) quando ela é observada ou informada. */
 const SIGMA: Record<MeasureKey, number> = { shoulderW: 0.004, chestW: 0.005, waistW: 0.005, hipW: 0.005, legLen: 0.004, armLen: 0.005, headH: 0.003, chestD: 0.006, waistD: 0.006, hipD: 0.006 };
-/** Quanto cada origem pesa: "default" não puxa nada (fica o típico do sexo). */
-const TRUST: Record<Source, number> = { observed: 1, user: 1, estimated: 0.3, default: 0 };
+/**
+ * Quanto cada origem pesa: "default" não puxa nada (fica o típico do sexo). O que a pessoa ajusta ("user") vale 4×
+ * (metade da incerteza): é o valor que ela quer ver, enquanto a foto ("observed") tem o erro da medida. Com peso 1 a
+ * forma típica segurava um quadril de +4,7 cm em +3,0 cm (TWIN-FID, docs/avatar3d/fidelidade-digital-twin-2026-10-06.md).
+ */
+const TRUST: Record<Source, number> = { observed: 1, user: 4, estimated: 0.3, default: 0 };
 
 export interface ShapeTarget { name: string; value: number; sigma: number }
 

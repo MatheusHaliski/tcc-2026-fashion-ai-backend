@@ -6,7 +6,7 @@ import { HumanAvatar, type HumanParts } from "@/components/three/human-avatar";
 import { FileButton } from "@/components/ui";
 import { exportAvatarGlb } from "@/lib/avatar3d/human/export-glb";
 import { StudioLight, type Look3dPiece } from "@/components/three/common";
-import { DEFAULT_BODY } from "@/lib/avatar3d/body-spec";
+import { DEFAULT_BODY, type BodyParams, type BodySources } from "@/lib/avatar3d/body-spec";
 import { analyzePhoto, buildAvatar, type AnalyzedPhoto, type BuiltAvatar } from "@/lib/avatar3d/pipeline";
 import type { Pt } from "@/lib/avatar3d/image-stats";
 import type { AvatarHair } from "@/lib/avatar3d/model";
@@ -86,10 +86,12 @@ export default function HumanLab() {
   const [built, setBuilt] = useState<BuiltAvatar | null>(null); const [status, setStatus] = useState("idle"); const [outfit, setOutfit] = useState("none");
   const [cut, setCut] = useState(0); const [synth, setSynth] = useState<"none" | "frame" | "sun">("none");
   const [analyzed, setAnalyzed] = useState<AnalyzedPhoto | null>(null); const [glassesOn, setGlassesOn] = useState(1);
+  // corpo com medidas escolhidas (avaliação do digital twin: corpos diferentes com o mesmo código de produção)
+  const [bodyParams, setBodyParams] = useState<BodyParams | null>(null);
   const [hairPreset, setHairPreset] = useState<string | null>(null); const [hairLod, setHairLod] = useState<HairLod | undefined>(undefined);
   const [still, setStill] = useState(false); const [stillBytes, setStillBytes] = useState(0);   // Prévia 2D (avatar da foto ou manequim)
   const bodySex = built?.model.sex ?? sex;                  // corpo base estimado pelo rosto (ou o botão, sem foto)
-  const H = DEFAULT_BODY[bodySex].stature;
+  const H = bodyParams?.stature ?? DEFAULT_BODY[bodySex].stature;
   const parts = useRef<HumanParts | null>(null);
   async function glb(): Promise<string | null> {
     const p = parts.current; if (!p) return null; const b = await exportAvatarGlb(p.human, p.pose, { hair: { live: p.hair, build: p.exportHair } });
@@ -110,7 +112,10 @@ export default function HumanLab() {
       identity: () => parts.current?.identity ?? null, skinReport: () => parts.current?.human.root.userData.skinReport ?? null,
       warnings: () => built?.model.warnings ?? [],
       // olhos e óculos (I4): classe, confiança e o que foi detectado (números agregados)
-      eyes: () => built?.model.eyes ?? null, atlas: () => built?.atlas.toDataURL("image/png") ?? null, photo: () => analyzed ? { png: analyzed.canvas.toDataURL("image/png"), px: analyzed.px, skin: analyzed.skin } : null,
+      eyes: () => built?.model.eyes ?? null, setBodyParams,
+      // dados do gêmeo para comparar versões NO AMBIENTE LOCAL (forma do rosto e cor: nunca para log nem repositório)
+      twin: () => built ? { shape: built.model.shape, skin: built.model.skin, eyes: built.model.eyes ?? null, brows: built.model.brows ?? null, hair: built.model.hair, sex: built.model.sex ?? null } : null,
+      bodyMeasures: () => { const p = parts.current; if (!p) return null; const c = p.composed; let lo = Infinity, hi = -Infinity; for (let i = 1; i < c.body.length; i += 3) { lo = Math.min(lo, c.body[i]); hi = Math.max(hi, c.body[i]); } return { stature: hi - lo }; }, atlas: () => built?.atlas.toDataURL("image/png") ?? null, photo: () => analyzed ? { png: analyzed.canvas.toDataURL("image/png"), px: analyzed.px, skin: analyzed.skin } : null,
       // só a análise (sem montar o avatar): foto com óculos sintéticos opcionais, pontos e avisos, para avaliar fora do navegador
       analyze: async (url: string, kind: "none" | "frame" | "sun") => {
         const blob = await (await fetch(url)).blob(); let p = await analyzePhoto(blob, "front");
@@ -144,7 +149,7 @@ export default function HumanLab() {
             <directionalLight position={[1.2, 2.6, 2.4]} intensity={0.9} />
             <directionalLight position={[-1.6, 2.0, 1.8]} intensity={0.45} />
             <directionalLight position={[0, 2.2, -2.5]} intensity={0.4} />
-            <HumanAvatar key={bodySex + (model ? "a" : "")} hairLod={hairLod} body={{ sex: bodySex }} stature={H} adjust={{ hairCut: cut, glasses: glassesOn }} skin={model?.skin ?? (bodySex === "FEMININO" ? "#c99a6e" : "#a97c50")}
+            <HumanAvatar key={bodySex + (model ? "a" : "") + (bodyParams ? JSON.stringify(bodyParams) : "")} hairLod={hairLod} body={bodyParams ? { sex: bodySex, params: bodyParams, sources: Object.fromEntries(Object.keys(bodyParams).map((k) => [k, "user"])) as BodySources } : { sex: bodySex }} stature={H} adjust={{ hairCut: cut, glasses: glassesOn }} skin={model?.skin ?? (bodySex === "FEMININO" ? "#c99a6e" : "#a97c50")}
               face={model} atlas={built?.atlas ?? null} hair={(hairPreset ? HAIR_PRESETS[hairPreset] : null) ?? model?.hair ?? null} motion={motion}
               debugHair={typeof window !== "undefined" && location.hash === "#hair"} onReady={(p) => { parts.current = p; setReady((r) => r + 1); }}
               pieces={OUTFITS[outfit] ?? []} />

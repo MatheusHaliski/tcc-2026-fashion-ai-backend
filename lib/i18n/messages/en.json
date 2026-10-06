@@ -587,6 +587,7 @@
   "avatar3d.issue.TURN_LESS": "In the 3/4 photo, turn a bit less: the face is almost in profile ({deg}°).",
   "avatar3d.issue.TURN_MORE": "In the 3/4 photo, turn your face a bit more (only {deg}°).",
   "avatar3d.issue.WB_GRAY_WORLD": "The light color was corrected without seeing the whites of the eyes: the skin tone may be slightly off.",
+  "avatar3d.issue.WB_LIMITED": "The light color correction was limited so the skin tone stays natural: check the skin color in the review.",
   "avatar3d.issue.WB_NONE": "The photo's light color couldn't be corrected: the skin tone is what the photo shows.",
   "avatar3d.page.ajustes": "Fine adjustments",
   "avatar3d.page.ajustes_salvos": "Changes saved.",

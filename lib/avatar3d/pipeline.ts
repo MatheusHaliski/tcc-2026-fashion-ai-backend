@@ -185,7 +185,7 @@ export function buildAvatar(photos: AnalyzedPhoto[], opts: { sex?: Sex | null; p
     metrics: faceMetrics(shape),
     views: views.map((v) => ({ role: v.role, yaw: +v.fit!.pose.yaw.toFixed(1), pitch: +v.fit!.pose.pitch.toFixed(1), roll: +v.fit!.pose.roll.toFixed(1) })),
     warnings: [...new Set([...set.issues.filter((i) => i.severity === "warn").map((i) => i.code), ...views.flatMap((v) => v.issues.filter((i) => i.severity === "warn").map((i) => i.code)), ...(profile?.estimated ? ["HAIR_ESTIMATED"] : []),
-      ...(wb0?.source === "GRAY_WORLD" ? ["WB_GRAY_WORLD"] : wb0?.source === "NONE" && SKIN_WB ? ["WB_NONE"] : []),
+      ...(wb0?.source === "GRAY_WORLD" ? ["WB_GRAY_WORLD"] : wb0?.source === "NONE" && SKIN_WB ? ["WB_NONE"] : []), ...(wb0?.limited != null ? ["WB_LIMITED"] : []),
       ...(glasses.kind === "SUNGLASSES" ? ["GLASSES_SUNGLASSES"] : glasses.kind === "PRESCRIPTION" ? ["GLASSES_PRESCRIPTION"] : []),
       ...(eyes && eyes.source === "IMAGE_ANALYSIS" && eyes.confidence < 0.5 ? ["IRIS_LOW_CONFIDENCE"] : [])])],
     ...(eyes ? { eyes } : {}), ...(brows ? { brows } : {}),
@@ -205,7 +205,8 @@ function whiteBalanced(v: AnalyzedPhoto): { canvas: HTMLCanvasElement; wb: Illum
   const c = document.createElement("canvas"); c.width = v.width; c.height = v.height;
   const g = c.getContext("2d", { willReadFrequently: true })!; g.drawImage(v.canvas, 0, 0);
   const id = g.getImageData(0, 0, v.width, v.height);
-  const wb = v.px ? estimateIlluminant(id, v.px) : { gains: [1, 1, 1] as Gains, source: "NONE" as const, confidence: 0, samples: 0 };
+  // a pele medida na foto liga as travas (esclera escura não vale; a correção não tira a pele da faixa humana)
+  const wb = v.px ? estimateIlluminant(id, v.px, 0.95, v.skin) : { gains: [1, 1, 1] as Gains, source: "NONE" as const, confidence: 0, samples: 0 };
   if (wb.source !== "NONE") { balanceRaster(id, wb.gains); g.putImageData(id, 0, 0); }
   return { canvas: c, wb };
 }

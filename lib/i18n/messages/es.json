@@ -587,6 +587,7 @@
   "avatar3d.issue.TURN_LESS": "En la foto de 3/4, gira un poco menos: el rostro está casi de perfil ({deg}°).",
   "avatar3d.issue.TURN_MORE": "En la foto de 3/4, gira un poco más el rostro (solo {deg}°).",
   "avatar3d.issue.WB_GRAY_WORLD": "El color de la luz se corrigió sin ver el blanco de los ojos: el tono de piel puede haber quedado un poco distinto.",
+  "avatar3d.issue.WB_LIMITED": "La corrección del color de la luz se limitó para que el tono de piel siga siendo natural: revisa el color de la piel.",
   "avatar3d.issue.WB_NONE": "No se pudo corregir el color de la luz de la foto: el tono de piel es el que muestra la foto.",
   "avatar3d.page.ajustes": "Ajustes finos",
   "avatar3d.page.ajustes_salvos": "Cambios guardados.",

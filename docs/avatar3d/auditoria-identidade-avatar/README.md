@@ -594,6 +594,21 @@ A pequena queda nos reconhecedores é esperada: eles comparam o avatar com a fot
 cor da pele (o tom intrínseco é o certo para o provador e para a loja, que têm a própria luz). A troca fica documentada e
 reversível pela variável acima.
 
+**Correção de 06/10 (TWIN-FID, [relatório](../fidelidade-digital-twin-2026-10-06.md)).** O "erro de cor 0,2" da tabela
+acima compara a textura com o tom que o próprio pipeline mediu: não pega um tom errado. A bateria de fidelidade comparou
+o tom do gêmeo com a foto e achou o erro:
+
+- em 7 de 16 retratos (olho pequeno ou semicerrado), a "esclera" amostrada era mais escura que a pele: pálpebra,
+  sombra e a própria pele na borda do contorno;
+- os ganhos então tiravam o calor da pele, e o gêmeo saía cinza, esverdeado ou azulado (fora da faixa de pele humana);
+- a correção: a amostra fica só com pixels de pelo menos 85% do brilho da pele e com razão R/G abaixo de 0,9 × a da pele.
+  Essa razão não muda com a cor da luz: esclera ≈ 1,03; pele 1,3–1,5 em todas as tonalidades;
+- os ganhos finais nunca levam a pele para fora da faixa humana (matiz 22°–82°, croma ≥ 7); quando limitam, o aviso
+  `WB_LIMITED` pede para conferir a pele na revisão;
+- resultado: pele fora da faixa de 7 para 1 de 16 (o restante já está fora na foto e fica como está). Distância entre
+  o tom da foto e o do gêmeo: mediana 10,1 → 4,2 e máximo 25,5 → 11,0. Sob luz quente, a diferença do gêmeo ao da foto
+  original caiu de 4,1 para 1,3.
+
 **Resultado do I4 nos mesmos retratos**, cada um também com uma armação de grau e uma lente escura desenhadas pelo
 laboratório sobre os pontos do rosto ([`metricas-identidade-I4-2026-10-06.json`](metricas-identidade-I4-2026-10-06.json)):
 
