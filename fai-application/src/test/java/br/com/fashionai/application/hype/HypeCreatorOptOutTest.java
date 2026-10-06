@@ -79,7 +79,7 @@ class HypeCreatorOptOutTest {
         c.setEntityType(HypeEntityType.PIECE);
         c.setEntityId(w.getId());
         c.setOwnerId(owner.getId());
-        c.setAlgorithmVersion("HYPE_V2");
+        c.setAlgorithmVersion(HypeScoreConfig.DEFAULT_VERSION);
         c.setStatus(HypeStatus.AVAILABLE);
         c.setScore(BigDecimal.valueOf(score));
         c.setDimensions(new HypeDimensions());
@@ -131,9 +131,9 @@ class HypeCreatorOptOutTest {
         piece(ana, 60);
         piece(bia, 99);
         piece(bia, 98);
-        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, "HYPE_V2", HypeStatus.AVAILABLE)).thenReturn(rows);
-        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.SCHEME, "HYPE_V2", HypeStatus.AVAILABLE)).thenReturn(List.of());
-        when(current.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.PIECE), anyCollection(), eq("HYPE_V2")))
+        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE)).thenReturn(rows);
+        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.SCHEME, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE)).thenReturn(List.of());
+        when(current.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.PIECE), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION)))
                 .thenAnswer(inv -> rows.stream().filter(c -> ((Collection<UUID>) inv.getArgument(1)).contains(c.getEntityId())).toList());
         when(pieces.findByIdIn(anyCollection()))
                 .thenAnswer(inv -> catalog.stream().filter(w -> ((Collection<UUID>) inv.getArgument(0)).contains(w.getId())).toList());

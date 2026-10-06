@@ -127,7 +127,7 @@ class SearchHypeV2Test {
         HypeScoreCurrent c = new HypeScoreCurrent();
         c.setEntityType(type);
         c.setEntityId(id);
-        c.setAlgorithmVersion("HYPE_V2");
+        c.setAlgorithmVersion(HypeScoreConfig.DEFAULT_VERSION);
         c.setStatus(HypeStatus.AVAILABLE);
         c.setScore(BigDecimal.valueOf(score));
         c.setLevel(HypeScoreConfig.defaults().level(score));
@@ -137,7 +137,7 @@ class SearchHypeV2Test {
     }
 
     private void hypeOf(HypeScoreCurrent... rows) {
-        when(hype.findByEntityTypeAndEntityIdInAndAlgorithmVersion(any(), anyCollection(), eq("HYPE_V2"))).thenAnswer(a -> {
+        when(hype.findByEntityTypeAndEntityIdInAndAlgorithmVersion(any(), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION))).thenAnswer(a -> {
             Collection<UUID> ids = a.getArgument(1);
             return List.of(rows).stream().filter(r -> r.getEntityType() == a.getArgument(0) && ids.contains(r.getEntityId())).toList();
         });
@@ -177,7 +177,7 @@ class SearchHypeV2Test {
         assertThat(order.get(3)).isEqualTo(low.getId());
         assertThat(order.subList(1, 3)).containsExactlyInAnyOrder(fresh.getId(), privateHype.getId());
         // uma consulta de Hype por página (antes do sort), nunca uma por look
-        verify(hype, times(1)).findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.SCHEME), anyCollection(), eq("HYPE_V2"));
+        verify(hype, times(1)).findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.SCHEME), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION));
         assertThat(out.get("items")).asList().hasSize(4);
     }
 
@@ -231,7 +231,7 @@ class SearchHypeV2Test {
         Scheme first = look("first");
         Scheme second = look("second");
         when(schemes.searchPublic(any(), any())).thenReturn(List.of());
-        when(hype.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.SCHEME, "HYPE_V2", HypeStatus.AVAILABLE))
+        when(hype.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.SCHEME, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE))
                 .thenReturn(List.of(row(HypeEntityType.SCHEME, second.getId(), 61, true), row(HypeEntityType.SCHEME, first.getId(), 88, true)));
         when(schemes.findByIdIn(anyCollection())).thenReturn(List.of(second, first, v1Star));
 

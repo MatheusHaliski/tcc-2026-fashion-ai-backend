@@ -62,7 +62,7 @@ class HypeQueryPrivacyTest {
         HypeScoreCurrent c = new HypeScoreCurrent();
         c.setEntityType(HypeEntityType.PIECE);
         c.setEntityId(id);
-        c.setAlgorithmVersion("HYPE_V2");
+        c.setAlgorithmVersion(HypeScoreConfig.DEFAULT_VERSION);
         c.setStatus(HypeStatus.AVAILABLE);
         c.setScore(BigDecimal.valueOf(70));
         c.setPublicEligible(eligible);
@@ -85,7 +85,7 @@ class HypeQueryPrivacyTest {
         when(pieces.findByIdIn(anyCollection())).thenReturn(List.of(pub, priv));
         when(guard.canView(isNull(), eq(owner), eq(Visibility.PUBLIC))).thenReturn(true);
         when(guard.canView(isNull(), eq(owner), eq(Visibility.PRIVATE))).thenReturn(false);
-        when(current.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.PIECE), anyCollection(), eq("HYPE_V2")))
+        when(current.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.PIECE), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION)))
                 .thenReturn(List.of(row(pub.getId(), true)));
     }
 
@@ -96,13 +96,13 @@ class HypeQueryPrivacyTest {
         Map<String, Object> items = (Map<String, Object>) out.get("items");
         assertThat(items).containsOnlyKeys(pub.getId().toString());
         ArgumentCaptor<Collection<UUID>> asked = ArgumentCaptor.forClass(Collection.class);
-        verify(current).findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.PIECE), asked.capture(), eq("HYPE_V2"));
+        verify(current).findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.PIECE), asked.capture(), eq(HypeScoreConfig.DEFAULT_VERSION));
         assertThat(asked.getValue()).containsExactly(pub.getId());   // nem chega a consultar o privado
     }
 
     @Test
     void rankingOnlyReadsThePublicEligiblePopulation() {
-        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, "HYPE_V2", HypeStatus.AVAILABLE))
+        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE))
                 .thenReturn(List.of(row(pub.getId(), true)));
         Map<String, Object> ranked = query.rank(HypeEntityType.PIECE, 7, null, null, null, 10);
         assertThat(ranked.get("items")).asList().hasSize(1);
