@@ -44,7 +44,6 @@ export function renderApp(ui: ReactElement, opts?: Omit<RenderOptions, "wrapper"
   return render(ui, { wrapper: ({ children }) => <Providers initialLocale="pt-BR">{children}</Providers>, ...opts });
 }
 
-/** Espera a sessão assentar (restauração + /api/me) antes de interagir. */
 export const settle = () => waitFor(() => new Promise((r) => setTimeout(r, 0)));
 
 export * from "@testing-library/react";
