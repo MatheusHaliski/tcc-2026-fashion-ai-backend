@@ -192,11 +192,11 @@ package "fai-application" {
     +remove()
     +clear()
     +suggest()
+    +wardrobe()
     +vistaMe()
     +another()
     +swap()
     +takeOneOff()
-    +useLook()
   }
 }
 MirrorService ..> MirrorState : usa

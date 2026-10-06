@@ -37,7 +37,7 @@ package "Frontend (Next.js)" {
   component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  component "MirrorController\n/api/me/mirror\n/api/me/mirror/another\n/api/me/mirror/draft\n/api/me/mirror/grwm\n(+8 rotas)" as MirrorController
+  component "MirrorController\n/api/me/mirror\n/api/me/mirror/another\n/api/me/mirror/draft\n/api/me/mirror/grwm\n(+9 rotas)" as MirrorController
 }
 package "fai-application (casos de uso)" {
   component "MirrorService" as MirrorService

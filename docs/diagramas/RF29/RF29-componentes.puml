@@ -42,6 +42,7 @@ package "fai-application (casos de uso)" {
   component "InventoryScoreService" as InventoryScoreService
   component "RoomService" as RoomService <<apoio>>
   component "AchievementService" as AchievementService <<apoio>>
+  component "SideEffectRunner" as SideEffectRunner <<apoio>>
 }
 package "fai-domain (repositórios)" {
   component "WardrobeItemRepository\nSchemeRepository\nSchemeItemRepository\nPieceUsageDiaryEntryRepository\nWardrobeAvailabilityChangeRepository\nStyleDnaRepository\nInventoryScoreSnapshotRepository\nRankingOptInRepository\nRankingPositionRepository\nChallengeTemplateRepository\n(+1)" as REPO_MySQL
@@ -53,5 +54,6 @@ HighlightsController --> InventoryScoreService
 InventoryScoreService --> REPO_MySQL
 InventoryScoreService ..> AchievementService
 InventoryScoreService ..> RoomService
+InventoryScoreService ..> SideEffectRunner
 REPO_MySQL --> DB_MySQL : JPA/Flyway
 @enduml

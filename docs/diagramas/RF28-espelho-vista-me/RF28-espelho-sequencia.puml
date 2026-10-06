@@ -31,11 +31,9 @@ participant "lib/hooks/use-api.ts" as lib_hooks_use_api_ts
 participant "API (Spring Boot)" as API
 participant "lib/avatar3d/body-spec.ts" as lib_avatar3d_body_spec_ts
 participant "MirrorService" as MirrorService
+participant "WardrobeService" as WardrobeService
 database "MySQL" as DB_MySQL
 participant "RoomService" as RoomService
-participant "WardrobeService" as WardrobeService
-participant "AiEngine" as AI
-participant "Audit" as Audit
 queue "Eventos de domínio" as EV
 == c/mirror/mirror-stage.tsx · MirrorStage() ==
 U -> c_mirror_mirror_stage_tsx : MirrorStage()
@@ -57,28 +55,19 @@ c_mirror_mirror_stage_tsx --> U : encerra
 end
 deactivate c_mirror_mirror_stage_tsx
 c_mirror_mirror_stage_tsx --> U : resultado
-== MirrorService · another() ==
-U -> MirrorService : another()
+== MirrorService · place() ==
+U -> MirrorService : place()
 activate MirrorService
+alt peça obrigatória
+MirrorService --> U : 400 PECA_OBRIGATORIA
+end
+MirrorService -> WardrobeService : owned()
 MirrorService -> DB_MySQL : SELECT mirror_states
 MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
-MirrorService -> DB_MySQL : SELECT mirror_states
-MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
-MirrorService -> RoomService : outOfSeason()
-MirrorService -> WardrobeService : eligible()
-alt acervo sem superior
-MirrorService --> U : 422 ACERVO_SEM_SUPERIOR
-end
-MirrorService -> DB_MySQL : SELECT wardrobe_items
-MirrorService -> AI : COPILOT
-MirrorService -> Audit : log() (×2)
-MirrorService -> AI : SCHEME_COMPOSER
-alt sem combinação nova
-MirrorService --> U : 422 SEM_COMBINACAO_NOVA
-end
+MirrorService -> RoomService : locateAll()
+MirrorService -> DB_MySQL : SELECT wardrobe_items (×4)
 MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
 MirrorService ->> EV : MirrorAction
-MirrorService -> RoomService : locateAll()
 MirrorService -> DB_MySQL : SELECT wardrobe_items
 MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
 MirrorService -> RoomService : locateAll()

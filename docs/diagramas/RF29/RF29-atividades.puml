@@ -39,7 +39,7 @@ start
 :HighlightsController.highlights\n→ InventoryScoreService.highlightsTab;
 |Dados e serviços|
 :Lê: wardrobe_items\nschemes\nscheme_items\npiece_usage_diary\nwardrobe_availability_log\nstyle_dna (+3);
-:Usa: RoomService.layout\nRoomService.labels\nRoomService.labelSources\nRoomService.locateAll\nAchievementService.grant\nAchievementService.list;
+:Usa: RoomService.layout\nRoomService.labels\nRoomService.labelSources\nRoomService.locateAll\nSideEffectRunner.run\nAchievementService.grant (+1);
 :Grava: inventory_score_snapshots;
 :Estado: computedAt → set;
 |Tela (Next.js)|

@@ -29,6 +29,7 @@ entrega fecha com testes, métricas, documentação, commit e push no ramo `clau
 | AVATAR-ID I1 | Identidade versionada: refazer não apaga a aprovada; aprovar, restaurar, histórico | V42 + `Avatar3dService` |
 | AVATAR-ID I2 | Camada de resíduo assimétrico + medidas nomeadas: SFace de frente 0,369 → 0,476, top-1 15/15 | `face-residual.ts`, `face-profile.ts` |
 | AVATAR-ID I3 | Pele com balanço de branco pela esclera, rosto casado com o corpo: erro de cor 0,2, sem costura, gate 14/15 | `skin-tone.ts` |
+| WARDROBE-FIX | Espelho: botão "Do guarda-roupa" em cada parte do look lista todas as peças elegíveis do slot, sem IA (`GET /api/me/mirror/wardrobe`), com as que já estão no espelho marcadas; "Levar ao espelho" no quarto fecha a etiqueta e foca o espelho; `POST /api/me/mirror/pieces` sem peça devolve 400 (era 500); o snapshot e as conquistas do Inventory Score passam a gravar em transação própria — duas leituras simultâneas do quarto davam 500 por chave duplicada (`uq_inv_snap`) | `MirrorService.wardrobe`, `InventoryScoreService`, `mirror/page.tsx`, `room/page.tsx` |
 | DIAG-ALL | Todos os diagramas de atividades, sequência, componentes, estados e classes reescritos a partir do código (319 gerados; 7 de estados mantidos do time com legenda, porque o código não tem o estado equivalente) + globais v5 + índice | `scripts/diagramas/v5`, `docs/diagramas/INDICE-2026-10.md` |
 
 ---
@@ -37,7 +38,7 @@ entrega fecha com testes, métricas, documentação, commit e push no ramo `clau
 
 | # | Item | Por que nesta posição |
 |---|---|---|
-| 1 | **WARDROBE-FIX**: tirar a peça do guarda-roupa e provar no espelho (hoje não funciona) | Defeito funcional relatado em teste |
+| 1 | ~~**WARDROBE-FIX**~~ — entregue (seção 1) | — |
 | 2 | **AVATAR-ID I4–I7**: olhos (cor da íris, shader, ossos), cabelo e barba, rig facial, revisão visual, níveis de detalhe — **mais os itens de rosto e cabelo da lista de 29/09 (seção 5.2) e os acréscimos da especificação completa (seção 6)** | Continua a cadeia de identidade; o desfile e o quarto usam o mesmo avatar |
 | 3 | **GARMENT F0–F6**: moldes paramétricos, passes com restrições, XPBD, camadas, detalhes — **mais os itens de roupa da lista de 29/09 (seção 5.2) e o PROV-3D (seção 5.1)** | Base de "roupa que veste" e de "tecido com movimento natural" (itens 5 e 6) |
 | 4 | **CATALOG-IMG V2**: pipeline profissional das fotos oficiais da Busca Catalogada (seção 4) — **com o FRAME e o relatório de 79 perguntas (seção 5.1)** | Alimenta cards, IA, 2D, 3D e Hype Score |

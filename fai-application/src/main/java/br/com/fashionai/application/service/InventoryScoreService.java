@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.events.SideEffectRunner;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.ai.local.ColorMath;
 import br.com.fashionai.application.common.ApiException;
@@ -141,12 +142,14 @@ public class InventoryScoreService {
     private final UserRepository users;
     private final RoomService room;
     private final AchievementService achievements;
+    private final SideEffectRunner sideEffects;
 
     public InventoryScoreService(WardrobeItemRepository pieces, SchemeRepository schemes, SchemeItemRepository schemeItems,
                                  PieceUsageDiaryEntryRepository diary, WardrobeAvailabilityChangeRepository availability,
                                  StyleDnaRepository dnas, InventoryScoreSnapshotRepository snapshots, RankingOptInRepository optIns,
                                  RankingPositionRepository positions, ChallengeTemplateRepository templates, UserRepository users,
-                                 RoomService room, AchievementService achievements) {
+                                 RoomService room, AchievementService achievements, SideEffectRunner sideEffects) {
+        this.sideEffects = sideEffects;
         this.pieces = pieces;
         this.schemes = schemes;
         this.schemeItems = schemeItems;
@@ -714,9 +717,12 @@ public class InventoryScoreService {
         metrics.put("undiscoveredSample", combos.sample().stream().map(l -> l.stream().map(UUID::toString).toList()).toList());
         metrics.put("usageCount", usage.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().toString(), e -> e.getValue().size())));
         Result result = new Result(userId, eligible, n, k, eligible ? score : null, eligible ? band(score) : null, dims, metrics, explain, Instant.now());
-        snapshot(result, today);
-        if (eligible) {
-            checkAchievements(result, all, usageAll);
+        // snapshot do dia e do mês em transação própria: o quarto pede /api/me/room e /api/me/room/list ao mesmo tempo,
+        // os dois calculam o score e a segunda gravação batia na chave única (uq_inv_snap), marcando a transação de
+        // leitura como rollback-only — a tela recebia 500. Agora a corrida só perde o snapshot repetido.
+        sideEffects.run("snapshot do Inventory Score", () -> snapshot(result, today));
+        if (eligible) {   // mesma corrida na conquista (user_achievements tem chave única): também isolada
+            sideEffects.run("conquistas do Inventory Score", () -> checkAchievements(result, all, usageAll));
         }
         return result;
     }

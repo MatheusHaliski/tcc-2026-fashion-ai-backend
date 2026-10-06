@@ -38,6 +38,10 @@ U -> P : Vestir uma peça no espelho
 P -> MirrorController : POST /api/me/mirror/pieces
 MirrorController -> MirrorService : place()
 activate MirrorService
+alt peça obrigatória
+MirrorService --> MirrorController : 400 PECA_OBRIGATORIA
+MirrorController --> P : 400 + mensagem
+end
 MirrorService -> WardrobeService : owned()
 WardrobeService -> DB_MySQL : SELECT wardrobe_items
 WardrobeService --> MirrorService

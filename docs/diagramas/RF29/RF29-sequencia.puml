@@ -29,6 +29,7 @@ control "HighlightsController" as HighlightsController
 participant "InventoryScoreService" as InventoryScoreService
 database "MySQL" as DB_MySQL
 participant "RoomService" as RoomService
+participant "SideEffectRunner" as SideEffectRunner
 participant "AchievementService" as AchievementService
 == Aba Destaques: Inventory Score, dimensões, dicas e álbum ==
 U -> P : Aba Destaques: Inventory Score, dimensões, dicas…
@@ -58,12 +59,13 @@ InventoryScoreService -> DB_MySQL : SELECT style_dna
 InventoryScoreService -> DB_MySQL : SELECT inventory_score_snapshots
 InventoryScoreService -> InventoryScoreService : computedAt = set
 InventoryScoreService -> DB_MySQL : INSERT/UPDATE inventory_score_snapshots
+InventoryScoreService -> SideEffectRunner : run()
 InventoryScoreService -> AchievementService : grant()
 AchievementService -> DB_MySQL : SELECT user_achievements
 AchievementService -> DB_MySQL : INSERT/UPDATE user_achievements
 AchievementService --> InventoryScoreService
-InventoryScoreService -> AchievementService : grant() (×2)
-note over InventoryScoreService : … e mais 15 passos no código
+InventoryScoreService -> AchievementService : grant()
+note over InventoryScoreService : … e mais 18 passos no código
 deactivate InventoryScoreService
 InventoryScoreService --> HighlightsController : resultado
 HighlightsController --> P : 200 JSON

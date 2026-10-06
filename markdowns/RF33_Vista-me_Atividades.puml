@@ -30,13 +30,17 @@ title RF33 — Smart Mirror 'Vista-me'\nDiagrama de atividades — gerado do có
 start
 :Abre /mirror, /room;
 |Tela (Next.js)|
-:Carrega os dados da tela\nGET /api/me/mirror\nGET /api/me/mirror/suggestions\nGET /api/me/mirror/grwm;
+:Carrega os dados da tela\nGET /api/me/mirror\nGET /api/me/mirror/wardrobe\nGET /api/me/mirror/suggestions\nGET /api/me/mirror/grwm;
 |Pessoa usuária|
 :Vestir uma peça no espelho;
 |Tela (Next.js)|
 :POST /api/me/mirror/pieces;
 |API (Spring Boot)|
 :MirrorController.place\n→ MirrorService.place;
+if (peça obrigatória?) then (sim)
+  :400 PECA_OBRIGATORIA\n«Escolha uma peça do guarda-roupa\npara levar ao espelho.»\n→ a tela mostra o aviso;
+  stop
+endif
 |Dados e serviços|
 :Lê: mirror_states\nwardrobe_items\nstyle_dna;
 :Usa: WardrobeService.owned\nRoomService.locateAll;
