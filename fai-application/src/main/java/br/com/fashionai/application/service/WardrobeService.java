@@ -1197,8 +1197,13 @@ public class WardrobeService {
     /**
      * RF47 · produto escolhido no catálogo global: a peça pessoal referencia o produto (sem copiar foto nem metadados)
      * e usa a foto oficial (proveniência no catálogo) como imagem principal até a pessoa adicionar a própria foto.
+     * {@code catalogImage}: a imagem do card ({@code CatalogImagePipelineService.cardImage}) — com o recorte semântico
+     * da canônica (nível A, a foto não é copiada) ou os assets processados (nível B); null = foto inteira.
      */
-    public record CatalogPick(UUID productId, UUID variantId, String imageUrl) {
+    public record CatalogPick(UUID productId, UUID variantId, String imageUrl, String thumbnailUrl, Map<String, Object> catalogImage) {
+        public CatalogPick(UUID productId, UUID variantId, String imageUrl) {
+            this(productId, variantId, imageUrl, null, null);
+        }
     }
 
     @Transactional
@@ -1239,8 +1244,12 @@ public class WardrobeService {
             boolean hasImage = pick.imageUrl() != null && !pick.imageUrl().isBlank();
             String url = hasImage ? pick.imageUrl() : assets.defaultPieceImage(w.getCategory(), w.getSubcategory());
             w.setImageUrl(url);
-            w.setThumbnailUrl(url);
+            w.setThumbnailUrl(hasImage && pick.thumbnailUrl() != null && !pick.thumbnailUrl().isBlank() ? pick.thumbnailUrl() : url);
             w.setOriginalImageUrl(null);
+            if (hasImage && pick.catalogImage() != null) {
+                // o recorte semântico vai junto da peça: quem mostra a foto aplica o mesmo enquadramento do card
+                w.setFlatLayMetadataJson(Json.write(Map.of("catalogImage", pick.catalogImage())));
+            }
             w.setDefaultImage(!hasImage);
             w.setImageOrigin(hasImage ? br.com.fashionai.domain.model.enums.ImageOrigin.CATALOG
                     : br.com.fashionai.domain.model.enums.ImageOrigin.DEFAULT);

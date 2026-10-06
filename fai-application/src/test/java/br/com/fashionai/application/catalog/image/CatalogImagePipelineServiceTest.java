@@ -43,6 +43,7 @@ class CatalogImagePipelineServiceTest {
     private final List<CatalogSource> sources = new ArrayList<>();
     private CatalogImagePipelineService service;
     private CatalogProduct product;
+    private CatalogProductRepository products;
     private final CurrentUser admin = new CurrentUser(UUID.randomUUID(), "admin", "ADMIN", null, true, null, null, null);
 
     @BeforeEach
@@ -64,7 +65,7 @@ class CatalogImagePipelineServiceTest {
                         && CatalogImagePipelineService.DONE.contains(i.getProcessingStatus())).findFirst());
         when(images.findByReviewStatusOrderByProcessedAtAsc(eq("PENDING"), any())).thenAnswer(inv ->
                 db.values().stream().filter(i -> "PENDING".equals(i.getReviewStatus())).toList());
-        CatalogProductRepository products = mock(CatalogProductRepository.class);
+        products = mock(CatalogProductRepository.class);
         product = new CatalogProduct();
         product.assignId(UUID.randomUUID());
         product.setBrandId(UUID.randomUUID());
@@ -161,10 +162,36 @@ class CatalogImagePipelineServiceTest {
         byte[] body = CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0));
         CatalogImage a = image("https://img.brand.com/a.jpg", CatalogImageType.FRONT, body);
         service.process(a.getId());
-        CatalogImage b = image("https://img.brand.com/b.jpg?w=2000", CatalogImageType.PACKSHOT, body);
+        CatalogImage b = image("https://img.brand.com/b.jpg?w=2000", CatalogImageType.FRONT, body);
         service.process(b.getId());
         assertThat(b.getMetricsJson()).isEqualTo(a.getMetricsJson());
         assertThat(List.of(a.getViewRole(), b.getViewRole())).containsExactlyInAnyOrder("CANONICAL", "DUPLICATE");
+    }
+
+    @Test
+    void mesmosBytesEmOutroContextoRodamOPipelineDeNovo() {
+        byte[] body = CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0));
+        CatalogImage a = image("https://img.brand.com/a.jpg", CatalogImageType.FRONT, body);
+        service.process(a.getId());
+        // outro tipo de vista no mesmo produto: detailView/recorte dependem dele
+        CatalogImage detail = image("https://img.brand.com/d.jpg", CatalogImageType.DETAIL, body);
+        service.process(detail.getId());
+        assertThat(Json.map(detail.getMetricsJson())).containsEntry("detailView", true);
+        assertThat(Json.map(a.getMetricsJson())).containsEntry("detailView", false);
+        // outro produto, de outra categoria: tipo de peça e foco vêm dela
+        CatalogProduct shoe = new CatalogProduct();
+        shoe.assignId(UUID.randomUUID());
+        shoe.setBrandId(product.getBrandId());
+        shoe.setCategory("shoes_piece");
+        shoe.setSubcategory("sneaker");
+        when(products.findById(shoe.getId())).thenReturn(Optional.of(shoe));
+        CatalogImage other = image("https://img.brand.com/s.jpg", CatalogImageType.FRONT, body);
+        other.setProductId(shoe.getId());
+        assertThat(service.sameContext(a, other, shoe)).isFalse();
+        CatalogImage sibling = image("https://img.brand.com/s2.jpg", CatalogImageType.FRONT, body);
+        assertThat(service.sameContext(a, sibling, product)).isTrue();
+        service.process(other.getId());
+        assertThat(Json.map(other.getMetricsJson())).containsEntry("pieceType", PieceType.SHOES_PIECE.name());
     }
 
     @Test

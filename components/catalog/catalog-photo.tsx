@@ -1,6 +1,7 @@
 "use client";
 import type { CSSProperties } from "react";
 import type { CatalogCardImage, NormRect } from "@/lib/api/catalog";
+import type { PieceView } from "@/lib/api/types";
 import { cn } from "@/components/ui";
 
 /**
@@ -11,6 +12,15 @@ import { cn } from "@/components/ui";
 export function semanticCropStyle(crop: NormRect): CSSProperties {
   const w = crop.w > 0 ? crop.w : 1, h = crop.h > 0 ? crop.h : 1;
   return { position: "absolute", width: `${100 / w}%`, height: "auto", maxWidth: "none", left: `${(-crop.x / w) * 100}%`, top: `${(-crop.y / h) * 100}%` };
+}
+
+/**
+ * Peça criada do catálogo com a foto oficial (nível A, a foto não é copiada): o mesmo recorte semântico do card,
+ * enquanto a foto da peça ainda for a oficial (a própria foto da pessoa nunca é recortada por ele).
+ */
+export function pieceCatalogCrop(p: PieceView): CatalogCardImage | null {
+  const ci = (p.flatLayMetadata as { catalogImage?: CatalogCardImage } | undefined)?.catalogImage;
+  return ci?.mode === "SEMANTIC_CROP" && ci.crop && ci.url && ci.url === p.imageUrl ? ci : null;
 }
 
 /** Foto do card da Busca Catalogada: canônica do pipeline (recorte 4:5 ou master processado) ou a foto inteira. */

@@ -518,17 +518,21 @@ public class CatalogService {
                 ? List.of(Taxonomy.allowedOccasions(p.getCategory()).get(0)) : a.occasion();
         List<String> style = a.style() == null || a.style().isEmpty() ? List.of("basic") : a.style();
         String name = a.name() != null && !a.name().isBlank() ? a.name().trim() : p.getProductName();
-        String image = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId()).stream()
+        CatalogImage chosen = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId()).stream()
                 .filter(i -> i.getUsageStatus() != br.com.fashionai.domain.model.enums.CatalogImageUsage.REJECTED)
-                .sorted(Comparator.comparing((CatalogImage i) -> !i.isCanonical()))
-                .map(i -> i.getStoredUrl() != null ? i.getStoredUrl() : i.getImageUrl()).findFirst().orElse(null);
+                .sorted(Comparator.comparing((CatalogImage i) -> !i.isCanonical())).findFirst().orElse(null);
+        // a peça herda a foto do card: master processado (nível B) ou a URL oficial COM o recorte semântico (nível A) —
+        // nunca a foto original inteira quando o pipeline já a enquadrou
+        Map<String, Object> card = CatalogImagePipelineService.cardImage(chosen);
+        String image = card != null ? String.valueOf(card.get("url"))
+                : chosen == null ? null : chosen.getStoredUrl() != null ? chosen.getStoredUrl() : chosen.getImageUrl();
         WardrobeService.PieceForm form = new WardrobeService.PieceForm(null, true, name, p.getCategory(), p.getSubcategory(), sex,
                 b.getId(), b.getName(), color, material, a.size(), null, occasion, style, List.of(),
                 a.price() == null ? BigDecimal.ZERO : a.price(), a.visibility(), List.of(), a.notes(), a.condition(), a.purchaseDate(),
                 a.purchaseLocation(), p.getSku(), null, a.forSale(), false, b.getLogoUrl(), "CATALOGO", p.getId().toString(),
                 a.background());
         Views.PieceView view = wardrobe.createFromCatalog(user, form, new WardrobeService.CatalogPick(p.getId(),
-                variant == null ? null : variant.getId(), image));
+                variant == null ? null : variant.getId(), image, card == null ? null : (String) card.get("thumbnailUrl"), card));
         if (Boolean.TRUE.equals(a.favorite())) {
             view = wardrobe.toggles(user, view.id(), true, null, null);
         }

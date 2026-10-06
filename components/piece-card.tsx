@@ -21,6 +21,7 @@ import { HypeCardBack } from "@/components/hype/hype-card-back";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { hypeViewState } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
+import { CatalogPhoto, pieceCatalogCrop } from "@/components/catalog/catalog-photo";
 
 /**
  * Imagem da peça para o card: a foto do feed (4:5, enquadrada pelo template da categoria) quando existe; senão a
@@ -62,6 +63,8 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   // Seção C: a posição do selo segue a anatomia da peça (padrão: "Categoria · marca · sexo · selos").
   const zone = pieceSealPlacement(anatomy ?? (piece as { background?: { anatomy?: string } }).background?.anatomy).zone;
   const img = pieceCardImage(piece);
+  // sem foto de estúdio, a peça do catálogo mostra a foto oficial com o mesmo recorte do card da busca
+  const crop = piece.studioFeedUrl || piece.studioThumbUrl || piece.studioImageUrl ? null : pieceCatalogCrop(piece);
   const art = readPieceArt(piece.background);
   const surface = artSurfaceProps(piece.background, art, "compact");
   const skin = (piece.background?.skin as string | undefined) ?? null;
@@ -75,7 +78,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
     : <span>{subcategoryLabel(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>;
   const media = (
     <>
-      {img.src ? <img src={img.src} srcSet={img.srcSet} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
+      {crop ? <CatalogPhoto image={crop} alt="" /> : img.src ? <img src={img.src} srcSet={img.srcSet} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
       {(zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
       {(!piece.disponivel || piece.forDonation || (mine && piece.favorite) || piece.aiGeneratedImage) && (
         <span className="pc-flags">
