@@ -176,6 +176,14 @@ public class CopilotService {
                              Double latitude, Double longitude, List<String> excludeKeys, String mode) {
     }
 
+    /** Momentos §17 — o Copilot conhece os Momentos ativos (injeção opcional: o construtor dos testes não muda). */
+    private br.com.fashionai.application.moments.MomentService moments;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setMoments(br.com.fashionai.application.moments.MomentService moments) {
+        this.moments = moments;
+    }
+
     private final WardrobeService wardrobe;
     private final WardrobeItemRepository pieces;
     private final SchemeRepository schemes;
@@ -262,6 +270,7 @@ public class CopilotService {
         out.put("selection", selection == null ? List.of() : selection);
         out.put("suggestedPrompts", promptsFor(view));
         out.put("activeChallenges", challenges.activeSummary(user.id()));
+        out.put("activeMoments", activeMoments(user.id()));
         return out;
     }
 
@@ -419,7 +428,7 @@ public class CopilotService {
         if (HYPE_QUESTION.matcher(t).matches() && !BUILD_REQUEST.matcher(t).matches()) {
             return Intent.HYPE;
         }
-        if (t.matches(".*(não uso|nao uso|esquecid|parad[ao]s?|há muito tempo|ha muito tempo|nunca usei|haven't worn|never worn|not worn|forgotten|unused|long time|no uso|olvidad|nunca usé|nunca use|mucho tiempo).*")) {
+        if (t.matches(".*(não uso|nao uso|esquecid|parad[ao]s?|há muito tempo|ha muito tempo|nunca usei|haven't worn|never worn|not worn|forgotten|unused|long time|no uso|olvidad|nunca usé|nunca use|mucho tiempo|redescobert|rediscover|redescubr).*")) {
             return Intent.FORGOTTEN;
         }
         if (t.matches(".*(melhorar (o |meu )?invent|inventory score|como melhorar|minha utiliza|meu score|improve (my )?invent|my utilization|my score|mejorar (el |mi )?invent|mi utiliza|mi puntuaci).*")) {
@@ -945,6 +954,11 @@ public class CopilotService {
         if (occasions.isEmpty()) {
             MirrorService.localInterpretation(message, List.of()).occasion().stream().filter(Taxonomy.OCCASIONS::contains).limit(3).forEach(occasions::add);
         }
+        // Momentos §17: "monte um look para o Halloween…" — o Momento ativo mencionado empresta ocasiões e tema
+        Map<String, Object> moment = detectMoment(user.id(), message);
+        if (moment != null && occasions.isEmpty()) {
+            strings(moment.get("occasionTags")).stream().filter(Taxonomy.OCCASIONS::contains).limit(2).forEach(occasions::add);
+        }
         Set<UUID> requiredPieceIds = Set.of();
         if (hasPieceConstraints(message)) {
             requiredPieceIds = searchPieces(user.id(), message, true).stream().map(WardrobeItem::getId).collect(Collectors.toSet());
@@ -1006,11 +1020,93 @@ public class CopilotService {
             return card;
         }).toList();
         RecommendationScoring.Mode mode = RecommendationScoring.Mode.parse(req.mode());
-        out.put("looks", scoreLooks(user, lookCards, mode));
+        List<Map<String, Object>> scored = scoreLooks(user, lookCards, mode);
+        if (moment != null) {
+            scored = withMomentMatch(scored, moment, occasions);
+            out.put("momentNotice", momentNotice(moment, scored));
+            out.put("moment", Map.of("id", moment.get("id"), "slug", moment.get("slug"), "name", moment.get("name")));
+        }
+        out.put("looks", scored);
         out.put("mode", mode == null ? null : mode.name());
         if (hasPieceConstraints(message)) out.put("requestedFilters", Map.of("pieceIds", requiredPieceIds));
         out.put("tools", List.of("buscar_pecas", "listar_looks", "montar_no_espelho", "abrir_criar_look"));
         return out;
+    }
+
+    // ================================================================== Momentos como contexto (§17–§18)
+    List<Map<String, Object>> activeMoments(UUID userId) {
+        try {
+            return moments == null ? List.of() : moments.activeSummary(userId);
+        } catch (RuntimeException ex) {
+            return List.of();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    static List<String> strings(Object v) {
+        return v instanceof List<?> l ? ((List<Object>) l).stream().map(String::valueOf).toList() : List.of();
+    }
+
+    /** O Momento ativo que a mensagem menciona (nome, slug ou tag de estilo/cor exclusiva dele); nulo se nenhum. */
+    Map<String, Object> detectMoment(UUID userId, String message) {
+        List<Map<String, Object>> active = activeMoments(userId);
+        for (Map<String, Object> m : active) {
+            String name = String.valueOf(m.get("name"));
+            String slug = String.valueOf(m.get("slug")).replace('-', ' ').replaceAll("\\d{4}", "").trim();
+            if (mentions(message, name) || (!slug.isBlank() && mentions(message, slug)) || mentions(message, name.replaceAll("\\d{4}", "").trim())) {
+                return m;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * MomentMatch de cada sugestão (sobre as tags das peças, determinístico) e reordenação: a leitura do Momento mais
+     * compatível com o DNA sobe, sem apagar as demais — descoberta e identidade convivem (§18).
+     */
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> withMomentMatch(List<Map<String, Object>> cards, Map<String, Object> moment, List<String> occasions) {
+        List<br.com.fashionai.application.moments.MomentMatch.Interpretation> interps = new ArrayList<>();
+        for (Object o : (List<Object>) moment.getOrDefault("interpretations", List.of())) {
+            if (o instanceof Map<?, ?> im) {
+                Map<String, Object> i = (Map<String, Object>) im;
+                interps.add(br.com.fashionai.application.moments.MomentMatch.interpretation(String.valueOf(i.get("key")), strings(i.get("styleTags")), strings(i.get("colorTags"))));
+            }
+        }
+        br.com.fashionai.application.moments.MomentMatch.Context ctx = br.com.fashionai.application.moments.MomentMatch.context(
+                strings(moment.get("styleTags")), strings(moment.get("colorTags")), strings(moment.get("occasionTags")), List.of(), interps);
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (Map<String, Object> card : cards) {
+            Map<String, Object> c = new LinkedHashMap<>(card);
+            List<UUID> ids = (List<UUID>) c.get("pieceIds");
+            List<WardrobeItem> look = ids == null ? List.of() : pieces.findByIdIn(ids);
+            Set<String> styles = new LinkedHashSet<>(strings(c.get("style")));
+            Set<String> colors = new LinkedHashSet<>();
+            List<String> subs = new ArrayList<>();
+            for (WardrobeItem w : look) {
+                styles.addAll(Json.csv(w.getStyleTags()));
+                colors.addAll(HypeQueryService.colorsOf(w));
+                if (w.getSubcategory() != null) subs.add(w.getSubcategory());
+            }
+            br.com.fashionai.application.moments.MomentMatch.Result r = br.com.fashionai.application.moments.MomentMatch.score(ctx,
+                    br.com.fashionai.application.moments.MomentMatch.subject(styles, colors, occasions, subs));
+            Map<String, Object> scores = new LinkedHashMap<>((Map<String, Object>) c.getOrDefault("scores", Map.of()));
+            scores.put("moment", r == null ? null : r.score());
+            c.put("scores", scores);
+            c.put("moment", Map.of("slug", moment.get("slug"), "name", moment.get("name"), "match", r == null ? 0 : r.score(),
+                    "interpretation", r == null || r.interpretation() == null ? "" : r.interpretation()));
+            out.add(c);
+        }
+        out.sort(Comparator.comparingInt((Map<String, Object> c) -> (Integer) ((Map<?, ?>) c.get("moment")).get("match")).reversed());
+        return out;
+    }
+
+    @SuppressWarnings("unchecked")
+    String momentNotice(Map<String, Object> moment, List<Map<String, Object>> cards) {
+        String name = String.valueOf(moment.get("name"));
+        String interpretation = cards.stream().map(c -> (Map<String, Object>) c.get("moment")).map(m -> String.valueOf(m.get("interpretation")))
+                .filter(x -> !x.isBlank()).findFirst().orElse(null);
+        return interpretation == null ? Msg.t("copilot.momento_sem_interpretacao", name) : Msg.t("copilot.momento_interpretacao", name, interpretation);
     }
 
     // ================================================================== HypeScore v2 como contexto
@@ -1303,6 +1399,7 @@ public class CopilotService {
             m.put("inventoryScore", null);
         }
         m.put("activeChallenges", challenges.activeSummary(user.id()));
+        m.put("activeMoments", activeMoments(user.id()));
         return m;
     }
 }

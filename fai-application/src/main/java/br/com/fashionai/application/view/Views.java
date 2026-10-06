@@ -6,6 +6,7 @@ import br.com.fashionai.domain.model.Notification;
 import br.com.fashionai.domain.model.Photo;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.SchemeItem;
+import br.com.fashionai.domain.model.TaxonomyAttribute;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
@@ -57,8 +58,8 @@ public final class Views {
                             boolean notAvailableAnymore, Instant createdAt, Instant updatedAt, String studioImageUrl,
                             String studioBackdrop, String studioThumbUrl, String studioDetailUrl,
                             String mannequinImageUrl, String mannequinImageFace, String brandSource, String studioFeedUrl,
-                            boolean aiGeneratedImage, boolean forDonation, String variation, String variationStatus,
-                            String variationSource, Map<String, List<String>> attributes) {
+                            boolean aiGeneratedImage, boolean forDonation,
+                            String variation, Map<String, List<String>> attributes) {
     }
 
     /** A miniatura do estúdio (640 px, para grades) fica ao lado da foto grande: {@code studio-x.jpg} → {@code studio-x.thumb.jpg}. */
@@ -107,9 +108,10 @@ public final class Views {
                 viewer == null ? ViewerState.NONE : viewer, w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED,
                 w.getCreatedAt(), w.getUpdatedAt(), w.getStudioImageUrl(), w.getStudioBackdrop(), studioThumb(w.getStudioImageUrl()), w.getStudioDetailUrl(),
                 w.getMannequinImageUrl(), w.getMannequinImageFace(), w.getBrandSource(), studioFeed(w), w.isAiGeneratedImage(),
-                w.isForDonation(), w.getVariationCode(), w.getVariationStatus(), w.getVariationSource(),
-                // atributos da taxonomia sem os que já têm campo próprio (cor, material, gênero, estilo, ocasião)
-                br.com.fashionai.domain.model.TaxonomyAttribute.toMap(w.getAttributes(), Taxonomy.FIELD_DIMENSIONS));
+                w.isForDonation(),
+                // taxonomia nova: variação da peça e atributos por dimensão; cor, material, sexo, estilo e ocasião já têm
+                // campo próprio na view e não se repetem aqui
+                w.getVariationCode(), TaxonomyAttribute.toMap(w.getAttributes(), Taxonomy.FIELD_DIMENSIONS));
     }
 
     /**

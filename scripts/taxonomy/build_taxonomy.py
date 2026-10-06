@@ -6,9 +6,9 @@
 
 Saídas (nunca edite à mão):
   fai-application/src/main/resources/taxonomy/taxonomy.json      — lida pelo backend (TaxonomyRegistry) e pelo Python
-  db/migration/V40__taxonomia_seed_estrutura.sql                 — categorias, subcategorias, legado, dimensões, escopos
-  db/migration/V41__taxonomia_seed_valores.sql                   — valores das dimensões + aliases de valor
-  db/migration/V42__taxonomia_seed_variacoes.sql                 — variações, subcategoria × variação, aliases
+  db/migration/V45__taxonomia_seed_estrutura.sql                 — categorias, subcategorias, legado, dimensões, escopos
+  db/migration/V46__taxonomia_seed_valores.sql                   — valores das dimensões + aliases de valor
+  db/migration/V47__taxonomia_seed_variacoes.sql                 — variações, subcategoria × variação, aliases
   docs/taxonomia/proposta/taxonomia_variacoes.csv                — tabela mestre (uma linha por subcategoria × variação)
   fai-application/src/main/resources/catalog/normalization.json  — seções taxonomy.subcategories, taxonomy.materials,
                                                                    legacySubcategories e sinônimos das subcategorias novas
@@ -315,9 +315,9 @@ for x in subcats:
                          "shared_with": " ".join(s for s in used[code] if s != x["code"])})
 inserts(v41, "taxonomy_subcategory_variations", ["subcategory_code", "variation_code", "tier", "priority", "sort_order"], link_rows)
 inserts(v41, "taxonomy_aliases", ["target_type", "target_code", "scope_subcategory_code", "alias", "alias_norm", "locale"], var_alias)
-outputs[MIGRATIONS / "V40__taxonomia_seed_estrutura.sql"] = v39.getvalue()
-outputs[MIGRATIONS / "V41__taxonomia_seed_valores.sql"] = v40.getvalue()
-outputs[MIGRATIONS / "V42__taxonomia_seed_variacoes.sql"] = v41.getvalue()
+outputs[MIGRATIONS / "V45__taxonomia_seed_estrutura.sql"] = v39.getvalue()
+outputs[MIGRATIONS / "V46__taxonomia_seed_valores.sql"] = v40.getvalue()
+outputs[MIGRATIONS / "V47__taxonomia_seed_variacoes.sql"] = v41.getvalue()
 
 buf = io.StringIO()
 w = csv.DictWriter(buf, fieldnames=list(csv_rows[0]), lineterminator="\n")
