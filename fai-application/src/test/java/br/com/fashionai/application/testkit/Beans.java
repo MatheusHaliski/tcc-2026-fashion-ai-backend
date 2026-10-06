@@ -28,7 +28,7 @@ final class Beans {
         if (whole != null) {
             return invoke(whole, bean);
         }
-        // prefixo mais longo que é propriedade, e o resto dentro dela (UserId → user.id; SchemeUserId → scheme.user.id)
+       
         for (int i = prop.length() - 1; i > 0; i--) {
             if (Character.isUpperCase(prop.charAt(i))) {
                 Method head = getter(bean.getClass(), prop.substring(0, i));
