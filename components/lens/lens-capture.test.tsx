@@ -50,7 +50,7 @@ describe("Lens › captura", () => {
     expect(form.get("source")).toBe("CAMERA");
     expect(form.get("intent")).toBe("IDENTIFY");
     expect(form.get("facesRedacted")).toBe("2");
-    expect(form.get("redactionConfirmed")).toBe("false");
+    expect(form.get("redactionConfirmed")).toBe("true");          // o borrão rodou: a foto pode ir à IA online
     expect(form.get("image")).toBeInstanceOf(Blob);
   });
 

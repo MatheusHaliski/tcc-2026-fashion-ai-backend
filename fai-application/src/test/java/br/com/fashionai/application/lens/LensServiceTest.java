@@ -77,6 +77,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -124,6 +125,10 @@ class LensServiceTest {
                     .filter(s -> s.getUserId().equals(a[0]) && s.getSavedAt() != null).toList(), (Pageable) a[1]);
             case "findByUserIdAndSavedAtIsNullOrderByCreatedAtDesc" -> page(scanRows.values().stream()
                     .filter(s -> s.getUserId().equals(a[0]) && s.getSavedAt() == null).toList(), (Pageable) a[1]);
+            case "findWantedByUserId" -> page(scanRows.values().stream()
+                    .filter(s -> s.getUserId().equals(a[0]) && (a[1] == null || (Boolean) a[1] == (s.getSavedAt() != null)))
+                    .filter(s -> detectionRows.values().stream().anyMatch(d -> d.getScanId().equals(s.getId())
+                            && d.getWantedAt() != null && d.getDismissedAt() == null)).toList(), (Pageable) a[2]);
             case "findTop200BySavedAtIsNullAndExpiresAtBefore" -> scanRows.values().stream()
                     .filter(s -> s.getSavedAt() == null && s.getExpiresAt() != null && s.getExpiresAt().isBefore((Instant) a[0])).limit(200).toList();
             case "delete" -> {
@@ -313,8 +318,9 @@ class LensServiceTest {
         return ImageOps.jpeg(img, 0.9f);
     }
 
+    /** Scan como o cliente web envia: rostos borrados no aparelho e a proteção confirmada. */
     LensViews.ScanView scan() {
-        return lens.create(meUser, new LensService.CreateCommand("CAMERA", "IDENTIFY", 1, false), photo());
+        return lens.create(meUser, new LensService.CreateCommand("CAMERA", "IDENTIFY", 1, true), photo());
     }
 
     static String code(Executable e) {
@@ -498,6 +504,31 @@ class LensServiceTest {
     }
 
     @Test
+    void fotoSemConfirmacaoDaProtecaoDosRostosNuncaVaiParaAIaExterna() {
+        // cliente antigo (sem o campo), chamada direta ou falha do cliente: leitura só local, e o scan diz o porquê
+        for (Boolean confirmed : new Boolean[]{null, false}) {
+            LensViews.ScanView v = lens.create(meUser, new LensService.CreateCommand("UPLOAD", "IDENTIFY", 0, confirmed), photo());
+            assertThat(v.status()).isEqualTo("READY");
+            assertThat(v.aiSource()).isEqualTo("local");
+            assertThat(v.errorCode()).isEqualTo("REDACTION_UNCONFIRMED");
+            assertThat(v.detections()).hasSize(1);                                     // a foto inteira, para a pessoa ajustar
+            assertThat(scanRows.get(v.id()).isRedactionConfirmed()).isFalse();
+        }
+        // "Ver no Lens": o servidor não borra rostos, então a foto do app também fica na leitura local
+        WardrobeItem mine = piece(me, "upper_piece", "jacket", "denim", Visibility.PRIVATE);
+        blobs.put("users/" + me.getId() + "/m.jpg", photo());
+        mine.setImageUrl("http://x/media/users/" + me.getId() + "/m.jpg");
+        assertThat(lens.fromApp(meUser, new LensService.FromAppCommand("PIECE", mine.getId())).aiSource()).isEqualTo("local");
+        verify(multiPiece, never()).detectPieces(any(), any());
+        // com a confirmação, a IA de visão é chamada
+        LensViews.ScanView ok = scan();
+        assertThat(ok.aiSource()).isEqualTo("ia");
+        assertThat(ok.errorCode()).isNull();
+        assertThat(scanRows.get(ok.id()).isRedactionConfirmed()).isTrue();
+        verify(multiPiece).detectPieces(any(), any());
+    }
+
+    @Test
     void verNoLensRespeitaAVisibilidade() {
         WardrobeItem privateOfOther = piece(other, "upper_piece", "jacket", "denim", Visibility.PRIVATE);
         blobs.put("users/" + other.getId() + "/p.jpg", photo());
@@ -613,6 +644,32 @@ class LensServiceTest {
         assertEquals(404, status(() -> lens.recreate(meUser, v.id(), new LensService.RecreateCommand("SAFE", null,
                 Map.of("TOP", notMine.getId().toString())))));
         assertEquals("MODO_INVALIDO", code(() -> lens.recreate(meUser, v.id(), new LensService.RecreateCommand("YOLO", null, null))));
+    }
+
+    @Test
+    void inspiracoesQueroSaoFiltradasAntesDePaginar() {
+        // 5 scans; só o 1º e o 4º têm uma peça "Quero" (e uma marcada e descartada no 2º não conta)
+        List<LensViews.ScanView> all = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            all.add(scan());
+        }
+        lens.want(meUser, all.get(0).id(), all.get(0).detections().get(0).id(), true);
+        lens.want(meUser, all.get(3).id(), all.get(3).detections().get(1).id(), true);
+        UUID dropped = all.get(1).detections().get(0).id();
+        lens.want(meUser, all.get(1).id(), dropped, true);
+        detectionRows.get(dropped).setDismissedAt(Instant.now());
+
+        Views.Page<LensViews.ScanCard> first = lens.history(meUser, null, true, 0, 1);
+        assertThat(first.items()).extracting(LensViews.ScanCard::id).containsExactly(all.get(0).id());
+        assertThat(first.total()).isEqualTo(2);
+        assertThat(first.hasMore()).isTrue();
+        Views.Page<LensViews.ScanCard> second = lens.history(meUser, null, true, 1, 1);
+        assertThat(second.items()).extracting(LensViews.ScanCard::id).containsExactly(all.get(3).id());
+        assertThat(second.hasMore()).isFalse();
+        // combinado com "salvos": só o 4º
+        lens.setSaved(meUser, all.get(3).id(), true);
+        assertThat(lens.history(meUser, true, true, 0, 12).items()).extracting(LensViews.ScanCard::id).containsExactly(all.get(3).id());
+        assertThat(lens.history(meUser, false, true, 0, 12).items()).extracting(LensViews.ScanCard::id).containsExactly(all.get(0).id());
     }
 
     @Test

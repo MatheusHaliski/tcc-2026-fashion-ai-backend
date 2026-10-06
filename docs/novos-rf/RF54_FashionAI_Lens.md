@@ -43,8 +43,8 @@ código ficou diferente, vale esta seção.
 
 | Método | Rota | Observação |
 |---|---|---|
-| POST | `/api/lens/scans` | multipart `image`, `source` (CAMERA, GALLERY, UPLOAD), `intent` (IDENTIFY, RECREATE), `facesRedacted`, `redactionConfirmed`; passa pelo `UploadSafetyInterceptor` |
-| POST | `/api/lens/scans/from-app` | `{type: PIECE\|LOOK, id}`: 404 se quem pede não pode ver o original; nada vira visualização |
+| POST | `/api/lens/scans` | multipart `image`, `source` (CAMERA, GALLERY, UPLOAD), `intent` (IDENTIFY, RECREATE), `facesRedacted`, `redactionConfirmed`; passa pelo `UploadSafetyInterceptor`. Sem `redactionConfirmed=true` (borrão feito no aparelho ou confirmação de que não há rostos) a leitura é só local: a foto não vai à IA externa e o scan volta com `errorCode = REDACTION_UNCONFIRMED` |
+| POST | `/api/lens/scans/from-app` | `{type: PIECE\|LOOK, id}`: 404 se quem pede não pode ver o original; nada vira visualização; leitura só local (o servidor não borra rostos, então a foto do app não vai à IA externa) |
 | GET | `/api/lens/scans/{id}` | scan + peças + leitura |
 | GET | `/api/lens/scans/{id}/image?variant=thumb` | JPEG sem metadados, `Cache-Control: private` (rota nova, não estava no §9.3) |
 | PATCH · DELETE | `/api/lens/scans/{id}` | `{saved}` (inspiração não expira) · apaga tudo (204) |
@@ -55,7 +55,7 @@ código ficou diferente, vale esta seção.
 | POST | `/api/lens/scans/{id}/detections` | a pessoa marca uma peça (caixa em %, lado mínimo 3%) |
 | PUT | `/api/lens/scans/{id}/detections/{did}/want` | `{wanted}` ("Quero"; no lugar do PUT/DELETE do §9.3) |
 | POST | `/api/lens/scans/{id}/detections/{did}/own` | "Eu tenho": liga a uma peça própria ou devolve `/pieces/new?…` pré-preenchido, nunca com o recorte da foto |
-| GET | `/api/me/lens/scans?saved=&wanted=&page=&size=` | histórico e inspirações (`Page<LensScanCard>`) |
+| GET | `/api/me/lens/scans?saved=&wanted=&page=&size=` | histórico e inspirações (`Page<LensScanCard>`); `wanted=true` filtra na consulta (`findWantedByUserId`), antes de paginar: `total` e `hasMore` contam só os scans com peça "Quero" |
 
 Outra pessoa recebe **404** em qualquer rota (nunca 403). `GET /api/admin/lens/metrics` não foi implementado.
 
@@ -87,8 +87,10 @@ usa o recorte da foto como foto da peça; retenção de 30 dias sem salvar; excl
 - Ponto de entrada "Ver no Lens" dentro do app (o backend `from-app` existe, a tela ainda não chama), segmento
   Inspirações no Lookbook, evento `LENS_SCAN` no Histórico, "desde o scan" (`LensDiff`), intenções do Copilot e
   `/api/admin/lens/metrics`.
-- Borrão de rosto **no servidor**: quem chama a API sem o cliente web (ou com o detector indisponível e a confirmação
-  marcada) envia a imagem como está; a moderação de upload continua valendo. `docs/seguranca/moderacao-de-imagens.md`
+- Borrão de rosto **no servidor**: a imagem fica como chegou. Sem `redactionConfirmed=true` (cliente antigo, chamada
+  direta ou falha do cliente) ela não vai à IA externa — a leitura é local e o scan avisa (`REDACTION_UNCONFIRMED`);
+  com a confirmação, vale a palavra do cliente (detector indisponível e caixa marcada pela pessoa). A moderação de upload
+  continua valendo. `docs/seguranca/moderacao-de-imagens.md`
   continua pendente.
 
 ### Testes

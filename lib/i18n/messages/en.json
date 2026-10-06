@@ -4846,6 +4846,7 @@
   "lens.notice.local": "Local reading: the online AI wasn't used, so the reading is simpler. Please check the pieces.",
   "lens.notice.partial": "Part of the reading isn't ready right now. What worked is shown below.",
   "lens.notice.faces": "{n, plural, one {# face was blurred} other {# faces were blurred}} to protect the people in the photo.",
+  "lens.notice.local_redaction": "Local reading: the photo arrived without confirmation that faces were protected, so it was not sent to the online AI. Check the pieces.",
   "lens.undo.text": "“{label}” was removed from the reading.",
   "lens.undo.action": "Undo",
   "lens.delete.title": "Delete this scan?",

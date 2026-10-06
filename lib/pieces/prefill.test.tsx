@@ -13,7 +13,7 @@ import NewPiecePage from "@/app/(site)/(app)/pieces/new/page";
 import { readPiecePrefill, validPieceCategory, validPiecePrefill } from "./prefill";
 
 const TAXONOMY = {
-  subcategories: { upper_piece: ["t_shirt", "shirt"], lower_piece: ["jeans"], shoes_piece: ["casual_sneakers"], accessory_piece: ["cap"] },
+  subcategories: { upper_piece: ["t_shirt", "shirt"], lower_piece: ["jeans"], shoes_piece: ["casual_sneakers"], accessory_piece: ["cap"], full_body_piece: ["dress", "jumpsuit"] },
   colors: { white: "#ffffff", black: "#111111" }, materials: ["COTTON", "LEATHER"], sizes: ["m"], sexes: ["UNISSEX"],
   occasions: ["casual", "work"], styles: ["basic", "streetwear", "minimalist"], allowedOccasionsByCategory: { upper_piece: ["casual", "work"] },
   defaultImages: { upper_piece: "/assets/upper.png", generic: "/assets/generic.png" }, brands: [],
@@ -63,6 +63,17 @@ describe("/pieces/new aberto pelo FashionAI Lens", () => {
     expect(pressed("Minimalista")).toBe("false");
     // a busca catalogada também abre no subtipo lido
     await waitFor(() => expect(pressed("Camiseta")).toBe("true"));
+  });
+
+  it("peça única (vestido, macacão): o detector devolve full_body_piece e o criador mantém tipo e subtipo", async () => {
+    nav.search = new URLSearchParams("category=full_body_piece&subcategory=dress&color=black&q=Vestido+preto&from=lens&scan=s9&detection=d2");
+    loggedAs(ME, ROUTES);
+    renderApp(<NewPiecePage />);
+    expect(await screen.findByText("Veio do FashionAI Lens")).toBeTruthy();
+    expect(pressed("Peça única")).toBe("true");
+    await waitFor(() => expect(text("subcategory")).toBe("Vestido"));
+    expect(text("color")).toBe("Preto");
+    expect((screen.getByLabelText(/^Nome/) as HTMLInputElement).value).toBe("Vestido preto");
   });
 
   it("taxonomia em cache: valores desconhecidos ficam em branco, sem nota e sem nome fora do Lens", async () => {

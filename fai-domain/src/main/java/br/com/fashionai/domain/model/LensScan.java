@@ -65,7 +65,10 @@ public class LensScan extends VersionedAuditableEntity {
     @Column(name = "faces_redacted", nullable = false)
     private int facesRedacted;
 
-    /** O cliente confirmou que rodou o borrão de rostos; sem confirmação a imagem não vai para IA externa. */
+    /**
+     * O cliente confirmou a proteção dos rostos (o borrão rodou no aparelho ou a pessoa confirmou que a foto não mostra
+     * rostos). Sem confirmação a imagem não vai para IA externa: o {@code LensService} faz só a leitura local.
+     */
     @Column(name = "redaction_confirmed", nullable = false)
     private boolean redactionConfirmed;
 

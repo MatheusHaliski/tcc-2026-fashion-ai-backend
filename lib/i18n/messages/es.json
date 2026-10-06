@@ -4846,6 +4846,7 @@
   "lens.notice.local": "Lectura local: no se usó la IA en línea, así que la lectura es más simple. Revisa las prendas.",
   "lens.notice.partial": "Parte de la lectura no está lista ahora. Lo que funcionó está abajo.",
   "lens.notice.faces": "{n, plural, one {# rostro se difuminó} other {# rostros se difuminaron}} para proteger a las personas de la foto.",
+  "lens.notice.local_redaction": "Lectura local: la foto llegó sin la confirmación de que los rostros estaban protegidos, así que no se envió a la IA en línea. Revisa las prendas.",
   "lens.undo.text": "“{label}” salió de la lectura.",
   "lens.undo.action": "Deshacer",
   "lens.delete.title": "¿Eliminar este escaneo?",

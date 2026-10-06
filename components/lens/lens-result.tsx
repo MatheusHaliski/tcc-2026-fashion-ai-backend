@@ -22,7 +22,7 @@ function Notices({ scan }: { scan: LensScanView }) {
   const days = expiryDays(scan.expiresAt, scan.savedAt);
   const items: { key: string; text: string; tone?: "warn" }[] = [];
   if (days != null) items.push({ key: "exp", text: days === 0 ? t("lens.notice.expires_today") : t("lens.notice.expires", { n: days }) });
-  if (scan.aiSource === "local") items.push({ key: "local", text: t("lens.notice.local"), tone: "warn" });
+  if (scan.aiSource === "local") items.push({ key: "local", text: t(scan.errorCode === "REDACTION_UNCONFIRMED" ? "lens.notice.local_redaction" : "lens.notice.local"), tone: "warn" });
   if (scan.status === "PARTIAL") items.push({ key: "partial", text: t("lens.notice.partial"), tone: "warn" });
   if (scan.facesRedacted > 0) items.push({ key: "faces", text: t("lens.notice.faces", { n: scan.facesRedacted }) });
   if (!items.length) return null;

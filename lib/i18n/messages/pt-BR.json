@@ -4846,6 +4846,7 @@
   "lens.notice.local": "Leitura local: a IA online não foi usada, então a leitura é mais simples. Confira as peças.",
   "lens.notice.partial": "Parte da leitura não ficou pronta agora. O que deu certo está abaixo.",
   "lens.notice.faces": "{n, plural, one {# rosto foi borrado} other {# rostos foram borrados}} para proteger as pessoas da foto.",
+  "lens.notice.local_redaction": "Leitura local: a foto chegou sem a confirmação de que os rostos foram protegidos, então não foi enviada à IA online. Confira as peças.",
   "lens.undo.text": "“{label}” saiu da leitura.",
   "lens.undo.action": "Desfazer",
   "lens.delete.title": "Excluir este scan?",

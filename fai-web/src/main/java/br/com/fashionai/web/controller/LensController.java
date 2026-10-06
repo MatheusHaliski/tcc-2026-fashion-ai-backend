@@ -51,7 +51,9 @@ public class LensController {
     }
 
     @PostMapping(value = "/api/lens/scans", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "RF54 — Novo scan: imagem (rostos já borrados no aparelho) + source, intent, facesRedacted, redactionConfirmed")
+    @Operation(summary = "RF54 — Novo scan: imagem (rostos já borrados no aparelho) + source, intent, facesRedacted, redactionConfirmed",
+            description = "Sem redactionConfirmed=true (borrão feito no aparelho ou confirmação de que não há rostos) a leitura é só "
+                    + "local: a foto não vai para a IA externa e o scan volta com errorCode REDACTION_UNCONFIRMED.")
     public LensViews.ScanView create(CurrentUser user, @RequestPart("image") MultipartFile image,
                                      @RequestParam(value = "source", required = false) String source,
                                      @RequestParam(value = "intent", required = false) String intent,

@@ -5,7 +5,7 @@
 import type { PieceView } from "@/lib/api/types";
 
 export type LensScanStatus = "READY" | "PARTIAL" | "NO_FASHION_FOUND" | "FAILED";
-export type LensErrorCode = "NO_FASHION_FOUND" | "CONSENT_REQUIRED" | "QUOTA" | "FAILED";
+export type LensErrorCode = "NO_FASHION_FOUND" | "CONSENT_REQUIRED" | "QUOTA" | "FAILED" | "REDACTION_UNCONFIRMED";
 export type LensSource = "CAMERA" | "GALLERY" | "UPLOAD" | "IN_APP_PIECE" | "IN_APP_LOOK";
 export type LensIntent = "IDENTIFY" | "RECREATE";
 export type LensConfidenceBand = "HIGH" | "MEDIUM" | "LOW";
@@ -107,6 +107,9 @@ export interface LensCreateInput {
   image: Blob; source: LensSource; intent?: LensIntent;
   /** rostos borrados no aparelho antes do envio */
   facesRedacted: number;
-  /** a pessoa confirmou que a foto não mostra rostos (o detector não pôde rodar) */
+  /**
+   * a foto chega protegida: o borrão de rostos rodou no aparelho ou, sem detector, a pessoa confirmou que ela não mostra
+   * rostos. Sem isso (false ou ausente) o servidor faz só a leitura local: a foto não vai à IA online
+   */
   redactionConfirmed: boolean;
 }

@@ -72,7 +72,9 @@ function Review({ file, source, onReset }: { file: File; source: LensSource; onR
     if (!result || !ready) return;
     setSending(true); setProblem(null);
     try {
-      const scan = await lensApi.create({ image: result.blob, source, intent: "IDENTIFY", facesRedacted: Math.max(0, result.faces), redactionConfirmed: unknown && confirmed });
+      // redactionConfirmed: o borrão rodou aqui (faces ≥ 0) ou a pessoa confirmou que não há rostos — sem isso o servidor
+      // faz só a leitura local e a foto não vai à IA online
+      const scan = await lensApi.create({ image: result.blob, source, intent: "IDENTIFY", facesRedacted: Math.max(0, result.faces), redactionConfirmed: !unknown || confirmed });
       router.push(`/lens/${encodeURIComponent(scan.id)}`);
     } catch (e) { setProblem(sendProblem(e, t)); setSending(false); }
   }

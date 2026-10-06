@@ -261,6 +261,12 @@ describe("Lens › estados e ações do scan", () => {
     expect(screen.getByText(/Leitura local: a IA online não foi usada/)).toBeTruthy();
   });
 
+  it("foto sem a confirmação da proteção dos rostos: a leitura local diz o porquê", async () => {
+    open({}, scanOf({ errorCode: "REDACTION_UNCONFIRMED", aiSource: "local" }));
+    expect(await screen.findByText(/a foto chegou sem a confirmação de que os rostos foram protegidos/)).toBeTruthy();
+    expect(screen.queryByText(/Leitura local: a IA online não foi usada/)).toBeNull();
+  });
+
   it("salvar como inspiração (PATCH saved) tira o aviso de expiração", async () => {
     const api = open({ "PATCH /api/lens/scans/s1": scanOf({ savedAt: new Date().toISOString(), expiresAt: null }) });
     const save = await screen.findByRole("button", { name: "Salvar como inspiração" });

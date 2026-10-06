@@ -106,6 +106,8 @@ import java.util.stream.Collectors;
 public class LensService {
     private static final Logger log = LoggerFactory.getLogger(LensService.class);
     static final String QUOTA_BUCKET = "lens:scan";
+    /** Leitura local porque a foto chegou sem a confirmação de que os rostos foram protegidos (não foi à IA externa). */
+    static final String REDACTION_UNCONFIRMED = "REDACTION_UNCONFIRMED";
     private static final DateTimeFormatter HOUR = DateTimeFormatter.ofPattern("dd/MM HH:mm").withZone(ZoneId.of("America/Sao_Paulo"));
     static final Set<String> PATTERNS = Set.of("solid", "striped", "checked", "printed");
     /** Lado menor mínimo (em %) de uma caixa marcada pela pessoa — a mesma regra do detector de várias peças. */
@@ -278,14 +280,25 @@ public class LensService {
         }
     }
 
-    /** Detecta, lê cada recorte, grava a imagem limpa e as peças; o scan sai pronto (MVP síncrono). */
+    /**
+     * Detecta, lê cada recorte, grava a imagem limpa e as peças; o scan sai pronto (MVP síncrono).
+     * <p>
+     * Só vai para a IA externa a foto cujo cliente confirmou a proteção dos rostos ({@code redactionConfirmed}: o borrão
+     * rodou no aparelho ou a pessoa confirmou que a foto não mostra rostos). Sem isso — cliente antigo, chamada direta ou
+     * "Ver no Lens" (o servidor ainda não borra rostos) — a leitura é só local e a imagem não sai do servidor; o scan
+     * avisa o motivo ({@value #REDACTION_UNCONFIRMED}).
+     */
     LensViews.ScanView process(CurrentUser user, LensSource source, UUID refId, LensIntent intent, BufferedImage photo,
                                int faces, boolean redactionConfirmed) {
         MultiPieceService.PieceDetection det = null;
-        try {
-            det = multiPiece.detectPieces(user.id(), photo);
-        } catch (RuntimeException ex) {
-            log.warn("Lens: detecção falhou ({})", ex.toString());
+        if (!redactionConfirmed) {
+            det = new MultiPieceService.PieceDetection(List.of(MultiPieceService.localPiece()), "local", null);
+        } else {
+            try {
+                det = multiPiece.detectPieces(user.id(), photo);
+            } catch (RuntimeException ex) {
+                log.warn("Lens: detecção falhou ({})", ex.toString());
+            }
         }
         AiOutcome<?> outcome = det == null ? null : det.outcome();
 
@@ -313,7 +326,7 @@ public class LensService {
             scan.setErrorCode("NO_FASHION_FOUND");
         } else {
             scan.setStatus(LensScanStatus.READY);
-            scan.setErrorCode(degradedReason(det));
+            scan.setErrorCode(redactionConfirmed ? degradedReason(det) : REDACTION_UNCONFIRMED);
         }
         scans.save(scan);
 
@@ -412,14 +425,18 @@ public class LensService {
         }
     }
 
-    /** Histórico e inspirações: {@code saved} filtra salvos/não salvos; {@code wanted} só scans com alguma peça "Quero". */
+    /**
+     * Histórico e inspirações: {@code saved} filtra salvos/não salvos; {@code wanted} só scans com alguma peça "Quero"
+     * (filtro feito na consulta, antes de paginar: página, total e "tem mais" valem só para esses scans).
+     */
     @Transactional(readOnly = true)
     public Views.Page<LensViews.ScanCard> history(CurrentUser user, Boolean saved, Boolean wanted, int page, int size) {
         requireUser(user);
         int sz = Math.max(1, Math.min(50, size <= 0 ? 12 : size));
         int pg = Math.max(0, page);
         PageRequest req = PageRequest.of(pg, sz);
-        Page<LensScan> result = saved == null ? scans.findByUserIdOrderByCreatedAtDesc(user.id(), req)
+        Page<LensScan> result = Boolean.TRUE.equals(wanted) ? scans.findWantedByUserId(user.id(), saved, req)
+                : saved == null ? scans.findByUserIdOrderByCreatedAtDesc(user.id(), req)
                 : saved ? scans.findByUserIdAndSavedAtIsNotNullOrderByCreatedAtDesc(user.id(), req)
                 : scans.findByUserIdAndSavedAtIsNullOrderByCreatedAtDesc(user.id(), req);
         List<LensScan> rows = result.getContent();
@@ -432,9 +449,6 @@ public class LensService {
         for (LensScan s : rows) {
             List<LensDetection> ds = byScan.getOrDefault(s.getId(), List.of()).stream()
                     .sorted(Comparator.comparingInt(LensDetection::getOrdinal)).toList();
-            if (Boolean.TRUE.equals(wanted) && ds.stream().noneMatch(d -> d.getWantedAt() != null)) {
-                continue;
-            }
             int owned = 0, gaps = 0;
             for (LensDetection d : ds) {
                 if (closetMatches(ctx, d).isEmpty()) {
@@ -447,8 +461,7 @@ public class LensService {
             items.add(new LensViews.ScanCard(s.getId(), s.getCreatedAt(), s.getSavedAt(), s.getStatus().name(), ds.size(),
                     st.isEmpty() ? null : st.get(0).key(), owned, gaps));
         }
-        long total = Boolean.TRUE.equals(wanted) ? items.size() : result.getTotalElements();
-        return new Views.Page<>(items, pg, sz, total, Boolean.TRUE.equals(wanted) ? false : result.hasNext());
+        return new Views.Page<>(items, pg, sz, result.getTotalElements(), result.hasNext());
     }
 
     /**
