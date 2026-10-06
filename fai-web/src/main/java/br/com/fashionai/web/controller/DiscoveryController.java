@@ -58,7 +58,7 @@ public class DiscoveryController {
     }
 
     @GetMapping("/api/public-pieces")
-    @Operation(summary = "RF15 — Peças públicas para adicionar ao meu guarda-roupa (hypeLevel = faixa mínima do Hype público)")
+    @Operation(summary = "Explorar — Peças públicas para adicionar ao meu guarda-roupa (hypeLevel = faixa mínima do Hype público)")
     public Map<String, Object> publicPieces(CurrentUser viewer, @RequestParam(required = false) String cursor,
                                             @RequestParam(defaultValue = "24") int size,
                                             @RequestParam(required = false) String style, @RequestParam(required = false) String occasion,
