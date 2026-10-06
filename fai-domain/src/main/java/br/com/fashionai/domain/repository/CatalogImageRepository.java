@@ -34,7 +34,8 @@ public interface CatalogImageRepository extends JpaRepository<CatalogImage, UUID
                                      @Param("stale") Instant stale, Pageable page);
 
     /** Mesmo conteúdo já analisado nesta versão (cache por sourceImageHash: outra URL da mesma foto). */
-    Optional<CatalogImage> findFirstBySourceSha256AndPipelineVersionAndProcessingStatusIn(String sha, String version, Collection<String> statuses);
+    /** Todas as análises já feitas para os mesmos bytes: quem chama escolhe a de contexto compatível. */
+    List<CatalogImage> findBySourceSha256AndPipelineVersionAndProcessingStatusIn(String sha, String version, Collection<String> statuses);
 
     List<CatalogImage> findByProductIdInAndCanonicalTrue(Collection<UUID> productIds);
 

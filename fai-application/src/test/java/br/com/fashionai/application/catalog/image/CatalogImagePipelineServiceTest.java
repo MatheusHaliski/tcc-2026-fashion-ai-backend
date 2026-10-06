@@ -60,9 +60,9 @@ class CatalogImagePipelineServiceTest {
                 db.values().stream().filter(i -> i.getProductId().equals(inv.getArgument(0))).toList());
         when(images.pipelineQueue(anyString(), anyInt(), any(), any())).thenAnswer(inv ->
                 db.values().stream().filter(i -> "PENDING".equals(i.getProcessingStatus())).toList());
-        when(images.findFirstBySourceSha256AndPipelineVersionAndProcessingStatusIn(anyString(), anyString(), any())).thenAnswer(inv ->
+        when(images.findBySourceSha256AndPipelineVersionAndProcessingStatusIn(anyString(), anyString(), any())).thenAnswer(inv ->
                 db.values().stream().filter(i -> inv.<String>getArgument(0).equals(i.getSourceSha256())
-                        && CatalogImagePipelineService.DONE.contains(i.getProcessingStatus())).findFirst());
+                        && CatalogImagePipelineService.DONE.contains(i.getProcessingStatus())).toList());
         when(images.findByReviewStatusOrderByProcessedAtAsc(eq("PENDING"), any())).thenAnswer(inv ->
                 db.values().stream().filter(i -> "PENDING".equals(i.getReviewStatus())).toList());
         products = mock(CatalogProductRepository.class);
@@ -192,6 +192,21 @@ class CatalogImagePipelineServiceTest {
         assertThat(service.sameContext(a, sibling, product)).isTrue();
         service.process(other.getId());
         assertThat(Json.map(other.getMetricsJson())).containsEntry("pieceType", PieceType.SHOES_PIECE.name());
+    }
+
+    @Test
+    void comVariasAnalisesDosMesmosBytesEscolheADeContextoCompativel() {
+        byte[] body = CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0));
+        CatalogImage detail = image("https://img.brand.com/d.jpg", CatalogImageType.DETAIL, body);
+        service.process(detail.getId());
+        CatalogImage front = image("https://img.brand.com/f.jpg", CatalogImageType.FRONT, body);
+        service.process(front.getId());
+        // a primeira linha do cache (DETAIL) não serve; a segunda (FRONT) serve e é reaproveitada sem rodar o pipeline
+        String marker = Json.write(Map.of("marker", true));
+        front.setMetricsJson(marker);
+        CatalogImage again = image("https://img.brand.com/f2.jpg", CatalogImageType.FRONT, body);
+        service.process(again.getId());
+        assertThat(again.getMetricsJson()).isEqualTo(marker);
     }
 
     @Test

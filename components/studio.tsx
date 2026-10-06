@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api/client";
 import { useI18n, tr } from "@/lib/i18n/i18n";
+import type { CatalogCardImage } from "@/lib/api/catalog";
+import { CatalogPhoto } from "@/components/catalog/catalog-photo";
 
 /** RF4 · Estúdio — fundo de estúdio (cor do centro + cor da borda do degradê). */
 export interface StudioBackdrop { id: string; label: string; hex?: string; edge?: string; }
@@ -121,10 +123,10 @@ export function sangria(framing?: StudioInfo["framing"] | null): string[] {
   return (framing?.bleed ?? []).filter((b) => !(framing?.flush ?? []).includes(b));
 }
 
-export function StudioLightbox({ images, edge, center, start = 0, onClose }: { images: { src: string; alt: string; anchor?: string[]; cover?: boolean }[]; edge: string; center?: string; start?: number; onClose: () => void }) {
+export function StudioLightbox({ images, edge, center, start = 0, onClose }: { images: { src: string; alt: string; anchor?: string[]; cover?: boolean; crop?: CatalogCardImage | null }[]; edge: string; center?: string; start?: number; onClose: () => void }) {
   const { t } = useI18n();
   const [i, setI] = useState(start);
-  const imgRef = useRef<HTMLImageElement>(null); const [rect, setRect] = useState<DOMRect | null>(null);
+  const imgRef = useRef<HTMLElement>(null); const [rect, setRect] = useState<DOMRect | null>(null);
   const measure = useCallback(() => setRect(imgRef.current?.getBoundingClientRect() ?? null), []);
   useEffect(() => { window.addEventListener("resize", measure); return () => window.removeEventListener("resize", measure); }, [measure]);
   useEffect(() => {
@@ -144,7 +146,10 @@ export function StudioLightbox({ images, edge, center, start = 0, onClose }: { i
       className={`fixed inset-0 z-50 flex ${img.anchor?.includes("bottom") ? "items-end" : img.anchor?.includes("top") ? "items-start" : "items-center"} ${img.anchor?.includes("left") ? "justify-start" : img.anchor?.includes("right") ? "justify-end" : "justify-center"}`}
       style={{ background: continuedBackdrop(rect, center ?? edge, edge) }}>
       {/* detalhe do logo já é um recorte: preenche a tela inteira, centrado no logo */}
-      <img ref={imgRef} src={img.src} alt={img.alt} className={img.cover ? "h-full w-full object-cover" : "max-h-full max-w-full object-contain"} onLoad={measure} onClick={(e) => e.stopPropagation()} />
+      {/* foto oficial do catálogo (nível A): o mesmo quadro 4:5 com o recorte semântico, o maior que cabe na tela */}
+      {img.crop
+        ? <span ref={imgRef} className="relative block overflow-hidden" style={{ aspectRatio: "4 / 5", width: "min(100vw, 80vh)" }} role="img" aria-label={img.alt} onClick={(e) => e.stopPropagation()}><CatalogPhoto image={img.crop} alt="" /></span>
+        : <img ref={imgRef as React.RefObject<HTMLImageElement>} src={img.src} alt={img.alt} className={img.cover ? "h-full w-full object-cover" : "max-h-full max-w-full object-contain"} onLoad={measure} onClick={(e) => e.stopPropagation()} />}
       <button type="button" className="chip absolute right-3 top-3" onClick={onClose} aria-label={t("studio.fechar_tela_cheia")}>{t("studio.fechar")}</button>
       {images.length > 1 && (
         <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-2" onClick={(e) => e.stopPropagation()}>

@@ -133,9 +133,10 @@ public class CatalogImagePipelineService {
         String sha = CatalogImagePipeline.sha256(bytes);
         boolean persist = product != null && allowsPersistence(product, img);
         Optional<CatalogImage> cached = persist ? Optional.empty()
-                : images.findFirstBySourceSha256AndPipelineVersionAndProcessingStatusIn(sha, CatalogImagePipeline.VERSION, DONE)
+                : images.findBySourceSha256AndPipelineVersionAndProcessingStatusIn(sha, CatalogImagePipeline.VERSION, DONE).stream()
                 .filter(c -> !c.getId().equals(img.getId()))
-                .filter(c -> sameContext(c, img, product));
+                .filter(c -> sameContext(c, img, product))
+                .findFirst();
         if (cached.isPresent()) {
             copyAnalysis(cached.get(), img);
         } else {

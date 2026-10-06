@@ -225,7 +225,8 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const slides: Slide[] = [product, ...(p.mannequinImageUrl ? [{ key: "mannequin", src: mediaUrl(p.mannequinImageUrl)!, alt: t("pieces.id.no_manequim", { name: p.name, value: "" }), caption: t("pieceDetail.slide_manequim"), fit: "contain" as const }] : [])];
   // tela cheia: as fotos do carrossel e, só quando há logo de marca de verdade, o detalhe do logo
   const gallery = [
-    ...slides.map((s) => ({ src: s.src, alt: s.alt, anchor: s.key === "product" && p.studioImageUrl ? sangria(framing) : [] })),
+    // o recorte semântico da foto oficial vai junto: a tela cheia não pode devolver o que o recorte tirou (modelo, sobras)
+    ...slides.map((s) => ({ src: s.src, alt: s.alt, anchor: s.key === "product" && p.studioImageUrl ? sangria(framing) : [], crop: s.crop })),
     ...(hasRealLogo(p) ? [{ src: mediaUrl(p.studioDetailUrl)!, alt: t("pieces.id.detalhe_do_logo_2", { name: p.name }), anchor: [] as string[], cover: true }] : []),
   ];
   const vis = mine && p.visibility !== "PUBLIC" ? (p.visibility === "FOLLOWERS" ? t("common.followers") : t("common.private")) : null;
