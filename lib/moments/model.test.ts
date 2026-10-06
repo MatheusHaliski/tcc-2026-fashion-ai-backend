@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countdown, daysInMonth, elapsedAt, statusAt, touchesDay, unitOf, weekOf, weekday } from "./time";
+import { countdown, daysInMonth, elapsedAt, instantToLocalInput, isValidTimeZone, statusAt, touchesDay, unitOf, weekOf, weekday } from "./time";
 import { momentIcon, momentStyle, momentTone, safeGradient } from "./theme";
 import type { MomentTimeView } from "./types";
 
@@ -51,5 +51,22 @@ describe("tema do Momento é uma camada segura sobre a identidade FashionAI", ()
     expect(momentTone({ tone: "dark" })).toBe("dark");
     expect(momentIcon({ icon: "🎃" })).toBe("🎃");
     expect(momentIcon({ icon: "<script>" })).toBe("◌");
+  });
+});
+
+describe("datetime-local do admin: hora de parede no fuso do Momento", () => {
+  it("formata o instante no fuso informado, não em UTC nem no fuso do navegador", () => {
+    expect(instantToLocalInput("2026-10-20T03:00:00Z", "America/Sao_Paulo")).toBe("2026-10-20T00:00");
+    expect(instantToLocalInput("2026-10-20T03:00:00Z", "UTC")).toBe("2026-10-20T03:00");
+    expect(instantToLocalInput("2026-10-20T03:00:00Z", "Asia/Tokyo")).toBe("2026-10-20T12:00");
+    expect(instantToLocalInput("2026-11-01T02:59:59Z", "America/Sao_Paulo")).toBe("2026-10-31T23:59");
+    expect(instantToLocalInput("2026-07-01T04:30:00Z", "America/New_York")).toBe("2026-07-01T00:30");   // horário de verão
+    expect(instantToLocalInput(null, "UTC")).toBe("");
+    expect(instantToLocalInput("2026-10-20T03:00:00Z", "Marte/Olympus")).toBe("2026-10-20T03:00");
+  });
+  it("valida nomes IANA", () => {
+    expect(isValidTimeZone("America/Sao_Paulo")).toBe(true);
+    expect(isValidTimeZone("Marte/Olympus")).toBe(false);
+    expect(isValidTimeZone("")).toBe(false);
   });
 });

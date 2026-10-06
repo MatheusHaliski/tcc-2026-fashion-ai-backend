@@ -57,6 +57,11 @@ gravado; **toda consulta calcula o status efetivo pelo relógio do servidor** (`
 `startsInSeconds`, `endsInSeconds` e `daysLeft`: o cliente formata, nunca decide. Dias do calendário saem no fuso do
 Momento (`localStart`/`localEnd`), não no do navegador.
 
+Entrada de datas: com offset ou `Z`, vale o instante. Sem offset (o que um `<input type="datetime-local">` envia, ex.:
+`2026-11-09T18:30`), é a hora de parede **no fuso IANA do Momento** enviado no mesmo pedido; só a data vira 00:00 nesse
+fuso. O admin preenche os campos com a hora de parede no fuso do Momento e devolve o mesmo texto com o fuso, então
+editar sem mexer nas datas nunca desloca os horários.
+
 ## MomentMatch (§13–§15)
 
 `MomentMatch.score(contexto, look)` → 0–100 com partes (`styleMatch` 0,30 · `colorMatch` 0,25 · `occasionMatch` 0,15 ·
@@ -64,6 +69,14 @@ Momento (`localStart`/`localEnd`), não no do navegador.
 existentes, sem IA no caminho da pontuação. Não existe "HalloweenLook = true/false": a interface explica
 ("forte associação ao tema pela combinação de preto, laranja e elementos dark"). `creativeInterpretation` premia
 estilos **fora** do tema combinados com o tema (descoberta ≠ uniformização, §18).
+
+## Visibilidade dos looks enviados (§28)
+
+Um look PRIVATE (ou só para seguidores) pode participar de um Momento público e pontuar para quem o enviou, mas feed,
+ranking, trending e votação passam pelo mesmo filtro (`MomentService.visibleSubmissions`): o próprio dono, membros do
+grupo/administração, e para os demais só o que `Guard.canView` libera. Votar num look que não se pode ver devolve o
+mesmo 404 de envio inexistente. O ranking final, o vencedor e os destaques da Memória de um Momento público usam só
+looks PUBLIC, porque são lidos sem filtro de quem olha.
 
 ## FAI Points sazonais (§10–§11, §39)
 
