@@ -39,7 +39,6 @@ type Mode = "SAFE" | "DISCOVERY" | "EXPERIMENTAL";
 
 const lookKey = (look: SuggestedLook) => `${look.title}|${look.pieceIds.join(",")}`;
 
-/** O que o Copilot entendeu do pedido (ocasião, estilo, estação, humor, clima e fundo) — mostrado no card do look. */
 function Understood({ look }: { look: SuggestedLook }) {
   const { t } = useI18n();
   const tags = [...(look.occasion ?? []), ...(look.style ?? []), look.season, look.mood].filter((x): x is string => !!x).map((x) => label(x.toLowerCase()));
@@ -77,7 +76,6 @@ function PurchaseBlock({ reply }: { reply: Reply }) {
   );
 }
 
-//Funcao para o copilot funcionar
 function Copilot() {
   const { t } = useI18n(); const toast = useToast();
   const { data: ctx } = useApi<Ctx>((signal) => api.get("/api/copilot/context?view=copilot", { signal }), []);
