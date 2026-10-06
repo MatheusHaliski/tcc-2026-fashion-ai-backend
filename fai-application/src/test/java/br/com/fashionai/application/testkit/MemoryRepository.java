@@ -33,12 +33,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-/**
- * Repositório JPA em memória para os testes de unidade dos services: guarda as entidades salvas e responde aos métodos
- * do {@link JpaRepository} e às consultas derivadas do nome ({@code findByUserIdAndStatus}, {@code countBy…},
- * {@code existsBy…In}, {@code findTop5By…OrderBy…}). Consultas escritas à mão ({@code @Query}) não têm como ser
- * interpretadas aqui: devolvem vazio, e o teste que depende delas as programa com {@code Mockito.when}.
- */
+
 public final class MemoryRepository implements Answer<Object> {
     private static final Pattern DERIVED = Pattern.compile(
             "^(find|read|get|query|search|stream|count|exists|delete|remove)(?:Distinct)?(?:First|Top)?(\\d*)(?:Distinct)?\\w*?By(.+)$");
