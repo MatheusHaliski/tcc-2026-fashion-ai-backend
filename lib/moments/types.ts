@@ -46,7 +46,7 @@ export interface MomentScores { moment?: number | null; hype?: number | null; co
 
 export interface Submission {
   id: string; schemeId: string; challengeId?: string | null; match?: number | null; matchDetail?: Partial<MomentMatchResult>; wardrobeOnly: boolean; rediscovered: number;
-  votes: number; votedByMe: boolean; submittedAt: string; mine: boolean; scheme?: SchemeView; contextualHype?: number | null;
+  votes: number; votedByMe: boolean; submittedAt: string; mine: boolean; scheme?: SchemeView; hype?: number | null; contextualHype?: number | null;
 }
 
 export interface MemoryLook { submissionId: string; schemeId: string; votes: number; match?: number | null; title?: string; coverImageUrl?: string | null; user?: UserCard | null }

@@ -1089,7 +1089,9 @@ public class MomentService {
         v.put("mine", viewer != null && viewer.id().equals(s.getUserId()));
         if (sc != null) {
             v.put("scheme", Views.scheme(sc, schemeItems.findBySchemeIdOrderBySortOrder(sc.getId()), Views.ViewerState.NONE, Map.of()));
-            v.put("contextualHype", contextualHype(hypeOf(HypeEntityType.SCHEME, sc.getId(), isOwner(viewer, s.getUserId())), s.getMatchScore()));
+            Double hypeScore = hypeOf(HypeEntityType.SCHEME, sc.getId(), isOwner(viewer, s.getUserId()));
+            v.put("hype", hypeScore == null ? null : (int) Math.round(hypeScore));
+            v.put("contextualHype", contextualHype(hypeScore, s.getMatchScore()));
         }
         return v;
     }
