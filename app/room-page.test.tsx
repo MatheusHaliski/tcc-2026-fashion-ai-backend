@@ -36,7 +36,7 @@ describe("Meu Quarto (RF27)", () => {
     const { container } = renderApp(<RoomPage />);
     await act(async () => { await new Promise((r) => setTimeout(r, 80)); });
     expect(container.textContent).toContain("Porta 1");
-    // abas/seletores e botões da tela (lista, módulos, organizar, espelho, chaves, presentes)
+    
     for (const tab of screen.queryAllByRole("tab")) fireEvent.click(tab);
     for (const b of screen.queryAllByRole("button").slice(0, 30)) {
       if ((b as HTMLButtonElement).disabled) continue;
