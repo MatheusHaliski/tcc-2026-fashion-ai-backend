@@ -46,6 +46,7 @@ export interface SchemeView {
   coverImageUrl?: string | null; mannequinImageUrl?: string | null; mannequinImageFace?: string | null; background?: Record<string, unknown>; cardSkin?: string | null; layoutAnatomy?: string | null; containerOrigin?: string;
   containerColor?: string; items: SchemeItemView[]; totalPrice?: number | null; seals: string[]; sealBadges?: { tier: string; owner: string; premium: boolean; name?: string | null; iconUrl?: string | null; design?: import("@/components/seal-medallion").SealDesign | null; linkedPieceIds?: string[] }[]; tags: string[]; renderingStatus?: string;
   virtualTryOnUrl?: string | null; remixedFromId?: string | null; revalidationPending: boolean;
+  hypeScore?: number | null; hypeScoreGlobal?: number | null;
   counters: Counters; viewer: ViewerState; publishedAt?: string | null; createdAt: string; updatedAt: string;
 }
 export interface Page<T> { items: T[]; page: number; size: number; total: number; hasMore: boolean; }
