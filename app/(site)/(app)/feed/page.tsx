@@ -49,7 +49,7 @@ export default function FeedPage() {
     <>
       <PageHeader title={t("feed.title")} kicker="RF8" lead={t("feed.lead")} />
       <OnboardingChecklist />
-      {/* Momentos §43 — só aparece quando há um Momento ativo relevante (nunca um banner permanente) */}
+      {/* Momentos §43 — só aparece quando há um Momento ativo relevante */}
       <MomentNowBanner />
       <Tabs tabs={[{ id: "feed", label: t("feed.title") }, { id: "runway", label: t("feed.runway") }]} value={tab} onChange={(v) => { setTab(v); setCursor(null); }} />
       {tab === "runway" && !user && <EmptyState title={t("common.loginRequired")} action={<Link href="/login" className="btn btn-primary">{t("nav.login")}</Link>} />}
