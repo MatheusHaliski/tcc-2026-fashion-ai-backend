@@ -142,22 +142,30 @@ public class MomentService {
         this.hypeQuery = hypeQuery;
     }
 
-    /** HypeScore v2 atual de várias entidades (ids sem cálculo ficam fora do mapa: "sem base", nunca 0). */
-    Map<UUID, Double> hypeScores(HypeEntityType type, Collection<UUID> ids) {
+    /**
+     * HypeScore v2 atual de várias entidades (ids sem cálculo ficam fora do mapa: "sem base", nunca 0). Para quem não é o
+     * dono, só o Hype público elegível: o Hype pessoal (item privado, perfil só para seguidores…) fica com o dono.
+     */
+    Map<UUID, Double> hypeScores(HypeEntityType type, Collection<UUID> ids, UUID viewerId) {
         if (hypeQuery == null || ids == null || ids.isEmpty()) {
             return Map.of();
         }
         Map<UUID, Double> out = new HashMap<>();
         hypeQuery.currentOf(type, ids).forEach((id, c) -> {
-            if (c.getScore() != null) {
+            boolean owner = viewerId != null && viewerId.equals(c.getOwnerId());
+            if (c.getScore() != null && (owner || c.isPublicEligible())) {
                 out.put(id, c.getScore().doubleValue());
             }
         });
         return out;
     }
 
-    Double hypeScore(HypeEntityType type, UUID id) {
-        return id == null ? null : hypeScores(type, List.of(id)).get(id);
+    Double hypeScore(HypeEntityType type, UUID id, UUID viewerId) {
+        return id == null ? null : hypeScores(type, List.of(id), viewerId).get(id);
+    }
+
+    private static UUID idOf(CurrentUser user) {
+        return user == null ? null : user.id();
     }
 
     static Integer rounded(Double v) {
@@ -567,13 +575,13 @@ public class MomentService {
             ownerId = w.getUser().getId();
             vis = w.getVisibility();
             subject = subjectOf(w);
-            hype = hypeScore(HypeEntityType.PIECE, w.getId());
+            hype = hypeScore(HypeEntityType.PIECE, w.getId(), idOf(viewer));
         } else {
             Scheme s = schemes.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("moment.look")));
             ownerId = s.getUser().getId();
             vis = s.getVisibility();
             subject = subjectOf(s, schemeItems.findBySchemeIdOrderBySortOrder(id));
-            hype = hypeScore(HypeEntityType.SCHEME, s.getId());
+            hype = hypeScore(HypeEntityType.SCHEME, s.getId(), idOf(viewer));
         }
         if (!guard.canView(viewer, ownerId, vis)) {
             throw guard.deny(viewer, type.name().toLowerCase(Locale.ROOT) + ":" + id, Msg.t("guard.este_conteudo_nao_esta_visivel"));
@@ -801,7 +809,7 @@ public class MomentService {
         sub.setMatchJson(ev.match == null ? null : Json.write(ev.match.toMap()));
         sub.setWardrobeOnly(ev.facts.wardrobeOnly());
         sub.setRediscoveredJson(Json.write(ev.facts.rediscoveredPieces()));
-        sub.setHypeAtSubmission(rounded(hypeScore(HypeEntityType.SCHEME, s.getId())));
+        sub.setHypeAtSubmission(rounded(hypeScore(HypeEntityType.SCHEME, s.getId(), user.id())));
         sub.setSubmittedAt(now);
         // pontos: cada linha paga 1× pelo ledger (idempotência por usuário:ação:referência)
         int earned = 0;
@@ -994,7 +1002,7 @@ public class MomentService {
         List<MomentPointsPolicy.Line> lines = MomentPointsPolicy.compute(m, cs, facts);
         Map<String, Object> scores = new LinkedHashMap<>();
         scores.put("moment", match == null ? null : match.score());
-        Double lookHype = hypeScore(HypeEntityType.SCHEME, s.getId());
+        Double lookHype = hypeScore(HypeEntityType.SCHEME, s.getId(), userId);
         scores.put("hype", rounded(lookHype));
         scores.put("contextualHype", contextualHype(lookHype, match == null ? null : match.score()));
         scores.put("reuse", look.isEmpty() ? null : (int) Math.round(100.0 * look.stream().filter(w -> w.getCreatedAt() != null && w.getCreatedAt().isBefore(m.getStartAt())).count() / look.size()));
@@ -1091,7 +1099,7 @@ public class MomentService {
         List<MomentSubmission> subs = visibleSubmissions(viewer, m, byId);
         Set<UUID> myVotes = viewer == null ? Set.of() : votes.findByMomentIdAndVoterId(m.getId(), viewer.id()).stream().map(MomentVote::getSubmissionId).collect(Collectors.toSet());
         List<MomentSubmission> page = subs.stream().limit(FEED_MAX).toList();
-        Map<UUID, Double> hypes = hypeScores(HypeEntityType.SCHEME, page.stream().map(MomentSubmission::getSchemeId).toList());
+        Map<UUID, Double> hypes = hypeScores(HypeEntityType.SCHEME, page.stream().map(MomentSubmission::getSchemeId).toList(), idOf(viewer));
         List<Map<String, Object>> items = new ArrayList<>();
         for (MomentSubmission s : page) {
             items.add(submissionView(s, viewer, byId, myVotes.contains(s.getId()), hypes));
@@ -1123,7 +1131,7 @@ public class MomentService {
         v.put("mine", viewer != null && viewer.id().equals(s.getUserId()));
         if (sc != null) {
             v.put("scheme", Views.scheme(sc, schemeItems.findBySchemeIdOrderBySortOrder(sc.getId()), Views.ViewerState.NONE, Map.of()));
-            Double h = hypes == null ? hypeScore(HypeEntityType.SCHEME, sc.getId()) : hypes.get(sc.getId());
+            Double h = hypes == null ? hypeScore(HypeEntityType.SCHEME, sc.getId(), idOf(viewer)) : hypes.get(sc.getId());
             v.put("hype", rounded(h));
             v.put("contextualHype", contextualHype(h, s.getMatchScore()));
         }
@@ -1238,7 +1246,7 @@ public class MomentService {
         List<MomentSubmission> subs = visibleSubmissions(viewer, m, byId);
         Map<String, Integer> styles = new HashMap<>(), colors = new HashMap<>(), interps = new HashMap<>();
         List<Map<String, Object>> looks = new ArrayList<>();
-        Map<UUID, Double> hypes = hypeScores(HypeEntityType.SCHEME, byId.keySet());
+        Map<UUID, Double> hypes = hypeScores(HypeEntityType.SCHEME, byId.keySet(), idOf(viewer));
         for (MomentSubmission s : subs) {
             Scheme sc = byId.get(s.getSchemeId());
             Map<String, Object> match = Json.map(s.getMatchJson());

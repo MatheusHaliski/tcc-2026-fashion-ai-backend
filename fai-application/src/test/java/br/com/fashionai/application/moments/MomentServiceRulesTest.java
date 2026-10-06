@@ -443,4 +443,26 @@ class MomentServiceRulesTest {
         service.adminSave(admin, m.getId(), adminRequest("", "2027-11-08T00:00", "2027-11-15T00:00", "Europe/Lisbon"));
         assertThat(m.getStartAt()).isEqualTo(Instant.parse("2027-11-08T00:00:00Z"));
     }
+
+    /** Hype v2 no Momento: o dono vê o próprio Hype pessoal; os demais, só o público elegível. Sem score = fora do mapa. */
+    @Test
+    void hypeDoMomentoNaoVazaOHypePessoal() {
+        br.com.fashionai.application.hype.HypeQueryService query = org.mockito.Mockito.mock(br.com.fashionai.application.hype.HypeQueryService.class);
+        MomentService withHype = new MomentService(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, query);
+        UUID owner = UUID.randomUUID(), other = UUID.randomUUID(), personal = UUID.randomUUID(), open = UUID.randomUUID(), thin = UUID.randomUUID();
+        org.mockito.Mockito.when(query.currentOf(org.mockito.ArgumentMatchers.eq(br.com.fashionai.domain.model.enums.HypeEntityType.SCHEME), org.mockito.ArgumentMatchers.any()))
+                .thenReturn(Map.of(personal, hypeRow(owner, 72, false), open, hypeRow(owner, 55, true), thin, hypeRow(owner, null, true)));
+        List<UUID> ids = List.of(personal, open, thin);
+        assertThat(withHype.hypeScores(br.com.fashionai.domain.model.enums.HypeEntityType.SCHEME, ids, owner)).containsOnly(Map.entry(personal, 72.0), Map.entry(open, 55.0));
+        assertThat(withHype.hypeScores(br.com.fashionai.domain.model.enums.HypeEntityType.SCHEME, ids, other)).containsOnly(Map.entry(open, 55.0));
+        assertThat(withHype.hypeScores(br.com.fashionai.domain.model.enums.HypeEntityType.SCHEME, ids, null)).containsOnly(Map.entry(open, 55.0));
+    }
+
+    private static br.com.fashionai.domain.model.HypeScoreCurrent hypeRow(UUID owner, Integer score, boolean publicEligible) {
+        br.com.fashionai.domain.model.HypeScoreCurrent c = new br.com.fashionai.domain.model.HypeScoreCurrent();
+        c.setOwnerId(owner);
+        c.setScore(score == null ? null : java.math.BigDecimal.valueOf(score));
+        c.setPublicEligible(publicEligible);
+        return c;
+    }
 }
