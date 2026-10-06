@@ -1,0 +1,205 @@
+@startuml RF44_Classes_Ativos
+title RF44 — FAI Creative Engine\nDiagrama de classes — canônico × criativo: entidades e tabelas reais, rastreio do que foi gerado e o motor criativo planejado
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "Pipeline de confiança (RF4) — fiel à peça" {
+  class CanonicalPhotographer <<final>> {
+    +MODEL = canonical-photographer 1.0.0
+    +render(cutout, PhotographySpec, landmarks,\n  clippedRegions): Result
+  }
+  class "CanonicalPhotographer.Report" as CanonReport <<record>> {
+    specId: String
+    operations: List<String>
+    compliant: boolean
+    +toMap(): Map (generative = false)
+  }
+  class PhotographySpec <<record>> {
+    {field} id: String (ex.: PANTS_FRONT_V1)
+    version: int
+    view: CaptureView
+    canvasWidth / canvasHeight: int
+  }
+  class PieceImage <<Entity>> {
+    pieceId / userId: UUID
+    imageType: PieceImageType
+    viewType: CaptureView
+    url / sha256: String
+    photographySpec: String
+    derivedFromId: UUID
+    processingStatus: PieceImageStatus
+    modelVersion: String
+    superseded: boolean
+  }
+  enum PieceImageType {
+    ORIGINAL
+    CANONICAL
+    DETAIL
+    LOGO_DETAIL
+    TEXTURE_DETAIL
+    SEGMENTATION_MASK
+  }
+}
+
+package "Peça e derivados (fai-domain)" {
+  class WardrobeItem <<Entity>> {
+    {field} originalImageUrl: String (nunca sobrescrita)
+    {field} imageUrl: String (recorte Flat Lay)
+    {field} canonicalImageUrl: String (V29)
+    {field} studioImageUrl: String (vitrine aprovada)
+    studioBackdrop / studioDetailUrl: String
+    {field} flatLayMetadataJson: String (studio.version,\n  approved, pending, previous)
+    {field} backgroundConfigJson: String (arte do card, rev)
+    aiGeneratedImage: boolean
+  }
+  class Photo <<Entity>> {
+    user: User
+    origin: PhotoOrigin
+    storageKey / publicUrl: String
+    width / height: Integer
+    moderationStatus: ModerationStatus
+    {field} metadataJson: String (prompt, provider)
+  }
+  enum PhotoOrigin {
+    WARDROBE_ITEM
+    SCHEME
+    TRY_ON
+    STYLE_DNA
+    PROFILE
+    BACKGROUND_STUDIO
+    LOOSE
+    EDITOR
+  }
+}
+
+package "Rastreio (fai-domain)" {
+  class PipelineJob <<Entity>> {
+    user: User
+    type: PipelineJobType
+    status: PipelineJobStatus
+    provider / externalJobId: String
+    {field} targetType: String (ex.: AI_PIECE_IMAGE)
+    inputResourceId: UUID
+    inputJson / resultJson / stagesJson: String
+    outputUrl: String
+    qualityScore / totalCostUsd: BigDecimal
+    fallbackUsed: boolean
+    errorCode / errorMessage: String
+    attempts / retryCount: int
+    queuedAt / startedAt / finishedAt: Instant
+  }
+  enum PipelineJobType {
+    FLAT_LAY_STANDARDIZATION
+    BACKGROUND_GENERATION
+    SCHEME_CARD_RENDER
+    OUTFIT_RENDER
+    THREE_D_GENERATION
+    .. +9 tipos ..
+  }
+  class AiInferenceLog <<Entity>> {
+    userId: UUID
+    capability / hostRf: String
+    provider / model: String
+    latencyMs: long
+    estimatedCostUsd: BigDecimal
+    result: AiCallResult
+    fallbackUsed: boolean
+    inputSummaryJson / outputSummary: String
+    consentState / correlationId: String
+  }
+  enum AiCallResult {
+    SUCCESS
+    FALLBACK_LOCAL
+    TIMEOUT
+    CIRCUIT_OPEN
+    RATE_LIMITED
+    CONSENT_DENIED
+    PROMPT_REJECTED
+    ERROR
+  }
+}
+
+package "FAI Creative Engine <<planejado>>" #FAFAFA {
+  class CreativeRequest <<planejado>> {
+    assetType: CreativeAssetType
+    templateId: String
+    sourceAssetIds: List<UUID>
+    prompt: String
+  }
+  class CreativeTemplate <<planejado>> {
+    {field} code: String (ex.: BADGE_CIRCULAR_V3)
+    version: int
+    layers / safeZones / outputs
+  }
+  class TemplateResolver <<planejado>>
+  class CreativeAsset <<planejado>> {
+    assetType: CreativeAssetType
+    generative: boolean
+    creator / sourceAssets / template
+    provider / model / parameters
+    approvalStatus: String
+  }
+  class AssetVersion <<planejado>> {
+    width / height / format
+  }
+  enum CreativeAssetType <<planejado>> {
+    BADGE
+    PROFILE_COVER
+    BRAND_COVER
+    CELEBRITY_COVER
+    BACKGROUND
+    FLAIR_CARD
+    STORE_BANNER
+    OUTFIT_SCHEME
+    .. +8 tipos ..
+  }
+}
+
+CanonicalPhotographer ..> PhotographySpec : aplica
+CanonicalPhotographer ..> CanonReport
+CanonicalPhotographer ..> PieceImage : CANONICAL
+PieceImage --> PieceImageType
+PieceImage ..> PieceImage : derivedFromId (ORIGINAL)
+WardrobeItem "1" o-- "0..*" PieceImage : pieceId
+WardrobeItem ..> Photo : fotos da peça
+Photo --> PhotoOrigin
+PipelineJob --> PipelineJobType
+PipelineJob ..> WardrobeItem : inputResourceId
+PipelineJob ..> AiInferenceLog : inferenceId em resultJson
+AiInferenceLog --> AiCallResult
+CreativeRequest ..> CreativeTemplate
+TemplateResolver ..> CreativeTemplate
+CreativeRequest ..> PipelineJob : job assíncrono
+CreativeAsset "1" *-- "1..*" AssetVersion
+CreativeAsset --> CreativeAssetType
+CreativeAsset ..> PieceImage : lê o CANONICAL,\nnunca substitui (RN46.01/RN46.08)
+
+note bottom of CanonicalPhotographer
+  existe só como classe e teste: nenhum serviço
+  chama render() nem grava canonical_image_url hoje
+end note
+note bottom of WardrobeItem
+  derivados criativos de hoje:
+  • vitrine (StudioPipeline) com versão e aprovação
+  • cópia por IA com AiSeal + aiGeneratedImage
+  • arte do card só em backgroundConfigJson
+end note
+note bottom of PipelineJob
+  BACKGROUND_GENERATION existe no enum,
+  mas generateArt é síncrono e não cria job;
+  a cópia por IA grava o job já COMPLETED
+end note
+note bottom of AiInferenceLog
+  proveniência parcial (RN46.02): quem, capacidade,
+  provedor, modelo, custo e resultado; não guarda
+  template nem os assets de origem
+end note
+@enduml

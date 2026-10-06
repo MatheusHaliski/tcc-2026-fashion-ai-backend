@@ -1,6 +1,6 @@
 @startuml RF38_MaquinaDeEstados_Cupom
 !pragma layout smetana
-title RF38 — Direito ao cupom (coupon_rights) e cupom emitido (promotion/flair_redemptions)
+title RF38 — Meus cupons promocionais (marca/celebridade) e Meus cupons resgatados\nDiagrama de máquina de estados — direito ao cupom (coupon_rights.status) e cupom emitido
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,18 +8,31 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-state "Direito ao cupom" as D {
-  [*] --> PENDENTE : CouponRightsCheck\n(selo aprovado / vitória FLAIR)
-  PENDENTE --> RESGATADO : "Sim, resgatar"
-  PENDENTE --> DISPENSADO : "Dispensar"
+state "Direito ao cupom (CouponRight.status)" as D {
+  state "PENDENTE" as PENDENTE
+  state "RESGATADO\n(couponRef, decidedAt)" as RESGATADO
+  state "DISPENSADO\n(decidedAt)" as DISPENSADO
+  [*] --> PENDENTE : CouponService.scan após CouponRightsCheck,\nSchemeSaved ou PieceCreated (AFTER_COMMIT)\n+ notificação COUPON_AVAILABLE
+  PENDENTE --> RESGATADO : POST /api/me/coupon-rights/{id}/redeem\n(SealService.redeem ou FlairService.redeem)
+  PENDENTE --> RESGATADO : GET /api/me/coupons concilia: cupom já saiu\npor fora (troca direta no FLAIR ou limite da promoção)
+  PENDENTE --> DISPENSADO : POST /api/me/coupon-rights/{id}/dismiss
+  RESGATADO --> RESGATADO : novo redeem → 409 DIREITO_DECIDIDO
+  DISPENSADO --> DISPENSADO : redeem → 409 DIREITO_DECIDIDO
 }
-state "Cupom Fashion AI" as C {
-  [*] --> EMITIDO : código único, desconto,\nvalidade, storeUrl
-  EMITIDO --> USADO : loja valida no caixa
-  EMITIDO --> EXPIRADO : passa a validade
+state "Cupom Fashion AI (carteira)" as C {
+  state "EMITIDO\n(promotion_redemptions.status = ISSUED\nou flair_redemptions.status = EMITIDO)" as EMITIDO
+  state "USADO\n(USED · USADO + usedAt)" as USADO
+  state "EXPIRADO\n(calculado na leitura: expiresAt no passado)" as EXPIRADO
+  [*] --> EMITIDO : código único, desconto, validade, storeUrl (https)
+  EMITIDO --> USADO : loja valida no caixa\nPOST /api/me/coupons/validate\n(ou POST /api/flair/brand/redemptions/validate)
+  EMITIDO --> EXPIRADO : passa expiresAt
+  EXPIRADO --> EXPIRADO : validate → 409 CUPOM_EXPIRADO
+  USADO --> USADO : validate → 409 CUPOM_USADO
 }
-RESGATADO --> C : emite
+RESGATADO --> C : emite (couponRef aponta o cupom)
 DISPENSADO --> [*]
 USADO --> [*]
 EXPIRADO --> [*]
+note right of D : status é String com as constantes de CouponService;\núnico por (user_id, source_type, source_id):\nnunca há dois direitos para a mesma fonte
+note right of C : nenhum job grava EXPIRED/EXPIRADO;\na promoção pode ir para REDEEMED quando\na cota total acaba (SealService.redeem)
 @enduml

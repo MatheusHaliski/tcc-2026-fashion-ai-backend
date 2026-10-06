@@ -1,6 +1,6 @@
 @startuml RF42_MaquinaDeEstados_LookDoDia
 !pragma layout smetana
-title RF42 — DailyLook: Look do Dia de uma data (marcação, troca, avaliação e continuidade)
+title RF42 — Marcar um look como "Look do dia"\nDiagrama de máquina de estados — DailyLook de uma pessoa numa data (marcação, troca, continuidade e avaliação)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -10,25 +10,41 @@ skinparam state {
 }
 state "Sem Look do Dia na data" as Vazio
 state "Marcado\n(feedback = null)" as Marcado
+state "Materializado\n(cópia do anterior;\nmaterializedFrom ≠ null)" as Copia
 state "Avaliado" as Avaliado {
   state "ADOREI" as Adorei
   state "NAO_USEI" as NaoUsei
   state "NAO_GOSTEI" as NaoGostei
 }
+state "Histórico\n(data passada)" as Historico
+
 [*] --> Vazio
-Vazio --> Marcado : POST /api/me/daily-look\n(ou Autopiloto, Copilot, Vista-me, Smart Mirror)
-Vazio --> Vazio : 409 PECA_INDISPONIVEL
-Vazio --> Marcado : today() materializa cópia do\nlook anterior (materializedFrom)
-Marcado --> Marcado : novo register na mesma data\n(troca o esquema e a origem)
+Vazio --> Marcado : register(source)\nPOST /api/me/daily-look (MANUAL) · POST /api/schemes {lookDoDia}\n· Autopiloto · Copilot · POST /api/me/mirror/use\n/ DailyLookRegistered → LOOK_WORN + PIECE_USED
+Vazio --> Vazio : peça indisponível\n→ 409 PECA_INDISPONIVEL
+Vazio --> Copia : today() ao abrir a aba\n[há look anterior não arquivado]\n(sem evento, sem sinal)
+Copia --> Marcado : register na mesma data\n(troca o look)
+Marcado --> Marcado : register de outro look na mesma data\n(UPDATE scheme_id e source; novos sinais)
 Marcado --> Avaliado : PUT /api/me/daily-looks/{date}/feedback
-Avaliado --> Avaliado : nova avaliação substitui
-Avaliado --> [*] : vira histórico (GET /api/me/daily-looks)
-Marcado --> [*] : passa o dia sem avaliação\n(lembrete após 18h — pending-feedback)
-note right of Marcado : schemes.look_do_dia = true;\naparece na Passarela 3D (RF33)\nenquanto for a data de hoje
-note left of Marcado
-  novo (RF53 · HypeScore v2): cada register
-  publica DailyLookRegistered → HypeSignalRecorder
-  grava LOOK_WORN e PIECE_USED em hype_signal_daily
-  (a cópia do today() não gera sinal)
+Copia --> Avaliado : PUT …/feedback
+Avaliado --> Avaliado : nova avaliação substitui\n(feedback_at atualizado)
+Marcado --> Historico : virada do dia sem avaliação
+Avaliado --> Historico : virada do dia
+Historico --> Avaliado : PUT …/feedback com a data antiga
+Historico --> [*]
+
+note right of Marcado
+  schemes.look_do_dia = true; peças com
+  look_do_dia_count + 1 e last_worn_date.
+  Lembrete de avaliação a partir das 18 h
+  (feedbackReminder.show).
+end note
+note right of Historico
+  GET /api/me/daily-looks (60) e Histórico ›
+  Timeline; Passarela 3D (RF33) usa os
+  Looks do Dia de hoje (findByLookDate).
+end note
+note left of Avaliado
+  ADOREI alimenta o DNA; os três pesam
+  no PreferenceModel do Autopiloto.
 end note
 @enduml

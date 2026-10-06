@@ -1,5 +1,5 @@
 @startuml RF7_Componentes
-title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de componentes — listas → modal único → API → serviços → MySQL/Redis/OpenSearch
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -14,50 +14,88 @@ skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
-left to right direction
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #4A4852
+}
 
 package "Frontend (Next.js)" {
-  component "(app)/closet · lookbook-tabs\n(listas que abrem o detalhe)" as FE0
-  component "detail-modal.tsx\n(modal único, pilha de navegação)" as FE1
-  component "expanded-card.tsx\nExpandedPiece · ExpandedScheme" as FE2
-  component "(app)/pieces/[id]/page.tsx\n(app)/schemes/[id]/page.tsx" as FE3
-  component "interactions.tsx\n(InteractionBar — RF19)" as FE4
+  component "Listas que abrem o detalhe\n(app)/closet · lookbook · u/[username]\nfeed · photos · copilot · room" as FE_LIST
+  component "piece-card.tsx · scheme-card.tsx\n(openPiece / openScheme;\nCtrl/⌘ → rota própria)" as FE_CARD
+  component "detail-modal.tsx\nDetailModalProvider\n(pilha, foco preso, Esc, ←)" as FE_MODAL
+  component "expanded-card.tsx\nExpandedScheme · ExpandedPiece" as FE_EXP
+  component "(app)/pieces/[id]/page.tsx\n(app)/schemes/[id]/page.tsx\n(link «Voltar ao look»)" as FE_PAGES
+  component "piece-snapshot.tsx\n(PieceSnapshot — CA03)" as FE_SNAP
+  component "interactions.tsx\nCardActions · InteractionBar (RF19)" as FE_SOC
+  component "edit-image · photo-editor ·\npiece-form · piece-art (RF4/9/11/15)" as FE_EDIT
+  component "lib/api/client.ts (api)\n+ lib/hooks/use-api.ts" as FE_API
 }
-package "fai-web · controllers" {
-  [WardrobeController\nGET/PUT /api/pieces/{id} · PATCH flags\ndeletion-impact · DELETE] as WardrobeController
-  [SchemeController\nGET /api/schemes/{id}] as SchemeController
-  [CommentController\nPOST /api/pieces/{pieceId}/return-to-origin] as CommentController
-  [SocialController\n/api/interactions/{type}/{id}/...] as SocialController
-}
-package "fai-application · services" {
-  [WardrobeService\n(detail · toggles · update · delete)] as WardrobeService
-  [SchemeService\n(get · requireView)] as SchemeService
-  [SocialService\n(returnToOrigin · comentários)] as SocialService
-  [WardrobeEventListeners\n(AvailabilityChanged)] as Listeners
-  [Guard] as Guard
-}
-package "fai-domain · repositórios JPA" {
-  [WardrobeItemRepository\nSchemeRepository\nSchemeItemRepository\nWardrobeAvailabilityChangeRepository\nCommentRepository] as REPOS
-}
-database "MySQL · fashionai_app\n• wardrobe_items\n• schemes\n• scheme_items (snapshotJson)\n• wardrobe_availability_log\n• comments" as DB
 
-FE0 --> FE1 : abre
-FE1 --> FE2 : renderiza
-FE3 --> FE2 : rota direta
-FE2 --> WardrobeController : GET peça · flags · editar
-FE2 --> SchemeController : GET esquema
-FE2 --> CommentController : voltar à origem
-FE4 --> SocialController : reagir · comentar · salvar
-WardrobeController --> WardrobeService : chama
-SchemeController --> SchemeService : chama
-CommentController --> SocialService : chama
-SocialController --> SocialService : chama
-WardrobeService ..> Guard : requireView
-SchemeService ..> Guard : requireView
-WardrobeService --> Listeners : publica AvailabilityChanged
-WardrobeService --> REPOS : lê/grava
-SchemeService --> REPOS : lê
-SocialService --> REPOS : lê
-Listeners --> REPOS : grava log
-REPOS --> DB : JPA/Flyway
+package "fai-web · controllers" {
+  [WardrobeController\nGET/PUT /api/pieces/{id}\nPATCH /{id}/flags · GET /{id}/deletion-impact\nDELETE /{id} · POST /{id}/copy] as C_WR
+  [SchemeController\nGET /api/schemes/{id}] as C_SC
+  [CommentController\nPOST /api/pieces/{pieceId}/return-to-origin\n(sem chamada no frontend)] as C_CM
+  [SocialController\n/api/interactions/... (RF19)] as C_SO
+}
+
+package "fai-application · serviços" {
+  [WardrobeService\ndetail · requireVisiblePiece · toggles\ndeletionImpact · delete · addToWardrobe] as S_WR
+  [SchemeService\nget · requireView · canView] as S_SC
+  [SocialService\nreturnToOrigin · reações/comentários] as S_SO
+  [Guard\ncanView · requireView · requireOwner\n(403 → audit ACESSO_NEGADO_403)] as S_G
+  [ProjectionService\n(removePiece ao excluir)] as S_PROJ
+  [MediaService\n(retire: fotos saem de Minhas Fotos)] as S_MEDIA
+  [Listeners AFTER_COMMIT\nWardrobeEventListeners · HypeSignalRecorder\nHypeLiveRecalc · InventoryScoreService] as S_EV
+}
+
+package "portas (fai-application · ports)" {
+  interface "CounterStore\nPort" as P_CNT
+  interface "SearchIndex\nPort" as P_IDX
+}
+
+package "fai-infrastructure" {
+  [Repositórios JPA\nWardrobeItemRepository · SchemeRepository\nSchemeItemRepository · ReactionRepository\nSavedItemRepository · WardrobeAvailabilityChangeRepository\nHypeSignalDailyRepository · PhotoRepository] as I_JPA
+  [RedisAdapters.redisCounterStore\n(InMemoryCounterStore no perfil local)] as I_REDIS
+  [OpenSearchIndexAdapter] as I_OS
+}
+database "MySQL\n• wardrobe_items (view_count, availability_status)\n• schemes · scheme_items (snapshot_json)\n• wardrobe_availability_log\n• reactions · saved_items\n• hype_signal_daily · photos · audit_log" as DB
+database "Redis\n(contadores ao vivo)" as REDIS
+database "OpenSearch\n(índice de peças)" as OS
+
+FE_LIST --> FE_CARD
+FE_CARD --> FE_MODAL : abre
+FE_CARD ..> FE_PAGES : Ctrl/⌘ (nova aba)
+FE_MODAL --> FE_EXP
+FE_PAGES --> FE_EXP
+FE_EXP --> FE_SNAP : notAvailableAnymore
+FE_EXP --> FE_SOC
+FE_EXP --> FE_EDIT : só o dono
+FE_EXP --> FE_API
+FE_SOC --> FE_API
+FE_API --> C_WR : HTTPS/JSON
+FE_API --> C_SC
+FE_API --> C_SO
+C_WR --> S_WR
+C_SC --> S_SC
+C_CM --> S_SO
+C_SO --> S_SO
+S_WR --> S_G
+S_SC --> S_G
+S_SO --> S_SC : canView
+S_WR --> S_PROJ
+S_WR --> S_MEDIA
+S_WR ..> S_EV : HypeSignal · AvailabilityChanged\nPieceDeleted
+S_SC ..> S_EV : HypeSignal LOOK_VIEWED
+S_SC --> P_CNT : views
+S_PROJ --> P_IDX
+I_REDIS ..|> P_CNT
+I_OS ..|> P_IDX
+S_WR --> I_JPA
+S_SC --> I_JPA
+S_SO --> I_JPA
+S_G --> I_JPA : follows · bloqueios · audit
+S_EV --> I_JPA
+I_JPA --> DB : JPA / Flyway
+I_REDIS --> REDIS
+I_OS --> OS
 @enduml

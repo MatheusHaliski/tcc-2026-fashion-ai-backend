@@ -1,5 +1,5 @@
 @startuml RF26_Classes
-title RF26 — Explorador Global: painel por país, marcas & lojas e insights\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF26 — Busca global de esquemas e peças (aba "Explorador Global")\nDiagrama de classes — Painel global (volume), Buscar marcas & lojas e Insights globais
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -10,174 +10,167 @@ skinparam class {
 }
 skinparam packageStyle rectangle
 hide empty methods
+set separator none
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +email: String
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String
-  +birthDate: String
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  .. +20 campos ..
+package "fai-web" {
+  class DiscoveryController <<RestController>> {
+    +global(viewer, country, season, color)  «GET /api/explorer/global»
+    +brands(viewer, term, country, category, sort, color, season, minLevel)  «GET /api/explorer/brands»
+    +insights(viewer)  «GET /api/explorer/insights»
+  }
 }
-class BrandProfile {
-  +owner: User
-  +brandName: String
-  +slug: String
-  +logoUrl: String
-  +coverUrl: String
-  +bio: String
-  +storeUrl: String
-  +cnpj: String
-  +razaoSocial: String
-  +nomeFantasia: String
-  +fashionCategory: String
-  +commercialContact: String
-  +officialHashtag: String
-  +activityProofUrl: String
-  .. +11 campos ..
+
+package "fai-application" {
+  class ExplorerService <<service>> {
+    +MIN_DATA = 3  «país aceso no painel»
+    +MIN_BRAND_ITEMS = 3  «base mínima de Hype»
+    ~BRAND_TOP_ITEMS = 5 · RANKING_ROWS = 5
+    +globalPanel(viewer, country, season, color): Map
+    +brandsAndStores(viewer, term, country, category, sort, color, season, minLevel): Map
+    +insights(viewer): Map
+    ~publicPieces(): List<PublicPiece>
+    ~brandHype(bondedLooks, brandPieces, cfg): Map  «BONDED_LOOKS · BRAND_GROUP»
+    -passesHype(card, minLevel): boolean
+    ~hypeRankings(): Map
+    ~seasonAverages(): List<Agg>
+  }
+  class "ExplorerService.PublicPiece" as PublicPiece <<record>> {
+    hype : HypeScoreCurrent
+    piece : WardrobeItem
+  }
+  class "ExplorerService.Agg" as Agg <<record>> {
+    key : String
+    value : double
+    items : int
+  }
+  interface AnalyticsQueryPort <<port>> {
+    brandUsage(limit)  «vw_brand_usage»
+    countries()  «vw_country_insights»
+    countryColors()
+    looksBySeason(country)
+    colorRanking(country, limit)
+    schemesByCountry(GlobalFilter)
+    piecesByCountry(GlobalFilter)
+    brandFacets()
+  }
+  class "AnalyticsQueryPort.GlobalFilter" as GlobalFilter <<record>> {
+    season : String
+    color : String
+  }
+  class SearchService <<service>> {
+    {static} ~parseLevel(raw): HypeLevel  «400 NIVEL_INVALIDO»
+    {static} ~hypeRows(repo, cfg, type, ids)
+    {static} ~publicScore(c): Double
+    {static} ~trendFor(c, self): Double
+    {static} ~publicRow(c): HypeScoreCurrent
+  }
+  class AiEngine <<service>> {
+    +text(TextCall): AiOutcome<String>  «INSIGHT_GENERATOR»
+  }
+  class LocalAdvisors <<final>> {
+    {static} +insightText(rankings): String
+  }
+  class CatalogService <<service, RF47>> {
+    +catalogBrands(): List<Map>
+  }
+  class HypeScoreConfig <<component>> {
+    +algorithmVersion(): String
+    +level(score): HypeLevel
+  }
+  class Taxonomy <<final>> {
+    {static} COLORS
+    {static} hex(color): String
+  }
 }
-class WardrobeItem {
-  +user: User
-  +brandProfile: BrandProfile
-  +brand: Brand
-  +name: String
-  +category: String
-  +subcategory: String
-  +sex: String
-  +brandName: String
-  +color: String
-  +material: String
-  +sizeLabel: String
-  +market: String
-  +styleTags: String
-  +occasionTags: String
-  .. +54 campos ..
+
+package "fai-infrastructure" {
+  class MysqlAnalyticsAdapter <<adapter>>
 }
-class Scheme {
-  +user: User
-  +originalScheme: Scheme
-  +title: String
-  +description: String
-  +creationMode: CreationMode
-  +origin: SchemeOrigin
-  +style: String
-  +occasion: String
-  +season: Season
-  +mood: Mood
-  +visibility: Visibility
-  +status: SchemeStatus
-  +displayMode: DisplayMode
-  +disponivel: boolean
-  .. +41 campos ..
+
+package "fai-domain" {
+  class User <<entity users>> {
+    country : String  «região do dono (CA04)»
+    profileType : ProfileType
+  }
+  class BrandProfile <<entity brand_profiles>> {
+    owner : User
+    brandName, slug, logoUrl, storeUrl : String
+    fashionCategory : String
+    country : String
+    approvalStatus : ApprovalStatus
+  }
+  class WardrobeItem <<entity wardrobe_items>> {
+    user : User
+    category, subcategory, color : String
+    brandName : String
+    visibility : Visibility
+  }
+  class Scheme <<entity schemes>> {
+    user : User
+    season : Season
+    visibility : Visibility
+  }
+  class SealBond <<entity seal_bonds>> {
+    scheme : Scheme
+    targetOwner : User
+    status : SealBondStatus
+    expiresAt : Instant
+  }
+  class HypeScoreCurrent <<entity hype_scores>> {
+    entityType : HypeEntityType
+    entityId : UUID
+    status : HypeStatus
+    score : BigDecimal
+    level : HypeLevel
+    dimensions : HypeDimensions  «trend = crescimento»
+    publicEligible : boolean
+    category : String
+  }
+  interface BrandProfileRepository <<repository>> {
+    findByApprovalStatusOrderByCreatedAtDesc(status)
+  }
+  interface SealBondRepository <<repository>> {
+    findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(owner, status)
+  }
+  interface HypeScoreCurrentRepository <<repository>> {
+    findByEntityTypeAndAlgorithmVersion\nAndPublicEligibleTrueAndStatus(type, versão, status)
+  }
+  enum HypeLevel {
+    LOW_SIGNAL
+    NICHE
+    RELEVANT
+    HOT
+    TRENDING
+    VIRAL
+  }
 }
-class SealBond {
-  +scheme: Scheme
-  +targetOwner: User
-  +requestedBy: User
-  +tier: SealTier
-  +linkedPieceIdsJson: String
-  +confidence: BigDecimal
-  +justification: String
-  +basis: SealBondBasis
-  +status: SealBondStatus
-  +requiresReview: boolean
-  +seal: Seal
-  +imageRightsConsent: Boolean
-  +aiInferenceId: UUID
-  +respondedAt: Instant
-  .. +8 campos ..
-}
-class HypeScoreMetric {
-  +dailyLook: DailyLook
-  +scheme: Scheme
-  +user: User
-  +scoreDate: LocalDate
-  +likesCount: long
-  +commentsCount: long
-  +sharesCount: long
-  +remixesCount: long
-  +engagementRaw: BigDecimal
-  +engagementNorm: BigDecimal
-  +trendRaw: BigDecimal
-  +trendNorm: BigDecimal
-  +hypeScore: BigDecimal
-  +globalHypeScore: BigDecimal
-  .. +9 campos ..
-}
-class HypeScoreCurrent <<RF53>> {
-  +entityType: HypeEntityType
-  +entityId: UUID
-  +ownerId: UUID
-  +algorithmVersion: String
-  +status: HypeStatus
-  +score: BigDecimal
-  +dimensions: HypeDimensions
-  +publicEligible: boolean
-  +category: String
-  +styles: String
-  +occasions: String
-  .. +11 campos ..
-}
-class HypeScoreSnapshot <<RF53>> {
-  +entityType: HypeEntityType
-  +entityId: UUID
-  +algorithmVersion: String
-  +snapshotDate: LocalDate
-  +status: HypeStatus
-  +score: BigDecimal
-  +publicEligible: boolean
-  .. +5 campos ..
-}
-class HypeDimensions <<embeddable>> {
-  +popularity · engagement
-  +trend · trendVelocity
-  +novelty · longevity · rarity
-  +originality · influence
-}
-}
-package "fai-domain · enums" {
-enum ProfileType {
-  PESSOAL
-  MARCA
-  CELEBRIDADE
-}
-enum HypeEntityType {
-  PIECE
-  SCHEME
-}
-enum HypeStatus <<RF53>> {
-  AVAILABLE
-  INSUFFICIENT_DATA
-}
-}
+
+DiscoveryController --> ExplorerService
+ExplorerService --> AnalyticsQueryPort
+ExplorerService --> BrandProfileRepository
+ExplorerService --> SealBondRepository
+ExplorerService --> HypeScoreCurrentRepository
+ExplorerService --> AiEngine
+ExplorerService ..> LocalAdvisors
+ExplorerService ..> SearchService
+ExplorerService ..> HypeScoreConfig
+ExplorerService ..> Taxonomy
+ExplorerService ..> "0..1" CatalogService : setter opcional
+ExplorerService ..> PublicPiece
+ExplorerService ..> Agg
+AnalyticsQueryPort ..> GlobalFilter
+AnalyticsQueryPort <|.. MysqlAnalyticsAdapter
 BrandProfile "1" --> "1" User : owner
-HypeScoreMetric "*" --> "1" Scheme : scheme
-HypeScoreMetric "*" --> "1" User : user
-Scheme "*" --> "1" User : user
-SealBond "*" --> "1" Scheme : scheme
-SealBond "*" --> "1" User : requestedBy
-SealBond "*" --> "1" User : targetOwner
-User --> ProfileType
-WardrobeItem "*" --> "1" BrandProfile : brandProfile
 WardrobeItem "*" --> "1" User : user
-HypeScoreCurrent *-- HypeDimensions : dimensions
-HypeScoreSnapshot *-- HypeDimensions : dimensions
-HypeScoreCurrent ..> HypeEntityType
-HypeScoreCurrent ..> HypeStatus
-HypeScoreCurrent ..> WardrobeItem : entityId (PIECE)
-HypeScoreCurrent ..> Scheme : entityId (SCHEME)
-HypeScoreSnapshot ..> HypeScoreCurrent : mesma entidade, por dia
-note top of User : tabela users
-note top of BrandProfile : tabela brand_profiles
-note top of WardrobeItem : tabela wardrobe_items
-note top of Scheme : tabela schemes
-note top of SealBond : tabela seal_bonds
-note top of HypeScoreCurrent : tabela hype_scores — novo (RF53 · HypeScore v2)\n"Em alta" lê só publicEligible = true e status = AVAILABLE\n(janela 1 = dimensions.trend · 7 = score)
-note bottom of HypeScoreSnapshot : tabela hype_score_snapshots\njanela 30 = média dos snapshots do mês
+Scheme "*" --> "1" User : user
+SealBond "*" --> "1" Scheme
+SealBond "*" --> "1" User : targetOwner
+PublicPiece --> HypeScoreCurrent
+PublicPiece --> WardrobeItem
+HypeScoreCurrent ..> HypeLevel
+HypeScoreCurrentRepository ..> HypeScoreCurrent
+BrandProfileRepository ..> BrandProfile
+SealBondRepository ..> SealBond
+note bottom of MysqlAnalyticsAdapter : agrega schemes · wardrobe_items JOIN users\n(só PUBLIC, por users.country) e lê as views\nvw_brand_usage e vw_country_insights
+note right of ExplorerService : P3-16: sem hypeBand, sem hypeMin e\nsem médias de hype_score v1; Hype só v2\npúblico (publicEligible + AVAILABLE)
 @enduml

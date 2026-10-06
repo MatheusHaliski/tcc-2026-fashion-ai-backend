@@ -1,0 +1,303 @@
+@startuml FashionAI_Classes_v5_Pecas
+title FashionAI — Visão global do domínio (v5)\nDiagrama de classes — Peças, marcas e catálogo global (RF4 Acervo & Busca Catalogada, RF6, RF7, RF29, RF31) · entidades JPA de fai-domain, Flyway V1–V42
+!pragma layout smetana
+set separator none
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam note {
+  BackgroundColor #FFFBEA
+  BorderColor #B8A86A
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "Peça do guarda-roupa (posse)" {
+class WardrobeItem << (V,#C9B8F0) wardrobe_items >> {
+  +user: User
+  +brandProfile: BrandProfile
+  +brand: Brand
+  +name: String
+  +category: String
+  +subcategory: String
+  +color: String
+  +material: String
+  +styleTags: String
+  +occasionTags: String
+  +price: BigDecimal
+  +visibility: Visibility
+  +disponivel: boolean
+  +availabilityStatus: AvailabilityStatus
+  +condition: ItemCondition
+  +favorite: boolean
+  +forSale: boolean
+  +forDonation: boolean
+  +wearCount: int
+  +moderationStatus: ModerationStatus
+  +photoProcessingStatus: PhotoProcessingStatus
+  +model3dStatus: Model3dStatus
+  +imageOrigin: ImageOrigin
+  +captureSessionId: UUID
+  +catalogProductId: UUID
+  +catalogVariantId: UUID
+  +remixedFromPieceId: UUID
+  +processingJobId: UUID
+  .. +48 campos ..
+}
+class PieceUsageDiaryEntry << (S,#F0D2B8) piece_usage_diary >> {
+  +wardrobeItemId: UUID
+  +userId: UUID
+  +usedOn: LocalDate
+  +occasion: String
+  +note: String
+  +source: String
+  +schemeId: UUID
+}
+class WardrobeAvailabilityChange << (S,#F0D2B8) wardrobe_availability_log >> {
+  +wardrobeItemId: UUID
+  +userId: UUID
+  +available: boolean
+  +changedAt: Instant
+}
+class ItemEmbedding << (V,#C9B8F0) item_embeddings >> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +userId: UUID
+  +provider: String
+  +dimensions: int
+  +vectorJson: String
+}
+}
+package "Marcas" {
+class Brand << (V,#C9B8F0) brands >> {
+  +name: String
+  +slug: String
+  +website: String
+  +source: BrandSource
+  +catalogOrigin: CatalogOrigin
+  +sourceConfidence: BigDecimal
+  +verifiedAt: Instant
+  +country: String
+  +brandProfile: BrandProfile
+  .. +2 campos ..
+}
+class BrandAlias << (V,#C9B8F0) brand_aliases >> {
+  +brandId: UUID
+  +alias: String
+  +aliasNorm: String
+}
+class BrandLogo << (V,#C9B8F0) brand_logos >> {
+  +nameKey: String
+  +displayName: String
+  +logoUrl: String
+  +source: String
+  +status: String
+  +domain: String
+  +confidence: BigDecimal
+  +checkedAt: Instant
+  .. +3 campos ..
+}
+}
+package "Catálogo global (produto ≠ posse)" {
+class CatalogSource << (V,#C9B8F0) catalog_sources >> {
+  +brandId: UUID
+  +domain: String
+  +sourceType: CatalogSourceType
+  +country: String
+  +allowsImagePersistence: boolean
+  +active: boolean
+  .. +1 campos ..
+}
+class CatalogProduct << (V,#C9B8F0) catalog_products >> {
+  +brandId: UUID
+  +category: String
+  +subcategory: String
+  +productName: String
+  +modelName: String
+  +productCode: String
+  +sku: String
+  +gtin: String
+  +colorName: String
+  +sourceType: CatalogSourceType
+  +sourceStatus: CatalogSourceStatus
+  +ingestionStatus: CatalogIngestionStatus
+  +dedupKey: String
+  +description: String
+  +designJson: String
+  +ownersCount: int
+  .. +13 campos ..
+}
+class CatalogProductAlias << (V,#C9B8F0) catalog_product_aliases >> {
+  +productId: UUID
+  +alias: String
+  +aliasNorm: String
+}
+class CatalogVariant << (V,#C9B8F0) catalog_variants >> {
+  +productId: UUID
+  +variantKey: String
+  +colorName: String
+  +variantCode: String
+  +sku: String
+  +gtin: String
+  +availability: String
+  .. +1 campos ..
+}
+class CatalogImage << (V,#C9B8F0) catalog_images >> {
+  +productId: UUID
+  +variantId: UUID
+  +imageUrl: String
+  +imageType: CatalogImageType
+  +sourceType: CatalogSourceType
+  +primary: boolean
+  +usageStatus: CatalogImageUsage
+  +storedUrl: String
+  .. +5 campos ..
+}
+class CatalogIngestionRun << (V,#C9B8F0) catalog_ingestion_runs >> {
+  +kind: String
+  +source: String
+  +dryRun: boolean
+  +totalRead: int
+  +createdCount: int
+  +duplicatesCount: int
+  +errorCount: int
+  +startedAt: Instant
+  +finishedAt: Instant
+  .. +3 campos ..
+}
+}
+package "Enums-chave (domain/model/enums)" {
+enum AvailabilityStatus {
+  AVAILABLE
+  UNAVAILABLE
+  ARCHIVED
+}
+enum ItemCondition {
+  NEW
+  GOOD
+  WORN
+  DAMAGED
+}
+enum PhotoProcessingStatus {
+  NEW
+  MODERATING
+  PROCESSING
+  COMPLETED
+  NEEDS_REUPLOAD
+  FAILED
+}
+enum Model3dStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+enum ImageOrigin {
+  CATALOG
+  USER_PHOTO
+  DEFAULT
+}
+enum HypeEntityType {
+  PIECE
+  SCHEME
+}
+enum BrandSource {
+  SEEDED
+  AUTO_DETECTED
+  USER_SUBMITTED
+}
+enum CatalogOrigin {
+  REAL
+  SEED
+  DEMO
+}
+enum CatalogSourceType {
+  OFFICIAL_BRAND
+  OFFICIAL_STORE
+  AUTHORIZED_RETAILER
+  PARTNER_API
+  MANUAL_ADMIN
+}
+enum CatalogSourceStatus {
+  ACTIVE
+  UNAVAILABLE
+  SOURCE_REMOVED
+  NEEDS_REVALIDATION
+}
+enum CatalogIngestionStatus {
+  DISCOVERED
+  VALIDATED
+  PERSISTABLE
+  REFERENCE_ONLY
+  REJECTED
+}
+enum CatalogImageType {
+  FRONT
+  BACK
+  SIDE
+  TOP
+  DETAIL
+  SOLE
+  PACKSHOT
+  OTHER
+}
+enum CatalogImageUsage {
+  REFERENCE_ONLY
+  PERSISTED
+  REJECTED
+}
+}
+package "Referências a outras áreas" #FAFAFA {
+class User <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class BrandProfile <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class Scheme <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class CaptureSession <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class PipelineJob <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+}
+
+' --- associações JPA (geradas do código) ---
+WardrobeItem "*" --> "1" User : user
+WardrobeItem "*" --> "0..1" BrandProfile : brandProfile
+WardrobeItem "*" --> "0..1" Brand : brand
+Brand "*" --> "0..1" BrandProfile : brandProfile
+' --- referências por id, sem FK JPA ---
+WardrobeItem ..> CatalogProduct : catalogProductId
+WardrobeItem ..> CatalogVariant : catalogVariantId
+WardrobeItem ..> CaptureSession : captureSessionId
+WardrobeItem ..> PipelineJob : processingJobId
+WardrobeItem ..> WardrobeItem : remixedFromPieceId
+PieceUsageDiaryEntry ..> WardrobeItem : wardrobeItemId
+PieceUsageDiaryEntry ..> Scheme : schemeId
+WardrobeAvailabilityChange ..> WardrobeItem : wardrobeItemId
+ItemEmbedding ..> WardrobeItem : entityId (PIECE)
+ItemEmbedding ..> Scheme : entityId (SCHEME)
+BrandAlias ..> Brand : brandId
+CatalogSource ..> Brand : brandId
+CatalogProduct ..> Brand : brandId
+CatalogProductAlias ..> CatalogProduct : productId
+CatalogVariant ..> CatalogProduct : productId
+CatalogImage ..> CatalogProduct : productId
+CatalogImage ..> CatalogVariant : variantId
+note "Hype da peça não fica mais aqui: o v1 (hype_score,\nhype_score_global, hype_group_id) saiu em P3-16.\nO HypeScore v2 vive em hype_scores (RF46),\nver FashionAI_Classes_v5_Hype_Lens.\nV38: forDonation (peça para doar)." as N_HYPE
+N_HYPE .. WardrobeItem
+note "V30 (catálogo global) + V36 (description, designJson).\nREFERENCE_ONLY guarda só a URL autorizada;\nPERSISTED só se a fonte permite cópia." as N_CAT
+N_CAT .. CatalogImage
+legend right
+  <b>Letra do ícone</b>
+  V = estende VersionedAuditableEntity (id UUID, createdAt/updatedAt, createdBy/lastModifiedBy, @Version)
+  A = estende AuditableEntity (id UUID e auditoria, sem @Version)
+  S = @Entity sem superclasse (id e datas próprios) · M = @Embeddable (colunas embutidas na tabela dona)
+  E = enum
+  ⟶ seta cheia = associação JPA (@ManyToOne/@OneToOne) · seta tracejada = id guardado sem FK JPA
+  <<outra área>> = classe detalhada em outro diagrama v5
+endlegend
+@enduml

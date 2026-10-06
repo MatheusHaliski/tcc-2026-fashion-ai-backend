@@ -1,5 +1,5 @@
 @startuml RF32_Componentes
-title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade ("Desafios")\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade, através da sub-aba "Desafios"\nDiagrama de componentes — telas de Desafios → ChallengeController → ChallengeService → tabelas challenge_*, quarto, espelho e pontos
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -16,34 +16,63 @@ skinparam database {
 }
 left to right direction
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "challenges — catálogo" as FE0
-  component "challenges/[id] — progresso, mural e votação" as FE1
+package "Frontend (Next.js 16)" {
+  component "challenges/page.tsx\n(abas Catálogo · Meus desafios ·\nVotação · Propor; diálogo Começar)" as FE0
+  component "challenges/[id]/page.tsx\n(progresso, entradas, mural,\nsair, cancelar, card de resultado)" as FE1
+  component "room/page.tsx · mirror/page.tsx\n(decorações e restrição do desafio)" as FE2
 }
-package "fai-web (REST)" {
-  [ChallengeController] as ChallengeController
+package "fai-web" {
+  [ChallengeController\n/api/challenges/** · /api/me/challenges] as CC
+  [AdminController\nPOST /api/admin/challenges/{code}/promotion] as AC
+  [RoomController · MirrorController] as RMC
 }
-package "fai-application (casos de uso)" {
-  [ChallengeService] as ChallengeService
-  [RoomService] as RoomService #FAFAFA
-  [FaiPointsService] as FaiPointsService #FAFAFA
+package "fai-application" {
+  [ChallengeService] as CS
+  [AdminService] as AS
+  [RoomService.DecorationsProvider] <<port>> as P_DEC
+  [MirrorService.PieceRestrictionProvider] <<port>> as P_RES
+  [RoomService] as RS
+  [MirrorService] as MS
+  [CopilotService\n(activeSummary)] as CPS
+  [FaiPointsService\n(award · game)] as FPS
+  [NotificationService] as NS
+  [MediaService\n(fotos restritas do Espelho de Verdade)] as MED
+  [Guard · Audit] as GA
+  [SideEffectRunner] as SER
+  [Eventos de domínio AFTER_COMMIT\nSchemeSaved · DailyLookRegistered ·\nMirrorAction · PieceCreated] as EV
+  [Scheduler\n@Scheduled tick() a cada 15 min] as JOB
 }
-package "fai-domain (repositórios JPA)" {
-  [ChallengeEventRepository\nChallengeInstanceRepository\nChallengeNoteRepository\nChallengeParticipantRepository\nChallengeTemplateRepository\nChallengeVoteRepository\nDailyLookRepository\nFollowRepository\nPieceUsageDiaryEntryRepository\nSchemeItemRepository\nSchemeRepository\nStyleDnaRepository\nUserRepository\nWardrobeItemRepository] as REPOS
+package "fai-domain (Spring Data JPA)" {
+  [ChallengeTemplateRepository · ChallengeInstanceRepository\nChallengeParticipantRepository · ChallengeEventRepository\nChallengeNoteRepository · ChallengeVoteRepository] as R_CH
+  [WardrobeItemRepository · SchemeRepository · SchemeItemRepository\nDailyLookRepository · PieceUsageDiaryEntryRepository\nFollowRepository · UserRepository · StyleDnaRepository] as R_OUT
 }
-database "MySQL · fashionai_app\n• challenge_events\n• challenge_instances\n• challenge_notes\n• challenge_participants\n• challenge_templates\n• challenge_votes\n• daily_looks\n• follows\n• piece_usage_diary\n• scheme_items\n• schemes\n• style_dna\n• users\n• wardrobe_items" as DB
-database "Storage de mídia\n(local / S3, MediaStoragePort)" as P_media
-[NotificationService\n(RNF10)] as P_notif
-[SideEffectRunner\n(efeitos colaterais isolados)] as P_side
+database "MySQL · fashionai_app\n• challenge_templates · challenge_instances\n• challenge_participants · challenge_events\n• challenge_notes · challenge_votes\n• schemes · wardrobe_items · follows · daily_looks…" as DB
+database "Storage de mídia\n(MediaStoragePort: local / S3)\nrestricted/challenges/…" as ST
 
-FE0 --> ChallengeController : HTTPS/JSON
-FE1 --> ChallengeController : HTTPS/JSON
-ChallengeController --> ChallengeService
-ChallengeService ..> RoomService
-ChallengeService ..> FaiPointsService
-ChallengeService --> REPOS
-ChallengeService --> P_notif
-ChallengeService --> P_media
-ChallengeService --> P_side
-REPOS --> DB : JPA/Flyway
+FE0 --> CC : HTTPS/JSON
+FE1 --> CC : HTTPS/JSON
+FE2 --> RMC : GET /api/me/room · /api/me/mirror
+RMC --> RS
+RMC --> MS
+CC --> CS
+AC --> AS
+AS --> CS : promote
+CS ..|> P_DEC
+CS ..|> P_RES
+RS --> P_DEC
+MS --> P_RES
+CPS --> CS
+EV ..> CS : progresso
+CS --> SER
+JOB --> CS
+CS --> FPS : CHALLENGE_COMPLETED · GAME_PLAYED
+CS --> NS : CHALLENGE_INVITE · CHALLENGE_RESULT
+CS --> RS : hasKey · lastDiaryDates
+CS --> MED
+CS --> GA
+CS --> R_CH
+CS --> R_OUT
+MED --> ST
+R_CH --> DB : JPA/Flyway (V5, V27)
+R_OUT --> DB
 @enduml

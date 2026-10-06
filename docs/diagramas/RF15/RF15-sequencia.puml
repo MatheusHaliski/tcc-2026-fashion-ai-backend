@@ -1,5 +1,5 @@
 @startuml RF15_Sequencia
-title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de sequência — endpoints reais
+title RF15 — Editar uma fotografia de uma peça de roupa através de um Editor Canvas Interativo 2D\nDiagrama de sequência — o que existe hoje: carregar, remover fundo e salvar no PhotoEditor; versão de estúdio com aprovação
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,67 +8,95 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor "Usuário" as U
-participant "Frontend\n/photos · expanded-card\nPhotoEditor (canvas 2D)" as FE
+actor "Pessoa (dona)" as U
+participant "expanded-card.tsx\nExpandedPiece +\nedit-image.tsx\nEditImageDialog" as EC
+participant "photo-editor.tsx\nPhotoEditor" as ED
 participant "PhotoController" as PC
-participant "PhotoService" as PS
 participant "WardrobeController" as WC
+participant "PhotoService" as PS
 participant "WardrobeService" as WS
-participant "AiEngine (RF24)\nFlatLayPipeline" as AI
-participant "MediaService\n(MediaStoragePort)" as M
+participant "AiEngine (RF24)\nFLAT_LAY_STANDARDIZER /\nSTUDIO_ENHANCER" as AI
+participant "MediaService\n(MediaStoragePort)" as ST
 database "MySQL" as DB
-U -> FE: abre a foto da peça e toca em "Editar"
-alt veio de "Minhas Fotos" (photoId)
-  FE -> PC: GET /api/photos/{id}/file
-  PC -> PS: download (só o dono, sem marca d'água)
-  PS --> FE: 200 image/* (original)
-else veio do card da peça (pieceId)
-  FE -> FE: fetch(originalImageUrl ?? imageUrl)
+
+== Abrir o editor ==
+alt pela página da peça
+  U -> EC: "Editar imagem" → "Ajustar manual" / "Corrigir recorte"
+  EC -> ED: PhotoEditor(pieceId, imageUrl = originalImageUrl ?? imageUrl)
+  ED -> ST: fetch(mediaUrl(imageUrl)) (CORS) → blob
+else por Minhas Fotos (RF12)
+  U -> ED: PhotoEditor(photoId)
+  ED -> PC: GET /api/photos/{id}/file
+  PC -> PS: download(user, id) — owned (403 auditado)
+  PS -> ST: read(originalUrl ?? publicUrl)
+  PC --> ED: 200 bytes
 end
-FE -> FE: desenha no <canvas> (passo "original")
-loop ferramentas do editor
-  U -> FE: recortar / girar 90 / brilho / contraste
-  FE -> FE: push(step) → histórico (desfazer/refazer)
-end
+ED -> ED: passo 0 "Original"; draw() no <canvas>
+
+== Ferramentas (no navegador) ==
+U -> ED: recortar · girar 90° · brilho · contraste
+ED -> ED: push(passo) — desfazer/refazer, histórico, voltar à original
 opt remover fundo (CA01/CA04)
-  U -> FE: "Remover fundo"
-  FE -> PC: POST /api/photos/background-removal (file)
+  U -> ED: "Remover fundo"
+  ED -> PC: POST /api/photos/background-removal (PNG do passo atual)
   PC -> PS: removeBackground(user, bytes)
   PS -> WS: governedFlatLay(userId, bytes)
-  WS -> AI: execute(FLAT_LAY_STANDARDIZER) · remove.bg → fallback local
-  AI --> WS: Result(backgroundRemoved, processedPng, stages)
+  WS -> AI: execute(FLAT_LAY_STANDARDIZER) — cota diária + teto de gasto
+  AI -> AI: rembg → remove.bg → recorte local (FlatLayPipeline)
   alt fundo removido
-    PS --> FE: 200 {ok:true, png (base64), provider}
-    FE -> FE: push(step "Remover fundo")
+    PC --> ED: 200 {ok: true, png (base64), provider}
+    ED -> ED: novo passo com o PNG
   else falhou
-    PS --> FE: 200 {ok:false, message}
-    FE -> FE: aviso; demais ferramentas seguem
+    PC --> ED: 200 {ok: false, message} — as outras ferramentas seguem
   end
 end
-U -> FE: "Salvar"
-FE -> FE: canvas.toBlob("image/png")
-alt photoId (Minhas Fotos)
-  FE -> PC: POST /api/photos/{id}/edits (multipart file)
+
+== Salvar (CA02) ==
+U -> ED: "Salvar edição"
+ED -> ED: canvas.toBlob("image/png")
+alt aberto por photoId
+  ED -> PC: POST /api/photos/{id}/edits (file)
   PC -> PS: saveEdit(user, id, bytes)
-  PS -> DB: SELECT photos (owned) + wardrobe_items (sourceEntityId)
-  alt foto é a imagem de uma peça ativa do dono
-    PS -> WS: replaceImage(user, pieceId, bytes, editedFromPhotoId=id)
-    WS -> M: put(edit.png) + put(edit-thumb.png)
-    WS -> M: register(Photo EDITOR, APPROVED)
-    WS -> DB: UPDATE wardrobe_items (image_url, thumbnail_url, COMPLETED)
-    PS --> FE: 200 {replacedPieceImage:true, piece, message}
-  else foto solta / de esquema
-    PS -> M: put(edit.png) + put(edit-thumb.png)
-    PS -> M: register(Photo EDITOR, editedFromPhotoId, APPROVED)
-    M -> DB: INSERT photos
-    PS --> FE: 200 {replacedPieceImage:false, photo, message}
+  alt foto de peça ativa da dona
+    PS -> WS: replaceImage(user, pieceId, bytes, editedFromPhotoId = id)
+  else foto avulsa/de look
+    PS -> ST: put(users/{u}/photos/edit-*.png + thumb)
+    PS -> DB: INSERT photos (EDITOR, edited_from_photo_id)
+    PC --> ED: 200 {replacedPieceImage: false, photo, message}
   end
-else pieceId (card da peça)
-  FE -> WC: PUT /api/pieces/{id}/image (multipart file)
+else aberto por pieceId
+  ED -> WC: PUT /api/pieces/{id}/image (file)
   WC -> WS: replaceImage(user, id, bytes, null)
-  WS -> M: put(edit.png) + put(edit-thumb.png)
-  WS -> DB: UPDATE wardrobe_items + INSERT photos (EDITOR)
-  WS --> FE: 200 PieceView
 end
-note over FE, DB : CA02 — a foto original é preservada (original_url / edited_from_photo_id)
+WS -> WS: requireCanCreate + owned · ImageOps.requireAcceptedImage\n(400 ARQUIVO_VAZIO · ARQUIVO_GRANDE · FORMATO_INVALIDO)
+WS -> ST: put(edit-*.png + -thumb.png) · register(Photo EDITOR, APPROVED)
+WS -> DB: wardrobe_items.image_url/thumbnail_url = edição;\ndefault_image = false; COMPLETED (troca imediata)
+alt imagem com transparência e peça já com estúdio
+  WS -> AI: execute(STUDIO_ENHANCER) — refreshStudio
+  WS -> DB: offerStudio(sourceChanged): estúdio novo no ar com approved = false
+else imagem opaca
+  WS -> DB: applyStudio(null): estúdio removido
+end
+WS -> DB: audit_log EDICAO_PECA {field: image}
+WS --> ED: 200 PieceView / {replacedPieceImage: true, piece, message}
+ED --> U: toast e recarrega
+
+== Versões do estúdio com aprovação (o embrião das versões do RF15) ==
+U -> EC: escolhe outro fundo (BackdropChips)
+EC -> WC: POST /api/pieces/{id}/studio?backdrop=…
+WC -> WS: studioPiece → studioShot → offerStudio(sourceChanged = false)
+alt há uma aprovada no ar
+  WS -> DB: flatLayMetadata.studio.pending = versão n+1 (approved = false)
+else sem aprovada
+  WS -> DB: no ar com approved = false
+end
+U -> EC: ApprovalPanel: aprovada × nova
+alt aprovar
+  EC -> WC: POST /api/pieces/{id}/studio/approve
+  WC -> WS: approveStudio → pendente no ar; anterior em "previous"
+else descartar
+  EC -> WC: DELETE /api/pieces/{id}/studio/pending
+  WC -> WS: discardStudio → apaga os arquivos da pendente
+end
+WS --> EC: 200 PieceView (409 NADA_A_APROVAR / NADA_A_DESCARTAR)
 @enduml

@@ -1,0 +1,201 @@
+@startuml FashionAI_Classes_v5_Selos_Cupons
+title FashionAI — Visão global do domínio (v5)\nDiagrama de classes — Selos, vínculos, promoções e cupons (RF20, RF21, RF25, RF38) · entidades JPA de fai-domain, Flyway V1–V42
+!pragma layout smetana
+set separator none
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam note {
+  BackgroundColor #FFFBEA
+  BorderColor #B8A86A
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "Selos e vínculos (RF20, RF21, RF25)" {
+class Seal << (V,#C9B8F0) seals >> {
+  +owner: User
+  +name: String
+  +tier: SealTier
+  +status: SealStatus
+  +premium: boolean
+  +backgroundConfigJson: String
+  +availableFrom: Instant
+  +availableUntil: Instant
+  +usageLimit: Integer
+  +usageCount: int
+  +autoIssued: boolean
+  .. +2 campos ..
+}
+class SealBond << (V,#C9B8F0) seal_bonds >> {
+  +scheme: Scheme
+  +seal: Seal
+  +targetOwner: User
+  +requestedBy: User
+  +tier: SealTier
+  +basis: SealBondBasis
+  +status: SealBondStatus
+  +origin: SealBondOrigin
+  +confidence: BigDecimal
+  +requiresReview: boolean
+  +linkedPieceIdsJson: String
+  +aiInferenceId: UUID
+  +sealCode: String
+  +issuedAt: Instant
+  +expiresAt: Instant
+  +reviewedBy: UUID
+  +eraLabel: String
+  .. +5 campos ..
+}
+}
+package "Promoções e cupons (RF20, RF21, RF38)" {
+class Promotion << (V,#C9B8F0) promotions >> {
+  +seal: Seal
+  +sealBond: SealBond
+  +type: PromotionType
+  +status: PromotionStatus
+  +visibility: Visibility
+  +title: String
+  +code: String
+  +discountPercent: Integer
+  +totalQuota: Integer
+  +perUserLimit: int
+  +redeemedCount: int
+  +partnerBrandUserId: UUID
+  +ownerUserId: UUID
+  +startsAt: Instant
+  +expiresAt: Instant
+  .. +7 campos ..
+}
+class PromotionRedemption << (A,#B8DCC0) promotion_redemptions >> {
+  +promotion: Promotion
+  +sealBond: SealBond
+  +user: User
+  +code: String
+  +issuerUserId: UUID
+  +partnerBrandUserId: UUID
+  +status: RedemptionStatus
+  +redeemedAt: Instant
+  +expiresAt: Instant
+}
+class CouponRight << (V,#C9B8F0) coupon_rights >> {
+  +user: User
+  +owner: User
+  +sourceType: String
+  +sourceId: UUID
+  +title: String
+  +status: String
+  +schemeId: UUID
+  +couponRef: UUID
+  +decidedAt: Instant
+  .. +1 campos ..
+}
+}
+package "Enums-chave (domain/model/enums)" {
+enum SealTier {
+  PECA
+  LOOK
+}
+enum SealStatus {
+  ACTIVE
+  INACTIVE
+}
+enum SealBondStatus {
+  SUGGESTED
+  ACCEPTED
+  EDITED
+  REFUSED
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  REVOKED
+}
+enum SealBondBasis {
+  BRAND_MATCH
+  STYLE_SIGNATURE
+}
+enum SealBondOrigin {
+  AI_SUGGESTION
+  MANUAL
+}
+enum PromotionType {
+  DESCONTO_ECOMMERCE
+  CUPOM_LOJA
+  EVENTO
+  SHOW
+  FRETE_GRATIS
+  BRINDE
+  ACESSO_ANTECIPADO
+  MEET_GREET
+  PRE_VENDA
+  CONTEUDO_EXCLUSIVO
+}
+enum PromotionStatus {
+  AVAILABLE
+  REDEEMED
+  EXPIRED
+  REVOKED
+}
+enum RedemptionStatus {
+  ISSUED
+  USED
+  EXPIRED
+}
+}
+package "Referências a outras áreas" #FAFAFA {
+class User <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class Scheme <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class FlairCombination <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class FlairRedemption <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class AiInferenceLog <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+}
+
+' --- associações JPA (geradas do código) ---
+Seal "*" --> "1" User : owner
+SealBond "*" --> "1" Scheme : scheme
+SealBond "*" --> "1" User : targetOwner
+SealBond "*" --> "1" User : requestedBy
+SealBond "*" --> "0..1" Seal : seal
+Promotion "*" --> "0..1" Seal : seal
+Promotion "*" --> "0..1" SealBond : sealBond
+PromotionRedemption "*" --> "1" Promotion : promotion
+PromotionRedemption "*" --> "1" SealBond : sealBond
+PromotionRedemption "*" --> "1" User : user
+CouponRight "*" --> "1" User : user
+CouponRight "*" --> "1" User : owner
+' --- referências por id, sem FK JPA ---
+SealBond ..> AiInferenceLog : aiInferenceId
+SealBond ..> User : reviewedBy
+Promotion ..> User : partnerBrandUserId / ownerUserId
+PromotionRedemption ..> User : issuerUserId
+CouponRight ..> Promotion : sourceId (SELO)
+CouponRight ..> FlairCombination : sourceId (FLAIR)
+CouponRight ..> PromotionRedemption : couponRef (SELO)
+CouponRight ..> FlairRedemption : couponRef (FLAIR)
+CouponRight ..> Scheme : schemeId
+Seal -[hidden]-> SealTier
+note "Vínculo: SUGGESTED → ACCEPTED/EDITED/REFUSED →\nPENDING_REVIEW → APPROVED/REJECTED → REVOKED.\nUm vínculo por emissor por look; editar as peças de um\nlook APPROVED liga Scheme.revalidationPending." as N_BOND
+N_BOND .. SealBond
+note "Desenho (SealDesign) e política (SealPolicy) do selo\nvivem em backgroundConfigJson (validados por\nSealDesigns.normalize e SealPolicies.normalize)." as N_SEAL
+N_SEAL .. Seal
+note "status (texto): PENDENTE → RESGATADO | DISPENSADO\n(constantes de CouponService; o Javadoc cita EXPIRADO).\ncouponRef = cupom emitido pela fonte ao resgatar." as N_CR
+N_CR .. CouponRight
+legend right
+  <b>Letra do ícone</b>
+  V = estende VersionedAuditableEntity (id UUID, createdAt/updatedAt, createdBy/lastModifiedBy, @Version)
+  A = estende AuditableEntity (id UUID e auditoria, sem @Version)
+  S = @Entity sem superclasse (id e datas próprios) · M = @Embeddable (colunas embutidas na tabela dona)
+  E = enum
+  ⟶ seta cheia = associação JPA (@ManyToOne/@OneToOne) · seta tracejada = id guardado sem FK JPA
+  <<outra área>> = classe detalhada em outro diagrama v5
+endlegend
+@enduml

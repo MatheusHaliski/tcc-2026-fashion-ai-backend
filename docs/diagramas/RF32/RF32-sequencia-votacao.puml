@@ -1,0 +1,93 @@
+@startuml RF32_Sequencia_Votacao
+title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade, através da sub-aba "Desafios"\nDiagrama de sequência — inscrever look, votar às cegas (Batalha na Passarela), concluir pelo job e card de resultado
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Participante" as U
+actor "Votante\n(qualquer conta ativa)" as V
+participant "challenges/[id]/page.tsx\n+ challenges/page.tsx (Votação)" as FE
+participant "ChallengeController" as C
+participant "ChallengeService" as S
+participant "FaiPointsService" as P
+participant "NotificationService" as N
+participant "Scheduler\n(@Scheduled */15 min)" as J
+database "MySQL" as DB
+
+== Inscrever look ==
+U -> FE: escolhe um look (GET /api/me/schemes?size=50)
+FE -> C: POST /api/challenges/{id}/entries {schemeId}
+C -> S: submitEntry(user, id, schemeId)
+alt não participa (ATIVO) · desafio não ATIVO
+  S --> FE: 403 · 409 ESTADO_INVALIDO
+else look de outra pessoa ou < 2 peças do próprio acervo
+  S --> FE: 403 · 400 LOOK_INVALIDO
+else tiro único (RUNWAY_BATTLE, GRWM, DAILY_CHALLENGE) já inscrito
+  S --> FE: 409 JA_INSCRITO
+else ok
+  S -> DB: INSERT challenge_events (LOOK_ENTRY, ref = schemeId)
+  S -> P: game(userId, "CHALLENGE", id, null)
+  P -> DB: GAME_PLAYED +5 (chave CHALLENGE:id, 1× por desafio)
+  S -> S: refresh(i, t) → progresso
+  S --> FE: detail (entradas, progresso, mural)
+end
+
+== Votar às cegas ==
+V -> FE: aba Votação
+FE -> C: GET /api/challenges/votes
+C -> S: voteFeed(user)
+S -> DB: instâncias ATIVO · DUELO · RUNWAY_BATTLE/GRWM\n+ entradas LOOK_ENTRY (títulos "Look 1, 2…")
+S --> FE: [{challengeId, name, theme, entries[], endsAt}]
+V -> FE: toca num look
+FE -> C: POST /api/challenges/{id}/votes {entrySchemeId}
+note right of FE
+  Divergência: a tela monta a URL com v.id,
+  mas o feed devolve challengeId — o voto
+  sai para /api/challenges/undefined/votes.
+end note
+C -> S: vote(user, id, entrySchemeId)
+S -> S: guard.requireCanCreate
+alt não ATIVO ou desafio sem votação
+  S --> FE: 409 VOTACAO_FECHADA
+else voto no próprio look
+  S --> FE: 400 VOTO_PROPRIO
+else já votou (ou corrida na unique uq_ch_vote_voter)
+  S --> FE: 409 JA_VOTOU
+else ok
+  S -> DB: INSERT challenge_votes
+  S --> FE: {voted: true}
+end
+
+== Concluir (job) ==
+J -> S: tick()
+S -> DB: SELECT challenge_instances WHERE state IN (AGUARDANDO, ATIVO)
+alt AGUARDANDO com 48 h vencidas
+  S -> DB: aceitos ≥ mínimo → activate (ATIVO) · senão EXPIRADO
+else ATIVO com ends_at vencido
+  S -> S: conclude(i, t): refreshProgressOnly
+  S -> DB: duelScores: votos por dono da entrada\n(ou recorde pessoal fora das batalhas)
+  loop cada membro
+    S -> DB: participant CONCLUIU
+    S -> P: award(userId, CHALLENGE_COMPLETED, "CHALLENGE", id, pts)\nvencedor = rewardPoints · demais = ¼
+  end
+  S -> DB: UPDATE instância CONCLUIDO + result_json\n(winners, ranking, scoring)
+  S -> N: notify(CHALLENGE_RESULT) para cada membro
+else REAL_MIRROR ativo
+  S -> N: aviso da janela aleatória do dia (1× por dia)
+end
+
+== Card de resultado ==
+U -> FE: "Card de resultado"
+FE -> C: GET /api/challenges/{id}/result-card
+C -> S: resultCard(user, id)
+S --> FE: {title, mode, format 9:16, fraction, best, label, result,\nexcludes: preço, custo por uso, marcas, acervo}
+note right of FE
+  Divergência: a tela espera url/imageUrl para abrir
+  a imagem, mas a API devolve só os dados do card —
+  o botão não abre nada.
+end note
+@enduml

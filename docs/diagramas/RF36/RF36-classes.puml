@@ -1,5 +1,5 @@
 @startuml RF36_Classes
-title RF36 — "Foto com meu manequim": peça (RF4) ou look inteiro (RF5) no manequim com rosto 3D da foto de perfil\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF36 — Foto com meu manequim (peça do RF4 ou look do RF5)\nDiagrama de classes — ShowcaseService, manequim (Look3d), foto guardada na peça/no look e Avatar 3D (RF40)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -10,103 +10,162 @@ skinparam class {
 }
 skinparam packageStyle rectangle
 hide empty methods
+set separator none
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +email: String
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String
-  +birthDate: String
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  .. +20 campos ..
+package "frontend (components)" {
+  class MannequinPhotoDialog <<React>> {
+    kind : piece | scheme
+    asCover : boolean  «look: começa true»
+    shoot()  «canvas.toBlob JPEG 0,93 → upload»
+  }
+  class MannequinPhotoButton <<React>>
+  class LookViewer <<React, Three.js>> {
+    look : Look3d
+    still · framing (upper | full)
+  }
+  class Look3d <<interface TS>> {
+    schemeId? · pieceId? · title
+    mannequin : Mannequin3d
+    pieces : Look3dPiece[]
+    ready3d · missing3d
+  }
+  class Mannequin3d <<interface TS>> {
+    sex : FEMININO | MASCULINO
+    sexSource : cadastro | provador | pecas | padrao
+    photoUrl · head : FOTO | PADRAO | AVATAR
+    skinTone · build · face : FaceFit
+    avatar : Avatar3dRef
+  }
 }
-class UserPreferences {
-  +user: User
-  +theme: ThemeMode
-  +language: UiLanguage
-  +density: UiDensity
-  +fontScale: int
-  +highContrast: boolean
-  +reduceMotion: boolean
-  +chromeBackgroundId: String
-  +sizeSystem: SizeSystem
-  +unitSystem: UnitSystem
-  +mannequinSex: MannequinSex
-  +mannequinSkinTone: String
-  +mannequinBuild: BodyBuild
-  +contentContainerColor: String
-  .. +10 campos ..
+
+package "fai-web" {
+  class ShowcaseController <<RestController>> {
+    +look3d(viewer, id)  «GET /api/schemes/{id}/look3d»
+    +piece3d(viewer, id)  «GET /api/pieces/{id}/look3d»
+    +pieceMannequinPhoto(user, id, file)  «POST /api/pieces/{id}/mannequin-photo»
+    +schemeMannequinPhoto(user, id, file, asCover)  «POST /api/schemes/{id}/mannequin-photo»
+    +deleteMannequinPhoto(user, kind, id)  «DELETE /api/{pieces|schemes}/{id}/mannequin-photo · 204»
+  }
 }
-class WardrobeItem {
-  +user: User
-  +brandProfile: BrandProfile
-  +brand: Brand
-  +name: String
-  +category: String
-  +subcategory: String
-  +sex: String
-  +brandName: String
-  +color: String
-  +material: String
-  +sizeLabel: String
-  +market: String
-  +styleTags: String
-  +occasionTags: String
-  .. +54 campos ..
+
+package "fai-application" {
+  class ShowcaseService <<service>> {
+    {static} ~MANNEQUIN_PHOTO_CATEGORIES = upper_piece, full_body_piece
+    +look3d(viewer, schemeId): Map
+    +piece3d(viewer, pieceId): Map
+    ~mannequin(user, pieces, viewer): Map
+    -mannequinBase(user, pieces): Map
+    +pieceMannequinPhoto(user, id, bytes): Map  «422 SEM_FOTO_NO_MANEQUIM»
+    +schemeMannequinPhoto(user, id, bytes, asCover): Map
+    +deleteMannequinPhoto(user, kind, id)
+    -storeMannequinPhoto(user, base, bytes): String
+    {static} -faceOf(user): String  «FOTO | PADRAO»
+  }
+  class Avatar3dService <<service, RF40>> {
+    +forMannequin(ownerId, viewerId): Optional<Map>
+  }
+  class SchemeService <<service>> {
+    +owned(user, id): Scheme
+    +canView(viewer, scheme): boolean
+  }
+  class Guard <<component>> {
+    +requireCanCreate(user)
+    +requireOwner(user, ownerId, resource)
+    +requireView(viewer, ownerId, visibility, resource)
+  }
+  class MediaService <<service>> {
+    +put(key, bytes, contentType): StoredObject
+  }
+  interface MediaStoragePort <<port>>
+  class ImageOps <<final>> {
+    {static} +requireAcceptedImage(bytes)  «400 ARQUIVO_VAZIO · ARQUIVO_GRANDE · FORMATO_INVALIDO»
+    {static} +scaleToFit(img, 1600, 1600)
+    {static} +jpeg(img, 0.92)
+  }
+  class PreferencesService <<service>> {
+    +updateProfile(user, ProfileUpdate)  «mannequinFace → mannequin_face_json»
+  }
 }
-class Scheme {
-  +user: User
-  +originalScheme: Scheme
-  +title: String
-  +description: String
-  +creationMode: CreationMode
-  +origin: SchemeOrigin
-  +style: String
-  +occasion: String
-  +season: Season
-  +mood: Mood
-  +visibility: Visibility
-  +status: SchemeStatus
-  +displayMode: DisplayMode
-  +disponivel: boolean
-  .. +41 campos ..
+
+package "fai-domain" {
+  class User <<entity users>> {
+    sex : MannequinSex  «RF1»
+    avatarUrl : String
+    profileType : ProfileType
+  }
+  class UserPreferences <<entity user_preferences>> {
+    mannequinSex : MannequinSex
+    mannequinSkinTone : String
+    mannequinBuild : BodyBuild
+    mannequinFaceJson : String  «offsetX, offsetY, scale»
+  }
+  class UserAvatar3d <<entity user_avatars_3d>> {
+    modelJson · adjustJson · textureKey
+    publicOnRunway : boolean
+    textureModeration : ModerationStatus
+  }
+  class WardrobeItem <<entity wardrobe_items>> {
+    category : String
+    sex : String
+    imageUrl : String  «recorte que veste o manequim»
+    model3dStatus : Model3dStatus
+    model3dUrl : String
+    mannequinImageUrl : String  «V17»
+    mannequinImageFace : String  «FOTO | PADRAO»
+  }
+  class Scheme <<entity schemes>> {
+    status : SchemeStatus
+    coverImageUrl : String
+    mannequinImageUrl : String  «V17»
+    mannequinImageFace : String
+  }
+  class SchemeItem <<entity scheme_items>>
+  enum MannequinSex {
+    MASCULINO
+    FEMININO
+  }
+  enum BodyBuild {
+    SLIM
+    MEDIUM
+    ATHLETIC
+    CURVY
+    PLUS
+  }
+  enum Model3dStatus {
+    QUEUED
+    PROCESSING
+    COMPLETED
+    FAILED
+  }
 }
-class SchemeItem {
-  +scheme: Scheme
-  +wardrobeItem: WardrobeItem
-  +slot: SchemeSlot
-  +tryOnLayer: TryOnLayer
-  +sortOrder: int
-  +zIndex: int
-  +positionX: BigDecimal
-  +positionY: BigDecimal
-  +scale: BigDecimal
-  +rotation: BigDecimal
-  +opacity: BigDecimal
-  +filtersJson: String
-  +snapshotJson: String
-}
-}
-package "fai-domain · enums" {
-enum MannequinSex {
-  MASCULINO
-  FEMININO
-}
-}
-Scheme "*" --> "1" User : user
-SchemeItem "*" --> "1" Scheme : scheme
-SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
-UserPreferences "1" --> "1" User : user
-UserPreferences --> MannequinSex
-WardrobeItem "*" --> "1" User : user
-note top of User : tabela users
-note top of UserPreferences : tabela user_preferences
-note top of WardrobeItem : tabela wardrobe_items
-note top of Scheme : tabela schemes
-note top of SchemeItem : tabela scheme_items
+
+MannequinPhotoButton --> MannequinPhotoDialog
+MannequinPhotoDialog --> LookViewer
+MannequinPhotoDialog ..> Look3d
+Look3d *-- Mannequin3d
+LookViewer ..> Look3d
+MannequinPhotoDialog ..> ShowcaseController : HTTP
+ShowcaseController --> ShowcaseService
+ShowcaseService --> Avatar3dService
+ShowcaseService --> SchemeService
+ShowcaseService --> Guard
+ShowcaseService --> MediaService
+ShowcaseService ..> ImageOps
+MediaService --> MediaStoragePort
+Avatar3dService ..> UserAvatar3d
+ShowcaseService ..> UserPreferences
+ShowcaseService ..> WardrobeItem
+ShowcaseService ..> Scheme
+PreferencesService ..> UserPreferences
+UserPreferences "1" --> "1" User
+UserAvatar3d "0..1" --> "1" User
+WardrobeItem "*" --> "1" User
+Scheme "*" --> "1" User
+SchemeItem "*" --> "1" Scheme
+SchemeItem "*" --> "0..1" WardrobeItem
+User ..> MannequinSex
+UserPreferences ..> MannequinSex
+UserPreferences ..> BodyBuild
+WardrobeItem ..> Model3dStatus
+note bottom of Mannequin3d : o backend só devolve head = PADRAO ou AVATAR;\nFOTO ficou no tipo, mas a foto de perfil não vai\nmais para a cabeça (divergência com o Trello)
 @enduml

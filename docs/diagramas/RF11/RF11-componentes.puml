@@ -27,6 +27,11 @@ package "Frontend (Next.js)" {
   component "scheme-card · dna-card · piece-art\n(cards do feed)" as FE_CARDS
   component "lib/api/client.ts (api)" as FE_API
   component "/public: MP4 de Aura, pôsteres,\ntexturas (servidos pelo Next.js)" as FE_PUB
+  component "middleware.ts\n(CSP media-src 'self' blob: data:)" as FE_CSP
+}
+package "Geração dos arquivos (scripts/assets, fora do app)" {
+  component "aura_motion_library.py\n(MP4 por variante de Aura:\n480 px, 20 fps, laço de 8 s)" as GEN_MP4
+  component "build_card_art_index.py\n(asset-manifest.json →\ncard-art-index.json)" as GEN_IDX
 }
 package "fai-web · controllers" {
   [BackgroundController\nGET /api/backgrounds/catalog · combination · recommendations\nPOST /api/backgrounds/art · uploads\nPUT|DELETE /api/schemes/{id}/background\nPUT /api/pieces/{id}/background] as BC
@@ -71,6 +76,9 @@ FE_CARDS --> FE_LIB : resolveCardArt
 FE_CARDS --> FE_CA : CardArtLayer
 FE_BS ..> FE_LIB : ART_INDEX · prévia
 FE_CA --> FE_PUB : vídeo perto da tela
+FE_CSP ..> FE_PUB : libera o <video>
+GEN_MP4 --> FE_PUB : gera os MP4
+GEN_IDX --> FE_LIB : gera o índice
 FE_API --> BC : HTTPS/JSON
 FE_API --> SC : HTTPS/JSON
 FE_API --> WC : HTTPS/JSON

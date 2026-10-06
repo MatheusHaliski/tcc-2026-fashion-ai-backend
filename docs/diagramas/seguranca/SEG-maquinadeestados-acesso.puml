@@ -1,25 +1,36 @@
 @startuml SEG_MaquinaDeEstados_Acesso
-title Fashion AI — Máquina de estados: acesso de um navegador (gate + sessão)
+title Segurança, integridade e operação (transversal)\nDiagrama de máquina de estados — acesso de um navegador: gate de desenvolvedor, token de API e sessão no app
 !include _estilo.iuml
+state "Sem gate" as SemGate : "/" mostra a tela do gate\noutras páginas → /?next=…\n/bff/* → 403 DEV_GATE
+state "1º fator ok" as Fator1 : cookie fai_gate_g (15 min)\nconta Google da lista
+state "IP bloqueado no gate" as IpBloq : POST /gate/verify → 429\nRetry-After: 900
+
 [*] --> SemGate
-state SemGate : qualquer página → /gate\n/bff/* → 403
-SemGate --> IdentidadeConferida : Google/usuário ok\n(e na lista permitida)
-SemGate --> GateLiberado : JWT Cloudflare Access válido\n(modo cloudflare)
-IdentidadeConferida --> SemGate : PIN errado\n(cookie do Google apagado)
-IdentidadeConferida --> GateLiberado : PIN ok → fai_gate (gp, 12 h)\n+ fai_gate_a (ga, 1 h)
+SemGate --> Fator1 : /gate/google/callback\n(conta em DEV_GATE_ALLOWED_EMAILS)
+Fator1 --> SemGate : PIN errado (fai_gate_g apagado)\nou 15 min sem PIN
+Fator1 --> GateLiberado : PIN certo → fai_gate (gp, 12 h)\n+ fai_gate_a (ga, 1 h)
+SemGate --> GateLiberado : modo cloudflare: JWT do Access válido\nou DEV_GATE_GOOGLE=false: usuário + PIN
+SemGate --> IpBloq : 8 erros do IP em 15 min
+Fator1 --> IpBloq : 8 erros do IP em 15 min
+IpBloq --> SemGate : janela de 15 min vence
 
 state GateLiberado {
   state "Token de API (fai_gate_a)" as TA {
-    [*] --> ApiLiberada
-    ApiLiberada --> ApiVencida : ga vence (1 h)
-    ApiVencida --> ApiLiberada : middleware renova (< 20 min)\nou /gate/renew após 403
+    [*] --> ApiValida
+    state "Válido" as ApiValida
+    state "Vencido" as ApiVencida
+    ApiValida --> ApiValida : middleware renova na navegação\n(falta < 20 min)
+    ApiValida --> ApiVencida : 1 h sem navegar
+    ApiVencida --> ApiValida : 403 X-Dev-Gate-Required →\nPOST /gate/renew → repete 1 vez
   }
-  state "Sessão no app (independente do token de API)" as SS {
-    [*] --> Anonimo
-    Anonimo --> Autenticado : login pelo BFF\n(fai_rt HttpOnly + access em memória)
-    Autenticado --> Autenticado : refresh (rotação da família)
-    Autenticado --> Anonimo : logout (cookies apagados mesmo offline)\nou refresh recusado
+  state "Sessão no app (independe do gate)" as SS {
+    [*] --> Anonima
+    state "Anônima" as Anonima
+    state "Autenticada" as Autenticada : access token em memória\nrefresh no cookie fai_rt
+    Anonima --> Autenticada : login ou cadastro pelo BFF\nou restoreSession() com fai_rt
+    Autenticada --> Autenticada : refresh com rotação\n(Web Lock entre abas)
+    Autenticada --> Anonima : logout (cookies apagados mesmo offline)\nou refresh 401
   }
 }
-GateLiberado --> SemGate : gp vence (12 h) · identidade revogada\n· segredo trocado
+GateLiberado --> SemGate : fai_gate vence (12 h) e /gate/renew 401\n→ DELETE /gate/verify · e-mail tirado da lista\n· DEV_GATE_SECRET trocado
 @enduml

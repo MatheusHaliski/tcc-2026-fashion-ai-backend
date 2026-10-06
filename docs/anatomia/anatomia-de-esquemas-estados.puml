@@ -1,6 +1,6 @@
 @startuml Anatomia_Esquema_Estados
 !pragma layout smetana
-title Ciclo de vida do esquema (look)\nMáquina de estados
+title Esquema (look) — ciclo de vida\nDiagrama de máquina de estados — Scheme.status (SchemeStatus) e as três dimensões do look publicado (SchemeService, SealService, DailyLookService)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,37 +8,71 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-[*] --> DRAFT : Criar Look (manual/IA), provador,\nremix, copiloto, DNA, autopiloto, espelho
-state DRAFT : edição livre entre as etapas;\n1 peça por tipo
-state PUBLISHED {
-  state "Visibilidade" as Vis {
-    [*] --> Privado
-    state "PRIVATE" as Privado
-    state "FOLLOWERS" as Seguidores
-    state "PUBLIC" as Publico
-    Privado --> Seguidores
-    Seguidores --> Publico
-    Publico --> Privado
-  }
-  state "Disponibilidade" as Disp {
-    [*] --> Disponivel
-    state "disponivel = true" as Disponivel
-    state "disponivel = false" as Indisponivel
-    Disponivel --> Indisponivel : dono marca
-    Indisponivel --> Disponivel : dono marca
-  }
-  state "Selos" as Sel {
-    [*] --> EmDia
-    state "selos em dia" as EmDia
-    state "revalidationPending" as Revalidando
-    EmDia --> Revalidando : dono edita as peças de um look\ncom vínculo APPROVED (emissor avisado)
-    Revalidando --> EmDia : emissor revisa\n(mantém ou revoga)
+skinparam note {
+  BackgroundColor #FFFBEA
+  BorderColor #B8A86A
+}
+state "Ativo (não arquivado)" as ATIVO {
+  [*] --> DRAFT : POST /api/schemes\n(publish ≠ true)
+  [*] --> PUBLISHED : POST /api/schemes\n(publish = true)
+  state DRAFT : rascunho; etapas do criador navegáveis;\n1 peça por tipo (slot); sem peças → 400 SEM_PECAS\norigem: CRIAR_LOOK (manual ou IA), PROVADOR,\nCOPILOT, AUTOPILOTO, SMART_MIRROR/VISTA_ME, REMIX\n(DNA_DUPLICATE está no enum, mas nada o grava)
+  DRAFT --> DRAFT : PUT /api/schemes/{id}
+  DRAFT --> PUBLISHED : POST /api/schemes/{id}/publication {visibility}\nou PUT /api/schemes/{id} com publish = true
+  state PUBLISHED {
+    state "Visibilidade" as Vis {
+      state "PRIVATE" as Privado
+      state "FOLLOWERS" as Seguidores
+      state "PUBLIC" as Publico
+      [*] --> Privado : padrão = visibilidade\ndo perfil (PRIVATE se vazia)
+      [*] --> Seguidores
+      [*] --> Publico
+      Privado --> Seguidores : PUT {visibility}
+      Seguidores --> Publico : PUT {visibility}
+      Privado --> Publico : PUT {visibility}
+      Publico --> Seguidores : PUT {visibility}
+      Seguidores --> Privado : PUT {visibility}\n(revoga os vínculos de selo)
+      Publico --> Privado : PUT {visibility}\n(revoga os vínculos de selo)
+    }
+    state "Disponibilidade" as Disp {
+      state "disponivel = true" as Disponivel
+      state "disponivel = false" as Indisponivel
+      [*] --> Disponivel
+      Disponivel --> Indisponivel : PATCH /api/schemes/{id}/flags
+      Indisponivel --> Disponivel : PATCH /api/schemes/{id}/flags
+    }
+    state "Selos" as Sel {
+      state "selos em dia" as EmDia
+      state "revalidationPending = true" as Revalidando
+      [*] --> EmDia
+      EmDia --> Revalidando : PUT muda as peças de um look\ncom vínculo APPROVED\n(flagRevalidation avisa o emissor:\nSEAL_BOND_REVIEW)
+      Revalidando --> EmDia : POST /api/seal-bonds/{bondId}/review\n(aprova = mantém · recusa = REVOKED)
+    }
   }
 }
-note bottom of PUBLISHED : as três dimensões variam de forma independente
-DRAFT --> PUBLISHED : salvar / publicar
-PUBLISHED --> PUBLISHED : usar como look do dia (lookDoDiaCount +1)
-PUBLISHED --> ARCHIVED : excluir (RF31): vínculos de selo revogados,\nfoto do look sai de "Minhas Fotos"
+state ARCHIVED : exclusão lógica: some do perfil,\ndas contagens e da busca
+ATIVO --> ATIVO : Look do Dia — POST /api/me/daily-look, Copilot,\nAutopiloto: lookDoDia = true, lookDoDiaCount + 1\n[peça indisponível → 409 PECA_INDISPONIVEL]
+ATIVO --> ARCHIVED : POST /api/schemes/{id}/archive\nou DELETE /api/schemes/{id}
 ARCHIVED --> [*]
-note right of ARCHIVED : exclusão lógica: some do perfil,\ndas contagens e da busca
+note right of ARCHIVED
+  SchemeService.archive: revokeForScheme (APPROVED,
+  SUGGESTED e PENDING_REVIEW → REVOKED), remove o
+  look das projeções (busca/timeline) e retira a foto
+  do look de "Minhas Fotos" (RF12.CA13).
+  AccountService.purgeScheduledDeletions também arquiva
+  os looks de contas com exclusão vencida (o Javadoc diz
+  "job diário", mas o método não tem @Scheduled nem
+  chamada no código atual).
+end note
+note as N_PUB
+  <b>PUBLISHED</b> — visibilidade, disponibilidade e selos
+  variam de forma independente.
+  Ao publicar: publishedAt (1ª vez),
+  communityIndexed = (visibility = PUBLIC),
+  snapshotJson de cada peça e projeções.
+  Só PUBLISHED + PUBLIC (perfil não privado,
+  conta que não é de teste) entra no Hype
+  público do v2 (HypeSnapshotService.publicScheme).
+  Remix exige look visível e disponível
+  (senão 409 INDISPONIVEL).
+end note
 @enduml

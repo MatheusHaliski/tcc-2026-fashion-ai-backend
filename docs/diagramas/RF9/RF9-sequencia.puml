@@ -1,5 +1,5 @@
 @startuml RF9_Sequencia
-title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de sequência — endpoints reais
+title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de sequência — salvar a edição do look (PUT /api/schemes/{id}), revalidação do selo e "melhorar com IA"
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,72 +8,103 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor "Autor" as U
-participant "Frontend\nschemes/[id]/edit · SchemeBuilder" as FE
+actor "Autora" as U
+participant "schemes/[id]/edit/page.tsx\nSchemeBuilder(initial)" as FE
+participant "expanded-card.tsx\nExpandedScheme" as EC
 participant "SchemeController" as SC
 participant "SchemeService" as SS
 participant "Guard" as G
-participant "AiEngine (RF24)\nEDIT_ASSISTANT" as AI
+participant "BackgroundStudioService" as BG
 participant "SealService" as SEAL
-participant "WardrobeController" as WC
-participant "WardrobeService" as WS
+participant "AiEngine (RF24)\nEDIT_ASSISTANT" as AI
+participant "ProjectionService\n(SearchIndexPort)" as PJ
 database "MySQL" as DB
-U -> FE: abre edição do esquema
+
+== Abrir o editor (CA01) ==
+U -> FE: menu ⋯ → "Editar" (só aparece para a autora — CA04)
 FE -> SC: GET /api/schemes/{id}
 SC -> SS: get(viewer, id)
-SS -> DB: SELECT schemes, scheme_items
-SS --> FE: 200 {scheme, canEdit}
-alt canEdit = false (CA04)
-  FE -> FE: botão Editar oculto
-else autor
-  FE -> FE: SchemeBuilder(initial) — título, descrição,\nocasião, visibilidade, arte, peças (CA01)
-end
-opt "melhorar com IA" (RF30.CA10)
-  U -> FE: instrução em linguagem natural
-  FE -> SC: POST /api/schemes/{id}/improvements {instruction}
-  SC -> SS: improve(user, id, instruction)
-  SS -> G: requireOwner(user, ownerId, "scheme:{id}")
-  SS -> AI: text(TextCall EDIT_ASSISTANT, campos atuais + instrução)
-  AI --> SS: changes[{field, current, proposed, reason}] (ou LocalAdvisors.proposeEdit)
-  SS --> FE: 200 {changes, explanation, inferenceId}
-  U -> FE: aceita/recusa item a item
-  FE -> SC: POST /api/schemes/{id}/improvements/apply {field: valor}
-  SC -> SS: applyDiff(user, id, accepted)
-  SS -> SS: validChange(field, valor) → 400 DIFF_INVALIDO se inválido
-  SS -> DB: UPDATE schemes; INSERT audit_log (EDICAO_ESQUEMA aiDiffFields)
-  SS --> FE: 200 {scheme}
-end
-U -> FE: salva as alterações
-FE -> SC: PUT /api/schemes/{id} (SchemeForm)
+SS -> DB: schemes · scheme_items · selos
+SC --> FE: 200 {scheme, canEdit, ...}
+FE -> FE: SchemeBuilder(initial): campos, arte, foto e peças atuais
+FE -> SC: GET /api/schemes/builder (peças elegíveis do Closet)
+
+== Salvar (CA02, CA03, CA05) ==
+U -> FE: altera campos e a lista de peças → Salvar
+FE -> SC: PUT /api/schemes/{id} {SchemeForm, items[], background, publish}
 SC -> SS: update(user, id, form)
+SS -> G: requireCanCreate(user)
+SS -> DB: schemes.findById (404)
 SS -> G: requireOwner(user, ownerId, "scheme:{id}")
-alt não é o autor
-  G -> DB: INSERT audit_log (ACESSO_NEGADO_403)
+alt não é a autora (CA04)
+  G -> DB: audit_log ACESSO_NEGADO_403
   G --> FE: 403
-else autor
-  SS -> DB: SELECT scheme_items (before)
-  SS -> SS: applyForm; replaceItems(form.items) — CA02: só scheme_items
-  alt items vazio
+else autora
+  SS -> SS: applyForm → 400 FORMULARIO_INVALIDO {campos}
+  SS -> DB: replaceItems: peças suas e disponíveis\n(400 PECA_DE_OUTRO_USUARIO · PECA_INDISPONIVEL)
+  SS -> DB: UPSERT scheme_items · DELETE dos que saíram\n(wardrobe_items intactos — CA02)
+  alt nenhuma peça
     SS --> FE: 400 SEM_PECAS
+  end
+  opt background ou direção recomendada
+    SS -> BG: applyToScheme(s, background, applyDirection)
+    SS -> SS: applyLookPhoto (foto do look, 400 FOTO_INVALIDA)
   end
   opt peças mudaram e status = PUBLISHED (CA05)
     SS -> SEAL: flagRevalidation(scheme)
-    SEAL -> DB: SELECT seal_bonds WHERE status = APPROVED
-    SEAL -> DB: INSERT notifications (SEAL_BOND_REVIEW → marca)
-    SEAL --> SS: revalidationPending = true
+    SEAL -> DB: seal_bonds APPROVED → notifications SEAL_BOND_REVIEW\n(para a marca/celebridade)
+    SEAL -> SS: revalidationPending = true
+    SS -> DB: snapshot_json nos scheme_items que não tinham
   end
-  opt visibilidade virou PRIVATE
-    SS -> SEAL: revokeForScheme(id) — RF20.CA14
+  opt visibilidade passou a PRIVATE
+    SS -> SEAL: revokeForScheme(id, "esquema tornado privado")
+    SEAL -> DB: seal_bonds → REVOKED (+ notificação)
   end
-  SS -> DB: UPDATE schemes, scheme_items; INSERT audit_log (EDICAO_ESQUEMA)
-  SS --> FE: 200 {scheme, revalidationPending}
+  opt publish = true e ainda DRAFT
+    SS -> DB: PUBLISHED · published_at · snapshot_json (RF7.CA03)
+  end
+  SS -> PJ: scheme(s, items) — OpenSearch
+  SS -> DB: audit_log EDICAO_ESQUEMA {itemsChanged}
+  SS -> DB: commit (updated_at automático — CA03;\n@Version divergente → 409 EDICAO_CONCORRENTE)
+  opt peças mudaram
+    SS ->> SS: SchemeSaved(created = false) AFTER_COMMIT\n(diário de uso, desafios, conquistas, cupons, Hype)
+  end
+  SC --> FE: 200 {scheme, revalidationPending}
+  loop cada selo marcado no editor
+    FE -> SC: POST /api/schemes/{id}/seal-bonds {targetOwnerId, imageRightsConsent}
+  end
+  FE --> U: CreationSuccess (editado)
 end
-opt editar uma peça do esquema (CA07)
-  U -> FE: edita a peça (PieceForm)
-  FE -> WC: PUT /api/pieces/{id}
-  WC -> WS: update(user, id, form)
-  WS -> G: requireOwner(user, ownerId, "piece:{id}")
-  WS -> DB: UPDATE wardrobe_items; INSERT audit_log (EDICAO_PECA)
-  WS --> FE: 200 PieceView
+
+== A marca revalida (fora do editor) ==
+note over SEAL, DB
+  POST /api/seal-bonds/{bondId}/review {approve, reason} (SealController → SealService.review):
+  aprovar → revalidationPending = false ("revalidado"); recusar (motivo obrigatório) → vínculo REVOKED.
+end note
+
+== "Melhorar com IA" no card ampliado (RF30.CA10) ==
+U -> EC: "Melhorar" + instrução
+EC -> SC: POST /api/schemes/{id}/improvements {instruction}
+SC -> SS: improve(user, id, instruction)
+SS -> G: requireCanCreate + requireOwner
+SS -> AI: text(TextCall EDIT_ASSISTANT, campos atuais + instrução)
+alt IA indisponível, sem cota ou resposta inválida
+  AI -> AI: LocalAdvisors.proposeEdit (plano B local)
 end
+AI --> SS: AiOutcome<List<FieldChange>>
+SC --> EC: 200 {changes, explanation, inferenceId, message}
+U -> EC: Aplicar
+EC -> SC: POST /api/schemes/{id}/improvements/apply (corpo = resposta inteira)
+SC -> SS: applyDiff(user, id, accepted)
+alt algum campo não passa em validChange
+  SS --> EC: 400 DIFF_INVALIDO
+else campos válidos
+  SS -> DB: UPDATE schemes (só os campos aceitos) · audit EDICAO_ESQUEMA {aiDiffFields}
+  SC --> EC: 200 {scheme}
+end
+note right of EC
+  Divergência: a tela não tem aceite item a item e envia
+  {changes, explanation, ...}; o backend espera {campo: valor},
+  então a chamada cai em 400 DIFF_INVALIDO.
+end note
 @enduml

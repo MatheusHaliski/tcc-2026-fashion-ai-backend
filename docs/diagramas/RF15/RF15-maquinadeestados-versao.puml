@@ -1,0 +1,48 @@
+@startuml RF15_MaquinaDeEstados_Versao
+!pragma layout smetana
+title RF15 — Editar uma fotografia de uma peça de roupa através de um Editor Canvas Interativo 2D\nDiagrama de máquina de estados — <<planejado>> ciclo de vida de uma versão (image_edit_versions.status)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F2F2F2
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+}
+
+state "DRAFT\n(rascunho automático, só a dona vê)" as Draft
+state "PENDING_REVIEW\n(gerada pelo sistema; a ativa não muda)" as Pending
+state "ACTIVE\n(image_url derivada desta versão;\nactive_edit_version_id / cover_edit_version_id)" as Active
+state "INACTIVE\n(versão anterior, reativável)" as Inactive
+state "ARCHIVED" as Archived
+
+[*] --> Draft : edição em curso (a cada 2 s, com rede)
+[*] --> Pending : sistema: estúdio refeito (AUTO_STUDIO),\npreset em lote (BATCH_PRESET), IA (AI_CREATIVE)
+Draft --> Active : "Usar esta foto" — POST /api/edit/{ownerType}/{ownerId}/versions\n(activate; baseRev em dia; classe medida)
+Draft --> [*] : descartar · ou 30 dias sem atividade (LGPD)
+Draft --> Draft : salvar com baseRev desatualizado → 409\n("ver a mais nova" / "salvar como outra versão")
+Pending --> Active : POST /api/edit/versions/{id}/approve
+Pending --> [*] : POST /api/edit/versions/{id}/discard
+Active --> Inactive : outra versão ativada
+Inactive --> Active : POST /api/edit/versions/{id}/activate
+Inactive --> Archived : DELETE /api/edit/versions/{id}
+Archived --> [*]
+
+note right of Active
+  Recusa ativar F3 em peça à venda/para doar (CA10).
+  confirm-color mantém F1 quando 3 < ΔE00 ≤ 8.
+  A original (F0) nunca é versão nem é arquivada.
+end note
+note left of Pending
+  Hoje só o estúdio tem algo parecido:
+  flatLayMetadata.studio.pending +
+  POST …/studio/approve · DELETE …/studio/pending.
+end note
+note bottom of Archived
+  PLANO (RF15 §8.5 e §10): nenhuma tabela,
+  enum ou rota destas existe no código.
+end note
+@enduml

@@ -1,5 +1,5 @@
 @startuml RF30_Componentes
-title RF30 — Ganhar e usar FAI Points, evoluir o nível do "Meu Quarto" e comprar na loja do quarto\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF30 — Ganhar e usar FAI Points e evoluir o nível do "Meu Quarto"\nDiagrama de componentes — telas → HighlightsController → FaiPointsService → ledger, regras e loja do quarto
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -16,45 +16,62 @@ skinparam database {
 }
 left to right direction
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "points — Saldo, níveis e extrato" as FE0
-  component "points — Loja do quarto (RoomStore)" as FE1
-  component "room — caixa de entrega" as FE2
+package "Frontend (Next.js 16)" {
+  component "points/page.tsx\n(saldo, níveis, como ganhar)" as FE0
+  component "components/room3d/room-store.tsx\n(RoomStore: filtros, provar, comprar, montar)" as FE1
+  component "room/page.tsx\n(caixa de entrega · unbox)" as FE2
+  component "notifications/page.tsx\n(?cat=POINTS = extrato)" as FE3
+  component "Telas que geram pontos\n(pieces/new, schemes, mirror,\nroom, flair, challenges…)" as FE4
 }
 package "fai-web (REST)" {
-  [HighlightsController] as HighlightsController
+  [HighlightsController\nGET /api/me/points · GET /api/points/shop\nPOST /api/points/shop/{sku}/try-on | purchase\nPOST /api/me/room-inventory/{id}/apply] as HC
+  [RoomController\nGET /api/me/room] as RC
+  [NotificationController\nGET /api/notifications] as NC
+  [SchemeController · WardrobeController\nLookbookController · FlairController …] as OC
 }
-package "fai-application (casos de uso)" {
-  [InventoryScoreService] as InventoryScoreService
-  [FaiPointsService] as FaiPointsService
-  [AchievementService] as AchievementService
-  [RoomService] as RoomService #FAFAFA
-  [WardrobeCreatorService] as WardrobeCreatorService #FAFAFA
+package "fai-application" {
+  [FaiPointsService\naward · game · account · shop\ntryOn · buy · apply] as FPS
+  [FaiPointsService.RoomLayoutAccess] <<port>> as P_RLA
+  [RoomService] as RS
+  [WardrobeCreatorService\nview · blocker · sellerActive] as WCS
+  [NotificationService] as NS
+  [WardrobeEventListeners\n(@TransactionalEventListener AFTER_COMMIT)] as WEL
+  [SideEffectRunner\n(transação própria)] as SER
+  [AchievementService] as AS
+  [Serviços de origem\n(SchemeService, WardrobeService,\nDailyLookService, Model3dService,\nChallengeService, FlairService…)] as ORIG
 }
-package "fai-domain (repositórios JPA)" {
-  [ChallengeTemplateRepository\nFaiPointsLedgerEntryRepository\nFaiPointsRuleRepository\nInventoryScoreSnapshotRepository\nPieceUsageDiaryEntryRepository\nRankingOptInRepository\nRankingPositionRepository\nRoomCatalogItemRepository\nRoomInventoryItemRepository\nSchemeItemRepository\nSchemeRepository\nStyleDnaRepository\nUserAchievementRepository\nUserRepository\nWardrobeAvailabilityChangeRepository\nWardrobeItemRepository] as REPOS
+package "fai-domain (Spring Data JPA)" {
+  [FaiPointsLedgerEntryRepository\nFaiPointsRuleRepository] as R_PTS
+  [RoomCatalogItemRepository\nRoomInventoryItemRepository\nRoomLayoutRepository] as R_ROOM
+  [NotificationRepository] as R_NOT
 }
-database "MySQL · fashionai_app\n• challenge_templates\n• fai_points_ledger\n• fai_points_rules\n• inventory_score_snapshots\n• piece_usage_diary\n• ranking_opt_ins\n• ranking_positions\n• room_catalog\n• room_inventory\n• scheme_items\n• schemes\n• style_dna\n• user_achievements\n• users\n• wardrobe_availability_log\n• wardrobe_items" as DB
-[Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
-[NotificationService\n(RNF10)] as P_notif
-[SideEffectRunner\n(efeitos colaterais isolados)] as P_side
+database "MySQL · fashionai_app\n• fai_points_ledger · fai_points_rules\n• room_catalog · room_inventory\n• room_layouts · notifications · users" as DB
 
-FE0 --> HighlightsController : HTTPS/JSON
-FE1 --> HighlightsController : HTTPS/JSON
-FE2 --> HighlightsController : HTTPS/JSON
-HighlightsController --> InventoryScoreService
-HighlightsController --> FaiPointsService
-HighlightsController --> AchievementService
-InventoryScoreService ..> RoomService
-InventoryScoreService ..> AchievementService
-InventoryScoreService --> REPOS
-FaiPointsService ..> WardrobeCreatorService
-FaiPointsService --> REPOS
-FaiPointsService --> P_notif
-AchievementService ..> FaiPointsService
-AchievementService --> REPOS
-AchievementService --> P_notif
-AchievementService --> P_events
-AchievementService --> P_side
-REPOS --> DB : JPA/Flyway
+FE0 --> HC : HTTPS/JSON
+FE1 --> HC : HTTPS/JSON
+FE2 --> RC : HTTPS/JSON
+FE2 --> HC : apply (unbox)
+FE3 --> NC : HTTPS/JSON
+FE4 --> OC : ações do dia a dia
+HC --> FPS
+RC --> RS
+NC --> NS
+OC --> ORIG
+ORIG ..> WEL : DomainEvents\n(SchemeSaved, PieceCreated,\nModel3dGenerated…)
+WEL --> SER
+WEL --> FPS : award()
+ORIG --> FPS : award() / game() direto\n(desafios, FLAIR, 3D)
+AS --> FPS : award(ACHIEVEMENT)
+FPS --> P_RLA : setLevel · compatibleModules · applyFinish
+RS ..|> P_RLA
+FPS --> WCS
+FPS --> NS : FAI_POINTS · ROOM_LEVEL_UP
+FPS --> R_PTS
+FPS --> R_ROOM
+RS --> R_ROOM
+RS --> R_PTS : lifetime → levelOf
+NS --> R_NOT
+R_PTS --> DB : JPA/Flyway (V5, V7, V26, V37)
+R_ROOM --> DB
+R_NOT --> DB
 @enduml

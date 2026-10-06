@@ -1,10 +1,9 @@
 @startuml RF42_Componentes
-title RF42 — Marcar um look como "Look do dia"\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF42 — Marcar um look como "Look do dia"\nDiagrama de componentes — telas, LookbookController, DailyLookService, painel v2 (HypeScoreService), eventos e persistência
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
   BackgroundColor #F4F2EF
-  BackgroundColor<<RF49>> #EAF6EE
   BorderColor #4A4852
   ArrowColor #4A4852
 }
@@ -18,49 +17,90 @@ skinparam database {
 left to right direction
 
 package "Frontend (Next.js)" {
-  component "ExpandedCard (esquema)\nbotão \"Look do dia\"" as FE0
-  component "lookbook → u/[username]?tab=daily\n(LookbookTabs · DailyTab)" as FE1
-  component "explorer — Passarela 3D" as FE2
+  component "components/expanded-card.tsx\n(botão Look do dia)" as FE0
+  component "components/scheme-builder.tsx\n(Switch Look do dia)" as FE1
+  component "components/lookbook-tabs.tsx › DailyTab\n(painel em 6 versões, 💡 tip, avaliação,\nhistórico com HypeBadge)" as FE2
+  component "history/page.tsx › HistoryTimeline" as FE3
+  component "autopilot · copilot · mirror\n(RF43 · RF10 · RF28/RF41)" as FE4
+  component "lib/hype/use-hype (lote de resumos)\ncomponents/hype (HypeInline, HypeBadge)" as FE5
+  component "lib/api/client.ts (api)" as FE6
 }
 package "fai-web · controllers" {
-  [LookbookController] as LC
-  [SchemeController] as SCH
-  [ShowcaseController] as SC
+  [LookbookController\nPOST /api/me/daily-look · GET /api/me/daily-look-tab\nGET /api/me/daily-looks · pending-feedback\nPUT /api/me/daily-looks/{date}/feedback\nPUT /api/me/hype-panel-version · GET /api/hype/panel-versions] as LC
+  [SchemeController\nPOST /api/schemes {lookDoDia}] as SCH
+  [AutopilotController · MirrorController] as OC
+  [HypeController\nGET /api/hype/summaries] as HC
 }
-package "fai-application · services" {
-  [LookbookService] as LS
-  [SchemeService] as SS
-  [DailyLookService] as DS
-  [HypeScoreService] as HS
-  [AutopilotService\nCopilotService\nMirrorService] as OTH
-  [WardrobeEventListeners\nAchievementService] as WL
-  [ShowcaseService] as SHS
-  [HypeSignalRecorder\nHypeIntegrityPolicy] as HSR <<RF49>>
+package "fai-application · serviços" {
+  [LookbookService\ndailyLookTab · markDailyLook · setPanelVersion] as LS
+  [DailyLookService\nregister · today · feedback · history] as DS
+  [HypeScoreService\npanel (só leitura) · localTip] as HSS
+  [SchemeService\nowned · create] as SS
+  [AutopilotService · CopilotService\nMirrorService] as OS
+  [AiEngine (RF24)\nSTYLE_ADVISOR] as AI
+  [WardrobeEventListeners · AchievementService\nChallengeService · InventoryScoreService] as WL
+  [PreferenceModel · DnaService\n(leem o feedback)] as PM
+  [Guard\nrequireOwner] as G
 }
-package "fai-infrastructure · adapters" {
-  [DailyLookRepository\nSchemeRepository\nSchemeItemRepository\nWardrobeItemRepository] as REPOS
-  [HypeSignalDailyRepository] as HREPO <<RF49>>
+package "fai-application · hype" {
+  [HypeSignalRecorder\nonDailyLook] as HR
+  [HypeIntegrityPolicy] as IP
+  [HypeLiveRecalc] as LR
+  [HypeSnapshotService] as HJ
+  [HypeQueryService] as HQ
 }
-database "MySQL\n• daily_looks\n• schemes\n• scheme_items\n• wardrobe_items\n• hype_signal_daily (RF49)" as DB
+package "fai-application · portas" {
+  interface "AiProviderPort" as P_AI
+  interface "RenderCachePort" as P_RC
+}
+package "fai-infrastructure" {
+  [Repositórios JPA (persistence-mysql)\nDailyLookRepository · SchemeRepository · SchemeItemRepository\nWardrobeItemRepository · UserRepository\nHypeSignalDailyRepository · HypeScoreCurrentRepository] as REPOS
+  [ClaudeProvider · GeminiProvider] as A_AI
+  [RedisAdapters / InMemoryRenderCache] as A_RC
+}
+database "MySQL\n• daily_looks (uq user_id + look_date)\n• schemes · wardrobe_items · users\n• piece_usage_diary · fai_points_ledger\n• hype_signal_daily · hype_scores" as DB
+cloud "Provedores de IA de texto" as C_AI
 
-FE0 --> LC : POST /api/me/daily-look
-FE0 --> SCH : POST /api/schemes (lookDoDia)
-FE1 --> LC : GET /api/me/daily-look-tab\nPUT /api/me/daily-looks/{date}/feedback
-FE2 --> SC : GET /api/explorer/runway
-LC --> LS : chama
-LC --> DS : history / feedback
-SCH --> SS : chama
-SC --> SHS : chama
-LS --> DS : register / today
-LS --> HS : panel
-SS --> DS : register
-OTH --> DS : register (AUTOPILOTO, COPILOT,\nVISTA_ME, SMART_MIRROR)
-SHS --> DS : today
-DS --> WL : publica DailyLookRegistered
-DS --> REPOS : grava/lê
-WL --> REPOS : grava
-DS --> HSR : publica DailyLookRegistered\n(AFTER_COMMIT)
-HSR --> HREPO : increment (LOOK_WORN, PIECE_USED)
-HREPO --> DB : JPA/Flyway
-REPOS --> DB : JPA/Flyway
+FE0 --> FE6
+FE1 --> FE6
+FE2 --> FE6
+FE2 --> FE5
+FE3 --> FE6
+FE4 --> FE6
+FE5 --> FE6
+FE6 --> LC : HTTPS/JSON
+FE6 --> SCH
+FE6 --> OC
+FE6 --> HC
+LC --> LS
+LC --> DS : history · feedback · pending
+SCH --> SS
+OC --> OS
+HC --> HQ
+LS --> DS
+LS --> HSS
+LS --> SS : owned
+SS --> DS : register (MANUAL)
+OS --> DS : register (AUTOPILOTO · COPILOT\n· VISTA_ME · SMART_MIRROR)
+DS --> G
+HSS --> AI : withAi
+AI --> P_AI
+P_AI <|.. A_AI
+A_AI --> C_AI
+DS ..> WL : DailyLookRegistered
+DS ..> HR : DailyLookRegistered (AFTER_COMMIT)
+DS ..> LR : markDirty
+HR --> IP
+IP --> P_RC : dedupe
+P_RC <|.. A_RC
+LR --> HJ : recalculate()
+PM --> REPOS
+DS --> REPOS
+LS --> REPOS
+HSS --> REPOS : lê hype_scores
+WL --> REPOS
+HR --> REPOS : hype_signal_daily
+HJ --> REPOS : grava hype_scores
+HQ --> REPOS
+REPOS --> DB : JPA / Flyway
 @enduml

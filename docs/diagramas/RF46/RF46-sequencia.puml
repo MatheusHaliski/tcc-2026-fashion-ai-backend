@@ -1,5 +1,5 @@
 @startuml RF46_Sequencia
-title RF46 — Gerar assets criativos do FashionAI por meio do FAI Creative Engine e serviços Adobe\nDiagrama de sequência — endpoints reais (Background Studio / selos) e Creative Engine planejado
+title RF46 — HypeScore v2\nDiagrama de sequência — sinal, recálculo ao vivo, job com marcos e leitura no card (endpoints reais)
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,48 +8,114 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor "Pessoa" as U
-participant "Frontend\nbackground-studio.tsx" as FE
-participant "BackgroundController" as C
-participant "BackgroundStudioService" as S
-participant "AiEngine (RF24)" as AI
-participant "ImageGenerationPort\n(ReplicateImageGenerationAdapter;\nAdobe Firefly <<planejado>>)" as P
-participant "MediaService\n(→ MediaStoragePort)" as ST
-participant "FAI Creative Engine\n<<planejado>>" as CE #FAFAFA
+actor "Usuário" as U
+participant "Frontend\nPieceCard / SchemeCard\n(FashionCard)" as FE
+participant "useHypeSummary\n(lote de até 100 ids)" as LOT
+participant "SocialController\n→ SocialService" as SOC
+participant "HypeSignalRecorder\n(AFTER_COMMIT)" as REC
+participant "HypeIntegrityPolicy" as POL
+participant "HypeLiveRecalc\n(@Scheduled 30 s)" as LIVE
+participant "HypeController" as HC
+participant "HypeQueryService" as HQ
+participant "HypeCache\n(RenderCachePort)" as CACHE
+participant "HypeSnapshotService\n(@Scheduled 6/6 h,\nsynchronized)" as JOB
+participant "HypeCalculator" as CALC
+participant "HypeMilestoneNotifier\n(AFTER_COMMIT)" as MIL
+participant "PreferencesController\n→ PreferencesService" as PREF
 database "MySQL" as DB
 
-U -> FE: prompt + direção + era + alvo
-FE -> C: GET /api/backgrounds/catalog
-C -> S: catalog()
-S -> DB: SELECT asset_presets
-C --> FE: 200 presets AURA/materiais + imageGenerationAvailable
-FE -> C: POST /api/backgrounds/art (ArtRequest)
-C -> S: generateArt(user, req)
-S -> AI: execute(BACKGROUND_GENERATOR, protectedNames, steps)
-loop cada provedor disponível (fallback)
-  AI -> P: generate(prompt, negativePrompt, 896, 1344)
-  P --> AI: ProviderImage(bytes, costUsd, provider)
+== 1. Sinal (ex.: curtir a peça de outra pessoa) ==
+U -> FE: curte a peça
+FE -> SOC: POST /api/interactions/PIECE/{id}/reactions {reaction: LIKE}
+SOC -> DB: grava a reação (transação)
+SOC -> REC: publishEvent(HypeSignal LIKE_CREATED,\nPIECE, id, ator, dono)
+SOC -> LIVE: o mesmo evento (AFTER_COMMIT)
+LIVE -> LIVE: markDirty()
+note right of REC: só depois do commit;\nfalha aqui nunca desfaz a curtida
+REC -> POL: weight(sinal, hoje)
+POL -> CACHE: get/put hype:dedupe:LIKE_CREATED:{id}:{ator}:{dia}
+POL --> REC: 0 (dono, visitante ou repetido)\n| 0,5 (conta nova) | 1
+alt peso > 0
+  REC -> DB: INSERT … ON DUPLICATE KEY UPDATE\nhype_signal_daily (event_count, weighted_count)
 end
-alt nenhum provedor respondeu
-  AI --> S: AiOutcome(value=null)
-  S -> DB: SELECT asset_presets (auraPresets)
-  S --> FE: 200 FALLBACK_GALLERY + suggestions
-else imagem gerada
-  AI --> S: AiOutcome(bytes, provider, latencyMs, costUsd)
-  S -> ST: put(users/{id}/backgrounds/{uuid}.png)
-  S -> DB: INSERT photos (register: PhotoOrigin.BACKGROUND_STUDIO, prompt, provider)
-  S --> FE: 200 READY + url
+
+== 2. Recálculo: ao vivo (≤ 120 s) ou job de 6 h / POST /api/admin/hype/snapshots ==
+loop a cada 30 s
+  LIVE -> LIVE: tick(): sujo e último recálculo ≥ 120 s?
+  opt sim
+    LIVE -> JOB: recalculate()
+  end
 end
-U -> FE: aplicar ao card
-FE -> C: PUT /api/pieces/{id}/background
-C -> S: savePiece(user, pieceId, cfg)
-S -> DB: UPDATE wardrobe_items.background_config_json (com rev)
-note right of S: a imagem canônica da peça (RF45) não muda:\no card só sobrepõe a peça ao fundo
-opt <<planejado>> — não implementado, conforme Trello
-  FE -> CE: CreativeRequest (tipo BADGE | PROFILE_COVER | FLAIR_CARD…, template)
-  CE -> DB: INSERT pipeline_jobs (PENDING)
-  CE --> FE: 202 jobId (sem HTTP bloqueante)
-  CE -> CE: TemplateResolver + composição com piece_product_front.png (RF45)
-  CE -> DB: CreativeAsset + AssetVersion + provenance; job COMPLETED | REQUIRES_REVIEW
+JOB -> DB: sinais das últimas 12 semanas,\npeças e looks não arquivados, país dos donos
+JOB -> CALC: baseline(população pública elegível)
+loop cada peça e cada look
+  JOB -> CALC: compute(inputs, baseline)
+  CALC --> JOB: HypeResult (status, score, nível,\n9 dimensões, momentum, motivos)
+  JOB -> JOB: milestones(estado anterior → novo):\nsó subida para HOT/TRENDING/VIRAL ou EMERGING novo
 end
+JOB -> DB: upsert hype_scores (HYPE_V2): delta de 7 dias, signals_json.byType,\ncountry, region, categories, subcategories (V39)\n+ snapshot do dia em hype_score_snapshots; apaga entidades que sumiram
+JOB -> CACHE: bump() — nova geração
+JOB -> MIL: publishEvent(HypeMilestone) depois do commit
+MIL -> DB: hype_milestones (único por entidade e marco;\nViral cobre Em alta e Tendência)
+alt marco novo e dono confere
+  MIL -> DB: cria ou atualiza o resumo do dia\n(notificação HYPE_MILESTONE, ACHIEVEMENT, opt-out)
+end
+
+== 3. Leitura na grade (frente), no verso e na análise completa ==
+FE -> LOT: useHypeSummary(PIECE, id) por card
+LOT -> HC: GET /api/hype/summaries?type=PIECE&ids=a,b,c…
+HC -> HQ: summaries(viewer, PIECE, ids)
+HQ -> DB: carrega as peças e filtra por Guard.canView\n(privado de terceiros fica fora)
+HQ -> DB: hype_scores dos ids visíveis
+HQ --> HC: items{id → status, score, level, direction,\ndimensions, stale, seals[]}
+HC --> LOT: 200
+LOT --> FE: HypeBadge (score + nível em texto + seta)\n+ até 2 Selos de Hype
+U -> FE: toca em ↻ (FashionCard vira)
+FE --> U: verso "Hype analytics" com arte por faixa (HypeBackArt)
+U -> FE: "Ver análise completa"
+FE -> HC: GET /api/hype/pieces/{id}
+HC -> HQ: detail(viewer, PIECE, id)
+HQ --> HC: dimensões, motivos, pesos, sinais byType,\ninLooks (peça) ou pieces (look), sealProgress,\ncompatibilidade com o DNA à parte
+FE -> HC: GET /api/hype/pieces/{id}/history?days=90
+HC -> HQ: history(viewer, PIECE, id, 90)
+HQ -> DB: hype_score_snapshots da peça
+FE -> HC: GET /api/hype/pieces/{id}/positions
+HC -> HQ: positions(viewer, PIECE, id)
+HQ --> HC: eligible + posições (mundo, categoria,\nsubcategoria, região, país) ou eligible=false
+HC --> FE: série diária e posições
+FE --> U: drawer com gráfico, posições, Selos de Hype e explicação
+
+== 4. "Em alta" (Explorador) ==
+U -> FE: Explorador › Em alta (Hoje / 7 / 30 dias, recortes)
+FE -> HC: GET /api/hype/trending?type=PIECE|LOOK|BRAND|CREATOR&window=…
+alt type = BRAND ou CREATOR
+  HC -> HQ: trendingGroups(viewer, RankGroup, window, …)
+else PIECE ou LOOK
+  HC -> HQ: trending(viewer, type, window, …)
+end
+HQ -> CACHE: get(chave da geração, loader)
+alt sem cache
+  HQ -> DB: hype_scores com public_eligible = true e AVAILABLE\n(window 30 = média dos snapshots do mês)
+  opt CREATOR
+    HQ -> DB: user_preferences.hype_creator_opt_out (V42):\nquem saiu não entra no ranking de criadores
+  end
+end
+HQ --> FE: itens ranqueados (só públicos; grupo ≥ 3 itens,\nvalor = média dos 5 mais relevantes)
+
+== 5. Chips de Hype de marca e criador (busca, perfis, /brands) ==
+FE -> HC: GET /api/hype/groups?type=BRAND|CREATOR&keys=a,b&window=7
+alt type fora de BRAND | CREATOR
+  HC --> FE: 400 TIPO_INVALIDO
+end
+HC -> HQ: groups(viewer, RankGroup, keys, window)
+HQ -> CACHE: get("groups-table:TIPO:janela", groupTable)
+HQ -> HQ: criador bloqueado some; quem saiu de\nCriadores em alta volta sem valor, faixa e posição
+HQ --> FE: items{chave → value, level, items, sufficient (≥ 3), rank}\nou sem dados (nunca 0)
+
+== 6. Sair de "Criadores em alta" (Configurações › Privacidade) ==
+U -> FE: desliga "Aparecer em Criadores em alta"
+FE -> PREF: PUT /api/me/preferences {hypeCreatorOptOut: true}
+PREF -> DB: UPDATE user_preferences.hype_creator_opt_out (V42)
+PREF -> CACHE: HypeCache.bump() depois do commit (nova geração)
+PREF --> FE: 200 preferências (a opção também vai na exportação LGPD)
 @enduml

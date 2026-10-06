@@ -1,5 +1,5 @@
 @startuml RF3_Componentes
-title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de componentes — telas → controllers → serviços → portas → MySQL, Redis, Cassandra, S3 e Resend
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -14,66 +14,106 @@ skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #4A4852
+}
 left to right direction
 
 package "Frontend (Next.js)" {
-  component "(app)/settings/page.tsx\n+ edit-profile.tsx\n(Conta · Privacidade · Aparência · Idioma · Seus dados)" as FE0
-  component "(app)/notifications/page.tsx\n(central de notificações)" as FE1
+  component "settings/page.tsx\nabas Conta · Aparência · Privacidade\nSeus dados · Sessões" as FE_SET
+  component "components/edit-profile.tsx\n(EditProfileForm)" as FE_EDIT
+  component "notifications/page.tsx\n(caixa · preferências por tipo)" as FE_NOT
+  component "forgot-password · reset-password\n(páginas públicas)" as FE_PWD
+  component "app-shell.tsx\n(sino: unread-count)" as FE_SHELL
+  component "lib/api/client.ts (api)\nlib/hooks/use-api.ts (useApi)\nlib/auth/session.tsx (useAuth)" as FE_LIB
 }
-package "fai-web · controllers" {
-  [MeController\n/api/me · sensitive · email-change/confirm\nprivacy · consents · exports · deletion] as MeController
-  [PreferencesController\n/api/me/preferences · profile · username\navatar · cover] as PreferencesController
-  [AuthController\n/api/auth/password · sessions · logout\npassword-reset] as AuthController
-  [NotificationController\n/api/notifications · read · read-all\npreferences] as NotificationController
-  [AccountController\n/api/rf3/users/{userId}/privacy-probe\n(CA14: @PreAuthorize → 403)] as AccountController
-  [FashionAuthorization\n(canAccessUser)] as Authz
-}
-package "fai-application · services" {
-  [AccountService] as AccountService
-  [PreferencesService] as PreferencesService
-  [IdentityService\n(reauthenticate · sessions · changePassword)] as IdentityService
-  [NotificationService] as NotificationService
-  [AuditService] as AuditPort #FAFAFA
-  [EmailSenderPort] as EmailPort #FAFAFA
-  [MediaStoragePort] as MediaPort #FAFAFA
-}
-package "fai-domain · repositórios JPA" {
-  [UserRepository\nUserPreferencesRepository\nUserConsentRepository\nDataExportRequestRepository\nNotificationRepository\nRefreshTokenRepository\nVerificationCodeRepository] as REPOS
-}
-package "fai-infrastructure · adapters" {
-  [MysqlAuditService] as Audit
-  [ResendEmailSender / LoggingEmailSender] as Resend
-  [S3MediaStorageAdapter / LocalFileMediaStorage] as S3
-}
-database "MySQL · fashionai_app\n• users\n• user_preferences\n• user_consents\n• data_export_requests\n• notifications\n• refresh_tokens\n• verification_codes\n• audit_log" as DB
-cloud "Resend (e-mail transacional)" as C_mail
-cloud "S3 / storage de mídia\n(restricted/users/{id}/exports)" as C_s3
 
-FE0 --> MeController : sensível · privacidade · LGPD
-FE0 --> PreferencesController : perfil · aparência · idioma
-FE0 --> AuthController : senha · sessões
-FE0 --> NotificationController : preferências por tipo
-FE1 --> NotificationController : inbox · read
-MeController --> AccountService : chama
-PreferencesController --> PreferencesService : chama
-AuthController --> IdentityService : chama
-NotificationController --> NotificationService : chama
-AccountController ..> Authz : @PreAuthorize
-AccountService --> IdentityService : reauthenticate
-AccountService --> NotificationService : DATA_EXPORT_READY
-AccountService ..> EmailPort
-AccountService ..> MediaPort
-AccountService ..> AuditPort
-PreferencesService ..> MediaPort
-AccountService --> REPOS : grava
-PreferencesService --> REPOS : grava
-IdentityService --> REPOS : revoga refresh_tokens
-NotificationService --> REPOS : grava
-EmailPort <.. Resend
-MediaPort <.. S3
-AuditPort <.. Audit
-REPOS --> DB : JPA/Flyway
-Audit --> DB : grava audit_log
-Resend --> C_mail : envia
-S3 --> C_s3 : put/get/delete
+package "fai-web" {
+  component "AuthRateLimitFilter\n(limite por IP nas rotas sensíveis)" as RLF
+  component "MeController\n/api/me · /sensitive · /email-change/confirm\n/privacy · /consents/{purpose}\n/exports · /exports/{id}/file · /deletion" as MeC
+  component "AuthController\n/api/auth/password · /sessions(/{id})\n/password-reset/request · /confirm · /logout" as AuC
+  component "NotificationController\n/api/notifications · /unread-count\n/read · /read-all · /preferences" as NoC
+  component "AccountController\n/api/rf3/users/{userId}/privacy-probe" as AcC
+  component "FashionAuthorization\ncanAccessUser (403 auditado)" as Authz
+}
+
+package "fai-application" {
+  component "AccountService\ndados sensíveis · privacidade · consentimentos\nexportação JSON · exclusão (30 dias)" as AS
+  component "IdentityService\nreauthenticate · changePassword\nsessions · revokeSession · password reset" as IS
+  component "NotificationService\nnotify · inbox · markRead\npreferences · purgeExpired" as NS
+  component "Audit → AuditService" as AUD
+  interface "MediaStoragePort" as P_MEDIA <<port>>
+  interface "EmailSenderPort" as P_MAIL <<port>>
+  interface "RateLimitPort" as P_RL <<port>>
+  interface "NotificationProjectionPort" as P_PROJ <<port>>
+}
+
+package "fai-domain · repositórios" {
+  component "UserRepository · UserConsentRepository\nDataExportRequestRepository · VerificationCodeRepository\nRefreshTokenRepository · NotificationRepository\nUserPreferencesRepository" as REPOS
+}
+
+package "fai-infrastructure" {
+  component "MysqlAuditService" as A_AUD
+  component "S3MediaStorageAdapter\n| LocalFileMediaStorage" as A_S3
+  component "ResendEmailSender\n| LoggingEmailSender" as A_MAIL
+  component "RedisAdapters.redisRateLimit\n| InMemoryRateLimit" as A_RL
+  component "CassandraProjectionAdapter\n| NoopProjections" as A_CASS
+}
+
+database "MySQL (Flyway)\nusers · user_consents · data_export_requests\nverification_codes · refresh_tokens\nnotifications · user_preferences · audit_log" as DB
+database "Redis\ncontadores de tentativa" as REDIS
+database "Cassandra\ninbox projetada (TTL 90 dias)" as CASS
+cloud "S3 / R2\nrestricted/users/{id}/exports" as S3
+cloud "Resend\ne-mail transacional" as RESEND
+
+FE_SET --> FE_EDIT
+FE_SET --> FE_LIB
+FE_EDIT --> FE_LIB
+FE_NOT --> FE_LIB
+FE_PWD --> FE_LIB
+FE_SHELL --> FE_LIB
+
+FE_LIB --> RLF : HTTPS + JWT
+RLF --> MeC
+RLF --> AuC
+FE_LIB --> NoC
+FE_LIB --> AcC
+AcC ..> Authz : @PreAuthorize
+
+MeC --> AS
+AuC --> IS
+NoC --> NS
+AS --> IS : reauthenticate · invalidateCodes\nrequireCodeAttemptQuota
+AS --> NS : DATA_EXPORT_READY
+AS --> AUD : ALTERACAO_DADO_PESSOAL_SENSIVEL\nCONSENTIMENTO_* · EXPORTACAO_CONTA\nEXCLUSAO_CONTA
+IS --> AUD
+AS --> P_MEDIA
+AS --> P_MAIL
+IS --> P_MAIL
+IS --> P_RL
+NS --> P_PROJ
+
+AS --> REPOS
+IS --> REPOS
+NS --> REPOS
+
+A_S3 ..|> P_MEDIA
+A_MAIL ..|> P_MAIL
+A_RL ..|> P_RL
+A_CASS ..|> P_PROJ
+AUD --> A_AUD
+
+REPOS --> DB : JPA
+A_AUD --> DB : audit_log
+A_RL --> REDIS
+A_CASS --> CASS
+A_S3 --> S3
+A_MAIL --> RESEND
+
+note bottom of AS
+  purgeExpiredExports: @Scheduled 0 50 * * * * (America/Sao_Paulo).
+  purgeScheduledDeletions e NotificationService.purgeExpired
+  existem no código, mas nenhum @Scheduled os chama hoje.
+end note
 @enduml

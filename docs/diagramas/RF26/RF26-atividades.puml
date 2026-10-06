@@ -1,5 +1,5 @@
 @startuml RF26_Atividades
-title RF26 — Realizar busca global de esquemas de vestimenta & peças por estação, região, clima e gênero, através da aba "Explorador Global"\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF26 — Busca global de esquemas e peças (aba "Explorador Global")\nDiagrama de atividades — Painel global: volume por país e globo com camadas de Hype v2
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -26,95 +26,83 @@ skinparam note {
 
 |Pessoa|
 start
-:Abre a aba Explorar (/explorer);
-:Escolhe a sub-aba do Explorador Global;
-if (Qual sub-aba?) then (Painel global)
-  :Ajusta filtros: estação, cor, faixa de hype;
-  |Frontend|
-  :GET /api/explorer/global?country&season&color&hypeBand;
-  |Backend|
-  :ExplorerService.globalPanel valida filtros\n(ESTACAO_INVALIDA / COR_INVALIDA / FAIXA_INVALIDA → 400);
-  |Bancos-serviços|
-  :AnalyticsQueryPort: schemesByCountry, piecesByCountry,\ncountryColors, colorRanking (agregados MySQL);
-  |Backend|
-  :Agrupa por User.country do dono\n(nenhum campo de região em peça/esquema — CA04);
-  :Marca sufficient = total >= MIN_DATA (3)\ne cor dominante por país;
-  note right
-    CA01: um ponto luminoso por país
-    com dados suficientes; intensidade =
-    hype médio dos esquemas públicos.
-  end note
-  |Frontend|
-  :Renderiza Globe (components/globe.tsx)\n+ lista de países com badge "poucos dados";
-  |Pessoa|
-  if (Toca um país?) then (sim)
+:Abre /explorer (com ou sem login)\ne escolhe a aba "Painel global" (?tab=map);
+note right
+  Outras abas do Explorador: Em alta, Ranking,
+  Buscar marcas & lojas e Insights globais
+  (ver RF26_Atividades_EmAlta_Ranking e
+  RF26_Atividades_Marcas_Insights). A aba
+  "Passarela 3D" é do RF33.
+end note
+|Frontend|
+:useGlobeFilters lê a URL: camadas (numbers, columns, figures,\ncards, heat), métrica (avg · max · volume · growth),\ntipo (peças · looks), janela (1 · 7 · 30), categoria, nível mínimo;
+fork
+  :GET /api/explorer/global?country&season&color;
+  |API|
+  :DiscoveryController.global → ExplorerService.globalPanel;
+  if (season fora de SPRING…WINTER\nou cor fora da taxonomia?) then (sim)
+    #FFE3E3:400 ESTACAO_INVALIDA | COR_INVALIDA;
     |Frontend|
-    :GET /api/explorer/global?country=XX;
-    |Backend|
-    :Adiciona selected: hypeBySeason(país) + topColors(país, 5);
-    |Frontend|
-    :Mostra painel do país selecionado;
+    :ErrorState com "Tentar de novo";
   else (não)
-  endif
-elseif (Buscar marcas & lojas) then
-  |Pessoa|
-  :Digita termo e filtra país, categoria,\ncor, estação, hype mínimo, ordenação;
-  |Frontend|
-  :GET /api/explorer/brands?term&country&category&sort&color&season&hypeMin;
-  |Backend|
-  :ExplorerService.brandsAndStores lê\nBrandProfile APROVADO (CA02);
-  |Bancos-serviços|
-  :brandFacets + brandUsage (cores, estações, peças, looks com selo);
-  |Backend|
-  :Filtra e ordena os cards por hypeScore;
-  |Frontend|
-  :Grade de perfis BRAND com logo, contadores e paleta;
-  |Pessoa|
-  :Toca um card → abre o perfil da marca (RF14);
-elseif (Em alta) then
-  |Pessoa|
-  :novo (RF53 · HypeScore v2)\nEscolhe tipo (Peças · Looks),\njanela (Hoje · 7 · 30 dias) e filtros\n(categoria só p/ peças, estilo, ocasião);
-  |Frontend|
-  :HypeTrendingPanel (hype-trending.tsx)\nGET /api/hype/trending?type&window\n&category&style&occasion&limit=24;
-  |Backend|
-  :HypeController →\nHypeQueryService.trending\n(window → 1, 7 ou 30);
-  if (Ranking no HypeCache?\n(geração, TTL 10 min)) then (não)
-    |Bancos-serviços|
-    :HypeScoreCurrentRepository\n.findByEntityTypeAndAlgorithmVersion\nAndPublicEligibleTrueAndStatus(AVAILABLE);
-    |Backend|
-    :rank(): filtra categoria/estilo/ocasião;\nordena: 1 = dimensão trend ·\n7 = score atual · 30 = média\ndos snapshots do mês;
-  else (sim)
-  endif
-  :views(viewer): tira o que quem\nvê não pode ver (bloqueio /\nvisibilidade mudou);
-  |Frontend|
-  :Grade PieceCard / SchemeCard\ncom #posição;
-else (Insights globais)
-  |Frontend|
-  :GET /api/explorer/insights;
-  |Backend|
-  :ExplorerService.insights monta rankings:\ntopBrands, hypeBySeason, topColors, hypeByColor,\nhypeByBrand, topCountries;
-  if (Pessoa autenticada?) then (sim)
-    |Bancos-serviços|
-    :AiEngine.text(INSIGHT_GENERATOR) — ver RF24;
-    |Backend|
-    if (IA respondeu?) then (sim)
-      :aiInsight = texto da IA (até 400 chars);
-    else (não / fallback)
-      :aiInsight = LocalAdvisors.insightText (fallbackUsed=true);
+    |Banco/IA|
+    :AnalyticsQueryPort (MySQL): countryColors,\nschemesByCountry, piecesByCountry (só PUBLIC,\nagrupado por users.country do dono);
+    |API|
+    :total = looks + peças; sufficient = total ≥ MIN_DATA (3);\ncor dominante; facets (estações, 12 cores);
+    if (country informado?) then (sim)
+      |Banco/IA|
+      :looksBySeason(país) e colorRanking(país, 5)\n(só volume — sem Hype por estação);
     endif
-  else (não)
-    :aiInsight = leitura local\n("faça login para a leitura da IA");
+    |API|
+    :200 {countries[], minData, facets, selected?, legend};
   endif
+fork again
   |Frontend|
-  :Rankings em barras + leitura textual;
+  :GET /api/hype/globe?type&window&category&minLevel;
+  |API|
+  :HypeController.globe → HypeQueryService.globe;
+  if (type ou minLevel inválidos?) then (sim)
+    #FFE3E3:400 TIPO_INVALIDO | NIVEL_INVALIDO;
+  else (não)
+    if (agregado do recorte no HypeCache\n(chave com a geração, TTL 10 min)?) then (não)
+      |Banco/IA|
+      :hype_scores públicos (publicEligible + AVAILABLE + score)\nfiltrados por categoria, subcategoria e nível mínimo;\njanela 30 → média de hype_score_snapshots;
+      |API|
+      :por país (hype_scores.country): count, creators,\navgHype/maxHype + faixa, trend, rising, levels,\ncor e categoria dominantes, 8 candidatos a destaque;\nsufficient = count ≥ GLOBE_MIN_ITEMS (3); mundo e regiões;
+    endif
+    :destaque ("top") = 1º candidato ainda público\ne visível para quem vê;
+    :200 {world, countries[], regions[], minItems};
+  endif
+end fork
+|Frontend|
+if (Painel por país falhou e o globo\nnão chegou?) then (sim)
+  :ErrorState com "Tentar de novo";
+  stop
+elseif (Nenhum país no recorte?) then (sim)
+  :Globo sem pontos + EmptyState na lista\n"Nada neste recorte" (trocar estação ou cor);
+else (não)
+  :Globe (d3-geo) ou HypeGlobeTable ("ver como tabela"):\nponto aceso só com dados suficientes; camadas de números,\ncolunas, figuras, cards e calor; HypeGlobeLegend;\nlista de países com volume e Hype v2 (sem v2 = "—");
 endif
 |Pessoa|
-:Lê tendências agregadas (sem dados pessoais);
+if (Toca um país no globo ou na lista?) then (sim)
+  |Frontend|
+  :pickCountry(iso) → grava ?country na URL\ne refaz GET /api/explorer/global?country=XX;
+  :Painel do país: HypeGlobeCountryPanel (números de Hype\ndo recorte) + "Looks por estação" (volume)\n+ 5 cores mais usadas;
+  |Pessoa|
+  if (Abre o item de destaque?) then (sim)
+    |Frontend|
+    :HypeAnalyticsDrawer → GET /api/hype/{pieces|looks}/{id};
+  endif
+else (não)
+  :Muda camadas, métrica, tipo, janela,\ncategoria, nível, estação ou cor\n(URL atualizada, nova leitura);
+endif
+|Pessoa|
+:Lê tendências agregadas, sem dados pessoais;
 note right
-  <<planejado>> filtros por clima e gênero do título
-  do Trello: não implementados — o código filtra por
-  estação, cor, faixa de hype, país e categoria
-  (e, em "Em alta", estilo e ocasião).
+  Divergência com o título do Trello:
+  não há filtro por clima nem por gênero.
+  O recorte real é estação e cor (volume)
+  e tipo, janela, categoria e nível (Hype v2).
 end note
 stop
 @enduml

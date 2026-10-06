@@ -1,0 +1,67 @@
+@startuml RF4_Sequencia_Canonico
+!pragma layout smetana
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de sequência — <<planejado>> sessão de captura adaptativa e asset canônico sobre a biblioteca de visão existente
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "Criador /pieces/new\n(passo de foto)\n<<planejado>>" as FE #F2F2F2
+participant "/api/capture/**\nCaptureSessionService\n<<planejado>>" as CS #F2F2F2
+participant "WardrobeService\n(existe)" as W
+participant "AiEngine (RF24)\n(existe)" as AI
+participant "LandmarkDetector ·\nBrandEnsembleResolver ·\nIdentificationHierarchy\n(existem)" as V
+participant "PhotographyQualityGate\n(existe)" as Q
+participant "AdaptiveCaptureEngine\n+ CaptureProfiles\n(existem)" as A
+participant "CanonicalPhotographer\n+ PhotographySpecs\n(existem)" as CP
+participant "MediaStoragePort\n(existe)" as ST
+database "MySQL (V29)" as DB
+
+note over U, DB
+  Só os participantes marcados "existe" estão no código; a biblioteca de visão roda apenas nos testes.
+  Rotas do plano (docs/visao-computacional/RF04_ADAPTIVE_GARMENT_CAPTURE.md §14): GET /api/capture/profiles,
+  POST /api/capture/sessions, GET /api/capture/sessions/{id}, POST …/{id}/images, POST …/{id}/requests/{requestId}/skip.
+end note
+U -> FE: envia UMA foto principal (tipo opcional)
+FE -> CS: POST /api/capture/sessions (file, category?, viewType?, identifyModel?)
+CS -> ST: put(piece_original_{vista}) — ORIGINAL imutável
+CS -> DB: INSERT capture_sessions (ANALYZING) · piece_images (ORIGINAL)
+CS -> W: analyzeForCapture(user, bytes, category, lenient = true)
+W -> AI: FLAT_LAY_STANDARDIZER · PIECE_ANALYZER · CONTENT_MODERATOR
+alt fora da política
+  W --> FE: 422 FOTO_RECUSADA
+else
+  W --> CS: CaptureAnalysis (draft, studioSource, logoBox, truncated, failedChecks)
+  CS -> V: detect(recorte, família) · evidências → resolve() · reconcile()
+  V --> CS: landmarks + níveis (CATEGORY … VARIANT) com confiança e alternativas
+  CS -> Q: evaluate(perfil, vista, Signals)
+  Q --> CS: Report (score, ACCEPT | ACCEPT_WITH_GUIDANCE | RETAKE_SUGGESTED)
+  CS -> A: decide(Context)
+  A --> CS: Decision (next, alternatives, done, doneReason)
+  opt done = false
+    CS -> DB: INSERT capture_requests (PENDING, expected_gain, confidence_before)\nsessão AWAITING_CAPTURE
+    CS --> FE: próxima vista ("Só mais um detalhe") com "Pular"
+    alt envia a vista complementar
+      FE -> CS: POST /api/capture/sessions/{id}/images
+      CS -> DB: capture_requests FULFILLED (confidence_after) → reavalia
+    else pula
+      FE -> CS: POST /api/capture/sessions/{id}/requests/{requestId}/skip
+      CS -> DB: capture_requests SKIPPED
+    end
+  end
+  CS -> CP: render(recorte, PhotographySpecs.get(specFor(perfil, vista)), landmarks, cortes)
+  CP --> CS: Result (imagem, Report: specId, rotação, escala, cobertura)
+  CS -> CP: detail(recorte, spec, logoBox)
+  CS -> ST: put(piece_product_front.png, piece_logo_detail.png, …)
+  CS -> DB: piece_images CANONICAL/DETAIL (derived_from_id) · brand_predictions\n· garment_landmarks · model_inferences · sessão READY_FOR_REVIEW
+  CS --> FE: identificação, qualidade e canônicos para revisão
+  U -> FE: confirma
+  FE -> W: POST /api/pieces (PieceForm.draftId + captureSessionId)
+  W -> DB: INSERT wardrobe_items (capture_session_id)
+  W ->> W: PieceCapturedFromSession (AFTER_COMMIT) — sem ouvinte hoje
+end
+@enduml

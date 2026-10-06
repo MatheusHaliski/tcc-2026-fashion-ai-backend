@@ -1,54 +1,66 @@
 @startuml SEG_Sequencia_Sessao_BFF
-title Fashion AI — Sequência: sessão pelo BFF (login, chamada com gate vencido, refresh e logout offline)
+title Segurança, integridade e operação (transversal)\nDiagrama de sequência — sessão pelo BFF: login, token do gate vencido, refresh entre abas e logout com a API fora do ar
 !include _estilo.iuml
 autonumber
 actor Pessoa
 participant "App (navegador)\nlib/api/client.ts" as App
 participant "middleware.ts" as MW
-participant "BFF\n/bff/auth/[action]" as BFF
+participant "BFF\napp/bff/auth/[action]/route.ts" as BFF
 participant "/gate/renew" as Renew
-participant "API Spring Boot\nDevGateFilter · AuthRateLimitFilter" as API
+participant "API Spring Boot\nDevGateFilter · AuthRateLimitFilter\nAuthController" as API
 database "MySQL\n(fai_app, TLS)" as DB
 
 == Login ==
-Pessoa -> App : e-mail + senha
-App -> MW : POST /bff/auth/login (cookies fai_gate, fai_gate_a)
-MW -> MW : verifyGate("gp")
+Pessoa -> App : e-mail ou @ + senha
+App -> MW : POST /bff/auth/login (cookies fai_gate e fai_gate_a)
+MW -> MW : verifyGate("gp") ok
 MW -> BFF : segue
 BFF -> BFF : mesma origem? corpo ≤ 64 KB?
 BFF -> API : POST /api/auth/login\nX-Dev-Gate: ga · X-Fai-Client-Ip/Ts/Sig (HMAC)
-API -> DB : usuário · Argon2id · tentativas
-API --> BFF : 200 {accessToken, refreshToken}
-BFF --> App : 200 {accessToken} + Set-Cookie fai_rt (HttpOnly, Path=/bff/auth, SameSite=Strict) e fai_rt_h
-App -> App : access token só em memória
+API -> DB : conta · Argon2id · balde "login-fail" (RF2)
+API --> BFF : 200 {accessToken, refreshToken, …}
+BFF --> App : 200 {accessToken, …} sem o refresh\nSet-Cookie fai_rt (HttpOnly, Path=/bff/auth, SameSite=Strict) + fai_rt_h
+App -> App : tokenStore guarda o access token só em memória
 
 == Chamada com o token de API do gate vencido ==
-App -> API : GET /api/... (Bearer, X-Dev-Gate expirado)
-API --> App : 403 X-Dev-Gate-Required
-App -> Renew : POST /gate/renew (cookie fai_gate)
-Renew --> App : Set-Cookie fai_gate_a novo (1 h)
-App -> API : repete UMA vez
-API --> App : 200
+App -> API : GET /api/... (Bearer + X-Dev-Gate vencido)
+API --> App : 403 + X-Dev-Gate-Required: 1
+App -> Renew : POST /gate/renew (cookie fai_gate, mesma origem)
+alt fai_gate ainda vale
+  Renew --> App : 200 + Set-Cookie fai_gate_a novo (1 h)
+  App -> API : repete a chamada UMA vez
+  API --> App : 200
+else fai_gate vencido (12 h)
+  Renew --> App : 401 GATE_EXPIRADO
+  App -> MW : DELETE /gate/verify (apaga os cookies do gate)\ne vai para /?next=<página atual>
+end
 
-== Access token vencido (várias abas) ==
+== Access token vencido com várias abas abertas ==
 App -> App : Web Lock "fai-auth-refresh" (só uma aba renova)
 App -> BFF : POST /bff/auth/refresh (cookie fai_rt)
 BFF -> API : POST /api/auth/refresh {refreshToken do cookie}
-API -> DB : rotaciona a família do refresh token
-API --> BFF : 200 {access, refresh novo}
-BFF --> App : {accessToken} + fai_rt novo
-App -> App : BroadcastChannel "fai-auth" avisa as outras abas
+API -> DB : rotaciona a família do refresh token (RF2)
+alt 200
+  API --> BFF : {accessToken, refreshToken novo}
+  BFF --> App : {accessToken} + fai_rt novo
+  App -> App : BroadcastChannel "fai-auth" avisa as outras abas
+else 401 (sessão encerrada)
+  BFF --> App : 401 e apaga fai_rt e fai_rt_h
+else 403 (gate da API)
+  BFF --> App : 403 — os cookies da sessão ficam
+end
 
 == Logout com a API fora do ar ==
 App -> BFF : POST /bff/auth/logout
 BFF -> API : POST /api/auth/logout
 API --> BFF : falha de rede
-BFF --> App : 502 offline + apaga fai_rt e fai_rt_h
+BFF --> App : 502 OFFLINE + apaga fai_rt e fai_rt_h
 note right of BFF
   Os cookies saem SEMPRE: num aparelho
   compartilhado, recarregar a página não
   pode restaurar a sessão "encerrada".
-  401 da API: refresh com o cookie e
-  repete o logout; 401 de novo = 204.
+  Se a API responder 401 (access vencido),
+  o BFF renova com o cookie e repete o
+  logout; 401 de novo vira 204.
 end note
 @enduml

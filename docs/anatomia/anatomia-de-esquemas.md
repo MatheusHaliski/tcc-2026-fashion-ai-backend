@@ -24,9 +24,9 @@
 | Grupo | Campos | Regras |
 |---|---|---|
 | Identidade | `user`, `originalScheme` (remix), `title`, `description`, `tags` | o remix aponta para o original (RF19.CA13) |
-| Classificação | `creationMode` (MANUAL · AI_ASSISTED), `origin` (CRIAR_LOOK · PROVADOR · REMIX · COPILOT · DNA_DUPLICATE · AUTOPILOTO), `occasion`, `style`, `season` (SPRING · SUMMER · AUTUMN · WINTER), `mood` (ENERGETIC · ELEGANT · COMFORTABLE · SOPHISTICATED) | ocasião e estilo: até **3** valores cada no esquema (`Taxonomy.MAX_SCHEME_TAGS`), contra até 2 na peça |
+| Classificação | `creationMode` (MANUAL · AI_ASSISTED), `origin` (CRIAR_LOOK · PROVADOR · REMIX · COPILOT · DNA_DUPLICATE · SMART_MIRROR · VISTA_ME · AUTOPILOTO), `occasion`, `style`, `season` (SPRING · SUMMER · AUTUMN · WINTER), `mood` (ENERGETIC · ELEGANT · COMFORTABLE · SOPHISTICATED) | ocasião e estilo: até **3** valores cada no esquema (`Taxonomy.MAX_SCHEME_TAGS`), contra até 2 na peça |
 | Estado | `status` (DRAFT · PUBLISHED · ARCHIVED), `visibility` (PRIVATE · FOLLOWERS · PUBLIC), `disponivel`, `lookDoDia`, `lookDoDiaCount`, `communityIndexed`, `favorite`, `publishedAt`, `revalidationPending` | ver §7 |
-| Métricas | `likeCount`, `commentCount`, `shareCount`, `remixCount`, `viewCount`, `saveCount`, `totalPrice`, `hypeScore`, `hypeScoreGlobal`, `hypeGroupId` | contadores no formato de rede social, fora dos botões |
+| Métricas | `likeCount`, `commentCount`, `shareCount`, `remixCount`, `viewCount`, `saveCount`, `totalPrice` | contadores no formato de rede social, fora dos botões. O Hype do look não fica em `schemes`: é o HypeScore v2 em `hype_scores` (entidade SCHEME, RF46); os campos v1 `hypeScore`, `hypeScoreGlobal` e `hypeGroupId` saíram do código em P3-16 |
 | Agrupamento | `groupingId` → `scheme_groupings` | coleção, promoção, série assinatura, evolução, linha de estilo, era, fase, temporada, turnê |
 | Mídia | `coverImageUrl` (foto do look, só filtro de política), `mannequinImageUrl`/`Face` (foto com o manequim) | a foto do look sai de "Minhas Fotos" quando o look é excluído (RF12.CA13) |
 
@@ -127,8 +127,8 @@ nunca aparece sem roupa nem descalço) — ver `docs/diagramas/RF40-roupa-no-ava
 
 | Agregado | Relação | Uso |
 |---|---|---|
-| `dna_schemes` / `dna_scheme_items` | 2 a 6 esquemas do próprio usuário | DNA de Estilo (RF13): 11 narrativas (TIMELINE, MOMENTOS_MARCANTES, PRIMEIRA_VEZ, CAPSULA_VERSATILIDADE, POR_OCASIAO, MOOD_BOARD, PALETA_DOMINANTE, HARMONIA_CROMATICA, MARCAS_FAVORITAS, HYPE_FOCUS, CARTELA_SAZONAL) |
-| `daily_looks` (+ `hype_score_metrics`) | um esquema por dia | Look do Dia e Hype Score (RF6) |
+| `dna_schemes` / `dna_scheme_items` | 2 a 6 esquemas do próprio usuário | DNA de Estilo (RF13): 12 narrativas (TIMELINE, MOMENTOS_MARCANTES, PRIMEIRA_VEZ, CAPSULA_VERSATILIDADE, POR_OCASIAO, MOOD_BOARD, PALETA_DOMINANTE, HARMONIA_CROMATICA, MARCAS_FAVORITAS, HYPE_FOCUS, CARTELA_SAZONAL, LEGO) |
+| `daily_looks` | um esquema por dia | Look do Dia (RF42); o painel do dia lê o HypeScore v2 (`hype_scores`) |
 | `week_plans` / `week_plan_days` | um esquema por dia da semana | Semana Planejada (HU18), sem repetir combinação |
 | `scheme_groupings` | n esquemas por agrupamento | coleções, eras e turnês de marcas/celebridades (RF14/RF22) |
 | `mirror_states` | peças por slot | espelho Vista-me (RF28) → "Abrir no editor" cria um DRAFT |

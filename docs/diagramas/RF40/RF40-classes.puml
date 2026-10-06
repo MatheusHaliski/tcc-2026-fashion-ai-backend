@@ -1,5 +1,5 @@
 @startuml RF40_Classes
-title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba "Meu Avatar 3D", e usá-lo no manequim da Passarela 3D, do Meu Quarto e do Espelho\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF40 — Criar o próprio avatar 3D a partir de fotos (aba "Meu Avatar 3D") e usá-lo no manequim\nDiagrama de classes — API, serviço, entidade user_avatars_3d e o modelo do avatar no frontend
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -9,94 +9,189 @@ skinparam class {
   HeaderBackgroundColor #E4DEF0
 }
 skinparam packageStyle rectangle
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 hide empty methods
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +avatarUrl: String
-  +profileType: ProfileType
-  +mannequinSex: MannequinSex
-  .. +campos do RF1/RF3 ..
+package "fai-web" {
+class Avatar3dController {
+  +get(user): Map  «GET /api/me/avatar3d»
+  +save(user, meta: String, texture: MultipartFile): Map\n  «POST /api/me/avatar3d (multipart)»
+  +update(user, SettingsCommand): Map  «PATCH /api/me/avatar3d»
+  +delete(user)  «DELETE /api/me/avatar3d (204)»
+  +texture(user, userId): ResponseEntity<byte[]>\n  «GET /api/avatar3d/{userId}/texture»
 }
-class UserAvatar3d {
-  +user: User
+}
+
+package "fai-application" {
+class Avatar3dService {
+  ~MODEL_VERSION = 1
+  ~SHAPE_LEN = 468 × 3
+  -MAX_TEXTURE_BYTES = 4 MB
+  ~HAIR_TONES = 14 · HAIR_CUTS = 7
+  -ADJUST: headScale, neck, hairVolume,\n  skinLight, hairTone, hairCut
+  ~BODY_RANGE · BODY_SOURCES
+  +get(user): Map
+  +save(user, SaveCommand, texture: byte[]): Map
+  +update(user, SettingsCommand): Map
+  +delete(user)
+  +deleteAllFor(userId)
+  +texture(viewer, ownerId): byte[]
+  +forMannequin(ownerId, viewerId): Optional<Map>
+  ~moderateTexture(userId, jpeg): ModerationStatus
+  ~{static} publicTexture(a): boolean
+  ~{static} validateModel(m): Map
+  ~{static} validateBody(b): Map
+  ~{static} clampAdjust(a): Map
+  ~{static} normalizeTexture(bytes): byte[]
+}
+class "Avatar3dService.SaveCommand" as SaveCmd <<record>> {
+  +model, adjust: Map
+  +photos: Integer
+  +warnings: List<String>
+  +consent, publicOnRunway: Boolean
+}
+class "Avatar3dService.SettingsCommand" as SetCmd <<record>> {
+  +adjust: Map
+  +publicOnRunway: Boolean
+  +body: Map
+  +sex: String  «FEMININO | MASCULINO»
+}
+class ShowcaseService {
+  ~mannequin(u: User, ws, viewer): Map  «head = AVATAR»
+}
+class TryOnService {
+  ~resolve(user, prefs, sex): Resolved
+}
+class "TryOnService.Resolved" as Resolved <<record>> {
+  +sex: MannequinSex
+  +body, identity
+  +avatar: Map
+}
+class AccountService {
+  +purgeScheduledDeletions(): int
+}
+class Audit {
+  +log(user, action, resource, metadata)
+}
+class AiEngine {
+  +text(TextCall<T>): AiOutcome<T>
+}
+interface MediaStoragePort <<port>> {
+  +put(key, bytes, contentType): StoredObject
+  +get(key): byte[]
+  +delete(key)
+}
+}
+
+package "fai-domain" {
+class UserAvatar3d <<table user_avatars_3d>> {
+  +user: User  «1 por pessoa»
   +modelVersion: int
   +modelJson: String
   +adjustJson: String
-  +textureKey: String
+  +textureKey: String  «restricted/users/{id}/avatar3d/…»
   +photosCount: int
   +warningsJson: String
-  +publicOnRunway: boolean
+  +publicOnRunway: boolean  «padrão true»
   +consentAt: Instant
-  +textureModeration: ModerationStatus
+  +textureModeration: ModerationStatus  «V27»
 }
-class AiInferenceLog {
-  +userId: UUID
-  +capability: String
-  +provider: String
-  +result: AiCallResult
-  +fallbackUsed: boolean
+abstract class VersionedAuditableEntity {
+  +id: UUID  «AuditableEntity»
+  +createdAt, updatedAt: Instant
+  +version: long
 }
+interface UserAvatar3dRepository {
+  +findByUserId(userId): Optional<UserAvatar3d>
 }
-package "fai-domain · enums" {
+class User <<table users>> {
+  +sex: MannequinSex
+  +profileType: ProfileType
+}
 enum ModerationStatus {
   PENDING
   APPROVED
   REJECTED_POLICY
   REJECTED_NOT_CLOTHING
 }
-enum ProfileType {
-  PESSOAL
-  MARCA
-  CELEBRIDADE
+enum MannequinSex {
+  MASCULINO
+  FEMININO
 }
 }
-package "fai-application · service" {
-class Avatar3dService {
-  +get(user): Map
-  +save(user, SaveCommand, texture): Map
-  +update(user, SettingsCommand): Map
-  +delete(user): void
-  +deleteAllFor(userId): void
-  +texture(viewer, ownerId): byte[]
-  +forMannequin(ownerId, viewerId): Optional<Map>
-  ~moderateTexture(userId, jpeg): ModerationStatus
-  {static} ~publicTexture(a): boolean
+
+package "Frontend (TypeScript)" {
+class AvatarModel <<interface>> {
+  +v: number
+  +shape: number[]  «468×3 cm canônicos»
+  +skin: string  «#rrggbb medido»
+  +hair: AvatarHair
+  +metrics, views, warnings
+  +body?: BodyModel
+  +sex?: Sex
 }
-class "Avatar3dService.SaveCommand" as SaveCmd <<record>> {
-  +model: Map
-  +adjust: Map
-  +photos: Integer
-  +warnings: List<String>
-  +consent: Boolean
-  +publicOnRunway: Boolean
+class AvatarAdjust <<interface>> {
+  +headScale, neck, hairVolume
+  +skinLight, hairTone, hairCut: number
 }
-class "Avatar3dService.SettingsCommand" as SetCmd <<record>> {
-  +adjust: Map
-  +publicOnRunway: Boolean
-  +body: Map
-  +sex: String
+class AvatarHair <<interface>> {
+  +present: boolean
+  +color: string | null
+  +top, side, bottom, fringe, cut
+  +length?, texture?, tone?, volume?
 }
-class ShowcaseService {
-  ~mannequin(user, peças, viewer): Map
+class BodyModel <<interface>> {
+  +v: 1
+  +sex: Sex
+  +params: BodyParams
+  +sources: BodySources
 }
-class AiEngine {
-  +text(TextCall): AiOutcome
+class AnalyzedPhoto <<interface>> {
+  +role, faces, lm, fit, stats
+  +issues: Issue[]
+  +sex: SexGuess | null
+}
+class Issue <<interface>> {
+  +code: string
+  +severity: "block" | "warn"
+}
+class Avatar3dRef <<interface>> {
+  +version?, model: AvatarModel
+  +adjust?, textureUrl?
 }
 }
-UserAvatar3d "1" --> "1" User : user
-UserAvatar3d --> ModerationStatus : textureModeration
-User --> ProfileType
-Avatar3dService ..> UserAvatar3d
+
+Avatar3dController --> Avatar3dService
 Avatar3dService ..> SaveCmd
 Avatar3dService ..> SetCmd
+Avatar3dService --> UserAvatar3dRepository
+Avatar3dService --> MediaStoragePort : textura privada
 Avatar3dService --> AiEngine : CONTENT_MODERATOR
-AiEngine ..> AiInferenceLog : grava
+Avatar3dService --> Audit : AVATAR3D_SALVO · _CORPO · _EXCLUIDO
 ShowcaseService --> Avatar3dService : forMannequin
-note top of UserAvatar3d : tabela user_avatars_3d (V25)\num avatar por pessoa; textura em chave privada
-note top of User : tabela users
-note top of AiInferenceLog : tabela ai_inference_log — ver RF24 (motor de IA)
-note bottom of ShowcaseService : head=AVATAR na Passarela 3D e na Foto com meu manequim;\nMeu Quarto e Espelho: não implementado — conforme Trello (CA10)
+TryOnService --> Avatar3dService : forMannequin
+TryOnService ..> Resolved
+AccountService --> Avatar3dService : deleteAllFor
+UserAvatar3dRepository ..> UserAvatar3d
+UserAvatar3d --|> VersionedAuditableEntity
+UserAvatar3d "0..1" --> "1" User : user
+UserAvatar3d --> ModerationStatus
+User --> MannequinSex
+AvatarModel *-- AvatarHair
+AvatarModel o-- "0..1" BodyModel
+AnalyzedPhoto *-- "*" Issue
+Avatar3dRef --> AvatarModel
+Avatar3dRef ..> AvatarAdjust
+UserAvatar3d ..> AvatarModel : modelJson (validado por\nvalidateModel nos dois lados)
+UserAvatar3d ..> AvatarAdjust : adjustJson
+
+note bottom of UserAvatar3d
+  V25 cria a tabela; V27 acrescenta texture_moderation.
+  publicTexture = publicOnRunway e APPROVED: só assim
+  outras pessoas recebem a textura do rosto.
+end note
 @enduml

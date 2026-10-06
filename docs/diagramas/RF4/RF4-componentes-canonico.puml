@@ -1,0 +1,77 @@
+@startuml RF4_Componentes_Canonico
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de componentes — imagem canônica e captura adaptativa: o que existe (biblioteca, tabelas V29) e o que é plano
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam component<<planejado>> {
+  BackgroundColor #F2F2F2
+  BorderColor #9A9A9A
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+
+package "Frontend (Next.js)" {
+  component "lib/capture/capture-guides.ts (CATEGORY_CARDS)\n+ components/capture/garment-glyphs.tsx\n(hoje só ilustram a escolha do tipo no catálogo)" as FE_GUIDE
+  component "CameraCapture · CaptureRequestCard\nIdentificationSummary · QualityGuidance" <<planejado>> as FE_CAP
+  component "admin/ai-review" <<planejado>> as FE_ADM
+}
+
+package "fai-web · controllers" {
+  [WardrobeController\nPOST /api/pieces (captureSessionId, draftId)\nPOST /api/pieces/analysis/batch · /multi] as C_WR
+  component "CaptureController\n/api/capture/profiles · /sessions\n/sessions/{id}/images · /requests/{id}/skip" <<planejado>> as C_CAP
+  component "Admin: /api/admin/ai-review\n/api/admin/vision/models · metrics · datasets" <<planejado>> as C_ADM
+}
+
+package "fai-application" {
+  [WardrobeService\nanalyzeForCapture (sem chamador)\ncreateInternal → PieceCapturedFromSession] as S_WR
+  component "CaptureSessionService" <<planejado>> as S_CAP
+  package "vision (biblioteca; usada nos testes)" {
+    [AdaptiveCaptureEngine\n+ CaptureProfiles / CaptureProfile] as V_ACE
+    [PhotographyQualityGate] as V_QG
+    [LandmarkDetector] as V_LD
+    [BrandEnsembleResolver\n+ IdentificationHierarchy] as V_BER
+    [ProductKnowledgeBase (@Service)] as V_KB
+    [CanonicalPhotographer\n+ PhotographySpecs] as V_CP
+    [GarmentEmbedder (96 dims)] as V_EMB
+  }
+  [LensService (RF45)\nusa GarmentEmbedder,\nPieceImageRepository e\nGarmentEmbeddingRepository] as S_LENS
+  [AiEngine (RF24) · FlatLayPipeline\nBrandReader (OCR local: TextReaderPort\n→ OnnxTextReader)] as S_AI
+}
+
+package "fai-infrastructure" {
+  [Repositórios JPA (V29)\nCaptureSessionRepository · CaptureRequestRepository\nPieceImageRepository · BrandPredictionRepository\nGarmentLandmarkRepository · GarmentEmbeddingRepository\nModelRegistryEntryRepository · ModelInferenceRepository\nAiReviewItemRepository · TrainingCandidateRepository\nDatasetSourceRepository · Kb*Repository] as I_JPA
+  [S3MediaStorageAdapter /\nLocalFileMediaStorage] as I_S3
+}
+database "MySQL — V29__adaptive_garment_capture\n• capture_sessions · capture_requests\n• piece_images · garment_landmarks\n• brand_predictions · model_registry · model_inferences\n• ai_review_items · dataset_sources · training_candidates\n• kb_brand_signatures · kb_product_lines · kb_product_models\n• garment_embeddings\n• wardrobe_items.canonical_image_url · capture_session_id" as DB
+
+FE_CAP ..> C_CAP
+FE_ADM ..> C_ADM
+C_CAP ..> S_CAP
+C_WR --> S_WR
+S_CAP ..> S_WR : analyzeForCapture
+S_CAP ..> V_ACE
+S_CAP ..> V_QG
+S_CAP ..> V_LD
+S_CAP ..> V_BER
+S_CAP ..> V_CP
+S_CAP ..> I_S3 : original e derivados
+S_CAP ..> I_JPA
+C_ADM ..> I_JPA
+V_BER <.. V_KB : evidências
+V_KB --> I_JPA : kb_*
+V_CP ..> V_LD
+S_WR --> S_AI
+S_WR --> I_JPA : wardrobe_items
+S_LENS --> V_EMB
+S_LENS --> I_JPA : piece_images · garment_embeddings
+I_JPA --> DB : JPA / Flyway V29
+@enduml

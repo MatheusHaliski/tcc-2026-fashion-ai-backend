@@ -1,0 +1,349 @@
+@startuml FashionAI_Classes_v5_Identidade
+title FashionAI — Visão global do domínio (v5)\nDiagrama de classes — Identidade, perfis emissores e social (RF1–RF3, RF8, RF12, RF14, RF17, RF19, RF22, RF23) · entidades JPA de fai-domain, Flyway V1–V42
+!pragma layout smetana
+set separator none
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam note {
+  BackgroundColor #FFFBEA
+  BorderColor #B8A86A
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "Conta, sessão e privacidade (RF1–RF3, RF23)" {
+class User << (V,#C9B8F0) users >> {
+  +username: String
+  +displayName: String
+  +email: String
+  +emailHash: String
+  +profileType: ProfileType
+  +role: String
+  +status: AccountStatus
+  +accountOrigin: AccountOrigin
+  +profileVisibility: Visibility
+  +privateAccount: boolean
+  +verified: boolean
+  +twoFactorEnabled: boolean
+  +runwayOptOut: boolean
+  +lookDoDiaPanelVersion: HypeScorePanelVersion
+  +deletionScheduledFor: Instant
+  .. +17 campos ..
+}
+class UserPreferences << (V,#C9B8F0) user_preferences >> {
+  +user: User
+  +theme: ThemeMode
+  +language: UiLanguage
+  +density: UiDensity
+  +sizeSystem: SizeSystem
+  +mannequinSex: MannequinSex
+  +defaultCardSkin: String
+  +notificationPushMaster: boolean
+  +hypeCreatorOptOut: boolean
+  +clientUpdatedAt: Instant
+  .. +16 campos ..
+}
+class UserConsent << (V,#C9B8F0) user_consents >> {
+  +user: User
+  +purpose: ConsentPurpose
+  +granted: boolean
+  +legalBasis: String
+  +policyVersion: String
+  +grantedAt: Instant
+  +revokedAt: Instant
+}
+class VerificationCode << (V,#C9B8F0) verification_codes >> {
+  +user: User
+  +purpose: VerificationPurpose
+  +codeHash: String
+  +target: String
+  +expiresAt: Instant
+  +consumedAt: Instant
+  +attempts: int
+  .. +2 campos ..
+}
+class RefreshToken << (V,#C9B8F0) refresh_tokens >> {
+  +user: User
+  +tokenHash: String
+  +familyId: UUID
+  +rotatedFromId: UUID
+  +expiresAt: Instant
+  +revokedAt: Instant
+  +deviceName: String
+  +persistent: boolean
+  .. +4 campos ..
+}
+class DataExportRequest << (V,#C9B8F0) data_export_requests >> {
+  +user: User
+  +status: ExportStatus
+  +fileKey: String
+  +readyAt: Instant
+  +expiresAt: Instant
+}
+}
+package "Perfis emissores: marca e celebridade (RF1, RF14, RF22)" {
+class BrandProfile << (V,#C9B8F0) brand_profiles >> {
+  +owner: User
+  +brandName: String
+  +slug: String
+  +cnpj: String
+  +approvalStatus: ApprovalStatus
+  +source: BrandSource
+  +verificationScore: BigDecimal
+  +requiresSealReview: boolean
+  +sealConfidenceThreshold: BigDecimal
+  +reviewAttempts: int
+  +reviewSubmittedAt: Instant
+  .. +19 campos ..
+}
+class CelebrityProfile << (V,#C9B8F0) celebrity_profiles >> {
+  +owner: User
+  +stageName: String
+  +slug: String
+  +styleSignatureJson: String
+  +verificationStatus: ApprovalStatus
+  +verificationScore: BigDecimal
+  +sealConsentGranted: boolean
+  +requiresSealReview: boolean
+  +reviewAttempts: int
+  +reviewSubmittedAt: Instant
+  .. +19 campos ..
+}
+}
+package "Social, notificações e fotos (RF8, RF12, RF17, RF19)" {
+class Follow << (V,#C9B8F0) follows >> {
+  +follower: User
+  +following: User
+  +status: FollowStatus
+  +respondedAt: Instant
+}
+class Comment << (V,#C9B8F0) comments >> {
+  +author: User
+  +targetType: TargetType
+  +targetId: UUID
+  +parentCommentId: UUID
+  +content: String
+  +active: boolean
+}
+class Reaction << (V,#C9B8F0) reactions >> {
+  +actor: User
+  +targetType: TargetType
+  +targetId: UUID
+  +reactionType: ReactionType
+}
+class Share << (V,#C9B8F0) shares >> {
+  +user: User
+  +targetType: TargetType
+  +targetId: UUID
+  +channel: ShareChannel
+  +caption: String
+  +exportUrl: String
+}
+class SavedItem << (A,#B8DCC0) saved_items >> {
+  +user: User
+  +targetType: TargetType
+  +targetId: UUID
+  +savedAt: Instant
+  +favorite: boolean
+}
+class Notification << (V,#C9B8F0) notifications >> {
+  +recipient: User
+  +actor: User
+  +type: NotificationType
+  +category: NotificationCategory
+  +resourceType: String
+  +resourceId: UUID
+  +read: boolean
+  +readAt: Instant
+  +delivered: boolean
+  .. +3 campos ..
+}
+class Photo << (V,#C9B8F0) photos >> {
+  +user: User
+  +origin: PhotoOrigin
+  +sourceEntityId: UUID
+  +storageKey: String
+  +contentHash: String
+  +qualityScore: BigDecimal
+  +moderationStatus: ModerationStatus
+  +keyMoment: boolean
+  +editedFromPhotoId: UUID
+  +deletedAt: Instant
+  .. +9 campos ..
+}
+}
+interface ReviewableProfile <<domain/model>> {
+  +getOwner(): User
+  +publicName(): String
+  +reviewStatus(): ApprovalStatus
+  +reviewStatus(status: ApprovalStatus)
+  +getReviewAttempts(): int
+  +getReviewReasons(): String
+  +getReviewChecklist(): String
+}
+package "Enums-chave (domain/model/enums)" {
+enum AccountStatus {
+  PENDING_EMAIL_VERIFICATION
+  ACTIVE
+  PENDING_VALIDATION
+  SUSPENDED
+  DELETION_SCHEDULED
+  DELETED
+}
+enum ProfileType {
+  PESSOAL
+  MARCA
+  CELEBRIDADE
+  ADMIN
+}
+enum AccountOrigin {
+  REAL
+  TEST_SEED
+  DEMO
+  SYSTEM
+}
+enum Visibility {
+  PRIVATE
+  FOLLOWERS
+  PUBLIC
+}
+enum HypeScorePanelVersion {
+  SPOTLIGHT_CLASSICO
+  PASSARELA
+  RAIO_X_ESTILO
+  BENTO_DIA
+  EDITORIAL_MINIMAL
+  COACH_ESTILO
+}
+enum ApprovalStatus {
+  PENDENTE
+  AJUSTES
+  APROVADO
+  RECUSADO
+  SUSPENSO
+}
+enum ConsentPurpose {
+  AI_RECOMMENDATION
+  AI_EXTERNAL_PHOTO_PROCESSING
+  HISTORY_FOR_RECOMMENDATION
+  PERSONALIZED_ADS
+  PARTNER_SHARING
+  BODY_MEASUREMENTS
+  FACIAL_RECOGNITION
+  LOCATION_HISTORY
+  AI_MODEL_TRAINING
+}
+enum VerificationPurpose {
+  EMAIL_VERIFICATION
+  EMAIL_CHANGE
+  TWO_FACTOR
+  PASSWORD_RESET
+}
+enum ExportStatus {
+  REQUESTED
+  PROCESSING
+  READY
+  EXPIRED
+}
+enum FollowStatus {
+  PENDENTE
+  ACEITO
+  BLOQUEADO
+}
+enum TargetType {
+  PIECE
+  SCHEME
+  DNA
+}
+enum ReactionType {
+  LIKE
+  TREND
+  ELEGANTE
+  CRIATIVO
+}
+enum ShareChannel {
+  FEED
+  EXTERNAL
+}
+enum NotificationCategory {
+  SECURITY
+  SOCIAL
+  ACHIEVEMENT
+  SYSTEM
+  POINTS
+}
+enum NotificationType {
+  PASSWORD_RESET
+  TWO_FACTOR_CODE
+  NEW_LOGIN_DEVICE
+  EMAIL_CONFIRMATION
+  DATA_EXPORT_READY
+  FOLLOW_REQUEST
+  FOLLOW_ACCEPTED
+  NEW_FOLLOWER
+  .. +22 valores ..
+}
+enum PhotoOrigin {
+  WARDROBE_ITEM
+  SCHEME
+  TRY_ON
+  STYLE_DNA
+  PROFILE
+  BACKGROUND_STUDIO
+  LOOSE
+  EDITOR
+}
+enum ModerationStatus {
+  PENDING
+  APPROVED
+  REJECTED_POLICY
+  REJECTED_NOT_CLOTHING
+}
+}
+
+' --- associações JPA (geradas do código) ---
+UserPreferences "0..1" --> "1" User : user
+UserConsent "*" --> "1" User : user
+VerificationCode "*" --> "1" User : user
+RefreshToken "*" --> "1" User : user
+DataExportRequest "*" --> "1" User : user
+BrandProfile "0..1" --> "1" User : owner
+CelebrityProfile "0..1" --> "1" User : owner
+Follow "*" --> "1" User : follower
+Follow "*" --> "1" User : following
+Comment "*" --> "1" User : author
+Reaction "*" --> "1" User : actor
+Share "*" --> "1" User : user
+SavedItem "*" --> "1" User : user
+Notification "*" --> "1" User : recipient
+Notification "*" --> "0..1" User : actor
+Photo "*" --> "1" User : user
+' --- referências por id, sem FK JPA ---
+BrandProfile ..|> ReviewableProfile
+CelebrityProfile ..|> ReviewableProfile
+Comment ..> Comment : parentCommentId
+RefreshToken ..> RefreshToken : rotatedFromId
+Photo ..> Photo : editedFromPhotoId
+User -[hidden]-> AccountStatus
+User -[hidden]-> ApprovalStatus
+note "targetType + targetId (Comment, Reaction, Share, SavedItem):\nPIECE → WardrobeItem · SCHEME → Scheme · DNA → DnaScheme\n(sem FK JPA; ver FashionAI_Classes_v5_Pecas e _Esquemas)." as N_TARGET
+N_TARGET .. Reaction
+note "V42: hypeCreatorOptOut tira a pessoa de\n«Criadores em alta» (HypeScore v2, RF46)." as N_V42
+N_V42 .. UserPreferences
+note "Notificação: fonte de verdade no MySQL;\nprojeção de entrega (inbox, TTL 90 dias)\nno Cassandra via NotificationProjectionPort.\nV37: lançamentos de FAI Points viram FAI_POINTS." as N_NOTIF
+N_NOTIF .. Notification
+legend right
+  <b>Letra do ícone</b>
+  V = estende VersionedAuditableEntity (id UUID, createdAt/updatedAt, createdBy/lastModifiedBy, @Version)
+  A = estende AuditableEntity (id UUID e auditoria, sem @Version)
+  S = @Entity sem superclasse (id e datas próprios) · M = @Embeddable (colunas embutidas na tabela dona)
+  E = enum
+  ⟶ seta cheia = associação JPA (@ManyToOne/@OneToOne) · seta tracejada = id guardado sem FK JPA
+  <<outra área>> = classe detalhada em outro diagrama v5
+endlegend
+@enduml

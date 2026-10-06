@@ -1,0 +1,65 @@
+@startuml RF41_Sequencia_Criacoes
+title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de sequência — criações: esquema, peça (cadastro e edição), peça completa e 3D
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "schemes/new · mirror · autopilot ·\ntry-on · pieces/new · pieces/[id]" as FE
+participant "SchemeController\n· WardrobeController" as C
+participant "SchemeService\n· WardrobeService" as S
+participant "Model3dService" as M3
+participant "WardrobeEventListeners\n+ SideEffectRunner" as WEL
+participant "FaiPointsService" as FP
+database "MySQL" as DB
+
+== Esquema criado (qualquer caminho) ==
+U -> FE: salva um look (Criar Look, Vista-me, DNA, Autopiloto, Provador, remix)
+FE -> C: POST /api/schemes
+C -> S: SchemeService.create(user, form)
+S -> DB: INSERT schemes + scheme_items
+S -> S: publishEvent(SchemeSaved(userId, schemeId, pieceIds, origin, created = true))
+S --> FE: 201
+S ->> WEL: SchemeSaved (AFTER_COMMIT)
+WEL -> FP: award(userId, SCHEME_CREATED, "SCHEME", schemeId) → +40 (5/dia, 1× por esquema)
+note right of S: edição (created = false) não pontua
+
+== Peça cadastrada ou editada ==
+U -> FE: cadastra a peça com foto real
+FE -> C: POST /api/pieces
+C -> S: WardrobeService.create
+S -> S: publishEvent(PieceCreated(userId, pieceId,\nreadyForCatalog = catalogReady(w)))
+S ->> WEL: PieceCreated (AFTER_COMMIT)
+WEL -> DB: INSERT wardrobe_availability_log (available = true)
+opt catalogReady: completude ≥ 60%, imagem e não é imagem padrão
+  WEL -> FP: award(PIECE_CATALOGED, "PIECE", pieceId) → +25 (10/dia, 1× por peça)
+end
+U -> FE: edita a peça
+FE -> C: PUT /api/pieces/{id}
+C -> S: WardrobeService.update → PieceUpdated(userId, pieceId, completeness)
+S ->> WEL: PieceUpdated (AFTER_COMMIT)
+opt a edição deixou a peça pronta (catalogReady)
+  WEL -> FP: award(PIECE_CATALOGED) — mesma chave: paga só se ainda não pagou
+end
+opt completude ≥ 90%
+  WEL -> FP: award(PIECE_COMPLETED, "PIECE", pieceId) → +10 (1× por peça)
+end
+
+== 3D gerado (RF16) ==
+M3 -> M3: job do modelo 3D termina (GLB salvo)
+M3 -> FP: awardIsolated(userId, PIECE_3D, "PIECE", pieceId) — REQUIRES_NEW, +15
+note right of M3
+  O listener onModel3d existe, mas nenhum serviço
+  publica Model3dGenerated: quem paga é a chamada
+  direta do Model3dService (falha só vira log).
+end note
+
+== Cópia não pontua ==
+U -> FE: "Guardar cópia" de peça pública de outra pessoa
+FE -> C: POST /api/pieces/{id}/copy
+C -> S: WardrobeService.addToWardrobe — não publica PieceCreated
+@enduml

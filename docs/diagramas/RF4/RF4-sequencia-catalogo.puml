@@ -1,0 +1,93 @@
+@startuml RF4_Sequencia_Catalogo
+!pragma layout smetana
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de sequência — busca catalogada em detalhe: marca e apelidos, interpretação do texto, pool priorizado, ranking e busca oficial
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "pieces/new · CatalogSearch\n(catalog-search.tsx,\nbrand-autocomplete.tsx)" as FE
+participant "CatalogController" as C
+participant "CatalogService" as S
+participant "CatalogTextInterpreter ·\nCatalogDesignInterpreter" as TI
+participant "AiEngine (RF24)\nCATALOG_TEXT_INTERPRETER ·\nCATALOG_DISCOVERY" as AI
+participant "CatalogProductRepository" as R
+participant "CatalogMatchScorer" as M
+participant "OfficialCatalogDiscovery" as D
+participant "CatalogIngestService" as I
+database "MySQL" as DB
+
+U -> FE: tipo da peça → marca
+FE -> C: GET /api/catalog/brands?q=lev
+C -> S: brandSuggestions(q)
+S -> DB: brands + brand_aliases (nome e apelidos)
+C --> FE: 200 {brands} ("Levis" → Levi's)
+U -> FE: "moletom com capuz preto" (debounce 350 ms)
+FE -> C: GET /api/catalog/search?category&subcategory&brand&q&color (+ /suggestions)
+C -> S: search(userId, SearchRequest)
+S -> S: resolve(): marca (BrandAlias), subtipo pela FRASE mais longa\n(4 → 2 palavras: "moletom com capuz" = hoodie), cor, termos
+S -> TI: interpret(userId, q)
+TI -> TI: leitura local (normalization.json → design):\nestampa, logo (posição/tamanho), lados, cor da peça × da estampa
+opt 4+ palavras e IA disponível
+  TI -> AI: text(CATALOG_TEXT_INTERPRETER) — vocabulário fechado
+  AI --> TI: JSON {pattern, logoPlacement, sides, baseColors, printColors}
+end
+TI --> S: DesignTraits (+ palavras consumidas)
+alt sem marca, tipo, termo nem design
+  S --> FE: 200 {enoughInput: false}
+else
+  note over S, R
+    Pool (sem repetir id), começando pelo que a pessoa descreveu.
+    O subtipo LIDO do texto prioriza e pontua, mas não filtra.
+  end note
+  opt subtipo e cor
+    S -> R: candidatesWithColor(marca, categoria, subtipo, cor, termos)\n(cor no produto OU numa variante)
+  end
+  opt subtipo
+    S -> R: candidates(marca, categoria, subtipo, termos)
+  end
+  opt estampa ≠ PLAIN
+    S -> R: candidates(…, subtipo, patternTerms(estampa))
+  end
+  S -> R: candidates(…, subFilter, termos) — pool geral
+  opt pool < 8
+    S -> R: candidates(…, subFilter, null) — reforço
+  end
+  R -> DB: MATCH(search_text) AGAINST (BOOLEAN MODE)\nsó VALIDATED · PERSISTABLE · REFERENCE_ONLY\nORDER BY owners_count DESC LIMIT 200
+  S -> DB: rank(): fotos primárias, variantes e apelidos do pool
+  loop cada produto
+    S -> M: score(Intent, Candidate com variantes/design_json/description)
+    M --> S: Score (total + motivos ✓/✗) — design pesa 0,45
+    S -> S: total < MIN_SCORE (0,35) → sai;\nvariante da cor pedida pré-selecionada
+  end
+  S -> S: orderScore(): sem foto cede NO_PHOTO_PENALTY = 0,10\nsó na ordem ("% compatível" igual) · desempate owners_count
+  C --> FE: 200 {intent (chips "Entendemos: …"), results[matchScore, foto oficial],\ntotal, enoughInput, canSearchOfficial}
+end
+
+opt nada encontrado e canSearchOfficial
+  U -> FE: "Pesquisar nas lojas oficiais"
+  FE -> C: POST /api/catalog/discover (SearchRequest)
+  C -> S: discover(user, r)
+  S -> DB: catalog_sources (marca, active)
+  alt marca desconhecida / sem fonte oficial
+    S --> FE: 200 {status: BRAND_UNKNOWN | NO_OFFICIAL_SOURCE}
+  else
+    S -> D: discover(userId, marca, subtipo, query, domínios oficiais)
+    D -> AI: text(CATALOG_DISCOVERY) — busca na web SÓ nesses domínios
+    AI --> D: products[] (máx. 8; sem URL, código ou foto inventados)
+    loop cada produto achado
+      S -> I: upsert(ProductInput, DISCOVERED, createBrand = false)
+      I -> DB: catalog_products (dedup_key único) · catalog_images REFERENCE_ONLY
+    end
+    C --> FE: 200 {status FOUND | NOT_FOUND, results, rejected}
+  end
+end
+U -> FE: "É esta" → Salvar (RF4-sequencia-v3)
+FE -> C: POST /api/pieces/from-catalog (AddRequest)
+C -> S: addToWardrobe(user, a)
+S -> DB: REJECTED → 400 PRODUTO_RECUSADO;\nDISCOVERED → REFERENCE_ONLY; owners_count + 1
+@enduml

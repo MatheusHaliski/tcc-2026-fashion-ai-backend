@@ -1,6 +1,6 @@
 @startuml RF9_MaquinaDeEstados_Edicao
 !pragma layout smetana
-title RF9 — Scheme: edição × publicação (SchemeStatus) e revalidação do vínculo de selo (SealBondStatus)
+title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de máquina de estados — Scheme.status na edição e revalidationPending do vínculo de selo (CA05)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,23 +8,47 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-[*] --> Rascunho : POST /api/schemes
-state "DRAFT" as Rascunho
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+}
+
+state "DRAFT\n(rascunho)" as Rascunho
 state "PUBLISHED" as Publicado {
-  state "revalidationPending = false" as Ok
-  state "revalidationPending = true" as Reval
+  state "Sem revalidação\n(revalidationPending = false)" as Ok
+  state "Revalidação pendente\n(revalidationPending = true)" as Reval
   [*] --> Ok
-  Ok --> Ok : PUT /api/schemes/{id}\n(só campos, mesmas peças)
-  Ok --> Reval : PUT /api/schemes/{id} com peças alteradas\ne algum SealBond APPROVED\n(SealService.flagRevalidation → notifica a marca)
-  Reval --> Ok : marca revisa o vínculo\n(POST /api/seal-bonds/{id}/review — RF20/RF21)
+  Ok --> Ok : PUT /api/schemes/{id}\n(mesmas peças: só campos, arte, visibilidade)
+  Ok --> Reval : PUT /api/schemes/{id} com a lista de\npeças alterada e ≥ 1 SealBond APPROVED\n(SealService.flagRevalidation + SEAL_BOND_REVIEW)
+  Reval --> Reval : nova edição das peças\n(notifica de novo)
+  Reval --> Ok : POST /api/seal-bonds/{bondId}/review\napprove = true ("revalidado")
+  Reval --> Ok : review approve = false (motivo obrigatório)\n→ vínculo REVOKED
 }
 state "ARCHIVED" as Arquivado
+
+[*] --> Rascunho : POST /api/schemes (RF5, publish = false)\nPOST /api/me/mirror/draft (Espelho)
+[*] --> Publicado : POST /api/schemes com publish = true
 Rascunho --> Rascunho : PUT /api/schemes/{id}\nPOST .../improvements/apply
-Rascunho --> Publicado : PUT /api/schemes/{id} publish=true\nPOST /api/schemes/{id}/publication
-Publicado --> Publicado : POST /api/schemes/{id}/improvements/apply\n(diff aceito item a item)
-Publicado --> Arquivado : POST /api/schemes/{id}/archive\n(revoga selos: SealBond → REVOKED)
-Rascunho --> Arquivado : POST /api/schemes/{id}/archive
-note right of Reval : CA05 — "revalidação pendente";\nos scheme_items ganham snapshot_json\nse ainda não tinham
-note left of Publicado : visibilidade → PRIVATE em qualquer\nedição revoga os selos (RF20.CA14)
-note bottom of Arquivado : qualquer edição é negada:\nowned() + Guard.requireOwner;\nnão-autor sempre recebe 403 auditado (CA04)
+Rascunho --> Publicado : PUT /api/schemes/{id} {publish: true}\nou POST /api/schemes/{id}/publication\n(publishedAt + snapshot_json das peças)
+Publicado --> Publicado : POST .../improvements/apply\n(só campos; não marca revalidação)
+Rascunho --> Arquivado : POST /api/schemes/{id}/archive\nou DELETE /api/schemes/{id}
+Publicado --> Arquivado : POST .../archive · DELETE\n(revokeForScheme: selos REVOKED;\nfora do índice; foto do look sai de Minhas Fotos)
+Arquivado --> [*]
+
+note right of Rascunho
+  Toda transição exige requireCanCreate + owned:
+  não-autor → 403 auditado (CA04).
+  @Version: duas edições concorrentes →
+  409 EDICAO_CONCORRENTE.
+end note
+note left of Publicado
+  Visibilidade → PRIVATE num PUT revoga os
+  selos (RF20.CA14) sem mudar o status.
+  O applyDiff com visibility PRIVATE não revoga.
+end note
+note bottom of Arquivado
+  Não há endpoint para desarquivar.
+  Para visitantes o look some (404);
+  a autora ainda o vê no filtro "arquivados".
+end note
 @enduml

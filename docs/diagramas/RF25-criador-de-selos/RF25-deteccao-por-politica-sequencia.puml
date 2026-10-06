@@ -52,7 +52,8 @@ end
 
 group Salvar o look e pedir os vínculos
   P -> F : salva/publica o look com os selos marcados
-  F -> C : POST /api/schemes (ou PUT /api/schemes/{id})
+  F -> F : POST /api/schemes | PUT /api/schemes/{id}\n(SchemeController, RF5) → id do look
+  note right of F : na peça (RF4) a escolha só é guardada em\nwardrobe_items.seal_ids_json ("TIPO:nome", até 2);\nselo de PEÇA emitido vem de vínculo\nde um look (tier PECA)
   loop cada emissor marcado
     F -> C : POST /api/schemes/{id}/seal-bonds {targetOwnerId, imageRightsConsent}
     C -> S : linkManually(user, schemeId, targetOwnerId, consent)

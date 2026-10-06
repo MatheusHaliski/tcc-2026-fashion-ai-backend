@@ -1,11 +1,13 @@
 @startuml RF41_Componentes
-title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de componentes — jogos e criações → FaiPointsService (ponte única) → regras, extrato e nível
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
+  BackgroundColor<<planejado>> #F2F2F2
+  BorderColor<<planejado>> #9AA0A6
 }
 skinparam package {
   BorderColor #CBC6BE
@@ -16,54 +18,66 @@ skinparam database {
 }
 left to right direction
 
-package "Frontend (Next.js)" {
-  component "flair — resultado com\n\"+N FAI Pts\"" as FE0
-  component "challenges" as FE1
-  component "points — saldo, nível,\nregras e extrato" as FE2
-  component "selo \"+N FAI Pts\" na Arena\ne na inscrição em Desafio" <<planejado>> as FEP
+package "Frontend (Next.js 16)" {
+  component "flair/page.tsx\n(duelo e times: selo “+N FAI Pts”)" as FE0
+  component "components/flair/modes-shared.tsx\n(resultado dos 15 modos com faiPoints)" as FE1
+  component "challenges/[id]/page.tsx\n(inscrição de look)" as FE2
+  component "schemes/new · mirror · autopilot ·\ntry-on · pieces/new · pieces/[id]" as FE3
+  component "points/page.tsx · notifications/page.tsx\n(saldo, regras e extrato)" as FE4
+  component "selo “+N FAI Pts” na Arena\ne na inscrição em Desafio" <<planejado>> as FEP
 }
-note bottom of FEP : não implementado — conforme\ndocs/novos-rf/RF40-RF41.md (Pendente)
-package "fai-web · controllers" {
-  [FlairController] as FC
-  [FlairModesController] as FMC
-  [ChallengeController] as CC
-  [HighlightsController\n(/api/me/points)] as HC
-  [RoomController\n(/api/me/room)] as RC
+package "fai-web" {
+  [FlairController\n/api/flair/duels · arena · teams/battles · quests/{code}/claim] as FC
+  [FlairModesController\n/api/flair/modes/*] as FMC
+  [ChallengeController\n/api/challenges/{id}/entries] as CC
+  [SchemeController · WardrobeController\n/api/schemes · /api/pieces] as SWC
+  [HighlightsController · NotificationController\n/api/me/points · /api/notifications] as HC
 }
-package "fai-application · services" {
+package "fai-application" {
   [FlairService] as FS
   [FlairModesService] as FMS
   [ChallengeService] as CS
-  [WardrobeEventListeners\n(AFTER_COMMIT)] as WL
-  [AchievementService] as AS
+  [SchemeService · WardrobeService] as SWS
   [Model3dService (RF16)] as M3
-  [FaiPointsService\ngame() · award()] as FP
+  [WardrobeEventListeners\n+ SideEffectRunner (AFTER_COMMIT)] as WEL
+  [AchievementService] as AS
+  [FaiPointsService\ngame() · award() · awardIsolated()] as FP
+  [FaiPointsService.RoomLayoutAccess] <<port>> as P_RLA
   [RoomService] as RS
   [NotificationService] as NS
 }
-package "fai-infrastructure · adapters" {
-  [FaiPointsLedgerEntryRepository\nFaiPointsRuleRepository\nUserAchievementRepository\nRoomLayoutRepository] as REPOS
+package "fai-domain (Spring Data JPA)" {
+  [FaiPointsRuleRepository\nFaiPointsLedgerEntryRepository] as R_PTS
+  [FlairMatchRepository · FlairCoinEntryRepository\nFlairProfileRepository] as R_FL
 }
-database "MySQL\n• fai_points_ledger\n• fai_points_rules\n• user_achievements\n• room_layouts\n• notifications" as DB
+database "MySQL · fashionai_app\n• fai_points_rules (V5, V26)\n• fai_points_ledger\n• flair_matches · flair_coin_entries\n• flair_profiles · room_layouts · notifications" as DB
 
 FE0 --> FC : HTTPS/JSON
-FE0 --> FMC : HTTPS/JSON
-FE1 --> CC : HTTPS/JSON
-FE2 --> HC : GET /api/me/points
-FC --> FS : chama
-FMC --> FMS : chama
-CC --> CS : chama
+FE1 --> FMC : HTTPS/JSON
+FE2 --> CC : HTTPS/JSON
+FE3 --> SWC : HTTPS/JSON
+FE4 --> HC : HTTPS/JSON
+FEP ..> FC : <<planejado>>
+FC --> FS
+FMC --> FMS
+CC --> CS
+SWC --> SWS
 HC --> FP : account()
-RC --> RS : chama
-FS --> FP : game() / award(FLAIR_QUEST)
-FMS --> FP : game()
-CS --> FP : game() / award(CHALLENGE_COMPLETED)
-WL --> FP : award(SCHEME_CREATED, PIECE_*)
-AS --> FP : award(ACHIEVEMENT)
+HC --> NS
+FS --> FP : game(FLAIR_DUEL · FLAIR_ARENA · FLAIR_TEAM)\naward(FLAIR_QUEST · GAME_WON)
+FMS --> FP : game(FLAIR_<MODO>)
+FMS --> FS : FLAIR Coins
+CS --> FP : game(CHALLENGE)\naward(CHALLENGE_COMPLETED)
+SWS ..> WEL : SchemeSaved · PieceCreated · PieceUpdated
+WEL --> FP : award(SCHEME_CREATED · PIECE_CATALOGED\n· PIECE_COMPLETED)
 M3 --> FP : awardIsolated(PIECE_3D)
-FP --> RS : setLevel
-FP --> NS : publica ROOM_LEVEL_UP
-FP --> REPOS : grava/lê
-AS --> REPOS : grava
-REPOS --> DB : JPA/Flyway (V26)
+AS --> FP : award(ACHIEVEMENT)
+FP --> P_RLA : setLevel
+RS ..|> P_RLA
+FP --> NS : FAI_POINTS · ROOM_LEVEL_UP
+FP --> R_PTS
+FS --> R_FL
+FMS --> R_FL
+R_PTS --> DB : JPA/Flyway
+R_FL --> DB
 @enduml

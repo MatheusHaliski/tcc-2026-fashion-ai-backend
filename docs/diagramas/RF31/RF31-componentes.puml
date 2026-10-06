@@ -1,10 +1,9 @@
 @startuml RF31_Componentes
-title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF31 — Filtrar e marcar o estado dos itens do acervo: favoritar, disponível, indisponível e todos\nDiagrama de componentes — guarda-roupa e card da peça → WardrobeController → WardrobeService → wardrobe_items, hype_scores e selos
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
   BackgroundColor #F4F2EF
-  BackgroundColor<<RF49>> #EAF6EE
   BorderColor #4A4852
   ArrowColor #4A4852
 }
@@ -17,49 +16,60 @@ skinparam database {
 }
 left to right direction
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "closet — filtros de estado\n+ hypeLevel e ordenação (hype-filters.ts)" as FE0
-  component "pieces/[id] — flags" as FE1
-  component "room — cesto e cabide especial" as FE2
+package "Frontend (Next.js 16)" {
+  component "closet/page.tsx\n(abas por categoria, filtro de estado,\n“Com selo”, ?category= e ?seal= na URL)" as FE0
+  component "components/filter-bar.tsx\n+ components/hype/hype-filters.ts\n(hypeSortOptions · hypeLevelFilter)" as FE1
+  component "components/piece-card.tsx\n(Indisponível · Para doar · ★ · SealSlot)" as FE2
+  component "components/expanded-card.tsx\n(menu ⋯: favoritar, disponível,\nà venda, para doar)" as FE3
+  component "lib/pieces/use-piece-seals.ts\n+ piece-events.ts (emitPieceUpdate)" as FE4
+  component "lookbook-tabs.tsx (Peças de outro perfil)\n+ looks/my-looks.tsx (Meus looks)" as FE5
 }
-package "fai-web (REST)" {
-  [WardrobeController] as WardrobeController
+package "fai-web" {
+  [WardrobeController\nGET /api/me/closet · GET /api/users/{id}/closet\nPATCH /api/pieces/{id}/flags] as WC
+  [SchemeController\nGET /api/me/schemes\nPATCH /api/schemes/{id}/flags] as SCC
+  [SealController\nGET /api/pieces/seals] as SLC
 }
-package "fai-application (casos de uso)" {
-  [WardrobeService] as WardrobeService
-  [FlatLayPipeline] as FlatLayPipeline #FAFAFA
-  [AssetCatalogService] as AssetCatalogService #FAFAFA
-  [ProjectionService] as ProjectionService #FAFAFA
-  [JobQueuePort] as JobQueuePort #FAFAFA
-  [Model3dService] as Model3dService #FAFAFA
-  [HypeScoreConfig\n(algorithmVersion · levelThresholds)] as HypeScoreConfig <<RF49>>
+package "fai-application" {
+  [WardrobeService\ncloset · toggles · applyListing\nstateMatches · sealFilter · eligible] as WS
+  [SchemeService\nmine · toggles · stateMatches] as SS
+  [SealService\napprovedPieceBonds] as SEAL
+  [HypeSeals] as HSL
+  [HypeScoreConfig\n(algorithmVersion · levelThresholds)] as CFG
+  [Guard] as G
+  [WardrobeEventListeners\n(onAvailability, AFTER_COMMIT)] as WEL
+  [Consumidores de "disponível"\nSchemeService (Criar look) · MirrorService.eligible\nCopilotService · RoomService · InventoryScoreService] as CONS
 }
-package "fai-domain (repositórios JPA)" {
-  [BrandRepository\nModerationQueueRepository\nPhotoRepository\nPipelineJobRepository\nProcessingJobLogRepository\nQualityScoreRepository\nReactionRepository\nSavedItemRepository\nSchemeItemRepository\nSchemeRepository\nUserRepository\nWardrobeItemRepository] as REPOS
-  [HypeScoreCurrentRepository] as HypeRepo <<RF49>>
+package "fai-domain (Spring Data JPA)" {
+  [WardrobeItemRepository · SchemeRepository\nSchemeItemRepository · SealBondRepository] as R1
+  [HypeScoreCurrentRepository] as R2
+  [WardrobeAvailabilityChangeRepository] as R3
 }
-database "MySQL · fashionai_app\n• ModerationQueue\n• brands\n• photos\n• pipeline_jobs\n• processing_jobs_log\n• quality_scores\n• reactions\n• saved_items\n• scheme_items\n• schemes\n• users\n• wardrobe_items\n• hype_scores (RF49)" as DB
-cloud "Motor de IA transversal (RF24)\nprovedores externos + fallback local" as P_ai
-[Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
-database "Storage de mídia\n(local / S3, MediaStoragePort)" as P_media
-[NotificationService\n(RNF10)] as P_notif
+database "MySQL · fashionai_app\n• wardrobe_items (is_favorite, disponivel,\n  availability_status, for_sale, for_donation V38)\n• wardrobe_availability_log\n• schemes · scheme_items · seal_bonds\n• hype_scores (V31)" as DB
 
-FE0 --> WardrobeController : HTTPS/JSON
-FE1 --> WardrobeController : HTTPS/JSON
-FE2 --> WardrobeController : HTTPS/JSON
-WardrobeController --> WardrobeService
-WardrobeService ..> FlatLayPipeline
-WardrobeService ..> AssetCatalogService
-WardrobeService ..> ProjectionService
-WardrobeService ..> JobQueuePort
-WardrobeService ..> Model3dService
-WardrobeService --> REPOS
-WardrobeService --> P_ai
-WardrobeService --> P_media
-WardrobeService --> P_notif
-WardrobeService --> P_events
-REPOS --> DB : JPA/Flyway
-WardrobeService --> HypeRepo : sort Hype · hypeLevel
-WardrobeService ..> HypeScoreConfig
-HypeRepo --> DB : JPA/Flyway
+FE0 --> FE1
+FE0 --> FE2
+FE2 --> FE3 : abre o card
+FE0 --> FE4
+FE0 --> WC : HTTPS/JSON
+FE3 --> WC : PATCH flags
+FE4 --> SLC
+FE5 --> WC : /api/users/{id}/closet
+FE5 --> SCC : /api/me/schemes?state=
+WC --> WS
+SCC --> SS
+SLC --> SEAL
+WS --> G : requireCanCreate · requireOwner · canView
+WS --> CFG
+WS ..> HSL : seal = hype | any
+WS ..> SEAL : seal = brand | any
+WS --> R1
+WS --> R2 : sort Hype · hypeLevel · seal
+WS ..> WEL : AvailabilityChanged
+WEL --> R3
+SS --> R1
+SEAL --> R1
+CONS --> R1 : lê disponivel / for_sale
+R1 --> DB : JPA/Flyway
+R2 --> DB
+R3 --> DB
 @enduml

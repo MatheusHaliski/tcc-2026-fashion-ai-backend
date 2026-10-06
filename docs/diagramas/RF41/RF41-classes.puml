@@ -1,5 +1,5 @@
 @startuml RF41_Classes
-title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de classes — quem chama FaiPointsService.game()/award(), eventos de criação e regras (V5 + V26)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -10,95 +10,149 @@ skinparam class {
 }
 skinparam packageStyle rectangle
 hide empty methods
+hide empty fields
 
-package "fai-domain · model" {
-class FaiPointsLedgerEntry <<@Table fai_points_ledger>> {
-  +id: UUID
-  +userId: UUID
-  +delta: int
-  +actionCode: String
-  +refType: String
-  +refId: String
-  +idempotencyKey: String
-  +countsLifetime: boolean
-  +createdAt: Instant
+package "fai-application · jogos" {
+  class FlairService <<@Service>> {
+    +duel(user, schemeId, opponent): Map  «faiPoints»
+    +joinArena(user, schemeId): Map
+    +teamBattle(user, code): Map  «faiPoints»
+    +claimQuest(user, code): Map
+    ~award(userId, coins, rankPoints, reason, ref): boolean  «FLAIR Coins»
+  }
+  class FlairModesService <<@Service>> {
+    +MODES: List<Mode>  «15 modos»
+    ~REWARDED_PER_MODE_DAY = 3  «coins»
+    ~finish(user, mode, theme, winner, result, …): Map  «faiPoints»
+  }
+  class ChallengeService <<@Service>> {
+    +submitEntry(user, id, schemeId): Map
+    ~reward(participant, instance, template, pts)
+  }
 }
-class FaiPointsRule <<@Table fai_points_rules>> {
-  +actionCode: String  <<@Id>>
-  +points: int
-  +dailyCap: Integer
-  +weeklyCap: Integer
-  +oncePerRef: boolean
-  +active: boolean
-  +description: String
+
+package "fai-application · criações" {
+  class SchemeService <<@Service>> {
+    +create(user, SchemeForm): Map  «SchemeSaved(created = true)»
+  }
+  class WardrobeService <<@Service>> {
+    +create(user, PieceForm)  «PieceCreated»
+    +update(user, id, form)  «PieceUpdated»
+    +addToWardrobe(user, sourceId)  «cópia: sem evento»
+  }
+  class Model3dService <<@Service>> {
+    job do 3D concluído → awardIsolated(PIECE_3D)
+  }
+  class WardrobeEventListeners <<@Component>> {
+    +onSchemeSaved(SchemeSaved)
+    +onPieceCreated(PieceCreated)
+    +onPieceUpdated(PieceUpdated)
+    +onModel3d(Model3dGenerated)  «sem publicador»
+  }
+  class InventoryScoreService {
+    +{static} catalogReady(w): boolean  «≥ 60%, foto real»
+    +{static} completeness(w): int
+  }
 }
-class UserAchievement <<@Table user_achievements>> {
-  +userId: UUID
-  +achievementCode: String
-  +secret: boolean
-  +grantedAt: Instant
+
+package "fai-application · eventos" {
+  class "DomainEvents.SchemeSaved" as SchemeSaved <<record>> {
+    userId, schemeId: UUID
+    pieceIds: List<UUID>
+    origin: String
+    created: boolean
+  }
+  class "DomainEvents.PieceCreated" as PieceCreated <<record>> {
+    userId, pieceId: UUID
+    readyForCatalog: boolean
+  }
+  class "DomainEvents.PieceUpdated" as PieceUpdated <<record>> {
+    userId, pieceId: UUID
+    completeness: int
+  }
 }
-class RoomLayout <<@Table room_layouts>> {
-  +level: String = "ESTREIA"
+
+package "fai-application · pontos" {
+  class FaiPointsService <<@Service>> {
+    +game(userId, game, matchRef, outcome): int
+    +award(userId, actionCode, refType, refId, pointsOverride): Award
+    +awardIsolated(…): Award  «REQUIRES_NEW»
+  }
+  class "FaiPointsService.Award" as Award <<record>> {
+    granted: boolean
+    points: int
+    capReached: boolean
+    message: String
+    level: Level
+    levelUp: boolean
+  }
 }
+
+package "fai-domain" {
+  class FaiPointsRule <<@Entity>> {
+    actionCode: String «PK»
+    points: int
+    dailyCap: Integer
+    weeklyCap: Integer
+    oncePerRef: boolean
+    active: boolean
+  }
+  class FaiPointsLedgerEntry <<@Entity>> {
+    userId: UUID
+    delta: int
+    actionCode: String
+    refType / refId: String
+    idempotencyKey: String «único»
+    countsLifetime: boolean
+    createdAt: Instant
+  }
+  class FlairCoinEntry <<@Entity>> {
+    user: User
+    delta: int
+    reason / ref: String
+  }
+  class FlairMatch <<@Entity>> {
+    id: UUID
+    mode: String
+    winnerSide: String
+  }
 }
-package "fai-application · service" {
-class FaiPointsService {
-  +game(userId, game, matchRef, outcome): int
-  +award(userId, actionCode, refType, refId, pointsOverride): Award
-  +awardIsolated(...): Award
-  +balance(userId): long
-  +lifetime(userId): long
-  +level(userId): Level
-  +account(user): Map
-}
-enum "FaiPointsService.Level" as Level {
-  ESTREIA (0)
-  STUDIO (300)
-  LOFT (900)
-  CLOSET (2000)
-  ATELIER (4000)
-  PENTHOUSE (7500)
-  MAISON (12000)
-}
-class "FaiPointsService.Award" as Award <<record>> {
-  +granted: boolean
-  +points: int
-  +capReached: boolean
-  +level: Level
-  +levelUp: boolean
-}
-class FlairService {
-  +duel(user, schemeId, opponent): Map
-  +joinArena(user, schemeId): Map
-  +teamBattle(user, opponentCode): Map
-  +claimQuest(user, code): Map
-}
-class ChallengeService {
-  +submitEntry(user, id, schemeId): Map
-}
-class WardrobeEventListeners {
-  +onSchemeSaved(SchemeSaved)
-  +onPieceCreated(PieceCreated)
-  +onPieceUpdated(PieceUpdated)
-  +onModel3d(Model3dGenerated)
-}
-class AchievementService {
-  +grant(userId, code): boolean
-  +list(user): List
-}
-}
-FaiPointsLedgerEntry "*" ..> "1" FaiPointsRule : actionCode
-FaiPointsService --> FaiPointsLedgerEntry : grava (append-only)
+
+FlairService --> FaiPointsService : game(FLAIR_DUEL | FLAIR_ARENA | FLAIR_TEAM)\naward(FLAIR_QUEST · GAME_WON)
+FlairModesService --> FaiPointsService : game(FLAIR_<MODO>)
+FlairModesService --> FlairService : award (coins)
+ChallengeService --> FaiPointsService : game(CHALLENGE)\naward(CHALLENGE_COMPLETED)
+Model3dService --> FaiPointsService : awardIsolated(PIECE_3D)
+SchemeService ..> SchemeSaved : publica
+WardrobeService ..> PieceCreated : publica
+WardrobeService ..> PieceUpdated : publica
+WardrobeEventListeners ..> SchemeSaved
+WardrobeEventListeners ..> PieceCreated
+WardrobeEventListeners ..> PieceUpdated
+WardrobeEventListeners --> FaiPointsService : award(SCHEME_CREATED ·\nPIECE_CATALOGED · PIECE_COMPLETED)
+WardrobeEventListeners ..> InventoryScoreService : catalogReady
+FaiPointsService ..> Award
 FaiPointsService --> FaiPointsRule : lê
-FaiPointsService --> Award
-FaiPointsService --> Level
-FaiPointsService ..> RoomLayout : setLevel (RoomLayoutAccess)
-FlairService --> FaiPointsService
-ChallengeService --> FaiPointsService
-WardrobeEventListeners --> FaiPointsService
-AchievementService --> FaiPointsService
-AchievementService --> UserAchievement
-note bottom of FaiPointsRule : V26: GAME_PLAYED 5 (6/dia), GAME_WON 10 (4/dia),\nFLAIR_QUEST 10 (3/dia); SCHEME_CREATED 40 (5/dia),\nPIECE_CATALOGED 25 (10/dia), PIECE_COMPLETED 10, PIECE_3D 15
-note right of FaiPointsLedgerEntry : idempotencyKey = usuário:ação:ref\n(ref jogo:partida paga 1×)
+FaiPointsService --> FaiPointsLedgerEntry : grava
+FaiPointsRule "1" -- "0..*" FaiPointsLedgerEntry : actionCode
+FlairService --> FlairCoinEntry : FLAIR Coins (moeda separada)
+FlairService --> FlairMatch
+
+note bottom of FaiPointsRule
+  Regras do RF41:
+  GAME_PLAYED 5 (6/dia) · GAME_WON 10 (4/dia)
+  · FLAIR_QUEST 10 (3/dia) — V26
+  SCHEME_CREATED 40 (5/dia) · PIECE_CATALOGED 25 (10/dia)
+  · PIECE_COMPLETED 10 · PIECE_3D 15 · CHALLENGE_COMPLETED
+  (valor do desafio) — V5
+end note
+note bottom of FaiPointsLedgerEntry
+  idempotencyKey = userId:actionCode:refId
+  ex.: …:GAME_PLAYED:FLAIR_DUEL:<partida>
+  (a mesma partida nunca paga duas vezes)
+end note
+note bottom of FlairCoinEntry
+  tabela flair_coin_entries: FLAIR Coins são
+  outra moeda (só do jogo); nunca viram FAI Points
+end note
 @enduml

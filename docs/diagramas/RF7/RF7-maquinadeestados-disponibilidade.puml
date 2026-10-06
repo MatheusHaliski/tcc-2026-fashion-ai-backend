@@ -1,6 +1,6 @@
 @startuml RF7_MaquinaDeEstados_Disponibilidade
 !pragma layout smetana
-title RF7 — WardrobeItem.availabilityStatus (AvailabilityStatus): disponibilidade da peça vista no detalhe
+title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de máquina de estados — WardrobeItem.availabilityStatus: o que o detalhe mostra em cada estado
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,33 +8,46 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-state "AVAILABLE" as Disp
-state "UNAVAILABLE" as Indisp
-state "ARCHIVED" as Arq
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+}
 
-[*] --> Disp : POST /api/pieces (RF4)\nvalor padrão
-Disp --> Indisp : PATCH /api/pieces/{id}/flags\n{disponivel: false}
-Indisp --> Disp : PATCH /api/pieces/{id}/flags\n{disponivel: true}
-Disp --> Arq : DELETE /api/pieces/{id}\n(snapshot gravado nos scheme_items)
+state "AVAILABLE\n(disponivel = true)" as Disp
+state "UNAVAILABLE\n(disponivel = false)" as Indisp
+state "ARCHIVED\n(disponivel = false · visibility PRIVATE)" as Arq
+
+[*] --> Disp : POST /api/pieces · /from-catalog (RF4)\nPOST /api/pieces/{id}/copy (cópia de visitante)
+Disp --> Indisp : PATCH /api/pieces/{id}/flags {disponivel: false}\n(só o dono) → AvailabilityChanged
+Indisp --> Disp : PATCH /api/pieces/{id}/flags {disponivel: true}\n→ AvailabilityChanged
+Disp --> Arq : DELETE /api/pieces/{id}
 Indisp --> Arq : DELETE /api/pieces/{id}
-Disp --> Arq : purgeScheduledDeletions\n(exclusão da conta — RF3)
+Disp --> Arq : AccountService.purgeScheduledDeletions\n(exclusão da conta, RF3)
 Indisp --> Arq : purgeScheduledDeletions
 Arq --> [*]
 
 note right of Disp
-  Cada troca AVAILABLE ⇄ UNAVAILABLE publica
-  DomainEvents.AvailabilityChanged e grava uma linha
-  em wardrobe_availability_log (WardrobeEventListeners)
+  Detalhe completo (GET /api/pieces/{id}):
+  dono vê canEdit = true e o menu de ações;
+  visitante vê dados públicos + RF19.
+  Só peças AVAILABLE entram na composição de looks.
 end note
 note right of Indisp
-  Não vira Look do Dia (409 PECA_INDISPONIVEL — RF6);
-  return-to-origin para visitante: 409 INDISPONIVEL
+  O detalhe continua aberto para quem pode ver
+  (selo "indisponível" em "Situação").
+  Look com a peça não vira Look do Dia
+  (409 PECA_INDISPONIVEL, RF33); visitante
+  não compartilha nem remixa (409 INDISPONIVEL).
+  AvailabilityChanged (AFTER_COMMIT) grava
+  wardrobe_availability_log e marca o Hype
+  para recálculo (HypeLiveRecalc).
 end note
-note left of Arq
-  Exclusão lógica: disponivel = false, visibility PRIVATE,
-  fotos retiradas de Minhas Fotos (RF12).
-  Visitante que abre o detalhe recebe o snapshot
-  com notAvailableAnymore = true (CA03).
-  Não há endpoint para desarquivar.
+note bottom of Arq
+  delete(): retrato (Views.snapshot) gravado nos scheme_items
+  que ainda não tinham; sai do índice (OpenSearch); fotos
+  WARDROBE_ITEM e EDITOR retiradas de Minhas Fotos (RF12).
+  Visitante que abre o detalhe recebe {notAvailableAnymore: true,
+  snapshot} (CA03); o dono ainda vê a peça. Cópia de peça
+  arquivada → 404. Não há endpoint para desarquivar.
 end note
 @enduml

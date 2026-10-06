@@ -1,0 +1,84 @@
+@startuml RF15_Sequencia_Planejado
+title RF15 — Editar uma fotografia de uma peça de roupa através de um Editor Canvas Interativo 2D\nDiagrama de sequência — <<planejado>> salvar uma versão (/api/edit/*): receita, baseRev, classe medida (ΔE00), ativação e aprovação
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F2F2F2
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa (dona)" as U
+participant "Editor RF15 <<planejado>>\nEditorStore · Renderizador\n(WebGL2/Worker) · Coach" as ED
+participant "fai-web: rotas /api/edit/*\n<<planejado>>" as C
+participant "ImageEditService\n<<planejado>>" as S
+participant "Guarda de fidelidade\n§4.2 (ΔE00, família)\n<<planejado>>" as FG
+participant "QualityMetrics\n(existe)" as QM
+participant "AiEngine (RF24)\nCONTENT_MODERATOR (existe)" as AI
+participant "MediaStoragePort\n(existe)" as ST
+database "MySQL\nimage_edit_versions\n<<planejado>>" as DB
+
+note over U, DB
+  PLANO (docs/novos-rf/RF15_Editor_de_Fotografias.md §5, §8.5, §10.2). Nenhuma rota /api/edit/*, tabela
+  image_edit_versions ou classe ImageEditService existe hoje. As rotas atuais (POST /api/photos/{id}/edits,
+  PUT /api/pieces/{id}/image) passariam a criar uma versão ACTIVE com receita {"schema": "fai-photo-edit/0", "legacy": true}.
+end note
+
+== Abrir (E2: reabre a receita, não os pixels) ==
+U -> ED: "Editar imagem"
+ED -> C: GET /api/edit/PIECE/{pieceId}/versions
+C -> S: versões do dono (DRAFT/PENDING_REVIEW só para a dona)
+S -> DB: SELECT … WHERE owner_type, owner_id ORDER BY rev
+C --> ED: 200 [versões] (ativa, rev, recipe_json, fidelity_class)
+ED -> ST: original (F0) → proxy ≤ 4096 px
+ED -> ED: aplica a receita ativa na ordem fixa; coach mede a prévia
+
+== Ajustar e salvar ==
+U -> ED: ajustes (comandos do/undo) · assistentes opcionais
+opt assistentes
+  ED -> C: POST /api/edit/assist/background · /assist/segment · /assist/auto
+  note right of C: /assist/background reaproveita\nPOST /api/photos/background-removal
+end
+U -> ED: "Usar esta foto"
+ED -> C: POST /api/edit/PIECE/{pieceId}/versions\n(multipart: file = render final, recipe, baseRev, activate = true)
+C -> S: grava a versão (user, owner, file, recipe, baseRev, activate)
+S -> S: dona + upload seguro (tipo real, limites, sem EXIF)
+S -> DB: rev atual do dono
+alt baseRev < rev atual
+  S --> ED: 409 — "editada em outro dispositivo"\n[Ver a mais nova] [Salvar como outra versão]
+else revisão em dia
+  S -> S: classe declarada = maior classe das operações (F1/F2/F3)
+  S -> FG: mede render × referência (original ou calibrada)\ndentro da máscara da peça
+  FG --> S: colorDrift (ΔE00 ponderado), família de cor
+  alt drift > 8 ou família mudou (sem calibração)
+    S -> S: classe = F3 · Criativa
+  else 3 < drift ≤ 8 (sem calibração)
+    S -> S: mantém a classe + aviso "É assim ao vivo?"
+  end
+  S -> QM: evaluate(versão) → quality_json
+  S -> AI: CONTENT_MODERATOR (bloqueia só por política)
+  S -> ST: put(users/{u}/edits/{owner}/{rev}-{hash}.png) + renditions
+  S -> DB: INSERT image_edit_versions (rev + 1, status, recipe_json, fidelity_class,\ncolor_drift, quality_json, rendered_url, renditions_json, origin USER)
+  alt activate e (não à venda/doação ou classe ≠ F3)
+    S -> DB: versão ACTIVE; anterior INACTIVE;\nwardrobe_items.active_edit_version_id + image_url derivada
+  else F3 em peça à venda/para doar (CA10)
+    S -> DB: versão salva sem ativar
+  end
+  C --> ED: 201 versão {id, rev, status, fidelityClass, colorDrift, quality}
+end
+
+== Pós-salvar ==
+opt aviso de cor (3 < ΔE ≤ 8)
+  U -> ED: "É assim ao vivo"
+  ED -> C: POST /api/edit/versions/{id}/confirm-color
+  C -> S: color_confirmed = true (mantém F1)
+end
+opt versão gerada pelo sistema (estúdio refeito, lote, IA)
+  S -> DB: status PENDING_REVIEW (a ativa não muda)
+  U -> ED: aprovar ou descartar
+  ED -> C: POST /api/edit/versions/{id}/approve · /discard
+end
+opt reativar ou arquivar
+  ED -> C: POST /api/edit/versions/{id}/activate · DELETE /api/edit/versions/{id}
+end
+@enduml

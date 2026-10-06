@@ -1,31 +1,52 @@
 @startuml DEMO_Sequencia_Seed
-title Fashion AI — Sequência: seed idempotente do ambiente demo (planejado; fixtures e guarda já no código)
+title Dados demo e de teste (transversal)\nDiagrama de sequência — seed idempotente do universo demo (orquestração planejada; trava, fixtures e consultas por fixture_key já no código)
 !include ../seguranca/_estilo.iuml
 autonumber
 actor "Dev/QA" as Dev
-participant "scripts/demo/\nseed_demo_environment.py" as CLI
-participant "DemoAdminController\n(ADMIN · trava de ambiente)" as CTL
-participant "DemoDataService" as SVC
-participant "DemoFixtures\n(classpath:demo/fixtures/*.json)" as FX
+participant "scripts/demo/\nseed_demo_environment.py\n<<planejado>>" as CLI #FFFFFF
+participant "DemoAdminController\n<<planejado>>" as CTL #FFFFFF
+participant "DemoDataService\n<<planejado>>" as SVC #FFFFFF
+participant "DemoEnvironmentGuard" as GRD
+participant "DemoFixtures\n(@Lazy · classpath:demo/fixtures/*.json)" as FX
+participant "UserRepository\nBrandRepository" as REPO
 database "MySQL" as DB
-participant "Feed (Cassandra)\n+ Busca (OpenSearch)" as PROJ
+participant "TimelineProjectionPort\nSearchIndexPort" as PROJ
 
-Dev -> CLI : --profile=frontend
-CLI -> CTL : POST /api/admin/demo/seed?profile=frontend
+Dev -> CLI : --profile=frontend | full
+CLI -> CTL : POST /api/admin/demo/seed?profile=… (ADMIN + gate)
 CTL -> SVC : seed(profile)
-SVC -> FX : carrega personas (fixture_key) com Random(2026)
-group @Transactional (rollback total em erro)
-  loop ordem fixa: marcas demo → contas → perfis → peças → looks\n→ publicação → follows → reações → comentários → salvos → notificações
-    SVC -> DB : findByFixtureKey(key)
-    alt existe
-      SVC -> DB : atualiza para o estado da fixture  [UPDATED]/[FOUND]
-    else não existe
-      SVC -> DB : cria (e-mail @example.test cifrado,\nArgon2 de FASHIONAI_DEMO_PASSWORD,\naccount_origin = DEMO)  [CREATED]
+SVC -> GRD : requireEnabled()
+alt desligado ou produção sem override
+  GRD --> CLI : 403 DEMO_DESLIGADO · DEMO_BLOQUEADO_EM_PRODUCAO
+else liberado
+  SVC -> FX : personas(profile) — 12 personas\n(+ 24 seguidores no perfil full)
+  note right of FX
+    Validadas ao carregar: prefixo demo_, e-mail
+    @example.test, contagens coerentes e taxonomia
+    (fixture inválida → IllegalStateException).
+    SEED = 2026: mesmos dados a cada execução.
+  end note
+  group @Transactional (rollback total em erro)
+    loop marcas demo → contas → perfis → peças → looks → follows → reações → comentários → salvos
+      SVC -> REPO : findByFixtureKey(key)
+      REPO -> DB : SELECT … WHERE fixture_key = ?
+      alt existe e igual à fixture
+        SVC -> SVC : [FOUND]
+      else existe e mudou pelo app
+        SVC -> DB : volta ao estado da fixture  [UPDATED]
+      else não existe
+        SVC -> DB : cria com account_origin = DEMO\n(catalog_origin = DEMO nas marcas de QA)  [CREATED]
+      end
     end
   end
+  SVC -> PROJ : depois do commit: feed e índice de busca (idempotente)
+  SVC --> CTL : DemoReport (linhas e totais por tipo)
+  CTL --> CLI : 200 + relatório
+  CLI --> Dev : imprime o log
 end
-SVC -> PROJ : depois do commit: projeta feed e indexa busca (idempotente)
-SVC --> CTL : relatório ([FOUND]/[UPDATED]/[CREATED]/[SKIP] por tipo)
-CTL --> CLI : 200 + relatório
-CLI --> Dev : imprime o log
+note over SVC, DB
+  Senha única das contas demo vinda de FASHIONAI_DEMO_PASSWORD (plano em
+  docs/banco/integridade/AUDITORIA_FKS_E_PIPELINE_DEMO.md); nenhum e-mail é enviado
+  para @example.test.
+end note
 @enduml

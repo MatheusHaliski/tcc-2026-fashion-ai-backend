@@ -1,5 +1,5 @@
 @startuml RF40_Roupa_Estados
-title RF40 — Avatar 3D: ciclo de vida de uma peça no corpo\nMáquina de estados
+title RF40 — Criar o próprio avatar 3D a partir de fotos (aba "Meu Avatar 3D") e usá-lo no manequim\nDiagrama de máquina de estados — roupa no avatar: corpo (root.userData.dressed) e cada peça vestida
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam state {
@@ -8,17 +8,54 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-[*] --> Mapeada : kindOf(peça)
-Mapeada --> Padrao : sem molde / slot vazio → peça padrão FAI
-Mapeada --> Casca : garmentGeometry
-Padrao --> Casca
-Casca --> Relaxada : relaxGarment
-Relaxada --> Dobrada : foldGarment (tecidos moles)
-Relaxada --> Acabada : tecidos rígidos
-Dobrada --> Acabada : gola + barra + punhos
-Acabada --> Texturizada : foto da peça (ou cor do tecido)
-Texturizada --> PresaAoEsqueleto : pesos de pele do corpo
-PresaAoEsqueleto --> Animada : pose natural
-Animada --> Casca : corpo/medidas mudam (recalcula)
-Animada --> [*] : peça removida do look
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+state "Corpo do manequim (HumanAvatar)" as Corpo {
+  state "Carregando o corpo\n(useBodyAsset = null)" as Carregando
+  state "Falha ao carregar\n(useBodyAsset = error)" as Falha
+  state "Composto e invisível\n(dressed = false)" as Composto
+  state "Vestido na cor do tecido\n(fotos ainda chegando)" as Cor
+  state "Vestido com as fotos\n(dressed = true, visível)" as Foto
+  state "Escondido\n(zona descoberta: console.error)" as Escondido
+  [*] --> Carregando
+  Carregando --> Falha : fetch do .json/.bin falha
+  Carregando --> Composto : fitBody · compose · fitFace · buildHuman
+  Composto --> Cor : dress() antes da pintura\n(useLayoutEffect)
+  Composto --> Escondido : dress() sem as três zonas cobertas
+  Cor --> Foto : loadTexture das peças termina\n→ dress() de novo
+  Foto --> Composto : peças ou fotos mudam (limpa as malhas\ne veste de novo); medidas, rosto ou ajuste\nde cabeça/pescoço mudam (corpo novo)
+  Cor --> Composto : peças mudam
+  Escondido --> Composto : peças mudam
+}
+note right of Carregando : a tela mostra o CapsuleMannequin\n(a vitrine nunca fica vazia)
+note right of Falha : continua o CapsuleMannequin;\na próxima montagem tenta de novo
+note bottom of Foto
+  A cada quadro: visible = dressed e applyIdle
+  (parado com "reduzir movimento").
+  exportAvatarGlb só funciona aqui.
+end note
+
+state "Peça do look em dress()" as Peca {
+  state "Molde escolhido\n(kindOf → SPECS[kind])" as Molde
+  state "Fora do corpo\n(acessório: kindOf = null)" as Acessorio
+  state "Casca\n(garmentGeometry com underLayer)" as Casca
+  state "Sem geometria" as SemGeo
+  state "Com caimento\n(relaxGarment · foldGarment)" as Caimento
+  state "Texturizada\n(texturedGeometry · cor do tecido ou foto)" as Textura
+  state "Presa ao esqueleto\n(SkinnedMesh.bind)" as Presa
+  [*] --> Molde : outfitOf
+  [*] --> Acessorio : outfitOf
+  Molde --> Casca
+  Molde --> SemGeo : garmentGeometry = null
+  Casca --> Caimento
+  Caimento --> Textura
+  Textura --> Presa : roupa: malha + barra, punho e gola\ncalçado: shoeParts (bota também o cano)
+  Presa --> [*] : cleanup (peça sai do look,\ntroca de foto ou desmontagem)
+  SemGeo --> [*] : se a zona ficou vazia,\nentra a peça padrão FAI
+  Acessorio --> [*]
+}
 @enduml

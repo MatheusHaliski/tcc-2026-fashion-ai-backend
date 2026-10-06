@@ -1,0 +1,108 @@
+@startuml RF20_Atividades_Revisao
+title RF20 — Publicar look vinculado a uma marca cadastrada\nDiagrama de atividades — revisão pela marca, revalidação, revogação, validade e efeito no perfil (RF14)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Marca (dona do perfil)|
+start
+:Recebe a notificação SEAL_BOND_REVIEW;
+note right
+  GET /api/institutional/{slug} também manda
+  reviewBanner "N vínculo(s) aguardando sua
+  revisão", mas a tela não mostra esse campo
+end note
+:Abre a aba "Revisão de vínculos" (ReviewQueue);
+|Frontend (brands/[slug]/page.tsx)|
+:GET /api/seal-bonds/review-queue;
+|SealService|
+if (Quem pede é marca/celebridade APROVADA?\n(guard.requireApprovedInstitutional)) then (não)
+  #FFE3E3:403 auditado;
+  stop
+else (sim)
+endif
+:Fila = vínculos PENDING_REVIEW (mais antigo primeiro)\n+ vínculos APPROVED cujo look tem\nrevalidationPending (marcados "revalidation");
+|Frontend (brands/[slug]/page.tsx)|
+if (Fila vazia?) then (sim)
+  :"Nenhum vínculo aguardando revisão";
+  stop
+else (não)
+  :Lista: look, autor, selo, base e confiança\n+ "Ver look" · "Aprovar" · "Rejeitar";
+endif
+|Marca (dona do perfil)|
+:Decide;
+|Frontend (brands/[slug]/page.tsx)|
+:POST /api/seal-bonds/{id}/review {approve, reason}\n(rejeitar manda o motivo padrão "não atende à política");
+|SealService|
+if (Vínculo é da marca? (guard.requireOwner)) then (não)
+  #FFE3E3:403 auditado;
+  stop
+else (sim)
+endif
+if (PENDING_REVIEW ou APPROVED em revalidação?) then (não)
+  #FFE3E3:409 ESTADO_INVALIDO;
+  stop
+else (sim)
+endif
+if (approve?) then (sim)
+  if (Revalidação?) then (sim)
+    :revalidationPending = false, reviewNote "revalidado",\nauditoria "REVALIDADO" — volta aos destaques;
+  else (não)
+    :issue(b, marcaId): APPROVED, sealCode BRD-…,\nissuedAt/expiresAt, usageCount + 1,\nnotify SEAL_GRANTED, CouponRightsCheck (CA08/CA11);
+  endif
+else (não)
+  if (reason vazio?) then (sim)
+    #FFE3E3:400 MOTIVO_OBRIGATORIO;
+    stop
+  else (não)
+  endif
+  if (Revalidação?) then (sim)
+    :REVOKED + revalidationPending = false;
+  else (não)
+    :REJECTED;
+  endif
+  :reviewNote, reviewedAt/By, notify(autor, "não aprovado"\nou "revogado" + motivo), auditoria;
+endif
+stop
+
+|Sistema (SchemeService)|
+start
+:Eventos no look com vínculo;
+split
+  :PUT /api/schemes/{id} muda a lista de peças\nde um look PUBLISHED;
+  :SealService.flagRevalidation(): notify à marca\n"Revalidação pendente" (RF9.CA05);
+  :Scheme.revalidationPending = true\n→ sai de "Esquemas em destaque" (RF14);
+split again
+  :Look passa a PRIVATE ou é excluído;
+  :SealService.revokeForScheme(): APPROVED → REVOKED\n(com notificação), SUGGESTED / PENDING_REVIEW → REVOKED (CA14);
+split again
+  |Marca (dona do perfil)|
+  :POST /api/seal-bonds/{id}/revoke {reason}\n(sem botão na interface hoje);
+  |SealService|
+  :revokeInternal(): REVOKED, motivo padrão "uso indevido",\nnotify(autor, "Selo revogado") (CA14);
+split again
+  |SealService|
+  :expiresAt passa: nenhum job muda o status —\nas leituras calculam "expirado"\n(Meus Selos: inativos · perfil: só consagrados ·\npromoção deixa de ser elegível);
+end split
+:Cupons já resgatados continuam válidos;
+stop
+@enduml

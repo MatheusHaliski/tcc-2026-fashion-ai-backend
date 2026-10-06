@@ -1,0 +1,67 @@
+@startuml RF30_MaquinaDeEstados_Resgate
+title RF30 — Ganhar e usar FAI Points e evoluir o nível do "Meu Quarto"\nDiagrama de máquina de estados — <<planejado>> pedido de resgate (PayoutRequest) e doação (PointsTransfer), antigo RF48
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F2F2F2
+  BorderColor #9AA0A6
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+state "PayoutRequest.status <<planejado>>" as PR {
+  state "REQUESTED\n(PAYOUT_RESERVE: pontos reservados)" as REQ
+  state "UNDER_REVIEW\n(AUTO ou MANUAL)" as REV
+  state "APPROVED\n(taxa, bruto, retenção e líquido fixados)" as APR
+  state "PROCESSING\n(enviado ao parceiro)" as PRO
+  state "PAID\n(id end-to-end do PIX)" as PAID
+  state "REJECTED" as REJ
+  state "DEFERRED\n(não coube no fundo)" as DEF
+  state "FAILED" as FAIL
+  state "CANCELLED" as CAN
+  state "REVERSED\n(fraude após pagamento)" as REVD
+
+  [*] --> REQ : POST /api/me/payout-requests\n(KYC APPROVED, 2FA, saldo sacável maturado)
+  REQ --> CAN : POST /{id}/cancel antes do fechamento\n/ PAYOUT_RELEASE
+  REQ --> REV : PointsRiskEngine
+  REV --> APR : fechamento do mês\n(CreatorFundService: cabe no fundo)
+  REV --> DEF : fundo + reserva esgotados\n/ PAYOUT_RELEASE
+  REV --> REJ : admin recusa ou risco alto\n/ PAYOUT_RELEASE (ou REVERSAL se fraude)
+  APR --> PRO : job de pagamento\nPayoutProviderPort.pay (idempotente)
+  PRO --> PAID : webhook "pago"
+  PRO --> FAIL : webhook "falhou"\n(chave inválida, conta encerrada)
+  PAID --> REVD : fraude confirmada\n/ carteira congelada, dívida registrada
+  FAIL --> [*] : 24 h depois / PAYOUT_RELEASE
+  PAID --> [*]
+  REVD --> [*]
+  REJ --> [*]
+  DEF --> [*]
+  CAN --> [*]
+}
+
+state "PointsTransfer.status <<planejado>>" as PT {
+  state "COMPLETED\n(crédito DONATION_RECEIVED\nmatura em 14 dias)" as TC
+  state "HELD\n(risco 40–69: maturação parada)" as TH
+  state "REVERSED\n(estorno: linhas REVERSAL)" as TR
+  [*] --> TC : POST /api/points/transfers\n(risco < 40)
+  [*] --> TH : risco 40–69
+  TH --> TC : admin libera
+  TH --> TR : admin confirma fraude
+  TC --> TR : POST /api/admin/points/transfers/{id}/reverse\n(dentro da maturação)
+  TC --> [*]
+  TR --> [*]
+}
+
+note bottom of PR
+  Nada disto existe no código nem no banco (2026-10-05).
+  Regras da proposta: 1 pedido por mês, mínimo ≈ R$ 20,
+  teto R$ 500/mês por CPF no piloto; total pago no mês
+  ≤ fundo + reserva (RN48.02). Hoje o único débito real
+  do ledger é SHOP_PURCHASE (FaiPointsService.buy).
+end note
+@enduml

@@ -1,11 +1,15 @@
 @startuml RF12_Componentes
-title RF12 — Visualizar & Editar a página "Minhas Fotos" & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF12 — Visualizar & Editar a página "Minhas Fotos" & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de componentes — Minhas Fotos e várias peças: telas → controllers → serviços → storage/IA/MySQL
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
+}
+skinparam component<<port>> {
+  BackgroundColor #FFFFFF
+  BorderColor #7C5FC0
 }
 skinparam package {
   BorderColor #CBC6BE
@@ -14,62 +18,81 @@ skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
-left to right direction
 
 package "Frontend (Next.js)" {
-  component "(app)/photos/page.tsx\n+ infinite-sentinel.tsx · detail-modal.tsx" as FE0
-  component "photo-editor.tsx\n(Editor Canvas 2D — RF15)" as FE1
-  component "multi-piece-review.tsx\nMultiPieceUpload · MultiPieceReview" as FE2
-  component "<<planejado>>\nentrada de lote (várias fotos)\nnuma rota do app" as FE3 #FFF5F8
+  component "(app)/photos/page.tsx\ngaleria · linha do tempo · insights · comparar\n+ InfiniteSentinel · InsightStrip" as FE_PH
+  component "photo-editor.tsx\nPhotoEditor (Editor Canvas 2D — RF15)" as FE_ED
+  component "detail-modal.tsx\n(abre a peça/look da foto — RF7)" as FE_DM
+  component "multi-piece-review.tsx\nMultiPieceUpload · MultiPieceReview" as FE_MP
+  component "<<planejado>>\nrota que monte o envio de\nvárias peças / lote de fotos" as FE_LOTE #FFF5F8
 }
-package "fai-web · controllers" {
-  [PhotoController\n/api/me/photos · insights · curation · timeline\n/api/photos/{id} · bulk-deletion · file · edits · key-moment] as PhotoController
-  [WardrobeController\n/api/pieces/analysis/batch · /analysis/multi\n/analysis/multi/{draftId}/pieces · ai-image\n/api/pieces · /api/pieces/batch] as WardrobeController
-}
-package "fai-application · services" {
-  [PhotoService] as PhotoService
-  [WardrobeService\n(analyze · analyzeBatch · create · createBatch)] as WardrobeService
-  [MultiPieceService\n(detect · pieceDraft · recreate · aiPieceDraft)] as MultiPieceService
-  [MediaService\n(register · retire)] as MediaService
-  [AiEngine (RF24)\nPHOTO_CURATOR · MULTI_PIECE_DETECTOR\nFLAT_LAY_STANDARDIZER · CONTENT_MODERATOR\nPIECE_IMAGE_RECREATOR] as AiEngine
-  [MediaStoragePort] as MediaPort #FAFAFA
-}
-package "fai-domain · repositórios JPA" {
-  [PhotoRepository\nPipelineJobRepository\nWardrobeItemRepository\nQualityScoreRepository] as REPOS
-}
-package "fai-infrastructure · adapters" {
-  [S3MediaStorageAdapter / LocalFileMediaStorage] as S3
-  [Provedores de visão / imagem\n(ai-providers)] as Prov
-}
-database "MySQL · fashionai_app\n• photos\n• pipeline_jobs\n• wardrobe_items\n• quality_scores" as DB
-cloud "S3 / storage de mídia\n(users/{id}/drafts · pieces)" as C_s3
 
-FE0 --> PhotoController : galeria · excluir · baixar · curadoria
-FE0 --> FE1 : editar foto
-FE1 --> PhotoController : POST edits
-FE2 --> WardrobeController : analysis/multi · pieces
-FE3 ..> WardrobeController : analysis/batch · pieces/batch
-PhotoController --> PhotoService : chama
-WardrobeController --> WardrobeService : chama
-WardrobeController --> MultiPieceService : chama
-PhotoService --> WardrobeService : useDefaultImageAfterPhotoDeletion
-PhotoService --> AiEngine : local(PHOTO_CURATOR)
-MultiPieceService --> AiEngine : detector · flat lay · moderação · recriação
-WardrobeService --> AiEngine : análise da peça
-WardrobeService --> MediaService : register(WARDROBE_ITEM)
-PhotoService --> MediaService : register(EDITOR)
-MediaService ..> MediaPort
-PhotoService --> REPOS : lê/grava
-WardrobeService --> REPOS : grava
-MultiPieceService --> REPOS : grava pipeline_jobs
-AiEngine ..> Prov
-MediaPort <.. S3
-REPOS --> DB : JPA/Flyway
-S3 --> C_s3 : put/get
-note bottom of FE3
-  não implementado — conforme Trello:
-  POST /api/pieces/analysis/batch e /api/pieces/batch
-  existem no backend, mas nenhuma tela os chama;
-  MultiPieceUpload também não está montado em rota
-end note
+package "fai-web · controllers" {
+  [PhotoController\n/api/me/photos · /insights · /timeline · /curation\n/api/photos/{id} · /bulk-deletion · /{id}/file\n/{id}/edits · /{id}/key-moment · /background-removal] as C_PH
+  [WardrobeController\n/api/pieces/analysis/batch · /analysis/multi\n/multi/{draftId}/pieces · /ai-image · /ai-images/{id}/piece\nPOST /api/pieces · /api/pieces/batch] as C_WR
+}
+
+package "fai-application · serviços" {
+  [PhotoService\n+ PhotoInsights (filtros, facetas, frases)] as S_PH
+  [WardrobeService\nanalyzeBatch · create · createBatch\nreplaceImage · useDefaultImageAfterPhotoDeletion] as S_WR
+  [MultiPieceService\ndetect · pieceDraft · recreate · aiPieceDraft] as S_MP
+  [MediaService\nput · read · register · retire] as S_MEDIA
+  [AiEngine (RF24)\nlocal: PHOTO_CURATOR · STYLE_INSIGHT\nremoto: MULTI_PIECE_DETECTOR · PIECE_ANALYZER\nFLAT_LAY_STANDARDIZER · CONTENT_MODERATOR\nPIECE_IMAGE_RECREATOR] as S_AI
+  [FlatLayPipeline · ImageOps\n(10 MB · JPG/PNG/WebP)] as S_IMG
+  [Guard\nrequireOwner · requireCanCreate] as S_G
+}
+
+package "portas" {
+  component "MediaStoragePort" <<port>> as P_MEDIA
+  component "JobQueuePort" <<port>> as P_JOB
+  component "AiProviderPort" <<port>> as P_AI
+  component "ImageProviderPorts\nBackgroundRemovalPort · ImageEditPort" <<port>> as P_IMG
+}
+
+package "fai-infrastructure" {
+  [S3MediaStorageAdapter /\nLocalFileMediaStorage] as I_S3
+  [RedisAdapters.redisJobQueue /\nInMemoryJobQueue] as I_JOB
+  [ClaudeProvider · GeminiProvider] as I_AI
+  [RembgAdapter · RemoveBgAdapter\nGeminiImageEditAdapter · ReplicateImageEditAdapter] as I_IMG
+  [Repositórios JPA\nPhotoRepository · PipelineJobRepository\nWardrobeItemRepository · SchemeRepository\nQualityScoreRepository · ProcessingJobLogRepository] as I_JPA
+}
+database "MySQL\n• photos (deleted_at, key_moment, edited_from_photo_id)\n• pipeline_jobs · wardrobe_items\n• quality_scores · processing_jobs_log" as DB
+database "Storage S3/R2/local\nusers/{id}/photos · drafts · pieces" as STO
+database "Redis\njobs:flatlay-reprocess\n(sem consumidor)" as REDIS
+
+FE_PH --> FE_ED : editar
+FE_PH --> FE_DM : abrir peça/look
+FE_PH --> C_PH : HTTPS/JSON
+FE_ED --> C_PH : GET /file · POST /edits\nPOST /background-removal
+FE_MP --> C_WR : analysis/multi · pieces · POST /api/pieces
+FE_LOTE ..> FE_MP : <<planejado>> montar
+FE_LOTE ..> C_WR : <<planejado>> analysis/batch · pieces/batch
+C_PH --> S_PH
+C_WR --> S_WR
+C_WR --> S_MP
+S_PH --> S_G
+S_PH --> S_WR : replaceImage · imagem padrão\ngovernedFlatLay
+S_PH --> S_MEDIA
+S_PH --> S_AI
+S_MP --> S_AI
+S_MP --> S_MEDIA
+S_MP --> P_IMG : ImageEditPort (recriação)
+S_MP ..> S_WR : flatLayStep · parseModeration
+S_WR --> S_AI
+S_WR --> S_MEDIA
+S_WR --> P_JOB : PIECE_REPROCESS
+S_AI --> S_IMG
+S_AI --> P_AI
+S_IMG --> P_IMG
+S_MEDIA --> P_MEDIA
+I_S3 ..|> P_MEDIA
+I_JOB ..|> P_JOB
+I_AI ..|> P_AI
+I_IMG ..|> P_IMG
+S_PH --> I_JPA
+S_WR --> I_JPA
+S_MP --> I_JPA
+I_JPA --> DB : JPA / Flyway
+I_S3 --> STO
+I_JOB --> REDIS
 @enduml

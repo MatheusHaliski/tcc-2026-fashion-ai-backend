@@ -98,6 +98,13 @@ class RoomService
 class MediaService {
   +put(key, bytes, contentType): StoredObject
 }
+class NotificationService {
+  +notify(recipientId, actorId, type, …): Notification
+}
+class Guard {
+  +requireApprovedInstitutional(user, resource, msg)
+  +deny(user, resource, msg): ApiException
+}
 }
 package "fai-domain · model" {
 class RoomCatalogItem {
@@ -176,6 +183,8 @@ ItemForm "1" o-- "*" BundlePart
 WardrobeCreatorService ..> Block
 WardrobeCreatorService ..> Material
 WardrobeCreatorService --> MediaService : logo e arte
+WardrobeCreatorService --> Guard : só marca/celebridade aprovada
+FaiPointsService --> NotificationService : extrato FAI_POINTS
 FaiPointsService --> WardrobeCreatorService : view · blocker · sellerActive
 FaiPointsService --> RLA
 RoomService ..|> RLA

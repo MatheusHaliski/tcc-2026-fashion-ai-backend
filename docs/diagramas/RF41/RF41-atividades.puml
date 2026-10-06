@@ -1,5 +1,5 @@
 @startuml RF41_Atividades
-title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de atividades — de onde vêm os pontos e como a mesma regra decide se paga
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,70 +23,63 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Pessoa|
 start
+:Pessoa joga ou cria algo no app;
 if (O que a pessoa faz?) then (joga)
-  :Duelo FLAIR, Arena do dia, um dos 15 modos,\nduelo de times 3×3 ou inscreve look em Desafio;
-  |Backend|
-  :FlairService / FlairModesService / ChallengeService\nencerra a partida;
-  :FaiPointsService.game(userId, jogo, partida, resultado);
-  :award(GAME_PLAYED, ref = jogo:partida) +5;
-  if (resultado = WIN?) then (sim)
-    :award(GAME_WON, mesma ref) +10;
-  endif
-  note right
-    Quest do FLAIR resgatada → FLAIR_QUEST +10
-    Desafio concluído → CHALLENGE_COMPLETED
-    (valor do desafio)
-  end note
+  switch (Qual jogo?)
+  case (duelo 1×1)
+    :FlairService.duel\n(vs @usuário ou a Casa)\n→ game(FLAIR_DUEL,\npartida, resultado);
+  case (15 modos)
+    :FlairModesService.finish\n→ game(FLAIR_<MODO>,\npartida, resultado);
+  case (times 3×3)
+    :FlairService.teamBattle\nquem disparou: game(FLAIR_TEAM,\npartida, WIN ou PLAYED)\n+ cada membro vencedor:\naward(GAME_WON);
+  case (Arena do dia)
+    :FlairService.joinArena\n→ game(FLAIR_ARENA,\ndata) — só jogar;
+  case (quest)
+    :FlairService.claimQuest\n(feita e não resgatada)\n→ award(FLAIR_QUEST);
+  case (Desafio)
+    :ChallengeService.submitEntry\n→ game(CHALLENGE, desafio)\n1× por desafio;\nconclude → award(\nCHALLENGE_COMPLETED);
+  endswitch
+  :FaiPointsService.game() (duelo, modos, times, Arena, inscrição):\naward(GAME_PLAYED, ref jogo:partida) +5\ne, se WIN, award(GAME_WON, mesma ref) +10\n(quest e desafio concluído chamam award() direto);
 else (cria)
-  |Pessoa|
-  :Cria esquema (RF5, Smart Mirror/Vista-me, DNA, remix)\nou cadastra/edita/completa peça ou gera o 3D;
-  |Backend|
-  :Serviço publica DomainEvents\n(SchemeSaved, PieceCreated, PieceUpdated, Model3dGenerated);
-  :WardrobeEventListeners (AFTER_COMMIT);
-  if (Qual evento?) then (esquema criado)
-    :award(SCHEME_CREATED) +40;
-  elseif (peça pronta para o catálogo) then (sim)
-    :award(PIECE_CATALOGED) +25;
-  elseif (completude >= 90%) then (sim)
-    :award(PIECE_COMPLETED) +10;
-  else (3D gerado — RF16)
-    :award(PIECE_3D) +15;
+  :SchemeService.create (Criar Look, Smart Mirror/Vista-me,\nDNA, Autopiloto, Provador; o remix também termina aqui)\n→ SchemeSaved(created = true) → SCHEME_CREATED +40;
+  :WardrobeService.create / update → PieceCreated / PieceUpdated\n→ PIECE_CATALOGED +25 (foto real e completude ≥ 60%,\nno cadastro ou quando a edição deixa pronta)\n→ PIECE_COMPLETED +10 (completude ≥ 90%);
+  :Model3dService conclui o 3D → awardIsolated(PIECE_3D) +15;
+  note right
+    Os eventos rodam depois do commit
+    (WardrobeEventListeners + SideEffectRunner):
+    falha nos pontos não desfaz a criação.
+    Copiar a peça de outra pessoa
+    (POST /api/pieces/{id}/copy) não pontua.
+  end note
+endif
+:FaiPointsService.award(userId, actionCode, refType, refId, override);
+if (Regra em fai_points_rules e ativa?) then (não)
+  :Não paga\n("ação sem regra");
+elseif (Chave usuário:ação:ref\njá existe?) then (sim)
+  :Não paga\n("evento já pontuado":\na partida nunca paga 2×);
+elseif (Contagem do dia ≥ dailyCap\n(ou da semana ≥ weeklyCap)?) then (sim)
+  :Não paga\n(capReached = true);
+  note right
+    Tetos: GAME_PLAYED 6/dia · GAME_WON 4/dia ·
+    FLAIR_QUEST 3/dia (= 100 pts/dia em jogos) ·
+    SCHEME_CREATED 5/dia · PIECE_CATALOGED 10/dia.
+    O teto nunca impede de jogar ou criar.
+  end note
+else (paga)
+  :INSERT fai_points_ledger\n(+pontos, countsLifetime = true)\n+ notificação FAI_POINTS (extrato);
+  if (Vitalício cruzou o próximo nível?) then (sim)
+    :setLevel + ROOM_LEVEL_UP (RF30);
   endif
 endif
-|Backend|
-:Lê fai_points_rules[actionCode];
-if (regra existe e está ativa?) then (sim)
-  if (idempotency_key usuário:ação:ref já existe?) then (sim)
-    :Não paga (evento já pontuado);
-  elseif (teto diário/semanal atingido?) then (sim)
-    :Não paga, mas o jogo/ação segue normalmente;
-    note right
-      Tetos dos jogos: 6 partidas, 4 vitórias,
-      3 quests = 100 pts/dia (V26).
-      Sem apostas: os pontos saem do sistema,
-      nunca do oponente.
-    end note
-  else (não)
-    |Bancos-serviços|
-    :INSERT fai_points_ledger (delta, actionCode, refType, refId);
-    |Backend|
-    if (pontos vitalícios passaram do limiar do próximo nível?) then (sim)
-      :RoomService.setLevel + notificação ROOM_LEVEL_UP;
-    endif
-  endif
-else (não)
-  :Não paga (ação sem regra);
+if (A resposta do jogo traz faiPoints?) then (duelo · modos · times)
+  :Tela de resultado mostra "+N FAI Pts" ao lado das\nFLAIR Coins (flair/page.tsx · modes-shared.tsx);
+else (Arena · quest · Desafio · criações)
+  :Aparece só no extrato (/notifications?cat=POINTS)\ne no saldo de /points;
+  note right
+    <<planejado>> selo "+N FAI Pts" na Arena e na
+    inscrição em Desafio (RF40-RF41.md: pendente)
+  end note
 endif
-if (foi uma partida de duelo, modos ou times?) then (sim)
-  |Frontend|
-  :Resultado mostra "+N FAI Pts"\nao lado das FLAIR Coins (flair/page.tsx);
-else (não)
-  |Frontend|
-  :Lançamento aparece só no extrato\n(selo na Arena/Desafio: planejado);
-endif
-|Pessoa|
-:Abre a aba Pontos (points) → GET /api/me/points\n(saldo, nível, regras e extrato);
 stop
 @enduml

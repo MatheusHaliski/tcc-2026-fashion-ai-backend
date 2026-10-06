@@ -1,5 +1,5 @@
 @startuml RF17_Classes
-title RF17 — Permitir que o Usuário visualize a página de perfil de outros Usuários cadastrados dentro da rede social do FashionAI\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF17 — Visualizar a página de perfil de outros usuários\nDiagrama de classes — User, Follow, preferências (opt-out V42), ProfileService, Guard, Lookbook e Hype do criador (HypeQueryService.groups)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -11,89 +11,217 @@ skinparam class {
 skinparam packageStyle rectangle
 hide empty methods
 
-package "fai-domain · model" {
-class User <<@Table users>> {
-  +username: String
-  +displayName: String
-  +bio: String
-  +pronouns: String
-  +coverUrl: String
-  +linksJson: String
-  +profileType: ProfileType
-  +privateAccount: boolean = true
-  +profileVisibility: Visibility = PRIVATE
-  +status: AccountStatus
-}
-class Follow <<@Table follows>> {
-  +follower: User
-  +following: User
-  +status: FollowStatus = ACEITO
-  +respondedAt: Instant
-}
-class Notification <<@Table notifications>> {
-  +recipient: User
-  +actor: User
-  +type: NotificationType
-  +title: String
-  +read: boolean
-}
-class Scheme <<@Table schemes>> {
-  +user: User
-  +status: SchemeStatus
-  +visibility: Visibility
-}
-class WardrobeItem <<@Table wardrobe_items>> {
-  +user: User
-  +visibility: Visibility
-  +availabilityStatus: AvailabilityStatus
-}
-}
-package "fai-domain · enums" {
-enum FollowStatus {
-  PENDENTE
-  ACEITO
-  BLOQUEADO
-}
-enum Visibility {
-  PRIVATE
-  FOLLOWERS
-  PUBLIC
-}
-enum "NotificationType (trecho)" as NT {
-  FOLLOW_REQUEST
-  FOLLOW_ACCEPTED
-  NEW_FOLLOWER
-}
-}
 package "fai-application · service" {
-class ProfileService {
-  +profile(viewer, idOrUsername): Map
-  +counters(userId, published): Map
-  +follow(viewer, targetId): Map
-  +unfollow(viewer, targetId): Map
-  +requests(user): List
-  +respond(user, followId, accept): Map
-  +connections(viewer, userId): Map
-  +block(user, targetId, block): Map
+  class ProfileService {
+    ~resolve(idOrUsername): User
+    ~relation(viewer, target): FollowStatus
+    +profile(viewer, idOrUsername, sort): Map
+    ~publishedLooks(viewer, owner, self, published, order): List<Scheme>
+    +counters(userId, published): Map
+    +follow(viewer, targetId): Map
+    +unfollow(viewer, targetId): Map
+    +requests(user): List<Map>
+    +respond(user, followId, accept): Map
+    +connections(viewer, userId): Map
+    +block(user, targetId, block): Map
+  }
+  class Guard {
+    +canView(viewer, ownerId, Visibility): boolean
+    +blocked(a, b): boolean
+    +requireOwner(user, ownerId, resource)
+    +deny(user, resource, message): ApiException
+  }
+  class LookbookService {
+    +overview(viewer, ownerId): Map
+    +publications(viewer, ownerId, page, size): Page
+    +favorites(viewer, ownerId): Map
+    +groupingsOf(viewer, ownerId): List<Map>
+    {static} +lookSort(raw): String
+    {static} ~hypeOrder(sort, rowOf): Comparator
+  }
+  class WardrobeService {
+    +closet(viewer, ownerId, ClosetFilter): Page<PieceView>
+  }
+  class NotificationService {
+    +notify(recipientId, actorId, NotificationType,\nresourceType, resourceId, title, …): Notification
+    +enabled(userId, NotificationType): boolean
+  }
+  class PreferencesService {
+    +get(user): Map
+    +update(user, Update): Map
+    -invalidateHypeCacheAfterCommit()
+  }
 }
-class Guard {
-  +canView(viewer, ownerId, visibility): boolean
-  +blocked(a, b): boolean
+
+package "fai-application · hype e insights" {
+  class HypeQueryService {
+    {static} ~MIN_GROUP_ITEMS = 3
+    {static} ~GROUP_TOP_ITEMS = 5
+    {static} +MAX_GROUP_KEYS = 100
+    +groups(viewer, RankGroup, keys, window): Map
+    ~groupTable(RankGroup, win): Map
+    ~groupRows(RankGroup, win, category, style, occasion): List<Map>
+    ~creatorOptOuts(): Set<UUID>
+    {static} ~groupKeys(RankGroup, raw): List<String>
+    {static} ~emptyGroup(key): Map
+  }
+  enum "HypeQueryService.RankGroup" as RankGroup {
+    BRAND
+    CREATOR
+    {static} +parse(raw): RankGroup
+  }
+  class HypeCache {
+    +generation(): long
+    +bump()
+    +get(key, supplier)
+  }
+  class InsightService {
+    +insights(viewer, context, window, region, category,\nsubcategory, key, pieces, withAi): Map
+    ~blocked(viewer, Target): boolean
+  }
+  class ProfileInsights {
+    ~resolve(InsightContext, rawKey): Target
+  }
 }
-class WardrobeService {
-  +closet(viewer, ownerId, ClosetFilter): Page<PieceView>
+
+package "fai-domain · model" {
+  class User <<table users>> {
+    +username: String
+    +displayName: String
+    +bio: String
+    +pronouns: String
+    +avatarUrl: String
+    +coverUrl: String
+    +linksJson: String
+    +country: String
+    +verified: boolean
+    +profileType: ProfileType
+    +privateAccount: boolean = true
+    +profileVisibility: Visibility = PRIVATE
+    +status: AccountStatus
+  }
+  class Follow <<table follows>> {
+    +follower: User
+    +following: User
+    +status: FollowStatus = ACEITO
+    +respondedAt: Instant
+  }
+  class UserPreferences <<table user_preferences>> {
+    +user: User
+    +hypeCreatorOptOut: boolean = false
+  }
+  class Notification <<table notifications>> {
+    +recipient: User
+    +actor: User
+    +type: NotificationType
+    +delivered: boolean
+  }
+  class Scheme <<table schemes>> {
+    +status: SchemeStatus
+    +visibility: Visibility
+  }
+  class WardrobeItem <<table wardrobe_items>> {
+    +visibility: Visibility
+    +availabilityStatus: AvailabilityStatus
+  }
+  class HypeScoreCurrent <<table hype_scores>> {
+    +entityType: HypeEntityType
+    +entityId: UUID
+    +score: BigDecimal
+    +publicEligible: boolean
+  }
 }
+
+package "fai-domain · enums" {
+  enum FollowStatus {
+    PENDENTE
+    ACEITO
+    BLOQUEADO
+  }
+  enum Visibility {
+    PRIVATE
+    FOLLOWERS
+    PUBLIC
+  }
+  enum ProfileType {
+    PESSOAL
+    MARCA
+    CELEBRIDADE
+    ADMIN
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum "NotificationType (trecho)" as NT {
+    FOLLOW_REQUEST
+    FOLLOW_ACCEPTED
+    NEW_FOLLOWER
+  }
 }
+
+package "fai-domain · repository" {
+  interface FollowRepository {
+    +findByFollowerIdAndFollowingId(followerId, followingId): Optional<Follow>
+    +findByFollowingIdAndStatus(followingId, status): List<Follow>
+    +findByFollowerIdAndStatus(followerId, status): List<Follow>
+    +countByFollowingIdAndStatus(followingId, status): long
+    +countByFollowerIdAndStatus(followerId, status): long
+  }
+  interface UserRepository {
+    +findByUsernameIgnoreCase(username): Optional<User>
+  }
+  interface UserPreferencesRepository {
+    +findHypeCreatorOptOutUserIds(): List<UUID>
+  }
+}
+
 Follow "*" --> "1" User : follower
 Follow "*" --> "1" User : following
+UserPreferences "0..1" --> "1" User
 Notification "*" --> "1" User : recipient
 Scheme "*" --> "1" User
 WardrobeItem "*" --> "1" User
 Follow --> FollowStatus
 User --> Visibility
+User --> ProfileType
+User --> AccountStatus
 Notification --> NT
-ProfileService --> Follow
+ProfileService --> UserRepository
+ProfileService --> FollowRepository
 ProfileService --> Guard
+ProfileService --> NotificationService : FOLLOW_REQUEST · NEW_FOLLOWER\n· FOLLOW_ACCEPTED
+ProfileService ..> LookbookService : lookSort · hypeOrder
+ProfileService ..> HypeScoreCurrent : ordena looks (Hype público)
 WardrobeService --> Guard
-note bottom of Follow : uq_follows_pair (follower_id, following_id);\nBLOQUEADO: follower = quem bloqueou
+LookbookService --> Guard
+Guard --> FollowRepository
+HypeQueryService --> Guard : bloqueio (CREATOR)
+HypeQueryService --> HypeCache
+HypeQueryService --> UserPreferencesRepository
+HypeQueryService ..> RankGroup
+HypeQueryService ..> HypeScoreCurrent : lê
+PreferencesService --> UserPreferences
+PreferencesService --> HypeCache : bump() após o commit
+InsightService --> ProfileInsights : CREATOR_PROFILE
+InsightService --> Guard : blocked
+UserPreferencesRepository ..> UserPreferences
+FollowRepository ..> Follow
+
+note bottom of Follow
+  uq_follows_pair (follower_id, following_id).
+  BLOQUEADO: follower = quem bloqueou.
+  PENDENTE só para perfil PESSOAL com
+  privateAccount e visibilidade não PUBLIC.
+end note
+note bottom of UserPreferences
+  V42: hype_creator_opt_out (padrão FALSE).
+  Tira a pessoa só do agregado de criador
+  (Em alta e lote de chips); itens seguem
+  com o próprio Hype. Exportado na LGPD.
+end note
 @enduml

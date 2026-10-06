@@ -1,5 +1,5 @@
 @startuml RF21_Atividades
-title RF21 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma celebridade\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF21 — Publicar look vinculado a uma celebridade verificada\nDiagrama de atividades — assinatura de estilo, consentimento de imagem, revisão obrigatória da celebridade e Selo Premium
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,62 +23,96 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Usuário|
+|Pessoa|
 start
-:Cria o look em /schemes/new (RF5);
-|Frontend (scheme-builder.tsx)|
-:POST /api/seal-suggestions/preview\n{pieceIds, occasion, style};
-|Backend (SealService)|
-:SealBond Matcher (SEALBOND_MATCHER): Similarity.of(look)\n× styleSignatureJson da celebridade (CA17);
-note right
-  Diferença do RF20: base STYLE_SIGNATURE
-  (estilos, cores, tipos de peça, ocasiões, era),
-  não a marca da peça
-end note
-:Só CelebrityProfile com verificationStatus APROVADO (CA18)\ne sealConsentGranted (CA19);
-:Confiança 0,3 + similaridade; descarta abaixo\nde sealConfidenceThreshold; eraLabel na justificativa;
-|Frontend (scheme-builder.tsx)|
-if (Há celebridade sugerida?) then (não)
-  :Look segue sem vínculo (CA05);
-else (sim)
-  |Usuário|
-  :Marca a celebridade e confirma o\nconsentimento de direito de imagem;
+:Monta o look (Criar Look, etapa Detalhes)\nou abre um look salvo e pede "Sugerir selos";
+|SealService|
+:candidates() via ai.local(SEALBOND_MATCHER);
+:1) Selos com política (RF25) de emissor apto:\ncelebridade com verificationStatus APROVADO\ne sealConsentGranted (CA18/CA19);
+:2) Assinatura de estilo (CA17): Similarity.of(look) ×\nstyleSignatureJson (estilos, cores, tipos, ocasiões)\n→ confiança = min(0,97, 0,3 + similaridade);
+if (Celebridade não verificada ou sem\nsealConsentGranted?) then (sim)
+  :Fica fora das sugestões;
+else (não)
+  if (confiança < sealConfidenceThreshold (0,600)?) then (sim)
+    :Descarta;
+  else (não)
+    :Candidate CELEBRITY, basis STYLE_SIGNATURE,\njustificativa "compatíveis: estilo … e paleta …\ncom a era X" (eraLabel);
+  endif
 endif
-:Salva o look — POST /api/schemes;
-|Frontend (scheme-builder.tsx)|
-:POST /api/schemes/{id}/seal-bonds\n{targetOwnerId, imageRightsConsent};
-|Backend (SealService)|
-if (Celebridade não VERIFICADA?) then (sim)
-  #FFE3E3:400 CELEBRIDADE_NAO_VERIFICADA (CA18);
+:Até 3 (junto com marcas), ordem por confiança\ne depois pelo Hype v2;
+|Frontend|
+if (Onde?) then (Criar Look — scheme-builder)
+  |Pessoa|
+  :Marca a celebridade;
+  |Frontend|
+  :Mostra a caixa "Entendo que o selo de celebridade\nusa a imagem dela e depende da aprovação dela";
+  if (Caixa marcada?) then (não)
+    :Botão Salvar desabilitado;
+    stop
+  else (sim)
+  endif
+  :POST /api/schemes → depois\nPOST /api/schemes/{id}/seal-bonds\n{targetOwnerId, imageRightsConsent: true};
+  |SealService|
+  :linkManually(): celebridade precisa estar APROVADA;
+  if (Não verificada?) then (sim)
+    #FFE3E3:400 CELEBRIDADE_NAO_VERIFICADA (CA18);
+    stop
+  else (não)
+  endif
+  :SealBond MANUAL, EDITED, basis STYLE_SIGNATURE;
+  note right
+    linkManually não confere sealConsentGranted
+    do perfil (só a lista de sugestões confere)
+  end note
+else (look salvo — expanded-card)
+  |Frontend|
+  :"Vincular" → POST /api/seal-bonds/{id}/accept\n{imageRightsConsent: true};
+  note right
+    Divergência: o look salvo envia o consentimento
+    como true sem mostrar a caixa de consentimento
+  end note
+  |SealService|
+  :accept(): SUGGESTED/REFUSED → ACCEPTED;
+endif
+|SealService|
+:route();
+if (Par look × celebridade já PENDING_REVIEW/APPROVED?) then (sim)
+  #FFE3E3:409 VINCULO_EXISTENTE (CA09);
   stop
 else (não)
 endif
-:SealBond origin=MANUAL, status=EDITED,\nbasis=STYLE_SIGNATURE;
-if (imageRightsConsent == true?) then (não)
-  #FFE3E3:400 CONSENTIMENTO_IMAGEM (CA19);
-  stop
-else (sim)
-endif
-:route(): Seal ATIVO do tier\n(Seal.premium = true — Selo Premium, CA20);
-if (Selo fora da janela ou usageCount = usageLimit?) then (sim)
-  #FFE3E3:REJECTED "RECUSADO_LIMITE" +\n409 SELO_INDISPONIVEL — teto da campanha (CA23);
+if (imageRightsConsent != true?) then (sim)
+  #FFE3E3:400 CONSENTIMENTO_IMAGEM (CA19)\n— transação desfeita: nada muda;
   stop
 else (não)
 endif
-:Celebridade SEMPRE revisa: PENDING_REVIEW\n+ notify(SEAL_BOND_REVIEW) (auto-aprovação bloqueada);
-note right: diferença do RF20: não existe\nauto-aprovação para celebridade
+if (Selo Premium indisponível: inativo, fora da janela\nou usageCount ≥ usageLimit (teto da campanha)?) then (sim)
+  #FFE3E3:REJECTED + motivo, auditoria "RECUSADO_LIMITE"\n→ 409 SELO_INDISPONIVEL (CA23, noRollbackFor);
+  stop
+else (não)
+endif
+:Celebridade SEMPRE revisa: PENDING_REVIEW,\nrequiresReview = true (sem auto-aprovação);
+:notify(celebridade, SEAL_BOND_REVIEW) + auditoria "PENDENTE";
 |Celebridade|
-:brands/[slug] → aba Revisão\nGET /api/seal-bonds/review-queue;
+:/brands/{slug} → "Revisão de vínculos"\nGET /api/seal-bonds/review-queue;
+:Vê o look, quem pediu, selo e confiança;
 :POST /api/seal-bonds/{id}/review {approve, reason};
-|Backend (SealService)|
+|SealService|
 if (Aprovou?) then (não)
-  :REJECTED + motivo + notify;
+  :REJECTED + motivo obrigatório\n+ notify ao autor;
   stop
 else (sim)
 endif
-:issue(): APPROVED, sealCode "PRM-…" (Premium),\nusageCount+1, notify(SEAL_GRANTED "Selo Premium emitido!");
-:AuditLog MUDANCA_ESTADO_VINCULO_SELO (CA16);
-:CouponRightsCheck → promoções da celebridade\n(SHOW, MEET_GREET, PRE_VENDA…) e com marca parceira\n(partnerBrandUserId) — CA21/CA22;
-note right: resgate em POST /api/promotions/{id}/redemptions (RF25/RF38)
+:issue(): APPROVED, sealCode "PRM-…" (Selo Premium, CA20),\nissuedAt/expiresAt, usageCount + 1,\nnotify(autor, "Selo Premium emitido!");
+:CouponRightsCheck → promoções da celebridade\n(SHOW, MEET_GREET, PRE_VENDA, CONTEUDO_EXCLUSIVO\ne os tipos de marca — CA21);
+note right
+  CA22: promoção com marca parceira
+  (partnerBrandUserId) só se a marca aprovou
+  um vínculo pedido pela celebridade —
+  409 PARCERIA_NAO_AUTORIZADA. Sem campo
+  na tela de promoções hoje.
+end note
+|Frontend|
+:Card do look com SealBadges vítreo/holográfico\n(badge.premium) e o look entra nos destaques\ndo perfil da celebridade (RF22);
 stop
 @enduml

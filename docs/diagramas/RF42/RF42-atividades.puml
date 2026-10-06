@@ -1,5 +1,5 @@
 @startuml RF42_Atividades
-title RF42 — Marcar um look como "Look do dia"\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF42 — Marcar um look como "Look do dia"\nDiagrama de atividades — marcar (manual, ao criar, Autopiloto, Copilot, espelho), sinais LOOK_WORN/PIECE_USED, aba Look do Dia (painel v2 só leitura com dica), avaliação e histórico
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -27,78 +27,91 @@ skinparam note {
 start
 note right
   Card do Trello sem descrição:
-  fluxo tirado do título e do código
+  fluxo tirado do título e do código.
 end note
 if (Por onde marca?) then (look salvo)
-  :Abre um esquema seu (ExpandedCard)\n→ "Look do dia";
+  :Abre um look seu (ExpandedCard) → "Look do dia";
   |Frontend|
   :POST /api/me/daily-look {schemeId};
-  |Backend|
-  :LookbookService.markDailyLook\n(SchemeService.owned: só o dono);
-elseif (ao criar o esquema) then (sim)
+  |API|
+  :LookbookService.markDailyLook: SchemeService.owned\n(só o dono; senão 403/404) → source MANUAL;
+elseif () then (ao criar o look)
   |Frontend|
-  :POST /api/schemes com lookDoDia = true;
-  |Backend|
-  :SchemeService registra depois de salvar\n(recusa vira aviso, não erro);
-else (Autopiloto / Copilot / Vista-me)
-  |Backend|
-  :AutopilotService / CopilotService / MirrorService\nregistram com source correspondente;
+  :scheme-builder: Switch "Look do dia"\n→ POST /api/schemes {lookDoDia: true};
+  |API|
+  :SchemeService.create salva o look e tenta registrar\n(MANUAL); recusa vira aviso dailyLookWarning, não erro;
+else (Autopiloto · Copilot · espelho)
+  |API|
+  :AutopilotService (confirmação e dia da semana: AUTOPILOTO)\n· CopilotService.accept (COPILOT)\n· MirrorService.useLook (VISTA_ME ou SMART_MIRROR);
 endif
-|Backend|
-:DailyLookService.register(user, scheme, source, hoje);
-if (todas as peças disponíveis\n(isDisponivel e AVAILABLE)?) then (sim)
-  if (já existe DailyLook do usuário na data?) then (sim)
-    :Substitui o esquema e a origem\n(uq_daily_looks_user_date);
-  else (não)
-    :Cria DailyLook (look_date = hoje);
-    :scheme.lookDoDiaCount + 1;
-  endif
-  :scheme.lookDoDia = true;
-  :peças: lookDoDiaCount + 1 e lastWornDate = hoje;
-  :Publica DomainEvents.DailyLookRegistered;
-  |Bancos-serviços|
-  fork
-    :WardrobeEventListeners (AFTER_COMMIT):\ndiário de uso e wearCount + 1;
-    note right
-      origem VISTA_ME pontua
-      VISTA_ME_DAILY_LOOK (RF41);
-      AchievementService.onDailyLook
-      avalia conquistas
-    end note
-  fork again
-    :HypeSignalRecorder.onDailyLook\n(AFTER_COMMIT): HypeIntegrityPolicy\n.weight → HypeSignalDailyRepository\n.increment em hype_signal_daily:\nLOOK_WORN (look) + PIECE_USED (peças);
-    note right
-      novo (RF53 · HypeScore v2):
-      transação própria; 1 sinal por
-      entidade/pessoa/dia; o score sai do
-      job de snapshots (HypeSnapshotService)
-    end note
-  end fork
+|API|
+:DailyLookService.register(user, scheme, source, data);\nGuard.requireOwner;
+if (Alguma peça indisponível\n(disponivel = false ou status ≠ AVAILABLE)?) then (sim)
+  #FFE3E3:409 PECA_INDISPONIVEL com os nomes das peças\n(nada muda; ao criar o look, vira aviso);
   |Frontend|
-  :Toast "Look do dia" e recarrega o card;
-else (não)
-  :409 PECA_INDISPONIVEL com os nomes das peças;
-  |Frontend|
-  :Mostra o motivo;
+  :Mostra o motivo (toast);
   stop
 endif
-|Pessoa|
-:Abre lookbook → aba Look do Dia (u/[username]?tab=daily);
-|Frontend|
-:GET /api/me/daily-look-tab;
-|Backend|
-if (há DailyLook hoje?) then (sim)
-  :Devolve look, painel de Hype Score e histórico\n(cada dia com title e hypeScore);
+|API|
+if (Já existe DailyLook da pessoa na data\n(uq_daily_looks_user_date)?) then (sim)
+  :Troca o look e a origem na mesma linha;
 else (não)
-  if (há look anterior não arquivado?) then (sim)
-    :today() materializa uma cópia\n(materializedFrom) na virada do dia;
+  :INSERT daily_looks; schemes.lookDoDiaCount + 1;
+endif
+:schemes.lookDoDia = true; cada peça: lookDoDiaCount + 1\ne lastWornDate = data (se mais recente);
+:publishEvent DailyLookRegistered(userId, schemeId, data, source, pieceIds);
+:Commit → 200 {id, date, source, schemeId, title, coverImageUrl,\nfeedback, materialized, weekPlanDayId};
+|Eventos (AFTER_COMMIT)|
+fork
+  :WardrobeEventListeners.onDailyLook: diário de uso\n(DAILY_LOOK) e wearCount + 1 por peça;\nVISTA_ME → pontos VISTA_ME_DAILY_LOOK;
+fork again
+  :HypeSignalRecorder.onDailyLook (SideEffectRunner):\nLOOK_WORN no look + PIECE_USED em cada peça;
+  :HypeIntegrityPolicy: ações do dono contam (peso 1),\n1 por item/dia (dedupe 26 h) → hype_signal_daily;
+fork again
+  :HypeLiveRecalc.markDirty → recálculo em até ~2 min\n(hype_scores do look e das peças);
+fork again
+  :AchievementService e ChallengeService\n(conquistas e desafios); InventoryScoreService.invalidate\nouve na hora (@EventListener, antes do commit);
+end fork
+|Pessoa|
+:Abre Lookbook › aba "Look do dia"\n(/u/{username}?tab=daily);
+|Frontend|
+:DailyTab → GET /api/me/daily-look-tab?withAi;
+|API|
+:DailyLookService.today(userId);
+if (Há DailyLook hoje?) then (não)
+  if (Há look anterior e o look não está arquivado?) then (sim)
+    :Materializa uma cópia para hoje\n(materializedFrom = anterior; sem novo sinal);
   else (não)
-    :Estado vazio: marcar look salvo,\nAutopiloto ou Vista-me;
+    :empty: "marcar um look salvo" · Autopiloto · Vista-me;
+    |Frontend|
+    :EmptyState com os atalhos;
+    stop
   endif
 endif
-|Pessoa|
-:Avalia o look (ADOREI / NAO_USEI / NAO_GOSTEI);
+|API|
+:HypeScoreService.panel(dl, withAi): só LÊ hype_scores\n(v2Summary; sem linha = NOT_CALCULATED, nunca 0);
+:tip = dica local (contadores + ENGAGEMENT e TREND v2);\ncom withAi: AiEngine STYLE_ADVISOR (falha = dica local);
+:+ magazineCover (a partir de TRENDING), previousDailyLook,\nhistory (60), feedbackReminder, panelVersions;
 |Frontend|
-:PUT /api/me/daily-looks/{date}/feedback;
+:Painel na versão escolhida (6 visuais, mesmo número v2);\n💡 tip; HypeInline; histórico com HypeBadge v2 por dia\n(/api/hype/summaries em lote);
+|Pessoa|
+if (Ação no painel?) then (trocar versão)
+  |Frontend|
+  :PUT /api/me/hype-panel-version {version};
+  |API|
+  :users.lookDoDiaPanelVersion (só a apresentação muda);
+elseif () then (avaliar o look)
+  |Frontend|
+  :PUT /api/me/daily-looks/{date}/feedback\n{ADOREI · NAO_USEI · NAO_GOSTEI};
+  |API|
+  if (Sem Look do Dia na data?) then (sim)
+    #FFE3E3:404 SEM_LOOK_DO_DIA (href /autopilot);
+    stop
+  endif
+  :feedback e feedbackAt gravados; alimentam\nPreferenceModel (Autopiloto) e DNA (ADOREI);
+else (ver histórico)
+  |Frontend|
+  :Histórico › Timeline → GET /api/me/daily-looks\n(até 60 dias, com avaliação e Hype atual);
+endif
 stop
 @enduml

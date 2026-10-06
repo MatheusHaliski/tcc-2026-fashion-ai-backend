@@ -1,5 +1,5 @@
 @startuml RF46_Classes
-title RF46 — Gerar assets criativos do FashionAI por meio do FAI Creative Engine e serviços Adobe\nDiagrama de classes — entidades JPA reais (fai-domain), enums e classes planejadas
+title RF46 — HypeScore v2\nDiagrama de classes — entidades JPA (fai-domain), enums, cálculo, recálculo ao vivo, leitura, Selos de Hype e marcos (fai-application)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -12,125 +12,304 @@ skinparam packageStyle rectangle
 hide empty methods
 
 package "fai-domain · model" {
-class AssetPreset {
-  +id: String
-  +kind: AssetKind
-  +label: String
-  +presetGroup: String
-  +staticUrl: String
-  +animatedUrl: String
-  +paletteJson: String
-  +metadataJson: String
-  +status: String
-  +rfTags: String
+class HypeSignalDaily <<@Table hype_signal_daily>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +signalType: HypeSignalType
+  +signalDate: LocalDate
+  +eventCount: int
+  +weightedCount: BigDecimal = 0
+  +updatedAt: Instant
 }
-class PipelineJob {
+note bottom of HypeSignalDaily : UNIQUE (entity_type, entity_id,\nsignal_type, signal_date)\nincrementado por upsert nativo
+
+class HypeScoreCurrent <<@Table hype_scores>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +ownerId: UUID
+  +algorithmVersion: String = "HYPE_V2"
+  +status: HypeStatus
+  +score: BigDecimal [0–100, null se insuficiente]
+  +level: HypeLevel
+  +dimensions: HypeDimensions
+  +deltaPoints: BigDecimal
+  +deltaPercent: BigDecimal
+  +direction: String [UP|DOWN|STABLE]
+  +momentum: HypeMomentum
+  +publicEligible: boolean
+  +category: String
+  +styles: String
+  +occasions: String
+  +country: String [V39, país do dono]
+  +region: String [V39, WorldRegions]
+  +categories: String [V39, csv]
+  +subcategories: String [V39, csv]
+  +signalsJson: String [+ byType]
+  +reasonsJson: String
+  +windowStart: Instant
+  +windowEnd: Instant
+  +calculatedAt: Instant
+}
+note bottom of HypeScoreCurrent : UNIQUE (entity_type, entity_id,\nalgorithm_version) — estado atual\n(read model dos cards e rankings)
+
+class HypeScoreSnapshot <<@Table hype_score_snapshots>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +algorithmVersion: String
+  +snapshotDate: LocalDate
+  +status: HypeStatus
+  +score: BigDecimal
+  +level: HypeLevel
+  +dimensions: HypeDimensions
+  +publicEligible: boolean
+  +windowStart: Instant
+  +windowEnd: Instant
+  +calculatedAt: Instant
+}
+note bottom of HypeScoreSnapshot : 1 por entidade, versão e dia\n(histórico, delta de 7 dias, média de 30 dias)
+
+class HypeDimensions <<@Embeddable>> {
+  +popularity: BigDecimal
+  +engagement: BigDecimal
+  +trend: BigDecimal
+  +trendVelocity: BigDecimal
+  +novelty: BigDecimal
+  +longevity: BigDecimal
+  +rarity: BigDecimal
+  +originality: BigDecimal
+  +influence: BigDecimal [só looks]
+}
+
+class HypeMilestone <<@Table hype_milestones>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +ownerId: UUID
+  +milestone: Kind
+  +level: HypeLevel
+  +momentum: HypeMomentum
+  +score: BigDecimal
+  +publicEligible: boolean
+  +algorithmVersion: String
+  +achievedAt: Instant
+  +digestDate: LocalDate
+  +notificationId: UUID
+}
+note bottom of HypeMilestone : V41 — UNIQUE (entity_type, entity_id,\nmilestone); queda nunca grava linha
+
+enum "HypeMilestone.Kind" as Kind {
+  HOT
+  TRENDING
+  VIRAL
+  EMERGING
+}
+
+class WardrobeItem <<@Table wardrobe_items>> {
   +user: User
-  +type: PipelineJobType
-  +status: PipelineJobStatus
-  +provider: String
-  +externalJobId: String
-  +targetType: String
-  +inputResourceId: UUID
-  +outputUrl: String
-  +resultJson: String
-  +qualityScore: BigDecimal
-  +totalCostUsd: BigDecimal
-  +fallbackUsed: boolean
-  +attempts: int
-  +queuedAt / startedAt / finishedAt: Instant
+  +category: String
+  +visibility: Visibility
+  +catalogProductId: UUID
 }
-class PieceImage {
-  +imageType: PieceImageType
-  +url: String
-  +photographySpec: String
+class Scheme <<@Table schemes>> {
+  +user: User
+  +visibility: Visibility
+  +originalScheme: Scheme [remix]
 }
+class UserPreferences <<@Table user_preferences>> {
+  +hypeCreatorOptOut: boolean [V42]
 }
-package "fai-domain · enums" {
-enum AssetKind {
-  CHROME_BACKGROUND
-  AURA_PRESET
-  AURA_VARIANT
-  MATERIAL
-  AURA_MATERIAL_STATIC
-  AURA_MATERIAL_ANIMATED
-  AURA_MATERIAL_MOSAIC
-  GRADIENT_AURA
-  SEASONAL
-  CARD_SKIN
+note bottom of WardrobeItem : v1 removido (P3-16): as colunas hype_score*\nficam no banco só como histórico;\nnenhuma entidade as mapeia
 }
-enum PipelineJobStatus {
-  PENDING
-  RUNNING
-  RENDERING
-  ENHANCING
-  COMPOSITING
-  COMPLETED
-  FAILED
-  CANCELLED
+
+package "fai-domain · model.enums" {
+enum HypeEntityType {
+  PIECE
+  SCHEME
 }
-enum PipelineJobType {
-  BACKGROUND_GENERATION
-  SCHEME_CARD_RENDER
-  OUTFIT_RENDER
-  FLAT_LAY_STANDARDIZATION
-  .. +10 tipos ..
+enum HypeSignalType {
+  LIKE_CREATED
+  COMMENT_CREATED
+  SAVE_CREATED
+  SHARE_CREATED
+  FAVORITE_CREATED
+  LOOK_REMIXED
+  PIECE_REMIXED
+  LOOK_VIEWED
+  PIECE_VIEWED
+  PIECE_USED
+  PIECE_IN_LOOK
+  LOOK_WORN
 }
+enum HypeStatus {
+  AVAILABLE
+  INSUFFICIENT_DATA
 }
-package "fai-application · service" {
-class BackgroundStudioService {
-  +catalog(): Map
-  +generateArt(CurrentUser, ArtRequest): Map
-  +upload(CurrentUser, byte[], String): Map
-  +saveScheme(CurrentUser, UUID, Map, boolean): Map
-  +savePiece(CurrentUser, UUID, Object): Map
-  +generateSkinThumbnail(CurrentUser, String, boolean): Map
+enum HypeLevel {
+  LOW_SIGNAL
+  NICHE
+  RELEVANT
+  HOT
+  TRENDING
+  VIRAL
 }
-class SealDesignService {
-  +catalog(): Map
-  +upload(CurrentUser, byte[]): Map
-}
-interface "ImageProviderPorts.ImageGenerationPort" as IGP {
-  +available(): boolean
-  +generate(prompt, negativePrompt, width, height): Optional<ProviderImage>
+enum HypeMomentum {
+  EMERGING
+  RISING
+  STABLE
+  COOLING
+  CLASSIC
 }
 }
-package "FAI Creative Engine <<planejado>>" {
-class CreativeRequest <<planejado>> {
-  +assetType: CreativeAssetType
-  +templateId: String
-  +sourceAssetIds: List<UUID>
-  +prompt: String
+
+package "fai-application · hype" {
+class HypeScoreConfig <<@Component>> {
+  +algorithmVersion(): String
+  +weights(type): Map<Dimension, Double>
+  +signalWeight(signal): double
+  +level(score): HypeLevel
+  +decayLambda(): double
+  +describe(): Map
 }
-class CreativeTemplate <<planejado>> {
-  +code: String (ex.: BADGE_CIRCULAR_V3)
-  +version: int
-  +layersJson / safeZonesJson
+class HypeCalculator {
+  +baseline(publicPopulation): Baseline
+  +compute(in: HypeInputs, base: Baseline): HypeResult
+  +direction(score, base): String
+  ~momentum(dims): HypeMomentum
 }
-class CreativeAsset <<planejado>> {
-  +assetType: CreativeAssetType
-  +generative: boolean
-  +provider / model: String
-  +approvalStatus: String
+class HypeInputs <<record>>
+class HypeResult <<record>> {
+  +status: HypeStatus
+  +score: Double
+  +level: HypeLevel
+  +dimensions: Map
+  +momentum: HypeMomentum
+  +reasons: List<HypeReason>
 }
-class AssetVersion <<planejado>> {
-  +width / height / format
+class HypeReason <<record>> {
+  +code: String
+  +tone: String
+  +dimension: String
+  +value: Double
 }
-class TemplateResolver <<planejado>>
+class HypeSignalSeries <<record>> {
+  +build(rows, today, config): Map<UUID, HypeSignalSeries>
 }
-BackgroundStudioService --> AssetPreset : lê presets
-BackgroundStudioService --> IGP : fallback entre provedores
-PipelineJob --> PipelineJobStatus
-PipelineJob --> PipelineJobType
-AssetPreset --> AssetKind
-CreativeRequest ..> CreativeTemplate
-TemplateResolver ..> CreativeTemplate
-CreativeRequest ..> PipelineJob : job assíncrono
-CreativeAsset ..> PieceImage : usa CANONICAL (RF45), nunca substitui
-CreativeAsset "1" *-- "*" AssetVersion
-CreativeAsset ..> IGP
-note top of AssetPreset : tabela asset_presets
-note top of PipelineJob : tabela pipeline_jobs\nBACKGROUND_GENERATION existe no enum,\nmas generateArt hoje é síncrono (sem job)
-note bottom of CreativeAsset : <<planejado>> não implementado — conforme Trello\nprovenance: creator, source assets, prompt, template,\nprovider, model, parâmetros (RN46.02/RN46.03)
-note bottom of PieceImage : asset canônico do RF45 (verdade visual)
+class HypeIntegrityPolicy <<@Component>> {
+  +weight(sinal: HypeSignal, dia): double
+}
+class "DomainEvents.HypeSignal" as HypeSignal <<record>> {
+  +signal: HypeSignalType
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +actorId: UUID
+  +ownerId: UUID
+}
+class StyleCompatibility {
+  +profile(styles, colors, occasions): Profile
+  +score(dna, item): Map {score, parts}
+}
+class RecommendationScoring {
+  +Mode: SAFE | DISCOVERY | EXPERIMENTAL
+  +rankValue(scores, mode): double
+}
+class HypeLiveRecalc <<@Component>> {
+  -dirty: AtomicBoolean
+  -lastRun: Instant
+  -minInterval: Duration = 120 s
+  +markDirty()
+  +onSignal / onPieceCreated / onSchemeSaved …()
+  +tick() <<@Scheduled 30 s>>
+}
+class HypeSignalRecorder <<@Component>> {
+  +onSignal(HypeSignal) <<AFTER_COMMIT>>
+  +onPieceWorn / onSchemeSaved / onDailyLook()
+}
+class HypeCache <<@Component>> {
+  +generation(): long
+  +bump()
+  +get(key, loader): Map [TTL 10 min]
+}
+class HypeQueryService <<@Service>> {
+  +MAX_BATCH = 100
+  +summaries(viewer, type, ids): Map
+  +detail(viewer, type, id): Map
+  +history(viewer, type, id, days): Map
+  +positions(viewer, type, id): Map
+  +trending(viewer, type, window, …): Map
+  +trendingGroups(viewer, RankGroup, window, …): Map
+  +groups(viewer, RankGroup, keys, window): Map
+  +ranking(viewer, type, window, region, country,\n  category, subcategory, page, size): Map
+  +rankingFacets(type, window, region, category): Map
+  +globe(viewer, type, window, category,\n  subcategory, minLevel): Map
+  +wardrobe(user) · movers(user, days): Map
+  ~creatorOptOuts(): Set<UUID>
+}
+enum "HypeQueryService.RankGroup" as RankGroup {
+  BRAND
+  CREATOR
+}
+class HypeSnapshotService <<@Service>> {
+  +recalculate(): Map <<synchronized>>
+  ~milestones(hadPrevious, levelBefore, momentumBefore,\n  levelAfter, momentumAfter): List<Kind>
+}
+class HypeSeals <<final>> {
+  +VIRAL, TRENDING, EMERGING, CLASSIC, RARE
+  +CARD_MAX = 2
+  +of(c: HypeScoreCurrent): List<String>
+  +forCard(c): List<String>
+  +progress(c, thresholds): List<Map>
+}
+class "DomainEvents.HypeMilestone" as HypeMilestoneEvent <<record>> {
+  +entityType: HypeEntityType
+  +entityId: UUID
+  +ownerId: UUID
+  +milestone: Kind
+  +level: HypeLevel
+  +momentum: HypeMomentum
+  +score: Double
+  +publicEligible: boolean
+}
+class HypeMilestoneNotifier <<@Component>> {
+  +MAX_NAMED = 3
+  +onMilestone(ev) <<AFTER_COMMIT>>
+  ~record(ev): boolean
+}
+}
+
+HypeScoreCurrent *-- HypeDimensions
+HypeScoreSnapshot *-- HypeDimensions
+HypeSignalDaily --> HypeEntityType
+HypeSignalDaily --> HypeSignalType
+HypeScoreCurrent --> HypeStatus
+HypeScoreCurrent --> HypeLevel
+HypeScoreCurrent --> HypeMomentum
+HypeScoreSnapshot --> HypeLevel
+HypeSignalDaily ..> WardrobeItem : entity_id (PIECE)
+HypeSignalDaily ..> Scheme : entity_id (SCHEME)
+HypeScoreCurrent ..> WardrobeItem : entity_id (PIECE)
+HypeScoreCurrent ..> Scheme : entity_id (SCHEME)
+HypeScoreCurrent "1" ..> "0..*" HypeScoreSnapshot : mesma entidade e versão
+HypeSignalRecorder ..> HypeSignalDaily : upsert\n(peso de HypeIntegrityPolicy)
+HypeSignalRecorder ..> HypeSignal : ouve
+HypeIntegrityPolicy ..> HypeSignal
+HypeCalculator ..> HypeScoreConfig
+HypeCalculator ..> HypeInputs
+HypeCalculator ..> HypeResult
+HypeResult *-- HypeReason
+HypeSignalSeries ..> HypeSignalDaily : lê as linhas
+HypeResult ..> HypeScoreCurrent : persistido pelo\nHypeSnapshotService
+HypeLiveRecalc ..> HypeSnapshotService : recalculate()\n(≤ 1 a cada 120 s)
+HypeSnapshotService ..> HypeCalculator
+HypeSnapshotService ..> HypeMilestoneEvent : publica só na subida
+HypeMilestoneNotifier ..> HypeMilestoneEvent : ouve
+HypeMilestoneNotifier ..> HypeMilestone : grava (dedupe)\n+ resumo do dia
+HypeMilestone --> Kind
+HypeSeals ..> HypeScoreCurrent : deriva (nada gravado;\nsó AVAILABLE e publicEligible)
+HypeSignalRecorder ..> HypeIntegrityPolicy
+HypeSnapshotService ..> HypeCache : bump()
+HypeQueryService ..> HypeScoreCurrent : lê (GET nunca recalcula)
+HypeQueryService ..> HypeScoreSnapshot : history
+HypeQueryService ..> HypeCache
+HypeQueryService ..> HypeSeals : summary().seals,\nsealProgress
+HypeQueryService ..> RankGroup
+HypeQueryService ..> UserPreferences : opt-out de\nCriadores em alta
 @enduml

@@ -1,0 +1,89 @@
+@startuml RF4_Atividades_Canonico
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de atividades — imagem canônica e captura adaptativa: o fluxo planejado sobre a biblioteca de visão que já existe
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+|Pessoa|
+|Frontend|
+|Backend|
+|Visão (biblioteca)|
+|Banco/Storage|
+|Pessoa|
+start
+note right
+  Cinza = <<planejado>> (sem tela, rota ou serviço).
+  Lilás = existe no código (biblioteca de visão em
+  fai-application · vision, exercitada só nos testes;
+  WardrobeService.analyzeForCapture sem chamador).
+end note
+#F2F2F2:<<planejado>> "Adicionar minha foto" no criador:\nUMA foto principal (câmera ou galeria) com o\nguia da categoria (lib/capture/capture-guides.ts);
+|Frontend|
+#F2F2F2:<<planejado>> POST /api/capture/sessions\n(file, category?, viewType?, identifyModel?);
+|Backend|
+#F2F2F2:<<planejado>> CaptureSessionService:\nsessão ANALYZING;
+|Banco/Storage|
+#F2F2F2:<<planejado>> piece_images ORIGINAL\n(storage_key única; nunca sobrescrita);
+|Backend|
+:WardrobeService.analyzeForCapture(user, bytes, category,\nlenient = true): Flat Lay (rembg → remove.bg → local),\nPIECE_ANALYZER, CONTENT_MODERATOR, critérios da foto\n→ CaptureAnalysis (draft, studioSource, logoBox, failedChecks);
+if (Conteúdo fora da política?) then (sim)
+  #FFE3E3:422 FOTO_RECUSADA (lenient só orienta\nos critérios de foto; política continua recusando);
+  stop
+endif
+|Visão (biblioteca)|
+:CaptureProfiles.resolve(categoria, subtipo) → CaptureProfile;
+:LandmarkDetector.detect(recorte, família);
+:ProductKnowledgeBase.evidenceFor + logo/OCR\n→ BrandEnsembleResolver.resolve(evidências);
+:IdentificationHierarchy.reconcile()\ncategoria → subcategoria → marca → linha → modelo;
+:PhotographyQualityGate.evaluate(perfil, vista, sinais)\n→ score 0–100 (ACCEPT ≥ 75 · GUIDANCE ≥ 50 · RETAKE);
+:AdaptiveCaptureEngine.decide(Context)\n(ganho esperado por vista);
+if (Decision.done?) then (não)
+  |Pessoa|
+  #F2F2F2:<<planejado>> "Só mais um detalhe" (ex.: BACK_VIEW,\nTONGUE_LABEL, WATCH_BACK) — com "Pular";
+  if (Pula?) then (sim)
+    #F2F2F2:<<planejado>> …/requests/{requestId}/skip\n→ CaptureRequest SKIPPED;
+  else (não)
+    #F2F2F2:<<planejado>> POST …/sessions/{id}/images\n→ CaptureRequest FULFILLED;
+  endif
+  |Visão (biblioteca)|
+  :Reavalia (máx. 3 complementares;\n2 pulos seguidos encerram);
+else (sim)
+endif
+:PhotographySpecs.get(CaptureProfiles.specFor(perfil, vista));
+:CanonicalPhotographer.render(recorte, spec, landmarks, cortes)\n— rotação limitada, recorte, escala uniforme, margem;\nsem inpainting, IA generativa nem espelhamento;
+:CanonicalPhotographer.detail(…) → LOGO / TEXTURE / LABEL_DETAIL;
+|Banco/Storage|
+#F2F2F2:<<planejado>> piece_images CANONICAL/DETAIL\n(derived_from_id = ORIGINAL, photography_spec),\nbrand_predictions, garment_landmarks,\nmodel_inferences (ModelRef nome + versão);
+|Pessoa|
+#F2F2F2:<<planejado>> Revisa identificação, confianças\ne o canônico (sessão READY_FOR_REVIEW);
+|Frontend|
+:POST /api/pieces {…, draftId, captureSessionId}\n(o campo existe no PieceForm; nenhuma tela envia);
+|Backend|
+:createInternal: grava a peça; com captureSessionId +\ndraftId grava wardrobe_items.capture_session_id\ne publica PieceCapturedFromSession;
+note right
+  O evento não tem ouvinte: canonical_image_url
+  fica vazio e as correções não viram
+  ai_review_items nem training_candidates.
+end note
+|Pessoa|
+stop
+@enduml

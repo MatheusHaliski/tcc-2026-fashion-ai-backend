@@ -1,4 +1,5 @@
 @startuml RF30_MaquinaDeEstados_Nivel
+title RF30 — Ganhar e usar FAI Points e evoluir o nível do "Meu Quarto"\nDiagrama de máquina de estados — nível do quarto (FaiPointsService.Level · room_layouts.level)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam state {
@@ -7,23 +8,47 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-title RF30 — Nível do Meu Quarto (FaiPointsService.Level, room_layouts.level) pelos FAI Points vitalícios
-[*] --> ESTREIA : conta criada (lifetime = 0)
-state "ESTREIA (0)\nFAI Origem, Smart Mirror, Vista-me" as ESTREIA
-state "STUDIO (300)\niluminação guiada, 1ºs acabamentos" as STUDIO
-state "LOFT (900)\n+2 módulos, mais categorias" as LOFT
-state "CLOSET (2000)\nsapateira, vitrine de bolsas" as CLOSET
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "ESTREIA (0)\nFAI Origem, Smart Mirror, Vista-me\n4 portas · 24 gavetas · espelho" as ESTREIA
+state "STUDIO (300)\niluminação guiada (setLight),\nmonograma, 1ºs acabamentos" as STUDIO
+state "LOFT (900)\n+2 portas de 90 cm · +12 gavetas" as LOFT
+state "CLOSET (2000)\nsapateira, vitrine de bolsas,\nporta-joias" as CLOSET
 state "ATELIER (4000)\nilha central / bancada de looks" as ATELIER
-state "PENTHOUSE (7500)\ntroca de estação (maleiro)" as PENTHOUSE
-state "MAISON (12000)\ncloset de assinatura, itens exclusivos" as MAISON
-ESTREIA --> STUDIO : lifetime >= 300
-STUDIO --> LOFT : lifetime >= 900
-LOFT --> CLOSET : lifetime >= 2000
-CLOSET --> ATELIER : lifetime >= 4000
-ATELIER --> PENTHOUSE : lifetime >= 7500
-PENTHOUSE --> MAISON : lifetime >= 12000
-ESTREIA --> ESTREIA : award(actionCode) → fai_points_ledger\n(idempotencyKey, limite diário/semanal)
-note right of ESTREIA : cada Award credita delta no ledger append-only;\nlevelUp notifica "nível liberado" e grava room_layouts.level
-note bottom of MAISON : nível nunca regride: compras na loja\n(POST /api/points/shop/{sku}/purchase) debitam o saldo\nmas não o vitalício (countsLifetime = false)
-note left of CLOSET : nenhum nível bloqueia função básica;\nitens da loja podem exigir requiredLevel\n(409 NIVEL_INSUFICIENTE)
+state "PENTHOUSE (7500)\nmaleiro de estação\n(seasonStorage)" as PENTHOUSE
+state "MAISON (12000)\ncloset de assinatura" as MAISON
+
+[*] --> ESTREIA : RoomService.layout() cria room_layouts\ncom levelOf(lifetime) (conta nova = 0)
+ESTREIA --> STUDIO : award() e lifetime ≥ 300
+STUDIO --> LOFT : award() e lifetime ≥ 900
+LOFT --> CLOSET : award() e lifetime ≥ 2000
+CLOSET --> ATELIER : award() e lifetime ≥ 4000
+ATELIER --> PENTHOUSE : award() e lifetime ≥ 7500
+PENTHOUSE --> MAISON : award() e lifetime ≥ 12000
+ESTREIA -[dashed]-> CLOSET : um lançamento grande\npode pular níveis\n(Level.of(lifetime))
+
+note right of ESTREIA
+  Em cada subida (Level.of depois > antes):
+  • RoomLayoutAccess.setLevel → room_layouts.level
+    e mescla os módulos de defaultModules(level);
+  • notificação ROOM_LEVEL_UP "Seu quarto evoluiu".
+  Ganho sem subir: só +delta no ledger e
+  a notificação FAI_POINTS do extrato.
+end note
+note left of CLOSET
+  Nunca regride: lifetime soma só créditos
+  com countsLifetime = true. A compra na loja
+  (SHOP_PURCHASE, countsLifetime = false)
+  baixa o saldo, não o nível.
+end note
+note bottom of MAISON
+  Nenhum nível bloqueia função básica.
+  Funções do quarto checam o nível:
+  setLight/setMonogram (STUDIO) e seasonStorage
+  (PENTHOUSE) → 409 NIVEL_INSUFICIENTE;
+  itens da loja: requiredLevel no buy().
+end note
 @enduml

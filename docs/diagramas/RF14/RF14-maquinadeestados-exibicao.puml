@@ -1,0 +1,49 @@
+@startuml RF14_MaquinaDeEstados_Exibicao
+!pragma layout smetana
+title RF14 — Aba "Marcas": feed e perfil das marcas cadastradas\nDiagrama de máquina de estados — look de outra pessoa no perfil da marca (política de exibição por selo, vale também para o RF22)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Fora do perfil\n(sem vínculo APPROVED com a marca)" as Fora
+state "Com vínculo APPROVED" as Promovido {
+  state "Em destaque\nEsquemas/Peças em destaque\n+ Looks consagrados («vigente até…»)" as Destaque
+  state "Em revalidação\nsó em Looks consagrados\n(«em revalidação»)" as Revalidacao
+  state "Expirado\nsó em Looks consagrados\n(«expirado em…»)" as Expirado
+  state "Oculto para quem vê\n(displayable = false)" as Oculto
+}
+
+[*] --> Fora
+Fora --> Destaque : SealService.issue() — auto-aprovação\nou POST /api/seal-bonds/{id}/review {approve: true}\n(issuedAt = agora, expiresAt = fim do selo ou +365 dias)
+Destaque --> Revalidacao : PUT /api/schemes/{id} muda as peças\nde look publicado → flagRevalidation\n(Scheme.revalidationPending = true)
+Revalidacao --> Destaque : POST /api/seal-bonds/{id}/review {approve: true}\n(«revalidado», revalidationPending = false)
+Revalidacao --> Fora : review {approve: false, reason}\n→ vínculo REVOKED
+Destaque --> Expirado : leitura com agora ≥ expiresAt de todos\nos vínculos (calculado na hora, sem job)
+Destaque --> Fora : POST /api/seal-bonds/{id}/revoke\nou look privado/excluído → revokeForScheme
+Expirado --> Fora : revoke · revokeForScheme
+Destaque --> Oculto : look sai de PUBLISHED, autor SUSPENDED /\nDELETION_SCHEDULED / DELETED, ou bloqueio /\nvisibilidade não deixa quem vê ver o look
+Oculto --> Destaque : volta a ser visível\n(e vínculo ainda vigente)
+
+note right of Destaque
+  Ordem padrão: HypeScore v2 público do look
+  (AVAILABLE e publicEligible), sem Hype no fim,
+  desempate pela emissão mais recente.
+  ?filter=RECENTES|HYPE|GROWTH só reordena.
+  Peças: selo LOOK cobre todas, selo PECA
+  só as linkedPieceIds (lista vazia = todas).
+end note
+note bottom of Fora
+  Nunca entram: SUGGESTED, ACCEPTED, EDITED,
+  PENDING_REVIEW, REFUSED, REJECTED, REVOKED.
+  Selo desativado (INACTIVE) só impede novas
+  emissões: o que já foi emitido vale até expirar.
+end note
+@enduml

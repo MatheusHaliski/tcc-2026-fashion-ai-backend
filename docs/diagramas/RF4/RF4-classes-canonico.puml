@@ -1,0 +1,212 @@
+@startuml RF4_Classes_Canonico
+!pragma layout smetana
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de classes — imagens canônicas e captura adaptativa: biblioteca de visão (fai-application · vision) e tabelas V29
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #F8F4FF
+  BorderColor #7C5FC0
+  ArrowColor #52606D
+}
+skinparam class<<planejado>> {
+  BackgroundColor #F2F2F2
+  BorderColor #9A9A9A
+}
+skinparam packageStyle rectangle
+hide empty members
+
+package "fai-application · vision (biblioteca; sem endpoint)" {
+  class AdaptiveCaptureEngine <<final>> {
+    +MODEL = ModelRef.CAPTURE_POLICY
+    +decide(Context) : Decision
+  }
+  class "AdaptiveCaptureEngine.Decision" as Decision <<record>> {
+    next : Recommendation
+    alternatives : List<Recommendation>
+    done : boolean
+    doneReason : CONFIDENT | LIMIT_REACHED |\n  USER_DECLINED | NO_USEFUL_VIEW
+  }
+  class "AdaptiveCaptureEngine.Recommendation" as Rec <<record>> {
+    view : CaptureView ; purpose : CapturePurpose
+    need : CaptureNeed ; reasonCode : String
+  }
+  class CaptureProfiles <<final>> {
+    +VERSION = "CAPTURE_PROFILES_V1"
+    +resolve(category, subcategory) : CaptureProfile
+    +specFor(profile, view) : String
+    +all() ; +describe()
+  }
+  class CaptureProfile <<record>> {
+    id, family : String
+    primaryView : CaptureView
+    secondary views (informs por VisionSignal)
+    guidance (overlay, distância, fundo)
+  }
+  class PhotographyQualityGate <<final>> {
+    +ACCEPT = 75 ; +GUIDE = 50
+    +evaluate(profile, view, Signals) : Report
+  }
+  class "PhotographyQualityGate.Report" as QReport <<record>> {
+    score : int
+    decision : ACCEPT | ACCEPT_WITH_GUIDANCE | RETAKE_SUGGESTED
+    criteria ; clippedRegions
+  }
+  class LandmarkDetector {
+    +detect(cutout, family) : Result
+  }
+  class BrandEnsembleResolver <<final>> {
+    +resolve(List<Evidence>) : Resolution
+    +{static} canonical(brand) : String
+  }
+  class IdentificationHierarchy <<final>> {
+    +IDENTIFIED = 0.90 ; +LIKELY = 0.60
+    +put(level, value, confidence, alternatives, ...)
+    +reconcile() : IdentificationHierarchy
+  }
+  class ProductKnowledgeBase <<Service>> {
+    +evidenceFor(brand, zone, category, view)
+    +brandByToken(text) ; +matchModel(brand, text)
+  }
+  class CanonicalPhotographer <<final>> {
+    +MODEL = ModelRef.CANONICAL
+    +render(cutout, spec, landmarks, clippedRegions) : Result
+    +detail(cutout, spec, logoBox) : Result
+  }
+  class PhotographySpecs {
+    +get(id) ; +find(id) ; +all()
+  }
+  class PhotographySpec <<record>> {
+    id ; version ; view : CaptureView
+    aspectRatio ; canvas ; coverageTarget
+    allowedRotationDeg ; maxUpscale
+  }
+  class GarmentEmbedder <<final>> {
+    +DIMENSIONS = 96
+    +embed(cutout) : float[]
+  }
+  class ModelRef <<record>> {
+    name, version, provider : String
+  }
+}
+
+package "fai-application · service" {
+  class WardrobeService <<Service>> {
+    +analyzeForCapture(user, bytes, category, lenient) : CaptureAnalysis
+    ~createInternal(...) → PieceCapturedFromSession
+  }
+  class "WardrobeService.CaptureAnalysis" as CA <<record>> {
+    draft : Draft ; studioSource : BufferedImage
+    truncated ; logoBox ; failedChecks ; allChecks
+  }
+  class CaptureSessionService <<planejado>> {
+    orquestra a sessão (/api/capture/**)
+  }
+  class LensService <<Service>>
+}
+
+package "fai-domain · model (V29__adaptive_garment_capture)" {
+  class CaptureSession <<Entity>> <<table capture_sessions>> {
+    userId, draftJobId, pieceId : UUID
+    category, subcategory, profileId : String
+    primaryView : CaptureView
+    status : CaptureSessionStatus
+    complementaryCount, consecutiveSkips : int
+    identificationJson, decisionJson, qualityJson
+  }
+  class CaptureRequest <<Entity>> <<table capture_requests>> {
+    sessionId : UUID ; viewType : CaptureView
+    purpose : CapturePurpose ; need : CaptureNeed
+    expectedGain, confidenceBefore, confidenceAfter
+    status : CaptureRequestStatus
+    fulfilledImageId : UUID
+  }
+  class PieceImage <<Entity>> <<table piece_images>> {
+    sessionId, pieceId, userId : UUID
+    imageType : PieceImageType ; viewType : CaptureView
+    captureRole : CaptureRole
+    storageKey, url, sha256 : String
+    qualityScore ; blurScore ; lightingScore
+    photographySpec : String ; derivedFromId : UUID
+    processingStatus : PieceImageStatus
+    modelVersion ; superseded : boolean
+  }
+  class BrandPrediction <<Entity>> <<table brand_predictions>> {
+    level : IdentificationLevel ; value : String
+    confidence ; evidenceJson ; alternativesJson
+  }
+  class "GarmentLandmark · GarmentEmbedding\nModelInference · ModelRegistryEntry\nAiReviewItem · TrainingCandidate\nDatasetSource · KbBrandSignature\nKbProductLine · KbProductModel" as Others <<Entity>>
+}
+package "fai-domain · enums" {
+  enum CaptureSessionStatus {
+    ANALYZING
+    AWAITING_CAPTURE
+    READY_FOR_REVIEW
+    COMPLETED
+    ABANDONED
+  }
+  enum CaptureRequestStatus {
+    PENDING
+    FULFILLED
+    SKIPPED
+    SUPERSEDED
+  }
+  enum IdentificationLevel {
+    CATEGORY
+    SUBCATEGORY
+    BRAND
+    PRODUCT_LINE
+    MODEL
+    VARIANT
+  }
+}
+
+AdaptiveCaptureEngine ..> Decision
+Decision *-- "0..*" Rec
+AdaptiveCaptureEngine ..> CaptureProfile
+CaptureProfiles ..> CaptureProfile
+CaptureProfiles ..> PhotographySpecs : specFor
+PhotographySpecs ..> PhotographySpec
+PhotographyQualityGate ..> QReport
+CanonicalPhotographer ..> PhotographySpec
+CanonicalPhotographer ..> LandmarkDetector
+BrandEnsembleResolver <.. ProductKnowledgeBase : Evidence
+IdentificationHierarchy ..> IdentificationLevel
+WardrobeService ..> CA
+CaptureSessionService ..> WardrobeService : analyzeForCapture
+CaptureSessionService ..> AdaptiveCaptureEngine
+CaptureSessionService ..> PhotographyQualityGate
+CaptureSessionService ..> BrandEnsembleResolver
+CaptureSessionService ..> CanonicalPhotographer
+CaptureSessionService ..> CaptureSession
+LensService ..> GarmentEmbedder : único uso fora dos testes
+LensService ..> PieceImage : lê (embeddings)
+CaptureRequest "*" ..> "1" CaptureSession : sessionId
+PieceImage "*" ..> "0..1" CaptureSession : sessionId
+PieceImage ..> PieceImage : derivedFromId (ORIGINAL → CANONICAL/DETAIL)
+BrandPrediction "*" ..> "1" CaptureSession : sessionId
+Others ..> PieceImage : imageId
+CaptureSession --> CaptureSessionStatus
+CaptureRequest --> CaptureRequestStatus
+BrandPrediction --> IdentificationLevel
+AdaptiveCaptureEngine ..> ModelRef
+WardrobeService -[hidden]down-> AdaptiveCaptureEngine
+Rec -[hidden]down-> CaptureSession
+PhotographySpec -[hidden]down-> PieceImage
+LandmarkDetector -[hidden]down-> Others
+
+note bottom of CaptureSessionService
+  Não existe: nenhum controller /api/capture/** nem
+  serviço grava capture_sessions, capture_requests,
+  brand_predictions ou piece_images. analyzeForCapture
+  não tem chamador e o evento PieceCapturedFromSession
+  (publicado se o PieceForm traz captureSessionId)
+  não tem ouvinte.
+end note
+note bottom of ProductKnowledgeBase
+  @Service sem injeção em outro serviço;
+  AdaptiveCaptureEngine, QualityGate, Ensemble,
+  LandmarkDetector e CanonicalPhotographer
+  só rodam nos testes.
+end note
+@enduml

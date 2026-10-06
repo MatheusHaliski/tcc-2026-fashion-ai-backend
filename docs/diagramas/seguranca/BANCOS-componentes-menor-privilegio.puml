@@ -1,0 +1,49 @@
+@startuml BANCOS_Componentes_Menor_Privilegio
+title Segurança, integridade e operação (transversal)\nDiagrama de componentes — bancos endurecidos como código (infra/railway): usuários de menor privilégio, TLS e quem conecta
+!include _estilo.iuml
+left to right direction
+
+package "Railway · api (Spring Boot)" {
+  component "JPA + Flyway\n(MYSQL_USER=fai_app\nMYSQL_SSL_MODE=REQUIRED)" as JPA
+  component "MysqlDumpBackupAdapter\n(MYSQL_BACKUP_USER=fai_backup)" as BKP
+  component "CassandraProjectionAdapter\n(fai_app · CASSANDRA_SSL=true\nCASSANDRA_CA_CERT_PEM)" as CAD
+  component "OpenSearchIndexAdapter\n(https · fai_app\nOPENSEARCH_CA_CERT_PEM)" as OSA
+  component "RedisAdapters\nredisRateLimit · redisRenderCache\n(REDIS_USERNAME=fashionai)" as RDA
+}
+
+package "infra/railway (git)" {
+  component "start-command.sh\nconfere o SHA-256 do script" as CMD
+  component "mysql/start.sh" as SMY
+  component "cassandra/start.sh" as SCA
+  component "opensearch/start.sh" as SOS
+  component "redis/start.sh" as SRD
+}
+
+package "Railway · bancos (rede privada)" {
+  database "MySQL 9\nfai_app: DML + DDL do Flyway só no banco,\nnenhum privilégio global, REQUIRE SSL\nfai_backup: SELECT, SHOW VIEW, TRIGGER,\nLOCK TABLES, EVENT, REQUIRE SSL\nroot: só administração" as MY
+  database "Cassandra 4.1\nfai_app: SELECT, MODIFY, CREATE, ALTER\nsó em fashionai_feed\nfai_admin: superusuário de manutenção\ncassandra: sem LOGIN · TLS com CA própria" as CA
+  database "OpenSearch 2.19\nplugin de segurança · TLS (HTTP e transporte)\nfai_app: crud e create_index só em fai-*\nsó admin no internal_users.yml\nauditoria FAILED_LOGIN e MISSING_PRIVILEGES" as OS
+  database "Redis 8.2\nACL fashionai: chaves rate:* counter:*\nrender:* jobs:* · sem @dangerous · sem pub/sub\ndefault: só administração" as RD
+}
+
+CMD ..> SMY
+CMD ..> SCA
+CMD ..> SOS
+CMD ..> SRD
+SMY ..> MY : cria e confere usuários\na cada início
+SCA ..> CA : papéis + TLS
+SOS ..> OS : usuário, papel e TLS
+SRD ..> RD : usuário ACL
+
+JPA --> MY : JDBC + TLS
+BKP --> MY : mysqldump --ssl-mode
+CAD --> CA : CQL + TLS
+OSA --> OS : HTTPS + Basic
+RDA --> RD : AUTH usuário ACL
+
+note bottom of MY
+  Senhas geradas pelo Railway (secret(40)), referenciadas
+  pela API por variável (nunca copiadas). Rotação: trocar a
+  variável, reiniciar o banco e depois a API.
+end note
+@enduml

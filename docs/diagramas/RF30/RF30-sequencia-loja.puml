@@ -1,0 +1,82 @@
+@startuml RF30_Sequencia_Loja
+title RF30 — Ganhar e usar FAI Points e evoluir o nível do "Meu Quarto"\nDiagrama de sequência — loja do quarto: listar, provar, comprar e montar no módulo
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "points/page.tsx\n+ RoomStore\n(room/page.tsx: caixa de entrega)" as FE
+participant "HighlightsController" as C
+participant "FaiPointsService" as P
+participant "WardrobeCreatorService" as W
+participant "RoomService\n(RoomLayoutAccess)" as R
+participant "NotificationService" as N
+database "MySQL" as DB
+
+== Listar ==
+U -> FE: abre a loja do quarto
+FE -> C: GET /api/points/shop
+C -> P: shop(user)
+P -> DB: lifetime → nível · balance → saldo
+P -> DB: SELECT room_inventory WHERE user_id (unidades já compradas)
+P -> DB: SELECT room_catalog WHERE active ORDER BY price_points
+loop cada item (sai se EXPIRADO ou vendedor inativo, salvo se já é da pessoa)
+  P -> W: view(item, buyer) — dados, criador, selo, condições
+  P -> R: compatibleModules(userId, item)
+end
+P --> FE: itens + levelOk, affordable, owned, inventory[], compatibleModules
+FE --> U: filtros (tipo, bloco, material, origem, criador, busca,\n"só os que posso comprar") e ordenação por preço
+
+== Provar (sem compra) ==
+U -> FE: Provar no meu quarto
+FE -> C: POST /api/points/shop/{sku}/try-on {}
+C -> P: tryOn(user, sku, null)
+P -> DB: SELECT room_catalog (404 se o SKU não existe)
+P -> R: compatibleModules
+P --> FE: preview = true, module (1º compatível), finish, balance
+FE --> U: aviso "Prévia em Porta 1 — nada foi comprado"
+
+== Comprar ==
+U -> FE: Comprar
+FE -> C: POST /api/points/shop/{sku}/purchase
+C -> P: buy(user, sku)  «@Transactional»
+P -> DB: lockOwner: SELECT users … FOR UPDATE
+P -> DB: lockBySku: SELECT room_catalog … FOR UPDATE
+alt nível < requiredLevel
+  P --> FE: 409 NIVEL_INSUFICIENTE
+else soldCount ≥ stockLimit
+  P --> FE: 409 ESGOTADO
+else blocker() ≠ null (janela, vendedor, limite por pessoa, selo)
+  P -> W: blocker(buyer, item)
+  P --> FE: 409 CONDICAO_DE_COMPRA (motivo)
+else saldo < preço
+  P --> FE: 409 SALDO_INSUFICIENTE
+else ok
+  opt preço > 0
+    P -> DB: INSERT fai_points_ledger (−preço, SHOP_PURCHASE,\nref SKU, countsLifetime = false)
+    P -> N: notify(FAI_POINTS, "−180 FAI Points", "Compra na loja do quarto: …")
+  end
+  P -> DB: UPDATE room_catalog.sold_count + 1 (@Version)
+  P -> DB: INSERT room_inventory (serial se edição limitada,\nsource = PURCHASE, appliedModule = null)
+  P --> FE: 200 {inventoryId, balance, lifetime, level, serial}
+end
+
+== Montar no módulo ==
+U -> FE: escolhe o módulo (ou abre a caixa no quarto)
+FE -> C: POST /api/me/room-inventory/{inventoryId}/apply {moduleId}
+C -> P: apply(user, inventoryId, moduleId)
+alt item de outro usuário
+  P --> FE: 403 (item de outro usuário)
+else módulo fora de compatibleModules
+  P --> FE: 409 ENCAIXE_INCOMPATIVEL (lista os módulos que servem)
+else ok
+  P -> DB: UPDATE room_inventory.applied_module
+  P -> R: applyFinish(userId, moduleId, item)
+  R -> DB: UPDATE room_layouts.modules_json\n(COMPONENT: só o módulo · WARDROBE: "ALL",\num acabamento por tipo de bloco)
+  P --> FE: {applied: true, module, sku}
+end
+@enduml

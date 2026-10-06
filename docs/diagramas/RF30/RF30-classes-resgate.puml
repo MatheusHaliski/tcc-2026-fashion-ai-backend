@@ -1,0 +1,223 @@
+@startuml RF30_Classes_Resgate
+title RF30 — Ganhar e usar FAI Points e evoluir o nível do "Meu Quarto"\nDiagrama de classes — <<planejado>> resgate em dinheiro e doações (antigo RF48) sobre o ledger que já existe
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+  BackgroundColor<<planejado>> #F2F2F2
+  BorderColor<<planejado>> #9AA0A6
+  HeaderBackgroundColor<<planejado>> #E6E6E6
+}
+skinparam packageStyle rectangle
+hide empty methods
+hide empty fields
+
+package "Já existe (fai-domain / fai-application)" {
+  class User <<@Entity>> {
+    id: UUID
+    country: String
+    birthDate: String «cifrado, opcional»
+    emailVerified: boolean
+    twoFactorEnabled: boolean
+    status: AccountStatus
+    profileType: ProfileType
+  }
+  class FaiPointsRule <<@Entity>> {
+    actionCode: String «PK»
+    points: int
+    dailyCap / weeklyCap: Integer
+    oncePerRef: boolean
+    active: boolean
+    .. <<planejado>> ..
+    cashable: boolean
+    maturationDays: int
+  }
+  class FaiPointsLedgerEntry <<@Entity>> {
+    id: UUID
+    userId: UUID
+    delta: int
+    actionCode: String
+    refType / refId: String
+    idempotencyKey: String «único»
+    countsLifetime: boolean
+    createdAt: Instant
+    .. <<planejado>> ..
+    bucket: PointsBucket
+    matureAt: Instant
+    counterpartyUserId: UUID
+    transferId / payoutRequestId: UUID
+    operationId / reversesEntryId: UUID
+  }
+  class DailyLook <<@Entity>> {
+    id: UUID
+    user: User
+    scheme: Scheme
+    lookDate: LocalDate
+    source: DailyLookSource
+  }
+  class FaiPointsService <<@Service>> {
+    +award(...): Award
+    +balance(userId): long
+    +buy(user, sku)  «lockOwner»
+    .. <<planejado>> ..
+    award() com trava para regras sacáveis
+  }
+}
+
+package "Proposta — fai-domain (migração futura ≥ V43)" {
+  class PointsTransfer <<planejado>> {
+    id: UUID
+    senderUserId / receiverUserId: UUID
+    amount: int
+    contextType: TransferContext
+    contextId: UUID
+    messageCode: String
+    anonymous: boolean
+    status: TransferStatus
+    riskScore: Integer
+    idempotencyKey: String
+    createdAt / reversedAt: Instant
+  }
+  class PayoutAccount <<planejado>> {
+    id: UUID
+    userId: UUID «único»
+    provider: String
+    kycStatus: KycStatus
+    cpfEnc / cpfHash: String
+    pixKeyType / pixKeyEnc / pixKeyHash: String
+    pixKeyChangedAt: Instant
+    termsVersion: String
+  }
+  class PayoutRequest <<planejado>> {
+    id: UUID
+    userId / payoutAccountId: UUID
+    periodMonth: String «YYYY-MM»
+    points / pointsFromDonations: int
+    currency: String
+    rate: BigDecimal
+    amountGross / taxWithheld / amountNet: BigDecimal
+    status: PayoutStatus
+    reviewMode: String «AUTO | MANUAL»
+    providerPayoutRef: String
+  }
+  class CreatorFundPeriod <<planejado>> {
+    periodMonth: String
+    country: String
+    netRevenue / fundPct / fundAmount: BigDecimal
+    reserveIn / reserveOut: BigDecimal
+    pointsRequested: long
+    rateFloor / rateCeiling / rateApplied: BigDecimal
+    status: String «OPEN | CLOSING | CLOSED»
+  }
+  class RiskFlag <<planejado>> {
+    userId / relatedUserId: UUID
+    kind: RiskKind
+    severity: RiskSeverity
+    score: int
+    status: String «OPEN | CONFIRMED | DISMISSED»
+  }
+  class PointsWalletStatus <<planejado>> {
+    userId: UUID «PK»
+    frozen: boolean
+    frozenReason: String
+    receiveSupport: boolean
+  }
+  enum PointsBucket <<planejado>> {
+    EARNED_STANDARD
+    EARNED_CASHABLE
+    DONATION_RECEIVED
+  }
+  enum TransferStatus <<planejado>> {
+    COMPLETED
+    HELD
+    REVERSED
+  }
+  enum PayoutStatus <<planejado>> {
+    REQUESTED
+    UNDER_REVIEW
+    APPROVED
+    PROCESSING
+    PAID
+    REJECTED
+    DEFERRED
+    FAILED
+    CANCELLED
+    REVERSED
+  }
+  enum KycStatus <<planejado>> {
+    NOT_STARTED
+    PENDING
+    APPROVED
+    REJECTED
+    EXPIRED
+  }
+}
+
+package "Proposta — fai-application" {
+  class PointsWalletService <<planejado>> {
+    +wallet(userId)  «disponível, em maturação, reservado»
+    +statement(userId, bucket, type, page)
+  }
+  class PointsTransferService <<planejado>> {
+    +quote(sender, receiver, context)
+    +transfer(sender, receiver, amount, ...)
+  }
+  class PayoutService <<planejado>> {
+    +startKyc / request / cancel
+    +onProviderWebhook(event)
+  }
+  class CreatorFundService <<planejado>> {
+    +closeMonth(period, country)
+  }
+  class PointsRiskEngine <<planejado>> {
+    +evaluate(sender, receiver, amount): score
+  }
+  interface PayoutProviderPort <<planejado>> {
+    +createAccount / startKyc / verifyPixKey
+    +pay(payoutRequest) «idempotente»
+    +parseWebhook(payload)
+  }
+}
+
+User "1" -- "0..*" FaiPointsLedgerEntry : userId
+FaiPointsRule "1" -- "0..*" FaiPointsLedgerEntry : actionCode
+FaiPointsService --> FaiPointsLedgerEntry
+User "1" -- "0..*" DailyLook
+
+PointsTransfer "1" .. "2..*" FaiPointsLedgerEntry : transferId (soma zero)
+PointsTransfer "0..*" .. "1" DailyLook : contexto DAILY_LOOK (F1)
+User "1" .. "0..*" PointsTransfer : envia / recebe
+User "1" .. "0..1" PayoutAccount
+PayoutAccount "1" .. "0..*" PayoutRequest
+PayoutRequest "1" .. "1..*" FaiPointsLedgerEntry : PAYOUT_RESERVE / RELEASE
+CreatorFundPeriod "1" .. "0..*" PayoutRequest : periodMonth + country
+User "1" .. "0..*" RiskFlag
+User "1" .. "0..1" PointsWalletStatus
+FaiPointsLedgerEntry ..> PointsBucket
+PointsTransfer ..> TransferStatus
+PayoutRequest ..> PayoutStatus
+PayoutAccount ..> KycStatus
+
+PointsTransferService ..> PointsWalletService
+PointsTransferService ..> PointsRiskEngine
+PointsTransferService ..> PointsTransfer
+PayoutService ..> PayoutProviderPort
+PayoutService ..> CreatorFundService
+PayoutService ..> PayoutRequest
+PointsWalletService ..> FaiPointsLedgerEntry : SUM(delta) por bucket
+
+note bottom of FaiPointsLedgerEntry
+  Hoje: saldo = SUM(delta) e vitalício = SUM(delta > 0 com countsLifetime).
+  Proposta: saldo por bucket e maturação; doação recebida com
+  countsLifetime = false (não sobe nível); correção só por linha nova
+  (REVERSAL, ADMIN_ADJUSTMENT) — ledger sem UPDATE/DELETE.
+end note
+note top of PointsTransfer
+  A proposta citava a migração V33, mas V33 já é
+  politica_verificacao_emissor; a última é V42.
+  Nenhuma dessas tabelas existe no banco.
+end note
+@enduml

@@ -1,5 +1,5 @@
 @startuml RF17_Sequencia
-title RF17 — Permitir que o Usuário visualize a página de perfil de outros Usuários cadastrados dentro da rede social do FashionAI\nDiagrama de sequência — endpoints reais
+title RF17 — Visualizar a página de perfil de outros usuários\nDiagrama de sequência — abrir o perfil (privacidade e bloqueio), seguir, pedido para seguir, conexões e bloqueio
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -10,59 +10,106 @@ skinparam sequence {
 autonumber
 actor "Visitante" as V
 actor "Dono do perfil" as O
-participant "Frontend\nu/[username]" as FE
+participant "u/[username]/page.tsx\nProfileHeader · LookbookTabs" as FE
 participant "ProfileController" as PC
 participant "ProfileService" as PS
 participant "Guard" as G
-participant "WardrobeController" as WC
-participant "WardrobeService" as WS
+participant "WardrobeController\nWardrobeService" as WC
 participant "NotificationService" as NS
-participant "NotificationController" as NC
 database "MySQL" as DB
+
 V -> FE: abre /u/{username}
-FE -> PC: GET /api/profiles/{idOrUsername}
-PC -> PS: profile(viewer, idOrUsername)
-PS -> DB: users (findById / findByUsernameIgnoreCase)
-PS -> DB: follows (relação nos dois sentidos)
-alt dono bloqueou o visitante / conta excluída
+FE -> PC: GET /api/profiles/{idOrUsername} (anônimo se sem login)
+PC -> PS: profile(viewer, idOrUsername, sort)
+PS -> DB: users (findById ou findByUsernameIgnoreCase)
+alt conta inexistente, DELETED ou DELETION_SCHEDULED
+  PS --> FE: 404 Perfil
+else dono bloqueou o visitante (follows dono→visitante = BLOQUEADO)
   PS --> FE: 404 Perfil
 else
+  PS -> DB: follows visitante→dono (relation)
+  PS -> DB: contadores (follows ACEITO, wardrobe_items, schemes)
   PS -> G: canView(viewer, ownerId, profileVisibility)
-  alt pode ver
-    PS -> DB: schemes PUBLISHED + wardrobe_items
-    PS --> FE: 200 {user, bio, counters, relation, contentVisible=true, schemes, pieces}
-    FE -> WC: GET /api/users/{ownerId}/closet?category&state&page
-    WC -> WS: closet(viewer, ownerId, ClosetFilter)
-    WS -> G: canView por peça (visibilidade efetiva, APPROVED)
-    WS --> FE: 200 Page<PieceView>
-  else privado
-    PS --> FE: 200 {counters, relation, contentVisible=false, invite: SEGUIR}
+  G -> DB: follows nos dois sentidos (bloqueio) e Follow ACEITO
+  alt pode ver (dono, admin, PUBLIC ou FOLLOWERS com ACEITO)
+    PS -> DB: schemes PUBLISHED + wardrobe_items visíveis\n(SchemeService.moreRestrictive look × perfil)
+    opt sort = hype_desc · hype_asc · growth
+      PS -> DB: hype_scores (SCHEME, só público elegível\npara quem não é o dono)
+    end
+    PS --> FE: 200 {user, bio, layout, relation, counters, visibility,\ncontentVisible: true, schemes, pieces, sort}
+  else privado, só seguidores ou bloqueio vindo do visitante
+    PS --> FE: 200 {…, contentVisible: false, invite {message, SEGUIR},\nschemes: [], pieces: []}
   end
 end
+alt layout = INSTITUCIONAL
+  FE -> FE: router.replace(/brands/{username}) (RF14/RF22)
+else PESSOAL e contentVisible
+  FE -> FE: Hype do criador e insights do perfil\n(ver RF17_Sequencia_Hype)
+  FE -> WC: GET /api/users/{ownerId}/closet?category&state&sort&hypeLevel&page
+  WC -> G: canView por peça (visibilidade efetiva)
+  WC --> FE: 200 Page<PieceView>
+end
+
+== Seguir ou pedir para seguir ==
 V -> FE: Seguir
 FE -> PC: POST /api/users/{targetId}/followers
 PC -> PS: follow(viewer, targetId)
-alt privateAccount e não PUBLIC (PESSOAL)
-  PS -> DB: INSERT follows (PENDENTE)
-  PS -> NS: notify(FOLLOW_REQUEST)
-else público
-  PS -> DB: INSERT follows (ACEITO)
-  PS -> NS: notify(NEW_FOLLOWER)
+alt seguir a si mesmo
+  PS --> FE: 400 SEGUIR_A_SI
+else dono bloqueou o visitante
+  PS --> FE: 404 Perfil
+else já ACEITO
+  PS --> FE: 200 {relation: ACEITO, followers, following}
+else privateAccount, não PUBLIC e PESSOAL
+  PS -> DB: INSERT/UPDATE follows (PENDENTE)
+  PS -> NS: notify(dono, FOLLOW_REQUEST)
+  PS --> FE: 200 {relation: PENDENTE, followers, following}
+else perfil aberto ou institucional
+  PS -> DB: INSERT/UPDATE follows (ACEITO)
+  PS -> NS: notify(dono, NEW_FOLLOWER)
+  PS --> FE: 200 {relation: ACEITO, followers, following}
 end
-PS --> FE: 200 {relation, followers, following}
-O -> NC: GET /api/notifications
-NC --> O: caixa SOCIAL com o pedido
+NS -> DB: INSERT notifications (categoria SOCIAL)
+
 O -> PC: GET /api/me/follow-requests
+PC -> PS: requests(user) → follows PENDENTE
 O -> PC: POST /api/follow-requests/{followId} {accept}
 PC -> PS: respond(user, followId, accept)
-alt aceita
+PS -> G: requireOwner(user, following.id) — senão 403
+alt pedido já respondido
+  PS --> O: 409 PEDIDO_RESPONDIDO
+else aceita
   PS -> DB: UPDATE follows SET status = ACEITO, responded_at
-  PS -> NS: notify(FOLLOW_ACCEPTED)
+  PS -> NS: notify(visitante, FOLLOW_ACCEPTED)
 else recusa
   PS -> DB: DELETE follows
 end
-opt deixar de seguir / bloquear
+note over O, PC: Não há tela de pedidos no frontend:\nos dois endpoints existem só na API.
+
+== Deixar de seguir, conexões e bloqueio ==
+opt deixar de seguir ou cancelar pedido
   FE -> PC: DELETE /api/users/{targetId}/followers/me
-  FE -> PC: PUT /api/users/{targetId}/block {blocked}
+  PC -> PS: unfollow → apaga o Follow (nunca um BLOQUEADO), sem notificação
 end
+opt ver seguidores e seguindo
+  FE -> PC: GET /api/users/{userId}/connections
+  PC -> PS: connections(viewer, userId)
+  alt sem permissão para ver o perfil
+    PS --> FE: 403 (Guard.deny, ACESSO_NEGADO_403 auditado)
+  else
+    PS --> FE: 200 {followers, following} (só ACEITO)
+  end
+end
+opt bloquear / desbloquear (Dialog de confirmação ao bloquear)
+  FE -> PC: PUT /api/users/{targetId}/block {blocked}
+  PC -> PS: block(user, targetId, blocked)
+  alt bloquear a si mesmo
+    PS --> FE: 400 BLOQUEIO_INVALIDO
+  else
+    PS -> DB: DELETE follows alvo→eu
+    PS -> DB: bloquear: meu Follow = BLOQUEADO\ndesbloquear: DELETE do meu BLOQUEADO
+    PS --> FE: 200 {blocked}
+  end
+end
+FE -> FE: reload() do perfil
 @enduml

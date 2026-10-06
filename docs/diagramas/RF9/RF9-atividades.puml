@@ -1,5 +1,5 @@
 @startuml RF9_Atividades
-title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de atividades — editor do look (/schemes/{id}/edit): dados, peças, arte e salvar
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,67 +23,81 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
+
+|Pessoa|
+|Frontend|
+|API + Serviço|
+|Banco/Eventos|
 |Pessoa|
 start
-:Abre o esquema (menu ⋯ → Editar);
-|Frontend (Next.js)|
-:GET /api/schemes/{id};
-|Backend (SchemeService)|
-if (É o autor? (canEdit)) then (não)
-  :Botão "Editar" não aparece (CA04);
-  |Pessoa|
-  stop
-else (sim)
-endif
-|Frontend (Next.js)|
-:schemes/[id]/edit → SchemeBuilder(initial)\ncarrega nome, ocasião, descrição, visibilidade,\narte e lista de peças atuais (CA01);
-|Pessoa|
-:Altera campos, remove/adiciona peças,\nmuda visibilidade ou arte de fundo;
-if (Pediu "melhorar com IA"?) then (sim)
-  |Frontend (Next.js)|
-  :POST /api/schemes/{id}/improvements {instruction};
-  |Backend (SchemeService)|
-  :Edit Assistant (AiCapability.EDIT_ASSISTANT)\npropõe diff por campo; fallback LocalAdvisors;
-  note right: ver RF24 (motor de IA) — RF30.CA10
-  |Pessoa|
-  :Aceita ou recusa item a item;
-  |Frontend (Next.js)|
-  :POST /api/schemes/{id}/improvements/apply {campo: valor};
-  |Backend (SchemeService)|
-  :validChange por campo; grava só o aceito;\naudita EDICAO_ESQUEMA (aiDiffFields);
-endif
-|Pessoa|
-:Salvar;
-|Frontend (Next.js)|
-:PUT /api/schemes/{id} (SchemeForm);
-|Backend (SchemeService)|
-:Guard.requireOwner — não-autor recebe\n403 e audit_log ACESSO_NEGADO_403 (CA04);
-:applyForm + replaceItems (scheme_items);
-if (Ficou sem peças?) then (sim)
-  #FFE3E3:400 SEM_PECAS;
-  stop
-endif
+:Abre um look seu (card ou detail-modal);
 note right
-  CA02: remover peça do esquema apaga só o
-  scheme_item — a WardrobeItem continua no Closet
-  CA03: updatedAt registrado (AuditableEntity)
+  "Melhorar com IA" e a edição da peça
+  estão em RF9-atividades-ia-peca.
 end note
-if (Peças mudaram e status = PUBLISHED?) then (sim)
-  :SealService.flagRevalidation: vínculo APPROVED →\nrevalidationPending = true e notifica a marca\n(SEAL_BOND_REVIEW) (CA05);
+|Frontend|
+if (Sessão é a dona do look?\n(viewer.canEdit ou owner.id)) then (não)
+  :Menu ⋯ sem "Editar" nem "Excluir";\nsó remixar e manequim 3D (CA04);
+  stop
 endif
-if (Virou PRIVATE?) then (sim)
-  :revokeForScheme (RF20.CA14);
-endif
-:projections.scheme + audit EDICAO_ESQUEMA\n+ evento SchemeSaved;
-|Frontend (Next.js)|
-:Mostra esquema atualizado e aviso\n"revalidação pendente" quando houver;
+  :Menu ⋯ → "Editar" → /schemes/{id}/edit\n(RequireAuth);
+note right
+  A página de edição não confere a autoria:
+  quem abre a URL direto vê o editor, mas o
+  PUT responde 403 auditado (CA04).
+end note
+  :GET /api/schemes/{id} → SchemeBuilder(initial):\ntítulo, descrição, ocasião, estilo, estação,\nmood, visibilidade, tags, arte (Background Studio),\nfoto do look, skin/anatomia e peças (CA01);
+  :Hype atual do look (HypeInline) +\nprévia do Hype da nova combinação;
+  |Pessoa|
+  :Troca campos, adiciona/remove peças,\nmuda a arte ou a visibilidade;
+  #F2F2F2:<<planejado>> confirmar antes de descartar\nalterações não salvas (CA06);
+  note right
+    Não há beforeunload nem diálogo
+    de descarte no SchemeBuilder hoje.
+  end note
+  :Salvar (ou "Salvar e publicar");
+  |Frontend|
+  :PUT /api/schemes/{id} (SchemeForm + items[])\n— publicar com PRIVATE vira PUBLIC;
+  |API + Serviço|
+  :SchemeController.update → SchemeService.update;
+  if (requireCanCreate + owned\n(Guard.requireOwner)) then (falhou)
+    #FFE3E3:401 sem login · 403 EMAIL_NAO_CONFIRMADO,\nCONTA_SUSPENSA, EXCLUSAO_AGENDADA ·\n403 não-autor (audit ACESSO_NEGADO_403, CA04) · 404;
+    stop
+  endif
+  if (applyForm: título 2–120, ≤ 3 ocasiões,\n≤ 3 estilos do vocabulário, ≤ 4 selos) then (inválido)
+    #FFE3E3:400 FORMULARIO_INVALIDO {campo: mensagem};
+    stop
+  endif
+  if (replaceItems: cada peça é sua e disponível?) then (não)
+    #FFE3E3:400 PECA_DE_OUTRO_USUARIO ·\nPECA_INDISPONIVEL · 404 peça;
+    stop
+  endif
+  |Banco/Eventos|
+  :Atualiza/insere scheme_items; apaga os que saíram\n(a peça continua no Closet — CA02);\npeça nova: scheme_usage_count + 1;\ntotal_price e capa recalculados;
+  |API + Serviço|
+  if (Ficou sem peças?) then (sim)
+    #FFE3E3:400 SEM_PECAS;
+    stop
+  endif
+  if (Veio background ou direção recomendada?) then (sim)
+    :BackgroundStudioService.applyToScheme\n+ foto do look (applyLookPhoto);
+  endif
+  if (Peças mudaram e o look está PUBLISHED?) then (sim)
+    :SealService.flagRevalidation: vínculo APPROVED →\nrevalidationPending = true + notificação\nSEAL_BOND_REVIEW à marca/celebridade (CA05);\nsnapshot_json nos itens que não tinham;
+  endif
+  if (Visibilidade passou a PRIVATE?) then (sim)
+    :SealService.revokeForScheme\n(selos revogados — RF20.CA14);
+  endif
+  if (publish = true e ainda não publicado?) then (sim)
+    :publishInternal: PUBLISHED, publishedAt,\nsnapshot_json de cada peça (RF7.CA03);
+  endif
+  |Banco/Eventos|
+  :UPDATE schemes (updated_at automático — CA03;\n@Version: conflito → 409 EDICAO_CONCORRENTE);\nprojections.scheme (OpenSearch);\naudit EDICAO_ESQUEMA {itemsChanged};
+  :Peças mudaram → SchemeSaved (AFTER_COMMIT):\nHype (PIECE_IN_LOOK só em look novo), desafios,\nconquistas, cupons, diário de uso;
+  |Frontend|
+  :Selos marcados viram pedidos:\nPOST /api/schemes/{id}/seal-bonds (um por selo);
+  :CreationSuccess (edited) → volta ao look;
 |Pessoa|
-if (Edita uma peça do esquema?) then (sim)
-  |Frontend (Next.js)|
-  :PUT /api/pieces/{id} (PieceForm);
-  |Backend (WardrobeService)|
-  :owned + validate + apply; projections.piece;\naudit EDICAO_PECA; evento PieceUpdated;
-  note right: CA07 — a peça muda no acervo e em todos\nos esquemas dali em diante; esquemas publicados\nguardam snapshot_json da publicação (RF7.CA03)
-endif
+:Vê o look atualizado (aviso de revalidação\npendente quando houver);
 stop
 @enduml

@@ -1,4 +1,5 @@
 @startuml RF31_MaquinaDeEstados_Peca
+title RF31 — Filtrar e marcar o estado dos itens do acervo: favoritar, disponível, indisponível e todos\nDiagrama de máquina de estados — estados da peça no acervo (WardrobeItem: disponibilidade × favorita × anúncio)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam state {
@@ -7,26 +8,56 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-title RF31 — WardrobeItem: disponibilidade (availability_status) × favorita × à venda
-[*] --> Disponivel : peça cadastrada (RF4)
-state "AVAILABLE\n(disponivel = true)" as Disponivel {
-  state "favorite = false" as NaoFav
-  state "favorite = true (estrela)" as Fav
-  NaoFav --> Fav : PATCH /api/pieces/{id}/flags {favorite:true}
-  Fav --> NaoFav : PATCH /api/pieces/{id}/flags {favorite:false}
-  --
-  state "forSale = false" as NaoVenda
-  state "forSale = true (à venda)" as Venda
-  NaoVenda --> Venda : PATCH /api/pieces/{id}/flags {forSale:true}
-  Venda --> NaoVenda : PATCH /api/pieces/{id}/flags {forSale:false}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
-state "UNAVAILABLE\n(disponivel = false)" as Indisponivel
-state "ARCHIVED" as Arquivada
-Disponivel --> Indisponivel : PATCH /api/pieces/{id}/flags {disponivel:false}\n→ AvailabilityChanged → wardrobe_availability_log
-Indisponivel --> Disponivel : PATCH /api/pieces/{id}/flags {disponivel:true}\n→ AvailabilityChanged → wardrobe_availability_log
-Disponivel --> Arquivada : DELETE /api/pieces/{id} (RF7)
-Indisponivel --> Arquivada : DELETE /api/pieces/{id} (RF7)
-Arquivada --> [*]
-note right of Indisponivel : exclusivo com AVAILABLE (CA06); some do Criar Look (RF5),\ndo Copilot (RF10) e do Vista-me (RF28), mas segue no acervo;\nno Meu Quarto vai para o cesto (RF27)
-note bottom of Disponivel : favoritar é independente da disponibilidade;\nfiltro state=todos|favoritos|disponivel|indisponivel|venda\nem GET /api/me/closet (mesmo filtro em /api/me/schemes)
+
+state "Disponibilidade" as Disp {
+  state "AVAILABLE\n(disponivel = true)" as AV
+  state "UNAVAILABLE\n(disponivel = false)" as UN
+  [*] --> AV : peça cadastrada (RF4)
+  AV --> UN : PATCH /api/pieces/{id}/flags {disponivel:false}\n/ AvailabilityChanged → wardrobe_availability_log
+  UN --> AV : PATCH …/flags {disponivel:true}\n/ AvailabilityChanged → wardrobe_availability_log
+}
+state "Favorita" as FavR {
+  state "não favorita" as NF
+  state "favorita ★\n(is_favorite = true)" as FV
+  [*] --> NF
+  NF --> FV : PATCH …/flags {favorite:true}
+  FV --> NF : PATCH …/flags {favorite:false}
+}
+state "Anúncio (público)" as Anuncio {
+  state "sem anúncio" as SA
+  state "À venda\n(for_sale = true)" as VD
+  state "Para doar\n(for_donation = true, V38)" as DO
+  [*] --> SA
+  SA --> VD : {forSale:true}\n(ou forSale no formulário da peça)
+  SA --> DO : {forDonation:true}
+  VD --> DO : {forDonation:true}\n/ applyListing desmarca forSale
+  DO --> VD : {forSale:true}\n/ applyListing desmarca forDonation
+  VD --> SA : {forSale:false}
+  DO --> SA : {forDonation:false}
+}
+state "ARCHIVED\n(excluída: disponivel = false,\nvisibilidade PRIVATE)" as AR
+
+Disp --> AR : DELETE /api/pieces/{id}\n(snapshot nos looks, PieceDeleted)
+AR --> [*]
+
+note bottom of FavR
+  As três regiões valem ao mesmo tempo e são independentes; só "à venda" e "para doar"
+  se excluem (applyListing). Filtros de GET /api/me/closet?state=:
+  todos · favoritos · disponivel · indisponivel · venda · doar.
+  UNAVAILABLE some do Criar Look (RF5), do Vista-me (RF28)
+  e do Copilot (RF10), mas continua no acervo e no Meu Quarto
+  (estado INDISPONIVEL). Peça à venda também fica fora do Vista-me.
+  Divergência: a edição (PUT /api/pieces/{id}) grava forSale direto,
+  sem applyListing — uma peça "para doar" editada com "à venda"
+  fica com os dois marcados.
+end note
+note bottom of AR
+  ARCHIVED não aparece no closet nem nos filtros;
+  o detalhe só mostra o retrato salvo no look de origem.
+end note
 @enduml

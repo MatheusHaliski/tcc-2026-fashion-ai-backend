@@ -1,0 +1,70 @@
+@startuml RF40_Sequencia_Uso
+title RF40 — Criar o próprio avatar 3D a partir de fotos (aba "Meu Avatar 3D") e usá-lo no manequim\nDiagrama de sequência — o avatar no manequim: Passarela 3D, Foto com meu manequim, Provador e Espelho
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Quem vê\n(logado ou não)" as V
+actor "Dono do avatar" as U
+participant "generate-3d.tsx ·\nmannequin-photo.tsx\n→ Mannequin" as FE
+participant "try-on/page.tsx ·\nmirror-stage.tsx" as FE2
+participant "ShowcaseController" as SC
+participant "ShowcaseService" as SS
+participant "TryOnController\n→ TryOnService" as TS
+participant "Avatar3dController" as AC
+participant "Avatar3dService" as AS
+participant "MediaStoragePort" as ST
+database "MySQL" as DB
+
+== Passarela 3D e Foto com meu manequim ==
+V -> FE: abre o 3D de um look ou de uma peça
+FE -> SC: GET /api/schemes/{id}/look3d (ou /api/pieces/{id}/look3d)\nrota pública
+SC -> SS: look3d(viewer, id) → look(s, viewer)
+SS -> SS: mannequin(owner, peças, viewer)\nsexo: cadastro → provador → peças → feminino
+alt dono com perfil MARCA
+  SS --> FE: mannequin padrão (sem avatar)
+else
+  SS -> AS: forMannequin(ownerId, viewerId)
+  AS -> DB: findByUserId(ownerId)
+  alt sem avatar, ou privado e quem vê não é o dono
+    AS --> SS: vazio
+    SS --> FE: mannequin {head: PADRAO}
+  else público ou dono
+    AS --> SS: {version, model, adjust,\ntextureUrl só para o dono ou se público + APPROVED}
+    SS --> FE: mannequin {head: AVATAR, avatar}
+  end
+end
+opt textureUrl presente
+  FE -> AC: GET /api/avatar3d/{userId}/texture?v=… (exige login)
+  AC -> AS: texture(viewer, ownerId)
+  alt dono, ou público e APPROVED
+    AS -> ST: get(textureKey)
+    AC --> FE: 200 image/jpeg (Cache-Control private, 10 min)
+  else
+    AC --> FE: 404 (não revela que existe)
+  end
+end
+FE --> V: corpo humano com o rosto e o cabelo do avatar,\nvestindo o look (ver RF40-roupa-no-avatar)
+
+== Provador (RF18): o próprio avatar como "digital double" ==
+U -> FE2: abre /try-on
+FE2 -> TS: GET /api/try-on
+TS -> AS: forMannequin(user, user)
+TS -> TS: resolve: sexo e medidas do avatar;\nsem avatar, preferências do provador
+TS --> FE2: estado com mannequin {head AVATAR | PADRAO, avatar}
+
+== Espelho (RF28) ==
+U -> FE2: abre o Espelho
+FE2 -> AC: GET /api/me/avatar3d
+AC -> AS: get(user)
+AS --> FE2: {exists, model, adjust, textureUrl}
+FE2 --> U: AvatarViewer com o avatar (corpo inteiro, de frente)\nou manequim de referência + link "criar avatar"
+
+note over V, DB
+  <<planejado>> Meu Quarto (RF27): a cena do quarto (RoomScene) ainda não mostra o avatar (CA10).
+end note
+@enduml

@@ -1,5 +1,5 @@
 @startuml RF12_Atividades
-title RF12 — Visualizar & Editar a página "Minhas Fotos" & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF12 — Visualizar & Editar a página "Minhas Fotos" & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de atividades — Minhas Fotos (/photos): galeria, filtros, edição, exclusão, download e curadoria
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,79 +23,106 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
+
+|Pessoa|
+|Frontend (photos/page.tsx)|
+|API + PhotoService|
+|Banco/Storage/IA|
 |Pessoa|
 start
-if (O que deseja fazer?) then (Minhas Fotos)
-  :Abre /photos;
-  |Frontend (photos)|
-  :GET /api/me/photos?origin=&occasion=&style=&color=&month=&days=&page=&size=60;
-  |Backend (PhotoController · PhotoService)|
-  :gallery: acervo agrupado por origem (WARDROBE_ITEM, SCHEME,\nTRY_ON, STYLE_DNA...), mais recentes primeiro, com facetas (CA01);
-  |Frontend (photos)|
-  :Carrega sob demanda (InfiniteSentinel) — CA06 / RNF7;
-  |Pessoa|
-  if (Ação?) then (editar)
-    |Frontend (photos)|
-    :Abre o Editor Canvas 2D (PhotoEditor) com a foto (CA02 — RF15);
-    |Backend (PhotoController · PhotoService)|
-    :POST /api/photos/{id}/edits (multipart) — saveEdit;\noriginal preservada, nova foto origem EDITOR;
-  elseif (excluir uma)
-    |Backend (PhotoController · PhotoService)|
-    :DELETE /api/photos/{id};
-    if (Foto é a imagem de peça ativa e confirmed = false?) then (sim)
-      #FFE3E3:409 CONFIRMACAO_NECESSARIA {pieceId} (CA03);
-      |Pessoa|
-      :Confirma que a peça ficará sem imagem;
-      |Backend (PhotoController · PhotoService)|
-      :DELETE /api/photos/{id}?confirmed=true;
-    endif
-    :Peça volta à imagem padrão; photos.deletedAt = agora;
-  elseif (excluir em lote)
-    |Backend (PhotoController · PhotoService)|
-    :POST /api/photos/bulk-deletion {ids, confirmed: false};
-    :Devolve requiresConfirmation, count e linkedToPieces (CA04);
-    |Pessoa|
-    :Confirma UMA vez informando a quantidade;
-    |Backend (PhotoController · PhotoService)|
-    :POST /api/photos/bulk-deletion {ids, confirmed: true};
-  elseif (baixar)
-    |Backend (PhotoController · PhotoService)|
-    :GET /api/photos/{id}/file — original sem marca d'água,\nsó o dono (CA05);
-  else (curadoria por IA)
-    |Backend (PhotoController · PhotoService)|
-    :POST /api/me/photos/curation — AiEngine.local(PHOTO_CURATOR):\ndHash agrupa duplicatas e baixa qualidade;
-    note right: RF30.CA11 — a IA sugere qual manter, nunca exclui sozinha
-  endif
-else (várias peças por vez)
-  |Pessoa|
-  if (Várias fotos ou uma foto com várias peças?) then (várias fotos)
-    |Backend (WardrobeController · WardrobeService)|
-    :POST /api/pieces/analysis/batch (files[], category);
-    if (0 fotos ou mais de 12?) then (sim)
-      #FFE3E3:400 SEM_FOTOS / LOTE_GRANDE;
-      stop
-    endif
-    :Para cada foto: analyze (critérios de aceite, Flat Lay,\nsubtipo, marca, moderação, pré-preenchimento);
-    note right: foto recusada volta com rejection (motivo); as demais seguem
-  else (uma foto, várias peças)
-    |Backend (WardrobeController · MultiPieceService)|
-    :POST /api/pieces/analysis/multi — detect:\nAiEngine.text(MULTI_PIECE_DETECTOR) devolve caixas em %;
-    |Frontend (multi-piece-review)|
-    :MultiPieceReview: a pessoa revisa cada peça detectada;
-    |Backend (WardrobeController · MultiPieceService)|
-    :POST /api/pieces/analysis/multi/{draftId}/pieces?index=\n(recorte → Flat Lay + moderação → rascunho);
-    if (Quer cópia por IA?) then (sim)
-      :POST .../{draftId}/ai-image (PIECE_IMAGE_RECREATOR)\n→ POST .../ai-images/{aiImageId}/piece;
-      note right: sem IA de imagem → 503 IA_INDISPONIVEL; peça leva aiGeneratedImage = true
-    endif
-  endif
-  |Pessoa|
-  :Revisa e confirma os rascunhos;
-  |Backend (WardrobeController · WardrobeService)|
-  :POST /api/pieces (um a um) ou POST /api/pieces/batch (lista de PieceForm);
-  :Cada peça é gravada e a foto entra em Minhas Fotos (origem WARDROBE_ITEM);
+:Abre Minhas Fotos (/photos);
+|Frontend (photos/page.tsx)|
+if (Sessão ativa? (RequireAuth)) then (não)
+  #FFE3E3:Vai para /login;
+  stop
 endif
-|Frontend (photos)|
-:Atualiza a lista;
+:Modo (SegmentPicker): galeria · linha do tempo ·\ninsights de IA · comparar;
+:GET /api/me/photos?origin&occasion&style&color&month&days\n&page=0&size=60;
+|API + PhotoService|
+:gallery: fotos do dono sem deletedAt, mais recentes\nprimeiro; ocasião/estilo/cor vêm da peça ou do look\nda foto; facetas + contagem por origem (CA01);
+|Frontend (photos/page.tsx)|
+if (Há fotos?) then (não)
+  :EmptyState ("as fotos das peças e looks\naparecem aqui");
+  stop
+endif
+:Grade + filtros em cascata (origem → ocasião →\nestilo → cor → mês → período);\n"● " marca a imagem atual de uma peça;
+:InfiniteSentinel: próxima página (60) ao rolar\n(CA06 / RNF7 — serverMs na resposta);
+
+repeat
+|Pessoa|
+:Escolhe uma ação;
+if (Abrir a peça/look da foto?) then (sim)
+  |Frontend (photos/page.tsx)|
+  :openPiece / openScheme no modal (RF7);
+endif
+|Pessoa|
+if (Editar?) then (sim)
+  |Frontend (photos/page.tsx)|
+  :PhotoEditor(photoId) — Editor Canvas 2D (RF15, CA02):\nGET /api/photos/{id}/file carrega a original;
+  :Salvar → POST /api/photos/{id}/edits (PNG);
+  |API + PhotoService|
+  if (Foto de peça ativa da pessoa?) then (sim)
+    :WardrobeService.replaceImage: a edição vira a imagem\nda peça; a original continua em Minhas Fotos;
+  else (não)
+    :Nova Photo origem EDITOR (editedFromPhotoId =\nfoto de origem); a original nunca é sobrescrita;
+  endif
+endif
+|Pessoa|
+if (Excluir uma?) then (sim)
+  |Frontend (photos/page.tsx)|
+  :Diálogo de confirmação; se é a imagem atual\nda peça: "excluir mesmo assim" (CA03);
+  :DELETE /api/photos/{id}?confirmed=true;
+  |API + PhotoService|
+  if (Imagem de peça ativa e confirmed = false?) then (sim)
+    #FFE3E3:409 CONFIRMACAO_NECESSARIA {pieceId};
+  else (não)
+    :useDefaultImageAfterPhotoDeletion: a peça volta à\nilustração da subcategoria (sem estúdio);
+    |Banco/Storage/IA|
+    :photos.deleted_at = agora (exclusão lógica);
+  endif
+endif
+|Pessoa|
+if (Excluir várias?) then (sim)
+  |Frontend (photos/page.tsx)|
+  :Seleciona fotos → POST /api/photos/bulk-deletion\n{ids, confirmed: false};
+  |API + PhotoService|
+  :Devolve {requiresConfirmation, count,\nlinkedToPieces, message} — nada é apagado;
+  |Pessoa|
+  :Confirma UMA vez, vendo a quantidade (CA04);
+  |API + PhotoService|
+  :bulk-deletion {confirmed: true}: cada foto ligada a\npeça ativa → ilustração; deleted_at = agora;
+endif
+|Pessoa|
+if (Baixar a original?) then (sim)
+  |Frontend (photos/page.tsx)|
+  :GET /api/photos/{id}/file (blob → download);
+  |API + PhotoService|
+  :download: só o dono (403 auditado para outros);\noriginal sem marca d'água, Cache-Control: private,\nno-store; last_viewed_at (CA05);
+endif
+|Pessoa|
+if (Marcar momento-chave?) then (sim)
+  |API + PhotoService|
+  :PUT /api/photos/{id}/key-moment {key};
+endif
+|Pessoa|
+if (Curadoria por IA?) then (sim)
+  |API + PhotoService|
+  :POST /api/me/photos/curation →\nAiEngine.local(PHOTO_CURATOR): dHash 64 bits\n(até 400 fotos; hash guardado em metadata);
+  :Grupos de quase duplicatas + suggestKeep\n(maior qualidade/tamanho) + suggestDiscard;
+  note right
+    RF30.CA11: só sugere — nada é excluído;
+    a pessoa decide e exclui pelo fluxo normal.
+  end note
+endif
+|Pessoa|
+if (Linha do tempo / insights?) then (sim)
+  |API + PhotoService|
+  :GET /api/me/photos/timeline (mês a mês, momentos-chave)\nou GET /api/me/photos/insights\n(AiEngine.local(STYLE_INSIGHT): frases + barras);
+endif
+|Frontend (photos/page.tsx)|
+:Atualiza a lista (nonce) e mostra o toast;
+|Pessoa|
+repeat while (Outra ação?) is (sim) not (não)
+|Pessoa|
 stop
 @enduml

@@ -1,0 +1,89 @@
+@startuml RF25_Selos_Hype_Sequencia
+title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de sequência — Selos de Hype (automáticos, derivados do HypeScore v2) e "Hype do selo" do emissor
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #52606D
+  LifeLineBorderColor #B695F5
+  ParticipantBackgroundColor #F8F4FF
+  ParticipantBorderColor #B695F5
+  ActorBackgroundColor #F8F4FF
+  GroupBackgroundColor #FFF5F8
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+autonumber
+actor "Pessoa usuária" as P
+participant "piece-card.tsx ·\nscheme-card.tsx" as Card
+participant "useHypeSummary\n(lib/hype/use-hype.ts)" as UH
+participant "hype-seals.tsx +\nSealMedallion" as HUI
+participant "brands/[slug]/page.tsx\n(aba Selos)" as Page
+participant "HypeController" as HC
+participant "SealController" as SC
+participant "SealService" as S
+participant "HypeQueryService" as Q
+participant "HypeSeals" as HS
+participant "HypeCache" as Cache
+database "MySQL\nhype_scores · seal_bonds · seals" as DB
+
+note over Q, DB : hype_scores é gravado só pelo HypeSnapshotService (cron a cada 6 h)\ne pelo HypeLiveRecalc; leitura nunca recalcula. Selo nunca alimenta o Hype.
+
+group Selos de Hype nos cards (grade de peças ou looks)
+  P -> Card : abre o guarda-roupa, o feed ou o perfil
+  Card -> UH : useHypeSummary(type, id)
+  UH -> HC : GET /api/hype/summaries?type=PIECE|LOOK&ids=… (até 100)
+  HC -> Q : summaries(viewer, type, ids)
+  Q -> DB : hype_scores atuais (algorithmVersion) dos itens visíveis
+  loop cada item
+    Q -> HS : of(HypeScoreCurrent)
+    alt AVAILABLE, publicEligible e com score
+      HS --> Q : códigos na ordem VIRAL > TRENDING >\nEMERGING > CLASSIC > RARE
+    else sem linha, INSUFFICIENT_DATA ou item privado
+      HS --> Q : [] (sem selo)
+    end
+  end
+  Q --> UH : {items: {id: {status, score, level, …, seals}}}
+  UH --> Card : summary
+  Card -> HUI : withHypeSeals(selos de marca, hypeSealCodes(summary))
+  HUI -> HUI : até 2 Selos de Hype (cardHypeSeals);\nmedalhão FASHIONAI fixo: VIRAL→fai/03 · TRENDING→fai/02 ·\nEMERGING→fai/06 · CLASSIC→fai/10 · RARE→fai/09
+  HUI --> P : SealSlot com selos de marca + Selos de Hype
+end
+
+group Progresso na análise completa (drawer)
+  P -> HUI : abre a análise do Hype
+  HUI -> HC : GET /api/hype/pieces/{id} | /api/hype/looks/{id}
+  HC -> Q : detail(viewer, type, id)
+  alt item invisível para quem pede
+    Q --> HUI : 404
+  else visível
+    Q -> HS : progress(c, config.levelThresholds())
+    HS --> Q : [{code, earned, criteria}] (os 5 códigos)
+    Q --> HUI : {…, sealProgress}
+    HUI --> P : HypeSealProgressList: conquistados e o que falta
+  end
+end
+
+group "Hype do selo" no perfil do emissor
+  P -> Page : aba "Selos"
+  Page -> SC : GET /api/users/{ownerId}/seals
+  SC -> S : sealsOf(viewer, ownerId)
+  alt visitante e emissor inativo
+    S --> Page : []
+  else dono/admin: todos · visitante: só ACTIVE
+    S -> S : sealViews(seals) → sealHype(seals)
+    S -> Cache : get("seal-hype:{id}:{tier}:{usageCount}", loader)
+    opt fora do cache (nova geração do Hype)
+      S -> DB : seal_bonds APPROVED e vigentes (findBySealIdInAndStatus)
+      S -> Q : currentOf(SCHEME, looks) | currentOf(PIECE, peças)
+      Q -> DB : hype_scores
+      S -> S : média só dos públicos com Hype → {avgScore, level, bonded}
+    end
+    S --> Page : selos com "hype"
+    Page -> HUI : SealHypeStat(hype, tier)
+    HUI --> P : média, faixa e itens vinculados;\nsem média, a linha some (nunca 0)
+  end
+end
+@enduml

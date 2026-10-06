@@ -1,0 +1,44 @@
+@startuml RF30_MaquinaDeEstados_Item
+title RF30 — Ganhar e usar FAI Points e evoluir o nível do "Meu Quarto"\nDiagrama de máquina de estados — item da loja do quarto (room_catalog → room_inventory)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Na vitrine\n(room_catalog.active,\nWardrobeCreatorService.availability = DISPONIVEL)" as Vitrine
+state "Bloqueado para esta pessoa\n(levelOk = false · ESGOTADO · EM_BREVE ·\nlimite por pessoa · selo exigido · saldo baixo)" as Bloqueado
+state "Em prévia\n(try-on: só aviso, nada gravado)" as Previa
+state "Na caixa de entrega\n(room_inventory, appliedModule = null)" as Caixa
+state "Montado no quarto\n(appliedModule = door:1, drawer:3, … ou ALL)" as Montado
+
+[*] --> Vitrine : item ativo (fábrica FAI ou criado\npor marca/celebridade — RF39)
+Vitrine --> Bloqueado : shop() calcula levelOk / affordable\ne blocker() ≠ null
+Bloqueado --> Vitrine : sobe de nível, ganha saldo,\njanela abre ou recebe selo
+Vitrine --> Previa : POST /api/points/shop/{sku}/try-on
+Previa --> Vitrine : sai da prévia (saldo intacto)
+Vitrine --> Caixa : POST …/{sku}/purchase\n(ledger −preço, sold_count + 1, serial)
+Bloqueado --> Bloqueado : purchase → 409 NIVEL_INSUFICIENTE · ESGOTADO ·\nCONDICAO_DE_COMPRA · SALDO_INSUFICIENTE
+Caixa --> Montado : POST /api/me/room-inventory/{id}/apply\n(RoomStore ou "abrir a caixa" no quarto)
+Montado --> Montado : apply em outro módulo compatível\n(applyFinish regrava modules_json)
+Caixa --> Caixa : apply em módulo incompatível → 409 ENCAIXE_INCOMPATIVEL\nou item de outra pessoa → 403
+Vitrine --> [*] : EXPIRADO / vendedor inativo\n(continua listado para quem já tem)
+
+note right of Caixa
+  room/page.tsx lista até 6 itens sem módulo
+  ("unboxing") e monta sozinho no 1º módulo
+  do mesmo slotType (WARDROBE → "ALL").
+end note
+note right of Montado
+  Não existe "desmontar" nem devolução: um item
+  novo no mesmo módulo troca o acabamento da cena,
+  mas o item antigo continua com appliedModule gravado.
+end note
+@enduml

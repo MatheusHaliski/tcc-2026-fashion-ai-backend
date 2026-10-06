@@ -1,0 +1,225 @@
+@startuml RF39_Classes_ItensUnicos
+title RF39 — Criar guarda-roupa 3D com a identidade de uma marca/celebridade e vender na loja do quarto\nDiagrama de classes — itens únicos e personalizáveis: identidade, edição limitada, selo exigido e unidade do comprador (absorve o antigo RF44)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+hide empty methods
+
+package "fai-application" {
+class WardrobeCreatorService {
+  +identity(u: User): Map  «nome, logo, slug da marca»
+  +save(user, sku, ItemForm): Map
+  +delete(user, sku)
+  +mine(user): Map  «itens, vendas, pontos»
+  +{static} availability(item, now): String
+  +blocker(buyer: UUID, item): String
+  +hasSeal(buyer: UUID, item): boolean
+  +sellerActive(item): boolean
+  ~{static} finish(material, colorName, hex, logoUrl,\n  artUrl, label, sealId, creator): Map
+}
+class FaiPointsService {
+  +buy(user, sku): Map
+  +apply(user, inventoryId, moduleId): Map
+}
+class RoomService {
+  +room(user): Map  «unboxing: unidades sem módulo»
+  +compatibleModules(userId, item): List<String>
+  +applyFinish(userId, moduleId, item)
+}
+class FlairService {
+  ~{static} sellerActive(owner: User): boolean
+}
+}
+
+package "fai-domain · model" {
+class RoomCatalogItem <<table room_catalog>> {
+  +sku: String  «BRD-<marca>-<token>»
+  +kind: String  «COMPONENT | WARDROBE»
+  +rarity: String  «MARCA | CELEBRIDADE»
+  +finishJson, bundleJson: String
+  +logoUrl, artUrl: String
+  +labelText: String  «até 60»
+  +sealId: UUID
+  +creatorUserId: UUID
+  +pricePoints: int  «0–20 000»
+  +requiredLevel: String
+  +stockLimit: Integer  «edição limitada»
+  +soldCount: int
+  +perUserLimit: Integer
+  +availableFrom, availableUntil: Instant
+  +requiresSeal: boolean
+  +active: boolean
+  +version: Long  «@Version (V27)»
+}
+class RoomInventoryItem <<table room_inventory>> {
+  +id: UUID
+  +userId: UUID
+  +sku: String
+  +serial: Integer  «nº da unidade»
+  +source: String  «PURCHASE»
+  +appliedModule: String  «null = na caixa de entrega»
+  +acquiredAt: Instant
+}
+class FaiPointsLedgerEntry <<table fai_points_ledger>> {
+  +userId: UUID
+  +delta: int  «−preço»
+  +actionCode: String  «SHOP_PURCHASE»
+  +refType: String  «SKU»
+  +refId: String
+  +countsLifetime: boolean  «false»
+}
+class Seal <<table seals>> {
+  +owner: User
+  +name: String
+  +status: SealStatus
+  +availableFrom, availableUntil: Instant
+}
+class SealBond <<table seal_bonds>> {
+  +requestedBy: User
+  +targetOwner: User
+  +seal: Seal
+  +status: SealBondStatus
+  +expiresAt: Instant
+}
+class User <<table users>> {
+  +profileType: ProfileType
+  +status: AccountStatus
+}
+class BrandProfile <<table brand_profiles>> {
+  +owner: User
+  +brandName, slug, logoUrl: String
+  +approvalStatus: ApprovalStatus
+}
+class CelebrityProfile <<table celebrity_profiles>> {
+  +owner: User
+  +stageName, slug, avatarUrl: String
+  +verificationStatus: ApprovalStatus
+}
+class AssetPreset <<table asset_presets>> {
+  +id: String
+  +kind: AssetKind
+  +label, presetGroup: String
+  +staticUrl, animatedUrl: String
+  +status: String
+}
+class "BackgroundStudioStoreItem" as BSI <<planejado>> #FFF5F8 {
+  +creatorUserId: UUID
+  +presetId: String
+  +pricePoints: int
+  +stockLimit: Integer
+}
+}
+
+package "fai-domain · enums" {
+enum ProfileType {
+  PESSOAL
+  MARCA
+  CELEBRIDADE
+  ADMIN
+}
+enum SealBondStatus {
+  SUGGESTED
+  ACCEPTED
+  EDITED
+  REFUSED
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  REVOKED
+}
+enum SealStatus {
+  ACTIVE
+  INACTIVE
+}
+enum AssetKind {
+  CHROME_BACKGROUND · AURA_PRESET
+  AURA_VARIANT · MATERIAL
+  AURA_MATERIAL_STATIC · …_ANIMATED
+  AURA_MATERIAL_MOSAIC · GRADIENT_AURA
+  SEASONAL · CARD_SKIN
+}
+}
+
+package "fai-domain · repository" {
+interface RoomCatalogItemRepository {
+  +lockBySku(sku): Optional  «FOR UPDATE»
+  +findByCreatorUserIdOrderByCreatedAtDesc(id)
+}
+interface RoomInventoryItemRepository {
+  +countByUserIdAndSku(userId, sku): long
+  +findBySku(sku): List
+  +findByUserId(userId): List
+}
+interface SealBondRepository {
+  +findByRequestedByIdAndStatusOrderByCreatedAtDesc(id, status)
+}
+interface FaiPointsLedgerEntryRepository {
+  +lockOwner(userId): Optional<User>  «FOR UPDATE»
+  +balance(userId): long
+}
+}
+
+WardrobeCreatorService --> RoomCatalogItemRepository
+WardrobeCreatorService --> RoomInventoryItemRepository : limite por pessoa,\nexclusão com unidades
+WardrobeCreatorService --> SealBondRepository : hasSeal
+WardrobeCreatorService ..> FlairService : sellerActive
+WardrobeCreatorService ..> BrandProfile : identity
+WardrobeCreatorService ..> CelebrityProfile : identity
+FaiPointsService --> WardrobeCreatorService : blocker
+FaiPointsService --> FaiPointsLedgerEntryRepository
+FaiPointsService --> RoomCatalogItemRepository
+FaiPointsService --> RoomInventoryItemRepository
+FaiPointsService --> RoomService : RoomLayoutAccess
+RoomService --> RoomInventoryItemRepository : unboxing
+
+RoomCatalogItemRepository ..> RoomCatalogItem
+RoomInventoryItemRepository ..> RoomInventoryItem
+SealBondRepository ..> SealBond
+FaiPointsLedgerEntryRepository ..> FaiPointsLedgerEntry
+
+RoomCatalogItem "*" ..> "1" User : creatorUserId
+RoomCatalogItem "*" ..> "0..1" Seal : sealId
+RoomInventoryItem "0..stockLimit" ..> "1" RoomCatalogItem : sku
+RoomInventoryItem "*" ..> "1" User : userId (comprador)
+FaiPointsLedgerEntry "*" ..> "1" RoomCatalogItem : refId = sku
+Seal "*" --> "1" User : owner
+Seal --> SealStatus
+SealBond "*" --> "0..1" Seal : seal
+SealBond "*" --> "1" User : requestedBy
+SealBond "*" --> "1" User : targetOwner
+SealBond --> SealBondStatus
+BrandProfile "0..1" --> "1" User : owner
+CelebrityProfile "0..1" --> "1" User : owner
+User --> ProfileType
+AssetPreset --> AssetKind
+BSI ..> AssetPreset : presetId
+BSI ..> User : creatorUserId
+
+note right of RoomInventoryItem
+  serial = soldCount na compra, só quando o item
+  tem stockLimit: unidade numerada da edição.
+  A unidade nunca é apagada, mesmo com o item
+  inativo, expirado ou esgotado.
+end note
+note bottom of BSI
+  <<planejado>>: venda de auras, materiais e skins
+  do Background Studio por marcas/celebridades.
+  Hoje asset_presets não tem criador, preço nem estoque.
+end note
+note top of SealBond
+  "exige selo": APPROVED, targetOwner = criador do item,
+  expiresAt nulo ou futuro e, se o item tem sealId,
+  o mesmo selo (WardrobeCreatorService.hasSeal).
+end note
+@enduml

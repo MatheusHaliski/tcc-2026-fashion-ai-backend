@@ -1,5 +1,5 @@
 @startuml RF23_Classes
-title RF23 — Criar as telas de configuração do usuário (Conta, Privacidade, Aparência, Idioma, Seus dados) no padrão LGPD, com i18n\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF23 — Telas de configuração (Conta, Privacidade, Aparência, Idioma, Seus dados) com i18n\nDiagrama de classes — preferências, vitrine do perfil, opção "Criadores em alta" (V42) e i18n do backend
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -12,52 +12,46 @@ skinparam packageStyle rectangle
 hide empty methods
 
 package "fai-domain · model" {
-class User {
+class User <<table users>> {
   +username: String
   +displayName: String
-  +bio: String
+  +bio: String «AES-GCM»
+  +pronouns: String
+  +linksJson: String «json»
   +avatarUrl: String
   +coverUrl: String
   +country: String
+  +sex: MannequinSex
+  +runwayOptOut: boolean
   +interfaceBackgroundPresetId: String
-  +lookDoDiaPanelVersion: HypeScorePanelVersion
-  .. +campos sensíveis do RF3 ..
+  +lookDoDiaPanelVersion: HypeScorePanelVersion = SPOTLIGHT_CLASSICO
+  .. dados sensíveis e status: RF1/RF3 ..
 }
-class UserPreferences {
+class UserPreferences <<table user_preferences>> {
   +user: User
-  +theme: ThemeMode
-  +language: UiLanguage
-  +density: UiDensity
-  +fontScale: int
+  +theme: ThemeMode = AUTO
+  +language: UiLanguage = PT_BR
+  +density: UiDensity = COMFORTABLE
+  +fontScale: int = 100
   +highContrast: boolean
   +reduceMotion: boolean
   +chromeBackgroundId: String
   +contentContainerColor: String
-  +defaultCardSkin: String
-  +sizeSystem: SizeSystem
-  +unitSystem: UnitSystem
-  +soundEnabled: boolean
-  +hapticsEnabled: boolean
+  +defaultCardSkin: String = "atelier"
+  +sizeSystem: SizeSystem = BR
+  +unitSystem: UnitSystem = CM
+  +soundEnabled: boolean = false
+  +hapticsEnabled: boolean = true
+  +coreAesthetic: String
+  +mannequinSex: MannequinSex
+  +mannequinSkinTone: String
+  +mannequinBuild: BodyBuild
+  +hypeCreatorOptOut: boolean = false «V42»
   +clientUpdatedAt: Instant
-  .. +campos de manequim e notificações ..
-}
-class UserConsent {
-  +user: User
-  +purpose: ConsentPurpose
-  +granted: boolean
-  +legalBasis: String
-  +policyVersion: String
-  +grantedAt: Instant
-  +revokedAt: Instant
-}
-class DataExportRequest {
-  +user: User
-  +status: ExportStatus
-  +fileKey: String
-  +readyAt: Instant
-  +expiresAt: Instant
+  .. notificações (RF3), manequim (RF18) ..
 }
 }
+
 package "fai-domain · enums" {
 enum ThemeMode {
   LIGHT
@@ -73,72 +67,128 @@ enum UiDensity {
   COMFORTABLE
   COMPACT
 }
-enum Visibility {
-  PRIVATE
-  FOLLOWERS
-  PUBLIC
+enum SizeSystem {
+  BR
+  EU
+  US
+  UK
 }
-enum ExportStatus {
-  REQUESTED
-  PROCESSING
-  READY
-  EXPIRED
-}
-enum ConsentPurpose {
-  AI_RECOMMENDATION
-  AI_EXTERNAL_PHOTO_PROCESSING
-  HISTORY_FOR_RECOMMENDATION
-  PERSONALIZED_ADS
-  PARTNER_SHARING
-  BODY_MEASUREMENTS
-  FACIAL_RECOGNITION
-  LOCATION_HISTORY
-  AI_MODEL_TRAINING
+enum UnitSystem {
+  CM
+  IN
 }
 }
-package "fai-application · service" {
+
+package "fai-domain · repository" {
+interface UserPreferencesRepository {
+  +findByUserId(userId): Optional<UserPreferences>
+  +findHypeCreatorOptOutUserIds(): List<UUID>
+}
+interface UserRepository {
+  +existsByUsernameIgnoreCase(username): boolean
+}
+}
+
+package "fai-application" {
 class PreferencesService {
+  +{static} CORES: List<String>
   +get(user): Map
   +options(): Map
   +update(user, Update): Map
   +updateProfile(user, ProfileUpdate): Views.UserCard
-  +changeUsername(user, username): Map
-  +checkUsername(username): Map
+  +changeUsername(user, requested): Map
+  +checkUsername(requested): Map
   +uploadProfileImage(user, bytes, cover): Views.UserCard
+  +rotateAvatar(user, degrees): Views.UserCard
+  +setHypeCache(HypeCache)
+  -invalidateHypeCacheAfterCommit()
 }
-class AccountService {
-  +updatePrivacy(user, Visibility): Map
-  +consents(user): List
-  +setConsent(user, ConsentPurpose, granted): List
-  +requestExport(user): Map
-  +exportsOf(user): List
-  +downloadExport(user, exportId): byte[]
-  +purgeExpiredExports(): int
+class "Update" as Update << (R,#E4DEF0) record >> {
+  theme · language · density · fontScale
+  highContrast · reduceMotion · chromeBackgroundId
+  contentContainerColor · sizeSystem · unitSystem
+  soundEnabled · hapticsEnabled · coreAesthetic
+  defaultCardSkin · lookDoDiaPanelVersion
+  mannequinSex · mannequinSkinTone · mannequinBuild
+  hypeCreatorOptOut: Boolean
+  clientUpdatedAt: Instant
 }
-class Msg {
-  {static} +t(key, args): String
-  {static} +k(key, args): String
-  {static} +locale(): Locale
-  {static} +fromPreference(language): Locale
-  {static} +resolveDeep(locale, value): Object
+class "ProfileUpdate" as ProfileUpdate << (R,#E4DEF0) record >> {
+  displayName · bio · avatarUrl · coverUrl
+  country · sex · runwayOptOut · pronouns
+  links: List<Map> · mannequinFace: Map
+}
+class AssetCatalogService {
+  +chromeBackgrounds(): List<Map>
+  +isChromeBackground(id): boolean
+  +cardSkin(id): Optional<Map>
+}
+class HypeCache {
+  +generation(): long
+  +bump()
+  +get(key, loader): Map
+}
+class HypeQueryService {
+  ~creatorOptOuts(): Set<UUID>
+}
+class Msg <<i18n>> {
+  +{static} PT_BR: Locale
+  +{static} SUPPORTED: List<Locale>
+  +{static} t(key, args): String
+  +{static} k(key, args): String
+  +{static} resolveDeep(locale, value): Object
+  +{static} fromPreference(language): Locale
 }
 }
-UserPreferences "1" --> "1" User : user
-UserConsent "*" --> "1" User : user
-DataExportRequest "*" --> "1" User : user
+
+package "fai-web" {
+class PreferencesController {
+  GET · PUT /api/me/preferences
+  GET /api/preferences/options
+  PATCH /api/me/profile
+  PUT /api/me/username
+  GET /api/usernames/{username}/availability
+  POST /api/me/avatar · /avatar/rotate · /cover
+}
+class RequestLocaleFilter <<@Order(-104)>> {
+  ~{static} pick(acceptLanguage): Locale
+  #doFilterInternal(req, res, chain)
+}
+class I18nConfig {
+  +localeResolver(): LocaleResolver
+  +i18nJsonModule(): JacksonModule
+}
+}
+
+UserPreferences "0..1" --> "1" User : user
 UserPreferences --> ThemeMode
 UserPreferences --> UiLanguage
 UserPreferences --> UiDensity
-UserConsent --> ConsentPurpose
-DataExportRequest --> ExportStatus
-PreferencesService ..> UserPreferences
-AccountService ..> UserConsent
-AccountService ..> DataExportRequest
-AccountService ..> Visibility
-AccountService ..> Msg
-note top of User : tabela users
-note top of UserPreferences : tabela user_preferences\n(não é dado pessoal — salva sem reautenticação)
-note top of UserConsent : tabela user_consents
-note top of DataExportRequest : tabela data_export_requests
-note bottom of Msg : messages.properties · _en · _es\n(Accept-Language → Content-Language)
+UserPreferences --> SizeSystem
+UserPreferences --> UnitSystem
+PreferencesController --> PreferencesService
+PreferencesService ..> Update
+PreferencesService ..> ProfileUpdate
+PreferencesService --> UserPreferencesRepository
+PreferencesService --> UserRepository
+PreferencesService --> AssetCatalogService : valida fundo e skin
+PreferencesService --> "0..1" HypeCache : bump() após o commit
+HypeQueryService --> UserPreferencesRepository : quem saiu de\n"Criadores em alta"
+HypeQueryService --> HypeCache
+PreferencesService ..> Msg
+RequestLocaleFilter ..> Msg : idioma da requisição
+I18nConfig ..> Msg : resolve textos adiados\nna serialização
+UserPreferencesRepository ..> UserPreferences
+
+note bottom of UserPreferences
+  Preferência de uso, não dado pessoal sensível:
+  salva sem reautenticação. Tema e fundo mudam só
+  o chrome do app (CA08). O pacote LGPD (RF3)
+  exporta tema, idioma, fundo e hypeCreatorOptOut.
+end note
+note bottom of RequestLocaleFilter
+  Accept-Language → pt-BR | en | es (padrão pt-BR)
+  → LocaleContextHolder e Content-Language.
+  Textos em i18n/messages{,_en,_es}.properties.
+end note
 @enduml

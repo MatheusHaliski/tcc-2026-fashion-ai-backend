@@ -1,5 +1,5 @@
 @startuml RF30_Classes
-title RF30 — Ganhar e usar FAI Points, evoluir o nível do "Meu Quarto" e comprar na loja do quarto\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF30 — Ganhar e usar FAI Points e evoluir o nível do "Meu Quarto"\nDiagrama de classes — ledger de pontos, níveis do quarto e loja (fai-application + fai-domain)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -10,92 +10,224 @@ skinparam class {
 }
 skinparam packageStyle rectangle
 hide empty methods
+hide empty fields
+
+package "fai-web" {
+  class HighlightsController {
+    +account(user): Map  «GET /api/me/points»
+    +shop(user): List<Map>  «GET /api/points/shop»
+    +tryOn(user, sku, ModuleRequest)  «POST …/{sku}/try-on»
+    +buy(user, sku)  «POST …/{sku}/purchase»
+    +apply(user, inventoryId, ModuleRequest)\n  «POST /api/me/room-inventory/{id}/apply»
+  }
+}
+
+package "fai-application · service" {
+  class FaiPointsService <<@Service>> {
+    +ZONE: ZoneId = America/Sao_Paulo
+    +award(userId, actionCode, refType, refId, pointsOverride): Award
+    +awardIsolated(...): Award  «REQUIRES_NEW»
+    +game(userId, game, matchRef, outcome): int  «RF41»
+    +balance(userId): long
+    +lifetime(userId): long
+    +level(userId): Level
+    +account(user): Map
+    +shop(user): List<Map>
+    +tryOn(user, sku, moduleId): Map
+    +buy(user, sku): Map
+    +apply(user, inventoryId, moduleId): Map
+    -statement(entry, detail)  «extrato FAI_POINTS»
+  }
+  enum "FaiPointsService.Level" as Level {
+    ESTREIA (0)
+    STUDIO (300)
+    LOFT (900)
+    CLOSET (2000)
+    ATELIER (4000)
+    PENTHOUSE (7500)
+    MAISON (12000)
+    --
+    +threshold: int
+    +unlocks: String
+    +aesthetic: String
+    +of(lifetime): Level
+    +atLeast(other): boolean
+  }
+  class "FaiPointsService.Award" as Award <<record>> {
+    granted: boolean
+    points: int
+    capReached: boolean
+    message: String
+    level: Level
+    levelUp: boolean
+  }
+  interface "FaiPointsService.RoomLayoutAccess" as RLA <<port>> {
+    +setLevel(userId, level)
+    +compatibleModules(userId, item): List<String>
+    +applyFinish(userId, moduleId, item)
+    +layout(userId): RoomLayout
+  }
+  class RoomService <<@Service>> {
+    +levelOf(userId): Level
+    ~defaultModules(level): List<Map>
+    +room(user): Map  «unboxing = itens sem módulo»
+  }
+  class WardrobeCreatorService <<@Service>> {
+    +view(item, buyer): Map
+    +blocker(buyer, item): String
+    +sellerActive(item): boolean
+    +availability(item, now): String
+  }
+  class WardrobeEventListeners <<@Component>> {
+    onSchemeSaved / onDailyLook / onPieceCreated
+    onPieceUpdated / onModel3d / onInteraction
+    onRoomOrganized / onPieceWorn
+    «AFTER_COMMIT via SideEffectRunner»
+  }
+  class AchievementService <<@Service>> {
+    +grant(userId, code): boolean
+  }
+  class NotificationService <<@Service>> {
+    +notify(recipient, actor, type, resourceType,\n  resourceId, title, body, payload)
+  }
+}
 
 package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +email: String
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String
-  +birthDate: String
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  .. +20 campos ..
+  class FaiPointsLedgerEntry <<@Entity>> {
+    id: UUID
+    userId: UUID
+    delta: int
+    actionCode: String
+    refType: String
+    refId: String
+    idempotencyKey: String «único»
+    countsLifetime: boolean
+    createdAt: Instant
+  }
+  class FaiPointsRule <<@Entity>> {
+    actionCode: String «PK»
+    points: int
+    dailyCap: Integer
+    weeklyCap: Integer
+    oncePerRef: boolean
+    active: boolean
+    description: String
+  }
+  class RoomCatalogItem <<@Entity>> {
+    sku: String «PK»
+    name: String
+    moldId / slotType: String
+    widthCm: int
+    kind: String  «COMPONENT | WARDROBE»
+    finishJson / bundleJson: String
+    rarity: String
+    pricePoints: int
+    requiredLevel: String
+    stockLimit: Integer
+    soldCount: int
+    creatorUserId / sealId: UUID
+    availableFrom / availableUntil: Instant
+    perUserLimit: Integer
+    requiresSeal: boolean
+    active: boolean
+    version: Long «@Version»
+  }
+  class RoomInventoryItem <<@Entity>> {
+    id: UUID
+    userId: UUID
+    sku: String
+    serial: Integer
+    source: String  «PURCHASE»
+    appliedModule: String
+    acquiredAt: Instant
+  }
+  class RoomLayout <<@Entity>> {
+    user: User
+    level: String = "ESTREIA"
+    modulesJson: String
+    drawerLabelsJson: String
+  }
+  class User <<@Entity>> {
+    id: UUID
+    username: String
+    profileType: ProfileType
+  }
+  enum NotificationType {
+    FAI_POINTS  «categoria POINTS»
+    ROOM_LEVEL_UP  «categoria ACHIEVEMENT»
+    ACHIEVEMENT_UNLOCKED
+  }
 }
-class FaiPointsLedgerEntry {
-  +id: UUID
-  +userId: UUID
-  +delta: int
-  +actionCode: String
-  +refType: String
-  +refId: String
-  +idempotencyKey: String
-  +countsLifetime: boolean
-  +createdAt: Instant
+
+package "fai-domain · repository" {
+  interface FaiPointsLedgerEntryRepository {
+    +existsByIdempotencyKey(key): boolean
+    +countByUserIdAndActionCodeAndCreatedAtAfter(...): long
+    +balance(userId): long  «SUM(delta)»
+    +lifetime(userId): long  «SUM(delta>0 e countsLifetime)»
+    +lockOwner(userId): Optional<User>  «PESSIMISTIC_WRITE»
+    +findTop100ByUserIdOrderByCreatedAtDesc(userId)
+  }
+  interface FaiPointsRuleRepository
+  interface RoomCatalogItemRepository {
+    +findByActiveTrueOrderByPricePoints()
+    +lockBySku(sku)  «PESSIMISTIC_WRITE»
+  }
+  interface RoomInventoryItemRepository {
+    +findByUserId(userId)
+    +countByUserIdAndSku(userId, sku): long
+  }
+  interface RoomLayoutRepository {
+    +findByUserId(userId): Optional<RoomLayout>
+  }
 }
-class FaiPointsRule {
-  +actionCode: String
-  +points: int
-  +dailyCap: Integer
-  +weeklyCap: Integer
-  +oncePerRef: boolean
-  +active: boolean
-  +description: String
-}
-class RoomCatalogItem {
-  +sku: String
-  +name: String
-  +moldId: String
-  +slotType: String
-  +widthCm: int
-  +finishJson: String
-  +rarity: String
-  +pricePoints: int
-  +requiredLevel: String
-  +stockLimit: Integer
-  +soldCount: int
-  +maisonBrandUserId: UUID
-  +active: boolean
-  +kind: String
-  .. +14 campos ..
-}
-class RoomInventoryItem {
-  +id: UUID
-  +userId: UUID
-  +sku: String
-  +serial: Integer
-  +source: String
-  +appliedModule: String
-  +acquiredAt: Instant
-}
-class RoomLayout {
-  +user: User
-  +level: String
-  +modulesJson: String
-  +drawerLabelsJson: String
-  +previousMapJson: String
-}
-class UserAchievement {
-  +id: UUID
-  +userId: UUID
-  +achievementCode: String
-  +secret: boolean
-  +grantedAt: Instant
-}
-}
-FaiPointsLedgerEntry ..> User : userId
-RoomCatalogItem ..> User : maisonBrandUserId
-RoomInventoryItem ..> User : userId
-RoomLayout "*" --> "1" User : user
-UserAchievement ..> User : userId
-note top of User : tabela users
-note top of FaiPointsLedgerEntry : tabela fai_points_ledger
-note top of FaiPointsRule : tabela fai_points_rules
-note top of RoomCatalogItem : tabela room_catalog
-note top of RoomInventoryItem : tabela room_inventory
-note top of RoomLayout : tabela room_layouts
-note top of UserAchievement : tabela user_achievements
+
+HighlightsController --> FaiPointsService
+FaiPointsService +-- Level
+FaiPointsService +-- Award
+FaiPointsService +-- RLA
+FaiPointsService --> RLA : layouts
+RoomService ..|> RLA
+FaiPointsService --> WardrobeCreatorService : creator
+FaiPointsService --> NotificationService
+FaiPointsService --> FaiPointsLedgerEntryRepository
+FaiPointsService --> FaiPointsRuleRepository
+FaiPointsService --> RoomCatalogItemRepository
+FaiPointsService --> RoomInventoryItemRepository
+RoomService --> RoomLayoutRepository
+WardrobeEventListeners --> FaiPointsService : award()
+AchievementService --> FaiPointsService : award(ACHIEVEMENT)
+
+FaiPointsLedgerEntryRepository ..> FaiPointsLedgerEntry
+FaiPointsRuleRepository ..> FaiPointsRule
+RoomCatalogItemRepository ..> RoomCatalogItem
+RoomInventoryItemRepository ..> RoomInventoryItem
+RoomLayoutRepository ..> RoomLayout
+
+FaiPointsRule "1" -- "0..*" FaiPointsLedgerEntry : actionCode
+User "1" -- "0..*" FaiPointsLedgerEntry : userId
+User "1" -- "0..1" RoomLayout : user (único)
+User "1" -- "0..*" RoomInventoryItem : userId
+RoomCatalogItem "1" -- "0..*" RoomInventoryItem : sku
+Award --> Level
+NotificationService ..> NotificationType
+
+note bottom of FaiPointsLedgerEntry
+  tabela fai_points_ledger (V5, V7) — append-only por convenção.
+  Saldo = SUM(delta); vitalício = SUM(delta > 0 com countsLifetime).
+  Compra grava delta negativo com countsLifetime = false: o nível não cai.
+  idempotencyKey = userId:actionCode:(refId ou dia).
+end note
+note bottom of FaiPointsRule
+  tabela fai_points_rules (seeds V5 e V26):
+  PIECE_CATALOGED 25 · PIECE_COMPLETED 10 · PIECE_3D 15
+  SCHEME_CREATED 40 (5/dia) · FORGOTTEN_RESCUED 30 (3/dia)
+  VISTA_ME_DAILY_LOOK 15 · ROOM_ORGANIZED 20 (1/semana)
+  LIKE 1 · COMMENT 2 · REMIX 10 (50/dia) · ACHIEVEMENT
+  CHALLENGE_COMPLETED · GAME_PLAYED · GAME_WON · FLAIR_QUEST
+  SHOP_PURCHASE (débito)
+end note
+note right of RoomLayout : tabela room_layouts\n(1 por usuário; nível gravado no level up)
+note right of RoomCatalogItem : tabela room_catalog\n(Molde + Acabamento = SKU;\nitens de marca/celebridade: RF39)
+note right of RoomInventoryItem : tabela room_inventory\n(appliedModule nulo = caixa de entrega)
 @enduml

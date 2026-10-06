@@ -1,22 +1,35 @@
 @startuml DEMO_MaquinaDeEstados_Fixture
-title Fashion AI — Máquina de estados: uma fixture (fixture_key) e o plano de reset (planejado; V35 já aplicada)
+title Dados demo e de teste (transversal)\nDiagrama de máquina de estados — uma fixture (users.fixture_key) e o plano de reset (seed/reset planejados; V35 e porta SQL no código)
 !include ../seguranca/_estilo.iuml
 state "Fixture (ex.: USER_PUBLIC)" as F {
+  state "Ausente" as Ausente : verify acusa\n[FIXTURE] persona ausente
+  state "Presente" as Presente : account_origin = DEMO\nusername demo_… · fixture_key
+  state "Divergente" as Divergente : alguém mudou pelo app
   [*] --> Ausente
   Ausente --> Presente : seed [CREATED]
   Presente --> Presente : seed, igual à fixture [FOUND]
-  Presente --> Divergente : alguém mexeu pelo app
+  Presente --> Divergente : edição pelo app
   Divergente --> Presente : seed [UPDATED]
-  Presente --> Ausente : reset (DELETE + cascatas)
+  Presente --> Ausente : reset — deleteTestAccounts\n+ cascatas da V34
   Divergente --> Ausente : reset
 }
 state "Plano de reset" as R {
-  [*] --> Planejado : dry-run (planHash)
-  Planejado --> Confirmado : confirm=planHash
-  Confirmado --> Abortado : plano mudou\nou realUsersToDelete > 0
-  Confirmado --> Executado : COMMIT
-  Executado --> Verificado : verify sem sobras
+  state "Planejado" as Planejado : ResetPlan com planHash
+  state "Confirmado" as Confirmado : confirm = planHash
+  state "Abortado" as Abortado : ROLLBACK
+  state "Executado" as Executado : COMMIT
+  state "Verificado" as Verificado : integrityProblems() vazio
+  [*] --> Planejado : dry-run
+  Planejado --> Confirmado : pessoa confirma
+  Confirmado --> Abortado : plano mudou · blockers\n· realAccountsAmong > 0
+  Confirmado --> Executado : contadores descontados,\npolimórficas e contas apagadas
+  Executado --> Verificado : verify sem sobras\n(purgeUser e índice limpos)
   Abortado --> [*]
   Verificado --> [*]
 }
+note bottom of F
+  Seed, reset e verify são do DemoDataService (planejado);
+  o que já existe: DemoFixtures, DemoEnvironmentGuard,
+  findByFixtureKey e MysqlDemoDataAdminAdapter.
+end note
 @enduml

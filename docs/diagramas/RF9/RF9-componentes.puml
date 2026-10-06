@@ -1,5 +1,5 @@
 @startuml RF9_Componentes
-title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de componentes — editor do look, "melhorar com IA" e edição da peça até MySQL/OpenSearch/IA
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -14,58 +14,98 @@ skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
-left to right direction
+skinparam component<<port>> {
+  BackgroundColor #FFFFFF
+  BorderColor #7C5FC0
+}
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #4A4852
+}
 
 package "Frontend (Next.js)" {
-  component "schemes/[id]/edit/page.tsx" as FE0
-  component "SchemeBuilder\n(scheme-builder.tsx)" as FE1
-  component "ExpandedCard\n(menu ⋯ · melhorar com IA · diff)" as FE2
-  component "PieceForm · PieceArtEditor" as FE3
-  component "Confirmação ao descartar\nalterações não salvas (CA06)" as FE4 #FFF5F8
+  component "scheme-card.tsx\n(menu ⋯: Editar/Excluir só da autora)" as FE_CARD
+  component "(app)/schemes/[id]/edit/page.tsx\n(RequireAuth + HypeInline)" as FE_EDIT
+  component "scheme-builder.tsx\nSchemeBuilder(initial)\n+ LookHypePreview" as FE_BUILDER
+  component "piece-art-editor / Background Studio (RF11)\nfoto do look · skin · anatomia" as FE_ART
+  component "expanded-card.tsx\nExpandedScheme (Melhorar · ChangeList)\nExpandedPiece (Editar dados)" as FE_EXP
+  component "piece-form.tsx\nPieceForm · validatePieceForm" as FE_PF
+  component "<<planejado>>\nconfirmar descarte de\nalterações não salvas (CA06)" as FE_CA06 #FFF5F8
 }
-package "fai-web · controllers" {
-  [SchemeController] as SC
-  [WardrobeController] as WC
-}
-package "fai-application · services" {
-  [SchemeService] as SS
-  [WardrobeService] as WS
-  [SealService] as SEAL
-  [BackgroundStudioService] as BG
-  [ProjectionService] as PJ
-  [NotificationService] as NT
-  [Guard + AuditService] as G
-  [AiEngine (RF24)\nAiCapability.EDIT_ASSISTANT\nfallback LocalAdvisors] as AI
-}
-package "fai-infrastructure · adapters" {
-  [Repositórios JPA\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · SealBondRepository\nNotificationRepository] as REPOS
-  [MysqlAuditService] as AUD
-  [OpenSearchIndexAdapter] as OS
-}
-database "MySQL\n• schemes\n• scheme_items\n• wardrobe_items\n• seal_bonds\n• notifications\n• audit_log" as DB
-cloud "Provedores de IA\n(ClaudeProvider · GeminiProvider)" as P_ai
 
-FE0 --> SC : GET /api/schemes/{id}
-FE1 --> SC : PUT /api/schemes/{id}
-FE2 --> SC : POST /api/schemes/{id}/improvements\nPOST .../improvements/apply\nPOST /api/schemes/{id}/archive
-FE3 --> WC : PUT /api/pieces/{id}
-FE4 ..> FE1 : <<planejado>>
-SC --> SS : chama
-WC --> WS : chama
-SS --> G : requireOwner (403 auditado)
-WS --> G : requireOwner
-SS --> SEAL : flagRevalidation · revokeForScheme
-SS --> BG : applyToScheme (arte)
-SS --> AI : improve (diff)
-SS --> PJ : publica projeções
-WS --> PJ : publica projeções
-SEAL --> NT : notifica marca
-SS --> REPOS : grava
-WS --> REPOS : grava
-G --> AUD : audita
-PJ --> OS : indexa
-AI --> P_ai : HTTPS
-REPOS --> DB : JPA/Flyway
-AUD --> DB : audit_log
-note bottom of FE4 : não implementado — conforme Trello (CA06)
+package "fai-web · controllers" {
+  [SchemeController\nGET/PUT /api/schemes/{id} · GET /api/schemes/builder\nPOST /{id}/improvements · /{id}/improvements/apply\nPOST /{id}/archive · DELETE /{id}] as C_SC
+  [SealController\nPOST /api/schemes/{id}/seal-bonds\nPOST /api/seal-bonds/{bondId}/review] as C_SEAL
+  [WardrobeController\nPUT /api/pieces/{id}] as C_WR
+}
+
+package "fai-application · serviços" {
+  [SchemeService\nupdate · improve · applyDiff · archive] as S_SC
+  [SealService\nflagRevalidation · revokeForScheme · review] as S_SEAL
+  [BackgroundStudioService\napplyToScheme] as S_BG
+  [WardrobeService\nupdate (CA07)] as S_WR
+  [AiEngine (RF24)\nEDIT_ASSISTANT\n+ LocalAdvisors.proposeEdit] as S_AI
+  [Guard + Audit\nrequireOwner → ACESSO_NEGADO_403\nEDICAO_ESQUEMA · EDICAO_PECA] as S_G
+  [NotificationService\nSEAL_BOND_REVIEW] as S_NT
+  [ProjectionService] as S_PJ
+  [MediaService\n(foto do look)] as S_MEDIA
+  [Listeners AFTER_COMMIT\nSchemeSaved: WardrobeEventListeners · HypeSignalRecorder\nHypeLiveRecalc · ChallengeService · AchievementService · CouponService\nPieceUpdated: WardrobeEventListeners · InventoryScoreService] as S_EV
+}
+
+package "portas" {
+  component "AiProviderPort" <<port>> as P_AI
+  component "SearchIndexPort" <<port>> as P_IDX
+  component "MediaStoragePort" <<port>> as P_MEDIA
+}
+
+package "fai-infrastructure" {
+  [Repositórios JPA\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · SealBondRepository\nNotificationRepository] as I_JPA
+  [MysqlAuditService] as I_AUD
+  [OpenSearchIndexAdapter] as I_OS
+  [ClaudeProvider · GeminiProvider\n(ai-providers)] as I_AI
+  [S3MediaStorageAdapter /\nLocalFileMediaStorage] as I_S3
+}
+database "MySQL\n• schemes (revalidation_pending, version)\n• scheme_items (snapshot_json)\n• wardrobe_items · seal_bonds\n• notifications · audit_log" as DB
+database "OpenSearch" as OS
+cloud "Provedores de LLM" as X_AI
+
+FE_CARD --> FE_EDIT : /schemes/{id}/edit
+FE_EDIT --> FE_BUILDER
+FE_BUILDER --> FE_ART
+FE_CA06 ..> FE_BUILDER : <<planejado>>
+FE_EXP --> FE_PF
+FE_EDIT --> C_SC : GET
+FE_BUILDER --> C_SC : PUT /api/schemes/{id}
+FE_BUILDER --> C_SEAL : seal-bonds
+FE_EXP --> C_SC : improvements · apply
+FE_PF --> C_WR : PUT /api/pieces/{id}
+C_SC --> S_SC
+C_SEAL --> S_SEAL
+C_WR --> S_WR
+S_SC --> S_G
+S_WR --> S_G
+S_SC --> S_SEAL
+S_SC --> S_BG
+S_SC --> S_MEDIA
+S_SC --> S_AI
+S_SC --> S_PJ
+S_WR --> S_PJ
+S_SEAL --> S_NT
+S_SC ..> S_EV : SchemeSaved
+S_WR ..> S_EV : PieceUpdated
+S_AI --> P_AI
+S_PJ --> P_IDX
+S_MEDIA --> P_MEDIA
+I_AI ..|> P_AI
+I_OS ..|> P_IDX
+I_S3 ..|> P_MEDIA
+S_SC --> I_JPA
+S_WR --> I_JPA
+S_SEAL --> I_JPA
+S_NT --> I_JPA
+S_G --> I_AUD
+I_JPA --> DB : JPA / Flyway
+I_AUD --> DB
+I_OS --> OS
+I_AI --> X_AI : HTTPS
 @enduml

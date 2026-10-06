@@ -1,0 +1,92 @@
+@startuml RF44_Atividades_Derivados
+title RF44 — FAI Creative Engine\nDiagrama de atividades — derivados da foto da peça: foto de vitrine (nunca troca em silêncio) e cópia por IA (sempre com selo)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+start
+if (Qual derivado?) then (foto de vitrine)
+  :Pessoa: na peça aberta, pede a foto de estúdio\n(fundo "auto" ou um dos 7 fundos);
+  :expanded-card.tsx\nPOST /api/pieces/{id}/studio?backdrop=auto;
+  :WardrobeService.studioPiece;
+  if (Peça com recorte pronto?\n(sem imagem padrão, Flat Lay COMPLETED)) then (não)
+    #FFE3E3:422 SEM_RECORTE;
+    stop
+  endif
+  :studioShot → AiEngine.execute(STUDIO_ENHANCER)\n→ StudioPipeline.run: nitidez → volume e luz → fundo\n→ sombra → composição 1600×1600 → validação;\nPhotoroom (StudioShotPort), Stability (UpscalePort)\nou etapas locais Java2D;
+  if (Gerou a foto?) then (não)
+    #FFE3E3:503 ESTUDIO_INDISPONIVEL;
+    stop
+  endif
+  :offerStudio;
+  if (Já existe foto aprovada da mesma\nfoto de origem?) then (sim)
+    :Resultado fica pendente em\nflatLayMetadata.studio.pending (versão + 1);\na aprovada continua no ar;
+  else (não)
+    :Vai ao ar marcada "aguardando aprovação";
+  endif
+  if (Pessoa decide) then (aprovar)
+    :POST /api/pieces/{id}/studio/approve;
+    if (Há pendente ou foto aguardando?) then (não)
+      #FFE3E3:409 NADA_A_APROVAR;
+      stop
+    endif
+    :A pendente vai ao ar\n(a anterior fica em "previous");
+  else (descartar)
+    :DELETE /api/pieces/{id}/studio/pending;
+    if (Há pendente?) then (não)
+      #FFE3E3:409 NADA_A_DESCARTAR;
+      stop
+    endif
+    :Apaga os arquivos da pendente;\na aprovada continua no ar;
+  endif
+else (cópia por IA)
+  :Pessoa: na revisão de várias peças, acha a foto ruim\ne pede uma cópia recriada por IA;
+  :multi-piece-review.tsx\nPOST /api/pieces/analysis/multi/{draftId}/ai-image\n(arquivo + nome, tipo e cor conferidos);
+  :MultiPieceService.recreate\n→ AiEngine.execute(PIECE_IMAGE_RECREATOR);
+  :ImageEditPort na ordem: Gemini 2.5 Flash Image,\nReplicate FLUX Kontext (imagem → imagem;\nnunca o gerador de fundos);
+  if (Imagem gerada?) then (não)
+    #FFE3E3:503 IA_INDISPONIVEL\n(sem provedor, consentimento, cota ou teto);
+    stop
+  endif
+  :PipelineJob COMPLETED, targetType AI_PIECE_IMAGE;\noriginal sem selo + prévia 768 px com AiSeal;
+  if (Pessoa usa a cópia?) then (não)
+    :Segue com a foto real;
+  else (sim)
+    :POST /api/pieces/analysis/multi/{draftId}\n/ai-images/{aiImageId}/piece;
+    :Flat Lay + moderação; original, recorte,\nflat lay e miniatura gravados com AiSeal;
+    :POST /api/pieces → WardrobeItem.aiGeneratedImage = true;
+  endif
+endif
+:A peça segue com a foto real como origem\n(originalImageUrl nunca é sobrescrita);
+note right
+  Fidelidade (RN46.01 / RN46.03):
+  • vitrine = derivado com versão e aprovação
+  • cópia por IA = generativa, marcada no
+    arquivo (AiSeal) e na peça (flag)
+  • canônico determinístico (CanonicalPhotographer,
+    generative = false) existe só como classe e teste:
+    nenhum serviço grava canonical_image_url hoje
+  • MultiPieceUpload/MultiPieceReview: nenhuma
+    página monta o componente hoje
+end note
+stop
+@enduml

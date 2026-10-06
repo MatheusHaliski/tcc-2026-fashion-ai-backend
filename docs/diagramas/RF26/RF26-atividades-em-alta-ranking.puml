@@ -1,0 +1,95 @@
+@startuml RF26_Atividades_EmAlta_Ranking
+title RF26 — Busca global de esquemas e peças (aba "Explorador Global")\nDiagrama de atividades — abas "Em alta" e "Ranking de HypeScore" (região, país, categoria e subcategoria)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+|Pessoa|
+start
+:Em /explorer escolhe a aba;
+if (Qual aba?) then (Em alta)
+  :Tipo (Peças · Looks · Marcas · Criadores),\njanela (Hoje · 7 · 30 dias), categoria\n(só peças e marcas), estilo e ocasião;
+  |Frontend|
+  :HypeTrendingPanel →\nGET /api/hype/trending?type&window&category&style&occasion&limit=24;
+  |API|
+  if (type = BRAND | CREATOR?) then (sim)
+    :HypeQueryService.trendingGroups:\nunidade = marca (peças) ou criador\n(peças + looks); grupo só com\n≥ MIN_GROUP_ITEMS (3) itens públicos;
+    :criador bloqueado some (Guard.canView);
+  else (PIECE | LOOK)
+    if (type válido?) then (não)
+      #FFE3E3:400 TIPO_INVALIDO;
+      |Frontend|
+      :ErrorState;
+      stop
+    endif
+    |API|
+    :HypeQueryService.trending: janela → 1 | 7 | 30,\nlimit 1–50;
+    if (ranking no HypeCache?) then (não)
+      |Banco/IA|
+      :hype_scores com publicEligible + AVAILABLE;\nfiltra categoria, estilo e ocasião;
+      |API|
+      :ordena: 1 = dimensão trend (desempate score) ·\n7 = score atual · 30 = média dos\nhype_score_snapshots do mês;
+    endif
+    :views(viewer): tira o que quem vê não pode ver;
+  endif
+  |Frontend|
+  if (items vazio?) then (sim)
+    :EmptyState com dica para trocar o recorte;
+  else (não)
+    :Grade de PieceCard / SchemeCard com #posição\nou lista de marcas/criadores com faixa de Hype;
+  endif
+else (Ranking)
+  |Pessoa|
+  :Tipo (Peças · Looks), janela, região do mundo,\npaís, categoria e subcategoria (chips e listas);
+  |Frontend|
+  :HypeRankingPanel grava os filtros na URL;
+  fork
+    :GET /api/hype/ranking?type&window&region\n&country&category&subcategory&page&size;
+    |API|
+    :HypeQueryService.ranking (size ≤ 48);
+    if (ids ordenados no HypeCache?) then (não)
+      |Banco/IA|
+      :publicPool(type): só públicos com score;\nregião = hype_scores.region (sem país = "OUTRAS");\nlook entra pelas categorias das peças dele;
+      |API|
+      :rankRegional: mesma métrica do Em alta,\ndesempate estável pelo id;
+    endif
+    :página: posições fixas; item bloqueado ou\nque deixou de ser visível só some da página;\nlook leva o Hype de cada peça;
+  fork again
+    |Frontend|
+    :GET /api/hype/ranking/facets?type&window&region&category;
+    |API|
+    :rankingFacets (cache): regiões com Hype médio,\npaíses, categorias e subcategorias com contagem;
+  end fork
+  |Frontend|
+  if (Erro?) then (sim)
+    :ErrorState com "Tentar de novo";
+  elseif (Página vazia?) then (sim)
+    :EmptyState com dica para trocar o recorte;
+  else (não)
+    :Lista ranqueada (#posição, valor da janela,\nfaixa, região/país) + paginação "hasMore";
+  endif
+endif
+|Pessoa|
+:Abre um card: detalhe da peça ou do look,\nperfil da marca (/brands/{slug}) ou do criador (/u/{username});
+stop
+@enduml

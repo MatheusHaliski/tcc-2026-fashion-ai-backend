@@ -1,0 +1,48 @@
+@startuml RF41_MaquinaDeEstados_Partida
+title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de máquina de estados — pontuação de uma partida (referência jogo:partida em FaiPointsService.game)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Partida encerrada\n(FLAIR_DUEL, FLAIR_<MODO>, FLAIR_TEAM,\nFLAIR_ARENA ou CHALLENGE)" as Encerrada
+state "Participação paga\n(GAME_PLAYED +5)" as Jogou
+state "Participação sem pontos\n(já pontuada ou 6 partidas hoje)" as SemJogo
+state "Vitória paga\n(GAME_WON +10)" as Venceu
+state "Vitória sem pontos\n(já paga ou 4 vitórias hoje)" as SemVitoria
+state "Resposta com faiPoints\n(0, 5, 10 ou 15)" as Fim
+
+[*] --> Encerrada : serviço do jogo chama game(userId, jogo, partida, resultado)
+Encerrada --> Jogou : chave userId:GAME_PLAYED:jogo:partida nova\ne contagem de hoje < 6
+Encerrada --> SemJogo : chave já existe\nou teto do dia
+Jogou --> Venceu : resultado = WIN, chave nova\ne vitórias de hoje < 4
+SemJogo --> Venceu : resultado = WIN, chave nova\ne vitórias de hoje < 4
+Jogou --> SemVitoria : WIN, mas chave existe ou teto
+SemJogo --> SemVitoria : WIN, mas chave existe ou teto
+Jogou --> Fim : DRAW / LOSS / PLAYED / null
+SemJogo --> Fim : DRAW / LOSS / PLAYED / null
+Venceu --> Fim
+SemVitoria --> Fim
+Fim --> [*]
+
+note right of Encerrada
+  O teto é por dia no fuso America/Sao_Paulo
+  (contagem desde 00:00): no dia seguinte a
+  mesma regra volta a pagar. O teto nunca
+  impede de jogar — só zera os pontos.
+end note
+note bottom of Fim
+  Duelo, modos e times devolvem faiPoints na resposta
+  (selo "+N FAI Pts"); Arena e Desafio só aparecem no
+  extrato — selo <<planejado>>. No duelo de times, cada
+  membro vencedor recebe award(GAME_WON) com a mesma ref.
+end note
+@enduml

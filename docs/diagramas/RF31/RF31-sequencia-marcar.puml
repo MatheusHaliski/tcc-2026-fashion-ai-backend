@@ -1,0 +1,66 @@
+@startuml RF31_Sequencia_Marcar
+title RF31 — Filtrar e marcar o estado dos itens do acervo: favoritar, disponível, indisponível e todos\nDiagrama de sequência — marcar estado da peça (PATCH /flags), histórico de disponibilidade e efeito nas outras telas
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa (dona)" as U
+participant "expanded-card.tsx\n(menu ⋯ da peça)" as FE
+participant "WardrobeController" as C
+participant "WardrobeService" as S
+participant "Guard" as G
+participant "WardrobeEventListeners\n+ SideEffectRunner" as WEL
+participant "SchemeService · MirrorService\n· CopilotService · RoomService" as CONS
+database "MySQL" as DB
+
+U -> FE: "Marcar indisponível"
+FE -> C: PATCH /api/pieces/{id}/flags {disponivel: false}
+C -> S: toggles(user, id, favorite, disponivel, forSale, forDonation)
+S -> G: requireCanCreate(user)
+alt e-mail não confirmado / conta suspensa / exclusão agendada
+  G --> FE: 403 EMAIL_NAO_CONFIRMADO | CONTA_SUSPENSA | EXCLUSAO_AGENDADA
+end
+S -> DB: SELECT wardrobe_items WHERE id (404 se não existe)
+S -> G: requireOwner(user, ownerId)
+alt peça de outra pessoa
+  G --> FE: 403 "apenas o autor pode alterar"
+end
+opt favorite ≠ null
+  S -> S: setFavorite(valor) — independente
+end
+opt disponivel ≠ null
+  S -> S: disponivel = false\navailabilityStatus = UNAVAILABLE
+  opt o valor mudou
+    S ->> S: publishEvent(AvailabilityChanged(userId, id, false))
+  end
+end
+S -> S: applyListing(w, forSale, forDonation)\nmarcar um desmarca o outro
+S -> DB: UPDATE wardrobe_items (commit)
+S --> FE: PieceView (disponivel, favorite, forSale, forDonation…)
+FE -> FE: emitPieceUpdate(p) → closet e quarto atualizam o card
+FE --> U: selo "Indisponível" no card
+
+== Depois do commit ==
+S ->> WEL: AvailabilityChanged (AFTER_COMMIT)
+WEL -> DB: INSERT wardrobe_availability_log\n(wardrobe_item_id, user_id, available = false, changed_at)
+note right of WEL: base da Utilização do\nFAI Inventory Score (RF29)
+
+== Efeito nas outras telas (leitura) ==
+CONS -> DB: lê disponivel / availability_status / for_sale
+note over CONS
+  SchemeService (Criar look, RF5): peça indisponível → 400 PECA_INDISPONIVEL
+  MirrorService.eligible (Smart Mirror / Vista-me, RF28): só disponíveis e sem as à venda
+  CopilotService (RF10): availableOnly · RoomService (RF27): estados INDISPONIVEL, FAVORITA, A_VENDA
+end note
+
+== Looks (mesmo padrão, sem tela) ==
+note over C, S
+  PATCH /api/schemes/{id}/flags {favorite, disponivel} → SchemeService.toggles existe na API,
+  mas nenhuma tela do frontend chama esse endpoint (divergência com o RF31, que pede os toggles
+  também no card de esquema). "à venda" e "para doar" só existem na peça.
+end note
+@enduml

@@ -1,0 +1,97 @@
+@startuml RF20_Sequencia_Revisao
+title RF20 — Publicar look vinculado a uma marca cadastrada\nDiagrama de sequência — revisão pela marca, revalidação, revogação, Meus Selos e promoções habilitadas
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+autonumber
+actor "Marca (dona)" as M
+actor "Autor do look" as U
+participant "brands/[slug]/page.tsx\n(ReviewQueue · IssuerMetrics)" as FE
+participant "SealController" as C
+participant "SchemeService" as SCH
+participant "SealService" as S
+participant "Guard" as G
+participant "NotificationService ·\nAudit" as N
+database "MySQL" as DB
+
+== Fila de revisão (CA07) ==
+M -> FE: aba "Revisão de vínculos"
+FE -> C: GET /api/seal-bonds/review-queue
+C -> S: reviewQueue(user)
+S -> G: requireApprovedInstitutional(user)
+alt não é marca/celebridade aprovada
+  G --> FE: 403 (auditado)
+else
+  S -> DB: seal_bonds target_owner = marca AND status = PENDING_REVIEW (created_at asc)
+  S -> DB: seal_bonds APPROVED cujo scheme.revalidation_pending = true
+  S --> FE: 200 [bondView + scheme {id, title, coverImageUrl, owner} (+ revalidation: true)]
+end
+
+== Decisão ==
+M -> FE: Aprovar / Rejeitar
+FE -> C: POST /api/seal-bonds/{bondId}/review {approve, reason}
+C -> S: review(user, bondId, approve, reason)
+S -> G: requireOwner(user, targetOwner)
+alt não está PENDING_REVIEW nem em revalidação
+  S --> FE: 409 ESTADO_INVALIDO
+else approve e revalidação
+  S -> DB: UPDATE schemes SET revalidation_pending = false · seal_bonds.review_note = 'revalidado'
+  S -> N: audit "REVALIDADO"
+  S --> FE: 200 bondView (volta aos destaques do RF14)
+else approve
+  S -> S: issue(bond, marcaId): APPROVED, BRD-…, expiresAt, usageCount + 1
+  S -> N: notify(autor, SEAL_GRANTED) · audit "EMITIDO"
+  S ->> S: publishEvent(CouponRightsCheck)
+  S --> FE: 200 bondView (APPROVED)
+else rejeita sem motivo
+  S --> FE: 400 MOTIVO_OBRIGATORIO
+else rejeita
+  S -> DB: UPDATE seal_bonds SET status = REJECTED (ou REVOKED na revalidação),\nreview_note, reviewed_at, reviewed_by
+  S -> N: notify(autor, SEAL_BOND_REVIEW "não aprovado"/"revogado" + motivo) · audit
+  S --> FE: 200 bondView
+end
+
+== Mudanças no look (RF9.CA05 e CA14) ==
+U -> SCH: PUT /api/schemes/{id} via SchemeController\n(lista de peças mudou, look PUBLISHED)
+SCH -> S: flagRevalidation(scheme)
+S -> N: notify(marca, SEAL_BOND_REVIEW "Revalidação pendente")
+S -> DB: UPDATE schemes SET revalidation_pending = true
+U -> SCH: PUT /api/schemes/{id} visibility = PRIVATE\nou DELETE /api/schemes/{id} (archive)
+SCH -> S: revokeForScheme(schemeId, motivo)
+S -> DB: APPROVED → REVOKED (com notify) · SUGGESTED/PENDING_REVIEW → REVOKED
+opt revogação direta (sem botão na interface hoje)
+  M -> C: POST /api/seal-bonds/{bondId}/revoke {reason}
+  C -> S: revoke(user, bondId, reason ?: "uso indevido")
+  S -> DB: UPDATE seal_bonds SET status = REVOKED
+  S -> N: notify(autor, "Selo revogado") · audit "REVOGADO"
+end
+
+== Selos do autor e promoções (CA11–CA13) ==
+U -> C: GET /api/me/seals
+C -> S: mySeals(user)
+S -> DB: seal_bonds requested_by = autor
+S --> U: 200 {ativos (com promoções), pendentes, recusados, sugeridos,\ninativos (expirados, rejeitados, revogados), redemptions}
+note right: sem tela no frontend hoje:\nlacuna "Meus Selos" do Trello
+U -> C: POST /api/promotions/{id}/redemptions
+C -> S: redeem(user, promotionId)
+alt promoção indisponível (status, janela, cota, selo inativo, emissor inativo)
+  S --> U: 409 PROMOCAO_INDISPONIVEL
+else sem vínculo APPROVED vigente com o emissor (ou com o selo exigido)
+  S --> U: 409 SELO_INVALIDO
+else limite por pessoa atingido
+  S --> U: 409 LIMITE_POR_USUARIO
+else ok
+  S -> DB: INSERT promotion_redemptions (código único) · promotions.redeemed_count + 1
+  S -> N: audit PROMOCAO_RESGATADA
+  S --> U: 201 {code, promotionTitle, expiresAt}
+end
+@enduml

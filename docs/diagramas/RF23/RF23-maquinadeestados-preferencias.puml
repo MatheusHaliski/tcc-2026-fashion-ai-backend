@@ -1,0 +1,44 @@
+@startuml RF23_MaquinaDeEstados_Preferencias
+!pragma layout smetana
+title RF23 — Telas de configuração (Conta, Privacidade, Aparência, Idioma, Seus dados) com i18n\nDiagrama de máquina de estados — uma preferência de interface entre o navegador e o servidor (CA01/CA02)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Padrão do app" as Default : AUTO · pt-BR · COMFORTABLE · 100%
+state "Lida do navegador" as Local : tema: localStorage fai.theme (THEME_BOOT antes da 1ª pintura)\nidioma: cookie fai.locale (layout no servidor) e localStorage
+state "Sincronizada" as Synced : navegador = user_preferences
+state "Aplicada só no navegador" as Optimistic : ThemeProvider.update / setLocale
+state "Salvando" as Saving : PUT /api/me/preferences\n{campo, clientUpdatedAt}
+state "Recusada pelo servidor" as Rejected : 400 FONTE_INVALIDA · FUNDO_INVALIDO\nCOR_INVALIDA · JSON_INVALIDO …
+
+[*] --> Default : primeira visita
+Default --> Local : já escolheu antes neste navegador
+Default --> Synced : login — app-shell faz GET /api/me/preferences\n(tema, densidade, fonte, fundo e cor)
+Local --> Synced : login (aparência) · abrir /settings (idioma,\nsetLocale sem regravar) — o servidor sobrescreve o local
+Synced --> Optimistic : pessoa muda tema, idioma,\nfonte, fundo ou cor
+Optimistic --> Saving : savePrefs (com sessão)
+Saving --> Synced : 200 — grava e audita\nALTERACAO_PREFERENCIAS
+Saving --> Synced : clientUpdatedAt mais antigo que o salvo —\nservidor devolve o estado salvo e a tela reaplica
+Saving --> Rejected : valor inválido
+Rejected --> Synced : próximo login ou recarga de /settings\nreaplica o valor salvo
+Optimistic --> Optimistic : sem sessão: idioma fica\nsó no navegador e no cookie
+
+note right of Saving
+  Vale para cada campo enviado. Outro dispositivo
+  com alteração mais nova sempre vence (last-write-wins).
+end note
+note bottom of Rejected
+  A escolha continua aplicada no navegador até lá.
+  Ex.: o tema HIGH_CONTRAST do frontend não existe em
+  ThemeMode (LIGHT · DARK · AUTO) e volta 400 JSON_INVALIDO.
+end note
+@enduml

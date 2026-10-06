@@ -1,5 +1,5 @@
 @startuml RF20_Atividades
-title RF20 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma marca de roupa\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF20 — Publicar look vinculado a uma marca cadastrada\nDiagrama de atividades — sugestão por política, pedido/aceite do vínculo e roteamento até o selo
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,59 +23,97 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Usuário|
+|Pessoa|
 start
-:Cria o look em /schemes/new (RF5):\nescolhe peças, estilo e ocasião;
-|Frontend (scheme-builder.tsx)|
-:POST /api/seal-suggestions/preview\n{pieceIds, occasion, style};
-|Backend (SealService)|
-:SealBond Matcher (AiCapability.SEALBOND_MATCHER, local):\npeças × marcas com BrandProfile APROVADO (CA01);
-if (Marca da peça sem perfil cadastrado?) then (sim)
-  :unregisteredBrands + mensagem\n"somente marcas com perfil cadastrado" (CA06);
-else (não)
+if (Por onde pede o selo?) then (Criar Look — /schemes/new)
+  :Escolhe peças, estilo e ocasião\n(etapa "Detalhes" do scheme-builder);
+  |Frontend|
+  :POST /api/seal-suggestions/preview\n{pieceIds, occasion, style}\n(de novo a cada mudança, 350 ms depois);
+  |SealService|
+  :preview(): nada é gravado;
+  :candidates() — ai.local(SEALBOND_MATCHER);
+  note right
+    <b>Como a IA escolhe (candidates)</b>
+    1) Selos ACTIVE e disponíveis com política (RF25):
+       SealPolicies.evaluate (cor, marca, tipo, ocasião,
+       estilo, Hype v2) → confiança 0,97, um selo por
+       emissor. Emissor com política e nenhuma regra
+       atendida não entra pela heurística.
+    2) Heurística: peças com BrandProfile APROVADO (ou
+       nome parecido, Jaro-Winkler ≥ 0,92), confiança =
+       0,45 + 0,5·k/n (+0,05 com Brand). Abaixo de
+       sealConfidenceThreshold (padrão 0,600) = descarta.
+       1 peça = tier PECA, várias = LOOK (BRAND_MATCH).
+    3) Marca sem perfil → unregisteredBrands (CA06).
+    4) Ordena por confiança, corta em 3 e reordena
+       pelo Hype v2 (byHype).
+  end note
+  |Frontend|
+  if (Há sugestões?) then (não)
+    :"Nenhuma marca ou celebridade atingiu\na confiança" (CA05) e, se houver,\n"somente marcas com perfil cadastrado:\nX, Y" (CA06);
+  else (sim)
+    |Pessoa|
+    :Marca as marcas que quer pedir\n(nenhuma marcada = recusa, CA04);
+  endif
+  |Frontend|
+  :Salva: POST /api/schemes (+ publish);
+  note right
+    O backend também roda suggest() depois do
+    commit (SchemeController, 2+ peças) e devolve
+    sealSuggestions — o scheme-builder ignora
+    essa lista e usa só o que a pessoa marcou
+  end note
+  :Para cada marca marcada:\nPOST /api/schemes/{id}/seal-bonds {targetOwnerId}\n(erro num pedido não desfaz o look);
+  |SealService|
+  :linkManually(): guard.requireCanCreate + dona do look;
+  if (Alvo é PESSOAL / marca não APROVADA?) then (sim)
+    #FFE3E3:400 PERFIL_INVALIDO /\n400 MARCA_NAO_VALIDADA (CA06);
+    stop
+  else (não)
+  endif
+  :Apaga sugestões SUGGESTED do mesmo par,\ncria SealBond origin MANUAL, status EDITED,\ntier = PECA (1 peça) ou LOOK, todas as peças vinculadas;
+else (look já salvo — /schemes/{id})
+  |Frontend|
+  :"Sugerir selos de marca"\nGET /api/schemes/{id}/seal-suggestions;
+  |SealService|
+  :suggest(): dona do look, candidates(),\napaga SUGGESTED antigos e grava até 3\nSealBond SUGGESTED (origin AI_SUGGESTION,\naiInferenceId, confiança e justificativa);
+  |Pessoa|
+  :Toca em "Vincular" numa sugestão;
+  |Frontend|
+  :POST /api/seal-bonds/{bondId}/accept\n{imageRightsConsent: true};
+  |SealService|
+  if (Status é SUGGESTED ou REFUSED?) then (não)
+    #FFE3E3:409 ESTADO_INVALIDO;
+    stop
+  else (sim)
+  endif
+  :status ACCEPTED, respondedAt;
 endif
-:Confiança 0,45 + 0,5·k/n (+0,05 se Brand);\ndescarta abaixo de sealConfidenceThreshold;
-:Até 3 candidatos com confiança, justificativa\ne tier (1 peça = PECA, várias = LOOK);
-|Frontend (scheme-builder.tsx)|
-if (Há sugestões?) then (não)
-  :"Nenhuma marca atingiu a confiança" —\nlook segue sem vínculo (CA05);
-else (sim)
-  |Usuário|
-  :Marca as sugestões que quer pedir\n(ou nenhuma = recusa — CA04);
-endif
-:Salva/publica o look\nPOST /api/schemes (+ /publication);
-|Frontend (scheme-builder.tsx)|
-:Para cada marca marcada:\nPOST /api/schemes/{id}/seal-bonds {targetOwnerId};
-|Backend (SealService)|
-:linkManually(): só MARCA/CELEBRIDADE;\nmarca precisa estar APROVADA (CA06);
-:SealBond origin=MANUAL, status=EDITED (CA02/CA03);
-if (Já há PENDING_REVIEW/APPROVED\npara o par esquema × marca?) then (sim)
-  #FFE3E3:409 VINCULO_EXISTENTE — selo único por par (CA09);
+|SealService|
+:route() — @Transactional(noRollbackFor = SealUnavailable);
+note right: celebridade: exige imageRightsConsent\ne sempre revisa — ver RF21
+if (Já existe PENDING_REVIEW ou APPROVED\npara o par look × marca?) then (sim)
+  #FFE3E3:409 VINCULO_EXISTENTE (CA09)\n— transação desfeita (aceite volta a SUGGESTED);
   stop
 else (não)
 endif
-:route(): escolhe o Seal ATIVO do tier;
-if (Selo ausente, fora da janela\nou sem emissões?) then (sim)
-  #FFE3E3:REJECTED + 409 SELO_INDISPONIVEL;
+:Escolhe o Seal: o do vínculo (se ACTIVE e da marca)\nou sealFor(): selo ACTIVE do tier cuja política\no look atende → senão um sem política → senão o 1º;
+if (Sem selo, inativo, fora da janela\nou usageCount ≥ usageLimit?) then (sim)
+  #FFE3E3:status REJECTED + reviewNote + auditoria\n"RECUSADO_LIMITE", lança SealUnavailable\n→ 409 SELO_INDISPONIVEL (teto: RF21.CA23)\n— a recusa FICA gravada (noRollbackFor);
   stop
 else (não)
 endif
 if (BrandProfile.requiresSealReview?) then (sim)
-  :PENDING_REVIEW + notify(SEAL_BOND_REVIEW) à marca (CA07);
-  |Marca|
-  :Abre brands/[slug] → aba Revisão\nGET /api/seal-bonds/review-queue;
-  :POST /api/seal-bonds/{id}/review {approve, reason};
-  |Backend (SealService)|
-  if (Aprovou?) then (não)
-    :REJECTED + motivo obrigatório\n+ notify ao autor;
-    stop
-  else (sim)
-  endif
+  :status PENDING_REVIEW, requiresReview = true;
+  :notify(marca, SEAL_BOND_REVIEW)\n+ auditoria "PENDENTE" (CA07);
+  note right: segue em RF20_Atividades_Revisao
 else (não — auto-aprovação)
+  :issue(): APPROVED, issuedAt = agora,\nexpiresAt = availableUntil do selo ou +365 dias,\nsealCode único "BRD-…", usageCount + 1,\nid do vínculo em schemes.seal_ids_json (CA08/CA10);
+  :notify(autor, SEAL_GRANTED) + auditoria "EMITIDO" (CA16);
+  :publishEvent(CouponRightsCheck) → CouponService.onCheck\n(AFTER_COMMIT, nova transação): direito a cupom (CA11, RF38);
 endif
-:issue(): APPROVED, sealCode "BRD-…",\nissuedAt/expiresAt, usageCount+1 (CA08/CA10);
-:notify(SEAL_GRANTED) + AuditLog\nMUDANCA_ESTADO_VINCULO_SELO (CA16);
-:CouponRightsCheck → promoções habilitadas\n(CA11; resgate em RF38/RF25);
-note right: revogação/expiração (CA14): POST /api/seal-bonds/{id}/revoke,\nesquema excluído/privado → revokeForScheme
+|Frontend|
+:Toast "Vínculo enviado para revisão da marca"\nou selo no card (SealBadges, têxtil/dourado);
 stop
+
 @enduml

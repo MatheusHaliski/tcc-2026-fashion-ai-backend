@@ -1,6 +1,7 @@
 @startuml Taxonomia_Contextos
-title FashionAI — Taxonomia das entidades por contexto delimitado\nVisão geral — entidades-chave (fai-domain) e dependências entre contextos
+title FashionAI — Taxonomia das entidades por contexto delimitado\nVisão geral — entidades-chave de fai-domain/.../domain/model e dependências entre contextos (Flyway V1–V42)
 !pragma layout smetana
+set separator none
 skinparam backgroundColor #FFFFFF
 skinparam component {
   BackgroundColor #F4F2EF
@@ -13,6 +14,10 @@ skinparam package {
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
+}
+skinparam note {
+  BackgroundColor #FFFBEA
+  BorderColor #B8A86A
 }
 left to right direction
 
@@ -29,14 +34,14 @@ package "2. Guarda-roupa & Peças" as CTX_WR {
   component "PieceUsageDiaryEntry" as PieceUsage
   component "AcervoGroup" as AcervoGroup
 }
-package "3. Captura adaptativa & Visão (RF45)" as CTX_CAP {
+package "3. Captura adaptativa & Visão (RF4)" as CTX_CAP {
   component "CaptureSession" as CaptureSession
   component "CaptureRequest" as CaptureRequest
   component "PieceImage" as PieceImage
   component "BrandPrediction" as BrandPrediction
   component "ModelRegistryEntry" as ModelRegistry
 }
-package "4. Catálogo global & Busca (RF47)" as CTX_CAT {
+package "4. Catálogo global & Busca (RF4 — Acervo & Busca Catalogada)" as CTX_CAT {
   component "Brand" as Brand
   component "CatalogProduct" as CatalogProduct
   component "CatalogVariant" as CatalogVariant
@@ -88,24 +93,50 @@ package "11. Infra & Operação" as CTX_OPS {
   component "ProcessingJobLog" as ProcessingJobLog
   component "BackupRecord" as BackupRecord
 }
+package "12. HypeScore v2 (RF46) — V31, V39, V41" as CTX_HYPE {
+  component "HypeSignalDaily" as HypeSignalDaily
+  component "HypeScoreCurrent" as HypeScoreCurrent
+  component "HypeScoreSnapshot" as HypeScoreSnapshot
+  component "HypeMilestone" as HypeMilestone
+}
+package "13. FashionAI Lens (RF45) — V40" as CTX_LENS {
+  component "LensScan" as LensScan
+  component "LensDetection" as LensDetection
+  component "LensFeedback" as LensFeedback
+}
 
-WardrobeItem --> CatalogProduct : catalogProductId /\ncatalogVariantId (V30)
+WardrobeItem ..> CatalogProduct : catalogProductId /\ncatalogVariantId (V30)
 WardrobeItem --> Brand : brand (N:1)
 WardrobeItem --> User : user (N:1)
-CaptureSession --> WardrobeItem : pieceId
-PieceImage --> WardrobeItem : pieceId
+CaptureSession ..> WardrobeItem : pieceId
+PieceImage ..> WardrobeItem : pieceId
 SchemeItem --> WardrobeItem : wardrobeItem (N:1)
 Scheme --> User : user (N:1)
 Follow --> User : follower / following
 SealBond --> Scheme : scheme (N:1)
 BrandProfile --> User : owner (1:1)
 Brand --> BrandProfile : brandProfile (N:1)
-CouponRight --> Promotion : sourceId (SELO)
-CouponRight --> FlairCombination : sourceId (FLAIR)
-RoomCatalogItem --> User : creatorUserId / maisonBrandUserId\n(marca/celebridade)
-PieceUsage --> Scheme : schemeId
+CouponRight ..> Promotion : sourceId (SELO)
+CouponRight ..> FlairCombination : sourceId (FLAIR)
+RoomCatalogItem ..> User : creatorUserId / maisonBrandUserId\n(marca/celebridade)
+PieceUsage ..> Scheme : schemeId
 UserAvatar3d --> User : user (1:1)
 PipelineJob --> User : user (N:1)
 WardrobeItem ..> PipelineJob : processingJobId
 ItemEmbedding ..> WardrobeItem : entityId (HypeEntityType)
+HypeSignalDaily ..> WardrobeItem : entityId (PIECE)
+HypeScoreCurrent ..> Scheme : entityId (SCHEME)
+HypeScoreSnapshot ..> HypeScoreCurrent : mesma (entityType, entityId)
+HypeMilestone ..> Notification : notificationId
+LensScan ..> User : userId
+LensScan ..> AiInferenceLog : aiInferenceId
+LensDetection ..> LensScan : scanId
+LensDetection ..> WardrobeItem : ownedItemId («Eu tenho»)
+LensFeedback ..> LensDetection : detectionId
+note "HypeScore v1 removido em P3-16: as entidades\nHypeScoreMetric, HypeGroup e MetricSnapshot e o enum\nHypeScoreBand saíram do código (tabelas antigas ficam\nno banco só como histórico). V42: UserPreferences\n.hypeCreatorOptOut tira a pessoa de «Criadores em alta»." as N_V1
+N_V1 .. HypeScoreCurrent
+legend right
+  Seta cheia = associação JPA (@ManyToOne/@OneToOne) · tracejada = id guardado sem FK JPA.
+  Detalhe de cada área: docs/diagramas/fashionai-classes-v5-*.puml (PNG FashionAI_Classes_v5_<Área>).
+endlegend
 @enduml

@@ -1,5 +1,5 @@
 @startuml RF16_Sequencia
-title RF16 — Implementar geração de imagem 3D das peças do guarda-roupa utilizando serviços de API externas\nDiagrama de sequência — endpoints reais
+title RF16 — Implementar geração de imagem 3D das peças do guarda-roupa utilizando serviços de API externas\nDiagrama de sequência — POST/GET /api/pieces/{id}/model3d, worker agendado e cadeia de provedores
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,65 +8,83 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor "Usuário (dono)" as U
-participant "Frontend\npieces/[id]\n(Model3dPanel)" as FE
-participant "WardrobeController" as C
+actor "Pessoa (dona)" as U
+participant "expanded-card.tsx\nModel3dAction · useModel3d\n(model3d-panel.tsx)" as FE
+participant "WardrobeController" as WC
 participant "WardrobeService" as WS
 participant "Model3dService" as M
-participant "AiEngine (RF24)" as AI
-participant "Meshy / Stability SF3D\n(Model3dPort)" as EXT
-participant "MediaService\n(storage)" as ST
-participant "NotificationService" as NS
-participant "FaiPointsService" as FP
+participant "AiEngine (RF24)\nTHREE_D_GENERATOR" as AI
+participant "MeshyModel3dAdapter\n(assíncrono)" as MESHY
+participant "StabilityFast3dAdapter\n(síncrono)" as SF3D
+participant "ReliefModelGenerator\n(relevo local)" as REL
+participant "WebFetchPort ·\nMediaService" as IO
 database "MySQL" as DB
-U -> FE: Gerar 3D
-FE -> C: POST /api/pieces/{id}/model3d
-C -> WS: request3d(user, id)
-WS -> M: request(owned(user, id))
-alt recurso desligado / sem foto
-  M --> FE: 409 RECURSO_DESLIGADO / 422 SEM_FOTO
-else job já QUEUED/PROCESSING
-  M --> FE: 200 status do mesmo job
-else novo pedido
-  M -> DB: INSERT pipeline_jobs (THREE_D_GENERATION, PENDING)
-  M -> DB: UPDATE wardrobe_items.model3d_status = QUEUED
-  M --> FE: 202 {status, jobId, progress, stages, freeRetry}
-end
-loop a cada 5 s — @Scheduled tick()
-  M -> DB: findByStatusOrderByQueuedAtAsc(PENDING)
-  M -> DB: job RUNNING / peça PROCESSING
-  M -> AI: execute(userId|null, THREE_D_GENERATOR, steps, fallback)
-  AI -> DB: INSERT ai_inference_log
-  alt Meshy (assíncrono)
-    AI -> EXT: submit(png)
-    EXT --> M: taskId (externalJobId)
-    M -> EXT: poll(taskId) (próximos ticks)
-    EXT --> M: SUCCEEDED + glbUrl
-    M -> EXT: WebFetchPort.get(glbUrl, 40 MB)
-  else Stable Fast 3D (síncrono)
-    AI -> EXT: generateNow(png)
-    EXT --> M: GLB
-  else sem chave / cota esgotada / falha
-    AI -> M: fallback ReliefModelGenerator (relevo local)
-  end
-  alt GLB válido
-    M -> ST: put(users/.../model-*.glb)
-    M -> DB: job COMPLETED, wardrobe_items.model3d_url
-    M -> NS: notify(AI_JOB_FINISHED, "Modelo 3D pronto")
-    M -> FP: awardIsolated(PIECE_3D) (+15, RF41)
-  else erro ou TEMPO_LIMITE
-    M -> DB: job FAILED (errorCode, errorMessage), peça FAILED
-  end
+
+== Pedido (CA01, CA04) ==
+U -> FE: "Tentar de novo" (FAILED) — sem botão "Gerar 3D" na página
+FE -> WC: POST /api/pieces/{id}/model3d
+WC -> WS: request3d(user, id)
+WS -> WS: requireCanCreate + owned (403 auditado)
+WS -> M: request(peça)
+alt recurso desligado
+  M --> FE: 409 RECURSO_DESLIGADO
+else sem foto real (ilustração)
+  M --> FE: 422 SEM_FOTO
+else já QUEUED/PROCESSING
+  M --> FE: 202 status do mesmo job
+else novo job
+  M -> DB: INSERT pipeline_jobs (THREE_D_GENERATION, PENDING, PIECE,\nretryCount, input {freeRetry, image}) · model3d_status = QUEUED
+  WC --> FE: 202 {status, label, progress 5, freeRetry, canRetryFree, providers}
 end
 loop a cada 2,5 s enquanto QUEUED/PROCESSING
-  FE -> C: GET /api/pieces/{id}/model3d
-  C -> WS: status3d(user, id)
-  WS -> M: status(w)
-  M --> FE: 200 {status, label, progress, stages, modelUrl, error, canRetryFree}
+  FE -> WC: GET /api/pieces/{id}/model3d
+  WC -> WS: status3d → M.status(peça)
+  WC --> FE: 200 {status, progress, progressReal, stages, error, model}
 end
-FE -> U: PieceModelViewer (girar e zoom)
-opt look completo
-  FE -> C: POST /api/schemes/{id}/model3d (ShowcaseController)
-  note right: ShowcaseService.requestModels pede o 3D\nde todas as peças do esquema sem modelo
+
+== Worker: start (@Scheduled a cada 5 s) ==
+M -> DB: jobs PENDING (THREE_D_GENERATION)
+M -> IO: read(imageUrl) — falta → FAILED SEM_ARQUIVO / PECA_REMOVIDA
+M -> DB: job RUNNING, attempts + 1 · peça PROCESSING
+M -> AI: execute(userId | null se freeRetry, THREE_D_GENERATOR, passos remotos, plano B local)
+alt Meshy disponível (MESHY_API_KEY + cota 3/dia)
+  AI -> MESHY: submit(png)
+  MESHY --> M: taskId
+  M -> DB: external_job_id · stages FOTO, ENVIO · progress 10
+else Stability disponível (STABILITY_API_KEY)
+  AI -> SF3D: generateNow(png)
+  SF3D --> M: GLB (isGlb)
+else nenhum provedor / falha / sem cota
+  AI -> REL: generate(recorte, altura por tipo)
+  REL --> M: Model(glb, vértices, triângulos, dimensões)
 end
+
+== Worker: follow (tarefa Meshy) ==
+loop a cada tick até terminar
+  M -> MESHY: poll(taskId)
+  alt SUCCEEDED com glbUrl
+    M -> IO: WebFetchPort.get(glbUrl, ≤ 40 MB)
+  else FAILED ou passou de 10 min
+    M -> REL: plano B (provider "meshy→local-relevo", fallbackUsed)
+  else ainda rodando
+    M -> DB: result_json {progress 10–95, progressReal}
+  end
+end
+
+== Fim ==
+alt GLB pronto
+  M -> IO: put(users/{u}/pieces/{id}/model-*.glb, model/gltf-binary)
+  M -> DB: model3d_url · model3d_status = COMPLETED · job COMPLETED\n(output_url, total_time_ms, stages, result_json)
+  M -> DB: notifications AI_JOB_FINISHED ("Modelo 3D pronto")
+  M -> DB: FaiPointsService.awardIsolated(PIECE_3D, +15, 1× por peça)
+  FE --> U: toast + "Ver em 3D" (PieceModelViewer; Meu Quarto 3D)
+else sem GLB
+  M -> DB: job FAILED (PROVEDOR_FALHOU · TEMPO_LIMITE · ERRO_INTERNO)\n+ mensagem · peça FAILED
+  FE --> U: "Falhou" + "Tentar grátis" (canRetryFree = retryCount 0)
+end
+note over M, DB
+  Reprocessamento grátis (CA03): o 1º pedido depois de uma falha cria o job com freeRetry = true e retryCount = 1;
+  ele roda sem usuário no controle de cota. Os seguintes voltam a consumir a cota de 3/dia.
+  Também cria jobs: POST /api/schemes/{id}/model3d (ShowcaseService.requestModels, todas as peças do look) — sem tela hoje.
+end note
 @enduml

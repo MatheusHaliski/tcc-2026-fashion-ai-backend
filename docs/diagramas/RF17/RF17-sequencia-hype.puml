@@ -1,0 +1,80 @@
+@startuml RF17_Sequencia_Hype
+title RF17 — Visualizar a página de perfil de outros usuários\nDiagrama de sequência — Hype do criador no cabeçalho (GET /api/hype/groups), insights CREATOR_PROFILE e opt-out de "Criadores em alta" (V42)
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Visitante" as V
+actor "Dono do perfil" as O
+participant "u/[username]/page.tsx\nHypeGroupBadge · InsightStrip" as FE
+participant "lib/hype/use-hype-group\n(lote de até 50 chaves, TTL 5 min)" as HK
+participant "HypeController" as HC
+participant "HypeQueryService" as HQ
+participant "Guard" as G
+participant "HypeCache\n(RenderCachePort)" as CA
+participant "InsightsController\nInsightService · ProfileInsights" as IS
+participant "settings/page.tsx" as ST
+participant "PreferencesController\nPreferencesService" as PR
+database "MySQL" as DB
+
+V -> FE: perfil PESSOAL com contentVisible = true
+FE -> HK: useHypeGroup(CREATOR, user.id)
+HK -> HC: GET /api/hype/groups?type=CREATOR&keys={id,…}
+HC -> HC: RankGroup.parse(type) — inválido = 400 TIPO_INVALIDO
+HC -> HQ: groups(viewer, CREATOR, keys, window = 7)
+HQ -> HQ: groupKeys: só UUIDs válidos, distintos, até 100
+HQ -> CA: get("groups-table:CREATOR:7")
+alt sem cache na geração atual
+  CA -> HQ: groupTable → groupRows(CREATOR, 7)
+  HQ -> DB: hype_scores PIECE e SCHEME (public_eligible,\nAVAILABLE, versão atual do algoritmo)
+  HQ -> DB: user_preferences.findHypeCreatorOptOutUserIds()
+  HQ -> HQ: agrupa por dono; quem tem hype_creator_opt_out\nfica fora do agregado (os demais sobem)
+  HQ -> HQ: suficiente = ≥ 3 itens públicos;\nvalor = média dos 5 mais relevantes; faixa; posição
+  HQ -> CA: put (TTL 10 min, chave com a geração)
+end
+loop cada chave pedida
+  HQ -> G: canView(viewer, criador, PUBLIC)
+  alt bloqueio em qualquer direção
+    HQ -> HQ: chave omitida da resposta
+  else linha na tabela
+    HQ -> HQ: groupView (sem valor, faixa e posição se insuficiente)
+  else sem itens ou opt-out
+    HQ -> HQ: emptyGroup(key) — sufficient false, value null
+  end
+end
+HQ --> HK: 200 {type, window, algorithmVersion, minItems: 3, total, items}
+HK --> FE: grupo da chave (ausente = sem dados)
+alt sufficient e level presentes
+  FE -> FE: "Hype do criador": faixa, 🔥 valor, base de itens,\nposição (link /explorer?tab=trending&type=CREATOR)
+else
+  FE -> FE: nada no cabeçalho (nunca "0")
+end
+
+opt visibility = PUBLIC
+  FE -> IS: GET /api/insights?context=CREATOR_PROFILE&key=@username
+  IS -> IS: ProfileInsights.resolve: pessoa PESSOAL e ativa
+  alt perfil desconhecido ou bloqueio entre visitante e dono
+    IS --> FE: 200 {items: []} (sem erro e sem vazar nada)
+  else
+    IS -> CA: get("insights:CREATOR_PROFILE:…") → build só com itens públicos elegíveis
+    IS --> FE: 200 {items} → faixa de insights recolhível
+  end
+end
+
+== Opt-out de "Criadores em alta" (V42 · user_preferences.hype_creator_opt_out) ==
+O -> ST: Configurações › Privacidade › HypeScore e privacidade\nliga "não aparecer em Criadores em alta"
+ST -> PR: PUT /api/me/preferences {hypeCreatorOptOut: true}
+PR -> DB: UPDATE user_preferences SET hype_creator_opt_out
+PR -> PR: audit.log(ALTERACAO_PREFERENCIAS)
+PR ->> CA: afterCommit → HypeCache.bump() (nova geração)
+PR --> ST: 200 preferências (falha = o Switch volta ao valor anterior)
+note over HQ, CA
+  Próxima leitura monta a tabela de novo: a pessoa some de
+  GET /api/hype/trending?type=CREATOR e, no lote, a chave dela volta
+  como emptyGroup. Cada peça/look público dela continua com o próprio Hype.
+end note
+@enduml

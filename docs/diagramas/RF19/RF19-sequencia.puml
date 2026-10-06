@@ -1,5 +1,5 @@
 @startuml RF19_Sequencia
-title RF19 — Interagir socialmente com esquemas e peças: reagir, comentar, salvar, compartilhar, remixar e retornar\nDiagrama de sequência — endpoints reais
+title RF19 — Interagir socialmente com esquemas e peças\nDiagrama de sequência — reagir, comentar, excluir comentário, salvar e compartilhar (notificação ao autor e eventos AFTER_COMMIT)
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -9,101 +9,109 @@ skinparam sequence {
 }
 autonumber
 actor "Pessoa" as U
-participant "Frontend\ncomponents/interactions.tsx" as FE
-participant "SocialController" as SC
-participant "CommentController" as CC
+participant "components/interactions.tsx\nCardActions · CommentsDialog\nShareDialog" as FE
+participant "SocialController\nCommentController" as SC
 participant "SocialService" as S
-participant "SchemeService" as SS
+participant "Guard\nSchemeService" as G
+participant "CounterStorePort\n(Redis ou memória)" as CT
 participant "NotificationService" as N
-participant "CounterStorePort" as CT
-participant "HypeSignalRecorder\n+ HypeIntegrityPolicy\n<<RF53>>" as HR
+participant "ApplicationEventPublisher\n(DomainEvents)" as EV
 database "MySQL" as DB
-note over FE, SS : novo (RF53 · HypeScore v2): GET /api/schemes/{id} e GET /api/pieces/{id} por pessoa logada que não é dona\npublicam HypeSignal LOOK_VIEWED (SchemeService) / PIECE_VIEWED (WardrobeService)
-U -> FE: curtir
-FE -> SC: POST /api/interactions/{type}/{id}/reactions {reaction: LIKE}
-SC -> S: react(user, type, id, LIKE)
-S -> S: target(): visibilidade, bloqueio, moderação
-S -> DB: SELECT reactions (actor, target, reactionType)
-alt já reagiu
-  S -> DB: DELETE reactions · likeCount-1
-  S --> FE: 200 {active:false, count}
-else nova reação
-  S -> DB: INSERT reactions · likeCount+1
-  S -> CT: increment("scheme"|"piece", id, "likes")
-  S -> N: notify(owner, NEW_LIKE | NEW_REACTION)
-  N -> DB: INSERT notifications (delivered = tipo habilitado)
-  opt reaction == LIKE
-    S ->> HR: publishEvent HypeSignal(LIKE_CREATED)
+
+note over S, G
+  Toda interação começa igual: guard.requireCanCreate (login, e-mail confirmado,
+  conta ativa) e target(type, id) — visibilidade efetiva, bloqueio e moderação da peça.
+  Quem não vê o conteúdo recebe 404/403 e nada é gravado.
+end note
+
+== Reagir (curtir, trend, elegante, criativo) ==
+U -> FE: toca no ícone (UI otimista)
+FE -> SC: POST /api/interactions/{type}/{id}/reactions {reaction}
+SC -> S: react(user, type, id, reaction)
+S -> G: requireCanCreate · target
+S -> DB: reactions (ator, alvo, tipo)
+alt já reagiu com o mesmo tipo
+  S -> DB: DELETE reactions
+  opt LIKE
+    S -> CT: increment(likes, −1)
+    S -> DB: likeCount − 1 (schemes · wardrobe_items · dna_schemes)
   end
-  S --> FE: 200 {active:true, reaction, count}
+else primeira vez
+  S -> DB: INSERT reactions
+  opt LIKE
+    S -> CT: increment(likes, +1)
+    S -> DB: likeCount + 1
+  end
+  S -> N: notify(dono, NEW_LIKE ou NEW_REACTION)
+  opt LIKE
+    S -> EV: InteractionReceived(LIKE) · HypeSignal(LIKE_CREATED)
+  end
 end
-U -> FE: comentar
+S --> FE: 200 {active, reaction, count}
+
+== Comentar e excluir ==
+U -> FE: escreve no CommentsDialog
 FE -> SC: POST /api/interactions/{type}/{id}/comments {content, parentId}
 SC -> S: comment(user, type, id, content, parentId)
-alt vazio / > 500 / ofensivo
-  S --> FE: 400 COMENTARIO_VAZIO | COMENTARIO_LONGO | CONTEUDO_BLOQUEADO
+alt vazio · mais de 500 · ofensivo (InputSanitizer)
+  S --> FE: 400 COMENTARIO_VAZIO · COMENTARIO_LONGO · CONTEUDO_BLOQUEADO
 else válido
-  S -> DB: INSERT comments (active=true) · commentCount+1
-  S -> N: notify(owner, NEW_COMMENT)
-  S ->> HR: publishEvent HypeSignal(COMMENT_CREATED)
+  S -> DB: INSERT comments (active = true) · commentCount + 1
+  S -> N: notify(dono, NEW_COMMENT, trecho de até 120 caracteres)
+  S -> EV: InteractionReceived(COMMENT) · HypeSignal(COMMENT_CREATED)
   S --> FE: 201 {id, author, content, createdAt}
 end
-U -> FE: excluir comentário
-FE -> CC: DELETE /api/comments/{commentId}
-CC -> S: deleteComment(user, commentId)
-alt não é autor nem dono do conteúdo
-  S --> FE: 403 (Guard.deny, auditado)
-else permitido
-  S -> DB: UPDATE comments SET active=false · commentCount-1
+U -> FE: excluir (canDelete)
+FE -> SC: DELETE /api/comments/{commentId}
+SC -> S: deleteComment(user, commentId)
+alt não é autor do comentário nem dono do conteúdo
+  S -> G: deny → audita ACESSO_NEGADO_403
+  S --> FE: 403
+else
+  S -> DB: UPDATE comments SET active = false · commentCount − 1
   S --> FE: 204
 end
-U -> FE: salvar
+
+== Salvar e favoritar ==
 FE -> SC: POST /api/interactions/{type}/{id}/saves
 SC -> S: toggleSave(user, type, id)
-S -> DB: INSERT | DELETE saved_items
-opt INSERT (salvou)
-  S ->> HR: publishEvent HypeSignal(SAVE_CREATED)
+alt já salvo
+  S -> DB: DELETE saved_items · saveCount − 1
+  S --> FE: 200 {saved: false}
+else
+  S -> DB: INSERT saved_items (uq_saved_items) · saveCount + 1
+  S -> EV: HypeSignal(SAVE_CREATED) — sem notificação
+  S --> FE: 200 {saved: true}
 end
-S --> FE: 200 {saved}
-note right of S: PUT .../saves/favorite (favorite = true)\n→ HypeSignal(FAVORITE_CREATED) <<RF53>>
-U -> FE: compartilhar (FEED ou EXTERNAL)
+opt Looks Salvos › favoritar
+  FE -> SC: PUT /api/interactions/{type}/{id}/saves/favorite {favorite}
+  SC -> S: favoriteSaved — não salvo = 404
+  S -> EV: favorite = true → HypeSignal(FAVORITE_CREATED)
+end
+
+== Compartilhar ==
+U -> FE: ShareDialog (FEED ou EXTERNAL, legenda)
 FE -> SC: POST /api/interactions/{type}/{id}/shares {channel, caption}
 SC -> S: share(user, type, id, channel, caption)
-opt channel == EXTERNAL e type == SCHEME
-  S -> SS: renderCard(user, id, expanded=true)
-  S -> S: MediaService.put("shares/{user}/…png")
+alt conteúdo indisponível
+  S --> FE: 409 INDISPONIVEL
+else
+  opt EXTERNAL
+    S -> G: SchemeService.renderCard(user, id, expanded) (só look)
+    S -> S: MediaService.put(shares/{userId}/…png) → exportUrl\n(peça: imagem da própria peça)
+  end
+  S -> DB: INSERT shares (legenda moderada, até 500) · shareCount + 1
+  S -> EV: HypeSignal(SHARE_CREATED)
+  S -> N: notify(dono, NEW_REACTION, {channel})
+  S --> FE: 200 {shareId, channel, shares, imageUrl?, link?}
 end
-S -> DB: INSERT shares · shareCount+1
-S ->> HR: publishEvent HypeSignal(SHARE_CREATED)
-S -> N: notify(owner, NEW_REACTION, {channel})
-S --> FE: 200 {shareId, channel, shares, imageUrl?, link?}
-U -> FE: remixar
-FE -> SC: POST /api/interactions/{type}/{id}/remixes
-SC -> S: remix(user, type, id)
-alt type == SCHEME
-  S -> SS: remix(user, id)
-  SS -> DB: SELECT scheme_items da origem · peças elegíveis do remixador
-  SS --> FE: 201 {prefill(origin REMIX, remixedFromId), missingPieces, next:/create-look?remix=}
-  note right of SS: ao salvar o remix (POST /api/schemes → SchemeService.create\ncom originalScheme): HypeSignal(LOOK_REMIXED) <<RF53>>
-else type == PIECE
-  S ->> HR: publishEvent HypeSignal(PIECE_REMIXED)
-  S -> N: notify(owner, NEW_REMIX)
-  S --> FE: 201 {next:/create-look?seedPiece=, sourcePiece}
-end
-U -> FE: retornar (a partir da peça)
-FE -> CC: POST /api/pieces/{pieceId}/return-to-origin?fromScheme={id}
-CC -> S: returnToOrigin(user, pieceId, fromScheme)
-S -> DB: SELECT scheme_items WHERE wardrobe_item_id (esquemas visíveis, mais antigo primeiro)
-S --> FE: 200 {originSchemeId, title, otherSchemes}
 
-== HypeScore v2: gravação do sinal (novo · RF53) ==
-note over HR : @TransactionalEventListener(AFTER_COMMIT) onSignal\n→ SideEffectRunner (REQUIRES_NEW): falha aqui nunca desfaz a interação
-HR -> HR: HypeIntegrityPolicy.weight(sinal, dia)
-alt visitante (sem ator) · ator == dono (exceto PIECE_USED / PIECE_IN_LOOK / LOOK_WORN)\n· chave hype:dedupe:{sinal}:{entidade}:{ator}:{dia} já existe (TTL 26 h)
-  HR -> HR: peso 0 — sinal descartado
-else conta criada há menos de 7 dias
-  HR -> DB: HypeSignalDailyRepository.increment(peso 0,5)\nINSERT … ON DUPLICATE KEY UPDATE hype_signal_daily
-else demais
-  HR -> DB: HypeSignalDailyRepository.increment(peso 1)\nINSERT … ON DUPLICATE KEY UPDATE hype_signal_daily
-end
+== Notificação e eventos ==
+N -> DB: INSERT notifications (SOCIAL; delivered = tipo habilitado)
+note right of N
+  Interação consigo mesmo não notifica.
+  Tipo desativado: grava, mas não entrega
+  nem projeta no Cassandra.
+end note
+EV ->> EV: depois do commit: pontos (WardrobeEventListeners)\ne sinais do Hype (ver RF19_Sequencia_Hype)
 @enduml

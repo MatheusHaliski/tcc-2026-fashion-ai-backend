@@ -1,6 +1,6 @@
 @startuml RF23_MaquinaDeEstados_Exportacao
 !pragma layout smetana
-title RF23 — DataExportRequest: pedido "Seus dados" (ExportStatus, LGPD Art. 18 V)
+title RF23 — Telas de configuração (Conta, Privacidade, Aparência, Idioma, Seus dados) com i18n\nDiagrama de máquina de estados — aba "Seus dados": lista de exportações e o status de cada pedido (ExportStatus)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,16 +8,39 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-state "REQUESTED" as Requested
-state "PROCESSING" as Processing
-state "READY" as Ready
-state "EXPIRED" as Expired
-[*] --> Requested : valor padrão da entidade
-Requested --> Processing : POST /api/me/exports\n(AccountService.requestExport salva já em PROCESSING)
-Processing --> Ready : JSON montado no idioma preferido,\ngravado em restricted/… (MediaStoragePort.put)\nreadyAt = agora, expiresAt = +7 dias
-Ready --> Ready : GET /api/me/exports/{id}/file\n(só o dono; 403 para outro usuário)
-Ready --> Expired : cron purgeExpiredExports (0 50 * * * *)\napaga o arquivo, fileKey = null
-Expired --> [*]
-note right of Ready : notificação DATA_EXPORT_READY\naudit EXPORTACAO_CONTA
-note bottom of Expired : GET …/file responde 410 EXPORTACAO_EXPIRADA;\nexportsOf mostra EXPIRED assim que passa expiresAt
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Aba fechada" as Closed
+state "Carregando lista" as Loading : GET /api/me/exports\n(useApi só com a aba aberta)
+state "Lista na tela" as Listed {
+  state "Sem pedidos" as Empty : só o botão "Exportar"
+  state "Pedido READY" as Ready : linha "READY · …" + botão Baixar
+  state "Pedido EXPIRED" as Expired : linha sem botão
+  [*] --> Empty
+  Empty --> Ready : POST /api/me/exports → 202\n(requestExport grava, notifica e audita)
+  Ready --> Ready : Baixar — api.blobUrl(\nGET /api/me/exports/{id}/file) abre o JSON
+  Ready --> Expired : expiresAt passou (+7 dias)\nou job purgeExpiredExports
+  Expired --> Ready : novo pedido — POST /api/me/exports
+}
+state "Erro ao baixar" as DlError : 410 EXPORTACAO_EXPIRADA\n(a tela não trata o erro: nada abre, sem aviso)
+
+[*] --> Closed
+Closed --> Loading : abre a aba "Seus dados"
+Loading --> Listed : 200 [{id, status, readyAt, expiresAt}]
+Loading --> Listed : erro — a lista fica vazia (sem aviso)
+Ready --> DlError : arquivo já apagado
+DlError --> Listed : pessoa continua na lista
+Listed --> Closed : troca de aba
+
+note right of Listed
+  REQUESTED e PROCESSING existem em ExportStatus, mas
+  não aparecem na tela: o pedido nasce e fica READY na
+  mesma transação (ciclo completo no RF3).
+  O pacote sai no idioma salvo em user_preferences.
+  A tela lê requestedAt, mas a API manda readyAt:
+  a data da linha sai vazia.
+end note
 @enduml

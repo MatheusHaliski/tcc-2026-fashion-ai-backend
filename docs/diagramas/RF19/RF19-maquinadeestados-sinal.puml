@@ -1,0 +1,41 @@
+@startuml RF19_MaquinaDeEstados_Sinal
+!pragma layout smetana
+title RF19 — Interagir socialmente com esquemas e peças\nDiagrama de máquina de estados — sinal do HypeScore v2 (DomainEvents.HypeSignal) da interação ao hype_scores
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+state "Publicado\n(evento em memória, dentro\nda transação da interação)" as Publicado
+state "Perdido\n(rollback: nenhum listener roda)" as Perdido
+state "Em avaliação\n(HypeSignalRecorder.onSignal\nvia SideEffectRunner, REQUIRES_NEW)" as Avaliacao
+state "Descartado\n(peso 0)" as Descartado
+state "Agregado\n(hype_signal_daily: event_count + 1,\nweighted_count + peso)" as Agregado
+state "Falhou\n(só log; a interação continua salva)" as Falhou
+state "Hype sujo\n(HypeLiveRecalc.dirty = true)" as Sujo
+state "Recalculado\n(hype_scores + hype_score_snapshots;\nHypeCache.bump)" as Recalculado
+
+[*] --> Publicado : SocialService · SchemeService · WardrobeService\npublishEvent(HypeSignal)
+Publicado --> Perdido : transação desfeita (erro 4xx/5xx)
+Publicado --> Avaliacao : AFTER_COMMIT
+Publicado --> Sujo : AFTER_COMMIT (HypeLiveRecalc.onSignal)
+Avaliacao --> Descartado : visitante · ator = dono (fora de PIECE_USED,\nPIECE_IN_LOOK, LOOK_WORN) · chave\nhype:dedupe:{sinal}:{item}:{ator}:{dia} já existe
+Avaliacao --> Agregado : peso 1 (ou 0,5 se a conta tem\nmenos de 7 dias) → increment (UPSERT)
+Avaliacao --> Falhou : exceção no banco ou no cache
+Sujo --> Recalculado : tick a cada 30 s, 120 s desde o último\n→ HypeSnapshotService.recalculate()
+Sujo --> Sujo : recálculo falhou\n(tenta na próxima janela)
+Agregado --> Recalculado : job @Scheduled (cron 0 20 */6 * * *)\nou recálculo ao vivo lê a janela
+Recalculado --> [*] : leituras (GET /api/hype/*) usam a nova\ngeração; marcos → HypeMilestone
+Descartado --> [*]
+Perdido --> [*]
+Falhou --> [*]
+
+note right of Agregado
+  Uma linha por (entidade, sinal, dia).
+  Sinais de visualização (LOOK_VIEWED,
+  PIECE_VIEWED) entram separados na
+  série (HypeSignalSeries).
+end note
+@enduml

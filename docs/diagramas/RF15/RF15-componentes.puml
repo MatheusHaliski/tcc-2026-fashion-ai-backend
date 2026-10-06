@@ -1,11 +1,19 @@
 @startuml RF15_Componentes
-title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF15 — Editar uma fotografia de uma peça de roupa através de um Editor Canvas Interativo 2D\nDiagrama de componentes — editor atual (existe) e arquitetura do plano (<<planejado>>) sobre as mesmas portas
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
+}
+skinparam component<<planejado>> {
+  BackgroundColor #F2F2F2
+  BorderColor #9A9A9A
+}
+skinparam component<<port>> {
+  BackgroundColor #FFFFFF
+  BorderColor #7C5FC0
 }
 skinparam package {
   BorderColor #CBC6BE
@@ -14,57 +22,75 @@ skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
-left to right direction
 
 package "Frontend (Next.js)" {
-  component "photos/page.tsx\n(Minhas Fotos, RF12)" as FE0
-  component "components/expanded-card.tsx\n(card da peça / esquema)" as FE1
-  component "components/photo-editor.tsx\n<canvas> 2D: recorte, giro,\nbrilho/contraste, remover fundo,\ndesfazer/refazer" as FE2
-  component "components/edit-image.tsx\n(diálogo Estúdio / substituir)" as FE3
+  component "expanded-card.tsx · ExpandedPiece\n(«Editar imagem», só a dona)" as FE_EXP
+  component "edit-image.tsx · EditImageDialog\n+ ApprovalPanel · BackdropChips\n+ before-after.tsx" as FE_EI
+  component "(app)/photos/page.tsx\n(Minhas Fotos, RF12)" as FE_PH
+  component "photo-editor.tsx · PhotoEditor\ncanvas 2D: recorte, giro 90°, brilho/contraste,\nremover fundo, histórico, desfazer/refazer" as FE_ED
+  component "Editor RF15: EditorStore · Renderizador\nWebGL2 (Worker) · Coach · modo guiado\n· modo Look (lib/lens/redact.ts)" <<planejado>> as FE_NEW
+  component "pieces/new: «Adicionar minha foto\n(opcional)» + escolha da capa (E1)" <<planejado>> as FE_E1
 }
-package "fai-web · controllers" {
-  [PhotoController] as PhotoController
-  [WardrobeController] as WardrobeController
-  [DiscoveryController] as DiscoveryController
-}
-package "fai-application · services" {
-  [PhotoService] as PhotoService
-  [WardrobeService] as WardrobeService
-  [MediaService] as MediaService
-  [FlatLayPipeline\n(imaging)] as FlatLay
-  [AiEngine (RF24)] as AiEngine
-  [SearchService\n(publicPieces)] as SearchService
-}
-package "fai-infrastructure · adapters" {
-  [PhotoRepository\nWardrobeItemRepository\nPieceImageRepository\nProcessingJobLogRepository] as REPOS
-  [MediaStoragePort\n(LocalFileMediaStorage / S3MediaStorageAdapter)] as STORAGE
-  [BackgroundRemovalPort\n(RemoveBgAdapter)] as BGPORT
-}
-database "MySQL\n• photos\n• wardrobe_items\n• piece_images\n• processing_jobs_log" as DB
-cloud "remove.bg\n(remoção de fundo paga)" as EXT
 
-FE0 --> FE2 : abre (photoId)
-FE1 --> FE2 : abre (pieceId)
-FE1 --> FE3 : abre
-FE2 --> PhotoController : GET /api/photos/{id}/file\nPOST /api/photos/{id}/edits\nPOST /api/photos/background-removal
-FE2 --> WardrobeController : PUT /api/pieces/{id}/image
-FE1 --> WardrobeController : POST /api/pieces/{id}/copy
-FE1 --> DiscoveryController : GET /api/public-pieces
-PhotoController --> PhotoService : chama
-WardrobeController --> WardrobeService : chama
-DiscoveryController --> SearchService : chama
-PhotoService --> WardrobeService : replaceImage · governedFlatLay
-PhotoService --> MediaService : grava cópia editada
-WardrobeService --> MediaService : grava imagem + thumb
-WardrobeService --> AiEngine : execute(FLAT_LAY_STANDARDIZER)
-AiEngine --> FlatLay : fallback local
-FlatLay --> BGPORT : chama
-BGPORT --> EXT : HTTPS
-MediaService --> STORAGE : put / register
-PhotoService --> REPOS : lê / grava
-WardrobeService --> REPOS : grava
-SearchService --> REPOS : lê
-REPOS --> DB : JPA/Flyway
-note bottom of FlatLay : ver RF4 (análise da foto e flat lay)
-note bottom of FE0 : galeria e curadoria: ver RF12
+package "fai-web · controllers" {
+  [PhotoController\nGET /api/photos/{id}/file · POST /{id}/edits\nPOST /api/photos/background-removal] as C_PH
+  [WardrobeController\nPUT /api/pieces/{id}/image\nPOST /{id}/studio · /studio/approve\nDELETE /{id}/studio/pending] as C_WR
+  component "rotas /api/edit/*\nversions · activate · approve/discard\nconfirm-color · assist/* · presets" <<planejado>> as C_EDIT
+}
+
+package "fai-application" {
+  [PhotoService\nsaveEdit · removeBackground · download] as S_PH
+  [WardrobeService\nreplaceImage · governedFlatLay\nstudioPiece · approveStudio · discardStudio\n(offerStudio: versão pendente)] as S_WR
+  component "ImageEditService\nclasse F1/F2/F3 + colorDrift ΔE00\nbaseRev · renditions · moderação" <<planejado>> as S_EDIT
+  [AiEngine (RF24)\nFLAT_LAY_STANDARDIZER · STUDIO_ENHANCER\nCONTENT_MODERATOR] as S_AI
+  [FlatLayPipeline · StudioPipeline\nStudioFraming · GhostMannequin\nQualityMetrics · ImageOps] as S_IMG
+  [MediaService\nput · register (Photo EDITOR)] as S_MEDIA
+  [Guard + Audit\n(EDICAO_PECA)] as S_G
+}
+
+package "portas" {
+  component "MediaStoragePort" <<port>> as P_MEDIA
+  component "ImageProviderPorts\nBackgroundRemovalPort · StudioShotPort" <<port>> as P_IMG
+}
+
+package "fai-infrastructure" {
+  [S3MediaStorageAdapter /\nLocalFileMediaStorage] as I_S3
+  [RembgAdapter · RemoveBgAdapter\nPhotoroomStudioAdapter] as I_IMG
+  [Repositórios JPA\nPhotoRepository · WardrobeItemRepository] as I_JPA
+}
+database "MySQL\n• photos (edited_from_photo_id)\n• wardrobe_items (image_url,\n  flat_lay_metadata_json.studio)" as DB
+database "image_edit_versions ·\nimage_edit_presets\n(migração proposta)" <<planejado>> as DB_NEW
+cloud "rembg · remove.bg · Photoroom" as X_IMG
+
+FE_EXP --> FE_EI
+FE_EI --> FE_ED : "Ajustar manual"
+FE_PH --> FE_ED : photoId
+FE_ED --> C_PH
+FE_ED --> C_WR : PUT /image (pieceId)
+FE_EI --> C_WR : studio · approve · pending
+FE_NEW ..> FE_ED : substitui (fallback Canvas 2D)
+FE_E1 ..> FE_NEW : abre em modo guiado
+FE_NEW ..> C_EDIT : versões (receita + render)
+C_PH --> S_PH
+C_WR --> S_WR
+C_EDIT ..> S_EDIT
+S_PH --> S_WR : replaceImage · governedFlatLay
+S_PH --> S_MEDIA
+S_WR --> S_MEDIA
+S_WR --> S_AI
+S_WR --> S_G
+S_AI --> S_IMG
+S_IMG --> P_IMG
+S_MEDIA --> P_MEDIA
+S_EDIT ..> S_IMG : reuso (QualityMetrics, estúdio)
+S_EDIT ..> S_AI : moderação · assistentes
+S_EDIT ..> S_MEDIA : chave única por versão
+S_EDIT ..> DB_NEW
+S_PH ..> S_EDIT : <<planejado>> rota legada cria versão ACTIVE
+I_S3 ..|> P_MEDIA
+I_IMG ..|> P_IMG
+S_PH --> I_JPA
+S_WR --> I_JPA
+I_JPA --> DB : JPA / Flyway
+I_IMG --> X_IMG : HTTPS
 @enduml

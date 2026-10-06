@@ -1,5 +1,6 @@
 @startuml RF45_Atividades
-title RF45 — Processar e padronizar imagens canônicas de peças, calçados e acessórios (pipeline de validação e padronização)\nDiagrama de atividades — fluxo da pessoa e do sistema
+!pragma layout smetana
+title RF45 — FashionAI Lens\nDiagrama de atividades — captura → rostos borrados no aparelho → envio → peças → leitura, correspondências e Recriar → corrigir, Quero/Eu tenho e salvar
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,77 +24,103 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Pessoa|
+|Pessoa (app)|
 start
-:Em "Adicionar peça" (RF4) escolhe o tipo\ne envia UMA foto principal (JPG/PNG/WebP);
-note right
-  RN45.02 — uma foto basta para começar.
-  Atenção: o criador
-  de peça (pieces/new) NÃO usa mais a foto
-  (seção Foto e guia "Como fotografar" retirados);
-  o pipeline abaixo permanece só no backend.
-end note
-|Frontend|
-:pieces/new/page.tsx monta o multipart\n(file + category);
+:Abre /lens (login obrigatório)\nCâmera · Galeria · Recentes;
+:Tira a foto (input capture="environment")\nou escolhe uma imagem;
+|Navegador (lib/lens/redact.ts)|
+:Decodifica com a orientação do EXIF e redesenha\nnum canvas ≤ 2048 px (descarta EXIF/GPS);
+if (MediaPipe Face Landmarker carregou?) then (sim)
+  repeat
+    :Acha rostos (até 3 por passada);
+    :Pixela (≈ 6 blocos) e desfoca cada rosto;
+  repeat while (Achou rosto novo e passadas < 4?) is (sim) not (não)
+  :faces = rostos borrados;
+else (não: offline, sem WebAssembly/WebGL,\nheadless ou tempo esgotado)
+  :faces = -1;
+endif
+:Regrava em JPEG;
+|Pessoa (app)|
+:Vê a prévia já borrada;
+if (faces = -1?) then (sim)
+  :Marca "Confirmo que a foto não mostra\no rosto de ninguém (ou já recortei)";
+endif
+:Analisar;
 |Backend|
-:WardrobeService.analyzeForCapture(user, bytes,\ncategory, lenient=true)\n(hoje via POST /api/pieces/analysis);
-if (Formato/tamanho aceitos?\nImageOps.requireAcceptedImage) then (não)
-  #FFE3E3:400 formato ou tamanho inválido;
+:POST /api/lens/scans (multipart: image, source,\nintent, facesRedacted, redactionConfirmed);
+:UploadSafetyInterceptor (ImageSafety);
+if (Veredito?) then (BLOCK)
+  #FFE3E3:422 IMAGEM_RECUSADA (nada guardado);
+  stop
+elseif (REVIEW) then
+  #FFE3E3:Quarentena + fila do admin\n422 IMAGEM_EM_REVISAO;
+  stop
+else (ALLOW)
+endif
+:LensService.create;
+if (Origem válida (CAMERA, GALLERY, UPLOAD)\ne arquivo com imagem legível?) then (não)
+  #FFE3E3:400 ORIGEM_INVALIDA / ARQUIVO_VAZIO\n/ VALOR_INVALIDO;
   stop
 endif
-|Bancos-serviços|
-:Guarda o ORIGINAL imutável\n(piece_images ORIGINAL, storage_key única);
-note right: RN45.01 — o original nunca é sobrescrito
-|Backend|
-:Flat Lay (AiCapability.FLAT_LAY_STANDARDIZER):\nsegmentação rembg → remove.bg → local;
-:PIECE_ANALYZER + silhueta: categoria e subcategoria;
-if (Conteúdo fora da política?\nCONTENT_MODERATOR) then (sim)
-  #FFE3E3:422 FOTO_RECUSADA;
+:Reduz a ≤ 2048 px;
+if (Cota do dia (30 scans) disponível?) then (não)
+  #FFE3E3:429 QUOTA {limit, used, resetAt}\n(nada gravado);
   stop
 endif
-:LandmarkDetector.detect(cutout, family);
-:Logo, OCR (BrandReader) e KB de marca\n→ BrandEnsembleResolver.resolve(evidências);
-:IdentificationHierarchy.reconcile()\ncategoria → subcategoria → marca → linha → modelo;
-:PhotographyQualityGate.evaluate(profile, view, signals)\n= PhotographyQualityScore 0–100;
-note right
-  ACCEPT >= 75 · ACCEPT_WITH_GUIDANCE >= 50
-  RETAKE_SUGGESTED < 50 ou blur/luz severos
-  RN45.05 — < 0,60 aparece como "possível"
-end note
-:AdaptiveCaptureEngine.decide(Context)\n(ganho esperado por vista);
-if (Decision.done?) then (não)
-  |Pessoa|
-  :Vê "Só mais um detalhe"\n(ex.: BACK_VIEW, TONGUE_LABEL, WATCH_BACK);
-  if (Pula?) then (sim)
-    :CaptureRequest SKIPPED\n(atributo fica incerto e editável);
-  else (não)
-    :Envia a foto complementar;
-    note right: <<planejado>> POST /api/capture/sessions/{id}/images\nnão implementado — conforme Trello
-  endif
-  |Backend|
-  :Reavalia (máx. 3 complementares,\n2 pulos seguidos encerram);
-else (sim)
+:MultiPieceService.detectPieces via AiEngine\n(MULTI_PIECE_DETECTOR: consentimento\nAI_EXTERNAL_PHOTO_PROCESSING, cota, orçamento);
+if (Resultado?) then (exceção)
+  :Scan FAILED (a cota volta para a pessoa);
+elseif (IA indisponível ou sem consentimento) then
+  :Leitura LOCAL: 1 peça cobrindo a foto,\nsem categoria, confiança 0 (faixa baixa);\nerrorCode CONSENT_REQUIRED ou QUOTA;
+  :Scan READY (aiSource = local);
+elseif (0 peças) then
+  :Scan NO_FASHION_FOUND;
+else (≥ 1 peça)
+  :Scan READY (aiSource = ia);
 endif
-:PhotographySpecs.get(CaptureProfiles.specFor(profile, view))\nex.: PANTS_FRONT_V1, SNEAKER_SIDE_V1;
-:CanonicalPhotographer.render(cutout, spec, landmarks, clipped)\nrotação limitada, crop, escala uniforme, padding;
+:Grava JPEG sem metadados + miniatura 480 px\nem restricted/users/{id}/lens/{scanId}.jpg;
+:Para cada peça (de cima para baixo):\nLensImageAnalysis do recorte → paleta com fração,\npadrão e embedding de 96 dimensões;
+:Grava lens_scans + lens_detections\n(expires_at = criação + 30 dias);
+:200 com o scan pronto (MVP síncrono);
 note right
-  RN45.04 — sem inpainting, geração,
-  super-resolução generativa ou espelhamento.
-  RN45.07 — toda imagem final segue
-  uma PhotographySpec versionada.
+  <<planejado>> (especificação, fora do MVP):
+  pipeline assíncrono (JobQueuePort, 202),
+  borrão de rosto também no servidor,
+  estado PARTIAL e evento LensScanCompleted
 end note
-:CanonicalPhotographer.detail(...) → LOGO/TEXTURE/PANTS_DETAIL;
-|Bancos-serviços|
-:Grava derivados (piece_images CANONICAL/DETAIL…),\nbrand_predictions, garment_landmarks e model_inferences;
-note right: RN45.06 — modelo e versão registrados\n(model_registry / ModelRef)
-|Pessoa|
-:Revisa identificação, confianças e o canônico;
-if (Confirma?) then (sim)
+|Pessoa (app)|
+:/lens/{scanId}: imagem com hotspots,\nFoco (?focus=) e abas (?tab=);
+fork
+  :Leitura: estilos, paleta, ocasiões, estação\n(GET …/reading);
+fork again
+  :Seu guarda-roupa: peças próprias parecidas\n(GET …/matches?scope=MY_CLOSET, piso 55)\nou "sem correspondência" + lacuna (nunca 0%);
+fork again
+  :Recriar: plano por slots no modo\nSeguro / Descoberta / Experimental\n(POST …/recreate) → Salvar como look;
+fork again
+  :Estilo & Hype: compatibilidade com o DNA\ne Hype do grupo (≥ 5 peças públicas), separados;
+fork again
+  :Descobrir: peças públicas de outras pessoas\n(scope=COMMUNITY, piso 65; só semelhança);
+end fork
+note right
+  <<planejado>>: Catálogo RF47 e peças à venda
+  no Descobrir, provar o plano (RF18), modo
+  ao vivo, "desde o scan" (LensDiff)
+end note
+|Backend|
+:Camada viva calculada a cada leitura\n(guarda-roupa, DNA e Hype de agora);\nnunca escreve hype_signal_daily;
+|Pessoa (app)|
+if (A leitura está errada ou faltou peça?) then (sim)
+  :Corrige chips (PATCH …/detections/{did}),\n"não é roupa" (dismissed) ou marca uma peça\n(POST …/detections, imagem inteira como caixa);
   |Backend|
-  :POST /api/pieces (PieceForm.captureSessionId)\nwardrobe_items.canonical_image_url;
-  :Correções viram ai_review_items\n(e training_candidates só com consentimento);
-else (pede correção)
-  :Edita campos ou refaz a foto;
+  :Grava lens_feedback (training_consent só com\nAI_MODEL_TRAINING) e refaz as correspondências;
+  |Pessoa (app)|
+endif
+:"Quero" (PUT …/want) ou "Eu tenho" (POST …/own:\nliga a uma peça sua ou abre /pieces/new pré-preenchido,\nnunca com o recorte da foto);
+if (Salvar como inspiração?) then (sim)
+  :PATCH /api/lens/scans/{id} {saved: true}: não expira;
+else (não)
+  |Backend|
+  :LensRetentionJob (diário, 04:40): vencido o prazo,\napaga imagem, miniatura, peças e correções;
 endif
 stop
 @enduml

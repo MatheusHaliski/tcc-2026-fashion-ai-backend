@@ -1,5 +1,5 @@
 @startuml RF12_Classes
-title RF12 — Visualizar & Editar a página "Minhas Fotos" & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF12 — Visualizar & Editar a página "Minhas Fotos" & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de classes — PhotoService/Photo (Minhas Fotos) e rascunhos de várias peças (PipelineJob)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -9,115 +9,187 @@ skinparam class {
   HeaderBackgroundColor #E4DEF0
 }
 skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+
+package "fai-web · controller" {
+  class PhotoController <<RestController>> {
+    +list(user, origin, occasion, style, color, month, days, page, size)\n  «GET /api/me/photos»
+    +insights(user) «GET /api/me/photos/insights»
+    +timeline(user) «GET /api/me/photos/timeline»
+    +delete(user, id, confirmed) «DELETE /api/photos/{id}»
+    +bulkDelete(user, BulkDelete) «POST /api/photos/bulk-deletion»
+    +download(user, id) «GET /api/photos/{id}/file»
+    +saveEdit(user, id, file) «POST /api/photos/{id}/edits»
+    +removeBackground(user, file) «POST /api/photos/background-removal»
+    +keyMoment(user, id, KeyMoment) «PUT /api/photos/{id}/key-moment»
+    +curate(user) «POST /api/me/photos/curation»
+  }
+  class WardrobeController <<RestController>> {
+    +analyzeBatch(user, files, category) «POST /api/pieces/analysis/batch»
+    +analyzeMulti(user, file) «POST /api/pieces/analysis/multi»
+    +multiPieceDraft(user, draftId, file, index)\n  «POST …/multi/{draftId}/pieces»
+    +multiPieceAiImage(...) «POST …/multi/{draftId}/ai-image»
+    +multiPieceAiDraft(user, draftId, aiImageId)\n  «POST …/multi/{draftId}/ai-images/{aiImageId}/piece»
+    +create(user, PieceForm) «POST /api/pieces» 201
+    +createBatch(user, forms) «POST /api/pieces/batch» 201
+  }
+}
+
+package "fai-application" {
+  class PhotoService <<Service>> {
+    +{static} DUPLICATE_DISTANCE = 6
+    +gallery(user, Filter, page, size) : Map
+    +insights(user) : Map
+    +timeline(user) : Map
+    +delete(user, id, confirmed) : Map
+    +bulkDelete(user, ids, confirmed) : Map
+    +download(user, id) : byte[]
+    +setKeyMoment(user, id, key) : Map
+    +curate(user) : Map
+    +saveEdit(user, id, bytes) : Map
+    +removeBackground(user, bytes) : Map
+    ~owned(user, id) : Photo
+    ~linkedActivePiece(photo) : Optional<WardrobeItem>
+    ~{static} dHash(img) : long
+  }
+  class "PhotoInsights.Filter" as Filter <<record>> {
+    origin : PhotoOrigin
+    occasion, style, color, month : String
+    days : Integer
+  }
+  class WardrobeService <<Service>> {
+    +analyzeBatch(user, files, category) : List<Draft>
+    +create(user, PieceForm) : PieceView
+    +createBatch(user, forms) : List<PieceView>
+    +replaceImage(user, id, bytes, editedFromPhotoId) : PieceView
+    +useDefaultImageAfterPhotoDeletion(w)
+    +governedFlatLay(userId, bytes) : FlatLayPipeline.Result
+    +reprocessPending() : int «sem agendador»
+  }
+  class "WardrobeService.Draft" as Draft <<record>> {
+    draftId : UUID
+    processedUrl, thumbnailUrl, originalUrl : String
+    prefill : Prefill ; quality, moderation : Map
+    backgroundRemoved, reprocessPending : boolean
+    rejection : Map «só no lote»
+  }
+  class MultiPieceService <<Service>> {
+    +detect(user, bytes) : Detection
+    +pieceDraft(user, draftId, index, bytes) : PieceDraft
+    +recreate(user, draftId, index, bytes, name, category, color) : AiImage
+    +aiPieceDraft(user, draftId, aiImageId) : PieceDraft
+  }
+  class "MultiPieceService.Detection" as Detection <<record>> {
+    draftId : UUID ; originalUrl : String
+    width, height : int
+    pieces : List<DetectedPiece> ; source : String
+  }
+  class "MultiPieceService.DetectedPiece" as DetectedPiece <<record>> {
+    index : int ; name, category, subcategory, color : String
+    box : Box ; confidence : double
+  }
+  class "MultiPieceService.PieceDraft" as PieceDraft <<record>> {
+    draftId : UUID ; processedUrl : String
+    backgroundRemoved, aiGenerated : boolean
+  }
+  class MediaService <<Service>> {
+    +put(key, bytes, contentType) : StoredObject
+    +read(url) : Optional<byte[]>
+    +register(owner, origin, sourceEntityId, stored, ...) : Photo
+    +retire(userId, sourceEntityId, origins, urls) : int
+  }
+  class AiEngine {
+    +local(userId, capability, inputs, fn) : AiOutcome
+    +text(TextCall) : AiOutcome
+    +execute(userId, capability, ...) : AiOutcome
+  }
+}
 
 package "fai-domain · model" {
-class Photo {
-  +user: User
-  +origin: PhotoOrigin
-  +sourceEntityId: UUID
-  +storageKey: String
-  +publicUrl: String
-  +originalUrl: String
-  +thumbnailUrl: String
-  +contentHash: String
-  +width: Integer
-  +height: Integer
-  +qualityScore: BigDecimal
-  +moderationStatus: ModerationStatus
-  +keyMoment: boolean
-  +editedFromPhotoId: UUID
-  +metadataJson: String
-  +deletedAt: Instant
-}
-class PipelineJob {
-  +user: User
-  +type: PipelineJobType
-  +status: PipelineJobStatus
-  +targetType: String
-  +inputResourceId: UUID
-  +resultJson: String
-  +stagesJson: String
-  +totalCostUsd: BigDecimal
-  +errorCode: String
-  +attempts: int
-  +queuedAt: Instant
-  +finishedAt: Instant
-}
-class WardrobeItem {
-  +name: String
-  +imageUrl: String
-  +originalImageUrl: String
-  +photoProcessingStatus: PhotoProcessingStatus
-  +availabilityStatus: AvailabilityStatus
-}
+  class Photo <<Entity>> <<table photos>> {
+    user : User
+    origin : PhotoOrigin ; sourceEntityId : UUID
+    storageKey, publicUrl, originalUrl, thumbnailUrl : String
+    contentHash, mimeType : String
+    width, height : Integer ; bytesSize : Long
+    qualityScore : BigDecimal
+    moderationStatus : ModerationStatus
+    keyMoment : boolean
+    editedFromPhotoId : UUID
+    metadataJson : String «dhash em cache»
+    lastViewedAt, deletedAt : Instant
+  }
+  class PipelineJob <<Entity>> <<table pipeline_jobs>> {
+    type : PipelineJobType ; status : PipelineJobStatus
+    targetType : String «PIECE_DRAFT · MULTI_PIECE_DRAFT ·\nAI_PIECE_IMAGE · PIECE · PIECE_REPROCESS»
+    inputResourceId : UUID ; inputJson, resultJson : String
+    totalCostUsd : BigDecimal ; attempts : int
+    errorCode : String
+  }
+  class WardrobeItem <<Entity>> <<table wardrobe_items>> {
+    imageUrl, originalImageUrl, thumbnailUrl : String
+    defaultImage, aiGeneratedImage : boolean
+    photoProcessingStatus : PhotoProcessingStatus
+    processingJobId : UUID
+  }
+  class QualityScore <<Entity>> <<table quality_scores>> {
+    wardrobeItemId, pipelineJobId : UUID
+    overall : BigDecimal ; accepted : boolean
+  }
 }
 package "fai-domain · enums" {
-enum PhotoOrigin {
-  WARDROBE_ITEM
-  SCHEME
-  TRY_ON
-  STYLE_DNA
-  PROFILE
-  BACKGROUND_STUDIO
-  LOOSE
-  EDITOR
+  enum PhotoOrigin {
+    WARDROBE_ITEM
+    SCHEME
+    TRY_ON
+    STYLE_DNA
+    PROFILE
+    BACKGROUND_STUDIO
+    LOOSE
+    EDITOR
+  }
+  enum PipelineJobStatus {
+    PENDING
+    RUNNING
+    RENDERING
+    ENHANCING
+    COMPOSITING
+    COMPLETED
+    FAILED
+    CANCELLED
+  }
 }
-enum PipelineJobStatus {
-  PENDING
-  RUNNING
-  RENDERING
-  ENHANCING
-  COMPOSITING
-  COMPLETED
-  FAILED
-  CANCELLED
-}
-enum PhotoProcessingStatus {
-  NEW
-  MODERATING
-  PROCESSING
-  COMPLETED
-  NEEDS_REUPLOAD
-  FAILED
-}
-}
-package "fai-application · service" {
-class PhotoService {
-  +gallery(user, Filter, page, size): Map
-  +insights(user): Map
-  +delete(user, id, confirmed): Map
-  +bulkDelete(user, ids, confirmed): Map
-  +download(user, id): byte[]
-  +setKeyMoment(user, id, key): Map
-  +curate(user): Map
-  +timeline(user): Map
-  +saveEdit(user, id, bytes): Map
-}
-class WardrobeService {
-  +analyze(user, bytes, category): Draft
-  +analyzeBatch(user, files, category): List<Draft>
-  +create(user, PieceForm): PieceView
-  +createBatch(user, forms): List<PieceView>
-  +reprocessPending(): int
-}
-class MultiPieceService {
-  +detect(user, bytes): Detection
-  +pieceDraft(user, draftId, index, bytes): PieceDraft
-  +recreate(user, draftId, index, bytes, ...): AiImage
-  +aiPieceDraft(user, draftId, aiImageId): PieceDraft
-}
-}
+
+PhotoController --> PhotoService
+WardrobeController --> WardrobeService
+WardrobeController --> MultiPieceService
+PhotoService ..> Filter
+PhotoService --> WardrobeService : replaceImage · imagem padrão
+PhotoService --> MediaService
+PhotoService --> AiEngine : PHOTO_CURATOR · STYLE_INSIGHT
+MultiPieceService --> AiEngine : MULTI_PIECE_DETECTOR · FLAT_LAY ·\nCONTENT_MODERATOR · PIECE_IMAGE_RECREATOR
+MultiPieceService ..> WardrobeService : flatLayStep · parseModeration
+WardrobeService --> MediaService
+WardrobeService --> AiEngine
+WardrobeService ..> Draft
+MultiPieceService ..> Detection
+Detection *-- "0..*" DetectedPiece
+MultiPieceService ..> PieceDraft
+PhotoService ..> Photo
+MediaService ..> Photo : register · retire
+WardrobeService ..> PipelineJob
+MultiPieceService ..> PipelineJob
+WardrobeService ..> QualityScore
 Photo --> PhotoOrigin
 PipelineJob --> PipelineJobStatus
-WardrobeItem --> PhotoProcessingStatus
-Photo ..> WardrobeItem : sourceEntityId (origem WARDROBE_ITEM / EDITOR)
-PhotoService ..> Photo : lista/exclui (deletedAt)
-PhotoService ..> WardrobeService : peça sem imagem
-WardrobeService ..> PipelineJob : rascunho PIECE_DRAFT
-MultiPieceService ..> PipelineJob : MULTI_PIECE_DRAFT
-WardrobeService ..> WardrobeItem : cria
-note top of Photo : tabela photos
-note top of PipelineJob : tabela pipeline_jobs\n(type FLAT_LAY_STANDARDIZATION;\ntargetType PIECE_DRAFT | MULTI_PIECE_DRAFT | PIECE_REPROCESS)
-note bottom of WardrobeService : Draft(draftId, processedUrl, prefill, quality,\nmoderation, stages, rejection, ...) — lote de até 12 fotos
+Photo "*" ..> "0..1" WardrobeItem : sourceEntityId\n(WARDROBE_ITEM · EDITOR)
+Photo ..> Photo : editedFromPhotoId
+WardrobeItem "0..1" ..> "0..1" PipelineJob : processingJobId
+PipelineJob ..> PipelineJob : MULTI_PIECE_DRAFT → PIECE_DRAFT\n(inputJson.multiPieceDraftId)
+
+note bottom of Photo
+  Exclusão lógica (deleted_at). Foto que é a imagem de
+  peça ativa: 409 CONFIRMACAO_NECESSARIA sem confirmed;
+  confirmada, a peça volta à ilustração.
+end note
 @enduml

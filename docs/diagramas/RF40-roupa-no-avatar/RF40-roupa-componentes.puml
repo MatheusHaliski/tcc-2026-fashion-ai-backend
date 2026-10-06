@@ -1,5 +1,5 @@
 @startuml RF40_Roupa_Componentes
-title RF40 — Avatar 3D: componentes da roupa no corpo
+title RF40 — Criar o próprio avatar 3D a partir de fotos (aba "Meu Avatar 3D") e usá-lo no manequim\nDiagrama de componentes — roupa no avatar (tudo no navegador, React Three Fiber + Three.js)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam component {
@@ -8,37 +8,81 @@ skinparam component {
   FontColor #2D2438
   ArrowColor #52606D
 }
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+package "Telas que vestem o corpo" {
+  [my-avatar.tsx · body-editor.tsx\n(Meu Avatar 3D)] as MA
+  [try-on/page.tsx · fitting-room-scene.tsx\n(Provador, RF18)] as PV
+  [mirror-stage.tsx\n(Espelho, RF28)] as MI
+  [generate-3d.tsx · mannequin-photo.tsx\n→ look-viewer.tsx (Passarela 3D,\nFoto com meu manequim)] as LV
+  [runway-panel → runway-scene.tsx\nshowcase-tabs → stage-scene.tsx] as VT
+  [lab/human → human-lab.tsx\n(só com AVATAR_LAB fora de produção)] as LAB
+}
+
 package "components/three" {
-  [AvatarViewer] as AV
-  [HumanAvatar\n(corpo, rosto, cabelo)] as HA
-  [HumanOutfit\n(roupa e calçado)] as HO
+  [AvatarViewer\n(avatar-viewer.tsx)] as AV
+  [Mannequin\n(mannequin.tsx)] as MN
+  [CapsuleMannequin\n(fallback enquanto o corpo carrega)] as CM
+  [HumanAvatar\n(human-avatar.tsx: corpo, rosto, cabelo, pele)] as HA
+  [HumanOutfit\n(human-outfit.tsx: roupa e calçado)] as HO
 }
+
 package "lib/avatar3d/human" {
-  [asset / compose\n(MakeHuman CC0 + esqueleto)] as AS
-  [garments.ts\n(moldes, casca, textura, cores)] as GA
-  [garment-relax.ts\n(caimento, dobras)] as GR
-  [garment-trims.ts\n(barras e punhos 3D)] as GT
-  [shoes.ts\n(tênis/sapato em loft)] as SH
-  [hair-geometry.ts\n(cabelo)] as HG
+  [asset.ts · compose.ts\n(corpo MakeHuman CC0, fitBody, fitFace)] as AS
+  [three-human.ts · pose.ts\n(esqueleto, pose de exibição, applyIdle)] as TH
+  [skin-bake.ts\n(pele e textura do rosto)] as SK
+  [hair-geometry.ts · hair-strands.ts\n(cabelo; fios opcionais)] as HG
+  [default-outfit.ts\n(peça padrão por zona)] as DO
+  [garments.ts\n(kindOf, SPECS, casca, textura, cores, gola)] as GA
+  [garment-relax.ts\n(smoothBody, caimento, dobras)] as GR
+  [garment-trims.ts\n(barra e punho 3D)] as GT
+  [shoes.ts\n(sola, cabedal, cadarço)] as SH
+  [export-glb.ts\n(GLB só vestido)] as GLB
 }
-package "Consumidores" {
-  [Provador 3D (RF18)] as PV
-  [Espelho Vista-me (RF28)] as MI
-  [Meu Avatar 3D / perfil] as MA
-  [Lab do avatar\n(/lab/human)] as LAB
-}
-PV --> AV
-MI --> AV
+
+database "public/ (estático)\n• avatar3d/body/fai-body-v1.json + .bin\n• avatar3d/body/eye-brown.png\n• _derived/pecas_thumb/*-640.webp\n  (camiseta, jeans, tênis padrão)" as PUB
+database "Mídia das peças\n(studioUrl / imageUrl via mediaUrl)" as MED
+
 MA --> AV
+MA --> GLB : baixar GLB
+PV --> AV
+PV --> MN
+MI --> AV
+LV --> MN
+VT --> MN
 LAB --> HA
-AV --> HA
-HA --> HO
+AV --> MN
+MN --> DO : withDefaultOutfit
+MN --> HA
+HA --> CM : fallback
 HA --> AS
+HA --> TH
+HA --> SK
 HA --> HG
+HA --> HO
+HO --> DO
 HO --> GA
 HO --> GR
 HO --> GT
 HO --> SH
-GA --> AS
-GR --> AS
+HO --> TH : setArmOut · applyIdle
+GLB --> TH
+AS --> PUB : loadBodyAsset
+HA --> PUB : olhos (EYE_TEXTURE)
+DO --> PUB
+HO --> MED : loadTexture
+
+note bottom of HO
+  O comentário de default-outfit.ts cita o Meu Quarto,
+  mas a cena do quarto (room-scene.tsx) não usa o
+  Mannequin hoje: lá não há corpo para vestir (<<planejado>>, CA10).
+end note
 @enduml

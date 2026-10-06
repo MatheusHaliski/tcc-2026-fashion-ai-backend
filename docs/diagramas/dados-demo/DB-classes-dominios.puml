@@ -1,55 +1,82 @@
 @startuml DB_Classes_Dominios
-title Fashion AI — Integridade por domínio: OWNERSHIP → CASCADE · GLOBAL → RESTRICT (V34, aplicada: 131 FKs)
+title Dados demo e de teste (transversal)\nDiagrama de classes (tabelas) — integridade por domínio da V34: OWNERSHIP → CASCADE · GLOBAL → RESTRICT · SET NULL só onde o filho sobrevive
 !include ../seguranca/_estilo.iuml
 left to right direction
+hide empty members
 
-package "USER / SOCIAL (ownership)" {
-  class users
-  class brand_profiles
-  class celebrity_profiles
-  class wardrobe_items
-  class schemes
-  class scheme_items
-  class photos
-  class reactions
-  class comments
-  class follows
-  class saved_items
-  class notifications
-  class refresh_tokens
-  class seals
-  class seal_bonds
-  class room_inventory
+package "USER · conta (dona)" {
+  class users <<table>> {
+    account_origin «V35»
+    fixture_key «V35»
+  }
+  class brand_profiles <<table>>
+  class celebrity_profiles <<table>>
+  class "user_preferences · user_consents\nrefresh_tokens · verification_codes\ndata_export_requests" as conta <<tables>>
 }
-package "GLOBAL / CATALOG" {
-  class brands
-  class room_catalog
-  class challenge_templates
-  class challenge_instances
+package "USER · conteúdo" {
+  class wardrobe_items <<table>>
+  class schemes <<table>>
+  class scheme_items <<table>>
+  class photos <<table>>
+  class seals <<table>>
+  class seal_bonds <<table>>
+  class room_inventory <<table>>
+  class daily_looks <<table>>
+}
+package "SOCIAL" {
+  class "reactions · comments · saved_items\nshares · follows · notifications" as social <<tables>>
+}
+package "GLOBAL · catálogo" {
+  class brands <<table>> {
+    catalog_origin «V35»
+    fixture_key «V35»
+  }
+  class catalog_products <<table>>
+  class catalog_variants <<table>>
+  class room_catalog <<table>>
+  class challenge_templates <<table>>
+  class challenge_instances <<table>>
+}
+package "registro técnico" {
+  class ai_inference_log <<table>>
 }
 
 users *-- brand_profiles : CASCADE
 users *-- celebrity_profiles : CASCADE
+users *-- conta : CASCADE
 users *-- wardrobe_items : CASCADE
 users *-- schemes : CASCADE
 users *-- photos : CASCADE
-users *-- reactions : CASCADE
-users *-- comments : CASCADE
-users *-- follows : CASCADE (seguidor)
-users *-- follows : CASCADE (seguido)
-users *-- saved_items : CASCADE
-users *-- notifications : CASCADE
-users *-- refresh_tokens : CASCADE
 users *-- seals : CASCADE
+users *-- room_inventory : CASCADE
+users *-- daily_looks : CASCADE
+users *-- social : CASCADE (autor, seguidor,\nseguido, destinatário)
+users o-- ai_inference_log : SET NULL (o log de custo fica)
+users o-- room_catalog : SET NULL (creator_user_id)
+
 schemes *-- scheme_items : CASCADE
 wardrobe_items *-- scheme_items : CASCADE
-seals *-- seal_bonds : CASCADE
 schemes *-- seal_bonds : CASCADE
-schemes o-- schemes : SET NULL (remix sobrevive)
+seals *-- seal_bonds : CASCADE
+schemes *-- daily_looks : CASCADE
+schemes o-- schemes : SET NULL\n(original_scheme_id: o remix sobrevive)
 
-brands <-- wardrobe_items : RESTRICT
-brand_profiles <.. brands : SET NULL (brand_profile_id:\nmarca sobrevive à conta)
-room_catalog <-- room_inventory : RESTRICT
-users *-- room_inventory : CASCADE
-challenge_templates <-- challenge_instances : RESTRICT
+brands <-- wardrobe_items : RESTRICT (brand_id)
+brands <-- catalog_products : RESTRICT (brand_id)
+catalog_products <-- wardrobe_items : RESTRICT (catalog_product_id)
+catalog_products *-- catalog_variants : CASCADE
+catalog_variants <.. wardrobe_items : SET NULL (catalog_variant_id)
+brand_profiles <.. brands : SET NULL (brand_profile_id:\na marca sobrevive à conta)
+room_catalog <-- room_inventory : RESTRICT (sku)
+challenge_templates <-- challenge_instances : RESTRICT (template_code)
+
+note bottom of social
+  Linhas polimórficas (target_type/target_id) não têm FK:
+  o reset demo apaga explicitamente as que apontam para
+  conteúdo demo (deletePolymorphicTargeting).
+end note
+note bottom of brands
+  A V34 tem 131 FKs na POLICY (109 CASCADE ·
+  16 SET NULL · 6 RESTRICT); aqui só as principais.
+end note
 @enduml

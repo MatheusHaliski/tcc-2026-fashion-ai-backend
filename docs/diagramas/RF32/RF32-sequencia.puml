@@ -1,5 +1,5 @@
 @startuml RF32_Sequencia
-title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade ("Desafios")\nDiagrama de sequência — endpoints reais
+title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade, através da sub-aba "Desafios"\nDiagrama de sequência — criar um Duelo, convidar, aceitar e começar
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,27 +8,82 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor Usuário as U
-actor Convidado as G
-participant "Frontend\nchallenges" as FE
+actor "Criadora" as U
+actor "Convidado" as G
+participant "challenges/page.tsx\n+ challenges/[id]/page.tsx" as FE
 participant "ChallengeController" as C
 participant "ChallengeService" as S
-participant "FaiPointsService" as P
+participant "Guard" as GD
+participant "RoomService\n(hasKey)" as R
 participant "NotificationService" as N
 database "MySQL" as DB
-U -> FE: iniciar duelo
-FE -> C: POST /api/challenges
-C -> S: start(template, mode, invitees)
-S -> DB: INSERT challenge_instances + participants
-S -> N: convite
-G -> FE: aceitar
-FE -> C: POST /api/challenges/{id}/accept
-U -> FE: enviar look
-FE -> C: POST /api/challenges/{id}/entries
-S -> DB: INSERT challenge_events
-G -> FE: votar
-FE -> C: POST /api/challenges/{id}/votes
-S -> DB: INSERT challenge_votes
-S -> P: credita pontos ao encerrar
-FE -> C: GET /api/challenges/{id}/result-card
+
+U -> FE: Catálogo → "Começar" → modo DUELO + convidados
+FE -> C: POST /api/challenges {code: NO_REPEAT, mode: DUELO,\nparams, invitees: [uuid]}
+C -> S: start(user, StartRequest)
+S -> GD: requireCanCreate(user)
+S -> DB: SELECT challenge_templates (ativo) → modesAllowedJson
+alt modo não permitido
+  S --> FE: 400 MODO_INDISPONIVEL
+end
+S -> DB: participações ATIVO/AGUARDANDO da pessoa
+alt já tem 3
+  S --> FE: 409 LIMITE_DESAFIOS {active: [...]}
+end
+S -> S: validateParams (peças do próprio acervo, cartela…)
+S -> DB: INSERT challenge_instances (RASCUNHO, created_by)\nINSERT challenge_participants (criadora ATIVO, meta pessoal)
+S -> S: launch(): convidados ≠ criadora, ≤ maxParticipants
+loop cada convidado
+  S -> DB: follows (ACEITO)?
+  opt não segue
+    S -> R: hasKey(criadora, convidado)
+  end
+  alt nem segue nem tem a chave
+    S --> FE: 403 "você só pode convidar quem segue"
+  end
+end
+S -> DB: UPDATE instância AGUARDANDO, accept_deadline = +48 h\nINSERT participants CONVIDADO
+S -> N: notify(CHALLENGE_INVITE, "convidou você para…", 48 h)
+S -> DB: audit DESAFIO_CRIADO
+S --> FE: 201 detail (estado, participantes, progresso)
+note right of FE
+  Divergência: o campo de convite aceita "usernames ou ids",
+  mas a API só aceita UUIDs (List<UUID>) — @nome falha.
+end note
+
+G -> FE: Meus desafios → Convites → "Aceitar"
+FE -> C: POST /api/challenges/{id}/accept {photoConsent: true}
+C -> S: accept(user, id, photoConsent)
+alt não é CONVIDADO
+  S --> FE: 404 Convite
+else fora de AGUARDANDO ou depois das 48 h
+  S --> FE: 409 CONVITE_EXPIRADO
+else ok
+  S -> DB: participants ATIVO (joined_at, meta pessoal)
+  S -> S: maybeStartEarly: ninguém pendente?
+  alt aceitos ≥ max(2, minParticipants)
+    S -> DB: activate → ATIVO, starts_at, ends_at
+  else abaixo do mínimo
+    S -> DB: EXPIRADO (resultJson: mínimo não atingido)
+  end
+  S --> FE: detail
+end
+
+opt criadora não quer esperar
+  U -> FE: "Começar agora"
+  FE -> C: POST /api/challenges/{id}/start
+  C -> S: startNow(user, id)
+  alt não é a criadora
+    S --> FE: 403
+  else não está AGUARDANDO ou abaixo do mínimo
+    S --> FE: 409 MINIMO_NAO_ATINGIDO
+  else ok
+    S -> DB: pendentes → RECUSOU · activate → ATIVO
+  end
+end
+note over FE
+  Divergência: a tela de detalhe mostra "Começar agora" e "Aceitar"
+  só quando state = "PENDENTE", mas o backend usa "AGUARDANDO": "Começar agora"
+  nunca aparece e "Aceitar/Recusar" só aparece em Meus desafios › Convites.
+end note
 @enduml

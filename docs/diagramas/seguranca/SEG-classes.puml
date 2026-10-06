@@ -1,117 +1,131 @@
 @startuml SEG_Classes
-title Fashion AI — Classes de segurança (gate, sessão, controle de acesso, custos de IA)
+title Segurança, integridade e operação (transversal)\nDiagrama de classes — acesso: gate de desenvolvedor, cliente da API, filtros e configuração de segurança
 !include _estilo.iuml
 left to right direction
 
-package "frontend · lib/gate" <<Frame>> {
-  class GateConfig <<TS>> {
+package "frontend · lib/gate e lib/safe-next.ts" <<Frame>> {
+  class GateConfig <<interface TS>> {
+    enabled : boolean
     mode : "builtin" | "cloudflare"
+    user : string
+    pinHash : string | null
+    secret : string | null «≥ 32»
     apiToken : "legacy" | "v2"
-    secret : string (≥ 32)
-    allowedEmails : Set<string>
+    google : boolean
+    allowedEmails : string[]
+    publicUrl : string | null
     cloudflare : {teamDomain, aud}
   }
   class "token.ts" as Token <<module>> {
+    GATE_TTL_SECONDS = 12 h
+    GATE_API_TTL_SECONDS = 1 h
+    GATE_API_RENEW_BEFORE_SECONDS = 20 min
+    MIN_SECRET_LENGTH = 32 · MIN_PIN_LENGTH = 8
+    +gateConfig() : GateConfig
     +signGate(kind, id, jti, secret, ttl) : string
-    +verifyGate(kind, token, cfg) : GatePayload?
+    +verifyGate(kind, token, cfg) : GateIdentity?
     +signApiToken(cfg, id, jti, ttl) : string
     +signLegacyApiToken(user, secret, ttl) : string
-    +verifyCloudflareAccess(jwt, cfg) : identidade?
+    +apiTokenMatches(cfg, token) : boolean
+    +verifyCloudflareAccess(jwt, cfg) : GateIdentity?
     +maskIdentity(id) : string
+  }
+  class GateIdentity <<interface TS>> {
+    id : string
+    jti : string
+    exp : number
   }
   class "safeNext(next, fallback)" as SafeNext <<function>>
   Token ..> GateConfig
+  Token ..> GateIdentity
 }
 
-package "frontend · lib/api" <<Frame>> {
-  class TokenStore <<em memória>> {
-    -accessToken : string?
-    +restorable : boolean
+package "frontend · lib/api/client.ts" <<Frame>> {
+  class tokenStore <<objeto em memória>> {
+    +access : string?
+    +restorable : boolean «cookie fai_rt_h»
+    +set(token)
+    +clear()
   }
-  class ApiClient <<module>> {
-    +restoreSession()
-    +renewGate()
-    -tryRefresh() «Web Lock»
-    -checkPath(path) «recusa .. e %2f»
+  class "client.ts" as ApiClient <<module>> {
+    +api.get · post · put · patch · delete · upload
+    +restoreSession() : Promise<boolean>
+    -renewGate() «POST /gate/renew»
+    -withRefreshLock(fn) «Web Lock fai-auth-refresh»
+    -tryRefresh() «POST /bff/auth/refresh»
+    -checkPath(path) «recusa .., %2f e controle»
   }
-  ApiClient --> TokenStore
+  ApiClient --> tokenStore
 }
 
-package "fai-web" <<Frame>> {
-  class DevGateFilter {
-    -mode : builtin | cloudflare
-    -allowedEmails : Set<String>
-    -acceptLegacy : boolean
-    +valid(token, secret, list, now) : boolean
-    +validLegacy(token, secret, user, now) : boolean
+package "fai-web · support e security" <<Frame>> {
+  class CorrelationIdFilter <<HIGHEST_PRECEDENCE>> {
+    HEADER = "X-Correlation-Id"
+  }
+  class DevGateFilter <<@Order(-103)>> {
+    HEADER = "X-Dev-Gate"
+    CLOUDFLARE_HEADER = "Cf-Access-Jwt-Assertion"
+    MIN_SECRET_LENGTH = 32
+    -OPEN = /actuator/health · /actuator/info · /media/
+    -enabled · cloudflareMode · acceptLegacy
+    -allowed : Set<String>
+    ~valid(token, secret, allowed, now) : boolean
+    ~validLegacy(token, secret, user, now) : boolean
+    -validCloudflare(jwt) : boolean
   }
   class ClientIpResolver {
+    SIGNED_IP · SIGNED_TS · SIGNED_SIG
+    MAX_SKEW_SECONDS = 60
+    MIN_SECRET_LENGTH = 32
     +resolve(request) : String
-    -- aceita X-Fai-Client-Ip só com HMAC(ip|ts) e ts recente
+    ~signature(secret, ip, ts) : String
   }
-  class AuthRateLimitFilter {
-    -limit(caminhoNormalizado, ip)
+  class AuthRateLimitFilter <<@Order(-102)>> {
+    ~RULES : List<Rule>
+    -hashing : Semaphore
+    -hashWaitMillis = 2000
+    ~ruleFor(method, path) : Optional<Rule>
+    ~defaultHashPermits(cores, dbPool) : int
   }
-  class RequestPaths <<util>> {
-    +normalize(uri) : String
+  class "Rule" as Rule <<record>> {
+    method · path · limit
+    window : Duration
+    hashes : boolean
   }
-  class MediaProxyController {
-    -- users/* e restricted/: Cache-Control private
-    -- exports/ e backups/: bloqueados
+  class SecurityConfig {
+    -PUBLIC_GET : String[]
+    «/api/admin/** e /actuator/** → ADMIN»
+    «/media/restricted/** → ADMIN»
   }
+  class SessionActiveFilter {
+    «depois do BearerTokenAuthenticationFilter»
+    «sessão encerrada → 401»
+  }
+  class FashionAuthorization {
+    +canAccessUser(targetUserId, authentication) : boolean
+  }
+  class Argon2PasswordHasher
+  AuthRateLimitFilter *-- Rule
   AuthRateLimitFilter ..> ClientIpResolver
-  AuthRateLimitFilter ..> RequestPaths
+  SecurityConfig ..> SessionActiveFilter : addFilterAfter
 }
 
 package "fai-application" <<Frame>> {
-  class AiBudget {
-    -globalDaily : BigDecimal = 5.00
-    -userDaily : BigDecimal = 0.50
-    +check(userId, custoEstimado) : Verdict
+  interface PasswordHasherPort <<port>>
+  interface RateLimitPort <<port>> {
+    +tryAcquire(owner, bucket, limit, window) : boolean
+    +release(owner, bucket)
   }
-  enum Verdict {
-    OK
-    GLOBAL_EXHAUSTED
-    USER_EXHAUSTED
+  class Guard {
+    +requireCanCreate(user)
+    +requireOwner(user, ownerId, resource)
+    +requireAdmin(user)
+    +canView(viewer, ownerId, visibility) : boolean
   }
-  class MediaService {
-    +{static} ownedMedia(storage, owner, url, scopes) : Optional<OwnedMedia>
-    +requireOwnedMedia(owner, url, scopes, campo) : OwnedMedia
-    +read(url) : bytes «nunca restricted/»
-    +readRestricted(key) : bytes
-  }
-  enum MediaScope {
-    OWNER
-    PENDING
-    CATALOG
-  }
-  class "OwnedMedia" as OwnedMedia <<record>> {
-    key : String
-    url : String
-  }
-  class OwnMedia {
-    +accepts(owner, url, allowCatalog) : boolean
-    +require(owner, url, campo, allowCatalog) : String
-  }
-  AiBudget --> Verdict
-  MediaService --> MediaScope
-  MediaService --> OwnedMedia
-  OwnMedia ..> MediaService
 }
 
-package "fai-domain" <<Frame>> {
-  class AesGcmStringConverter <<JPA>> {
-    -- nome, e-mail, bio, telefone, nascimento
-    -- AES-256-GCM · DATA_ENCRYPTION_KEY
-  }
-  class User {
-    -emailHash : String
-    -status : AccountStatus
-    -testAccount : boolean
-  }
-  User ..> AesGcmStringConverter
-}
-
-ApiClient ..> DevGateFilter : X-Dev-Gate (ga)
-Token ..> DevGateFilter : mesmo formato\n(vetor cruzado nos testes)
+Argon2PasswordHasher ..|> PasswordHasherPort
+AuthRateLimitFilter --> RateLimitPort : balde por IP
+ApiClient ..> DevGateFilter : X-Dev-Gate (cookie fai_gate_a)
+Token ..> DevGateFilter : mesmo formato "ga"\n(vetor cruzado nos testes)
 @enduml

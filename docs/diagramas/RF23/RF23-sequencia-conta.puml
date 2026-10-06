@@ -1,0 +1,89 @@
+@startuml RF23_Sequencia_Conta
+title RF23 — Telas de configuração (Conta, Privacidade, Aparência, Idioma, Seus dados) com i18n\nDiagrama de sequência — aba Conta: @, vitrine do perfil e foto (sem reautenticação)
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor Pessoa as U
+participant "edit-profile.tsx\n(EditProfileForm)" as FE
+participant "PreferencesController" as PC
+participant "PreferencesService" as PS
+participant "Guard" as G
+participant "IdentityService" as IS
+participant "MediaService" as MS
+database "MySQL" as DB
+participant "MediaStoragePort\n(S3 / local)" as ST
+
+== Conferir o @ enquanto digita ==
+U -> FE: digita um novo @
+FE -> FE: espera 350 ms
+FE -> PC: GET /api/usernames/{username}/availability
+PC -> PS: checkUsername(username)
+PS -> IS: normalizeUsername · usernameProblem
+PS -> DB: existsByUsernameIgnoreCase
+opt indisponível
+  PS -> IS: usernameSuggestions(username)
+end
+PC --> FE: 200 {username, available, suggestions}
+
+== Salvar ==
+U -> FE: Salvar
+opt @ mudou
+  FE -> PC: PUT /api/me/username {username}
+  PC -> PS: changeUsername(user, username)
+  PS -> G: requireCanCreate(user)
+  alt e-mail não confirmado ou conta suspensa
+    G --> FE: 403 EMAIL_NAO_CONFIRMADO · CONTA_SUSPENSA
+  else
+    alt menos de 3 caracteres
+      PS --> FE: 400 USERNAME_INVALIDO
+    else reservado ou em uso
+      PS -> IS: usernameSuggestions(username)
+      PS --> FE: 400 USERNAME_RESERVADO · USERNAME_EM_USO {suggestions} (CA04)
+    else livre
+      PS -> DB: UPDATE users.username · INSERT audit_log ALTERACAO_PERFIL
+      PC --> FE: 200 {username}
+    end
+  end
+end
+FE -> PC: PATCH /api/me/profile {displayName, pronouns, bio, links, sex}
+PC -> PS: updateProfile(user, ProfileUpdate)
+alt campo inválido
+  PS --> FE: 400 CAMPO_INVALIDO · CONTEUDO_BLOQUEADO\nLINKS_DEMAIS · LINK_INVALIDO · PAIS_INVALIDO
+else válido
+  PS -> DB: UPDATE users (sexo também em user_preferences.mannequin_sex)\nINSERT audit_log ALTERACAO_PERFIL
+  PC --> FE: 200 Views.UserCard
+  FE -> FE: refreshMe · aviso "perfil salvo"
+end
+
+== Foto de perfil ==
+U -> FE: escolhe a foto
+FE -> PC: POST /api/me/avatar (multipart file)
+PC -> PS: uploadProfileImage(user, bytes, cover = false)
+alt vazio, > 10 MB ou formato não aceito
+  PS --> FE: 400 ARQUIVO_VAZIO · ARQUIVO_GRANDE · FORMATO_INVALIDO
+else aceito
+  PS -> PS: ImageOps.scaleToFit 512×512 · JPEG 0,9
+  PS -> MS: put(users/{id}/profile/avatar-{ts}.jpg)
+  MS -> ST: put(key, bytes, image/jpeg)
+  PS -> MS: register(user, PROFILE, …, APPROVED)
+  MS -> DB: INSERT photos
+  PS -> DB: UPDATE users.avatar_url
+  PC --> FE: 200 Views.UserCard
+end
+opt foto deitada
+  FE -> PC: POST /api/me/avatar/rotate?degrees=90
+  PC -> PS: rotateAvatar(user, 90)
+  PS -> MS: ownedMedia · readImage
+  PS --> FE: 200 nova versão · ou 400 SEM_FOTO · ROTACAO_INVALIDA
+end
+note over FE, PS
+  A capa usa o mesmo caminho: POST /api/me/cover (1600×900).
+  Nada aqui pede senha: é dado de vitrine (RF23).
+  E-mail, telefone, nascimento e 2FA ficam no RF3.
+end note
+@enduml

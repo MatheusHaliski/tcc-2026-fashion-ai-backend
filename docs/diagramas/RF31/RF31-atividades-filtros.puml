@@ -1,0 +1,74 @@
+@startuml RF31_Atividades_Filtros
+title RF31 — Filtrar e marcar o estado dos itens do acervo: favoritar, disponível, indisponível e todos\nDiagrama de atividades — filtrar e ordenar o guarda-roupa (estado, faixa de Hype v2, "Com selo", ordenações)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre o Guarda-roupa (/closet);
+|Frontend (closet/page.tsx · FilterBar)|
+:Escolhe a aba (categoria) e os filtros:\nestado (Todas · Favoritas · Disponíveis · Indisponíveis ·\nÀ venda · Para doar), cor, ocasião, faixa mínima de Hype,\n"Com selo" (Hype · Marca/celebridade · Qualquer) e ordenação;
+note right
+  hype-filters.ts: hypeSortOptions (hype_desc, hype_asc,
+  growth, worn, least_worn, rarity, idle) e hypeLevelFilter
+  (NICHE…VIRAL). ?category= e ?seal= ficam na URL.
+end note
+:GET /api/me/closet?state=&hypeLevel=&seal=&sort=&page=&size=24;
+|API + Serviço (WardrobeController → WardrobeService.closet)|
+:Peças da dona sem ARCHIVED, filtradas por categoria, cor\n(ou família de cor), estação, ocasião, estilo, stateMatches e busca;
+:SORT_ALIASES normaliza nomes antigos\n(mais_usadas → worn, nome → name, preco → price…);
+if (sort ∈ HYPE_SORTS, hypeLevel ou seal ≠ brand?) then (sim)
+  |Banco / eventos|
+  :hype_scores PIECE da versão atual\n(HypeScoreCurrentRepository; dona vê o Hype pessoal,\nterceiros só publicEligible);
+  |API + Serviço (WardrobeController → WardrobeService.closet)|
+endif
+if (hypeLevel informado?) then (sim)
+  :Tira as peças sem Hype ou abaixo do mínimo da faixa\n(NICHE 20 · RELEVANT 40 · HOT 60 · TRENDING 75 · VIRAL 90,\ncomparado ao número exibido: score ≥ mínimo − 0,5);
+endif
+if (seal informado?) then (hype)
+  :Mantém só peças com HypeSeals.of(score) não vazio\n(VIRAL, TRENDING, EMERGING, CLASSIC, RARE);
+elseif () then (brand)
+  :Mantém só peças com vínculo de selo APROVADO de tier PEÇA\nnum look visível (SealService.approvedPieceBonds);
+elseif () then (any)
+  :Mantém peças com qualquer um dos dois;
+else (sem filtro)
+endif
+:Ordena: recent · name · price · worn · least_worn · idle\n· hype_desc/hype_asc · growth · rarity (sem Hype vai por último);
+:Página de até 60 itens (padrão 24) → Page<PieceView>;
+|Frontend (closet/page.tsx · FilterBar)|
+if (Lista vazia?) then (sim)
+  :EmptyState "Adicionar peça";
+else (não)
+  :Grade de PieceCard com SealSlot\n(GET /api/pieces/seals?ids=… em lote) e paginação;
+endif
+note right
+  Mesma regra em outras listas:
+  • Lookbook › Peças de outra pessoa (lookbook-tabs.tsx):
+    GET /api/users/{id}/closet com state, sort e hypeLevel,
+    sem "Favoritas" e sem o filtro "Com selo"
+  • Meus looks (looks/my-looks.tsx): GET /api/me/schemes?state=
+    todos · publicados · rascunhos · favoritos · arquivados
+    (SchemeService.stateMatches também aceita disponivel/indisponivel)
+end note
+stop
+@enduml

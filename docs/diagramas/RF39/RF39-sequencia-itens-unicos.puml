@@ -1,0 +1,92 @@
+@startuml RF39_Sequencia_ItensUnicos
+title RF39 — Criar guarda-roupa 3D com a identidade de uma marca/celebridade e vender na loja do quarto\nDiagrama de sequência — itens únicos: última unidade da edição limitada, selo exigido e caixa de entrega (absorve o antigo RF44)
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Comprador A" as A
+actor "Comprador B" as B
+participant "points/page.tsx\n→ RoomStore" as FE
+participant "room/page.tsx\n→ RoomScene" as RFE
+participant "HighlightsController" as HC
+participant "FaiPointsService" as P
+participant "WardrobeCreatorService" as W
+participant "RoomController" as RC
+participant "RoomService\n(RoomLayoutAccess)" as R
+participant "NotificationService" as N
+database "MySQL" as DB
+
+note over A, DB
+  Item de marca com stockLimit = 5, perUserLimit = 1 e requiresSeal = true (SKU BRD-…).
+  Resta 1 unidade (soldCount = 4). A e B tocam em "Comprar" quase ao mesmo tempo.
+end note
+
+par A compra
+  A -> FE: Comprar
+  FE -> HC: POST /api/points/shop/{sku}/purchase
+  HC -> P: buy(A, sku)
+  P -> DB: lockOwner(A) — SELECT users … FOR UPDATE
+  P -> DB: lockBySku(sku) — SELECT room_catalog … FOR UPDATE
+else B compra
+  B -> FE: Comprar
+  FE -> HC: POST /api/points/shop/{sku}/purchase
+  HC -> P: buy(B, sku)
+  P -> DB: lockOwner(B)
+  P -> DB: lockBySku(sku) — espera a transação de A
+end
+
+== Transação de A (com a trava do item) ==
+P -> P: nível(A) ≥ requiredLevel? soldCount (4) < stockLimit (5)?
+P -> W: blocker(A, item)
+W -> W: availability = DISPONIVEL · sellerActive(item)
+W -> DB: countByUserIdAndSku(A, sku) < perUserLimit?
+W -> DB: SealBond APPROVED de A com a marca,\nnão vencido (e do selo do item, se houver)
+alt A não tem o selo exigido
+  W --> P: "Exige um selo válido de <marca>"
+  P --> FE: 409 CONDICAO_DE_COMPRA
+else saldo menor que o preço
+  P --> FE: 409 SALDO_INSUFICIENTE
+else ok
+  W --> P: null (pode comprar)
+  P -> DB: INSERT fai_points_ledger (SHOP_PURCHASE, −preço)
+  P -> N: notify(A, FAI_POINTS, extrato da compra)
+  P -> DB: UPDATE room_catalog SET sold_count = 5 (@Version)
+  P -> DB: INSERT room_inventory (source PURCHASE, serial = 5)
+  P --> FE: 200 {inventoryId, serial: "5", balance, level}
+end
+
+== Transação de B (recebe a trava depois do commit de A) ==
+P -> P: soldCount (5) ≥ stockLimit (5)
+P --> FE: 409 ESGOTADO — edição limitada esgotada
+
+== A abre a caixa de entrega no Meu Quarto ==
+A -> RFE: abre /room
+RFE -> RC: GET /api/me/room
+RC -> R: room(user)
+R -> DB: room_inventory de A com applied_module nulo
+R --> RFE: {modules, …, unboxing: [{inventoryId, sku, name, slotType}]}
+A -> RFE: abre a caixa
+RFE -> HC: POST /api/me/room-inventory/{inventoryId}/apply\n{moduleId: "ALL" (guarda-roupa) ou módulo do mesmo slotType}
+HC -> P: apply(A, inventoryId, moduleId)
+P -> R: compatibleModules(A, item)
+alt módulo incompatível
+  P --> RFE: 409 ENCAIXE_INCOMPATIVEL
+else ok
+  P -> R: applyFinish(A, moduleId, item)
+  R -> DB: UPDATE room_layouts.modules_json (sku, finish com logo/arte/placa, raridade)
+  P -> DB: UPDATE room_inventory.applied_module
+  P --> RFE: 200 {applied: true, module, sku}
+end
+
+group <<planejado>> Itens do Background Studio à venda
+  note over FE, DB
+    Não implementado. asset_presets não tem criador, preço nem estoque;
+    o BackgroundController só tem catálogo, combinação, recomendações, arte e uploads
+    (GET /api/backgrounds/catalog …), sem rota de venda.
+  end note
+end
+@enduml

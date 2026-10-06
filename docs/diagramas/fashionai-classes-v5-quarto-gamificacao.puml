@@ -1,0 +1,225 @@
+@startuml FashionAI_Classes_v5_Quarto_Gamificacao
+title FashionAI — Visão global do domínio (v5)\nDiagrama de classes — Meu Quarto, avatar, FAI Points, desafios e rankings (RF27, RF29, RF30, RF32, RF39, RF40, RF41) · entidades JPA de fai-domain, Flyway V1–V42
+!pragma layout smetana
+set separator none
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam note {
+  BackgroundColor #FFFBEA
+  BorderColor #B8A86A
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "Meu Quarto, loja e avatar (RF27, RF30, RF39, RF40)" {
+class RoomLayout << (V,#C9B8F0) room_layouts >> {
+  +user: User
+  +level: String
+  +modulesJson: String
+  +drawerLabelsJson: String
+  +previousMapJson: String
+}
+class RoomStorageEntry << (A,#B8DCC0) room_storage_map >> {
+  +userId: UUID
+  +wardrobeItemId: UUID
+  +address: String
+  +assignedBy: String
+}
+class RoomCatalogItem << (S,#F0D2B8) room_catalog >> {
+  +sku: String
+  +name: String
+  +moldId: String
+  +slotType: String
+  +kind: String
+  +rarity: String
+  +pricePoints: int
+  +requiredLevel: String
+  +stockLimit: Integer
+  +soldCount: int
+  +maisonBrandUserId: UUID
+  +creatorUserId: UUID
+  +sealId: UUID
+  +perUserLimit: Integer
+  +requiresSeal: boolean
+  +active: boolean
+  .. +11 campos ..
+}
+class RoomInventoryItem << (S,#F0D2B8) room_inventory >> {
+  +userId: UUID
+  +sku: String
+  +serial: Integer
+  +source: String
+  +appliedModule: String
+  +acquiredAt: Instant
+}
+class UserAvatar3d << (V,#C9B8F0) user_avatars_3d >> {
+  +user: User
+  +modelVersion: int
+  +textureKey: String
+  +photosCount: int
+  +publicOnRunway: boolean
+  +consentAt: Instant
+  +textureModeration: ModerationStatus
+  .. +3 campos ..
+}
+}
+package "FAI Points, conquistas e rankings (RF29, RF30, RF41)" {
+class FaiPointsLedgerEntry << (S,#F0D2B8) fai_points_ledger >> {
+  +userId: UUID
+  +delta: int
+  +actionCode: String
+  +refType: String
+  +refId: String
+  +idempotencyKey: String
+  +countsLifetime: boolean
+}
+class FaiPointsRule << (S,#F0D2B8) fai_points_rules >> {
+  +actionCode: String
+  +points: int
+  +dailyCap: Integer
+  +weeklyCap: Integer
+  +oncePerRef: boolean
+  +active: boolean
+  .. +1 campos ..
+}
+class UserAchievement << (S,#F0D2B8) user_achievements >> {
+  +userId: UUID
+  +achievementCode: String
+  +secret: boolean
+  +grantedAt: Instant
+}
+class InventoryScoreSnapshot << (S,#F0D2B8) inventory_score_snapshots >> {
+  +userId: UUID
+  +periodType: String
+  +periodDate: LocalDate
+  +score: Integer
+  +dimensionsJson: String
+  +eligible: boolean
+  +computedAt: Instant
+  .. +1 campos ..
+}
+class RankingOptIn << (S,#F0D2B8) ranking_opt_ins >> {
+  +userId: UUID
+  +optedIn: boolean
+  +shareCity: boolean
+  +city: String
+}
+class RankingPosition << (S,#F0D2B8) ranking_positions >> {
+  +segment: String
+  +userId: UUID
+  +position: int
+  +total: int
+  +topPercent: BigDecimal
+  +value: BigDecimal
+  +computedAt: Instant
+}
+}
+package "Desafios (RF32)" {
+class ChallengeTemplate << (S,#F0D2B8) challenge_templates >> {
+  +code: String
+  +name: String
+  +modesAllowedJson: String
+  +durationDays: Integer
+  +scoreDimensionsJson: String
+  +rewardPoints: int
+  +minParticipants: int
+  +maxParticipants: int
+  +authorUserId: UUID
+  +active: boolean
+  .. +5 campos ..
+}
+class ChallengeInstance << (S,#F0D2B8) challenge_instances >> {
+  +templateCode: String
+  +mode: String
+  +state: String
+  +paramsJson: String
+  +startsAt: Instant
+  +endsAt: Instant
+  +acceptDeadline: Instant
+  +createdBy: UUID
+  +resultJson: String
+}
+class ChallengeParticipant << (S,#F0D2B8) challenge_participants >> {
+  +instanceId: UUID
+  +userId: UUID
+  +team: String
+  +status: String
+  +joinedAt: Instant
+  +leftAt: Instant
+  +progressFraction: BigDecimal
+  +bestRecord: int
+  .. +1 campos ..
+}
+class ChallengeEvent << (S,#F0D2B8) challenge_events >> {
+  +instanceId: UUID
+  +userId: UUID
+  +evidenceType: String
+  +refId: UUID
+}
+class ChallengeNote << (S,#F0D2B8) challenge_notes >> {
+  +instanceId: UUID
+  +userId: UUID
+  +kind: String
+  +content: String
+}
+class ChallengeVote << (S,#F0D2B8) challenge_votes >> {
+  +instanceId: UUID
+  +voterUserId: UUID
+  +entrySchemeId: UUID
+}
+}
+package "Referências a outras áreas" #FAFAFA {
+class User <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class WardrobeItem <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class Scheme <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class Seal <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+}
+
+' --- associações JPA (geradas do código) ---
+RoomLayout "*" --> "1" User : user
+UserAvatar3d "0..1" --> "1" User : user
+' --- referências por id, sem FK JPA ---
+RoomStorageEntry ..> User : userId
+RoomStorageEntry ..> WardrobeItem : wardrobeItemId
+RoomInventoryItem ..> RoomCatalogItem : sku
+RoomInventoryItem ..> User : userId
+RoomCatalogItem ..> User : maisonBrandUserId / creatorUserId
+RoomCatalogItem ..> Seal : sealId
+FaiPointsLedgerEntry ..> FaiPointsRule : actionCode
+FaiPointsLedgerEntry ..> User : userId
+UserAchievement ..> User : userId
+InventoryScoreSnapshot ..> User : userId
+RankingOptIn ..> User : userId
+RankingPosition ..> User : userId
+ChallengeInstance ..> ChallengeTemplate : templateCode
+ChallengeParticipant ..> ChallengeInstance : instanceId
+ChallengeEvent ..> ChallengeInstance : instanceId
+ChallengeNote ..> ChallengeInstance : instanceId
+ChallengeVote ..> ChallengeInstance : instanceId
+ChallengeVote ..> Scheme : entrySchemeId
+ChallengeParticipant ..> User : userId
+note "state (texto, ChallengeService):\nRASCUNHO → AGUARDANDO → ATIVO → CONCLUIDO | EXPIRADO\nmode: SOLO · EQUIPE · DUELO · COMUNIDADE" as N_CH
+N_CH .. ChallengeInstance
+note "Ledger append-only: chave de idempotência\n(user_id, action_code, ref_id) — V7.\nCada lançamento vira notificação FAI_POINTS (V37)." as N_FP
+N_FP .. FaiPointsLedgerEntry
+note "SKU = molde + acabamento. Itens únicos de\nmarca/celebridade (RF39): creatorUserId,\nsealId, perUserLimit, requiresSeal." as N_RC
+N_RC .. RoomCatalogItem
+legend right
+  <b>Letra do ícone</b>
+  V = estende VersionedAuditableEntity (id UUID, createdAt/updatedAt, createdBy/lastModifiedBy, @Version)
+  A = estende AuditableEntity (id UUID e auditoria, sem @Version)
+  S = @Entity sem superclasse (id e datas próprios) · M = @Embeddable (colunas embutidas na tabela dona)
+  E = enum
+  ⟶ seta cheia = associação JPA (@ManyToOne/@OneToOne) · seta tracejada = id guardado sem FK JPA
+  <<outra área>> = classe detalhada em outro diagrama v5
+endlegend
+@enduml

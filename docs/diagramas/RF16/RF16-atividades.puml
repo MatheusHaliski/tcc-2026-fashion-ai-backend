@@ -1,5 +1,5 @@
 @startuml RF16_Atividades
-title RF16 — Implementar geração de imagem 3D das peças do guarda-roupa utilizando serviços de API externas\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF16 — Implementar geração de imagem 3D das peças do guarda-roupa utilizando serviços de API externas\nDiagrama de atividades — pedido, fila, provedor (Meshy → Stability SF3D → relevo local), falha e reprocessamento grátis
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,73 +23,92 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Pessoa|
-start
-:Abre a peça cadastrada (RF4)\nem pieces/[id];
-:Aba "Modelo 3D" → clica em Gerar 3D;
+
+|Pessoa (dona)|
 |Frontend|
-:Model3dPanel envia\nPOST /api/pieces/{id}/model3d;
-|Backend|
-:WardrobeService.request3d\n(guard.requireCanCreate + posse da peça);
-if (fashionai.features.rf16-3d ligado?) then (sim)
-  if (peça tem foto real\n(imageUrl e não defaultImage)?) then (sim)
-    if (model3dStatus QUEUED ou PROCESSING?) then (sim)
-      :Devolve o mesmo job\n(sem duplicar — CA04);
-    else (não)
-      :Cria PipelineJob THREE_D_GENERATION\nstatus PENDING (freeRetry se a última falhou);
-      :wardrobe_items.model3d_status = QUEUED;
-    endif
-    :202 com status, label, progress, stages;
-  else (não)
-    :422 SEM_FOTO;
-    stop
-  endif
-else (não)
-  :409 RECURSO_DESLIGADO;
+|Backend (API + worker)|
+|Provedores/Storage|
+|Pessoa (dona)|
+start
+if (Como o pedido nasce?) then (API da peça)
+  |Backend (API + worker)|
+  :POST /api/pieces/{id}/model3d → WardrobeController\n→ WardrobeService.request3d (requireCanCreate + owned);
+  note right
+    A página da peça NÃO tem mais botão "Gerar 3D"
+    (decisão de produto, model3d-panel.tsx): o pedido
+    vem da API, do "Tentar de novo" após falha ou de
+    POST /api/schemes/{id}/model3d (todas as peças
+    do look, ShowcaseService.requestModels) — também
+    sem tela que o chame hoje.
+  end note
+else ("Tentar de novo" após falha)
+  |Frontend|
+  :Model3dAction (só a dona, status FAILED):\nPOST /api/pieces/{id}/model3d;
+endif
+|Backend (API + worker)|
+:Model3dService.request(peça);
+if (fashionai.features.rf16-3d ligado?) then (não)
+  #FFE3E3:409 RECURSO_DESLIGADO;
   stop
 endif
+if (Peça tem foto real?\n(imageUrl e defaultImage = false)) then (não)
+  #FFE3E3:422 SEM_FOTO;
+  stop
+endif
+if (model3dStatus QUEUED ou PROCESSING?) then (sim)
+  :Devolve o MESMO job (sem duplicar — CA04);
+else (não)
+  :freeRetry = última falhou e retryCount = 0 (CA03);
+  :INSERT pipeline_jobs THREE_D_GENERATION · PENDING ·\ntargetType PIECE · input {freeRetry, image};\nwardrobe_items.model3d_status = QUEUED;
+endif
+:202 {status, label, progress, stages, canRetryFree, providers};
 |Frontend|
-:Linha do tempo de estados e barra de progresso;
-:Consulta GET /api/pieces/{id}/model3d\na cada 2,5 s enquanto o job anda;
-|Backend|
-:Model3dService.tick (a cada 5 s)\npega jobs PENDING → start();
-:job RUNNING, peça PROCESSING;
-note right
-  CA03: o reprocessamento grátis
-  não consome a cota diária (3/dia)
-  de AiCapability.THREE_D_GENERATOR
+:useModel3d: GET /api/pieces/{id}/model3d a cada 2,5 s\nenquanto QUEUED/PROCESSING ("Na fila" / "Gerando");
+
+|Backend (API + worker)|
+:@Scheduled a cada 5 s: start() dos PENDING\ne follow() dos RUNNING;
+:start: peça e arquivo existem?;
+if (Peça excluída ou foto ilegível?) then (sim)
+  #FFE3E3:FAILED (PECA_REMOVIDA · SEM_ARQUIVO);\npeça FAILED;
+  stop
+endif
+:job RUNNING, attempts + 1; peça PROCESSING;
+|Provedores/Storage|
+:AiEngine.execute(THREE_D_GENERATOR) — cota 3/dia;\nfreeRetry entra sem usuário (não gasta cota);
+if (Provedor disponível (chave + cota)?) then (Meshy, assíncrono)
+  :MeshyModel3dAdapter.submit(png) → externalJobId;\netapas FOTO, ENVIO; progress 10;
+note left
+  Meshy e Stability: adaptadores existem, mas
+  dependem de MESHY_API_KEY / STABILITY_API_KEY
+  e não têm teste automatizado — não testados
+  com provedor real. Sem chave, o relevo local
+  sempre responde.
 end note
-|Bancos-serviços|
-:AiEngine (RF24) escolhe o provedor:\nMeshy → Stability SF3D → relevo local;
-if (Meshy (assíncrono)?) then (sim)
-  :submit(png) → externalJobId;
-  |Backend|
-  :follow(): poll da tarefa a cada tick;
+  repeat
+    :follow (tick seguinte): poll(taskId)\n→ progresso real 10–95%;
+  repeat while (SUCCEEDED / FAILED / passou de 10 min?) is (não) not (sim)
   if (SUCCEEDED com glbUrl?) then (sim)
-    :Baixa o GLB via WebFetchPort (até 40 MB);
-  elseif (FAILED ou passou do tempo-limite (10 min)?) then (sim)
-    :Plano B: ReliefModelGenerator (relevo local);
-  else (em andamento)
-    :Atualiza progress (10–95);
+    :WebFetchPort.get(glbUrl, ≤ 40 MB,\nsó https) → GLB válido?;
+  else (FAILED ou TEMPO_LIMITE)
+    :Plano B: ReliefModelGenerator.generate\n(provider "meshy→local-relevo", fallbackUsed);
   endif
-else (não)
-  :Stable Fast 3D (síncrono) ou\nrelevo local devolve o GLB;
+elseif (Stability SF3D, síncrono)
+  :StabilityFast3dAdapter.generateNow(png) → GLB;
+else (nenhum / falha / sem cota)
+  :Relevo local: ReliefModelGenerator (grade 128,\nsilhueta → malha frente/verso, foto como textura);\netapas SILHUETA, MALHA, TEXTURA;
 endif
-|Backend|
-if (GLB válido?) then (sim)
-  :MediaService.put(.glb) → model3dUrl;
-  :job COMPLETED, peça COMPLETED;
-  :Notificação AI_JOB_FINISHED "Modelo 3D pronto";
-  :FaiPointsService.awardIsolated(PIECE_3D) +15 (RF41);
+|Backend (API + worker)|
+if (GLB pronto?) then (sim)
+  :complete: put(users/{u}/pieces/{id}/model-*.glb);\nmodel3d_url; peça e job COMPLETED; etapa ARMAZENAMENTO;
+  :Notificação AI_JOB_FINISHED ("Modelo 3D pronto")\n+ FAI Points PIECE_3D (+15, 1× por peça);
   |Frontend|
-  :PieceModelViewer (React Three Fiber)\ngira e dá zoom; 2D mantido (CA02);
-  |Pessoa|
-  :Vê a peça em 3D (também no Meu Quarto 3D);
+  :Toast "Modelo 3D pronto"; "Ver em 3D" (dona e\nvisitante) → PieceModelViewer (girar e zoom);\nmesmo GLB no Meu Quarto 3D e no manequim;
 else (não)
-  |Backend|
-  :fail(): FAILED com errorCode\n(SEM_ARQUIVO, PECA_REMOVIDA, PROVEDOR_FALHOU,\nTEMPO_LIMITE, ERRO_INTERNO);
+  |Backend (API + worker)|
+  :fail: FAILED + errorCode (PROVEDOR_FALHOU ·\nTEMPO_LIMITE · ERRO_INTERNO) + mensagem legível;
   |Frontend|
-  :Mostra o motivo e "reprocessar\n(uma vez sem custo)";
+  :"Falhou" + "Tentar grátis" (canRetryFree)\nou "Tentar de novo" (usa a cota);
 endif
+|Pessoa (dona)|
 stop
 @enduml

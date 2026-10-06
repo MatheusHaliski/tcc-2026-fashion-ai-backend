@@ -1,5 +1,5 @@
 @startuml RF43_Classes
-title RF43 — Autopiloto gera combinações de vestimentas com IA de acordo com as especificações do usuário\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF43 — Autopiloto gera combinações de vestimentas com IA\nDiagrama de classes — AutopilotService (Hoje e Semana), motor local, LookScorer/RecommendationScoring, WeekPlan e insights AUTOPILOT
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -11,141 +11,193 @@ skinparam class {
 skinparam packageStyle rectangle
 hide empty methods
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +profileType: ProfileType
-}
-class WeekPlan {
-  +user: User
-  +weekStart: LocalDate
-  +status: WeekPlanStatus
-  +gapsJson: String
-}
-class WeekPlanDay {
-  +weekPlan: WeekPlan
-  +dayDate: LocalDate
-  +eventLabel: String
-  +occasion: String
-  +scheme: Scheme
-  +pieceIdsJson: String
-  +combinationKey: String
-  +rationale: String
-  +editedManually: boolean
-}
-class DailyLook {
-  +user: User
-  +scheme: Scheme
-  +lookDate: LocalDate
-  +source: DailyLookSource
-  +feedback: DailyLookFeedback
-  +weekPlanDayId: UUID
-}
-class Scheme {
-  +user: User
-  +title: String
-  +creationMode: CreationMode
-  +origin: SchemeOrigin
-  +style: String
-  +occasion: String
-  +season: Season
-  +mood: Mood
-  +status: SchemeStatus
-  +lookDoDia: boolean
-  .. +50 campos ..
-}
-class SchemeItem {
-  +scheme: Scheme
-  +wardrobeItem: WardrobeItem
-  +slot: SchemeSlot
-  +sortOrder: int
-  +zIndex: int
-}
-class WardrobeItem {
-  +user: User
-  +name: String
-  +category: String
-  +subcategory: String
-  +color: String
-  +occasionTags: String
-  +wearCount: int
-  +disponivel: boolean
-  .. +campos ..
-}
-}
-package "fai-domain · enums" {
-enum WeekPlanStatus {
-  ACTIVE
-  DISCARDED
-  COMPLETED
-}
-enum SchemeOrigin {
-  CRIAR_LOOK
-  PROVADOR
-  REMIX
-  COPILOT
-  DNA_DUPLICATE
-  SMART_MIRROR
-  VISTA_ME
-  AUTOPILOTO
-}
-enum DailyLookSource {
-  MANUAL
-  AUTOPILOTO
-  COPILOT
-  VISTA_ME
-  SMART_MIRROR
-}
-enum CreationMode {
-  MANUAL
-  AI_ASSISTED
-}
-}
 package "fai-application · service" {
-class AutopilotService {
-  +MIN_PIECES = 3
-  +daily(user, DailyRequest): Map
-  +confirmDaily(user, pieceIds, title, occasion, mood): Map
-  +planWeek(user, WeekRequest): Map
-  +currentWeek(user): Map
-  +editDay(user, dayId, pieceIds): Map
-  +useDay(user, dayId): Map
-  +discardWeek(user): Map
-  ~candidates(...): List<Candidate>
-  ~pickWithAi(...): List<Map>
+  class AutopilotService {
+    {static} +MIN_PIECES = 3
+    {static} ~W_OCCASION = 0.35
+    {static} ~W_CLIMATE = 0.25
+    {static} ~W_PREFERENCE = 0.25
+    {static} ~W_DIVERSITY = 0.15
+    +daily(user, DailyRequest): Map
+    +daily(user, DailyRequest, requiredPieceIds, weatherBand): Map
+    +confirmDaily(user, pieceIds, title, occasion, mood): Map
+    +planWeek(user, WeekRequest): Map
+    +currentWeek(user): Map
+    +editDay(user, dayId, pieceIds): Map
+    +useDay(user, dayId): Map
+    +discardWeek(user): Map
+    ~candidates(userId, eligible, occasions, mood, ctx,\nexclude, alreadyUsed, limit, required): List<Candidate>
+    ~pickWithAi(user, ranked, occasions, mood, ctx, holder): List<Map>
+    ~scoresOf(userId, pool): Map<String, Scores>
+    {static} ~byMode(pool, scores, Mode): List<Candidate>
+    {static} ~attachScores(picks, pool, scores, Mode): List<Map>
+    ~createScheme(user, pieceIds, title, occasion, SchemeOrigin, …): Scheme
+    ~gap(DayRequest, eligible, ctx): Map
+    ~planView(user, WeekPlan): Map
+    {static} ~inferOccasion(event): String
+  }
+  class "AutopilotService.DailyRequest" as DailyRequest <<record>> {
+    +occasion: List<String>
+    +mood: String
+    +city: String
+    +latitude: Double
+    +longitude: Double
+    +excludeKeys: List<String>
+    +mode: String
+  }
+  class "AutopilotService.WeekRequest" as WeekRequest <<record>> {
+    +weekStart: LocalDate
+    +days: List<DayRequest>
+    +city: String
+    +latitude · longitude: Double
+  }
+  class "AutopilotService.DayRequest" as DayRequest <<record>> {
+    +date: LocalDate
+    +event: String
+    +occasion: String
+  }
+  class "AutopilotService.Candidate" as Candidate <<record>> {
+    +pieces: List<WardrobeItem>
+    +key: String
+    +score: double
+    +criteria: Map<String, Double>
+    +composition: Composition
+  }
+  class LookScorer {
+    ~scoreLooks(userId, looks): List<Scores>
+    ~scoreCards(user, cards, Mode): List<Map>
+  }
+  class PreferenceModel {
+    +of(userId): Model
+  }
+  class WeatherService {
+    +resolve(latitude, longitude, city): Context
+    {static} +withBand(Context, band): Context
+    {static} +unsuitable(subcategory, band): boolean
+    {static} +isLayer(subcategory): boolean
+  }
+  class DailyLookService {
+    +register(user, scheme, DailyLookSource, date): DailyLook
+  }
 }
-class WeatherService {
-  +resolve(latitude, longitude, city): Context
-  +{static} band(t): String
-  +{static} withBand(ctx, band): Context
-  +{static} unsuitable(subcategory, band): boolean
-  +{static} isLayer(subcategory): boolean
+
+package "fai-application · ai, hype e insights" {
+  class LocalSchemeComposer {
+    {static} +compose(wardrobe, occasions, styles, season, mood, limit): List<Composition>
+    {static} +slotOf(WardrobeItem): SchemeSlot
+  }
+  class AiEngine {
+    +text(TextCall): AiOutcome
+  }
+  class RecommendationScoring <<final>> {
+    {static} +rankValue(Mode, Scores): double
+  }
+  enum "RecommendationScoring.Mode" as Mode {
+    SAFE
+    DISCOVERY
+    EXPERIMENTAL
+    {static} +parse(raw): Mode
+  }
+  class "RecommendationScoring.Scores" as Scores <<record>> {
+    +compatibility · hype · novelty: Integer
+    +reuse · usage · sustainability: Integer
+  }
+  class InsightService {
+    +itemsOrEmpty(user, InsightContext.AUTOPILOT): List<Map>
+  }
 }
+
+package "fai-domain · model" {
+  class WeekPlan <<table week_plans>> {
+    +user: User
+    +weekStart: LocalDate
+    +status: WeekPlanStatus = ACTIVE
+    +gapsJson: String
+  }
+  class WeekPlanDay <<table week_plan_days>> {
+    +weekPlan: WeekPlan
+    +dayDate: LocalDate
+    +eventLabel: String
+    +occasion: String
+    +scheme: Scheme
+    +pieceIdsJson: String
+    +combinationKey: String
+    +rationale: String
+    +editedManually: boolean
+  }
+  class Scheme <<table schemes>> {
+    +origin: SchemeOrigin
+    +creationMode: CreationMode
+  }
+  class DailyLook <<table daily_looks>> {
+    +lookDate: LocalDate
+    +source: DailyLookSource
+    +weekPlanDayId: String
+  }
+  class WardrobeItem <<table wardrobe_items>> {
+    +disponivel: boolean
+    +subcategory: String
+    +occasionTags: String
+    +wearCount: int
+  }
 }
-WeekPlan "*" --> "1" User : user
-WeekPlanDay "*" --> "1" WeekPlan : weekPlan
-WeekPlanDay "*" --> "0..1" Scheme : scheme
-DailyLook "*" --> "1" User : user
-DailyLook "*" --> "1" Scheme : scheme
-DailyLook ..> WeekPlanDay : weekPlanDayId
-Scheme "*" --> "1" User : user
-SchemeItem "*" --> "1" Scheme : scheme
-SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
-WardrobeItem "*" --> "1" User : user
+
+package "fai-domain · enums" {
+  enum WeekPlanStatus {
+    ACTIVE
+    DISCARDED
+    COMPLETED
+  }
+  enum "SchemeOrigin (trecho)" as SO {
+    AUTOPILOTO
+  }
+  enum "DailyLookSource (trecho)" as DLS {
+    AUTOPILOTO
+  }
+}
+
+package "fai-domain · repository" {
+  interface WeekPlanRepository {
+    +findFirstByUserIdAndStatusOrderByWeekStartDesc(userId, status): Optional<WeekPlan>
+  }
+  interface WeekPlanDayRepository {
+    +findByWeekPlanIdOrderByDayDate(weekPlanId): List<WeekPlanDay>
+  }
+}
+
+AutopilotService ..> DailyRequest
+AutopilotService ..> WeekRequest
+WeekRequest *-- "0..7" DayRequest
+AutopilotService ..> Candidate
+AutopilotService *-- "1" LookScorer : mesma régua do Copilot
+AutopilotService --> PreferenceModel : preferências .25
+AutopilotService --> WeatherService
+AutopilotService --> AiEngine : COPILOT (escolhe 3)
+AutopilotService ..> LocalSchemeComposer : candidatas e fallback
+AutopilotService --> InsightService : AUTOPILOT
+AutopilotService --> DailyLookService : register(AUTOPILOTO)
+AutopilotService --> WeekPlanRepository
+AutopilotService --> WeekPlanDayRepository
+DailyRequest ..> Mode : mode (parse)
+LookScorer ..> RecommendationScoring
+RecommendationScoring ..> Scores
+RecommendationScoring ..> Mode
+Candidate "*" --> "2..*" WardrobeItem
+WeekPlan "1" *-- "0..7" WeekPlanDay : dias (7 ao planejar;\napagados ao descartar)
 WeekPlan --> WeekPlanStatus
-Scheme --> SchemeOrigin
-Scheme --> CreationMode
-DailyLook --> DailyLookSource
-AutopilotService ..> WeatherService : clima
-AutopilotService ..> WeekPlan : cria/descarta
-AutopilotService ..> Scheme : cria (origin AUTOPILOTO)
-AutopilotService ..> DailyLook : registra (source AUTOPILOTO)
-note top of WeekPlan : tabela week_plans
-note top of WeekPlanDay : tabela week_plan_days
-note top of DailyLook : tabela daily_looks\n(uq user_id + look_date)
-note top of Scheme : tabela schemes
-note top of SchemeItem : tabela scheme_items
-note top of WardrobeItem : tabela wardrobe_items
-note bottom of WeatherService : faixas: VERAO_LEVE, MEIA_ESTACAO,\nCAMADAS, INVERNO_PESADO (ver RF24 para a IA)
+WeekPlanDay "*" --> "0..1" Scheme : look usado
+DailyLook ..> WeekPlanDay : weekPlanDayId
+Scheme --> SO
+DailyLook --> DLS
+
+note bottom of WeekPlanStatus
+  COMPLETED existe no enum, mas nenhum
+  código atribui esse estado.
+end note
+note right of Candidate
+  score = .35 ocasião + .25 clima
+  + .25 preferências + .15 diversidade;
+  os seis números (Scores) só reordenam
+  quando há modo.
+end note
 @enduml

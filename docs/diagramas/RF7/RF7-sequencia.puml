@@ -1,5 +1,5 @@
 @startuml RF7_Sequencia
-title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de sequência — endpoints reais
+title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de sequência — esquema → peça com origem, peça excluída e ações do dono
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -9,61 +9,107 @@ skinparam sequence {
 }
 autonumber
 actor "Pessoa" as P
-participant "Frontend\ndetail-modal · expanded-card\n(pieces/[id] · schemes/[id])" as FE
+participant "piece-card / scheme-card\n+ DetailModalProvider\n(detail-modal.tsx)" as FE
+participant "ExpandedScheme ·\nExpandedPiece\n(expanded-card.tsx)" as EC
 participant "SchemeController" as SCC
 participant "WardrobeController" as WC
-participant "CommentController" as CC
 participant "SchemeService" as SS
 participant "WardrobeService" as WS
-participant "SocialService" as SO
 participant "Guard" as G
+participant "CounterStorePort\n(Redis)" as CNT
 database "MySQL" as DB
 
-P -> FE: clica num esquema da lista do Closet
-FE -> SCC: GET /api/schemes/{id}
+== Esquema ==
+P -> FE: clica num look do Closet/Lookbook
+FE -> FE: openScheme(id) — pilha [scheme]
+FE -> EC: ExpandedScheme(id)
+EC -> SCC: GET /api/schemes/{id}
 SCC -> SS: get(viewer, id)
-SS -> G: requireView(viewer, ownerId, visibilidade efetiva)
-SS -> DB: schemes · scheme_items · seals
-SCC --> FE: 200 {scheme, wearstyles, seals, sealBadges, remixedFrom, canEdit}
-P -> FE: clica numa peça (linha compacta do esquema)
-FE -> FE: empilha navegação (origem = schemeId) — CA01
-FE -> WC: GET /api/pieces/{id}?fromScheme={schemeId}
-WC -> WS: detail(viewer, id, fromScheme)
-WS -> WS: requireVisiblePiece (moderação APPROVED + Guard.requireView)
-alt sem permissão
-  WS --> FE: 404 / 403
-else peça ARCHIVED e quem pede não é o dono (CA03)
-  WS -> DB: scheme_items.snapshotJson do esquema de origem
-  WC --> FE: 200 {notAvailableAnymore: true, snapshot, fromSchemeId}
-else peça disponível
-  WS -> DB: touchView(id) · scheme_items (originSchemes)
-  WC --> FE: 200 {piece, wearstyles, originSchemes, fromSchemeId, canEdit}
-end
-alt canEdit = true (dono)
-  P -> FE: alterna disponível/indisponível
-  FE -> WC: PATCH /api/pieces/{id}/flags {disponivel}
-  WC -> WS: toggles(user, id, favorite, disponivel, forSale)
-  WS -> DB: wardrobe_items.availabilityStatus = AVAILABLE | UNAVAILABLE
-  WS -> WS: publishEvent(AvailabilityChanged)
-  WS -> DB: INSERT wardrobe_availability_log (WardrobeEventListeners, após o commit)
-  WC --> FE: 200 PieceView
-  opt editar
-    FE -> WC: PUT /api/pieces/{id} (PieceForm)
-    WC -> WS: update(user, id, form)
-    WC --> FE: 200 PieceView
+SS -> DB: schemes.findById
+alt não existe ou ARCHIVED (quem vê não é o autor)
+  SS --> EC: 404
+else visibilidade efetiva (esquema × perfil) não permite ou há bloqueio
+  SS -> G: requireView(viewer, ownerId, efetiva, "scheme:{id}")
+  G -> DB: audit ACESSO_NEGADO_403
+  G --> EC: 403
+else pode ver
+  opt quem vê não é o autor
+    SS -> DB: schemes.view_count + 1
+    SS -> CNT: increment("scheme", id, "views")
+    SS ->> SS: HypeSignal LOOK_VIEWED (AFTER_COMMIT → hype_signal_daily)
   end
-else visitante (CA02)
-  FE -> FE: dados públicos + InteractionBar (RF19), sem edição
-  opt voltar ao esquema de origem
-    FE -> CC: POST /api/pieces/{pieceId}/return-to-origin?fromScheme=
-    CC -> SO: returnToOrigin(user, pieceId, fromScheme)
-    alt peça indisponível
-      SO --> FE: 409 INDISPONIVEL
+  SS -> DB: scheme_items (ordem) · selos aprovados
+  SCC --> EC: 200 {scheme, wearstyles, seals, sealBadges, remixedFrom, canEdit}
+end
+
+== Peça aberta de dentro do look (CA01) ==
+P -> EC: clica numa peça da lista compacta
+EC -> FE: openPiece(pieceId, fromScheme = schemeId) — pilha [scheme, piece]
+FE -> EC: ExpandedPiece(id, from)
+EC -> WC: GET /api/pieces/{id}?fromScheme={schemeId}
+WC -> WS: detail(viewer, id, fromScheme)
+WS -> DB: wardrobe_items.findById (404 se não existe)
+WS -> WS: requireVisiblePiece
+note right of WS
+  dono/admin: passa direto
+  moderação ≠ APPROVED: 404
+  senão Guard.requireView com a visibilidade mais
+  restritiva entre peça e perfil (+ bloqueio): 403 auditado
+end note
+alt ARCHIVED e quem vê não é o dono (CA03)
+  WS -> DB: scheme_items do look de origem (look visível?)
+  WC --> EC: 200 {notAvailableAnymore: true, snapshot, fromSchemeId}
+  EC --> P: PieceSnapshot "peça não mais disponível", sem ações
+else peça ativa
+  WS -> DB: touchView(id, visitante ? 1 : 0, agora)
+  opt visitante logado
+    WS ->> WS: HypeSignal PIECE_VIEWED (AFTER_COMMIT)
+  end
+  WS -> DB: reações e salvos de quem vê (viewerState) · contagem de reações
+  WS -> DB: scheme_items.findByWardrobeItemId → looks visíveis (originSchemes)
+  WC --> EC: 200 {piece, wearstyles, originSchemes, fromSchemeId, canEdit}
+end
+
+== Dono × visitante (CA02) ==
+alt dono (owner.id = sessão)
+  P -> EC: "Mais opções" → marcar indisponível
+  EC -> WC: PATCH /api/pieces/{id}/flags {disponivel: false}
+  WC -> WS: toggles(user, id, null, false, null, null)
+  WS -> G: requireCanCreate + requireOwner (403 auditado)
+  WS -> DB: disponivel = false · availability_status = UNAVAILABLE
+  WS ->> WS: AvailabilityChanged (AFTER_COMMIT → wardrobe_availability_log,\nHypeLiveRecalc, InventoryScore)
+  WC --> EC: 200 PieceView
+  opt excluir
+    EC -> WC: GET /api/pieces/{id}/deletion-impact
+    WC --> EC: 200 {schemesAffected, publishedSchemes, message}
+    P -> EC: confirma
+    EC -> WC: DELETE /api/pieces/{id}
+    WC -> WS: delete(user, id)
+    WS -> DB: snapshot nos scheme_items sem retrato · ARCHIVED · PRIVATE
+    WS -> DB: photos retiradas (WARDROBE_ITEM, EDITOR) · audit EXCLUSAO_PECA
+    WS ->> WS: PieceDeleted (AFTER_COMMIT)
+    WC --> EC: 200 {schemesAffected, photosRemoved}
+  end
+else visitante
+  EC --> P: dados públicos + CardActions (RF19); sem editar
+  opt "guardar uma cópia"
+    EC -> WC: POST /api/pieces/{id}/copy
+    WC -> WS: addToWardrobe(user, id)
+    alt é sua
+      WS --> EC: 409 JA_E_SUA
     else
-      CC --> FE: 200 {originSchemeId, title, otherSchemes}
+      WS -> DB: INSERT wardrobe_items (cópia, remixed_from_piece_id)
+      WC --> EC: 201 PieceView → /pieces/{novoId}
     end
   end
 end
-P -> FE: "voltar"
-FE -> FE: desempilha para o esquema de origem
+
+== Voltar ==
+P -> FE: ← (voltar)
+FE -> FE: desempilha → ExpandedScheme do look de origem
+note over FE, WC
+  Na rota /pieces/{id}?fromScheme= o atalho é o link "Voltar ao look".
+  POST /api/pieces/{pieceId}/return-to-origin (CommentController → SocialService.returnToOrigin)
+  existe, mas nenhuma tela o chama.
+end note
 @enduml

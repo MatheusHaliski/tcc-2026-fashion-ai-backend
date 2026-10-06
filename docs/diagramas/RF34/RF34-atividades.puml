@@ -1,5 +1,5 @@
 @startuml RF34_Atividades
-title RF34 — Explorar as "Eras" de uma celebridade: busca por era, Insights de Eras e My Stage 3D\nDiagrama de atividades
+title RF34 — Eras da celebridade: busca por era, Insights de Eras e My Stage 3D\nDiagrama de atividades — as três sub-abas da aba "Eras" no perfil da celebridade (RF22)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,30 +23,74 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Visitante|
+|Pessoa|
 start
-:Abre o perfil da celebridade (RF22) → aba "Eras";
-|Sistema (ShowcaseService)|
-:Lista as eras (agrupamentos type=ERA)\ncom foto, período e contagem;
-|Visitante|
-split
-  :Busca por era, texto e ano;
-  |Sistema (ShowcaseService)|
-  :Esquemas e peças da era;
-split again
-  |Visitante|
-  :"Insights de Eras";
-  |Sistema (ShowcaseService)|
-  :Ranking das eras (hype, looks, salvamentos)\nem palcos 2D;
-split again
-  |Visitante|
-  :My Stage 3D;
-  |Sistema (ShowcaseService)|
-  :Foto da celebridade no manequim, no palco 3D;
-end split
-|Celebridade (dona)|
-:Cria/edita era, adiciona looks\ne envia a foto da era;
-|Sistema (LookbookService)|
-:Salva o agrupamento e os itens;
+:No perfil /brands/{slug} da celebridade, abre a aba "Eras"\n(ou o botão "Eras" do header);
+|Frontend (ErasTab)|
+:SegmentPicker: Buscar por era · Insights de Eras · My Stage 3D;
+note right
+  Em toda chamada: ShowcaseService.owner(slug, ERAS)
+  → 404 se o slug não é perfil institucional ou não é
+  CELEBRIDADE. Eras = scheme_groupings do dono com type
+  ERA, PHASE ou TOUR (ordem sortOrder, depois periodFrom).
+  Visíveis para quem vê: looks PUBLISHED (o dono vê todos
+  menos arquivados) com canView, peças não arquivadas com
+  canView (visibilidade × privacidade do perfil × bloqueio).
+end note
+switch (Sub-aba?)
+case (Buscar por era)
+  :GET …/showcase/eras (cards: label, período, cor, capa, nº de looks/peças)\n+ GET …/showcase/eras/items?groupingId&q&type&sort&year;
+  |ShowcaseService|
+  if (groupingId não é uma era do perfil?) then (sim)
+    #FFE3E3:404 Era;
+    stop
+  else (não)
+  endif
+  :Filtra pela era (ou todas) e pelo ano dentro do período,\ntexto em título/tags/estilo (looks) ou nome/marca/tags (peças);
+  :Ordem: HYPE (v2 público, sem Hype no fim) · GROWTH (Δ 7 dias e TREND)\n· CURTIDAS · RECENTES, até 60 looks e 60 peças;
+  :Header = card da era escolhida: foto enviada ou, sem foto,\na capa do look de maior Hype (coverSource esquema);
+  |Frontend (ErasTab)|
+  if (Sem resultados?) then (sim)
+    :"Nada nesta era com esses filtros";
+  else (não)
+    :Hero da era (foto, título, período) + SchemeCard e PieceCard;
+  endif
+case (Insights de Eras)
+  :GET /api/institutional/{slug}/showcase/eras/insights;
+  |ShowcaseService|
+  :Por era: curtidas (looks + peças), itens, comentários,\ncompartilhamentos, Hype v2 {top, avg, level} e topScheme;
+  :Pontuação de POPULARIDADE = 0,75·curtidas/máx + 0,25·itens/máx\n(o Hype não entra), ranking desc;
+  :Plateia: fraction = pontuação/1º lugar, audience = fraction·120,\nspotlights = máx(1, 4 − posição);
+  |Frontend (ErasTab)|
+  if (Nenhuma era?) then (sim)
+    :"Nenhuma era para ranquear ainda";
+  else (não)
+    :Cards Mais popular · Mais curtidas totais · Maior Hype médio;
+    :Lista #n com MiniStage2D (SVG): plateia de 120 lugares\nenche do centro, 1º lugar = "LOTADO";
+  endif
+case (My Stage 3D)
+  :GET /api/institutional/{slug}/stage[?schemeId];
+  |ShowcaseService|
+  :Look padrão = o de maior HypeScore v2 entre TODOS os looks\nvisíveis (empate: mais recente), schemeId escolhe outro;
+  if (schemeId não é look visível?) then (sim)
+    #FFE3E3:404 Esquema;
+    stop
+  else (não)
+  endif
+  :photoUrl = foto do CelebrityProfile (ou do usuário).\nlook(): manequim (sexo do cadastro → provador → peças → feminino)\ne peças (GLB do RF16 quando pronto, senão a foto recortada);
+  |Frontend (ErasTab)|
+  if (WebGL disponível?) then (sim)
+    :StageScene (React Three Fiber): palco, telão LED com\nnome e look, feixes nas cores das eras, plateia e giro;
+  else (não)
+    :StageFallback 2D: foto + peças;
+  endif
+  :Seletor "Look no palco" (12 de maior Hype) e cores das eras;
+endswitch
+note right
+  Divergências com o Trello: o palco mostra o look de maior
+  Hype de todas as eras (não o mais curtido da era escolhida);
+  a cabeça 3D só usa o Avatar 3D (RF40) — a foto oficial vai
+  só para o plano B 2D e a legenda; o ranking não soma o Hype.
+end note
 stop
 @enduml

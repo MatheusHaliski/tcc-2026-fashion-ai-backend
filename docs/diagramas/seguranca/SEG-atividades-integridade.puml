@@ -1,0 +1,60 @@
+@startuml SEG_Atividades_Integridade
+title Segurança, integridade e operação (transversal)\nDiagrama de atividades — integridade referencial por domínio: Flyway V34 (política de ON DELETE) e V35 (origem da conta)
+!include _estilo.iuml
+|Flyway (subida da API)|
+start
+:Chega à V34~__integridade_referencial_por_dominio
+(migração Java, fora de transação:
+cada ALTER do MySQL faz commit sozinha);
+|V34.migrate|
+while (Próxima Fk de POLICY? (131: 109 CASCADE · 16 SET NULL · 6 RESTRICT)) is (sim)
+  :existing(): lê nome e DELETE_RULE atuais
+  no INFORMATION_SCHEMA (nunca presume o nome);
+  if (Uma FK só e sameRule(atual, política)?
+  (NO ACTION conta como RESTRICT)) then (sim)
+    :Pula (já na política);
+  else (não)
+    :problem(): confere a FK;
+    if (Tabela ou coluna inexistente,
+    SET NULL em coluna NOT NULL,
+    tipo/collation diferente do pai
+    ou linhas órfãs?) then (sim)
+      #FFF6E5:Adia SÓ esta FK
+      (a constraint antiga continua valendo)
+      e registra o motivo no log;
+    else (não)
+      :Uma ALTER TABLE só:
+      DROP FOREIGN KEY das antigas e
+      ADD CONSTRAINT fkp_(tabela)~__(coluna)
+      ON DELETE (regra) ON UPDATE RESTRICT;
+    endif
+  endif
+endwhile (fim)
+:Log "V34: N aplicadas, M já na política, K adiadas";
+note right
+  Nunca desliga FOREIGN_KEY_CHECKS.
+  Dado de quem é dono → CASCADE;
+  catálogo global (marcas, produtos, modelos de desafio,
+  móveis) → RESTRICT; SET NULL só onde o filho
+  continua válido sem o pai (ex.: remix, log de IA).
+end note
+|Flyway (subida da API)|
+:V35~__origem_da_conta_e_fixtures (SQL);
+:users.account_origin (REAL padrão · CHECK REAL, TEST_SEED,
+DEMO, SYSTEM) e fixture_key único;
+:test_account = TRUE vira TEST_SEED e
+a coluna test_account passa a ser GERADA
+(account_origin IN TEST_SEED, DEMO);
+:brands.catalog_origin (REAL · SEED · DEMO) e fixture_key;
+:Segue para V36…V42;
+|Verificação (pipeline demo)|
+:MysqlDemoDataAdminAdapter.integrityProblems():
+FK ausente, com regra diferente ou fora da POLICY,
+conta real com fixture_key, conta DEMO sem demo_,
+interação polimórfica órfã, peça real em marca DEMO;
+note right
+  Pronto no adaptador; quem o chama
+  (verify do DemoDataService) é planejado.
+end note
+stop
+@enduml

@@ -1,6 +1,6 @@
 @startuml RF25_Criador_Estados
 !pragma layout smetana
-title RF25 — Criador de selo: etapas do assistente, tipo de arte e modo do núcleo\nMáquina de estados
+title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de máquina de estados — assistente SealWizard (passo, tipo de arte e modo do núcleo)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,12 +8,17 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-[*] --> Modo : "Novo selo"
-[*] --> Dados : "Editar" (selo existente)
-state Modo
-state "Sugerindo (IA)" as Sugerindo
-state Dados
-state Arte {
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+[*] --> Modo : "Novo selo" (step 0)
+[*] --> Dados : "Editar" (form.id → step 1, modo MANUAL)
+state "Modo (step 0)" as Modo
+state "Sugerindo (IA)\ndrafting = true" as Sugerindo
+state "Dados (step 1)" as Dados
+state "Arte (step 2)" as Arte {
   [*] --> Circular
   state Circular {
     [*] --> Modelo
@@ -28,30 +33,44 @@ state Arte {
   Folha --> Circular : tipo
   note right of Folha : ao voltar a um tipo,\no último modelo escolhido\nnele é restaurado
 }
-state Revisar
+state "Revisar (step 3)" as Revisar
+state "Salvando\nsaving = true" as Salvando
 state Salvo
-Modo --> Sugerindo : "Com IA"
-Sugerindo --> Dados : 200 sugestão
-Sugerindo --> Modo : erro (toast)
-Modo --> Dados : "Sem IA"
+Modo --> Sugerindo : "Com IA" → POST /api/seals/draft
+Sugerindo --> Dados : 200 sugestão + reasons
+Sugerindo --> Modo : erro 403/5xx (toast, mode = null)
+Modo --> Dados : "Sem IA" (mode = MANUAL)
 Dados --> Arte : Avançar
 Arte --> Dados : Voltar
 Arte --> Revisar : Avançar [nome ≥ 2]
-Revisar --> Dados : Editar dados
-Revisar --> Arte : Editar arte
-Revisar --> Salvo : Salvar selo [201]
-Revisar --> Revisar : 400 SELO_DESIGN_INVALIDO
+Revisar --> Dados : "Editar" (nome, nível, política,\nvalidade, limite)
+Revisar --> Arte : "Editar" (tipo)
+Revisar --> Salvando : "Salvar selo" [nome ≥ 2]
+Salvando --> Salvo : 201 POST | 200 PUT\n(Dialog fecha, aba recarrega)
+Salvando --> Revisar : 400 CAMPO_INVALIDO · POLITICA_INVALIDA ·\nSELO_DESIGN_INVALIDO · MIDIA_INVALIDA ·\nPERIODO_INVALIDO · LIMITE_INVALIDO (toast)
 Salvo --> [*]
 
-state "Núcleo (circular e emblema da folha)" as Nucleo {
+state "Núcleo (circular e emblema da folha) — SealCoreEditor" as Nucleo {
   [*] --> ELEMENT
-  ELEMENT --> IMAGE : enviar imagem
-  ELEMENT --> TEXT : escrever texto
-  IMAGE --> TEXT
-  TEXT --> IMAGE
-  IMAGE --> ELEMENT : remover imagem
-  TEXT --> ELEMENT
-  note bottom of IMAGE : exige imageUrl do próprio emissor;\nzoom 1–3 e texto opcional
-  note bottom of TEXT : exige texto (≤ 24);\nquebra em até 2 linhas
+  state ELEMENT : ícone + material + cor + texto ≤ 3
+  state IMAGE {
+    state "Sem imagem" as SemImg
+    state "Enviando\nPOST /api/seals/uploads?purpose=core" as Enviando
+    state "Com imagem\nimageUrl" as ComImg
+    [*] --> SemImg
+    SemImg --> Enviando : arquivo ok no cliente\n(≥ 64 px, ≤ 4:1)
+    SemImg --> SemImg : arquivo recusado no cliente (toast)
+    Enviando --> ComImg : 200 {url}
+    Enviando --> SemImg : 400 NUCLEO_PEQUENO ·\nNUCLEO_PROPORCAO · 403 (toast)
+    ComImg --> Enviando : "Trocar"
+  }
+  state TEXT : texto obrigatório (≤ 24),\naté 2 linhas
+  ELEMENT --> IMAGE : segmento "Imagem"
+  ELEMENT --> TEXT : segmento "Texto"
+  IMAGE --> TEXT : segmento "Texto"
+  TEXT --> IMAGE : segmento "Imagem"
+  TEXT --> ELEMENT : segmento "Elemento"
+  IMAGE --> ELEMENT : "Remover imagem" ou segmento
+  note bottom of IMAGE : no salvamento, OwnMedia exige\nimagem do próprio emissor;\nzoom 1–3 e texto opcional
 }
 @enduml

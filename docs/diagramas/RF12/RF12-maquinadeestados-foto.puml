@@ -1,0 +1,48 @@
+@startuml RF12_MaquinaDeEstados_Foto
+!pragma layout smetana
+title RF12 — Visualizar & Editar a página "Minhas Fotos" & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de máquina de estados — Photo em Minhas Fotos: no acervo, imagem da peça, edição e exclusão lógica (deletedAt)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+}
+
+state "No acervo\n(deleted_at = null)" as Ativa {
+  state "Foto avulsa ou de look/provador/DNA\n(SCHEME · TRY_ON · STYLE_DNA ·\nPROFILE · BACKGROUND_STUDIO · LOOSE)" as Avulsa
+  state "Foto de peça\n(WARDROBE_ITEM · EDITOR)" as DaPeca {
+    state "Imagem atual da peça\n(publicUrl = imageUrl ou originalImageUrl;\npeça não arquivada) — «●» na grade" as Atual
+    state "Histórico da peça\n(original preservada ou edição antiga)" as Hist
+  }
+}
+state "Excluída\n(deleted_at = agora — some da galeria)" as Excl
+
+[*] --> DaPeca : POST /api/pieces com draftId\n(MediaService.register WARDROBE_ITEM)
+[*] --> Avulsa : look, provador, DNA, perfil, estúdio de fundo
+[*] --> Atual : POST /api/photos/{id}/edits ou PUT /api/pieces/{id}/image\n(nova Photo EDITOR; editedFromPhotoId = original)
+Atual --> Hist : outra edição/foto vira a imagem da peça
+Avulsa --> Avulsa : POST /api/photos/{id}/edits\n→ cria uma nova Photo EDITOR (esta não muda)
+Atual -down-> Excl : DELETE /api/photos/{id}?confirmed=true\nou bulk-deletion {confirmed: true}\n→ peça volta à ilustração (CA03)
+Atual --> Atual : DELETE sem confirmed\n→ 409 CONFIRMACAO_NECESSARIA
+Hist -down-> Excl : DELETE /api/photos/{id}\n· bulk-deletion
+DaPeca -down-> Excl : DELETE /api/pieces/{id} (RF7)\nMediaService.retire (CA13)
+Avulsa -down-> Excl : DELETE /api/photos/{id} · bulk-deletion ·\nDELETE /api/schemes/{id} (retire SCHEME)
+Excl --> [*]
+
+note right of Excl
+  Exclusão lógica: a linha fica em photos;
+  owned() responde 404 para foto excluída.
+  Não há "restaurar". Só a dona baixa,
+  edita ou exclui (403 auditado para outros).
+end note
+note left of Ativa
+  key_moment é um marcador à parte
+  (PUT /api/photos/{id}/key-moment {key}),
+  usado na linha do tempo; não muda o estado.
+end note
+@enduml

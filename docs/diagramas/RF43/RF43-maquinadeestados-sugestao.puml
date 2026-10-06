@@ -1,6 +1,6 @@
 @startuml RF43_MaquinaDeEstados_Sugestao
 !pragma layout smetana
-title RF43 — Sugestão do Autopiloto e WeekPlan: da combinação ranqueada ao esquema / Look do Dia
+title RF43 — Autopiloto gera combinações de vestimentas com IA\nDiagrama de máquina de estados — sugestão do dia (em memória) e plano da semana (WeekPlan e WeekPlanDay)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,27 +8,50 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-state "Sugestão diária (em memória)" as Diaria {
-  [*] --> Candidata : LocalSchemeComposer.compose\n+ pontuação
-  Candidata --> Sugerida : IA (COPILOT) ou fallback\nescolhe 3 (POST /api/autopilot/daily)
-  Candidata --> Excluida : combinationKey em excludeKeys
-  Sugerida --> Excluida : "Outras opções"\n(key entra em excludeKeys)
-  Sugerida --> Confirmada : POST /api/autopilot/daily/confirmation
+state "Sugestão do dia (não gravada)" as Diaria {
+  state "Candidata\n(LocalSchemeComposer + nota\ndo motor)" as Candidata
+  state "Pontuada\n(seis números; com modo,\nreordenada)" as Pontuada
+  state "Sugerida\n(uma das 3 escolhidas\npela IA ou pelo fallback)" as Sugerida
+  state "Excluída\n(combinationKey em excludeKeys)" as Excluida
+  [*] --> Candidata : POST /api/autopilot/daily
+  Candidata --> Excluida : já mostrada
+  Candidata --> Pontuada : entre as 10 primeiras
+  Pontuada --> Sugerida : pickWithAi (COPILOT)\nou fallback local
+  Sugerida --> Excluida : "Outras opções"
   Excluida --> [*]
 }
-Confirmada --> SchemeAutopiloto : createScheme (reaproveita esquema\ncom a mesma combinationKey ou cria)
-state "Scheme origin=AUTOPILOTO\ncreationMode=AI_ASSISTED" as SchemeAutopiloto
-SchemeAutopiloto --> DailyLookAutopiloto : DailyLookService.register
-state "DailyLook source=AUTOPILOTO" as DailyLookAutopiloto
-DailyLookAutopiloto --> [*]
+state "Look AUTOPILOTO\n(schemes.origin = AUTOPILOTO;\nmesma combinação = reaproveitado)" as Look
+state "Look do Dia AUTOPILOTO\n(daily_looks.source)" as LookDia
+Sugerida --> Look : POST /api/autopilot/daily/confirmation
+Look --> LookDia : DailyLookService.register(hoje)\n[peças disponíveis; senão 409]
 
 state "WeekPlan (week_plans.status)" as Semana {
-  [*] --> ACTIVE : POST /api/autopilot/weeks\n(plano ACTIVE anterior vira DISCARDED)
-  ACTIVE --> ACTIVE : PUT /api/autopilot/days/{dayId}\n(editedManually, revalida repetição → 409)
-  ACTIVE --> ACTIVE : POST /api/autopilot/days/{dayId}/use\n(dia ganha scheme + DailyLook)
-  ACTIVE --> DISCARDED : DELETE /api/autopilot/weeks/current\nou novo planWeek
-  DISCARDED --> [*]
+  state "ACTIVE" as Active {
+    state "Dia com look\n(piece_ids_json, combination_key)" as DiaLook
+    state "Lacuna\n(sem peças; gaps_json)" as Lacuna
+    state "Editado\n(edited_manually = true,\nscheme = null)" as Editado
+    state "Usado\n(scheme + daily_looks.week_plan_day_id)" as Usado
+    [*] --> DiaLook : há candidata nova
+    [*] --> Lacuna : nenhuma combinação nova
+    DiaLook --> Editado : PUT /api/autopilot/days/{dayId}\n[≥ 2 peças e sem repetir; senão 400/409]
+    Editado --> Editado : nova edição
+    DiaLook --> Usado : POST /api/autopilot/days/{dayId}/use
+    Editado --> Usado : POST …/use
+    Usado --> Editado : PUT …/days/{dayId} (desvincula o look)
+    Usado --> Usado : POST …/use de novo (mesmo look)
+    Lacuna --> Lacuna : POST …/use → 409 DIA_SEM_LOOK
+    Lacuna --> Editado : PUT …/days/{dayId}
+  }
+  state "DISCARDED" as Discarded
+  state "COMPLETED\n(no enum; nunca atribuído)" as Completed
+  [*] --> Active : POST /api/autopilot/weeks
+  Active --> Discarded : DELETE /api/autopilot/weeks/current\n(apaga os dias)
+  Active --> Discarded : novo POST /api/autopilot/weeks\n(o anterior é descartado)
+  Discarded --> [*]
 }
-note right of Semana : enum WeekPlanStatus = ACTIVE, DISCARDED, COMPLETED;\nCOMPLETED existe no enum mas nenhuma transição\no atribui no código atual
-note bottom of SchemeAutopiloto : esquemas já salvos continuam após o descarte\nda semana (discardWeek não apaga schemes)
+Usado --> LookDia : register(AUTOPILOTO, data do dia)
+note bottom of Semana
+  Descartar a semana não apaga os looks já salvos
+  nem os Looks do Dia registrados.
+end note
 @enduml

@@ -1,0 +1,89 @@
+@startuml RF43_Sequencia_Semana
+title RF43 — Autopiloto gera combinações de vestimentas com IA\nDiagrama de sequência — aba Semana: planejar, ver o plano com seis números por dia, usar um dia, editar e descartar
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "autopilot/page.tsx\n(aba Semana)" as FE
+participant "AutopilotController" as AC
+participant "AutopilotService" as AP
+participant "WeatherService" as WS
+participant "LocalSchemeComposer\nLocalAdvisors" as LC
+participant "LookScorer" as LSC
+participant "SchemeService\nDailyLookService" as SD
+database "MySQL" as DB
+
+FE -> AC: GET /api/autopilot/weeks/current
+AC -> AP: currentWeek(user)
+AP -> DB: week_plans (user, ACTIVE, mais recente)
+alt sem plano ativo
+  AP --> FE: 200 {active: false, message}
+  U -> FE: preenche início, cidade e eventos/ocasiões dos 7 dias
+  FE -> AC: POST /api/autopilot/weeks {weekStart, city, days}
+  AC -> AP: planWeek(user, WeekRequest)
+  alt menos de 3 peças elegíveis
+    AP --> FE: 422 ACERVO_INSUFICIENTE
+  else
+    AP -> AP: início = segunda-feira; ocasião ou inferOccasion(evento)
+    AP -> DB: plano ACTIVE anterior → DISCARDED; INSERT week_plans (ACTIVE)
+    AP -> WS: resolve(lat, lon, city)
+    loop 7 dias
+      AP -> LC: candidates(ocasião, clima, combinações já usadas,\nuso de peças no plano, 5)
+      alt há candidata
+        AP -> DB: INSERT week_plan_days (piece_ids_json, combination_key, rationale local)
+      else lacuna
+        AP -> LC: LocalAdvisors.wardrobeGaps + até 4 peças públicas de MARCA
+        AP -> DB: INSERT week_plan_days (sem peças, rationale de lacuna)
+      end
+    end
+    AP -> DB: week_plans.gaps_json
+  end
+end
+AP -> AP: planView(user, plan)
+AP -> DB: week_plan_days + wardrobe_items de cada dia
+AP -> LSC: scoreLooks(userId, looks dos dias com peças)
+LSC --> AP: seis números por dia (lacuna = scores nulo)
+AP --> FE: 200 {active, id, weekStart, days[{id, date, today, event, occasion,\npieces, gap, rationale, editedManually, schemeId, scores}], gaps, distinctLooks}
+
+opt "Usar hoje" num dia
+  FE -> AC: POST /api/autopilot/days/{dayId}/use
+  AC -> AP: useDay(user, dayId)
+  AP -> AP: Guard.requireOwner do plano (403)
+  alt dia sem peças (lacuna)
+    AP --> FE: 409 DIA_SEM_LOOK
+  else
+    AP -> SD: day.scheme ou createScheme("Semana planejada…", AUTOPILOTO)
+    AP -> SD: DailyLookService.register(AUTOPILOTO, day.dayDate)
+    SD -> DB: daily_looks (week_plan_day_id = dia)
+    AP --> FE: 200 {schemeId, dailyLook}
+  end
+end
+opt trocar as peças de um dia (rota da API; a tela não usa)
+  U -> AC: PUT /api/autopilot/days/{dayId} {pieceIds}
+  AC -> AP: editDay(user, dayId, pieceIds)
+  alt menos de 2 peças
+    AP --> U: 400 SEM_PECAS
+  else combinationKey igual à de outro dia
+    AP --> U: 409 COMBINACAO_REPETIDA
+  else
+    AP -> DB: UPDATE week_plan_days (edited_manually, scheme = null)
+    AP --> U: 200 planView
+  end
+end
+opt "Descartar semana"
+  FE -> AC: DELETE /api/autopilot/weeks/current
+  AC -> AP: discardWeek(user)
+  alt sem plano ACTIVE
+    AP --> FE: 404
+  else
+    AP -> DB: DELETE week_plan_days; week_plans.status = DISCARDED
+    AP --> FE: 200 {discarded: true, note: looks salvos continuam}
+  end
+end
+note over FE: A tela espera d.used e d.title, que a API não manda:\n"Usar hoje" aparece mesmo depois de usado (divergência).
+@enduml

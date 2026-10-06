@@ -1,0 +1,78 @@
+@startuml RF42_Sequencia_Painel
+title RF42 — Marcar um look como "Look do dia"\nDiagrama de sequência — aba Look do Dia: continuidade, painel v2 só leitura com dica (tip), versão do painel, avaliação e histórico
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "DailyTab\n(components/lookbook-tabs.tsx)" as FE
+participant "HistoryTimeline\n(history/page.tsx)" as HT
+participant "LookbookController" as LC
+participant "LookbookService" as LS
+participant "DailyLookService" as DS
+participant "HypeScoreService" as HS
+participant "AiEngine (RF24)\nSTYLE_ADVISOR" as AI
+participant "HypeController\n/api/hype/summaries" as HC
+database "MySQL" as DB
+
+U -> FE: Lookbook › Look do dia (/u/{username}?tab=daily)
+FE -> LC: GET /api/me/daily-look-tab?withAi=false
+LC -> LS: dailyLookTab(user, withAi)
+LS -> DS: today(userId)
+DS -> DB: daily_looks (user, hoje)
+opt sem registro hoje
+  DS -> DB: último anterior (findFirst…LookDateBefore)
+  alt existe e o look não está ARCHIVED
+    DS -> DB: INSERT daily_looks (cópia, materialized_from_id) — sem evento
+  else
+    DS --> LS: vazio
+  end
+end
+alt sem Look do Dia
+  LS --> FE: 200 {panelVersion, panelVersions, today: null, empty {message, actions},\nhistory, feedbackReminder, feedbackOptions}
+else com Look do Dia
+  LS -> HS: panel(dl, withAi)
+  HS -> DB: hype_scores (SCHEME, versão atual) — só leitura, nunca recalcula
+  HS -> HS: v2Summary (sem linha = NOT_CALCULATED; sem dados = score nulo)\n+ magazineCover (TRENDING ou mais)
+  HS -> HS: tip = localTip (likes, comentários, shares, remixes,\nENGAGEMENT e TREND v2; dimensão sem base = 50)
+  opt withAi = true (checkbox "dica com IA")
+    HS -> AI: text(STYLE_ADVISOR, dimensão mais fraca; nunca promete Hype)
+    AI --> HS: dica (falha ou sem cota = dica local)
+  end
+  HS --> LS: {v2, magazineCover, tip, aiExplanation, previousDailyLook}
+  LS --> FE: 200 {panelVersion, today, scheme, panel, history (60),\nfeedbackReminder, feedbackOptions}
+end
+FE -> FE: primeHype(SCHEME, v2) e painel na versão escolhida\n(SPOTLIGHT_CLASSICO · PASSARELA · RAIO_X_ESTILO · BENTO_DIA\n· EDITORIAL_MINIMAL · COACH_ESTILO) + 💡 tip + HypeInline
+FE -> HC: GET /api/hype/summaries?type=SCHEME&ids=… (histórico, em lote)
+HC --> FE: HypeBadge v2 por dia (Hype pessoal do dono)
+
+opt trocar a versão do painel
+  FE -> LC: PUT /api/me/hype-panel-version {version}
+  LC -> LS: setPanelVersion → users.look_do_dia_panel_version
+  LS --> FE: 200 {panelVersion}; reload()
+end
+opt avaliar (só quando today.feedback é nulo)
+  U -> FE: ADOREI · NAO_USEI · NAO_GOSTEI
+  FE -> LC: PUT /api/me/daily-looks/{date}/feedback {feedback}
+  LC -> DS: feedback(user, date, feedback)
+  alt sem Look do Dia na data
+    DS --> FE: 404 SEM_LOOK_DO_DIA {href: /autopilot}
+  else
+    DS -> DB: UPDATE daily_looks SET feedback, feedback_at
+    DS --> FE: 200 view
+  end
+end
+note over FE, DS
+  O lembrete chega na própria aba (feedbackReminder: pending, evening ≥ 18 h,
+  show, message). A rota GET /api/me/daily-looks/pending-feedback existe
+  só na API: a tela não a chama.
+end note
+U -> HT: Histórico › Timeline
+HT -> LC: GET /api/me/daily-looks
+LC -> DS: history(user) → 60 mais recentes
+DS --> HT: 200 [{date, source, schemeId, title, feedback, materialized…}]
+@enduml

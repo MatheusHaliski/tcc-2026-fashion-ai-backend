@@ -1,0 +1,100 @@
+@startuml RF4_Atividades_Acervo_Oficial
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de atividades — acervo oficial em escala: coleta nos sites oficiais → revisão → fotos → importação idempotente → índice
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+|Operador|
+|Coletor (scripts/catalog)|
+|Sites oficiais|
+|Banco|
+|Operador|
+start
+:data/catalog/brands.json (100 marcas e seus domínios\noficiais) + aliases.json (CK → Calvin Klein);
+:collect_official.py ~--brands ~--max-per-brand ~--min-interval\n~--workers [~--fresh] [~--dry-run];
+|Coletor (scripts/catalog)|
+:run(): official_sources() só aceita OFFICIAL_BRAND ·\nOFFICIAL_STORE · AUTHORIZED_RETAILER (RN47.04);\nmarcas em paralelo (~--workers), 1 requisição por vez\npor site (Politeness);
+repeat
+  :collect_brand(): próximo domínio oficial da marca\n(retomada: .state/<marca>.visited + JSONL);
+  |Sites oficiais|
+  :Site.load_robots(): robots.txt (fallback www. em 0/403/404)\n+ Crawl-delay → intervalo = max(~--min-interval, Crawl-delay);
+  |Coletor (scripts/catalog)|
+  if (robots.txt deixa coletar?) then (não: 401/403/429\nou sem conexão)
+    #FFE3E3:StopDomain — domínio fica de fora\n("PAROU" no relatório);
+  else (sim)
+    :product_urls(): sitemaps de produto/pdp primeiro;\najuda, blog e lojas físicas ficam de fora;
+    repeat
+      |Sites oficiais|
+      :Site.get(url) — URL nova e liberada por Site.allowed;
+      note right
+        403/429 em qualquer GET → StopDomain:
+        o domínio é encerrado na hora.
+      end note
+      |Coletor (scripts/catalog)|
+      :structured_product(): JSON-LD Product/ProductGroup\nou OpenGraph (nada de HTML livre) → to_catalog_item():\nclean_title · same_brand · unsupported_reason ·\nis_pack · infer_subcategory (pelo NOME);
+      if (aceito e normalize_product válido?) then (sim)
+        :on_item(): +1 linha em collected/<marca>.jsonl;\nfotos de product_images() só de hosts aceitos\npor brand_cdn_ok — só a URL;
+      else (não)
+        #FFF1E0:descarta com motivo: sem tipo no nome (nunca\nchutado) · marca da página ≠ da fonte · roupa\níntima / vale-presente · kit sem tipo · sem\nJSON-LD/OpenGraph · ValidationError;
+      endif
+    repeat while (mais URLs e ~--max-per-brand não atingido?) is (sim) not (não)
+  endif
+repeat while (outro domínio oficial da marca?) is (sim) not (não)
+:Resumo por domínio: páginas · produtos · descartes ·\nbloqueados pelo robots.txt · domínios que pararam;
+|Operador|
+:recheck_collected.py [~--dry-run] e depois\nenrich_images.py [~--brands] [~--workers];
+|Coletor (scripts/catalog)|
+:recheck(): saem fora_do_acervo · sem_tipo_no_nome ·\nkit_sem_tipo; corrigidos tipo_corrigido · titulo_limpo ·\nfoto_https (reescreve via .jsonl.tmp);
+|Sites oficiais|
+:enrich_file(): produtos sem foto revisitam official_product_url\n(robots.txt, 1 requisição por site, 403/429 → StopDomain);
+|Coletor (scripts/catalog)|
+:product_images() + brand_cdn_ok() completam as fotos;\nconsolidado em acervo/acervo-oficial-2026-10-05.jsonl.gz\n(9.573 linhas);
+|Operador|
+repeat
+  :import_products.py <arquivos> ~--dry-run\n(JSON · JSONL · .jsonl.gz · CSV);
+  |Coletor (scripts/catalog)|
+  :Ingestor(dry_run): relatório [CREATE] · [UPDATE] ·\n[DUP] · [SKIP] · [ERROR] — nada gravado;
+  |Operador|
+repeat while (erros a corrigir? (ajusta brands.json / regras)) is (sim) not (não)
+:import_railway.sh <host> <porta> (1/3 seed_catalog →\n2/3 acervo → 3/3 índice) ou import_products.py;
+note right
+  Railway: TCP proxy temporário; usuário fai_app
+  só com TLS (MYSQL_SSL_MODE=REQUIRED); senha só
+  por RAILWAY_MYSQL_APP_PASSWORD; remover o
+  proxy ao terminar.
+end note
+|Coletor (scripts/catalog)|
+:Ingestor.ingest(): uma transação por produto;\ndedup gtin › ean › upc › sku › código › URL canônica ›\nmarca+subtipo+modelo+variante › marca+subtipo+título+cor;
+|Banco|
+if (Produto já existe?) then (não)
+  :[CREATE] catalog_products (VALIDATED, ACTIVE)\n+ catalog_variants + catalog_images (REFERENCE_ONLY);
+else (sim)
+  :[UPDATE] campos vazios / nova variante de cor\n(DISCOVERED vira VALIDATED) · [SKIP] · [DUP];
+endif
+:record_run() → catalog_ingestion_runs (contagens do Report);
+|Operador|
+:rebuild_search_index.py · revalidate_catalog.py ~--limit 200;
+|Banco|
+:search_text (FULLTEXT ngram) recalculado;\nsource_status ACTIVE · UNAVAILABLE · SOURCE_REMOVED ·\nNEEDS_REVALIDATION (HEAD nas páginas oficiais);
+:Acervo (doc RF49): 8.810 produtos, 26.457 variantes,\n8.357 com foto (95%) — busca em RF4-sequencia-catalogo;
+stop
+@enduml

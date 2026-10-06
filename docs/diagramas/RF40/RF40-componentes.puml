@@ -1,5 +1,5 @@
 @startuml RF40_Componentes
-title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba "Meu Avatar 3D", e usá-lo no manequim da Passarela 3D, do Meu Quarto e do Espelho\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF40 — Criar o próprio avatar 3D a partir de fotos (aba "Meu Avatar 3D") e usá-lo no manequim\nDiagrama de componentes — pipeline no navegador, API do avatar e uso no manequim
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -14,53 +14,118 @@ skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
-left to right direction
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #4A4852
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 
 package "Frontend (Next.js · React Three Fiber)" {
-  component "avatar/page.tsx → components/avatar3d/my-avatar.tsx\n(aba Meu Avatar 3D)" as FE0
-  component "lib/avatar3d\npipeline.ts · detect.ts · geometry.ts · image-stats.ts\nquality.ts · atlas.ts · model.ts · hair-*.ts · body-*.ts" as FE1
-  component "components/three/avatar-bust.tsx\n(busto 3D: crânio, orelhas, cabelo, pescoço, ombros)" as FE2
-  component "public/mediapipe\n(face_landmarker.task · hair_segmenter.tflite)" as FE3
-  component "lab/avatar/page.tsx → components/avatar3d/lab.tsx\n(só em desenvolvimento)" as FE4
-  component "Passarela 3D (explorer) · Foto com meu manequim" as FE5
-  component "Meu Quarto (room) · Espelho (mirror)" as FE6 <<planejado>>
+  package "Aba Meu Avatar 3D" {
+    component "avatar/page.tsx\n→ my-avatar.tsx\n(Create · Saved)" as FMy
+    component "body-editor.tsx\n(BodyEditor: corpo inteiro)" as FBody
+  }
+  package "lib/avatar3d (no navegador)" {
+    component "pipeline.ts\nanalyzePhoto · buildAvatar · atlasBlob" as LPipe
+    component "detect.ts · body-detect.ts\nsex-detect.ts" as LDetect
+    component "quality.ts\ncheckPhoto · checkSet" as LQual
+    component "geometry.ts · image-stats.ts\natlas.ts · hair*.ts" as LGeo
+    component "model.ts · body-spec.ts\nvalidateModel · clampAdjust\nvalidateBody" as LModel
+    component "human/export-glb.ts\nexportAvatarGlb" as LGlb
+  }
+  component "public/mediapipe\nface_landmarker · hair_segmenter\npose_landmarker · selfie_multiclass\nface-api (self-hosted)" as FMp
+  package "components/three" {
+    component "avatar-viewer.tsx\n(prévia girável)" as FViewer
+    component "mannequin.tsx\nMannequin" as FMan
+    component "human-avatar.tsx + human-outfit.tsx\n(corpo vestido: ver RF40-roupa-no-avatar)" as FHuman
+    component "avatar-bust.tsx\nuseAvatarTexture" as FBust
+  }
+  package "Onde o avatar aparece" {
+    component "generate-3d.tsx · mannequin-photo.tsx\n→ look-viewer.tsx\n(Passarela 3D, Foto com meu manequim)" as FShow
+    component "try-on/page.tsx\n→ fitting-room-scene.tsx (RF18)" as FTry
+    component "mirror-stage.tsx (Espelho, RF28)" as FMirror
+    component "room-scene.tsx (Meu Quarto)" as FRoom <<planejado>> #FFF5F8
+  }
+  component "lab/avatar · lab/body · lab/human\n(só com AVATAR_LAB fora de produção)" as FLab
 }
-package "fai-web · controllers" {
-  [Avatar3dController] as AC
-  [ShowcaseController] as SC
-  [TryOnController] as TC
-}
-package "fai-application · services" {
-  [Avatar3dService] as AS
-  [ShowcaseService\n(mannequin head=AVATAR)] as SS
-  [TryOnService] as TS
-  [AccountService\n(deleteAllFor ao excluir a conta)] as ACS
-  [AiEngine (RF24)\nCONTENT_MODERATOR] as AI
-  [Audit] as AU
-}
-package "fai-infrastructure · adapters" {
-  [UserAvatar3dRepository\nUserRepository] as REPOS
-  [MediaStoragePort\n(local / S3 — restricted/users/{id}/avatar3d/)] as ST
-}
-database "MySQL · fashionai_app\n• user_avatars_3d (V25__avatar_3d.sql)\n• users\n• ai_inference_log\n• audit_log" as DB
 
-FE0 --> FE1 : analyzePhoto · buildAvatar · atlasBlob
-FE1 --> FE3 : carrega modelos
-FE0 --> FE2 : prévia girável
-FE4 --> FE1 : valida o pipeline com fotos de teste
-FE0 --> AC : GET/POST/PATCH/DELETE /api/me/avatar3d
-FE5 --> SC : GET /api/explorer/runway · POST …/mannequin-photo
-FE5 --> AC : GET /api/avatar3d/{userId}/texture
-FE6 ..> AC : não implementado — conforme Trello (CA10)
-AC --> AS : chama
-SC --> SS : chama
-TC --> TS : chama
-SS --> AS : forMannequin(owner, viewer)
-TS --> AS : forMannequin(user, user)
-ACS --> AS : deleteAllFor(userId)
-AS --> AI : moderateTexture
-AS --> AU : AVATAR3D_SALVO · AVATAR3D_CORPO
-AS --> ST : grava/lê/apaga textura
-AS --> REPOS : lê/grava
-REPOS --> DB : JPA/Flyway
+package "fai-web" {
+  component "Avatar3dController\n/api/me/avatar3d\n/api/avatar3d/{userId}/texture" as CAv
+  component "ShowcaseController\n/api/schemes/{id}/look3d\n/api/pieces/{id}/look3d" as CShow
+  component "TryOnController\n/api/try-on" as CTry
+}
+
+package "fai-application" {
+  component "Avatar3dService" as SAv
+  component "ShowcaseService\nmannequin (head = AVATAR)" as SShow
+  component "TryOnService\nresolve (digital double)" as STry
+  component "AccountService\npurgeScheduledDeletions" as SAcc
+  component "AiEngine\nCONTENT_MODERATOR" as SAi
+  component "Audit" as SAud
+  interface "MediaStoragePort" as IMedia <<port>>
+  interface "AiProviderPort" as IAi <<port>>
+  interface "AuditService" as IAud <<port>>
+}
+
+package "fai-domain" {
+  component "UserAvatar3dRepository" as RAv
+}
+
+package "fai-infrastructure" {
+  component "LocalFileMediaStorage\nS3MediaStorageAdapter" as AStore
+  component "provedores de IA\n(adapters de AiProviderPort)" as AAi
+  component "MysqlAuditService" as AAud
+}
+
+database "MySQL\n• user_avatars_3d (V25; V27 texture_moderation)\n• ai_inference_log · audit_log" as DB
+database "Storage\nrestricted/users/{id}/avatar3d/\n(/media/restricted/** só ADMIN)" as ST
+
+FMy --> LPipe : analyzePhoto · buildAvatar
+FMy --> FBody
+FBody --> LDetect : detectBody
+LPipe --> LDetect
+LPipe --> LQual
+LPipe --> LGeo
+LPipe --> LModel
+LDetect --> FMp : carrega modelos
+FMy --> FViewer
+FMy --> LGlb : baixar GLB
+FViewer --> FMan
+FMan --> FHuman
+FMan --> FBust : textura do rosto
+FShow --> FMan
+FTry --> FMan
+FMirror --> FViewer
+FLab --> LPipe
+
+FMy --> CAv : GET · POST · PATCH · DELETE
+FMirror --> CAv : GET /api/me/avatar3d
+FBust --> CAv : GET …/texture
+FShow --> CShow
+FTry --> CTry
+FRoom ..> CAv : CA10 ainda não usa
+
+CAv --> SAv
+CShow --> SShow
+CTry --> STry
+SShow --> SAv : forMannequin
+STry --> SAv : forMannequin
+SAcc --> SAv : deleteAllFor
+SAv --> RAv
+SAv --> IMedia
+SAv --> SAi : moderateTexture
+SAv --> SAud
+SAud --> IAud
+SAi --> IAi
+IMedia <|.. AStore
+IAi <|.. AAi
+IAud <|.. AAud
+RAv --> DB
+AAud --> DB
+SAi --> DB : ai_inference_log
+AStore --> ST
 @enduml

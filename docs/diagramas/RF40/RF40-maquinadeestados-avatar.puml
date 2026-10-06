@@ -1,6 +1,6 @@
 @startuml RF40_MaquinaDeEstados_Avatar
 !pragma layout smetana
-title RF40 — UserAvatar3d: ciclo do avatar (pipeline no navegador → registro no servidor → moderação da textura)
+title RF40 — Criar o próprio avatar 3D a partir de fotos (aba "Meu Avatar 3D") e usá-lo no manequim\nDiagrama de máquina de estados — avatar da pessoa (prévia no navegador → user_avatars_3d → moderação da textura)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,30 +8,56 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-state "Sem avatar\n(GET /api/me/avatar3d → exists=false)" as SemAvatar
-state "Fotos em análise\n(analyzePhoto · checkPhoto)" as Analise
-state "Foto recusada\n(Issue block: NO_FACE, BLURRY, TOO_DARK…)" as Recusada
-state "Prévia 3D\n(buildAvatar · ajustes finos)" as Previa
-state "Avatar salvo (user_avatars_3d)" as Salvo {
-  state "textureModeration = PENDING" as Pending
-  state "textureModeration = APPROVED" as Approved
-  state "textureModeration = REJECTED_POLICY" as Rejected
-  [*] --> Pending : POST com publicOnRunway=false\nou sem veredito remoto (RF24)
-  [*] --> Approved : POST com publicOnRunway=true\ne IA aprova
-  [*] --> Rejected : POST com publicOnRunway=true\ne IA reprova
-  Pending --> Approved : PATCH publicOnRunway=true\n→ moderateTexture aprova
-  Pending --> Rejected : PATCH publicOnRunway=true\n→ moderateTexture reprova
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
+
+state "Sem avatar\n(GET /api/me/avatar3d → exists = false)" as SemAvatar
+state "No navegador (nada vai ao servidor)" as Navegador {
+  state "Foto escolhida\n(foto de perfil ou enviada)" as Foto
+  state "Analisando\n(analyzePhoto)" as Analise
+  state "Foto recusada\n(Issue block)" as Recusada
+  state "Prévia 3D\n(buildAvatar, ajustes, corpo base)" as Previa
+  [*] --> Foto
+  Foto --> Analise : Gerar prévia
+  Analise --> Recusada : checkPhoto bloqueia
+  Recusada --> Foto : troca a foto
+  Analise --> Previa : foto aceita\n(avisos "warn" viram warnings)
+  Previa --> Previa : consentimento ausente\n(botão Salvar inativo; servidor: 400)
+}
+state "Avatar salvo (user_avatars_3d.texture_moderation)" as Salvo {
+  state "PENDING" as Pending
+  state "APPROVED" as Approved
+  state "REJECTED_POLICY" as Rejected
+  [*] --> Pending : salvo privado,\nou público sem veredito da IA
+  [*] --> Approved : salvo público\ne a IA aprova
+  [*] --> Rejected : salvo público\ne a IA reprova
+  Pending --> Approved : PATCH {publicOnRunway: true}\n→ moderateTexture aprova
+  Pending --> Rejected : PATCH {publicOnRunway: true}\n→ moderateTexture reprova
+  Pending --> Pending : PATCH público sem veredito\n(sem provedor, sem consentimento de IA, sem cota)
+}
+
 [*] --> SemAvatar
-SemAvatar --> Analise : envia 1 foto de frente (+ até 2 de 3/4)\ne toca Gerar prévia
-Analise --> Recusada : checkPhoto devolve issue "block"
-Recusada --> Analise : troca a foto
-Analise --> Previa : fotos aceitas (avisos "warn" ficam em warnings)
-Previa --> Salvo : consent=true → POST /api/me/avatar3d\n(sem consent: 400 CONSENTIMENTO_OBRIGATORIO)
-Salvo --> Salvo : PATCH /api/me/avatar3d (adjust, body, sex)
-Salvo --> Analise : Refazer com novas fotos\n(nova textura volta a PENDING)
-Salvo --> SemAvatar : DELETE /api/me/avatar3d\nou exclusão da conta (deleteAllFor)
-note right of Approved : outras pessoas veem a textura\n(publicTexture = público + APPROVED)
-note right of Pending : dono vê a textura; outras pessoas\nveem a forma com o rosto padrão
-note bottom of SemAvatar : manequim volta ao rosto padrão / foto de perfil
+SemAvatar -down-> Navegador : abre /avatar (com WebGL)
+Navegador -down-> Salvo : POST /api/me/avatar3d\n(consent = true, modelo e textura válidos)
+Salvo -up-> Navegador : Refazer
+Salvo -up-> SemAvatar : DELETE /api/me/avatar3d\nou deleteAllFor (exclusão da conta)
+
+note right of Salvo
+  PATCH adjust · sex · body não muda a textura
+  nem a moderação. O dono sempre vê a própria
+  textura; outras pessoas só com publicOnRunway
+  e APPROVED (publicTexture). Avatar público ainda
+  não aprovado aparece com o rosto padrão;
+  privado não aparece para os outros.
+  PATCH {publicOnRunway: false} esconde o avatar
+  sem mudar o estado da moderação.
+end note
+note bottom of Rejected
+  Só sai daqui com nova textura (Refazer → POST):
+  o PATCH só modera texturas PENDING.
+end note
+note right of SemAvatar : manequim com a cabeça padrão (head = PADRAO)
 @enduml

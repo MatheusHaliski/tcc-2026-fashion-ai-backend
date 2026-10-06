@@ -1,5 +1,5 @@
 @startuml RF34_Sequencia
-title RF34 — Explorar as "Eras" de uma celebridade: busca por era, Insights de Eras e My Stage 3D\nDiagrama de sequência — endpoints reais
+title RF34 — Eras da celebridade: busca por era, Insights de Eras e My Stage 3D\nDiagrama de sequência — busca por era, ranking com mini palcos 2D e My Stage 3D
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -7,28 +7,78 @@ skinparam sequence {
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
 }
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 autonumber
-actor Visitante as V
-actor "Celebridade" as CEL
-participant "Frontend\nErasTab" as FE
+actor "Pessoa" as U
+participant "ErasTab\n(showcase-tabs.tsx)" as FE
+participant "StageScene\n(three · R3F)" as ST
 participant "ShowcaseController" as C
-participant "LookbookController" as LC
 participant "ShowcaseService" as S
+participant "InstitutionalService" as IS
+participant "SchemeService · Guard" as G
+participant "Avatar3dService" as AV
 database "MySQL" as DB
-database "Storage de mídia" as MS
-V -> FE: aba Eras
+
+== Buscar por era ==
+U -> FE: aba "Eras" › Buscar por era
 FE -> C: GET /api/institutional/{slug}/showcase/eras
-C -> S: list(viewer, slug, ERAS)
-S -> DB: SELECT scheme_groupings (ERA) + schemes
-V -> FE: busca "Tour 2024"
-FE -> C: GET .../showcase/eras/items?q=&year=
-V -> FE: Insights de Eras
-FE -> C: GET .../showcase/eras/insights
-V -> FE: My Stage 3D
-FE -> C: GET /api/institutional/{slug}/stage
-CEL -> FE: nova era + looks
-FE -> LC: POST /api/groupings ; POST /api/groupings/{id}/items
-CEL -> FE: foto da era
-FE -> C: POST /api/groupings/{id}/cover
-C -> MS: put(imagem)
+C -> S: list(viewer, slug, kind("eras") = ERAS)
+S -> IS: institutionalUser(slug)
+alt não é perfil institucional ou não é CELEBRIDADE
+  S --> FE: 404
+else
+  S -> DB: scheme_groupings do dono (ERA · PHASE · TOUR)\n· schemes · wardrobe_items do dono
+  S -> G: canView(viewer, look) · canView(viewer, dono, visibilidade da peça)
+  S -> DB: hype_scores (SCHEME) — HypeScoreConfig.algorithmVersion
+  S --> FE: 200 {kind, owner, items [{id, type, label, period, accentColor,\ncoverUrl, coverSource, schemes, pieces}], ungrouped}
+end
+U -> FE: escolhe a era, digita "Turnê", ano, tipo e ordem
+FE -> C: GET …/showcase/eras/items?groupingId&q&type&sort&year
+C -> S: items(viewer, slug, ERAS, groupingId, q, type, sort, year)
+alt groupingId não pertence às eras do perfil
+  S --> FE: 404 Era
+else
+  S -> DB: hype_scores (SCHEME e PIECE)
+  S -> S: filtra era/ano/texto · order(sort): HYPE · GROWTH · CURTIDAS · RECENTES
+  S -> G: SchemeService.view(viewer, look, itens)
+  S --> FE: 200 {header (card da era), schemes ≤ 60, pieces ≤ 60, years, sorts}
+end
+
+== Insights de Eras (mini palcos 2D) ==
+U -> FE: Insights de Eras
+FE -> C: GET …/showcase/eras/insights
+C -> S: insights(viewer, slug, ERAS)
+S -> DB: schemes · wardrobe_items visíveis · hype_scores
+S -> S: por era: likes, items, comments, shares,\ngroupHype {top, avg, level, items}, topScheme
+S -> S: score = 0,75·likes/máx + 0,25·itens/máx (×100)\nrank · audienceFraction · audience (de 120) · spotlights
+S --> FE: 200 {ranking, mostLiked, mostHype, algorithmVersion, method}
+FE -> FE: MiniStage2D (SVG) por era — 1º lugar "LOTADO"
+
+== My Stage 3D ==
+U -> FE: My Stage 3D
+FE -> C: GET /api/institutional/{slug}/stage[?schemeId]
+C -> S: stage(viewer, slug, schemeId)
+S -> DB: looks visíveis + hype_scores (SCHEME)
+S -> S: ordena por Hype v2 (público; o dono vê o pessoal),\nsem Hype no fim
+alt schemeId informado e não visível
+  S --> FE: 404 Esquema
+else
+  S -> DB: celebrity_profiles.avatar_url (ou users.avatar_url)
+  S -> S: look(escolhido): mannequin(sexo: cadastro → provador → peças → FEMININO)\n+ peças (GLB do RF16 se COMPLETED, senão imageUrl)
+  S -> AV: forMannequin(celebridade, quem vê)
+  AV --> S: busto do Avatar 3D (RF40) se confirmado e visível → head = AVATAR
+  S --> FE: 200 {celebrity, photoUrl, look {mannequin, pieces, hype, likes},\neras [{label, accentColor}], looks (12 primeiros)}
+end
+alt WebGL disponível
+  FE -> ST: StageScene(nome, look, cores das eras, mannequin, peças)
+  ST -> ST: palco, telão LED, feixes, plateia (150) e giro\n(useReducedMotion desliga animações)
+else sem WebGL
+  FE -> FE: StageFallback 2D (foto oficial + peças)
+end
+U -> FE: troca o "Look no palco"
+FE -> C: GET /api/institutional/{slug}/stage?schemeId={id}
 @enduml

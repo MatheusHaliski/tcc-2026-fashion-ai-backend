@@ -1,0 +1,99 @@
+@startuml RF12_Atividades_Lote
+title RF12 — Visualizar & Editar a página "Minhas Fotos" & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de atividades — várias peças por vez: lote de fotos (até 12) e uma foto com várias peças
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+|Pessoa|
+|Frontend|
+|API + Serviço|
+|Banco/Storage/IA|
+|Pessoa|
+start
+#F2F2F2:<<planejado>> Entrada "adicionar várias peças"\nnuma rota do app;
+note right
+  multi-piece-review.tsx (MultiPieceUpload ·
+  MultiPieceReview) existe, mas nenhuma página o
+  monta; POST /api/pieces/analysis/batch e
+  /api/pieces/batch não têm tela que os chame.
+  O fluxo abaixo é o contrato real do backend.
+end note
+if (Como envia?) then (várias fotos, uma peça cada)
+  |API + Serviço|
+  :POST /api/pieces/analysis/batch (files[], category?)\n→ WardrobeService.analyzeBatch;
+  if (0 fotos ou mais de 12?) then (sim)
+    #FFE3E3:400 SEM_FOTOS · LOTE_GRANDE;
+    stop
+  endif
+  :Para cada foto: analyze (ImageOps 10 MB / JPG·PNG·WebP,\nFlat Lay, critérios de aceite, subtipo, marca, moderação,\npré-preenchimento) → PipelineJob PIECE_DRAFT COMPLETED;
+  :Foto fora dos critérios → Draft.rejected {code, message}\n(as demais seguem — CA05);
+  |Banco/Storage/IA|
+  :users/{id}/drafts/{job}/… (original, flat lay, miniatura);\npipeline_jobs + inferências da IA;
+else (uma foto com várias peças)
+  |Frontend|
+  :MultiPieceUpload → POST /api/pieces/analysis/multi;
+  |API + Serviço|
+  :MultiPieceService.detect: requireCanCreate + tipo/tamanho;\nAiEngine.text(MULTI_PIECE_DETECTOR) → caixas em %\n(sem IA: uma peça = foto inteira, source "local");
+  |Banco/Storage/IA|
+  :PipelineJob MULTI_PIECE_DRAFT (COMPLETED) +\noriginal em users/{id}/drafts/{job}/;
+  |Frontend|
+  :MultiPieceReview: uma linha por peça detectada\n(incluir/excluir, recortar, corrigir campos);
+  |Pessoa|
+  if (Quer cópia da peça por IA?) then (sim)
+    |API + Serviço|
+    :POST .../multi/{draftId}/ai-image\n(PIECE_IMAGE_RECREATOR, prévia com selo IA);
+    if (IA de imagem disponível?) then (não)
+      #FFE3E3:503 IA_INDISPONIVEL\n(a linha segue com a foto real);
+    endif
+  endif
+endif
+
+|Pessoa|
+:Revisa os rascunhos e confirma;
+|Frontend|
+if (validatePieceForm em todas as linhas?) then (não)
+  #FFE3E3:"Corrija os campos" — nada é enviado;
+  stop
+endif
+|API + Serviço|
+:Uma foto/várias peças: para cada linha\nPOST .../multi/{draftId}/pieces?index=n (recorte →\nFlat Lay + moderação; CONTEUDO_BLOQUEADO = 400)\nou POST .../ai-images/{aiImageId}/piece;
+:POST /api/pieces {PieceForm + draftId} por linha\n(falha de uma linha não desfaz as outras);\nlote de fotos: POST /api/pieces/batch (List<PieceForm>,\numa transação);
+:createInternal com draft: moderação do rascunho\n(REJECTED_POLICY → 400), foto do rascunho vira a\nimagem; aiGeneratedImage da cópia por IA;
+if (Fundo removido no rascunho?) then (sim)
+  :photoProcessingStatus = COMPLETED;\nestúdio oferecido (aguardando aprovação);
+else (não)
+  :PROCESSING + PipelineJob PIECE_REPROCESS (PENDING)\nna fila "flatlay-reprocess" (RF4.CA06);
+  note right
+    reprocessPending() existe, mas nenhum
+    agendador consome a fila hoje.
+  end note
+endif
+|Banco/Storage/IA|
+:INSERT wardrobe_items · quality_scores ·\nprocessing_jobs_log · photos (WARDROBE_ITEM);\nnotificação PIECE_CREATED; audit CADASTRO_PECA;
+:PieceCreated (AFTER_COMMIT): FAI Points,\nHype, Inventory Score, Meu Quarto…;
+|Frontend|
+:Status por linha (salva / erro com motivo);\nao fim, onSaved(quantidade);
+|Pessoa|
+:As fotos das peças aparecem em Minhas Fotos;
+stop
+@enduml

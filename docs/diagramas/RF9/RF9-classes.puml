@@ -1,5 +1,5 @@
 @startuml RF9_Classes
-title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de classes — SchemeService.update/improve/applyDiff, selos em revalidação e edição da peça
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -9,132 +9,184 @@ skinparam class {
   HeaderBackgroundColor #E4DEF0
 }
 skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+
+package "fai-web · controller" {
+  class SchemeController <<RestController>> {
+    +get(viewer, id) «GET /api/schemes/{id}»
+    +update(user, id, SchemeForm) «PUT /api/schemes/{id}»
+    +improve(user, id, ImproveRequest) «POST /api/schemes/{id}/improvements»
+    +applyDiff(user, id, Map) «POST /api/schemes/{id}/improvements/apply»
+    +archive(user, id) «POST /api/schemes/{id}/archive»
+    +delete(user, id) «DELETE /api/schemes/{id}»
+  }
+  class WardrobeController <<RestController>> {
+    +update(user, id, PieceForm) «PUT /api/pieces/{id}»
+  }
+  class SealController <<RestController>> {
+    +review(user, bondId, ReviewRequest) «POST /api/seal-bonds/{bondId}/review»
+  }
+}
+
+package "fai-application" {
+  class SchemeService <<Service>> {
+    +update(user, id, SchemeForm) : Map
+    +improve(user, id, instruction) : Map
+    +applyDiff(user, id, accepted) : Map
+    +archive(user, id) : Map
+    +owned(user, id) : Scheme
+    -applyForm(s, form)
+    -replaceItems(user, s, items) : List<SchemeItem>
+    ~applyLookPhoto(user, s, background, items)
+    -publishInternal(s, items)
+    ~parseDiff(text, current) : List<FieldChange>
+    ~{static} validChange(field, value) : boolean
+  }
+  class "SchemeService.SchemeForm" as SchemeForm <<record>> {
+    title, description : String
+    occasion, style, tags, seals : List<String>
+    season : Season ; mood : Mood
+    visibility : Visibility
+    items : List<ItemForm>
+    background : Map ; applyRecommendedDirection : Boolean
+    cardSkin, layoutAnatomy : String
+    publish, lookDoDia : Boolean
+  }
+  class "SchemeService.ItemForm" as ItemForm <<record>> {
+    wardrobeItemId : UUID ; slot : SchemeSlot
+    sortOrder, zIndex : Integer
+    positionX, positionY, scale : BigDecimal
+    rotation, opacity : BigDecimal
+    filters : Map
+  }
+  class "LocalAdvisors.FieldChange" as FieldChange <<record>> {
+    field : String
+    current, proposed : Object
+    reason : String
+  }
+  class LocalAdvisors {
+    +{static} proposeEdit(current, instruction) : List<FieldChange>
+  }
+  class AiEngine {
+    +text(TextCall) : AiOutcome
+  }
+  class SealService <<Service>> {
+    +flagRevalidation(scheme)
+    +revokeForScheme(schemeId, reason)
+    +review(user, bondId, approve, reason) : Map
+  }
+  class BackgroundStudioService <<Service>> {
+    +applyToScheme(s, config, applyRecommendedDirection)
+  }
+  class WardrobeService <<Service>> {
+    +update(user, id, PieceForm) : PieceView
+    +owned(user, id) : WardrobeItem
+    -validate(PieceForm)
+    -apply(w, form, creating)
+  }
+  class Guard <<Component>> {
+    +requireCanCreate(user)
+    +requireOwner(user, ownerId, resource)
+  }
+  class "DomainEvents" as Ev <<events>> {
+    SchemeSaved(userId, schemeId, pieceIds, origin, created)
+    PieceUpdated(userId, pieceId, completeness)
+  }
+}
 
 package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +profileVisibility: Visibility
-}
-class Scheme {
-  +user: User
-  +title: String
-  +description: String
-  +style: String
-  +occasion: String
-  +season: Season
-  +mood: Mood
-  +visibility: Visibility
-  +status: SchemeStatus
-  +backgroundColor: String
-  +backgroundGradient: String
-  +backgroundArtUrl: String
-  +studioConfigJson: String
-  +revalidationPending: boolean
-  +publishedAt: Instant
-}
-class SchemeItem {
-  +scheme: Scheme
-  +wardrobeItem: WardrobeItem
-  +slot: SchemeSlot
-  +sortOrder: int
-  +zIndex: int
-  +snapshotJson: String
-}
-class WardrobeItem {
-  +user: User
-  +name: String
-  +category: String
-  +subcategory: String
-  +color: String
-  +material: String
-  +brandName: String
-  +styleTags: String
-  +occasionTags: String
-  +visibility: Visibility
-  +backgroundConfigJson: String
-}
-class SealBond {
-  +scheme: Scheme
-  +targetOwner: User
-  +status: SealBondStatus
-  +requiresReview: boolean
-}
-class Notification {
-  +recipient: User
-  +actor: User
-  +type: NotificationType
-  +resourceType: String
-  +resourceId: UUID
-}
-class AuditLog {
-  +actorId: String
-  +action: String
-  +resource: String
-}
+  class Scheme <<Entity>> <<table schemes>> {
+    title, description : String
+    occasion, style, tags : String «csv»
+    season : Season ; mood : Mood
+    visibility : Visibility ; status : SchemeStatus
+    coverImageUrl, studioConfigJson : String
+    cardSkin, layoutAnatomy : String
+    totalPrice : BigDecimal
+    revalidationPending : boolean
+    publishedAt, updatedAt : Instant
+    version : long «@Version»
+  }
+  class SchemeItem <<Entity>> <<table scheme_items>> {
+    slot : SchemeSlot ; sortOrder, zIndex : int
+    positionX, positionY, scale : BigDecimal
+    filtersJson, snapshotJson : String
+  }
+  class WardrobeItem <<Entity>> <<table wardrobe_items>> {
+    name, category, subcategory, color : String
+    disponivel : boolean
+    schemeUsageCount : int
+    version : long «@Version»
+  }
+  class SealBond <<Entity>> <<table seal_bonds>> {
+    targetOwner, requestedBy : User
+    status : SealBondStatus
+    reviewNote : String ; reviewedAt : Instant
+  }
 }
 package "fai-domain · enums" {
-enum SchemeStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
+  enum SchemeStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+  }
+  enum SealBondStatus {
+    SUGGESTED
+    ACCEPTED
+    EDITED
+    REFUSED
+    PENDING_REVIEW
+    APPROVED
+    REJECTED
+    REVOKED
+  }
+  enum Season {
+    SPRING
+    SUMMER
+    AUTUMN
+    WINTER
+  }
+  enum Mood {
+    ENERGETIC
+    ELEGANT
+    COMFORTABLE
+    SOPHISTICATED
+  }
 }
-enum Visibility {
-  PRIVATE
-  FOLLOWERS
-  PUBLIC
-}
-enum SealBondStatus {
-  SUGGESTED
-  ACCEPTED
-  EDITED
-  REFUSED
-  PENDING_REVIEW
-  APPROVED
-  REJECTED
-  REVOKED
-}
-}
-package "fai-application · service" {
-class SchemeService {
-  +get(viewer, id)
-  +update(user, id, SchemeForm)
-  +improve(user, id, instruction)
-  +applyDiff(user, id, accepted)
-  +archive(user, id)
-  +owned(user, id)
-}
-class WardrobeService {
-  +update(user, id, PieceForm)
-  +owned(user, id)
-}
-class SealService {
-  +flagRevalidation(Scheme)
-  +revokeForScheme(schemeId, reason)
-}
-}
-Scheme "*" --> "1" User : user
-Scheme --> SchemeStatus
-Scheme --> Visibility
-SchemeItem "*" --> "1" Scheme : scheme
-SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
-WardrobeItem "*" --> "1" User : user
-WardrobeItem --> Visibility
-SealBond "*" --> "1" Scheme : scheme
-SealBond "*" --> "1" User : targetOwner
-SealBond --> SealBondStatus
-Notification "*" --> "1" User : recipient
+
+SchemeController --> SchemeService
+WardrobeController --> WardrobeService
+SealController --> SealService
+SchemeService ..> SchemeForm
+SchemeForm *-- "1..*" ItemForm
+SchemeService --> Guard
+WardrobeService --> Guard
+SchemeService --> SealService : CA05 · RF20.CA14
+SchemeService --> BackgroundStudioService : arte do look
+SchemeService --> AiEngine : EDIT_ASSISTANT
+SchemeService ..> LocalAdvisors : plano B local (na TextCall)
+SchemeService ..> FieldChange
+SchemeService ..> Ev : SchemeSaved
+WardrobeService ..> Ev : PieceUpdated
 SchemeService ..> Scheme
-SchemeService ..> SchemeItem : replaceItems
-SchemeService ..> SealService : CA05
-SchemeService ..> AuditLog : EDICAO_ESQUEMA / ACESSO_NEGADO_403
-WardrobeService ..> WardrobeItem : CA07
+SchemeService ..> SchemeItem : replaceItems (CA02)
 SealService ..> SealBond
-SealService ..> Notification : SEAL_BOND_REVIEW
-note top of Scheme : tabela schemes
-note top of SchemeItem : tabela scheme_items\n(CA02: remover daqui não remove a peça)
-note top of WardrobeItem : tabela wardrobe_items
-note top of SealBond : tabela seal_bonds
-note top of AuditLog : tabela audit_log
+WardrobeService ..> WardrobeItem : CA07
+Scheme "1" *-- "1..*" SchemeItem
+SchemeItem "*" --> "1" WardrobeItem
+SealBond "*" --> "1" Scheme
+Scheme --> SchemeStatus
+Scheme --> Season
+Scheme --> Mood
+SealBond --> SealBondStatus
+
+note bottom of SchemeItem
+  Remover a peça do look apaga só o scheme_item:
+  a WardrobeItem continua no Closet (CA02).
+end note
+note right of SealBond
+  flagRevalidation: só vínculos APPROVED;
+  review(approve) limpa revalidationPending,
+  review(recusa) → REVOKED.
+end note
 @enduml

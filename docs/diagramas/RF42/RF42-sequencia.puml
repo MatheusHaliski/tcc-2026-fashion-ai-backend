@@ -1,5 +1,5 @@
 @startuml RF42_Sequencia
-title RF42 — Marcar um look como "Look do dia"\nDiagrama de sequência — endpoints reais
+title RF42 — Marcar um look como "Look do dia"\nDiagrama de sequência — marcar o look, efeitos AFTER_COMMIT (diário de uso, pontos) e sinais LOOK_WORN/PIECE_USED do HypeScore v2
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,56 +8,60 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor "Usuário" as U
-participant "Frontend\nschemes (ExpandedCard)" as FE
+actor "Pessoa" as U
+participant "ExpandedCard\n(components/expanded-card.tsx)" as FE
 participant "LookbookController" as LC
 participant "LookbookService" as LS
 participant "SchemeService" as SS
 participant "DailyLookService" as DS
 participant "WardrobeEventListeners" as WL
-participant "HypeSignalRecorder" as HSR <<RF53>>
-participant "Frontend\nlookbook → u/[username]?tab=daily" as FEL
-participant "ShowcaseController" as SC
+participant "HypeSignalRecorder\nHypeIntegrityPolicy" as HR
+participant "HypeLiveRecalc" as LR
 database "MySQL" as DB
-U -> FE: "Look do dia" no próprio esquema
+
+U -> FE: "Look do dia" num look próprio
 FE -> LC: POST /api/me/daily-look {schemeId}
 LC -> LS: markDailyLook(user, schemeId)
 LS -> SS: owned(user, schemeId)
-LS -> DS: register(user, scheme, MANUAL, hoje)
-DS -> DB: scheme_items (peças do esquema)
-alt alguma peça indisponível
-  DS --> FE: 409 PECA_INDISPONIVEL
+alt look inexistente
+  SS --> FE: 404
+else de outra pessoa
+  SS --> FE: 403 (Guard.requireOwner, auditado)
+end
+LS -> DS: register(user, scheme, MANUAL, hoje em America/Sao_Paulo)
+DS -> DB: scheme_items do look (peças)
+alt peça indisponível (disponivel = false ou status ≠ AVAILABLE)
+  DS --> FE: 409 PECA_INDISPONIVEL {nomes}
 else
-  DS -> DB: findByUserIdAndLookDate(user, hoje)
+  DS -> DB: daily_looks por (user_id, look_date)
   alt já existe na data
-    DS -> DB: UPDATE daily_looks (scheme, source)
+    DS -> DB: UPDATE daily_looks (scheme_id, source)
   else
-    DS -> DB: INSERT daily_looks
+    DS -> DB: INSERT daily_looks · schemes.look_do_dia_count + 1
   end
-  DS -> DB: UPDATE schemes (look_do_dia, look_do_dia_count)
-  DS -> DB: UPDATE wardrobe_items (look_do_dia_count, last_worn_date)
-  DS ->> WL: DailyLookRegistered (AFTER_COMMIT)
-  WL -> DB: diário de uso + wear_count
-  DS ->> HSR: DailyLookRegistered (AFTER_COMMIT)
-  HSR -> HSR: HypeIntegrityPolicy.weight(sinal, dia)\n(1 sinal por entidade/pessoa/dia)
-  HSR -> DB: HypeSignalDailyRepository.increment → hype_signal_daily\nLOOK_WORN (SCHEME) + PIECE_USED (cada peça)
-  note right of HSR: novo (RF53 · HypeScore v2): transação própria;\no score sai do job de snapshots, não daqui
+  DS -> DB: schemes.look_do_dia = true\nwardrobe_items.look_do_dia_count + 1, last_worn_date
+  DS ->> DS: publishEvent DailyLookRegistered(userId, schemeId, data, MANUAL, pieceIds)
   DS --> LS: DailyLook
-  LS --> FE: 200 {id, date, source, schemeId, title, coverImageUrl, hypeScore}
+  LS --> FE: 200 view {id, date, source, schemeId, title, coverImageUrl,\nfeedback, materialized, weekPlanDayId}
+  FE -> FE: toast "Look do dia" e reload()
 end
-U -> FEL: abre a aba Look do Dia
-FEL -> LC: GET /api/me/daily-look-tab?withAi=false
-LC -> LS: dailyLookTab(user, withAi)
-LS -> DS: today(userId)
-opt sem registro hoje e há look anterior
-  DS -> DB: INSERT daily_looks (materialized_from)
+note over FE, DS
+  Mesmo register (e mesmos eventos) a partir de: POST /api/schemes {lookDoDia: true}
+  (MANUAL; recusa vira dailyLookWarning) · POST /api/autopilot/daily/confirmation e
+  POST /api/autopilot/days/{dayId}/use (AUTOPILOTO) · POST /api/copilot/looks (COPILOT)
+  · POST /api/me/mirror/use (VISTA_ME ou SMART_MIRROR).
+end note
+
+== Depois do commit (@TransactionalEventListener AFTER_COMMIT) ==
+DS ->> WL: onDailyLook
+WL -> DB: piece_usage_diary (DAILY_LOOK) · wear_count + 1
+opt source = VISTA_ME
+  WL -> DB: fai_points_ledger VISTA_ME_DAILY_LOOK
 end
-LS --> FEL: 200 {today, scheme, panel, history, feedbackReminder}
-note right of FEL: histórico: cada dia com title e hypeScore\n(a aba agora lê esses campos — RF53)
-U -> FEL: avalia (ADOREI | NAO_USEI | NAO_GOSTEI)
-FEL -> LC: PUT /api/me/daily-looks/{date}/feedback
-LC -> DS: feedback(user, date, feedback)
-DS -> DB: UPDATE daily_looks (feedback, feedback_at)
-DS --> FEL: 200 view
-note over SC: GET /api/explorer/runway (Passarela 3D, RF33)\nmostra os Looks do Dia visíveis de hoje
+DS ->> HR: onDailyLook → SideEffectRunner (REQUIRES_NEW)
+HR -> HR: weight(LOOK_WORN, look) e weight(PIECE_USED, cada peça)\nação do dono conta; dedupe hype:dedupe:…:{dia} (26 h)
+HR -> DB: HypeSignalDailyRepository.increment → hype_signal_daily\n(peso 1; já contado hoje = descartado)
+DS ->> LR: onDailyLook → markDirty()
+LR -> LR: tick (30 s): recalcula hype_scores em até ~2 min
+note right of HR: Trocar o look no mesmo dia gera novos\nsinais só para o look/peças novos.
 @enduml

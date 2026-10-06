@@ -1,0 +1,93 @@
+@startuml RF12_Sequencia_Lote
+title RF12 — Visualizar & Editar a página "Minhas Fotos" & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de sequência — várias peças por vez: análise em lote e foto com várias peças até o cadastro
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as P
+participant "multi-piece-review.tsx\nMultiPieceUpload · MultiPieceReview\n(sem rota que o monte)" as FE
+participant "WardrobeController" as WC
+participant "MultiPieceService" as MP
+participant "WardrobeService" as WS
+participant "AiEngine (RF24)" as AI
+participant "FlatLayPipeline" as FL
+participant "MediaService\n(MediaStoragePort)" as ST
+participant "JobQueuePort\n(Redis/memória)" as Q
+database "MySQL" as DB
+
+== Lote de fotos (contrato do backend, sem tela) ==
+P -> WC: POST /api/pieces/analysis/batch (files[] ≤ 12, category?)
+WC -> WS: analyzeBatch(user, files, category)
+alt 0 fotos / mais de 12
+  WS --> P: 400 SEM_FOTOS · LOTE_GRANDE
+else
+  loop cada foto
+    WS -> AI: FLAT_LAY_STANDARDIZER · PIECE_ANALYZER · CONTENT_MODERATOR
+    AI -> FL: run(bytes) — rembg → remove.bg → recorte local
+    WS -> ST: put(users/{id}/drafts/{job}/…)
+    WS -> DB: pipeline_jobs (FLAT_LAY_STANDARDIZATION, PIECE_DRAFT, COMPLETED)
+    opt foto fora dos critérios (FOTO_RECUSADA)
+      WS -> WS: Draft.rejected {code, message} — as demais seguem
+    end
+  end
+  WC --> P: 200 List<Draft> (prefill, quality, moderation, stages, rejection)
+end
+
+== Uma foto com várias peças ==
+P -> FE: escolhe a foto
+FE -> WC: POST /api/pieces/analysis/multi (file)
+WC -> MP: detect(user, bytes)
+MP -> AI: text(MULTI_PIECE_DETECTOR) — fallback: uma peça = foto inteira
+MP -> DB: pipeline_jobs (MULTI_PIECE_DRAFT, COMPLETED, result_json com as caixas)
+MP -> ST: put(users/{id}/drafts/{job}/original.jpg|png)
+WC --> FE: 200 Detection {draftId, pieces[box, nome, tipo, cor...], source}
+FE --> P: MultiPieceReview (incluir, recortar, corrigir campos)
+opt cópia por IA de uma peça
+  FE -> WC: POST /api/pieces/analysis/multi/{draftId}/ai-image?index&name&category&color
+  WC -> MP: recreate(...)
+  MP -> AI: execute(PIECE_IMAGE_RECREATOR)
+  alt sem IA de imagem
+    MP --> FE: 503 IA_INDISPONIVEL
+  else
+    MP -> DB: pipeline_jobs (AI_PIECE_IMAGE) · prévia com selo IA
+    WC --> FE: 200 AiImage {aiImageId, previewUrl}
+  end
+end
+P -> FE: Salvar (validatePieceForm em todas as linhas)
+loop cada linha incluída
+  alt usa a cópia por IA
+    FE -> WC: POST /api/pieces/analysis/multi/{draftId}/ai-images/{aiImageId}/piece
+    WC -> MP: aiPieceDraft(user, draftId, aiImageId)
+  else foto real (recorte ou foto inteira)
+    FE -> WC: POST /api/pieces/analysis/multi/{draftId}/pieces?index=n (file)
+    WC -> MP: pieceDraft(user, draftId, index, bytes)
+  end
+  MP -> AI: FLAT_LAY_STANDARDIZER + CONTENT_MODERATOR
+  alt REJECTED_POLICY
+    MP --> FE: 400 CONTEUDO_BLOQUEADO (só esta linha)
+  else
+    MP -> DB: pipeline_jobs (PIECE_DRAFT, COMPLETED)
+    WC --> FE: 200 PieceDraft {draftId, processedUrl, backgroundRemoved, aiGenerated}
+    FE -> WC: POST /api/pieces {PieceForm, draftId, useDefaultImage: false}
+    WC -> WS: create(user, form) → createInternal
+    WS -> DB: INSERT wardrobe_items · quality_scores · processing_jobs_log
+    WS -> ST: register(Photo WARDROBE_ITEM) — aparece em Minhas Fotos
+    opt fundo não removido (RF4.CA06)
+      WS -> DB: pipeline_jobs PIECE_REPROCESS (PENDING)
+      WS -> Q: enqueue("flatlay-reprocess", jobId)
+      note right of Q: nenhum agendador chama\nreprocessPending() hoje
+    end
+    WS ->> WS: PieceCreated (AFTER_COMMIT)
+    WC --> FE: 201 PieceView
+  end
+end
+FE --> P: status por linha e total salvo
+note over P, WC
+  POST /api/pieces/batch (List<PieceForm>) confirma um lote de rascunhos numa única transação
+  (createBatch → create para cada um); hoje nenhuma tela chama.
+end note
+@enduml

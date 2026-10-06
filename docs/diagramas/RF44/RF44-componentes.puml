@@ -1,5 +1,5 @@
 @startuml RF44_Componentes
-title RF44 — Permitir que marcas & celebridades vendam itens únicos e personalizáveis do Meu Quarto e do Background Studio na loja do app\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF44 — FAI Creative Engine\nDiagrama de componentes — telas → controllers → serviços criativos → motor de IA e portas → provedores, storage e MySQL
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -16,53 +16,122 @@ skinparam database {
 }
 left to right direction
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "brands/[slug] — aba GUARDA_ROUPA\n(WardrobeCreatorTab para o dono,\nRoomStore compact para visitantes)" as FE0
-  component "points — RoomStore\n(loja do quarto, try-on, compra, aplicar)" as FE1
-  component "room — RoomScene\n(acabamentos aplicados, placa de logo)" as FE2
-  component "background-studio.tsx\n(catálogo de auras/materiais/skins)" as FE3 #FAFAFA
+package "Frontend (Next.js)" {
+  component "schemes/new · schemes/[id]/edit\n(scheme-builder.tsx: arte por IA)" as FE_SB
+  component "components/background-studio.tsx\n(catálogo, presets AURA, materiais)" as FE_BS
+  component "pieces/[id] · detail-modal\n(expanded-card.tsx: foto de estúdio,\naprovar / descartar)" as FE_EC
+  component "closet/page.tsx\n(estúdio em todas as peças)" as FE_CL
+  component "components/multi-piece-review.tsx\n(cópia por IA; nenhuma página monta hoje)" as FE_MP
+  component "brands/[slug] → seal-wizard.tsx\nseal-creator.tsx · seal-core-editor.tsx" as FE_SEAL
+  component "lib/api/client.ts (api)" as FE_API
 }
 package "fai-web · controllers" {
-  [RoomCreatorController] as RCC
-  [HighlightsController\n(/api/points/shop, /api/me/room-inventory)] as HC
-  [RoomController] as RC
-  [BackgroundController] as BGC #FAFAFA
-  [<<planejado>>\nvenda de itens do Background Studio] as PLAN #FFF5F8
+  [BackgroundController\nPOST /api/backgrounds/art · uploads\nGET /api/backgrounds/catalog · recommendations\nPUT /api/pieces/{id}/background] as BC
+  [SchemeController\nPOST /api/schemes · PUT /api/schemes/{id}] as SC
+  [WardrobeController\nPOST /api/pieces/{id}/studio · studio/approve\nDELETE /api/pieces/{id}/studio/pending\nPOST /api/me/pieces/studio · GET /api/studio/backdrops\nPOST /api/pieces/analysis/multi/{draftId}/ai-image\nPOST …/ai-images/{aiImageId}/piece] as WC
+  [SealController\nGET /api/seals/design-catalog\nPOST /api/seals/uploads] as SLC
+  [CreativeController\n<<planejado>>] as CC #FAFAFA
 }
-package "fai-application · services" {
-  [WardrobeCreatorService\n(options, save, blocker, availability, view)] as WCS
-  [FaiPointsService\n(shop, tryOn, buy, apply)] as FPS
-  [RoomService\n(compatibleModules, applyFinish)] as RS
-  [FlairService.sellerActive] as FS
-  [MediaService] as MED
-  [BackgroundStudioService\n(catalog, recommend)] as BSS #FAFAFA
+package "fai-application · serviços criativos" {
+  [BackgroundStudioService\ngenerateArt · applyToScheme · savePiece] as BSS
+  [SchemeService] as SS
+  [WardrobeService\nstudioPiece · approveStudio · discardStudio] as WS
+  [StudioPipeline\n(+ FlatLayPipeline)] as SP
+  [MultiPieceService\nrecreate · aiPieceDraft] as MPS
+  [AiSeal] as SEAL
+  [AssetCatalogService] as ACS
+  [MediaService] as MS
+  [SealDesignService] as SDS
+  package "FAI Creative Engine <<planejado>>" {
+    [CreativeRequest → TemplateResolver\n→ composição → validação\n→ CreativeAsset + AssetVersion] as CE #FAFAFA
+  }
 }
-package "fai-infrastructure · adapters" {
-  [RoomCatalogItemRepository\nRoomInventoryItemRepository\nFaiPointsLedgerEntryRepository\nRoomLayoutRepository\nBrandProfileRepository\nCelebrityProfileRepository\nSealRepository\nSealBondRepository\nUserRepository\nAssetPresetRepository] as REPOS
-  [LocalFileMediaStorage /\nS3MediaStorageAdapter\n(MediaStoragePort)] as STOR
+package "fai-application · ai (RF24)" {
+  [AiEngine\nconsentimento · AiBudget · cota · fallback] as AIE
+  [CelebrityPromptValidator] as CPV
+  [AiCatalog\nopções por capacidade (inclui "firefly")] as CAT
 }
-database "MySQL · fashionai_app\n• room_catalog\n• room_inventory\n• fai_points_ledger\n• room_layouts\n• brand_profiles\n• celebrity_profiles\n• seals\n• seal_bonds\n• users\n• asset_presets" as DB
+package "Portas (ImageProviderPorts)" {
+  interface "ImageGenerationPort" as IGP
+  interface "ImageEditPort" as IEP
+  interface "StudioShotPort" as SSP
+  interface "UpscalePort" as UP
+  interface "MediaStoragePort" as MSP
+}
+package "fai-infrastructure" {
+  [ReplicateImageGenerationAdapter] as REPG
+  [GeminiImageEditAdapter\nReplicateImageEditAdapter] as EDIT
+  [PhotoroomStudioAdapter] as PHR
+  [StabilityUpscaleAdapter] as STB
+  [AdobeFireflyAdapter · Photoshop API\n<<planejado>>] as FF #FAFAFA
+  [S3MediaStorageAdapter\nLocalFileMediaStorage] as S3
+  [Repositórios JPA\nPipelineJobRepository · AiInferenceLogRepository\nPhotoRepository · WardrobeItemRepository\nSchemeRepository · CelebrityProfileRepository] as REPOS
+}
+database "MySQL\n• pipeline_jobs\n• ai_inference_log\n• photos\n• wardrobe_items (studio_*, background_config_json,\n  is_ai_generated_image, canonical_image_url)\n• piece_images (V29)\n• schemes · asset_presets" as DB
+cloud "Replicate\n(FLUX schnell · FLUX Kontext)" as EXT_R
+cloud "Google Gemini\n(2.5 Flash Image)" as EXT_G
+cloud "Photoroom · Stability AI" as EXT_P
+cloud "Adobe Firefly / Photoshop / Express\n<<planejado>>" as EXT_A
+cloud "S3 / R2 / disco local" as EXT_S
 
-FE0 --> RCC : chama /api/room-creator/**
-FE0 --> HC : chama GET /api/points/shop
-FE1 --> HC : chama shop, try-on, purchase, apply
-FE2 --> RC : lê GET /api/me/room
-FE3 --> BGC : lê GET /api/backgrounds/catalog
-RCC --> WCS : chama
-HC --> FPS : chama
-RC --> RS : chama
-BGC --> BSS : chama
-WCS --> MED : grava logo/arte
-WCS --> FS : checa criador ativo
-WCS --> REPOS : grava room_catalog
-FPS --> WCS : blocker / view
-FPS --> RS : applyFinish
-FPS --> REPOS : grava fai_points_ledger,\nroom_inventory
-RS --> REPOS : grava room_layouts
-BSS --> REPOS : lê asset_presets
-MED --> STOR : grava
-REPOS --> DB : JPA/Flyway
-PLAN ..> BGC : não implementado —\nconforme Trello
-PLAN ..> BSS : não implementado —\nconforme Trello
-note bottom of PLAN : o título do card inclui itens do Background Studio;\nhoje só blocos/guarda-roupas (room_catalog) são vendidos.\nCriação do bloco 3D: ver RF39. Pontos e níveis: ver RF35.
+FE_SB --> FE_API
+FE_BS --> FE_API
+FE_EC --> FE_API
+FE_CL --> FE_API
+FE_MP --> FE_API
+FE_SEAL --> FE_API
+FE_API --> BC : HTTPS/JSON
+FE_API --> SC
+FE_API --> WC
+FE_API --> SLC
+FE_API ..> CC : <<planejado>>
+BC --> BSS
+SC --> SS
+SS --> BSS : applyToScheme
+WC --> WS
+WC --> MPS
+SLC --> SDS
+BSS --> ACS : presets e galeria
+BSS --> AIE : BACKGROUND_GENERATOR
+BSS --> IGP
+BSS --> MS
+WS --> AIE : STUDIO_ENHANCER
+WS --> SP
+WS --> MS
+SP --> SSP
+SP --> UP
+MPS --> AIE : PIECE_IMAGE_RECREATOR
+MPS --> IEP
+MPS --> SEAL
+MPS --> MS
+SDS --> MSP
+AIE --> CPV
+AIE --> CAT
+AIE --> REPOS : ai_inference_log
+MS --> MSP
+MS --> REPOS : photos
+WS --> REPOS
+MPS --> REPOS : pipeline_jobs
+IGP <|.. REPG
+IGP <|.. FF
+IEP <|.. EDIT
+SSP <|.. PHR
+UP <|.. STB
+MSP <|.. S3
+REPG --> EXT_R
+EDIT --> EXT_G
+EDIT --> EXT_R
+PHR --> EXT_P
+STB --> EXT_P
+FF ..> EXT_A
+S3 --> EXT_S
+REPOS --> DB : JPA / Flyway
+CC ..> CE
+CE ..> IGP : provedor criativo
+note bottom of CE
+  pipeline de confiança (RF4: original, recorte,
+  canônico) × pipeline criativo (RF44): o criativo
+  lê o canônico e nunca o substitui (RN46.01);
+  geração em PipelineJob assíncrono (RN46.05)
+end note
 @enduml

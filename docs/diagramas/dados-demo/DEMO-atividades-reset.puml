@@ -1,43 +1,75 @@
 @startuml DEMO_Atividades_Reset
-title Fashion AI — Atividades: reset do universo demo (planejado sobre a base já no código: V34/V35 e MysqlDemoDataAdminAdapter)
+title Dados demo e de teste (transversal)\nDiagrama de atividades — reset do universo demo: plano, dry-run, confirmação por planHash e cascatas da V34 (orquestração planejada)
 !include ../seguranca/_estilo.iuml
+|CLI e rota (planejado)|
 start
-:python scripts/demo/reset_demo_environment.py;
-:POST /api/admin/demo/reset?dryRun=true\n(ADMIN + dev gate);
+:reset_demo_environment.py --dry-run
+→ POST /api/admin/demo/reset?dryRun=true
+(ADMIN + gate);
+|DemoDataService (planejado)|
+:DemoEnvironmentGuard.requireEnabled();
 if (FASHIONAI_DEMO_ENABLED?) then (não)
-  :403 — demo desligado;
+  #FFE3E3:403 DEMO_DESLIGADO;
   stop
-endif
-if (Ambiente de produção\nsem FASHIONAI_DEMO_ALLOW_PRODUCTION?) then (sim)
-  :403 — bloqueado em produção;
+elseif (Produção sem FASHIONAI_DEMO_ALLOW_PRODUCTION?) then (sim)
+  #FFE3E3:403 DEMO_BLOQUEADO_EM_PRODUCAO;
   stop
+else (liberado)
 endif
-:Plano: contas com account_origin IN (TEST_SEED, DEMO)\n+ contagem por tabela + planHash;
-:Mostra o preview\n(Users, WardrobeItems, Schemes, Reactions...,\nReal users affected: 0);
-if (--dry-run?) then (sim)
+|MysqlDemoDataAdminAdapter (no código)|
+:testAccountIds()
+(account_origin IN TEST_SEED, DEMO);
+:realAccountsAmong(ids) · plan(ids) → ResetCounts
+(cascade e setNull pelas FKs reais do INFORMATION_SCHEMA,
+polymorphic, blockers RESTRICT/NO ACTION);
+|DemoDataService (planejado)|
+:ResetPlan com contagens, [KEEP] (globalCounts)
+e planHash;
+|CLI e rota (planejado)|
+:Mostra o plano (Real users affected: 0);
+if (--dry-run ou a pessoa não confirma?) then (sim)
   stop
+else (confirma)
 endif
-if (Pessoa confirma?) then (não)
-  stop
-endif
-:POST /api/admin/demo/reset?confirm=planHash;
+:POST /api/admin/demo/reset?confirm=<planHash>;
+|DemoDataService (planejado)|
 partition "Transação MySQL" {
-  :Refaz o plano com FOR UPDATE;
-  if (planHash mudou?) then (sim)
-    :ROLLBACK — plano mudou, rodar o dry-run de novo;
+  |MysqlDemoDataAdminAdapter (no código)|
+  :lockAccounts(ids) — SELECT … FOR UPDATE;
+  :Refaz plan(ids);
+  |DemoDataService (planejado)|
+  if (planHash mudou, blockers > 0
+  ou realAccountsAmong(ids) > 0?) then (sim)
+    #FFE3E3:ROLLBACK — abortar e rodar o dry-run de novo;
     stop
+  else (não)
   endif
-  if (realUsersToDelete > 0?) then (sim)
-    :ROLLBACK — ABORT;
-    stop
-  endif
-  :DELETE explícito das linhas polimórficas que apontam\npara conteúdo demo (reações, comentários, salvos,\ncompartilhamentos, notificações, moderação);
-  :DELETE FROM users WHERE account_origin IN (TEST_SEED, DEMO);
-  note right: as cascatas (V34) levam peças, looks,\nfollows, perfis, sessões...\nSEM FOREIGN_KEY_CHECKS = 0
-  :COMMIT;
+  |MysqlDemoDataAdminAdapter (no código)|
+  :interactionsOnRealContent(ids) → subtractCounters(deltas)
+  (GREATEST(0, atual − delta) nos contadores de conteúdo real);
+  :deletePolymorphicTargeting(ids)
+  (reações, comentários, salvos, compartilhamentos,
+  notificações que apontam para conteúdo demo);
+  :deleteTestAccounts(ids)
+  DELETE FROM users WHERE id IN (…)
+  AND account_origin IN ('TEST_SEED','DEMO');
+  note right
+    As cascatas da V34 levam peças, looks, follows,
+    perfis, sessões… Nunca FOREIGN_KEY_CHECKS = 0.
+  end note
 }
-:Limpa feed (Cassandra) e busca (OpenSearch) das contas demo\n(idempotente; o verify aponta sobras);
-:[KEEP] brands · room_catalog · challenge_templates;
-:verify_demo_environment → 0 contas demo;
+|Projeções e storage|
+:Depois do commit: purgeUser(id) no Cassandra,
+SearchIndexPort.remove das peças e looks
+e MediaStoragePort.delete das chaves das contas;
+|MysqlDemoDataAdminAdapter (no código)|
+:integrityProblems(fixtureKeys) — verify sem sobras;
+|CLI e rota (planejado)|
+:Imprime o DemoReport ([DELETE] [CASCADE] [KEEP]);
+note right
+  [KEEP]: contas reais, marcas, room_catalog,
+  challenge_templates. Marca DEMO só sai pelo
+  reset de catálogo e só sem referências.
+end note
 stop
 @enduml

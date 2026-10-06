@@ -1,5 +1,5 @@
 @startuml RF17_Componentes
-title RF17 — Permitir que o Usuário visualize a página de perfil de outros Usuários cadastrados dentro da rede social do FashionAI\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF17 — Visualizar a página de perfil de outros usuários\nDiagrama de componentes — tela do perfil, ProfileController, ProfileService, Guard, Lookbook, Hype do criador, insights e preferências
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -17,45 +17,96 @@ skinparam database {
 left to right direction
 
 package "Frontend (Next.js)" {
-  component "u/[username]\n(ProfileHeader, seguir, bloquear,\nseguidores/seguindo)" as FE0
-  component "LookbookTabs\n(ClosetTab, LooksTab, GroupsTab)" as FE1
-  component "notifications" as FE2
+  component "u/[username]/page.tsx\n(seguir, bloquear, conexões,\nredireciona INSTITUCIONAL → /brands)" as FE0
+  component "components/profile-header" as FE1
+  component "components/hype/hype-group-badge\n(HypeGroupBadge CREATOR, header)\nlib/hype/use-hype-group (lote)" as FE2
+  component "components/insights/insight-strip\n(CREATOR_PROFILE)" as FE3
+  component "components/lookbook-tabs\n(Closet · Looks · Publicações\n· Favoritos · Agrupamentos)" as FE4
+  component "settings/page.tsx\n(Privacidade › HypeScore:\nopt-out Criadores em alta)" as FE5
   component "Tela de pedidos para seguir\n(aceitar/recusar)" <<planejado>> as FEP
+  component "lib/api/client.ts (api)" as FE6
 }
-note bottom of FEP : não implementado no frontend —\nos endpoints /api/me/follow-requests e\n/api/follow-requests/{followId} já existem
+note bottom of FEP : sem tela no frontend; os endpoints\n/api/me/follow-requests e\n/api/follow-requests/{followId} já existem
 package "fai-web · controllers" {
-  [ProfileController] as PC
-  [WardrobeController] as WC
-  [NotificationController] as NC
-  [SocialController\n(/api/interactions/{type}/{id})] as SC
+  [ProfileController\n/api/profiles/{idOrUsername}\n/api/users/{id}/followers · block · connections\n/api/me/follow-requests · /api/follow-requests/{id}] as PC
+  [WardrobeController\nGET /api/users/{ownerId}/closet] as WC
+  [LookbookController\n/api/users/{id}/lookbook · publications\nfavorites · groupings] as LC
+  [HypeController\nGET /api/hype/groups?type=CREATOR] as HC
+  [InsightsController\nGET /api/insights] as IC
+  [PreferencesController\nPUT /api/me/preferences] as PRC
 }
-package "fai-application · services" {
+package "fai-application · serviços" {
   [ProfileService] as PS
-  [WardrobeService] as WS
-  [SchemeService] as SS
-  [Guard\n(canView, blocked)] as G
-  [NotificationService] as NS
+  [Guard\ncanView · blocked · requireOwner · deny] as G
+  [WardrobeService\ncloset] as WS
+  [LookbookService\nlookSort · hypeOrder] as LS
+  [SchemeService\nview · moreRestrictive] as SS
+  [NotificationService\nFOLLOW_REQUEST · NEW_FOLLOWER\nFOLLOW_ACCEPTED] as NS
+  [PreferencesService\nhypeCreatorOptOut] as PRS
+  [AuditService] as AU
 }
-package "fai-infrastructure · adapters" {
-  [UserRepository\nFollowRepository\nSchemeRepository\nSchemeItemRepository\nWardrobeItemRepository\nNotificationRepository] as REPOS
+package "fai-application · hype e insights" {
+  [HypeQueryService\ngroups · groupRows · creatorOptOuts] as HQ
+  [HypeCache\n(geração + TTL 10 min)] as HCA
+  [InsightService · ProfileInsights] as IS
 }
-database "MySQL\n• users\n• follows\n• schemes\n• scheme_items\n• wardrobe_items\n• notifications" as DB
+package "fai-application · portas" {
+  interface "RenderCachePort" as P_C
+}
+package "fai-infrastructure" {
+  [Repositórios JPA (persistence-mysql)\nUserRepository · FollowRepository\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · NotificationRepository\nUserPreferencesRepository · HypeScoreCurrentRepository] as REPOS
+  [RedisAdapters (cache-redis)\nInMemoryRenderCache (fallback)] as A_C
+}
+database "MySQL\n• users · follows (uq_follows_pair)\n• schemes · scheme_items · wardrobe_items\n• notifications\n• user_preferences.hype_creator_opt_out (V42)\n• hype_scores (só leitura)" as DB
+database "Redis" as RD
+component "HypeSnapshotService (job @Scheduled)\ngrava hype_scores — RF46" as HJ
 
-FE0 --> PC : GET /api/profiles/{idOrUsername}\nfollowers · block · connections
-FE1 --> WC : GET /api/users/{ownerId}/closet
-FE1 --> SC : reações/comentários (RF8)
-FE2 --> NC : GET /api/notifications
-FEP ..> PC : follow-requests
-PC --> PS : chama
-WC --> WS : chama
-NC --> NS : chama
-PS --> G : canView
-WS --> G : canView
-PS --> SS : view(esquema)
-PS --> NS : publica FOLLOW_*
-PS --> REPOS : lê/grava
-WS --> REPOS : lê
-G --> REPOS : lê follows
-NS --> REPOS : grava
-REPOS --> DB : JPA/Flyway
+FE0 --> FE1
+FE1 --> FE2 : cabeçalho
+FE0 --> FE3 : perfil PUBLIC
+FE0 --> FE4 : contentVisible
+FE0 --> FE6
+FE2 --> FE6
+FE3 --> FE6
+FE4 --> FE6
+FE5 --> FE6
+FEP ..> FE6
+FE6 --> PC : HTTPS/JSON
+FE6 --> WC
+FE6 --> LC
+FE6 --> HC
+FE6 --> IC
+FE6 --> PRC
+PC --> PS
+WC --> WS
+LC --> LS
+HC --> HQ
+IC --> IS
+PRC --> PRS
+PS --> G
+PS --> SS : view dos looks
+PS --> LS : ordenação por Hype
+PS --> NS
+WS --> G
+LS --> G
+G --> AU : ACESSO_NEGADO_403
+HQ --> G : bloqueio (CREATOR)
+HQ --> HCA
+IS --> G : blocked
+IS --> HCA
+PRS --> HCA : bump() após o commit
+PRS --> AU : ALTERACAO_PREFERENCIAS
+HCA --> P_C
+P_C <|.. A_C
+A_C --> RD
+PS --> REPOS
+WS --> REPOS
+LS --> REPOS
+G --> REPOS : follows
+NS --> REPOS
+PRS --> REPOS
+HQ --> REPOS : hype_scores · opt-outs
+IS --> REPOS
+REPOS --> DB : JPA / Flyway
+HJ --> DB : grava hype_scores
 @enduml

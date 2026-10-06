@@ -1,5 +1,5 @@
 @startuml RF30_Sequencia
-title RF30 — Ganhar e usar FAI Points, evoluir o nível do "Meu Quarto" e comprar na loja do quarto\nDiagrama de sequência — endpoints reais
+title RF30 — Ganhar e usar FAI Points e evoluir o nível do "Meu Quarto"\nDiagrama de sequência — ganhar pontos (evento após o commit), subir de nível e ver saldo e extrato
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,31 +8,62 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor Usuário as U
-participant "Frontend\npoints + RoomStore" as FE
-participant "HighlightsController" as C
+actor "Pessoa" as U
+participant "Tela de origem\n(pieces/new, schemes, mirror, room…)" as FEO
+participant "Serviço de origem\n(SchemeService, WardrobeService,\nDailyLookService, RoomService…)" as ORIG
+participant "WardrobeEventListeners\n+ SideEffectRunner" as WEL
 participant "FaiPointsService" as P
-participant "WardrobeCreatorService" as W
-participant "RoomService" as R
+participant "RoomService\n(RoomLayoutAccess)" as R
+participant "NotificationService" as N
+participant "points/page.tsx\n+ notifications/page.tsx" as FE
+participant "HighlightsController" as C
+participant "NotificationController" as NC
 database "MySQL" as DB
-U -> FE: abre FAI Points
+
+== Ganhar pontos pelo uso ==
+U -> FEO: cria um esquema (exemplo)
+FEO -> ORIG: POST /api/schemes
+ORIG -> DB: INSERT schemes
+ORIG -> ORIG: publishEvent(SchemeSaved(created = true))
+ORIG --> FEO: 201 (a ação termina aqui)
+note over ORIG, WEL: @TransactionalEventListener(AFTER_COMMIT):\nfalha nos pontos nunca desfaz a ação principal
+ORIG ->> WEL: SchemeSaved (após o commit)
+WEL -> P: award(userId, "SCHEME_CREATED", "SCHEME", schemeId, null)
+P -> DB: SELECT fai_points_rules WHERE action_code = ?
+alt regra ausente ou inativa
+  P --> WEL: Award(granted = false, "ação sem regra de pontos")
+else chave userId:SCHEME_CREATED:schemeId já existe
+  P --> WEL: Award(granted = false, "evento já pontuado")
+else contagem do dia ≥ dailyCap (ou da semana ≥ weeklyCap)
+  P --> WEL: Award(granted = false, capReached = true)
+  note right of P: o teto não bloqueia a ação,\nsó não pontua
+else lança
+  P -> DB: lifetime(userId) → nível antes
+  P -> DB: INSERT fai_points_ledger\n(delta = +40, countsLifetime = true, idempotencyKey)
+  P -> N: notify(FAI_POINTS, "+40 FAI Points", "Esquema criado", href /points)
+  N -> DB: INSERT notifications (categoria POINTS)
+  P -> DB: lifetime(userId) → nível depois
+  opt nível subiu (Level.of(lifetime) maior)
+    P -> R: setLevel(userId, "STUDIO")
+    R -> DB: UPDATE room_layouts.level\n+ mescla os módulos liberados (defaultModules)
+    P -> N: notify(ROOM_LEVEL_UP, "Seu quarto evoluiu", unlocks)
+  end
+  P --> WEL: Award(granted = true, points = 40, level, levelUp)
+end
+
+== Ver saldo, níveis e regras ==
+U -> FE: abre FAI Points (/points)
 FE -> C: GET /api/me/points
 C -> P: account(user)
-P -> DB: SUM fai_points_ledger (saldo e vitalício)
-FE -> C: GET /api/points/shop
-C -> P: shop(user)
-P -> DB: SELECT room_catalog ativos + room_inventory
-P -> W: view(item, buyer) + blocker
-P -> R: compatibleModules
-P --> FE: itens com condições e motivo do bloqueio
-U -> FE: Comprar
-FE -> C: POST /api/points/shop/{sku}/purchase
-C -> P: buy(user, sku)
-P -> W: blocker(buyer, item)
-P -> DB: INSERT fai_points_ledger (−preço)\nINSERT room_inventory\nUPDATE room_catalog.sold_count
-U -> FE: Montar em "Porta 1"
-FE -> C: POST /api/me/room-inventory/{id}/apply
-C -> P: apply
-P -> R: applyFinish(user, moduleId, item)
-R -> DB: UPDATE room_layouts.modules_json
+P -> DB: SUM(delta) → balance\nSUM(delta > 0 e countsLifetime) → lifetime
+P -> DB: SELECT fai_points_rules (ativas)\nSELECT top 100 fai_points_ledger (30 recentes)
+P --> FE: balance, lifetime, level, unlocks, nextLevel {missing},\nlevels[7] {reached}, rules[], recent[], note "não são vendidos"
+FE --> U: saldo, barra até o próximo nível, níveis e "Como ganhar"
+
+== Ver o extrato ==
+U -> FE: "Ver extrato" → /notifications?cat=POINTS
+FE -> NC: GET /api/notifications
+NC -> N: caixa de entrada do usuário
+N -> DB: SELECT notifications (FAI_POINTS)
+NC --> FE: notificações FAI_POINTS (a tela agrupa por dia: "+N FAI Pts")
 @enduml

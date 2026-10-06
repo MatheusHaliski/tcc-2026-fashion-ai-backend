@@ -1,0 +1,188 @@
+@startuml FashionAI_Classes_v5_IA_Operacao
+title FashionAI — Visão global do domínio (v5)\nDiagrama de classes — IA, pipelines, moderação, auditoria e backup (RF4, RF11, RF16, RF18, RF24, RNF4, RNF5) · entidades JPA de fai-domain, Flyway V1–V42
+!pragma layout smetana
+set separator none
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam note {
+  BackgroundColor #FFFBEA
+  BorderColor #B8A86A
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "IA e jobs assíncronos (RF24)" {
+class AiInferenceLog << (S,#F0D2B8) ai_inference_log >> {
+  +userId: UUID
+  +capability: String
+  +hostRf: String
+  +provider: String
+  +model: String
+  +latencyMs: long
+  +estimatedCostUsd: BigDecimal
+  +result: AiCallResult
+  +fallbackUsed: boolean
+  +inputSummaryJson: String
+  +consentState: String
+  +correlationId: String
+  .. +1 campos ..
+}
+class PipelineJob << (V,#C9B8F0) pipeline_jobs >> {
+  +user: User
+  +type: PipelineJobType
+  +status: PipelineJobStatus
+  +provider: String
+  +externalJobId: String
+  +targetType: String
+  +inputResourceId: UUID
+  +outputUrl: String
+  +stagesJson: String
+  +qualityScore: BigDecimal
+  +totalCostUsd: BigDecimal
+  +fallbackUsed: boolean
+  +errorCode: String
+  +attempts: int
+  +queuedAt: Instant
+  +finishedAt: Instant
+  .. +6 campos ..
+}
+class ProcessingJobLog << (S,#F0D2B8) processing_jobs_log >> {
+  +pipelineJobId: UUID
+  +wardrobeItemId: UUID
+  +userId: UUID
+  +jobType: String
+  +status: String
+  +finalQualityScore: BigDecimal
+  +totalCostUsd: BigDecimal
+  +accepted: boolean
+  +fallbackUsed: boolean
+  .. +4 campos ..
+}
+class RenderJobLog << (S,#F0D2B8) render_jobs_log >> {
+  +pipelineJobId: UUID
+  +schemeId: UUID
+  +userId: UUID
+  +renderingType: String
+  +status: String
+  +finalQualityScore: BigDecimal
+  +totalCost: BigDecimal
+  +retryCount: int
+  .. +6 campos ..
+}
+}
+package "Moderação, auditoria e backup (RN11, RNF4, RNF5)" {
+class ModerationQueueItem << (V,#C9B8F0) moderation_queue >> {
+  +targetType: String
+  +targetId: UUID
+  +userId: UUID
+  +contentExcerpt: String
+  +categoriesJson: String
+  +confidence: BigDecimal
+  +status: ModerationQueueStatus
+  +reviewedBy: UUID
+  +reviewedAt: Instant
+  +reason: String
+}
+class AuditLog << (S,#F0D2B8) audit_log >> {
+  +actor: String
+  +acao: String
+  +recurso: String
+  +resultado: String
+  +ip: String
+  +timestamp: Instant
+  +correlationId: String
+  +metadataJson: String
+  .. +1 campos ..
+}
+class BackupRecord << (S,#F0D2B8) backup_records >> {
+  +kind: String
+  +status: String
+  +fileKey: String
+  +sizeBytes: Long
+  +checksum: String
+  +startedAt: Instant
+  +finishedAt: Instant
+  .. +1 campos ..
+}
+}
+package "Enums-chave (domain/model/enums)" {
+enum AiCallResult {
+  SUCCESS
+  FALLBACK_LOCAL
+  TIMEOUT
+  CIRCUIT_OPEN
+  RATE_LIMITED
+  CONSENT_DENIED
+  PROMPT_REJECTED
+  ERROR
+}
+enum PipelineJobType {
+  PIECE_ANALYSIS
+  FLAT_LAY_STANDARDIZATION
+  CONTENT_MODERATION
+  BACKGROUND_GENERATION
+  SCHEME_CARD_RENDER
+  TRY_ON_2D
+  OUTFIT_RENDER
+  TRY_ON_POLISH
+  CATEGORY_FALLBACK_COMPOSITION
+  STYLE_DNA_SYNTHESIS
+  EMBEDDING_GENERATION
+  HYPE_SCORE_RECALC
+  DATA_EXPORT
+  THREE_D_GENERATION
+}
+enum PipelineJobStatus {
+  PENDING
+  RUNNING
+  RENDERING
+  ENHANCING
+  COMPOSITING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+enum ModerationQueueStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+}
+package "Referências a outras áreas" #FAFAFA {
+class User <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class WardrobeItem <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class Scheme <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+}
+
+' --- associações JPA (geradas do código) ---
+PipelineJob "*" --> "1" User : user
+' --- referências por id, sem FK JPA ---
+AiInferenceLog ..> User : userId
+PipelineJob ..> WardrobeItem : inputResourceId (targetType PIECE, PIECE_DRAFT…)
+ProcessingJobLog ..> PipelineJob : pipelineJobId
+ProcessingJobLog ..> WardrobeItem : wardrobeItemId
+RenderJobLog ..> PipelineJob : pipelineJobId
+RenderJobLog ..> Scheme : schemeId
+ModerationQueueItem ..> User : userId / reviewedBy
+note "inputSummaryJson diz QUAIS dados alimentaram\na inferência (RF24.CA12) — nunca foto, senha\nou token. Gravado pelo AiEngine." as N_AI
+N_AI .. AiInferenceLog
+note "Estado canônico no MySQL; o disparo vai para\na fila (JobQueuePort: Redis Streams ou memória)." as N_PJ
+N_PJ .. PipelineJob
+legend right
+  <b>Letra do ícone</b>
+  V = estende VersionedAuditableEntity (id UUID, createdAt/updatedAt, createdBy/lastModifiedBy, @Version)
+  A = estende AuditableEntity (id UUID e auditoria, sem @Version)
+  S = @Entity sem superclasse (id e datas próprios) · M = @Embeddable (colunas embutidas na tabela dona)
+  E = enum
+  ⟶ seta cheia = associação JPA (@ManyToOne/@OneToOne) · seta tracejada = id guardado sem FK JPA
+  <<outra área>> = classe detalhada em outro diagrama v5
+endlegend
+@enduml

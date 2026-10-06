@@ -1,49 +1,93 @@
 @startuml SEG_Atividades_Acesso
-title Fashion AI — Atividades: do navegador à API (dev gate + sessão BFF)
+title Segurança, integridade e operação (transversal)\nDiagrama de atividades — do navegador à API: CSP, gate de desenvolvedor, BFF da sessão e filtros da API
 !include _estilo.iuml
 |Navegador|
 start
-:Abre qualquer página do fai-network.com;
-|middleware.ts (Next.js)|
-:Gera nonce e CSP da requisição;
-if (Cookie **fai_gate** (token "gp") válido?\nassinatura HMAC · validade 12 h · identidade permitida) then (sim)
-  if (Cookie **fai_gate_a** ("ga", 1 h) ausente, de outro formato\nou com menos de 20 min?) then (sim)
-    :Renova fai_gate_a (signApiToken);
-  endif
-  :Entrega a página (SSR dinâmico, nonce em todos os scripts);
-else (não)
-  if (Rota /gate/*, /bff/* ou página?) then (página)
-    :Reescreve para /gate;
-  elseif (/bff/*) then
-    :403 JSON "gate required";
-    stop
-  else (/gate/google · callback · verify · status · renew)
-    :Segue para a rota do gate;
-  endif
-  |/gate (Route Handlers)|
-  if (DEV_GATE_MODE) then (cloudflare)
-    :Valida o JWT do Cloudflare Access\n(RS256 pelo JWKS · iss · aud · exp);
+:Abre qualquer endereço do app;
+|middleware.ts|
+:Gera nonce e a CSP da requisição
+(script-src 'self' 'nonce-…' 'strict-dynamic');
+if (Gate ligado? (DEV_GATE_ENABLED ≠ false)) then (não)
+  :Segue para a página;
+else (sim)
+  if (Modo do gate) then (cloudflare)
+    :Confere o JWT do Cloudflare Access
+    (cf-access-jwt-assertion: RS256 · iss · aud);
   else (builtin)
-    :Identidade: login Google (DEV_GATE_GOOGLE, state assinado)\nou usuário DEV_GATE_USER;
-    :Confere a identidade em DEV_GATE_ALLOWED_EMAILS;
-    :PIN de 2º fator (falha apaga o cookie do Google;\nlog de auditoria com identidade mascarada);
+    :Confere o cookie fai_gate (token "gp", 12 h)
+    contra DEV_GATE_SECRET e a lista de e-mails;
   endif
-  :Emite fai_gate (gp, HttpOnly) e fai_gate_a (ga);
-  :Redireciona para safeNext(next)\n(recusa //, \\, controle e outra origem);
+  if (Identidade válida?) then (sim)
+    if (Token de API fai_gate_a ausente,
+    de outro formato ou vence em < 20 min?) then (sim)
+      :Grava fai_gate_a novo (token "ga", 1 h);
+    else (não)
+    endif
+    :Entrega a página com a CSP
+    e X-Robots-Tag: noindex;
+  else (não)
+    if (Caminho?) then (/bff/*)
+      #FFE3E3:403 JSON DEV_GATE
+      + X-Dev-Gate-Required: 1;
+      stop
+    elseif (modo cloudflare) then
+      #FFE3E3:403 texto puro (nada do produto aparece);
+      stop
+    elseif ("/" ou /gate/*) then
+      :Reescreve para a tela do gate
+      (a URL não muda);
+    else (outra página)
+      :Redireciona para /?next=<caminho>;
+    endif
+    |Rotas /gate|
+    :1º fator — GET /gate/google
+    (state, nonce e PKCE no cookie fai_gate_oauth, 10 min);
+    :Callback confere a conta Google em
+    DEV_GATE_ALLOWED_EMAILS → cookie fai_gate_g (15 min)
+    (com DEV_GATE_GOOGLE=false: usuário DEV_GATE_USER);
+    :2º fator — POST /gate/verify com o PIN
+    (SHA-256 comparado em tempo constante);
+    if (8 erros deste IP em 15 min?) then (sim)
+      #FFE3E3:429 MUITAS_TENTATIVAS (Retry-After: 900);
+      stop
+    elseif (1º fator e PIN certos?) then (não)
+      #FFE3E3:Conta o erro do IP, espera 600 ms,
+      401 CREDENCIAIS_INVALIDAS e apaga fai_gate_g
+      (refazer o login Google);
+      stop
+    else (sim)
+      :Grava fai_gate (HttpOnly) e fai_gate_a;
+      :Volta para safeNext(next)
+      (recusa //, barra invertida, caracteres de controle
+      e outra origem);
+    endif
+  endif
 endif
 |Navegador|
-:App carrega; restoreSession() pede /bff/auth/refresh;
+:App carrega; restoreSession()
+chama POST /bff/auth/refresh;
 |BFF /bff/auth/[action]|
-:Confere mesma origem e corpo ≤ 64 KB;
-:Repassa à API com X-Dev-Gate (ga) e IP assinado\n(X-Fai-Client-Ip · X-Fai-Proxy-Ts · X-Fai-Proxy-Sig);
-|API (Spring Boot)|
-:DevGateFilter valida o ga (ou v1 legado na transição);
-:ClientIpResolver aceita o IP só com assinatura válida;
-:AuthRateLimitFilter limita pelo caminho normalizado + IP;
-:JWT com aud · Argon2id · lockout sem enumeração;
+:Aceita só POST da mesma origem
+e corpo até 64 KB (senão 403 ou 413);
+:Assina o IP do cliente: X-Fai-Client-Ip, X-Fai-Proxy-Ts,
+X-Fai-Proxy-Sig = HMAC-SHA256(EDGE_PROXY_SECRET, ip|ts)
+e manda X-Dev-Gate;
+|API Spring Boot|
+:CorrelationIdFilter → RequestLocaleFilter (-104);
+:DevGateFilter (-103): token "ga" (ou v1 legado)
+ou JWT do Cloudflare; livres só /actuator/health,
+/actuator/info e /media/;
+:AuthRateLimitFilter (-102): IP pelo ClientIpResolver,
+limite por IP + método + rota e teto de hashes;
+:Spring Security: JWT RS256 com aud, papel do claim
+role; SessionActiveFilter recusa sessão encerrada;
+:Controllers e serviços: FashionAuthorization (dono),
+OwnMedia, Guard, AiBudget;
 |BFF /bff/auth/[action]|
-:Tira o refresh token do JSON e grava no cookie\n**fai_rt** (HttpOnly · Path=/bff/auth · SameSite=Strict);
+:Tira o refresh token do JSON e grava o cookie fai_rt
+(HttpOnly · SameSite=Strict · só /bff/auth) + fai_rt_h;
 |Navegador|
-:Access token só em memória;\nabas sincronizadas (Web Locks + BroadcastChannel);
+:Access token só em memória,
+abas combinam a renovação (Web Lock + BroadcastChannel);
 stop
 @enduml

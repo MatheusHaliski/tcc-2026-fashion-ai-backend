@@ -1,5 +1,5 @@
 @startuml RF36_Sequencia
-title RF36 — "Foto com meu manequim": peça (RF4) ou look inteiro (RF5) no manequim com rosto 3D da foto de perfil\nDiagrama de sequência — endpoints reais
+title RF36 — Foto com meu manequim (peça do RF4 ou look do RF5)\nDiagrama de sequência — look3d, geração no navegador, upload, capa do post e remoção
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,22 +8,83 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor "Usuário (dono)" as U
-participant "Frontend\nMannequinPhotoDialog" as FE
+actor "Pessoa (dona)" as U
+participant "expanded-card.tsx\n(ExpandedPiece · ExpandedScheme)" as EC
+participant "MannequinPhotoDialog\n+ LookViewer (Three.js)" as FE
 participant "ShowcaseController" as C
 participant "ShowcaseService" as S
-database "MySQL" as DB
-database "Storage de mídia" as MS
-U -> FE: Foto com meu manequim
-FE -> C: GET /api/schemes/{id}/look3d
-C -> S: look3d(viewer, schemeId)
-S -> DB: SELECT users (sexo, avatar), user_preferences\n(rosto), scheme_items, wardrobe_items (GLB/recorte)
-S --> FE: manequim + peças por slot
-FE -> FE: Three.js renderiza, usuário ajusta o rosto
-U -> FE: Gerar foto (usar como capa)
-FE -> C: POST /api/schemes/{id}/mannequin-photo?asCover=true
-C -> S: schemeMannequinPhoto(bytes, asCover)
-S -> MS: put(users/…/schemes/{id}.png)
-S -> DB: UPDATE schemes.mannequin_image_url (+ capa)
-FE -> C: PUT /api/me/preferences (mannequinFace)
+participant "Guard ·\nSchemeService" as G
+participant "Avatar3dService" as AV
+participant "ImageOps ·\nMediaService" as IM
+database "MySQL\nusers · user_preferences ·\nuser_avatars_3d · schemes ·\nscheme_items · wardrobe_items" as DB
+database "MediaStoragePort\n(S3 / local)" as ST
+
+U -> EC : "Foto com meu manequim"\n(peça upper/full_body ou look; só a dona)
+EC -> FE : abre o diálogo (kind = piece | scheme)
+alt peça
+  FE -> C : GET /api/pieces/{id}/look3d
+  C -> S : piece3d(viewer, id)
+  S -> G : requireView(viewer, dono, visibilidade)
+else look
+  FE -> C : GET /api/schemes/{id}/look3d
+  C -> S : look3d(viewer, id)
+  S -> G : SchemeService.canView (arquivado de outra pessoa = 404)
+end
+alt sem permissão / inexistente
+  S --> FE : 403 | 404 → "não foi possível montar o manequim"
+else ok
+  S -> DB : peças (scheme_items → wardrobe_items), users.sex,\nuser_preferences (mannequinSex, skinTone, build, face)
+  S -> S : mannequinBase: sexo RF1 → provador → peças → FEMININO;\nhead = PADRAO; MARCA sem photoUrl
+  opt não é MARCA
+    S -> AV : forMannequin(dono, viewer)
+    AV -> DB : user_avatars_3d (publicOnRunway ou dona)
+    AV --> S : {model, adjust, textureUrl?} → head = AVATAR
+  end
+  S --> FE : 200 {mannequin, pieces[slot, imageUrl, model3dUrl], hype, ready3d, missing3d}
+end
+alt sem WebGL
+  FE --> U : aviso; "Gerar foto" desabilitado
+else WebGL
+  FE --> U : manequim parado (rosto do avatar ou cabeça neutra)\n+ "Usar como foto do post" (look)
+  U -> FE : gira e toca "Gerar foto"
+  FE -> FE : canvas.toBlob("image/jpeg", 0.93)
+  alt peça
+    FE -> C : POST /api/pieces/{id}/mannequin-photo (multipart file)
+    C -> S : pieceMannequinPhoto(user, id, Uploads.image(file))
+    S -> G : requireCanCreate · requireOwner
+    alt categoria fora de upper_piece / full_body_piece
+      S --> FE : 422 SEM_FOTO_NO_MANEQUIM
+    end
+  else look
+    FE -> C : POST /api/schemes/{id}/mannequin-photo?asCover=true|false
+    C -> S : schemeMannequinPhoto(user, id, bytes, asCover)
+    S -> G : requireCanCreate · SchemeService.owned
+  end
+  alt sem login · e-mail não confirmado · não é a dona
+    G --> FE : 401 | 403 EMAIL_NAO_CONFIRMADO | 403
+  else imagem recusada
+    S -> IM : requireAcceptedImage(bytes)
+    IM --> FE : 400 ARQUIVO_VAZIO | ARQUIVO_GRANDE | FORMATO_INVALIDO
+  else ok
+    S -> IM : scaleToFit(1600, 1600) · jpeg(0.92)
+    S -> IM : media.put("users/{id}/{pieces|schemes}/{id}/mannequin-{ts}.jpg")
+    IM -> ST : put(chave, bytes, image/jpeg)
+    S -> DB : UPDATE mannequin_image_url, mannequin_image_face\n(faceOf: FOTO | PADRAO)
+    opt look com asCover
+      S -> DB : UPDATE schemes.cover_image_url = url
+    end
+    S --> FE : 200 {url, face[, cover]}
+    FE --> U : foto salva (toast) · "Gerar de novo" · "Remover foto"
+  end
+end
+
+opt remover
+  U -> FE : "Remover foto"
+  FE -> C : DELETE /api/{pieces|schemes}/{id}/mannequin-photo
+  C -> S : deleteMannequinPhoto(user, kind, id)
+  S -> G : dona (requireOwner / owned)
+  S -> DB : mannequin_image_url = NULL, mannequin_image_face = NULL\n(+ cover_image_url = NULL se a capa era essa foto)
+  S --> FE : 204
+  FE --> EC : fecha e recarrega
+end
 @enduml

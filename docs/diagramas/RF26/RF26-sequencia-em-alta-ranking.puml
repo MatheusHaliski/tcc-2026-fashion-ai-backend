@@ -1,0 +1,82 @@
+@startuml RF26_Sequencia_EmAlta_Ranking
+title RF26 — Busca global de esquemas e peças (aba "Explorador Global")\nDiagrama de sequência — "Em alta" (/api/hype/trending) e "Ranking de HypeScore" (/api/hype/ranking)
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "HypeTrendingPanel\n(hype-trending.tsx)" as TP
+participant "HypeRankingPanel\n(hype-ranking.tsx)" as RP
+participant "HypeController" as HC
+participant "HypeQueryService" as HQ
+participant "HypeCache\n(RenderCachePort)" as CA
+participant "Guard" as G
+participant "HypeScoreCurrentRepository ·\nHypeScoreSnapshotRepository" as HR
+database "MySQL\nhype_scores ·\nhype_score_snapshots" as DB
+
+== Em alta ==
+U -> TP : tipo, janela (1 · 7 · 30), categoria, estilo, ocasião
+TP -> HC : GET /api/hype/trending?type&window&category&style&occasion&limit=24
+alt type = BRAND | CREATOR (RankGroup.parse)
+  HC -> HQ : trendingGroups(viewer, group, window, …, limit)
+  HQ -> CA : get("trending-groups:…", rankGroups)
+  opt fora do cache
+    HQ -> HR : hype_scores públicos (peças; criador: peças + looks)
+    HR -> DB : SELECT
+    HQ -> HQ : agrupa por marca ou dono; grupo com ≥ 3 itens públicos
+  end
+  loop cada criador
+    HQ -> G : canView(viewer, ownerId, PUBLIC)
+    G --> HQ : bloqueado → some (posições não mudam)
+  end
+  HQ --> TP : 200 {type, window, items[grupo, valor, faixa, peças/looks]}
+else type = PIECE | LOOK
+  HC -> HQ : trending(viewer, type, window, category, style, occasion, limit)
+  HQ -> CA : get("trending:{type}:{win}:{cat}:{style}:{occ}:{lim}", rank)
+  opt fora do cache (geração nova ou TTL 10 min)
+    HQ -> HR : findByEntityTypeAndAlgorithmVersion\nAndPublicEligibleTrueAndStatus(type, versão, AVAILABLE)
+    HR -> DB : SELECT hype_scores
+    alt window = 1
+      HQ -> HQ : ordena pela dimensão trend (desempate score)
+    else window = 7
+      HQ -> HQ : ordena pelo score atual
+    else window = 30
+      HQ -> HR : findByEntityTypeAndAlgorithmVersionAndSnapshotDateBetween(…)
+      HR -> DB : SELECT hype_score_snapshots (29 dias atrás → hoje)
+      HQ -> HQ : ordena pela média do mês
+    end
+  end
+  HQ -> HQ : views(viewer, type, ids) — tira o invisível para quem vê
+  HQ --> TP : 200 {type, window, algorithmVersion, items[rank, id, hype, piece|scheme]}
+else type desconhecido
+  HC --> TP : 400 TIPO_INVALIDO
+end
+TP --> U : grade com #posição (ou EmptyState)
+
+== Ranking de HypeScore ==
+U -> RP : tipo, janela, região, país, categoria, subcategoria, página
+RP -> RP : grava os filtros na URL
+par lista
+  RP -> HC : GET /api/hype/ranking?type&window&region&country&category&subcategory&page&size
+  HC -> HQ : ranking(viewer, type, window, region, country, category, subcategory, page, size ≤ 48)
+  HQ -> CA : get("ranking:{type}:{win}:{região}:{país}:{cat}:{sub}", rankRegional)
+  opt fora do cache
+    HQ -> HR : publicPool(type)
+    HR -> DB : SELECT hype_scores
+    HQ -> HQ : filtra região (hype_scores.region; sem região = OUTRAS),\npaís, categoria/subcategoria (look: pelas peças);\nordena pela métrica da janela, desempate pelo id
+  end
+  HQ -> HR : currentOf(type, ids da página)
+  HQ -> HQ : views / schemeService.view + lookPieces;\nitem bloqueado ou não mais público só some
+  HQ --> RP : 200 {total, page, size, hasMore, filters, items[rank, value, hype, region, country, piece|scheme]}
+else facetas
+  RP -> HC : GET /api/hype/ranking/facets?type&window&region&category
+  HC -> HQ : rankingFacets(type, window, region, category)
+  HQ -> CA : get("ranking-facets:…", facets)
+  HQ --> RP : 200 {regiões com Hype médio, países, categorias, subcategorias}
+end
+RP --> U : lista ranqueada + chips com contagens + paginação
+@enduml

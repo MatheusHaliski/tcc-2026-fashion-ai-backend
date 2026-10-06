@@ -1,0 +1,100 @@
+@startuml RF39_Componentes_ItensUnicos
+title RF39 — Criar guarda-roupa 3D com a identidade de uma marca/celebridade e vender na loja do quarto\nDiagrama de componentes — itens únicos e personalizáveis do Meu Quarto e o Background Studio (<<planejado>>) (absorve o antigo RF44)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #4A4852
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+package "Frontend (Next.js)" {
+  component "WardrobeCreatorTab\nidentidade, edição limitada,\nlimite por pessoa, selo exigido,\nMinhas criações (vendas)" as FCreator
+  component "RoomStore\nestoque restante, blocker,\nunidades e serial" as FStore
+  component "room/page.tsx · RoomScene\ncaixa de entrega (unbox),\nplaca de logo e arte" as FRoom
+  component "background-studio.tsx\n(catálogo de auras, materiais, skins)" as FBg
+}
+
+package "fai-web" {
+  component "RoomCreatorController" as CCreator
+  component "HighlightsController" as CHigh
+  component "RoomController" as CRoom
+  component "BackgroundController\nGET /api/backgrounds/catalog" as CBg
+  component "<<planejado>>\nrota de venda de itens\ndo Background Studio" as CPlan #FFF5F8
+}
+
+package "fai-application" {
+  component "WardrobeCreatorService\nidentity · save · delete · mine\nblocker · hasSeal · sellerActive" as SCreator
+  component "FaiPointsService\nbuy (trava comprador → item)\napply" as SPoints
+  component "RoomService\nroom (unboxing) · applyFinish" as SRoom
+  component "FlairService.sellerActive\n(conta ACTIVE de marca/celebridade)" as SFlair
+  component "BackgroundStudioService\ncatalog · combination · recommend" as SBg
+  interface "RoomLayoutAccess" as IRoom <<port>>
+}
+
+package "fai-domain (repositórios)" {
+  component "RoomCatalogItemRepository\n(lockBySku FOR UPDATE)" as RCat
+  component "RoomInventoryItemRepository\n(countByUserIdAndSku · findBySku)" as RInv
+  component "FaiPointsLedgerEntryRepository\n(lockOwner FOR UPDATE)" as RLed
+  component "SealBondRepository · SealRepository" as RSeal
+  component "BrandProfileRepository\nCelebrityProfileRepository · UserRepository" as RProf
+  component "AssetPresetRepository" as RAsset
+}
+
+database "MySQL\n• room_catalog (stock_limit, sold_count,\n  per_user_limit, requires_seal, seal_id,\n  logo_url, art_url, label_text, version)\n• room_inventory (serial, applied_module)\n• fai_points_ledger · room_layouts\n• seal_bonds · seals\n• brand_profiles · celebrity_profiles · users\n• asset_presets" as DB
+
+FCreator --> CCreator : /api/room-creator/**
+FStore --> CHigh : shop · purchase · apply
+FRoom --> CRoom : GET /api/me/room
+FRoom --> CHigh : apply (unbox)
+FBg --> CBg
+
+CCreator --> SCreator
+CHigh --> SPoints
+CRoom --> SRoom
+CBg --> SBg
+CPlan ..> SBg : não implementado
+
+SPoints --> SCreator : blocker · view
+SPoints --> IRoom
+IRoom <|.. SRoom
+SCreator --> SFlair
+SCreator --> RCat
+SCreator --> RInv
+SCreator --> RSeal
+SCreator --> RProf
+SPoints --> RCat
+SPoints --> RInv
+SPoints --> RLed
+SRoom --> RInv
+SBg --> RAsset
+
+RCat --> DB
+RInv --> DB
+RLed --> DB
+RSeal --> DB
+RProf --> DB
+RAsset --> DB
+
+note bottom of CPlan
+  O título antigo (RF44) incluía itens do Background Studio.
+  Hoje só blocos e guarda-roupas (room_catalog) são vendidos;
+  asset_presets não tem criador, preço nem estoque.
+end note
+@enduml

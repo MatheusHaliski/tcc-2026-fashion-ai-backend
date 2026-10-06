@@ -1,5 +1,6 @@
 @startuml RF35_MaquinaDeEstados_Colecao
 !pragma layout smetana
+title RF35 — Coleções da marca: busca por coleção e Collections Insights com mini lojas 3D\nDiagrama de máquina de estados — coleção da marca (scheme_groupings type COLLECTION) e sua mini loja no ranking
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -7,26 +8,38 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-title RF35 — Coleção da marca (scheme_groupings, type = COLLECTION): da criação à mini loja 3D com fogos
-[*] --> Criada : POST /api/groupings {type: COLLECTION, label}\n(só perfil MARCA; tipos permitidos por profileType)
-state "Criada\n(sem itens)" as Criada
-state "Com arte da coleção\n(coverUrl → fachada, vitrine, letreiro)" as ComArte
-state "Com itens\n(schemes/wardrobe_items.grouping_id)" as ComItens
-state "Ranqueada em Collections Insights\n(0,5·curtidas + 0,35·hype + 0,15·itens)" as Ranqueada {
-  state "rank 1–4 com fraction >= 0,25\n(fireworks = 4 − rank, público máximo)" as Top
-  state "demais posições\n(público proporcional, sem fogos)" as Resto
-  Resto --> Top : sobe no ranking
-  Top --> Resto : outra coleção ultrapassa
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
-Criada --> ComArte : POST /api/groupings/{id}/cover (arte da coleção)
-Criada --> ComItens : POST /api/groupings/{id}/items {schemeIds, pieceIds}
-ComArte --> ComItens : POST /api/groupings/{id}/items
-ComItens --> ComItens : PUT /api/groupings/{id} (label, descrição, accentColor)
-ComItens --> Ranqueada : GET /api/institutional/{slug}/showcase/collections/insights
-Ranqueada --> ComItens : marca edita/adiciona itens
-ComItens --> Criada : POST /api/groupings/{id}/items com groupingId=null
-Criada --> [*] : DELETE /api/groupings/{id}
-ComItens --> [*] : DELETE /api/groupings/{id}\n(itens ficam, grouping_id = null)
-note right of Ranqueada : mesma fórmula do RF34 (ShowcaseService.insights);\nmini loja 3D usa o motor do RF33/RF34 no cliente
-note bottom of ComItens : busca por coleção: GET /api/institutional/{slug}/showcase/collections/items?grouping&q&year
+[*] --> Vazia : POST /api/groupings {type: COLLECTION, label, período, cor}\n(perfil MARCA — LookbookService.BRAND)
+state "Sem itens\n(loja vazia no ranking, pontuação 0)" as Vazia
+state "Com itens\n(schemes/wardrobe_items.grouping_id = coleção)" as ComItens {
+  [*] --> ArteAuto
+  state "Vitrine automática\n(capa do look de maior Hype v2\nou foto de peça — coverSource esquema)" as ArteAuto
+  state "Vitrine com a arte da coleção\n(coverSource upload)" as ArteUpload
+  ArteAuto --> ArteUpload : POST /api/groupings/{id}/cover
+}
+state "Mini loja em Collections Insights" as Loja {
+  state "Pódio com fogos\n(posições 1–4 com fraction ≥ 0,25:\nfogos = 4 − posição, público grande)" as Podio
+  state "Demais lojas\n(público = fraction × 80, sem fogos)" as Demais
+  Demais --> Podio : sobe no ranking
+  Podio --> Demais : outra coleção ultrapassa\nou fraction < 0,25
+}
+
+Vazia --> Vazia : POST …/cover · PUT /api/groupings/{id}\n(label, descrição, período, cor, ordem)
+Vazia --> ComItens : POST /api/groupings/{id}/items {schemeIds, pieceIds}
+ComItens --> Vazia : todos os itens ligados a outra coleção\n(não há endpoint só para desligar)
+ComItens --> Loja : GET …/showcase/collections/insights\n(calculado na hora, sem tabela de ranking)
+Loja --> ComItens : curtidas e itens mudam (nova leitura reordena)
+Vazia --> [*] : DELETE /api/groupings/{id}
+ComItens --> [*] : DELETE /api/groupings/{id}\n(looks e peças ficam, grouping_id = NULL)
+
+note right of Loja
+  score = 0,75·curtidas/máx + 0,25·itens/máx (×100).
+  O 1º lugar fica no centro da rua e maior (escala 1,3).
+  O frontend mostra só as 7 primeiras lojas em 3D e até
+  90 pessoas por loja. Hype v2 à parte (top, média, faixa).
+end note
 @enduml

@@ -1,5 +1,5 @@
 @startuml RF17_Atividades
-title RF17 — Permitir que o Usuário visualize a página de perfil de outros Usuários cadastrados dentro da rede social do FashionAI\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF17 — Visualizar a página de perfil de outros usuários\nDiagrama de atividades — abrir o perfil, privacidade e bloqueio, Hype do criador, seguir, pedir para seguir e bloquear
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,71 +25,102 @@ skinparam note {
 }
 |Pessoa|
 start
-:Toca em @username (feed, busca,\ncomentário, seguidores);
+:Toca em @username (feed, busca,\ncomentário, lista de seguidores);
 |Frontend|
-:Abre u/[username];
+:Abre /u/[username] (u/[username]/page.tsx);\nsem login a chamada vai anônima;
 :GET /api/profiles/{idOrUsername};
-|Backend|
+|API e serviços|
 :ProfileService.profile → resolve(id ou @username);
-if (conta existe e não está DELETED /\nDELETION_SCHEDULED?) then (sim)
-  if (dono do perfil bloqueou quem visita?) then (sim)
-    :404 Perfil;
-    stop
+if (Conta existe e não está DELETED\nnem DELETION_SCHEDULED?) then (não)
+  #FFE3E3:404 Perfil;
+  |Frontend|
+  :ErrorState com "tentar de novo";
+  stop
+endif
+|API e serviços|
+if (O dono bloqueou quem visita\n(Follow dono→visitante = BLOQUEADO)?) then (sim)
+  #FFE3E3:404 Perfil (como se não existisse);
+  stop
+endif
+:relation = Follow visitante→dono\n(NENHUMA · PENDENTE · ACEITO · BLOQUEADO);
+:counters: seguidores e seguindo (ACEITO), publicados,\npeças não arquivadas, esquemas não arquivados;
+:contentVisible = dono, admin ou Guard.canView(profileVisibility):\nPUBLIC = todos · FOLLOWERS = Follow ACEITO · PRIVATE = ninguém;\nbloqueio em qualquer direção = falso;
+if (contentVisible?) then (sim)
+  :schemes PUBLISHED visíveis (visibilidade mais restritiva\nentre look e perfil), ordem sort = recent · hype_desc\n· hype_asc · growth (Hype público elegível; sem Hype por último);
+  :pieces visíveis (até 60, não arquivadas);
+else (não)
+  :invite {SEGUIR}: "mostra as publicações só a seguidores"\nou "perfil privado"; schemes e pieces vazios;
+endif
+|Frontend|
+if (layout = INSTITUCIONAL (marca ou celebridade)?) then (sim)
+  :router.replace(/brands/{username})\n(perfil oficial — RF14/RF22);
+  stop
+endif
+:ProfileHeader: avatar, capa, @, pronomes, bio, link,\ncontadores (abrem Conexões), selo verificado;
+if (contentVisible?) then (sim)
+  :HypeGroupBadge CREATOR (cabeçalho)\nGET /api/hype/groups?type=CREATOR&keys={id};
+  if (Grupo suficiente (≥ 3 itens públicos), sem opt-out\ne sem bloqueio?) then (sim)
+    :Mostra "Hype do criador": faixa, número,\nbase de itens públicos e posição no ranking\n(link Explorador › Em alta);
   else (não)
+    :Nada no cabeçalho (nunca "0");
   endif
+  if (visibility = PUBLIC?) then (sim)
+    :InsightStrip CREATOR_PROFILE\nGET /api/insights?context=CREATOR_PROFILE&key=@;
+  endif
+  :LookbookTabs: Closet (GET /api/users/{id}/closet) · Looks\n(GET /api/profiles/{id}?sort) · Publicações · Favoritos\n· Agrupamentos (abas do dono ficam ocultas);
 else (não)
-  :404 Perfil;
-  stop
-endif
-:relation = Follow do visitante (NENHUMA, PENDENTE, ACEITO, BLOQUEADO);
-:counters: seguidores, seguindo, peças, esquemas (RF19);
-if (perfil institucional (marca/celebridade)?) then (sim)
-  |Frontend|
-  :Redireciona para brands/[slug] (RF14/RF22);
-  stop
-else (não)
-endif
-|Backend|
-if (Guard.canView(profileVisibility)\nPUBLIC, ou FOLLOWERS com Follow ACEITO?) then (sim)
-  :Devolve esquemas publicados e peças\n(cada item pela visibilidade mais restritiva);
-  |Frontend|
-  :ProfileHeader + abas Closet / Looks / Agrupamentos;
-  :Closet: GET /api/users/{ownerId}/closet\n(filtros categoria, estado...);
-else (não)
-  :contentVisible = false + convite "SEGUIR";
-  |Frontend|
-  :Mostra cabeçalho e contadores,\nsem conteúdo (perfil privado);
+  :EmptyState "Perfil privado" + botão\n"Pedir para seguir" (logado, sem pedido)\nou "Entrar" (sem login);
 endif
 |Pessoa|
-if (Ação?) then (seguir)
+if (Ação?) then (seguir / pedir)
   |Frontend|
   :POST /api/users/{targetId}/followers;
-  |Backend|
-  if (privateAccount e visibilidade não PUBLIC\ne perfil PESSOAL?) then (sim)
+  |API e serviços|
+  if (Seguir a si mesmo?) then (sim)
+    #FFE3E3:400 SEGUIR_A_SI;
+    stop
+  elseif (Dono bloqueou quem pede?) then (sim)
+    #FFE3E3:404 Perfil;
+    stop
+  elseif (privateAccount, visibilidade não PUBLIC\ne perfil PESSOAL?) then (sim)
     :Follow PENDENTE + notificação FOLLOW_REQUEST;
     note right
-      O dono aceita ou recusa por
-      POST /api/follow-requests/{followId}
-      (aceito → FOLLOW_ACCEPTED)
+      O dono responde por POST /api/follow-requests/{followId}
+      (aceito → ACEITO + FOLLOW_ACCEPTED; recusa apaga a linha).
+      Não há tela de pedidos no frontend.
     end note
   else (não)
     :Follow ACEITO + notificação NEW_FOLLOWER;
   endif
-elseif (deixar de seguir / cancelar pedido) then (sim)
+elseif (deixar de seguir / cancelar pedido) then
   |Frontend|
   :DELETE /api/users/{targetId}/followers/me;
-  |Backend|
-  :Remove o Follow (sem notificação);
-elseif (bloquear) then (sim)
+  |API e serviços|
+  :Apaga o Follow (nunca um BLOQUEADO);\nsem notificação;
+elseif (bloquear / desbloquear) then
   |Frontend|
-  :PUT /api/users/{targetId}/block {blocked};
-  |Backend|
-  :Desfaz vínculos e grava Follow BLOQUEADO;
-else (ver seguidores)
+  :Confirma no Dialog (só para bloquear)\nPUT /api/users/{targetId}/block {blocked};
+  |API e serviços|
+  if (Bloquear a si mesmo?) then (sim)
+    #FFE3E3:400 BLOQUEIO_INVALIDO;
+    stop
+  endif
+  :Apaga o Follow do outro para mim;\nbloquear: meu Follow vira BLOQUEADO;\ndesbloquear: apaga meu BLOQUEADO;
+elseif (ver conexões) then
   |Frontend|
   :GET /api/users/{userId}/connections;
+  |API e serviços|
+  if (Pode ver o perfil?) then (não)
+    #FFE3E3:403 (Guard.deny, auditado);
+    stop
+  endif
+  :followers e following (só ACEITO);
+else (copiar link)
+  |Frontend|
+  :Copia a URL do perfil;
+  stop
 endif
 |Frontend|
-:Recarrega o perfil com a nova relação;
+:reload() do perfil com a nova relação e contadores;
 stop
 @enduml

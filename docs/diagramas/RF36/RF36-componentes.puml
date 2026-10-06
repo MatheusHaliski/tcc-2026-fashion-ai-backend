@@ -1,5 +1,5 @@
 @startuml RF36_Componentes
-title RF36 — "Foto com meu manequim": peça (RF4) ou look inteiro (RF5) no manequim com rosto 3D da foto de perfil\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF36 — Foto com meu manequim (peça do RF4 ou look do RF5)\nDiagrama de componentes — diálogo com Three.js → ShowcaseController → ShowcaseService → MySQL e storage de mídia
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -14,38 +14,55 @@ skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam interface {
+  BackgroundColor #FFF5F8
+  BorderColor #4A4852
+}
 left to right direction
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "pieces/[id] e schemes/[id] — botão "Foto com meu manequim"" as FE0
-  component "MannequinPhotoDialog + LookViewer (Three.js)" as FE1
-  component "edit-profile — ajuste do rosto" as FE2
+package "Frontend (Next.js · Three.js)" {
+  component "pieces/[id]/page.tsx · schemes/[id]/page.tsx\n→ expanded-card.tsx (ExpandedPiece: menu;\nExpandedScheme: MannequinPhotoButton)" as Pages
+  component "mannequin-photo.tsx\n(MannequinPhotoDialog)" as Dialog
+  component "three/look-viewer.tsx (LookViewer)\n+ three/mannequin.tsx · common.tsx (useWebGL)" as Viewer
+  component "look-exports.tsx\n(capa = coverImageUrl ?? mannequinImageUrl)" as Exports
 }
-package "fai-web (REST)" {
-  [ShowcaseController] as ShowcaseController
+package "fai-web" {
+  [ShowcaseController\nGET /api/{pieces|schemes}/{id}/look3d\nPOST /api/{pieces|schemes}/{id}/mannequin-photo\nDELETE /api/{pieces|schemes}/{id}/mannequin-photo] as Ctl
+  [Uploads.image\n(multipart)] as Up
 }
-package "fai-application (casos de uso)" {
-  [ShowcaseService] as ShowcaseService
-  [DailyLookService] as DailyLookService #FAFAFA
-  [SchemeService] as SchemeService #FAFAFA
-  [InstitutionalService] as InstitutionalService #FAFAFA
-  [Model3dService] as Model3dService #FAFAFA
+package "fai-application" {
+  [ShowcaseService\n(look3d, piece3d, mannequinBase,\npiece/schemeMannequinPhoto, faceOf)] as Svc
+  [Avatar3dService (RF40)\nforMannequin] as Av
+  [SchemeService\n(owned, canView)] as Sch
+  [Guard] as G
+  [ImageOps\n(requireAcceptedImage,\nscaleToFit, jpeg)] as Img
+  [MediaService] as Media
+  [PreferencesService\n(PATCH /api/me/profile:\nmannequinFace)] as Pref
+  interface "MediaStoragePort" as MSP <<port>>
 }
-package "fai-domain (repositórios JPA)" {
-  [CelebrityProfileRepository\nDailyLookRepository\nFollowRepository\nSchemeGroupingRepository\nSchemeItemRepository\nSchemeRepository\nUserPreferencesRepository\nUserRepository\nWardrobeItemRepository] as REPOS
+package "fai-domain" {
+  [WardrobeItemRepository · SchemeRepository ·\nSchemeItemRepository · UserPreferencesRepository ·\nUserAvatar3dRepository] as Repos
 }
-database "MySQL · fashionai_app\n• celebrity_profiles\n• daily_looks\n• follows\n• scheme_groupings\n• scheme_items\n• schemes\n• user_preferences\n• users\n• wardrobe_items" as DB
-database "Storage de mídia\n(local / S3, MediaStoragePort)" as P_media
+package "fai-infrastructure" {
+  database "MySQL\nwardrobe_items · schemes · scheme_items ·\nusers · user_preferences · user_avatars_3d" as DB
+  [S3MediaStorageAdapter /\nLocalFileMediaStorage\nusers/{id}/{pieces|schemes}/{id}/mannequin-*.jpg] as ST
+}
 
-FE0 --> ShowcaseController : HTTPS/JSON
-FE1 --> ShowcaseController : HTTPS/JSON
-FE2 --> ShowcaseController : HTTPS/JSON
-ShowcaseController --> ShowcaseService
-ShowcaseService ..> DailyLookService
-ShowcaseService ..> SchemeService
-ShowcaseService ..> InstitutionalService
-ShowcaseService ..> Model3dService
-ShowcaseService --> REPOS
-ShowcaseService --> P_media
-REPOS --> DB : JPA/Flyway
+Pages --> Dialog
+Dialog --> Viewer
+Pages --> Exports
+Dialog --> Ctl : look3d · mannequin-photo (POST/DELETE)
+Ctl --> Up
+Ctl --> Svc
+Svc --> Av
+Svc --> Sch
+Svc --> G
+Svc --> Img
+Svc --> Media
+Svc --> Repos
+Av --> Repos
+Pref --> Repos
+Media --> MSP
+MSP <|.. ST
+Repos --> DB : JPA
 @enduml

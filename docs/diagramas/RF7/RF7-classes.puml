@@ -1,5 +1,5 @@
 @startuml RF7_Classes
-title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de classes — controllers, serviços, guarda de visibilidade, entidades e eventos do detalhe
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -9,110 +9,179 @@ skinparam class {
   HeaderBackgroundColor #E4DEF0
 }
 skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+
+package "fai-web · controller" {
+  class WardrobeController <<RestController>> {
+    +detail(viewer, id, fromScheme) «GET /api/pieces/{id}»
+    +update(user, id, PieceForm) «PUT /api/pieces/{id}»
+    +flags(user, id, Flags) «PATCH /api/pieces/{id}/flags»
+    +deletionImpact(user, id) «GET /api/pieces/{id}/deletion-impact»
+    +delete(user, id) «DELETE /api/pieces/{id}»
+    +copy(user, id) «POST /api/pieces/{id}/copy» 201
+  }
+  class SchemeController <<RestController>> {
+    +get(viewer, id) «GET /api/schemes/{id}»
+  }
+  class CommentController <<RestController>> {
+    +returnToOrigin(user, pieceId, fromScheme)\n«POST /api/pieces/{pieceId}/return-to-origin»
+  }
+  class "WardrobeController.Flags" as Flags <<record>> {
+    favorite, disponivel : Boolean
+    forSale, forDonation : Boolean
+  }
+}
+
+package "fai-application" {
+  class WardrobeService <<Service>> {
+    +detail(viewer, id, fromSchemeId) : Map
+    ~requireVisiblePiece(viewer, w)
+    ~schemeVisible(viewer, scheme) : boolean
+    +{static} effectiveVisibility(w) : Visibility
+    +viewerState(viewer, w) : ViewerState
+    +reactionCounts(type, id) : Map<String, Long>
+    +toggles(user, id, favorite, disponivel,\n  forSale, forDonation) : PieceView
+    +deletionImpact(user, id) : Map
+    +delete(user, id) : Map
+    +addToWardrobe(user, sourceId) : PieceView
+    +owned(user, id) : WardrobeItem
+  }
+  class SchemeService <<Service>> {
+    +get(viewer, id) : Map
+    +requireView(viewer, scheme)
+    +canView(viewer, scheme) : boolean
+    +{static} moreRestrictive(a, b) : Visibility
+    +view(viewer, scheme, items) : SchemeView
+  }
+  class SocialService <<Service>> {
+    +returnToOrigin(user, pieceId, fromSchemeId) : Map
+  }
+  class Guard <<Component>> {
+    +canView(viewer, ownerId, visibility) : boolean
+    +requireView(viewer, ownerId, visibility, resource)
+    +requireOwner(user, ownerId, resource)
+    +requireCanCreate(user)
+    +deny(user, resource, message) : ApiException
+  }
+  class "Views.ViewerState" as ViewerState <<record>> {
+    liked : boolean ; reactions : List<String>
+    saved, canEdit, following : boolean
+  }
+  class "DomainEvents" as Ev <<events>> {
+    HypeSignal(PIECE_VIEWED | LOOK_VIEWED)
+    AvailabilityChanged(userId, pieceId, available)
+    PieceDeleted(userId, pieceId)
+  }
+  class WardrobeEventListeners <<Component>> {
+    +onAvailability(AvailabilityChanged) «AFTER_COMMIT»
+  }
+  class HypeSignalRecorder <<Component>> {
+    +onSignal(HypeSignal) «AFTER_COMMIT»
+  }
+}
 
 package "fai-domain · model" {
-class WardrobeItem {
-  +user: User
-  +brand: Brand
-  +name: String
-  +category: String
-  +sex: String
-  +imageUrl: String
-  +visibility: Visibility
-  +disponivel: boolean
-  +availabilityStatus: AvailabilityStatus
-  +moderationStatus: ModerationStatus
-  +favorite: boolean
-  +forSale: boolean
-  +wearCount: int
-  +lastWornDate: LocalDate
-  +viewCount: long
+  class WardrobeItem <<Entity>> <<table wardrobe_items>> {
+    user : User
+    name, category, subcategory, sex : String
+    brandName, sizeLabel, color : String
+    imageUrl, studioImageUrl : String
+    visibility : Visibility
+    disponivel : boolean
+    availabilityStatus : AvailabilityStatus
+    moderationStatus : ModerationStatus
+    favorite, forSale, forDonation : boolean
+    viewCount : long ; lastViewedAt : Instant
+    remixedFromPieceId : UUID
+  }
+  class Scheme <<Entity>> <<table schemes>> {
+    user : User ; title : String
+    status : SchemeStatus
+    visibility : Visibility
+    coverImageUrl : String
+    originalScheme : Scheme
+    viewCount : long
+  }
+  class SchemeItem <<Entity>> <<table scheme_items>> {
+    scheme : Scheme
+    wardrobeItem : WardrobeItem
+    slot : SchemeSlot ; sortOrder : int
+    snapshotJson : String «retrato na publicação»
+  }
+  class WardrobeAvailabilityChange <<Entity>> <<table wardrobe_availability_log>> {
+    wardrobeItemId, userId : UUID
+    available : boolean ; changedAt : Instant
+  }
 }
-class Scheme {
-  +user: User
-  +title: String
-  +status: SchemeStatus
-  +visibility: Visibility
-  +coverImageUrl: String
-  +originalScheme: Scheme
-}
-class SchemeItem {
-  +scheme: Scheme
-  +wardrobeItem: WardrobeItem
-  +slot: SchemeSlot
-  +sortOrder: int
-  +snapshotJson: String
-}
-class WardrobeAvailabilityChange {
-  +id: UUID
-  +wardrobeItemId: UUID
-  +userId: UUID
-  +available: boolean
-  +changedAt: Instant
-}
-class Comment {
-  +author: User
-  +targetType: TargetType
-  +targetId: UUID
-  +parentCommentId: UUID
-  +content: String
-  +active: boolean
-}
+package "fai-domain · repository" {
+  interface WardrobeItemRepository {
+    +touchView(id, inc, now) : int
+  }
+  interface SchemeItemRepository {
+    +findBySchemeIdOrderBySortOrder(schemeId)
+    +findByWardrobeItemId(pieceId)
+  }
 }
 package "fai-domain · enums" {
-enum AvailabilityStatus {
-  AVAILABLE
-  UNAVAILABLE
-  ARCHIVED
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  enum Visibility {
+    PRIVATE
+    FOLLOWERS
+    PUBLIC
+  }
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
+  enum SchemeStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+  }
 }
-enum Visibility {
-  PRIVATE
-  FOLLOWERS
-  PUBLIC
-}
-enum TargetType {
-  PIECE
-  SCHEME
-  DNA
-}
-}
-package "fai-application · service" {
-class WardrobeService {
-  +detail(viewer, id, fromSchemeId): Map
-  +update(user, id, PieceForm): PieceView
-  +toggles(user, id, favorite, disponivel, forSale): PieceView
-  +deletionImpact(user, id): Map
-  +delete(user, id): Map
-  {static} +effectiveVisibility(w): Visibility
-}
-class SchemeService {
-  +get(viewer, id): Map
-  +requireView(viewer, scheme)
-}
-class SocialService {
-  +returnToOrigin(user, pieceId, fromSchemeId): Map
-  +deleteComment(user, commentId)
-}
-class WardrobeEventListeners {
-  .. on AvailabilityChanged ..
-}
-}
-SchemeItem "*" --> "1" Scheme : scheme
-SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
+
+WardrobeController --> WardrobeService
+WardrobeController ..> Flags
+SchemeController --> SchemeService
+CommentController --> SocialService
+WardrobeService --> Guard
+SchemeService --> Guard
+SocialService --> SchemeService : canView
+WardrobeService ..> SchemeService : moreRestrictive
+WardrobeService ..> ViewerState
+WardrobeService --> WardrobeItemRepository
+WardrobeService --> SchemeItemRepository
+SchemeService --> SchemeItemRepository
+WardrobeService ..> Ev : publica
+SchemeService ..> Ev : LOOK_VIEWED
+Ev <.. WardrobeEventListeners : escuta
+Ev <.. HypeSignalRecorder : escuta
+WardrobeEventListeners ..> WardrobeAvailabilityChange : grava
+SchemeItem "*" --> "1" Scheme
+SchemeItem "*" --> "1" WardrobeItem
 Scheme "*" --> "0..1" Scheme : originalScheme
-WardrobeAvailabilityChange ..> WardrobeItem : wardrobeItemId
-Comment ..> WardrobeItem : targetType = PIECE
+WardrobeAvailabilityChange "*" ..> "1" WardrobeItem : wardrobeItemId
 WardrobeItem --> AvailabilityStatus
 WardrobeItem --> Visibility
-Comment --> TargetType
-WardrobeService ..> WardrobeItem : lê/atualiza
-WardrobeService ..> SchemeItem : snapshot ao excluir
-SchemeService ..> Scheme : lê
-SocialService ..> SchemeItem : esquemas de origem
-WardrobeEventListeners ..> WardrobeAvailabilityChange : grava
-note top of WardrobeItem : tabela wardrobe_items
-note top of SchemeItem : tabela scheme_items\n(snapshotJson = retrato da peça na publicação — CA03)
-note top of WardrobeAvailabilityChange : tabela wardrobe_availability_log
-note bottom of Comment : tabela comments
+WardrobeItem --> ModerationStatus
+Scheme --> SchemeStatus
+WardrobeItemRepository ..> WardrobeItem
+SchemeItemRepository ..> SchemeItem
+
+note right of WardrobeService
+  Visibilidade efetiva = a mais restritiva entre
+  a da peça (ou do esquema) e a do perfil do dono.
+  ARCHIVED + não dono → snapshot (CA03).
+end note
+note bottom of SocialService
+  returnToOrigin existe no backend
+  (409 INDISPONIVEL), mas o frontend
+  não chama: a volta é pela pilha do modal.
+end note
 @enduml

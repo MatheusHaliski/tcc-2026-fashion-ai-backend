@@ -1,0 +1,77 @@
+@startuml RF19_Sequencia_Remix
+title RF19 — Interagir socialmente com esquemas e peças\nDiagrama de sequência — remixar (look e peça) e retornar da peça ao look de origem
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "CardActions · useRemix\n(components/interactions.tsx)" as FE
+participant "ExpandedPiece\n(components/expanded-card.tsx)" as EP
+participant "SocialController\nCommentController" as SC
+participant "SchemeController" as SCH
+participant "SocialService" as S
+participant "SchemeService" as SS
+participant "WardrobeController\nWardrobeService" as WS
+participant "NotificationService" as N
+participant "DomainEvents" as EV
+database "MySQL" as DB
+
+== Remixar ==
+U -> FE: "Remixar" no detalhe (não aparece no próprio post nem em DNA)
+FE -> SC: POST /api/interactions/{type}/{id}/remixes
+SC -> S: remix(user, type, id)
+S -> S: requireCanCreate · target (visibilidade e bloqueio)
+alt conteúdo marcado como indisponível
+  S --> FE: 409 INDISPONIVEL
+else type = SCHEME
+  S -> SS: remix(user, sourceId)
+  SS -> DB: scheme_items da origem · peças elegíveis de quem remixa
+  SS -> SS: troca cada peça pela mais semelhante do acervo (subcategoria 1 ou\ncategoria 0,5 + cor 0,5 ou família 0,25; mínimo 1); dono = mesmas peças
+  SS --> FE: 201 {prefill {title "Remix de…", items, background, cardSkin,\nremixedFromId, origin REMIX}, missingPieces, source, next: /create-look?remix=}
+  note right of SS: Nada é gravado aqui: o contador e o\nsinal só existem quando o remix é salvo.
+else type = PIECE
+  S -> DB: remixesCount + 1 (CounterStorePort)
+  S -> EV: HypeSignal(PIECE_REMIXED)
+  S -> N: notify(dono, NEW_REMIX)
+  S --> FE: 201 {next: /create-look?seedPiece=, sourcePiece, hint}
+else type = DNA
+  S -> DB: remixCount + 1
+  S --> FE: 201 {next: /dna/new?remix=}
+end
+FE -> FE: toast "remixado"; navega só se vier scheme.id ou id\n(a API devolve prefill/next: fica na mesma tela)
+
+opt salvar o remix (API: POST /api/schemes com remixedFromId)
+  U -> SCH: POST /api/schemes {items, …, remixedFromId}
+  SCH -> SS: create(user, form)
+  SS -> SS: requireView(origem) — indisponível e de outra pessoa = 409
+  SS -> DB: INSERT schemes (origin REMIX, original_scheme_id) · scheme_items
+  SS -> DB: origem.remixCount + 1
+  SS -> N: notify(dono da origem, NEW_REMIX)
+  SS -> EV: InteractionReceived(REMIX) · HypeSignal(LOOK_REMIXED, origem)\n· SchemeSaved (PIECE_IN_LOOK de cada peça)
+  SS --> U: 201 {scheme}
+end
+
+== Retornar (peça → look de origem) ==
+U -> EP: abre a peça a partir de um look (/pieces/{id}?fromScheme=)
+EP -> WS: GET /api/pieces/{id}?fromScheme={schemeId}
+WS -> DB: touchView; scheme_items da peça (looks visíveis)
+WS -> EV: HypeSignal(PIECE_VIEWED) se logado e não é o dono
+WS --> EP: 200 {piece, fromSchemeId, originSchemes[{schemeId, title, cover}]}
+EP -> EP: botão "Voltar ao look" (fromScheme) e lista\n"Looks com esta peça" → /schemes/{schemeId}
+opt rota dedicada (existe na API, a tela não chama)
+  U -> SC: POST /api/pieces/{pieceId}/return-to-origin?fromScheme={id}
+  SC -> S: returnToOrigin(user, pieceId, fromScheme)
+  alt peça indisponível e quem pede não é o dono
+    S --> U: 409 INDISPONIVEL
+  else nenhum outro look visível com a peça
+    S --> U: 404
+  else
+    S -> DB: scheme_items por wardrobe_item_id (sem o fromScheme,\nvisíveis, mais antigo primeiro)
+    S --> U: 200 {pieceId, originSchemeId, title, otherSchemes}
+  end
+end
+@enduml

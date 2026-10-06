@@ -1,5 +1,5 @@
 @startuml RF40_Roupa_Sequencia
-title RF40 — Avatar 3D: do look às malhas vestidas\nDiagrama de sequência
+title RF40 — Criar o próprio avatar 3D a partir de fotos (aba "Meu Avatar 3D") e usá-lo no manequim\nDiagrama de sequência — roupa no avatar: do look às malhas vestidas presas ao esqueleto
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam sequence {
@@ -10,30 +10,65 @@ skinparam sequence {
   ActorBackgroundColor #F8F4FF
   GroupBackgroundColor #FFF5F8
 }
-participant "AvatarViewer" as V
-participant "HumanAvatar" as H
-participant "HumanOutfit" as O
+autonumber
+participant "AvatarViewer · LookViewer\nfitting-room · runway · stage" as V
+participant "Mannequin\n(mannequin.tsx)" as M
+participant "default-outfit.ts" as D
+participant "HumanAvatar\n(human-avatar.tsx)" as H
+participant "asset.ts · compose.ts\nthree-human.ts · pose.ts" as B
+participant "HumanOutfit\n(human-outfit.tsx)" as O
 participant "garments.ts" as G
 participant "garment-relax.ts" as R
 participant "garment-trims.ts" as T
 participant "shoes.ts" as S
 participant "Three.js\n(SkinnedMesh)" as X
-V -> H : avatar, corpo, pieces
-H -> O : asset, composed, skeleton, pieces
-O -> G : kindOf(piece) / SPECS[kind]
-O -> G : bodyParam(asset, composed)
-O -> R : smoothBody(asset, composed)
-loop camadas, de dentro para fora
-  O -> G : garmentGeometry(asset, composed, normals, P, spec, under)
-  O -> R : relaxGarment(gg, composed, normals, P, under)
-  O -> R : foldGarment(gg, composed, normals, P)
-  O -> G : collarBand(...)
-  O -> T : garmentTrims(asset, composed, P, gg)
-  O -> G : photoInfo(img) / texturedGeometry / garmentMaterial
-  O -> G : underLayer(composed, P, [specs até aqui])
+
+V -> M : mannequin {sex, head, avatar?}, pieces, body
+M -> D : withDefaultOutfit(pieces)
+D --> M : peças + padrão FAI nas zonas vazias
+M -> H : body, stature, skin, face, atlas, hair, pieces, adjust, motion
+H -> B : loadBodyAsset() — GET /avatar3d/body/fai-body-v1.json e .bin\n(uma vez por sessão)
+alt corpo ainda carregando ou erro
+  H --> V : fallback CapsuleMannequin
+else corpo pronto
+  H -> B : fitBody · compose · fitFace (se há rosto) · buildHuman
+  H -> B : applyRestPose; root.visible = false
+  H -> O : HumanOutfit(parts, pieces)
+  O -> O : loadTexture(studioUrl ou imageUrl) de cada peça\n(assíncrono; ao chegar, veste de novo)
+  O -> G : outfitOf: kindOf(peça) → SPECS[kind], ordena por layer
+  O -> B : setArmOut(armOutFor(specs)) · applyIdle(0, 0)
+  O -> G : bodyParam(asset, composed)
+  O -> R : smoothBody(asset, composed, 12)
+  loop cada peça, de dentro para fora
+    O -> G : underLayer(cc, P, peças já vestidas)
+    O -> G : garmentGeometry(asset, cc, normals, P, spec, under)
+    opt geometria gerada
+      O -> R : relaxGarment(gg, …) · foldGarment(gg, …)
+      O -> G : posedPositions · photoInfo(img) · texturedGeometry\nfabricColor · garmentTexture
+      alt calçado (shoes, boots)
+        O -> G : shoeColors(img, colorHex)
+        O -> S : shoeParts(asset, composed, P, spec, cores, shoeStyleOf(sub))
+      else roupa
+        O -> G : garmentMaterial(tex, spec)
+        O -> G : trimColors · ribColor
+        O -> T : garmentTrims(asset, cc, P, gg)
+        O -> G : collarBand(asset, cc, P, spec, under)
+      end
+      O -> X : new SkinnedMesh(…) · bind(skeleton)
+    end
+  end
+  opt zona sem peça depois dos moldes
+    O -> D : DEFAULT_PIECES[zona] → veste
+  end
+  O -> D : zonesCovered(moldes vestidos)
+  alt tronco, pernas e pés cobertos
+    O -> X : root.userData.dressed = true; root.visible = true
+  else
+    O -> X : root.visible = false; console.error
+  end
+  loop a cada quadro (useFrame)
+    H -> X : visible = dressed · applyIdle(movimento)
+  end
+  X --> V : avatar vestido e animado
 end
-O -> G : shoeColors(img)
-O -> S : shoeParts(asset, composed, P, spec, cores, estilo)
-O -> X : malhas com skinIndex/skinWeight do corpo
-X --> V : avatar vestido, animado
 @enduml

@@ -1,5 +1,5 @@
 @startuml RF39_Componentes
-title RF39 — "Criar guarda-roupa 3D": componentes ou guarda-roupa inteiro de marca/celebridade vendidos na loja do quarto\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF39 — Criar guarda-roupa 3D com a identidade de uma marca/celebridade e vender na loja do quarto\nDiagrama de componentes — criador, loja do quarto e montagem no Meu Quarto
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -14,58 +14,113 @@ skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
-left to right direction
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #4A4852
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 
 package "Frontend (Next.js · React Three Fiber)" {
-  component "brands/[slug] — aba Criar guarda-roupa 3D (WardrobeCreatorTab)" as FE0
-  component "WardrobePreview (criador de blocos 3D)" as FE1
-  component "points — RoomStore" as FE2
-  component "room — RoomScene (acabamentos, arte, placa de logo)" as FE3
+  component "brands/[slug]/page.tsx\naba GUARDA_ROUPA" as PBrand
+  component "WardrobeCreatorTab\n(wardrobe-creator.tsx)\ndono: criar, editar, Minhas criações" as FCreator
+  component "WardrobePreview\n(wardrobe-preview.tsx)\nFAI Origem 3D, toque no bloco" as FPreview
+  component "points/page.tsx" as PPoints
+  component "RoomStore\n(room-store.tsx)\nfiltros, provar, comprar, montar" as FStore
+  component "room/page.tsx\n(caixa de entrega: unbox)" as PRoom
+  component "RoomScene\n(room-scene.tsx)\nacabamento, arte, placa de logo" as FScene
+  component "api client\n(lib/api/client)" as FApi
 }
-package "fai-web (REST)" {
-  [RoomCreatorController] as RoomCreatorController
-  [HighlightsController] as HighlightsController
-}
-package "fai-application (casos de uso)" {
-  [WardrobeCreatorService] as WardrobeCreatorService
-  [InventoryScoreService] as InventoryScoreService
-  [FaiPointsService] as FaiPointsService
-  [AchievementService] as AchievementService
-  [RoomService] as RoomService #FAFAFA
-}
-package "fai-domain (repositórios JPA)" {
-  [BrandProfileRepository\nCelebrityProfileRepository\nChallengeTemplateRepository\nFaiPointsLedgerEntryRepository\nFaiPointsRuleRepository\nInventoryScoreSnapshotRepository\nPieceUsageDiaryEntryRepository\nRankingOptInRepository\nRankingPositionRepository\nRoomCatalogItemRepository\nRoomInventoryItemRepository\nSchemeItemRepository\nSchemeRepository\nSealBondRepository\nSealRepository\nStyleDnaRepository\nUserAchievementRepository\nUserRepository\nWardrobeAvailabilityChangeRepository\nWardrobeItemRepository] as REPOS
-}
-database "MySQL · fashionai_app\n• brand_profiles\n• celebrity_profiles\n• challenge_templates\n• fai_points_ledger\n• fai_points_rules\n• inventory_score_snapshots\n• piece_usage_diary\n• ranking_opt_ins\n• ranking_positions\n• room_catalog\n• room_inventory\n• scheme_items\n• schemes\n• seal_bonds\n• seals\n• style_dna\n• user_achievements\n• users\n• wardrobe_availability_log\n• wardrobe_items" as DB
-[Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
-database "Storage de mídia\n(local / S3, MediaStoragePort)" as P_media
-[NotificationService\n(RNF10)] as P_notif
-[SideEffectRunner\n(efeitos colaterais isolados)] as P_side
 
-FE0 --> RoomCreatorController : HTTPS/JSON
-FE0 --> HighlightsController : HTTPS/JSON
-FE1 --> RoomCreatorController : HTTPS/JSON
-FE1 --> HighlightsController : HTTPS/JSON
-FE2 --> RoomCreatorController : HTTPS/JSON
-FE2 --> HighlightsController : HTTPS/JSON
-FE3 --> RoomCreatorController : HTTPS/JSON
-FE3 --> HighlightsController : HTTPS/JSON
-RoomCreatorController --> WardrobeCreatorService
-HighlightsController --> InventoryScoreService
-HighlightsController --> FaiPointsService
-HighlightsController --> AchievementService
-WardrobeCreatorService --> REPOS
-WardrobeCreatorService --> P_media
-InventoryScoreService ..> RoomService
-InventoryScoreService ..> AchievementService
-InventoryScoreService --> REPOS
-FaiPointsService ..> WardrobeCreatorService
-FaiPointsService --> REPOS
-FaiPointsService --> P_notif
-AchievementService ..> FaiPointsService
-AchievementService --> REPOS
-AchievementService --> P_notif
-AchievementService --> P_events
-AchievementService --> P_side
-REPOS --> DB : JPA/Flyway
+package "fai-web (REST)" {
+  component "RoomCreatorController\n/api/room-creator/**" as CCreator
+  component "HighlightsController\n/api/points/shop/**\n/api/me/room-inventory/{id}/apply" as CHigh
+  component "RoomController\nGET /api/me/room" as CRoom
+}
+
+package "fai-application" {
+  component "WardrobeCreatorService\noptions · save · delete · mine · uploadArt\navailability · blocker · hasSeal · view · seedFactory" as SCreator
+  component "FaiPointsService\nshop · tryOn · buy · apply\nbalance · level" as SPoints
+  component "RoomService\ncompatibleModules · applyFinish\nroom (unboxing)" as SRoom
+  component "Guard\nrequireApprovedInstitutional · deny" as SGuard
+  component "MediaService\nput" as SMedia
+  component "NotificationService\n(extrato FAI_POINTS)" as SNotif
+  component "ImageOps\n(confere e reduz ≤ 1600 px)" as SImg
+  interface "RoomLayoutAccess\n(interna ao FaiPointsService)" as IRoom <<port>>
+  interface "MediaStoragePort" as IMedia <<port>>
+  interface "AuditService" as IAudit <<port>>
+}
+
+package "fai-domain (repositórios JPA)" {
+  component "RoomCatalogItemRepository\n(lockBySku: FOR UPDATE)" as RCat
+  component "RoomInventoryItemRepository" as RInv
+  component "RoomLayoutRepository" as RLay
+  component "FaiPointsLedgerEntryRepository\n(lockOwner: FOR UPDATE)" as RLed
+  component "UserRepository · BrandProfileRepository\nCelebrityProfileRepository" as RUsr
+  component "SealRepository · SealBondRepository" as RSeal
+}
+
+package "fai-infrastructure" {
+  component "LocalFileMediaStorage\nS3MediaStorageAdapter" as AStore
+}
+
+database "MySQL (Flyway V5, V20, V27)\n• room_catalog\n• room_inventory\n• room_layouts\n• fai_points_ledger\n• users · brand_profiles · celebrity_profiles\n• seals · seal_bonds\n• notifications" as DB
+database "Storage de mídia\nusers/{id}/room-creator/…" as ST
+
+PBrand --> FCreator : dono do perfil
+PBrand --> FStore : visitante logado\n(compact, filtra pela marca)
+FCreator --> FPreview
+PPoints --> FStore
+PRoom --> FScene
+FCreator --> FApi
+FStore --> FApi
+PRoom --> FApi
+
+FApi --> CCreator : HTTPS/JSON
+FApi --> CHigh : HTTPS/JSON
+FApi --> CRoom : HTTPS/JSON
+
+CCreator --> SCreator
+CHigh --> SPoints
+CRoom --> SRoom
+
+SCreator --> SGuard
+SGuard --> IAudit : ACESSO_NEGADO_403
+SCreator --> SImg
+SCreator --> SMedia : logo (PNG) e arte (JPEG)
+SMedia --> IMedia
+IMedia <|.. AStore
+AStore --> ST
+SCreator --> RCat
+SCreator --> RInv
+SCreator --> RUsr
+SCreator --> RSeal
+
+SPoints --> SCreator : view · blocker · sellerActive
+SPoints --> IRoom
+IRoom <|.. SRoom
+SPoints --> SNotif
+SPoints --> RCat
+SPoints --> RInv
+SPoints --> RLed
+SRoom --> RLay
+SRoom --> RInv
+SRoom --> RCat
+
+RCat --> DB
+RInv --> DB
+RLay --> DB
+RLed --> DB
+RUsr --> DB
+RSeal --> DB
+SNotif --> DB
+
+note right of SCreator
+  Na subida (ContextRefreshedEvent) gera o catálogo
+  de fábrica: 20 blocos × materiais × cores (SKU FAI-…).
+  Itens de marca/celebridade têm SKU BRD-….
+end note
 @enduml

@@ -1,0 +1,74 @@
+@startuml RF32_Atividades_Participar
+title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade, através da sub-aba "Desafios"\nDiagrama de atividades — progresso por dados reais, inscrição de look, votação às cegas, mural, saída e conclusão
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+start
+:Desafio ATIVO (Pessoa usa o app ou abre /challenges/{id});
+repeat
+  switch (O que acontece?)
+  case (usa o app)
+    :Eventos após o commit\n(SchemeSaved · DailyLookRegistered ·\nMirrorAction · PieceCreated)\nvia SideEffectRunner;
+    :handleLook / onMirror / onPieceCreated\ngrava challenge_events 1× por (tipo, ref):\nLOOK, CAPSULE_DAY, RESCUE, DAILY_LOOK,\nSEASON_DAY, TAKE_ONE_OFF, GRWM_VIDEO,\nRULE_LOOK, VIOLATION…;
+    :refresh: progressFraction e\nbestRecord dos participantes;
+    if (Meta atingida?) then (Solo/Equipe:\nmédia ≥ 1)
+      :conclude antes do prazo;
+    elseif () then (Comunidade:\nmeta pessoal ≥ 1)
+      :finishParticipant:\nCONCLUIU + recompensa;
+    else (não / Duelo)
+    endif
+  case (inscreve look)
+    :POST /{id}/entries {schemeId};
+    if (Participa, ATIVO, look próprio\ncom ≥ 2 peças do acervo?) then (não)
+      #FFE3E3:403 não participa\n409 ESTADO_INVALIDO\n400 LOOK_INVALIDO;
+    elseif (Tiro único e\njá inscreveu?) then (sim)
+      #FFE3E3:409 JA_INSCRITO;
+    else (ok)
+      :challenge_events LOOK_ENTRY\n+ FaiPointsService.game\n(CHALLENGE, id) — RF41;
+    endif
+  case (comunidade vota)
+    :Aba Votação:\nGET /api/challenges/votes\n(duelos RUNWAY_BATTLE/GRWM,\nlooks anônimos);
+    :POST /{id}/votes {entrySchemeId}\n(qualquer conta ativa);
+    if (ATIVO, votado, não é o\npróprio look, 1º voto?) then (não)
+      #FFE3E3:409 VOTACAO_FECHADA\n400 VOTO_PROPRIO\n409 JA_VOTOU (unique);
+    else (sim)
+      :INSERT challenge_votes;
+    endif
+  case (mural)
+    :Equipe e Duelo: frase pronta,\nbilhete até 80 caracteres\n(moderado) ou uma das\n6 reações fixas (REACTIONS);
+    :POST /{id}/notes · /{id}/reactions\n→ challenge_notes\n(400 SEM_INTERACAO em\nSolo/Comunidade);
+  case (sai)
+    :POST /{id}/leave → SAIU\n(sem punição; o progresso\ncontinua registrado);
+    if (Ninguém ativo e\nnão é Comunidade?) then (sim)
+      :EXPIRADO\n("todos saíram");
+      stop
+    endif
+  endswitch
+repeat while (Desafio ATIVO e antes de endsAt?) is (sim) not (prazo vencido)
+:Job ChallengeService.tick() (a cada 15 min):\nATIVO com endsAt vencido → conclude;
+:conclude → recompensa por modo:\n• Solo/Comunidade: rewardPoints × fração (0 abaixo de 25%)\n• Equipe: pote = rewardPoints × média (0 abaixo de 25%), dividido igual\n• Duelo: votos às cegas ou recorde pessoal → vencedor ganha\n  rewardPoints, os demais ¼;
+:reward → participante CONCLUIU e\nFaiPointsService.award(CHALLENGE_COMPLETED, pontos) se > 0;
+:Instância CONCLUIDO + resultJson e\nnotificação CHALLENGE_RESULT para os membros;
+:Pessoa abre o "Card de resultado":\nGET /api/challenges/{id}/result-card\n(9:16, sem preço, custo por uso, marcas nem acervo);
+stop
+@enduml

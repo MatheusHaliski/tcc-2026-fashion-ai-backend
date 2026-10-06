@@ -1,86 +1,161 @@
 @startuml DEMO_Classes
-title Fashion AI — Classes: pipeline demo e integridade por domínio (V34/V35 aplicadas · serviço e controller planejados)
+title Dados demo e de teste (transversal)\nDiagrama de classes — pipeline demo: trava de ambiente, fixtures, porta SQL do reset e origem das contas (serviço e rota planejados)
 !include ../seguranca/_estilo.iuml
 left to right direction
 
-enum AccountOrigin {
-  REAL
-  TEST_SEED
-  DEMO
-  SYSTEM
-}
-enum CatalogOrigin {
-  REAL
-  SEED
-  DEMO
-}
-class User {
-  -accountOrigin : AccountOrigin
-  -fixtureKey : String «único»
-  -testAccountColumn : Boolean «gerada (V35): origem ∈ {TEST_SEED, DEMO}»
-}
-class Brand {
-  -catalogOrigin : CatalogOrigin
-  -fixtureKey : String «único»
-}
-User --> AccountOrigin
-Brand --> CatalogOrigin
-
-class "DemoAdminController (planejado)" as DemoAdminController {
-  +seed(profile) : DemoReport
-  +verify() : VerifyReport
-  +reset(dryRun, confirm) : ResetPlan | DemoReport
-  +resetCatalog(dryRun) : ResetPlan
-}
-class "DemoDataService (planejado)" as DemoDataService {
-  -guard : DemoEnvironmentGuard
-  +seed(profile) : DemoReport
-  +plan() : ResetPlan
-  +reset(planHash) : DemoReport
-  +verify() : VerifyReport
-}
-class DemoEnvironmentGuard {
-  +requireEnabled()
-  -- FASHIONAI_DEMO_ENABLED
-  -- produção: FASHIONAI_DEMO_ALLOW_PRODUCTION
-}
-class DemoFixtures <<@Lazy>> {
-  +personas() : List<Persona>
-  +seed : long = 2026
-}
-class Persona <<record>> {
-  fixtureKey : String
-  kind : USER | BRAND | CELEBRITY | CREATOR
-  pieces : int
-  looks : int
-  privateAccount : boolean
-}
-class ResetPlan <<record>> {
-  countsByTable : Map<String, Long>
-  realUsersToDelete : long
-  planHash : String
-}
-class DemoReport <<record>> {
-  lines : List<String> «[CREATED] [FOUND] [UPDATED] [DELETE] [CASCADE] [KEEP]»
-}
-class "V34__integridade_referencial_por_dominio" as V34 <<Flyway Java>> {
-  +POLICY : List<Fk>
-  +migrate(ctx) «INFORMATION_SCHEMA · órfãos · idempotente»
-}
-class Fk <<record>> {
-  table : String
-  column : String
-  refTable : String
-  refColumn : String = "id"
-  onDelete : CASCADE | RESTRICT | SET NULL
+package "fai-domain" <<Frame>> {
+  enum AccountOrigin {
+    REAL
+    TEST_SEED
+    DEMO
+    SYSTEM
+    +isTest() : boolean
+  }
+  enum CatalogOrigin {
+    REAL
+    SEED
+    DEMO
+  }
+  class User <<table users>> {
+    -accountOrigin : AccountOrigin = REAL
+    -fixtureKey : String «único»
+    -testAccountColumn : Boolean «gerada (V35)»
+    +isTestAccount() : boolean
+  }
+  class Brand <<table brands>> {
+    -catalogOrigin : CatalogOrigin = REAL
+    -fixtureKey : String «único»
+  }
+  User --> AccountOrigin
+  Brand --> CatalogOrigin
 }
 
-DemoAdminController --> DemoDataService
-DemoDataService --> DemoEnvironmentGuard
-DemoDataService --> DemoFixtures
-DemoFixtures *-- Persona
-DemoDataService ..> ResetPlan
-DemoDataService ..> DemoReport
-DemoDataService ..> User
-V34 *-- Fk
+package "fai-application · demo" <<Frame>> {
+  class DemoEnvironmentGuard <<@Component>> {
+    -enabled «fashionai.demo.enabled = false»
+    -allowProduction «fashionai.demo.allow-production = false»
+    -environment «RAILWAY_ENVIRONMENT_NAME | APP_ENV»
+    +production() : boolean
+    +environment() : String
+    +requireEnabled() «403 DEMO_DESLIGADO · DEMO_BLOQUEADO_EM_PRODUCAO»
+  }
+  class DemoFixtures <<@Component @Lazy>> {
+    +{static} SEED = 2026
+    +{static} PROFILES = frontend · full
+    +personas(profile) : List<Persona>
+    +fixtureKeys(profile) : List<String>
+    +pieces() · looks() · brands() · follows() · saves()
+    -validate() «demo_, @example.test, taxonomia»
+  }
+  class "Persona" as Persona <<record>> {
+    fixtureKey · kind «USER | BRAND | CELEBRITY»
+    username «demo_…» · email «…@example.test»
+    privateAccount · verified
+    pieces · publicPieces · looks
+    publishedLooks · forSale · catalogBrand
+  }
+  class "DemoModels" as DemoModels <<final>> {
+  }
+  class "DemoReport" as DemoReport <<record>> {
+    operation · profile
+    lines «[CREATED] [FOUND] [UPDATED] [SKIP]
+    [CONFLICT] [DELETE] [CASCADE] [KEEP]»
+    totals : Map<String, Long>
+  }
+  class "ResetPlan" as ResetPlan <<record>> {
+    testAccounts : int
+    realAccountsAffected : long
+    counts · keep : Map<String, Long>
+    planHash : String
+    lines : List<String>
+  }
+  class "VerifyReport" as VerifyReport <<record>> {
+    ok : boolean
+    problems : List<String>
+    totals : Map<String, Long>
+  }
+  DemoFixtures +-- Persona
+  DemoModels +-- DemoReport
+  DemoModels +-- ResetPlan
+  DemoModels +-- VerifyReport
+}
+
+package "fai-application · ports" <<Frame>> {
+  interface DemoDataAdminPort <<port>> {
+    +testAccountIds() : List<UUID>
+    +realAccountsAmong(ids) : long
+    +plan(ids) : ResetCounts
+    +lockAccounts(ids) «FOR UPDATE»
+    +pieceIdsOf(ids) · schemeIdsOf(ids) · storageKeysOf(ids)
+    +interactionsOnRealContent(ids) : List<CounterDelta>
+    +subtractCounters(deltas) : int
+    +deletePolymorphicTargeting(ids) : Map<String, Long>
+    +deleteTestAccounts(ids) : long
+    +demoCatalogBrands() · deleteUnreferencedDemoBrands()
+    +globalCounts() : Map<String, Long>
+    +integrityProblems(expectedFixtureKeys) : List<String>
+  }
+  class "ResetCounts" as ResetCounts <<record>> {
+    cascade · setNull · polymorphic : Map<String, Long>
+    blockers : List<String>
+  }
+  class "CounterDelta" as CounterDelta <<record>> {
+    targetType · targetId
+    likes · comments · saves · shares
+  }
+  interface TimelineProjectionPort <<port>> {
+    +purgeUser(userId)
+  }
+  interface NotificationProjectionPort <<port>> {
+    +purgeUser(userId)
+  }
+  DemoDataAdminPort +-- ResetCounts
+  DemoDataAdminPort +-- CounterDelta
+}
+
+package "fai-infrastructure" <<Frame>> {
+  class MysqlDemoDataAdminAdapter {
+    ~TEST_ORIGINS
+    -TARGETS : PIECE · SCHEME · DNA
+    -INTERACTIONS : reactions · saved_items · shares · comments
+    ~edges() «FKs reais do INFORMATION_SCHEMA»
+    ~{static} deletedRows(edges) «CASCADE recursivo»
+  }
+  class CassandraProjectionAdapter {
+    +purgeUser(userId) «timeline + caixa de notificações»
+  }
+}
+
+package "planejado" <<Frame>> {
+  class "DemoDataService <<planejado>>" as DDS #FFFFFF {
+    +seed(profile) : DemoReport
+    +plan() : ResetPlan
+    +reset(planHash) : DemoReport
+    +verify() : VerifyReport
+  }
+  class "DemoAdminController <<planejado>>" as DAC #FFFFFF {
+    POST /api/admin/demo/seed?profile=
+    GET /api/admin/demo/verify
+    POST /api/admin/demo/reset?dryRun=true | confirm=planHash
+    POST /api/admin/demo/catalog/reset
+  }
+  class "scripts/demo/*.py <<planejado>>" as CLI #FFFFFF {
+    seed_demo_environment.py
+    verify_demo_environment.py
+    reset_demo_environment.py
+    reset_demo_catalog.py
+  }
+}
+
+MysqlDemoDataAdminAdapter ..|> DemoDataAdminPort
+CassandraProjectionAdapter ..|> TimelineProjectionPort
+CassandraProjectionAdapter ..|> NotificationProjectionPort
+MysqlDemoDataAdminAdapter ..> User : só TEST_SEED/DEMO
+CLI ..> DAC
+DAC ..> DDS
+DDS ..> DemoEnvironmentGuard
+DDS ..> DemoFixtures
+DDS ..> DemoDataAdminPort
+DDS ..> TimelineProjectionPort
+DDS ..> DemoModels
 @enduml

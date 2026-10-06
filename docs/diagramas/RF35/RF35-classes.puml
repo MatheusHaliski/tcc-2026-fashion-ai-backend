@@ -1,5 +1,5 @@
 @startuml RF35_Classes
-title RF35 — Explorar as "Coleções" de uma marca: busca por coleção, Collections Insights e mini lojas 3D\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF35 — Coleções da marca: busca por coleção e Collections Insights com mini lojas 3D\nDiagrama de classes — frontend (CollectionsTab, mini lojas), ShowcaseService, LookbookService, entidades e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -9,87 +9,133 @@ skinparam class {
   HeaderBackgroundColor #E4DEF0
 }
 skinparam packageStyle rectangle
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 hide empty methods
+hide empty fields
+
+package "Frontend · components/showcase e components/three" {
+class CollectionsTab <<component>> {
+  +slug: string
+  +admin: boolean
+  -sub: busca | insights
+}
+class GroupingSearch <<component>> {
+  +kind = collections
+  -f: {groupingId, q, type, sort = HYPE, year}
+}
+class GroupingForm <<component>>
+class AssignDialog <<component>>
+class CollectionsInsights <<component>> {
+  -sel: string — loja escolhida
+}
+class StoreStreetScene <<component · R3F>> {
+  +stores: StoreEntry[]
+  +onPick(id)
+  +selectedId
+}
+class StoreEntry <<interface TS>> {
+  +id, label: string
+  +rank, score: number
+  +audience, fraction: number
+  +fireworks: number
+  +accentColor: string
+  +artUrl: string
+}
+}
+
+package "fai-web · controller" {
+class ShowcaseController {
+  +list(viewer, slug, kind): Map
+  +items(viewer, slug, kind, groupingId, q, type, sort, year): Map
+  +insights(viewer, slug, kind): Map
+  +groupingCover(user, id, file): Map
+}
+class LookbookController {
+  +createGrouping(user, GroupingForm): Map
+  +updateGrouping(user, id, GroupingForm): Map
+  +deleteGrouping(user, id)
+  +assign(user, id, AssignRequest): Map
+}
+}
+
+package "fai-application · service" {
+class ShowcaseService {
+  {static} ~COLLECTION_TYPES = COLLECTION
+  {static} ~W_LIKES = 0.75
+  {static} ~W_ITEMS = 0.25
+  {static} +SHOWCASE_SORTS = HYPE, GROWTH, CURTIDAS, RECENTES
+  +list(viewer, slug, Kind): Map
+  +items(viewer, slug, Kind, groupingId, q, type, sort, year): Map
+  +insights(viewer, slug, Kind): Map
+  +groupingCover(user, id, bytes): Map
+  -owner(slug, Kind): User
+  -groupingsOf(User, Kind): List<SchemeGrouping>
+  -groupingCard(g, schemes, pieces, hype, self): Map
+  {static} ~groupHype(rows, self, cfg): Map
+}
+enum Kind {
+  ERAS
+  COLLECTIONS
+}
+class LookbookService {
+  {static} ~BRAND = COLLECTION, PROMOTION, SIGNATURE_SERIES, SEASON, STYLE_LINE
+  +createGrouping(user, GroupingForm): Map
+  +updateGrouping(user, id, GroupingForm): Map
+  +deleteGrouping(user, id)
+  +assignToGrouping(user, groupingId, schemeIds, pieceIds): Map
+}
+class InstitutionalService {
+  ~institutionalUser(slug): User
+  ~profile(): header.coverLabel = 1ª COLLECTION
+}
+class MediaService {
+  +put(key, bytes, contentType): StoredObject
+}
+}
 
 package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +email: String
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String
-  +birthDate: String
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  .. +20 campos ..
-}
-class BrandProfile {
+class SchemeGrouping <<scheme_groupings>> {
   +owner: User
-  +brandName: String
-  +slug: String
-  +logoUrl: String
-  +coverUrl: String
-  +bio: String
-  +storeUrl: String
-  +cnpj: String
-  +razaoSocial: String
-  +nomeFantasia: String
-  +fashionCategory: String
-  +commercialContact: String
-  +officialHashtag: String
-  +activityProofUrl: String
-  .. +11 campos ..
-}
-class SchemeGrouping {
-  +owner: User
-  +type: GroupingType
+  +type: GroupingType = COLLECTION
   +label: String
   +description: String
-  +coverUrl: String
-  +atmospherePrompt: String
-  +periodFrom: Integer
-  +periodTo: Integer
+  +coverUrl: String — arte da coleção
+  +periodFrom, periodTo: Integer
   +accentColor: String
   +sortOrder: int
 }
-class Scheme {
+class Scheme <<schemes>> {
   +user: User
-  +originalScheme: Scheme
-  +title: String
-  +description: String
-  +creationMode: CreationMode
-  +origin: SchemeOrigin
-  +style: String
-  +occasion: String
-  +season: Season
-  +mood: Mood
-  +visibility: Visibility
-  +status: SchemeStatus
-  +displayMode: DisplayMode
-  +disponivel: boolean
-  .. +41 campos ..
+  +groupingId: UUID
+  +likeCount, commentCount, shareCount: long
+  +coverImageUrl: String
 }
-class WardrobeItem {
+class WardrobeItem <<wardrobe_items>> {
   +user: User
+  +groupingId: UUID
+  +likesCount: long
   +brandProfile: BrandProfile
-  +brand: Brand
-  +name: String
-  +category: String
-  +subcategory: String
-  +sex: String
+}
+class BrandProfile <<brand_profiles>> {
+  +owner: User
   +brandName: String
-  +color: String
-  +material: String
-  +sizeLabel: String
-  +market: String
-  +styleTags: String
-  +occasionTags: String
-  .. +54 campos ..
+  +slug: String
+  +approvalStatus: ApprovalStatus
+}
+class HypeScoreCurrent <<hype_scores>> {
+  +score: BigDecimal
+  +publicEligible: boolean
+  +level: HypeLevel
+}
+class User <<users>> {
+  +profileType: ProfileType = MARCA
 }
 }
-package "fai-domain · enums" {
+
 enum GroupingType {
   COLLECTION
   PROMOTION
@@ -101,16 +147,35 @@ enum GroupingType {
   SEASON
   TOUR
 }
-}
-BrandProfile "1" --> "1" User : owner
-Scheme "*" --> "1" User : user
+
+CollectionsTab *-- GroupingSearch
+CollectionsTab *-- CollectionsInsights
+GroupingSearch --> GroupingForm
+GroupingSearch --> AssignDialog
+CollectionsInsights --> StoreStreetScene : com WebGL (7 lojas)
+StoreStreetScene ..> StoreEntry
+GroupingSearch ..> ShowcaseController : list · items
+CollectionsInsights ..> ShowcaseController : insights
+GroupingForm ..> LookbookController
+GroupingForm ..> ShowcaseController : cover
+AssignDialog ..> LookbookController : items
+ShowcaseController --> ShowcaseService
+LookbookController --> LookbookService
+ShowcaseService ..> Kind
+ShowcaseService --> InstitutionalService : owner()
+ShowcaseService --> MediaService
+SchemeGrouping "1" <.. "*" Scheme : groupingId
+SchemeGrouping "1" <.. "*" WardrobeItem : groupingId
 SchemeGrouping "*" --> "1" User : owner
-SchemeGrouping --> GroupingType
-WardrobeItem "*" --> "1" BrandProfile : brandProfile
-WardrobeItem "*" --> "1" User : user
-note top of User : tabela users
-note top of BrandProfile : tabela brand_profiles
-note top of SchemeGrouping : tabela scheme_groupings
-note top of Scheme : tabela schemes
-note top of WardrobeItem : tabela wardrobe_items
+BrandProfile "0..1" --> "1" User : owner
+HypeScoreCurrent ..> Scheme : entityId
+SchemeGrouping ..> GroupingType
+
+note right of ShowcaseService
+  insights(COLLECTIONS): capacity = 80,
+  audience = fraction · 80,
+  fireworks = máx(0, 4 − i) se fraction ≥ 0,25,
+  spotlights = máx(1, 4 − i).
+  O Hype v2 vem à parte (top, avg, level).
+end note
 @enduml

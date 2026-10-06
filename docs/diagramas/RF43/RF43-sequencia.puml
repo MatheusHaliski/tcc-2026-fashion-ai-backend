@@ -1,5 +1,5 @@
 @startuml RF43_Sequencia
-title RF43 — Autopiloto gera combinações de vestimentas com IA de acordo com as especificações do usuário\nDiagrama de sequência — endpoints reais
+title RF43 — Autopiloto gera combinações de vestimentas com IA\nDiagrama de sequência — aba Hoje: POST /api/autopilot/daily (motor, modo, seis números, IA com fallback, insights AUTOPILOT) e confirmação
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,69 +8,78 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor Pessoa as U
-participant "Frontend\nautopilot" as FE
-participant "AutopilotController" as C
-participant "AutopilotService" as S
-participant "WeatherService" as W
-participant "Open-Meteo\n(OpenMeteoAdapter)" as OM
-participant "AiEngine (RF24)" as AI
-participant "SchemeService" as SS
-participant "DailyLookService" as DL
+actor "Pessoa" as U
+participant "autopilot/page.tsx\nLookScores · InsightStrip" as FE
+participant "AutopilotController" as AC
+participant "AutopilotService" as AP
+participant "WeatherService\n(OpenMeteoAdapter)" as WS
+participant "LocalSchemeComposer\nPreferenceModel" as LC
+participant "LookScorer\nRecommendationScoring" as LSC
+participant "AiEngine (RF24)\nCOPILOT" as AI
+participant "InsightService\n(PersonalInsights)" as IS
+participant "SchemeService\nDailyLookService" as SD
 database "MySQL" as DB
 
-U -> FE: ocasião, humor, cidade → "Sugerir look de hoje"
-FE -> C: POST /api/autopilot/daily {occasion, mood, city, excludeKeys}
-C -> S: daily(user, DailyRequest)
-S -> DB: SELECT wardrobe_items disponíveis (wardrobe.eligible)
-alt menos de 3 peças elegíveis
-  S --> FE: 422 ACERVO_INSUFICIENTE {href: /pieces/new}
-else acervo suficiente
-  S -> W: resolve(latitude, longitude, city)
-  opt cidade informada e sem cache (TTL 30 min)
-    W -> OM: geocodificação + previsão
-    OM --> W: temperatura, descrição
+U -> FE: ocasião, humor, cidade e modo (SAFE padrão)
+FE -> AC: POST /api/autopilot/daily {occasion, mood, city, mode, excludeKeys}
+AC -> AP: daily(user, DailyRequest)
+AP -> DB: wardrobe_items elegíveis (WardrobeService.eligible)
+alt menos de 3
+  AP --> FE: 422 ACERVO_INSUFICIENTE {href: /pieces/new, pieces}
+else
+  AP -> WS: resolve(lat, lon, city)
+  WS --> AP: Context {band, season, note, available}
+  AP -> LC: compose(peças adequadas ao clima, ocasiões, estação, humor, 60)
+  AP -> LC: PreferenceModel.of(userId).pieceScore(look)
+  AP -> AP: nota = ocasião .35 + clima .25 + preferências .25\n+ diversidade .15; sem excludeKeys; 30 melhores
+  alt nenhuma candidata
+    AP --> FE: 200 {weather, suggestions: [], message}
+  else
+    AP -> LSC: scoreLooks(userId, 10 primeiras)
+    LSC -> DB: style_dna · pares já usados · hype_scores (HypeQueryService)
+    LSC --> AP: Scores {compatibility, hype, novelty, reuse, usage, sustainability}
+    opt Mode.parse(mode) ≠ nulo
+      AP -> AP: byMode: ordena por rankValue(mode, scores)
+    end
+    AP -> AI: text(COPILOT, "escolha 3 de c1..c10 e justifique", JSON)
+    alt resposta válida
+      AI --> AP: picks {ref, rationale}
+    else IA indisponível, sem cota ou JSON inválido
+      AI --> AP: fallback local (3 primeiras, localRationale)
+    end
+    AP -> AP: suggestionView (key, title, pieceIds, pieces, criteria,\nrationale, mannequin) + attachScores (com modo, reordena e renumera)
+    AP -> IS: itemsOrEmpty(user, AUTOPILOT)
+    IS --> AP: insights (redescoberta, peças paradas, DNA, Hype ao lado)\n— falha = lista vazia
+    AP --> FE: 200 {weather, suggestions[{…, scores}], mode, excludeKeys, fallbackUsed,\nexplanation, quota, message, weatherNotice?, notice?, insights}
   end
-  W --> S: Context {band, season, note, available}
-  S -> S: candidates(): LocalSchemeComposer.compose\n+ pontuação (ocasião, clima, preferências, diversidade)
-  S -> AI: text(COPILOT) — escolher 3 de c1..c10 e justificar
-  alt IA devolve JSON {picks}
-    AI --> S: picks com rationale
-  else quota/erro/JSON inválido
-    AI --> S: fallback local (3 melhores, localRationale)
-  end
-  S --> C: {weather, suggestions[3], excludeKeys, fallbackUsed, explanation, quota}
-  C --> FE: 200 Map<String,Object>
-  FE --> U: 3 looks com peças, score e motivo
 end
+FE -> FE: cards com LookScores; InsightStrip(preset = insights)
+note right of FE: A tela lê p.why ?? p.reason, mas a API manda\n"rationale": a justificativa não aparece (divergência).
 
-U -> FE: "Usar hoje" em um look
-FE -> C: POST /api/autopilot/daily/confirmation {pieceIds, title, occasion, mood}
-C -> S: confirmDaily(user, pieceIds, title, occasion, mood)
-S -> DB: SELECT schemes não arquivados (mesma combinationKey?)
-alt já existe esquema com as mesmas peças
-  S -> S: reaproveita o Scheme existente
-else combinação nova
-  S -> SS: create(user, SchemeForm origin=AUTOPILOTO, AI_ASSISTED)
-  SS -> DB: INSERT schemes, scheme_items
+opt "Outras opções"
+  FE -> AC: POST /api/autopilot/daily {…, excludeKeys acumuladas}
 end
-S -> DL: register(user, scheme, AUTOPILOTO, hoje)
-DL -> DB: INSERT/UPDATE daily_looks
-S --> C: {schemeId, dailyLook}
-C --> FE: 201 Created
-FE --> U: redireciona para /schemes/{schemeId}
-
-opt Aba Semana
-  U -> FE: "Planejar" (weekStart, cidade, evento/ocasião por dia)
-  FE -> C: POST /api/autopilot/weeks {weekStart, days[], city}
-  C -> S: planWeek(user, WeekRequest)
-  S -> DB: UPDATE week_plans ACTIVE anterior → DISCARDED
-  S -> DB: INSERT week_plans (ACTIVE) + 7 week_plan_days
-  S --> FE: 201 planView (days, gaps, distinctLooks)
-  FE -> C: GET /api/autopilot/weeks/current
-  U -> FE: "Usar hoje" num dia
-  FE -> C: POST /api/autopilot/days/{dayId}/use
-  C -> S: useDay(user, dayId)
-  S -> DL: register(user, scheme, AUTOPILOTO, dayDate)
+U -> FE: "Usar hoje" num look
+FE -> AC: POST /api/autopilot/daily/confirmation {pieceIds, title, occasion, mood}
+AC -> AP: confirmDaily(user, pieceIds, title, occasion, mood)
+AP -> AP: createScheme(…, AUTOPILOTO)
+alt menos de 2 peças
+  AP --> FE: 400 SEM_PECAS
+else peça de outra pessoa
+  AP --> FE: 403 (Guard.requireOwner)
+else mesma combinação já salva
+  AP -> DB: reaproveita o look existente
+else
+  AP -> SD: SchemeService.create (AI_ASSISTED, origin AUTOPILOTO)
+  SD -> DB: INSERT schemes · scheme_items
+end
+AP -> SD: DailyLookService.register(user, scheme, AUTOPILOTO, hoje)
+alt peça indisponível
+  SD --> FE: 409 PECA_INDISPONIVEL
+else
+  SD -> DB: INSERT/UPDATE daily_looks
+  SD ->> SD: DailyLookRegistered (AFTER_COMMIT: diário, LOOK_WORN, PIECE_USED)
+  AP --> FE: 201 {schemeId, dailyLook}
+  FE -> FE: redireciona para /schemes/{schemeId}
 end
 @enduml

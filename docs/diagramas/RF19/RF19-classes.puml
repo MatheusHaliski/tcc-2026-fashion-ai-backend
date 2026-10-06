@@ -1,5 +1,5 @@
 @startuml RF19_Classes
-title RF19 — Interagir socialmente com esquemas e peças: reagir, comentar, salvar, compartilhar, remixar e retornar\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF19 — Interagir socialmente com esquemas e peças\nDiagrama de classes — SocialService, entidades de interação, notificação e sinais do HypeScore v2 (DomainEvents, HypeSignalRecorder, HypeIntegrityPolicy, HypeLiveRecalc)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -11,197 +11,271 @@ skinparam class {
 skinparam packageStyle rectangle
 hide empty methods
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +profileType: ProfileType
-}
-class Reaction {
-  +actor: User
-  +targetType: TargetType
-  +targetId: UUID
-  +reactionType: ReactionType
-}
-class Comment {
-  +author: User
-  +targetType: TargetType
-  +targetId: UUID
-  +parentCommentId: UUID
-  +content: String
-  +active: boolean
-}
-class SavedItem {
-  +user: User
-  +targetType: TargetType
-  +targetId: UUID
-  +savedAt: Instant
-  +favorite: boolean
-}
-class Share {
-  +user: User
-  +targetType: TargetType
-  +targetId: UUID
-  +channel: ShareChannel
-  +caption: String
-  +exportUrl: String
-}
-class Notification {
-  +recipient: User
-  +actor: User
-  +type: NotificationType
-  +category: NotificationCategory
-  +resourceType: String
-  +resourceId: UUID
-  +delivered: boolean
-  +read: boolean
-}
-class Scheme {
-  +user: User
-  +originalScheme: Scheme
-  +origin: SchemeOrigin
-  +visibility: Visibility
-  +disponivel: boolean
-  +likeCount: long
-  +commentCount: long
-  +shareCount: long
-  +remixCount: long
-  +saveCount: long
-}
-class WardrobeItem {
-  +user: User
-  +name: String
-  +disponivel: boolean
-  +likesCount: long
-  +commentCount: long
-  +sharesCount: long
-  +remixesCount: long
-}
-class SchemeItem {
-  +scheme: Scheme
-  +wardrobeItem: WardrobeItem
-  +slot: SchemeSlot
-}
-class HypeSignalDaily <<RF53>> {
-  +entityType: HypeEntityType
-  +entityId: UUID
-  +signalType: HypeSignalType
-  +signalDate: LocalDate
-  +eventCount: int
-  +weightedCount: BigDecimal
-  +updatedAt: Instant
-}
-}
-package "fai-domain · enums" {
-enum ReactionType {
-  LIKE
-  TREND
-  ELEGANTE
-  CRIATIVO
-}
-enum ShareChannel {
-  FEED
-  EXTERNAL
-}
-enum TargetType {
-  PIECE
-  SCHEME
-  DNA
-}
-enum NotificationType {
-  NEW_LIKE
-  NEW_REACTION
-  NEW_COMMENT
-  NEW_REMIX
-  ..
-}
-enum HypeSignalType <<RF53>> {
-  LIKE_CREATED
-  COMMENT_CREATED
-  SAVE_CREATED
-  SHARE_CREATED
-  FAVORITE_CREATED
-  LOOK_REMIXED
-  PIECE_REMIXED
-  LOOK_VIEWED
-  PIECE_VIEWED
-  PIECE_USED
-  PIECE_IN_LOOK
-  LOOK_WORN
-}
-enum HypeEntityType {
-  PIECE
-  SCHEME
-}
-}
 package "fai-application · service" {
-class SocialService {
-  {static} COMMENT_MAX = 500
-  +react(user, type, id, reaction): Map
-  +comments(viewer, type, id): List
-  +comment(user, type, id, content, parentId): Map
-  +deleteComment(user, commentId)
-  +toggleSave(user, type, id): Map
-  +favoriteSaved(user, type, id, favorite): Map
-  +share(user, type, id, channel, caption): Map
-  +remix(user, type, id): Map
-  +returnToOrigin(user, pieceId, fromSchemeId): Map
-  +counters(viewer, type, id): Map
-  -hypeSignal(t, actorId, signal) <<RF53>>
+  class SocialService {
+    {static} +COMMENT_MAX = 500
+    ~target(viewer, TargetType, id): Target
+    +react(user, type, id, ReactionType): Map
+    +comments(viewer, type, id): List<Map>
+    +comment(user, type, id, content, parentId): Map
+    +deleteComment(user, commentId)
+    +toggleSave(user, type, id): Map
+    +favoriteSaved(user, type, id, favorite): Map
+    +share(user, type, id, ShareChannel, caption): Map
+    +remix(user, type, id): Map
+    +returnToOrigin(user, pieceId, fromSchemeId): Map
+    +counters(viewer, type, id): Map
+    -bump(Target, field, delta)
+    -hypeSignal(Target, actorId, HypeSignalType)
+  }
+  class "SocialService.Target" as Target <<record>> {
+    +type: TargetType
+    +id: UUID
+    +owner: User
+    +title: String
+    +available: boolean
+    +entity: Object
+  }
+  class SchemeService {
+    +remix(user, sourceId): Map
+    +create(user, SchemeForm): Map
+    +renderCard(viewer, id, expanded): byte[]
+    +requireView(viewer, Scheme)
+    +canView(viewer, Scheme): boolean
+  }
+  class NotificationService {
+    +notify(recipientId, actorId, NotificationType,\nresourceType, resourceId, title, body, payload): Notification
+    +enabled(userId, NotificationType): boolean
+  }
+  class Guard {
+    +requireCanCreate(user)
+    +requireView(viewer, ownerId, Visibility, resource)
+    +deny(user, resource, message): ApiException
+  }
+  class WardrobeEventListeners {
+    +onInteraction(InteractionReceived)
+  }
 }
+
+package "fai-application · events" {
+  class "DomainEvents.HypeSignal" as HypeSignal <<record>> {
+    +signal: HypeSignalType
+    +entityType: HypeEntityType
+    +entityId: UUID
+    +actorId: UUID
+    +ownerId: UUID
+  }
+  class "DomainEvents.InteractionReceived" as InteractionReceived <<record>> {
+    +ownerId: UUID
+    +actorId: UUID
+    +kind: String
+    +targetId: UUID
+  }
+  class SideEffectRunner {
+    +run(what, Runnable)
+  }
 }
-package "fai-application · hype <<RF53>>" {
-class "DomainEvents.HypeSignal" as HypeSignal <<record>> {
-  +signal: HypeSignalType
-  +entityType: HypeEntityType
-  +entityId: UUID
-  +actorId: UUID
-  +ownerId: UUID
+
+package "fai-application · hype" {
+  class HypeSignalRecorder {
+    {static} +ZONE = America/Sao_Paulo
+    +onSignal(HypeSignal)
+    +onPieceWorn(PieceWorn)
+    +onSchemeSaved(SchemeSaved)
+    +onDailyLook(DailyLookRegistered)
+    ~record(HypeSignal)
+  }
+  class HypeIntegrityPolicy {
+    {static} ~OWNER_ACTIONS = {PIECE_USED, PIECE_IN_LOOK, LOOK_WORN}
+    -DEDUPE_TTL = 26 h
+    +weight(HypeSignal, day): double
+    ~isNewAccount(actorId): boolean
+  }
+  class HypeLiveRecalc {
+    -dirty: AtomicBoolean
+    -minInterval = 120 s
+    +markDirty()
+    +onSignal(HypeSignal)
+    +tick()
+  }
+  class HypeSnapshotService {
+    +recalculate(): Map
+  }
 }
-class HypeSignalRecorder {
-  +onSignal(HypeSignal)
-  ~record(HypeSignal)
+
+package "fai-application · portas" {
+  interface CounterStorePort {
+    +increment(entityType, entityId, field, delta): long
+    +read(entityType, entityId): Map<String, Long>
+  }
+  interface RenderCachePort {
+    +get(key): Optional<String>
+    +put(key, value, ttl)
+  }
 }
-class HypeIntegrityPolicy {
-  {static} OWNER_ACTIONS = PIECE_USED, PIECE_IN_LOOK, LOOK_WORN
-  {static} -DEDUPE_TTL = 26 h
-  +weight(HypeSignal, day): double
-  ~isNewAccount(actorId): boolean
+
+package "fai-domain · model" {
+  class Reaction <<table reactions>> {
+    +actor: User
+    +targetType: TargetType
+    +targetId: UUID
+    +reactionType: ReactionType
+  }
+  class Comment <<table comments>> {
+    +author: User
+    +targetType: TargetType
+    +targetId: UUID
+    +parentCommentId: UUID
+    +content: String
+    +active: boolean = true
+  }
+  class SavedItem <<table saved_items>> {
+    +user: User
+    +targetType: TargetType
+    +targetId: UUID
+    +savedAt: Instant
+    +favorite: boolean
+  }
+  class Share <<table shares>> {
+    +user: User
+    +targetType: TargetType
+    +targetId: UUID
+    +channel: ShareChannel
+    +caption: String
+    +exportUrl: String
+  }
+  class Notification <<table notifications>> {
+    +recipient: User
+    +actor: User
+    +type: NotificationType
+    +category: NotificationCategory
+    +delivered: boolean
+  }
+  class Scheme <<table schemes>> {
+    +originalScheme: Scheme
+    +origin: SchemeOrigin
+    +disponivel: boolean
+    +likeCount · commentCount · shareCount
+    +remixCount · saveCount · viewCount: long
+  }
+  class WardrobeItem <<table wardrobe_items>> {
+    +disponivel: boolean
+    +moderationStatus: ModerationStatus
+    +likesCount · commentCount · sharesCount
+    +remixesCount · viewCount: long
+  }
+  class DnaScheme <<table dna_schemes>> {
+    +likeCount · commentCount
+    +shareCount · remixCount: long
+  }
+  class HypeSignalDaily <<table hype_signal_daily>> {
+    +entityType: HypeEntityType
+    +entityId: UUID
+    +signalType: HypeSignalType
+    +signalDate: LocalDate
+    +eventCount: int
+    +weightedCount: BigDecimal
+  }
 }
-interface HypeSignalDailyRepository {
-  +increment(id, entityType, entityId, signalType, day, weight, now): int
+
+package "fai-domain · enums" {
+  enum TargetType {
+    PIECE
+    SCHEME
+    DNA
+  }
+  enum ReactionType {
+    LIKE
+    TREND
+    ELEGANTE
+    CRIATIVO
+  }
+  enum ShareChannel {
+    FEED
+    EXTERNAL
+  }
+  enum "NotificationType (trecho)" as NT {
+    NEW_LIKE
+    NEW_REACTION
+    NEW_COMMENT
+    NEW_REMIX
+  }
+  enum HypeSignalType {
+    LIKE_CREATED
+    COMMENT_CREATED
+    SAVE_CREATED
+    SHARE_CREATED
+    FAVORITE_CREATED
+    LOOK_REMIXED
+    PIECE_REMIXED
+    LOOK_VIEWED
+    PIECE_VIEWED
+    PIECE_USED
+    PIECE_IN_LOOK
+    LOOK_WORN
+  }
 }
+
+package "fai-domain · repository" {
+  interface ReactionRepository {
+    +findByActorIdAndTargetTypeAndTargetIdAndReactionType(…): Optional<Reaction>
+    +countByTargetTypeAndTargetIdAndReactionType(…): long
+  }
+  interface CommentRepository {
+    +findByTargetTypeAndTargetIdAndActiveTrueOrderByCreatedAtAsc(…): List<Comment>
+  }
+  interface SavedItemRepository {
+    +findByUserIdAndTargetTypeAndTargetId(…): Optional<SavedItem>
+  }
+  interface ShareRepository {
+    +countByTargetTypeAndTargetId(…): long
+  }
+  interface HypeSignalDailyRepository {
+    +increment(id, entityType, entityId, signalType, day,\nweight, now): int
+  }
 }
-Reaction "*" --> "1" User : actor
-Comment "*" --> "1" User : author
-SavedItem "*" --> "1" User
-Share "*" --> "1" User
-Notification "*" --> "1" User : recipient
-Scheme "*" --> "1" User
-Scheme "*" --> "0..1" Scheme : originalScheme (remix)
-WardrobeItem "*" --> "1" User
-SchemeItem "*" --> "1" Scheme
-SchemeItem "*" --> "1" WardrobeItem
-Reaction ..> ReactionType
-Reaction ..> TargetType
-Share ..> ShareChannel
-Notification ..> NotificationType
-SocialService ..> Reaction
-SocialService ..> Comment
-SocialService ..> SavedItem
-SocialService ..> Share
-SocialService ..> HypeSignal : publica (LIKE, COMMENT, SAVE,\nFAVORITE, SHARE, PIECE_REMIXED)
-HypeSignal ..> HypeSignalType
-HypeSignal ..> HypeEntityType
-HypeSignalRecorder ..> HypeSignal : consome (AFTER_COMMIT)
-HypeSignalRecorder ..> HypeIntegrityPolicy : weight
-HypeSignalRecorder ..> HypeSignalDailyRepository : increment (peso > 0)
+
+SocialService ..> Target
+SocialService --> Guard
+SocialService --> SchemeService : remix · renderCard · requireView
+SocialService --> NotificationService
+SocialService --> CounterStorePort
+SocialService --> ReactionRepository
+SocialService --> CommentRepository
+SocialService --> SavedItemRepository
+SocialService --> ShareRepository
+SocialService ..> HypeSignal : publica
+SocialService ..> InteractionReceived : publica
+SchemeService ..> HypeSignal : LOOK_REMIXED · LOOK_VIEWED
+WardrobeEventListeners ..> InteractionReceived : ouve (AFTER_COMMIT)
+HypeSignalRecorder ..> HypeSignal : ouve (AFTER_COMMIT)
+HypeSignalRecorder --> SideEffectRunner
+HypeSignalRecorder --> HypeIntegrityPolicy
+HypeSignalRecorder --> HypeSignalDailyRepository
+HypeIntegrityPolicy --> RenderCachePort : dedupe
+HypeLiveRecalc ..> HypeSignal : ouve (markDirty)
+HypeLiveRecalc --> HypeSnapshotService : recalculate()
+HypeSnapshotService --> HypeSignalDailyRepository : lê
+HypeSignal --> HypeSignalType
+Reaction --> ReactionType
+Reaction --> TargetType
+Share --> ShareChannel
+Notification --> NT
+HypeSignalDaily --> HypeSignalType
 HypeSignalDailyRepository ..> HypeSignalDaily
-HypeSignalDaily ..> HypeSignalType
-note bottom of Reaction : uq_reactions_actor_target —\nsem curtida duplicada (CA02)
-note bottom of SchemeItem : returnToOrigin (CA14) percorre\nscheme_items por wardrobe_item_id
-note bottom of HypeSignalDaily : tabela hype_signal_daily\nnovo (RF53 · HypeScore v2)
-note bottom of HypeSignalDailyRepository : @Modifying nativo: INSERT … ON DUPLICATE KEY UPDATE\nevent_count + 1, weighted_count + peso
-note bottom of HypeIntegrityPolicy : 0 = visitante, próprio dono (fora OWNER_ACTIONS)\nou repetido no dia (hype:dedupe:* no RenderCachePort);\nconta nova (< 7 dias) = 0,5; demais = 1
-note top of HypeSignal : também publicado por SchemeService\n(LOOK_REMIXED, LOOK_VIEWED) e\nWardrobeService (PIECE_VIEWED)
+Scheme "0..*" --> "0..1" Scheme : originalScheme (remix)
+Target ..> Scheme
+Target ..> WardrobeItem
+Target ..> DnaScheme
+
+note bottom of Reaction
+  uq_reactions_actor_target (ator, tipo de alvo,
+  alvo, tipo de reação): repetir remove.
+  Só LIKE mexe em likeCount, pontua e vira sinal.
+end note
+note bottom of HypeSignalDaily
+  Uma linha por entidade, sinal e dia (UPSERT):
+  event_count + 1 e weighted_count + peso
+  (1, ou 0,5 para conta com menos de 7 dias).
+end note
 @enduml

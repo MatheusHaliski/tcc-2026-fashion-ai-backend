@@ -1,5 +1,5 @@
 @startuml RF23_Sequencia
-title RF23 — Criar as telas de configuração do usuário (Conta, Privacidade, Aparência, Idioma, Seus dados) no padrão LGPD, com i18n\nDiagrama de sequência — endpoints reais
+title RF23 — Telas de configuração (Conta, Privacidade, Aparência, Idioma, Seus dados) com i18n\nDiagrama de sequência — preferências: carregar, aparência, idioma (i18n) e sair de "Criadores em alta"
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -9,74 +9,82 @@ skinparam sequence {
 }
 autonumber
 actor Pessoa as U
-participant "Frontend\n/settings" as FE
+participant "settings/page.tsx" as FE
+participant "ThemeProvider\nlib/theme/theme.tsx" as TH
+participant "I18nProvider\nlib/i18n/i18n.tsx" as I18N
+participant "RequestLocaleFilter" as RLF
 participant "PreferencesController" as PC
 participant "PreferencesService" as PS
 participant "AssetCatalogService" as AC
-participant "MeController" as MC
-participant "AccountService" as AS
+participant "HypeCache" as HC
 database "MySQL" as DB
-participant "Storage de mídia\n(MediaStoragePort)" as ST
-U -> FE: abre Configurações
-FE -> PC: GET /api/me/preferences\n(Accept-Language: pt-BR|en|es)
+
+== Abrir Configurações ==
+U -> FE: abre /settings
+FE -> RLF: GET /api/me/preferences\nAccept-Language: pt-BR | en | es
+RLF -> PC: LocaleContextHolder = idioma pedido
 PC -> PS: get(user)
-PS -> DB: SELECT user_preferences, users
-PC --> FE: 200 {theme, language, density, fontScale,\nhighContrast, reduceMotion, chromeBackgroundId, …}
-FE -> FE: ThemeProvider aplica data-theme/density,\nfont-size e --chrome-bg (só o chrome, CA08)
-== Aparência / Idioma ==
-U -> FE: troca tema, idioma, fonte ou fundo do chrome
-FE -> FE: aplica na hora + localStorage (fai.locale, tema)
-FE -> PC: PUT /api/me/preferences\n{theme, language, …, clientUpdatedAt}
+PS -> DB: SELECT user_preferences\n(INSERT com os padrões se não existe)
+PC --> FE: 200 {theme, language, density, fontScale, highContrast,\nreduceMotion, chromeBackgroundId, contentContainerColor,\nsizeSystem, unitSystem, soundEnabled, hapticsEnabled,\nhypeCreatorOptOut, clientUpdatedAt, profile}\nContent-Language
+FE -> TH: update(tema, densidade, fonte, contraste,\nmenos animação, fundo, cor dos containers)
+TH -> TH: data-theme · data-density · font-size\nvariáveis CSS chrome-bg e content-bg · localStorage fai.theme
+opt idioma salvo ≠ idioma local
+  FE -> I18N: setLocale(fromServerLanguage(language))
+end
+
+== Aparência ==
+U -> FE: troca tema, fonte, fundo do chrome, cor…
+FE -> TH: update(…) (aplica na hora, só no chrome — CA08)
+FE -> RLF: PUT /api/me/preferences {campo, clientUpdatedAt}
+RLF -> PC
 PC -> PS: update(user, Update)
 alt clientUpdatedAt anterior ao salvo
-  PS --> PC: estado atual (last-write-wins, CA02)
-else validação
-  PS -> AC: isChromeBackground(id) / cardSkin(id)
-  alt inválido
-    PS --> PC: 400 FUNDO_INVALIDO / FONTE_INVALIDA / COR_INVALIDA
-  else ok
-    PS -> DB: UPDATE user_preferences; audit ALTERACAO_PREFERENCIAS
-    PC --> FE: 200 preferências (Content-Language)
+  PS --> FE: 200 estado salvo, sem mudança (CA02)
+else alteração mais recente
+  PS -> AC: isChromeBackground(id) · cardSkin(id)
+  alt valor inválido
+    PS --> FE: 400 FONTE_INVALIDA · FUNDO_INVALIDO · COR_INVALIDA\nSKIN_INVALIDA · CORE_INVALIDO · TOM_INVALIDO
+    FE -> FE: aviso de erro (a escolha local fica aplicada)
+  else válido
+    PS -> DB: UPDATE user_preferences\n(fundo também em users.interface_background_preset_id)
+    PS -> DB: INSERT audit_log ALTERACAO_PREFERENCIAS
+    PC --> FE: 200 preferências
   end
 end
-== Conta (vitrine, sem reautenticação) ==
-U -> FE: edita nome, bio, país, avatar, capa
-FE -> PC: PATCH /api/me/profile
-PC -> PS: updateProfile(user, ProfileUpdate)
-PS -> DB: UPDATE users
-PC --> FE: 200 Views.UserCard
-U -> FE: troca o @
-FE -> PC: PUT /api/me/username
-PC -> PS: changeUsername(user, username)
-alt @ em uso ou reservado
-  PS --> PC: 400 USERNAME_EM_USO {suggestions} (CA04)
-else livre
-  PS -> DB: UPDATE users.username
-  PC --> FE: 200 {username}
+
+== Idioma ==
+U -> FE: escolhe English no seletor
+FE -> I18N: setLocale("en")
+I18N -> I18N: setCurrentLocale · localStorage e cookie fai.locale\n<html lang="en"> · textos de messages/en.json
+opt há sessão (tokenStore.access)
+  I18N -> RLF: PUT /api/me/preferences {language: EN, clientUpdatedAt}
+  RLF -> PC
+  PC -> PS: update(user, Update)
+  PS -> DB: UPDATE user_preferences.language
+  note right of I18N: falha aqui é silenciosa:\no idioma local já vale
 end
-== Privacidade (LGPD) ==
-FE -> MC: GET /api/me/consents
-MC -> AS: consents(user)
-MC --> FE: 200 [{purpose, granted, grantedAt, …}]
-U -> FE: liga/desliga uma finalidade
-FE -> MC: PUT /api/me/consents/{purpose} {granted}
-MC -> AS: setConsent(user, purpose, granted)
-AS -> DB: UPSERT user_consents; INSERT audit_log
-note right of AS : ver RF24 (motor de IA) — a finalidade\ncontrola o envio a provedores externos
-== Seus dados ==
-U -> FE: Exportar meus dados
-FE -> MC: POST /api/me/exports
-MC -> AS: requestExport(user)
-AS -> DB: INSERT data_export_requests (PROCESSING)
-AS -> ST: put(restricted/users/{id}/exports/{exportId}.json)
-AS -> DB: UPDATE status=READY, expires_at=+7d; notifica DATA_EXPORT_READY
-MC --> FE: 202 {id, status, readyAt, expiresAt, bytes}
-FE -> MC: GET /api/me/exports/{exportId}/file
-MC -> AS: downloadExport(user, exportId)
-alt expirada ou sem arquivo
-  AS --> MC: 410 EXPORTACAO_EXPIRADA
-else ok
-  AS -> ST: get(fileKey)
-  MC --> FE: 200 application/octet-stream (fashionai-dados-{id}.zip)
+note over FE, PS
+  Daqui em diante toda chamada leva Accept-Language: en.
+  O RequestLocaleFilter responde Content-Language: en e Msg.t usa
+  messages_en.properties. E-mails e exportação usam o idioma salvo.
+end note
+
+== Privacidade: sair de "Criadores em alta" (V42) ==
+U -> FE: liga "não aparecer em Criadores em alta"
+FE -> FE: switch marcado na hora (otimista)
+FE -> RLF: PUT /api/me/preferences {hypeCreatorOptOut: true, clientUpdatedAt}
+RLF -> PC
+PC -> PS: update(user, Update)
+PS -> DB: UPDATE user_preferences.hype_creator_opt_out = true\nINSERT audit_log
+PS -> PS: registra afterCommit
+PC --> FE: 200 preferências
+PS -> HC: bump() depois do commit\n(hype:generation + 1)
+alt falha no PUT
+  FE -> FE: switch volta ao valor anterior
 end
+note over HC, DB
+  Próxima leitura de GET /api/hype/trending?type=CREATOR (RF46):
+  HypeQueryService.creatorOptOuts() → findHypeCreatorOptOutUserIds()
+  tira a pessoa do agregado. Peças e looks seguem com o próprio Hype.
+end note
 @enduml

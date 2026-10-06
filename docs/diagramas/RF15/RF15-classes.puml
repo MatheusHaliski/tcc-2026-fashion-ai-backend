@@ -1,5 +1,5 @@
 @startuml RF15_Classes
-title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF15 — Editar uma fotografia de uma peça de roupa através de um Editor Canvas Interativo 2D\nDiagrama de classes — o que existe hoje: PhotoService.saveEdit, WardrobeService.replaceImage e versões do estúdio
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -9,129 +9,143 @@ skinparam class {
   HeaderBackgroundColor #E4DEF0
 }
 skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+
+package "Frontend (components)" {
+  class PhotoEditor <<React>> {
+    props: photoId?, pieceId?, imageUrl?, title
+    steps : Step[] ; at : number
+    +rotate() ; +applyCrop() ; +removeBg()
+    +undo() ; +redo() ; +save()
+  }
+  class "Step" as Step <<interface TS>> {
+    src : string
+    rotation : 0 | 90 | 180 | 270
+    crop : Rect | null
+    brightness, contrast : number «40–180»
+    label : string
+  }
+  class EditImageDialog <<React>> {
+    seções: framing · cut · compare · logo
+    onStudio(backdrop) ; onReplace(file)
+    onManual() ; onApprove() ; onDiscard()
+  }
+  class ApprovalPanel <<React>>
+  class "studioVersion(p)" as SV <<função>> {
+    version : number ; approved : boolean
+    pending : {url, feedUrl, version, backdrop}
+  }
+}
+
+package "fai-web · controller" {
+  class PhotoController <<RestController>> {
+    +download(user, id) «GET /api/photos/{id}/file»
+    +saveEdit(user, id, file) «POST /api/photos/{id}/edits»
+    +removeBackground(user, file) «POST /api/photos/background-removal»
+  }
+  class WardrobeController <<RestController>> {
+    +replaceImage(user, id, file, editedFromPhotoId) «PUT /api/pieces/{id}/image»
+    +studioPiece(user, id, backdrop) «POST /api/pieces/{id}/studio»
+    +approveStudio(user, id) «POST /api/pieces/{id}/studio/approve»
+    +discardStudio(user, id) «DELETE /api/pieces/{id}/studio/pending»
+  }
+}
+
+package "fai-application" {
+  class PhotoService <<Service>> {
+    +saveEdit(user, id, bytes) : Map
+    +removeBackground(user, bytes) : Map
+    +download(user, id) : byte[]
+    ~owned(user, id) : Photo
+  }
+  class WardrobeService <<Service>> {
+    +replaceImage(user, id, bytes, editedFromPhotoId) : PieceView
+    +governedFlatLay(userId, bytes) : FlatLayPipeline.Result
+    +studioPiece(user, id, backdrop) : PieceView
+    +approveStudio(user, id) : PieceView
+    +discardStudio(user, id) : PieceView
+    ~offerStudio(w, info, sourceChanged) : String
+    ~refreshStudio(w, cutout, createIfMissing, sameSource)
+    -applyStudio(w, info, approved)
+  }
+  class MediaService <<Service>> {
+    +put(key, bytes, contentType) : StoredObject
+    +register(owner, origin, sourceEntityId, stored, ...) : Photo
+  }
+  class ImageOps {
+    +MAX_UPLOAD_BYTES = 10 MB
+    +requireAcceptedImage(bytes) : String
+  }
+  class FlatLayPipeline <<Component>>
+  class StudioPipeline <<Component>>
+  class QualityMetrics {
+    +ACCEPTANCE_THRESHOLD = 0.6
+  }
+}
 
 package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  .. +outros campos ..
+  class Photo <<Entity>> <<table photos>> {
+    origin : PhotoOrigin ; sourceEntityId : UUID
+    publicUrl, originalUrl, thumbnailUrl : String
+    moderationStatus : ModerationStatus
+    editedFromPhotoId : UUID
+    metadataJson : String «sourceMime, editedFrom»
+    deletedAt : Instant
+  }
+  class WardrobeItem <<Entity>> <<table wardrobe_items>> {
+    imageUrl, originalImageUrl, thumbnailUrl : String
+    defaultImage, aiGeneratedImage : boolean
+    photoProcessingStatus : PhotoProcessingStatus
+    studioImageUrl, studioBackdrop, studioDetailUrl : String
+    flatLayMetadataJson : String
+  }
+  class "flatLayMetadata.studio" as Studio <<JSON>> {
+    version : int ; approved : boolean
+    url, thumbUrl, feedUrl, detailUrl : String
+    backdrop : String ; createdAt, approvedAt
+    pending : {mesmos campos, version n+1}
+    previous : {version, url, feedUrl, backdrop}
+  }
+  class PieceImage <<Entity>> <<table piece_images>> {
+    imageType : PieceImageType
+    derivedFromId : UUID
+    processingStatus : PieceImageStatus
+    superseded : boolean
+  }
 }
-class Photo {
-  +user: User
-  +origin: PhotoOrigin
-  +sourceEntityId: UUID
-  +storageKey: String
-  +publicUrl: String
-  +originalUrl: String
-  +thumbnailUrl: String
-  +contentHash: String
-  +mimeType: String
-  +width: Integer
-  +height: Integer
-  +bytesSize: Long
-  +qualityScore: BigDecimal
-  +moderationStatus: ModerationStatus
-  +keyMoment: boolean
-  +editedFromPhotoId: UUID
-  +metadataJson: String
-  +deletedAt: Instant
-}
-class WardrobeItem {
-  +user: User
-  +name: String
-  +imageUrl: String
-  +originalImageUrl: String
-  +thumbnailUrl: String
-  +defaultImage: boolean
-  +aiGeneratedImage: boolean
-  +visibility: Visibility
-  +photoProcessingStatus: PhotoProcessingStatus
-  +availabilityStatus: AvailabilityStatus
-  .. +outros campos (RF4/RF7) ..
-}
-class PieceImage {
-  +sessionId: UUID
-  +pieceId: UUID
-  +userId: UUID
-  +imageType: PieceImageType
-  +viewType: CaptureView
-  +storageKey: String
-  +url: String
-  +width: int
-  +height: int
-  +qualityScore: Integer
-  +derivedFromId: UUID
-  +processingStatus: PieceImageStatus
-  +superseded: boolean
-}
-}
-package "fai-domain · enums" {
-enum PhotoOrigin {
-  WARDROBE_ITEM
-  SCHEME
-  TRY_ON
-  STYLE_DNA
-  PROFILE
-  BACKGROUND_STUDIO
-  LOOSE
-  EDITOR
-}
-enum ModerationStatus {
-  PENDING
-  APPROVED
-  REJECTED_POLICY
-  REJECTED_NOT_CLOTHING
-}
-enum PhotoProcessingStatus {
-  NEW
-  MODERATING
-  PROCESSING
-  COMPLETED
-  NEEDS_REUPLOAD
-  FAILED
-}
-enum PieceImageType {
-  ORIGINAL
-  CANONICAL
-  DETAIL
-  LOGO_DETAIL
-  TEXTURE_DETAIL
-  SEGMENTATION_MASK
-}
-}
-package "fai-application · service" {
-class PhotoService {
-  +saveEdit(user, id, bytes): Map
-  +removeBackground(user, bytes): Map
-  +delete(user, id, confirmed): Map
-  +list(user, origin, page, size): Map
-}
-class WardrobeService {
-  +replaceImage(user, id, bytes, editedFromPhotoId): PieceView
-  +governedFlatLay(userId, bytes): FlatLayPipeline.Result
-  +addToWardrobe(user, sourceId): PieceView
-}
-class MediaService {
-  +put(key, bytes, mime): StoredObject
-  +register(owner, origin, sourceEntityId, stored, originalUrl, thumbUrl, ...): Photo
-}
-}
-Photo "*" --> "1" User : user
-Photo --> PhotoOrigin
-Photo --> ModerationStatus
-Photo ..> Photo : editedFromPhotoId
-Photo ..> WardrobeItem : sourceEntityId
-WardrobeItem "*" --> "1" User : user
-WardrobeItem --> PhotoProcessingStatus
-PieceImage ..> WardrobeItem : pieceId
-PieceImage --> PieceImageType
+
+PhotoEditor *-- "1..*" Step : histórico da sessão
+PhotoEditor ..> PhotoController : photoId
+PhotoEditor ..> WardrobeController : pieceId
+EditImageDialog *-- ApprovalPanel
+EditImageDialog ..> SV
+EditImageDialog ..> PhotoEditor : onManual
+PhotoController --> PhotoService
+WardrobeController --> WardrobeService
+PhotoService --> WardrobeService : replaceImage · governedFlatLay
+PhotoService --> MediaService
+WardrobeService --> MediaService
+WardrobeService ..> ImageOps
+WardrobeService --> FlatLayPipeline
+WardrobeService --> StudioPipeline
+FlatLayPipeline ..> QualityMetrics
 PhotoService ..> Photo
-PhotoService ..> WardrobeService
+MediaService ..> Photo : register (EDITOR)
+Photo ..> Photo : editedFromPhotoId
+Photo "*" ..> "0..1" WardrobeItem : sourceEntityId
 WardrobeService ..> WardrobeItem
-WardrobeService ..> MediaService
-MediaService ..> Photo : register
-note top of Photo : tabela photos\nedição do canvas: origin = EDITOR
-note top of WardrobeItem : tabela wardrobe_items — ver RF4/RF7
-note top of PieceImage : tabela piece_images (captura adaptativa, RF4)
+WardrobeItem *-- "0..1" Studio : flatLayMetadataJson
+PieceImage ..> WardrobeItem : pieceId
+
+note bottom of PhotoEditor
+  Destrutivo ao salvar: envia um PNG "assado".
+  Sem receita, sem proporções/zonas seguras,
+  sem balanço de branco nem medida de cor;
+  o histórico (Step[]) some ao fechar.
+end note
+note bottom of PieceImage
+  piece_images (V29): base proposta para versões,
+  mas o plano do RF15 escolhe uma tabela nova
+  (image_edit_versions — RF15-classes-planejado).
+end note
 @enduml

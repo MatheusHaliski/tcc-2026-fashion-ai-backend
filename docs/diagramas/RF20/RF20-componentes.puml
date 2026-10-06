@@ -1,5 +1,5 @@
 @startuml RF20_Componentes
-title RF20 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma marca de roupa\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF20 — Publicar look vinculado a uma marca cadastrada\nDiagrama de componentes — telas, SealController, SealService, eventos e persistência do vínculo
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -14,49 +14,82 @@ skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam interface {
+  BackgroundColor #FFF5F8
+  BorderColor #4A4852
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 left to right direction
 
 package "Frontend (Next.js)" {
-  component "schemes/new/page.tsx\ncomponents/scheme-builder.tsx\n(selos possíveis + pedido ao salvar)" as FE0
-  component "brands/[slug]/page.tsx\nabas Selos · Revisão (ReviewQueue) ·\nMétricas (IssuerMetrics)" as FE1
-  component "components/seal-medallion.tsx\ncomponents/scheme-card.tsx (SealBadges)" as FE2
-  component "Aba \"Meus Selos\" (GET /api/me/seals)\n<<planejado>>" as FE3 #FFF5F8
+  component "schemes/new → components/scheme-builder.tsx\n(SealSuggestions na etapa Detalhes,\npedidos ao salvar)" as FE0
+  component "schemes/[id] → components/expanded-card.tsx\n(«Sugerir selos de marca» + Vincular)" as FE1
+  component "brands/[slug]/page.tsx\n(Selos · Revisão de vínculos (ReviewQueue) ·\nMétricas (IssuerMetrics) · Promoções)" as FE2
+  component "scheme-card.tsx (SealBadges)\nseal-medallion.tsx (têxtil/dourado)" as FE3
+  component "Aba «Meus Selos»\n(GET /api/me/seals)" as FE4 <<planejado>> #FFF5F8
 }
-package "fai-web · controllers" {
-  [SealController\nPOST /api/seal-suggestions/preview\nGET /api/schemes/{id}/seal-suggestions\nPOST /api/schemes/{id}/seal-bonds\nPOST /api/seal-bonds/{id}/accept|refuse|review|revoke\nGET /api/seal-bonds/review-queue\nGET /api/me/seals · GET /api/me/issuer-metrics] as C
-  [SchemeController\nPOST /api/schemes\nPOST /api/schemes/{id}/publication] as SCH
-}
-package "fai-application · services" {
-  [SealService] as S
-  [SchemeService (RF5)] as SS
-  [AiEngine\nAiCapability.SEALBOND_MATCHER\n(LocalAdvisors · Similarity)] as AI
-  [NotificationService\nSEAL_BOND_REVIEW · SEAL_GRANTED] as N
-  [Audit\nAuditActions.MUDANCA_ESTADO_VINCULO_SELO] as A
-  [Guard] as G
-  [CouponService (RF38)\nCouponRightsCheck AFTER_COMMIT] as CS
-}
-package "fai-infrastructure · adapters" {
-  [MysqlAuditService\n(audit_log)] as MA
-  [Repositórios JPA (fai-domain · repository)\nSealBondRepository · SealRepository\nBrandProfileRepository · SchemeRepository\nSchemeItemRepository · WardrobeItemRepository\nPromotionRepository · NotificationRepository] as REPOS
-}
-database "MySQL · fashionai_app\n• seal_bonds\n• seals\n• brand_profiles\n• schemes · scheme_items\n• wardrobe_items\n• promotions\n• notifications\n• audit_log\n• ai_inference_logs" as DB
 
-FE0 --> C : preview / seal-bonds
-FE0 --> SCH : cria e publica o look
-FE1 --> C : review-queue / review / revoke / issuer-metrics
-FE2 --> FE1 : usa
-FE3 ..> C : não implementado — conforme Trello\n(lacuna 2: recusados para aplicação manual)
-C --> S : chama
-SCH --> SS : chama
-SS --> S : revokeForScheme / flagRevalidation
-S --> G : requireOwner / requireCanCreate
+package "fai-web · controllers" {
+  [SealController\nPOST /api/seal-suggestions/preview\nGET /api/schemes/{id}/seal-suggestions\nPOST /api/schemes/{id}/seal-bonds (+ /refuse-all)\nPOST /api/seal-bonds/{id}/accept · refuse · review · revoke\nGET /api/seal-bonds/review-queue\nGET /api/me/seals · GET /api/me/issuer-metrics\nPOST /api/promotions/{id}/redemptions] as C
+  [SchemeController\nPOST /api/schemes · PUT /api/schemes/{id}\nDELETE /api/schemes/{id}] as SCC
+}
+
+package "fai-application" {
+  [SealService\nsuggest · preview · accept · linkManually ·\nroute · issue · review · revoke ·\nflagRevalidation · revokeForScheme] as S
+  [SealPolicies\n(política padronizada do selo — RF25)] as POL
+  [SchemeService (RF5/RF9)\nsuggestSealsAfterSave] as SS
+  [AiEngine (RF24)\nAiCapability.SEALBOND_MATCHER\n(motor local: LocalAdvisors · Similarity)] as AI
+  [HypeQueryService\n(Hype v2 das peças/look para\npolíticas e ordem das sugestões)] as HQ
+  [NotificationService\nSEAL_BOND_REVIEW · SEAL_GRANTED] as N
+  [Audit\nMUDANCA_ESTADO_VINCULO_SELO ·\nPROMOCAO_RESGATADA] as A
+  [Guard\nrequireOwner · requireCanCreate ·\nrequireApprovedInstitutional] as G
+  interface "AuditService" as AS <<port>>
+  [CouponService (RF38)\n@TransactionalEventListener AFTER_COMMIT\nonCheck(CouponRightsCheck)] as CS
+  [InstitutionalService (RF14/RF22)\nperfil mostra só APPROVED] as IS
+}
+
+package "fai-domain · repository (JPA)" {
+  [SealBondRepository · SealRepository\nBrandProfileRepository · CelebrityProfileRepository\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · UserRepository\nPromotionRepository · PromotionRedemptionRepository] as REPOS
+}
+
+package "fai-infrastructure" {
+  [MysqlAuditService\n(implementa AuditService)] as MA
+}
+
+database "MySQL\n• seal_bonds · seals\n• brand_profiles · celebrity_profiles\n• schemes (seal_ids_json, revalidation_pending)\n• scheme_items · wardrobe_items\n• promotions · promotion_redemptions\n• notifications · audit_log\n• ai_inference_log · hype_scores" as DB
+
+FE0 --> C : preview · seal-bonds
+FE0 --> SCC : salva o look
+FE1 --> C : seal-suggestions · accept
+FE2 --> C : review-queue · review · issuer-metrics
+FE2 --> FE3
+FE4 ..> C : sem tela hoje
+
+C --> S
+SCC --> SS
+SS --> S : suggest (depois do commit)\nflagRevalidation · revokeForScheme
+S --> POL : evaluate
 S --> AI : local(SEALBOND_MATCHER)
-S --> N : notify
-S --> A : log
-S --> CS : publica CouponRightsCheck
-S --> REPOS : lê/grava
-A --> MA : grava
-MA --> DB : JDBC
-REPOS --> DB : JPA/Flyway
-note bottom of AI : ver RF24 (motor de IA) — matcher local,\ninferência registrada (aiInferenceId)
+S --> HQ : Hype v2 (opcional)
+S --> N
+S --> A
+A --> AS
+S --> G
+S ..> CS : publishEvent(CouponRightsCheck)
+S --> REPOS
+IS --> REPOS : seal_bonds APPROVED
+REPOS --> DB : JPA · Flyway
+AS <|.. MA
+MA --> DB : audit_log
+
+note bottom of S
+  Mecanismo: IA sugere até 3 → pessoa aceita,
+  escolhe ou recusa → pendente → auto-aprovado
+  (marca sem revisão) ou fila da marca → selo
+  emitido (tier PECA ou LOOK) → promoções.
+end note
 @enduml

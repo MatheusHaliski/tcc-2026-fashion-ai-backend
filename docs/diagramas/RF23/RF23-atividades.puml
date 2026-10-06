@@ -1,5 +1,5 @@
 @startuml RF23_Atividades
-title RF23 — Criar as telas de configuração do usuário (Conta, Privacidade, Aparência, Idioma, Seus dados) no padrão LGPD, com i18n\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF23 — Telas de configuração (Conta, Privacidade, Aparência, Idioma, Seus dados) com i18n\nDiagrama de atividades — abrir Configurações, mudar aparência e idioma, sair de "Criadores em alta"
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,77 +25,104 @@ skinparam note {
 }
 |Pessoa|
 start
-:Abre /settings (abas Conta, Aparência,\nPrivacidade, Seus dados, Sessões);
-|Frontend (settings/page.tsx)|
+:Abre /settings;
+|Frontend|
+if (Tem sessão? (RequireAuth)) then (não)
+  :Leva para o login (RF2);
+  stop
+else (sim)
+endif
 :GET /api/me/preferences;
-:Aplica tema, densidade, fonte, contraste,\nreduceMotion e fundo do chrome (ThemeProvider);
+|API|
+:PreferencesService.get
+cria a linha user_preferences
+na primeira vez (padrões);
+|Frontend|
+:ThemeProvider aplica tema, densidade, fonte,
+alto contraste, menos animação, fundo do chrome
+e cor dos containers;
+if (Idioma salvo no servidor ≠ idioma local?) then (sim)
+  :I18nProvider.setLocale(idioma do servidor);
+else (não)
+endif
 note right
-  CA08 — tema e fundo mudam só o chrome do app
-  (--chrome-bg, data-theme, data-density).
-  A arte das peças e dos esquemas e dos cards
-  (RF11) não é tocada.
+  CA08 — tema, fundo e cor dos containers mudam só o
+  chrome do app (data-theme e as variáveis CSS chrome-bg e content-bg).
+  A arte dos esquemas e das peças (RF11) não muda.
 end note
 |Pessoa|
-if (Qual aba?) then (Conta)
-  :Edita nome de exibição, bio, país,\navatar e capa (EditProfileForm);
-  |Frontend (settings/page.tsx)|
-  :PATCH /api/me/profile;
-  |Backend (PreferencesService)|
-  :updateProfile — salva SEM reautenticação (CA03);
-  note right : Dados sensíveis (e-mail, senha,\n2FA) ficam no RF3 — PATCH /api/me/sensitive\npede reautenticação.
-  |Pessoa|
-  if (Trocou o @?) then (sim)
-    |Frontend (settings/page.tsx)|
-    :PUT /api/me/username;
-    |Backend (PreferencesService)|
-    if (@ livre e não reservado?) then (sim)
-      :Grava username e audita ALTERACAO_PERFIL;
-    else (não)
-      #FFE3E3:400 USERNAME_EM_USO com suggestions (CA04);
-    endif
-  else (não)
-  endif
-elseif (Aparência / Idioma) then
-  :Escolhe tema, idioma, densidade, fonte (80–160),\nalto contraste, reduzir animações, fundo do chrome;
-  |Frontend (settings/page.tsx)|
-  :Aplica na hora (ThemeProvider / I18nProvider)\ne guarda em localStorage;
-  :PUT /api/me/preferences {…, clientUpdatedAt};
-  |Backend (PreferencesService)|
+if (Aba?) then (Aparência)
+  :Escolhe tema, idioma, densidade, fonte,
+  alto contraste, menos animação, som, háptico,
+  tamanhos, unidades, fundo do chrome ou cor;
+  |Frontend|
+  :Aplica na hora e grava no navegador
+  (fai.theme; idioma em fai.locale + cookie);
+  :PUT /api/me/preferences
+  {campo alterado, clientUpdatedAt};
+  |API|
   if (clientUpdatedAt mais antigo que o salvo?) then (sim)
-    :Ignora e devolve o estado atual\n(last-write-wins, CA02);
+    :Não grava e devolve o estado salvo
+    (a alteração mais recente vence, CA02);
   else (não)
-    if (fontScale, chromeBackgroundId, cor e skin válidos?) then (sim)
-      :Grava user_preferences e audita\nALTERACAO_PREFERENCIAS;
+    if (Valores válidos?) then (sim)
+      :Grava user_preferences
+      e audita ALTERACAO_PREFERENCIAS;
+      |Frontend|
+      :Aviso "salvo";
     else (não)
-      #FFE3E3:400 FONTE_INVALIDA / FUNDO_INVALIDO / COR_INVALIDA;
+      |API|
+      #FFE3E3:400 FONTE_INVALIDA (fora de 80–160)
+      FUNDO_INVALIDO · COR_INVALIDA (não é #RRGGBB)
+      SKIN_INVALIDA · CORE_INVALIDO · TOM_INVALIDO
+      JSON_INVALIDO (valor fora do enum);
+      |Frontend|
+      :Aviso de erro; a escolha local continua aplicada;
     endif
   endif
-  |Frontend (settings/page.tsx)|
-  :Idioma: catálogos lib/i18n/messages/{pt-BR,en,es}.json\ne Accept-Language em toda chamada;
-  |Backend (PreferencesService)|
-  :RequestLocaleFilter lê Accept-Language;\nMsg.t resolve messages*.properties\ne devolve Content-Language;
 elseif (Privacidade) then
-  |Frontend (settings/page.tsx)|
-  :GET /api/me/consents;
-  |Pessoa|
-  :Define visibilidade padrão e\nconsentimentos por finalidade;
-  |Frontend (settings/page.tsx)|
-  :PUT /api/me/privacy · PUT /api/me/consents/{purpose};
-  |Backend (AccountService)|
-  :Grava user_consents (granted, grantedAt/revokedAt)\ne registra em audit_log;
-  note right : ver RF24 (motor de IA) — finalidades\nAI_RECOMMENDATION, AI_EXTERNAL_PHOTO_PROCESSING…
-else (Seus dados)
-  |Frontend (settings/page.tsx)|
-  :GET /api/me/exports;
-  |Pessoa|
-  :Pede exportação (ou agenda exclusão da conta);
-  |Frontend (settings/page.tsx)|
-  :POST /api/me/exports;
-  |Backend (AccountService)|
-  :Cria data_export_requests (PROCESSING),\nmonta JSON no idioma preferido,\ngrava em restricted/… e marca READY;
-  :Notifica DATA_EXPORT_READY; expira em 7 dias\n(purgeExpiredExports → EXPIRED);
-  |Pessoa|
-  :Baixa GET /api/me/exports/{id}/file;
+  :Visibilidade padrão e consentimentos
+  (fluxo do RF3: PUT /api/me/privacy,
+  PUT /api/me/consents/{purpose});
+  :Card "HypeScore e privacidade":
+  liga "não aparecer em Criadores em alta";
+  |Frontend|
+  :Marca o switch na hora (otimista);
+  :PUT /api/me/preferences {hypeCreatorOptOut};
+  |API|
+  if (Valor mudou?) then (sim)
+    :Grava user_preferences.hype_creator_opt_out (V42);
+    :Depois do commit: HypeCache.bump()
+    (nova geração; o ranking em cache não volta);
+  else (não)
+  endif
+  if (Salvou?) then (sim)
+    |Frontend|
+    :Aviso "salvo";
+    note right
+      Com a opção ligada, a pessoa some de
+      GET /api/hype/trending?type=CREATOR e o lote
+      /api/hype/groups devolve a chave dela sem dados.
+      Peças e looks continuam com o próprio Hype.
+    end note
+  else (não)
+    |Frontend|
+    :Volta o switch ao valor anterior;
+  endif
+elseif (Conta) then
+  :Edita a vitrine do perfil
+  (ver RF23-atividades-conta);
+  :Dados sensíveis pedem a senha
+  (fluxo do RF3: PATCH /api/me/sensitive);
+else (Seus dados / Sessões)
+  :Exporta os dados, agenda a exclusão
+  ou encerra sessões (fluxos do RF3);
 endif
+|Frontend|
+:Cada chamada leva Accept-Language
+(pt-BR · en · es);
+|API|
+:RequestLocaleFilter escolhe o idioma, Msg.t traduz
+as mensagens e a resposta volta com Content-Language;
 stop
 @enduml

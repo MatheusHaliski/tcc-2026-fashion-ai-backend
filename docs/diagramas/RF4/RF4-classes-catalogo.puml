@@ -1,0 +1,203 @@
+@startuml RF4_Classes_Catalogo
+!pragma layout smetana
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de classes — acervo e busca catalogada em detalhe: catálogo global (V30/V36), interpretação do texto e pool da busca
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #F8F4FF
+  BorderColor #7C5FC0
+  ArrowColor #52606D
+}
+skinparam packageStyle rectangle
+hide empty members
+
+package "fai-application · catalog" {
+  class CatalogService <<Service>> {
+    +MIN_SCORE = 0.35
+    ~NO_PHOTO_PENALTY = 0.10
+    +search(userId, SearchRequest) : Map
+    ~resolve(userId, SearchRequest) : Resolved
+    ~patternTerms(pattern) : String
+    ~rank(Resolved, pool, limit) : List<Map>
+    ~{static} orderScore(Map) : double
+    +suggestions(SearchRequest) : Map
+    +brandSuggestions(term) : Map
+    +discover(user, SearchRequest) : Map
+    +addToWardrobe(user, AddRequest) : PieceView
+    +catalogBrands() : List<Map>
+  }
+  class CatalogTextInterpreter <<Component>> {
+    +interpret(userId, text) : DesignTraits
+    «leitura local sempre; IA CATALOG_TEXT_INTERPRETER
+    só com o vocabulário fechado»
+  }
+  class CatalogDesignInterpreter {
+    +interpret(text) : DesignTraits
+    +ofProduct(name, description, colorName, color) : DesignTraits
+  }
+  class DesignTraits <<record>> {
+    pattern, logoPlacement, logoSize : String
+    sides : Set<String>
+    baseColors, printColors, anyColors : List<String>
+    consumed : Set<String>
+    source : LOCAL | AI | CATALOG
+  }
+  class CatalogNormalizer {
+    «catalog/normalization.json (mesmo do Python)»
+    +subcategory(raw) ; +color(raw) ; +brandSlug(raw)
+    +tokens(raw) ; +dedupKey(...)
+    +{static} canonicalUrl(url) ; +{static} sameSite(domain, official)
+  }
+  class CatalogMatchScorer {
+    W_BRAND 0.25 · W_CATEGORY 0.10 · W_SUBCATEGORY 0.20
+    W_TEXT 0.35 · W_COLOR 0.10 · W_VISUAL 0.15 · W_DESIGN 0.45
+    +score(Intent, Candidate, visual) : Score
+  }
+  class OfficialCatalogDiscovery <<Component>> {
+    +discover(userId, brand, subcategoryLabel, query, officialDomains)
+    «IA CATALOG_DISCOVERY, só domínios de catalog_sources»
+  }
+  class CatalogIngestService <<Service>> {
+    +resolveBrand(raw, createIfMissing) : Optional<Brand>
+    +upsert(ProductInput, CatalogIngestionStatus, createBrand) : Result
+  }
+}
+
+package "fai-domain · repository" {
+  interface CatalogProductRepository {
+    +candidates(brandId, category, subcategory, terms)
+    +candidatesWithColor(brandId, category, subcategory, color, terms)
+    «MATCH(search_text) AGAINST (BOOLEAN MODE),
+    só VALIDATED · PERSISTABLE · REFERENCE_ONLY,
+    ORDER BY owners_count DESC LIMIT 200»
+    +findByDedupKey(key) ; +findFirstByGtin/Ean/Upc/Sku/…
+  }
+}
+
+package "fai-domain · model" {
+  class Brand <<Entity>> <<table brands>> {
+    name, slug, logoUrl, website : String
+  }
+  class BrandAlias <<Entity>> <<table brand_aliases>> {
+    brandId : UUID ; alias, aliasNorm : String
+  }
+  class CatalogSource <<Entity>> <<table catalog_sources>> {
+    brandId : UUID ; domain, country : String
+    sourceType : CatalogSourceType
+    allowsImagePersistence, active : boolean
+  }
+  class CatalogProduct <<Entity>> <<table catalog_products>> {
+    brandId : UUID ; category, subcategory : String
+    productName, modelName : String
+    productCode, sku, gtin, ean, upc : String
+    color, colorName, material, gender : String
+    officialProductUrl, canonicalUrl, sourceDomain : String
+    sourceType : CatalogSourceType
+    sourceStatus : CatalogSourceStatus
+    ingestionStatus : CatalogIngestionStatus
+    dedupKey : String «UNIQUE»
+    description, designJson «V36» : String
+    searchText : String «FULLTEXT ngram»
+    ownersCount : int ; firstSeenAt, lastVerifiedAt
+  }
+  class CatalogProductAlias <<Entity>> <<table catalog_product_aliases>> {
+    productId : UUID ; alias, aliasNorm : String
+  }
+  class CatalogVariant <<Entity>> <<table catalog_variants>> {
+    productId : UUID ; variantKey : String
+    color, colorName, variantCode, sku, gtin : String
+    availability : String
+  }
+  class CatalogImage <<Entity>> <<table catalog_images>> {
+    productId, variantId : UUID
+    imageUrl, imageUrlHash, sourceDomain : String
+    imageType : CatalogImageType ; primary : boolean
+    usageStatus : CatalogImageUsage ; storedUrl : String
+  }
+  class CatalogIngestionRun <<Entity>> <<table catalog_ingestion_runs>> {
+    kind, source : String ; dryRun : boolean
+    totalRead, createdCount, updatedCount : int
+    skippedCount, duplicatesCount, errorCount : int
+    reportJson : String
+  }
+  class WardrobeItem <<Entity>> <<table wardrobe_items>> {
+    catalogProductId, catalogVariantId : UUID
+    imageOrigin : ImageOrigin
+  }
+}
+
+package "fai-domain · enums" {
+  enum CatalogIngestionStatus {
+    DISCOVERED
+    VALIDATED
+    PERSISTABLE
+    REFERENCE_ONLY
+    REJECTED
+  }
+  enum CatalogSourceType {
+    OFFICIAL_BRAND
+    OFFICIAL_STORE
+    AUTHORIZED_RETAILER
+    PARTNER_API
+    MANUAL_ADMIN
+  }
+  enum CatalogSourceStatus {
+    ACTIVE
+    UNAVAILABLE
+    SOURCE_REMOVED
+    NEEDS_REVALIDATION
+  }
+  enum CatalogImageType {
+    FRONT
+    BACK
+    SIDE
+    TOP
+    DETAIL
+    SOLE
+    PACKSHOT
+    OTHER
+  }
+  enum CatalogImageUsage {
+    REFERENCE_ONLY
+    PERSISTED
+    REJECTED
+  }
+}
+
+CatalogService --> CatalogTextInterpreter : resolve() — design do texto
+CatalogTextInterpreter --> CatalogDesignInterpreter : leitura local
+CatalogTextInterpreter ..> DesignTraits
+CatalogDesignInterpreter ..> CatalogNormalizer
+CatalogService --> CatalogNormalizer : subtipo pela frase mais longa
+CatalogService --> CatalogProductRepository : pool priorizado
+CatalogService --> CatalogMatchScorer : rank()
+CatalogMatchScorer ..> DesignTraits : intenção × produto
+CatalogService --> OfficialCatalogDiscovery : discover()
+CatalogService --> CatalogIngestService : upsert(DISCOVERED)
+CatalogIngestService ..> CatalogDesignInterpreter : design da descrição
+CatalogProductRepository ..> CatalogProduct
+BrandAlias "*" --> "1" Brand
+CatalogSource "*" --> "1" Brand
+CatalogProduct "*" --> "1" Brand : brandId
+CatalogProductAlias "*" --> "1" CatalogProduct
+CatalogProduct "1" *-- "0..*" CatalogVariant
+CatalogProduct "1" *-- "0..*" CatalogImage
+CatalogImage "*" ..> "0..1" CatalogVariant : variantId
+WardrobeItem "*" ..> "0..1" CatalogProduct : por referência
+CatalogProduct --> CatalogIngestionStatus
+CatalogProduct --> CatalogSourceStatus
+CatalogSource --> CatalogSourceType
+CatalogImage --> CatalogImageType
+CatalogImage --> CatalogImageUsage
+
+note bottom of CatalogIngestionRun
+  Gravada só pelo pipeline Python
+  (scripts/catalog/ingest.py · record_run):
+  ver RF4-*-acervo-oficial.
+end note
+note bottom of CatalogImage
+  REFERENCE_ONLY guarda só a URL oficial;
+  PERSISTED só se CatalogSource.allowsImagePersistence.
+end note
+@enduml

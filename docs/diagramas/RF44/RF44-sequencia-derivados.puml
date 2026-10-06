@@ -1,0 +1,91 @@
+@startuml RF44_Sequencia_Derivados
+title RF44 — FAI Creative Engine\nDiagrama de sequência — foto de vitrine com versão e aprovação; cópia da peça por IA com selo (endpoints reais)
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "Frontend\nexpanded-card.tsx ·\nmulti-piece-review.tsx" as FE
+participant "WardrobeController" as WC
+participant "WardrobeService" as WS
+participant "MultiPieceService" as MP
+participant "AiEngine (RF24)" as AI
+participant "StudioPipeline" as SP
+participant "StudioShotPort · UpscalePort\n(Photoroom · Stability)" as SPP
+participant "ImageEditPort\n(GeminiImageEditAdapter ·\nReplicateImageEditAdapter)" as IEP
+participant "AiSeal" as SEAL
+participant "MediaService" as M
+database "MySQL" as DB
+
+== Foto de vitrine (StudioPipeline) ==
+U -> FE: gerar ou refazer a foto de estúdio
+FE -> WC: POST /api/pieces/{id}/studio?backdrop=auto
+WC -> WS: studioPiece(user, id, backdrop)
+alt peça sem recorte (imagem padrão ou Flat Lay não COMPLETED)
+  WS --> FE: 422 SEM_RECORTE
+end
+WS -> AI: execute(STUDIO_ENHANCER, …, remoto = studio.run(…, true), local = studio.run(…, false))
+AI -> SP: run(cutout, backdrop, allowExternal, Hints)
+opt provedor disponível
+  SP -> SPP: upscale(png) · studio(cutout, backgroundHex, 1600, 1600, padding)
+  SPP --> SP: ProviderImage (ou falha → etapa local Java2D)
+end
+SP --> AI: Result(studioJpeg, thumbJpeg, feedJpeg, detailJpeg,\nenhancedPng, stages, costUsd, fallbackUsed)
+AI --> WS: AiOutcome<Result>
+alt sem resultado
+  WS --> FE: 503 ESTUDIO_INDISPONIVEL
+end
+WS -> M: put(users/{id}/pieces/{id}/… studio, thumb, feed, detail, enhanced)
+WS -> WS: offerStudio(w, info, sourceChanged = false)
+alt já existe foto aprovada da mesma origem
+  WS -> DB: UPDATE wardrobe_items.flat_lay_metadata_json\n(studio.pending com versão + 1); studio_image_url não muda
+else sem aprovada
+  WS -> DB: UPDATE wardrobe_items (studio_image_url, studio_backdrop,\nstudio_detail_url; studio.approved = false)
+end
+WS --> FE: 200 PieceView (aprovada no ar + pendente)
+alt aprovar
+  FE -> WC: POST /api/pieces/{id}/studio/approve
+  WC -> WS: approveStudio(user, id)
+  WS -> DB: pendente vira a atual (approvedAt); a anterior fica em "previous"
+  WS -> DB: INSERT audit (EDICAO_PECA, studio/approve)
+else descartar
+  FE -> WC: DELETE /api/pieces/{id}/studio/pending
+  WC -> WS: discardStudio(user, id)
+  WS -> M: deleteUrl(arquivos da pendente)
+  WS -> DB: remove studio.pending
+end
+note over WS: nada a aprovar → 409 NADA_A_APROVAR;\nnada a descartar → 409 NADA_A_DESCARTAR
+
+== Cópia da peça por IA (sempre com selo) ==
+U -> FE: pedir cópia por IA (nome, tipo e cor conferidos)
+FE -> WC: POST /api/pieces/analysis/multi/{draftId}/ai-image (multipart)
+WC -> MP: recreate(user, draftId, index, bytes, name, category, color)
+MP -> DB: SELECT pipeline_jobs (rascunho MULTI_PIECE_DRAFT do próprio dono)
+MP -> AI: execute(PIECE_IMAGE_RECREATOR, steps = cada ImageEditPort)
+loop Gemini 2.5 Flash Image → Replicate FLUX Kontext
+  AI -> IEP: edit(jpeg 1024 px, "image/jpeg", recreatePrompt)
+  IEP --> AI: ProviderImage
+end
+alt nenhum provedor (consentimento, cota, teto ou falha)
+  MP --> FE: 503 IA_INDISPONIVEL {capability}
+end
+MP -> DB: INSERT pipeline_jobs (FLAT_LAY_STANDARDIZATION, COMPLETED,\ntargetType AI_PIECE_IMAGE, provider, custo)
+MP -> M: put(…/ai-{jobId}.png) — original da IA, sem selo
+MP -> SEAL: stamp(prévia 768 px, "gerada por IA")
+MP -> M: put(…/ai-{jobId}-preview.jpg)
+MP --> FE: 200 AiImage(aiImageId, previewUrl, explanation, quota)
+U -> FE: usar a cópia e salvar
+FE -> WC: POST /api/pieces/analysis/multi/{draftId}/ai-images/{aiImageId}/piece
+WC -> MP: aiPieceDraft(user, draftId, aiImageId)
+MP -> AI: execute(FLAT_LAY_STANDARDIZER) e CONTENT_MODERATOR
+MP -> SEAL: stamp(original, recorte, flat lay e miniatura)
+MP -> M: put(versões com selo)
+MP --> FE: 200 PieceDraft(draftId, …, aiImage = true)
+FE -> WC: POST /api/pieces {draftId, …}
+WC -> WS: create(user, PieceForm)
+WS -> DB: INSERT wardrobe_items (is_ai_generated_image = true)
+@enduml

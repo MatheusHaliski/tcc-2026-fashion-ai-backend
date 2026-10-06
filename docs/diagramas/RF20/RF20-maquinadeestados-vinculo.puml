@@ -1,6 +1,6 @@
 @startuml RF20_MaquinaDeEstados_Vinculo
 !pragma layout smetana
-title RF20 — SealBond: vínculo esquema × marca (SealBondStatus), da sugestão da IA ao selo emitido
+title RF20 — Publicar look vinculado a uma marca cadastrada\nDiagrama de máquina de estados — SealBond (SealBondStatus): da sugestão da IA ao selo emitido, revogado ou expirado
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,33 +8,62 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-[*] --> Sugerido : GET /api/schemes/{id}/seal-suggestions\n(origin AI_SUGGESTION, até 3)
-[*] --> Editado : POST /api/schemes/{id}/seal-bonds\n(origin MANUAL — CA03)
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 state "SUGGESTED" as Sugerido
-state "ACCEPTED" as Aceito
-state "EDITED" as Editado
 state "REFUSED" as Recusado
+state "ACCEPTED\n(transitório)" as Aceito
+state "EDITED\n(transitório, origin MANUAL)" as Editado
 state "PENDING_REVIEW" as EmRevisao
-state "APPROVED" as Aprovado
+state "APPROVED" as Aprovado {
+  state "Vigente\n(expiresAt no futuro)" as Vigente
+  state "Em revalidação\n(Scheme.revalidationPending)" as Revalida
+  state "Expirado\n(calculado na leitura)" as Expirado
+  [*] --> Vigente
+  Vigente --> Revalida : PUT /api/schemes/{id} muda as peças\n→ flagRevalidation (RF9.CA05)
+  Revalida --> Vigente : review {approve: true}\n(«revalidado»)
+  Vigente --> Expirado : agora ≥ expiresAt\n(sem job: "EXPIRADO" em /api/me/seals)
+}
 state "REJECTED" as Rejeitado
 state "REVOKED" as Revogado
-Sugerido --> Aceito : POST /api/seal-bonds/{id}/accept (CA02)
+
+[*] --> Sugerido : GET /api/schemes/{id}/seal-suggestions\nou POST /api/schemes (2+ peças, depois do commit)\n— suggest(): até 3, origin AI_SUGGESTION
+[*] --> Editado : POST /api/schemes/{id}/seal-bonds\n— linkManually() (CA03)
 Sugerido --> Recusado : POST /api/seal-bonds/{id}/refuse\nou …/seal-bonds/refuse-all (CA04)
-Recusado --> Aceito : accept() depois, a partir de\n"Meus Selos · recusados" (lacuna 2)
-Aceito --> EmRevisao : route(): BrandProfile.requiresSealReview\n+ notify SEAL_BOND_REVIEW (CA07)
+Sugerido --> Aceito : POST /api/seal-bonds/{id}/accept (CA02)
+Recusado --> Aceito : accept() depois\n(sem tela "Meus Selos" hoje)
+Sugerido --> [*] : nova sugestão ou pedido manual\npara o mesmo look apaga o SUGGESTED
+
+Aceito --> EmRevisao : route(): BrandProfile.requiresSealReview\n→ notify SEAL_BOND_REVIEW (CA07)
 Editado --> EmRevisao : route(): requiresSealReview
-Aceito --> Aprovado : route(): auto-aprovação → issue()
+Aceito --> Aprovado : route(): auto-aprovação → issue()\n(BRD-…, usageCount + 1, CA08)
 Editado --> Aprovado : route(): auto-aprovação → issue()
-Aceito --> Rejeitado : route(): selo sem emissões /\nfora da janela (SELO_INDISPONIVEL)
-Editado --> Rejeitado : route(): SELO_INDISPONIVEL
-EmRevisao --> Aprovado : POST /api/seal-bonds/{id}/review {approve:true}\n→ issue(): sealCode BRD-…, expiresAt (CA08)
-EmRevisao --> Rejeitado : review {approve:false, reason}\n(motivo obrigatório)
-Aprovado --> Revogado : POST /api/seal-bonds/{id}/revoke\nou esquema excluído/privado (revokeForScheme) — CA14
-Aprovado --> Revogado : review da revalidação rejeitada\n(RF9.CA05 — peças do look mudaram)
-Sugerido --> Revogado : revokeForScheme (esquema excluído)
-EmRevisao --> Revogado : revokeForScheme (esquema excluído)
-Aprovado --> [*] : expiresAt passou → "EXPIRADO"\nem GET /api/me/seals (inativos)
-note right of Aprovado : notify SEAL_GRANTED · AuditLog "EMITIDO"\nCouponRightsCheck → promoções (CA11; RF38)
-note right of EmRevisao : CA09 — só um PENDING_REVIEW/APPROVED\npor par esquema × marca (VINCULO_EXISTENTE)
-note bottom of Recusado : cada transição grava AuditLog\nMUDANCA_ESTADO_VINCULO_SELO (CA16)
+Aceito --> Rejeitado : route(): selo indisponível →\nSealUnavailable 409 (noRollbackFor, CA23)
+Editado --> Rejeitado : route(): SealUnavailable 409
+EmRevisao --> Aprovado : POST /api/seal-bonds/{id}/review\n{approve: true} → issue()
+EmRevisao --> Rejeitado : review {approve: false, reason}\n(motivo obrigatório)
+Revalida --> Revogado : review {approve: false, reason}
+Aprovado --> Revogado : POST /api/seal-bonds/{id}/revoke\nou look PRIVATE/excluído → revokeForScheme (CA14)
+Sugerido --> Revogado : revokeForScheme
+EmRevisao --> Revogado : revokeForScheme
+
+note right of Aceito
+  ACCEPTED e EDITED vivem só dentro da
+  transação do route(). Se o route() falha com
+  409 VINCULO_EXISTENTE (ou, para celebridade,
+  400 CONSENTIMENTO_IMAGEM), a transação é
+  desfeita: o aceite volta a SUGGESTED e o
+  pedido manual nem é gravado.
+end note
+note bottom of Aprovado
+  Só APPROVED põe o look no perfil da marca (RF14):
+  vigente = destaque; expirado ou em revalidação =
+  só "Looks consagrados". Um APPROVED expirado
+  ainda bloqueia novo vínculo do mesmo par (CA09).
+  Recusa, pendência, emissão, revisão e revogação
+  gravam audit_log MUDANCA_ESTADO_VINCULO_SELO (CA16).
+end note
 @enduml

@@ -1,0 +1,57 @@
+@startuml RF15_Atividades_Pipeline
+title RF15 — Editar uma fotografia de uma peça de roupa através de um Editor Canvas Interativo 2D\nDiagrama de atividades — <<planejado>> pipeline de ordem fixa da receita e a classe de cada estágio (F0–F3)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F2F2F2
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+start
+note right
+  <<planejado>> (plano RF15 §5.2–§5.3).
+  O histórico guarda a ORDEM DOS COMANDOS (desfazer);
+  o renderizador aplica SEMPRE esta ordem: a mesma
+  receita gera sempre a mesma imagem.
+  Hoje o PhotoEditor aplica giro → brilho/contraste →
+  recorte num Canvas 2D, sem receita persistida.
+end note
+:F0 · Original imutável (sem EXIF) + receita EditRecipe;
+:1 · Entrada — orientação EXIF, ICC → sRGB, proxy\n(createImageBitmap imageOrientation "from-image");
+:2 · Geometria (F1) — rotate90, straightenDeg ±15,\nperspective 4 pontos, crop normalizado + proporção;
+:3 · Balanço de branco (F1) — temperature/tint ou\nneutralPoint (conta-gotas → calibrated = true);
+:4 · Tom (F1) — exposure (EV), contrast, highlights,\nshadows, whites, blacks, curve;
+if (5 · Cor — vibrance/saturation dentro de ±15\ne sem hsl que atinja a peça?) then (sim)
+  :Cor F1;
+else (não)
+  :Cor F3 · Criativa;
+endif
+:6 · Detalhe (F1 moderado) — sharpen\n(quantidade, raio, limiar) · denoise;
+:7 · Ajustes locais (herda a classe) — máscaras garment,\nbackground, brush, linear, radial (Fase 2);
+if (8 · Retoque heal[] usado?) then (sim)
+  :F2 · Vitrine — PatchMatch local;\nbloqueado sobre a caixa do logo e\nacima de 2% da área da peça por ponto;
+else (não)
+endif
+if (9 · Fundo e composição) then (keep · transparent · white · solid)
+  :F1;
+else (studio:<id> · shadow · ghostMannequin)
+  :F2 · Vitrine (reuso de StudioPipeline.BACKDROPS,\nGhostMannequin, StudioFraming);
+endif
+:10 · Saída — renditions[] por destino (card-1x1,\ncard-4x5, sale-2000…), Lanczos, sRGB, sem metadados;
+:Classe declarada = a MAIOR entre os estágios usados\n(somar uma operação nunca baixa a classe);
+:Servidor confere: colorDrift (ΔE00) e família de cor\n→ pode subir para F3 (nunca descer);
+stop
+@enduml

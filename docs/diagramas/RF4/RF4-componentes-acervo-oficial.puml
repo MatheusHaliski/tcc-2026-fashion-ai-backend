@@ -1,0 +1,82 @@
+@startuml RF4_Componentes_Acervo_Oficial
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de componentes — acervo oficial em escala: sites oficiais → coletor CLI → JSONL → importação idempotente → MySQL → busca
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam artifact {
+  BackgroundColor #FFFFFF
+  BorderColor #4A4852
+}
+
+cloud "Sites oficiais das marcas\n(OFFICIAL_BRAND · OFFICIAL_STORE ·\nAUTHORIZED_RETAILER: robots.txt, Crawl-delay,\nsitemaps de produto, JSON-LD, og:image)" as WEB
+cloud "Servidores de imagem das lojas\n(STORE_IMAGE_HOSTS; foto só por URL)" as CDN
+
+package "data/catalog" {
+  artifact "brands.json · aliases.json" as BR
+  artifact "collected/<marca>.jsonl\n+ .state/<marca>.visited" as JL
+  artifact "acervo/acervo-oficial-2026-10-05.jsonl.gz\n(9.573 produtos)" as ACV
+}
+artifact "fai-application/src/main/resources/\ncatalog/normalization.json\n(lido pelo Java e pelo Python)" as NJ
+
+package "scripts/catalog · coleta (Python CLI)" {
+  [collect_official.py\nrun · collect_brand · make_fetch\nofficial_sources · ascii_url] as COL
+  [providers/official_sitemap.py\nSite · Politeness · StopDomain\nproduct_urls · structured_product\nto_catalog_item · product_images · brand_cdn_ok] as OSM
+  [recheck_collected.py · enrich_images.py] as REV
+}
+
+package "scripts/catalog · carga (Python)" {
+  [import_railway.sh\n1/3 seed → 2/3 acervo → 3/3 índice] as RWS
+  [seed_catalog.py] as SEED
+  [import_products.py\n(read_items)] as IMP
+  [ingest.py · Ingestor\n(+ deduplicate.py · validate_source.py\n· normalize_product.py)] as ING
+  [rebuild_search_index.py\nrevalidate_catalog.py] as IDX
+  [db.py (connect · transaction, TLS)] as DBPY
+}
+
+node "Railway (produção)" {
+  [TCP proxy temporário\n(removido ao fim)] as PROXY
+  database "MySQL fashionai (fai_app, só TLS)\n• brands · brand_aliases · catalog_sources\n• catalog_products (dedup_key UNIQUE,\n  FULLTEXT ngram search_text, design_json)\n• catalog_product_aliases · catalog_variants\n• catalog_images · catalog_ingestion_runs" as DB
+}
+
+package "API Spring (ver RF4-componentes e RF4-classes-catalogo)" {
+  [CatalogController → CatalogService\n(pool priorizado + CatalogMatchScorer)\n→ CatalogProductRepository] as API
+}
+[pieces/new · catalog-search.tsx] as FE
+
+COL --> BR : lê fontes oficiais
+COL --> OSM
+COL --> JL : grava + visited
+OSM --> WEB : GET robots, sitemaps, páginas\n(403/429 → StopDomain)
+OSM ..> CDN : brand_cdn_ok (só a URL)
+OSM ..> NJ : via normalize_product
+REV --> JL : recheck · enrich_file
+REV --> OSM
+JL ..> ACV : consolidado
+RWS --> SEED
+RWS --> IMP
+RWS --> IDX
+SEED --> BR
+SEED --> ING
+IMP --> ACV : lê
+IMP --> ING : ingest() por produto
+ING ..> NJ : dedup_key
+ING --> DBPY
+IDX --> DBPY
+IDX ..> WEB : HEAD (revalidate)
+DBPY --> PROXY : TCP + TLS
+PROXY --> DB
+FE --> API : GET /api/catalog/search
+API --> DB : MATCH(search_text) AGAINST
+FE ..> CDN : exibe a foto oficial
+@enduml

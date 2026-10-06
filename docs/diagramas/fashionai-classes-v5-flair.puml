@@ -1,0 +1,163 @@
+@startuml FashionAI_Classes_v5_Flair
+title FashionAI — Visão global do domínio (v5)\nDiagrama de classes — FLAIR, o jogo de cartas de moda (RF37) · entidades JPA de fai-domain, Flyway V1–V42
+!pragma layout smetana
+set separator none
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam note {
+  BackgroundColor #FFFBEA
+  BorderColor #B8A86A
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "Jogador e partidas" {
+class FlairProfile << (V,#C9B8F0) flair_profiles >> {
+  +user: User
+  +coins: int
+  +rankPoints: int
+  +wins: int
+  +losses: int
+  +draws: int
+  +activeSkin: String
+  .. +1 campos ..
+}
+class FlairCoinEntry << (V,#C9B8F0) flair_coin_entries >> {
+  +user: User
+  +delta: int
+  +reason: String
+  +ref: String
+}
+class FlairMatch << (V,#C9B8F0) flair_matches >> {
+  +mode: String
+  +status: String
+  +theme: String
+  +playDate: LocalDate
+  +createdByUser: User
+  +teamAId: UUID
+  +teamBId: UUID
+  +winnerSide: String
+  +resultJson: String
+}
+class FlairMatchEntry << (V,#C9B8F0) flair_match_entries >> {
+  +match: FlairMatch
+  +user: User
+  +scheme: Scheme
+  +side: String
+  +deckPower: int
+  +score: BigDecimal
+  +brandPiecesJson: String
+}
+class FlairModeState << (V,#C9B8F0) flair_mode_states >> {
+  +user: User
+  +mode: String
+  +seasonKey: String
+  +stateJson: String
+}
+class FlairTrophy << (V,#C9B8F0) flair_trophies >> {
+  +user: User
+  +mode: String
+  +title: String
+  +seasonKey: String
+  +detailJson: String
+}
+}
+package "Equipes e territórios" {
+class FlairTeam << (V,#C9B8F0) flair_teams >> {
+  +name: String
+  +code: String
+  +owner: User
+  +color: String
+  +points: int
+}
+class FlairTeamMember << (V,#C9B8F0) flair_team_members >> {
+  +team: FlairTeam
+  +user: User
+  +role: String
+}
+class FlairTerritory << (V,#C9B8F0) flair_territories >> {
+  +mapCode: String
+  +territoryCode: String
+  +owner: User
+  +defenderJson: String
+  +capturedAt: Instant
+  +defenses: int
+}
+}
+package "Combinações das lojas e cupons" {
+class FlairCombination << (V,#C9B8F0) flair_combinations >> {
+  +brand: User
+  +name: String
+  +gameType: String
+  +requiredCategoriesJson: String
+  +minBrandPieces: int
+  +minDeckPower: int
+  +minRarity: String
+  +minWins: int
+  +couponTitle: String
+  +discountPercent: Integer
+  +stock: Integer
+  +redeemed: int
+  +active: boolean
+  +startsAt: Instant
+  +endsAt: Instant
+  .. +8 campos ..
+}
+class FlairRedemption << (V,#C9B8F0) flair_redemptions >> {
+  +combination: FlairCombination
+  +user: User
+  +scheme: Scheme
+  +code: String
+  +status: String
+  +deckPower: Integer
+  +expiresAt: Instant
+  +usedAt: Instant
+}
+}
+package "Referências a outras áreas" #FAFAFA {
+class User <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class Scheme <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+}
+
+' --- associações JPA (geradas do código) ---
+FlairProfile "*" --> "1" User : user
+FlairCoinEntry "*" --> "1" User : user
+FlairMatch "*" --> "1" User : createdByUser
+FlairMatchEntry "*" --> "1" FlairMatch : match
+FlairMatchEntry "*" --> "0..1" User : user
+FlairMatchEntry "*" --> "0..1" Scheme : scheme
+FlairModeState "*" --> "1" User : user
+FlairTrophy "*" --> "1" User : user
+FlairTeam "*" --> "1" User : owner
+FlairTeamMember "*" --> "1" FlairTeam : team
+FlairTeamMember "*" --> "1" User : user
+FlairTerritory "*" --> "0..1" User : owner
+FlairCombination "*" --> "1" User : brand
+FlairRedemption "*" --> "1" FlairCombination : combination
+FlairRedemption "*" --> "1" User : user
+FlairRedemption "*" --> "0..1" Scheme : scheme
+' --- referências por id, sem FK JPA ---
+FlairMatch ..> FlairTeam : teamAId / teamBId
+note "Os modos, status e lados são texto (String):\nduelo 1×1, batalha de ocasião do dia (lado SOLO),\nduelo de equipes 3×3, treino contra a Casa;\nmodos de temporada guardam o estado em stateJson." as N_MODE
+N_MODE .. FlairMatch
+note "(motivo, referência) única por usuário:\na recompensa não é paga duas vezes." as N_COIN
+N_COIN .. FlairCoinEntry
+note "Um cupom por pessoa e combinação;\nbrand = conta da marca/celebridade dona." as N_RED
+N_RED .. FlairRedemption
+legend right
+  <b>Letra do ícone</b>
+  V = estende VersionedAuditableEntity (id UUID, createdAt/updatedAt, createdBy/lastModifiedBy, @Version)
+  A = estende AuditableEntity (id UUID e auditoria, sem @Version)
+  S = @Entity sem superclasse (id e datas próprios) · M = @Embeddable (colunas embutidas na tabela dona)
+  E = enum
+  ⟶ seta cheia = associação JPA (@ManyToOne/@OneToOne) · seta tracejada = id guardado sem FK JPA
+  <<outra área>> = classe detalhada em outro diagrama v5
+endlegend
+@enduml

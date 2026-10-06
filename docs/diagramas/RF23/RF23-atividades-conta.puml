@@ -1,0 +1,114 @@
+@startuml RF23_Atividades_Conta
+title RF23 — Telas de configuração (Conta, Privacidade, Aparência, Idioma, Seus dados) com i18n\nDiagrama de atividades — aba Conta: vitrine do perfil, @, foto e capa (sem reautenticação, CA03/CA04)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre a aba Conta (EditProfileForm);
+if (O que muda?) then (foto de perfil ou capa)
+  :Escolhe o arquivo;
+  |Frontend|
+  :POST /api/me/avatar ou /api/me/cover (multipart);
+  |API|
+  if (Arquivo aceito?) then (sim)
+    :Ajusta a 512×512 (capa 1600×900) e gera JPEG;
+    :MediaService.put em users/{id}/profile/…
+    e registra Photo (origem PROFILE);
+    :users.avatar_url ou cover_url = nova URL;
+    |Frontend|
+    :refreshMe; mostra a nova imagem;
+  else (não)
+    #FFE3E3:400 ARQUIVO_VAZIO · ARQUIVO_GRANDE (> 10 MB)
+    · FORMATO_INVALIDO;
+  endif
+elseif (girar a foto) then
+  |Frontend|
+  :POST /api/me/avatar/rotate?degrees=90;
+  |API|
+  if (Tem foto própria e o ângulo é múltiplo de 90?) then (sim)
+    :Gira, salva nova versão e audita ALTERACAO_PERFIL;
+  else (não)
+    #FFE3E3:400 SEM_FOTO · ROTACAO_INVALIDA;
+  endif
+else (nome, @, pronomes, bio, links, sexo)
+  |Pessoa|
+  :Edita os campos;
+  if (Mudou o @?) then (sim)
+    |Frontend|
+    :Espera 350 ms e consulta
+    GET /api/usernames/{username}/availability;
+    :Mostra "disponível" ou sugestões;
+  else (não)
+  endif
+  |Pessoa|
+  :Clica em Salvar;
+  |Frontend|
+  if (@ diferente do atual?) then (sim)
+    :PUT /api/me/username;
+    |API|
+    if (E-mail confirmado e conta não suspensa?) then (não)
+      #FFE3E3:403 EMAIL_NAO_CONFIRMADO · CONTA_SUSPENSA;
+      stop
+    else (sim)
+    endif
+    if (@ normalizado tem 3+ caracteres?) then (não)
+      #FFE3E3:400 USERNAME_INVALIDO;
+      stop
+    elseif (Reservado?) then (sim)
+      #FFE3E3:400 USERNAME_RESERVADO + suggestions;
+      stop
+    elseif (Já em uso por outra pessoa?) then (sim)
+      #FFE3E3:400 USERNAME_EM_USO + suggestions (CA04);
+      stop
+    else (livre)
+      :Grava users.username
+      e audita ALTERACAO_PERFIL;
+    endif
+  else (não)
+  endif
+  |Frontend|
+  :PATCH /api/me/profile
+  {displayName, pronouns, bio, links, sex};
+  |API|
+  if (Campos válidos?) then (sim)
+    :Grava em users (sexo também vai para
+    user_preferences.mannequin_sex);
+    :Audita ALTERACAO_PERFIL e devolve UserCard;
+    |Frontend|
+    :refreshMe; aviso "perfil salvo";
+  else (não)
+    #FFE3E3:400 CAMPO_INVALIDO (nome 2–80) · CONTEUDO_BLOQUEADO
+    · LINKS_DEMAIS (> 5) · LINK_INVALIDO (só http/https)
+    · PAIS_INVALIDO (ISO de 2 letras);
+  endif
+endif
+note right
+  A mesma aba também liga "desfilar meu Look do Dia"
+  (runwayOptOut) e o país, pelo mesmo
+  PATCH /api/me/profile.
+  E-mail, telefone, nascimento, 2FA e senha
+  ficam no RF3 e pedem a senha.
+end note
+stop
+@enduml

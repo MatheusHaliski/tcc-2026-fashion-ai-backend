@@ -57,7 +57,7 @@ repeat :Para cada look com vínculo aprovado;
 repeat while (Mais looks?) is (sim)
 ->não;
 if (Qual aba?) then (destaques)
-  :Ordem padrão: HypeScore v2 do look (só AVAILABLE e\npublicEligible para terceiros; sem Hype no fim) e,\nno empate, emissão mais recente;
+  :Ordem padrão: HypeScore v2 do look (só AVAILABLE e\npublicEligible para terceiros, sem Hype no fim) e,\nno empate, emissão mais recente;
 else (consagrados)
   :Ordem padrão: emissão mais recente\n(inclui expirados e em revalidação, marcados);
 endif
@@ -70,7 +70,7 @@ if (Peças em destaque?) then (sim)
   repeat :Para cada peça dos looks promovidos;
     if (displayable(peça)? não arquivada, moderação APPROVED,\nautor ativo e visível para quem vê) then (sim)
       if (covers(vínculo, peça)? selo LOOK cobre todas;\nselo PECA só as linkedPieceIds (lista vazia = todas)) then (sim)
-        :Entra com os selos que a cobrem\n(peça repetida junta os selos; até 60);
+        :Entra com os selos que a cobrem\n(peça repetida junta os selos, até 60 peças);
       else (não)
       endif
     else (não)

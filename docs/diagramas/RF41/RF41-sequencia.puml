@@ -1,5 +1,5 @@
 @startuml RF41_Sequencia
-title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de sequência — endpoints reais
+title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de sequência — jogos: a ponte única FaiPointsService.game() (duelo, modos, times, Arena, quest, Desafio)
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,55 +8,71 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor "Usuário" as U
-participant "Frontend\nflair / schemes / pieces" as FE
-participant "FlairController" as FC
-participant "FlairService" as FS
-participant "SchemeController → SchemeService /\nWardrobeController → WardrobeService" as CS
-participant "WardrobeEventListeners" as WL
+actor "Pessoa" as U
+participant "flair/page.tsx\n+ components/flair/modes-shared.tsx" as FE
+participant "FlairController\n· FlairModesController" as FC
+participant "FlairService\n· FlairModesService" as FS
+participant "ChallengeController\n→ ChallengeService" as CS
 participant "FaiPointsService" as FP
-participant "RoomService\n(RoomLayoutAccess)" as RS
 participant "NotificationService" as NS
-participant "HighlightsController" as HC
-participant "Frontend\npoints" as FEP
 database "MySQL" as DB
-== Jogos ==
-U -> FE: Duelar contra @usuário ou a Casa
+
+== Duelo 1×1 (vale também para os 15 modos) ==
+U -> FE: escolhe o deck (look) e o rival: @usuário ou a Casa
 FE -> FC: POST /api/flair/duels {schemeId, opponent}
 FC -> FS: duel(user, schemeId, opponent)
-FS -> DB: INSERT partida + FLAIR Coins
-FS -> FP: game(userId, "FLAIR_DUEL", matchId, outcome)
-FP -> FP: award(GAME_PLAYED, ref FLAIR_DUEL:matchId)
+FS -> DB: INSERT flair_matches · flair_coin_entries (FLAIR Coins)\nUPDATE flair_profiles (vitórias, coins, rank)
+FS -> FP: game(userId, "FLAIR_DUEL", matchId, WIN | DRAW | LOSS)
+FP -> FP: award(GAME_PLAYED, "GAME", "FLAIR_DUEL:matchId")
+FP -> DB: regra ativa? chave userId:GAME_PLAYED:FLAIR_DUEL:matchId existe?\ncontagem de hoje < 6?
+alt paga
+  FP -> DB: INSERT fai_points_ledger (+5)
+  FP -> NS: notify(FAI_POINTS, "+5 FAI Points")
+else já pontuada ou teto do dia
+  FP -> FP: Award(granted = false) → 0
+end
 opt outcome = WIN
-  FP -> FP: award(GAME_WON, mesma ref)
+  FP -> FP: award(GAME_WON, mesma ref) → +10 (teto 4/dia)
 end
-FP --> FS: pontos lançados agora (0 se repetido ou no teto)
-FS --> FE: 200 {outcome, coins, faiPoints}
-FE -> U: selo "+N FAI Pts"
-note over FC, FS: o mesmo game() é chamado por POST /api/flair/arena,\nPOST /api/flair/teams/battles, /api/flair/modes/* (FlairModesService)\ne POST /api/challenges/{id}/entries (ChallengeService.submitEntry)
-== Criações ==
-U -> FE: Salvar novo esquema / cadastrar peça
-FE -> CS: POST /api/schemes · POST /api/pieces
-CS ->> WL: SchemeSaved / PieceCreated (AFTER_COMMIT)
-WL -> FP: award(SCHEME_CREATED | PIECE_CATALOGED, ...)
-== award() ==
-FP -> DB: SELECT fai_points_rules WHERE action_code
-FP -> DB: existsByIdempotencyKey(usuário:ação:ref)
-FP -> DB: countByUserIdAndActionCodeAndCreatedAtAfter (teto)
-alt sem regra / já pontuado / teto atingido
-  FP --> WL: Award(granted=false)
-else paga
-  FP -> DB: INSERT fai_points_ledger
-  opt subiu de nível
-    FP -> RS: setLevel(userId, level)
-    RS -> DB: UPDATE room_layouts.level
-    FP -> NS: notify(ROOM_LEVEL_UP)
+FP --> FS: pontos lançados agora (0, 5 ou 15)
+FS --> FE: 200 {outcome, coins, …, faiPoints}
+FE --> U: Badge "+N FAI Pts" ao lado das FLAIR Coins
+note over FC, FS
+  POST /api/flair/modes/* → FlairModesService.finish → game("FLAIR_<MODO>", matchId, resultado);
+  a resposta também traz coins, rewardCapReached e faiPoints (modes-shared.tsx mostra o selo).
+end note
+
+== Duelo de times 3×3 ==
+U -> FE: Desafiar time
+FE -> FC: POST /api/flair/teams/battles {code}
+FC -> FS: teamBattle(user, code)
+FS -> FP: game(userId, "FLAIR_TEAM", matchId, WIN ou PLAYED)
+opt um time venceu
+  loop cada membro do time vencedor
+    FS -> FP: award(membro, GAME_WON, "GAME", "FLAIR_TEAM:matchId")
   end
+  note right of FP: para quem disparou e venceu,\na mesma chave já existe: paga 1×
 end
-== Consulta ==
-U -> FEP: Abre Pontos
-FEP -> HC: GET /api/me/points
-HC -> FP: account(user)
-FP -> DB: balance / lifetime / extrato / regras
-FP --> FEP: 200 {balance, lifetime, level, nextLevel, levels, ledger, rules}
+FS --> FE: {teamA, teamB, duels, winner, faiPoints}
+
+== Arena do dia e quests (sem selo na tela) ==
+U -> FE: inscreve o deck do dia
+FE -> FC: POST /api/flair/arena {schemeId}
+FC -> FS: joinArena → 409 JA_NA_ARENA se já inscreveu hoje
+FS -> FP: game(userId, "FLAIR_ARENA", data, null)
+FS --> FE: arena(user) — sem faiPoints na resposta
+U -> FE: resgata uma quest concluída
+FE -> FC: POST /api/flair/quests/{code}/claim
+FC -> FS: claimQuest → 409 QUEST_INCOMPLETA / QUEST_JA_RESGATADA
+FS -> FP: award(userId, FLAIR_QUEST, "QUEST", "QUEST_<code>:<período>") (+10, 3/dia)
+
+== Desafios (RF32) ==
+U -> FE: inscreve um look no desafio (challenges/[id]/page.tsx)
+FE -> CS: POST /api/challenges/{id}/entries {schemeId}
+CS -> FP: game(userId, "CHALLENGE", desafioId, null) — 1× por desafio
+CS -> FP: (no fim) award(userId, CHALLENGE_COMPLETED, "CHALLENGE", desafioId, rewardPoints × progresso)
+note right of FE
+  <<planejado>> selo "+N FAI Pts" na Arena e na
+  inscrição em Desafio (hoje só no extrato).
+end note
 @enduml

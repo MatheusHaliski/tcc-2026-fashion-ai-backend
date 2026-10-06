@@ -1,0 +1,102 @@
+@startuml RF15_Atividades_Planejado
+title RF15 — Editar uma fotografia de uma peça de roupa através de um Editor Canvas Interativo 2D\nDiagrama de atividades — <<planejado>> editor não destrutivo: modo guiado, coach, classe de fidelidade medida e versões
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F2F2F2
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+|Pessoa|
+|Editor (navegador) <<planejado>>|
+|API /api/edit/* <<planejado>>|
+|Banco/Storage/IA|
+|Pessoa|
+start
+note right
+  Todo este diagrama é PLANO
+  (docs/novos-rf/RF15_Editor_de_Fotografias.md,
+  Fases 0–3). Nada daqui existe no código.
+end note
+:Entrada da foto:\nE1 cadastro (RF4, "Adicionar minha foto — opcional")\nE2 página da peça · E3 look (modo Look)\nE4 Minhas Fotos · E5 Lens "Eu tenho";
+|Editor (navegador) <<planejado>>|
+:Upload seguro: tipo real (ImageOps), limites de\ndecodificação, EXIF/GPS removidos, moderação;
+:Original vira F0 (imutável); proxy ≤ 4096 px;\nreceita EditRecipe (schema fai-photo-edit/1);
+if (Já existe versão ativa?) then (sim, E2)
+  :Abre a RECEITA da versão ativa\nsobre a original (não os pixels gravados);
+else (não)
+endif
+:Modo guiado (cada etapa com "Pular"):\n1 Enquadrar (preset do destino + template da categoria,\nzonas seguras) → 2 Luz e cor (automático fiel +\nconta-gotas neutro) → 3 Fundo (manter · remover ·\nbranco · estúdio) → 4 Revisar (antes × depois);
+note right
+  Modo avançado por divulgação progressiva.
+  Sem ferramenta de corpo (liquify, afinar)
+  nem no modo Look; lá só borrar rosto e fundo.
+end note
+repeat
+  |Pessoa|
+  :Ajusta um controle ou aplica uma sugestão;
+  |Editor (navegador) <<planejado>>|
+  :Comando do/undo sobre a receita (arrasto = 1 passo);\nrenderizador WebGL2 em Web Worker na ORDEM FIXA\n(ver RF15-atividades-pipeline; fallback Canvas 2D);
+  :Coach de qualidade (debounce 250 ms): até 3 orientações\ncom correção de um toque (sharpness, exposure, tilt,\nkeystone, colorCast, coverage, noise, resolution,\nmoire_risk, colorDrift) — nunca bloqueia salvar;
+  :Rascunho automático a cada 2 s (IndexedDB e,\ncom rede, versão DRAFT no servidor);
+  |Pessoa|
+repeat while (Continua ajustando?) is (sim) not (não)
+:"Usar esta foto" (salvar);
+|Editor (navegador) <<planejado>>|
+:Exporta o render final (tiles) + receita + baseRev;
+|API /api/edit/* <<planejado>>|
+:POST /api/edit/{ownerType}/{ownerId}/versions\n(ImageEditService);
+if (baseRev desatualizado?) then (sim)
+  #FFE3E3:409 — "editada em outro dispositivo"\n[Ver a mais nova] [Salvar como outra versão];
+  stop
+endif
+:Classe pelas operações da receita (F1 Fiel · F2 Vitrine ·\nF3 Criativa — a maior entre as usadas);
+|Banco/Storage/IA|
+:Mede no servidor, dentro da máscara da peça:\ncores dominantes (k-means CIELAB) e colorDrift =\nΔE00 ponderado contra a original ou o estado calibrado;
+|API /api/edit/* <<planejado>>|
+if (colorDrift) then (≤ 3 e mesma família)
+  :Mantém a classe das operações;
+elseif (3 < ΔE ≤ 8, sem calibração)
+  :Aviso "A cor mudou bastante. É assim ao vivo?"\n→ POST /api/edit/versions/{id}/confirm-color\n(colorConfirmedByOwner) ou desfazer cor;
+else (> 8 ou família mudou, sem calibração)
+  :Versão vira F3 · Criativa\n(mesmo que o cliente declare F1);
+endif
+:QualityMetrics da versão + CONTENT_MODERATOR;
+|Banco/Storage/IA|
+:INSERT image_edit_versions (recipe_json, fidelity_class,\ncolor_drift, quality_json, rendered_url, renditions_json,\nrev, origin USER); chave única por versão — a original\nnunca é sobrescrita;
+|API /api/edit/* <<planejado>>|
+if (Origem da versão?) then (edição da pessoa)
+  if (Peça à venda/para doar e versão F3?) then (sim)
+    #FFE3E3:Ativação recusada (CA10): a versão fica\nsalva, e a 1ª imagem tem de ser F1/F2;
+  else (não)
+    :status ACTIVE; wardrobe_items.active_edit_version_id\n(ou schemes.cover_edit_version_id); image_url derivada;
+  endif
+else (sistema: estúdio refeito, lote, IA)
+  :status PENDING_REVIEW — a ativa não muda\naté a dona aprovar (/approve · /discard);
+endif
+|Pessoa|
+:Vê a peça com a versão ativa e o rótulo\n"Imagem criativa" quando for F3;
+note right
+  Editar não gera sinal de Hype, pontos nem muda
+  selos/ranking (CA15). F3 fica fora de busca,
+  Lens, selos, catálogo e perfis institucionais.
+end note
+stop
+@enduml

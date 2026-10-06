@@ -1,0 +1,59 @@
+@startuml RF39_MaquinaDeEstados_ItensUnicos
+!pragma layout smetana
+title RF39 — Criar guarda-roupa 3D com a identidade de uma marca/celebridade e vender na loja do quarto\nDiagrama de máquina de estados — item único: edição limitada (room_catalog) e unidade do comprador (room_inventory) (absorve o antigo RF44)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+state "Edição do item (RoomCatalogItem com stockLimit)" as Edicao {
+  state "À venda\n(active, soldCount < stockLimit)" as AVenda
+  state "Esgotada\n(soldCount = stockLimit)" as Esgotada
+  state "Fora da vitrine\n(criador pendente ou suspenso:\nsellerActive = false)" as ForaVitrine
+  state "Retirada\n(active = false)" as Retirada
+  [*] --> AVenda : POST /api/room-creator/items\n(soldCount = 0)
+  AVenda --> AVenda : compra: soldCount + 1\n(serial = soldCount)
+  AVenda --> Esgotada : compra da última unidade
+  Esgotada --> AVenda : PUT …/items/{sku}\ncom estoque maior
+  AVenda --> ForaVitrine : conta do criador deixa de ser ACTIVE
+  ForaVitrine --> AVenda : conta volta a ACTIVE
+  AVenda --> Retirada : PUT {active: false}\nou DELETE com vendas
+  Esgotada --> Retirada : DELETE (já tem vendas)
+  Retirada --> AVenda : PUT {active: true}
+  AVenda --> [*] : DELETE sem vendas\n(linha apagada)
+}
+
+state "Unidade do comprador (RoomInventoryItem)" as Unidade {
+  state "Na caixa de entrega\n(appliedModule = null)" as Caixa
+  state "Montada\n(appliedModule = <moduleId> ou ALL)" as Montada
+  [*] --> Caixa : buy(): INSERT room_inventory\n(source PURCHASE, serial)
+  Caixa --> Montada : POST /api/me/room-inventory/{id}/apply\n(caixa do Meu Quarto ou "Montar" na loja)
+  Montada --> Montada : apply em outro módulo compatível
+  Caixa --> Caixa : apply incompatível\n(409 ENCAIXE_INCOMPATIVEL)
+}
+
+AVenda --> Caixa : compra aprovada\n(nível, estoque, blocker e saldo ok)
+
+note right of AVenda
+  A compra também precisa de: janela aberta
+  (nem EM_BREVE nem EXPIRADO), unidades do
+  comprador < perUserLimit e, com requiresSeal,
+  SealBond APPROVED não vencido com a marca.
+  A janela completa está em RF39_MaquinaDeEstados_ItemDaLoja.
+end note
+note bottom of Unidade
+  A unidade nunca é apagada quando a edição
+  esgota, expira, sai da vitrine ou é retirada:
+  quem comprou continua com ela no quarto.
+  Montar outra unidade no mesmo módulo troca o
+  acabamento do módulo, sem mudar esta unidade.
+end note
+@enduml

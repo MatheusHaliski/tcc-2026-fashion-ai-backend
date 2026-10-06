@@ -37,6 +37,7 @@ if (Regra ativa, chave nova e abaixo dos tetos?) then (sim)
     :Notificação ROOM_LEVEL_UP ("Seu quarto evoluiu");
   endif
 else (não)
+  |Serviço (FaiPointsService)|
   :Não lança (sem regra, já pontuado ou no teto);\na ação da pessoa segue normalmente;
 endif
 |Pessoa|
@@ -48,13 +49,16 @@ endif
 |Pessoa|
 if (Provar antes?) then (sim)
   |Frontend (points/page.tsx · RoomStore)|
-  :POST /api/points/shop/{sku}/try-on;
-  if (Cabe em algum módulo do nível?) then (sim)
-    :Aviso "Prévia em Porta 1 — nada foi comprado"\n(saldo intacto);
-  else (não)
+  :POST /api/points/shop/{sku}/try-on {} (sem módulo);
+  |Serviço (FaiPointsService)|
+  :tryOn(): escolhe o 1º módulo compatível\n(compatibleModules do nível atual);
+  if (Veio moduleId que não cabe?) then (sim)
     #FFE3E3:409 ENCAIXE_INCOMPATIVEL;
+  else (não)
+    |Frontend (points/page.tsx · RoomStore)|
+    :Aviso "Prévia em Porta 1 — nada foi comprado"\n(saldo intacto, nada gravado);
+    note right: a tela manda {} e a prévia vira só aviso;\nnão é aplicada na cena 3D
   endif
-  note right: a prévia não é aplicada na cena 3D; só vira aviso
 endif
 |Frontend (points/page.tsx · RoomStore)|
 :Comprar → POST /api/points/shop/{sku}/purchase;
@@ -86,6 +90,7 @@ if (Item é da pessoa e o módulo é compatível?) then (sim)
   :applyFinish(): acabamento no módulo\n(guarda-roupa inteiro: em todos os blocos do tipo, "ALL");
   :appliedModule gravado; quarto recarrega com o acabamento;
 else (não)
+  |Serviço (FaiPointsService)|
   #FFE3E3:403 item de outro usuário\nou 409 ENCAIXE_INCOMPATIVEL;
 endif
 stop

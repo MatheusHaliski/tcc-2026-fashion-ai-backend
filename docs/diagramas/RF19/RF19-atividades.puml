@@ -1,5 +1,5 @@
 @startuml RF19_Atividades
-title RF19 — Interagir socialmente com esquemas e peças: reagir, comentar, salvar, compartilhar, remixar e retornar\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF19 — Interagir socialmente com esquemas e peças\nDiagrama de atividades — reagir, comentar, salvar e compartilhar, com notificação ao autor, pontos e sinais do HypeScore v2
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,106 +25,82 @@ skinparam note {
 }
 |Pessoa|
 start
-:Vê o card de um esquema ou peça\n(feed, /schemes/[id], /pieces/[id]);
-note right
-  novo (RF53 · HypeScore v2): abrir o detalhe
-  (GET /api/schemes/{id} · GET /api/pieces/{id})
-  logado e sem ser dono publica HypeSignal
-  LOOK_VIEWED (SchemeService) / PIECE_VIEWED (WardrobeService)
-end note
-|Frontend (CardActions)|
-:GET /api/interactions/{type}/{id}/counters;
-|Backend (SocialService)|
-:target(): visibilidade efetiva, bloqueio (Guard)\ne moderação da peça — quem não vê não interage;
-note right: TargetType SCHEME · PIECE · DNA\n(CA10 — peça com contadores próprios)
+:Vê um look, peça ou DNA (feed, detalhe,\nperfil, Looks Salvos);
+|Frontend|
+:CardActions (components/interactions.tsx):\ncurtir · comentar · compartilhar · reações\n· remixar (só no detalhe e nunca no próprio post) · salvar;
+if (Sem login?) then (sim)
+  :router.push(/login);
+  stop
+endif
 |Pessoa|
+:Escolhe a interação;
+|API (SocialService)|
+:guard.requireCanCreate: e-mail confirmado,\nconta não suspensa nem com exclusão agendada (403);
+:target(type, id): SCHEME · PIECE · DNA — visibilidade efetiva\n(conteúdo × perfil), bloqueio em qualquer direção (Guard)\ne peça aprovada na moderação (senão 404/403);
 if (Interação?) then (reagir)
-  |Frontend (CardActions)|
-  :POST .../reactions {reaction: LIKE|TREND|ELEGANTE|CRIATIVO};
-  |Backend (SocialService)|
-  if (Já existe a mesma reação do ator?) then (sim)
-    :Remove — nunca há curtida dupla (CA02);
+  :POST …/reactions {LIKE · TREND · ELEGANTE · CRIATIVO};
+  if (Mesma reação do mesmo ator já existe?) then (sim)
+    :Apaga a Reaction (nunca há curtida dupla);\nLIKE: likeCount − 1;
   else (não)
-    :Grava Reaction e bump("likes") se LIKE (CA01/CA03);
-    :notify(NEW_LIKE | NEW_REACTION) + InteractionReceived;
-    :Se LIKE: publica HypeSignal(LIKE_CREATED) <<RF53>>;
+    :INSERT reactions (uq_reactions_actor_target);\nLIKE: likeCount + 1 e CounterStorePort;
+    :notify NEW_LIKE (LIKE) ou NEW_REACTION (demais);
+    :LIKE: InteractionReceived(LIKE) + HypeSignal(LIKE_CREATED);\nTREND · ELEGANTE · CRIATIVO só contam (sem pontos nem Hype);
   endif
-elseif (comentar) then
-  |Frontend (CardActions)|
-  :POST .../comments {content, parentId};
-  |Backend (SocialService)|
-  if (Vazio, > 500 chars ou ofensivo?) then (sim)
-    #FFE3E3:400 COMENTARIO_VAZIO / COMENTARIO_LONGO /\nCONTEUDO_BLOQUEADO (CA06);
+elseif () then (comentar)
+  :POST …/comments {content, parentId};
+  if (Vazio · mais de 500 caracteres · ofensivo?) then (sim)
+    #FFE3E3:400 COMENTARIO_VAZIO · COMENTARIO_LONGO\n· CONTEUDO_BLOQUEADO;
     stop
-  else (não)
-    :Grava Comment (active=true), bump("comments");
-    :notify(NEW_COMMENT) (CA04);
-    :publica HypeSignal(COMMENT_CREATED) <<RF53>>;
   endif
-elseif (excluir comentário) then
-  |Frontend (CardActions)|
+  :INSERT comments (active = true); commentCount + 1;
+  :notify NEW_COMMENT + InteractionReceived(COMMENT)\n+ HypeSignal(COMMENT_CREATED);
+elseif () then (excluir comentário)
   :DELETE /api/comments/{commentId};
-  |Backend (SocialService)|
   if (Autor do comentário ou dono do conteúdo?) then (não)
-    #FFE3E3:403 negado e auditado (CA05);
+    #FFE3E3:403 (Guard.deny, ACESSO_NEGADO_403 auditado);
     stop
-  else (sim)
-    :Comment.active=false, bump("comments", -1);
   endif
-elseif (salvar) then
-  |Frontend (CardActions)|
-  :POST .../saves;
-  |Backend (SocialService)|
-  :toggleSave: cria/remove SavedItem\nnos Looks Salvos (CA07);
-:Se criou: HypeSignal(SAVE_CREATED);\nPUT .../saves/favorite (true):\nHypeSignal(FAVORITE_CREATED) <<RF53>>;
-elseif (compartilhar) then
-  |Frontend (CardActions)|
-  :POST .../shares {channel: FEED|EXTERNAL, caption};
-  |Backend (SocialService)|
-  if (Conteúdo marcado indisponível?) then (sim)
+  :active = false (exclusão lógica); commentCount − 1;
+elseif () then (salvar)
+  :POST …/saves (alterna);
+  if (Já salvo?) then (sim)
+    :DELETE saved_items; saveCount − 1;
+  else (não)
+    :INSERT saved_items; saveCount + 1;\nHypeSignal(SAVE_CREATED) — sem notificação;
+  endif
+  :Opcional: PUT …/saves/favorite {favorite}\n(true → HypeSignal(FAVORITE_CREATED));
+elseif () then (compartilhar)
+  :POST …/shares {channel FEED · EXTERNAL, caption};
+  if (Conteúdo marcado como indisponível?) then (sim)
     #FFE3E3:409 INDISPONIVEL;
     stop
-  else (não)
   endif
-  if (channel == EXTERNAL?) then (sim)
-    :renderCard() → PNG em shares/{user}/…\n+ link /schemes|/pieces/{id} (CA09);
-  else (FEED)
-    :Share no feed interno (CA08);
+  if (EXTERNAL?) then (sim)
+    :Look: SchemeService.renderCard → PNG em\nshares/{userId}/… (MediaService); peça: imagem dela;\nlink /schemes · /pieces · /dna-schemes/{id};
   endif
-  :bump("shares") + notify;
-:publica HypeSignal(SHARE_CREATED) <<RF53>>;
-elseif (remixar) then
-  |Frontend (useRemix)|
-  :POST .../remixes;
-  |Backend (SocialService)|
-  if (type == SCHEME?) then (sim)
-    :SchemeService.remix(): prefill com itens\nmapeados por similaridade, origin=REMIX,\nremixedFromId=origem (CA13);
-    :Ao salvar o remix (SchemeService.create\ncom originalScheme):\nHypeSignal(LOOK_REMIXED) <<RF53>>;
-  else (PIECE)
-    :bump("remixes") + notify(NEW_REMIX);\nnext=/create-look?seedPiece=;
-    :publica HypeSignal(PIECE_REMIXED) <<RF53>>;
-  endif
-elseif (retornar) then
-  |Frontend (CardActions)|
-  :POST /api/pieces/{pieceId}/return-to-origin?fromScheme=;
-  note right: botão "Retornar" na tela —\nnão implementado — conforme Trello
-  |Backend (SocialService)|
-  :returnToOrigin(): esquema de ORIGEM mais antigo\nvisível que usa a peça (CA14);
+  :INSERT shares; shareCount + 1;\nHypeSignal(SHARE_CREATED) + notify NEW_REACTION {channel};
+else (remixar · retornar)
+  :Ver RF19_Atividades_Remix;
+  stop
 endif
-|Backend (NotificationService)|
-:notify(): grava Notification;\ndelivered = tipo habilitado pelo autor (CA11/CA12);
-note right: tipo desativado contabiliza mas não entrega
-if (HypeSignal publicado?) then (sim)
-  |Backend (HypeSignalRecorder)|
-  :novo (RF53 · HypeScore v2)\n@TransactionalEventListener(AFTER_COMMIT)\nonSignal → SideEffectRunner (REQUIRES_NEW):\nfalha aqui nunca desfaz a interação;
-  :HypeIntegrityPolicy.weight(sinal, dia)\ndedupe hype:dedupe:{sinal}:{entidade}:\n{ator}:{dia} no RenderCachePort (TTL 26 h);
-  if (Visitante, interação do próprio\ndono (exceto ações de dono)\nou repetido no dia?) then (sim)
-    :peso 0 —\ndescartado;
+|API (SocialService)|
+:NotificationService.notify: sem auto-notificação SOCIAL;\ndelivered = tipo habilitado pelo autor (desativado conta,\nmas não entrega nem vai para a projeção Cassandra);
+:Commit da transação → resposta 200/201/204;
+|Eventos e Hype (AFTER_COMMIT)|
+fork
+  :WardrobeEventListeners.onInteraction:\nLIKE_RECEIVED · COMMENT_RECEIVED · REMIX_RECEIVED\n(FAI Points; consigo mesmo não pontua);
+fork again
+  :HypeSignalRecorder.onSignal → SideEffectRunner\n(REQUIRES_NEW; falha só é registrada);
+  :HypeIntegrityPolicy.weight;
+  if (Visitante · ação no próprio item ·\njá contado hoje (dedupe 26 h)?) then (sim)
+    :Peso 0: descartado;
   else (não)
-    :peso 1 (conta com\n< 7 dias: 0,5);
-    :HypeSignalDailyRepository\n.increment → INSERT … ON\nDUPLICATE KEY UPDATE\nhype_signal_daily\n(event_count + 1,\nweighted_count + peso);
+    :Peso 1 (conta com menos de 7 dias: 0,5)\n→ UPSERT hype_signal_daily;
   endif
-else (não)
-endif
+fork again
+  :HypeLiveRecalc.onSignal → markDirty();
+  :tick (a cada 30 s): se sujo e 120 s desde o último,\nHypeSnapshotService.recalculate();
+  :Grava hype_scores e hype_score_snapshots;\nHypeCache.bump() (nova geração);
+end fork
 stop
 @enduml

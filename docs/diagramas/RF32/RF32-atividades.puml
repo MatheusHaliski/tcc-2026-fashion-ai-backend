@@ -1,5 +1,5 @@
 @startuml RF32_Atividades
-title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade ("Desafios")\nDiagrama de atividades
+title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade, através da sub-aba "Desafios"\nDiagrama de atividades — escolher no catálogo, começar (Solo · Equipe · Duelo · Comunidade) e responder convites
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,28 +23,66 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Usuário|
+|Pessoa|
 start
-:Abre "Desafios" → catálogo com elegibilidade;
-:Escolhe modalidade: solo, duelo, grupo ou equipes;
-|Sistema (ChallengeService)|
-:Cria o desafio (rascunho) e convida;
-|Convidados|
-if (Aceitam?) then (sim)
-  :Entram no desafio;
-else (não)
-  :Recusam (criador pode começar mesmo assim);
+:Abre Desafios (/challenges) → aba Catálogo;
+|Frontend (challenges/page.tsx)|
+:GET /api/challenges/catalog (11 modelos ativos:\nregra, duração, esforço, recompensa, modos, "jogando agora",\nregra do Desafio do Dia, tema da Batalha na Passarela)\n+ GET /api/me/challenges (ativos, convites, concluídos);
+|Pessoa|
+:Toca "Começar" e escolhe o modo permitido pelo modelo;
+|Frontend (challenges/page.tsx)|
+:POST /api/challenges {code, mode, params, invitees};
+|Serviço (ChallengeService)|
+:guard.requireCanCreate;
+if (Modo está em modesAllowedJson?) then (não)
+  #FFE3E3:400 MODO_INDISPONIVEL;
+  stop
 endif
-|Usuário|
-repeat
-  :Envia look como entrada\n(só peças do próprio guarda-roupa);
-  :Foto no espelho real como evidência (opcional);
-  |Convidados|
-  :Confirmam evidência, reagem e deixam recados;
-repeat while (Prazo aberto?) is (sim)
-|Comunidade|
-:Vota nas entradas (feed de votação);
-|Sistema (ChallengeService)|
-:Apura resultado, credita FAI Points\ne gera o card de resultado;
+if (mode = COMUNIDADE?) then (sim)
+  :joinCommunity: acha (ou cria) a instância ATIVA\ncompartilhada do período (dia ou semana ISO);
+  :requireSlot (máx. 3 desafios ATIVO/AGUARDANDO)\n→ 409 LIMITE_DESAFIOS;
+  :participant ATIVO + meta pessoal;
+  stop
+endif
+:requireSlot (máx. 3) → senão 409 LIMITE_DESAFIOS;
+:validateParams por modelo (ex.: 10×10 = exatamente 10 peças\ndo próprio acervo; Cápsula = 33; Minha Estação exige cartela)\n→ 400 PECAS_INVALIDAS / 409 SEM_COLORACAO;
+:INSERT challenge_instances (RASCUNHO)\n+ criador como participant ATIVO (meta pessoal);
+if (mode = SOLO?) then (sim)
+  :activate: ATIVO, startsAt = agora,\nendsAt = hoje + durationDays;
+else (EQUIPE ou DUELO)
+  if (Convidou alguém e cabe em maxParticipants?) then (não)
+    #FFE3E3:400 SEM_CONVIDADOS / PARTICIPANTES_DEMAIS;
+    stop
+  endif
+  if (Cada convidado é seguido (ACEITO) ou tem a chave do quarto?) then (não)
+    #FFE3E3:403 "você só pode convidar quem segue";
+    stop
+  endif
+  :AGUARDANDO, acceptDeadline = agora + 48 h\n+ participants CONVIDADO;
+  :NotificationService: CHALLENGE_INVITE\n("convidou você… o convite vale por 48 h");
+  |Convidado|
+  if (Responde?) then (aceita)
+    :POST /api/challenges/{id}/accept {photoConsent};
+    |Serviço (ChallengeService)|
+    if (Ainda AGUARDANDO e dentro das 48 h?) then (não)
+      #FFE3E3:409 CONVITE_EXPIRADO;
+      stop
+    endif
+    :requireSlot → participant ATIVO;
+  else (recusa)
+    |Convidado|
+    :POST /api/challenges/{id}/decline → RECUSOU;
+    |Serviço (ChallengeService)|
+  endif
+  :maybeStartEarly: todos responderam?\naceitos ≥ max(2, minParticipants) → ATIVO,\nsenão → EXPIRADO (sem punição);
+  note right
+    O criador pode "Começar agora"
+    (POST /{id}/start) com o mínimo;
+    o job tick() (a cada 15 min) fecha
+    as 48 h: começa ou expira.
+  end note
+endif
+|Frontend (challenges/page.tsx)|
+:Abre /challenges/{id} (progresso, participantes, mural);
 stop
 @enduml

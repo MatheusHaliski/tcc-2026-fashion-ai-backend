@@ -1,0 +1,97 @@
+@startuml SEG_Classes_Integridade
+title Segurança, integridade e operação (transversal)\nDiagrama de classes — integridade referencial (Flyway V34), origem da conta e do catálogo (V35) e os testes-guarda
+!include _estilo.iuml
+left to right direction
+
+package "fai-infrastructure · persistence-mysql · db.migration" <<Frame>> {
+  class "V34__integridade_referencial_por_dominio" as V34 <<BaseJavaMigration>> {
+    +{static} POLICY : List<Fk> «131 FKs»
+    +canExecuteInTransaction() : boolean = false
+    +migrate(context)
+    +{static} sameRule(current, wanted) : boolean «NO ACTION = RESTRICT»
+    ~{static} existing(conn, schema, fk) : List<String[]>
+    ~{static} problem(conn, schema, fk) : String «órfãos, NOT NULL, tipo/collation»
+  }
+  class "Fk" as Fk <<record>> {
+    table : String
+    column : String
+    refTable : String
+    refColumn : String = "id"
+    onDelete : CASCADE | RESTRICT | SET NULL
+    +constraintName() : String «fkp_<tabela>__<coluna>»
+  }
+  V34 *-- "131" Fk
+}
+
+package "fai-infrastructure · testes (CI)" <<Frame>> {
+  class MigrationVersionsTest <<JUnit>> {
+    cadaVersaoDeMigrationApareceUmaVezSo()
+    «versões SQL + Java, sem repetição»
+  }
+}
+
+package "fai-domain" <<Frame>> {
+  class User <<table users>> {
+    +{static} TEST_PREFIX = "e2e_"
+    +{static} DEMO_PREFIX = "demo_"
+    -accountOrigin : AccountOrigin = REAL
+    -fixtureKey : String «único»
+    -testAccountColumn : Boolean «gerada: só leitura»
+    +isTestAccount() : boolean
+    ~markTestOriginFromUsername() «@PrePersist: e2e_ → TEST_SEED»
+    +{static} isTestUsername(username) : boolean
+  }
+  enum AccountOrigin {
+    REAL
+    TEST_SEED
+    DEMO
+    SYSTEM
+    +isTest() : boolean «TEST_SEED ou DEMO»
+  }
+  class Brand <<table brands>> {
+    -catalogOrigin : CatalogOrigin = REAL
+    -fixtureKey : String «único»
+  }
+  enum CatalogOrigin {
+    REAL
+    SEED
+    DEMO
+  }
+  User --> AccountOrigin
+  Brand --> CatalogOrigin
+}
+
+package "fai-application · ports" <<Frame>> {
+  interface DemoDataAdminPort <<port>> {
+    +integrityProblems(expectedFixtureKeys) : List<String>
+    +deleteTestAccounts(ids) : long
+    «demais operações: dados-demo/DEMO-classes»
+  }
+}
+
+package "fai-infrastructure · persistence-mysql · demo" <<Frame>> {
+  class MysqlDemoDataAdminAdapter {
+    ~TEST_ORIGINS = "account_origin IN ('TEST_SEED','DEMO')"
+    ~edges() : List<Edge> «FKs reais do INFORMATION_SCHEMA»
+    ~{static} deletedRows(edges) : Map<String, String>
+    +integrityProblems(keys) : List<String>
+  }
+}
+
+MysqlDemoDataAdminAdapter ..|> DemoDataAdminPort
+MysqlDemoDataAdminAdapter ..> V34 : POLICY e sameRule\n(desvio da política)
+MigrationVersionsTest ..> V34 : conta a versão 34
+MysqlDemoDataAdminAdapter ..> User : só TEST_SEED/DEMO
+
+note bottom of V34
+  Adiar uma FK nunca quebra a subida: a constraint
+  antiga continua e o motivo vai para o log.
+  Nunca desliga FOREIGN_KEY_CHECKS.
+end note
+note bottom of User
+  V35: test_account virou coluna GERADA
+  (account_origin IN TEST_SEED, DEMO) com índice;
+  CHECK ck_users_account_origin. O javadoc da
+  entidade ainda cita "V30".
+end note
+@enduml

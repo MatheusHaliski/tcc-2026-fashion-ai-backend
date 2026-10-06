@@ -1,5 +1,5 @@
 @startuml RF40_Atividades
-title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba "Meu Avatar 3D", e usá-lo no manequim da Passarela 3D, do Meu Quarto e do Espelho\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF40 — Criar o próprio avatar 3D a partir de fotos (aba "Meu Avatar 3D") e usá-lo no manequim\nDiagrama de atividades — criar, salvar, ajustar e excluir o avatar
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,58 +25,77 @@ skinparam note {
 }
 |Pessoa|
 start
-:Abre a aba Meu Avatar 3D (/avatar);
+:Abre "Meu Avatar 3D" (/avatar, só logada);
 |Frontend (my-avatar.tsx · lib/avatar3d)|
 :GET /api/me/avatar3d;
-if (exists?) then (sim)
-  :Mostra prévia com a textura do servidor,\navisos, interruptor da Passarela, ajustes,\nRefazer e Excluir;
+if (erro ou carregando?) then (erro)
+  #FFE3E3:ErrorState com "tentar de novo";
+  stop
+endif
+if (WebGL disponível?) then (não)
+  :Explica e segue com o manequim padrão (CA11);
+  stop
+endif
+if (exists e não pediu Refazer?) then (sim)
+  :Avatar salvo: prévia (busto ou corpo inteiro, vistas\nfrente, 3/4, perfil, costas), avisos, "Público na Passarela";
 else (não)
-  if (WebGL disponível?) then (não)
-    :Explica e oferece o manequim padrão (CA11);
+  :Usa a foto de perfil como foto do avatar\n(ou a pessoa envia outra);
+  |Pessoa|
+  :Toca "Gerar prévia";
+  |Frontend (my-avatar.tsx · lib/avatar3d)|
+  :analyzePhoto: loadOriented (EXIF, até 1600 px) →\ndetectFace (MediaPipe Face Landmarker, 478 pontos)\n→ pose neutra, pele e cabelo medidos (segmentadores)\n→ sexo do corpo base estimado (face-api);
+  note right
+    Tudo no navegador, com modelos em
+    public/mediapipe: a foto nunca sai do aparelho.
+    Só o modelo (números) e a textura do rosto
+    vão ao servidor.
+  end note
+  if (checkPhoto bloqueia? NO_FACE · MULTIPLE_FACES ·\nFACE_CUT · FACE_SMALL · TOO_DARK · TOO_BRIGHT ·\nDEEP_SHADOWS · SIDE_LIGHT · BLURRY · EYES_CLOSED ·\nLOOK_AT_CAMERA · HEAD_UP_DOWN) then (sim)
+    #FFE3E3:Mostra o motivo e pede outra foto (CA02);
     stop
   endif
-  :Envio guiado: 1 foto de frente (obrigatória)\n+ até 2 de 3/4 (CA01);
-endif
-|Pessoa|
-:Escolhe as fotos (ou a foto de perfil) e toca Gerar prévia;
-|Frontend (my-avatar.tsx · lib/avatar3d)|
-:loadOriented — aplica EXIF de rotação;
-:detectFace — MediaPipe Face Landmarker (478 pontos,\nself-hosted em public/mediapipe); segmentHair;
-note right : A foto nunca sai do aparelho:\nsó o modelo (números) e a textura do rosto\nvão ao servidor.
-if (checkPhoto (quality.ts) bloqueia?\nNO_FACE · MULTIPLE_FACES · FACE_CUT · FACE_SMALL ·\nTOO_DARK · TOO_BRIGHT · BLURRY · LOOK_AT_CAMERA…) then (sim)
-  #FFE3E3:Pede outra foto e explica o motivo (CA02);
+  :buildAvatar: forma do rosto, pele medida (sem clarear,\nCA03), atlas da textura (bakeAtlas), cabelo e corpo base;\navisos "warn" (FACE_OCCLUDED, MOUTH_OPEN, HEAD_TILT,\nHAIR_CUT, HAIR_UNSURE, HAIR_ESTIMATED…);
+  :Prévia 3D girável (AvatarViewer) + corpo base\n(estimado, do cadastro ou escolhido);
   |Pessoa|
-  :Troca a foto;
-  stop
+  :Marca o consentimento (dado biométrico, CA07),\ndecide se fica público e toca "Salvar avatar";
+  |Frontend (my-avatar.tsx · lib/avatar3d)|
+  :POST /api/me/avatar3d (multipart: meta JSON\n{model, adjust, photos: 1, warnings, consent,\npublicOnRunway} + texture JPEG);
+  |API (Avatar3dService)|
+  if (consent = true?) then (não)
+    #FFE3E3:400 CONSENTIMENTO_OBRIGATORIO;
+    stop
+  endif
+  if (modelo e textura válidos? (versão 1, 468×3 pontos,\npele hex, cabelo; textura quadrada 256–2048 px, ≤ 4 MB)) then (não)
+    #FFE3E3:400 MODELO_INVALIDO · TEXTURA_INVALIDA;
+    stop
+  endif
+  :Textura em restricted/users/{id}/avatar3d/face-{ts}.jpg\n(chave privada, CA08); UPSERT user_avatars_3d;\napaga a textura anterior; audita AVATAR3D_SALVO;
+  if (publicOnRunway (padrão: sim)?) then (sim)
+    :moderateTexture (AiEngine CONTENT_MODERATOR,\nimagem 512 px) → APPROVED · REJECTED_POLICY\n· PENDING sem veredito (nunca aprova por omissão);
+  else (não)
+    :textureModeration = PENDING;
+  endif
 endif
-:geometry.ts — pose neutra (Horn), yaw/pitch/roll;\nfuseShape quando há mais de uma foto;
-:image-stats.ts — tom de pele e cabelo medidos\n(sem clarear nem embelezar, CA03);
-:atlas.ts — textura no UV canônico; buildAvatar;
-if (Só uma foto?) then (sim)
-  :Avisa: profundidade estimada; sugere foto de 3/4 (CA05);
-endif
-:Prévia 3D girável (avatar-bust.tsx) + ajustes finos\nlimitados (ADJUST_RANGE) (CA06);
 |Pessoa|
-:Marca o consentimento (dado biométrico, CA07)\ne toca Salvar avatar;
-|Frontend (my-avatar.tsx · lib/avatar3d)|
-:POST /api/me/avatar3d multipart\n(meta JSON: model, adjust, photos, warnings, consent · texture JPEG);
-|Backend (Avatar3dService)|
-if (consent = true?) then (não)
-  #FFE3E3:400 CONSENTIMENTO_OBRIGATORIO;
-  stop
-endif
-:validateModel (versão, forma de tamanho fixo, pele hex);\nnormalizeTexture (quadrada, 256–2048 px, ≤ 4 MB);
-|Bancos-serviços|
-:Grava textura em restricted/users/{id}/avatar3d/ (chave privada, CA08);
-:UPSERT user_avatars_3d (model_json, adjust_json,\ntexture_key, photos_count, consent_at); apaga textura antiga;
-|Backend (Avatar3dService)|
-if (publicOnRunway?) then (sim)
-  :moderateTexture via AiEngine CONTENT_MODERATOR\n(APPROVED / REJECTED_POLICY / PENDING);
-  note right : ver RF24 (motor de IA) — sem veredito\nremoto fica PENDING: nunca aprova por omissão.
-endif
-:Audita AVATAR3D_SALVO;
-|Pessoa|
-:Vê o avatar no manequim: Passarela 3D e Foto com meu manequim\n(ShowcaseService.mannequin head=AVATAR, TryOnService);
-note right : CA10 — Meu Quarto e Espelho ainda não usam\no avatar (não implementado — conforme Trello).
+switch (O que faz com o avatar salvo?)
+case (ajustar)
+  :Ajustes finos limitados (cabeça, pescoço, volume, luz da\npele, tom e corte de cabelo), corpo base, "Público" ou\ncorpo inteiro (BodyEditor: foto de corpo inteiro ou medidas)\n→ PATCH /api/me/avatar3d {adjust | publicOnRunway | sex | body};
+  if (corpo fora das faixas plausíveis?) then (sim)
+    #FFE3E3:400 CORPO_INVALIDO;
+  else (não)
+    :Avatar3dService: clampAdjust; ao tornar público com\ntextura PENDING, modera agora; corpo vai para\no model_json (audita AVATAR3D_CORPO);
+  endif
+case (baixar GLB)
+  :exportAvatarGlb no navegador\n(só com o avatar vestido);
+case (excluir)
+  :Confirma → DELETE /api/me/avatar3d: textura e linha\napagadas, audita AVATAR3D_EXCLUIDO; o manequim\nvolta ao rosto padrão (CA09);
+case (usar)
+  :Vê o próprio rosto no manequim: Passarela 3D e Foto\ncom meu manequim (look3d), Provador (RF18)\ne Espelho (mirror-stage);
+  note right
+    CA10: o Meu Quarto ainda não usa o avatar
+    (<<planejado>>). Perfis MARCA não levam o
+    avatar ao manequim das vitrines.
+  end note
+endswitch
 stop
 @enduml

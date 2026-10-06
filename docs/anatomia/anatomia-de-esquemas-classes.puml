@@ -1,5 +1,7 @@
 @startuml Anatomia_Esquema_Classes
-title Anatomia do esquema (look): dados, peças posicionadas, arte do card e selos\nDiagrama de classes
+title Esquema (look) — anatomia\nDiagrama de classes — dados, peças posicionadas, arte do card, selos e HypeScore v2 (Scheme, SchemeItem, BackgroundStudioService, scheme-anatomies.tsx)
+!pragma layout smetana
+set separator none
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam class {
@@ -12,6 +14,11 @@ skinparam package {
   BorderColor #CBC6BE
   FontColor #2D2438
 }
+skinparam note {
+  BackgroundColor #FFFBEA
+  BorderColor #B8A86A
+}
+hide empty methods
 package "Conteúdo" {
   class Scheme <<schemes>> {
     .. identidade ..
@@ -19,18 +26,21 @@ package "Conteúdo" {
     title, description, tags
     .. classificação ..
     creationMode : MANUAL|AI_ASSISTED
-    origin : CRIAR_LOOK|PROVADOR|REMIX|COPILOT|DNA_DUPLICATE|AUTOPILOTO
-    occasion, style «≤ 3 cada»
-    season, mood
+    origin : CRIAR_LOOK|PROVADOR|REMIX|COPILOT|DNA_DUPLICATE|
+      SMART_MIRROR|VISTA_ME|AUTOPILOTO
+    {field} occasion, style «≤ 3 cada (MAX_SCHEME_TAGS)»
+    season : SPRING|SUMMER|AUTUMN|WINTER
+    mood : ENERGETIC|ELEGANT|COMFORTABLE|SOPHISTICATED
     .. estado ..
     status : DRAFT|PUBLISHED|ARCHIVED
     visibility : PRIVATE|FOLLOWERS|PUBLIC
-    disponivel, lookDoDia, lookDoDiaCount
-    communityIndexed, favorite, publishedAt
-    revalidationPending
-    .. métricas ..
+    disponivel, favorite, lookDoDia, lookDoDiaCount
+    communityIndexed, publishedAt, revalidationPending
+    .. métricas (contadores) ..
     like/comment/share/remix/view/saveCount
-    totalPrice, hypeScore, hypeScoreGlobal
+    totalPrice
+    .. agrupamento ..
+    groupingId «→ scheme_groupings»
   }
   class SchemeItem <<scheme_items>> {
     slot : TOP|BOTTOM|SHOES|ACCESSORY|FULL_BODY|OUTERWEAR
@@ -38,22 +48,23 @@ package "Conteúdo" {
     sortOrder, zIndex
     positionX, positionY, scale, rotation, opacity
     filtersJson
-    snapshotJson «cópia da peça no momento do look»
+    snapshotJson «cópia da peça ao publicar»
   }
   class WardrobeItem <<wardrobe_items>> {
     category, subcategory, brand, color
-    occasionTags, styleTags «≤ 2 cada»
+    {field} occasionTags, styleTags «≤ 2 cada (MAX_PIECE_TAGS)»
     imageUrl, studioImageUrl, model3dUrl
   }
 }
 package "Arte do card (RF11)" {
   class Apresentacao <<colunas de schemes>> {
     cardSkin «atelier, editorial_ivory, …»
-    layoutAnatomy «13 anatomias»
-    layoutDensity
+    {field} layoutAnatomy «13 anatomias (SCHEME_ANATOMIES)»
+    layoutDensity «AMPLIADO | compacto»
     displayMode : CAROUSEL|GRID|STACKED
     containerOrigin : INDEFINIDA|MANUAL|AUTO
     containerColor, containerMandatory
+    recommendedDirection
   }
   class Fundo <<colunas de schemes>> {
     backgroundColor, backgroundGradient
@@ -63,42 +74,62 @@ package "Arte do card (RF11)" {
     coverImageUrl, mannequinImageUrl/Face
   }
   class StudioConfig <<schemes.studio_config_json>> {
-    aura {variantId, format IMAGEM_UNICA|MOSAICO}
+    {field} aura {variantId, format IMAGEM_UNICA|MOSAICO}
     materialId «proibido com LEGO»
     gradient | gradientPresetId | seasonalPresetId
     aiArt | uploadUrl
     container, skin, direção
-  }
-}
-package "Provador e render" {
-  class Render <<colunas de schemes>> {
-    renderingStatus : PENDING…COMPLETED|FAILED
-    virtualTryOnUrl, renderingJobId
-    renderingQualityJson, renderingMetadataJson
-    cachedUntil
-  }
-}
-package "Selos (RF20/RF21/RF25)" {
-  class SealBond <<seal_bonds>> {
-    status : SUGGESTED|ACCEPTED|EDITED|REFUSED|PENDING_REVIEW|APPROVED|REJECTED|REVOKED
-    basis : BRAND_MATCH|STYLE_SIGNATURE
-    tier : LOOK|PECA, confidence, linkedPieceIds
-  }
-  class Seal <<seals>> {
-    design «Circular|Folha|Padrão FashionAI»
-    policy «regras + tags»
   }
   class ZonaDoSelo <<BackgroundStudioService.SEAL_PLACEMENT>> {
     TITLE_ROW | META_BLOCK | COVER_CORNER | HEADER | STUDS
     44 px no look · 36 px na peça
   }
 }
+package "Provador e render" {
+  class Render <<colunas de schemes>> {
+    renderingStatus : PENDING|RENDERING|ENHANCING|
+      COMPOSITING|CACHED|COMPLETED|FAILED
+    virtualTryOnUrl, renderingJobId
+    renderingQualityJson, renderingMetadataJson
+    cachedUntil
+  }
+}
+package "Selos (RF20, RF21, RF25)" {
+  class SealBond <<seal_bonds>> {
+    status : SUGGESTED|ACCEPTED|EDITED|REFUSED|
+      PENDING_REVIEW|APPROVED|REJECTED|REVOKED
+    basis : BRAND_MATCH|STYLE_SIGNATURE
+    tier : PECA|LOOK, confidence, linkedPieceIdsJson
+  }
+  class Seal <<seals>> {
+    design «Circular|Folha|Padrão FashionAI»
+    policy «regras + tags»
+  }
+}
+package "HypeScore v2 (RF46)" {
+  class HypeScoreCurrent <<hype_scores>> {
+    entityType : PIECE|SCHEME
+    entityId
+    status : AVAILABLE|INSUFFICIENT_DATA
+    score «0–100; nulo sem dados, nunca 0»
+    level : LOW_SIGNAL|NICHE|RELEVANT|HOT|TRENDING|VIRAL
+    momentum, direction, deltaPoints
+    publicEligible, algorithmVersion «HYPE_V2»
+  }
+  class HypeFocus <<anatomia HYPE_FOCUS · components/scheme-anatomies.tsx>> {
+    usePiecesHype(ids) «look-hype-preview.tsx»
+    useHypeSummary("PIECE", id) «lib/hype/use-hype.ts»
+    rankPiecesByHype(pieces, byId)
+    «GET /api/hype/summaries?type=PIECE&ids=… (lote ≤ 100)»
+  }
+}
 package "Agrupamentos" {
   class SchemeGrouping <<scheme_groupings>> {
-    type : COLLECTION|PROMOTION|SIGNATURE_SERIES|EVOLUTION|STYLE_LINE|ERA|PHASE|SEASON|TOUR
+    type : COLLECTION|PROMOTION|SIGNATURE_SERIES|EVOLUTION|
+      STYLE_LINE|ERA|PHASE|SEASON|TOUR
   }
   class DnaScheme <<dna_schemes>> {
-    2 a 6 esquemas, narrativa (11), arquétipo
+    2 a 6 esquemas, narrativa (12, com HYPE_FOCUS e LEGO), arquétipo
   }
   class DailyLook <<daily_looks>>
   class WeekPlanDay <<week_plan_days>>
@@ -110,11 +141,21 @@ Scheme o-- Fundo
 Fundo ..> StudioConfig
 Scheme o-- Render
 Scheme "1" -- "0..n" SealBond
-SealBond --> Seal
+SealBond "n" --> "0..1" Seal
 Apresentacao ..> ZonaDoSelo : layoutAnatomy → zona
 Scheme --> Scheme : originalScheme (remix)
-Scheme "n" --> "0..1" SchemeGrouping : groupingId
+Scheme "n" ..> "0..1" SchemeGrouping : groupingId
 DnaScheme "1" o-- "2..6" Scheme
 DailyLook --> Scheme
 WeekPlanDay --> Scheme
+HypeScoreCurrent ..> Scheme : entityId (SCHEME)
+HypeScoreCurrent ..> WardrobeItem : entityId (PIECE)
+HypeFocus ..> HypeScoreCurrent : lê o v2 de cada peça
+note right of HypeFocus
+  Mede a relevância atual de cada peça no FashionAI
+  (não qualidade). Peças com score, da maior para a menor;
+  as demais mostram «—» com o motivo: carregando,
+  dados insuficientes ou Hype ainda não calculado.
+  Os campos v1 hypeScore/hypeScoreGlobal saíram em P3-16.
+end note
 @enduml

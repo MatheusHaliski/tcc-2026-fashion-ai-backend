@@ -1,0 +1,40 @@
+@startuml RF44_MaquinaDeEstados_Vitrine
+!pragma layout smetana
+title RF44 — FAI Creative Engine\nMáquina de estados — foto de vitrine da peça (wardrobe_items.studio_image_url + flatLayMetadata.studio): o derivado nunca troca o aprovado em silêncio
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Sem foto de vitrine" as Sem : studioImageUrl = null\n(versão 0)
+state "Aguardando aprovação" as Aguardando : no ar, studio.approved = false
+state "Aprovada" as Aprovada : no ar, studio.approved = true\n(approvedAt; peça antiga sem campo = versão 1 aprovada)
+state "Aprovada + pendente" as Pendente : a aprovada segue no ar;\nstudio.pending (versão + 1) só na revisão
+
+[*] --> Sem : cadastro sem recorte, sem estúdio\nou com studio = false
+[*] --> Aprovada : POST /api/pieces com a foto de estúdio\nvista no rascunho (versão 1);\nimagem padrão: backfill a cada 10 min
+Sem --> Aguardando : POST /api/pieces/{id}/studio,\nPOST /api/me/pieces/studio ou reprocessamento\n(offerStudio → "applied")
+Aguardando --> Aprovada : POST /api/pieces/{id}/studio/approve
+Aguardando --> Aguardando : refazer com outro fundo\n(substitui, pois ainda não foi aprovada)
+Aprovada --> Pendente : POST /api/pieces/{id}/studio\n(mesma foto de origem → "pending")
+Pendente --> Pendente : refazer de novo\n(a pendente anterior é apagada)
+Pendente --> Aprovada : POST .../studio/approve\n(a anterior vai para "previous")
+Pendente --> Aprovada : DELETE .../studio/pending\n(arquivos da pendente apagados)
+Aprovada --> Aguardando : PUT /api/pieces/{id}/image (editada,\ncom transparência)\n(refreshStudio, sourceChanged: o estúdio\nde outra imagem não fica no ar)
+Aprovada --> Sem : imagem nova opaca, ou o estúdio falha\nna imagem nova (offerStudio → "failed")
+
+note right of Pendente
+  RN46.01 no código: com uma foto aprovada no ar,
+  um processamento novo não a substitui; vira
+  pendente até a pessoa aprovar ou descartar.
+  Sem nada pendente: 409 NADA_A_APROVAR
+  ou 409 NADA_A_DESCARTAR
+end note
+@enduml

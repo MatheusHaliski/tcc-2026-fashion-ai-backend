@@ -1,5 +1,5 @@
 @startuml RF7_Atividades
-title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de atividades — do clique na lista ao card ampliado (dono × visitante × peça excluída)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,76 +23,117 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
+
+|Pessoa|
+|Frontend|
+|API + Serviço|
+|Banco/Cache|
 |Pessoa|
 start
-:Clica numa peça ou num esquema de uma lista\n(Closet, Lookbook, feed, perfil);
-|Frontend (detail-modal · expanded-card)|
-:Abre o modal único: o card ampliado É a superfície\n(o modal só dá o scrim, sem segunda borda);
-note right
-  Anatomia (Trello): card ampliado da peça 90 × 208 mm;
-  peça dentro do esquema em linha compacta ≤ 18 mm
-  (logo + marca + nome + tipo + tamanho); campo sexo
-  exibido na identificação da peça
-end note
-if (Item clicado?) then (esquema)
-  :GET /api/schemes/{id};
-  |Backend (SchemeController · SchemeService)|
-  :requireView: esquema ARCHIVED ou sem permissão → 404/403;
-  :Devolve scheme + itens, wearstyles, selos, remixedFrom, canEdit;
-  |Frontend (detail-modal · expanded-card)|
-  :ExpandedScheme mostra a lista de peças do look;
-  |Pessoa|
-  :Clica numa peça da lista;
-  |Frontend (detail-modal · expanded-card)|
-  :Empilha a navegação guardando o esquema de origem (CA01);
-else (peça)
-endif
-:GET /api/pieces/{id}?fromScheme={schemeId};
-|Backend (WardrobeController · WardrobeService)|
-:requireVisiblePiece: dono/admin passa; senão exige\nmoderação APPROVED e visibilidade efetiva (peça × perfil);
-if (Pode ver?) then (não)
-  #FFE3E3:404 / 403 (acesso negado auditado);
-  stop
-endif
-if (Peça ARCHIVED e quem pede não é o dono?) then (sim)
-  :Devolve o snapshot do momento da publicação\n(scheme_items.snapshotJson) com notAvailableAnymore = true (CA03);
-  |Frontend (detail-modal · expanded-card)|
-  :Card marcado "não mais disponível", sem ações;
-  stop
-endif
-|Backend (WardrobeController · WardrobeService)|
-:pieces.touchView (contador de visualização);
-:Devolve piece, wearstyles, originSchemes, canEdit;
-|Frontend (detail-modal · expanded-card)|
-if (canEdit (é o dono)?) then (sim)
-  :Mostra editar, disponível/indisponível, favoritar, excluir;
-  |Pessoa|
-  if (Ação do dono?) then (editar)
-    |Backend (WardrobeController · WardrobeService)|
-    :PUT /api/pieces/{id} (PieceForm) — audita EDICAO_PECA;
-  elseif (disponibilidade)
-    |Backend (WardrobeController · WardrobeService)|
-    :PATCH /api/pieces/{id}/flags {disponivel};\nAvailabilityStatus AVAILABLE ⇄ UNAVAILABLE;
-    :Evento AvailabilityChanged → wardrobe_availability_log;
-  else (excluir)
-    |Backend (WardrobeController · WardrobeService)|
-    :GET /api/pieces/{id}/deletion-impact (esquemas afetados);
-    :DELETE /api/pieces/{id}: grava snapshot nos scheme_items,\nARCHIVED, PRIVATE, retira fotos (RF12);
-  endif
+:Clica num card de uma lista\n(Closet, Lookbook, perfil, feed, Minhas Fotos,\nCopilot, Meu Quarto);
+|Frontend|
+if (Ctrl/⌘ ou botão do meio?) then (sim)
+  :Rota própria em nova aba:\n/pieces/{id} ou /schemes/{id}\n(mesmo card ampliado, sem modal);
 else (não)
-  :Mostra dados públicos + controles sociais\n(reagir, comentar, salvar, compartilhar, remixar — RF19) (CA02);
+  :DetailModalProvider empilha o alvo\n(openScheme(id) ou openPiece(id));
+  note right
+    Modal único: o card É a superfície,
+    o modal só dá o scrim (sem 2ª borda).
+    Foco preso no diálogo; Esc fecha;
+    ao fechar, o foco volta ao card.
+  end note
+endif
+
+if (É um esquema?) then (sim)
+  :ExpandedScheme: GET /api/schemes/{id}\n(anônimo se não há sessão);
+  |API + Serviço|
+  :SchemeController.get → SchemeService.get\n→ requireView;
+  if (Visível? (ARCHIVED só para o autor;\nvisibilidade mais restritiva entre\nesquema e perfil; bloqueio)) then (não)
+    #FFE3E3:404 inexistente/arquivado\nou 403 auditado (ACESSO_NEGADO_403);
+    |Frontend|
+    :ErrorState com "tentar de novo";
+    stop
+  endif
+  |Banco/Cache|
+  :Visitante: schemes.view_count + 1,\ncontador "views" (Redis) e\nHypeSignal LOOK_VIEWED (AFTER_COMMIT);
+  |API + Serviço|
+  :200 {scheme, wearstyles, seals,\nsealBadges, remixedFrom, canEdit};
+  |Frontend|
+  :SchemeCard ampliado; peças em linha compacta\n(logo + marca + nome + tipo + tamanho);
   |Pessoa|
-  if (Voltar ao esquema de origem?) then (sim)
-    |Backend (CommentController · SocialService)|
-    :POST /api/pieces/{pieceId}/return-to-origin?fromScheme=;
-    if (Peça indisponível e não é o dono?) then (sim)
-      #FFE3E3:409 INDISPONIVEL;
-      stop
+  :Clica numa peça do look;
+  |Frontend|
+  :openPiece(pieceId, fromScheme = schemeId)\n— a origem fica na pilha (CA01);
+else (não, é uma peça)
+endif
+
+|Frontend|
+:ExpandedPiece: GET /api/pieces/{id}?fromScheme={schemeId};
+|API + Serviço|
+:WardrobeController.detail → WardrobeService.detail\n→ requireVisiblePiece;
+if (Visível? (dono/admin passam; senão moderação\nAPPROVED + visibilidade efetiva peça × perfil\n+ sem bloqueio)) then (não)
+  #FFE3E3:404 inexistente/fora da moderação\nou 403 auditado (ACESSO_NEGADO_403);
+  |Frontend|
+  :ErrorState com "tentar de novo";
+  stop
+endif
+|API + Serviço|
+if (ARCHIVED e quem vê não é o dono?) then (sim)
+  |Banco/Cache|
+  :scheme_items.snapshot_json do look de origem\n(se o look for visível) ou Views.snapshot(peça);
+  |API + Serviço|
+  :200 {notAvailableAnymore: true,\nsnapshot, fromSchemeId};
+  |Frontend|
+  :PieceSnapshot com o selo\n"peça não mais disponível", sem ações (CA03);
+  stop
+endif
+|Banco/Cache|
+:touchView (view_count + 1 só de visitante);\nHypeSignal PIECE_VIEWED (visitante logado);
+|API + Serviço|
+:200 {piece (viewerState + reações), wearstyles,\noriginSchemes (looks visíveis), canEdit};
+|Frontend|
+:Card ampliado: galeria (produto/estúdio, manequim),\nnome, marca com logo, detalhes, Hype,\n"Looks com esta peça";
+
+if (Dono? (owner.id = sessão)) then (sim)
+  :"Adicionar ao look" (/mirror?piece=)\n+ menu "Mais opções" só do dono;
+  |Pessoa|
+  :Escolhe uma ação do dono;
+  |Frontend|
+  :editar dados → PUT /api/pieces/{id} (RF9.CA07)\nimagem → EditImageDialog/PhotoEditor (RF4, RF15)\narte → PieceArtDialog (RF11);
+  :disponível/favorita/à venda/doar →\nPATCH /api/pieces/{id}/flags;
+  |API + Serviço|
+  :toggles: AVAILABLE ⇄ UNAVAILABLE; à venda e\npara doar se excluem; mudou a disponibilidade\n→ AvailabilityChanged (log + Hype);
+  |Frontend|
+  :excluir → GET /api/pieces/{id}/deletion-impact\n→ diálogo "aparece em N looks" → confirmar\n→ DELETE /api/pieces/{id};
+  |API + Serviço|
+  :delete: snapshot nos scheme_items sem retrato,\nARCHIVED, disponivel = false, PRIVATE,\nfora do índice, fotos fora de Minhas Fotos\n(RF12), PieceDeleted;
+else (não — visitante)
+  :Só dados públicos + CardActions (reagir,\ncomentar, salvar, compartilhar — RF19);\nsem botão editar (CA02);
+  |Pessoa|
+  if (Ação principal?) then (experimentar)
+    |Frontend|
+    :Generate3DDialog (manequim 3D);
+  elseif (guardar cópia)
+    |API + Serviço|
+    :POST /api/pieces/{id}/copy → addToWardrobe;
+    if (Já é sua, arquivada ou invisível?) then (sim)
+      #FFE3E3:409 JA_E_SUA · 404 · 403;
+    else (não)
+      :Cópia no Closet de quem vê\n(remixedFromPieceId = original);
     endif
-    :Devolve originSchemeId e otherSchemes visíveis;
+  else (só olhar)
   endif
 endif
-|Frontend (detail-modal · expanded-card)|
-:"Voltar" desempilha para o esquema de origem; Esc fecha o modal;
+
+|Pessoa|
+:Navega a partir do detalhe;
+|Frontend|
+:← desempilha para o look de origem (modal)\nou link "Voltar ao look" (/pieces/{id}?fromScheme=);\n"Looks com esta peça" → openScheme(schemeId);\n✕, Esc ou clique no scrim esvaziam a pilha;
+note right
+  POST /api/pieces/{pieceId}/return-to-origin
+  (SocialService.returnToOrigin, 409 INDISPONIVEL)
+  existe no backend, mas o frontend não chama:
+  a volta usa a pilha do modal e originSchemes.
+end note
 stop
 @enduml

@@ -1,5 +1,5 @@
 @startuml RF35_Atividades
-title RF35 — Explorar as "Coleções" de uma marca: busca por coleção, Collections Insights e mini lojas 3D\nDiagrama de atividades
+title RF35 — Coleções da marca: busca por coleção e Collections Insights com mini lojas 3D\nDiagrama de atividades — aba "Coleções" do perfil da marca (RF14): busca, ranking em mini lojas 3D e gestão pela dona
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,25 +23,68 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Visitante|
+|Pessoa|
 start
-:Abre o perfil da marca (RF14) → aba "Coleções";
-|Sistema (ShowcaseService)|
-:Lista as coleções (type=COLLECTION)\ncom arte, temporada e contagem;
-|Visitante|
-split
-  :Busca por coleção, texto e ano;
-  |Sistema (ShowcaseService)|
-  :Esquemas e peças da coleção;
-split again
-  |Visitante|
-  :"Collections Insights";
-  |Sistema (ShowcaseService)|
-  :Ranking das coleções como mini lojas 3D\n(vitrine com a arte da coleção);
-end split
-|Marca (dona)|
-:Cria/edita coleção, adiciona peças/looks\ne envia a arte da coleção;
-|Sistema (LookbookService)|
-:Salva o agrupamento e os itens;
+:No perfil /brands/{slug} da marca, abre "Coleções"\n(1ª aba do perfil, ou botão "Coleções" do header);
+|Frontend (CollectionsTab)|
+:SegmentPicker: Coleções · Collections Insights;
+note right
+  Em toda chamada: ShowcaseService.owner(slug, COLLECTIONS)
+  → 404 se não é perfil institucional ou não é MARCA.
+  Coleções = scheme_groupings do dono com type COLLECTION
+  (PROMOTION, SIGNATURE_SERIES, SEASON e STYLE_LINE da
+  marca não aparecem aqui). Só itens visíveis para quem vê.
+end note
+switch (Sub-aba ou ação?)
+case (Coleções — busca)
+  :GET …/showcase/collections\n+ GET …/showcase/collections/items?groupingId&q&type&sort&year;
+  |ShowcaseService|
+  if (groupingId não é coleção da marca?) then (sim)
+    #FFE3E3:404 Coleção;
+    stop
+  else (não)
+  endif
+  :Filtra por coleção, ano e texto (looks: título, tags, estilo ·\npeças: nome, marca, tags), ordem HYPE · GROWTH · CURTIDAS ·\nRECENTES, até 60 looks e 60 peças;
+  :Header = card da coleção: arte enviada ou, sem arte,\ncapa do look de maior Hype v2 (ou foto de peça);
+  |Frontend (CollectionsTab)|
+  if (Sem resultados?) then (sim)
+    :"Nada nesta coleção com esses filtros";
+  else (não)
+    :Hero com a arte da coleção + SchemeCard e PieceCard;
+  endif
+case (Collections Insights)
+  |Frontend (CollectionsTab)|
+  :GET /api/institutional/{slug}/showcase/collections/insights;
+  |ShowcaseService|
+  :Por coleção: curtidas, itens, comentários, compartilhamentos,\nHype v2 {top, avg, level} e topScheme;
+  :score = 0,75·curtidas/máx + 0,25·itens/máx (o Hype não entra),\nranking desc, fraction = score/1º;
+  :Público = fraction × 80 · fogos = 4 − posição (só 4 primeiras\ncom fraction ≥ 0,25) · spotlights = máx(1, 4 − posição);
+  |Frontend (CollectionsTab)|
+  if (Nenhuma coleção?) then (sim)
+    :"Nenhuma coleção para ranquear ainda";
+  else (não)
+    if (WebGL disponível?) then (sim)
+      :StoreStreetScene: até 7 mini lojas numa rua em arco,\n1º no centro e maior, arte na vitrine, nome no letreiro,\npúblico (até 90 por loja) e fogos — "reduzir movimento"\ntroca os fogos por estrelas e congela o público;
+    else (não)
+      :Aviso "sem WebGL — veja o ranking abaixo";
+    endif
+    :Card da coleção escolhida (#, público, fogos, curtidas,\nHype médio) + lista ranqueada clicável;
+  endif
+case (Dona: criar, ilustrar, ligar)
+  |Frontend (CollectionsTab)|
+  :GroupingForm (sem escolha de tipo → COLLECTION)\nou AssignDialog;
+  |LookbookService|
+  :POST /api/groupings — tipos da MARCA: COLLECTION, PROMOTION,\nSIGNATURE_SERIES, SEASON, STYLE_LINE (400 TIPO_INVALIDO),\nperíodo 1900–2100 e cor #RRGGBB;
+  :POST /api/groupings/{id}/items → grouping_id nos looks/peças da dona;
+  |ShowcaseService|
+  :POST /api/groupings/{id}/cover: arte → 1800×1200 JPEG\n→ MediaStoragePort → cover_url (fachada/vitrine da loja);
+endswitch
+|Frontend (CollectionsTab)|
+note right
+  Divergências com o Trello: pede brand_collections + collection_id
+  (o código usa scheme_groupings type COLLECTION + grouping_id);
+  o ranking soma curtidas e itens e mostra o Hype à parte;
+  a arte vai só para a vitrine (fachada e letreiro usam a cor e o nome).
+end note
 stop
 @enduml

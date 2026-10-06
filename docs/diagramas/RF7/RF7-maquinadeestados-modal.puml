@@ -1,0 +1,62 @@
+@startuml RF7_MaquinaDeEstados_Modal
+!pragma layout smetana
+title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de máquina de estados — tela do detalhe: pilha do DetailModalProvider e estados do card ampliado
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+}
+
+state "Fechado\n(stack = [])" as Fechado
+state "Esquema no topo\n(ExpandedScheme)" as Esq {
+  state "Carregando\n(Skeleton)" as ECarr
+  state "Erro\n(ErrorState + tentar de novo)" as EErro
+  state "Pronto\n(SchemeCard ampliado)" as EPronto
+  [*] --> ECarr
+  ECarr --> EPronto : 200 GET /api/schemes/{id}
+  ECarr --> EErro : 403 · 404 · rede
+  EErro --> ECarr : tentar de novo (reload)
+}
+state "Peça no topo\n(ExpandedPiece)" as Peca {
+  state "Carregando\n(Skeleton)" as PCarr
+  state "Erro\n(ErrorState)" as PErro
+  state "Não mais disponível\n(PieceSnapshot, sem ações)" as PSnap
+  state "Pronta — visitante\n(dados públicos + RF19)" as PVis
+  state "Pronta — dono\n(menu Mais opções)" as PDono
+  state "Diálogo aberto por cima\n(editar dados · imagem · arte ·\nexcluir · 3D · manequim)" as PDlg
+  [*] --> PCarr
+  PCarr --> PSnap : 200 notAvailableAnymore
+  PCarr --> PVis : 200 canEdit = false
+  PCarr --> PDono : 200 e owner.id = sessão
+  PCarr --> PErro : 403 · 404 · rede
+  PErro --> PCarr : tentar de novo
+  PDono --> PDlg : ação do dono
+  PDlg --> PDono : salvar (PUT/PATCH) ou cancelar
+  PDlg --> Fechado : excluir confirmado\n(DELETE → recarrega a lista)
+}
+
+[*] --> Fechado
+Fechado -down-> Esq : clique num look\nopenScheme(id)
+Fechado -down-> Peca : clique numa peça\nopenPiece(id)
+Esq -right-> Peca : peça do look:\nopenPiece(id, fromScheme)\nempilha (CA01)
+Esq -up-> Fechado : ✕ · Esc · scrim
+Peca -up-> Fechado : ✕ · Esc · scrim
+Peca -[#7C5FC0]-> Esq : ← voltar (stack.length > 1)\nou "Looks com esta peça"\n→ openScheme
+
+note right of Fechado
+  Ao fechar, o foco volta a quem abriu.
+  Ctrl/⌘/botão do meio no card não usa
+  o modal: abre /pieces/{id} ou
+  /schemes/{id} (mesmos estados, sem pilha).
+end note
+note bottom of Peca
+  Esc dentro de um menu/lista aberta fecha só o menu.
+  Diálogos por cima cuidam do próprio foco e Esc.
+end note
+@enduml

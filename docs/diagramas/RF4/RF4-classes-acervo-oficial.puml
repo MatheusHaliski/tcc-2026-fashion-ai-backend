@@ -1,0 +1,157 @@
+@startuml RF4_Classes_Acervo_Oficial
+!pragma layout smetana
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de classes — acervo oficial em escala: coletor e importador Python (scripts/catalog) e arquivos de data/catalog
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam class {
+  BackgroundColor #F8F4FF
+  BorderColor #7C5FC0
+  ArrowColor #52606D
+}
+skinparam packageStyle rectangle
+hide empty members
+
+package "data/catalog (arquivos)" {
+  class "brands.json" as BrandsJson <<arquivo>> {
+    100 marcas · domínios oficiais
+    sources[].source_type
+    collector: product_patterns, sitemap_patterns
+  }
+  class "aliases.json" as AliasesJson <<arquivo>> {
+    apelidos de marca (CK → Calvin Klein)
+  }
+  class "collected/<marca>.jsonl" as CollectedJsonl <<arquivo>> {
+    1 produto por linha (o coletor só acrescenta)
+    .state/<marca>.visited (retomada)
+  }
+  class "acervo/acervo-oficial-2026-10-05.jsonl.gz" as AcervoGz <<arquivo>> {
+    9.573 produtos consolidados
+  }
+}
+
+package "scripts/catalog · coleta" {
+  class "collect_official.py" as CollectOfficial <<módulo CLI>> {
+    ALLOWED_SOURCES = OFFICIAL_BRAND, OFFICIAL_STORE,
+      AUTHORIZED_RETAILER
+    CLI: ~--brands ~--max-per-brand ~--min-interval
+    ~--workers ~--fresh ~--dry-run ~--out ~--timeout
+    +run(args, fetch, brands, log) : dict
+    +collect_brand(...) : int
+    +official_sources(brands, only) : list
+    +make_fetch(user_agent, timeout, retries)
+    +ascii_url(url) : str
+  }
+  class "providers/official_sitemap.py" as OfficialSitemap <<módulo>> {
+    STORE_IMAGE_HOSTS ; PRODUCT_SITEMAP_HINTS
+    +collect(site, brand, source_type, ...) : dict
+    +product_urls(site, patterns...) : Iterator
+    +structured_product(page) : dict
+    +to_catalog_item(found, page_url, brand, ...) : dict
+    +product_images(found, official) : list
+    +brand_cdn_ok(image_url, official) : bool
+    +clean_title ; +infer_subcategory ; +unsupported_reason
+    +is_pack ; +same_brand
+  }
+  class Site <<official_sitemap.py>> {
+    +load_robots()
+    +allowed(url) : bool
+    +get(url) : (status, corpo, content-type)
+  }
+  class Politeness <<official_sitemap.py>> {
+    +wait(host, crawl_delay)
+  }
+  class StopDomain <<Exception>>
+  class "recheck_collected.py" as Recheck <<módulo CLI>> {
+    +recheck(item, n) : (motivo, item)
+    +https_images(item) : dict
+  }
+  class "enrich_images.py" as Enrich <<módulo CLI>> {
+    +enrich_file(path, fetch, args, log) : (int, int)
+  }
+}
+
+package "scripts/catalog · normalização e carga" {
+  class Normalizer <<normalize_product.py>> {
+    «catalog/normalization.json (mesmo do Java)»
+    +subcategory ; +color ; +brand_slug ; +tokens
+    +dedup_key(brand_slug, p) : str
+  }
+  class "validate_source.py" as Validate <<módulo>> {
+    +same_site(d, official) ; +blocked(url)
+    +classify(url, official_domains)
+  }
+  class "import_products.py" as ImportProducts <<módulo CLI>> {
+    +read_items(path) : Iterator «JSON · JSONL · .jsonl.gz · CSV»
+  }
+  class Ingestor <<ingest.py>> {
+    dry_run ; create_brands ; overwrite
+    +ingest(raw, label) : CREATE | UPDATE | DUPLICATE | SKIP | ERROR
+    +upsert_brand ; +upsert_brand_alias ; +upsert_source
+    +search_text(cur, brand, p) : str
+    +record_run(kind, source, started)
+    -_upsert ; -_variants ; -_images ; -_aliases
+  }
+  class Report <<dataclass>> {
+    total_read ; created ; updated
+    skipped ; duplicates_found ; errors
+  }
+  class "deduplicate.py" as Dedup <<módulo>> {
+    +find_existing(cur, p, dedup_key)
+    +find_same_model(cur, brand_id, p)
+  }
+  class "seed_catalog.py" as Seed <<módulo CLI>>
+  class "rebuild_search_index.py" as Rebuild <<módulo CLI>>
+  class "revalidate_catalog.py" as Revalidate <<módulo CLI>> {
+    +check(url, timeout) : ACTIVE | UNAVAILABLE |\n  SOURCE_REMOVED | NEEDS_REVALIDATION
+  }
+  class "db.py" as Db <<módulo>> {
+    +connect() ; +transaction() «TLS por MYSQL_SSL_MODE»
+  }
+  class "import_railway.sh" as ImportRailway <<script>> {
+    1/3 seed · 2/3 acervo · 3/3 índice
+    fai_app + TLS · RAILWAY_MYSQL_APP_PASSWORD
+  }
+}
+
+package "MySQL (tabelas do RF4-classes-catalogo)" {
+  class "catalog_products · catalog_variants · catalog_images\ncatalog_product_aliases · brands · brand_aliases\ncatalog_sources · catalog_ingestion_runs" as Tables <<table>>
+}
+
+BrandsJson <.. CollectOfficial : fontes oficiais
+CollectOfficial --> OfficialSitemap : collect()
+CollectOfficial ..> Site : 1 por domínio
+CollectOfficial ..> Politeness : intervalo por site
+OfficialSitemap ..> Site
+Site --> Politeness : wait(host, Crawl-delay)
+Site ..> StopDomain : 401/403 robots · 403/429 página
+CollectOfficial ..> Normalizer : valida antes de gravar
+CollectOfficial ..> CollectedJsonl : grava
+Recheck ..> CollectedJsonl : reescreve
+Enrich ..> CollectedJsonl : completa fotos
+Recheck ..> OfficialSitemap : reaplica regras
+Enrich ..> OfficialSitemap : structured_product · product_images
+CollectedJsonl ..> AcervoGz : consolidado
+ImportProducts ..> AcervoGz : lê
+ImportProducts --> Ingestor : ingest(raw)
+ImportRailway ..> Seed
+ImportRailway ..> ImportProducts
+ImportRailway ..> Rebuild
+Seed ..> BrandsJson
+Seed ..> AliasesJson
+Seed --> Ingestor
+Ingestor *-- Report
+Ingestor ..> Dedup
+Ingestor ..> Normalizer : dedup_key
+Ingestor ..> Validate : classify
+Ingestor --> Db
+Rebuild --> Db
+Revalidate --> Db
+Db ..> Tables
+
+note bottom of OfficialSitemap
+  RN47.03/RN47.04: só domínios oficiais/autorizados; foto só como URL
+  (REFERENCE_ONLY). Subtipo só pelo nome (sem acerto → descarta, nunca
+  chuta); marca da página ≠ marca da fonte → descarta (same_brand).
+end note
+@enduml

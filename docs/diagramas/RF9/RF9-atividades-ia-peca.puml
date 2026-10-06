@@ -1,0 +1,109 @@
+@startuml RF9_Atividades_IA_Peca
+title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de atividades — "melhorar com IA" (diff do Edit Assistant) e edição de uma peça do look (CA07)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+|Pessoa|
+|Frontend|
+|API + Serviço|
+|Banco/IA|
+|Pessoa|
+start
+if (Melhorar o look com IA?) then (sim)
+  |Frontend|
+  :Card ampliado do look (ExpandedScheme, só a dona)\n→ "Melhorar" → instrução em texto livre;
+  :POST /api/schemes/{id}/improvements {instruction};
+  |API + Serviço|
+  :SchemeService.improve: requireCanCreate + owned\n(403 auditado para não-autor);
+  |Banco/IA|
+  :AiEngine.text(EDIT_ASSISTANT): campos atuais +\ninstrução (limpa, ≤ 500 caracteres);\nsem provedor/cota → LocalAdvisors.proposeEdit;
+  |API + Serviço|
+  :parseDiff: descarta campos desconhecidos\ne valores fora de validChange;
+  :200 {changes[campo, atual, proposto, motivo],\nexplanation, inferenceId, message};
+  |Frontend|
+  :ChangeList mostra a proposta;
+  note right
+    Divergência com RF30.CA10 / Trello: a tela envia
+    a resposta inteira de /improvements e não oferece
+    aceite item a item; o backend espera {campo: valor}
+    → na prática responde 400 DIFF_INVALIDO.
+  end note
+  |Pessoa|
+  if (Aplicar?) then (sim)
+    |Frontend|
+    :POST /api/schemes/{id}/improvements/apply;
+    |API + Serviço|
+    :SchemeService.applyDiff: requireCanCreate + owned;
+    if (Todo campo recebido passa em validChange?\n(≤ 3 ocasiões/estilos do vocabulário, estação,\nmood, visibilidade, título/descrição não vazios)) then (não)
+      #FFE3E3:400 DIFF_INVALIDO;
+      stop
+    endif
+    |Banco/IA|
+    :UPDATE schemes só nos campos recebidos;\naudit EDICAO_ESQUEMA {aiDiffFields};
+    note right
+      applyDiff não reindexa (projections) nem
+      revoga selos se a visibilidade virar
+      PRIVATE — só o PUT /api/schemes/{id} faz.
+    end note
+    |Frontend|
+    :Toast "salvo" e recarrega o look;
+  else (cancelar)
+  endif
+else (não)
+endif
+|Pessoa|
+if (Editar uma peça do look?) then (sim)
+  |Frontend|
+  :Peça ampliada (ExpandedPiece, dona)\n→ "Editar dados" → PieceForm;
+  if (validatePieceForm local ok?) then (não)
+    #FFE3E3:Erros junto dos campos;
+    stop
+  endif
+  :PUT /api/pieces/{id} (PieceForm)\n(trava síncrona: um pedido por clique);
+  |API + Serviço|
+  :WardrobeService.update: requireCanCreate + owned;
+  if (Dona?) then (não)
+    #FFE3E3:403 auditado (ACESSO_NEGADO_403);
+    stop
+  endif
+  if (validate(form): taxonomia, nome, preço ≥ 0,\n≤ 2 selos, mercado) then (inválido)
+    #FFE3E3:400 FORMULARIO_INVALIDO {campo: mensagem};
+    stop
+  endif
+  :apply (marca, logo, tags, arte…) +\nvisibilidade, se enviada;
+  |Banco/IA|
+  :UPDATE wardrobe_items (@Version → 409\nEDICAO_CONCORRENTE); projections.piece;\naudit EDICAO_PECA;
+  :PieceUpdated(completude) AFTER_COMMIT →\nFAI Points PIECE_COMPLETED (≥ 90%),\nInventory Score;
+  note right
+    CA07: a peça muda no Closet e em todos os
+    looks dali em diante. Looks publicados
+    mantêm o snapshot_json da publicação.
+  end note
+  |Frontend|
+  :Fecha o diálogo e mostra a peça atualizada;
+else (não)
+endif
+|Pessoa|
+stop
+@enduml

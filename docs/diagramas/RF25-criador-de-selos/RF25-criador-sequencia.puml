@@ -74,10 +74,11 @@ group Passo 4 — Revisar e salvar
   W -> C : POST /api/seals {name, tier, policy, design,\navailableFrom, availableUntil, usageLimit, status}
   C -> S : createSeal(user, form)
   S -> G : requireApprovedInstitutional
+  S -> S : InputSanitizer.required(name, 2, 160)
   S -> N : SealPolicies.normalize/parse/describe → policyText
   S -> N : SealDesigns.normalize(design)
-  alt desenho inválido
-    N --> W : 400 SELO_DESIGN_INVALIDO {fields}
+  alt nome curto, política ou desenho inválidos
+    N --> W : 400 CAMPO_INVALIDO | POLITICA_INVALIDA |\nSELO_DESIGN_INVALIDO {fields}
   else válido
     S -> O : require(owner, core.imageUrl) /\nrequireOrUnchanged(owner, uploadUrl | iconUrl)
     alt arquivo de outra pessoa ou de terceiros

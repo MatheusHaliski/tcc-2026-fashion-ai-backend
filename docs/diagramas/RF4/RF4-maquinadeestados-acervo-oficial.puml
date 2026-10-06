@@ -1,0 +1,70 @@
+@startuml RF4_MaquinaDeEstados_Acervo_Oficial
+!pragma layout smetana
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de máquina de estados — acervo oficial: domínio oficial (Site) e URL de produto coletada (sitemap → JSONL → catálogo)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+}
+
+state "DOMÍNIO OFICIAL — Site(domínio)" as DOM {
+  state "LENDO ROBOTS\n(load_robots; 0/403/404 → tenta www.)" as ROB
+  state "ATIVO\n(product_urls + get;\nPoliteness: max(~--min-interval, Crawl-delay))" as ATIVO
+  state "PAROU\n(StopDomain → relatório «stopped»)" as PAROU
+  state "CONCLUÍDO\n(sitemaps esgotados ou\n~--max-per-brand atingido)" as FIM
+  [*] --> ROB
+  ROB --> ATIVO : 200 (regras + Sitemap:)\nou 404 (sem regras = permitido)
+  ROB --> PAROU : 401/403/429 ou sem conexão
+  ATIVO --> PAROU : 403/429 em qualquer GET
+  ATIVO --> FIM
+  PAROU --> [*]
+  FIM --> [*]
+}
+
+state "URL de produto" as URL {
+  state "DESCOBERTA\n(<loc> de sitemap de produto/pdp)" as DESC
+  state "IGNORADA\n(já em .visited ou no JSONL;\nou robots.txt proíbe)" as IGN
+  state "BAIXADA (200 HTML)" as BAIX
+  state "ITEM\n(to_catalog_item: clean_title, infer_subcategory\npelo nome, product_images + brand_cdn_ok)" as ITEM
+  state "DESCARTADA\n(sem dados estruturados · sem tipo no nome ·\nfora do acervo · kit sem tipo · outra marca ·\nValidationError) — nunca chutado" as DESCART
+  state "NO JSONL\n(collected/<marca>.jsonl)" as JSONL
+  state "RECHECADO\n(ok · titulo_limpo · tipo_corrigido · foto_https)" as RECH
+  state "SEM FOTO" as SEMF
+  state "COM FOTO\n(images[] só URL — REFERENCE_ONLY)" as FOTO
+  state "IMPORTADO\n(Ingestor: [CREATE] VALIDATED ·\n[UPDATE] · [DUP] · [SKIP])" as IMP
+  state "INDEXADO\n(search_text FULLTEXT ngram)" as IDX
+  [*] --> DESC : sitemap lido com o domínio ATIVO
+  DESC --> IGN
+  DESC --> BAIX : permitida e nova
+  BAIX --> DESCART : status ≠ 200, não HTML ou só HTML livre
+  BAIX --> ITEM : JSON-LD Product/ProductGroup\nou OpenGraph
+  ITEM --> DESCART : regras do nome/marca\nou normalize_product inválido
+  ITEM --> JSONL : on_item()
+  JSONL --> RECH : recheck_collected.py
+  RECH --> DESCART : fora_do_acervo · sem_tipo_no_nome\n· kit_sem_tipo (sai do arquivo)
+  RECH --> FOTO : images ≠ []
+  RECH --> SEMF : images = []
+  SEMF --> FOTO : enrich_images.py (enrich_file)
+  SEMF --> IMP : segue sem foto
+  FOTO --> IMP : import_products.py\n(import_railway.sh 2/3)
+  IMP --> IDX : rebuild_search_index.py (3/3)
+  IGN --> [*]
+  DESCART --> [*]
+  IDX --> [*] : visível em GET /api/catalog/search\n(depois: ciclo do CatalogProduct)
+}
+
+note right of IMP
+  Uma transação por produto; dedup gtin › ean › upc ›
+  sku › código › URL canônica › marca+subtipo+modelo+
+  variante › marca+subtipo+título+cor. Reimportar é
+  idempotente (0 criados); [ERROR] fica no relatório e o
+  lote segue; cada execução real grava catalog_ingestion_runs.
+  Estados de ingestão: RF4-maquinadeestados-catalogo.
+end note
+@enduml

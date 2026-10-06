@@ -1,5 +1,5 @@
 @startuml RF36_Atividades
-title RF36 — "Foto com meu manequim": peça (RF4) ou look inteiro (RF5) no manequim com rosto 3D da foto de perfil\nDiagrama de atividades
+title RF36 — Foto com meu manequim (peça do RF4 ou look do RF5)\nDiagrama de atividades — montar o manequim, gerar a foto no navegador, guardar, usar como capa e remover
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,29 +23,101 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Usuário (dono)|
+|Pessoa (dona)|
 start
-:Abre a peça (parte de cima / peça inteira)\nou o esquema → "Foto com meu manequim";
-|Sistema (ShowcaseService)|
-:Monta o Look 3D: sexo do RF1 → preferência\ndo manequim → maioria das peças → feminino;
-if (Tem foto de perfil?) then (sim)
-  :Cabeça com rosto 3D da foto\n(ajuste offsetX/offsetY/scale salvo);
-else (não)
-  :Manequim padrão masc./fem.\n(nunca manequim fantasma);
+if (Onde?) then (peça — ExpandedPiece)
+  :Menu "Foto com meu manequim"\n(só para a dona e categoria\nupper_piece ou full_body_piece);
+else (look — ExpandedScheme)
+  :Botão "Foto com meu manequim"\n(MannequinPhotoButton, só para a dona);
 endif
-|Usuário (dono)|
-if (WebGL?) then (sim)
-  :Gira o manequim e ajusta o rosto;
-  :"Gerar foto" (render no cliente);
-else (não)
-  :Botão desabilitado + explicação;
+|Frontend|
+:MannequinPhotoDialog abre (Skeleton);
+:GET /api/pieces/{id}/look3d | GET /api/schemes/{id}/look3d;
+|API|
+:ShowcaseController → ShowcaseService.piece3d | look3d;
+if (Pode ver a peça/o look?) then (não)
+  #FFE3E3:404 (look arquivado de outra pessoa ou invisível)\n403/404 (peça sem permissão);
+  |Frontend|
+  :mensagem "não foi possível montar o manequim";
   stop
 endif
-|Sistema (ShowcaseService)|
-:Valida a imagem e grava no storage;
-:Salva mannequinImageUrl na peça/esquema;
-if (Esquema e "usar como capa"?) then (sim)
-  :A foto vira a capa do post;
+|Serviço|
+:mannequinBase: sexo = User.sex (RF1) → UserPreferences.mannequinSex\n→ maioria das peças → FEMININO; tom de pele e biotipo;
+:head = PADRAO (cabeça neutra); perfil MARCA não usa foto;
+note right
+  Divergência com o Trello: a foto de perfil NÃO vira
+  rosto 3D (o código tirou isso: levava fundo e roupa
+  para o rosto). O rosto só vem do Avatar 3D (RF40).
+end note
+if (Avatar 3D (RF40) da dona existe\ne é visível para quem vê?) then (sim)
+  :head = AVATAR (forma do rosto, ajustes\ne textura aprovada);
+endif
+:peças com slot, recorte (imageUrl) e modelo\n3D do RF16 quando COMPLETED;
+|Frontend|
+if (Navegador tem WebGL?) then (não)
+  :Aviso "sem WebGL" e "Gerar foto" desabilitado;
+  stop
+endif
+:LookViewer (Three.js) parado; enquadramento\n"upper" se a peça é só parte de cima;\nmostra sexo e "rosto do avatar" ou "cabeça neutra"\n(+ link "Crie o avatar" se não for marca);
+if (É look?) then (sim)
+  |Pessoa (dona)|
+  :Liga/desliga "Usar como foto do post"\n(começa ligado);
+endif
+|Pessoa (dona)|
+:Gira o manequim e toca "Gerar foto";
+|Frontend|
+:canvas.toBlob(JPEG 0.93);
+if (Captura falhou?) then (sim)
+  :toast de erro;
+  stop
+endif
+:POST /api/pieces/{id}/mannequin-photo\nou POST /api/schemes/{id}/mannequin-photo?asCover=… (multipart);
+|API|
+:Uploads.image(file)\n(400 ARQUIVO_VAZIO · FORMATO_NAO_SUPORTADO · ARQUIVO_ILEGIVEL);
+|Serviço|
+if (Logada, e-mail confirmado e dona?\n(requireCanCreate · requireOwner /\nSchemeService.owned)) then (não)
+  #FFE3E3:401 sem login · 403 EMAIL_NAO_CONFIRMADO\nou não é a dona · 404 inexistente;
+  |Frontend|
+  :toast;
+  stop
+endif
+|Serviço|
+if (Peça fora de upper_piece / full_body_piece?) then (sim)
+  #FFE3E3:422 SEM_FOTO_NO_MANEQUIM;
+  |Frontend|
+  :toast;
+  stop
+endif
+|Serviço|
+if (ImageOps.requireAcceptedImage ok?) then (não)
+  #FFE3E3:400 ARQUIVO_VAZIO · ARQUIVO_GRANDE · FORMATO_INVALIDO;
+  |Frontend|
+  :toast;
+  stop
+endif
+|Serviço|
+:reduz a ≤ 1600 px e grava JPEG 0,92;
+|Banco/Storage|
+:MediaService.put → users/{id}/{pieces|schemes}/{id}/mannequin-{ts}.jpg;
+:UPDATE wardrobe_items | schemes: mannequin_image_url\ne mannequin_image_face (FOTO se tem foto de perfil\ne não é marca; senão PADRAO);
+if (Look com asCover = true?) then (sim)
+  :schemes.cover_image_url = a mesma foto;
+endif
+|Frontend|
+:Mostra a foto salva + toast; refreshMe;
+|Pessoa (dona)|
+if (O que faz agora?) then (gerar de novo)
+  :volta ao manequim (preview limpo) e gera de novo;\na nova foto substitui a URL anterior;
+elseif (remover foto)
+  |Frontend|
+  :DELETE /api/{pieces|schemes}/{id}/mannequin-photo;
+  |Banco/Storage|
+  :mannequin_image_url e _face = NULL;\nse a capa era essa foto, cover_image_url = NULL;
+  |Frontend|
+  :204 → toast "Foto removida", fecha e recarrega;
+else (fechar)
+  |Frontend|
+  :Fecha; peça ganha o slide "no manequim" na galeria;\nlook usa a foto como capa do post e das exportações;
 endif
 stop
 @enduml

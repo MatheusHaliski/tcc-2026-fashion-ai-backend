@@ -1,0 +1,52 @@
+@startuml RF4_MaquinaDeEstados_Catalogo
+!pragma layout smetana
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de máquina de estados — CatalogProduct.ingestionStatus: descoberta ≠ persistência (e source_status como eixo à parte)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+}
+
+state "DISCOVERED\n(oculto da busca local)" as Descoberto
+state "VALIDATED\n(curado: seed / acervo oficial)" as Validado
+state "PERSISTABLE" as Persistivel #F2F2F2
+state "REFERENCE_ONLY\n(alguém já escolheu)" as Referencia
+state "REJECTED" as Recusado #F2F2F2
+
+[*] --> Descoberto : POST /api/catalog/discover →\nCatalogIngestService.upsert(…, DISCOVERED)
+[*] --> Validado : scripts/catalog: seed_catalog.py ·\nimport_products.py (Ingestor [CREATE])
+Descoberto --> Referencia : POST /api/pieces/from-catalog\n(addToWardrobe; owners_count + 1)
+Descoberto --> Validado : importação curada do mesmo produto\n(ingest.py [UPDATE] ou upsert com status ≠ DISCOVERED)
+Validado --> Validado : reimportação: só preenche vazios,\nnovas variantes/fotos ([UPDATE] · [SKIP] · [DUP])
+Validado --> Persistivel : <<planejado>> curadoria confirma\ndireito de uso da foto
+Descoberto --> Recusado : <<planejado>> curadoria recusa
+Recusado --> [*]
+
+note right of Descoberto
+  Nunca rebaixa um produto já curado:
+  upsert(DISCOVERED) sobre um existente → DUPLICATE.
+end note
+note right of Referencia
+  Visível na busca: o próximo usuário acha o
+  produto localmente. owners_count + 1 a cada
+  peça criada (VALIDATED/REFERENCE_ONLY mantêm o status).
+end note
+note bottom of Recusado
+  Nenhum endpoint ou script grava PERSISTABLE ou REJECTED hoje; os
+  estados existem no enum e na consulta (VISIBLE = VALIDATED · PERSISTABLE ·
+  REFERENCE_ONLY). addToWardrobe recusa REJECTED com 400 PRODUTO_RECUSADO.
+end note
+note left of Validado
+  source_status é outro eixo (revalidate_catalog.py, HEAD):
+  ACTIVE (2xx/3xx) · UNAVAILABLE (5xx, timeout) ·
+  SOURCE_REMOVED (404/410) · NEEDS_REVALIDATION (outros 4xx);
+  o import grava ACTIVE. catalog_images.usage_status
+  (REFERENCE_ONLY · PERSISTED · REJECTED) é da foto.
+end note
+@enduml

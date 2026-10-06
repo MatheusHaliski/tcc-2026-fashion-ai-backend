@@ -25,15 +25,15 @@ skinparam note {
 }
 |Marca/Celebridade|
 start
-:Perfil (brands/[slug]) → aba GUARDA_ROUPA\n(dono vê o WardrobeCreatorTab);
+:Perfil (brands/[slug]) → aba GUARDA_ROUPA\n(dono vê o WardrobeCreatorTab; visitante logado\nvê a RoomStore filtrada pela marca);
 |Frontend (WardrobeCreatorTab · WardrobePreview)|
 :GET /api/room-creator/options\n+ GET /api/room-creator/items;
 |API (WardrobeCreatorService)|
 if (marca/celebridade aprovada e com conta ativa?\n(Guard.requireApprovedInstitutional)) then (não)
-  #FFE3E3:403 — só marcas e celebridades criam;
+  #FFE3E3:403 — só marcas e celebridades criam\n(PERFIL_EM_VALIDACAO se pendente;\nnegação registrada na auditoria);
   stop
 endif
-:Opções: 20 blocos (porta, gaveta, puxador, maleiro, base,\ncabides, logo, LED, tapete, sapateira, vitrine, porta-joias,\nilha, espelhos), 22 materiais com cores, 7 níveis\n(ESTREIA → MAISON), identidade e selos ACTIVE;
+:Opções: 20 blocos (porta, gaveta, puxador, maleiro, base,\ncabides, logo, LED, tapete, sapateira, vitrine, porta-joias,\nilha, espelhos), 22 materiais com cores (holográfico só\nna fábrica), 7 níveis (ESTREIA → MAISON),\nidentidade da marca e selos ACTIVE;
 |Marca/Celebridade|
 if (Componente ou guarda-roupa inteiro?) then (COMPONENT)
   :Escolhe um bloco, material e cor;
@@ -50,8 +50,8 @@ endif
 |Frontend (WardrobeCreatorTab · WardrobePreview)|
 :POST /api/room-creator/items (ou PUT …/items/{sku});
 |API (WardrobeCreatorService)|
-if (bloco e material aceitos, preço 0–20 000,\njanela coerente, URL de imagem válida,\nguarda-roupa com blocos, selo do próprio perfil?) then (não)
-  #FFE3E3:400 BLOCO_INVALIDO · MATERIAL_INVALIDO\n· PRECO_INVALIDO · PERIODO_INVALIDO\n· URL_INVALIDA · SEM_BLOCOS · 403 selo de outro perfil;
+if (nome de 3 a 120 letras (moderado), bloco e material\naceitos, preço 0–20 000, janela coerente, URL de imagem\nválida, guarda-roupa com blocos, selo do próprio perfil,\nitem do próprio criador (PUT)?) then (não)
+  #FFE3E3:400 BLOCO_INVALIDO · MATERIAL_INVALIDO\n· PRECO_INVALIDO · PERIODO_INVALIDO\n· URL_INVALIDA · SEM_BLOCOS\n· 403 selo ou item de outro perfil;
   stop
 endif
 :Nível final = o maior entre o escolhido, o do bloco\ne o do material; raridade MARCA ou CELEBRIDADE;
@@ -71,9 +71,9 @@ if (nível · estoque · disponibilidade · limite por pessoa\n· selo exigido �
   #FFE3E3:409 NIVEL_INSUFICIENTE · ESGOTADO · CONDICAO_DE_COMPRA\n(EM_BREVE, EXPIRADO, limite, selo) · SALDO_INSUFICIENTE;
   stop
 endif
-:Débito SHOP_PURCHASE em fai_points_ledger (não conta\npara o nível), soldCount + 1 e unidade em room_inventory\n(serial quando há estoque limitado);
+:Débito SHOP_PURCHASE em fai_points_ledger (não conta\npara o nível), soldCount + 1 e unidade em room_inventory\n(serial quando há estoque limitado);\nnotificação FAI_POINTS no extrato (sino);
 |Comprador|
-:Montar no quarto;
+:Montar no quarto (RoomStore) ou abrir a caixa\nde entrega no Meu Quarto (monta sozinha);
 |API (FaiPointsService · RoomService)|
 :POST /api/me/room-inventory/{id}/apply {moduleId};
 if (módulo compatível?\n(WARDROBE → só "ALL")) then (não)

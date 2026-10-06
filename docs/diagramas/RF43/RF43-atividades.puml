@@ -1,5 +1,5 @@
 @startuml RF43_Atividades
-title RF43 — Autopiloto gera combinações de vestimentas com IA de acordo com as especificações do usuário\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF43 — Autopiloto gera combinações de vestimentas com IA\nDiagrama de atividades — aba Hoje: ocasião, humor, clima e modo (SEGURO/DESCOBERTA/EXPERIMENTAL), três looks com seis números, insights AUTOPILOT e confirmação como Look do Dia
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,88 +25,68 @@ skinparam note {
 }
 |Pessoa|
 start
-:Abre a tela Autopiloto (autopilot);
-:Informa ocasião (até 2), humor e cidade;
 note right
-  O card do Trello (RF43) não tem descrição:
-  o fluxo segue o código. No código e na API
-  o recurso aparece como RF10 (numeração antiga).
+  Card do Trello sem descrição:
+  fluxo tirado do título e do código.
 end note
-|Frontend (autopilot/page.tsx)|
-:POST /api/autopilot/daily
-{occasion, mood, city, excludeKeys};
-|Backend (AutopilotService)|
-:wardrobe.eligible(userId)
-peças disponíveis da pessoa;
-if (eligible >= MIN_PIECES (3)?) then (não)
-  #FFE3E3:422 ACERVO_INSUFICIENTE
-  (href /pieces/new);
-  stop
-endif
-|Bancos-serviços|
-:WeatherService.resolve(lat, lon, city)
-Open-Meteo, cache 30 min;
-:Faixa de clima: VERAO_LEVE, MEIA_ESTACAO,
-CAMADAS ou INVERNO_PESADO;
-|Backend (AutopilotService)|
-:Filtra peças inadequadas ao clima
-(WeatherService.unsuitable);
-:LocalSchemeComposer.compose → candidatas;
-:Pontua: ocasião, clima, preferências
-(PreferenceModel) e diversidade;
-note right
-  score = W_OCCASION*ocasiao + W_CLIMATE*clima
-  + W_PREFERENCE*preferencias + W_DIVERSITY*diversidade;
-  chaves em excludeKeys são descartadas
-  ("Outras opções" nunca repete).
-end note
-if (há candidatas?) then (não)
-  :suggestions = [] + mensagem;
-  |Frontend (autopilot/page.tsx)|
-  :EmptyState → "Adicionar peça";
-  stop
-endif
-|Bancos-serviços|
-:AiEngine.text(COPILOT) escolhe 3 entre
-as 10 melhores e justifica (ver RF24);
-if (IA respondeu JSON válido?) then (não)
-  |Backend (AutopilotService)|
-  :Fallback local: 3 primeiras
-  com localRationale (fallbackUsed=true);
-endif
-|Backend (AutopilotService)|
-:suggestionView: peças, critérios, score,
-rationale e layout no manequim;
-|Frontend (autopilot/page.tsx)|
-:Mostra até 3 looks com clima e explicação;
+:Abre /autopilot (RequireAuth) → aba "Hoje";
+|Frontend|
+:InsightStrip AUTOPILOT (antes de gerar busca\nGET /api/insights?context=AUTOPILOT);
 |Pessoa|
-if (Gostou de algum look?) then (não)
-  :"Outras opções";
-  |Frontend (autopilot/page.tsx)|
-  :POST /api/autopilot/daily
-  com excludeKeys acumuladas;
+:Escolhe até 2 ocasiões (padrão casual), humor,\ncidade (opcional) e o modo: Seguro (SAFE, padrão)\n· Descoberta (DISCOVERY) · Experimental (EXPERIMENTAL);
+:Toca em "Sugerir look de hoje";
+|Frontend|
+:POST /api/autopilot/daily {occasion, mood, city, mode, excludeKeys: []};
+|API (AutopilotService)|
+:wardrobe.eligible(userId): só peças disponíveis do acervo;
+if (Menos de 3 peças elegíveis?) then (sim)
+  #FFE3E3:422 ACERVO_INSUFICIENTE {href /pieces/new, pieces};
+  |Frontend|
+  :Toast com o erro;
   stop
-else (sim)
-  :"Usar hoje";
 endif
-|Frontend (autopilot/page.tsx)|
-:POST /api/autopilot/daily/confirmation
-{pieceIds, title, occasion, mood};
-|Backend (AutopilotService)|
-:createScheme: reaproveita esquema igual
-ou cria Scheme (origin AUTOPILOTO,
-creationMode AI_ASSISTED);
-:DailyLookService.register
-(source AUTOPILOTO, hoje);
-|Bancos-serviços|
-:INSERT schemes, scheme_items, daily_looks;
-|Frontend (autopilot/page.tsx)|
-:201 → redireciona para /schemes/{id};
-note right
-  Aba "Semana": POST /api/autopilot/weeks monta
-  7 dias sem repetir combinação (WeekPlan ACTIVE),
-  PUT /days/{id} troca peças, POST /days/{id}/use
-  registra o Look do Dia, DELETE /weeks/current descarta.
-end note
+|API (AutopilotService)|
+:WeatherService.resolve(lat, lon, city) → faixa VERAO_LEVE ·\nMEIA_ESTACAO · CAMADAS · INVERNO_PESADO (sem cidade = sem clima);
+:candidates: descarta peças inadequadas ao clima; LocalSchemeComposer\n(até 60); ignora combinações em excludeKeys;
+:Nota do motor = ocasião .35 + clima .25\n+ preferências (PreferenceModel) .25 + diversidade .15 → 30 melhores;
+if (Nenhuma candidata?) then (sim)
+  :200 {suggestions: [], message "não há combinações novas"};
+  |Frontend|
+  :EmptyState + "Adicionar peça";
+  stop
+endif
+|API (AutopilotService)|
+:As 10 primeiras recebem os seis números do LookScorer\n(compatibilidade DNA · Hype · novidade · reuso · uso · sustentabilidade);
+if (Modo informado?) then (sim)
+  :Reordena por RecommendationScoring.rankValue(modo)\n(dimensão nula = 50; Hype ≤ 20% do peso);
+endif
+:pickWithAi: AiEngine.text(COPILOT) escolhe 3 entre c1..c10\ne justifica (JSON); ref inválida é descartada;
+if (IA indisponível, sem cota ou resposta inválida?) then (sim)
+  :Fallback local: 3 primeiras com\nlocalRationale (fallbackUsed = true);
+endif
+:attachScores; com modo, reordena as 3 e renumera os títulos;
+:+ excludeKeys (já mostradas), weather, notice (< 3 looks),\nexplanation, quota e insights AUTOPILOT\n(peças paradas, uso, DNA; Hype ao lado);
+|Frontend|
+:Cards com peças, LookScores (seis números lado a lado,\n— quando sem base) e o clima; InsightStrip com os insights recebidos;
+|Pessoa|
+if (O que faz?) then (outras opções)
+  |Frontend|
+  :POST /api/autopilot/daily com excludeKeys acumuladas;
+  note right: volta ao início do motor\nsem repetir combinações
+  stop
+else (usar hoje)
+  |Frontend|
+  :POST /api/autopilot/daily/confirmation\n{pieceIds, title, occasion, mood};
+  |API (AutopilotService)|
+  :createScheme (origin AUTOPILOTO, AI_ASSISTED):\nmenos de 2 peças = 400 SEM_PECAS; peça de outra pessoa = 403;\nmesma combinação já salva = reaproveita o look;
+  :DailyLookService.register(AUTOPILOTO, hoje);
+  if (Peça indisponível?) then (sim)
+    #FFE3E3:409 PECA_INDISPONIVEL (nada gravado);
+    stop
+  endif
+  :201 {schemeId, dailyLook} → DailyLookRegistered\n(diário de uso, LOOK_WORN/PIECE_USED — ver RF42);
+  |Frontend|
+  :Toast e redireciona para /schemes/{schemeId};
+endif
 stop
 @enduml

@@ -1,5 +1,6 @@
 @startuml RF40_Roupa_Classes
-title RF40 — Avatar 3D: tipos da montagem da roupa\nDiagrama de classes
+title RF40 — Criar o próprio avatar 3D a partir de fotos (aba "Meu Avatar 3D") e usá-lo no manequim\nDiagrama de classes — roupa no avatar: tipos TypeScript de lib/avatar3d/human e components/three
+!pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam class {
@@ -8,67 +9,145 @@ skinparam class {
   FontColor #2D2438
   ArrowColor #52606D
 }
-enum GarmentKind {
-  tee
-  tank
-  longsleeve
-  shirt
-  sweater
-  hoodie
-  jacket
-  coat
-  crop
-  dress
-  jumpsuit
-  skirt
-  pants
-  shorts
-  leggings
-  shoes
-  boots
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
-class GarmentSpec {
-  kind : GarmentKind
+hide empty methods
+
+package "components/three" {
+class Look3dPiece <<interface>> {
+  id, name, slot: string
+  category?, subcategory?: string
+  imageUrl?, studioUrl?: string
+  colorHex?: string
+  defaultImage?: boolean
+}
+class OutfitItem <<interface>> {
+  key: string
+  spec: GarmentSpec
+  piece: Look3dPiece
+}
+class HumanParts <<interface>> {
+  human: Human
+  pose: PoseState
+  composed: Composed
+  asset: BodyAsset
+  hair: SkinnedMesh | null
+}
+}
+
+package "lib/avatar3d/human" {
+enum GarmentKind {
+  tee · tank · longsleeve · shirt
+  sweater · hoodie · jacket · coat · crop
+  dress · jumpsuit · skirt · pants
+  shorts · leggings · shoes · boots
+}
+class GarmentSpec <<interface>> {
+  kind: GarmentKind
   ease, hem, neck, vneck, waist
   sleeve, leg, skirt, drape, flare
-  layer
+  layer: number
 }
-class BodyParam {
-  h[], group[], side[]
-  hipY, neckY, torsoZ
-  shoulder{L,R}, wrist{L,R}
+enum Zone {
+  upper
+  lower
+  feet
 }
-class GarmentGeometry {
-  spec : GarmentSpec
-  position, alpha
-  source  «vértice do corpo de origem»
+class BodyAsset <<interface>> {
+  meta: BodyMeta
+  body, eye, hair: Part
+  shapeJoints, shapeTails
+  face, landmark
+}
+class Composed <<interface>> {
+  body, eye, hair: Float32Array
+  joints, tails: Float32Array
+  stature, scale: number
+}
+class Human <<interface>> {
+  root: Group
+  body, eyes: SkinnedMesh
+  skeleton: Skeleton
+  rest: {body, normals, joints}
+  bone(name): Bone
+}
+class PoseState <<interface>> {
+  base, hips, legLen
+}
+class BodyParam <<interface>> {
+  group, side, h, arm, leg
+  hipY, neckY, ankleY, torsoZ, neckZ
+  shoulder?, wrist?: {L, R}
+}
+class GarmentGeometry <<interface>> {
+  spec: GarmentSpec
+  position, alpha: Float32Array
   skinIndex, skinWeight, index
+  source: Int32Array  «vértice do corpo; −1 = tubo da saia»
 }
-class UnderLayer {
-  ease : Float32Array  «folga já ocupada»
-  tubes : SkirtTube[]
+class UnderLayer <<interface>> {
+  ease: Float32Array  «folga já ocupada»
+  tubes: SkirtTube[]
 }
-class CollarBand {
+class SkirtTube <<interface>> {
+  y0, len: number
+  r: Float32Array[]
+}
+class CollarBand <<interface>> {
   position, skinIndex, skinWeight, index
 }
-class TrimBand {
-  part : barra|punho
+class TrimBand <<interface>> {
+  part: "barra" | "punho"
   position, skinIndex, skinWeight, index
 }
-class ShoePart {
-  name : cabedal|sola|cadarco|colarinho
+class ShoePart <<interface>> {
+  name: cabedal | sola | cadarco | colarinho
   position, color, skinIndex, skinWeight, index
 }
-class PhotoInfo {
-  width, height, box
-  widthAt(fy), collarRow
+enum ShoeStyle {
+  sneaker
+  low
 }
+class PhotoInfo <<interface>> {
+  width, height, box
+  widthAt(fy)
+  collarRow: number | null
+}
+}
+
+OutfitItem --> GarmentSpec
+OutfitItem --> Look3dPiece
+GarmentSpec --> GarmentKind
+HumanParts --> Human
+HumanParts --> PoseState
+HumanParts --> Composed
+HumanParts --> BodyAsset
+Composed ..> BodyAsset : compose(asset, z, fz, stature)
+BodyParam ..> Composed : bodyParam(asset, composed)
 GarmentGeometry --> GarmentSpec
-GarmentSpec ..> GarmentKind
 GarmentGeometry ..> BodyParam
-GarmentGeometry ..> UnderLayer : folga sobre
-TrimBand ..> GarmentGeometry : raio da peça
-CollarBand ..> GarmentSpec
+GarmentGeometry ..> UnderLayer : folga por fora
+UnderLayer *-- "*" SkirtTube
+TrimBand ..> GarmentGeometry : garmentTrims(…, gg)
+CollarBand ..> GarmentSpec : só HAS_COLLAR_BAND
+ShoePart ..> ShoeStyle
 ShoePart ..> BodyParam
-GarmentGeometry ..> PhotoInfo : textura
+GarmentGeometry ..> PhotoInfo : texturedGeometry
+Zone ..> Look3dPiece : DEFAULT_PIECES[zona]
+
+note bottom of Zone
+  DEFAULT_PIECES: camiseta de referência (upper),
+  jeans (lower) e tênis casual (feet), em WebP 640 px.
+  zonesCovered: jaqueta e casaco não cobrem o tronco
+  sozinhos; casaco longo não cobre as pernas.
+end note
+note right of GarmentSpec
+  SPECS[kind] fixa as folgas e a camada:
+  leggings 1 · calças, saias e calçados 2 ·
+  camisetas, vestidos e macacões 3 ·
+  suéter e moletom 4 · jaqueta 5 · casaco 6.
+end note
 @enduml

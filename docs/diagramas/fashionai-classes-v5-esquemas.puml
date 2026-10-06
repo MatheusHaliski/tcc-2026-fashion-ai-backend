@@ -1,0 +1,318 @@
+@startuml FashionAI_Classes_v5_Esquemas
+title FashionAI — Visão global do domínio (v5)\nDiagrama de classes — Esquemas (looks), DNA de Estilo e planejamento (RF5–RF7, RF9, RF11, RF13, RF28, RF42, RF43) · entidades JPA de fai-domain, Flyway V1–V42
+!pragma layout smetana
+set separator none
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam note {
+  BackgroundColor #FFFBEA
+  BorderColor #B8A86A
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "Esquema (look) e peças posicionadas" {
+class Scheme << (V,#C9B8F0) schemes >> {
+  +user: User
+  +originalScheme: Scheme
+  +title: String
+  +creationMode: CreationMode
+  +origin: SchemeOrigin
+  +style: String
+  +occasion: String
+  +season: Season
+  +visibility: Visibility
+  +status: SchemeStatus
+  +displayMode: DisplayMode
+  +disponivel: boolean
+  +lookDoDia: boolean
+  +lookDoDiaCount: int
+  +communityIndexed: boolean
+  +cardSkin: String
+  +layoutAnatomy: String
+  +studioConfigJson: String
+  +renderingStatus: RenderStatus
+  +sealIdsJson: String
+  +groupingId: UUID
+  +revalidationPending: boolean
+  +favorite: boolean
+  +publishedAt: Instant
+  .. +28 campos ..
+}
+class SchemeItem << (A,#B8DCC0) scheme_items >> {
+  +scheme: Scheme
+  +wardrobeItem: WardrobeItem
+  +slot: SchemeSlot
+  +tryOnLayer: TryOnLayer
+  +sortOrder: int
+  +zIndex: int
+  +filtersJson: String
+  +snapshotJson: String
+  .. +5 campos ..
+}
+class SchemeGrouping << (V,#C9B8F0) scheme_groupings >> {
+  +owner: User
+  +type: GroupingType
+  +label: String
+  +atmospherePrompt: String
+  +periodFrom: Integer
+  +periodTo: Integer
+  +sortOrder: int
+  .. +3 campos ..
+}
+class AssetPreset << (S,#F0D2B8) asset_presets >> {
+  +id: String
+  +kind: AssetKind
+  +label: String
+  +presetGroup: String
+  +staticUrl: String
+  +animatedUrl: String
+  +status: String
+  +rfTags: String
+  .. +6 campos ..
+}
+}
+package "Look do Dia, semana e espelho" {
+class DailyLook << (V,#C9B8F0) daily_looks >> {
+  +user: User
+  +scheme: Scheme
+  +materializedFrom: DailyLook
+  +lookDate: LocalDate
+  +source: DailyLookSource
+  +feedback: DailyLookFeedback
+  +feedbackAt: Instant
+  +weekPlanDayId: UUID
+}
+class WeekPlan << (V,#C9B8F0) week_plans >> {
+  +user: User
+  +weekStart: LocalDate
+  +status: WeekPlanStatus
+  +gapsJson: String
+}
+class WeekPlanDay << (A,#B8DCC0) week_plan_days >> {
+  +weekPlan: WeekPlan
+  +dayDate: LocalDate
+  +eventLabel: String
+  +occasion: String
+  +scheme: Scheme
+  +pieceIdsJson: String
+  +combinationKey: String
+  +editedManually: boolean
+  .. +1 campos ..
+}
+class MirrorState << (A,#B8DCC0) mirror_states >> {
+  +userId: UUID
+  +slotsJson: String
+  +shownCombinationsJson: String
+  +lastPrompt: String
+}
+class AcervoGroup << (V,#C9B8F0) acervo_groups >> {
+  +user: User
+  +entityType: HypeEntityType
+  +label: String
+  +memberIdsJson: String
+  +memberCount: int
+  +computedAt: Instant
+  .. +1 campos ..
+}
+}
+package "DNA de Estilo (RF13)" {
+class DnaScheme << (V,#C9B8F0) dna_schemes >> {
+  +user: User
+  +title: String
+  +identityPhrase: String
+  +archetype: StyleArchetype
+  +narrativeType: NarrativeType
+  +iconSchemeId: UUID
+  +visibility: Visibility
+  +status: SchemeStatus
+  +groupingId: UUID
+  +remixedFromDnaId: UUID
+  +cardLayout: String
+  .. +22 campos ..
+}
+class DnaSchemeItem << (A,#B8DCC0) dna_scheme_items >> {
+  +dnaScheme: DnaScheme
+  +scheme: Scheme
+  +cell: DnaCell
+  +eraLabel: String
+  +duplicate: boolean
+  +sourceSchemeId: UUID
+  +milestone: boolean
+  .. +1 campos ..
+}
+class StyleDna << (V,#C9B8F0) style_dna >> {
+  +user: User
+  +archetype: StyleArchetype
+  +boldnessIndex: int
+  +identityPhrase: String
+  +colorPalette: String
+  +silhouette: String
+  +colorSeason: String
+  +latestDnaSchemeId: UUID
+  +synthesizedAt: Instant
+  .. +9 campos ..
+}
+class StyleDnaVersion << (S,#F0D2B8) style_dna_versions >> {
+  +userId: UUID
+  +snapshotJson: String
+}
+}
+package "Enums-chave (domain/model/enums)" {
+enum SchemeStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+enum SchemeOrigin {
+  CRIAR_LOOK
+  PROVADOR
+  REMIX
+  COPILOT
+  DNA_DUPLICATE
+  SMART_MIRROR
+  VISTA_ME
+  AUTOPILOTO
+}
+enum CreationMode {
+  MANUAL
+  AI_ASSISTED
+}
+enum RenderStatus {
+  PENDING
+  RENDERING
+  ENHANCING
+  COMPOSITING
+  CACHED
+  COMPLETED
+  FAILED
+}
+enum SchemeSlot {
+  TOP
+  BOTTOM
+  SHOES
+  ACCESSORY
+  FULL_BODY
+  OUTERWEAR
+}
+enum TryOnLayer {
+  BASE
+  INTERMEDIATE
+  OUTER
+  ACCESSORY
+}
+enum GroupingType {
+  COLLECTION
+  PROMOTION
+  SIGNATURE_SERIES
+  EVOLUTION
+  STYLE_LINE
+  ERA
+  PHASE
+  SEASON
+  TOUR
+}
+enum NarrativeType {
+  TIMELINE
+  MOMENTOS_MARCANTES
+  PRIMEIRA_VEZ
+  CAPSULA_VERSATILIDADE
+  POR_OCASIAO
+  MOOD_BOARD
+  PALETA_DOMINANTE
+  HARMONIA_CROMATICA
+  MARCAS_FAVORITAS
+  HYPE_FOCUS
+  CARTELA_SAZONAL
+  LEGO
+}
+enum StyleArchetype {
+  ROMANTIC
+  DRAMATIC
+  CLASSIC
+  NATURAL
+  GAMINE
+}
+enum DailyLookSource {
+  MANUAL
+  AUTOPILOTO
+  COPILOT
+  VISTA_ME
+  SMART_MIRROR
+}
+enum DailyLookFeedback {
+  ADOREI
+  NAO_USEI
+  NAO_GOSTEI
+}
+enum WeekPlanStatus {
+  ACTIVE
+  DISCARDED
+  COMPLETED
+}
+enum AssetKind {
+  CHROME_BACKGROUND
+  AURA_PRESET
+  AURA_VARIANT
+  MATERIAL
+  AURA_MATERIAL_STATIC
+  AURA_MATERIAL_ANIMATED
+  AURA_MATERIAL_MOSAIC
+  GRADIENT_AURA
+  .. +2 valores ..
+}
+}
+package "Referências a outras áreas" #FAFAFA {
+class User <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class WardrobeItem <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+}
+
+' --- associações JPA (geradas do código) ---
+Scheme "*" --> "1" User : user
+Scheme "*" --> "0..1" Scheme
+SchemeItem "*" --> "1" Scheme : scheme
+SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
+SchemeGrouping "*" --> "1" User : owner
+DailyLook "*" --> "1" User : user
+DailyLook "*" --> "1" Scheme : scheme
+DailyLook "*" --> "0..1" DailyLook
+WeekPlan "*" --> "1" User : user
+WeekPlanDay "*" --> "1" WeekPlan : weekPlan
+WeekPlanDay "*" --> "0..1" Scheme : scheme
+AcervoGroup "*" --> "1" User : user
+DnaScheme "*" --> "1" User : user
+DnaSchemeItem "*" --> "1" DnaScheme : dnaScheme
+DnaSchemeItem "*" --> "1" Scheme : scheme
+StyleDna "0..1" --> "1" User : user
+' --- referências por id, sem FK JPA ---
+Scheme ..> SchemeGrouping : groupingId
+DailyLook ..> WeekPlanDay : weekPlanDayId
+MirrorState ..> User : userId
+DnaScheme ..> Scheme : iconSchemeId
+DnaScheme ..> SchemeGrouping : groupingId
+StyleDna ..> DnaScheme : latestDnaSchemeId
+StyleDnaVersion ..> User : userId
+AcervoGroup ..> WardrobeItem : memberIdsJson (PIECE)
+note "originalScheme = look de origem do remix (auto-associação).\nSem hypeScore/hypeScoreGlobal/hypeGroupId:\no v1 saiu em P3-16; o Hype do look é\nHypeScoreCurrent(SCHEME, id) — RF46." as N_SCH
+N_SCH .. Scheme
+note "materializedFrom = Look do Dia de ontem\nque continuou hoje (materialização lazy)." as N_DL
+N_DL .. DailyLook
+note "DnaScheme: 2 a 6 esquemas do próprio usuário\n(DnaSchemeItem.cell CELL_1…CELL_6)." as N_DNA
+N_DNA .. DnaSchemeItem
+legend right
+  <b>Letra do ícone</b>
+  V = estende VersionedAuditableEntity (id UUID, createdAt/updatedAt, createdBy/lastModifiedBy, @Version)
+  A = estende AuditableEntity (id UUID e auditoria, sem @Version)
+  S = @Entity sem superclasse (id e datas próprios) · M = @Embeddable (colunas embutidas na tabela dona)
+  E = enum
+  ⟶ seta cheia = associação JPA (@ManyToOne/@OneToOne) · seta tracejada = id guardado sem FK JPA
+  <<outra área>> = classe detalhada em outro diagrama v5
+endlegend
+@enduml

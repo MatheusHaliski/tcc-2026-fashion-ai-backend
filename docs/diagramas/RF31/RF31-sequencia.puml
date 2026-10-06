@@ -1,5 +1,5 @@
 @startuml RF31_Sequencia
-title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de sequência — endpoints reais
+title RF31 — Filtrar e marcar o estado dos itens do acervo: favoritar, disponível, indisponível e todos\nDiagrama de sequência — filtrar e ordenar o guarda-roupa (estado, faixa de Hype v2 e "Com selo")
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,27 +8,47 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor Usuário as U
-participant "Frontend\ncloset / pieces" as FE
+actor "Pessoa" as U
+participant "closet/page.tsx\n(FilterBar · hype-filters.ts)" as FE
 participant "WardrobeController" as C
 participant "WardrobeService" as S
+participant "HypeScoreConfig" as CFG
+participant "HypeSeals" as HS
+participant "SealService\n(approvedPieceBonds)" as SS
+participant "SealController" as SC
 database "MySQL" as DB
-U -> FE: filtra "Indisponíveis"\n(+ faixa de Hype e ordenação, opcionais)
-FE -> C: GET /api/me/closet?state=indisponivel\n&hypeLevel=HOT&sort=hype_desc
-C -> S: closet(filter)
-S -> DB: SELECT wardrobe_items
-S -> S: SORT_ALIASES normaliza o sort\n(mais_usadas → worn, nome → name, preco → price…)
-opt sort ∈ HYPE_SORTS (hype, hype_desc, hype_asc, growth, rarity) ou hypeLevel
-  S -> DB: SELECT hype_scores (HypeScoreCurrentRepository,\nPIECE, algorithmVersion do HypeScoreConfig)
-  S -> S: hypeLevel → score mínimo (levelThresholds);\nsem Hype fica por último (nullsLast)
+
+U -> FE: estado "Indisponíveis", faixa "Em alta ou mais",\n"Com selo: Hype", ordenar "Maior Hype"
+FE -> FE: router.replace(/closet?category=…&seal=hype)
+FE -> C: GET /api/me/closet?state=indisponivel&hypeLevel=HOT\n&seal=hype&sort=hype_desc&page=0&size=24
+C -> S: closet(user, user.id(), ClosetFilter(…, hypeLevel, seal))
+S -> DB: SELECT wardrobe_items WHERE user_id ORDER BY created_at DESC
+S -> S: tira ARCHIVED; filtra categoria, cor (ou família),\nestação, ocasião, estilo, stateMatches(w, "indisponivel"), q
+S -> S: SORT_ALIASES (mais_usadas → worn, nome → name…)\nsealFilter("hype") → "hype"
+opt sort ∈ HYPE_SORTS ou hypeLevel ou seal ∈ {hype, any}
+  S -> CFG: algorithmVersion()
+  S -> DB: hype_scores (PIECE, ids, versão)\nfindByEntityTypeAndEntityIdInAndAlgorithmVersion
+  note right of S: dona: Hype pessoal de todas as peças;\noutra pessoa: só publicEligible
 end
-note right of S: novo (RF53 · HypeScore v2):\nClosetFilter.hypeLevel e sorts canônicos
-S --> FE: Page<PieceView>
-U -> FE: marca "Indisponível"
-FE -> C: PATCH /api/pieces/{id}/flags
-C -> S: toggles(user, id, favorite,\ndisponivel, forSale)
-S -> DB: UPDATE wardrobe_items
-S ->> S: AvailabilityChanged (AFTER_COMMIT)
-S -> DB: INSERT wardrobe_availability_changes\n(WardrobeEventListeners)
-S --> FE: peça atualizada
+opt hypeLevel informado
+  S -> CFG: levelThresholds() → HOT = 60
+  S -> S: remove sem Hype ou score < 60 − 0,5
+end
+alt seal = hype
+  S -> HS: of(hypeScore) — VIRAL, TRENDING, EMERGING, CLASSIC, RARE
+  S -> S: remove peças sem selo de Hype
+else seal = brand ou any
+  S -> SS: approvedPieceBonds(ids, schemeItems, sealBonds, canViewScheme)
+  SS -> DB: scheme_items + seal_bonds (APROVADO, tier PEÇA)
+  S -> S: brand: remove sem vínculo · any: remove sem nenhum dos dois
+end
+S -> S: ordena (hype_desc: score, sem Hype por último)\npagina (size ≤ 60)
+S --> C: Page<PieceView> {items, page, size, total, hasMore}
+C --> FE: 200
+FE -> SC: GET /api/pieces/seals?ids=… (usePieceSeals, até 60)
+SC --> FE: selos de marca/celebridade por peça
+FE --> U: grade de PieceCard (SealSlot · Indisponível · Para doar · ★)
+alt nenhuma peça
+  FE --> U: EmptyState "Adicionar peça"
+end
 @enduml

@@ -1,0 +1,87 @@
+@startuml RF4_Sequencia_Acervo_Oficial
+!pragma layout smetana
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de sequência — acervo oficial em escala: coleta (CLI) → revisão e fotos → importação idempotente no MySQL
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Operador" as OP
+participant "collect_official.py\nrun() · collect_brand()\nmake_fetch() · ascii_url()" as CO
+participant "providers/official_sitemap.py\ncollect() · Site · Politeness\nstructured_product()\nto_catalog_item()" as SM
+participant "Site oficial\nda marca" as WEB
+collections "data/catalog/collected\n<marca>.jsonl\n.state/<marca>.visited" as FS
+participant "recheck_collected.py\nenrich_images.py" as REV
+participant "import_railway.sh ·\nimport_products.py ·\nIngestor (ingest.py)" as IMP
+database "MySQL\n(Railway: fai_app + TLS)" as DB
+
+== 1/3 Coleta — sites oficiais → JSONL (sem acesso ao banco) ==
+OP -> CO: collect_official.py ~--brands nike,levis ~--max-per-brand 2000\n~--min-interval 1.5 ~--workers 12 [~--fresh] [~--dry-run]
+CO -> CO: official_sources(brands.json): OFFICIAL_BRAND /\nOFFICIAL_STORE / AUTHORIZED_RETAILER (RN47.04)
+par marcas em paralelo (~--workers); cada site com 1 requisição por vez
+  CO -> FS: collect_brand(): lê .visited e o .jsonl (retomada; ~--fresh apaga)
+  loop cada domínio oficial da marca
+    CO -> SM: collect(Site(domínio, fetch, Politeness, user_agent), marca, visited, on_item)
+    SM -> WEB: Site.load_robots(): GET /robots.txt (0/403/404 → tenta www.)
+    alt robots.txt 401/403/429 ou sem conexão
+      SM --> CO: StopDomain → relatório "PAROU"
+    else robots lido (404 = sem regras)
+      WEB --> SM: regras + Crawl-delay + "Sitemap:"
+      SM -> WEB: product_urls(): sitemaps de produto/pdp primeiro
+      loop cada URL nova até ~--max-per-brand
+        SM -> WEB: allowed(url) · get(url) (Politeness.wait: Crawl-delay)
+        alt 403 / 429
+          WEB --> SM: StopDomain (encerra o domínio)
+        else 200 HTML
+          SM -> SM: structured_product() → to_catalog_item():\nclean_title · same_brand · unsupported_reason ·\ninfer_subcategory · is_pack · product_images + brand_cdn_ok
+          SM -> CO: on_item(item)
+          CO -> FS: normalize_product(item) ok → +1 linha em <marca>.jsonl
+        end
+      end
+    end
+    CO -> FS: URLs novas em .state/<marca>.visited
+  end
+end
+CO --> OP: resumo: domínios · páginas · produtos · inválidos · domínios que pararam
+
+== 2/3 Revisão das regras e fotos (antes de importar) ==
+OP -> REV: recheck_collected.py [~--dry-run]
+REV -> FS: recheck(): fora_do_acervo · sem_tipo_no_nome · kit_sem_tipo ·\ntipo_corrigido · titulo_limpo · foto_https (reescreve via .jsonl.tmp)
+OP -> REV: enrich_images.py [~--workers 8]
+loop cada produto sem foto com official_product_url
+  REV -> SM: Site(host).load_robots() · allowed(url) · get(url)
+  SM -> WEB: GET página oficial (403/429 → StopDomain)
+  REV -> REV: structured_product() → product_images()\n(nó → variantes → og:image; brand_cdn_ok)
+end
+REV -> FS: enrich_file(): reescreve <marca>.jsonl
+
+== 3/3 Importação idempotente ==
+OP -> IMP: import_railway.sh <host> <porta> [~--dry-run]\n(TCP proxy temporário · fai_app com TLS · senha só em RAILWAY_MYSQL_APP_PASSWORD)
+note over IMP
+  1) seed_catalog.py (marcas, apelidos, fontes)
+  2) import_products.py acervo-oficial-2026-10-05.jsonl.gz
+  3) rebuild_search_index.py
+end note
+IMP -> FS: read_items(): .jsonl.gz em streaming
+loop cada produto (Ingestor.ingest(): uma transação)
+  IMP -> IMP: normalize_product (inválido → [ERROR], o lote segue)
+  IMP -> DB: brand_by_name · official_sources → validate_source.classify(URL)
+  IMP -> DB: deduplicate.find_existing: gtin › ean › upc › sku › código ›\nURL canônica › dedup_key · find_same_model (outra cor = variante)
+  alt não existe
+    IMP -> DB: INSERT catalog_products (VALIDATED, ACTIVE, search_text) — [CREATE]
+  else já existe
+    IMP -> DB: só campos vazios (DISCOVERED → VALIDATED) — [UPDATE]\nnada novo — [SKIP] · [DUP]
+  end
+  IMP -> DB: _variants · _aliases · _images (catalog_images REFERENCE_ONLY)
+end
+IMP -> DB: record_run(): catalog_ingestion_runs
+IMP -> DB: rebuild_search_index.py: UPDATE search_text (FULLTEXT ngram)
+IMP --> OP: Report: total_read · created · updated · skipped · duplicates_found · errors
+note over DB
+  Rodar de novo não duplica (0 criados).
+  A busca sobre esse acervo está em RF4-sequencia-catalogo.
+end note
+@enduml

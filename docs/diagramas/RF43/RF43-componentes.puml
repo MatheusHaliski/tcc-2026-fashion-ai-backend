@@ -1,5 +1,5 @@
 @startuml RF43_Componentes
-title RF43 — Autopiloto gera combinações de vestimentas com IA de acordo com as especificações do usuário\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF43 — Autopiloto gera combinações de vestimentas com IA\nDiagrama de componentes — tela do Autopiloto, AutopilotController, AutopilotService, motor local, IA, LookScorer, insights e persistência
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -17,48 +17,84 @@ skinparam database {
 left to right direction
 
 package "Frontend (Next.js)" {
-  component "autopilot/page.tsx — aba Hoje\n(ocasião, humor, cidade, 3 sugestões)" as FE0
-  component "autopilot/page.tsx — aba Semana\n(planejar, usar, descartar)" as FE1
+  component "autopilot/page.tsx\nabas Hoje · Semana; SegmentPicker de modo\n(SAFE padrão); Outras opções; Usar hoje" as FE0
+  component "components/hype/look-scores\n(LookScores: seis números)" as FE1
+  component "components/insights/insight-strip\n(InsightStrip AUTOPILOT, preset)" as FE2
+  component "lib/api/client.ts (api)\nlib/hooks/use-api" as FE3
 }
 package "fai-web · controllers" {
-  [AutopilotController] as AC
+  [AutopilotController\nPOST /api/autopilot/daily · /daily/confirmation\nPOST /api/autopilot/weeks · GET|DELETE /weeks/current\nPUT /api/autopilot/days/{dayId} · POST /days/{dayId}/use] as AC
+  [InsightsController\nGET /api/insights?context=AUTOPILOT] as IC
 }
-package "fai-application · services" {
-  [AutopilotService] as AS
+package "fai-application · serviços" {
+  [AutopilotService] as AP
+  [LookScorer\n(mesma régua do Copilot)] as LS
+  [PreferenceModel\n(feedback dos Looks do Dia)] as PM
   [WeatherService] as WS
-  [PreferenceModel] as PM
-  [LocalSchemeComposer\n(ai.local)] as LSC
-  [SchemeService] as SS
-  [DailyLookService] as DLS
-  [WardrobeService.eligible] as WDS
-  [AiEngine (RF24)\ncapability COPILOT] as AI
+  [WardrobeService\neligible] as WD
+  [SchemeService\ncreate · combinationKey] as SS
+  [DailyLookService\nregister(AUTOPILOTO)] as DL
+  [Guard\nrequireOwner] as G
+  [AiEngine (RF24)\nAiCapability.COPILOT] as AI
+  [LocalSchemeComposer · LocalAdvisors\n(ai/local)] as LOC
 }
-package "fai-infrastructure · adapters" {
-  [OpenMeteoAdapter\n(WeatherPort + GeocodingPort)] as OMA
-  [Provedores de IA\n(ai-providers)] as AIP
-  [WeekPlanRepository\nWeekPlanDayRepository\nSchemeRepository\nSchemeItemRepository\nWardrobeItemRepository\nUserPreferencesRepository\nUserRepository] as REPOS
+package "fai-application · hype e insights" {
+  [RecommendationScoring\nMode · Scores · rankValue] as RS
+  [StyleCompatibility] as SC
+  [HypeQueryService\ncurrentOf(PIECE)] as HQ
+  [InsightService · PersonalInsights\nitemsOrEmpty(AUTOPILOT)] as IS
 }
-database "MySQL · fashionai_app\n• week_plans\n• week_plan_days\n• schemes\n• scheme_items\n• daily_looks\n• wardrobe_items\n• user_preferences\n• users" as DB
-cloud "Open-Meteo\n(previsão + geocodificação)" as OM
-cloud "LLM remoto\n(fallback local se indisponível)" as LLM
+package "fai-application · portas" {
+  interface "WeatherPort · GeocodingPort" as P_W
+  interface "AiProviderPort" as P_AI
+}
+package "fai-infrastructure" {
+  [OpenMeteoAdapter (platform)] as A_W
+  [ClaudeProvider · GeminiProvider\n(ai-providers)] as A_AI
+  [Repositórios JPA (persistence-mysql)\nWardrobeItemRepository · SchemeRepository · SchemeItemRepository\nWeekPlanRepository · WeekPlanDayRepository · DailyLookRepository\nUserRepository · UserPreferencesRepository · StyleDnaRepository\nHypeScoreCurrentRepository] as REPOS
+}
+database "MySQL\n• wardrobe_items · schemes · scheme_items\n• week_plans · week_plan_days\n• daily_looks · user_preferences · style_dna\n• hype_scores (só leitura)" as DB
+cloud "Open-Meteo" as C_W
+cloud "Provedores de IA de texto" as C_AI
 
-FE0 --> AC : chama POST /api/autopilot/daily,\n/daily/confirmation
-FE1 --> AC : chama POST/GET/DELETE /api/autopilot/weeks,\nPUT/POST /api/autopilot/days/{id}
-AC --> AS : chama
-AS --> WDS : lê peças disponíveis
-AS --> WS : resolve clima
-AS --> PM : lê preferências aprendidas
-AS --> LSC : compõe candidatas
-AS --> AI : escolhe e justifica 3 looks
-AS --> SS : cria Scheme (origin AUTOPILOTO)
-AS --> DLS : registra Look do Dia (AUTOPILOTO)
-AS --> REPOS : grava week_plans / week_plan_days
-WS --> OMA : chama
-OMA --> OM : HTTPS
-AI --> AIP : chama
-AIP --> LLM : HTTPS
-SS --> REPOS : grava
-DLS --> REPOS : grava
-REPOS --> DB : JPA/Flyway
-note bottom of AC : no código a tag é "RF10 — Autopiloto, Semana e Copilot";\nnumeração oficial do Trello: RF43
+FE0 --> FE1
+FE0 --> FE2
+FE0 --> FE3
+FE2 --> FE3
+FE3 --> AC : HTTPS/JSON
+FE3 --> IC
+AC --> AP
+IC --> IS
+AP --> WD : peças elegíveis
+AP --> WS : clima e faixa
+AP --> LOC : candidatas · lacunas
+AP --> PM : preferências
+AP --> LS : seis números
+AP --> AI : escolhe 3 e justifica
+AP --> IS : insights AUTOPILOT
+AP --> SS : createScheme
+AP --> DL : Look do Dia
+AP --> G
+AI --> LOC : fallback local
+AI --> P_AI
+P_AI <|.. A_AI
+A_AI --> C_AI : HTTPS
+WS --> P_W
+P_W <|.. A_W
+A_W --> C_W : HTTPS
+LS --> RS
+LS --> SC
+LS --> HQ
+IS --> HQ
+AP --> REPOS : week_plans · week_plan_days
+PM --> REPOS : daily_looks
+LS --> REPOS : style_dna · pares usados
+HQ --> REPOS : hype_scores
+SS --> REPOS
+DL --> REPOS
+REPOS --> DB : JPA / Flyway
+note bottom of AI
+  Recebe só candidatas já validadas
+  (refs c1..c10): não inventa peças.
+end note
 @enduml

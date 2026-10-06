@@ -1,0 +1,98 @@
+@startuml RF43_Atividades_Semana
+title RF43 — Autopiloto gera combinações de vestimentas com IA\nDiagrama de atividades — aba Semana: planejar 7 dias sem repetir combinação, lacunas, seis números por dia, usar, editar e descartar
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre a aba "Semana";
+|Frontend|
+:GET /api/autopilot/weeks/current;
+|API (AutopilotService)|
+if (Há WeekPlan ACTIVE?) then (não)
+  :200 {active: false, message};
+  |Frontend|
+  :Formulário: início (próxima segunda), cidade e,\npara cada dia, evento opcional e ocasião\n(seg–sex work, sáb–dom casual);
+  |Pessoa|
+  :Toca em "Planejar";
+  |Frontend|
+  :POST /api/autopilot/weeks {weekStart, city, days[{date, event, occasion}]};
+  |API (AutopilotService)|
+  if (Menos de 3 peças elegíveis?) then (sim)
+    #FFE3E3:422 ACERVO_INSUFICIENTE;
+    stop
+  endif
+  :Normaliza o início para a segunda-feira; ocasião inválida\nvira inferOccasion(evento) (palavras do espelho; senão casual);
+  :Plano ACTIVE anterior → DISCARDED; INSERT week_plans (ACTIVE);
+  :WeatherService.resolve(city) uma vez para a semana;
+  repeat :Para cada um dos 7 dias;
+    :candidates(ocasião do dia, clima, já usadas = combinações\ndos dias anteriores, uso de peças penaliza diversidade);
+    if (Há candidata nova?) then (sim)
+      :Melhor candidata: pieceIdsJson, combinationKey\ne rationale local (sem IA);
+    else (não)
+      :Lacuna: rationale "não há combinação nova" e gap com\nsugestões genéricas (LocalAdvisors) + até 4 peças públicas\nde perfis MARCA (externas, só entram se a pessoa comprar);
+    endif
+    :INSERT week_plan_days;
+  repeat while (Faltam dias?) is (sim) not (não)
+  :gapsJson no plano;
+endif
+|API (AutopilotService)|
+:planView: dias (hoje marcado), peças, gap, rationale,\neditedManually, schemeId e scores (seis números do LookScorer\npor dia com look; lacuna = sem números); distinctLooks;
+|Frontend|
+:Cards por dia com LookScores; lacunas listadas;\nbotões "Usar hoje", "Ver" (se já tem look) e "Descartar semana";
+|Pessoa|
+if (Ação?) then (usar o look do dia)
+  |Frontend|
+  :POST /api/autopilot/days/{dayId}/use;
+  |API (AutopilotService)|
+  if (Dia é lacuna?) then (sim)
+    #FFE3E3:409 DIA_SEM_LOOK;
+    stop
+  endif
+  :Dono do plano (senão 403); reaproveita day.scheme ou\ncreateScheme (AUTOPILOTO, "Semana planejada");
+  :DailyLookService.register(AUTOPILOTO, data do dia)\n+ weekPlanDayId; peça indisponível = 409 PECA_INDISPONIVEL;
+elseif () then (trocar peças de um dia — só API)
+  :PUT /api/autopilot/days/{dayId} {pieceIds};
+  |API (AutopilotService)|
+  if (Menos de 2 peças?) then (sim)
+    #FFE3E3:400 SEM_PECAS;
+    stop
+  elseif (Combinação já planejada em outro dia?) then (sim)
+    #FFE3E3:409 COMBINACAO_REPETIDA;
+    stop
+  endif
+  :editedManually = true; rationale "editado por você";\nscheme = null;
+else (descartar)
+  |Frontend|
+  :DELETE /api/autopilot/weeks/current;
+  |API (AutopilotService)|
+  if (Sem plano ACTIVE?) then (sim)
+    #FFE3E3:404;
+    stop
+  endif
+  :Apaga os dias; plano → DISCARDED;\nlooks já salvos continuam no acervo;
+endif
+|Frontend|
+:week.reload();
+stop
+@enduml

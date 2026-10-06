@@ -1,5 +1,5 @@
 @startuml RF19_Componentes
-title RF19 — Interagir socialmente com esquemas e peças: reagir, comentar, salvar, compartilhar, remixar e retornar\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF19 — Interagir socialmente com esquemas e peças\nDiagrama de componentes — CardActions, SocialController/CommentController, SocialService, notificações, pontos e pipeline de sinais do HypeScore v2
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -17,55 +17,95 @@ skinparam database {
 left to right direction
 
 package "Frontend (Next.js)" {
-  component "components/interactions.tsx\nCardActions · InteractionBar\nShareDialog · Comments · useRemix" as FE0
-  component "components/scheme-card.tsx (PostMenu)\ncomponents/piece-card.tsx" as FE1
-  component "feed/page.tsx · schemes/[id]\npieces/[id] · lookbook (Looks Salvos)" as FE2
-  component "Botão \"Retornar\" <<planejado>>" as FE3 #FFF5F8
+  component "components/interactions.tsx\nCardActions · InteractionBar · ShareDialog\nCommentsDialog · CommentButton · useRemix" as FE0
+  component "scheme-card · piece-card\nfeed · schemes/[id] · lookbook-tabs (Salvos)" as FE1
+  component "components/expanded-card.tsx\n(ExpandedPiece: Voltar ao look,\nLooks com esta peça)" as FE2
+  component "lib/api/client.ts (api)" as FE3
 }
 package "fai-web · controllers" {
-  [SocialController\n/api/interactions/{type}/{id}/\nreactions · comments · saves\nsaves/favorite · shares · remixes · counters] as SC
+  [SocialController\n/api/interactions/{type}/{id}/reactions · comments\nsaves · saves/favorite · shares · remixes · counters] as SC
   [CommentController\nDELETE /api/comments/{id}\nPOST /api/pieces/{id}/return-to-origin] as CC
-  [SchemeController\nPOST /api/schemes/{id}/remix] as SCH
+  [SchemeController\nPOST /api/schemes (remixedFromId)\nPOST /api/schemes/{id}/remix] as SCH
+  [WardrobeController\nGET /api/pieces/{id}?fromScheme] as WC
 }
-package "fai-application · services" {
+package "fai-application · serviços" {
   [SocialService] as S
-  [SchemeService\nremix() · renderCard()] as SS
-  [NotificationService (RNF10)] as N
-  [Guard\n(visibilidade, bloqueio)] as G
-  [WardrobeEventListeners\nInteractionReceived → FaiPoints (RF35)] as EV
-  [HypeScoreService\n(lê contadores — RF26)] as H
-  [WardrobeService\n(detalhe da peça)] as WS #FAFAFA
-  [HypeSignalRecorder <<RF49>>\n@TransactionalEventListener(AFTER_COMMIT)\n→ SideEffectRunner (REQUIRES_NEW)\n+ HypeIntegrityPolicy.weight(): próprio dono 0\n· dedupe 26 h · conta nova 0,5 · visitante 0] as HR
+  [SchemeService\nremix · create · renderCard] as SS
+  [WardrobeService\nget (originSchemes, PIECE_VIEWED)] as WS
+  [Guard] as G
+  [NotificationService] as N
+  [MediaService] as M
+  [WardrobeEventListeners\nFaiPointsService] as PT
 }
-package "fai-infrastructure · adapters" {
-  [InMemoryCounterStore\n(CounterStorePort)] as CT
-  [RenderCachePort <<RF49>>\n(Redis · InMemoryRenderCache)\nchaves hype:dedupe:*] as RC
-  [S3MediaStorageAdapter /\nLocalFileMediaStorage\n(MediaStoragePort — PNG exportado)] as ST
-  [Repositórios JPA (fai-domain · repository)\nReactionRepository · CommentRepository\nSavedItemRepository · ShareRepository\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · NotificationRepository\nHypeSignalDailyRepository <<RF49>>] as REPOS
+package "fai-application · eventos e Hype v2" {
+  [DomainEvents\nHypeSignal · InteractionReceived] as EV
+  [HypeSignalRecorder\n(AFTER_COMMIT)] as HR
+  [SideEffectRunner\n(REQUIRES_NEW)] as SE
+  [HypeIntegrityPolicy\n(self, dedupe 26 h, conta nova 0,5)] as IP
+  [HypeLiveRecalc\n(markDirty · tick 30 s / 120 s)] as LR
+  [HypeSnapshotService\n(job 6 h + recálculo ao vivo)] as HS
+  [HypeCache] as HC
 }
-database "MySQL · fashionai_app\n• reactions\n• comments\n• saved_items\n• shares\n• notifications\n• schemes · scheme_items\n• wardrobe_items\n• hype_signal_daily (RF49)" as DB
+package "fai-application · portas" {
+  interface "CounterStorePort" as P_CT
+  interface "RenderCachePort" as P_RC
+  interface "MediaStoragePort" as P_ST
+  interface "NotificationProjectionPort" as P_NP
+}
+package "fai-infrastructure" {
+  [Repositórios JPA (persistence-mysql)\nReactionRepository · CommentRepository · SavedItemRepository\nShareRepository · SchemeRepository · WardrobeItemRepository\nDnaSchemeRepository · NotificationRepository\nHypeSignalDailyRepository · HypeScoreCurrentRepository] as REPOS
+  [RedisAdapters (cache-redis)\nInMemoryCounterStore · InMemoryRenderCache] as A_R
+  [S3MediaStorageAdapter /\nLocalFileMediaStorage] as A_ST
+  [CassandraProjectionAdapter\n(persistence-cassandra)] as A_CA
+}
+database "MySQL\n• reactions · comments · saved_items · shares\n• schemes · wardrobe_items · dna_schemes (contadores)\n• notifications · fai_points_ledger\n• hype_signal_daily · hype_scores · hype_score_snapshots" as DB
+database "Redis\nstats:{tipo}:{id} · hype:dedupe:*\nhype:generation" as RD
+database "Cassandra\n(caixa de notificações)" as CAS
+cloud "S3 / R2 ou disco local\n(shares/{userId}/*.png)" as C_ST
 
-FE0 --> SC : chama HTTPS/JSON
-FE0 --> CC : DELETE comentário
-FE1 --> FE0 : usa
-FE2 --> FE1 : renderiza cards
-FE3 ..> CC : return-to-origin\n(não implementado — conforme Trello)
-SC --> S : chama
-CC --> S : chama
-SCH --> SS : chama
-S --> G : requireCanCreate / deny
-S --> SS : remix · renderCard
-S --> N : notify(NEW_LIKE, NEW_REACTION,\nNEW_COMMENT, NEW_REMIX)
-S --> CT : increment / read
-S --> ST : grava PNG (EXTERNAL)
-S --> EV : publica InteractionReceived
-S --> HR : publica HypeSignal (LIKE · COMMENT · SAVE ·\nFAVORITE · SHARE · PIECE_REMIXED)
-HR <-- SS : HypeSignal LOOK_REMIXED (remix salvo)\n· LOOK_VIEWED (GET por não dono)
-HR <-- WS : HypeSignal PIECE_VIEWED
-HR --> RC : dedupe (TTL 26 h)
-HR --> REPOS : increment (upsert nativo)
-S --> REPOS : lê/grava
-N --> REPOS : grava notifications
-H --> REPOS : lê contadores
-REPOS --> DB : JPA/Flyway
+FE1 --> FE0
+FE0 --> FE3
+FE2 --> FE3
+FE3 --> SC : HTTPS/JSON
+FE3 --> CC
+FE3 --> WC
+FE3 ..> SCH : só a API usa remixedFromId
+SC --> S
+CC --> S
+SCH --> SS
+WC --> WS
+S --> G : requireCanCreate · requireView · deny
+S --> SS : remix · renderCard · requireView
+S --> N
+S --> M : PNG do compartilhamento
+S --> P_CT : stats
+S --> EV : publica
+SS --> EV : LOOK_REMIXED · LOOK_VIEWED\nSchemeSaved
+WS --> EV : PIECE_VIEWED
+EV --> PT : InteractionReceived
+EV --> HR : HypeSignal
+EV --> LR : HypeSignal · uso · SchemeSaved
+HR --> SE
+HR --> IP
+IP --> P_RC : dedupe
+LR --> HS : recalculate()
+HS --> HC : bump()
+HC --> P_RC
+N --> P_NP : só entregues
+M --> P_ST
+P_CT <|.. A_R
+P_RC <|.. A_R
+P_ST <|.. A_ST
+P_NP <|.. A_CA
+A_R --> RD
+A_ST --> C_ST
+A_CA --> CAS
+S --> REPOS
+SS --> REPOS
+WS --> REPOS
+N --> REPOS
+PT --> REPOS
+HR --> REPOS : UPSERT hype_signal_daily
+HS --> REPOS : hype_scores · snapshots
+REPOS --> DB : JPA / Flyway
 @enduml

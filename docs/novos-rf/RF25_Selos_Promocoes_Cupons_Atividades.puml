@@ -1,5 +1,5 @@
 @startuml RF25_Selos_Promocoes_Cupons_Atividades
-title RF25 — Selo / jogo FLAIR → direito promocional → cupom Fashion AI\n(atualizado com o card RF38 — Meus cupons promocionais e Meus cupons resgatados)
+title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de atividades — política de promoção do selo (ou combinação FLAIR) → direito ao cupom → cupom Fashion AI (fluxo do RF38)
 
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
@@ -21,57 +21,112 @@ skinparam note {
 }
 
 |Marca / Celebridade|
+|Pessoa usuária|
+|Sistema (API + serviços)|
+|MySQL|
+|Marca / Celebridade|
 start
-:Abrir o perfil (RF14/RF22) →\naba "Meus cupons promocionais";
-:Sub-aba "Todas as promoções" →\n"Criar promoção";
-if (Qual fonte de cupom?) then (Selo)
-  :Criar & editar o selo pelo formulário\ne arte de background (RF25);
-  :Definir a política de promoção do selo\n(tipo, % ou benefício, período, estoque,\nlimite por pessoa, link da loja);
-else (Jogo FLAIR)
-  :Aba "Minhas combinações FLAIR":\ncategorias, styles, occasions, peças da marca,\npoder mínimo, raridade ou vitórias na semana;
-  :Definir o cupom (título, % ou R$,\nvalidade, estoque, link da loja);
-endif
-:Promoção fica ATIVA\n(ou inativa fora do período / sem estoque);
-note right
-  "Todas as promoções" lista ativas e inativas
-  das duas fontes; o botão "Criar promoção"
-  leva direto ao formulário do RF25 ou ao FLAIR.
-end note
-
-|Usuário|
-:Usar o app normalmente\n(montar looks, publicar, jogar FLAIR);
-
-|Sistema|
-if (Conquistou o direito?) then (Selo)
-  :Look recebe o selo da marca/celebridade\n(vínculo aprovado — RF20/RF21);
-else (FLAIR)
-  :Deck/guarda-roupa completa a combinação\n(ou vence os duelos patrocinados);
-endif
-:Criar o direito promocional PENDENTE\n(coupon_rights: usuário, fonte, promoção);
-:Notificar o usuário (COUPON_AVAILABLE);
-
-|Usuário|
-:Receber a notificação:\n"Parabéns! Deseja resgatar o CUPOM?";
-if (Resgatar agora?) then (Sim)
-  |Sistema|
-  :Emitir o cupom Fashion AI da marca/celebridade\n(código único, validade, estoque, limite por pessoa);
-  :Registrar o resgate (promotion_redemptions\nou flair_redemptions) e contar na promoção;
-  |Usuário|
-  :Cupom aparece na aba\n"Meus cupons resgatados" (lookbook);
-  :Tocar no cupom;
-  :Abrir a loja terceira, fora do app FAI\n(link da promoção → site da marca → link do perfil);
-  |Marca / Celebridade|
-  :Conferir o código no caixa ou no e-commerce\n("Meus cupons promocionais" → validar);
-  :Cupom marcado como USADO;
+:Perfil (brands/[slug]) → aba "Cupons" (BrandCouponsTab)\n→ GET /api/me/coupons/admin;
+|Sistema (API + serviços)|
+if (Perfil MARCA/CELEBRIDADE aprovado e ativo?) then (não)
+  #FFE3E3:403 (Guard.requireApprovedInstitutional);
   stop
-else (Agora não / Dispensar)
-  |Usuário|
-  if (Dispensar?) then (Sim)
-    :Direito DISPENSADO;
-    stop
-  else (Agora não)
-    :Continua em "Cupons conquistados"\npara decidir depois;
+endif
+|Marca / Celebridade|
+:Sub-abas "Cupons emitidos" e "Todas as promoções"\n(ativas e inativas das duas fontes) → "Criar promoção";
+if (Fonte do cupom?) then (Selo — RF25)
+  :Cria/edita o selo no criador (SealWizard:\nPOST/PUT /api/seals — ver RF25-criador-de-selos);
+  :Formulário da promoção: tipo, título, descrição, regras,\n% de desconto, selo exigido (opcional), início e fim,\nestoque total, limite por pessoa, marca parceira\n(só celebridade), visibilidade e link https da loja;
+  :POST /api/promotions | PUT /api/promotions/{id};
+  |Sistema (API + serviços)|
+  :SealService.createPromotion / updatePromotion;
+  if (Válido?) then (não)
+    #FFE3E3:400 TIPO_OBRIGATORIO · TIPO_INVALIDO (tipo só de celebridade)\n· CAMPO_INVALIDO (título 3–160) · DESCONTO_INVALIDO (1–90)\n· SELO_INATIVO · PERIODO_INVALIDO · PARCEIRA_INVALIDA\n· LINK_INVALIDO · 409 PARCERIA_NAO_AUTORIZADA;
     stop
   endif
+  |MySQL|
+  :promotions (status AVAILABLE, requiredSealKind\nBRAND_SEAL | PREMIUM_SEAL, redeemedCount 0);
+else (Jogo FLAIR — RF37)
+  |Marca / Celebridade|
+  :Aba FLAIR → POST /api/flair/brand/combinations:\ncategorias, estilos, ocasiões, peças mínimas da marca,\npoder mínimo do deck, raridade ou vitórias,\ncupom (% ou R$, compra mínima, validade, estoque, link);
+  |MySQL|
+  :flair_combinations (active);
+endif
+|Marca / Celebridade|
+:Ativar/desativar a promoção:\nPUT /api/promotions/{id}/status {AVAILABLE | REVOKED};
+
+|Pessoa usuária|
+:Usa o app: monta e publica looks,\ncadastra peças, joga FLAIR;
+|Sistema (API + serviços)|
+if (O que aconteceu?) then (vínculo de selo APPROVED)
+  :SealService.issue() publica CouponRightsCheck;
+else (look salvo · peça criada · "Meus cupons" aberto)
+  :SchemeSaved · PieceCreated (ou GET /api/me/coupons);
+endif
+:CouponService.onCheck / onScheme / onPiece\n(AFTER_COMMIT, nova transação) → scan(usuária);
+:SELO: eligiblePromotions — emissor ativo, promoção AVAILABLE\nno período, com estoque e selo ativo; vínculo APPROVED vigente\ncom o emissor (e o selo exigido); abaixo do limite por pessoa;
+:FLAIR: combinationsFor — combinação completa,\ndisponível e ainda não resgatada;
+if (Direito novo (usuária, fonte, promoção)?) then (sim)
+  |MySQL|
+  :coupon_rights PENDENTE;
+  |Sistema (API + serviços)|
+  :Notificação COUPON_AVAILABLE\n("Parabéns! Deseja resgatar o CUPOM?",\nlink /coupons?right={id});
+else (não)
+  :nada a fazer (sem duplicar);
+  stop
+endif
+
+|Pessoa usuária|
+:Abre /coupons (MyCoupons) → GET /api/me/coupons\n("Cupons conquistados" + "Meus cupons resgatados");
+if (Decisão?) then (Resgatar)
+  :"Sim, resgatar cupom" →\nPOST /api/me/coupon-rights/{id}/redeem;
+  |Sistema (API + serviços)|
+  if (Direito ainda PENDENTE?) then (não)
+    #FFE3E3:409 DIREITO_DECIDIDO;
+    stop
+  endif
+  if (Fonte?) then (SELO)
+    :SealService.redeem;
+    if (Pode resgatar?) then (não)
+      #FFE3E3:409 PROMOCAO_INDISPONIVEL · SELO_INVALIDO\n(sem selo ou selo revogado) · LIMITE_POR_USUARIO;
+      stop
+    endif
+    |MySQL|
+    :promotion_redemptions ISSUED (código do emissor,\nvalidade da promoção); redeemedCount + 1;\nestoque acabou → promotions REDEEMED;\naudit PROMOCAO_RESGATADA;
+  else (FLAIR)
+    |Sistema (API + serviços)|
+    :FlairService.redeem → código FLR-XXXX-XXXX;
+    |MySQL|
+    :flair_redemptions;
+  endif
+  |MySQL|
+  :coupon_rights RESGATADO (couponRef);
+  |Pessoa usuária|
+  :Cupom Fashion AI em "Meus cupons resgatados";
+  :Toca no cupom válido → abre a loja terceira\n(link https da promoção), fora do app;
+  |Marca / Celebridade|
+  :"Cupons emitidos" → conferir código no caixa\nou no e-commerce: POST /api/me/coupons/validate;
+  |Sistema (API + serviços)|
+  if (Código?) then (FLR-…)
+    :FlairService.validateCode;
+  else (cupom de promoção)
+    if (Cupom do emissor, válido e não usado?) then (não)
+      #FFE3E3:404 Cupom · 409 CUPOM_USADO · 409 CUPOM_EXPIRADO;
+      stop
+    endif
+    |MySQL|
+    :promotion_redemptions USED;
+  endif
+  stop
+elseif (Dispensar)
+  |Pessoa usuária|
+  :"Dispensar" → POST /api/me/coupon-rights/{id}/dismiss;
+  |MySQL|
+  :coupon_rights DISPENSADO;
+  stop
+else (Agora não)
+  |Pessoa usuária|
+  :Fecha o diálogo; o direito continua PENDENTE\nem "Cupons conquistados";
+  stop
 endif
 @enduml

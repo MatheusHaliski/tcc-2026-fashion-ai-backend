@@ -1,5 +1,5 @@
 @startuml RF44_Atividades
-title RF44 — Permitir que marcas & celebridades vendam itens únicos e personalizáveis do Meu Quarto e do Background Studio na loja do app\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF44 — FAI Creative Engine\nDiagrama de atividades — arte de fundo por IA (Background Studio) e o motor criativo planejado
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,80 +23,72 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Marca / Celebridade|
+|Pessoa|
 start
-:Perfil (brands/[slug]) → aba Guarda-roupa 3D;
+:Monta o look (ou a peça) e pede\numa arte de fundo gerada por IA;
+|Frontend|
+:scheme-builder.tsx (modo IA)\nPOST /api/backgrounds/art\n{prompt, direction, era, passePartout, target};
+|API|
+:BackgroundController.art\n→ BackgroundStudioService.generateArt;
+if (Perfil pode criar?\n(Guard.requireCanCreate)) then (não)
+  #FFE3E3:403;
+  stop
+endif
+if (Prompt vazio?) then (sim)
+  #FFE3E3:400 PROMPT_VAZIO;
+  stop
+endif
+:Prompt final = texto da pessoa + direção + era\n+ "fashion card background, no people";\nnegativo: sem rostos, sem pessoas;
+|IA|
+:AiEngine.execute(BACKGROUND_GENERATOR,\nprotectedNames = nomes de celebridades cadastradas);
+if (CelebrityPromptValidator: cita celebridade\nou pede rosto, retrato ou corpo?) then (sim)
+  #FFE3E3:422 PROMPT_REJEITADO\n(ai_inference_log: PROMPT_REJECTED);
+  stop
+endif
+if (IA remota ligada, consentimento, teto de gasto\ne cota diária ok, com provedor disponível?) then (sim)
+  :Tenta cada ImageGenerationPort na ordem\n(hoje: ReplicateImageGenerationAdapter,\nFLUX schnell, 896×1344);
+  :Registra cada tentativa em ai_inference_log\n(provedor, modelo, latência, custo, resultado);
+else (não)
+  :Sem imagem (caminho local);
+endif
+|API|
+if (Algum provedor devolveu imagem?) then (não)
+  :200 FALLBACK_GALLERY\n+ até 6 presets AURA parecidos com o prompt;
+  |Frontend|
+  :Fica o preset recomendado\n(GET /api/backgrounds/recommendations);
+else (sim)
+  |API|
+  :Recorta 900×2160 (look) ou 900×2080 (peça);
+  :Grava PNG em users/{id}/backgrounds/ (MediaService)\ne registra photos: origin BACKGROUND_STUDIO,\nmetadata {prompt, provider};
+  :200 READY + url, provedor, latência e custo;
+endif
+|Pessoa|
+:Salva o look ou a arte da peça;
+|API|
+:PUT /api/schemes/{id}/background ou\nPUT /api/pieces/{id}/background (baseRev);
+if (baseRev diferente da revisão salva?) then (sim)
+  #FFE3E3:409 ARTE_ALTERADA;
+  stop
+endif
+:Grava só a configuração do fundo (rev + 1);
 note right
-  Card do Trello sem descrição: fluxo tirado do código.
-  A criação do bloco/guarda-roupa em si é o RF39;
-  aqui o foco é a venda do item único e personalizável.
+  Canônico × criativo (RN46.01 / RN46.08):
+  o card sobrepõe a peça (recorte) à arte;
+  originalImageUrl e imageUrl da peça
+  não mudam
 end note
-|Backend (WardrobeCreatorService)|
-if (Perfil MARCA ou CELEBRIDADE?) then (não)
-  #FFE3E3:403 (creator exige perfil de marca/celebridade);
-  stop
-endif
-:GET /api/room-creator/options: blocos, materiais,
-cores, níveis, identidade e selos ATIVOS;
-|Marca / Celebridade|
-:Personaliza o item: material, cor, logo (PNG),
-arte das portas, texto da placa e selo exigido;
-:Define a venda: pricePoints, requiredLevel, stock,
-perUserLimit, availableFrom/Until, requiresSeal;
-if (Tipo de item?) then (Meu Quarto)
-  :Bloco do móvel (COMPONENT) ou
-  guarda-roupa inteiro (WARDROBE);
-else (Background Studio)
-  #FFE3E3:Aura / material / skin à venda
-  <<planejado>> — não implementado, conforme Trello;
-  note right
-    Hoje asset_presets (AssetPreset) não tem
-    criador, preço nem estoque; não há endpoint
-    de venda no BackgroundController.
-  end note
-  stop
-endif
-|Backend (WardrobeCreatorService)|
-:POST /api/room-creator/items → save();
-if (Preço 0..20000, janela válida e selo do próprio perfil?) then (não)
-  #FFE3E3:400 PRECO_INVALIDO / PERIODO_INVALIDO
-  ou 403 selo de outro perfil;
-  stop
-endif
-:sku "BRD-<marca>-<token>", rarity MARCA/CELEBRIDADE,
-requiredLevel = maior(escolhido, bloco, material);
-|Bancos-serviços|
-:INSERT room_catalog (kind, finish_json, bundle_json,
-stock_limit, per_user_limit, requires_seal);
-|Comprador|
-:Loja do quarto (points → RoomStore)
-ou aba da marca (RoomStore compact);
-|Backend (FaiPointsService)|
-:GET /api/points/shop: itens ativos, criador ativo,
-availability, blocker, levelOk, affordable;
-|Comprador|
-:Experimenta no módulo (try-on) e compra;
-|Backend (FaiPointsService)|
-:POST /api/points/shop/{sku}/purchase → buy()
-trava usuário → item;
-if (nível OK, não esgotado, sem blocker e saldo suficiente?) then (não)
-  #FFE3E3:409 NIVEL_INSUFICIENTE, ESGOTADO,
-  CONDICAO_DE_COMPRA ou SALDO_INSUFICIENTE;
-  stop
-endif
+|Motor criativo <<planejado>>|
+#FAFAFA:CreativeRequest → TemplateResolver\n→ provedor criativo (Adobe Firefly,\nPhotoshop API, Express)\n→ validação de qualidade\n→ CreativeAsset + AssetVersion;
 note right
-  blocker(): EM_BREVE, EXPIRADO, ESGOTADO, INATIVO,
-  criador suspenso, limite por pessoa, selo exigido
-  (SealBond APPROVED com o criador — ver RF25/RF20).
+  <<planejado>> — não existe no código:
+  • tipos BADGE, PROFILE_COVER, BRAND_COVER,
+    FLAIR_CARD, STORE_BANNER, CAMPAIGN…
+  • templates versionados (RN46.06) e
+    variantes de tamanho/formato (RN46.07)
+  • proveniência completa por asset (RN46.02)
+  • job assíncrono com REQUIRES_REVIEW (RN46.05)
+  • Adobe: só a opção "firefly" no AiCatalog,
+    sem adaptador
 end note
-|Bancos-serviços|
-:INSERT fai_points_ledger (SHOP_PURCHASE, -pricePoints);
-:UPDATE room_catalog.sold_count + 1;
-:INSERT room_inventory (serial = sold_count
-quando há stock_limit → unidade numerada);
-|Comprador|
-:Monta no quarto: POST /api/me/room-inventory/{id}/apply;
-|Backend (RoomService)|
-:compatibleModules → applyFinish (room_layouts.modules_json);
 stop
 @enduml

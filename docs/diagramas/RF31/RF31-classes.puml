@@ -1,5 +1,5 @@
 @startuml RF31_Classes
-title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF31 — Filtrar e marcar o estado dos itens do acervo: favoritar, disponível, indisponível e todos\nDiagrama de classes — estados da peça e do look, filtro do closet (estado, Hype v2, "Com selo") e histórico
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -10,115 +10,177 @@ skinparam class {
 }
 skinparam packageStyle rectangle
 hide empty methods
+hide empty fields
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +email: String
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String
-  +birthDate: String
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  .. +20 campos ..
+package "fai-web" {
+  class WardrobeController {
+    +myCloset(user, category, color, season, occasion, style,\n  state, q, sort, page, size, hypeLevel, seal)  «GET /api/me/closet»
+    +closet(viewer, ownerId, …, hypeLevel)  «GET /api/users/{ownerId}/closet»
+    +flags(user, id, Flags)  «PATCH /api/pieces/{id}/flags»
+  }
+  class "WardrobeController.Flags" as WFlags <<record>> {
+    favorite: Boolean
+    disponivel: Boolean
+    forSale: Boolean
+    forDonation: Boolean
+  }
+  class SchemeController {
+    +mine(…, state, kind, sort, hypeLevel)  «GET /api/me/schemes»
+    +flags(user, id, Flags{favorite, disponivel})  «PATCH /api/schemes/{id}/flags»
+  }
 }
-class WardrobeItem {
-  +user: User
-  +brandProfile: BrandProfile
-  +brand: Brand
-  +name: String
-  +category: String
-  +subcategory: String
-  +sex: String
-  +brandName: String
-  +color: String
-  +material: String
-  +sizeLabel: String
-  +market: String
-  +styleTags: String
-  +occasionTags: String
-  .. +54 campos ..
+
+package "fai-application" {
+  class WardrobeService <<@Service>> {
+    ~{static} HYPE_SORTS = hype, hype_desc, hype_asc, growth, rarity
+    ~{static} SORT_ALIASES: Map<String, String>
+    +closet(viewer, ownerId, ClosetFilter): Page<PieceView>
+    +toggles(user, id, favorite, disponivel, forSale, forDonation): PieceView
+    ~{static} applyListing(w, forSale, forDonation)
+    ~{static} stateMatches(w, state): boolean
+    ~{static} sealFilter(raw): String
+    ~hypeMinimum(level): int
+    +eligible(userId): List<WardrobeItem>
+    +owned(user, id): WardrobeItem
+  }
+  class "WardrobeService.ClosetFilter" as ClosetFilter <<record>> {
+    category, color, season, occasion, style: String
+    state: String
+    q: String
+    sort: String
+    page, size: int
+    hypeLevel: String
+    seal: String  «hype | brand | any»
+  }
+  class SchemeService <<@Service>> {
+    +mine(user, occasion, state, kind, sort, hypeLevel, page, size)
+    +toggles(user, id, favorite, disponivel): Map
+    ~{static} stateMatches(scheme, state): boolean
+  }
+  class HypeSeals <<final>> {
+    +{static} of(HypeScoreCurrent): List<String>
+    +{static} CODES = VIRAL, TRENDING, EMERGING, CLASSIC, RARE
+  }
+  class HypeScoreConfig <<@Component>> {
+    +algorithmVersion(): String
+    +levelThresholds(): int[]  «20, 40, 60, 75, 90»
+  }
+  class SealService <<@Service>> {
+    +{static} approvedPieceBonds(pieceIds, schemeItems, bonds, schemeVisible)
+  }
+  class Guard {
+    +requireCanCreate(user)
+    +requireOwner(user, ownerId, resource)
+    +canView(viewer, owner, visibility): boolean
+  }
+  class WardrobeEventListeners <<@Component>> {
+    +onAvailability(AvailabilityChanged)  «AFTER_COMMIT»
+  }
+  class "DomainEvents.AvailabilityChanged" as AvailabilityChanged <<record>> {
+    userId: UUID
+    pieceId: UUID
+    available: boolean
+  }
 }
-class WardrobeAvailabilityChange {
-  +id: UUID
-  +wardrobeItemId: UUID
-  +userId: UUID
-  +available: boolean
-  +changedAt: Instant
+
+package "fai-domain" {
+  class WardrobeItem <<@Entity>> {
+    id: UUID
+    user: User
+    name / category / color: String
+    visibility: Visibility
+    disponivel: boolean = true
+    availabilityStatus: AvailabilityStatus
+    favorite: boolean  «is_favorite»
+    forSale: boolean
+    forDonation: boolean  «V38»
+    price: BigDecimal
+    wearCount: int
+    lastWornDate: LocalDate
+    createdAt: Instant
+  }
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  class Scheme <<@Entity>> {
+    id: UUID
+    status: SchemeStatus
+    favorite: boolean
+    disponivel: boolean
+  }
+  class WardrobeAvailabilityChange <<@Entity>> {
+    id: UUID
+    wardrobeItemId: UUID
+    userId: UUID
+    available: boolean
+    changedAt: Instant
+  }
+  class HypeScoreCurrent <<@Entity>> {
+    entityType: HypeEntityType  «PIECE»
+    entityId: UUID
+    algorithmVersion: String
+    score: BigDecimal
+    level: HypeLevel
+    momentum: HypeMomentum
+    deltaPoints: BigDecimal
+    publicEligible: boolean
+  }
+  enum HypeLevel {
+    LOW_SIGNAL
+    NICHE
+    RELEVANT
+    HOT
+    TRENDING
+    VIRAL
+  }
+  class SealBond <<@Entity>>
+  interface WardrobeItemRepository {
+    +findByUserIdOrderByCreatedAtDesc(userId)
+    +findByUserIdAndDisponivelOrderByCreatedAtDesc(userId, true)
+  }
+  interface HypeScoreCurrentRepository {
+    +findByEntityTypeAndEntityIdInAndAlgorithmVersion(type, ids, version)
+  }
+  interface WardrobeAvailabilityChangeRepository
 }
-class PieceUsageDiaryEntry {
-  +id: UUID
-  +wardrobeItemId: UUID
-  +userId: UUID
-  +usedOn: LocalDate
-  +occasion: String
-  +note: String
-  +source: String
-  +schemeId: UUID
-  +createdAt: Instant
-}
-class HypeScoreCurrent <<RF53>> {
-  +entityType: HypeEntityType
-  +entityId: UUID
-  +algorithmVersion: String
-  +status: HypeStatus
-  +score: BigDecimal
-  +level: HypeLevel
-  +dimensions: HypeDimensions
-  +deltaPoints: BigDecimal
-  +calculatedAt: Instant
-  .. +12 campos ..
-}
-}
-package "fai-domain · enums" {
-enum HypeLevel <<RF53>> {
-  LOW_SIGNAL
-  NICHE
-  RELEVANT
-  HOT
-  TRENDING
-  VIRAL
-}
-}
-package "fai-application · service" {
-class "WardrobeService.ClosetFilter" as ClosetFilter <<record>> {
-  +category, color, season, occasion, style: String
-  +state: String
-  +q: String
-  +sort: String
-  +page, size: int
-  +hypeLevel: String
-}
-class WardrobeService {
-  ~{static} HYPE_SORTS = hype, hype_desc, hype_asc, growth, rarity
-  ~{static} SORT_ALIASES: Map<String, String>
-  +closet(viewer, ownerId, ClosetFilter): Page<PieceView>
-  ~hypeMinimum(level): int
-  ~{static} stateMatches(w, state): boolean
-}
-}
-PieceUsageDiaryEntry ..> User : userId
-PieceUsageDiaryEntry ..> WardrobeItem : wardrobeItemId
-WardrobeAvailabilityChange ..> User : userId
-WardrobeAvailabilityChange ..> WardrobeItem : wardrobeItemId
-WardrobeItem "*" --> "1" User : user
-HypeScoreCurrent ..> WardrobeItem : entityId (PIECE)
-HypeScoreCurrent --> HypeLevel
+
+WardrobeController --> WardrobeService
+WardrobeController +-- WFlags
+SchemeController --> SchemeService
 WardrobeService ..> ClosetFilter
-WardrobeService ..> WardrobeItem : filtra/ordena
-WardrobeService ..> HypeScoreCurrent : lê (sort Hype · hypeLevel)
-note top of User : tabela users
-note top of WardrobeItem : tabela wardrobe_items
-note top of WardrobeAvailabilityChange : tabela wardrobe_availability_log
-note top of PieceUsageDiaryEntry : tabela piece_usage_diary
-note top of HypeScoreCurrent : tabela hype_scores — novo (RF53 · HypeScore v2)
-note bottom of ClosetFilter : hypeLevel = faixa mínima (filtro, não aba) — novo (RF53)
-note top of WardrobeService
-  novo (RF53) — SORT_ALIASES: recentes→recent · mais_usadas→worn
-  menos_usadas→least_worn · nome→name · preco→price · mais_tempo_sem_uso→idle
-  (sort Hype e hypeLevel leem hype_scores; sem Hype fica por último)
+WardrobeService --> Guard
+WardrobeService --> WardrobeItemRepository
+WardrobeService --> HypeScoreCurrentRepository : sort Hype · hypeLevel · seal
+WardrobeService --> HypeScoreConfig
+WardrobeService ..> HypeSeals : seal = hype | any
+WardrobeService ..> SealService : seal = brand | any
+WardrobeService ..> AvailabilityChanged : publica
+WardrobeEventListeners ..> AvailabilityChanged : escuta
+WardrobeEventListeners --> WardrobeAvailabilityChangeRepository
+SealService ..> SealBond
+WardrobeItemRepository ..> WardrobeItem
+HypeScoreCurrentRepository ..> HypeScoreCurrent
+WardrobeAvailabilityChangeRepository ..> WardrobeAvailabilityChange
+WardrobeItem --> AvailabilityStatus
+HypeScoreCurrent --> HypeLevel
+WardrobeItem "1" -- "0..*" WardrobeAvailabilityChange : wardrobeItemId
+HypeScoreCurrent "0..*" ..> "1" WardrobeItem : entityId
+SchemeService ..> Scheme
+
+note bottom of WardrobeItem
+  tabela wardrobe_items: is_favorite, disponivel,
+  availability_status, for_sale, for_donation (V38).
+  "à venda" e "para doar" se excluem em toggles.
+end note
+note bottom of WardrobeAvailabilityChange : tabela wardrobe_availability_log\n(base da Utilização no Inventory Score, RF29)
+note bottom of HypeScoreCurrent : tabela hype_scores (HypeScore v2, V31)
+note right of ClosetFilter
+  state: todos · favoritos · disponivel · indisponivel ·
+  venda · doar (aceita sinônimos em inglês)
+  sort: recent · name · price · worn · least_worn · idle ·
+  hype_desc · hype_asc · growth · rarity
+  hypeLevel: faixa mínima (filtro, nunca aba)
 end note
 @enduml

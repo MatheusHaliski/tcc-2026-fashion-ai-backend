@@ -1,5 +1,5 @@
 @startuml RF32_Classes
-title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade ("Desafios")\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade, através da sub-aba "Desafios"\nDiagrama de classes — ChallengeService, entidades challenge_* e integrações (quarto, espelho, pontos)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -10,114 +10,175 @@ skinparam class {
 }
 skinparam packageStyle rectangle
 hide empty methods
+hide empty fields
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +email: String
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String
-  +birthDate: String
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  .. +20 campos ..
+package "fai-web" {
+  class ChallengeController {
+    catalog · mine · start · launch · accept · decline
+    startNow · leave · cancel · detail · submitEntry
+    voteFeed · vote · note · react · realMirror
+    mirrorPhoto · confirmRealMirror · resultCard · propose
+  }
+  class AdminController {
+    +promoteChallenge(user, code)\n  «POST /api/admin/challenges/{code}/promotion»
+  }
 }
-class ChallengeTemplate {
-  +code: String
-  +name: String
-  +ruleText: String
-  +ruleBlocksJson: String
-  +modesAllowedJson: String
-  +durationDays: Integer
-  +scoreDimensionsJson: String
-  +rewardPoints: int
-  +effort: String
-  +minParticipants: int
-  +maxParticipants: int
-  +origin: String
-  +authorUserId: UUID
-  +roomDecoration: String
-  .. +1 campos ..
+
+package "fai-application" {
+  class ChallengeService <<@Service>> {
+    +MAX_ACTIVE = 3
+    +ACCEPT_WINDOW = 48 h
+    +NOTE_MAX = 80
+    +MODES = SOLO, EQUIPE, DUELO, COMUNIDADE
+    +REACTIONS · PRESET_NOTES
+    ~VOTED = RUNWAY_BATTLE, GRWM
+    ~SINGLE_SHOT = RUNWAY_BATTLE, GRWM, DAILY_CHALLENGE
+    ~RULE_BLOCK_TYPES
+    --
+    +catalog(user) · +mine(user)
+    +start(user, StartRequest)
+    +launchDraft(user, id, invitees, teams)
+    +accept / decline / startNow / leave / cancel
+    +submitEntry(user, id, schemeId)
+    +voteFeed(user) · +vote(user, id, entrySchemeId)
+    +note(user, id, preset, free) · +react(user, id, emoji)
+    +realMirror · +confirmRealMirror · +mirrorPhoto
+    +conclude(instance, template)
+    +tick()  «@Scheduled 0 */15 * * * *»
+    +onSchemeSaved / onDailyLook / onMirror / onPieceCreated\n  «AFTER_COMMIT»
+    +resultCard(user, id) · +propose(user, ProposalRequest)
+    +promote(admin, code)
+    +decorations(userId) · +restriction(userId)
+    +activeSummary(userId)
+  }
+  class "ChallengeService.StartRequest" as StartRequest <<record>> {
+    code: String
+    mode: String
+    params: Map
+    invitees: List<UUID>
+    teams: Map<String, String>
+    draft: Boolean
+    photoConsent: Boolean
+  }
+  class "ChallengeService.Progress" as Progress <<record>> {
+    value, target: int
+    fraction: double
+    best: int
+    label: String
+    pending: int
+  }
+  interface "RoomService.DecorationsProvider" as DecProv <<port>> {
+    +decorations(userId)
+  }
+  interface "MirrorService.PieceRestrictionProvider" as RestrProv <<port>> {
+    +restriction(userId): Optional<Restriction>
+  }
+  class FaiPointsService <<@Service>> {
+    +award(userId, CHALLENGE_COMPLETED, …, pts)
+    +game(userId, "CHALLENGE", id, null)
+  }
+  class NotificationService <<@Service>> {
+    CHALLENGE_INVITE · CHALLENGE_RESULT
+  }
+  class RoomService <<@Service>> {
+    +hasKey(owner, guest): boolean
+    +lastDiaryDates(…)
+  }
+  class CopilotService <<@Service>>
 }
-class ChallengeInstance {
-  +id: UUID
-  +templateCode: String
-  +mode: String
-  +state: String
-  +paramsJson: String
-  +startsAt: Instant
-  +endsAt: Instant
-  +acceptDeadline: Instant
-  +resultJson: String
-  +createdAt: Instant
-  +updatedAt: Instant
+
+package "fai-domain" {
+  class ChallengeTemplate <<@Entity>> {
+    code: String «PK»
+    name / ruleText: String
+    ruleBlocksJson / modesAllowedJson: String
+    durationDays: Integer
+    scoreDimensionsJson: String
+    rewardPoints: int
+    effort: String
+    minParticipants / maxParticipants: int
+    origin: String «OFFICIAL | COMMUNITY»
+    authorUserId: UUID
+    roomDecoration: String
+    active: boolean
+  }
+  class ChallengeInstance <<@Entity>> {
+    id: UUID
+    templateCode: String
+    mode: String
+    state: String
+    paramsJson: String
+    startsAt / endsAt / acceptDeadline: Instant
+    createdBy: UUID
+    resultJson: String
+    version: long
+  }
+  class ChallengeParticipant <<@Entity>> {
+    id: UUID
+    instanceId / userId: UUID
+    team: String «A | B»
+    status: String
+    joinedAt / leftAt: Instant
+    personalGoalJson: String
+    progressFraction: BigDecimal
+    bestRecord: int
+  }
+  class ChallengeEvent <<@Entity>> {
+    id: UUID
+    instanceId / userId: UUID
+    evidenceType: String
+    refId: UUID
+    createdAt: Instant
+  }
+  class ChallengeNote <<@Entity>> {
+    instanceId / userId: UUID
+    kind: String «PRESET | FREE | REACTION»
+    content: String
+  }
+  class ChallengeVote <<@Entity>> {
+    instanceId: UUID
+    voterUserId: UUID
+    entrySchemeId: UUID
+  }
+  class Scheme <<@Entity>>
+  class User <<@Entity>>
 }
-class ChallengeParticipant {
-  +id: UUID
-  +instanceId: UUID
-  +userId: UUID
-  +team: String
-  +status: String
-  +joinedAt: Instant
-  +leftAt: Instant
-  +personalGoalJson: String
-  +progressFraction: BigDecimal
-  +bestRecord: int
-}
-class ChallengeEvent {
-  +id: UUID
-  +instanceId: UUID
-  +userId: UUID
-  +evidenceType: String
-  +refId: UUID
-  +createdAt: Instant
-}
-class ChallengeNote {
-  +id: UUID
-  +instanceId: UUID
-  +userId: UUID
-  +kind: String
-  +content: String
-  +createdAt: Instant
-}
-class ChallengeVote {
-  +id: UUID
-  +instanceId: UUID
-  +voterUserId: UUID
-  +entrySchemeId: UUID
-  +createdAt: Instant
-}
-class Scheme {
-  +user: User
-  +originalScheme: Scheme
-  +title: String
-  +description: String
-  +creationMode: CreationMode
-  +origin: SchemeOrigin
-  +style: String
-  +occasion: String
-  +season: Season
-  +mood: Mood
-  +visibility: Visibility
-  +status: SchemeStatus
-  +displayMode: DisplayMode
-  +disponivel: boolean
-  .. +41 campos ..
-}
-}
-ChallengeEvent ..> User : userId
-ChallengeNote ..> User : userId
-ChallengeParticipant ..> User : userId
-Scheme "*" --> "1" User : user
-note top of User : tabela users
-note top of ChallengeTemplate : tabela challenge_templates
-note top of ChallengeInstance : tabela challenge_instances
-note top of ChallengeParticipant : tabela challenge_participants
-note top of ChallengeEvent : tabela challenge_events
-note top of ChallengeNote : tabela challenge_notes
-note top of ChallengeVote : tabela challenge_votes
-note top of Scheme : tabela schemes
+
+ChallengeController --> ChallengeService
+AdminController ..> ChallengeService : AdminService.promoteChallenge → promote
+ChallengeService ..|> DecProv
+ChallengeService ..|> RestrProv
+ChallengeService --> FaiPointsService
+ChallengeService --> NotificationService
+ChallengeService --> RoomService
+CopilotService ..> ChallengeService : activeSummary
+ChallengeService ..> StartRequest
+ChallengeService ..> Progress
+ChallengeService ..> ChallengeInstance : Challenge*Repository (6)
+
+ChallengeTemplate "1" -- "0..*" ChallengeInstance : templateCode
+ChallengeInstance "1" *-- "1..*" ChallengeParticipant : instanceId
+ChallengeInstance "1" *-- "0..*" ChallengeEvent
+ChallengeInstance "1" *-- "0..*" ChallengeNote
+ChallengeInstance "1" *-- "0..*" ChallengeVote
+ChallengeVote "0..*" --> "1" Scheme : entrySchemeId
+ChallengeParticipant "0..*" --> "1" User : userId
+ChallengeInstance "0..*" --> "1" User : createdBy
+
+note bottom of ChallengeInstance
+  tabela challenge_instances · state:
+  RASCUNHO · AGUARDANDO · ATIVO · CONCLUIDO · EXPIRADO
+end note
+note bottom of ChallengeParticipant
+  tabela challenge_participants · status: CONVIDADO ·
+  ATIVO · RECUSOU · SAIU · CONCLUIU · CANCELADO
+end note
+note bottom of ChallengeVote : tabela challenge_votes\n(unique uq_ch_vote_voter, V27: 1 voto por batalha)
+note right of ChallengeTemplate
+  tabela challenge_templates (seed V5): TEN_X_TEN,
+  CAPSULE_SEASON, SECOND_CHANCE, NO_REPEAT,
+  WEAR_WHAT_YOU_HAVE, CHANEL_WEEK, MY_SEASON,
+  RUNWAY_BATTLE, DAILY_CHALLENGE, GRWM, REAL_MIRROR
+  + propostas da comunidade (origin COMMUNITY)
+end note
 @enduml

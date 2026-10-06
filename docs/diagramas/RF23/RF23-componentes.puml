@@ -1,5 +1,5 @@
 @startuml RF23_Componentes
-title RF23 — Criar as telas de configuração do usuário (Conta, Privacidade, Aparência, Idioma, Seus dados) no padrão LGPD, com i18n\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF23 — Telas de configuração (Conta, Privacidade, Aparência, Idioma, Seus dados) com i18n\nDiagrama de componentes — telas, provedores de tema e idioma, API de preferências e i18n do backend
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -14,58 +14,102 @@ skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #4A4852
+}
 left to right direction
 
 package "Frontend (Next.js)" {
-  component "settings/page.tsx\n(abas Conta · Aparência · Privacidade · Seus dados · Sessões)" as FE0
-  component "components/edit-profile.tsx\n(EditProfileForm)" as FE1
-  component "lib/theme/theme.tsx\n(ThemeProvider · CHROME_BACKGROUNDS · CONTAINER_PRESETS)" as FE2
-  component "lib/i18n (i18n.tsx · core.ts · state.ts · icu.ts)\nmessages/pt-BR.json · en.json · es.json" as FE3
-  component "scripts/i18n (extract · scan · check · qa · JavaExtract)" as FE4
-  component "components/app-shell.tsx\n(carrega preferências no login)" as FE5
+  component "settings/page.tsx\nabas Conta · Aparência (com Idioma)\nPrivacidade · Seus dados · Sessões" as FE_SET
+  component "components/edit-profile.tsx\n(EditProfileForm)" as FE_EDIT
+  component "components/app-shell.tsx\nmenu de tema e idioma ·\naplica preferências no login" as FE_SHELL
+  component "lib/theme/theme.tsx\nThemeProvider · CHROME_BACKGROUNDS\nCONTAINER_PRESETS" as FE_THEME
+  component "lib/i18n\ni18n.tsx (I18nProvider) · core.ts · state.ts\nicu.ts · rich.tsx · pseudo.ts" as FE_I18N
+  component "lib/i18n/messages\npt-BR.json · en.json · es.json" as FE_MSG
+  component "app/(site)/layout.tsx\ncookie fai.locale → idioma do SSR\nTHEME_BOOT" as FE_LAYOUT
+  component "lib/api/client.ts\nAccept-Language em toda chamada" as FE_API
+  component "scripts/i18n\ncheck.js · scan.js · qa.js\nextract.js · JavaExtract.java" as FE_TOOLS
 }
-package "fai-web · controllers" {
-  [PreferencesController] as PC
-  [MeController] as MC
-  [BackgroundController] as BC
-  [RequestLocaleFilter + I18nConfig\n(Accept-Language → Content-Language)] as LF
-}
-package "fai-application · services" {
-  [PreferencesService] as PS
-  [AccountService] as AS
-  [AssetCatalogService] as AC
-  [IdentityService\n(usernameSuggestions)] as IS
-  [Msg (common)\ni18n/messages*.properties] as MSG
-  [NotificationService] as NS
-  [Audit] as AU
-}
-package "fai-infrastructure · adapters" {
-  [UserPreferencesRepository\nUserRepository\nUserConsentRepository\nDataExportRequestRepository\nAssetPresetRepository] as REPOS
-  [MediaStoragePort\n(local / S3 — restricted/)] as ST
-}
-database "MySQL · fashionai_app\n• user_preferences\n• users\n• user_consents\n• data_export_requests\n• audit_log\n• notifications" as DB
 
-FE0 --> PC : GET/PUT /api/me/preferences\nPATCH /api/me/profile · PUT /api/me/username
-FE1 --> PC : PATCH /api/me/profile\nPOST /api/me/avatar · /api/me/cover
-FE0 --> MC : GET/PUT /api/me/consents/{purpose}\nPUT /api/me/privacy · POST/GET /api/me/exports
-FE2 --> BC : GET /api/assets/chrome · /api/assets/manifest
-FE5 --> PC : GET /api/me/preferences
-FE3 --> LF : Accept-Language em toda chamada
-FE4 ..> FE3 : gera/valida catálogos
-PC --> PS : chama
-MC --> AS : chama
-BC --> AC : chama
-PS --> AC : valida chromeBackgroundId / skin
+package "fai-web" {
+  component "RequestLocaleFilter\nAccept-Language → Content-Language" as RLF
+  component "I18nConfig\nLocaleResolver · serializador\nde textos adiados (Msg.k)" as I18NC
+  component "PreferencesController\n/api/me/preferences · /api/preferences/options\n/api/me/profile · /api/me/username\n/api/usernames/{u}/availability\n/api/me/avatar(/rotate) · /api/me/cover" as PC
+  component "MeController\n/api/me/privacy · /consents · /exports\n/deletion (RF3)" as MC
+}
+
+package "fai-application" {
+  component "PreferencesService" as PS
+  component "AccountService (RF3)\nprivacidade · consentimentos\nexportação · exclusão" as AS
+  component "AssetCatalogService\nfundos do chrome · skins" as AC
+  component "IdentityService\nusernameSuggestions" as IS
+  component "MediaService\nput · register · ownedMedia" as MS
+  component "HypeCache\n(geração do cache do Hype)" as HC
+  component "HypeQueryService (RF46)\ncreatorOptOuts" as HQ
+  component "Msg\ni18n/messages{,_en,_es}.properties" as MSG
+  component "Audit" as AUD
+  interface "RenderCachePort" as P_CACHE <<port>>
+  interface "MediaStoragePort" as P_MEDIA <<port>>
+}
+
+package "fai-domain · repositórios" {
+  component "UserPreferencesRepository\nUserRepository · AssetPresetRepository\nPhotoRepository" as REPOS
+}
+
+package "fai-infrastructure" {
+  component "RedisAdapters.redisRenderCache\n| InMemoryRenderCache" as A_CACHE
+  component "S3MediaStorageAdapter\n| LocalFileMediaStorage" as A_MEDIA
+  component "MysqlAuditService" as A_AUD
+}
+
+database "MySQL (Flyway)\nuser_preferences (V42: hype_creator_opt_out)\nusers · photos · asset_presets · audit_log" as DB
+database "Redis\nhype:generation" as REDIS
+cloud "S3 / R2\nusers/{id}/profile/…" as S3
+
+FE_SET --> FE_EDIT
+FE_SET --> FE_THEME : update()
+FE_SET --> FE_I18N : setLocale()
+FE_SHELL --> FE_THEME
+FE_SHELL --> FE_I18N
+FE_LAYOUT --> FE_I18N : idioma inicial
+FE_I18N --> FE_MSG
+FE_TOOLS ..> FE_MSG : paridade e ICU\n(prebuild e CI)
+FE_TOOLS ..> MSG : mesmos {n} no backend
+FE_SET --> FE_API
+FE_EDIT --> FE_API
+FE_SHELL --> FE_API
+FE_I18N --> FE_API : PUT language
+
+FE_API --> RLF : HTTPS + JWT
+RLF --> PC
+RLF --> MC
+RLF ..> MSG : LocaleContextHolder
+I18NC ..> MSG : resolve na resposta
+
+PC --> PS
+MC --> AS
+PS --> AC : valida fundo e skin
 PS --> IS : sugestões de @
-PS --> AU : audita
-AS --> NS : DATA_EXPORT_READY
-AS --> AU : audita
-AS --> ST : grava/lê exportação JSON
-PS --> MSG : Msg.t (idioma da requisição)
-AS --> MSG : Msg.resolveDeep (idioma preferido)
-LF --> MSG : LocaleContextHolder
-PS --> REPOS : lê/grava
-AS --> REPOS : lê/grava
-AC --> REPOS : lê presets
-REPOS --> DB : JPA/Flyway
+PS --> MS : avatar e capa
+PS --> HC : bump() após o commit
+PS --> AUD : ALTERACAO_PREFERENCIAS\nALTERACAO_PERFIL
+PS ..> MSG : mensagens de erro
+AS ..> MSG : pacote no idioma salvo
+HQ --> HC
+HQ --> REPOS : findHypeCreatorOptOutUserIds
+HC --> P_CACHE
+MS --> P_MEDIA
+
+PS --> REPOS
+AC --> REPOS
+MS --> REPOS
+
+A_CACHE ..|> P_CACHE
+A_MEDIA ..|> P_MEDIA
+AUD --> A_AUD
+REPOS --> DB : JPA
+A_AUD --> DB
+A_CACHE --> REDIS
+A_MEDIA --> S3
 @enduml

@@ -1,0 +1,90 @@
+@startuml RF30_Componentes_Resgate
+title RF30 — Ganhar e usar FAI Points e evoluir o nível do "Meu Quarto"\nDiagrama de componentes — <<planejado>> resgate em dinheiro e doações (antigo RF48): o que existe e o que falta
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  BackgroundColor<<planejado>> #F2F2F2
+  BorderColor<<planejado>> #9AA0A6
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js 16)" {
+  component "components/showcase/runway-panel.tsx\n+ schemes/[id] (look do dia de terceiros)" as FE0
+  component "points/page.tsx\n(saldo, níveis, loja)" as FE1
+  component "Botão e folha\n“Apoiar com FAI Points”" <<planejado>> as FE2
+  component "Aba Carteira em points/page.tsx\n(saldos por bucket, resgatar, KYC, taxas)" <<planejado>> as FE3
+  component "admin/points\n(resgates, risco, fundo, usuário)" <<planejado>> as FE4
+}
+package "fai-web" {
+  [ShowcaseController\nGET /api/explorer/runway] as C0
+  [HighlightsController\nGET /api/me/points] as C1
+  [DailyLookPublicController\nGET /api/users/{id}/daily-look] <<planejado>> as C2
+  [PointsTransferController\n/api/points/transfers (+ /quote)] <<planejado>> as C3
+  [PointsWalletController · PayoutController\n/api/me/points/wallet · /api/me/payout-*] <<planejado>> as C4
+  [PayoutWebhookController\nPOST /api/webhooks/payouts/{provider}\n(webhook assinado do parceiro, HMAC)] <<planejado>> as C5
+  [AdminPointsController\n/api/admin/points/*] <<planejado>> as C6
+}
+package "fai-application" {
+  [ShowcaseService.runway] as S0
+  [FaiPointsService\n(award · balance · buy com lockOwner)] as S1
+  [NotificationService] as S2
+  [Audit / AuditService\n(REQUIRES_NEW)] as S3
+  [DailyLookService] as S4
+  [PointsTransferService] <<planejado>> as S5
+  [PointsWalletService] <<planejado>> as S6
+  [PayoutService · CreatorFundService] <<planejado>> as S7
+  [PointsRiskEngine] <<planejado>> as S8
+  [PayoutProviderPort] <<planejado>> as P1
+}
+package "fai-infrastructure" {
+  [Adaptador do parceiro licenciado\n(PSP / IP autorizada pelo BCB)] <<planejado>> as A1
+}
+database "MySQL\n• fai_points_ledger · fai_points_rules (existem)\n• daily_looks · users · notifications · audit_log (existem)\n• points_transfers · payout_accounts · payout_requests\n  creator_fund_periods · risk_flags · points_wallet_status\n  (planejadas, migração ≥ V43)" as DB
+cloud "Parceiro de pagamento\n(KYC + PIX)" as EXT
+
+FE0 --> C0 : HTTPS/JSON
+FE1 --> C1 : HTTPS/JSON
+FE2 ..> C2 : <<planejado>>
+FE2 ..> C3 : <<planejado>>
+FE3 ..> C4 : <<planejado>>
+FE4 ..> C6 : <<planejado>>
+C0 --> S0
+C1 --> S1
+C2 ..> S4
+C3 ..> S5
+C4 ..> S6
+C4 ..> S7
+C5 ..> S7
+C6 ..> S5
+C6 ..> S7
+C6 ..> S8
+S5 ..> S6
+S5 ..> S8
+S5 ..> S2 : POINTS_RECEIVED
+S5 ..> S3 : PONTOS_DOACAO_*
+S7 ..> S6
+S7 ..> P1
+S7 ..> S2 : PAYOUT_STATUS
+S7 ..> S3 : RESGATE_*
+S1 ..> S6 : saldos por bucket
+P1 <|.. A1
+A1 ..> EXT
+S1 --> DB
+S2 --> DB
+S3 --> DB
+S4 --> DB
+S5 ..> DB
+S6 ..> DB
+S7 ..> DB
+S8 ..> DB
+@enduml

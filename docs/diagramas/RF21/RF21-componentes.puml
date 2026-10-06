@@ -1,5 +1,5 @@
 @startuml RF21_Componentes
-title RF21 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma celebridade\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF21 — Publicar look vinculado a uma celebridade verificada\nDiagrama de componentes — consentimento no Criar Look, revisão da celebridade, Selo Premium e promoções
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -14,49 +14,73 @@ skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam interface {
+  BackgroundColor #FFF5F8
+  BorderColor #4A4852
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 left to right direction
 
 package "Frontend (Next.js)" {
-  component "schemes/new/page.tsx\ncomponents/scheme-builder.tsx\n(sugestões + consentimento de imagem\npara kind CELEBRITY)" as FE0
-  component "brands/[slug]/page.tsx (celebridade)\nabas Selos · Promoções · Revisão · Métricas" as FE1
-  component "components/seal-medallion.tsx\n(premium = vítreo/holográfico)\ncomponents/scheme-card.tsx (SealBadges)" as FE2
-  component "Aba \"Meus Selos\" (GET /api/me/seals)\n<<planejado>>" as FE3 #FFF5F8
+  component "components/scheme-builder.tsx\nSealSuggestions + caixa de consentimento\n(Salvar desabilitado sem ela)" as FE0
+  component "components/expanded-card.tsx\n(look salvo: Vincular)" as FE1
+  component "brands/[slug]/page.tsx (celebridade)\nRevisão de vínculos · Selos · Promoções" as FE2
+  component "seal-medallion.tsx · scheme-card.tsx\n(premium = vítreo/holográfico)" as FE3
+  component "(auth)/register/page.tsx\nsealConsentGranted no cadastro (RF1)" as FE4
 }
-package "fai-web · controllers" {
-  [SealController\nPOST /api/seal-suggestions/preview\nGET /api/schemes/{id}/seal-suggestions\nPOST /api/schemes/{id}/seal-bonds\nPOST /api/seal-bonds/{id}/accept|refuse|review|revoke\nGET /api/seal-bonds/review-queue\nPOST /api/promotions/{id}/redemptions] as C
-  [SchemeController\nPOST /api/schemes] as SCH
-}
-package "fai-application · services" {
-  [SealService] as S
-  [SchemeService (RF5)] as SS
-  [AiEngine\nAiCapability.SEALBOND_MATCHER\n(Similarity — assinatura de estilo)] as AI
-  [NotificationService\nSEAL_BOND_REVIEW · SEAL_GRANTED] as N
-  [Audit\nAuditActions.MUDANCA_ESTADO_VINCULO_SELO] as A
-  [CouponService (RF38)\nCouponRightsCheck AFTER_COMMIT] as CS
-  [InstitutionalService (RF22)\nperfil verificado da celebridade] as INST
-}
-package "fai-infrastructure · adapters" {
-  [MysqlAuditService\n(audit_log)] as MA
-  [Repositórios JPA (fai-domain · repository)\nSealBondRepository · SealRepository\nCelebrityProfileRepository · SchemeRepository\nSchemeItemRepository · PromotionRepository\nPromotionRedemptionRepository · NotificationRepository] as REPOS
-}
-database "MySQL · fashionai_app\n• seal_bonds\n• seals (premium)\n• celebrity_profiles\n• schemes · scheme_items\n• promotions · promotion_redemptions\n• notifications\n• audit_log" as DB
 
-FE0 --> C : preview / seal-bonds
-FE0 --> SCH : cria o look
-FE1 --> C : review-queue / review / revoke
-FE2 --> FE1 : usa
-FE3 ..> C : não implementado — conforme Trello
-C --> S : chama
-SCH --> SS : chama
-SS --> S : revokeForScheme / flagRevalidation
-S --> AI : local(SEALBOND_MATCHER)
-S --> N : notify
-S --> A : log
-S --> CS : publica CouponRightsCheck
-S --> REPOS : lê/grava
-INST --> REPOS : lê celebrity_profiles
-A --> MA : grava
-MA --> DB : JDBC
-REPOS --> DB : JPA/Flyway
-note bottom of S : diferenças do RF20: só celebridade APROVADA com\nsealConsentGranted; imageRightsConsent obrigatório;\nsempre PENDING_REVIEW; sealCode PRM-…
+package "fai-web · controllers" {
+  [SealController\nPOST /api/seal-suggestions/preview\nGET /api/schemes/{id}/seal-suggestions\nPOST /api/schemes/{id}/seal-bonds\nPOST /api/seal-bonds/{id}/accept · review · revoke\nGET /api/seal-bonds/review-queue\nPOST /api/promotions · PUT /api/promotions/{id}\nPOST /api/promotions/{id}/redemptions] as C
+  [SchemeController\nPOST /api/schemes] as SCC
+  [AuthController · AdminController\ncadastro e verificação (RF1)] as AUTH
+}
+
+package "fai-application" {
+  [SealService\ncandidates (STYLE_SIGNATURE) · route\n(consentimento + revisão obrigatória) ·\nissue (PRM-…) · createPromotion ·\npartnerConsented · redeem] as S
+  [Similarity (ai.local)\nassinatura de estilo] as SIM
+  [AiEngine (RF24)\nSEALBOND_MATCHER] as AI
+  [IdentityService · IssuerReviewService\nCelebrityProfile PENDENTE → APROVADO\n(requiresSealReview = true, selos padrão)] as IR
+  [InstitutionalService (RF22)\nupdateCelebrity: sealConsentGranted,\nassinatura de estilo] as IS
+  [NotificationService · Audit] as N
+  [CouponService (RF38)\nonCheck(CouponRightsCheck)] as CS
+  [FlairService.sellerActive\n(emissor ativo e aprovado)] as FS
+}
+
+package "fai-domain · repository (JPA)" {
+  [SealBondRepository · SealRepository\nCelebrityProfileRepository · BrandProfileRepository\nPromotionRepository · PromotionRedemptionRepository\nSchemeRepository · SchemeItemRepository · UserRepository] as REPOS
+}
+
+database "MySQL\n• celebrity_profiles (style_signature_json,\n  seal_consent_granted, requires_seal_review)\n• seal_bonds (image_rights_consent, era_label)\n• seals (premium, usage_limit)\n• promotions (partner_brand_user_id)\n• promotion_redemptions\n• notifications · audit_log" as DB
+
+FE0 --> C : preview · seal-bonds\n{imageRightsConsent}
+FE0 --> SCC
+FE1 --> C : accept {imageRightsConsent: true}
+FE2 --> C : review-queue · review · promoções
+FE2 --> FE3
+FE4 --> AUTH
+C --> S
+AUTH --> IR
+S --> AI
+AI ..> SIM : executa candidates()
+S --> SIM
+S --> N
+S ..> CS : CouponRightsCheck (AFTER_COMMIT)
+S --> FS
+S --> REPOS
+IR --> REPOS
+IS --> REPOS
+REPOS --> DB : JPA · Flyway
+
+note bottom of S
+  Diferenças do RF20: só celebridade APROVADA
+  (CA18); sugestão pela assinatura de estilo (CA17);
+  imageRightsConsent obrigatório (CA19); sempre
+  PENDING_REVIEW; código PRM-… (CA20); teto pelo
+  Seal.usageLimit (CA23). Partner brand: sem campo
+  na tela de promoções hoje.
+end note
 @enduml

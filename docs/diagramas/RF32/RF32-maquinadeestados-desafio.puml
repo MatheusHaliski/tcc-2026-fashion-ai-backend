@@ -1,6 +1,6 @@
 @startuml RF32_MaquinaDeEstados_Desafio
+title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade, através da sub-aba "Desafios"\nDiagrama de máquina de estados — instância do desafio (challenge_instances.state)
 !pragma layout smetana
-title RF32 — Desafio (challenge_instances.status)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,14 +8,41 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-[*] --> RASCUNHO : POST /api/challenges
-RASCUNHO --> AGUARDANDO : launch (convites enviados)
-RASCUNHO --> ATIVO : solo
-AGUARDANDO --> ATIVO : convidados aceitam\nou criador "começar agora"
-AGUARDANDO --> CANCELADO : criador cancela
-ATIVO --> VOTACAO_FECHADA : prazo encerra a votação
-ATIVO --> CANCELADO : criador cancela
-VOTACAO_FECHADA --> CONCLUIDO : apuração + FAI Points\n+ card de resultado
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "RASCUNHO\n(criado; criadora já é participante)" as RASCUNHO
+state "AGUARDANDO\n(convites por 48 h · acceptDeadline)" as AGUARDANDO
+state "ATIVO\n(startsAt; endsAt = hoje + durationDays)" as ATIVO
+state "CONCLUIDO\n(resultJson, recompensas pagas)" as CONCLUIDO
+state "EXPIRADO\n(sem punição)" as EXPIRADO
+
+[*] --> RASCUNHO : POST /api/challenges\n(SOLO/EQUIPE/DUELO)
+[*] --> ATIVO : POST /api/challenges (COMUNIDADE):\ninstância compartilhada do dia/semana
+RASCUNHO --> ATIVO : launch, modo SOLO\n(start ou POST /{id}/launch)
+RASCUNHO --> AGUARDANDO : launch com convidados (EQUIPE/DUELO)\n→ CHALLENGE_INVITE
+AGUARDANDO --> ATIVO : todos responderam e aceitos ≥ max(2, mínimo)\n(maybeStartEarly) · POST /{id}/start · tick() após 48 h
+AGUARDANDO --> EXPIRADO : abaixo do mínimo (respostas ou tick() após 48 h)\n· todos saíram (POST /{id}/leave)
+AGUARDANDO --> RASCUNHO : POST /{id}/cancel (criadora)\nparticipantes → CANCELADO
+ATIVO --> RASCUNHO : POST /{id}/cancel (criadora; não em COMUNIDADE)
+ATIVO --> CONCLUIDO : meta atingida (refresh, Solo/Equipe)\nou tick() com endsAt vencido → conclude
+ATIVO --> EXPIRADO : todos saíram (fora COMUNIDADE)
 CONCLUIDO --> [*]
-CANCELADO --> [*]
+EXPIRADO --> [*]
+
+note right of ATIVO
+  Conta no limite de 3 desafios por pessoa
+  (ATIVO ou AGUARDANDO → 409 LIMITE_DESAFIOS).
+  Só aqui: entradas, votos (RUNWAY_BATTLE/GRWM),
+  progresso por eventos e Espelho de Verdade.
+  Decora o Meu Quarto (DecorationsProvider) e
+  restringe Vista-me/Copilot no 10×10 e na Cápsula.
+end note
+note left of RASCUNHO
+  "Cancelar" não tem estado próprio:
+  a instância volta a RASCUNHO e
+  pode ser relançada.
+end note
 @enduml

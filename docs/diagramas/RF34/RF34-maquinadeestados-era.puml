@@ -1,5 +1,6 @@
 @startuml RF34_MaquinaDeEstados_Era
 !pragma layout smetana
+title RF34 — Eras da celebridade: busca por era, Insights de Eras e My Stage 3D\nDiagrama de máquina de estados — era da celebridade (scheme_groupings type ERA · PHASE · TOUR) e sua posição no ranking
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -7,28 +8,40 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-title RF34 — Era da celebridade (scheme_groupings, type = ERA): da criação ao palco com plateia lotada
-[*] --> Criada : POST /api/groupings {type: ERA, label, periodFrom, periodTo}\n(só perfil CELEBRIDADE; tipos permitidos por profileType)
-state "Criada\n(sem itens)" as Criada
-state "Com foto da era\n(coverUrl)" as ComCapa
-state "Com itens\n(schemes/wardrobe_items.grouping_id)" as ComItens
-state "Ranqueada em Insights de Eras\n(0,5·curtidas + 0,35·hype + 0,15·itens)" as Ranqueada {
-  state "rank 1 — plateia lotada\n(audienceFraction = 1)" as Top
-  state "rank n — plateia proporcional" as Resto
-  Resto --> Top : passa a 1ª em curtidas/hype
-  Top --> Resto : outra era ultrapassa
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
-state "No My Stage 3D\n(GET /api/institutional/{slug}/stage?era)" as Palco
-Criada --> ComCapa : POST /api/groupings/{id}/cover (foto da era)
-Criada --> ComItens : POST /api/groupings/{id}/items {schemeIds, pieceIds}
-ComCapa --> ComItens : POST /api/groupings/{id}/items
-ComItens --> ComItens : PUT /api/groupings/{id} (label, período, descrição)
-ComItens --> Ranqueada : GET /api/institutional/{slug}/showcase/eras/insights
-Ranqueada --> Palco : escolhe a era → look mais curtido\nvestido no manequim com a foto oficial (RF1 CA09)
-Palco --> Ranqueada : troca de era
-ComItens --> Criada : POST /api/groupings/{id}/items com groupingId=null\n(desvincula tudo)
-Criada --> [*] : DELETE /api/groupings/{id}
-ComItens --> [*] : DELETE /api/groupings/{id}\n(itens ficam, grouping_id = null)
-note right of Ranqueada : ranking calculado na hora a partir de likes_count\ne hype_score — sem tabela de ranking nova
-note bottom of ComItens : busca por era: GET /api/institutional/{slug}/showcase/eras/items?grouping&q&year
+[*] --> Vazia : POST /api/groupings {type: ERA|PHASE|TOUR, label, período, cor}\n(perfil CELEBRIDADE — LookbookService.CELEBRITY)
+state "Sem itens\n(card com 0 looks/peças, capa = foto enviada ou nenhuma)" as Vazia
+state "Com itens\n(schemes/wardrobe_items.grouping_id = era)" as ComItens {
+  [*] --> SemFoto
+  state "Capa automática\n(coverSource = esquema: capa do look\nde maior Hype v2)" as SemFoto
+  state "Com foto da era\n(coverSource = upload)" as ComFoto
+  SemFoto --> ComFoto : POST /api/groupings/{id}/cover
+}
+state "No ranking de Insights de Eras" as Ranking {
+  state "1º lugar\n(fraction = 1, plateia 120/120, «LOTADO»)" as Primeiro
+  state "Demais posições\n(plateia = pontuação/1º × 120)" as Demais
+  Demais --> Primeiro : passa a ter a maior pontuação
+  Primeiro --> Demais : outra era a ultrapassa
+}
+
+Vazia --> Vazia : POST /api/groupings/{id}/cover · PUT /api/groupings/{id}
+Vazia --> ComItens : POST /api/groupings/{id}/items {schemeIds, pieceIds}
+ComItens --> Vazia : todos os itens ligados a outra era\n(não há endpoint só para desligar)
+ComItens --> Ranking : GET …/showcase/eras/insights\n(calculado na hora, sem tabela de ranking)
+Ranking --> ComItens : curtidas e itens mudam\n(nova leitura reordena)
+Vazia --> [*] : DELETE /api/groupings/{id}
+ComItens --> [*] : DELETE /api/groupings/{id}\n(looks e peças ficam, grouping_id = NULL)
+
+note right of Ranking
+  Pontuação de POPULARIDADE (ShowcaseService.insights):
+  0,75·curtidas/máx do perfil + 0,25·itens/máx (×100).
+  O HypeScore v2 NÃO entra: aparece à parte (top, média e
+  faixa); mostHype = era de maior Hype médio.
+  Só contam looks e peças visíveis para quem vê.
+  Uma era vazia também entra no ranking (pontuação 0).
+end note
 @enduml

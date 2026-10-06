@@ -1,5 +1,5 @@
 @startuml RF14_Componentes
-title RF14 — Visualizar a aba "Marcas" — Feed de Perfil de Marcas de roupa cadastradas dentro do sistema do FashionAI\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF14 — Aba "Marcas": feed e perfil das marcas cadastradas\nDiagrama de componentes — páginas → controllers → serviços → portas/repositórios → MySQL, Redis e web
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -14,58 +14,114 @@ skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam interface {
+  BackgroundColor #FFF5F8
+  BorderColor #4A4852
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 left to right direction
 
-package "Frontend (Next.js)" {
-  component "brands/page.tsx\n(feed Marcas · Celebridades)" as FE0
-  component "brands/[slug]/page.tsx\n(perfil institucional)" as FE1
-  component "components/brand-logo.tsx" as FE2
-  component "showcase-tabs (Coleções/Eras)\nflair · room3d (abas)" as FE3
+package "Frontend (Next.js · app/(site)/(app)/brands)" {
+  component "brands/page.tsx\n(feed Marcas · Celebridades,\nbusca e ordem)" as FE0
+  component "brands/[slug]/page.tsx\n(perfil institucional, abas,\nSegmentPicker Recentes · Hype · Em crescimento)" as FE1
+  component "components/brand-logo.tsx\n(BrandLogo)" as FELOGO
+  component "components/hype/hype-group-badge.tsx\n+ lib/hype/use-hype-group.ts\n(lote de até 50 chaves)" as FEHYPE
+  component "components/insights/insight-strip.tsx" as FEINS
+  component "SchemeCard · PieceCard\n(SealBadges + nota do vínculo)" as FECARD
+  component "showcase-tabs (Coleções — RF35)\nflair (RF37) · room3d (RF39)\nissuer-review (Central — RF1)" as FETABS
 }
-package "fai-web · controllers" {
-  [ProfileController] as ProfileController
-  [BrandLogoController] as BrandLogoController
-  [LookbookController] as LookbookController
-  [FlairController] as FlairController
-}
-package "fai-application · services" {
-  [InstitutionalService] as InstitutionalService
-  [ProfileService] as ProfileService
-  [BrandLogoService] as BrandLogoService
-  [BrandWebSearchService] as BrandWebSearchService
-  [LookbookService] as LookbookService
-  [AiEngine (RF24)] as AiEngine
-}
-package "fai-infrastructure · adapters" {
-  [BrandProfileRepository\nBrandRepository · BrandLogoRepository\nCelebrityProfileRepository\nStyleDnaRepository · FollowRepository\nSealRepository · SealBondRepository\nSchemeGroupingRepository · UserRepository] as REPOS
-  [WebFetchPort\n(JdkWebFetchAdapter)] as WEB
-  [MediaStoragePort] as STORAGE
-}
-database "MySQL\n• brand_profiles\n• brands\n• brand_logos\n• celebrity_profiles\n• style_dna\n• follows · seals · seal_bonds\n• scheme_groupings · users" as DB
-cloud "Wikidata · Simple Icons (GitHub)\n· IA com busca na web" as EXT
 
-FE0 --> ProfileController : GET /api/brands · /api/celebrities
-FE1 --> ProfileController : GET /api/institutional/{slug}[/tabs/{tab}]
-FE1 --> LookbookController : GET /api/users/{ownerId}/groupings
-FE1 --> FlairController : aba Combinações FLAIR
-FE0 --> FE2 : exibe logo
-FE2 --> BrandLogoController : GET /api/brand-logos[/batch]
-FE1 --> FE3 : abas
-ProfileController --> InstitutionalService : chama
-ProfileController --> ProfileService : seguir (RF17)
-BrandLogoController --> BrandLogoService : chama
-BrandLogoController --> BrandWebSearchService : /api/brand-search
-BrandLogoService --> BrandWebSearchService : busca na primeira vez
-BrandWebSearchService --> WEB : lê
+package "fai-web · controllers" {
+  [ProfileController\nGET /api/brands\nGET /api/institutional/{slugOrId}\nGET /api/institutional/{slugOrId}/tabs/{tab}\nGET /api/institutional/{slugOrId}/store\nPATCH /api/me/brand-profile\nPOST/DELETE /api/users/{id}/followers] as PC
+  [HypeController\nGET /api/hype/groups] as HC
+  [InsightsController\nGET /api/insights] as IC
+  [SealController\nGET /api/users/{ownerId}/seals\nGET /api/users/{ownerId}/promotions] as SC
+  [BrandLogoController\nGET /api/brand-logos · /api/brand-logos/batch] as BLC
+}
+
+package "fai-application" {
+  [InstitutionalService\nbrandFeed · profile · tab\npromoted · filterLooks · pieceEntries] as IS
+  [HypeQueryService\ngroups · currentOf] as HQ
+  [HypeCache\n(geração do job)] as HCACHE
+  [HypeSnapshotService\n@Scheduled a cada 6 h] as JOB
+  [InsightService · ProfileInsights\n(BRAND_PROFILE)] as INS
+  [SealService\nsealsOf · promotionsOf · badge] as SS
+  [SchemeService\ncanView · view] as SCH
+  [ProfileService\nfollow · unfollow (RF17)] as PS
+  [Guard\n(visibilidade, bloqueio, deny auditado)] as G
+  [AiEngine (RF24)\nlocal(AFFINITY)] as AI
+  [BrandLogoService · BrandWebSearchService] as BLS
+  interface "RenderCachePort" as RCP <<port>>
+  interface "WebFetchPort" as WFP <<port>>
+  interface "MediaStoragePort" as MSP <<port>>
+}
+
+package "fai-domain · repository (JPA)" {
+  [BrandProfileRepository · UserRepository\nFollowRepository · SealBondRepository · SealRepository\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · SchemeGroupingRepository\nStyleDnaRepository · HypeScoreCurrentRepository\nSavedItemRepository · ReactionRepository] as REPOS
+}
+
+package "fai-infrastructure" {
+  [RedisAdapters\n(InMemoryRenderCache no fallback)] as REDIS
+  [JdkWebFetchAdapter] as WEB
+  [S3MediaStorageAdapter /\nLocalFileMediaStorage] as STO
+}
+
+database "MySQL\n• brand_profiles · users · follows\n• seal_bonds · seals\n• schemes · scheme_items · wardrobe_items\n• scheme_groupings · style_dna\n• hype_scores · saved_items · reactions\n• brand_logos" as DB
+database "Redis\n(hype:g{geração}:…)" as RDB
+cloud "Web pública\n(Wikidata · Simple Icons)" as EXT
+
+FE0 --> PC : feed
+FE0 --> FELOGO
+FE0 --> FEHYPE : group já veio no feed
+FE1 --> PC : perfil e abas
+FE1 --> SC : selos e promoções
+FE1 --> FEHYPE : Hype da marca (header)
+FE1 --> FEINS
+FE1 --> FECARD
+FE1 --> FETABS
+FEHYPE --> HC
+FEINS --> IC
+FELOGO --> BLC
+
+PC --> IS
+PC --> PS
+HC --> HQ
+IC --> INS
+SC --> SS
+BLC --> BLS
+
+IS --> HQ : feedHype · currentOf
+IS --> SS : badge
+IS --> SCH : canView · view
+IS --> G
+IS --> AI
+IS --> REPOS
+INS --> HQ
+HQ --> HCACHE
+HQ --> REPOS
+JOB --> REPOS : grava hype_scores
+JOB --> HCACHE : bump()
+HCACHE --> RCP
+SS --> REPOS
+BLS --> WFP
+BLS --> MSP
+BLS --> REPOS
+
+RCP <|.. REDIS
+WFP <|.. WEB
+MSP <|.. STO
+REDIS --> RDB
 WEB --> EXT : HTTPS
-BrandWebSearchService --> AiEngine : IA com busca web
-InstitutionalService --> AiEngine : local(AFFINITY)
-InstitutionalService --> REPOS : lê
-BrandLogoService --> REPOS : grava brand_logos
-BrandLogoService --> STORAGE : grava logo filtrado
-LookbookController --> LookbookService : chama
-LookbookService --> REPOS : lê
-REPOS --> DB : JPA/Flyway
-note bottom of InstitutionalService : aprovação da marca: AdminService (RF1.CA08)\nselos e promoções das abas: ver RF25
-note bottom of BrandWebSearchService : ver RF4 (docs/novos-rf/RF4_Buscador_Web_Marcas.md)
+REPOS --> DB : JPA · Flyway
+
+note bottom of IS
+  O perfil mostra conteúdo de outras pessoas só
+  pelo vínculo APPROVED (política do selo):
+  ver RF14_Atividades_Exibicao.
+  Vínculo e emissão do selo: RF20/RF21.
+end note
 @enduml

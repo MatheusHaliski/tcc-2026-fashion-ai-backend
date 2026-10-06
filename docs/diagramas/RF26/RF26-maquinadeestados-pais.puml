@@ -1,6 +1,6 @@
 @startuml RF26_MaquinaDeEstados_Pais
 !pragma layout smetana
-title RF26 — Ponto do país no globo: dados suficientes × seleção (ExplorerService.globalPanel)
+title RF26 — Busca global de esquemas e peças (aba "Explorador Global")\nDiagrama de máquina de estados — país no globo (volume + Hype v2) e carregamento de cada aba
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,21 +8,51 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-[*] --> Ausente : nenhuma peça/esquema PUBLIC\ncom users.country = país
-state "Ausente (fora de countries[])" as Ausente
-state "sufficient = false\n(badge 'poucos dados')" as Insuficiente
-state "sufficient = true\n(ponto luminoso aceso)" as Aceso {
-  [*] --> Intensidade
-  state "intensity = avg_hype\n(faixas DESPRETENSIOSO…ICONE_DE_ESTILO)" as Intensidade
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
-state "Selecionado\n(selected: hypeBySeason + topColors)" as Selecionado
-Ausente --> Insuficiente : 1º item público do país\n(total < MIN_DATA = 3)
-Insuficiente --> Aceso : total >= 3
-Aceso --> Insuficiente : filtro season/color/hypeBand\nreduz o recorte
-Aceso --> Selecionado : toque no globo →\nGET /api/explorer/global?country=XX
-Insuficiente --> Selecionado : toque na lista →\nGET /api/explorer/global?country=XX
-Selecionado --> Aceso : troca de país / limpa seleção
-Aceso --> Ausente : itens arquivados ou\nvisibilidade deixa de ser PUBLIC
-note right of Aceso : CA01 — um ponto por país com dados suficientes;\nregião = users.country do dono (CA04)
-note bottom of Selecionado : o estado é só de leitura; nada é gravado
+
+state "País no Painel global" as Pais {
+  [*] --> Ausente
+  state "Ausente\n(fora de countries[])" as Ausente
+  state "Apagado\nsufficient = false\n(total < MIN_DATA = 3, volume)" as Apagado
+  state "Aceso\nsufficient = true (volume)" as Aceso {
+    [*] --> ComHype
+    state "Hype v2 completo\ncount ≥ GLOBE_MIN_ITEMS (3):\nnúmeros, colunas, figuras, card top" as ComHype
+    state "Hype com pouca base\ncount < 3: desenhado\napagado e sem card" as PoucaBase
+    state "Sem Hype v2\n(valor —, nunca 0)" as SemHype
+    ComHype --> PoucaBase : recorte do globo (tipo, janela,\ncategoria, minLevel) reduz a base
+    PoucaBase --> ComHype : base volta a ≥ 3
+    PoucaBase --> SemHype : nenhum item público no recorte
+    SemHype --> PoucaBase : 1º item público no recorte
+  }
+  state "Selecionado\n(?country=XX)" as Selecionado
+  Ausente --> Apagado : 1º item PUBLIC de dono do país
+  Apagado --> Aceso : total ≥ 3 (volume)
+  Aceso --> Apagado : estação/cor reduzem o recorte\nou itens saem do público
+  Apagado --> Ausente : nenhum item público
+  Aceso --> Selecionado : toque no globo/lista →\nGET /api/explorer/global?country=XX
+  Apagado --> Selecionado : toque na lista
+  Selecionado --> Aceso : "Fechar país" (pickCountry(""))
+  Selecionado --> Selecionado : troca de país ou de filtro
+  note right of Selecionado : painel: HypeGlobeCountryPanel +\nlooksBySeason (volume) + 5 cores;\ndestaque "top" abre o HypeAnalyticsDrawer
+}
+
+state "Aba do Explorador (useApi)" as Aba {
+  [*] --> Carregando : aba aberta (enabled) ou filtro mudou
+  state "Carregando\n(Skeleton)" as Carregando
+  state "Pronto" as Pronto
+  state "Vazio\n(EmptyState)" as Vazio
+  state "Erro\n(ErrorState)" as Erro
+  Carregando --> Pronto : 200 com itens
+  Carregando --> Vazio : 200 sem itens
+  Carregando --> Erro : 400 (ESTACAO_INVALIDA, COR_INVALIDA,\nTIPO_INVALIDO, NIVEL_INVALIDO) ou rede
+  Erro --> Carregando : "Tentar de novo" (reload)
+  Pronto --> Carregando : novo filtro / página / login
+  Vazio --> Carregando : novo filtro
+  note bottom of Erro : no Painel global o ErrorState só aparece\nquando /api/explorer/global falha e o\nglobo de Hype também não chegou
+}
+note "Nada é gravado: estados de leitura derivados de hype_scores\n(job a cada 6 h) e dos agregados de volume" as N1
 @enduml

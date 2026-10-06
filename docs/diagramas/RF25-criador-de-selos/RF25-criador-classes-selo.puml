@@ -1,0 +1,218 @@
+@startuml RF25_Criador_Classes_Selo
+title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de classes — selo salvo, vínculo selo × look/peça, detecção por política e Selos de Hype (HypeScore v2)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam class {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+hide empty methods
+set separator none
+
+package "fai-domain" {
+  class Seal <<entity seals>> {
+    id : UUID
+    owner : User  «marca ou celebridade»
+    name : String  «2–160»
+    tier : SealTier
+    policyText : String
+    status : SealStatus
+    iconUrl : String
+    premium : boolean  «celebridade»
+    backgroundConfigJson : String  «{design, policy}»
+    availableFrom / availableUntil : Instant
+    usageLimit : Integer
+    usageCount : int
+    autoIssued : boolean
+  }
+  class SealBond <<entity seal_bonds>> {
+    id : UUID
+    scheme : Scheme
+    targetOwner : User  «emissor»
+    requestedBy : User
+    seal : Seal
+    tier : SealTier
+    linkedPieceIdsJson : String
+    confidence : BigDecimal  «0,97 por política»
+    justification : String  «"atende: …"»
+    basis : SealBondBasis
+    origin : SealBondOrigin
+    status : SealBondStatus
+    requiresReview : boolean
+    imageRightsConsent : Boolean
+    sealCode : String  «BRD-/PRM- + 8»
+    issuedAt / expiresAt : Instant
+    reviewNote : String
+  }
+  class HypeScoreCurrent <<entity hype_scores>> {
+    entityType : HypeEntityType
+    entityId : UUID
+    status : HypeStatus
+    score : BigDecimal
+    level : HypeLevel
+    momentum : HypeMomentum
+    dimensions : HypeDimensions  «longevity, rarity…»
+    publicEligible : boolean
+  }
+  enum SealTier {
+    PECA
+    LOOK
+  }
+  enum SealStatus {
+    ACTIVE
+    INACTIVE
+  }
+  enum SealBondStatus {
+    SUGGESTED
+    ACCEPTED
+    EDITED
+    REFUSED
+    PENDING_REVIEW
+    APPROVED
+    REJECTED
+    REVOKED
+  }
+  enum SealBondOrigin {
+    AI_SUGGESTION
+    MANUAL
+  }
+  enum SealBondBasis {
+    BRAND_MATCH
+    STYLE_SIGNATURE
+  }
+  interface SealRepository <<repository>> {
+    findByOwnerIdOrderByCreatedAtDesc(ownerId)
+    findByOwnerIdAndStatusOrderByCreatedAtDesc(ownerId, status)
+    findByStatus(status)  «detecção»
+  }
+  interface SealBondRepository <<repository>> {
+    findBySchemeId(schemeId)
+    findBySchemeIdAndTargetOwnerIdAndStatusIn(…)
+    findByTargetOwnerIdAndStatusOrderByCreatedAtAsc(…)
+    findBySealIdInAndStatus(sealIds, status)  «Hype do selo»
+    findBySchemeIdInAndStatus(schemeIds, status)
+    findBySealCode(code)
+  }
+}
+
+package "fai-application" {
+  class SealService <<service>> {
+    +MAX_SUGGESTIONS = 3 · MAX_PIECE_SEALS = 60
+    +DEFAULT_SEAL_VALIDITY = 365 dias
+    +preview(user, pieceIds, occasion, style): Map
+    +previewPiece(user, PieceFields): Map
+    +suggest(user, schemeId): Map
+    +linkManually(user, schemeId, targetOwnerId, consent): Map
+    +accept(user, bondId, consent) / refuse / refuseAll
+    +review(user, bondId, approve, reason): Map
+    +revoke(user, bondId, reason) / revokeForScheme / flagRevalidation
+    +sealsOf(viewer, ownerId) / pieceSeals(viewer, ids)
+    +ensureDefaultSeals(owner)
+    {static} +available(seal, now): boolean
+    {static} +unavailableReason(seal, now): String
+    ~candidates(scheme, items, unregistered, pieceOnly, hype)
+    -policyCandidates(…): Set<UUID>  «emissores governados»
+    -route(user, bond) · -sealFor(target, tier, scheme) · -issue(bond, by)
+    ~sealHype(seals): Map  «Hype do selo»
+  }
+  class "SealService.Candidate" as Candidate <<record>> {
+    targetOwnerId, kind, name, logoUrl
+    confidence : BigDecimal
+    justification : String
+    tier : SealTier
+    linkedPieceIds : List<UUID>
+    basis : SealBondBasis
+    sealId : UUID
+  }
+  class "SealService.PieceFields" as PieceFields <<record>> {
+    name, category, subcategory, color, brandName
+    occasion, style : List<String>
+  }
+  class "SealService.SealUnavailable" as SealUnavailable <<ApiException 409>> {
+    SELO_INDISPONIVEL
+  }
+  class SealPolicies <<final>> {
+    {static} +parse(stored): Policy
+    {static} +evaluate(p, tier, pieces, occasions, styles, hype): Verdict
+    {static} +describe(p, tier): String
+  }
+  interface "SealPolicies.HypeLookup" as HypeLookup {
+    NONE
+    piece(pieceId): HypeFact
+    look(): HypeFact
+    {static} of(pieces, look)
+  }
+  class "SealPolicies.HypeFact" as HypeFact <<record>> {
+    score : Double
+    level : HypeLevel
+    momentum : HypeMomentum
+    available : boolean
+  }
+  class AiEngine <<service>> {
+    +local(userId, SEALBOND_MATCHER, inputsUsed, engine): AiOutcome
+  }
+  class HypeQueryService <<service>> {
+    +currentOf(type, ids): Map<UUID, HypeScoreCurrent>
+    +summaries(viewer, type, ids): Map  «seals por item»
+    +detail(viewer, type, id): Map  «sealProgress»
+    +config(): HypeScoreConfig
+  }
+  class HypeSeals <<final>> {
+    +CODES = VIRAL, TRENDING, EMERGING, CLASSIC, RARE
+    +CARD_MAX = 2
+    +CLASSIC_LONGEVITY_MIN = 70 · RARE_RARITY_MIN = 75
+    {static} +of(c): List<String>
+    {static} +forCard(c): List<String>
+    {static} +progress(c, thresholds): List<Map>
+  }
+  class HypeCache <<service>> {
+    +get(key, loader): Map  «seal-hype:{id}:{tier}:{usageCount}»
+    +generation() / bump()
+  }
+}
+
+package "frontend (lib/hype/seals.ts · components/hype/hype-seals.tsx)" {
+  class HYPE_SEAL_DESIGN <<const>> {
+    VIRAL → fai/03
+    TRENDING → fai/02
+    EMERGING → fai/06
+    CLASSIC → fai/10
+    RARE → fai/09
+  }
+  class "hype-seals.tsx" as HypeSealsUi <<React>> {
+    hypeSealDesign(code): SealDesign  «kind FASHIONAI, TEMPLATE»
+    withHypeSeals(seals, codes)
+    SealHypeStat · SealSuggestionHype
+    HypeSealProgressList
+  }
+}
+
+Seal "1" <-- "0..*" SealBond : seal
+Seal ..> SealTier
+Seal ..> SealStatus
+SealBond ..> SealBondStatus
+SealBond ..> SealBondOrigin
+SealBond ..> SealBondBasis
+SealRepository ..> Seal
+SealBondRepository ..> SealBond
+SealService --> SealRepository
+SealService --> SealBondRepository
+SealService ..> SealPolicies : parse/evaluate/describe
+SealService ..> Candidate : gera até 3
+SealService ..> PieceFields
+SealService ..> SealUnavailable : route()
+SealService --> AiEngine
+SealService ..> HypeQueryService : currentOf (ObjectProvider)
+SealService --> HypeCache
+SealService ..> HypeLookup : hypeLookup()
+SealPolicies ..> HypeLookup
+HypeLookup ..> HypeFact
+HypeFact ..> HypeScoreCurrent : of(c)
+HypeQueryService ..> HypeScoreCurrent
+HypeQueryService ..> HypeSeals : summary().seals
+HypeSeals ..> HypeScoreCurrent
+HypeSealsUi ..> HYPE_SEAL_DESIGN
+HypeSealsUi ..> HypeQueryService : GET /api/hype/summaries\nGET /api/hype/{pieces|looks}/{id}
+@enduml

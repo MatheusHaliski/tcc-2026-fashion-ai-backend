@@ -1,5 +1,5 @@
 @startuml RF46_Componentes
-title RF46 — Gerar assets criativos do FashionAI por meio do FAI Creative Engine e serviços Adobe\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF46 — HypeScore v2\nDiagrama de componentes — núcleo (v1 removido em P3-16): telas → controllers → serviços do Hype → repositórios e cache → MySQL
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -17,58 +17,115 @@ skinparam database {
 left to right direction
 
 package "Frontend (Next.js)" {
-  component "components/background-studio.tsx" as FE0
-  component "components/scheme-builder.tsx" as FE1
-  component "components/seal-creator.tsx\n+ seal-medallion.tsx" as FE2
+  component "PieceCard · SchemeCard\n(FashionCard: frente/verso, CardFlipButton)" as FE_CARD
+  component "components/hype\nHypeBadge · HypeCardBack · HypeBackArt\nHypeAnalyticsDrawer · HypeSealProgressList" as FE_HYPE
+  component "lib/hype\nuseHypeSummary (lote 100, TTL 5 min)\nmodel · explain · seals · globe" as FE_LIB
+  component "Explorador › Em alta\n(HypeTrendingPanel: peças, looks,\nMarcas e Criadores em alta)" as FE_TREND
+  component "Explorador › Ranking\n(HypeRankingPanel)" as FE_RANK
+  component "Explorador › Painel global\n(globe.tsx + HypeGlobe*: camadas,\nlegenda, tabela)" as FE_GLOBE
+  component "Lookbook › Insights · /history\n(HypeWardrobeInsights, history-hype)" as FE_INS
+  component "closet · Meus looks\n(ordenar e filtrar por Hype)" as FE_CLOSET
+  component "search · brands · brands/[slug] · u/[username]\nHypeGroupBadge (lib/hype/use-hype-group)" as FE_GROUP
+  component "settings (Privacidade:\nsair de Criadores em alta)" as FE_SET
 }
 package "fai-web · controllers" {
-  [BackgroundController\n/api/backgrounds/** · /api/assets/**\n/api/schemes/{id}/background · /api/pieces/{id}/background] as BC
-  [SealController\n/api/seals/design-catalog · /api/seals/uploads] as SC
-  [CreativeController\n<<planejado>>] as CC #FAFAFA
+  [HypeController] as HC
+  [SocialController] as SOCC
+  [WardrobeController\nSchemeController] as SWC
+  [LookbookController\n(/api/hype/method: só o v2)] as LBC
+  [PreferencesController\n(PUT /api/me/preferences)] as PRC
+  [AdminController\n(job "hype")] as ADM
+}
+package "fai-application · hype" {
+  [HypeQueryService\nsummaries · detail · history · positions\ntrending · trendingGroups · groups\nranking · facets · globe · wardrobe · movers] as HQ
+  [HypeSnapshotService\n@Scheduled 6/6 h · synchronized] as JOB
+  [HypeLiveRecalc\nmarkDirty · tick 30 s · ≤ 1/120 s] as LIVE
+  [HypeSignalRecorder\n@TransactionalEventListener] as REC
+  [HypeIntegrityPolicy] as POL
+  [HypeCalculator\nHypeSignalSeries] as CALC
+  [HypeScoreConfig\n(pesos, janelas, faixas, HYPE_V2)] as CFG
+  [HypeCache\n(geração + TTL 10 min)] as HCACHE
+  [HypeSeals\n(VIRAL · TRENDING · EMERGING\nCLASSIC · RARE)] as SEALS
+  [HypeMilestoneNotifier\nAFTER_COMMIT · SideEffectRunner] as MIL
+  [StyleCompatibility\nRecommendationScoring] as REC2
 }
 package "fai-application · services" {
-  [BackgroundStudioService\ngenerateArt · upload · savePiece · saveScheme] as BSS
-  [SealDesignService\ncatalog · upload] as SDS
-  [AssetCatalogService] as ACS
-  [AiEngine (RF24)\nAiCapability.BACKGROUND_GENERATOR] as AIE
-  package "FAI Creative Engine <<planejado>>" {
-    [CreativeRequest → TemplateResolver\n→ Prompt/Composition Resolver\n→ Quality Validation] as CE #FAFAFA
-  }
-  [ImageGenerationPort\n(provider abstrato)] as IGP
-  [MediaService] as MS
-  [MediaStoragePort] as MSP
+  [SocialService\nSchemeService\nWardrobeService\nDailyLookService] as PUB
+  [AdminService\n(job "hype" = só v2)] as ADMS
+  [PreferencesService\n(hypeCreatorOptOut)] as PREF
+}
+package "fai-application · notificações" {
+  [NotificationService\n(HYPE_MILESTONE, ACHIEVEMENT)] as NOTS
+}
+package "fai-application · taxonomy" {
+  [WorldRegions\n(país → região)] as WR
+}
+package "fai-domain · repositories" {
+  [HypeSignalDailyRepository\nHypeScoreCurrentRepository\nHypeScoreSnapshotRepository\nHypeMilestoneRepository] as REPOS
+  [WardrobeItemRepository\nSchemeRepository · SchemeItemRepository\nStyleDnaRepository · UserRepository\nUserPreferencesRepository] as OREPOS
 }
 package "fai-infrastructure · adapters" {
-  [ReplicateImageGenerationAdapter] as REP
-  [FireflyAdapter / Photoshop API\n<<planejado>>] as FF #FAFAFA
-  [S3MediaStorageAdapter\nLocalFileMediaStorage] as S3
-  [AssetPresetRepository\nPipelineJobRepository\nSchemeRepository · WardrobeItemRepository\nPhotoRepository] as REPOS
+  [RenderCachePort\n(Redis ou memória)] as RCP
 }
-database "MySQL\n• asset_presets\n• pipeline_jobs\n• schemes\n• photos\n• wardrobe_items\n• piece_images (canônicos RF45, só leitura)" as DB
-cloud "Replicate (flux-schnell / SDXL)" as EXT1
-cloud "Adobe Firefly · Photoshop API · Express\n<<planejado>>" as EXT2
+database "MySQL" {
+  [hype_signal_daily] as T1
+  [hype_scores\n(+ country, region,\ncategories, subcategories: V39)] as T2
+  [hype_score_snapshots] as T3
+  [hype_milestones (V41)] as T4
+  [user_preferences\n.hype_creator_opt_out (V42)] as T5
+}
 
-FE0 --> BC : chama (HTTPS/JSON)
-FE1 --> BC : chama
-FE2 --> SC : chama
-BC --> BSS : chama
-SC --> SDS : chama
-BSS --> ACS : lê catálogo de assets
-BSS --> AIE : chama
-AIE --> IGP : fallback entre provedores
-IGP <|.. REP
-IGP <|.. FF
-REP --> EXT1 : chama
-FF ..> EXT2 : chama
-BSS --> MS : grava PNG + registra (photos)
-MS --> MSP : put
-SDS --> MSP : grava arte do selo
-MSP <|.. S3
-BSS --> REPOS : lê/grava
-CC ..> CE : chama
-CE ..> IGP : provider criativo
-CE ..> REPOS : PipelineJob assíncrono
-CE ..> DB : lê asset canônico (RF45)
-REPOS --> DB : JPA/Flyway
-note bottom of CE : RF45 = verdade visual (pipeline de confiança)\nRF46 = expressão criativa (pipeline criativo)\no criativo lê o canônico, nunca o substitui (RN46.01)
+FE_CARD --> FE_HYPE
+FE_HYPE --> FE_LIB
+FE_LIB --> HC : GET /api/hype/summaries\n/pieces|looks/{id}[/history|/positions]
+FE_TREND --> HC : GET /api/hype/trending\n?type=PIECE|LOOK|BRAND|CREATOR
+FE_RANK --> HC : GET /api/hype/ranking\n/ranking/facets
+FE_GLOBE --> HC : GET /api/hype/globe
+FE_INS --> HC : GET /api/me/hype/wardrobe\n/api/me/hype/movers
+FE_CLOSET --> SWC : GET /api/me/closet?sort=&hypeLevel=&seal=\n/api/me/schemes?sort=&hypeLevel=
+FE_CARD --> SOCC : curtir, comentar, salvar…
+FE_GROUP --> HC : GET /api/hype/groups\n?type=BRAND|CREATOR&keys=
+FE_SET --> PRC : {hypeCreatorOptOut}
+PRC --> PREF
+PREF --> HCACHE : bump() depois do commit
+PREF --> OREPOS
+
+HC --> HQ
+HC --> JOB : POST /api/admin/hype/snapshots
+SOCC --> PUB
+SWC --> PUB
+ADM --> ADMS
+LBC --> CFG
+
+PUB ..> REC : DomainEvents.HypeSignal\nPieceWorn · SchemeSaved\nDailyLookRegistered
+PUB ..> LIVE : HypeSignal · PieceCreated/Updated/Deleted\nSchemeSaved · PieceWorn · DailyLook\nAvailabilityChanged
+LIVE --> JOB : recalculate()
+REC --> POL
+POL --> OREPOS : idade da conta (UserRepository)
+POL --> RCP : dedupe 26 h
+REC --> REPOS
+JOB --> CALC
+JOB --> CFG
+JOB --> WR : região do país do dono
+JOB --> REPOS
+JOB --> OREPOS
+JOB --> HCACHE : bump()
+JOB ..> MIL : DomainEvents.HypeMilestone\n(só subida)
+MIL --> REPOS : hype_milestones (dedupe)
+MIL --> NOTS : HYPE_MILESTONE\n(resumo do dia)
+HQ --> REPOS
+HQ --> OREPOS : visibilidade e opt-out\n(findHypeCreatorOptOutUserIds)
+HQ --> HCACHE
+HQ --> REC2
+HQ --> SEALS : summary().seals\nsealProgress
+HQ --> WR
+HCACHE --> RCP
+PUB --> REPOS : WardrobeService / SchemeService:\nordenações por Hype
+ADMS --> JOB : recalculate()
+
+REPOS --> T1
+REPOS --> T2
+REPOS --> T3
+REPOS --> T4
+OREPOS --> T5
 @enduml

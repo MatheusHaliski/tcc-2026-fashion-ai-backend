@@ -1,0 +1,71 @@
+@startuml RF30_Sequencia_Resgate
+title RF30 — Ganhar e usar FAI Points e evoluir o nível do "Meu Quarto"\nDiagrama de sequência — <<planejado>> doação "Apoiar com FAI Points" no Look do dia (antigo RF48, fase F1)
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+skinparam participant {
+  BackgroundColor<<planejado>> #F2F2F2
+  BorderColor<<planejado>> #9AA0A6
+}
+autonumber
+actor "Doadora A" as A
+participant "runway-panel.tsx\n/ schemes/[id]\n(folha Apoiar <<planejado>>)" as FE
+participant "PointsTransferController" as C <<planejado>>
+participant "PointsTransferService" as S <<planejado>>
+participant "PointsRiskEngine" as R <<planejado>>
+participant "PointsWalletService" as W <<planejado>>
+participant "NotificationService\n(existe)" as N
+participant "Audit\n(existe, REQUIRES_NEW)" as AU
+database "MySQL" as DB
+actor "Recebedor B" as B
+
+note over FE, DB
+  **<<planejado>>** — nenhum destes endpoints, serviços ou tabelas existe (2026-10-05).
+  O que já existe e seria reaproveitado: fai_points_ledger, a trava PESSIMISTIC_WRITE
+  de users (FaiPointsLedgerEntryRepository.lockOwner), NotificationService e Audit.
+end note
+
+A -> FE: abre o look do dia de B (Passarela 3D)
+FE -> C: GET /api/users/{B}/daily-look
+C --> FE: scheme, dailyLookId, canSupport = true
+A -> FE: Apoiar → 25 pts, "Amei o look!"
+FE -> C: GET /api/points/transfers/quote?receiverId=B&contextId=…
+C -> S: quote(A, B, DAILY_LOOK, id)
+S --> FE: limites restantes, saldo doável, requires2fa = false
+A -> FE: confirma
+FE -> C: POST /api/points/transfers\nIdempotency-Key: k1
+C -> S: transfer(A, B, 25, DAILY_LOOK, id)
+S -> DB: points_transfers com (A, k1)?
+alt já processada
+  DB --> S: transferId existente
+  S --> C: mesmo recibo
+else nova
+  S -> DB: SELECT … FROM users WHERE id IN (menor, maior)\nFOR UPDATE (ordem crescente: sem deadlock)
+  S -> S: elegibilidade (18+, conta ≥ 30 dias, sem bloqueio,\nperfil PESSOAL/CELEBRIDADE, carteira não congelada)
+  S -> DB: soma das doações do dia/mês\n(doador, recebedor, par) sob a trava
+  S -> W: saldo doável por bucket (maturado)
+  W -> DB: SUM(delta) GROUP BY bucket
+  W --> S: standard = 10, cashable = 40
+  S -> R: evaluate(A, B, 25)
+  R -> DB: pares recíprocos, dispositivo/IP comum,\nvelocidade, idade das contas
+  alt BLOCK (≥ 70)
+    R --> S: score 75
+    S -> DB: INSERT risk_flags · points_wallet_status.frozen
+    S --> C: 409 (doação recusada)
+  else OK (< 40)
+    R --> S: score 12
+    S -> DB: INSERT points_transfers (COMPLETED)
+    S -> DB: INSERT fai_points_ledger A: −10 EARNED_STANDARD\nINSERT fai_points_ledger A: −15 EARNED_CASHABLE\nINSERT fai_points_ledger B: +25 DONATION_RECEIVED\n(mature_at = +14 d, mesmo transfer_id, countsLifetime = false)
+    S -> AU: PONTOS_DOACAO_ENVIADA
+    S --> C: recibo {transferId, amount, receiver, balanceAfter}
+  end
+end
+C --> FE: 201 Created
+FE --> A: recibo + saldo atualizado
+S ->> N: após o commit: notify(POINTS_RECEIVED)
+N --> B: "@A apoiou seu look com 25 FAI Points — Amei o look!"
+@enduml

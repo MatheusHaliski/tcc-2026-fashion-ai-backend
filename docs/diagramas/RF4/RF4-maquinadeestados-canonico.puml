@@ -1,0 +1,62 @@
+@startuml RF4_MaquinaDeEstados_Canonico
+!pragma layout smetana
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de máquina de estados — <<planejado>> captura adaptativa: CaptureSession e CaptureRequest (enums e tabelas V29 existem; as transições não)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F2F2F2
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+}
+
+state "CaptureSession.status (capture_sessions)" as Sessao {
+  state "ANALYZING" as Analisando
+  state "AWAITING_CAPTURE" as Aguardando
+  state "READY_FOR_REVIEW" as Revisao
+  state "COMPLETED" as Concluida
+  state "ABANDONED" as Abandonada
+  [*] --> Analisando : <<planejado>> POST /api/capture/sessions\n(foto principal; piece_images ORIGINAL)
+  Analisando --> Aguardando : AdaptiveCaptureEngine.decide → next ≠ null\n(INSERT capture_requests PENDING)
+  Analisando --> Revisao : Decision.done (CONFIDENT | NO_USEFUL_VIEW)\n→ CanonicalPhotographer.render / detail
+  Aguardando --> Analisando : foto complementar\n(POST …/sessions/{id}/images)
+  Aguardando --> Aguardando : pular → próxima vista recomendada
+  Aguardando --> Revisao : 2 pulos seguidos ou 3 complementares\n(USER_DECLINED | LIMIT_REACHED)
+  Revisao --> Analisando : refazer a foto (QUALITY_RETAKE)
+  Revisao --> Concluida : POST /api/pieces {captureSessionId, draftId}\n(pieceId + completedAt)
+  Aguardando --> Abandonada : sai sem salvar
+  Revisao --> Abandonada : sai sem salvar
+  Concluida --> [*]
+  Abandonada --> [*]
+}
+
+state "CaptureRequest.status (capture_requests)" as Pedido {
+  state "PENDING" as Pend
+  state "FULFILLED" as Atendido
+  state "SKIPPED" as Pulado
+  state "SUPERSEDED" as Substituido
+  [*] --> Pend : decide() → Recommendation\n(view, purpose, need, expectedGain, confidenceBefore)
+  Pend --> Atendido : POST …/sessions/{id}/images\n(fulfilledImageId, confidenceAfter)
+  Pend --> Pulado : POST …/requests/{requestId}/skip
+  Pend --> Substituido : nova decisão torna o pedido inútil\n(ex.: marca ≥ 0,90)
+  Atendido --> [*]
+  Pulado --> [*]
+  Substituido --> [*]
+}
+
+note bottom of Sessao
+  Hoje: CaptureSessionStatus, CaptureRequestStatus e as tabelas (V29) existem,
+  mas não há /api/capture/** nem CaptureSessionService; nenhum código grava
+  essas tabelas. O POST /api/pieces só publica PieceCapturedFromSession
+  (sem ouvinte) quando recebe captureSessionId — e o criador não envia.
+  Plano: docs/visao-computacional/RF04_ADAPTIVE_GARMENT_CAPTURE.md §4 e §14.
+end note
+note right of Pedido
+  CaptureNeed STRONGLY_RECOMMENDED · RECOMMENDED ·
+  OPTIONAL: nenhum bloqueia o cadastro.
+  Ganho realizado = confidenceAfter − confidenceBefore.
+end note
+@enduml

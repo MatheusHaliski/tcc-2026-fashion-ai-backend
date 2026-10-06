@@ -1,5 +1,5 @@
 @startuml RF45_Sequencia
-title RF45 — Processar e padronizar imagens canônicas de peças, calçados e acessórios (pipeline de validação e padronização)\nDiagrama de sequência — endpoints reais e motores de visão (fai-application · vision)
+title RF45 — FashionAI Lens\nDiagrama de sequência — endpoints reais (todas as rotas exigem login; outra pessoa recebe 404, nunca 403)
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -9,62 +9,120 @@ skinparam sequence {
 }
 autonumber
 actor "Pessoa" as U
-participant "Frontend\npieces/new" as FE
-participant "WardrobeController" as C
-participant "CaptureSessionService\n<<planejado>>" as CS #FAFAFA
-participant "WardrobeService" as W
-participant "AiEngine (RF24)" as AI
-participant "LandmarkDetector\nBrandEnsembleResolver\nIdentificationHierarchy" as V
-participant "PhotographyQualityGate" as Q
-participant "AdaptiveCaptureEngine" as A
-participant "CanonicalPhotographer\n+ PhotographySpecs" as CP
-participant "MediaStoragePort\n(S3 / local)" as ST
-database "MySQL" as DB
+participant "LensCapture\n(lens/page.tsx)" as CAP
+participant "redactFaces\n(lib/lens/redact.ts)\n+ MediaPipe" as RED
+participant "LensResult\n(lens/[scanId]/page.tsx)\nabas + Foco" as RES
+participant "UploadSafety\nInterceptor" as USI
+participant "LensController" as LC
+participant "LensService" as LS
+participant "RateLimitPort" as RL
+participant "MultiPieceService\n→ AiEngine" as MP
+participant "LensImageAnalysis\nLensSimilarity\nLensReading" as LA
+participant "MediaStoragePort\n(restricted/)" as ST
+participant "HypeScoreCurrent\nRepository (só leitura)" as HY
+database "MySQL\n(V40)" as DB
 
-note over U, FE
-  O criador de peça (pieces/new) não envia mais foto:
-  POST /api/pieces/analysis segue no backend, sem tela que o chame nesse fluxo
-end note
-U -> FE: escolhe o tipo e envia a foto principal
-alt fluxo implementado hoje
-  FE -> C: POST /api/pieces/analysis (file, category)
-  C -> W: analyze(user, bytes, category)
-else fluxo de captura adaptativa
-  FE -> CS: POST /api/capture/sessions (file, category, viewType, identifyModel)
-  note right of CS: <<planejado>> não há controller /api/capture/**\nnão implementado — conforme Trello
-  CS -> ST: put(piece_original_{vista}.jpg) — ORIGINAL imutável
-  CS -> W: analyzeForCapture(user, bytes, category, lenient=true)
+== 1. Captura e rostos borrados no aparelho ==
+U -> CAP: Câmera (input capture) ou Galeria
+CAP -> RED: redactFaces(arquivo)
+RED -> RED: decodifica (EXIF) → canvas ≤ 2048 px
+alt detector disponível
+  RED -> RED: até 4 passadas: acha rostos → pixela e desfoca
+  RED --> CAP: {blob JPEG, faces = N}
+else sem detector (headless, offline, tempo esgotado)
+  RED --> CAP: {blob, faces = -1}
+  CAP --> U: "Não foi possível verificar rostos…"
+  U -> CAP: confirma que não há rosto
 end
-W -> AI: FLAT_LAY_STANDARDIZER (rembg → remove.bg → local)
-AI --> W: recorte + studioSource
-W -> AI: CONTENT_MODERATOR / PIECE_ANALYZER
-AI --> W: PieceGuess (categoria, subcategoria, marca, confianças)
-W --> CS: CaptureAnalysis (draft, studioSource, logoBox, ocr, failedChecks)
-CS -> V: detect(cutout, family) · resolve(evidências) · reconcile()
-V --> CS: landmarks + BrandPrediction por IdentificationLevel
-CS -> Q: evaluate(profile, view, Signals)
-Q --> CS: Report(score, ACCEPT | ACCEPT_WITH_GUIDANCE | RETAKE_SUGGESTED)
-CS -> A: decide(Context)
-A --> CS: Decision(next, alternatives, done, doneReason)
-opt Decision.done = false
-  CS -> DB: INSERT capture_requests (PENDING, expected_gain, confidence_before)
-  CS --> FE: 201 sessão AWAITING_CAPTURE + próxima vista
-  alt pessoa envia a vista complementar
-    FE -> CS: POST /api/capture/sessions/{id}/images <<planejado>>
-    CS -> DB: UPDATE capture_requests FULFILLED (confidence_after)
-  else pessoa pula
-    FE -> CS: POST /api/capture/sessions/{id}/requests/{requestId}/skip <<planejado>>
-    CS -> DB: UPDATE capture_requests SKIPPED
-  end
+U -> CAP: Analisar
+
+== 2. Scan (síncrono no MVP) ==
+CAP -> USI: POST /api/lens/scans (multipart: image, source,\nintent, facesRedacted, redactionConfirmed)
+alt BLOCK / REVIEW
+  USI --> CAP: 422 IMAGEM_RECUSADA / IMAGEM_EM_REVISAO
 end
-CS -> CP: render(cutout, PhotographySpecs.get(specId), landmarks, clipped)
-CP --> CS: Result(image, Report: specId, rotação, escala, cobertura)
-CS -> ST: put(piece_product_front.png, piece_logo_detail.png…)
-CS -> DB: INSERT piece_images (CANONICAL/DETAIL, derived_from_id), brand_predictions,\ngarment_landmarks, model_inferences
-CS --> FE: sessão READY_FOR_REVIEW (identificação, qualidade, canônicos)
-U -> FE: confirma
-FE -> C: POST /api/pieces (PieceForm.captureSessionId)
-C -> W: create(user, form)
-W -> DB: INSERT wardrobe_items (capture_session_id, canonical_image_url)
-C --> FE: 201 PieceView
+USI -> LC: segue (ALLOW)
+LC -> LS: create(user, CreateCommand, bytes)
+LS -> LS: origem (CAMERA | GALLERY | UPLOAD) e intenção;\nImageOps: imagem legível; reduz a ≤ 2048 px
+alt origem inválida ou arquivo vazio
+  LS --> CAP: 400 ORIGEM_INVALIDA / ARQUIVO_VAZIO
+end
+LS -> RL: tryAcquire(user, "lens:scan", 30, 1 dia)
+alt cota estourada
+  LS --> CAP: 429 QUOTA {limit, used, resetAt} (nada gravado)
+end
+LS -> MP: detectPieces(userId, foto)
+MP -> MP: AiEngine MULTI_PIECE_DETECTOR\n(consentimento, cota, orçamento, ai_inference_log)
+alt IA respondeu
+  MP --> LS: peças com caixa, categoria, cor, material,\nestilos, confiança (source "ia")
+else sem IA (consentimento, cota, provedor)
+  MP --> LS: 1 peça cobrindo a foto, confiança 0\n(source "local"; errorCode CONSENT_REQUIRED/QUOTA)
+else exceção no detector
+  LS -> RL: release(user, "lens:scan") — a cota volta
+end
+LS -> DB: INSERT lens_scans (READY | NO_FASHION_FOUND | FAILED,\nexpires_at = +30 dias, model_version, LENS_V1)
+LS -> ST: put restricted/users/{id}/lens/{scanId}.jpg\n+ -thumb.jpg (JPEG sem metadados)
+loop cada peça (de cima para baixo)
+  LS -> LA: LensImageAnalysis.read(foto, caixa, cor)
+  LA --> LS: paleta com fração, padrão, embedding (96)
+  LS -> DB: INSERT lens_detections (DETECTED)
+end
+LS --> CAP: 200 ScanView (detections + reading)
+CAP -> RES: abre /lens/{scanId}
+RES -> LC: GET /api/lens/scans/{id}/image
+LC -> LS: image(user, id, thumb) → só o dono (senão 404)
+LS -> ST: get(chave)
+LC --> RES: image/jpeg (Cache-Control: private, 10 min)
+opt <<planejado>> — "Ver no Lens" dentro do app
+  note over CAP, LC: POST /api/lens/scans/from-app {type: PIECE | LOOK, id} já existe\n(404 se não pode ver; 422 LENS_SEM_IMAGEM), mas nenhuma tela chama
+end
+
+== 3. Camada viva (calculada a cada leitura, nunca gravada) ==
+RES -> LC: GET /api/lens/scans/{id}/matches?detection=&scope=MY_CLOSET
+LC -> LS: matches(user, id, detectionId, scope)
+LS -> DB: peças próprias (+ garment_embeddings quando existem)
+LS -> LA: LensSimilarity.score: 0,45·visual + 0,35·atributos\n+ 0,20·cor (ΔE00/40), renormalizado; piso 55; top 12
+LS --> RES: items [{similarity, components, reasons, piece}]\nou vazio ("sem correspondência", nunca 0%)
+RES -> LC: GET …/matches?scope=COMMUNITY
+LS -> DB: peças públicas elegíveis de OUTRAS pessoas,\nvisíveis para quem pede (piso 65)
+RES -> LC: GET /api/lens/scans/{id}/reading?detection=
+LC -> LS: reading(user, id, detectionId)
+LS -> DB: style_dna (StyleCompatibility)
+LS -> HY: hype_scores públicos do grupo
+LS -> LA: LensReading: estilos, paleta, ocasiões, estação;\ntrend = Hype do grupo (cc:/st:/cm:, ≥ 5 itens)
+LS --> RES: {styles, palette, occasions, season, fit | null,\ntrend (AVAILABLE | INSUFFICIENT_DATA), impact}
+U -> RES: aba Recriar, modo Descoberta, fixa um slot
+RES -> LC: POST /api/lens/scans/{id}/recreate {mode, focus?, locked?}
+LC -> LS: recreate(user, id, RecreateCommand)
+alt modo desconhecido
+  LS --> RES: 400 MODO_INVALIDO
+end
+LS --> RES: slots (own | alternative | gap), pieceIds,\nseis números, createHref "/schemes/new?pieces=…"
+note over LS, HY: o Lens só LÊ hype_scores: nenhum evento, nada em hype_signal_daily
+
+== 4. Corrigir, marcar, Quero, Eu tenho, salvar ==
+U -> RES: corrige a cor (chip)
+RES -> LC: PATCH /api/lens/scans/{id}/detections/{did} {color}
+LC -> LS: correct(user, id, did, CorrectionCommand)
+LS -> DB: lens_detections (CORRECTED) + lens_feedback WRONG_COLOR\n(training_consent = AI_MODEL_TRAINING concedido?)
+LS --> RES: DetectionView → refaz as correspondências
+U -> RES: Marcar uma peça
+RES -> LC: POST /api/lens/scans/{id}/detections {box (imagem inteira), category}
+LS -> DB: ADDED_BY_USER + feedback MISSING_PIECE\n(NO_FASHION_FOUND → READY)
+RES -> LC: PUT …/detections/{did}/want {wanted: true}
+RES -> LC: POST …/detections/{did}/own {itemId?}
+LC --> RES: {detection, href} (/pieces/new?… sem o recorte da foto)
+U -> RES: Salvar como inspiração
+RES -> LC: PATCH /api/lens/scans/{id} {saved: true}
+LS -> DB: saved_at preenchido, expires_at = null
+U -> CAP: Recentes / Salvos
+CAP -> LC: GET /api/me/lens/scans?saved=&page=&size=
+LC --> CAP: Page<ScanCard>
+
+== 5. Retenção e exclusão ==
+LS -> DB: LensRetentionJob (04:40): scans não salvos vencidos\n→ apaga imagem, miniatura, peças e correções
+U -> RES: Excluir
+RES -> LC: DELETE /api/lens/scans/{id}
+LC --> RES: 204
+note over LS: excluir a conta: AccountService → LensService.deleteAllFor(userId)
 @enduml

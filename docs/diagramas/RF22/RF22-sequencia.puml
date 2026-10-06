@@ -1,5 +1,5 @@
 @startuml RF22_Sequencia
-title RF22 — Visualizar a aba "Celebridades" — Feed de Perfil de Celebridades cadastradas dentro do sistema do FashionAI\nDiagrama de sequência — endpoints reais
+title RF22 — Aba "Celebridades": feed e perfil das celebridades cadastradas\nDiagrama de sequência — feed /api/celebrities, perfil institucional, Hype da criadora e abas com a política de exibição
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -7,61 +7,88 @@ skinparam sequence {
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
 }
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 autonumber
 actor "Pessoa" as U
-participant "Frontend\n/brands (aba Celebridades)" as FE
-participant "Frontend\n/brands/[slug]" as FE2
+participant "brands/page.tsx ·\nbrands/[slug]/page.tsx" as FE
 participant "ProfileController" as PC
-participant "SealController" as SC
-participant "ShowcaseController" as SH
-participant "FlairController" as FC
-participant "InstitutionalService" as I
-participant "SealService" as S
+participant "HypeController ·\nInsightsController ·\nSealController" as HC
+participant "InstitutionalService" as IS
+participant "SealService" as SS
+participant "HypeQueryService\n(+ HypeCache)" as HQ
 database "MySQL" as DB
-U -> FE: abre /brands e seleciona a aba "Celebridades"
+
+== Feed: aba "Celebridades" de /brands ==
+U -> FE: troca para "Celebridades"
 FE -> PC: GET /api/celebrities?term=&order=
-PC -> I: celebrityFeed(viewer, term, order)
-I -> DB: SELECT celebrity_profiles WHERE verification_status = 'APROVADO'
-opt visitante autenticado com DNA de estilo e order != RECENTES
-  I -> DB: SELECT style_dnas (styleKeywords) · wardrobe_items do perfil
-  I -> I: affinity(): Jaccard(estilos do DNA × estilos do acervo)
+PC -> IS: celebrityFeed(viewer, term, order)
+IS -> DB: SELECT celebrity_profiles WHERE verification_status = 'APROVADO'\nORDER BY created_at DESC
+opt logada
+  IS -> DB: SELECT style_dna.style_keywords
 end
+IS -> HQ: groups(viewer, CREATOR, ids dos donos, 7)
+HQ -> DB: hype_scores públicos (tabela por geração no HypeCache)
+HQ --> IS: {items: {ownerId: {value, level, items, sufficient, rank}}}\n(bloqueio entre quem vê e a criadora = chave some)
 loop cada celebridade
-  I -> DB: COUNT seal_bonds (APPROVED) · COUNT follows (ACEITO)
+  IS -> DB: COUNT seal_bonds APPROVED · COUNT follows ACEITO
+  opt AFINIDADE com DNA
+    IS -> DB: wardrobe_items.style_tags (até 80)
+  end
 end
-I --> FE: 200 {celebrities:[{slug, name, avatarUrl, bonds, followers,\nstyleSignature, material VITREO_HOLOGRAFICO, affinity?}], order, orders}
-FE -> FE: renderiza cards (Avatar, áreas, seguidores, selos, afinidade)
-U -> FE: toca em um perfil
-FE -> FE2: navega para /brands/{slug}
-FE2 -> PC: GET /api/institutional/{slug}
-PC -> I: profile(viewer, slug)
-I -> DB: SELECT celebrity_profiles WHERE slug
-alt verification_status != APROVADO e visitante não é dona/admin
-  I --> FE2: 404 Celebridade
-else verificada
-  I --> FE2: 200 {header: status "Verificada", autoApproval:false,\nautoApprovalLocked, coverLabel (ERA), kind, tabs}
+alt EM_ALTA
+  IS -> IS: sort BY_GROUP_HYPE
+else AFINIDADE com DNA
+  IS -> IS: sort afinidade desc
 end
-par abas carregadas em paralelo
-  FE2 -> SC: GET /api/users/{ownerId}/seals
-  SC -> S: sealsOf(viewer, ownerId)
-  S --> FE2: 200 [selos ACTIVE (premium)]
-  FE2 -> SC: GET /api/users/{ownerId}/promotions
-  SC -> S: promotionsOf(viewer, ownerId)
-  S --> FE2: 200 [promoções + eligible]
+IS --> FE: 200 {celebrities [{slug, name, avatarUrl, coverUrl, bonds, followers,\nstyleSignature, material VITREO_HOLOGRAFICO, affinity?, hype}], order, orders}
+
+== Perfil /brands/[slug] ==
+U -> FE: toca numa celebridade
+FE -> PC: GET /api/institutional/{slug}
+PC -> IS: profile(viewer, slug)
+IS -> DB: SELECT celebrity_profiles WHERE slug
+alt slug inexistente ou perfil PESSOAL
+  IS --> FE: 404 Perfil institucional
+else não APROVADA e quem vê não é a dona nem admin
+  IS --> FE: 404 Celebridade (anônimo: NullPointerException → 500)
+else
+  IS -> DB: follows · wardrobe_items · schemes · seals ACTIVE ·\nscheme_groupings ERA · métricas RF19 (likes, reactions, saves)
+  IS --> FE: 200 {header {status "Verificada", autoApproval false,\nautoApprovalLocked, coverLabel = 1ª ERA, metrics}, mode, tabs, groupings}
+  par cabeçalho
+    FE -> HC: GET /api/hype/groups?type=CREATOR&keys={ownerId}
+    HC -> HQ: groups(viewer, CREATOR, [ownerId], 7)
+    HC --> FE: 200 Hype da criadora (faixa, valor, base, posição)
+  else
+    FE -> HC: GET /api/insights?context=BRAND_PROFILE&key={slug}
+    HC --> FE: 200 insights públicos (ProfileInsights, kind CELEBRITY)
+  else
+    FE -> HC: GET /api/users/{ownerId}/seals · /api/users/{ownerId}/promotions
+    HC -> SS: sealsOf(viewer, ownerId) · promotionsOf(viewer, ownerId)
+    HC --> FE: 200 selos Premium ativos · promoções (eligible pelo selo de quem vê)
+  end
 end
-U -> FE2: aba "Eras"
-FE2 -> SH: GET /api/institutional/{slug}/showcase/eras
-SH --> FE2: 200 eras (scheme_groupings type ERA)
-FE2 -> SH: GET /api/institutional/{slug}/showcase/eras/items?groupingId=
-SH --> FE2: 200 esquemas/peças da era
-U -> FE2: aba "Esquemas em destaque"
-FE2 -> PC: GET /api/institutional/{slug}/tabs/ESQUEMAS_DESTAQUE
-PC -> I: tab(viewer, slug, "ESQUEMAS_DESTAQUE", filter, groupingId)
-I --> FE2: 200 [{scheme, seals}]
-U -> FE2: aba "Combinações FLAIR"
-FE2 -> FC: GET /api/institutional/{slug}/flair
-FC --> FE2: 200 combinações (RF14/RF22)
-U -> FE2: seguir
-FE2 -> PC: POST /api/users/{targetId}/followers
-PC --> FE2: 200 (RF17)
+
+== Abas de looks e peças (mesma política do RF14) ==
+U -> FE: "Esquemas em destaque" (ordem Hype)
+FE -> PC: GET /api/institutional/{slug}/tabs/ESQUEMAS_DESTAQUE
+PC -> IS: tab(viewer, slug, "ESQUEMAS_DESTAQUE", null, null)
+IS -> DB: seal_bonds target_owner = celebridade AND status = APPROVED + schemes
+IS -> IS: promoted(history = false): displayable, vigente, sem revalidação
+IS -> HQ: currentOf(SCHEME, looks)
+IS --> FE: 200 [{scheme, seals (premium), promotion {issuedAt, expiresAt,\nexpired, revalidationPending}}]
+opt "Looks consagrados" (?filter=HYPE|GROWTH se mudar a ordem)
+  FE -> PC: GET /api/institutional/{slug}/tabs/LOOKS_CONSAGRADOS[?filter=…]
+  PC -> IS: tab(…): promoted(history = true) + filterLooks
+  IS --> FE: 200 [entradas com expired / revalidationPending marcados]
+end
+opt aba só da dona pedida por outra pessoa
+  IS --> FE: 403 (Guard.deny, auditado)
+end
+opt aba "Eras"
+  FE -> FE: ErasTab → ShowcaseController (ver RF34)
+end
 @enduml

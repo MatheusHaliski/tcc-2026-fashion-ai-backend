@@ -1,5 +1,5 @@
 @startuml RF26_Componentes
-title RF26 — Explorador Global: painel por país, marcas & lojas e insights\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF26 — Busca global de esquemas e peças (aba "Explorador Global")\nDiagrama de componentes — página /explorer → DiscoveryController/HypeController → ExplorerService/HypeQueryService → MySQL, cache e IA
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -14,49 +14,81 @@ skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam interface {
+  BackgroundColor #FFF5F8
+  BorderColor #4A4852
+}
 left to right direction
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "explorer — Painel global" as FE0
-  component "explorer — Buscar marcas & lojas" as FE1
-  component "explorer — Insights globais" as FE2
-  component "explorer — Em alta <<RF49>>\nHypeTrendingPanel\n(components/hype/hype-trending.tsx)" as FE3
+package "Frontend (Next.js)" {
+  component "app/(site)/(app)/explorer/page.tsx\n(Tabs: Em alta · Ranking · Painel global ·\nBuscar marcas & lojas · Insights globais)" as Page
+  component "globe.tsx (d3-geo) +\nhype-globe.tsx (useGlobeFilters,\nFilterBar, Legend, Table, CountryPanel)" as Globe
+  component "hype-trending.tsx\n(HypeTrendingPanel)" as Trend
+  component "hype-ranking.tsx\n(HypeRankingPanel)" as Rank
+  component "hype-analytics-drawer.tsx" as Drawer
+  component "insight-strip.tsx\n(InsightStrip EXPLORER_*)" as Strip
+  component "runway-panel.tsx\n(aba Passarela 3D — RF33)" as Runway #FAFAFA
 }
-package "fai-web (REST)" {
-  [DiscoveryController] as DiscoveryController
-  [HypeController <<RF49>>\nGET /api/hype/trending] as HypeController
+package "fai-web" {
+  [DiscoveryController\n/api/explorer/global · /brands · /insights] as DC
+  [HypeController\n/api/hype/globe · /trending ·\n/ranking · /ranking/facets · /{pieces|looks}/{id}] as HC
+  [InsightsController\n/api/insights] as IC
 }
-package "fai-application (casos de uso)" {
-  [SearchService] as SearchService
-  [ExplorerService] as ExplorerService
-  [SchemeService] as SchemeService #FAFAFA
-  [ChallengeService] as ChallengeService #FAFAFA
-  [HypeQueryService <<RF49>>\ntrending · rank · monthAverage] as HypeQueryService
-  [HypeCache <<RF49>>\nchave com geração · TTL 10 min] as HypeCache
+package "fai-application" {
+  [ExplorerService] as ES
+  [SearchService\n(parseLevel, hypeRows, publicScore)] as SS
+  [CatalogService (RF47)] as CAT
+  [HypeQueryService\nglobe · trending · trendingGroups ·\nranking · rankingFacets · detail] as HQ
+  [HypeCache\n(geração + TTL 10 min)] as HCA
+  [HypeScoreConfig] as CFG
+  [Guard] as G
+  [InsightService] as IS
+  [AiEngine (RF24)\nINSIGHT_GENERATOR] as AI
+  [LocalAdvisors\n(fallback local)] as LA
+  interface "AnalyticsQueryPort" as AQP <<port>>
+  interface "RenderCachePort" as RCP <<port>>
 }
-package "fai-domain (repositórios JPA)" {
-  [BrandProfileRepository\nBrandRepository\nCelebrityProfileRepository\nFollowRepository\nSchemeItemRepository\nSchemeRepository\nSealBondRepository\nShareRepository\nStyleDnaRepository\nUserRepository\nWardrobeItemRepository\nHypeScoreCurrentRepository <<RF49>>\nHypeScoreSnapshotRepository <<RF49>>] as REPOS
+package "fai-domain" {
+  [BrandProfileRepository · SealBondRepository ·\nWardrobeItemRepository · SchemeRepository ·\nHypeScoreCurrentRepository · HypeScoreSnapshotRepository] as REPOS
 }
-database "MySQL · fashionai_app\n• brand_profiles\n• brands\n• celebrity_profiles\n• follows\n• scheme_items\n• schemes\n• seal_bonds\n• shares\n• style_dna\n• users\n• wardrobe_items\n• hype_scores (RF49)\n• hype_score_snapshots (RF49)" as DB
-cloud "Motor de IA transversal (RF24)\nprovedores externos + fallback local" as P_ai
-database "AnalyticsQueryPort\n(MysqlAnalyticsAdapter · agregados)" as P_analytics
-database "RenderCachePort\n(Redis · memória)" as P_cache
+package "fai-infrastructure" {
+  [MysqlAnalyticsAdapter] as MA
+  [RedisAdapters.redisRenderCache /\nInMemoryRenderCache] as RC
+  database "MySQL\nusers · brand_profiles · wardrobe_items ·\nschemes · scheme_items · seal_bonds ·\nhype_scores · hype_score_snapshots ·\nvw_brand_usage · vw_country_insights ·\nai_inference_log" as DB
+  cloud "Provedores de IA (RF24)\n+ fallback local" as PAI
+}
 
-FE0 --> DiscoveryController : HTTPS/JSON
-FE1 --> DiscoveryController : HTTPS/JSON
-FE2 --> DiscoveryController : HTTPS/JSON
-FE3 --> HypeController : GET /api/hype/trending\n?type&window(1|7|30)&category&style&occasion
-DiscoveryController --> SearchService
-DiscoveryController --> ExplorerService
-SearchService ..> SchemeService
-SearchService ..> ChallengeService
-SearchService --> REPOS
-ExplorerService --> REPOS
-ExplorerService --> P_analytics
-ExplorerService --> P_ai
-HypeController --> HypeQueryService : trending
-HypeQueryService --> HypeCache : get(chave, rank)
-HypeCache --> P_cache
-HypeQueryService --> REPOS : só publicEligible + AVAILABLE
-REPOS --> DB : JPA/Flyway
+Page --> Globe
+Page --> Trend
+Page --> Rank
+Page --> Strip
+Page --> Runway
+Globe --> Drawer
+Page --> DC : GET /api/explorer/global ·\n/brands · /insights
+Globe --> HC : GET /api/hype/globe
+Trend --> HC : GET /api/hype/trending
+Rank --> HC : GET /api/hype/ranking(/facets)
+Drawer --> HC : GET /api/hype/{pieces|looks}/{id}
+Strip --> IC : GET /api/insights?context=EXPLORER_*
+DC --> ES
+HC --> HQ
+IC --> IS
+ES --> AQP
+ES --> SS
+ES --> CAT
+ES --> AI
+ES --> LA
+ES --> REPOS
+ES --> CFG
+HQ --> HCA
+HQ --> CFG
+HQ --> G
+HQ --> REPOS
+HCA --> RCP
+AQP <|.. MA
+RCP <|.. RC
+MA --> DB
+REPOS --> DB : JPA
+AI --> PAI
+AI --> DB
 @enduml

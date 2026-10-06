@@ -1,5 +1,5 @@
 @startuml RF10_Componentes
-title RF10 — Possibilitar que o usuário gere recomendações de esquemas de vestimenta & de peças de roupa através da aba "Copilot"\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF10 — Gerar recomendações de esquemas e peças na aba Copilot\nDiagrama de componentes — telas, AutopilotController, CopilotService, LookScorer/RecommendationScoring, Hype v2, insights e persistência
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -17,64 +17,116 @@ skinparam database {
 left to right direction
 
 package "Frontend (Next.js)" {
-  component "copilot/page.tsx\n(chat + sugestões visuais)\nTabs: Recomendações · Descoberta · Experimentação\n· Redescoberta · Insights; modo (SegmentPicker,\nSAFE padrão); ?ask= pré-preenche; LookScoresRow" as FE0
-  component "components/hype <<RF49>>\nHypeWardrobeInsights · HypeRediscoveryCard" as FE3
-  component "SchemeCard · PieceCard\nuseDetailModal" as FE1
-  component "autopilot/page.tsx\n(look de hoje · semana)" as FE2
+  component "copilot/page.tsx\nabas Recomendações · Descoberta · Experimentação\n· Redescoberta · Insights; SegmentPicker de modo\n(SAFE padrão); ?ask= pré-preenche; localStorage (40 looks)" as FE0
+  component "components/hype/look-scores\n(LookScores: seis números lado a lado)" as FE1
+  component "components/hype\nHypeWardrobeInsights · HypeRediscoveryCard" as FE2
+  component "components/insights/insight-strip\n(InsightStrip context=COPILOT)" as FE3
+  component "SchemeCard · PieceCard\nuseDetailModal (detalhe RF7)" as FE4
+  component "room/page.tsx\n(busto Copilot, view ROOM)" as FE5
+  component "lib/api/client.ts (api)\nlib/hooks/use-api" as FE6
 }
 package "fai-web · controllers" {
-  [AutopilotController\n/api/copilot/* · /api/autopilot/*] as AC
-  [HypeController <<RF49>>\nGET /api/me/hype/wardrobe] as HC
+  [AutopilotController\n/api/copilot/context · suggestions\nmessages · looks] as AC
+  [HypeController\nGET /api/me/hype/wardrobe] as HC
+  [InsightsController\nGET /api/insights] as IC
 }
-package "fai-application · services" {
-  [CopilotService] as CS
-  [CopilotLexicon] as LX
-  [WeatherService] as WS
-  [AutopilotService] as AP
-  [WardrobeService] as WD
-  [SchemeService] as SS
-  [DailyLookService] as DL
-  [RoomService] as RM
-  [ChallengeService] as CH
-  [AiEngine (RF24)\nAiCapability.COPILOT\nfallback LocalSchemeComposer] as AI
-  [HypeQueryService <<RF49>>\ncurrentOf(PIECE|SCHEME) · wardrobe] as HQ
-  [RecommendationScoring <<RF49>>\nMode SAFE · DISCOVERY · EXPERIMENTAL\nStyleCompatibility (DNA ≠ Hype)] as RS
+package "fai-application · serviços" {
+  [CopilotService\ncontext · suggestions · ask · accept] as CS
+  [CopilotLexicon\n(vocabulário pt/en/es)] as LX
+  [LookScorer\n(seis números, mesma régua do Autopiloto)] as LS
+  [AutopilotService\ndaily · createScheme] as AP
+  [DailyLookService\nregister(COPILOT)] as DL
+  [WeatherService\nresolve · band · unsuitable] as WS
+  [WardrobeService\neligible] as WD
+  [SchemeService\nview · canView · create] as SS
+  [RoomService\nlocateAll · forgotten] as RM
+  [ChallengeService\nrestriction · activeSummary] as CH
+  [MirrorService · InventoryScoreService\nBackgroundStudioService] as OUT
+  [AiEngine (RF24)\nAiCapability.COPILOT] as AI
+  [LocalSchemeComposer\n(ai/local, sem custo)] as LOC
 }
-package "fai-infrastructure · adapters" {
-  [OpenMeteoAdapter\n(WeatherPort · GeocodingPort)] as OMA
-  [Repositórios JPA\nWardrobeItemRepository · SchemeRepository\nSchemeItemRepository · WeekPlanRepository\nWeekPlanDayRepository · DailyLookRepository\nPieceUsageDiaryEntryRepository\nHypeScoreCurrentRepository <<RF49>>] as REPOS
+package "fai-application · hype e insights" {
+  [RecommendationScoring\nMode SAFE · DISCOVERY · EXPERIMENTAL\nScores · rankValue] as RS
+  [StyleCompatibility\n(DNA × peça, nunca somado ao Hype)] as SC
+  [HypeQueryService\ncurrentOf · wardrobe] as HQ
+  [HypeCache] as HCA
+  [InsightService · PersonalInsights\nitemsOrEmpty(COPILOT)] as IS
 }
-database "MySQL\n• wardrobe_items\n• schemes · scheme_items\n• week_plans · week_plan_days\n• daily_looks\n• piece_usage_diary\n• room_inventory\n• hype_scores (RF49)" as DB
-cloud "Open-Meteo\napi.open-meteo.com\ngeocoding-api.open-meteo.com" as OMC
-cloud "Provedores de IA\n(ClaudeProvider · GeminiProvider)" as P_ai
+package "fai-application · portas" {
+  interface "WeatherPort · GeocodingPort" as P_W
+  interface "AiProviderPort" as P_AI
+  interface "RenderCachePort" as P_C
+}
+package "fai-infrastructure" {
+  [OpenMeteoAdapter (platform)] as A_W
+  [ClaudeProvider · GeminiProvider\n(ai-providers)] as A_AI
+  [RedisAdapters (cache-redis)\nInMemoryRenderCache (fallback)] as A_C
+  [Repositórios JPA (persistence-mysql)\nWardrobeItemRepository · SchemeRepository\nSchemeItemRepository · DailyLookRepository\nStyleDnaRepository · UserPreferencesRepository\nRoomInventoryItemRepository · HypeScoreCurrentRepository] as REPOS
+}
+database "MySQL\n• wardrobe_items · schemes · scheme_items\n• daily_looks · style_dna · user_preferences\n• room_inventory\n• hype_scores (só leitura)" as DB
+cloud "Open-Meteo\n(clima e geocodificação)" as C_W
+cloud "Provedores de IA de texto" as C_AI
+database "Redis\n(hype:generation, TTL 10 min)" as RD
+component "HypeSnapshotService (job @Scheduled)\ngrava hype_scores — RF46" as HJ
 
-FE0 --> AC : GET /api/copilot/context · /api/copilot/suggestions\nPOST /api/copilot/messages · /api/copilot/looks
-FE1 --> FE0 : exibe looks e chips
-FE3 --> FE0 : abas Redescoberta · Insights
-FE3 --> HC : GET /api/me/hype/wardrobe
-FE2 --> AC : POST /api/autopilot/daily · /api/autopilot/weeks\nGET /api/autopilot/weeks/current
-AC --> CS : chama
-AC --> AP : chama
-CS --> LX : extrai termos
-CS --> WS : clima
-CS --> WD : eligible
-CS --> SS : view · canView
-CS --> AP : createScheme
-CS --> DL : register (COPILOT)
-CS --> RM : locateAll
-CS --> CH : restriction
-CS --> AI : text (GENERAL)
-CS --> HQ : currentOf — trendingLooks,\nscoreLooks, hypeAnswer (HYPE)
-CS --> RS : scoreLooks(mode) · compatibilidade
-HC --> HQ : wardrobe(user)
-HQ --> REPOS : lê hype_scores
-AP --> WS : clima
-AP --> AI : text (ranking)
-AP --> REPOS : grava planos
-WS --> OMA : resolve
-OMA --> OMC : HTTPS
+FE0 --> FE1 : looks e combinações
+FE0 --> FE2 : Redescoberta · Insights
+FE0 --> FE3 : aba Insights
+FE0 --> FE4 : readyLooks · trendingLooks · peças
+FE0 --> FE6
+FE2 --> FE6
+FE3 --> FE6
+FE5 --> FE6
+FE6 --> AC : HTTPS/JSON
+FE6 --> HC : HTTPS/JSON
+FE6 --> IC : HTTPS/JSON
+AC --> CS
+HC --> HQ
+IC --> IS
+CS --> LX : intenção e pedido
+CS --> LS : scoreCards(mode)
+CS --> AP : daily (LOOKS) · createScheme (aceite)
+CS --> DL : register(COPILOT)
+CS --> WS
+CS --> WD
+CS --> SS
+CS --> RM : endereço · esquecidas
+CS --> CH : desafio ativo
+CS --> OUT : chips do espelho · diagnóstico · fundo
+CS --> AI : text(COPILOT) — GENERAL
+CS --> LOC : combinações novas
+CS --> HQ : currentOf (HYPE, em alta)
+CS --> SC
+CS --> IS : insights COPILOT
+LS --> RS
+LS --> SC
+LS --> HQ : currentOf(PIECE)
+AP --> AI : text(COPILOT) — escolhe 3
+AP --> LOC : candidatas
+AP --> WS
+AI --> LOC : fallback local
+AI --> P_AI
+P_AI <|.. A_AI
+A_AI --> C_AI : HTTPS
+WS --> P_W
+P_W <|.. A_W
+A_W --> C_W : HTTPS
+HQ --> HCA
+HCA --> P_C
+P_C <|.. A_C
+A_C --> RD
+IS --> HQ
 CS --> REPOS : lê
-WD --> REPOS : lê
-AI --> P_ai : HTTPS
-REPOS --> DB : JPA/Flyway
+RM --> REPOS : room_inventory
+LS --> REPOS : style_dna · pares já usados
+AP --> REPOS : grava esquema
+DL --> REPOS : grava daily_looks
+HQ --> REPOS : lê hype_scores
+REPOS --> DB : JPA / Flyway
+HJ --> DB : grava hype_scores
+note bottom of RS
+  O Hype é só uma das seis dimensões
+  (peso máximo 20% em qualquer modo).
+  Sem modo, a ordem do motor fica como está.
+end note
 @enduml

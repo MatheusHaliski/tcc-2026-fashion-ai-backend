@@ -1,0 +1,73 @@
+@startuml RF34_Sequencia_Gestao
+title RF34 — Eras da celebridade: busca por era, Insights de Eras e My Stage 3D\nDiagrama de sequência — a celebridade cria a era, envia a foto e liga looks e peças
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+autonumber
+actor "Celebridade (dona)" as CE
+participant "GroupingForm ·\nAssignDialog" as FE
+participant "LookbookController" as LC
+participant "LookbookService" as LS
+participant "ShowcaseController" as SC
+participant "ShowcaseService" as S
+participant "Guard · OwnMedia" as G
+participant "MediaService →\nMediaStoragePort" as MS
+database "MySQL" as DB
+database "S3 / disco local" as ST
+
+CE -> FE: "Nova era" (tipo, nome, período, cor)
+FE -> LC: POST /api/groupings {type: ERA|PHASE|TOUR, label, description,\nperiodFrom, periodTo, accentColor, coverUrl}
+LC -> LS: createGrouping(user, GroupingForm)
+alt tipo fora do permitido para CELEBRIDADE
+  LS --> FE: 400 TIPO_INVALIDO
+else período ou cor inválidos
+  LS --> FE: 400 PERIODO_INVALIDO / COR_INVALIDA
+else
+  LS -> G: OwnMedia.require(dono, coverUrl) — capa só de mídia própria
+  LS -> DB: INSERT scheme_groupings
+  LS --> FE: 201 groupingView
+end
+
+CE -> FE: escolhe a "Foto da era" (era já salva)
+FE -> SC: POST /api/groupings/{id}/cover (multipart file)
+SC -> SC: Uploads.image — jpeg/png/webp/heic\n(400 ARQUIVO_VAZIO / FORMATO_NAO_SUPORTADO)
+SC -> S: groupingCover(user, id, bytes)
+S -> G: requireCanCreate · requireOwner(dono do agrupamento)
+alt agrupamento inexistente
+  S --> FE: 404 Agrupamento
+else não é a dona
+  G --> FE: 403 (auditado)
+else
+  S -> S: ImageOps.requireAcceptedImage · scaleToFit(1800×1200) · jpeg(0,9)
+  S -> MS: put("users/{id}/groupings/{id}/cover-{ts}.jpg", jpeg)
+  MS -> ST: grava
+  S -> DB: UPDATE scheme_groupings SET cover_url
+  S --> FE: 200 {id, coverUrl}
+end
+
+CE -> FE: "Ligar esquemas e peças"
+FE -> LC: GET /api/me/schemes?size=60 · GET /api/me/closet?size=60
+FE -> LC: POST /api/groupings/{id}/items {schemeIds, pieceIds}
+LC -> LS: assignToGrouping(user, id, schemeIds, pieceIds)
+LS -> G: requireOwner(dono do agrupamento)
+LS -> DB: UPDATE schemes / wardrobe_items SET grouping_id = id\n(só itens da própria dona: owned)
+LS --> FE: 200 {assigned, groupingId}
+
+opt editar ou excluir
+  FE -> LC: PUT /api/groupings/{id} {campos}
+  LC -> LS: updateGrouping(user, id, form)
+  FE -> LC: DELETE /api/groupings/{id}
+  LC -> LS: deleteGrouping(user, id)
+  LS -> DB: grouping_id = NULL nos itens · DELETE scheme_groupings
+  LS --> FE: 204
+end
+@enduml

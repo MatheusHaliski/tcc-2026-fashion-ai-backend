@@ -1,0 +1,212 @@
+@startuml FashionAI_Componentes_v5
+title FashionAI — Visão global do sistema (v5)\nDiagrama de componentes — frontend Next.js → fai-web (controllers) → fai-application (serviços) → portas → fai-infrastructure (adaptadores)
+!pragma layout smetana
+set separator none
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam componentStyle rectangle
+skinparam component<<port>> {
+  BackgroundColor #E4DEF0
+  BorderColor #4A4852
+}
+skinparam note {
+  BackgroundColor #FFFBEA
+  BorderColor #B8A86A
+}
+
+package "Frontend — Next.js 16 · React 19 · React Three Fiber (app/(site)/(app), components, lib)" {
+  component "Conta e acesso\n(auth)/login · register · verify-email ·\nforgot/reset-password · settings · notifications" as FE_CONTA
+  component "BFF da sessão\napp/bff/auth/[action]/route.ts\n(refresh token em cookie HttpOnly)" as FE_BFF
+  component "Guarda-roupa\ncloset · pieces · photos · history ·\nroom · highlights · points · avatar" as FE_GR
+  component "Looks e IA\nlooks · schemes · lookbook · try-on · mirror ·\ndna · dna-schemes · copilot · autopilot" as FE_LOOK
+  component "Descobrir e social\nfeed · search · explorer · u/[username] · brands" as FE_SOC
+  component "Jogos e cupons\nflair · challenges · coupons" as FE_JOGO
+  component "Hype e Lens\nlens · components/hype · lib/hype\n(useHypeSummary → lote /api/hype/summaries)" as FE_HYPE
+  component "Admin\nadmin/(dashboard, moderation, system, users) · dashboard" as FE_ADM
+  component "lib/api/client.ts\napi.get/post/put/patch/delete\n(access token em memória · NEXT_PUBLIC_API_BASE_URL)" as FE_API
+}
+
+package "fai-web — REST · Spring Boot (web/controller, 37 controllers)" {
+  component "Conta e identidade\nAuthController · MeController · AccountController ·\nPreferencesController · NotificationController ·\nProfileController · IssuerReviewController" as W_CONTA
+  component "Peças e mídia\nWardrobeController · PhotoController · CatalogController ·\nBrandLogoController · Avatar3dController ·\nBackgroundController · MediaProxyController" as W_PECA
+  component "Looks e IA\nSchemeController · LookbookController · TryOnController ·\nMirrorController · AutopilotController · DnaController" as W_LOOK
+  component "Social e descoberta\nSocialController · CommentController ·\nDiscoveryController · ShowcaseController" as W_SOC
+  component "Selos, cupons e jogos\nSealController · CouponController · FlairController ·\nFlairModesController · ChallengeController" as W_JOGO
+  component "Quarto e pontos\nRoomController · RoomCreatorController ·\nHighlightsController" as W_QUARTO
+  component "Hype, insights e Lens\nHypeController (/api/hype/…, /api/me/hype/…,\nPOST /api/admin/hype/snapshots) ·\nInsightsController (/api/insights) ·\nLensController (/api/lens/…)" as W_HYPE
+  component "Admin\nAdminController (/api/admin/…) ·\nDashboardController" as W_ADM
+  component "web/security + support\nSecurityConfig · JwtTokenIssuer · Argon2PasswordHasher ·\nAuthRateLimitFilter · ClientIpResolver · DevGateFilter ·\nUploadSafetyInterceptor · GlobalExceptionHandler" as W_SEC
+}
+
+package "fai-application — casos de uso" {
+  component "Conta e identidade (service)\nIdentityService · AccountService · PreferencesService ·\nNotificationService · ProfileService · InstitutionalService ·\nIssuerReviewService · IssuerVerificationPolicy" as A_CONTA
+  component "Peças, mídia e catálogo\nWardrobeService · MultiPieceService · PhotoService · MediaService ·\nModel3dService · Avatar3dService · BrandLogoService · BrandWebSearchService ·\nBackgroundStudioService · catalog/CatalogService · assets/AssetCatalogService ·\nimaging/(FlatLayPipeline, StudioPipeline, TryOnCompositor, BrandReader) ·\nmoderation/(ImageSafety, UploadQuarantine) · vision/ProductKnowledgeBase" as A_PECA
+  component "Looks e IA\nSchemeService · LookbookService · DailyLookService · TryOnService ·\nMirrorService · AutopilotService · CopilotService · DnaService ·\nLookPreviewService · LookScorer · WeatherService ·\nHypeScoreService (painel do Look do Dia, só lê o v2)" as A_LOOK
+  component "Social e descoberta\nSocialService · SearchService · ExplorerService ·\nShowcaseService · ProjectionService" as A_SOC
+  component "Selos, cupons e jogos\nSealService · SealDesignService · CouponService ·\nFlairService · FlairModesService · ChallengeService\n(@Scheduled a cada 15 min)" as A_JOGO
+  component "Quarto e pontos\nRoomService · WardrobeCreatorService · FaiPointsService ·\nAchievementService · InventoryScoreService ·\nWardrobeEventListeners (AFTER_COMMIT)" as A_QUARTO
+  package "application/hype — HypeScore v2 (RF46)" {
+    component "HypeQueryService\n(cards em lote, histórico, trending, ranking,\nfacetas, globo, posições, guarda-roupa, movers)" as H_QUERY
+    component "HypeSnapshotService\n(@Scheduled cron 0 20 */6 · recalculate())" as H_SNAP
+    component "HypeLiveRecalc\n(eventos marcam sujo · verificação 30 s ·\n≤ 1 recálculo a cada 120 s)" as H_LIVE
+    component "HypeSignalRecorder\n(@TransactionalEventListener AFTER_COMMIT)" as H_REC
+    component "HypeIntegrityPolicy\n(dedupe, sem auto-interação, conta nova pesa menos)" as H_INT
+    component "HypeCalculator · HypeSignalSeries ·\nHypeScoreConfig · HypeSeals\n(cálculo puro, 9 dimensões, HYPE_V2)" as H_CALC
+    component "HypeMilestoneNotifier\n(DomainEvents.HypeMilestone → hype_milestones\n+ notificação HYPE_MILESTONE)" as H_MS
+    component "HypeCache\n(geração + TTL)" as H_CACHE
+  }
+  component "insights/InsightService\n(PublicInsights · PersonalInsights · ProfileInsights)" as A_INS
+  component "lens/LensService · LensRetentionJob\n(@Scheduled 04:40 · retenção de 30 dias)\nLensImageAnalysis · LensSimilarity · LensReading" as A_LENS
+  component "Admin e operação\nAdminService (job «hype», backups, aprovações) ·\nDashboardService · BackupJob · AdminBootstrap" as A_ADM
+  component "Transversais\nai/AiEngine (AiBudget, AiCatalog, fallback local) ·\naudit/AuditService · events/DomainEvents + SideEffectRunner ·\nsecurity/Guard" as A_TRANS
+}
+
+package "Portas (interfaces de fai-domain e fai-application)" {
+  component "Repositórios Spring Data\n(fai-domain/repository · 103)\nusados por todos os serviços" as P_REPO <<port>>
+  component "AnalyticsQueryPort · BackupPort ·\nDemoDataAdminPort · AuditService" as P_SQL <<port>>
+  component "TimelineProjectionPort ·\nNotificationProjectionPort" as P_PROJ <<port>>
+  component "SearchIndexPort" as P_SEARCH <<port>>
+  component "RenderCachePort (HypeCache, HypeIntegrityPolicy) ·\nRateLimitPort (AiEngine, IdentityService, LensService) ·\nCounterStorePort (SchemeService, SocialService) ·\nJobQueuePort (WardrobeService)" as P_CACHE <<port>>
+  component "AiProviderPort" as P_AI <<port>>
+  component "ImageProviderPorts: BackgroundRemoval · Upscale ·\nStudioShot · TryOnProvider · ImageGeneration ·\nImageEdit · Model3d · TextReaderPort ·\nImageSafetyPorts (RemoteClassifier, PersonSegmentation)" as P_IMG <<port>>
+  component "MediaStoragePort\n(MediaService, IdentityService, AccountService,\nSealDesignService, LensService, …)" as P_MEDIA <<port>>
+  component "EmailSenderPort · WebFetchPort ·\nWeatherPort · GeocodingPort ·\nDomainEventPublisherPort" as P_PLAT <<port>>
+  component "TokenIssuerPort · PasswordHasherPort" as P_SEC <<port>>
+}
+
+package "fai-infrastructure — adaptadores (com plano B quando o serviço está desligado)" {
+  component "persistence-mysql\nSpring Data JPA · MysqlAnalyticsAdapter · MysqlAuditService ·\nMysqlDumpBackupAdapter · MysqlDemoDataAdminAdapter" as I_MYSQL
+  component "persistence-cassandra\nCassandraProjectionAdapter\n(fashionai.cassandra.enabled)" as I_CASS
+  component "search-opensearch\nOpenSearchIndexAdapter\n(fashionai.opensearch.enabled)" as I_OS
+  component "platform/memory\nNoopProjections (Cassandra/OpenSearch desligados) ·\nInMemoryRenderCache · InMemoryRateLimit ·\nInMemoryCounterStore · InMemoryJobQueue" as I_MEM
+  component "cache-redis\nRedisAdapters (4 portas)\n(fashionai.redis.enabled)" as I_REDIS
+  component "ai-providers (texto)\nClaudeProvider · GeminiProvider · ProviderCircuit" as I_AI
+  component "ai-providers (imagem e visão)\nRembgAdapter · RemoveBgAdapter · PhotoroomStudioAdapter ·\nStabilityUpscaleAdapter · FashnTryOnAdapter ·\nReplicateImageGenerationAdapter · GeminiImageEditAdapter ·\nReplicateImageEditAdapter · MeshyModel3dAdapter ·\nStabilityFast3dAdapter · OnnxTextReader ·\nGoogleVisionSafeSearchAdapter · OnnxPersonSegmenter" as I_IMG
+  component "storage-s3 · S3MediaStorageAdapter (storage.type=s3)\nplatform · LocalFileMediaStorage (padrão: disco local)" as I_MEDIA
+  component "platform\nResendEmailSender | LoggingEmailSender · JdkWebFetchAdapter ·\nOpenMeteoAdapter · LoggingDomainEventPublisher" as I_PLAT
+}
+
+database "MySQL 8\nFlyway V1–V42 (V34 em Java)\nhype_signal_daily · hype_scores ·\nhype_score_snapshots · hype_milestones (V41) ·\nlens_scans/detections/feedback (V40)" as DB_MYSQL
+database "Cassandra\n(timeline e inbox de notificações)" as DB_CASS
+database "OpenSearch\n(índice de busca)" as DB_OS
+database "Redis\n(cache, limites, contadores, Streams)" as DB_REDIS
+database "Storage de mídia\nS3 / R2 / MinIO ou disco local" as DB_MEDIA
+cloud "IA externa\nAnthropic Claude · Google Gemini · Replicate ·\nStability · Meshy · Fashn · Photoroom ·\nremove.bg · Google Vision · rembg auto-hospedado" as EXT_AI
+cloud "Serviços web\nResend (e-mail) · Open-Meteo (clima) ·\nsites oficiais de marcas e catálogos" as EXT_WEB
+
+' --- frontend → API ---
+FE_CONTA --> FE_API
+FE_GR --> FE_API
+FE_LOOK --> FE_API
+FE_SOC --> FE_API
+FE_JOGO --> FE_API
+FE_HYPE --> FE_API
+FE_ADM --> FE_API
+FE_CONTA --> FE_BFF : login · cadastro · refresh
+FE_BFF --> W_CONTA : POST /api/auth/…\n(X-Fai-Client-Ip assinado)
+FE_API --> W_CONTA : HTTPS/JSON
+FE_API --> W_PECA
+FE_API --> W_LOOK
+FE_API --> W_SOC
+FE_API --> W_JOGO
+FE_API --> W_QUARTO
+FE_API --> W_HYPE
+FE_API --> W_ADM
+
+' --- controllers → serviços ---
+W_CONTA --> A_CONTA
+W_PECA --> A_PECA
+W_LOOK --> A_LOOK
+W_SOC --> A_SOC
+W_JOGO --> A_JOGO
+W_QUARTO --> A_QUARTO
+W_HYPE --> H_QUERY : GET /api/hype/…
+W_HYPE --> H_SNAP : POST /api/admin/hype/snapshots
+W_HYPE --> A_INS : GET /api/insights
+W_HYPE --> A_LENS : /api/lens/…
+W_ADM --> A_ADM
+W_LOOK --> H_CALC : GET /api/hype/method
+P_SEC <|.. W_SEC : implementa
+
+' --- HypeScore v2 por dentro ---
+A_SOC ..> H_REC : DomainEvents.HypeSignal
+A_LOOK ..> H_REC : HypeSignal · SchemeSaved ·\nDailyLookRegistered
+A_PECA ..> H_REC : HypeSignal · PieceWorn
+A_QUARTO ..> H_REC : PieceWorn
+A_PECA ..> H_LIVE : PieceCreated/Updated/Deleted ·\nAvailabilityChanged (WardrobeService)
+H_REC ..> H_INT
+H_LIVE --> H_SNAP
+H_SNAP ..> H_CALC
+H_SNAP ..> H_CACHE
+H_SNAP ..> H_MS : DomainEvents.HypeMilestone
+H_QUERY ..> H_CACHE
+H_MS ..> A_CONTA : NotificationService
+A_INS ..> H_QUERY
+A_LENS ..> H_CALC : Estilo & Hype (HypeScoreConfig)
+A_LOOK ..> H_QUERY : LookScorer · CopilotService
+A_ADM ..> H_SNAP : job «hype»
+A_ADM ..> H_LIVE
+
+' --- serviços → portas (os demais consumidores estão listados na caixa da porta) ---
+A_LOOK --> P_REPO : todos os serviços
+H_REC --> P_REPO : hype_signal_daily (upsert)
+H_SNAP --> P_REPO : hype_scores · hype_score_snapshots
+H_MS --> P_REPO : hype_milestones
+A_LENS --> P_REPO : lens_scans/detections/feedback ·\npiece_images · garment_embeddings
+A_ADM --> P_SQL : AnalyticsQueryPort · BackupPort
+A_SOC --> P_SQL : AnalyticsQueryPort (Explorador)
+A_TRANS --> P_SQL : AuditService
+A_SOC --> P_SEARCH : ProjectionService · SearchService
+A_SOC --> P_PROJ : timeline
+A_CONTA --> P_PROJ : NotificationService
+H_CACHE --> P_CACHE
+H_INT --> P_CACHE
+A_PECA --> P_CACHE : JobQueuePort
+A_TRANS --> P_CACHE : RateLimitPort
+A_TRANS --> P_AI : AiEngine
+A_PECA --> P_IMG : pipelines de imagem
+A_LOOK --> P_IMG : TryOnCompositor
+A_PECA --> P_MEDIA : MediaService
+A_CONTA --> P_PLAT : EmailSenderPort
+A_PECA --> P_PLAT : WebFetchPort
+A_LOOK --> P_PLAT : WeatherPort · GeocodingPort
+A_CONTA --> P_SEC
+
+' --- adaptadores → portas e sistemas externos ---
+P_REPO <|.. I_MYSQL
+P_SQL <|.. I_MYSQL
+P_PROJ <|.. I_CASS
+P_SEARCH <|.. I_OS
+P_PROJ <|.. I_MEM
+P_SEARCH <|.. I_MEM
+P_CACHE <|.. I_MEM
+P_CACHE <|.. I_REDIS
+P_AI <|.. I_AI
+P_IMG <|.. I_IMG
+P_MEDIA <|.. I_MEDIA
+P_PLAT <|.. I_PLAT
+I_MYSQL --> DB_MYSQL : JDBC/Hibernate
+I_CASS --> DB_CASS
+I_OS --> DB_OS
+I_REDIS --> DB_REDIS
+I_MEDIA --> DB_MEDIA
+I_AI --> EXT_AI : HTTPS
+I_IMG --> EXT_AI : HTTPS (OCR e segmentação\nrodam local em ONNX)
+I_PLAT --> EXT_WEB : HTTPS
+
+note "Hype v1 removido (P3-16): sem HypeScoreMetric,\nHypeGroup, MetricSnapshot, job de 4 h nem\nhype_score/hypeScoreGlobal nas views. O v2 grava só\nnas tabelas próprias, com algorithm_version." as N_V1
+N_V1 .. H_SNAP
+note "ColorNormalizationPort e ArtifactCleanupPort não têm adaptador:\na lista injetada fica vazia e o pipeline segue sem essas etapas.\nDemoDataAdminPort e DomainEventPublisherPort têm adaptador,\nmas nenhum serviço de fai-application os injeta hoje\n(os eventos de domínio usam o ApplicationEventPublisher do Spring)." as N_PORTS
+N_PORTS .. P_IMG
+@enduml

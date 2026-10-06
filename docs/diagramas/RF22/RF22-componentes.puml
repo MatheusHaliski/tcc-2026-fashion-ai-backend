@@ -1,5 +1,5 @@
 @startuml RF22_Componentes
-title RF22 — Visualizar a aba "Celebridades" — Feed de Perfil de Celebridades cadastradas dentro do sistema do FashionAI\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF22 — Aba "Celebridades": feed e perfil das celebridades cadastradas\nDiagrama de componentes — páginas → controllers → serviços → repositórios/portas → MySQL e Redis
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -14,55 +14,89 @@ skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam interface {
+  BackgroundColor #FFF5F8
+  BorderColor #4A4852
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 left to right direction
 
-package "Frontend (Next.js)" {
-  component "brands/page.tsx\nTabs brands | celebrities → GET /api/{tab}" as FE0
+package "Frontend (Next.js · app/(site)/(app)/brands)" {
+  component "brands/page.tsx\nTabs Marcas | Celebridades → GET /api/{tab}" as FE0
   component "brands/[slug]/page.tsx\n(perfil institucional da celebridade)" as FE1
-  component "components/showcase/showcase-tabs.tsx\n(ErasTab) · components/profile-header.tsx\ncomponents/flair/brand-flair-tab.tsx" as FE2
-  component "admin/users/page.tsx\n(aba approvals — RF1.CA08)" as FE3
+  component "components/profile-header.tsx\nhype/hype-group-badge.tsx (CREATOR)\ninsights/insight-strip.tsx" as FE2
+  component "showcase/showcase-tabs.tsx (ErasTab — RF34)\nflair/brand-flair-tab.tsx · room3d\nissuer-review.tsx (Central)" as FE3
+  component "SchemeCard · PieceCard\n(selo vítreo/holográfico)" as FE4
 }
+
 package "fai-web · controllers" {
-  [ProfileController\nGET /api/celebrities\nGET /api/institutional/{slugOrId}\nGET /api/institutional/{slugOrId}/tabs/{tab}\nPATCH /api/me/celebrity-profile\nPOST /api/users/{id}/followers] as PC
-  [SealController\nGET /api/users/{ownerId}/seals\nGET /api/users/{ownerId}/promotions] as SC
-  [ShowcaseController\nGET /api/institutional/{slug}/showcase/{kind}\nGET …/showcase/{kind}/items · /insights\nGET /api/institutional/{slug}/stage] as SH
-  [FlairController\nGET /api/institutional/{slug}/flair] as FC
-  [AdminController\nGET/POST /api/admin/approvals/{userId}] as AC
+  [ProfileController\nGET /api/celebrities\nGET /api/institutional/{slugOrId} · …/tabs/{tab}\nPATCH /api/me/celebrity-profile\nPOST/DELETE /api/users/{id}/followers] as PC
+  [HypeController\nGET /api/hype/groups?type=CREATOR] as HC
+  [InsightsController\nGET /api/insights?context=BRAND_PROFILE] as IC
+  [SealController\nGET /api/users/{ownerId}/seals · /promotions] as SC
+  [ShowcaseController\nGET /api/institutional/{slug}/showcase/eras…\nGET /api/institutional/{slug}/stage] as SH
+  [IssuerReviewController\nGET /api/me/issuer-review] as IRC
 }
-package "fai-application · services" {
-  [InstitutionalService\ncelebrityFeed · profile · tab\nupdateCelebrity] as I
-  [SealService\nsealsOf · promotionsOf] as S
-  [ShowcaseService (eras)] as SHS
-  [FlairService] as FS
-  [AdminService\ndecide() → verificationStatus] as AD
-  [ProfileService (RF17 follow)] as PS
+
+package "fai-application" {
+  [InstitutionalService\ncelebrityFeed · profile · tab ·\nupdateCelebrity] as IS
+  [HypeQueryService · HypeCache] as HQ
+  [InsightService · ProfileInsights] as INS
+  [SealService\nsealsOf · promotionsOf · badge] as SS
+  [ShowcaseService (RF34)] as SHS
+  [IssuerReviewService (RF1)] as IRS
+  [ProfileService (RF17)] as PS
+  [SchemeService · Guard] as SCH
+  interface "RenderCachePort" as RCP <<port>>
 }
-package "fai-infrastructure · adapters" {
-  [Repositórios JPA (fai-domain · repository)\nCelebrityProfileRepository · UserRepository\nFollowRepository · SealBondRepository\nSealRepository · PromotionRepository\nSchemeGroupingRepository · DnaSchemeRepository] as REPOS
-  [S3MediaStorageAdapter /\nLocalFileMediaStorage\n(avatar e capa)] as ST
+
+package "fai-domain · repository (JPA)" {
+  [CelebrityProfileRepository · UserRepository\nFollowRepository · SealBondRepository · SealRepository\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · SchemeGroupingRepository\nStyleDnaRepository · HypeScoreCurrentRepository] as REPOS
 }
-database "MySQL · fashionai_app\n• celebrity_profiles\n• users\n• follows\n• seal_bonds · seals\n• promotions\n• scheme_groupings (ERA)\n• style_dnas" as DB
+
+package "fai-infrastructure" {
+  [RedisAdapters\n(InMemoryRenderCache no fallback)] as REDIS
+}
+
+database "MySQL\n• celebrity_profiles · users · follows\n• seal_bonds · seals · promotions\n• schemes · scheme_items · wardrobe_items\n• scheme_groupings (ERA · PHASE · TOUR)\n• style_dna · hype_scores" as DB
+database "Redis" as RDB
 
 FE0 --> PC : GET /api/celebrities
+FE0 --> FE2 : chip "Criador em alta"
 FE1 --> PC : perfil e abas
 FE1 --> SC : selos e promoções
-FE1 --> FE2 : usa
-FE2 --> SH : eras / stage
-FE2 --> FC : combinações FLAIR
-FE3 --> AC : aprova/rejeita celebridade
-PC --> I : chama
-PC --> PS : follow
-SC --> S : chama
-SH --> SHS : chama
-FC --> FS : chama
-AC --> AD : chama
-I --> S : sealsOf (aba MEUS_SELOS)
-I --> REPOS : lê
-S --> REPOS : lê
-SHS --> REPOS : lê scheme_groupings
-AD --> REPOS : grava verification_status
-I --> ST : URLs de avatar/capa
-REPOS --> DB : JPA/Flyway
+FE1 --> FE2
+FE1 --> FE3
+FE1 --> FE4
+FE2 --> HC
+FE2 --> IC
+FE3 --> SH
+FE3 --> IRC
+PC --> IS
+PC --> PS
+HC --> HQ
+IC --> INS
+SC --> SS
+SH --> SHS
+IRC --> IRS
+IS --> HQ : groups(CREATOR) · currentOf
+IS --> SS
+IS --> SCH
+IS --> REPOS
+INS --> HQ
+SHS --> IS : institutionalUser
+SHS --> REPOS
+IRS --> REPOS
+HQ --> RCP
+HQ --> REPOS
+RCP <|.. REDIS
+REDIS --> RDB
+REPOS --> DB : JPA · Flyway
+
 note bottom of FE0 : não há rota /celebrities própria —\na aba "Celebridades" vive em /brands
-note bottom of I : ver RF14 (marcas — mesmo layout),\nRF21 (vínculos) e RF24.CA06 (afinidade)
+note bottom of IS : mesmo layout e mesma política de exibição\ndo RF14; vínculos: RF21; eras: RF34
 @enduml

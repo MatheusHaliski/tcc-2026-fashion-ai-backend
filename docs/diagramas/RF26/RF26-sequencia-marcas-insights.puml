@@ -1,0 +1,69 @@
+@startuml RF26_Sequencia_Marcas_Insights
+title RF26 — Busca global de esquemas e peças (aba "Explorador Global")\nDiagrama de sequência — "Buscar marcas & lojas" (/api/explorer/brands) e "Insights globais" (/api/explorer/insights)
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "explorer/page.tsx\n(abas brands · insights)" as FE
+participant "DiscoveryController" as DC
+participant "ExplorerService" as ES
+participant "AnalyticsQueryPort\n(MysqlAnalyticsAdapter)" as A
+participant "BrandProfileRepository ·\nSealBondRepository" as BR
+participant "HypeScoreCurrentRepository" as HR
+participant "CatalogService\n(RF47, opcional)" as CAT
+participant "AiEngine (RF24)" as AI
+database "MySQL" as DB
+
+== Buscar marcas & lojas ==
+U -> FE : nome, país, categoria, cor, estação, minLevel, ordem
+FE -> DC : GET /api/explorer/brands?term&country&category&color&season&minLevel&sort
+DC -> ES : brandsAndStores(viewer, term, country, category, sort, color, season, minLevel)
+alt minLevel fora de HypeLevel
+  ES --> FE : 400 NIVEL_INVALIDO
+else ok
+  ES -> A : brandFacets() · brandUsage(500)
+  A -> DB : wardrobe_items · vw_brand_usage
+  ES -> HR : peças públicas com Hype (publicPieces)
+  HR -> DB : hype_scores (PIECE, publicEligible, AVAILABLE)
+  ES -> BR : findByApprovalStatusOrderByCreatedAtDesc(APROVADO)
+  loop cada marca que passa nos filtros de texto, país, categoria, cor e estação
+    ES -> BR : findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(dono, APPROVED)
+    ES -> ES : card (peças públicas, looks com selo, paleta, estações)
+  end
+  ES -> HR : Hype dos looks vinculados (SearchService.hypeRows, em lote)
+  ES -> ES : brandHype(): BONDED_LOOKS (≥ 3) · BRAND_GROUP (≥ 3, top 5) · sem valor;\npassesHype(minLevel)
+  opt sem filtro de cor/estação
+    ES -> CAT : catalogBrands()
+    ES -> ES : marcas só de catálogo (catalog = true), Hype pelas peças públicas
+  end
+  ES -> ES : ordena por HYPE (nulos por último) ou SCHEMES
+  ES --> FE : 200 {brands[], facets, countries, categories, seasons, levels, minItems = 3}
+  FE --> U : cards de marca (→ /brands/{slug}, catálogo ou loja)
+end
+
+== Insights globais ==
+U -> FE : aba "Insights globais"
+FE -> DC : GET /api/explorer/insights
+DC -> ES : insights(viewer)
+ES -> HR : população pública (PIECE e SCHEME)
+HR -> DB : hype_scores
+ES -> ES : hypeRankings(): byCategory, byColor, byBrand (top 5),\nbySeason (looks), growthByCategory (TREND);\ngrupo com < 3 itens fica fora
+ES -> A : brandUsage(500) · colorRanking(null, 5) · countries()
+A -> DB : vw_brand_usage · wardrobe_items · vw_country_insights
+ES -> ES : rankings: topBrands, topColors, topCountries (volume)\n+ hypeBySeason, hypeByColor, hypeByBrand
+ES -> ES : texto local = LocalAdvisors.insightText(rankings + crescimento)
+alt pessoa autenticada
+  ES -> AI : text(TextCall(INSIGHT_GENERATOR, prompt, rankings, 250))
+  AI -> DB : ai_inference_log
+  AI --> ES : AiOutcome<String> (texto ≤ 400 ou fallback local)
+else anônimo
+  ES -> ES : aiInsight = texto local; "faça login para a leitura da IA"
+end
+ES --> FE : 200 {rankings, hype, aiInsight, explanation, fallbackUsed, note}
+FE --> U : leitura de tendência + blocos Hype · Crescimento · Volume ("—" sem base)
+@enduml

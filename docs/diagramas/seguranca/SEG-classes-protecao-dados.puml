@@ -1,0 +1,120 @@
+@startuml SEG_Classes_Protecao_Dados
+title Segurança, integridade e operação (transversal)\nDiagrama de classes — proteção de dados: mídia com dono, restricted/, teto de gasto de IA, criptografia de campo e backup
+!include _estilo.iuml
+left to right direction
+
+package "fai-application · service" <<Frame>> {
+  class MediaService {
+    +{static} PERSONAL_PREFIXES = users/ · pending/ · challenges/
+    +put(key, bytes, contentType) : StoredObject
+    +ownedMedia(owner, url, scopes) : Optional<OwnedMedia>
+    +requireOwnedMedia(owner, url, scopes, field) : OwnedMedia
+    +read(url) : Optional<byte[]> «nunca restricted/»
+    +readRestricted(url) : Optional<byte[]>
+    +register(owner, origin, …) : Photo
+  }
+  enum MediaScope {
+    OWNER «users/{dono}/…»
+    PENDING «pending/{uuid}/…»
+    PENDING_RESTRICTED «restricted/pending/…»
+    CATALOG «asset de /public»
+  }
+  class "OwnedMedia" as OwnedMedia <<record>> {
+    key : String
+    url : String «URL canônica do storage»
+  }
+  class OwnMedia {
+    ~CATALOG = assets/ · brands/logos/
+    +accepts(ownerId, url, allowCatalog) : boolean
+    +require(ownerId, url, field, allowCatalog) : String
+    +requireOrUnchanged(ownerId, url, field, allowCatalog, current) : String
+  }
+  class AdminService {
+    +runBackup(admin) : Map «manual, auditado»
+    +scheduledBackup() «@Scheduled 0 0 3 * * *»
+  }
+  class BackupJob {
+    RUNNING · COMPLETED · FAILED · EXPIRED
+    ~run(trigger) : BackupRecord
+    ~prune() : int «mantém os N mais recentes»
+  }
+  MediaService +-- MediaScope
+  MediaService +-- OwnedMedia
+}
+
+package "fai-application · ai" <<Frame>> {
+  class AiBudget {
+    -globalDaily : BigDecimal = 5.00 USD
+    -userDaily : BigDecimal = 0.50 USD
+    +check(userId, pending) : Verdict
+  }
+  enum Verdict {
+    OK
+    GLOBAL_EXHAUSTED
+    USER_EXHAUSTED
+  }
+  class AiEngine {
+    «estourou: nenhum provedor pago é chamado»
+    «USER_EXHAUSTED → RATE_LIMITED»
+    «GLOBAL_EXHAUSTED → FALLBACK_LOCAL»
+  }
+  AiBudget +-- Verdict
+  AiEngine --> AiBudget
+}
+
+package "fai-application · ports" <<Frame>> {
+  interface MediaStoragePort <<port>> {
+    +put(key, bytes, contentType) : StoredObject
+    +get(key) : byte[]
+    +delete(key)
+  }
+  interface BackupPort <<port>> {
+    +run(kind) : Result
+    +delete(fileKey) : boolean
+  }
+}
+
+package "fai-web" <<Frame>> {
+  class MediaProxyController {
+    +media(request) : ResponseEntity<byte[]> «GET /media/**»
+    ~cacheFor(key) : CacheControl
+    «chave com .., barra invertida ou / inicial → 404»
+    «users/*/exports/ e backups/ → 404»
+  }
+}
+
+package "fai-infrastructure" <<Frame>> {
+  class S3MediaStorageAdapter
+  class LocalFileMediaStorage
+  class MysqlDumpBackupAdapter {
+    «mysqldump gzip → restricted/backups/ + sufixo aleatório»
+    «senha só em MYSQL_PWD · --ssl-mode = MYSQL_SSL_MODE»
+  }
+}
+
+package "fai-domain" <<Frame>> {
+  class AesGcmStringConverter <<JPA AttributeConverter>> {
+    -PREFIX = "enc:v1:"
+    -IV_BYTES = 12 · TAG_BITS = 128
+    +convertToDatabaseColumn(text) : String
+    +convertToEntityAttribute(db) : String
+    «chave: DATA_ENCRYPTION_KEY (AES-256, base64)»
+  }
+  class User {
+    -displayName «cifrado»
+    -email «cifrado» · emailHash
+    -phone · birthDate · bio «cifrados»
+  }
+  User ..> AesGcmStringConverter
+}
+
+OwnMedia ..> MediaService : ownedMedia(storage, …)
+MediaService --> MediaStoragePort
+MediaProxyController --> MediaStoragePort
+S3MediaStorageAdapter ..|> MediaStoragePort
+LocalFileMediaStorage ..|> MediaStoragePort
+BackupJob --> BackupPort
+AdminService ..> BackupJob : cria e executa
+MysqlDumpBackupAdapter ..|> BackupPort
+MysqlDumpBackupAdapter ..> MediaStoragePort : grava o dump
+@enduml

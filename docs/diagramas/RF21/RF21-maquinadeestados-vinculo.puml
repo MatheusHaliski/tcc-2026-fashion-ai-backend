@@ -1,6 +1,6 @@
 @startuml RF21_MaquinaDeEstados_Vinculo
 !pragma layout smetana
-title RF21 — SealBond: vínculo esquema × celebridade verificada (SealBondStatus) — sempre com revisão
+title RF21 — Publicar look vinculado a uma celebridade verificada\nDiagrama de máquina de estados — SealBond com celebridade: consentimento e revisão sempre obrigatórios
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,31 +8,51 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-[*] --> Sugerido : GET /api/schemes/{id}/seal-suggestions\n(basis STYLE_SIGNATURE, só celebridade\nAPROVADA com sealConsentGranted)
-[*] --> Editado : POST /api/schemes/{id}/seal-bonds\n{targetOwnerId, imageRightsConsent} (MANUAL)
-state "SUGGESTED" as Sugerido
-state "ACCEPTED" as Aceito
-state "EDITED" as Editado
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "SUGGESTED\n(basis STYLE_SIGNATURE, eraLabel)" as Sugerido
 state "REFUSED" as Recusado
-state "PENDING_REVIEW" as EmRevisao
-state "APPROVED" as Aprovado
+state "ACCEPTED / EDITED\n(transitórios, dentro do route())" as Pedido
+state "PENDING_REVIEW\n(sempre, sem auto-aprovação)" as EmRevisao
+state "APPROVED — Selo Premium PRM-…" as Aprovado {
+  state "Vigente" as Vigente
+  state "Em revalidação\n(na fila da celebridade)" as Revalida
+  state "Expirado\n(calculado na leitura)" as Expirado
+  [*] --> Vigente
+  Vigente --> Revalida : PUT /api/schemes/{id} muda as peças\n→ flagRevalidation (RF9.CA05)
+  Revalida --> Vigente : review {approve: true}
+  Vigente --> Expirado : agora ≥ expiresAt
+}
 state "REJECTED" as Rejeitado
 state "REVOKED" as Revogado
-Sugerido --> Aceito : POST /api/seal-bonds/{id}/accept\n{imageRightsConsent:true} (CA02/CA19)
-Sugerido --> Recusado : POST /api/seal-bonds/{id}/refuse · refuse-all (CA04)
-Recusado --> Aceito : accept() depois ("Meus Selos · recusados")
-Aceito --> EmRevisao : route(): celebridade → requiresReview = true\nnotify SEAL_BOND_REVIEW
-Editado --> EmRevisao : route(): sempre revisão\n(sem auto-aprovação — diferença do RF20)
-Aceito --> Rejeitado : route(): imageRightsConsent != true →\n400 CONSENTIMENTO_IMAGEM (CA19)
-Editado --> Rejeitado : route(): Selo Premium fora da janela\nou usageCount = usageLimit → RECUSADO_LIMITE (CA23)
-EmRevisao --> Aprovado : POST /api/seal-bonds/{id}/review {approve:true}\n→ issue(): sealCode PRM-…, Seal.premium (CA20)
-EmRevisao --> Rejeitado : review {approve:false, reason}
-Aprovado --> Revogado : POST /api/seal-bonds/{id}/revoke · revokeForScheme\n(esquema excluído/privado) — CA14
-Aprovado --> Revogado : revalidação rejeitada (peças do look mudaram)
+
+[*] --> Sugerido : suggest(): só celebridade APROVADA\ncom sealConsentGranted (CA18)
+[*] --> Pedido : POST /api/schemes/{id}/seal-bonds\n{targetOwnerId, imageRightsConsent} (EDITED)
+Sugerido --> Pedido : POST /api/seal-bonds/{id}/accept\n{imageRightsConsent} (ACCEPTED)
+Sugerido --> Recusado : refuse · refuse-all (CA04)
+Recusado --> Pedido : accept() depois
+Pedido --> Sugerido : 400 CONSENTIMENTO_IMAGEM ou\n409 VINCULO_EXISTENTE → rollback: volta ao\nstatus anterior (pedido manual nem é gravado)
+Pedido --> Rejeitado : Selo Premium indisponível — teto da\ncampanha (usageLimit), janela ou INACTIVE\n→ 409 SELO_INDISPONIVEL (CA23, noRollbackFor)
+Pedido --> EmRevisao : route(): profileType CELEBRIDADE →\nrequiresReview = true, notify SEAL_BOND_REVIEW
+EmRevisao --> Aprovado : POST /api/seal-bonds/{id}/review\n{approve: true} → issue() (CA20)
+EmRevisao --> Rejeitado : review {approve: false, reason}
+Revalida --> Revogado : review {approve: false, reason}
+Aprovado --> Revogado : POST /api/seal-bonds/{id}/revoke\nou look PRIVATE/excluído (revokeForScheme, CA14)
 Sugerido --> Revogado : revokeForScheme
 EmRevisao --> Revogado : revokeForScheme
-Aprovado --> [*] : expiresAt passou → "EXPIRADO" em GET /api/me/seals
-note right of Aprovado : notify SEAL_GRANTED "Selo Premium emitido!"\nCouponRightsCheck → promoções SHOW / MEET_GREET /\nPRE_VENDA e marca parceira (CA21/CA22; RF38)
-note right of Rejeitado : CA23 — recusa com motivo explicativo\n(review_note), sem emissão
-note bottom of Recusado : toda transição grava AuditLog\nMUDANCA_ESTADO_VINCULO_SELO (CA16)
+
+note right of Aprovado
+  Habilita promoções da celebridade (CA21)
+  e, com marca parceira que consentiu,
+  promoções conjuntas (CA22).
+  Badge vítreo/holográfico (premium).
+end note
+note left of Pedido
+  A tela do look salvo (expanded-card)
+  sempre envia imageRightsConsent = true;
+  o Criar Look exige a caixa marcada.
+end note
 @enduml

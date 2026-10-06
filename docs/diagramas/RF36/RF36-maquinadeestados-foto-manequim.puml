@@ -1,5 +1,6 @@
 @startuml RF36_MaquinaDeEstados_FotoManequim
 !pragma layout smetana
+title RF36 — Foto com meu manequim (peça do RF4 ou look do RF5)\nDiagrama de máquina de estados — foto da peça/do look (mannequin_image_url) e o diálogo que a gera
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -7,24 +8,45 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-title RF36 — Foto com meu manequim: mannequin_image_url da peça (RF4) ou do esquema (RF5)
-[*] --> SemFoto : peça/esquema criado
-state "Sem foto\n(mannequinImageUrl = null)" as SemFoto
-state "Manequim montado no cliente\n(GET /api/pieces/{id}/look3d · GET /api/schemes/{id}/look3d)" as Montado {
-  state "rosto da foto de perfil\n(face = avatar)" as ComRosto
-  state "manequim padrão\n(MASCULINO | FEMININO pelo sexo do RF1)" as Padrao
-  Padrao --> ComRosto : usuário cadastra foto de perfil (RF1/RF23)
-  ComRosto --> ComRosto : PUT /api/me/preferences (ajuste do rosto)
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
-state "Foto gerada e guardada\n(storage próprio, mannequinImageFace)" as Gerada
-state "Capa do post do esquema\n(schemes.cover_image_url = foto)" as Capa
-SemFoto --> Montado : botão "Foto com meu manequim"\nno detalhe da peça/esquema
-Montado --> Gerada : POST /api/pieces/{id}/mannequin-photo\nPOST /api/schemes/{id}/mannequin-photo (PNG do cliente)
-Montado --> Capa : POST /api/schemes/{id}/mannequin-photo?asCover=true
-Gerada --> Capa : nova geração com asCover=true (só esquema)
-Gerada --> Montado : gerar de novo (substitui o arquivo)
-Gerada --> SemFoto : DELETE /api/{pieces|schemes}/{id}/mannequin-photo
-Capa --> SemFoto : DELETE /api/schemes/{id}/mannequin-photo\n(cover_image_url volta a null)
-note right of Montado : peça: só superior ou corpo inteiro; o ghost mannequin\n(RF4) não é usado aqui; sem biometria — foto só como textura
-note bottom of Gerada : face registrada na geração (avatar | padrão) para\nreexibir a mesma foto mesmo se a pessoa trocar o perfil
+
+state "Foto guardada (WardrobeItem | Scheme)" as Foto {
+  [*] --> SemFoto : peça ou look criado
+  state "Sem foto\nmannequin_image_url = NULL" as SemFoto
+  state "Com foto\nurl + face (FOTO | PADRAO)" as ComFoto
+  state "Com foto e capa do post\n(só look) cover_image_url = url" as Capa
+  SemFoto --> ComFoto : POST …/mannequin-photo\n(peça · look com asCover=false)
+  SemFoto --> Capa : POST /api/schemes/{id}/mannequin-photo?asCover=true
+  ComFoto --> ComFoto : gerar de novo (nova URL)
+  ComFoto --> Capa : gerar de novo com asCover=true
+  Capa --> ComFoto : gerar de novo com asCover=false\n(capa continua com a URL antiga)
+  Capa --> Capa : gerar de novo com asCover=true
+  ComFoto --> SemFoto : DELETE …/mannequin-photo (204)
+  Capa --> SemFoto : DELETE …/mannequin-photo\n(capa = NULL se era a mesma foto)
+  note bottom of ComFoto : face = FOTO se a dona tem foto de perfil e não é\nmarca; senão PADRAO (registrado na geração)
+}
+
+state "MannequinPhotoDialog" as Dialogo {
+  [*] --> Montando : abrir ("Foto com meu manequim")
+  state "Montando\nGET …/look3d (Skeleton)" as Montando
+  state "Falhou ao montar\n(403/404, mensagem)" as FalhaMontar
+  state "Sem WebGL\n(Gerar foto desabilitado)" as SemWebGL
+  state "Pronto\n(LookViewer parado; cabeça neutra\nou rosto do Avatar 3D)" as Pronto
+  state "Enviando\n(busy; JPEG 0,93 do canvas)" as Enviando
+  state "Prévia salva\n(foto do servidor)" as Previa
+  Montando --> FalhaMontar : erro
+  Montando --> SemWebGL : 200, useWebGL() = false
+  Montando --> Pronto : 200, WebGL
+  Pronto --> Enviando : "Gerar foto"
+  Pronto --> Pronto : captura falhou (toast)
+  Enviando --> Previa : 200 {url, face}
+  Enviando --> Pronto : 400 · 401 · 403 · 422 SEM_FOTO_NO_MANEQUIM (toast)
+  Previa --> Pronto : "Gerar de novo"
+  Previa --> [*] : "Remover foto" (DELETE) ou fechar
+  Pronto --> [*] : fechar
+}
 @enduml

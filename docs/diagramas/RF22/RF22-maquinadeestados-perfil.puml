@@ -1,6 +1,6 @@
 @startuml RF22_MaquinaDeEstados_Perfil
 !pragma layout smetana
-title RF22 — CelebrityProfile: verificationStatus (ApprovalStatus) e visibilidade no feed de Celebridades
+title RF22 — Aba "Celebridades": feed e perfil das celebridades cadastradas\nDiagrama de máquina de estados — CelebrityProfile.verificationStatus e presença no feed de Celebridades
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,22 +8,46 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-[*] --> Pendente : cadastro como CELEBRIDADE (RF1)\nIdentityService cria CelebrityProfile
-state "PENDENTE" as Pendente
-state "APROVADO" as Aprovado {
-  [*] --> Listada
-  state "Listada no feed\nGET /api/celebrities" as Listada
-  state "Perfil público\n/brands/[slug] — status «Verificada»" as Publica
-  Listada --> Publica : toque no card
-  Publica --> Publica : PATCH /api/me/celebrity-profile\n(dona edita bio, capa, assinatura de estilo)
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
+[*] --> Pendente : cadastro como CELEBRIDADE (RF1)\nIdentityService cria CelebrityProfile\n(verificationStatus = PENDENTE, sealConsentGranted do formulário)
+state "PENDENTE\n(fila de verificação)" as Pendente
+state "AJUSTES\n(aguardando a celebridade)" as Ajustes
 state "RECUSADO" as Recusado
-state "SUSPENSO <<planejado>>" as Suspenso #FFF5F8
-Pendente --> Aprovado : POST /api/admin/approvals/{userId}\n{approve:true} (RF1.CA08)
-Pendente --> Recusado : POST /api/admin/approvals/{userId}\n{approve:false, notes}
-Aprovado --> Suspenso : sem transição no código
-Suspenso --> Aprovado : sem transição no código
-note right of Pendente : fora do feed e sem tela pública:\nGET /api/institutional/{slug} → 404\npara visitantes (só dona e admin veem)
-note right of Aprovado : só aqui a celebridade pode receber\nvínculos de selo (RF21.CA18) e aparecer\nordenada por AFINIDADE ou RECENTES
-note bottom of Suspenso : valor existe no enum ApprovalStatus —\nnão implementado — conforme Trello\n(sem uso em AdminService/InstitutionalService)
+state "APROVADO\n(status «Verificada»)" as Aprovado {
+  [*] --> Listada
+  state "No feed GET /api/celebrities\n(AFINIDADE · RECENTES · EM_ALTA)" as Listada
+  state "Perfil público /brands/{slug}\n(Eras, destaques, Selos Premium)" as Publico
+  Listada --> Publico : toque no card
+  Publico --> Publico : PATCH /api/me/celebrity-profile\n(bio, capa, styleSignature, sealConsentGranted)
+}
+state "SUSPENSO" as Suspenso #FFF5F8
+
+Pendente --> Aprovado : POST /api/admin/approvals/{userId}\n{decision: APROVAR} (IssuerReviewService.decide)
+Pendente --> Ajustes : decide {AJUSTES, reasons}
+Pendente --> Recusado : decide {RECUSAR, reasons}
+Ajustes --> Recusado : decide {RECUSAR}
+Ajustes --> Pendente : POST /api/me/issuer-review/resubmit\n(até 5 envios)
+Recusado --> Pendente : POST /api/me/issuer-review/resubmit
+Aprovado -[dashed]-> Suspenso : <<planejado>>\nnenhum endpoint atribui
+
+note right of Pendente
+  Fora do feed e sem tela pública:
+  GET /api/institutional/{slug} → 404 para quem
+  não é a dona nem admin (anônimo: 500 —
+  viewer.admin() com viewer nulo).
+end note
+note right of Aprovado
+  Ao aprovar: identityVerified, requiresSealReview = true
+  (RF21.CA19), conta ACTIVE e verified, selos padrão
+  Premium (PECA e LOOK). Só aqui recebe vínculos de
+  selo (RF21.CA18), aparece no feed e tem Hype CREATOR.
+end note
+note bottom of Suspenso
+  Valor do enum ApprovalStatus sem transição
+  no código. Detalhes da verificação: RF1.
+end note
 @enduml

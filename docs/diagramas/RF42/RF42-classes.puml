@@ -1,5 +1,5 @@
 @startuml RF42_Classes
-title RF42 — Marcar um look como "Look do dia"\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF42 — Marcar um look como "Look do dia"\nDiagrama de classes — DailyLook, DailyLookService, LookbookService, painel v2 (HypeScoreService) e sinais LOOK_WORN/PIECE_USED
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -11,112 +11,171 @@ skinparam class {
 skinparam packageStyle rectangle
 hide empty methods
 
-package "fai-domain · model" {
-class User <<@Table users>> {
-  +username: String
-  +lookDoDiaPanelVersion: HypeScorePanelVersion
-}
-class DailyLook <<@Table daily_looks>> {
-  +user: User
-  +scheme: Scheme
-  +materializedFrom: DailyLook
-  +lookDate: LocalDate
-  +source: DailyLookSource = MANUAL
-  +feedback: DailyLookFeedback
-  +feedbackAt: Instant
-  +weekPlanDayId: UUID
-}
-class Scheme <<@Table schemes>> {
-  +user: User
-  +title: String
-  +status: SchemeStatus
-  +lookDoDia: boolean
-  +lookDoDiaCount: int
-  +hypeScore: BigDecimal
-}
-class SchemeItem <<@Table scheme_items>> {
-  +scheme: Scheme
-  +wardrobeItem: WardrobeItem
-}
-class WardrobeItem <<@Table wardrobe_items>> {
-  +availabilityStatus: AvailabilityStatus
-  +wearCount: int
-  +lastWornDate: LocalDate
-  +lookDoDiaCount: int
-}
-class HypeSignalDaily <<@Table hype_signal_daily>> <<RF53>> {
-  +entityType: HypeEntityType
-  +entityId: UUID
-  +signalType: HypeSignalType
-  +signalDate: LocalDate
-  +eventCount: int
-  +weightedCount: BigDecimal
-  +updatedAt: Instant
-}
-}
-package "fai-domain · enums" {
-enum DailyLookSource {
-  MANUAL
-  AUTOPILOTO
-  COPILOT
-  VISTA_ME
-  SMART_MIRROR
-}
-enum DailyLookFeedback {
-  ADOREI
-  NAO_USEI
-  NAO_GOSTEI
-}
-enum HypeSignalType <<RF53>> {
-  LOOK_WORN
-  PIECE_USED
-  PIECE_IN_LOOK
-  .. +9 (curtida, save, view…) ..
-}
-}
 package "fai-application · service" {
-class DailyLookService {
-  +register(user, scheme, source, date): DailyLook
-  +today(userId): Optional<DailyLook>
-  +feedback(user, date, feedback): Map
-  +history(user): List
-  +pendingFeedback(user): Map
-  +view(dl): Map
+  class DailyLookService {
+    +register(user, Scheme, DailyLookSource, date): DailyLook
+    +today(userId): Optional<DailyLook>
+    +feedback(user, date, DailyLookFeedback): Map
+    +history(user): List<Map>
+    +pendingFeedback(user): Map
+    +view(DailyLook): Map
+  }
+  class LookbookService {
+    +dailyLookTab(user, withAi): Map
+    +markDailyLook(user, schemeId): Map
+    +setPanelVersion(user, HypeScorePanelVersion): Map
+    {static} +panelVersions(): List<Map>
+  }
+  class HypeScoreService {
+    {static} +MAGAZINE_MIN_LEVEL = TRENDING
+    +panel(DailyLook, withAi): Map
+    {static} ~localTip(Scheme, dims): String
+    ~currentV2(HypeEntityType, id): HypeScoreCurrent
+    {static} +v2Summary(HypeScoreCurrent, cfg, now): Map
+    {static} +magazineCover(v2): Map
+  }
+  class SchemeService {
+    +owned(user, id): Scheme
+    +create(user, SchemeForm): Map
+  }
+  class WardrobeEventListeners {
+    +onDailyLook(DailyLookRegistered)
+  }
+  class PreferenceModel {
+    ~peso por feedback (ADOREI · NAO_USEI · NAO_GOSTEI)
+  }
 }
-class LookbookService {
-  +markDailyLook(user, schemeId): Map
-  +dailyLookTab(user, withAi): Map
+
+package "fai-application · events e hype" {
+  class "DomainEvents.DailyLookRegistered" as DLR <<record>> {
+    +userId: UUID
+    +schemeId: UUID
+    +date: LocalDate
+    +source: String
+    +pieceIds: List<UUID>
+  }
+  class HypeSignalRecorder {
+    +onDailyLook(DailyLookRegistered)
+  }
+  class HypeIntegrityPolicy {
+    {static} ~OWNER_ACTIONS = {PIECE_USED, PIECE_IN_LOOK, LOOK_WORN}
+    +weight(HypeSignal, day): double
+  }
+  class HypeLiveRecalc {
+    +onDailyLook(DailyLookRegistered)
+  }
 }
-class "DomainEvents.DailyLookRegistered" as DLR <<record>> {
-  +userId: UUID
-  +schemeId: UUID
-  +date: LocalDate
-  +source: String
-  +pieceIds: List<UUID>
+
+package "fai-domain · model" {
+  class DailyLook <<table daily_looks>> {
+    +user: User
+    +scheme: Scheme
+    +materializedFrom: DailyLook
+    +lookDate: LocalDate
+    +source: DailyLookSource = MANUAL
+    +feedback: DailyLookFeedback
+    +feedbackAt: Instant
+    +weekPlanDayId: String
+  }
+  class Scheme <<table schemes>> {
+    +lookDoDia: boolean
+    +lookDoDiaCount: int
+    +status: SchemeStatus
+    +likeCount · commentCount · shareCount · remixCount
+  }
+  class WardrobeItem <<table wardrobe_items>> {
+    +disponivel: boolean
+    +availabilityStatus: AvailabilityStatus
+    +lookDoDiaCount: int
+    +wearCount: int
+    +lastWornDate: LocalDate
+  }
+  class User <<table users>> {
+    +lookDoDiaPanelVersion: HypeScorePanelVersion
+  }
+  class HypeScoreCurrent <<table hype_scores>> {
+    +entityType: HypeEntityType
+    +score: BigDecimal
+    +level: HypeLevel
+    +dimensions: HypeDimensions
+    +status: HypeStatus
+    +calculatedAt: Instant
+  }
+  class HypeSignalDaily <<table hype_signal_daily>> {
+    +signalType: HypeSignalType
+    +signalDate: LocalDate
+    +eventCount: int
+    +weightedCount: BigDecimal
+  }
 }
-class HypeSignalRecorder <<RF53>> {
-  +onDailyLook(DailyLookRegistered)
-  ~record(HypeSignal)
+
+package "fai-domain · enums" {
+  enum DailyLookSource {
+    MANUAL
+    AUTOPILOTO
+    COPILOT
+    VISTA_ME
+    SMART_MIRROR
+  }
+  enum DailyLookFeedback {
+    ADOREI
+    NAO_USEI
+    NAO_GOSTEI
+  }
+  enum HypeScorePanelVersion {
+    SPOTLIGHT_CLASSICO
+    PASSARELA
+    RAIO_X_ESTILO
+    BENTO_DIA
+    EDITORIAL_MINIMAL
+    COACH_ESTILO
+  }
+  enum "HypeSignalType (trecho)" as HST {
+    LOOK_WORN
+    PIECE_USED
+  }
 }
-class HypeIntegrityPolicy <<RF53>> {
-  +weight(HypeSignal, day): double
+
+package "fai-domain · repository" {
+  interface DailyLookRepository {
+    +findByUserIdAndLookDate(userId, date): Optional<DailyLook>
+    +findFirstByUserIdAndLookDateBeforeOrderByLookDateDesc(userId, date)
+    +findTop60ByUserIdOrderByLookDateDesc(userId): List<DailyLook>
+    +findByLookDate(date): List<DailyLook>
+    +countByUserIdAndFeedback(userId, feedback): long
+  }
 }
-}
-DailyLook "*" --> "1" User
-DailyLook "*" --> "1" Scheme
-DailyLook "*" --> "0..1" DailyLook : materializedFrom
-SchemeItem "*" --> "1" Scheme
-SchemeItem "*" --> "1" WardrobeItem
-Scheme "*" --> "1" User
+
+DailyLook "*" --> "1" User : user
+DailyLook "*" --> "1" Scheme : scheme
+DailyLook "0..1" --> "0..1" DailyLook : materializedFrom
 DailyLook --> DailyLookSource
 DailyLook --> DailyLookFeedback
+User --> HypeScorePanelVersion
 LookbookService --> DailyLookService
-DailyLookService --> DailyLook : grava
+LookbookService --> HypeScoreService : panel
+LookbookService --> SchemeService : owned
+DailyLookService --> DailyLookRepository
 DailyLookService ..> DLR : publica
-HypeSignalRecorder ..> DLR : @TransactionalEventListener\n(AFTER_COMMIT)
-HypeSignalRecorder --> HypeIntegrityPolicy : peso
-HypeSignalRecorder ..> HypeSignalDaily : increment
-HypeSignalDaily --> HypeSignalType
-note bottom of DailyLook : uq_daily_looks_user_date (user_id, look_date):\num Look do Dia por pessoa por dia
-note bottom of HypeSignalDaily : novo (RF53 · HypeScore v2): Look do Dia soma\nLOOK_WORN (SCHEME) e PIECE_USED (cada peça) no dia
+DailyLookService ..> WardrobeItem : lookDoDiaCount · lastWornDate
+SchemeService --> DailyLookService : register (lookDoDia)
+HypeScoreService ..> HypeScoreCurrent : só lê
+WardrobeEventListeners ..> DLR : ouve
+HypeSignalRecorder ..> DLR : ouve
+HypeLiveRecalc ..> DLR : ouve (markDirty)
+HypeSignalRecorder --> HypeIntegrityPolicy
+HypeSignalRecorder ..> HypeSignalDaily : LOOK_WORN · PIECE_USED
+HypeSignalDaily --> HST
+PreferenceModel ..> DailyLook : feedback
+
+note bottom of DailyLook
+  uq_daily_looks_user_date (user_id, look_date):
+  um Look do Dia por pessoa e dia; marcar de novo
+  troca o look e a origem na mesma linha.
+end note
+note right of HypeScoreService
+  Painel v2 só leitura: o GET nunca recalcula.
+  tip = dica local (ou STYLE_ADVISOR com withAi);
+  sem dados = status, nunca 0.
+end note
 @enduml

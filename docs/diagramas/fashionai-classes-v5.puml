@@ -1,0 +1,142 @@
+@startuml FashionAI_Classes_v5
+title FashionAI — Visão global do domínio (v5)\nDiagrama de classes — visão geral das áreas: 103 entidades JPA + 1 @Embeddable de fai-domain/.../domain/model, 95 enums, Flyway V1–V42
+!pragma layout smetana
+set separator none
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam note {
+  BackgroundColor #FFFBEA
+  BorderColor #B8A86A
+}
+skinparam packageStyle rectangle
+hide members
+
+package "Bases (@MappedSuperclass)" {
+  abstract class AuditableEntity <<id UUID · createdAt/updatedAt · createdBy/lastModifiedBy>>
+  abstract class VersionedAuditableEntity <<+ @Version>>
+  note "67 entidades estendem VersionedAuditableEntity,\n9 estendem AuditableEntity e 27 não têm base\n(id, datas e versão próprios). Cada entidade tem\nseu repositório Spring Data em domain/repository (103)." as N_BASE
+}
+
+package "Identidade, perfis e social · FashionAI_Classes_v5_Identidade (15 + interface)" {
+  class User <<users>>
+  class BrandProfile <<brand_profiles>>
+  class CelebrityProfile <<celebrity_profiles>>
+  interface ReviewableProfile
+  class Notification <<notifications>>
+  note "+ UserPreferences (V42 hypeCreatorOptOut), UserConsent,\nVerificationCode, RefreshToken, DataExportRequest,\nFollow, Comment, Reaction, Share, SavedItem, Photo" as N_ID
+}
+
+package "Peças, marcas e catálogo · FashionAI_Classes_v5_Pecas (13)" {
+  class WardrobeItem <<wardrobe_items>>
+  class Brand <<brands>>
+  class CatalogProduct <<catalog_products>>
+  note "+ PieceUsageDiaryEntry, WardrobeAvailabilityChange,\nItemEmbedding, BrandAlias, BrandLogo, CatalogSource,\nCatalogProductAlias, CatalogVariant, CatalogImage,\nCatalogIngestionRun (V30, V36, V38)" as N_PC
+}
+
+package "Captura e visão · FashionAI_Classes_v5_Visao (15)" {
+  class CaptureSession <<capture_sessions>>
+  class PieceImage <<piece_images>>
+  note "+ CaptureRequest, QualityScore, BrandPrediction,\nGarmentLandmark, GarmentEmbedding, Kb* (3),\nAiReviewItem, TrainingCandidate, DatasetSource,\nModelRegistryEntry, ModelInference (V29)" as N_VI
+}
+
+package "Esquemas, DNA e planejamento · FashionAI_Classes_v5_Esquemas (13)" {
+  class Scheme <<schemes>>
+  class SchemeItem <<scheme_items>>
+  class DailyLook <<daily_looks>>
+  class DnaScheme <<dna_schemes>>
+  note "+ SchemeGrouping, AssetPreset, WeekPlan, WeekPlanDay,\nMirrorState, AcervoGroup, DnaSchemeItem,\nStyleDna, StyleDnaVersion" as N_ES
+}
+
+package "Selos e cupons · FashionAI_Classes_v5_Selos_Cupons (5)" {
+  class Seal <<seals>>
+  class SealBond <<seal_bonds>>
+  class Promotion <<promotions>>
+  class CouponRight <<coupon_rights>>
+  note "+ PromotionRedemption" as N_SE
+}
+
+package "FLAIR · FashionAI_Classes_v5_Flair (11)" {
+  class FlairCombination <<flair_combinations>>
+  class FlairMatchEntry <<flair_match_entries>>
+  note "+ FlairProfile, FlairCoinEntry, FlairMatch,\nFlairTeam, FlairTeamMember, FlairModeState,\nFlairRedemption, FlairTerritory, FlairTrophy" as N_FL
+}
+
+package "Quarto, avatar e gamificação · FashionAI_Classes_v5_Quarto_Gamificacao (17)" {
+  class RoomStorageEntry <<room_storage_map>>
+  class UserAvatar3d <<user_avatars_3d>>
+  class FaiPointsLedgerEntry <<fai_points_ledger>>
+  class ChallengeInstance <<challenge_instances>>
+  note "+ RoomLayout, RoomCatalogItem, RoomInventoryItem,\nFaiPointsRule, UserAchievement, InventoryScoreSnapshot,\nRankingOptIn, RankingPosition, ChallengeTemplate,\nChallengeParticipant, ChallengeEvent, ChallengeNote,\nChallengeVote" as N_QG
+}
+
+package "HypeScore v2 e Lens · FashionAI_Classes_v5_Hype_Lens (7 + @Embeddable)" {
+  class HypeScoreCurrent <<hype_scores>>
+  class HypeSignalDaily <<hype_signal_daily>>
+  class LensScan <<lens_scans>>
+  class LensDetection <<lens_detections>>
+  note "+ HypeScoreSnapshot, HypeMilestone (V41),\nHypeDimensions (@Embeddable), LensFeedback.\nV1 removido: HypeScoreMetric, HypeGroup,\nMetricSnapshot e o enum HypeScoreBand." as N_HL
+}
+
+package "IA e operação · FashionAI_Classes_v5_IA_Operacao (7)" {
+  class PipelineJob <<pipeline_jobs>>
+  class AiInferenceLog <<ai_inference_log>>
+  note "+ ProcessingJobLog, RenderJobLog,\nModerationQueueItem, AuditLog, BackupRecord" as N_IA
+}
+
+AuditableEntity <|-- VersionedAuditableEntity
+
+' --- principais relações entre áreas (setas cheias = JPA; tracejadas = id sem FK JPA) ---
+BrandProfile "0..1" --> "1" User : owner
+CelebrityProfile "0..1" --> "1" User : owner
+BrandProfile ..|> ReviewableProfile
+CelebrityProfile ..|> ReviewableProfile
+Notification "*" --> "1" User : recipient
+WardrobeItem "*" --> "1" User : user
+WardrobeItem "*" --> "0..1" Brand : brand
+Brand "*" --> "0..1" BrandProfile : brandProfile
+WardrobeItem ..> CatalogProduct : catalogProductId
+CatalogProduct ..> Brand : brandId
+CaptureSession ..> WardrobeItem : pieceId
+PieceImage ..> CaptureSession : sessionId
+Scheme "*" --> "1" User : user
+SchemeItem "*" --> "1" Scheme : scheme
+SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
+DailyLook "*" --> "1" Scheme : scheme
+Seal "*" --> "1" User : owner
+SealBond "*" --> "1" Scheme
+SealBond "*" --> "0..1" Seal : seal
+Promotion "*" --> "0..1" Seal : seal
+CouponRight ..> Promotion : sourceId (SELO)
+CouponRight ..> FlairCombination : sourceId (FLAIR)
+FlairCombination "*" --> "1" User : brand
+FlairMatchEntry "*" --> "0..1" Scheme : scheme
+RoomStorageEntry ..> WardrobeItem : wardrobeItemId
+UserAvatar3d "0..1" --> "1" User : user
+FaiPointsLedgerEntry ..> User : userId
+ChallengeInstance ..> User : createdBy
+HypeSignalDaily ..> WardrobeItem : entityId (PIECE)
+HypeScoreCurrent ..> WardrobeItem : entityId (PIECE)
+HypeScoreCurrent ..> Scheme : entityId (SCHEME)
+LensDetection ..> LensScan : scanId
+LensDetection ..> WardrobeItem : ownedItemId
+LensScan ..> User : userId
+PipelineJob "*" --> "1" User : user
+WardrobeItem ..> PipelineJob : processingJobId
+AiInferenceLog ..> User : userId
+' --- só para o layout (empilhar as áreas) ---
+CaptureSession -[hidden]-> HypeSignalDaily
+HypeScoreCurrent -[hidden]-> CouponRight
+Seal -[hidden]-> FlairMatchEntry
+FaiPointsLedgerEntry -[hidden]-> PieceImage
+User -[hidden]-> AuditableEntity
+legend right
+  Seta cheia = associação JPA (@ManyToOne/@OneToOne) · seta tracejada = id guardado sem FK JPA.
+  Cada pacote aponta o diagrama da área (PNG FashionAI_Classes_v5_<Área>) com campos, enums e notas.
+  Entidades nos diagramas por área: 15 + 13 + 15 + 13 + 5 + 11 + 17 + 7 + 7 = 103 (+ HypeDimensions).
+endlegend
+@enduml

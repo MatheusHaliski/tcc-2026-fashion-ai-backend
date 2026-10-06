@@ -1,33 +1,43 @@
 @startuml BANCOS_Sequencia_Inicio_Endurecido
-title Fashion AI — Sequência: início endurecido de um banco no Railway (exemplo: Cassandra)
+title Segurança, integridade e operação (transversal)\nDiagrama de sequência — início endurecido de um banco no Railway (exemplo: Cassandra, infra/railway/cassandra/start.sh)
 !include _estilo.iuml
 autonumber
 participant "Railway\n(deploy do serviço)" as RW
-participant "Comando de início\n(start-command.sh)" as CMD
+participant "Custom Start Command\n(gerado por start-command.sh)" as CMD
 participant "start.sh\n(FAI_START_SCRIPT)" as SH
 participant "Cassandra\n(docker-entrypoint)" as C
-participant "bootstrap\n(segundo plano · cqlsh TLS)" as BS
-participant "API" as API
+participant "bootstrap\n(segundo plano · cqlsh com TLS)" as BS
+participant "API\n(CassandraProjectionAdapter)" as API
 
-RW -> CMD : inicia o contêiner (variáveis do serviço)
-CMD -> CMD : SHA-256(FAI_START_SCRIPT) = hash versionado?
+RW -> CMD : inicia o contêiner com as variáveis do serviço
+CMD -> CMD : grava FAI_START_SCRIPT em /tmp/fai-start.sh\nSHA-256 (16 primeiros) = hash do start.sh versionado?
 alt hash diferente
-  CMD -> C : sobe como antes do endurecimento\n+ "fai-start: ERRO ... difere"
+  CMD -> C : sobe como antes do endurecimento\n+ log "fai-start: ERRO: FAI_START_SCRIPT difere…"
 else hash confere
-  CMD -> SH : exec (FAI_START_SCRIPT sai do ambiente)
-  SH -> SH : valida senhas (≥ 24, [A-Za-z0-9_])
-  SH -> SH : CA + certificado do nó no volume (só na 1ª vez)\nimprime o certificado da CA (público)
-  SH -> SH : cassandra.yaml: PasswordAuthenticator,\nCassandraAuthorizer, client_encryption_options
-  SH -> SH : senhas → variáveis do shell; unset do ambiente
-  SH -> C : inicia (PID acompanhado; SIGTERM repassado)
-  SH -> BS : inicia
-  loop até o CQL responder (≤ 10 min)
-    BS -> C : login fai_admin (ou cassandra/cassandra na 1ª vez)
+  CMD -> SH : unset FAI_START_SCRIPT · exec
+  SH -> SH : senhas com ≥ 24 caracteres e só [A-Za-z0-9_]?
+  alt senha inválida
+    SH -> RW : sai com erro (Cassandra falha fechado:\nnunca sobe sem autenticação)
+  else válidas
+    SH -> SH : CA própria + certificado do nó no volume\n(fai-tls/, só na 1ª vez)
+    SH -> SH : cassandra.yaml: PasswordAuthenticator,\nCassandraAuthorizer, client_encryption_options
+    SH -> SH : senhas em variáveis do shell;\nunset das variáveis de ambiente
+    SH -> RW : log do certificado da CA (público)\n→ vira CASSANDRA_CA_CERT_PEM na API
+    SH -> C : docker-entrypoint.sh cassandra -f\n(PID acompanhado; SIGTERM repassado)
+    SH -> BS : bootstrap &
+    loop até 120 tentativas a cada 5 s (~10 min)
+      BS -> C : login fai_admin\n(1ª vez: cassandra/cassandra cria fai_admin)
+    end
+    BS -> C : ALTER ROLE cassandra: senha aleatória,\nsem LOGIN e sem SUPERUSER
+    BS -> C : CREATE KEYSPACE IF NOT EXISTS fashionai_feed\nCREATE ROLE fai_app · GRANT SELECT, MODIFY,\nCREATE, ALTER no keyspace (sem DROP, sem AUTHORIZE)
+    BS -> C : fai_app entra com a senha atual?\nsenão ALTER ROLE (rotação)
+    BS -> RW : log "fai-start: pronto: autenticação ligada…"
   end
-  BS -> C : cria fai_admin (1ª vez) · desativa "cassandra"
-  BS -> C : keyspace · papel fai_app · GRANT SELECT/MODIFY/CREATE/ALTER
-  BS -> C : fai_app autentica com a senha atual? senão ALTER (rotação)
-  BS -> RW : log "fai-start: pronto ..."
 end
-API -> C : reconecta (driver) com fai_app (+ TLS, com a CA fixada)
+API -> C : conecta como fai_app com TLS\n(CA fixada, CASSANDRA_SSL=true)
+note over RW, SH
+  Mesmo padrão em mysql/, redis/ e opensearch/. MySQL e Redis nunca deixam
+  de subir por senha ruim (a API inteira depende deles): sobem sem os usuários
+  novos e com "fai-start: ERRO" no log. Cassandra e OpenSearch falham fechados.
+end note
 @enduml

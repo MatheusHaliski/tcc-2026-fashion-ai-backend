@@ -1,5 +1,5 @@
 @startuml RF20_Classes
-title RF20 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma marca de roupa\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF20 — Publicar look vinculado a uma marca cadastrada\nDiagrama de classes — SealController, SealService (sugestão, roteamento, emissão), SealPolicies, entidades e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -9,34 +9,110 @@ skinparam class {
   HeaderBackgroundColor #E4DEF0
 }
 skinparam packageStyle rectangle
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 hide empty methods
+hide empty fields
+
+package "fai-web · controller" {
+class SealController {
+  +preview(user, PreviewRequest): Map
+  +suggest(user, schemeId): Map
+  +link(user, schemeId, LinkRequest): Map
+  +accept(user, bondId, AcceptRequest): Map
+  +refuse(user, bondId) · refuseAll(user, schemeId)
+  +reviewQueue(user): List
+  +review(user, bondId, ReviewRequest): Map
+  +revoke(user, bondId, RevokeRequest): Map
+  +mySeals(user): Map
+  +redeem(user, promotionId): Map
+}
+class SchemeController {
+  +create(user, SchemeForm): Map
+}
+}
+
+package "fai-application · service" {
+class SealService {
+  {static} +MAX_SUGGESTIONS = 3
+  {static} +DEFAULT_SEAL_VALIDITY = 365 dias
+  -OPEN: Set<SealBondStatus>
+  +preview(user, pieceIds, occasion, style): Map
+  +suggest(user, schemeId): Map
+  +accept(user, bondId, imageRightsConsent): Map
+  +linkManually(user, schemeId, targetOwnerId, imageRightsConsent): Map
+  +refuse(user, bondId): Map
+  +refuseAll(user, schemeId): int
+  +reviewQueue(user): List
+  +review(user, bondId, approve, reason): Map
+  +revoke(user, bondId, reason): Map
+  +revokeForScheme(schemeId, reason)
+  +flagRevalidation(Scheme)
+  +mySeals(user): Map
+  +redeem(user, promotionId): Map
+  +ensureDefaultSeals(User)
+  {static} +available(Seal, now): boolean
+  {static} +unavailableReason(Seal, now): String
+  {static} +badge(SealBond): Map
+  ~candidates(scheme, items, unregistered, pieceOnly, hype): List<Candidate>
+  -policyCandidates(…): Set<UUID>
+  -requireUnique(SealBond)
+  -route(user, SealBond): Map
+  -sealFor(target, tier, scheme): Seal
+  -issue(SealBond, decidedBy)
+  -logBond(user, SealBond, result)
+}
+class Candidate <<record>> {
+  +targetOwnerId: UUID
+  +kind: String
+  +name: String
+  +confidence: BigDecimal
+  +justification: String
+  +tier: SealTier
+  +linkedPieceIds: List<UUID>
+  +basis: SealBondBasis
+  +eraLabel: String
+  +sealId: UUID
+}
+class SealUnavailable <<exception>> {
+  409 SELO_INDISPONIVEL
+}
+class SealPolicies <<utility>> {
+  {static} +parse(stored): Policy
+  {static} +evaluate(Policy, tier, pieces, occasions, styles, HypeLookup): Verdict
+  {static} +describe(Policy, tier): String
+}
+class Verdict <<record>> {
+  +matched: boolean
+  +pieceIds: List<UUID>
+  +why: String
+}
+class SchemeService {
+  +suggestSealsAfterSave(user, schemeId): Map
+  +update(user, id, form) · archive(user, id)
+}
+class CouponService {
+  +onCheck(CouponRightsCheck) <<AFTER_COMMIT>>
+}
+class CouponRightsCheck <<record · DomainEvents>> {
+  +userId: UUID
+}
+class AiEngine {
+  +local(userId, SEALBOND_MATCHER, inputs, work): AiOutcome
+}
+class NotificationService {
+  +notify(to, from, type, resource, id, title, body, data)
+}
+class Audit {
+  +log(actor, MUDANCA_ESTADO_VINCULO_SELO, resource, result, …)
+}
+}
 
 package "fai-domain · model" {
-class User {
-  +username: String
-  +profileType: ProfileType
-}
-class BrandProfile {
-  +owner: User
-  +brandName: String
-  +slug: String
-  +logoUrl: String
-  +approvalStatus: ApprovalStatus
-  +requiresSealReview: boolean
-  +sealConfidenceThreshold: BigDecimal
-}
-class Seal {
-  +owner: User
-  +name: String
-  +tier: SealTier
-  +status: SealStatus
-  +premium: boolean
-  +availableFrom: Instant
-  +availableUntil: Instant
-  +usageLimit: Integer
-  +usageCount: int
-}
-class SealBond {
+class SealBond <<seal_bonds>> {
   +scheme: Scheme
   +targetOwner: User
   +requestedBy: User
@@ -45,49 +121,62 @@ class SealBond {
   +linkedPieceIdsJson: String
   +confidence: BigDecimal
   +justification: String
-  +basis: SealBondBasis
-  +origin: SealBondOrigin
-  +status: SealBondStatus
+  +basis: SealBondBasis = BRAND_MATCH
+  +origin: SealBondOrigin = AI_SUGGESTION
+  +status: SealBondStatus = SUGGESTED
   +requiresReview: boolean
+  +imageRightsConsent: Boolean
   +aiInferenceId: UUID
-  +sealCode: String
-  +issuedAt: Instant
-  +expiresAt: Instant
+  +respondedAt, reviewedAt: Instant
   +reviewedBy: UUID
   +reviewNote: String
+  +sealCode: String
+  +issuedAt, expiresAt: Instant
+  +eraLabel: String
 }
-class Scheme {
+class Seal <<seals>> {
+  +owner: User
+  +name: String
+  +tier: SealTier = LOOK
+  +status: SealStatus = ACTIVE
+  +premium: boolean
+  +backgroundConfigJson: String — política + desenho
+  +availableFrom, availableUntil: Instant
+  +usageLimit: Integer
+  +usageCount: int
+  +autoIssued: boolean
+}
+class BrandProfile <<brand_profiles>> {
+  +owner: User
+  +brandName: String
+  +approvalStatus: ApprovalStatus
+  +requiresSealReview: boolean
+  +sealConfidenceThreshold: BigDecimal = 0.600
+}
+class Scheme <<schemes>> {
   +user: User
   +title: String
   +status: SchemeStatus
   +visibility: Visibility
+  +occasion, style: String
   +sealIdsJson: String
   +revalidationPending: boolean
 }
-class SchemeItem {
+class SchemeItem <<scheme_items>> {
   +scheme: Scheme
   +wardrobeItem: WardrobeItem
 }
-class WardrobeItem {
+class WardrobeItem <<wardrobe_items>> {
   +brandName: String
   +brand: Brand
   +brandProfile: BrandProfile
 }
-class Promotion {
-  +seal: Seal
-  +sealBond: SealBond
-  +type: PromotionType
-  +status: PromotionStatus
-  +ownerUserId: UUID
-}
-class AuditLog {
-  +actor: String
-  +acao: String
-  +recurso: String
-  +resultado: String
-  +metadataJson: String
+class User <<users>> {
+  +username: String
+  +profileType: ProfileType
 }
 }
+
 package "fai-domain · enums" {
 enum SealBondStatus {
   SUGGESTED
@@ -111,48 +200,51 @@ enum SealTier {
   PECA
   LOOK
 }
-enum ApprovalStatus {
-  PENDENTE
-  APROVADO
-  RECUSADO
-  SUSPENSO
+enum SealStatus {
+  ACTIVE
+  INACTIVE
 }
 }
-package "fai-application · service" {
-class SealService {
-  {static} MAX_SUGGESTIONS = 3
-  +preview(user, pieceIds, occasion, style): Map
-  +suggest(user, schemeId): Map
-  +accept(user, bondId, imageRightsConsent): Map
-  +linkManually(user, schemeId, targetOwnerId, consent): Map
-  +refuse(user, bondId): Map
-  +refuseAll(user, schemeId): int
-  +reviewQueue(user): List
-  +review(user, bondId, approve, reason): Map
-  +revoke(user, bondId, reason): Map
-  +revokeForScheme(schemeId, reason)
-  +mySeals(user): Map
-  +issuerMetrics(user): Map
-}
-}
-BrandProfile "1" --> "1" User : owner
-Seal "*" --> "1" User : owner
+
+SealController --> SealService
+SchemeController --> SchemeService
+SchemeService --> SealService : suggest · flagRevalidation\nrevokeForScheme
+SealService ..> Candidate : cria
+SealService ..> SealUnavailable : lança
+SealService --> SealPolicies
+SealPolicies ..> Verdict
+SealService --> AiEngine
+SealService --> NotificationService
+SealService --> Audit
+SealService ..> CouponRightsCheck : publica
+CouponService ..> CouponRightsCheck : escuta
+SealService ..> SealBond : grava
 SealBond "*" --> "1" Scheme
 SealBond "*" --> "1" User : targetOwner
 SealBond "*" --> "1" User : requestedBy
 SealBond "*" --> "0..1" Seal
-Scheme "*" --> "1" User
+Seal "*" --> "1" User : owner
+BrandProfile "0..1" --> "1" User : owner
+Scheme "*" --> "1" User : user
 SchemeItem "*" --> "1" Scheme
 SchemeItem "*" --> "1" WardrobeItem
 WardrobeItem "*" --> "0..1" BrandProfile
-Promotion "*" --> "0..1" Seal
-Promotion "*" --> "0..1" SealBond
 SealBond ..> SealBondStatus
 SealBond ..> SealBondOrigin
 SealBond ..> SealBondBasis
-Seal ..> SealTier
-BrandProfile ..> ApprovalStatus
-SealService ..> SealBond
-SealService ..> AuditLog : logBond()
-note bottom of SealBond : CA09 — único por par esquema × emissor\n(PENDING_REVIEW/APPROVED); CA16 — aiInferenceId + audit_log
+SealBond ..> SealTier
+Seal ..> SealStatus
+
+note bottom of SealBond
+  CA09: um PENDING_REVIEW/APPROVED por par look × emissor
+  (requireUnique → 409 VINCULO_EXISTENTE).
+  CA16: aiInferenceId + audit_log (MUDANCA_ESTADO_VINCULO_SELO).
+  Código BRD-… (marca) ou PRM-… (celebridade).
+end note
+note right of SealUnavailable
+  accept/linkManually usam
+  @Transactional(noRollbackFor =
+  SealUnavailable): o REJECTED com
+  o motivo fica gravado
+end note
 @enduml

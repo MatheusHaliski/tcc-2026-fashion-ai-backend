@@ -1,0 +1,74 @@
+@startuml RF19_Sequencia_Hype
+title RF19 — Interagir socialmente com esquemas e peças\nDiagrama de sequência — da interação ao HypeScore v2: DomainEvents.HypeSignal, HypeSignalRecorder, HypeIntegrityPolicy e HypeLiveRecalc
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+participant "SocialService\nSchemeService · WardrobeService" as S
+participant "Spring\n(@TransactionalEventListener\nAFTER_COMMIT)" as SP
+participant "WardrobeEventListeners\nFaiPointsService" as PT
+participant "HypeSignalRecorder" as HR
+participant "SideEffectRunner\n(REQUIRES_NEW)" as SE
+participant "HypeIntegrityPolicy" as IP
+participant "RenderCachePort\n(Redis ou memória)" as RC
+participant "HypeSignalDailyRepository" as SD
+participant "HypeLiveRecalc" as LR
+participant "HypeSnapshotService\n(HypeCalculator)" as HS
+participant "HypeCache" as HC
+database "MySQL" as DB
+
+S -> SP: publishEvent HypeSignal(signal, PIECE|SCHEME, entityId, actorId, ownerId)\nLIKE_CREATED · COMMENT_CREATED · SAVE_CREATED · FAVORITE_CREATED\n· SHARE_CREATED · PIECE_REMIXED · LOOK_REMIXED · LOOK_VIEWED · PIECE_VIEWED
+S -> SP: publishEvent InteractionReceived(ownerId, actorId, LIKE|COMMENT|REMIX, targetId)
+note over S: DNA não gera HypeSignal (só PIECE e SCHEME têm Hype).\nRollback da ação = nenhum evento é entregue.
+S -> DB: COMMIT da interação
+
+SP -> PT: onInteraction (consigo mesmo não pontua)
+PT -> DB: fai_points_ledger: LIKE_RECEIVED · COMMENT_RECEIVED · REMIX_RECEIVED
+
+SP -> HR: onSignal(HypeSignal)
+HR -> SE: run("HypeSignal", record)
+SE -> HR: record(s) em transação nova
+HR -> IP: weight(s, hoje em America/Sao_Paulo)
+alt actorId nulo (visitante) ou entityId nulo
+  IP --> HR: 0
+else ator = dono e o sinal não é PIECE_USED · PIECE_IN_LOOK · LOOK_WORN
+  IP --> HR: 0 (self-like farming)
+else
+  IP -> RC: get(hype:dedupe:{sinal}:{entidade}:{ator}:{dia})
+  alt já existe
+    IP --> HR: 0 (1 sinal por pessoa, item, tipo e dia)
+  else
+    IP -> RC: put(chave, TTL 26 h)
+    IP -> DB: users.createdAt do ator
+    IP --> HR: 1, ou newAccountWeight 0,5 se a conta tem menos de 7 dias
+  end
+end
+opt peso > 0
+  HR -> SD: increment(entity, signal, dia, peso)
+  SD -> DB: INSERT … ON DUPLICATE KEY UPDATE hype_signal_daily\n(event_count + 1, weighted_count + peso)
+end
+note right of SE: exceção aqui só vira log:\na curtida/comentário já foi confirmada
+
+SP -> LR: onSignal → markDirty()
+note over LR: também marca sujo em PieceCreated, PieceUpdated, PieceDeleted,\nSchemeSaved, PieceWorn, DailyLookRegistered e AvailabilityChanged
+
+loop @Scheduled a cada 30 s (live-recalc-check-ms)
+  LR -> LR: tick(): sujo e 120 s desde o último recálculo?
+  opt sim
+    LR -> HS: recalculate()
+    HS -> DB: hype_signal_daily (horizonte) · wardrobe_items · schemes · scheme_items
+    HS -> HS: HypeSignalSeries + HypeCalculator → score,\ndimensões, faixa e elegibilidade pública
+    HS -> DB: saveAll hype_scores · hype_score_snapshots;\napaga estado de itens arquivados
+    HS -> HC: bump() — nova geração do cache
+    HS ->> HS: HypeMilestone (AFTER_COMMIT → HypeMilestoneNotifier)
+    alt falha
+      LR -> LR: volta a marcar sujo (tenta na próxima janela)
+    end
+  end
+end
+note over HS: O job completo também roda sozinho (cron 0 20 */6 * * *).\nGET de Hype nunca recalcula: só lê hype_scores via HypeCache.
+@enduml

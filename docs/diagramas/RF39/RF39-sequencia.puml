@@ -18,14 +18,15 @@ participant "HighlightsController" as HC
 participant "FaiPointsService" as P
 participant "RoomService\n(RoomLayoutAccess)" as R
 participant "MediaService\n(MediaStoragePort)" as MS
+participant "NotificationService" as N
 database "MySQL" as DB
 == Criar o item (marca/celebridade aprovada) ==
 M -> FE: aba GUARDA_ROUPA do próprio perfil
 FE -> RC: GET /api/room-creator/options
 RC -> W: options(user)
 W -> W: creator(user) — Guard.requireApprovedInstitutional
-alt perfil não aprovado, pendente ou suspenso
-  W --> FE: 403
+alt perfil comum, pendente ou suspenso
+  W --> FE: 403 (PERFIL_EM_VALIDACAO se pendente;\nGuard.deny grava ACESSO_NEGADO_403 na auditoria)
 else
   W -> DB: SELECT seals WHERE owner AND status = ACTIVE
   W --> FE: {blocks (20), materials (22), colors, levels (7), identity, seals, currency}
@@ -55,6 +56,12 @@ P -> DB: SELECT room_catalog WHERE active · room_inventory do comprador
 P -> W: view(item, buyer) · availability · blocker · sellerActive
 P -> R: compatibleModules(user, item)
 P --> SFE: itens com availability, blocker, levelOk, affordable, owned
+opt provar antes de comprar
+  U -> SFE: Provar no meu quarto
+  SFE -> HC: POST /api/points/shop/{sku}/try-on
+  HC -> P: tryOn(user, sku, moduleId)
+  P --> SFE: {preview: true, module, finish} — nada é cobrado\n(409 ENCAIXE_INCOMPATIVEL se o módulo não serve)
+end
 U -> SFE: Comprar
 SFE -> HC: POST /api/points/shop/{sku}/purchase
 HC -> P: buy(user, sku)
@@ -69,6 +76,7 @@ else saldo menor que o preço
   P --> SFE: 409 SALDO_INSUFICIENTE
 else ok
   P -> DB: INSERT fai_points_ledger (SHOP_PURCHASE, −preço, countsLifetime = false)
+  P -> N: notify(FAI_POINTS, "−preço FAI Points · Compra na loja do quarto")
   P -> DB: UPDATE room_catalog.sold_count · INSERT room_inventory (serial)
   P --> SFE: {inventoryId, balance, level, serial}
 end

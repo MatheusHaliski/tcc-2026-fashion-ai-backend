@@ -1,5 +1,5 @@
 @startuml RF25_Criador_Componentes
-title RF25 — Criador de selo: componentes (frontend, backend, catálogo de modelos e armazenamento)
+title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de componentes — criador (4 passos), catálogo de modelos, detecção por política e Selos de Hype
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam component {
@@ -12,69 +12,116 @@ skinparam package {
   BorderColor #CBC6BE
   FontColor #2D2438
 }
+skinparam interface {
+  BackgroundColor #FFF5F8
+  BorderColor #F08DB1
+}
+
+
 package "Frontend (Next.js)" {
-  [brands/{slug}/page.tsx\n(aba Selos + Dialog)] as Page
-  [SealWizard\n(Modo · Dados · Arte · Revisar)] as Wizard
-  [SealPolicyEditor\n(regras + tags)] as Policy
-  [SealArt\n(tipo + galerias + textos da folha)] as Art
-  [SealCoreEditor\n(Elemento · Imagem · Texto)] as Core
-  [SealCreator\n(gerador circular / upload)] as Gen
-  [SealMedallion\n(render por tipo)] as Med
+  package "Perfil do emissor" {
+    component "brands/[slug]/page.tsx\n(abas Selos · Revisão · Métricas)" as Page
+    [SealWizard · SealArt · SealReview\n(seal-wizard.tsx)] as Wizard
+    [SealPolicyEditor\n(regras, tags, Hype; describePolicy)] as PolEd
+    [SealCoreEditor\n(Elemento · Imagem · Texto)] as CoreEd
+    [SealCreator\n(gerador circular / upload)] as Gen
+  }
+  package "Criadores e cards" {
+    [scheme-builder.tsx (RF5)\npiece-form.tsx (RF4)] as Criadores
+    [scheme-card.tsx · piece-card.tsx\n(SealSlot)] as Cards
+    [hype-seals.tsx\n(withHypeSeals · SealHypeStat ·\nHypeSealProgressList)] as HypeUi
+    [hype-analytics-drawer.tsx] as Drawer
+  }
+  [SealMedallion\n(seal-medallion.tsx: render por kind)] as Med
   [lib/seals/templates.ts\n+ templates.json] as Cat
-  [scheme-card / cards\n(selos nos looks e peças)] as Cards
+  [lib/hype/seals.ts\n(HYPE_SEAL_DESIGN → fai/03…)] as HypeLib
+  [lib/hype/use-hype.ts\n(useHypeSummary)] as UseHype
+  [lib/pieces/use-piece-seals.ts] as UsePS
 }
-package "Assets públicos" {
-  [public/selos/fai/*.webp\n(13 medalhões)] as FAI
-  [public/selos/circular/*.webp\n(44 anéis, centro livre)] as CIRC
-  [public/selos/folha/*.webp\n(33 folhas + emblemas)] as FOL
+package "Assets e geração (scripts/selos)" {
+  [public/selos/{fai,circular,folha}\n13 · 44 · 33 modelos] as Assets
+  [build_templates.py · build_folhas.mjs] as Build
 }
-package "Geração de modelos (scripts/selos)" {
-  [build_templates.py\n(OpenCV: recorte circular,\ndisco central, cor dominante)] as BT
-  [build_folhas.mjs\n(Chromium: camadas, slots\nde texto e emblema)] as BF
+package "fai-web" {
+  [SealController\n/api/seals · /draft · /uploads · /design-catalog\n/api/seal-suggestions/* · /api/seal-bonds/*\n/api/pieces/seals] as Ctl
+  [HypeController\n/api/hype/summaries · /pieces/{id} · /looks/{id}] as HCtl
 }
-package "Backend (Spring Boot)" {
-  [SealController\n/api/seals, /draft, /uploads] as Ctl
+package "fai-application" {
   [SealService] as Svc
-  [SealDrafts\n(IA local)] as Drafts
-  [SealDesigns\n(validação do desenho)] as Designs
+  [SealDesignService] as Up
+  [SealDrafts\n(IA local do "Com IA")] as Drafts
+  [SealDesigns\n(+ seals/templates.json)] as Designs
   [SealPolicies] as Pol
-  [SealDesignService\n(upload selo/núcleo)] as Up
   [OwnMedia] as Own
-  [seals/templates.json\n(ids + cores)] as BCat
+  [Guard · Audit · NotificationService] as Sec
+  [AiEngine\n(local SEALBOND_MATCHER)] as Ai
+  [HypeQueryService] as HQ
+  [HypeSeals\n(Selos de Hype derivados)] as HS
+  [HypeCache] as HC
+  [CouponService\n(onCheck AFTER_COMMIT)] as Coupon
+  interface "MediaStoragePort" as MSP <<port>>
+  interface "RenderCachePort" as RCP <<port>>
 }
-database "MySQL\nseals, seal_bonds" as DB
-database "Storage S3/local\nusers/{id}/seals" as ST
+package "fai-domain" {
+  [Seal · SealBond · HypeScoreCurrent\nSealRepository · SealBondRepository\nHypeScoreCurrentRepository\nWardrobeItemRepository\nBrand/CelebrityProfileRepository] as Dom
+}
+package "fai-infrastructure" {
+  database "MySQL\nseals · seal_bonds · wardrobe_items\nhype_scores · ai_inference_log · audit_log" as DB
+  [S3MediaStorageAdapter /\nLocalFileMediaStorage\nusers/{id}/seals/*.png] as ST
+  [RedisAdapters.redisRenderCache /\nInMemoryRenderCache] as Cache
+}
 
 Page --> Wizard
-Wizard --> Policy
-Wizard --> Art
-Art --> Core
-Art --> Gen
-Gen --> Core
-Art --> Med
+Wizard --> PolEd
+Wizard --> CoreEd
+Wizard --> Gen
 Wizard --> Med
+Page --> HypeUi : "Hype do selo"
 Cards --> Med
+Cards --> HypeUi
+Cards --> UseHype
+Cards --> UsePS
+Criadores --> HypeUi : Hype da sugestão
+Drawer --> HypeUi
+HypeUi --> HypeLib
+HypeUi --> Med
 Med --> Cat
-Cat ..> FAI
-Cat ..> CIRC
-Cat ..> FOL
-BT --> FAI
-BT --> CIRC
-BF --> FOL
-BT --> Cat
-BF --> Cat
-BT --> BCat
-BF --> BCat
-Wizard --> Ctl : POST /api/seals/draft\nPOST/PUT /api/seals
-Core --> Ctl : POST /api/seals/uploads?purpose=core
+Cat ..> Assets
+Build --> Assets
+Build --> Cat
+Build --> Designs : seals/templates.json
+
+Wizard --> Ctl : POST /api/seals/draft\nPOST·PUT /api/seals
+CoreEd --> Ctl : POST /api/seals/uploads?purpose=core
+Gen --> Ctl : POST /api/seals/uploads
+Page --> Ctl : GET /api/users/{ownerId}/seals\nPOST /api/seal-bonds/{id}/review
+Criadores --> Ctl : POST /api/seal-suggestions/preview(-piece)\nPOST /api/schemes/{id}/seal-bonds
+UsePS --> Ctl : GET /api/pieces/seals?ids=
+UseHype --> HCtl : GET /api/hype/summaries
+Drawer --> HCtl : GET /api/hype/{pieces|looks}/{id}
+
 Ctl --> Svc
 Ctl --> Up
+HCtl --> HQ
 Svc --> Drafts
 Svc --> Designs
 Svc --> Pol
 Svc --> Own
+Svc --> Sec
+Svc --> Ai
+Svc ..> HQ : currentOf (critério de Hype,\nordem e "Hype do selo")
+Svc --> HC
+Svc ..> Coupon : CouponRightsCheck
+HQ --> HS : summary().seals ·\ndetail().sealProgress
 Drafts --> Designs
-Designs --> BCat
-Svc --> DB
-Up --> ST
+Up --> Designs
+Up --> MSP
+Own --> MSP
+HC --> RCP
+Svc --> Dom
+HQ --> Dom
+Dom --> DB
+Ai --> DB
+MSP <|.. ST
+RCP <|.. Cache
 @enduml

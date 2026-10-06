@@ -1,0 +1,69 @@
+@startuml RF25_Criador_Estados_Selo
+!pragma layout smetana
+title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de máquina de estados — selo salvo (seals.status), vínculo selo × look/peça (seal_bonds.status) e Selo de Hype (derivado)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+state "Selo (Seal.status: SealStatus)" as SeloVida {
+  [*] --> ACTIVE : POST /api/seals (criador)\nou ensureDefaultSeals na aprovação do perfil
+  state ACTIVE {
+    state "Aguardando janela" as Aguardando
+    state "Disponível" as Disponivel
+    state "Esgotado" as Esgotado
+    state "Fora do período" as Expirado
+    [*] --> Aguardando : availableFrom > agora
+    [*] --> Disponivel : sem início ou já começou
+    Aguardando --> Disponivel : chega availableFrom
+    Disponivel --> Esgotado : usageCount = usageLimit\n(issue() soma 1)
+    Disponivel --> Expirado : passa availableUntil
+    Esgotado --> Disponivel : PUT aumenta o limite
+    Expirado --> Disponivel : PUT estende a validade
+  }
+  ACTIVE --> INACTIVE : "Desativar"\nPUT /api/seals/{id} {status: INACTIVE}
+  INACTIVE --> ACTIVE : "Ativar"\nPUT /api/seals/{id} {status: ACTIVE}
+  note bottom of Disponivel : SealService.available(seal, agora):\nsó aqui o selo entra na detecção por\npolítica e pode ser emitido; nos demais,\nunavailableReason() explica o motivo
+}
+
+state "Vínculo (SealBond.status: SealBondStatus)" as Vinculo {
+  [*] --> SUGGESTED : GET /api/schemes/{id}/seal-suggestions\n(origin AI_SUGGESTION, até 3)
+  [*] --> EDITED : POST /api/schemes/{id}/seal-bonds\n(origin MANUAL)
+  SUGGESTED --> ACCEPTED : POST /api/seal-bonds/{id}/accept
+  REFUSED --> ACCEPTED : aceita depois ("Meus selos")
+  SUGGESTED --> REFUSED : POST .../refuse ou\n/api/schemes/{id}/seal-bonds/refuse-all
+  state Roteamento <<choice>>
+  ACCEPTED --> Roteamento : route()
+  EDITED --> Roteamento : route()
+  Roteamento --> REJECTED : 409 SELO_INDISPONIVEL\n(sem selo, inativo, fora da janela, esgotado)
+  Roteamento --> PENDING_REVIEW : celebridade (sempre) ou marca com\nrequiresSealReview → SEAL_BOND_REVIEW
+  Roteamento --> APPROVED : issue(): marca sem revisão
+  PENDING_REVIEW --> APPROVED : POST /api/seal-bonds/{id}/review\n{approve: true} → issue()
+  PENDING_REVIEW --> REJECTED : review {approve: false, reason}\n(sem motivo: 400 MOTIVO_OBRIGATORIO)
+  APPROVED --> REVOKED : POST /api/seal-bonds/{id}/revoke ·\nlook excluído ou tornado privado ·\nrevalidação recusada
+  APPROVED --> APPROVED : look mudou de peças → revalidationPending;\nemissor revalida (review approve)
+  SUGGESTED --> REVOKED : look excluído ou privado
+  PENDING_REVIEW --> REVOKED : look excluído ou privado
+  REJECTED --> [*]
+  REVOKED --> [*]
+  note right of APPROVED : issue(): sealCode (BRD-/PRM-), issuedAt,\nexpiresAt = availableUntil ou +365 dias,\nseal.usageCount + 1, SEAL_GRANTED e\nCouponRightsCheck (AFTER_COMMIT).\nVencido (expiresAt < agora): "EXPIRADO"\nem "Meus selos", sem mudar o status
+  note left of Roteamento : 400 CONSENTIMENTO_IMAGEM (celebridade)\ne 409 VINCULO_EXISTENTE desfazem a\ntransação: o vínculo fica como estava
+}
+
+state "Selo de Hype (HypeSeals.of — nada é salvo)" as SeloHype {
+  state "Sem selo" as SemHype
+  state "Conquistado" as ComHype
+  [*] --> SemHype
+  SemHype --> ComHype : job do Hype grava hype_scores com\nAVAILABLE + publicEligible e a regra\nVIRAL · TRENDING · EMERGING · CLASSIC · RARE
+  ComHype --> SemHype : novo cálculo deixa de atender,\nitem fica privado ou INSUFFICIENT_DATA
+  note bottom of ComHype : card mostra até 2 (prioridade\nVIRAL > TRENDING > EMERGING > CLASSIC > RARE);\nmedalhão Padrão FashionAI fixo por código
+}
+@enduml

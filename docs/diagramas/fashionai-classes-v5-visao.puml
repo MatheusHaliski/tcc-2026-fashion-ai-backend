@@ -1,0 +1,362 @@
+@startuml FashionAI_Classes_v5_Visao
+title FashionAI — Visão global do domínio (v5)\nDiagrama de classes — Captura adaptativa, imagem canônica e identificação da peça (RF4) · entidades JPA de fai-domain, Flyway V1–V42
+!pragma layout smetana
+set separator none
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam note {
+  BackgroundColor #FFFBEA
+  BorderColor #B8A86A
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "Captura e imagens da peça (V29)" {
+class CaptureSession << (V,#C9B8F0) capture_sessions >> {
+  +userId: UUID
+  +draftJobId: UUID
+  +category: String
+  +subcategory: String
+  +primaryView: CaptureView
+  +status: CaptureSessionStatus
+  +identifyModel: boolean
+  +complementaryCount: int
+  +consecutiveSkips: int
+  +pieceId: UUID
+  +completedAt: Instant
+  .. +4 campos ..
+}
+class CaptureRequest << (V,#C9B8F0) capture_requests >> {
+  +sessionId: UUID
+  +viewType: CaptureView
+  +purpose: CapturePurpose
+  +need: CaptureNeed
+  +reasonCode: String
+  +expectedGain: BigDecimal
+  +status: CaptureRequestStatus
+  +fulfilledImageId: UUID
+  +confidenceBefore: BigDecimal
+  +confidenceAfter: BigDecimal
+  .. +2 campos ..
+}
+class PieceImage << (V,#C9B8F0) piece_images >> {
+  +sessionId: UUID
+  +pieceId: UUID
+  +userId: UUID
+  +imageType: PieceImageType
+  +viewType: CaptureView
+  +captureRole: CaptureRole
+  +capturePurpose: CapturePurpose
+  +captureSource: CaptureSource
+  +storageKey: String
+  +sha256: String
+  +qualityScore: Integer
+  +derivedFromId: UUID
+  +processingStatus: PieceImageStatus
+  +modelVersion: String
+  +superseded: boolean
+  .. +13 campos ..
+}
+class QualityScore << (A,#B8DCC0) quality_scores >> {
+  +wardrobeItemId: UUID
+  +pipelineJobId: UUID
+  +overall: BigDecimal
+  +accepted: boolean
+  +acceptanceThreshold: BigDecimal
+  +issuesJson: String
+  +recommendationsJson: String
+  .. +2 campos ..
+}
+}
+package "Identificação (marca, linha, modelo)" {
+class BrandPrediction << (V,#C9B8F0) brand_predictions >> {
+  +sessionId: UUID
+  +pieceId: UUID
+  +level: IdentificationLevel
+  +value: String
+  +confidence: BigDecimal
+  +evidenceJson: String
+  +alternativesJson: String
+  +resolverVersion: String
+}
+class GarmentLandmark << (V,#C9B8F0) garment_landmarks >> {
+  +imageId: UUID
+  +name: String
+  +x: BigDecimal
+  +y: BigDecimal
+  +confidence: BigDecimal
+  +visible: boolean
+  +modelVersion: String
+}
+class GarmentEmbedding << (V,#C9B8F0) garment_embeddings >> {
+  +imageId: UUID
+  +userId: UUID
+  +modelVersion: String
+  +dimensions: int
+  +vectorJson: String
+  +labelSource: String
+  .. +3 campos ..
+}
+class KbBrandSignature << (V,#C9B8F0) kb_brand_signatures >> {
+  +brandName: String
+  +brandSlug: String
+  +signalType: String
+  +name: String
+  +ocrTokens: String
+  +weight: BigDecimal
+  .. +3 campos ..
+}
+class KbProductLine << (V,#C9B8F0) kb_product_lines >> {
+  +brandSlug: String
+  +name: String
+  +categories: String
+  +ocrTokens: String
+}
+class KbProductModel << (V,#C9B8F0) kb_product_models >> {
+  +productLineId: UUID
+  +brandSlug: String
+  +name: String
+  +subcategory: String
+  +ocrTokens: String
+  +codePattern: String
+  .. +2 campos ..
+}
+}
+package "Revisão, dataset e modelos" {
+class AiReviewItem << (V,#C9B8F0) ai_review_items >> {
+  +kind: AiReviewKind
+  +status: AiReviewStatus
+  +sessionId: UUID
+  +pieceId: UUID
+  +imageId: UUID
+  +userId: UUID
+  +field: String
+  +aiValue: String
+  +aiConfidence: BigDecimal
+  +userValue: String
+  +adminDecision: AiReviewDecision
+  +finalValue: String
+  +reviewerId: UUID
+  +addToTraining: boolean
+  .. +4 campos ..
+}
+class TrainingCandidate << (V,#C9B8F0) training_candidates >> {
+  +imageId: UUID
+  +userId: UUID
+  +sessionId: UUID
+  +reviewItemId: UUID
+  +dataset: VisionDataset
+  +status: TrainingCandidateStatus
+  +sourceId: UUID
+  +license: String
+  +consentGrantedAt: Instant
+  +exportedAt: Instant
+  .. +3 campos ..
+}
+class DatasetSource << (V,#C9B8F0) dataset_sources >> {
+  +code: String
+  +name: String
+  +sourceType: DatasetSourceType
+  +license: String
+  +usagePermission: DatasetUsage
+  +commercialUse: boolean
+  +consentRequired: boolean
+  .. +1 campos ..
+}
+class ModelRegistryEntry << (V,#C9B8F0) model_registry >> {
+  +name: String
+  +modelVersion: String
+  +task: String
+  +provider: String
+  +datasetVersion: String
+  +deploymentStatus: ModelDeploymentStatus
+  +artifactUri: String
+  .. +3 campos ..
+}
+class ModelInference << (V,#C9B8F0) model_inferences >> {
+  +modelName: String
+  +modelVersion: String
+  +task: String
+  +sessionId: UUID
+  +imageId: UUID
+  +latencyMs: Integer
+  +confidence: BigDecimal
+  +aiInferenceId: UUID
+  .. +1 campos ..
+}
+}
+package "Enums-chave (domain/model/enums)" {
+enum CaptureSessionStatus {
+  ANALYZING
+  AWAITING_CAPTURE
+  READY_FOR_REVIEW
+  COMPLETED
+  ABANDONED
+}
+enum CaptureRequestStatus {
+  PENDING
+  FULFILLED
+  SKIPPED
+  SUPERSEDED
+}
+enum CaptureView {
+  FRONT_VIEW
+  BACK_VIEW
+  LEFT_SIDE
+  RIGHT_SIDE
+  THREE_QUARTER
+  TOP_VIEW
+  WATCH_FACE
+  .. +15 valores ..
+}
+enum CapturePurpose {
+  PRIMARY_IDENTIFICATION
+  BRAND_DISAMBIGUATION
+  MODEL_IDENTIFICATION
+  MATERIAL_IDENTIFICATION
+  PATTERN_IDENTIFICATION
+  QUALITY_RETAKE
+  COVERAGE_COMPLETION
+  DETAIL_RECORD
+}
+enum CaptureNeed {
+  STRONGLY_RECOMMENDED
+  RECOMMENDED
+  OPTIONAL
+}
+enum CaptureRole {
+  PRIMARY
+  COMPLEMENTARY
+}
+enum CaptureSource {
+  CAMERA
+  GALLERY
+  UPLOAD
+  IMPORT
+}
+enum PieceImageType {
+  ORIGINAL
+  CANONICAL
+  DETAIL
+  LOGO_DETAIL
+  TEXTURE_DETAIL
+  SEGMENTATION_MASK
+}
+enum PieceImageStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  NEEDS_REVIEW
+  FAILED
+}
+enum IdentificationLevel {
+  CATEGORY
+  SUBCATEGORY
+  BRAND
+  PRODUCT_LINE
+  MODEL
+  VARIANT
+}
+enum AiReviewKind {
+  CORRECTION
+  LOW_CONFIDENCE
+}
+enum AiReviewStatus {
+  PENDING_REVIEW
+  CONFIRMED
+  DISMISSED
+}
+enum AiReviewDecision {
+  ACCEPT_USER
+  ACCEPT_AI
+  OVERRIDE
+  DISMISS
+}
+enum TrainingCandidateStatus {
+  CANDIDATE
+  APPROVED
+  EXPORTED
+  REJECTED
+  REVOKED
+}
+enum VisionDataset {
+  GARMENT_VISION
+  HARD_EXAMPLES
+}
+enum DatasetSourceType {
+  OWN
+  USER_CONSENTED
+  LICENSED
+  ACADEMIC
+  BRAND_PARTNER
+  MANUFACTURER
+  AUTHORIZED_CATALOG
+  INTERNAL
+}
+enum DatasetUsage {
+  TRAINING
+  EVALUATION_ONLY
+  DISPLAY_ONLY
+}
+enum ModelDeploymentStatus {
+  CANDIDATE
+  SHADOW
+  CANARY
+  PRODUCTION
+  RETIRED
+}
+}
+package "Referências a outras áreas" #FAFAFA {
+class User <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class WardrobeItem <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class PipelineJob <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+class AiInferenceLog <<outra área>> #FFFFFF;line.dashed;line:9A97A0 {
+}
+}
+
+' --- associações JPA (geradas do código) ---
+' --- referências por id, sem FK JPA ---
+CaptureSession ..> User : userId
+CaptureSession ..> WardrobeItem : pieceId
+CaptureSession ..> PipelineJob : draftJobId
+CaptureRequest ..> CaptureSession : sessionId
+CaptureRequest ..> PieceImage : fulfilledImageId
+PieceImage ..> CaptureSession : sessionId
+PieceImage ..> WardrobeItem : pieceId
+PieceImage ..> PieceImage : derivedFromId
+QualityScore ..> WardrobeItem : wardrobeItemId
+QualityScore ..> PipelineJob : pipelineJobId
+BrandPrediction ..> CaptureSession : sessionId
+GarmentLandmark ..> PieceImage : imageId
+GarmentEmbedding ..> PieceImage : imageId
+KbProductModel ..> KbProductLine : productLineId
+AiReviewItem ..> CaptureSession : sessionId
+AiReviewItem ..> PieceImage : imageId
+TrainingCandidate ..> PieceImage : imageId
+TrainingCandidate ..> AiReviewItem : reviewItemId
+TrainingCandidate ..> DatasetSource : sourceId
+ModelInference ..> PieceImage : imageId
+ModelInference ..> AiInferenceLog : aiInferenceId
+CaptureSession -[hidden]-> CaptureSessionStatus
+note "Uso no código atual: QualityScore (WardrobeService),\nKb* (ProductKnowledgeBase), PieceImage e GarmentEmbedding\n(LensService). As demais tabelas de V29 têm entidade e\nrepositório, mas nenhum serviço as grava ainda;\nAdaptiveCaptureEngine é função pura, sem endpoint." as N_USO
+N_USO .. CaptureSession
+note "ORIGINAL nunca é sobrescrito:\nos derivados apontam derivedFromId." as N_ORIG
+N_ORIG .. PieceImage
+legend right
+  <b>Letra do ícone</b>
+  V = estende VersionedAuditableEntity (id UUID, createdAt/updatedAt, createdBy/lastModifiedBy, @Version)
+  A = estende AuditableEntity (id UUID e auditoria, sem @Version)
+  S = @Entity sem superclasse (id e datas próprios) · M = @Embeddable (colunas embutidas na tabela dona)
+  E = enum
+  ⟶ seta cheia = associação JPA (@ManyToOne/@OneToOne) · seta tracejada = id guardado sem FK JPA
+  <<outra área>> = classe detalhada em outro diagrama v5
+endlegend
+@enduml

@@ -1,12 +1,17 @@
 @startuml RF41_MaquinaDeEstados_Nivel
+title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de máquina de estados — nível do quarto alimentado por jogos e criações (FaiPointsService.Level)
 !pragma layout smetana
-title RF41 — FaiPointsService.Level: nível pelos pontos vitalícios (nunca diminui)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
   ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
 state "ESTREIA (0)" as Estreia
 state "STUDIO (300)" as Studio
@@ -15,14 +20,33 @@ state "CLOSET (2000)" as Closet
 state "ATELIER (4000)" as Atelier
 state "PENTHOUSE (7500)" as Penthouse
 state "MAISON (12000)" as Maison
-[*] --> Estreia : conta criada\n(room_layouts.level = ESTREIA)
-Estreia --> Studio : award() leva lifetime >= 300
-Studio --> Loft : lifetime >= 900
-Loft --> Closet : lifetime >= 2000
-Closet --> Atelier : lifetime >= 4000
-Atelier --> Penthouse : lifetime >= 7500
-Penthouse --> Maison : lifetime >= 12000
-Estreia --> Estreia : award() sem cruzar limiar\n(jogo, esquema, peça, 3D)
-note right of Studio : cada subida: RoomService.setLevel\n+ notificação ROOM_LEVEL_UP
-note right of Maison : lifetime = soma dos deltas > 0 com countsLifetime;\ngastar na loja (POST /api/points/shop/{sku}/purchase)\nreduz o saldo, não o nível
+
+[*] --> Estreia : conta nova (lifetime = 0)
+Estreia --> Studio : award() de jogo ou criação\nleva lifetime ≥ 300
+Studio --> Loft : lifetime ≥ 900
+Loft --> Closet : lifetime ≥ 2000
+Closet --> Atelier : lifetime ≥ 4000
+Atelier --> Penthouse : lifetime ≥ 7500
+Penthouse --> Maison : lifetime ≥ 12000
+Estreia --> Estreia : award() sem cruzar o limiar\nou não pago (já pontuado / teto)
+
+note right of Estreia
+  Tudo do RF41 entra com countsLifetime = true:
+  • jogos: GAME_PLAYED +5, GAME_WON +10, FLAIR_QUEST +10
+    (no máximo 100 pts/dia somando os três tetos)
+  • Desafio concluído: CHALLENGE_COMPLETED (valor do desafio)
+  • criações: SCHEME_CREATED +40 (até 200/dia),
+    PIECE_CATALOGED +25 (até 250/dia), PIECE_COMPLETED +10,
+    PIECE_3D +15 (1× por peça)
+end note
+note right of Studio
+  Em cada subida: RoomLayoutAccess.setLevel
+  (room_layouts.level + módulos novos) e
+  notificação ROOM_LEVEL_UP — ciclo completo no RF30.
+end note
+note right of Maison
+  O nível nunca cai: FLAIR Coins são outra moeda
+  e não contam; a loja do quarto debita o saldo
+  com countsLifetime = false.
+end note
 @enduml

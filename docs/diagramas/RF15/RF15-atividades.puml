@@ -1,5 +1,5 @@
 @startuml RF15_Atividades
-title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF15 — Editar uma fotografia de uma peça de roupa através de um Editor Canvas Interativo 2D\nDiagrama de atividades — o que existe hoje: "Editar imagem" (EditImageDialog) e o Editor Canvas 2D (PhotoEditor)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,66 +23,91 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Pessoa|
+
+|Pessoa (dona)|
+|Frontend|
+|API + Serviço|
+|Banco/Storage/IA|
+|Pessoa (dona)|
 start
-:Abre a foto de uma peça já cadastrada (RF4):\nem "Minhas Fotos" (/photos) ou no card expandido da peça;
-:Toca em "Editar" → abre o Editor Canvas 2D (PhotoEditor);
-|Frontend (photo-editor.tsx)|
-if (Veio de "Minhas Fotos"?) then (sim)
-  :GET /api/photos/{id}/file (original, só o dono);
-else (não)
-  :Baixa originalImageUrl / imageUrl da peça;
-endif
-:Desenha o passo inicial no <canvas>\n(histórico: fonte, giro, recorte, brilho, contraste);
-|Pessoa|
-repeat
-  :Escolhe uma ferramenta;
-  if (Ferramenta) then (recortar)
-    |Frontend (photo-editor.tsx)|
-    :Arrasta a área (>= 3% da largura) e aplica o recorte;
-  elseif (girar 90°)
-    :Gira o canvas e o recorte acumulado;
-  elseif (brilho / contraste)
-    :Aplica filtro CSS 2D e registra o passo;
-  else (remover fundo)
-    :POST /api/photos/background-removal (PNG atual);
-    |Backend (PhotoService)|
-    :guard.requireCanCreate → wardrobe.governedFlatLay\n(AiEngine FLAT_LAY_STANDARDIZER: cota diária e teto de gasto);
-    if (Fundo removido?) then (sim)
-      :Devolve PNG base64 + provedor (remove.bg / local);
-    else (não)
-      :ok=false — mensagem; demais ferramentas seguem (CA04);
-    endif
-    note right: ver RF4 (FlatLayPipeline) e RF24 (motor de IA)
+if (De onde abre?) then (página da peça)
+  :Peça ampliada → "Editar imagem" (só a dona;\nescondido se a peça só tem a ilustração);
+  |Frontend|
+  :EditImageDialog: ApprovalPanel + seções\nEnquadramento · Recorte · Original × processado · Logo;
+  :Outras ações do diálogo (detalhadas no RF4):\nPOST /api/pieces/{id}/studio?backdrop (versão de estúdio),\nPOST …/studio/approve · DELETE …/studio/pending,\nPUT /api/pieces/{id}/image (substituir foto);
+  |Pessoa (dona)|
+  if ("Ajustar manual" ou "Corrigir recorte"?) then (não)
+    stop
   endif
-  |Frontend (photo-editor.tsx)|
-  :Empilha o passo (desfazer/refazer, Ctrl+Z / Ctrl+Shift+Z);
-  |Pessoa|
-repeat while (Continua editando?) is (sim)
-->não;
-if (Fechar com edições pendentes?) then (sim)
-  :Confirma descarte (CA05);
+  |Frontend|
+  :Fecha o diálogo e abre PhotoEditor(pieceId,\nimageUrl = originalImageUrl ?? imageUrl);
+else (Minhas Fotos, RF12)
+  |Frontend|
+  :PhotoEditor(photoId) — carrega a original por\nGET /api/photos/{id}/file (só a dona);
+endif
+
+|Frontend|
+if (Imagem carregou?) then (não)
+  #FFE3E3:Toast de erro e o editor fecha;
   stop
-else (não)
 endif
-:Toca em "Salvar";
-|Frontend (photo-editor.tsx)|
-:canvas.toBlob("image/png");
-if (Foto de "Minhas Fotos" (photoId)?) then (sim)
-  :POST /api/photos/{id}/edits (multipart file);
-  |Backend (PhotoService)|
-  if (Foto é a imagem de uma peça ativa do dono?) then (sim)
-    :WardrobeService.replaceImage: nova imagem + thumb,\nregistra Photo EDITOR, mantém o selo de IA;
-  else (não)
-    :Grava cópia editada (Photo origin=EDITOR,\neditedFromPhotoId, ModerationStatus APPROVED);
+:Passo 0 "Original" no histórico; desenha no <canvas>;
+repeat
+  |Pessoa (dona)|
+  :Escolhe uma ferramenta;
+  |Frontend|
+  if (Remover fundo?) then (não)
+    :Recortar (arrasto ≥ 3% por lado) · girar 90°\n(rotateRect leva o recorte junto) · brilho e\ncontraste 40–180% (vira passo ao soltar);
+  else (sim)
+    :POST /api/photos/background-removal (PNG do passo atual);
+    |API + Serviço|
+    :PhotoService.removeBackground: requireCanCreate →\nWardrobeService.governedFlatLay (AiEngine\nFLAT_LAY_STANDARDIZER: cota diária e teto de gasto);
+    |Banco/Storage/IA|
+    :FlatLayPipeline: rembg → remove.bg → recorte local;
+    |Frontend|
+    if (ok?) then (sim)
+      :Novo passo com o PNG sem fundo\n+ toast com o provedor;
+    else (não)
+      :Aviso; as demais ferramentas seguem (CA04);
+    endif
   endif
-  note right: CA02 — a original é preservada em "Minhas Fotos"
-else (não)
-  :PUT /api/pieces/{pieceId}/image (multipart file);
-  |Backend (WardrobeService)|
-  :replaceImage: substitui imageUrl/thumbnailUrl da peça,\nphotoProcessingStatus = COMPLETED;
+  :Empilha o passo (desfazer/refazer: botões,\nCtrl/⌘+Z e Ctrl/⌘+Shift+Z; histórico clicável;\n"Voltar à original");
+  |Pessoa (dona)|
+repeat while (Continua editando?) is (sim) not (não)
+if (Fecha com edições não salvas?) then (sim)
+  |Frontend|
+  :Diálogo "Sair sem salvar?" (CA05);
+  if (Descartar?) then (sim)
+    stop
+  endif
 endif
-|Frontend (photo-editor.tsx)|
-:Mensagem de sucesso e recarrega a galeria / o card;
+|Frontend|
+:Salvar → canvas.toBlob("image/png");
+if (Abriu por photoId?) then (sim)
+  :POST /api/photos/{id}/edits (file);
+  |API + Serviço|
+  :PhotoService.saveEdit: owned + requireCanCreate;
+  if (Foto de peça ativa da dona?) then (sim)
+    :WardrobeService.replaceImage(editedFromPhotoId = id)\n— mantém o selo de IA da peça;
+  else (não)
+    :Nova Photo EDITOR (APPROVED, editedFromPhotoId);\na peça não muda;
+  endif
+else (abriu por pieceId)
+  :PUT /api/pieces/{pieceId}/image (file);
+  |API + Serviço|
+  :WardrobeService.replaceImage(editedFromPhotoId = null)\n— foto nova tira o selo de IA;
+endif
+|Banco/Storage/IA|
+:ImageOps.requireAcceptedImage (10 MB · JPG/PNG/WebP);\nedit-*.png + miniatura; Photo EDITOR registrada;\nno caminho replaceImage, image_url trocada NA HORA\n(sem versão pendente);
+:replaceImage: imagem com transparência e peça com estúdio →\nestúdio refeito "aguardando aprovação";\nimagem opaca → estúdio removido; audit EDICAO_PECA;
+note right
+  Destrutivo: grava um PNG "assado", sem receita,
+  sem classe de fidelidade e sem medir a cor;
+  o histórico some ao fechar. A original continua
+  em Minhas Fotos (CA02).
+end note
+|Frontend|
+:Toast de sucesso; recarrega a peça ou a galeria;
+|Pessoa (dona)|
 stop
 @enduml

@@ -1,6 +1,6 @@
 @startuml RF16_MaquinaDeEstados_Job
 !pragma layout smetana
-title RF16 — PipelineJob THREE_D_GENERATION: ciclo do job 3D da peça (e model3dStatus da peça)
+title RF16 — Implementar geração de imagem 3D das peças do guarda-roupa utilizando serviços de API externas\nDiagrama de máquina de estados — job THREE_D_GENERATION (PipelineJobStatus) e model3dStatus da peça (QUEUED/PROCESSING/COMPLETED/FAILED)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,23 +8,42 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-state "PENDING\n(peça: QUEUED)" as Pend
-state "RUNNING\n(peça: PROCESSING)" as Run {
-  state "provedor externo\n(externalJobId)" as Ext
-  state "relevo local\n(ReliefModelGenerator)" as Rel
-  [*] --> Ext : Meshy submit
-  [*] --> Rel : sem chave / cota esgotada
-  Ext --> Rel : FAILED ou TEMPO_LIMITE (fallback)
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
 }
-state "COMPLETED\n(peça: COMPLETED)" as Done
-state "FAILED\n(peça: FAILED)" as Fail
-[*] --> Pend : POST /api/pieces/{id}/model3d
-Pend --> Run : tick() → start()
-Pend --> Fail : PECA_REMOVIDA / SEM_ARQUIVO
-Run --> Done : GLB salvo no storage\n(notificação + FAI Points +15)
-Run --> Fail : PROVEDOR_FALHOU / TEMPO_LIMITE / ERRO_INTERNO
-Fail --> Pend : POST /api/pieces/{id}/model3d\n(1º reprocessamento grátis)
+
+state "Sem modelo\n(model3dStatus = null)" as Nada
+state "PENDING\n(peça: QUEUED · «Na fila»)" as Pend
+state "RUNNING\n(peça: PROCESSING · «Gerando»)" as Run {
+  state "Tarefa no Meshy\n(external_job_id; progresso real 10–95%)" as Ext
+  state "Gerando no ato\n(Stability SF3D ou relevo local)" as Sync
+  [*] --> Ext : Meshy aceitou a tarefa
+  [*] --> Sync : sem Meshy (chave/cota)
+  Ext --> Sync : FAILED ou > 10 min →\nplano B ReliefModelGenerator\n("meshy→local-relevo")
+}
+state "COMPLETED\n(peça: COMPLETED · model3d_url = .glb)" as Done
+state "FAILED\n(peça: FAILED · errorCode + mensagem)" as Fail
+
+[*] --> Nada
+Nada --> Pend : POST /api/pieces/{id}/model3d · POST /api/schemes/{id}/model3d\n(foto real; recurso ligado) — 409 RECURSO_DESLIGADO · 422 SEM_FOTO
+Pend --> Pend : novo pedido em QUEUED/PROCESSING\ndevolve o mesmo job (CA04)
+Pend --> Run : tick() → start() (@Scheduled 5 s)\nattempts + 1
+Pend --> Fail : PECA_REMOVIDA · SEM_ARQUIVO
+Run --> Done : GLB válido no storage → notificação\nAI_JOB_FINISHED + FAI Points PIECE_3D (+15)
+Run --> Fail : PROVEDOR_FALHOU · TEMPO_LIMITE\n(e o relevo também falhou) · ERRO_INTERNO
+Fail --> Pend : POST /api/pieces/{id}/model3d ("Tentar de novo")\n1º após a falha: freeRetry, sem cota (CA03)
+Done --> Pend : POST /api/pieces/{id}/model3d\n(gera outra versão; o requestModels do look pula COMPLETED)
 Done --> [*]
-note right of Fail : errorCode + errorMessage legíveis;\ncanRetryFree enquanto retryCount = 0
-note right of Pend : pedido repetido em QUEUED/PROCESSING\ndevolve o mesmo job (CA04)
+
+note right of Fail
+  canRetryFree = status FAILED e retryCount = 0.
+  O job grátis nasce com retryCount = 1; os
+  pedidos seguintes voltam a gastar a cota (3/dia).
+end note
+note left of Done
+  "Ver em 3D" para dona e visitante
+  (PieceModelViewer, Meu Quarto 3D).
+  model3d_generated_at não é preenchido.
+end note
 @enduml

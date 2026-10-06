@@ -1,0 +1,81 @@
+@startuml RF19_Atividades_Remix
+title RF19 — Interagir socialmente com esquemas e peças\nDiagrama de atividades — remixar (look, peça, DNA) e retornar da peça ao look de origem
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+if (O que quer fazer?) then (remixar)
+  :Toca em "Remixar" no detalhe de um look\nou peça de outra pessoa;
+  |Frontend|
+  :useRemix → POST /api/interactions/{type}/{id}/remixes\n(sem login → /login);
+  |API|
+  :SocialService.remix: requireCanCreate e target\n(visibilidade, bloqueio, moderação);
+  if (Conteúdo marcado como indisponível?) then (sim)
+    #FFE3E3:409 INDISPONIVEL;
+    stop
+  endif
+  if (Tipo?) then (SCHEME)
+    :SchemeService.remix: cada peça da origem vira a peça\nmais semelhante do acervo de quem remixa\n(nota ≥ 1: subcategoria/categoria + cor/família);
+    :201 {prefill (title "Remix de…", itens, fundo, skin,\nremixedFromId, origin REMIX), missingPieces, source,\nnext /create-look?remix=} — nada gravado;
+  elseif () then (PIECE)
+    :remixesCount + 1 (e CounterStorePort);\nHypeSignal(PIECE_REMIXED); notify NEW_REMIX;
+    :201 {next /create-look?seedPiece=, sourcePiece, hint};
+  else (DNA)
+    :remixCount + 1; 201 {next /dna/new?remix=};
+  endif
+  |Frontend|
+  :Toast "remixado"; navega só se vier scheme.id ou id\n(a resposta traz prefill/next: fica na tela);
+  note right
+    Divergência: a tela ignora prefill e next,
+    e a rota /create-look não existe no app.
+  end note
+  |Pessoa|
+  if (Salva o remix como look? (só via API:\nPOST /api/schemes com remixedFromId)) then (sim)
+    |API|
+    :SchemeService.create: requireView da origem;\norigem indisponível de outra pessoa = 409;
+    :INSERT schemes (origin REMIX, original_scheme_id)\n+ scheme_items; origem.remixCount + 1;
+    :notify NEW_REMIX + InteractionReceived(REMIX)\n+ HypeSignal(LOOK_REMIXED) + SchemeSaved;
+    |Eventos (AFTER_COMMIT)|
+    :Pontos REMIX_RECEIVED ao dono da origem;\nsinal LOOK_REMIXED (HypeIntegrityPolicy)\ne PIECE_IN_LOOK das peças novas;
+  endif
+else (retornar)
+  |Pessoa|
+  :Abre uma peça a partir de um look\n(/pieces/{id}?fromScheme=…);
+  |Frontend|
+  :ExpandedPiece → GET /api/pieces/{id}?fromScheme;
+  |API|
+  :WardrobeService: originSchemes = looks visíveis\nque usam a peça; PIECE_VIEWED se não é o dono;
+  |Frontend|
+  :Botão "Voltar ao look" + lista\n"Looks com esta peça" (com o Hype de cada look);
+  |Pessoa|
+  :Toca num look → /schemes/{schemeId};
+  note right
+    A API também tem POST /api/pieces/{id}/return-to-origin
+    (look de ORIGEM mais antigo visível; 409 se a peça
+    está indisponível para quem não é dono; 404 sem
+    look), mas a tela não chama essa rota.
+  end note
+endif
+stop
+@enduml

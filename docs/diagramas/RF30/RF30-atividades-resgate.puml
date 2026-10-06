@@ -1,0 +1,102 @@
+@startuml RF30_Atividades_Resgate
+title RF30 — Ganhar e usar FAI Points e evoluir o nível do "Meu Quarto"\nDiagrama de atividades — <<planejado>> resgate em dinheiro e doações de FAI Points (antigo RF48)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F2F2F2
+  BorderColor #9AA0A6
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Doador (app)|
+start
+note right
+  **<<planejado>>** — nada deste fluxo existe no código (2026-10-05).
+  Proposta: docs/novos-rf/RF48_FAI_Points_Resgate_e_Doacoes.md.
+  Hoje os FAI Points só se ganham (award) e só se gastam
+  na loja do quarto (SHOP_PURCHASE). Caixas roxas = já existe;
+  caixas cinza = planejado.
+end note
+#F8F4FF:Abre o look do dia de outra pessoa pela Passarela 3D\n(GET /api/explorer/runway → /schemes/{id}) — existe hoje;
+:<<planejado>> GET /api/users/{id}/daily-look\n(hoje só há /api/me/daily-look-tab, do próprio dono);
+if (canSupport?) then (não)
+  :Botão "Apoiar com FAI Points" desabilitado com motivo\n(menor de 18, bloqueio, conta < 30 dias, perfil de Marca,\nrecebedor desligou "receber apoios");
+  stop
+else (sim)
+endif
+:Toca "Apoiar com FAI Points";
+:GET /api/points/transfers/quote\n(limites restantes, saldo doável, requires2fa, blockReason);
+:Escolhe 5 / 10 / 25 / 50 ou valor livre (≤ 20% do disponível),\nmensagem da lista fechada e "anônimo?";
+:Confirma na folha ("a doação é definitiva");
+if (valor ≥ 100 ou soma do dia ≥ 200?) then (sim)
+  :Informa o código 2FA (senão 428 DOIS_FATORES_OBRIGATORIO);
+endif
+|Servidor|
+:POST /api/points/transfers (Idempotency-Key);
+if (Mesma chave já processada?) then (sim)
+  :Devolve o mesmo recibo;
+  stop
+endif
+#F8F4FF:Trava users de A e B em ordem crescente de id\n(mesmo padrão do lockOwner usado hoje em FaiPointsService.buy);
+:Revalida elegibilidade, bloqueio e limites\n(doador 200/dia e 1.500/mês · recebedor 500/dia\n· mesmo par 1 por look e 1 a cada 24 h);
+if (Algum limite ou regra falhou?) then (sim)
+  #FFE3E3:403 BLOQUEADO / MENOR_DE_IDADE / CONTA_NOVA\nou 409 LIMITE_DOACAO_DIA / LIMITE_RECEBEDOR / COOLDOWN_PAR;
+  stop
+endif
+if (Saldo doável ≥ valor?\n(EARNED_STANDARD + EARNED_CASHABLE maturados)) then (não)
+  #FFE3E3:409 SALDO_INSUFICIENTE;
+  stop
+endif
+:PointsRiskEngine síncrono\n(idade de conta, velocidade, par recíproco, dispositivo/IP);
+if (Risco) then (BLOCK ≥ 70)
+  #FFE3E3:409 + risk_flags (carteira congelada até revisão);
+  stop
+elseif (REVIEW 40–69) then
+  :points_transfers HELD\n(maturação só corre depois da revisão);
+else (OK < 40)
+  :points_transfers COMPLETED;
+endif
+:Ledger em partidas dobradas, mesmo transfer_id:\n−N de A por bucket (STANDARD → CASHABLE)\n+N para B em DONATION_RECEIVED (mature_at = +14 dias,\ncountsLifetime = false: não sobe nível);
+:Audit PONTOS_DOACAO_ENVIADA;
+:Após o commit: notificação POINTS_RECEIVED para B\n("@A apoiou seu look com 25 FAI Points") e recibo para A;
+|Recebedor / resgate (F2)|
+:Créditos sacáveis (30 dias) e doações (14 dias) amadurecem;
+:Abre FAI Points → aba Carteira → Resgatar;
+if (Conta de recebimento com KYC APPROVED\ne chave PIX do mesmo CPF?) then (não)
+  :Aceita o Termo do Programa de Criadores, informa CPF e PIX →\nKYC no parceiro (webhook APPROVED / REJECTED);
+  stop
+else (sim)
+endif
+:Escolhe os pontos (mínimo ≈ R$ 20; 1 pedido por mês;\nteto R$ 500/mês no piloto) e confirma com 2FA;
+|Servidor|
+:POST /api/me/payout-requests → REQUESTED\n(linha PAYOUT_RESERVE tira do disponível);
+:Motor de risco → UNDER_REVIEW (AUTO; MANUAL acima de R$ 200,\nconta < 90 dias ou com sinal de risco);
+:Fechamento do mês (CreatorFundCloseJob + admin):\ntaxa = fundo ÷ pontos pedidos, limitada por piso e teto;
+if (Cabe no fundo + reserva?) then (sim)
+  :APPROVED com taxa, bruto, retenção e líquido;
+  :PayoutProviderPort.pay (idempotente) → PROCESSING;
+  if (Webhook do parceiro) then (pago)
+    :PAID (id end-to-end do PIX) + recibo;
+  else (falhou)
+    :FAILED → PAYOUT_RELEASE após 24 h;
+  endif
+else (não)
+  :DEFERRED → PAYOUT_RELEASE (pontos voltam);
+endif
+stop
+@enduml

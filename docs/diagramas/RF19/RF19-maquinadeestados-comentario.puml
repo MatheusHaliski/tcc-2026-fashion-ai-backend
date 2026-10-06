@@ -1,6 +1,6 @@
 @startuml RF19_MaquinaDeEstados_Comentario
 !pragma layout smetana
-title RF19 — Comment: ciclo do comentário (active) e da notificação ao autor do conteúdo
+title RF19 — Interagir socialmente com esquemas e peças\nDiagrama de máquina de estados — Comment (active) e a notificação NEW_COMMENT ao autor do conteúdo
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,26 +8,41 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-[*] --> Digitando : abre Comments no card
-state "Digitando (frontend)" as Digitando
-state "Validando" as Validando
-state "Rejeitado" as Rejeitado
-state "Publicado\n(active = true)" as Publicado {
-  state "Notification NEW_COMMENT" as Notif {
-    [*] --> Entregue : delivered = true
-    [*] --> Contabilizada : delivered = false\n(tipo desativado pelo autor — CA12)
+state "Digitando\n(CommentsDialog)" as Digitando
+state "Validando\n(SocialService.comment)" as Validando
+state "Rejeitado\n(nada gravado)" as Rejeitado
+state "Publicado (active = true)" as Publicado {
+  state "Notificação NEW_COMMENT" as Notif {
+    state "Entregue\n(delivered = true,\nprojeção Cassandra)" as Entregue
+    state "Só contabilizada\n(delivered = false)" as Contada
+    state "Não criada\n(comentário no próprio conteúdo)" as Nenhuma
+    [*] --> Entregue : tipo habilitado
+    [*] --> Contada : tipo desativado ou push master desligado
+    [*] --> Nenhuma : ator = dono
+  }
+  state "Sinal COMMENT_CREATED\n(AFTER_COMMIT)" as Sinal {
+    state "Agregado em hype_signal_daily" as Agregado
+    state "Descartado (peso 0)" as Descartado
+    [*] --> Agregado : outra pessoa, primeiro do dia
+    [*] --> Descartado : dono, visitante ou repetido no dia
   }
 }
 state "Excluído\n(active = false)" as Excluido
-Digitando --> Validando : POST /api/interactions/{type}/{id}/comments
-Validando --> Rejeitado : vazio · > 500 chars · ofensivo\n(COMENTARIO_VAZIO / COMENTARIO_LONGO / CONTEUDO_BLOQUEADO)
-Validando --> Rejeitado : alvo não visível, bloqueio\nou peça não aprovada (404/403)
+
+[*] --> Digitando : abre os comentários (logado)
+Digitando --> Validando : POST /api/interactions/{type}/{id}/comments\n{content, parentId}
+Validando --> Rejeitado : sem permissão (login, e-mail, conta),\nalvo invisível/bloqueado → 401/403/404
+Validando --> Rejeitado : vazio · mais de 500 · ofensivo\n→ 400 COMENTARIO_VAZIO · COMENTARIO_LONGO\n· CONTEUDO_BLOQUEADO
 Rejeitado --> Digitando : corrige o texto
-Validando --> Publicado : INSERT comments · commentCount+1\nnotify(owner, NEW_COMMENT)
-Publicado --> Publicado : resposta (parentCommentId)
-Publicado --> Excluido : DELETE /api/comments/{id}\npelo autor do comentário ou dono do conteúdo (CA05)
-Publicado --> Publicado : DELETE por terceiro → 403\nGuard.deny (auditado)
-Excluido --> [*] : soft delete — commentCount-1;\nsai de findBy…ActiveTrue
-note right of Publicado : CA04/CA06 — SocialService.COMMENT_MAX = 500
-note right of Notif : NotificationService.notify():\nautor do conteúdo não é notificado\nde interação própria
+Validando --> Publicado : INSERT comments · commentCount + 1\n→ 201
+Publicado --> Publicado : resposta (parentCommentId)\n= novo Comment
+Publicado --> Publicado : DELETE por terceiro\n→ 403 (Guard.deny, auditado)
+Publicado --> Excluido : DELETE /api/comments/{commentId}\n[autor do comentário ou dono do conteúdo]\n→ 204
+Excluido --> [*] : commentCount − 1; some de\nfindBy…ActiveTrue (a linha fica)
+
+note right of Excluido
+  Excluir não desfaz o sinal de Hype nem a
+  notificação já gravada; os pontos
+  COMMENT_RECEIVED também ficam.
+end note
 @enduml

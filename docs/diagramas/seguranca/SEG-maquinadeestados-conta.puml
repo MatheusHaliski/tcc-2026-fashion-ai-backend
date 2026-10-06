@@ -1,29 +1,40 @@
 @startuml SEG_MaquinaDeEstados_Conta
-title Fashion AI — Máquina de estados: conta (AccountStatus) e origem (account_origin, V35)
+title Segurança, integridade e operação (transversal)\nDiagrama de máquina de estados — origem da conta (users.account_origin, V35) e como a linha sai do banco
 !include _estilo.iuml
-[*] --> PENDING_EMAIL_VERIFICATION : cadastro
-PENDING_EMAIL_VERIFICATION --> ACTIVE : código de e-mail ok\n(perfil pessoal)
-PENDING_EMAIL_VERIFICATION --> PENDING_VALIDATION : código ok\n(marca/celebridade)
-PENDING_VALIDATION --> ACTIVE : aprovação do admin
-ACTIVE --> SUSPENDED : admin suspende
-SUSPENDED --> ACTIVE : admin reativa
-ACTIVE --> DELETION_SCHEDULED : pessoa pede exclusão\n(prazo de arrependimento)
-DELETION_SCHEDULED --> ACTIVE : cancela no prazo
-DELETION_SCHEDULED --> DELETED : job diário: anonimiza (LGPD)\nnome/e-mail trocados, fotos e avatar 3D apagados
-DELETED --> [*]
+state "REAL" as Real : padrão do cadastro público\ntest_account = false
+state "TEST_SEED" as TestSeed : contas e2e_* dos testes\ntest_account = true (gerada)
+state "DEMO <<planejado>>" as Demo : fixtures do pipeline demo\nfixture_key único · test_account = true
+state "SYSTEM" as Sys : previsto no CHECK da V35;\nnenhum código grava hoje
+state "REAL anonimizada" as Anon : status DELETED · deleted_xxxxxxxx\ndeleted+…@fashionai.invalid\na linha continua no banco
+state "Apagada" as Gone : DELETE FROM users\n+ cascatas da V34
 
-note right of DELETED
-  Conta real NUNCA sofre DELETE:
-  a linha fica, anonimizada.
-  DELETE FROM users (com as cascatas
-  da V34) é só do reset do universo
-  demo: account_origin IN (TEST_SEED, DEMO).
+[*] --> Real : POST /api/auth/register
+[*] --> TestSeed : cadastro com @ e2e_\n(User.@PrePersist markTestOriginFromUsername)\nou V35: test_account = TRUE → TEST_SEED
+[*] --> Demo : seed por fixture_key\n(DemoDataService — planejado)
+[*] --> Sys
+Real --> Anon : AccountService.purgeScheduledDeletions()\ndepois de DELETION_SCHEDULED + 30 dias (ciclo no RF1)
+TestSeed --> Gone : reset demo — deleteTestAccounts(ids)\nsó WHERE account_origin IN (TEST_SEED, DEMO)
+Demo --> Gone : reset demo (planejado)
+Gone --> [*]
+
+note right of Real
+  Conta real NUNCA sofre DELETE: só é
+  anonimizada (LGPD). O reset aborta se
+  realAccountsAmong(ids) > 0.
 end note
-
-state "Origem (imutável depois da criação)" as Origem {
-  state REAL
-  state TEST_SEED : contas e2e_* (V22)
-  state DEMO : fixtures do pipeline demo
-  state SYSTEM
-}
+note bottom of Anon
+  purgeScheduledDeletions existe no código,
+  mas nenhum @Scheduled o chama hoje.
+end note
+note right of TestSeed
+  Conteúdo de conta de teste fica fora da vitrine
+  pública (SearchService.showcaseAllows): só outra
+  conta e2e_/demo_ o vê. O @ demo_ é reservado
+  no cadastro (IdentityService.reservedUsername).
+end note
+note bottom of Gone
+  DemoDataAdminPort e MysqlDemoDataAdminAdapter já
+  estão no código; o serviço e a rota que chamam o
+  reset são planejados (pasta dados-demo).
+end note
 @enduml

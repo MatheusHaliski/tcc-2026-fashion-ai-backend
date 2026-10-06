@@ -1,5 +1,5 @@
 @startuml RF12_Sequencia
-title RF12 — Visualizar & Editar a página "Minhas Fotos" & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de sequência — endpoints reais
+title RF12 — Visualizar & Editar a página "Minhas Fotos" & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de sequência — Minhas Fotos: galeria paginada, edição, exclusão (uma e em lote), download e curadoria
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,90 +8,85 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor "Pessoa" as P
-participant "Frontend\n(app)/photos · multi-piece-review" as FE
+actor "Pessoa (dona)" as P
+participant "(app)/photos/page.tsx\n+ InfiniteSentinel" as FE
+participant "photo-editor.tsx\nPhotoEditor(photoId)" as ED
 participant "PhotoController" as PC
-participant "WardrobeController" as WC
 participant "PhotoService" as PS
 participant "WardrobeService" as WS
-participant "MultiPieceService" as MP
-participant "AiEngine (RF24)" as AI
-participant "MediaStoragePort\n(S3 / local)" as ST
+participant "MediaService\n(MediaStoragePort)" as ST
+participant "AiEngine (RF24)\nlocal" as AI
 database "MySQL" as DB
 
-== Minhas Fotos ==
-P -> FE: abre /photos
-FE -> PC: GET /api/me/photos?origin=&month=&page=0&size=60
+== Galeria (CA01, CA06) ==
+P -> FE: abre /photos (RequireAuth)
+FE -> PC: GET /api/me/photos?origin&occasion&style&color&month&days&page=0&size=60
 PC -> PS: gallery(user, Filter, page, size)
-PS -> DB: photos (deletedAt IS NULL) ORDER BY createdAt DESC
-PC --> FE: 200 {items, facets, counts (por origem), hasMore, total}
-loop rolagem (InfiniteSentinel — CA06)
-  FE -> PC: GET /api/me/photos?page=n
+PS -> DB: photos WHERE user_id AND deleted_at IS NULL ORDER BY created_at DESC
+PS -> DB: wardrobe_items / schemes da pessoa (ocasião, estilo, cor da foto)
+PS --> FE: 200 {items, facets, counts por origem, hasMore, total, all, serverMs}
+loop rolagem até o fim (InfiniteSentinel)
+  FE -> PC: GET /api/me/photos?...&page=n
+  PC --> FE: 200 {items, hasMore}
 end
-P -> FE: exclui uma foto
-FE -> PC: DELETE /api/photos/{id}
-PC -> PS: delete(user, id, confirmed=false)
-alt imagem de peça ativa (CA03)
+
+== Editar no Canvas 2D (CA02 → RF15) ==
+P -> FE: "Editar" numa foto
+FE -> ED: abre PhotoEditor(photoId)
+ED -> PC: GET /api/photos/{id}/file
+PC -> PS: download(user, id) — owned (403 auditado se não for a dona)
+PS -> ST: read(originalUrl ?? publicUrl)
+PC --> ED: 200 bytes (Cache-Control: private, no-store)
+P -> ED: recorta, gira, brilho/contraste, remove fundo, desfaz/refaz
+ED -> PC: POST /api/photos/{id}/edits (file = PNG do canvas)
+PC -> PS: saveEdit(user, id, bytes)
+alt foto de uma peça ativa da pessoa (WARDROBE_ITEM / EDITOR)
+  PS -> WS: replaceImage(user, pieceId, bytes, editedFromPhotoId = id)
+  WS -> ST: put(edit-*.png + thumb) · register(Photo EDITOR)
+  WS -> DB: wardrobe_items.image_url = edição (original preservada)
+  PC --> ED: 200 {replacedPieceImage: true, piece, message}
+else outra foto
+  PS -> ST: put(users/{id}/photos/edit-*.png + thumb)
+  PS -> DB: INSERT photos (EDITOR, edited_from_photo_id = id)
+  PC --> ED: 200 {replacedPieceImage: false, photo, message}
+end
+ED --> FE: onSaved → recarrega a galeria
+
+== Excluir uma foto (CA03) ==
+P -> FE: lixeira → diálogo ("excluir mesmo assim" se é a imagem da peça)
+FE -> PC: DELETE /api/photos/{id}?confirmed=true
+PC -> PS: delete(user, id, confirmed)
+PS -> DB: owned + linkedActivePiece (peça não arquivada cuja imagem é esta foto)
+alt ligada a peça ativa e confirmed = false
   PS --> FE: 409 CONFIRMACAO_NECESSARIA {pieceId}
-  P -> FE: confirma
-  FE -> PC: DELETE /api/photos/{id}?confirmed=true
-  PC -> PS: delete(user, id, true)
-  PS -> WS: useDefaultImageAfterPhotoDeletion(peça)
+else
+  opt ligada a peça ativa
+    PS -> WS: useDefaultImageAfterPhotoDeletion(peça) — ilustração, sem estúdio
+  end
+  PS -> DB: photos.deleted_at = agora
+  PC --> FE: 200 {deleted: 1, pieceWithoutImage}
 end
-PS -> DB: photos.deletedAt = agora
-PC --> FE: 200 {deleted: 1, pieceWithoutImage}
+
+== Excluir em lote (CA04) ==
+P -> FE: seleciona N fotos → excluir
 FE -> PC: POST /api/photos/bulk-deletion {ids, confirmed: false}
 PC -> PS: bulkDelete(user, ids, false)
-PC --> FE: 200 {requiresConfirmation, count, linkedToPieces, message} (CA04)
+PS --> FE: 200 {requiresConfirmation: true, count, linkedToPieces, message}
+P -> FE: confirma uma vez
 FE -> PC: POST /api/photos/bulk-deletion {ids, confirmed: true}
+PS -> WS: useDefaultImageAfterPhotoDeletion (cada foto ligada a peça)
+PS -> DB: deleted_at = agora (só fotos da própria pessoa)
 PC --> FE: 200 {deleted}
+
+== Baixar (CA05) e curadoria (RF30.CA11) ==
+P -> FE: "baixar original"
 FE -> PC: GET /api/photos/{id}/file
-PC -> PS: download(user, id) (só o dono — CA05)
-PS -> ST: read(originalUrl)
-PC --> FE: 200 bytes originais
-opt editar no Canvas 2D (CA02 — RF15)
-  FE -> PC: POST /api/photos/{id}/edits (multipart)
-  PC -> PS: saveEdit(user, id, bytes)
-  PS -> ST: put(edição) · INSERT photos (EDITOR, metadata editedFrom)
-end
+PC --> FE: 200 attachment foto-{id}.{ext} (sem marca d'água, só a dona)
+P -> FE: "curadoria"
 FE -> PC: POST /api/me/photos/curation
 PC -> PS: curate(user)
-PS -> AI: local(PHOTO_CURATOR) — dHash local
-PC --> FE: 200 {duplicatas, baixa qualidade, sugestão de qual manter}
-== Várias peças por vez ==
-alt várias fotos (uma peça por foto)
-  FE -> WC: POST /api/pieces/analysis/batch (files[], category)
-  WC -> WS: analyzeBatch(user, files, category)
-  alt 0 ou mais de 12 fotos
-    WS --> FE: 400 SEM_FOTOS | LOTE_GRANDE
-  else
-    loop cada foto
-      WS -> WS: analyze(user, bytes, category)
-      alt foto fora dos critérios
-        WS -> WS: Draft.rejected(motivo)
-      else aceita
-        WS -> DB: INSERT pipeline_jobs (PIECE_DRAFT, COMPLETED)
-        WS -> ST: put(users/{id}/drafts/{jobId}/...)
-      end
-    end
-    WC --> FE: 200 List<Draft>
-  end
-else uma foto com várias peças
-  FE -> WC: POST /api/pieces/analysis/multi (file)
-  WC -> MP: detect(user, bytes)
-  MP -> AI: text(MULTI_PIECE_DETECTOR, foto reduzida)
-  MP -> DB: INSERT pipeline_jobs (MULTI_PIECE_DRAFT, COMPLETED)
-  WC --> FE: 200 Detection {draftId, pieces[box, name, category...], source}
-  loop cada peça revisada (MultiPieceReview)
-    FE -> WC: POST /api/pieces/analysis/multi/{draftId}/pieces?index=i (recorte)
-    WC -> MP: pieceDraft(user, draftId, index, bytes)
-    MP -> AI: execute(FLAT_LAY_STANDARDIZER) · text(CONTENT_MODERATOR)
-    WC --> FE: 200 PieceDraft | 400 CONTEUDO_BLOQUEADO
-  end
-end
-P -> FE: confirma o lote revisado
-FE -> WC: POST /api/pieces/batch [PieceForm...]  (ou POST /api/pieces por item)
-WC -> WS: createBatch(user, forms) → create(user, form) para cada
-WS -> DB: INSERT wardrobe_items · INSERT photos (WARDROBE_ITEM)
-WC --> FE: 201 List<PieceView>
+PS -> AI: local(PHOTO_CURATOR) — dHash 64 bits (até 400 fotos)
+AI -> ST: readImage(miniatura) quando o hash não está em metadata_json
+PS --> FE: 200 {duplicateGroups[photos, suggestKeep, suggestDiscard], explanation, note}
+note right of FE: só sugestão: nada é excluído sem a pessoa
 @enduml

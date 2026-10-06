@@ -109,9 +109,10 @@ partition "Passo 4 · Revisar e salvar" {
   :Resumo: nome, nível, frase da política (describePolicy),\nvalidade, limite e tipo — "Editar" volta ao passo;
   :POST /api/seals | PUT /api/seals/{id};
   |Backend (SealService)|
-  :SealPolicies.normalize/describe → policyText;\nSealDesigns.normalize → desenho válido do catálogo;\nOwnMedia: imagens só do próprio emissor;\nfolha sem título → título = nome do selo;
+  :Guard.requireApprovedInstitutional (senão 403);
+  :nome 2–160 → SealPolicies.normalize/describe → policyText;\nSealDesigns.normalize → desenho válido do catálogo;\nOwnMedia: imagens só do próprio emissor;\nfolha sem título → título = nome do selo;
   if (Válido?) then (não)
-    #FFE3E3:400 SELO_DESIGN_INVALIDO {fields} ·\nPERIODO_INVALIDO · LIMITE_INVALIDO;
+    #FFE3E3:400 CAMPO_INVALIDO · POLITICA_INVALIDA ·\nSELO_DESIGN_INVALIDO {fields} · MIDIA_INVALIDA ·\nPERIODO_INVALIDO · LIMITE_INVALIDO;
     |Frontend (SealWizard)|
     :toast; continua no passo 4;
     stop
@@ -120,6 +121,16 @@ partition "Passo 4 · Revisar e salvar" {
   :INSERT/UPDATE seals: background_config_json\nguarda {design, policy}; audit SELO_EDITADO;
 }
 |Emissor (marca/celebridade)|
-:Selo aparece na aba e nos cards com o medalhão escolhido;
+:Selo aparece na aba "Selos" com o medalhão,\na frase da política, as emissões e o "Hype do selo";
+note right
+  "Desativar"/"Ativar" na aba = PUT /api/seals/{id}
+  com status INACTIVE/ACTIVE.
+  Selo ACTIVE, dentro da validade e abaixo do limite
+  entra na detecção por política nos criadores de
+  peça (RF4) e de look (RF5) — ver RF25_Deteccao_Politica_Sequencia.
+  Os Selos de Hype (VIRAL, TRENDING, EMERGING, CLASSIC, RARE)
+  não passam por este criador: são automáticos, vêm do
+  HypeScore v2 e usam medalhões Padrão FashionAI fixos.
+end note
 stop
 @enduml

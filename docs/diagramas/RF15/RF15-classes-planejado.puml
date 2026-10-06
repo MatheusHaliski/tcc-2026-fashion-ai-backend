@@ -1,0 +1,156 @@
+@startuml RF15_Classes_Planejado
+title RF15 — Editar uma fotografia de uma peça de roupa através de um Editor Canvas Interativo 2D\nDiagrama de classes — <<planejado>> receita não destrutiva, versões (image_edit_versions), classes F0–F3 e ligação com o que existe
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam class<<planejado>> {
+  BackgroundColor #F2F2F2
+  BorderColor #9A9A9A
+  HeaderBackgroundColor #E6E6E6
+}
+skinparam packageStyle rectangle
+hide empty members
+
+package "Editor no navegador <<planejado>>" {
+  class EditorStore <<planejado>> {
+    {field} receita em edição + histórico de comandos (do/undo)
+    rascunho no IndexedDB a cada 2 s
+  }
+  class "Renderizador" as Renderer <<planejado>> {
+    {field} WebGL2 em Web Worker (OffscreenCanvas)
+    {field} fallback Canvas 2D (o PhotoEditor atual)
+    proxy ≤ 4096 px ; exportação por tiles
+  }
+  class "Coach" as Coach <<planejado>> {
+    métricas: sharpness, exposure, tilt, keystone,
+    colorCast, coverage, noise, resolution,
+    {field} moire_risk, colorDrift (escala 0–1)
+    até 3 orientações; nunca bloqueia salvar
+  }
+}
+
+package "Receita (JSON fai-photo-edit/1) <<planejado>>" {
+  class EditRecipe <<planejado>> {
+    schema = "fai-photo-edit/1"
+    source {imageId, width, height, sha256}
+    geometry {rotate90, straightenDeg, perspective, crop}
+    whiteBalance {mode, temperature, tint, point, calibrated}
+    tone {exposure, contrast, highlights, shadows, whites, blacks, curve}
+    color {vibrance, saturation}
+    detail {sharpen, denoise}
+    local[] ; heal[]
+    background {mode: keep|transparent|white|solid|studio:<id>}
+    framing {preset, marginPct}
+    output {renditions[]}
+    meta {editor, ops[]}
+  }
+}
+
+package "fai-application / fai-web <<planejado>>" {
+  class ImageEditService <<planejado>> {
+    {field} valida upload (UploadSafety, ImageOps)
+    {field} mede classe e colorDrift (ΔE00) no servidor
+    QualityMetrics da versão + moderação
+    {field} grava versão com baseRev (409 se desatualizada)
+    gera renditions por destino
+    ativa · aprova · descarta · confirma cor · arquiva
+  }
+  class "rotas /api/edit/*" as Routes <<planejado>> {
+    GET/POST /api/edit/{ownerType}/{ownerId}/versions
+    POST /api/edit/versions/{id}/activate
+    POST /api/edit/versions/{id}/approve · /discard
+    POST /api/edit/versions/{id}/confirm-color
+    DELETE /api/edit/versions/{id}
+    POST /api/edit/assist/background · /segment · /auto
+    GET/POST /api/edit/presets · POST …/{id}/apply «Fase 3»
+  }
+}
+
+package "Banco (migração aditiva proposta) <<planejado>>" {
+  class image_edit_versions <<table>> <<planejado>> {
+    {field} id, owner_id, user_id, parent_version_id : CHAR(36)
+    owner_type : PIECE | SCHEME | PHOTO
+    {field} source_image_url : VARCHAR(512) «F0, nunca regravada»
+    {field} rev : INT «UNIQUE (owner_type, owner_id, rev)»
+    status : DRAFT | PENDING_REVIEW | ACTIVE | INACTIVE | ARCHIVED
+    recipe_json : JSON
+    fidelity_class : F1 | F2 | F3
+    {field} color_drift : DECIMAL(5,2) «ΔE00»
+    color_confirmed, calibrated : BOOLEAN
+    quality_json, renditions_json : JSON
+    {field} rendered_url : VARCHAR(512)
+    origin : USER | AUTO_STUDIO | BATCH_PRESET | AI_CREATIVE
+    {field} ai_inference_id : CHAR(36)
+  }
+  class image_edit_presets <<table>> <<planejado>> {
+    {field} id, user_id : CHAR(36) ; name : VARCHAR(80)
+    recipe_json : JSON «Fase 3»
+  }
+  class "wardrobe_items + active_edit_version_id\nschemes + cover_edit_version_id" as Cols <<planejado>>
+}
+
+package "Classes de fidelidade <<planejado>>" {
+  enum "Classe de fidelidade" as Fid <<planejado>> {
+    F0 · Original (imutável)
+    F1 · Fiel (geometria, WB, tom, cor ≤ ±15, fundo liso)
+    F2 · Vitrine (estúdio, sombra, manequim invisível, retoque)
+    F3 · Criativa (filtros, troca de cor, IA generativa)
+  }
+}
+
+package "Existe hoje (reuso)" {
+  class PhotoService <<Service>> {
+    +saveEdit(user, id, bytes)
+    +removeBackground(user, bytes)
+  }
+  class WardrobeService <<Service>> {
+    +replaceImage(user, id, bytes, editedFromPhotoId)
+    ~offerStudio(w, info, sourceChanged)
+    +approveStudio(user, id) ; +discardStudio(user, id)
+  }
+  class QualityMetrics {
+    +ACCEPTANCE_THRESHOLD = 0.6
+    +evaluate(...) : Report
+  }
+  class "StudioPipeline · GhostMannequin\nStudioFraming · FlatLayPipeline" as Imaging
+  class "BackgroundStudioService.withRevision" as WithRev {
+    baseRev da arte do card (modelo do 409)
+  }
+  class WardrobeItem <<Entity>> <<table wardrobe_items>>
+  class Photo <<Entity>> <<table photos>>
+  class Scheme <<Entity>> <<table schemes>>
+}
+
+EditorStore *-- "1" EditRecipe
+EditorStore --> Renderer
+Renderer ..> Coach : prévia
+EditorStore ..> Routes : POST versão (render + receita + baseRev)
+Routes --> ImageEditService
+ImageEditService ..> EditRecipe : valida/armazena
+ImageEditService --> image_edit_versions
+ImageEditService ..> Fid : mede e classifica
+ImageEditService --> QualityMetrics : reuso
+ImageEditService --> Imaging : reuso (fundo, estúdio, enquadramento)
+ImageEditService ..> WithRev : mesmo contrato de revisão
+image_edit_versions "*" --> "1" image_edit_versions : parent_version_id
+image_edit_versions ..> Fid : fidelity_class
+image_edit_versions "*" ..> "1" WardrobeItem : owner PIECE
+image_edit_versions "*" ..> "1" Scheme : owner SCHEME
+image_edit_versions "*" ..> "1" Photo : owner PHOTO
+Cols ..> image_edit_versions : versão ativa
+PhotoService ..> ImageEditService : passaria a criar versão ACTIVE\n(receita "fai-photo-edit/0", legacy)
+WardrobeService ..> ImageEditService : idem; estúdio migra para\norigin AUTO_STUDIO (PENDING_REVIEW)
+
+note bottom of Fid
+  Classe da versão = maior classe das operações
+  E a medida no servidor: colorDrift > 8 ou família de
+  cor diferente (sem calibração) → F3. F3 não entra em
+  busca, Lens, selos, catálogo, venda/doação nem
+  perfis institucionais; editar não mexe no Hype.
+end note
+@enduml

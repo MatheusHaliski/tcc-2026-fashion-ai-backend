@@ -1,0 +1,213 @@
+@startuml RF46_Classes_Integracoes
+title RF46 — HypeScore v2\nDiagrama de classes — integrações: Insights dinâmicos, Selos × Hype, seis números do look (LookScorer) e prévia do editor
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-application · insights" {
+  enum InsightContext {
+    EXPLORER_RUNWAY
+    EXPLORER_TRENDING
+    EXPLORER_RANKING
+    EXPLORER_MAP
+    EXPLORER_BRANDS
+    EXPLORER_GLOBAL
+    FEED
+    SEARCH
+    BRAND_PROFILE
+    CREATOR_PROFILE
+    CAPSULE
+    COPILOT
+    AUTOPILOT
+    HISTORY
+    CLOSET
+    LOOKS
+    LOOK_EDITOR
+    +isPublic(): boolean
+    +parse(raw): InsightContext
+  }
+  class Insight <<record>> {
+    +code: String
+    +tone: Tone [POSITIVE | NEUTRAL | ATTENTION]
+    +title: String
+    +text: String
+    +metric: Metric {label, value, unit}
+    +action: Action {label, href}
+    +basis: List<String>
+    +relevance: double
+  }
+  class InsightService <<@Service>> {
+    +MAX_ITEMS = 5
+    +insights(viewer, context, window, region, category,\n  subcategory, key, pieces, withAi): Map
+    +itemsOrEmpty(user, ctx): List<Map>
+    ~sameNumbers(local, candidate): boolean
+  }
+  class PublicInsights {
+    contextos EXPLORER_*:
+    REGION_LEADER, CATEGORY_RISING,
+    TREND_VS_POPULARITY, MAP_COVERAGE…
+  }
+  class PersonalInsights {
+    contextos pessoais:
+    CAPSULE_IDLE_REDISCOVERY, PIECE_HYPE_AND_STYLE,
+    STYLE_OVER_HYPE, DNA_MISSING…
+  }
+  class ProfileInsights {
+    contextos BRAND_PROFILE (slug)
+    e CREATOR_PROFILE (@ ou id)
+    ~resolve(ctx, rawKey): Target
+    ~build(Target): List<Insight>
+  }
+  class InsightMath {
+    ~numbers(text): Set<String>
+    ~trend(c), popularity(c), dims(c)
+  }
+}
+
+package "fai-application · service (selos)" {
+  class "SealPolicies.Policy" as Policy <<record>> {
+    +any: boolean
+    +rules: List<Rule>
+    +occasions: List<String>
+    +styles: List<String>
+    +hype: HypeCriteria [opcional]
+  }
+  class "SealPolicies.Rule" as Rule <<record>> {
+    +quantifier: AT_LEAST | ALL | NONE
+    +count: int
+    +color, brand, category, subcategory: String
+    +hypeMin: HypeLevel [opcional]
+  }
+  class "SealPolicies.HypeCriteria" as HypeCriteria <<record>> {
+    +minLevel: HypeLevel
+    +minScore: Integer [0–100]
+    +momentum: List<HypeMomentum> [≤ 3]
+  }
+  class "SealPolicies.HypeFact" as HypeFact <<record>> {
+    +score: Double
+    +level: HypeLevel
+    +momentum: HypeMomentum
+    +available: boolean
+    +of(c: HypeScoreCurrent): HypeFact
+  }
+  interface "SealPolicies.HypeLookup" as HypeLookup {
+    +piece(pieceId): HypeFact
+    +look(): HypeFact
+    +NONE
+  }
+  class "SealPolicies.Verdict" as Verdict <<record>> {
+    +matched: boolean
+    +pieceIds: List<UUID>
+    +why: String ["atende: … Hype ≥ Em alta"]
+  }
+  class SealPolicies <<final>> {
+    +normalize(raw): Map  [400 POLITICA_INVALIDA]
+    +parse(stored): Policy
+    +evaluate(p, tier, pieces, occasions,\n  styles, hype: HypeLookup): Verdict
+  }
+  class SealService <<@Service>> {
+    +MAX_PIECE_SEALS = 60
+    ~candidateHype(c, hype): HypeFact
+    -computeSealHype(seals): Map {avgScore, level, bonded}\n  [só públicos elegíveis]
+    ~bondedHype(issuerId): Map [métricas do emissor]
+    ~{static} publicHype(c): boolean
+    +accept(…) <<@Transactional(noRollbackFor =\n  SealUnavailable)>>
+    +pieceSeals(viewer, ids): Map
+  }
+  class "SealService.SealUnavailable" as SealUnavailable <<ApiException 409>> {
+    SELO_INDISPONIVEL
+  }
+  class InstitutionalService <<@Service>> {
+    +FEED_ORDERS = AFINIDADE, RECENTES, EM_ALTA
+    ~feedHype(viewer, RankGroup, keys): Map
+    ~{static} lookHype(hype, schemeId, personal): Double
+    ~{static} lookGrowth(hype, schemeId, personal): Double
+  }
+}
+
+package "fai-application · service (looks)" {
+  class LookScorer {
+    ~context(userId): Context
+    ~scores(ctx, ids, look, hypeById): Scores
+    ~scoreLooks(userId, looks): List<Scores>
+    ~scoreCards(user, cards, mode): List<Map>
+  }
+  class MirrorService <<@Service>> {
+    espelho e Vista-me: "scores"
+    com os seis números (P3-07)
+  }
+  class LookPreviewService <<@Service>> {
+    +scores(user, req: PreviewRequest): Map
+    +compositions(user, list): List<Map>
+  }
+  class "LookPreviewService.PreviewRequest" as PreviewRequest <<record>> {
+    +pieceIds: List<UUID>
+    +occasion: List<String>
+    +style: List<String>
+    +schemeId: UUID
+  }
+}
+
+package "fai-application · hype" {
+  class "RecommendationScoring.Scores" as Scores <<record>> {
+    +compatibility: Integer
+    +hype: Integer
+    +novelty: Integer
+    +reuse: Integer
+    +usage: Integer
+    +sustainability: Integer
+  }
+  enum "RecommendationScoring.Mode" as Mode {
+    SAFE
+    DISCOVERY
+    EXPERIMENTAL
+  }
+  class HypeQueryService <<@Service>>
+  class HypeSeals <<final>>
+  class HypeCache <<@Component>>
+}
+package "fai-domain · model" {
+  class HypeScoreCurrent <<@Table hype_scores>>
+}
+
+InsightService ..> InsightContext
+InsightService ..> PublicInsights
+InsightService ..> PersonalInsights
+InsightService ..> ProfileInsights
+ProfileInsights ..> Insight : cria
+ProfileInsights ..> HypeQueryService : groups()
+InsightService ..> InsightMath : reescrita da IA só\ncom os mesmos números
+InsightService ..> HypeCache : contextos públicos
+PublicInsights ..> Insight : cria
+PersonalInsights ..> Insight : cria
+PublicInsights ..> HypeQueryService
+PersonalInsights ..> HypeQueryService
+
+Policy *-- Rule
+Policy *-- HypeCriteria
+SealPolicies ..> Policy
+SealPolicies ..> HypeLookup
+SealPolicies ..> Verdict
+HypeLookup ..> HypeFact
+HypeFact ..> HypeScoreCurrent : lê (nunca escreve)
+SealService ..> SealPolicies
+SealService ..> HypeQueryService
+SealService ..> SealUnavailable : lança (vínculo REJECTED fica)
+InstitutionalService ..> HypeQueryService : groups() para a ordem\nEm alta; estado v2 dos destaques
+MirrorService ..> LookScorer : só peças do dono,\nnada gravado
+HypeQueryService ..> HypeSeals : summary().seals,\nsealProgress
+HypeSeals ..> HypeScoreCurrent
+
+LookPreviewService ..> PreviewRequest
+LookPreviewService ..> LookScorer : nada gravado,\nnenhum sinal
+LookScorer ..> Scores
+LookScorer ..> HypeQueryService
+Scores ..> Mode : rankValue(scores, mode)\nHype ≤ 20% do peso
+@enduml

@@ -1,5 +1,5 @@
 @startuml RF34_Classes
-title RF34 — Explorar as "Eras" de uma celebridade: busca por era, Insights de Eras e My Stage 3D\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF34 — Eras da celebridade: busca por era, Insights de Eras e My Stage 3D\nDiagrama de classes — frontend (ErasTab, palcos), ShowcaseService, LookbookService, entidades e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -9,104 +9,160 @@ skinparam class {
   HeaderBackgroundColor #E4DEF0
 }
 skinparam packageStyle rectangle
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 hide empty methods
+hide empty fields
+
+package "Frontend · components/showcase e components/three" {
+class ErasTab <<component>> {
+  +slug: string
+  +admin: boolean
+  -sub: busca | insights | stage
+}
+class GroupingSearch <<component>> {
+  -f: {groupingId, q, type, sort = HYPE, year}
+}
+class GroupingForm <<component>>
+class AssignDialog <<component>>
+class ErasInsights <<component>>
+class MiniStage2D <<component · SVG>> {
+  +r: Rank (audience, capacity, spotlights)
+}
+class MyStage <<component>> {
+  -schemeId: string
+}
+class StageScene <<component · R3F>> {
+  +name, era, colors, mannequin, pieces
+  +crowd = 150
+}
+class StageFallback <<component>>
+}
+
+package "fai-web · controller" {
+class ShowcaseController {
+  +list(viewer, slug, kind): Map
+  +items(viewer, slug, kind, groupingId, q, type, sort, year): Map
+  +insights(viewer, slug, kind): Map
+  +stage(viewer, slug, schemeId): Map
+  +groupingCover(user, id, file): Map
+}
+class LookbookController {
+  +createGrouping(user, GroupingForm): Map
+  +updateGrouping(user, id, GroupingForm): Map
+  +deleteGrouping(user, id)
+  +assign(user, id, AssignRequest): Map
+}
+}
+
+package "fai-application · service" {
+class ShowcaseService {
+  {static} ~ERA_TYPES = ERA, PHASE, TOUR
+  {static} ~W_LIKES = 0.75
+  {static} ~W_ITEMS = 0.25
+  {static} +SHOWCASE_SORTS = HYPE, GROWTH, CURTIDAS, RECENTES
+  {static} +kind(String): Kind
+  +list(viewer, slug, Kind): Map
+  +items(viewer, slug, Kind, groupingId, q, type, sort, year): Map
+  +insights(viewer, slug, Kind): Map
+  +stage(viewer, slug, schemeId): Map
+  +groupingCover(user, id, bytes): Map
+  -owner(slug, Kind): User
+  -groupingsOf(User, Kind): List<SchemeGrouping>
+  -visibleSchemes(viewer, User): List<Scheme>
+  -visiblePieces(viewer, User): List<WardrobeItem>
+  -groupingCard(g, schemes, pieces, hype, self): Map
+  ~look(Scheme, viewer, HypeScoreCurrent): Map
+  ~mannequin(User, pieces, viewer): Map
+  {static} ~order(sort, hype, self, likes, created): Comparator
+  {static} ~groupHype(rows, self, cfg): Map
+  {static} ~period(SchemeGrouping): String
+}
+enum Kind {
+  ERAS
+  COLLECTIONS
+}
+class LookbookService {
+  {static} ~CELEBRITY = ERA, PHASE, SEASON, TOUR, COLLECTION
+  +createGrouping(user, GroupingForm): Map
+  +updateGrouping(user, id, GroupingForm): Map
+  +deleteGrouping(user, id)
+  +assignToGrouping(user, groupingId, schemeIds, pieceIds): Map
+}
+class "LookbookService.GroupingForm" as GForm <<record>> {
+  +type: GroupingType
+  +label, description, coverUrl: String
+  +atmospherePrompt: String
+  +periodFrom, periodTo: Integer
+  +accentColor: String
+  +sortOrder: Integer
+}
+class InstitutionalService {
+  ~institutionalUser(slug): User
+}
+class SearchService <<static helpers>> {
+  {static} +scoreFor(hype, self): Double
+  {static} +growthFor(hype, self): Double
+  {static} +trendFor(hype, self): Double
+  {static} +hypeSummary(hype, own, cfg): Map
+}
+class Avatar3dService {
+  +forMannequin(ownerId, viewerId): Optional<Map>
+}
+class MediaService {
+  +put(key, bytes, contentType): StoredObject
+}
+}
 
 package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +email: String
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String
-  +birthDate: String
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  .. +20 campos ..
-}
-class CelebrityProfile {
-  +owner: User
-  +stageName: String
-  +slug: String
-  +avatarUrl: String
-  +coverUrl: String
-  +bio: String
-  +realName: String
-  +areasJson: String
-  +verifiableFollowersJson: String
-  +identityProofUrl: String
-  +verificationUrl: String
-  +professionalHistory: String
-  +representationContact: String
-  +fashionInterestsJson: String
-  .. +10 campos ..
-}
-class SchemeGrouping {
+class SchemeGrouping <<scheme_groupings>> {
   +owner: User
   +type: GroupingType
   +label: String
   +description: String
   +coverUrl: String
   +atmospherePrompt: String
-  +periodFrom: Integer
-  +periodTo: Integer
+  +periodFrom, periodTo: Integer
   +accentColor: String
   +sortOrder: int
 }
-class Scheme {
+class Scheme <<schemes>> {
   +user: User
-  +originalScheme: Scheme
   +title: String
-  +description: String
-  +creationMode: CreationMode
-  +origin: SchemeOrigin
-  +style: String
-  +occasion: String
-  +season: Season
-  +mood: Mood
-  +visibility: Visibility
   +status: SchemeStatus
-  +displayMode: DisplayMode
-  +disponivel: boolean
-  .. +41 campos ..
+  +groupingId: UUID
+  +likeCount, commentCount, shareCount: long
+  +coverImageUrl: String
 }
-class WardrobeItem {
+class WardrobeItem <<wardrobe_items>> {
   +user: User
-  +brandProfile: BrandProfile
-  +brand: Brand
-  +name: String
-  +category: String
-  +subcategory: String
-  +sex: String
-  +brandName: String
-  +color: String
-  +material: String
-  +sizeLabel: String
-  +market: String
-  +styleTags: String
-  +occasionTags: String
-  .. +54 campos ..
+  +groupingId: UUID
+  +likesCount: long
+  +availabilityStatus: AvailabilityStatus
+  +model3dStatus: Model3dStatus
+  +model3dUrl: String
 }
-class UserPreferences {
-  +user: User
-  +theme: ThemeMode
-  +language: UiLanguage
-  +density: UiDensity
-  +fontScale: int
-  +highContrast: boolean
-  +reduceMotion: boolean
-  +chromeBackgroundId: String
-  +sizeSystem: SizeSystem
-  +unitSystem: UnitSystem
-  +mannequinSex: MannequinSex
-  +mannequinSkinTone: String
-  +mannequinBuild: BodyBuild
-  +contentContainerColor: String
-  .. +10 campos ..
+class CelebrityProfile <<celebrity_profiles>> {
+  +owner: User
+  +avatarUrl: String — foto oficial
+}
+class HypeScoreCurrent <<hype_scores>> {
+  +score: BigDecimal
+  +status: HypeStatus
+  +publicEligible: boolean
+  +deltaPoints: BigDecimal
+}
+class UserAvatar3d <<user_avatars_3d>>
+class User <<users>> {
+  +profileType: ProfileType
+  +sex: MannequinSex
+  +avatarUrl: String
 }
 }
-package "fai-domain · enums" {
+
 enum GroupingType {
   COLLECTION
   PROMOTION
@@ -118,17 +174,41 @@ enum GroupingType {
   SEASON
   TOUR
 }
-}
-CelebrityProfile "1" --> "1" User : owner
-Scheme "*" --> "1" User : user
+
+ErasTab *-- GroupingSearch
+ErasTab *-- ErasInsights
+ErasTab *-- MyStage
+GroupingSearch --> GroupingForm
+GroupingSearch --> AssignDialog
+ErasInsights *-- MiniStage2D
+MyStage --> StageScene : com WebGL
+MyStage --> StageFallback : sem WebGL
+GroupingSearch ..> ShowcaseController : list · items
+ErasInsights ..> ShowcaseController : insights
+MyStage ..> ShowcaseController : stage
+GroupingForm ..> LookbookController
+GroupingForm ..> ShowcaseController : cover
+AssignDialog ..> LookbookController : items
+ShowcaseController --> ShowcaseService
+LookbookController --> LookbookService
+ShowcaseService ..> Kind
+ShowcaseService --> InstitutionalService : owner()
+ShowcaseService ..> SearchService
+ShowcaseService --> Avatar3dService
+ShowcaseService --> MediaService
+LookbookService ..> GForm
+SchemeGrouping "1" <.. "*" Scheme : groupingId
+SchemeGrouping "1" <.. "*" WardrobeItem : groupingId
 SchemeGrouping "*" --> "1" User : owner
-SchemeGrouping --> GroupingType
-UserPreferences "1" --> "1" User : user
-WardrobeItem "*" --> "1" User : user
-note top of User : tabela users
-note top of CelebrityProfile : tabela celebrity_profiles
-note top of SchemeGrouping : tabela scheme_groupings
-note top of Scheme : tabela schemes
-note top of WardrobeItem : tabela wardrobe_items
-note top of UserPreferences : tabela user_preferences
+CelebrityProfile "0..1" --> "1" User : owner
+UserAvatar3d --> User
+HypeScoreCurrent ..> Scheme : entityId
+SchemeGrouping ..> GroupingType
+
+note right of ShowcaseService
+  insights: score = 0,75·curtidas/máx + 0,25·itens/máx
+  (popularidade; o Hype v2 vem à parte em hype {top,
+  avg, level}). Plateia: audience = fraction · 120.
+  stage: look de maior Hype v2 (público para visitas).
+end note
 @enduml

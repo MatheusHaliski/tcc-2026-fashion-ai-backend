@@ -1,0 +1,56 @@
+@startuml RF44_MaquinaDeEstados_Job
+!pragma layout smetana
+title RF44 — FAI Creative Engine\nMáquina de estados — PipelineJob (enum real PipelineJobStatus) × ciclo do Trello (RN46.05)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "PENDING" as Pendente : queuedAt
+state "RUNNING" as Rodando : startedAt · attempts + 1\n(Trello: PROCESSING)
+state "COMPLETED" as Concluido : outputUrl · resultJson · finishedAt
+state "FAILED" as Falhou : errorCode · errorMessage · finishedAt
+state "CANCELLED" as Cancelado : existe no enum;\nnenhum endpoint atribui
+state "Etapas sem uso" as Etapas #FAFAFA {
+  state "RENDERING" as Render
+  state "ENHANCING" as Enhance
+  state "COMPOSITING" as Compose
+}
+state "REQUIRES_REVIEW\n<<planejado>>" as Revisao #FAFAFA
+
+[*] --> Pendente : job criado\n(reprocessamento do Flat Lay, 3D)
+[*] --> Concluido : cópia por IA: MultiPieceService.recreate\ngrava o job já COMPLETED (AI_PIECE_IMAGE)
+Pendente --> Rodando : agendador pega o job\n(Model3dService.tick a cada 5 s;\nWardrobeService.reprocessPending)
+Pendente --> Falhou : peça removida ou sem arquivo\n(PECA_REMOVIDA, SEM_ARQUIVO)
+Rodando --> Concluido : provedor devolveu o resultado
+Rodando --> Pendente : Flat Lay sem recorte novo\ne attempts < 3
+Rodando --> Falhou : attempts >= 3, SEM_ORIGINAL\nou erro do provedor
+Pendente --> Cancelado : <<planejado>> pessoa ou admin cancela
+Rodando --> Revisao : <<planejado>> asset de marca/celebridade\nou validação de qualidade reprovada
+Revisao --> Concluido : <<planejado>> aprovado
+Revisao --> Falhou : <<planejado>> recusado
+Concluido --> [*]
+Falhou --> [*]
+Cancelado --> [*]
+
+note right of Etapas
+  RENDERING, ENHANCING e COMPOSITING existem
+  no enum, mas nenhum serviço os atribui
+end note
+note bottom of Revisao
+  Divergências Trello × código:
+  • PROCESSING (Trello) = RUNNING (enum real)
+  • REQUIRES_REVIEW não existe no enum
+  • a arte de fundo (BACKGROUND_GENERATION) é
+    gerada de forma síncrona, sem job
+  • WardrobeService.reprocessPending não tem
+    agendador que o chame no código atual
+end note
+@enduml

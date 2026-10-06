@@ -1,68 +1,72 @@
 @startuml FashionAI_Componentes_v5_Seguranca
-title Fashion AI — Componentes v5: camadas de segurança, da borda aos bancos (Railway + Vercel)
+title Segurança, integridade e operação (transversal)\nDiagrama de componentes — camadas de defesa da borda aos bancos, dados demo isolados e entrega contínua (Vercel + Railway)
 !include _estilo.iuml
 left to right direction
 
-actor "Pessoa autorizada\n(equipe/banca)" as P
+actor "Pessoa\n(usuária · equipe · banca)" as P
 
-package "Vercel · fai-network.com (Next.js 15)" {
-  component "middleware.ts\nCSP com nonce · dev gate" as MW
-  component "/gate/*\nGoogle/usuário + PIN · Cloudflare Access" as GATE
-  component "/bff/auth/[action]\nlogin · refresh · logout" as BFF
-  component "App (React)\nlib/api/client.ts · token em memória" as APP
+package "GitHub" {
+  component "CI (.github/workflows/ci.yml)\nAPI: mvn verify (JDK 21)\nFront: typecheck · vitest · build · npm audit\nSegredos: gitleaks no histórico" as CI
+  component "Dependabot\nMaven · npm · Actions · Docker\n(JVM só LTS na imagem)" as DEP
 }
 
-package "Railway · api (Spring Boot 4.1 · JVM 25 LTS, rede privada)" {
-  component "DevGateFilter\nga · v1 legado · Cloudflare JWT" as DGF
-  component "ClientIpResolver\nIP assinado (HMAC)" as CIR
-  component "AuthRateLimitFilter\ncaminho normalizado" as ARL
-  component "Spring Security\nJWT (aud) · papéis · Argon2id" as SEC
-  component "Serviços (RF1–RF40)\nBOLA/BFLA · OwnMedia · locks" as SVC
-  component "AiBudget\nteto USD global e por pessoa" as BUD
-  component "MediaService / MediaProxy\nrestricted/ só pela API" as MED
-  component "BackupJob\nmysqldump → restricted/backups" as BKP
+package "Vercel · Next.js 16" {
+  component "middleware.ts\nCSP com nonce · gate · noindex" as MW
+  component "Rotas /gate\ngoogle · callback · verify (PIN)\nrenew · status" as GATE
+  component "BFF app/bff/auth/[action]\nlogin · register · refresh · logout\nIP assinado (EDGE_PROXY_SECRET)" as BFF
+  component "App React\nlib/api/client.ts\naccess token só em memória" as APP
 }
 
-package "Railway · bancos (sem TCP proxy público)" {
-  database "MySQL 9\nfai_app (só o banco, TLS)\nfai_backup (leitura, TLS)" as MY
-  database "Cassandra 4.1\nfai_app (só o keyspace)\nTLS CA própria" as CA
-  database "OpenSearch 2.19\nfai_app (só fai-*)\nTLS CA própria · auditoria" as OS
-  database "Redis 8.2\nfashionai (ACL, sem @dangerous)" as RD
-  database "Bucket S3\nfashionai-media" as S3
+package "Railway · api (Spring Boot 4.1 · imagem Temurin 25 LTS)" {
+  component "CorrelationIdFilter\nRequestLocaleFilter (-104)" as F0
+  component "DevGateFilter (-103)\ntoken ga · v1 legado · Cloudflare" as DGF
+  component "AuthRateLimitFilter (-102)\nClientIpResolver · teto de hashes" as ARL
+  component "Spring Security\nJWT RS256 (aud) · SessionActiveFilter\nArgon2PasswordHasher" as SEC
+  component "Controllers e serviços\nFashionAuthorization · Guard\nOwnMedia · MediaService · Audit" as SVC
+  component "AiEngine + AiBudget\nteto USD global e por pessoa" as AI
+  component "MediaProxyController\n/media/** · restricted/ só ADMIN" as MED
+  component "AdminService.scheduledBackup\nBackupJob → MysqlDumpBackupAdapter" as BKP
+  component "Flyway V1–V42\nV34 ON DELETE por domínio\nV35 account_origin" as FW
+  component "Pipeline demo (base)\nDemoEnvironmentGuard · DemoFixtures (@Lazy)\nMysqlDemoDataAdminAdapter" as DEMO
+  component "DemoDataService · /api/admin/demo\n<<planejado>>" as DEMOP #FFFFFF
 }
 
-cloud "Provedores de IA\nAnthropic · Google · Replicate" as IA
+package "Railway · bancos (rede privada · start.sh conferido por SHA-256)" {
+  database "MySQL 9\nfai_app (só o banco, REQUIRE SSL)\nfai_backup (leitura, REQUIRE SSL)" as MY
+  database "Cassandra 4.1\nfai_app só em fashionai_feed\nTLS com CA própria" as CA
+  database "OpenSearch 2.19\nfai_app só em fai-* · TLS\nauditoria de falhas" as OS
+  database "Redis 8.2\nACL fashionai sem @dangerous" as RD
+  database "Bucket S3\nmídia · restricted/" as S3
+}
+
+component "Railway deploy\n(healthcheck configurado no painel)" as RWD
+cloud "Provedores de IA\nchaves só no servidor" as IA
 
 P --> MW : HTTPS
-MW --> GATE : sem gp válido
-MW --> APP : gp válido (renova ga)
+MW --> GATE : sem gate válido
+MW --> APP : gate válido (renova ga)
 APP --> BFF : sessão (cookie fai_rt)
-APP --> DGF : chamadas /api (Bearer + X-Dev-Gate)
-BFF --> DGF : X-Dev-Gate + IP assinado
-DGF --> CIR
-CIR --> ARL
+APP --> F0 : /api (Bearer + X-Dev-Gate)
+BFF --> F0 : X-Dev-Gate + IP assinado
+F0 --> DGF
+DGF --> ARL
 ARL --> SEC
 SEC --> SVC
-SVC --> BUD
+SVC --> AI
 SVC --> MED
-BUD --> IA : chaves só no servidor\n(Vision em cabeçalho · Replicate só api.replicate.com)
+AI --> IA : só com orçamento
 SVC --> MY : JDBC sslMode=REQUIRED
 SVC --> CA : CQL + TLS
-SVC --> OS : HTTPS + Basic
-SVC --> RD : AUTH usuário ACL
+SVC --> OS : HTTPS + usuário
+ARL --> RD : contadores\n(sem Redis: memória com teto)
 MED --> S3
+SVC --> S3
 BKP --> MY : fai_backup
 BKP --> S3 : restricted/backups/
-
-note top of SEC
-  Evolução (v6, com teto de hashes, bloqueio
-  por reserva atômica, Flyway V34/V35 e entrega
-  contínua): docs/diagramas/RF49/RF49_Componentes.png
-end note
-
-note bottom of MY
-  Cada banco sobe por um start.sh versionado
-  (infra/railway), conferido por SHA-256:
-  usuários de menor privilégio a cada início.
-end note
+FW --> MY
+DEMO --> MY : só TEST_SEED/DEMO
+DEMOP ..> DEMO
+DEP --> CI : PRs semanais
+CI --> RWD : merge na branch de deploy\n(com CI verde)
+RWD --> FW : nova imagem sobe e migra
 @enduml

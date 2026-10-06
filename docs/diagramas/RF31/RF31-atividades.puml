@@ -1,5 +1,5 @@
 @startuml RF31_Atividades
-title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de atividades
+title RF31 — Filtrar e marcar o estado dos itens do acervo: favoritar, disponível, indisponível e todos\nDiagrama de atividades — marcar os estados da peça (favorita, disponível/indisponível, à venda, para doar)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,31 +23,40 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Usuário|
+|Pessoa|
 start
-:Closet → filtro (Todas, Favoritas,\nDisponíveis, Indisponíveis, À venda);
-:Opcional: faixa mínima de Hype (hypeLevel) e ordenação\n(recent · hype_desc · hype_asc · growth · rarity\n· worn · least_worn · idle · name · price);
+:Abre a peça (card expandido) e usa o menu ⋯:\nFavoritar · Marcar indisponível/disponível ·\nMarcar à venda · Marcar para doar;
+|Frontend (expanded-card.tsx)|
+:PATCH /api/pieces/{id}/flags\n{favorite | disponivel | forSale | forDonation: !atual};
+|API + Serviço (WardrobeController → WardrobeService.toggles)|
+:guard.requireCanCreate (e-mail confirmado, conta não suspensa)\ne owned(user, id) → guard.requireOwner;
+if (Pode e é dona?) then (não)
+  #FFE3E3:403 EMAIL_NAO_CONFIRMADO / CONTA_SUSPENSA,\n403 "apenas o autor pode alterar" ou 404 peça inexistente;
+  stop
+endif
+if (favorite veio?) then (sim)
+  :is_favorite = valor (independente dos outros estados);
+endif
+if (disponivel veio?) then (sim)
+  :disponivel = valor e availability_status =\nAVAILABLE | UNAVAILABLE (exclusivos);
+  if (Mudou de fato?) then (sim)
+    :publishEvent(AvailabilityChanged);
+    |Banco / eventos|
+    :Após o commit (WardrobeEventListeners.onAvailability):\nINSERT wardrobe_availability_log (available, changedAt)\n→ Utilização do Inventory Score (RF29);
+  endif
+endif
+|API + Serviço (WardrobeController → WardrobeService.toggles)|
+:applyListing: marcar à venda desmarca "para doar"\ne vice-versa; desmarcar não mexe no outro;
+:Devolve PieceView atualizado;
+|Frontend (expanded-card.tsx)|
+:emitPieceUpdate(p): card, closet e quarto se atualizam;\nselos no card: Indisponível · Para doar · ★ (só a dona);
 note right
-  novo (RF53 · HypeScore v2): hype-filters.ts
-  (hypeSortOptions · hypeLevelFilter); antes a tela
-  mandava mais_usadas/nome/preco e a ordem era ignorada
+  Efeito de "indisponível" em outras telas:
+  • Criar look (RF5): 400 PECA_INDISPONIVEL
+  • Vista-me / Smart Mirror (RF28): eligible() só usa
+    disponíveis e ainda tira as peças à venda
+  • Copilot (RF10): filtro availableOnly
+  • Meu Quarto (RF27): estados INDISPONIVEL, FAVORITA, A_VENDA
 end note
-|Sistema (WardrobeService)|
-:GET /api/me/closet → closet(viewer, ownerId, ClosetFilter);\nSORT_ALIASES normaliza o sort (mais_usadas → worn, nome → name…);
-if (sort em HYPE_SORTS ou hypeLevel informado?) then (sim)
-  :Lê hype_scores das peças (HypeScoreCurrentRepository,\nalgorithmVersion do HypeScoreConfig);
-  :hypeLevel: tira peças abaixo do score mínimo da faixa\n(e as sem Hype); ordenação Hype: sem Hype por último;
-endif
-:Lista as peças do filtro;
-|Usuário|
-:Abre uma peça e muda o estado;
-|Sistema (WardrobeService)|
-:Atualiza as flags da peça\n(favorita, disponível, à venda);
-if (Disponibilidade mudou?) then (sim)
-  :Publica AvailabilityChanged;
-  |Sistema (WardrobeEventListeners)|
-  :Após o commit, registra a mudança\n(histórico usado no Inventory Score);
-endif
-:Reflete no Meu Quarto\n(cesto, cabide especial, arara de venda)\ne no Smart Mirror (não sugere indisponível);
 stop
 @enduml

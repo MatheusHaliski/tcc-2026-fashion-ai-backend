@@ -1,0 +1,98 @@
+@startuml RF39_Atividades_ItensUnicos
+title RF39 — Criar guarda-roupa 3D com a identidade de uma marca/celebridade e vender na loja do quarto\nDiagrama de atividades — itens únicos e personalizáveis: edição limitada numerada, limite por pessoa, selo exigido (absorve o antigo RF44)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Marca/Celebridade|
+start
+:Perfil (brands/[slug]) → aba "Criar guarda-roupa 3D"\n(WardrobeCreatorTab);
+if (O que quer vender?) then (bloco ou guarda-roupa\ndo Meu Quarto)
+else (aura, material ou skin\ndo Background Studio)
+  #FFF5F8:<<planejado>> Venda de itens do Background Studio;
+  note right
+    Não existe no código: asset_presets (AssetPreset)
+    não tem criador, preço nem estoque, e o
+    BackgroundController não tem rota de venda.
+  end note
+  stop
+endif
+:Personaliza: material e cor por bloco, logo (PNG),\narte das portas, nome gravado na placa (labelText)\ne selo de identidade (um selo ACTIVE do próprio perfil);
+:Define o que torna o item único:\n• estoque (edição limitada, mínimo 1)\n• limite por pessoa (mínimo 1)\n• disponível a partir de / expira em\n• "exige selo" aprovado num look\n• preço (0–20 000 FAI Points) e nível mínimo;
+|API (WardrobeCreatorService)|
+:POST /api/room-creator/items (save);
+if (marca/celebridade aprovada, selo do próprio perfil,\npreço e janela válidos?) then (não)
+  #FFE3E3:403 (perfil ou selo) · 400 PRECO_INVALIDO\n· PERIODO_INVALIDO;
+  stop
+endif
+:SKU BRD-<marca>-<token>; raridade MARCA ou CELEBRIDADE;\nfinish_json leva logoUrl, artUrl, labelText, sealId e criador;\nstock_limit, per_user_limit, requires_seal em room_catalog;
+|Comprador|
+:Loja do quarto (/points) ou aba "Guarda-roupa 3D" da marca\n(RoomStore: estoque restante, "só o que posso comprar");
+:Comprar;
+|API (FaiPointsService)|
+:Trava o comprador (lockOwner) e depois o item (lockBySku);
+if (nível do quarto ≥ nível do item?) then (não)
+  #FFE3E3:409 NIVEL_INSUFICIENTE;
+  stop
+endif
+if (soldCount < stockLimit?\n(ou sem estoque)) then (não)
+  #FFE3E3:409 ESGOTADO\n(edição limitada esgotada);
+  stop
+endif
+if (blocker(): janela aberta, criador ativo,\nunidades < limite por pessoa e, se exige selo,\nSealBond APPROVED não vencido com a marca\n(e com o selo do item)?) then (não)
+  #FFE3E3:409 CONDICAO_DE_COMPRA\n(com o motivo em texto);
+  stop
+endif
+if (saldo ≥ preço?) then (não)
+  #FFE3E3:409 SALDO_INSUFICIENTE;
+  stop
+endif
+:Débito SHOP_PURCHASE (se preço > 0) e notificação FAI_POINTS;
+:soldCount + 1; unidade em room_inventory com\nserial = soldCount quando há estoque (nº da edição);
+|Comprador|
+:Unidade aparece na caixa de entrega do Meu Quarto\n(GET /api/me/room → unboxing);
+:Abre a caixa (ou "Montar" na loja);
+|API (FaiPointsService)|
+:POST /api/me/room-inventory/{id}/apply;
+if (WARDROBE?) then (sim)
+  :moduleId = ALL: cada bloco do bundle\nvai para todos os módulos do tipo;
+else (COMPONENT)
+  :módulo compatível (mesmo slotType e largura);
+endif
+:room_layouts.modules_json recebe sku, finish e raridade;
+|Marca/Celebridade|
+:"Minhas criações": vendas e FAI Points por item\n(GET /api/room-creator/items);
+note right
+  Os pontos são só estatística (vendas × preço):
+  o débito do comprador não vira crédito
+  para a marca/celebridade.
+end note
+if (Retirar o item da loja?) then (sim)
+  if (já vendeu ou há unidades?) then (sim)
+    :DELETE só desativa (active = false):\nquem comprou continua com a unidade;
+  else (não)
+    :DELETE apaga o item;
+  endif
+else (não)
+endif
+stop
+@enduml

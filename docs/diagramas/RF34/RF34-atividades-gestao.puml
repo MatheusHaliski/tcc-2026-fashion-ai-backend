@@ -1,0 +1,87 @@
+@startuml RF34_Atividades_Gestao
+title RF34 — Eras da celebridade: busca por era, Insights de Eras e My Stage 3D\nDiagrama de atividades — a celebridade (dona do perfil) cria, edita, ilustra e liga looks e peças a uma era
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Celebridade (dona)|
+start
+:Na sub-aba "Buscar por era" vê o cartão\n"Você administra este perfil" (admin = mode ADMINISTRADOR);
+|Frontend (showcase-tabs: GroupingForm · AssignDialog)|
+switch (Ação escolhida?)
+case (Nova era)
+  :GroupingForm: tipo ERA · PHASE · TOUR, nome (2–80), descrição (≤ 300),\nde/até ano (1900–2100), cor (#RRGGBB);
+  :POST /api/groupings {type, label, description,\nperiodFrom, periodTo, accentColor, coverUrl};
+  |LookbookService|
+  if (type fora de CELEBRITY = ERA, PHASE, SEASON, TOUR, COLLECTION?) then (sim)
+    #FFE3E3:400 TIPO_INVALIDO;
+    stop
+  elseif (periodTo < periodFrom ou ano fora de 1900–2100?) then (sim)
+    #FFE3E3:400 PERIODO_INVALIDO;
+    stop
+  elseif (cor não é #RRGGBB?) then (sim)
+    #FFE3E3:400 COR_INVALIDA;
+    stop
+  else (ok)
+    :INSERT scheme_groupings (owner = celebridade);
+  endif
+case (Foto da era)
+  |Frontend (showcase-tabs: GroupingForm · AssignDialog)|
+  if (Era ainda não foi salva?) then (sim)
+    :Aviso "salve primeiro, depois envie a foto";
+    stop
+  else (não)
+  endif
+  :POST /api/groupings/{id}/cover (multipart);
+  |ShowcaseService|
+  :Uploads.image: jpeg/png/webp/heic\n(senão 400 FORMATO_NAO_SUPORTADO);
+  :requireCanCreate + dono do agrupamento (403),\nImageOps: valida, reduz a 1800×1200, JPEG 0,9;
+  :MediaService.put("users/{id}/groupings/{id}/cover-….jpg")\n→ MediaStoragePort (S3 ou disco local);
+  :scheme_groupings.cover_url = URL → header da busca;
+case (Ligar looks e peças)
+  |Frontend (showcase-tabs: GroupingForm · AssignDialog)|
+  :AssignDialog: GET /api/me/schemes?size=60\n· GET /api/me/closet?size=60, a dona marca os itens;
+  :POST /api/groupings/{id}/items {schemeIds, pieceIds};
+  |LookbookService|
+  :Dono do agrupamento? (403)\ncada look/peça precisa ser da dona (owned → 404/403);
+  :schemes.grouping_id / wardrobe_items.grouping_id = id\n(uma era por item: ligar a outra substitui);
+case (Editar ou excluir)
+  |Frontend (showcase-tabs: GroupingForm · AssignDialog)|
+  if (Excluir?) then (sim)
+    :DELETE /api/groupings/{id};
+    |LookbookService|
+    :grouping_id = null nos looks e peças da dona\n+ DELETE scheme_groupings (itens continuam);
+  else (editar)
+    |Frontend (showcase-tabs: GroupingForm · AssignDialog)|
+    :PUT /api/groupings/{id} (campos mudados);
+    |LookbookService|
+    :Atualiza label, descrição, período, cor, ordem e capa;
+    note right
+      Divergência: "Remover" a foto manda coverUrl = null,
+      que o backend ignora (só "" remove a capa)
+    end note
+  endif
+endswitch
+|Frontend (showcase-tabs: GroupingForm · AssignDialog)|
+:Recarrega a lista de eras e os itens da busca;
+stop
+@enduml

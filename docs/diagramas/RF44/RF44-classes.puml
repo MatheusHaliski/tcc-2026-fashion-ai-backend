@@ -1,5 +1,5 @@
 @startuml RF44_Classes
-title RF44 — Permitir que marcas & celebridades vendam itens únicos e personalizáveis do Meu Quarto e do Background Studio na loja do app\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF44 — FAI Creative Engine\nDiagrama de classes — serviços criativos reais, motor de IA (RF24) e portas de provedor de imagem
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -10,175 +10,193 @@ skinparam class {
 }
 skinparam packageStyle rectangle
 hide empty methods
+hide empty fields
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +profileType: ProfileType
-  +status: AccountStatus
-  .. +campos ..
+package "fai-application · serviços criativos" {
+  class BackgroundStudioService <<Service>> {
+    +catalog(): Map
+    +recommend(styles, occasions): Map
+    +generateArt(CurrentUser, ArtRequest): Map
+    +upload(CurrentUser, byte[], String target): Map
+    +applyToScheme(Scheme, Map config, boolean)
+    +savePiece(CurrentUser, UUID, Object cfg): Map
+    +generateSkinThumbnail(CurrentUser, String, boolean): Map
+  }
+  class "BackgroundStudioService.ArtRequest" as ArtRequest <<record>> {
+    prompt: String
+    direction: String
+    celebrityId: UUID
+    era: String
+    passePartout: boolean
+    target: String
+  }
+  class WardrobeService <<Service>> {
+    +studioPiece(CurrentUser, UUID, String): PieceView
+    +approveStudio(CurrentUser, UUID): PieceView
+    +discardStudio(CurrentUser, UUID): PieceView
+    +studioAll(CurrentUser, String): Map
+    ~offerStudio(WardrobeItem, Map, boolean): String
+  }
+  class StudioPipeline <<Component>> {
+    +SIZE = 1600
+    +BACKDROPS: List<Backdrop> (7 fundos)
+    +externalAvailable(): boolean
+    +run(BufferedImage cutout, String backdropId,\n  boolean allowExternal, Hints): Result
+  }
+  class "StudioPipeline.Result" as StudioResult <<record>> {
+    studioJpeg, thumbJpeg, detailJpeg, feedJpeg: byte[]
+    enhancedPng: byte[]
+    backdrop: Backdrop
+    stages: List<Stage>
+    costUsd: BigDecimal
+    fallbackUsed: boolean
+  }
+  class MultiPieceService <<Service>> {
+    +recreate(CurrentUser, UUID draftId, Integer, byte[],\n  name, category, color): AiImage
+    +aiPieceDraft(CurrentUser, UUID draftId, UUID aiImageId): PieceDraft
+    ~recreatePrompt(name, category, color): String
+  }
+  class "MultiPieceService.AiImage" as AiImage <<record>> {
+    aiImageId: UUID
+    previewUrl: String
+    explanation: AiOutcome.Explanation
+    quota: AiOutcome.Quota
+  }
+  class AiSeal <<final>> {
+    HEIGHT_RATIO = 0.075
+    MIN_HEIGHT = 22
+    +{static} stamp(BufferedImage, String label): BufferedImage
+  }
+  class SealDesignService <<Service>> {
+    +catalog(): Map
+    +upload(CurrentUser, byte[]): Map
+    +uploadCore(CurrentUser, byte[]): Map
+  }
 }
-class RoomCatalogItem {
-  +sku: String
-  +name: String
-  +kind: String
-  +slotType: String
-  +moldId: String
-  +material: String
-  +colorName: String
-  +finishJson: String
-  +bundleJson: String
-  +logoUrl: String
-  +artUrl: String
-  +labelText: String
-  +sealId: UUID
-  +rarity: String
-  +pricePoints: int
-  +requiredLevel: String
-  +stockLimit: Integer
-  +soldCount: int
-  +perUserLimit: Integer
-  +availableFrom: Instant
-  +availableUntil: Instant
-  +requiresSeal: boolean
-  +active: boolean
-  +creatorUserId: UUID
-  +maisonBrandUserId: UUID
-  +version: Long
+
+package "fai-application · ai (RF24)" {
+  class AiEngine <<Service>> {
+    +execute(UUID userId, AiCapability, List<String> inputs,\n  String prompt, Collection<String> protectedNames,\n  List<RemoteStep<T>>, Supplier<T> local): AiOutcome<T>
+    +remoteAllowed(UUID, AiCapability): boolean
+  }
+  interface "AiEngine.RemoteStep<T>" as RemoteStep {
+    +provider(): String
+    +model(): String
+    +available(): boolean
+    +call(): RemoteResult<T>
+  }
+  class "AiOutcome<T>" as AiOutcome <<record>> {
+    value: T
+    inferenceId: UUID
+    result: AiCallResult
+    fallbackUsed: boolean
+    provider, model: String
+    latencyMs: long
+    costUsd: BigDecimal
+    userMessage: String
+  }
+  class CelebrityPromptValidator <<final>> {
+    +{static} validate(String prompt,\n  Collection<String> names): Verdict
+  }
+  enum AiCapability {
+    BACKGROUND_GENERATOR
+    STUDIO_ENHANCER
+    PIECE_IMAGE_RECREATOR
+    FLAT_LAY_STANDARDIZER
+    .. +22 capacidades ..
+  }
 }
-class RoomInventoryItem {
-  +id: UUID
-  +userId: UUID
-  +sku: String
-  +serial: Integer
-  +source: String
-  +appliedModule: String
-  +acquiredAt: Instant
+
+package "fai-application · imaging · ImageProviderPorts" {
+  interface ImageGenerationPort <<port>> {
+    +available(): boolean
+    +generate(prompt, negativePrompt,\n  width, height): Optional<ProviderImage>
+  }
+  interface ImageEditPort <<port>> {
+    +available(): boolean
+    +edit(byte[] image, String mimeType,\n  String prompt): Optional<ProviderImage>
+  }
+  interface StudioShotPort <<port>> {
+    +available(): boolean
+    +studio(cutoutPng, backgroundHex, width,\n  height, padding): Optional<ProviderImage>
+  }
+  interface UpscalePort <<port>> {
+    +available(): boolean
+    +upscale(byte[] png): Optional<ProviderImage>
+  }
+  class ProviderImage <<record>> {
+    bytes: byte[]
+    mimeType: String
+    provider: String
+    costUsd: BigDecimal
+    latencyMs: long
+    confidence: double
+    metadata: Map
+  }
 }
-class FaiPointsLedgerEntry {
-  +userId: UUID
-  +delta: int
-  +actionCode: String
-  +refType: String
-  +refId: String
-  +idempotencyKey: String
-  +countsLifetime: boolean
+
+package "fai-infrastructure · ai-providers" {
+  class ReplicateImageGenerationAdapter <<adapter>> {
+    FLUX schnell
+  }
+  class GeminiImageEditAdapter <<adapter>> {
+    gemini-2.5-flash-image
+  }
+  class ReplicateImageEditAdapter <<adapter>> {
+    flux-kontext-pro
+  }
+  class PhotoroomStudioAdapter <<adapter>>
+  class StabilityUpscaleAdapter <<adapter>>
+  class "AdobeFireflyAdapter" as Firefly <<planejado>> #FAFAFA
 }
-class RoomLayout {
-  +user: User
-  +level: String
-  +modulesJson: String
-}
-class Seal {
-  +owner: User
-  +name: String
-  +status: SealStatus
-  +availableFrom: Instant
-  +availableUntil: Instant
-}
-class SealBond {
-  +targetOwner: User
-  +requestedBy: User
-  +seal: Seal
-  +status: SealBondStatus
-  +expiresAt: Instant
-}
-class BrandProfile {
-  +owner: User
-  +brandName: String
-  +slug: String
-  +logoUrl: String
-  +approvalStatus: ApprovalStatus
-}
-class CelebrityProfile {
-  +owner: User
-  +stageName: String
-  +slug: String
-  +avatarUrl: String
-  +verificationStatus: ApprovalStatus
-}
-class AssetPreset {
-  +id: String
-  +kind: AssetKind
-  +label: String
-  +presetGroup: String
-  +staticUrl: String
-  +animatedUrl: String
-  +paletteJson: String
-  +status: String
-}
-class "<<planejado>>\nBackgroundStudioStoreItem" as BSI #FFF5F8 {
-  +creatorUserId: UUID
-  +presetId: String
-  +pricePoints: int
-  +stockLimit: Integer
-}
-}
-package "fai-domain · enums" {
-enum ProfileType {
-  PESSOAL
-  MARCA
-  CELEBRIDADE
-}
-enum AssetKind {
-  CHROME_BACKGROUND
-  AURA_PRESET
-  AURA_VARIANT
-  MATERIAL
-  AURA_MATERIAL_STATIC
-  AURA_MATERIAL_ANIMATED
-  AURA_MATERIAL_MOSAIC
-  GRADIENT_AURA
-  SEASONAL
-  CARD_SKIN
-}
-}
-package "fai-application · service" {
-class WardrobeCreatorService {
-  +options(user): Map
-  +save(user, sku, ItemForm): Map
-  +delete(user, sku)
-  +mine(user): Map
-  +uploadArt(user, bytes, kind): Map
-  +{static} availability(item, now): String
-  +hasSeal(buyer, item): boolean
-  +blocker(buyer, item): String
-  +sellerActive(item): boolean
-}
-class FaiPointsService {
-  +shop(user): List<Map>
-  +tryOn(user, sku, moduleId): Map
-  +buy(user, sku): Map
-  +apply(user, inventoryId, moduleId): Map
-}
-}
-RoomCatalogItem ..> User : creatorUserId
-RoomCatalogItem ..> Seal : sealId
-RoomInventoryItem ..> RoomCatalogItem : sku
-RoomInventoryItem ..> User : userId
-FaiPointsLedgerEntry ..> User : userId
-FaiPointsLedgerEntry ..> RoomCatalogItem : refType=SKU, refId
-RoomLayout "*" --> "1" User : user
-Seal "*" --> "1" User : owner
-SealBond "*" --> "1" Seal : seal
-SealBond "*" --> "1" User : targetOwner
-SealBond "*" --> "1" User : requestedBy
-BrandProfile "1" --> "1" User : owner
-CelebrityProfile "1" --> "1" User : owner
-User --> ProfileType
-AssetPreset --> AssetKind
-BSI ..> AssetPreset : presetId
-BSI ..> User : creatorUserId
-WardrobeCreatorService ..> RoomCatalogItem : cria/edita
-FaiPointsService ..> RoomInventoryItem : cria (buy)
-FaiPointsService ..> FaiPointsLedgerEntry : debita SHOP_PURCHASE
-note top of RoomCatalogItem : tabela room_catalog\nkind = COMPONENT | WARDROBE;\nrarity = MARCA | CELEBRIDADE
-note top of RoomInventoryItem : tabela room_inventory\nserial = número da unidade\n(edição limitada)
-note top of FaiPointsLedgerEntry : tabela fai_points_ledger
-note top of RoomLayout : tabela room_layouts
-note top of AssetPreset : tabela asset_presets\n(Background Studio — RF11)
-note bottom of BSI : não implementado — conforme Trello\n(venda de itens do Background Studio)
-note top of BrandProfile : tabela brand_profiles
-note top of CelebrityProfile : tabela celebrity_profiles
+
+class Photo <<Entity>>
+class WardrobeItem <<Entity>>
+class PipelineJob <<Entity>>
+class AiInferenceLog <<Entity>>
+
+BackgroundStudioService ..> ArtRequest
+BackgroundStudioService --> "0..*" ImageGenerationPort : fallback em ordem
+BackgroundStudioService --> AiEngine
+BackgroundStudioService ..> Photo : registra (BACKGROUND_STUDIO)
+BackgroundStudioService ..> WardrobeItem : backgroundConfigJson (rev)
+WardrobeService --> StudioPipeline
+WardrobeService --> AiEngine : STUDIO_ENHANCER
+WardrobeService ..> WardrobeItem : versão pendente / aprovada
+StudioPipeline ..> StudioResult
+StudioPipeline --> "0..*" StudioShotPort
+StudioPipeline --> "0..*" UpscalePort
+MultiPieceService --> "0..*" ImageEditPort
+MultiPieceService --> AiEngine : PIECE_IMAGE_RECREATOR
+MultiPieceService ..> AiSeal : carimba as versões
+MultiPieceService ..> AiImage
+MultiPieceService ..> PipelineJob : AI_PIECE_IMAGE
+AiEngine ..> RemoteStep
+AiEngine ..> AiOutcome
+AiEngine ..> CelebrityPromptValidator
+AiEngine ..> AiCapability
+AiEngine --> AiInferenceLog : uma linha por tentativa
+ImageGenerationPort ..> ProviderImage
+ImageEditPort ..> ProviderImage
+ImageGenerationPort <|.. ReplicateImageGenerationAdapter
+ImageGenerationPort <|.. Firefly
+ImageEditPort <|.. GeminiImageEditAdapter
+ImageEditPort <|.. ReplicateImageEditAdapter
+StudioShotPort <|.. PhotoroomStudioAdapter
+UpscalePort <|.. StabilityUpscaleAdapter
+
+note bottom of AiSeal
+  RN46.03 hoje: selo "gerada por IA" no arquivo
+  + flag WardrobeItem.aiGeneratedImage
+end note
+note bottom of CelebrityPromptValidator
+  RN46.04 parcial: rejeita prompt com nome de
+  celebridade cadastrada ou pedido de rosto
+  (422 PROMPT_REJEITADO)
+end note
+note bottom of Firefly
+  RN46.10: a porta já abstrai o provedor;
+  Adobe só aparece como opção "firefly"
+  no AiCatalog (sem adaptador)
+end note
 @enduml

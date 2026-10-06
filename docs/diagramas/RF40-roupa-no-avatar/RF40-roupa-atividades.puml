@@ -1,5 +1,5 @@
 @startuml RF40_Roupa_Atividades
-title RF40 — Avatar 3D: montagem da roupa (caimento de tecido, acabamentos e tênis) sobre o corpo com esqueleto\nDiagrama de atividades
+title RF40 — Criar o próprio avatar 3D a partir de fotos (aba "Meu Avatar 3D") e usá-lo no manequim\nDiagrama de atividades — roupa no avatar: do look ao corpo vestido (nunca sem roupa)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,26 +23,56 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|HumanOutfit (navegador)|
+|Tela 3D (Mannequin)|
 start
-:Recebe as peças do look (provador, espelho, perfil);
-:kindOf(categoria, subcategoria) → molde\n(tee, shirt, hoodie, coat, jeans, dress, …);
-if (Falta parte de cima, de baixo ou calçado?) then (sim)
-  :Completa com as peças padrão FAI\n(nunca sem roupa; tênis FAI se descalço);
+:Recebe o manequim (sexo, avatar ou não, medidas)\ne as peças do look (provador, espelho, vitrines,\nPassarela 3D, Meu Avatar 3D);
+:withDefaultOutfit: zona sem peça (tronco, pernas, pés)\nrecebe a peça padrão FAI (camiseta, jeans, tênis casual);
+|HumanAvatar (navegador)|
+if (corpo fai-body-v1 (.json + .bin) carregado?) then (não: carregando ou erro)
+  :Desenha o fallback (CapsuleMannequin):\na vitrine nunca fica vazia;
+  stop
 endif
-:Ordena as camadas (base → intermediária → externa);
-:bodyParam(asset, composed) — eixos, ombros, punhos, quadril;
-:smoothBody — corpo suavizado (sem relevo de mamilos,\numbigo e costelas na roupa);
+:fitBody (medidas do avatar ou referência do sexo)\n→ compose (forma e estatura) → fitFace\n(468 pontos do rosto, quando há avatar);
+:buildHuman (malha MakeHuman CC0 + esqueleto)\ncom o corpo invisível (dressed = false); applyRestPose;\najustes de cabeça e pescoço;
+:Cabelo (buildHair; fios só com NEXT_PUBLIC_AVATAR_HAIR_STRANDS=1),\npele (bakeSkin com a textura do rosto) e olhos;
+|HumanOutfit (navegador)|
+:Baixa a foto de cada peça (studioUrl ou imageUrl);
+note right
+  Antes de a foto chegar, a peça já é vestida
+  na cor do tecido (colorHex): o corpo nunca é
+  desenhado sem as peças (useLayoutEffect).
+end note
+:outfitOf: kindOf(categoria, subcategoria) → molde\n(tee, shirt, hoodie, jacket, coat, pants, dress, shoes, boots…);\nacessório (null) fica de fora; ordena por camada;
+:setArmOut(armOutFor) e pose de exibição; bodyParam;\nsmoothBody: corpo suavizado para o tecido;
 repeat
-  :garmentGeometry — casca a partir do corpo suavizado,\ncom folga do molde e da camada de baixo;
-  :relaxGarment — caimento (Laplaciano/Taubin)\nsem atravessar o corpo;
-  :foldGarment — dobras discretas nos tecidos moles;
-  :collarBand + garmentTrims — gola, barra e punhos\ncomo faixas 3D na cor do acabamento da foto;
-  :texturedGeometry + garmentMaterial — foto da peça\ncomo textura, cor do tecido nas áreas sem foto;
-repeat while (Mais peças?) is (sim)
+  :underLayer das peças já vestidas → garmentGeometry\n(casca com a folga do molde, por fora da camada de baixo);
+  if (o molde gerou geometria?) then (sim)
+    :relaxGarment (caimento) e foldGarment (dobras);
+    :posedPositions → texturedGeometry com photoInfo\n(foto como textura; cor do tecido onde não há foto);
+    if (calçado (shoes, boots)?) then (sim)
+      :cabedal e sola nas cores da foto (shoeColors)\n+ shoeParts: sola, cabedal, cadarço, colarinho\n(estilo sneaker ou low); bota mantém o cano;
+    else (não)
+      :SkinnedMesh com garmentMaterial;\ngarmentTrims (barra e punho) e collarBand (gola)\nnas cores da foto (trimColors, ribColor);
+    endif
+    :prende as malhas ao esqueleto do corpo (bind);
+  else (não)
+  endif
+repeat while (mais peças?) is (sim)
 ->não;
-:shoeParts — tênis/sapato com sola, cabedal e cadarço\nnas cores da foto (ou padrão FAI);
-:Prende cada malha aos ossos (pesos do vértice\ndo corpo mais próximo) — acompanha a pose;
-:Pose natural (respiração, apoio) e render;
+if (alguma zona ficou sem peça (molde falhou)?) then (sim)
+  :veste a peça padrão FAI dessa zona;
+endif
+:Calçado: o corpo sobe a altura da sola (SOLE_LIFT);
+if (tronco, pernas e pés cobertos (zonesCovered)?) then (sim)
+  :root.userData.dressed = true; corpo visível;
+else (não)
+  #FFE3E3:corpo escondido e console.error\n("avatar sem as três zonas cobertas");
+endif
+|HumanAvatar (navegador)|
+:A cada quadro: visible = dressed; applyIdle\n(movimento parado; desligado com "reduzir movimento");
+note right
+  exportAvatarGlb (Meu Avatar 3D) só exporta
+  com dressed = true (AVATAR_NOT_DRESSED).
+end note
 stop
 @enduml

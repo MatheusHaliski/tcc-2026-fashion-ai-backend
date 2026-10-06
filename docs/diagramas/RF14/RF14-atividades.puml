@@ -29,15 +29,15 @@ start
 |Frontend (brands/page.tsx)|
 :GET /api/brands?term=&order= (anônimo sem login);
 |API (ProfileController · InstitutionalService)|
-:brandFeed: só brand_profiles com approval_status = APROVADO;\nfiltra brandName por termo (sem caixa);
+:brandFeed: só brand_profiles com approval_status = APROVADO,\nfiltra brandName pelo termo (sem diferenciar caixa);
 switch (Ordem pedida?)
 case (EM_ALTA)
-  :Ordena pelo Hype agregado da marca (BY_GROUP_HYPE):\ngrupos suficientes primeiro, maior valor antes;\nsem base (menos de 3 itens públicos) no fim;
+  :Ordena pelo Hype agregado da marca (BY_GROUP_HYPE):\ngrupos suficientes primeiro, maior valor antes,\nsem base (menos de 3 itens públicos) no fim;
 case (RECENTES)
   :Mantém createdAt desc;
 case (AFINIDADE ou vazio)
   if (Logada e com StyleDna?) then (sim)
-    :Afinidade = Jaccard(estilos do DNA × style_tags do catálogo\nda marca) em %; AiEngine.local(AFFINITY); ordena desc;
+    :Afinidade = Jaccard(estilos do DNA × style_tags do catálogo\nda marca) em %, AiEngine.local(AFFINITY), ordena desc;
   else (não)
     :Cai para RECENTES;
   endif
@@ -54,8 +54,11 @@ else (não)
 endif
 note right
   Card sem logo: BrandLogo busca
-  GET /api/brand-logos (cache em brand_logos;
-  busca na web limitada — RF4)
+  GET /api/brand-logos (cache em brand_logos,
+  busca na web limitada — RF4).
+  Divergência: a API manda o total de selos
+  em "bonds", mas o card lê "seals" — o número
+  de selos não aparece no card.
 end note
 |Pessoa|
 if (Toca em uma marca ou troca para "Celebridades"?) then (Celebridades)
@@ -89,7 +92,7 @@ fork again
 fork again
   :InsightStrip → GET /api/insights?context=BRAND_PROFILE&key=slug;
 end fork
-:Abas: Coleções (RF35) · Esquemas em destaque · Peças em destaque ·\nLooks consagrados · Catálogo · Selos · Promoções · FLAIR ·\nGuarda-roupa 3D; dona também: Central · Salvos · Revisão ·\nMétricas · Meus cupons;
+:Abas: Coleções (RF35) · Esquemas em destaque · Peças em destaque ·\nLooks consagrados · Catálogo · Selos · Promoções · FLAIR ·\nGuarda-roupa 3D. Dona também: Central · Salvos · Revisão ·\nMétricas · Meus cupons;
 switch (A pessoa escolhe…)
 case (aba de looks/peças)
   :GET /api/institutional/{slug}/tabs/{TAB}[?filter=RECENTES|HYPE|GROWTH];

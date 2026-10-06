@@ -1,0 +1,52 @@
+@startuml SEG_Sequencia_Entrega_Continua
+title Segurança, integridade e operação (transversal)\nDiagrama de sequência — entrega contínua: da branch ao ar com CI, imagem, Flyway e healthcheck
+!include _estilo.iuml
+autonumber
+
+actor "Dev (ou sessão Claude)" as DEV
+participant "GitHub\nPR · main · claude/**" as GH
+participant "CI · API\nmvn -B verify (JDK 21)" as CIAPI
+participant "CI · Front\ntypecheck · vitest · build · audit" as CIFE
+participant "CI · Segredos\ngitleaks (histórico inteiro)" as CIGL
+participant "Railway · build\nDockerfile.backend" as RB
+participant "Contêiner da API\nTemurin 25 JRE · Spring Boot 4.1" as API
+database "MySQL 9" as DB
+participant "Railway · healthcheck\n/actuator/health" as HC
+
+DEV -> GH : push ou PR
+par
+  GH -> CIAPI : verify
+  CIAPI -> CIAPI : testes, incluindo os guardas\nMigrationVersionsTest (versão de migration única)\nJsonContractTest (contrato JSON com o front)\nAutoConfigurationExclusionsTest (exclusões do Boot 4)
+else
+  GH -> CIFE : npm ci · typecheck · vitest
+  CIFE -> CIFE : npm run build (prebuild: i18n:check e i18n:scan)\nnpm audit --omit=dev --audit-level=high
+else
+  GH -> CIGL : gitleaks git --redact\n(.gitleaksignore com impressões digitais exatas)
+end
+alt algum job vermelho
+  GH --> DEV : PR vermelho: corrigir antes do merge
+else tudo verde
+  DEV -> GH : merge no main e depois na branch de deploy\n(claude/fashion-ai-interfaces-config-id7naj)
+  GH -> RB : deploy da branch ("Wait for CI" no serviço api)
+  RB -> RB : estágio build: maven:3-eclipse-temurin-25\nmvn package (bytecode Java 21)
+  RB -> API : imagem eclipse-temurin:25-jre-noble + mysql-client
+  API -> DB : Flyway: valida as migrations já aplicadas (checksums)
+  alt migration repetida, alterada ou com erro
+    API -> API : a aplicação não sobe
+    HC -> API : /actuator/health
+    HC --> RB : sem resposta → deploy falha
+    RB -> RB : a versão anterior continua servindo
+  else ok
+    API -> DB : migra o que falta (até V42)\nV34 Java: política de ON DELETE, FK por FK
+    API -> API : sobe (DemoFixtures é @Lazy:\nfixture de QA nunca impede a subida)
+    HC -> API : /actuator/health
+    API --> HC : UP
+    HC --> RB : saudável → o tráfego vai para a versão nova
+  end
+end
+note over DEV, GH
+  Dependabot abre bumps semanais (Maven, npm, Docker) e mensais (Actions).
+  Major do Boot é migração, não bump (docs/MIGRACAO_SPRING_BOOT_4.md); a imagem
+  usa só JVM LTS. Healthcheck e "Wait for CI" são configurados no painel do Railway.
+end note
+@enduml

@@ -1,6 +1,6 @@
 @startuml RF39_MaquinaDeEstados_ItemDaLoja
 !pragma layout smetana
-title RF39 — Criar guarda-roupa 3D com a identidade de uma marca/celebridade e vender na loja do quarto\nDiagrama de máquina de estados — item da loja (WardrobeCreatorService.availability, calculado a cada leitura)
+title RF39 — Criar guarda-roupa 3D com a identidade de uma marca/celebridade e vender na loja do quarto\nDiagrama de máquina de estados — item da loja (room_catalog; WardrobeCreatorService.availability, calculado a cada leitura)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,32 +8,51 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-state "EM_BREVE\n(agora < availableFrom)" as EM_BREVE
-state "DISPONIVEL" as DISPONIVEL
-state "ESGOTADO\n(soldCount >= stockLimit)" as ESGOTADO
-state "EXPIRADO\n(agora > availableUntil)" as EXPIRADO
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+state "active = true" as Ativo {
+  state "EM_BREVE\n(agora < availableFrom)" as EM_BREVE
+  state "DISPONIVEL" as DISPONIVEL
+  state "ESGOTADO\n(soldCount ≥ stockLimit)" as ESGOTADO
+  state "EXPIRADO\n(agora > availableUntil)" as EXPIRADO
+  [*] --> EM_BREVE : availableFrom no futuro
+  [*] --> DISPONIVEL : sem janela ou já dentro dela
+  EM_BREVE --> DISPONIVEL : chega availableFrom
+  DISPONIVEL --> DISPONIVEL : compra (buy): soldCount + 1
+  DISPONIVEL --> ESGOTADO : compra leva soldCount ao stockLimit
+  DISPONIVEL --> EXPIRADO : passa availableUntil
+  ESGOTADO --> EXPIRADO : passa availableUntil\n(a janela é conferida antes do estoque)
+  ESGOTADO --> DISPONIVEL : PUT …/items/{sku}\ncom estoque maior ou sem estoque
+  EXPIRADO --> DISPONIVEL : PUT …/items/{sku}\ncom nova data de fim
+}
 state "INATIVO\n(active = false)" as INATIVO
-state "Removido\n(sem vendas)" as Removido
-[*] --> EM_BREVE : POST /api/room-creator/items\ncom availableFrom futuro
-[*] --> DISPONIVEL : POST /api/room-creator/items\nsem janela ou já dentro dela
-EM_BREVE --> DISPONIVEL : chega availableFrom
-DISPONIVEL --> ESGOTADO : compra leva soldCount ao stockLimit\n(POST /api/points/shop/{sku}/purchase)
-DISPONIVEL --> EXPIRADO : passa availableUntil
-ESGOTADO --> DISPONIVEL : PUT …/items/{sku} aumenta o estoque
-EXPIRADO --> DISPONIVEL : PUT …/items/{sku} estende availableUntil
-DISPONIVEL --> INATIVO : PUT {active: false}\nou DELETE com vendas/unidades
-EM_BREVE --> INATIVO : PUT {active: false}
-INATIVO --> DISPONIVEL : PUT {active: true}
-DISPONIVEL --> Removido : DELETE /api/room-creator/items/{sku}\nsem vendas
-EM_BREVE --> Removido : DELETE sem vendas
+state "Removido\n(linha apagada)" as Removido
+
+[*] --> Ativo : POST /api/room-creator/items\n(ativo é o padrão; SKU BRD-…)\nou seedFactory() na subida (SKU FAI-…)
+Ativo --> INATIVO : PUT {active: false}\nou DELETE com vendas ou unidades
+INATIVO --> Removido : DELETE sem vendas e sem unidades
+INATIVO -up-> Ativo : PUT {active: true}\n(volta ao estado da janela/estoque)
+Ativo --> Removido : DELETE /api/room-creator/items/{sku}\nsem vendas e sem unidades
 Removido --> [*]
+
 note right of DISPONIVEL
-Mesmo DISPONIVEL, a compra ainda checa (409):
-NIVEL_INSUFICIENTE, limite por pessoa e selo exigido
-(CONDICAO_DE_COMPRA) e SALDO_INSUFICIENTE.
-Criador pendente ou suspenso: o item sai da vitrine
-("item fora da loja"), sem mudar o estado.
+  Mesmo DISPONIVEL, a compra ainda pode dar 409:
+  NIVEL_INSUFICIENTE, CONDICAO_DE_COMPRA
+  (criador pendente ou suspenso, limite por pessoa,
+  selo exigido) e SALDO_INSUFICIENTE.
 end note
-note bottom of EXPIRADO : some da loja para quem não tem;\nquem comprou continua com o item no quarto
-note bottom of INATIVO : GET /api/points/shop só lista active = true;\nas unidades compradas continuam no room_inventory
+note bottom of EXPIRADO
+  GET /api/points/shop esconde o item
+  de quem não tem; quem comprou continua
+  vendo e usando o item no quarto.
+end note
+note bottom of INATIVO
+  POST com active = false já nasce aqui.
+  A loja só lista active = true. As unidades
+  compradas (room_inventory) nunca são apagadas.
+end note
 @enduml
