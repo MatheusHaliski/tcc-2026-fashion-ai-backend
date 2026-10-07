@@ -18,6 +18,7 @@ import { CreationSuccess } from "@/components/expanded-card";
 import { PieceArtEditor } from "@/components/piece-art-editor";
 import { FaiIcon } from "@/components/fai-icon";
 import { keepAllowed } from "@/lib/pieces/tags";
+import { CatalogPhoto } from "@/components/catalog/catalog-photo";
 import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
 import { MultiPieceUpload } from "@/components/multi-piece-review";
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
@@ -181,7 +182,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
     </div>
   );
   // prévia do card da peça com o que já foi preenchido (RF7 · anatomia "peça de roupa")
-  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: officialImg ?? asset, thumbnailUrl: officialImg ?? asset, studioImageUrl: null, studioThumbUrl: null, studioFeedUrl: null, defaultImage: !officialImg, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: officialImg ?? asset, thumbnailUrl: officialImg ?? asset, ...(pick?.product.catalogImage && officialImg ? { flatLayMetadata: { catalogImage: pick.product.catalogImage } } : {}), studioImageUrl: null, studioThumbUrl: null, studioFeedUrl: null, defaultImage: !officialImg, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   return (
     <>
       <PageHeader title={t("closet.addPiece")} kicker="RF47" lead={t("pieces.new.lead_unica")} />
@@ -221,7 +222,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-catalog-label" className="type-h3">{t("catalog.buscar_no_catalogo")}</h2><Badge tone="thread">{t("catalog.recomendado")}</Badge><span className="type-caption text-muted">{t("catalog.lead_busca")}</span></div>
                 {pick ? (
                   <div className="catalog-pick" role="status">
-                    <span className="catalog-pick-art" aria-hidden><img src={officialImg ?? asset} alt="" /></span>
+                    <span className="catalog-pick-art" aria-hidden>{pick.product.catalogImage ? <CatalogPhoto image={pick.product.catalogImage} fallbackUrl={officialImg} alt="" /> : <img src={officialImg ?? asset} alt="" />}</span>
                     <div className="min-w-0">
                       <p className="type-caption text-muted">{t("catalog.peca_do_catalogo")}</p>
                       <p className="type-body font-medium truncate">{pick.product.brand?.name} · {pick.product.productName}{pick.variant?.colorName ? ` — ${pick.variant.colorName}` : ""}</p>

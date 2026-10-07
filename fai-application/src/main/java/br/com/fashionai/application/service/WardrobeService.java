@@ -418,7 +418,8 @@ public class WardrobeService {
             studioSourceUrl = media.put(base + "studio-source.png", ImageOps.png(r.studioSource()), "image/png").url();
             studioInfo = studioShot(user.id(), r.studioSource(), "auto", base, new br.com.fashionai.application.imaging.StudioPipeline.Hints(
                     studioKind(prefill.category(), prefill.subcategory()), r.truncated(), logoRel, logoSource,
-                    br.com.fashionai.application.imaging.FeedFraming.template(prefill.category(), prefill.subcategory(), null)));
+                    br.com.fashionai.application.imaging.FeedFraming.template(prefill.category(), prefill.subcategory(), null),
+                    prefill.category(), prefill.subcategory()));
         }
 
         Map<String, Object> quality = new LinkedHashMap<>();
@@ -2177,7 +2178,7 @@ public class WardrobeService {
             box = b.stream().mapToDouble(v -> ((Number) v).doubleValue()).toArray();
         }
         return new br.com.fashionai.application.imaging.StudioPipeline.Hints(kind, truncated, box, box == null ? null : "ia",
-                br.com.fashionai.application.imaging.FeedFraming.template(category, subcategory, kind));
+                br.com.fashionai.application.imaging.FeedFraming.template(category, subcategory, kind), category, subcategory);
     }
 
     br.com.fashionai.application.imaging.StudioPipeline.Hints studioHints(WardrobeItem w) {
@@ -2501,7 +2502,8 @@ public class WardrobeService {
         Map<String, Object> info = studioShot(w.getUser().getId(), art, "auto", "defaults/studio/" + stem + "/",
                 new br.com.fashionai.application.imaging.StudioPipeline.Hints(studioKind(w.getCategory(), w.getSubcategory()), Set.of(),
                         assets.defaultPieceLogo(w.getImageUrl()).orElse(null), "catalogo",
-                        br.com.fashionai.application.imaging.FeedFraming.template(w.getCategory(), w.getSubcategory(), null)));
+                        br.com.fashionai.application.imaging.FeedFraming.template(w.getCategory(), w.getSubcategory(), null),
+                        w.getCategory(), w.getSubcategory()));
         if (info != null) {
             applyStudio(w, info, true);                         // arte padrão do catálogo: não há foto da pessoa a aprovar
         }

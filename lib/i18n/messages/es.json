@@ -1095,6 +1095,8 @@
   "closet.remix.selecionadas": "{count, plural, =0 {Ninguna prenda seleccionada} one {# prenda seleccionada} other {# prendas seleccionadas}}",
   "closet.remix.ir": "Remezclar seleccionadas",
   "pieces.new.prefere_fotografar": "¿Prefieres fotografiar? En la pestaña Fotografiar subes una o varias fotos; cada prenda encontrada se convierte en una prenda de tu armario.",
+  "closet.estudio.dica": "Elige prendas con foto tuya: cada una recibe la foto de producto (fondo de estudio, encuadrada por la regla de su categoría) para que la apruebes.",
+  "closet.estudio.ir": "Llevar seleccionadas al estudio",
   "closet.worn": "Usada hoy",
   "common.aceitar": "Aceptar",
   "common.acessorio": "Accesorio",
