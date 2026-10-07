@@ -1,0 +1,184 @@
+name: Repository Backup
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  schedule:
+    # GitHub Actions cron schedules use UTC.
+    - cron: "0 3 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fashionai-repository-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Back up Git repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out complete repository history
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Configure dedicated backup SSH key
+        env:
+          BACKUP_SSH_KEY: ${{ secrets.BACKUP_SSH_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Register this key's public half as a write-enabled Deploy Key on
+          # MatheusHaliski/tcc-2026-fashion-ai-backend-backup001.
+          if [[ -z "${BACKUP_SSH_KEY:-}" ]]; then
+            printf '%s\n' \
+              "Required repository secret BACKUP_SSH_KEY is not configured." >&2
+            exit 1
+          fi
+
+          install -m 700 -d "$HOME/.ssh"
+          key_path="$HOME/.ssh/fashionai_backup"
+          printf '%s\n' "$BACKUP_SSH_KEY" > "$key_path"
+          chmod 600 "$key_path"
+          unset BACKUP_SSH_KEY
+
+          ssh-keyscan -H github.com >> "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+          cat > "$HOME/.ssh/config" <<EOF
+          Host github.com
+            HostName github.com
+            User git
+            IdentityFile $key_path
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking yes
+            UserKnownHostsFile $HOME/.ssh/known_hosts
+          EOF
+          chmod 600 "$HOME/.ssh/config"
+
+      - name: Fetch all source branches and tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Fetching repository history"
+          git fetch --force origin \
+            '+refs/heads/*:refs/remotes/origin/*' \
+            '+refs/tags/*:refs/tags/*'
+
+          # Checkout's read-only token is needed for this fetch only.
+          # Remove it before any access to the backup remote.
+          credential_key='http.https://github.com/.extraheader'
+          git config --local --unset-all "$credential_key" || true
+
+      - name: Configure and check backup remote
+        env:
+          BACKUP_URL: git@github.com:MatheusHaliski/tcc-2026-fashion-ai-backend-backup001.git
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git remote get-url backup >/dev/null 2>&1; then
+            git remote set-url backup "$BACKUP_URL"
+          else
+            git remote add backup "$BACKUP_URL"
+          fi
+
+          if [[ "$(git remote get-url backup)" != "$BACKUP_URL" ]]; then
+            echo "Backup remote URL validation failed." >&2
+            exit 1
+          fi
+
+          echo "Checking backup repository reachability"
+          git ls-remote --heads --tags backup >/dev/null
+          echo "Backup repository reachable"
+
+      - name: Synchronize source branches and tags
+        id: synchronize
+        shell: bash
+        run: |
+          set -euo pipefail
+          branch_count=0
+          echo "Synchronizing branches"
+          while IFS= read -r source_ref; do
+            branch="${source_ref#refs/remotes/origin/}"
+            if [[ "$branch" == "HEAD" ]]; then
+              continue
+            fi
+
+            git push backup "$source_ref:refs/heads/$branch"
+            branch_count=$((branch_count + 1))
+          done < <(git for-each-ref --format='%(refname)' refs/remotes/origin/)
+
+          if (( branch_count == 0 )); then
+            echo "No source branches were found." >&2
+            exit 1
+          fi
+
+          tag_count="$(
+            git for-each-ref --format='%(refname)' refs/tags/ |
+              wc -l |
+              tr -d '[:space:]'
+          )"
+          echo "Synchronizing tags"
+          git push backup 'refs/tags/*:refs/tags/*'
+
+          echo "branch_count=$branch_count" >> "$GITHUB_OUTPUT"
+          echo "tag_count=$tag_count" >> "$GITHUB_OUTPUT"
+
+      - name: Verify backup refs and summarize
+        env:
+          BRANCH_COUNT: ${{ steps.synchronize.outputs.branch_count }}
+          TAG_COUNT: ${{ steps.synchronize.outputs.tag_count }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          declare -A remote_refs=()
+
+          echo "Verifying remote heads"
+          remote_heads="$(git ls-remote --heads backup)"
+          while IFS=$'\t' read -r object_id ref; do
+            [[ -z "$ref" ]] || remote_refs["$ref"]="$object_id"
+          done <<< "$remote_heads"
+
+          while IFS= read -r source_ref; do
+            branch="${source_ref#refs/remotes/origin/}"
+            [[ "$branch" == "HEAD" ]] && continue
+            destination_ref="refs/heads/$branch"
+            expected="$(git rev-parse "$source_ref")"
+            if [[ "${remote_refs[$destination_ref]:-}" != "$expected" ]]; then
+              echo "Remote branch verification failed." >&2
+              exit 1
+            fi
+          done < <(git for-each-ref --format='%(refname)' refs/remotes/origin/)
+
+          echo "Verifying remote tags"
+          remote_tags="$(git ls-remote --tags backup)"
+          while IFS=$'\t' read -r object_id ref; do
+            [[ -z "$ref" ]] || remote_refs["$ref"]="$object_id"
+          done <<< "$remote_tags"
+
+          while IFS= read -r source_ref; do
+            expected="$(git rev-parse "$source_ref")"
+            if [[ "${remote_refs[$source_ref]:-}" != "$expected" ]]; then
+              echo "Remote tag verification failed." >&2
+              exit 1
+            fi
+          done < <(git for-each-ref --format='%(refname)' refs/tags/)
+
+          echo "Backup completed successfully"
+          {
+            echo "# FashionAI Repository Backup"
+            echo
+            echo "- **Status:** SUCCESS"
+            echo "- **Time:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            echo "- **Trigger branch:** ${GITHUB_REF_NAME}"
+            echo "- **Destination:** tcc-2026-fashion-ai-backend-backup001"
+            echo "- **Branches synchronized:** ${BRANCH_COUNT}"
+            echo "- **Tags synchronized:** ${TAG_COUNT}"
+            echo "- **Verification:** PASSED"
+          } >> "$GITHUB_STEP_SUMMARY"
