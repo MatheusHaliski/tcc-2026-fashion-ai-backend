@@ -50,6 +50,13 @@ describe("utilitários 3D", () => {
     expect(bodyParamsOf({ ...M, build: "magra" })).toBeTruthy();
   });
 
+  it("blazer keeps a neutral modesty layer and a tailored ease instead of the branded default tee", () => {
+    const items = outfitOf([{ id: "blazer", name: "Blazer", slot: "outer_layer", subcategory: "blazer" }]);
+    const blazer = items.find((i) => i.key === "blazer")!;
+    expect(blazer.spec.ease).toBe(0.010);
+    const inner = items.find((i) => i.spec.kind === "tee")!;
+    expect(inner.piece.imageUrl).toBeNull(); expect(inner.piece.colorHex).toBe("#202020");
+  });
   it("roupa do avatar: cada peça vira um item de vestir na camada certa", () => {
     const items = outfitOf(PIECES);
     expect(items.length).toBeGreaterThan(0);

@@ -5,7 +5,7 @@ import { parseBodyAsset, type BodyMeta } from "./asset";
 import { compose, fitBody } from "./compose";
 import { buildHuman, baseNormals } from "./three-human";
 import { applyIdle, applyRestPose, setArmOut } from "./pose";
-import { SPECS, armOutFor, bodyParam, collarBand, garmentGeometry, kindOf, necklineH, posedPositions, tubeRadius, underLayer, type GarmentKind } from "./garments";
+import { SPECS, armOutFor, bodyParam, collarBand, garmentGeometry, kindOf, necklineH, posedPositions, texturedGeometry, tubeRadius, underLayer, type GarmentKind } from "./garments";
 import { DEFAULT_BODY } from "../body-spec";
 
 const dir = new URL("../../../public/avatar3d/body/", import.meta.url);
@@ -44,6 +44,53 @@ function dressed(sex: "FEMININO" | "MASCULINO", kinds: GarmentKind[]) {
 }
 
 describe("roupa que veste — moldes presos ao esqueleto", () => {
+  it("shirts and jackets have a continuous hip-bound hem instead of independently skinned thigh scraps", () => {
+    for (const sex of ["MASCULINO", "FEMININO"] as const) for (const kind of ["shirt", "jacket"] as const) {
+      const { c, h, gs } = dressed(sex, ["pants", "tee", kind]);
+      const gg = gs.at(-1)!, P = bodyParam(asset, c);
+      let hem = 0;
+      for (let v = 0; v < gg.source.length; v++) {
+        const source = gg.source[v];
+        if (source >= 0) { if (P.group[source] === 3) expect(P.h[source]).toBeGreaterThan(-0.03); }
+        else {
+          hem++;
+          expect(gg.alpha[v]).toBe(1);
+          expect(gg.skinWeight[v * 4]).toBe(1);
+          expect(gg.skinWeight[v * 4 + 1]).toBe(0);
+        }
+      }
+      expect(hem).toBeGreaterThan(128); h.dispose();
+    }
+  });
+  it("outer layers clear the accumulated thickness of all inner layers", () => {
+    const { c, h } = dressed("MASCULINO", ["pants", "tee"]);
+    const P = bodyParam(asset, c);
+    const pants = underLayer(c, P, [SPECS.pants]).ease;
+    const tee = underLayer(c, P, [SPECS.tee]).ease;
+    const both = underLayer(c, P, [SPECS.pants, SPECS.tee]).ease;
+    let overlaps = 0;
+    for (let v = 0; v < both.length; v++) if (pants[v] > 0 && tee[v] > 0) {
+      overlaps++; expect(both[v]).toBeCloseTo(pants[v] + tee[v], 6);
+    }
+    expect(overlaps).toBeGreaterThan(10); h.dispose();
+  });
+
+  it("shirt sleeves and back have fabric UV coverage instead of sampling a flat-color pixel", () => {
+    const { h, gs } = dressed("MASCULINO", ["shirt"]);
+    const gg = gs[0];
+    const geo = texturedGeometry(gg, gg.position, null);
+    const uv = geo.getAttribute("uv"), position = geo.getAttribute("position");
+    const samples = new Set<string>();
+    let front = 0, back = 0;
+    for (let i = 0; i < uv.count; i++) {
+      expect(uv.getX(i)).toBeGreaterThan(0.5); expect(uv.getX(i)).toBeLessThan(1);
+      samples.add(`${uv.getX(i).toFixed(3)}:${uv.getY(i).toFixed(3)}`);
+      if (position.getZ(i) > 0) front++; else back++;
+    }
+    expect(samples.size).toBeGreaterThan(100); expect(front).toBeGreaterThan(100); expect(back).toBeGreaterThan(100);
+    expect(geo.userData.fabricMapping.width).toBeGreaterThan(0.3);
+    geo.dispose(); h.dispose();
+  });
   it("reconhece o tipo de molde pela subcategoria da peça", () => {
     expect(kindOf({ subcategory: "t_shirt" })).toBe("tee");
     expect(kindOf({ subcategory: "jeans" })).toBe("pants");

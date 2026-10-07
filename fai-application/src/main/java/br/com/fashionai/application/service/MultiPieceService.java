@@ -14,6 +14,7 @@ import br.com.fashionai.application.imaging.FlatLayPipeline;
 import br.com.fashionai.application.imaging.ImageProviderPorts;
 import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.imaging.LocalVision;
+import br.com.fashionai.application.imaging.LocalPieceRegions;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
@@ -87,7 +88,7 @@ public class MultiPieceService {
                                 String sex, List<String> style, List<String> occasion, Box box, double confidence) {
     }
 
-    /** @param source "ia" quando a visão remota respondeu; "local" = sem IA, uma peça cobrindo a foto inteira */
+    /** @param source "ia" quando a visão remota respondeu; "local" = regiões estimadas para revisão */
     public record Detection(UUID draftId, String originalUrl, int width, int height, List<DetectedPiece> pieces,
                             String source, String aiMessage, AiOutcome.Explanation explanation, AiOutcome.Quota quota) {
     }
@@ -112,11 +113,11 @@ public class MultiPieceService {
 
     /**
      * Núcleo da detecção, sem efeito colateral fora do motor de IA (nenhum rascunho, job ou arquivo): a IA de visão acha
-     * as peças da foto já orientada; sem IA (consentimento, cota, orçamento, provedor), uma peça cobrindo a foto. Usado
+     * as peças da foto já orientada; sem IA (consentimento, cota, orçamento, provedor), regiões locais a conferir. Usado
      * pelo cadastro de várias peças ({@link #detect}) e pelo FashionAI Lens (RF54).
      */
     public PieceDetection detectPieces(UUID userId, BufferedImage photo) {
-        List<DetectedPiece> local = List.of(localPiece());
+        List<DetectedPiece> local = localPieces(photo);
         AiOutcome<List<DetectedPiece>> outcome = ai.text(new AiEngine.TextCall<>(userId, AiCapability.MULTI_PIECE_DETECTOR,
                 DETECTOR_SYSTEM, detectorPrompt(),
                 List.of(new AiRequest.AiImage(ImageOps.jpeg(ImageOps.scaleToFit(photo, 1568, 1568), 0.9f), "image/jpeg")),
@@ -170,6 +171,17 @@ public class MultiPieceService {
     /** Sem IA de visão: uma peça cobrindo a foto inteira, sem campos — a pessoa preenche e recorta na revisão. */
     public static DetectedPiece localPiece() {
         return new DetectedPiece(0, null, null, null, null, null, null, List.of(), List.of(), new Box(0, 0, 100, 100), 0);
+    }
+
+    static List<DetectedPiece> localPieces(BufferedImage photo) {
+        List<LocalPieceRegions.Region> regions = LocalPieceRegions.detect(photo);
+        if (regions.isEmpty()) return List.of(localPiece());
+        List<DetectedPiece> pieces = new ArrayList<>();
+        for (LocalPieceRegions.Region region : regions) {
+            pieces.add(new DetectedPiece(pieces.size(), null, null, null, null, null, null, List.of(), List.of(),
+                    new Box(region.x(), region.y(), region.width(), region.height()), 0.45));
+        }
+        return List.copyOf(pieces);
     }
 
     static final String DETECTOR_SYSTEM = """

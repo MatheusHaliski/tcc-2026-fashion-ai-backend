@@ -1,0 +1,9 @@
+{
+  "fixture": true,
+  "externalVisionMocked": true,
+  "slots": 5,
+  "dialogCount": 0,
+  "editsPreserved": true,
+  "mobileOverflow": false,
+  "errors": []
+}

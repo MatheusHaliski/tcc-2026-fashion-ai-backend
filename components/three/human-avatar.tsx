@@ -80,6 +80,7 @@ export interface HumanParts {
   hairLod?: HairLod;
   /** fidelidade do rosto medido no corpo (AVATAR-ID I0): só números agregados, nunca vai para log */
   identity?: FaceFidelity | null;
+  eyes?: AvatarEyes | null;          // inclui óculos reconhecidos em texturas de avatares antigos
 }
 
 export interface HumanAvatarProps {
@@ -198,6 +199,19 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
     const reg = auditRegistry(); if (!built || !reg) return;
     const e = { root: built.h.root }; reg.add(e); return () => { reg.delete(e); };
   }, [built]);
+  const eyewearKey = JSON.stringify(face?.eyes ?? null);
+  const preparedAtlas = useMemo(() => {
+    if (!atlas) return null;
+    const source = imageOf(atlas);
+    const canvas = document.createElement("canvas"); canvas.width = source.width; canvas.height = source.height;
+    const g = canvas.getContext("2d", { willReadFrequently: true })!; g.drawImage(source, 0, 0);
+    const id = g.getImageData(0, 0, canvas.width, canvas.height);
+    const tone = face?.skin ?? skin;
+    const rgb = [1, 3, 5].map((start) => parseInt(tone.slice(start, start + 2), 16)) as [number, number, number];
+    const cleaned = prepareFaceTexture(id, rgb, face?.eyes);
+    if (cleaned.removed) { id.data.set(cleaned.image.data); g.putImageData(id, 0, 0); }
+    return { canvas, eyes: cleaned.eyes };
+  }, [atlas, face?.skin, skin, eyewearKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // pele: tom medido em todo o corpo; rosto da foto quando há atlas
   useEffect(() => {
     if (!built) return; const m = built.h.body.material as THREE.MeshPhysicalMaterial; const ud = built.h.root.userData;
@@ -207,13 +221,13 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
     const id = window.setTimeout(() => {
       if (!alive) return;
       // relatório da pele (erro de cor e costura): números agregados para o gate, nunca em log
-      const tex = new THREE.CanvasTexture(bakeSkin(built.asset, skin, imageOf(atlas), 2048, (r) => { ud.skinReport = r; })); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+      const tex = new THREE.CanvasTexture(bakeSkin(built.asset, skin, preparedAtlas?.canvas ?? imageOf(atlas), 2048, (r) => { ud.skinReport = r; })); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
       m.map?.dispose(); m.map = tex; m.color.set("#ffffff"); m.needsUpdate = true; ud.skin = "baked";
     }, 0);
     return () => { alive = false; window.clearTimeout(id); };
-  }, [built, atlas, skin]);
+  }, [built, atlas, preparedAtlas, skin]);
   // olhos: a textura do MakeHuman com a íris recolorida na cor medida na foto (AVATAR-ID I4); a original fica no cache
-  const eyes = face?.eyes ?? null; const eyesKey = JSON.stringify(eyes ? [eyes.source, eyes.color, eyes.secondary, eyes.left ?? null, eyes.right ?? null] : null);
+  const eyes = preparedAtlas?.eyes ?? face?.eyes ?? null; const eyesKey = JSON.stringify(eyes ? [eyes.source, eyes.color, eyes.secondary, eyes.left ?? null, eyes.right ?? null] : null);
   useEffect(() => {
     if (!built) return; let alive = true; let own: THREE.Texture | null = null;
     loadTexture(EYE_TEXTURE).then((t) => {
@@ -232,7 +246,7 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
     head.add(g);
     return () => { g.removeFromParent(); g.userData.dispose?.(); };
   }, [built, showGlasses, eyes?.frame]); // eslint-disable-line react-hooks/exhaustive-deps
-  const parts = useMemo<HumanParts | null>(() => (built ? { human: built.h, pose: built.st, composed: built.c, asset: built.asset, hair: hairMesh, exportHair: () => { const m = makeHair(GLB_HAIR_LOD); return m && attach(m); }, hairLod: (hairMesh?.userData.hairLod ?? 3) as HairLod, identity: built.identity } : null), [built, hairMesh]); // eslint-disable-line react-hooks/exhaustive-deps
+  const parts = useMemo<HumanParts | null>(() => (built ? { human: built.h, pose: built.st, composed: built.c, asset: built.asset, hair: hairMesh, exportHair: () => { const m = makeHair(GLB_HAIR_LOD); return m && attach(m); }, hairLod: (hairMesh?.userData.hairLod ?? 3) as HairLod, identity: built.identity, eyes } : null), [built, hairMesh, eyes]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (parts) onReady?.(parts); }, [parts]); // eslint-disable-line react-hooks/exhaustive-deps
   const t0 = useRef(Math.random() * 20);
   const anchor = useMemo(() => new THREE.Vector3(), []); const inv = useMemo(() => new THREE.Matrix3(), []);

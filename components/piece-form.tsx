@@ -77,13 +77,13 @@ export function PieceSealSuggestions({ value, onChange }: { value: PieceFormValu
 }
 
 /** Campos de "Mais detalhes" (RF4): selos pela IA, visibilidade e à venda (RF4.CA8). */
-export function PieceMoreDetails({ value, onChange, error }: { value: PieceFormValue; onChange: (v: PieceFormValue) => void; error?: ApiError | null }) {
+export function PieceMoreDetails({ value, onChange, error, idPrefix = "" }: { value: PieceFormValue; onChange: (v: PieceFormValue) => void; error?: ApiError | null; idPrefix?: string }) {
   const { t } = useI18n(); const err = error?.fields ?? {};
   const set = <K extends keyof PieceFormValue>(k: K, v: PieceFormValue[K]) => onChange({ ...value, [k]: v });
   return (
     <div className="grid gap-x-4 sm:grid-cols-2">
       <Field label={t("pieceForm.selos_da_peca")} error={err.seals} className="sm:col-span-2"><PieceSealSuggestions value={value} onChange={onChange} /></Field>
-      <Field label={t("common.visibility")} id="visibility" error={err.visibility}><Select id="visibility" value={value.visibility} onChange={(e) => set("visibility", e.target.value)}><option value="PRIVATE">{t("common.private")}</option><option value="FOLLOWERS">{t("common.followers")}</option><option value="PUBLIC">{t("common.public")}</option></Select></Field>
+      <Field label={t("common.visibility")} id={`${idPrefix}visibility`} error={err.visibility}><Select id={`${idPrefix}visibility`} value={value.visibility} onChange={(e) => set("visibility", e.target.value)}><option value="PRIVATE">{t("common.private")}</option><option value="FOLLOWERS">{t("common.followers")}</option><option value="PUBLIC">{t("common.public")}</option></Select></Field>
       <label className="mb-3 flex items-start gap-2 self-end pb-3 type-body"><input type="checkbox" className="mt-1" checked={value.forSale} onChange={(e) => set("forSale", e.target.checked)} /><span><span className="whitespace-nowrap">{t("common.forSale")}</span><span className="block type-caption text-muted">{t("pieceForm.a_venda_aparece_na_sub_aba")}</span></span></label>
     </div>
   );

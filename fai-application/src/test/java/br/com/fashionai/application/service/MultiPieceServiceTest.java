@@ -74,7 +74,7 @@ class MultiPieceServiceTest {
     @Test
     void detectarECriarORascunhoDeCadaPeca() {
         MultiPieceService.Detection d = multi.detect(ana, photo);
-        assertThat(d.pieces()).hasSize(1);
+        assertThat(d.pieces()).hasSize(2);
         assertThat(d.source()).isEqualTo("local");
         assertThat(d.originalUrl()).endsWith("original.png");
         PipelineJob parent = kit.dep(PipelineJobRepository.class).findById(d.draftId()).orElseThrow();

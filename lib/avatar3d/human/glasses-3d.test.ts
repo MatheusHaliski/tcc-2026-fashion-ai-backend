@@ -26,6 +26,22 @@ function bodies() {
 }
 
 describe("óculos de grau como acessório 3D (I4)", () => {
+  it("o aro curvo inteiro mantém folga do rosto, incluindo a espessura da armação", () => {
+    for (const c of bodies()) {
+      const fit = fitGlasses(asset, c), lm = landmarksOn(asset, c.body);
+      const group = buildGlasses(fit, [0, 0, 0]);
+      for (const [side, index] of [["left", 0], ["right", 3]] as const) {
+        const center = fit.lens.center[side];
+        let behind = -Infinity;
+        for (let i = 0; i < lm.length; i += 3) {
+          if (Math.abs(lm[i] - center[0]) < fit.lens.w / 2 && Math.abs(lm[i + 1] - center[1]) < fit.lens.h / 2) behind = Math.max(behind, lm[i + 2]);
+        }
+        const ring = group.children[index] as THREE.Mesh; ring.geometry.computeBoundingBox();
+        expect(ring.geometry.boundingBox!.min.z - behind).toBeGreaterThanOrEqual(0.004 - 1e-6);
+      }
+      group.userData.dispose();
+    }
+  });
   it("lentes à frente da córnea e nunca encostadas no rosto (folga ≥ 4 mm), de tamanho humano", () => {
     for (const c of bodies()) {
       const f = fitGlasses(asset, c);

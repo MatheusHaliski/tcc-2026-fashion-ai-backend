@@ -18,8 +18,8 @@
  */
 import type { Pt, Raster } from "./image-stats";
 import { hex, luma, median, polygonMask } from "./image-stats";
-import { FACE_OVAL } from "./canonical-face";
-import { EYES, type EyeSide, type GlassesKind } from "./iris";
+import { CANON_UV, FACE_OVAL } from "./canonical-face";
+import { defaultEyes, EYES, type AvatarEyes, type EyeSide, type GlassesKind } from "./iris";
 import { deltaE2000, rgbToLab } from "./identity/metrics";
 
 export interface GlassesDetection {
@@ -157,6 +157,22 @@ function lensScore(img: Raster, px: Pt[], f: EyeFrame, skin: [number, number, nu
 }
 
 export const NO_GLASSES: GlassesDetection = { kind: "NONE", confidence: 0, scores: { bridge: 0, lowerR: 0, lowerL: 0, outerR: 0, outerL: 0, lensR: 0, lensL: 0 }, frame: null };
+
+/**
+ * Repair stored face atlases as well as newly generated ones. Older avatars have no eyewear metadata:
+ * recognize a frame only with structural evidence, remove its pixels from a copy, then render it in 3D.
+ * The source texture and saved identity are never mutated by viewing an avatar.
+ */
+export function prepareFaceTexture(img: Raster, skin: [number, number, number], eyes?: AvatarEyes | null,
+  px: Pt[] = Array.from({ length: 468 }, (_, i) => [CANON_UV[i * 2] * img.width, CANON_UV[i * 2 + 1] * img.height] as Pt)) {
+  const detected = eyes && eyes.glasses !== "NONE" ? NO_GLASSES : detectGlasses(img, px, skin);
+  const inferred = detected.confidence >= 0.65 ? defaultEyes(detected.kind, detected.frame) : null;
+  const resolved = inferred ? { ...(eyes ?? inferred), glasses: inferred.glasses, ...(inferred.frame ? { frame: inferred.frame } : {}) } : eyes ?? null;
+  if (!resolved || resolved.glasses === "NONE") return { image: img, eyes: resolved, removed: 0 };
+  const copy: Raster = { width: img.width, height: img.height, data: new Uint8ClampedArray(img.data) };
+  const removed = removeGlasses(copy, px, skin, resolved.glasses, resolved.frame);
+  return { image: removed ? copy : img, eyes: resolved, removed };
+}
 
 export function detectGlasses(img: Raster, px: Pt[], skin: [number, number, number]): GlassesDetection {
   if (px.length < 468) return NO_GLASSES;
