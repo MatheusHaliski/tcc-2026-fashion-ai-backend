@@ -237,7 +237,7 @@ class LookbookPublicationsTest {
         hype(HypeEntityType.SCHEME, followersOnly.getId(), owner.getId(), 99.0, false, null);
         hype(HypeEntityType.SCHEME, popular.getId(), owner.getId(), 75.0, true, null);
         when(guard.canView(any(), eq(owner.getId()), any())).thenReturn(true);
-        ProfileService profiles = new ProfileService(null, null, schemes, null, pieces, null, null, guard, hypeRepo, HypeScoreConfig.defaults());
+        ProfileService profiles = new ProfileService(null, null, schemes, null, pieces, null, null, guard, hypeRepo, HypeScoreConfig.defaults(), null, null);
         List<Scheme> published = List.of(newest, followersOnly, popular);
 
         // visitante: só o Hype público ordena (o 99 de "só para seguidores" é pessoal do dono); sem Hype segue a ordem recente

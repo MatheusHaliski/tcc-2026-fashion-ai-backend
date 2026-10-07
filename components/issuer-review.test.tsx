@@ -6,6 +6,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, loggedAs, renderApp, screen, waitFor, within } from "@/test-utils/render";
 import { IssuerCenter, useIssuerReview, type IssuerReview } from "./issuer-review";
+import { router } from "@/test-utils/setup";
 import { AdminApprovals, businessDaysSince, type Dossier, type ReviewQueue } from "./admin-approvals";
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
@@ -24,6 +25,16 @@ function Central() {
 }
 
 describe("Central do emissor", () => {
+  it("perfil aprovado sai da central sem mostrar informações da análise", async () => {
+    loggedAs(undefined, { "GET /api/me/issuer-review": { ...REVIEW, status: "APROVADO" } });
+    renderApp(<Central />);
+    await waitFor(() => expect(router.replace).toHaveBeenCalledWith("/brands/atelier-lume"));
+    expect(screen.queryByText("Status da verificação")).toBeNull();
+    expect(screen.queryByText("Critérios da verificação")).toBeNull();
+    expect(screen.queryByText("Prazos e regras")).toBeNull();
+    expect(screen.queryByRole("link", { name: /dashboard/ })).toBeNull();
+  });
+
   it("mostra o motivo, o código de verificação e reenvia o pedido", async () => {
     const { calls } = loggedAs(undefined, { "GET /api/me/issuer-review": REVIEW, "POST /api/me/issuer-review/resubmit": { ...REVIEW, status: "PENDENTE", attempts: 2 } });
     renderApp(<Central />);

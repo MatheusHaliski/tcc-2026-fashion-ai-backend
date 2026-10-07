@@ -1,6 +1,7 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -30,7 +31,16 @@ const TONE: Record<ReviewStatus, string> = { PENDENTE: "is-pending", AJUSTES: "i
 const NEGATIVE: ReviewStatus[] = ["AJUSTES", "RECUSADO", "SUSPENSO"];
 
 export function useIssuerReview(enabled = true) {
-  return useApi<IssuerReview>((signal) => api.get("/api/me/issuer-review", { signal }), [], { enabled });
+  const review = useApi<IssuerReview>((signal) => api.get("/api/me/issuer-review", { signal }), [], { enabled });
+  useEffect(() => {
+    if (!enabled) return;
+    const refresh = () => { if (document.visibilityState === "visible") review.reload(); };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    const timer = review.data?.status === "PENDENTE" ? window.setInterval(refresh, 30_000) : undefined;
+    return () => { window.removeEventListener("focus", refresh); document.removeEventListener("visibilitychange", refresh); if (timer !== undefined) window.clearInterval(timer); };
+  }, [enabled, review.data?.status, review.reload]);
+  return review;
 }
 
 export function ReviewPill({ status }: { status: ReviewStatus }) {
@@ -64,31 +74,38 @@ export function PolicyCheckRow({ c, kind, children, action }: { c: PolicyCheck; 
   );
 }
 
-/** Aba Central do emissor: tudo o que o dono do perfil precisa durante e depois da verificação. */
-export function IssuerCenter({ review, onTab }: { review: ReturnType<typeof useIssuerReview>; onTab?: (tab: string) => void }) {
+/** A central orienta cadastros em análise; perfis aprovados seguem direto para sua página oficial. */
+export function IssuerCenter({ review }: { review: ReturnType<typeof useIssuerReview> }) {
   if (review.error) return <ErrorState error={review.error} onRetry={review.reload} />;
   if (!review.data) return <Skeleton className="h-64" />;
   // API de versão anterior (sem critérios, motivos ou campos editáveis) não derruba a página: as listas vêm vazias
   const d: IssuerReview = { ...review.data, reasons: review.data.reasons ?? [], checks: review.data.checks ?? [], editable: review.data.editable ?? {} };
+  if (d.status === "APROVADO") return <ApprovedProfile slug={d.slug} />;
   return (
     <div className="issuer-center">
       <div className="grid min-w-0 content-start gap-4">
-        <StatusCard d={d} onReload={review.reload} reloading={review.loading} onTab={onTab} />
+        <StatusCard d={d} onReload={review.reload} reloading={review.loading} />
         {NEGATIVE.includes(d.status) && <Feedback d={d} />}
         {(d.status === "AJUSTES" || d.status === "RECUSADO") && <Resubmit d={d} onDone={review.reload} />}
         {/* no celular o código vem antes dos critérios (é o que a pessoa precisa fazer); no desktop fica na lateral */}
-        {d.status !== "APROVADO" && <div className="lg:hidden"><CodeCard d={d} /></div>}
+        <div className="lg:hidden"><CodeCard d={d} /></div>
         <Requirements d={d} />
       </div>
       <aside className="grid min-w-0 content-start gap-4">
-        {d.status !== "APROVADO" && <div className="hidden lg:block"><CodeCard d={d} /></div>}
+        <div className="hidden lg:block"><CodeCard d={d} /></div>
         <RulesCard d={d} />
       </aside>
     </div>
   );
 }
 
-function StatusCard({ d, onReload, reloading, onTab }: { d: IssuerReview; onReload: () => void; reloading: boolean; onTab?: (tab: string) => void }) {
+function ApprovedProfile({ slug }: { slug?: string }) {
+  const router = useRouter(); const { t } = useI18n();
+  useEffect(() => { router.replace(slug ? `/brands/${encodeURIComponent(slug)}` : "/lookbook"); }, [router, slug]);
+  return <p className="type-body text-muted" role="status">{t("common.loading")}</p>;
+}
+
+function StatusCard({ d, onReload, reloading }: { d: IssuerReview; onReload: () => void; reloading: boolean }) {
   const { t, fmtDateTime } = useI18n();
   const kind = t(d.profileType === "CELEBRIDADE" ? "issuerReview.tipo_celebridade" : "issuerReview.tipo_marca");
   const decided = d.status !== "PENDENTE";
@@ -122,12 +139,6 @@ function StatusCard({ d, onReload, reloading, onTab }: { d: IssuerReview; onRelo
           </li>
         ))}
       </ol>
-      {d.status === "APROVADO" && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          <Link href="/dashboard" className="btn btn-sm btn-primary">{t("issuerReview.abrir_dashboard")}</Link>
-          {onTab && <><Button size="sm" onClick={() => onTab("SELOS")}>{t("issuerReview.criar_selos")}</Button><Button size="sm" onClick={() => onTab("PROMOCOES")}>{t("issuerReview.promocoes")}</Button><Button size="sm" onClick={() => onTab("METRICAS")}>{t("issuerReview.metricas")}</Button></>}
-        </div>
-      )}
       {d.status !== "APROVADO" && <p className="mt-4 rounded-md bg-surface-2 p-2 type-caption text-muted">{t("issuerReview.liberado_apos_aprovacao")}</p>}
     </Card>
   );

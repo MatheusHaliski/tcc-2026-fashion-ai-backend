@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, use, useState } from "react";
+import { useEffect, use, useState, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
 import type { PieceView, SchemeView, UserCard } from "@/lib/api/types";
@@ -42,20 +43,32 @@ interface Promotion { id: string; type: string; title: string; description?: str
 interface Profile { user?: UserCard; brand?: Record<string, unknown>; celebrity?: Record<string, unknown>; header: { userId?: string; username?: string; name?: string; slug?: string; logoUrl?: string | null; avatarUrl?: string | null; userAvatarUrl?: string | null; coverUrl?: string | null; bio?: string | null; storeUrl?: string | null; status?: string; kind?: string; profileType?: string; verified?: boolean; premium?: boolean; category?: string | null; followers?: number; following: number; pieces?: number; schemes?: number; activeSeals: number; viewerFollows: boolean; metrics?: Record<string, number> }; mode?: string; tabs?: ({ id: string; label: string; adminOnly?: boolean } | string)[]; admin?: boolean; store?: { url?: string; hashtag?: string }; [k: string]: unknown; }
 
 export default function BrandPage({ params }: { params: Promise<{ slug: string }> }) {
-  const slug = encodeURIComponent(use(params).slug);   /* vai direto para caminhos da API */ const { t, fmtDate, rich } = useI18n(); const { user } = useAuth(); const toast = useToast();
+  const slug = use(params).slug;   /* vai direto para caminhos da API */ const { t, fmtDate, rich } = useI18n(); const { user, refreshMe } = useAuth(); const router = useRouter(); const searchParams = useSearchParams(); const toast = useToast();
   const { data, loading, error, reload } = useApi<Profile>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}`, { signal, anonymous: !user }), [slug, !!user]);
   const [tab, setTab] = useState("ESQUEMAS_DESTAQUE"); const [flairNew, setFlairNew] = useState(0);
   const [sorts, setSorts] = useState<Record<string, HighlightSort>>({});
   const sortDefault = SORTABLE_TABS[tab]; const sort = sorts[tab] ?? sortDefault;
   const sortParam = sortDefault && sort !== sortDefault ? `?filter=${sort}` : "";
-  useEffect(() => { const q = new URLSearchParams(window.location.search).get("tab"); if (q) setTab(q.toUpperCase()); }, []);
+  const requestedTab = searchParams.get("tab")?.toUpperCase();
+  useEffect(() => { setTab(requestedTab ?? "ESQUEMAS_DESTAQUE"); }, [slug, requestedTab]);
   const ownerId = data?.header?.userId ?? data?.user?.id;
   const seals = useApi<Seal[]>((signal) => api.get(`/api/users/${ownerId}/seals`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
   const promos = useApi<Promotion[]>((signal) => api.get(`/api/users/${ownerId}/promotions`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
   // Central do emissor (verificação do perfil): só para o dono; com o perfil ainda em verificação, a página abre nela
   const review = useIssuerReview(!!data && (data.admin ?? data.mode === "ADMINISTRADOR"));
-  const reviewStatus = review.data?.status;
-  useEffect(() => { if (reviewStatus && reviewStatus !== "APROVADO" && !new URLSearchParams(window.location.search).get("tab")) setTab("CENTRAL"); }, [reviewStatus]);
+  const reviewStatus = review.data?.status ?? (["Verificada", "Validada"].includes(data?.header.status ?? "") ? "APROVADO" : undefined);
+  const previousStatus = useRef(reviewStatus);
+  useEffect(() => {
+    if (reviewStatus === "APROVADO") {
+      if (previousStatus.current && previousStatus.current !== "APROVADO") { reload(); void refreshMe(); }
+      if (tab === "CENTRAL") setTab("ESQUEMAS_DESTAQUE");
+      if (requestedTab === "CENTRAL") {
+        const query = new URLSearchParams(searchParams.toString()); query.delete("tab");
+        router.replace(`/brands/${encodeURIComponent(slug)}${query.size ? `?${query}` : ""}`, { scroll: false });
+      }
+    } else if (reviewStatus && !requestedTab && previousStatus.current !== reviewStatus) setTab("CENTRAL");
+    previousStatus.current = reviewStatus;
+  }, [reviewStatus, tab, requestedTab, slug, searchParams, router, reload, refreshMe]);
   type SealBadgeSource = NonNullable<Parameters<typeof toSealBadges>[0]>[number];
   type HighlightedPieces = { piece: PieceView; author?: UserCard; schemeId?: string; schemeTitle?: string; seals?: SealBadgeSource[] }[];
   type SavedSchemes = { scheme: SchemeView; author?: UserCard; savedAt?: string }[];
@@ -80,7 +93,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const isCeleb = (data.user?.profileType ?? h.profileType ?? h.kind) === "CELEBRIDADE" || h.premium === true || String(h.kind ?? "").toUpperCase().includes("CELEB");
   const owner: UserCard = data.user ?? ({ id: h.userId ?? "", username: h.username ?? h.slug ?? "", displayName: h.name ?? h.username ?? "", avatarUrl: h.logoUrl ?? null, profileType: isCeleb ? "CELEBRIDADE" : "MARCA", verified: h.verified } as unknown as UserCard);
   const tabs = [...(isCeleb ? [{ id: "ERAS", label: t("brands.slug.eras") }] : [{ id: "COLECOES", label: t("common.colecoes") }]), { id: "ESQUEMAS_DESTAQUE", label: t("brands.slug.esquemas_em_destaque") }, { id: "PECAS_DESTAQUE", label: t("brands.slug.pecas_em_destaque") }, { id: "LOOKS_CONSAGRADOS", label: admin ? t("lookbook.looks") : t("brands.slug.looks_consagrados") }, { id: "CATALOGO", label: t("brands.slug.catalogo_de_pecas") }, { id: "SELOS", label: t("brands.slug.selos", { value: seals.data?.length ?? data.header.activeSeals }) }, { id: "PROMOCOES", label: t("brands.slug.promocoes") }, { id: "FLAIR", label: admin ? t("brands.slug.minhas_combinacoes_flair") : t("brands.slug.combinacoes_flair") }, ...(admin ? [{ id: "CUPONS", label: t("brands.slug.meus_cupons_promocionais") }] : []), { id: "GUARDA_ROUPA", label: admin ? t("brands.slug.criar_guarda_roupa_3d") : t("brands.slug.guarda_roupa_3d") },
-    ...(admin ? [{ id: "CENTRAL", label: t("issuerReview.central") }, { id: "ESQUEMAS_SALVOS", label: t("brands.slug.esquemas_salvos") }, { id: "PECAS_SALVAS", label: t("lookbook.savedPieces") }, { id: "REVISAO", label: t("brands.slug.revisao_de_vinculos") }, { id: "METRICAS", label: t("brands.slug.metricas") }] : [])];
+    ...(admin ? [...(reviewStatus !== "APROVADO" ? [{ id: "CENTRAL", label: t("issuerReview.central") }] : []), { id: "ESQUEMAS_SALVOS", label: t("brands.slug.esquemas_salvos") }, { id: "PECAS_SALVAS", label: t("lookbook.savedPieces") }, { id: "REVISAO", label: t("brands.slug.revisao_de_vinculos") }, { id: "METRICAS", label: t("brands.slug.metricas") }] : [])];
   async function follow() { try { if (data!.header.viewerFollows) await api.delete(`/api/users/${ownerId}/followers/me`); else await api.post(`/api/users/${ownerId}/followers`); reload(); } catch (e) { toast.fromError(e); } }
   async function saveSeal() {
     const iso = (v: string) => (v ? new Date(v).toISOString() : null);
@@ -106,7 +119,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
         photo={!h.userAvatarUrl && !isCeleb ? <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white"><BrandLogo name={(brand.brandName as string) ?? owner.displayName} src={(brand.logoUrl as string) ?? h.logoUrl ?? undefined} size={120} /></span> : undefined}
         counts={{ pieces: h.pieces, schemes: h.schemes, followers: h.followers, following: h.following }}
         hype={isCeleb ? <HypeGroupBadge type="CREATOR" groupKey={ownerId} variant="header" /> : <HypeGroupBadge type="BRAND" groupKey={(brand.brandName as string) ?? h.name} variant="header" />}
-        actions={<>{!admin && user && <Button size="sm" variant={data.header.viewerFollows ? "default" : "primary"} onClick={follow}><FaiIcon id="SOC-12" size={24} active={data.header.viewerFollows} decorative />{data.header.viewerFollows ? t("lookbook.unfollow") : t("lookbook.follow")}</Button>}{admin && <><Link href="/settings" className="btn btn-sm">{t("common.editar_perfil")}</Link><IssuerCenterButton status={reviewStatus} onOpen={() => { setTab("CENTRAL"); document.getElementById("perfil-abas")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} /></>}<Button size="sm" onClick={() => setTab(isCeleb ? "ERAS" : "COLECOES")}>{isCeleb ? t("brands.slug.eras") : t("common.colecoes")}</Button></>} />
+        actions={<>{!admin && user && <Button size="sm" variant={data.header.viewerFollows ? "default" : "primary"} onClick={follow}><FaiIcon id="SOC-12" size={24} active={data.header.viewerFollows} decorative />{data.header.viewerFollows ? t("lookbook.unfollow") : t("lookbook.follow")}</Button>}{admin && <><Link href="/settings" className="btn btn-sm">{t("common.editar_perfil")}</Link>{reviewStatus !== "APROVADO" && <IssuerCenterButton status={reviewStatus} onOpen={() => { setTab("CENTRAL"); document.getElementById("perfil-abas")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} />}</>}<Button size="sm" onClick={() => setTab(isCeleb ? "ERAS" : "COLECOES")}>{isCeleb ? t("brands.slug.eras") : t("common.colecoes")}</Button></>} />
       {/* RF53 · Lote A5 (P3-15): Hype agregado do perfil com o estilo ao lado, crescimento e looks com selo (só públicos) */}
       <InsightStrip context="BRAND_PROFILE" params={{ key: decodeURIComponent(slug) }} collapsible className="mb-3" />
       <div id="perfil-abas" className="scroll-mt-16"><Tabs tabs={tabs} value={tab} onChange={setTab} /></div>
@@ -117,7 +130,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
           <p className="brand-sort-hint">{t(`hypeBrands.sort_hint_${sort}`)}</p>
         </div>
       )}
-      {tab === "CENTRAL" && admin && <IssuerCenter review={review} onTab={setTab} />}
+      {tab === "CENTRAL" && admin && reviewStatus !== "APROVADO" && <IssuerCenter review={review} />}
       {tab === "ERAS" && isCeleb && <ErasTab slug={slug} admin={admin} />}
       {tab === "COLECOES" && !isCeleb && <CollectionsTab slug={slug} admin={admin} brand={{ name: (brand.brandName as string) ?? h.name ?? owner.displayName, logoUrl: (brand.logoUrl as string) ?? h.logoUrl ?? null }} />}
       {tab === "FLAIR" && <BrandFlairTab slug={slug} autoNew={flairNew} />}
@@ -181,11 +194,10 @@ function ReviewQueue() {
 interface IssuerHypeData { bonded: number; withHype: number; avgScore?: number | null; level?: HypeLevel | null; deltaPoints?: number | null; direction?: HypeDirection | null; deltaWindowDays?: number | null; top?: { schemeId: string; title?: string | null; score: number; level: HypeLevel }[] }
 const ARROWS: Record<HypeDirection, string> = { UP: "↑", DOWN: "↓", STABLE: "→" };
 function IssuerMetrics() {
-  const { t } = useI18n();
   const { data, loading } = useApi<Record<string, unknown>>((signal) => api.get("/api/me/issuer-metrics", { signal }), []);
   if (loading || !data) return <Skeleton className="h-40" />;
   const hype = data.hype && typeof data.hype === "object" ? data.hype as IssuerHypeData : null;
-  return <div className="grid gap-3 sm:grid-cols-3">{Object.entries(data).filter(([, v]) => typeof v === "number" || typeof v === "string").map(([k, v]) => <Card key={k}><p className="label">{k.replace(/([A-Z])/g, " $1").toLowerCase()}</p><p className="hero-number text-3xl">{String(v)}</p></Card>)}{hype && <IssuerHype hype={hype} />}<Link href="/dashboard" className="btn sm:col-span-3">{t("brands.slug.abrir_dashboard_do_emissor")}</Link></div>;
+  return <div className="grid gap-3 sm:grid-cols-3">{Object.entries(data).filter(([, v]) => typeof v === "number" || typeof v === "string").map(([k, v]) => <Card key={k}><p className="label">{k.replace(/([A-Z])/g, " $1").toLowerCase()}</p><p className="hero-number text-3xl">{String(v)}</p></Card>)}{hype && <IssuerHype hype={hype} />}</div>;
 }
 function IssuerHype({ hype }: { hype: IssuerHypeData }) {
   const { t } = useI18n();
