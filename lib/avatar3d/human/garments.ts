@@ -18,6 +18,8 @@
  * A geometria é pura (testável em node); a textura precisa de canvas (navegador).
  */
 import * as THREE from "three";
+import { fabricRows, fabricTile } from "./garment-photo";
+import { baseNormals } from "./three-human";
 import type { BodyAsset } from "./asset";
 import type { Composed } from "./compose";
 
@@ -269,7 +271,7 @@ export function underLayer(c: Composed, P: BodyParam, below: GarmentSpec[]): Und
   for (const sp of [...below].sort((a, b) => a.layer - b.layer)) {
     const cov = coverageOf(c, P, sp);
     const e = sp.ease + 0.004 + (sp.skirt > 0 ? 0 : sp.flare * 0.3);     // o alargamento da saia está no tubo
-    for (let v = 0; v < out.length; v++) if (cov[v] > 0.02) out[v] = Math.max(out[v], e);
+    for (let v = 0; v < out.length; v++) if (cov[v] > 0.02) out[v] += e;
     if (sp.skirt > 0) { tubes.push(skirtTube(c, P, sp, acc)); }
     acc = { ease: out, tubes };
   }
@@ -284,7 +286,11 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
     const p = rv[idx[t]], q = rv[idx[t + 1]], r = rv[idx[t + 2]];
     if (Math.max(cov[p], cov[q], cov[r]) > 0.02 && Math.min(cov[p], cov[q], cov[r]) >= 0 && (cov[p] + cov[q] + cov[r]) > 0.3) tris.push(p, q, r);
   }
-  const top = sp.skirt > 0 ? skirtTop(sp) : NaN;
+  // Below the hip a shirt is a single fabric envelope, not two copied thigh meshes.
+  // The latter split at the crotch and created dangling, independently skinned scraps.
+  const shortHem = sp.skirt === 0 && Number.isFinite(sp.hem) && sp.hem < 0;
+  const tubeSpec = shortHem ? { ...sp, skirt: (0.07 - sp.hem) * (P.neckY - P.hipY), waist: 0.07 } : sp;
+  const top = shortHem ? 0.02 : sp.skirt > 0 ? skirtTop(sp) : NaN;
   const pos: number[] = [], al: number[] = [], si: number[] = [], sw: number[] = [], src: number[] = [];
   // caimento: anel do busto
   const NA = 64; const bustY = lerp(P.hipY, P.neckY, 0.72);
@@ -341,22 +347,23 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
   const index: number[] = [];
   for (let t = 0; t < tris.length; t += 3) {
     const [p, q, r] = [tris[t], tris[t + 1], tris[t + 2]];
+    if (shortHem && [p, q, r].some((v) => P.group[v] !== 2 && P.h[v] < 0)) continue;
     // a saia/vestido de baixo é o tubo: o molde não desce pelas pernas abaixo do começo da saia
     if (!Number.isNaN(top) && [p, q, r].every((v) => P.group[v] === 3 || P.h[v] < top - 0.02)) continue;
     index.push(add(p), add(q), add(r));
   }
   // ---- tubo da saia (saia, vestido, casaco longo)
-  if (sp.skirt > 0) {
-    const tube = skirtTube(c, P, sp, under); const rows = tube.r.length - 1;
+  if (sp.skirt > 0 || shortHem) {
+    const tube = skirtTube(c, P, shortHem ? { ...tubeSpec, kind: "skirt" } : tubeSpec, under); const rows = tube.r.length - 1;
     const base = pos.length / 3; const names = a.meta.bones.map((b) => b.name);
     const hips = names.indexOf("mixamorig:Hips"), upL = names.indexOf("mixamorig:LeftUpLeg"), upR = names.indexOf("mixamorig:RightUpLeg");
     for (let i = 0; i <= rows; i++) {
-      const y = tube.y0 - (sp.skirt * i) / rows; const t = i / rows;
+      const y = tube.y0 - (tube.len * i) / rows; const t = i / rows;
       for (let j = 0; j < TUBE_NA; j++) {
         const r = tube.r[i][j]; const phi = (j / TUBE_NA) * 2 * Math.PI - Math.PI;
         pos.push(Math.sin(phi) * r, y, P.torsoZ + Math.cos(phi) * r);
         al.push(1); src.push(-1);
-        const leg = Math.sin(phi) >= 0 ? upL : upR; const wl = 0.55 * smooth(0.1, 0.9, t) * Math.min(1, Math.abs(Math.sin(phi)) * 1.6);
+        const leg = Math.sin(phi) >= 0 ? upL : upR; const wl = shortHem ? 0 : 0.55 * smooth(0.1, 0.9, t) * Math.min(1, Math.abs(Math.sin(phi)) * 1.6);
         si.push(hips, leg, 0, 0); sw.push(1 - wl, wl, 0, 0);
       }
     }
@@ -434,16 +441,23 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
   const sp = gg.spec; const n = gg.index.length / 3;
   // referência na foto e no molde (pose de exibição)
   let map: ((x: number, y: number) => [number, number]) | null = null;
+  let photoScaleX = 1, photoScaleY = 1;
+  let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+  for (let v = 0; v < gg.position.length / 3; v++) {
+    xMin = Math.min(xMin, gg.position[v * 3]); xMax = Math.max(xMax, gg.position[v * 3]);
+    yMin = Math.min(yMin, gg.position[v * 3 + 1]); yMax = Math.max(yMax, gg.position[v * 3 + 1]);
+  }
   if (photo && sp.kind !== "shoes" && sp.kind !== "boots") {
     let yTop = -Infinity, yBot = Infinity; const front: number[] = [];
-    for (let v = 0; v < posed.length / 3; v++) if (gg.alpha[v] > 0.5) { const y = posed[v * 3 + 1]; yTop = Math.max(yTop, y); yBot = Math.min(yBot, y); front.push(v); }
+    for (let v = 0; v < posed.length / 3; v++) if (gg.alpha[v] > 0.5 && !noPhoto?.(v)) { const y = posed[v * 3 + 1]; yTop = Math.max(yTop, y); yBot = Math.min(yBot, y); front.push(v); }
     const fy = sp.kind === "pants" || sp.kind === "shorts" || sp.kind === "skirt" || sp.kind === "leggings" ? 0.12 : 0.62;
     const yRef = yTop - (yTop - yBot) * fy;
     let xl = Infinity, xr = -Infinity;
-    for (const v of front) if (Math.abs(posed[v * 3 + 1] - yRef) < 0.012 && (gg.source[v] < 0 || true)) { xl = Math.min(xl, posed[v * 3]); xr = Math.max(xr, posed[v * 3]); }
+    for (const v of front) if (Math.abs(posed[v * 3 + 1] - yRef) < 0.012) { xl = Math.min(xl, posed[v * 3]); xr = Math.max(xr, posed[v * 3]); }
     const pw = photo.widthAt(fy);
     if (Number.isFinite(xl) && pw && xr > xl) {
       const { box } = photo; const sx = (pw.x1 - pw.x0) / (xr - xl); const cxP = (pw.x0 + pw.x1) / 2, cxG = (xl + xr) / 2;
+      photoScaleX = sx;
       const bh = box.y1 - box.y0;
       // peça de cima com gola: o fim da gola da foto (collarRow) vai para a borda do decote 3D na frente — sem isso a
       // gola da foto caía abaixo da borda, com tecido "sobrando" entre ela e o pescoço. A barra continua na barra.
@@ -458,29 +472,41 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
       if (Number.isFinite(yFront) && yFront - yBot > 0.1) {
         const yRib = yFront - 0.016; const rowRib = box.y0 + bh * photo.collarRow!;   // fim da faixa 3D (collarBand)
         const sy = (box.y1 - rowRib) / (yRib - yBot);
+        photoScaleY = sy;
         map = (x, y) => [(cxP + (x - cxG) * sx) / photo.width, 1 - (box.y1 - (y - yBot) * sy) / photo.height];
       } else {
         const sy = bh / Math.max(0.05, yTop - yBot);
+        photoScaleY = sy;
         map = (x, y) => [(cxP + (x - cxG) * sx) / photo.width, 1 - (box.y0 + (yTop - y) * sy) / photo.height];
       }
     }
   }
   const pos: number[] = [], uv: number[] = [], col: number[] = [], si: number[] = [], sw: number[] = [];
-  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
-  const P = (v: number, o: THREE.Vector3) => o.set(posed[v * 3], posed[v * 3 + 1], posed[v * 3 + 2]);
+  const fabricUv: number[] = [], photoWeight: number[] = [];
+  const normals = baseNormals(posed, gg.index, Uint32Array.from({ length: posed.length / 3 }, (_, i) => i));
   const cache = new Map<string, number>(); const index: number[] = [];
   for (let t = 0; t < n; t++) {
     const vs = [gg.index[t * 3], gg.index[t * 3 + 1], gg.index[t * 3 + 2]];
-    P(vs[0], a); P(vs[1], b); P(vs[2], c); const nz = new THREE.Vector3().subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a)).normalize().z;
     // manga: a foto plana mostra a manga aberta para o lado; projetada de frente no braço caído viraria um retalho —
     // a manga fica no tecido (cor e trama), com a barra/punho próprios
-    const isFront = !!map && nz > 0.2 && !(noPhoto && vs.every((v) => noPhoto(v)));
+    const isFront = !!map;
     for (const v of vs) {
       const key = `${v}:${isFront ? 1 : 0}`; let i = cache.get(key);
       if (i === undefined) {
         i = pos.length / 3; cache.set(key, i);
         pos.push(gg.position[v * 3], gg.position[v * 3 + 1], gg.position[v * 3 + 2]);
-        if (isFront && map) { const [u, w] = map(posed[v * 3], posed[v * 3 + 1]); uv.push(Math.min(0.999, Math.max(0.001, u)), Math.min(0.999, Math.max(0.001, w))); } else uv.push(0.0015, 0.9985);
+        const blend = isFront && !noPhoto?.(v) ? Math.min(1, Math.max(0, (normals[v * 3 + 2] - 0.05) / 0.7)) : 0;
+        if (blend > 0 && map) {
+          const [u, w] = map(posed[v * 3], posed[v * 3 + 1]);
+          uv.push(0.5 * Math.min(0.999, Math.max(0.001, u)), Math.min(0.999, Math.max(0.001, w)));
+        } else {
+          // Separate fabric panel for sleeves, sides and back. It spans the rest mesh, never one flat-color pixel.
+          uv.push(0.501 + 0.498 * (gg.position[v * 3] - xMin) / Math.max(0.01, xMax - xMin),
+            0.001 + 0.998 * (gg.position[v * 3 + 1] - yMin) / Math.max(0.01, yMax - yMin));
+        }
+        fabricUv.push(0.501 + 0.498 * (gg.position[v * 3] - xMin) / Math.max(0.01, xMax - xMin),
+          0.001 + 0.998 * (gg.position[v * 3 + 1] - yMin) / Math.max(0.01, yMax - yMin));
+        photoWeight.push(blend * blend * (3 - 2 * blend));
         col.push(1, 1, 1, gg.alpha[v]);
         for (let k = 0; k < 4; k++) { si.push(gg.skinIndex[v * 4 + k]); sw.push(gg.skinWeight[v * 4 + k]); }
       }
@@ -490,19 +516,56 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
   const g = new THREE.BufferGeometry();
   g.setAttribute("position", new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute("uv", new THREE.Float32BufferAttribute(uv, 2));
+  g.setAttribute("fabricUv", new THREE.Float32BufferAttribute(fabricUv, 2));
+  g.setAttribute("photoWeight", new THREE.Float32BufferAttribute(photoWeight, 1));
   g.setAttribute("color", new THREE.Float32BufferAttribute(col, 4));
   g.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(si, 4));
   g.setAttribute("skinWeight", new THREE.Float32BufferAttribute(sw, 4));
   g.setIndex(index); g.computeVertexNormals();
+  g.userData.fabricMapping = { width: Math.max(0.01, xMax - xMin), height: Math.max(0.01, yMax - yMin), photoScaleX, photoScaleY };
   return g;
 }
 
 /** Textura: fundo na cor do tecido (costas, laterais, onde a foto é transparente) e a foto por cima. */
-export function garmentTexture(img: (CanvasImageSource & { width: number; height: number }) | null, fabric: string): THREE.CanvasTexture {
+export function garmentTexture(img: (CanvasImageSource & { width: number; height: number }) | null, fabric: string,
+  mapping?: { width: number; height: number; photoScaleX: number; photoScaleY: number }): THREE.CanvasTexture {
   const W = img ? Math.min(1024, img.width) : 16, H = img ? Math.round((W * img.height) / img.width) : 16;
-  const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const g = cv.getContext("2d")!;
-  g.fillStyle = fabric; g.fillRect(0, 0, W, H);
-  if (img) { g.drawImage(img, 0, 0, W, H); g.fillStyle = fabric; g.fillRect(0, 0, 3, 3); }
+  const cv = document.createElement("canvas"); cv.width = W * 2; cv.height = H; const g = cv.getContext("2d")!;
+  g.fillStyle = fabric; g.fillRect(0, 0, W * 2, H);
+  if (img) {
+    const source = document.createElement("canvas"); source.width = img.width; source.height = img.height;
+    const sg = source.getContext("2d", { willReadFrequently: true })!; sg.drawImage(img, 0, 0);
+    const raster = sg.getImageData(0, 0, source.width, source.height);
+    const tile = fabricTile(raster);
+    if (!tile) {
+      const rows = fabricRows(raster);
+      if (rows.length) {
+        // A front photo of denim contains a wash gradient; carry that fabric tone around the leg.
+        const gradient = g.createLinearGradient(0, 0, 0, H);
+        for (const row of rows) gradient.addColorStop(row.y / img.height, `rgb(${row.rgb.join(",")})`);
+        g.fillStyle = gradient; g.fillRect(0, 0, W, H);
+        const back = g.createLinearGradient(0, 0, 0, H);
+        const photoHeight = mapping ? mapping.height * mapping.photoScaleY : img.height;
+        const first = rows[0].y, last = rows[rows.length - 1].y;
+        for (const row of rows) back.addColorStop(Math.min(1, Math.max(0, (row.y - first) / Math.max(1, Math.min(photoHeight, last - first)))), `rgb(${row.rgb.join(",")})`);
+        g.fillStyle = back; g.fillRect(W, 0, W, H);
+      }
+    }
+    if (tile) {
+      const sample = document.createElement("canvas"); sample.width = tile.width; sample.height = tile.height;
+      sample.getContext("2d")!.drawImage(source, tile.x, tile.y, tile.width, tile.height, 0, 0, tile.width, tile.height);
+      const pattern = g.createPattern(sample, "repeat");
+      if (pattern) {
+        const fill = (x: number, sx: number, sy: number) => {
+          g.save(); g.translate(x, 0); g.scale(sx, sy); g.fillStyle = pattern; g.fillRect(0, 0, W / sx, H / sy); g.restore();
+        };
+        fill(0, W / img.width, H / img.height);
+        fill(W, mapping ? W / (mapping.width * mapping.photoScaleX) : W / img.width,
+          mapping ? H / (mapping.height * mapping.photoScaleY) : H / img.height);
+      }
+    }
+    g.drawImage(img, 0, 0, W, H);
+  }
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 
@@ -596,9 +659,24 @@ export function fabricColor(img: (CanvasImageSource & { width: number; height: n
 export function garmentMaterial(tex: THREE.Texture, sp: GarmentSpec): THREE.MeshPhysicalMaterial {
   const m = new THREE.MeshPhysicalMaterial({
     map: tex, vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: sp.kind === "jacket" || sp.kind === "coat" ? 0.7 : 0.85,
-    sheen: 0.5, sheenRoughness: 0.8, sheenColor: new THREE.Color("#ffffff"), polygonOffset: true, polygonOffsetFactor: -sp.layer, polygonOffsetUnits: -sp.layer,
+    sheen: sp.kind === "jacket" || sp.kind === "coat" ? 0.15 : 0.35, sheenRoughness: 0.8, sheenColor: new THREE.Color("#ffffff"), polygonOffset: true, polygonOffsetFactor: -sp.layer, polygonOffsetUnits: -sp.layer,
   });
   m.name = `roupa-${sp.kind}`;
+  m.onBeforeCompile = (shader) => {
+    shader.vertexShader = shader.vertexShader.replace("#include <common>", `#include <common>
+      attribute vec2 fabricUv; attribute float photoWeight;
+      varying vec2 vGarmentFabricUv; varying float vGarmentPhotoWeight;`)
+      .replace("#include <begin_vertex>", `#include <begin_vertex>
+        vGarmentFabricUv = fabricUv; vGarmentPhotoWeight = photoWeight;`);
+    shader.fragmentShader = shader.fragmentShader.replace("#include <common>", `#include <common>
+      varying vec2 vGarmentFabricUv; varying float vGarmentPhotoWeight;`)
+      .replace("#include <map_fragment>", `#ifdef USE_MAP
+        vec4 garmentPhoto = texture2D(map, vMapUv);
+        vec4 garmentFabric = texture2D(map, vGarmentFabricUv);
+        diffuseColor *= mix(garmentFabric, garmentPhoto, clamp(vGarmentPhotoWeight, 0.0, 1.0));
+      #endif`);
+  };
+  m.customProgramCacheKey = () => "garment-fabric-blend-v1";
   return m;
 }
 

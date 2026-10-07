@@ -13,7 +13,7 @@ import { DEFAULT_PIECES, ZONES, withDefaultOutfit, zonesCovered } from "@/lib/av
 import { foldGarment, relaxGarment, smoothBody } from "@/lib/avatar3d/human/garment-relax";
 import { SOLE_LIFT, shoeParts, shoeStyleOf } from "@/lib/avatar3d/human/shoes";
 import { garmentTrims } from "@/lib/avatar3d/human/garment-trims";
-import { prepareGarmentPhoto } from "@/lib/avatar3d/human/garment-photo";
+import { prepareOutfitPhoto } from "@/lib/avatar3d/human/garment-photo";
 
 /*
  * Provador / vitrines 3D — as peças do look vestidas no corpo humano do avatar (lib/avatar3d/human/garments.ts): cada
@@ -30,7 +30,8 @@ export interface OutfitItem { key: string; spec: GarmentSpec; piece: Look3dPiece
 
 export function outfitOf(pieces: Look3dPiece[]): OutfitItem[] {
   const items: OutfitItem[] = [];
-  for (const p of withDefaultOutfit(pieces)) { const k = kindOf(p); if (k) items.push({ key: p.id, spec: SPECS[k], piece: p }); }
+  const hasOuter = pieces.some((p) => ["jacket", "coat"].includes(kindOf(p) ?? ""));
+  for (const raw of withDefaultOutfit(pieces)) { const p = hasOuter && raw.id === DEFAULT_PIECES.upper.id ? { ...raw, imageUrl: null, colorHex: "#202020" } : raw; const k = kindOf(p); if (k) items.push({ key: p.id, spec: k === "jacket" && /blazer/i.test(p.subcategory ?? "") ? { ...SPECS[k], ease: 0.010, drape: 0.5 } : SPECS[k], piece: p }); }
   return items.sort((a, b) => a.spec.layer - b.spec.layer);
 }
 
@@ -60,7 +61,7 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
     const geo = texturedGeometry(gg, posed, img ? photoInfo(img) : null, it.spec.sleeve > 0 ? sleeveVert : undefined);
     const shoe = it.spec.kind === "shoes" || it.spec.kind === "boots";
     const fabric = fabricColor(img, it.piece.colorHex);
-    const tex = garmentTexture(shoe ? null : img, shoe ? "#ffffff" : fabric);
+    const tex = garmentTexture(shoe ? null : img, shoe ? "#ffffff" : fabric, geo.userData.fabricMapping);
     if (shoe) {                                                    // cabedal e sola nas cores da foto (cor por vértice)
       const sc = shoeColors(img, it.piece.colorHex); const up = new THREE.Color(sc.upper), so = new THREE.Color(sc.sole);
       const pos = geo.getAttribute("position"), col = geo.getAttribute("color");
@@ -146,7 +147,7 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
       const u = mediaUrl(i.piece.imageUrl ?? null);
       const t = u ? await loadTexture(u) : null;
       const img = t?.image as Img | undefined;
-      return [i.key, img ? prepareGarmentPhoto(img) : null] as const;
+      return [i.key, img ? await prepareOutfitPhoto(img, ["tee", "shirt", "longsleeve", "tank", "crop", "sweater", "hoodie", "jacket"].includes(i.spec.kind)) : null] as const;
     })).then((kv) => { if (alive) setLoaded({ key: urlKey, images: Object.fromEntries(kv) }); });
     return () => { alive = false; };
   }, [urlKey]); // eslint-disable-line react-hooks/exhaustive-deps

@@ -201,7 +201,7 @@ export const api = {
   put: <T,>(path: string, body?: unknown, opts?: RequestOptions) => request<T>("PUT", path, body ?? {}, opts),
   patch: <T,>(path: string, body?: unknown, opts?: RequestOptions) => request<T>("PATCH", path, body ?? {}, opts),
   delete: <T,>(path: string, opts?: RequestOptions) => request<T>("DELETE", path, undefined, opts),
-  upload: <T,>(path: string, form: FormData, method: "POST" | "PUT" = "POST") => request<T>(method, path, form),
+  upload: <T,>(path: string, form: FormData, method: "POST" | "PUT" = "POST", opts?: RequestOptions) => request<T>(method, path, form, opts),
   /** Busca um binário autenticado (card.png privado, foto) e devolve uma object URL. */
   async blobUrl(path: string): Promise<string> {
     // imagens (card.png, exportações): o Accept padrão é JSON e o servidor responderia 406

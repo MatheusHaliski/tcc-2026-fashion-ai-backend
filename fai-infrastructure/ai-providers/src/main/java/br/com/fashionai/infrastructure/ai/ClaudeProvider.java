@@ -1,6 +1,7 @@
 package br.com.fashionai.infrastructure.ai;
 
 import br.com.fashionai.application.ai.AiProviderPort;
+import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiRequest;
 import br.com.fashionai.application.ai.AiResponse;
 import com.anthropic.client.AnthropicClient;
@@ -30,6 +31,7 @@ import java.util.List;
 public class ClaudeProvider implements AiProviderPort {
     public static final String ID = "claude";
     private final AnthropicClient client;
+    private final AnthropicClient visionClient;
     private final boolean configured;
 
     public ClaudeProvider(@Value("${fashionai.ai.anthropic-api-key:}") String apiKey,
@@ -41,6 +43,10 @@ public class ClaudeProvider implements AiProviderPort {
                 .timeout(Duration.ofSeconds(timeoutSeconds))
                 .maxRetries(1)
                 .build();
+        this.visionClient = AnthropicOkHttpClient.builder()
+                .apiKey(configured ? key : "not-configured")
+                .timeout(Duration.ofSeconds(Math.min(6, timeoutSeconds)))
+                .maxRetries(0).build();
     }
 
     @Override
@@ -85,8 +91,10 @@ public class ClaudeProvider implements AiProviderPort {
         long in = 0;
         long out = 0;
         long searches = 0;
+        boolean interactive = request.capability() == AiCapability.MULTI_PIECE_DETECTOR;
+        AnthropicClient selected = interactive ? visionClient : client;
         try {
-            message = ProviderCircuit.run(ID, () -> client.messages().create(params.build()));
+            message = ProviderCircuit.run(ID, () -> selected.messages().create(params.build()), !interactive);
             in += message.usage().inputTokens();
             out += message.usage().outputTokens();
             searches += message.usage().serverToolUse().map(ServerToolUsage::webSearchRequests).orElse(0L);
