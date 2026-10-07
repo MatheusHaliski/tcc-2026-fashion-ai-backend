@@ -8157,5 +8157,12 @@
   "pieces.new.share_falhou": "La prenda se guardó, pero no se pudo compartir en el feed.",
   "pieces.new.flair_feito": "Carta FLAIR {tier} {ovr} creada en Mis cartas FLAIR.",
   "pieces.new.flair_falhou": "La prenda se guardó, pero la carta FLAIR no se creó.",
-  "interactions.post_preview": "Vista previa de la publicación"
+  "interactions.post_preview": "Vista previa de la publicación",
+  "tryOn.avatar_required": "Crea o revisa tu Avatar 3D para probar prendas en tu cuerpo.",
+  "tryOn.model_missing": "Vista previa 2D disponible; el modelo 3D de la prenda aún no se ha generado",
+  "tryOn.model_requires_fitting": "Modelo 3D disponible; el ajuste al avatar aún no se ha validado.",
+  "tryOn.review_piece": "Revisar prenda y modelo 3D",
+  "tryOn.category_review": "Revisa la categoría de estas prendas antes de probarlas.",
+  "tryOn.avatar_loading": "Cargando tu Avatar 3D…",
+  "tryOn.avatar_load_failed": "No se pudo cargar tu Avatar 3D. Inténtalo de nuevo."
 }

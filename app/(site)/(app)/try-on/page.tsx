@@ -20,7 +20,7 @@ import type { Avatar3dRef, Look3dPiece } from "@/components/three/common";
 import type { AvatarView } from "@/components/three/avatar-viewer";
 import { validateBody } from "@/lib/avatar3d/body-spec";
 import {
-  FITTING_SLOTS, decodeTryOn, encodeTryOn, removeSlot, resolveEnvironment, slotOf, visibleItems, wearItem, wearOf,
+  FITTING_SLOTS, decodeTryOn, encodeTryOn, removeSlot, resolveEnvironment, restoreFittingItems, slotOf, visibleItems, wearItem, wearOf,
   type EnvironmentMode, type FittingItem, type FittingSlot, type LightMode,
 } from "@/lib/tryon/fitting-room";
 import { resolveScene, type SceneProduct } from "@/lib/scene3d/scene";
@@ -39,7 +39,7 @@ const FittingRoomScene = dynamic(() => retryImport(() => import("@/components/th
  */
 type Sex = "MASCULINO" | "FEMININO";
 interface Entry { piece: PieceView; slot: FittingSlot; wear: string }
-interface State { mannequin: { sex: Sex; build: string; skinTone?: string | null }; sex: Sex; pieces: Record<FittingSlot, Entry[]>; avatar?: Avatar3dRef | null }
+interface State { mannequin: { sex: Sex; build: string; skinTone?: string | null }; sex: Sex; pieces: Record<FittingSlot, Entry[]>; avatar?: Avatar3dRef | null; needsReview?: { piece: PieceView }[] }
 interface Store { brandId: string; slug: string; name: string; logoUrl?: string | null; catalogProducts: number; categories: string[] }
 interface SavedTry { id: string; title: string; items: FittingItem[]; createdAt: number }
 type Tab = "stores" | "wardrobe" | "saved";
@@ -53,10 +53,11 @@ const write = (store: "session" | "local", key: string, value: unknown) => { try
 let clock = 0;
 const nextTick = () => Math.max(Date.now(), ++clock);
 
-function fromCatalog(p: CatalogProduct, variant: CatalogVariant | null, colors: Record<string, string> | undefined): FittingItem {
+function fromCatalog(p: CatalogProduct, variant: CatalogVariant | null, colors: Record<string, string> | undefined): FittingItem | null {
   const color = variant?.color ?? p.color ?? null;
+  const slot = slotOf(p.category); if (!slot) return null;
   return {
-    key: `c:${p.id}`, source: "catalog", slot: slotOf(p.category), wear: wearOf(p.category, p.subcategory), name: p.productName,
+    key: `c:${p.id}`, source: "catalog", slot, wear: wearOf(p.category, p.subcategory), name: p.productName,
     brand: p.brand ? { name: p.brand.name, slug: p.brand.slug, logoUrl: p.brand.logoUrl ?? null } : null, category: p.category, subcategory: p.subcategory,
     imageUrl: p.imageUrl ?? null, colorHex: (color && colors?.[color]) || p.colorHex || null, colorName: variant?.colorName ?? p.colorName ?? (color ? label(color) : null),
     productId: p.id, variantId: variant?.id ?? null,
@@ -70,13 +71,14 @@ function fromWardrobe(e: Entry): FittingItem {
     key: `w:${p.id}`, source: "wardrobe", slot: e.slot, wear: (e.wear as FittingItem["wear"]) ?? wearOf(p.category, p.subcategory), name: p.name,
     brand: p.brandName ? { name: p.brandName, logoUrl: p.brandLogoUrl ?? null } : null, category: p.category, subcategory: p.subcategory,
     imageUrl: p.imageUrl ?? p.thumbnailUrl ?? null, colorHex: p.colorHex ?? null, colorName: p.color ? label(p.color) : null, pieceId: p.id, addedAt: nextTick(),
+    model3dUrl: p.model3dUrl ?? null, model3dStatus: p.model3dStatus ?? null,
   };
 }
 const toSceneProduct = (p: CatalogProduct): SceneProduct => ({
   id: p.id, name: p.productName, imageUrl: p.imageUrl ?? null, category: p.category, subcategory: p.subcategory,
   brand: p.brand ? { name: p.brand.name, slug: p.brand.slug, logoUrl: p.brand.logoUrl ?? null } : null,
 });
-const toLook3d = (i: FittingItem): Look3dPiece => ({ id: i.key, name: i.name, slot: WEAR3D[i.wear] ?? "accessory", category: i.category, subcategory: i.subcategory ?? undefined, imageUrl: i.imageUrl, colorHex: i.colorHex, model3dUrl: null, defaultImage: !i.imageUrl });
+const toLook3d = (i: FittingItem): Look3dPiece => ({ id: i.key, name: i.name, slot: WEAR3D[i.wear] ?? "accessory", category: i.category, subcategory: i.subcategory ?? undefined, imageUrl: i.imageUrl, colorHex: i.colorHex, model3dUrl: i.model3dUrl, model3dStatus: i.model3dStatus, defaultImage: !i.imageUrl });
 
 function FittingRoom() {
   const { t } = useI18n(); const toast = useToast(); const sp = useSearchParams(); const tax = useTaxonomy();
@@ -85,7 +87,7 @@ function FittingRoom() {
   const [items, setItems] = useState<FittingItem[]>([]);
   const [products, setProducts] = useState<Record<string, CatalogProduct>>({});
   const [mode, setMode] = useState<EnvironmentMode>("auto");
-  const [light, setLight] = useState<LightMode>("store");
+  const [light, setLight] = useState<LightMode>("daylight");
   const [view, setView] = useState<AvatarView>("front");
   const [tab, setTab] = useState<Tab>("stores");
   const [category, setCategory] = useState("");
@@ -108,7 +110,7 @@ function FittingRoom() {
     if (booted.current || !data) return; booted.current = true;
     setSaved(read<SavedTry[]>("local", SAVED_KEY, []));
     const refs = decodeTryOn(sp.get("provar"));
-    if (!refs.length) { setItems(read<FittingItem[]>("session", SESSION_KEY, [])); return; }
+    if (!refs.length) { setItems(restoreFittingItems(read<FittingItem[]>("session", SESSION_KEY, []))); return; }
     const wardrobe = new Map(FITTING_SLOTS.flatMap((s) => (data.pieces?.[s] ?? []).map((e) => [e.piece.id, e] as const)));
     Promise.all(refs.map(async (r) => {
       if (r.source === "wardrobe") { const e = wardrobe.get(r.id); return e ? fromWardrobe(e) : null; }
@@ -150,12 +152,14 @@ function FittingRoom() {
   }
   function pickProduct(p: CatalogProduct, v: CatalogVariant | null) {
     setProducts((m) => ({ ...m, [p.id]: p })); setHeroId(p.id);
-    tryOn(fromCatalog(p, v ?? p.selectedVariant ?? null, tax?.colors));
+    const item = fromCatalog(p, v ?? p.selectedVariant ?? null, tax?.colors);
+    if (item) tryOn(item); else toast.info(t("tryOn.category_review"));
   }
   function remove(slot: FittingSlot) { commit(removeSlot(items, slot)); setStatus(t("tryOn.lugar_vazio_status", { slot: slotName[slot] })); }
   function changeVariant(item: FittingItem, v: CatalogVariant) {
     const p = products[item.productId!]; if (!p) return;
-    commit(items.map((i) => i.key === item.key ? { ...fromCatalog(p, v, tax?.colors), addedAt: i.addedAt } : i));
+    const next = fromCatalog(p, v, tax?.colors); if (!next) return;
+    commit(items.map((i) => i.key === item.key ? { ...next, addedAt: i.addedAt } : i));
   }
   async function ownIt(item: FittingItem) {
     if (!item.productId || busyOwn) return;
@@ -211,8 +215,12 @@ function FittingRoom() {
             </div>
             <div className="fitting-stage" role="region" aria-label={t("tryOn.palco_lojas_aria", { n: shown.length, marca: env.featured.name })}
               style={{ ["--fitting-accent" as string]: env.featured.accent }}>
-              <FittingRoomScene avatar={avatar} sex={data.sex} build={data.mannequin.build} skinTone={avatar ? null : data.mannequin.skinTone} body={bodyParams}
+              {avatar ? <FittingRoomScene avatar={avatar} sex={data.sex} build={data.mannequin.build} skinTone={null} body={bodyParams}
                 pieces={shown.map(toLook3d)} environment={env} scene={scene} light={light} view={view} onCanvas={(c) => { canvas.current = c; }} />
+                : <div className="grid h-full content-center justify-items-center gap-3 p-6 text-center" role="status">
+                  <p>{t("tryOn.avatar_required")}</p>
+                  <Link href="/avatar" className="btn btn-sm">{t("mirror.criar_avatar")}</Link>
+                </div>}
             </div>
             <div className="grid gap-2 p-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -252,6 +260,8 @@ function FittingRoom() {
                           <p className="flex items-center gap-1.5 type-caption text-muted">{i.brand && <BrandLogo name={i.brand.name} src={i.brand.logoUrl} size={16} />}{i.brand?.name ?? t("tryOn.sem_marca")}
                             <Badge tone={i.source === "catalog" ? "thread" : "chalk"}>{i.source === "catalog" ? t("tryOn.origem_loja") : t("tryOn.origem_guarda_roupa")}</Badge></p>
                           <p className="truncate type-body-sm font-medium">{i.name}{i.colorName ? ` · ${i.colorName}` : ""}</p>
+                          <p className="type-caption text-muted">{t(i.model3dUrl ? "tryOn.model_requires_fitting" : "tryOn.model_missing")}</p>
+                          {i.pieceId && <Link href={`/pieces/${i.pieceId}`} className="type-caption underline">{t("tryOn.review_piece")}</Link>}
                           {covered && <p className="type-caption text-muted">{t("tryOn.coberta_pela_peca_inteira", { name: items.find((x) => x.wear === "FULL_BODY")!.name })}</p>}
                           {p && (p.variants?.length ?? 0) > 1 && (
                             <div className="mt-1 flex flex-wrap gap-1" role="group" aria-label={t("tryOn.trocar_cor")}>
@@ -306,6 +316,10 @@ function FittingRoom() {
           {tab === "wardrobe" && (
             <Card>
               <p className="mb-3 type-caption text-muted">{t("tryOn.combinar_guarda_roupa_dica")}</p>
+              {!!data.needsReview?.length && <div role="status" className="mb-3">
+                <p>{t("tryOn.category_review")}</p>
+                {data.needsReview.map(({ piece }) => <Link key={piece.id} href={`/pieces/${piece.id}`} className="block underline">{piece.name}</Link>)}
+              </div>}
               {wardrobeCount === 0 ? <p className="type-body-sm">{t("tryOn.guarda_roupa_vazio")} <Link href="/pieces/new" className="underline">{t("common.cadastrar_peca")}</Link></p> : FITTING_SLOTS.map((s) => {
                 const list = data.pieces?.[s] ?? []; if (!list.length) return null;
                 return (

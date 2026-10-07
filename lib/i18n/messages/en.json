@@ -8157,5 +8157,12 @@
   "pieces.new.share_falhou": "The piece was saved, but it could not be shared to the feed.",
   "pieces.new.flair_feito": "FLAIR card {tier} {ovr} created in My FLAIR cards.",
   "pieces.new.flair_falhou": "The piece was saved, but the FLAIR card was not created.",
-  "interactions.post_preview": "Post preview"
+  "interactions.post_preview": "Post preview",
+  "tryOn.avatar_required": "Create or review your 3D Avatar to try pieces on your body.",
+  "tryOn.model_missing": "2D preview available; the piece’s 3D model has not been generated yet",
+  "tryOn.model_requires_fitting": "3D model available; avatar fitting has not been validated yet.",
+  "tryOn.review_piece": "Review piece and 3D model",
+  "tryOn.category_review": "Review these pieces’ categories before trying them on.",
+  "tryOn.avatar_loading": "Loading your 3D Avatar…",
+  "tryOn.avatar_load_failed": "Your 3D Avatar could not be loaded. Please try again."
 }

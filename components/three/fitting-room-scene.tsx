@@ -5,6 +5,7 @@ import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { StudioLight, rng, useCanvasTexture, useReducedMotion, useTex, type Avatar3dRef, type Look3dPiece } from "@/components/three/common";
 import { Mannequin, bodyParamsOf } from "@/components/three/mannequin";
+import { useBodyAsset } from "@/components/three/human-avatar";
 import { buildSpec, type BodyParams } from "@/lib/avatar3d/body-spec";
 import type { BrandEnvironment, LightMode, ResolvedEnvironment, RoomStyle, WallMotif } from "@/lib/tryon/fitting-room";
 import type { AvatarView } from "@/components/three/avatar-viewer";
@@ -242,7 +243,7 @@ function ZoneFixtures({ scene, env, label }: { scene: StoreScene; env: BrandEnvi
 }
 
 /** Luz por modo: loja (spots quentes), luz do dia (clara e fria) e noite (baixa, com o letreiro e o anel brilhando). */
-function Lights({ light, accent }: { light: LightMode; accent: string }) {
+function Lights({ light }: { light: LightMode }) {
   const night = light === "night", day = light === "daylight";
   return (
     <>
@@ -251,7 +252,7 @@ function Lights({ light, accent }: { light: LightMode; accent: string }) {
       <spotLight position={[0, WALL_H - 0.1, 1.1]} angle={0.55} penumbra={0.6} intensity={night ? 14 : day ? 6 : 11} color={day ? "#FFFFFF" : "#FFE8CC"} castShadow target-position={[0, 0.8, 0]} />
       <directionalLight position={[1.4, 2.6, 3]} intensity={night ? 0.25 : day ? 0.9 : 0.55} />
       <directionalLight position={[-1.6, 2.0, 2.4]} intensity={night ? 0.15 : 0.35} />
-      <pointLight position={[0, 1.4, -1.2]} color={accent} intensity={night ? 2.4 : 0.8} distance={3} />
+      <pointLight position={[0, 1.4, -1.2]} color={day ? "#FFFFFF" : "#FFF4E6"} intensity={night ? 0.8 : 0.4} distance={3} />
     </>
   );
 }
@@ -262,6 +263,7 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
 }) {
   const { t } = useI18n();
   const reduced = useReducedMotion();
+  const asset = useBodyAsset();
   sex = avatar?.model?.sex ?? sex;
   const params = body ?? bodyParamsOf({ sex, build, avatar });
   const H = buildSpec(params).stature;
@@ -269,13 +271,17 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
   const dist = H * 2.7;
   const env = scene?.brand ?? environment.featured;
   const others = scene ? scene.others : environment.others;
+  if (!asset || asset === "error") return <div role="status" className="grid h-full content-center justify-items-center gap-3 p-6 text-center">
+    <p>{t(asset === "error" ? "tryOn.avatar_load_failed" : "tryOn.avatar_loading")}</p>
+    {asset === "error" && <button type="button" className="btn btn-sm" onClick={() => window.location.reload()}>{t("common.retry")}</button>}
+  </div>;
   return (
     <Canvas shadows camera={{ fov: 32, near: 0.05, far: 30, position: [0, target[1], dist] }} dpr={[1, 2]} gl={{ preserveDrawingBuffer: true, antialias: true }}
       onCreated={({ gl }) => { gl.toneMapping = THREE.NeutralToneMapping; gl.toneMappingExposure = 1; onCanvas?.(gl.domElement); }}
       aria-label={t("tryOn.cena_aria", { marca: env.name })}>
       <color attach="background" args={[light === "night" ? "#0B0C0F" : env.wall]} />
       <fog attach="fog" args={[light === "night" ? "#0B0C0F" : env.wall, 9, 18]} />
-      <Lights light={light} accent={env.accent} />
+      <Lights light={light} />
       <Room env={env} others={others} light={light} reduced={reduced} scene={scene} />
       <group position={[0, 0.04, 0]}>
         <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={pieces} sway={false} body={params} />

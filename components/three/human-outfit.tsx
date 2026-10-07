@@ -13,6 +13,7 @@ import { DEFAULT_PIECES, ZONES, withDefaultOutfit, zonesCovered } from "@/lib/av
 import { foldGarment, relaxGarment, smoothBody } from "@/lib/avatar3d/human/garment-relax";
 import { SOLE_LIFT, shoeParts, shoeStyleOf } from "@/lib/avatar3d/human/shoes";
 import { garmentTrims } from "@/lib/avatar3d/human/garment-trims";
+import { prepareGarmentPhoto } from "@/lib/avatar3d/human/garment-photo";
 
 /*
  * Provador / vitrines 3D — as peças do look vestidas no corpo humano do avatar (lib/avatar3d/human/garments.ts): cada
@@ -136,15 +137,16 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
 export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look3dPiece[] }) {
   // fotos das peças com a chave do look a que pertencem: a Prévia 2D só fotografa quando as fotos do look atual chegaram
   const [loaded, setLoaded] = useState<{ key: string; images: Record<string, Img | null> }>({ key: "", images: {} });
-  const images = loaded.images;
   const items = outfitOf(pieces);
-  const urlKey = items.map((i) => `${i.key}:${i.piece.studioUrl ?? i.piece.imageUrl ?? ""}`).join("|");
+  const urlKey = items.map((i) => `${i.key}:${i.piece.imageUrl ?? ""}`).join("|");
+  const images = loaded.key === urlKey ? loaded.images : {};
   useEffect(() => {
     let alive = true;
     Promise.all(items.map(async (i) => {
-      const u = mediaUrl(i.piece.studioUrl ?? i.piece.imageUrl ?? null);
+      const u = mediaUrl(i.piece.imageUrl ?? null);
       const t = u ? await loadTexture(u) : null;
-      return [i.key, (t?.image as Img | undefined) ?? null] as const;
+      const img = t?.image as Img | undefined;
+      return [i.key, img ? prepareGarmentPhoto(img) : null] as const;
     })).then((kv) => { if (alive) setLoaded({ key: urlKey, images: Object.fromEntries(kv) }); });
     return () => { alive = false; };
   }, [urlKey]); // eslint-disable-line react-hooks/exhaustive-deps

@@ -25,6 +25,8 @@ export interface FittingItem {
   category: string;
   subcategory?: string | null;
   imageUrl?: string | null;
+  model3dUrl?: string | null;
+  model3dStatus?: string | null;
   colorHex?: string | null;
   colorName?: string | null;
   productId?: string;
@@ -46,11 +48,20 @@ export function wearOf(category: string, subcategory?: string | null): Wear {
   }
 }
 /** Lugar no corpo: a peça inteira (vestido, macacão) ocupa a parte de cima e cobre a de baixo. */
-export function slotOf(category: string): FittingSlot {
+export function slotOf(category: string): FittingSlot | null {
   if (category === "lower_piece") return "lower_piece";
   if (category === "shoes_piece") return "shoes_piece";
   if (category === "upper_piece" || category === "full_body_piece") return "upper_piece";
-  return "accessory_piece";
+  return category === "accessory_piece" ? "accessory_piece" : null;
+}
+
+/** Revalidate old browser sessions against persisted categories, not legacy layer names. */
+export function restoreFittingItems(items: FittingItem[]): FittingItem[] {
+  if (!Array.isArray(items)) return [];
+  return items.reduce<FittingItem[]>((restored, item) => {
+    const slot = item && slotOf(item.category);
+    return slot ? wearItem(restored, { ...item, slot, wear: wearOf(item.category, item.subcategory) }) : restored;
+  }, []);
 }
 
 /** Vestir: a nova peça toma o lugar dela; a peça inteira tira a parte de baixo do corpo (mas não do histórico da prova). */
