@@ -25,7 +25,6 @@ import type { AvatarHair, AvatarModel } from "@/lib/avatar3d/model";
 import { loadTexture, type Look3dPiece } from "@/components/three/common";
 import { HumanOutfit } from "@/components/three/human-outfit";
 import { attachHair } from "@/lib/avatar3d/human/attach-hair";
-import { prepareFaceTexture } from "@/lib/avatar3d/glasses";
 
 /**
  * Cabelo em fios (HAIR-F2): nível de detalhe pelo aparelho (hair-lod.ts) e rebaixado se o tempo de quadro estourar.

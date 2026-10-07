@@ -8164,16 +8164,5 @@
   "tryOn.review_piece": "Review piece and 3D model",
   "tryOn.category_review": "Review these pieces’ categories before trying them on.",
   "tryOn.avatar_loading": "Loading your 3D Avatar…",
-  "tryOn.avatar_load_failed": "Your 3D Avatar could not be loaded. Please try again.",
-  "multiPiece.revisao_local": "Vision AI is unavailable. Check the suggested regions: add a piece and adjust its crop if an item was not separated.",
-  "multiPiece.slots": "Select piece to edit",
-  "multiPiece.adicionar_slot": "Add piece",
-  "multiPiece.ajustar_caixa": "Adjust crop (%)",
-  "multiPiece.box_x": "Left",
-  "multiPiece.box_y": "Top",
-  "multiPiece.box_width": "Width",
-  "multiPiece.box_height": "Height",
-  "multiPiece.confianca_recorte": "Crop confidence: {pct}%",
-  "multiPiece.recorte_obrigatorio": "Adjust this crop so the photo with all the garments is not saved as one piece.",
-  "multiPiece.tempo_esgotado": "Analysis took too long. Retry with a smaller photo or check your connection."
+  "tryOn.avatar_load_failed": "Your 3D Avatar could not be loaded. Please try again."
 }

@@ -13,7 +13,7 @@ import { DEFAULT_PIECES, ZONES, withDefaultOutfit, zonesCovered } from "@/lib/av
 import { foldGarment, relaxGarment, smoothBody } from "@/lib/avatar3d/human/garment-relax";
 import { SOLE_LIFT, shoeParts, shoeStyleOf } from "@/lib/avatar3d/human/shoes";
 import { garmentTrims } from "@/lib/avatar3d/human/garment-trims";
-import { prepareOutfitPhoto } from "@/lib/avatar3d/human/garment-photo";
+import { prepareGarmentPhoto } from "@/lib/avatar3d/human/garment-photo";
 
 /*
  * Provador / vitrines 3D — as peças do look vestidas no corpo humano do avatar (lib/avatar3d/human/garments.ts): cada
@@ -147,7 +147,7 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
       const u = mediaUrl(i.piece.imageUrl ?? null);
       const t = u ? await loadTexture(u) : null;
       const img = t?.image as Img | undefined;
-      return [i.key, img ? await prepareOutfitPhoto(img, ["tee", "shirt", "longsleeve", "tank", "crop", "sweater", "hoodie", "jacket"].includes(i.spec.kind)) : null] as const;
+      return [i.key, img ? prepareGarmentPhoto(img) : null] as const;
     })).then((kv) => { if (alive) setLoaded({ key: urlKey, images: Object.fromEntries(kv) }); });
     return () => { alive = false; };
   }, [urlKey]); // eslint-disable-line react-hooks/exhaustive-deps
