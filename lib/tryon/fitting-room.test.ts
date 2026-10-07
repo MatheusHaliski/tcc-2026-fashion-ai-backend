@@ -57,6 +57,14 @@ describe("provador virtual: motor de ambiente", () => {
     expect(brandKey("Levi's")).toBe("levis");
     expect(brandKey("New Balance")).toBe("new-balance");
   });
+
+  it("toda marca não curada tem estilo e motivo definidos (hash ≥ 2³¹ não vira índice negativo)", () => {
+    const names = ["Costa Linho", "Norte Sport", "Atelier Lumi", "Rio Aurora", "Osklen", "Farm", ...Array.from({ length: 200 }, (_, i) => `Marca ${i}`)];
+    for (const name of names) {
+      const env = environmentFor({ name });
+      expect(env.style, name).toBeTruthy(); expect(env.motif, name).toBeTruthy();
+    }
+  });
 });
 
 describe("provador virtual: link da prova", () => {

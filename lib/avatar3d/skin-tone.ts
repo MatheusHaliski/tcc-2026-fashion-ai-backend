@@ -8,6 +8,11 @@
  *    cílios e o reflexo; sem esclera utilizável (olhos pequenos, fechados, óculos escuros), "gray-world" fraco na
  *    imagem toda; sem nada, nenhuma correção;
  *  - os ganhos corrigem a CROMATICIDADE e preservam a luminância (a pele não fica mais clara nem mais escura);
+ *  - duas travas (TWIN-FID, docs/avatar3d/fidelidade-digital-twin-2026-10-06.md): "esclera" mais escura que a pele não é
+ *    esclera (em olho pequeno ou semicerrado a amostra pegava pálpebra, sombra e pele): só pixels quase tão claros e menos
+ *    vermelhos que a pele (razão R/G) contam, e com poucos deles vale a reserva; e a correção nunca
+ *    leva a pele para fora da faixa de cor humana (SKIN_LOCUS): aplica-se só a fração dos ganhos que a mantém plausível.
+ *    Sem as travas, 7 dos 16 retratos de teste saíam com pele cinza, esverdeada ou azulada;
  *  - skinProfile: tom base em CIELAB, subtom (contínuo pelo ângulo de matiz + classe), nível de melanina e de
  *    vermelhidão, cada um com confiança e origem.
  *
@@ -18,7 +23,11 @@ import { rgbToLab, type Lab } from "./identity/metrics";
 import type { Source, Trait } from "./identity/face-profile";
 
 export type Gains = [number, number, number];
-export interface Illuminant { gains: Gains; source: "SCLERA" | "GRAY_WORLD" | "NONE"; confidence: number; samples: number }
+export interface Illuminant {
+  gains: Gains; source: "SCLERA" | "GRAY_WORLD" | "NONE"; confidence: number; samples: number;
+  /** fração dos ganhos aplicada quando a correção inteira tiraria a pele da faixa humana (só quando < 1) */
+  limited?: number;
+}
 
 /** Contorno de cada olho (MediaPipe, em ordem) e a íris (centro + 4 pontos do anel; só existe com os 478 pontos). */
 const EYE_L = [33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160, 161, 246];
@@ -38,8 +47,14 @@ function inPoly(x: number, y: number, poly: Pt[]): boolean {
   return inside;
 }
 
-/** Pixels de esclera dos dois olhos: dentro do contorno, fora da íris, no meio-alto da luminância (sem cílio nem reflexo). */
-export function scleraPixels(img: Raster, px: Pt[]): number[][] {
+/**
+ * Pixels de esclera dos dois olhos: dentro do contorno, fora da íris, no meio-alto da luminância (sem cílio nem reflexo).
+ * `like`: a pele medida liga dois filtros — só pixels com pelo menos 85% do brilho da pele (o que é mais escuro é pálpebra ou
+ * sombra que entrou no contorno de um olho pequeno ou semicerrado) e MENOS vermelhos que ela na razão R/G. A razão entre a
+ * R/G da esclera e a da pele não muda com a cor da luz (cada canal é multiplicado pelo mesmo ganho): esclera ≈ 1,03, pele
+ * 1,3–1,5 em todas as tonalidades; o que é tão vermelho quanto a pele é a própria pele ou a pálpebra.
+ */
+export function scleraPixels(img: Raster, px: Pt[], like?: readonly number[] | null): number[][] {
   if (px.length < 478) return [];
   const all: number[][] = [];
   for (const [eye, iris] of [[EYE_L, IRIS_L], [EYE_R, IRIS_R]] as const) {
@@ -52,6 +67,10 @@ export function scleraPixels(img: Raster, px: Pt[]): number[][] {
         const o = (y * img.width + x) * 4; all.push([img.data[o], img.data[o + 1], img.data[o + 2], luma(img.data[o], img.data[o + 1], img.data[o + 2])]);
       }
     }
+  }
+  if (like) {
+    const minL = 0.85 * luma(like[0], like[1], like[2]), maxRG = 0.9 * like[0] / Math.max(1, like[1]);
+    const keep = all.filter((p) => p[3] >= minL && p[0] / Math.max(1, p[1]) <= maxRG); all.length = 0; all.push(...keep);
   }
   if (all.length < 8) return [];
   const Ls = all.map((p) => p[3]).sort((a, b) => a - b);
@@ -67,17 +86,57 @@ export function chromaGains(rgb: [number, number, number], ref: Gains, strength:
   return raw.map((v) => { const n = v / l; return 1 + (Math.min(1.35, Math.max(0.74, n)) - 1) * strength; }) as Gains;
 }
 
-export function estimateIlluminant(img: Raster, px: Pt[], strength = 0.95): Illuminant {
-  const sc = scleraPixels(img, px);
-  if (sc.length >= 24) {
+/**
+ * Faixa de cor de pele humana em CIELAB, de todas as tonalidades: matiz (h = atan2(b*, a*)) entre 22° (rosada) e 82°
+ * (oliva amarelada) e croma de pelo menos 7. Fora dela a pele fica cinza, verde, azul ou magenta — nenhuma pessoa tem.
+ */
+export const SKIN_LOCUS = { hueMin: 22, hueMax: 82, chromaMin: 7 } as const;
+
+/** Quanto uma cor está fora da faixa de pele (0 = dentro): graus de matiz + 3 × croma que falta. */
+export function skinLocusDistance(lab: Lab): number {
+  const h = (Math.atan2(lab.b, lab.a) * 180) / Math.PI; const c = Math.hypot(lab.a, lab.b);
+  const ang = (x: number, y: number) => { const d = Math.abs(x - y) % 360; return d > 180 ? 360 - d : d; };
+  const dh = h >= SKIN_LOCUS.hueMin && h <= SKIN_LOCUS.hueMax ? 0 : Math.min(ang(h, SKIN_LOCUS.hueMin), ang(h, SKIN_LOCUS.hueMax));
+  return dh + 3 * Math.max(0, SKIN_LOCUS.chromaMin - c);
+}
+
+/**
+ * A maior fração dos ganhos (1; 0,9; …; 0) que deixa a pele dentro da faixa humana. Se nenhuma deixa (luz muito
+ * colorida e pele fora da faixa já na foto), a fração que mais a aproxima — a correção que ajuda continua inteira.
+ */
+export function limitToSkin(gains: Gains, skin: readonly number[]): { gains: Gains; applied: number } {
+  let best = 1, bestD = Infinity;
+  for (let k = 10; k >= 0; k--) {
+    const f = k / 10; const g = gains.map((v) => 1 + (v - 1) * f) as Gains;
+    const d = skinLocusDistance(rgbToLab(...applyGains(skin, g)));
+    if (d === 0) return { gains: g, applied: f };
+    if (d < bestD - 1e-9) { bestD = d; best = f; }
+  }
+  return { gains: gains.map((v) => 1 + (v - 1) * best) as Gains, applied: best };
+}
+
+/**
+ * Cor da luz da foto. `skin` (RGB medido no rosto, sem correção) liga as travas: a amostra da esclera fica só com pixels
+ * quase tão claros e menos vermelhos que a pele (`scleraPixels`), e os ganhos finais passam por `limitToSkin`.
+ */
+export function estimateIlluminant(img: Raster, px: Pt[], strength = 0.95, skin?: readonly number[] | null): Illuminant {
+  const guard = (w: Illuminant): Illuminant => {
+    if (!skin || w.source === "NONE") return w;
+    const { gains, applied } = limitToSkin(w.gains, skin);
+    return applied < 1 ? { ...w, gains, limited: applied, confidence: Math.round(w.confidence * (0.5 + 0.5 * applied) * 100) / 100 } : w;
+  };
+  // só o que é quase tão claro e menos vermelho que a pele conta como esclera (sem isso, pálpebra, sombra e pele entravam)
+  const sc = scleraPixels(img, px, skin);
+  // com os filtros pela pele, 12 pixels já são esclera de verdade (foto pequena tem poucos); sem eles, 24
+  if (sc.length >= (skin ? 12 : 24)) {
     const mean = [0, 1, 2].map((k) => sc.reduce((s, p) => s + p[k], 0) / sc.length) as [number, number, number];
-    return { gains: chromaGains(mean, SCLERA_REF, strength), source: "SCLERA", confidence: Math.min(0.9, 0.5 + sc.length / 400), samples: sc.length };
+    return guard({ gains: chromaGains(mean, SCLERA_REF, strength), source: "SCLERA", confidence: Math.min(0.9, 0.5 + sc.length / 400), samples: sc.length });
   }
   // reserva: gray-world fraco (a média de uma cena raramente é neutra; metade da correção)
   let r = 0, g = 0, b = 0, n = 0;
   for (let i = 0; i < img.data.length; i += 16) { const L = luma(img.data[i], img.data[i + 1], img.data[i + 2]); if (L < 20 || L > 235) continue; r += img.data[i]; g += img.data[i + 1]; b += img.data[i + 2]; n++; }
   if (n < 100) return { gains: [1, 1, 1], source: "NONE", confidence: 0, samples: 0 };
-  return { gains: chromaGains([r / n, g / n, b / n], [1, 1, 1], 0.5), source: "GRAY_WORLD", confidence: 0.35, samples: n };
+  return guard({ gains: chromaGains([r / n, g / n, b / n], [1, 1, 1], 0.5), source: "GRAY_WORLD", confidence: 0.35, samples: n });
 }
 
 export const applyGains = (rgb: readonly number[], g: Gains): [number, number, number] =>

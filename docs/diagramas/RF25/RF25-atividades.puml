@@ -1,9 +1,16 @@
 @startuml RF25_Atividades
-title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de atividades — aba Selos (criar, editar, ativar) e política de promoção do perfil emissor
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,85 +19,29 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF25 — Criar & editar selo de marca/celebridade (formulário + arte) e política de promoção\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre o perfil /brands/[slug] (RF14/RF22) → aba "Selos";
-|Frontend|
-:GET /api/users/{ownerId}/seals;
-|Serviço|
-if (Quem vê é o dono ou admin?) then (sim)
-  :SealService.sealsOf(ownerId): todos os selos;
-else (não)
-  if (Emissor aprovado e ativo (sellerActive)?) then (não)
-    :Lista vazia;
-  else (sim)
-    :Só os selos ACTIVE;
-  endif
-endif
-:sealViews(): design, policy, available,\nunavailableReason, emissões e o "Hype do selo"\n(média do HypeScore v2 dos vínculos aprovados);
-|Frontend|
-if (Lista vazia?) then (sim)
-  :EmptyState "Nenhum selo ainda";
-else (não)
-  :Cards: SealMedallion + nível + disponível/motivo\n+ SealHypeStat + frase da política;
-endif
-|Pessoa|
-if (É o dono do perfil?) then (não)
-  :Só consulta (o vínculo do selo ao look é no RF20/RF21);
-  stop
-endif
-if (O que fazer?) then (Novo selo / Editar)
-  :SealWizard em 4 passos: modo (com/sem IA) → dados\n(nome, nível, política, validade, limite) → arte → revisar\n(detalhes em RF25-criador-de-selos);
-  |Frontend|
-  :POST /api/seals ou PUT /api/seals/{id}\n{name, tier, policy, design, availableFrom/Until, usageLimit, status};
-  |Serviço|
-  if (Perfil institucional aprovado (requireIssuer)?\nE, na edição, é o dono do selo?) then (não)
-    #FFE3E3:403;
-    stop
-  endif
-  :applySeal(): nome 2–160; nível (padrão LOOK);\nSealPolicies.normalize → policyText gerado;\nSealDesigns.normalize; OwnMedia nas imagens;\npremium = perfil CELEBRIDADE;
-  if (Validações?) then (falhou)
-    #FFE3E3:400 SELO_DESIGN_INVALIDO · PERIODO_INVALIDO ·\nLIMITE_INVALIDO (< 1) · campo obrigatório;
-    |Frontend|
-    :toast com o erro; o assistente continua aberto;
-    stop
-  endif
-  |Banco|
-  :INSERT/UPDATE seals (background_config_json =\n{design, policy}) + audit SELO_EDITADO;
-  |Frontend|
-  :201/200 → fecha o diálogo e recarrega a lista;
-elseif (Ativar / Desativar) then
-  |Frontend|
-  :PUT /api/seals/{id} com status ACTIVE ⇄ INACTIVE;
-  note right: inativo não emite; promoção\nligada a ele fica indisponível
-else (Criar promoção)
-  |Pessoa|
-  :Aba "Meus cupons promocionais" → "Criar promoção"\n(tipo, título, regras, desconto, selo exigido,\nperíodo, estoque, limite por pessoa, link da loja);
-  |Frontend|
-  :POST /api/promotions ou PUT /api/promotions/{id};
-  |Serviço|
-  :SealService.applyPromotion();
-  if (Regras da promoção?) then (falhou)
-    #FFE3E3:400 TIPO_OBRIGATORIO · TIPO_INVALIDO (marca: 6 tipos) ·\nDESCONTO_INVALIDO (1–90 %) · SELO_INATIVO ·\nPERIODO_INVALIDO · PARCEIRA_INVALIDA · LINK_INVALIDO (só https)\n409 PARCERIA_NAO_AUTORIZADA;
-    stop
-  endif
-  |Banco|
-  :INSERT/UPDATE promotions (status AVAILABLE,\nrequiredSealKind BRAND_SEAL | PREMIUM_SEAL, perUserLimit ≥ 1);
-  |Frontend|
-  :Pausar/retomar: PUT /api/promotions/{id}/status\n(AVAILABLE ⇄ REVOKED);
-endif
-|Serviço|
-:Quando um look/peça recebe o selo (RF20/RF21 · issue):\nemissões +1 e evento CouponRightsCheck (AFTER_COMMIT)\n→ direito ao cupom (RF38);
+:Abre /brands/[slug];
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/coupons/admin;
+|Pessoa usuária|
+:Criador de selo 'Com IA': sugere\nnome, nível, política e ar…;
+|Tela (Next.js)|
+:POST /api/seals/draft;
+|API (Spring Boot)|
+:SealController.draft\n→ SealService.draft;
+|Dados e serviços|
+:Lê: users\ncelebrity_profiles\nbrand_profiles\nwardrobe_items;
+:Usa: Guard.requireApprovedInstitutional;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
 stop
 @enduml

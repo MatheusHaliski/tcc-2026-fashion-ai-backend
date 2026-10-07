@@ -1,55 +1,43 @@
 @startuml RF48_Sequencia
-!pragma layout smetana
-title RF48 — FAI Points: resgate em dinheiro e doações\nDiagrama de sequência — doação "Apoiar com FAI Points" no Look do dia
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
-  LifeLineBorderColor #4A4852
+  LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-actor "Doadora A" as A
-participant "Frontend\n(LookbookTabs / RunwayPanel)" as FE
-participant "PointsTransferController" as C
-participant "PointsTransferService" as S
-participant "PointsRiskEngine" as R
-participant "PointsWalletService" as W
-database "MySQL" as DB
-participant "NotificationService" as N
-participant "AuditService" as AU
-actor "Recebedor B" as B
+autonumber "<b>0."
+title RF48 — FAI Points: resgate em dinheiro e doações\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-A -> FE : abre o look do dia de B
-FE -> C : GET /api/users/{B}/daily-look
-C --> FE : scheme, dailyLookId, canSupport = true
-A -> FE : Apoiar → 25 pts, "Amei o look!"
-FE -> C : GET /api/points/transfers/quote
-C -> S : quote(A, B, DAILY_LOOK, id)
-S --> FE : limites restantes, requires2fa = false
-A -> FE : confirma
-FE -> C : POST /api/points/transfers\nIdempotency-Key: k1
-C -> S : transfer(A, B, 25, ...)
-S -> DB : existe (A, k1)?
-alt já processada
-  DB --> S : transferId existente
-  S --> C : mesmo recibo
-else nova
-  S -> DB : SELECT ... FROM users\nWHERE id IN (min(A,B), max(A,B)) FOR UPDATE
-  S -> S : elegibilidade (18+, conta >= 30 dias,\nsem bloqueio, perfil, carteira não congelada)
-  S -> DB : soma doações do dia/mês (doador,\nrecebedor, par) sob a trava
-  S -> W : saldo doável por bucket (maturado)
-  W -> DB : SUM(delta) GROUP BY bucket
-  W --> S : standard = 10, cashable = 40
-  S -> R : avaliar(A, B, 25)
-  R -> DB : pares recíprocos, dispositivo/IP comum,\nvelocidade, idade das contas
-  R --> S : OK (score 12)
-  S -> DB : INSERT points_transfers (COMPLETED)
-  S -> DB : INSERT ledger A: -10 EARNED_STANDARD\nINSERT ledger A: -15 EARNED_CASHABLE\nINSERT ledger B: +25 DONATION_RECEIVED\n(mature_at = +14 d, mesmo transfer_id)
-  S -> AU : PONTOS_DOACAO_ENVIADA (REQUIRES_NEW)
-  S --> C : recibo (transferId, saldo depois)
-end
-C --> FE : 201 Created
-FE --> A : recibo + extrato atualizado
-S -> N : após commit: POINTS_RECEIVED
-N --> B : "@A apoiou seu look com 25 FAI Points"
+actor "Pessoa usuária" as U
+boundary "Tela /points" as P
+control "HighlightsController" as HighlightsController
+participant "FaiPointsService" as FaiPointsService
+database "MySQL" as DB_MySQL
+== Saldo, nível e extrato de FAI Points ==
+U -> P : Saldo, nível e extrato de FAI Points
+P -> HighlightsController : GET /api/me/points
+HighlightsController -> FaiPointsService : account()
+activate FaiPointsService
+FaiPointsService -> DB_MySQL : SELECT fai_points_ledger (×2)
+FaiPointsService -> DB_MySQL : SELECT fai_points_rules
+FaiPointsService -> DB_MySQL : SELECT fai_points_ledger
+deactivate FaiPointsService
+FaiPointsService --> HighlightsController : resultado
+HighlightsController --> P : 200 JSON
+P --> U : atualiza a tela
 @enduml

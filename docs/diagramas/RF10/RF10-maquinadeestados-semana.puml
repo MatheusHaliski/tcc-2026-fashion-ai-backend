@@ -1,50 +1,41 @@
 @startuml RF10_MaquinaDeEstados_Semana
 !pragma layout smetana
-title RF10 — Gerar recomendações de esquemas e peças na aba Copilot\nDiagrama de máquina de estados — look sugerido pelo Copilot: da sugestão pontuada ao esquema COPILOT e ao Look do Dia
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "Look sugerido (não gravado no banco)" as Sugerido {
-  state "Pontuado\n(seis números do LookScorer;\nsem modo = ordem do motor)" as Pontuado
-  state "Reordenado pelo modo\n(SAFE · DISCOVERY · EXPERIMENTAL,\nRecommendationScoring.rankValue)" as Ordenado
-  state "Lembrado no aparelho\n(localStorage fashionai.copilot.looks.v1.{userId},\naté 40 looks na lista lateral)" as Lembrado
-  [*] --> Pontuado
-  Pontuado --> Ordenado : mode informado no\nPOST /api/copilot/messages
-  Pontuado --> Lembrado : a tela guarda o look
-  Ordenado --> Lembrado : a tela guarda o look
+title RF10 — ciclo de vida de WeekPlan.status\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum WeekPlanStatus · tabela week_plans
+
+state "WeekPlan.status" as Ciclo_WeekPlan {
+  state Ciclo_WeekPlan_ACTIVE as "ACTIVE"
+  state Ciclo_WeekPlan_DISCARDED as "DISCARDED"
+  state Ciclo_WeekPlan_COMPLETED as "COMPLETED"
 }
-state "Já mostrado\n(chave da combinação na fila em memória\nde CopilotService, até 60 por pessoa)" as Mostrado
-state "Aceite pedido\n(POST /api/copilot/looks)" as Aceite
-state "Esquema COPILOT\n(schemes.origin = COPILOT,\ncreationMode = AI_ASSISTED)" as Esquema
-state "Look do Dia COPILOT\n(daily_looks.source = COPILOT, hoje)" as LookDoDia
-state "Recusado\n(nada gravado: a transação volta)" as Recusado
-
-[*] --> Sugerido : GET /api/copilot/suggestions (combinações novas)\nou intenção LOOKS no chat
-Pontuado --> Mostrado : resposta do chat enviada
-Mostrado --> [*] : próxima rodada não repete a combinação\n(excludeKeys); a fila some ao reiniciar o servidor
-Sugerido --> Aceite : "Salvar como look"
-Lembrado --> Aceite : abre o look lembrado e salva
-[*] --> Aceite : ação COMPOSE_WITH\n(respostas HYPE ou FORGOTTEN)
-Aceite --> Recusado : menos de 2 peças → 400 SEM_PECAS\npeça de outra pessoa → 403\npeça indisponível → 409 PECA_INDISPONIVEL
-Recusado --> Sugerido : pessoa ajusta e tenta de novo
-Aceite --> Esquema : AutopilotService.createScheme\n(SchemeService.create)
-Esquema --> LookDoDia : DailyLookService.register(COPILOT)
-LookDoDia --> [*] : 201 {schemeId, origin: COPILOT, dailyLook}\n→ DailyLookRegistered (uso, LOOK_WORN, PIECE_USED)
-
-note right of Sugerido
-  O Hype entra só como uma das seis dimensões
-  (no máximo 20% do peso em qualquer modo);
-  dimensão sem base aparece como — e vale 50
-  na ordenação, nunca 0.
+[*] --> Ciclo_WeekPlan_ACTIVE : criação
+Ciclo_WeekPlan --> Ciclo_WeekPlan_ACTIVE : planWeek()\nPOST /api/autopilot/weeks
+Ciclo_WeekPlan --> Ciclo_WeekPlan_DISCARDED : discardWeek(), planWeek()
+note bottom of Ciclo_WeekPlan
+  Sem mudança explícita no código para: COMPLETED
+  (valor vindo de importação, regra calculada ou dado legado)
 end note
-note bottom of LookDoDia
-  O plano da semana (WeekPlan: ACTIVE, DISCARDED,
-  COMPLETED) é do Autopiloto: ver RF43
-  (RF43_MaquinaDeEstados_Sugestao). Este arquivo
-  manteve o nome antigo para não quebrar links.
+note right of Ciclo_WeekPlan
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
 end note
 @enduml

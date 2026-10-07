@@ -1,94 +1,122 @@
 @startuml RF24_Componentes
-title RF24 — Usar a IA do sistema\nDiagrama de componentes — telas → controllers → serviços hospedeiros → AiEngine → portas → provedores, Redis e MySQL
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF24 — Usar a IA do sistema (motor transversal de inteligência artificial do Fashion AI)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "Frontend (Next.js)" {
-  component "settings/page.tsx — aba Privacidade\n(um Switch por finalidade)" as FE0
-  component "admin/system/page.tsx\n(provedores · catálogo · inferências recentes)" as FE1
-  component "Telas dos RFs hospedeiros\n(pieces/new · schemes · mirror · copilot · autopilot ·\ndna · photos · room · explorer · brands · try-on…)\nmostram provedor ou \"motor local\" e o \"por quê?\"" as FE2
+package "app/(site)/(app)/settings" {
+  component "page.tsx" as m_app__site___app__settings_page_tsx
 }
-package "fai-web · controllers" {
-  component "MeController\nGET /api/me/consents\nPUT /api/me/consents/{purpose}" as MC
-  component "AdminController\nGET /api/admin/ai" as AC
-  component "Controllers dos RFs hospedeiros\n(WardrobeController, SchemeController (+ Copilot),\nMirrorController, DnaController, AutopilotController,\nRoomController, PhotoController, DiscoveryController…)" as HC
+package "app/(site)/(app)/admin/system" {
+  component "page.tsx" as m_app__site___app__admin_system_page_tsx
 }
-package "fai-application · services" {
-  component "AccountService\n(setConsent · consents)" as AS
-  component "AdminService · DashboardService\n(aiOverview · providerAvailability)" as ADS
-  component "Serviços hospedeiros — ai.text / ai.execute:\nWardrobeService · MultiPieceService · SchemeService ·\nMirrorService · DnaService · CopilotService ·\nAutopilotService · RoomService · HypeScoreService ·\nExplorerService · InsightService · BackgroundStudioService ·\nTryOnService · Model3dService · Avatar3dService ·\nBrandLogoService · BrandWebSearchService ·\nCatalogTextInterpreter · OfficialCatalogDiscovery" as HS
-  component "Serviços com motor local primário — ai.local:\nSealService · LookbookService · InstitutionalService ·\nPhotoService · DnaService" as HSL
+package "lib/avatar3d" {
+  component "geometry.ts" as m_lib_avatar3d_geometry_ts
 }
-package "fai-application · ai (motor RF24)" {
-  component "AiEngine\n(text · execute · local · remoteAllowed)" as AI
-  component "AiCatalog\n(CapabilitySpec: primário · alternativo ·\nlocal · cota diária · timeout 30 s)" as CAT
-  component "AiCapability\n(26 capacidades · hostRf · consentPurpose)" as CAP
-  component "AiBudget\n(teto diário US$ global e por usuário)" as BUD
-  component "CelebrityPromptValidator" as VAL
-  component "ai.local\n(LocalAdvisors · LocalSchemeComposer ·\nLocalDnaSynthesizer · Similarity · ColorMath)" as LOC
+package "components" {
+  component "app-shell.tsx" as m_components_app_shell_tsx <<apoio>>
+  component "edit-profile.tsx" as m_components_edit_profile_tsx <<apoio>>
+  component "brand-logo.tsx" as m_components_brand_logo_tsx <<apoio>>
 }
-package "Portas" {
-  component "AiProviderPort <<port>>" as PP
-  component "AuditService <<port>>\n(record: CHAMADA_IA)" as AUD
-  component "RateLimitPort <<port>>" as RLP
-  component "ImageProviderPorts <<port>>\n(TryOn · BackgroundRemoval · StudioShot ·\nUpscale · ImageGeneration · ImageEdit · Model3d)" as IPP
+package "components/ui" {
+  component "index.tsx" as m_components_ui_index_tsx <<apoio>>
 }
-package "fai-infrastructure" {
-  component "ai-providers\nGeminiProvider (gemini) · ClaudeProvider (claude)\n+ ProviderCircuit (1 retry · abre 60 s após 5 falhas)" as PROV
-  component "ai-providers · image\nFashnTryOnAdapter · RembgAdapter · RemoveBgAdapter ·\nPhotoroomStudioAdapter · StabilityUpscaleAdapter ·\nReplicateImageGenerationAdapter · ReplicateImageEditAdapter ·\nGeminiImageEditAdapter · MeshyModel3dAdapter · StabilityFast3dAdapter" as IMG
-  component "platform · InMemoryRateLimit\n(padrão)\ncache-redis · RedisAdapters.redisRateLimit\n(fashionai.redis.enabled=true)" as RL
-  component "persistence-mysql\nAiInferenceLogRepository · UserConsentRepository\n+ MysqlAuditService (AuditService)" as REPOS
+package "lib/auth" {
+  component "session.tsx" as m_lib_auth_session_tsx <<apoio>>
 }
-database "MySQL\n• ai_inference_log\n• user_consents\n• audit_log" as DB
-database "Redis\n(baldes ai:CAPACIDADE)" as REDIS
-cloud "Google Gemini API\n(generativelanguage.googleapis.com)" as GEM
-cloud "Anthropic API (Claude)" as CLA
-cloud "Imagem/3D: FASHN · remove.bg · Photoroom ·\nReplicate · Stability · Meshy · rembg próprio" as IMGC
-
-FE0 --> MC
-FE1 --> AC
-FE2 --> HC
-MC --> AS
-AC --> ADS
-HC --> HS
-HC --> HSL
-AS --> REPOS : grava consentimento
-ADS --> AI : providerAvailability · remoteEnabled
-ADS --> CAT : AiCatalog.all()
-ADS --> REPOS : últimas inferências
-HS --> AI : text(TextCall) / execute(RemoteSteps)
-HSL --> AI : local(engine)
-HS --> LOC : valor de fallback
-AI --> CAT : spec(capability)
-CAT --> CAP
-AI --> VAL
-AI --> BUD
-AI --> RLP
-AI --> PP
-AI --> AUD
-AI --> REPOS : consentimento · ai_inference_log
-BUD --> REPOS : soma o custo do dia
-HS ..> IPP : passos remotos de imagem/3D
-PROV ..|> PP
-IMG ..|> IPP
-RL ..|> RLP
-RL --> REDIS
-REPOS ..|> AUD
-REPOS --> DB : JPA/Flyway
-PROV --> GEM : HTTPS
-PROV --> CLA : HTTPS (SDK oficial)
-IMG --> IMGC : HTTPS
+package "lib" {
+  component "dev-refs.ts" as m_lib_dev_refs_ts <<apoio>>
+}
+package "lib/hooks" {
+  component "use-api.ts" as m_lib_hooks_use_api_ts <<apoio>>
+}
+package "lib/i18n" {
+  component "state.ts" as m_lib_i18n_state_ts <<apoio>>
+}
+package "lib/theme" {
+  component "theme.tsx" as m_lib_theme_theme_tsx <<apoio>>
+}
+package "Backend (Spring Boot)" {
+  component "AdminController" as AdminController
+  component "AuthController" as AuthController
+  component "BrandLogoController" as BrandLogoController
+  component "DnaController" as DnaController
+  component "MeController" as MeController
+  component "NotificationController" as NotificationController
+  component "PreferencesController" as PreferencesController
+  component "SchemeController" as SchemeController
+  component "SealController" as SealController
+  component "TryOnController" as TryOnController
+  component "WardrobeController" as WardrobeController
+  component "AiBudget" as AiBudget
+  component "AiCatalog" as AiCatalog <<apoio>>
+  component "AiEngine" as AiEngine
+  component "AiRequest" as AiRequest <<apoio>>
+  component "CelebrityPromptValidator" as CelebrityPromptValidator <<apoio>>
+  component "ColorMath" as ColorMath <<apoio>>
+  component "LocalAdvisors" as LocalAdvisors <<apoio>>
+  component "LocalSchemeComposer" as LocalSchemeComposer <<apoio>>
+  component "Similarity" as Similarity <<apoio>>
+  component "RateLimitPort" as RateLimitPort <<apoio>>
+}
+database "MySQL" as DB_MySQL
+AdminController --> AiEngine
+AiBudget --> DB_MySQL : ai_inference_log
+AiEngine --> AiBudget
+AiEngine --> DB_MySQL : ai_inference_log, user_consents
+AiEngine --> RateLimitPort
+m_app__site___app__admin_system_page_tsx --> AdminController : HTTPS
+m_app__site___app__admin_system_page_tsx --> BrandLogoController : HTTPS
+m_app__site___app__admin_system_page_tsx --> m_components_app_shell_tsx
+m_app__site___app__admin_system_page_tsx --> m_components_brand_logo_tsx
+m_app__site___app__admin_system_page_tsx --> m_components_ui_index_tsx
+m_app__site___app__admin_system_page_tsx --> m_lib_hooks_use_api_ts
+m_app__site___app__settings_page_tsx --> AuthController : HTTPS
+m_app__site___app__settings_page_tsx --> MeController : HTTPS
+m_app__site___app__settings_page_tsx --> PreferencesController : HTTPS
+m_app__site___app__settings_page_tsx --> m_components_app_shell_tsx
+m_app__site___app__settings_page_tsx --> m_components_edit_profile_tsx
+m_app__site___app__settings_page_tsx --> m_components_ui_index_tsx
+m_app__site___app__settings_page_tsx --> m_lib_auth_session_tsx
+m_app__site___app__settings_page_tsx --> m_lib_dev_refs_ts
+m_app__site___app__settings_page_tsx --> m_lib_hooks_use_api_ts
+m_app__site___app__settings_page_tsx --> m_lib_i18n_state_ts
+m_app__site___app__settings_page_tsx --> m_lib_theme_theme_tsx
+m_components_app_shell_tsx --> NotificationController : HTTPS
+m_components_app_shell_tsx --> PreferencesController : HTTPS
+m_components_app_shell_tsx --> m_components_ui_index_tsx
+m_components_app_shell_tsx --> m_lib_auth_session_tsx
+m_components_app_shell_tsx --> m_lib_theme_theme_tsx
+m_components_edit_profile_tsx --> PreferencesController : HTTPS
+m_components_edit_profile_tsx --> m_components_ui_index_tsx
+m_components_edit_profile_tsx --> m_lib_auth_session_tsx
+m_components_ui_index_tsx --> m_lib_dev_refs_ts
+m_lib_hooks_use_api_ts --> m_lib_auth_session_tsx
 @enduml

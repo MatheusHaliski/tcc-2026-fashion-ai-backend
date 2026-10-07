@@ -1,9 +1,16 @@
 @startuml RF19_Atividades
-title RF19 — Interagir socialmente com esquemas e peças: reagir, comentar, salvar, compartilhar, remixar e retornar\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,119 +19,61 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF19 — Interagir socialmente com esquemas e peças: reagir, comentar, salvar, compartilhar, remixar e retornar\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Vê o card de um esquema ou peça\n(feed, /schemes/[id], /pieces/[id]);
-note right
-  novo (RF53 · HypeScore v2): abrir o detalhe
-  (GET /api/schemes/{id} · GET /api/pieces/{id})
-  logado e sem ser dono publica HypeSignal
-  LOOK_VIEWED (SchemeService) / PIECE_VIEWED (WardrobeService)
-end note
-|Frontend (CardActions)|
-:GET /api/interactions/{type}/{id}/counters;
-|Backend (SocialService)|
-:target(): visibilidade efetiva, bloqueio (Guard)\ne moderação da peça — quem não vê não interage;
-note right: TargetType SCHEME · PIECE · DNA\n(CA10 — peça com contadores próprios)
-|Pessoa|
-if (Interação?) then (reagir)
-  |Frontend (CardActions)|
-  :POST .../reactions {reaction: LIKE|TREND|ELEGANTE|CRIATIVO};
-  |Backend (SocialService)|
-  if (Já existe a mesma reação do ator?) then (sim)
-    :Remove — nunca há curtida dupla (CA02);
-  else (não)
-    :Grava Reaction e bump("likes") se LIKE (CA01/CA03);
-    :notify(NEW_LIKE | NEW_REACTION) + InteractionReceived;
-    :Se LIKE: publica HypeSignal(LIKE_CREATED) <<RF53>>;
-  endif
-elseif (comentar) then
-  |Frontend (CardActions)|
-  :POST .../comments {content, parentId};
-  |Backend (SocialService)|
-  if (Vazio, > 500 chars ou ofensivo?) then (sim)
-    #FFE3E3:400 COMENTARIO_VAZIO / COMENTARIO_LONGO /\nCONTEUDO_BLOQUEADO (CA06);
-    stop
-  else (não)
-    :Grava Comment (active=true), bump("comments");
-    :notify(NEW_COMMENT) (CA04);
-    :publica HypeSignal(COMMENT_CREATED) <<RF53>>;
-  endif
-elseif (excluir comentário) then
-  |Frontend (CardActions)|
-  :DELETE /api/comments/{commentId};
-  |Backend (SocialService)|
-  if (Autor do comentário ou dono do conteúdo?) then (não)
-    #FFE3E3:403 negado e auditado (CA05);
-    stop
-  else (sim)
-    :Comment.active=false, bump("comments", -1);
-  endif
-elseif (salvar) then
-  |Frontend (CardActions)|
-  :POST .../saves;
-  |Backend (SocialService)|
-  :toggleSave: cria/remove SavedItem\nnos Looks Salvos (CA07);
-:Se criou: HypeSignal(SAVE_CREATED);\nPUT .../saves/favorite (true):\nHypeSignal(FAVORITE_CREATED) <<RF53>>;
-elseif (compartilhar) then
-  |Frontend (CardActions)|
-  :POST .../shares {channel: FEED|EXTERNAL, caption};
-  |Backend (SocialService)|
-  if (Conteúdo marcado indisponível?) then (sim)
-    #FFE3E3:409 INDISPONIVEL;
-    stop
-  else (não)
-  endif
-  if (channel == EXTERNAL?) then (sim)
-    :renderCard() → PNG em shares/{user}/…\n+ link /schemes|/pieces/{id} (CA09);
-  else (FEED)
-    :Share no feed interno (CA08);
-  endif
-  :bump("shares") + notify;
-:publica HypeSignal(SHARE_CREATED) <<RF53>>;
-elseif (remixar) then
-  |Frontend (useRemix)|
-  :POST .../remixes;
-  |Backend (SocialService)|
-  if (type == SCHEME?) then (sim)
-    :SchemeService.remix(): prefill com itens\nmapeados por similaridade, origin=REMIX,\nremixedFromId=origem (CA13);
-    :Ao salvar o remix (SchemeService.create\ncom originalScheme):\nHypeSignal(LOOK_REMIXED) <<RF53>>;
-  else (PIECE)
-    :bump("remixes") + notify(NEW_REMIX);\nnext=/create-look?seedPiece=;
-    :publica HypeSignal(PIECE_REMIXED) <<RF53>>;
-  endif
-elseif (retornar) then
-  |Frontend (CardActions)|
-  :POST /api/pieces/{pieceId}/return-to-origin?fromScheme=;
-  note right: botão "Retornar" na tela —\nnão implementado — conforme Trello
-  |Backend (SocialService)|
-  :returnToOrigin(): esquema de ORIGEM mais antigo\nvisível que usa a peça (CA14);
+:Abre /schemes/[id], /pieces/[id],\n/schemes/[id]/edit;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/schemes/{id}\nGET /api/pieces/{id}\nGET /api/pieces/{id}/model3d\nGET /api/studio/backdrops;
+|Pessoa usuária|
+:Remixar conteúdo público para o meu\nacervo;
+|Tela (Next.js)|
+:POST /api/interactions/{type}/{id}/remixes;
+|API (Spring Boot)|
+:SocialController.remix\n→ SocialService.remix;
+if (Peça não encontrado[a]?) then (sim)
+  :404 NAO_ENCONTRADO\n«Peça não encontrado(a)»\n→ a tela mostra o aviso;
+  stop
 endif
-|Backend (NotificationService)|
-:notify(): grava Notification;\ndelivered = tipo habilitado pelo autor (CA11/CA12);
-note right: tipo desativado contabiliza mas não entrega
-if (HypeSignal publicado?) then (sim)
-  |Backend (HypeSignalRecorder)|
-  :novo (RF53 · HypeScore v2)\n@TransactionalEventListener(AFTER_COMMIT)\nonSignal → SideEffectRunner (REQUIRES_NEW):\nfalha aqui nunca desfaz a interação;
-  :HypeIntegrityPolicy.weight(sinal, dia)\ndedupe hype:dedupe:{sinal}:{entidade}:\n{ator}:{dia} no RenderCachePort (TTL 26 h);
-  if (Visitante, interação do próprio\ndono (exceto ações de dono)\nou repetido no dia?) then (sim)
-    :peso 0 —\ndescartado;
-  else (não)
-    :peso 1 (conta com\n< 7 dias: 0,5);
-    :HypeSignalDailyRepository\n.increment → INSERT … ON\nDUPLICATE KEY UPDATE\nhype_signal_daily\n(event_count + 1,\nweighted_count + peso);
-  endif
-else (não)
+if (indisponível?) then (sim)
+  :409 INDISPONIVEL\n«O autor marcou este conteúdo como\nindisponível para remix.»\n→ a tela mostra o aviso;
+  stop
 endif
+|Dados e serviços|
+:Lê: schemes\nwardrobe_items\ndna_schemes;
+:Usa: Guard.requireCanCreate\nSchemeService.requireView\nGuard.requireView\nSchemeService.remix\nCounterStorePort.increment\nNotificationService.notify;
+:Evento: HypeSignal;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Remixar um esquema público para o…)
+    :POST /api/schemes/{id}/remix\n→ SchemeService.remix\nvalida: INDISPONIVEL, NAO_ENCONTRADO\nlê: schemes, scheme_items\nusa: Guard.requireCanCreate, Guard.requireView,\nWardrobeService.eligible;
+  case (Excluir a peça)
+    :DELETE /api/pieces/{id}\n→ WardrobeService.delete\nlê: wardrobe_items, scheme_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.removePiece …\nestado: availabilityStatus → ARCHIVED, disponivel →\nfalse, visibility → PRIVATE;
+  case (Salvar esquema [manual, IA, autop…)
+    :POST /api/schemes\n→ SchemeService.create\nvalida: FORMULARIO_INVALIDO, FOTO_INVALIDA,\nINDISPONIVEL, NAO_ENCONTRADO …\nlê: users, schemes, wardrobe_items …\nusa: Guard.requireCanCreate, Guard.requireView,\nBackgroundStudioService.applyToScheme …\ngrava: schemes, scheme_items;
+  case (Editar esquema)
+    :PUT /api/schemes/{id}\n→ SchemeService.update\nvalida: FORMULARIO_INVALIDO, FOTO_INVALIDA,\nPECA_DE_OUTRO_USUARIO, PECA_INDISPONIVEL …\nlê: schemes, scheme_items, wardrobe_items …\nusa: Guard.requireCanCreate, Guard.requireOwner,\nBackgroundStudioService.applyToScheme …\ngrava: scheme_items;
+  case (Editar a peça)
+    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Cadastrar a peça a partir do…, Excluir o look
+  (menu ⋯ do don…, Apagar comentário (autor ou d…,
+  Solicitar modelo 3D da peça
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

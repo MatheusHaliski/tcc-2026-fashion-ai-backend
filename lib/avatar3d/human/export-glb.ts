@@ -23,8 +23,14 @@ export async function exportAvatarGlb(human: Human, pose: PoseState, opts: { ani
   if (opts.animation !== false) clips.push(idleClip(human, pose));
   applyIdle(human, pose, 0, 0);                              // o arquivo guarda a pose de exibição como pose inicial
   const live = opts.hair?.live ?? null; const wasVisible = live?.visible ?? false;
+  // a córnea é só reflexo em cena (mistura aditiva, que o glTF não tem): fica fora do arquivo; o globo já tem verniz
+  const corneaVisible = human.cornea.visible, tearVisible = human.tearLines.visible; human.cornea.visible = false; human.tearLines.visible = false;
   const fileHair = opts.hair?.build?.() ?? null;            // já preso ao esqueleto (HumanParts.exportHair)
   if (fileHair && live) live.visible = false;
+  fileHair?.geometry.deleteAttribute("hairS");                // só do movimento em cena (hair-motion.ts), não vai para o arquivo
+  // sem a córnea no arquivo, o globo leva o verniz (em cena ele é fosco e o brilho é o da córnea)
+  const eyeMat = human.eyes.material as THREE.MeshPhysicalMaterial; const eyeCoat = [eyeMat.clearcoat, eyeMat.clearcoatRoughness] as const;
+  eyeMat.clearcoat = 1; eyeMat.clearcoatRoughness = 0.08;
   try {
     human.root.updateMatrixWorld(true);
     const exporter = new GLTFExporter();
@@ -36,6 +42,8 @@ export async function exportAvatarGlb(human: Human, pose: PoseState, opts: { ani
       for (const m of ([] as THREE.Material[]).concat(fileHair.material)) { (m as THREE.MeshPhysicalMaterial).map?.dispose(); m.dispose(); }
     }
     if (live) live.visible = wasVisible;
+    eyeMat.clearcoat = eyeCoat[0]; eyeMat.clearcoatRoughness = eyeCoat[1];
+    human.cornea.visible = corneaVisible; human.tearLines.visible = tearVisible;
   }
 }
 

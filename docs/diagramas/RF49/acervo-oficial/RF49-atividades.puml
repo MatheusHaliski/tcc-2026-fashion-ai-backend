@@ -1,9 +1,16 @@
 @startuml RF49_Atividades
-title RF49 — Acervo oficial em escala\nDiagrama de atividades — pipeline do operador (coleta → revisão → fotos → importação → índice) e busca com milhares de produtos
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,138 +19,59 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
+title RF49 — Acervo oficial em escala\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-' ordem das raias: pipeline do operador à esquerda, busca da pessoa à direita (Backend ao lado do Banco)
-|Operador|
-|Coletor (scripts/catalog)|
-|Sites oficiais|
-|Banco|
-|Backend|
-|Frontend|
-|Pessoa|
-
-' ───────────── Parte 1 — o operador monta o acervo a partir dos sites oficiais
-|Operador|
+|Pessoa usuária|
 start
-#E4DEF0:<b>Parte 1 — montar o acervo (operador)</b>;
-:data/catalog/brands.json + aliases.json\n100 marcas, 112 domínios oficiais\n(100 OFFICIAL_BRAND + 12 OFFICIAL_STORE);
-:collect_official.py ~--brands ~--max-per-brand\n~--min-interval ~--workers [~--fresh] [~--dry-run];
-|Coletor (scripts/catalog)|
-:run(): official_sources() só aceita OFFICIAL_BRAND /\nOFFICIAL_STORE / AUTHORIZED_RETAILER e agrupa por marca;\nmarcas em paralelo (ThreadPoolExecutor ~--workers),\n1 requisição por vez por site (Politeness);
-note right
-  RN47.04 / RN49.01 — só fontes oficiais/autorizadas;
-  redirecionamento para outro domínio
-  vira status 0 (make_fetch); URL com
-  acento passa por ascii_url()
-end note
-repeat
-  :collect_brand(): próximo domínio oficial da marca;
-  |Sites oficiais|
-  :Site.load_robots(): robots.txt\n(fallback www. em 0/403/404) e Crawl-delay\n→ intervalo = max(~--min-interval, Crawl-delay);
-  |Coletor (scripts/catalog)|
-  if (robots.txt deixa coletar?) then (não: 401/403\nou sem conexão)
-    #FFE3E3:StopDomain — domínio fica\nde fora ("PAROU" no relatório);
-  else (sim)
-    :product_urls(): sitemaps de produto/pdp e\nBrasil/EUA primeiro; ajuda, blog e lojas pulados;
-    repeat
-      |Sites oficiais|
-      :Site.get(url): página de produto fora de\n.state/<marca>.visited e liberada por Site.allowed;
-      note right
-        RN49.02 — 403/429 → StopDomain:
-        o domínio é encerrado
-        na hora, sem insistir
-      end note
-      |Coletor (scripts/catalog)|
-      :structured_product(): JSON-LD Product/ProductGroup\n+ og:image (nada de HTML livre)\nto_catalog_item(): clean_title · same_brand ·\nunsupported_reason · is_pack · infer_subcategory;
-      if (aceito e passa em normalize_product?) then (sim)
-        :on_item(): linha em collected/<marca>.jsonl\ncom as fotos de product_images() (nó → variantes\n→ og:image, só hosts brand_cdn_ok) — só a URL;
-      else (não)
-        #FFF1E0:descarta com o motivo (RN49.05): sem tipo\nno nome (nunca chutado) · marca da\npágina diferente (nunca inventada) ·\nroupa íntima / vale-presente · kit sem tipo ·\nsem JSON-LD/OpenGraph · inválido (ValidationError);
-      endif
-    repeat while (mais URLs e ~--max-per-brand\nnão atingido?) is (sim)
-    ->não;
+|Tela (React)|
+partition "c/catalog/catalog-search.tsx · CatalogSearch()" {
+  :useI18n()\n<size:10>lib/i18n/i18n.tsx</size>;
+  :useTaxonomy()\n<size:10>lib/api/taxonomy.ts</size>;
+  :enoughToSearch()\n<size:10>lib/api/catalog.ts</size>;
+  :estado da tela: Res = null;
+  :catch(), then(), suggestions()\n<size:10>lib/api/catalog.ts</size>;
+  :estado da tela: Loading = true;
+  :estado da tela: Error = null;
+  :search()\n<size:10>lib/api/catalog.ts</size>;
+  if (e as Error].name === 'AbortError'?) then (sim)
+    :encerra este passo;
+    stop
   endif
-repeat while (outro domínio oficial da marca?) is (sim)
-->não;
-:Resumo por domínio: páginas · produtos ·\ndescartes · bloqueados pelo robots.txt;
-|Operador|
-:recheck_collected.py [~--dry-run]\ndepois enrich_images.py [~--brands] [~--workers];
-|Coletor (scripts/catalog)|
-:recheck: saem fora_do_acervo · sem_tipo_no_nome ·\nkit_sem_tipo; corrigidos tipo_corrigido ·\ntitulo_limpo · foto_https;
-|Sites oficiais|
-:enrich_images: só produtos sem foto revisitam\nofficial_product_url (robots.txt, 1 requisição\npor site, 403/429 → StopDomain);
-|Coletor (scripts/catalog)|
-:product_images() + brand_cdn_ok():\n4.059 de 4.371 ganharam foto;
-|Operador|
-repeat
-  :import_products.py <arquivos> ~--dry-run\n(collected/*.jsonl ou acervo-oficial-2026-10-05\n.jsonl.gz, 9.573 produtos; ou import_railway.sh);
-  |Coletor (scripts/catalog)|
-  :Ingestor(dry_run): relatório [CREATE] / [UPDATE] /\n[DUP] / [SKIP] / [ERROR] — nada gravado;
-  |Operador|
-repeat while (erros a corrigir?) is (sim: ajusta\nbrands.json / regras)
-->não;
-:Importação real: import_products.py ou\nimport_railway.sh <host> <porta>\n(seed_catalog → acervo → índice);
-note right
-  Railway: TCP proxy temporário,
-  usuário fai_app só com TLS, senha só
-  por RAILWAY_MYSQL_APP_PASSWORD;
-  remover o proxy ao terminar
-end note
-|Coletor (scripts/catalog)|
-:Ingestor.ingest(): uma transação por produto;\ndedup gtin › ean › upc › sku › código ›\nURL canônica › marca+subtipo+modelo+variante\n› marca+subtipo+título+cor;
-|Banco|
-if (produto já existe?) then (não)
-  :[CREATE] catalog_products\n(VALIDATED) + catalog_variants\n+ catalog_images (REFERENCE_ONLY);
-else (sim)
-  :[UPDATE] campos vazios /\nnova variante de cor\nou [SKIP] · [DUP];
-endif
-:catalog_ingestion_runs (relatório da execução);
-|Operador|
-:rebuild_search_index.py\nrevalidate_catalog.py ~--limit 200;
-|Banco|
-:search_text (FULLTEXT ngram) recalculado;\nsource_status ACTIVE / UNAVAILABLE /\nSOURCE_REMOVED / NEEDS_REVALIDATION (HEAD);
-#E4F5EC:Acervo: 8.810 produtos de 52 marcas,\n26.457 variantes, 8.357 com foto (95%);
-stop
-
-' ───────────── Parte 2 — a pessoa busca no criador de peças com milhares de produtos
-|Pessoa|
-start
-#E4DEF0:<b>Parte 2 — buscar no acervo (pessoa)</b>;
-:Em /pieces/new: tipo da peça,\n"De qual marca?" e "Como ela se chama?"\n(ex.: Everlane · "moletom com capuz preto");
-|Frontend|
-:catalog-search.tsx\n(debounce 350 ms)\nGET /api/catalog/search\n?category&subcategory\n&brand&q&color;
-|Backend|
-:CatalogService.resolve(): marca (BrandAlias)\ne design (CatalogTextInterpreter /\nCatalogDesignInterpreter);
-:subtipo pela FRASE mais longa (4 → 2 palavras):\n"moletom com capuz" = hoodie\n(não "moletom" + "capuz");
-note right
-  Sem subtipo reconhecido,
-  nada é chutado; o subtipo lido
-  do texto prioriza e pontua,
-  mas não filtra (RN49.07)
-end note
-|Banco|
-:CatalogProductRepository — pool priorizado\nde search(), LIMIT 200 cada (FULLTEXT ngram\nem search_text, só VALIDATED/PERSISTABLE/\nREFERENCE_ONLY)\n1. candidatesWithColor (subtipo + cor\n    no produto ou numa variante)\n2. candidates (subtipo)\n3. candidates (estampa: patternTerms)\n4. candidates (pool geral);
-if (pool < 8?) then (sim)
-  :reforço: candidates\nsem termos;
-else (não)
-endif
-|Backend|
-:rank(): CatalogMatchScorer.score\n(descarta < 0,35); variante da cor\npedida pré-selecionada;
-:orderScore(): sem foto cede\nNO_PHOTO_PENALTY = 0,10 na ordem\n(o "% compatível" não muda);
-|Frontend|
-:cards com foto oficial,\nsubtipo certo, cor pedida\ne "% compatível";
-|Pessoa|
-:Toca "É esta" → adiciona\npor referência (RF47);
+  :estado da tela: Loading = false;
+  :discover()\n<size:10>lib/api/catalog.ts</size>;
+  :label(), label(), label(), label()\n<size:10>lib/api/taxonomy.ts</size>;
+  :cn()\n<size:10>c/ui/index.tsx</size>;
+  :label()\n<size:10>lib/api/taxonomy.ts</size>;
+}
+|Backend (Java)|
+partition "CatalogMatchScorer.score()" {
+  :CatalogNormalizer.categoryOf();
+  :CatalogNormalizer.tokens();
+  :CatalogNormalizer.tokens();
+  :CatalogNormalizer.color();
+}
+|API (Spring Boot)|
+partition "CatalogService.addToWardrobe()" {
+  :lê catalog_products;
+  if (produto recusado?) then (sim)
+    :400 PRODUTO_RECUSADO\n«Este produto foi retirado do\ncatálogo.»;
+    stop
+  endif
+  :lê brands;
+  :lê catalog_variants;
+  :ingestionStatus → REFERENCE_ONLY;
+  :lastVerifiedAt → set;
+  :grava catalog_products;
+  :lê catalog_images;
+  :WardrobeService.createFromCatalog();
+  :WardrobeService.toggles();
+}
+|Pessoa usuária|
+:Vê o resultado;
 stop
 @enduml

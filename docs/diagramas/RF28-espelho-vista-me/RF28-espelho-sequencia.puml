@@ -1,70 +1,77 @@
 @startuml RF28_Espelho_Sequencia
-title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de sequência — estado do espelho com os seis números, Avatar 3D e reflexo vestido
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam sequence {
-  ArrowColor #52606D
-  LifeLineBorderColor #B695F5
-  ParticipantBackgroundColor #F8F4FF
-  ParticipantBorderColor #B695F5
-  ActorBackgroundColor #F8F4FF
-  GroupBackgroundColor #FFF5F8
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
-autonumber
-actor "Pessoa usuária" as P
-participant "mirror/page.tsx" as Pg
-participant "MirrorStage\n(components/mirror)" as St
-participant "AvatarViewer → Mannequin\n→ HumanAvatar (Three.js)" as V
-participant "HumanOutfit\n(withDefaultOutfit)" as O
-participant "LookScores\n(components/hype)" as LSc
-participant "MirrorController" as C
-participant "MirrorService" as S
-participant "LookScorer" as LS
-participant "HypeQueryService" as HQ
-participant "Avatar3dController\n→ Avatar3dService" as AC
-database "MySQL\nmirror_states · wardrobe_items ·\nstyle_dna · schemes · scheme_items ·\nhype_scores · user_avatars_3d" as DB
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+title RF28 — Vista-me: estado do espelho, avatar 3D e 'Vista-me' por prompt\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-P -> Pg : abre /mirror
-Pg -> C : GET /api/me/mirror
-C -> S : state(user)
-S -> DB : MirrorState + peças do dono
-alt espelho com peças
-  S -> LS : scoreLooks(userId, [look])
-  LS -> DB : DNA (StyleDna) e pares já combinados nos looks salvos
-  LS -> HQ : currentOf(PIECE, ids)
-  HQ -> DB : SELECT hype_scores (algorithmVersion atual)
-  LS --> S : Scores(compatibility, hype, novelty, reuse, usage, sustainability)
-else espelho vazio
-  S -> S : scores = null
+actor "Pessoa usuária" as U
+boundary "c/mirror/mirror-stage.tsx" as c_mirror_mirror_stage_tsx
+participant "lib/i18n/i18n.tsx" as lib_i18n_i18n_tsx
+participant "lib/auth/session.tsx" as lib_auth_session_tsx
+participant "lib/hooks/use-api.ts" as lib_hooks_use_api_ts
+participant "API (Spring Boot)" as API
+participant "lib/avatar3d/body-spec.ts" as lib_avatar3d_body_spec_ts
+participant "MirrorService" as MirrorService
+participant "WardrobeService" as WardrobeService
+database "MySQL" as DB_MySQL
+participant "RoomService" as RoomService
+queue "Eventos de domínio" as EV
+== c/mirror/mirror-stage.tsx · MirrorStage() ==
+U -> c_mirror_mirror_stage_tsx : MirrorStage()
+activate c_mirror_mirror_stage_tsx
+c_mirror_mirror_stage_tsx -> lib_i18n_i18n_tsx : useI18n()
+c_mirror_mirror_stage_tsx -> lib_auth_session_tsx : useAuth()
+c_mirror_mirror_stage_tsx -> lib_hooks_use_api_ts : useApi()
+c_mirror_mirror_stage_tsx -> API : GET /api/me/avatar3d\nAvatar3dController.get
+API --> c_mirror_mirror_stage_tsx : JSON
+c_mirror_mirror_stage_tsx -> lib_avatar3d_body_spec_ts : validateBody()
+opt !kelvin
+c_mirror_mirror_stage_tsx --> U : encerra
 end
-S --> Pg : 200 {slots, complete, missing, light, …, scores}
-Pg -> St : <MirrorStage slots kelvin>
-St -> AC : GET /api/me/avatar3d
-AC -> DB : SELECT user_avatars_3d
-AC --> St : {exists, model, adjust, textureUrl} ou {exists: false}
-alt exists = true
-  St -> V : avatar (rosto/cabelo do RF40), corpo validado (validateBody),\npieces = mirrorPieces(slots), framing = full, controls = false
-else sem avatar
-  St -> V : manequim de referência (sexo do perfil), head = PADRAO
-  St --> P : "Criar meu avatar" (/avatar)
+opt kelvin < 3500
+c_mirror_mirror_stage_tsx --> U : encerra
 end
-V -> O : veste as peças; o que falta vem de DEFAULT_PIECES\n(tronco, pernas e pés)
-O --> V : malhas presas ao esqueleto; corpo só aparece vestido
-V --> P : reflexo em pose natural (applyIdle; parado com reduzir movimento)
-opt scores ≠ null e há peças
-  Pg -> LSc : <LookScores scores>
-  LSc --> P : seis números lado a lado ("—" = sem base)
+opt kelvin > 5000
+c_mirror_mirror_stage_tsx --> U : encerra
 end
-
-== Vista-me com o espelho montado ==
-P -> Pg : "Vista-me: jantar de sexta" + manter o que já está
-Pg -> C : POST /api/me/mirror/vista-me {prompt, keepMirror: true}
-C -> S : vistaMe(user, prompt, anchors, focus, keep)
-S -> S : elegíveis → interpretar → compor (IA validada ou local)
-S -> DB : grava slots (origin vista_me) e combinações mostradas
-S -> LS : scoreLooks (look novo)
-S --> Pg : novo estado + sequence + scores
-Pg -> St : novos slots
-St -> V : pieces atualizadas
-V --> P : reflexo com o look novo e números novos
+deactivate c_mirror_mirror_stage_tsx
+c_mirror_mirror_stage_tsx --> U : resultado
+== MirrorService · place() ==
+U -> MirrorService : place()
+activate MirrorService
+alt peça obrigatória
+MirrorService --> U : 400 PECA_OBRIGATORIA
+end
+MirrorService -> WardrobeService : owned()
+MirrorService -> DB_MySQL : SELECT mirror_states
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService -> RoomService : locateAll()
+MirrorService -> DB_MySQL : SELECT wardrobe_items (×4)
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService ->> EV : MirrorAction
+MirrorService -> DB_MySQL : SELECT wardrobe_items
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService -> RoomService : locateAll()
+MirrorService -> DB_MySQL : SELECT style_dna
+deactivate MirrorService
+MirrorService --> U : resultado
 @enduml

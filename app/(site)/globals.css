@@ -2953,3 +2953,57 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 :root[data-theme="contrast"] .moment-day-pill, :root[data-theme="contrast"] .moment-tag { background: var(--surface-2); border-color: var(--line); }
 @media (forced-colors: active) { .moment-card, .moment-day-pill, .moment-tl-item { border: 1px solid CanvasText; } .moment-timebar > i { background: CanvasText; forced-color-adjust: none; } }
 @media (prefers-reduced-motion: reduce) { .moment-timebar > i { transition: none; } }
+
+/* ---------- Carta FLAIR (FLAIR-UT §3, seção E da prancha) ----------
+   5:7; o metal é o nível (que também vem escrito no rodapé); a frente traz nota, posição, foto, nome, marca e os números
+   do Hype em linha (2 colunas de 4). A carta é um objeto: as cores do metal valem nos dois temas, com tinta escura sobre
+   bronze, prata e ouro (contraste ≥ 4,5:1) e tinta branca sobre a placa escura da Especial. */
+.fgc { --fgc-w: 220px; position: relative; width: 100%; max-width: var(--fgc-w); aspect-ratio: 5 / 7; border-radius: 14px; padding: 6px; color: var(--fgc-ink); background: var(--fgc-metal); box-shadow: 0 6px 18px rgba(0,0,0,.18), inset 0 0 0 1px rgba(255,255,255,.4); font-family: var(--font-data); overflow: hidden; }
+.fgc-sm { --fgc-w: 184px; } .fgc-lg { --fgc-w: 300px; }
+.fgc-face { position: relative; height: 100%; display: flex; flex-direction: column; border-radius: 10px; padding: 8px 10px 6px; background: var(--fgc-plate); overflow: hidden; }
+/* como nas cartas de futebol: nota e posição no canto, por cima da foto, que começa no topo da carta */
+.fgc-top { position: absolute; top: 8px; left: 10px; right: 38px; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; pointer-events: none; }
+.fgc-ovr { display: flex; flex-direction: column; line-height: 1; }
+.fgc-ovr b { font-size: calc(var(--fgc-w) * .15); font-weight: 800; letter-spacing: -.02em; }
+.fgc-ovr small { font-size: 11px; font-weight: 700; letter-spacing: .08em; margin-top: 2px; }
+.fgc-brand-mark { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 12px; background: var(--fgc-ink); color: var(--fgc-plate-solid); }
+/* a foto ocupa só a área que sobra (posição absoluta): nunca empurra nome, marca e números para fora da carta */
+.fgc-photo { position: relative; flex: 1 1 0; min-height: 0; margin: 0 0 4px; }
+.fgc-photo img { position: absolute; top: 4px; right: 0; bottom: 0; left: 20%; width: 80%; height: calc(100% - 4px); object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,.25)); }
+.fgc-name { text-align: center; text-transform: uppercase; font-weight: 800; font-size: calc(var(--fgc-w) * .058); letter-spacing: .02em; line-height: 1.15; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fgc-brand { text-align: center; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px; }
+.fgc-hype { display: grid; grid-template-columns: 1fr 1fr; column-gap: 10px; row-gap: 1px; border-top: 1px solid var(--fgc-line); padding-top: 4px; margin: 0; }
+.fgc-hype > div { display: flex; align-items: baseline; gap: 5px; }
+.fgc-hype dd { margin: 0; font-weight: 800; font-size: 12.5px; min-width: 2ch; text-align: right; }
+.fgc-hype dt { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; }
+.fgc-sm .fgc-hype dd { font-size: 11.5px; } .fgc-sm .fgc-hype dt { font-size: 9.5px; }
+.fgc-foot { display: flex; justify-content: space-between; gap: 6px; border-top: 1px solid var(--fgc-line); margin-top: 4px; padding-top: 3px; font-size: 10.5px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.fgc-flip { position: absolute; top: 10px; right: 10px; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.55); color: #1c1a17; font-size: 14px; border: 1px solid rgba(0,0,0,.15); }
+.fgc-flip:focus-visible { outline: 2px solid var(--fgc-ink); outline-offset: 2px; }
+.fgc-back { gap: 6px; font-size: 11px; padding-top: 12px; }
+.fgc-back-title { flex: none; font-weight: 800; text-transform: uppercase; padding-right: 30px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fgc-stats { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
+.fgc-stats li { display: grid; grid-template-columns: 42px 1fr 24px; align-items: center; gap: 6px; font-weight: 600; letter-spacing: .04em; }
+.fgc-bar { height: 6px; border-radius: 3px; background: var(--fgc-line); overflow: hidden; } .fgc-bar i { display: block; height: 100%; background: var(--fgc-ink); }
+.fgc-ability, .fgc-meta { margin: 0; line-height: 1.35; }
+.fgc.tier-bronze { --fgc-metal: linear-gradient(145deg, #6E4128, #C58A5A 45%, #8C5A3C); --fgc-plate: linear-gradient(180deg, #EBCBAA, #C99068); --fgc-plate-solid: #EBCBAA; --fgc-ink: #2B170B; --fgc-line: rgba(43,23,11,.28); }
+.fgc.tier-prata { --fgc-metal: linear-gradient(145deg, #7F868E, #E3E6EA 45%, #9DA3AA); --fgc-plate: linear-gradient(180deg, #F5F6F8, #C9CDD2); --fgc-plate-solid: #F5F6F8; --fgc-ink: #1F2328; --fgc-line: rgba(31,35,40,.25); }
+.fgc.tier-ouro { --fgc-metal: linear-gradient(145deg, #8A6408, #F2C94C 40%, #FFF3C4 55%, #B8860B); --fgc-plate: linear-gradient(180deg, #FFF7DA, #EBC660); --fgc-plate-solid: #FFF7DA; --fgc-ink: #1C1606; --fgc-line: rgba(28,22,6,.28); }
+.fgc.tier-especial { --fgc-metal: linear-gradient(135deg, #3B1C7A, #C2185B 35%, #00A3A3 70%, #3B1C7A); --fgc-plate: linear-gradient(180deg, #170E30, #2B1450); --fgc-plate-solid: #170E30; --fgc-ink: #FFFFFF; --fgc-line: rgba(255,255,255,.3); }
+.fgc.is-rare .fgc-face::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.38) 45%, transparent 60%); background-size: 250% 100%; background-position: 50% 0; }
+@media (prefers-reduced-motion: no-preference) { .fgc.is-rare .fgc-face::after { animation: fgc-shine 3.6s ease-in-out infinite; } }
+@keyframes fgc-shine { from { background-position: 130% 0; } to { background-position: -130% 0; } }
+.fgc.is-locked { filter: grayscale(.75); opacity: .85; }
+.fgc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; justify-items: center; }
+.fgc-tier-head { display: flex; align-items: baseline; gap: 8px; margin: 18px 0 10px; }
+.fgc-tier-head:first-child { margin-top: 0; }
+/* Criador de peça › "Depois de salvar": Compartilhar no feed e Converter para FLAIR (as duas começam desligadas) */
+.after-save { display: grid; gap: 10px; margin: 16px 0 12px; padding-top: 14px; border-top: 1px solid var(--line-soft); }
+.after-save-detail { padding: 0 0 4px 2px; }
+.after-save-flair { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px; }
+.after-save-flair .fgc { flex: 0 0 auto; }
+.after-save-flair p { flex: 1 1 180px; min-width: 0; }
+/* Compartilhar › prévia do post: o próprio card, sem descrição, como sai no feed */
+.share-post { display: grid; gap: 6px; justify-items: center; margin: 0; }
+.share-post > figcaption { justify-self: start; }
+.share-post > .fai-card { width: 100%; max-width: 260px; }

@@ -1,175 +1,234 @@
 @startuml RF27_Classes
-title RF27 — Meu Quarto (guarda-roupa num quarto 3D interativo)\nDiagrama de classes — RoomService, endereço da peça e tabelas do quarto
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF27 — Visualizar e organizar o guarda-roupa num quarto 3D interativo ('Meu Quarto')\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-web · controller" {
-class RoomController {
-  +room(user): Map
-  +listView(user): List<Map>
-  +open(user, moduleId): Map
-  +move(user, pieceId, AddressRequest): Map
-  +renameDrawer(user, drawer, LabelRequest): Map
-  +organizePreview(user, useAi): Map
-  +applyOrganization(user, OrganizeRequest): Map
-  +undoOrganization(user): Map
-  +pieceTag(user, pieceId): Map
-  +giveKey(user, KeyRequest) / tour(viewer, ownerId)
-  +light(…) · monogram(…) · seasonStorage(…) · island(…) · diary(…) · showInRoom(…)
+package "fai-domain (entidades JPA)" {
+  class Brand <<brands>> {
+    +id: UUID
+    +name: String
+    +slug: String
+    +logoUrl: String
+    +website: String
+    +source: BrandSource
+    +catalogOrigin: CatalogOrigin
+    +fixtureKey: String
+    +sourceConfidence: BigDecimal
+    +verifiedAt: Instant
+    .. +2 campos ..
+  }
+  class BrandProfile <<brand_profiles>> {
+    +id: UUID
+    +owner: User
+    +brandName: String
+    +slug: String
+    +logoUrl: String
+    +coverUrl: String
+    +bio: String
+    +storeUrl: String
+    +cnpj: String
+    +razaoSocial: String
+    .. +21 campos ..
+  }
+  class DailyLook <<daily_looks>> {
+    +id: UUID
+    +user: User
+    +scheme: Scheme
+    +materializedFrom: DailyLook
+    +lookDate: LocalDate
+    +source: DailyLookSource
+    +feedback: DailyLookFeedback
+    +feedbackAt: Instant
+    +weekPlanDayId: UUID
+  }
+  class RoomCatalogItem <<room_catalog>> {
+    +sku: String
+    +name: String
+    +moldId: String
+    +slotType: String
+    +widthCm: int
+    +finishJson: String
+    +rarity: String
+    +pricePoints: int
+    +requiredLevel: String
+    +stockLimit: Integer
+    .. +17 campos ..
+  }
+  class RoomInventoryItem <<room_inventory>> {
+    +id: UUID
+    +userId: UUID
+    +sku: String
+    +serial: Integer
+    +source: String
+    +appliedModule: String
+    +acquiredAt: Instant
+  }
+  class RoomLayout <<room_layouts>> {
+    +id: UUID
+    +user: User
+    +level: String
+    +modulesJson: String
+    +drawerLabelsJson: String
+    +previousMapJson: String
+  }
+  class RoomStorageEntry <<room_storage_map>> {
+    +id: UUID
+    +userId: UUID
+    +wardrobeItemId: UUID
+    +address: String
+    +assignedBy: String
+  }
+  class Scheme <<schemes>> {
+    +id: UUID
+    +user: User
+    +originalScheme: Scheme
+    +title: String
+    +description: String
+    +creationMode: CreationMode
+    +origin: SchemeOrigin
+    +style: String
+    +occasion: String
+    +season: Season
+    .. +46 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class UserPreferences <<user_preferences>> {
+    +id: UUID
+    +user: User
+    +theme: ThemeMode
+    +language: UiLanguage
+    +density: UiDensity
+    +fontScale: int
+    +highContrast: boolean
+    +reduceMotion: boolean
+    +chromeBackgroundId: String
+    +sizeSystem: SizeSystem
+    .. +16 campos ..
+  }
+  class WardrobeItem <<wardrobe_items>> {
+    +id: UUID
+    +user: User
+    +brandProfile: BrandProfile
+    +brand: Brand
+    +name: String
+    +category: String
+    +subcategory: String
+    +sex: String
+    +brandName: String
+    +brandLogoUrl: String
+    .. +70 campos ..
+  }
 }
+package "fai-domain (enums)" {
+  enum ApprovalStatus {
+    PENDENTE
+    AJUSTES
+    APROVADO
+    RECUSADO
+    SUSPENSO
+  }
+  enum SchemeStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+  }
+  enum RenderStatus {
+    PENDING
+    RENDERING
+    ENHANCING
+    COMPOSITING
+    CACHED
+    COMPLETED
+    FAILED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
 }
-
-package "fai-application · service / room" {
-class RoomService {
-  +{static} FORGOTTEN_DAYS = 60
-  +{static} HANGERS_PER_DOOR = 12
-  +{static} DRAWER_CAPACITY = 6
-  +{static} SHOE_RACK_CAPACITY = 24
-  +{static} DEFAULT_DRAWER_LABELS: List<String>
-  +room(user): Map
-  +layout(userId): RoomLayout
-  +entries(userId, pieces): List<RoomStorageEntry>
-  +autoAssign(userId, pieceId): RoomAddress
-  +locate(userId, pieceId): Optional<Location>
-  +locateAll(userId): Map<UUID, Location>
-  +outOfSeason(userId): Set<UUID>
-  +move(user, pieceId, rawAddress): Map
-  +organizePreview(user, useAi): Map
-  +applyOrganization(user, labels, moves): Map
-  +undoOrganization(user): Map
-  +diaryEntry(user, pieceId, date, occasion, note): Map
-  +onPieceCreated(PieceCreated) <<AFTER_COMMIT>>
-  +onPieceDeleted(PieceDeleted)
-  ~statesOf(w, a, today, lastDiary, dailyLookPieces, icon): Set<String>
-  +{static} forgotten(w, last, today): boolean
+package "fai-application" {
+  class RoomService <<service>> {
+    +room()
+    +tour()
+    +giveKey()
+    +listView()
+    +open()
+    +move()
+    +renameDrawer()
+    +showInRoom()
+    +seasonStorage()
+    +organizePreview()
+  }
 }
-class "RoomService.Location" as Location <<record>> {
-  +address: RoomAddress
-  +label: String
-  +moduleId: String
-}
-interface "RoomService.DecorationsProvider" as Decorations <<port>> {
-  +decorations(userId): List<Map>
-}
-class RoomAddress <<record>> {
-  +zone: String
-  +index: int
-  +sub: int
-  +{static} parse(raw): Optional<RoomAddress>
-  +moduleId(): String
-  +label(drawerLabels): String
-}
-note bottom of RoomAddress
-  zonas: door:n/hanger:k · drawer:n · top:n · base:n
-  shoe:n · bags:n · jewelry:n · chair:n · season:n
-end note
-interface "FaiPointsService.RoomLayoutAccess" as Access <<port>> {
-  +setLevel(userId, level)
-  +compatibleModules(userId, item): List<String>
-  +applyFinish(userId, moduleId, item)
-  +layout(userId): RoomLayout
-}
-enum "FaiPointsService.Level" as Level {
-  ESTREIA
-  STUDIO
-  LOFT
-  CLOSET
-  ATELIER
-  PENTHOUSE
-  MAISON
-}
-class ChallengeService
-}
-
-package "fai-domain · model" {
-class RoomLayout <<table room_layouts>> {
-  +user: User
-  +level: String = "ESTREIA"
-  +modulesJson: String
-  +drawerLabelsJson: String
-  +previousMapJson: String
-}
-class RoomStorageEntry <<table room_storage_map>> {
-  +userId: UUID
-  +wardrobeItemId: UUID {unique}
-  +address: String
-  +assignedBy: String = AUTO | USER | AI
-}
-class RoomInventoryItem <<table room_inventory>> {
-  +id: UUID
-  +userId: UUID
-  +sku: String
-  +serial: Integer
-  +source: String
-  +appliedModule: String
-  +acquiredAt: Instant
-}
-class WardrobeItem <<table wardrobe_items>> {
-  +name: String
-  +category / subcategory: String
-  +disponivel: boolean
-  +availabilityStatus: AvailabilityStatus
-  +favorite: boolean
-  +forSale: boolean
-  +wearCount: int
-  +lastWornDate: LocalDate
-  +pieceOrigin: String
-  .. demais campos ..
-}
-class PieceUsageDiaryEntry <<table piece_usage_diary>> {
-  +wardrobeItemId: UUID
-  +userId: UUID
-  +usedOn: LocalDate
-  +occasion: String
-  +source: String
-}
-class DailyLook <<table daily_looks>> {
-  +lookDate: LocalDate
-  +source: DailyLookSource
-}
-class StyleDna <<table style_dna>> {
-  +iconPieceName: String
-}
-class User <<table users>>
-}
-
-package "fai-domain · repository" {
-interface RoomLayoutRepository {
-  +findByUserId(userId): Optional<RoomLayout>
-}
-interface RoomStorageEntryRepository {
-  +findByUserId(userId): List<RoomStorageEntry>
-  +findByWardrobeItemId(id): Optional<RoomStorageEntry>
-  +deleteByWardrobeItemId(id)
-}
-}
-
-RoomController --> RoomService
-RoomService ..|> Access
-ChallengeService ..|> Decorations
-RoomService --> "0..*" Decorations : decorações de desafios
-RoomService ..> RoomAddress
-RoomService ..> Location
-Location --> RoomAddress
-RoomService --> RoomLayoutRepository
-RoomService --> RoomStorageEntryRepository
-RoomService ..> Level : levelOf(lifetime)
-RoomLayoutRepository ..> RoomLayout
-RoomStorageEntryRepository ..> RoomStorageEntry
-RoomLayout "0..1" --> "1" User : user (unique)
-RoomStorageEntry "0..1" ..> "1" WardrobeItem : wardrobeItemId
-RoomStorageEntry ..> RoomAddress : address (texto)
-RoomInventoryItem "*" ..> "1" User : userId
-WardrobeItem "*" --> "1" User
-PieceUsageDiaryEntry "*" ..> "1" WardrobeItem
-DailyLook "*" --> "1" User
-StyleDna "0..1" --> "1" User
+RoomService ..> DailyLook : usa
+RoomService ..> RoomCatalogItem : usa
+RoomService ..> RoomInventoryItem : usa
+RoomService ..> RoomLayout : usa
+RoomService ..> RoomStorageEntry : usa
+RoomService ..> Scheme : usa
+Brand "*" --> "1" BrandProfile : brandProfile
+BrandProfile "1" --> "1" User : owner
+BrandProfile --> ApprovalStatus
+DailyLook "*" --> "1" Scheme : scheme
+DailyLook "*" --> "1" User : user
+RoomInventoryItem ..> User : userId
+RoomLayout "*" --> "1" User : user
+RoomStorageEntry ..> User : userId
+RoomStorageEntry ..> WardrobeItem : wardrobeItemId
+Scheme "*" --> "1" User : user
+Scheme --> RenderStatus
+Scheme --> SchemeStatus
+User --> AccountStatus
+UserPreferences "1" --> "1" User : user
+WardrobeItem "*" --> "1" Brand : brand
+WardrobeItem "*" --> "1" BrandProfile : brandProfile
+WardrobeItem "*" --> "1" User : user
+WardrobeItem --> AvailabilityStatus
+WardrobeItem --> ModerationStatus
 @enduml

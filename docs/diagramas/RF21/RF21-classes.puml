@@ -1,158 +1,205 @@
 @startuml RF21_Classes
-title RF21 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma celebridade\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF21 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma celebridade\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +profileType: ProfileType
+package "fai-domain (entidades JPA)" {
+  class CelebrityProfile <<celebrity_profiles>> {
+    +id: UUID
+    +owner: User
+    +stageName: String
+    +slug: String
+    +avatarUrl: String
+    +coverUrl: String
+    +bio: String
+    +realName: String
+    +areasJson: String
+    +verifiableFollowersJson: String
+    .. +20 campos ..
+  }
+  class Notification <<notifications>> {
+    +id: UUID
+    +recipient: User
+    +actor: User
+    +type: NotificationType
+    +category: NotificationCategory
+    +resourceType: String
+    +resourceId: UUID
+    +title: String
+    +body: String
+    +payloadJson: String
+    .. +3 campos ..
+  }
+  class Promotion <<promotions>> {
+    +id: UUID
+    +seal: Seal
+    +sealBond: SealBond
+    +type: PromotionType
+    +code: String
+    +description: String
+    +discountPercent: Integer
+    +partnerBrandUserId: UUID
+    +campaignId: UUID
+    +campaignLimit: Integer
+    .. +13 campos ..
+  }
+  class PromotionRedemption <<promotion_redemptions>> {
+    +id: UUID
+    +promotion: Promotion
+    +sealBond: SealBond
+    +user: User
+    +code: String
+    +issuerUserId: UUID
+    +partnerBrandUserId: UUID
+    +status: RedemptionStatus
+    +redeemedAt: Instant
+    +expiresAt: Instant
+  }
+  class Scheme <<schemes>> {
+    +id: UUID
+    +user: User
+    +originalScheme: Scheme
+    +title: String
+    +description: String
+    +creationMode: CreationMode
+    +origin: SchemeOrigin
+    +style: String
+    +occasion: String
+    +season: Season
+    .. +46 campos ..
+  }
+  class Seal <<seals>> {
+    +id: UUID
+    +owner: User
+    +name: String
+    +tier: SealTier
+    +policyText: String
+    +status: SealStatus
+    +iconUrl: String
+    +premium: boolean
+    +backgroundConfigJson: String
+    +availableFrom: Instant
+    .. +4 campos ..
+  }
+  class SealBond <<seal_bonds>> {
+    +id: UUID
+    +scheme: Scheme
+    +targetOwner: User
+    +requestedBy: User
+    +tier: SealTier
+    +linkedPieceIdsJson: String
+    +confidence: BigDecimal
+    +justification: String
+    +basis: SealBondBasis
+    +status: SealBondStatus
+    .. +13 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
 }
-class CelebrityProfile {
-  +owner: User
-  +stageName: String
-  +slug: String
-  +avatarUrl: String
-  +styleSignatureJson: String
-  +verificationStatus: ApprovalStatus
-  +identityVerified: boolean
-  +sealConsentGranted: boolean
-  +requiresSealReview: boolean
-  +sealConfidenceThreshold: BigDecimal
+package "fai-domain (enums)" {
+  enum ApprovalStatus {
+    PENDENTE
+    AJUSTES
+    APROVADO
+    RECUSADO
+    SUSPENSO
+  }
+  enum PromotionStatus {
+    AVAILABLE
+    REDEEMED
+    EXPIRED
+    REVOKED
+  }
+  enum RedemptionStatus {
+    ISSUED
+    USED
+    EXPIRED
+  }
+  enum SchemeStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+  }
+  enum RenderStatus {
+    PENDING
+    RENDERING
+    ENHANCING
+    COMPOSITING
+    CACHED
+    COMPLETED
+    FAILED
+  }
+  enum SealStatus {
+    ACTIVE
+    INACTIVE
+  }
 }
-class Seal {
-  +owner: User
-  +name: String
-  +tier: SealTier
-  +status: SealStatus
-  +premium: boolean
-  +availableFrom: Instant
-  +availableUntil: Instant
-  +usageLimit: Integer
-  +usageCount: int
+package "fai-application" {
+  class SealService <<service>> {
+    +mySeals()
+    +preview()
+    +suggest()
+    +linkManually()
+    +refuseAll()
+    +accept()
+    +refuse()
+  }
 }
-class SealBond {
-  +scheme: Scheme
-  +targetOwner: User
-  +requestedBy: User
-  +seal: Seal
-  +tier: SealTier
-  +basis: SealBondBasis
-  +origin: SealBondOrigin
-  +status: SealBondStatus
-  +requiresReview: boolean
-  +imageRightsConsent: Boolean
-  +eraLabel: String
-  +confidence: BigDecimal
-  +sealCode: String
-  +issuedAt: Instant
-  +expiresAt: Instant
-}
-class Scheme {
-  +user: User
-  +title: String
-  +style: String
-  +occasion: String
-  +sealIdsJson: String
-}
-class Promotion {
-  +seal: Seal
-  +sealBond: SealBond
-  +type: PromotionType
-  +status: PromotionStatus
-  +ownerUserId: UUID
-  +partnerBrandUserId: UUID
-  +campaignId: UUID
-  +campaignLimit: Integer
-  +totalQuota: Integer
-  +perUserLimit: int
-}
-class PromotionRedemption {
-  +promotion: Promotion
-  +user: User
-  +code: String
-}
-class Notification {
-  +recipient: User
-  +type: NotificationType
-  +resourceType: String
-  +resourceId: UUID
-}
-}
-package "fai-domain · enums" {
-enum SealBondStatus {
-  SUGGESTED
-  ACCEPTED
-  EDITED
-  REFUSED
-  PENDING_REVIEW
-  APPROVED
-  REJECTED
-  REVOKED
-}
-enum SealBondBasis {
-  BRAND_MATCH
-  STYLE_SIGNATURE
-}
-enum PromotionType {
-  DESCONTO_ECOMMERCE
-  CUPOM_LOJA
-  EVENTO
-  SHOW
-  FRETE_GRATIS
-  BRINDE
-  ACESSO_ANTECIPADO
-  MEET_GREET
-  PRE_VENDA
-  CONTEUDO_EXCLUSIVO
-}
-enum ProfileType {
-  PESSOAL
-  MARCA
-  CELEBRIDADE
-  ADMIN
-}
-}
-package "fai-application · service" {
-class SealService {
-  +preview(user, pieceIds, occasion, style): Map
-  +suggest(user, schemeId): Map
-  +linkManually(user, schemeId, targetOwnerId, imageRightsConsent): Map
-  +accept(user, bondId, imageRightsConsent): Map
-  +review(user, bondId, approve, reason): Map
-  +revoke(user, bondId, reason): Map
-  +redeem(user, promotionId): Map
-  -candidates(scheme, items, unregistered): List<Candidate>
-  -route(user, bond): Map
-  -issue(bond, decidedBy)
-}
-}
+SealService ..> CelebrityProfile : usa
+SealService ..> Promotion : usa
+SealService ..> PromotionRedemption : usa
+SealService ..> Scheme : usa
+SealService ..> Seal : usa
+SealService ..> SealBond : usa
 CelebrityProfile "1" --> "1" User : owner
+CelebrityProfile --> ApprovalStatus
+Notification "*" --> "1" User : actor
+Notification "*" --> "1" User : recipient
+Promotion "*" --> "1" Seal : seal
+Promotion "*" --> "1" SealBond : sealBond
+Promotion --> PromotionStatus
+PromotionRedemption "*" --> "1" Promotion : promotion
+PromotionRedemption "*" --> "1" SealBond : sealBond
+PromotionRedemption "*" --> "1" User : user
+PromotionRedemption --> RedemptionStatus
+Scheme "*" --> "1" User : user
+Scheme --> RenderStatus
+Scheme --> SchemeStatus
 Seal "*" --> "1" User : owner
-SealBond "*" --> "1" Scheme
-SealBond "*" --> "1" User : targetOwner
+Seal --> SealStatus
+SealBond "*" --> "1" Scheme : scheme
+SealBond "*" --> "1" Seal : seal
 SealBond "*" --> "1" User : requestedBy
-SealBond "*" --> "0..1" Seal
-Scheme "*" --> "1" User
-Promotion "*" --> "0..1" Seal
-Promotion "*" --> "0..1" SealBond
-PromotionRedemption "*" --> "1" Promotion
-PromotionRedemption "*" --> "1" User
-Notification "*" --> "1" User
-SealBond ..> SealBondStatus
-SealBond ..> SealBondBasis
-Promotion ..> PromotionType
-User ..> ProfileType
-SealService ..> SealBond
-SealService ..> CelebrityProfile
-note bottom of CelebrityProfile : CA17 styleSignatureJson · CA18 verificationStatus APROVADO\nCA19 sealConsentGranted + SealBond.imageRightsConsent
-note bottom of Seal : CA20 premium=true (Selo Premium, código PRM-…)\nCA23 usageLimit/usageCount = teto da campanha
+SealBond "*" --> "1" User : targetOwner
 @enduml

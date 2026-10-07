@@ -1,116 +1,172 @@
 @startuml RF16_Classes
-title RF16 — Implementar geração de imagem 3D das peças do guarda-roupa utilizando serviços de API externas\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF16 — Implementar geração de imagem 3D das peças do guarda-roupa utilizando serviços de API externas\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
+package "fai-domain (entidades JPA)" {
+  class AiInferenceLog <<ai_inference_log>> {
+    +id: UUID
+    +userId: UUID
+    +capability: String
+    +hostRf: String
+    +provider: String
+    +model: String
+    +latencyMs: long
+    +estimatedCostUsd: BigDecimal
+    +result: AiCallResult
+    +fallbackUsed: boolean
+    .. +4 campos ..
+  }
+  class PipelineJob <<pipeline_jobs>> {
+    +id: UUID
+    +user: User
+    +type: PipelineJobType
+    +status: PipelineJobStatus
+    +provider: String
+    +externalJobId: String
+    +targetType: String
+    +inputResourceId: UUID
+    +inputJson: String
+    +outputUrl: String
+    .. +13 campos ..
+  }
+  class ProcessingJobLog <<processing_jobs_log>> {
+    +id: UUID
+    +pipelineJobId: UUID
+    +wardrobeItemId: UUID
+    +userId: UUID
+    +jobType: String
+    +status: String
+    +totalProcessingTimeMs: Integer
+    +stageTimesJson: String
+    +finalQualityScore: BigDecimal
+    +totalCostUsd: BigDecimal
+    .. +4 campos ..
+  }
+  class RenderJobLog <<render_jobs_log>> {
+    +id: UUID
+    +pipelineJobId: UUID
+    +schemeId: UUID
+    +userId: UUID
+    +renderingType: String
+    +status: String
+    +totalProcessingTimeMs: Integer
+    +stageTimesJson: String
+    +finalQualityScore: BigDecimal
+    +costFashnAi: BigDecimal
+    .. +5 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class WardrobeItem <<wardrobe_items>> {
+    +id: UUID
+    +user: User
+    +brandProfile: BrandProfile
+    +brand: Brand
+    +name: String
+    +category: String
+    +subcategory: String
+    +sex: String
+    +brandName: String
+    +brandLogoUrl: String
+    .. +70 campos ..
+  }
 }
-class WardrobeItem <<@Table wardrobe_items>> {
-  +user: User
-  +name: String
-  +imageUrl: String
-  +defaultImage: boolean
-  +model3dStatus: Model3dStatus
-  +model3dUrl: String
-  +model3dGeneratedAt: Instant
+package "fai-domain (enums)" {
+  enum PipelineJobStatus {
+    PENDING
+    RUNNING
+    RENDERING
+    ENHANCING
+    COMPOSITING
+    COMPLETED
+    FAILED
+    CANCELLED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
+  enum PhotoProcessingStatus {
+    NEW
+    MODERATING
+    PROCESSING
+    COMPLETED
+    NEEDS_REUPLOAD
+    FAILED
+  }
+  enum Model3dStatus {
+    QUEUED
+    PROCESSING
+    COMPLETED
+    FAILED
+  }
 }
-class PipelineJob <<@Table pipeline_jobs>> {
-  +user: User
-  +type: PipelineJobType
-  +status: PipelineJobStatus
-  +provider: String
-  +externalJobId: String
-  +targetType: String
-  +inputResourceId: UUID
-  +outputUrl: String
-  +stagesJson: String
-  +totalCostUsd: BigDecimal
-  +fallbackUsed: boolean
-  +errorCode: String
-  +errorMessage: String
-  +retryCount: int
-  +queuedAt / startedAt / finishedAt: Instant
+package "fai-application" {
+  class ShowcaseService <<service>> {
+    +requestModels()
+    +piece3d()
+  }
 }
-class AiInferenceLog <<@Table ai_inference_log>> {
-  +userId: UUID
-  +capability: String
-  +hostRf: String
-  +provider: String
-  +latencyMs: long
-  +estimatedCostUsd: BigDecimal
-  +fallbackUsed: boolean
-}
-}
-package "fai-domain · enums" {
-enum Model3dStatus {
-  QUEUED
-  PROCESSING
-  COMPLETED
-  FAILED
-}
-enum PipelineJobStatus {
-  PENDING
-  RUNNING
-  RENDERING
-  ENHANCING
-  COMPOSITING
-  COMPLETED
-  FAILED
-  CANCELLED
-}
-enum PipelineJobType {
-  ...
-  THREE_D_GENERATION
-}
-}
-package "fai-application · service" {
-class Model3dService {
-  +request(w: WardrobeItem): Map
-  +status(w: WardrobeItem): Map
-  +tick(): void
-  ~start(jobId: UUID)
-  ~follow(jobId: UUID)
-}
-class WardrobeService {
-  +request3d(user, id): Map
-  +status3d(user, id): Map
-}
-class ShowcaseService {
-  +piece3d(viewer, pieceId): Map
-  +requestModels(user, schemeId): Map
-}
-interface "ImageProviderPorts.Model3dPort" as Port {
-  +available(): boolean
-  +async(): boolean
-  +submit(png): Optional<String>
-  +poll(taskId): Optional<TaskStatus>
-  +generateNow(png): Optional<byte[]>
-}
-class ReliefModelGenerator {
-  +generate(cutout, heightM): Model
-}
-}
-WardrobeItem "*" --> "1" User
-PipelineJob "*" --> "1" User
-WardrobeItem --> Model3dStatus
+ShowcaseService ..> User : usa
+ShowcaseService ..> WardrobeItem : usa
+AiInferenceLog ..> User : userId
+PipelineJob "*" --> "1" User : user
 PipelineJob --> PipelineJobStatus
-PipelineJob --> PipelineJobType
-PipelineJob ..> WardrobeItem : inputResourceId (PIECE)
-WardrobeService --> Model3dService
-ShowcaseService --> Model3dService
-Model3dService --> Port : Meshy / Stability
-Model3dService --> ReliefModelGenerator : plano B (RNF8)
-Model3dService ..> AiInferenceLog : via AiEngine (RF24)
-note bottom of PipelineJob : RenderJobLog / ProcessingJobLog não são\ngravados pelo job 3D (são dos pipelines RF4/RF5)
+ProcessingJobLog ..> PipelineJob : pipelineJobId
+ProcessingJobLog ..> User : userId
+ProcessingJobLog ..> WardrobeItem : wardrobeItemId
+RenderJobLog ..> PipelineJob : pipelineJobId
+RenderJobLog ..> User : userId
+User --> AccountStatus
+WardrobeItem "*" --> "1" User : user
+WardrobeItem --> AvailabilityStatus
+WardrobeItem --> Model3dStatus
+WardrobeItem --> ModerationStatus
+WardrobeItem --> PhotoProcessingStatus
 @enduml

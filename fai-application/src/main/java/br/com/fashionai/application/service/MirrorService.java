@@ -121,7 +121,7 @@ public class MirrorService {
     public static String slotOf(WardrobeItem w) {
         String cat = w.getCategory() == null ? "" : w.getCategory();
         return switch (cat) {
-            case "upper_piece" -> RoomService.OUTERWEAR.contains(w.getSubcategory()) ? "outer_layer" : "upper";
+            case "upper_piece" -> w.getSubcategory() != null && RoomService.OUTERWEAR.contains(w.getSubcategory()) ? "outer_layer" : "upper";
             case "lower_piece" -> "lower";
             case "full_body_piece" -> "dress";
             case "shoes_piece" -> "shoes";
@@ -366,6 +366,9 @@ public class MirrorService {
     // ================================================================== montagem manual (CA01/CA02/CA05)
     @Transactional
     public Map<String, Object> place(CurrentUser user, UUID pieceId) {
+        if (pieceId == null) {   // corpo sem pieceId: 400 com a mensagem, não erro interno ao buscar id nulo
+            throw ApiException.badRequest("PECA_OBRIGATORIA", Msg.t("mirror.escolha_uma_peca"));
+        }
         WardrobeItem w = wardrobe.owned(user, pieceId);
         MirrorState s = stateEntity(user.id());
         Map<String, Object> slots = slots(s);
@@ -542,6 +545,37 @@ public class MirrorService {
         out.put("explanation", outcome.explanation());
         out.put("quota", outcome.quota());
         out.put("message", outcome.userMessage());
+        return out;
+    }
+
+    // ================================================================== escolher do guarda-roupa (WARDROBE-FIX)
+    /**
+     * Todas as peças que podem ir para o slot, para a pessoa escolher à mão: sem IA e sem custo. As mesmas regras do
+     * Vista-me valem aqui (só disponíveis, dentro da estação, permitidas pelo desafio ativo); as que já estão no espelho
+     * vêm marcadas.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> wardrobe(CurrentUser user, String slot) {
+        if (!SLOTS.contains(slot)) {
+            throw ApiException.badRequest("SLOT_INVALIDO", "Slots: " + SLOTS);
+        }
+        Set<UUID> inMirror = new HashSet<>(mirrors.findByUserId(user.id()).map(s -> allIds(slots(s))).orElse(List.of()));
+        Map<UUID, RoomService.Location> where = room.locateAll(user.id());
+        List<Map<String, Object>> pieces = new ArrayList<>();
+        for (WardrobeItem w : eligible(user.id())) {
+            if (slotOf(w).equals(slot)) {
+                Map<String, Object> m = pieceView(w, where);
+                m.put("inMirror", inMirror.contains(w.getId()));
+                pieces.add(m);
+            }
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("slot", slot);
+        out.put("pieces", pieces);
+        if (pieces.isEmpty()) {
+            out.put("message", Msg.t("mirror.voce_nao_tem_peca_disponivel"));
+            out.put("href", "/pieces/new");
+        }
         return out;
     }
 

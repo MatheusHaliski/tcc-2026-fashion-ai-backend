@@ -1,75 +1,52 @@
 @startuml RF33_Sequencia
-title RF33 — Passarela 3D: o Look do Dia de cada usuário desfilando num manequim\nDiagrama de sequência — GET /api/explorer/runway com HypeScore v2
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor Pessoa as U
-participant "explorer/page.tsx\n→ RunwayPanel" as FE
-participant "LookbookController\nMirrorController" as LC
-participant "ShowcaseController" as C
-participant "ShowcaseService" as S
-participant "DailyLookService" as DLS
-participant "SchemeService" as SCH
-participant "Avatar3dService" as AV
-participant "HypeScoreCurrentRepository" as HR
-database "MySQL" as DB
-== Antes do desfile: o Look do Dia vira sinal de Hype ==
-U -> FE: marca o Look do Dia (Lookbook, Espelho, Copilot, Autopiloto)
-FE -> LC: POST /api/me/daily-look {schemeId} · POST /api/me/mirror/use
-LC -> DLS: register(user, scheme, source, hoje)
-alt alguma peça do look indisponível (RF33.CA05)
-  DLS --> LC: 409 PECA_INDISPONIVEL
-  LC --> FE: 409
-else
-  DLS -> DB: UPSERT daily_looks (1 por pessoa e dia; troca o esquema se já havia)
-  DLS ->> DLS: DomainEvents.DailyLookRegistered (AFTER_COMMIT)
-end
-note over DLS, HR: HypeSignalRecorder grava o sinal LOOK_WORN; HypeLiveRecalc marca "sujo" e\nrecalcula; o job HypeSnapshotService (6/6 h) grava hype_scores
-== Abrir a Passarela 3D ==
-U -> FE: aba "Passarela 3D", ranking e filtros
-FE -> C: GET /api/explorer/runway?ranking=TOP100_REGIONAL&region=EUROPA\n&colors=preto&occasions=&styles=&sex=&limit=12&offset=0
-C -> S: runway(viewer, RunwayFilter)
-S -> DB: SELECT daily_looks WHERE look_date >= hoje − 7
-loop cada pessoa com look na semana
-  S -> DLS: today(userId)
-  DLS -> DB: copia o último look (materializedFrom)\nse não há registro de hoje e o esquema não é ARCHIVED
-end
-alt ranking fora de RUNWAY_RANKINGS
-  S --> C: 400 RANKING_INVALIDO
-  C --> FE: 400
-else ranking = SEGUINDO e sem login
-  S --> C: 401 (entrar para ver)
-  C --> FE: 401
-else ok
-  S -> DB: SELECT daily_looks WHERE look_date = hoje\n(JOIN users, schemes, scheme_items, wardrobe_items)
-  S -> SCH: canView(viewer, scheme) — filtra conta ACTIVE,\nsem runwayOptOut, sem conta de teste, não ARCHIVED
-  opt SEGUINDO
-    S -> DB: SELECT follows WHERE follower = eu AND status = ACEITO
-  end
-  S -> S: escopo (WorldRegions.of(country)) + facetas + filtros
-  S -> HR: findByEntityTypeAndEntityIdInAndAlgorithmVersion(SCHEME, ids, v2)
-  HR -> DB: SELECT hype_scores
-  S -> S: runwayOrder(ranking) · corta no Top 100 · lote offset/limit (≤ 24)
-  loop cada look do lote
-    S -> S: look(scheme, viewer, hype) → mannequin(owner, peças, viewer)
-    S -> DB: SELECT user_preferences (sexo, pele, porte do manequim)
-    S -> AV: forMannequin(ownerId, viewerId)
-    AV -> DB: SELECT user_avatars_3d
-    AV --> S: avatar (público ou do próprio dono) | vazio
-  end
-  S --> C: {date, nextUpdate, totalToday, total, ranking, applied,\nbatch, looks[], table[≤100], facets, you, algorithmVersion}
-  C --> FE: 200
-  FE -> FE: RunwayScene (3D) ou RunwayFallback (2D)\n+ tabela com HypeBadge / RunwayHype
-end
-U -> FE: próximo lote
-FE -> C: GET /api/explorer/runway?…&offset=12
-== Sair (ou voltar) da Passarela ==
-U -> FE: Configurações → "Desfilar meu Look do Dia"
-FE -> FE: PATCH /api/me/profile {runwayOptOut}
-note right of FE: PreferencesController → PreferencesService.updateProfile\n(users.runway_opt_out)
+autonumber "<b>0."
+title RF33 — Passarela 3D: Look do Dia desfilando em manequins, Top 100 Global/Regional/País e filtros\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /explorer" as P
+control "ShowcaseController" as ShowcaseController
+participant "ShowcaseService" as ShowcaseService
+control "LookbookController" as LookbookController
+participant "DailyLookService" as DailyLookService
+database "MySQL" as DB_MySQL
+== Passarela 3D (RF33) — Look do Dia visível: Top 100 Global/Regional/Pa… ==
+U -> P : Passarela 3D (RF33) — Look do Dia visível: Top 10…
+P -> ShowcaseController : GET /api/explorer/runway
+ShowcaseController -> ShowcaseService : runway()
+activate ShowcaseService
+deactivate ShowcaseService
+ShowcaseService --> ShowcaseController : resultado
+ShowcaseController --> P : 200 JSON
+P --> U : atualiza a tela
+== Histórico de Looks do Dia ==
+U -> P : Histórico de Looks do Dia
+P -> LookbookController : GET /api/me/daily-looks
+LookbookController -> DailyLookService : history()
+activate DailyLookService
+DailyLookService -> DB_MySQL : SELECT daily_looks
+deactivate DailyLookService
+DailyLookService --> LookbookController : resultado
+LookbookController --> P : 200 JSON
+P --> U : atualiza a tela
 @enduml

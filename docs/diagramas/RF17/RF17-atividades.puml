@@ -1,9 +1,16 @@
 @startuml RF17_Atividades
-title RF17 — Permitir que o Usuário visualize a página de perfil de outros Usuários cadastrados dentro da rede social do FashionAI\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,84 +19,43 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF17 — Permitir que o Usuário visualize a página de perfil de outros Usuários cadastrados dentro da rede social do FashionAI\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Toca em @username (feed, busca,\ncomentário, seguidores);
-|Frontend|
-:Abre u/[username];
+:Abre /closet, /brands/[slug],\n/u/[username];
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/users/{userId}/connections\nGET /api/me/follow-requests;
+|Pessoa usuária|
+:Perfil público (por id ou\n@username); sort = recent | hype_…;
+|Tela (Next.js)|
 :GET /api/profiles/{idOrUsername};
-|Backend|
-:ProfileService.profile → resolve(id ou @username);
-if (conta existe e não está DELETED /\nDELETION_SCHEDULED?) then (sim)
-  if (dono do perfil bloqueou quem visita?) then (sim)
-    :404 Perfil;
-    stop
-  else (não)
-  endif
-else (não)
-  :404 Perfil;
-  stop
+|API (Spring Boot)|
+:ProfileController.profile\n→ ProfileService.profile;
+|Dados e serviços|
+:Monta a resposta;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Aceitar ou recusar pedido)
+    :POST /api/follow-requests/{followId}\n→ ProfileService.respond\nvalida: PEDIDO_RESPONDIDO\nlê: follows\nusa: Guard.requireOwner,\nNotificationService.notify\ngrava: follows;
+  case (Seguir [ou pedir para seguir perf…)
+    :POST /api/users/{targetId}/followers\n→ ProfileService.follow\nvalida: NAO_ENCONTRADO, SEGUIR_A_SI\nlê: users, follows\nusa: NotificationService.notify\ngrava: follows;
+  case (Deixar de seguir)
+    :DELETE /api/users/{targetId}/followers/me\n→ ProfileService.unfollow\nlê: follows;
+  case (Bloquear/desbloquear usuário)
+    :PUT /api/users/{targetId}/block\n→ ProfileService.block\nvalida: BLOQUEIO_INVALIDO\nlê: users, follows\ngrava: follows\nestado: status → BLOQUEADO;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-:relation = Follow do visitante (NENHUMA, PENDENTE, ACEITO, BLOQUEADO);
-:counters: seguidores, seguindo, peças, esquemas (RF19);
-if (perfil institucional (marca/celebridade)?) then (sim)
-  |Frontend|
-  :Redireciona para brands/[slug] (RF14/RF22);
-  stop
-else (não)
-endif
-|Backend|
-if (Guard.canView(profileVisibility)\nPUBLIC, ou FOLLOWERS com Follow ACEITO?) then (sim)
-  :Devolve esquemas publicados e peças\n(cada item pela visibilidade mais restritiva);
-  |Frontend|
-  :ProfileHeader + abas Closet / Looks / Agrupamentos;
-  :Closet: GET /api/users/{ownerId}/closet\n(filtros categoria, estado...);
-else (não)
-  :contentVisible = false + convite "SEGUIR";
-  |Frontend|
-  :Mostra cabeçalho e contadores,\nsem conteúdo (perfil privado);
-endif
-|Pessoa|
-if (Ação?) then (seguir)
-  |Frontend|
-  :POST /api/users/{targetId}/followers;
-  |Backend|
-  if (privateAccount e visibilidade não PUBLIC\ne perfil PESSOAL?) then (sim)
-    :Follow PENDENTE + notificação FOLLOW_REQUEST;
-    note right
-      O dono aceita ou recusa por
-      POST /api/follow-requests/{followId}
-      (aceito → FOLLOW_ACCEPTED)
-    end note
-  else (não)
-    :Follow ACEITO + notificação NEW_FOLLOWER;
-  endif
-elseif (deixar de seguir / cancelar pedido) then (sim)
-  |Frontend|
-  :DELETE /api/users/{targetId}/followers/me;
-  |Backend|
-  :Remove o Follow (sem notificação);
-elseif (bloquear) then (sim)
-  |Frontend|
-  :PUT /api/users/{targetId}/block {blocked};
-  |Backend|
-  :Desfaz vínculos e grava Follow BLOQUEADO;
-else (ver seguidores)
-  |Frontend|
-  :GET /api/users/{userId}/connections;
-endif
-|Frontend|
-:Recarrega o perfil com a nova relação;
+|Pessoa usuária|
 stop
 @enduml

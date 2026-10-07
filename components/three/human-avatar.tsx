@@ -11,12 +11,16 @@ import type { FaceResidual } from "@/lib/avatar3d/human/face-residual";
 const FACE_RESIDUAL = process.env.NEXT_PUBLIC_FACE_RESIDUAL !== "off";
 import { buildHuman, type Human } from "@/lib/avatar3d/human/three-human";
 import { applyIdle, applyRestPose, type PoseState } from "@/lib/avatar3d/human/pose";
-import { buildHair } from "@/lib/avatar3d/human/hair-geometry";
+import { buildHair, headFrame } from "@/lib/avatar3d/human/hair-geometry";
+import { HairSpring, baseHairS, hairMotionUniforms, patchHairMotion, windVector } from "@/lib/avatar3d/human/hair-motion";
 import { hairColorFor } from "@/lib/avatar3d/hair-tone";
-import { hairWithCut } from "@/lib/avatar3d/hair-cut";
+import { hairWithCut, hairWithFringe } from "@/lib/avatar3d/hair-cut";
 import { growGroom, strandContext, strandsFromGroom, withStrands } from "@/lib/avatar3d/human/hair-strands";
 import { GLB_HAIR_LOD, HairFrameBudget, chooseHairLod, deviceInfo, type HairLod } from "@/lib/avatar3d/human/hair-lod";
 import { EYE_TEXTURE, bakeSkin } from "@/lib/avatar3d/human/skin-bake";
+import { recolorIris, shadeSclera } from "@/lib/avatar3d/human/eyes";
+import { buildGlasses, fitGlasses } from "@/lib/avatar3d/human/glasses-3d";
+import { defaultEyes, irisColorOf, type AvatarEyes } from "@/lib/avatar3d/iris";
 import type { AvatarHair, AvatarModel } from "@/lib/avatar3d/model";
 import { loadTexture, type Look3dPiece } from "@/components/three/common";
 import { HumanOutfit } from "@/components/three/human-outfit";
@@ -85,12 +89,26 @@ export interface HumanAvatarProps {
   hair?: AvatarHair | null;          // cabelo/cobertura medidos na foto
   pieces: Look3dPiece[];             // peças do look — o que faltar (tronco, pernas, pés) vem do look padrão do FashionAI
   motion?: boolean;                  // movimento parado (desligado com "reduzir movimento")
+  wind?: number;                     // vento no cabelo, 0–1 (padrão 0,15: ar parado de ambiente fechado; palco/passarela, mais)
   onReady?: (p: HumanParts) => void;
   children?: (p: HumanParts) => React.ReactNode;   // extras em cena (a roupa já vem do próprio HumanAvatar)
   fallback?: React.ReactNode;
   debugHair?: boolean;
   hairLod?: HairLod;                 // força o nível de detalhe do cabelo (laboratório); sem ele, o do aparelho
-  adjust?: { headScale?: number; neck?: number; hairVolume?: number; hairTone?: number; hairCut?: number } | null;   // ajustes finos do Avatar 3D
+  adjust?: { headScale?: number; neck?: number; hairVolume?: number; hairTone?: number; hairCut?: number; glasses?: number; hairFringe?: number } | null;   // ajustes finos do Avatar 3D
+}
+
+/**
+ * Textura do olho com a íris na cor medida na foto (AVATAR-ID I4). Sem cor medida (óculos escuros, avatar antigo,
+ * manequim), o castanho médio padrão — a textura original do MakeHuman é avermelhada demais. null = fica a original.
+ */
+function irisTexture(src: CanvasImageSource & { width: number; height: number }, eyes: AvatarEyes): THREE.CanvasTexture | null {
+  if (!src.width) return null;
+  const c = document.createElement("canvas"); c.width = src.width; c.height = src.height;
+  const g = c.getContext("2d", { willReadFrequently: true }); if (!g) return null;
+  g.drawImage(src, 0, 0); const id = g.getImageData(0, 0, c.width, c.height);
+  recolorIris(id, { left: irisColorOf(eyes, "left"), right: irisColorOf(eyes, "right") }); shadeSclera(id); g.putImageData(id, 0, 0);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 
 function imageOf(src: Img): HTMLCanvasElement {
@@ -98,7 +116,9 @@ function imageOf(src: Img): HTMLCanvasElement {
   const c = document.createElement("canvas"); c.width = src.width; c.height = src.height; c.getContext("2d")!.drawImage(src, 0, 0); return c;
 }
 
-export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, motion = true, onReady, children, fallback = null, debugHair, hairLod: forcedLod, adjust }: HumanAvatarProps) {
+const ZERO = new THREE.Vector3();
+
+export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, motion = true, onReady, children, fallback = null, debugHair, hairLod: forcedLod, adjust, wind }: HumanAvatarProps) {
   const asset = useBodyAsset();
   const key = JSON.stringify([body.sex, body.params ?? null, body.sources ?? null, stature, face?.shape?.length ? face.shape.slice(0, 24) : null, adjust?.headScale ?? 1, adjust?.neck ?? 0]);
   const built = useMemo(() => {
@@ -120,7 +140,7 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
     const head = h.bone("Head"); head.scale.setScalar(adjust?.headScale ?? 1); head.position.y += adjust?.neck ?? 0;
     return { h, st, c, asset, identity };
   }, [asset, key]); // eslint-disable-line react-hooks/exhaustive-deps
-  const hairKey = JSON.stringify([hair ?? null, adjust?.hairVolume ?? 1, adjust?.hairTone ?? 0, adjust?.hairCut ?? 0]);
+  const hairKey = JSON.stringify([hair ?? null, adjust?.hairVolume ?? 1, adjust?.hairTone ?? 0, adjust?.hairCut ?? 0, adjust?.hairFringe ?? 0]);
   const [autoLod, setAutoLod] = useState<HairLod>(INITIAL_HAIR_LOD);
   const lod: HairLod = forcedLod ?? autoLod;
   const budget = useRef(new HairFrameBudget());
@@ -128,7 +148,8 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
   const groomed = useMemo(() => {
     if (!built || !hair) return null;
     // corte e tom do cabelo: os escolhidos pela pessoa (ajuste fino) ou os medidos na foto
-    const cut = hairWithCut(hair, adjust?.hairCut); const color = hairColorFor(cut.color, adjust?.hairTone);
+    // franja escolhida (reta, lateral, cortina…) por cima do corte
+    const cut = hairWithFringe(hairWithCut(hair, adjust?.hairCut), adjust?.hairFringe); const color = hairColorFor(cut.color, adjust?.hairTone);
     const h2 = { ...cut, color }; const vol = adjust?.hairVolume ?? 1;
     // fios (hair-strands.ts) por cima de uma base que garante cobertura; raspado/careca/cobertura: só a base
     const fibrous = !cut.cover && !!color && (cut.length === "short" || cut.length === "medium" || cut.length === "long");
@@ -138,16 +159,23 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
     probe?.geometry.dispose(); (probe?.material as THREE.Material | undefined)?.dispose();
     return { h2, vol, color, ctx, groom };
   }, [built, hairKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // movimento do cabelo: uniforms compartilhados pelos materiais do cabelo, mola do atraso e vento do ambiente
+  const motionU = useMemo(() => hairMotionUniforms(), []);
+  const spring = useRef(new HairSpring());
   const makeHair = (level: HairLod): THREE.SkinnedMesh | null => {
     if (!built || !groomed) return null;
     const { h2, vol, color, ctx, groom } = groomed;
     const strands = level < 3 && ctx && groom && color;
     const hb = buildHair(built.asset, built.c, built.h.rest.normals, h2, vol, { base: !!strands }); if (!hb) return null;
     let geometry = hb.geometry; let material: THREE.Material | THREE.Material[] = hb.material;
+    const earY = headFrame(built.asset, built.c).earY;
     if (strands) {
       const st = strandsFromGroom(ctx, groom, level as 0 | 1 | 2);
-      if (st) { const w = withStrands(hb, st, color); hb.geometry.dispose(); geometry = w.geometry; material = w.material; }
+      if (st) { const w = withStrands(hb, st, color, { earY }); hb.geometry.dispose(); geometry = w.geometry; material = w.material; }
     }
+    // movimento do cabelo (vento e atraso dos gestos) na GPU; a cobertura de cabeça (lenço, boné) não balança
+    if (!geometry.getAttribute("hairS")) { const pa = geometry.getAttribute("position") as THREE.BufferAttribute; geometry.setAttribute("hairS", new THREE.BufferAttribute(hb.kind === "cover" ? new Float32Array(pa.count) : baseHairS(pa.array as ArrayLike<number>, pa.count, earY), 1)); }
+    for (const mat of ([] as THREE.Material[]).concat(material)) patchHairMotion(mat, motionU);
     const m = new THREE.SkinnedMesh(geometry, material); m.name = hb.kind === "cover" ? "cobertura" : "cabelo"; m.castShadow = true;
     m.userData.hairLod = strands ? level : 3;
     return m;
@@ -182,22 +210,46 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
     }, 0);
     return () => { alive = false; window.clearTimeout(id); };
   }, [built, atlas, skin]);
+  // olhos: a textura do MakeHuman com a íris recolorida na cor medida na foto (AVATAR-ID I4); a original fica no cache
+  const eyes = face?.eyes ?? null; const eyesKey = JSON.stringify(eyes ? [eyes.source, eyes.color, eyes.secondary, eyes.left ?? null, eyes.right ?? null] : null);
   useEffect(() => {
-    if (!built) return; let alive = true;
+    if (!built) return; let alive = true; let own: THREE.Texture | null = null;
     loadTexture(EYE_TEXTURE).then((t) => {
       if (!alive) return; built.h.root.userData.eyesReady = true; if (!t) return;
-      const m = built.h.eyes.material as THREE.MeshPhysicalMaterial; m.map = t; m.alphaTest = 0.5; m.color.set("#ffffff"); m.needsUpdate = true;
+      own = irisTexture(t.image as HTMLImageElement, eyes ?? defaultEyes());
+      const m = built.h.eyes.material as THREE.MeshPhysicalMaterial; m.map = own ?? t; m.alphaTest = 0.5; m.color.set("#ffffff"); m.needsUpdate = true;
     });
-    return () => { alive = false; };
-  }, [built]);
+    return () => { alive = false; own?.dispose(); };
+  }, [built, eyesKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  // óculos de grau vistos na foto: acessório preso ao osso Head, afastado do rosto; a pessoa pode tirar (ajuste "glasses")
+  const showGlasses = eyes?.glasses === "PRESCRIPTION" && (adjust?.glasses ?? 1) !== 0;
+  useLayoutEffect(() => {
+    if (!built || !showGlasses) return;
+    const head = built.h.bone("Head"); const hj = built.h.bones.indexOf(head);
+    const g = buildGlasses(fitGlasses(built.asset, built.c), [built.c.joints[hj * 3], built.c.joints[hj * 3 + 1], built.c.joints[hj * 3 + 2]], eyes?.frame);
+    head.add(g);
+    return () => { g.removeFromParent(); g.userData.dispose?.(); };
+  }, [built, showGlasses, eyes?.frame]); // eslint-disable-line react-hooks/exhaustive-deps
   const parts = useMemo<HumanParts | null>(() => (built ? { human: built.h, pose: built.st, composed: built.c, asset: built.asset, hair: hairMesh, exportHair: () => { const m = makeHair(GLB_HAIR_LOD); return m && attach(m); }, hairLod: (hairMesh?.userData.hairLod ?? 3) as HairLod, identity: built.identity } : null), [built, hairMesh]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (parts) onReady?.(parts); }, [parts]); // eslint-disable-line react-hooks/exhaustive-deps
   const t0 = useRef(Math.random() * 20);
+  const anchor = useMemo(() => new THREE.Vector3(), []); const inv = useMemo(() => new THREE.Matrix3(), []);
   useFrame(({ clock }, delta) => {
     if (!built) return;
     if (forcedLod === undefined && hairMesh) { const next = budget.current.push(delta * 1000, autoLod); if (next !== null) setAutoLod(next); }
     built.h.root.visible = built.h.root.userData.dressed === true;   // guarda: sem as três zonas cobertas, não desenha
     applyIdle(built.h, built.st, clock.elapsedTime + t0.current, motion ? 1 : 0);
+    // cabelo: o ponto da massa do cabelo (abaixo e atrás do centro da cabeça) puxa a mola; vento e atraso vão para o
+    // espaço do objeto do cabelo. Sem movimento (reduzir movimento), tudo parado
+    if (hairMesh) {
+      const head = built.h.bone("Head"); head.updateWorldMatrix(true, false);
+      anchor.set(0, -0.06, -0.05).applyMatrix4(head.matrixWorld);
+      const lag = motion ? spring.current.step(delta, anchor) : (spring.current.reset(), spring.current.lag);
+      inv.setFromMatrix4(hairMesh.matrixWorld).invert();
+      motionU.hairLag.value.copy(lag).applyMatrix3(inv);
+      motionU.hairWind.value.copy(motion ? windVector(wind ?? 0.15) : ZERO).applyMatrix3(inv);
+      motionU.hairTime.value = motion ? clock.elapsedTime : 0;
+    }
   });
   if (!parts) return <>{fallback}</>;
   return <group><primitive object={parts.human.root} /><HumanOutfit parts={parts} pieces={pieces} />{children?.(parts)}</group>;

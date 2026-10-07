@@ -542,7 +542,7 @@ A escolha segue o nível do cabelo (aparelho + tempo de quadro, HAIR-F2) e a dis
 | I1 | `CanonicalAvatarIdentity` v2 + `AvatarIdentityVersion` no backend (migração do v1, histórico, aprovação), confiança por característica | refazer não apaga mais a versão aprovada |
 | I2 | **Camada de resíduo assimétrico** (FaceMorphFitter), morphs nomeados e medidas da seção 5 | assimetria ≥ 0,7; reprojeção ≤ 1,5 mm |
 | I3 | Pele: balanço de branco, separação de luz, albedo + normal + rugosidade, transição do pescoço | skinColorError ≤ 5; sem costura |
-| I4 | Olhos: cor da íris medida, shader, ossos | cor da íris nos casos de teste |
+| I4 | Olhos: cor da íris medida, shader, ossos; óculos (escuros removidos, de grau como acessório); sobrancelhas medidas | cor da íris nos casos de teste |
 | I5 | Cabelo: risca, linha do cabelo, densidade × volume, cores (mecha/raiz), coberturas no tamanho real; barba e bigode | hairSilhouetteError ≤ 0,15; casos com barba |
 | I6 | Rig facial (mandíbula, olhos, pálpebras, 52 blendshapes), dentes; detalhes individuais por máscara | expressões sem perder o gate |
 | I7 | Revisão visual na tela Meu Avatar 3D (cartões), correção localizada, LOD 0–3, serviço para Scores | casos obrigatórios aprovados |
@@ -560,6 +560,7 @@ compartilhados).
 | I1 | **Entregue (05/10)** | `avatar_identity_versions` (V42; era V38 antes de trazer o `main`, que já usava V38–V41) + `AvatarIdentityVersion`; `user_avatars_3d` vira a versão atual (`identity_id`, `current_version`, `approved_version`, `identity_status`, `quality_json`). Os avatares existentes migram como versão 1 aprovada. Salvar cria uma versão: o gate é **recalculado no servidor** (`IdentityQuality`) a partir dos números do aparelho; reprovou → `NEEDS_REFINEMENT` e as outras pessoas continuam vendo a última aprovada (forma e textura por `?version=`). Endpoints `GET /api/me/avatar3d/versions`, `POST …/versions/{n}/approve` (com avisos só com `acceptWarnings`) e `POST …/versions/{n}/restore` (cria versão nova). Guarda a atual, a aprovada e as 5 mais recentes; o resto some com a textura. Auditoria só com versão, status e nomes das métricas. Tela Meu Avatar 3D: versão, status, o que reprovou em palavras, aprovar mesmo assim, histórico e restaurar. Testes: 6 novos no `Avatar3dServiceTest` (incluindo a auditoria sem dado pessoal) e verificação da migração num MySQL local com um avatar criado pela versão anterior. |
 | I2 | **Entregue (05/10)** | `lib/avatar3d/human/face-residual.ts`: camada de resíduo assimétrico (RBF de Wendland C2 com suporte compacto, profundidade com peso 0,35, resíduo limitado a 6% da altura do rosto, λ = 0,008) sobre o espaço de rostos, na mesma topologia (rig, UV, pesos, cabelo e roupas valem). Os olhos andam inteiros com o campo. `fitFace` devolve o campo; `compose(..., residual)` aplica; `NEXT_PUBLIC_FACE_RESIDUAL=off` desliga. Medidas nomeadas da seção 5 em `identity/face-profile.ts`: 18 proporções, ângulo da mandíbula, classe do formato derivada, assimetria por região, confiança e origem; `proportionErrorPct` entra no relatório de qualidade. |
 | I3 | **Entregue (05/10)** | `lib/avatar3d/skin-tone.ts`: cor da luz pela **esclera** (sem íris, cílios e reflexo), gray-world fraco como reserva; ganhos só de cromaticidade (a luminância não muda). O pipeline corrige cada foto antes de medir pele, cabelo e atlas (`NEXT_PUBLIC_SKIN_WB=off` desliga). `skinProfile`: tom em CIELAB, subtom pelo ângulo de matiz, melanina e vermelhidão, com confiança. `matchFaceToBody` leva a pele média do rosto ao tom do corpo e devolve `skinColorError` e a costura (ΔE da borda); entram no relatório do gate. Teste com 5 luzes × 3 tons de pele: ΔE2000 ≤ 3 depois da correção. |
+| I4 | **Entregue (06/10)** | **Olhos:** `lib/avatar3d/iris.ts` mede cada íris pelos 5 pontos de íris do MediaPipe, dentro do contorno das pálpebras, na foto já corrigida pela esclera (anel 0,40–0,93 R; fora o reflexo e os cílios), com cor base, zona perto da pupila, padrão (RING, RADIAL, UNIFORM; CRYPT não é inferido) e confiança (íris < 18 px, olho semicerrado, pouca íris visível, luz sem correção). A classe sai da matiz e da saturação (11 classes); a malha usa a cor contínua. Heterocromia só com cor diferente (ΔE ≥ 15 **e** Δab ≥ 10), não com um olho na sombra. `human/eyes.ts`: a textura do olho é recolorida guardando as fibras, a pupila e o anel; ossos `LeftEye`/`RightEye` (nomes do Mixamo) presos ao `Head` no centro de cada globo; a córnea vira uma malha própria só de reflexo (IOR 1,376, verniz) e há a linha d'água na pálpebra de baixo; as duas ficam fora do GLB. **Óculos:** `lib/avatar3d/glasses.ts` detecta escuros (lente que cobre a pele abaixo do olho, sem esclera) e de grau (faixas finas, alinhadas e da mesma cor sob os dois olhos e na ponte ou na lateral, de cromaticidade diferente da pele) e tira da cópia que vira textura — a lente inteira ou só os traços finos da armação, na cor dela, nunca olho, cílios, pálpebra, vinco, sobrancelha, pinta, ruga ou olheira (preenchimento harmônico liso). `human/glasses-3d.ts` devolve os de grau como acessório preso ao `Head`: lente 12 mm à frente da córnea e ≥ 4 mm de qualquer ponto do rosto, ponte sobre o nariz, hastes por fora da cabeça até atrás da orelha, cor medida; a pessoa tira em "Óculos" (ajuste `glasses`). Com óculos escuros a íris fica a padrão (confiança 0) e o EYES_CLOSED deixa de bloquear. **Sobrancelhas:** `identity/brows.ts` mede cor, espessura, arco (reta, suave, alta) e densidade, com confiança baixa para franja por cima, sobrancelha clara ou armação cruzando (contraste relativo, sem punir pele escura). `AvatarModel.eyes`/`brows` validados no app (`validateEyes`, `validateBrows`) e no backend (`validEyes`, `validBrows`): fora das regras saem, o avatar fica. Avisos `GLASSES_SUNGLASSES`, `GLASSES_PRESCRIPTION`, `IRIS_LOW_CONFIDENCE` (e textos para `WB_GRAY_WORLD`/`WB_NONE`). Desligar: `NEXT_PUBLIC_AVATAR_GLASSES=off`. |
 
 
 **Resultado do I2 nos 15 retratos autorizados** (reconhecedores independentes; agregados em
@@ -592,6 +593,46 @@ o 3/4 ainda não (0,404 < 0,45 no conjunto; o gate de 3/4 pede ≥ 0,363 por pes
 A pequena queda nos reconhecedores é esperada: eles comparam o avatar com a foto **com** a cor da luz, e o I3 tira essa
 cor da pele (o tom intrínseco é o certo para o provador e para a loja, que têm a própria luz). A troca fica documentada e
 reversível pela variável acima.
+
+**Correção de 06/10 (TWIN-FID, [relatório](../fidelidade-digital-twin-2026-10-06.md)).** O "erro de cor 0,2" da tabela
+acima compara a textura com o tom que o próprio pipeline mediu: não pega um tom errado. A bateria de fidelidade comparou
+o tom do gêmeo com a foto e achou o erro:
+
+- em 7 de 16 retratos (olho pequeno ou semicerrado), a "esclera" amostrada era mais escura que a pele: pálpebra,
+  sombra e a própria pele na borda do contorno;
+- os ganhos então tiravam o calor da pele, e o gêmeo saía cinza, esverdeado ou azulado (fora da faixa de pele humana);
+- a correção: a amostra fica só com pixels de pelo menos 85% do brilho da pele e com razão R/G abaixo de 0,9 × a da pele.
+  Essa razão não muda com a cor da luz: esclera ≈ 1,03; pele 1,3–1,5 em todas as tonalidades;
+- os ganhos finais nunca levam a pele para fora da faixa humana (matiz 22°–82°, croma ≥ 7); quando limitam, o aviso
+  `WB_LIMITED` pede para conferir a pele na revisão;
+- resultado: pele fora da faixa de 7 para 1 de 16 (o restante já está fora na foto e fica como está). Distância entre
+  o tom da foto e o do gêmeo: mediana 10,1 → 4,2 e máximo 25,5 → 11,0. Sob luz quente, a diferença do gêmeo ao da foto
+  original caiu de 4,1 para 1,3.
+
+**Resultado do I4 nos mesmos retratos**, cada um também com uma armação de grau e uma lente escura desenhadas pelo
+laboratório sobre os pontos do rosto ([`metricas-identidade-I4-2026-10-06.json`](metricas-identidade-I4-2026-10-06.json)):
+
+| Medida | Valor |
+|---|---|
+| Íris medida na foto | 16 de 16; confiança mediana 0,83 (3 abaixo de 0,5: olhos semicerrados ou íris menor que 18 px) |
+| Classe da íris conferida no próprio olho (só no ambiente local) | 16 de 16 (10 castanho-escuro, 2 castanho, 2 cinza, 1 verde-acinzentado, 1 azul) |
+| Mesma classe com a armação desenhada | 15 de 16 (a diferente tem confiança 0,25) |
+| Heterocromia falsa | 0 (com só o ΔE, dois retratos com um olho na sombra davam falso) |
+| Sem óculos → "nenhum" / armação → "de grau" / lente → "escuros" | 16/16 · 16/16 · 16/16 |
+| Armação removida da textura (pixels devolvidos à pele original, ΔE < 10) | mediana 70% (59–82%); o restante é o aro de cima encostado na sobrancelha |
+| Pixels mudados fora da armação | mediana 0%; até 29% do tamanho da armação, sempre colados nos cantos dela; sobrancelha intacta em 15 de 16 |
+| Sobrancelhas | 16 de 16 medidas; 4 retas, 7 arco suave, 5 arco alto (limites nos tercis) |
+| Gate de identidade (I3 → I4) | 14/15 → 14/15; reprojeção 0,6 mm, erro de cor da pele 0,2, nenhuma costura |
+| SFace de frente, mediana (I3 → I4) | 0,450 → 0,448 (14 de 15 acima do limiar; top-1 15/15 nos dois) |
+| SFace 3/4, mediana (I3 → I4) | 0,372 → 0,363 (8 → 7 de 14 acima; top-1 13 → 14) |
+
+A regressão fica dentro do limite de 0,03 do plano. **Limites conhecidos:** as armações e lentes do teste são
+sintéticas e todas do mesmo estilo (escura, retangular); armação fina de metal, sem aro ou da cor da pele pode passar
+sem ser vista (aí nada é removido nem acrescentado). O aro de cima que encosta na sobrancelha fica na textura — pela cor
+ele não se separa da sobrancelha, e tirá-lo apagaria o vinco da pálpebra em pele escura; com os óculos 3D ligados o aro
+3D cobre, desligados ele aparece como um traço sob a sobrancelha. Com óculos escuros a pele em volta dos olhos é
+preenchida lisa (copiar textura de outro ponto traria rugas que não estão ali) e o balanço de branco cai no gray-world.
+Ficam para o I6: parallax da íris, sombra das pálpebras sobre o olho e o olhar animado pelos ossos novos.
 
 **Linha de base do I0 (rostos sintéticos, sem foto de ninguém):**
 

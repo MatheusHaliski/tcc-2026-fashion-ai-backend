@@ -1,114 +1,49 @@
 @startuml RF49_MaquinaDeEstados_ItemColetado
 !pragma layout smetana
-title RF49 — Acervo oficial em escala\nDiagrama de máquina de estados — URL de produto coletada (sitemap → JSONL → catálogo) e domínio oficial (Site)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-skinparam note {
-  BackgroundColor #F4F2EF
-  BorderColor #CBC6BE
+title RF49 — ciclo de vida de CatalogProduct.ingestionStatus e sourceType\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum CatalogIngestionStatus · enum CatalogSourceType · tabela catalog_products
+
+state "CatalogProduct.ingestionStatus" as Ciclo_CatalogProduct {
+  state Ciclo_CatalogProduct_DISCOVERED as "DISCOVERED"
+  state Ciclo_CatalogProduct_VALIDATED as "VALIDATED"
+  state Ciclo_CatalogProduct_PERSISTABLE as "PERSISTABLE"
+  state Ciclo_CatalogProduct_REFERENCE_ONLY as "REFERENCE_ONLY"
+  state Ciclo_CatalogProduct_REJECTED as "REJECTED"
 }
-
-' ───────────── domínio oficial (um por fonte OFFICIAL_BRAND / OFFICIAL_STORE / AUTHORIZED_RETAILER)
-state "DOMÍNIO OFICIAL — Site(domain)\nrun(): marcas em paralelo (--workers) · collect_brand(): domínios da marca em sequência" as DOM {
-  state "LENDO ROBOTS\nSite.load_robots()\n(0/403/404 no domínio puro\n→ tenta https://www.<domínio>)" as ROB
-  state "ATIVO\nproduct_urls() + Site.get()\nPoliteness.wait = max(--min-interval, Crawl-delay)\n1 requisição por vez por site" as ATIVO
-  state "PAROU (RN49.02)\nStopDomain → report['stopped']\n(log: PAROU: …; sem insistir)" as PAROU
-  state "CONCLUÍDO\nsitemaps esgotados (até 60)\nou --max-per-brand atingido" as FIM
-
-  [*] --> ROB
-  ROB --> ATIVO : 200 (regras + Sitemap:)\nou 404/outro (sem regras = permitido)
-  ROB --> PAROU : robots.txt 401/403/429\nou status 0 (sem conexão)
-  ATIVO --> PAROU : 403/429 em qualquer GET\n(o site pediu para parar)
-  ATIVO --> FIM
-  PAROU --> [*]
-  FIM --> [*]
-}
-
-' ───────────── URL de produto → item do acervo
-state "DESCOBERTA\nproduct_urls(): <loc> de sitemap de produto/pdp\n(ajuda, blog, lojas físicas ficam de fora)" as DESC
-state "REPETIDA (ignorada)\n.state/<marca>.visited\nou URL já no JSONL\n(retomada: não repete)" as VIS
-state "BLOQUEADA PELO ROBOTS\nSite.allowed(url) = false\nblocked_by_robots + 1" as BLOQ
-state "BAIXADA\nSite.get(url) → 200 text/html" as BAIX
-state "SEM DADOS ESTRUTURADOS\nstructured_product() = None\n(sem JSON-LD Product/ProductGroup\nnem og:type=product)" as SEMD
-state "ITEM\nto_catalog_item(): clean_title,\ninfer_subcategory (pelo nome),\nproduct_images + brand_cdn_ok" as ITEM
-state "DESCARTADO\nnunca chutado, nunca outra marca" as DESCART
-state "GRAVADO NO JSONL\ncollected/<marca>.jsonl\n(o coletor só acrescenta linhas)" as JSONL
-state "RECHECADO\nrecheck_collected.py (reescreve o JSONL via .tmp)\nok · titulo_limpo · tipo_corrigido · foto_https" as RECH
-state "COM FOTO\nimages[] (PACKSHOT, até 4)\nsó a URL: REFERENCE_ONLY (RN47.03)" as FOTO
-state "SEM FOTO\nimages = []" as SEMF
-state "ENRIQUECIDO\nenrich_images.py revisita official_product_url\nproduto → variantes → og:image" as ENR
-state "IMPORTADO — import_products.py · Ingestor.ingest()\n(uma transação por produto)" as IMP {
-  state "[CREATE]\nINSERT catalog_products\ningestion_status = VALIDATED" as CRE
-  state "[UPDATE]\nsó preenche campos vazios;\nnovas variantes e fotos\n(catalog_images REFERENCE_ONLY)" as UPD
-  state "[DUP] / já existe\nfind_existing (gtin…URL, dedup_key)\nou find_same_model: outra cor = variante" as DUP
-  state "[SKIP]\nnada mudou\n(reimportação)" as SKP
-  [*] --> CRE : nada igual no banco
-  [*] --> DUP : achado pelo dedup
-  DUP --> UPD : campo vazio, variante\nou foto nova
-  DUP --> SKP : nada novo
-}
-state "INDEXADO\nsearch_text (FULLTEXT ngram)\nrebuild_search_index.py" as IDX
-state "VISÍVEL NA BUSCA\nGET /api/catalog/search\nCatalogService.search() → rank()" as BUSCA
-
-state "FIM" as E1 <<end>>
-state "FIM" as E2 <<end>>
-state "FIM" as E3 <<end>>
-state "FIM" as E4 <<end>>
-state "FIM" as E5 <<end>>
-
-[*] --> DESC : sitemap lido com o\ndomínio ATIVO
-DESC --> VIS : url ∈ visited
-VIS --> E1
-DESC --> BLOQ : robots.txt proíbe\no nosso User-Agent
-BLOQ --> E2
-DESC --> BAIX : permitida
-BAIX --> SEMD : só HTML livre
-SEMD --> E3
-BAIX --> DESCART : status ≠ 200\nou não HTML
-BAIX --> ITEM : JSON-LD ou OpenGraph
-ITEM --> VIS : official_product_url\njá está no JSONL
-ITEM --> DESCART : sem tipo no nome · fora do acervo\n(roupa íntima, vale-presente) · kit sem tipo\n· marca divergente (same_brand) · sem nome\n· normalize_product: ValidationError
-ITEM --> JSONL : on_item()
-JSONL --> RECH
-RECH --> DESCART : fora_do_acervo · sem_tipo_no_nome\n· kit_sem_tipo (sai do arquivo)
-DESCART --> E4
-RECH --> FOTO : [images ≠ []]
-RECH --> SEMF : [images = []]
-SEMF --> ENR : enrich_images.py\n(robots, Crawl-delay; 403/429 = PAROU)
-ENR --> FOTO : ganhou foto\n(4.059 de 4.371)
-ENR --> IMP : segue sem foto
-FOTO --> IMP : import_railway.sh 2/3
-IMP --> IDX : import_railway.sh 3/3
-IDX --> BUSCA
-BUSCA --> E5 : escolhido pela pessoa\n→ ciclo do CatalogProduct (RF47)
-
-note right of IMP
-  acervo-oficial-2026-10-05.jsonl.gz (9.573 itens)
-  dedup: gtin › ean › upc › sku › código
-  › URL canônica › marca+subtipo+modelo+variante
-  › marca+subtipo+título+cor
-  [ERROR] (ValidationError, domínio não oficial,
-  erro de banco) fica no relatório e o lote segue;
-  cada execução (sem --dry-run) grava catalog_ingestion_runs.
-  Rodar de novo é idempotente: 0 criados (CA04)
+Ciclo_CatalogProduct_DISCOVERED --> Ciclo_CatalogProduct_REFERENCE_ONLY : addToWardrobe()\nPOST /api/pieces/from-catalog
+Ciclo_CatalogProduct_VALIDATED --> Ciclo_CatalogProduct_REFERENCE_ONLY : addToWardrobe()\nPOST /api/pieces/from-catalog
+Ciclo_CatalogProduct_PERSISTABLE --> Ciclo_CatalogProduct_REFERENCE_ONLY : addToWardrobe()\nPOST /api/pieces/from-catalog
+note bottom of Ciclo_CatalogProduct
+  Sem mudança explícita no código para: DISCOVERED, VALIDATED, PERSISTABLE, REJECTED
+  (valor vindo de importação, regra calculada ou dado legado)
 end note
-note right of BUSCA
-  pool: candidatesWithColor (subtipo + cor)
-  → candidates (subtipo) → patternTerms
-  → geral; LIMIT 200 cada; reforço se < 8.
-  Sem foto: orderScore − NO_PHOTO_PENALTY (0,10);
-  o % compatível mostrado não muda.
-  8.810 produtos · 26.457 variantes · 8.357 com foto
-end note
-note left of DESCART
-  RN47.04 / RN49.01: só fontes oficiais da marca;
-  RN49.05: o subtipo vem do NOME (a descrição nunca
-  decide; sem tipo = descarte, nunca chutado);
-  marca da página ≠ marca da fonte = descarte
+state "CatalogProduct.sourceType" as Ciclo_CatalogProduct_sourceType {
+  state Ciclo_CatalogProduct_sourceType_OFFICIAL_BRAND as "OFFICIAL_BRAND"
+  state Ciclo_CatalogProduct_sourceType_OFFICIAL_STORE as "OFFICIAL_STORE"
+  state Ciclo_CatalogProduct_sourceType_AUTHORIZED_RETAILER as "AUTHORIZED_RETAILER"
+  state Ciclo_CatalogProduct_sourceType_PARTNER_API as "PARTNER_API"
+  state Ciclo_CatalogProduct_sourceType_MANUAL_ADMIN as "MANUAL_ADMIN"
+}
+note bottom of Ciclo_CatalogProduct_sourceType
+  Sem mudança explícita no código para: OFFICIAL_BRAND, OFFICIAL_STORE, AUTHORIZED_RETAILER, PARTNER_API, MANUAL_ADMIN
+  (valor vindo de importação, regra calculada ou dado legado)
 end note
 @enduml

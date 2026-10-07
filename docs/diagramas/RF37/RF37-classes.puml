@@ -1,207 +1,181 @@
 @startuml RF37_Classes
-title RF37 — FLAIR: jogo de cartas de moda com 15 modos e combinações de lojas que rendem cupons\nDiagrama de classes — serviços e entidades JPA (flair_*), com HypeScore v2 e cupons
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-application · service" {
-class FlairService {
-  ~DUEL_REWARDS_PER_DAY = 5
-  ~GAME_TYPES = {COMBINACAO, COLECAO, DUELO_PATROCINADO}
-  ~SKINS = {BRAND_FRAME 300, HOLOGRAFICO 500, CHAMPION 800}
-  +cards(user): Map
-  +decks(user): List<Deck>
-  +publicLookHype(schemeIds): Map<UUID, Double>
-  +duel(user, schemeId, opponent): Map
-  +joinArena(user, schemeId): Map
-  +teamBattle(user, opponentCode): Map
-  +claimQuest(user, code): Map
-  +buySkin(user, skin, activate): Map
-  +saveCombination(user, id, CombinationForm): Map
-  +combinationsFor(user): List<Map>
-  +checkCombination(user, id, schemeId): Map
-  +redeem(user, id, schemeId): Map
-  +validateCode(user, code): Map
-  +rightsCheck(userId): void
-  ~award(userId, delta, rankPoints, reason, ref): boolean
-  ~available(FlairCombination): boolean
+package "fai-domain (entidades JPA)" {
+  class Brand <<brands>> {
+    +id: UUID
+    +name: String
+    +slug: String
+    +logoUrl: String
+    +website: String
+    +source: BrandSource
+    +catalogOrigin: CatalogOrigin
+    +fixtureKey: String
+    +sourceConfidence: BigDecimal
+    +verifiedAt: Instant
+    .. +2 campos ..
+  }
+  class BrandProfile <<brand_profiles>> {
+    +id: UUID
+    +owner: User
+    +brandName: String
+    +slug: String
+    +logoUrl: String
+    +coverUrl: String
+    +bio: String
+    +storeUrl: String
+    +cnpj: String
+    +razaoSocial: String
+    .. +21 campos ..
+  }
+  class FlairCoinEntry <<flair_coin_entries>> {
+    +id: UUID
+    +user: User
+    +delta: int
+    +reason: String
+    +ref: String
+  }
+  class FlairCombination <<flair_combinations>> {
+    +id: UUID
+    +brand: User
+    +name: String
+    +description: String
+    +gameType: String
+    +requiredCategoriesJson: String
+    +requiredStylesJson: String
+    +requiredOccasionsJson: String
+    +minBrandPieces: int
+    +minDeckPower: int
+    .. +14 campos ..
+  }
+  class FlairMatch <<flair_matches>> {
+    +id: UUID
+    +mode: String
+    +status: String
+    +theme: String
+    +playDate: LocalDate
+    +createdByUser: User
+    +teamAId: UUID
+    +teamBId: UUID
+    +winnerSide: String
+    +resultJson: String
+  }
+  class FlairMatchEntry <<flair_match_entries>> {
+    +id: UUID
+    +match: FlairMatch
+    +user: User
+    +scheme: Scheme
+    +side: String
+    +deckPower: int
+    +score: BigDecimal
+    +brandPiecesJson: String
+  }
+  class FlairModeState <<flair_mode_states>> {
+    +id: UUID
+    +user: User
+    +mode: String
+    +seasonKey: String
+    +stateJson: String
+  }
+  class FlairProfile <<flair_profiles>> {
+    +id: UUID
+    +user: User
+    +coins: int
+    +rankPoints: int
+    +wins: int
+    +losses: int
+    +draws: int
+    +skinsJson: String
+    +activeSkin: String
+  }
+  class FlairRedemption <<flair_redemptions>> {
+    +id: UUID
+    +combination: FlairCombination
+    +user: User
+    +scheme: Scheme
+    +code: String
+    +status: String
+    +deckPower: Integer
+    +expiresAt: Instant
+    +usedAt: Instant
+  }
+  class FlairTeam <<flair_teams>> {
+    +id: UUID
+    +name: String
+    +code: String
+    +owner: User
+    +color: String
+    +points: int
+  }
+  class FlairTeamMember <<flair_team_members>> {
+    +id: UUID
+    +team: FlairTeam
+    +user: User
+    +role: String
+  }
+  class FlairTerritory <<flair_territories>> {
+    +id: UUID
+    +mapCode: String
+    +territoryCode: String
+    +owner: User
+    +defenderJson: String
+    +capturedAt: Instant
+    +defenses: int
+  }
 }
-class FlairModesService {
-  ~REWARDED_PER_MODE_DAY = 3
-  ~COMPETITIVE: Set<String>
-  +MODES: List<Mode> (15)
-  +catalog(): Map
-  +battle(…) · squad(…) · playLeague(…)
-  +enterRunway(user, schemeId): Map
-  +roll(user) · resolveTour(…) · attack(…)
-  +draftStart(…) · deckStart(…) · combo(…)
-  +tagTeam(…) · fightBoss(…) · wardrobeWars(…)
-  +chess(…) · playUltimate(…)
-  ~look(Scheme): Look
-  ~finish(user, mode, theme, winner, …): Map
-  ~trophy(userId, mode, title, season, detail)
+package "fai-domain (enums)" {
+  enum ApprovalStatus {
+    PENDENTE
+    AJUSTES
+    APROVADO
+    RECUSADO
+    SUSPENSO
+  }
 }
-class "FlairService.CombinationForm" as CombinationForm <<record>> {
-  +name, description, gameType
-  +requiredCategories / Styles / Occasions
-  +minBrandPieces, minDeckPower, minRarity, minWins
-  +couponTitle, discountPercent, discountAmount
-  +minPurchase, validDays, stock, active
-  +startsAt, endsAt, accentColor, storeUrl
+package "fai-application" {
+  class FlairService <<service>> {
+    +cards()
+    +decks()
+    +deckOf()
+    +quests()
+    +combinationsFor()
+    +checkCombination()
+    +redeem()
+    +vouchers()
+    +saveCombination()
+    +deleteCombination()
+  }
 }
-class FaiPointsService <<RF41>> {
-  +game(userId, game, matchRef, outcome): int
-  +award(userId, actionCode, refType, refId, pts): Award
-}
-class CouponService <<RF38>> {
-  +onCheck(CouponRightsCheck)
-  +scan(userId): int
-}
-}
-package "fai-domain · model (flair_*)" {
-class FlairProfile {
-  +user: User
-  +coins: int
-  +rankPoints: int
-  +wins / losses / draws: int
-  +skinsJson: String
-  +activeSkin: String
-}
-class FlairCoinEntry {
-  +user: User
-  +delta: int
-  +reason: String
-  +ref: String
-}
-class FlairMatch {
-  +mode: String
-  +status: String = OPEN | FINISHED
-  +theme: String
-  +playDate: LocalDate
-  +createdByUser: User
-  +teamAId / teamBId: UUID
-  +winnerSide: String = A | B | DRAW
-  +resultJson: String
-}
-class FlairMatchEntry {
-  +match: FlairMatch
-  +user: User
-  +scheme: Scheme
-  +side: String
-  +deckPower: int
-  +score: BigDecimal
-  +brandPiecesJson: String
-}
-class FlairTeam {
-  +name: String
-  +code: String
-  +owner: User
-  +color: String
-  +points: int
-}
-class FlairTeamMember {
-  +team: FlairTeam
-  +user: User
-  +role: String
-}
-class FlairModeState {
-  +user: User
-  +mode: String
-  +seasonKey: String
-  +stateJson: String
-}
-class FlairTerritory {
-  +mapCode: String
-  +territoryCode: String
-  +owner: User
-  +defenderJson: String
-  +capturedAt: Instant
-  +defenses: int
-}
-class FlairTrophy {
-  +user: User
-  +mode: String
-  +title: String
-  +seasonKey: String
-  +detailJson: String
-}
-class FlairCombination {
-  +brand: User
-  +name: String
-  +gameType: String
-  +requiredCategoriesJson: String
-  +requiredStylesJson: String
-  +requiredOccasionsJson: String
-  +minBrandPieces / minDeckPower / minWins: int
-  +minRarity: String
-  +couponTitle: String
-  +discountPercent: Integer
-  +discountAmount / minPurchase: BigDecimal
-  +validDays: int
-  +stock: Integer
-  +redeemed: int
-  +active: boolean
-  +startsAt / endsAt: Instant
-  +storeUrl: String
-}
-class FlairRedemption {
-  +combination: FlairCombination
-  +user: User
-  +scheme: Scheme
-  +code: String = FLR-XXXX-XXXX
-  +status: String = EMITIDO | USADO
-  +deckPower: Integer
-  +expiresAt: Instant
-  +usedAt: Instant
-}
-class User
-class Scheme
-class WardrobeItem
-class HypeScoreCurrent {
-  +entityType: HypeEntityType
-  +entityId: UUID
-  +publicEligible: boolean
-  +status: HypeStatus
-  +score: BigDecimal
-  +level: HypeLevel
-  +dimensions.rarity: BigDecimal
-}
-}
-FlairModesService --> FlairService : profile · award · publicLookHype · rightsCheck
-FlairService ..> CombinationForm
-FlairService --> FaiPointsService : game · award (RF41)
-FlairModesService --> FaiPointsService : game
-FlairService ..> CouponService : CouponRightsCheck (AFTER_COMMIT)
-CouponService --> FlairService : combinationsFor · redeem
-FlairService ..> HypeScoreCurrent : lê (PIECE e SCHEME)
-FlairProfile "0..1" --> "1" User
-FlairCoinEntry "*" --> "1" User
-FlairMatch "*" --> "1" User : createdByUser
-FlairMatch ..> FlairTeam : teamAId / teamBId
-FlairMatchEntry "*" --> "1" FlairMatch
-FlairMatchEntry "*" --> "0..1" Scheme
-FlairMatchEntry "*" --> "0..1" User
-FlairTeam "*" --> "1" User : owner
-FlairTeamMember "*" --> "1" FlairTeam
-FlairTeamMember "0..1" --> "1" User
-FlairModeState "*" --> "1" User
-FlairTerritory "*" --> "0..1" User : owner
-FlairTrophy "*" --> "1" User
-FlairCombination "*" --> "1" User : brand (MARCA | CELEBRIDADE)
-FlairRedemption "*" --> "1" FlairCombination
-FlairRedemption "*" --> "1" User
-FlairRedemption "*" --> "0..1" Scheme : deck
-Scheme "*" --> "1" User
-WardrobeItem "*" --> "1" User
-HypeScoreCurrent ..> WardrobeItem : PIECE
-HypeScoreCurrent ..> Scheme : SCHEME
-note bottom of FlairRedemption : "EXPIRADO" não é gravado: é calculado na leitura\n(status EMITIDO e expiresAt no passado)
-note bottom of FlairCoinEntry : (user, reason, ref) paga uma vez só;\ntetos: 5 duelos/dia e 3 partidas por modo/dia
+FlairService ..> BrandProfile : usa
+FlairService ..> FlairCoinEntry : usa
+FlairService ..> FlairCombination : usa
+FlairService ..> FlairMatch : usa
+FlairService ..> FlairMatchEntry : usa
+FlairService ..> FlairProfile : usa
+Brand "*" --> "1" BrandProfile : brandProfile
+BrandProfile --> ApprovalStatus
+FlairMatchEntry "*" --> "1" FlairMatch : match
+FlairRedemption "*" --> "1" FlairCombination : combination
+FlairTeamMember "*" --> "1" FlairTeam : team
 @enduml

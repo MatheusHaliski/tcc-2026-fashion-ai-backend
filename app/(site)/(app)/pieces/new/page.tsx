@@ -8,7 +8,10 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
 import { CATEGORY_LABEL, label, useTaxonomy, subcategoryLabel } from "@/lib/api/taxonomy";
 import { RequireAuth } from "@/components/app-shell";
-import { Badge, Button, Card, Chip, PageHeader, SegmentPicker, useToast } from "@/components/ui";
+import { Badge, Button, Card, Chip, PageHeader, SegmentPicker, Switch, useToast } from "@/components/ui";
+import { useApi } from "@/lib/hooks/use-api";
+import { FlairGameCard, type FlairCollectionCard } from "@/components/flair/flair-game-card";
+import type { FlairPreview } from "@/components/flair/flair-collection";
 import { EMPTY_PIECE, PIECE_FIELD_STEP, PieceFields, PieceMoreDetails, isNoBrand, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
 import { PieceCard } from "@/components/piece-card";
 import { CreationSuccess } from "@/components/expanded-card";
@@ -83,6 +86,16 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   const saving = useRef(false); const [busy, setBusy] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saveProblem, setSaveProblem] = useState<string | null>(null);
+  // Depois de salvar (pedidos de 07/10): "Compartilhar no feed" vem LIGADO — o post é o próprio card, sem descrição;
+  // desligado, nada vai ao feed e a peça fica só no perfil. "Converter para FLAIR" (desligado) cria a cópia em Minhas
+  // cartas FLAIR e não publica nada.
+  const [shareToFeed, setShareToFeed] = useState(true);
+  const [toFlair, setToFlair] = useState(false);
+  const flairDraft = JSON.stringify({ category: value.category, subcategory: value.subcategory || null, price: value.price === "" ? null : Number(value.price),
+    brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandId: value.brandId || null, catalogProductId: pick?.product.id ?? null,
+    styles: value.style, occasions: value.occasion, color: value.color || null, material: value.material || null });
+  const flairPreview = useApi<FlairPreview>((signal) => api.post<FlairPreview>("/api/flair/cards/preview", JSON.parse(flairDraft), { signal }), [flairDraft],
+    { enabled: toFlair && step === "review" && !!value.category });
 
   /** Tipo da peça (primeira escolha da etapa Peça): ocasiões fora do permitido para o tipo saem. */
   function chooseCategory(category: string) {
@@ -127,7 +140,21 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
             price: payload.price, purchaseDate: payload.purchaseDate, purchaseLocation: value.purchaseLocation || null, favorite: false, forSale: value.forSale, notes: value.notes || null,
             visibility: value.visibility, occasion: value.occasion, style: value.style, color: value.color || null, material: value.material || null, sex: value.sex || null, name: value.name || null, background })
         : await api.post<PieceView>("/api/pieces", payload);
-      setFieldErrors({}); toast.success(t("piece.created")); setDone(p.id);
+      setFieldErrors({}); toast.success(t("piece.created"));
+      // as opções rodam depois da peça salva: se uma falhar, a peça fica e o aviso diz o que não deu certo
+      if (shareToFeed) {
+        try {
+          await api.post(`/api/interactions/PIECE/${p.id}/shares`, { channel: "FEED", ...(value.visibility === "PRIVATE" ? { publish: true } : {}) });
+          toast.success(t("interactions.sharedToFeed"));
+        } catch (e) { toast.fromError(e, t("pieces.new.share_falhou")); }
+      }
+      if (toFlair) {
+        try {
+          const card = await api.post<FlairCollectionCard>("/api/flair/cards", { pieceId: p.id });
+          toast.success(t("pieces.new.flair_feito", { tier: t(`flairCard.tier.${card.tier}`), ovr: card.ovr }));
+        } catch (e) { toast.fromError(e, t("pieces.new.flair_falhou")); }
+      }
+      setDone(p.id);
     } catch (e) {
       // campos continuam no estado da página: nada se perde numa falha
       const err = e instanceof ApiError ? e : new ApiError(0, "ERRO", String(e));
@@ -229,12 +256,30 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
               <dl className="c-facts mb-3">
                 {([[t("common.nome"), value.name], [t("common.category"), value.category ? label(value.category) : "—"], [t("common.subcategory"), value.subcategory ? subcategoryLabel(value.subcategory) : "—"], [t("common.color"), value.color ? label(value.color) : "—"], [t("common.brand"), value.brandName || "—"], [t("common.occasion"), value.occasion.map((o) => label(o)).join(", ") || "—"], [t("common.style"), value.style.map((x) => label(x)).join(", ") || "—"], [t("common.price"), value.price || "—"], [t("common.visibility"), label(value.visibility.toLowerCase())], [t("common.forSale"), value.forSale ? t("common.yes") : t("common.no")], [t("pieceForm.selos_da_peca"), value.seals.map((s) => s.split(":")[1] ?? s).join(", ") || "—"], [t("catalog.origem"), origin]] as [string, string][]).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
               </dl>
+              <section className="after-save" aria-labelledby="after-save-title">
+                <h3 id="after-save-title" className="type-h3">{t("pieces.new.depois_de_salvar")}</h3>
+                <Switch checked={shareToFeed} onChange={setShareToFeed} label={t("pieces.new.opt_share")} hint={t(shareToFeed ? "pieces.new.opt_share_on" : "pieces.new.opt_share_off")} />
+                {shareToFeed && value.visibility === "PRIVATE" && <p role="note" className="after-save-detail type-caption">{t("pieces.new.opt_share_private")}</p>}
+                <Switch checked={toFlair} onChange={setToFlair} label={t("pieces.new.opt_flair")} hint={t("pieces.new.opt_flair_hint")} />
+                {toFlair && (
+                  <div className="after-save-detail after-save-flair">
+                    {flairPreview.data ? <>
+                      <FlairGameCard size="sm" flip={false} card={{ id: "preview", originType: "PIECE", originId: "", season: flairPreview.data.season, tier: flairPreview.data.tier, ovr: flairPreview.data.ovr, rare: false,
+                        position: flairPreview.data.position, name: value.name || t("common.peca"), brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, imageUrl: officialImg ?? asset,
+                        hype: null, priceVerified: flairPreview.data.priceVerified, state: "AVAILABLE", tradeable: true, acquiredVia: "GENERATED" }} />
+                      <p className="type-body-sm">{t("pieces.new.opt_flair_preview", { tier: t(`flairCard.tier.${flairPreview.data.tier}`), ovr: flairPreview.data.ovr })}
+                        {flairPreview.data.cappedByUnverifiedPrice && <><br /><span className="type-caption">{t("flairCard.unverified")}</span></>}</p>
+                    </> : <p className="type-caption text-muted">{flairPreview.error ? t("pieces.new.opt_flair_sem_previa") : t("common.loading")}</p>}
+                  </div>
+                )}
+              </section>
               {saveProblem && <p role="alert" className="error-text mb-2">{saveProblem}</p>}
               {nav}
             </Card>
           )}
         </div>
-        {step !== "art" && <aside aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start"><p className="label">{t("scheme.card")}</p><PieceCard piece={previewPiece} href="#" /></aside>}
+        {step !== "art" && <aside aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start"><p className="label">{step === "review" && shareToFeed ? t("interactions.post_preview") : t("scheme.card")}</p><PieceCard piece={previewPiece} href="#"
+          extra={step === "review" && shareToFeed && user ? <span className="caption">{t("feed.shared_by", { username: user.username })}</span> : undefined} /></aside>}
       </div>
       <p className="mt-4 type-caption text-faint"><Link className="underline" href="/closet">← {t("closet.title")}</Link></p>
       {done && <CreationSuccess kind="piece" id={done} onDone={() => { window.location.href = user ? `/u/${user.username}` : "/closet"; }} />}

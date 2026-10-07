@@ -11,6 +11,7 @@ import { SchemeCard } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
 import { useReducedMotion, useWebGL, type Look3d, type Mannequin3d } from "@/components/three/common";
 import type { StoreEntry } from "@/components/three/store-street-scene";
+import type { FittingBrand } from "@/lib/tryon/fitting-room";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 import type { HypeLevel } from "@/lib/hype/types";
 
@@ -54,14 +55,15 @@ export function ErasTab({ slug, admin }: { slug: string; admin: boolean }) {
   );
 }
 
-export function CollectionsTab({ slug, admin }: { slug: string; admin: boolean }) {
+/** `brand`: identidade do perfil da marca — a fachada das mini lojas usa a parede, o logo e a cor dela (plano 9.4). */
+export function CollectionsTab({ slug, admin, brand }: { slug: string; admin: boolean; brand?: FittingBrand | null }) {
   const { t } = useI18n();
   const [sub, setSub] = useState<"busca" | "insights">("busca");
   return (
     <div>
       <SubTabs value={sub} onChange={setSub} tabs={[{ id: "busca", label: t("common.colecoes") }, { id: "insights", label: t("showcase.showcaseTabs.collections_insights") }]} />
       {sub === "busca" && <GroupingSearch slug={slug} kind="collections" admin={admin} />}
-      {sub === "insights" && <CollectionsInsights slug={slug} />}
+      {sub === "insights" && <CollectionsInsights slug={slug} brand={brand} />}
     </div>
   );
 }
@@ -326,7 +328,7 @@ function StageFallback({ data }: { data: StageRes }) {
 
 // ------------------------------------------------------------------ Collections insights: mini lojas 3D
 
-function CollectionsInsights({ slug }: { slug: string }) {
+function CollectionsInsights({ slug, brand }: { slug: string; brand?: FittingBrand | null }) {
   const { t } = useI18n();
   const { user } = useAuth(); const webgl = useWebGL(); const [sel, setSel] = useState<string | null>(null);
   const { data, loading, error, reload } = useApi<InsightsRes>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}/showcase/collections/insights`, { signal, anonymous: !user }), [slug, !!user]);
@@ -338,7 +340,7 @@ function CollectionsInsights({ slug }: { slug: string }) {
   return (
     <div>
       <div className="showcase-3d mb-4 h-[480px]">
-        {webgl === false ? <div className="grid h-full place-items-center p-4 text-center type-body text-muted">{t("showcase.showcaseTabs.sem_webgl_veja_o_ranking")}</div> : <StoreStreetScene stores={stores} onPick={setSel} selectedId={picked.id} />}
+        {webgl === false ? <div className="grid h-full place-items-center p-4 text-center type-body text-muted">{t("showcase.showcaseTabs.sem_webgl_veja_o_ranking")}</div> : <StoreStreetScene stores={stores} onPick={setSel} selectedId={picked.id} brand={brand} />}
       </div>
       <div className="surface mb-4 p-4" style={{ borderColor: picked.accentColor }}>
         <div className="flex flex-wrap items-center gap-3">

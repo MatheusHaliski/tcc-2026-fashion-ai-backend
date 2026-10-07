@@ -1,9 +1,16 @@
 @startuml RF24_Atividades
-title RF24 — Usar a IA do sistema\nDiagrama de atividades — funil de governança do AiEngine (text → execute, e local)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,112 +19,56 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF24 — Usar a IA do sistema (motor transversal de inteligência artificial do Fashion AI)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Usa um recurso com IA num RF hospedeiro\n(RF4 peça, RF5 look, RF10 Copilot, RF13 DNA,\nRF11 fundo, RF26 insights, RF47 catálogo…);
-|Serviço hospedeiro|
-if (Motor primário da capacidade é local?\n(SealBond Matcher, Acervo Grouping, Affinity,\nPhoto Curator, Style Insight…)) then (sim)
-  |AiEngine|
-  :local(userId, capability, inputsUsed, engine);
-  :Roda o motor local e registra SUCCESS\n(provider = local, custo 0);
-  |Banco|
-  :INSERT ai_inference_log + audit_log (CHAMADA_IA);
-  |Serviço hospedeiro|
-  :Usa o valor + Explanation "por quê?";
-  stop
-endif
-if (Chamada textual/multimodal?) then (sim)
-  :Monta AiEngine.TextCall\n(capability, system, prompt, imagens,\nparser JSON, fallback local, protectedNames);
-  |AiEngine|
-  :text(): para cada opção primária/alternativa do\nAiCatalog.spec(capability) que não é "local"\ne tem AiProviderPort registrado → RemoteStep;
-else (imagem / 3D)
-  :Monta RemoteSteps próprios\n(ex.: FASHN no provador, Meshy/Stability no RF16,\ngeração e edição de imagem);
-endif
-|AiEngine|
-:execute(): correlationId novo;
-if (Fundo (BACKGROUND_GENERATOR) ou nomes protegidos\ne o prompt cita nome protegido?\n(CelebrityPromptValidator)) then (sim)
-  |Banco|
-  :INSERT ai_inference_log (PROMPT_REJECTED);
-  |Serviço hospedeiro|
-  #FFE3E3:422 PROMPT_REJEITADO {violations, inferenceId};
-  stop
-endif
-|AiEngine|
-if (Capacidade fora de escopo?\n(RF16 sem fashionai.features.rf16-3d)) then (sim)
-  :Resultado local · FALLBACK_LOCAL\n("tema futuro, recurso desligado")\n→ AiOutcome local (fallbackUsed = true);
-  stop
-endif
-|Banco|
-:consentState: NAO_APLICAVEL (finalidade nula) ·\nSISTEMA (sem usuário) · CONCEDIDO/NEGADO (user_consents);
-|AiEngine|
-if (remoteEnabled e algum RemoteStep disponível?\n(chave no ambiente e circuito fechado)) then (não)
-  :Resultado local · FALLBACK_LOCAL\n→ AiOutcome local (fallbackUsed = true);
-  stop
-endif
-if (consentState = NEGADO?) then (sim)
-  :Resultado local · CONSENT_DENIED\n(nunca envia dado sem consentimento)\n→ AiOutcome local (fallbackUsed = true);
-  stop
-endif
-|Banco|
-:AiBudget.check(userId, custo estimado):\nsoma de ai_inference_log no dia UTC\n(global US$ 5,00 · por usuário US$ 0,50);
-|AiEngine|
-if (Veredito do teto?) then (USER_EXHAUSTED)
-  :Resultado local · RATE_LIMITED\n→ AiOutcome local (fallbackUsed = true);
-  stop
-elseif (GLOBAL_EXHAUSTED\n(ou soma indisponível)) then
-  :Resultado local · FALLBACK_LOCAL\n→ AiOutcome local (fallbackUsed = true);
-  stop
-else (OK)
-endif
-if (Há userId?) then (sim)
-  |Cache|
-  :RateLimitPort.tryAcquire(userId, "ai:CAPACIDADE",\ndailyQuotaPerUser, 1 dia)\n(Redis ou memória);
-  |AiEngine|
-  if (Cota diária esgotada?) then (sim)
-    :Resultado local · RATE_LIMITED\ncom Quota {limit, used, resetAt}\n→ AiOutcome local (fallbackUsed = true);
+|API (Spring Boot)|
+partition "AiBudget.check()" {
+  :lê ai_inference_log;
+  :lê ai_inference_log;
+}
+|Backend (Java)|
+partition "AiCatalog.spec()" {
+  :executa;
+}
+|API (Spring Boot)|
+partition "AiEngine.text()" {
+  if (prompt rejeitado?) then (sim)
+    :422 PROMPT_REJEITADO\n«A arte trabalha a atmosfera da\nera, nunca rosto, corpo, silhueta\nou nome de pessoa real.»;
     stop
   endif
-endif
-repeat
-  if (RemoteStep disponível?) then (sim)
-    |Provedor externo|
-    :call(): provedor com timeout 30 s,\n1 nova tentativa (500 ms) e circuito\n(abre 60 s após 5 falhas — ProviderCircuit);
-    |AiEngine|
-    if (Respondeu dentro do contrato?) then (sim)
-      |Banco|
-      :INSERT ai_inference_log (SUCCESS, custo real)\n+ audit_log;
-      |Serviço hospedeiro|
-      :AiOutcome(SUCCESS, Explanation, Quota);
-      stop
-    else (exceção)
-      |AiEngine|
-      :classify(): CIRCUIT_OPEN · TIMEOUT ·\nRATE_LIMITED (429) · ERROR;
-      |Banco|
-      :INSERT ai_inference_log (falha, fallbackUsed = true);
-    endif
-  endif
-  |AiEngine|
-repeat while (Há outro RemoteStep (alternativo)?) is (sim) not (não)
-:Resultado local · FALLBACK_LOCAL\n("serviço externo indisponível: <motivo>");
-note right
-  RNF8 — degradação controlada: o RF hospedeiro
-  continua com ai.local (LocalAdvisors,
-  LocalSchemeComposer, LocalDnaSynthesizer…).
-  Todo resultado local também vira uma linha
-  em ai_inference_log (provider = local).
-end note
-|Pessoa|
-:Vê o resultado; quando a tela mostra,\no provedor ou "motor local" e o "por quê?";
+  :cria AiInferenceLog;
+  :result → ?result;
+  :fallbackUsed → ?fallback;
+  :grava ai_inference_log;
+  :AuditService.record();
+  :lê user_consents;
+  :cria AiInferenceLog;
+  :result → ?result;
+  :fallbackUsed → ?fallback;
+  :grava ai_inference_log;
+  :AuditService.record();
+  :cria AiInferenceLog;
+  :result → ?result;
+  :fallbackUsed → ?fallback;
+  :grava ai_inference_log;
+  :AuditService.record();
+  :AiBudget.check();
+  :cria AiInferenceLog;
+  :result → ?result;
+  :fallbackUsed → ?fallback;
+  :grava ai_inference_log;
+  :AuditService.record();
+  :cria AiInferenceLog;
+  :… e mais 35 passos no código;
+}
+|Pessoa usuária|
+:Vê o resultado;
 stop
 @enduml

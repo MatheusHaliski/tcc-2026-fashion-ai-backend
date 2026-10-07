@@ -119,7 +119,7 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
       )}
       {tab === "CENTRAL" && admin && <IssuerCenter review={review} onTab={setTab} />}
       {tab === "ERAS" && isCeleb && <ErasTab slug={slug} admin={admin} />}
-      {tab === "COLECOES" && !isCeleb && <CollectionsTab slug={slug} admin={admin} />}
+      {tab === "COLECOES" && !isCeleb && <CollectionsTab slug={slug} admin={admin} brand={{ name: (brand.brandName as string) ?? h.name ?? owner.displayName, logoUrl: (brand.logoUrl as string) ?? h.logoUrl ?? null }} />}
       {tab === "FLAIR" && <BrandFlairTab slug={slug} autoNew={flairNew} />}
       {tab === "GUARDA_ROUPA" && (admin ? <WardrobeCreatorTab /> : user ? <RoomStore creatorSlug={slug} compact /> : <EmptyState title={t("brands.slug.entre_para_ver_os_itens")} hint={t("brands.slug.componentes_e_guarda_roupas_inteiros")} />)}
       {tab === "CUPONS" && admin && <BrandCouponsTab ownerId={ownerId ?? ""} celebrity={isCeleb} onCreateFlair={() => { setTab("FLAIR"); setFlairNew((n) => n + 1); }} />}

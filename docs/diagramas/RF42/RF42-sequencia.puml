@@ -1,63 +1,68 @@
 @startuml RF42_Sequencia
-title RF42 — Marcar um look como "Look do dia"\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Usuário" as U
-participant "Frontend\nschemes (ExpandedCard)" as FE
-participant "LookbookController" as LC
-participant "LookbookService" as LS
-participant "SchemeService" as SS
-participant "DailyLookService" as DS
-participant "WardrobeEventListeners" as WL
-participant "HypeSignalRecorder" as HSR <<RF53>>
-participant "Frontend\nlookbook → u/[username]?tab=daily" as FEL
-participant "ShowcaseController" as SC
-database "MySQL" as DB
-U -> FE: "Look do dia" no próprio esquema
-FE -> LC: POST /api/me/daily-look {schemeId}
-LC -> LS: markDailyLook(user, schemeId)
-LS -> SS: owned(user, schemeId)
-LS -> DS: register(user, scheme, MANUAL, hoje)
-DS -> DB: scheme_items (peças do esquema)
-alt alguma peça indisponível
-  DS --> FE: 409 PECA_INDISPONIVEL
-else
-  DS -> DB: findByUserIdAndLookDate(user, hoje)
-  alt já existe na data
-    DS -> DB: UPDATE daily_looks (scheme, source)
-  else
-    DS -> DB: INSERT daily_looks
-  end
-  DS -> DB: UPDATE schemes (look_do_dia, look_do_dia_count)
-  DS -> DB: UPDATE wardrobe_items (look_do_dia_count, last_worn_date)
-  DS ->> WL: DailyLookRegistered (AFTER_COMMIT)
-  WL -> DB: diário de uso + wear_count
-  DS ->> HSR: DailyLookRegistered (AFTER_COMMIT)
-  HSR -> HSR: HypeIntegrityPolicy.weight(sinal, dia)\n(1 sinal por entidade/pessoa/dia)
-  HSR -> DB: HypeSignalDailyRepository.increment → hype_signal_daily\nLOOK_WORN (SCHEME) + PIECE_USED (cada peça)
-  note right of HSR: novo (RF53 · HypeScore v2): transação própria;\no score sai do job de snapshots, não daqui
-  DS --> LS: DailyLook
-  LS --> FE: 200 {id, date, source, schemeId, title, coverImageUrl, hypeScore}
-end
-U -> FEL: abre a aba Look do Dia
-FEL -> LC: GET /api/me/daily-look-tab?withAi=false
-LC -> LS: dailyLookTab(user, withAi)
-LS -> DS: today(userId)
-opt sem registro hoje e há look anterior
-  DS -> DB: INSERT daily_looks (materialized_from)
-end
-LS --> FEL: 200 {today, scheme, panel, history, feedbackReminder}
-note right of FEL: histórico: cada dia com title e hypeScore\n(a aba agora lê esses campos — RF53)
-U -> FEL: avalia (ADOREI | NAO_USEI | NAO_GOSTEI)
-FEL -> LC: PUT /api/me/daily-looks/{date}/feedback
-LC -> DS: feedback(user, date, feedback)
-DS -> DB: UPDATE daily_looks (feedback, feedback_at)
-DS --> FEL: 200 view
-note over SC: GET /api/explorer/runway (Passarela 3D, RF33)\nmostra os Looks do Dia visíveis de hoje
+autonumber "<b>0."
+title RF42 — Marcar um look como 'Look do dia'\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /schemes/[id]/edit" as P
+control "LookbookController" as LookbookController
+participant "LookbookService" as LookbookService
+participant "SchemeService" as SchemeService
+database "MySQL" as DB_MySQL
+participant "DailyLookService" as DailyLookService
+== Marcar esquema como Look do Dia ==
+U -> P : Marcar esquema como Look do Dia
+P -> LookbookController : POST /api/me/daily-look
+LookbookController -> LookbookService : markDailyLook()
+activate LookbookService
+LookbookService -> SchemeService : owned()
+SchemeService -> DB_MySQL : SELECT schemes
+SchemeService --> LookbookService
+LookbookService -> DailyLookService : register()
+DailyLookService -> DB_MySQL : SELECT scheme_items
+DailyLookService -> DB_MySQL : SELECT users
+DailyLookService -> DB_MySQL : SELECT daily_looks
+DailyLookService -> DB_MySQL : INSERT/UPDATE daily_looks
+DailyLookService --> LookbookService
+LookbookService -> DailyLookService : view()
+deactivate LookbookService
+LookbookService --> LookbookController : resultado
+LookbookController --> P : 201 JSON
+P --> U : atualiza a tela
+== Feedback do look (ADOREI / OK / NAO_CURTI) alimenta as preferências ==
+U -> P : Feedback do look (ADOREI / OK / NAO_CURTI) alimen…
+P -> LookbookController : PUT /api/me/daily-looks/{date}/feedback
+LookbookController -> DailyLookService : feedback()
+activate DailyLookService
+DailyLookService -> DB_MySQL : SELECT daily_looks (×2)
+DailyLookService -> DailyLookService : new DailyLook()
+DailyLookService -> DB_MySQL : INSERT/UPDATE daily_looks
+DailyLookService -> DB_MySQL : SELECT daily_looks
+DailyLookService -> DailyLookService : feedback = ?feedback
+DailyLookService -> DailyLookService : feedbackAt = set
+DailyLookService -> DB_MySQL : INSERT/UPDATE daily_looks
+deactivate DailyLookService
+DailyLookService --> LookbookController : resultado
+LookbookController --> P : 200 JSON
+P --> U : atualiza a tela
 @enduml

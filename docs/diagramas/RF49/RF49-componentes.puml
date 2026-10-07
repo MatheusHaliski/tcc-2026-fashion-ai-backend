@@ -1,70 +1,60 @@
 @startuml RF49_Componentes
-!include ../seguranca/_estilo.iuml
-title RF49 — Segurança, integridade e operação\nDiagrama de componentes (v6): camadas de defesa da borda aos bancos, dados demo isolados e entrega contínua
-
-actor "Pessoa\n(usuária · equipe · banca)" as P
-
-package "GitHub" {
-  component "CI (Actions)\nAPI mvn verify · Front · gitleaks" as CI
-  component "Dependabot\nMaven · npm · Actions · Docker (JVM só LTS)" as DEP
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
-
-package "Vercel · Next.js (fai-network.com)" {
-  component "middleware.ts\nCSP com nonce · dev gate" as MW
-  component "/gate/*\nGoogle autorizado + PIN\n8 erros por IP / 15 min" as GATE
-  component "BFF /bff/auth/[action]\nIP assinado (EDGE_PROXY_SECRET)\nrefresh em cookie HttpOnly fai_rt" as BFF
-  component "App React\naccess token só em memória" as APP
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
 }
-
-package "Railway · api (Spring Boot 4.1 · Java 21 em JVM 25 LTS)" {
-  component "CorrelationIdFilter · idioma\nDevGateFilter (-103)" as F1
-  component "ClientIpResolver\nIP assinado › X-Real-IP › TCP\nIPv6 por /64" as CIR
-  component "AuthRateLimitFilter (-102)\nlimite por IP + método + rota\nteto de hashes Argon2 (503)" as ARL
-  component "Spring Security 7\nJWT RS256 (aud) · papéis\nSessionActiveFilter" as SEC
-  component "IdentityService\nbloqueio 5/15 min (reserva atômica)\nreconferência de senha bloqueável" as IDS
-  component "Serviços RF1–RF48\nBOLA/BFLA · OwnMedia · AiBudget" as SVC
-  component "Demo/Test Data Pipeline\nDemoEnvironmentGuard · DemoFixtures (@Lazy)\nseed/reset/verify: planejado" as DEMO
-  component "Flyway V1–V36\nV34 política de ON DELETE\nV35 account_origin" as FW
-  component "Jackson 3 · JacksonModule\ni18n · apelidos de enums" as JSON
-  component "BackupJob\nmysqldump → restricted/backups" as BKP
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
 }
-
-package "Railway · bancos (rede privada, start.sh conferido por SHA-256)" {
-  database "MySQL 9\nfai_app · fai_backup (TLS)" as MY
-  database "Cassandra 4.1\nfai_app · TLS CA própria" as CA
-  database "OpenSearch\nfai_app só fai-* · TLS · auditoria" as OS
-  database "Redis 8.2 (opcional)\nACL fashionai" as RD
-  database "Bucket S3\nmídia · restricted/" as S3
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF49 — Segurança, integridade e operação\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-component "Railway deploy\nhealthcheck /actuator/health\n(versão anterior segue se falhar)" as RWD
-cloud "IA (Anthropic · Google · Replicate)\nchaves só no servidor" as IA
-
-P --> MW : HTTPS
-MW --> GATE : sem gate válido
-MW --> APP
-APP --> BFF : login · refresh · logout
-APP --> F1 : /api (Bearer + X-Dev-Gate)
-BFF --> F1 : X-Fai-Client-Ip/Ts/Sig
-F1 --> CIR
-CIR --> ARL
-ARL --> SEC
-SEC --> IDS
-SEC --> SVC
-SVC --> DEMO
-SVC --> JSON
-IDS --> MY : JDBC sslMode=REQUIRED
-SVC --> MY
-SVC --> CA : CQL + TLS
-SVC --> OS : HTTPS
-ARL ..> RD : contadores (se ligado;\nsenão memória com teto)
-SVC --> S3
-SVC --> IA : AiBudget (teto USD)
-BKP --> MY
-BKP --> S3
-FW --> MY
-DEMO --> MY : só account_origin\nTEST_SEED/DEMO
-CI --> RWD : merge → branch de deploy
-DEP --> CI : PRs semanais
-RWD --> FW : sobe a imagem\n(valida versões únicas)
+package "raiz" {
+  component "middleware.ts" as m_middleware_ts
+}
+package "app/(gate)/gate/verify" {
+  component "route.ts" as m_app__gate__gate_verify_route_ts
+}
+package "lib/gate" {
+  component "token.ts" as m_lib_gate_token_ts <<apoio>>
+}
+package "Backend (Spring Boot)" {
+  component "AiBudget" as AiBudget
+  component "DemoFixtures" as DemoFixtures
+  component "BackupJob" as BackupJob <<apoio>>
+  component "IdentityService" as IdentityService
+  component "OwnMedia" as OwnMedia
+  component "AuthRateLimitFilter" as AuthRateLimitFilter <<apoio>>
+  component "ClientIpResolver" as ClientIpResolver <<apoio>>
+  component "CorrelationIdFilter" as CorrelationIdFilter <<apoio>>
+}
+database "MySQL" as DB_MySQL
+AiBudget --> DB_MySQL : ai_inference_log
+AuthRateLimitFilter --> ClientIpResolver
+BackupJob --> DB_MySQL : backup_records
+IdentityService --> DB_MySQL : brand_profiles, celebrity_profiles,\nrefresh_tokens, user_preferences, users,\nverification_codes
+m_app__gate__gate_verify_route_ts --> m_lib_gate_token_ts
+m_middleware_ts --> m_lib_gate_token_ts
 @enduml

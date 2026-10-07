@@ -1,9 +1,16 @@
 @startuml RF29_Atividades
-title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings ("Destaques")\nDiagrama de atividades — abrir Destaques, ver a nota e agir sobre ela
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,64 +19,40 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings do guarda-roupa\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre o menu **Destaques** (/highlights);
-|Frontend (highlights/page.tsx)|
+:Abre /highlights;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/inventory-score/dimensions/{code}\nGET /api/inventory-score/method\nGET /api/me/album;
+|Pessoa usuária|
+:Aba Destaques: Inventory Score,\ndimensões, dicas e álbum;
+|Tela (Next.js)|
 :GET /api/me/highlights;
-|Serviço (InventoryScoreService)|
-if (Nota em cache há menos de 1 h?) then (sim)
-  :Usa o resultado em memória;
-else (não)
-  :computeNow(): peças não arquivadas, esquemas, diário de uso\n(janela de 90 dias) e histórico de disponibilidade;
-  :7 dimensões de 0 a 100 (rubrica absoluta):\nCatalogação 20% · Utilização 20% · Versatilidade 15%\n· Descoberta 13% · Diversidade 12% · Organização 10%\n· Identidade 10% (omitida sem DNA de Estilo);
-  :k = min(1, peças / 20); nota = 10 × média ponderada × k\n(volume não pesa acima de 20 peças);
-  :Grava snapshots DAY e MONTH\n(inventory_score_snapshots);
-  if (Elegível (10+ peças)?) then (sim)
-    :Confere conquistas: CURADOR, SIGNATURE_CLOSET,\nSEGUNDA_CHANCE, CAMALEAO, STYLIST, HIDDEN_GEM\n(AchievementService.grant: 1× cada, FAI Points e aviso);
-  endif
+|API (Spring Boot)|
+:HighlightsController.highlights\n→ InventoryScoreService.highlightsTab;
+|Dados e serviços|
+:Lê: wardrobe_items\nschemes\nscheme_items\npiece_usage_diary\nwardrobe_availability_log\nstyle_dna (+3);
+:Usa: RoomService.layout\nRoomService.labels\nRoomService.labelSources\nRoomService.locateAll\nSideEffectRunner.run\nAchievementService.grant (+1);
+:Grava: inventory_score_snapshots;
+:Estado: computedAt → set;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Entrar/sair dos rankings [k-anoni…)
+    :PUT /api/me/rankings/opt-in\n→ InventoryScoreService.optIn\nlê: ranking_opt_ins, ranking_positions\ngrava: ranking_opt_ins\nestado: optedIn → ?optedIn;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-if (Elegível (10+ peças)?) then (não)
-  :Devolve progresso {missing, target = 10, steps}\ne o manifesto, sem nota parcial;
-  |Frontend (highlights/page.tsx)|
-  :Checklist "faltam N peças"\n+ botão para cadastrar peça;
-  stop
-else (sim)
-  :Devolve nota, faixa (Em Montagem → Maison Closet),\ndimensões, variação do mês, até 6 destaques,\nevolução, recordes, conquistas, desafios sugeridos\ne se a pessoa está nos rankings;
-endif
-|Frontend (highlights/page.tsx)|
-:Mostra a nota e a barra de faixas, as 7 dimensões,\nos destaques do mês, a evolução e as conquistas;
-:Card "Maior crescimento de Hype" (GET /api/me/hype/wardrobe)\ne InsightStrip (GET /api/insights) — Hype não entra na nota;
-switch (Ação da pessoa)
-case (abre uma dimensão)
-  :GET /api/me/inventory-score/dimensions/{code}\n→ regra em linguagem simples + itens que puxam para baixo\n(404 se o código não existe);
-case (entra ou sai dos rankings)
-  :PUT /api/me/rankings/opt-in {optedIn, shareCity, city};
-  :Sair apaga as posições da pessoa;\ncidade só com consentimento (shareCity);
-case (vê os rankings)
-  :GET /api/me/rankings;
-  if (Tem opt-in?) then (sim)
-    :Posições por segmento (GLOBAL, PAIS, CIDADE, FAIXA,\nESTILO, SUSTENTAVEL, VERSATEIS, RISING) e top 5;
-  else (não)
-    :Convite para participar + segmentos disponíveis;
-  endif
-  note right: a tela mostra a resposta como JSON bruto num diálogo
-case (abre um desafio sugerido)
-  :/challenges?start={code} (RF32);
-case ("Como melhorar meu inventário?")
-  :Pergunta no Copilot (/copilot) → intenção IMPROVE_INVENTORY\n→ improvementHints: as 2 dimensões mais fracas + ações;
-  note right: não há botão na tela Destaques
-endswitch
+|Pessoa usuária|
 stop
 @enduml

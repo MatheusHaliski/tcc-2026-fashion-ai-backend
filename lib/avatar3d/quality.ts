@@ -28,6 +28,7 @@ export interface PhotoCheck {
   inFrame?: boolean;                     // todos os pontos do rosto dentro da foto (com margem)
   pose?: Pose; stats?: FaceStats; blend?: Record<string, number>; rms?: number;
   occlusion?: number;                    // fração da pele do rosto coberta por algo que não é pele
+  glasses?: "NONE" | "PRESCRIPTION" | "SUNGLASSES";   // óculos vistos na foto (glasses.ts)
 }
 
 export function checkPhoto(p: PhotoCheck): Issue[] {
@@ -65,7 +66,8 @@ export function checkPhoto(p: PhotoCheck): Issue[] {
   }
   const b = p.blend;
   if (b && p.role === "front") {
-    if ((b.eyeBlinkLeft ?? 0) > L.blink && (b.eyeBlinkRight ?? 0) > L.blink) out.push({ code: "EYES_CLOSED", severity: "block" });
+    // com óculos escuros o detector "vê" olhos fechados: os olhos só não aparecem (a lente sai da textura, glasses.ts)
+    if (p.glasses !== "SUNGLASSES" && (b.eyeBlinkLeft ?? 0) > L.blink && (b.eyeBlinkRight ?? 0) > L.blink) out.push({ code: "EYES_CLOSED", severity: "block" });
     if ((b.jawOpen ?? 0) > L.jawOpen) out.push({ code: "MOUTH_OPEN", severity: "warn" });
   }
   const occ = p.occlusion ?? 0;

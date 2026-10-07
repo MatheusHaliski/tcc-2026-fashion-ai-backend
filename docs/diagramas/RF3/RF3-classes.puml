@@ -1,198 +1,169 @@
 @startuml RF3_Classes
-title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de classes — conta, segurança, privacidade e direitos do titular (LGPD)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class User <<table users>> {
-  +email: String «AES-GCM»
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String «AES-GCM»
-  +birthDate: String «AES-GCM»
-  +bio: String «AES-GCM»
-  +twoFactorEnabled: boolean
-  +privateAccount: boolean
-  +profileVisibility: Visibility = PRIVATE
-  +status: AccountStatus
-  +deletionRequestedAt: Instant
-  +deletionScheduledFor: Instant
-  .. demais campos: RF1 ..
+package "fai-domain (entidades JPA)" {
+  class AuditLog <<audit_log>> {
+    +id: UUID
+    +actor: String
+    +acao: String
+    +recurso: String
+    +resultado: String
+    +ip: String
+    +userAgent: String
+    +timestamp: Instant
+    +correlationId: String
+    +metadataJson: String
+  }
+  class DataExportRequest <<data_export_requests>> {
+    +id: UUID
+    +user: User
+    +status: ExportStatus
+    +fileKey: String
+    +readyAt: Instant
+    +expiresAt: Instant
+  }
+  class Notification <<notifications>> {
+    +id: UUID
+    +recipient: User
+    +actor: User
+    +type: NotificationType
+    +category: NotificationCategory
+    +resourceType: String
+    +resourceId: UUID
+    +title: String
+    +body: String
+    +payloadJson: String
+    .. +3 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class UserConsent <<user_consents>> {
+    +id: UUID
+    +user: User
+    +purpose: ConsentPurpose
+    +granted: boolean
+    +legalBasis: String
+    +policyVersion: String
+    +grantedAt: Instant
+    +revokedAt: Instant
+  }
+  class UserPreferences <<user_preferences>> {
+    +id: UUID
+    +user: User
+    +theme: ThemeMode
+    +language: UiLanguage
+    +density: UiDensity
+    +fontScale: int
+    +highContrast: boolean
+    +reduceMotion: boolean
+    +chromeBackgroundId: String
+    +sizeSystem: SizeSystem
+    .. +16 campos ..
+  }
 }
-class UserConsent <<table user_consents>> {
-  +user: User
-  +purpose: ConsentPurpose
-  +granted: boolean
-  +legalBasis: String
-  +policyVersion: String
-  +grantedAt: Instant
-  +revokedAt: Instant
+package "fai-domain (enums)" {
+  enum ExportStatus {
+    REQUESTED
+    PROCESSING
+    READY
+    EXPIRED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum NotificationType {
+    PASSWORD_RESET
+    TWO_FACTOR_CODE
+    NEW_LOGIN_DEVICE
+    EMAIL_CONFIRMATION
+    DATA_EXPORT_READY
+    FOLLOW_REQUEST
+    FOLLOW_ACCEPTED
+    NEW_FOLLOWER
+    NEW_COMMENT
+    NEW_LIKE
+    ..
+  }
+  enum NotificationCategory {
+    SECURITY
+    SOCIAL
+    ACHIEVEMENT
+    SYSTEM
+    POINTS
+  }
+  enum Visibility {
+    PRIVATE
+    FOLLOWERS
+    PUBLIC
+  }
+  enum ConsentPurpose {
+    AI_RECOMMENDATION
+    AI_EXTERNAL_PHOTO_PROCESSING
+    HISTORY_FOR_RECOMMENDATION
+    PERSONALIZED_ADS
+    PARTNER_SHARING
+    BODY_MEASUREMENTS
+    FACIAL_RECOGNITION
+    LOCATION_HISTORY
+    AI_MODEL_TRAINING
+  }
 }
-class DataExportRequest <<table data_export_requests>> {
-  +user: User
-  +status: ExportStatus = REQUESTED
-  +fileKey: String
-  +readyAt: Instant
-  +expiresAt: Instant
+package "fai-application" {
+  class IdentityService <<service>> {
+    +changePassword()
+    +sessions()
+    +revokeSession()
+    +revokeOtherSessions()
+  }
 }
-class VerificationCode <<table verification_codes>> {
-  +purpose: VerificationPurpose
-  +target: String «AES-GCM»
-  +expiresAt: Instant
-  +consumedAt: Instant
-  +attempts: int
-}
-class RefreshToken <<table refresh_tokens>> {
-  +familyId: UUID
-  +deviceName: String
-  +createdIp: String
-  +locationApprox: String
-  +lastUsedAt: Instant
-  +expiresAt: Instant
-  +revokedAt: Instant
-}
-}
-package "fai-domain · enums" {
-enum ExportStatus {
-  REQUESTED
-  PROCESSING
-  READY
-  EXPIRED
-}
-enum ConsentPurpose {
-  AI_RECOMMENDATION
-  AI_EXTERNAL_PHOTO_PROCESSING
-  HISTORY_FOR_RECOMMENDATION
-  PERSONALIZED_ADS
-  PARTNER_SHARING
-  BODY_MEASUREMENTS
-  FACIAL_RECOGNITION
-  LOCATION_HISTORY
-  AI_MODEL_TRAINING
-}
-enum Visibility {
-  PRIVATE
-  FOLLOWERS
-  PUBLIC
-}
-enum AccountStatus {
-  PENDING_EMAIL_VERIFICATION
-  ACTIVE
-  PENDING_VALIDATION
-  SUSPENDED
-  DELETION_SCHEDULED
-  DELETED
-}
-}
-package "fai-application · service" {
-class AccountService {
-  +{static} DELETION_GRACE = 30 dias
-  +{static} EXPORT_TTL = 7 dias
-  +{static} PURPOSES: Map<ConsentPurpose, String[]>
-  +me(user): Map
-  +updateSensitive(user, SensitiveUpdate): Map
-  +confirmEmailChange(user, code): Views.UserCard
-  +updatePrivacy(user, visibility): Map
-  +consents(user): List<Map>
-  +setConsent(user, purpose, granted): List<Map>
-  +requestExport(user): Map
-  +exportsOf(user): List<Map>
-  +downloadExport(user, exportId): byte[]
-  +purgeExpiredExports(): int «@Scheduled 0 50 * * * *»
-  +requestDeletion(user, password): Map
-  +cancelDeletion(user): Map
-  +purgeScheduledDeletions(): int «sem agendamento»
-  +{static} defaultVisibility(user): Visibility
-  ~exportData(user): Map
-}
-class "SensitiveUpdate" as SensitiveUpdate << (R,#E4DEF0) record >> {
-  password: String
-  email: String
-  phone: String
-  birthDate: String
-  twoFactorEnabled: Boolean
-}
-class IdentityService {
-  +reauthenticate(userId, password)
-  +changePassword(user, sid, current, new, confirm): int
-  +sessions(user, currentSession): List<Map>
-  +revokeSession(user, sessionId)
-  +revokeOtherSessions(userId, keep): int
-  +requestPasswordReset(email, ip, ua)
-  +confirmPasswordReset(token, new, confirm)
-  +requireCodeAttemptQuota(userId, purpose)
-  +{static} wrongCode(code): ApiException
-}
-class Guard {
-  +requireCanCreate(user)
-  +canView(viewer, ownerId, visibility): boolean
-}
-interface MediaStoragePort <<port>> {
-  +put(key, bytes, contentType)
-  +get(key): byte[]
-  +delete(key)
-}
-interface EmailSenderPort <<port>> {
-  +send(to, subject, html, category)
-}
-}
-package "fai-web" {
-class MeController {
-  GET /api/me
-  PATCH /api/me/sensitive
-  POST /api/me/email-change/confirm
-  PUT /api/me/privacy
-  GET · PUT /api/me/consents(/{purpose})
-  POST · GET /api/me/exports
-  GET /api/me/exports/{exportId}/file
-  POST · DELETE /api/me/deletion
-}
-class AuthController {
-  PUT /api/auth/password
-  GET · DELETE /api/auth/sessions(/{sessionId})
-  POST /api/auth/password-reset/request
-  POST /api/auth/password-reset/confirm
-}
-class AccountController {
-  GET /api/rf3/users/{userId}/privacy-probe
-}
-class FashionAuthorization {
-  +canAccessUser(targetUserId, authentication): boolean
-}
-}
-
-UserConsent "*" --> "1" User : user
+IdentityService ..> User : usa
+IdentityService ..> UserPreferences : usa
 DataExportRequest "*" --> "1" User : user
-VerificationCode "*" --> "1" User
-RefreshToken "*" --> "1" User
-User --> Visibility
-User --> AccountStatus
-UserConsent --> ConsentPurpose
 DataExportRequest --> ExportStatus
-MeController --> AccountService
-AuthController --> IdentityService
-AccountController ..> FashionAuthorization : @PreAuthorize (403 auditado)
-AccountService ..> SensitiveUpdate
-AccountService --> IdentityService : reauthenticate · wrongCode
-AccountService ..> UserConsent : grava
-AccountService ..> DataExportRequest : cria · expira
-AccountService ..> VerificationCode : EMAIL_CHANGE
-AccountService --> MediaStoragePort : restricted/users/{id}/exports
-AccountService --> EmailSenderPort
-IdentityService ..> RefreshToken : lista · revoga
-IdentityService ..> VerificationCode : PASSWORD_RESET
-Guard ..> Visibility
-note bottom of UserConsent
-  Único (user_id, purpose). Sem linha = não concedido
-  (Privacy by Default). FACIAL_RECOGNITION nunca
-  pode ser concedido (400 FINALIDADE_NAO_UTILIZADA).
-end note
+Notification "*" --> "1" User : actor
+Notification "*" --> "1" User : recipient
+Notification --> NotificationCategory
+Notification --> NotificationType
+User --> AccountStatus
+User --> Visibility
+UserConsent "*" --> "1" User : user
+UserConsent --> ConsentPurpose
+UserPreferences "1" --> "1" User : user
 @enduml

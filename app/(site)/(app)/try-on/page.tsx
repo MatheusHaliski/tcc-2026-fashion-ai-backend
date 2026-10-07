@@ -14,7 +14,7 @@ import { RequireAuth } from "@/components/app-shell";
 import { Badge, Button, Card, Chip, Dialog, ErrorState, PageHeader, SegmentPicker, Skeleton, cn, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { BrandLogo } from "@/components/brand-logo";
-import { CatalogSearch } from "@/components/catalog/catalog-search";
+import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import type { Avatar3dRef, Look3dPiece } from "@/components/three/common";
 import type { AvatarView } from "@/components/three/avatar-viewer";
@@ -23,6 +23,7 @@ import {
   FITTING_SLOTS, decodeTryOn, encodeTryOn, removeSlot, resolveEnvironment, slotOf, visibleItems, wearItem, wearOf,
   type EnvironmentMode, type FittingItem, type FittingSlot, type LightMode,
 } from "@/lib/tryon/fitting-room";
+import { resolveScene, type SceneProduct } from "@/lib/scene3d/scene";
 
 const FittingRoomScene = dynamic(() => retryImport(() => import("@/components/three/fitting-room-scene")), { ssr: false, loading: () => <Skeleton className="h-full w-full" /> });
 
@@ -71,6 +72,10 @@ function fromWardrobe(e: Entry): FittingItem {
     imageUrl: p.imageUrl ?? p.thumbnailUrl ?? null, colorHex: p.colorHex ?? null, colorName: p.color ? label(p.color) : null, pieceId: p.id, addedAt: nextTick(),
   };
 }
+const toSceneProduct = (p: CatalogProduct): SceneProduct => ({
+  id: p.id, name: p.productName, imageUrl: p.imageUrl ?? null, category: p.category, subcategory: p.subcategory,
+  brand: p.brand ? { name: p.brand.name, slug: p.brand.slug, logoUrl: p.brand.logoUrl ?? null } : null,
+});
 const toLook3d = (i: FittingItem): Look3dPiece => ({ id: i.key, name: i.name, slot: WEAR3D[i.wear] ?? "accessory", category: i.category, subcategory: i.subcategory ?? undefined, imageUrl: i.imageUrl, colorHex: i.colorHex, model3dUrl: null, defaultImage: !i.imageUrl });
 
 function FittingRoom() {
@@ -90,6 +95,8 @@ function FittingRoom() {
   const [busyOwn, setBusyOwn] = useState<string | null>(null);
   const [confirmClear, setConfirmClear] = useState(false);
   const [status, setStatus] = useState("");
+  const [search, setSearch] = useState<{ ctx: CatalogSearchContext; results: CatalogProduct[] } | null>(null);
+  const [heroId, setHeroId] = useState<string | null>(null);
   const canvas = useRef<HTMLCanvasElement | null>(null);
   const slotName: Record<FittingSlot, string> = { upper_piece: t("tryOn.slot_upper"), lower_piece: t("tryOn.slot_lower"), shoes_piece: t("tryOn.slot_shoes"), accessory_piece: t("tryOn.slot_accessory") };
 
@@ -117,6 +124,23 @@ function FittingRoom() {
   }, [sp, data, commit]);
 
   const env = useMemo(() => resolveEnvironment(items, mode), [items, mode]);
+  // Provador pela Busca Catalogada (plano 9.2): a busca escolhe a loja (marca), a zona (categoria/subcategoria), os
+  // expositores (resultados) e o produto em destaque (o último provado que ainda bate com a busca). Busca vazia, marca
+  // fixada ou provador neutro: o ambiente de antes, pela marca vestida.
+  const scene = useMemo(() => {
+    if (mode !== "auto" || !search) return null;
+    const { ctx, results } = search;
+    if (!ctx.brand && !ctx.category && !ctx.subcategory) return null;
+    const known = ctx.brand ? stores.data?.stores.find((s) => s.name.toLowerCase() === ctx.brand.toLowerCase()) : undefined;
+    const hero = heroId ? products[heroId] : undefined;
+    const heroFits = !!hero && (!ctx.category || hero.category === ctx.category) && (!ctx.brand || hero.brand?.name.toLowerCase() === ctx.brand.toLowerCase());
+    return resolveScene({
+      brand: ctx.brand ? { name: known?.name ?? ctx.brand, slug: known?.slug, logoUrl: known?.logoUrl ?? null } : null,
+      category: ctx.category || null, subcategory: ctx.subcategory || null,
+      product: heroFits ? toSceneProduct(hero!) : null, results: results.map(toSceneProduct), worn: items,
+    });
+  }, [mode, search, stores.data, heroId, products, items]);
+  const onSearchResults = useCallback((ctx: CatalogSearchContext, results: CatalogProduct[]) => setSearch({ ctx, results }), []);
   const shown = useMemo(() => visibleItems(items), [items]);
   const brandsWorn = env.brands;
 
@@ -125,7 +149,7 @@ function FittingRoom() {
     setStatus(t("tryOn.provando_status", { name: item.name, slot: slotName[item.slot], marca: item.brand?.name ?? "" }));
   }
   function pickProduct(p: CatalogProduct, v: CatalogVariant | null) {
-    setProducts((m) => ({ ...m, [p.id]: p }));
+    setProducts((m) => ({ ...m, [p.id]: p })); setHeroId(p.id);
     tryOn(fromCatalog(p, v ?? p.selectedVariant ?? null, tax?.colors));
   }
   function remove(slot: FittingSlot) { commit(removeSlot(items, slot)); setStatus(t("tryOn.lugar_vazio_status", { slot: slotName[slot] })); }
@@ -188,7 +212,7 @@ function FittingRoom() {
             <div className="fitting-stage" role="region" aria-label={t("tryOn.palco_lojas_aria", { n: shown.length, marca: env.featured.name })}
               style={{ ["--fitting-accent" as string]: env.featured.accent }}>
               <FittingRoomScene avatar={avatar} sex={data.sex} build={data.mannequin.build} skinTone={avatar ? null : data.mannequin.skinTone} body={bodyParams}
-                pieces={shown.map(toLook3d)} environment={env} light={light} view={view} onCanvas={(c) => { canvas.current = c; }} />
+                pieces={shown.map(toLook3d)} environment={env} scene={scene} light={light} view={view} onCanvas={(c) => { canvas.current = c; }} />
             </div>
             <div className="grid gap-2 p-3">
               <div className="flex flex-wrap items-center gap-2">
@@ -275,7 +299,7 @@ function FittingRoom() {
                 <Chip active={!category} onClick={() => setCategory("")}>{t("tryOn.tudo")}</Chip>
                 {CATEGORY_CARDS.map((c) => <Chip key={c.id} active={category === c.id} onClick={() => setCategory(category === c.id ? "" : c.id)}>{CATEGORY_LABEL[c.id] ?? label(c.id)}</Chip>)}
               </div>
-              <CatalogSearch key={store} initial={{ brand: store }} category={category} browse onPick={pickProduct}
+              <CatalogSearch key={store} initial={{ brand: store }} category={category} browse onPick={pickProduct} onResults={onSearchResults}
                 pickLabel={t("tryOn.provar_peca")} noResultHint={t("tryOn.sem_resultado_dica")} />
             </Card>
           )}

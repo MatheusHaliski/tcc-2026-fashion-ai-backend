@@ -1,87 +1,75 @@
 @startuml RF24_Sequencia
-title RF24 — Usar a IA do sistema\nDiagrama de sequência — consentimento (LGPD), inferência governada, motor local e governança no admin
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as U
-actor "Admin" as A
-participant "Frontend\nsettings/page.tsx · tela do RF hospedeiro ·\nadmin/system/page.tsx" as FE
-participant "MeController" as MC
-participant "AccountService" as AS
-participant "Controller do RF hospedeiro\n(ex.: SchemeController)" as HC
-participant "Serviço hospedeiro\n(ex.: SchemeService)" as HS
-participant "AiEngine" as AI
-participant "AiBudget" as BU
-participant "RateLimitPort\n(Redis | memória)" as RL
-participant "AiProviderPort\n(GeminiProvider · ClaudeProvider)" as PR
-participant "AdminController\n/ AdminService" as AC
-database "MySQL" as DB
+autonumber "<b>0."
+title RF24 — Usar a IA do sistema (motor transversal de inteligência artificial do Fashion AI)\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-== Consentimento por finalidade (RF23 grava, RF24 lê) ==
-U -> FE: liga "Recomendações por IA" (aba Privacidade)
-FE -> MC: PUT /api/me/consents/AI_RECOMMENDATION {granted: true}
-MC -> AS: setConsent(user, purpose, granted)
-alt FACIAL_RECOGNITION com granted = true
-  AS --> FE: 400 FINALIDADE_NAO_UTILIZADA
-else demais finalidades
-  AS -> DB: UPSERT user_consents (granted, legalBasis,\npolicyVersion, grantedAt | revokedAt)
-  AS -> DB: audit_log CONSENTIMENTO_CONCEDIDO | _REVOGADO
-  AS --> FE: 200 lista de consentimentos
+actor "Pessoa usuária" as U
+boundary "c/coupons/brand-coupons-tab.tsx" as c_coupons_brand_coupons_tab_tsx
+participant "lib/i18n/i18n.tsx" as lib_i18n_i18n_tsx
+participant "c/ui/index.tsx" as c_ui_index_tsx
+participant "lib/hooks/use-api.ts" as lib_hooks_use_api_ts
+participant "API (Spring Boot)" as API
+participant "lib/i18n/state.ts" as lib_i18n_state_ts
+participant "lib/api/taxonomy.ts" as lib_api_taxonomy_ts
+participant "AiBudget" as AiBudget
+database "MySQL" as DB_MySQL
+== c/coupons/brand-coupons-tab.tsx · BrandCouponsTab() ==
+U -> c_coupons_brand_coupons_tab_tsx : BrandCouponsTab()
+activate c_coupons_brand_coupons_tab_tsx
+c_coupons_brand_coupons_tab_tsx -> lib_i18n_i18n_tsx : useI18n()
+c_coupons_brand_coupons_tab_tsx -> c_ui_index_tsx : useToast()
+c_coupons_brand_coupons_tab_tsx -> lib_hooks_use_api_ts : useApi()
+c_coupons_brand_coupons_tab_tsx -> API : GET /api/me/coupons/admin\nCouponController.admin
+API --> c_coupons_brand_coupons_tab_tsx : JSON
+c_coupons_brand_coupons_tab_tsx -> lib_hooks_use_api_ts : useApi()
+c_coupons_brand_coupons_tab_tsx -> API : GET /api/users/${ownerId}/seals\nSealController.sealsOf
+API --> c_coupons_brand_coupons_tab_tsx : JSON
+opt admin.error
+c_coupons_brand_coupons_tab_tsx --> U : encerra
 end
-
-== Inferência dentro do RF hospedeiro (ex.: compor look) ==
-U -> FE: pede um recurso com IA
-FE -> HC: rota do RF hospedeiro
-HC -> HS: caso de uso
-HS -> AI: text(TextCall{userId, SCHEME_COMPOSER, system,\nprompt, images, parser, local})
-AI -> AI: AiCatalog.spec() → RemoteSteps (primário,\nalternativo); CelebrityPromptValidator se houver\nnomes protegidos (422 PROMPT_REJEITADO)
-AI -> DB: SELECT user_consents (finalidade da capacidade)
-alt sem provedor disponível ou consentimento NEGADO
-  AI -> DB: INSERT ai_inference_log (FALLBACK_LOCAL | CONSENT_DENIED)
-  AI --> HS: AiOutcome(valor local, fallbackUsed = true)
-else liberado
-  AI -> BU: check(userId, custo estimado)
-  BU -> DB: SUM(estimated_cost_usd) do dia UTC (global e do usuário)
-  BU --> AI: OK | USER_EXHAUSTED | GLOBAL_EXHAUSTED
-  AI -> RL: status / tryAcquire(userId, "ai:SCHEME_COMPOSER",\ndailyQuotaPerUser, 1 dia)
-  alt teto ou cota estourados
-    AI -> DB: INSERT ai_inference_log (RATE_LIMITED | FALLBACK_LOCAL)
-    AI --> HS: AiOutcome(valor local, Quota{limit, used, resetAt})
-  else dentro do limite
-    loop RemoteSteps disponíveis (primário → alternativo)
-      AI -> PR: invoke(AiRequest{model, system, prompt, images, expectJson})
-      alt resposta válida (parser devolve valor)
-        PR --> AI: AiResponse{text, latencyMs, estimatedCostUsd, tokens}
-        AI -> DB: INSERT ai_inference_log (SUCCESS) + audit_log CHAMADA_IA
-        AI --> HS: AiOutcome(SUCCESS, inferenceId, Explanation, Quota)
-      else exceção / fora do contrato
-        AI -> DB: INSERT ai_inference_log (TIMEOUT | CIRCUIT_OPEN |\nRATE_LIMITED | ERROR, fallbackUsed = true)
-      end
-    end
-    opt todos falharam
-      AI -> DB: INSERT ai_inference_log (FALLBACK_LOCAL)
-      AI --> HS: AiOutcome(valor local, userMessage com o motivo)
-    end
-  end
+opt admin.loading || !admin.data
+c_coupons_brand_coupons_tab_tsx --> U : encerra
 end
-HS --> HC: resultado do caso de uso (+ explanation, fallbackUsed)
-HC --> FE: 200 DTO do RF hospedeiro
-
-== Motor local primário (ex.: SealBond Matcher, RF20/RF21) ==
-HS -> AI: local(userId, SEALBOND_MATCHER, inputsUsed, engine)
-AI -> DB: INSERT ai_inference_log (SUCCESS, provider = local)
-AI --> HS: AiOutcome(valor, Explanation "motor local determinístico")
-
-== Governança (admin) ==
-A -> FE: abre /admin/system
-FE -> AC: GET /api/admin/ai
-AC -> AC: AdminService.aiOverview(admin) → guard.requireAdmin (403)
-AC -> DB: SELECT ai_inference_log (top 300, mostra 100)
-AC -> AI: providerAvailability(), remoteEnabled()
-AC --> FE: 200 {providers, remoteEnabled, catalog[capability, name,\nhostRf, primary, fallback, dailyQuota, status], recent[…], hypeV2}
+c_coupons_brand_coupons_tab_tsx -> API : PUT /api/promotions/${form.id}\nSealController.updatePromotion
+API --> c_coupons_brand_coupons_tab_tsx : JSON
+c_coupons_brand_coupons_tab_tsx -> API : POST /api/promotions\nSealController.createPromotion
+API --> c_coupons_brand_coupons_tab_tsx : JSON
+c_coupons_brand_coupons_tab_tsx -> API : PUT /api/promotions/${p.id}/status\nSealController.setPromotionStatus
+API --> c_coupons_brand_coupons_tab_tsx : JSON
+c_coupons_brand_coupons_tab_tsx -> lib_i18n_state_ts : currentIntl()
+c_coupons_brand_coupons_tab_tsx -> c_coupons_brand_coupons_tab_tsx : setPromoFilter("ATIVAS")
+c_coupons_brand_coupons_tab_tsx -> c_coupons_brand_coupons_tab_tsx : setPromoFilter("INATIVAS")
+c_coupons_brand_coupons_tab_tsx -> c_coupons_brand_coupons_tab_tsx : setChooser("true")
+c_coupons_brand_coupons_tab_tsx -> lib_api_taxonomy_ts : label()
+c_coupons_brand_coupons_tab_tsx -> lib_i18n_state_ts : currentIntl()
+c_coupons_brand_coupons_tab_tsx -> c_coupons_brand_coupons_tab_tsx : setChooser("false") (×3)
+c_coupons_brand_coupons_tab_tsx -> c_coupons_brand_coupons_tab_tsx : setChecked("null") (×2)
+deactivate c_coupons_brand_coupons_tab_tsx
+c_coupons_brand_coupons_tab_tsx --> U : resultado
+== AiBudget · check() ==
+U -> AiBudget : check()
+activate AiBudget
+AiBudget -> DB_MySQL : SELECT ai_inference_log (×2)
+deactivate AiBudget
+AiBudget --> U : resultado
 @enduml

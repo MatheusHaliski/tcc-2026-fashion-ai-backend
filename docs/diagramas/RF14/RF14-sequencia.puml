@@ -1,98 +1,77 @@
 @startuml RF14_Sequencia
-title RF14 — Aba "Marcas": feed e perfil das marcas cadastradas\nDiagrama de sequência — feed /brands, perfil /brands/[slug], Hype da marca e abas de destaque
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as U
-participant "brands/page.tsx ·\nbrands/[slug]/page.tsx" as FE
-participant "ProfileController" as PC
-participant "HypeController ·\nInsightsController ·\nSealController" as HC
-participant "InstitutionalService" as IS
-participant "SealService" as SS
-participant "HypeQueryService\n(+ HypeCache)" as HQ
-participant "AiEngine (RF24)" as AI
-database "MySQL" as DB
+autonumber "<b>0."
+title RF14 — Visualizar a aba 'Marcas' — Feed de Perfil de Marcas de roupa cadastradas dentro do sistema do FashionAI\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-== Feed /brands ==
-U -> FE: abre a aba "Marcas" (com ou sem login)
-FE -> PC: GET /api/brands?term=&order=
-PC -> IS: brandFeed(viewer, term, order)
-IS -> DB: SELECT brand_profiles WHERE approval_status = 'APROVADO' ORDER BY created_at DESC
-opt logado
-  IS -> DB: SELECT style_dna.style_keywords (quem vê)
+actor "Pessoa usuária" as U
+boundary "Tela (Next.js)" as P
+control "ProfileController" as ProfileController
+participant "InstitutionalService" as InstitutionalService
+database "MySQL" as DB_MySQL
+participant "HypeQueryService" as HypeQueryService
+participant "AiEngine\n(provedor de IA + reserva local)" as AI
+participant "Guard" as Guard
+== Marcas (busca e ordenação) ==
+U -> P : Marcas (busca e ordenação)
+P -> ProfileController : GET /api/brands
+ProfileController -> InstitutionalService : brandFeed()
+activate InstitutionalService
+InstitutionalService -> DB_MySQL : SELECT brand_profiles
+InstitutionalService -> DB_MySQL : SELECT style_dna
+InstitutionalService -> HypeQueryService : groups()
+HypeQueryService -> DB_MySQL : SELECT hype_scores
+HypeQueryService -> DB_MySQL : SELECT hype_score_snapshots
+HypeQueryService -> DB_MySQL : SELECT wardrobe_items
+HypeQueryService -> DB_MySQL : SELECT schemes
+HypeQueryService --> InstitutionalService
+InstitutionalService -> DB_MySQL : SELECT seal_bonds
+InstitutionalService -> DB_MySQL : SELECT follows
+InstitutionalService -> DB_MySQL : SELECT wardrobe_items
+InstitutionalService -> AI : AFFINITY
+AI --> InstitutionalService : resposta (ou reserva local)
+deactivate InstitutionalService
+InstitutionalService --> ProfileController : resultado
+ProfileController --> P : 200 JSON
+P --> U : atualiza a tela
+== Marca edita seus dados institucionais ==
+U -> P : Marca edita seus dados institucionais
+P -> ProfileController : PATCH /api/me/brand-profile
+ProfileController -> InstitutionalService : updateBrand()
+activate InstitutionalService
+InstitutionalService -> DB_MySQL : SELECT brand_profiles
+InstitutionalService -> Guard : deny()
+alt url inválida
+InstitutionalService --> ProfileController : 400 URL_INVALIDA
+ProfileController --> P : 400 + mensagem
 end
-IS -> HQ: groups(viewer, BRAND, nomes normalizados, 7)
-HQ -> DB: hype_scores dos itens públicos (tabela por geração no cache)
-HQ --> IS: {items: {chave: {value, level, items, sufficient, rank}}}
-loop cada marca
-  IS -> DB: COUNT seal_bonds APPROVED · COUNT follows ACEITO
-  opt ordem AFINIDADE com DNA
-    IS -> DB: SELECT wardrobe_items.style_tags (até 80 peças da marca)
-    IS -> IS: affinity = Jaccard(DNA × catálogo)
-  end
-end
-alt order = EM_ALTA
-  IS -> IS: sort BY_GROUP_HYPE (sem base no fim, nunca 0)
-else AFINIDADE com DNA
-  IS -> AI: local(AFFINITY) — registro da inferência
-  IS -> IS: sort afinidade desc
-else RECENTES (ou sem DNA)
-  IS -> IS: mantém created_at desc
-end
-IS --> FE: 200 {brands: [{slug, name, logoUrl, category, bonds, followers,\nmaterial TEXTIL_DOURADO, affinity?, hype}], order, orders, empty}
-
-== Perfil /brands/[slug] ==
-U -> FE: toca em uma marca
-FE -> PC: GET /api/institutional/{slug}
-PC -> IS: profile(viewer, slug)
-IS -> DB: SELECT brand_profiles WHERE slug (ou celebrity_profiles)
-alt slug inexistente ou perfil PESSOAL
-  IS --> FE: 404 Perfil institucional
-else marca não APROVADA e quem vê não é a dona nem admin
-  IS --> FE: 404 Marca (visitante anônimo: NullPointerException → 500)
-else
-  IS -> DB: COUNT follows · wardrobe_items · schemes · seals ACTIVE ·\nseal_bonds PENDING_REVIEW (dona) · métricas RF19
-  IS --> FE: 200 {header (status "Validada", autoApproval, coverLabel, metrics),\nmode VISITANTE | ADMINISTRADOR, tabs, reviewBanner?, groupings}
-  par cabeçalho e abas fixas
-    FE -> HC: GET /api/hype/groups?type=BRAND&keys={nome}
-    HC -> HQ: groups(viewer, BRAND, [nome], 7)
-    HC --> FE: 200 Hype da marca (faixa, valor, base de itens, posição)
-  else
-    FE -> HC: GET /api/insights?context=BRAND_PROFILE&key={slug}
-    HC --> FE: 200 insights públicos (InsightService)
-  else
-    FE -> HC: GET /api/users/{ownerId}/seals · /api/users/{ownerId}/promotions
-    HC -> SS: sealsOf(viewer, ownerId) · promotionsOf(viewer, ownerId)
-    HC --> FE: 200 selos ativos e promoções (eligible)
-  end
-end
-
-== Abas de destaque (política de exibição) ==
-U -> FE: "Esquemas em destaque" + ordem "Em crescimento"
-FE -> PC: GET /api/institutional/{slug}/tabs/ESQUEMAS_DESTAQUE?filter=GROWTH
-PC -> IS: tab(viewer, slug, "ESQUEMAS_DESTAQUE", "GROWTH", null)
-IS -> DB: seal_bonds (target_owner = marca, APPROVED) + schemes
-IS -> IS: promoted(viewer, marca, history = false, agora)\ndisplayable · vigentes · sem revalidação
-IS -> HQ: currentOf(SCHEME, looks)
-HQ -> DB: SELECT hype_scores
-IS -> IS: filterLooks(GROWTH): dimensão TREND, desempate pelo Δ; sem Hype no fim
-IS -> SS: badge(vínculo) para cada selo
-IS --> FE: 200 [{scheme, seals, promotion {issuedAt, expiresAt, expired, revalidationPending}}]
-opt "Peças em destaque"
-  FE -> PC: GET /api/institutional/{slug}/tabs/PECAS_DESTAQUE
-  IS -> IS: pieceEntries: displayable(peça) + covers(vínculo, peça)
-  IS --> FE: 200 [{piece, author, schemeId, schemeTitle, seals}]
-end
-opt aba só da dona pedida por outra pessoa
-  IS --> FE: 403 (Guard.deny, auditado)
-end
-opt seguir a marca (RF17)
-  FE -> PC: POST /api/users/{ownerId}/followers
-  PC --> FE: 200
-end
+InstitutionalService -> InstitutionalService : storeUrl = set
+InstitutionalService -> InstitutionalService : logoUrl = set
+InstitutionalService -> InstitutionalService : coverUrl = set
+InstitutionalService -> DB_MySQL : INSERT/UPDATE brand_profiles
+InstitutionalService -> DB_MySQL : SELECT seal_bonds
+InstitutionalService -> DB_MySQL : SELECT follows
+deactivate InstitutionalService
+InstitutionalService --> ProfileController : resultado
+ProfileController --> P : 200 JSON
+P --> U : atualiza a tela
 @enduml

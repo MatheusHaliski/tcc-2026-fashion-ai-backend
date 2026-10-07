@@ -1,230 +1,169 @@
 @startuml RF1_Classes
-title RF1 — Cadastrar conta na plataforma (Pessoal, Marca ou Celebridade)\nDiagrama de classes — cadastro e confirmação do e-mail (entidades, serviço e portas)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF1 — Cadastrar conta na plataforma (perfil Pessoal, Marca ou Celebridade)\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class User <<table users>> {
-  +username: String
-  +displayName: String «AES-GCM»
-  +email: String «AES-GCM»
-  +emailHash: String
-  +emailVerified: boolean
-  +birthDate: String «AES-GCM»
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String = "USER"
-  +status: AccountStatus = PENDING_EMAIL_VERIFICATION
-  +accountOrigin: AccountOrigin = REAL
-  +avatarUrl: String
-  +privateAccount: boolean = true
-  +profileVisibility: Visibility = PRIVATE
-  +verified: boolean
-  +country: String
-  +sex: MannequinSex
-  +termsAcceptedAt: Instant
-  +termsVersion: String
-  +canWrite(): boolean
+package "fai-domain (entidades JPA)" {
+  class BrandProfile <<brand_profiles>> {
+    +id: UUID
+    +owner: User
+    +brandName: String
+    +slug: String
+    +logoUrl: String
+    +coverUrl: String
+    +bio: String
+    +storeUrl: String
+    +cnpj: String
+    +razaoSocial: String
+    .. +21 campos ..
+  }
+  class CelebrityProfile <<celebrity_profiles>> {
+    +id: UUID
+    +owner: User
+    +stageName: String
+    +slug: String
+    +avatarUrl: String
+    +coverUrl: String
+    +bio: String
+    +realName: String
+    +areasJson: String
+    +verifiableFollowersJson: String
+    .. +20 campos ..
+  }
+  class RefreshToken <<refresh_tokens>> {
+    +id: UUID
+    +user: User
+    +tokenHash: String
+    +familyId: UUID
+    +expiresAt: Instant
+    +revokedAt: Instant
+    +rotatedFromId: UUID
+    +createdIp: String
+    +userAgent: String
+    +deviceName: String
+    .. +3 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class UserPreferences <<user_preferences>> {
+    +id: UUID
+    +user: User
+    +theme: ThemeMode
+    +language: UiLanguage
+    +density: UiDensity
+    +fontScale: int
+    +highContrast: boolean
+    +reduceMotion: boolean
+    +chromeBackgroundId: String
+    +sizeSystem: SizeSystem
+    .. +16 campos ..
+  }
+  class VerificationCode <<verification_codes>> {
+    +id: UUID
+    +user: User
+    +purpose: VerificationPurpose
+    +codeHash: String
+    +target: String
+    +expiresAt: Instant
+    +consumedAt: Instant
+    +attempts: int
+    +sendCount: int
+    +lastSentAt: Instant
+  }
 }
-class UserPreferences <<table user_preferences>> {
-  +user: User
-  +language: UiLanguage = PT_BR
-  +mannequinSex: MannequinSex
-  .. demais preferências: RF23 ..
+package "fai-domain (enums)" {
+  enum ApprovalStatus {
+    PENDENTE
+    AJUSTES
+    APROVADO
+    RECUSADO
+    SUSPENSO
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum ProfileType {
+    PESSOAL
+    MARCA
+    CELEBRIDADE
+    ADMIN
+  }
+  enum ThemeMode {
+    LIGHT
+    DARK
+    AUTO
+  }
+  enum UiLanguage {
+    PT_BR
+    EN
+    ES
+  }
+  enum MannequinSex {
+    MASCULINO
+    FEMININO
+  }
 }
-class VerificationCode <<table verification_codes>> {
-  +user: User
-  +purpose: VerificationPurpose
-  +codeHash: String
-  +target: String «AES-GCM»
-  +expiresAt: Instant
-  +consumedAt: Instant
-  +attempts: int
-  +sendCount: int
-  +lastSentAt: Instant
-  +isUsable(now): boolean
+package "fai-application" {
+  class IdentityService <<service>> {
+    +register()
+    +preRegistrationUpload()
+    +usernameSuggestions()
+    +suggestUsername()
+    +verifyEmail()
+    +resendEmailVerification()
+  }
 }
-class BrandProfile <<table brand_profiles>> {
-  +owner: User
-  +brandName: String
-  +slug: String
-  +logoUrl: String
-  +cnpj: String «AES-GCM»
-  +razaoSocial: String
-  +nomeFantasia: String
-  +fashionCategory: String
-  +storeUrl: String
-  +commercialContact: String «AES-GCM»
-  +officialHashtag: String
-  +activityProofUrl: String
-  +approvalStatus: ApprovalStatus = PENDENTE
-  +reviewAttempts: int = 1
-}
-class CelebrityProfile <<table celebrity_profiles>> {
-  +owner: User
-  +stageName: String
-  +slug: String
-  +avatarUrl: String
-  +realName: String «AES-GCM»
-  +identityProofUrl: String
-  +verificationUrl: String
-  +areasJson: String
-  +representationContact: String «AES-GCM»
-  +sealConsentGranted: boolean
-  +verificationStatus: ApprovalStatus = PENDENTE
-  +reviewAttempts: int = 1
-}
-}
-package "fai-domain · enums" {
-enum ProfileType {
-  PESSOAL
-  MARCA
-  CELEBRIDADE
-  ADMIN
-}
-enum AccountStatus {
-  PENDING_EMAIL_VERIFICATION
-  ACTIVE
-  PENDING_VALIDATION
-  SUSPENDED
-  DELETION_SCHEDULED
-  DELETED
-}
-enum ApprovalStatus {
-  PENDENTE
-  AJUSTES
-  APROVADO
-  RECUSADO
-  SUSPENSO
-}
-enum VerificationPurpose {
-  EMAIL_VERIFICATION
-  EMAIL_CHANGE
-  TWO_FACTOR
-  PASSWORD_RESET
-}
-enum MannequinSex {
-  MASCULINO
-  FEMININO
-}
-}
-package "fai-application · service" {
-class IdentityService {
-  +{static} TERMS_VERSION = "2026-09"
-  +{static} MAX_CODE_ATTEMPTS = 5
-  +{static} RESERVED_USERNAMES: Set<String>
-  +preRegistrationUpload(bytes, kind, ip): Map
-  +purgeStalePendingUploads(): int «@Scheduled 0 35 * * * *»
-  +register(cmd, ip, userAgent): Session
-  +suggestUsername(name): String
-  +usernameSuggestions(taken): List<String>
-  +verifyEmail(current, code): Views.UserCard
-  +resendEmailVerification(current)
-  +requireCodeAttemptQuota(userId, purpose)
-  +{static} validatePassword(password, errors)
-  +{static} validCnpj(raw): boolean
-  +{static} normalizeUsername(raw): String
-  +{static} reservedUsername(normalized): boolean
-}
-class "RegisterCommand" as RegisterCommand << (R,#E4DEF0) record >> {
-  profileType: ProfileType
-  fullName, username, email: String
-  password, confirmPassword: String
-  acceptTerms: boolean
-  birthDate, country: String
-  brand: BrandData
-  celebrity: CelebrityData
-  avatarUrl: String
-  sex: MannequinSex
-}
-class "BrandData" as BrandData << (R,#E4DEF0) record >> {
-  razaoSocial, cnpj, nomeFantasia, logoUrl
-  fashionCategory, storeUrl, commercialContact
-  officialHashtag, activityProofUrl
-}
-class "CelebrityData" as CelebrityData << (R,#E4DEF0) record >> {
-  stageName, realName, identityProofUrl
-  officialPhotoUrl, areas, verifiableFollowers
-  verificationUrl, professionalHistory
-  representationContact, fashionInterests
-  sealConsentGranted: boolean
-}
-class "Session" as Session << (R,#E4DEF0) record >> {
-  accessToken: String
-  expiresInSeconds: long
-  refreshToken: String
-  refreshExpiresAt: Instant
-  sessionId: UUID
-  user: Views.UserCard
-  status: String
-  emailVerified: boolean
-  warnings: List<String>
-}
-class PreferencesService {
-  +checkUsername(requested): Map
-}
-class Guard {
-  +requireCanCreate(user) «403 EMAIL_NAO_CONFIRMADO»
-  +requireApprovedProfile(user, type) «403 PERFIL_EM_VALIDACAO»
-  +requireApprovedInstitutional(user, resource, message)
-}
-interface PasswordHasherPort <<port>> {
-  +hash(raw): String
-  +matches(raw, encoded): boolean
-}
-interface MediaStoragePort <<port>> {
-  +put(key, bytes, contentType): StoredObject
-  +get(key): byte[]
-  +listOlderThan(prefix, before, limit): List<String>
-}
-interface EmailSenderPort <<port>> {
-  +send(to, subject, html, category)
-}
-interface RateLimitPort <<port>> {
-  +tryAcquire(owner, bucket, limit, window): boolean
-}
-}
-
-UserPreferences "1" --> "1" User : user
-VerificationCode "*" --> "1" User : user
-BrandProfile "0..1" --> "1" User : owner
-CelebrityProfile "0..1" --> "1" User : owner
-User --> ProfileType
-User --> AccountStatus
-User --> MannequinSex
+IdentityService ..> BrandProfile : usa
+IdentityService ..> CelebrityProfile : usa
+IdentityService ..> RefreshToken : usa
+IdentityService ..> User : usa
+IdentityService ..> UserPreferences : usa
+IdentityService ..> VerificationCode : usa
+BrandProfile "1" --> "1" User : owner
 BrandProfile --> ApprovalStatus
+CelebrityProfile "1" --> "1" User : owner
 CelebrityProfile --> ApprovalStatus
-VerificationCode --> VerificationPurpose
-RegisterCommand *-- "0..1" BrandData
-RegisterCommand *-- "0..1" CelebrityData
-IdentityService ..> RegisterCommand : recebe
-IdentityService ..> Session : devolve
-IdentityService ..> User : cria
-IdentityService ..> BrandProfile : cria (MARCA)
-IdentityService ..> CelebrityProfile : cria (CELEBRIDADE)
-IdentityService ..> VerificationCode : cria/consome
-IdentityService --> PasswordHasherPort
-IdentityService --> MediaStoragePort
-IdentityService --> EmailSenderPort
-IdentityService --> RateLimitPort
-Guard ..> AccountStatus : status da conta
-PreferencesService ..> User : @ livre?
-note bottom of IdentityService
-  Repositórios usados: UserRepository (existsByEmailHash,
-  existsByUsernameIgnoreCase), UserPreferencesRepository,
-  BrandProfileRepository / CelebrityProfileRepository
-  (findByOwnerId, findBySlug), VerificationCodeRepository
-  (findFirstByUserIdAndPurposeAndConsumedAtIsNull…).
-  Depois do register de MARCA/CELEBRIDADE chama
-  IssuerReviewService.submitted; depois do verifyEmail,
-  IssuerReviewService.emailConfirmed (RF1_Classes_Verificacao).
-end note
+RefreshToken "*" --> "1" User : user
+User --> AccountStatus
+User --> ProfileType
+UserPreferences "1" --> "1" User : user
+UserPreferences --> MannequinSex
+UserPreferences --> ThemeMode
+UserPreferences --> UiLanguage
+VerificationCode "*" --> "1" User : user
 @enduml

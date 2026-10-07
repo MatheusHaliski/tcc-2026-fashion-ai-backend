@@ -1,237 +1,180 @@
 @startuml RF13_Classes
-title RF13 — Esquema de identidade pessoal na página "DNA de Estilo"\nDiagrama de classes — StyleDna, Esquema de DNA e células, serviço, formulários e HypeScore v2
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF13 — Criar um esquema de identidade pessoal de moda na página 'DNA de Estilo'\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-web · controller" {
-class DnaController {
-  +overview(user) · generate(user, LifeForm)
-  +updateLife · privateFields · colorSeason · shareCard
-  +builder(user) · preview(user, form)
-  +compositions(user, DnaComposeRequest)
-  +create · update · get · mine · delete
+package "fai-domain (entidades JPA)" {
+  class DnaScheme <<dna_schemes>> {
+    +id: UUID
+    +user: User
+    +title: String
+    +identityPhrase: String
+    +archetype: StyleArchetype
+    +boldnessIndex: Integer
+    +iconSchemeId: UUID
+    +colorPaletteJson: String
+    +narrativeType: NarrativeType
+    +seasonalTheme: Season
+    .. +25 campos ..
+  }
+  class DnaSchemeItem <<dna_scheme_items>> {
+    +id: UUID
+    +dnaScheme: DnaScheme
+    +scheme: Scheme
+    +cell: DnaCell
+    +eraLabel: String
+    +duplicate: boolean
+    +sourceSchemeId: UUID
+    +appliedToOriginal: boolean
+    +milestone: boolean
+  }
+  class Scheme <<schemes>> {
+    +id: UUID
+    +user: User
+    +originalScheme: Scheme
+    +title: String
+    +description: String
+    +creationMode: CreationMode
+    +origin: SchemeOrigin
+    +style: String
+    +occasion: String
+    +season: Season
+    .. +46 campos ..
+  }
+  class StyleDna <<style_dna>> {
+    +id: UUID
+    +user: User
+    +archetype: StyleArchetype
+    +boldnessIndex: int
+    +identityPhrase: String
+    +colorPalette: String
+    +styleKeywords: String
+    +occasionKeywords: String
+    +iconPieceName: String
+    +latestDnaSchemeId: UUID
+    .. +9 campos ..
+  }
+  class StyleDnaVersion <<style_dna_versions>> {
+    +id: UUID
+    +userId: UUID
+    +snapshotJson: String
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
 }
+package "fai-domain (enums)" {
+  enum SchemeStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+  }
+  enum RenderStatus {
+    PENDING
+    RENDERING
+    ENHANCING
+    COMPOSITING
+    CACHED
+    COMPLETED
+    FAILED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum StyleArchetype {
+    ROMANTIC
+    DRAMATIC
+    CLASSIC
+    NATURAL
+    GAMINE
+  }
+  enum NarrativeType {
+    TIMELINE
+    MOMENTOS_MARCANTES
+    PRIMEIRA_VEZ
+    CAPSULA_VERSATILIDADE
+    POR_OCASIAO
+    MOOD_BOARD
+    PALETA_DOMINANTE
+    HARMONIA_CROMATICA
+    MARCAS_FAVORITAS
+    HYPE_FOCUS
+    ..
+  }
+  enum Season {
+    SPRING
+    SUMMER
+    AUTUMN
+    WINTER
+  }
 }
-
 package "fai-application" {
-class DnaService {
-  {static} +MIN_PIECES = 10
-  {static} +MIN_POSITIVE = 5
-  {static} +RECALC_INTERACTIONS = 10
-  {static} +LAYOUTS = AMPLIADO, GRADE, HORIZONTAL, LATERAL
-  +overview(user): Map
-  +generate(user, LifeForm): Map
-  +updateLife(user, LifeForm): Map
-  +setPrivateFields(user, fields): Map
-  +setColorSeason(user, season): Map
-  +shareCard(user): Map
-  +builder(user): Map
-  +preview(user, DnaSchemeForm): Map
-  +compositions(user, DnaComposeRequest): Map
-  +createDnaScheme(user, DnaSchemeForm): Map
-  +updateDnaScheme(user, id, DnaSchemeForm): Map
-  +getDnaScheme(viewer, id): Map
-  +myDnaSchemes(user): List
-  +deleteDnaScheme(user, id)
-  ~ensureDna(user): StyleDna
-  ~synthesize(user, dna, regeneratePhrase, reason)
-  ~stamp(DnaScheme, StyleDna)
-  ~narrativeData(dna, cells, items, hype): Map
+  class DnaService <<service>> {
+    +overview()
+    +socialProof()
+    +generate()
+    +updateLife()
+    +setPrivateFields()
+    +setColorSeason()
+    +shareCard()
+    +builder()
+    +preview()
+    +compositions()
+  }
 }
-class DnaSchemeForm <<record>> {
-  +title: String
-  +cells: List<DnaCellForm>
-  +cardLayout: String
-  +targetElement: String
-  +narrativeType: NarrativeType
-  +occasion, style: String
-  +seasonalTheme: Season
-  +visibility: Visibility
-  +background: Map
-  +publish: Boolean
-  +creationMode: String
-}
-class DnaCellForm <<record>> {
-  +schemeId: UUID
-  +eraLabel: String
-  +milestone: Boolean
-}
-class DnaComposeRequest <<record>> {
-  +prompt: String
-  +occasion, style: List<String>
-  +narrativeType: NarrativeType
-  +season: Season
-}
-class DnaProposal <<record>> {
-  +title, cardLayout, rationale: String
-  +narrativeType: NarrativeType
-  +cells: List<DnaCellForm>
-  +seasonalTheme: Season
-}
-class LocalDnaSynthesizer {
-  {static} +synthesize(schemes, itemsByScheme, wardrobe): Synthesis
-}
-class AiEngine {
-  +local(userId, DNA_SYNTHESIZER, inputs, supplier)
-  +text(TextCall): AiOutcome
-}
-}
-
-package "fai-domain · model" {
-class StyleDna {
-  +user: User
-  +archetype: StyleArchetype = CLASSIC
-  +boldnessIndex: int
-  +identityPhrase: String — cifrada
-  +colorPalette: String
-  +styleKeywords: String
-  +occasionKeywords: String
-  +iconPieceName: String
-  +silhouette: String
-  +lifeIdentityJson: String — cifrada
-  +lifePrivateFieldsJson: String
-  +interactionsAtSynthesis: int
-  +latestDnaSchemeId: UUID
-  +cardImageUrl: String
-  +cardExpiresAt: Instant
-  +phraseSource: String
-  +colorSeason: String
-  +synthesizedAt: Instant
-}
-class StyleDnaVersion {
-  +userId: UUID
-  +snapshotJson: String
-  +createdAt: Instant
-}
-class DnaScheme {
-  +user: User
-  +title: String
-  +identityPhrase: String — cifrada
-  +archetype: StyleArchetype
-  +boldnessIndex: Integer
-  +colorPaletteJson: String
-  +narrativeType: NarrativeType
-  +seasonalTheme: Season
-  +occasion, style: String
-  +cardLayout: String = "AMPLIADO"
-  +targetElement: String = "DNA_COMPLETO"
-  +backgroundColor: String
-  +backgroundAnimationType: BackgroundAnimation
-  +backgroundVideoUrl: String
-  +studioConfigJson: String
-  +creationMode: CreationMode
-  +visibility: Visibility = PRIVATE
-  +status: SchemeStatus = DRAFT
-  +likeCount, commentCount, shareCount, remixCount: long
-  +publishedAt: Instant
-}
-class DnaSchemeItem {
-  +dnaScheme: DnaScheme
-  +scheme: Scheme
-  +cell: DnaCell
-  +eraLabel: String
-  +milestone: boolean
-  +duplicate: boolean
-  +sourceSchemeId: UUID
-}
-class Scheme {
-  +user: User
-  +title: String
-  +status: SchemeStatus
-  +season: Season
-  .. ver RF5 ..
-}
-class HypeScoreCurrent {
-  +entityType: HypeEntityType
-  +entityId: UUID
-  +algorithmVersion: String
-  +status: HypeStatus
-  +score: BigDecimal
-  +level: HypeLevel
-  +publicEligible: boolean
-}
-class User {
-  +username: String
-  +profileVisibility: Visibility
-}
-}
-package "fai-domain · enums" {
-enum StyleArchetype {
-  ROMANTIC
-  DRAMATIC
-  CLASSIC
-  NATURAL
-  GAMINE
-}
-enum DnaCell {
-  CELL_1 .. CELL_6
-}
-enum NarrativeType {
-  TIMELINE
-  MOMENTOS_MARCANTES
-  PRIMEIRA_VEZ
-  CAPSULA_VERSATILIDADE
-  POR_OCASIAO
-  MOOD_BOARD
-  PALETA_DOMINANTE
-  HARMONIA_CROMATICA
-  MARCAS_FAVORITAS
-  HYPE_FOCUS
-  CARTELA_SAZONAL
-  LEGO
-}
-enum CreationMode {
-  MANUAL
-  AI_ASSISTED
-}
-enum SchemeStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
-enum HypeStatus {
-  AVAILABLE
-  INSUFFICIENT_DATA
-}
-}
-
-DnaController --> DnaService
-DnaService ..> DnaSchemeForm
-DnaSchemeForm *-- "2..6" DnaCellForm
-DnaService ..> DnaComposeRequest
-DnaService ..> DnaProposal
-DnaService --> AiEngine : DNA_SYNTHESIZER
-AiEngine ..> LocalDnaSynthesizer : motor local
-DnaService ..> StyleDna : ensureDna · synthesize
-DnaService ..> StyleDnaVersion : snapshot(reason)
-DnaService ..> DnaScheme
-DnaService ..> HypeScoreCurrent : só leitura (HYPE_FOCUS, contexto da IA)
-StyleDna "1" --> "1" User : user
-StyleDnaVersion "*" ..> "1" User : userId
-StyleDna ..> DnaScheme : latestDnaSchemeId
+DnaService ..> DnaScheme : usa
+DnaService ..> DnaSchemeItem : usa
+DnaService ..> Scheme : usa
+DnaService ..> StyleDna : usa
+DnaService ..> StyleDnaVersion : usa
+DnaService ..> User : usa
 DnaScheme "*" --> "1" User : user
-DnaSchemeItem "2..6" --> "1" DnaScheme : dnaScheme
-DnaSchemeItem "*" --> "1" Scheme : scheme
-Scheme "*" --> "1" User
-HypeScoreCurrent ..> Scheme : entityType = SCHEME
-StyleDna --> StyleArchetype
-DnaScheme --> StyleArchetype
 DnaScheme --> NarrativeType
-DnaScheme --> CreationMode
 DnaScheme --> SchemeStatus
-DnaSchemeItem --> DnaCell
-HypeScoreCurrent --> HypeStatus
-note top of StyleDna : tabela style_dna (1 por conta)
-note top of StyleDnaVersion : tabela style_dna_versions\nmotivos: GERACAO · EVOLUCAO · EDICAO_VIDA
-note bottom of DnaScheme : tabela dna_schemes (o HypeScore v1\nsaiu; o Hype vem de hype_scores)
-note bottom of DnaSchemeItem : tabela dna_scheme_items
-note bottom of HypeScoreCurrent : tabela hype_scores (gravada pelo\nHypeSnapshotService; aqui só leitura)
+DnaScheme --> Season
+DnaScheme --> StyleArchetype
+DnaSchemeItem "*" --> "1" DnaScheme : dnaScheme
+DnaSchemeItem "*" --> "1" Scheme : scheme
+Scheme "*" --> "1" User : user
+Scheme --> RenderStatus
+Scheme --> SchemeStatus
+Scheme --> Season
+StyleDna "1" --> "1" User : user
+StyleDna --> StyleArchetype
+StyleDnaVersion ..> User : userId
+User --> AccountStatus
 @enduml

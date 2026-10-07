@@ -1,45 +1,49 @@
 @startuml RF13_MaquinaDeEstados_Esquema
 !pragma layout smetana
-title RF13 — Esquema de identidade pessoal na página "DNA de Estilo"\nDiagrama de máquina de estados — DnaScheme (SchemeStatus) e versões do StyleDna
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "StyleDna (1 por conta)" as Dna {
-  state "Sem DNA" as SemDna
-  state "Sintetizado" as Sintetizado
-  Sintetizado : arquétipo, paleta, estilos, silhueta, frase
-  state "Card compartilhável válido" as Card
-  Card : card_image_url + card_expires_at (30 dias)
-  [*] --> SemDna
-  SemDna --> Sintetizado : ensureDna (builder, preview, criar)\nou POST /api/me/dna — versão "GERACAO"
-  Sintetizado --> Sintetizado : GET /api/me/dna com 10+ interações novas\n— versão "EVOLUCAO" + notificação
-  Sintetizado --> Sintetizado : PUT /api/me/dna/life — nova frase,\nversão "EDICAO_VIDA"
-  Sintetizado --> Card : POST /api/me/dna/share-card
-  Card --> Sintetizado : nova síntese, edição de vida ou campos\nprivados (card_image_url = null)
+title RF13 — ciclo de vida de DnaScheme.status e visibility\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum SchemeStatus · enum Visibility · tabela dna_schemes
+
+state "DnaScheme.status" as Ciclo_DnaScheme {
+  state Ciclo_DnaScheme_DRAFT as "DRAFT"
+  state Ciclo_DnaScheme_PUBLISHED as "PUBLISHED"
+  state Ciclo_DnaScheme_ARCHIVED as "ARCHIVED"
 }
-state "DnaScheme" as Esq {
-  state "DRAFT" as Rascunho
-  Rascunho : só o dono vê; visitante recebe\n403 em GET /api/dna-schemes/{id}
-  state "PUBLISHED" as Publicado
-  Publicado : visível conforme Visibility (PRIVATE,\nFOLLOWERS, PUBLIC) × privacidade do perfil
-  state "ARCHIVED" as Arquivado
-  Arquivado : visibility = PRIVATE; some de\nGET /api/me/dna-schemes
-  [*] --> Rascunho : POST /api/dna-schemes (publish ausente/false)
-  [*] --> Publicado : POST /api/dna-schemes (publish = true)
-  Rascunho --> Rascunho : PUT /api/dna-schemes/{id}\n(dono edita células, layout, fundo)
-  Rascunho --> Publicado : PUT /api/dna-schemes/{id} (publish = true)\npublished_at = agora
-  Publicado --> Publicado : PUT /api/dna-schemes/{id} (continua publicado)
-  Rascunho --> Arquivado : DELETE /api/dna-schemes/{id}
-  Publicado --> Arquivado : DELETE /api/dna-schemes/{id}
+[*] --> Ciclo_DnaScheme_DRAFT : criação
+Ciclo_DnaScheme --> Ciclo_DnaScheme_ARCHIVED : deleteDnaScheme()\nDELETE /api/dna-schemes/{id}
+Ciclo_DnaScheme --> Ciclo_DnaScheme_DRAFT : createDnaScheme()\nPOST /api/dna-schemes
+Ciclo_DnaScheme --> Ciclo_DnaScheme_PUBLISHED : createDnaScheme(), updateDnaScheme()
+state "DnaScheme.visibility" as Ciclo_DnaScheme_visibility {
+  state Ciclo_DnaScheme_visibility_PRIVATE as "PRIVATE"
+  state Ciclo_DnaScheme_visibility_FOLLOWERS as "FOLLOWERS"
+  state Ciclo_DnaScheme_visibility_PUBLIC as "PUBLIC"
 }
-Dna --> Esq : stamp na criação: arquétipo, ousadia,\nfrase e paleta copiados
-note bottom of Arquivado
-  Exclusão lógica (sem DELETE físico). A API não
-  bloqueia PUT com publish = true num DNA arquivado,
-  mas a interface não lista arquivados.
+[*] --> Ciclo_DnaScheme_visibility_PRIVATE : criação
+Ciclo_DnaScheme_visibility --> Ciclo_DnaScheme_visibility_PRIVATE : deleteDnaScheme()\nDELETE /api/dna-schemes/{id}
+note bottom of Ciclo_DnaScheme_visibility
+  Sem mudança explícita no código para: FOLLOWERS, PUBLIC
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
+note right of Ciclo_DnaScheme
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
 end note
 @enduml

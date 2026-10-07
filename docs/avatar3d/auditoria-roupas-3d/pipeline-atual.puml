@@ -1,57 +1,84 @@
 @startuml pipeline-atual
-title Pipeline atual de roupas 3D (provador, espelho, vitrines, passarela) — 2026-10-05
-skinparam defaultFontName DejaVu Sans
-skinparam activity {
-  BackgroundColor #F4F7FB
-  BorderColor #3A5A80
-}
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
 skinparam note {
-  BackgroundColor #FFF6E0
-  BorderColor #C08A20
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
-|Entrada|
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title Pipeline atual de roupas 3D (provador, espelho, vitrines, passarela) — 2026-10-05\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Foto da peça (RF4) → recorte sem fundo,
-foto de estúdio (StudioPipeline, backend);
-:Subcategoria da taxonomia
-(ex.: "jeans", "hoodie");
-|Avatar canônico (navegador)|
-:Corpo MakeHuman CC0 + esqueleto Mixamo
-(asset.ts) → forma por medidas (fitBody, compose);
-:Pose de repouso + braços abertos
-conforme as camadas (setArmOut);
-|Molde da peça (garments.ts)|
-:kindOf(subcategoria) → 1 de 17 SPECS fixos
-(folga, barra, gola, manga, perna, saia, camada);
-note right: Não lê a forma da peça.\nJeans skinny = wide leg.
-:Cobertura contínua por vértice da PELE
-(tronco/braço/perna) → copia os triângulos do corpo;
-:Afasta ao longo da normal pela folga
-(+ folga das camadas de baixo);
-:Caimento heurístico: anel do busto,
-casco convexo do peito, tubo da saia;
-|Acabamento (garment-relax/trims)|
-:Corpo suavizado (laplaciano) como referência;
-:relaxGarment: laplaciano com borda fixa e
-folga mínima pela normal da pele de ORIGEM;
-:foldGarment: ondas de 1,5–8 mm pela normal;
-:Barras/punhos = anéis em volta do eixo
-ombro→punho; gola = cilindro de 4 anéis;
-|Textura|
-:Foto projetada de FRENTE na pose de exibição
-(só faces com nz > 0,2); costas/laterais = cor lisa,
-mangas sem foto;
-|Render (three.js)|
-:SkinnedMesh por peça, pesos copiados do vértice de
-origem (LBS), polygonOffset por camada, alphaTest;
-:Guarda "nunca sem roupa" (três zonas cobertas);
-:Exibição: provador/espelho/vitrine/passarela/GLB;
+|Lógica no navegador (lib)|
+partition "lib/avatar3d/human/asset.ts · loadBodyAsset()" {
+  if (!r.ok?) then (sim)
+    :lança erro;
+    stop
+  endif
+  if (!r.ok?) then (sim)
+    :lança erro;
+    stop
+  endif
+  if (meta.format !== BODY_FORMAT?) then (sim)
+    :lança erro;
+    stop
+  endif
+  if (!s || s.type !== type?) then (sim)
+    :lança erro;
+    stop
+  endif
+}
+|Lógica no navegador (lib)|
+partition "lib/avatar3d/human/garments.ts · kindOf()" {
+  if (is['legging'?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  if (is['skirt', 'saia'] && !is['short'?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  if (is['short', 'bermuda'?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  if (is['pant', 'jean', 'trouser', 'calca', 'calça', '…?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  note right
+  e mais 18 condições que encerram cedo:
+  is('dress', 'vestido', is('jumpsuit', 'macac', 'overall', 'romper', 'playsuit', is('boot'…
+  end note
+}
+|Tela (React)|
+partition "c/ui/index.tsx · ChipMultiSelect()" {
+  :estado da tela: LimitHit = false;
+  :estado da tela: LimitHit = true;
+  :estado da tela: LimitHit = false;
+  :tr(), tr(), tr(), tr()\n<size:10>lib/i18n/i18n.tsx</size>;
+  :tr()\n<size:10>lib/i18n/i18n.tsx</size>;
+}
+|Pessoa usuária|
+:Vê o resultado;
 stop
-|Fora do provador|
-note right
-  RF16 (backend): Meshy → Stable Fast 3D → relevo local
-  geram GLB ESTÁTICO da peça (visualizador e Meu Quarto).
-  Não vestível: sem esqueleto, costuras ou regiões.
-  Blender worker / RunPod: só documentos em markdowns/.
-end note
 @enduml

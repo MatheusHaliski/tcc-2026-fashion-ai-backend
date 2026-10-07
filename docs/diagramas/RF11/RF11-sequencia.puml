@@ -1,108 +1,93 @@
 @startuml RF11_Sequencia
-title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de sequência — arte do card do look: catálogo, arte com IA, prévia e salvar
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as P
-participant "schemes/new/page.tsx\nSchemeBuilder ·\nBackgroundStudio" as FE
-participant "api\n(lib/api/client)" as API
-participant "BackgroundController" as BC
-participant "SchemeController" as SC
-participant "SchemeService" as SS
-participant "BackgroundStudioService" as BS
-participant "AssetCatalogService" as AC
-participant "AiEngine (RF24)" as AI
-participant "ImageGenerationPort\n(Replicate)" as IMG
-participant "MediaService" as MS
-database "MySQL" as DB
+autonumber "<b>0."
+title RF11 — Compor a arte de fundo (Background Studio) do card de um esquema ou de uma peça\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-P -> FE: chega à etapa 4 (Aparência)
-FE -> API: GET /api/backgrounds/catalog (anônimo)
-API -> BC: catalog()
-BC -> BS: catalog()
-BS -> AC: list(gradientes, cartelas, auras, materiais) · skins() · mosaics()
-BC --> FE: 200 {colors, gradients, seasonal, auraPresets, materials,\nskins, directions, anatomies, animations, imageGenerationAvailable}
-FE -> API: GET /api/backgrounds/recommendations?styles=&occasions=
-API -> BC: recommend(styles, occasions)
-BC -> BS: recommend(...) — regra local por estilo/ocasião
-BS -> AC: resolveCombination(aura, material) · nativeContainer(skin)
-BC --> FE: 200 {id, label, skin, aura, material, containerColor, reason}
-
-== Modo IA: a composição escolhida já vem com arte (applyComposition) ==
-opt o look veio de "Gerar com IA" na etapa 1
-  FE -> API: POST /api/backgrounds/art {prompt, direction, passePartout: true}
-  API -> BC: art(user, ArtRequest)
-  BC -> BS: generateArt(user, ArtRequest)
-  alt e-mail não confirmado / conta bloqueada
-    BS --> FE: 403 EMAIL_NAO_CONFIRMADO | CONTA_SUSPENSA
-  else prompt vazio
-    BS --> FE: 400 PROMPT_VAZIO
-  else
-    BS -> DB: celebrity_profiles (nomes artísticos e civis protegidos)
-    BS -> AI: execute(userId, BACKGROUND_GENERATOR, prompt, protectedNames, steps)
-    alt prompt cita pessoa real, rosto ou corpo (CelebrityPromptValidator)
-      AI -> DB: INSERT ai_inference_log (PROMPT_REJECTED)
-      AI --> FE: 422 PROMPT_REJEITADO {violations, inferenceId}
-    else provedor, orçamento e cota disponíveis
-      AI -> IMG: generate(prompt, "no people, no faces", 896, 1344)
-      IMG --> AI: bytes + custo
-      AI -> DB: INSERT ai_inference_log (SUCCESS)
-      BS -> MS: put(users/{id}/backgrounds/{uuid}.png) · register(BACKGROUND_STUDIO)
-      MS -> DB: INSERT photos
-      BC --> FE: 200 {status: READY, url, provider, latencyMs, costUsd}
-    else sem provedor, sem orçamento ou sem cota
-      AI -> DB: INSERT ai_inference_log (FALLBACK_LOCAL | RATE_LIMITED)
-      BC --> FE: 200 {status: FALLBACK_GALLERY, message, suggestions[6]}
-    end
-  end
-  FE -> FE: READY → bg.aiArt = {url}; senão fica a aura/material/skin recomendados
+actor "Pessoa usuária" as U
+boundary "Tela (Next.js)" as P
+control "BackgroundController" as BackgroundController
+participant "BackgroundStudioService" as BackgroundStudioService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+participant "AssetCatalogService" as AssetCatalogService
+participant "MediaService" as MediaService
+== Aplicar configuração de fundo ao esquema ==
+U -> P : Aplicar configuração de fundo ao esquema
+P -> BackgroundController : PUT /api/schemes/{id}/background
+BackgroundController -> BackgroundStudioService : saveScheme()
+activate BackgroundStudioService
+BackgroundStudioService -> Guard : requireCanCreate()
+BackgroundStudioService -> DB_MySQL : SELECT schemes
+BackgroundStudioService -> Guard : requireOwner()
+alt cor inválida
+BackgroundStudioService --> BackgroundController : 400 COR_INVALIDA
+BackgroundController --> P : 400 + mensagem
 end
-
-== Rascunho: os segmentos mudam só o estado local ==
-loop cada escolha em Cor · Aura & Material · Layout & Estilo · Container
-  P -> FE: escolhe uma opção
-  FE -> FE: setBg / setSkin / setAnatomy → prévia (resolveCardArt + CardArtLayer)
+alt preset inválido
+BackgroundStudioService --> BackgroundController : 400 PRESET_INVALIDO
+BackgroundController --> P : 400 + mensagem
 end
-
-== Etapa 5: PNG e salvar ==
-opt pré-visualizar em PNG
-  FE -> API: POST /api/schemes/preview (Accept: image/png)
-  API -> SC: preview(user, SchemeForm)
-  SC -> SS: preview(user, form)
-  SS -> BS: applyToScheme(esquema transitório, background, false)
-  SS -> SS: SchemeCardRenderer (rendererBackground)
-  SC --> FE: 200 image/png (nada gravado)
+alt preset inválido
+BackgroundStudioService --> BackgroundController : 400 PRESET_INVALIDO
+BackgroundController --> P : 400 + mensagem
 end
-P -> FE: Salvar ou Publicar
-FE -> API: POST /api/schemes | PUT /api/schemes/{id}\n{..., background: {scheme: {...bg, layoutAnatomy, photo}, pieces: {anatomy}},\ncardSkin, layoutAnatomy, publish}
-API -> SC: create(user, form) | update(user, id, form)
-SC -> SS: create/update
-SS -> BS: applyToScheme(scheme, background, applyRecommendedDirection = false)
-alt regra do Studio falhou
-  BS --> FE: 400 COR_INVALIDA | PRESET_INVALIDO | MATERIAL_INDISPONIVEL |\nFORMATO_INVALIDO | ESTACAO_OBRIGATORIA | SKIN_INVALIDA |\nANATOMIA_INVALIDA | SILHUETA_INVALIDA | MIDIA_INVALIDA
-else container travado pela direção recomendada e cor diferente
-  BS --> FE: 409 CONTAINER_TRAVADO
-else válido
-  BS -> AC: resolveCombination(...) (vídeo do combo, pôster)
-  BS -> MS: requireOwnedMedia(arte com IA ou envio)
-  SS -> DB: INSERT/UPDATE schemes (background_*, card_skin, layout_anatomy,\ncontainer_*, studio_config_json + "resolved") · scheme_items
-  SC --> FE: 201/200 {scheme, sealSuggestions (RF20, só no POST)}
+alt preset inválido
+BackgroundStudioService --> BackgroundController : 400 PRESET_INVALIDO
+BackgroundController --> P : 400 + mensagem
 end
-
-== API sem tela no frontend atual ==
-opt PUT /api/schemes/{id}/background {config, applyRecommendedDirection}
-  API -> BC: saveScheme(user, id, body)
-  BC -> BS: saveScheme → requireOwner → applyToScheme(..., true|false)\n+ savePieceInternal para cada pieces.{pieceId}
-  BC --> FE: 200 {studio, cardSkin, containerOrigin, containerMandatory, containerColor}
+alt preset inválido
+BackgroundStudioService --> BackgroundController : 400 PRESET_INVALIDO
+BackgroundController --> P : 400 + mensagem
 end
-opt DELETE /api/schemes/{id}/background (restaurar padrão)
-  API -> BC: resetScheme(user, id)
-  BC -> BS: resetScheme → #F4F2EF, sem gradiente/arte, NONE;\ncontainer INDEFINIDA se não estiver travado
-  BC --> FE: 200 {reset: true, containerMandatory}
+alt material indisponível
+BackgroundStudioService --> BackgroundController : 400 MATERIAL_INDISPONIVEL
+BackgroundController --> P : 400 + mensagem
 end
+alt formato inválido
+BackgroundStudioService --> BackgroundController : 400 FORMATO_INVALIDO
+BackgroundController --> P : 400 + mensagem
+end
+alt formato inválido
+BackgroundStudioService --> BackgroundController : 400 FORMATO_INVALIDO
+BackgroundController --> P : 400 + mensagem
+end
+BackgroundStudioService -> BackgroundStudioService : backgroundVideoUrl = null
+BackgroundStudioService -> AssetCatalogService : resolveCombination()
+BackgroundStudioService -> BackgroundStudioService : backgroundVideoUrl = set
+BackgroundStudioService -> MediaService : requireOwnedMedia()
+BackgroundStudioService -> BackgroundStudioService : backgroundArtUrl = set
+alt estacao obrigatória
+BackgroundStudioService --> BackgroundController : 400 ESTACAO_OBRIGATORIA
+BackgroundController --> P : 400 + mensagem
+end
+BackgroundStudioService -> AssetCatalogService : gradient()
+alt silhueta inválida
+BackgroundStudioService --> BackgroundController : 400 SILHUETA_INVALIDA
+BackgroundController --> P : 400 + mensagem
+end
+note over BackgroundStudioService : … e mais 27 passos no código
+deactivate BackgroundStudioService
+BackgroundStudioService --> BackgroundController : resultado
+BackgroundController --> P : 200 JSON
+P --> U : atualiza a tela
 @enduml

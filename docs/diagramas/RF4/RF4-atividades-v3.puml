@@ -1,10 +1,16 @@
 @startuml RF4_Criar_Peca_v3
-title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de atividades — criador catalog-first (/pieces/new), do tipo da peça ao salvar
-
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -18,159 +24,68 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
+title RF4 — Criar Peça (v3)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-|Pessoa|
-|Frontend (pieces/new · PieceCreator)|
-|API (fai-web)|
-|Serviço (fai-application)|
-|Banco/IA|
-|Pessoa|
+|Pessoa usuária|
 start
-:Abre "Adicionar peça" (/pieces/new):\nCloset, atalho do Explorador/marca\n(?category, ?brand, ?q) ou "Eu tenho" do Lens\n(?from=lens com subtipo, cor, material, estilos);
-
-|Frontend (pieces/new · PieceCreator)|
-if (Sessão ativa? (RequireAuth)) then (não)
-  #FFE3E3:Vai para /login;
+:Abre /pieces/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/brand-search\nGET /api/studio/backdrops\nGET /api/taxonomy\nGET /api/brand-logos/batch;
+|Pessoa usuária|
+:Cadastrar a peça a partir do\nrascunho analisado;
+|Tela (Next.js)|
+:POST /api/pieces;
+|API (Spring Boot)|
+:WardrobeController.create\n→ WardrobeService.create;
+if (formulario inválido?) then (sim)
+  :400 FORMULARIO_INVALIDO\n«Corrija os campos destacados.»\n→ a tela mostra o aviso;
   stop
 endif
-:readPiecePrefill + validPiecePrefill:\nvalor fora da taxonomia é ignorado;
-note right
-  Lens (RF45/RF54): aviso "veio do Lens" com link
-  para o scan. A foto do Lens NUNCA vira a foto
-  da peça (LensService.prefillHref).
-end note
-
-partition "Etapa 1 · Peça — tipo, busca catalogada e dados" {
-  |Pessoa|
-  :Escolhe o tipo da peça (obrigatório):\nsuperior, inferior, calçado, acessório, corpo inteiro;
-  |Frontend (pieces/new · PieceCreator)|
-  :Troca de tipo limpa o subtipo e tira\nocasiões não permitidas para o tipo;
-
-  |Pessoa|
-  :Descreve a peça na busca catalogada\n(subtipo → marca → nome/modelo, cor);
-  |Frontend (pieces/new · PieceCreator)|
-  if (Contexto suficiente? (enoughToSearch:\nmarca, subtipo ou texto)) then (sim)
-    :Após 350 ms: GET /api/catalog/search\n(+ GET /api/catalog/suggestions e /api/catalog/brands);
-    |Serviço (fai-application)|
-    :CatalogService.search: resolve a intenção\n(marca e apelidos, subtipo, cor, traços de design),\nmonta o pool (FULLTEXT ngram) e reordena\n(CatalogMatchScorer, MIN_SCORE 0,35);
-    |Banco/IA|
-    :MySQL: catalog_products · catalog_variants ·\ncatalog_images · brands · brand_aliases\n(só VALIDATED, PERSISTABLE, REFERENCE_ONLY);
-    |Frontend (pieces/new · PieceCreator)|
-    if (Há resultados?) then (sim)
-      :Cards com a foto oficial e o "% compatível";
-      |Pessoa|
-      if (Escolhe "É esta"?) then (sim)
-        |Frontend (pieces/new · PieceCreator)|
-        :applyCatalog: preenche nome, tipo, subtipo, cor,\nmaterial, sexo, SKU e marca (brandSource CATALOGO,\nbrandRef = productId); a foto oficial vira a imagem;
-      else (não)
-      endif
-    else (não)
-      |Pessoa|
-      if (Procura nas lojas oficiais da marca?) then (sim)
-        |Frontend (pieces/new · PieceCreator)|
-        :POST /api/catalog/discover;
-        |Serviço (fai-application)|
-        :CatalogService.discover → OfficialCatalogDiscovery\n(só domínios de catalog_sources da marca);
-        if (Resultado) then (achou)
-          :Candidatos gravados como DISCOVERED\n(ocultos até alguém escolher);
-        else (não achou)
-          :BRAND_UNKNOWN · NO_OFFICIAL_SOURCE · NOT_FOUND\n→ "preencha os dados da peça abaixo";
-        endif
-      else (não)
-        |Frontend (pieces/new · PieceCreator)|
-        :"Ou preencha os dados da peça logo abaixo";
-      endif
-    endif
-  else (não)
-  endif
-
-  |Pessoa|
-  :Preenche/revisa o formulário (PieceFields):\nnome, subtipo, sexo, cor, material, tamanho,\nocasião e estilo (vocabulário do tipo), preço, visibilidade;
-  :Campo "Marca" = buscador web (BrandSearchInput)\n→ GET /api/brand-search (ver RF4-sequencia-v3\ne RF4-pipeline-filtro-logo);
-  |Frontend (pieces/new · PieceCreator)|
-  :Selos sugeridos para a peça:\nPOST /api/seal-suggestions/preview-piece (nada é gravado);
-
-  |Pessoa|
-  #F2F2F2:<<planejado>> "Adicionar minha foto (opcional)"\npara um item mais personalizado → editor\nguiado do RF15 → escolher a capa\n(minha foto × foto oficial);
+if (erro?) then (sim)
+  :500 ERRO\n→ a tela mostra o aviso;
+  stop
+endif
+if (foto obrigatória?) then (sim)
+  :400 FOTO_OBRIGATORIA\n«Envie uma foto ou escolha usar a\nimagem padrão da peça.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (conteúdo bloqueado?) then (sim)
+  :400 CONTEUDO_BLOQUEADO\n«A foto viola a política de\nconteúdo e não pode ser usada.»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: users\npipeline_jobs\nwardrobe_items\nreactions\nbrands;
+:Usa: Guard.requireCanCreate\nOwnMedia.accepts\nMediaService.read\nBrandLogoService.acceptWebLogo\nAssetCatalogService.defaultPieceImage\nAssetCatalogService.publicFile (+6);
+:IA: STUDIO_ENHANCER;
+:Grava: wardrobe_items\nquality_scores\nprocessing_jobs_log\nmoderation_queue\npipeline_jobs;
+:Estado: brandLogoUrl → null\nbrandLogoUrl → set\nimageUrl → set\nthumbnailUrl → set\noriginalImageUrl → null\nmoderationStatus → APPROVED (+12);
+:Evento: PieceCreated\nPieceCapturedFromSession;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Substituir a foto da peça [reproc…)
+    :PUT /api/pieces/{id}/image\n→ WardrobeService.replaceImage\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.put …\nia: STUDIO_ENHANCER;
+  case (Reprocessar remoção de fundo)
+    :POST /api/pieces/{id}/background-removal\n→ WardrobeService.removeBackground\nlê: wardrobe_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.read …\nia: FLAT_LAY_STANDARDIZER, STUDIO_ENHANCER;
+  case (Rascunho de uma peça da foto com…)
+    :POST /api/pieces/analysis/multi/{draftId}/pieces\n→ MultiPieceService.pieceDraft\nvalida: CONTEUDO_BLOQUEADO, ERRO\nlê: users, pipeline_jobs\nusa: Guard.requireCanCreate,\nWardrobeService.flatLayStep,\nFlatLayPipeline.run …\nia: FLAT_LAY_STANDARDIZER, CONTENT_MODERATOR;
+  case (Várias peças numa foto: a IA acha…)
+    :POST /api/pieces/analysis/multi\n→ MultiPieceService.detect\nlê: users\nusa: Guard.requireCanCreate, MediaService.put\nia: MULTI_PIECE_DETECTOR;
+  case (RF4 · Estúdio — gera/refaz a foto…)
+    :POST /api/pieces/{id}/studio\n→ WardrobeService.studioPiece\nvalida: ESTUDIO_INDISPONIVEL, NAO_ENCONTRADO,\nSEM_RECORTE\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.read …\nia: STUDIO_ENHANCER;
+  endswitch
   note right
-    Decisão do Trello: foto OPCIONAL.
-    O envio de foto saiu do criador em 04/10
-    (commit 1f31fc16) e ainda não voltou.
-    Hoje a foto própria entra depois, na página
-    da peça (ver RF4-atividades-imagem).
+  Outras ações deste RF:
+  Rascunho da peça com a cópia…, Cópia da peça por
+  IA: recria…, Nova tentativa de ler a marca…, RF4 ·
+  Estúdio — leva ao estúd…, RF4 · Estúdio — aprova a
+  foto…, RF4 · Estúdio — refaz a foto…
   end note
-}
-
-partition "Etapa 2 · Mais detalhes" {
-  |Pessoa|
-  :PieceMoreDetails: estado de conservação, data e\nlocal de compra, SKU, cuidados, notas, à venda;
-}
-partition "Etapa 3 · Arte de fundo (RF11)" {
-  :PieceArtEditor: skin, aura, material e anatomia\ndo card (config "background");
-}
-partition "Etapa 4 · Revisar e salvar" {
-  |Frontend (pieces/new · PieceCreator)|
-  :Resumo dos campos + origem da imagem\n("foto oficial do catálogo" ou "ilustração da categoria");
-  |Pessoa|
-  :Toca em Salvar (trava síncrona: um pedido por clique);
-  |Frontend (pieces/new · PieceCreator)|
-  if (validatePieceForm local ok?) then (não)
-    #FFE3E3:Mostra o erro junto do campo e volta\nà etapa do primeiro campo com problema;
-    stop
-  endif
-  if (Escolheu um produto do catálogo?) then (sim)
-    :POST /api/pieces/from-catalog\n(productId, variantId + dados pessoais);
-    |API (fai-web)|
-    :CatalogController.fromCatalog;
-    |Serviço (fai-application)|
-    :CatalogService.addToWardrobe;
-    if (Produto REJECTED?) then (sim)
-      #FFE3E3:400 PRODUTO_RECUSADO;
-      stop
-    endif
-    :DISCOVERED → REFERENCE_ONLY (o próximo usuário\nacha localmente); ownersCount + 1;\nfoto = 1ª catalog_image não recusada;
-    :WardrobeService.createFromCatalog(form, CatalogPick);
-  else (não)
-    |Frontend (pieces/new · PieceCreator)|
-    :POST /api/pieces (PieceForm, useDefaultImage = true);
-    |API (fai-web)|
-    :WardrobeController.create;
-    |Serviço (fai-application)|
-    :WardrobeService.create;
-  endif
-
-  |Serviço (fai-application)|
-  :createInternal: Guard.requireCanCreate\n(401 sem login · 403 EMAIL_NAO_CONFIRMADO,\nCONTA_SUSPENSA, EXCLUSAO_AGENDADA);
-  if (validate(form): taxonomia, nome, preço ≥ 0,\n≤ 2 selos, mercado) then (inválido)
-    #FFE3E3:400 FORMULARIO_INVALIDO {campo: mensagem};
-    |Frontend (pieces/new · PieceCreator)|
-    :Campos destacados; nada se perde;
-    stop
-  endif
-  |Serviço (fai-application)|
-  :apply + resolveBrand + brandFromWebSearch\n(logo só do storage próprio; fonte WIKIDATA,\nSIMPLE_ICONS, IA_BUSCA_WEB, PLATAFORMA ou TEXTO_LIVRE);
-  if (Produto com foto oficial?) then (sim)
-    :imageUrl = foto oficial; imageOrigin = CATALOG;\ndefaultImage = false;
-  else (não)
-    :imageUrl = ilustração da subcategoria\n(AssetCatalogService.defaultPieceImage);\ndefaultImage = true; imageOrigin = DEFAULT\n(só no caminho do catálogo);
-    :Sem catálogo: defaultStudio — a ilustração\ntambém ganha foto de estúdio (aprovada);
-  endif
-  :moderationStatus = APPROVED;\nphotoProcessingStatus = COMPLETED;\nvisibilidade = a do formulário ou a padrão do perfil;
-  |Banco/IA|
-  :INSERT wardrobe_items; OpenSearch (projections.piece);\nnotificação PIECE_CREATED; audit CADASTRO_PECA;
-  :DomainEvents.PieceCreated (AFTER_COMMIT):\nFAI Points PIECE_CATALOGED, HypeLiveRecalc,\nInventory Score, Meu Quarto, desafios, cupons;
-  |Frontend (pieces/new · PieceCreator)|
-  if (Resposta) then (201)
-    :CreationSuccess → perfil (/u/{username}) ou /closet;
-  else (erro)
-    #FFE3E3:status 0 → "sem conexão"; 5xx → mensagem\ncom a referência (correlationId); 401/403/409 →\nmensagem do servidor; o formulário continua preenchido;
-  endif
-}
-|Pessoa|
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

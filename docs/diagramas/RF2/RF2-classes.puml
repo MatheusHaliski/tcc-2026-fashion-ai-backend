@@ -1,219 +1,78 @@
 @startuml RF2_Classes
-title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de classes — login, sessão (família de refresh token), JWT e freios contra força bruta
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class User <<table users>> {
-  +username: String
-  +email: String «AES-GCM»
-  +emailHash: String
-  +emailVerified: boolean
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  +status: AccountStatus
-  +twoFactorEnabled: boolean
-  +country: String
-  +lastLoginAt: Instant
-  +deletionScheduledFor: Instant
+package "Backend (Java)" {
+  class PasswordHasherPort <<interface>> {
+    +hash()
+    +matches()
+    +needsRehash()
+  }
+  class RateLimitPort <<interface>> {
+    +tryAcquire()
+    +status()
+    +reset()
+    +release()
+  }
+  class TokenIssuerPort <<interface>> {
+    +issueAccessToken()
+    +accessTokenTtl()
+  }
+  class IdentityService <<service>> {
+    -audit: Audit
+    -frontendUrl: String
+    -dummyHash: String
+    -mailExecutor: Executor
+    +setIssuerReview()
+    +preRegistrationUpload()
+    +pendingUpload()
+    +purgeStalePendingUploads()
+    +pendingReferenced()
+    +register()
+    +readQuietly()
+    +claimPendingUpload()
+  }
+  class Argon2PasswordHasher  {
+    -encoder: Argon2PasswordEncoder
+    +hash()
+    +matches()
+    +needsRehash()
+  }
+  class JwtTokenIssuer  {
+    -encoder: JwtEncoder
+    -issuer: String
+    -audience: String
+    -ttl: Duration
+    +issueAccessToken()
+    +accessTokenTtl()
+  }
+  class SessionActiveFilter  {
+    -errors: ErrorWriter
+    +doFilterInternal()
+  }
 }
-class RefreshToken <<table refresh_tokens>> {
-  +user: User
-  +tokenHash: String «SHA-256»
-  +familyId: UUID «= sid do JWT»
-  +expiresAt: Instant
-  +revokedAt: Instant
-  +rotatedFromId: UUID
-  +createdIp: String
-  +userAgent: String
-  +deviceName: String
-  +locationApprox: String
-  +lastUsedAt: Instant
-  +persistent: boolean
-}
-class VerificationCode <<table verification_codes>> {
-  +user: User
-  +purpose: VerificationPurpose
-  +codeHash: String
-  +expiresAt: Instant
-  +consumedAt: Instant
-  +attempts: int
-  +isUsable(now): boolean
-}
-class AuditLog <<table audit_log>> {
-  +actor: String
-  +acao: String
-  +recurso: String
-  +resultado: String
-  +ip: String
-  +userAgent: String
-  +timestamp: Instant
-  +correlationId: String
-  +metadataJson: String
-}
-enum AccountStatus {
-  PENDING_EMAIL_VERIFICATION
-  ACTIVE
-  PENDING_VALIDATION
-  SUSPENDED
-  DELETION_SCHEDULED
-  DELETED
-}
-enum VerificationPurpose {
-  EMAIL_VERIFICATION
-  EMAIL_CHANGE
-  TWO_FACTOR
-  PASSWORD_RESET
-}
-}
-package "fai-application" {
-class IdentityService {
-  -MAX_LOGIN_FAILURES = 5
-  -LOCK_WINDOW = 15 min
-  ~LOGIN_FAIL = "login-fail"
-  -dummyHash: String
-  +login(cmd, ip, userAgent): Session
-  +refresh(rawRefresh, ip, userAgent): Session
-  +sessionActive(familyId): boolean
-  +logout(user, sessionId)
-  +findByEmail(rawEmail): Optional<User>
-  -openSession(user, persistent, ip, ua, device): Session
-  -issue(user, family, rotatedFrom, persistent, ip, ua, device): Session
-  -revokeFamily(family)
-  -sendTwoFactor(user)
-}
-class "LoginCommand" as LoginCommand << (R,#E4DEF0) record >> {
-  identifier: String
-  password: String
-  rememberMe: boolean
-  deviceName: String
-  twoFactorCode: String
-}
-class "Session" as Session << (R,#E4DEF0) record >> {
-  accessToken: String
-  expiresInSeconds: long
-  refreshToken: String
-  refreshExpiresAt: Instant
-  sessionId: UUID
-  user: Views.UserCard
-  status: String
-  emailVerified: boolean
-  warnings: List<String>
-}
-class "CurrentUser" as CurrentUser << (R,#E4DEF0) record >> {
-  id: UUID
-  username, role: String
-  profileType: ProfileType
-  emailVerified: boolean
-  status: AccountStatus
-  ip, userAgent: String
-  +admin(): boolean
-}
-interface TokenIssuerPort <<port>> {
-  +issueAccessToken(user, sessionId): String
-  +accessTokenTtl(): Duration
-}
-interface PasswordHasherPort <<port>> {
-  +hash(raw): String
-  +matches(raw, encoded): boolean
-  +needsRehash(encoded): boolean
-}
-interface RateLimitPort <<port>> {
-  +tryAcquire(owner, bucket, limit, window): boolean
-  +status(owner, bucket, limit, window): QuotaStatus
-  +reset(owner, bucket)
-  +release(owner, bucket)
-}
-class "QuotaStatus" as QuotaStatus << (R,#E4DEF0) record >> {
-  limit: int
-  used: long
-  resetAt: Instant
-  +exhausted(): boolean
-}
-class Audit {
-  +log(user, action, resource, metadata)
-  +log(actor, action, resource, result, ip, ua, metadata)
-}
-}
-package "fai-web" {
-class AuthController {
-  POST /api/auth/login
-  POST /api/auth/refresh
-  POST /api/auth/logout
-}
-class JwtTokenIssuer {
-  -ttl = 15 min (RS256, kid "fai-1")
-  +issueAccessToken(user, sessionId): String
-}
-class Argon2PasswordHasher {
-  MEMORY_KIB = 19456 · ITERATIONS = 2
-  PARALLELISM = 1 · SALT 16 · HASH 32
-}
-class SessionActiveFilter {
-  #doFilterInternal(request, response, chain)
-}
-class AuthRateLimitFilter {
-  ~RULES: List<Rule>
-  -hashing: Semaphore
-  ~bucketKey(ip): String «IPv6 → /64»
-}
-class ClientIpResolver {
-  +resolve(request): String
-}
-class CurrentUserResolver {
-  +resolveArgument(...): CurrentUser
-}
-class SecurityConfig {
-  securityFilterChain(http, ...)
-  jwtAuthenticationConverter()
-}
-}
-package "fai-infrastructure" {
-class InMemoryRateLimit
-class RedisAdapters {
-  redisRateLimit(redis): RateLimitPort
-}
-}
-
-RefreshToken "*" --> "1" User : user
-VerificationCode "*" --> "1" User : user
-User --> AccountStatus
-VerificationCode --> VerificationPurpose
-AuthController --> IdentityService
-IdentityService ..> LoginCommand
-IdentityService ..> Session
-IdentityService ..> RefreshToken : cria · rotaciona · revoga
-IdentityService ..> VerificationCode : TWO_FACTOR
-IdentityService --> TokenIssuerPort
 IdentityService --> PasswordHasherPort
+IdentityService --> TokenIssuerPort
 IdentityService --> RateLimitPort
-IdentityService --> Audit
-Audit ..> AuditLog : grava (MysqlAuditService)
-RateLimitPort ..> QuotaStatus
-JwtTokenIssuer ..|> TokenIssuerPort
-Argon2PasswordHasher ..|> PasswordHasherPort
-InMemoryRateLimit ..|> RateLimitPort
-RedisAdapters ..> RateLimitPort : bean
-SessionActiveFilter --> IdentityService : sessionActive(sid)
-SecurityConfig ..> SessionActiveFilter : addFilterAfter(Bearer…)
-AuthRateLimitFilter --> RateLimitPort
-AuthRateLimitFilter --> ClientIpResolver
-CurrentUserResolver ..> CurrentUser : JWT + users (status atual)
-note bottom of AuthRateLimitFilter
-  Por IP: login 30/10 min · register 10/h · uploads 40/h
-  · refresh 120/10 min · password-reset 10/h e 20/h
-  · PUT /api/auth/password 20/h · PATCH /api/me/sensitive 30/h
-  · POST /api/me/deletion 10/h · availability 120/10 min
-  · username-suggestions 60/10 min. Rotas com hash entram no
-  teto de hashes simultâneos (503 AUTENTICACAO_OCUPADA).
-end note
+SessionActiveFilter --> IdentityService
 @enduml

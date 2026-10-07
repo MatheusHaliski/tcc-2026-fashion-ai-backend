@@ -1,0 +1,44 @@
+{
+ "data": "2026-10-06",
+ "fase": "AVATAR-ID I4 (olhos, óculos e sobrancelhas)",
+ "conjunto": "16 retratos autorizados, cada um em 3 versões: original, com armação de grau sintética e com lente escura sintética (desenhadas pelo laboratório sobre os pontos do rosto); só agregados",
+ "iris": {
+  "medidaNaFoto": 16,
+  "confiancaMediana": 0.825,
+  "confiancaAbaixoDe05": 3,
+  "classes": {"DARK_BROWN": 10, "MEDIUM_BROWN": 2, "GRAY": 2, "GREEN_GRAY": 1, "BLUE": 1},
+  "classeConfereComOlhoNaFoto": 16,
+  "mesmaClasseComArmacaoDesenhada": 15,
+  "heterocromiaFalsa": 0,
+  "comLenteEscura": {"corPadrao": 16, "confianca": 0}
+ },
+ "oculos": {
+  "semOculosDetectadoComoNenhum": 16,
+  "armacaoDetectadaComoGrau": 16,
+  "lenteDetectadaComoEscura": 16,
+  "remocaoArmacao": {
+   "pixelsDaArmacaoDevolvidosAPeleMediana": 0.704,
+   "minimo": 0.59,
+   "maximo": 0.824,
+   "observacao": "o restante é o aro de cima encostado na sobrancelha, protegido junto com a pálpebra e o vinco; o aro 3D cobre",
+   "pixelsMudadosForaDaArmacaoMediana": 0.0002,
+   "pixelsMudadosForaDaArmacaoMaximo": 0.294,
+   "sobrancelhaIntacta": 15
+  }
+ },
+ "sobrancelhas": {
+  "medidas": 16,
+  "formas": {"STRAIGHT": 4, "SOFT_ARCH": 7, "HIGH_ARCH": 5},
+  "limitesDoArco": [0.13, 0.16]
+ },
+ "identidade": {
+  "gateNoAparelho": {"I3": "14/15", "I4": "14/15"},
+  "reprojecaoTodosMmMediana": 0.6,
+  "erroDeCorDaPeleMediana": 0.2,
+  "costuras": 0,
+  "semelhanca": {
+   "frente": {"I3": {"sfaceMediana": 0.45, "acimaDoLimiar": 14, "top1": 15}, "I4": {"sfaceMediana": 0.448, "acimaDoLimiar": 14, "top1": 15}},
+   "tres_quartos": {"I3": {"sfaceMediana": 0.372, "acimaDoLimiar": 8, "top1": 13}, "I4": {"sfaceMediana": 0.363, "acimaDoLimiar": 7, "top1": 14}}
+  }
+ }
+}

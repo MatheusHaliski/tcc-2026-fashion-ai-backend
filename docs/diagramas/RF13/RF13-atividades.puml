@@ -1,9 +1,16 @@
 @startuml RF13_Atividades
-title RF13 — Esquema de identidade pessoal na página "DNA de Estilo"\nDiagrama de atividades — criar o Esquema de DNA (2 a 6 looks), com IA ou manual, até salvar ou publicar
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,94 +19,79 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF13 — Criar um esquema de identidade pessoal de moda na página 'DNA de Estilo'\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre "DNA de Estilo" (/dna, só logado)\nou edita um DNA (/dna-schemes/[id]/edit);
-|Frontend (dna/page.tsx · DnaBuilder)|
-:GET /api/dna-schemes/builder;
-|API (DnaController · DnaService)|
-if (Já existe StyleDna sintetizado?) then (não)
-  :ensureDna cria o StyleDna e sintetiza a Camada 1:\nAiEngine.local(DNA_SYNTHESIZER) → LocalDnaSynthesizer\n(arquétipo, paleta, estilos, silhueta, peça-ícone)\n+ frase de identidade por AiEngine.text (ou local);
-  |Banco/IA (MySQL · AiEngine)|
-  :INSERT style_dna + style_dna_versions ("GERACAO");
-else (sim)
+:Abre /dna, /dna-schemes/[id]/edit,\n/dna-schemes/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/dna-schemes/builder\nGET /api/me/dna\nGET /api/dna-schemes/{id}\nGET /api/me/dna-schemes;
+|Pessoa usuária|
+:HU20 — Criar esquema de DNA (linha\ndo tempo de looks);
+|Tela (Next.js)|
+:POST /api/dna-schemes;
+|API (Spring Boot)|
+:DnaController.create\n→ DnaService.createDnaScheme;
+if (layout inválido?) then (sim)
+  :400 LAYOUT_INVALIDO\n«Anatomias:»\n→ a tela mostra o aviso;
+  stop
 endif
-|API (DnaController · DnaService)|
-:Lista os looks do próprio usuário que não estão ARCHIVED;
+if (alvo inválido?) then (sim)
+  :400 ALVO_INVALIDO\n«Elemento-alvo: DNA_COMPLETO ou\nESQUEMA.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (narrativa indisponível?) then (sim)
+  :400 NARRATIVA_INDISPONIVEL\n«As narrativas só aparecem quando o\nelemento-alvo é o DNA completo.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (celulas invalidas?) then (sim)
+  :400 CELULAS_INVALIDAS\n«Um DNA referencia de 2 a 6\nesquemas.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (marco único?) then (sim)
+  :400 MARCO_UNICO\n«Escolha uma única célula como\nmarco (Momentos Marcantes).»\n→ a tela mostra o aviso;
+  stop
+endif
 note right
-  Sem pré-requisito de desbloqueio: 10 peças e 5 looks
-  "adorei" só deixam a síntese mais precisa. A re-síntese
-  "EVOLUCAO" (10 interações novas) roda em GET /api/me/dna,
-  hoje chamado só pela aba Histórico › Evolução do estilo.
+  e mais 1 validações:
+  ESQUEMA_REPETIDO
 end note
-if (Menos de 2 looks?) then (sim)
-  |Frontend (dna/page.tsx · DnaBuilder)|
-  :Estado vazio "Crie esquemas de vestimenta primeiro"\ncom atalho para /schemes/new;
-  stop
-else (não)
+|Dados e serviços|
+:Lê: style_dna\nusers\nschemes\nscheme_items\ndaily_looks\nwardrobe_items (+1);
+:Usa: Guard.requireCanCreate\nGuard.requireOwner;
+:IA: DNA_SYNTHESIZER;
+:Grava: style_dna\nstyle_dna_versions\ndna_schemes\ndna_scheme_items;
+:Estado: synthesizedAt → set\ncardImageUrl → null\nstatus → DRAFT\nbackgroundVideoUrl → set\nseasonalTheme → AUTUMN\nstatus → PUBLISHED (+1);
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Pré-visualizar o card do Esquema…)
+    :POST /api/dna-schemes/preview\n→ DnaService.preview\nvalida: ALVO_INVALIDO, LAYOUT_INVALIDO,\nNARRATIVA_INDISPONIVEL\nlê: style_dna, users, schemes …\nusa: Guard.requireOwner\nia: DNA_SYNTHESIZER;
+  case (Modo IA: até 3 propostas de DNA a…)
+    :POST /api/dna-schemes/compositions\n→ DnaService.compositions\nvalida: ESQUEMAS_INSUFICIENTES\nlê: style_dna, users, schemes …\nusa: HypeScoreConfig.algorithmVersion\nia: DNA_SYNTHESIZER;
+  case (Gerar/regerar o DNA [com formulár…)
+    :POST /api/me/dna\n→ DnaService.generate\nvalida: FORMULARIO_INVALIDO\nlê: users, style_dna, schemes …\nia: DNA_SYNTHESIZER\ngrava: style_dna, style_dna_versions;
+  case (Gerar card PNG com marca d'água […)
+    :POST /api/me/dna/share-card\n→ DnaService.shareCard\nlê: style_dna\nusa: MediaService.put\ngrava: style_dna;
+  case (Definir estação de cor [coloração…)
+    :PUT /api/me/dna/color-season\n→ DnaService.setColorSeason\nvalida: ESTACAO_INVALIDA\nlê: style_dna\ngrava: style_dna;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Atualizar campos de vida (lug…, Marcar campos como
+  privados (…, HU20 — Editar esquema de DNA, HU20 —
+  Excluir esquema de DNA
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-|Pessoa|
-if (Etapa 1 — modo?) then (IA)
-  :Escreve o pedido e escolhe ocasião, estilo,\nnarrativa e estação (opcionais);
-  |Frontend (dna/page.tsx · DnaBuilder)|
-  :POST /api/dna-schemes/compositions;
-  |API (DnaController · DnaService)|
-  :Contexto: até 40 looks com peças, marcas, cores, datas\ne HypeScore v2 PESSOAL (sem dados = null, nunca 0);
-  |Banco/IA (MySQL · AiEngine)|
-  :AiEngine.text(DNA_SYNTHESIZER) pede até 3 propostas;\nsem IA remota → localProposals (motor local);
-  |Pessoa|
-  :Escolhe uma proposta (vai para a etapa 2 preenchida);
-else (manual)
-endif
-:Etapa 2 — marca de 2 a 6 looks (células CELL_1..CELL_6),\nordem, rótulo de época e um marco opcional;
-:Etapa 3 — título, ocasião, estilo, elemento-alvo\n(DNA_COMPLETO ou ESQUEMA), estação e visibilidade;
-:Etapa 4 — Background Studio (RF11): anatomia A1–A4\n(AMPLIADO, GRADE, HORIZONTAL, LATERAL) ou narrativa B1–B12,\ncor, Aura & Material, skin, container;
-note right
-  B10 HYPE_FOCUS: medidores em HypeScore v2,
-  maior Hype primeiro e "sem dados" por último.
-  B11 CARTELA_SAZONAL: cartela e animação no modal
-  (RF11_Atividades_Cartela).
-end note
-|Frontend (dna/page.tsx · DnaBuilder)|
-:Prévia ao vivo: POST /api/dna-schemes/preview\n(debounce 250 ms; nada é gravado);
-|Pessoa|
-:Etapa 5 — Salvar ou Publicar;
-|Frontend (dna/page.tsx · DnaBuilder)|
-:POST /api/dna-schemes (ou PUT /api/dna-schemes/{id})\ncom cells, cardLayout, targetElement, narrativeType,\nseasonalTheme, visibility, background {..., skin}, publish;
-|API (DnaController · DnaService)|
-if (E-mail não confirmado ou conta bloqueada?) then (sim)
-  #FFE3E3:403 EMAIL_NAO_CONFIRMADO / CONTA_SUSPENSA;
-  stop
-elseif (Título, layout, alvo ou narrativa inválidos?) then (sim)
-  #FFE3E3:400 CAMPO_INVALIDO · LAYOUT_INVALIDO ·\nALVO_INVALIDO · NARRATIVA_INDISPONIVEL;
-  stop
-elseif (Células fora de 2–6, look repetido ou 2 marcos?) then (sim)
-  #FFE3E3:400 CELULAS_INVALIDAS · ESQUEMA_REPETIDO · MARCO_UNICO;
-  stop
-elseif (Algum look não é da pessoa?) then (sim)
-  #FFE3E3:403 (acesso negado, auditado);
-  stop
-else (ok)
-endif
-:Na criação, stamp copia arquétipo, ousadia, frase\ne paleta do StyleDna para o esquema;
-|Banco/IA (MySQL · AiEngine)|
-:INSERT/UPDATE dna_schemes (novo = DRAFT, creationMode\nMANUAL/AI_ASSISTED) + dna_scheme_items;\nstyle_dna.latest_dna_scheme_id (na criação);
-if (publish = true?) then (sim)
-  :status PUBLISHED, published_at = agora;
-else (não)
-endif
-|Frontend (dna/page.tsx · DnaBuilder)|
-:201 DnaView → tela de sucesso; o card fica na sub-aba\n"Meus looks DNA" do Lookbook (GET /api/me/dna-schemes);
+|Pessoa usuária|
 stop
 @enduml

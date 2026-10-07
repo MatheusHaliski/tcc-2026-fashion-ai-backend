@@ -1,214 +1,203 @@
 @startuml RF25_Criador_Classes
-title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de classes — criador: desenho e política (JSON em seals), catálogo de modelos, serviços e componentes
+!pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam class {
-  BackgroundColor #F8F4FF
-  BorderColor #B695F5
-  FontColor #2D2438
-  ArrowColor #52606D
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
-hide empty methods
-set separator none
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF25 — Criador de selo: modelo do desenho (JSON), catálogo de modelos e serviços\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "JSON em seals.background_config_json" {
-  class SealDesign <<JSON design>> {
-    kind : SealKind
-    mode : DesignMode
-    template : String  «circular/07 · folha/mat-04 · fai/03»
-    label : String  «título da folha ≤ 22 (vazio = nome)»
-    caption : String  «≤ 40»
-    texts : Map<series|subtitle|style|year|emblem, String>
-    core : SealCore
-    palette : String
-    border / field / center : Map
-    element : Elemento
-    uploadUrl : String
+package "components/seal-medallion.tsx" {
+  class SealDesign as "SealDesign" <<interface>> {
+    +kind: SealKind
+    +mode: 'GENERATED' | 'UPLOAD' | 'TEMPLATE'
+    +template: string | null
+    +label: string | null
+    +caption: string | null
+    +texts: Partial<Record<Exclude<FolhaSlotKey, 't…
+    +core: SealCore | null
+    +palette: string | null
+    +border: { material?: string; color?: string; wi…
+    +field: { pattern?: string; material?: string;…
+    .. +3 ..
   }
-  class SealCore <<JSON>> {
-    mode : SealCoreMode
-    imageUrl : String  «users/{id}/seals/core-*.png»
-    text : String  «≤ 24, até 2 linhas»
-    textColor : #RRGGBB
-    zoom : 1..3
+  class SealCore as "SealCore" <<interface>> {
+    +mode: SealCoreMode
+    +imageUrl: string | null
+    +text: string | null
+    +textColor: string | null
+    +zoom: number
   }
-  class Elemento <<JSON>> {
-    id : BAG · HANGER · STAR · DIAMOND · CROWN · HEART ·\nSCISSORS · NEEDLE · LAUREL · BOLT · FLOWER · MONOGRAM
-    material : FOSCO · BRILHO · DOURADO · … · NEON
-    color : #RRGGBB
-    text : String  «≤ 3»
-  }
-  class SealPolicyJson <<JSON policy>> {
-    match : ALL | ANY
-    rules : List<Rule>  «≤ 6»
-    occasions : List<String>  «≤ 4»
-    styles : List<String>  «≤ 4»
-    hype : {minLevel, minScore, momentum ≤ 3}
-  }
-  enum SealKind {
-    CIRCULAR
-    FOLHA
-    FASHIONAI
-  }
-  enum DesignMode {
-    GENERATED
-    UPLOAD
-    TEMPLATE
-  }
-  enum SealCoreMode {
+  enum SealCoreMode as "SealCoreMode" {
     ELEMENT
     IMAGE
     TEXT
   }
-}
-
-package "lib/seals/templates.ts (+ templates.json · 44 circulares · 33 folhas · 13 FAI)" {
-  class CircularTemplate <<interface>> {
-    id, src
-    center : number  «fração do raio do disco liso»
-    plain : boolean
-    color : string  «cor dominante»
-  }
-  class FolhaTemplate <<interface>> {
-    id, src  «arte sem textos»
-    emblem : {src, x, y, w, h} | null
-    ink, style : string
-    slots : Partial<Record<FolhaSlotKey, FolhaSlot>>
-  }
-  class FolhaSlot <<interface>> {
-    text  «padrão neutro»
-    x, y, m[6]  «posição e matriz»
-    size, weight, family, italic, ls, anchor, fill
-  }
-  class FaiTemplate <<interface>> {
-    id, src, color
+  class mod_seal_medallion_tsx as "seal-medallion.tsx" <<módulo>> {
+    +designFromPalette()
+    +sealKind()
+    +mix()
+    +lighten()
+    +darken()
+    +isLight()
+    +SealMedallion()
+    +validateSealImage()
   }
 }
-
-package "fai-application" {
-  class SealService <<service>> {
-    +createSeal(user, SealForm): Map
-    +updateSeal(user, sealId, SealForm): Map
-    +draft(user, tier): Map
-    -applySeal(seal, form, owner)
+package "components/seal-policy-editor.tsx" {
+  class SealPolicy as "SealPolicy" <<interface>> {
+    +match: 'ALL' | 'ANY'
+    +rules: SealRule[]
+    +occasions: string[]
+    +styles: string[]
+    +hype: SealHypeCriteria | null
   }
-  class SealDrafts <<final>> {
-    {static} +suggest(issuerName, celebrity, tier, pieces): Map
-    ~initials(name): String
+  class SealRule as "SealRule" <<interface>> {
+    +quantifier: SealQuantifier
+    +count: number | null
+    +color: string | null
+    +brand: string | null
+    +category: string | null
+    +subcategory: string | null
+    +hypeMin: HypeLevel | null
   }
-  class SealDesigns <<final>> {
-    +KINDS · LABEL_MAX = 22 · CAPTION_MAX = 40
-    +CORE_TEXT_MAX = 24 · CORE_MODES
-    +FOLHA_TEXT_LIMITS · GEOMETRY
-    +ELEMENTS · PATTERNS · MATERIALS · PALETTES
-    {static} +catalog(): Map
-    {static} +defaultDesign(premium, tier): Map
-    {static} +normalize(raw): Map  «400 SELO_DESIGN_INVALIDO»
-    {static} +nearestCircular(hex): String
-    {static} +labelFrom(name): String
+  class SealHypeCriteria as "SealHypeCriteria" <<interface>> {
+    +minLevel: HypeLevel | null
+    +minScore: number | null
+    +momentum: HypeMomentum[] | null
   }
-  class SealPolicies <<final>> {
-    +QUANTIFIERS = AT_LEAST, ALL, NONE
-    +MAX_RULES = 6 · MAX_TAGS = 4 · MAX_HYPE_MOMENTUM = 3
-    {static} +normalize(raw): Map
-    {static} +parse(stored): Policy
-    {static} +evaluate(p, tier, pieces, occasions, styles, hype): Verdict
-    {static} +describe(p, tier): String
+  enum SealQuantifier as "SealQuantifier" {
+    AT_LEAST
+    ALL
+    NONE
   }
-  class "SealPolicies.Policy" as Policy <<record>> {
-    any : boolean
-    rules : List<Rule>
-    occasions, styles : List<String>
-    hype : HypeCriteria
+  enum SealTierId as "SealTierId" {
+    LOOK
+    PECA
   }
-  class "SealPolicies.Rule" as Rule <<record>> {
-    quantifier : String
-    count : int
-    color, brand, category, subcategory : String
-    hypeMin : HypeLevel
+  class mod_seal_policy_editor_tsx as "seal-policy-editor.tsx" <<módulo>> {
+    +cleanHype()
+    +cleanPolicy()
+    +describeHype()
+    +describeRule()
+    +describePolicy()
+    +SealPolicyEditor()
   }
-  class "SealPolicies.HypeCriteria" as HypeCriteria <<record>> {
-    minLevel : HypeLevel
-    minScore : Integer
-    momentum : List<HypeMomentum>
+}
+package "lib/seals/templates.ts" {
+  class FolhaSlot as "FolhaSlot" <<interface>> {
+    +text: string
+    +x: number
+    +y: number
+    +m: number[]
+    +size: number
+    +weight: string
+    +family: string
+    +italic: boolean
+    +ls: number
+    +anchor: string
+    .. +3 ..
   }
-  class "SealPolicies.Verdict" as Verdict <<record>> {
-    matched : boolean
-    pieceIds : List<UUID>
-    why : String
+  class FolhaTemplate as "FolhaTemplate" <<interface>> {
+    +id: string
+    +src: string
+    +emblem: { src: string; x: number; y: number; w:…
+    +ink: string
+    +style: string
+    +slots: Partial<Record<FolhaSlotKey, FolhaSlot>>
   }
-  interface "SealPolicies.HypeLookup" as HypeLookup {
-    piece(pieceId): HypeFact
-    look(): HypeFact
+  class CircularTemplate as "CircularTemplate" <<interface>> {
+    +id: string
+    +src: string
+    +center: number
+    +plain: boolean
+    +color: string
   }
-  class SealDesignService <<service>> {
-    ~CORE_MIN_PX = 64 · CORE_OUTPUT_PX = 640
-    +catalog(): Map
-    +upload(user, bytes): Map  «selo pronto 1:1 → 512 px»
-    +uploadCore(user, bytes): Map  «núcleo ≤ 4:1»
+  class mod_templates_ts as "templates.ts" <<módulo>> {
+    +kindOfTemplate()
+    +faiTemplate()
+    +circularTemplate()
+    +folhaTemplate()
+    +nearestByColor()
+  }
+}
+package "Backend (Java)" {
+  class SealDesigns  {
+    +catalog()
+    +defaultDesign()
+    +normalize()
+    +fromPalette()
+    +item()
+    +palette()
+    +ids()
+    +part()
+  }
+  class SealDrafts  {
+    +suggest()
+    +initials()
+    +caption()
+    +familyLabel()
+    +capitalize()
+    +top()
+    +topTags()
   }
   class OwnMedia <<service>> {
-    +require(ownerId, url, field, allowCatalog): String
-    +requireOrUnchanged(ownerId, url, field, allowCatalog, current): String
+    +accepts()
+    +require()
+    +requireOrUnchanged()
+    +acceptsKey()
+  }
+  class SealDesignService <<service>> {
+    +catalog()
+    +upload()
+    +uploadCore()
+    +cornersClear()
+  }
+  class SealPolicies  {
+    +normalize()
+    +normalizeHype()
+    +level()
+    +parse()
+    +parseHype()
+    +parseEnum()
+    +evaluate()
+  }
+  class SealService <<service>> {
+    -ai: AiEngine
+    -guard: Guard
+    -audit: Audit
+    -events: ApplicationEventPublisher
+    -ownMedia: OwnMedia
+    -hypeQuery: ObjectProvider<HypeQueryService>
+    +setHypeQuery()
+    +setHypeCache()
+    +hype()
+    +hypeLookup()
+    +candidateHype()
+    +byHype()
+    +hypeView()
   }
 }
-
-package "fai-domain" {
-  class Seal <<entity seals>> {
-    id : UUID
-    name : String
-    tier : SealTier
-    policyText : String  «gerado por describe()»
-    backgroundConfigJson : String  «{design, policy}»
-    iconUrl : String
-    status : SealStatus
-    premium : boolean
-    availableFrom / availableUntil : Instant
-    usageLimit : Integer
-    usageCount : int
-  }
-}
-
-package "components (frontend)" {
-  class SealWizard <<React>> {
-    passos: Modo · Dados · Arte · Revisar
-  }
-  class SealArt <<React>>
-  class SealPolicyEditor <<React>>
-  class SealCoreEditor <<React>>
-  class SealCreator <<React>>
-  class SealMedallion <<React>> {
-    render por kind (44 / 36 px nos cards)
-  }
-}
-
-SealDesign *-- "0..1" SealCore
-SealDesign *-- "0..1" Elemento
-SealDesign ..> SealKind
-SealDesign ..> DesignMode
-SealCore ..> SealCoreMode
-SealDesign ..> CircularTemplate : template (CIRCULAR)
-SealDesign ..> FolhaTemplate : template (FOLHA)
-SealDesign ..> FaiTemplate : template (FASHIONAI)
-FolhaTemplate *-- "1..7" FolhaSlot
-SealPolicyJson ..> Policy : parse()
-Policy *-- "0..6" Rule
-Policy *-- "0..1" HypeCriteria
-Seal o-- SealDesign
-Seal o-- SealPolicyJson
-SealService --> Seal
-SealService ..> SealDesigns
-SealService ..> SealPolicies
-SealService ..> SealDrafts
-SealService ..> OwnMedia
-SealDrafts ..> SealDesigns
-SealDesignService ..> SealDesigns
-SealPolicies ..> Verdict
-SealPolicies ..> HypeLookup
-SealWizard --> SealPolicyEditor
-SealWizard --> SealArt
-SealArt --> SealCoreEditor
-SealArt --> SealCreator
-SealArt --> SealMedallion
-SealMedallion ..> SealDesign
+SealService --> OwnMedia
+FolhaTemplate --> FolhaSlot : slots
+SealCore --> SealCoreMode : mode
+SealDesign --> SealCore : core
+SealPolicy --> SealHypeCriteria : hype
+SealPolicy --> SealRule : rules
+SealRule --> SealQuantifier : quantifier
 @enduml

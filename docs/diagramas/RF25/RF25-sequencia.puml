@@ -1,98 +1,77 @@
 @startuml RF25_Sequencia
-title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de sequência — listar, criar/editar e ativar selos; criar promoção e resgatar com o selo
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Emissor\n(marca/celebridade)" as M
-actor "Usuário com selo" as U
-participant "brands/[slug]/page.tsx\n(SealWizard · BrandCouponsTab)" as FE
-participant "SealController" as C
-participant "SealService" as S
-participant "Guard" as G
-participant "SealPolicies ·\nSealDesigns · OwnMedia" as V
-participant "HypeQueryService\n+ HypeCache" as H
-database "MySQL" as DB
+autonumber "<b>0."
+title RF25 — Criar & editar selo de marca/celebridade (formulário + arte) e política de promoção\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-== Listar selos do perfil ==
-M -> FE: aba "Selos"
-FE -> C: GET /api/users/{ownerId}/seals
-C -> S: sealsOf(viewer, ownerId)
-alt dono ou admin
-  S -> DB: seals do dono (todos)
-else visitante
-  S -> DB: users (emissor aprovado e ativo?) + seals ACTIVE
+actor "Pessoa usuária" as U
+boundary "Tela /brands/[slug]" as P
+control "SealController" as SealController
+participant "SealService" as SealService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+participant "OwnMedia" as OwnMedia
+participant "Audit" as Audit
+participant "HypeCache" as HypeCache
+== Marca/celebridade cria um selo ==
+U -> P : Marca/celebridade cria um selo
+P -> SealController : POST /api/seals
+SealController -> SealService : createSeal()
+activate SealService
+SealService -> Guard : requireApprovedInstitutional()
+SealService -> DB_MySQL : SELECT users
+SealService -> SealService : new Seal()
+SealService -> OwnMedia : require()
+SealService -> OwnMedia : requireOrUnchanged() (×2)
+SealService -> SealService : iconUrl = set
+alt período inválido
+SealService --> SealController : 400 PERIODO_INVALIDO
+SealController --> P : 400 + mensagem
 end
-S -> H: sealHype(list) → currentOf(PIECE | SCHEME, ids vinculados)
-H --> S: média do Hype v2 público (cache "seal-hype:…")
-S --> FE: 200 [{id, name, tier, design, policy, policyText, status,\navailable, unavailableReason, usageCount, usageLimit, hype}]
-
-== Criar ou editar selo ==
-M -> FE: "Salvar selo" (último passo do assistente)
-FE -> C: POST /api/seals | PUT /api/seals/{id}\n{name, tier, policy, design, availableFrom, availableUntil, usageLimit, status}
-C -> S: createSeal(user, form) | updateSeal(user, id, form)
-S -> G: requireApprovedInstitutional (403 se não aprovado)
-opt edição
-  S -> DB: SELECT seals (404 se não existe)
-  S -> G: requireOwner (403)
+alt limite inválido
+SealService --> SealController : 400 LIMITE_INVALIDO
+SealController --> P : 400 + mensagem
 end
-S -> V: SealPolicies.normalize/parse/describe → policyText
-S -> V: SealDesigns.normalize(design)
-alt desenho inválido
-  V --> FE: 400 SELO_DESIGN_INVALIDO {fields}
-else período ou limite inválidos
-  S --> FE: 400 PERIODO_INVALIDO | LIMITE_INVALIDO
-else ok
-  S -> V: OwnMedia.require(owner, core.imageUrl | uploadUrl)
-  S -> DB: INSERT/UPDATE seals (background_config_json = {design, policy})
-  S -> DB: audit SELO_EDITADO
-  S --> FE: 201 | 200 sealView
-end
-opt ativar / desativar
-  M -> FE: "Desativar" | "Ativar"
-  FE -> C: PUT /api/seals/{id} (status INACTIVE | ACTIVE)
-end
-
-== Política de promoção ==
-M -> FE: "Criar promoção" (Meus cupons promocionais)
-FE -> C: POST /api/promotions {type, title, rules, discountPercent, sealId,\nstartsAt, expiresAt, totalQuota, perUserLimit, storeUrl}
-C -> S: createPromotion(user, PromotionForm)
-S -> G: requireApprovedInstitutional
-S -> S: applyPromotion(): tipo permitido ao perfil, desconto 1–90,\nselo do próprio emissor e ACTIVE, período, parceira, link https
-alt regra violada
-  S --> FE: 400 (TIPO_INVALIDO, DESCONTO_INVALIDO, SELO_INATIVO…)\nou 409 PARCERIA_NAO_AUTORIZADA
-else ok
-  S -> DB: INSERT promotions (AVAILABLE)
-  S --> FE: 201 promotionView
-end
-opt pausar / retomar
-  FE -> C: PUT /api/promotions/{id}/status {status: REVOKED | AVAILABLE}
-  C -> S: setPromotionStatus(user, id, status) (dono)
-end
-
-== Usuário com selo resgata (aba Promoções do perfil) ==
-U -> FE: aba "Promoções"
-FE -> C: GET /api/users/{ownerId}/promotions
-C -> S: promotionsOf(viewer, ownerId)
-S -> DB: promotions AVAILABLE + seal_bonds APPROVED do usuário com este emissor
-S --> FE: [{…, eligible, unavailableReason, remaining}]
-U -> FE: "Resgatar"
-FE -> C: POST /api/promotions/{id}/redemptions
-C -> S: redeem(user, promotionId)
-alt fora do período, esgotada ou emissor inativo
-  S --> FE: 409 PROMOCAO_INDISPONIVEL
-else sem selo válido deste emissor
-  S --> FE: 409 SELO_INVALIDO
-else já resgatou o limite por pessoa
-  S --> FE: 409 LIMITE_POR_USUARIO
-else ok
-  S -> DB: INSERT promotion_redemptions (código único, ISSUED)
-  S -> DB: UPDATE promotions (redeemedCount+1; estoque zerado → REDEEMED)
-  S -> DB: audit PROMOCAO_RESGATADA
-  S --> FE: 201 {code, expiresAt}
-end
+SealService -> DB_MySQL : INSERT/UPDATE seals
+SealService -> Audit : log()
+SealService -> DB_MySQL : SELECT seal_bonds
+SealService -> HypeCache : get()
+deactivate SealService
+SealService --> SealController : resultado
+SealController --> P : 201 JSON
+P --> U : atualiza a tela
+== Criador de selo 'Com IA': sugere nome, nível, política e arte a parti… ==
+U -> P : Criador de selo 'Com IA': sugere nome, nível, pol…
+P -> SealController : POST /api/seals/draft
+SealController -> SealService : draft()
+activate SealService
+SealService -> Guard : requireApprovedInstitutional()
+SealService -> DB_MySQL : SELECT users
+SealService -> DB_MySQL : SELECT celebrity_profiles
+SealService -> DB_MySQL : SELECT brand_profiles
+SealService -> DB_MySQL : SELECT wardrobe_items
+SealService -> Audit : log()
+deactivate SealService
+SealService --> SealController : resultado
+SealController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

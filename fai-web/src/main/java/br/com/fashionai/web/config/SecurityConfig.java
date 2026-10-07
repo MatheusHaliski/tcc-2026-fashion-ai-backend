@@ -48,7 +48,7 @@ public class SecurityConfig {
             "/api/schemes/*", "/api/schemes/*/card.png", "/api/schemes/*/look3d", "/api/pieces/*", "/api/pieces/*/look3d", "/api/dna-schemes/*",
             "/api/interactions/*/*/comments", "/api/interactions/*/*/counters",
             "/api/users/*/lookbook", "/api/users/*/closet", "/api/users/*/seals", "/api/users/*/promotions",
-            "/api/users/*/publications", "/api/users/*/favorites",
+            "/api/users/*/publications", "/api/users/*/favorites", "/api/users/*/flair/cards",
             "/api/users/*/groupings", "/api/users/*/connections", "/api/groupings/*/schemes",
             "/api/hype/**", "/api/insights",
             // Momentos: leituras públicas (privados filtram por membro no serviço); ações e "meus" exigem sessão

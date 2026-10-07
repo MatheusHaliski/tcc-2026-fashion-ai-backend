@@ -1,67 +1,48 @@
 @startuml RF6_MaquinaDeEstados_LookDoDia
 !pragma layout smetana
-title RF6 — Acessar e gerenciar o Perfil Lookbook\nDiagrama de máquina de estados — aba Look do dia: carregamento, painel HypeScore v2 (só leitura), capa e avaliação
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "Carregando\n(GET /api/me/daily-look-tab)" as Carregando
-state "Sem Look do Dia\n(empty: /looks · /autopilot · /mirror)" as Vazio
-state "Com Look do Dia de hoje" as Com {
-  state "Painel HypeScore v2 do look" as Painel {
-    state "NOT_CALCULATED\n(sem linha em hype_scores)" as NaoCalc
-    state "INSUFFICIENT_DATA\n(Dados insuficientes, score nulo)" as Insuf
-    state "AVAILABLE\n(score + faixa em texto)" as Disp
-    state "AVAILABLE desatualizado\n(stale: calculado há > 24 h)" as Stale
-    [*] --> NaoCalc
-    [*] --> Insuf
-    [*] --> Disp
-    NaoCalc --> Insuf : job grava a primeira linha\n(menos de 3 eventos)
-    NaoCalc --> Disp : job grava com sinais suficientes
-    Insuf --> Disp : novos sinais (LOOK_WORN, curtidas…)\n+ recálculo
-    Disp --> Stale : passam 24 h sem recálculo
-    Stale --> Disp : HypeSnapshotService (6 em 6 h)\nou HypeLiveRecalc (≤ 1 a cada 120 s)
-  }
-  state "Capa FAI Magazine bloqueada" as CapaB
-  state "Capa FAI Magazine liberada\n(faixa ≥ TRENDING)" as CapaL
-  state "Dica local (tip)\npela dimensão v2 mais fraca" as DicaL
-  state "Dica do Style Advisor\n(AiEngine STYLE_ADVISOR)" as DicaIA
-  state "Aguardando avaliação" as Aguard
-  state "Lembrete de avaliação\n(feedbackReminder.show:\npendente e depois das 18 h)" as Lembrete
-  state "Avaliado\n(ADOREI | NAO_USEI | NAO_GOSTEI)" as Aval
-  [*] --> Painel
-  Painel --> CapaB : panel.magazineCover
-  CapaB --> CapaL : faixa do look sobe para\nTRENDING ou VIRAL
-  CapaL --> CapaB : faixa cai abaixo de TRENDING
-  [*] --> DicaL
-  DicaL --> DicaIA : marca "Dica com IA"\n(GET ?withAi=true)
-  DicaIA --> DicaL : IA indisponível ou sem cota\n(volta a dica local)
-  [*] --> Aguard
-  Aguard --> Lembrete : relógio passa das 18 h
-  Aguard --> Aval : PUT /api/me/daily-looks/{date}/feedback
-  Lembrete --> Aval : PUT /api/me/daily-looks/{date}/feedback
-  Aval --> Aval : nova avaliação substitui a anterior
+title RF6 — ciclo de vida de DailyLook.feedback e source\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum DailyLookFeedback · enum DailyLookSource · tabela daily_looks
+
+state "DailyLook.feedback" as Ciclo_DailyLook {
+  state Ciclo_DailyLook_ADOREI as "ADOREI"
+  state Ciclo_DailyLook_NAO_USEI as "NAO_USEI"
+  state Ciclo_DailyLook_NAO_GOSTEI as "NAO_GOSTEI"
 }
-[*] --> Carregando
-Carregando --> Vazio : today() sem registro e\nsem look anterior não arquivado
-Carregando --> Com : registro de hoje existe
-Carregando --> Com : today() materializa cópia do\nlook anterior (materializedFrom)
-Vazio --> Carregando : marca um look (POST /api/me/daily-look,\nAutopiloto, Copilot ou Vista-me) e recarrega
-Com --> Carregando : PUT /api/me/hype-panel-version\n(troca só a versão visual; o número é o mesmo)
-Com --> Carregando : virada do dia (00 h America/Sao_Paulo)
-note right of Painel
-  HypeScoreService.panel só LÊ hype_scores:
-  nenhum GET recalcula nem grava o Hype.
-  As 6 versões do painel (SPOTLIGHT_CLASSICO,
-  PASSARELA, RAIO_X_ESTILO, BENTO_DIA,
-  EDITORIAL_MINIMAL, COACH_ESTILO) mudam só a
-  apresentação. "Sem dados" nunca vira 0.
+Ciclo_DailyLook --> Ciclo_DailyLook_ADOREI : feedback()\nPUT /api/me/daily-looks/{date}/feedback
+Ciclo_DailyLook --> Ciclo_DailyLook_NAO_USEI : feedback()\nPUT /api/me/daily-looks/{date}/feedback
+Ciclo_DailyLook --> Ciclo_DailyLook_NAO_GOSTEI : feedback()\nPUT /api/me/daily-looks/{date}/feedback
+state "DailyLook.source" as Ciclo_DailyLook_source {
+  state Ciclo_DailyLook_source_MANUAL as "MANUAL"
+  state Ciclo_DailyLook_source_AUTOPILOTO as "AUTOPILOTO"
+  state Ciclo_DailyLook_source_COPILOT as "COPILOT"
+  state Ciclo_DailyLook_source_VISTA_ME as "VISTA_ME"
+  state Ciclo_DailyLook_source_SMART_MIRROR as "SMART_MIRROR"
+}
+[*] --> Ciclo_DailyLook_source_MANUAL : criação
+note bottom of Ciclo_DailyLook_source
+  Recebe o valor escolhido em: register(source)
 end note
-note bottom of Vazio
-  O v1 (hype_score_metrics, faixas de juízo,
-  HypeGroups) não existe mais (P3-16).
+note right of Ciclo_DailyLook
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
 end note
 @enduml

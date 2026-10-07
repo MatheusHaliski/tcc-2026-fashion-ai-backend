@@ -1,111 +1,311 @@
 @startuml Taxonomia_Contextos
-title FashionAI — Taxonomia das entidades por contexto delimitado\nVisão geral — entidades-chave (fai-domain) e dependências entre contextos
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
-skinparam component {
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
+  StereotypeFontColor #6B6470
 }
-skinparam package {
-  BorderColor #CBC6BE
-}
-skinparam database {
-  BackgroundColor #EEF6FF
-  BorderColor #4A4852
-}
+hide empty members
 left to right direction
+title FashionAI — entidades-chave por contexto delimitado (áreas da taxonomia)\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)\n109 entidades JPA do fai-domain em 14 áreas
 
-package "1. Identidade & Conta" as CTX_ID {
-  component "User" as User
-  component "RefreshToken" as RefreshToken
-  component "UserConsent" as UserConsent
-  component "UserPreferences" as UserPreferences
-  component "Notification" as Notification
+package "Identidade, conta e privacidade\n<size:10>RF1–RF3, RF23, RNF2/RNF6</size>" {
+  class User <<users>> {
+    status
+  }
+  class UserPreferences <<user_preferences>>
+  class UserConsent <<user_consents>>
+  class VerificationCode <<verification_codes>>
+  class RefreshToken <<refresh_tokens>>
+  class DataExportRequest <<data_export_requests>> {
+    status
+  }
 }
-package "2. Guarda-roupa & Peças" as CTX_WR {
-  component "WardrobeItem" as WardrobeItem
-  component "Photo" as Photo
-  component "PieceUsageDiaryEntry" as PieceUsage
-  component "AcervoGroup" as AcervoGroup
+package "Perfis emissores (marca e celebridade)\n<size:10>RF1.CA06–CA10, RF14, RF20–RF22</size>" {
+  class BrandProfile <<brand_profiles>> {
+    approvalStatus
+  }
+  class CelebrityProfile <<celebrity_profiles>> {
+    verificationStatus
+  }
 }
-package "3. Captura adaptativa & Visão (RF45)" as CTX_CAP {
-  component "CaptureSession" as CaptureSession
-  component "CaptureRequest" as CaptureRequest
-  component "PieceImage" as PieceImage
-  component "BrandPrediction" as BrandPrediction
-  component "ModelRegistryEntry" as ModelRegistry
+package "Guarda-roupa e peças\n<size:10>RF4, RF6, RF7, RF9, RF28, RF29, RF31, RF45</size>" {
+  class WardrobeItem <<wardrobe_items>> {
+    availabilityStatus, moderationStatus, p…
+  }
+  class PieceImage <<piece_images>> {
+    processingStatus
+  }
+  class PieceUsageDiaryEntry <<piece_usage_diary>>
+  class WardrobeAvailabilityChange <<wardrobe_availability_log>>
+  class CaptureSession <<capture_sessions>> {
+    status
+  }
+  class CaptureRequest <<capture_requests>> {
+    status
+  }
+  class QualityScore <<quality_scores>>
+  class AiReviewItem <<ai_review_items>> {
+    status
+  }
+  class GarmentLandmark <<garment_landmarks>>
+  class GarmentEmbedding <<garment_embeddings>>
+  class ItemEmbedding <<item_embeddings>>
+  class BrandPrediction <<brand_predictions>>
 }
-package "4. Catálogo global & Busca (RF47)" as CTX_CAT {
-  component "Brand" as Brand
-  component "CatalogProduct" as CatalogProduct
-  component "CatalogVariant" as CatalogVariant
-  component "CatalogImage" as CatalogImage
-  component "CatalogSource" as CatalogSource
+package "Marcas e catálogo global\n<size:10>RF4, RF47</size>" {
+  class Brand <<brands>>
+  class BrandAlias <<brand_aliases>>
+  class BrandLogo <<brand_logos>> {
+    status
+  }
+  class CatalogSource <<catalog_sources>>
+  class CatalogProduct <<catalog_products>> {
+    sourceStatus, ingestionStatus
+  }
+  class CatalogProductAlias <<catalog_product_aliases>>
+  class CatalogVariant <<catalog_variants>>
+  class CatalogImage <<catalog_images>> {
+    usageStatus
+  }
+  class CatalogIngestionRun <<catalog_ingestion_runs>>
+  class KbBrandSignature <<kb_brand_signatures>>
+  class KbProductLine <<kb_product_lines>>
+  class KbProductModel <<kb_product_models>>
 }
-package "5. Esquemas & DNA de Estilo" as CTX_SCH {
-  component "Scheme" as Scheme
-  component "SchemeItem" as SchemeItem
-  component "DailyLook" as DailyLook
-  component "WeekPlan" as WeekPlan
-  component "DnaScheme" as DnaScheme
-  component "StyleDna" as StyleDna
+package "Esquemas (looks), DNA e planejamento\n<size:10>RF5–RF7, RF11, RF13, RF28 (Vista-me), HU18–HU20</size>" {
+  class Scheme <<schemes>> {
+    status, renderingStatus
+  }
+  class SchemeItem <<scheme_items>>
+  class SchemeGrouping <<scheme_groupings>>
+  class DnaScheme <<dna_schemes>> {
+    status
+  }
+  class DnaSchemeItem <<dna_scheme_items>>
+  class StyleDna <<style_dna>>
+  class StyleDnaVersion <<style_dna_versions>>
+  class DailyLook <<daily_looks>>
+  class HypeScoreMetric <<hype_score_metrics>>
+  class WeekPlan <<week_plans>> {
+    status
+  }
+  class WeekPlanDay <<week_plan_days>>
+  class AcervoGroup <<acervo_groups>>
+  class HypeGroup <<hype_groups>>
+  class MirrorState <<mirror_states>>
 }
-package "6. Social" as CTX_SOC {
-  component "Follow" as Follow
-  component "Comment" as Comment
-  component "Reaction" as Reaction
-  component "SavedItem" as SavedItem
+package "Selos, promoções e cupons\n<size:10>RF20, RF21, RF25, RF38</size>" {
+  class Seal <<seals>> {
+    status
+  }
+  class SealBond <<seal_bonds>> {
+    status
+  }
+  class Promotion <<promotions>> {
+    status
+  }
+  class PromotionRedemption <<promotion_redemptions>> {
+    status
+  }
+  class CouponRight <<coupon_rights>> {
+    status
+  }
 }
-package "7. Marcas, Celebridades, Selos & Cupons" as CTX_BR {
-  component "BrandProfile" as BrandProfile
-  component "CelebrityProfile" as CelebrityProfile
-  component "Seal" as Seal
-  component "SealBond" as SealBond
-  component "Promotion" as Promotion
-  component "CouponRight" as CouponRight
+package "Social e notificações\n<size:10>RF8, RF12, RF19, RNF10</size>" {
+  class Follow <<follows>> {
+    status
+  }
+  class Comment <<comments>>
+  class Reaction <<reactions>>
+  class Share <<shares>>
+  class SavedItem <<saved_items>>
+  class Notification <<notifications>>
+  class Photo <<photos>> {
+    moderationStatus
+  }
 }
-package "8. Meu Quarto, Pontos, Desafios & FLAIR" as CTX_ROOM {
-  component "RoomLayout" as RoomLayout
-  component "RoomCatalogItem" as RoomCatalogItem
-  component "FaiPointsLedgerEntry" as FaiPoints
-  component "ChallengeInstance" as ChallengeInstance
-  component "FlairCombination" as FlairCombination
-  component "FlairMatch" as FlairMatch
+package "Gamificação (FAI Points, desafios, rankings)\n<size:10>RF29, RF30, RF32, RF41</size>" {
+  class FaiPointsLedgerEntry <<fai_points_ledger>>
+  class FaiPointsRule <<fai_points_rules>>
+  class ChallengeTemplate <<challenge_templates>>
+  class ChallengeInstance <<challenge_instances>> {
+    state
+  }
+  class ChallengeParticipant <<challenge_participants>> {
+    status
+  }
+  class ChallengeEvent <<challenge_events>>
+  class ChallengeNote <<challenge_notes>>
+  class ChallengeVote <<challenge_votes>>
+  class UserAchievement <<user_achievements>>
+  class RankingOptIn <<ranking_opt_ins>>
+  class RankingPosition <<ranking_positions>>
+  class InventoryScoreSnapshot <<inventory_score_snapshots>>
 }
-package "9. Provador, 3D & Avatar" as CTX_3D {
-  component "UserAvatar3d" as UserAvatar3d
-  component "RenderJobLog" as RenderJobLog
+package "FLAIR (jogo de cartas)\n<size:10>RF37</size>" {
+  class FlairProfile <<flair_profiles>>
+  class FlairCoinEntry <<flair_coin_entries>>
+  class FlairCombination <<flair_combinations>>
+  class FlairMatch <<flair_matches>> {
+    status
+  }
+  class FlairMatchEntry <<flair_match_entries>>
+  class FlairModeState <<flair_mode_states>>
+  class FlairRedemption <<flair_redemptions>> {
+    status
+  }
+  class FlairTeam <<flair_teams>>
+  class FlairTeamMember <<flair_team_members>>
+  class FlairTerritory <<flair_territories>>
+  class FlairTrophy <<flair_trophies>>
 }
-package "10. IA & Governança" as CTX_AI {
-  component "AiInferenceLog" as AiInferenceLog
-  component "ModerationQueueItem" as ModerationQueue
-  component "ItemEmbedding" as ItemEmbedding
+package "Quarto 3D e avatar\n<size:10>RF27, RF30, RF39, RF40</size>" {
+  class RoomCatalogItem <<room_catalog>>
+  class RoomInventoryItem <<room_inventory>>
+  class RoomLayout <<room_layouts>>
+  class RoomStorageEntry <<room_storage_map>>
+  class UserAvatar3d <<user_avatars_3d>> {
+    identityStatus
+  }
+  class AvatarIdentityVersion <<avatar_identity_versions>> {
+    status
+  }
 }
-package "11. Infra & Operação" as CTX_OPS {
-  component "AuditLog" as AuditLog
-  component "PipelineJob" as PipelineJob
-  component "ProcessingJobLog" as ProcessingJobLog
-  component "BackupRecord" as BackupRecord
+package "IA, visão computacional e pipelines\n<size:10>RF4, RF11, RF16, RF18, RF24, RF45</size>" {
+  class AiInferenceLog <<ai_inference_log>> {
+    consentState
+  }
+  class ModelInference <<model_inferences>>
+  class ModelRegistryEntry <<model_registry>> {
+    deploymentStatus
+  }
+  class DatasetSource <<dataset_sources>>
+  class TrainingCandidate <<training_candidates>> {
+    status
+  }
+  class PipelineJob <<pipeline_jobs>> {
+    status
+  }
+  class ProcessingJobLog <<processing_jobs_log>> {
+    status
+  }
+  class RenderJobLog <<render_jobs_log>> {
+    status
+  }
+  class MetricSnapshot <<metric_snapshots>>
+  class AssetPreset <<asset_presets>> {
+    status
+  }
 }
-
-WardrobeItem --> CatalogProduct : catalogProductId /\ncatalogVariantId (V30)
-WardrobeItem --> Brand : brand (N:1)
-WardrobeItem --> User : user (N:1)
-CaptureSession --> WardrobeItem : pieceId
-PieceImage --> WardrobeItem : pieceId
-SchemeItem --> WardrobeItem : wardrobeItem (N:1)
-Scheme --> User : user (N:1)
-Follow --> User : follower / following
-SealBond --> Scheme : scheme (N:1)
-BrandProfile --> User : owner (1:1)
-Brand --> BrandProfile : brandProfile (N:1)
-CouponRight --> Promotion : sourceId (SELO)
-CouponRight --> FlairCombination : sourceId (FLAIR)
-RoomCatalogItem --> User : creatorUserId / maisonBrandUserId\n(marca/celebridade)
-PieceUsage --> Scheme : schemeId
-UserAvatar3d --> User : user (1:1)
-PipelineJob --> User : user (N:1)
-WardrobeItem ..> PipelineJob : processingJobId
-ItemEmbedding ..> WardrobeItem : entityId (HypeEntityType)
+package "HypeScore v2 (sinais, recortes e marcos)\n<size:10>RF26, RF53</size>" {
+  class HypeSignalDaily <<hype_signal_daily>>
+  class HypeScoreCurrent <<hype_scores>> {
+    status
+  }
+  class HypeScoreSnapshot <<hype_score_snapshots>> {
+    status
+  }
+  class HypeMilestone <<hype_milestones>>
+}
+package "FashionAI Lens\n<size:10>RF54</size>" {
+  class LensScan <<lens_scans>> {
+    status
+  }
+  class LensDetection <<lens_detections>> {
+    status
+  }
+  class LensFeedback <<lens_feedback>>
+}
+package "Moderação, auditoria e operação\n<size:10>RN11, RNF4, RNF5</size>" {
+  class ModerationQueueItem <<moderation_queue>> {
+    status
+  }
+  class AuditLog <<audit_log>>
+  class BackupRecord <<backup_records>> {
+    status
+  }
+}
+AcervoGroup "*" --> "1" User : user
+AvatarIdentityVersion "*" --> "1" User : user
+Brand "*" --> "1" BrandProfile : brandProfile
+BrandProfile "1" --> "1" User : owner
+CelebrityProfile "1" --> "1" User : owner
+Comment "*" --> "1" User : author
+CouponRight "*" --> "1" User : owner
+CouponRight "*" --> "1" User : user
+DailyLook "*" --> "1" Scheme : scheme
+DailyLook "*" --> "1" User : user
+DataExportRequest "*" --> "1" User : user
+DnaScheme "*" --> "1" User : user
+DnaSchemeItem "*" --> "1" DnaScheme : dnaScheme
+DnaSchemeItem "*" --> "1" Scheme : scheme
+FlairCoinEntry "*" --> "1" User : user
+FlairCombination "*" --> "1" User : brand
+FlairMatch "*" --> "1" User : createdByUser
+FlairMatchEntry "*" --> "1" FlairMatch : match
+FlairMatchEntry "*" --> "1" Scheme : scheme
+FlairMatchEntry "*" --> "1" User : user
+FlairModeState "*" --> "1" User : user
+FlairProfile "*" --> "1" User : user
+FlairRedemption "*" --> "1" FlairCombination : combination
+FlairRedemption "*" --> "1" Scheme : scheme
+FlairRedemption "*" --> "1" User : user
+FlairTeam "*" --> "1" User : owner
+FlairTeamMember "*" --> "1" FlairTeam : team
+FlairTeamMember "*" --> "1" User : user
+FlairTerritory "*" --> "1" User : owner
+FlairTrophy "*" --> "1" User : user
+Follow "*" --> "1" User : follower
+Follow "*" --> "1" User : following
+HypeScoreMetric "*" --> "1" DailyLook : dailyLook
+HypeScoreMetric "*" --> "1" Scheme : scheme
+HypeScoreMetric "*" --> "1" User : user
+Notification "*" --> "1" User : actor
+Notification "*" --> "1" User : recipient
+Photo "*" --> "1" User : user
+PipelineJob "*" --> "1" User : user
+Promotion "*" --> "1" Seal : seal
+Promotion "*" --> "1" SealBond : sealBond
+PromotionRedemption "*" --> "1" Promotion : promotion
+PromotionRedemption "*" --> "1" SealBond : sealBond
+PromotionRedemption "*" --> "1" User : user
+Reaction "*" --> "1" User : actor
+RefreshToken "*" --> "1" User : user
+RoomLayout "*" --> "1" User : user
+SavedItem "*" --> "1" User : user
+Scheme "*" --> "1" User : user
+SchemeGrouping "*" --> "1" User : owner
+SchemeItem "*" --> "1" Scheme : scheme
+SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
+Seal "*" --> "1" User : owner
+SealBond "*" --> "1" Scheme : scheme
+SealBond "*" --> "1" Seal : seal
+SealBond "*" --> "1" User : requestedBy
+SealBond "*" --> "1" User : targetOwner
+Share "*" --> "1" User : user
+StyleDna "1" --> "1" User : user
+UserAvatar3d "1" --> "1" User : user
+UserConsent "*" --> "1" User : user
+UserPreferences "1" --> "1" User : user
+VerificationCode "*" --> "1" User : user
+WardrobeItem "*" --> "1" Brand : brand
+WardrobeItem "*" --> "1" BrandProfile : brandProfile
+WardrobeItem "*" --> "1" User : user
+WeekPlan "*" --> "1" User : user
+WeekPlanDay "*" --> "1" Scheme : scheme
+WeekPlanDay "*" --> "1" WeekPlan : weekPlan
 @enduml

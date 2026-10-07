@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyGains, estimateIlluminant, skinProfile, undertoneOf } from "./skin-tone";
+import { applyGains, estimateIlluminant, limitToSkin, skinLocusDistance, skinProfile, undertoneOf } from "./skin-tone";
 import { deltaE2000, rgbToLab } from "./identity/metrics";
 import type { Pt } from "./image-stats";
 
@@ -52,6 +52,46 @@ describe("balanço de branco pela esclera (I3)", () => {
       if (ln !== "neutra") expect(after).toBeLessThan(before);
     });
   }
+  it("com a pele medida, a correção continua igual nos cartões (esclera clara de verdade)", () => {
+    for (const [ln, il] of Object.entries(ILLUMINANTS)) for (const refl of Object.values(SKINS)) {
+      const { img, px } = scene(il);
+      const photo = refl.map((r, k) => Math.min(255, r * il[k] * 230)) as [number, number, number];
+      const wb = estimateIlluminant(img, px, 0.95, photo);
+      expect(wb.source, ln).toBe("SCLERA");
+      expect(deltaE2000(rgbToLab(...applyGains(photo, wb.gains)), rgbToLab(...(refl.map((r) => r * 230) as [number, number, number])))).toBeLessThanOrEqual(3);
+    }
+  });
+
+  it("TWIN-FID: 'esclera' mais escura que a pele (pálpebra, sombra) não vale, e a pele nunca sai da faixa humana", () => {
+    // olho semicerrado: o contorno só tem pálpebra avermelhada e escura; a pele em volta é morena-dourada
+    const { img, px } = scene([1, 1, 1]);
+    const lid: [number, number, number] = [105, 61, 57], skin: [number, number, number] = [203, 146, 130];
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const o = (y * W + x) * 4; const inEye = [70, 150].some((cx) => ((x - cx) / 18) ** 2 + ((y - 60) / 8) ** 2 < 1);
+      img.data.set(inEye ? lid : skin, o);
+    }
+    const old = estimateIlluminant(img, px);                       // sem a pele: a pálpebra vira "esclera"
+    expect(old.source).toBe("SCLERA");
+    expect(skinLocusDistance(rgbToLab(...applyGains(skin, old.gains)))).toBeGreaterThan(0);   // pele acinzentada/esverdeada
+    const wb = estimateIlluminant(img, px, 0.95, skin);
+    expect(wb.source).not.toBe("SCLERA");
+    expect(skinLocusDistance(rgbToLab(...applyGains(skin, wb.gains)))).toBe(0);
+  });
+
+  it("limitToSkin aplica só a fração dos ganhos que mantém a pele plausível; a correção que ajuda fica inteira", () => {
+    const skin: [number, number, number] = [203, 146, 130];
+    const tooMuch: [number, number, number] = [0.75, 1.09, 1.11];   // tiraria todo o vermelho
+    const r = limitToSkin(tooMuch, skin);
+    expect(r.applied).toBeLessThan(1); expect(r.applied).toBeGreaterThan(0);
+    expect(skinLocusDistance(rgbToLab(...applyGains(skin, r.gains)))).toBe(0);
+    const green: [number, number, number] = [150, 170, 120];         // pele esverdeada pela luz fluorescente
+    const fix = limitToSkin([1.12, 0.93, 1.02], green);
+    expect(fix.applied).toBe(1);
+    expect(skinLocusDistance(rgbToLab(...applyGains(green, fix.gains)))).toBeLessThan(skinLocusDistance(rgbToLab(...green)));
+    expect(skinLocusDistance({ L: 60, a: 14, b: 18 })).toBe(0);
+    expect(skinLocusDistance({ L: 60, a: -3, b: 5 })).toBeGreaterThan(0);
+  });
+
   it("sem íris (468 pontos): gray-world fraco; imagem escura: sem correção", () => {
     const { img, px } = scene(ILLUMINANTS.quente, false);
     const wb = estimateIlluminant(img, px);

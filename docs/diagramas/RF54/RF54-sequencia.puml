@@ -1,117 +1,78 @@
 @startuml RF54_Sequencia
-title RF54 — FashionAI Lens (MVP)\nDiagrama de sequência — endpoints reais (todas as rotas exigem login; outra pessoa recebe 404)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as U
-participant "LensCapture\n(/lens)" as CAP
-participant "redactFaces\n(lib/lens/redact.ts)\n+ MediaPipe" as RED
-participant "LensResult\n(/lens/{scanId})\nabas + Foco" as RES
-participant "UploadSafety\nInterceptor" as USI
-participant "LensController" as LC
-participant "LensService" as LS
-participant "RateLimitPort" as RL
-participant "MultiPieceService\n→ AiEngine" as MP
-participant "LensImageAnalysis\nLensSimilarity\nLensReading" as LA
-participant "MediaStoragePort\n(restricted/)" as ST
-participant "HypeScoreCurrent\nRepository (só leitura)" as HY
-database "MySQL\n(V40)" as DB
+autonumber "<b>0."
+title RF54 — FashionAI Lens (MVP)\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-== 1. Captura e rostos borrados no aparelho ==
-U -> CAP: Câmera (input capture) ou Galeria
-CAP -> RED: redactFaces(arquivo)
-RED -> RED: decodifica (EXIF) → canvas ≤ 2048 px
-alt detector disponível
-  RED -> RED: até 4 passadas: acha rostos → pixela e desfoca
-  RED --> CAP: {blob JPEG, faces = N}
-else sem detector (headless, offline, tempo esgotado)
-  RED --> CAP: {blob, faces = -1}
-  CAP --> U: "Não foi possível verificar rostos…"
-  U -> CAP: confirma que não há rosto
+actor "Pessoa usuária" as U
+boundary "Tela (Next.js)" as P
+control "LensController" as LensController
+participant "LensService" as LensService
+participant "Guard" as Guard
+participant "LensConfig" as LensConfig
+participant "MultiPieceService" as MultiPieceService
+database "MySQL" as DB_MySQL
+participant "MediaStoragePort\n(LocalFileMediaStorage, S3MediaStorageAdapter)" as MediaStoragePort
+== Novo scan: imagem (rostos já borrados no aparelho) + source, intent,… ==
+U -> P : Novo scan: imagem (rostos já borrados no aparelho…
+P -> LensController : POST /api/lens/scans
+LensController -> LensService : create()
+activate LensService
+LensService -> Guard : requireCanCreate()
+alt origem inválida
+LensService --> LensController : 400 ORIGEM_INVALIDA
+LensController --> P : 400 + mensagem
 end
-U -> CAP: Analisar
-
-== 2. Scan (síncrono no MVP) ==
-CAP -> USI: POST /api/lens/scans (multipart: image, source,\nintent, facesRedacted, redactionConfirmed)
-alt BLOCK / REVIEW
-  USI --> CAP: 422 IMAGEM_RECUSADA / IMAGEM_EM_REVISAO
+alt arquivo vazio
+LensService --> LensController : 400 ARQUIVO_VAZIO
+LensController --> P : 400 + mensagem
 end
-USI -> LC: segue (ALLOW)
-LC -> LS: create(user, cmd, bytes)
-LS -> LS: valida origem/intenção, ImageOps: imagem legível,\nreduz a ≤ 2048 px
-LS -> RL: tryAcquire(user, "lens:scan", 30, 1 dia)
-alt cota estourada
-  LS --> CAP: 429 QUOTA {limit, used, resetAt} (nada gravado)
+LensService -> LensConfig : dailyScans()
+alt quota
+LensService --> LensController : 429 QUOTA
+LensController --> P : 429 + mensagem
 end
-LS -> MP: detectPieces(userId, foto)
-MP -> MP: AiEngine MULTI_PIECE_DETECTOR\n(consentimento, cota, orçamento, ai_inference_log)
-alt IA respondeu
-  MP --> LS: peças com caixa, categoria, cor, material,\nestilos, confiança (source "ia")
-else sem IA (consentimento, cota, provedor)
-  MP --> LS: 1 peça cobrindo a foto, confiança 0\n(source "local"; errorCode CONSENT_REQUIRED/QUOTA)
-end
-LS -> DB: lens_scans (READY | NO_FASHION_FOUND | FAILED,\nexpires_at = +30 dias, model_version, LENS_V1)
-LS -> ST: put restricted/users/{id}/lens/{scanId}.jpg\n+ -thumb.jpg (JPEG sem metadados)
-loop cada peça (de cima para baixo)
-  LS -> LA: LensImageAnalysis.read(foto, caixa, cor)
-  LA --> LS: paleta com fração, padrão, embedding (96)
-  LS -> DB: lens_detections
-end
-LS --> CAP: 200 LensScanView (detections + reading)
-CAP -> RES: abre /lens/{scanId}
-RES -> LC: GET /api/lens/scans/{id}/image
-LC -> LS: image(user, id) → só o dono (senão 404)
-LS -> ST: get(chave)
-LC --> RES: image/jpeg (Cache-Control: private)
-
-== 3. Camada viva (calculada a cada leitura, nunca gravada) ==
-RES -> LC: GET /api/lens/scans/{id}/matches?detection=&scope=MY_CLOSET
-LC -> LS: matches(…)
-LS -> DB: peças próprias (+ garment_embeddings quando existem)
-LS -> LA: LensSimilarity.score: 0,45·visual + 0,35·atributos\n+ 0,20·cor (ΔE00/40), renormalizado; piso 55; top 12
-LS --> RES: items [{similarity, components, reasons, piece}]\nou vazio ("sem correspondência", nunca 0%)
-RES -> LC: GET …/matches?scope=COMMUNITY
-LS -> HY: peças públicas elegíveis de OUTRAS pessoas,\nvisíveis para quem pede (piso 65)
-RES -> LC: GET /api/lens/scans/{id}/reading?detection=
-LC -> LS: reading(…)
-LS -> DB: DNA de estilo (StyleCompatibility)
-LS -> HY: hype_scores públicos da categoria
-LS -> LA: LensReading: estilos, paleta, ocasiões, estação;\ntrend = Hype do grupo (cc:/st:/cm:, ≥ 5 itens)
-LS --> RES: {styles, palette, occasions, season, fit | null,\ntrend (AVAILABLE | INSUFFICIENT_DATA), impact}
-U -> RES: aba Recriar, modo Descoberta, fixa um slot
-RES -> LC: POST /api/lens/scans/{id}/recreate {mode, focus?, locked?}
-LC -> LS: recreate(…)
-LS --> RES: slots (own | alternative | gap), pieceIds,\nseis números, createHref "/schemes/new?pieces=…"
-note over LS, HY: o Lens só LÊ hype_scores: nenhum evento, nada em hype_signal_daily
-
-== 4. Corrigir, marcar, Quero, Eu tenho, salvar ==
-U -> RES: corrige a cor (chip)
-RES -> LC: PATCH /api/lens/scans/{id}/detections/{did} {color}
-LC -> LS: correct(…)
-LS -> DB: lens_detections (CORRECTED) + lens_feedback WRONG_COLOR\n(training_consent = AI_MODEL_TRAINING concedido?)
-LS --> RES: LensDetectionView → refaz as correspondências
-U -> RES: Marcar uma peça
-RES -> LC: POST /api/lens/scans/{id}/detections {box (imagem inteira), category}
-LS -> DB: ADDED_BY_USER + feedback MISSING_PIECE\n(NO_FASHION_FOUND → READY)
-RES -> LC: PUT …/detections/{did}/want {wanted: true}
-RES -> LC: POST …/detections/{did}/own {itemId?}
-LC --> RES: {detection, href} (/pieces/new?… sem o recorte da foto)
-U -> RES: Salvar como inspiração
-RES -> LC: PATCH /api/lens/scans/{id} {saved: true}
-LS -> DB: saved_at (não expira)
-U -> CAP: Recentes / Salvos
-CAP -> LC: GET /api/me/lens/scans?saved=&page=&size=
-LC --> CAP: Page<LensScanCard>
-
-== 5. Retenção e exclusão ==
-LS -> DB: LensRetentionJob (04:40): scans não salvos vencidos\n→ apaga imagem, miniatura, peças e correções
-U -> RES: Excluir
-RES -> LC: DELETE /api/lens/scans/{id}
-LC --> RES: 204
-note over LS: excluir a conta: AccountService → LensService.deleteAllFor(userId)
+LensService -> MultiPieceService : detectPieces()
+LensService -> LensService : new LensScan()
+LensService -> LensService : source = ?source
+LensService -> LensService : intent = ?intent
+LensService -> LensService : redactionConfirmed = ?redactionConfirmed
+LensService -> LensConfig : retentionDays()
+LensService -> LensService : expiresAt = set
+LensService -> LensService : processedAt = set
+LensService -> LensService : status = FAILED
+LensService -> LensService : status = NO_FASHION_FOUND
+LensService -> LensService : status = READY
+LensService -> DB_MySQL : INSERT/UPDATE lens_scans
+LensService -> MediaStoragePort : put() (×2)
+LensService -> LensService : imageKey = set
+LensService -> LensService : thumbKey = set
+LensService -> DB_MySQL : INSERT/UPDATE lens_scans
+LensService -> LensService : new LensDetection()
+LensService -> LensService : status = DETECTED
+LensService -> DB_MySQL : INSERT/UPDATE lens_detections
+note over LensService : … e mais 2 passos no código
+deactivate LensService
+LensService --> LensController : resultado
+LensController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

@@ -1,96 +1,87 @@
 @startuml RF5_Sequencia_v3
-!pragma layout smetana
-title RF5 — Criar um esquema de vestimenta na aba "Criar Look"\nDiagrama de sequência — builder, composição com IA, prévia de Hype, salvar e pedidos de selo
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as U
-participant "schemes/new/page.tsx\nSchemeBuilder · LookHypePreview\nBackgroundStudio" as FE
-participant "SchemeController" as SC
-participant "SchemeService" as SS
-participant "WardrobeService" as WS
-participant "AiEngine (RF24)\nSCHEME_COMPOSER" as AI
-participant "LookPreviewService\n(HypeScore v2)" as LP
-participant "SealController ·\nSealService" as SEAL
-participant "BackgroundStudioService" as BG
-database "MySQL" as DB
+autonumber "<b>0."
+title RF5 — Criar Look (v3) — marca do slot vem da peça (sem campo de marca no esquema)\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-U -> FE: abre /schemes/new
-FE -> SC: GET /api/schemes/builder
-SC -> SS: builder(user)
-SS -> WS: eligible(userId) — só disponíveis do próprio acervo
-WS -> DB: wardrobe_items (AVAILABLE, moderação não reprovada)
-alt < 2 elegíveis (CA02)
-  SS --> FE: 200 {status: INSUFICIENTE, action: /pieces/new}
-  FE --> U: estado vazio "Adicionar nova peça"
-else
-  SS --> FE: 200 {status: PRONTO, lists por tipo, defaultVisibility, steps}
+actor "Pessoa usuária" as U
+boundary "Tela /schemes/[id]/edit" as P
+control "SchemeController" as SchemeController
+participant "SchemeService" as SchemeService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+participant "BackgroundStudioService" as BackgroundStudioService
+== Salvar esquema (manual, IA, autopiloto, remix) ==
+U -> P : Salvar esquema (manual, IA, autopiloto, remix)
+P -> SchemeController : POST /api/schemes
+SchemeController -> SchemeService : create()
+activate SchemeService
+SchemeService -> Guard : requireCanCreate()
+SchemeService -> DB_MySQL : SELECT users
+alt sem peças
+SchemeService --> SchemeController : 400 SEM_PECAS
+SchemeController --> P : 400 + mensagem
 end
-
-opt modo IA (CA04)
-  U -> FE: ocasião, estilo, orientação
-  FE -> SC: POST /api/schemes/compositions {occasion, style, mood, season, prompt}
-  SC -> SS: compose(user, req, SCHEME_COMPOSER)
-  alt < 2 elegíveis
-    SS --> FE: 422 ACERVO_INSUFICIENTE
-  else
-    SS -> DB: hype_scores das peças (HypeScoreCurrent)
-    SS -> AI: text(TextCall: 3 looks só com refs do acervo)
-    AI --> SS: compositions (ou LocalSchemeComposer.compose, plano B)
-    SC -> LP: compositions(user, list) — seis números por look
-    SC --> FE: 200 ComposeResult {compositions, orientation, scores, fallbackUsed, provider}
-    U -> FE: escolhe uma composição (uma peça por tipo)
-  end
+SchemeService -> SchemeService : new Scheme()
+alt formulario inválido
+SchemeService --> SchemeController : 400 FORMULARIO_INVALIDO
+SchemeController --> P : 400 + mensagem
 end
-
-U -> FE: seleciona/ajusta peças (SlotBrand: marca vem da peça)
-FE -> SC: POST /api/schemes/scores {pieceIds, occasion, style}
-SC -> LP: scores(user, PreviewRequest)
-LP --> FE: 200 seis números (nada gravado, sem sinal de Hype)
-U -> FE: dados (título, ocasião ≤ 3, estilo ≤ 3, estação, humor, visibilidade)
-FE -> SEAL: POST /api/seal-suggestions/preview {pieceIds, occasion, style}
-SEAL --> FE: 200 {suggestions, message}
-U -> FE: Background Studio (skin, anatomia, cor, arte com IA)
-FE -> BG: GET /api/backgrounds/recommendations · POST /api/backgrounds/art\n(via BackgroundController)
-opt prévia em PNG
-  FE -> SC: POST /api/schemes/preview (SchemeForm)
-  SC -> SS: preview(user, form) → SchemeCardRenderer
-  SS --> FE: 200 image/png
+SchemeService -> DB_MySQL : SELECT schemes
+alt Esquema não encontrado(a)
+SchemeService --> SchemeController : 404 NAO_ENCONTRADO
+SchemeController --> P : 404 + mensagem
 end
-
-U -> FE: Salvar ou Publicar
-FE -> SC: POST /api/schemes {title, items[wardrobeItemId, slot, sortOrder],\nbackground, publish, visibility, lookDoDia}
-SC -> SS: create(user, form)
-SS -> SS: Guard.requireCanCreate
-alt items vazio (CA06)
-  SS --> FE: 400 SEM_PECAS
-else peça de outra pessoa / indisponível / campos inválidos
-  SS --> FE: 400 PECA_DE_OUTRO_USUARIO | PECA_INDISPONIVEL | FORMULARIO_INVALIDO
-else ok
-  SS -> DB: INSERT schemes (DRAFT, origin CRIAR_LOOK, visibilidade do\nformulário ou AccountService.defaultVisibility — CA03)
-  SS -> DB: INSERT scheme_items (slot, tryOnLayer, sortOrder)
-  SS -> BG: applyToScheme(s, background)
-  opt publish = true (CA05)
-    SS -> DB: status PUBLISHED, publishedAt, communityIndexed,\nscheme_items.snapshot_json
-  end
-  SS -> DB: projeções · notifications (SCHEME_CREATED) · audit_log (CRIACAO_ESQUEMA)
-  SS ->> SS: SchemeSaved (AFTER_COMMIT): FAI Points, Hype, desafios, conquistas
-  opt lookDoDia
-    SS -> SS: DailyLookService.register (erro → dailyLookWarning)
-  end
-  SC -> SS: suggestSealsAfterSave(user, id) — depois do commit (≥ 2 peças)
-  SS -> SEAL: suggest(user, schemeId) (falha → lista vazia)
-  SC --> FE: 201 {scheme, sealSuggestions[, dailyLookWarning]}
-  loop cada selo marcado na etapa de dados
-    FE -> SEAL: POST /api/schemes/{id}/seal-bonds {targetOwnerId, imageRightsConsent}
-    SEAL -> DB: seal_bonds (EDITED → route: aprovado pela política ou PENDING_REVIEW)
-    SEAL --> FE: 201 (ou 400 MARCA_NAO_VALIDADA, CELEBRIDADE_NAO_VERIFICADA)
-  end
-  FE --> U: look criado
+SchemeService -> Guard : requireView()
+alt indisponível
+SchemeService --> SchemeController : 409 INDISPONIVEL
+SchemeController --> P : 409 + mensagem
 end
+SchemeService -> SchemeService : origin = REMIX
+SchemeService -> DB_MySQL : INSERT/UPDATE schemes
+alt formulario inválido
+SchemeService --> SchemeController : 400 FORMULARIO_INVALIDO
+SchemeController --> P : 400 + mensagem
+end
+SchemeService -> DB_MySQL : SELECT wardrobe_items
+alt peça de outro usuário
+SchemeService --> SchemeController : 400 PECA_DE_OUTRO_USUARIO
+SchemeController --> P : 400 + mensagem
+end
+alt peça indisponível
+SchemeService --> SchemeController : 400 PECA_INDISPONIVEL
+SchemeController --> P : 400 + mensagem
+end
+SchemeService -> DB_MySQL : SELECT scheme_items
+SchemeService -> SchemeService : new SchemeItem()
+SchemeService -> DB_MySQL : INSERT/UPDATE scheme_items
+SchemeService -> DB_MySQL : DELETE scheme_items
+SchemeService -> SchemeService : coverImageUrl = set
+SchemeService -> BackgroundStudioService : applyToScheme()
+BackgroundStudioService -> DB_MySQL : SELECT wardrobe_items
+BackgroundStudioService --> SchemeService
+note over SchemeService : … e mais 27 passos no código
+deactivate SchemeService
+SchemeService --> SchemeController : resultado
+SchemeController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

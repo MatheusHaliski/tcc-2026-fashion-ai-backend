@@ -1,49 +1,76 @@
 @startuml RF32_Componentes
-title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade ("Desafios")\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade ('Desafios')\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "challenges — catálogo" as FE0
-  component "challenges/[id] — progresso, mural e votação" as FE1
+package "Frontend (Next.js)" {
+  component "/challenges/[id]\n(site)/(app)/challenges/[id]/page.tsx" as FE0
+  component "/challenges\n(site)/(app)/challenges/page.tsx" as FE1
+  component "/room\n(site)/(app)/room/page.tsx" as FE2
+  component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  [ChallengeController] as ChallengeController
+  component "ChallengeController\n/api/challenges\n/api/challenges/catalog\n/api/challenges/proposals\n/api/challenges/votes\n(+16 rotas)" as ChallengeController
+  component "RoomController\n/api/me/room\n/api/me/room/drawers/{…}\n/api/me/room/island\n/api/me/room/keys\n(+11 rotas)" as RoomController
 }
 package "fai-application (casos de uso)" {
-  [ChallengeService] as ChallengeService
-  [RoomService] as RoomService #FAFAFA
-  [FaiPointsService] as FaiPointsService #FAFAFA
+  component "ChallengeService" as ChallengeService
+  component "RoomService" as RoomService
+  component "FaiPointsService" as FaiPointsService <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
+  component "MediaService" as MediaService <<apoio>>
+  component "SideEffectRunner" as SideEffectRunner <<apoio>>
 }
-package "fai-domain (repositórios JPA)" {
-  [ChallengeEventRepository\nChallengeInstanceRepository\nChallengeNoteRepository\nChallengeParticipantRepository\nChallengeTemplateRepository\nChallengeVoteRepository\nDailyLookRepository\nFollowRepository\nPieceUsageDiaryEntryRepository\nSchemeItemRepository\nSchemeRepository\nStyleDnaRepository\nUserRepository\nWardrobeItemRepository] as REPOS
+package "fai-domain (repositórios)" {
+  component "ChallengeTemplateRepository\nChallengeInstanceRepository\nChallengeParticipantRepository\nChallengeEventRepository\nChallengeNoteRepository\nChallengeVoteRepository\nWardrobeItemRepository\nSchemeRepository\nSchemeItemRepository\nDailyLookRepository\n(+11)" as REPO_MySQL
 }
-database "MySQL · fashionai_app\n• challenge_events\n• challenge_instances\n• challenge_notes\n• challenge_participants\n• challenge_templates\n• challenge_votes\n• daily_looks\n• follows\n• piece_usage_diary\n• scheme_items\n• schemes\n• style_dna\n• users\n• wardrobe_items" as DB
-database "Storage de mídia\n(local / S3, MediaStoragePort)" as P_media
-[NotificationService\n(RNF10)] as P_notif
-[SideEffectRunner\n(efeitos colaterais isolados)] as P_side
-
-FE0 --> ChallengeController : HTTPS/JSON
-FE1 --> ChallengeController : HTTPS/JSON
+database "MySQL\n• challenge_events\n• challenge_instances\n• challenge_notes\n• challenge_participants\n• challenge_templates\n• challenge_votes\n• daily_looks\n• fai_points_ledger\n• follows\n• piece_usage_diary\n• room_catalog\n• room_inventory\n(+9)" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+APIC --> ChallengeController : HTTPS/JSON
+APIC --> RoomController : HTTPS/JSON
 ChallengeController --> ChallengeService
-ChallengeService ..> RoomService
+ChallengeService --> REPO_MySQL
 ChallengeService ..> FaiPointsService
-ChallengeService --> REPOS
-ChallengeService --> P_notif
-ChallengeService --> P_media
-ChallengeService --> P_side
-REPOS --> DB : JPA/Flyway
+ChallengeService ..> MediaService
+ChallengeService ..> NotificationService
+ChallengeService ..> RoomService
+ChallengeService ..> SideEffectRunner
+FE0 --> APIC
+FE1 --> APIC
+FE2 --> APIC
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+RoomController --> RoomService
+RoomService --> AI
+RoomService --> EV
+RoomService --> REPO_MySQL
+RoomService ..> SideEffectRunner
 @enduml

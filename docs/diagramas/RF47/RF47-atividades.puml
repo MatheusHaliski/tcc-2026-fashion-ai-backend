@@ -1,9 +1,16 @@
 @startuml RF47_Atividades
-title RF47 — Acervo & Busca Catalogada\nDiagrama de atividades — fluxo da pessoa e do sistema (catalog-first)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,96 +19,45 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF47 — Acervo & Busca Catalogada\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Em "Adicionar peça", etapa "Peça",\nescolhe o tipo da peça (chips CATEGORY_CARDS);
-:Buscar no catálogo: subtipo (category-cards)\n→ marca (brand-autocomplete) → nome/modelo/cor;
-note right
-  A seção Foto foi retirada
-  do criador de peça; não há upload de foto
-  nem guia "Como fotografar" nesta tela
-end note
-|Frontend|
-:GET /api/catalog/brands?q= (nome e apelidos);
-:catalog-search.tsx com debounce de 350 ms\nGET /api/catalog/search + /suggestions;
-|Backend|
-:CatalogService.search → resolve marca\n(BrandAlias) e intenção (CatalogNormalizer);
-:CatalogTextInterpreter lê as características únicas no texto\n(estampa, logo, lados, cor da peça × da estampa);
-note right
-  Leitura local sempre; IA (CATALOG_TEXT_INTERPRETER)
-  refina descrições com 4+ palavras, só com o
-  vocabulário fechado. Subtipo deduzido do texto
-  ("camisa") pontua e prioriza o pool, não filtra.
-end note
-:Tipo pela frase mais longa do texto (4 → 2 palavras):\n"moletom com capuz" = hoodie, não "moletom" + "capuz";
-:Pool priorizado — CatalogProductRepository, LIMIT 200 cada\n(FULLTEXT ngram, só VALIDATED/PERSISTABLE/REFERENCE_ONLY):\n1. candidatesWithColor (subtipo + cor no produto ou variante)\n2. candidates (subtipo) · 3. candidates (estampa: patternTerms)\n4. candidates (pool geral) · reforço se o pool < 8;
-note right
-  Com milhares de produtos (RF49), o pool
-  começa pelo que a pessoa descreveu;
-  o subtipo lido do texto prioriza o pool,
-  mas continua sem filtrar
-end note
-:CatalogMatchScorer.score por candidato\n(+ componente design e motivos ✓/✗; descarta < 0,35);
-:Ordem com foto: orderScore() — produto sem foto\ncede NO_PHOTO_PENALTY = 0,10 na ordem\n(o "% compatível" mostrado não muda);
-|Frontend|
-:Cards com foto oficial e "% compatível"\n(variante da cor pedida pré-selecionada);
-if (Achou no catálogo local?) then (sim)
-else (não)
-  |Pessoa|
-  if (O que fazer?) then (pesquisar em lojas oficiais)
-    |Backend|
-    :POST /api/catalog/discover\nOfficialCatalogDiscovery (AiCapability.CATALOG_DISCOVERY);
-    note right
-      Só se canSearchOfficial (fonte oficial ativa).
-      Busca na web SÓ nos domínios de catalog_sources
-      (nunca Pinterest, Instagram, marketplaces, blogs).
-      Nada de URL, código ou foto inventados.
-    end note
-    :CatalogIngestService.upsert(..., DISCOVERED)\nnormaliza, dedup_key único, imagens REFERENCE_ONLY;
-    note right: candidato DISCOVERED fica oculto da busca\naté alguém escolher
-  else (refinar ou preencher os dados)
-    |Pessoa|
-    :Refina a busca ou segue sem produto;
-  endif
+:Abre /pieces/new, /try-on;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/catalog/brands\nGET /api/catalog/stores\nGET /api/catalog/products/{id};
+|Pessoa usuária|
+:Busca no catálogo interno\n(categoria, subcategoria, marca,…;
+|Tela (Next.js)|
+:GET /api/catalog/search;
+|API (Spring Boot)|
+:CatalogController.search\n→ CatalogService.search;
+|Dados e serviços|
+:Monta a resposta;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Busca nas fontes oficiais da marc…)
+    :POST /api/catalog/discover\n→ CatalogService.discover\nlê: catalog_sources, catalog_product_aliases,\ncatalog_images …\nusa: OfficialCatalogDiscovery.discover,\nCatalogNormalizer.subcategory,\nCatalogIngestService.upsert …;
+  case (Adiciona ao guarda-roupa a peça e…)
+    :POST /api/pieces/from-catalog\n→ CatalogService.addToWardrobe\nvalida: PRODUTO_RECUSADO\nlê: catalog_products, brands, catalog_variants …\nusa: WardrobeService.createFromCatalog,\nWardrobeService.toggles\ngrava: catalog_products;
+  case (Editar a peça)
+    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
+  case (Excluir a peça)
+    :DELETE /api/pieces/{id}\n→ WardrobeService.delete\nlê: wardrobe_items, scheme_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.removePiece …\nestado: availabilityStatus → ARCHIVED, disponivel →\nfalse, visibility → PRIVATE;
+  case (Cadastrar a peça a partir do rasc…)
+    :POST /api/pieces\n→ WardrobeService.create\nvalida: CONTEUDO_BLOQUEADO, ERRO,\nFORMULARIO_INVALIDO, FOTO_OBRIGATORIA\nlê: users, pipeline_jobs, wardrobe_items …\nusa: Guard.requireCanCreate, OwnMedia.accepts,\nMediaService.read …\nia: STUDIO_ENHANCER;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-|Pessoa|
-if (Toca "É esta" num produto?) then (sim)
-  |Frontend|
-  :Produto e variante preenchem o formulário\n(nome, marca, cor, material…);
-else (não)
-endif
-|Pessoa|
-:Dados → Mais detalhes → Arte de fundo\n→ Revisar e salvar;
-if (Escolheu produto do catálogo?) then (sim)
-  |Frontend|
-  :POST /api/pieces/from-catalog\n(productId, variantId, dados pessoais, background);
-  |Backend|
-  if (Produto REJECTED?) then (sim)
-    #FFE3E3:400 PRODUTO_RECUSADO;
-    stop
-  endif
-  :CatalogService.addToWardrobe:\nDISCOVERED → REFERENCE_ONLY, owners_count + 1;
-  note right: o próximo usuário acha o produto localmente
-  :WardrobeService.createFromCatalog\nfoto oficial (image_origin CATALOG) ou\nilustração da categoria (DEFAULT);
-else (não)
-  |Frontend|
-  :POST /api/pieces (useDefaultImage = true);
-  |Backend|
-  :WardrobeService.create com a ilustração\nda categoria (assets.defaultPieceImage);
-endif
-|Bancos-serviços|
-:wardrobe_items referencia catalog_products\n(por referência, sem cópia do produto);
-:Marcas do catálogo aparecem no Explorador\n(ExplorerService.brandsAndStores);
+|Pessoa usuária|
 stop
 @enduml

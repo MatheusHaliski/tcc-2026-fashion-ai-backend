@@ -1,71 +1,83 @@
 @startuml RF50_Sequencia
-title RF50 (evolução do RF25) — Criador de selo: sugestão "Com IA", upload do núcleo e salvamento\nDiagrama de sequência
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam sequence {
-  ArrowColor #52606D
-  LifeLineBorderColor #B695F5
-  ParticipantBackgroundColor #F8F4FF
-  ParticipantBorderColor #B695F5
-  ActorBackgroundColor #F8F4FF
-  GroupBackgroundColor #FFF5F8
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
-actor "Emissor\n(marca/celebridade)" as E
-participant "SealWizard\n(seal-wizard.tsx)" as W
-participant "SealArt +\nSealCoreEditor" as A
-participant "SealMedallion\n(prévia)" as M
-participant "SealController" as C
-participant "SealService" as S
-participant "SealDrafts" as D
-participant "SealDesignService" as U
-participant "SealDesigns" as N
-participant "OwnMedia" as O
-database "MySQL\nseals" as DB
-database "Storage\nusers/{id}/seals" as ST
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+title RF50 (evolução do RF25) — Criador de selo: sugestão 'Com IA', upload do núcleo e salvamento\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-E -> W : "Novo selo"
-group Passo 1 — Com IA
-  E -> W : escolhe "Com IA"
-  W -> C : POST /api/seals/draft {tier}
-  C -> S : draft(user, tier)
-  S -> S : requireIssuer (perfil aprovado)
-  S -> DB : perfil emissor + peças do emissor
-  S -> D : suggest(nome, celebridade?, tier, peças)
-  D -> N : nearestCircular(cor dominante) / labelFrom(nome)
-  D -> N : normalize(design sugerido)
-  D --> S : {name, tier, policy, design, reasons}
-  S --> W : 200 sugestão (nada salvo)
-  W -> W : preenche dados e arte; mostra o porquê
+actor "Pessoa usuária" as U
+boundary "c/seal-wizard.tsx" as c_seal_wizard_tsx
+participant "lib/i18n/i18n.tsx" as lib_i18n_i18n_tsx
+participant "c/ui/index.tsx" as c_ui_index_tsx
+participant "c/seal-policy-editor.tsx" as c_seal_policy_editor_tsx
+participant "c/seal-medallion.tsx" as c_seal_medallion_tsx
+participant "lib/seals/templates.ts" as lib_seals_templates_ts
+participant "ApiException" as ApiException
+== c/seal-wizard.tsx · SealWizard() ==
+U -> c_seal_wizard_tsx : SealWizard()
+activate c_seal_wizard_tsx
+c_seal_wizard_tsx -> lib_i18n_i18n_tsx : useI18n()
+c_seal_wizard_tsx -> c_ui_index_tsx : useToast()
+c_seal_wizard_tsx -> c_seal_wizard_tsx : setMode("AI")
+c_seal_wizard_tsx -> c_seal_wizard_tsx : setDrafting("true")
+c_seal_wizard_tsx -> c_seal_wizard_tsx : setMode("null")
+c_seal_wizard_tsx -> c_seal_wizard_tsx : setDrafting("false")
+c_seal_wizard_tsx -> c_seal_wizard_tsx : setSaving("true")
+c_seal_wizard_tsx -> c_seal_wizard_tsx : setSaving("false")
+c_seal_wizard_tsx -> c_ui_index_tsx : cn() (×2)
+c_seal_wizard_tsx -> c_seal_wizard_tsx : setMode("MANUAL")
+c_seal_wizard_tsx -> c_seal_policy_editor_tsx : cleanPolicy()
+deactivate c_seal_wizard_tsx
+c_seal_wizard_tsx --> U : resultado
+== c/seal-wizard.tsx · SealArt() ==
+U -> c_seal_wizard_tsx : SealArt()
+activate c_seal_wizard_tsx
+c_seal_wizard_tsx -> lib_i18n_i18n_tsx : useI18n()
+c_seal_wizard_tsx -> c_seal_medallion_tsx : sealKind() (×2)
+opt k === kind
+c_seal_wizard_tsx --> U : encerra
 end
-group Passo 3 — Arte
-  E -> A : tipo (Circular | Folha | Padrão FashionAI) e modelo
-  A -> M : design {kind, mode, template, texts, core}
-  M --> E : prévia 200/44/36 px
-  opt núcleo com imagem
-    E -> A : escolhe arquivo
-    A -> A : valida no cliente (≥ 64 px, ≤ 4:1)
-    A -> C : POST /api/seals/uploads?purpose=core (multipart)
-    C -> U : uploadCore(user, bytes)
-    U -> U : perfil MARCA/CELEBRIDADE; decodifica; reduz a ≤ 640 px
-    U -> ST : put(users/{id}/seals/core-{uuid}.png)
-    U --> A : {url, width, height}
-    A -> M : core {mode: IMAGE, imageUrl, zoom, text?}
-  end
+c_seal_wizard_tsx -> lib_seals_templates_ts : map()
+c_seal_wizard_tsx -> c_seal_medallion_tsx : map() (×2)
+c_seal_wizard_tsx -> lib_seals_templates_ts : map() (×3)
+deactivate c_seal_wizard_tsx
+c_seal_wizard_tsx --> U : resultado
+== c/seal-medallion.tsx · SealMedallion() ==
+U -> c_seal_medallion_tsx : SealMedallion()
+activate c_seal_medallion_tsx
+c_seal_medallion_tsx -> lib_i18n_i18n_tsx : useI18n()
+c_seal_medallion_tsx -> lib_seals_templates_ts : kindOfTemplate()
+opt kind === 'FOLHA'
+c_seal_medallion_tsx --> U : encerra
 end
-group Passo 4 — Revisar e salvar
-  E -> W : "Salvar selo"
-  W -> C : POST /api/seals {name, tier, policy, design, validade, limite}
-  C -> S : createSeal(user, form)
-  S -> N : normalize(design)
-  alt desenho inválido
-    N --> S : ApiException 400 SELO_DESIGN_INVALIDO {fields}
-    S --> W : 400 (campos apontados)
-  else válido
-    S -> O : require(owner, core.imageUrl) — só arquivo do próprio emissor
-    S -> S : SealPolicies.normalize/describe → policyText
-    S -> DB : INSERT seals (background_config_json = {design, policy})
-    S --> W : 201 sealView
-    W --> E : selo na aba "Selos"
-  end
+c_seal_medallion_tsx -> lib_seals_templates_ts : faiTemplate() (×2)
+c_seal_medallion_tsx -> lib_seals_templates_ts : circularTemplate()
+opt d.mode === 'UPLOAD' && d.uploadUrl
+c_seal_medallion_tsx --> U : encerra
 end
+deactivate c_seal_medallion_tsx
+c_seal_medallion_tsx --> U : resultado
+== ApiException · status() ==
+U -> ApiException : status()
+activate ApiException
+deactivate ApiException
+ApiException --> U : resultado
 @enduml

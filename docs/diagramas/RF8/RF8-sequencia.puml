@@ -1,85 +1,93 @@
 @startuml RF8_Sequencia
-title RF8 — Visualizar esquemas e peças de outros usuários na aba Buscar\nDiagrama de sequência — feed da comunidade (relevância com Hype público v2), Passarela, insights FEED e abertura do card
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as U
-participant "feed/page.tsx\nInsightStrip · SchemeCard\nInfiniteSentinel" as FE
-participant "InsightsController\nInsightService\nPublicInsights" as IS
-participant "DiscoveryController" as DC
-participant "SearchService" as SS
-participant "SchemeService\nGuard" as SCH
-participant "HypeController\nHypeQueryService" as HQ
-participant "HypeCache\n(RenderCachePort)" as HC
-participant "CassandraProjectionAdapter\n(TimelineProjectionPort)" as TL
-database "MySQL" as DB
+autonumber "<b>0."
+title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba 'Buscar'\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-U -> FE: abre /feed (aba Feed)
-FE -> IS: GET /api/insights?context=FEED&window=7 (público)
-IS -> HC: get("insights:FEED:7:…", loader) por geração
-alt cache vazio na geração atual
-  IS -> DB: hype_scores públicos (public_eligible) dos looks
-  IS -> IS: PublicInsights.feed → FEED_STYLE_RISING,\nFEED_HOT_SHARE, FEED_TREND_VS_POPULARITY…
+actor "Pessoa usuária" as U
+boundary "Tela /feed" as P
+control "DiscoveryController" as DiscoveryController
+participant "SearchService" as SearchService
+database "MySQL" as DB_MySQL
+participant "SchemeService" as SchemeService
+control "SocialController" as SocialController
+participant "SocialService" as SocialService
+participant "Guard" as Guard
+participant "CounterStorePort\n(InMemoryCounterStore)" as CounterStorePort
+participant "NotificationService" as NotificationService
+queue "Eventos de domínio" as EV
+== Feed da comunidade (cursor opaco, relevância = recência + HypeScore v… ==
+U -> P : Feed da comunidade (cursor opaco, relevância = re…
+P -> DiscoveryController : GET /api/feed
+DiscoveryController -> SearchService : communityFeed()
+activate SearchService
+SearchService -> DB_MySQL : SELECT follows (×2)
+SearchService -> DB_MySQL : SELECT style_dna
+SearchService -> DB_MySQL : SELECT schemes
+SearchService -> SchemeService : canView()
+SearchService -> DB_MySQL : SELECT scheme_items
+SearchService -> SchemeService : view()
+SchemeService -> DB_MySQL : SELECT reactions
+SchemeService -> DB_MySQL : SELECT saved_items
+SchemeService --> SearchService
+deactivate SearchService
+SearchService --> DiscoveryController : resultado
+DiscoveryController --> P : 200 JSON
+P --> U : atualiza a tela
+== Reagir (curtir etc.) a esquema, peça ou comentário; repetir remove ==
+U -> P : Reagir (curtir etc.) a esquema, peça ou comentári…
+P -> SocialController : POST /api/interactions/{type}/{id}/reactions
+SocialController -> SocialService : react()
+activate SocialService
+SocialService -> Guard : requireCanCreate()
+SocialService -> DB_MySQL : SELECT schemes
+SocialService -> SchemeService : requireView()
+SocialService -> DB_MySQL : SELECT wardrobe_items
+alt Peça não encontrado(a)
+SocialService --> SocialController : 404 NAO_ENCONTRADO
+SocialController --> P : 404 + mensagem
 end
-IS --> FE: 200 {context: FEED, source: local, items[≤ 5]}
-U -> FE: liga o chip "Em alta" (opcional)
-FE -> DC: GET /api/feed?cursor&size=12&hypeLevel=HOT&style&occasion…
-DC -> SS: communityFeed(viewer, cursor, size, Filters)
-alt hypeLevel ou cursor inválidos
-  SS --> FE: 400 NIVEL_INVALIDO | CURSOR_INVALIDO
-else
-  SS -> DB: follows BLOQUEADO (dois sentidos) · style_dna de quem vê
-  SS -> DB: schemes.findPublicFeed (até 400, PUBLIC + PUBLISHED)
-  loop candidatos depois do cursor, mais recentes primeiro
-    SS -> SCH: canView(viewer, scheme) — dono ACTIVE, não bloqueado,\nmoreRestrictive(look, perfil)
-    opt filtro hypeLevel
-      SS -> SS: meetsLevel(hype_scores públicos, faixa mínima)
-    end
-    SS -> SS: matches(filtros) — até completar a página
-  end
-  SS -> DB: hype_scores da página (uma consulta, HYPE_V2)
-  SS -> SS: relevance = 0,5·recência + 0,3·Hype público\n(sem Hype = 0,5) + 0,2·afinidade DNA
-  SS --> FE: 200 {items: SchemeView[], nextCursor, chips, order}
-end
-FE -> HQ: GET /api/hype/summaries?type=SCHEME&ids= (HypeBadge, lote)
-HQ --> FE: 200 {items} (só ids visíveis para quem vê)
-U -> FE: rola até o fim
-FE -> DC: GET /api/feed?cursor=<nextCursor>…
-note right of FE: nextCursor nulo = fim (sem itens repetidos)
-
-== Passarela (quem eu sigo) — exige login ==
-U -> FE: aba Passarela
-FE -> DC: GET /api/runway?cursor&size=12
-DC -> SS: runway(viewer, cursor, size)
-SS -> DB: follows ACEITO (quem sigo)
-opt projeção de timeline ligada
-  SS -> TL: readTimeline(viewerId, 300)
-end
-SS -> DB: looks de quem sigo · shares FEED · vínculos APPROVED\ndas marcas seguidas (reason SEGUINDO | COMPARTILHADO | VINCULO_*)
-alt ninguém seguido ou sem entradas
-  SS -> DB: findPublicFeed (reason COMUNIDADE, fallbackToCommunity)
-end
-SS --> FE: 200 {items: [{reason, scheme, at}], nextCursor, waywt, battles}
-FE -> FE: card recebe só item.scheme
-
-== Abrir o card de outra pessoa ==
-U -> FE: toca no card
-FE -> SCH: GET /api/schemes/{id} (SchemeController)
-SCH -> SCH: requireView(viewer, scheme)
-alt sem permissão
-  SCH -> DB: INSERT audit_log (ACESSO_NEGADO_403)
-  SCH --> FE: 403
-else
-  opt quem vê não é o dono
-    SCH -> DB: UPDATE schemes.view_count + 1 (CounterStorePort "views")
-    SCH ->> SCH: logado → publishEvent HypeSignal(LOOK_VIEWED)\n(HypeSignalRecorder grava depois do commit — RF19)
-  end
-  SCH --> FE: 200 {scheme, wearstyles, seals, canEdit = false}
-end
-FE -> FE: CardActions → GET /api/interactions/SCHEME/{id}/counters (RF19)
+SocialService -> Guard : requireView()
+SocialService -> DB_MySQL : SELECT dna_schemes
+SocialService -> Guard : requireView()
+SocialService -> DB_MySQL : SELECT reactions
+SocialService -> DB_MySQL : DELETE reactions
+SocialService -> CounterStorePort : increment()
+SocialService -> SocialService : new Reaction()
+SocialService -> DB_MySQL : SELECT users
+SocialService -> SocialService : targetType = ?type
+SocialService -> SocialService : reactionType = ?reaction
+SocialService -> DB_MySQL : INSERT/UPDATE reactions
+SocialService -> CounterStorePort : increment()
+SocialService -> NotificationService : notify()
+NotificationService -> DB_MySQL : SELECT users (×2)
+NotificationService -> DB_MySQL : SELECT user_preferences
+NotificationService -> DB_MySQL : INSERT/UPDATE notifications
+NotificationService --> SocialService
+SocialService ->> EV : InteractionReceived
+SocialService ->> EV : HypeSignal
+SocialService -> DB_MySQL : SELECT reactions
+deactivate SocialService
+SocialService --> SocialController : resultado
+SocialController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml
