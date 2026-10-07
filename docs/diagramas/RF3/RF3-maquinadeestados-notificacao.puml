@@ -1,0 +1,40 @@
+@startuml RF3_MaquinaDeEstados_Notificacao
+!pragma layout smetana
+title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de máquina de estados — notificação (Notification.delivered · read)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Silenciada\n(delivered = false)" as Sil
+state "Não lida\n(delivered = true, read = false)" as NaoLida
+state "Lida\n(read = true, readAt)" as Lida
+state "Expurgada" as Exp
+
+[*] --> NaoLida : NotificationService.notify (outros RF)\ntipo obrigatório ou ligado nas preferências\n→ projection.appendNotification
+[*] --> Sil : notify com o tipo desligado\nou notificationPushMaster = false
+NaoLida --> Lida : POST /api/notifications/read {ids}\n· POST /api/notifications/read-all
+Sil --> Lida : POST /api/notifications/read-all\n(marca também as não entregues)
+Lida --> Exp : POST /api/admin/jobs/notifications\n(sp_purge_notifications, mais de 90 dias)
+NaoLida --> Exp : idem
+Sil --> Exp : idem
+Exp --> [*]
+
+note right of Sil
+  Fica gravada, mas não aparece na caixa nem
+  no contador (as consultas filtram delivered = true).
+  SECURITY e avisos de SYSTEM obrigatórios
+  (optOutAllowed = false) nunca são silenciados.
+end note
+note bottom of Exp
+  O expurgo de 90 dias só roda pelo job manual do administrador;
+  NotificationService.purgeExpired() não tem agendamento nem chamada.
+end note
+@enduml

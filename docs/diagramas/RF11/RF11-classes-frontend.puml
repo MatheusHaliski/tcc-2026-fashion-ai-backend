@@ -1,0 +1,181 @@
+@startuml RF11_Classes_Frontend
+title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de classes — frontend: tipos da arte, Background Studio, cartela sazonal, editor da peça e ArtVideo
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+set separator none
+
+package "components/background-studio.tsx" {
+class BgConfig <<type>> {
+  +color, gradient, gradientPresetId
+  +seasonalPresetId: string | null
+  +seasonalAuto: boolean
+  +aura: {variantId, format IMAGEM_UNICA | MOSAICO}
+  +materialId: string | null
+  +aiArt: {url} | null
+  +uploadUrl: string | null
+  +animation: NONE | SNOW | PETALS | LEAVES | SHIMMER
+  +silhouette, posterUrl
+  +container: {color, ink} | null
+}
+class BgCatalog <<type>> {
+  +colors, gradients, seasonal[]
+  +auraPresets, materials, skins
+  +directions, anatomies, animations
+  +imageGenerationAvailable: boolean
+}
+class BackgroundStudio <<React>> {
+  -seg: cor | aura | layout | container
+  -seasonal: {enter?, patch?} | null
+  +value, onChange, skin, onSkin
+  +anatomy, onAnatomy, pieceAnatomy
+  +season, layoutPanel({openSeasonal})
+  -chooseAnatomy(a)
+  -applySeasonal(draft)
+}
+class ColorPanel <<React>> {
+  +hideSeasonal: boolean
+  +keepCartela: boolean
+}
+class AuraMaterialPanel <<React>> {
+  +styles, occasions
+  +disabledNote (layout com arte própria)
+}
+class ContainerColor <<React>>
+class SkinPicker <<React>>
+class SeasonalDialog <<React>> {
+  +open, value, season
+  +onApply(draft), onClose()
+}
+class SeasonalDraft <<React>> {
+  -draft: {seasonalPresetId, seasonalAuto, animation}
+}
+class SeasonalOptions <<React>> {
+  +forLayout: boolean
+  +season
+}
+class StudioHelpers <<module>> {
+  +CLEAR_CARTELA = {seasonalPresetId: null,\nseasonalAuto: false, animation: "NONE"}
+  +useLeaveCartela(active, clear)
+  +useBgCatalog(): BgCatalog
+  +useRecommendedSkins(styles, occasions)
+}
+}
+
+package "lib/card-art.ts" {
+class CardArt <<type>> {
+  +kind: none | color | gradient | seasonal | aura |\nmaterial | aura_material | mosaic | ai | upload
+  +base, image, material
+  +video: {src, poster} | undefined
+  +still: string | null
+  +animation, season, frame
+  +motion: snow | petals | leaves | shimmer | null
+}
+class CardArtLib <<module>> {
+  +ART_INDEX (card-art-index.json)
+  +resolveCardArt(bg, {season}): CardArt
+  +cartelaSeason(bg, season): string | null
+  +motionOf(animation)
+  +studioOf(bg)
+  +containerColorOf(skin, manual)
+}
+}
+
+package "components/card-art.tsx" {
+class CardArtLayer <<React>> {
+  +art: CardArt
+  -stuck: boolean
+}
+class ArtVideo <<React>> {
+  +src, poster
+  +onStuck(stuck: boolean)
+  -nearIO (300 px) · seenIO
+  -tryPlay() · dropRetry()
+}
+class MotionFall <<React>>
+class SeasonDecor <<React>>
+}
+
+package "lib/piece-art.ts · components/piece-art-editor.tsx" {
+class PieceArt <<type>> {
+  +v: 2
+  +template: {family, variant, season}
+  +composition: {emphasis}
+  +surface: {color, style solid | frosted}
+  +effects: ArtEffects
+}
+class ArtEffects <<type>> {
+  +aura: {on, intensity, reach}
+  +rim, glow, glass, relief, collage, particles, motion
+  +finish, texture
+}
+class PieceArtLib <<module>> {
+  +FAMILIES: classic, bento, blocks, seasonal, xray, runway
+  +EFFECT_LIMIT = 3
+  +AURA_MAX = 0.8
+  +readPieceArt(bg) / writePieceArt(prev, art, studio)
+  +constrainEffects(e, family)
+}
+class PieceArtEditor <<React>> {
+  -seg, view feed | expanded
+  -chooseTemplate(f, v)
+  -applySeasonal(draft)
+}
+class PieceArtDialog <<React>> {
+  -draft
+  -apply(): PUT /api/pieces/{id}/background + baseRev
+}
+}
+
+package "Telas que usam a arte" {
+class SchemeBuilder <<React>> {
+  -bg: BgConfig · skin · anatomy
+  -applyComposition(c)
+  -save(publish)
+}
+class DnaBuilder <<React>> {
+  -bg: BgConfig · narrative
+}
+class SchemeCard <<React>>
+class DnaCard <<React>>
+class ArtStage <<React>>
+}
+
+BackgroundStudio *-- ColorPanel
+BackgroundStudio *-- AuraMaterialPanel
+BackgroundStudio *-- ContainerColor
+BackgroundStudio *-- SkinPicker
+BackgroundStudio *-- SeasonalDialog
+SeasonalDialog *-- SeasonalDraft
+SeasonalDraft *-- SeasonalOptions
+BackgroundStudio ..> BgConfig
+BackgroundStudio ..> StudioHelpers
+StudioHelpers ..> BgCatalog
+SchemeBuilder --> BackgroundStudio
+DnaBuilder --> BackgroundStudio
+DnaBuilder ..> StudioHelpers : useLeaveCartela
+PieceArtDialog *-- PieceArtEditor
+PieceArtEditor --> SeasonalDialog
+PieceArtEditor --> ColorPanel
+PieceArtEditor --> AuraMaterialPanel
+PieceArtEditor ..> PieceArtLib
+PieceArtLib ..> PieceArt
+PieceArt *-- ArtEffects
+CardArtLib ..> CardArt : cria
+SchemeCard ..> CardArtLib
+DnaCard ..> CardArtLib
+ArtStage ..> CardArtLib
+SchemeCard --> CardArtLayer
+DnaCard --> CardArtLayer
+ArtStage --> CardArtLayer
+CardArtLayer *-- "0..1" ArtVideo : art.video
+CardArtLayer *-- "0..1" MotionFall : art.motion
+CardArtLayer *-- "0..1" SeasonDecor : art.season
+@enduml

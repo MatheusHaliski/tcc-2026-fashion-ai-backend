@@ -13,6 +13,7 @@ import br.com.fashionai.domain.model.AvatarIdentityVersion;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.UserAvatar3d;
 import br.com.fashionai.domain.model.enums.AiCallResult;
+import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.repository.AvatarIdentityVersionRepository;
 import br.com.fashionai.domain.repository.UserAvatar3dRepository;
 import br.com.fashionai.domain.repository.UserRepository;
@@ -408,6 +409,21 @@ class Avatar3dServiceTest {
         assertTrue(service.texture(other, owner.getId(), 1).length > 0);
         assertThrows(ApiException.class, () -> service.texture(other, owner.getId(), 2));
         assertTrue(service.texture(me, owner.getId(), 2).length > 0);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void tornarPublicoAoSalvarVersaoReprovadaModeraAAprovadaAnterior() {
+        service.save(me, cmdQ(quality(0.9), false), texture(512, 512));                // v1 aprovada, privada: sem moderação
+        assertTrue(moderations.isEmpty());
+        service.save(me, cmdQ(quality(0.0), true), texture(512, 512));                 // v2 reprova no gate e torna público
+        Map<String, Object> identity = (Map<String, Object>) service.get(me).get("identity");
+        assertEquals(1, identity.get("approvedVersion"));
+        assertEquals(2, moderations.size());                                            // a v2 e a v1 (a que os outros veem)
+        AvatarIdentityVersion v1 = versionRows.stream().filter(v -> v.getVersionNo() == 1).findFirst().orElseThrow();
+        assertEquals(ModerationStatus.APPROVED, v1.getTextureModeration());
+        assertEquals("/api/avatar3d/" + owner.getId() + "/texture?version=1", service.forMannequin(owner.getId(), other.id()).orElseThrow().get("textureUrl"));
+        assertTrue(service.texture(other, owner.getId(), 1).length > 0);
     }
 
     @Test

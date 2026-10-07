@@ -214,7 +214,7 @@ class StructuredDataTest(unittest.TestCase):
         def item(name, **extra):
             return to_catalog_item({"node": {"name": name, "brand": "Everlane", **extra}, "variants": []}, "https://www.everlane.com/p/x",
                                    "Everlane", "everlane.com", "OFFICIAL_BRAND", N, [])
-        self.assertIsNone(item("The City Boot | Cream", description="Wear it with your favorite sweater."))
+        self.assertEqual(item("The City Boot | Cream", description="Wear it with your favorite sweater.")["subcategory"], "boots")
         self.assertIsNone(item("The Cotton Tank Bra | Black"))
         self.assertIsNone(item("Tripack Cano Alto Fbox"))
         self.assertEqual(item("Kit 3 Pares de Meias Cano Alto")["subcategory"], "socks")

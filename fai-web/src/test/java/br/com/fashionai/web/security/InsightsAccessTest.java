@@ -59,7 +59,7 @@ class InsightsAccessTest {
         public Map<String, Object> insights(CurrentUser viewer, String context, Integer window, String region, String category, String subcategory,
                                             String key, List<UUID> pieces, boolean withAi) {
             calls.add(context + ":" + (viewer == null ? "anon" : "user") + (key == null ? "" : ":key=" + key) + (pieces == null || pieces.isEmpty() ? "" : ":pieces=" + pieces.size()));
-            return Map.of("context", context, "source", "local", "algorithmVersion", "HYPE_V2", "items", List.of());
+            return Map.of("context", context, "source", "local", "algorithmVersion", HypeScoreConfig.DEFAULT_VERSION, "items", List.of());
         }
     }
 

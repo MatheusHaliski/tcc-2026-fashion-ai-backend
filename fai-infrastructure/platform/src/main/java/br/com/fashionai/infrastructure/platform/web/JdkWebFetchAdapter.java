@@ -92,6 +92,15 @@ public class JdkWebFetchAdapter implements WebFetchPort {
 
     /** https e host público (todas as resoluções DNS precisam ser públicas). */
     static boolean safe(URI uri) {
+        return safe(uri, System.getProperty("https.proxyHost") != null);
+    }
+
+    /**
+     * @param proxied há proxy de saída configurado (https.proxyHost): só então um nome que não resolve localmente pode
+     *                seguir — quem resolve e conecta é o proxy. Sem proxy, DNS que falha é recusa (fail-closed): um nome
+     *                que não resolve aqui pode resolver para a rede interna na hora da conexão.
+     */
+    static boolean safe(URI uri, boolean proxied) {
         if (uri == null || !"https".equalsIgnoreCase(uri.getScheme()) || uri.getHost() == null || uri.getUserInfo() != null) {
             return false;
         }
@@ -112,8 +121,8 @@ public class JdkWebFetchAdapter implements WebFetchPort {
             }
             return true;
         } catch (Exception e) {
-            // sem DNS local (ex.: atrás de proxy que resolve nomes) — o proxy decide; nomes internos já foram barrados acima
-            return host.contains(".") && !host.matches("[0-9.]+") && !host.contains(":");
+            // sem DNS local: só atrás de proxy (ele resolve e conecta); nomes internos e IPs literais já foram barrados acima
+            return proxied && host.contains(".") && !host.matches("[0-9.]+") && !host.contains(":");
         }
     }
 

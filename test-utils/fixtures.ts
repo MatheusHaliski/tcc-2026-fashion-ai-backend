@@ -1,4 +1,8 @@
-/** Dados de exemplo no formato das respostas da API, para os testes de telas e componentes. */
+
+
+/** Dados de exemplo no formato das respostas da API, para os testes de telas e componentes. 
+    utilizado para a parte de testes para frontend
+*/
 import type { Counters, PieceView, SchemeView, UserCard, ViewerState } from "@/lib/api/types";
 
 export const OWNER: UserCard = { id: "u1", username: "ana", displayName: "Ana Souza", profileType: "PESSOAL", verified: true, privateAccount: false, country: "BR" };

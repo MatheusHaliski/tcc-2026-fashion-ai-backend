@@ -54,7 +54,8 @@ import java.util.stream.Collectors;
  * RF53 (Lote 1 da auditoria de abas): Marcas & lojas e Insights globais leem o HypeScore v2 ({@code hype_scores}) só da
  * população pública ({@code publicEligible} + AVAILABLE) — o fallback {@code vw_brand_usage.avg_hype}, que tirava a média
  * de peças privadas também, saiu; grupos com menos de {@link #MIN_BRAND_ITEMS} itens públicos ficam sem valor ("—").
- * O painel global (globo) continua no v1 e migra pelo {@code /api/hype/globe}.
+ * O painel global (globo) mostra volume por país; o Hype por país vem do {@code /api/hype/globe}. A limpeza do v1 (P3-16)
+ * tirou daqui as faixas de juízo do RF6, o filtro {@code hypeBand}, o {@code hypeMin} e as médias de {@code hype_score}.
  */
 @Service
 public class ExplorerService {
@@ -90,29 +91,17 @@ public class ExplorerService {
 
     /** Mínimo de peças + looks públicos para um país acender no globo (CA01 — "com dados suficientes"). */
     public static final int MIN_DATA = 3;
-    /** Faixas do hypeScore (mesmas do RF6/dashboard). */
-    public static final Map<String, double[]> HYPE_BANDS = new LinkedHashMap<>();
-
-    static {
-        HYPE_BANDS.put("DESPRETENSIOSO", new double[]{0, 15});
-        HYPE_BANDS.put("EM_CONSTRUCAO", new double[]{15, 30});
-        HYPE_BANDS.put("NOTADO", new double[]{30, 50});
-        HYPE_BANDS.put("COM_ESTILO", new double[]{50, 70});
-        HYPE_BANDS.put("MUITO_ESTILOSO", new double[]{70, 85});
-        HYPE_BANDS.put("ARRASANDO_NO_LOOK", new double[]{85, 96});
-        HYPE_BANDS.put("ICONE_DE_ESTILO", new double[]{96, 101});
-    }
-
     public Map<String, Object> globalPanel(CurrentUser viewer, String selectedCountry) {
-        return globalPanel(viewer, selectedCountry, null, null, null);
+        return globalPanel(viewer, selectedCountry, null, null);
     }
 
     /**
      * RF26.CA01 — painel global: um ponto por país com dados suficientes, agrupando peças e esquemas públicos pelo país do
-     * dono (User.country — CA04: nenhum campo de região em peça/esquema), com recorte por estação, cor e faixa de hype.
+     * dono (User.country — CA04: nenhum campo de região em peça/esquema), com recorte por estação e cor. Só volume: o Hype
+     * por país é do {@code /api/hype/globe} (v2, só público).
      */
     @Transactional(readOnly = true)
-    public Map<String, Object> globalPanel(CurrentUser viewer, String selectedCountry, String season, String color, String hypeBand) {
+    public Map<String, Object> globalPanel(CurrentUser viewer, String selectedCountry, String season, String color) {
         String se = season == null || season.isBlank() ? null : season.trim().toUpperCase(Locale.ROOT);
         if (se != null && !Set.of("SPRING", "SUMMER", "AUTUMN", "WINTER").contains(se)) {
             throw ApiException.badRequest("ESTACAO_INVALIDA", Msg.t("explorer.estacoes_spring_summer_autumn_winter"));
@@ -121,12 +110,7 @@ public class ExplorerService {
         if (co != null && !Taxonomy.COLORS.containsKey(co)) {
             throw ApiException.badRequest("COR_INVALIDA", Msg.t("explorer.cor_fora_da_taxonomia", co));
         }
-        String band = hypeBand == null || hypeBand.isBlank() ? null : hypeBand.trim().toUpperCase(Locale.ROOT);
-        if (band != null && !HYPE_BANDS.containsKey(band)) {
-            throw ApiException.badRequest("FAIXA_INVALIDA", Msg.t("explorer.faixas_de_hype", HYPE_BANDS.keySet()));
-        }
-        double[] range = band == null ? null : HYPE_BANDS.get(band);
-        AnalyticsQueryPort.GlobalFilter gf = new AnalyticsQueryPort.GlobalFilter(se, co, range == null ? null : range[0], range == null ? null : range[1]);
+        AnalyticsQueryPort.GlobalFilter gf = new AnalyticsQueryPort.GlobalFilter(se, co);
         Map<String, String> dominantColor = new HashMap<>();
         Map<String, Long> best = new HashMap<>();
         for (Map<String, Object> r : analytics.countryColors()) {
@@ -141,7 +125,6 @@ public class ExplorerService {
         for (Map<String, Object> r : analytics.schemesByCountry(gf)) {
             Map<String, Object> m = byCountry.computeIfAbsent(String.valueOf(r.get("country")), k -> new LinkedHashMap<>(Map.of("country", k, "schemes", 0L, "pieces", 0L)));
             m.put("schemes", ((Number) r.get("schemes")).longValue());
-            m.put("avg_hype", r.get("avg_hype"));
         }
         for (Map<String, Object> r : analytics.piecesByCountry(gf)) {
             Map<String, Object> m = byCountry.computeIfAbsent(String.valueOf(r.get("country")), k -> new LinkedHashMap<>(Map.of("country", k, "schemes", 0L, "pieces", 0L)));
@@ -156,7 +139,6 @@ public class ExplorerService {
             m.put("sufficient", total >= MIN_DATA);
             m.put("dominantColor", dc);
             m.put("dominantColorHex", dc == null ? null : Taxonomy.hex(dc));
-            m.put("intensity", m.get("avg_hype") == null ? 0 : m.get("avg_hype"));
             m.put("public_schemes", m.get("schemes"));
             points.add(m);
         }
@@ -164,11 +146,11 @@ public class ExplorerService {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("countries", points);
         out.put("minData", MIN_DATA);
-        out.put("filters", Map.of("season", String.valueOf(se), "color", String.valueOf(co), "hypeBand", String.valueOf(band)));
-        out.put("facets", Map.of("seasons", List.of("SPRING", "SUMMER", "AUTUMN", "WINTER"), "hypeBands", HYPE_BANDS.keySet(),
+        out.put("filters", Map.of("season", String.valueOf(se), "color", String.valueOf(co)));
+        out.put("facets", Map.of("seasons", List.of("SPRING", "SUMMER", "AUTUMN", "WINTER"),
                 "colors", analytics.colorRanking(null, 12).stream().map(r -> String.valueOf(r.get("color"))).toList()));
         if (selectedCountry != null && !selectedCountry.isBlank()) {
-            out.put("selected", Map.of("country", selectedCountry, "hypeBySeason", analytics.hypeBySeason(selectedCountry),
+            out.put("selected", Map.of("country", selectedCountry, "looksBySeason", analytics.looksBySeason(selectedCountry),
                     "topColors", analytics.colorRanking(selectedCountry, 5)));
         }
         out.put("legend", Msg.t("explorer.um_ponto_por_pais_com", MIN_DATA));
@@ -178,14 +160,7 @@ public class ExplorerService {
     /** Buscar marcas & lojas — grade de cards (userType = BRAND) com filtros e ordenação por hype. */
     @Transactional(readOnly = true)
     public Map<String, Object> brandsAndStores(CurrentUser viewer, String term, String country, String category, String sort) {
-        return brandsAndStores(viewer, term, country, category, sort, null, null, null, null);
-    }
-
-    /** Compatibilidade: sem {@code minLevel}. {@code hypeMin} é DEPRECADO (use a faixa mínima). */
-    @Transactional(readOnly = true)
-    public Map<String, Object> brandsAndStores(CurrentUser viewer, String term, String country, String category, String sort,
-                                               String color, String season, Integer hypeMin) {
-        return brandsAndStores(viewer, term, country, category, sort, color, season, hypeMin, null);
+        return brandsAndStores(viewer, term, country, category, sort, null, null, null);
     }
 
     // ================================================================== HypeScore v2 agregado (RF53 · P1-04, P2-04)
@@ -265,21 +240,10 @@ public class ExplorerService {
         return card.get("hype") instanceof Map<?, ?> h && h.get("value") instanceof Number n ? n.doubleValue() : null;
     }
 
-    /** Filtros mínimos de Hype: faixa ({@code minLevel}) e o número deprecado ({@code hypeMin}); sem valor nunca passa. */
-    private boolean passesHype(Map<String, Object> card, HypeLevel minLevel, Integer hypeMin) {
+    /** Filtro mínimo de Hype pela faixa ({@code minLevel}); sem valor nunca passa. */
+    private boolean passesHype(Map<String, Object> card, HypeLevel minLevel) {
         Double v = hypeValue(card);
-        if (minLevel != null && (v == null || v < SearchService.levelMinimum(hypeConfig, minLevel) - 0.5)) {
-            return false;
-        }
-        return hypeMin == null || (v != null && Math.round(v) >= hypeMin);
-    }
-
-    /** Campos v2 + compatibilidade do card: {@code hypeScore} e {@code stars} ficam DEPRECADOS. */
-    private void putHype(Map<String, Object> card, Map<String, Object> hype) {
-        card.put("hype", hype);
-        Double v = hype.get("value") instanceof Number n ? n.doubleValue() : null;
-        card.put("hypeScore", v == null ? null : Math.round(v));   // DEPRECADO: espelha hype.value (nulo = sem dado, nunca 0)
-        card.put("stars", null);                                    // DEPRECADO: estrelas não derivam mais do Hype (juízo de qualidade)
+        return minLevel == null || (v != null && v >= SearchService.levelMinimum(hypeConfig, minLevel) - 0.5);
     }
 
     /**
@@ -289,7 +253,7 @@ public class ExplorerService {
      */
     @Transactional(readOnly = true)
     public Map<String, Object> brandsAndStores(CurrentUser viewer, String term, String country, String category, String sort,
-                                               String color, String season, Integer hypeMin, String minLevel) {
+                                               String color, String season, String minLevel) {
         HypeLevel min = SearchService.parseLevel(minLevel);
         Map<String, Map<String, Object>> facets = new HashMap<>();
         analytics.brandFacets().forEach(r -> facets.put(String.valueOf(r.get("brand")), r));
@@ -360,8 +324,8 @@ public class ExplorerService {
         List<Map<String, Object>> cards = new ArrayList<>();
         for (Pending x : pending) {
             List<Double> looks = x.bondedLooks().stream().map(id -> SearchService.publicScore(lookHype.get(id))).filter(Objects::nonNull).toList();
-            putHype(x.card(), brandHype(looks, brandScores.getOrDefault(x.key(), List.of()), hypeConfig));
-            if (passesHype(x.card(), min, hypeMin)) {
+            x.card().put("hype", brandHype(looks, brandScores.getOrDefault(x.key(), List.of()), hypeConfig));
+            if (passesHype(x.card(), min)) {
                 cards.add(x.card());
             }
         }
@@ -404,8 +368,8 @@ public class ExplorerService {
                 m.put("catalog", true);
                 m.put("catalogProducts", cb.get("catalogProducts"));
                 // marca só de catálogo: o Hype vem das peças públicas com essa marca (sem selo, sem looks vinculados)
-                putHype(m, brandHype(List.of(), brandScores.getOrDefault(name.trim().toLowerCase(Locale.ROOT), List.of()), hypeConfig));
-                if (passesHype(m, min, hypeMin)) {
+                m.put("hype", brandHype(List.of(), brandScores.getOrDefault(name.trim().toLowerCase(Locale.ROOT), List.of()), hypeConfig));
+                if (passesHype(m, min)) {
                     cards.add(m);
                 }
             }
@@ -421,7 +385,6 @@ public class ExplorerService {
         filters.put("category", String.valueOf(category));
         filters.put("color", String.valueOf(color));
         filters.put("season", String.valueOf(season));
-        filters.put("hypeMin", String.valueOf(hypeMin));
         filters.put("minLevel", String.valueOf(min));
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("brands", cards);

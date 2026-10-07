@@ -28,9 +28,9 @@ const summaries = (known: Record<string, HypeSummary>) => (url: URL) => {
 const VERSIONS = ["SPOTLIGHT_CLASSICO", "PASSARELA", "RAIO_X_ESTILO", "BENTO_DIA", "EDITORIAL_MINIMAL", "COACH_ESTILO"].map((code) => ({ code, name: code }));
 const V2: HypeSummary = { status: "AVAILABLE", score: 82.4, level: "TRENDING", direction: "UP", deltaPercent: 14, deltaPoints: 10, dimensions: { POPULARITY: 70, TREND: 88 }, calculatedAt: new Date().toISOString() };
 /** Aba Look do Dia: painel com o v2 e, de propósito, campos v1 que NÃO podem aparecer (número 12, faixa "Arrasando no Look"). */
-const dailyTab = (v2: HypeSummary | null, panelVersion = "SPOTLIGHT_CLASSICO") => ({
+const dailyTab = (v2: HypeSummary | null, panelVersion = "SPOTLIGHT_CLASSICO", tip: string | null = null) => ({
   panelVersion, panelVersions: VERSIONS, today: { date: "2026-10-05", feedback: "ADOREI" }, scheme: SCHEME,
-  panel: { hypeScore: 12, band: { code: "ARRASANDO_NO_LOOK", label: "Arrasando no Look" }, v2, magazineCover: { unlocked: v2?.level === "TRENDING", minLevel: "TRENDING" } },
+  panel: { hypeScore: 12, band: { code: "ARRASANDO_NO_LOOK", label: "Arrasando no Look" }, v2, tip, magazineCover: { unlocked: v2?.level === "TRENDING", minLevel: "TRENDING" } },
   history: [{ date: "2026-10-04", schemeId: "s2", title: "Look de quinta", feedback: "ADOREI", hypeScore: 33 }, { date: "2026-10-03", schemeId: "s3", title: "Look de quarta", feedback: null, hypeScore: 0 }],
 });
 const BASE = { "GET /api/insights": { context: "HISTORY", items: [] }, "GET /api/users/u1/lookbook": overview(true) };
@@ -51,6 +51,20 @@ describe("faixa a partir do número (levelForScore)", () => {
 });
 
 describe("Lookbook › Look do Dia em v2", () => {
+  it("a dica do painel (dimensão v2 mais fraca, P3-16) aparece; sem dica, nada é inventado", async () => {
+    loggedAs(undefined, { ...BASE, "GET /api/me/daily-look-tab": dailyTab(V2, "SPOTLIGHT_CLASSICO", "Poucas conversas no look: publique com uma pergunta."),
+      "GET /api/hype/summaries": summaries({}) });
+    renderApp(<LookbookTabs ownerId="u1" initialTab="daily" />);
+    await settle();
+    expect(await screen.findByText(/Poucas conversas no look: publique com uma pergunta\./)).toBeTruthy();
+    cleanup();
+    loggedAs(undefined, { ...BASE, "GET /api/me/daily-look-tab": dailyTab(V2), "GET /api/hype/summaries": summaries({}) });
+    const { container } = renderApp(<LookbookTabs ownerId="u1" initialTab="daily" />);
+    await settle();
+    expect(await screen.findByLabelText("Hype 82, Tendência")).toBeTruthy();
+    expect(container.textContent).not.toContain("💡");
+  });
+
   it("o painel mostra o HypeScore v2 com a faixa em texto, a análise completa e o histórico com o Hype de cada dia", async () => {
     const api = loggedAs(undefined, { ...BASE, "GET /api/me/daily-look-tab": dailyTab(V2),
       "GET /api/hype/summaries": summaries({ "SCHEME:s2": { status: "AVAILABLE", score: 64, level: "HOT" }, "SCHEME:s3": { status: "INSUFFICIENT_DATA", score: null } }) });

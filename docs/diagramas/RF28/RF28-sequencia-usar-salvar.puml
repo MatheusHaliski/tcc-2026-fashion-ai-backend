@@ -1,0 +1,74 @@
+@startuml RF28_Sequencia_Usar_Salvar
+title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de sequência — usar o look hoje, salvar como esquema e levar ao editor
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "mirror/page.tsx\n(ou room/page.tsx)" as FE
+participant "MirrorController" as C
+participant "MirrorService" as S
+participant "SchemeService" as SS
+participant "DailyLookService" as DL
+participant "WardrobeEventListeners" as WL
+participant "FaiPointsService" as FP
+participant "ChallengeService /\nAchievementService" as EXT
+database "MySQL" as DB
+
+== Usar este look hoje ==
+U -> FE: Usar este look hoje
+FE -> C: POST /api/me/mirror/use
+C -> S: useLook(user)
+alt look incompleto
+  S --> FE: 409 LOOK_INCOMPLETO
+end
+S -> DB: SELECT schemes + scheme_items (mesma combinação?)
+alt já existe esquema com as mesmas peças
+  S -> S: reaproveita o esquema
+else não existe
+  S -> SS: create(user, SchemeForm(origin SMART_MIRROR | VISTA_ME,\ncreationMode MANUAL | AI_ASSISTED, publish = false))
+  SS -> DB: INSERT schemes, scheme_items
+  SS ->> WL: SchemeSaved(created = true) (AFTER_COMMIT)
+end
+S -> DL: register(user, scheme, source, hoje)
+alt alguma peça indisponível
+  DL --> FE: 409 PECA_INDISPONIVEL
+else ok
+  DL -> DB: INSERT/UPDATE daily_looks (source = SMART_MIRROR | VISTA_ME)
+  DL ->> WL: DailyLookRegistered (AFTER_COMMIT)
+  DL ->> EXT: DailyLookRegistered → progresso dos desafios\ne conquista secreta SEXTA_CASUAL
+  S --> FE: 200 {schemeId, dailyLook, source, closing, message}
+end
+WL -> DB: INSERT piece_usage_diary (source DAILY_LOOK) e wearCount + 1
+opt source = VISTA_ME
+  WL -> FP: award(VISTA_ME_DAILY_LOOK) (+15, 1 por dia)
+  FP -> DB: INSERT fai_points_ledger
+end
+opt esquema novo
+  WL -> FP: award(SCHEME_CREATED) (+40, 5 por dia)
+end
+note over FE: no quarto: portas fecham, a luz do espelho sobe\ne aparece a foto do look (respeita reduzir movimento)
+
+== Salvar como look ==
+U -> FE: Salvar como look {título}
+FE -> C: POST /api/me/mirror/save {title, publish: false}
+C -> S: save(user, title, publish)
+alt menos de 2 peças
+  S --> FE: 400 SEM_PECAS
+else
+  S -> SS: create(...) (ou reaproveita o existente)
+  S --> FE: 200 {schemeId, title, origin}
+  FE -> U: vai para /schemes/{schemeId}
+end
+
+== Abrir no editor ==
+U -> FE: Abrir no editor
+FE -> C: POST /api/me/mirror/draft {origin: "MIRROR"}
+C -> S: draft(user, origin)
+S --> FE: 200 RoomLookDraft {origin, slots, accessories,\noccasion, prompt, sessionStorageKey "sai_room_look_draft"}
+note right of FE: a tela procura schemeId na resposta e não navega;\nnenhuma tela grava ou lê "sai_room_look_draft"\n(divergência com o RF28: o RF5 não abre com os slots)
+@enduml

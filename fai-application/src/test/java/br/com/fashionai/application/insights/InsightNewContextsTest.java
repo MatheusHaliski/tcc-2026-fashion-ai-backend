@@ -118,8 +118,8 @@ class InsightNewContextsTest {
         UserPreferencesRepository preferences = mock(UserPreferencesRepository.class);
         when(preferences.findByUserId(any())).thenReturn(Optional.empty());
         when(dnas.findByUserId(any())).thenReturn(Optional.empty());
-        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, "HYPE_V2", HypeStatus.AVAILABLE)).thenReturn(publicPieces);
-        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.SCHEME, "HYPE_V2", HypeStatus.AVAILABLE)).thenReturn(publicLooks);
+        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE)).thenReturn(publicPieces);
+        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.SCHEME, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE)).thenReturn(publicLooks);
         when(pieces.findByIdIn(anyCollection())).thenAnswer(inv -> catalog.stream().filter(w -> ((java.util.Collection<?>) inv.getArgument(0)).contains(w.getId())).toList());
         when(pieces.findById(any())).thenAnswer(inv -> catalog.stream().filter(w -> w.getId().equals(inv.getArgument(0))).findFirst());
         when(users.findById(any())).thenReturn(Optional.empty());
@@ -139,7 +139,7 @@ class InsightNewContextsTest {
         c.setEntityType(type);
         c.setEntityId(UUID.randomUUID());
         c.setOwnerId(owner);
-        c.setAlgorithmVersion("HYPE_V2");
+        c.setAlgorithmVersion(HypeScoreConfig.DEFAULT_VERSION);
         c.setStatus(HypeStatus.AVAILABLE);
         c.setScore(BigDecimal.valueOf(score));
         c.setLevel(HypeScoreConfig.defaults().level(score));

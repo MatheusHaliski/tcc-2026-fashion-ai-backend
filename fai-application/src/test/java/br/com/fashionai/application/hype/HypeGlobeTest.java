@@ -88,7 +88,7 @@ class HypeGlobeTest {
         c.setEntityType(type);
         c.setEntityId(id);
         c.setOwnerId(owner.getId());
-        c.setAlgorithmVersion("HYPE_V2");
+        c.setAlgorithmVersion(HypeScoreConfig.DEFAULT_VERSION);
         c.setStatus(HypeStatus.AVAILABLE);
         c.setScore(BigDecimal.valueOf(score));
         c.setLevel(config.level(score));
@@ -125,7 +125,7 @@ class HypeGlobeTest {
         HypeScoreSnapshot s = new HypeScoreSnapshot();
         s.setEntityType(HypeEntityType.PIECE);
         s.setEntityId(w.getId());
-        s.setAlgorithmVersion("HYPE_V2");
+        s.setAlgorithmVersion(HypeScoreConfig.DEFAULT_VERSION);
         s.setStatus(HypeStatus.AVAILABLE);
         s.setScore(BigDecimal.valueOf(score));
         s.setSnapshotDate(LocalDate.now(HypeSignalRecorder.ZONE).minusDays(daysAgo));
@@ -175,16 +175,16 @@ class HypeGlobeTest {
         // privada: nunca entra (a consulta já filtra; a linha prova a defesa extra do serviço)
         piece(ana, "shoes_piece", "white", 99, 99, HypeMomentum.RISING, false);
 
-        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, "HYPE_V2", HypeStatus.AVAILABLE)).thenReturn(pieceRows);
-        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.SCHEME, "HYPE_V2", HypeStatus.AVAILABLE)).thenReturn(lookRows);
-        when(current.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.PIECE), anyCollection(), eq("HYPE_V2")))
+        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE)).thenReturn(pieceRows);
+        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.SCHEME, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE)).thenReturn(lookRows);
+        when(current.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.PIECE), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION)))
                 .thenAnswer(a -> HypeRegionalRankingTest.byIds(a.getArgument(1), pieceRows, HypeScoreCurrent::getEntityId));
-        when(current.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.SCHEME), anyCollection(), eq("HYPE_V2")))
+        when(current.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.SCHEME), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION)))
                 .thenAnswer(a -> HypeRegionalRankingTest.byIds(a.getArgument(1), lookRows, HypeScoreCurrent::getEntityId));
         when(pieces.findByIdIn(anyCollection())).thenAnswer(a -> HypeRegionalRankingTest.byIds(a.getArgument(0), catalog, WardrobeItem::getId));
         when(schemes.findByIdIn(anyCollection())).thenAnswer(a -> HypeRegionalRankingTest.byIds(a.getArgument(0), looks, Scheme::getId));
         when(schemeItems.findBySchemeIdIn(anyCollection())).thenAnswer(a -> lookItems.stream().filter(si -> ((Collection<?>) a.getArgument(0)).contains(si.getScheme().getId())).toList());
-        when(snapshots.findByEntityTypeAndAlgorithmVersionAndSnapshotDateBetween(eq(HypeEntityType.PIECE), eq("HYPE_V2"), any(), any())).thenReturn(month);
+        when(snapshots.findByEntityTypeAndAlgorithmVersionAndSnapshotDateBetween(eq(HypeEntityType.PIECE), eq(HypeScoreConfig.DEFAULT_VERSION), any(), any())).thenReturn(month);
         when(guard.canView(any(), any(), eq(Visibility.PUBLIC))).thenReturn(true);
         when(guard.canView(any(), any(), eq(Visibility.PRIVATE))).thenReturn(false);
         when(schemeService.canView(any(), any())).thenReturn(true);
@@ -295,7 +295,7 @@ class HypeGlobeTest {
         assertThat(num(br.get("count"))).isEqualTo(4);
         assertThat(num(br.get("maxHype"))).isEqualTo(90.0);
         // o agregado saiu do cache (uma leitura da população só)
-        verify(current, times(1)).findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, "HYPE_V2", HypeStatus.AVAILABLE);
+        verify(current, times(1)).findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE);
     }
 
     @Test

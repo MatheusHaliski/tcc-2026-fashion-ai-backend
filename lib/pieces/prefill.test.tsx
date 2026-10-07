@@ -10,10 +10,11 @@ import { cleanup, loggedAs, renderApp, screen, waitFor, ME } from "@/test-utils/
 import { nav } from "@/test-utils/setup";
 import type { Taxonomy } from "@/lib/api/taxonomy";
 import NewPiecePage from "@/app/(site)/(app)/pieces/new/page";
+import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import { readPiecePrefill, validPieceCategory, validPiecePrefill } from "./prefill";
 
 const TAXONOMY = {
-  subcategories: { upper_piece: ["t_shirt", "shirt"], lower_piece: ["jeans"], shoes_piece: ["casual_sneakers"], accessory_piece: ["cap"] },
+  subcategories: { upper_piece: ["t_shirt", "shirt"], lower_piece: ["jeans"], shoes_piece: ["casual_sneakers"], accessory_piece: ["cap"], full_body_piece: ["dress"] },
   colors: { white: "#ffffff", black: "#111111" }, materials: ["COTTON", "LEATHER"], sizes: ["m"], sexes: ["UNISSEX"],
   occasions: ["casual", "work"], styles: ["basic", "streetwear", "minimalist"], allowedOccasionsByCategory: { upper_piece: ["casual", "work"] },
   defaultImages: { upper_piece: "/assets/upper.png", generic: "/assets/generic.png" }, brands: [],
@@ -63,6 +64,17 @@ describe("/pieces/new aberto pelo FashionAI Lens", () => {
     expect(pressed("Minimalista")).toBe("false");
     // a busca catalogada também abre no subtipo lido
     await waitFor(() => expect(pressed("Camiseta")).toBe("true"));
+  });
+
+  it("peça única lida pelo Lens (vestido, macacão…) chega com tipo e subtipo: o criador oferece full_body_piece", async () => {
+    expect(CATEGORY_CARDS.map((c) => c.id)).toContain("full_body_piece");
+    nav.search = new URLSearchParams("category=full_body_piece&subcategory=dress&color=black&q=Vestido+preto&from=lens&scan=s9");
+    loggedAs(ME, ROUTES);
+    renderApp(<NewPiecePage />);
+    expect(await screen.findByText("Veio do FashionAI Lens")).toBeTruthy();
+    expect(pressed("Peça única")).toBe("true");
+    await waitFor(() => expect(text("subcategory")).toBe("Vestido"));
+    expect(text("color")).toBe("Preto");
   });
 
   it("taxonomia em cache: valores desconhecidos ficam em branco, sem nota e sem nome fora do Lens", async () => {

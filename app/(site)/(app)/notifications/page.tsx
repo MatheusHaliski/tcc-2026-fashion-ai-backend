@@ -18,7 +18,7 @@ interface Inbox { unread: number; items: Notification[]; groups?: Record<string,
 interface Pref { type: string; enabled: boolean; category?: string; label?: string; }
 /** Destino de "Ver": o link que o servidor mandou no payload (caminho interno) ou o recurso da notificação. */
 const payloadHref = (n: Notification) => (typeof n.payload?.href === "string" && n.payload.href.startsWith("/") && !n.payload.href.startsWith("//") ? n.payload.href : null);
-const hrefFor = (n: Notification) => n.resourceType === "COUPON_RIGHT" ? String(n.payload?.href ?? `/coupons?right=${n.resourceId}`) : payloadHref(n) ? payloadHref(n) : n.resourceType === "SCHEME" ? `/schemes/${n.resourceId}` : n.resourceType === "PIECE" ? `/pieces/${n.resourceId}` : n.resourceType === "CHALLENGE" ? `/challenges/${n.resourceId}` : n.resourceType === "USER" && n.actor ? `/u/${n.actor.username}` : null;
+const hrefFor = (n: Notification) => n.resourceType === "COUPON_RIGHT" ? String(n.payload?.href ?? `/coupons?right=${n.resourceId}`) : payloadHref(n) ? payloadHref(n) : n.resourceType === "SCHEME" ? `/schemes/${n.resourceId}` : n.resourceType === "PIECE" ? `/pieces/${n.resourceId}` : n.resourceType === "CHALLENGE" ? `/challenges/${n.resourceId}` : n.resourceType === "MOMENT" ? `/moments/${n.resourceId}` : n.resourceType === "USER" && n.actor ? `/u/${n.actor.username}` : null;
 
 function Inbox() {
   const { t, relative, fmtNumber } = useI18n(); const toast = useToast(); const [tab, setTab] = useState<"inbox" | "prefs">("inbox"); const [cat, setCat] = useState("ALL");

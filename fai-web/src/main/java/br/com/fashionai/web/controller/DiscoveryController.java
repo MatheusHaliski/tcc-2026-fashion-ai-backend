@@ -68,26 +68,25 @@ public class DiscoveryController {
     }
 
     @GetMapping("/api/explorer/global")
-    @Operation(summary = "RF26 — Painel global por país (cores, hype, marcas)")
+    @Operation(summary = "RF26 — Painel global por país (volume de looks e peças públicos, cores e estações; o Hype por país é /api/hype/globe)")
     public Map<String, Object> global(CurrentUser viewer, @RequestParam(required = false) String country,
-                                      @RequestParam(required = false) String season, @RequestParam(required = false) String color,
-                                      @RequestParam(required = false) String hypeBand) {
-        return explorer.globalPanel(viewer, country, season, color, hypeBand);
+                                      @RequestParam(required = false) String season, @RequestParam(required = false) String color) {
+        return explorer.globalPanel(viewer, country, season, color);
     }
 
     /**
-     * {@code minLevel} (RF53 · P1-04) = faixa mínima do Hype v2 da marca ({@code hype.level}). {@code hypeMin} continua
-     * aceito só por compatibilidade (DEPRECADO: número mínimo comparado ao {@code hype.value} v2; use {@code minLevel}).
+     * {@code minLevel} (RF53 · P1-04) = faixa mínima do Hype v2 da marca ({@code hype.level}). O número {@code hypeMin}
+     * (deprecado) saiu na limpeza do v1 (P3-16).
      */
     @GetMapping("/api/explorer/brands")
-    @Operation(summary = "RF26 — Marcas e lojas por país/categoria (hype v2 agregado; minLevel = faixa mínima; hypeMin deprecado)")
+    @Operation(summary = "RF26 — Marcas e lojas por país/categoria (hype v2 agregado; minLevel = faixa mínima)")
     public Map<String, Object> brands(CurrentUser viewer, @RequestParam(required = false) String term,
                                       @RequestParam(required = false) String country,
                                       @RequestParam(required = false) String category,
                                       @RequestParam(required = false) String sort, @RequestParam(required = false) String color,
-                                      @RequestParam(required = false) String season, @RequestParam(required = false) Integer hypeMin,
+                                      @RequestParam(required = false) String season,
                                       @RequestParam(required = false) String minLevel) {
-        return explorer.brandsAndStores(viewer, term, country, category, sort, color, season, hypeMin, minLevel);
+        return explorer.brandsAndStores(viewer, term, country, category, sort, color, season, minLevel);
     }
 
     @GetMapping("/api/explorer/insights")

@@ -17,7 +17,7 @@ import { SchemeCard } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
 import { useDetailModal } from "@/components/detail-modal";
 import type { PieceView, SchemeView } from "@/lib/api/types";
-import { label } from "@/lib/api/taxonomy";
+import { label, subcategoryLabel } from "@/lib/api/taxonomy";
 import { resolveCardArt } from "@/lib/card-art";
 
 interface Chip { pieceId: string; name: string; imageUrl?: string; available?: boolean; address?: string; addressLabel?: string; actions?: string[]; hype?: number | null; compatibility?: number | null; }
@@ -25,9 +25,9 @@ interface Action { type: string; label?: string; href?: string; pieceIds?: strin
 interface SuggestedLook { title: string; pieceIds: string[]; pieces?: Chip[]; why?: string; occasion?: string[]; style?: string[]; mood?: string; season?: string; weather?: string; description?: string; background?: Record<string, unknown>; /** recomendação multidimensional (components/hype/look-scores) */ scores?: LookScoreValues; }
 /** Sugestão de compra genérica do backend (CopilotService): só depois do reuso, com o ganho de combinações e sem marca. */
 interface PurchaseSuggestion { subcategory?: string; color?: string; gain?: number; gainText?: string; reason?: string; action?: { label?: string; href?: string } }
-interface Reply { text: string; chips?: Chip[]; actions?: Action[]; intent?: string; suggestedPrompts?: string[]; looks?: SuggestedLook[]; backgroundNotice?: Record<string, string>; purchases?: { name?: string; reason?: string; delta?: number; sponsored?: boolean; brand?: string }[]; purchaseSuggestions?: PurchaseSuggestion[]; sponsored?: { label?: string; items?: { name?: string; reason?: string }[] }; challengeNotice?: string; roomHighlight?: { pieceId: string; address: string }; fallbackUsed?: boolean; explanation?: { provider?: string }; }
+interface Reply { text: string; chips?: Chip[]; actions?: Action[]; intent?: string; suggestedPrompts?: string[]; looks?: SuggestedLook[]; backgroundNotice?: Record<string, string>; purchases?: { name?: string; reason?: string; delta?: number; sponsored?: boolean; brand?: string }[]; purchaseSuggestions?: PurchaseSuggestion[]; sponsored?: { label?: string; items?: { name?: string; reason?: string }[] }; challengeNotice?: string; momentNotice?: string; moment?: { slug: string; name: string }; roomHighlight?: { pieceId: string; address: string }; fallbackUsed?: boolean; explanation?: { provider?: string }; }
 interface Msg { role: "user" | "copilot"; text: string; reply?: Reply; }
-interface Ctx { userId?: string; view: string; pieces: number; available: number; ready: boolean; limitation?: { message: string; href?: string }; occasion?: string[]; mood?: string | null; weather?: { available: boolean; note?: string; temperatureC?: number; city?: string; description?: string }; suggestedPrompts: string[]; activeChallenges?: { name: string }[]; }
+interface Ctx { userId?: string; view: string; pieces: number; available: number; ready: boolean; limitation?: { message: string; href?: string }; occasion?: string[]; mood?: string | null; weather?: { available: boolean; note?: string; temperatureC?: number; city?: string; description?: string }; suggestedPrompts: string[]; activeChallenges?: { name: string }[]; activeMoments?: { id: string; slug: string; name: string; daysLeft?: number | null }[]; }
 
 /** Combinação nova do motor local (Experimentar). `scores` (P2-16) = os mesmos seis números dos looks do chat e do Autopiloto. */
 interface NewCombination { title: string; rationale?: string; occasions?: string[]; pieces: PieceView[]; pieceIds: string[]; totalPrice?: number; scores?: LookScoreValues | null }
@@ -39,7 +39,6 @@ type Mode = "SAFE" | "DISCOVERY" | "EXPERIMENTAL";
 
 const lookKey = (look: SuggestedLook) => `${look.title}|${look.pieceIds.join(",")}`;
 
-/** O que o Copilot entendeu do pedido (ocasião, estilo, estação, humor, clima e fundo) — mostrado no card do look. */
 function Understood({ look }: { look: SuggestedLook }) {
   const { t } = useI18n();
   const tags = [...(look.occasion ?? []), ...(look.style ?? []), look.season, look.mood].filter((x): x is string => !!x).map((x) => label(x.toLowerCase()));
@@ -63,7 +62,7 @@ function Understood({ look }: { look: SuggestedLook }) {
  */
 function PurchaseBlock({ reply }: { reply: Reply }) {
   const { t } = useI18n();
-  const organic = (reply.purchaseSuggestions ?? []).map((p) => ({ name: [label(p.subcategory ?? ""), p.color ? label(p.color) : ""].filter(Boolean).join(" · "), gain: p.gainText, reason: p.reason, href: p.action?.href, cta: p.action?.label }))
+  const organic = (reply.purchaseSuggestions ?? []).map((p) => ({ name: [subcategoryLabel(p.subcategory), p.color ? label(p.color) : ""].filter(Boolean).join(" · "), gain: p.gainText, reason: p.reason, href: p.action?.href, cta: p.action?.label }))
     .concat((reply.purchases ?? []).filter((p) => !p.sponsored).map((p) => ({ name: p.name ?? "", gain: p.delta != null ? t("copilot.combinacoes", { delta: p.delta }) : undefined, reason: p.reason, href: undefined, cta: undefined })));
   const sponsored = [...(reply.sponsored?.items ?? []), ...(reply.purchases ?? []).filter((p) => p.sponsored)];
   if (organic.length === 0 && sponsored.length === 0) return null;
@@ -77,7 +76,6 @@ function PurchaseBlock({ reply }: { reply: Reply }) {
   );
 }
 
-//Funcao para o copilot funcionar
 function Copilot() {
   const { t } = useI18n(); const toast = useToast();
   const { data: ctx } = useApi<Ctx>((signal) => api.get("/api/copilot/context?view=copilot", { signal }), []);
@@ -186,6 +184,7 @@ function Copilot() {
               {m.reply && <PurchaseBlock reply={m.reply} />}
               {m.reply?.actions?.length ? <div className="mt-2 flex flex-wrap gap-2">{m.reply.actions.map((a, j) => a.type === "COMPOSE_WITH" ? <Button key={j} size="sm" variant="primary" onClick={() => accept(a)}>{a.label ?? t("scheme.create")}</Button> : a.href ? <Link key={j} href={a.href === "/add-piece" ? "/pieces/new" : a.href} className="btn btn-sm">{a.label ?? a.type}</Link> : null)}</div> : null}
               {m.reply?.challengeNotice && <p className="mt-2 type-caption text-chalk">{m.reply.challengeNotice}</p>}
+              {m.reply?.momentNotice && <p className="mt-2 type-caption text-thread">{m.reply.momentNotice}{m.reply.moment && <> · <Link href={`/moments/${m.reply.moment.slug}`} className="underline">{m.reply.moment.name}</Link></>}</p>}
               {m.reply?.explanation?.provider && <p className="mt-1 type-caption text-faint">{m.reply.fallbackUsed ? t("copilot.motor_local") : m.reply.explanation.provider} · {m.reply.intent}</p>}
             </div>
           ))}

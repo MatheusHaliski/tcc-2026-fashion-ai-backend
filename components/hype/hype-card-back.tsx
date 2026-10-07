@@ -11,6 +11,7 @@ import { HypeStateNotice } from "./hype-state-notice";
 import { HypeTrendIndicator } from "./hype-trend-indicator";
 import { HypeAnalyticsDrawer } from "./hype-analytics-drawer";
 import { HypeBackArt } from "./hype-back-art";
+import { MomentContextRows } from "@/components/moments/moment-scores";
 
 /**
  * Verso do card (HYPE ANALYTICS): objetivo analítico — score grande, faixa, movimento, dimensões, leitura do momento,
@@ -45,6 +46,8 @@ export function HypeCardBack({ type, id, name }: { type: HypeEntity; id: string;
               </span>
             </div>
             <HypeBreakdown type={type} dimensions={summary?.dimensions} />
+            {/* Momentos §16/§35 — relevância contextual (MomentMatch + Hype contextual) por Momento ativo; só no verso */}
+            <MomentContextRows type={type} id={id} />
           </>
         ) : <HypeStateNotice state={state} />}
       </div>

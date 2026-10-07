@@ -9,11 +9,14 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Taxonomia oficial (taxonomias_fashion_ai_v5.html, v3.7) — códigos destinados ao banco e à API.
- * Espelhada no frontend em lib/taxonomy.ts. Valida categoria/subcategoria, cor, tamanho, material,
- * mercado, ocasião e estilo, incluindo os tetos de cardinalidade da §01.
+ * Taxonomia oficial — códigos destinados ao banco e à API (docs/taxonomia/AUDITORIA_TAXONOMIA_PECAS.md). Categorias,
+ * subcategorias ATIVAS, variações e dimensões de atributo vêm do {@link TaxonomyRegistry} (taxonomy/taxonomy.json);
+ * cores, estilos, ocasiões, sexos e tamanhos continuam aqui. O frontend lê tudo por GET /api/taxonomy (lib/api/taxonomy.ts).
+ * Valida categoria/subcategoria/variação, atributos, cor, tamanho, material, mercado, ocasião e estilo, incluindo os
+ * tetos de cardinalidade (peça ≤ 2 estilos e ≤ 2 ocasiões; esquema ≤ 3).
  */
 public final class Taxonomy {
+    /** categoria → subcategorias ATIVAS (as LEGACY, como bermuda_shorts, continuam válidas: ver {@link #isSubcategoryOf}). */
     public static final Map<String, List<String>> SUBCATEGORIES = new LinkedHashMap<>();
     public static final Set<String> SNEAKERS = Set.of("casual_sneakers", "running_shoes", "training_shoes",
             "basketball_shoes", "skate_shoes", "high_top_sneakers");
@@ -26,7 +29,9 @@ public final class Taxonomy {
     public static final List<String> STYLES = List.of("classic", "minimalist", "modern", "chic", "streetwear", "sporty",
             "athleisure", "preppy", "romantic", "boho", "vintage", "grunge", "edgy", "glam", "luxury", "avant_garde",
             "y2k", "utility", "techwear", "tailored", "urban", "resort", "basic", "statement", "futuristic");
-    public static final List<String> MATERIALS = List.of("COTTON", "POLYESTER", "WOOL", "SILK", "LEATHER", "SYNTHETIC", "BLEND");
+    /** Materiais oferecidos (formulário, IA); SYNTHETIC e BLEND são legado: aceitos nos dados, fora das listas. */
+    public static final List<String> MATERIALS = TaxonomyRegistry.get().dimension("MATERIAL").orElseThrow().values().stream()
+            .filter(v -> !v.legacy()).map(TaxonomyRegistry.Value::code).toList();
     public static final List<String> SEXES = List.of("MASCULINO", "FEMININO", "UNISSEX");
     public static final Map<String, String> COLORS = new LinkedHashMap<>();
     public static final Map<String, String> COLOR_FAMILY = new LinkedHashMap<>();
@@ -44,18 +49,7 @@ public final class Taxonomy {
     public static final Map<String, List<String>> WEARSTYLES_BY_PART = new LinkedHashMap<>();
 
     static {
-        SUBCATEGORIES.put("upper_piece", List.of("t_shirt", "shirt", "blouse", "tank_top", "crop_top", "polo_shirt",
-                "bodysuit", "sweater", "sweatshirt", "hoodie", "cardigan", "vest", "blazer", "jacket", "coat", "parka",
-                "windbreaker", "kimono"));
-        SUBCATEGORIES.put("lower_piece", List.of("jeans", "tailored_pants", "casual_pants", "chino_pants", "cargo_pants",
-                "jogger_pants", "sweatpants", "leggings", "culottes", "shorts", "bermuda_shorts", "denim_shorts", "skirt", "skort"));
-        SUBCATEGORIES.put("shoes_piece", List.of("casual_sneakers", "running_shoes", "training_shoes", "basketball_shoes",
-                "skate_shoes", "high_top_sneakers", "loafers", "moccasins", "oxford_shoes", "derby_shoes", "ankle_boots",
-                "long_boots", "combat_boots", "sandals", "flip_flops", "heels", "flats", "espadrilles"));
-        SUBCATEGORIES.put("accessory_piece", List.of("handbag", "crossbody_bag", "tote_bag", "clutch", "backpack", "belt",
-                "cap", "hat", "beanie", "scarf", "tie", "bow_tie", "sunglasses", "eyeglasses", "necklace", "bracelet",
-                "earrings", "ring", "watch", "wallet", "gloves", "socks", "hair_accessory"));
-        SUBCATEGORIES.put("full_body_piece", List.of("dress", "jumpsuit", "romper", "matching_set", "overalls"));
+        SUBCATEGORIES.putAll(TaxonomyRegistry.get().activeSubcategories());
 
         WEARSTYLE_GROUPS.put("casual", List.of("casual", "home", "school", "university", "travel", "outdoor", "vacation"));
         WEARSTYLE_GROUPS.put("social", List.of("social", "formal", "business", "wedding", "ceremony", "date"));
@@ -100,12 +94,30 @@ public final class Taxonomy {
         return category != null && SUBCATEGORIES.containsKey(category);
     }
 
+    /** Categoria de uma subcategoria ativa ou LEGACY (null se o código não existe). */
     public static String categoryOf(String subcategory) {
-        if (subcategory == null) {
-            return null;                              // List.of(...).contains(null) lança NPE
-        }
-        return SUBCATEGORIES.entrySet().stream().filter(e -> e.getValue().contains(subcategory)).map(Map.Entry::getKey)
-                .findFirst().orElse(null);
+        return TaxonomyRegistry.get().categoryOf(subcategory);
+    }
+
+    /** Subcategoria (ativa ou LEGACY) da categoria — dado antigo com código legado continua válido. */
+    public static boolean isSubcategoryOf(String category, String subcategory) {
+        return category != null && subcategory != null && category.equals(categoryOf(subcategory));
+    }
+
+    /** Subcategoria no padrão novo: LEGACY → a que a substitui (bermuda_shorts → shorts); ativa ou desconhecida → ela mesma. */
+    public static String activeSubcategory(String subcategory) {
+        TaxonomyRegistry.Resolved r = TaxonomyRegistry.get().resolve(subcategory);
+        return r == null ? subcategory : r.subcategory();
+    }
+
+    /** Código de subcategoria conhecido (ativo ou LEGACY). */
+    public static boolean isSubcategory(String subcategory) {
+        return categoryOf(subcategory) != null;
+    }
+
+    /** Material conhecido, inclusive os de legado (SYNTHETIC, BLEND). */
+    public static boolean isMaterial(String material) {
+        return TaxonomyRegistry.get().dimension("MATERIAL").flatMap(d -> d.value(material)).isPresent();
     }
 
     public static void requirePiece(String category, String subcategory, String sex, String color, String material,
@@ -122,7 +134,7 @@ public final class Taxonomy {
         Map<String, Object> errors = new LinkedHashMap<>();
         if (!isValidCategory(category)) {
             errors.put("category", Msg.t("taxonomy.categoria_invalida"));
-        } else if (subcategory == null || !SUBCATEGORIES.get(category).contains(subcategory)) {
+        } else if (!isSubcategoryOf(category, subcategory)) {
             errors.put("subcategory", Msg.t("taxonomy.subcategoria_nao_pertence_a_categoria"));
         }
         if (sex == null || !SEXES.contains(sex)) {
@@ -131,7 +143,7 @@ public final class Taxonomy {
         if (color == null || !COLORS.containsKey(color)) {
             errors.put("color", Msg.t("taxonomy.selecione_uma_cor_da_paleta"));
         }
-        if (material == null || !MATERIALS.contains(material)) {
+        if (material == null || !isMaterial(material)) {
             errors.put("material", Msg.t("taxonomy.selecione_um_material_valido"));
         }
         if (size == null || !SIZES.contains(size)) {
@@ -139,6 +151,47 @@ public final class Taxonomy {
         }
         requireTags("occasion", occasions, allowedOccasions(category), MAX_PIECE_TAGS, errors, "peca", category);
         requireTags("style", styles, STYLES, MAX_PIECE_TAGS, errors, "peca", category);
+        return errors;
+    }
+
+    /** Dimensões que a peça guarda em colunas/campos próprios (não entram no mapa de atributos). */
+    public static final java.util.Set<String> FIELD_DIMENSIONS = java.util.Set.of("COLOR", "MATERIAL", "GENDER", "STYLE", "OCCASION");
+
+    /**
+     * Variação e atributos da peça (docs/taxonomia, C.6–C.7), com a subcategoria já no padrão novo. A variação tem de ser
+     * da subcategoria; cada dimensão tem de valer para a peça, com valores do vocabulário e no máximo o teto da dimensão;
+     * salto incoerente com a subcategoria (salto rasteiro em "heels", salto alto em "flats") é recusado.
+     */
+    public static Map<String, Object> variationErrors(String category, String subcategory, String variation,
+                                                      Map<String, List<String>> attributes) {
+        Map<String, Object> errors = new LinkedHashMap<>();
+        TaxonomyRegistry reg = TaxonomyRegistry.get();
+        if (variation != null && !reg.isVariationOf(subcategory, variation)) {
+            errors.put("variation", Msg.t("taxonomy.variacao_nao_pertence", label(variation), label(subcategory)));
+        }
+        Map<String, Object> attrErrors = new LinkedHashMap<>();
+        (attributes == null ? Map.<String, List<String>>of() : attributes).forEach((dim, values) -> {
+            TaxonomyRegistry.Dimension d = reg.dimension(dim).orElse(null);
+            List<String> distinct = values == null ? List.of() : values.stream().filter(java.util.Objects::nonNull).distinct().toList();
+            if (d == null || FIELD_DIMENSIONS.contains(dim)) {
+                attrErrors.put(dim, Msg.t("taxonomy.atributo_desconhecido", dim));
+            } else if (!reg.applies(d, category, subcategory)) {
+                attrErrors.put(dim, Msg.t("taxonomy.atributo_nao_se_aplica", label(dim), label(subcategory)));
+            } else if (distinct.size() > d.maxPerPiece()) {
+                attrErrors.put(dim, Msg.t("taxonomy.atributo_maximo", label(dim), d.maxPerPiece()));
+            } else {
+                distinct.stream().filter(v -> !reg.isAllowed(dim, v, category, subcategory)).findFirst()
+                        .ifPresent(v -> attrErrors.put(dim, Msg.t("taxonomy.atributo_valor_invalido", v, label(dim))));
+            }
+        });
+        List<String> heel = attributes == null ? null : attributes.get("HEEL_HEIGHT");
+        if (heel != null && !attrErrors.containsKey("HEEL_HEIGHT")
+                && (("heels".equals(subcategory) && heel.contains("FLAT")) || ("flats".equals(subcategory) && !heel.isEmpty() && !heel.contains("FLAT")))) {
+            attrErrors.put("HEEL_HEIGHT", Msg.t("taxonomy.salto_incoerente", label(subcategory)));
+        }
+        if (!attrErrors.isEmpty()) {
+            errors.put("attributes", attrErrors);
+        }
         return errors;
     }
 
@@ -213,22 +266,25 @@ public final class Taxonomy {
         return canonicalTags(values).stream().filter(allowed::contains).limit(max).toList();
     }
 
-    /** Rótulo do código na língua de quem lê (ou o próprio código, se não houver rótulo). */
+    /**
+     * Rótulo do código na língua de quem lê: messages*.properties (taxonomy.&lt;código&gt;), senão o rótulo da taxonomia
+     * (variações e valores novos), senão o próprio código.
+     */
     public static String label(String code) {
         String key = "taxonomy." + code;
         String l = Msg.t(key);
-        return key.equals(l) ? code : l;
+        if (!key.equals(l)) {
+            return l;
+        }
+        return TaxonomyRegistry.get().label(code, Msg.locale()).orElse(code);
     }
 
-    /** Ocasiões permitidas para a parte do corpo (união dos grupos dos wearstyles permitidos). */
+    /**
+     * Ocasiões da peça: as 20, em qualquer categoria (seção I.11 da auditoria). A restrição por parte do corpo bloqueava
+     * usos legítimos (gravata no trabalho, calça na festa); o parâmetro fica para compatibilidade.
+     */
     public static List<String> allowedOccasions(String category) {
-        List<String> parts = WEARSTYLES_BY_PART.get(category);
-        if (parts == null) {
-            return OCCASIONS;
-        }
-        java.util.LinkedHashSet<String> out = new java.util.LinkedHashSet<>();
-        parts.forEach(w -> out.addAll(WEARSTYLE_GROUPS.get(w)));
-        return OCCASIONS.stream().filter(out::contains).toList();
+        return OCCASIONS;
     }
 
     /** Wearstyle (rótulo de uso) de cada ocasião, para exibição no card. */

@@ -1,0 +1,72 @@
+@startuml RF13_Sequencia_DNA
+title RF13 — Esquema de identidade pessoal na página "DNA de Estilo"\nDiagrama de sequência — ver e excluir o Esquema de DNA, evolução do StyleDna e card compartilhável
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Visitante ou dono" as V
+participant "dna-schemes/[id]/page.tsx ·\nexpanded-card · lookbook-tabs ·\nhistory-style" as FE
+participant "DnaController" as C
+participant "DnaService" as S
+participant "Guard" as G
+participant "AiEngine (RF24)" as AI
+participant "NotificationService" as N
+participant "MediaService\n(MediaStoragePort)" as M
+database "MySQL" as DB
+
+== Ver um Esquema de DNA ==
+V -> FE: abre /dna-schemes/{id} (anônimo ou logado)
+FE -> C: GET /api/dna-schemes/{id}
+C -> S: getDnaScheme(viewer, id)
+S -> DB: SELECT dna_schemes · dna_scheme_items
+alt quem vê não é o dono
+  S -> G: requireView(viewer, dono, visibilidade mais restritiva\n(DNA × perfil), "dna:{id}")
+  alt sem permissão ou status ≠ PUBLISHED
+    G --> FE: 403 (acesso negado, auditado)
+  end
+end
+S -> DB: SELECT hype_scores (SCHEME) das células
+S -> S: cellHype: dono = Hype pessoal;\nvisitante = só Hype público elegível ("sem dados" = status)
+S --> FE: 200 DnaView {cells, narrative, palette, background, counters, canEdit}
+
+== Meus DNAs (Lookbook) e exclusão ==
+V -> FE: sub-aba "Meus looks DNA"
+FE -> C: GET /api/me/dna-schemes
+C -> S: myDnaSchemes(user) — sem ARCHIVED
+S --> FE: 200 [DnaView]
+opt dono exclui
+  FE -> C: DELETE /api/dna-schemes/{id}
+  C -> S: deleteDnaScheme → requireOwner
+  S -> DB: UPDATE status = ARCHIVED, visibility = PRIVATE
+  C --> FE: 204
+end
+
+== Camada 1 do StyleDna (Histórico › Evolução do estilo) ==
+V -> FE: abre Histórico › Evolução do estilo
+FE -> C: GET /api/me/dna
+C -> S: overview(user)
+S -> S: ensureDna (síntese "GERACAO" se ainda não existe)
+alt interações desde a síntese ≥ 10
+  S -> AI: local(DNA_SYNTHESIZER) + text (frase)
+  S -> DB: UPDATE style_dna · INSERT style_dna_versions ("EVOLUCAO")
+  S -> N: notify(AI_JOB_FINISHED, "Sua identidade evoluiu")
+  N -> DB: INSERT notifications
+end
+S --> FE: 200 {prerequisites, precisionNote?, dna, versions (até 20), lifeForm}
+
+== API sem tela no frontend atual ==
+opt PUT /api/me/dna/life · PUT /api/me/dna/private-fields · PUT /api/me/dna/color-season
+  C -> S: updateLife (nova frase, snapshot "EDICAO_VIDA") ·\nsetPrivateFields · setColorSeason (400 ESTACAO_INVALIDA)
+end
+opt POST /api/me/dna/share-card
+  C -> S: shareCard(user)
+  S -> S: renderCard: PNG 1080 × 1350 com marca d'água;\ncampos de vida privados ficam de fora
+  S -> M: put("dna/{userId}/card-<ms>.png")
+  S -> DB: UPDATE style_dna (card_image_url, card_expires_at = +30 dias)
+  C --> FE: 200 {url, expiresAt, watermark, hiddenFields}
+end
+@enduml

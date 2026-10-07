@@ -20,6 +20,7 @@ import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.repository.BrandAliasRepository;
 import br.com.fashionai.domain.repository.BrandRepository;
 import br.com.fashionai.domain.repository.CatalogImageRepository;
+import br.com.fashionai.application.catalog.image.CatalogImagePipelineService;
 import br.com.fashionai.domain.repository.CatalogProductAliasRepository;
 import br.com.fashionai.domain.repository.CatalogProductRepository;
 import br.com.fashionai.domain.repository.CatalogSourceRepository;
@@ -253,6 +254,8 @@ public class CatalogService {
                 .collect(Collectors.groupingBy(CatalogProductAlias::getProductId, Collectors.mapping(CatalogProductAlias::getAlias, Collectors.toList())));
         Map<UUID, CatalogImage> primary = images.findByProductIdInAndPrimaryTrue(ids).stream()
                 .collect(Collectors.toMap(CatalogImage::getProductId, Function.identity(), (a, b) -> a));
+        // a foto canônica do pipeline de imagens (aprovada pelo Quality Gate) passa na frente da principal da ingestão
+        images.findByProductIdInAndCanonicalTrue(ids).forEach(c -> primary.put(c.getProductId(), c));
         Map<UUID, List<CatalogVariant>> variantsBy = variants.findByProductIdIn(ids).stream()
                 .collect(Collectors.groupingBy(CatalogVariant::getProductId));
         Map<UUID, Brand> brandById = new HashMap<>();
@@ -334,7 +337,9 @@ public class CatalogService {
         m.put("gender", p.getGender());
         m.put("productCode", p.getProductCode());
         m.put("sku", p.getSku());
-        m.put("imageUrl", img == null ? null : img.getImageUrl());
+        Map<String, Object> catalogImage = CatalogImagePipelineService.cardImage(img);
+        m.put("imageUrl", catalogImage != null ? catalogImage.get("url") : img == null ? null : img.getImageUrl());
+        m.put("catalogImage", catalogImage);
         m.put("imageSource", img == null ? null : CatalogIngestService.provenance(img));
         m.put("source", Map.of("type", p.getSourceType().name(), "domain", String.valueOf(p.getSourceDomain()),
                 "productUrl", String.valueOf(p.getOfficialProductUrl()), "status", p.getSourceStatus().name(),
@@ -407,9 +412,25 @@ public class CatalogService {
         CatalogProduct p = products.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("catalog.produto")));
         Brand b = brands.findById(p.getBrandId()).orElse(null);
         List<CatalogImage> imgs = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId());
-        Map<String, Object> m = card(p, b, imgs.isEmpty() ? null : imgs.get(0));
-        m.put("images", imgs.stream().map(i -> Map.of("id", i.getId(), "url", i.getImageUrl(), "type", i.getImageType().name(),
-                "primary", i.isPrimary(), "provenance", CatalogIngestService.provenance(i))).toList());
+        Map<String, Object> m = card(p, b, imgs.stream().filter(CatalogImage::isCanonical).findFirst()
+                .orElse(imgs.isEmpty() ? null : imgs.get(0)));
+        // CatalogProductImage: viewType, qualityScore, sourceUrl, processedUrl e papel (canônica, alternativa, detalhe)
+        m.put("images", imgs.stream().map(i -> {
+            Map<String, Object> im = new LinkedHashMap<>();
+            im.put("id", i.getId());
+            im.put("url", i.getImageUrl());
+            im.put("sourceUrl", i.getImageUrl());
+            im.put("processedUrl", i.getStoredUrl());
+            im.put("type", i.getImageType().name());
+            im.put("viewType", i.getImageType().name());
+            im.put("primary", i.isPrimary());
+            im.put("canonical", i.isCanonical());
+            im.put("viewRole", i.getViewRole());
+            im.put("qualityScore", i.getQualityScore());
+            im.put("processingStatus", i.getProcessingStatus());
+            im.put("provenance", CatalogIngestService.provenance(i));
+            return im;
+        }).toList());
         m.put("variants", variants.findByProductIdOrderByVariantKey(p.getId()).stream().map(this::variantMap).toList());
         m.put("aliases", productAliases.findByProductId(p.getId()).stream().map(CatalogProductAlias::getAlias).toList());
         return m;
@@ -497,16 +518,21 @@ public class CatalogService {
                 ? List.of(Taxonomy.allowedOccasions(p.getCategory()).get(0)) : a.occasion();
         List<String> style = a.style() == null || a.style().isEmpty() ? List.of("basic") : a.style();
         String name = a.name() != null && !a.name().isBlank() ? a.name().trim() : p.getProductName();
-        String image = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId()).stream()
+        CatalogImage chosen = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId()).stream()
                 .filter(i -> i.getUsageStatus() != br.com.fashionai.domain.model.enums.CatalogImageUsage.REJECTED)
-                .map(i -> i.getStoredUrl() != null ? i.getStoredUrl() : i.getImageUrl()).findFirst().orElse(null);
+                .sorted(Comparator.comparing((CatalogImage i) -> !i.isCanonical())).findFirst().orElse(null);
+        // a peça herda a foto do card: master processado (nível B) ou a URL oficial COM o recorte semântico (nível A) —
+        // nunca a foto original inteira quando o pipeline já a enquadrou
+        Map<String, Object> card = CatalogImagePipelineService.cardImage(chosen);
+        String image = card != null ? String.valueOf(card.get("url"))
+                : chosen == null ? null : chosen.getStoredUrl() != null ? chosen.getStoredUrl() : chosen.getImageUrl();
         WardrobeService.PieceForm form = new WardrobeService.PieceForm(null, true, name, p.getCategory(), p.getSubcategory(), sex,
                 b.getId(), b.getName(), color, material, a.size(), null, occasion, style, List.of(),
                 a.price() == null ? BigDecimal.ZERO : a.price(), a.visibility(), List.of(), a.notes(), a.condition(), a.purchaseDate(),
                 a.purchaseLocation(), p.getSku(), null, a.forSale(), false, b.getLogoUrl(), "CATALOGO", p.getId().toString(),
                 a.background());
         Views.PieceView view = wardrobe.createFromCatalog(user, form, new WardrobeService.CatalogPick(p.getId(),
-                variant == null ? null : variant.getId(), image));
+                variant == null ? null : variant.getId(), image, card == null ? null : (String) card.get("thumbnailUrl"), card));
         if (Boolean.TRUE.equals(a.favorite())) {
             view = wardrobe.toggles(user, view.id(), true, null, null);
         }

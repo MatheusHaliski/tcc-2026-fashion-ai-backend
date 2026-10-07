@@ -1,0 +1,65 @@
+@startuml RF25_Sequencia_Hype
+title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de sequência — "Hype do selo" (média do HypeScore v2 dos vínculos) e Selos de Hype FashionAI (HypeSeals, derivados)
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "brands/[slug]/page.tsx\n(SealHypeStat)" as FB
+participant "scheme-card / piece-card\n(lib/hype/use-hype · hype-seals.tsx)" as FC
+participant "SealController" as C
+participant "SealService" as S
+participant "HypeController" as HC
+participant "HypeQueryService" as Q
+participant "HypeCache\n(RenderCachePort)" as HCA
+participant "HypeSeals" as HS
+database "MySQL" as DB
+
+== "Hype do selo" na aba Selos ==
+U -> FB: abre a aba "Selos"
+FB -> C: GET /api/users/{ownerId}/seals
+C -> S: sealsOf(viewer, ownerId) → sealViews(list)
+loop cada selo
+  S -> HCA: get("seal-hype:{id}:{tier}:{usageCount}")\n(chave com a geração do Hype)
+  alt em cache
+    HCA --> S: {avgScore, level, bonded}
+  else ausente (calcula todos de uma vez)
+    S -> DB: seal_bonds APPROVED dos selos (sem os vencidos)
+    S -> Q: currentOf(SCHEME, looks) | currentOf(PIECE, peças vinculadas)
+    Q -> DB: hype_scores (versão atual do algoritmo)
+    S -> S: média só dos itens públicos elegíveis com\nstatus AVAILABLE; level = HypeScoreConfig.level(média)
+    S -> HCA: put (TTL 10 min)
+  end
+end
+S --> FB: selos com hype {avgScore | null, level | null, bonded}
+FB --> U: "Hype do selo" com faixa em texto;\nsem item público com Hype: "Dados insuficientes" (nunca 0)
+
+== Selos de Hype FashionAI nos cards (derivados, nada é salvo) ==
+U -> FC: rola uma grade de looks/peças
+FC -> HC: GET /api/hype/summaries?type=PIECE|LOOK&ids=… (até 100)
+HC -> Q: summaries(viewer, type, ids)
+Q -> DB: hype_scores dos ids visíveis para quem vê
+loop cada item
+  Q -> HS: of(HypeScoreCurrent)
+  HS --> Q: códigos na ordem VIRAL > TRENDING > EMERGING > CLASSIC > RARE\n(só AVAILABLE + publicEligible + score)
+end
+Q --> FC: {items: {id: {status, seals[], score, level, …}}}
+FC --> U: até 2 medalhões no card (SealMedallion FASHIONAI:\nfai/03, fai/02, fai/06, fai/10, fai/09)
+
+== Progresso dos Selos de Hype no detalhe ==
+U -> FC: abre a análise do Hype (HypeAnalyticsDrawer)
+FC -> HC: GET /api/hype/pieces/{id} | /api/hype/looks/{id}
+HC -> Q: detail(viewer, type, id)
+Q -> HS: progress(row, levelThresholds)
+HS --> Q: [{code, earned, criteria}] (critério com o limiar da faixa)
+Q --> FC: {…, sealProgress}
+FC --> U: HypeSealProgressList (conquistados e o que falta)
+note over S, HS
+  O Hype alimenta os selos; nenhum selo, vínculo ou cupom
+  vira sinal do HypeCalculator (sem retroalimentação).
+end note
+@enduml

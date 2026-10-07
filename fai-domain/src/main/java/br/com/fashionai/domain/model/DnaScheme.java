@@ -21,7 +21,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -127,9 +126,6 @@ public class DnaScheme extends VersionedAuditableEntity {
 
     @Column(name = "remix_count", nullable = false)
     private long remixCount;
-
-    @Column(name = "hype_score", precision = 6, scale = 2)
-    private BigDecimal hypeScore;
 
     /** Explicação da inferência (RF24.CA12): dados usados + provedor. */
     @Column(name = "ai_explanation_json", columnDefinition = "json")

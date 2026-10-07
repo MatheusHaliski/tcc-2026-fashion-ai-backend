@@ -2,6 +2,7 @@ package br.com.fashionai.domain.repository;
 
 import br.com.fashionai.domain.model.HypeSignalDaily;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
+import br.com.fashionai.domain.model.enums.HypeSignalType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -18,6 +19,21 @@ public interface HypeSignalDailyRepository extends JpaRepository<HypeSignalDaily
     List<HypeSignalDaily> findByEntityTypeAndSignalDateGreaterThanEqual(HypeEntityType entityType, LocalDate since);
 
     List<HypeSignalDaily> findByEntityTypeAndEntityIdAndSignalDateGreaterThanEqual(HypeEntityType entityType, UUID entityId, LocalDate since);
+
+    /** Totais por entidade e sinal ANTES de {@code before} — o histórico anterior ao horizonte, já filtrado pela integridade. */
+    @Query("select h.entityId as entityId, h.signalType as signalType, sum(h.eventCount) as events, sum(h.weightedCount) as weighted "
+            + "from HypeSignalDaily h where h.entityType = :entityType and h.signalDate < :before group by h.entityId, h.signalType")
+    List<SignalTotal> totalsBefore(@Param("entityType") HypeEntityType entityType, @Param("before") LocalDate before);
+
+    interface SignalTotal {
+        UUID getEntityId();
+
+        HypeSignalType getSignalType();
+
+        Long getEvents();
+
+        BigDecimal getWeighted();
+    }
 
     /** Soma 1 evento (e o peso) ao dia do sinal, criando a linha na primeira vez — atômico no MySQL (sem corrida). */
     @Modifying

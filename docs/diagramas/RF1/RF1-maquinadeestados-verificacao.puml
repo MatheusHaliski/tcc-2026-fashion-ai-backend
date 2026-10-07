@@ -1,0 +1,56 @@
+@startuml RF1_MaquinaDeEstados_Verificacao
+!pragma layout smetana
+title RF1 — Cadastrar conta na plataforma (Pessoal, Marca ou Celebridade)\nDiagrama de máquina de estados — verificação do perfil (ReviewableProfile · ApprovalStatus)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "PENDENTE\n(na fila do analista)" as Pend
+state "AJUSTES\n(aguardando o dono)" as Aj
+state "APROVADO" as Apr
+state "RECUSADO" as Rec
+state "SUSPENSO" as Susp
+
+[*] --> Pend : POST /api/auth/register (MARCA/CELEBRIDADE)\nreviewAttempts = 1 · aviso aos ADMIN depois do commit
+Pend --> Pend : POST /api/auth/email-verification\n(reviewSubmittedAt = agora: o prazo começa)
+Pend --> Apr : POST /api/admin/approvals/{userId}\nAPROVAR (e-mail confirmado + checklist obrigatória)
+Pend --> Aj : AJUSTES (motivos padronizados)
+Pend --> Rec : RECUSAR (motivos padronizados)
+Aj --> Rec : RECUSAR (sem resposta do dono)
+Aj --> Pend : POST /api/me/issuer-review/resubmit\n(reviewAttempts < 5)
+Rec --> Pend : POST /api/me/issuer-review/resubmit\n(reviewAttempts < 5)
+Apr --> [*]
+Rec --> [*] : 5 envios esgotados\n(409 LIMITE_DE_ENVIOS)
+
+note right of Apr
+  users.status = ACTIVE, verified = true,
+  identityVerified; marca: documentVerified;
+  celebridade: requiresSealReview;
+  SealService.ensureDefaultSeals;
+  notificação ACCOUNT_APPROVAL + e-mail.
+  Libera o perfil (RF14 marca / RF22 celebridade).
+end note
+note right of Aj
+  O dono vê motivos e observação na Central
+  do emissor (GET /api/me/issuer-review) e pode
+  corrigir links, contato, nome civil e documento.
+end note
+note bottom of Susp
+  Valor do enum sem nenhuma transição no código:
+  nada grava SUSPENSO (a suspensão da conta é
+  AccountStatus.SUSPENDED, no RF1_MaquinaDeEstados_Conta).
+end note
+note left of Pend
+  Fora da fila (status ≠ PENDENTE) qualquer decisão
+  responde 409 FORA_DA_FILA — exceto RECUSAR em AJUSTES.
+  Prazo: 3 dias úteis (2 no reenvio).
+end note
+@enduml

@@ -33,7 +33,7 @@ interface ListRes { kind: string; owner: UserCard; items: Grouping[]; ungrouped:
 interface ItemsRes { header: Grouping | null; schemes: { scheme: SchemeView; grouping: string }[]; pieces: { piece: PieceView; grouping: string }[]; years: number[] }
 /** Hype v2 de uma era/coleção: maior e médio dos itens com Hype visível; `level` = faixa da média; nulos = "—". */
 interface GroupHype { top: number | null; avg: number | null; level: HypeLevel | null; items: number }
-interface Rank extends Grouping { rank: number; likes: number; /** @deprecated v1 — use `hype` */ topHype: number; hype?: GroupHype; items: number; comments: number; shares: number; score: number; audience: number; capacity: number; audienceFraction: number; fireworks: number; spotlights: number; topScheme?: { id: string; title: string } | null }
+interface Rank extends Grouping { rank: number; likes: number; hype?: GroupHype; items: number; comments: number; shares: number; score: number; audience: number; capacity: number; audienceFraction: number; fireworks: number; spotlights: number; topScheme?: { id: string; title: string } | null }
 interface InsightsRes { ranking: Rank[]; mostLiked?: string | null; mostHype?: string | null; method: string }
 interface StageRes { celebrity: UserCard; photoUrl?: string | null; look: Look3d | null; mannequin?: Mannequin3d; eras: { id: string; label: string; accentColor: string }[]; looks: { id: string; title: string }[] }
 

@@ -97,7 +97,7 @@ class HypeRegionalRankingTest {
         c.setEntityType(type);
         c.setEntityId(id);
         c.setOwnerId(owner.getId());
-        c.setAlgorithmVersion("HYPE_V2");
+        c.setAlgorithmVersion(HypeScoreConfig.DEFAULT_VERSION);
         c.setStatus(HypeStatus.AVAILABLE);
         c.setScore(BigDecimal.valueOf(score));
         c.setPublicEligible(eligible);
@@ -195,13 +195,13 @@ class HypeRegionalRankingTest {
         look(cai, 66, teeAna);                          // só parte de cima
 
         // a consulta do repositório já filtra; a linha não elegível aqui prova a defesa extra do serviço
-        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, "HYPE_V2", HypeStatus.AVAILABLE)).thenReturn(pieceRows);
-        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.SCHEME, "HYPE_V2", HypeStatus.AVAILABLE)).thenReturn(lookRows);
-        when(current.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.PIECE), anyCollection(), eq("HYPE_V2")))
+        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE)).thenReturn(pieceRows);
+        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.SCHEME, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE)).thenReturn(lookRows);
+        when(current.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.PIECE), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION)))
                 .thenAnswer(a -> byIds(a.getArgument(1), pieceRows, HypeScoreCurrent::getEntityId));
-        when(current.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.SCHEME), anyCollection(), eq("HYPE_V2")))
+        when(current.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.SCHEME), anyCollection(), eq(HypeScoreConfig.DEFAULT_VERSION)))
                 .thenAnswer(a -> byIds(a.getArgument(1), lookRows, HypeScoreCurrent::getEntityId));
-        when(current.findByEntityTypeAndEntityIdAndAlgorithmVersion(any(), any(), eq("HYPE_V2")))
+        when(current.findByEntityTypeAndEntityIdAndAlgorithmVersion(any(), any(), eq(HypeScoreConfig.DEFAULT_VERSION)))
                 .thenAnswer(a -> (a.getArgument(0) == HypeEntityType.PIECE ? pieceRows : lookRows).stream()
                         .filter(c -> c.getEntityId().equals(a.getArgument(1))).findFirst());
         when(pieces.findByIdIn(anyCollection())).thenAnswer(a -> byIds(a.getArgument(0), catalog, WardrobeItem::getId));

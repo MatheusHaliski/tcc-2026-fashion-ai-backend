@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/i18n";
-import { label } from "@/lib/api/taxonomy";
+import { label, subcategoryLabel } from "@/lib/api/taxonomy";
 import { lensApi } from "@/lib/lens/api";
 import { bandOf, shownSimilarity, LENS_PATTERNS } from "@/lib/lens/model";
 import type { LensDetectionView } from "@/lib/lens/types";
@@ -31,7 +31,7 @@ function DetectionBack({ detection }: { detection: LensDetectionView }) {
   const band = bandOf(detection);
   const color = detection.colors[0];
   const rows: [string, string][] = [
-    [t("common.category"), label(detection.category)], [t("common.subcategory"), label(detection.subcategory)],
+    [t("common.category"), label(detection.category)], [t("common.subcategory"), subcategoryLabel(detection.subcategory)],
     [t("common.color"), color ? label(color.name) : ""], [t("common.material"), label(detection.material)],
     [t("lens.attr.pattern"), pattern(detection.pattern)], [t("common.estilos"), detection.styles.map(label).join(", ")],
     [t("common.ocasioes"), detection.occasions.map(label).join(", ")],

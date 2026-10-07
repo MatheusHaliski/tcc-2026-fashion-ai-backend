@@ -1,5 +1,5 @@
 "use client";
-import { label } from "@/lib/api/taxonomy";
+import { label, subcategoryLabel } from "@/lib/api/taxonomy";
 import { cn } from "@/components/ui";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 
@@ -68,7 +68,7 @@ export function FlairCardView({ card, skin, size = "md", selected, onClick, dim 
           <span className="flair-power tabular" title={t("flair.flairCard.poder_da_carta")}>{card.power}</span>
         </div>
         <div className="flair-art" style={{ background: card.colorHex ? `radial-gradient(circle at 50% 40%, #fff 0%, ${card.colorHex}22 70%)` : undefined }}>
-          {card.imageUrl ? <img src={card.imageUrl} alt="" loading="lazy" draggable={false} /> : <span className="type-caption text-faint">{label(card.subcategory)}</span>}
+          {card.imageUrl ? <img src={card.imageUrl} alt="" loading="lazy" draggable={false} /> : <span className="type-caption text-faint">{subcategoryLabel(card.subcategory)}</span>}
           {card.brandName && <span className="flair-brand">{card.brandName}</span>}
         </div>
         <p className="flair-name" title={card.name}>{card.name}</p>

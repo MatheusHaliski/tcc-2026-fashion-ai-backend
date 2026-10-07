@@ -3,6 +3,7 @@ package br.com.fashionai.application.service;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.audit.Audit;
 import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.hype.HypeQueryService;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.domain.model.MirrorState;
 import br.com.fashionai.domain.model.WardrobeItem;
@@ -60,7 +61,7 @@ class MirrorWardrobePickerTest {
         when(room.locateAll(userId)).thenReturn(Map.of());
         service = new MirrorService(mirrors, mock(WardrobeItemRepository.class), wardrobe, room, mock(SchemeService.class),
                 mock(SchemeRepository.class), mock(SchemeItemRepository.class), mock(DailyLookService.class), mock(StyleDnaRepository.class),
-                restrictions, ai, mock(Audit.class), mock(ApplicationEventPublisher.class));
+                restrictions, ai, mock(Audit.class), mock(ApplicationEventPublisher.class), mock(HypeQueryService.class));
     }
 
     private WardrobeItem piece(String name, String category) {
