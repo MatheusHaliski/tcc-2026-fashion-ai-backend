@@ -1,4 +1,5 @@
 "use client";
+import { prepareFaceTexture } from "@/lib/avatar3d/glasses";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
