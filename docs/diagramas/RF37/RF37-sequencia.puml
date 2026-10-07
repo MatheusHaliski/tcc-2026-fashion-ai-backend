@@ -1,5 +1,5 @@
 @startuml RF37_Sequencia
-title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de sequência — endpoints reais
+title RF37 — FLAIR: jogo de cartas de moda com 15 modos e combinações de lojas que rendem cupons\nDiagrama de sequência — cartas com HypeScore v2, duelo 1×1 e um modo (FLAIR Runway)
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -9,31 +9,74 @@ skinparam sequence {
 }
 autonumber
 actor Jogador as J
-actor Loja as L
-participant "Frontend\nflair" as FE
-participant "FlairModesController" as MC
+participant "flair/page.tsx\n· FlairModes (modes.tsx)" as FE
 participant "FlairController" as C
+participant "FlairModesController" as MC
 participant "FlairModesService" as MS
 participant "FlairService" as S
+participant "FlairEngine · FlairLooks\n(motor puro)" as ENG
+participant "FaiPointsService" as FP
+participant "NotificationService" as N
 participant "CouponService" as CS
 database "MySQL" as DB
-J -> FE: FLAIR Runway (tema do dia)
-FE -> MC: GET /api/flair/modes/runway
-MC -> MS: runwayState(user)
-MS -> DB: SELECT flair_mode_states, schemes
-J -> FE: inscreve look
-FE -> MC: POST /api/flair/modes/runway
+== Cartas e decks (HypeScore v2 só leitura) ==
+J -> FE: abre "Cartas e álbum"
+FE -> C: GET /api/flair/cards
+C -> S: cards(user)
+S -> DB: SELECT wardrobe_items (não arquivadas)
+S -> DB: SELECT hype_scores WHERE entity_type = PIECE\nAND entity_id IN (…) AND algorithm_version = v2
+S -> ENG: card(PieceInput, estação) — Hype.of(publicEligible, status, score, level, rarity)
+ENG --> S: Card (6 atributos, raridade, poder, habilidade, hype)
+S --> FE: {season, cards[], album}
+== Duelo 1×1 ==
+J -> FE: duelar com @pessoa ou com a Casa
+FE -> C: POST /api/flair/duels {schemeId, opponent}
+C -> S: duel(user, schemeId, opponent)
+alt deck vazio · duelo consigo · rival sem look público
+  S --> FE: 400 DECK_VAZIO · 400 DUELO_CONSIGO · 409 SEM_DECK_PUBLICO
+else
+  S -> ENG: duel(deckA, deckB) — 5 rodadas
+  S -> DB: INSERT flair_matches (DUEL | TREINO) + flair_match_entries
+  S -> DB: UPDATE flair_profiles (vitórias/derrotas)
+  opt menos de 5 duelos premiados hoje
+    S -> DB: INSERT flair_coin_entries (DUEL) · coins 40/20 · 15 · 5
+  end
+  S -> FP: game(user, "FLAIR_DUEL", matchId, outcome)
+  FP -> DB: INSERT fai_points_ledger (GAME_PLAYED [+ GAME_WON])
+  S ->> CS: rightsCheck → CouponRightsCheck
+  S --> FE: {rounds, score, outcome, coins, faiPoints, profile}
+end
+== Um dos 15 modos: FLAIR Runway (semanal) ==
+J -> FE: Modos → Runway → inscreve um look
+FE -> MC: POST /api/flair/modes/runway {schemeId}
 MC -> MS: enterRunway(user, schemeId)
-MS -> MS: FlairLooks.score (40% IA, 30% tema,\n20% votos, 10% originalidade)
-MS -> DB: INSERT flair_matches + entries\nUPSERT flair_mode_states
-MS -> DB: INSERT flair_coin_entries (MODE_RUNWAY,\nsó as 3 primeiras partidas do dia)
-MS -> DB: INSERT flair_trophies (se vencer)
-MS ->> CS: CouponRightsCheck (AFTER_COMMIT)
-L -> FE: nova combinação (requisitos + cupom)
-FE -> C: POST /api/flair/brand/combinations
-C -> S: saveCombination
-S -> DB: INSERT flair_combinations
-J -> FE: trocar deck pelo cupom
-FE -> C: POST /api/flair/combinations/{id}/redeem
-S -> DB: INSERT flair_redemptions (código único)
+alt já desfilou nesta semana
+  MS --> FE: 409 JA_NA_RUNWAY
+else
+  MS -> S: publicLookHype(schemeId) — atributo HYPE
+  S -> DB: SELECT hype_scores (SCHEME)
+  MS -> ENG: look(LookInput) · 7 looks da Casa · runwayScore (qualificação → semifinal → final)
+  opt campeão ou finalista
+    MS -> DB: INSERT flair_trophies
+    MS -> N: notify(ACHIEVEMENT_UNLOCKED, "FLAIR_TROPHY")
+  end
+  MS -> DB: UPSERT flair_mode_states (RUNWAY, semana)
+  MS -> MS: finish(): INSERT flair_matches + entries
+  opt menos de 3 partidas premiadas do modo hoje
+    MS -> S: award(coins 20 · 8 · 3, "MODE_RUNWAY", matchId)
+    S -> DB: INSERT flair_coin_entries
+  end
+  MS -> FP: game(user, "FLAIR_RUNWAY", matchId, outcome)
+  opt modo em COMPETITIVE (BATTLE, SQUAD, LEAGUE, TAG_TEAM, CONQUEST,\nMONOPOLY, COMBO, ULTIMATE — o RUNWAY não está)
+    MS ->> CS: rightsCheck → CouponRightsCheck
+  end
+  MS --> FE: {theme, field, stages, champion, place, coins, faiPoints}
+end
+== Depois do commit ==
+CS -> CS: onCheck(CouponRightsCheck) → scan(userId)
+CS -> S: combinationsFor(user) — completa e disponível?
+opt nova combinação completa
+  CS -> DB: INSERT coupon_rights (FLAIR, PENDENTE)
+  CS -> N: notify(COUPON_AVAILABLE) — RF38
+end
 @enduml

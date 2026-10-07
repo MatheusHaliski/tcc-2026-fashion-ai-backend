@@ -1,0 +1,59 @@
+@startuml RF25_MaquinaDeEstados_Promocao
+!pragma layout smetana
+title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de máquina de estados — política de promoção (PromotionStatus) e código resgatado (RedemptionStatus)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Promoção (promotions.status)" as Promo {
+  state "AVAILABLE" as Avail {
+    state "Agendada\n(agora < startsAt)" as Agendada
+    state "Vigente\n(unavailable() = null)" as Vigente
+    state "Fora do período\n(expiresAt passou)" as Vencida
+    state "Selo inativo\n(selo exigido INACTIVE)" as SeloOff
+    [*] --> Agendada : startsAt no futuro
+    [*] --> Vigente : sem início ou já começou
+    Agendada --> Vigente : chega startsAt
+    Vigente --> Vencida : passa expiresAt
+    Vigente --> SeloOff : dono desativa o selo
+    SeloOff --> Vigente : dono reativa o selo
+    Vigente --> Vigente : resgate\n(redeemedCount + 1)
+  }
+  state "REDEEMED\n(estoque esgotado)" as Redeemed
+  state "REVOKED\n(pausada pelo dono)" as Revoked
+  state "EXPIRED" as Expired
+  [*] --> Avail : POST /api/promotions (201)
+  Avail --> Redeemed : resgate que atinge totalQuota
+  Avail --> Revoked : PUT /api/promotions/{id}/status {REVOKED}
+  Revoked --> Avail : PUT …/status {AVAILABLE}
+  Redeemed --> Avail : PUT …/status {AVAILABLE}
+  Avail --> Expired : PUT …/status {EXPIRED}
+}
+
+state "Código resgatado (promotion_redemptions.status)" as Cod {
+  state "ISSUED" as Issued
+  state "USED" as Used
+  state "EXPIRED\n(derivado na leitura)" as CodExp
+  [*] --> Issued : redeem() — código único\n(prefixo do emissor [+ X parceira])
+  Issued --> Used : POST /api/me/coupons/validate\n(emissor ou parceira, no caixa)
+  Issued --> CodExp : expiresAt passou
+  Used --> [*]
+  CodExp --> [*]
+}
+Vigente -right-> Cod : POST /api/promotions/{id}/redemptions\n→ novo código
+
+note bottom of Promo
+  Nenhum job muda o status sozinho: período vencido e selo
+  inativo são calculados em unavailable() a cada leitura.
+  EXPIRED só entra pelo PUT de status. Validar código usado
+  ou vencido: 409 CUPOM_USADO | CUPOM_EXPIRADO.
+end note
+@enduml

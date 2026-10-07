@@ -1,5 +1,5 @@
 @startuml RF39_Sequencia
-title RF39 — "Criar guarda-roupa 3D": componentes ou guarda-roupa inteiro de marca/celebridade vendidos na loja do quarto\nDiagrama de sequência — endpoints reais
+title RF39 — Criar guarda-roupa 3D com a identidade de uma marca/celebridade e vender na loja do quarto\nDiagrama de sequência — criar item, comprar com FAI Points e montar no Meu Quarto
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -10,33 +10,80 @@ skinparam sequence {
 autonumber
 actor "Marca/Celebridade" as M
 actor Comprador as U
-participant "Frontend\nWardrobeCreatorTab" as FE
+participant "brands/[slug]/page.tsx\n→ WardrobeCreatorTab\n+ WardrobePreview" as FE
+participant "points/page.tsx\n→ RoomStore" as SFE
 participant "RoomCreatorController" as RC
 participant "WardrobeCreatorService" as W
 participant "HighlightsController" as HC
 participant "FaiPointsService" as P
-participant "RoomService" as R
+participant "RoomService\n(RoomLayoutAccess)" as R
+participant "MediaService\n(MediaStoragePort)" as MS
 database "MySQL" as DB
-database "Storage de mídia" as MS
-M -> FE: aba Criar guarda-roupa 3D
+== Criar o item (marca/celebridade aprovada) ==
+M -> FE: aba GUARDA_ROUPA do próprio perfil
 FE -> RC: GET /api/room-creator/options
 RC -> W: options(user)
+W -> W: creator(user) — Guard.requireApprovedInstitutional
+alt perfil não aprovado, pendente ou suspenso
+  W --> FE: 403
+else
+  W -> DB: SELECT seals WHERE owner AND status = ACTIVE
+  W --> FE: {blocks (20), materials (22), colors, levels (7), identity, seals, currency}
+end
 M -> FE: envia logo e arte
-FE -> RC: POST /api/room-creator/uploads?kind=logo|art
-W -> MS: put(png/jpg)
-M -> FE: Publicar (bundle de blocos + condições)
-FE -> RC: POST /api/room-creator/items
+FE -> RC: POST /api/room-creator/uploads?kind=logo|art (multipart)
+RC -> W: uploadArt(user, bytes, kind)
+W -> MS: put(users/{id}/room-creator/{kind}-{ts}.png|jpg)
+W --> FE: {url, kind}
+M -> FE: Publicar (bloco único ou bundle de blocos + condições)
+FE -> RC: POST /api/room-creator/items (ItemForm)
 RC -> W: save(user, null, ItemForm)
-W -> DB: INSERT room_catalog (BRD-…)
-U -> FE: Loja do quarto
-FE -> HC: GET /api/points/shop
+alt bloco/material/preço/período/URL inválidos ou sem blocos
+  W --> FE: 400 BLOCO_INVALIDO · MATERIAL_INVALIDO · PRECO_INVALIDO\n· PERIODO_INVALIDO · URL_INVALIDA · SEM_BLOCOS
+else selo de outro perfil
+  W --> FE: 403
+else ok
+  W -> DB: INSERT room_catalog (sku BRD-…, kind, finish_json, bundle_json,\nrequired_level, price_points, stock_limit, per_user_limit,\navailable_from/until, requires_seal, creator_user_id)
+  W --> FE: 201 view(item)
+end
+note over FE, RC: PUT /api/room-creator/items/{sku} edita; DELETE apaga\nou só desativa (active = false) quando já houve venda
+== Comprar na loja do quarto ==
+U -> SFE: Loja do quarto
+SFE -> HC: GET /api/points/shop
 HC -> P: shop(user)
-P -> W: view + blocker
-U -> FE: Comprar
-FE -> HC: POST /api/points/shop/{sku}/purchase
-P -> DB: INSERT fai_points_ledger, room_inventory
-U -> FE: Montar (guarda-roupa inteiro)
-FE -> HC: POST /api/me/room-inventory/{id}/apply {moduleId: ALL}
-P -> R: applyFinish → todos os módulos de cada bloco
-R -> DB: UPDATE room_layouts.modules_json
+P -> DB: SELECT room_catalog WHERE active · room_inventory do comprador
+P -> W: view(item, buyer) · availability · blocker · sellerActive
+P -> R: compatibleModules(user, item)
+P --> SFE: itens com availability, blocker, levelOk, affordable, owned
+U -> SFE: Comprar
+SFE -> HC: POST /api/points/shop/{sku}/purchase
+HC -> P: buy(user, sku)
+P -> DB: lockOwner(user) e depois lockBySku(sku)
+alt nível baixo
+  P --> SFE: 409 NIVEL_INSUFICIENTE
+else estoque esgotado
+  P --> SFE: 409 ESGOTADO
+else blocker (EM_BREVE, EXPIRADO, INATIVO, limite por pessoa, selo exigido)
+  P --> SFE: 409 CONDICAO_DE_COMPRA
+else saldo menor que o preço
+  P --> SFE: 409 SALDO_INSUFICIENTE
+else ok
+  P -> DB: INSERT fai_points_ledger (SHOP_PURCHASE, −preço, countsLifetime = false)
+  P -> DB: UPDATE room_catalog.sold_count · INSERT room_inventory (serial)
+  P --> SFE: {inventoryId, balance, level, serial}
+end
+== Montar no quarto ==
+U -> SFE: Montar (guarda-roupa inteiro)
+SFE -> HC: POST /api/me/room-inventory/{id}/apply {moduleId: "ALL"}
+HC -> P: apply(user, inventoryId, moduleId)
+alt item de outra pessoa
+  P --> SFE: 403
+else módulo incompatível
+  P --> SFE: 409 ENCAIXE_INCOMPATIVEL
+else ok
+  P -> R: applyFinish(userId, moduleId, item)
+  R -> DB: UPDATE room_layouts.modules_json\n(WARDROBE: cada bloco do bundle em todos os módulos do tipo)
+  P -> DB: UPDATE room_inventory.applied_module
+  P --> SFE: {applied, module, sku}
+end
 @enduml

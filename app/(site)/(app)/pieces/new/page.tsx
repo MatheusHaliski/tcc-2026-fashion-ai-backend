@@ -6,7 +6,7 @@ import { ApiError, api } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
-import { CATEGORY_LABEL, label, useTaxonomy } from "@/lib/api/taxonomy";
+import { CATEGORY_LABEL, label, useTaxonomy, subcategoryLabel } from "@/lib/api/taxonomy";
 import { RequireAuth } from "@/components/app-shell";
 import { Badge, Button, Card, Chip, PageHeader, SegmentPicker, useToast } from "@/components/ui";
 import { EMPTY_PIECE, PIECE_FIELD_STEP, PieceFields, PieceMoreDetails, isNoBrand, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
@@ -212,6 +212,12 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 {pick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("catalog.preenchido_do_catalogo")}</p>}
                 <PieceFields value={value} onChange={(v) => { setValue(v); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors} />
               </section>
+              {/* RF4 · fotografia opcional, para um item mais personalizado: uma ou várias fotos, cada peça detectada vira uma
+                  peça no guarda-roupa (revisão foto por foto). Independe do tipo escolhido acima. */}
+              <section className="creator-section" aria-labelledby="piece-photo-label">
+                <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-photo-label" className="type-h3">{t("pieces.new.foto_opcional")}</h2><Badge tone="chalk">{t("common.optional")}</Badge></div>
+                <MultiPieceUpload onSaved={(count) => { toast.success(t("multiPiece.salvas", { count })); window.location.href = user ? `/u/${user.username}` : "/closet"; }} />
+              </section>
               {nav}
             </Card>
           )}
@@ -221,7 +227,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
             <Card>
               <h2 className="type-h3 mb-2">{t("builder.step.review")}</h2>
               <dl className="c-facts mb-3">
-                {([[t("common.nome"), value.name], [t("common.category"), value.category ? label(value.category) : "—"], [t("common.subcategory"), value.subcategory ? label(value.subcategory) : "—"], [t("common.color"), value.color ? label(value.color) : "—"], [t("common.brand"), value.brandName || "—"], [t("common.occasion"), value.occasion.map((o) => label(o)).join(", ") || "—"], [t("common.style"), value.style.map((x) => label(x)).join(", ") || "—"], [t("common.price"), value.price || "—"], [t("common.visibility"), label(value.visibility.toLowerCase())], [t("common.forSale"), value.forSale ? t("common.yes") : t("common.no")], [t("pieceForm.selos_da_peca"), value.seals.map((s) => s.split(":")[1] ?? s).join(", ") || "—"], [t("catalog.origem"), origin]] as [string, string][]).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
+                {([[t("common.nome"), value.name], [t("common.category"), value.category ? label(value.category) : "—"], [t("common.subcategory"), value.subcategory ? subcategoryLabel(value.subcategory) : "—"], [t("common.color"), value.color ? label(value.color) : "—"], [t("common.brand"), value.brandName || "—"], [t("common.occasion"), value.occasion.map((o) => label(o)).join(", ") || "—"], [t("common.style"), value.style.map((x) => label(x)).join(", ") || "—"], [t("common.price"), value.price || "—"], [t("common.visibility"), label(value.visibility.toLowerCase())], [t("common.forSale"), value.forSale ? t("common.yes") : t("common.no")], [t("pieceForm.selos_da_peca"), value.seals.map((s) => s.split(":")[1] ?? s).join(", ") || "—"], [t("catalog.origem"), origin]] as [string, string][]).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
               </dl>
               {saveProblem && <p role="alert" className="error-text mb-2">{saveProblem}</p>}
               {nav}

@@ -1,5 +1,5 @@
 @startuml RF25_Criador_Atividades
-title RF25 — Criador de selo em 4 passos: modo (com/sem IA) → dados → arte (Circular · Folha · Padrão FashionAI) → revisar e salvar\nDiagrama de atividades
+title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de atividades — criador em 4 passos: modo (com/sem IA) → dados e política → arte (Circular · Folha · Padrão FashionAI) → revisar e salvar
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -23,63 +23,103 @@ skinparam note {
   BorderColor #D8CE78
   FontColor #554F24
 }
-|Marca/Celebridade (aprovada)|
+|Emissor (marca/celebridade)|
 start
-:Perfil → aba "Selos" → "Novo selo";
-partition "Passo 1 · Modo" {
-  if (Com IA?) then (sim)
-    |Sistema (SealService / SealDrafts)|
-    :POST /api/seals/draft {tier};
-    :Lê o perfil emissor e as peças do emissor\n(cor mais frequente, ocasiões, estilos, categoria);
-    :Sugere nome, nível, política padronizada\ne arte (marca: anel circular da cor mais próxima\n+ iniciais; celebridade: folha holográfica);
-    note right: nada é salvo aqui;\no emissor revisa tudo
-    |Marca/Celebridade (aprovada)|
-    :Vê "Sugerido pela IA" com o porquê de cada escolha;
-  else (não)
-    :Começa do desenho padrão;
-  endif
-}
+:Perfil → aba "Selos" → "Novo selo" (ou "Editar");
+|Frontend (SealWizard)|
+if (Editar selo existente?) then (sim)
+  :Abre no passo 2 (modo = sem IA)\ncom nome, nível, política, validade, limite e desenho;
+else (não)
+  partition "Passo 1 · Modo" {
+    |Emissor (marca/celebridade)|
+    if (Com IA?) then (sim)
+      |Frontend (SealWizard)|
+      :POST /api/seals/draft {tier};
+      |Backend (SealService)|
+      if (Perfil MARCA/CELEBRIDADE aprovado e ativo?) then (não)
+        #FFE3E3:403 → toast; volta ao passo 1;
+        stop
+      endif
+      :SealDrafts.suggest(nome do perfil, celebridade?, nível,\naté 300 peças do emissor): cor mais frequente,\nmarca, categoria, até 2 ocasiões e 2 estilos;
+      :Arte sugerida: marca → anel circular de cor mais próxima\n(SealDesigns.nearestCircular) + iniciais;\ncelebridade → folha "folha/mat-12" com o nome;
+      note right: nada é salvo; audit "seal:draft"
+      |Frontend (SealWizard)|
+      :Preenche dados e arte; mostra\n"Sugerido pela IA" com os motivos;
+    else (não)
+      |Frontend (SealWizard)|
+      :Começa do desenho padrão (paleta FAI);
+    endif
+  }
+endif
 partition "Passo 2 · Dados" {
-  :Nome, nível (LOOK/PEÇA), política padronizada\n(regras: quantificador × cor × marca × categoria;\ntags de ocasião e estilo), validade e limite de emissões;
+  |Emissor (marca/celebridade)|
+  :Nome (até 160), nível LOOK/PEÇA;
+  :Política padronizada (SealPolicyEditor):\naté 6 regras quantificador (AT_LEAST n · ALL · NONE)\n× cor × marca × categoria × subcategoria × Hype mínimo;\naté 4 ocasiões e 4 estilos; ALL/ANY;
+  :Critério de Hype da entidade (opcional):\nfaixa mínima, score mínimo e até 3 momentos;
+  :Disponível a partir de / Expira em (vazio = imediato / sem fim)\ne limite de emissões (≥ 1, opcional);
 }
 partition "Passo 3 · Arte" {
-  :Escolhe o tipo de selo;
+  :Escolhe o tipo do selo;
   if (Tipo?) then (Circular)
-    if (Origem?) then (Modelo)
-      :Escolhe um dos anéis com centro livre (44);
+    if (Origem?) then (Modelos)
+      :Um dos 44 anéis com centro livre;
+      :Núcleo (SealCoreEditor): Elemento (12 ícones +\nmaterial + cor + texto ≤ 3) | Imagem | Texto (≤ 24);
     else (Personalizado)
-      :Gerador (paleta, padrão, materiais, bisel)\nou envio de selo pronto (1:1, circular);
+      :SealCreator: gerador (paleta, padrão entre borda\ne centro, materiais) ou envio de selo pronto;
+      if (Enviou selo pronto?) then (sim)
+        |Frontend (SealWizard)|
+        :validateSealImage no cliente;
+        :POST /api/seals/uploads (multipart);
+        |Backend (SealService)|
+        :SealDesignService.upload: 1:1 (± 3 %), 256–4096 px\n→ PNG 512 px em users/{id}/seals/upload-*.png;
+        if (Válido?) then (não)
+          #FFE3E3:400 SELO_PROPORCAO_INVALIDA ·\nSELO_PEQUENO · SELO_GRANDE;
+        else (sim)
+          :{url, circular, warning se os cantos não forem transparentes};
+        endif
+        |Emissor (marca/celebridade)|
+      endif
     endif
-    :Núcleo do selo: Elemento (ícone + texto + material)\n| Imagem enviada (zoom + texto opcional)\n| Texto livre (até 24 caracteres, 2 linhas);
   elseif (Folha)
-    :Escolhe uma das 33 folhas picotadas;
-    :Edita os textos da folha: título (vazio = nome do selo),\nsérie, subtítulo, rótulo, legenda, ano e texto do emblema;
-    :Imagem central: emblema da arte | imagem enviada | texto;
+    :Uma das 33 folhas picotadas;
+    :Textos da folha: título (vazio = nome do selo), série,\nsubtítulo, rótulo, legenda, ano e emblema;
+    :Emblema central: elemento da arte | imagem | texto;
   else (Padrão FashionAI)
-    :Escolhe um dos 13 medalhões prontos;
+    :Um dos 13 medalhões prontos;
   endif
-  if (Imagem do núcleo?) then (enviada)
-    |Sistema (SealService / SealDesigns)|
-    :POST /api/seals/uploads?purpose=core\n(≥ 64 px, proporção ≤ 4:1, PNG ≤ 640 px\nem users/{id}/seals/);
-    |Marca/Celebridade (aprovada)|
+  if (Núcleo/emblema com imagem enviada?) then (sim)
+    |Frontend (SealWizard)|
+    :Confere no cliente (≥ 64 px, proporção ≤ 4:1);
+    :POST /api/seals/uploads?purpose=core;
+    |Backend (SealService)|
+    :SealDesignService.uploadCore → PNG ≤ 640 px\nem users/{id}/seals/core-*.png;
+    if (Válido?) then (não)
+      #FFE3E3:400 NUCLEO_PEQUENO · NUCLEO_PROPORCAO;
+    endif
+    |Emissor (marca/celebridade)|
   endif
-  :Prévia ao vivo no tamanho do card do look (44 px)\ne do card da peça (36 px);
+  :Prévia ao vivo: 200 px, card do look (44 px)\ne card da peça (36 px);
 }
 partition "Passo 4 · Revisar e salvar" {
-  :Confere nome, nível, política (frase gerada),\nvalidade, limite e tipo — "Editar" volta ao passo;
-  :Salvar selo;
+  |Frontend (SealWizard)|
+  if (Nome com ≥ 2 caracteres?) then (não)
+    :Botões "Avançar"/"Salvar selo" desabilitados;
+    stop
+  endif
+  :Resumo: nome, nível, frase da política (describePolicy),\nvalidade, limite e tipo — "Editar" volta ao passo;
+  :POST /api/seals | PUT /api/seals/{id};
+  |Backend (SealService)|
+  :SealPolicies.normalize/describe → policyText;\nSealDesigns.normalize → desenho válido do catálogo;\nOwnMedia: imagens só do próprio emissor;\nfolha sem título → título = nome do selo;
+  if (Válido?) then (não)
+    #FFE3E3:400 SELO_DESIGN_INVALIDO {fields} ·\nPERIODO_INVALIDO · LIMITE_INVALIDO;
+    |Frontend (SealWizard)|
+    :toast; continua no passo 4;
+    stop
+  endif
+  |Backend (SealService)|
+  :INSERT/UPDATE seals: background_config_json\nguarda {design, policy}; audit SELO_EDITADO;
 }
-|Sistema (SealService / SealDesigns)|
-:SealDesigns.normalize: kind, template do catálogo,\ntextos da folha, núcleo (modo, URL, texto, cor, zoom);
-if (Desenho válido?) then (não)
-  #FFE3E3:400 SELO_DESIGN_INVALIDO\n(campos apontados);
-  stop
-endif
-:OwnMedia: a imagem do núcleo é do próprio emissor;
-:SealPolicies.normalize + describe → policyText;
-:Folha sem título → título = nome do selo;
-:Salva o selo (MySQL · seals.background_config_json\n{design, policy}) e audita;
-|Marca/Celebridade (aprovada)|
-:Selo aparece na aba e nos cards com o medalhão do tipo escolhido;
+|Emissor (marca/celebridade)|
+:Selo aparece na aba e nos cards com o medalhão escolhido;
 stop
 @enduml

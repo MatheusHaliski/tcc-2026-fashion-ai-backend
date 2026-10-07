@@ -500,9 +500,10 @@ public class AccountService {
         profile.put("createdAt", u.getCreatedAt());
         profile.put("termsAcceptedAt", u.getTermsAcceptedAt());
         data.put("profile", profile);
+        // RF53 · P3-12: a opção de não aparecer em "Criadores em alta" também é da pessoa e vai na exportação
         preferences.findByUserId(u.getId()).ifPresent(p -> data.put("preferences", Map.of("theme", p.getTheme(),
                 "language", p.getLanguage(), "density", p.getDensity(), "fontScale", p.getFontScale(),
-                "chromeBackgroundId", String.valueOf(p.getChromeBackgroundId()))));
+                "chromeBackgroundId", String.valueOf(p.getChromeBackgroundId()), "hypeCreatorOptOut", p.isHypeCreatorOptOut())));
         data.put("consents", consents.findByUserId(u.getId()).stream().map(c -> Map.of("purpose", c.getPurpose(),
                 "granted", c.isGranted(), "grantedAt", String.valueOf(c.getGrantedAt()), "revokedAt", String.valueOf(c.getRevokedAt()))).toList());
         List<WardrobeItem> myPieces = pieces.findByUserIdOrderByCreatedAtDesc(u.getId());

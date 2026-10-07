@@ -182,15 +182,6 @@ public class Scheme extends VersionedAuditableEntity {
     @Column(name = "rendering_metadata_json", columnDefinition = "json")
     private String renderingMetadataJson;
 
-    @Column(name = "hype_score", precision = 6, scale = 2)
-    private BigDecimal hypeScore;
-
-    @Column(name = "hype_score_global", precision = 6, scale = 2)
-    private BigDecimal hypeScoreGlobal;
-
-    @Column(name = "hype_group_id", length = 36)
-    private UUID hypeGroupId;
-
     @Column(name = "grouping_id", length = 36)
     private UUID groupingId;
 

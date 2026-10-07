@@ -317,8 +317,12 @@ public class IssuerReviewService {
         // 1) valida tudo antes de qualquer efeito: um documento só é copiado para restricted/ se o pedido inteiro passar
         //    (senão a cópia ficava órfã — fora de pending/, a limpeza dos envios abandonados não a encontra)
         Map<String, Object> errors = new LinkedHashMap<>();
+        // link oficial (obrigatório): o efetivo é o enviado ou o já gravado; perfil antigo sem link (o caso do modal "sem link")
+        // não pode reenviar sem informar um, senão consumiria uma tentativa e voltaria à fila com o critério em FALHA
         String link = IssuerVerificationPolicy.normalizeUrl(celebrity ? c.verificationUrl() : c.storeUrl());
-        if (present(link) && !IssuerVerificationPolicy.webUrl(link)) {
+        String effectiveLink = link != null ? link
+                : celebrity ? ((CelebrityProfile) p).getVerificationUrl() : ((BrandProfile) p).getStoreUrl();
+        if (!IssuerVerificationPolicy.webUrl(effectiveLink)) {
             errors.put(celebrity ? "verificationUrl" : "storeUrl", Msg.t("issuerReview.link_invalido"));
         }
         // nome civil (NOME_CONFERE, obrigatório): o efetivo é o enviado ou o já gravado; sem ele o reenvio só consumiria uma

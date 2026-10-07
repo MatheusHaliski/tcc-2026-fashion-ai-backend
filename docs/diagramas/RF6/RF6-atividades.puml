@@ -1,5 +1,5 @@
 @startuml RF6_Atividades
-title RF6 — Acessar e gerenciar o Perfil Lookbook (Closet Digital + Looks Salvos)\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF6 — Acessar e gerenciar o Perfil Lookbook\nDiagrama de atividades — abrir o Lookbook e navegar pelas abas (Peças, Looks, Salvos, Insights…)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,105 +25,90 @@ skinparam note {
 }
 |Pessoa|
 start
-:Abre /lookbook (ou /u/{username});
-|Frontend (u/[username] · lookbook-tabs)|
-:/lookbook redireciona para /u/{seu usuário}?tab=...;
-if (?tab=cupons|coupons (dono)?) then (sim)
+:Abre /lookbook (próprio perfil)\nou /u/{username} (perfil de alguém);
+|Frontend|
+if (Rota /lookbook?) then (sim)
+  :lookbook/page.tsx (RequireAuth)\nrouter.replace(/u/{seu usuário}?tab=…);
+else (não)
+endif
+:u/[username]/page.tsx\nGET /api/profiles/{idOrUsername};
+|API|
+:ProfileController → ProfileService.profile\n(conta DELETED ou dono bloqueou quem vê = 404);
+|Frontend|
+if (layout = INSTITUCIONAL?) then (sim)
+  :Redireciona para /brands/{slug}\n(RF14/RF22);
+  stop
+endif
+if (contentVisible?) then (não)
+  :Cabeçalho + "Perfil privado"\ne convite para seguir (RF17);
+  stop
+endif
+if (?tab=cupons|coupons e é o dono?) then (sim)
   :CouponsRedirect → /coupons\n(a aba de cupons saiu do Lookbook);
-  note right: alterado (RF53 · HypeScore v2)
   stop
 endif
-:GET /api/users/{ownerId}/lookbook;
-|Backend (LookbookController · LookbookService)|
-:overview(viewer, ownerId): carrega peças (sem ARCHIVED)\ne esquemas (sem ARCHIVED);
-if (Visitante é o dono?) then (não)
-  :Filtra por guard.canView (visibilidade da peça/esquema\ne do perfil); só esquemas PUBLISHED;
-  note right: abas de salvos e Look do Dia ficam com contagem 0 para visitante
-else (sim)
-endif
-:Monta as abas: closet · looks · saved_looks · saved_pieces\n· daily · capsule · room (peças e esquemas nunca na mesma aba);
-|Frontend (u/[username] · lookbook-tabs)|
-:Mostra as abas (TabId): closet · looks · groups\n+ dono: saved · dna · daily · capsule · insights;
+:LookbookTabs\nGET /api/users/{ownerId}/lookbook;
+|API|
+:LookbookController.overview → LookbookService.overview:\npeças e looks sem ARCHIVED; visitante vê só looks\nPUBLISHED e itens que Guard.canView libera\n(visibilidade do item × visibilidade do perfil);
 note right
-  alterado (RF53 · HypeScore v2): saved_looks/saved_pieces
-  viram "saved" (SegmentPicker looks | peças);
-  nova aba insights; sem aba de cupons
+  Contagens de Salvos e Look do Dia só para o dono
+  (para visitante = 0). A contagem do Look do Dia chama
+  DailyLookService.today, que pode materializar a cópia
+  do look anterior na virada do dia (ver RF42).
 end note
-if (Closet vazio?) then (sim)
-  :Estado vazio com ação "Adicionar nova peça" → /pieces/new;
+|Frontend|
+if (visible?) then (não)
+  :EmptyState "Perfil privado";
   stop
 endif
+:Mostra as abas: Peças · Looks · Publicações · Favoritos\n· Agrupamentos (+ dono: Salvos · DNA · Look do dia\n· Cápsula · Insights). Peças e looks nunca dividem aba;
 |Pessoa|
-if (Qual aba?) then (Closet Digital)
-  |Frontend (u/[username] · lookbook-tabs)|
-  :GET /api/users/{ownerId}/closet (filtros, busca, ordenação);
-  note right: clicar num item abre o detalhe — ver RF7
-elseif (Salvos — SegmentPicker looks | peças)
-  |Frontend (u/[username] · lookbook-tabs)|
-  :GET /api/me/saved-looks?occasion= · GET /api/me/saved-pieces?category=;
-  |Pessoa|
-  if (Ação no salvo?) then (favoritar)
-    |Backend (LookbookController · LookbookService)|
-    :PUT /api/me/saved-looks/{schemeId}/favorite\n(peça: PUT /api/interactions/PIECE/{id}/saves/favorite);
+:Escolhe uma aba;
+|Frontend|
+if (Peças?) then (sim)
+  :GET /api/users/{ownerId}/closet\n?category&state&sort=recent|hype_desc|growth&hypeLevel=\n+ GET /api/pieces/seals?ids= (selos de marca na frente);
+  note right
+    Ordenar por Hype e filtrar por faixa mínima:
+    o dono usa o Hype pessoal; visitante, só o Hype
+    público (publicEligible). Sem Hype = "—" e no fim
+  end note
+  if (Sem peças?) then (sim)
+    :Estado vazio (dono: "Adicionar peça" → /pieces/new);
+  endif
+elseif (Looks?) then (sim)
+  :GET /api/profiles/{ownerId}?sort=recent|hype_desc|growth\n(ProfileService.publishedLooks, até 60 looks publicados);
+  :Dono vê o atalho "Gerenciar meus looks" → /looks;
+elseif (Publicações ou Favoritos?) then (sim)
+  :GET /api/users/{ownerId}/publications?page&size\n(looks publicados não privados + peças APPROVED\nnão privadas, mais recentes primeiro)\nou GET /api/users/{ownerId}/favorites (looks | peças);
+elseif (Salvos (dono)?) then (sim)
+  :SegmentPicker Looks | Peças\nGET /api/me/saved-looks?occasion&sort\nGET /api/me/saved-pieces?category;
+  if (Ação no item salvo?) then (favoritar)
+    :PUT /api/me/saved-looks/{schemeId}/favorite\n(peça: PUT /api/interactions/PIECE/{id}/saves/favorite)\nlook de terceiro → SocialService.favoriteSaved;
+    note right: favoritar emite o sinal de Hype\nFAVORITE_CREATED (ver RF19)
   else (remover)
-    |Backend (LookbookController · LookbookService)|
-    :DELETE /api/me/saved-looks/{schemeId}\n(peça: POST /api/interactions/PIECE/{id}/saves alterna);
+    :DELETE /api/me/saved-looks/{schemeId}\n(sem salvo = 404) ou POST .../PIECE/{id}/saves (alterna);
   endif
-elseif (Look do Dia)
-  |Backend (LookbookController · LookbookService)|
-  :GET /api/me/daily-look-tab?withAi=;
-  :DailyLookService.today: sem registro de hoje,\nmaterializa cópia do último (materializedFrom);
-  if (Há Look do Dia?) then (sim)
-    :HypeScoreService.panel → grava hype_score_metrics\n(engajamento, tendência, faixa HypeScoreBand);
-    |Pessoa|
-    :Avalia: ADOREI / NAO_USEI / NAO_GOSTEI;
-    |Backend (LookbookController · LookbookService)|
-    :PUT /api/me/daily-looks/{date}/feedback;
-  else (não)
-    :Estado vazio: marcar look salvo, Autopiloto ou Vista-me;
-    |Pessoa|
-    :Escolhe um esquema e marca;
-    |Backend (LookbookController · LookbookService)|
-    :POST /api/me/daily-look → DailyLookService.register (MANUAL);
-    if (Alguma peça indisponível?) then (sim)
-      #FFE3E3:409 PECA_INDISPONIVEL;
-      stop
-    endif
+elseif (Cápsula (dono)?) then (sim)
+  :GET /api/me/capsule?category\n+ InsightStrip CAPSULE (GET /api/insights?context=CAPSULE);
+  if (Sem looks?) then (sim)
+    :Estado vazio "Criar meu primeiro look" → /schemes/new;
   endif
-elseif (Insights (dono))
-  |Frontend (u/[username] · lookbook-tabs)|
-  :HypeWardrobeInsights → GET /api/me/hype/wardrobe\n(HypeController → HypeQueryService.wardrobe:\nhype_scores do dono → Hype médio e variação,\ndestaques e redescobertas);
-  note right: novo (RF53 · HypeScore v2) —\nnunca compara com outras pessoas
-else (Agrupamentos)
-  |Backend (LookbookController · LookbookService)|
-  if (Sugestão por IA ou manual?) then (IA)
-    :POST /api/me/hype-groups/suggestions?type=PIECE|SCHEME;
-    if (Acervo pequeno?) then (sim)
-      #FFE3E3:422 ACERVO_PEQUENO;
-      stop
-    endif
-    :AiEngine.local(ACERVO_GROUPING) — cluster por estilo,\nocasião, cores e marcas → grava acervo_groups;
-    note right: sugestões sempre descartáveis (DELETE /api/me/hype-groups/{id}) — RF24.CA05
-  else (manual)
-    :POST /api/groupings {type, label, coverUrl, atmospherePrompt, período};
-    :POST /api/groupings/{id}/items {schemeIds, pieceIds};
-    note right
-      GroupingType permitido depende do perfil
-      (MARCA, CELEBRIDADE ou PESSOAL);
-      era de celebridade = ATMOSFERA, nunca RETRATO
-      (CelebrityPromptValidator — HU-RF6.CA19)
-    end note
-  endif
+elseif (DNA (dono)?) then (sim)
+  :GET /api/me/dna-schemes (cards do RF13);
+elseif (Insights (dono)?) then (sim)
+  :InsightStrip CLOSET + HypeWardrobeInsights\nGET /api/me/hype/wardrobe (HypeQueryService.wardrobe:\nHype médio, variação, destaques e redescobertas —\nsó itens do dono, nunca compara com outras pessoas);
+else (Look do dia ou Agrupamentos)
+  :Ver RF6_Atividades_LookDoDia\ne RF6_Atividades_Agrupamentos;
 endif
-|Frontend (u/[username] · lookbook-tabs)|
-:Atualiza a aba;
-:Cards de peça e look (PieceCard · SchemeCard) em FashionCard:\nHypeBadge na frente; use-hype.ts junta os ids do tick\n→ GET /api/hype/summaries?type=PIECE|SCHEME&ids=;
-note right
-  novo (RF53 · HypeScore v2) — nas abas com cards
-  (closet, looks, salvos, look do dia, grupos)
-end note
+:Cards (PieceCard · SchemeCard em FashionCard):\nHypeBadge na frente; use-hype.ts junta os ids do mesmo tick\n→ GET /api/hype/summaries?type=PIECE|SCHEME&ids= (até 100);
+|API|
+:HypeQueryService.summaries: só ids visíveis para quem vê\n(lê hype_scores, nunca recalcula). Sem linha = NOT_CALCULATED;
+|Frontend|
 if (Pessoa vira o card (↻)?) then (sim)
-  :Verso HypeCardBack (mesmo cache): score, faixa, dimensões;\n"Ver análise completa" → HypeAnalyticsDrawer:\nGET /api/hype/pieces/{id} (ou /looks/{id}) + /history?days=90;
+  :Verso HypeCardBack (mesmo cache);
+  if ("Ver análise completa"?) then (sim)
+    :HypeAnalyticsDrawer: GET /api/hype/pieces|looks/{id}\n+ /history?days=90 + /positions;
+  endif
 endif
 stop
 @enduml

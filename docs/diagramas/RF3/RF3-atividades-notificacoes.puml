@@ -1,0 +1,60 @@
+@startuml RF3_Atividades_Notificacoes
+title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de atividades — central de notificações e preferências por tipo
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre /notifications (ou vê o badge do topo);
+  |Frontend (notifications · app-shell)|
+  :/notifications → GET /api/notifications\n(até 100 + até 100 de FAI Points, por categoria) e\nbadge do topo: GET /api/notifications/unread-count a cada 60 s;
+  if (Caixa vazia?) then (sim)
+    #EEF6FF:EmptyState;
+    stop
+  else (não)
+  endif
+  |Pessoa|
+  if (Ação?) then (marcar lidas)
+    |Frontend (notifications · app-shell)|
+    :POST /api/notifications/read {ids}\nou POST /api/notifications/read-all;
+    |API (NotificationController · NotificationService)|
+    :Notificação de outra pessoa → 403; senão read = true, readAt;
+  else (preferências)
+    |Frontend (notifications · app-shell)|
+    :GET /api/notifications/preferences (tipo, categoria, optOutAllowed, enabled);\nPUT /api/notifications/preferences {changes, master};
+    |API (NotificationController · NotificationService)|
+    if (Tipo desconhecido ou desligar tipo obrigatório?) then (sim)
+      #FFE3E3:400 TIPO_INVALIDO · 400 TIPO_OBRIGATORIO;
+      stop
+    endif
+    :Grava notificationPrefsJson e notificationPushMaster\n(SECURITY e avisos de sistema não desligam);
+  note right
+    Expurgo de 90 dias: só pelo job manual
+    POST /api/admin/jobs/notifications (sp_purge_notifications);
+    NotificationService.purgeExpired não é agendado.
+  end note
+  endif
+|Frontend (notifications · app-shell)|
+:Recarrega a caixa ou as preferências;
+stop
+@enduml

@@ -4,7 +4,7 @@
  * do dashboard e ações sociais. Cada variante desenha sem quebrar e mostra o que a pessoa precisa ver.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, loggedAs, mockApi, renderApp, screen, waitFor } from "@/test-utils/render";
+import { ME, cleanup, fireEvent, loggedAs, mockApi, renderApp, screen, waitFor } from "@/test-utils/render";
 import { PIECE, PIECE_2, SCHEME, OWNER } from "@/test-utils/fixtures";
 import type { SchemeView } from "@/lib/api/types";
 import {
@@ -167,6 +167,31 @@ describe("ações sociais do card (RF8)", () => {
     await waitFor(() => expect(screen.getAllByRole("button").length).toBeGreaterThan(2));
     for (const b of screen.getAllByRole("button")) { if (!(b as HTMLButtonElement).disabled) fireEvent.click(b); }
     await waitFor(() => expect(calls.length).toBeGreaterThan(2));
+  });
+
+  it("remixar fica na linha: detalhe de peça com 7 ações + salvar, card compacto com 4 + salvar", () => {
+    loggedAs();
+    const row = (c: HTMLElement) => Array.from(c.querySelectorAll(".c-actions .c-act"));
+    const detail = renderApp(<CardActions type="PIECE" id="p1" counters={PIECE.counters} viewer={PIECE.viewer} title="Camiseta" ownerId="u2" reactions />);
+    expect(row(detail.container).map((b) => b.className.match(/is-([\w-]+)/)?.[1]))
+      .toEqual(["like", "comment", "share", "rx-TREND", "rx-ELEGANTE", "rx-CRIATIVO", "remix", "save"]);
+    expect(screen.getByRole("button", { name: /Remixar/ })).toBeTruthy();
+    cleanup();
+    const card = renderApp(<CardActions type="PIECE" id="p1" counters={PIECE.counters} viewer={PIECE.viewer} title="Camiseta" compact />);
+    expect(row(card.container).map((b) => b.className.match(/is-([\w-]+)/)?.[1])).toEqual(["like", "comment", "share", "remix", "save"]);
+  });
+
+  it("a dona também remixa a própria peça e vai ao criador de looks com ela", async () => {
+    const { calls } = loggedAs(undefined, { "POST /api/interactions/PIECE/p1/remixes": { next: "/schemes/new?pieces=p1", hint: "A peça entra como semente do novo look." } });
+    renderApp(<CardActions type="PIECE" id="p1" counters={PIECE.counters} viewer={PIECE.viewer} title="Camiseta" ownerId={ME.user.id} reactions />);
+    // a sessão carrega depois do primeiro render: clica até o usuário existir (antes disso o clique leva ao login)
+    await waitFor(() => { fireEvent.click(screen.getByRole("button", { name: /Remixar/ })); expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/remixes"))).toBe(true); });
+  });
+
+  it("no look, quem publicou não vê remixar", async () => {
+    loggedAs();
+    const { container } = renderApp(<CardActions type="SCHEME" id="s1" counters={SCHEME.counters} viewer={SCHEME.viewer} title="Look" ownerId={ME.user.id} reactions />);
+    await waitFor(() => expect(container.querySelector(".c-act.is-remix")).toBeNull());
   });
 
   it("diálogo de compartilhar e ícones sociais", () => {

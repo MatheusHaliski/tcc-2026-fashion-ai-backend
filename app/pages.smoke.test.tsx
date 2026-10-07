@@ -71,11 +71,11 @@ describe("telas do app abrem sem quebrar", () => {
       const params = resolved(nav.params); const searchParams = resolved({});
       const { container } = renderApp(<Suspense fallback={<p>carregando</p>}><Page params={params} searchParams={searchParams} /></Suspense>);
       await waitFor(() => expect(container.textContent).not.toBe("carregando"), { timeout: 3000 });
-      await new Promise((r) => setTimeout(r, 50));
+      // tela que quebra é desmontada pelo React e o contêiner fica vazio: exige conteúdo na tela. Espera o conteúdo (até
+      // 3 s) em vez de uma pausa fixa: com a suíte inteira em paralelo, telas com import dinâmico demoram mais a pintar
+      await waitFor(() => expect(container.textContent?.trim().length ?? 0).toBeGreaterThan(0), { timeout: 3000 });
       spy.mockRestore();
       expect(errors).toEqual([]);
-      // tela que quebra é desmontada pelo React e o contêiner fica vazio: exige conteúdo na tela
-      expect(container.textContent?.trim().length ?? 0).toBeGreaterThan(0);
     });
   }
 

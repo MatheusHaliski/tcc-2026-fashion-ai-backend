@@ -179,7 +179,7 @@ public class MultiPieceService {
             {"pieces": [{"name": nome curto da peça em português (ex.: "Camiseta branca lisa"),
                          "category": um de [upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece],
                          "subcategory": código da lista de subtipos do tipo,
-                         "color": código da paleta (a cor principal da peça), "material": um de [COTTON, POLYESTER, WOOL, SILK, LEATHER, SYNTHETIC, BLEND],
+                         "color": código da paleta (a cor principal da peça), "material": código da lista de materiais,
                          "sex": um de [MASCULINO, FEMININO, UNISSEX],
                          "style": até 2 códigos da lista de estilos, "occasion": até 2 códigos da lista de ocasiões,
                          "box": {"x": borda esquerda, "y": borda de cima, "width": largura, "height": altura} em PORCENTAGEM
@@ -193,12 +193,13 @@ public class MultiPieceService {
             - No máximo 12 peças, das maiores para as menores.
             Nunca descreva pessoas. Sem nenhuma peça na foto, devolva {"pieces": []}.""";
 
-    /** Vocabulário permitido (a taxonomia v3.7): o que vier fora dele é descartado no parser. */
+    /** Vocabulário permitido (docs/taxonomia): o que vier fora dele é descartado no parser. */
     static String detectorPrompt() {
         return "Subtipos por tipo: " + Taxonomy.SUBCATEGORIES + ".\n"
                 + "Ocasiões: " + String.join(", ", Taxonomy.OCCASIONS) + ".\n"
                 + "Estilos: " + String.join(", ", Taxonomy.STYLES) + ".\n"
                 + "Cores (códigos): " + String.join(", ", Taxonomy.COLORS.keySet()) + ".\n"
+                + "Materiais: " + String.join(", ", Taxonomy.MATERIALS) + ".\n"
                 + "Identifique todas as peças da foto e responda só com o JSON.";
     }
 
@@ -223,7 +224,7 @@ public class MultiPieceService {
             if (box == null) {
                 continue;
             }
-            String sub = WardrobeService.str(p.get("subcategory"));
+            String sub = Taxonomy.activeSubcategory(WardrobeService.str(p.get("subcategory")));   // legado → código novo
             String category = WardrobeService.str(p.get("category"));
             if (sub != null && Taxonomy.categoryOf(sub) != null) {
                 category = Taxonomy.categoryOf(sub);

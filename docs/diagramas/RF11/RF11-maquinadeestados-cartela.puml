@@ -1,0 +1,50 @@
+@startuml RF11_MaquinaDeEstados_Cartela
+!pragma layout smetana
+title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de máquina de estados — layout Cartela sazonal e o modal de cartela e animação
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+state "Outro layout" as Fora
+Fora : look: outra anatomia · DNA: outra narrativa
+Fora : peça: outra família
+Fora : seasonalPresetId nulo · animação NONE
+state "Modal aberto para entrar" as Entrando
+Entrando : SeasonalDraft com o valor atual
+Entrando : enter() e patch guardados, layout ainda igual
+state "Cartela sazonal ativa" as Ativa {
+  state "Pela estação dos dados" as PelaEstacao
+  PelaEstacao : sem cartela escolhida ou automática ligada
+  state "Cartela escolhida" as Escolhida
+  Escolhida : Frost · Solstice · Ember · Bloom
+  state "Sem estação" as SemEstacao
+  SemEstacao : o card do look cai para Lista vertical
+  [*] --> PelaEstacao
+  PelaEstacao --> Escolhida : Aplicar com cartela
+  Escolhida --> PelaEstacao : Aplicar desmarcando a cartela\nou com a automática ligada
+  PelaEstacao --> SemEstacao : look sem season e sem cartela
+  SemEstacao --> Escolhida : Aplicar com cartela
+}
+state "Modal aberto para editar" as Editando
+Editando : rascunho {seasonalPresetId, seasonalAuto, animation}
+
+[*] --> Fora
+Fora --> Entrando : clica em Cartela sazonal (look/peça)\nou na narrativa B11 (DNA)
+Entrando --> Fora : Cancelar · X · Esc · fundo\n(rascunho descartado)
+Entrando --> Ativa : Aplicar cartela → enter() + patch + rascunho\n(no look, aura, material, IA e upload saem)
+Ativa --> Editando : clica de novo no layout ou em\n"Escolher cartela e animação"
+Editando --> Ativa : Aplicar (novos valores) ou Cancelar (mantém)
+Ativa --> Fora : troca de layout/narrativa/família →\nCLEAR_CARTELA (DNA: useLeaveCartela)
+Ativa --> Ativa : salvar o look/DNA/peça\n(grava os campos no backend)
+
+note right of Ativa
+  Animação escolhida no modal: NONE, SNOW, PETALS,
+  LEAVES ou SHIMMER (MotionFall ou brilho).
+  Com "reduzir movimento" o CSS para a animação.
+  Backend: seasonalAuto sem estação → 400 ESTACAO_OBRIGATORIA;
+  cartela desconhecida → 400 PRESET_INVALIDO (applyToScheme).
+end note
+@enduml

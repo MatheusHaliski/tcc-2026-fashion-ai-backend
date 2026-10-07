@@ -175,7 +175,7 @@ describe("Explorador › Painel global: lista de países com o Hype v2 do globo"
   beforeEach(() => { nav.pathname = "/explorer"; nav.search = new URLSearchParams("tab=map"); });
 
   it("volume do painel + Hype v2 (médio ou máximo) com a faixa em texto; sem v2 = “Hype —”, nunca o v1 nem 0", async () => {
-    mockApi({ ...COMMON, "GET /api/explorer/global": (url: URL) => ({ ...V1, selected: url.searchParams.get("country") ? { country: url.searchParams.get("country"), hypeBySeason: [{ season: "SUMMER", avg_hype: 77, total: 3 }, { season: "WINTER", avg_hype: 90, total: 5 }], topColors: [] } : undefined }), "GET /api/hype/globe": GLOBE });
+    mockApi({ ...COMMON, "GET /api/explorer/global": (url: URL) => ({ ...V1, selected: url.searchParams.get("country") ? { country: url.searchParams.get("country"), looksBySeason: [{ season: "SUMMER", total: 3 }, { season: "WINTER", total: 5 }], topColors: [] } : undefined }), "GET /api/hype/globe": GLOBE });
     const { container } = renderApp(<ExplorerPage />);
     const list = await screen.findByRole("list", { name: /Países: volume do painel e Hype v2/ });
     const row = (iso: string) => list.querySelector(`[data-country="${iso}"]`) as HTMLElement;

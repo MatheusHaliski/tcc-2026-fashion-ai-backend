@@ -1,6 +1,6 @@
 package br.com.fashionai.application.catalog.image;
 
-import br.com.fashionai.application.catalog.CatalogNormalizer;
+import br.com.fashionai.application.taxonomy.TaxonomyRegistry;
 import br.com.fashionai.application.catalog.image.SemanticRegionRegistry.FramingRule.Align;
 import br.com.fashionai.application.catalog.image.SemanticRegionRegistry.FramingRule.Fit;
 import org.junit.jupiter.api.Test;
@@ -69,7 +69,7 @@ class SemanticRegionRegistryTest {
     void subcategoriasDoRegistroExistemNaTaxonomiaDoMesmoPieceType() throws Exception {
         tools.jackson.databind.JsonNode root = new tools.jackson.databind.ObjectMapper()
                 .readTree(getClass().getResourceAsStream(SemanticRegionRegistry.RESOURCE));
-        CatalogNormalizer n = CatalogNormalizer.get();
+        TaxonomyRegistry n = TaxonomyRegistry.get();
         int checked = 0;
         for (PieceType t : PieceType.values()) {
             for (String sub : root.path("pieceTypes").path(t.name()).path("subcategories").propertyNames()) {
@@ -78,6 +78,14 @@ class SemanticRegionRegistryTest {
             }
         }
         assertThat(checked).isGreaterThan(20);
+    }
+
+    @Test
+    void subcategoriaAntigaUsaOEnquadramentoDaQueASubstituiu() {
+        assertThat(registry.profile(PieceType.LOWER_PIECE, "denim_shorts").focus())
+                .isEqualTo(registry.profile(PieceType.LOWER_PIECE, "shorts").focus());
+        assertThat(registry.profile(PieceType.LOWER_PIECE, "denim_shorts").focus())
+                .isNotEqualTo(registry.profile(PieceType.LOWER_PIECE, null).focus());
     }
 
     @Test

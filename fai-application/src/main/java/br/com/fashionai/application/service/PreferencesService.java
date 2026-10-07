@@ -7,6 +7,7 @@ import br.com.fashionai.application.audit.AuditActions;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.hype.HypeCache;
 import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.imaging.MannequinGeometry;
 import br.com.fashionai.application.ports.MediaStoragePort;
@@ -27,8 +28,11 @@ import br.com.fashionai.domain.model.enums.UiLanguage;
 import br.com.fashionai.domain.model.enums.UnitSystem;
 import br.com.fashionai.domain.repository.UserPreferencesRepository;
 import br.com.fashionai.domain.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.awt.image.BufferedImage;
 import java.time.Instant;
@@ -43,6 +47,7 @@ import java.util.Set;
  * idioma, densidade, fonte, alto contraste, redução de animação, fundo do chrome (lista /public/bg_chrome),
  * manequim do provador (RF18.CA01/CA06) e vitrine do perfil (nome de exibição, bio, avatar, capa, @).
  * CA08: tema/fundo mudam só o chrome — nunca a cor dos esquemas e das peças do usuário.
+ * RF53 · P3-12: também guarda a opção de não aparecer em "Criadores em alta" ({@code hypeCreatorOptOut}).
  */
 @Service
 public class PreferencesService {
@@ -63,6 +68,18 @@ public class PreferencesService {
         this.media = media;
         this.guard = guard;
         this.audit = audit;
+    }
+
+    /**
+     * RF53 · P3-12 — cache de leitura do Hype: mudar a opção de "Criadores em alta" incrementa a geração, para o ranking
+     * de criadores (e o lote de chips) em cache nunca mostrar o valor antigo. Por setter (o construtor não muda); sem
+     * ele, nada a invalidar.
+     */
+    private HypeCache hypeCache;
+
+    @Autowired(required = false)
+    public void setHypeCache(HypeCache hypeCache) {
+        this.hypeCache = hypeCache;
     }
 
     private UserPreferences prefs(CurrentUser user) {
@@ -96,6 +113,7 @@ public class PreferencesService {
         out.put("mannequinBuild", p.getMannequinBuild());
         out.put("defaultCardSkin", p.getDefaultCardSkin());
         out.put("lookDoDiaPanelVersion", u.getLookDoDiaPanelVersion());
+        out.put("hypeCreatorOptOut", p.isHypeCreatorOptOut());
         out.put("clientUpdatedAt", p.getClientUpdatedAt());
         out.put("profile", Map.of("displayName", u.getDisplayName(), "username", u.getUsername(),
                 "bio", u.getBio() == null ? "" : u.getBio(), "avatarUrl", String.valueOf(u.getAvatarUrl()),
@@ -121,7 +139,8 @@ public class PreferencesService {
                          Boolean reduceMotion, String chromeBackgroundId, SizeSystem sizeSystem, UnitSystem unitSystem,
                          MannequinSex mannequinSex, String mannequinSkinTone, BodyBuild mannequinBuild,
                          String defaultCardSkin, HypeScorePanelVersion lookDoDiaPanelVersion, Instant clientUpdatedAt,
-                         String contentContainerColor, Boolean soundEnabled, Boolean hapticsEnabled, String coreAesthetic) {
+                         String contentContainerColor, Boolean soundEnabled, Boolean hapticsEnabled, String coreAesthetic,
+                         Boolean hypeCreatorOptOut) {
     }
 
     /** DET-C06 — microestéticas "-core" do quiz "Qual é o seu core?" (vocabulário do arquétipo do DNA). */
@@ -211,9 +230,32 @@ public class PreferencesService {
         if (u.lookDoDiaPanelVersion() != null) {
             p.getUser().setLookDoDiaPanelVersion(u.lookDoDiaPanelVersion());
         }
+        if (u.hypeCreatorOptOut() != null && u.hypeCreatorOptOut() != p.isHypeCreatorOptOut()) {
+            // P3-12 — sair (ou voltar) de "Criadores em alta": só o agregado de criador muda; as peças e looks continuam
+            // com o próprio Hype. O cache do ranking troca de geração depois do commit (nunca serve o valor antigo).
+            p.setHypeCreatorOptOut(u.hypeCreatorOptOut());
+            invalidateHypeCacheAfterCommit();
+        }
         p.setClientUpdatedAt(u.clientUpdatedAt() == null ? Instant.now() : u.clientUpdatedAt());
         audit.log(user, AuditActions.ALTERACAO_PREFERENCIAS, "preferences:" + user.id(), Map.of());
         return get(user);
+    }
+
+    /** Nova geração do HypeCache quando a transação confirmar (sem transação ativa, na hora). */
+    private void invalidateHypeCacheAfterCommit() {
+        if (hypeCache == null) {
+            return;
+        }
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    hypeCache.bump();
+                }
+            });
+        } else {
+            hypeCache.bump();
+        }
     }
 
     /**

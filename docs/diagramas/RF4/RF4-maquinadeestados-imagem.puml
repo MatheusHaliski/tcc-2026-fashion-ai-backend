@@ -1,0 +1,78 @@
+@startuml RF4_MaquinaDeEstados_Imagem
+!pragma layout smetana
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de máquina de estados — imagem da peça (WardrobeItem: imageOrigin, defaultImage, photoProcessingStatus e versões do estúdio)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+}
+
+state "Ilustração da subcategoria\n(defaultImage = true · COMPLETED)\nimageOrigin DEFAULT só no caminho do catálogo" as Ilustracao
+state "Foto oficial do catálogo\n(imageOrigin CATALOG · defaultImage = false)" as Oficial
+state "Foto própria no cadastro\n<<planejado>> (RF15 §8.1)" as Planejada #F2F2F2
+state "Foto da pessoa\n(defaultImage = false)" as Foto {
+  state "PROCESSING\n(salva com a original)" as Processing
+  state "COMPLETED — foto de estúdio (flatLayMetadata.studio)" as Completed {
+    state "Sem estúdio" as SemEst
+    state "No ar, aguardando aprovação\n(approved = false)" as Aguard
+    state "Aprovada (versão n)" as Aprov
+    state "Aprovada no ar +\nversão pendente (n+1)" as Pend
+    [*] --> SemEst
+    SemEst --> Aguard : POST /api/pieces/{id}/studio\nou POST /api/me/pieces/studio
+    Aguard --> Aprov : POST .../studio/approve
+    Aprov --> Pend : novo estúdio da mesma origem\n(/studio, remover fundo)
+    Pend --> Aprov : POST .../studio/approve (a anterior\nvai para "previous") · DELETE .../studio/pending
+    Aprov --> Aguard : PUT /api/pieces/{id}/image\n(nova foto com transparência)
+    Aprov --> SemEst : PUT .../image (foto opaca)
+    Aguard --> SemEst : PUT .../image (foto opaca)
+  }
+  [*] --> Completed : fundo removido no rascunho\nou foto nova (replaceImage)
+  [*] --> Processing : rascunho sem recorte\n(lote / várias peças, RF12)
+  Processing --> Completed : POST /api/pieces/{id}/background-removal\n(reprocessPending existe, mas sem agendador)
+}
+state "Arquivada\n(DELETE /api/pieces/{id}:\nfotos retiradas de Minhas Fotos)" as Arquivada
+
+[*] --> Ilustracao : POST /api/pieces (useDefaultImage)\nou from-catalog sem foto oficial
+[*] --> Oficial : POST /api/pieces/from-catalog\n(produto com catalog_image)
+[*] --> Foto : POST /api/pieces com draftId\n(análise por foto: lote / várias peças)
+[*] -[dashed]-> Planejada : <<planejado>> criador com foto opcional
+Planejada -[dashed]-> Foto : <<planejado>> editor guiado → "Usar esta foto"
+
+Ilustracao --> Foto : PUT /api/pieces/{id}/image\n(EditImageDialog ou PhotoEditor)
+Oficial --> Foto : PUT /api/pieces/{id}/image
+Foto --> Foto : PUT /api/pieces/{id}/image\n(nova Photo EDITOR; a original fica em Minhas Fotos)
+Foto -up-> Ilustracao : foto da peça excluída em Minhas Fotos\n(DELETE /api/photos/{id}?confirmed=true, RF12.CA03)
+Ilustracao --> Arquivada
+Oficial --> Arquivada
+Foto --> Arquivada
+Arquivada --> [*]
+
+note bottom of Ilustracao
+  A ilustração também ganha foto de estúdio já
+  aprovada: defaultStudio no cadastro e
+  backfillDefaultStudio (@Scheduled, 10 min).
+end note
+note right of Oficial
+  A foto oficial nunca é editada pela pessoa (RF47).
+  Ao trocar por uma foto própria, imageOrigin continua
+  CATALOG: replaceImage não atualiza o campo.
+end note
+note bottom of Foto
+  Regra: a versão aprovada nunca é trocada em silêncio.
+  Sem aprovada no ar, o resultado novo entra no ar
+  com approved = false até a pessoa aprovar.
+  409 NADA_A_APROVAR / NADA_A_DESCARTAR.
+end note
+note left of Foto
+  PIECE_REPROCESS (RF4.CA06) é enfileirado,
+  mas nenhum job chama reprocessPending():
+  PROCESSING só sai pela remoção de fundo
+  sob demanda ou por uma foto nova.
+end note
+@enduml

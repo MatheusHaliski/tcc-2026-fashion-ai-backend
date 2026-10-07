@@ -1,5 +1,5 @@
 @startuml RF28_Espelho_Sequencia
-title RF28 — Vista-me: estado do espelho, avatar 3D e "Vista-me" por prompt\nDiagrama de sequência
+title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de sequência — estado do espelho com os seis números, Avatar 3D e reflexo vestido
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam sequence {
@@ -10,35 +10,61 @@ skinparam sequence {
   ActorBackgroundColor #F8F4FF
   GroupBackgroundColor #FFF5F8
 }
+autonumber
 actor "Pessoa usuária" as P
 participant "mirror/page.tsx" as Pg
-participant "MirrorStage" as St
-participant "AvatarViewer\n(Three.js)" as V
-participant "HumanOutfit" as O
+participant "MirrorStage\n(components/mirror)" as St
+participant "AvatarViewer → Mannequin\n→ HumanAvatar (Three.js)" as V
+participant "HumanOutfit\n(withDefaultOutfit)" as O
+participant "LookScores\n(components/hype)" as LSc
 participant "MirrorController" as C
 participant "MirrorService" as S
-participant "Avatar3dController" as AC
-database "MySQL\nmirror_states ·\nwardrobe_items ·\nuser_avatar3d" as DB
+participant "LookScorer" as LS
+participant "HypeQueryService" as HQ
+participant "Avatar3dController\n→ Avatar3dService" as AC
+database "MySQL\nmirror_states · wardrobe_items ·\nstyle_dna · schemes · scheme_items ·\nhype_scores · user_avatars_3d" as DB
 
 P -> Pg : abre /mirror
 Pg -> C : GET /api/me/mirror
 C -> S : state(user)
-S -> DB : MirrorState + peças
-S --> Pg : {slots, complete, missing, light}
+S -> DB : MirrorState + peças do dono
+alt espelho com peças
+  S -> LS : scoreLooks(userId, [look])
+  LS -> DB : DNA (StyleDna) e pares já combinados nos looks salvos
+  LS -> HQ : currentOf(PIECE, ids)
+  HQ -> DB : SELECT hype_scores (algorithmVersion atual)
+  LS --> S : Scores(compatibility, hype, novelty, reuse, usage, sustainability)
+else espelho vazio
+  S -> S : scores = null
+end
+S --> Pg : 200 {slots, complete, missing, light, …, scores}
 Pg -> St : <MirrorStage slots kelvin>
 St -> AC : GET /api/me/avatar3d
-AC --> St : {exists, model, adjust, textureUrl}
-St -> V : avatar, sexo, corpo, pieces=mirrorPieces(slots), framing=full
-V -> O : veste as peças (padrão FAI no que faltar)
-O --> V : malhas presas ao esqueleto
-V --> P : reflexo em pose natural
-P -> Pg : "Vista-me: jantar de sexta"
-Pg -> C : POST /api/me/mirror/vista-me {prompt, keepMirror}
+AC -> DB : SELECT user_avatars_3d
+AC --> St : {exists, model, adjust, textureUrl} ou {exists: false}
+alt exists = true
+  St -> V : avatar (rosto/cabelo do RF40), corpo validado (validateBody),\npieces = mirrorPieces(slots), framing = full, controls = false
+else sem avatar
+  St -> V : manequim de referência (sexo do perfil), head = PADRAO
+  St --> P : "Criar meu avatar" (/avatar)
+end
+V -> O : veste as peças; o que falta vem de DEFAULT_PIECES\n(tronco, pernas e pés)
+O --> V : malhas presas ao esqueleto; corpo só aparece vestido
+V --> P : reflexo em pose natural (applyIdle; parado com reduzir movimento)
+opt scores ≠ null e há peças
+  Pg -> LSc : <LookScores scores>
+  LSc --> P : seis números lado a lado ("—" = sem base)
+end
+
+== Vista-me com o espelho montado ==
+P -> Pg : "Vista-me: jantar de sexta" + manter o que já está
+Pg -> C : POST /api/me/mirror/vista-me {prompt, keepMirror: true}
 C -> S : vistaMe(user, prompt, anchors, focus, keep)
-S -> S : interpreta (ocasião, humor, âncoras, restrições, estação)
-S -> DB : escolhe peças elegíveis por slot e salva o estado
-S --> Pg : novo estado
+S -> S : elegíveis → interpretar → compor (IA validada ou local)
+S -> DB : grava slots (origin vista_me) e combinações mostradas
+S -> LS : scoreLooks (look novo)
+S --> Pg : novo estado + sequence + scores
 Pg -> St : novos slots
 St -> V : pieces atualizadas
-V --> P : reflexo com o look novo
+V --> P : reflexo com o look novo e números novos
 @enduml

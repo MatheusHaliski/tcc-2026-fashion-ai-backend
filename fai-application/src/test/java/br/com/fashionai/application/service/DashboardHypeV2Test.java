@@ -66,7 +66,7 @@ class DashboardHypeV2Test {
         assertThat(h.get("level")).isEqualTo("HOT");                         // faixa sempre com o número (60–74 = Em alta)
         assertThat(h.get("deltaPoints")).isEqualTo(1.0);                     // média de 1, 2 e 0 (o look sem base fica fora)
         assertThat(h.get("direction")).isEqualTo("STABLE");                  // |Δ| < 2 pts
-        assertThat(h).containsEntry("deltaWindowDays", 7).containsEntry("algorithmVersion", "HYPE_V2");
+        assertThat(h).containsEntry("deltaWindowDays", 7).containsEntry("algorithmVersion", HypeScoreConfig.DEFAULT_VERSION);
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> top = (List<Map<String, Object>>) h.get("top");
         assertThat(top).extracting(m -> m.get("schemeId")).containsExactly("a", "c", "b");
@@ -119,7 +119,7 @@ class DashboardHypeV2Test {
         assertThat(coverage.get(0)).containsEntry("available", 6L).containsEntry("insufficient", 10L).containsEntry("notCalculated", 4L)
                 .containsEntry("publicEligible", 9L).containsEntry("total", 20L);
         assertThat(coverage.get(1)).containsEntry("total", 0L).containsEntry("notCalculated", 0L);   // sem linha: contagem 0, não erro
-        assertThat(b).containsEntry("algorithmVersion", "HYPE_V2");
+        assertThat(b).containsEntry("algorithmVersion", HypeScoreConfig.DEFAULT_VERSION);
         @SuppressWarnings("unchecked")
         Map<String, Object> job = (Map<String, Object>) b.get("job");
         assertThat(job).containsEntry("lastCalculatedAt", "2026-10-05T09:20:00Z").containsEntry("lastSnapshotDate", "2026-10-05")
@@ -146,22 +146,22 @@ class DashboardHypeV2Test {
         UUID issuerId = UUID.randomUUID();
         CurrentUser issuer = new CurrentUser(issuerId, "marca", "USER", ProfileType.MARCA, true, AccountStatus.ACTIVE, null, null);
         when(seals.issuerMetrics(issuer)).thenReturn(Map.of("approved", 3L));
-        when(analytics.bondedLooksHypeV2(issuerId, "HYPE_V2")).thenReturn(List.of(look("a", "A", "AVAILABLE", 77.0, "TRENDING", 3.0, true)));
+        when(analytics.bondedLooksHypeV2(issuerId, HypeScoreConfig.DEFAULT_VERSION)).thenReturn(List.of(look("a", "A", "AVAILABLE", 77.0, "TRENDING", 3.0, true)));
         Map<String, Object> out = svc.issuer(issuer, null);
         assertThat(out).containsKeys("metrics", "bondSeries", "hype");
         @SuppressWarnings("unchecked")
         Map<String, Object> hype = (Map<String, Object>) out.get("hype");
         assertThat(hype).containsEntry("avgScore", 77.0).containsEntry("level", "TRENDING");
 
-        when(analytics.hypeLevelsV2(any(), eq("HYPE_V2"))).thenReturn(List.of(row("entity_type", "SCHEME", "level", "VIRAL", "total", 1L)));
+        when(analytics.hypeLevelsV2(any(), eq(HypeScoreConfig.DEFAULT_VERSION))).thenReturn(List.of(row("entity_type", "SCHEME", "level", "VIRAL", "total", 1L)));
         CurrentUser admin = new CurrentUser(UUID.randomUUID(), "admin", "ADMIN", ProfileType.PESSOAL, true, AccountStatus.ACTIVE, null, null);
         Map<String, Object> dash = svc.admin(admin, null);
-        assertThat(dash).containsKeys("hypeBands", "hypeV2");                 // v1 continua (deprecado) ao lado do v2
+        assertThat(dash).containsKey("hypeV2").doesNotContainKey("hypeBands");   // o v1 saiu na limpeza do v1 (P3-16)
         @SuppressWarnings("unchecked")
         Map<String, Object> v2 = (Map<String, Object>) dash.get("hypeV2");
-        assertThat(v2).containsEntry("algorithmVersion", "HYPE_V2");
-        verify(analytics).hypeCoverageV2(any(), eq("HYPE_V2"));
-        verify(analytics).hypeJobV2("HYPE_V2");
+        assertThat(v2).containsEntry("algorithmVersion", HypeScoreConfig.DEFAULT_VERSION);
+        verify(analytics).hypeCoverageV2(any(), eq(HypeScoreConfig.DEFAULT_VERSION));
+        verify(analytics).hypeJobV2(HypeScoreConfig.DEFAULT_VERSION);
         // painel do emissor nunca consulta agregados de outros emissores
         verify(analytics, never()).bondedLooksHypeV2(eq(admin.id()), anyString());
     }

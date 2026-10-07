@@ -114,7 +114,7 @@ export default function HumanLab() {
           </Canvas>
         </div>
         {still && <div id="human-still" style={{ width: 360, height: 720, background: "#EEEAE2" }}>
-          <AvatarStill avatar={stillAvatar} sex={bodySex} body={null} pieces={OUTFITS[outfit] ?? []} background="#EEEAE2" className="mirror-still" alt="Prévia 2D" onStill={(u) => setStillBytes(u.length)} />
+          <AvatarStill avatar={stillAvatar} sex={bodySex} body={null} pieces={OUTFITS[outfit] ?? []} background="#EEEAE2" className="mirror-still" alt="Prévia 2D" onStill={(u) => setStillBytes(u?.length ?? 0)} />
         </div>}
         <pre style={{ fontSize: 11, maxWidth: 420, whiteSpace: "pre-wrap" }}>{JSON.stringify({ hair: model?.hair, profile: built?.hairProfile, skin: model?.skin }, null, 1)}</pre>
       </div>

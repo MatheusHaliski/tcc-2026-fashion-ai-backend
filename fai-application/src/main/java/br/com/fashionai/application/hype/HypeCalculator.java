@@ -207,7 +207,7 @@ public class HypeCalculator {
         }
 
         dims.replaceAll((k, v) -> round(v, 1));
-        double events = in.totalEvents() + in.lifetimeInteractions();
+        double events = in.totalEvents();
         signals.put("events", round(events, 1));
         boolean sufficient = events >= config.minSignalEvents();
         Double score = sufficient ? round(weighted(dims, config.weights(in.type())), 1) : null;

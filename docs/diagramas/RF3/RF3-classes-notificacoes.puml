@@ -1,0 +1,119 @@
+@startuml RF3_Classes_Notificacoes
+title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de classes — central de notificações e preferências por tipo
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+class Notification <<table notifications>> {
+  +recipient: User
+  +actor: User
+  +type: NotificationType
+  +category: NotificationCategory
+  +resourceType: String
+  +resourceId: UUID
+  +title: String
+  +body: String
+  +payloadJson: String
+  +read: boolean
+  +readAt: Instant
+  +delivered: boolean = true
+}
+class UserPreferences <<table user_preferences>> {
+  +user: User
+  +notificationPushMaster: boolean = true
+  +notificationPrefsJson: String
+  .. tema, idioma etc.: RF23 ..
+}
+class User <<table users>>
+}
+package "fai-domain · enums" {
+enum NotificationCategory {
+  SECURITY
+  SOCIAL
+  ACHIEVEMENT
+  SYSTEM
+  POINTS
+}
+enum "NotificationType (30 valores)" as NotificationType {
+  PASSWORD_RESET · TWO_FACTOR_CODE · NEW_LOGIN_DEVICE
+  EMAIL_CONFIRMATION · DATA_EXPORT_READY «SECURITY, obrigatórios»
+  WELCOME · ACCOUNT_APPROVAL · ISSUER_REVIEW_REQUEST
+  CONTENT_REVIEW «SYSTEM, obrigatórios»
+  FOLLOW_REQUEST · NEW_COMMENT · NEW_REACTION … «SOCIAL»
+  SEAL_GRANTED · HYPE_MILESTONE · COUPON_AVAILABLE … «ACHIEVEMENT»
+  FAI_POINTS «POINTS»
+  --
+  +category(): NotificationCategory
+  +optOutAllowed(): boolean
+}
+}
+package "fai-application" {
+class NotificationService {
+  +{static} RETENTION = 90 dias
+  +notify(recipientId, actorId, type, resourceType, resourceId, title, body, payload): Notification
+  +enabled(userId, type): boolean
+  +inbox(user): Map
+  +unread(user): long
+  +markRead(user, ids)
+  +markAllRead(user): int
+  +preferences(user): List<Map>
+  +updatePreferences(user, changes, master): List<Map>
+  +purgeExpired(): int «sem chamada no código»
+}
+interface NotificationProjectionPort <<port>> {
+  +appendNotification(recipientUserId, notificationId)
+  +purgeUser(userId)
+}
+interface AnalyticsQueryPort <<port>> {
+  +purgeNotifications(days): int
+}
+class AdminService {
+  +runJob(admin, "notifications"): Map
+}
+}
+package "fai-web" {
+class NotificationController {
+  GET /api/notifications
+  GET /api/notifications/unread-count
+  POST /api/notifications/read
+  POST /api/notifications/read-all
+  GET · PUT /api/notifications/preferences
+}
+}
+package "fai-infrastructure" {
+class CassandraProjectionAdapter
+class NoopProjections
+class MysqlAnalyticsAdapter {
+  +purgeNotifications(days) «CALL sp_purge_notifications»
+}
+}
+
+Notification "*" --> "1" User : recipient
+Notification "*" --> "0..1" User : actor
+UserPreferences "1" --> "1" User
+Notification --> NotificationType
+Notification --> NotificationCategory
+NotificationType --> NotificationCategory
+NotificationController --> NotificationService
+NotificationService ..> Notification : grava · lê
+NotificationService ..> UserPreferences : prefs por tipo + master
+NotificationService --> NotificationProjectionPort : entregue
+CassandraProjectionAdapter ..|> NotificationProjectionPort
+NoopProjections ..> NotificationProjectionPort : desligado
+AdminService --> AnalyticsQueryPort : POST /api/admin/jobs/notifications
+MysqlAnalyticsAdapter ..|> AnalyticsQueryPort
+note bottom of NotificationService
+  delivered = enabled(tipo): tipos obrigatórios sempre;
+  senão notificationPushMaster e o valor do tipo no JSON.
+  Social do próprio ator não notifica. A caixa traz até 100
+  itens fora de POINTS + até 100 de POINTS.
+end note
+@enduml

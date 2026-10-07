@@ -1,6 +1,6 @@
 @startuml Taxonomia_Entidades
 !pragma layout smetana
-title Taxonomia de entidades do FashionAI — 99 entidades em 12 áreas (relações JPA)
+title Taxonomia de entidades do FashionAI — 103 entidades em 12 áreas (relações JPA)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 hide empty members
@@ -65,11 +65,9 @@ package "Esquemas (looks), DNA e planejamento" {
   class StyleDna <<style_dna>>
   class StyleDnaVersion <<style_dna_versions>>
   class DailyLook <<daily_looks>>
-  class HypeScoreMetric <<hype_score_metrics>>
   class WeekPlan <<week_plans>>
   class WeekPlanDay <<week_plan_days>>
   class AcervoGroup <<acervo_groups>>
-  class HypeGroup <<hype_groups>>
   class MirrorState <<mirror_states>>
 }
 package "Selos, promoções e cupons" {
@@ -131,7 +129,6 @@ package "IA, visão computacional e pipelines" {
   class PipelineJob <<pipeline_jobs>>
   class ProcessingJobLog <<processing_jobs_log>>
   class RenderJobLog <<render_jobs_log>>
-  class MetricSnapshot <<metric_snapshots>>
   class AssetPreset <<asset_presets>>
 }
 package "Moderação, auditoria e operação" {
@@ -140,7 +137,7 @@ package "Moderação, auditoria e operação" {
   class BackupRecord <<backup_records>>
 }
 note as N
-  Relações com **User** (dono/autor) omitidas: 45.
+  Relações com **User** (dono/autor) omitidas: 44.
   Setas: ManyToOne/OneToOne (→), coleções (o–).
 end note
 Brand --> BrandProfile
@@ -153,8 +150,6 @@ FlairMatchEntry --> Scheme
 FlairRedemption --> FlairCombination
 FlairRedemption --> Scheme
 FlairTeamMember --> FlairTeam
-HypeScoreMetric --> DailyLook
-HypeScoreMetric --> Scheme
 Promotion --> Seal
 Promotion --> SealBond
 PromotionRedemption --> Promotion

@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -133,7 +134,8 @@ public class CatalogImagePipelineService {
         boolean persist = product != null && allowsPersistence(product, img);
         Optional<CatalogImage> cached = persist ? Optional.empty()
                 : images.findFirstBySourceSha256AndPipelineVersionAndProcessingStatusIn(sha, CatalogImagePipeline.VERSION, DONE)
-                .filter(c -> !c.getId().equals(img.getId()));
+                .filter(c -> !c.getId().equals(img.getId()))
+                .filter(c -> sameContext(c, img, product));
         if (cached.isPresent()) {
             copyAnalysis(cached.get(), img);
         } else {
@@ -149,6 +151,23 @@ public class CatalogImagePipelineService {
         log.info("event=catalog_image_processed imageId={} productId={} status={} quality={} reasons={} persisted={} cached={} ms={} version={}",
                 img.getId(), img.getProductId(), img.getProcessingStatus(), img.getQualityScore(), img.getGateReasons(), persist,
                 cached.isPresent(), (System.nanoTime() - t0) / 1_000_000, CatalogImagePipeline.VERSION);
+    }
+
+    /**
+     * O pipeline usa categoria, subcategoria e tipo de vista para decidir peça, foco, recorte e detailView: os mesmos
+     * bytes em outro contexto não podem herdar a análise — sem contexto igual, roda o pipeline de novo.
+     */
+    boolean sameContext(CatalogImage cached, CatalogImage img, CatalogProduct product) {
+        if (cached.getImageType() != img.getImageType()) {
+            return false;
+        }
+        if (cached.getProductId() != null && cached.getProductId().equals(img.getProductId())) {
+            return true;
+        }
+        CatalogProduct other = cached.getProductId() == null ? null : products.findById(cached.getProductId()).orElse(null);
+        String category = product == null ? null : product.getCategory(), subcategory = product == null ? null : product.getSubcategory();
+        return other == null ? category == null && subcategory == null
+                : Objects.equals(other.getCategory(), category) && Objects.equals(other.getSubcategory(), subcategory);
     }
 
     void apply(CatalogImage img, CatalogImagePipeline.Analysis a, boolean persist) {

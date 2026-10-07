@@ -1,0 +1,70 @@
+@startuml RF27_Sequencia_Organizar
+title RF27 — Meu Quarto (guarda-roupa num quarto 3D interativo)\nDiagrama de sequência — organizar com IA, desfazer e endereço automático da peça nova
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "room/page.tsx" as FE
+participant "RoomController" as C
+participant "RoomService" as S
+participant "AiEngine\n(motor de IA, RF24)" as AI
+participant "AiProviderPort\n(Claude / Gemini)" as P
+participant "WardrobeEventListeners" as WL
+participant "FaiPointsService" as FP
+participant "InventoryScoreService" as ISS
+database "MySQL" as DB
+
+== Prévia da organização ==
+U -> FE: Organizar (com IA)
+FE -> C: GET /api/me/room/organization/preview?useAi=true
+C -> S: organizePreview(user, true)
+S -> DB: SELECT room_layouts, room_storage_map, wardrobe_items
+S -> S: suggestLabel(): rótulo local pela categoria dominante
+S -> AI: text(TextCall(COPILOT, gavetas e subcategorias))
+AI -> AI: cota (RateLimitPort), consentimento, teto de gasto
+alt provedor disponível
+  AI -> P: gera {"labels": {...}}
+  P --> AI: texto
+  AI --> S: AiOutcome(rótulos validados, ≤ 24 caracteres)
+else sem provedor, cota ou resposta inválida
+  AI --> S: AiOutcome(fallback local, fallbackUsed = true)
+end
+S -> S: mantém peças coerentes; place() para as demais
+S --> FE: 200 {labels, changedLabels, moves, summary,\nfallbackUsed, explanation, canUndo}
+note right of FE: a prévia não grava nada
+
+== Aplicar ==
+U -> FE: Aplicar
+FE -> C: POST /api/me/room/organization {labels, moves}
+C -> S: applyOrganization(user, labels, moves)
+S -> DB: UPDATE room_layouts (previous_map_json,\ndrawer_labels_json com source = AI)
+S -> DB: UPDATE room_storage_map (assigned_by = AI)
+S -> ISS: RoomOrganized → invalidate (limpa o cache da nota)
+S --> FE: 200 {applied, labels, canUndo}
+S ->> WL: RoomOrganized (AFTER_COMMIT, SideEffectRunner)
+WL -> FP: award(userId, "ROOM_ORGANIZED", "ROOM", null)
+FP -> DB: INSERT fai_points_ledger (+20; teto semanal 1)
+
+== Desfazer ==
+U -> FE: Desfazer
+FE -> C: DELETE /api/me/room/organization
+C -> S: undoOrganization(user)
+alt previous_map_json vazio
+  S --> FE: 409 NADA_A_DESFAZER
+else há mapa anterior
+  S -> DB: UPDATE room_layouts (rótulos anteriores, previous_map_json = null)
+  S -> DB: UPDATE room_storage_map (endereços anteriores, assigned_by = USER)
+  S --> FE: 200 {restored, labels}
+end
+
+== Peça nova ganha endereço sozinha ==
+note over S, DB: WardrobeService.create publica PieceCreated (RF4)
+S -> S: onPieceCreated (AFTER_COMMIT) → SideEffectRunner\n"quarto:PieceCreated" → autoAssign(userId, pieceId)
+S -> DB: INSERT room_storage_map (assigned_by = AUTO)
+note right of S: falha aqui não desfaz o cadastro da peça;\nPieceDeleted → deleteByWardrobeItemId
+@enduml

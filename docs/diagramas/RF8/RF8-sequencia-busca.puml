@@ -1,0 +1,80 @@
+@startuml RF8_Sequencia_Busca
+title RF8 — Visualizar esquemas e peças de outros usuários na aba Buscar\nDiagrama de sequência — busca por abas, filtro de faixa de Hype público, busca vazia "Em alta", chips de Hype de criador/marca e insights SEARCH
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "search/page.tsx\nFilterBar · HypeGroupBadge\nInsightStrip" as FE
+participant "InsightsController\nInsightService" as IS
+participant "DiscoveryController" as DC
+participant "SearchService" as SS
+participant "OpenSearchIndexAdapter\n(SearchIndexPort)" as OS
+participant "SchemeService\nGuard" as SCH
+participant "HypeController\nHypeQueryService" as HQ
+database "MySQL" as DB
+
+U -> FE: abre /search, aba LOOKS (padrão)
+FE -> IS: GET /api/insights?context=SEARCH&window=7&category=
+IS --> FE: 200 {items: SEARCH_CATEGORY_RISING, SEARCH_HOT_SHARE…}
+alt sem termo (LOOKS ou PECAS)
+  FE -> DC: GET /api/feed (LOOKS) ou GET /api/public-pieces?cursor&size=24&filtros (PECAS)
+  DC -> SS: communityFeed(…) | publicPieces(viewer, Filters, cursor, size)
+  SS --> FE: 200 {items, nextCursor, chips}
+else com termo
+  U -> FE: digita q, escolhe a aba e os filtros\n(estilo, ocasião, cor, marca, categoria, faixa de Hype / "Em alta")
+  FE -> DC: GET /api/search?q&tab&size=24&cursor&style&occasion&color&brand&category&hypeLevel
+  DC -> SS: search(viewer, term, tab, Filters, size, cursor)
+  alt tab fora de LOOKS, PECAS, PESSOAS, MARCAS, CELEBRIDADES
+    SS --> FE: 400 ABA_INVALIDA
+  else hypeLevel desconhecido
+    SS --> FE: 400 NIVEL_INVALIDO
+  else
+    SS -> DB: follows BLOQUEADO (dois sentidos)
+    alt tab = LOOKS ou PECAS
+      alt OpenSearch ligado e há termo
+        SS -> OS: search("schemes" | "pieces", termo, 200)
+        OS --> SS: ids
+        SS -> DB: findByIdIn(ids)
+      else
+        SS -> DB: schemes.searchPublic / wardrobe_items.searchPublic
+      end
+      opt hypeLevel informado
+        SS -> DB: hype_scores dos candidatos (uma consulta)
+        SS -> SS: meetsLevel: só Hype público AVAILABLE ≥ limiar da faixa
+      end
+      loop candidatos
+        SS -> SCH: visible: canView (look) | APPROVED + Guard.canView (peça)
+        SS -> SS: matches(filtros)
+      end
+    else tab = PESSOAS
+      SS -> DB: users.searchByUsername (PESSOAL, ACTIVE, não bloqueados)
+    else tab = MARCAS
+      SS -> DB: brand_profiles APROVADO + marcas do catálogo (brands)\ncom nº de peças públicas
+    else tab = CELEBRIDADES
+      SS -> DB: celebrity_profiles APROVADO
+    end
+    opt nenhum resultado na 1ª página
+      SS -> DB: hype_scores SCHEME públicos AVAILABLE (top 30 por score)
+      SS -> SCH: visíveis para quem vê (até 6)
+      SS -> SS: alternatives(termo) — Jaro-Winkler ≥ 0,75\n(sem parecidos: estilos/ocasiões dos looks em alta)
+    end
+    SS --> FE: 200 {term, tab, tabs, results, nextCursor, chips,\nengine: mysql | opensearch, empty?}
+  end
+end
+alt resultados de LOOKS ou PECAS
+  FE -> HQ: GET /api/hype/summaries?type=SCHEME|PIECE&ids= (cards)
+else resultados de PESSOAS, MARCAS ou CELEBRIDADES
+  FE -> HQ: GET /api/hype/groups?type=CREATOR|BRAND&keys=… (lote, até 100)
+  HQ -> HQ: groupTable em HypeCache (por geração): só itens\npúblicos, ≥ 3 itens, média dos 5 mais relevantes
+  HQ --> FE: 200 {items: key → {sufficient, value, level, rank}}
+  note right of FE: chip só a partir de "Em alta" (HOT);\ncriador bloqueado ou com opt-out de\n"Criadores em alta" fica sem chip;\no chip nunca reordena a busca
+end
+U -> FE: rola a lista
+FE -> DC: GET /api/search?…&cursor=<nextCursor> (deslocamento opaco)
+note right of FE: cursor ilegível dá 400 CURSOR_INVALIDO;\nnextCursor nulo indica a última página
+@enduml

@@ -71,7 +71,7 @@ public final class ImageCandidateRanker {
             } else {
                 role = Role.ALTERNATE;
             }
-            if (role != Role.REJECTED && role != Role.DUPLICATE && c.phash() != null) {
+            if ((role == Role.CANONICAL || role == Role.ALTERNATE) && c.phash() != null) {
                 kept.put(c.id(), c.phash());
             }
             out.add(new Ranked(c, score(c, type), role));

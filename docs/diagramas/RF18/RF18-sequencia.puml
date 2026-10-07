@@ -1,5 +1,5 @@
 @startuml RF18_Sequencia
-title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de sequência — endpoints reais
+title RF18 — Usar o Provador virtual de lojas\nDiagrama de sequência — carga do provador, prova de produto, ambiente por marca e "Já tenho esta peça"
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -9,54 +9,86 @@ skinparam sequence {
 }
 autonumber
 actor "Pessoa" as U
-participant "Frontend\ntry-on/page.tsx" as FE
-participant "Motor de ambiente\nlib/tryon/fitting-room.ts" as ENV
-participant "FittingRoomScene\n(three.js)" as SC
+participant "try-on/page.tsx\n(FittingRoom)" as FE
+participant "lib/tryon/\nfitting-room.ts" as ENV
+participant "FittingRoomScene\n(React Three Fiber)" as SC
 participant "TryOnController" as TC
 participant "TryOnService" as TS
+participant "Avatar3dService" as AV
 participant "CatalogController" as CC
 participant "CatalogService" as CS
 participant "WardrobeService" as WS
 database "MySQL" as DB
+
+== Carga (CA01, CA04) ==
 U -> FE: abre /try-on
-FE -> TC: GET /api/try-on
-TC -> TS: state(user, sex)
-TS -> DB: user_preferences, user_avatar3d, wardrobe_items
-TS --> FE: 200 {mannequin, sex, avatar, pieces por lugar}
-note right of TS: sem peças no guarda-roupa: lista vazia (não bloqueia)
-FE -> CC: GET /api/catalog/stores
-CC -> CS: catalogBrands()
-CS -> DB: brands, catalog_products (contagem, categorias)
-CS --> FE: 200 {stores[]}
-U -> FE: toca na loja "Nike" + "Calçados"
-FE -> CC: GET /api/catalog/search?brand=Nike&category=shoes_piece
+par estado do provador
+  FE -> TC: GET /api/try-on
+  TC -> TS: state(user, sex)
+  TS -> DB: user_preferences (404 se não existir)
+  TS -> AV: forMannequin(userId, userId)
+  AV -> DB: user_avatars_3d
+  AV --> TS: avatar {model, adjust, textureUrl} ou vazio
+  TS -> DB: wardrobe_items do dono (sem ARCHIVED)
+  TS -> TS: sexMatches + slotOf(categoria)\n→ 4 lugares; categoria desconhecida → needsReview
+  TS --> FE: 200 {mannequin, identity, avatar, sex,\nslots, pieces por lugar, needsReview}
+else lojas em destaque
+  FE -> CC: GET /api/catalog/stores
+  CC -> CS: catalogBrands()
+  CS -> DB: brands + catalog_products visíveis\n(VALIDATED · PERSISTABLE · REFERENCE_ONLY)
+  CS --> FE: 200 {stores[brandId, slug, name, logoUrl,\ncatalogProducts, categories]}
+end
+alt link ?provar=c.<produto>.<variante>,w.<peça>
+  FE -> ENV: decodeTryOn(raw) (até 8 itens válidos)
+  loop cada produto de loja
+    FE -> CC: GET /api/catalog/products/{id}
+    CC -> CS: product(id)
+    CS -> DB: catalog_products, catalog_images, catalog_variants
+    CS --> FE: 200 produto | 404 (fica de fora)
+  end
+else sem link
+  FE -> FE: sessionStorage fai.tryon.fitting
+end
+
+== Provar produto de loja (CA01–CA03) ==
+U -> FE: toca a loja "Nike" e o tipo "Calçados"
+FE -> CC: GET /api/catalog/search?brand=Nike&category=shoes_piece&limit=24
 CC -> CS: search(userId, SearchRequest)
-CS -> DB: candidates (FULLTEXT ngram) + variantes + imagens
-CS --> FE: 200 {intent, results[] com % compatível}
-U -> FE: "Provar" (Air Force 1, variante preta)
-FE -> ENV: wearItem(items, item) → resolveEnvironment(items, mode)
-ENV --> FE: {kind: brand, featured: Nike, others: []}
-FE -> SC: pieces (prévia projetada) + environment + luz + vista
-SC --> U: provador Nike (faixa, letreiro, quadra laranja)
-U -> FE: prova também o jeans Levi's
-FE -> ENV: resolveEnvironment()
+CS -> DB: candidatos visíveis + variantes + imagens
+CS --> FE: 200 {intent, results[] com matchScore, canSearchOfficial}
+U -> FE: "Provar" (produto + variante)
+FE -> ENV: wearItem(items, fromCatalog(p, v))
+FE -> ENV: resolveEnvironment(items, mode)
+ENV --> FE: {kind: brand, featured: Nike, others: [], brands}
+FE -> SC: pieces = visibleItems() → Look3dPiece\n+ environment + light + view
+SC --> U: Avatar 3D na loja da marca (prévia projetada)
+U -> FE: prova também um jeans Levi's
+FE -> ENV: resolveEnvironment(items, "auto")
 ENV --> FE: {kind: multibrand, featured: Levi's, others: [Nike]}
-FE -> SC: troca animada do ambiente (respeita reduzir movimento)
-opt Já tenho esta peça
-  U -> FE: "Já tenho esta peça"
-  FE -> CC: POST /api/pieces/from-catalog {productId, variantId}
-  CC -> CS: addToWardrobe(user, AddRequest)
-  CS -> WS: createFromCatalog(user, form, pick)
-  WS -> DB: INSERT wardrobe_items (catalog_product_id, image_origin)
+FE -> SC: troca animada (instantânea com "reduzir movimento")
+opt fixar marca ou Neutro
+  U -> FE: chip "Nike" ou "Neutro"
+  FE -> ENV: resolveEnvironment(items, {pinned: "nike"} | "neutral")
+end
+
+== "Já tenho esta peça" (CA06) ==
+U -> FE: "Já tenho esta peça"
+FE -> CC: POST /api/pieces/from-catalog {productId, variantId, visibility: PRIVATE}
+CC -> CS: addToWardrobe(user, AddRequest)
+alt produto inexistente
+  CS --> FE: 404
+else produto REJECTED
+  CS --> FE: 400 PRODUTO_RECUSADO
+else ok
+  CS -> DB: UPDATE catalog_products (ownersCount+1;\nDISCOVERED → REFERENCE_ONLY)
+  CS -> WS: createFromCatalog(user, PieceForm, CatalogPick)
+  WS -> DB: INSERT wardrobe_items (catalog_product_id,\ncatalog_variant_id, imagem oficial)
   CS --> FE: 201 PieceView
+  FE -> TC: GET /api/try-on (recarrega o guarda-roupa)
 end
-opt Link da prova
-  U -> FE: "Copiar link da prova"
-  FE -> FE: encodeTryOn(items) → /try-on?provar=c.p1.v2,w.w9
-  note over FE: quem abre o link: decodeTryOn() + GET /api/catalog/products/{id}
-end
-opt Foto e provas salvas
-  FE -> SC: canvas.toDataURL() → PNG
-  FE -> FE: localStorage fai.tryon.saved (até 8)
-end
+
+== Foto, link e provas salvas (CA07) — só no navegador ==
+FE -> SC: canvas.toDataURL("image/png") → download
+FE -> ENV: encodeTryOn(items) → /try-on?provar=… (clipboard)
+FE -> FE: localStorage fai.tryon.saved (até 8 provas)
 @enduml

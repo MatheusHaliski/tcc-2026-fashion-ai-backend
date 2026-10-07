@@ -1,7 +1,7 @@
 # Fashion AI — backend (TCC 2026)
 
 API REST do **Fashion AI**, rede social de moda com guarda-roupa digital, composição de looks por IA, DNA de Estilo,
-Hype Score, selos de marcas/celebridades, Meu Quarto, Smart Mirror, Inventory Score, FAI Points e desafios.
+Hype Score, selos de marcas/celebridades, Meu Quarto, Smart Mirror, Inventory Score, FAI Points, desafios e Momentos (o calendário da moda: datas, temporadas, desafios e eventos privados FLAIR — `docs/momentos/MOMENTOS.md`).
 Este repositório contém o backend Java (Spring Boot 4.1, Java 21) e os assets/documentação do projeto.
 O frontend Next.js consome esta API.
 

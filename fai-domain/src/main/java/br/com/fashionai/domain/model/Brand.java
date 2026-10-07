@@ -61,6 +61,10 @@ public class Brand extends VersionedAuditableEntity {
     @Column(length = 2)
     private String country;
 
+    /** BUDGET · MID · PREMIUM · LUXURY — derivada da mediana de preço do catálogo da marca (docs/taxonomia, H.2). */
+    @Column(name = "price_tier", length = 10)
+    private String priceTier;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "brand_profile_id")
     private BrandProfile brandProfile;

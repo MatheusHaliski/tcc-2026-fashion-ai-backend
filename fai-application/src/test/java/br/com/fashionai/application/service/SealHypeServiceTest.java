@@ -304,7 +304,7 @@ class SealHypeServiceTest {
         c.setLevel(level);
         c.setMomentum(momentum);
         c.setPublicEligible(publicEligible);
-        c.setAlgorithmVersion("HYPE_V2");
+        c.setAlgorithmVersion(HypeScoreConfig.DEFAULT_VERSION);
         c.setCalculatedAt(Instant.now());
         return c;
     }

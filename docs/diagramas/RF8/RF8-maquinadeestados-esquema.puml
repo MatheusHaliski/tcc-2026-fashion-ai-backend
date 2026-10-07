@@ -1,6 +1,6 @@
 @startuml RF8_MaquinaDeEstados_Esquema
 !pragma layout smetana
-title RF8 — Scheme: publicação (SchemeStatus) × visibilidade (Visibility) — o que aparece na aba "Buscar"
+title RF8 — Visualizar esquemas e peças de outros usuários na aba Buscar\nDiagrama de máquina de estados — Scheme (SchemeStatus × Visibility): quando o look aparece no feed, na busca e no Hype público
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,25 +8,56 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-[*] --> Rascunho : POST /api/schemes (sem publish)
-state "DRAFT" as Rascunho
+state "DRAFT\n(só o dono vê)" as Rascunho
 state "PUBLISHED" as Publicado {
-  state "PRIVATE" as Priv
-  state "FOLLOWERS" as Seg
-  state "PUBLIC" as Pub
-  [*] --> Priv : visibilidade padrão
-  Priv --> Seg : PUT /api/schemes/{id} visibility=FOLLOWERS
-  Seg --> Pub : PUT /api/schemes/{id} visibility=PUBLIC
-  Pub --> Seg : PUT /api/schemes/{id} visibility=FOLLOWERS
-  Seg --> Priv : PUT /api/schemes/{id} visibility=PRIVATE\n(revoga selos — RF20.CA14)
-  Pub --> Priv : PUT /api/schemes/{id} visibility=PRIVATE
+  state "PRIVATE\n(só o dono)" as Priv
+  state "FOLLOWERS\n(Follow ACEITO com o dono)" as Seg
+  state "PUBLIC" as Pub {
+    state "Fora do Hype público\n(perfil do dono PRIVATE\nou conta de teste)" as PubSemHype
+    state "public_eligible = true\n(entra na régua, no Em alta\ne no filtro hypeLevel)" as PubHype
+    [*] --> PubHype : perfil não PRIVATE\ne conta real
+    [*] --> PubSemHype : perfil PRIVATE\nou conta de teste
+    PubSemHype --> PubHype : dono abre o perfil +\npróximo cálculo do job
+    PubHype --> PubSemHype : dono fecha o perfil +\npróximo cálculo do job
+  }
+  [*] --> Priv : herdada do perfil\n(padrão PRIVATE)
+  [*] --> Seg : perfil FOLLOWERS
+  [*] --> Pub : perfil PUBLIC ou\nescolhida ao publicar
+  Priv --> Seg : PUT /api/schemes/{id} {visibility: FOLLOWERS}
+  Seg --> Pub : PUT /api/schemes/{id} {visibility: PUBLIC}
+  Priv --> Pub : PUT /api/schemes/{id} {visibility: PUBLIC}
+  Pub --> Seg : PUT /api/schemes/{id} {visibility: FOLLOWERS}
+  Pub --> Priv : PUT /api/schemes/{id} {visibility: PRIVATE}\n(revoga os selos — RF20.CA14)
+  Seg --> Priv : PUT /api/schemes/{id} {visibility: PRIVATE}\n(revoga os selos)
 }
-state "ARCHIVED" as Arquivado
-Rascunho --> Publicado : POST /api/schemes/{id}/publication {visibility}\nou PUT /api/schemes/{id} publish=true\n(publishedAt, communityIndexed = PUBLIC, snapshot das peças)
-Publicado --> Arquivado : POST /api/schemes/{id}/archive\n(revoga selos, remove projeções, retira foto de Minhas Fotos)
-Rascunho --> Arquivado : POST /api/schemes/{id}/archive
-note right of Pub : aparece em GET /api/search (LOOKS),\nGET /api/feed e GET /api/runway\npara qualquer pessoa não bloqueada\n(dono com AccountStatus ACTIVE)
-note right of Seg : aparece só para quem tem\nFollow ACEITO com o dono\n(Guard.canView)
-note bottom of Arquivado : invisível fora do dono\n(SchemeService.canView = false)
-note left of Publicado : visibilidade efetiva =\nmoreRestrictive(scheme.visibility,\nuser.profileVisibility)
+state "ARCHIVED\n(excluído pelo dono)" as Arquivado
+
+[*] --> Rascunho : POST /api/schemes (sem publish)
+[*] --> Publicado : POST /api/schemes {publish: true}
+Rascunho --> Publicado : POST /api/schemes/{id}/publication {visibility}\nou PUT /api/schemes/{id} {publish: true}\n(sem peças = 400 SEM_PECAS)
+Rascunho --> Arquivado : POST /api/schemes/{id}/archive\nou DELETE /api/schemes/{id}
+Publicado --> Arquivado : POST /api/schemes/{id}/archive\nou DELETE /api/schemes/{id}
+Arquivado --> [*]
+
+note right of Pub
+  Aparece em GET /api/feed, GET /api/search (LOOKS)
+  e no "Em alta na comunidade" para qualquer pessoa
+  (inclusive sem login), exceto bloqueados nos dois
+  sentidos e conta de teste para quem não é de teste.
+  Visibilidade efetiva = moreRestrictive(look, perfil).
+end note
+note left of Seg
+  Não entra no feed da comunidade
+  (findPublicFeed só lê PUBLIC); aparece
+  na Passarela de quem segue (findFeedForFollowing)
+  e no perfil (Guard.canView).
+end note
+note bottom of Arquivado
+  publishInternal grava publishedAt, communityIndexed
+  (= PUBLIC) e o snapshot das peças. Arquivar revoga
+  os selos, remove as projeções (OpenSearch/Cassandra)
+  e tira a foto de Minhas Fotos. ARCHIVED só o dono vê
+  (SchemeService.canView), e o Hype público sai no
+  próximo cálculo.
+end note
 @enduml

@@ -1,5 +1,5 @@
 @startuml RF29_Sequencia
-title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings do guarda-roupa\nDiagrama de sequência — endpoints reais
+title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings ("Destaques")\nDiagrama de sequência — Destaques, explicação de dimensão, rankings e jobs agendados
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -8,22 +8,72 @@ skinparam sequence {
   ParticipantBorderColor #4A4852
 }
 autonumber
-actor Usuário as U
-participant "Frontend\nhighlights" as FE
+actor "Pessoa" as U
+participant "highlights/page.tsx" as FE
 participant "HighlightsController" as C
 participant "InventoryScoreService" as S
+participant "AchievementService" as AS
+participant "FaiPointsService" as FP
+participant "NotificationService" as NS
+participant "Repositórios JPA\n(WardrobeItem, Scheme, SchemeItem,\nPieceUsageDiaryEntry,\nWardrobeAvailabilityChange, StyleDna,\nInventoryScoreSnapshot, RankingOptIn,\nRankingPosition, ChallengeTemplate)" as R
 database "MySQL" as DB
-U -> FE: abre Destaques
+
+== Abrir Destaques ==
+U -> FE: abre /highlights
 FE -> C: GET /api/me/highlights
 C -> S: highlightsTab(user)
-S -> DB: SELECT wardrobe_items, piece_usage_diary,\navailability_changes, schemes
-S -> DB: INSERT inventory_score_snapshots
-S --> FE: score, dimensões, dicas, álbum
-U -> FE: explicar uma dimensão
-FE -> C: GET /api/me/inventory-score/dimensions/{code}
-U -> FE: entrar nos rankings
-FE -> C: PUT /api/me/rankings/opt-in
-S -> DB: UPSERT ranking_opt_in
+S -> S: compute(userId, useCache = true)
+alt cache em memória com menos de 1 h
+  S -> S: usa o Result guardado
+else recalcular
+  S -> R: peças, esquemas, itens, diário (90 dias),\nhistórico de disponibilidade, DNA
+  R -> DB: SELECT wardrobe_items, schemes, scheme_items,\npiece_usage_diary, wardrobe_availability_log, style_dna
+  S -> S: 7 dimensões, k = min(1, n/20), nota 0–1000, faixa
+  S -> R: snapshot DAY e MONTH (upsert)
+  R -> DB: INSERT/UPDATE inventory_score_snapshots
+  opt elegível (10+ peças)
+    S -> AS: grant(userId, CURADOR | SIGNATURE_CLOSET | …)
+    AS -> DB: INSERT user_achievements (1× por código)
+    AS -> FP: award(ACHIEVEMENT, valor da conquista)
+    AS -> NS: ACHIEVEMENT_UNLOCKED
+  end
+end
+alt menos de 10 peças
+  S --> FE: 200 {eligible: false, pieces, progress{missing, target, steps}, manifesto}
+else elegível
+  S -> R: snapshot do mês anterior (delta, evolução), opt-in e até 2\nchallenge_templates da dimensão mais fraca (se < 70)
+  S --> FE: 200 {score, band, bands, k, dimensions, delta, highlights (≤ 6),\nevolution, records, achievements, suggestedChallenges, rankingsOptIn}
+end
+
+== Explicar uma dimensão ==
+U -> FE: toca em "Utilização"
+FE -> C: GET /api/me/inventory-score/dimensions/U
+C -> S: explain(user, "U")
+alt código inexistente
+  S --> FE: 404 dimensão
+else
+  S --> FE: 200 Dimension{code, name, value, weight, rule, pullingDown}
+end
+
+== Rankings (opt-in) ==
+U -> FE: liga "Participar dos rankings"
+FE -> C: PUT /api/me/rankings/opt-in {optedIn, shareCity, city}
+C -> S: optIn(user, optedIn, shareCity, city)
+S -> DB: UPSERT ranking_opt_ins (cidade só com shareCity)
+opt optedIn = false
+  S -> DB: DELETE ranking_positions da pessoa
+end
 FE -> C: GET /api/me/rankings
-S -> DB: SELECT ranking_positions (k ≥ 50)
+C -> S: rankings(user)
+S -> DB: SELECT ranking_positions (+ top 5 do segmento)
+S --> FE: 200 {optedIn, positions[segment, position, total, topPercent, value, top]}\nou {optedIn: false, message, available}
+
+== Jobs agendados (America/Sao_Paulo) ==
+note over S, DB: @Scheduled "0 30 3 * * *" dailySnapshots(): compute(useCache = false)\npara cada pessoa com opt-in → snapshots do dia
+S -> DB: recomputeRankings() @Scheduled "0 15 */4 * * *"
+note right of S: segmentos GLOBAL, PAIS:x, CIDADE:x, FAIXA:x, ESTILO:x,\nSUSTENTAVEL, VERSATEIS, RISING (30 dias);\nCIDADE com menos de 50 pessoas não é gravada (k-anonimato)
+S -> DB: DELETE + INSERT ranking_positions por segmento (Top% = 100·(N−pos+1)/N)
+
+== Invalidação do cache ==
+note over S: @EventListener: SchemeSaved, DailyLookRegistered, PieceCreated,\nPieceUpdated, PieceDeleted, RoomOrganized, AvailabilityChanged\n→ remove a nota da pessoa do cache
 @enduml

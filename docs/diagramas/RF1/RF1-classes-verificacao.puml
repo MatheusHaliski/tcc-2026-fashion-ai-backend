@@ -1,0 +1,198 @@
+@startuml RF1_Classes_Verificacao
+title RF1 — Cadastrar conta na plataforma (Pessoal, Marca ou Celebridade)\nDiagrama de classes — verificação de marca e celebridade (política 1.0, fila e Central do emissor)
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  HeaderBackgroundColor #E4DEF0
+}
+skinparam packageStyle rectangle
+hide empty methods
+
+package "fai-domain · model" {
+interface ReviewableProfile {
+  +getOwner(): User
+  +getSlug(): String
+  +publicName(): String
+  +reviewStatus(): ApprovalStatus
+  +reviewStatus(status)
+  +getVerificationNotes() / setVerificationNotes
+  +getApprovedBy() / getApprovedAt()
+  +isIdentityVerified() / setIdentityVerified
+  +getReviewAttempts() / setReviewAttempts
+  +getReviewSubmittedAt() / setReviewSubmittedAt
+  +getReviewReasons() / setReviewReasons
+  +getReviewChecklist() / setReviewChecklist
+  +getReviewOwnerMessage() / setReviewOwnerMessage
+}
+class BrandProfile <<table brand_profiles>> {
+  +approvalStatus: ApprovalStatus
+  +storeUrl: String
+  +commercialContact: String
+  +activityProofUrl: String
+  +identityVerified: boolean
+  +documentVerified: boolean
+  +verificationNotes: String
+  +approvedBy: UUID
+  +approvedAt: Instant
+  +reviewAttempts: int
+  +reviewSubmittedAt: Instant
+  +reviewReasons: String
+  +reviewChecklist: String
+  +reviewOwnerMessage: String
+}
+class CelebrityProfile <<table celebrity_profiles>> {
+  +verificationStatus: ApprovalStatus
+  +verificationUrl: String
+  +realName: String
+  +representationContact: String
+  +identityProofUrl: String
+  +identityVerified: boolean
+  +requiresSealReview: boolean
+  +verificationNotes: String
+  +approvedBy: UUID
+  +approvedAt: Instant
+  +reviewAttempts: int
+  +reviewSubmittedAt: Instant
+  +reviewReasons: String
+  +reviewChecklist: String
+  +reviewOwnerMessage: String
+}
+class User <<table users>> {
+  +profileType: ProfileType
+  +status: AccountStatus
+  +emailVerified: boolean
+  +verified: boolean
+  +role: String
+}
+}
+package "fai-domain · enums" {
+enum ApprovalStatus {
+  PENDENTE
+  AJUSTES
+  APROVADO
+  RECUSADO
+  SUSPENSO
+}
+enum "NotificationType (trecho)" as NotificationType {
+  ISSUER_REVIEW_REQUEST
+  ACCOUNT_APPROVAL
+}
+}
+package "fai-application · service" {
+class IssuerReviewService {
+  +{static} DOC_IDENTITY = "identity"
+  +{static} DOC_ACTIVITY = "activity-proof"
+  +submitted(userId) «aviso depois do commit»
+  +emailConfirmed(user)
+  +adminsConfigured(): boolean
+  +status(current): Map
+  +resubmit(current, ResubmitCommand): Map
+  +queue(admin): Map
+  +document(admin, userId, kind): byte[]
+  +decide(admin, userId, DecisionCommand): Map
+  ~notifyAdmins(userId)
+  ~dossier(profile): Map
+}
+class IssuerVerificationPolicy {
+  +{static} VERSION = "1.0"
+  +{static} MAX_SUBMISSIONS = 5
+  +{static} SLA_BUSINESS_DAYS = 3
+  +{static} RESUBMIT_SLA_BUSINESS_DAYS = 2
+  +{static} BRAND: List<Criterion>
+  +{static} CELEBRITY: List<Criterion>
+  +{static} REASONS: List<String>
+  +checks(user, profile): List<Check>
+  +{static} criteria(profile): List<Criterion>
+  +{static} verificationCode(userId): String
+  +{static} normalizeUrl(raw): String
+  +{static} webUrl(url): boolean
+}
+enum Auto {
+  OK
+  FALHA
+  ANALISTA
+}
+class "Criterion" as Criterion << (R,#E4DEF0) record >> {
+  code: String
+  mandatory: boolean
+}
+class "Check" as Check << (R,#E4DEF0) record >> {
+  code: String
+  mandatory: boolean
+  auto: Auto
+  detail: String
+  +toMap(): Map
+}
+class "DecisionCommand" as DecisionCommand << (R,#E4DEF0) record >> {
+  decision: String «APROVAR | AJUSTES | RECUSAR»
+  reasons: List<String>
+  notes: String
+  checklist: Map<String, Boolean>
+  approve: Boolean «forma antiga»
+}
+class "ResubmitCommand" as ResubmitCommand << (R,#E4DEF0) record >> {
+  message, storeUrl, commercialContact: String
+  verificationUrl, representationContact: String
+  documentUrl, realName: String
+}
+class SealService {
+  +ensureDefaultSeals(owner)
+}
+class NotificationService {
+  +notify(recipientId, actorId, type, resourceType, resourceId, title, body, payload)
+}
+class MediaService {
+  +readRestricted(url): Optional<byte[]>
+}
+class Guard {
+  +requireAdmin(user)
+}
+}
+package "fai-web · controller" {
+class AdminController {
+  GET /api/admin/approvals
+  POST /api/admin/approvals/{userId}
+  GET /api/admin/approvals/{userId}/documents/{kind}
+}
+class IssuerReviewController {
+  GET /api/me/issuer-review
+  POST /api/me/issuer-review/resubmit
+}
+}
+
+BrandProfile ..|> ReviewableProfile
+CelebrityProfile ..|> ReviewableProfile
+BrandProfile "0..1" --> "1" User : owner
+CelebrityProfile "0..1" --> "1" User : owner
+ReviewableProfile --> ApprovalStatus
+IssuerVerificationPolicy *-- "*" Criterion
+IssuerVerificationPolicy ..> Check : cria
+Check --> Auto
+AdminController --> IssuerReviewService
+IssuerReviewController --> IssuerReviewService
+IssuerReviewService --> IssuerVerificationPolicy
+IssuerReviewService ..> ReviewableProfile : lê/decide
+IssuerReviewService ..> DecisionCommand
+IssuerReviewService ..> ResubmitCommand
+IssuerReviewService --> SealService : aprovado
+IssuerReviewService --> NotificationService
+IssuerReviewService --> MediaService : documentos
+IssuerReviewService --> Guard
+NotificationService ..> NotificationType
+note bottom of IssuerVerificationPolicy
+  MARCA: EMAIL_CONFIRMADO, CNPJ_VALIDO, CNPJ_ATIVO, ATIVIDADE_MODA,
+  COMPROVANTE_ATIVIDADE, PRESENCA_OFICIAL, REPRESENTACAO, SEM_CONFLITO
+  (obrigatórios) e PERFIL_COMPLETO.
+  CELEBRIDADE: EMAIL_CONFIRMADO, DOCUMENTO_IDENTIDADE, NOME_CONFERE,
+  MAIOR_DE_IDADE, CONTROLE_PERFIL_OFICIAL, NOTORIEDADE, SEM_IMPERSONACAO
+  (obrigatórios); REPRESENTACAO, CONSENTIMENTO_SELOS, PERFIL_COMPLETO.
+  13 motivos padronizados (DOCUMENTO_ILEGIVEL … OUTRO).
+end note
+note bottom of ApprovalStatus
+  SUSPENSO existe no enum, mas nenhum
+  fluxo do código grava esse valor.
+end note
+@enduml

@@ -1,5 +1,5 @@
 @startuml RF37_Componentes
-title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF37 — FLAIR: jogo de cartas de moda com 15 modos e combinações de lojas que rendem cupons\nDiagrama de componentes — frontend → API → serviços e motor → HypeScore v2, FAI Points, cupons e MySQL
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -16,43 +16,70 @@ skinparam database {
 }
 left to right direction
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "flair — Modos de jogo (15)" as FE0
-  component "flair — Duelos, equipes, cartas, decks, quests, carteira" as FE1
-  component "brands/[slug] — aba FLAIR (combinações da loja)" as FE2
+package "Frontend (Next.js)" {
+  component "flair/page.tsx\nabas modos · jogar · cartas · decks\n· lojas · carteira (skins) · quests" as FE_PAGE
+  component "flair/modes.tsx · modes-shared.tsx\nFlairModes · LookPicker · ResultView\n(STAT HYPE = Hype v2 público)" as FE_MODES
+  component "flair/flair-card.tsx\nFlairCardView · DeckSummary\n(rarityBasis explica a raridade pelo Hype)" as FE_CARD
+  component "flair/flair-shared.tsx\nVoucherDialog · checkLabel" as FE_SHARED
+  component "brands/[slug]/page.tsx\n→ flair/brand-flair-tab.tsx (BrandFlairTab)" as FE_BRAND
+  component "coupons/page.tsx (RF38)" as FE_COUP
 }
 package "fai-web (REST)" {
-  [FlairController] as FlairController
-  [FlairModesController] as FlairModesController
+  [FlairController\n/api/flair/me · cards · decks · quests · duels\n· arena · teams · combinations · vouchers · skins\n· /api/flair/brand/** · /api/institutional/{slug}/flair] as FC
+  [FlairModesController\n/api/flair/modes/** (15 modos, looks, troféus)] as FMC
 }
-package "fai-application (casos de uso)" {
-  [FlairService] as FlairService
-  [FlairModesService] as FlairModesService
-  [SchemeService] as SchemeService #FAFAFA
-  [InstitutionalService] as InstitutionalService #FAFAFA
+package "fai-application" {
+  [FlairService\ncartas, decks, duelo, arena, equipes,\nquests, skins, combinações e cupons FLR] as FS
+  [FlairModesService\n15 modos · finish · trophy] as FMS
+  [FlairEngine · FlairLooks\n(motor puro, sem banco)] as ENG
+  [SchemeService\nowned · canView] as SCH
+  [InstitutionalService\ninstitutionalUser(slug)] as INST
+  [Guard\nrequireCanCreate · requireApprovedInstitutional] as G
+  [FaiPointsService (RF41)\ngame · award] as FP
+  [CouponService (RF38)\nonCheck → scan] as CS
+  [NotificationService\nACHIEVEMENT_UNLOCKED · COUPON_AVAILABLE] as NS
+  [HypeScoreConfig\nalgorithmVersion] as CFG
 }
-package "fai-domain (repositórios JPA)" {
-  [BrandProfileRepository\nFlairCoinEntryRepository\nFlairCombinationRepository\nFlairMatchEntryRepository\nFlairMatchRepository\nFlairModeStateRepository\nFlairProfileRepository\nFlairRedemptionRepository\nFlairTeamMemberRepository\nFlairTeamRepository\nFlairTerritoryRepository\nFlairTrophyRepository\nReactionRepository\nSchemeItemRepository\nSchemeRepository\nUserRepository\nWardrobeItemRepository] as REPOS
+interface "ApplicationEventPublisher\nCouponRightsCheck (AFTER_COMMIT)" as EV
+package "fai-domain · repository" {
+  [FlairProfileRepository · FlairCoinEntryRepository\nFlairMatchRepository · FlairMatchEntryRepository\nFlairTeamRepository · FlairTeamMemberRepository\nFlairModeStateRepository · FlairTerritoryRepository\nFlairTrophyRepository · FlairCombinationRepository\nFlairRedemptionRepository] as FREPOS
+  [SchemeRepository · SchemeItemRepository\nWardrobeItemRepository · UserRepository\nBrandProfileRepository · ReactionRepository] as REPOS
+  [HypeScoreCurrentRepository] as HREPO
 }
-database "MySQL · fashionai_app\n• brand_profiles\n• flair_coin_entries\n• flair_combinations\n• flair_match_entries\n• flair_matches\n• flair_mode_states\n• flair_profiles\n• flair_redemptions\n• flair_team_members\n• flair_teams\n• flair_territories\n• flair_trophies\n• reactions\n• scheme_items\n• schemes\n• users\n• wardrobe_items" as DB
-[NotificationService\n(RNF10)] as P_notif
-[Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
+database "MySQL · fashionai_app\n• flair_profiles · flair_coin_entries\n• flair_matches · flair_match_entries\n• flair_teams · flair_team_members\n• flair_mode_states · flair_territories · flair_trophies\n• flair_combinations · flair_redemptions\n• schemes · scheme_items · wardrobe_items\n• hype_scores · fai_points_ledger · coupon_rights" as DB
 
-FE0 --> FlairController : HTTPS/JSON
-FE0 --> FlairModesController : HTTPS/JSON
-FE1 --> FlairController : HTTPS/JSON
-FE1 --> FlairModesController : HTTPS/JSON
-FE2 --> FlairController : HTTPS/JSON
-FE2 --> FlairModesController : HTTPS/JSON
-FlairController --> FlairService
-FlairModesController --> FlairModesService
-FlairService ..> SchemeService
-FlairService ..> InstitutionalService
-FlairService --> REPOS
-FlairService --> P_events
-FlairModesService ..> FlairService
-FlairModesService ..> SchemeService
-FlairModesService --> REPOS
-FlairModesService --> P_notif
+FE_PAGE --> FE_MODES
+FE_PAGE --> FE_CARD
+FE_PAGE --> FE_SHARED
+FE_BRAND --> FE_SHARED
+FE_PAGE --> FC : HTTPS/JSON
+FE_MODES --> FMC : HTTPS/JSON
+FE_BRAND --> FC : HTTPS/JSON
+FE_PAGE ..> FE_COUP : "Meus cupons resgatados"
+FC --> FS
+FMC --> FMS
+FMS --> FS : profile · award · publicLookHype · rightsCheck
+FS --> ENG
+FMS --> ENG
+FS ..> SCH
+FMS ..> SCH
+FS ..> INST
+FS ..> G
+FMS ..> G
+FS --> FP
+FMS --> FP
+FMS --> NS
+FS --> EV : rightsCheck
+EV ..> CS
+CS --> FS : combinationsFor · redeem
+CS --> NS
+FS ..> CFG
+FS --> FREPOS
+FMS --> FREPOS
+FS --> REPOS
+FMS --> REPOS
+FS --> HREPO : Hype v2 (só leitura)
+FREPOS --> DB : JPA/Flyway
 REPOS --> DB : JPA/Flyway
+HREPO --> DB : JPA/Flyway
 @enduml

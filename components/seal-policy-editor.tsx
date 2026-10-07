@@ -1,6 +1,6 @@
 "use client";
 import { Button, ChipMultiSelect, Dropdown, Field, Input, SegmentPicker } from "@/components/ui";
-import { CATEGORY_KEYS, label, useTaxonomy } from "@/lib/api/taxonomy";
+import { CATEGORY_KEYS, label, useTaxonomy, subcategoryLabel } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
 import { tr } from "@/lib/i18n/core";
 import { LEVELS } from "@/lib/hype/model";
@@ -61,7 +61,7 @@ export function cleanPolicy(p: SealPolicy | null | undefined): SealPolicy | null
 
 function pieceWords(r: SealRule): string {
   const w: string[] = [];
-  if (r.subcategory) w.push(label(r.subcategory).toLowerCase()); else if (r.category) w.push(label(r.category).toLowerCase());
+  if (r.subcategory) w.push(subcategoryLabel(r.subcategory).toLowerCase()); else if (r.category) w.push(label(r.category).toLowerCase());
   if (r.color) w.push(tr("sealPolicy.cor", { c: colorLabel(r.color).toLowerCase() }));
   if (r.brand?.trim()) w.push(tr("sealPolicy.da_marca", { b: r.brand.trim() }));
   if (isLevel(r.hypeMin)) w.push(tr("sealPolicy.hype.com_hype_min", { level: tr(`hype.level.${r.hypeMin}`) }));
@@ -170,7 +170,7 @@ export function SealPolicyEditor({ value, onChange, tier, onTier, brandName }: {
                 <Field label={t("sealPolicy.tipo_de_peca")} id={`sp-cat-${i}`}><Dropdown id={`sp-cat-${i}`} block value={r.category ?? ""} options={categoryOptions} onChange={(v) => setRule(i, { category: v || null, subcategory: null })} /></Field>
                 {r.category && (
                   <Field label={t("sealPolicy.subtipo")} id={`sp-sub-${i}`}><Dropdown id={`sp-sub-${i}`} block value={r.subcategory ?? ""} onChange={(v) => setRule(i, { subcategory: v || null })}
-                    options={[{ id: "", label: t("sealPolicy.qualquer_subtipo") }, ...(tax?.subcategories?.[r.category] ?? []).map((s) => ({ id: s, label: label(s) }))]} /></Field>
+                    options={[{ id: "", label: t("sealPolicy.qualquer_subtipo") }, ...(tax?.subcategories?.[r.category] ?? []).map((s) => ({ id: s, label: subcategoryLabel(s) }))]} /></Field>
                 )}
                 <Field label={t("sealPolicy.marca_label")} id={`sp-brand-${i}`} hint={t("sealPolicy.marca_dica")}>
                   <Input id={`sp-brand-${i}`} value={r.brand ?? ""} maxLength={80} placeholder={t("sealPolicy.qualquer_marca")} onChange={(e) => setRule(i, { brand: e.target.value })} />

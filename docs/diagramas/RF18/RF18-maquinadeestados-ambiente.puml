@@ -1,6 +1,6 @@
 @startuml RF18_MaquinaDeEstados_Ambiente
 !pragma layout smetana
-title RF18 — Ambiente 3D do provador: neutro, marca, multimarca e marca fixada (resolveEnvironment)
+title RF18 — Usar o Provador virtual de lojas\nDiagrama de máquina de estados — ambiente 3D do provador (resolveEnvironment × modo escolhido)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,29 +8,56 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-[*] --> Neutro : provador vazio ou peças sem marca
-state "neutral (FashionAI)" as Neutro
-state "brand (uma marca)" as Marca
-state "multibrand (destaque + painéis)" as Multi
-state "pinned (marca fixada)" as Fixada
-Neutro --> Marca : prova peça com marca
-Marca --> Marca : prova outra peça da mesma marca
-Marca --> Multi : prova peça de outra marca\n(a nova vira destaque)
-Multi --> Multi : prova peça de outra marca\n(destaque = última escolha; até 3 painéis)
-Multi --> Marca : remove as peças das outras marcas
-Marca --> Neutro : remove a última peça com marca / Limpar
-Multi --> Neutro : Limpar
-Marca --> Fixada : fixa a marca (chip do ambiente)
-Multi --> Fixada : fixa uma das marcas vestidas
-Fixada --> Fixada : continua provando\n(o destaque não muda)
-Fixada --> Marca : volta para Automático
-Fixada --> Multi : volta para Automático
-Marca --> Neutro : escolhe "Neutro"
-Multi --> Neutro : escolhe "Neutro"
-Neutro --> Marca : volta para Automático (há marca vestida)
-note right of Multi
-  Cada troca anima as cores e o painel entra
-  com escala suave; "reduzir movimento"
-  troca na hora.
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+[*] --> Auto : abre /try-on (mode = auto)
+
+state "Automático (mode = auto)" as Auto {
+  state "neutral\n(FashionAI: nenhuma peça com marca)" as AN
+  state "brand\n(uma marca vestida = destaque)" as AB
+  state "multibrand\n(destaque = marca da última peça;\naté 3 painéis laterais)" as AM
+  [*] --> AN
+  AN --> AB : veste peça com marca
+  AB --> AB : veste outra peça da mesma marca
+  AB --> AM : veste peça de outra marca
+  AM --> AM : veste mais uma marca\n(a nova vira destaque)
+  AM --> AB : removeSlot() deixa só uma marca
+  AB --> AN : remove a última peça com marca
+  AM --> AN : Limpar (commit([]))
+  AB --> AN : Limpar
+}
+
+state "Marca fixada (mode = {pinned: key})" as Fixada {
+  state "pinned ok\n(destaque = marca fixada;\nas outras viram painéis)" as FP
+  state "fallback\n(marca fixada saiu do corpo:\ndestaque = última marca)" as FF
+  [*] --> FP
+  FP --> FP : continua provando\n(o destaque não muda)
+  FP --> FF : remove as peças da marca fixada
+  FF --> FP : veste de novo a marca fixada
+}
+
+state "Neutro escolhido (mode = neutral)" as Neutro : kind = neutral mesmo com marcas vestidas
+
+Auto --> Fixada : ida: chip de uma marca vestida\nvolta: chip fixado de novo ou "Automático"
+Fixada --> Fixada : toca o chip de outra marca
+Fixada --> Auto
+Auto -down-> Neutro : chip "Neutro"
+Fixada -down-> Neutro : chip "Neutro"
+Neutro -up-> Auto : chip "Automático"
+Neutro -up-> Fixada : chip de\numa marca
+
+note as N1
+  Sem marca vestida ou modo Neutro:
+  NEUTRAL_ENVIRONMENT (FashionAI).
+  Cada troca anima cores e painéis;
+  com "reduzir movimento" troca na hora.
+end note
+note as N2
+  O modo vive só no estado da tela (useState);
+  a prova (peças) fica no sessionStorage;
+  nada vai ao servidor.
 end note
 @enduml

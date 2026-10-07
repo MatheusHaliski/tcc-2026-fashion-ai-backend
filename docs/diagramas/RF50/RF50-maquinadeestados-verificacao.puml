@@ -57,8 +57,10 @@ note bottom of Perfil
     (automático OK ou conferido pelo analista) e analista ≠ dono
 (2) ao menos um motivo padronizado; OUTRO exige observação;
     {approve: false} antigo vira OUTRO ou DADOS_INCOMPLETOS
-(3) link válido, nome civil efetivo da celebridade preenchido e
-    documento enviado pelo formulário: attempts + 1,
+(3) link oficial efetivo (enviado ou já gravado) válido e nome
+    civil efetivo da celebridade preenchido; documento novo é
+    opcional (só ao trocar o comprovante, e então enviado pelo
+    formulário; sem ele o atual é mantido): attempts + 1,
     reviewSubmittedAt = agora, reviewOwnerMessage.
     Inválido: 400 FORMULARIO_INVALIDO e o pedido fica
     no estado em que estava (nada é gravado)

@@ -48,12 +48,11 @@ class DnaHypeFocusV2Test {
     private DnaService dna;
     private Scheme viral, insufficient, notCalculated, privateHot;
 
-    Scheme look(String title, BigDecimal v1, int daysAgo) {
+    Scheme look(String title, int daysAgo) {
         Scheme s = new Scheme();
         s.assignId(UUID.randomUUID());
         s.setUser(owner);
         s.setTitle(title);
-        s.setHypeScore(v1);
         s.markCreatedAt(Instant.parse("2026-09-30T10:00:00Z").minusSeconds(daysAgo * 86400L));
         return s;
     }
@@ -79,11 +78,10 @@ class DnaHypeFocusV2Test {
         owner.setUsername("ana");
         owner.setProfileType(ProfileType.PESSOAL);
         dna = new DnaService(null, null, null, null, null, null, schemeItems, null, null, null, null, null, null, null, hypeRepo, HypeScoreConfig.defaults());
-        // v1 propositalmente invertido: se a narrativa ainda lesse o v1, a ordem sairia ao contrário
-        viral = look("Look viral", BigDecimal.valueOf(5), 1);
-        insufficient = look("Look novo", BigDecimal.valueOf(99), 2);
-        notCalculated = look("Look sem cálculo", BigDecimal.valueOf(80), 3);
-        privateHot = look("Look privado", BigDecimal.valueOf(1), 4);
+        viral = look("Look viral", 1);
+        insufficient = look("Look novo", 2);
+        notCalculated = look("Look sem cálculo", 3);
+        privateHot = look("Look privado", 4);
         when(schemeItems.findBySchemeIdIn(anyCollection())).thenReturn(List.of());
         when(hypeRepo.findByEntityTypeAndEntityIdInAndAlgorithmVersion(eq(HypeEntityType.SCHEME), anyCollection(), anyString())).thenReturn(List.of(
                 row(viral, HypeStatus.AVAILABLE, 91.6, HypeLevel.VIRAL, true),
@@ -121,13 +119,13 @@ class DnaHypeFocusV2Test {
         // dados insuficientes e não calculado: status, score nulo — nunca 0
         assertThat(hypeOfCell(view, insufficient)).containsEntry("status", "INSUFFICIENT_DATA").containsEntry("score", null).containsEntry("level", null);
         assertThat(hypeOfCell(view, notCalculated)).containsEntry("status", "NOT_CALCULATED").containsEntry("score", null);
-        // o campo v1 continua (deprecado), sem influenciar o v2
-        assertThat(((List<Map<String, Object>>) view.get("cells")).get(0)).containsKey("hypeScoreGlobal");
+        // o campo v1 (hypeScoreGlobal) saiu na limpeza do v1 (P3-16)
+        assertThat(((List<Map<String, Object>>) view.get("cells")).get(0)).doesNotContainKey("hypeScoreGlobal");
 
         Map<String, Object> narrative = (Map<String, Object>) view.get("narrative");
         assertThat(narrative).containsEntry("basis", "HYPE_V2");
         List<Map<String, Object>> meters = (List<Map<String, Object>>) narrative.get("meters");
-        // maior v2 primeiro; sem Hype por último (o v1 invertido não manda mais)
+        // maior v2 primeiro; sem Hype por último
         assertThat(meters).extracting(m -> m.get("schemeId")).containsExactly(viral.getId(), privateHot.getId(), notCalculated.getId(), insufficient.getId());
         assertThat(meters.get(0)).containsEntry("score", 91.6).containsEntry("level", "VIRAL");
         assertThat(meters.get(3)).containsEntry("score", null).containsEntry("status", "INSUFFICIENT_DATA");
