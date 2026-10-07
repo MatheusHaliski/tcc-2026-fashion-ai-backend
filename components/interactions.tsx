@@ -191,10 +191,8 @@ export function useRemix(type: TargetType, id: string) {
     if (!user) { router.push("/login"); return; }
     if (busy) return; setBusy(true);
     try {
-      const r = await api.post<{ scheme?: { id: string }; id?: string; next?: string; hint?: string; seedPieceId?: string }>(`/api/interactions/${interactionType(type)}/${id}/remixes`);
-      // a peça vira semente do criador de looks (/schemes/new?pieces=); só segue o `next` da API quando ele já aponta
-      // para o criador — versões antigas da API devolviam /create-look?seedPiece=, rota que o app não tem (404)
-      if (type === "PIECE") { if (r.hint) toast.success(r.hint); router.push(r.next?.startsWith("/schemes/new") ? r.next : `/schemes/new?pieces=${encodeURIComponent(r.seedPieceId ?? id)}`); return; }
+      const r = await api.post<{ scheme?: { id: string }; id?: string; next?: string; hint?: string }>(`/api/interactions/${interactionType(type)}/${id}/remixes`);
+      if (type === "PIECE") { if (r.hint) toast.success(r.hint); router.push(r.next?.startsWith("/") ? r.next : `/schemes/new?pieces=${id}`); return; }
       toast.success(t("interactions.remixDone")); const nid = r.scheme?.id ?? r.id; if (nid) router.push(`/schemes/${nid}`);
     } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
