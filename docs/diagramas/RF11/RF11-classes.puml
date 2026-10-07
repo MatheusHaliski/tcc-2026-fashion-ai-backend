@@ -1,5 +1,5 @@
 @startuml RF11_Classes
-title RF11 — Compor a arte de fundo (Background Studio) do card de um esquema ou de uma peça\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de classes — backend: controller, serviços, portas, entidades e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -11,45 +11,154 @@ skinparam class {
 skinparam packageStyle rectangle
 hide empty methods
 
+package "fai-web · controller" {
+class BackgroundController {
+  +catalog(): Map
+  +combination(aura, material, animated, mosaic): Map
+  +recommend(styles, occasions): Map
+  +art(user, ArtRequest): Map
+  +upload(user, file, target): Map
+  +saveScheme(user, id, SchemeBackground): Map
+  +resetScheme(user, id): Map
+  +savePiece(user, id, config): Map
+  +skinThumbnail(admin, skinId, pieceContext): Map
+}
+class SchemeBackground <<record>> {
+  +config: Map
+  +applyRecommendedDirection: Boolean
+}
+}
+
+package "fai-application" {
+class BackgroundStudioService {
+  {static} {field} +ANATOMIES: List — 13 anatomias do look
+  {static} {field} +PIECE_ANATOMIES: List — 8 da peça
+  {static} +SILHOUETTES: Set
+  {static} +AURA_FORMATS = [IMAGEM_UNICA, MOSAICO]
+  {static} +DIRECTIONS: EDITORIAL_SPREAD, LUXURY_GLASS,\nATELIER, SHOW_NOTES
+  {static} +SEAL_PLACEMENT / PIECE_SEAL_PLACEMENT
+  +catalog(): Map
+  +combination(aura, material, animated, mosaic): Map
+  +recommend(styles, occasions): Map
+  +generateArt(user, ArtRequest): Map
+  +upload(user, bytes, target): Map
+  +applyToScheme(Scheme, config, applyRecommendedDirection)
+  +saveScheme(user, schemeId, config, applyDirection): Map
+  +resetScheme(user, schemeId): Map
+  +savePiece(user, pieceId, cfg): Map
+  ~withRevision(currentJson, cfg): Object
+  +generateSkinThumbnail(admin, skinId, pieceContext): Map
+  +rendererBackground(Scheme): Background
+}
+class ArtRequest <<record>> {
+  +prompt: String
+  +direction: String
+  +celebrityId: UUID
+  +era: String
+  +passePartout: boolean
+  +target: String
+}
+class AssetCatalogService {
+  +manifest(): Map
+  +list(key): List
+  +mosaics(): List
+  +auraVariant(id): Optional
+  +material(id): Optional
+  +gradient(id): Optional
+  +cardSkin(id): Optional
+  +resolveCombination(aura, material, animated, mosaic): Map
+  +nativeContainer(skinId): String
+  +syncPresets(): int
+}
+class SchemeService {
+  +create(user, SchemeForm): Map
+  +update(user, id, SchemeForm): Map
+  +preview(user, SchemeForm): byte[]
+  +renderCard(viewer, id, expanded): byte[]
+}
+class MediaService {
+  +put(key, bytes, contentType): StoredObject
+  +register(owner, PhotoOrigin, ...): Photo
+  +requireOwnedMedia(owner, url, scopes, field): OwnedMedia
+  +readImage(url): Optional<BufferedImage>
+}
+class AiEngine {
+  +execute(userId, AiCapability, inputs, prompt,\nprotectedNames, remotes, local): AiOutcome
+}
+class CelebrityPromptValidator {
+  {static} +validate(prompt, protectedNames): Verdict
+}
+class "SchemeCardRenderer.Background" as RB <<record>> {
+  +color: String
+  +gradientStops: List<String>
+  +auraVariantId: String
+  +materialId: String
+  +aiArt: BufferedImage
+  +passePartout: boolean
+  +containerColor: String
+  +cardSkin: String
+}
+interface "ImageProviderPorts.ImageGenerationPort" as IGP <<port>> {
+  +available(): boolean
+  +generate(prompt, negative, width, height): Optional<ProviderImage>
+}
+interface MediaStoragePort <<port>> {
+  +put(key, bytes, contentType): StoredObject
+}
+enum AiCapability {
+  BACKGROUND_GENERATOR
+  .. demais capacidades (RF24) ..
+}
+}
+
+package "fai-infrastructure" {
+class ReplicateImageGenerationAdapter
+class "S3MediaStorageAdapter /\nLocalFileMediaStorage" as Storage
+}
+
 package "fai-domain · model" {
 class Scheme {
+  +season: Season
   +backgroundColor: String = "#F4F2EF"
   +backgroundGradient: String
   +backgroundArtUrl: String
   +backgroundVideoUrl: String
-  +backgroundAnimationType: BackgroundAnimation
-  +studioConfigJson: String
+  +backgroundAnimationType: BackgroundAnimation = NONE
+  +studioConfigJson: String — JSON
   +cardSkin: String = "atelier"
-  +containerOrigin: ContainerOrigin
-  +containerMandatory: boolean
+  +layoutAnatomy: String = "LISTA_VERTICAL"
+  +containerOrigin: ContainerOrigin = INDEFINIDA
   +containerColor: String
+  +containerMandatory: boolean
   +recommendedDirection: String
 }
 class WardrobeItem {
   +backgroundConfigJson: String
-  .. {rev, template, composition, surface, effects} ..
+  .. {rev, v, template, composition, surface,\neffects + campos do Studio} ..
+}
+class DnaScheme {
+  +backgroundColor: String
+  +backgroundVideoUrl: String
+  +studioConfigJson: String
+  .. ver RF13 ..
 }
 class AssetPreset {
   +id: String
   +kind: AssetKind
   +label: String
   +presetGroup: String
-  +staticUrl: String
-  +animatedUrl: String
-  +posterUrl: String
+  +staticUrl / previewUrl: String
+  +animatedUrl / posterUrl: String
   +paletteJson: String
-  +metadataJson: String
   +status: String
   +rfTags: String
-  +syncedAt: Instant
 }
 class Photo {
   +user: User
   +origin: PhotoOrigin
   +storageKey: String
   +publicUrl: String
-  +width: Integer
-  +height: Integer
+  +width / height: Integer
 }
 }
 package "fai-domain · enums" {
@@ -77,45 +186,39 @@ enum AssetKind {
   SEASONAL
   CARD_SKIN
 }
-}
-package "fai-application · service" {
-class BackgroundStudioService {
-  +catalog(): Map
-  +combination(aura, material, animated, mosaic): Map
-  +recommend(styles, occasions): Map
-  +generateArt(user, ArtRequest): Map
-  +upload(user, bytes, target): Map
-  +applyToScheme(scheme, config, applyDirection)
-  +saveScheme(user, schemeId, config, applyDirection): Map
-  +resetScheme(user, schemeId): Map
-  +savePiece(user, pieceId, cfg): Map
-  +rendererBackground(scheme): Background
-}
-class ArtRequest <<record>> {
-  +prompt: String
-  +direction: String
-  +celebrityId: UUID
-  +era: String
-  +passePartout: boolean
-  +target: String
-}
-enum AiCapability {
-  BACKGROUND_GENERATOR
-  .. outras capacidades (RF24) ..
+enum PhotoOrigin {
+  BACKGROUND_STUDIO
+  .. demais origens (RF12) ..
 }
 }
+
+BackgroundController --> BackgroundStudioService
+BackgroundController ..> SchemeBackground
+BackgroundController --> AssetCatalogService : manifest · skins · mosaics
+BackgroundStudioService ..> ArtRequest
+BackgroundStudioService --> AssetCatalogService
+BackgroundStudioService --> MediaService
+BackgroundStudioService --> AiEngine : BACKGROUND_GENERATOR
+BackgroundStudioService --> "0..*" IGP : generators
+BackgroundStudioService ..> RB : rendererBackground
+SchemeService --> BackgroundStudioService : applyToScheme / rendererBackground
+AiEngine ..> CelebrityPromptValidator : antes do envio
+AiEngine ..> AiCapability
+MediaService --> MediaStoragePort
+IGP <|.. ReplicateImageGenerationAdapter
+MediaStoragePort <|.. Storage
+BackgroundStudioService ..> Scheme : applyToScheme · resetScheme
+BackgroundStudioService ..> WardrobeItem : savePiece (rev + 1)
+AssetCatalogService ..> AssetPreset : syncPresets()
+MediaService ..> Photo : register(BACKGROUND_STUDIO)
 Scheme --> ContainerOrigin
 Scheme --> BackgroundAnimation
+DnaScheme --> BackgroundAnimation
 AssetPreset --> AssetKind
-BackgroundStudioService ..> Scheme : applyToScheme / reset
-BackgroundStudioService ..> WardrobeItem : savePiece (rev)
-BackgroundStudioService ..> AssetPreset : via AssetCatalogService
-BackgroundStudioService ..> Photo : registra BACKGROUND_STUDIO
-BackgroundStudioService ..> ArtRequest
-BackgroundStudioService ..> AiCapability : BACKGROUND_GENERATOR
-note top of Scheme : tabela schemes (só os campos do RF11)
-note top of WardrobeItem : tabela wardrobe_items
-note top of AssetPreset : tabela asset_presets
+Photo --> PhotoOrigin
+note bottom of Scheme : tabela schemes (só as colunas do RF11)
+note bottom of WardrobeItem : tabela wardrobe_items\n(background_config_json)
+note bottom of AssetPreset : tabela asset_presets (cópia do\ncatalog/asset-manifest.json via\nPOST /api/admin/jobs/assets)
 note bottom of Photo : tabela photos (Minhas Fotos — RF12)
-note bottom of ArtRequest : direction ∈ EDITORIAL_SPREAD, LUXURY_GLASS,\nATELIER, SHOW_NOTES (DIRECTIONS)
+note top of IGP : só o adapter da Replicate existe;\nFirefly/Gemini aparecem só em comentário
 @enduml

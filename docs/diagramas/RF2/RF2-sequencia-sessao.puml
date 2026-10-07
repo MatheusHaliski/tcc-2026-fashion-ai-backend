@@ -1,0 +1,85 @@
+@startuml RF2_Sequencia_Sessao
+title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de sequência — sessão em uso: restaurar, requisição autenticada, renovação com rotação e sair
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+participant "AuthProvider\n(lib/auth/session.tsx)" as AP
+participant "lib/api/client.ts\n(tokenStore · tryRefresh)" as CL
+participant "BFF\n/bff/auth/[action]" as BFF
+participant "Spring Security\n(JWT RS256 + aud)" as SEC
+participant "SessionActiveFilter" as SF
+participant "AuthController" as AC
+participant "IdentityService" as IS
+participant "XController\n(qualquer rota /api)" as XC
+database "MySQL\nrefresh_tokens" as DB
+
+== Abrir o app (restaurar a sessão) ==
+AP -> CL: restoreSession()
+alt sem cookie-sinal fai_rt_h
+  CL --> AP: false (visitante)
+else há sessão para restaurar
+  CL -> CL: Web Lock "fai-auth-refresh" (uma aba renova por vez)
+  CL -> BFF: POST /bff/auth/refresh (cookie fai_rt)
+  BFF -> AC: POST /api/auth/refresh {refreshToken}
+  AC -> IS: refresh(raw, ip, userAgent)
+  IS -> DB: findByTokenHash(SHA-256)
+  alt token já rotacionado (reuso)
+    IS -> DB: revokedAt em toda a família · audit_log REFRESH_REUTILIZADO
+    IS --> BFF: 401 "sessão encerrada por segurança"
+    BFF --> CL: 401 + apaga fai_rt e fai_rt_h
+  else expirado, inexistente ou conta DELETED/SUSPENDED
+    IS --> BFF: 401
+    BFF --> CL: 401 + apaga os cookies
+  else válido
+    IS -> DB: revokedAt = agora no antigo · INSERT refresh_tokens (mesma família, rotatedFromId)
+    IS --> BFF: 200 Session (novo par)
+    BFF --> CL: 200 {accessToken, …} + fai_rt novo
+    CL -> CL: tokenStore.set(access) · BroadcastChannel avisa as outras abas
+  end
+  AP -> CL: GET /api/me (Me: e-mail confirmado, papel, status)
+end
+
+== Requisição autenticada ==
+CL -> SEC: GET /api/... (Authorization: Bearer, X-Dev-Gate, Accept-Language)
+SEC -> SEC: assinatura RS256, iss "fashionai", aud "fashionai-api", exp
+alt access token inválido ou vencido
+  SEC --> CL: 401
+  CL -> CL: tryRefresh() (passos da renovação acima) e repete UMA vez
+  opt renovação recusada
+    CL -> AP: onUnauthorized → /login?reason=session
+  end
+else token válido
+  SEC -> SF: claim sid
+  SF -> IS: sessionActive(sid)
+  IS -> DB: findByFamilyId(sid) — algum token sem revokedAt e não expirado?
+  alt família revogada (logout, outra sessão encerrada, troca de senha)
+    SF --> CL: 401 SESSAO_ENCERRADA
+  else ativa
+    SF -> XC: segue (RequestActor = user_id)
+    XC --> CL: 200
+  end
+end
+
+== Sair ==
+AP -> CL: signOut()
+CL -> BFF: POST /bff/auth/logout (Bearer)
+BFF -> AC: POST /api/auth/logout
+alt access vencido (401) e cookie fai_rt presente
+  BFF -> AC: POST /api/auth/refresh {cookie} → access novo
+  BFF -> AC: POST /api/auth/logout (Bearer novo)
+end
+AC -> IS: logout(user, sid)
+IS -> DB: revokedAt em toda a família · audit_log LOGOUT
+alt API fora do ar
+  BFF --> CL: 502 OFFLINE + apaga fai_rt e fai_rt_h
+else
+  BFF --> CL: 204 + apaga fai_rt e fai_rt_h (401 da API também vira 204)
+end
+CL -> CL: tokenStore.clear() · BroadcastChannel "logout"
+CL -> AP: /login
+@enduml

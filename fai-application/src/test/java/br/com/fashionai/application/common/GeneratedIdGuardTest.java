@@ -33,7 +33,7 @@ class GeneratedIdGuardTest {
     void entidadesComIdGeradoNaoRecebemIdManual() throws IOException {
         assumeTrue(Files.isDirectory(DOMAIN), "fonte do domínio fora do checkout");
         Set<String> generated = generatedIdEntities();
-        assertThat(generated).contains("AiInferenceLog", "ProcessingJobLog", "MetricSnapshot");
+        assertThat(generated).contains("AiInferenceLog", "ProcessingJobLog");
         List<String> offenders = new ArrayList<>();
         for (Path root : CODE) {
             if (!Files.isDirectory(root)) {

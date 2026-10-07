@@ -1,6 +1,6 @@
 @startuml RF25_MaquinaDeEstados_Selo
 !pragma layout smetana
-title RF25 — Selo: status × janela de validade (disponível a partir de / expira em)
+title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de máquina de estados — selo (SealStatus × janela de validade × limite de emissões)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,16 +8,42 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-[*] --> Ativo : POST /api/seals
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+[*] --> Ativo : POST /api/seals (status padrão ACTIVE)\nou ensureDefaultSeals() na aprovação do emissor
+[*] --> Inativo : POST /api/seals com status INACTIVE
+
 state "ACTIVE" as Ativo {
-  [*] --> EmBreve : agora < availableFrom
+  state "Em breve\n(agora < availableFrom)" as EmBreve
+  state "Disponível\n(available = true)" as Disponivel
+  state "Expirado\n(agora ≥ availableUntil)" as Expirado
+  state "Esgotado\n(usageCount ≥ usageLimit)" as Esgotado
+  [*] --> EmBreve : availableFrom no futuro
   [*] --> Disponivel : sem janela ou dentro dela
   EmBreve --> Disponivel : chega availableFrom
+  Disponivel --> Disponivel : issue(): vínculo APPROVED,\nusageCount + 1, CouponRightsCheck
+  Disponivel --> Esgotado : última emissão do limite
   Disponivel --> Expirado : passa availableUntil
-  Disponivel --> Esgotado : emissões = usageLimit
+  Esgotado --> Disponivel : PUT /api/seals/{id}\n(limite maior ou sem limite)
+  Expirado --> Disponivel : PUT /api/seals/{id}\n(nova data de fim)
 }
-Ativo --> Inativo : dono desativa
-Inativo --> Ativo : dono reativa
-note right of Disponivel : só aqui o selo é concedido\n(SealBond APPROVED)\ne gera CouponRightsCheck (RF38)
-note right of Expirado : fora da janela aparece como\nindisponível, com o motivo
+state "INACTIVE\n(motivo: o selo está inativo)" as Inativo
+
+Ativo --> Inativo : PUT /api/seals/{id} {status: INACTIVE}\n(botão "Desativar" do dono)
+Inativo --> Ativo : PUT /api/seals/{id} {status: ACTIVE}\n(botão "Ativar")
+
+note right of Disponivel
+  Só aqui o selo é concedido. Fora daqui o pedido
+  de vínculo vira REJECTED com o motivo
+  (409 SELO_INDISPONIVEL) — unavailableReason().
+end note
+note bottom of Inativo
+  Visitantes só veem selos ACTIVE; promoção ligada
+  a selo inativo fica indisponível e não se cria
+  promoção nova para ele (400 SELO_INATIVO).
+  Não há exclusão de selo pela API.
+end note
 @enduml

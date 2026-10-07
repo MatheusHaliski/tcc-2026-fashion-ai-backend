@@ -28,6 +28,7 @@ import br.com.fashionai.domain.repository.HypeScoreSnapshotRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.StyleDnaRepository;
+import br.com.fashionai.domain.repository.UserPreferencesRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -104,6 +105,26 @@ public class HypeQueryService {
         this.wardrobe = wardrobe;
         this.schemeService = schemeService;
         this.cache = cache;
+    }
+
+    /**
+     * RF53 · P3-12 — preferências de quem pediu para não aparecer em "Criadores em alta". Por setter (os construtores de
+     * 11 e 12 argumentos continuam valendo); sem ele, ninguém saiu do ranking.
+     */
+    private UserPreferencesRepository preferences;
+
+    @Autowired(required = false)
+    public void setPreferences(UserPreferencesRepository preferences) {
+        this.preferences = preferences;
+    }
+
+    /** Ids de quem saiu de "Criadores em alta" (uma consulta por montagem da tabela, que vai para o cache por geração). */
+    Set<UUID> creatorOptOuts() {
+        if (preferences == null) {
+            return Set.of();
+        }
+        List<UUID> ids = preferences.findHypeCreatorOptOutUserIds();
+        return ids == null || ids.isEmpty() ? Set.of() : new HashSet<>(ids);
     }
 
     // ================================================================== visibilidade
@@ -449,6 +470,10 @@ public class HypeQueryService {
      * sem valor nem faixa ("sem dados" nunca vira 0). A faixa ({@code level}) só existe quando o valor é Hype (janelas 7 e
      * 30); na janela 1 o valor é o trend médio (crescimento), que não tem faixa. A marca com perfil oficial aprovado leva
      * o {@code slug} (link para /brands/{slug}).
+     * <p>
+     * P3-12: a pessoa que optou por não aparecer em "Criadores em alta" fica fora do agregado de criador — some do ranking
+     * (os demais sobem) e, no lote de chips, a chave dela volta sem dados. As peças e looks dela continuam com o próprio
+     * Hype (o filtro é só aqui, no agrupamento por pessoa; marcas não mudam).
      */
     List<Map<String, Object>> groupRows(RankGroup group, int win, String category, String style, String occasion) {
         List<HypeEntityType> types = group == RankGroup.BRAND ? List.of(HypeEntityType.PIECE) : List.of(HypeEntityType.PIECE, HypeEntityType.SCHEME);
@@ -475,6 +500,7 @@ public class HypeQueryService {
                 ? schemes.findByIdIn(scored.stream().filter(x -> x.type() == HypeEntityType.SCHEME).map(x -> x.c().getEntityId()).toList()).stream()
                 .collect(Collectors.toMap(Scheme::getId, Function.identity(), (a, b) -> a)) : Map.of();
         Map<String, String> slugs = group == RankGroup.BRAND ? officialBrandSlugs() : Map.of();
+        Set<UUID> optedOut = group == RankGroup.CREATOR ? creatorOptOuts() : Set.of();
 
         Map<String, List<Scored>> byKey = new LinkedHashMap<>();
         Map<String, Map<String, Object>> meta = new HashMap<>();
@@ -499,8 +525,8 @@ public class HypeQueryService {
                 br.com.fashionai.domain.model.User owner = x.type() == HypeEntityType.PIECE
                         ? Optional.ofNullable(pieceById.get(x.c().getEntityId())).map(WardrobeItem::getUser).orElse(null)
                         : Optional.ofNullable(schemeById.get(x.c().getEntityId())).map(Scheme::getUser).orElse(null);
-                if (owner == null) {
-                    continue;
+                if (owner == null || optedOut.contains(owner.getId())) {
+                    continue;   // P3-12: quem saiu de "Criadores em alta" não forma agregado (o item segue com o próprio Hype)
                 }
                 key = owner.getId().toString();
                 if (!meta.containsKey(key)) {
@@ -571,7 +597,8 @@ public class HypeQueryService {
      * relevantes; {@code rank} é a posição no ranking público completo do tipo (sem recorte). Janela 7 (HypeScore atual)
      * ou 30 (média do mês); a 1 (trend) cai em 7, porque o chip fala de Hype, e crescimento não é Hype. A tabela completa
      * vai para o HypeCache por geração (GET nunca recalcula); o bloqueio entre quem vê e o criador é aplicado depois:
-     * a chave bloqueada some da resposta, como se não houvesse dado.
+     * a chave bloqueada some da resposta, como se não houvesse dado. Criador que saiu de "Criadores em alta" (P3-12) volta
+     * como sem dados: sem valor, sem faixa e sem posição (nunca 0).
      */
     public static final int MAX_GROUP_KEYS = MAX_BATCH;
 

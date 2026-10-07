@@ -1,5 +1,5 @@
 @startuml RF14_Atividades
-title RF14 — Visualizar a aba "Marcas" — Feed de Perfil de Marcas de roupa cadastradas dentro do sistema do FashionAI\nDiagrama de atividades — fluxo da pessoa e do sistema
+title RF14 — Aba "Marcas": feed e perfil das marcas cadastradas\nDiagrama de atividades — feed /brands, ordem, Hype da marca e perfil /brands/[slug] com abas
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 18
@@ -25,59 +25,81 @@ skinparam note {
 }
 |Pessoa|
 start
-:Abre a aba "Marcas" (/brands);
+:Abre /brands (aba "Marcas"), logada ou não;
 |Frontend (brands/page.tsx)|
-:GET /api/brands?term=&order=\n(anônimo quando não está logado);
-|Backend (InstitutionalService)|
-:Lê brand_profiles com approval_status = APROVADO;
-note right
-  RN (RF1.CA06): marca PENDENTE, RECUSADO
-  ou SUSPENSO não aparece no feed
-  nem tem página pública
-end note
-if (Há termo de busca?) then (sim)
-  :Filtra por brandName (contains, sem caixa);
-else (não)
-endif
-if (Logado, com DNA e order != RECENTES?) then (sim)
-  :Calcula afinidade (styleKeywords do StyleDna × catálogo da marca)\nAiEngine.local(AFFINITY);
-  :Ordena por afinidade desc (order = AFINIDADE);
-  note right: ver RF13 (DNA de Estilo) e RF24 (motor de IA)
-else (não)
-  :Ordena por createdAt desc (order = RECENTES);
-endif
-:Monta cards: slug, nome, logo, categoria,\nbonds aprovados, seguidores;
-|Frontend (brands/page.tsx)|
-:Exibe grade de cards (BrandLogo + nome + seguidores + selos);
-if (Logo da marca ausente no card?) then (sim)
-  :GET /api/brand-logos?name= (cache / busca na web);
-  note right: ver RF4 (buscador web de marcas)
-else (não)
-endif
-|Pessoa|
-:Toca em um card ou alterna para a aba "Celebridades";
-if (Abriu uma marca?) then (sim)
-  |Frontend (brands/[slug]/page.tsx)|
-  :GET /api/institutional/{slug};
-  |Backend (InstitutionalService)|
-  if (Marca APROVADA ou visitante é o dono/admin?) then (não)
-    #FFE3E3:404 Marca;
-    stop
-  else (sim)
-  endif
-  :Header estilo Instagram: logo, bio, storeUrl, status "Validada",\nseguidores/seguindo, peças, esquemas, selos ativos, métricas RF19;
-  :mode = VISITANTE → abas PROMOCOES, LOOKS_CONSAGRADOS, CATALOGO\nmode = ADMINISTRADOR → abas de gestão;
-  |Frontend (brands/[slug]/page.tsx)|
-  :Carrega abas: /tabs/{tab}, /api/users/{ownerId}/seals,\n/api/users/{ownerId}/promotions, Coleções (RF22), FLAIR, Guarda-roupa 3D (RF39);
-  |Pessoa|
-  if (Quer seguir a marca?) then (sim)
-    :POST /api/users/{ownerId}/followers;
-    note right: ver RF17 (seguir perfis)
+:GET /api/brands?term=&order= (anônimo sem login);
+|API (ProfileController · InstitutionalService)|
+:brandFeed: só brand_profiles com approval_status = APROVADO;\nfiltra brandName por termo (sem caixa);
+switch (Ordem pedida?)
+case (EM_ALTA)
+  :Ordena pelo Hype agregado da marca (BY_GROUP_HYPE):\ngrupos suficientes primeiro, maior valor antes;\nsem base (menos de 3 itens públicos) no fim;
+case (RECENTES)
+  :Mantém createdAt desc;
+case (AFINIDADE ou vazio)
+  if (Logada e com StyleDna?) then (sim)
+    :Afinidade = Jaccard(estilos do DNA × style_tags do catálogo\nda marca) em %; AiEngine.local(AFFINITY); ordena desc;
   else (não)
+    :Cai para RECENTES;
   endif
+endswitch
+|Banco (MySQL · HypeCache)|
+:feedHype: HypeQueryService.groups(BRAND, nomes, 7 dias)\n(hype_scores dos itens públicos, cache por geração);
+:Conta seal_bonds APPROVED e follows ACEITO por marca;
+|Frontend (brands/page.tsx)|
+if (Lista vazia?) then (sim)
+  :Estado vazio: "nenhuma marca validada"\nou "nenhuma marca para o termo";
+  stop
 else (não)
-  |Frontend (brands/page.tsx)|
-  :GET /api/celebrities (mesmo feed, RF22);
+  :Grade de cards: BrandLogo, nome, categoria, seguidores,\nselos, afinidade e chip "Marca em alta" (só de HOT para cima);
 endif
+note right
+  Card sem logo: BrandLogo busca
+  GET /api/brand-logos (cache em brand_logos;
+  busca na web limitada — RF4)
+end note
+|Pessoa|
+if (Toca em uma marca ou troca para "Celebridades"?) then (Celebridades)
+  :Mesmo feed com GET /api/celebrities (ver RF22);
+  stop
+else (marca)
+endif
+|Frontend (brands/[slug]/page.tsx)|
+:GET /api/institutional/{slug};
+|API (ProfileController · InstitutionalService)|
+if (Slug não é de marca/celebridade?) then (sim)
+  #FFE3E3:404 Perfil institucional\n(tela sugere ver as peças da marca na busca);
+  stop
+elseif (Marca não APROVADA e quem vê não é a dona nem admin?) then (sim)
+  #FFE3E3:404 Marca;
+  note right
+    Divergência: visitante ANÔNIMO num perfil não
+    aprovado cai em viewer.admin() com viewer nulo
+    (NullPointerException → 500), não no 404
+  end note
+  stop
+else (pode ver)
+endif
+:Header: logo/foto, capa, bio, storeUrl, status "Validada",\nseguidores/seguindo, peças, esquemas, selos ativos,\nmétricas do RF19, autoApproval, coverLabel (1ª coleção);
+:mode = ADMINISTRADOR (dona) ou VISITANTE;
+|Frontend (brands/[slug]/page.tsx)|
+fork
+  :GET /api/users/{ownerId}/seals\ne /api/users/{ownerId}/promotions;
+fork again
+  :Hype da marca no header: HypeGroupBadge\n→ GET /api/hype/groups?type=BRAND&keys=nome;
+fork again
+  :InsightStrip → GET /api/insights?context=BRAND_PROFILE&key=slug;
+end fork
+:Abas: Coleções (RF35) · Esquemas em destaque · Peças em destaque ·\nLooks consagrados · Catálogo · Selos · Promoções · FLAIR ·\nGuarda-roupa 3D; dona também: Central · Salvos · Revisão ·\nMétricas · Meus cupons;
+switch (A pessoa escolhe…)
+case (aba de looks/peças)
+  :GET /api/institutional/{slug}/tabs/{TAB}[?filter=RECENTES|HYPE|GROWTH];
+  note right: política de exibição e ordenação:\nRF14_Atividades_Exibicao
+case (seguir)
+  :POST /api/users/{ownerId}/followers\nou DELETE .../followers/me (RF17);
+case (abrir a loja)
+  :Link externo para storeUrl;
+case (outras abas)
+  :Coleções (RF35), Selos/Promoções (RF25/RF38),\nFLAIR (RF37), Guarda-roupa 3D (RF39), Central (verificação);
+endswitch
 stop
 @enduml

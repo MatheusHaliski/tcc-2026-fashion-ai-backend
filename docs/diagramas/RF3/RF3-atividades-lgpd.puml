@@ -1,0 +1,56 @@
+@startuml RF3_Atividades_LGPD
+title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de atividades — privacidade do perfil e consentimentos por finalidade (LGPD)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre /settings, aba Privacidade;
+  |Frontend (settings)|
+  :GET /api/me/consents → 9 finalidades com título, base legal,\nartigo da LGPD, sensível?, granted, grantedAt, revokedAt;
+  |Pessoa|
+  if (O que muda?) then (visibilidade do perfil)
+    |Frontend (settings)|
+    :PUT /api/me/privacy {visibility: PUBLIC | FOLLOWERS | PRIVATE};
+    |API (MeController · AccountService)|
+    :profileVisibility = visibility; privateAccount = (≠ PUBLIC);\naudita ALTERACAO_PERFIL → 200 {profileVisibility, privateAccount,\ndefaultSchemeVisibility} (vale para o feed RF8 e o perfil RF17);
+  else (um consentimento)
+    |Frontend (settings)|
+    :PUT /api/me/consents/{purpose} {granted} (o mesmo interruptor\nconcede e revoga — art. 8º §5º);
+    |API (MeController · AccountService)|
+    if (FACIAL_RECOGNITION com granted = true?) then (sim)
+      #FFE3E3:400 FINALIDADE_NAO_UTILIZADA;
+      stop
+    endif
+    :UPSERT user_consents (legalBasis, policyVersion 2026-09,\ngrantedAt ou revokedAt); audita CONSENTIMENTO_CONCEDIDO | REVOGADO;
+    note right
+      Privacy by Default: a conta nasce PRIVATE e nenhuma
+      finalidade vem concedida (sem linha = granted false).
+      Divergência: a tela usa c.label (a API manda title) e
+      não mostra lgpdArticle.
+    end note
+  endif
+|Frontend (settings)|
+:Atualiza a seção e mostra o aviso;
+stop
+@enduml

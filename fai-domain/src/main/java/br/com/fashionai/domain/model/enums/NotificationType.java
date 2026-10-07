@@ -44,7 +44,16 @@ public enum NotificationType {
     /** Card Trello RF38 — "Parabéns! Deseja resgatar o CUPOM?" (direito promocional conquistado no app). */
     COUPON_AVAILABLE(NotificationCategory.ACHIEVEMENT, true),
     /** RF30/RF39 — extrato dos FAI Points: cada lançamento do ledger (ganho ou gasto) vira uma notificação. */
-    FAI_POINTS(NotificationCategory.POINTS, true);
+    FAI_POINTS(NotificationCategory.POINTS, true),
+    /**
+     * FashionAI Momentos (§44): linguagem informativa, nunca FOMO. "Halloween começa esta semana", "Seu grupo criou um
+     * novo Momento", "Faltam dois dias para enviar seu look", "Seu Momento foi concluído". Todas desativáveis por tipo;
+     * no máximo um aviso por Momento por motivo (dedupe no serviço), nunca spam diário.
+     */
+    MOMENT_STARTING(NotificationCategory.SOCIAL, true),
+    MOMENT_GROUP_CREATED(NotificationCategory.SOCIAL, true),
+    MOMENT_DEADLINE(NotificationCategory.SOCIAL, true),
+    MOMENT_COMPLETED(NotificationCategory.ACHIEVEMENT, true);
 
     private final NotificationCategory category;
     private final boolean optOutAllowed;

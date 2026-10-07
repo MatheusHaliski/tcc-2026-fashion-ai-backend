@@ -1,4 +1,5 @@
 @startuml RF27_MaquinaDeEstados_PecaNoQuarto
+title RF27 — Meu Quarto (guarda-roupa num quarto 3D interativo)\nDiagrama de máquina de estados — a peça no quarto: endereço (room_storage_map) e marcadores
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam state {
@@ -7,32 +8,43 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-title RF27 — Peça no Meu Quarto: representação pelo estado do acervo (RoomService.statesOf)
-[*] --> Guardada : peça cadastrada (RF4) recebe endereço\n(door:n/hanger:k, drawer:n, shoe:n…)
-state "Guardada no móvel\n(sem marcador)" as Guardada
-state "ESQUECIDA\n(poeira)" as Esquecida
-state "INDISPONIVEL\n(cesto)" as Indisponivel
-state "FAVORITA\n(cabide especial)" as Favorita
-state "ICONE\n(vitrine)" as Icone
-state "LOOK_DO_DIA\n(na cadeira / em uso)" as LookDoDia
-state "FORA_DE_ESTACAO\n(maleiro de estação)" as ForaEstacao
-state "A_VENDA\n(arara de venda)" as AVenda
-Guardada --> Esquecida : sem uso há mais que a janela\n(RoomService.forgotten)
-Esquecida --> Guardada : POST /api/pieces/{id}/diary\nou entra num Look do Dia
-Guardada --> Indisponivel : PATCH /api/pieces/{id}/flags {disponivel:false} (RF31)
-Esquecida --> Indisponivel : PATCH /api/pieces/{id}/flags {disponivel:false}
-Indisponivel --> Guardada : PATCH /api/pieces/{id}/flags {disponivel:true}
-Guardada --> Favorita : PATCH /api/pieces/{id}/flags {favorite:true}
-Favorita --> Guardada : PATCH /api/pieces/{id}/flags {favorite:false}
-Guardada --> Icone : StyleDna.iconPieceName = nome da peça (RF13)
-Icone --> Guardada : DNA muda a Peça Ícone
-Guardada --> LookDoDia : POST /api/me/mirror/use ou\nPOST /api/me/daily-look (RF28)
-LookDoDia --> Guardada : vira o dia (lookDate)
-Guardada --> ForaEstacao : POST /api/me/room/season-storage\n(nível PENTHOUSE)
-ForaEstacao --> Guardada : POST /api/me/room/season-storage (retirar)
-Guardada --> AVenda : PATCH /api/pieces/{id}/flags {forSale:true}
-AVenda --> Guardada : PATCH /api/pieces/{id}/flags {forSale:false}
-Guardada --> Guardada : PUT /api/pieces/{id}/room-address\n(mover de endereço) · POST /api/me/room/organization
-note right of Indisponivel : INDISPONIVEL tem precedência sobre ESQUECIDA;\nFAVORITA, ICONE, A_VENDA e LOOK_DO_DIA são\nmarcadores cumulativos (Set<String> states)
-note bottom of Guardada : esquemas salvos aparecem como caixas no maleiro\n(lookBoxes) — ver RF5; Grade continua a visão padrão
+[*] --> SemEndereco : peça cadastrada (RF4)
+state "Sem endereço\n(ainda sem linha em room_storage_map)" as SemEndereco
+state "No móvel\n(door:n/hanger:k · drawer:n · top · base\n· shoe · bags · jewelry)" as NoMovel
+state "Na Cadeira\n(chair:n — sem posição livre)" as Cadeira
+state "No maleiro de estação\n(season:n — só nível PENTHOUSE)" as Estacao
+SemEndereco --> NoMovel : onPieceCreated (AFTER_COMMIT) → autoAssign\nou ao abrir o quarto (entries) · assigned_by = AUTO
+SemEndereco --> Cadeira : sem posição livre compatível
+NoMovel --> Cadeira : organização sem vaga\n(place() devolve chair)
+Cadeira --> NoMovel : PUT /api/pieces/{id}/room-address\n(assigned_by = USER)
+NoMovel --> NoMovel : PUT room-address (USER) ·\nPOST /api/me/room/organization (AI) ·\nDELETE /api/me/room/organization (desfazer)
+NoMovel --> Estacao : POST /api/me/room/season-storage\n{store: true}
+Estacao --> NoMovel : POST /api/me/room/season-storage\n{store: false} → place()
+NoMovel --> [*] : peça excluída → PieceDeleted\n→ deleteByWardrobeItemId
+Cadeira --> [*] : peça excluída
+Estacao --> [*] : peça excluída
+
+state "Marcador principal no ambiente (derivado, não gravado)" as Marcador {
+  state "Sem marcador\n(guardada)" as Normal
+  state "ESQUECIDA\n(poeira)" as Esquecida
+  state "INDISPONIVEL\n(cesto)" as Cesto
+  [*] --> Normal
+  Normal --> Esquecida : 60 dias sem uso\n(diário + lastWornDate)
+  Esquecida --> Normal : uso registrado: Look do Dia,\nesquema salvo ou POST /api/pieces/{id}/diary
+  Normal --> Cesto : PATCH /api/pieces/{id}/flags\n{disponivel: false} (RF31)
+  Esquecida --> Cesto : PATCH flags {disponivel: false}
+  Cesto --> Normal : PATCH flags {disponivel: true}
+}
+note right of Marcador
+  calculado a cada GET /api/me/room (RoomService.statesOf).
+  INDISPONIVEL tem precedência sobre ESQUECIDA.
+  Marcadores cumulativos: FAVORITA (cabide especial),
+  ICONE (vitrine, Peça Ícone do DNA), A_VENDA (Arara do
+  Desapego), LOOK_DO_DIA, CROQUI (sem foto), 30_USOS,
+  GARIMPO, CADEIRA, FORA_DE_ESTACAO.
+end note
+note bottom of Estacao
+  o Smart Mirror e o Vista-me (RF28)
+  ignoram peças fora de estação (outOfSeason)
+end note
 @enduml

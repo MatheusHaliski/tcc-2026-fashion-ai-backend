@@ -1,5 +1,5 @@
 @startuml RF13_Componentes
-title RF13 — Criar um esquema de identidade pessoal de moda na página "DNA de Estilo"\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF13 — Esquema de identidade pessoal na página "DNA de Estilo"\nDiagrama de componentes — telas, DnaController, DnaService, motor de IA, Hype v2 e persistência
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -18,44 +18,70 @@ left to right direction
 
 package "Frontend (Next.js)" {
   component "dna/page.tsx\n(DNA de Estilo)" as FE0
-  component "dna-schemes/new · [id] · [id]/edit" as FE1
-  component "components/dna-builder.tsx" as FE2
-  component "components/dna-card.tsx" as FE3
+  component "dna-schemes/new · [id] · [id]/edit\n(page.tsx)" as FE1
+  component "components/dna-builder.tsx\n(5 etapas, modo IA, prévia)" as FE2
+  component "components/dna-card.tsx\n(anatomias A1–A4, narrativas B1–B12)" as FE3
+  component "components/background-studio.tsx\n(etapa 4 — RF11)" as FE4
+  component "lookbook-tabs (Meus looks DNA)\nhistory/history-style (versões do DNA)" as FE5
+  component "lib/api/client.ts (api)" as FE6
 }
 package "fai-web · controllers" {
-  [DnaController] as DnaController
+  [DnaController\n/api/me/dna/… · /api/dna-schemes/…] as C
 }
-package "fai-application · services" {
-  [DnaService] as DnaService
-  [SchemeService] as SchemeService
-  [MediaService] as MediaService
-  [NotificationService] as NotificationService
-  [AiEngine (RF24)] as AiEngine
-  [LocalDnaSynthesizer\n(ai/local)] as LocalDna
+package "fai-application · serviços" {
+  [DnaService] as S
+  [SchemeService (RF5)\nview · moreRestrictive] as SS
+  [AiEngine (RF24)\nDNA_SYNTHESIZER] as AI
+  [LocalDnaSynthesizer\n(ai/local)] as LOC
+  [MediaService] as M
+  [NotificationService] as N
+  [Guard\nrequireCanCreate · requireOwner · requireView] as G
 }
-package "fai-infrastructure · adapters" {
-  [StyleDnaRepository\nStyleDnaVersionRepository\nDnaSchemeRepository\nDnaSchemeItemRepository\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · DailyLookRepository\nUserRepository] as REPOS
-  [MediaStoragePort\n(LocalFileMediaStorage / S3MediaStorageAdapter)] as STORAGE
-  [AiProviderPort\n(provedores remotos de texto)] as AIPROV
+package "fai-application · portas" {
+  interface "AiProviderPort" as P_AI
+  interface "MediaStoragePort" as P_ST
+  interface "RateLimitPort" as P_RL
 }
-database "MySQL\n• style_dna\n• style_dna_versions\n• dna_schemes\n• dna_scheme_items\n• schemes · scheme_items\n• wardrobe_items · daily_looks\n• notifications" as DB
-cloud "Provedores de IA externos\n(texto · DNA Synthesizer)" as EXT
+package "fai-infrastructure" {
+  [Repositórios JPA (persistence-mysql)\nStyleDnaRepository · StyleDnaVersionRepository\nDnaSchemeRepository · DnaSchemeItemRepository\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · DailyLookRepository\nHypeScoreCurrentRepository · UserRepository] as REPOS
+  [Adapters de IA (ai-providers)] as A_AI
+  [S3MediaStorageAdapter /\nLocalFileMediaStorage] as A_ST
+  [RedisAdapters / InMemoryRateLimit] as A_RL
+}
+database "MySQL\n• style_dna · style_dna_versions\n• dna_schemes · dna_scheme_items\n• schemes · scheme_items · wardrobe_items\n• daily_looks · notifications\n• hype_scores (só leitura)" as DB
+cloud "Provedores de IA de texto\n(frase e propostas de DNA)" as EXT
+cloud "S3 / R2 ou disco local\n(dna/{userId}/card-*.png)" as C_ST
+component "HypeSnapshotService (job @Scheduled)\ngrava hype_scores — RF46" as HJ
 
-FE0 --> FE2 : renderiza
-FE1 --> FE2 : renderiza
-FE2 --> FE3 : exibe card
-FE2 --> DnaController : chama (HTTPS/JSON)
-DnaController --> DnaService : chama
-DnaService --> SchemeService : lê visões dos esquemas
-DnaService --> AiEngine : local/text (DNA_SYNTHESIZER)
-AiEngine --> LocalDna : fallback local
-AiEngine --> AIPROV : chama
-AIPROV --> EXT : HTTPS
-DnaService --> MediaService : grava card PNG
-MediaService --> STORAGE : put
-DnaService --> NotificationService : publica AI_JOB_FINISHED
-DnaService --> REPOS : lê / grava
-REPOS --> DB : JPA/Flyway
-note bottom of AiEngine : ver RF24 (motor de IA transversal)
-note bottom of FE2 : fundo do card: Background Studio, ver RF11
+FE0 --> FE2
+FE1 --> FE2
+FE2 --> FE3 : prévia do card
+FE2 --> FE4 : etapa 4
+FE2 --> FE6
+FE5 --> FE6
+FE6 --> C : HTTPS/JSON
+C --> S
+S --> SS : view dos looks · visibilidade
+S --> AI : local(...) · text(...)
+AI --> LOC : motor local / fallback
+AI --> P_AI
+AI --> P_RL : cota diária
+S --> M : card PNG (share-card)
+S --> N : AI_JOB_FINISHED (evolução)
+S --> G
+M --> P_ST
+P_AI <|.. A_AI
+P_ST <|.. A_ST
+P_RL <|.. A_RL
+A_AI --> EXT : HTTPS
+A_ST --> C_ST
+S --> REPOS : lê / grava
+N --> REPOS
+REPOS --> DB : JPA / Flyway
+HJ --> DB : grava hype_scores
+note bottom of S
+  O fundo do card do DNA vem do Background Studio (RF11),
+  mas é gravado direto em dna_schemes.studio_config_json,
+  sem a validação de applyToScheme.
+end note
 @enduml

@@ -99,7 +99,7 @@ público. A rota legada de mesmo caminho (agrupamentos por similaridade, v1) pas
 (deprecada). Até o commit, vale a versão do último commit (rota legada).
 
 **Privacidade:** item privado de outra pessoa → 404 / fora do lote; ranking, globo, insights públicos e estatísticas
-só leem a população pública elegível (item público, perfil não privado, moderação aprovada, conta não-teste).
+só leem a população pública elegível (item público, perfil público — nunca "só seguidores", moderação aprovada, conta não-teste).
 **Antimanipulação** (`HypeIntegrityPolicy`): interação do próprio dono não conta (o uso conta); 1 sinal por pessoa,
 entidade, tipo e dia; conta com menos de 7 dias pesa 0,5; visitante sem conta não conta; patrocínio nunca entra.
 Selos, prévia do editor, marcos, Lens e votação de desafio **nunca** escrevem em `hype_signal_daily`.

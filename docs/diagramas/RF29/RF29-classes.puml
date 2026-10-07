@@ -1,5 +1,5 @@
 @startuml RF29_Classes
-title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings do guarda-roupa\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings ("Destaques")\nDiagrama de classes — InventoryScoreService, AchievementService e tabelas de nota e ranking
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -11,24 +11,98 @@ skinparam class {
 skinparam packageStyle rectangle
 hide empty methods
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +email: String
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String
-  +birthDate: String
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  .. +20 campos ..
+package "fai-web · controller" {
+class HighlightsController {
+  +highlights(user): Map
+  +explain(user, code): Dimension
+  +hints(user): Map
+  +method(): Map
+  +album(user) / retrospective(user, year): Map
+  +optIn(user, OptInRequest): Map
+  +rankings(user): Map
+  +achievements(user): List<Map>
 }
-class InventoryScoreSnapshot {
+}
+
+package "fai-application · service" {
+class InventoryScoreService {
+  +{static} WINDOW_DAYS = 90
+  +{static} MIN_PIECES = 10
+  +{static} SATURATION = 20
+  +{static} CITY_K_ANONYMITY = 50
+  ~{static} CACHE_TTL = 1 h
+  ~{static} WEIGHTS: C .20 · U .20 · V .15 · R .13 · D .12 · O .10 · I .10
+  +{static} BANDS: List<Band>
+  +compute(userId, useCache): Result
+  +highlightsTab(user): Map
+  +explain(user, code): Dimension
+  +improvementHints(userId): Map
+  +album(user) / retrospective(user, year): Map
+  +optIn(user, optedIn, shareCity, city): Map
+  +rankings(user): Map
+  +recomputeRankings(): int <<@Scheduled 0 15 */4 * * *>>
+  +dailySnapshots(): int <<@Scheduled 0 30 3 * * *>>
+  +invalidate(evento) <<@EventListener>>
+  +{static} completeness(w): int
+  +{static} catalogReady(w): boolean
+}
+class "InventoryScoreService.Result" as Result <<record>> {
+  +userId: UUID
+  +eligible: boolean
+  +pieces: int
+  +k: double
+  +score: Integer
+  +band: String
+  +dims: Map<String, Integer>
+  +metrics: Map<String, Object>
+  +dimensions: List<Dimension>
+  +computedAt: Instant
+}
+class "InventoryScoreService.Dimension" as Dimension <<record>> {
+  +code: String
+  +name: String
+  +value: Integer
+  +weight: double
+  +rule: String
+  +pullingDown: List<Map>
+}
+class "InventoryScoreService.Band" as Band <<record>> {
+  +min: int
+  +max: int
+  +label: String
+}
+note bottom of Band
+  0–299 Em Montagem · 300–499 Organizado · 500–649 Versátil
+  650–799 Bem Curado · 800–899 Closet Inteligente
+  900–959 Signature Closet · 960–1000 Maison Closet
+end note
+class AchievementService {
+  +{static} CATALOG: List<Def>
+  +grant(userId, code): boolean
+  +list(user): List<Map>
+  +onMirror(MirrorAction) <<AFTER_COMMIT>>
+  +onSchemeSaved(SchemeSaved) <<AFTER_COMMIT>>
+  +onDailyLook(DailyLookRegistered) <<AFTER_COMMIT>>
+}
+class "AchievementService.Def" as Def <<record>> {
+  +code: String
+  +name: String
+  +emoji: String
+  +condition: String
+  +points: int
+  +secret: boolean
+}
+class FaiPointsService {
+  +award(userId, actionCode, refType, refId, pointsOverride): Award
+}
+class RoomService
+}
+
+package "fai-domain · model" {
+class InventoryScoreSnapshot <<table inventory_score_snapshots>> {
   +id: UUID
   +userId: UUID
-  +periodType: String
+  +periodType: String = DAY | MONTH
   +periodDate: LocalDate
   +score: Integer
   +dimensionsJson: String
@@ -36,14 +110,14 @@ class InventoryScoreSnapshot {
   +eligible: boolean
   +computedAt: Instant
 }
-class RankingOptIn {
-  +userId: UUID
+class RankingOptIn <<table ranking_opt_ins>> {
+  +userId: UUID <<id>>
   +optedIn: boolean
   +shareCity: boolean
   +city: String
   +updatedAt: Instant
 }
-class RankingPosition {
+class RankingPosition <<table ranking_positions>> {
   +id: UUID
   +segment: String
   +userId: UUID
@@ -53,64 +127,73 @@ class RankingPosition {
   +value: BigDecimal
   +computedAt: Instant
 }
-class UserAchievement {
+class UserAchievement <<table user_achievements>> {
   +id: UUID
   +userId: UUID
   +achievementCode: String
   +secret: boolean
   +grantedAt: Instant
 }
-class WardrobeItem {
-  +user: User
-  +brandProfile: BrandProfile
-  +brand: Brand
-  +name: String
-  +category: String
-  +subcategory: String
-  +sex: String
-  +brandName: String
-  +color: String
-  +material: String
-  +sizeLabel: String
-  +market: String
-  +styleTags: String
-  +occasionTags: String
-  .. +54 campos ..
-}
-class PieceUsageDiaryEntry {
-  +id: UUID
-  +wardrobeItemId: UUID
-  +userId: UUID
-  +usedOn: LocalDate
-  +occasion: String
-  +note: String
-  +source: String
-  +schemeId: UUID
-  +createdAt: Instant
-}
-class WardrobeAvailabilityChange {
-  +id: UUID
+class WardrobeAvailabilityChange <<table wardrobe_availability_log>> {
   +wardrobeItemId: UUID
   +userId: UUID
   +available: boolean
   +changedAt: Instant
 }
+class PieceUsageDiaryEntry <<table piece_usage_diary>> {
+  +wardrobeItemId: UUID
+  +usedOn: LocalDate
+  +source: String
+  +schemeId: UUID
 }
-InventoryScoreSnapshot ..> User : userId
-PieceUsageDiaryEntry ..> User : userId
-PieceUsageDiaryEntry ..> WardrobeItem : wardrobeItemId
-RankingOptIn ..> User : userId
-RankingPosition ..> User : userId
-UserAchievement ..> User : userId
-WardrobeAvailabilityChange ..> User : userId
-WardrobeAvailabilityChange ..> WardrobeItem : wardrobeItemId
-WardrobeItem "*" --> "1" User : user
-note top of User : tabela users
-note top of InventoryScoreSnapshot : tabela inventory_score_snapshots
-note top of RankingOptIn : tabela ranking_opt_ins
-note top of RankingPosition : tabela ranking_positions
-note top of UserAchievement : tabela user_achievements
-note top of WardrobeItem : tabela wardrobe_items
-note top of PieceUsageDiaryEntry : tabela piece_usage_diary
-note top of WardrobeAvailabilityChange : tabela wardrobe_availability_log
+class StyleDna <<table style_dna>> {
+  +archetype: StyleArchetype
+  +iconPieceName: String
+}
+class ChallengeTemplate <<table challenge_templates>> {
+  +code: String
+  +scoreDimensionsJson: String
+}
+}
+
+package "fai-domain · repository" {
+interface InventoryScoreSnapshotRepository {
+  +findByUserIdAndPeriodTypeAndPeriodDate(...): Optional
+  +findTop60ByUserIdAndPeriodTypeOrderByPeriodDateDesc(...): List
+}
+interface RankingOptInRepository {
+  +findByOptedInTrue(): List<RankingOptIn>
+}
+interface RankingPositionRepository {
+  +findByUserId(userId): List
+  +deleteBySegment(segment)
+  +findTop20BySegmentOrderByPositionDesc(segment): List
+}
+interface UserAchievementRepository {
+  +existsByUserIdAndAchievementCode(userId, code): boolean
+}
+}
+
+HighlightsController --> InventoryScoreService
+HighlightsController --> AchievementService
+InventoryScoreService ..> Result
+Result *-- "7" Dimension : I com value = null sem DNA
+InventoryScoreService ..> Band
+InventoryScoreService --> AchievementService : checkAchievements
+InventoryScoreService --> RoomService : FORGOTTEN_DAYS, lastUse
+AchievementService ..> Def
+AchievementService --> FaiPointsService : award(ACHIEVEMENT)
+InventoryScoreService --> InventoryScoreSnapshotRepository
+InventoryScoreService --> RankingOptInRepository
+InventoryScoreService --> RankingPositionRepository
+AchievementService --> UserAchievementRepository
+InventoryScoreSnapshotRepository ..> InventoryScoreSnapshot
+RankingOptInRepository ..> RankingOptIn
+RankingPositionRepository ..> RankingPosition
+UserAchievementRepository ..> UserAchievement
+InventoryScoreService ..> WardrobeAvailabilityChange : Utilização (exposição)
+InventoryScoreService ..> PieceUsageDiaryEntry : uso na janela
+InventoryScoreService ..> StyleDna : Identidade
+InventoryScoreService ..> ChallengeTemplate : desafios sugeridos
+RankingOptIn "1" ..> "0..*" RankingPosition : userId
 @enduml

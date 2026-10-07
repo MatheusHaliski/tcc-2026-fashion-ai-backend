@@ -22,7 +22,7 @@ class HypeSealsTest {
         HypeScoreCurrent c = new HypeScoreCurrent();
         c.setEntityType(HypeEntityType.PIECE);
         c.setEntityId(UUID.randomUUID());
-        c.setAlgorithmVersion("HYPE_V2");
+        c.setAlgorithmVersion(HypeScoreConfig.DEFAULT_VERSION);
         c.setStatus(HypeStatus.AVAILABLE);
         c.setScore(BigDecimal.valueOf(score));
         c.setLevel(level);

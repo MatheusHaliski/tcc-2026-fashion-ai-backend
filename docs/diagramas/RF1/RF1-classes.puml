@@ -1,5 +1,5 @@
 @startuml RF1_Classes
-title RF1 — Cadastrar conta na plataforma (perfil Pessoal, Marca ou Celebridade)\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF1 — Cadastrar conta na plataforma (Pessoal, Marca ou Celebridade)\nDiagrama de classes — cadastro e confirmação do e-mail (entidades, serviço e portas)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -12,37 +12,39 @@ skinparam packageStyle rectangle
 hide empty methods
 
 package "fai-domain · model" {
-class User {
+class User <<table users>> {
   +username: String
-  +displayName: String
-  +email: String
+  +displayName: String «AES-GCM»
+  +email: String «AES-GCM»
   +emailHash: String
   +emailVerified: boolean
-  +birthDate: String
+  +birthDate: String «AES-GCM»
   +passwordHash: String
   +profileType: ProfileType
-  +role: String
-  +status: AccountStatus
+  +role: String = "USER"
+  +status: AccountStatus = PENDING_EMAIL_VERIFICATION
+  +accountOrigin: AccountOrigin = REAL
   +avatarUrl: String
-  +privateAccount: boolean
+  +privateAccount: boolean = true
+  +profileVisibility: Visibility = PRIVATE
+  +verified: boolean
   +country: String
+  +sex: MannequinSex
   +termsAcceptedAt: Instant
   +termsVersion: String
-  +sex: MannequinSex
-  .. +20 campos ..
+  +canWrite(): boolean
 }
-class UserPreferences {
+class UserPreferences <<table user_preferences>> {
   +user: User
-  +language: UiLanguage
-  +theme: ThemeMode
+  +language: UiLanguage = PT_BR
   +mannequinSex: MannequinSex
-  .. +25 campos ..
+  .. demais preferências: RF23 ..
 }
-class VerificationCode {
+class VerificationCode <<table verification_codes>> {
   +user: User
   +purpose: VerificationPurpose
   +codeHash: String
-  +target: String
+  +target: String «AES-GCM»
   +expiresAt: Instant
   +consumedAt: Instant
   +attempts: int
@@ -50,42 +52,35 @@ class VerificationCode {
   +lastSentAt: Instant
   +isUsable(now): boolean
 }
-class RefreshToken {
-  +user: User
-  +tokenHash: String
-  +familyId: UUID
-  +expiresAt: Instant
-  +revokedAt: Instant
-  +persistent: boolean
-}
-class BrandProfile {
+class BrandProfile <<table brand_profiles>> {
   +owner: User
   +brandName: String
   +slug: String
   +logoUrl: String
-  +cnpj: String
+  +cnpj: String «AES-GCM»
   +razaoSocial: String
   +nomeFantasia: String
   +fashionCategory: String
+  +storeUrl: String
+  +commercialContact: String «AES-GCM»
+  +officialHashtag: String
   +activityProofUrl: String
-  +approvalStatus: ApprovalStatus
-  +verificationNotes: String
-  +approvedBy: UUID
-  +approvedAt: Instant
+  +approvalStatus: ApprovalStatus = PENDENTE
+  +reviewAttempts: int = 1
 }
-class CelebrityProfile {
+class CelebrityProfile <<table celebrity_profiles>> {
   +owner: User
   +stageName: String
   +slug: String
   +avatarUrl: String
-  +realName: String
+  +realName: String «AES-GCM»
   +identityProofUrl: String
   +verificationUrl: String
+  +areasJson: String
+  +representationContact: String «AES-GCM»
   +sealConsentGranted: boolean
-  +verificationStatus: ApprovalStatus
-  +verificationNotes: String
-  +approvedBy: UUID
-  +approvedAt: Instant
+  +verificationStatus: ApprovalStatus = PENDENTE
+  +reviewAttempts: int = 1
 }
 }
 package "fai-domain · enums" {
@@ -105,6 +100,7 @@ enum AccountStatus {
 }
 enum ApprovalStatus {
   PENDENTE
+  AJUSTES
   APROVADO
   RECUSADO
   SUSPENSO
@@ -115,45 +111,120 @@ enum VerificationPurpose {
   TWO_FACTOR
   PASSWORD_RESET
 }
+enum MannequinSex {
+  MASCULINO
+  FEMININO
+}
 }
 package "fai-application · service" {
 class IdentityService {
-  +register(cmd, ip, userAgent): Session
+  +{static} TERMS_VERSION = "2026-09"
+  +{static} MAX_CODE_ATTEMPTS = 5
+  +{static} RESERVED_USERNAMES: Set<String>
   +preRegistrationUpload(bytes, kind, ip): Map
+  +purgeStalePendingUploads(): int «@Scheduled 0 35 * * * *»
+  +register(cmd, ip, userAgent): Session
   +suggestUsername(name): String
   +usernameSuggestions(taken): List<String>
-  +verifyEmail(current, code): UserCard
+  +verifyEmail(current, code): Views.UserCard
   +resendEmailVerification(current)
-  {static} +validatePassword(password, errors)
-  {static} +validCnpj(raw): boolean
+  +requireCodeAttemptQuota(userId, purpose)
+  +{static} validatePassword(password, errors)
+  +{static} validCnpj(raw): boolean
+  +{static} normalizeUsername(raw): String
+  +{static} reservedUsername(normalized): boolean
 }
-class AdminService {
-  +approvals(admin): Map
-  +decide(admin, userId, approve, notes): Map
+class "RegisterCommand" as RegisterCommand << (R,#E4DEF0) record >> {
+  profileType: ProfileType
+  fullName, username, email: String
+  password, confirmPassword: String
+  acceptTerms: boolean
+  birthDate, country: String
+  brand: BrandData
+  celebrity: CelebrityData
+  avatarUrl: String
+  sex: MannequinSex
+}
+class "BrandData" as BrandData << (R,#E4DEF0) record >> {
+  razaoSocial, cnpj, nomeFantasia, logoUrl
+  fashionCategory, storeUrl, commercialContact
+  officialHashtag, activityProofUrl
+}
+class "CelebrityData" as CelebrityData << (R,#E4DEF0) record >> {
+  stageName, realName, identityProofUrl
+  officialPhotoUrl, areas, verifiableFollowers
+  verificationUrl, professionalHistory
+  representationContact, fashionInterests
+  sealConsentGranted: boolean
+}
+class "Session" as Session << (R,#E4DEF0) record >> {
+  accessToken: String
+  expiresInSeconds: long
+  refreshToken: String
+  refreshExpiresAt: Instant
+  sessionId: UUID
+  user: Views.UserCard
+  status: String
+  emailVerified: boolean
+  warnings: List<String>
 }
 class PreferencesService {
   +checkUsername(requested): Map
 }
+class Guard {
+  +requireCanCreate(user) «403 EMAIL_NAO_CONFIRMADO»
+  +requireApprovedProfile(user, type) «403 PERFIL_EM_VALIDACAO»
+  +requireApprovedInstitutional(user, resource, message)
 }
+interface PasswordHasherPort <<port>> {
+  +hash(raw): String
+  +matches(raw, encoded): boolean
+}
+interface MediaStoragePort <<port>> {
+  +put(key, bytes, contentType): StoredObject
+  +get(key): byte[]
+  +listOlderThan(prefix, before, limit): List<String>
+}
+interface EmailSenderPort <<port>> {
+  +send(to, subject, html, category)
+}
+interface RateLimitPort <<port>> {
+  +tryAcquire(owner, bucket, limit, window): boolean
+}
+}
+
 UserPreferences "1" --> "1" User : user
 VerificationCode "*" --> "1" User : user
-RefreshToken "*" --> "1" User : user
-BrandProfile "1" --> "1" User : owner
-CelebrityProfile "1" --> "1" User : owner
+BrandProfile "0..1" --> "1" User : owner
+CelebrityProfile "0..1" --> "1" User : owner
 User --> ProfileType
 User --> AccountStatus
+User --> MannequinSex
 BrandProfile --> ApprovalStatus
 CelebrityProfile --> ApprovalStatus
 VerificationCode --> VerificationPurpose
+RegisterCommand *-- "0..1" BrandData
+RegisterCommand *-- "0..1" CelebrityData
+IdentityService ..> RegisterCommand : recebe
+IdentityService ..> Session : devolve
 IdentityService ..> User : cria
-IdentityService ..> VerificationCode : cria
-AdminService ..> BrandProfile : aprova/recusa
-AdminService ..> CelebrityProfile : aprova/recusa
-note top of User : tabela users
-note top of UserPreferences : tabela user_preferences
-note top of VerificationCode : tabela verification_codes
-note top of RefreshToken : tabela refresh_tokens
-note top of BrandProfile : tabela brand_profiles
-note top of CelebrityProfile : tabela celebrity_profiles
-note bottom of IdentityService : RegisterCommand(profileType, fullName, username, email,\npassword, confirmPassword, acceptTerms, birthDate,\ncountry, brand: BrandData, celebrity: CelebrityData, avatarUrl, sex)
+IdentityService ..> BrandProfile : cria (MARCA)
+IdentityService ..> CelebrityProfile : cria (CELEBRIDADE)
+IdentityService ..> VerificationCode : cria/consome
+IdentityService --> PasswordHasherPort
+IdentityService --> MediaStoragePort
+IdentityService --> EmailSenderPort
+IdentityService --> RateLimitPort
+Guard ..> AccountStatus : status da conta
+PreferencesService ..> User : @ livre?
+note bottom of IdentityService
+  Repositórios usados: UserRepository (existsByEmailHash,
+  existsByUsernameIgnoreCase), UserPreferencesRepository,
+  BrandProfileRepository / CelebrityProfileRepository
+  (findByOwnerId, findBySlug), VerificationCodeRepository
+  (findFirstByUserIdAndPurposeAndConsumedAtIsNull…).
+  Depois do register de MARCA/CELEBRIDADE chama
+  IssuerReviewService.submitted; depois do verifyEmail,
+  IssuerReviewService.emailConfirmed (RF1_Classes_Verificacao).
+end note
 @enduml

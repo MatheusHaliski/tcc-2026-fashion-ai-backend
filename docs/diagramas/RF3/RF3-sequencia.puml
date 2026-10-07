@@ -1,5 +1,5 @@
 @startuml RF3_Sequencia
-title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de sequência — endpoints reais
+title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de sequência — dados sensíveis, troca de e-mail, senha, sessões e recuperação de senha
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -9,101 +9,108 @@ skinparam sequence {
 }
 autonumber
 actor "Pessoa" as P
-participant "Frontend\n(app)/settings · notifications" as FE
+participant "settings/page.tsx\nforgot-password · reset-password" as FE
+participant "AuthRateLimitFilter" as RLF
 participant "MeController" as MC
 participant "AuthController" as AUC
-participant "NotificationController" as NC
 participant "AccountService" as AS
 participant "IdentityService" as IS
-participant "NotificationService" as NS
-participant "MediaStoragePort\n(S3 / local)" as ST
+participant "RateLimitPort" as RL
 participant "EmailSenderPort\n(Resend)" as EM
+participant "NotificationService" as NS
 database "MySQL" as DB
 
 P -> FE: abre /settings
 FE -> MC: GET /api/me
 MC -> AS: me(user)
-AS -> DB: users · user_preferences
-MC --> FE: 200 {profile, profileVisibility, deletionScheduledFor, ...}
-== Dado sensível (CA01–CA02) ==
-FE -> MC: PATCH /api/me/sensitive {password, email, phone, birthDate, twoFactorEnabled}
+AS -> DB: users · brand_profiles | celebrity_profiles · user_consents
+MC --> FE: 200 {user, email, emailVerified, phone, birthDate, status, role, twoFactorEnabled,\nprofileVisibility, defaultSchemeVisibility, deletionScheduledFor, consents, …}
+
+== Dados sensíveis (reautenticação) ==
+FE -> RLF: PATCH /api/me/sensitive {password, email, phone, birthDate, twoFactorEnabled}
+RLF -> MC: até 30/h por IP · teto de hashes
 MC -> AS: updateSensitive(user, SensitiveUpdate)
 AS -> IS: reauthenticate(userId, password)
-alt troca de e-mail
-  AS -> DB: existsByEmailHash · INSERT verification_codes (EMAIL_CHANGE, 2 h)
-  AS -> EM: send(novo e-mail, código) · send(e-mail antigo, aviso)
+IS -> RL: tryAcquire(userId, "login-fail", 5, 15 min)
+alt bloqueado
+  IS --> FE: 429 MUITAS_TENTATIVAS {resetAt}
+else senha errada
+  IS --> FE: 401 REAUTENTICACAO_FALHOU
+else senha certa
+  IS -> RL: release(userId, "login-fail")
+  opt e-mail novo
+    AS -> DB: existsByEmailHash (409 EMAIL_EM_USO se tomado)
+    AS -> DB: invalida códigos EMAIL_CHANGE abertos · INSERT verification_codes (EMAIL_CHANGE, 2 h, target = novo e-mail)
+    AS -> EM: send(e-mail novo, código) · send(e-mail antigo, aviso mascarado)
+  end
+  AS -> DB: users.phone · birthDate · twoFactorEnabled · audit_log ALTERACAO_DADO_PESSOAL_SENSIVEL
+  MC --> FE: 200 {changed, emailChangePending}
 end
-AS -> DB: audit_log ALTERACAO_DADO_PESSOAL_SENSIVEL
-MC --> FE: 200 {changed, emailChangePending}
-FE -> MC: POST /api/me/email-change/confirm {code}
-MC -> AS: confirmEmailChange(user, code)
-MC --> FE: 200 UserCard | 400 CODIGO_INVALIDO | 409 EMAIL_EM_USO
-== Sessões e senha (CA07–CA11) ==
+opt confirmar a troca de e-mail
+  FE -> MC: POST /api/me/email-change/confirm {code}
+  MC -> AS: confirmEmailChange(user, code)
+  AS -> IS: requireCodeAttemptQuota(userId, EMAIL_CHANGE) (10/h)
+  alt código inválido, vencido ou errado
+    AS -> DB: attempts + 1
+    AS --> FE: 400 CODIGO_INVALIDO | CODIGO_EXPIRADO · 429 MUITAS_TENTATIVAS
+  else e-mail tomado nesse meio-tempo
+    AS --> FE: 409 EMAIL_EM_USO
+  else
+    AS -> DB: users.email · emailHash · emailVerified = true · audit_log
+    MC --> FE: 200 UserCard
+  end
+end
+
+== Senha e sessões ==
+FE -> RLF: PUT /api/auth/password {currentPassword, newPassword, confirmPassword}
+RLF -> AUC: até 20/h por IP · teto de hashes
+AUC -> IS: changePassword(user, sid, …)
+alt senha atual errada ou bloqueio
+  IS --> FE: 400 SENHA_ATUAL_INCORRETA | 429 MUITAS_TENTATIVAS
+else nova senha fora da política
+  IS --> FE: 400 FORMULARIO_INVALIDO
+else
+  IS -> DB: users.passwordHash · invalida PASSWORD_RESET · revoga as outras famílias · audit_log TROCA_SENHA
+  AUC --> FE: 200 {revokedSessions, message}
+end
 FE -> AUC: GET /api/auth/sessions
 AUC -> IS: sessions(user, sid)
-AUC --> FE: 200 [sessões com current]
-FE -> AUC: DELETE /api/auth/sessions/{sessionId}
-AUC -> IS: revokeSession(user, sessionId)
-AUC --> FE: 204
-FE -> AUC: PUT /api/auth/password {currentPassword, newPassword, confirmPassword}
-AUC -> IS: changePassword(user, sid, ...)
-AUC --> FE: 200 {revokedSessions}
-== Privacidade e consentimentos (CA12, CA19–CA23) ==
-FE -> MC: PUT /api/me/privacy {visibility}
-MC -> AS: updatePrivacy(user, visibility)
-AS -> DB: users.profileVisibility · privateAccount · audit ALTERACAO_PERFIL
-MC --> FE: 200 {profileVisibility, privateAccount, defaultSchemeVisibility}
-FE -> MC: PUT /api/me/consents/{purpose} {granted}
-MC -> AS: setConsent(user, purpose, granted)
-alt FACIAL_RECOGNITION com granted = true
-  AS --> FE: 400 FINALIDADE_NAO_UTILIZADA
-else
-  AS -> DB: UPSERT user_consents (legalBasis, policyVersion, grantedAt | revokedAt)
-  AS -> DB: audit CONSENTIMENTO_CONCEDIDO | CONSENTIMENTO_REVOGADO
-  MC --> FE: 200 [consentimentos com lgpdArticle]
+IS -> DB: refresh_tokens ativos (o mais novo de cada família)
+AUC --> FE: 200 [{sessionId, device, userAgent, ip, location, lastUsedAt, expiresAt, current}]
+alt encerrar uma sessão
+  FE -> AUC: DELETE /api/auth/sessions/{sessionId}
+  AUC -> IS: revokeSession(user, sessionId)
+  IS -> DB: família de outra pessoa → 404 · senão revokedAt · audit_log SESSAO_REVOGADA
+  AUC --> FE: 204
+else sair de todos os outros dispositivos
+  FE -> AUC: DELETE /api/auth/sessions
+  AUC -> IS: revokeOtherSessions(userId, sid)
+  AUC --> FE: 200 {revokedSessions}
 end
-== Notificações (CA15–CA18) ==
-FE -> NC: GET /api/notifications
-NC -> NS: inbox(user)
-NC --> FE: 200 {unread, items}
-FE -> NC: POST /api/notifications/read {ids}
-NC -> NS: markRead(user, ids)
-FE -> NC: PUT /api/notifications/preferences {changes, master}
-NC -> NS: updatePreferences(user, changes, master)
-alt tipo com optOutAllowed = false desligado
-  NS --> FE: 400 TIPO_OBRIGATORIO
-else
-  NS -> DB: user_preferences.notificationPrefsJson · notificationPushMaster
-  NC --> FE: 200 [preferências por tipo]
+note right of FE: a aba Sessões lê s.id / s.deviceName;\na API manda sessionId / device (divergência)
+
+== Esqueci a senha (sem login) ==
+FE -> RLF: POST /api/auth/password-reset/request {email}
+RLF -> AUC: até 10/h por IP
+AUC -> IS: requestPasswordReset(email, ip, userAgent)
+opt conta existe e < 5 pedidos na última hora
+  IS -> DB: INSERT verification_codes (PASSWORD_RESET, token de 32 bytes, 30 min)
+  IS -> NS: notify(PASSWORD_RESET)
+  IS -> DB: audit_log RECUPERACAO_SENHA
+  IS -> EM: depois do commit, em thread virtual: send(link /reset-password?token=…)
 end
-== Seus dados: exportação e exclusão (CA04–CA05, CA24) ==
-FE -> MC: POST /api/me/exports
-MC -> AS: requestExport(user)
-AS -> DB: INSERT data_export_requests (PROCESSING)
-AS -> ST: put(restricted/users/{id}/exports/{exportId}.json)
-AS -> DB: status READY · readyAt · expiresAt (+7 dias)
-AS -> NS: notify(DATA_EXPORT_READY)
-MC --> FE: 202 {id, status, readyAt, expiresAt, bytes}
-FE -> MC: GET /api/me/exports/{exportId}/file
-MC -> AS: downloadExport(user, exportId)
-alt de outro usuário
-  AS --> FE: 403
-else expirada
-  AS --> FE: 410 EXPORTACAO_EXPIRADA
+AUC --> FE: 202 {message} igual exista ou não a conta
+P -> FE: abre o link do e-mail
+FE -> RLF: POST /api/auth/password-reset/confirm {token, newPassword, confirmPassword}
+RLF -> AUC: até 20/h por IP · teto de hashes
+AUC -> IS: confirmPasswordReset(token, newPassword, confirm)
+alt token inexistente, usado ou vencido
+  IS --> FE: 400 LINK_INVALIDO
+else nova senha inválida
+  IS --> FE: 400 FORMULARIO_INVALIDO
 else
-  AS -> ST: get(fileKey)
-  MC --> FE: 200 fashionai-dados-{id}.zip
-end
-P -> FE: confirma exclusão com a senha
-FE -> MC: POST /api/me/deletion {password}
-MC -> AS: requestDeletion(user, password)
-AS -> IS: reauthenticate
-AS -> DB: users.status = DELETION_SCHEDULED · deletionScheduledFor = +30 dias
-AS -> EM: send("Exclusão de conta agendada")
-MC --> FE: 200 {status, deletionScheduledFor}
-opt arrependimento dentro da carência
-  FE -> MC: DELETE /api/me/deletion
-  MC -> AS: cancelDeletion(user)
-  MC --> FE: 200 {status}
+  IS -> DB: users.passwordHash · consome os links · revoga TODAS as famílias · audit_log TROCA_SENHA
+  IS -> RL: reset(userId, "login-fail") — sai do bloqueio
+  AUC --> FE: 204
 end
 @enduml

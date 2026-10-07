@@ -1,0 +1,87 @@
+@startuml RF6_Atividades_Agrupamentos
+title RF6 — Acessar e gerenciar o Perfil Lookbook\nDiagrama de atividades — aba Agrupamentos (sugestões por similaridade e agrupamentos editoriais)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Abre a aba Agrupamentos (próprio perfil ou de outra pessoa);
+|Frontend|
+:GroupsTab: GET /api/users/{ownerId}/groupings;
+|API e serviços|
+if (Quem vê pode ver o perfil?) then (não)
+  :Lista vazia (nem os nomes aparecem);
+else (sim)
+  :scheme_groupings do dono + quantos looks\nvisíveis há em cada um;
+endif
+|Pessoa|
+if (Ação?) then (abrir agrupamento)
+  |Frontend|
+  :GET /api/groupings/{id}/schemes\n(só looks que quem vê pode ver);
+elseif () then (sugerir por similaridade — dono)
+  |Frontend|
+  :Botão visível com ≥ 20 peças (groupingSuggestionsAvailable)\nPOST /api/me/similarity-groups/suggestions?type=SCHEME;
+  |API e serviços|
+  if (type = PIECE com menos de 20 peças?) then (sim)
+    #FFE3E3:422 ACERVO_PEQUENO {pieces, missing};
+    stop
+  endif
+  |Banco/IA|
+  :AiEngine.local(ACERVO_GROUPING) → HypeScoreService.cluster:\nsimilaridade ≥ 0,70 (estilo, ocasião, cor, marca, tipo),\ngrupos com 3 ou mais membros;
+  :Apaga e regrava acervo_groups (kind SIMILARITY);
+  |Frontend|
+  :Lista GET /api/me/similarity-groups?type=SCHEME\ncom o Hype médio v2 dos membros ao lado\n(avgScore nulo = "Hype médio: —");
+  note right
+    O agrupamento é por similaridade, não por Hype.
+    /api/me/hype-groups* ficaram só como apelidos
+    deprecados das rotas novas
+  end note
+elseif () then (descartar sugestão)
+  |Frontend|
+  :DELETE /api/me/similarity-groups/{groupId}\n(só o dono; outro = 403 auditado);
+else (criar agrupamento editorial — dono)
+  |Frontend|
+  :POST /api/groupings {type, label, description,\ncoverUrl, atmospherePrompt, periodFrom, periodTo, accentColor};
+  |API e serviços|
+  if (Tipo permitido para o perfil?) then (não)
+    #FFE3E3:400 TIPO_INVALIDO;
+    note right
+      PESSOAL: COLLECTION, EVOLUTION, STYLE_LINE, SEASON.
+      A tela envia COLECAO, TEMPORADA, EDITORIAL, CAPSULA
+      e VIAGEM, que não existem em GroupingType
+      (divergência front × back)
+    end note
+    stop
+  elseif (Período fora de 1900–2100 ou fim < início?) then (sim)
+    #FFE3E3:400 PERIODO_INVALIDO;
+    stop
+  elseif (accentColor fora de #RRGGBB?) then (sim)
+    #FFE3E3:400 COR_INVALIDA;
+    stop
+  else (ok)
+    :Grava scheme_groupings (capa só do próprio dono,\natmospherePrompt limpo até 300 caracteres);
+    :POST /api/groupings/{id}/items {schemeIds, pieceIds}\npreenche grouping_id dos itens do dono;
+  endif
+endif
+stop
+@enduml

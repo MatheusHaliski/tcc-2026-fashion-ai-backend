@@ -69,7 +69,7 @@ public final class CaptureProfiles {
                         sv(TEXTURE_DETAIL, Condition.ALWAYS, 1.0, Reveal.NEUTRAL, MATERIAL, 0.7, PATTERN, 0.5)),
                 specs(FRONT_VIEW, "SKIRT_FRONT_V1"), 0, false, new Guidance("skirt", "PORTRAIT", 50, 80, "plain_contrast", "diffuse")));
         // ── parte de cima e corpo inteiro
-        add(upper("TSHIRT", List.of("t_shirt", "tank_top", "crop_top", "bodysuit"), "TSHIRT_FRONT_V1", "tshirt",
+        add(upper("TSHIRT", List.of("t_shirt", "tank_top", "crop_top", "top", "bodysuit"), "TSHIRT_FRONT_V1", "tshirt",
                 List.of(sv(LOGO_DETAIL, Condition.ALWAYS, 1.0, Reveal.ZOOM_VISIBLE_LOGO, BRAND, 0.7),
                         sv(LABEL_DETAIL, Condition.ALWAYS, 1.15, Reveal.NEW_REGION, BRAND, 0.75, MATERIAL, 0.85),
                         sv(BACK_VIEW, Condition.ALWAYS, 1.0, Reveal.NEW_REGION, BRAND, 0.35, PATTERN, 0.2),
@@ -115,7 +115,7 @@ public final class CaptureProfiles {
                         sv(SOLE_VIEW, Condition.MODEL_WANTED, 1.3, Reveal.NEW_REGION, MODEL, 0.5, PRODUCT_LINE, 0.5, BRAND, 0.3)),
                 specs(THREE_QUARTER, "SNEAKER_THREE_QUARTER_V1", LEFT_SIDE, "SNEAKER_SIDE_V1", RIGHT_SIDE, "SNEAKER_SIDE_V1",
                         SOLE_VIEW, "SNEAKER_SOLE_V1"), 0, false, new Guidance("sneaker", "LANDSCAPE", 30, 50, "plain_contrast", "diffuse")));
-        add(shoe("BOOT", List.of("ankle_boots", "long_boots", "combat_boots"), LEFT_SIDE, List.of(THREE_QUARTER), "boot",
+        add(shoe("BOOT", List.of("boots", "ankle_boots", "long_boots", "combat_boots"), LEFT_SIDE, List.of(THREE_QUARTER), "boot",
                 edges("shaft", "sole", "toe_or_heel", "toe_or_heel"),
                 List.of(sv(RIGHT_SIDE, Condition.OTHER_SIDE, 1.0, Reveal.NEW_REGION, BRAND, 0.5),
                         sv(LOGO_DETAIL, Condition.ALWAYS, 1.0, Reveal.ZOOM_VISIBLE_LOGO, BRAND, 0.6),

@@ -1,5 +1,5 @@
 @startuml RF28_Classes
-title RF28 — Montar looks no Smart Mirror e pedir sugestões ao "Vista-me" (só com peças do próprio guarda-roupa)\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
+title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de classes — MirrorService, LookScorer, estado do espelho e origem do look
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam class {
@@ -11,131 +11,184 @@ skinparam class {
 skinparam packageStyle rectangle
 hide empty methods
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +email: String
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String
-  +birthDate: String
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  .. +20 campos ..
+package "fai-web · controller" {
+class MirrorController {
+  +state(user): Map
+  +place(user, PieceRequest): Map
+  +remove(user, pieceId) / clear(user): Map
+  +suggest(user, slot): Map
+  +vistaMe(user, VistaMeRequest): Map
+  +another(user) / swap(user, slot) / takeOneOff(user): Map
+  +useLook(user) / save(user, SaveRequest) / draft(user, DraftRequest): Map
+  +grwm(user): Map
 }
-class MirrorState {
-  +userId: UUID
+class "MirrorController.VistaMeRequest" as VMR <<record>> {
+  +prompt: String
+  +anchorIds: List<UUID>
+  +focusPieceId: UUID
+  +keepMirror: Boolean
+}
+}
+
+package "fai-application · service" {
+class MirrorService {
+  +{static} SLOTS = upper, lower, dress, shoes, outer_layer, accessory
+  +{static} MAX_ACCESSORIES = 4
+  +{static} MAX_SHOWN = 50
+  +state(user): Map
+  +place(user, pieceId): Map
+  +suggest(user, slot): Map
+  +vistaMe(user, prompt, anchorIds, focusPieceId, keepMirror): Map
+  +another(user) / swap(user, slot) / takeOneOff(user): Map
+  +useLook(user) / save(user, title, publish) / draft(user, origin): Map
+  +grwmStoryboard(user): Map
+  +eligible(userId): List<WardrobeItem>
+  +{static} slotOf(w): String
+  ~{static} complete(slots): boolean
+  ~{static} missing(slots): List<Map>
+  ~lookScores(userId, look): Map
+}
+class "MirrorService.Interpretation" as Interp <<record>> {
+  +occasion: List<String>
+  +mood: String
+  +anchors: List<UUID>
+  +constraints: List<String>
+  +season: String
+}
+interface "MirrorService.PieceRestrictionProvider" as PRP <<port>> {
+  +restriction(userId): Optional<Restriction>
+}
+class "PieceRestrictionProvider.Restriction" as Restr <<record>> {
+  +challengeName: String
+  +allowedPieceIds: Set<UUID>
+}
+class LookScorer {
+  ~context(userId): Context
+  ~scoreLooks(userId, looks): List<Scores>
+  ~{static} scores(ctx, ids, look, hypeById): Scores
+}
+class "RecommendationScoring.Scores" as Scores <<record>> {
+  +compatibility: Integer
+  +hype: Integer
+  +novelty: Integer
+  +reuse: Integer
+  +usage: Integer
+  +sustainability: Integer
+  +toMap(): Map
+}
+class ChallengeService
+class WardrobeService {
+  +owned(user, pieceId): WardrobeItem
+  +eligible(userId): List<WardrobeItem>
+}
+class RoomService {
+  +locateAll(userId): Map<UUID, Location>
+  +outOfSeason(userId): Set<UUID>
+}
+class SchemeService {
+  +create(user, SchemeForm): Map
+}
+class DailyLookService {
+  +register(user, scheme, source, date): DailyLook
+}
+class HypeQueryService {
+  +currentOf(type, ids): Map<UUID, HypeScoreCurrent>
+}
+class AiEngine
+}
+
+package "fai-domain · model" {
+class MirrorState <<table mirror_states>> {
+  +userId: UUID {unique}
   +slotsJson: String
   +shownCombinationsJson: String
   +lastPrompt: String
 }
-class WardrobeItem {
-  +user: User
-  +brandProfile: BrandProfile
-  +brand: Brand
-  +name: String
-  +category: String
-  +subcategory: String
-  +sex: String
-  +brandName: String
-  +color: String
-  +material: String
-  +sizeLabel: String
-  +market: String
-  +styleTags: String
-  +occasionTags: String
-  .. +54 campos ..
-}
-class Scheme {
-  +user: User
-  +originalScheme: Scheme
+note bottom of MirrorState
+  slots_json: upper/lower/dress/shoes/outer_layer → id,
+  accessory → [ids], origin (manual | smart_mirror | vista_me),
+  prompt, interpretation, updatedAt
+end note
+class Scheme <<table schemes>> {
   +title: String
-  +description: String
-  +creationMode: CreationMode
   +origin: SchemeOrigin
-  +style: String
-  +occasion: String
-  +season: Season
-  +mood: Mood
-  +visibility: Visibility
+  +creationMode: CreationMode
   +status: SchemeStatus
-  +displayMode: DisplayMode
-  +disponivel: boolean
-  .. +41 campos ..
+  +lookDoDia: boolean
 }
-class SchemeItem {
-  +scheme: Scheme
-  +wardrobeItem: WardrobeItem
+class SchemeItem <<table scheme_items>> {
   +slot: SchemeSlot
-  +tryOnLayer: TryOnLayer
   +sortOrder: int
-  +zIndex: int
-  +positionX: BigDecimal
-  +positionY: BigDecimal
-  +scale: BigDecimal
-  +rotation: BigDecimal
-  +opacity: BigDecimal
-  +filtersJson: String
-  +snapshotJson: String
 }
-class DailyLook {
-  +user: User
-  +scheme: Scheme
-  +materializedFrom: DailyLook
+class DailyLook <<table daily_looks>> {
   +lookDate: LocalDate
   +source: DailyLookSource
-  +feedback: DailyLookFeedback
-  +feedbackAt: Instant
-  +weekPlanDayId: UUID
 }
-class PieceUsageDiaryEntry {
-  +id: UUID
-  +wardrobeItemId: UUID
-  +userId: UUID
-  +usedOn: LocalDate
-  +occasion: String
-  +note: String
-  +source: String
-  +schemeId: UUID
-  +createdAt: Instant
+class WardrobeItem <<table wardrobe_items>> {
+  +category / subcategory: String
+  +disponivel: boolean
+  +availabilityStatus: AvailabilityStatus
+  +forSale: boolean
 }
-class StyleDna {
-  +user: User
-  +archetype: StyleArchetype
-  +boldnessIndex: int
-  +identityPhrase: String
-  +colorPalette: String
-  +styleKeywords: String
-  +occasionKeywords: String
-  +iconPieceName: String
-  +latestDnaSchemeId: UUID
-  +synthesizedAt: Instant
-  +silhouette: String
-  +lifeIdentityJson: String
-  +lifePrivateFieldsJson: String
-  +interactionsAtSynthesis: int
-  .. +4 campos ..
+enum SchemeOrigin {
+  CRIAR_LOOK
+  PROVADOR
+  REMIX
+  COPILOT
+  DNA_DUPLICATE
+  SMART_MIRROR
+  VISTA_ME
+  AUTOPILOTO
+}
+enum DailyLookSource {
+  MANUAL
+  AUTOPILOTO
+  COPILOT
+  VISTA_ME
+  SMART_MIRROR
+}
+enum SchemeSlot {
+  TOP
+  BOTTOM
+  SHOES
+  ACCESSORY
+  FULL_BODY
+  OUTERWEAR
 }
 }
-DailyLook "*" --> "1" Scheme : scheme
-DailyLook "*" --> "1" User : user
-MirrorState ..> User : userId
-PieceUsageDiaryEntry ..> Scheme : schemeId
-PieceUsageDiaryEntry ..> User : userId
-PieceUsageDiaryEntry ..> WardrobeItem : wardrobeItemId
-Scheme "*" --> "1" User : user
-SchemeItem "*" --> "1" Scheme : scheme
-SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
-StyleDna "1" --> "1" User : user
-WardrobeItem "*" --> "1" User : user
-note top of User : tabela users
-note top of MirrorState : tabela mirror_states
-note top of WardrobeItem : tabela wardrobe_items
-note top of Scheme : tabela schemes
-note top of SchemeItem : tabela scheme_items
-note top of DailyLook : tabela daily_looks
-note top of PieceUsageDiaryEntry : tabela piece_usage_diary
-note top of StyleDna : tabela style_dna
+
+package "fai-domain · repository" {
+interface MirrorStateRepository {
+  +findByUserId(userId): Optional<MirrorState>
+}
+}
+
+MirrorController --> MirrorService
+MirrorController ..> VMR
+MirrorService --> MirrorStateRepository
+MirrorStateRepository ..> MirrorState
+MirrorService *-- LookScorer : P3-07
+MirrorService ..> Interp
+MirrorService --> "0..*" PRP
+ChallengeService ..|> PRP
+PRP ..> Restr
+MirrorService --> WardrobeService
+MirrorService --> RoomService
+MirrorService --> SchemeService
+MirrorService --> DailyLookService
+MirrorService --> AiEngine : COPILOT · SCHEME_COMPOSER\n· STYLE_ADVISOR
+LookScorer --> HypeQueryService
+LookScorer ..> Scores
+MirrorState "1" ..> "*" WardrobeItem : ids em slots_json
+Scheme "1" *-- "*" SchemeItem
+SchemeItem "*" --> "1" WardrobeItem
+DailyLook "*" --> "1" Scheme
+Scheme --> SchemeOrigin
+DailyLook --> DailyLookSource
+SchemeItem --> SchemeSlot
+note right of MirrorService
+  slot → SchemeSlot: upper → TOP, lower → BOTTOM,
+  dress → FULL_BODY, shoes → SHOES,
+  outer_layer → OUTERWEAR, accessory → ACCESSORY
+end note
 @enduml

@@ -100,7 +100,7 @@ class InsightServiceTest {
         wardrobe = mock(WardrobeService.class);
         ai = mock(AiEngine.class);
         service = new InsightService(hype, current, new HypeCache(cachePort), pieces, schemes, schemeItems, dnas, preferences, lookbook, explorer, wardrobe, ai);
-        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(any(), eq("HYPE_V2"), eq(HypeStatus.AVAILABLE))).thenReturn(List.of());
+        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(any(), eq(HypeScoreConfig.DEFAULT_VERSION), eq(HypeStatus.AVAILABLE))).thenReturn(List.of());
         when(preferences.findByUserId(any())).thenReturn(Optional.empty());
         when(dnas.findByUserId(any())).thenReturn(Optional.empty());
     }
@@ -111,7 +111,7 @@ class InsightServiceTest {
         HypeScoreCurrent c = new HypeScoreCurrent();
         c.setEntityType(type);
         c.setEntityId(UUID.randomUUID());
-        c.setAlgorithmVersion("HYPE_V2");
+        c.setAlgorithmVersion(HypeScoreConfig.DEFAULT_VERSION);
         c.setStatus(HypeStatus.AVAILABLE);
         c.setScore(BigDecimal.valueOf(score));
         HypeDimensions d = new HypeDimensions();
@@ -183,11 +183,11 @@ class InsightServiceTest {
                 row(HypeEntityType.PIECE, "shoes_piece", "AMERICA_DO_SUL", 58, 30, 80, 12, 3, true),
                 row(HypeEntityType.PIECE, "upper_piece", "EUROPA", 85, 90, 45, 5, 5, true),
                 row(HypeEntityType.PIECE, "upper_piece", "EUROPA", 82, 90, 45, 5, 5, true));
-        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, "HYPE_V2", HypeStatus.AVAILABLE)).thenReturn(rows);
+        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE)).thenReturn(rows);
 
         Map<String, Object> out = service.insights(null, "EXPLORER_TRENDING", 7, null, null, null, false);
 
-        assertThat(out).containsEntry("context", "EXPLORER_TRENDING").containsEntry("algorithmVersion", "HYPE_V2").containsEntry("source", "local");
+        assertThat(out).containsEntry("context", "EXPLORER_TRENDING").containsEntry("algorithmVersion", HypeScoreConfig.DEFAULT_VERSION).containsEntry("source", "local");
         assertThat(items(out)).hasSizeBetween(2, 5);
         // (24 + 3) ÷ (6 + 3) − 1 = +200% em 7 dias, a mesma suavização do HypeCalculator
         Map<String, Object> rising = item(out, "CATEGORY_RISING");
@@ -209,7 +209,7 @@ class InsightServiceTest {
         HypeScoreCurrent priv2 = row(HypeEntityType.PIECE, "accessory_piece", "EUROPA", 99, 10, 99, 500, 0, false);
         HypeScoreCurrent insufficient = row(HypeEntityType.PIECE, "accessory_piece", "EUROPA", 99, 10, 99, 500, 0, true);
         insufficient.setStatus(HypeStatus.INSUFFICIENT_DATA);
-        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, "HYPE_V2", HypeStatus.AVAILABLE))
+        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE))
                 .thenReturn(List.of(pub1, pub2, priv1, priv2, insufficient));
 
         for (String ctx : List.of("EXPLORER_TRENDING", "EXPLORER_RANKING", "EXPLORER_RUNWAY")) {
@@ -233,7 +233,7 @@ class InsightServiceTest {
             rows.add(row(HypeEntityType.PIECE, "shoes_piece", "AMERICA_DO_SUL", 80, 50, 50, 4, 4, true));
             rows.add(row(HypeEntityType.PIECE, "upper_piece", "EUROPA", 60, 50, 50, 4, 4, true));
         }
-        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, "HYPE_V2", HypeStatus.AVAILABLE)).thenReturn(rows);
+        when(current.findByEntityTypeAndAlgorithmVersionAndPublicEligibleTrueAndStatus(HypeEntityType.PIECE, HypeScoreConfig.DEFAULT_VERSION, HypeStatus.AVAILABLE)).thenReturn(rows);
 
         Map<String, Object> out = service.insights(null, "EXPLORER_RANKING", 7, null, null, null, false);
 

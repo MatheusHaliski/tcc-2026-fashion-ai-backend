@@ -1,6 +1,6 @@
 @startuml RF10_MaquinaDeEstados_Semana
 !pragma layout smetana
-title RF10 — WeekPlan: ciclo do plano da semana (WeekPlanStatus) e dos seus dias
+title RF10 — Gerar recomendações de esquemas e peças na aba Copilot\nDiagrama de máquina de estados — look sugerido pelo Copilot: da sugestão pontuada ao esquema COPILOT e ao Look do Dia
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,27 +8,43 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-[*] --> Ativo : POST /api/autopilot/weeks\n(acervo >= mínimo; senão 422 ACERVO_INSUFICIENTE)
-state "ACTIVE" as Ativo {
-  state "Dia sugerido\n(pieceIdsJson, combinationKey, rationale)" as Sug
-  state "Dia editado\n(editedManually = true, scheme = null)" as Edit
-  state "Dia usado\n(scheme criado, DailyLook AUTOPILOTO)" as Usado
-  state "Lacuna\n(pieceIdsJson vazio → gapsJson)" as Gap
-  [*] --> Sug : 7 dias sem repetir combinação
-  [*] --> Gap : sem candidatos para o dia
-  Sug --> Edit : PUT /api/autopilot/days/{dayId} {pieceIds}\n(409 COMBINACAO_REPETIDA se igual a outro dia)
-  Edit --> Edit : PUT /api/autopilot/days/{dayId}
-  Sug --> Usado : POST /api/autopilot/days/{dayId}/use
-  Edit --> Usado : POST /api/autopilot/days/{dayId}/use
-  Gap --> Edit : PUT /api/autopilot/days/{dayId}
-  Gap --> Gap : POST .../use → 409 DIA_SEM_LOOK
+state "Look sugerido (não gravado no banco)" as Sugerido {
+  state "Pontuado\n(seis números do LookScorer;\nsem modo = ordem do motor)" as Pontuado
+  state "Reordenado pelo modo\n(SAFE · DISCOVERY · EXPERIMENTAL,\nRecommendationScoring.rankValue)" as Ordenado
+  state "Lembrado no aparelho\n(localStorage fashionai.copilot.looks.v1.{userId},\naté 40 looks na lista lateral)" as Lembrado
+  [*] --> Pontuado
+  Pontuado --> Ordenado : mode informado no\nPOST /api/copilot/messages
+  Pontuado --> Lembrado : a tela guarda o look
+  Ordenado --> Lembrado : a tela guarda o look
 }
-state "DISCARDED" as Descartado
-state "COMPLETED" as Concluido #F4F2EF
-Ativo --> Descartado : DELETE /api/autopilot/weeks/current\n(apaga week_plan_days; esquemas já salvos continuam)
-Ativo --> Descartado : novo POST /api/autopilot/weeks\n(só um plano ACTIVE por pessoa)
-Ativo --> Concluido : <<planejado>>
-note right of Concluido : valor existe no enum, mas nenhum fluxo\ngrava COMPLETED — não implementado
-note bottom of Ativo : GET /api/autopilot/weeks/current devolve\nsó o plano ACTIVE mais recente
-note left of Descartado : esquemas e Look do Dia criados\npor "use" permanecem (RF6)
+state "Já mostrado\n(chave da combinação na fila em memória\nde CopilotService, até 60 por pessoa)" as Mostrado
+state "Aceite pedido\n(POST /api/copilot/looks)" as Aceite
+state "Esquema COPILOT\n(schemes.origin = COPILOT,\ncreationMode = AI_ASSISTED)" as Esquema
+state "Look do Dia COPILOT\n(daily_looks.source = COPILOT, hoje)" as LookDoDia
+state "Recusado\n(nada gravado: a transação volta)" as Recusado
+
+[*] --> Sugerido : GET /api/copilot/suggestions (combinações novas)\nou intenção LOOKS no chat
+Pontuado --> Mostrado : resposta do chat enviada
+Mostrado --> [*] : próxima rodada não repete a combinação\n(excludeKeys); a fila some ao reiniciar o servidor
+Sugerido --> Aceite : "Salvar como look"
+Lembrado --> Aceite : abre o look lembrado e salva
+[*] --> Aceite : ação COMPOSE_WITH\n(respostas HYPE ou FORGOTTEN)
+Aceite --> Recusado : menos de 2 peças → 400 SEM_PECAS\npeça de outra pessoa → 403\npeça indisponível → 409 PECA_INDISPONIVEL
+Recusado --> Sugerido : pessoa ajusta e tenta de novo
+Aceite --> Esquema : AutopilotService.createScheme\n(SchemeService.create)
+Esquema --> LookDoDia : DailyLookService.register(COPILOT)
+LookDoDia --> [*] : 201 {schemeId, origin: COPILOT, dailyLook}\n→ DailyLookRegistered (uso, LOOK_WORN, PIECE_USED)
+
+note right of Sugerido
+  O Hype entra só como uma das seis dimensões
+  (no máximo 20% do peso em qualquer modo);
+  dimensão sem base aparece como — e vale 50
+  na ordenação, nunca 0.
+end note
+note bottom of LookDoDia
+  O plano da semana (WeekPlan: ACTIVE, DISCARDED,
+  COMPLETED) é do Autopiloto: ver RF43
+  (RF43_MaquinaDeEstados_Sugestao). Este arquivo
+  manteve o nome antigo para não quebrar links.
+end note
 @enduml

@@ -78,7 +78,7 @@ function InstitutionalRedirect({ slug }: { slug: string }) {
 const TAB_ALIASES: Record<string, TabId> = { saved_looks: "saved", saved_pieces: "saved", publicacoes: "publications", favoritos: "favorites" };
 function profileTab(tab: string | null, self: boolean): TabId {
   const t = (tab && TAB_ALIASES[tab]) || tab;
-  if (t === "closet" || t === "looks" || t === "publications" || t === "favorites" || t === "groups") return t;
+  if (t === "closet" || t === "looks" || t === "publications" || t === "favorites" || t === "groups" || t === "moments") return t;
   if (self && (t === "dna" || t === "saved" || t === "daily" || t === "capsule" || t === "insights")) return t;
   return "closet";
 }

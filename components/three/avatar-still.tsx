@@ -19,7 +19,8 @@ import { STILLS, stillKey, stillTick } from "@/lib/avatar3d/still";
 export interface AvatarStillProps {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; body: BodyParams | null; pieces: Look3dPiece[];
   background?: string; hidden?: boolean; width?: number; height?: number;
-  onStill?: (url: string) => void; alt?: string; className?: string;
+  onStill?: (url: string | null) => void;              // null: a foto falhou (canvas "sujo"), quem usava a anterior a larga
+  alt?: string; className?: string;
 }
 
 const OFFSCREEN: CSSProperties = { position: "fixed", left: -10000, top: 0, pointerEvents: "none" };
@@ -58,8 +59,8 @@ export default function AvatarStill({ avatar, sex, body, pieces, background = "#
       <AvatarViewer avatar={avatar} sex={sex} body={body} pieces={pieces} framing="full" view="front" controls={false} still hairLod={1} background={background}
         onHuman={(p) => { parts.current = p; }}>
         {!current && <Capture parts={parts} expectFace={expectFace} onShot={(url) => {
-          if (url) { STILLS.set(key, url); cb.current?.(url); }
-          setShot({ key, url });
+          if (url) STILLS.set(key, url);
+          cb.current?.(url); setShot({ key, url });
         }} />}
       </AvatarViewer>
     </div>

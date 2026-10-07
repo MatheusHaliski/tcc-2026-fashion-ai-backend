@@ -1,4 +1,5 @@
 @startuml RF29_MaquinaDeEstados_InventoryScore
+title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings ("Destaques")\nDiagrama de máquina de estados — a nota da pessoa (elegibilidade, faixas, cache) e a participação nos rankings
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam state {
@@ -7,26 +8,45 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-title RF29 — FAI Inventory Score: elegibilidade, faixas e participação nos rankings (InventoryScoreService)
-[*] --> Inelegivel : usuário com < 10 peças (MIN_PIECES)
-state "Inelegível\n(eligible = false — 'faltam N peças')" as Inelegivel
-state "Elegível\n(score 0–1000, snapshot DAY/MONTH)" as Elegivel {
-  state "EM_MONTAGEM / ORGANIZADO" as Baixa
-  state "VERSATIL (500–649)\nBEM_CURADO (650–799)" as Media
-  state "CLOSET_INTELIGENTE (800–899)\nSIGNATURE / MAISON CLOSET" as Alta
+[*] --> Inelegivel : conta nova (menos de 10 peças)
+state "Inelegível\n(eligible = false; score = null;\nprogresso 'faltam N peças')" as Inelegivel
+state "Elegível (10+ peças; score 0–1000; faixa = InventoryScoreService.band)" as Elegivel {
+  state "Em Montagem (0–299)\nOrganizado (300–499)" as Baixa
+  state "Versátil (500–649)\nBem Curado (650–799)" as Media
+  state "Closet Inteligente (800–899)\nSignature Closet (900–959)\nMaison Closet (960–1000)" as Alta
+  [*] --> Baixa
   Baixa --> Media : recálculo sobe a nota
   Media --> Alta : recálculo sobe a nota
   Alta --> Media : recálculo desce (rubrica absoluta)
   Media --> Baixa : recálculo desce
 }
-state "Fora dos rankings\n(ranking_opt_ins.optedIn = false)" as ForaRanking
-state "Nos rankings\n(ranking_positions: GLOBAL, PAIS, CIDADE, FAIXA,\nESTILO, SUSTENTAVEL, VERSATEIS, RISING)" as NoRanking
-Inelegivel --> Elegivel : 10ª peça cadastrada (RF4)\n→ GET /api/me/highlights calcula
-Elegivel --> Inelegivel : peças arquivadas abaixo de 10
-Elegivel --> ForaRanking : padrão (sem opt-in)
-ForaRanking --> NoRanking : PUT /api/me/rankings/opt-in {optedIn:true, shareCity?}
-NoRanking --> ForaRanking : PUT /api/me/rankings/opt-in {optedIn:false}
-NoRanking --> NoRanking : GET /api/me/rankings\n(CIDADE só com ≥ 50 pessoas — k-anonimato)
-note right of Elegivel : fator de confiança satura em 20 peças;\nIdentidade omitida sem DNA de Estilo (RF13);\nconquistas (user_achievements) concedidas no recálculo
-note bottom of Inelegivel : sem nota parcial; mostra progresso\n{missing, target}
+Inelegivel --> Elegivel : 10ª peça cadastrada (RF4)\n→ próximo compute()
+Elegivel --> Inelegivel : peças arquivadas/excluídas\ndeixam menos de 10
+
+state "Participação nos rankings (independente da faixa)" as Rankings {
+  state "Fora dos rankings\n(sem linha ou optedIn = false)" as Fora
+  state "Nos rankings (optedIn = true)" as Dentro {
+    state "Aguardando o job\n(sem posição ainda)" as Aguardando
+    state "Com posições\n(ranking_positions por segmento)" as ComPosicao
+    [*] --> Aguardando
+    Aguardando --> ComPosicao : recomputeRankings() (a cada 4 h, :15)\ncom snapshot DAY elegível
+    ComPosicao --> ComPosicao : job reescreve os segmentos
+  }
+  [*] --> Fora
+  Fora --> Dentro : PUT /api/me/rankings/opt-in\n{optedIn: true, shareCity?, city?}
+  Dentro --> Fora : PUT /api/me/rankings/opt-in {optedIn: false}\n→ apaga as posições da pessoa
+}
+note right of Dentro
+  segmento CIDADE só com consentimento
+  (shareCity) e com 50+ pessoas (k-anonimato);
+  sem opt-in, GET /api/me/rankings mostra só o convite
+end note
+note bottom of Elegivel
+  k = min(1, peças/20); Identidade omitida sem DNA;
+  conquistas CURADOR, SIGNATURE_CLOSET, SEGUNDA_CHANCE,
+  CAMALEAO, STYLIST, HIDDEN_GEM concedidas no recálculo.
+  Cada recálculo grava snapshots DAY e MONTH; o resultado fica
+  1 h em cache e sai dele a cada SchemeSaved, DailyLookRegistered,
+  PieceCreated/Updated/Deleted, RoomOrganized ou AvailabilityChanged
+end note
 @enduml

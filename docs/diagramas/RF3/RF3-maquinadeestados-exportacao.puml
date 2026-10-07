@@ -1,12 +1,17 @@
 @startuml RF3_MaquinaDeEstados_Exportacao
 !pragma layout smetana
-title RF3 — DataExportRequest (ExportStatus): pedido de exportação dos dados pessoais (LGPD art. 18)
+title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de máquina de estados — pedido de exportação (DataExportRequest · ExportStatus, LGPD art. 18)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
   ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
 state "REQUESTED" as Req
 state "PROCESSING" as Proc
@@ -15,24 +20,20 @@ state "EXPIRED" as Exp
 
 [*] --> Req : new DataExportRequest()\n(valor padrão do campo)
 Req --> Proc : POST /api/me/exports\nAccountService.requestExport
-Proc --> Ready : JSON gravado em restricted/users/{id}/exports\nreadyAt = agora · expiresAt = +7 dias\nnotificação DATA_EXPORT_READY
-Ready --> Ready : GET /api/me/exports/{exportId}/file\n(só o dono; 403 para outro usuário)
-Ready --> Exp : job purgeExpiredExports (@Scheduled, de hora em hora)\napaga o arquivo · fileKey = null
+Proc --> Ready : JSON gravado em restricted/users/{id}/exports/{exportId}.json\nreadyAt = agora · expiresAt = +7 dias\nnotificação DATA_EXPORT_READY · audit EXPORTACAO_CONTA
+Ready --> Ready : GET /api/me/exports/{exportId}/file\n(só o dono; 403 para outra pessoa)
+Ready --> Exp : job purgeExpiredExports\n(@Scheduled 0 50 * * * *, de hora em hora)\napaga o arquivo · fileKey = null
 Exp --> [*]
 
 note right of Proc
-  Processamento síncrono na mesma transação:
-  PROCESSING e READY acontecem na mesma chamada
-  (202 Accepted com status READY)
+  Tudo na mesma transação: REQUESTED nunca é gravado
+  e PROCESSING → READY acontece na mesma chamada
+  (202 Accepted já com status READY).
+  Erro na montagem desfaz o pedido inteiro.
 end note
 note right of Exp
   Download responde 410 EXPORTACAO_EXPIRADA;
   GET /api/me/exports já mostra EXPIRED quando
-  expiresAt passou, mesmo antes do job
-end note
-note left of Req
-  A exclusão da conta (POST /api/me/deletion,
-  carência de 30 dias) segue o ciclo
-  AccountStatus — ver RF1 (máquina da conta)
+  expiresAt passou, mesmo antes do job.
 end note
 @enduml

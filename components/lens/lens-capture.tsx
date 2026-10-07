@@ -47,7 +47,8 @@ function sendProblem(e: unknown, t: (k: string) => string): string {
 
 /**
  * Prévia + proteção + "Analisar": a foto já vem com os rostos borrados no aparelho. Sem detector (faces = -1), o
- * envio exige a confirmação explícita da pessoa.
+ * envio exige a confirmação explícita da pessoa. redactionConfirmed = borrão feito no aparelho ou confirmado pela pessoa:
+ * sem ele o servidor não manda a foto para a IA externa (a leitura fica local).
  */
 function Review({ file, source, onReset }: { file: File; source: LensSource; onReset: () => void }) {
   const { t } = useI18n(); const router = useRouter(); const checkId = useId();
@@ -72,7 +73,7 @@ function Review({ file, source, onReset }: { file: File; source: LensSource; onR
     if (!result || !ready) return;
     setSending(true); setProblem(null);
     try {
-      const scan = await lensApi.create({ image: result.blob, source, intent: "IDENTIFY", facesRedacted: Math.max(0, result.faces), redactionConfirmed: unknown && confirmed });
+      const scan = await lensApi.create({ image: result.blob, source, intent: "IDENTIFY", facesRedacted: Math.max(0, result.faces), redactionConfirmed: !unknown || confirmed });
       router.push(`/lens/${encodeURIComponent(scan.id)}`);
     } catch (e) { setProblem(sendProblem(e, t)); setSending(false); }
   }

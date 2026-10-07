@@ -1,5 +1,5 @@
 @startuml RF33_Componentes
-title RF33 — Passarela 3D: Look do Dia desfilando em manequins, Top 100 Global/Regional/País e filtros\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
+title RF33 — Passarela 3D: o Look do Dia de cada usuário desfilando num manequim\nDiagrama de componentes — frontend → API → serviços → HypeScore v2 e MySQL
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam component {
@@ -17,35 +17,68 @@ skinparam database {
 left to right direction
 
 package "Frontend (Next.js · React Three Fiber)" {
-  component "explorer — RunwayPanel (filtros, rankings, lotes)" as FE0
-  component "Runway3D (manequins no palco)" as FE1
-  component "Tabela Top 100" as FE2
+  component "explorer/page.tsx\n(aba runway + InsightStrip EXPLORER_RUNWAY)" as FE_PAGE
+  component "showcase/runway-panel.tsx\nRunwayPanel · RunwayFallback (2D)\nLookCard · RunwayHype · FilterBar" as FE_PANEL
+  component "three/runway-scene.tsx\nRunwayScene (desfile, plateia,\nreduzir movimento)" as FE_SCENE
+  component "three/mannequin.tsx → HumanAvatar\n(corpo por sexo, cabeça AVATAR/PADRAO,\nroupa no avatar — RF40)" as FE_MAN
+  component "hype/HypeBadge · HypeAnalyticsDrawer\n(lib/hype: hypeViewState)" as FE_HYPE
+  component "settings/page.tsx\n(«Desfilar meu Look do Dia»)" as FE_SET
 }
 package "fai-web (REST)" {
-  [ShowcaseController] as ShowcaseController
+  [ShowcaseController\nGET /api/explorer/runway] as SC
+  [PreferencesController\nPATCH /api/me/profile] as PC
+  [LookbookController · MirrorController\nPOST /api/me/daily-look · /api/me/mirror/use] as LC
 }
-package "fai-application (casos de uso)" {
-  [ShowcaseService] as ShowcaseService
-  [DailyLookService] as DailyLookService #FAFAFA
-  [SchemeService] as SchemeService #FAFAFA
-  [InstitutionalService] as InstitutionalService #FAFAFA
-  [Model3dService] as Model3dService #FAFAFA
+package "fai-application" {
+  [ShowcaseService\nrunway · runwayOrder · look · mannequin] as SS
+  [DailyLookService\nregister · today] as DLS
+  [SchemeService\ncanView] as SCH
+  [Avatar3dService\nforMannequin (RF40)] as AV
+  [PreferencesService\nupdateProfile (runwayOptOut)] as PS
+  [SearchService (estático)\nshowcaseAllows · publicScore\ntrendFor · risingFor · hypeSummary] as SEARCH
+  [WorldRegions\n(país → região do mundo)] as WR
 }
-package "fai-domain (repositórios JPA)" {
-  [CelebrityProfileRepository\nDailyLookRepository\nFollowRepository\nSchemeGroupingRepository\nSchemeItemRepository\nSchemeRepository\nUserPreferencesRepository\nUserRepository\nWardrobeItemRepository] as REPOS
+package "fai-application · hype (RF53)" {
+  [HypeSignalRecorder\nLOOK_WORN (AFTER_COMMIT)\nhype_signal_daily] as REC
+  [HypeLiveRecalc\nmarkDirty · tick 30 s] as LIVE
+  [HypeSnapshotService\n@Scheduled 6/6 h] as JOB
+  [HypeScoreConfig\nalgorithmVersion] as CFG
 }
-database "MySQL · fashionai_app\n• celebrity_profiles\n• daily_looks\n• follows\n• scheme_groupings\n• scheme_items\n• schemes\n• user_preferences\n• users\n• wardrobe_items" as DB
-database "Storage de mídia\n(local / S3, MediaStoragePort)" as P_media
+package "fai-domain · repository" {
+  [DailyLookRepository\nUserRepository · FollowRepository\nSchemeRepository · SchemeItemRepository\nUserPreferencesRepository\nUserAvatar3dRepository] as REPOS
+  [HypeScoreCurrentRepository] as HREPO
+}
+database "MySQL · fashionai_app\n• daily_looks\n• users (country, sex, runway_opt_out)\n• schemes · scheme_items · wardrobe_items\n• follows · user_preferences\n• user_avatars_3d\n• hype_scores · hype_signal_daily" as DB
+interface "MediaStoragePort" <<port>> as MSP
+database "Storage de mídia\n(MediaStoragePort: fotos recortadas,\nGLB do RF16, textura do avatar)" as MEDIA
 
-FE0 --> ShowcaseController : HTTPS/JSON
-FE1 --> ShowcaseController : HTTPS/JSON
-FE2 --> ShowcaseController : HTTPS/JSON
-ShowcaseController --> ShowcaseService
-ShowcaseService ..> DailyLookService
-ShowcaseService ..> SchemeService
-ShowcaseService ..> InstitutionalService
-ShowcaseService ..> Model3dService
-ShowcaseService --> REPOS
-ShowcaseService --> P_media
+FE_PAGE --> FE_PANEL
+FE_PANEL --> FE_SCENE : desfile 3D (sob demanda)
+FE_SCENE --> FE_MAN
+FE_PANEL --> FE_HYPE
+FE_PANEL --> SC : HTTPS/JSON
+FE_SET --> PC : HTTPS/JSON
+FE_MAN ..> MEDIA : imagens, GLB e textura
+AV --> MSP : textura do rosto
+MSP --> MEDIA
+SC --> SS
+PC --> PS
+LC --> DLS
+SS --> DLS : today()
+SS ..> SCH
+SS --> AV
+SS ..> SEARCH
+SS ..> WR
+SS ..> CFG
+SS --> REPOS
+SS --> HREPO : leitura em lote
+DLS --> REPOS
+DLS ..> REC : DailyLookRegistered
+DLS ..> LIVE : DailyLookRegistered
+LIVE --> JOB : recalculate()
+JOB --> HREPO : grava
+REC --> DB : sinal do dia
+JOB --> DB : lê sinais
 REPOS --> DB : JPA/Flyway
+HREPO --> DB : JPA/Flyway
 @enduml

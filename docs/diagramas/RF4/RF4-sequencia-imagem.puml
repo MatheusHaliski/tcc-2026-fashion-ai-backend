@@ -1,0 +1,106 @@
+@startuml RF4_Sequencia_Imagem
+!pragma layout smetana
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de sequência — fotografia da peça: substituir foto, remover fundo, estúdio com aprovação e "Eu tenho" do Lens
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa (dona)" as U
+participant "pieces/[id] · ExpandedPiece\nEditImageDialog · ApprovalPanel" as FE
+participant "WardrobeController" as WC
+participant "WardrobeService" as WS
+participant "AiEngine (RF24)" as AI
+participant "FlatLayPipeline ·\nStudioPipeline" as IMG
+participant "MediaService\n(MediaStoragePort)" as ST
+participant "LensController ·\nLensService" as LS
+database "MySQL" as DB
+
+== Substituir a foto da peça ==
+U -> FE: "Editar imagem" → "Substituir foto"
+FE -> WC: PUT /api/pieces/{id}/image (file[, editedFromPhotoId])
+WC -> WS: replaceImage(user, id, bytes, editedFromPhotoId)
+WS -> WS: requireCanCreate + owned (não-dono → 403, audit ACESSO_NEGADO_403)
+alt arquivo vazio / > 10 MB / não é JPG, PNG ou WebP
+  WS --> FE: 400 ARQUIVO_VAZIO | ARQUIVO_GRANDE | FORMATO_INVALIDO
+else ok
+  WS -> ST: put(edit-*.png) + put(edit-*-thumb.png)
+  WS -> ST: register(Photo EDITOR, APPROVED) → photos
+  WS -> DB: wardrobe_items: image_url, thumbnail_url, default_image = false,\nai_generated_image = false (foto nova), COMPLETED
+  alt imagem com transparência
+    WS -> AI: execute(STUDIO_ENHANCER) — estúdio refeito
+    AI -> IMG: StudioPipeline.run (Photoroom/Stability → local)
+    WS -> DB: offerStudio(sourceChanged): no ar com approved = false
+  else imagem opaca
+    WS -> DB: applyStudio(null): estúdio removido
+  end
+  WS --> FE: 200 PieceView
+end
+
+== Remover o fundo da foto atual ==
+U -> FE: "Remover fundo"
+FE -> WC: POST /api/pieces/{id}/background-removal
+WC -> WS: removeBackground(user, id)
+WS -> ST: read(originalImageUrl ?? imageUrl)
+alt sem arquivo
+  WS --> FE: 422 SEM_IMAGEM
+else
+  WS -> AI: execute(FLAT_LAY_STANDARDIZER, cota + teto de gasto)
+  AI -> IMG: FlatLayPipeline.run(bytes, externo?)\nrembg → remove.bg → recorte local
+  alt fundo removido
+    WS -> ST: put(processed-*.png) + thumb + fonte do estúdio
+    WS -> DB: COMPLETED; flat_lay_metadata; versão de estúdio pendente
+    WS --> FE: 200 {ok: true, imageUrl, thumbnailUrl, stages}
+  else não removeu
+    WS --> FE: 200 {ok: false, message, stages}
+  end
+end
+
+== Estúdio: nova versão e aprovação ==
+U -> FE: escolhe o fundo (BackdropChips)
+FE -> WC: POST /api/pieces/{id}/studio?backdrop=auto|<id>
+WC -> WS: studioPiece(user, id, backdrop)
+alt imagem padrão ou processamento ≠ COMPLETED
+  WS --> FE: 422 SEM_RECORTE
+else
+  WS -> AI: execute(STUDIO_ENHANCER)
+  AI -> IMG: StudioPipeline.run(recorte, fundo, hints)
+  alt não gerou
+    WS --> FE: 503 ESTUDIO_INDISPONIVEL
+  else gerou
+    WS -> ST: studio-*.jpg · .thumb · .feed · .detail · enhanced-*.png
+    WS -> DB: offerStudio: aprovada no ar → studio.pending (versão n+1)\nsem aprovada → no ar com approved = false
+    WS --> FE: 200 PieceView (flatLayMetadata.studio)
+  end
+end
+U -> FE: compara aprovada × nova
+alt aprovar
+  FE -> WC: POST /api/pieces/{id}/studio/approve
+  WC -> WS: approveStudio(user, id)
+  WS -> DB: pendente vai ao ar; anterior em "previous"; audit EDICAO_PECA
+  WS --> FE: 200 PieceView (ou 409 NADA_A_APROVAR)
+else descartar
+  FE -> WC: DELETE /api/pieces/{id}/studio/pending
+  WC -> WS: discardStudio(user, id)
+  WS -> ST: apaga os arquivos da pendente
+  WS --> FE: 200 PieceView (ou 409 NADA_A_DESCARTAR)
+end
+
+== "Eu tenho" no FashionAI Lens ==
+U -> FE: na leitura do Lens, "Eu tenho"
+FE -> LS: POST /api/lens/scans/{id}/detections/{did}/own {itemId?}
+alt com itemId (peça própria)
+  LS -> DB: lens_detections.owned_item_id = itemId (404 se não for sua)
+  LS --> FE: 200 {detection, href: /pieces/{itemId}}
+else sem itemId
+  LS --> FE: 200 {detection, href: /pieces/new?category&subcategory&color\n&material&styles&q&from=lens&scan&detection}
+  FE -> FE: abre o criador pré-preenchido (RF4-sequencia-v3)
+end
+note over U, DB
+  <<planejado>> foto opcional no criador (RF15 §8.1): upload seguro → editor guiado → escolha da capa
+  (minha foto × foto oficial). Hoje a foto própria só entra pela página da peça (esta sequência).
+end note
+@enduml

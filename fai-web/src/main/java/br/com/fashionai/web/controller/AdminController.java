@@ -138,8 +138,9 @@ public class AdminController {
         return admin.runJob(user, job);
     }
 
+    /** RF6.CA10 — mantido como atalho do job "hype": desde P3-16 recalcula só o HypeScore v2 (o v1 de percentis saiu). */
     @PostMapping("/hype/recalibration")
-    @Operation(summary = "RF6 — Recalibrar percentis do Hype Score")
+    @Operation(summary = "RF6 — Recalcular o HypeScore v2 (atalho do job \"hype\")")
     public Map<String, Object> recalibrate(CurrentUser user) {
         return admin.runJob(user, "hype");
     }

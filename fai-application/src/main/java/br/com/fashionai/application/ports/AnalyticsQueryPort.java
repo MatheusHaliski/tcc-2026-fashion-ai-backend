@@ -28,18 +28,10 @@ public interface AnalyticsQueryPort {
 
     List<Map<String, Object>> countryColors();
 
-    List<Map<String, Object>> hypeBySeason(String country);
+    /** Looks públicos por estação (volume, sem Hype), com recorte de país do dono. */
+    List<Map<String, Object>> looksBySeason(String country);
 
     List<Map<String, Object>> colorRanking(String country, int limit);
-
-    /** Legado v1 (auditoria L7/L19): faixas de juízo sobre {@code schemes.hype_score}. Substituído por {@link #hypeLevelsV2}; sai em P3-16. */
-    List<Map<String, Object>> hypeBands();
-
-    /**
-     * Faixas de Hype dos looks públicos com recorte de país/perfil do dono (dashboard). Legado v1, deprecado: o widget
-     * {@code hype_bands} passou a ler {@link #hypeLevelsV2}/{@link #hypeCoverageV2}; continua só por compatibilidade.
-     */
-    List<Map<String, Object>> hypeBands(Filter f);
 
     List<Map<String, Object>> inventoryBands();
 
@@ -77,27 +69,21 @@ public interface AnalyticsQueryPort {
     /** Tempo de um SELECT 1 no banco, em milissegundos (saúde do sistema). */
     long dbLatencyMs();
 
-    /** RF26 — recorte do painel global: estação (Scheme.season / WardrobeItem.market), cor e faixa de hypeScore. */
-    record GlobalFilter(String season, String color, Double hypeMin, Double hypeMax) {
+    /** RF26 — recorte do painel global: estação (Scheme.season / WardrobeItem.market) e cor. */
+    record GlobalFilter(String season, String color) {
     }
 
-    /** RF26.CA01 — esquemas públicos por país do dono (User.country), com hype médio, no recorte pedido. */
+    /** RF26.CA01 — esquemas públicos por país do dono (User.country), no recorte pedido (só volume). */
     List<Map<String, Object>> schemesByCountry(GlobalFilter filter);
 
     /** RF26.CA01 — peças públicas por país do dono (User.country), no recorte pedido. */
     List<Map<String, Object>> piecesByCountry(GlobalFilter filter);
 
-    /** RF26.CA02 — facetas por marca (cores, estações e hype médio das peças) para os filtros de Marcas & lojas. */
+    /** RF26.CA02 — facetas por marca (peças, cores e estações) para os filtros de Marcas & lojas. */
     List<Map<String, Object>> brandFacets();
 
-    /** RF26.CA03 — maior hypeScore médio dos looks por cor das peças. */
-    List<Map<String, Object>> hypeByColor(int limit);
-
-    /** RF26.CA03 — maior hypeScore médio dos looks por marca das peças. */
-    List<Map<String, Object>> hypeByBrand(int limit);
-
     // ---------------------------------------------------------------- HypeScore v2 (RF53 · Lote 7) — só acréscimos
-    // Os métodos v1 acima continuam (o Lote 1 ainda chama). Estes leem o estado gravado pelo job em hype_scores
+    // Os métodos de Hype v1 (faixas de juízo e médias de hype_score) saíram em P3-16. Estes leem o estado gravado pelo job em hype_scores
     // (GET nunca recalcula). Os defaults vazios mantêm compilando qualquer dublê de teste que implemente a porta.
 
     /**

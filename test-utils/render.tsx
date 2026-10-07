@@ -1,7 +1,7 @@
 /**
  * Render de componentes e telas nos testes (jsdom), dentro dos mesmos provedores do app (idioma, tema, avisos, toasts,
  * sessão, detalhe). A API é simulada por rota (`mockApi`); `loggedAs` restaura uma sessão como se o cookie existisse.
- * Fica fora de app/, components/ e lib/ para não entrar na conta da cobertura.
+ * Fica fora de app/, components/ e lib/ para não entrar na conta da cobertura
  */
 import type { ReactElement } from "react";
 import { vi } from "vitest";
@@ -34,7 +34,6 @@ export function mockApi(routes: Record<string, Handler> = {}) {
   return { fetchMock, calls };
 }
 
-/** Sessão restaurável (cookie-sinal do BFF) + /api/me: o AuthProvider entra logado como `me`. */
 export function loggedAs(me: Me = ME, routes: Record<string, Handler> = {}) {
   document.cookie = "fai_rt_h=1; path=/";
   return mockApi({ "POST /bff/auth/refresh": { accessToken: "test-token" }, "GET /api/me": me, ...routes });
@@ -44,7 +43,6 @@ export function renderApp(ui: ReactElement, opts?: Omit<RenderOptions, "wrapper"
   return render(ui, { wrapper: ({ children }) => <Providers initialLocale="pt-BR">{children}</Providers>, ...opts });
 }
 
-/** Espera a sessão assentar (restauração + /api/me) antes de interagir. */
 export const settle = () => waitFor(() => new Promise((r) => setTimeout(r, 0)));
 
 export * from "@testing-library/react";

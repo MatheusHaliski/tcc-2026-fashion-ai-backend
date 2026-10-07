@@ -8,7 +8,7 @@
     "shirt",
     "blouse",
     "tank_top",
-    "crop_top",
+    "top",
     "polo_shirt",
     "bodysuit",
     "sweater",
@@ -34,10 +34,15 @@
     "leggings",
     "culottes",
     "shorts",
-    "bermuda_shorts",
-    "denim_shorts",
     "skirt",
     "skort"
+   ],
+   "full_body_piece": [
+    "dress",
+    "jumpsuit",
+    "romper",
+    "matching_set",
+    "overalls"
    ],
    "shoes_piece": [
     "casual_sneakers",
@@ -45,14 +50,11 @@
     "training_shoes",
     "basketball_shoes",
     "skate_shoes",
-    "high_top_sneakers",
     "loafers",
     "moccasins",
     "oxford_shoes",
     "derby_shoes",
-    "ankle_boots",
-    "long_boots",
-    "combat_boots",
+    "boots",
     "sandals",
     "flip_flops",
     "heels",
@@ -61,7 +63,6 @@
    ],
    "accessory_piece": [
     "handbag",
-    "crossbody_bag",
     "tote_bag",
     "clutch",
     "backpack",
@@ -83,13 +84,6 @@
     "gloves",
     "socks",
     "hair_accessory"
-   ],
-   "full_body_piece": [
-    "dress",
-    "jumpsuit",
-    "romper",
-    "matching_set",
-    "overalls"
    ]
   },
   "colors": [
@@ -155,13 +149,105 @@
   ],
   "materials": [
    "COTTON",
-   "POLYESTER",
+   "DENIM",
+   "LINEN",
    "WOOL",
+   "CASHMERE",
    "SILK",
+   "SATIN",
+   "VISCOSE",
+   "POLYESTER",
+   "NYLON",
+   "ACRYLIC",
+   "FLEECE",
+   "KNIT",
+   "CORDUROY",
+   "VELVET",
+   "CANVAS",
+   "MESH",
    "LEATHER",
+   "SUEDE",
+   "FAUX_LEATHER",
+   "SHEARLING",
+   "RUBBER",
+   "EVA",
+   "CORK",
+   "STRAW",
+   "METAL",
+   "GOLD",
+   "SILVER",
+   "PLATED",
+   "PEARL",
+   "ACETATE",
    "SYNTHETIC",
    "BLEND"
   ]
+ },
+ "legacySubcategories": {
+  "crop_top": {
+   "category": "upper_piece",
+   "replacedBy": "top",
+   "implies": {
+    "LENGTH": "CROPPED"
+   },
+   "needsReview": true
+  },
+  "bermuda_shorts": {
+   "category": "lower_piece",
+   "replacedBy": "shorts",
+   "implies": {
+    "LENGTH": "KNEE"
+   },
+   "needsReview": false
+  },
+  "denim_shorts": {
+   "category": "lower_piece",
+   "replacedBy": "shorts",
+   "implies": {
+    "MATERIAL": "DENIM"
+   },
+   "needsReview": false
+  },
+  "high_top_sneakers": {
+   "category": "shoes_piece",
+   "replacedBy": "casual_sneakers",
+   "implies": {
+    "SHAFT_HEIGHT": "HIGH_TOP"
+   },
+   "needsReview": false
+  },
+  "ankle_boots": {
+   "category": "shoes_piece",
+   "replacedBy": "boots",
+   "implies": {
+    "SHAFT_HEIGHT": "ANKLE"
+   },
+   "needsReview": false
+  },
+  "long_boots": {
+   "category": "shoes_piece",
+   "replacedBy": "boots",
+   "implies": {
+    "SHAFT_HEIGHT": "KNEE_HIGH"
+   },
+   "needsReview": true
+  },
+  "combat_boots": {
+   "category": "shoes_piece",
+   "replacedBy": "boots",
+   "implies": {
+    "VARIATION": "COMBAT"
+   },
+   "needsReview": false
+  },
+  "crossbody_bag": {
+   "category": "accessory_piece",
+   "replacedBy": "handbag",
+   "implies": {
+    "CARRY_MODE": "CROSSBODY"
+   },
+   "needsReview": false
+  }
  },
  "categorySynonyms": {
   "upper_piece": [
@@ -667,6 +753,32 @@
   "overalls": [
    "overalls",
    "jardineira"
+  ],
+  "top": [
+   "top",
+   "corset",
+   "corselet",
+   "corpete",
+   "top faixa",
+   "bralette",
+   "top fitness",
+   "top esportivo",
+   "top de academia",
+   "bustie",
+   "bustiê",
+   "bustier",
+   "sports bra"
+  ],
+  "boots": [
+   "bota",
+   "botas",
+   "boot",
+   "boots",
+   "chelsea",
+   "galocha",
+   "bota de montaria",
+   "bota texana",
+   "botina"
   ]
  },
  "colorSynonyms": {
@@ -951,71 +1063,162 @@
  },
  "materialSynonyms": {
   "COTTON": [
-   "cotton",
-   "algodao",
    "algodão",
    "piquet",
-   "pique",
-   "piqué",
    "jersey",
-   "denim",
    "sarja",
    "twill",
-   "canvas",
-   "lona"
+   "pique",
+   "denim",
+   "canvas"
+  ],
+  "DENIM": [
+   "jeans",
+   "índigo"
+  ],
+  "LINEN": [
+   "linho"
+  ],
+  "WOOL": [
+   "lã",
+   "merino",
+   "lã batida",
+   "cashmere"
+  ],
+  "CASHMERE": [
+   "caxemira"
+  ],
+  "SILK": [
+   "seda"
+  ],
+  "SATIN": [
+   "cetim"
+  ],
+  "VISCOSE": [
+   "rayon",
+   "modal",
+   "liocel",
+   "lyocell"
   ],
   "POLYESTER": [
-   "polyester",
-   "poliester",
    "poliéster",
-   "dri-fit",
    "dri fit",
    "climalite"
   ],
-  "WOOL": [
-   "wool",
-   "la",
-   "lã",
-   "merino",
-   "cashmere",
-   "caxemira",
-   "tricot"
+  "NYLON": [
+   "poliamida",
+   "tactel",
+   "polyamide"
   ],
-  "SILK": [
-   "silk",
-   "seda",
-   "cetim"
+  "ACRYLIC": [
+   "acrílico"
+  ],
+  "FLEECE": [
+   "moletom",
+   "flanelado",
+   "soft",
+   "french terry"
+  ],
+  "KNIT": [
+   "malha",
+   "tricô",
+   "tricot",
+   "knitwear"
+  ],
+  "CORDUROY": [
+   "cotelê",
+   "veludo cotelê"
+  ],
+  "VELVET": [
+   "veludo",
+   "plush"
+  ],
+  "CANVAS": [
+   "lona"
+  ],
+  "MESH": [
+   "tela",
+   "arrastão"
   ],
   "LEATHER": [
-   "leather",
    "couro",
-   "suede",
-   "camurca",
+   "couro legítimo",
+   "suede"
+  ],
+  "SUEDE": [
    "camurça",
    "nobuck",
    "nubuck"
   ],
+  "FAUX_LEATHER": [
+   "couro sintético",
+   "couro ecológico",
+   "corino",
+   "pu",
+   "vegan leather"
+  ],
+  "SHEARLING": [
+   "pelo",
+   "pelúcia",
+   "teddy",
+   "pele sintética",
+   "faux fur"
+  ],
+  "RUBBER": [
+   "borracha"
+  ],
+  "EVA": [],
+  "CORK": [
+   "cortiça"
+  ],
+  "STRAW": [
+   "palha",
+   "ráfia",
+   "vime",
+   "raffia",
+   "wicker"
+  ],
+  "METAL": [
+   "aço",
+   "aço inox",
+   "steel",
+   "stainless steel"
+  ],
+  "GOLD": [
+   "ouro",
+   "ouro 18k"
+  ],
+  "SILVER": [
+   "prata",
+   "prata 925",
+   "sterling silver"
+  ],
+  "PLATED": [
+   "folheado",
+   "semijoia",
+   "banhado",
+   "gold plated"
+  ],
+  "PEARL": [
+   "pérola",
+   "pérolas"
+  ],
+  "ACETATE": [
+   "acetato"
+  ],
   "SYNTHETIC": [
-   "synthetic",
-   "sintetico",
    "sintético",
    "nylon",
-   "poliamida",
    "mesh",
    "flyknit",
    "primeknit",
-   "borracha",
    "rubber",
    "eva",
    "pvc",
    "plastico",
-   "acetato",
-   "metal",
-   "aco",
-   "aço"
+   "metal"
   ],
   "BLEND": [
-   "blend",
    "misto",
    "mesclado"
   ]

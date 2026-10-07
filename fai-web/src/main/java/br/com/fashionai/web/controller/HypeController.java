@@ -114,7 +114,7 @@ public class HypeController {
     /**
      * Lote A1 (P2-02, P2-03, P2-10): Hype agregado de várias marcas (chave = nome normalizado) ou pessoas (chave = id)
      * numa requisição — chips da busca, do perfil e de /brands. Só itens públicos elegíveis; {@code sufficient} = ≥ 3.
-     * Substitui o antigo GET /api/hype/groups (agrupamentos por similaridade, v1), que foi para /api/similarity-groups/global.
+     * Substitui o antigo GET /api/hype/groups (agrupamentos por similaridade, v1), removido na limpeza do v1 (P3-16).
      */
     @GetMapping("/api/hype/groups")
     @Operation(summary = "Hype agregado em lote de marcas (BRAND, chave = nome) ou criadores (CREATOR, chave = id): faixa, valor, itens públicos, suficiente (≥ 3) e posição; só conteúdo público")

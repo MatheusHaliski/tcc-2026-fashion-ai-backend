@@ -2,7 +2,6 @@ package br.com.fashionai.web.controller;
 
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.DailyLookService;
-import br.com.fashionai.application.service.HypeScoreService;
 import br.com.fashionai.application.service.LookbookService;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.enums.DailyLookFeedback;
@@ -25,16 +24,13 @@ import java.util.UUID;
 public class LookbookController {
     private final LookbookService lookbook;
     private final DailyLookService dailyLooks;
-    private final HypeScoreService hype;
-
     private final br.com.fashionai.application.hype.HypeScoreConfig hypeV2;
 
-    public LookbookController(LookbookService lookbook, DailyLookService dailyLooks, HypeScoreService hype,
+    public LookbookController(LookbookService lookbook, DailyLookService dailyLooks,
                               br.com.fashionai.application.hype.HypeScoreConfig hypeV2) {
         this.hypeV2 = hypeV2;
         this.lookbook = lookbook;
         this.dailyLooks = dailyLooks;
-        this.hype = hype;
     }
 
     @GetMapping("/api/users/{ownerId}/lookbook")
@@ -210,22 +206,9 @@ public class LookbookController {
     }
 
     @GetMapping("/api/hype/method")
-    @Operation(summary = "RF6 — Como o Hype Score é calculado (v1 do Look do Dia + configuração ativa do HypeScore v2)")
+    @Operation(summary = "RF53 — Como o HypeScore é calculado (configuração ativa do v2: dimensões, pesos, faixas, janelas e decaimento)")
     public Map<String, Object> hypeMethod() {
-        Map<String, Object> out = new java.util.LinkedHashMap<>(hype.describe());
-        out.put("v2", hypeV2.describe());
-        return out;
-    }
-
-    /**
-     * @deprecated legado v1: agrupamentos globais por SIMILARIDADE com a média v1 ({@code hypeScoreGlobal}); nenhuma tela
-     * usa. Saiu de GET /api/hype/groups (Lote A1), que agora é o Hype agregado de marcas e criadores no HypeController;
-     * o nome novo diz o que é (similaridade, não Hype).
-     */
-    @Deprecated
-    @GetMapping("/api/similarity-groups/global")
-    @Operation(summary = "RF6 — Agrupamentos globais por similaridade (legado v1 \"HypeGroups\", antes em /api/hype/groups; deprecado)", deprecated = true)
-    public List<Map<String, Object>> hypeGroups(@RequestParam HypeEntityType type) {
-        return hype.hypeGroups(type);
+        // P3-16: o v1 do RF6 (0,65·E_norm + 0,35·T_norm) saiu; o método publicado é só o v2
+        return hypeV2.describe();
     }
 }

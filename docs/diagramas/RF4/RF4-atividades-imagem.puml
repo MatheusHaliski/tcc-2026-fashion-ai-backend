@@ -1,0 +1,143 @@
+@startuml RF4_Atividades_Imagem
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de atividades — fotografia da peça: foto própria, remoção de fundo, estúdio com aprovação e "Eu tenho" do Lens
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+
+|Pessoa (dona da peça)|
+|Frontend (expanded-card · edit-image)|
+|Serviço (WardrobeService)|
+|Imagem/IA|
+|Pessoa (dona da peça)|
+start
+if (Por onde a foto chega?) then (peça já cadastrada)
+  :Abre a peça (/pieces/{id}) → "Editar imagem"\n(EditImageDialog, só o dono);
+  |Frontend (expanded-card · edit-image)|
+  :Seções: enquadramento (template do feed e\nregiões faltando), recorte, original × processado,\nlogo (só com logo real) + painel de aprovação;
+  repeat
+  |Pessoa (dona da peça)|
+  :Escolhe uma ação;
+  if (Substituir a foto?) then (sim)
+    |Frontend (expanded-card · edit-image)|
+    :PUT /api/pieces/{id}/image (multipart file);
+    |Serviço (WardrobeService)|
+    :replaceImage: requireCanCreate + owned\n(não-dono → 403 auditado);
+    if (ImageOps.requireAcceptedImage) then (falhou)
+      #FFE3E3:400 ARQUIVO_VAZIO · ARQUIVO_GRANDE (> 10 MB)\n· FORMATO_INVALIDO (só JPG, PNG, WebP);
+    else (ok)
+      |Imagem/IA|
+      :Grava edit-*.png + miniatura (MediaStoragePort);\nregistra Photo origem EDITOR (Minhas Fotos, RF12);
+      |Serviço (WardrobeService)|
+      :imageUrl = nova foto; defaultImage = false;\nfoto nova tira o selo de IA (aiGeneratedImage = false);\nphotoProcessingStatus = COMPLETED; audit EDICAO_PECA;
+      if (A imagem tem transparência (recorte)?) then (sim)
+        :refreshStudio → estúdio refeito com a nova\nimagem: entra no ar AGUARDANDO aprovação\n(a foto de origem mudou);
+      else (não)
+        :applyStudio(null): a foto de estúdio sai\n(foto opaca não vai ao estúdio);
+      endif
+    endif
+  endif
+  |Pessoa (dona da peça)|
+  if (Trocar o fundo do estúdio?) then (sim)
+    |Frontend (expanded-card · edit-image)|
+    :POST /api/pieces/{id}/studio?backdrop=<id|auto>;
+    |Serviço (WardrobeService)|
+    if (Imagem padrão ou\nprocessamento ≠ COMPLETED?) then (sim)
+      #FFE3E3:422 SEM_RECORTE;
+    else (não)
+      |Imagem/IA|
+      :studioShot: AiEngine.execute(STUDIO_ENHANCER)\nPhotoroom/Stability → plano B local\n(StudioPipeline: fundo, sombra, manequim\ninvisível, feed 4:5, detalhe do logo);
+      |Serviço (WardrobeService)|
+      if (Gerou?) then (não)
+        #FFE3E3:503 ESTUDIO_INDISPONIVEL;
+      else (sim)
+        :offerStudio: com uma APROVADA no ar, a nova fica\nem flatLayMetadata.studio.pending; sem aprovada,\nentra no ar com approved = false;
+      endif
+    endif
+  endif
+  |Pessoa (dona da peça)|
+  if (Há versão nova esperando decisão?\n(ApprovalPanel: aprovada × nova)) then (sim)
+    if (Decisão) then (aprovar)
+      |Frontend (expanded-card · edit-image)|
+      :POST /api/pieces/{id}/studio/approve;
+      |Serviço (WardrobeService)|
+      :approveStudio: a pendente vai ao ar e a anterior\nfica em "previous" (ou a atual é marcada\naprovada); nada a aprovar → 409 NADA_A_APROVAR;
+    else (descartar)
+      |Frontend (expanded-card · edit-image)|
+      :DELETE /api/pieces/{id}/studio/pending;
+      |Serviço (WardrobeService)|
+      :discardStudio: apaga os arquivos da pendente; a\naprovada continua; sem pendente → 409 NADA_A_DESCARTAR;
+    endif
+  endif
+  |Pessoa (dona da peça)|
+  if (Remover o fundo?) then (sim)
+    |Frontend (expanded-card · edit-image)|
+    :POST /api/pieces/{id}/background-removal;
+    |Serviço (WardrobeService)|
+    if (Há arquivo da foto?) then (não)
+      #FFE3E3:422 SEM_IMAGEM;
+    else (sim)
+      |Imagem/IA|
+      :governedFlatLay: AiEngine.execute(FLAT_LAY_STANDARDIZER)\n→ FlatLayPipeline (rembg → remove.bg → recorte local)\ncom cota diária e teto de gasto;
+      |Serviço (WardrobeService)|
+      if (Fundo removido?) then (não)
+        :200 {ok: false, mensagem, estágios}\n(as outras ferramentas seguem);
+      else (sim)
+        :Grava processed-*.png; COMPLETED;\nrefreshStudio (mesma origem → versão pendente);
+      endif
+    endif
+  endif
+  |Pessoa (dona da peça)|
+  if (Ajuste manual?) then (sim)
+    |Frontend (expanded-card · edit-image)|
+    :Abre o PhotoEditor (Editor Canvas 2D) —\ndetalhado no RF15;
+  endif
+  |Pessoa (dona da peça)|
+  repeat while (Outra ação na imagem?) is (sim) not (não)
+elseif (vários itens no Closet)
+  |Frontend (expanded-card · edit-image)|
+  :Closet → "Levar ao estúdio":\nPOST /api/me/pieces/studio;
+  |Serviço (WardrobeService)|
+  :studioAll: até 40 peças sem foto de estúdio\n(ilustração → defaultStudio aprovado;\nfoto → versão aguardando aprovação);
+elseif ("Eu tenho" no Lens)
+  |Frontend (expanded-card · edit-image)|
+  :POST /api/lens/scans/{id}/detections/{did}/own;
+  |Serviço (WardrobeService)|
+  :LensService.own: com itemId liga a detecção\na uma peça própria (404 se não for sua);\nsem itemId devolve /pieces/new?...&from=lens;
+  note right
+    O cadastro pré-preenchido segue o
+    RF4-atividades-v3. A foto do Lens nunca
+    vira a foto da peça.
+  end note
+else (no cadastro — planejado)
+  |Pessoa (dona da peça)|
+  #F2F2F2:<<planejado>> passo "Adicionar minha foto\n(opcional)" no criador: câmera ou galeria, upload\nseguro (tipo real, sem EXIF/GPS, moderação), editor\nguiado do RF15 e escolha da capa (minha foto ×\nfoto oficial — a oficial nunca é editada);
+  note right
+    Plano: docs/novos-rf/RF15_Editor_de_Fotografias.md
+    §8.1 (Fase 0). Hoje o criador salva só com a foto
+    oficial do catálogo ou a ilustração da subcategoria.
+  end note
+endif
+|Pessoa (dona da peça)|
+:Vê a peça com a imagem atual\n(e a versão de estúdio em revisão, se houver);
+stop
+@enduml

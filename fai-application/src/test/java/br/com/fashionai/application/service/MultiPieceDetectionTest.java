@@ -18,7 +18,7 @@ class MultiPieceDetectionTest {
                "material": "COTTON", "sex": "UNISSEX", "style": ["basic", "not_a_style", "minimalist", "classic"],
                "occasion": ["casual", "casual"], "box": {"x": 20, "y": 10, "width": 50, "height": 35}, "confidence": 0.93},
               {"name": "Calça jeans", "category": "lower_piece", "subcategory": "not_a_sub", "color": "roxo-inventado",
-               "material": "DENIM", "box": {"x": 90, "y": 45, "width": 30, "height": 60}, "confidence": 1.7},
+               "material": "KEVLAR", "box": {"x": 90, "y": 45, "width": 30, "height": 60}, "confidence": 1.7},
               {"name": "Tênis", "category": "shoes_piece", "box": {"x": 10, "y": 90, "width": 1, "height": 5}},
               {"name": "Boné", "category": "accessory_piece"}
             ]}""";

@@ -1,5 +1,6 @@
 package br.com.fashionai.application.catalog.image;
 
+import br.com.fashionai.application.taxonomy.TaxonomyRegistry;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -105,6 +106,13 @@ public final class SemanticRegionRegistry {
     public Profile profile(PieceType type, String subcategory) {
         JsonNode base = types.get(type);
         JsonNode sub = subcategory == null ? null : base.path("subcategories").get(subcategory);
+        if (subcategory != null) {
+            String replacement = TaxonomyRegistry.get().subcategory(subcategory).filter(TaxonomyRegistry.Subcategory::legacy)
+                    .map(TaxonomyRegistry.Subcategory::replacedBy).orElse(null);
+            if (replacement != null) {
+                sub = base.path("subcategories").get(replacement);
+            }
+        }
         JsonNode focus = pick(sub, base, "focus");
         List<Region> critical = new ArrayList<>();
         pick(sub, base, "critical").forEach(c -> critical.add(region(c)));

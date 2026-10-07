@@ -77,7 +77,7 @@ class HypePersonalDataTest {
         c.setEntityType(type);
         c.setEntityId(UUID.randomUUID());
         c.setOwnerId(owner);
-        c.setAlgorithmVersion("HYPE_V2");
+        c.setAlgorithmVersion(HypeScoreConfig.DEFAULT_VERSION);
         c.setStatus(score == null ? HypeStatus.INSUFFICIENT_DATA : HypeStatus.AVAILABLE);
         c.setScore(score == null ? null : BigDecimal.valueOf(score));
         c.setLevel(level);
@@ -171,8 +171,8 @@ class HypePersonalDataTest {
     void ilhaDoQuartoMostraOHypeV2PessoalSemPerderOCampoV1() {
         User u = user();
         CurrentUser me = new CurrentUser(u.getId(), "ana", "USER", ProfileType.PESSOAL, true, AccountStatus.ACTIVE, null, null);
-        Scheme a = scheme(u, 72.0);
-        Scheme b = scheme(u, null);
+        Scheme a = scheme(u);
+        Scheme b = scheme(u);
         Guard guard = mock(Guard.class);
         FaiPointsLedgerEntryRepository ledger = mock(FaiPointsLedgerEntryRepository.class);
         when(ledger.lifetime(u.getId())).thenReturn(5_000L);   // nível ATELIER libera a ilha
@@ -186,25 +186,24 @@ class HypePersonalDataTest {
 
         Map<String, Object> out = room.island(me, List.of(a.getId(), b.getId()));
         List<Map<String, Object>> looks = (List<Map<String, Object>>) out.get("looks");
-        assertThat(looks.get(0)).containsEntry("hypeScore", BigDecimal.valueOf(72.0));   // v1 continua (campo existente da API)
+        assertThat(looks.get(0)).doesNotContainKey("hypeScore");   // o v1 saiu na limpeza do v1 (P3-16)
         assertThat((Map<String, Object>) looks.get(0).get("hype")).containsEntry("level", "TRENDING").containsEntry("score", 77.0);
         // sem cálculo: "não calculado", nunca 0
         assertThat((Map<String, Object>) looks.get(1).get("hype")).containsEntry("status", "NOT_CALCULATED").doesNotContainKey("score");
         verify(query).summaries(eq(me), eq(HypeEntityType.SCHEME), eq(List.of(a.getId(), b.getId())));
 
         // look de outra pessoa: a guarda barra antes de qualquer leitura de Hype
-        Scheme alheio = scheme(user(), 90.0);
+        Scheme alheio = scheme(user());
         doThrow(ApiException.forbidden("não é seu")).when(guard).requireOwner(eq(me), eq(alheio.getUser().getId()), anyString());
         assertThrows(ApiException.class, () -> room.island(me, List.of(a.getId(), alheio.getId())));
         verify(query, org.mockito.Mockito.times(1)).summaries(any(), any(), anyList());
     }
 
-    Scheme scheme(User owner, Double v1) {
+    Scheme scheme(User owner) {
         Scheme s = new Scheme();
         s.assignId(UUID.randomUUID());
         s.setUser(owner);
         s.setTitle("Look");
-        s.setHypeScore(v1 == null ? null : BigDecimal.valueOf(v1));
         when(schemes.findById(s.getId())).thenReturn(Optional.of(s));
         return s;
     }

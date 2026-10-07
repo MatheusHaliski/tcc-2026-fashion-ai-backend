@@ -1,5 +1,5 @@
 @startuml RF10_Sequencia
-title RF10 — Possibilitar que o usuário gere recomendações de esquemas de vestimenta & de peças de roupa através da aba "Copilot"\nDiagrama de sequência — endpoints reais
+title RF10 — Gerar recomendações de esquemas e peças na aba Copilot\nDiagrama de sequência — abrir o Copilot: contexto, sugestões visuais (5 blocos), seis números das combinações novas e insights COPILOT
 skinparam backgroundColor #FFFFFF
 skinparam sequence {
   ArrowColor #4A4852
@@ -9,89 +9,58 @@ skinparam sequence {
 }
 autonumber
 actor "Pessoa" as U
-participant "Frontend\ncopilot" as FE
+participant "copilot/page.tsx" as FE
 participant "AutopilotController" as AC
 participant "CopilotService" as CS
-participant "WeatherService" as WS
-participant "Open-Meteo\n(OpenMeteoAdapter)" as OM
 participant "WardrobeService" as WD
-participant "AiEngine (RF24)\nCOPILOT" as AI
-participant "HypeController\n<<RF53>>" as HC
-participant "HypeQueryService\n<<RF53>>" as HQ
-participant "AutopilotService" as AP
-participant "DailyLookService" as DL
+participant "WeatherService" as WS
+participant "OpenMeteoAdapter\n(WeatherPort · GeocodingPort)" as OM
+participant "LookScorer" as LSC
+participant "HypeQueryService" as HQ
+participant "InsightService\n(PersonalInsights)" as IS
+participant "HypeController" as HC
 database "MySQL" as DB
-U -> FE: abre a aba Copilot
+
+U -> FE: abre /copilot (RequireAuth)
 FE -> AC: GET /api/copilot/context?view=copilot
 AC -> CS: context(user, view, selection, city, lat, lon)
-CS --> FE: 200 {suggestedPrompts, weather, selection}
-FE -> AC: GET /api/copilot/suggestions?city=&lat=&lon=
+CS -> WD: eligible(userId) — peças disponíveis do próprio acervo
+CS -> DB: daily_looks (30 últimos: ocasião e humor mais usados)
+CS -> WS: resolve(lat, lon, city)
+WS --> CS: Context.none (sem cidade nem coordenadas)
+CS --> FE: 200 {pieces, available, ready (≥ 3), limitation?, occasion, mood,\nweather, suggestedPrompts, activeChallenges}
+
+FE -> AC: GET /api/copilot/suggestions
 AC -> CS: suggestions(user, city, lat, lon)
 CS -> WD: eligible(userId)
-WD -> DB: SELECT wardrobe_items (disponíveis)
 CS -> WS: resolve(lat, lon, city)
-opt clima disponível
-  WS -> OM: GET forecast / geocoding
-  OM --> WS: temperatura, descrição
+opt cidade ou coordenadas e sem cache (30 min)
+  WS -> OM: geocode(city) · current(lat, lon)
+  OM --> WS: temperatura e descrição (falha = sem clima)
 end
-WS --> CS: Context{band, season}
-CS -> DB: SELECT schemes (meus, não ARCHIVED) · findPublicFeed (em alta)
+WS --> CS: Context {band, season, note, available}
+CS -> DB: schemes do dono não arquivados e disponíveis\n(favoritos e menos usados como Look do Dia, 6)
+CS -> CS: LocalSchemeComposer.compose(eligible, season, 3)\n→ combinações novas
+CS -> LSC: scoreCards(user, combinações, mode = nulo)
+LSC -> DB: style_dna · pares já combinados (scheme_items)
+LSC -> HQ: currentOf(PIECE, peças das combinações)
+HQ -> DB: hype_scores (HYPE_V2)
+LSC --> CS: scores {compatibility, hype, novelty, reuse,\nusage, sustainability} (sem base = nulo)
+CS -> CS: forgottenPieces (RoomService.forgotten: 60+ dias)\n· weatherPieces (WeatherService.unsuitable por faixa)
+CS -> DB: schemes.findPublicFeed (30) de outras pessoas, visíveis
 CS -> HQ: currentOf(SCHEME, looks públicos)
-HQ -> DB: SELECT hype_scores
-HQ --> CS: HypeScoreCurrent por look
-note right of CS: novo (RF53 · HypeScore v2):\ntrendingLooks ordenados pelo Hype\n(sem Hype calculado = por último)
-CS -> CS: LocalSchemeComposer.compose(eligible, season) — combinações novas
-CS --> FE: 200 {weather, readyLooks, newCombinations,\nforgottenPieces, weatherBand, weatherPieces, trendingLooks}
-FE -> FE: abas (Tabs): Recomendações · Descoberta ·\nExperimentação · Redescoberta · Insights
-opt aba Redescoberta ou Insights (novo · RF53)
+HQ --> CS: Hype v2 por look → trendingLooks (sem Hype por último)
+CS -> IS: itemsOrEmpty(user, COPILOT)
+IS --> CS: insights (Hype sempre ao lado do DNA e do uso;\nfalha = lista vazia)
+CS --> FE: 200 {weather, readyLooks, newCombinations (scores), forgottenPieces,\nweatherBand, weatherPieces, trendingLooks, suggestedPrompts, insights}
+FE -> FE: abas Recomendações · Descoberta · Experimentação\n· Redescoberta · Insights; lembra até 40 looks no localStorage
+opt aba Redescoberta ou Insights
   FE -> HC: GET /api/me/hype/wardrobe
   HC -> HQ: wardrobe(user)
-  HQ --> FE: 200 {Hype médio, destaques, rediscoveries}
+  HQ --> FE: 200 {averageHype, highlights, rediscoveries}
+  FE -> FE: InsightStrip COPILOT → GET /api/insights?context=COPILOT
 end
-U -> FE: escolhe o modo (Seguro/SAFE padrão · Descoberta · Experimental)\ne digita um pedido (ou confirma o ?ask= pré-preenchido)
-FE -> AC: POST /api/copilot/messages {message, view, mode}
-AC -> CS: ask(user, AskRequest)
-alt mensagem em branco
-  CS --> FE: 400 MENSAGEM_VAZIA
-else
-  CS -> CS: intent(message) via CopilotLexicon\n(HYPE = HYPE_QUESTION e não BUILD_REQUEST)
-  alt Intent.LOOKS
-    CS -> CS: looks(user, req, message) — peças do acervo + restrição de desafio
-    CS -> CS: scoreLooks(user, cards, RecommendationScoring.Mode.parse(mode))
-    CS -> HQ: currentOf(PIECE, peças de cada look)
-    HQ --> CS: Hype das peças (média = dimensão hype)
-    CS -> CS: StyleCompatibility.score(DNA, look) · novelty · reuse\n→ scores {compatibility, hype, novelty, reuse}
-    opt modo informado
-      CS -> CS: ordena por rankValue(mode, scores)\n(pesos [compat, hype, novidade, reuso] do modo)
-    end
-    note right of CS: novo (RF53 · HypeScore v2)
-  else Intent.HYPE (novo · RF53)
-    CS -> CS: hypeAnswer(user, message)
-    CS -> HQ: currentOf(PIECE | SCHEME, peças ou looks próprios)
-    HQ --> CS: HypeScoreCurrent (score, dimensões, delta)
-    CS -> CS: StyleCompatibility.score(DNA, peça) — separado do Hype
-    CS -> CS: anexa ao texto o aviso copilot.hype.aviso (sempre)
-  else Intent.GENERAL
-    CS -> AI: text(TextCall COPILOT, resumo + peças refs p1..pn + pergunta)
-    AI --> CS: texto citando [[pN]] (fallback: texto local)
-    CS -> CS: valida refs; descarta peças não listadas
-  else WHERE_IS / FORGOTTEN / DIAGNOSIS / IMPROVE_INVENTORY / DIFFERENT
-    CS -> DB: SELECT wardrobe_items (busca por termos) · room_inventory
-  end
-  CS --> FE: 200 {text, chips(hype?, compatibility?), actions, looks?(scores),\nmode?, intent, suggestedPrompts}
-end
-U -> FE: aceita um look sugerido
-FE -> AC: POST /api/copilot/looks {pieceIds, title, occasion, style, mood, season, background}
-AC -> CS: accept(user, pieceIds, ...)
-CS -> AP: createScheme(user, pieceIds, title, occasion, SchemeOrigin.COPILOT, ...)
-AP -> DB: INSERT schemes, scheme_items
-CS -> DL: register(user, scheme, DailyLookSource.COPILOT, hoje)
-DL -> DB: INSERT daily_looks
-CS --> FE: 201 {schemeId, origin: COPILOT, dailyLook}
-opt planejar a semana (RF10.CA05)
-  FE -> AC: POST /api/autopilot/weeks {weekStart, days, city}
-  AC -> AP: planWeek(user, WeekRequest)
-  AP -> DB: UPDATE week_plans (ACTIVE → DISCARDED); INSERT week_plans, week_plan_days
-  AP --> FE: 201 {plan, days[], gaps}
+opt link com ?ask= (vindo da Redescoberta)
+  FE -> FE: pré-preenche a pergunta; a pessoa confirma antes de enviar\n(ver RF10_Sequencia_Pergunta)
 end
 @enduml

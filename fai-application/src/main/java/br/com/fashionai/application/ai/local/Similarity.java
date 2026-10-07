@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Similaridade e embeddings locais. Assinatura ponderada do T_norm/HypeGroup (RF6_HYPE_SCORE_CALCULO §3.2):
+ * Similaridade e embeddings locais. Assinatura ponderada dos agrupamentos por similaridade (origem: RF6_HYPE_SCORE_CALCULO §3.2):
  * estilo 1,5 · marca 1,0 · cor 1,0 · ocasião 1,0 · categoria/tipo 0,5. Embeddings de atributos alimentam
  * Acervo Grouping (#13), Affinity (#14), SealBond (#6) e Photo Curator (#19).
  */
@@ -42,7 +42,7 @@ public final class Similarity {
     private Similarity() {
     }
 
-    /** Assinatura de uma peça ou esquema usada pelo T_norm e pelo HypeGroup. */
+    /** Assinatura de uma peça ou esquema usada nos agrupamentos por similaridade. */
     public record Signature(Set<String> styles, Set<String> brands, Set<String> colors, Set<String> occasions,
                             Set<String> types) {
     }

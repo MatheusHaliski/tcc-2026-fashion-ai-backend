@@ -1,6 +1,6 @@
 @startuml RF5_MaquinaDeEstados_Esquema
 !pragma layout smetana
-title RF5 — Scheme: ciclo de vida do esquema (SchemeStatus × Visibility)
+title RF5 — Criar um esquema de vestimenta na aba "Criar Look"\nDiagrama de máquina de estados — ciclo de vida do esquema (Scheme.status × visibility)
 skinparam backgroundColor #FFFFFF
 skinparam state {
   BackgroundColor #F8F4FF
@@ -8,28 +8,51 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-[*] --> Rascunho : POST /api/schemes\n(publish=false; CA06: items vazio → 400 SEM_PECAS)
-[*] --> Publicado : POST /api/schemes\n(publish=true)
-state "DRAFT" as Rascunho
-state "PUBLISHED" as Publicado {
-  [*] --> Privado : visibility=PRIVATE
-  [*] --> Seguidores : visibility=FOLLOWERS
-  [*] --> Publico : visibility=PUBLIC\n(communityIndexed=true → feed RF8)
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+}
+state "DRAFT\n(rascunho: só o dono vê)" as Rascunho
+state "PUBLISHED\n(publishedAt · snapshot_json das peças)" as Publicado {
   state "PRIVATE" as Privado
   state "FOLLOWERS" as Seguidores
-  state "PUBLIC" as Publico
+  state "PUBLIC\n(communityIndexed = true → feed do RF8)" as Publico
+  [*] --> Publico : publish com PRIVATE\n(o builder troca para PUBLIC)
+  [*] --> Seguidores : visibility = FOLLOWERS
+  [*] --> Privado : POST /publication {PRIVATE}
   Privado --> Seguidores : PUT /api/schemes/{id}
   Seguidores --> Publico : PUT /api/schemes/{id}
-  Publico --> Privado : PUT /api/schemes/{id}
+  Publico --> Privado : PUT /api/schemes/{id}\n(revoga selos — RF20.CA14)
+  Seguidores --> Privado : PUT /api/schemes/{id}\n(revoga selos)
 }
-state "ARCHIVED" as Arquivado
-Rascunho --> Rascunho : PUT /api/schemes/{id}\n(editar peças/arte, RF9)
-Rascunho --> Publicado : POST /api/schemes/{id}/publication\n{visibility} (CA05) — snapshot das peças (RF7.CA03)
-Publicado --> Publicado : PUT /api/schemes/{id}\n(re-projeção se peças mudam)
+state "ARCHIVED\n(fora do feed e das buscas)" as Arquivado
+
+[*] --> Rascunho : POST /api/schemes (publish = false)\n400 SEM_PECAS se items vazio (CA06)
+[*] --> Publicado : POST /api/schemes (publish = true)
+Rascunho --> Rascunho : PUT /api/schemes/{id}\n(peças, dados e arte — RF9)
+Rascunho --> Publicado : POST /api/schemes/{id}/publication {visibility}\nou PUT com publish = true (CA05)
+Publicado --> Publicado : PUT /api/schemes/{id}\n(peças mudaram → revalidação do selo, RF9)
 Rascunho --> Arquivado : POST /api/schemes/{id}/archive\nou DELETE /api/schemes/{id}
-Publicado --> Arquivado : POST /api/schemes/{id}/archive\nou DELETE /api/schemes/{id}\n(selos revogados, sai do feed e de Minhas Fotos)
-Arquivado --> [*]
-note right of Rascunho : visibilidade inicial herdada do perfil\n(AccountService.defaultVisibility, CA03)
-note right of Arquivado : só o dono ainda enxerga (get/canView);\nnão há transição de volta no código
-note bottom of Publicado : flags independentes do status:\ndisponivel / favorite via PATCH /api/schemes/{id}/flags (RF31)\ne lookDoDia no SchemeForm (RF28)
+Publicado --> Arquivado : POST .../archive ou DELETE\n(SealService.revokeForScheme, projeção removida,\nfoto do look sai de Minhas Fotos)
+Rascunho --> Arquivado : purgeScheduledDeletions\n(exclusão da conta, RF3)
+Publicado --> Arquivado : purgeScheduledDeletions
+Arquivado -[dashed]-> Publicado : POST /api/schemes/{id}/publication\n(sem trava de status no código)
+
+note right of Rascunho
+  Visibilidade inicial: a do formulário ou
+  AccountService.defaultVisibility(perfil) — CA03.
+  Visibilidade efetiva = a mais restritiva entre
+  esquema e perfil (SchemeService.moreRestrictive).
+end note
+note right of Arquivado
+  GET /api/schemes/{id}: 404 para quem não é o dono.
+  Não há "desarquivar" na interface; publish() e
+  update() usam owned(), que só confere o dono —
+  por isso a seta tracejada.
+end note
+note bottom of Publicado
+  Flags independentes do status: disponivel e favorite
+  (PATCH /api/schemes/{id}/flags, RF31) e lookDoDia (RF42).
+  Não há volta de PUBLISHED para DRAFT.
+end note
 @enduml

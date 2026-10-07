@@ -40,8 +40,8 @@ import java.util.Set;
  * <p>HypeScore v2 (RF53 · Lote 7): o widget {@code hype_bands} do admin lê {@code hypeV2} (faixas v2 de peças e looks só
  * com {@code publicEligible}, cobertura AVAILABLE/INSUFFICIENT/NOT_CALCULATED, versão do algoritmo e último cálculo) e o
  * painel do emissor ganha {@code hype} (média v2 + Δ7d + top 3 dos looks vinculados, só públicos). Tudo lê o estado
- * gravado pelo job — GET nunca recalcula — e "sem dados" sai nulo, nunca 0. O {@code hypeBands} v1 continua no payload
- * só por compatibilidade (deprecado; sai em P3-16).</p>
+ * gravado pelo job — GET nunca recalcula — e "sem dados" sai nulo, nunca 0. O {@code hypeBands} v1 e as médias de
+ * {@code hype_score} de marcas e países saíram na limpeza do v1 (P3-16).</p>
  */
 @Service
 public class DashboardService {
@@ -118,7 +118,6 @@ public class DashboardService {
         out.put("aiProviders", ai.providerAvailability());
         out.put("brands", analytics.brandUsage(10));
         out.put("countries", analytics.countries());
-        out.put("hypeBands", analytics.hypeBands(f));   // v1 deprecado: o widget hype_bands lê hypeV2
         out.put("hypeV2", hypeV2(f));
         out.put("inventoryBands", analytics.inventoryBands());
         out.put("sealFunnel", analytics.sealFunnel(f));
