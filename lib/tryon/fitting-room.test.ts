@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NEUTRAL_ENVIRONMENT, brandKey, decodeTryOn, encodeTryOn, environmentFor, resolveEnvironment, slotOf, visibleItems, wearItem, wearOf, type FittingItem } from "@/lib/tryon/fitting-room";
+import { NEUTRAL_ENVIRONMENT, brandKey, decodeTryOn, encodeTryOn, environmentFor, resolveEnvironment, restoreFittingItems, slotOf, visibleItems, wearItem, wearOf, type FittingItem } from "@/lib/tryon/fitting-room";
 
 let t = 0;
 const item = (over: Partial<FittingItem>): FittingItem => ({
@@ -14,6 +14,19 @@ describe("provador virtual: peças e lugares", () => {
     expect(wearOf("full_body_piece")).toBe("FULL_BODY");
     expect(slotOf("full_body_piece")).toBe("upper_piece");
     expect(slotOf("accessory_piece")).toBe("accessory_piece");
+    expect(slotOf("INVALID_CATEGORY")).toBeNull();
+  });
+
+  it("restores the Lacoste shirt by its category, preserving trousers and shoes", () => {
+    const trousers = item({ key: "w:jeans", category: "lower_piece", slot: "lower_piece", wear: "BOTTOM" });
+    const shoes = item({ key: "w:shoes", category: "shoes_piece", slot: "shoes_piece", wear: "SHOES" });
+    const shirt = item({ key: "w:shirt", name: "Minha Camisa Azul Lacoste", category: "upper_piece", slot: "INTERMEDIATE" as FittingItem["slot"] });
+    const restored = restoreFittingItems([trousers, shoes, shirt]);
+    expect(restored[2].slot).toBe("upper_piece");
+    const changed = wearItem(restored, item({ key: "w:new-shirt" }));
+    expect(changed.slice(0, 2)).toEqual([trousers, shoes]);
+    expect(changed.map((i) => i.key)).toEqual(["w:jeans", "w:shoes", "w:new-shirt"]);
+    expect(restoreFittingItems([item({ category: "unknown" })])).toEqual([]);
   });
 
   it("vestir troca só o lugar da peça; a peça inteira esconde a parte de baixo", () => {

@@ -24,6 +24,7 @@ import { defaultEyes, irisColorOf, type AvatarEyes } from "@/lib/avatar3d/iris";
 import type { AvatarHair, AvatarModel } from "@/lib/avatar3d/model";
 import { loadTexture, type Look3dPiece } from "@/components/three/common";
 import { HumanOutfit } from "@/components/three/human-outfit";
+import { attachHair } from "@/lib/avatar3d/human/attach-hair";
 
 /**
  * Cabelo em fios (HAIR-F2): nível de detalhe pelo aparelho (hair-lod.ts) e rebaixado se o tempo de quadro estourar.
@@ -58,12 +59,13 @@ function auditRegistry(): Set<AuditEntry> | null {
 }
 
 let assetPromise: Promise<BodyAsset> | null = null;
+let readyAsset: BodyAsset | null = null;
 export function useBodyAsset(): BodyAsset | null | "error" {
-  const [a, setA] = useState<BodyAsset | null | "error">(null);
+  const [a, setA] = useState<BodyAsset | null | "error">(() => readyAsset);
   useEffect(() => {
     let alive = true;
     assetPromise ??= loadBodyAsset();
-    assetPromise.then((x) => alive && setA(x), () => { assetPromise = null; if (alive) setA("error"); });
+    assetPromise.then((x) => { readyAsset = x; if (alive) setA(x); }, () => { assetPromise = null; if (alive) setA("error"); });
     return () => { alive = false; };
   }, []);
   return a;
@@ -180,7 +182,7 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
     m.userData.hairLod = strands ? level : 3;
     return m;
   };
-  const attach = (m: THREE.SkinnedMesh) => { built!.h.root.add(m); m.bind(built!.h.skeleton); return m; };
+  const attach = (m: THREE.SkinnedMesh) => attachHair(built!.h, m);
   // a malha nasce no memo (puro) e só entra na cena no efeito: no modo estrito o memo roda duas vezes
   const hairMesh = useMemo(() => makeHair(lod), [built, groomed, lod]); // eslint-disable-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {

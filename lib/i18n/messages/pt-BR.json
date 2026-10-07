@@ -8157,5 +8157,12 @@
   "pieces.new.share_falhou": "A peça foi salva, mas não deu para compartilhar no feed.",
   "pieces.new.flair_feito": "Carta FLAIR {tier} {ovr} criada em Minhas cartas FLAIR.",
   "pieces.new.flair_falhou": "A peça foi salva, mas a carta FLAIR não foi criada.",
-  "interactions.post_preview": "Prévia do post"
+  "interactions.post_preview": "Prévia do post",
+  "tryOn.avatar_required": "Crie ou revise seu Avatar 3D para iniciar a prova no seu corpo.",
+  "tryOn.model_missing": "Prévia 2D disponível; modelo 3D da peça ainda não gerado",
+  "tryOn.model_requires_fitting": "Modelo 3D disponível; ajuste ao avatar ainda não validado.",
+  "tryOn.review_piece": "Revisar peça e modelo 3D",
+  "tryOn.category_review": "Estas peças precisam de revisão da categoria antes de serem provadas.",
+  "tryOn.avatar_loading": "Carregando seu Avatar 3D…",
+  "tryOn.avatar_load_failed": "Não foi possível carregar seu Avatar 3D. Tente novamente."
 }
