@@ -233,7 +233,7 @@ public class WardrobeController {
 
     @PostMapping("/api/pieces/{id}/copy")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "RF15 — Adicionar uma peça pública ao meu guarda-roupa")
+    @Operation(summary = "Explorar — Adicionar uma peça pública ao meu guarda-roupa")
     public Views.PieceView copy(CurrentUser user, @PathVariable UUID id) {
         return wardrobe.addToWardrobe(user, id);
     }

@@ -21,15 +21,27 @@ class CatalogImagePipelineTest {
         assertThat(c.w() * a.width() / (c.h() * a.height())).isCloseTo(0.8, org.assertj.core.data.Offset.offset(1e-6));
     }
 
+    private static java.util.Map<String, Object> compliance(CatalogImagePipeline.Analysis a) {
+        return a.crop().compliance();
+    }
+
+    private static double focusY(CatalogImagePipeline.Analysis a) {
+        NRect c = a.crop().best().crop();
+        return (a.focus().rect().cy() - c.y()) / c.h();
+    }
+
     @Test
-    void packshotDeCamisetaAprovadoComRecorte45EOcupacaoNoAlvo() {
+    void packshotDeCamisetaPreencheOQuadroComAGolaNaMetadeSuperior() {
         CatalogImagePipeline.Analysis a = run(tee(200, 200, 1.0), "upper_piece", "t_shirt", false);
         assertThat(a.outcome()).as(a.reasons().toString()).isEqualTo(Outcome.APPROVED);
         assertThat(a.pieceType()).isEqualTo(PieceType.UPPER_PIECE);
         assertNoStretch(a);
-        assertThat(a.crop().best().fill()).isBetween(0.72, 0.90);
-        assertThat(a.crop().best().parts().get("completeness")).isGreaterThan(0.999);
-        assertThat(a.focus().rect().insideOf(a.crop().best().crop())).isGreaterThan(0.99);
+        assertThat(compliance(a)).containsEntry("ok", true).containsEntry("focusInTopHalf", true);
+        assertThat((Double) compliance(a).get("frameFilledByProduct")).isGreaterThan(0.97);
+        NRect c = a.crop().best().crop(), p = a.productBox();
+        assertThat(c.y()).as("topo do quadro na gola").isCloseTo(p.y(), org.assertj.core.data.Offset.offset(0.01));
+        assertThat(focusY(a)).isLessThan(0.5);
+        assertThat(a.cropJson()).containsKeys("rule", "ruleCompliant");
         assertThat(a.metrics()).containsKeys("segmentationConfidence", "productVisibility", "occupancyScore", "emptySpaceScore",
                 "focusScore", "logoPreservationScore", "colorPreservationScore", "edgeQuality", "reconstructionConfidence", "sourceQuality");
         assertThat(a.phash()).hasSize(16);
@@ -46,18 +58,30 @@ class CatalogImagePipelineTest {
         assertThat(a.outcome()).isNotEqualTo(Outcome.REJECTED);
         NRect c = a.crop().best().crop(), p = a.productBox();
         assertThat(Math.abs((p.cx() - c.x()) / c.w() - 0.5)).isLessThan(0.08);
-        assertThat(a.crop().best().fill()).isBetween(0.72, 0.90);
+        assertThat(compliance(a)).containsEntry("ok", true);
     }
 
     @Test
-    void jeansFocaNoCosENosBolsos() {
+    void jeansMostraCosPatchEBolsosTraseirosNaMetadeSuperior() {
         CatalogImagePipeline.Analysis a = run(jeans(), "lower_piece", "jeans", false);
         assertThat(a.outcome()).as(a.reasons().toString()).isEqualTo(Outcome.APPROVED);
-        assertThat(a.focus().name()).isEqualTo("waistband_front_coin_pocket");
-        NRect p = a.productBox(), f = a.focus().rect();
+        assertThat(a.focus().name()).isEqualTo("waistband_patch_back_pockets");
+        NRect p = a.productBox(), f = a.focus().rect(), c = a.crop().best().crop();
         assertThat(f.y()).isLessThan(p.y() + 0.05 * p.h());
         assertThat(f.y2()).isLessThan(p.y() + 0.45 * p.h());
+        assertThat(compliance(a)).containsEntry("view", "BACK").containsEntry("focusInTopHalf", true).containsEntry("ok", true);
+        assertThat((Double) compliance(a).get("widthFilledByProduct")).isGreaterThan(0.97);
+        assertThat(c.y()).isCloseTo(p.y(), org.assertj.core.data.Offset.offset(0.01));
         assertNoStretch(a);
+    }
+
+    @Test
+    void vistaDeclaradaDiferenteDaExigidaVaiParaRevisao() {
+        CatalogImagePipeline.Analysis front = pipeline.run(new CatalogImagePipeline.Request(jpeg(jeans()), "lower_piece", "jeans", "FRONT", false));
+        assertThat(front.outcome()).isEqualTo(Outcome.NEEDS_REPROCESSING);
+        assertThat(front.reasons()).contains("VIEW_MISMATCH_BACK");
+        CatalogImagePipeline.Analysis back = pipeline.run(new CatalogImagePipeline.Request(jpeg(jeans()), "lower_piece", "jeans", "BACK", false));
+        assertThat(back.outcome()).as(back.reasons().toString()).isEqualTo(Outcome.APPROVED);
     }
 
     @Test
@@ -68,6 +92,10 @@ class CatalogImagePipelineTest {
         CatalogImagePipeline.Analysis loafer = run(sneakers(), "shoes_piece", "loafers", false);
         assertThat(loafer.focus().name()).isEqualTo("vamp");
         assertNoStretch(sneaker);
+        // vista lateral: o comprimento todo do calçado ocupa a largura do quadro
+        assertThat(compliance(sneaker)).containsEntry("fit", "WIDTH").containsEntry("view", "SIDE");
+        assertThat((Double) compliance(sneaker).get("widthFilledByProduct")).isGreaterThan(0.97);
+        assertThat((Double) compliance(sneaker).get("productInsideFrame")).isGreaterThan(0.99);
     }
 
     @Test
@@ -76,6 +104,10 @@ class CatalogImagePipelineTest {
         assertThat(a.outcome()).isNotEqualTo(Outcome.REJECTED);
         assertThat(a.focus().name()).isEqualTo("dial");
         assertThat(a.crop().best().parts().get("completeness")).isGreaterThan(0.999);
+        // o centro do mostrador fica no centro do quadro
+        java.util.Map<?, ?> fc = (java.util.Map<?, ?>) compliance(a).get("focusCenter");
+        assertThat((Double) fc.get("x")).isCloseTo(0.5, org.assertj.core.data.Offset.offset(0.03));
+        assertThat((Double) fc.get("y")).isCloseTo(0.5, org.assertj.core.data.Offset.offset(0.03));
     }
 
     @Test

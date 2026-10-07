@@ -24,6 +24,8 @@ import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePref
 /** Etapas do criador de peça (RF4/RF47): peça (busca catalogada + dados) → mais detalhes → arte de fundo → revisar e salvar. */
 type Step = "piece" | "more" | "art" | "review";
 const STEPS: Step[] = ["piece", "more", "art", "review"];
+/** Forma de adicionar (RF4): pela busca catalogada com o formulário, ou fotografando (uma ou várias fotos). */
+type AddMode = "catalog" | "photos";
 const GENERIC_ASSET = "/_derived/pecas_default/generic.svg";
 /** Produto do catálogo escolhido na busca (RF47): a peça é criada por referência a ele. */
 interface CatalogPick { product: CatalogProduct; variant: CatalogVariant | null }
@@ -39,7 +41,8 @@ const CATEGORY_IDS = CATEGORY_CARDS.map((c) => c.id as string);
 function NewPiece() {
   const params = useSearchParams();
   const prefill = readPiecePrefill(params);
-  return <PieceCreator initial={{ category: validPieceCategory(prefill.category, CATEGORY_IDS) || undefined, brand: prefill.brand, query: prefill.query }} prefill={prefill} />;
+  return <PieceCreator initial={{ category: validPieceCategory(prefill.category, CATEGORY_IDS) || undefined, brand: prefill.brand, query: prefill.query }} prefill={prefill}
+    initialMode={params.get("mode") === "photos" ? "photos" : "catalog"} />;
 }
 
 /**
@@ -48,9 +51,11 @@ function NewPiece() {
  * preenche o formulário e a peça é criada por referência (POST /api/pieces/from-catalog); sem produto, a peça é salva com os
  * dados do formulário e a ilustração da categoria (POST /api/pieces).
  */
-function PieceCreator({ initial, prefill = {} }: { initial: Partial<CatalogSearchContext>; prefill?: PiecePrefillParams }) {
+function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { initial: Partial<CatalogSearchContext>; prefill?: PiecePrefillParams; initialMode?: AddMode }) {
   const { t } = useI18n(); const toast = useToast(); const tax = useTaxonomy(); const { user } = useAuth();
   const [step, setStep] = useState<Step>("piece");
+  // RF4 · duas formas de adicionar: busca catalogada (+ formulário) ou fotografar (várias fotos, várias peças por foto)
+  const [mode, setMode] = useState<AddMode>(initialMode);
   const [pick, setPick] = useState<CatalogPick | null>(null);
   // pré-preenchimento (Lens): validado na taxonomia já na primeira renderização quando ela está em cache; senão, o efeito
   // abaixo completa assim que ela chega
@@ -160,6 +165,20 @@ function PieceCreator({ initial, prefill = {} }: { initial: Partial<CatalogSearc
           {pre.scan && <Link className="underline" href={`/lens/${pre.scan}`}>{t("pieceForm.lens.voltar")}</Link>}
         </p>
       )}
+      <SegmentPicker className="mb-4" label={t("pieces.new.forma_de_adicionar")} value={mode} onChange={setMode}
+        options={[{ id: "catalog", label: t("pieces.new.modo_catalogo") }, { id: "photos", label: t("pieces.new.modo_fotos") }]} />
+      {mode === "photos" ? (
+        <Card>
+          <h2 className="type-h3 mb-1">{t("pieces.new.modo_fotos")}</h2>
+          <div className="mb-3">
+            <p className="label" id="photo-type-label">{t("pieces.new.tipo_para_o_guia")}</p>
+            <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="photo-type-label">{CATEGORY_CARDS.map((c) => <Chip key={c.id} active={value.category === c.id} onClick={() => chooseCategory(c.id)}>{CATEGORY_LABEL[c.id] ?? label(c.id)}</Chip>)}</div>
+          </div>
+          <MultiPieceUpload category={value.category} subcategory={value.subcategory}
+            onCategory={(c, sub) => { if (c !== value.category) chooseCategory(c); if (sub) setValue((v) => ({ ...v, subcategory: sub })); }}
+            onSaved={(count) => { toast.success(t("multiPiece.salvas", { count })); window.location.href = user ? `/u/${user.username}` : "/closet"; }} />
+        </Card>
+      ) : (<>
       <SegmentPicker className="mb-4" label={t("builder.stepsLabel")} value={step} onChange={go} options={STEPS.map((s, i) => ({ id: s, label: `${i + 1} · ${stepLabel[s]}` }))} />
       {/* na etapa da arte o editor tem a própria prévia (o mesmo card): a lateral some para não duplicar */}
       <div className={step === "art" ? "grid gap-5" : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]"}>
@@ -219,6 +238,7 @@ function PieceCreator({ initial, prefill = {} }: { initial: Partial<CatalogSearc
       </div>
       <p className="mt-4 type-caption text-faint"><Link className="underline" href="/closet">← {t("closet.title")}</Link></p>
       {done && <CreationSuccess kind="piece" id={done} onDone={() => { window.location.href = user ? `/u/${user.username}` : "/closet"; }} />}
+      </>)}
     </>
   );
 }

@@ -2827,6 +2827,17 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 :root[data-theme="contrast"] .xp-row-bar > span { background: var(--ink) !important; opacity: 1 !important; }
 @media (forced-colors: active) { .xp-row-bar { border: 1px solid CanvasText; } .xp-row-bar > span { forced-color-adjust: none; background: CanvasText !important; } }
 
+/* RF15 · Editor de fotografia da peça: prévia do servidor com o quadro 4:5 e as ferramentas por cima */
+.photo-edit-stage { display: grid; place-items: center; min-height: 320px; background: repeating-conic-gradient(var(--surface-2) 0% 25%, var(--surface-3) 0% 50%) 50% / 16px 16px; border-radius: var(--radius); overflow: hidden; touch-action: none; user-select: none; }
+.photo-edit-stage.is-tool { cursor: crosshair; }
+.photo-edit-frame { position: relative; display: inline-block; max-width: 100%; }
+.photo-edit-frame img { display: block; max-width: 100%; max-height: 70vh; width: auto; height: auto; }
+.photo-edit-crop { position: absolute; border: 2px solid var(--accent); box-shadow: 0 0 0 9999px rgb(0 0 0 / .45); cursor: move; }
+.photo-edit-crop-thirds { position: absolute; inset: 0; background: linear-gradient(to right, transparent 33.1%, rgb(255 255 255 / .5) 33.3%, transparent 33.5%, transparent 66.5%, rgb(255 255 255 / .5) 66.7%, transparent 66.9%), linear-gradient(to bottom, transparent 33.1%, rgb(255 255 255 / .5) 33.3%, transparent 33.5%, transparent 66.5%, rgb(255 255 255 / .5) 66.7%, transparent 66.9%); pointer-events: none; }
+.photo-edit-busy { position: absolute; right: .5rem; bottom: .5rem; padding: .2rem .5rem; border-radius: 999px; background: var(--surface); color: var(--muted); font-size: var(--text-caption); }
+.photo-edit-quality { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem .8rem; margin: 0; }
+.photo-edit-quality dt { font-size: var(--text-caption); color: var(--muted); }
+.photo-edit-quality dd { margin: 0; font-family: var(--font-data); }
 /* ======================================================================================================================
    FashionAI MOMENTOS (docs/momentos/MOMENTOS.md) — o tema do Momento é uma CAMADA (--moment-*) sobre os tokens FashionAI.
    Sem tema, tudo cai nos tokens padrão; nada depende só de cor (ícone + nome + status em texto); reduced motion = sem
