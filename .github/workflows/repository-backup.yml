@@ -115,7 +115,22 @@ jobs:
               continue
             fi
 
-            git push backup "$source_ref:refs/heads/$branch"
+            if ! git push backup "$source_ref:refs/heads/$branch"; then
+              echo "Direct push failed; seeding branch history incrementally."
+              seed_refs=()
+              while IFS= read -r commit; do
+                seed_ref="refs/heads/__backup_seed_${GITHUB_RUN_ID}_${commit}"
+                git push backup "$commit:$seed_ref"
+                seed_refs+=("${seed_ref#refs/heads/}")
+              done < <(git rev-list --reverse --topo-order "$source_ref")
+
+              git push backup "$source_ref:refs/heads/$branch"
+
+              while (( ${#seed_refs[@]} > 0 )); do
+                git push backup --delete "${seed_refs[@]:0:100}"
+                seed_refs=("${seed_refs[@]:100}")
+              done
+            fi
             branch_count=$((branch_count + 1))
           done < <(git for-each-ref --format='%(refname)' refs/remotes/origin/)
 
