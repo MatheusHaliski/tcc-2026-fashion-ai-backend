@@ -16,6 +16,7 @@ import br.com.fashionai.domain.model.enums.ImageOrigin;
 import br.com.fashionai.domain.model.enums.PieceImageStatus;
 import br.com.fashionai.domain.model.enums.PieceImageType;
 import br.com.fashionai.domain.repository.PieceImageRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -46,6 +47,7 @@ public class PhotoEditService {
     private final PieceImageRepository images;
     private final PhotoRecipeRenderer renderer;
 
+    @Autowired
     public PhotoEditService(WardrobeService wardrobe, MediaService media, PieceImageRepository images) {
         this(wardrobe, media, images, img -> ImageOps.removeBackgroundLocal(img).image());
     }
