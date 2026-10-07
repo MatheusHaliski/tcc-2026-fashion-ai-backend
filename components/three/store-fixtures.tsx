@@ -158,7 +158,7 @@ export function HeroPedestal({ env, product, position, reduced, label }: { env: 
     g.fillStyle = "#FFFFFF"; g.fillRect(0, 0, w, h); g.fillStyle = env.accent; g.fillRect(0, 0, 14, h);
     g.fillStyle = "#6B6B6B"; g.font = "600 34px Inter, Arial, sans-serif"; g.textBaseline = "middle"; g.fillText(label.toUpperCase(), 36, h * 0.26);
     g.fillStyle = "#141414"; let size = 50; g.font = `800 ${size}px Inter, Arial, sans-serif`;
-    const raw = product.name ?? ""; const name = raw.length > 28 ? raw.slice(0, 27) + "…" : raw;
+    const name = product.name.length > 28 ? product.name.slice(0, 27) + "…" : product.name;
     while (g.measureText(name).width > w - 60 && size > 26) { size -= 2; g.font = `800 ${size}px Inter, Arial, sans-serif`; }
     g.fillText(name, 36, h * 0.56);
     if (product.price) { g.fillStyle = env.accent === "#FFFFFF" ? "#141414" : env.accent; g.font = "800 40px Inter, Arial, sans-serif"; g.fillText(product.price, 36, h * 0.83); }
