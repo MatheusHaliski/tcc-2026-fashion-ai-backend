@@ -29,7 +29,8 @@ public class Run {
       r.put("outcome",an.outcome().name()); r.put("reasons",an.reasons()); r.put("quality",an.qualityScore());
       r.put("mime",an.mime()); r.put("w",an.width()); r.put("h",an.height()); r.put("metrics",an.metrics());
       if (an.crop()!=null) { r.put("fill",an.crop().best().fill()); r.put("padding",an.crop().best().padding()); r.put("focus",an.focus().name()+"/"+an.focus().source());
-        r.put("product",an.productBox().toMap()); r.put("bg",an.background()); r.put("stages",an.stages().stream().map(CatalogImagePipeline.Stage::toMap).toList()); r.put("debug",an.debug());
+        r.put("product",an.productBox().toMap()); r.put("bg",an.background());
+        if (an.crop().rule()!=null) { r.put("rule",an.crop().rule().toMap()); r.put("compliance",an.crop().compliance()); } r.put("stages",an.stages().stream().map(CatalogImagePipeline.Stage::toMap).toList()); r.put("debug",an.debug());
         viz(S.resolve(String.format("viz/%03d.png",id)), b, an); }
       out.add(r);
       System.out.println(id+" "+an.outcome()+" "+an.reasons()+" q="+an.qualityScore()+" "+r.get("ms")+"ms");
@@ -66,6 +67,14 @@ public class Run {
     g.drawImage(src,dx,dy,(int)(src.getWidth()*s2),(int)(src.getHeight()*s2),null);
     g.setClip(clip);
     g.setColor(new Color(0,0,0,40)); g.drawRect(0,0,cardW-1,cardH-1);
+    // quadrantes do quadro (regra: foco da peça de cima/baixo na metade superior = 1º e 2º quadrantes)
+    g.setColor(new Color(124,58,237,170));
+    g.setStroke(new BasicStroke(2,BasicStroke.CAP_BUTT,BasicStroke.JOIN_MITER,10,new float[]{6,6},0));
+    g.drawLine(0,cardH/2,cardW,cardH/2); g.drawLine(cardW/2,0,cardW/2,cardH);
+    // foco projetado no card (verde)
+    NRect f=an.focus().rect();
+    g.setColor(GREEN); g.setStroke(new BasicStroke(3));
+    g.drawRect((int)((f.x()-c.x())/c.w()*cardW),(int)((f.y()-c.y())/c.h()*cardH),(int)(f.w()/c.w()*cardW),(int)(f.h()/c.h()*cardH));
     g.dispose();
     ImageIO.write(canvas,"png",out.toFile());
   }

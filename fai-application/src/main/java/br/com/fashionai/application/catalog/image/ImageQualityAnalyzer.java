@@ -44,7 +44,9 @@ public final class ImageQualityAnalyzer {
         double maskArea = seg.coverage() / Math.max(1e-6, crop.best().crop().area());
         double empty = 1 - Math.min(1, maskArea);
         m.put("emptySpace", r(empty));
-        m.put("emptySpaceScore", r(empty < 0.25 ? empty / 0.25 : empty > 0.70 ? Math.max(0, 1 - (empty - 0.70) / 0.3) : 1));
+        // com Regra de Enquadramento COVER/WIDTH a peça preenche o quadro de propósito: pouco fundo não é defeito
+        double tooLittle = crop.rule() == null ? 0.25 : 0;
+        m.put("emptySpaceScore", r(empty < tooLittle ? empty / tooLittle : empty > 0.70 ? Math.max(0, 1 - (empty - 0.70) / 0.3) : 1));
         m.put("focusScore", r(crop.best().parts().get("focus")));
         m.put("cropScore", r(crop.best().score()));
         m.put("edgeQuality", r(seg.edgeQuality()));

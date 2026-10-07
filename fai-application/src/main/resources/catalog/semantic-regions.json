@@ -1,14 +1,14 @@
 {
-  "_doc": "Semantic Region Registry do pipeline de imagens do catálogo (docs/catalogo/PIPELINE_IMAGENS_CATALOGO.md §9). Retângulos em coordenadas relativas à caixa do produto (0–1: x, y, w, h). 'focus' = semanticFocusRegion; 'critical' = regiões que o recorte nunca pode cortar; 'occupancy' = fração do quadro ocupada pelo maior lado da peça (mín, ideal, máx); 'margin' = margem de segurança (fração do quadro); 'anchor' = onde o centro do foco deve cair no quadro 4:5 (x, y). 'subcategories' sobrescreve só as chaves que declara. Uma subcategoria nova entra aqui, sem código: a estratégia do piece_type usa os landmarks quando há e este registro quando não há.",
-  "version": "1.0.0",
+  "_doc": "Semantic Region Registry do pipeline de imagens do catálogo (docs/catalogo/PIPELINE_IMAGENS_CATALOGO.md §9). Retângulos em coordenadas relativas à caixa do produto (0–1: x, y, w, h). 'focus' = semanticFocusRegion; 'critical' = regiões que o recorte nunca pode cortar; 'occupancy' = fração do quadro ocupada pelo maior lado da peça (mín, ideal, máx); 'margin' = margem de segurança (fração do quadro); 'anchor' = onde o centro do foco deve cair no quadro 4:5 (x, y). 'subcategories' sobrescreve só as chaves que declara. Uma subcategoria nova entra aqui, sem código: a estratégia do piece_type usa os landmarks quando há e este registro quando não há. 'rule' = Regras de Enquadramento do Produto (docs/catalogo/PIPELINE_IMAGENS_CATALOGO.md §9.1): fit (cover = a peça preenche 100% do quadro; width = a peça ocupa toda a largura; contain = a peça inteira dentro do quadro), align (top, center, focus = centro do foco no centro do quadro), view (vista exigida: FRONT, BACK, SIDE, ANY) e focusTopHalf (o foco tem de ficar na metade superior, 1º e 2º quadrantes).",
+  "version": "2.0.0",
   "aspect": [4, 5],
   "pieceTypes": {
     "UPPER_PIECE": {
       "focus": {"name": "collar_chest", "rect": [0.22, 0.0, 0.56, 0.38]},
       "critical": [{"name": "collar", "rect": [0.30, 0.0, 0.40, 0.14]}, {"name": "chest", "rect": [0.25, 0.12, 0.50, 0.30]}],
       "occupancy": [0.72, 0.82, 0.90],
-      "margin": [0.04, 0.08],
-      "anchor": [0.5, 0.36],
+      "margin": [0.0, 0.0],
+      "anchor": [0.50, 0.36],
       "subcategories": {
         "shirt": {"focus": {"name": "collar_placket", "rect": [0.30, 0.0, 0.40, 0.45]}, "critical": [{"name": "collar", "rect": [0.28, 0.0, 0.44, 0.14]}, {"name": "placket", "rect": [0.42, 0.08, 0.16, 0.50]}]},
         "polo_shirt": {"focus": {"name": "collar_placket", "rect": [0.30, 0.0, 0.40, 0.36]}},
@@ -18,29 +18,31 @@
         "coat": {"focus": {"name": "collar_closure", "rect": [0.25, 0.0, 0.50, 0.45]}},
         "parka": {"focus": {"name": "hood_closure", "rect": [0.25, 0.0, 0.50, 0.45]}},
         "cardigan": {"focus": {"name": "neckline_buttons", "rect": [0.28, 0.0, 0.44, 0.55]}}
-      }
+      },
+      "rule": {"fit": "cover", "align": "top", "view": "FRONT", "focusTopHalf": true}
     },
     "LOWER_PIECE": {
-      "focus": {"name": "waistband_pockets", "rect": [0.0, 0.0, 1.0, 0.32]},
-      "critical": [{"name": "waistband", "rect": [0.05, 0.0, 0.90, 0.10]}, {"name": "front_pockets", "rect": [0.0, 0.04, 1.0, 0.24]}],
+      "focus": {"name": "waistband_patch_back_pockets", "rect": [0.0, 0.0, 1.0, 0.40]},
+      "critical": [{"name": "waistband", "rect": [0.05, 0.0, 0.90, 0.10]}, {"name": "patch", "rect": [0.55, 0.02, 0.30, 0.10]}, {"name": "back_pocket_left", "rect": [0.08, 0.10, 0.38, 0.26]}, {"name": "back_pocket_right", "rect": [0.54, 0.10, 0.38, 0.26]}],
       "occupancy": [0.74, 0.84, 0.90],
-      "margin": [0.04, 0.07],
-      "anchor": [0.5, 0.30],
+      "margin": [0.0, 0.0],
+      "anchor": [0.50, 0.30],
       "subcategories": {
-        "jeans": {"focus": {"name": "waistband_front_coin_pocket", "rect": [0.0, 0.0, 1.0, 0.30]}, "critical": [{"name": "waistband", "rect": [0.05, 0.0, 0.90, 0.09]}, {"name": "front_pocket", "rect": [0.0, 0.04, 0.45, 0.22]}, {"name": "coin_pocket", "rect": [0.55, 0.05, 0.25, 0.12]}]},
-        "denim_shorts": {"focus": {"name": "waistband_pockets", "rect": [0.0, 0.0, 1.0, 0.55]}},
-        "shorts": {"focus": {"name": "waistband_pockets", "rect": [0.0, 0.0, 1.0, 0.55]}},
-        "bermuda_shorts": {"focus": {"name": "waistband_pockets", "rect": [0.0, 0.0, 1.0, 0.50]}},
-        "skirt": {"focus": {"name": "waistband_drape", "rect": [0.0, 0.0, 1.0, 0.45]}, "critical": [{"name": "waistband", "rect": [0.05, 0.0, 0.90, 0.12]}]},
-        "leggings": {"focus": {"name": "waistband", "rect": [0.0, 0.0, 1.0, 0.25]}, "critical": [{"name": "waistband", "rect": [0.05, 0.0, 0.90, 0.10]}]}
-      }
+        "jeans": {"focus": {"name": "waistband_patch_back_pockets", "rect": [0.0, 0.0, 1.0, 0.38]}},
+        "denim_shorts": {"focus": {"name": "waistband_patch_back_pockets", "rect": [0.0, 0.0, 1.0, 0.60]}},
+        "shorts": {"focus": {"name": "waistband_patch_back_pockets", "rect": [0.0, 0.0, 1.0, 0.60]}},
+        "bermuda_shorts": {"focus": {"name": "waistband_patch_back_pockets", "rect": [0.0, 0.0, 1.0, 0.60]}},
+        "skirt": {"focus": {"name": "waistband_back", "rect": [0.0, 0.0, 1.0, 0.45]}, "critical": [{"name": "waistband", "rect": [0.05, 0.0, 0.90, 0.12]}]},
+        "leggings": {"focus": {"name": "waistband_back", "rect": [0.0, 0.0, 1.0, 0.30]}, "critical": [{"name": "waistband", "rect": [0.05, 0.0, 0.90, 0.10]}]}
+      },
+      "rule": {"fit": "cover", "align": "top", "view": "BACK", "focusTopHalf": true}
     },
     "SHOES_PIECE": {
       "focus": {"name": "laces_tongue_upper", "rect": [0.25, 0.0, 0.50, 0.55]},
       "critical": [{"name": "upper", "rect": [0.10, 0.0, 0.80, 0.70]}, {"name": "sole_line", "rect": [0.0, 0.80, 1.0, 0.20]}],
       "occupancy": [0.74, 0.84, 0.90],
-      "margin": [0.05, 0.08],
-      "anchor": [0.5, 0.46],
+      "margin": [0.0, 0.02],
+      "anchor": [0.50, 0.46],
       "subcategories": {
         "loafers": {"focus": {"name": "vamp", "rect": [0.45, 0.10, 0.45, 0.50]}, "laceless": true},
         "moccasins": {"focus": {"name": "vamp", "rect": [0.45, 0.10, 0.45, 0.50]}, "laceless": true},
@@ -52,34 +54,43 @@
         "ankle_boots": {"focus": {"name": "shaft_closure", "rect": [0.0, 0.0, 0.60, 0.60]}, "laceless": true},
         "long_boots": {"focus": {"name": "shaft", "rect": [0.0, 0.0, 0.70, 0.70]}, "laceless": true},
         "high_top_sneakers": {"focus": {"name": "laces_collar", "rect": [0.15, 0.0, 0.55, 0.60]}}
-      }
+      },
+      "rule": {"fit": "width", "align": "center", "view": "SIDE", "focusTopHalf": false}
     },
     "ACCESSORY_PIECE": {
       "focus": {"name": "whole_object", "rect": [0.0, 0.0, 1.0, 1.0]},
       "critical": [{"name": "object", "rect": [0.0, 0.0, 1.0, 1.0]}],
       "occupancy": [0.70, 0.80, 0.88],
-      "margin": [0.06, 0.08],
-      "anchor": [0.5, 0.50],
+      "margin": [0.02, 0.04],
+      "anchor": [0.50, 0.50],
       "subcategories": {
-        "watch": {"focus": {"name": "dial", "rect": [0.20, 0.30, 0.60, 0.40]}},
-        "belt": {"focus": {"name": "buckle", "rect": [0.0, 0.20, 0.35, 0.60]}, "occupancy": [0.70, 0.82, 0.90]},
+        "watch": {"focus": {"name": "dial", "rect": [0.20, 0.30, 0.60, 0.40]}, "critical": [{"name": "dial", "rect": [0.20, 0.30, 0.60, 0.40]}], "rule": {"fit": "cover", "align": "focus", "view": "ANY", "focusTopHalf": false}},
+        "belt": {"focus": {"name": "buckle", "rect": [0.0, 0.20, 0.35, 0.60]}, "rule": {"fit": "contain", "align": "focus", "view": "ANY", "focusTopHalf": false}},
         "handbag": {"focus": {"name": "clasp_logo", "rect": [0.25, 0.10, 0.50, 0.40]}},
         "crossbody_bag": {"focus": {"name": "clasp_logo", "rect": [0.25, 0.25, 0.50, 0.40]}},
         "tote_bag": {"focus": {"name": "front_logo", "rect": [0.20, 0.25, 0.60, 0.50]}},
         "backpack": {"focus": {"name": "front_pocket_logo", "rect": [0.20, 0.20, 0.60, 0.50]}},
-        "sunglasses": {"focus": {"name": "bridge_lenses", "rect": [0.10, 0.10, 0.80, 0.80]}},
-        "eyeglasses": {"focus": {"name": "bridge_lenses", "rect": [0.10, 0.10, 0.80, 0.80]}},
+        "sunglasses": {"focus": {"name": "both_lenses", "rect": [0.0, 0.0, 1.0, 1.0]}, "rule": {"fit": "width", "align": "center", "view": "FRONT", "focusTopHalf": false}},
+        "eyeglasses": {"focus": {"name": "both_lenses", "rect": [0.0, 0.0, 1.0, 1.0]}, "rule": {"fit": "width", "align": "center", "view": "FRONT", "focusTopHalf": false}},
         "cap": {"focus": {"name": "front_panel_logo", "rect": [0.20, 0.0, 0.60, 0.60]}},
-        "wallet": {"focus": {"name": "logo", "rect": [0.20, 0.20, 0.60, 0.60]}}
-      }
+        "wallet": {"focus": {"name": "logo", "rect": [0.20, 0.20, 0.60, 0.60]}},
+        "bracelet": {"focus": {"name": "whole_object", "rect": [0.0, 0.0, 1.0, 1.0]}, "rule": {"fit": "contain", "align": "center", "view": "TOP", "focusTopHalf": false}},
+        "earrings": {"focus": {"name": "whole_object", "rect": [0.0, 0.0, 1.0, 1.0]}, "rule": {"fit": "contain", "align": "center", "view": "TOP", "focusTopHalf": false}},
+        "ring": {"focus": {"name": "whole_object", "rect": [0.0, 0.0, 1.0, 1.0]}, "rule": {"fit": "contain", "align": "center", "view": "TOP", "focusTopHalf": false}},
+        "necklace": {"focus": {"name": "whole_object", "rect": [0.0, 0.0, 1.0, 1.0]}, "rule": {"fit": "contain", "align": "center", "view": "TOP", "focusTopHalf": false}},
+        "beanie": {"focus": {"name": "whole_object", "rect": [0.0, 0.0, 1.0, 1.0]}, "rule": {"fit": "contain", "align": "center", "view": "ANY", "focusTopHalf": false}},
+        "scarf": {"focus": {"name": "strip_section", "rect": [0.0, 0.0, 1.0, 1.0]}, "rule": {"fit": "contain", "align": "center", "view": "ANY", "focusTopHalf": false}}
+      },
+      "rule": {"fit": "contain", "align": "center", "view": "ANY", "focusTopHalf": false}
     },
     "FULL_BODY_PIECE": {
       "focus": {"name": "neckline_waist", "rect": [0.20, 0.0, 0.60, 0.45]},
       "critical": [{"name": "neckline", "rect": [0.30, 0.0, 0.40, 0.12]}, {"name": "waist", "rect": [0.15, 0.25, 0.70, 0.20]}],
       "occupancy": [0.78, 0.86, 0.92],
-      "margin": [0.04, 0.06],
-      "anchor": [0.5, 0.30],
-      "subcategories": {}
+      "margin": [0.0, 0.0],
+      "anchor": [0.50, 0.30],
+      "subcategories": {},
+      "rule": {"fit": "cover", "align": "top", "view": "FRONT", "focusTopHalf": true}
     }
   }
 }

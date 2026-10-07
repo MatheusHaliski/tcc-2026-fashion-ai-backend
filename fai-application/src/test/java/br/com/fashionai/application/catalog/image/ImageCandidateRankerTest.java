@@ -40,4 +40,20 @@ class ImageCandidateRankerTest {
         Map<String, Role> r = roles(List.of(new Candidate("m", "FRONT", Outcome.NEEDS_REPROCESSING, 0.7, false, null)));
         assertThat(r).containsEntry("m", Role.REVIEW).doesNotContainValue(Role.CANONICAL);
     }
+
+    @Test
+    void pecaDeBaixoPrefereCostasECalcadoPrefereLateral() {
+        List<Candidate> pants = List.of(
+                new Candidate("front", "FRONT", Outcome.APPROVED, 0.85, false, "ff00000000000000"),
+                new Candidate("back", "BACK", Outcome.APPROVED, 0.80, false, "00000000000000ff"));
+        assertThat(new ImageCandidateRanker().rank(pants, PieceType.LOWER_PIECE)).filteredOn(r -> r.role() == Role.CANONICAL)
+                .extracting(r -> r.candidate().id()).containsExactly("back");
+        assertThat(new ImageCandidateRanker().rank(pants, PieceType.UPPER_PIECE)).filteredOn(r -> r.role() == Role.CANONICAL)
+                .extracting(r -> r.candidate().id()).containsExactly("front");
+        List<Candidate> shoes = List.of(
+                new Candidate("top", "TOP", Outcome.APPROVED, 0.90, false, "ff00000000000000"),
+                new Candidate("side", "SIDE", Outcome.APPROVED, 0.82, false, "00000000000000ff"));
+        assertThat(new ImageCandidateRanker().rank(shoes, PieceType.SHOES_PIECE)).filteredOn(r -> r.role() == Role.CANONICAL)
+                .extracting(r -> r.candidate().id()).containsExactly("side");
+    }
 }

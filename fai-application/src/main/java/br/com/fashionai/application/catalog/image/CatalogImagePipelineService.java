@@ -269,7 +269,8 @@ public class CatalogImagePipelineService {
                     outcome, i.getQualityScore() == null ? 0 : i.getQualityScore().doubleValue(), Boolean.TRUE.equals(m.get("detailView")),
                     i.getPhash()));
         }
-        List<ImageCandidateRanker.Ranked> ranked = ranker.rank(cands);
+        PieceType type = products.findById(productId).map(p -> PieceType.of(p.getCategory())).orElse(null);
+        List<ImageCandidateRanker.Ranked> ranked = ranker.rank(cands, type);
         boolean manualCanonical = all.stream().anyMatch(i -> i.isCanonical() && "APPROVED".equals(i.getReviewStatus()));
         for (ImageCandidateRanker.Ranked r : ranked) {
             CatalogImage i = byId.get(r.candidate().id());
