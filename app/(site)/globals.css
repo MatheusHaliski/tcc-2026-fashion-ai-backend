@@ -251,6 +251,11 @@ h1, h2, h3, h4 { margin: 0; }
 .menu-item { display: flex; width: 100%; align-items: center; gap: 10px; min-height: var(--control-md); padding: 8px 12px; border-radius: 8px; text-align: left; font-size: var(--text-body); color: var(--ink); cursor: pointer; }
 .menu-item:hover, .menu-item:focus-visible { background: var(--surface-2); outline: none; }
 .menu-item.is-danger { color: var(--status-critical); }
+/* Remixar várias (Minhas peças): barra fixa no topo da grade com a contagem e a ação */
+.remix-pick-bar { position: sticky; top: 8px; z-index: var(--z-sticky, 20); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 12px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line-soft); background: var(--surface); box-shadow: 0 8px 24px rgba(0,0,0,.10); }
+/* uma linha fina entre os itens (lista longa de ações fica escaneável); o ícone mantém o tamanho */
+.menu-pop > .menu-item + .menu-item { border-top: 1px solid var(--line-soft); border-top-left-radius: 0; border-top-right-radius: 0; }
+.menu-item > svg, .menu-item > img, .menu-item > span:first-child { flex: none; }
 .menu-item[aria-checked="true"] { font-weight: 600; }
 .menu-sep { height: 1px; margin: 6px 4px; background: var(--line-soft); }
 .menu-label { padding: 8px 12px 4px; font-family: var(--font-data); font-size: var(--text-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--muted); }
