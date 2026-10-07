@@ -41,9 +41,14 @@ git clone git@github.com:MatheusHaliski/tcc-2026-fashion-ai-backend-backup001.gi
 O clone contém as branches e tags que chegaram ao backup. Para reconstruir o repositório principal em um destino vazio:
 
 ```bash
+set -euo pipefail
 git remote rename origin backup
 git remote add origin git@github.com:MatheusHaliski/tcc-2026-fashion-ai-backend.git
-git push origin --all
+while IFS= read -r ref; do
+  branch="${ref#refs/remotes/backup/}"
+  [[ "$branch" == "HEAD" ]] && continue
+  git push origin "$ref:refs/heads/$branch"
+done < <(git for-each-ref --format='%(refname)' refs/remotes/backup/)
 git push origin --tags
 ```
 

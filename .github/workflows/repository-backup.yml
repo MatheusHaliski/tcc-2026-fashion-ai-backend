@@ -34,8 +34,11 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Register this key's public half as a write-enabled Deploy Key on
+          # MatheusHaliski/tcc-2026-fashion-ai-backend-backup001.
           if [[ -z "${BACKUP_SSH_KEY:-}" ]]; then
-            echo "Required repository secret BACKUP_SSH_KEY is not configured." >&2
+            printf '%s\n' \
+              "Required repository secret BACKUP_SSH_KEY is not configured." >&2
             exit 1
           fi
 
@@ -47,6 +50,17 @@ jobs:
 
           ssh-keyscan -H github.com >> "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
+          cat > "$HOME/.ssh/config" <<EOF
+          Host github.com
+            HostName github.com
+            User git
+            IdentityFile $key_path
+            IdentitiesOnly yes
+            BatchMode yes
+            StrictHostKeyChecking yes
+            UserKnownHostsFile $HOME/.ssh/known_hosts
+          EOF
+          chmod 600 "$HOME/.ssh/config"
 
       - name: Fetch all source branches and tags
         shell: bash
@@ -57,13 +71,14 @@ jobs:
             '+refs/heads/*:refs/remotes/origin/*' \
             '+refs/tags/*:refs/tags/*'
 
-          # The checkout token is read-only and only needed for this source fetch.
-          git config --local --unset-all http.https://github.com/.extraheader || true
+          # Checkout's read-only token is needed for this fetch only.
+          # Remove it before any access to the backup remote.
+          credential_key='http.https://github.com/.extraheader'
+          git config --local --unset-all "$credential_key" || true
 
       - name: Configure and check backup remote
         env:
           BACKUP_URL: git@github.com:MatheusHaliski/tcc-2026-fashion-ai-backend-backup001.git
-          GIT_SSH_COMMAND: ssh -i $HOME/.ssh/fashionai_backup -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts
         shell: bash
         run: |
           set -euo pipefail
@@ -84,8 +99,6 @@ jobs:
 
       - name: Synchronize source branches and tags
         id: synchronize
-        env:
-          GIT_SSH_COMMAND: ssh -i $HOME/.ssh/fashionai_backup -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts
         shell: bash
         run: |
           set -euo pipefail
@@ -106,7 +119,11 @@ jobs:
             exit 1
           fi
 
-          tag_count="$(git for-each-ref --format='%(refname)' refs/tags/ | wc -l)"
+          tag_count="$(
+            git for-each-ref --format='%(refname)' refs/tags/ |
+              wc -l |
+              tr -d '[:space:]'
+          )"
           echo "Synchronizing tags"
           git push backup 'refs/tags/*:refs/tags/*'
 
@@ -115,7 +132,6 @@ jobs:
 
       - name: Verify backup refs and summarize
         env:
-          GIT_SSH_COMMAND: ssh -i $HOME/.ssh/fashionai_backup -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts
           BRANCH_COUNT: ${{ steps.synchronize.outputs.branch_count }}
           TAG_COUNT: ${{ steps.synchronize.outputs.tag_count }}
         shell: bash
