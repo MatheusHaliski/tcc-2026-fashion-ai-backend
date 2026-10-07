@@ -16,6 +16,16 @@ O pedido tem quatro partes:
 4. **Cartas especiais.** Vendidas na loja e ganhas nos jogos, nos momentos, nos desafios e nos perfis de celebridades e
    marcas, pela política de selos.
 
+Um segundo pedido, também de 07/10, acrescenta três pontos, estudados nas seções 12 e 13:
+
+5. **Carta com selo vira FLAIR Especial** pelo botão "Converter para FLAIR" (§12).
+6. **Mercado de transferências** parecido com o do FC UT, mas pago só em **FAI Points**. No modal de detalhe da peça
+   entra o botão "Inserir no mercado de transferência", com preço. Na prática, dá para comprar cartas FLAIR de outras
+   pessoas (§13).
+7. **Duas cartas.** Converter **duplica** a carta: a original fica no guarda-roupa e pode ser publicada no feed social
+   do FashionAI; a cópia FLAIR vai para a sub-aba "Minhas cartas FLAIR" (§5 e D11). O botão Compartilhar, que não
+   funcionava, foi corrigido no mesmo dia e publica no feed (item SHARE-FIX do plano mestre).
+
 ---
 
 ## 1. O que existe hoje (reconferência do código, 07/10)
@@ -55,6 +65,12 @@ configurável por desafio ("só cartas de peça"), sem mudar o resto.
 | D8 | **Preço verificado.** O preço que conta no nível vem da faixa do produto na Busca Catalogada ou da faixa da marca. Preço digitado fora da faixa é limitado ao teto da faixa, e preço sem confirmação **não passa de Prata** | O nível depende do preço, então o preço não pode ser só digitado; prêmio físico atrai fraude |
 | D9 | **Nada de pacote aleatório pago.** Carta especial é vendida como **ela mesma** (vê o que compra), com tiragem numerada | Lei 15.211/2025 (ECA Digital) proíbe caixas de recompensa em jogos acessíveis a crianças e adolescentes. As lojas exigem chances publicadas. Ver §9 |
 | D10 | **Nomes e arte próprios.** A inspiração é a estrutura das cartas do FC, mas sem os nomes "FC", "UT", "SBC" nem a arte da EA. O modo se chama **Desafios de Montagem** (CBC, de *Card Building Challenges*) | Marcas registradas de terceiros |
+| D11 | **Duas cartas.** O **original** (o card da peça ou do look) fica no guarda-roupa: é o post social, publicado no feed, curtido e comentado, e **nunca** vai ao mercado. A **cópia FLAIR** é um objeto de jogo com foto, nome, marca, nota e nível congelados na geração: joga, entra em desafios e pode ser negociada | É o pedido ("a carta é duplicada"). Separa o que é da pessoa (a peça) do que circula (a carta) |
+| D12 | **Mercado só em FAI Points.** Nada de dinheiro: não se compra ponto, não se saca ponto. Carta comprada com dinheiro na Loja FLAIR é **intransferível** | Mantém o RF35.CA08 ("FAI Points nunca são vendidos"); sem a regra, dinheiro → carta → pontos viraria venda de pontos |
+| D13 | **Faixa de preço** por nível e nota e **taxa de 5 %** em cada venda, que sai de circulação. Opcional: 2 % dos 5 % vão para quem criou a carta | A faixa impede passar pontos de uma conta para outra com uma carta qualquer a preço absurdo. A taxa segura a inflação de pontos |
+| D14 | **Vendedor anônimo, sem chat.** O anúncio só tem dados estruturados (carta, preço, prazo). A carta mostra quem a criou (perfil público) e quantos donos já teve | Evita assédio, combinação fora do app e golpe; protege menores |
+| D15 | **Um selo, uma carta especial.** O vínculo de selo aprovado dá direito a **uma** carta Especial do programa daquele selo, com número da tiragem | O selo vira o "ingresso" da carta especial, sem imprimir cartas infinitas |
+| D16 | **Trocas não sobem nível.** Débito e crédito do mercado entram no extrato com `counts_lifetime = false` | O nível de FAI Points mede uso do app; trocar entre contas próprias não pode subir de nível |
 
 ---
 
@@ -145,9 +161,28 @@ OVR = 45 + 30·preço + 18·marca + 6·acabamento        (arredondado, limitado 
   preço R$ 399 (confirmado no catálogo) · marca Norte Sport (varejo)". A carta nasce junto com o item salvo.
 - **Detalhe ampliado** da peça ou do look (o modal). O botão **"Converter para FLAIR"** abre a mesma prévia. Se a carta
   já existe na temporada, ele vira **"Ver carta FLAIR"**.
+- **Converter duplica (D11).** O card do guarda-roupa continua onde está, com as curtidas, os comentários e o botão
+  Compartilhar (publica no feed social do FashionAI). A carta FLAIR é uma **cópia** e vai para "Minhas cartas FLAIR".
+  - A cópia guarda a origem (peça ou look) e quem a criou ("criada por @ana"). Ela mostra o Hype **ao vivo** do original
+    (se o original for público) e, no verso, os números do dia da geração.
+  - Apagar a peça não apaga cartas já geradas: elas passam a mostrar "peça original removida" e perdem o link.
+  - Vender a carta não mexe na peça: ela continua no guarda-roupa de quem a criou.
+  - A regra D6 vale para a peça, não para a dona: vendida a carta da temporada, a mesma peça só gera outra na
+    temporada seguinte.
+- **Bloco FLAIR no detalhe** (só para a dona), abaixo das ações do post:
+
+  | Estado da carta da peça | O que o bloco mostra |
+  |---|---|
+  | Sem carta na temporada | "Converter para FLAIR" e "Converter e anunciar" |
+  | Carta disponível | "Ver carta FLAIR" e **"Inserir no mercado de transferência"** (§13.2) |
+  | Carta anunciada | "No mercado · 2.400 pts · termina em 3 h" e "Retirar do mercado" (só sem lance) |
+  | Carta entregue em desafio | "Entregue em ‹desafio›", sem mercado (D7) |
+  | Carta vendida | "Carta vendida em 07/10 · a peça continua com você" |
+  | Selo aprovado sem carta especial emitida | "Converter para FLAIR Especial" em destaque (§12) |
 - **Perfil → sub-aba "Minhas cartas FLAIR"**, ao lado de Closet, Looks, Publicações etc.
   - Separada por nível: Bronze, Prata, Ouro e Especial, com contagem.
-  - Filtros por posição, marca, temporada e estado (disponível ou entregue).
+  - Filtros por posição, marca, temporada, estado (disponível, entregue, no mercado) e origem (gerada por mim,
+    comprada, ganha).
   - Álbum da temporada e progresso.
   - Visitantes veem as cartas públicas; as de itens privados aparecem só para o dono.
 - O hub do FLAIR também tem "Minhas cartas", com o mesmo componente.
@@ -168,6 +203,7 @@ inferior não muda):
 | Desafios de Montagem | `/flair/desafios` | Modo novo (§7) |
 | Minhas cartas | `/flair/cartas` | Coleção por nível (o mesmo componente da sub-aba do perfil) |
 | Decks | `/flair/decks` | Como hoje |
+| Mercado | `/flair/mercado` | Mercado de transferências (§13): buscar, meus anúncios, lances, observando e histórico |
 | Loja FLAIR | `/flair/loja` | Cartas especiais, skins e combinações de marca |
 | Recompensas | `/flair/recompensas` | Carteira, vouchers, cupons, prêmios físicos e histórico de entregas |
 | Missões | `/flair/missoes` | Diárias, semanais e de evento |
@@ -330,6 +366,13 @@ jurídico**.
 | `flair_challenge_submission` | quem, desafio, cartas por vaga, sintonia, história gerada, recompensas concedidas, data |
 | `reward_grant` | tipo, conteúdo, estado, estoque e retirada (físico), auditoria |
 | `price_band` e `brand.tier` | faixas de preço por subcategoria e tier da marca, que alimentam a nota |
+| `flair_card_instance` (campos do §12–§13) | + criador original, `tradeable` e motivo quando não é, origem da posse (GERADA, MERCADO, RECOMPENSA, LOJA_PONTOS, LOJA_DINHEIRO, SELO), data da posse, estado de mercado (NENHUM, ANUNCIADA) |
+| `seal_bond.special_card_id` | a carta Especial emitida por aquele vínculo (no máximo uma, D15) |
+| `flair_market_listing` | carta, vendedor, lance inicial, "compre já", lance atual e quem deu, prazo, estado (ATIVO, VENDIDO, EXPIRADO, RETIRADO, CANCELADO), versão (trava otimista) |
+| `flair_market_bid` | anúncio, quem deu o lance, valor, reserva de pontos, estado (ATIVO, SUPERADO, VENCEU, LIBERADO) |
+| `fai_points_hold` | reserva de pontos de um lance ou compra: pessoa, valor, referência, estado (RESERVADO, CAPTURADO, LIBERADO). Saldo disponível = saldo − reservas |
+| `flair_card_transfer` | a procedência: carta, de quem, para quem, preço, taxa, parte de quem criou, anúncio, data |
+| `flair_price_range` | faixa mínima e máxima por nível, faixa de nota e programa especial, recalculada pelas vendas |
 
 **API.** As existentes continuam valendo; os endpoints novos são:
 
@@ -348,10 +391,22 @@ jurídico**.
 | POST | `/api/flair/specials/{id}/acquire` | Adquire uma carta especial |
 | GET | `/api/me/rewards` | Lista as recompensas da pessoa |
 | POST | `/api/me/rewards/{id}/pickup` | Gera o código de retirada de um prêmio físico |
+| POST | `/api/flair/cards/convert-preview` | Opções da conversão: carta comum e, com selo aprovado, a Especial (§12) |
+| GET | `/api/flair/market?level=&ovrMin=&ovrMax=&position=&brand=&season=&program=&priceMin=&priceMax=&sort=` | Busca no mercado |
+| GET | `/api/flair/market/price-range?cardId=` | Faixa permitida e média das últimas vendas da carta |
+| POST | `/api/flair/market/listings` | Anuncia uma carta (`cardId`, "compre já", lance inicial opcional, duração) |
+| DELETE | `/api/flair/market/listings/{id}` | Retira o anúncio (só sem lance) |
+| POST | `/api/flair/market/listings/{id}/bids` | Dá um lance (reserva os pontos) |
+| POST | `/api/flair/market/listings/{id}/buy` | Compra já |
+| GET | `/api/me/flair/market` | Meus anúncios, lances, lista de observação e cartas para anunciar de novo |
+| PUT/DELETE | `/api/me/flair/watchlist/{listingId}` | Observar ou deixar de observar |
+| GET | `/api/flair/cards/{id}/history` | Procedência da carta (criação, donos, vendas) |
 
 **Painéis.**
 
-- O admin cuida dos desafios, cenários, faixas de preço, revisão de Ouro com preço digitado e estoque de prêmios.
+- O admin cuida dos desafios, cenários, faixas de preço, revisão de Ouro com preço digitado e estoque de prêmios. No
+  mercado: faixas por nível, contas sinalizadas pelo antifraude (§13.5), bloqueio de anúncio e estorno de venda
+  fraudulenta.
 - A marca ou celebridade cuida dos programas de cartas especiais, prêmios patrocinados e relatório de entregas.
 
 ---
@@ -367,9 +422,10 @@ jurídico**.
 | **F4** | Grupo FLAIR na barra lateral, hub e rotas por categoria; os 15 modos e os de hoje nos lugares novos; redirecionamentos | Nenhum modo some; links antigos funcionam; testes de rotas |
 | **F5** | Desafios de Montagem: requisitos, sintonia, validação no servidor, bloqueio das cartas, 12 cenários 2D com história, grupos e sazonais | Entrega atômica; cartas bloqueadas; história nos 3 idiomas; desafio "só Bronze" possível com guarda-roupa simples |
 | **F6** | Momentos, a partir de Eras e Coleções | Momento recriado concede a carta do momento |
-| **F7** | Cartas especiais e Loja FLAIR: programas, tiragem, compra direta, concessão por selo, aprovação do examinador | Tiragem nunca passa do máximo (teste de concorrência); nada aleatório pago |
+| **F7** | Cartas especiais e Loja FLAIR: programas, tiragem, compra direta, **conversão de carta com selo em Especial (§12)**, aprovação do examinador | Tiragem nunca passa do máximo (teste de concorrência); nada aleatório pago; um vínculo de selo emite no máximo uma Especial |
 | **F8** | Recompensas: digitais e cupons; prêmios físicos patrocinados (estoque, retirada); **dinheiro só depois de parecer** | Toda entrega auditada; prêmio físico com regulamento anexado |
 | **F9** | Polimento: cenários em 3D (motor de cenas), animação de "abrir carta" (com redução de movimento), métricas, testes de ponta a ponta | Capturas e vídeo curto de cada cenário |
+| **F10** | **Mercado de transferências (§13)**: anúncio, lance, compre já, reservas de pontos, taxa, faixas, liquidação dos leilões vencidos, procedência, lista de observação, antifraude; botão "Inserir no mercado de transferência" no detalhe da peça | Ver §13.7 |
 
 **Dependências.**
 
@@ -377,3 +433,184 @@ jurídico**.
   existem.
 - F7 conversa com o **LOJA-EXCLUSIVOS** (item 9 do plano): mesma loja e mesmo inventário.
 - F9 usa o motor de cenas do **ENV3D** (item 6).
+- F10 depende de F3 (cartas geradas) e das reservas no `FaiPointsService`. Não depende de F5–F9 e pode vir logo
+  depois de F3 se a pessoa responsável quiser o mercado antes dos desafios.
+
+---
+
+## 12. Carta com selo vira FLAIR Especial ("Converter para FLAIR")
+
+### 12.1 O que existe hoje
+
+- O selo é de uma marca ou de uma celebridade (`Seal`: dono, tier PECA ou LOOK, política, janela de disponibilidade,
+  limite de uso).
+- O selo chega ao look por um **vínculo** (`SealBond`), sugerido pela IA ou pedido à mão. O vínculo passa por
+  SUGGESTED → ACCEPTED → PENDING_REVIEW → **APPROVED** (ou REFUSED, REJECTED, REVOKED) e guarda as peças ligadas
+  (`linkedPieceIds`), a base (BRAND_MATCH ou STYLE_SIGNATURE), o código do selo e a data de emissão.
+- O card mostra o selo como medalha. Hoje o selo não dá nada no FLAIR.
+
+### 12.2 Regra da troca
+
+O selo aprovado funciona como **ingresso** de uma carta Especial (D15):
+
+1. No detalhe do look (ou de uma peça ligada ao vínculo), o bloco FLAIR mostra **"Converter para FLAIR Especial"**
+   quando há vínculo **APPROVED**, dentro da janela do selo, ainda sem carta especial emitida, e o selo tem um
+   **programa especial** aprovado pelo examinador (`flair_special_program` com `seal_id`).
+2. A prévia mostra as duas opções lado a lado: a carta comum (pelo nível de §4, por exemplo "Ouro 78") e a **Especial do
+   selo** ("Atelier Lumi · Coleção Verão · nº 0042/500"). Embaixo, as regras em uma linha: o selo emite uma carta só; o
+   card do look e o selo continuam no perfil.
+3. Ao confirmar, numa transação:
+   - reserva o próximo número da tiragem com trava de linha (`SELECT … FOR UPDATE` no programa); esgotada a tiragem, a
+     conversão sai como carta comum, com o aviso "tiragem esgotada";
+   - cria a carta com nível **Especial** e nota entre 80 e 99: `max(80, nota de §4) + bônus do programa`, limitada a 99.
+     O bônus vem do tier do selo (LOOK +4, PECA +2) e do que o programa definir;
+   - grava `seal_bond.special_card_id`, para o mesmo vínculo nunca emitir outra;
+   - registra a procedência: origem SELO, programa, número e vínculo.
+
+| Situação | Resultado |
+|---|---|
+| Vínculo ainda não aprovado (SUGGESTED, ACCEPTED, PENDING_REVIEW) | Só a carta comum. A Especial aparece como "liberada quando o selo for aprovado" |
+| Selo sem programa especial | Carta comum com o **selo na moldura** (ornamento). Não vira Especial |
+| Programa fora da janela ou tiragem esgotada | Carta comum, com o motivo |
+| Vínculo revogado **depois** da emissão | A carta fica com a dona, marcada "selo revogado", e sai do mercado (§13.4). Se a revogação for por fraude, o admin pode anular a carta |
+| Celebridade | Exige o consentimento de imagem do vínculo (`imageRightsConsent`) e a licença do §9.2. No TCC, só artistas fictícios |
+
+### 12.3 Painel da marca ou celebridade
+
+O programa nasce no painel do selo: arte da moldura, tiragem, janela, bônus de nota, se a carta pode ir ao mercado
+(e depois de quantas horas) e relatório de emissões. Passa pelo examinador (EXAM-1) antes de valer.
+
+---
+
+## 13. Mercado de transferências (FAI Points)
+
+### 13.1 Como funciona (o modelo do FC UT, com as regras do FashionAI)
+
+- **O que se vende é a cópia FLAIR**, nunca a peça nem o card do guarda-roupa (D11).
+- **Anúncio.** Preço de **"compre já"** (obrigatório), **lance inicial** (opcional) e **duração**: 1 h, 3 h, 6 h, 12 h,
+  24 h ou 3 dias.
+- **Lance.** Cada lance precisa superar o anterior em pelo menos 5 % (mínimo de 10 pontos) e **reserva** os pontos de
+  quem deu. Quem é superado recebe a reserva de volta na hora. Sem prorrogação no último minuto, como no FC.
+- **Compre já** encerra o anúncio na hora, mesmo com lances (os lances são liberados).
+- **Fim do prazo.** Com lance, vende para o maior. Sem lance, a carta volta para "Para anunciar de novo" e pode ser
+  anunciada de novo ou retirada.
+- **Liquidação.** Débito de quem compra, crédito de quem vende (95 %), taxa de 5 % que sai de circulação e troca de
+  dona da carta, **tudo numa transação só**, com chave de idempotência no extrato. Débito e crédito entram com
+  `counts_lifetime = false` (D16).
+- **Busca.** Filtros por nível, nota (de–até), posição, marca, temporada, programa especial e preço; ordem por "termina
+  antes", menor preço ou maior nota.
+- **Lista de observação** (até 50 anúncios), **meus lances** e **meus anúncios**, com aviso quando alguém supera o
+  lance, quando a carta vende e quando o anúncio expira.
+- **Procedência.** Cada carta tem histórico: criação (criada por @ana em 07/10), número de donos e vendas, com preço e
+  data. Os donos intermediários aparecem só como "dona 2", "dona 3" (D14).
+
+### 13.2 Botão "Inserir no mercado de transferência" (detalhe da peça)
+
+Fica no bloco FLAIR do detalhe (§5), só para a dona. Se a peça ainda não tem carta na temporada, o botão vira
+**"Converter e anunciar"**: primeiro a prévia da carta, depois o formulário abaixo.
+
+```
+┌ Inserir no mercado de transferência ─────────────────┐
+│ [carta Ouro 78 · Tênis Aero · Norte Sport]           │
+│ Compre já *       [ 2.400 ] pts                      │
+│ Lance inicial     [ 1.800 ] pts   (opcional)         │
+│ Duração           ( 1 h | 3 h | 6 h | 12 h | 24 h | 3 d ) │
+│ Faixa permitida: 1.500 a 6.000 pts                   │
+│ Média das últimas 20 vendas: 2.150 pts               │
+│ Taxa do mercado (5 %): −120 · você recebe 2.280      │
+│ A peça continua no seu guarda-roupa. Vai a carta.    │
+│                          [Cancelar]  [Anunciar]      │
+└──────────────────────────────────────────────────────┘
+```
+
+- Os campos validam a faixa em tempo real; o servidor valida de novo.
+- **Peça privada.** A foto da carta apareceria para estranhos, então o anúncio pede antes "Tornar pública e
+  anunciar", a mesma regra do Compartilhar (a dona confirma).
+- O mesmo formulário abre em "Minhas cartas FLAIR" (para cartas compradas ou ganhas) e no hub `/flair/mercado`.
+
+### 13.3 Faixas de preço, taxa e economia
+
+- **Faixa por nível** (valores iniciais, a calibrar na F0):
+
+  | Nível | Mínimo | Máximo |
+  |---|---|---|
+  | Bronze | 150 | 5.000 |
+  | Prata | 300 | 15.000 |
+  | Ouro | 1.000 | 50.000 |
+  | Especial | 2.000 | 200.000 |
+
+  Dentro do nível, a faixa se estreita pela nota e, depois de 20 vendas parecidas, pela mediana ± 60 %. A
+  recalculação roda uma vez por hora e nunca passa dos limites da tabela.
+- **Taxa de 5 %** em toda venda, retirada de circulação. Opcional (decidir na F0): 2 dos 5 pontos percentuais vão para
+  quem **criou** a carta, um incentivo para cadastrar peças boas.
+- **Economia.** Os pontos entram pelo uso, com limites diários (RF35). Saem pela loja do quarto, pela Loja FLAIR e pela
+  taxa do mercado. O painel do admin acompanha os pontos em circulação por semana e a mediana de preço por nível, para
+  ajustar a taxa e as faixas se houver inflação.
+
+### 13.4 O que não vai ao mercado
+
+| Carta | Por quê |
+|---|---|
+| Card do guarda-roupa (original) | É a peça da pessoa (D11) |
+| Carta entregue em desafio | Fica bloqueada (D7) |
+| Carta em deck de partida em andamento ou em fila ranqueada | Está em uso; sai do deck antes |
+| Carta **comprada com dinheiro** na Loja FLAIR | D12: senão, dinheiro viraria pontos |
+| Recompensa marcada "intransferível" pelo desafio ou programa | Regra do programa |
+| Carta Especial antes do prazo do programa (padrão: 7 dias) | Evita revenda imediata de lançamento |
+| Carta comprada há menos de 24 h | Freia robôs de revenda |
+| Carta com selo revogado ou em revisão | Procedência contestada |
+| Carta de peça privada, até a dona publicar | A foto apareceria para estranhos |
+
+### 13.5 Antifraude e lavagem de pontos
+
+O risco clássico do mercado do FC UT é a **venda de moedas por dinheiro fora do jogo**: alguém anuncia uma carta
+qualquer a preço alto, e o comprador "paga" assim pontos que comprou por fora. As defesas:
+
+- **Faixas de preço** (§13.3) limitam o valor que passa numa venda.
+- **Limites:**
+  - até 30 anúncios ativos;
+  - até 50 compras e 100 lances por dia;
+  - conta nova (menos de 7 dias) ou sem e-mail verificado não negocia;
+  - para vender, a conta precisa do nível Studio dos FAI Points (uso real do app).
+- **Sinais para o admin:**
+  - o mesmo par de contas negociando várias vezes;
+  - compras repetidas perto do teto da faixa;
+  - vendedor e comprador no mesmo dispositivo;
+  - conta nova que compra muito acima da mediana;
+  - pontos que vão e voltam entre duas contas.
+- **Ação.** Venda suspeita fica **retida** (a carta e os pontos ficam parados) até a revisão do admin, que pode
+  liberar ou estornar. Os termos de uso proíbem vender cartas ou pontos por dinheiro, com perda dos itens e banimento.
+- **Sem chat e sem texto livre no anúncio** (D14): não há como combinar pagamento pelo próprio mercado.
+- **Conservação.** Teste de propriedade: em qualquer sequência de anúncios, lances, compras e expirações, a soma dos
+  saldos + reservas + taxas retiradas fica constante, e nenhuma carta tem duas donas.
+
+### 13.6 Menores e lei (mapa de perguntas, não parecer)
+
+- **Sem dinheiro, sem aposta.** Ninguém compra ponto nem saca ponto, e o mercado não tem sorte envolvida (o comprador
+  vê a carta que compra). Por isso, em princípio, o mercado fica fora das apostas de quota fixa (Lei 14.790/2023) e
+  das promoções com prêmio (Lei 5.768/1971). Confirmar com o jurídico antes de publicar.
+- **ECA Digital (Lei 15.211/2025).** Não há caixa de recompensa: o mercado vende cartas escolhidas. Para menores de 18:
+  - o mercado vem desligado e a pessoa responsável liga no controle parental;
+  - os limites diários são menores (10 compras, 20 lances);
+  - nunca há chat nem perfil do vendedor (D14).
+- **Lojas de aplicativo.** Conferir as regras vigentes sobre troca de itens digitais entre pessoas e sobre moedas
+  virtuais antes de publicar a versão de loja.
+- **LGPD.**
+  - A procedência guarda só o necessário: quem criou (perfil público) e números de donos, sem expor os outros.
+  - Ao excluir a conta, as cartas com outras pessoas ficam com "ex-membro" no lugar do criador. A foto da carta é de
+    produto (sem rosto, pela regra das fotos de peça).
+- **Consumidor.** Termos claros: FAI Points e cartas não têm valor em dinheiro, o FashionAI pode ajustar faixas e
+  taxas com aviso prévio, e venda fraudulenta pode ser estornada.
+
+### 13.7 Aceite da F10
+
+- Concorrência: dois compradores no mesmo "compre já" → exatamente um compra, o outro recebe 409 e a reserva volta.
+- Lance abaixo do mínimo, preço fora da faixa e carta intransferível → 400 ou 409 com o motivo.
+- Ninguém compra o próprio anúncio nem dá lance nele.
+- Leilão vencido é liquidado uma vez só, mesmo se a liquidação rodar duas vezes (idempotência).
+- O teste de conservação de §13.5 passa com sequências aleatórias.
+- Trocas não mexem nos pontos vitalícios (D16).
+- De ponta a ponta com banco: converter a peça → anunciar pelo detalhe → outra conta compra → a carta muda de dona, a
+  peça continua no guarda-roupa de quem a criou e o extrato das duas contas mostra débito, crédito e taxa.
+- Telas em claro e escuro, celular, leitor de tela: o formulário anuncia a faixa e a taxa, e o aviso de lance superado
+  chega pela central de notificações.

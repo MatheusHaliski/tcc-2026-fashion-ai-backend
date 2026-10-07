@@ -35,6 +35,7 @@ entrega fecha com testes, métricas, documentação, commit e push no ramo `clau
 | TWIN-FID | Bateria de fidelidade do digital twin: 16 pessoas, 6 × 6 capturas variadas, 6 corpos. De frente, 15/15 gêmeos identificados entre 16 fotos pelos dois reconhecedores (SFace 0,471); forma do rosto muda < 0,6 mm com luz, resolução e inclinação (4,6 mm entre pessoas). Corrigiu o balanço de branco do I3 (pele fora da faixa humana 7 → 1 de 16) e o peso do ajuste de corpo da pessoa (erro máx. 1,74 → 0,81 cm) | `docs/avatar3d/fidelidade-digital-twin-2026-10-06.md` |
 | SCENE-1 | Primeiro incremento do motor de cenas (9.2): `lib/scene3d/scene.ts` puro e testado (busca → loja, zona, expositores e produto em destaque; regras do mini palco). Provador pela Busca Catalogada na tela `/try-on` (parede de calçados, arara, mesa de denim, vitrine de acessórios, placa da zona, destaque com nome e preço; busca sem marca abre a loja multimarca FashionAI). Mini lojas das Coleções com fachada, letreiro e vitrine da marca do perfil. Mini palco com cortinas, logo e selos no telão, confete, fogos, lightsticks e plateia em silhueta. Corrigiu o ambiente procedural de marca que ficava sem estilo, e quebrava o provador, quando o hash do nome passava de 2³¹ | `docs/plano/img/scene-1/`, `/lab/scenes` (dev) |
 | HAIR-MOTION | Olhos sem o "risco": o brilho saiu do globo, de poucos polígonos, e ficou só na córnea; a esclera ganhou sombra. Cabelo natural: fibras finas em vez de tiras sólidas, guias que acompanham a cabeça (sem "sino"), base fosca com linha do cabelo de fios curtos e colisão com o alto do ombro. Franjas escolhidas no Meu Avatar 3D (reta simétrica cobrindo a testa até a sobrancelha, lateral, cortina, desfiada), com validação no backend. A franja medida voltou a aparecer. Vento e atraso dos gestos no cabelo, na GPU. Movimento do corpo com troca de apoio, joelho livre sem patinar e olhada para o lado | `docs/avatar3d/cabelo-olhos-movimento-2026-10-06.md` |
+| SHARE-FIX | Botão Compartilhar consertado e publicando no feed social do FashionAI. Havia cinco falhas: (1) nos cards das listas, o diálogo ficava preso e cortado dentro do card (a contenção do card virava o "viewport" do `position: fixed`); agora `Dialog` e `Sheet` abrem por portal no `<body>`; (2) o Feed da comunidade não mostrava compartilhamento nenhum, e a Passarela só os de looks de quem a pessoa segue; agora os dois mostram looks **e peças** compartilhados, com "@pessoa compartilhou" e a legenda, e a Passarela mostra também os posts da própria pessoa; (3) peça ou look privado da dona saía num post que ninguém via; agora o diálogo avisa e pede "Tornar público e publicar"; (4) "Copiar link" copiava depois de esperar a rede (o Safari recusa) e agora usa `ClipboardItem` com promessa, mostrando o link para copiar à mão se o navegador negar; (5) o DNA de estilo mandava o tipo `DNA_SCHEME`, que a API recusava (400) em curtir, comentar, salvar e compartilhar. A contagem sobe na hora | `SocialService.share`, `SearchService.communityFeed`/`runway`, `components/interactions.tsx`, `components/ui/index.tsx`, `app/(site)/(app)/feed/page.tsx`; testes `SocialServiceTest`, `SearchHypeV2Test`, `components/share.test.tsx` |
 
 ---
 
@@ -43,7 +44,7 @@ entrega fecha com testes, métricas, documentação, commit e push no ramo `clau
 | # | Item | Por que nesta posição |
 |---|---|---|
 | 1 | ~~**WARDROBE-FIX**~~ — entregue (seção 1) | — |
-| **1b** | **FLAIR-UT** (pedido de 07/10, **próximo item**): cartas FLAIR por nível (Bronze, Prata, Ouro, Especial) com o Hype em números na frente e a seção E na prancha de anatomias; "Gerar como FLAIR" nos criadores e "Converter para FLAIR" no detalhe; "Minhas cartas FLAIR" no perfil; grupo próprio do FLAIR na barra lateral; **Desafios de Montagem** com cenários que contam uma história; Momentos; cartas especiais pela loja, jogos, desafios e selos; recompensas (seção 10 e [FLAIR_UT_Cartas_e_Desafios.md](FLAIR_UT_Cartas_e_Desafios.md)) | Pedido da pessoa responsável para passar à frente. F1–F5 não dependem do avatar nem do GARMENT; o dinheiro como prêmio espera parecer jurídico (seção 10.4) |
+| **1b** | **FLAIR-UT** (pedido de 07/10, **próximo item**): cartas FLAIR por nível (Bronze, Prata, Ouro, Especial) com o Hype em números na frente e a seção E na prancha de anatomias; "Gerar como FLAIR" nos criadores e "Converter para FLAIR" no detalhe; "Minhas cartas FLAIR" no perfil; grupo próprio do FLAIR na barra lateral; **Desafios de Montagem** com cenários que contam uma história; Momentos; cartas especiais pela loja, jogos, desafios e selos; recompensas; **carta com selo vira FLAIR Especial**; **mercado de transferências em FAI Points**, com "Inserir no mercado de transferência" no detalhe da peça; a conversão **duplica** a carta (o original fica no guarda-roupa e vai ao feed, a cópia FLAIR joga e é negociada) (seção 10 e [FLAIR_UT_Cartas_e_Desafios.md](FLAIR_UT_Cartas_e_Desafios.md)) | Pedido da pessoa responsável para passar à frente. F1–F5 não dependem do avatar nem do GARMENT; o dinheiro como prêmio espera parecer jurídico (seção 10.4) |
 | 2 | **AVATAR-ID I5–I7** (o I4 — olhos, óculos e sobrancelhas — está entregue, seção 1): cabelo e barba (incluindo penteados presos — rabo de cavalo, coque, trança — sobre as guias e o movimento do HAIR-MOTION), rig facial, revisão visual, níveis de detalhe; mais **EXPO** (brilho de referência pela esclera: foto subexposta escurece a pele do gêmeo em ΔE ≈ 24), **IRIS-RECAL** (classes da íris recalibradas no balanço de branco corrigido; íris clara com centro âmbar) e **WB-2** (esclera amarelada pela idade lida como luz quente; realces sem mudar a matiz) achados pelo TWIN-FID — **mais os itens de rosto e cabelo da lista de 29/09 (seção 5.2) e os acréscimos da especificação completa (seção 6)** | Continua a cadeia de identidade; o desfile e o quarto usam o mesmo avatar |
 | 3 | **GARMENT F0–F6**: moldes paramétricos, passes com restrições, XPBD, camadas, detalhes — **mais os itens de roupa da lista de 29/09 (seção 5.2) e o PROV-3D (seção 5.1)** | Base de "roupa que veste" e de "tecido com movimento natural" (itens 5 e 6) |
 | 4 | **CATALOG-IMG V2**: pipeline profissional das fotos oficiais da Busca Catalogada (seção 4) — **com o FRAME e o relatório de 79 perguntas (seção 5.1)** | Alimenta cards, IA, 2D, 3D e Hype Score |
@@ -780,6 +781,24 @@ do que muda, do que foi decidido e da ordem.
    - **selos** de celebridades e marcas: o selo dá visibilidade e pode conceder a carta especial do artista ou da marca.
      O programa é aprovado pelo examinador.
 
+8. **Carta com selo vira FLAIR Especial** ("Converter para FLAIR Especial", §12 da especificação):
+   - o vínculo de selo **aprovado** funciona como ingresso de **uma** carta Especial do programa daquele selo, com número
+     da tiragem reservado em transação;
+   - sem programa especial, a carta sai comum, com o selo na moldura;
+   - selo revogado depois da emissão: a carta fica, mas sai do mercado.
+9. **Mercado de transferências** (§13), como o do FC UT, mas **só em FAI Points**:
+   - anúncio com "compre já", lance inicial opcional e duração de 1 h a 3 dias; lances reservam os pontos;
+   - faixa de preço por nível e nota, taxa de 5 % que sai de circulação (opcional: 2 % para quem criou a carta);
+   - vendedor anônimo e sem chat; procedência da carta (quem criou, quantos donos);
+   - no detalhe da peça, o bloco FLAIR ganha **"Inserir no mercado de transferência"** (ou "Converter e anunciar");
+   - não vão ao mercado: o card do guarda-roupa, carta entregue em desafio, carta comprada com dinheiro, carta de peça
+     privada (até a dona publicar), carta comprada há menos de 24 h;
+   - antifraude contra venda de pontos por fora: faixas, limites diários, conta nova sem mercado, sinais para o admin
+     e retenção da venda suspeita.
+10. **Duas cartas.** Converter duplica: o card original fica no guarda-roupa, é o post social e vai ao feed pelo botão
+    Compartilhar (consertado no SHARE-FIX); a cópia FLAIR vai para "Minhas cartas FLAIR", joga e pode ser vendida. A
+    peça nunca sai do guarda-roupa de quem a criou.
+
 ### 10.2 Decisões que mudam regras anteriores
 
 - **D1 — dois eixos.** A regra RF53 · P2-18 ("o preço nunca decide a raridade") **continua para a raridade**, que segue
@@ -787,6 +806,9 @@ do que muda, do que foi decidido e da ordem.
   novo.
 - **D5 — cartas por ação.** As cartas deixam de nascer sozinhas de cada peça do guarda-roupa: passam a nascer de um
   gesto da pessoa. Quem já joga ganha "Converter meu guarda-roupa", com limite diário.
+- **D12 — o mercado não mexe no RF35.CA08** ("FAI Points nunca são vendidos"): não se compra nem se saca ponto, e a
+  carta comprada com dinheiro na Loja FLAIR é intransferível; senão, dinheiro viraria pontos pelo mercado.
+- **D16 — trocas não sobem nível.** As entradas do mercado no extrato não contam para os pontos vitalícios.
 
 ### 10.3 Fases
 
@@ -799,9 +821,10 @@ do que muda, do que foi decidido e da ordem.
 | F4 | Grupo FLAIR na barra lateral, hub, rotas e redirecionamentos | — |
 | F5 | Desafios de Montagem com 12 cenários 2D e história | F3 |
 | F6 | Momentos | F3 |
-| F7 | Cartas especiais, Loja FLAIR e concessão por selo | F3; LOJA-EXCLUSIVOS (item 9) compartilha loja e inventário |
+| F7 | Cartas especiais, Loja FLAIR, concessão por selo e conversão de carta com selo em Especial | F3; LOJA-EXCLUSIVOS (item 9) compartilha loja e inventário |
 | F8 | Recompensas digitais, cupons e prêmios físicos patrocinados | F5 |
 | F9 | Cenários em 3D (motor de cenas do ENV3D), animação de abrir carta, métricas | F5; item 6.1 |
+| F10 | Mercado de transferências: anúncios, lances, compre já, reservas de pontos, faixas, taxa, liquidação, procedência, antifraude; "Inserir no mercado de transferência" no detalhe da peça | F3; reservas no `FaiPointsService`. Pode vir logo depois da F3 |
 
 ### 10.4 Precisa de estudo antes de implementar
 
@@ -814,4 +837,7 @@ Estes pontos são de produto e jurídicos. A especificação, §9.2, é o mapa d
   vendida é a carta escolhida.
 - **Imagem e marca.** Carta com artista ou marca reais exige licença; no TCC, só fictícios.
 - **Equilíbrio.** Nível por preço não pode decidir as batalhas ranqueadas: chaves por nota e desafios "só Bronze".
+- **Mercado.** Sem dinheiro e sem sorte, em princípio fica fora das apostas e das promoções com prêmio; confirmar com o
+  jurídico. Para menores: mercado desligado até a pessoa responsável ligar no controle parental, limites menores e
+  nenhum chat. Conferir as regras das lojas de aplicativo sobre troca de itens digitais entre pessoas (§13.6).
 
