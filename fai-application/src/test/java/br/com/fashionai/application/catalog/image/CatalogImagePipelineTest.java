@@ -111,6 +111,22 @@ class CatalogImagePipelineTest {
     }
 
     @Test
+    void fragmentoDaPecaNaoAprovaOCloseDoDetalhe() {
+        // só um detalhe escuro (patch de 23% × 19% da foto, como o gorro cinza da Billabong) sobre fundo claro: a segmentação acha o patch, não a peça clara
+        BufferedImage img = CatalogPhotos.studio(1920, 2400, 244);
+        java.awt.Graphics2D g = img.createGraphics();
+        g.setColor(new java.awt.Color(0x1A2340));
+        g.fillOval(890, 720, 450, 450);
+        g.dispose();
+        CatalogImagePipeline.Analysis a = run(img, "accessory_piece", "beanie", false);
+        assertThat(a.reasons()).contains("SEGMENTATION_FRAGMENT");
+        assertThat(a.outcome()).isNotEqualTo(Outcome.APPROVED);
+        // a mesma lasca declarada como foto de detalhe não é fragmento
+        CatalogImagePipeline.Analysis d = pipeline.run(new CatalogImagePipeline.Request(jpeg(img), "accessory_piece", "beanie", "DETAIL", false));
+        assertThat(d.reasons()).doesNotContain("SEGMENTATION_FRAGMENT");
+    }
+
+    @Test
     void ganchoDoCabideSaiDaMascara() {
         CatalogImagePipeline.Analysis a = run(teeOnHanger(), "upper_piece", "t_shirt", false);
         assertThat(a.debug().get("hangerTrimmed")).isEqualTo(true);

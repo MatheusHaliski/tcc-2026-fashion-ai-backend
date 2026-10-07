@@ -1719,7 +1719,7 @@
   "editImage.nova_para_revisar": "Nova versão pronta para revisão: a foto aprovada continua no feed.",
   "editImage.nova_versao": "Nova versão {v} pronta. A foto aprovada continua no feed até você decidir.",
   "editImage.recorte": "Recorte",
-  "editImage.regiao": "{id, select, collar {a gola} sleeves {as mangas inteiras} chest {a região do peito} waist {o cós} knees {a altura dos joelhos} hem {a barra} occluded {a parte que estava coberta (mão, braço ou objeto na frente)} other {a peça inteira}}",
+  "editImage.regiao": "{id, select, collar {a gola} sleeves {as mangas inteiras} chest {a região do peito} waist {o cós} knees {a altura dos joelhos} hem {a barra} occluded {a parte que estava coberta (mão, braço ou objeto na frente)} side_view {o calçado de lado (a regra pede a lateral, com o comprimento na largura)} other {a peça inteira}}",
   "editImage.sem_template": "Foto anterior aos templates: escolha um fundo abaixo para refazer o estúdio e gerar a foto do feed.",
   "editImage.template": "Template de enquadramento",
   "editImage.template_desc": "{template, select, TOP {Parte de cima: gola no topo, peito centralizado, ombros e mangas visíveis.} OUTERWEAR {Casaco e jaqueta: gola no topo, peça inteira até a barra.} PANTS {Calça: do cós até a metade dos joelhos, com bolsos, fechamento e formato das pernas.} SHORTS {Short e bermuda: do cós à barra.} SKIRT {Saia: do cós à barra.} FULL_BODY {Corpo inteiro: do decote à barra.} SHOES {Calçado: sola na linha do chão, peça inteira.} BAG {Bolsa: peça inteira, centralizada.} other {Acessório: peça inteira, centralizada.}}",

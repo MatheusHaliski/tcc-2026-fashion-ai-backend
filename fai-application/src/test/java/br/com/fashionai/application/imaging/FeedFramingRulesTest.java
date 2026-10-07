@@ -68,6 +68,36 @@ class FeedFramingRulesTest {
         assertThat(f.frame().bleed()).isEmpty();
     }
 
+    /** Silhueta de tênis de lado (comprido, sola reta, cano mais alto atrás) ou o par visto de frente (dois pés separados). */
+    private static BufferedImage shoe(boolean side) {
+        BufferedImage img = new BufferedImage(900, 600, BufferedImage.TYPE_INT_ARGB);
+        java.awt.Graphics2D g = img.createGraphics();
+        g.setColor(new Color(0x1F3A6B));
+        if (side) {
+            g.fillRoundRect(80, 330, 740, 150, 60, 60);                                   // sola + gáspea
+            g.fillPolygon(new int[]{120, 420, 520, 520, 120}, new int[]{330, 330, 200, 330, 330}, 5);
+            g.fillRoundRect(480, 170, 240, 200, 50, 50);                                  // cano/calcanhar
+        } else {
+            g.fillRoundRect(90, 120, 300, 380, 120, 120);
+            g.fillRoundRect(510, 120, 300, 380, 120, 120);
+        }
+        g.dispose();
+        return img;
+    }
+
+    @Test
+    void regra4PedeAFotoDeLadoQuandoOCalcadoNaoEstaDeLado() throws Exception {
+        FeedFraming.Feed side = feed(shoe(true), "shoes_piece", "casual_sneakers");
+        assertThat(side.missing()).doesNotContain("side_view");
+        FeedFraming.Feed pair = feed(shoe(false), "shoes_piece", "casual_sneakers");
+        assertThat(pair.missing()).contains("side_view");
+        assertThat(pair.landmarks()).containsEntry("view", "NOT_SIDE");
+        // o asset do tênis casual é o par visto de frente: a regra 4 (lateral) não está cumprida
+        assertThat(feed(asset("03_Calcados/01_tenis_casual.png"), "shoes_piece", "casual_sneakers").missing()).contains("side_view");
+        // regra sem vista exigida (acessório) nunca pede lateral
+        assertThat(feed(shoe(false), "accessory_piece", "belt").missing()).doesNotContain("side_view");
+    }
+
     @Test
     void regra5aOculosComAsDuasLentesNaLarguraToda() throws Exception {
         for (String a : new String[]{"04_Acessorios/13_oculos_sol.png", "04_Acessorios/14_oculos_grau.png"}) {

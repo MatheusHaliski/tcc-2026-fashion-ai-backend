@@ -279,8 +279,40 @@ public final class FeedFraming {
         Map<String, Object> lm = new LinkedHashMap<>(base.landmarks());
         lm.put("rule", profile.rule().toMap());
         lm.put("focus", profile.focus().name());
+        List<String> missing = new ArrayList<>(base.missing());
+        // regra 4 (calçado de lado): par fotografado de frente/de trás ou um pé de frente não vira lateral no recorte —
+        // a tela pede a foto de lado em vez de publicar como se a regra estivesse cumprida
+        if ("SIDE".equals(profile.rule().view()) && !looksSideView(p)) {
+            missing.add("side_view");
+            lm.put("view", "NOT_SIDE");
+        }
         return new Feed(base.template(), place(p, s, ox, oy, WIDTH, HEIGHT, bleedOf(p, s, ox, oy, WIDTH, HEIGHT, cuts)), lm,
-                base.missing(), base.estimated(), base.pieceSize());
+                missing, base.estimated(), base.pieceSize());
+    }
+
+    /**
+     * Vista lateral do calçado pela máscara: um pé de frente é mais alto que largo, e o par visto de frente ou de trás são
+     * duas manchas com um vão vertical no meio (de lado os pés se sobrepõem e a silhueta é contínua e comprida).
+     */
+    static boolean looksSideView(Profile p) {
+        int bw = p.right() - p.left() + 1, bh = p.bottom() - p.top() + 1;
+        if (bw <= 0 || bh <= 0) {
+            return true;
+        }
+        if (bw / (double) bh < 0.9) {
+            return false;
+        }
+        int from = p.left() + (int) (bw * 0.3), to = p.left() + (int) (bw * 0.7);
+        for (int x = from; x <= to; x++) {
+            int filled = 0;
+            for (int y = p.top(); y <= p.bottom(); y++) {
+                filled += p.mask()[y * p.w() + x] ? 1 : 0;
+            }
+            if (filled < bh * 0.03) {
+                return false;   // coluna vazia no miolo: dois pés separados (par de frente/de trás)
+            }
+        }
+        return true;
     }
 
     public static Feed frame(BufferedImage piece, Template template, Set<String> cut) {

@@ -1719,7 +1719,7 @@
   "editImage.nova_para_revisar": "Nueva versión lista para revisar: la foto aprobada sigue en el feed.",
   "editImage.nova_versao": "Nueva versión {v} lista. La foto aprobada sigue en el feed hasta que decidas.",
   "editImage.recorte": "Recorte",
-  "editImage.regiao": "{id, select, collar {el cuello} sleeves {las mangas enteras} chest {la zona del pecho} waist {la cintura} knees {la altura de las rodillas} hem {el bajo} occluded {la parte que estaba tapada (mano, brazo u objeto delante)} other {la prenda entera}}",
+  "editImage.regiao": "{id, select, collar {el cuello} sleeves {las mangas enteras} chest {la zona del pecho} waist {la cintura} knees {la altura de las rodillas} hem {el bajo} occluded {la parte que estaba tapada (mano, brazo u objeto delante)} side_view {el calzado de lado (la regla pide la vista lateral, con el largo a lo ancho)} other {la prenda entera}}",
   "editImage.sem_template": "Foto anterior a las plantillas: elige un fondo abajo para rehacer el estudio y generar la foto del feed.",
   "editImage.template": "Plantilla de encuadre",
   "editImage.template_desc": "{template, select, TOP {Parte de arriba: cuello arriba, pecho centrado, hombros y mangas visibles.} OUTERWEAR {Abrigos y chaquetas: cuello arriba, prenda entera hasta el bajo.} PANTS {Pantalón: de la cintura hasta la mitad de las rodillas, con bolsillos, cierre y forma de las piernas.} SHORTS {Shorts y bermudas: de la cintura al bajo.} SKIRT {Falda: de la cintura al bajo.} FULL_BODY {Cuerpo entero: del escote al bajo.} SHOES {Calzado: suela en la línea del suelo, prenda entera.} BAG {Bolso: prenda entera, centrada.} other {Accesorio: prenda entera, centrada.}}",
