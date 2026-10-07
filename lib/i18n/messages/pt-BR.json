@@ -1855,7 +1855,7 @@
   "feed.hot_empty": "Nenhum look em alta agora",
   "feed.hot_empty_hint": "Só entram looks públicos com HypeScore na faixa Em alta ou acima. O Hype é recalculado periodicamente.",
   "feed.hot_hint": "Só looks com HypeScore público na faixa Em alta ou acima (relevância atual, não curtidas).",
-  "feed.lead": "Looks da comunidade: os mais recentes, os que estão em alta e os mais próximos do seu estilo.",
+  "feed.lead": "Looks e posts da comunidade: os mais recentes, os compartilhados, os que estão em alta e os mais próximos do seu estilo.",
   "feed.runway": "Passarela",
   "feed.title": "Feed da comunidade",
   "filters.button": "Filtros",
@@ -2845,7 +2845,7 @@
   "interactions.share": "Compartilhar",
   "interactions.shareToFeed": "Publicar no feed",
   "interactions.share_n": "Compartilhar · {count, plural, =0 {nenhum compartilhamento} one {# compartilhamento} other {# compartilhamentos}}",
-  "interactions.sharedToFeed": "Compartilhado no feed",
+  "interactions.sharedToFeed": "Publicado no feed do FashionAI",
   "issuerPolicy.CELEBRIDADE.CONSENTIMENTO_SELOS": "Consentimento para selos",
   "issuerPolicy.CELEBRIDADE.CONSENTIMENTO_SELOS.dica": "Autoriza usar nome e imagem nos selos que o perfil conceder.",
   "issuerPolicy.CELEBRIDADE.CONTROLE_PERFIL_OFICIAL": "Controle do perfil oficial",
@@ -5734,5 +5734,12 @@
   "adminMoments.challenge_code": "Código",
   "adminMoments.points": "Pontos",
   "adminMoments.params": "Parâmetros (JSON)",
-  "adminMoments.params_hint": "Ex.: {\"wardrobeOnly\":true,\"looksRequired\":7,\"idleDays\":60,\"distinctColors\":3}"
+  "adminMoments.params_hint": "Ex.: {\"wardrobeOnly\":true,\"looksRequired\":7,\"idleDays\":60,\"distinctColors\":3}",
+  "interactions.share_feed_hint": "O post aparece no Feed da comunidade e na Passarela de quem segue você.",
+  "interactions.share_private": "Este conteúdo está privado, então só você o vê. Para sair no feed, ele passa a ser público.",
+  "interactions.publishAndShare": "Tornar público e publicar",
+  "interactions.publishedAndShared": "Agora é público e já está no feed",
+  "interactions.copy_manual": "O navegador não deixou copiar. Copie o link:",
+  "feed.shared_by": "@{username} compartilhou",
+  "feed.shared_piece": "Peça compartilhada"
 }

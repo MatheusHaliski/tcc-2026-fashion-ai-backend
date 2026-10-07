@@ -27,6 +27,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -132,6 +134,32 @@ class SocialServiceTest {
         assertThat(social.share(ana, TargetType.SCHEME, look.getId(), ShareChannel.FEED, null)).containsKey("shareId");
         look.setDisponivel(false);
         assertThatThrownBy(() -> social.share(ana, TargetType.SCHEME, look.getId(), ShareChannel.FEED, null)).isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void publicarNoFeedOConteudoPrivadoDaDonaPedeConfirmacaoEDepoisOTornaPublico() {
+        piece.setVisibility(Visibility.PRIVATE);
+        // sem confirmar: o post não sai (ninguém mais veria) e o app pergunta antes de tornar a peça pública
+        assertThatThrownBy(() -> social.share(bia, TargetType.PIECE, piece.getId(), ShareChannel.FEED, null))
+                .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.code()).isEqualTo("PUBLICAR_PARA_COMPARTILHAR"));
+        verify(kit.dep(WardrobeService.class), never()).publishForFeed(any(), any());
+        // confirmado: vira pública e o compartilhamento sai no feed
+        assertThat(social.share(bia, TargetType.PIECE, piece.getId(), ShareChannel.FEED, "Peça nova", true))
+                .containsEntry("published", true).containsKey("shareId");
+        verify(kit.dep(WardrobeService.class)).publishForFeed(bia, piece.getId());
+        // copiar o link não muda a visibilidade (quem abre o link continua sujeito às regras de quem vê)
+        assertThat(social.share(bia, TargetType.PIECE, piece.getId(), ShareChannel.EXTERNAL, null)).doesNotContainKey("published");
+        // look e DNA seguem a mesma regra
+        look.setVisibility(Visibility.PRIVATE);
+        assertThatThrownBy(() -> social.share(bia, TargetType.SCHEME, look.getId(), ShareChannel.FEED, null)).isInstanceOf(ApiException.class);
+        social.share(bia, TargetType.SCHEME, look.getId(), ShareChannel.FEED, null, true);
+        verify(kit.dep(SchemeService.class)).publish(bia, look.getId(), Visibility.PUBLIC);
+        dna.setVisibility(Visibility.PRIVATE);
+        social.share(bia, TargetType.DNA, dna.getId(), ShareChannel.FEED, null, true);
+        assertThat(dna.getVisibility()).isEqualTo(Visibility.PUBLIC);
+        // conteúdo de seguidores já chega a quem segue: compartilha sem perguntar
+        piece.setVisibility(Visibility.FOLLOWERS);
+        assertThat(social.share(bia, TargetType.PIECE, piece.getId(), ShareChannel.FEED, null)).doesNotContainKey("published");
     }
 
     @Test

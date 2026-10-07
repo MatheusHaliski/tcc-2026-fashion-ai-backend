@@ -1902,6 +1902,15 @@ public class WardrobeService {
         return Views.piece(w, viewerState(user, w), null);
     }
 
+    /** RF19.CA08 — publicar no feed: a dona confirmou no diálogo de compartilhar que a peça privada passa a ser pública. */
+    @Transactional
+    public void publishForFeed(CurrentUser user, UUID id) {
+        WardrobeItem w = owned(user, id);
+        w.setVisibility(Visibility.PUBLIC);
+        projections.piece(w);
+        audit.log(user, AuditActions.EDICAO_PECA, "piece:" + id, Map.of("visibility", Visibility.PUBLIC.name()));
+    }
+
     /** "À venda" e "para doar" são exclusivos: marcar um desmarca o outro; desmarcar não mexe no outro. */
     static void applyListing(WardrobeItem w, Boolean forSale, Boolean forDonation) {
         if (forSale != null) {

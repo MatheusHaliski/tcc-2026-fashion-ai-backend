@@ -21,5 +21,8 @@ public interface ShareRepository extends JpaRepository<Share, UUID> {
     @Query("select s from Share s where s.user.id in :userIds and s.channel = :channel order by s.createdAt desc")
     List<Share> findFeedShares(@Param("userIds") Collection<UUID> userIds, @Param("channel") ShareChannel channel, Pageable pageable);
 
+    /** RF19.CA08 — compartilhamentos mais recentes de um canal (o feed da comunidade mostra os do canal FEED). */
+    List<Share> findByChannelOrderByCreatedAtDesc(ShareChannel channel, Pageable pageable);
+
     long countByCreatedAtAfter(Instant since);
 }

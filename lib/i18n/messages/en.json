@@ -1855,7 +1855,7 @@
   "feed.hot_empty": "No hot looks right now",
   "feed.hot_empty_hint": "Only public looks with a HypeScore in the Hot band or above are included. Hype is recalculated periodically.",
   "feed.hot_hint": "Only looks with a public HypeScore in the Hot band or above (current relevance, not likes).",
-  "feed.lead": "Community looks: the newest, the trending and the closest to your style.",
+  "feed.lead": "Community looks and posts: the newest, the shared, the trending and the closest to your style.",
   "feed.runway": "Runway",
   "feed.title": "Community feed",
   "filters.button": "Filters",
@@ -2845,7 +2845,7 @@
   "interactions.share": "Share",
   "interactions.shareToFeed": "Post to feed",
   "interactions.share_n": "Share · {count, plural, =0 {no shares} one {# share} other {# shares}}",
-  "interactions.sharedToFeed": "Shared to the feed",
+  "interactions.sharedToFeed": "Posted to the FashionAI feed",
   "issuerPolicy.CELEBRIDADE.CONSENTIMENTO_SELOS": "Consent for seals",
   "issuerPolicy.CELEBRIDADE.CONSENTIMENTO_SELOS.dica": "Authorizes using name and image in the seals the profile grants.",
   "issuerPolicy.CELEBRIDADE.CONTROLE_PERFIL_OFICIAL": "Control of the official profile",
@@ -5734,5 +5734,12 @@
   "adminMoments.challenge_code": "Code",
   "adminMoments.points": "Points",
   "adminMoments.params": "Parameters (JSON)",
-  "adminMoments.params_hint": "E.g.: {\"wardrobeOnly\":true,\"looksRequired\":7,\"idleDays\":60,\"distinctColors\":3}"
+  "adminMoments.params_hint": "E.g.: {\"wardrobeOnly\":true,\"looksRequired\":7,\"idleDays\":60,\"distinctColors\":3}",
+  "interactions.share_feed_hint": "The post shows up in the Community feed and in the Runway of people who follow you.",
+  "interactions.share_private": "This content is private, so only you can see it. To post it to the feed, it becomes public.",
+  "interactions.publishAndShare": "Make public and post",
+  "interactions.publishedAndShared": "It is public now and already in the feed",
+  "interactions.copy_manual": "Your browser did not allow copying. Copy the link:",
+  "feed.shared_by": "@{username} shared",
+  "feed.shared_piece": "Shared piece"
 }

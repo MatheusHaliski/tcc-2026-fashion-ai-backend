@@ -4,10 +4,12 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.ports.SearchIndexPort;
 import br.com.fashionai.application.ports.TimelineProjectionPort;
+import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.Scheme;
+import br.com.fashionai.domain.model.Share;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AccountStatus;
@@ -17,6 +19,8 @@ import br.com.fashionai.domain.model.enums.HypeStatus;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
+import br.com.fashionai.domain.model.enums.ShareChannel;
+import br.com.fashionai.domain.model.enums.TargetType;
 import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.repository.BrandProfileRepository;
 import br.com.fashionai.domain.repository.BrandRepository;
@@ -41,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
@@ -65,6 +70,8 @@ class SearchHypeV2Test {
     private WardrobeItemRepository pieces;
     private HypeScoreCurrentRepository hype;
     private SchemeService schemeService;
+    private ShareRepository shares;
+    private Guard guard;
     private SearchService search;
     private final Instant published = Instant.now().minusSeconds(3600);
 
@@ -81,10 +88,11 @@ class SearchHypeV2Test {
             when(v.id()).thenReturn(((Scheme) a.getArgument(1)).getId());
             return v;
         });
-        Guard guard = mock(Guard.class);
+        shares = mock(ShareRepository.class);
+        guard = mock(Guard.class);
         when(guard.canView(any(), any(), any())).thenReturn(true);
         search = new SearchService(schemes, mock(SchemeItemRepository.class), pieces, mock(UserRepository.class), mock(BrandProfileRepository.class),
-                mock(CelebrityProfileRepository.class), mock(FollowRepository.class), mock(ShareRepository.class), mock(SealBondRepository.class),
+                mock(CelebrityProfileRepository.class), mock(FollowRepository.class), shares, mock(SealBondRepository.class),
                 mock(StyleDnaRepository.class), (ObjectProvider<SearchIndexPort>) mock(ObjectProvider.class), (ObjectProvider<TimelineProjectionPort>) mock(ObjectProvider.class),
                 schemeService, mock(ChallengeService.class), guard, mock(BrandRepository.class), hype, config);
     }
@@ -263,5 +271,69 @@ class SearchHypeV2Test {
         insufficient.setScore(null);
         assertThat(SearchService.hypeSummary(insufficient, false, config)).containsEntry("status", "INSUFFICIENT_DATA").containsEntry("score", null);
         assertThat(SearchService.hypeSummary(null, false, config)).containsEntry("status", "NOT_CALCULATED");
+    }
+
+    private static Share share(User by, TargetType type, UUID target, String caption, Instant at) {
+        Share sh = new Share();
+        sh.assignId(UUID.randomUUID());
+        sh.setUser(by);
+        sh.setTargetType(type);
+        sh.setTargetId(target);
+        sh.setChannel(ShareChannel.FEED);
+        sh.setCaption(caption);
+        sh.markCreatedAt(at);
+        return sh;
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void feedShowsWhatWasSharedToTheFeedLooksAndPiecesOncePerContent() {
+        Scheme shared = look("compartilhado");
+        Scheme plain = look("publicado");
+        WardrobeItem tee = piece();
+        WardrobeItem secret = piece();
+        secret.setVisibility(Visibility.PRIVATE);           // quem vê não abre: o post não entra
+        when(guard.canView(any(), eq(secret.getUser().getId()), eq(Visibility.PRIVATE))).thenReturn(false);
+        when(schemes.findPublicFeed(any())).thenReturn(new ArrayList<>(List.of(shared, plain)));
+        when(pieces.findById(tee.getId())).thenReturn(Optional.of(tee));
+        when(pieces.findById(secret.getId())).thenReturn(Optional.of(secret));
+        User bia = owner();
+        Instant now = Instant.now();
+        when(shares.findByChannelOrderByCreatedAtDesc(eq(ShareChannel.FEED), any())).thenReturn(List.of(
+                share(bia, TargetType.PIECE, secret.getId(), null, now.minusSeconds(10)),
+                share(bia, TargetType.PIECE, tee.getId(), "Peça do dia", now.minusSeconds(30)),
+                share(bia, TargetType.SCHEME, shared.getId(), "Olha esse look", now.minusSeconds(60))));
+
+        Map<String, Object> out = search.communityFeed(null, null, 10, new SearchService.Filters(null, null, null, null, null));
+
+        List<Map<String, Object>> entries = (List<Map<String, Object>>) out.get("entries");
+        // o compartilhamento é um post novo (sobe pela hora do post); o look compartilhado aparece uma vez só
+        assertThat(entries).extracting(e -> e.get("id")).containsExactly(tee.getId(), shared.getId(), plain.getId());
+        assertThat(entries.get(0)).containsEntry("kind", "PIECE").containsEntry("caption", "Peça do dia").containsKey("sharedBy");
+        assertThat(((Views.PieceView) entries.get(0).get("piece")).id()).isEqualTo(tee.getId());
+        assertThat(entries.get(1)).containsEntry("kind", "SCHEME").containsEntry("caption", "Olha esse look");
+        assertThat(entries.get(2)).doesNotContainKey("sharedBy");
+        // "items" continua só com looks (a busca usa), e cada look é montado uma vez
+        assertThat(out.get("items")).asList().hasSize(2);
+        verify(schemeService, times(2)).view(any(), any(), any());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void followingTabShowsMyOwnSharesAndSharedPieces() {
+        User me = owner();
+        WardrobeItem tee = piece();
+        tee.setUser(me);
+        when(pieces.findById(tee.getId())).thenReturn(Optional.of(tee));
+        when(schemes.findPublicFeed(any())).thenReturn(new ArrayList<>());
+        when(shares.findFeedShares(eq(List.of(me.getId())), eq(ShareChannel.FEED), any()))
+                .thenReturn(List.of(share(me, TargetType.PIECE, tee.getId(), "Minha peça", Instant.now())));
+
+        Map<String, Object> out = search.runway(CurrentUser.of(me, "127.0.0.1", "JUnit"), null, 12);
+
+        List<Map<String, Object>> items = (List<Map<String, Object>>) out.get("items");
+        assertThat(items).hasSize(1);
+        assertThat(items.get(0)).containsEntry("reason", "COMPARTILHADO").containsEntry("caption", "Minha peça");
+        assertThat(((Views.PieceView) items.get(0).get("piece")).id()).isEqualTo(tee.getId());
     }
 }
