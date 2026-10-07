@@ -27,3 +27,7 @@ O provador continua sendo uma prévia paramétrica. Uma foto não revela constru
 Publicado a pedido do usuário antes de concluir a validação final. Maven verify: 1183 testes, zero falhas/erros, dois ignorados. Frontend: execução completa com 973 testes passando; o teste adicional de amostragem do torso passou na execução dirigida (19 testes). Typecheck passou. O build de produção passou antes das últimas alterações de textura e geometria e não foi repetido neste estado final.
 
 A captura do blazer ainda mostra alguns acabamentos da camiseta interna atravessando a peça externa, principalmente nos braços e na barra. A correção completa dessa oclusão entre camadas fica pendente; não foi implementada antes da interrupção. A captura do xadrez confirma repetição nas mangas e costas, com barra contínua. Ambas usam imagens sintéticas.
+
+## Retomada após o merge
+
+A pendência dos acabamentos que atravessavam o blazer foi tratada na continuação, com validação do build de produção e novas capturas. Veja [Build e camadas do provador](provador-build-camadas-2026-10-07.md) para o estado atualizado e os limites da validação.

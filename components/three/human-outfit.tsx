@@ -13,7 +13,8 @@ import { DEFAULT_PIECES, ZONES, withDefaultOutfit, zonesCovered } from "@/lib/av
 import { foldGarment, relaxGarment, smoothBody } from "@/lib/avatar3d/human/garment-relax";
 import { SOLE_LIFT, shoeParts, shoeStyleOf } from "@/lib/avatar3d/human/shoes";
 import { garmentTrims } from "@/lib/avatar3d/human/garment-trims";
-import { prepareGarmentPhoto } from "@/lib/avatar3d/human/garment-photo";
+import { occludeInnerGarment, visibleGarmentFinishes } from "@/lib/avatar3d/human/garment-layers";
+import { prepareOutfitPhoto } from "@/lib/avatar3d/human/garment-photo";
 
 /*
  * Provador / vitrines 3D — as peças do look vestidas no corpo humano do avatar (lib/avatar3d/human/garments.ts): cada
@@ -47,18 +48,36 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
   const soft = { ...composed, body: smoothBody(asset, composed, 12) };
   let floorY = Infinity; for (let v = 0; v < P.group.length; v++) if (P.group[v] === 4) floorY = Math.min(floorY, composed.body[v * 3 + 1]);
   const meshes: THREE.SkinnedMesh[] = []; const below: GarmentSpec[] = []; const built: GarmentKind[] = [];
-  const wear = (it: OutfitItem) => {
+  const prepare = (it: OutfitItem, beneath: GarmentSpec[]) => {
     const shoeKind = it.spec.kind === "shoes" || it.spec.kind === "boots";
     const cc = shoeKind ? composed : soft;
-    const under = below.length ? underLayer(cc, P, below) : null;
+    const under = beneath.length ? underLayer(cc, P, beneath) : null;
     const gg = garmentGeometry(asset, cc, human.rest.normals, P, it.spec, under);
-    below.push(it.spec); if (!gg) return;
+    if (!gg) return null;
     // caimento: o tecido relaxa (sem o desenho do corpo por baixo) e ganha dobras, punho e barra (garment-relax.ts)
     relaxGarment(gg, cc, human.rest.normals, P, under); foldGarment(gg, cc, human.rest.normals, P);
+    return { cc, under, gg };
+  };
+  // Validate all outer meshes before hiding any inner fabric. A failed outer mold
+  // must leave the modesty layer visible, including when a fallback is needed.
+  const prepared = new Map<OutfitItem, NonNullable<ReturnType<typeof prepare>>>();
+  const plannedBelow: GarmentSpec[] = [];
+  for (const it of items) {
+    const plan = prepare(it, plannedBelow);
+    if (plan) { prepared.set(it, plan); plannedBelow.push(it.spec); }
+  }
+  const wear = (it: OutfitItem) => {
+    const plan = prepared.get(it) ?? prepare(it, below); if (!plan) return;
+    const { cc, under, gg } = plan;
+    below.push(it.spec);
+    const above = [...prepared.keys()].filter((outer) => outer.spec.layer > it.spec.layer).map((outer) => outer.spec);
+    const visibleAlpha = gg.alpha.slice();
+    occludeInnerGarment({ ...gg, alpha: visibleAlpha }, cc, P, above);
+    const finishes = visibleGarmentFinishes(it.spec, above, P);
     const img = images[it.key] ?? null;
     const posed = posedPositions(human.skeleton, human.body.bindMatrix, gg.position, gg.skinIndex, gg.skinWeight);
     const sleeveVert = (v: number) => gg.source[v] >= 0 && P.group[gg.source[v]] === 2;
-    const geo = texturedGeometry(gg, posed, img ? photoInfo(img) : null, it.spec.sleeve > 0 ? sleeveVert : undefined);
+    const geo = texturedGeometry(gg, posed, img ? photoInfo(img) : null, it.spec.sleeve > 0 ? sleeveVert : undefined, visibleAlpha);
     const shoe = it.spec.kind === "shoes" || it.spec.kind === "boots";
     const fabric = fabricColor(img, it.piece.colorHex);
     const tex = garmentTexture(shoe ? null : img, shoe ? "#ffffff" : fabric, geo.userData.fabricMapping);
@@ -93,6 +112,7 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
     if (!shoe) {
       const tc = trimColors(img, fabric); const rib = ribColor(img, fabric);
       for (const tb of garmentTrims(asset, cc, P, gg)) {
+        if (tb.part === "barra" ? !finishes.hem : !finishes.cuff) continue;
         const tg = new THREE.BufferGeometry();
         tg.setAttribute("position", new THREE.Float32BufferAttribute(tb.position, 3));
         tg.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(tb.skinIndex, 4));
@@ -108,7 +128,7 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
       }
     }
     // gola 3D contornando o decote inteiro (frente, lados e nuca), na cor da gola da foto
-    const cb = shoe ? null : collarBand(asset, cc, P, it.spec, under);
+    const cb = shoe || !finishes.collar ? null : collarBand(asset, cc, P, it.spec, under);
     if (cb) {
       const bg = new THREE.BufferGeometry();
       bg.setAttribute("position", new THREE.Float32BufferAttribute(cb.position, 3));
@@ -147,7 +167,7 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
       const u = mediaUrl(i.piece.imageUrl ?? null);
       const t = u ? await loadTexture(u) : null;
       const img = t?.image as Img | undefined;
-      return [i.key, img ? prepareGarmentPhoto(img) : null] as const;
+      return [i.key, img ? await prepareOutfitPhoto(img, ["tee", "shirt", "longsleeve", "tank", "crop", "sweater", "hoodie", "jacket"].includes(i.spec.kind)) : null] as const;
     })).then((kv) => { if (alive) setLoaded({ key: urlKey, images: Object.fromEntries(kv) }); });
     return () => { alive = false; };
   }, [urlKey]); // eslint-disable-line react-hooks/exhaustive-deps

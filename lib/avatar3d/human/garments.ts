@@ -437,7 +437,8 @@ export function photoInfo(img: CanvasImageSource & { width: number; height: numb
  * Geometria final para desenhar: triângulos da frente (na pose de exibição) com UV na foto; os de trás e dos lados com
  * UV num canto de cor lisa do tecido (a textura é foto sobre fundo da cor do tecido). Vértices duplicados na divisa.
  */
-export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo: PhotoInfo | null, noPhoto?: (v: number) => boolean): THREE.BufferGeometry {
+export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo: PhotoInfo | null, noPhoto?: (v: number) => boolean,
+  visibleAlpha: Float32Array = gg.alpha): THREE.BufferGeometry {
   const sp = gg.spec; const n = gg.index.length / 3;
   // referência na foto e no molde (pose de exibição)
   let map: ((x: number, y: number) => [number, number]) | null = null;
@@ -507,7 +508,7 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
         fabricUv.push(0.501 + 0.498 * (gg.position[v * 3] - xMin) / Math.max(0.01, xMax - xMin),
           0.001 + 0.998 * (gg.position[v * 3 + 1] - yMin) / Math.max(0.01, yMax - yMin));
         photoWeight.push(blend * blend * (3 - 2 * blend));
-        col.push(1, 1, 1, gg.alpha[v]);
+        col.push(1, 1, 1, visibleAlpha[v]);
         for (let k = 0; k < 4; k++) { si.push(gg.skinIndex[v * 4 + k]); sw.push(gg.skinWeight[v * 4 + k]); }
       }
       index.push(i);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cutoutGarment, fabricTile, fabricRows, type GarmentRaster } from "./garment-photo";
+import { cutoutGarment, fabricTile, fabricRows, fullBodyUpperPhoto, type GarmentRaster } from "./garment-photo";
 
 function jeans(): GarmentRaster {
   const width = 80, height = 100;
@@ -68,4 +68,13 @@ it("samples the torso of a flat-lay shirt whose sleeves widen the photo bounds",
     data.set([...rgb, 255], (y * width + x) * 4);
   }
   expect(fabricTile({ width, height, data })).toMatchObject({ width: 16, height: 16 });
+});
+
+it("full-length catalog silhouettes require person filtering before upper-garment projection", () => {
+  const width = 100, height = 300, data = new Uint8ClampedArray(width * height * 4);
+  for (let y = 10; y < 290; y++) for (let x = 30; x < 70; x++) data.set([20, 20, 20, 255], (y * width + x) * 4);
+  expect(fullBodyUpperPhoto({ width, height, data })).toBe(true);
+  expect(fullBodyUpperPhoto(cutoutGarment(jeans())!)).toBe(true);
+  const square = { width: 20, height: 20, data: new Uint8ClampedArray(20 * 20 * 4).fill(255) };
+  expect(fullBodyUpperPhoto(square)).toBe(false);
 });
