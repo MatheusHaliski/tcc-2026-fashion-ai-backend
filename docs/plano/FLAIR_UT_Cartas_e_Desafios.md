@@ -438,6 +438,22 @@ jurídico**.
 
 ---
 
+## 11.1 Estado da implementação (07/10)
+
+O pedido de 07/10 acrescentou uma regra de produto: **nada vai ao feed sem a pessoa ligar a opção Compartilhar**. Sem
+ela, a peça (e a carta) fica só no perfil. A primeira versão de F1–F3 entrou junto:
+
+| Parte | O que já funciona | O que falta |
+|---|---|---|
+| Criador de peças | Etapa final com **"Depois de salvar"**: "Compartilhar no feed do FashionAI" (com legenda; peça privada vira pública só com esta opção ligada) e "Converter para FLAIR" (com prévia da carta, nível e nota). As duas começam **desligadas** | Os criadores de look e de DNA |
+| Regra do feed | Auditoria: peças só chegam ao feed por um compartilhamento explícito; looks, só por "Publicar". Converter para FLAIR não publica nada (teste) | — |
+| F2 (nota e nível) | `FlairTier` com a fórmula do §4: faixas de preço iniciais fixas por categoria (bolsas com faixa própria), tier da marca pelo `Brand.priceTier`, preço confirmado pela faixa do produto da Busca Catalogada, teto em Prata sem confirmação. Os exemplos do §4 viraram testes | Tabela `price_band` alimentada pela Busca Catalogada; revisão de Ouro com preço digitado |
+| F3 (gerar e guardar) | `flair_card_instance` (V55), uma carta por peça por temporada (chave única), "Converter para FLAIR" no detalhe da peça (com prévia), **"Minhas cartas FLAIR"** no perfil, por nível; visitante vê só cartas de peças que pode abrir | Conversão de looks e DNA; "Converter meu guarda-roupa" |
+| F1 (carta) | `FlairGameCard`: frente com nota e posição por cima da foto, nome, marca, os 8 números do Hype em linha ("—" sem Hype público) e o nível escrito no rodapé; verso com os atributos de jogo e o porquê do nível; os 4 metais e o acabamento raro | Seção E da prancha (v21) com todos os estados |
+| F7 / F10 | — | Selo → Especial (§12) e mercado de transferências (§13) |
+
+---
+
 ## 12. Carta com selo vira FLAIR Especial ("Converter para FLAIR")
 
 ### 12.1 O que existe hoje

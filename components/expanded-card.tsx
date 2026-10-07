@@ -36,6 +36,7 @@ import { readPieceArt } from "@/lib/piece-art";
 import { CardHeader } from "@/components/card-header";
 import { PieceArtDialog } from "@/components/piece-art-editor";
 import { skinStyle } from "@/lib/skins";
+import { FlairPieceBlock } from "@/components/flair/flair-collection";
 
 const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("pieces.id.carregando_o_modelo_3d")}</div> });
 
@@ -299,6 +300,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
                     <span className="min-w-0 flex-1 truncate type-body-sm">{s.title}</span><LookHype id={s.schemeId} /></button>))}</div>
               </section>
             )}
+            {mine && <FlairPieceBlock pieceId={p.id} />}
             <section className="pd-section pd-options" aria-label={t("pieceDetail.opcoes")}>
               {mine && studioNeedsReview(p) && (
                 <p className="pd-warn" role="status">{t("pieceDetail.estudio_para_aprovar")} <button type="button" className="underline" onClick={() => setEditImage(true)}>{t("pieceDetail.revisar_foto")}</button></p>
