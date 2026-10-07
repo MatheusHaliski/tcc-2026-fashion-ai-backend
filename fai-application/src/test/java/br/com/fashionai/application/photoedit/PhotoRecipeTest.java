@@ -49,6 +49,14 @@ class PhotoRecipeTest {
     }
 
     @Test
+    void canonicaAceitaAJanelaLivreDoRecorte() {
+        PhotoRecipe free = recipe("CANONICAL", Map.of("op", "crop", "rect", Map.of("x", 0.2, "y", 0.1, "w", 0.5, "h", 0.3), "aspect", "FREE"));
+        assertThat(RecipePolicy.violations(free, 1)).isEmpty();
+        BufferedImage out = PhotoRecipeRenderer.crop(PhotoRecipeRendererAccess.argb(photo()), (PhotoRecipe.Crop) free.ops().get(0));
+        assertThat((double) out.getWidth() / out.getHeight()).as("a janela não é forçada a 4:5").isCloseTo(0.5 * photo().getWidth() / (0.3 * photo().getHeight()), offset(0.02));
+    }
+
+    @Test
     void apresentacaoAceitaFiltroESaturacaoMasNuncaOperacaoGenerativa() {
         PhotoRecipe pres = recipe("PRESENTATION", Map.of("op", "tone", "saturation", 60), Map.of("op", "filter", "style", "VINTAGE", "strength", 0.6));
         assertThat(RecipePolicy.violations(pres, 1)).isEmpty();

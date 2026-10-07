@@ -331,7 +331,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
         <p className="mt-2 type-caption text-muted">{t("expanded.fotos_excluidas_junto")}</p>
       </Dialog>
       {mine && <PieceArtDialog piece={p} open={editArt} onClose={() => setEditArt(false)} onSaved={setPiece} />}
-      {mine && <EditImageDialog piece={p} open={editImage} onClose={() => setEditImage(false)} onStudio={studioShot} studioBusy={studioBusy} onApprove={() => decideStudio(true)} onDiscard={() => decideStudio(false)} approvalBusy={approvalBusy} onReplace={replaceImage} onManual={() => { setEditImage(false); window.location.href = `/pieces/${p.id}/photo`; }} />}
+      {mine && <EditImageDialog piece={p} open={editImage} onClose={() => setEditImage(false)} onStudio={studioShot} studioBusy={studioBusy} onApprove={() => decideStudio(true)} onDiscard={() => decideStudio(false)} approvalBusy={approvalBusy} onReplace={replaceImage} onSaved={setPiece} onManual={() => { setEditImage(false); window.location.href = `/pieces/${p.id}/photo`; }} />}
       <Dialog open={view3d} onClose={() => setView3d(false)} title={t("pieceDetail.viewer3d_title", { name: p.name })} size="lg">
         {view3d && (p.model3dUrl || model.st?.modelUrl) && <div className="h-[420px] overflow-hidden rounded-lg border border-line-soft"><PieceModelViewer url={mediaUrl(p.model3dUrl ?? model.st?.modelUrl) ?? ""} name={p.name} /></div>}
         <p className="mt-2 type-caption text-muted">{t("model3d.viewer_aviso")}</p>
