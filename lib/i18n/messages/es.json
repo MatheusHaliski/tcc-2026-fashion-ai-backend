@@ -8164,5 +8164,16 @@
   "tryOn.review_piece": "Revisar prenda y modelo 3D",
   "tryOn.category_review": "Revisa la categoría de estas prendas antes de probarlas.",
   "tryOn.avatar_loading": "Cargando tu Avatar 3D…",
-  "tryOn.avatar_load_failed": "No se pudo cargar tu Avatar 3D. Inténtalo de nuevo."
+  "tryOn.avatar_load_failed": "No se pudo cargar tu Avatar 3D. Inténtalo de nuevo.",
+  "multiPiece.revisao_local": "La IA de visión no está disponible. Revisa las regiones sugeridas: añade una prenda y ajusta su recorte si alguna no se separó.",
+  "multiPiece.slots": "Seleccionar prenda para editar",
+  "multiPiece.adicionar_slot": "Añadir prenda",
+  "multiPiece.ajustar_caixa": "Ajustar recorte (%)",
+  "multiPiece.box_x": "Izquierda",
+  "multiPiece.box_y": "Arriba",
+  "multiPiece.box_width": "Ancho",
+  "multiPiece.box_height": "Alto",
+  "multiPiece.confianca_recorte": "Confianza del recorte: {pct}%",
+  "multiPiece.recorte_obrigatorio": "Ajusta este recorte para no guardar la foto con todas las prendas como una sola.",
+  "multiPiece.tempo_esgotado": "El análisis tardó demasiado. Inténtalo con una foto más pequeña o revisa la conexión."
 }

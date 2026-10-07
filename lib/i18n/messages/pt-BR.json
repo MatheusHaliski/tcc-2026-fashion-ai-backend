@@ -8164,5 +8164,16 @@
   "tryOn.review_piece": "Revisar peça e modelo 3D",
   "tryOn.category_review": "Estas peças precisam de revisão da categoria antes de serem provadas.",
   "tryOn.avatar_loading": "Carregando seu Avatar 3D…",
-  "tryOn.avatar_load_failed": "Não foi possível carregar seu Avatar 3D. Tente novamente."
+  "tryOn.avatar_load_failed": "Não foi possível carregar seu Avatar 3D. Tente novamente.",
+  "multiPiece.revisao_local": "A IA de visão está indisponível. Confira as regiões sugeridas: adicione uma peça e ajuste seu recorte se alguma roupa não foi separada.",
+  "multiPiece.slots": "Selecionar peça para editar",
+  "multiPiece.adicionar_slot": "Adicionar peça",
+  "multiPiece.ajustar_caixa": "Ajustar recorte (%)",
+  "multiPiece.box_x": "Esquerda",
+  "multiPiece.box_y": "Topo",
+  "multiPiece.box_width": "Largura",
+  "multiPiece.box_height": "Altura",
+  "multiPiece.confianca_recorte": "Confiança do recorte: {pct}%",
+  "multiPiece.recorte_obrigatorio": "Ajuste o recorte desta peça para não cadastrar a foto com todas as roupas.",
+  "multiPiece.tempo_esgotado": "A análise demorou demais. Tente novamente com uma foto menor ou verifique a conexão."
 }
