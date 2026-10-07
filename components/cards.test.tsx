@@ -3,6 +3,7 @@
  * Cards e peças de exibição (RF7, RF11, RF13, RF20): anatomias do card de look, medalha de selo, card de DNA, gráficos
  * do dashboard e ações sociais. Cada variante desenha sem quebrar e mostra o que a pessoa precisa ver.
  */
+import { router } from "@/test-utils/setup";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ME, cleanup, fireEvent, loggedAs, mockApi, renderApp, screen, waitFor } from "@/test-utils/render";
 import { PIECE, PIECE_2, SCHEME, OWNER } from "@/test-utils/fixtures";
@@ -186,6 +187,14 @@ describe("ações sociais do card (RF8)", () => {
     renderApp(<CardActions type="PIECE" id="p1" counters={PIECE.counters} viewer={PIECE.viewer} title="Camiseta" ownerId={ME.user.id} reactions />);
     // a sessão carrega depois do primeiro render: clica até o usuário existir (antes disso o clique leva ao login)
     await waitFor(() => { fireEvent.click(screen.getByRole("button", { name: /Remixar/ })); expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/remixes"))).toBe(true); });
+  });
+
+  it("API antiga devolve /create-look (rota que não existe): o remix da peça abre o criador de looks com ela", async () => {
+    const { calls } = loggedAs(undefined, { "POST /api/interactions/PIECE/p1/remixes": { next: "/create-look?seedPiece=p1" } });
+    renderApp(<CardActions type="PIECE" id="p1" counters={PIECE.counters} viewer={PIECE.viewer} title="Camiseta" ownerId={ME.user.id} reactions />);
+    await waitFor(() => { fireEvent.click(screen.getByRole("button", { name: /Remixar/ })); expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/remixes"))).toBe(true); });
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith("/schemes/new?pieces=p1"));
+    expect(router.push).not.toHaveBeenCalledWith(expect.stringContaining("create-look"));
   });
 
   it("no look, quem publicou não vê remixar", async () => {
