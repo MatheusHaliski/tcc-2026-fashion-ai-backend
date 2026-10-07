@@ -2992,3 +2992,7 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .after-save-flair { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 14px; }
 .after-save-flair .fgc { flex: 0 0 auto; }
 .after-save-flair p { flex: 1 1 180px; min-width: 0; }
+/* Compartilhar › prévia do post: o próprio card, sem descrição, como sai no feed */
+.share-post { display: grid; gap: 6px; justify-items: center; margin: 0; }
+.share-post > figcaption { justify-self: start; }
+.share-post > .fai-card { width: 100%; max-width: 260px; }

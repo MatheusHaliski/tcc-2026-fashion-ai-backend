@@ -66,14 +66,17 @@ public class SocialController {
         return social.favoriteSaved(user, type, id, body.favorite());
     }
 
-    /** {@code publish}: a dona confirmou que o conteúdo privado vira público para sair no feed (RF19.CA08). */
-    public record ShareRequest(@NotNull ShareChannel channel, String caption, Boolean publish) {
+    /**
+     * {@code publish}: a dona confirmou que o conteúdo privado vira público para sair no feed (RF19.CA08). Sem legenda:
+     * o post do FashionAI é o próprio card (um "caption" de cliente antigo é ignorado).
+     */
+    public record ShareRequest(@NotNull ShareChannel channel, Boolean publish) {
     }
 
     @PostMapping("/shares")
     @Operation(summary = "RF8/RF19 — Compartilhar: publicar no feed do FashionAI ou copiar o link")
     public Map<String, Object> share(CurrentUser user, @PathVariable TargetType type, @PathVariable UUID id, @RequestBody ShareRequest body) {
-        return social.share(user, type, id, body.channel(), body.caption(), Boolean.TRUE.equals(body.publish()));
+        return social.share(user, type, id, body.channel(), Boolean.TRUE.equals(body.publish()));
     }
 
     @PostMapping("/remixes")

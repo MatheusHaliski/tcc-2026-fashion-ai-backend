@@ -18,33 +18,30 @@ import { MomentNowBanner } from "@/components/moments/moment-banner";
 type Chips = { label?: string; key: string; value: string }[];
 /**
  * Post do feed (RF8 · RF19.CA08): o look publicado ou um compartilhamento no feed — de um look ou de uma peça — com
- * quem compartilhou e a legenda. `/api/feed` manda `entries` (e `items`, só os looks, para quem ainda lê o formato antigo).
+ * quem compartilhou. O post do FashionAI é o próprio card: não tem descrição. `/api/feed` manda `entries` (e `items`,
+ * só os looks, para quem ainda lê o formato antigo).
  */
-type FeedEntry = { kind: "SCHEME" | "PIECE"; id: string; scheme?: SchemeView; piece?: PieceView; sharedBy?: UserCard | null; caption?: string | null };
+type FeedEntry = { kind: "SCHEME" | "PIECE"; id: string; scheme?: SchemeView; piece?: PieceView; sharedBy?: UserCard | null };
 type Feed = { items: SchemeView[]; entries?: FeedEntry[]; nextCursor: string | null; chips?: Chips; order?: string };
 /** /api/runway devolve entradas com o motivo (seguindo, compartilhado, vínculo da marca) e o look ou a peça dentro. */
-type RunwayItem = { reason: string; scheme?: SchemeView; piece?: PieceView; at?: string; by?: UserCard; caption?: string; brand?: UserCard };
+type RunwayItem = { reason: string; scheme?: SchemeView; piece?: PieceView; at?: string; by?: UserCard; brand?: UserCard };
 type RunwayFeed = { items: RunwayItem[]; nextCursor: string | null; fallbackToCommunity?: boolean };
 
 const fromRunway = (e: RunwayItem): FeedEntry | null => {
   const content = e.scheme ?? e.piece;
   if (!content?.id) return null;
   const shared = e.reason === "COMPARTILHADO";
-  return { kind: e.scheme ? "SCHEME" : "PIECE", id: content.id, scheme: e.scheme, piece: e.piece, sharedBy: shared ? e.by : null, caption: shared ? e.caption : null };
+  return { kind: e.scheme ? "SCHEME" : "PIECE", id: content.id, scheme: e.scheme, piece: e.piece, sharedBy: shared ? e.by : null };
 };
 const fromFeed = (r: Feed): FeedEntry[] => r.entries ?? r.items.map((s) => ({ kind: "SCHEME" as const, id: s.id, scheme: s }));
-/** "null" chega como texto quando o backend serializa uma legenda vazia: não é legenda. */
-const captionOf = (c?: string | null) => (c && c !== "null" ? c : "");
 
-/** Quem compartilhou e a legenda, dentro do card (as legendas da lista nunca ficam soltas abaixo dele). */
+/** Quem compartilhou, dentro do card (o post não tem descrição; nada fica solto abaixo do card). */
 function SharedNote({ entry }: { entry: FeedEntry }) {
   const { t } = useI18n();
   if (!entry.sharedBy) return null;
-  const caption = captionOf(entry.caption);
   return (
-    <span className="caption" title={caption || undefined}>
+    <span className="caption">
       <Link href={`/u/${entry.sharedBy.username}`} className="font-semibold">{t("feed.shared_by", { username: entry.sharedBy.username })}</Link>
-      {caption && <> · {caption}</>}
     </span>
   );
 }

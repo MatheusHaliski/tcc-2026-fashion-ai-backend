@@ -5735,7 +5735,7 @@
   "adminMoments.points": "Points",
   "adminMoments.params": "Parameters (JSON)",
   "adminMoments.params_hint": "E.g.: {\"wardrobeOnly\":true,\"looksRequired\":7,\"idleDays\":60,\"distinctColors\":3}",
-  "interactions.share_feed_hint": "The post shows up in the Community feed and in the Runway of people who follow you.",
+  "interactions.share_feed_hint": "The post is the card itself, with no description. It shows up in the Community feed and in the Runway of people who follow you.",
   "interactions.share_private": "This content is private, so only you can see it. To post it to the feed, it becomes public.",
   "interactions.publishAndShare": "Make public and post",
   "interactions.publishedAndShared": "It is public now and already in the feed",
@@ -5783,14 +5783,15 @@
   "flairCollection.created": "FLAIR card created. It is in My FLAIR cards.",
   "pieces.new.depois_de_salvar": "After saving",
   "pieces.new.opt_share": "Share to the FashionAI feed",
-  "pieces.new.opt_share_on": "The piece card appears in the Community feed and in the Runway of people who follow you.",
+  "pieces.new.opt_share_on": "The piece card becomes a post in the Community feed and in the Runway of people who follow you. FashionAI posts have no description.",
   "pieces.new.opt_share_off": "Off: the piece stays only on your profile.",
-  "pieces.new.opt_share_private": "The piece is set to Private: sharing it makes it public.",
+  "pieces.new.opt_share_private": "The piece is set to Private: with this option on, it becomes public.",
   "pieces.new.opt_flair": "Convert to FLAIR",
   "pieces.new.opt_flair_hint": "Creates a copy of the piece in My FLAIR cards. It does not post anything to the feed.",
   "pieces.new.opt_flair_preview": "Card preview: {tier} {ovr}",
   "pieces.new.opt_flair_sem_previa": "Choose the piece type to see the card preview.",
   "pieces.new.share_falhou": "The piece was saved, but it could not be shared to the feed.",
   "pieces.new.flair_feito": "FLAIR card {tier} {ovr} created in My FLAIR cards.",
-  "pieces.new.flair_falhou": "The piece was saved, but the FLAIR card was not created."
+  "pieces.new.flair_falhou": "The piece was saved, but the FLAIR card was not created.",
+  "interactions.post_preview": "Post preview"
 }

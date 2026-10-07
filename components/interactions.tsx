@@ -2,12 +2,16 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ApiError, api, mediaUrl } from "@/lib/api/client";
-import type { Counters, UserCard, ViewerState } from "@/lib/api/types";
+import type { Counters, PieceView, SchemeView, UserCard, ViewerState } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
-import { Avatar, Button, Dialog, Textarea, useToast } from "@/components/ui";
+import { Avatar, Button, Dialog, Skeleton, Textarea, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
+// ciclo de módulos (piece-card e scheme-card usam CardActions daqui): seguro, os componentes são declarações de função
+// e só são usados na renderização
+import { PieceCard } from "@/components/piece-card";
+import { SchemeCard } from "@/components/scheme-card";
 
 type TargetType = "SCHEME" | "PIECE" | "COMMENT" | "DNA_SCHEME";
 interface Comment { id: string; author?: UserCard; user?: UserCard; content: string; createdAt: string; parentId?: string | null; parentCommentId?: string | null; replies?: Comment[]; canDelete?: boolean; }
@@ -25,29 +29,50 @@ export const interactionType = (type: TargetType) => (type === "DNA_SCHEME" ? "D
 /** Página do conteúdo no app (é o link copiado). */
 const contentPath = (type: TargetType, id: string) => `/${type === "PIECE" ? "pieces" : type === "DNA_SCHEME" ? "dna-schemes" : "schemes"}/${id}`;
 
+
 /**
- * Compartilhar (RF19.CA08/CA09). A ação principal publica no feed social do FashionAI (Feed da comunidade e Passarela
- * de quem segue), com legenda opcional. Se o conteúdo é meu e está privado, ninguém mais veria o post: o diálogo avisa
- * e pede "Tornar público e publicar". Copiar o link registra o compartilhamento e copia o link que a API confirma; o
- * ClipboardItem com promessa copia dentro do toque mesmo esperando a rede (o Safari recusa writeText depois de um
- * await). Sem permissão de área de transferência, o link aparece selecionado para copiar à mão.
+ * Prévia do post (pedido de 07/10): no FashionAI o post é o próprio card — sem descrição, diferente de outras redes — com
+ * "@você compartilhou" em cima, exatamente como sai no Feed e na Passarela. O card da prévia não tem ações (href="#").
+ */
+function SharePostPreview({ type, id }: { type: TargetType; id: string }) {
+  const { t } = useI18n(); const { user } = useAuth();
+  const path = type === "PIECE" ? `/api/pieces/${id}` : type === "SCHEME" ? `/api/schemes/${id}` : null;
+  const { data, error } = useApi<{ piece?: PieceView; scheme?: SchemeView }>((signal) => api.get(path!, { signal }), [path], { enabled: !!path });
+  if (!path || error) return null;
+  const note = user ? <span className="caption">{t("feed.shared_by", { username: user.username })}</span> : undefined;
+  return (
+    <figure className="share-post" aria-label={t("interactions.post_preview")}>
+      <figcaption className="label">{t("interactions.post_preview")}</figcaption>
+      {!data ? <Skeleton className="h-64" />
+        : data.piece ? <PieceCard piece={data.piece} href="#" flip={false} extra={note} />
+        : data.scheme ? <SchemeCard scheme={data.scheme} href="#" flip={false} extra={note} /> : null}
+    </figure>
+  );
+}
+
+/**
+ * Compartilhar (RF19.CA08/CA09). A ação principal cria um post no feed social do FashionAI (Feed da comunidade e
+ * Passarela de quem segue): o post é o próprio card, sem descrição, e o diálogo mostra a prévia dele. Se o conteúdo é
+ * meu e está privado, ninguém mais veria o post: o diálogo avisa e pede "Tornar público e publicar". Copiar o link
+ * registra o compartilhamento e copia o link que a API confirma; o ClipboardItem com promessa copia dentro do toque
+ * mesmo esperando a rede (o Safari recusa writeText depois de um await). Sem permissão de área de transferência, o link
+ * aparece selecionado para copiar à mão.
  */
 export function ShareDialog({ type, id, open, onClose, onShared }: { type: TargetType; id: string; open: boolean; onClose: () => void; onShared?: () => void }) {
   const { t } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
-  const [caption, setCaption] = useState("");
   const [busy, setBusy] = useState<"" | "FEED" | "EXTERNAL">("");
   const [needsPublish, setNeedsPublish] = useState(false);
   const [manualLink, setManualLink] = useState<string | null>(null);
   useEffect(() => { if (!open) { setNeedsPublish(false); setManualLink(null); } }, [open]);
   const endpoint = `/api/interactions/${interactionType(type)}/${id}/shares`;
   const absolute = (path: string) => (path.startsWith("/") ? `${window.location.origin}${path}` : path);
-  const done = (message: string) => { toast.success(message); setCaption(""); onClose(); onShared?.(); };
+  const done = (message: string) => { toast.success(message); onClose(); onShared?.(); };
 
   async function toFeed(publish = false) {
     if (!user) { router.push("/login"); return; }
     if (busy) return; setBusy("FEED");
     try {
-      await api.post(endpoint, { channel: "FEED", caption, ...(publish ? { publish: true } : {}) });
+      await api.post(endpoint, { channel: "FEED", ...(publish ? { publish: true } : {}) });
       done(t(publish ? "interactions.publishedAndShared" : "interactions.sharedToFeed"));
     } catch (e) {
       if (e instanceof ApiError && e.code === "PUBLICAR_PARA_COMPARTILHAR") setNeedsPublish(true); else toast.fromError(e);
@@ -57,7 +82,7 @@ export function ShareDialog({ type, id, open, onClose, onShared }: { type: Targe
   async function copyLink() {
     if (!user) { router.push("/login"); return; }
     if (busy) return; setBusy("EXTERNAL");
-    const link = api.post<{ url?: string; link?: string }>(endpoint, { channel: "EXTERNAL", caption }).then((r) => absolute(r.url ?? r.link ?? contentPath(type, id)));
+    const link = api.post<{ url?: string; link?: string }>(endpoint, { channel: "EXTERNAL" }).then((r) => absolute(r.url ?? r.link ?? contentPath(type, id)));
     try {
       try {
         if (typeof ClipboardItem === "undefined" || !navigator.clipboard?.write) throw new Error("clipboard-item");
@@ -74,8 +99,7 @@ export function ShareDialog({ type, id, open, onClose, onShared }: { type: Targe
     <Dialog open={open} onClose={onClose} title={t("common.share")} footer={needsPublish
       ? <><Button onClick={() => setNeedsPublish(false)}>{t("common.cancel")}</Button><Button variant="primary" loading={busy === "FEED"} onClick={() => toFeed(true)}>{t("interactions.publishAndShare")}</Button></>
       : <><Button loading={busy === "EXTERNAL"} onClick={copyLink}>{t("interactions.copyLink")}</Button><Button variant="primary" loading={busy === "FEED"} onClick={() => toFeed()}>{t("interactions.shareToFeed")}</Button></>}>
-      <label htmlFor={`share-caption-${id}`} className="label">{t("interactions.legenda_opcional")}</label>
-      <Textarea id={`share-caption-${id}`} value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={200} />
+      {open && <SharePostPreview type={type} id={id} />}
       <p className="type-caption text-muted mt-2">{t("interactions.share_feed_hint")}</p>
       {needsPublish && <p role="alert" className="type-body-sm mt-3">{t("interactions.share_private")}</p>}
       {manualLink && (

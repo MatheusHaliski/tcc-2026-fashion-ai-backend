@@ -5735,7 +5735,7 @@
   "adminMoments.points": "Puntos",
   "adminMoments.params": "Parámetros (JSON)",
   "adminMoments.params_hint": "Ej.: {\"wardrobeOnly\":true,\"looksRequired\":7,\"idleDays\":60,\"distinctColors\":3}",
-  "interactions.share_feed_hint": "La publicación aparece en el Feed de la comunidad y en la Pasarela de quienes te siguen.",
+  "interactions.share_feed_hint": "La publicación es la propia tarjeta, sin descripción. Aparece en el Feed de la comunidad y en la Pasarela de quienes te siguen.",
   "interactions.share_private": "Este contenido es privado, así que solo tú lo ves. Para publicarlo en el feed, pasa a ser público.",
   "interactions.publishAndShare": "Hacer público y publicar",
   "interactions.publishedAndShared": "Ahora es público y ya está en el feed",
@@ -5783,14 +5783,15 @@
   "flairCollection.created": "Carta FLAIR creada. Está en Mis cartas FLAIR.",
   "pieces.new.depois_de_salvar": "Después de guardar",
   "pieces.new.opt_share": "Compartir en el feed de FashionAI",
-  "pieces.new.opt_share_on": "La tarjeta de la prenda aparece en el Feed de la comunidad y en la Pasarela de quienes te siguen.",
+  "pieces.new.opt_share_on": "La tarjeta de la prenda se vuelve una publicación en el Feed de la comunidad y en la Pasarela de quienes te siguen. Las publicaciones de FashionAI no tienen descripción.",
   "pieces.new.opt_share_off": "Apagado: la prenda queda solo en tu perfil.",
-  "pieces.new.opt_share_private": "La prenda está como Privada: al compartirla, pasa a ser pública.",
+  "pieces.new.opt_share_private": "La prenda está como Privada: con esta opción activada, pasa a ser pública.",
   "pieces.new.opt_flair": "Convertir en FLAIR",
   "pieces.new.opt_flair_hint": "Crea una copia de la prenda en Mis cartas FLAIR. No publica nada en el feed.",
   "pieces.new.opt_flair_preview": "Vista previa de la carta: {tier} {ovr}",
   "pieces.new.opt_flair_sem_previa": "Elige el tipo de prenda para ver la vista previa de la carta.",
   "pieces.new.share_falhou": "La prenda se guardó, pero no se pudo compartir en el feed.",
   "pieces.new.flair_feito": "Carta FLAIR {tier} {ovr} creada en Mis cartas FLAIR.",
-  "pieces.new.flair_falhou": "La prenda se guardó, pero la carta FLAIR no se creó."
+  "pieces.new.flair_falhou": "La prenda se guardó, pero la carta FLAIR no se creó.",
+  "interactions.post_preview": "Vista previa de la publicación"
 }

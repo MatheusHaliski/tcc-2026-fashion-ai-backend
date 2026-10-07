@@ -405,9 +405,9 @@ public class SearchService {
 
     // ================================================================== feed comunitário (CA01/CA06)
     /**
-     * Um post do feed: o look publicado ou um compartilhamento no feed (RF19.CA08) de um look ou de uma peça. {@code at} é a
-     * hora do post (publicação ou compartilhamento) e {@code id} é o do conteúdo — o mesmo conteúdo aparece uma vez só,
-     * pelo post mais recente.
+     * Um post do feed: o look publicado ou um compartilhamento no feed (RF19.CA08) de um look ou de uma peça, sem
+     * descrição (o post do FashionAI é o próprio card). {@code at} é a hora do post (publicação ou compartilhamento) e
+     * {@code id} é o do conteúdo — o mesmo conteúdo aparece uma vez só, pelo post mais recente.
      */
     record Post(Instant at, UUID id, Scheme scheme, WardrobeItem piece, Share share) {
         Collection<String> styles() {
@@ -494,8 +494,7 @@ public class SearchService {
                 e.put("piece", Views.piece(p.piece(), null, null));
             }
             if (p.share() != null) {
-                e.put("sharedBy", Views.user(p.share().getUser()));
-                e.put("caption", p.share().getCaption());
+                e.put("sharedBy", Views.user(p.share().getUser()));   // o post não tem descrição: só quem compartilhou
             }
             entries.add(e);
         }
@@ -533,7 +532,7 @@ public class SearchService {
         return entryContent(e) instanceof Scheme s ? s.getId() : ((WardrobeItem) e.get("piece")).getId();
     }
 
-    /** Entrada de compartilhamento no feed (RF19.CA08): look ou peça, com quem compartilhou e a legenda. */
+    /** Entrada de compartilhamento no feed (RF19.CA08): look ou peça e quem compartilhou (o post não tem descrição). */
     private Map<String, Object> sharedEntry(Share sh) {
         Object content = switch (sh.getTargetType()) {
             case SCHEME -> schemes.findById(sh.getTargetId()).orElse(null);
@@ -546,7 +545,6 @@ public class SearchService {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("reason", "COMPARTILHADO");
         m.put("by", Views.user(sh.getUser()));
-        m.put("caption", String.valueOf(sh.getCaption()));
         m.put(content instanceof Scheme ? "scheme" : "piece", content);
         m.put("at", sh.getCreatedAt());
         return m;

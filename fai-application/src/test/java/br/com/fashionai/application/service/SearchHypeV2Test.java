@@ -309,9 +309,10 @@ class SearchHypeV2Test {
         List<Map<String, Object>> entries = (List<Map<String, Object>>) out.get("entries");
         // o compartilhamento é um post novo (sobe pela hora do post); o look compartilhado aparece uma vez só
         assertThat(entries).extracting(e -> e.get("id")).containsExactly(tee.getId(), shared.getId(), plain.getId());
-        assertThat(entries.get(0)).containsEntry("kind", "PIECE").containsEntry("caption", "Peça do dia").containsKey("sharedBy");
+        // o post do FashionAI é o próprio card: quem compartilhou, sem descrição
+        assertThat(entries.get(0)).containsEntry("kind", "PIECE").containsKey("sharedBy").doesNotContainKey("caption");
         assertThat(((Views.PieceView) entries.get(0).get("piece")).id()).isEqualTo(tee.getId());
-        assertThat(entries.get(1)).containsEntry("kind", "SCHEME").containsEntry("caption", "Olha esse look");
+        assertThat(entries.get(1)).containsEntry("kind", "SCHEME").containsKey("sharedBy").doesNotContainKey("caption");
         assertThat(entries.get(2)).doesNotContainKey("sharedBy");
         // "items" continua só com looks (a busca usa), e cada look é montado uma vez
         assertThat(out.get("items")).asList().hasSize(2);
@@ -333,7 +334,7 @@ class SearchHypeV2Test {
 
         List<Map<String, Object>> items = (List<Map<String, Object>>) out.get("items");
         assertThat(items).hasSize(1);
-        assertThat(items.get(0)).containsEntry("reason", "COMPARTILHADO").containsEntry("caption", "Minha peça");
+        assertThat(items.get(0)).containsEntry("reason", "COMPARTILHADO").containsKey("by").doesNotContainKey("caption");
         assertThat(((Views.PieceView) items.get(0).get("piece")).id()).isEqualTo(tee.getId());
     }
 }

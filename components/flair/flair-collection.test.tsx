@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 /**
- * FLAIR-UT F3 + pedido de 07/10: "Converter para FLAIR" duplica a peça numa carta (Minhas cartas FLAIR, por nível) e
- * nunca publica no feed. No criador de peças, "Compartilhar no feed" e "Converter para FLAIR" começam desligados: sem
- * Compartilhar, nenhuma chamada de compartilhamento sai e a peça fica só no perfil.
+ * FLAIR-UT F3 + pedidos de 07/10: "Converter para FLAIR" duplica a peça numa carta (Minhas cartas FLAIR, por nível) e
+ * nunca publica no feed. No criador de peças, "Compartilhar no feed" vem ligado (o post é o próprio card, sem descrição)
+ * e "Converter para FLAIR" desligado; desligando Compartilhar, nenhuma chamada de compartilhamento sai e a peça fica só
+ * no perfil.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor } from "@/test-utils/render";
@@ -89,27 +90,30 @@ describe("Criador de peças › Depois de salvar", () => {
     "POST /api/interactions/PIECE/nova/shares": { shareId: "s" }, "POST /api/flair/cards": CARD({ id: "f", originId: "nova", tier: "BRONZE", ovr: 52 }),
     "POST /api/flair/cards/preview": { ovr: 52, tier: "BRONZE", position: "SUP", priceVerified: false, cappedByUnverifiedPrice: false, season: "SPRING", basis: { priceUsed: 50 } } };
 
-  it("as duas opções começam desligadas: salvar não compartilha nem gera carta (a peça fica só no perfil)", async () => {
+  it("Compartilhar vem ligado e FLAIR desligado; a prévia ao lado vira a prévia do post; salvar publica sem descrição", async () => {
     const { calls } = loggedAs(ME, routes);
     await fillToReview();
-    for (const name of ["Compartilhar no feed do FashionAI", "Converter para FLAIR"]) expect(screen.getByRole("switch", { name }).getAttribute("aria-checked")).toBe("false");
-    expect(screen.getByText("Desligado: a peça fica só no seu perfil.")).toBeTruthy();
+    expect(screen.getByRole("switch", { name: "Compartilhar no feed do FashionAI" }).getAttribute("aria-checked")).toBe("true");
+    expect(screen.getByRole("switch", { name: "Converter para FLAIR" }).getAttribute("aria-checked")).toBe("false");
+    expect(screen.getByText("Prévia do post")).toBeTruthy();
+    expect(screen.queryByLabelText("Legenda (opcional)")).toBeNull();                     // o post não tem descrição
     await save();
-    await waitFor(() => expect(calls.some((c) => c.method === "POST" && c.path === "/api/pieces")).toBe(true), { timeout: 4000 });
-    expect(shares(calls)).toHaveLength(0);
+    await waitFor(() => expect(shares(calls)).toHaveLength(1), { timeout: 4000 });
+    expect((shares(calls)[0] as { body?: unknown }).body).toMatchObject({ channel: "FEED" });
+    expect((shares(calls)[0] as { body?: Record<string, unknown> }).body).not.toHaveProperty("caption");
     expect(calls.some((c) => c.method === "POST" && c.path === "/api/flair/cards")).toBe(false);
   });
 
-  it("com Compartilhar ligado, a peça sai no feed com a legenda; com FLAIR ligado, a cópia é gerada com prévia do nível", async () => {
+  it("desligando Compartilhar, nada vai ao feed (a peça fica só no perfil); com FLAIR ligado, a cópia é gerada", async () => {
     const { calls } = loggedAs(ME, routes);
     await fillToReview();
     fireEvent.click(screen.getByRole("switch", { name: "Compartilhar no feed do FashionAI" }));
-    fireEvent.change(screen.getByLabelText("Legenda (opcional)"), { target: { value: "Peça nova" } });
+    expect(screen.getByText("Desligado: a peça fica só no seu perfil.")).toBeTruthy();
     fireEvent.click(screen.getByRole("switch", { name: "Converter para FLAIR" }));
     expect(await screen.findByText("Prévia da carta: Bronze 52")).toBeTruthy();
     await save();
-    await waitFor(() => expect(shares(calls)).toHaveLength(1), { timeout: 4000 });
-    expect((shares(calls)[0] as { body?: unknown }).body).toMatchObject({ channel: "FEED", caption: "Peça nova" });
-    await waitFor(() => expect(calls.find((c) => c.method === "POST" && c.path === "/api/flair/cards")?.body).toEqual({ pieceId: "nova" }));
+    await waitFor(() => expect(calls.find((c) => c.method === "POST" && c.path === "/api/flair/cards")?.body).toEqual({ pieceId: "nova" }), { timeout: 4000 });
+    expect(calls.some((c) => c.method === "POST" && c.path === "/api/pieces")).toBe(true);
+    expect(shares(calls)).toHaveLength(0);
   });
 });

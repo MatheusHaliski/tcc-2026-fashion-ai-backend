@@ -320,17 +320,19 @@ public class SocialService {
 
     // ------------------------------------------------------------------ CA08/CA09 compartilhar
     @Transactional
-    public Map<String, Object> share(CurrentUser user, TargetType type, UUID id, ShareChannel channel, String caption) {
-        return share(user, type, id, channel, caption, false);
+    public Map<String, Object> share(CurrentUser user, TargetType type, UUID id, ShareChannel channel) {
+        return share(user, type, id, channel, false);
     }
 
     /**
-     * Compartilhar (RF19.CA08/CA09). No feed, o post só aparece para quem pode abrir o conteúdo: se a dona compartilha
-     * a própria peça, look ou DNA ainda PRIVADO, a API recusa com {@code PUBLICAR_PARA_COMPARTILHAR} e o app pergunta
-     * antes; com {@code publish} (a pessoa confirmou "Tornar público e publicar"), o conteúdo vira público e o post sai.
+     * Compartilhar (RF19.CA08/CA09). O post do FashionAI é o próprio card: diferente de outras redes, <b>não tem
+     * descrição</b> (pedido de 07/10), então nada de legenda é gravado. No feed, o post só aparece para quem pode abrir
+     * o conteúdo: se a dona compartilha a própria peça, look ou DNA ainda PRIVADO, a API recusa com
+     * {@code PUBLICAR_PARA_COMPARTILHAR} e o app pergunta antes; com {@code publish} (a pessoa confirmou ou ligou
+     * "Compartilhar no feed" no criador), o conteúdo vira público e o post sai.
      */
     @Transactional
-    public Map<String, Object> share(CurrentUser user, TargetType type, UUID id, ShareChannel channel, String caption, boolean publish) {
+    public Map<String, Object> share(CurrentUser user, TargetType type, UUID id, ShareChannel channel, boolean publish) {
         guard.requireCanCreate(user);
         Target t = target(user, type, id);
         if (!t.available()) {
@@ -349,7 +351,6 @@ public class SocialService {
         s.setTargetType(type);
         s.setTargetId(id);
         s.setChannel(channel);
-        s.setCaption(InputSanitizer.moderated("caption", caption, 500));
         if (channel == ShareChannel.EXTERNAL) {
             byte[] png = type == TargetType.SCHEME ? schemeService.renderCard(user, id, true) : null;
             if (png != null) {

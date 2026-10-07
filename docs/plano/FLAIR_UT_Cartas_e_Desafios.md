@@ -440,12 +440,14 @@ jurídico**.
 
 ## 11.1 Estado da implementação (07/10)
 
-O pedido de 07/10 acrescentou uma regra de produto: **nada vai ao feed sem a pessoa ligar a opção Compartilhar**. Sem
-ela, a peça (e a carta) fica só no perfil. A primeira versão de F1–F3 entrou junto:
+O pedido de 07/10 acrescentou uma regra de produto: **nada vai ao feed sem a opção Compartilhar ligada**. Sem ela, a
+peça (e a carta) fica só no perfil. No criador de peças a opção já vem ligada, e a pessoa desliga se quiser guardar a
+peça só para o perfil. O post do FashionAI não tem descrição. A primeira versão de F1–F3 entrou junto:
 
 | Parte | O que já funciona | O que falta |
 |---|---|---|
-| Criador de peças | Etapa final com **"Depois de salvar"**: "Compartilhar no feed do FashionAI" (com legenda; peça privada vira pública só com esta opção ligada) e "Converter para FLAIR" (com prévia da carta, nível e nota). As duas começam **desligadas** | Os criadores de look e de DNA |
+| Criador de peças | Etapa final com **"Depois de salvar"**: "Compartilhar no feed do FashionAI" vem **ligado** por padrão (peça privada vira pública só com esta opção ligada; desligado, a peça fica só no perfil) e "Converter para FLAIR" vem desligado (com prévia da carta, nível e nota). Ao lado, a **prévia do post** | Os criadores de look e de DNA |
+| Post do FashionAI | O post é o **próprio card, sem descrição** (diferente de redes como o Facebook): o diálogo Compartilhar mostra a prévia do post com "@pessoa compartilhou" e não tem campo de texto; a API não grava legenda e o feed e a Passarela não mostram as antigas | — |
 | Regra do feed | Auditoria: peças só chegam ao feed por um compartilhamento explícito; looks, só por "Publicar". Converter para FLAIR não publica nada (teste) | — |
 | F2 (nota e nível) | `FlairTier` com a fórmula do §4: faixas de preço iniciais fixas por categoria (bolsas com faixa própria), tier da marca pelo `Brand.priceTier`, preço confirmado pela faixa do produto da Busca Catalogada, teto em Prata sem confirmação. Os exemplos do §4 viraram testes | Tabela `price_band` alimentada pela Busca Catalogada; revisão de Ouro com preço digitado |
 | F3 (gerar e guardar) | `flair_card_instance` (V55), uma carta por peça por temporada (chave única), "Converter para FLAIR" no detalhe da peça (com prévia), **"Minhas cartas FLAIR"** no perfil, por nível; visitante vê só cartas de peças que pode abrir | Conversão de looks e DNA; "Converter meu guarda-roupa" |

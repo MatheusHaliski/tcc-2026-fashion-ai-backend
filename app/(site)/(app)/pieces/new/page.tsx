@@ -8,7 +8,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
 import { CATEGORY_LABEL, label, useTaxonomy, subcategoryLabel } from "@/lib/api/taxonomy";
 import { RequireAuth } from "@/components/app-shell";
-import { Badge, Button, Card, Chip, PageHeader, SegmentPicker, Switch, Textarea, useToast } from "@/components/ui";
+import { Badge, Button, Card, Chip, PageHeader, SegmentPicker, Switch, useToast } from "@/components/ui";
 import { useApi } from "@/lib/hooks/use-api";
 import { FlairGameCard, type FlairCollectionCard } from "@/components/flair/flair-game-card";
 import type { FlairPreview } from "@/components/flair/flair-collection";
@@ -81,9 +81,10 @@ function PieceCreator({ initial, prefill = {} }: { initial: Partial<CatalogSearc
   const saving = useRef(false); const [busy, setBusy] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [saveProblem, setSaveProblem] = useState<string | null>(null);
-  // Depois de salvar (pedido de 07/10): as duas opções começam DESLIGADAS. Sem "Compartilhar", nada vai ao feed e a peça
-  // fica só no perfil; "Converter para FLAIR" cria a cópia em Minhas cartas FLAIR e também não publica nada.
-  const [shareToFeed, setShareToFeed] = useState(false); const [shareCaption, setShareCaption] = useState("");
+  // Depois de salvar (pedidos de 07/10): "Compartilhar no feed" vem LIGADO — o post é o próprio card, sem descrição;
+  // desligado, nada vai ao feed e a peça fica só no perfil. "Converter para FLAIR" (desligado) cria a cópia em Minhas
+  // cartas FLAIR e não publica nada.
+  const [shareToFeed, setShareToFeed] = useState(true);
   const [toFlair, setToFlair] = useState(false);
   const flairDraft = JSON.stringify({ category: value.category, subcategory: value.subcategory || null, price: value.price === "" ? null : Number(value.price),
     brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandId: value.brandId || null, catalogProductId: pick?.product.id ?? null,
@@ -138,7 +139,7 @@ function PieceCreator({ initial, prefill = {} }: { initial: Partial<CatalogSearc
       // as opções rodam depois da peça salva: se uma falhar, a peça fica e o aviso diz o que não deu certo
       if (shareToFeed) {
         try {
-          await api.post(`/api/interactions/PIECE/${p.id}/shares`, { channel: "FEED", caption: shareCaption, ...(value.visibility === "PRIVATE" ? { publish: true } : {}) });
+          await api.post(`/api/interactions/PIECE/${p.id}/shares`, { channel: "FEED", ...(value.visibility === "PRIVATE" ? { publish: true } : {}) });
           toast.success(t("interactions.sharedToFeed"));
         } catch (e) { toast.fromError(e, t("pieces.new.share_falhou")); }
       }
@@ -239,13 +240,7 @@ function PieceCreator({ initial, prefill = {} }: { initial: Partial<CatalogSearc
               <section className="after-save" aria-labelledby="after-save-title">
                 <h3 id="after-save-title" className="type-h3">{t("pieces.new.depois_de_salvar")}</h3>
                 <Switch checked={shareToFeed} onChange={setShareToFeed} label={t("pieces.new.opt_share")} hint={t(shareToFeed ? "pieces.new.opt_share_on" : "pieces.new.opt_share_off")} />
-                {shareToFeed && (
-                  <div className="after-save-detail">
-                    <label htmlFor="share-caption-new" className="label">{t("interactions.legenda_opcional")}</label>
-                    <Textarea id="share-caption-new" value={shareCaption} onChange={(e) => setShareCaption(e.target.value)} maxLength={200} />
-                    {value.visibility === "PRIVATE" && <p role="note" className="type-caption mt-1">{t("pieces.new.opt_share_private")}</p>}
-                  </div>
-                )}
+                {shareToFeed && value.visibility === "PRIVATE" && <p role="note" className="after-save-detail type-caption">{t("pieces.new.opt_share_private")}</p>}
                 <Switch checked={toFlair} onChange={setToFlair} label={t("pieces.new.opt_flair")} hint={t("pieces.new.opt_flair_hint")} />
                 {toFlair && (
                   <div className="after-save-detail after-save-flair">
@@ -264,7 +259,8 @@ function PieceCreator({ initial, prefill = {} }: { initial: Partial<CatalogSearc
             </Card>
           )}
         </div>
-        {step !== "art" && <aside aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start"><p className="label">{t("scheme.card")}</p><PieceCard piece={previewPiece} href="#" /></aside>}
+        {step !== "art" && <aside aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start"><p className="label">{step === "review" && shareToFeed ? t("interactions.post_preview") : t("scheme.card")}</p><PieceCard piece={previewPiece} href="#"
+          extra={step === "review" && shareToFeed && user ? <span className="caption">{t("feed.shared_by", { username: user.username })}</span> : undefined} /></aside>}
       </div>
       <p className="mt-4 type-caption text-faint"><Link className="underline" href="/closet">← {t("closet.title")}</Link></p>
       {done && <CreationSuccess kind="piece" id={done} onDone={() => { window.location.href = user ? `/u/${user.username}` : "/closet"; }} />}

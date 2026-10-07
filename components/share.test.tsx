@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 /**
- * Compartilhar (RF19.CA08/CA09) — o botão publica no feed social do FashionAI: o diálogo abre por cima de tudo (portal
- * no <body>, nunca preso no card), conteúdo privado da dona pede "Tornar público e publicar", o DNA de estilo usa o
- * tipo DNA da API, copiar o link copia o link confirmado e o Feed mostra o post compartilhado com quem compartilhou.
+ * Compartilhar (RF19.CA08/CA09) — o botão cria um post no feed social do FashionAI: o post é o próprio card, SEM
+ * descrição (o diálogo mostra a prévia, não tem campo de legenda); o diálogo abre por cima de tudo (portal no <body>,
+ * nunca preso no card), conteúdo privado da dona pede "Tornar público e publicar", o DNA de estilo usa o tipo DNA da
+ * API, copiar o link copia o link confirmado e o Feed mostra o post com quem compartilhou.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor } from "@/test-utils/render";
+import { ME, cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor } from "@/test-utils/render";
 import { OWNER, PIECE, SCHEME } from "@/test-utils/fixtures";
 import { __resetHypeStore } from "@/lib/hype/use-hype";
 import { CardActions, ShareDialog, interactionType } from "./interactions";
@@ -18,18 +19,22 @@ beforeEach(() => __resetHypeStore());
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); document.cookie = "fai_rt_h=; max-age=0; path=/"; });
 
 describe("Compartilhar › diálogo", () => {
-  it("abre no <body> (fora do card) e publica no feed com a legenda", async () => {
-    const { calls } = loggedAs(undefined, { "POST /api/interactions/PIECE/p1/shares": { shareId: "x", channel: "FEED", shares: 1 } });
+  it("abre no <body> (fora do card), mostra a prévia do post sem campo de descrição e publica no feed", async () => {
+    const { calls } = loggedAs(undefined, { "POST /api/interactions/PIECE/p1/shares": { shareId: "x", channel: "FEED", shares: 1 }, "GET /api/pieces/p1": { piece: PIECE } });
     const { container } = renderApp(<div className="card-box"><CardActions type="PIECE" id="p1" counters={PIECE.counters} viewer={PIECE.viewer} title="Camiseta" compact /></div>);
     await settle();
     fireEvent.click(screen.getByRole("button", { name: /Compartilhar/ }));
     const dialog = await screen.findByRole("dialog", { name: "Compartilhar" });
     expect(container.contains(dialog)).toBe(false);                  // portal: a contenção do card não prende o diálogo
     expect(document.body.contains(dialog)).toBe(true);
-    fireEvent.change(screen.getByLabelText("Legenda (opcional)"), { target: { value: "Peça nova" } });
+    // a prévia do post é o próprio card, com "@você compartilhou" — e não há campo de descrição
+    const preview = await screen.findByRole("figure", { name: "Prévia do post" });
+    await waitFor(() => expect(preview.textContent).toContain(PIECE.name));
+    expect(preview.textContent).toContain(`@${ME.user.username} compartilhou`);
+    expect(dialog.querySelector("textarea")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Publicar no feed" }));
     await waitFor(() => expect(posts(calls)).toHaveLength(1));
-    expect(posts(calls)[0].body).toEqual({ channel: "FEED", caption: "Peça nova" });
+    expect(posts(calls)[0].body).toEqual({ channel: "FEED" });
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Compartilhar" })).toBeNull());
     // a contagem do botão sobe na hora
     expect(screen.getByRole("button", { name: /Compartilhar/ }).textContent).toContain(String((PIECE.counters?.shares ?? 0) + 1));
@@ -77,18 +82,18 @@ describe("Compartilhar › diálogo", () => {
 });
 
 describe("Compartilhar › Feed", () => {
-  it("o post compartilhado (peça ou look) aparece no Feed com quem compartilhou e a legenda", async () => {
+  it("o post compartilhado (peça ou look) aparece no Feed com quem compartilhou, sem descrição", async () => {
     loggedAs(undefined, {
       ...HYPE,
       "GET /api/feed": { items: [SCHEME], nextCursor: null, chips: [], entries: [
-        { kind: "PIECE", id: PIECE.id, piece: PIECE, sharedBy: OWNER, caption: "Peça do dia" },
+        { kind: "PIECE", id: PIECE.id, piece: PIECE, sharedBy: OWNER, caption: "legenda antiga" },   // dado antigo: não aparece
         { kind: "SCHEME", id: SCHEME.id, scheme: SCHEME },
       ] },
     });
     renderApp(<FeedPage />);
     await settle();
     expect(await screen.findByText(`@${OWNER.username} compartilhou`)).toBeTruthy();
-    expect(screen.getByText(/Peça do dia/)).toBeTruthy();
+    expect(screen.queryByText(/legenda antiga/)).toBeNull();
     expect(screen.getAllByText(PIECE.name).length).toBeGreaterThan(0);
     expect(screen.getByText(SCHEME.title)).toBeTruthy();
   });
@@ -103,6 +108,6 @@ describe("Compartilhar › Feed", () => {
     await settle();
     fireEvent.click(await screen.findByRole("tab", { name: "Passarela" }));
     expect(await screen.findByText(`@${OWNER.username} compartilhou`)).toBeTruthy();
-    expect(screen.queryByText(/· null/)).toBeNull();                 // legenda vazia não vira "null"
+    expect(screen.queryByText(/null/)).toBeNull();
   });
 });

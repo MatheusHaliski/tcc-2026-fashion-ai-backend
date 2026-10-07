@@ -5735,7 +5735,7 @@
   "adminMoments.points": "Pontos",
   "adminMoments.params": "Parâmetros (JSON)",
   "adminMoments.params_hint": "Ex.: {\"wardrobeOnly\":true,\"looksRequired\":7,\"idleDays\":60,\"distinctColors\":3}",
-  "interactions.share_feed_hint": "O post aparece no Feed da comunidade e na Passarela de quem segue você.",
+  "interactions.share_feed_hint": "O post é o próprio card, sem descrição. Aparece no Feed da comunidade e na Passarela de quem segue você.",
   "interactions.share_private": "Este conteúdo está privado, então só você o vê. Para sair no feed, ele passa a ser público.",
   "interactions.publishAndShare": "Tornar público e publicar",
   "interactions.publishedAndShared": "Agora é público e já está no feed",
@@ -5783,14 +5783,15 @@
   "flairCollection.created": "Carta FLAIR criada. Está em Minhas cartas FLAIR.",
   "pieces.new.depois_de_salvar": "Depois de salvar",
   "pieces.new.opt_share": "Compartilhar no feed do FashionAI",
-  "pieces.new.opt_share_on": "O card da peça sai no Feed da comunidade e na Passarela de quem segue você.",
+  "pieces.new.opt_share_on": "O card da peça vira um post no Feed da comunidade e na Passarela de quem segue você. Posts do FashionAI não têm descrição.",
   "pieces.new.opt_share_off": "Desligado: a peça fica só no seu perfil.",
-  "pieces.new.opt_share_private": "A peça está como Privada: ao compartilhar, ela passa a ser pública.",
+  "pieces.new.opt_share_private": "A peça está como Privada: com esta opção ligada, ela passa a ser pública.",
   "pieces.new.opt_flair": "Converter para FLAIR",
   "pieces.new.opt_flair_hint": "Cria uma cópia da peça em Minhas cartas FLAIR. Não publica nada no feed.",
   "pieces.new.opt_flair_preview": "Prévia da carta: {tier} {ovr}",
   "pieces.new.opt_flair_sem_previa": "Escolha o tipo da peça para ver a prévia da carta.",
   "pieces.new.share_falhou": "A peça foi salva, mas não deu para compartilhar no feed.",
   "pieces.new.flair_feito": "Carta FLAIR {tier} {ovr} criada em Minhas cartas FLAIR.",
-  "pieces.new.flair_falhou": "A peça foi salva, mas a carta FLAIR não foi criada."
+  "pieces.new.flair_falhou": "A peça foi salva, mas a carta FLAIR não foi criada.",
+  "interactions.post_preview": "Prévia do post"
 }
