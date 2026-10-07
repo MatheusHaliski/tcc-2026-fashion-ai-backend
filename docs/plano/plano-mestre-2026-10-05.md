@@ -43,6 +43,7 @@ entrega fecha com testes, métricas, documentação, commit e push no ramo `clau
 | # | Item | Por que nesta posição |
 |---|---|---|
 | 1 | ~~**WARDROBE-FIX**~~ — entregue (seção 1) | — |
+| **1b** | **FLAIR-UT** (pedido de 07/10, **próximo item**): cartas FLAIR por nível (Bronze, Prata, Ouro, Especial) com o Hype em números na frente e a seção E na prancha de anatomias; "Gerar como FLAIR" nos criadores e "Converter para FLAIR" no detalhe; "Minhas cartas FLAIR" no perfil; grupo próprio do FLAIR na barra lateral; **Desafios de Montagem** com cenários que contam uma história; Momentos; cartas especiais pela loja, jogos, desafios e selos; recompensas (seção 10 e [FLAIR_UT_Cartas_e_Desafios.md](FLAIR_UT_Cartas_e_Desafios.md)) | Pedido da pessoa responsável para passar à frente. F1–F5 não dependem do avatar nem do GARMENT; o dinheiro como prêmio espera parecer jurídico (seção 10.4) |
 | 2 | **AVATAR-ID I5–I7** (o I4 — olhos, óculos e sobrancelhas — está entregue, seção 1): cabelo e barba (incluindo penteados presos — rabo de cavalo, coque, trança — sobre as guias e o movimento do HAIR-MOTION), rig facial, revisão visual, níveis de detalhe; mais **EXPO** (brilho de referência pela esclera: foto subexposta escurece a pele do gêmeo em ΔE ≈ 24), **IRIS-RECAL** (classes da íris recalibradas no balanço de branco corrigido; íris clara com centro âmbar) e **WB-2** (esclera amarelada pela idade lida como luz quente; realces sem mudar a matiz) achados pelo TWIN-FID — **mais os itens de rosto e cabelo da lista de 29/09 (seção 5.2) e os acréscimos da especificação completa (seção 6)** | Continua a cadeia de identidade; o desfile e o quarto usam o mesmo avatar |
 | 3 | **GARMENT F0–F6**: moldes paramétricos, passes com restrições, XPBD, camadas, detalhes — **mais os itens de roupa da lista de 29/09 (seção 5.2) e o PROV-3D (seção 5.1)** | Base de "roupa que veste" e de "tecido com movimento natural" (itens 5 e 6) |
 | 4 | **CATALOG-IMG V2**: pipeline profissional das fotos oficiais da Busca Catalogada (seção 4) — **com o FRAME e o relatório de 79 perguntas (seção 5.1)** | Alimenta cards, IA, 2D, 3D e Hype Score |
@@ -716,3 +717,101 @@ a Passarela 6.2.
 
 Na ordem geral, os itens 6 e 7 continuam depois dos itens 2 a 5. O que muda: os passos 6.0 a 6.2 e 7.1 não esperam o
 GARMENT. Se a pessoa responsável quiser a passarela e os provadores antes, eles podem subir na fila sem retrabalho.
+
+---
+
+## 10. FLAIR-UT — refatoração do FLAIR (pedido de 07/10/2026, próximo item)
+
+A especificação completa está em [FLAIR_UT_Cartas_e_Desafios.md](FLAIR_UT_Cartas_e_Desafios.md). Aqui fica o resumo
+do que muda, do que foi decidido e da ordem.
+
+### 10.1 O que muda
+
+1. **Seção E da prancha de anatomias, "FLAIR game card design".** Entra depois da D, porque a C já é "Anatomias da
+   peça". São quatro conceitos de carta:
+   - **Bronze** (nota < 65), **Prata** (65–74) e **Ouro** (≥ 75);
+   - **Especial**, só por programa.
+
+   A frente traz:
+   - a nota e a posição (SUP, INF, CAL, ACE, VES, LOOK);
+   - a marca;
+   - a foto, o nome e a marca da peça no centro;
+   - os **números do Hype em linha**: as 7 dimensões do verso (POP, ENG, TRD, ORI, RAR, LON, NOV) + o HYP.
+
+   Os atributos de jogo de hoje (EDGE…SYNC) e a habilidade vão para o verso, então as 15 modalidades continuam
+   funcionando.
+2. **Cartas geradas pela pessoa.**
+   - "Gerar como carta FLAIR" na etapa final dos criadores de peça, look e DNA, com prévia do nível.
+   - "Converter para FLAIR" no detalhe ampliado.
+   - Sub-aba **"Minhas cartas FLAIR"** no perfil, separada por nível.
+   - Uma carta por peça por temporada.
+3. **O nível vem do formulário, principalmente preço e marca.** Nota = 45 + 30·preço + 18·marca + 6·acabamento. O preço
+   é **verificado** pela faixa da Busca Catalogada ou da marca; preço só digitado não passa de Prata, e Ouro com preço
+   digitado vai para revisão.
+4. **FLAIR com grupo próprio na barra lateral:**
+   - Início;
+   - Batalhas;
+   - Multijogador;
+   - Momentos (novo);
+   - Desafios de Montagem (novo);
+   - Minhas cartas;
+   - Decks;
+   - Loja FLAIR;
+   - Recompensas;
+   - Missões.
+5. **Desafios de Montagem (Card Building Challenges)**, só com cartas FLAIR.
+   - Requisitos de nível, nota, sintonia, marca, posição, taxonomia e números de Hype.
+   - Dificuldades de Fácil a Lendário, grupos e desafios sazonais.
+   - Cada desafio é um **cenário FashionAI ilustrado**, e cada carta acende a sua parte e escreve uma linha da história.
+     São 12 cenários iniciais: Verão em Ipanema, Primeiro dia de estágio, Brechó de tesouros (só Bronze), Festival de
+     música, Casamento no campo, Viagem a Paris, Inverno na serra, Carnaval, Noite de gala, Desfile da coleção cápsula,
+     Loja pop-up e Lenda do estilo.
+   - Carta entregue fica bloqueada com o selo do desafio; a peça nunca é apagada.
+6. **Recompensas:**
+   - FAI Points e cartas especiais;
+   - itens da loja do guarda-roupa e do quarto (armários, cadeiras, espelhos, cabides, tapetes, ambientes únicos);
+   - skins, cupons de marca e prêmios físicos patrocinados, retirados em loja;
+   - **dinheiro só depois do estudo**.
+7. **Cartas especiais** saem por cinco canais:
+   - Loja FLAIR, por compra direta da carta escolhida, com tiragem numerada;
+   - jogos;
+   - Momentos;
+   - Desafios;
+   - **selos** de celebridades e marcas: o selo dá visibilidade e pode conceder a carta especial do artista ou da marca.
+     O programa é aprovado pelo examinador.
+
+### 10.2 Decisões que mudam regras anteriores
+
+- **D1 — dois eixos.** A regra RF53 · P2-18 ("o preço nunca decide a raridade") **continua para a raridade**, que segue
+  vindo do Hype público e vira o **acabamento "raro"** da carta. O preço passa a decidir só o **nível**, que é um eixo
+  novo.
+- **D5 — cartas por ação.** As cartas deixam de nascer sozinhas de cada peça do guarda-roupa: passam a nascer de um
+  gesto da pessoa. Quem já joga ganha "Converter meu guarda-roupa", com limite diário.
+
+### 10.3 Fases
+
+| Fase | Entrega | Depende de |
+|---|---|---|
+| F0 | Confirmar as decisões D1–D10 e as regras de economia | — |
+| F1 | Seção E da prancha (v21) + componente `FlairGameCard` com fotos | F0 |
+| F2 | Motor da nota e do nível (cliente e servidor), faixas de preço, tier de marca, antifraude | F0 |
+| F3 | Gerar e converter nos criadores e no detalhe; "Minhas cartas FLAIR" | F1, F2 |
+| F4 | Grupo FLAIR na barra lateral, hub, rotas e redirecionamentos | — |
+| F5 | Desafios de Montagem com 12 cenários 2D e história | F3 |
+| F6 | Momentos | F3 |
+| F7 | Cartas especiais, Loja FLAIR e concessão por selo | F3; LOJA-EXCLUSIVOS (item 9) compartilha loja e inventário |
+| F8 | Recompensas digitais, cupons e prêmios físicos patrocinados | F5 |
+| F9 | Cenários em 3D (motor de cenas do ENV3D), animação de abrir carta, métricas | F5; item 6.1 |
+
+### 10.4 Precisa de estudo antes de implementar
+
+Estes pontos são de produto e jurídicos. A especificação, §9.2, é o mapa de perguntas, não parecer:
+
+- **Dinheiro como prêmio.** Pode ser aposta (Lei 14.790/2023) ou promoção comercial que exige autorização prévia
+  (Lei 5.768/1971). Exige ainda verificação de identidade e trata de impostos e regras das lojas.
+- **Prêmios físicos.** Regulamento por promoção.
+- **Menores.** O ECA Digital (Lei 15.211/2025) proíbe caixas de recompensa. Por isso nada aleatório pago: carta especial
+  vendida é a carta escolhida.
+- **Imagem e marca.** Carta com artista ou marca reais exige licença; no TCC, só fictícios.
+- **Equilíbrio.** Nível por preço não pode decidir as batalhas ranqueadas: chaves por nota e desafios "só Bronze".
+
