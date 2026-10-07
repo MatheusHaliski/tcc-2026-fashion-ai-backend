@@ -73,6 +73,22 @@ describe("QuickCrop", () => {
     expect(body.ops[0]).toEqual({ op: "crop", rect: { x: 0, y: 0, w: 0.6, h: 0.3 }, aspect: "FREE" });
   });
 
+  it("Recorte: com a janela na foto inteira, arrastar desenha a janela nova", async () => {
+    const { calls } = mockApi({ "GET /api/pieces/p1/photo-edits/session": SESSION, "POST /api/pieces/p1/photo-edits": { id: "v1", current: true, piece: PIECE } });
+    const { container } = renderApp(<QuickCrop pieceId="p1" mode="window" onSaved={() => undefined} />);
+    await waitFor(() => expect(container.querySelector(".qc-stage img")).toBeTruthy());
+    loadImage(container);
+    await screen.findByTestId("qc-rect");
+    const stage = container.querySelector(".qc-stage") as HTMLElement;
+    fireEvent.pointerDown(stage, { clientX: 20, clientY: 10, pointerId: 1 });
+    fireEvent.pointerMove(stage, { clientX: 70, clientY: 90, pointerId: 1 });
+    fireEvent.pointerUp(stage, { pointerId: 1 });
+    expect(screen.getByText("Janela: 500 × 800 px")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Salvar recorte" }));
+    await waitFor(() => expect(calls.some((c) => c.method === "POST" && c.path === "/api/pieces/p1/photo-edits")).toBe(true));
+    expect((calls.find((c) => c.method === "POST")!.body as { ops: unknown[] }).ops[0]).toEqual({ op: "crop", rect: { x: 0.2, y: 0.1, w: 0.5, h: 0.8 }, aspect: "FREE" });
+  });
+
   it("peça do catálogo: explica que não há foto própria e oferece trocar a imagem", async () => {
     const onReplace = vi.fn();
     mockApi({ "GET /api/pieces/p1/photo-edits/session": new Response(JSON.stringify({ status: 409, code: "SEM_FOTO_PROPRIA", message: "x" }), { status: 409, headers: { "content-type": "application/json" } }) });

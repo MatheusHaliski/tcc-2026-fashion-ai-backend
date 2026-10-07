@@ -93,7 +93,8 @@ export function QuickCrop({ pieceId, mode, onSaved, onReplace }: { pieceId: stri
     if (handle) {
       const ax = handle.includes("w") ? rect.x + rect.w : rect.x, ay = handle.includes("n") ? rect.y + rect.h : rect.y;
       drag.current = { kind: "resize", anchor: [ax, ay] };
-    } else if (inside(p, rect)) drag.current = { kind: "move", start: p, rect };
+    } else if (inside(p, rect) && !(mode === "window" && rect.w >= 0.999 && rect.h >= 0.999)) drag.current = { kind: "move", start: p, rect };
+    // janela = foto inteira (início) não tem para onde mover: arrastar já desenha a janela nova
     else if (mode === "window") drag.current = { kind: "draw", start: p };
     else return;
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
