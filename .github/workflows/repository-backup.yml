@@ -144,8 +144,12 @@ jobs:
               wc -l |
               tr -d '[:space:]'
           )"
-          echo "Synchronizing tags"
-          git push backup 'refs/tags/*:refs/tags/*'
+          if (( tag_count > 0 )); then
+            echo "Synchronizing tags"
+            git push backup 'refs/tags/*:refs/tags/*'
+          else
+            echo "No source tags were found; skipping tag synchronization"
+          fi
 
           echo "branch_count=$branch_count" >> "$GITHUB_OUTPUT"
           echo "tag_count=$tag_count" >> "$GITHUB_OUTPUT"
