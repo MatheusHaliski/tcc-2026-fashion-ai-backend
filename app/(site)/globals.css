@@ -2045,8 +2045,9 @@ input[type="range"]:not(.before-after-range):disabled { opacity: .45; cursor: no
 /* RF4 + RF47 · criador de peça em uma etapa: seções (busca catalogada, dados) e o produto escolhido */
 .creator-section { border-top: 1px solid var(--line-soft); padding-top: 14px; margin-top: 14px; }
 .catalog-pick { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 12px; border: 1.5px solid var(--thread); border-radius: 12px; background: var(--thread-soft); }
-.catalog-pick-art { width: 56px; height: 56px; border-radius: 8px; overflow: hidden; background: var(--surface); display: grid; place-items: center; }
-.catalog-pick-art img { width: 100%; height: 100%; object-fit: contain; }
+/* miniatura da peça escolhida: quadro 4:5 posicionado para o recorte do pipeline (.catalog-photo é absoluto) */
+.catalog-pick-art { position: relative; width: 56px; aspect-ratio: 4 / 5; flex-shrink: 0; border-radius: 8px; overflow: hidden; background: var(--surface); display: grid; place-items: center; }
+.catalog-pick-art > img { width: 100%; height: 100%; object-fit: contain; }
 @media (max-width: 480px) { .catalog-pick { grid-template-columns: 56px minmax(0, 1fr); } .catalog-pick > button { grid-column: 2; justify-self: start; } }
 
 /* RF1 — Painel do examinador: status da análise do perfil de marca/celebridade */

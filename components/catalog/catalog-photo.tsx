@@ -11,7 +11,10 @@ import { cn } from "@/components/ui";
  */
 export function semanticCropStyle(crop: NormRect): CSSProperties {
   const w = crop.w > 0 ? crop.w : 1, h = crop.h > 0 ? crop.h : 1;
-  return { position: "absolute", width: `${100 / w}%`, height: "auto", maxWidth: "none", left: `${(-crop.x / w) * 100}%`, top: `${(-crop.y / h) * 100}%` };
+  // altura explícita (o recorte tem a proporção do quadro, então 100/h % do quadro não estica): com height:auto a <img>
+  // lazy fica com altura 0 antes de carregar e, deslocada para cima e cortada pelo overflow, nunca entra na tela — e
+  // nunca carrega (card vazio)
+  return { position: "absolute", width: `${100 / w}%`, height: `${100 / h}%`, maxWidth: "none", maxHeight: "none", left: `${(-crop.x / w) * 100}%`, top: `${(-crop.y / h) * 100}%` };
 }
 
 /**

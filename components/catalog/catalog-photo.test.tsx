@@ -10,7 +10,7 @@ describe("semanticCropStyle", () => {
     expect(s.width).toBe("200%");
     expect(s.left).toBe("-50%");
     expect(s.top).toBe("-16%");
-    expect(s.height).toBe("auto");
+    expect(s.height).toBe("160%");   // altura explícita: a <img> lazy não fica com altura 0 fora do quadro
   });
 
   it("recorte que passa da borda (smartPadding) desloca a foto para dentro", () => {
