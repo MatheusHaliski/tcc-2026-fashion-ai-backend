@@ -7,6 +7,11 @@ import br.com.fashionai.application.testkit.Kit;
 import br.com.fashionai.application.testkit.MemoryRepository;
 import br.com.fashionai.application.testkit.World;
 import br.com.fashionai.domain.model.Follow;
+import br.com.fashionai.domain.model.CelebrityProfile;
+import br.com.fashionai.domain.model.BrandProfile;
+import br.com.fashionai.domain.model.enums.ProfileType;
+import br.com.fashionai.domain.repository.CelebrityProfileRepository;
+import br.com.fashionai.domain.repository.BrandProfileRepository;
 import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.FollowStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
@@ -64,6 +69,23 @@ class ProfileServiceTest {
         assertThatThrownBy(() -> profiles.profile(ana, "ninguem")).isInstanceOf(ApiException.class);
         world.friend.setStatus(AccountStatus.DELETION_SCHEDULED);
         assertThatThrownBy(() -> profiles.profile(ana, "caio")).isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void perfilInstitucionalInformaSlugDiferenteDoUsername() {
+        world.me.setProfileType(ProfileType.CELEBRIDADE);
+        CelebrityProfile c = new CelebrityProfile();
+        c.setOwner(world.me);
+        c.setSlug("celebridade-oficial");
+        kit.save(CelebrityProfileRepository.class, c);
+        assertThat(profiles.profile(ana, "ana")).containsEntry("layout", "INSTITUCIONAL")
+                .containsEntry("institutionalSlug", "celebridade-oficial");
+        world.rival.setProfileType(ProfileType.MARCA);
+        BrandProfile b = new BrandProfile();
+        b.setOwner(world.rival);
+        b.setSlug("marca-oficial");
+        kit.save(BrandProfileRepository.class, b);
+        assertThat(profiles.profile(ana, "bia")).containsEntry("institutionalSlug", "marca-oficial");
     }
 
     @Test

@@ -238,7 +238,8 @@ public class InstitutionalService {
         try {
             u = users.findById(UUID.fromString(slugOrId)).orElse(null);
         } catch (IllegalArgumentException ex) {
-            u = brands.findBySlug(slugOrId).map(BrandProfile::getOwner).orElseGet(() -> celebrities.findBySlug(slugOrId).map(CelebrityProfile::getOwner).orElse(null));
+            u = brands.findBySlug(slugOrId).map(BrandProfile::getOwner).orElseGet(() -> celebrities.findBySlug(slugOrId).map(CelebrityProfile::getOwner)
+                    .orElseGet(() -> users.findByUsernameIgnoreCase(slugOrId).orElse(null)));
         }
         if (u == null || u.getProfileType() == ProfileType.PESSOAL) {
             throw ApiException.notFound(Msg.t("institutional.perfil_institucional"));
@@ -254,7 +255,7 @@ public class InstitutionalService {
         Map<String, Object> header = new LinkedHashMap<>();
         if (brand) {
             BrandProfile b = brands.findByOwnerId(u.getId()).orElseThrow(() -> ApiException.notFound("Marca"));
-            if (b.getApprovalStatus() != ApprovalStatus.APROVADO && !admin && !viewer.admin()) {
+            if (b.getApprovalStatus() != ApprovalStatus.APROVADO && !admin && (viewer == null || !viewer.admin())) {
                 throw ApiException.notFound("Marca"); // RF1.CA06 — pendente_validação não tem tela pública
             }
             header.putAll(brandCard(b));
@@ -265,7 +266,7 @@ public class InstitutionalService {
             header.put("autoApproval", !b.isRequiresSealReview());
         } else {
             CelebrityProfile c = celebrities.findByOwnerId(u.getId()).orElseThrow(() -> ApiException.notFound("Celebridade"));
-            if (c.getVerificationStatus() != ApprovalStatus.APROVADO && !admin && !viewer.admin()) {
+            if (c.getVerificationStatus() != ApprovalStatus.APROVADO && !admin && (viewer == null || !viewer.admin())) {
                 throw ApiException.notFound("Celebridade");
             }
             header.putAll(celebrityCard(c));

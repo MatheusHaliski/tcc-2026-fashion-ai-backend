@@ -41,10 +41,8 @@ const withData = (url: URL) => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); document.cookie = "fai_rt_h=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/"; });
 
 describe("telas do app abrem sem quebrar", () => {
-  // a raiz só redireciona e o [...missing] é o "não encontrado": ficam de fora da fumaça de conteúdo
-  // a raiz só redireciona, o [...missing] é o "não encontrado" e o /lookbook leva ao perfil: ficam fora da fumaça de
-  // conteúdo (o /lookbook tem teste próprio abaixo)
-  const entries = Object.entries(pages).filter(([p]) => p !== "./(site)/page.tsx" && !p.includes("[...missing]") && !p.includes("/lookbook/page.tsx"));
+  // Rotas de redirecionamento não têm conteúdo: /lookbook é testado abaixo; /dashboard em celebrity-profile.test.tsx.
+  const entries = Object.entries(pages).filter(([p]) => p !== "./(site)/page.tsx" && !p.includes("[...missing]") && !p.includes("/lookbook/page.tsx") && p !== "./(site)/(app)/dashboard/page.tsx");
 
   it("há telas para testar", () => { expect(entries.length).toBeGreaterThan(20); });
 
