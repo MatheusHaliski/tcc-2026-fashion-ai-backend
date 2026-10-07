@@ -1,33 +1,35 @@
 @startuml RF19_MaquinaDeEstados_Comentario
 !pragma layout smetana
-title RF19 — Comment: ciclo do comentário (active) e da notificação ao autor do conteúdo
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-[*] --> Digitando : abre Comments no card
-state "Digitando (frontend)" as Digitando
-state "Validando" as Validando
-state "Rejeitado" as Rejeitado
-state "Publicado\n(active = true)" as Publicado {
-  state "Notification NEW_COMMENT" as Notif {
-    [*] --> Entregue : delivered = true
-    [*] --> Contabilizada : delivered = false\n(tipo desativado pelo autor — CA12)
-  }
+title RF19 — ciclo de vida de Comment.active\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\ncampo booleano · tabela comments
+
+state "Comment.active" as B_Comment_active {
+  state "active = true" as B_Comment_active_T
+  state "active = false" as B_Comment_active_F
+  [*] --> B_Comment_active_T : criação\ncomment()\n(valor inicial true)
+  B_Comment_active_T --> B_Comment_active_F : purgeScheduledDeletions(), moderate(),\ndeleteComment()
 }
-state "Excluído\n(active = false)" as Excluido
-Digitando --> Validando : POST /api/interactions/{type}/{id}/comments
-Validando --> Rejeitado : vazio · > 500 chars · ofensivo\n(COMENTARIO_VAZIO / COMENTARIO_LONGO / CONTEUDO_BLOQUEADO)
-Validando --> Rejeitado : alvo não visível, bloqueio\nou peça não aprovada (404/403)
-Rejeitado --> Digitando : corrige o texto
-Validando --> Publicado : INSERT comments · commentCount+1\nnotify(owner, NEW_COMMENT)
-Publicado --> Publicado : resposta (parentCommentId)
-Publicado --> Excluido : DELETE /api/comments/{id}\npelo autor do comentário ou dono do conteúdo (CA05)
-Publicado --> Publicado : DELETE por terceiro → 403\nGuard.deny (auditado)
-Excluido --> [*] : soft delete — commentCount-1;\nsai de findBy…ActiveTrue
-note right of Publicado : CA04/CA06 — SocialService.COMMENT_MAX = 500
-note right of Notif : NotificationService.notify():\nautor do conteúdo não é notificado\nde interação própria
+note bottom of B_Comment_active
+  Consultas que filtram por active:
+  countByTargetTypeAndTargetIdAndActiveTrue
+  findByTargetTypeAndTargetIdAndActiveTrueOrderByCreatedAtAsc
+end note
 @enduml

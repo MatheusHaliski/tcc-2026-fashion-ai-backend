@@ -1,9 +1,16 @@
 @startuml RF6_Atividades
-title RF6 — Acessar e gerenciar o Perfil Lookbook\nDiagrama de atividades — abrir o Lookbook e navegar pelas abas (Peças, Looks, Salvos, Insights…)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,103 +19,53 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF6 — Acessar e gerenciar o Perfil Lookbook (Closet Digital + Looks Salvos)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre /lookbook (próprio perfil)\nou /u/{username} (perfil de alguém);
-|Frontend|
-if (Rota /lookbook?) then (sim)
-  :lookbook/page.tsx (RequireAuth)\nrouter.replace(/u/{seu usuário}?tab=…);
-else (não)
-endif
-:u/[username]/page.tsx\nGET /api/profiles/{idOrUsername};
-|API|
-:ProfileController → ProfileService.profile\n(conta DELETED ou dono bloqueou quem vê = 404);
-|Frontend|
-if (layout = INSTITUCIONAL?) then (sim)
-  :Redireciona para /brands/{slug}\n(RF14/RF22);
-  stop
-endif
-if (contentVisible?) then (não)
-  :Cabeçalho + "Perfil privado"\ne convite para seguir (RF17);
-  stop
-endif
-if (?tab=cupons|coupons e é o dono?) then (sim)
-  :CouponsRedirect → /coupons\n(a aba de cupons saiu do Lookbook);
-  stop
-endif
-:LookbookTabs\nGET /api/users/{ownerId}/lookbook;
-|API|
-:LookbookController.overview → LookbookService.overview:\npeças e looks sem ARCHIVED; visitante vê só looks\nPUBLISHED e itens que Guard.canView libera\n(visibilidade do item × visibilidade do perfil);
-note right
-  Contagens de Salvos e Look do Dia só para o dono
-  (para visitante = 0). A contagem do Look do Dia chama
-  DailyLookService.today, que pode materializar a cópia
-  do look anterior na virada do dia (ver RF42).
-end note
-|Frontend|
-if (visible?) then (não)
-  :EmptyState "Perfil privado";
-  stop
-endif
-:Mostra as abas: Peças · Looks · Publicações · Favoritos\n· Agrupamentos (+ dono: Salvos · DNA · Look do dia\n· Cápsula · Insights). Peças e looks nunca dividem aba;
-|Pessoa|
-:Escolhe uma aba;
-|Frontend|
-if (Peças?) then (sim)
-  :GET /api/users/{ownerId}/closet\n?category&state&sort=recent|hype_desc|growth&hypeLevel=\n+ GET /api/pieces/seals?ids= (selos de marca na frente);
+:Abre /coupons, /closet, /history;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/daily-look-tab\nGET /api/me/saved-looks\nGET /api/me/saved-pieces;
+|Pessoa usuária|
+:Visão geral do lookbook (closet\ndigital, looks, agrupamento…;
+|Tela (Next.js)|
+:GET /api/users/{ownerId}/lookbook;
+|API (Spring Boot)|
+:LookbookController.overview\n→ LookbookService.overview;
+|Dados e serviços|
+:Lê: users\nwardrobe_items\nschemes\nsaved_items\nscheme_items;
+:Usa: Guard.canView\nDailyLookService.today;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Remover dos salvos)
+    :DELETE /api/me/saved-looks/{schemeId}\n→ LookbookService.removeSaved\nvalida: NAO_ENCONTRADO\nusa: SocialService.toggleSave;
+  case (Marcar esquema como Look do Dia)
+    :POST /api/me/daily-look\n→ LookbookService.markDailyLook\nusa: SchemeService.owned,\nDailyLookService.register,\nDailyLookService.view;
+  case (Editar agrupamento)
+    :PUT /api/groupings/{id}\n→ LookbookService.updateGrouping\nvalida: COR_INVALIDA, PERIODO_INVALIDO\nlê: scheme_groupings\nusa: Guard.requireOwner,\nOwnMedia.requireOrUnchanged\ngrava: scheme_groupings;
+  case (Excluir agrupamento)
+    :DELETE /api/groupings/{id}\n→ LookbookService.deleteGrouping\nlê: scheme_groupings, schemes, wardrobe_items\nusa: Guard.requireOwner\ngrava: scheme_groupings;
+  case (Criar agrupamento [coleção, tempo…)
+    :POST /api/groupings\n→ LookbookService.createGrouping\nvalida: COR_INVALIDA, PERIODO_INVALIDO,\nTIPO_INVALIDO\nlê: users\nusa: OwnMedia.require\ngrava: scheme_groupings;
+  endswitch
   note right
-    Ordenar por Hype e filtrar por faixa mínima:
-    o dono usa o Hype pessoal; visitante, só o Hype
-    público (publicEligible). Sem Hype = "—" e no fim
+  Outras ações deste RF:
+  Favoritar look salvo, Adicionar esquemas/peças ao
+  a…, Sugerir agrupamentos por simi…, Descartar
+  agrupamento sugerid…, Escolher versão do painel,
+  Feedback do look (ADOREI / OK…
   end note
-  if (Sem peças?) then (sim)
-    :Estado vazio (dono: "Adicionar peça" → /pieces/new);
-  endif
-elseif (Looks?) then (sim)
-  :GET /api/profiles/{ownerId}?sort=recent|hype_desc|growth\n(ProfileService.publishedLooks, até 60 looks publicados);
-  :Dono vê o atalho "Gerenciar meus looks" → /looks;
-elseif (Publicações ou Favoritos?) then (sim)
-  :GET /api/users/{ownerId}/publications?page&size\n(looks publicados não privados + peças APPROVED\nnão privadas, mais recentes primeiro)\nou GET /api/users/{ownerId}/favorites (looks | peças);
-elseif (Salvos (dono)?) then (sim)
-  :SegmentPicker Looks | Peças\nGET /api/me/saved-looks?occasion&sort\nGET /api/me/saved-pieces?category;
-  if (Ação no item salvo?) then (favoritar)
-    :PUT /api/me/saved-looks/{schemeId}/favorite\n(peça: PUT /api/interactions/PIECE/{id}/saves/favorite)\nlook de terceiro → SocialService.favoriteSaved;
-    note right: favoritar emite o sinal de Hype\nFAVORITE_CREATED (ver RF19)
-  else (remover)
-    :DELETE /api/me/saved-looks/{schemeId}\n(sem salvo = 404) ou POST .../PIECE/{id}/saves (alterna);
-  endif
-elseif (Cápsula (dono)?) then (sim)
-  :GET /api/me/capsule?category\n+ InsightStrip CAPSULE (GET /api/insights?context=CAPSULE);
-  if (Sem looks?) then (sim)
-    :Estado vazio "Criar meu primeiro look" → /schemes/new;
-  endif
-elseif (DNA (dono)?) then (sim)
-  :GET /api/me/dna-schemes (cards do RF13);
-elseif (Insights (dono)?) then (sim)
-  :InsightStrip CLOSET + HypeWardrobeInsights\nGET /api/me/hype/wardrobe (HypeQueryService.wardrobe:\nHype médio, variação, destaques e redescobertas —\nsó itens do dono, nunca compara com outras pessoas);
-else (Look do dia ou Agrupamentos)
-  :Ver RF6_Atividades_LookDoDia\ne RF6_Atividades_Agrupamentos;
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-:Cards (PieceCard · SchemeCard em FashionCard):\nHypeBadge na frente; use-hype.ts junta os ids do mesmo tick\n→ GET /api/hype/summaries?type=PIECE|SCHEME&ids= (até 100);
-|API|
-:HypeQueryService.summaries: só ids visíveis para quem vê\n(lê hype_scores, nunca recalcula). Sem linha = NOT_CALCULATED;
-|Frontend|
-if (Pessoa vira o card (↻)?) then (sim)
-  :Verso HypeCardBack (mesmo cache);
-  if ("Ver análise completa"?) then (sim)
-    :HypeAnalyticsDrawer: GET /api/hype/pieces|looks/{id}\n+ /history?days=90 + /positions;
-  endif
-endif
+|Pessoa usuária|
 stop
 @enduml

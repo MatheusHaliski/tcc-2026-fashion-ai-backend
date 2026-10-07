@@ -242,3 +242,21 @@ super-resolução generativa, reiluminação sintética, ghost mannequin sintét
 3. Prévia no cliente × no servidor para a máscara em celulares fracos.
 4. Peça à venda: exigir a canônica (fiel) como foto do anúncio?
 5. Corrigir o rótulo "RF15" do fluxo "copiar peça pública" na tabela de endpoints e nos controllers.
+
+## 13. Status de implementação (06/10/2026)
+
+| Etapa do plano (§11) | Situação | Onde |
+|---|---|---|
+| 1 Receita e histórico | feito: receita não destrutiva, versões em `piece_images` (`photography_spec = RF15_EDITOR`, receita em `analysis_json`), desfazer/refazer/voltar à original, restaurar versão | `application/photoedit/PhotoRecipe`, `PhotoEditService`, `lib/photo-edit/recipe.ts` |
+| 2 Enquadrar | feito: quadro 4:5 travado em pixels (arrastar + tamanho), endireitar ±15° sem cantos vazios, giro 90°, perspectiva de 4 pontos (servidor) | `PhotoRecipeRenderer.crop/straighten/perspective` |
+| 3 Fundo | feito: recorte local + pincel devolver/apagar com borda suave, branco/cinza neutro/transparente, sombra de contato suave rotulada | `PhotoRecipeRenderer.background` |
+| 4 Luz & Cor | feito: conta-gotas de balanço de branco, exposição EV, realces, sombras, contraste, saturação (limites da canônica), ΔE CIEDE2000 com aviso acima de 5 | `ColorFidelity`, `PhotoRecipeRenderer.tone/whiteBalance` |
+| 5 Revisar | feito: prévia renderizada pelo servidor (mesmo código do salvamento), segurar para ver a original, painel de qualidade, avisos, lista de versões | `PiecePhotoEditor` |
+| 6 Detalhes | feito: retoque pontual determinístico (anel em volta, ≤ 1% da área na canônica), nitidez leve | `PhotoRecipeRenderer.heal/sharpen` |
+| 7 Apresentação | parcial: versão rotulada com filtros (quente, frio, P&B, vintage) e saturação livre; estúdio/editorial do Creative Engine ainda não ligados | `RecipePolicy`, `PieceImageType.PRESENTATION` |
+| 8 Celular, acessibilidade, carga | parcial: ponteiro (mouse e toque), sliders rotulados; falta pinça/rotação com dois dedos e teste com fotos de 12 MP em celular | — |
+
+API: `GET /api/pieces/{id}/photo-edits/session`, `POST …/auto`, `POST …/preview`, `POST …` (salvar), `GET …` (versões),
+`POST …/{versionId}/restore`. Página: `/pieces/{id}/photo` (o "Ajustar manual" do diálogo Editar imagem abre aqui).
+Decisões do §12 adotadas por padrão, reversíveis: sombra sintética permitida na canônica com rótulo; retoque de
+fiapo/poeira até 1% da área na canônica. O editor antigo (`photo-editor.tsx`) continua só em Minhas Fotos.

@@ -1,32 +1,41 @@
 @startuml RF31_MaquinaDeEstados_Peca
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-title RF31 — WardrobeItem: disponibilidade (availability_status) × favorita × à venda
-[*] --> Disponivel : peça cadastrada (RF4)
-state "AVAILABLE\n(disponivel = true)" as Disponivel {
-  state "favorite = false" as NaoFav
-  state "favorite = true (estrela)" as Fav
-  NaoFav --> Fav : PATCH /api/pieces/{id}/flags {favorite:true}
-  Fav --> NaoFav : PATCH /api/pieces/{id}/flags {favorite:false}
-  --
-  state "forSale = false" as NaoVenda
-  state "forSale = true (à venda)" as Venda
-  NaoVenda --> Venda : PATCH /api/pieces/{id}/flags {forSale:true}
-  Venda --> NaoVenda : PATCH /api/pieces/{id}/flags {forSale:false}
+title RF31 — ciclo de vida de WardrobeItem.availabilityStatus\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum AvailabilityStatus · tabela wardrobe_items
+
+state "WardrobeItem.availabilityStatus" as Ciclo_WardrobeItem {
+  state Ciclo_WardrobeItem_AVAILABLE as "AVAILABLE"
+  state Ciclo_WardrobeItem_UNAVAILABLE as "UNAVAILABLE"
+  state Ciclo_WardrobeItem_ARCHIVED as "ARCHIVED"
 }
-state "UNAVAILABLE\n(disponivel = false)" as Indisponivel
-state "ARCHIVED" as Arquivada
-Disponivel --> Indisponivel : PATCH /api/pieces/{id}/flags {disponivel:false}\n→ AvailabilityChanged → wardrobe_availability_log
-Indisponivel --> Disponivel : PATCH /api/pieces/{id}/flags {disponivel:true}\n→ AvailabilityChanged → wardrobe_availability_log
-Disponivel --> Arquivada : DELETE /api/pieces/{id} (RF7)
-Indisponivel --> Arquivada : DELETE /api/pieces/{id} (RF7)
-Arquivada --> [*]
-note right of Indisponivel : exclusivo com AVAILABLE (CA06); some do Criar Look (RF5),\ndo Copilot (RF10) e do Vista-me (RF28), mas segue no acervo;\nno Meu Quarto vai para o cesto (RF27)
-note bottom of Disponivel : favoritar é independente da disponibilidade;\nfiltro state=todos|favoritos|disponivel|indisponivel|venda\nem GET /api/me/closet (mesmo filtro em /api/me/schemes)
+[*] --> Ciclo_WardrobeItem_AVAILABLE : criação
+Ciclo_WardrobeItem --> Ciclo_WardrobeItem_ARCHIVED : purgeScheduledDeletions(), delete()
+Ciclo_WardrobeItem --> Ciclo_WardrobeItem_AVAILABLE : ask(), diagnosis(),\npurchaseSuggestions()
+note bottom of Ciclo_WardrobeItem
+  Sem mudança explícita no código para: UNAVAILABLE
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
+note right of Ciclo_WardrobeItem
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
+end note
 @enduml

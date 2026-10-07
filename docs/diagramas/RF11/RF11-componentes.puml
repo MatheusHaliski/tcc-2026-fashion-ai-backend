@@ -1,110 +1,97 @@
 @startuml RF11_Componentes
-title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de componentes — telas, API, serviços, portas e infraestrutura da arte do card
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF11 — Compor a arte de fundo (Background Studio) do card de um esquema ou de uma peça\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "schemes/new · schemes/[id]/edit\n(page.tsx → SchemeBuilder, etapa 4)" as FE_SB
-  component "dna · dna-schemes/new|[id]/edit\n(DnaBuilder — RF13)" as FE_DNA
-  component "pieces/new (etapa Arte de fundo)\nexpanded-card (PieceArtDialog)" as FE_PC
-  component "components/background-studio.tsx\nBackgroundStudio · SeasonalDialog ·\nColorPanel · AuraMaterialPanel" as FE_BS
-  component "components/piece-art-editor.tsx\nlib/piece-art.ts" as FE_PAE
-  component "components/card-art.tsx\nCardArtLayer · ArtVideo · MotionFall" as FE_CA
-  component "lib/card-art.ts\n+ lib/assets/card-art-index.json" as FE_LIB
-  component "scheme-card · dna-card · piece-art\n(cards do feed)" as FE_CARDS
-  component "lib/api/client.ts (api)" as FE_API
-  component "/public: MP4 de Aura, pôsteres,\ntexturas (servidos pelo Next.js)" as FE_PUB
+  component "/dna-schemes/[id]/edit\n(site)/(app)/dna-schemes/[id]/edit/page.tsx" as FE0
+  component "/dna-schemes/new\n(site)/(app)/dna-schemes/new/page.tsx" as FE1
+  component "/dna\n(site)/(app)/dna/page.tsx" as FE2
+  component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE3
+  component "/schemes/[id]/edit\n(site)/(app)/schemes/[id]/edit/page.tsx" as FE4
+  component "/schemes/new\n(site)/(app)/schemes/new/page.tsx" as FE5
+  component "lib/api/client.ts" as APIC
 }
-package "fai-web · controllers" {
-  [BackgroundController\nGET /api/backgrounds/catalog · combination · recommendations\nPOST /api/backgrounds/art · uploads\nPUT|DELETE /api/schemes/{id}/background\nPUT /api/pieces/{id}/background] as BC
-  [SchemeController\nPOST /api/schemes · PUT /api/schemes/{id}\nPOST /api/schemes/preview · GET /api/schemes/{id}/card.png] as SC
-  [WardrobeController\nPOST /api/pieces] as WC
-  [DnaController\nPOST|PUT /api/dna-schemes] as DC
+package "fai-web (REST)" {
+  component "BackgroundController\n/api/admin/skins/{…}/thumbnail\n/api/assets/mosaics\n/api/assets/skins\n/api/backgrounds/art\n(+6 rotas)" as BackgroundController
+  component "SchemeController\n/api/schemes\n/api/schemes/builder\n/api/schemes/preview\n/api/schemes/{…}\n(+1 rotas)" as SchemeController
 }
-package "fai-application · serviços" {
-  [BackgroundStudioService] as BS
-  [SchemeService] as SS
-  [WardrobeService] as WS
-  [DnaService (RF13)] as DS
-  [AssetCatalogService\n(catalog/asset-manifest.json)] as AC
-  [MediaService] as MS
-  [AiEngine (RF24)\nCelebrityPromptValidator · AiBudget] as AI
-  [SchemeCardRenderer] as REN
+package "fai-application (casos de uso)" {
+  component "BackgroundStudioService" as BackgroundStudioService
+  component "AssetCatalogService" as AssetCatalogService
+  component "SchemeService" as SchemeService
+  component "MediaService" as MediaService <<apoio>>
+  component "WardrobeService" as WardrobeService <<apoio>>
+  component "SealService" as SealService <<apoio>>
+  component "SchemeCardRenderer" as SchemeCardRenderer <<apoio>>
+  component "ProjectionService" as ProjectionService <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
+  component "DailyLookService" as DailyLookService <<apoio>>
+  component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
+  component "CounterStorePort\n«InMemoryCounterStore»" as CounterStorePort <<port>>
 }
-package "fai-application · portas" {
-  interface "ImageGenerationPort" as P_IMG
-  interface "MediaStoragePort" as P_ST
-  interface "RateLimitPort" as P_RL
+package "fai-domain (repositórios)" {
+  component "AssetPresetRepository\nSchemeRepository\nWardrobeItemRepository\nUserRepository\nCelebrityProfileRepository\nSchemeItemRepository\nReactionRepository\nSavedItemRepository\nStyleDnaRepository\nHypeScoreCurrentRepository" as REPO_MySQL
 }
-package "fai-infrastructure" {
-  [ReplicateImageGenerationAdapter\n(ai-providers)] as A_REP
-  [S3MediaStorageAdapter (storage-s3)\nLocalFileMediaStorage (platform)] as A_ST
-  [RedisAdapters (cache-redis)\nInMemoryRateLimit (platform)] as A_RL
-  [Repositórios JPA (persistence-mysql)\nSchemeRepository · WardrobeItemRepository\nAssetPresetRepository · PhotoRepository\nCelebrityProfileRepository · AiInferenceLogRepository] as REPOS
-}
-database "MySQL\n• schemes (background_*, studio_config_json,\n  card_skin, container_*)\n• wardrobe_items (background_config_json)\n• dna_schemes · asset_presets\n• photos · ai_inference_log" as DB
-cloud "Replicate\n(texto → imagem)" as C_REP
-cloud "S3 / R2 ou disco local\n(users/{id}/backgrounds/*)" as C_ST
-database "Redis\n(cota diária por capacidade)" as C_REDIS
-
-FE_SB --> FE_BS : etapa 4
-FE_DNA --> FE_BS : etapa 4 do DNA
-FE_PC --> FE_PAE
-FE_PAE --> FE_BS : reaproveita os painéis
-FE_BS --> FE_API
-FE_PAE --> FE_API
-FE_SB --> FE_API
-FE_CARDS --> FE_LIB : resolveCardArt
-FE_CARDS --> FE_CA : CardArtLayer
-FE_BS ..> FE_LIB : ART_INDEX · prévia
-FE_CA --> FE_PUB : vídeo perto da tela
-FE_API --> BC : HTTPS/JSON
-FE_API --> SC : HTTPS/JSON
-FE_API --> WC : HTTPS/JSON
-FE_API --> DC : HTTPS/JSON
-BC --> BS
-BC --> AC : manifest · skins · mosaics
-SC --> SS
-WC --> WS
-DC --> DS
-SS --> BS : applyToScheme · rendererBackground
-SS --> REN : preview · card.png
-BS --> AC
-BS --> MS
-BS --> AI : execute(BACKGROUND_GENERATOR)
-BS ..> P_IMG : generators
-AI --> P_RL
-AI --> REPOS : ai_inference_log
-MS --> P_ST
-MS --> REPOS : photos
-BS --> REPOS
-WS --> REPOS
-DS --> REPOS
-AC --> REPOS : syncPresets
-P_IMG <|.. A_REP
-P_ST <|.. A_ST
-P_RL <|.. A_RL
-A_REP --> C_REP : HTTPS
-A_ST --> C_ST
-A_RL --> C_REDIS
-REPOS --> DB : JPA / Flyway
-note bottom of FE_BS
-  O frontend atual não chama POST /api/backgrounds/uploads,
-  PUT nem DELETE /api/schemes/{id}/background: a arte do look
-  vai junto do POST/PUT /api/schemes (etapa 5).
-end note
-note bottom of DS : o DNA grava o fundo em dna_schemes.studio_config_json\nsem passar por applyToScheme (ver RF13)
+database "MySQL\n• asset_presets\n• celebrity_profiles\n• hype_scores\n• reactions\n• saved_items\n• scheme_items\n• schemes\n• style_dna\n• users\n• wardrobe_items" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+APIC --> BackgroundController : HTTPS/JSON
+APIC --> SchemeController : HTTPS/JSON
+AssetCatalogService --> REPO_MySQL
+BackgroundController --> AssetCatalogService
+BackgroundController --> BackgroundStudioService
+BackgroundStudioService --> AI
+BackgroundStudioService --> REPO_MySQL
+BackgroundStudioService ..> AssetCatalogService
+BackgroundStudioService ..> MediaService
+FE0 --> APIC
+FE1 --> APIC
+FE2 --> APIC
+FE3 --> APIC
+FE4 --> APIC
+FE5 --> APIC
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+SchemeController --> SchemeService
+SchemeService --> AI
+SchemeService --> CounterStorePort
+SchemeService --> EV
+SchemeService --> REPO_MySQL
+SchemeService ..> BackgroundStudioService
+SchemeService ..> DailyLookService
+SchemeService ..> HypeScoreConfig
+SchemeService ..> MediaService
+SchemeService ..> NotificationService
+SchemeService ..> ProjectionService
+SchemeService ..> SchemeCardRenderer
+SchemeService ..> SealService
+SchemeService ..> WardrobeService
 @enduml

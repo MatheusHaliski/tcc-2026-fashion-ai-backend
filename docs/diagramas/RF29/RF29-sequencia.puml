@@ -1,79 +1,73 @@
 @startuml RF29_Sequencia
-title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings ("Destaques")\nDiagrama de sequência — Destaques, explicação de dimensão, rankings e jobs agendados
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as U
-participant "highlights/page.tsx" as FE
-participant "HighlightsController" as C
-participant "InventoryScoreService" as S
-participant "AchievementService" as AS
-participant "FaiPointsService" as FP
-participant "NotificationService" as NS
-participant "Repositórios JPA\n(WardrobeItem, Scheme, SchemeItem,\nPieceUsageDiaryEntry,\nWardrobeAvailabilityChange, StyleDna,\nInventoryScoreSnapshot, RankingOptIn,\nRankingPosition, ChallengeTemplate)" as R
-database "MySQL" as DB
+autonumber "<b>0."
+title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings do guarda-roupa\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-== Abrir Destaques ==
-U -> FE: abre /highlights
-FE -> C: GET /api/me/highlights
-C -> S: highlightsTab(user)
-S -> S: compute(userId, useCache = true)
-alt cache em memória com menos de 1 h
-  S -> S: usa o Result guardado
-else recalcular
-  S -> R: peças, esquemas, itens, diário (90 dias),\nhistórico de disponibilidade, DNA
-  R -> DB: SELECT wardrobe_items, schemes, scheme_items,\npiece_usage_diary, wardrobe_availability_log, style_dna
-  S -> S: 7 dimensões, k = min(1, n/20), nota 0–1000, faixa
-  S -> R: snapshot DAY e MONTH (upsert)
-  R -> DB: INSERT/UPDATE inventory_score_snapshots
-  opt elegível (10+ peças)
-    S -> AS: grant(userId, CURADOR | SIGNATURE_CLOSET | …)
-    AS -> DB: INSERT user_achievements (1× por código)
-    AS -> FP: award(ACHIEVEMENT, valor da conquista)
-    AS -> NS: ACHIEVEMENT_UNLOCKED
-  end
-end
-alt menos de 10 peças
-  S --> FE: 200 {eligible: false, pieces, progress{missing, target, steps}, manifesto}
-else elegível
-  S -> R: snapshot do mês anterior (delta, evolução), opt-in e até 2\nchallenge_templates da dimensão mais fraca (se < 70)
-  S --> FE: 200 {score, band, bands, k, dimensions, delta, highlights (≤ 6),\nevolution, records, achievements, suggestedChallenges, rankingsOptIn}
-end
-
-== Explicar uma dimensão ==
-U -> FE: toca em "Utilização"
-FE -> C: GET /api/me/inventory-score/dimensions/U
-C -> S: explain(user, "U")
-alt código inexistente
-  S --> FE: 404 dimensão
-else
-  S --> FE: 200 Dimension{code, name, value, weight, rule, pullingDown}
-end
-
-== Rankings (opt-in) ==
-U -> FE: liga "Participar dos rankings"
-FE -> C: PUT /api/me/rankings/opt-in {optedIn, shareCity, city}
-C -> S: optIn(user, optedIn, shareCity, city)
-S -> DB: UPSERT ranking_opt_ins (cidade só com shareCity)
-opt optedIn = false
-  S -> DB: DELETE ranking_positions da pessoa
-end
-FE -> C: GET /api/me/rankings
-C -> S: rankings(user)
-S -> DB: SELECT ranking_positions (+ top 5 do segmento)
-S --> FE: 200 {optedIn, positions[segment, position, total, topPercent, value, top]}\nou {optedIn: false, message, available}
-
-== Jobs agendados (America/Sao_Paulo) ==
-note over S, DB: @Scheduled "0 30 3 * * *" dailySnapshots(): compute(useCache = false)\npara cada pessoa com opt-in → snapshots do dia
-S -> DB: recomputeRankings() @Scheduled "0 15 */4 * * *"
-note right of S: segmentos GLOBAL, PAIS:x, CIDADE:x, FAIXA:x, ESTILO:x,\nSUSTENTAVEL, VERSATEIS, RISING (30 dias);\nCIDADE com menos de 50 pessoas não é gravada (k-anonimato)
-S -> DB: DELETE + INSERT ranking_positions por segmento (Top% = 100·(N−pos+1)/N)
-
-== Invalidação do cache ==
-note over S: @EventListener: SchemeSaved, DailyLookRegistered, PieceCreated,\nPieceUpdated, PieceDeleted, RoomOrganized, AvailabilityChanged\n→ remove a nota da pessoa do cache
+actor "Pessoa usuária" as U
+boundary "Tela /highlights" as P
+control "HighlightsController" as HighlightsController
+participant "InventoryScoreService" as InventoryScoreService
+database "MySQL" as DB_MySQL
+participant "RoomService" as RoomService
+participant "SideEffectRunner" as SideEffectRunner
+participant "AchievementService" as AchievementService
+== Aba Destaques: Inventory Score, dimensões, dicas e álbum ==
+U -> P : Aba Destaques: Inventory Score, dimensões, dicas…
+P -> HighlightsController : GET /api/me/highlights
+HighlightsController -> InventoryScoreService : highlightsTab()
+activate InventoryScoreService
+InventoryScoreService -> DB_MySQL : SELECT wardrobe_items
+InventoryScoreService -> DB_MySQL : SELECT schemes
+InventoryScoreService -> DB_MySQL : SELECT scheme_items
+InventoryScoreService -> DB_MySQL : SELECT piece_usage_diary (×3)
+InventoryScoreService -> DB_MySQL : SELECT wardrobe_availability_log
+InventoryScoreService -> RoomService : layout()
+RoomService -> DB_MySQL : SELECT room_layouts
+RoomService -> DB_MySQL : SELECT users
+RoomService -> DB_MySQL : SELECT fai_points_ledger
+RoomService -> DB_MySQL : INSERT/UPDATE room_layouts
+RoomService --> InventoryScoreService
+InventoryScoreService -> RoomService : labels()
+InventoryScoreService -> RoomService : labelSources()
+InventoryScoreService -> RoomService : locateAll()
+RoomService -> DB_MySQL : SELECT room_layouts
+RoomService -> DB_MySQL : SELECT users
+RoomService -> DB_MySQL : SELECT fai_points_ledger
+RoomService -> DB_MySQL : INSERT/UPDATE room_layouts
+RoomService --> InventoryScoreService
+InventoryScoreService -> DB_MySQL : SELECT style_dna
+InventoryScoreService -> DB_MySQL : SELECT inventory_score_snapshots
+InventoryScoreService -> InventoryScoreService : computedAt = set
+InventoryScoreService -> DB_MySQL : INSERT/UPDATE inventory_score_snapshots
+InventoryScoreService -> SideEffectRunner : run()
+InventoryScoreService -> AchievementService : grant()
+AchievementService -> DB_MySQL : SELECT user_achievements
+AchievementService -> DB_MySQL : INSERT/UPDATE user_achievements
+AchievementService --> InventoryScoreService
+InventoryScoreService -> AchievementService : grant()
+note over InventoryScoreService : … e mais 18 passos no código
+deactivate InventoryScoreService
+InventoryScoreService --> HighlightsController : resultado
+HighlightsController --> P : 200 JSON
+P --> U : atualiza a tela
 @enduml

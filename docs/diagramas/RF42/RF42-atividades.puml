@@ -1,9 +1,16 @@
 @startuml RF42_Atividades
-title RF42 — Marcar um look como "Look do dia"\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,93 +19,41 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF42 — Marcar um look como 'Look do dia'\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-note right
-  Card do Trello sem descrição:
-  fluxo tirado do título e do código
-end note
-if (Por onde marca?) then (look salvo)
-  :Abre um esquema seu (ExpandedCard)\n→ "Look do dia";
-  |Frontend|
-  :POST /api/me/daily-look {schemeId};
-  |Backend|
-  :LookbookService.markDailyLook\n(SchemeService.owned: só o dono);
-elseif (ao criar o esquema) then (sim)
-  |Frontend|
-  :POST /api/schemes com lookDoDia = true;
-  |Backend|
-  :SchemeService registra depois de salvar\n(recusa vira aviso, não erro);
-else (Autopiloto / Copilot / Vista-me)
-  |Backend|
-  :AutopilotService / CopilotService / MirrorService\nregistram com source correspondente;
+:Abre /schemes/[id]/edit, /schemes/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/daily-look-tab\nGET /api/schemes/{id}\nGET /api/me/daily-looks;
+|Pessoa usuária|
+:Marcar esquema como Look do Dia;
+|Tela (Next.js)|
+:POST /api/me/daily-look;
+|API (Spring Boot)|
+:LookbookController.markDailyLook\n→ LookbookService.markDailyLook;
+|Dados e serviços|
+:Usa: SchemeService.owned\nDailyLookService.register\nDailyLookService.view;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Salvar esquema [manual, IA, autop…)
+    :POST /api/schemes\n→ SchemeService.create\nvalida: FORMULARIO_INVALIDO, FOTO_INVALIDA,\nINDISPONIVEL, NAO_ENCONTRADO …\nlê: users, schemes, wardrobe_items …\nusa: Guard.requireCanCreate, Guard.requireView,\nBackgroundStudioService.applyToScheme …\ngrava: schemes, scheme_items;
+  case (Editar esquema)
+    :PUT /api/schemes/{id}\n→ SchemeService.update\nvalida: FORMULARIO_INVALIDO, FOTO_INVALIDA,\nPECA_DE_OUTRO_USUARIO, PECA_INDISPONIVEL …\nlê: schemes, scheme_items, wardrobe_items …\nusa: Guard.requireCanCreate, Guard.requireOwner,\nBackgroundStudioService.applyToScheme …\ngrava: scheme_items;
+  case (Excluir o look [menu ⋯ do dono];…)
+    :DELETE /api/schemes/{id}\n→ SchemeService.archive\nlê: schemes\nusa: Guard.requireCanCreate, Guard.requireOwner,\nSealService.revokeForScheme …\nestado: status → ARCHIVED;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-|Backend|
-:DailyLookService.register(user, scheme, source, hoje);
-if (todas as peças disponíveis\n(isDisponivel e AVAILABLE)?) then (sim)
-  if (já existe DailyLook do usuário na data?) then (sim)
-    :Substitui o esquema e a origem\n(uq_daily_looks_user_date);
-  else (não)
-    :Cria DailyLook (look_date = hoje);
-    :scheme.lookDoDiaCount + 1;
-  endif
-  :scheme.lookDoDia = true;
-  :peças: lookDoDiaCount + 1 e lastWornDate = hoje;
-  :Publica DomainEvents.DailyLookRegistered;
-  |Bancos-serviços|
-  fork
-    :WardrobeEventListeners (AFTER_COMMIT):\ndiário de uso e wearCount + 1;
-    note right
-      origem VISTA_ME pontua
-      VISTA_ME_DAILY_LOOK (RF41);
-      AchievementService.onDailyLook
-      avalia conquistas
-    end note
-  fork again
-    :HypeSignalRecorder.onDailyLook\n(AFTER_COMMIT): HypeIntegrityPolicy\n.weight → HypeSignalDailyRepository\n.increment em hype_signal_daily:\nLOOK_WORN (look) + PIECE_USED (peças);
-    note right
-      novo (RF53 · HypeScore v2):
-      transação própria; 1 sinal por
-      entidade/pessoa/dia; o score sai do
-      job de snapshots (HypeSnapshotService)
-    end note
-  end fork
-  |Frontend|
-  :Toast "Look do dia" e recarrega o card;
-else (não)
-  :409 PECA_INDISPONIVEL com os nomes das peças;
-  |Frontend|
-  :Mostra o motivo;
-  stop
-endif
-|Pessoa|
-:Abre lookbook → aba Look do Dia (u/[username]?tab=daily);
-|Frontend|
-:GET /api/me/daily-look-tab;
-|Backend|
-if (há DailyLook hoje?) then (sim)
-  :Devolve look, painel de Hype Score e histórico\n(cada dia com title e hypeScore);
-else (não)
-  if (há look anterior não arquivado?) then (sim)
-    :today() materializa uma cópia\n(materializedFrom) na virada do dia;
-  else (não)
-    :Estado vazio: marcar look salvo,\nAutopiloto ou Vista-me;
-  endif
-endif
-|Pessoa|
-:Avalia o look (ADOREI / NAO_USEI / NAO_GOSTEI);
-|Frontend|
-:PUT /api/me/daily-looks/{date}/feedback;
+|Pessoa usuária|
 stop
 @enduml

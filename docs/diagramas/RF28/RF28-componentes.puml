@@ -1,74 +1,67 @@
 @startuml RF28_Componentes
-title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de componentes — telas do espelho → MirrorController → MirrorService → serviços, IA e MySQL
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF28 — Montar looks no Smart Mirror e pedir sugestões ao 'Vista-me' (só com peças do próprio guarda-roupa)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "app/(site)/(app)/mirror/page.tsx\n(slots, Vista-me, seis números)" as FE0
-  component "app/(site)/(app)/room/page.tsx\n(Vista-me no espelho do quarto)" as FE1
-  component "components/mirror/mirror-stage.tsx\n(MirrorStage, MirrorWornStrip)" as FE2
-  component "components/hype/look-scores.tsx\n(LookScores)" as FE3
+package "Frontend (Next.js)" {
+  component "/mirror\n(site)/(app)/mirror/page.tsx" as FE0
+  component "/room\n(site)/(app)/room/page.tsx" as FE1
+  component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  [MirrorController\n/api/me/mirror/*] as MC
-  [Avatar3dController\n/api/me/avatar3d (RF40)] as AC
+  component "MirrorController\n/api/me/mirror\n/api/me/mirror/another\n/api/me/mirror/draft\n/api/me/mirror/grwm\n(+9 rotas)" as MirrorController
 }
-package "fai-application" {
-  [MirrorService] as MS
-  [LookScorer\n(RecommendationScoring)] as LS
-  [HypeQueryService\n(Hype v2, RF46)] as HQ
-  [WardrobeService] as WS
-  [RoomService\n(endereços, fora de estação)] as RS
-  [SchemeService] as SS
-  [DailyLookService] as DLS
-  [ChallengeService] as CHS
-  [AiEngine (RF24)] as AI
-  [WardrobeEventListeners\nAchievementService] as LIS
-  interface "MirrorService.PieceRestrictionProvider" as PRP <<port>>
-  interface "AiProviderPort" as APP <<port>>
+package "fai-application (casos de uso)" {
+  component "MirrorService" as MirrorService
+  component "WardrobeService" as WardrobeService <<apoio>>
+  component "RoomService" as RoomService <<apoio>>
+  component "SchemeService" as SchemeService <<apoio>>
+  component "DailyLookService" as DailyLookService <<apoio>>
 }
-package "fai-domain (repositórios JPA)" {
-  [MirrorStateRepository\nWardrobeItemRepository\nSchemeRepository · SchemeItemRepository\nStyleDnaRepository\nDailyLookRepository\nHypeScoreCurrentRepository] as REPOS
+package "fai-domain (repositórios)" {
+  component "MirrorStateRepository\nWardrobeItemRepository\nSchemeRepository\nSchemeItemRepository\nStyleDnaRepository" as REPO_MySQL
 }
-package "fai-infrastructure" {
-  [persistence-mysql\n(Spring Data JPA + Flyway)] as MYSQL
-  [ai-providers\n(ClaudeProvider, GeminiProvider)] as PROV
-}
-database "MySQL · fashionai_app\n• mirror_states\n• wardrobe_items\n• schemes · scheme_items\n• daily_looks · piece_usage_diary\n• style_dna · hype_scores\n• room_storage_map\n• fai_points_ledger" as DB
-
-FE0 --> FE2
-FE0 --> FE3
-FE0 --> MC : HTTPS/JSON
-FE1 --> MC : POST /vista-me · /use
-FE2 --> AC : GET /api/me/avatar3d
-MC --> MS
-MS --> LS : scores (P3-07)
-LS --> HQ : currentOf(PIECE)
-MS --> WS : owned · eligible
-MS --> RS : locateAll · outOfSeason
-MS --> SS : create (origin SMART_MIRROR / VISTA_ME)
-MS --> DLS : register (Look do Dia)
-MS --> PRP
-CHS ..|> PRP
-MS --> AI : interpretar · compor · sugerir · tirar uma coisa
-AI --> APP
-APP <.. PROV
-MS ..> LIS : MirrorAction / SchemeSaved /\nDailyLookRegistered (AFTER_COMMIT)
-MS --> REPOS
-LS --> REPOS
-REPOS <.. MYSQL
-MYSQL --> DB : JDBC
+database "MySQL\n• mirror_states\n• scheme_items\n• schemes\n• style_dna\n• wardrobe_items" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+APIC --> MirrorController : HTTPS/JSON
+FE0 --> APIC
+FE1 --> APIC
+MirrorController --> MirrorService
+MirrorService --> AI
+MirrorService --> EV
+MirrorService --> REPO_MySQL
+MirrorService ..> DailyLookService
+MirrorService ..> RoomService
+MirrorService ..> SchemeService
+MirrorService ..> WardrobeService
+REPO_MySQL --> DB_MySQL : JPA/Flyway
 @enduml

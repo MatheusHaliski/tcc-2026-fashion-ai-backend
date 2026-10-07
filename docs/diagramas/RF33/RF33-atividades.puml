@@ -1,9 +1,16 @@
 @startuml RF33_Atividades
-title RF33 — Passarela 3D: o Look do Dia de cada usuário desfilando num manequim\nDiagrama de atividades — Top 100 Global/Regional/País, filtros e HypeScore v2
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,71 +19,28 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF33 — Passarela 3D: Look do Dia desfilando em manequins, Top 100 Global/Regional/País e filtros\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Explorar → aba "Passarela 3D"\n(explorer/page.tsx, tab=runway);
-|Frontend (RunwayPanel)|
-:GET /api/explorer/runway?ranking=TOP100_GLOBAL\n&limit=12&offset=0 (sem login = anônimo);
-|API (ShowcaseService.runway)|
-:Vira o dia: DailyLookService.today para quem\nregistrou Look do Dia nos últimos 7 dias\n(copia o anterior; esquema ARCHIVED não copia);
-if (ranking está em RUNWAY_RANKINGS?) then (não)
-  #FFE3E3:400 RANKING_INVALIDO;
-  stop
-endif
-:Pool = daily_looks de hoje com conta ACTIVE,\nsem runwayOptOut, sem conta de teste\ne esquema não arquivado e visível (canView);
-:Escopo: TOP100_REGIONAL sem região → região do meu país\n(anônimo: AMERICA_DO_SUL); TOP100_PAIS sem país\n→ meu país (anônimo: BR);
-if (ranking = SEGUINDO?) then (sim)
-  if (logado?) then (não)
-    #FFE3E3:401 — entrar para ver quem você segue;
-    stop
-  endif
-  :Escopo = quem eu sigo (follows ACEITO) + eu;
-endif
-:Facetas com contagem (regiões, países, cores,\nocasiões, estilos), antes dos filtros de cor/ocasião/estilo;
-:Filtros: famílias de cor, ocasiões, estilos (basta um)\ne sexo do manequim;
-|Banco/IA (MySQL)|
-:Lê o HypeScore v2 do pool numa consulta\n(hype_scores · SCHEME · algorithmVersion);
-note right
-Só leitura: a Passarela nunca recalcula.
-O job (HypeSnapshotService) e o
-recálculo ao vivo (HypeLiveRecalc)
-gravam o estado.
-end note
-|API (ShowcaseService.runway)|
-:Ordena (runwayOrder):\nTop 100 e Seguindo = score público (sem Hype público = no fim)\nEm alta = momento RISING/EMERGING → dimensão TREND → score\nRecentes = hora do Look do Dia · desempate: mais recente;
-:Corta no Top 100 (tabela) e separa o lote\noffset … offset+limit (limit 1–24, padrão 12);
-:Monta cada look: manequim (sexo do RF1 → preferência\n→ peças → feminino), cabeça AVATAR se o Avatar 3D\né visível (RF40), senão PADRAO; peças (foto ou GLB do RF16);\nhype = resumo v2 (público; pessoal só para o dono); curtidas à parte;
-|Frontend (RunwayPanel)|
-if (erro na chamada?) then (sim)
-  #FFE3E3:ErrorState com "Tentar de novo";
-  stop
-endif
-if (lote vazio?) then (sim)
-  :EmptyState "Ninguém desfilou hoje ainda"\nou "Nenhum look com esses filtros"\n+ dica para marcar o Look do Dia;
-  stop
-endif
-if (WebGL e a pessoa pediu o 3D (fai.runway3d)?) then (sim)
-  :RunwayScene: manequins desfilam da coxia à ponta;\ncom "reduzir movimento" ficam parados em fila;
-else (não)
-  :RunwayFallback 2D: fila de cards com as mesmas ações\n(+ botão "Ver em 3D" quando há WebGL);
-endif
-:Tabela do ranking (até 100) com HypeBadge\n(mostra "—" sem Hype público, nunca 0);
-:Faixa "você": saiu da passarela → link Configurações;\ndesfila hoje → posição; sem look → "Marcar meu Look do Dia";
-|Pessoa|
-repeat
-  :Troca ranking ou filtros (o lote volta ao início)\nou anda pelos lotes (anterior / próximo);
-repeat while (Quer ver outros looks?) is (sim) not (não)
-:Toca num manequim ou numa linha → LookCard\n(Hype v2, curtidas, análise do Hype, "Abrir o look");
+:Abre a tela do RF;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/daily-looks;
+|Pessoa usuária|
+:Passarela 3D (RF33) — Look do Dia\nvisível: Top 100 Global/R…;
+|Tela (Next.js)|
+:GET /api/explorer/runway;
+|API (Spring Boot)|
+:ShowcaseController.runway\n→ ShowcaseService.runway;
+|Dados e serviços|
+:Monta a resposta;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
 stop
 @enduml

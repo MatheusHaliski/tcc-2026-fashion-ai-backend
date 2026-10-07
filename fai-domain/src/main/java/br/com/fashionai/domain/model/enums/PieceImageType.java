@@ -10,5 +10,7 @@ public enum PieceImageType {
     DETAIL,
     LOGO_DETAIL,
     TEXTURE_DETAIL,
-    SEGMENTATION_MASK
+    SEGMENTATION_MASK,
+    /** RF15 · versão de apresentação (estúdio, editorial, filtro): rotulada, nunca substitui a canônica */
+    PRESENTATION
 }

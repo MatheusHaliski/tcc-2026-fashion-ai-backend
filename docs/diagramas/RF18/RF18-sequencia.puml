@@ -1,94 +1,71 @@
 @startuml RF18_Sequencia
-title RF18 — Usar o Provador virtual de lojas\nDiagrama de sequência — carga do provador, prova de produto, ambiente por marca e "Já tenho esta peça"
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as U
-participant "try-on/page.tsx\n(FittingRoom)" as FE
-participant "lib/tryon/\nfitting-room.ts" as ENV
-participant "FittingRoomScene\n(React Three Fiber)" as SC
-participant "TryOnController" as TC
-participant "TryOnService" as TS
-participant "Avatar3dService" as AV
-participant "CatalogController" as CC
-participant "CatalogService" as CS
-participant "WardrobeService" as WS
-database "MySQL" as DB
+autonumber "<b>0."
+title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-== Carga (CA01, CA04) ==
-U -> FE: abre /try-on
-par estado do provador
-  FE -> TC: GET /api/try-on
-  TC -> TS: state(user, sex)
-  TS -> DB: user_preferences (404 se não existir)
-  TS -> AV: forMannequin(userId, userId)
-  AV -> DB: user_avatars_3d
-  AV --> TS: avatar {model, adjust, textureUrl} ou vazio
-  TS -> DB: wardrobe_items do dono (sem ARCHIVED)
-  TS -> TS: sexMatches + slotOf(categoria)\n→ 4 lugares; categoria desconhecida → needsReview
-  TS --> FE: 200 {mannequin, identity, avatar, sex,\nslots, pieces por lugar, needsReview}
-else lojas em destaque
-  FE -> CC: GET /api/catalog/stores
-  CC -> CS: catalogBrands()
-  CS -> DB: brands + catalog_products visíveis\n(VALIDATED · PERSISTABLE · REFERENCE_ONLY)
-  CS --> FE: 200 {stores[brandId, slug, name, logoUrl,\ncatalogProducts, categories]}
+actor "Pessoa usuária" as U
+boundary "Tela (Next.js)" as P
+control "TryOnController" as TryOnController
+participant "TryOnService" as TryOnService
+database "MySQL" as DB_MySQL
+participant "Avatar3dService" as Avatar3dService
+participant "WardrobeService" as WardrobeService
+participant "MediaService" as MediaService
+participant "TryOnCompositor" as TryOnCompositor
+participant "AiEngine\n(provedor de IA + reserva local)" as AI
+== Renderizar look no manequim (FASHN → compositor local em fallback) ==
+U -> P : Renderizar look no manequim (FASHN → compositor l…
+P -> TryOnController : POST /api/try-on/renders
+TryOnController -> TryOnService : render()
+activate TryOnService
+alt sem peças
+TryOnService --> TryOnController : 400 SEM_PECAS
+TryOnController --> P : 400 + mensagem
 end
-alt link ?provar=c.<produto>.<variante>,w.<peça>
-  FE -> ENV: decodeTryOn(raw) (até 8 itens válidos)
-  loop cada produto de loja
-    FE -> CC: GET /api/catalog/products/{id}
-    CC -> CS: product(id)
-    CS -> DB: catalog_products, catalog_images, catalog_variants
-    CS --> FE: 200 produto | 404 (fica de fora)
-  end
-else sem link
-  FE -> FE: sessionStorage fai.tryon.fitting
+TryOnService -> DB_MySQL : SELECT user_preferences
+TryOnService -> Avatar3dService : forMannequin()
+Avatar3dService -> DB_MySQL : SELECT user_avatars_3d
+Avatar3dService -> DB_MySQL : SELECT avatar_identity_versions
+Avatar3dService --> TryOnService
+TryOnService -> DB_MySQL : SELECT users
+TryOnService -> WardrobeService : owned()
+WardrobeService -> DB_MySQL : SELECT wardrobe_items
+WardrobeService --> TryOnService
+alt sexo incompativel
+TryOnService --> TryOnController : 400 SEXO_INCOMPATIVEL
+TryOnController --> P : 400 + mensagem
 end
-
-== Provar produto de loja (CA01–CA03) ==
-U -> FE: toca a loja "Nike" e o tipo "Calçados"
-FE -> CC: GET /api/catalog/search?brand=Nike&category=shoes_piece&limit=24
-CC -> CS: search(userId, SearchRequest)
-CS -> DB: candidatos visíveis + variantes + imagens
-CS --> FE: 200 {intent, results[] com matchScore, canSearchOfficial}
-U -> FE: "Provar" (produto + variante)
-FE -> ENV: wearItem(items, fromCatalog(p, v))
-FE -> ENV: resolveEnvironment(items, mode)
-ENV --> FE: {kind: brand, featured: Nike, others: [], brands}
-FE -> SC: pieces = visibleItems() → Look3dPiece\n+ environment + light + view
-SC --> U: Avatar 3D na loja da marca (prévia projetada)
-U -> FE: prova também um jeans Levi's
-FE -> ENV: resolveEnvironment(items, "auto")
-ENV --> FE: {kind: multibrand, featured: Levi's, others: [Nike]}
-FE -> SC: troca animada (instantânea com "reduzir movimento")
-opt fixar marca ou Neutro
-  U -> FE: chip "Nike" ou "Neutro"
-  FE -> ENV: resolveEnvironment(items, {pinned: "nike"} | "neutral")
-end
-
-== "Já tenho esta peça" (CA06) ==
-U -> FE: "Já tenho esta peça"
-FE -> CC: POST /api/pieces/from-catalog {productId, variantId, visibility: PRIVATE}
-CC -> CS: addToWardrobe(user, AddRequest)
-alt produto inexistente
-  CS --> FE: 404
-else produto REJECTED
-  CS --> FE: 400 PRODUTO_RECUSADO
-else ok
-  CS -> DB: UPDATE catalog_products (ownersCount+1;\nDISCOVERED → REFERENCE_ONLY)
-  CS -> WS: createFromCatalog(user, PieceForm, CatalogPick)
-  WS -> DB: INSERT wardrobe_items (catalog_product_id,\ncatalog_variant_id, imagem oficial)
-  CS --> FE: 201 PieceView
-  FE -> TC: GET /api/try-on (recarrega o guarda-roupa)
-end
-
-== Foto, link e provas salvas (CA07) — só no navegador ==
-FE -> SC: canvas.toDataURL("image/png") → download
-FE -> ENV: encodeTryOn(items) → /try-on?provar=… (clipboard)
-FE -> FE: localStorage fai.tryon.saved (até 8 provas)
+TryOnService -> MediaService : read()
+TryOnService -> TryOnCompositor : render()
+TryOnService -> AI : TRY_ON
+AI --> TryOnService : resposta (ou reserva local)
+TryOnService -> DB_MySQL : SELECT users
+TryOnService -> MediaService : put()
+TryOnService -> MediaService : register()
+MediaService -> DB_MySQL : INSERT/UPDATE photos
+MediaService --> TryOnService
+deactivate TryOnService
+TryOnService --> TryOnController : resultado
+TryOnController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

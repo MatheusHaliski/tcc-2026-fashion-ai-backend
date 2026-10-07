@@ -1,93 +1,79 @@
 @startuml RF2_Componentes
-title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de componentes — login, BFF da sessão, filtros da API e portas de autenticação
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "Frontend (Next.js 16)" {
-  component "(auth)/login/page.tsx\n+ auth-form.tsx" as FE0
-  component "lib/auth/session.tsx\n(AuthProvider · useAuth)\ncomponents/app-shell.tsx (RequireAuth)" as FE2
-  component "lib/api/client.ts\n(tokenStore em memória · tryRefresh com\nWeb Lock · BroadcastChannel · renewGate)" as FE1
-  component "app/bff/auth/[action]/route.ts\n(cookie HttpOnly fai_rt · IP assinado · X-Dev-Gate)" as BFF
-  component "middleware.ts\n(dev gate + CSP com nonce)" as MW
+package "Frontend (Next.js)" {
+  component "/forgot-password\n(site)/(auth)/forgot-password/page.tsx" as FE0
+  component "/login\n(site)/(auth)/login/page.tsx" as FE1
+  component "/closet\n(site)/(app)/closet/page.tsx" as FE2
+  component "/reset-password\n(site)/(auth)/reset-password/page.tsx" as FE3
+  component "/verify-email\n(site)/(auth)/verify-email/page.tsx" as FE4
+  component "/settings\n(site)/(app)/settings/page.tsx" as FE5
+  component "lib/api/client.ts" as APIC
 }
-package "fai-web" {
-  [DevGateFilter (-103)] as DGF
-  [AuthRateLimitFilter (-102)\nlimite por IP + teto de hashes] as RLF
-  [ClientIpResolver] as CIR
-  [SecurityConfig\n(oauth2ResourceServer JWT, STATELESS)] as Sec
-  [JwtConfig\n(JwtDecoder: iss + aud)] as JCfg
-  [SessionActiveFilter\n(sid ainda ativo?)] as SF
-  [AuthController\n/api/auth/login · refresh · logout] as AC
-  [CurrentUserResolver] as CUR
-  [AuditAuthenticationEntryPoint\nAuditAccessDeniedHandler] as AEP
-  [JwtTokenIssuer] as Jwt
-  [Argon2PasswordHasher] as Hasher
+package "fai-web (REST)" {
+  component "AuthController\n/api/auth/login\n/api/auth/logout\n/api/auth/password-reset/confirm\n/api/auth/password-reset/request\n(+1 rotas)" as AuthController
 }
-package "fai-application" {
-  [IdentityService] as IS
-  [NotificationService] as NS
-  [Audit → AuditService] as AUD
-  [TokenIssuerPort] <<port>> as P_TOK
-  [PasswordHasherPort] <<port>> as P_HASH
-  [RateLimitPort] <<port>> as P_RATE
-  [EmailSenderPort] <<port>> as P_MAIL
+package "fai-application (casos de uso)" {
+  component "IdentityService" as IdentityService
+  component "NotificationService" as NotificationService <<apoio>>
+  component "PasswordHasherPort\n«Argon2PasswordHasher»" as PasswordHasherPort <<port>>
+  component "TokenIssuerPort\n«JwtTokenIssuer»" as TokenIssuerPort <<port>>
+  component "RateLimitPort\n«InMemoryRateLimit»" as RateLimitPort <<port>>
+  component "EmailSenderPort\n«LoggingEmailSender / ResendEmailSender»" as EmailSenderPort <<port>>
+  component "MediaStoragePort\n«LocalFileMediaStorage / S3MediaStorageAdapter»" as MediaStoragePort <<port>>
 }
-package "fai-domain · repositórios" {
-  [UserRepository · RefreshTokenRepository\nVerificationCodeRepository · UserPreferencesRepository] as REPOS
+package "fai-domain (repositórios)" {
+  component "UserRepository\nUserPreferencesRepository\nBrandProfileRepository\nCelebrityProfileRepository\nRefreshTokenRepository\nVerificationCodeRepository" as REPO_MySQL
 }
-package "fai-infrastructure" {
-  [InMemoryRateLimit / RedisAdapters] as Rate
-  [ResendEmailSender / LoggingEmailSender] as Resend
-  [MysqlAuditService] as MAudit
-}
-database "MySQL · fashionai_app\n• users · refresh_tokens\n• verification_codes\n• notifications · audit_log" as DB
-cloud "Redis (opcional)\nchaves rate:*" as C_redis
-cloud "Resend\n(código 2FA)" as C_mail
-
-FE0 --> FE2 : signIn
-FE2 --> FE1 : restoreSession · signOut
-FE1 --> BFF : login · refresh · logout (mesma origem)
-FE1 --> DGF : /api/** (Bearer + X-Dev-Gate)
-MW ..> BFF : sem gate → 403 DEV_GATE
-BFF --> DGF : HTTPS/JSON\nX-Fai-Client-Ip/Ts/Sig
-DGF --> RLF
-RLF --> CIR
-RLF --> P_RATE
-RLF --> Sec
-Sec --> JCfg
-Sec --> SF : depois do BearerTokenAuthenticationFilter
-Sec ..> AEP : 401/403 auditados
-SF --> IS : sessionActive(sid)
-SF --> AC
-AC --> IS
-AC ..> CUR
-IS --> P_TOK
-IS --> P_HASH
-IS --> P_RATE
-IS --> P_MAIL
-IS --> NS : NEW_LOGIN_DEVICE
-IS --> AUD
-IS --> REPOS
-NS --> REPOS
-P_TOK <|.. Jwt
-P_HASH <|.. Hasher
-P_RATE <|.. Rate
-P_MAIL <|.. Resend
-AUD --> MAudit
-REPOS --> DB : JPA / Flyway
-MAudit --> DB
-Rate --> C_redis : INCR / TTL
-Resend --> C_mail
+database "MySQL\n• brand_profiles\n• celebrity_profiles\n• refresh_tokens\n• user_preferences\n• users\n• verification_codes" as DB_MySQL
+cloud "Resend" as CL_Resend
+cloud "S3" as CL_S3
+APIC --> AuthController : HTTPS/JSON
+AuthController --> IdentityService
+EmailSenderPort --> CL_Resend
+FE0 --> APIC
+FE1 --> APIC
+FE2 --> APIC
+FE3 --> APIC
+FE4 --> APIC
+FE5 --> APIC
+IdentityService --> EmailSenderPort
+IdentityService --> MediaStoragePort
+IdentityService --> PasswordHasherPort
+IdentityService --> REPO_MySQL
+IdentityService --> RateLimitPort
+IdentityService --> TokenIssuerPort
+IdentityService ..> NotificationService
+MediaStoragePort --> CL_S3
+REPO_MySQL --> DB_MySQL : JPA/Flyway
 @enduml

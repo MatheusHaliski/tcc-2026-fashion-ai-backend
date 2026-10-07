@@ -1,9 +1,16 @@
 @startuml RF11_Atividades
-title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de atividades — arte do card do look (etapa 4 do Criar Look) até salvar na etapa 5
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,109 +19,75 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF11 — Compor a arte de fundo (Background Studio) do card de um esquema ou de uma peça\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre Criar Look (/schemes/new) ou Editar (/schemes/[id]/edit)\ne avança até a etapa 4 "Aparência";
-note right
-  A etapa 4 só abre com 2 ou mais peças e título
-  (canGo do SchemeBuilder). O DNA de Estilo (RF13)
-  usa o mesmo BackgroundStudio; a peça tem editor
-  próprio (ver RF11_Atividades_Peca).
-end note
-|Frontend (scheme-builder · background-studio)|
-:useBgCatalog: GET /api/backgrounds/catalog (anônimo)\ncores, gradientes, cartelas, presets AURA, materiais,\nskins, direções, anatomias e animações;
-:GET /api/backgrounds/recommendations?styles=&occasions=\n(direção recomendada e skins recomendadas);
-note right
-  Os segmentos coexistem e NADA grava sozinho:
-  o rascunho (bg, skin, anatomia) fica no estado
-  do construtor até Salvar/Publicar na etapa 5.
-  "Desfazer" e "Limpar arte" mexem só no rascunho.
-end note
-if (O look veio de uma composição da IA (etapa 1, modo IA)?) then (sim)
-  :applyComposition: pede a direção recomendada\ne POST /api/backgrounds/art {prompt, direction, passePartout};
-  |API (BackgroundController · SchemeController)|
-  :BackgroundStudioService.generateArt;
-  if (E-mail não confirmado, conta bloqueada ou prompt vazio?) then (sim)
-    #FFE3E3:403 EMAIL_NAO_CONFIRMADO / CONTA_SUSPENSA\nou 400 PROMPT_VAZIO;
-  else (não)
-    |Banco/IA (AiEngine · Replicate · MySQL)|
-    :AiEngine.execute(BACKGROUND_GENERATOR)\ncom os nomes das celebridades protegidos;
-    if (Prompt cita pessoa real, rosto ou corpo?) then (sim)
-      #FFE3E3:422 PROMPT_REJEITADO antes do envio\n(ai_inference_log = PROMPT_REJECTED);
-    else (não)
-      if (Há provedor, orçamento e cota do dia?) then (sim)
-        :ImageGenerationPort.generate 896 × 1344\n(prompt negativo: sem pessoas e sem rostos);
-        :Recorta 900 × 2160, grava users/{id}/backgrounds/*.png\ne registra photos (origem BACKGROUND_STUDIO);
-        :200 READY {url, provider, costUsd};
-      else (não)
-        :Motor local não gera imagem\n→ 200 FALLBACK_GALLERY (6 sugestões AURA);
-      endif
-    endif
-  endif
-  |Frontend (scheme-builder · background-studio)|
-  if (status = READY?) then (sim)
-    :Rascunho recebe aiArt {url}\n(aura e material saem);
-  else (não ou erro)
-    :Fica o preset recomendado\n(aura, material e skin da direção);
-  endif
-else (não)
+:Abre /dna-schemes/[id]/edit,\n/dna-schemes/new, /dna;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/backgrounds/catalog\nGET /api/backgrounds/combination\nGET /api/backgrounds/recommendations\nGET /api/assets/skins;
+|Pessoa usuária|
+:Aplicar configuração de fundo ao\nesquema;
+|Tela (Next.js)|
+:PUT /api/schemes/{id}/background;
+|API (Spring Boot)|
+:BackgroundController.saveScheme\n→ BackgroundStudioService.saveScheme;
+if (cor inválida?) then (sim)
+  :400 COR_INVALIDA\n«Use cor hexadecimal (#RRGGBB).»\n→ a tela mostra o aviso;
+  stop
 endif
-|Pessoa|
-repeat
-  :Escolhe um segmento: Cor · Aura & Material ·\nLayout & Estilo · Container;
-  switch (Segmento?)
-  case (Cor)
-    :Cor lisa ou gradiente AURA;
-  case (Aura & Material)
-    if (Anatomia com arte própria (seções B/C)?) then (sim)
-      :Segmento desativado, com explicação;
-    else (não)
-      :Preset AURA, variação, material e formato\n(IMAGEM_UNICA ou MOSAICO) ou "Aplicar recomendada";
-    endif
-  case (Layout & Estilo)
-    :Anatomia do card (13), layout das peças (seção C),\nsilhueta e skin do card;
-    note right: "Cartela sazonal" abre um modal próprio\n(ver RF11_Atividades_Cartela)
-  case (Container)
-    :Cor do container e cor dos textos\n(nativa do skin ou escolhida);
+if (preset inválido?) then (sim)
+  :400 PRESET_INVALIDO\n«Gradiente desconhecido: …»\n→ a tela mostra o aviso;
+  stop
+endif
+if (preset inválido?) then (sim)
+  :400 PRESET_INVALIDO\n«Preset sazonal desconhecido: …»\n→ a tela mostra o aviso;
+  stop
+endif
+if (preset inválido?) then (sim)
+  :400 PRESET_INVALIDO\n«Preset AURA desconhecido: …»\n→ a tela mostra o aviso;
+  stop
+endif
+if (preset inválido?) then (sim)
+  :400 PRESET_INVALIDO\n«Material desconhecido: …»\n→ a tela mostra o aviso;
+  stop
+endif
+note right
+  e mais 12 validações:
+  ANATOMIA_INVALIDA, ARTE_ALTERADA,
+  CONTAINER_TRAVADO, COR_INVALIDA, DIRECAO_INVALIDA,
+  ESTACAO_OBRIGATORIA, FORMATO_INVALIDO,
+  MATERIAL_INDISPONIVEL, SILHUETA_INVALIDA,
+  SKIN_INVALIDA
+end note
+|Dados e serviços|
+:Lê: schemes\nwardrobe_items;
+:Usa: Guard.requireCanCreate\nGuard.requireOwner\nAssetCatalogService.resolveCombination\nMediaService.requireOwnedMedia\nAssetCatalogService.gradient\nAssetCatalogService.nativeContainer (+2);
+:Estado: backgroundVideoUrl → null\nbackgroundVideoUrl → set\nbackgroundArtUrl → set\ncontainerOrigin → AUTO\ncontainerMandatory → true\ncontainerOrigin → MANUAL (+1);
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Gerar arte de fundo por prompt [B…)
+    :POST /api/backgrounds/art\n→ BackgroundStudioService.generateArt\nvalida: PROMPT_VAZIO\nlê: celebrity_profiles, users\nusa: Guard.requireCanCreate,\nAssetCatalogService.list, MediaService.put …\nia: BACKGROUND_GENERATOR;
+  case (Enviar imagem própria de fundo [c…)
+    :POST /api/backgrounds/uploads\n→ BackgroundStudioService.upload\nvalida: IMAGEM_PEQUENA, PROPORCAO_INVALIDA\nlê: users\nusa: Guard.requireCanCreate, MediaService.put,\nMediaService.register;
+  case (Fundo do card da peça)
+    :PUT /api/pieces/{id}/background\n→ BackgroundStudioService.savePiece\nvalida: ARTE_ALTERADA\nlê: wardrobe_items\nusa: Guard.requireCanCreate, Guard.requireOwner;
+  case (Voltar ao fundo padrão do esquema)
+    :DELETE /api/schemes/{id}/background\n→ BackgroundStudioService.resetScheme\nlê: schemes\nusa: Guard.requireOwner\nestado: backgroundArtUrl → null,\nbackgroundAnimationType → NONE,\ncontainerOrigin → INDEFINIDA;
+  case ([admin] Gerar thumbnail de uma sk…)
+    :POST /api/admin/skins/{skinId}/thumbnail\n→ BackgroundStudioService.generateSkinThumbnail\nlê: asset_presets\nusa: Guard.requireAdmin,\nAssetCatalogService.skin, MediaService.put\nia: BACKGROUND_GENERATOR;
   endswitch
-  |Frontend (scheme-builder · background-studio)|
-  :Prévia ao vivo no SchemeCard\n(resolveCardArt + CardArtLayer; vídeo de Aura via ArtVideo);
-  |Pessoa|
-repeat while (Continua ajustando?) is (sim)
-->não;
-:Etapa 5: revisa as peças, pede o PNG (opcional)\ne clica em Salvar ou Publicar;
-|Frontend (scheme-builder · background-studio)|
-if (Pediu o PNG?) then (sim)
-  :POST /api/schemes/preview (nada é gravado);
-else (não)
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-:POST /api/schemes ou PUT /api/schemes/{id}\ncom background {scheme: {...bg, layoutAnatomy, photo},\npieces: {anatomy}}, cardSkin e layoutAnatomy;
-|API (BackgroundController · SchemeController)|
-:SchemeService.create/update chama\nBackgroundStudioService.applyToScheme;
-if (Alguma regra do Studio falhou?) then (sim)
-  #FFE3E3:400 com o código da regra:\nCOR_INVALIDA (cor fora de #RRGGBB) · PRESET_INVALIDO\n(gradiente, cartela, aura ou material desconhecido) ·\nMATERIAL_INDISPONIVEL (LEGO + material) · FORMATO_INVALIDO ·\nSKIN_INVALIDA · ANATOMIA_INVALIDA · SILHUETA_INVALIDA ·\nESTACAO_OBRIGATORIA (cartela automática sem estação) ·\nMIDIA_INVALIDA (arte que não é da pessoa nem do catálogo);
-  stop
-else (não)
-endif
-if (Container travado pela direção e cor diferente?) then (sim)
-  #FFE3E3:409 CONTAINER_TRAVADO;
-  stop
-else (não)
-endif
-|Banco/IA (AiEngine · Replicate · MySQL)|
-:Grava em schemes: background_color, background_gradient,\nbackground_art_url, background_video_url (combo animado),\nbackground_animation_type, card_skin, layout_anatomy,\ncontainer_*, studio_config_json (+ "resolved");
-|Frontend (scheme-builder · background-studio)|
-:201/200 SchemeView → tela de sucesso;\no card do feed lê o background gravado;
+|Pessoa usuária|
 stop
 @enduml

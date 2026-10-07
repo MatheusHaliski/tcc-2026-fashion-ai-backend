@@ -1,83 +1,53 @@
 @startuml RF50_MaquinaDeEstados
 !pragma layout smetana
-title RF50 (evolução do RF25) — Criador de selo (assistente, tipo de arte, núcleo), selo e vínculo selo × look/peça\nMáquina de estados
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-[*] --> Modo : "Novo selo"
-[*] --> Dados : "Editar" (selo existente)
-state Modo
-state "Sugerindo (IA)" as Sugerindo
-state Dados
-state Arte {
-  [*] --> Circular
-  state Circular {
-    [*] --> Modelo
-    Modelo --> Personalizado : origem
-    Personalizado --> Modelo : origem
-  }
-  state Folha
-  state "Padrão FashionAI" as FAI
-  Circular --> Folha : tipo
-  Folha --> FAI : tipo
-  FAI --> Circular : tipo
-  Folha --> Circular : tipo
-  note right of Folha : ao voltar a um tipo,\no último modelo escolhido\nnele é restaurado
-}
-state Revisar
-state Salvo
-Modo --> Sugerindo : "Com IA"
-Sugerindo --> Dados : 200 sugestão
-Sugerindo --> Modo : erro (toast)
-Modo --> Dados : "Sem IA"
-Dados --> Arte : Avançar
-Arte --> Dados : Voltar
-Arte --> Revisar : Avançar [nome ≥ 2]
-Revisar --> Dados : Editar dados
-Revisar --> Arte : Editar arte
-Revisar --> Salvo : Salvar selo [201]
-Revisar --> Revisar : 400 SELO_DESIGN_INVALIDO
-Salvo --> [*]
+title RF50 (evolução do RF25) — ciclo de vida de SealBond.status\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum SealBondStatus · tabela seal_bonds
 
-state "Núcleo (circular e emblema da folha)" as Nucleo {
-  [*] --> ELEMENT
-  ELEMENT --> IMAGE : enviar imagem
-  ELEMENT --> TEXT : escrever texto
-  IMAGE --> TEXT
-  TEXT --> IMAGE
-  IMAGE --> ELEMENT : remover imagem
-  TEXT --> ELEMENT
-  note bottom of IMAGE : exige imageUrl do próprio emissor;\nzoom 1–3 e texto opcional
-  note bottom of TEXT : exige texto (≤ 24);\nquebra em até 2 linhas
+state "SealBond.status" as Ciclo_SealBond {
+  state Ciclo_SealBond_SUGGESTED as "SUGGESTED"
+  state Ciclo_SealBond_ACCEPTED as "ACCEPTED"
+  state Ciclo_SealBond_EDITED as "EDITED"
+  state Ciclo_SealBond_REFUSED as "REFUSED"
+  state Ciclo_SealBond_PENDING_REVIEW as "PENDING_REVIEW"
+  state Ciclo_SealBond_APPROVED as "APPROVED"
+  state Ciclo_SealBond_REJECTED as "REJECTED"
+  state Ciclo_SealBond_REVOKED as "REVOKED"
 }
-
-state "Selo (seals.status)" as SeloVida {
-  [*] --> ACTIVE : salvo no criador
-  ACTIVE --> INACTIVE : emissor desativa
-  INACTIVE --> ACTIVE : emissor reativa
-  note right of ACTIVE : só entra na detecção dentro da\nvalidade (availableFrom/Until) e\nabaixo do limite de emissões
-}
-
-state "Vínculo selo × look ou peça (seal_bonds.status)" as Vinculo {
-  [*] --> SUGGESTED : política atendida no criador (RF4/RF5)
-  SUGGESTED --> ACCEPTED : pessoa aceita
-  SUGGESTED --> EDITED : pessoa troca o selo do emissor
-  SUGGESTED --> REFUSED : pessoa recusa (ou "recusar todos")
-  REFUSED --> ACCEPTED : pessoa aceita depois
-  ACCEPTED --> Roteamento
-  EDITED --> Roteamento
-  state Roteamento <<choice>>
-  Roteamento --> REJECTED : selo inválido, fora da validade,\nsem emissões ou sem consentimento\nde imagem (celebridade)
-  Roteamento --> PENDING_REVIEW : emissor exige revisão\n(celebridade sempre)
-  Roteamento --> APPROVED : emissão automática (emissões + 1)
-  PENDING_REVIEW --> APPROVED : emissor aprova (RF20/RF21)
-  PENDING_REVIEW --> REJECTED : emissor recusa
-  APPROVED --> REVOKED : emissor revoga, look excluído (RF31)\nou revalidação recusada após edição
-  SUGGESTED --> REVOKED : look excluído
-  PENDING_REVIEW --> REVOKED : look excluído
-}
+[*] --> Ciclo_SealBond_SUGGESTED : criação
+Ciclo_SealBond --> Ciclo_SealBond_APPROVED : accept(), issue(), linkManually(),\nreview(), route()
+Ciclo_SealBond --> Ciclo_SealBond_EDITED : linkManually()\nPOST /api/schemes/{schemeId}/seal-bonds
+Ciclo_SealBond --> Ciclo_SealBond_PENDING_REVIEW : accept(), linkManually(), route()
+Ciclo_SealBond --> Ciclo_SealBond_REFUSED : refuseAll()\nPOST /api/schemes/{schemeId}/seal-bonds/refu…
+Ciclo_SealBond --> Ciclo_SealBond_REVOKED : revoke(), revokeForScheme(),\nrevokeInternal()
+Ciclo_SealBond --> Ciclo_SealBond_SUGGESTED : suggest()\nGET /api/schemes/{schemeId}/seal-suggestions
+Ciclo_SealBond_REFUSED --> Ciclo_SealBond_ACCEPTED : accept()\nPOST /api/seal-bonds/{bondId}/accept
+Ciclo_SealBond_SUGGESTED --> Ciclo_SealBond_ACCEPTED : accept()\nPOST /api/seal-bonds/{bondId}/accept
+Ciclo_SealBond_SUGGESTED --> Ciclo_SealBond_REFUSED : refuse()\nPOST /api/seal-bonds/{bondId}/refuse
+note bottom of Ciclo_SealBond
+  Sem mudança explícita no código para: REJECTED
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
+note right of Ciclo_SealBond
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
+end note
 @enduml

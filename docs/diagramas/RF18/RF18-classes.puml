@@ -1,239 +1,184 @@
 @startuml RF18_Classes
-title RF18 — Usar o Provador virtual de lojas\nDiagrama de classes — motor do provador (frontend), controllers, serviços e entidades JPA usadas
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
-set separator none
+hide empty members
+left to right direction
+title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "Frontend · lib/tryon/fitting-room.ts" {
-  class FittingItem <<interface>> {
-    +key: string  «c:<produto> | w:<peça>»
-    +source: "catalog" | "wardrobe"
+package "lib/tryon/fitting-room.ts" {
+  class FittingItem as "FittingItem" <<interface>> {
+    +key: string
+    +source: 'catalog' | 'wardrobe'
     +slot: FittingSlot
     +wear: Wear
     +name: string
     +brand: FittingBrand | null
-    +category, subcategory
-    +imageUrl, colorHex, colorName
-    +productId, variantId, pieceId
-    +officialUrl, sourceDomain
-    +addedAt: number  «ordem de escolha»
+    +category: string
+    +subcategory: string | null
+    +imageUrl: string | null
+    +colorHex: string | null
+    .. +7 ..
   }
-  class FittingBrand <<interface>> {
+  class BrandEnvironment as "BrandEnvironment" <<interface>> {
+    +key: string
     +name: string
-    +slug?: string
-    +logoUrl?: string
-  }
-  class BrandEnvironment <<interface>> {
-    +key, name, logoUrl
+    +logoUrl: string | null
     +style: RoomStyle
     +motif: WallMotif
-    +wall, floor, accent, ink
+    +wall: string
+    +floor: string
+    +accent: string
+    +ink: string
     +curated: boolean
   }
-  class ResolvedEnvironment <<interface>> {
-    +kind: "neutral" | "brand" | "multibrand"
+  class ResolvedEnvironment as "ResolvedEnvironment" <<interface>> {
+    +kind: 'neutral' | 'brand' | 'multibrand'
     +featured: BrandEnvironment
-    +others: BrandEnvironment[]  «até 3»
+    +others: BrandEnvironment[]
     +brands: BrandEnvironment[]
   }
-  class TryOnRef <<interface>> {
-    +source: "catalog" | "wardrobe"
-    +id: string
-    +variantId: string | null
+  class FittingBrand as "FittingBrand" <<interface>> {
+    +name: string
+    +slug: string | null
+    +logoUrl: string | null
   }
-  class "fitting-room" as FR <<module>> {
-    +FITTING_SLOTS
-    +NEUTRAL_ENVIRONMENT
-    -CURATED  «10 marcas do seed»
-    +wearOf(category, subcategory): Wear
-    +slotOf(category): FittingSlot
-    +wearItem(items, item): FittingItem[]
-    +removeSlot(items, slot)
-    +visibleItems(items)
-    +brandKey(name): string
-    +environmentFor(brand): BrandEnvironment
-    +resolveEnvironment(items, mode): ResolvedEnvironment
-    +encodeTryOn(items): string
-    +decodeTryOn(raw): TryOnRef[]  «até 8»
-  }
-  enum FittingSlot {
+  enum FittingSlot as "FittingSlot" {
     upper_piece
     lower_piece
     shoes_piece
     accessory_piece
   }
-  enum Wear {
-    TOP
-    OUTERWEAR
-    BOTTOM
-    FULL_BODY
-    SHOES
-    ACCESSORY
-  }
-  enum RoomStyle {
-    arena
-    heritage
-    gallery
-    street
-    boutique
-    atelier
-  }
-  enum EnvironmentMode <<type>> {
-    "auto"
-    "neutral"
-    {pinned: key}
+  class mod_fitting_room_ts as "fitting-room.ts" <<módulo>> {
+    +wearOf()
+    +slotOf()
+    +wearItem()
+    +removeSlot()
+    +visibleItems()
+    +brandKey()
+    +environmentFor()
+    +resolveEnvironment()
   }
 }
-
-package "fai-web · controller" {
-  class TryOnController {
-    +state(user, sex): Map  «GET /api/try-on»
-    +preferences(user, PreferencesRequest)  «PUT /preferences · legado»
-    +render(user, RenderRequest)  «POST /renders · legado»
-    +saveAsScheme(user, SaveRequest)  «POST /schemes · legado»
+package "components/ui/index.tsx" {
+  enum Variant as "Variant" {
+    default
+    primary
+    accent
+    ghost
+    danger
   }
-  class CatalogController {
-    +stores()  «GET /api/catalog/stores»
-    +search(user, category, subcategory, brand, q, color, limit)
-    +product(id)  «GET /api/catalog/products/{id}»
-    +discover(user, SearchRequest)  «POST /api/catalog/discover»
-    +fromCatalog(user, AddRequest): PieceView  «POST /api/pieces/from-catalog»
+  class FieldProps as "FieldProps" <<interface>> {
+    +label: string
+    +hint: string
+    +error: string
+    +required: boolean
+    +children: ReactNode
+    +id: string
+    +className: string
   }
-}
-
-package "fai-application" {
-  class TryOnService {
-    ~SLOTS: List<String>
-    +state(user, requested: MannequinSex): Map
-    +savePreferences(user, sex, skinTone, build): Map
-    +render(user, sex, pieceIds): Map  «AiEngine TRY_ON»
-    +saveAsScheme(user, pieceIds, title, tryOnUrl): Map
-    ~slotOf(WardrobeItem): String
-    ~resolve(user, prefs, requested): Resolved
+  class MenuItem as "MenuItem" <<interface>> {
+    +label: string
+    +onSelect: () => void
+    +href: string
+    +danger: boolean
+    +icon: ReactNode
+    +hidden: boolean
+    +disabled: boolean
   }
-  class CatalogService {
-    ~VISIBLE: Set<CatalogIngestionStatus>
-    +catalogBrands(): List<Map>
-    +search(userId, SearchRequest): Map
-    +product(id): Map
-    +discover(user, SearchRequest): Map
-    +addToWardrobe(user, AddRequest): PieceView
-  }
-  class "CatalogService.AddRequest" as AddRequest <<record>> {
-    +productId: UUID
-    +variantId: UUID
-    +visibility: Visibility
-    .. dados pessoais (tamanho, preço…) ..
-  }
-  class WardrobeService {
-    +createFromCatalog(user, PieceForm, CatalogPick): PieceView
-  }
-  class "WardrobeService.CatalogPick" as CatalogPick <<record>> {
-    +productId: UUID
-    +variantId: UUID
-    +imageUrl: String
-  }
-  class Avatar3dService {
-    +forMannequin(ownerId, viewerId): Optional<Map>
+  class mod_index_tsx as "index.tsx" <<módulo>> {
+    +cn()
+    +Button()
+    +FileButton()
+    +Spinner()
+    +Field()
+    +Input()
+    +Textarea()
+    +Select()
   }
 }
-
-package "fai-domain · model" {
-  class Brand <<entity>> {
-    +name, slug, logoUrl
-    +website, country
+package "lib/api/catalog.ts" {
+  class CatalogProduct as "CatalogProduct" <<interface>> {
+    +id: string
+    +brand: CatalogBrandRef | null
+    +productName: string
+    +modelName: string | null
+    +category: string
+    +subcategory: string
+    +color: string | null
+    +colorName: string | null
+    +colorHex: string | null
+    +material: string | null
+    .. +17 ..
   }
-  class CatalogProduct <<entity>> {
-    +brandId: UUID
-    +category, subcategory
-    +productName, color, colorName, gender
-    +officialProductUrl, sourceDomain
-    +ingestionStatus: CatalogIngestionStatus
-    +ownersCount: int
+  class CatalogVariant as "CatalogVariant" <<interface>> {
+    +id: string
+    +key: string
+    +color: string | null
+    +colorName: string | null
+    +code: string | null
+    +sku: string | null
   }
-  class CatalogVariant <<entity>> {
-    +productId: UUID
-    +variantKey, color, colorName
-    +variantCode, sku
+  class MatchScore as "MatchScore" <<interface>> {
+    +total: number
+    +brandMatch: number
+    +categoryMatch: number
+    +subcategoryMatch: number
+    +textSimilarity: number
+    +colorMatch: number
+    +visualSimilarity: number | null
+    +designMatch: number | null
+    +reasons: MatchReason[]
   }
-  class CatalogImage <<entity>> {
-    +productId, variantId: UUID
-    +imageUrl, storedUrl
-    +primary: boolean
-    +usageStatus: CatalogImageUsage
-  }
-  class WardrobeItem <<entity>> {
-    +category, subcategory, sex
-    +brandName
-    +availabilityStatus: AvailabilityStatus
-    +catalogProductId: UUID
-    +catalogVariantId: UUID
-  }
-  class UserPreferences <<entity>> {
-    +mannequinSex: MannequinSex
-    +mannequinSkinTone: String
-    +mannequinBuild: BodyBuild
-  }
-  class UserAvatar3d <<entity>> {
-    +modelJson, adjustJson
-    +textureKey
-    +publicOnRunway: boolean
-  }
-  enum CatalogIngestionStatus {
-    DISCOVERED
-    VALIDATED
-    PERSISTABLE
-    REFERENCE_ONLY
-    REJECTED
+  class mod_catalog_ts as "catalog.ts" <<módulo>> {
+    +enoughToSearch()
   }
 }
-
-FittingItem --> FittingSlot
-FittingItem --> Wear
-FittingItem --> "0..1" FittingBrand
-BrandEnvironment --> RoomStyle
-ResolvedEnvironment --> "1" BrandEnvironment : featured
-ResolvedEnvironment --> "0..3" BrandEnvironment : others
-FR ..> FittingItem
-FR ..> ResolvedEnvironment
-FR ..> EnvironmentMode
-FR ..> TryOnRef
-
-TryOnController --> TryOnService
-CatalogController --> CatalogService
-TryOnService --> Avatar3dService
-CatalogService --> WardrobeService
-CatalogService ..> AddRequest
-WardrobeService ..> CatalogPick
-
-FittingItem ..> CatalogProduct : source = catalog\n(productId / variantId)
-FittingItem ..> WardrobeItem : source = wardrobe\n(pieceId)
-CatalogProduct "*" --> "1" Brand : brandId
-CatalogVariant "*" --> "1" CatalogProduct
-CatalogImage "*" --> "1" CatalogProduct
-CatalogProduct --> CatalogIngestionStatus
-WardrobeItem "*" ..> "0..1" CatalogProduct : catalog_product_id\n("Já tenho")
-TryOnService ..> UserPreferences : lê
-TryOnService ..> WardrobeItem : lê por lugar
-Avatar3dService ..> UserAvatar3d : lê
-
-note bottom of CatalogProduct
-  tabelas: brands, catalog_products,
-  catalog_variants, catalog_images,
-  wardrobe_items, user_preferences,
-  user_avatars_3d
-end note
-note bottom of TryOnController
-  render/preferences/schemes ficam na API
-  (render 2D: FASHN → TryOnCompositor),
-  mas a tela atual do provador não os usa
-end note
+package "app/(site)/(app)/search/page.tsx" {
+  class Brand as "Brand" <<interface>> {
+    +id: string
+    +userId: string
+    +slug: string
+    +name: string
+    +logoUrl: string | null
+    +registered: boolean
+    +publicPieces: number
+    +avatarUrl: string | null
+  }
+  class Filters as "Filters" <<type>> {
+    +style: string
+    +occasion: string
+    +color: string
+    +brand: string
+    +category: string
+    +hypeLevel: string
+  }
+  class mod_page_tsx as "page.tsx" <<módulo>> {
+    +SearchPage()
+  }
+}
+CatalogProduct --> CatalogVariant : selectedVariant
+CatalogProduct --> CatalogVariant : variants
+CatalogProduct --> MatchScore : matchScore
+FittingItem --> FittingBrand : brand
+FittingItem --> FittingSlot : slot
+ResolvedEnvironment --> BrandEnvironment : brands
+ResolvedEnvironment --> BrandEnvironment : featured
+ResolvedEnvironment --> BrandEnvironment : others
 @enduml

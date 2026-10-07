@@ -1,9 +1,16 @@
 @startuml RF7_Atividades
-title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,87 +19,58 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Clica numa peça ou num esquema de uma lista\n(Closet, Lookbook, feed, perfil);
-|Frontend (detail-modal · expanded-card)|
-:Abre o modal único: o card ampliado É a superfície\n(o modal só dá o scrim, sem segunda borda);
-note right
-  Anatomia (Trello): card ampliado da peça 90 × 208 mm;
-  peça dentro do esquema em linha compacta ≤ 18 mm
-  (logo + marca + nome + tipo + tamanho); campo sexo
-  exibido na identificação da peça
-end note
-if (Item clicado?) then (esquema)
-  :GET /api/schemes/{id};
-  |Backend (SchemeController · SchemeService)|
-  :requireView: esquema ARCHIVED ou sem permissão → 404/403;
-  :Devolve scheme + itens, wearstyles, selos, remixedFrom, canEdit;
-  |Frontend (detail-modal · expanded-card)|
-  :ExpandedScheme mostra a lista de peças do look;
-  |Pessoa|
-  :Clica numa peça da lista;
-  |Frontend (detail-modal · expanded-card)|
-  :Empilha a navegação guardando o esquema de origem (CA01);
-else (peça)
-endif
-:GET /api/pieces/{id}?fromScheme={schemeId};
-|Backend (WardrobeController · WardrobeService)|
-:requireVisiblePiece: dono/admin passa; senão exige\nmoderação APPROVED e visibilidade efetiva (peça × perfil);
-if (Pode ver?) then (não)
-  #FFE3E3:404 / 403 (acesso negado auditado);
+:Abre /schemes/[id]/edit, /schemes/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/schemes/{id}\nGET /api/me/closet\nGET /api/users/{ownerId}/closet;
+|Pessoa usuária|
+:Detalhe da peça (com contexto do\nesquema de origem, se houv…;
+|Tela (Next.js)|
+:GET /api/pieces/{id};
+|API (Spring Boot)|
+:WardrobeController.detail\n→ WardrobeService.detail;
+if (Peça não encontrado[a]?) then (sim)
+  :404 NAO_ENCONTRADO\n«Peça não encontrado(a)»\n→ a tela mostra o aviso;
   stop
 endif
-if (Peça ARCHIVED e quem pede não é o dono?) then (sim)
-  :Devolve o snapshot do momento da publicação\n(scheme_items.snapshotJson) com notAvailableAnymore = true (CA03);
-  |Frontend (detail-modal · expanded-card)|
-  :Card marcado "não mais disponível", sem ações;
-  stop
+|Dados e serviços|
+:Lê: wardrobe_items\nscheme_items\nreactions;
+:Usa: Guard.requireView\nGuard.canView;
+:Grava: wardrobe_items;
+:Evento: HypeSignal;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Editar a peça)
+    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
+  case (Excluir a peça)
+    :DELETE /api/pieces/{id}\n→ WardrobeService.delete\nlê: wardrobe_items, scheme_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.removePiece …\nestado: availabilityStatus → ARCHIVED, disponivel →\nfalse, visibility → PRIVATE;
+  case (Excluir o look [menu ⋯ do dono];…)
+    :DELETE /api/schemes/{id}\n→ SchemeService.archive\nlê: schemes\nusa: Guard.requireCanCreate, Guard.requireOwner,\nSealService.revokeForScheme …\nestado: status → ARCHIVED;
+  case (Voltar da peça para o esquema de…)
+    :POST /api/pieces/{pieceId}/return-to-origin\n→ SocialService.returnToOrigin\nvalida: INDISPONIVEL, NAO_ENCONTRADO\nlê: wardrobe_items\nusa: SchemeService.canView;
+  case (Registrar uso da peça hoje)
+    :POST /api/pieces/{id}/worn\n→ WardrobeService.markWorn\nlê: wardrobe_items, reactions\nusa: Guard.requireOwner\nevento: PieceWorn;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Favoritar, marcar disponível/…, Editar esquema,
+  Salvar esquema (manual, IA, a…, Cadastrar a peça a
+  partir do…, Favoritar / marcar disponibil…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-|Backend (WardrobeController · WardrobeService)|
-:pieces.touchView (contador de visualização);
-:Devolve piece, wearstyles, originSchemes, canEdit;
-|Frontend (detail-modal · expanded-card)|
-if (canEdit (é o dono)?) then (sim)
-  :Mostra editar, disponível/indisponível, favoritar, excluir;
-  |Pessoa|
-  if (Ação do dono?) then (editar)
-    |Backend (WardrobeController · WardrobeService)|
-    :PUT /api/pieces/{id} (PieceForm) — audita EDICAO_PECA;
-  elseif (disponibilidade)
-    |Backend (WardrobeController · WardrobeService)|
-    :PATCH /api/pieces/{id}/flags {disponivel};\nAvailabilityStatus AVAILABLE ⇄ UNAVAILABLE;
-    :Evento AvailabilityChanged → wardrobe_availability_log;
-  else (excluir)
-    |Backend (WardrobeController · WardrobeService)|
-    :GET /api/pieces/{id}/deletion-impact (esquemas afetados);
-    :DELETE /api/pieces/{id}: grava snapshot nos scheme_items,\nARCHIVED, PRIVATE, retira fotos (RF12);
-  endif
-else (não)
-  :Mostra dados públicos + controles sociais\n(reagir, comentar, salvar, compartilhar, remixar — RF19) (CA02);
-  |Pessoa|
-  if (Voltar ao esquema de origem?) then (sim)
-    |Backend (CommentController · SocialService)|
-    :POST /api/pieces/{pieceId}/return-to-origin?fromScheme=;
-    if (Peça indisponível e não é o dono?) then (sim)
-      #FFE3E3:409 INDISPONIVEL;
-      stop
-    endif
-    :Devolve originSchemeId e otherSchemes visíveis;
-  endif
-endif
-|Frontend (detail-modal · expanded-card)|
-:"Voltar" desempilha para o esquema de origem; Esc fecha o modal;
+|Pessoa usuária|
 stop
 @enduml

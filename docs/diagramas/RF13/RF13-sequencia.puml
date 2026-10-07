@@ -1,85 +1,75 @@
 @startuml RF13_Sequencia
-title RF13 — Esquema de identidade pessoal na página "DNA de Estilo"\nDiagrama de sequência — construtor do Esquema de DNA: dados, propostas da IA, prévia e salvar
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as U
-participant "dna/page.tsx\nDnaBuilder" as FE
-participant "api\n(lib/api/client)" as API
-participant "DnaController" as C
-participant "DnaService" as S
-participant "SchemeService" as SS
-participant "AiEngine (RF24)\nDNA_SYNTHESIZER" as AI
-participant "HypeScoreCurrentRepository\n(HypeScore v2)" as HR
-database "MySQL" as DB
+autonumber "<b>0."
+title RF13 — Criar um esquema de identidade pessoal de moda na página 'DNA de Estilo'\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-U -> FE: abre /dna
-FE -> API: GET /api/dna-schemes/builder
-API -> C: builder(user)
-C -> S: builder(user)
-S -> S: ensureDna(user)
-alt ainda sem StyleDna sintetizado
-  S -> DB: SELECT schemes (≠ ARCHIVED), scheme_items, daily_looks ("adorei"), wardrobe_items
-  S -> AI: local(DNA_SYNTHESIZER) → LocalDnaSynthesizer.synthesize
-  AI --> S: arquétipo, paleta, estilos, ocasiões
-  S -> AI: text(DNA_SYNTHESIZER) — frase de identidade
-  AI --> S: frase (ou fallback local)
-  S -> DB: INSERT style_dna · style_dna_versions ("GERACAO")
+actor "Pessoa usuária" as U
+boundary "Tela /dna-schemes/[id]/edit" as P
+control "DnaController" as DnaController
+participant "DnaService" as DnaService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+participant "AiEngine\n(provedor de IA + reserva local)" as AI
+== HU20 — Criar esquema de DNA (linha do tempo de looks) ==
+U -> P : HU20 — Criar esquema de DNA (linha do tempo de lo…
+P -> DnaController : POST /api/dna-schemes
+DnaController -> DnaService : createDnaScheme()
+activate DnaService
+DnaService -> Guard : requireCanCreate()
+DnaService -> DB_MySQL : SELECT style_dna
+DnaService -> DB_MySQL : SELECT users
+DnaService -> DnaService : new StyleDna()
+DnaService -> DB_MySQL : INSERT/UPDATE style_dna
+DnaService -> DB_MySQL : SELECT schemes
+DnaService -> DB_MySQL : SELECT scheme_items
+DnaService -> DB_MySQL : SELECT daily_looks
+DnaService -> DB_MySQL : SELECT wardrobe_items
+DnaService -> AI : DNA_SYNTHESIZER
+AI --> DnaService : resposta (ou reserva local)
+DnaService -> DB_MySQL : SELECT wardrobe_items
+DnaService -> DnaService : synthesizedAt = set
+DnaService -> DB_MySQL : SELECT schemes
+DnaService -> DB_MySQL : SELECT daily_looks
+DnaService -> AI : DNA_SYNTHESIZER
+AI --> DnaService : resposta (ou reserva local)
+DnaService -> DnaService : cardImageUrl = null
+DnaService -> DB_MySQL : INSERT/UPDATE style_dna
+DnaService -> DnaService : new StyleDnaVersion()
+DnaService -> DB_MySQL : INSERT/UPDATE style_dna_versions
+DnaService -> DnaService : new DnaScheme()
+DnaService -> DB_MySQL : SELECT users
+DnaService -> DnaService : status = DRAFT
+alt layout inválido
+DnaService --> DnaController : 400 LAYOUT_INVALIDO
+DnaController --> P : 400 + mensagem
 end
-S -> DB: SELECT schemes do usuário (≠ ARCHIVED) + scheme_items
-S -> SS: view(user, scheme, items)
-S --> FE: 200 {status PRONTO | INSUFICIENTE (< 2 looks), schemes, dna,\nlayouts, narratives, seasons, minCells 2, maxCells 6}
-
-opt Etapa 1 — modo IA
-  U -> FE: pedido livre + ocasião, estilo, narrativa, estação
-  FE -> API: POST /api/dna-schemes/compositions
-  API -> C: compositions(user, DnaComposeRequest)
-  C -> S: compositions(...)
-  alt menos de 2 looks
-    S --> FE: 422 ESQUEMAS_INSUFICIENTES {action: /schemes/new}
-  else
-    S -> HR: findByEntityTypeAndEntityIdInAndAlgorithmVersion(SCHEME, looks, v2)
-    HR -> DB: SELECT hype_scores
-    S -> AI: text(system, prompt com até 40 looks, Hype v2 pessoal,\nDNA sintetizado e orientações; parser; localProposals)
-    AI --> S: até 3 DnaProposal (ou propostas do motor local)
-    S --> FE: 200 {compositions, fallbackUsed, provider, message}
-    U -> FE: escolhe uma proposta (células, narrativa, layout)
-  end
+alt alvo inválido
+DnaService --> DnaController : 400 ALVO_INVALIDO
+DnaController --> P : 400 + mensagem
 end
-
-loop Etapas 2 a 4 — cada alteração (debounce 250 ms)
-  FE -> API: POST /api/dna-schemes/preview (DnaSchemeForm)
-  API -> C: preview(user, form)
-  C -> S: preview → stamp + apply + células transitórias
-  S -> HR: Hype v2 das células (dono = Hype pessoal)
-  S -> S: narrativeData (ex.: HYPE_FOCUS → medidores, basis HYPE_V2)
-  S --> FE: 200 DnaView (nada gravado)
-end
-
-U -> FE: Salvar ou Publicar (etapa 5)
-FE -> API: POST /api/dna-schemes | PUT /api/dna-schemes/{id}\n{title, cells, cardLayout, targetElement, narrativeType, occasion, style,\nseasonalTheme, visibility, background {..., skin}, publish, creationMode}
-API -> C: create(user, form) | update(user, id, form)
-C -> S: createDnaScheme | updateDnaScheme
-alt e-mail não confirmado / conta bloqueada (create)
-  S --> FE: 403 EMAIL_NAO_CONFIRMADO | CONTA_SUSPENSA
-else editar DNA de outra pessoa
-  S --> FE: 403 (Guard.requireOwner, auditado)
-else título, layout, alvo ou narrativa inválidos
-  S --> FE: 400 CAMPO_INVALIDO | LAYOUT_INVALIDO | ALVO_INVALIDO | NARRATIVA_INDISPONIVEL
-else células fora de 2–6, look repetido ou mais de um marco
-  S --> FE: 400 CELULAS_INVALIDAS | ESQUEMA_REPETIDO | MARCO_UNICO
-else válido
-  S -> S: ensureDna · stamp (arquétipo, ousadia, frase, paleta)
-  S -> DB: INSERT dna_schemes (DRAFT) · INSERT dna_scheme_items (CELL_1..CELL_n)
-  S -> DB: UPDATE style_dna.latest_dna_scheme_id
-  opt publish = true
-    S -> DB: UPDATE dna_schemes SET status = PUBLISHED, published_at = agora
-  end
-  S --> FE: 201/200 DnaView
-end
+note over DnaService : … e mais 21 passos no código
+deactivate DnaService
+DnaService --> DnaController : resultado
+DnaController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

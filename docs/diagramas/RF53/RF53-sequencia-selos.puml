@@ -1,88 +1,78 @@
 @startuml RF53_Sequencia_Selos
-title RF53 — Selos × HypeScore\nDiagrama de sequência — política com Hype, sugestão ordenada por Hype, aceite com teto, perfil do emissor e selos das peças
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Emissor\n(marca/celebridade)" as EM
-actor "Autor do look" as AU
-actor "Visitante" as VI
-participant "Frontend\nseal-policy-editor · scheme-builder\nbrands/[slug] · closet" as FE
-participant "SealController" as SC
-participant "ProfileController" as PC
-participant "WardrobeController" as WC
-participant "SealService\n+ SealPolicies" as SS
-participant "InstitutionalService" as INS
-participant "WardrobeService" as WS
-participant "HypeQueryService\n(+ HypeSeals)" as HQ
-database "MySQL" as DB
+autonumber "<b>0."
+title RF53 — Selos × HypeScore\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-== 1. Política com critério de Hype ==
-EM -> FE: regra "≥ 1 peça Nike com Hype ≥ Em alta"\n+ look com Hype ≥ 60 e em crescimento
-FE -> SC: POST /api/seals {tier, policy: {rules[{…, hypeMin: HOT}],\nhype: {minScore: 60, momentum: [RISING, EMERGING]}}}
-SC -> SS: create(…) → SealPolicies.validate
-alt nível, score ou momentum inválido
-  SS --> FE: 400 POLITICA_INVALIDA
-else válido
-  SS -> DB: seals.background_config_json.policy
-  SS --> FE: 201 + frase da política com o trecho de Hype
+actor "Pessoa usuária" as U
+boundary "Tela (Next.js)" as P
+control "SealController" as SealController
+participant "SealService" as SealService
+database "MySQL" as DB_MySQL
+participant "Guard" as Guard
+participant "OwnMedia" as OwnMedia
+participant "Audit" as Audit
+participant "HypeCache" as HypeCache
+== Selos de marca/celebridade das peças (vínculos APROVADOS de tier PEÇA… ==
+U -> P : Selos de marca/celebridade das peças (vínculos AP…
+P -> SealController : GET /api/pieces/seals
+SealController -> SealService : pieceSeals()
+activate SealService
+SealService -> DB_MySQL : SELECT wardrobe_items
+SealService -> Guard : canView()
+Guard -> DB_MySQL : SELECT follows (×3)
+Guard --> SealService
+SealService -> Guard : canView()
+SealService -> DB_MySQL : SELECT scheme_items
+SealService -> DB_MySQL : SELECT seal_bonds
+deactivate SealService
+SealService --> SealController : resultado
+SealController --> P : 200 JSON
+P --> U : atualiza a tela
+== Marca/celebridade cria um selo ==
+U -> P : Marca/celebridade cria um selo
+P -> SealController : POST /api/seals
+SealController -> SealService : createSeal()
+activate SealService
+SealService -> Guard : requireApprovedInstitutional()
+SealService -> DB_MySQL : SELECT users
+SealService -> SealService : new Seal()
+SealService -> OwnMedia : require()
+SealService -> OwnMedia : requireOrUnchanged() (×2)
+SealService -> SealService : iconUrl = set
+alt período inválido
+SealService --> SealController : 400 PERIODO_INVALIDO
+SealController --> P : 400 + mensagem
 end
-
-== 2. Sugestões com o Hype da entidade avaliada ==
-AU -> FE: salva o look (ou abre as sugestões)
-FE -> SC: GET /api/schemes/{id}/seal-suggestions
-SC -> SS: suggestions(…)
-SS -> DB: hype_scores atuais do look e das peças (versão corrente)
-SS -> SS: para cada selo: regras + hypeMin + policy.hype\n(sem Hype disponível = critério não atendido)
-SS -> SS: hype {score, level} da entidade (LOOK: o look;\nPEÇA: o maior Hype das peças vinculadas);\nordena por Hype desc (sem Hype no fim)
-SS --> FE: suggestions[{id, target, tier, why "atende: …", hype}]
-FE --> AU: SealSuggestionHype em cada sugestão
-note over SS, DB: nenhum vínculo, emissão ou selo escreve em hype_signal_daily
-
-== 3. Aceite, teto de emissões e revisão ==
-AU -> FE: aceitar
-FE -> SC: POST /api/seal-bonds/{bondId}/accept {imageRightsConsent?}
-SC -> SS: accept(…) @Transactional(noRollbackFor = SealUnavailable)
-alt teto atingido, fora da janela ou selo inativo
-  SS -> DB: vínculo REJECTED + auditoria RECUSADO_LIMITE (fica gravado)
-  SS --> FE: 409 SELO_INDISPONIVEL
-else emissor exige revisão
-  SS -> DB: PENDING_REVIEW
-  EM -> SC: POST /api/seal-bonds/{bondId}/review {approve: true}
-  SC -> SS: review(…)
-  SS -> DB: APPROVED + código PRM… + contador
-else aceite direto
-  SS -> DB: APPROVED + código BRD… + contador
+alt limite inválido
+SealService --> SealController : 400 LIMITE_INVALIDO
+SealController --> P : 400 + mensagem
 end
-
-== 4. Perfil do emissor e Hype do selo ==
-VI -> FE: abre /brands/{slug} › Looks em destaque
-FE -> PC: GET /api/institutional/{slug}/tabs/ESQUEMAS_DESTAQUE
-PC -> INS: tab(viewer, slug, ESQUEMAS_DESTAQUE)
-INS -> DB: vínculos APPROVED vigentes, sem revalidação;\nlook publicado e visível para quem vê; autor ativo
-INS -> HQ: estado v2 dos looks
-INS --> FE: looks ordenados pelo HypeScore v2 (sem score no fim)\n+ promotion {issuedAt, expiresAt, expired, revalidationPending}
-VI -> FE: aba Selos
-FE -> SC: GET /api/users/{ownerId}/seals
-SC -> SS: sealsOf(…) → sealHype(selos)
-SS -> HQ: Hype atual dos itens com vínculo APPROVED
-SS --> FE: selos + hype {avgScore, level, bonded}
-FE --> VI: SealHypeStat ("Hype do selo")
-
-== 5. Guarda-roupa: Selos de Hype e selos de marca nas peças ==
-AU -> FE: Minhas peças › Com selo: Hype
-FE -> WC: GET /api/me/closet?seal=hype
-WC -> WS: closet(…, seal = hype)
-WS -> HQ: estado v2 das peças → HypeSeals.of(…)\n(só AVAILABLE e público elegível; privada não tem)
-WS --> FE: só as peças com selo de Hype
-FE -> SC: GET /api/pieces/seals?ids=a,b,c (até 60)
-SC -> SS: pieceSeals(viewer, ids)
-SS -> DB: vínculos APPROVED de tier PEÇA cujo linkedPieceIds contém a peça\n(respeitando a visibilidade de quem vê)
-SS --> FE: {items: {pieceId: [SealBadgeView]}}
-FE -> HQ: (via /api/hype/summaries) seals[] de cada peça
-FE --> AU: SealSlot com até 2 Selos de Hype (medalhão Padrão FashionAI)\n+ selos de marca/celebridade
+SealService -> DB_MySQL : INSERT/UPDATE seals
+SealService -> Audit : log()
+SealService -> DB_MySQL : SELECT seal_bonds
+SealService -> HypeCache : get()
+deactivate SealService
+SealService --> SealController : resultado
+SealController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

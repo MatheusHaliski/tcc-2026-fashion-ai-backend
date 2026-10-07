@@ -23,12 +23,7 @@ import java.util.UUID;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 
-/**
- * Um mundo pequeno do Fashion AI para os testes de service: pessoas com guarda-roupa completo (partes de cima, de
- * baixo, calçados, acessórios e peça inteira) e looks publicados montados com essas peças, tudo nos repositórios em
- * memória do {@link Kit}. As consultas da vitrine pública ({@code findAllPublic}, escritas à mão) e o
- * {@link SchemeService} (dono e quem pode ver) respondem a partir desses dados.
- */
+
 public final class World {
     /** Guarda-roupa padrão: categoria, subcategoria, cor e estilo de cada peça. */
     private static final String[][] WARDROBE = {

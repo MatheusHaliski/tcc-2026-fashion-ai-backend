@@ -1,55 +1,35 @@
 @startuml RF28_MaquinaDeEstados_Espelho
-title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de máquina de estados — o look no espelho (mirror_states.slots_json)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-[*] --> Vazio : GET /api/me/mirror (1º acesso cria slots = {})
-state "Vazio\n(nenhuma peça; scores = null)" as Vazio
-state "Incompleto\n(missing[]: falta superior, inferior ou calçado;\nações SUGERIR_*; post-it)" as Incompleto
-state "Completo — origin manual / smart_mirror\n((upper + lower) ou dress, + shoes)" as Manual
-state "Completo — origin vista_me\n(prompt + interpretation gravados)" as VistaMe
-state "Look do Dia registrado\n(daily_looks.source = SMART_MIRROR | VISTA_ME)" as LookDoDia
-state "Salvo como esquema\n(schemes.origin = SMART_MIRROR | VISTA_ME)" as Salvo
+title RF28 — ciclo de vida de DailyLook.source\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum DailyLookSource · tabela daily_looks
 
-Vazio --> Incompleto : POST /api/me/mirror/pieces {pieceId}
-Vazio --> VistaMe : POST /api/me/mirror/vista-me {prompt}\n(peças elegíveis; refs validados no servidor)
-Incompleto --> Incompleto : POST /pieces · DELETE /pieces/{id}\n· GET /suggestions?slot
-Incompleto --> Manual : veste a categoria que faltava\n([Sugerir calçado] → GET /suggestions?slot=shoes)
-Incompleto --> VistaMe : POST /vista-me {keepMirror}
-Manual --> VistaMe : POST /vista-me · POST /another
-VistaMe --> VistaMe : POST /another (sem repetir as 50 últimas)
-VistaMe --> Manual : POST /pieces (edição à mão:\norigin vira smart_mirror)
-Manual --> Incompleto : DELETE /pieces/{id} de peça obrigatória
-VistaMe --> Incompleto : DELETE /pieces/{id} de peça obrigatória
-Manual --> Manual : POST /take-one-off (tira acessório\nou camada externa) · POST /slots/{slot}/swap
-Incompleto --> Vazio : DELETE /api/me/mirror
-Manual --> Vazio : DELETE /api/me/mirror
-VistaMe --> Vazio : DELETE /api/me/mirror
-Manual --> LookDoDia : POST /use\n(409 PECA_INDISPONIVEL se peça no cesto)
-VistaMe --> LookDoDia : POST /use (+15 FAI Points, 1 por dia)
-Manual --> Salvo : POST /save (2+ peças)
-VistaMe --> Salvo : POST /save
-Incompleto --> Salvo : POST /save (2+ peças;\nsenão 400 SEM_PECAS)
-LookDoDia --> Manual : o espelho continua montado
-Salvo --> Manual : o espelho continua montado
-note right of Incompleto
-  completude determinística, sem IA (MirrorService.missing):
-  "Esse look ainda não possui calçado."
-  POST /use e POST /take-one-off → 409 LOOK_INCOMPLETO
-end note
-note bottom of LookDoDia
-  alimenta o diário de uso (RF27/RF29),
-  os desafios (RF32) e a Passarela 3D (RF33)
-end note
-note left of VistaMe
-  a IA é instruída a montar look completo, mas o servidor só
-  exige 2+ peças: se faltar calçado, o look fica Incompleto
-  (com origin vista_me). POST /draft devolve o RoomLookDraft
-  em qualquer estado com peças, sem mudar o espelho.
+state "DailyLook.source" as Ciclo_DailyLook {
+  state Ciclo_DailyLook_MANUAL as "MANUAL"
+  state Ciclo_DailyLook_AUTOPILOTO as "AUTOPILOTO"
+  state Ciclo_DailyLook_COPILOT as "COPILOT"
+  state Ciclo_DailyLook_VISTA_ME as "VISTA_ME"
+  state Ciclo_DailyLook_SMART_MIRROR as "SMART_MIRROR"
+}
+[*] --> Ciclo_DailyLook_MANUAL : criação
+note bottom of Ciclo_DailyLook
+  Recebe o valor escolhido em: register(source)
 end note
 @enduml

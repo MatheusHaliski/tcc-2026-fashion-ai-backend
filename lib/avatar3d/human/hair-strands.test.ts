@@ -4,7 +4,7 @@ import { parseBodyAsset, type BodyMeta } from "./asset";
 import { compose, fitBody } from "./compose";
 import { baseNormals } from "./three-human";
 import { buildHair, headFrame } from "./hair-geometry";
-import { groomFromJSON, groomToJSON, growGroom, strandContext, strandGeometry, strandMaterial, strandsFromGroom, withStrands } from "./hair-strands";
+import { BABY_KIND, FRINGE_KIND, groomFromJSON, groomToJSON, growGroom, strandContext, strandGeometry, strandMaterial, strandsFromGroom, withStrands } from "./hair-strands";
 import { HAIR_LODS, HairFrameBudget, chooseHairLod } from "./hair-lod";
 import { DEFAULT_BODY } from "../body-spec";
 import type { AvatarHair } from "../model";
@@ -147,7 +147,9 @@ describe("cabelo em fios — penteado, níveis de detalhe e sombreamento (fase 2
       const gg = growGroom(cx, hh, bb)!;
       for (const lod of [1, 2] as const) {
         const st = strandsFromGroom(cx, gg, lod)!; const p = st.position; let bad = 0;
-        for (let i = 0; i < p.length; i += 3) { const q: [number, number, number] = [p[i], p[i + 1], p[i + 2]]; if (cx.inFace(q) || cx.onSkin(q)) bad++; }
+        // com franja, a testa acima da sobrancelha é coberta de propósito (a franja deita na pele da testa)
+        const forehead = (q: [number, number, number]) => "fringe" in o && q[1] > cx.browY - 0.002 && Math.abs(q[0] - cx.fr.cx) < cx.fr.halfW * 0.85 && q[2] > cx.fr.cz;
+        for (let i = 0; i < p.length; i += 3) { const q: [number, number, number] = [p[i], p[i + 1], p[i + 2]]; if (cx.inFace(q) || (cx.onSkin(q) && !forehead(q))) bad++; }
         expect(bad / (p.length / 3)).toBeLessThan(0.003);
       }
       let bangs = 0;
@@ -172,5 +174,68 @@ describe("cabelo em fios — penteado, níveis de detalhe e sombreamento (fase 2
     for (let i = 0; i < 80 && got === null; i++) got = b.push(40, 0);
     expect(got).toBe(1);                                                         // 25 qps: desce para o 1
     expect(new HairFrameBudget(1, 0).push(500, 2)).toBeNull();                   // cards nunca descem sozinhos
+  });
+});
+
+describe("franja escolhida (reta, lateral, cortina) — HAIR-MOTION", () => {
+  const grow = (o: Partial<AvatarHair>) => {
+    const hh = hairOf({ length: "long", bottom: -24, ...o });
+    const bb = buildHair(asset, c, normals, hh, 1, { base: true })!; const cx = strandContext(asset, c, hh, bb, 1)!;
+    return { cx, gg: growGroom(cx, hh, bb)! };
+  };
+  const linesOf = (gg: ReturnType<typeof grow>["gg"], k: number) => {
+    const out: number[][][] = [];
+    for (let g = 0; g < gg.kind.length; g++) if (gg.kind[g] === k) { const l: number[][] = []; for (let p = gg.start[g]; p < gg.start[g + 1]; p++) l.push([gg.points[p * 3], gg.points[p * 3 + 1], gg.points[p * 3 + 2]]); out.push(l); }
+    return out;
+  };
+
+  it("reta: muitas guias, simétrica (cada guia tem o espelho exato), todas as pontas na mesma altura, cobrindo a testa", () => {
+    const { cx, gg } = grow({ fringe: 0.9, fringeStyle: "blunt" });
+    const ls = linesOf(gg, FRINGE_KIND.blunt); expect(ls.length).toBeGreaterThan(200);
+    for (let i = 0; i < ls.length; i += 2) {
+      const a = ls[i], b = ls[i + 1]; expect(b.length).toBe(a.length);
+      for (let j = 0; j < a.length; j++) { expect(a[j][0] + b[j][0]).toBeCloseTo(2 * cx.fr.cx, 6); expect(a[j][1]).toBeCloseTo(b[j][1], 6); expect(a[j][2]).toBeCloseTo(b[j][2], 6); }
+    }
+    const ends = ls.map((l) => l[l.length - 1]);
+    for (const e of ends) expect(e[1]).toBeCloseTo(cx.browY + 0.004, 5);        // corte reto, na sobrancelha
+    const xs = ends.map((e) => (e[0] - cx.fr.cx) / cx.fr.halfW);
+    expect(Math.min(...xs)).toBeLessThan(-0.45); expect(Math.max(...xs)).toBeGreaterThan(0.45);
+    // as fitas também: nada abaixo da linha de corte (nunca na frente dos olhos)
+    const st = strandsFromGroom(cx, gg, 1)!; let below = 0;
+    for (let i = 1; i < st.position.length; i += 3) if (st.position[i] < cx.browY - 0.003 && Math.abs(st.position[i - 1] - cx.fr.cx) < cx.fr.halfW * 0.6 && st.position[i + 1] > cx.fr.cz + 0.03) below++;
+    expect(below / (st.position.length / 3)).toBeLessThan(0.002);
+  });
+
+  it("lateral: varrida para um lado, corte em diagonal (mais longa do lado para onde vai); cortina: curta no meio e longa nas laterais, fora da frente dos olhos", () => {
+    const side = grow({ fringe: 0.7, fringeStyle: "side" });
+    const sl = linesOf(side.gg, FRINGE_KIND.side); expect(sl.length).toBeGreaterThan(100);
+    const se = sl.map((l) => l[l.length - 1]);
+    const left = se.filter((e) => e[0] < side.cx.fr.cx - 0.02), right = se.filter((e) => e[0] > side.cx.fr.cx + 0.02);
+    const avg = (a: number[][]) => a.reduce((s, e) => s + e[1], 0) / a.length;
+    expect(avg(left)).toBeLessThan(avg(right) - 0.005);                        // varre para −x: mais longa ali
+    const cur = grow({ fringe: 0.6, fringeStyle: "curtain" });
+    const ce = linesOf(cur.gg, FRINGE_KIND.curtain).map((l) => l[l.length - 1]);
+    const mid = ce.filter((e) => Math.abs(e[0] - cur.cx.fr.cx) < cur.cx.fr.halfW * 0.3), out = ce.filter((e) => Math.abs(e[0] - cur.cx.fr.cx) > cur.cx.fr.halfW * 0.75);
+    expect(mid.length).toBeGreaterThan(5); expect(out.length).toBeGreaterThan(5);
+    expect(avg(mid)).toBeGreaterThan(avg(out) + 0.01);
+    for (const l of linesOf(cur.gg, FRINGE_KIND.curtain)) for (const q of l) expect(cur.cx.inFace(q as [number, number, number]) && q[1] < cur.cx.browY - 0.003).toBe(false);
+  });
+
+  it("sem franja escolhida, o penteado é o de antes (nenhuma guia de franja escolhida)", () => {
+    const { gg } = grow({ fringe: 0 });
+    expect(Array.from(gg.kind).some((k) => k >= 2 && k <= 4)).toBe(false);
+  });
+
+  it("linha do cabelo: fios curtos nascendo na borda da base e penteados para trás, nunca no rosto", () => {
+    const { cx, gg } = grow({ fringe: 0 });
+    const ls = linesOf(gg, BABY_KIND); expect(ls.length).toBeGreaterThan(150);
+    for (const l of ls) {
+      const a = l[0], b = l[l.length - 1]; expect(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2])).toBeLessThan(0.035);  // curtos (raiz→ponta, até 3,5 cm)
+      expect(l[l.length - 1][1]).toBeGreaterThan(l[0][1] - 0.002);              // sobem/vão para trás, não caem na testa
+      for (const q of l) expect(cx.inFace(q as [number, number, number])).toBe(false);
+    }
+    // com franja reta, a frente fica com a franja (sem fio curto debaixo dela)
+    const fr2 = linesOf(grow({ fringe: 0.9, fringeStyle: "blunt" }).gg, BABY_KIND);
+    expect(fr2.every((l) => Math.abs(Math.atan2(l[0][0] - cx.fr.cx, l[0][2] - cx.fr.cz)) >= 0.55)).toBe(true);
   });
 });

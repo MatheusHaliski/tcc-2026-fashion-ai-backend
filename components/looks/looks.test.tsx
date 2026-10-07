@@ -92,8 +92,8 @@ describe("Lookbook — vitrine social", () => {
     const text = container.textContent ?? "";
     expect(text.indexOf("Look de sexta")).toBeLessThan(text.indexOf("Jaqueta de couro"));
     expect(api.calls.some((c) => c.path === "/api/users/u2/publications?page=0&size=24")).toBe(true);
-    // a ordem das abas: Peças · Looks · Publicações · Favoritos · … (visitante não vê Salvos nem Insights)
-    expect(screen.getAllByRole("tab").map((t) => t.firstChild?.textContent)).toEqual(["Peças", "Looks", "Publicações", "Favoritos", "Agrupamentos", "Momentos"]);
+    // a ordem das abas: Peças · Cartas FLAIR · Looks · Publicações · Favoritos · … (visitante não vê Salvos nem Insights)
+    expect(screen.getAllByRole("tab").map((t) => t.firstChild?.textContent)).toEqual(["Peças", "Cartas FLAIR", "Looks", "Publicações", "Favoritos", "Agrupamentos", "Momentos"]);
     expect(screen.getByRole("tab", { name: /Publicações/ }).getAttribute("aria-selected")).toBe("true");
   });
 
@@ -116,7 +116,7 @@ describe("Lookbook — vitrine social", () => {
     // a gestão saiu do Lookbook: nenhum filtro e nenhuma chamada a /api/me/schemes
     expect(screen.queryByRole("button", { name: /Estado:/ })).toBeNull();
     expect(schemeCalls(api.calls)).toEqual([]);
-    expect(screen.getAllByRole("tab").map((t) => t.firstChild?.textContent)).toEqual(["Peças", "Looks", "Publicações", "Favoritos", "Salvos", "DNA de estilo", "Look do Dia", "Cápsula", "Agrupamentos", "Momentos", "Insights"]);
+    expect(screen.getAllByRole("tab").map((t) => t.firstChild?.textContent)).toEqual(["Peças", "Minhas cartas FLAIR", "Looks", "Publicações", "Favoritos", "Salvos", "DNA de estilo", "Look do Dia", "Cápsula", "Agrupamentos", "Momentos", "Insights"]);
   });
 
   it("quem visita vê os mesmos looks publicados, sem o atalho de gestão", async () => {

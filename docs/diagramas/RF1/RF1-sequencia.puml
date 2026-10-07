@@ -1,104 +1,77 @@
 @startuml RF1_Sequencia
-title RF1 — Cadastrar conta na plataforma (Pessoal, Marca ou Celebridade)\nDiagrama de sequência — cadastro, envio de imagens e confirmação do e-mail
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as P
-participant "register/page.tsx\nverify-email/page.tsx\n(PhotoPicker)" as FE
-participant "BFF\n/bff/auth/[action]" as BFF
-participant "AuthRateLimitFilter\n(limite por IP)" as RLF
-participant "AuthController" as AC
-participant "PreferencesController" as PC
-participant "IdentityService" as IS
-participant "MediaStoragePort\n(S3 / local)" as ST
-participant "EmailSenderPort\n(Resend)" as EM
-participant "NotificationService" as NS
-participant "IssuerReviewService" as IRS
-database "MySQL" as DB
+autonumber "<b>0."
+title RF1 — Cadastrar conta na plataforma (perfil Pessoal, Marca ou Celebridade)\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-P -> FE: escolhe o tipo de perfil e preenche o formulário
-opt foto de perfil, logo, foto oficial, documento ou comprovante
-  FE -> RLF: POST /api/auth/uploads?kind=avatar|logo|official-photo|identity|activity-proof
-  RLF -> AC: até 40 envios/h por IP (senão 429 MUITAS_TENTATIVAS)
-  AC -> IS: preRegistrationUpload(bytes, kind, ip)
-  alt tipo fora da lista · mais de 8 MB · 30 envios/h por IP
-    IS --> FE: 400 TIPO_INVALIDO · 400 ARQUIVO_GRANDE · 429 LIMITE_ENVIOS
-  else imagem aceita
-    IS -> ST: put("pending/{uuid}/{kind}.jpg" ou "restricted/pending/{uuid}/{kind}.jpg")
-    AC --> FE: 201 {url, kind, width, height}
-  end
+actor "Pessoa usuária" as U
+boundary "Tela (Next.js)" as P
+control "AuthController" as AuthController
+participant "IdentityService" as IdentityService
+participant "MediaStoragePort\n(LocalFileMediaStorage, S3MediaStorageAdapter)" as MediaStoragePort
+database "MySQL" as DB_MySQL
+participant "PasswordHasherPort\n(Argon2PasswordHasher)" as PasswordHasherPort
+== Cadastrar conta (pessoal, marca ou celebridade) e abrir sessão ==
+U -> P : Cadastrar conta (pessoal, marca ou celebridade) e…
+P -> AuthController : POST /api/auth/register
+AuthController -> IdentityService : register()
+activate IdentityService
+alt tipo inválido
+IdentityService --> AuthController : 400 TIPO_INVALIDO
+AuthController --> P : 400 + mensagem
 end
-FE -> PC: GET /api/usernames/{username}/availability
-PC --> FE: 200 {username, available, suggestions}
-FE -> BFF: POST /bff/auth/register (RegisterCommand)
-BFF -> RLF: POST /api/auth/register (X-Dev-Gate, IP assinado)
-RLF -> AC: até 10 cadastros/h por IP · vaga no teto de hashes (senão 503 AUTENTICACAO_OCUPADA)
-AC -> IS: register(cmd, ip, userAgent)
-IS -> IS: validatePassword · validCnpj · termos · idade ≥ 13 · campos de MARCA/CELEBRIDADE (CA01, CA03)
-IS -> ST: get(chave pendente) — confere cada envio do formulário
-alt formulário inválido
-  IS --> BFF: 400 FORMULARIO_INVALIDO {errors}
-else e-mail já cadastrado (CA02)
-  IS -> DB: existsByEmailHash(emailHash)
-  IS --> BFF: 409 EMAIL_EM_USO (sem dados da conta existente)
-else @ já usado
-  IS --> BFF: 400 USERNAME_EM_USO {suggestions}
-else cadastro aceito
-  IS -> DB: INSERT users (passwordHash Argon2id, PENDING_EMAIL_VERIFICATION, PRIVATE)
-  IS -> ST: put(users/{id}/profile/… | restricted/users/{id}/documents/…)
-  IS -> DB: INSERT user_preferences (language, mannequinSex)
-  opt MARCA ou CELEBRIDADE
-    IS -> DB: INSERT brand_profiles | celebrity_profiles (PENDENTE, reviewAttempts = 1)
-  end
-  IS -> DB: INSERT verification_codes (EMAIL_VERIFICATION, 24 h)
-  IS -> EM: send(e-mail, "Confirme seu e-mail", código de 6 dígitos)
-  opt MARCA ou CELEBRIDADE
-    IS -> EM: send(e-mail, "Cadastro recebido — pendente de validação") (CA06/CA09)
-    IS -> IRS: submitted(userId)
-    note right of IRS: aviso aos administradores só\ndepois do commit (ver RF1_Sequencia_Verificacao)
-  end
-  IS -> NS: notify(WELCOME) · notify(EMAIL_CONFIRMATION)
-  IS -> DB: INSERT audit_log CADASTRO_CONTA · INSERT refresh_tokens (família nova, 30 dias)
-  AC --> BFF: 201 Session {accessToken, refreshToken, user, status, emailVerified = false, warnings}
-  BFF --> FE: 201 Session sem refreshToken + Set-Cookie fai_rt (HttpOnly, SameSite=Strict, Path=/bff/auth)
-  FE -> FE: signIn (access em memória) · avisos · vai para /verify-email
+IdentityService -> MediaStoragePort : get()
+alt formulario inválido
+IdentityService --> AuthController : 400 FORMULARIO_INVALIDO
+AuthController --> P : 400 + mensagem
 end
-== Confirmação do e-mail (CA05) ==
-P -> FE: digita o código
-FE -> AC: POST /api/auth/email-verification {code} (Bearer)
-AC -> IS: verifyEmail(user, code)
-IS -> DB: verification_codes (último código aberto)
-alt mais de 10 tentativas por hora
-  IS --> FE: 429 MUITAS_TENTATIVAS
-else código expirado ou errado
-  IS -> DB: attempts + 1 (o 5º erro invalida o código)
-  IS --> FE: 400 CODIGO_INVALIDO (restam n) | CODIGO_EXPIRADO
-else código correto
-  IS -> DB: consumedAt · users.emailVerified = true
-  alt PESSOAL, ou perfil já APROVADO
-    IS -> DB: users.status = ACTIVE
-  else MARCA ou CELEBRIDADE aguardando a análise
-    IS -> DB: users.status = PENDING_VALIDATION
-    IS -> IRS: emailConfirmed(user) → reviewSubmittedAt = agora (o prazo começa)
-  end
-  IS -> DB: audit_log EMAIL_CONFIRMADO
-  AC --> FE: 200 UserCard
-  FE -> FE: refreshMe · vai para /closet
+alt e-mail em uso
+IdentityService --> AuthController : 409 EMAIL_EM_USO
+AuthController --> P : 409 + mensagem
 end
-opt reenviar o código
-  FE -> AC: POST /api/auth/email-verification/resend
-  AC -> IS: resendEmailVerification(user)
-  alt mais de 5 reenvios no dia
-    IS --> FE: 429 {resetAt}
-  else
-    IS -> DB: invalida os códigos abertos · INSERT verification_codes
-    IS -> EM: send(novo código)
-    AC --> FE: 202
-  end
+IdentityService -> DB_MySQL : SELECT users
+alt username em uso
+IdentityService --> AuthController : 400 USERNAME_EM_USO
+AuthController --> P : 400 + mensagem
 end
+IdentityService -> IdentityService : new User()
+IdentityService -> PasswordHasherPort : hash()
+IdentityService -> IdentityService : profileType = ?type
+IdentityService -> IdentityService : privateAccount = true
+IdentityService -> IdentityService : termsAcceptedAt = set
+IdentityService -> IdentityService : status = PENDING_EMAIL_VERIFICATION
+IdentityService -> DB_MySQL : INSERT/UPDATE users
+IdentityService -> MediaStoragePort : put()
+IdentityService -> IdentityService : avatarUrl = set (×3)
+IdentityService -> IdentityService : new UserPreferences()
+IdentityService -> DB_MySQL : INSERT/UPDATE user_preferences
+IdentityService -> IdentityService : new BrandProfile()
+IdentityService -> DB_MySQL : SELECT brand_profiles
+IdentityService -> IdentityService : logoUrl = set
+IdentityService -> IdentityService : storeUrl = set
+IdentityService -> IdentityService : activityProofUrl = set
+note over IdentityService : … e mais 33 passos no código
+deactivate IdentityService
+IdentityService --> AuthController : resultado
+AuthController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

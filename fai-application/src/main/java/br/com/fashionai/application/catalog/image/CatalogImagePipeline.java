@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Pipeline de imagens da Busca Catalogada (CATALOG_IMAGE_PIPELINE_V2), puro (sem rede, banco ou disco):
+ * Pipeline de imagens da Busca Catalogada (CATALOG_IMAGE_PIPELINE_V3), puro (sem rede, banco ou disco):
  * SOURCE → VALIDATION → PRODUCT DETECTION → SEGMENTATION → DISTRACTOR REMOVAL → CATEGORY-AWARE ROI → SEMANTIC REFRAMING
  * → BACKGROUND NORMALIZATION → DETAIL PRESERVATION → QUALITY CHECK → CATALOG MASTER IMAGE.
  *
@@ -28,7 +28,9 @@ import java.util.Set;
  * master (PNG transparente + variantes branco/neutro/card/thumb) para o storage do FashionAI.
  */
 public final class CatalogImagePipeline {
-    public static final String VERSION = "CATALOG_IMAGE_PIPELINE_V2";
+    public static final String VERSION = "CATALOG_IMAGE_PIPELINE_V3";
+    /** vistas que a origem declara de fato (PACKSHOT, OTHER e DETAIL não dizem qual lado da peça aparece) */
+    static final Set<String> VIEWS = Set.of("FRONT", "BACK", "SIDE", "TOP");
     public static final Set<String> ACCEPTED_MIME = Set.of("image/jpeg", "image/png", "image/webp");
 
     public record Request(byte[] bytes, String category, String subcategory, String imageType, boolean persist) {
@@ -70,6 +72,10 @@ public final class CatalogImagePipeline {
             }
             m.put("background", background);
             m.put("padding", NRect.r4(crop.best().padding()));
+            if (crop.rule() != null) {
+                m.put("rule", crop.rule().toMap());
+                m.put("ruleCompliant", crop.compliance().get("ok"));
+            }
             return m;
         }
     }
@@ -166,6 +172,16 @@ public final class CatalogImagePipeline {
                     + " color=" + NRect.r4(color)));
         }
 
+        // REGRA DE ENQUADRAMENTO (§9.1): recorte fora da regra ou vista declarada diferente da exigida vão para revisão
+        if (crop.rule() != null && Boolean.FALSE.equals(crop.compliance().get("ok"))) {
+            extra.add("FRAMING_RULE_NOT_MET");
+        }
+        String required = crop.rule() == null ? "ANY" : crop.rule().view();
+        String declared = req.imageType() == null ? null : req.imageType().toUpperCase(java.util.Locale.ROOT);
+        if (!"ANY".equals(required) && declared != null && VIEWS.contains(declared) && !declared.equals(required)) {
+            extra.add("VIEW_MISMATCH_" + required);
+        }
+
         // QUALITY CHECK
         t = System.nanoTime();
         Boolean logoInside = logoInside(product, crop.best().crop());
@@ -190,6 +206,10 @@ public final class CatalogImagePipeline {
         debug.put("truncated", seg.truncatedSides());
         debug.put("hangerTrimmed", seg.hangerTrimmed());
         debug.put("registryVersion", registry.version());
+        if (crop.rule() != null) {
+            debug.put("framingRule", crop.rule().toMap());
+            debug.put("ruleCompliance", crop.compliance());
+        }
         return new Analysis(outcome, List.copyOf(reasons), verdict.manualReview() || outcome == CatalogImageValidator.Outcome.NEEDS_REPROCESSING,
                 verdict.confidence(), mime, w, h, sha, phash, type, seg.productBox(), focus, crop, report.metrics(), report.overall(),
                 String.format("#%06x", seg.backgroundRgb() & 0xFFFFFF), detailView, rendered, List.copyOf(stages), debug);

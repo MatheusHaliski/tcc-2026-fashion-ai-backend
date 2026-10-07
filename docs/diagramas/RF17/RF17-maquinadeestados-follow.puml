@@ -1,27 +1,41 @@
 @startuml RF17_MaquinaDeEstados_Follow
 !pragma layout smetana
-title RF17 — Follow: vínculo entre visitante e perfil (seguir, pedido, bloqueio)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "sem vínculo\n(relation = NENHUMA)" as Nenhuma
-state "PENDENTE" as Pendente
-state "ACEITO" as Aceito
-state "BLOQUEADO" as Bloqueado
-[*] --> Nenhuma
-Nenhuma --> Pendente : POST /api/users/{targetId}/followers\n(privateAccount, não PUBLIC, PESSOAL)
-Nenhuma --> Aceito : POST /api/users/{targetId}/followers\n(perfil público ou institucional)
-Pendente --> Aceito : POST /api/follow-requests/{followId}\n{accept: true}
-Pendente --> Nenhuma : recusa (DELETE da linha) ou\nDELETE /api/users/{targetId}/followers/me
-Aceito --> Nenhuma : DELETE /api/users/{targetId}/followers/me
-Nenhuma --> Bloqueado : PUT /api/users/{targetId}/block {blocked: true}
-Pendente --> Bloqueado : PUT .../block {blocked: true}
-Aceito --> Bloqueado : PUT .../block {blocked: true}
-Bloqueado --> Nenhuma : PUT .../block {blocked: false}
-note right of Aceito : só aqui o visitante vê o conteúdo\nde perfis FOLLOWERS (Guard.canView);\nconta em seguidores/seguindo
-note right of Bloqueado : quem foi bloqueado recebe 404\nno perfil e não pode seguir
+title RF17 — ciclo de vida de Follow.status\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum FollowStatus · tabela follows
+
+state "Follow.status" as Ciclo_Follow {
+  state Ciclo_Follow_PENDENTE as "PENDENTE"
+  state Ciclo_Follow_ACEITO as "ACEITO"
+  state Ciclo_Follow_BLOQUEADO as "BLOQUEADO"
+}
+[*] --> Ciclo_Follow_ACEITO : criação
+Ciclo_Follow --> Ciclo_Follow_BLOQUEADO : block()\nPUT /api/users/{targetId}/block
+Ciclo_Follow_PENDENTE --> Ciclo_Follow_ACEITO : respond()\nPOST /api/follow-requests/{followId}
+note bottom of Ciclo_Follow
+  Sem mudança explícita no código para: PENDENTE
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
+note right of Ciclo_Follow
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
+end note
 @enduml

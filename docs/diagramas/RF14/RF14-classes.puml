@@ -1,197 +1,178 @@
 @startuml RF14_Classes
-title RF14 — Aba "Marcas": feed e perfil das marcas cadastradas\nDiagrama de classes — InstitutionalService, política de exibição (Promoted), Hype da marca e entidades
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF14 — Visualizar a aba 'Marcas' — Feed de Perfil de Marcas de roupa cadastradas dentro do sistema do FashionAI\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-web · controller" {
-class ProfileController {
-  +brands(viewer, term, order): Map
-  +celebrities(viewer, term, order): Map
-  +institutional(viewer, slugOrId): Map
-  +institutionalTab(viewer, slugOrId, tab, filter, groupingId): Object
-  +store(slugOrId): Map
-  +updateBrand(user, fields): Map
-  +follow(user, targetId) · unfollow(user, targetId)
+package "fai-domain (entidades JPA)" {
+  class Follow <<follows>> {
+    +id: UUID
+    +follower: User
+    +following: User
+    +status: FollowStatus
+    +respondedAt: Instant
+  }
+  class Brand <<brands>> {
+    +id: UUID
+    +name: String
+    +slug: String
+    +logoUrl: String
+    +website: String
+    +source: BrandSource
+    +catalogOrigin: CatalogOrigin
+    +fixtureKey: String
+    +sourceConfidence: BigDecimal
+    +verifiedAt: Instant
+    .. +2 campos ..
+  }
+  class BrandLogo <<brand_logos>> {
+    +id: UUID
+    +nameKey: String
+    +displayName: String
+    +logoUrl: String
+    +source: String
+    +status: String
+    +domain: String
+    +originUrl: String
+    +confidence: BigDecimal
+    +attempts: int
+    .. +2 campos ..
+  }
+  class BrandProfile <<brand_profiles>> {
+    +id: UUID
+    +owner: User
+    +brandName: String
+    +slug: String
+    +logoUrl: String
+    +coverUrl: String
+    +bio: String
+    +storeUrl: String
+    +cnpj: String
+    +razaoSocial: String
+    .. +21 campos ..
+  }
+  class CelebrityProfile <<celebrity_profiles>> {
+    +id: UUID
+    +owner: User
+    +stageName: String
+    +slug: String
+    +avatarUrl: String
+    +coverUrl: String
+    +bio: String
+    +realName: String
+    +areasJson: String
+    +verifiableFollowersJson: String
+    .. +20 campos ..
+  }
+  class StyleDna <<style_dna>> {
+    +id: UUID
+    +user: User
+    +archetype: StyleArchetype
+    +boldnessIndex: int
+    +identityPhrase: String
+    +colorPalette: String
+    +styleKeywords: String
+    +occasionKeywords: String
+    +iconPieceName: String
+    +latestDnaSchemeId: UUID
+    .. +9 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
 }
-class HypeController {
-  +groups(viewer, type, keys, window): Map
+package "fai-domain (enums)" {
+  enum FollowStatus {
+    PENDENTE
+    ACEITO
+    BLOQUEADO
+  }
+  enum ApprovalStatus {
+    PENDENTE
+    AJUSTES
+    APROVADO
+    RECUSADO
+    SUSPENSO
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum BrandSource {
+    SEEDED
+    AUTO_DETECTED
+    USER_SUBMITTED
+  }
+  enum ProfileType {
+    PESSOAL
+    MARCA
+    CELEBRIDADE
+    ADMIN
+  }
+  enum Visibility {
+    PRIVATE
+    FOLLOWERS
+    PUBLIC
+  }
 }
-}
-
 package "fai-application" {
-class InstitutionalService {
-  {static} +FEED_ORDERS = AFINIDADE, RECENTES, EM_ALTA
-  {static} +HIDDEN_AUTHORS = SUSPENDED, DELETION_SCHEDULED, DELETED
-  {static} +DESTAQUES_LIMIT = 12
-  {static} +TAB_LIMIT = 60
-  +brandFeed(viewer, term, order): Map
-  +celebrityFeed(viewer, term, order): Map
-  +profile(viewer, slugOrId): Map
-  +tab(viewer, slugOrId, tab, filter, groupingId): Object
-  +store(slugOrId): Map
-  +updateBrand(user, fields): Map
-  ~brandCard(BrandProfile): Map
-  ~affinity(userStyles, ownerId): double
-  ~feedHype(viewer, RankGroup, keys): Map
-  ~displayable(viewer, Scheme): boolean
-  ~displayable(viewer, WardrobeItem): boolean
-  ~promoted(viewer, User, history, now): List<Promoted>
-  ~filterLooks(list, filter, groupingId, personal): List<Promoted>
-  ~pieceEntries(viewer, looks): List
-  ~catalog(viewer, User, filter, admin): List
-  {static} ~covers(SealBond, pieceId): boolean
-  {static} ~lookHype(hype, schemeId, personal): Double
-  {static} ~lookGrowth(hype, schemeId, personal): Double
+  class InstitutionalService <<service>> {
+    +brandFeed()
+    +celebrityFeed()
+    +profile()
+    +tab()
+    +updateBrand()
+  }
 }
-class Promoted <<record>> {
-  +scheme: Scheme
-  +bonds: List<SealBond>
-  +issuedAt: Instant
-  +expiresAt: Instant
-  +expired: boolean
-  +revalidationPending: boolean
-}
-class HypeQueryService {
-  {static} ~MIN_GROUP_ITEMS = 3
-  {static} ~GROUP_TOP_ITEMS = 5
-  +groups(viewer, RankGroup, keys, window): Map
-  +currentOf(HypeEntityType, ids): Map<UUID, HypeScoreCurrent>
-  {static} +brandKey(name): String
-}
-enum RankGroup {
-  BRAND
-  CREATOR
-}
-class SealService {
-  +sealsOf(viewer, ownerId): List
-  +promotionsOf(viewer, ownerId): List
-  {static} +badge(SealBond): Map
-}
-class SchemeService {
-  +canView(viewer, Scheme): boolean
-  +view(viewer, Scheme, items): SchemeView
-}
-}
-
-package "fai-domain · model" {
-class BrandProfile {
-  +owner: User
-  +brandName: String
-  +slug: String
-  +logoUrl, coverUrl: String
-  +bio: String — cifrada
-  +storeUrl: String
-  +fashionCategory: String
-  +officialHashtag: String
-  +country: String
-  +approvalStatus: ApprovalStatus = PENDENTE
-  +requiresSealReview: boolean
-  +sealConfidenceThreshold: BigDecimal = 0.600
-}
-class User {
-  +username: String
-  +avatarUrl: String
-  +profileType: ProfileType
-  +status: AccountStatus
-}
-class Follow {
-  +follower: User
-  +following: User
-  +status: FollowStatus
-}
-class SealBond {
-  +scheme: Scheme
-  +targetOwner: User
-  +status: SealBondStatus
-  +tier: SealTier
-  +linkedPieceIdsJson: String
-  +issuedAt, expiresAt: Instant
-}
-class Scheme {
-  +user: User
-  +status: SchemeStatus
-  +visibility: Visibility
-  +disponivel: boolean
-  +lookDoDiaCount: int
-  +groupingId: UUID
-  +revalidationPending: boolean
-}
-class WardrobeItem {
-  +availabilityStatus: AvailabilityStatus
-  +moderationStatus: ModerationStatus
-  +styleTags: String
-}
-class HypeScoreCurrent {
-  +status: HypeStatus
-  +score: BigDecimal
-  +publicEligible: boolean
-  +dimensions.trend: BigDecimal
-  +deltaPoints: BigDecimal
-}
-class StyleDna {
-  +styleKeywords: String
-  .. ver RF13 ..
-}
-}
-package "fai-domain · enums" {
-enum ApprovalStatus {
-  PENDENTE
-  AJUSTES
-  APROVADO
-  RECUSADO
-  SUSPENSO
-}
-enum SealBondStatus {
-  SUGGESTED
-  ACCEPTED
-  EDITED
-  REFUSED
-  PENDING_REVIEW
-  APPROVED
-  REJECTED
-  REVOKED
-}
-enum SealTier {
-  PECA
-  LOOK
-}
-enum FollowStatus {
-  PENDENTE
-  ACEITO
-  BLOQUEADO
-}
-}
-
-ProfileController --> InstitutionalService
-HypeController --> HypeQueryService
-InstitutionalService --> HypeQueryService : feedHype · currentOf
-InstitutionalService --> SealService
-InstitutionalService --> SchemeService : canView · view
-InstitutionalService ..> Promoted
-HypeQueryService ..> RankGroup
-Promoted "*" --> "1" Scheme
-Promoted "*" --> "1..*" SealBond
-InstitutionalService ..> BrandProfile : feed só APROVADO
-InstitutionalService ..> StyleDna : afinidade
-InstitutionalService ..> HypeScoreCurrent : ordem HYPE / GROWTH
-BrandProfile "0..1" --> "1" User : owner
-Follow "*" --> "1" User : following
-SealBond "*" --> "1" Scheme
-SealBond "*" --> "1" User : targetOwner
-Scheme "*" --> "1" User : user
+InstitutionalService ..> BrandProfile : usa
+InstitutionalService ..> CelebrityProfile : usa
+InstitutionalService ..> Follow : usa
+InstitutionalService ..> StyleDna : usa
+InstitutionalService ..> User : usa
+Brand "*" --> "1" BrandProfile : brandProfile
+Brand --> BrandSource
+BrandProfile "1" --> "1" User : owner
 BrandProfile --> ApprovalStatus
-SealBond --> SealBondStatus
-SealBond --> SealTier
+BrandProfile --> BrandSource
+CelebrityProfile "1" --> "1" User : owner
+CelebrityProfile --> ApprovalStatus
+Follow "*" --> "1" User : follower
+Follow "*" --> "1" User : following
 Follow --> FollowStatus
-note bottom of BrandProfile : tabela brand_profiles
-note bottom of SealBond : tabela seal_bonds — só APPROVED põe\num look no perfil (vigente = destaque;\nexpirado/revalidação = consagrado)
-note bottom of HypeScoreCurrent : tabela hype_scores (HypeScore v2)
+StyleDna "1" --> "1" User : user
+User --> AccountStatus
+User --> ProfileType
+User --> Visibility
 @enduml

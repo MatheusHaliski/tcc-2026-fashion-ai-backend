@@ -1,9 +1,16 @@
 @startuml RF2_Atividades
-title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de atividades — login, segundo fator, freios contra força bruta e sessão no navegador
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,98 +19,77 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre /login e informa e-mail ou @, senha\ne "lembrar-me" (ligado por padrão);
-|Frontend (login/page.tsx · BFF)|
-:POST /bff/auth/login (mesma origem, corpo ≤ 64 KB)\nLoginCommand {identifier, password, rememberMe,\ndeviceName = userAgent, twoFactorCode};
-:BFF repassa a POST /api/auth/login\ncom X-Dev-Gate e o IP assinado (HMAC);
-|API (AuthRateLimitFilter)|
-if (Mais de 30 logins em 10 min deste IP (IPv6: prefixo /64)?) then (sim)
-  #FFE3E3:429 MUITAS_TENTATIVAS + Retry-After;
+:Abre /login, /closet, /reset-password;
+|Tela (Next.js)|
+:Monta a tela;
+|Pessoa usuária|
+:Autenticar por e-mail/username e\nsenha (2FA opcional);
+|Tela (Next.js)|
+:POST /api/auth/login;
+|API (Spring Boot)|
+:AuthController.login\n→ IdentityService.login;
+if (erro?) then (sim)
+  :500 ERRO\n→ a tela mostra o aviso;
   stop
 endif
-if (Vaga no teto de hashes Argon2 em até 2 s?) then (não)
-  #FFE3E3:503 AUTENTICACAO_OCUPADA + Retry-After: 2;
+if (erro?) then (sim)
+  :500 ERRO\n→ a tela mostra o aviso;
   stop
 endif
-|API (AuthController · IdentityService)|
-:Busca a conta: com "@" pelo emailHash,\nsenão pelo @ normalizado;
-if (Conta existe?) then (não)
-  :Confere a senha contra um hash falso (mesmo tempo)\ne audita LOGIN_FALHO (usuario_inexistente);
-  #FFE3E3:401 NAO_AUTENTICADO;
+if (erro?) then (sim)
+  :500 ERRO\n→ a tela mostra o aviso;
   stop
 endif
-:Reserva 1 tentativa no balde "login-fail"\n(5 em 15 min, atômico) e confere a senha (Argon2id) sempre;
-if (Balde cheio (conta bloqueada)?) then (sim)
-  :Audita LOGIN_BLOQUEADO_TENTATIVAS;
-  #FFE3E3:401 NAO_AUTENTICADO (igual à senha errada);
-  stop
-elseif (Senha errada?) then (sim)
-  :A reserva fica (conta como falha);\naudita LOGIN_FALHO;
-  #FFE3E3:401 NAO_AUTENTICADO;
-  stop
-else (senha certa)
-  :Devolve a reserva (release);
-endif
-if (status DELETED ou SUSPENDED?) then (sim)
-  #FFE3E3:403 CONTA_INDISPONIVEL;
+if (conta indisponível?) then (sim)
+  :403 CONTA_INDISPONIVEL\n«Esta conta não está disponível.»\n→ a tela mostra o aviso;
   stop
 endif
-if (Hash com parâmetros antigos?) then (sim)
-  :Refaz o hash com a senha certa (needsRehash);
-else (não)
-endif
-if (twoFactorEnabled?) then (sim)
-  if (Código 2FA veio no pedido?) then (não)
-    :VerificationCode TWO_FACTOR (6 dígitos, 10 min)\ne envio por e-mail;
-    #FFF5F8:401 DOIS_FATORES_NECESSARIO {twoFactorRequired: true};
-    note right
-      Divergência: a tela /login procura os códigos
-      2FA_OBRIGATORIO ou CODIGO_2FA para mostrar o campo
-      do código; a API manda DOIS_FATORES_NECESSARIO.
-    end note
-    stop
-  endif
-  if (Código aberto, válido e correto?) then (não)
-    :attempts + 1 (o 5º erro mata o código);\na falha entra no balde "login-fail"; audita LOGIN_FALHO (2fa);
-    #FFE3E3:401 NAO_AUTENTICADO;
-    stop
-  endif
-  :Consome o código;
-else (não)
-endif
-:Zera o balde "login-fail"; lastLoginAt = agora; audita LOGIN_SUCESSO;
-if (User-Agent ausente das sessões ativas?) then (sim)
-  :Notificação NEW_LOGIN_DEVICE (categoria SECURITY);
-else (não)
-endif
-:Cria RefreshToken (família nova; 30 dias com "lembrar-me", senão 1 dia)\ne emite o JWT RS256 de 15 min (iss, aud, sid, user_id, role, profile_type);
-:200 Session {accessToken, expiresInSeconds, refreshToken,\nrefreshExpiresAt, sessionId, user, status, emailVerified, warnings};
-|Frontend (login/page.tsx · BFF)|
-:BFF tira o refreshToken do JSON e grava o cookie fai_rt\n(HttpOnly, SameSite=Strict, Path=/bff/auth) e o sinal fai_rt_h;
-:signIn: access token só em memória (BroadcastChannel "fai-auth"\navisa as outras abas) e mostra os avisos da sessão;
-if (emailVerified?) then (não)
-  :Vai para /verify-email (RF1.CA05);
-else (sim)
-  :Vai para ?next= (safeNext) ou /feed;
+if (dois fatores necessario?) then (sim)
+  :401 DOIS_FATORES_NECESSARIO\n«Enviamos um código de verificação\npara o seu e-mail.»\n→ a tela mostra o aviso;
+  stop
 endif
 note right
-  Erros 401/429 viram aviso com o atalho
-  "Recuperar senha" (/forgot-password — RF3).
-  Renovação, requisições e saída:
-  RF2_Sequencia_Sessao e RF2_MaquinaDeEstados_Sessao.
+  e mais 2 validações:
+  NAO_AUTENTICADO
 end note
+|Dados e serviços|
+:Lê: users\nverification_codes\nrefresh_tokens;
+:Usa: RateLimitPort.tryAcquire\nPasswordHasherPort.matches\nRateLimitPort.release\nPasswordHasherPort.needsRehash\nPasswordHasherPort.hash\nRateLimitPort.reset (+3);
+:Grava: refresh_tokens;
+:Estado: consumedAt → set\nlastLoginAt → set\npersistent → ?persistent\nexpiresAt → set\nlastUsedAt → set;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Renovar access token com rotação…)
+    :POST /api/auth/refresh\n→ IdentityService.refresh\nvalida: NAO_AUTENTICADO\nlê: refresh_tokens\nusa: TokenIssuerPort.issueAccessToken,\nTokenIssuerPort.accessTokenTtl\ngrava: refresh_tokens;
+  case (Definir nova senha com o token re…)
+    :POST /api/auth/password-reset/confirm\n→ IdentityService.confirmPasswordReset\nvalida: FORMULARIO_INVALIDO, LINK_INVALIDO\nlê: verification_codes, refresh_tokens\nusa: PasswordHasherPort.hash, RateLimitPort.reset\nestado: consumedAt → set, revokedAt → set;
+  case (Pedir redefinição de senha [respo…)
+    :POST /api/auth/password-reset/request\n→ IdentityService.requestPasswordReset\nlê: users, user_preferences\nusa: RateLimitPort.tryAcquire,\nEmailSenderPort.send,\nNotificationService.notify\ngrava: verification_codes;
+  case (Encerrar a sessão atual)
+    :POST /api/auth/logout\n→ IdentityService.logout\nlê: refresh_tokens\nestado: revokedAt → set;
+  case (Trocar senha [encerra as outras s…)
+    :PUT /api/auth/password\n→ IdentityService.changePassword\nvalida: FORMULARIO_INVALIDO, SENHA_ATUAL_INCORRETA\nlê: users, verification_codes, refresh_tokens\nusa: PasswordHasherPort.hash\nestado: consumedAt → set, revokedAt → set;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Confirmar e-mail com o código…, Reenviar código de
+  confirmaçã…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

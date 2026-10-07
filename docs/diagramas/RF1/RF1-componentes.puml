@@ -1,114 +1,102 @@
 @startuml RF1_Componentes
-title RF1 — Cadastrar conta na plataforma (Pessoal, Marca ou Celebridade)\nDiagrama de componentes — cadastro, confirmação do e-mail e verificação de marca/celebridade
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF1 — Cadastrar conta na plataforma (perfil Pessoal, Marca ou Celebridade)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "Frontend (Next.js 16)" {
-  component "(auth)/register/page.tsx\n+ auth-form.tsx · photo-picker.tsx\n(PhotoPicker · MannequinSexPicker)" as FE0
-  component "(auth)/verify-email/page.tsx" as FE1
-  component "app/bff/auth/[action]/route.ts\n(register · login · refresh · logout)" as BFF
-  component "(app)/admin/users/page.tsx\n+ admin-approvals.tsx (AdminApprovals)" as FE3
-  component "(app)/brands/[slug]/page.tsx · (app)/dashboard/page.tsx\n+ issuer-review.tsx (IssuerCenter · useIssuerReview)" as FE4
-  component "lib/api/client.ts · lib/auth/session.tsx" as FE5
+package "Frontend (Next.js)" {
+  component "/admin/users\n(site)/(app)/admin/users/page.tsx" as FE0
+  component "/settings\n(site)/(app)/settings/page.tsx" as FE1
+  component "/u/[username]\n(site)/(app)/u/[username]/page.tsx" as FE2
+  component "/register\n(site)/(auth)/register/page.tsx" as FE3
+  component "/verify-email\n(site)/(auth)/verify-email/page.tsx" as FE4
+  component "lib/api/client.ts" as APIC
 }
-package "fai-web" {
-  [AuthRateLimitFilter\n(register 10/h · uploads 40/h por IP)] as RLF
-  [AuthController\n/api/auth/register · uploads\nusername-suggestions · email-verification(/resend)] as AuthController
-  [PreferencesController\n/api/usernames/{username}/availability] as PreferencesController
-  [AdminController\n/api/admin/approvals · /{userId} · /documents/{kind}] as AdminController
-  [IssuerReviewController\n/api/me/issuer-review · /resubmit] as IssuerReviewController
-  [SecurityConfig\n(permitAll do cadastro; /api/admin/** e\n/media/restricted/** só ADMIN)] as Sec
-  [Argon2PasswordHasher] as Hasher
-  [JwtTokenIssuer] as Jwt
+package "fai-web (REST)" {
+  component "AdminController\n/api/admin/approvals\n/api/admin/approvals/{…}\n/api/admin/approvals/{…}/documents/{…}" as AdminController
+  component "AuthController\n/api/auth/email-verification\n/api/auth/email-verification/resend\n/api/auth/login\n/api/auth/logout\n(+4 rotas)" as AuthController
+  component "PreferencesController\n/api/me/preferences\n/api/usernames/{…}/availability" as PreferencesController
 }
-package "fai-application" {
-  [IdentityService] as IdentityService
-  [IssuerReviewService] as IssuerReviewService
-  [IssuerVerificationPolicy] as Policy
-  [PreferencesService] as PreferencesService
-  [NotificationService] as NotificationService
-  [SealService] as SealService
-  [MediaService] as MediaService
-  [Guard\n(requireCanCreate — CA05 · requireAdmin)] as Guard
-  [Audit → AuditService] as Audit
-  [SideEffectRunner\n(e-mails depois do commit)] as SER
-  [PasswordHasherPort] <<port>> as P_HASH
-  [TokenIssuerPort] <<port>> as P_TOK
-  [EmailSenderPort] <<port>> as P_MAIL
-  [MediaStoragePort] <<port>> as P_MEDIA
-  [RateLimitPort] <<port>> as P_RATE
+package "fai-application (casos de uso)" {
+  component "IssuerReviewService" as IssuerReviewService
+  component "IdentityService" as IdentityService
+  component "PreferencesService" as PreferencesService
+  component "SideEffectRunner" as SideEffectRunner <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
+  component "IssuerVerificationPolicy" as IssuerVerificationPolicy <<apoio>>
+  component "SealService" as SealService <<apoio>>
+  component "MediaService" as MediaService <<apoio>>
+  component "AssetCatalogService" as AssetCatalogService <<apoio>>
+  component "EmailSenderPort\n«LoggingEmailSender / ResendEmailSender»" as EmailSenderPort <<port>>
+  component "MediaStoragePort\n«LocalFileMediaStorage / S3MediaStorageAdapter»" as MediaStoragePort <<port>>
+  component "PasswordHasherPort\n«Argon2PasswordHasher»" as PasswordHasherPort <<port>>
+  component "TokenIssuerPort\n«JwtTokenIssuer»" as TokenIssuerPort <<port>>
+  component "RateLimitPort\n«InMemoryRateLimit»" as RateLimitPort <<port>>
 }
-package "fai-domain · repositórios" {
-  [UserRepository · UserPreferencesRepository\nBrandProfileRepository · CelebrityProfileRepository\nVerificationCodeRepository · RefreshTokenRepository\nNotificationRepository] as REPOS
+package "fai-domain (repositórios)" {
+  component "UserRepository\nBrandProfileRepository\nCelebrityProfileRepository\nUserPreferencesRepository\nRefreshTokenRepository\nVerificationCodeRepository" as REPO_MySQL
 }
-package "fai-infrastructure" {
-  [ResendEmailSender / LoggingEmailSender] as Resend
-  [S3MediaStorageAdapter / LocalFileMediaStorage] as S3
-  [InMemoryRateLimit / RedisAdapters] as Rate
-  [MysqlAuditService] as MAudit
-}
-database "MySQL · fashionai_app\n• users · user_preferences\n• brand_profiles · celebrity_profiles\n• verification_codes · refresh_tokens\n• notifications · audit_log" as DB
-cloud "Resend\n(e-mail transacional)" as C_mail
-cloud "Storage de mídia\npending/ · users/{id}/profile/\nrestricted/pending/ · restricted/users/{id}/documents/" as C_s3
-cloud "Redis\n(contadores, opcional)" as C_redis
-
-FE0 --> BFF : POST register
-FE0 --> RLF : POST /api/auth/uploads
-FE0 --> PreferencesController : GET availability
-FE1 --> AuthController : email-verification (+ resend)
-FE0 ..> FE5
-BFF --> RLF : POST /api/auth/register
-RLF --> AuthController
-FE3 --> AdminController : fila · decisão · documento
-FE4 --> IssuerReviewController : status · reenvio
-AuthController --> IdentityService
-PreferencesController --> PreferencesService
+database "MySQL\n• brand_profiles\n• celebrity_profiles\n• refresh_tokens\n• user_preferences\n• users\n• verification_codes" as DB_MySQL
+cloud "Resend" as CL_Resend
+cloud "S3" as CL_S3
+APIC --> AdminController : HTTPS/JSON
+APIC --> AuthController : HTTPS/JSON
+APIC --> PreferencesController : HTTPS/JSON
 AdminController --> IssuerReviewService
-IssuerReviewController --> IssuerReviewService
-Sec ..> AdminController : ROLE_ADMIN
-IdentityService --> IssuerReviewService : submitted · emailConfirmed
-IdentityService --> NotificationService : WELCOME · EMAIL_CONFIRMATION
-IssuerReviewService --> Policy : checks · verificationCode
-IssuerReviewService --> NotificationService : ISSUER_REVIEW_REQUEST · ACCOUNT_APPROVAL
-IssuerReviewService --> SealService : ensureDefaultSeals
-IssuerReviewService --> MediaService : readRestricted
-IssuerReviewService --> Guard
-IssuerReviewService --> SER
-IdentityService --> Audit
-IssuerReviewService --> Audit
-IdentityService --> P_HASH
-IdentityService --> P_TOK
-IdentityService --> P_MAIL
-IdentityService --> P_MEDIA
-IdentityService --> P_RATE
-SER --> P_MAIL
-MediaService --> P_MEDIA
-RLF --> P_RATE
-IdentityService --> REPOS
-IssuerReviewService --> REPOS
-PreferencesService --> REPOS
-NotificationService --> REPOS
-P_HASH <|.. Hasher
-P_TOK <|.. Jwt
-P_MAIL <|.. Resend
-P_MEDIA <|.. S3
-P_RATE <|.. Rate
-Audit --> MAudit
-REPOS --> DB : JPA / Flyway
-MAudit --> DB : audit_log
-Resend --> C_mail
-S3 --> C_s3
-Rate --> C_redis
+AuthController --> IdentityService
+EmailSenderPort --> CL_Resend
+FE0 --> APIC
+FE1 --> APIC
+FE2 --> APIC
+FE3 --> APIC
+FE4 --> APIC
+IdentityService --> EmailSenderPort
+IdentityService --> MediaStoragePort
+IdentityService --> PasswordHasherPort
+IdentityService --> REPO_MySQL
+IdentityService --> RateLimitPort
+IdentityService --> TokenIssuerPort
+IdentityService ..> NotificationService
+IssuerReviewService --> EmailSenderPort
+IssuerReviewService --> MediaStoragePort
+IssuerReviewService --> REPO_MySQL
+IssuerReviewService ..> IssuerVerificationPolicy
+IssuerReviewService ..> MediaService
+IssuerReviewService ..> NotificationService
+IssuerReviewService ..> SealService
+IssuerReviewService ..> SideEffectRunner
+MediaStoragePort --> CL_S3
+PreferencesController --> PreferencesService
+PreferencesService --> REPO_MySQL
+PreferencesService ..> AssetCatalogService
+PreferencesService ..> IdentityService
+PreferencesService ..> MediaService
+REPO_MySQL --> DB_MySQL : JPA/Flyway
 @enduml

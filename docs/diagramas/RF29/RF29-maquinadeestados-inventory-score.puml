@@ -1,52 +1,60 @@
 @startuml RF29_MaquinaDeEstados_InventoryScore
-title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings ("Destaques")\nDiagrama de máquina de estados — a nota da pessoa (elegibilidade, faixas, cache) e a participação nos rankings
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-[*] --> Inelegivel : conta nova (menos de 10 peças)
-state "Inelegível\n(eligible = false; score = null;\nprogresso 'faltam N peças')" as Inelegivel
-state "Elegível (10+ peças; score 0–1000; faixa = InventoryScoreService.band)" as Elegivel {
-  state "Em Montagem (0–299)\nOrganizado (300–499)" as Baixa
-  state "Versátil (500–649)\nBem Curado (650–799)" as Media
-  state "Closet Inteligente (800–899)\nSignature Closet (900–959)\nMaison Closet (960–1000)" as Alta
-  [*] --> Baixa
-  Baixa --> Media : recálculo sobe a nota
-  Media --> Alta : recálculo sobe a nota
-  Alta --> Media : recálculo desce (rubrica absoluta)
-  Media --> Baixa : recálculo desce
-}
-Inelegivel --> Elegivel : 10ª peça cadastrada (RF4)\n→ próximo compute()
-Elegivel --> Inelegivel : peças arquivadas/excluídas\ndeixam menos de 10
+title RF29 — InventoryScoreService: elegibilidade e faixas de score\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nInventoryScoreService.BANDS · 7 faixas · calculado em computeNow()
 
-state "Participação nos rankings (independente da faixa)" as Rankings {
-  state "Fora dos rankings\n(sem linha ou optedIn = false)" as Fora
-  state "Nos rankings (optedIn = true)" as Dentro {
-    state "Aguardando o job\n(sem posição ainda)" as Aguardando
-    state "Com posições\n(ranking_positions por segmento)" as ComPosicao
-    [*] --> Aguardando
-    Aguardando --> ComPosicao : recomputeRankings() (a cada 4 h, :15)\ncom snapshot DAY elegível
-    ComPosicao --> ComPosicao : job reescreve os segmentos
-  }
-  [*] --> Fora
-  Fora --> Dentro : PUT /api/me/rankings/opt-in\n{optedIn: true, shareCity?, city?}
-  Dentro --> Fora : PUT /api/me/rankings/opt-in {optedIn: false}\n→ apaga as posições da pessoa
+state "Inelegível\neligible = false (n < 10)" as INELEGIVEL
+state "Elegível — eligible = true (n ≥ MIN_PIECES = 10)" as ELEGIVEL {
+  state "Em Montagem\nscore 0–299" as F0
+  state "Organizado\nscore 300–499" as F1
+  state "Versátil\nscore 500–649" as F2
+  state "Bem Curado\nscore 650–799" as F3
+  state "Closet Inteligente\nscore 800–899" as F4
+  state "Signature Closet\nscore 900–959" as F5
+  state "Maison Closet\nscore 960–1000" as F6
+  [*] --> F0
+  F0 --> F1 : score ≥ 300
+  F1 --> F2 : score ≥ 500
+  F2 --> F3 : score ≥ 650
+  F3 --> F4 : score ≥ 800
+  F4 --> F5 : score ≥ 900
+  F5 --> F6 : score ≥ 960
 }
-note right of Dentro
-  segmento CIDADE só com consentimento
-  (shareCity) e com 50+ pessoas (k-anonimato);
-  sem opt-in, GET /api/me/rankings mostra só o convite
+[*] --> INELEGIVEL
+INELEGIVEL --> ELEGIVEL : computeNow()\nn ≥ 10
+ELEGIVEL --> INELEGIVEL : computeNow()\nn < 10
+note right of ELEGIVEL
+  A cada cálculo a faixa é a que contém o score
+  (sobe ou desce com o recálculo);
+  as setas mostram a ordem crescente.
 end note
-note bottom of Elegivel
-  k = min(1, peças/20); Identidade omitida sem DNA;
-  conquistas CURADOR, SIGNATURE_CLOSET, SEGUNDA_CHANCE,
-  CAMALEAO, STYLIST, HIDDEN_GEM concedidas no recálculo.
-  Cada recálculo grava snapshots DAY e MONTH; o resultado fica
-  1 h em cache e sai dele a cada SchemeSaved, DailyLookRegistered,
-  PieceCreated/Updated/Deleted, RoomOrganized ou AvailabilityChanged
+state "RankingOptIn.optedIn" as B_RankingOptIn_optedIn {
+  state "optedIn = true" as B_RankingOptIn_optedIn_T
+  state "optedIn = false" as B_RankingOptIn_optedIn_F
+  [*] --> B_RankingOptIn_optedIn_F : criação\n(valor inicial false)
+  B_RankingOptIn_optedIn_T --> B_RankingOptIn_optedIn_F : optIn()\nPUT /api/me/rankings/opt-in\n(optedIn)
+  B_RankingOptIn_optedIn_F --> B_RankingOptIn_optedIn_T : optIn()\nPUT /api/me/rankings/opt-in\n(optedIn)
+}
+note bottom of B_RankingOptIn_optedIn
+  Consultas que filtram por optedIn:
+  findByOptedInTrue
 end note
 @enduml

@@ -1,66 +1,116 @@
 @startuml RF40_Componentes
-title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba "Meu Avatar 3D", e usá-lo no manequim da Passarela 3D, do Meu Quarto e do Espelho\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba 'Meu Avatar 3D', e usá-lo no manequim da Passarela 3D, do Meu Quarto e d…\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "avatar/page.tsx → components/avatar3d/my-avatar.tsx\n(aba Meu Avatar 3D)" as FE0
-  component "lib/avatar3d\npipeline.ts · detect.ts · geometry.ts · image-stats.ts\nquality.ts · atlas.ts · model.ts · hair-*.ts · body-*.ts" as FE1
-  component "components/three/avatar-bust.tsx\n(busto 3D: crânio, orelhas, cabelo, pescoço, ombros)" as FE2
-  component "public/mediapipe\n(face_landmarker.task · hair_segmenter.tflite)" as FE3
-  component "lab/avatar/page.tsx → components/avatar3d/lab.tsx\n(só em desenvolvimento)" as FE4
-  component "Passarela 3D (explorer) · Foto com meu manequim" as FE5
-  component "Meu Quarto (room) · Espelho (mirror)" as FE6 <<planejado>>
+package "app/(site)/lab/avatar" {
+  component "page.tsx" as m_app__site__lab_avatar_page_tsx
 }
-package "fai-web · controllers" {
-  [Avatar3dController] as AC
-  [ShowcaseController] as SC
-  [TryOnController] as TC
+package "components/avatar3d" {
+  component "my-avatar.tsx" as m_components_avatar3d_my_avatar_tsx
+  component "lab.tsx" as m_components_avatar3d_lab_tsx
 }
-package "fai-application · services" {
-  [Avatar3dService] as AS
-  [ShowcaseService\n(mannequin head=AVATAR)] as SS
-  [TryOnService] as TS
-  [AccountService\n(deleteAllFor ao excluir a conta)] as ACS
-  [AiEngine (RF24)\nCONTENT_MODERATOR] as AI
-  [Audit] as AU
+package "lib/avatar3d" {
+  component "pipeline.ts" as m_lib_avatar3d_pipeline_ts
+  component "detect.ts" as m_lib_avatar3d_detect_ts
+  component "geometry.ts" as m_lib_avatar3d_geometry_ts
+  component "image-stats.ts" as m_lib_avatar3d_image_stats_ts
+  component "quality.ts" as m_lib_avatar3d_quality_ts
+  component "atlas.ts" as m_lib_avatar3d_atlas_ts
+  component "iris.ts" as m_lib_avatar3d_iris_ts
+  component "glasses.ts" as m_lib_avatar3d_glasses_ts
 }
-package "fai-infrastructure · adapters" {
-  [UserAvatar3dRepository\nUserRepository] as REPOS
-  [MediaStoragePort\n(local / S3 — restricted/users/{id}/avatar3d/)] as ST
+package "lib/hype" {
+  component "model.ts" as m_lib_hype_model_ts
 }
-database "MySQL · fashionai_app\n• user_avatars_3d (V25__avatar_3d.sql)\n• users\n• ai_inference_log\n• audit_log" as DB
-
-FE0 --> FE1 : analyzePhoto · buildAvatar · atlasBlob
-FE1 --> FE3 : carrega modelos
-FE0 --> FE2 : prévia girável
-FE4 --> FE1 : valida o pipeline com fotos de teste
-FE0 --> AC : GET/POST/PATCH/DELETE /api/me/avatar3d
-FE5 --> SC : GET /api/explorer/runway · POST …/mannequin-photo
-FE5 --> AC : GET /api/avatar3d/{userId}/texture
-FE6 ..> AC : não implementado — conforme Trello (CA10)
-AC --> AS : chama
-SC --> SS : chama
-TC --> TS : chama
-SS --> AS : forMannequin(owner, viewer)
-TS --> AS : forMannequin(user, user)
-ACS --> AS : deleteAllFor(userId)
-AS --> AI : moderateTexture
-AS --> AU : AVATAR3D_SALVO · AVATAR3D_CORPO
-AS --> ST : grava/lê/apaga textura
-AS --> REPOS : lê/grava
-REPOS --> DB : JPA/Flyway
+package "components/three" {
+  component "avatar-bust.tsx" as m_components_three_avatar_bust_tsx
+}
+package "lib/avatar3d/human" {
+  component "eyes.ts" as m_lib_avatar3d_human_eyes_ts
+  component "glasses-3d.ts" as m_lib_avatar3d_human_glasses_3d_ts
+}
+package "Backend (Spring Boot)" {
+  component "Avatar3dController" as Avatar3dController
+  component "ShowcaseController" as ShowcaseController
+  component "TryOnController" as TryOnController
+  component "AiEngine" as AiEngine
+  component "Audit" as Audit
+  component "MediaStoragePort" as MediaStoragePort <<apoio>>
+  component "AccountService" as AccountService
+  component "Avatar3dService" as Avatar3dService
+  component "ShowcaseService" as ShowcaseService
+  component "TryOnService" as TryOnService
+}
+database "MySQL" as DB_MySQL
+AccountService --> Audit
+AccountService --> Avatar3dService
+AccountService --> DB_MySQL : ai_inference_log, brand_profiles,\ncelebrity_profiles, comments,\ndata_export_requests, dna_schemes
+AccountService --> MediaStoragePort
+AiEngine --> DB_MySQL : ai_inference_log, user_consents
+Avatar3dController --> Avatar3dService
+Avatar3dService --> AiEngine
+Avatar3dService --> Audit
+Avatar3dService --> DB_MySQL : avatar_identity_versions, user_avatars_3d, users
+Avatar3dService --> MediaStoragePort
+ShowcaseController --> ShowcaseService
+ShowcaseService --> Avatar3dService
+ShowcaseService --> DB_MySQL : celebrity_profiles, daily_looks,\nfollows, hype_scores, scheme_groupings,\nscheme_items
+TryOnController --> TryOnService
+TryOnService --> AiEngine
+TryOnService --> Avatar3dService
+TryOnService --> DB_MySQL : schemes, user_preferences, users, wardrobe_items
+m_app__site__lab_avatar_page_tsx --> m_components_avatar3d_lab_tsx
+m_components_avatar3d_lab_tsx --> m_lib_avatar3d_pipeline_ts
+m_components_avatar3d_my_avatar_tsx --> Avatar3dController : HTTPS
+m_components_avatar3d_my_avatar_tsx --> m_lib_avatar3d_iris_ts
+m_components_avatar3d_my_avatar_tsx --> m_lib_avatar3d_pipeline_ts
+m_components_avatar3d_my_avatar_tsx --> m_lib_avatar3d_quality_ts
+m_components_three_avatar_bust_tsx --> m_lib_avatar3d_geometry_ts
+m_lib_avatar3d_atlas_ts --> m_lib_avatar3d_geometry_ts
+m_lib_avatar3d_atlas_ts --> m_lib_avatar3d_image_stats_ts
+m_lib_avatar3d_detect_ts --> m_lib_avatar3d_geometry_ts
+m_lib_avatar3d_glasses_ts --> m_lib_avatar3d_image_stats_ts
+m_lib_avatar3d_glasses_ts --> m_lib_avatar3d_iris_ts
+m_lib_avatar3d_human_eyes_ts --> m_lib_avatar3d_image_stats_ts
+m_lib_avatar3d_human_eyes_ts --> m_lib_avatar3d_iris_ts
+m_lib_avatar3d_human_glasses_3d_ts --> m_lib_avatar3d_human_eyes_ts
+m_lib_avatar3d_iris_ts --> m_lib_avatar3d_image_stats_ts
+m_lib_avatar3d_pipeline_ts --> m_lib_avatar3d_atlas_ts
+m_lib_avatar3d_pipeline_ts --> m_lib_avatar3d_detect_ts
+m_lib_avatar3d_pipeline_ts --> m_lib_avatar3d_geometry_ts
+m_lib_avatar3d_pipeline_ts --> m_lib_avatar3d_glasses_ts
+m_lib_avatar3d_pipeline_ts --> m_lib_avatar3d_image_stats_ts
+m_lib_avatar3d_pipeline_ts --> m_lib_avatar3d_iris_ts
+m_lib_avatar3d_pipeline_ts --> m_lib_avatar3d_quality_ts
+m_lib_avatar3d_quality_ts --> m_lib_avatar3d_geometry_ts
+m_lib_avatar3d_quality_ts --> m_lib_avatar3d_image_stats_ts
 @enduml

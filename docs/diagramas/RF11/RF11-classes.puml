@@ -1,224 +1,162 @@
 @startuml RF11_Classes
-title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de classes — backend: controller, serviços, portas, entidades e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF11 — Compor a arte de fundo (Background Studio) do card de um esquema ou de uma peça\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-web · controller" {
-class BackgroundController {
-  +catalog(): Map
-  +combination(aura, material, animated, mosaic): Map
-  +recommend(styles, occasions): Map
-  +art(user, ArtRequest): Map
-  +upload(user, file, target): Map
-  +saveScheme(user, id, SchemeBackground): Map
-  +resetScheme(user, id): Map
-  +savePiece(user, id, config): Map
-  +skinThumbnail(admin, skinId, pieceContext): Map
+package "fai-domain (entidades JPA)" {
+  class AssetPreset <<asset_presets>> {
+    +id: String
+    +kind: AssetKind
+    +label: String
+    +presetGroup: String
+    +previewUrl: String
+    +animatedUrl: String
+    +posterUrl: String
+    +paletteJson: String
+    +metadataJson: String
+    +status: String
+    .. +3 campos ..
+  }
+  class Photo <<photos>> {
+    +id: UUID
+    +user: User
+    +origin: PhotoOrigin
+    +sourceEntityId: UUID
+    +storageKey: String
+    +publicUrl: String
+    +originalUrl: String
+    +thumbnailUrl: String
+    +contentHash: String
+    +mimeType: String
+    .. +10 campos ..
+  }
+  class Scheme <<schemes>> {
+    +id: UUID
+    +user: User
+    +originalScheme: Scheme
+    +title: String
+    +description: String
+    +creationMode: CreationMode
+    +origin: SchemeOrigin
+    +style: String
+    +occasion: String
+    +season: Season
+    .. +46 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class WardrobeItem <<wardrobe_items>> {
+    +id: UUID
+    +user: User
+    +brandProfile: BrandProfile
+    +brand: Brand
+    +name: String
+    +category: String
+    +subcategory: String
+    +sex: String
+    +brandName: String
+    +brandLogoUrl: String
+    .. +70 campos ..
+  }
 }
-class SchemeBackground <<record>> {
-  +config: Map
-  +applyRecommendedDirection: Boolean
+package "fai-domain (enums)" {
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
+  enum SchemeStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+  }
+  enum RenderStatus {
+    PENDING
+    RENDERING
+    ENHANCING
+    COMPOSITING
+    CACHED
+    COMPLETED
+    FAILED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  enum PhotoProcessingStatus {
+    NEW
+    MODERATING
+    PROCESSING
+    COMPLETED
+    NEEDS_REUPLOAD
+    FAILED
+  }
 }
-}
-
 package "fai-application" {
-class BackgroundStudioService {
-  {static} {field} +ANATOMIES: List — 13 anatomias do look
-  {static} {field} +PIECE_ANATOMIES: List — 8 da peça
-  {static} +SILHOUETTES: Set
-  {static} +AURA_FORMATS = [IMAGEM_UNICA, MOSAICO]
-  {static} +DIRECTIONS: EDITORIAL_SPREAD, LUXURY_GLASS,\nATELIER, SHOW_NOTES
-  {static} +SEAL_PLACEMENT / PIECE_SEAL_PLACEMENT
-  +catalog(): Map
-  +combination(aura, material, animated, mosaic): Map
-  +recommend(styles, occasions): Map
-  +generateArt(user, ArtRequest): Map
-  +upload(user, bytes, target): Map
-  +applyToScheme(Scheme, config, applyRecommendedDirection)
-  +saveScheme(user, schemeId, config, applyDirection): Map
-  +resetScheme(user, schemeId): Map
-  +savePiece(user, pieceId, cfg): Map
-  ~withRevision(currentJson, cfg): Object
-  +generateSkinThumbnail(admin, skinId, pieceContext): Map
-  +rendererBackground(Scheme): Background
+  class BackgroundStudioService <<service>> {
+    +catalog()
+    +combination()
+    +recommend()
+    +generateArt()
+    +upload()
+    +saveScheme()
+    +resetScheme()
+    +savePiece()
+    +generateSkinThumbnail()
+  }
 }
-class ArtRequest <<record>> {
-  +prompt: String
-  +direction: String
-  +celebrityId: UUID
-  +era: String
-  +passePartout: boolean
-  +target: String
-}
-class AssetCatalogService {
-  +manifest(): Map
-  +list(key): List
-  +mosaics(): List
-  +auraVariant(id): Optional
-  +material(id): Optional
-  +gradient(id): Optional
-  +cardSkin(id): Optional
-  +resolveCombination(aura, material, animated, mosaic): Map
-  +nativeContainer(skinId): String
-  +syncPresets(): int
-}
-class SchemeService {
-  +create(user, SchemeForm): Map
-  +update(user, id, SchemeForm): Map
-  +preview(user, SchemeForm): byte[]
-  +renderCard(viewer, id, expanded): byte[]
-}
-class MediaService {
-  +put(key, bytes, contentType): StoredObject
-  +register(owner, PhotoOrigin, ...): Photo
-  +requireOwnedMedia(owner, url, scopes, field): OwnedMedia
-  +readImage(url): Optional<BufferedImage>
-}
-class AiEngine {
-  +execute(userId, AiCapability, inputs, prompt,\nprotectedNames, remotes, local): AiOutcome
-}
-class CelebrityPromptValidator {
-  {static} +validate(prompt, protectedNames): Verdict
-}
-class "SchemeCardRenderer.Background" as RB <<record>> {
-  +color: String
-  +gradientStops: List<String>
-  +auraVariantId: String
-  +materialId: String
-  +aiArt: BufferedImage
-  +passePartout: boolean
-  +containerColor: String
-  +cardSkin: String
-}
-interface "ImageProviderPorts.ImageGenerationPort" as IGP <<port>> {
-  +available(): boolean
-  +generate(prompt, negative, width, height): Optional<ProviderImage>
-}
-interface MediaStoragePort <<port>> {
-  +put(key, bytes, contentType): StoredObject
-}
-enum AiCapability {
-  BACKGROUND_GENERATOR
-  .. demais capacidades (RF24) ..
-}
-}
-
-package "fai-infrastructure" {
-class ReplicateImageGenerationAdapter
-class "S3MediaStorageAdapter /\nLocalFileMediaStorage" as Storage
-}
-
-package "fai-domain · model" {
-class Scheme {
-  +season: Season
-  +backgroundColor: String = "#F4F2EF"
-  +backgroundGradient: String
-  +backgroundArtUrl: String
-  +backgroundVideoUrl: String
-  +backgroundAnimationType: BackgroundAnimation = NONE
-  +studioConfigJson: String — JSON
-  +cardSkin: String = "atelier"
-  +layoutAnatomy: String = "LISTA_VERTICAL"
-  +containerOrigin: ContainerOrigin = INDEFINIDA
-  +containerColor: String
-  +containerMandatory: boolean
-  +recommendedDirection: String
-}
-class WardrobeItem {
-  +backgroundConfigJson: String
-  .. {rev, v, template, composition, surface,\neffects + campos do Studio} ..
-}
-class DnaScheme {
-  +backgroundColor: String
-  +backgroundVideoUrl: String
-  +studioConfigJson: String
-  .. ver RF13 ..
-}
-class AssetPreset {
-  +id: String
-  +kind: AssetKind
-  +label: String
-  +presetGroup: String
-  +staticUrl / previewUrl: String
-  +animatedUrl / posterUrl: String
-  +paletteJson: String
-  +status: String
-  +rfTags: String
-}
-class Photo {
-  +user: User
-  +origin: PhotoOrigin
-  +storageKey: String
-  +publicUrl: String
-  +width / height: Integer
-}
-}
-package "fai-domain · enums" {
-enum ContainerOrigin {
-  INDEFINIDA
-  MANUAL
-  AUTO
-}
-enum BackgroundAnimation {
-  NONE
-  SNOW
-  PETALS
-  LEAVES
-  SHIMMER
-}
-enum AssetKind {
-  CHROME_BACKGROUND
-  AURA_PRESET
-  AURA_VARIANT
-  MATERIAL
-  AURA_MATERIAL_STATIC
-  AURA_MATERIAL_ANIMATED
-  AURA_MATERIAL_MOSAIC
-  GRADIENT_AURA
-  SEASONAL
-  CARD_SKIN
-}
-enum PhotoOrigin {
-  BACKGROUND_STUDIO
-  .. demais origens (RF12) ..
-}
-}
-
-BackgroundController --> BackgroundStudioService
-BackgroundController ..> SchemeBackground
-BackgroundController --> AssetCatalogService : manifest · skins · mosaics
-BackgroundStudioService ..> ArtRequest
-BackgroundStudioService --> AssetCatalogService
-BackgroundStudioService --> MediaService
-BackgroundStudioService --> AiEngine : BACKGROUND_GENERATOR
-BackgroundStudioService --> "0..*" IGP : generators
-BackgroundStudioService ..> RB : rendererBackground
-SchemeService --> BackgroundStudioService : applyToScheme / rendererBackground
-AiEngine ..> CelebrityPromptValidator : antes do envio
-AiEngine ..> AiCapability
-MediaService --> MediaStoragePort
-IGP <|.. ReplicateImageGenerationAdapter
-MediaStoragePort <|.. Storage
-BackgroundStudioService ..> Scheme : applyToScheme · resetScheme
-BackgroundStudioService ..> WardrobeItem : savePiece (rev + 1)
-AssetCatalogService ..> AssetPreset : syncPresets()
-MediaService ..> Photo : register(BACKGROUND_STUDIO)
-Scheme --> ContainerOrigin
-Scheme --> BackgroundAnimation
-DnaScheme --> BackgroundAnimation
-AssetPreset --> AssetKind
-Photo --> PhotoOrigin
-note bottom of Scheme : tabela schemes (só as colunas do RF11)
-note bottom of WardrobeItem : tabela wardrobe_items\n(background_config_json)
-note bottom of AssetPreset : tabela asset_presets (cópia do\ncatalog/asset-manifest.json via\nPOST /api/admin/jobs/assets)
-note bottom of Photo : tabela photos (Minhas Fotos — RF12)
-note top of IGP : só o adapter da Replicate existe;\nFirefly/Gemini aparecem só em comentário
+BackgroundStudioService ..> AssetPreset : usa
+BackgroundStudioService ..> Scheme : usa
+BackgroundStudioService ..> User : usa
+BackgroundStudioService ..> WardrobeItem : usa
+Photo "*" --> "1" User : user
+Photo --> ModerationStatus
+Scheme "*" --> "1" User : user
+Scheme --> RenderStatus
+Scheme --> SchemeStatus
+User --> AccountStatus
+WardrobeItem "*" --> "1" User : user
+WardrobeItem --> AvailabilityStatus
+WardrobeItem --> ModerationStatus
+WardrobeItem --> PhotoProcessingStatus
 @enduml

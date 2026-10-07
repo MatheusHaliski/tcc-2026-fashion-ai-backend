@@ -1,71 +1,103 @@
 @startuml RF14_Componentes
-title RF14 — Visualizar a aba "Marcas" — Feed de Perfil de Marcas de roupa cadastradas dentro do sistema do FashionAI\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF14 — Visualizar a aba 'Marcas' — Feed de Perfil de Marcas de roupa cadastradas dentro do sistema do FashionAI\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "brands/page.tsx\n(feed Marcas · Celebridades)" as FE0
-  component "brands/[slug]/page.tsx\n(perfil institucional)" as FE1
-  component "components/brand-logo.tsx" as FE2
-  component "showcase-tabs (Coleções/Eras)\nflair · room3d (abas)" as FE3
+  component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE0
+  component "/brands\n(site)/(app)/brands/page.tsx" as FE1
+  component "/flair\n(site)/(app)/flair/page.tsx" as FE2
+  component "/u/[username]\n(site)/(app)/u/[username]/page.tsx" as FE3
+  component "lib/api/client.ts" as APIC
 }
-package "fai-web · controllers" {
-  [ProfileController] as ProfileController
-  [BrandLogoController] as BrandLogoController
-  [LookbookController] as LookbookController
-  [FlairController] as FlairController
+package "fai-web (REST)" {
+  component "BrandLogoController\n/api/brand-logos\n/api/brand-logos/batch\n/api/brand-search" as BrandLogoController
+  component "FlairController\n/api/institutional/{…}/flair" as FlairController
+  component "LookbookController\n/api/users/{…}/groupings" as LookbookController
+  component "ProfileController\n/api/brands\n/api/celebrities\n/api/institutional/{…}\n/api/institutional/{…}/tabs/{…}\n(+1 rotas)" as ProfileController
 }
-package "fai-application · services" {
-  [InstitutionalService] as InstitutionalService
-  [ProfileService] as ProfileService
-  [BrandLogoService] as BrandLogoService
-  [BrandWebSearchService] as BrandWebSearchService
-  [LookbookService] as LookbookService
-  [AiEngine (RF24)] as AiEngine
+package "fai-application (casos de uso)" {
+  component "BrandLogoService" as BrandLogoService
+  component "FlairService" as FlairService
+  component "LookbookService" as LookbookService
+  component "InstitutionalService" as InstitutionalService
+  component "MediaService" as MediaService <<apoio>>
+  component "SchemeService" as SchemeService <<apoio>>
+  component "FaiPointsService" as FaiPointsService <<apoio>>
+  component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
+  component "WardrobeService" as WardrobeService <<apoio>>
+  component "SocialService" as SocialService <<apoio>>
+  component "DailyLookService" as DailyLookService <<apoio>>
+  component "HypeScoreService" as HypeScoreService <<apoio>>
+  component "WebFetchPort\n«JdkWebFetchAdapter»" as WebFetchPort <<port>>
+  component "MediaStoragePort\n«LocalFileMediaStorage / S3MediaStorageAdapter»" as MediaStoragePort <<port>>
 }
-package "fai-infrastructure · adapters" {
-  [BrandProfileRepository\nBrandRepository · BrandLogoRepository\nCelebrityProfileRepository\nStyleDnaRepository · FollowRepository\nSealRepository · SealBondRepository\nSchemeGroupingRepository · UserRepository] as REPOS
-  [WebFetchPort\n(JdkWebFetchAdapter)] as WEB
-  [MediaStoragePort] as STORAGE
+package "fai-domain (repositórios)" {
+  component "BrandLogoRepository\nBrandRepository\nWardrobeItemRepository\nFlairProfileRepository\nFlairCoinEntryRepository\nFlairCombinationRepository\nFlairRedemptionRepository\nFlairTeamRepository\nFlairTeamMemberRepository\nFlairMatchRepository\n(+15)" as REPO_MySQL
 }
-database "MySQL\n• brand_profiles\n• brands\n• brand_logos\n• celebrity_profiles\n• style_dna\n• follows · seals · seal_bonds\n• scheme_groupings · users" as DB
-cloud "Wikidata · Simple Icons (GitHub)\n· IA com busca na web" as EXT
-
-FE0 --> ProfileController : GET /api/brands · /api/celebrities
-FE1 --> ProfileController : GET /api/institutional/{slug}[/tabs/{tab}]
-FE1 --> LookbookController : GET /api/users/{ownerId}/groupings
-FE1 --> FlairController : aba Combinações FLAIR
-FE0 --> FE2 : exibe logo
-FE2 --> BrandLogoController : GET /api/brand-logos[/batch]
-FE1 --> FE3 : abas
-ProfileController --> InstitutionalService : chama
-ProfileController --> ProfileService : seguir (RF17)
-BrandLogoController --> BrandLogoService : chama
-BrandLogoController --> BrandWebSearchService : /api/brand-search
-BrandLogoService --> BrandWebSearchService : busca na primeira vez
-BrandWebSearchService --> WEB : lê
-WEB --> EXT : HTTPS
-BrandWebSearchService --> AiEngine : IA com busca web
-InstitutionalService --> AiEngine : local(AFFINITY)
-InstitutionalService --> REPOS : lê
-BrandLogoService --> REPOS : grava brand_logos
-BrandLogoService --> STORAGE : grava logo filtrado
-LookbookController --> LookbookService : chama
-LookbookService --> REPOS : lê
-REPOS --> DB : JPA/Flyway
-note bottom of InstitutionalService : aprovação da marca: AdminService (RF1.CA08)\nselos e promoções das abas: ver RF25
-note bottom of BrandWebSearchService : ver RF4 (docs/novos-rf/RF4_Buscador_Web_Marcas.md)
+database "MySQL\n• acervo_groups\n• brand_logos\n• brand_profiles\n• brands\n• celebrity_profiles\n• flair_coin_entries\n• flair_combinations\n• flair_match_entries\n• flair_matches\n• flair_profiles\n• flair_redemptions\n• flair_team_members\n(+13)" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+cloud "S3" as CL_S3
+APIC --> BrandLogoController : HTTPS/JSON
+APIC --> FlairController : HTTPS/JSON
+APIC --> LookbookController : HTTPS/JSON
+APIC --> ProfileController : HTTPS/JSON
+BrandLogoController --> BrandLogoService
+BrandLogoService --> AI
+BrandLogoService --> MediaStoragePort
+BrandLogoService --> REPO_MySQL
+BrandLogoService --> WebFetchPort
+BrandLogoService ..> MediaService
+FE0 --> APIC
+FE1 --> APIC
+FE2 --> APIC
+FE3 --> APIC
+FlairController --> FlairService
+FlairService --> REPO_MySQL
+FlairService ..> FaiPointsService
+FlairService ..> HypeScoreConfig
+FlairService ..> InstitutionalService
+FlairService ..> SchemeService
+InstitutionalService --> AI
+InstitutionalService --> REPO_MySQL
+InstitutionalService ..> SchemeService
+LookbookController --> LookbookService
+LookbookService --> AI
+LookbookService --> REPO_MySQL
+LookbookService ..> DailyLookService
+LookbookService ..> HypeScoreService
+LookbookService ..> SchemeService
+LookbookService ..> SocialService
+LookbookService ..> WardrobeService
+MediaStoragePort --> CL_S3
+ProfileController --> InstitutionalService
+REPO_MySQL --> DB_MySQL : JPA/Flyway
 @enduml

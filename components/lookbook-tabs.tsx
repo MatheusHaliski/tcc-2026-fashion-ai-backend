@@ -26,6 +26,7 @@ import { usePieceSeals } from "@/lib/pieces/use-piece-seals";
 import { FaiIcon } from "@/components/fai-icon";
 import { LookExports } from "@/components/look-exports";
 import { SavedLooks } from "@/components/looks/saved-looks";
+import { FlairCollectionTab } from "@/components/flair/flair-collection";
 import { MomentsTimelineSection } from "@/components/moments/moment-timeline";
 
 interface Overview { owner: UserCard; self: boolean; visible: boolean; institutional: boolean; tabs: { id: string; label: string; count: number }[]; emptyCloset?: { message: string; action: { label: string; href: string } } | null; panelVersion?: string; groupingSuggestionsAvailable?: boolean; }
@@ -39,7 +40,7 @@ interface Overview { owner: UserCard; self: boolean; visible: boolean; instituti
  * - Salvos: looks e peças salvos (SegmentPicker; ids antigos saved_looks/saved_pieces viram alias).
  * "Meus cupons resgatados" saiu (era o mesmo componente de /coupons).
  */
-export type TabId = "closet" | "looks" | "publications" | "favorites" | "dna" | "saved" | "daily" | "capsule" | "groups" | "insights" | "moments";
+export type TabId = "closet" | "flair" | "looks" | "publications" | "favorites" | "dna" | "saved" | "daily" | "capsule" | "groups" | "insights" | "moments";
 export type SavedView = "looks" | "pieces";
 /** categorias das peças (RF4): só as quatro — peça única não existe mais no formulário */
 const CATEGORIES = ["upper_piece", "lower_piece", "shoes_piece", "accessory_piece"];
@@ -60,7 +61,8 @@ export function LookbookTabs({ ownerId, initialTab = "closet", initialSaved = "l
   const count = (id: string) => ov.tabs.find((x) => x.id === id)?.count;
   const saved = (count("saved_looks") ?? 0) + (count("saved_pieces") ?? 0);
   // Looks do dono: a contagem do overview inclui rascunhos, e a aba mostra só os publicados — sem número para não divergir
-  const tabs = [{ id: "closet" as TabId, label: t("lookbook.closet"), count: count("closet") }, { id: "looks" as TabId, label: t("lookbook.looks"), count: ov.self ? undefined : count("looks") },
+  // "Minhas cartas FLAIR" (FLAIR-UT §5) logo depois do closet: a carta é a cópia FLAIR da peça
+  const tabs = [{ id: "closet" as TabId, label: t("lookbook.closet"), count: count("closet") }, { id: "flair" as TabId, label: t(ov.self ? "lookbook.flair" : "lookbook.flairVisitor") }, { id: "looks" as TabId, label: t("lookbook.looks"), count: ov.self ? undefined : count("looks") },
     { id: "publications" as TabId, label: t("lookbook.publications"), count: count("publications") }, { id: "favorites" as TabId, label: t("lookbook.favorites"), count: count("favorites") },
     ...(ov.self ? [{ id: "saved" as TabId, label: t("lookbook.saved"), count: saved }, { id: "dna" as TabId, label: t("lookbook.dna") },
       { id: "daily" as TabId, label: t("lookbook.daily") }, { id: "capsule" as TabId, label: t("lookbook.capsule"), count: count("capsule") }] : []), { id: "groups" as TabId, label: t("lookbook.groups") }, { id: "moments" as TabId, label: t("nav.moments") },
@@ -69,6 +71,7 @@ export function LookbookTabs({ ownerId, initialTab = "closet", initialSaved = "l
     <>
       <Tabs tabs={tabs} value={tab} onChange={setTab} />
       {tab === "closet" && <ClosetTab ownerId={ownerId} self={ov.self} empty={ov.emptyCloset} />}
+      {tab === "flair" && <FlairCollectionTab ownerId={ownerId} self={ov.self} />}
       {tab === "looks" && <LooksTab ownerId={ownerId} self={ov.self} />}
       {tab === "publications" && <PublicationsTab ownerId={ownerId} />}
       {tab === "favorites" && <FavoritesTab ownerId={ownerId} />}

@@ -1,123 +1,149 @@
 @startuml RF12_Classes
-title RF12 — Visualizar & Editar a página "Minhas Fotos" & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF12 — Visualizar & Editar a página 'Minhas Fotos' & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class Photo {
-  +user: User
-  +origin: PhotoOrigin
-  +sourceEntityId: UUID
-  +storageKey: String
-  +publicUrl: String
-  +originalUrl: String
-  +thumbnailUrl: String
-  +contentHash: String
-  +width: Integer
-  +height: Integer
-  +qualityScore: BigDecimal
-  +moderationStatus: ModerationStatus
-  +keyMoment: boolean
-  +editedFromPhotoId: UUID
-  +metadataJson: String
-  +deletedAt: Instant
+package "fai-domain (entidades JPA)" {
+  class Photo <<photos>> {
+    +id: UUID
+    +user: User
+    +origin: PhotoOrigin
+    +sourceEntityId: UUID
+    +storageKey: String
+    +publicUrl: String
+    +originalUrl: String
+    +thumbnailUrl: String
+    +contentHash: String
+    +mimeType: String
+    .. +10 campos ..
+  }
+  class PipelineJob <<pipeline_jobs>> {
+    +id: UUID
+    +user: User
+    +type: PipelineJobType
+    +status: PipelineJobStatus
+    +provider: String
+    +externalJobId: String
+    +targetType: String
+    +inputResourceId: UUID
+    +inputJson: String
+    +outputUrl: String
+    .. +13 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class WardrobeItem <<wardrobe_items>> {
+    +id: UUID
+    +user: User
+    +brandProfile: BrandProfile
+    +brand: Brand
+    +name: String
+    +category: String
+    +subcategory: String
+    +sex: String
+    +brandName: String
+    +brandLogoUrl: String
+    .. +70 campos ..
+  }
 }
-class PipelineJob {
-  +user: User
-  +type: PipelineJobType
-  +status: PipelineJobStatus
-  +targetType: String
-  +inputResourceId: UUID
-  +resultJson: String
-  +stagesJson: String
-  +totalCostUsd: BigDecimal
-  +errorCode: String
-  +attempts: int
-  +queuedAt: Instant
-  +finishedAt: Instant
+package "fai-domain (enums)" {
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
+  enum PipelineJobStatus {
+    PENDING
+    RUNNING
+    RENDERING
+    ENHANCING
+    COMPOSITING
+    COMPLETED
+    FAILED
+    CANCELLED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  enum PhotoProcessingStatus {
+    NEW
+    MODERATING
+    PROCESSING
+    COMPLETED
+    NEEDS_REUPLOAD
+    FAILED
+  }
+  enum Model3dStatus {
+    QUEUED
+    PROCESSING
+    COMPLETED
+    FAILED
+  }
 }
-class WardrobeItem {
-  +name: String
-  +imageUrl: String
-  +originalImageUrl: String
-  +photoProcessingStatus: PhotoProcessingStatus
-  +availabilityStatus: AvailabilityStatus
+package "fai-application" {
+  class PhotoService <<service>> {
+    +gallery()
+    +insights()
+    +delete()
+    +bulkDelete()
+    +download()
+    +saveEdit()
+    +setKeyMoment()
+    +curate()
+    +timeline()
+  }
 }
-}
-package "fai-domain · enums" {
-enum PhotoOrigin {
-  WARDROBE_ITEM
-  SCHEME
-  TRY_ON
-  STYLE_DNA
-  PROFILE
-  BACKGROUND_STUDIO
-  LOOSE
-  EDITOR
-}
-enum PipelineJobStatus {
-  PENDING
-  RUNNING
-  RENDERING
-  ENHANCING
-  COMPOSITING
-  COMPLETED
-  FAILED
-  CANCELLED
-}
-enum PhotoProcessingStatus {
-  NEW
-  MODERATING
-  PROCESSING
-  COMPLETED
-  NEEDS_REUPLOAD
-  FAILED
-}
-}
-package "fai-application · service" {
-class PhotoService {
-  +gallery(user, Filter, page, size): Map
-  +insights(user): Map
-  +delete(user, id, confirmed): Map
-  +bulkDelete(user, ids, confirmed): Map
-  +download(user, id): byte[]
-  +setKeyMoment(user, id, key): Map
-  +curate(user): Map
-  +timeline(user): Map
-  +saveEdit(user, id, bytes): Map
-}
-class WardrobeService {
-  +analyze(user, bytes, category): Draft
-  +analyzeBatch(user, files, category): List<Draft>
-  +create(user, PieceForm): PieceView
-  +createBatch(user, forms): List<PieceView>
-  +reprocessPending(): int
-}
-class MultiPieceService {
-  +detect(user, bytes): Detection
-  +pieceDraft(user, draftId, index, bytes): PieceDraft
-  +recreate(user, draftId, index, bytes, ...): AiImage
-  +aiPieceDraft(user, draftId, aiImageId): PieceDraft
-}
-}
-Photo --> PhotoOrigin
+PhotoService ..> Photo : usa
+PhotoService ..> WardrobeItem : usa
+Photo "*" --> "1" User : user
+Photo --> ModerationStatus
+PipelineJob "*" --> "1" User : user
 PipelineJob --> PipelineJobStatus
+User --> AccountStatus
+WardrobeItem "*" --> "1" User : user
+WardrobeItem --> AvailabilityStatus
+WardrobeItem --> Model3dStatus
+WardrobeItem --> ModerationStatus
 WardrobeItem --> PhotoProcessingStatus
-Photo ..> WardrobeItem : sourceEntityId (origem WARDROBE_ITEM / EDITOR)
-PhotoService ..> Photo : lista/exclui (deletedAt)
-PhotoService ..> WardrobeService : peça sem imagem
-WardrobeService ..> PipelineJob : rascunho PIECE_DRAFT
-MultiPieceService ..> PipelineJob : MULTI_PIECE_DRAFT
-WardrobeService ..> WardrobeItem : cria
-note top of Photo : tabela photos
-note top of PipelineJob : tabela pipeline_jobs\n(type FLAT_LAY_STANDARDIZATION;\ntargetType PIECE_DRAFT | MULTI_PIECE_DRAFT | PIECE_REPROCESS)
-note bottom of WardrobeService : Draft(draftId, processedUrl, prefill, quality,\nmoderation, stages, rejection, ...) — lote de até 12 fotos
 @enduml

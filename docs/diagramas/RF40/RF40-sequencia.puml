@@ -1,86 +1,143 @@
 @startuml RF40_Sequencia
-title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba "Meu Avatar 3D", e usá-lo no manequim da Passarela 3D, do Meu Quarto e do Espelho\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor Pessoa as U
-actor "Outra pessoa logada" as V
-participant "Frontend\n/avatar (my-avatar.tsx)" as FE
-participant "lib/avatar3d\n(pipeline · detect · quality · atlas)" as PIPE
-participant "MediaPipe self-hosted\n(public/mediapipe)" as MP
-participant "Avatar3dController" as AC
-participant "Avatar3dService" as AS
-participant "AiEngine (RF24)" as AI
-participant "Storage de mídia\n(MediaStoragePort, restricted/)" as ST
-database "MySQL" as DB
-participant "ShowcaseController" as SC
-participant "ShowcaseService" as SS
-U -> FE: abre Meu Avatar 3D
-FE -> AC: GET /api/me/avatar3d
-AC -> AS: get(user)
-AS -> DB: SELECT user_avatars_3d WHERE user_id
-AC --> FE: 200 {exists:false} | {exists:true, model, adjust, textureUrl, warnings, publicOnRunway, textureModeration}
-U -> FE: envia 1 foto de frente + até 2 de 3/4 e toca Gerar prévia
-loop para cada foto
-  FE -> PIPE: analyzePhoto(blob, role)
-  PIPE -> PIPE: loadOriented (EXIF)
-  PIPE -> MP: detectFace (Face Landmarker 478 pontos) · segmentHair
-  PIPE -> PIPE: checkPhoto → Issue[] (block | warn)
-  alt issue "block" (NO_FACE, BLURRY, TOO_DARK, FACE_CUT…)
-    PIPE --> FE: recusa com o motivo (CA02)
-  else aceita
-    PIPE --> FE: AnalyzedPhoto (pontos, pose, pele, cabelo, avisos)
-  end
+autonumber "<b>0."
+title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba 'Meu Avatar 3D', e usá-lo no manequim da Passarela 3D, do Meu Quarto e d…\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "c/avatar3d/my-avatar.tsx" as c_avatar3d_my_avatar_tsx
+participant "lib/i18n/i18n.tsx" as lib_i18n_i18n_tsx
+participant "lib/auth/session.tsx" as lib_auth_session_tsx
+participant "c/three/common.tsx" as c_three_common_tsx
+participant "lib/hooks/use-api.ts" as lib_hooks_use_api_ts
+participant "API (Spring Boot)" as API
+boundary "c/three/avatar-bust.tsx" as c_three_avatar_bust_tsx
+participant "lib/avatar3d/model.ts" as lib_avatar3d_model_ts
+participant "lib/api/client.ts" as lib_api_client_ts
+participant "lib/avatar3d/geometry.ts" as lib_avatar3d_geometry_ts
+participant "lib/avatar3d/canonical-face.ts" as lib_avatar3d_canonical_face_ts
+participant "lib/avatar3d/hair-tone.ts" as lib_avatar3d_hair_tone_ts
+participant "AiEngine" as AiEngine
+database "MySQL" as DB_MySQL
+participant "AuditService" as AuditService
+participant "AiBudget" as AiBudget
+participant "RateLimitPort" as RateLimitPort
+== c/avatar3d/my-avatar.tsx · MyAvatar() ==
+U -> c_avatar3d_my_avatar_tsx : MyAvatar()
+activate c_avatar3d_my_avatar_tsx
+c_avatar3d_my_avatar_tsx -> lib_i18n_i18n_tsx : useI18n()
+c_avatar3d_my_avatar_tsx -> lib_auth_session_tsx : useAuth()
+c_avatar3d_my_avatar_tsx -> c_three_common_tsx : useWebGL()
+c_avatar3d_my_avatar_tsx -> lib_hooks_use_api_ts : useApi()
+c_avatar3d_my_avatar_tsx -> API : GET /api/me/avatar3d\nAvatar3dController.get
+API --> c_avatar3d_my_avatar_tsx : JSON
+opt saved.error
+c_avatar3d_my_avatar_tsx --> U : encerra
 end
-FE -> PIPE: buildAvatar(photos) → {model, atlas, hair}
-FE -> FE: prévia girável (avatar-bust.tsx), ajustes finos (clampAdjust)
-U -> FE: marca consentimento e Salvar avatar
-FE -> PIPE: atlasBlob(atlas) → JPEG
-FE -> AC: POST /api/me/avatar3d (multipart: meta{model, adjust, photos, warnings, consent, publicOnRunway} + texture)
-AC -> AS: save(user, SaveCommand, bytes)
-alt consent != true
-  AS --> AC: 400 CONSENTIMENTO_OBRIGATORIO
-else
-  AS -> AS: validateModel · normalizeTexture · clampAdjust
-  AS -> ST: put(restricted/users/{id}/avatar3d/face-{ts}.jpg, image/jpeg)
-  opt publicOnRunway
-    AS -> AI: text(TextCall CONTENT_MODERATOR, imagem 512px)
-    AI --> AS: AiOutcome<Boolean> → APPROVED | REJECTED_POLICY | PENDING
-  end
-  AS -> DB: INSERT/UPDATE user_avatars_3d (consent_at, texture_moderation)
-  AS -> ST: delete(textura anterior)
-  AC --> FE: 200 view(avatar)
+opt saved.loading || !saved.data
+c_avatar3d_my_avatar_tsx --> U : encerra
 end
-U -> FE: ajusta ou troca a visibilidade na Passarela
-FE -> AC: PATCH /api/me/avatar3d {adjust, publicOnRunway, body, sex}
-AC -> AS: update(user, SettingsCommand)
-AS -> DB: UPDATE user_avatars_3d
-AC --> FE: 200 view(avatar)
-== Uso no manequim ==
-V -> SC: GET /api/explorer/runway
-SC -> SS: runway(...) → mannequin(owner, peças, viewer)
-SS -> AS: forMannequin(ownerId, viewerId)
-AS -> DB: SELECT user_avatars_3d
-alt avatar público (ou dono)
-  AS --> SS: {model, adjust, textureUrl se APPROVED ou dono}
-  SS --> SC: mannequin {head: "AVATAR", avatar}
-else
-  SS --> SC: mannequin padrão / foto de perfil
+c_avatar3d_my_avatar_tsx -> c_avatar3d_my_avatar_tsx : setRedo("false")
+c_avatar3d_my_avatar_tsx -> c_avatar3d_my_avatar_tsx : setRedo("true")
+c_avatar3d_my_avatar_tsx -> c_avatar3d_my_avatar_tsx : setRedo("false")
+deactivate c_avatar3d_my_avatar_tsx
+c_avatar3d_my_avatar_tsx --> U : resultado
+== c/three/avatar-bust.tsx · AvatarBust() ==
+U -> c_three_avatar_bust_tsx : AvatarBust()
+activate c_three_avatar_bust_tsx
+c_three_avatar_bust_tsx -> lib_avatar3d_model_ts : validateModel()
+c_three_avatar_bust_tsx -> lib_avatar3d_model_ts : clampAdjust()
+c_three_avatar_bust_tsx -> c_three_avatar_bust_tsx : setT("null")
+c_three_avatar_bust_tsx -> lib_api_client_ts : blobUrl()
+opt !model
+c_three_avatar_bust_tsx --> U : encerra
 end
-V -> AC: GET /api/avatar3d/{userId}/texture
-AC -> AS: texture(viewer, ownerId)
-AS -> ST: get(textureKey)
-AC --> V: 200 image/jpeg (Cache-Control private) | 404
-== Excluir ==
-U -> FE: Excluir avatar (confirmação)
-FE -> AC: DELETE /api/me/avatar3d
-AC -> AS: delete(user)
-AS -> ST: delete(textureKey)
-AS -> DB: DELETE user_avatars_3d
-AC --> FE: 204
+c_three_avatar_bust_tsx -> lib_avatar3d_geometry_ts : headShell()
+c_three_avatar_bust_tsx -> lib_avatar3d_geometry_ts : bustFit()
+c_three_avatar_bust_tsx -> lib_avatar3d_geometry_ts : canonicalWindingFlipped()
+c_three_avatar_bust_tsx -> lib_avatar3d_canonical_face_ts : indexOf() (×2)
+c_three_avatar_bust_tsx -> lib_avatar3d_canonical_face_ts : slice()
+opt !hr.present
+c_three_avatar_bust_tsx --> U : encerra
+end
+c_three_avatar_bust_tsx -> lib_avatar3d_canonical_face_ts : indexOf()
+c_three_avatar_bust_tsx -> lib_avatar3d_canonical_face_ts : slice() (×2)
+c_three_avatar_bust_tsx -> lib_avatar3d_canonical_face_ts : indexOf()
+opt !model || !built
+c_three_avatar_bust_tsx --> U : encerra
+end
+c_three_avatar_bust_tsx -> lib_avatar3d_model_ts : skinWithLight()
+c_three_avatar_bust_tsx -> lib_avatar3d_hair_tone_ts : hairColorFor()
+opt strandsTex
+c_three_avatar_bust_tsx --> U : encerra
+end
+opt hairEdgeTex
+c_three_avatar_bust_tsx --> U : encerra
+end
+opt strandsTex
+c_three_avatar_bust_tsx --> U : encerra
+end
+deactivate c_three_avatar_bust_tsx
+c_three_avatar_bust_tsx --> U : resultado
+== AiEngine · text() ==
+U -> AiEngine : text()
+activate AiEngine
+alt prompt rejeitado
+AiEngine --> U : 422 PROMPT_REJEITADO
+end
+AiEngine -> AiEngine : result = ?result
+AiEngine -> AiEngine : fallbackUsed = ?fallback
+AiEngine -> DB_MySQL : INSERT/UPDATE ai_inference_log
+AiEngine -> AuditService : record()
+AiEngine -> DB_MySQL : SELECT user_consents
+AiEngine -> AiEngine : result = ?result
+AiEngine -> AiEngine : fallbackUsed = ?fallback
+AiEngine -> DB_MySQL : INSERT/UPDATE ai_inference_log
+AiEngine -> AuditService : record()
+AiEngine -> AiEngine : result = ?result
+AiEngine -> AiEngine : fallbackUsed = ?fallback
+AiEngine -> DB_MySQL : INSERT/UPDATE ai_inference_log
+AiEngine -> AuditService : record()
+AiEngine -> AiBudget : check()
+AiEngine -> AiEngine : result = ?result
+AiEngine -> AiEngine : fallbackUsed = ?fallback
+AiEngine -> DB_MySQL : INSERT/UPDATE ai_inference_log
+AiEngine -> AuditService : record()
+AiEngine -> AiEngine : result = ?result
+AiEngine -> AiEngine : fallbackUsed = ?fallback
+AiEngine -> DB_MySQL : INSERT/UPDATE ai_inference_log
+AiEngine -> AuditService : record()
+AiEngine -> RateLimitPort : status()
+AiEngine -> RateLimitPort : tryAcquire()
+AiEngine -> RateLimitPort : status()
+AiEngine -> AiEngine : result = ?result
+AiEngine -> AiEngine : fallbackUsed = ?fallback
+AiEngine -> DB_MySQL : INSERT/UPDATE ai_inference_log
+AiEngine -> AuditService : record()
+AiEngine -> RateLimitPort : status()
+AiEngine -> AiEngine : result = ?result
+AiEngine -> AiEngine : fallbackUsed = ?fallback
+AiEngine -> DB_MySQL : INSERT/UPDATE ai_inference_log
+note over AiEngine : … e mais 25 passos
+deactivate AiEngine
+AiEngine --> U : resultado
 @enduml

@@ -1,19 +1,69 @@
 @startuml RF50_Classes
-title RF50 — Verificar perfis de Marca e Celebridade\nDiagrama de classes — entidades (fai-domain), política e serviço (fai-application)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam class {
-  BackgroundColor #F8F4FF
-  BorderColor #B695F5
-  FontColor #2D2438
-  ArrowColor #52606D
-  HeaderBackgroundColor #E4DEF0
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
-skinparam packageStyle rectangle
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
 hide empty members
+left to right direction
+title RF50 — Verificar perfis de Marca e Celebridade\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
+package "fai-domain (entidades JPA)" {
+  class BrandProfile <<brand_profiles>> {
+    +id: UUID
+    +owner: User
+    +brandName: String
+    +slug: String
+    +logoUrl: String
+    +coverUrl: String
+    +bio: String
+    +storeUrl: String
+    +cnpj: String
+    +razaoSocial: String
+    .. +21 campos ..
+  }
+  class CelebrityProfile <<celebrity_profiles>> {
+    +id: UUID
+    +owner: User
+    +stageName: String
+    +slug: String
+    +avatarUrl: String
+    +coverUrl: String
+    +bio: String
+    +realName: String
+    +areasJson: String
+    +verifiableFollowersJson: String
+    .. +20 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+}
+package "fai-domain (enums)" {
   enum ApprovalStatus {
     PENDENTE
     AJUSTES
@@ -23,8 +73,8 @@ package "fai-domain · model" {
   }
   enum AccountStatus {
     PENDING_EMAIL_VERIFICATION
-    PENDING_VALIDATION
     ACTIVE
+    PENDING_VALIDATION
     SUSPENDED
     DELETION_SCHEDULED
     DELETED
@@ -35,147 +85,23 @@ package "fai-domain · model" {
     CELEBRIDADE
     ADMIN
   }
-  class User <<Entity users>> {
-    +id : UUID
-    +username : String
-    {field} +email (cifrado) / emailHash
-    +profileType : ProfileType
-    +status : AccountStatus
-    +emailVerified : boolean
-    +verified : boolean
-    +role : String
-    +createdAt : Instant
-  }
-  interface ReviewableProfile {
-    +getOwner() : User
-    +getSlug() : String
-    +publicName() : String
-    +reviewStatus() : ApprovalStatus
-    +reviewStatus(ApprovalStatus)
-    +reviewAttempts : int
-    +reviewSubmittedAt : Instant
-    {field} +reviewReasons : String (csv)
-    {field} +reviewChecklist : String (json)
-    +reviewOwnerMessage : String
-    +verificationNotes : String
-    +approvedBy : UUID
-    +approvedAt : Instant
-    +identityVerified : boolean
-    +getCreatedAt() : Instant
-  }
-  class BrandProfile <<Entity brand_profiles>> {
-    +brandName, slug, logoUrl
-    +razaoSocial, nomeFantasia
-    {field} +cnpj (cifrado)
-    +fashionCategory, officialHashtag
-    +storeUrl, commercialContact
-    {field} +activityProofUrl (restricted/)
-    +approvalStatus : ApprovalStatus
-    +documentVerified : boolean
-    +requiresSealReview : boolean
-  }
-  class CelebrityProfile <<Entity celebrity_profiles>> {
-    +stageName, slug
-    {field} +realName (cifrado)
-    +birthDate, areas, followers
-    +verificationUrl, representationContact
-    {field} +identityProofUrl (restricted/)
-    +officialPhotoUrl
-    +verificationStatus : ApprovalStatus
-    +sealConsentGranted : boolean
-    +requiresSealReview : boolean
+}
+package "fai-application" {
+  class IssuerReviewService <<service>> {
+    +queue()
+    +decide()
+    +status()
+    +resubmit()
+    +document()
   }
 }
-
-package "fai-application · service" {
-  class IssuerVerificationPolicy <<Component>> {
-    +VERSION = "1.0"
-    +MAX_SUBMISSIONS = 5
-    +SLA_BUSINESS_DAYS = 3
-    +RESUBMIT_SLA_BUSINESS_DAYS = 2
-    ~NOTORIETY_FOLLOWERS = 10000
-    +BRAND : List<Criterion>
-    +CELEBRITY : List<Criterion>
-    +REASONS : List<String>
-    +{static} criteria(ReviewableProfile) : List<Criterion>
-    +checks(User, ReviewableProfile) : List<Check>
-    +{static} verificationCode(UUID) : String
-    +{static} validCnpj(String) : boolean
-    +{static} webUrl(String) : boolean
-  }
-  enum Auto {
-    OK
-    FALHA
-    ANALISTA
-  }
-  class Criterion <<record>> {
-    +code : String
-    +mandatory : boolean
-  }
-  class Check <<record>> {
-    +code : String
-    +mandatory : boolean
-    +auto : Auto
-    +detail : String
-    +toMap() : Map
-  }
-  class IssuerReviewService <<Service>> {
-    -DOC_IDENTITY = "identity"
-    -DOC_ACTIVITY = "activity-proof"
-    -notifyEmails : List<String>
-    -frontendUrl : String
-    +adminsConfigured() : boolean
-    +submitted(UUID)
-    ~notifyAdmins(UUID)
-    +emailConfirmed(User)
-    +status(CurrentUser) : Map
-    +resubmit(CurrentUser, ResubmitCommand) : Map
-    +queue(CurrentUser) : Map
-    ~dossier(ReviewableProfile) : Map
-    +document(CurrentUser, UUID, String) : byte[]
-    +decide(CurrentUser, UUID, DecisionCommand) : Map
-  }
-  class ResubmitCommand <<record>> {
-    +message : String
-    +storeUrl : String
-    +commercialContact : String
-    +verificationUrl : String
-    +representationContact : String
-    +documentUrl : String
-    +realName : String
-  }
-  class DecisionCommand <<record>> {
-    +decision : APROVAR | AJUSTES | RECUSAR
-    +reasons : List<String>
-    +notes : String
-    +checklist : Map<String, Boolean>
-    {field} +approve : Boolean (formato antigo)
-    +effective() : String
-    +legacyRejection() : boolean
-  }
-  class IdentityService <<Service>> {
-    +register(RegisterCommand, ip, userAgent) : Session
-    +verifyEmail(CurrentUser, code) : UserCard
-  }
-  interface EmailSenderPort {
-    +send(to, subject, html, category)
-  }
-}
-
-User "1" -- "0..1" BrandProfile : owner
-User "1" -- "0..1" CelebrityProfile : owner
-BrandProfile ..|> ReviewableProfile
-CelebrityProfile ..|> ReviewableProfile
-ReviewableProfile ..> ApprovalStatus
-User ..> AccountStatus
-User ..> ProfileType
-IssuerVerificationPolicy *-- "*" Criterion
-IssuerVerificationPolicy ..> Check : checks()
-Check ..> Auto
-IssuerReviewService --> IssuerVerificationPolicy
-IssuerReviewService ..> ReviewableProfile
-IssuerReviewService ..> ResubmitCommand
-IssuerReviewService ..> DecisionCommand
-IssuerReviewService --> EmailSenderPort
-IdentityService --> IssuerReviewService : submitted · emailConfirmed
+IssuerReviewService ..> BrandProfile : usa
+IssuerReviewService ..> CelebrityProfile : usa
+IssuerReviewService ..> User : usa
+BrandProfile "1" --> "1" User : owner
+BrandProfile --> ApprovalStatus
+CelebrityProfile "1" --> "1" User : owner
+CelebrityProfile --> ApprovalStatus
+User --> AccountStatus
+User --> ProfileType
 @enduml

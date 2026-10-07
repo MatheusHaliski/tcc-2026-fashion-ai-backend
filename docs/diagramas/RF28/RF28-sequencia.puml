@@ -1,81 +1,107 @@
 @startuml RF28_Sequencia
-title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de sequência — abrir o espelho, vestir uma peça e pedir ao Vista-me
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as U
-participant "mirror/page.tsx" as FE
-participant "lib/api/client\n(api)" as API
-participant "MirrorController\n/api/me/mirror" as C
-participant "MirrorService" as S
-participant "LookScorer" as LS
-participant "RoomService" as RS
-participant "AiEngine (RF24)" as AI
-participant "Repositórios JPA\n(MirrorState, WardrobeItem,\nScheme, SchemeItem, StyleDna)" as R
-database "MySQL" as DB
+autonumber "<b>0."
+title RF28 — Montar looks no Smart Mirror e pedir sugestões ao 'Vista-me' (só com peças do próprio guarda-roupa)\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-== Abrir o espelho ==
-U -> FE: abre /mirror
-FE -> API: GET /api/me/mirror
-API -> C: state(user)
-C -> S: state(user)
-S -> R: MirrorStateRepository.findByUserId
-R -> DB: SELECT mirror_states
-opt primeiro acesso
-  S -> R: save(MirrorState{slotsJson = "{}", shownCombinationsJson = "[]"})
+actor "Pessoa usuária" as U
+boundary "Tela /mirror" as P
+control "MirrorController" as MirrorController
+participant "MirrorService" as MirrorService
+participant "WardrobeService" as WardrobeService
+database "MySQL" as DB_MySQL
+participant "RoomService" as RoomService
+queue "Eventos de domínio" as EV
+participant "AiEngine\n(provedor de IA + reserva local)" as AI
+participant "Audit" as Audit
+== Vestir uma peça no espelho ==
+U -> P : Vestir uma peça no espelho
+P -> MirrorController : POST /api/me/mirror/pieces
+MirrorController -> MirrorService : place()
+activate MirrorService
+alt peça obrigatória
+MirrorService --> MirrorController : 400 PECA_OBRIGATORIA
+MirrorController --> P : 400 + mensagem
 end
-S -> R: WardrobeItemRepository.findByIdIn(ids dos slots)
-S -> S: tira peças apagadas/de terceiros;\ncomplete(), missing(), silhouette(), restriction()
-S -> RS: locateAll(userId) — endereço de cada peça
-S -> LS: scoreLooks(userId, [look])
-LS -> R: DNA (StyleDna), pares já combinados (schemes, scheme_items)
-LS -> LS: Hype v2 das peças (HypeQueryService.currentOf → hype_scores)
-LS --> S: Scores(compatibility, hype, novelty, reuse, usage, sustainability)
-S --> FE: 200 {slots, complete, missing, warnings, actions,\nsilhouette, postIt, light, restriction, shownCount, scores}
-note right of FE: espelho vazio → scores = null;\ndimensão sem base → "—"
-
-== Vestir uma peça ==
-U -> FE: escolhe uma peça sugerida
-FE -> API: POST /api/me/mirror/pieces {pieceId}
-API -> C: place(user, body)
-C -> S: place(user, pieceId)
-S -> S: WardrobeService.owned (404 / 403)\nslotOf(peça) → upper, lower, dress, shoes,\nouter_layer ou accessory (até 4)
-S -> R: save(MirrorState) — origin vista_me vira smart_mirror
-R -> DB: UPDATE mirror_states.slots_json
-S ->> S: MirrorAction("PLACE")
-S --> FE: 200 novo estado + placed + returned\n(+ notice se a peça está no cesto)
-
-== Vista-me ==
-U -> FE: "algo confortável para trabalhar"
-FE -> API: POST /api/me/mirror/vista-me {prompt, keepMirror}
-API -> C: vistaMe(user, body)
-C -> S: vistaMe(user, prompt, anchorIds, focusPieceId, keepMirror)
-S -> S: eligible(): disponíveis − à venda − fora de estação\n(RoomService.outOfSeason) ∩ peças do desafio ativo
-alt sem peça superior nem vestido elegível
-  S --> FE: 422 ACERVO_SEM_SUPERIOR {href: /pieces/new}
+MirrorService -> WardrobeService : owned()
+WardrobeService -> DB_MySQL : SELECT wardrobe_items
+WardrobeService --> MirrorService
+MirrorService -> DB_MySQL : SELECT mirror_states
+MirrorService -> MirrorService : new MirrorState()
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService -> RoomService : locateAll()
+RoomService -> DB_MySQL : SELECT room_layouts
+RoomService -> DB_MySQL : SELECT users
+RoomService -> DB_MySQL : SELECT fai_points_ledger
+RoomService -> DB_MySQL : INSERT/UPDATE room_layouts
+RoomService --> MirrorService
+MirrorService -> DB_MySQL : SELECT wardrobe_items (×4)
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService ->> EV : MirrorAction
+MirrorService -> DB_MySQL : SELECT wardrobe_items
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService -> RoomService : locateAll()
+MirrorService -> DB_MySQL : SELECT style_dna
+deactivate MirrorService
+MirrorService --> MirrorController : resultado
+MirrorController --> P : 201 JSON
+P --> U : atualiza a tela
+== Vista-me: look completo a partir de um pedido em linguagem natural ==
+U -> P : Vista-me: look completo a partir de um pedido em…
+P -> MirrorController : POST /api/me/mirror/vista-me
+MirrorController -> MirrorService : vistaMe()
+activate MirrorService
+MirrorService -> DB_MySQL : SELECT mirror_states
+MirrorService -> MirrorService : new MirrorState()
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService -> RoomService : outOfSeason()
+RoomService -> DB_MySQL : SELECT room_storage_map
+RoomService --> MirrorService
+MirrorService -> WardrobeService : eligible()
+WardrobeService -> DB_MySQL : SELECT wardrobe_items
+WardrobeService --> MirrorService
+alt acervo sem superior
+MirrorService --> MirrorController : 422 ACERVO_SEM_SUPERIOR
+MirrorController --> P : 422 + mensagem
 end
-S -> AI: text(COPILOT) — interpretar o pedido
-AI --> S: Interpretation(occasion, mood, anchors, constraints, season)\nou interpretação local (fallback)
-S -> AI: text(SCHEME_COMPOSER) — refs do acervo elegível
-alt ref fora do conjunto elegível ou âncora ausente
-  S -> S: audita VISTA_ME_SUGESTAO_DESCARTADA\ne monta localmente
-else IA indisponível / cota
-  S -> S: LocalSchemeComposer (fallbackUsed = true)
+MirrorService -> DB_MySQL : SELECT wardrobe_items
+MirrorService -> AI : COPILOT
+AI --> MirrorService : resposta (ou reserva local)
+MirrorService -> Audit : log() (×2)
+MirrorService -> AI : SCHEME_COMPOSER
+AI --> MirrorService : resposta (ou reserva local)
+alt sem combinação nova
+MirrorService --> MirrorController : 422 SEM_COMBINACAO_NOVA
+MirrorController --> P : 422 + mensagem
 end
-alt nenhuma combinação nova
-  S --> FE: 422 SEM_COMBINACAO_NOVA
-else look montado
-  S -> R: save(MirrorState: slots, origin = vista_me, prompt,\ninterpretation, shownCombinations ≤ 50, lastPrompt)
-  R -> DB: UPDATE mirror_states
-  S ->> S: MirrorAction("VISTA_ME" | "VISTA_ME_MADRUGADA")
-  S -> RS: locateAll → sequência "{peça} — {endereço}"
-  S -> LS: scoreLooks (seis números)
-  S --> FE: 200 estado + sequence + legend + fallbackUsed\n+ explanation + challengeNotice + actions
-end
-FE -> U: reflexo veste o look; no quarto, os módulos acendem
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService ->> EV : MirrorAction
+MirrorService -> RoomService : locateAll()
+MirrorService -> DB_MySQL : SELECT wardrobe_items
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService -> RoomService : locateAll()
+MirrorService -> DB_MySQL : SELECT style_dna
+deactivate MirrorService
+MirrorService --> MirrorController : resultado
+MirrorController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

@@ -1,68 +1,65 @@
 @startuml FashionAI_Componentes_v5_Seguranca
-title Fashion AI — Componentes v5: camadas de segurança, da borda aos bancos (Railway + Vercel)
-!include _estilo.iuml
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title Fashion AI — Componentes v5: camadas de segurança, da borda aos bancos (Railway + Vercel)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-actor "Pessoa autorizada\n(equipe/banca)" as P
-
-package "Vercel · fai-network.com (Next.js 15)" {
-  component "middleware.ts\nCSP com nonce · dev gate" as MW
-  component "/gate/*\nGoogle/usuário + PIN · Cloudflare Access" as GATE
-  component "/bff/auth/[action]\nlogin · refresh · logout" as BFF
-  component "App (React)\nlib/api/client.ts · token em memória" as APP
+package "raiz" {
+  component "middleware.ts" as m_middleware_ts
 }
-
-package "Railway · api (Spring Boot 4.1 · JVM 25 LTS, rede privada)" {
-  component "DevGateFilter\nga · v1 legado · Cloudflare JWT" as DGF
-  component "ClientIpResolver\nIP assinado (HMAC)" as CIR
-  component "AuthRateLimitFilter\ncaminho normalizado" as ARL
-  component "Spring Security\nJWT (aud) · papéis · Argon2id" as SEC
-  component "Serviços (RF1–RF40)\nBOLA/BFLA · OwnMedia · locks" as SVC
-  component "AiBudget\nteto USD global e por pessoa" as BUD
-  component "MediaService / MediaProxy\nrestricted/ só pela API" as MED
-  component "BackupJob\nmysqldump → restricted/backups" as BKP
+package "lib/api" {
+  component "client.ts" as m_lib_api_client_ts
 }
-
-package "Railway · bancos (sem TCP proxy público)" {
-  database "MySQL 9\nfai_app (só o banco, TLS)\nfai_backup (leitura, TLS)" as MY
-  database "Cassandra 4.1\nfai_app (só o keyspace)\nTLS CA própria" as CA
-  database "OpenSearch 2.19\nfai_app (só fai-*)\nTLS CA própria · auditoria" as OS
-  database "Redis 8.2\nfashionai (ACL, sem @dangerous)" as RD
-  database "Bucket S3\nfashionai-media" as S3
+package "lib/gate" {
+  component "token.ts" as m_lib_gate_token_ts <<apoio>>
 }
-
-cloud "Provedores de IA\nAnthropic · Google · Replicate" as IA
-
-P --> MW : HTTPS
-MW --> GATE : sem gp válido
-MW --> APP : gp válido (renova ga)
-APP --> BFF : sessão (cookie fai_rt)
-APP --> DGF : chamadas /api (Bearer + X-Dev-Gate)
-BFF --> DGF : X-Dev-Gate + IP assinado
-DGF --> CIR
-CIR --> ARL
-ARL --> SEC
-SEC --> SVC
-SVC --> BUD
-SVC --> MED
-BUD --> IA : chaves só no servidor\n(Vision em cabeçalho · Replicate só api.replicate.com)
-SVC --> MY : JDBC sslMode=REQUIRED
-SVC --> CA : CQL + TLS
-SVC --> OS : HTTPS + Basic
-SVC --> RD : AUTH usuário ACL
-MED --> S3
-BKP --> MY : fai_backup
-BKP --> S3 : restricted/backups/
-
-note top of SEC
-  Evolução (v6, com teto de hashes, bloqueio
-  por reserva atômica, Flyway V34/V35 e entrega
-  contínua): docs/diagramas/RF49/RF49_Componentes.png
-end note
-
-note bottom of MY
-  Cada banco sobe por um start.sh versionado
-  (infra/railway), conferido por SHA-256:
-  usuários de menor privilégio a cada início.
-end note
+package "lib/i18n" {
+  component "core.ts" as m_lib_i18n_core_ts <<apoio>>
+  component "state.ts" as m_lib_i18n_state_ts <<apoio>>
+}
+package "Backend (Spring Boot)" {
+  component "AiBudget" as AiBudget
+  component "BackupJob" as BackupJob <<apoio>>
+  component "MediaService" as MediaService
+  component "OwnMedia" as OwnMedia
+  component "AuthRateLimitFilter" as AuthRateLimitFilter <<apoio>>
+  component "ClientIpResolver" as ClientIpResolver <<apoio>>
+  component "DevGateFilter" as DevGateFilter <<apoio>>
+}
+database "MySQL" as DB_MySQL
+AiBudget --> DB_MySQL : ai_inference_log
+AuthRateLimitFilter --> ClientIpResolver
+BackupJob --> DB_MySQL : backup_records
+MediaService --> DB_MySQL : photos
+m_lib_api_client_ts --> m_lib_i18n_core_ts
+m_lib_api_client_ts --> m_lib_i18n_state_ts
+m_lib_i18n_core_ts --> m_lib_i18n_state_ts
+m_middleware_ts --> m_lib_gate_token_ts
 @enduml

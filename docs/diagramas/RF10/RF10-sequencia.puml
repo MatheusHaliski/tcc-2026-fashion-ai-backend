@@ -1,66 +1,81 @@
 @startuml RF10_Sequencia
-title RF10 — Gerar recomendações de esquemas e peças na aba Copilot\nDiagrama de sequência — abrir o Copilot: contexto, sugestões visuais (5 blocos), seis números das combinações novas e insights COPILOT
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as U
-participant "copilot/page.tsx" as FE
-participant "AutopilotController" as AC
-participant "CopilotService" as CS
-participant "WardrobeService" as WD
-participant "WeatherService" as WS
-participant "OpenMeteoAdapter\n(WeatherPort · GeocodingPort)" as OM
-participant "LookScorer" as LSC
-participant "HypeQueryService" as HQ
-participant "InsightService\n(PersonalInsights)" as IS
-participant "HypeController" as HC
-database "MySQL" as DB
+autonumber "<b>0."
+title RF10 — Possibilitar que o usuário gere recomendações de esquemas de vestimenta & de peças de roupa através da aba 'Copilot'\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-U -> FE: abre /copilot (RequireAuth)
-FE -> AC: GET /api/copilot/context?view=copilot
-AC -> CS: context(user, view, selection, city, lat, lon)
-CS -> WD: eligible(userId) — peças disponíveis do próprio acervo
-CS -> DB: daily_looks (30 últimos: ocasião e humor mais usados)
-CS -> WS: resolve(lat, lon, city)
-WS --> CS: Context.none (sem cidade nem coordenadas)
-CS --> FE: 200 {pieces, available, ready (≥ 3), limitation?, occasion, mood,\nweather, suggestedPrompts, activeChallenges}
-
-FE -> AC: GET /api/copilot/suggestions
-AC -> CS: suggestions(user, city, lat, lon)
-CS -> WD: eligible(userId)
-CS -> WS: resolve(lat, lon, city)
-opt cidade ou coordenadas e sem cache (30 min)
-  WS -> OM: geocode(city) · current(lat, lon)
-  OM --> WS: temperatura e descrição (falha = sem clima)
+actor "Pessoa usuária" as U
+boundary "Tela /copilot" as P
+control "AutopilotController" as AutopilotController
+participant "CopilotService" as CopilotService
+participant "RoomService" as RoomService
+database "MySQL" as DB_MySQL
+participant "HypeQueryService" as HypeQueryService
+participant "InventoryScoreService" as InventoryScoreService
+== Perguntar ao Copilot (roteamento de intenção, chips de peças, sugestõ… ==
+U -> P : Perguntar ao Copilot (roteamento de intenção, chi…
+P -> AutopilotController : POST /api/copilot/messages
+AutopilotController -> CopilotService : ask()
+activate CopilotService
+alt mensagem vazia
+CopilotService --> AutopilotController : 400 MENSAGEM_VAZIA
+AutopilotController --> P : 400 + mensagem
 end
-WS --> CS: Context {band, season, note, available}
-CS -> DB: schemes do dono não arquivados e disponíveis\n(favoritos e menos usados como Look do Dia, 6)
-CS -> CS: LocalSchemeComposer.compose(eligible, season, 3)\n→ combinações novas
-CS -> LSC: scoreCards(user, combinações, mode = nulo)
-LSC -> DB: style_dna · pares já combinados (scheme_items)
-LSC -> HQ: currentOf(PIECE, peças das combinações)
-HQ -> DB: hype_scores (HYPE_V2)
-LSC --> CS: scores {compatibility, hype, novelty, reuse,\nusage, sustainability} (sem base = nulo)
-CS -> CS: forgottenPieces (RoomService.forgotten: 60+ dias)\n· weatherPieces (WeatherService.unsuitable por faixa)
-CS -> DB: schemes.findPublicFeed (30) de outras pessoas, visíveis
-CS -> HQ: currentOf(SCHEME, looks públicos)
-HQ --> CS: Hype v2 por look → trendingLooks (sem Hype por último)
-CS -> IS: itemsOrEmpty(user, COPILOT)
-IS --> CS: insights (Hype sempre ao lado do DNA e do uso;\nfalha = lista vazia)
-CS --> FE: 200 {weather, readyLooks, newCombinations (scores), forgottenPieces,\nweatherBand, weatherPieces, trendingLooks, suggestedPrompts, insights}
-FE -> FE: abas Recomendações · Descoberta · Experimentação\n· Redescoberta · Insights; lembra até 40 looks no localStorage
-opt aba Redescoberta ou Insights
-  FE -> HC: GET /api/me/hype/wardrobe
-  HC -> HQ: wardrobe(user)
-  HQ --> FE: 200 {averageHype, highlights, rediscoveries}
-  FE -> FE: InsightStrip COPILOT → GET /api/insights?context=COPILOT
-end
-opt link com ?ask= (vindo da Redescoberta)
-  FE -> FE: pré-preenche a pergunta; a pessoa confirma antes de enviar\n(ver RF10_Sequencia_Pergunta)
-end
+CopilotService -> RoomService : locateAll()
+RoomService -> DB_MySQL : SELECT room_layouts
+RoomService -> DB_MySQL : SELECT users
+RoomService -> DB_MySQL : SELECT fai_points_ledger
+RoomService -> DB_MySQL : INSERT/UPDATE room_layouts
+RoomService --> CopilotService
+CopilotService -> RoomService : locate()
+RoomService -> DB_MySQL : SELECT room_layouts
+RoomService -> DB_MySQL : SELECT users
+RoomService -> DB_MySQL : SELECT fai_points_ledger
+RoomService -> DB_MySQL : INSERT/UPDATE room_layouts
+RoomService --> CopilotService
+CopilotService -> DB_MySQL : SELECT style_dna
+CopilotService -> RoomService : locateAll()
+CopilotService -> DB_MySQL : SELECT schemes
+CopilotService -> HypeQueryService : currentOf()
+HypeQueryService -> DB_MySQL : SELECT hype_scores
+HypeQueryService --> CopilotService
+CopilotService -> DB_MySQL : SELECT scheme_items
+CopilotService -> DB_MySQL : SELECT wardrobe_items
+CopilotService -> HypeQueryService : currentOf()
+CopilotService -> HypeQueryService : config()
+CopilotService -> RoomService : lastDiaryDates()
+RoomService -> DB_MySQL : SELECT piece_usage_diary
+RoomService --> CopilotService
+CopilotService -> DB_MySQL : SELECT wardrobe_items
+CopilotService -> RoomService : locateAll()
+CopilotService -> InventoryScoreService : improvementHints()
+InventoryScoreService -> DB_MySQL : SELECT wardrobe_items
+InventoryScoreService -> DB_MySQL : SELECT schemes
+InventoryScoreService -> DB_MySQL : SELECT scheme_items
+InventoryScoreService -> DB_MySQL : SELECT piece_usage_diary
+InventoryScoreService --> CopilotService
+note over CopilotService : … e mais 35 passos no código
+deactivate CopilotService
+CopilotService --> AutopilotController : resultado
+AutopilotController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

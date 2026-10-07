@@ -40,6 +40,15 @@ Nike". Viram: contexto Nike → área de sneakers → produtos compatíveis → 
 | Posse | mapa `owned` na página; "Já tenho esta peça" | Base para "Você já possui este item" (req. 57), mas o matching precisa ser confiável |
 | Imagens | Pipeline CATALOG-IMG V2 (seção 4 do plano) | A loja só usa imagens normalizadas (req. 48) |
 
+**Reconferência de 06/10/2026** (detalhes no [plano mestre, seção 9.3](plano-mestre-2026-10-05.md)):
+
+- `CatalogSearch` é montado com `key={store}`: trocar de loja **remonta** a busca e perde o estado. A loja escolhida
+  passa a ser o campo marca da busca, e o estado vai para a URL (`/try-on?brand=&category=&subcategory=&product=`).
+- "Provadores dinâmicos": cada combinação de busca gera o seu provador (neutro, marca, zona da categoria, zona da
+  categoria na marca, Hero Product). O `resolveEnvironment` atual vira o caso "busca vazia".
+- As mini lojas das Coleções viram a porta de entrada: a vitrine abre o provador já com marca e coleção na busca.
+- P1 a P5 não dependem do GARMENT; só P6 (Vista-me integrado) espera o GARMENT F0–F3.
+
 ---
 
 ## 2. Requisitos, agrupados (1–108)
@@ -261,7 +270,7 @@ Nike". Viram: contexto Nike → área de sneakers → produtos compatíveis → 
 |---|---|---|
 | P1 | Auditoria + arquitetura de estado (`CatalogSearchState`, `StoreSceneState`, `TryOnSession`) | — |
 | P2 | Busca Catalogada embarcada como controle (sem sub-abas redundantes), estado preservado no Vista-me e no "Voltar" | P1 |
-| P3 | `StoreSceneResolver` + loja neutra multimarca (cena persistente com módulos dinâmicos) | P2, ENV3D E1 |
+| P3 | `StoreSceneResolver` (no motor de cenas `lib/scene3d/`) + loja neutra multimarca (cena persistente com módulos dinâmicos) | P2, ENV3D E1 (passo 6.1) |
 | P4 | `BrandSceneProfile` e `CategorySceneProfile` (zonas, expositores, sinalização com assets aprovados) | P3, CATALOG-IMG V2 |
 | P5 | Product Focus (Hero Product) | P4 |
 | P6 | Vista-me integrado (câmera semântica, Try-On Focus, troca rápida) | P5, GARMENT F0–F3 |

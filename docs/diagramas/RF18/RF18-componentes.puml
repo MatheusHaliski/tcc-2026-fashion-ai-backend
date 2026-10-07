@@ -1,62 +1,92 @@
 @startuml RF18_Componentes
-title RF18 — Usar o Provador virtual de lojas\nDiagrama de componentes — telas → controllers → serviços → portas/repositórios → MySQL e navegador
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
-package "Frontend (Next.js · React Three Fiber)" {
-  component "app/(site)/(app)/try-on/page.tsx\n(FittingRoom: abas Lojas · Meu guarda-roupa · Provas salvas)" as P
-  component "components/catalog/catalog-search.tsx\n(CatalogSearch modo navegação, botão Provar)" as CSF
-  component "components/three/fitting-room-scene.tsx\n(loja 3D: faixa do logo, letreiro, painéis)" as SCN
-  component "components/three/mannequin.tsx\n(Avatar 3D / manequim de referência)" as MAN
-  component "lib/tryon/fitting-room.ts\n(wearItem · visibleItems · resolveEnvironment ·\nenvironmentFor · encode/decodeTryOn)" as ENV
-  component "lib/api/catalog.ts (catalogApi)\nlib/api/client.ts (api)" as API
-}
-component "Navegador\nsessionStorage fai.tryon.fitting\nlocalStorage fai.tryon.saved" as BR
-package "fai-web · controllers" {
-  component "TryOnController\nGET /api/try-on\n(PUT /preferences · POST /renders ·\nPOST /schemes — legado, a tela não usa)" as TC
-  component "CatalogController\nGET /api/catalog/stores · /search · /products/{id}\nPOST /api/catalog/discover\nPOST /api/pieces/from-catalog" as CC
-}
-package "fai-application · services" {
-  component "TryOnService" as TS
-  component "Avatar3dService\n(forMannequin)" as AV
-  component "CatalogService\n(catalogBrands · search · product ·\ndiscover · addToWardrobe)" as CS
-  component "WardrobeService\n(createFromCatalog)" as WS
-  component "AiEngine (RF24)\nTRY_ON — só no render legado" as AI
-}
-package "fai-domain · repositórios" {
-  component "UserPreferencesRepository · UserRepository\nUserAvatar3dRepository · WardrobeItemRepository\nBrandRepository · CatalogProductRepository\nCatalogVariantRepository · CatalogImageRepository" as REP
-}
-database "MySQL\n• user_preferences · users\n• user_avatars_3d · wardrobe_items\n• brands · catalog_products\n• catalog_variants · catalog_images" as DB
+title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-P --> CSF : usa
-P --> ENV : estado da prova e ambiente
-P --> SCN : pieces + environment + luz + vista
-SCN --> MAN : veste o Avatar
-P --> API
-CSF --> API
-API --> TC : HTTPS/JSON
-API --> CC : HTTPS/JSON
-P --> BR : prova da sessão e provas salvas
-TC --> TS
-TS --> AV
-TS ..> AI
-CC --> CS
-CS --> WS : cria por referência
-TS --> REP
-AV --> REP
-CS --> REP
-WS --> REP
-REP --> DB : JPA/Flyway
+package "Frontend (Next.js)" {
+  component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE0
+  component "/try-on\n(site)/(app)/try-on/page.tsx" as FE1
+  component "lib/api/client.ts" as APIC
+}
+package "fai-web (REST)" {
+  component "CatalogController\n/api/catalog/brands\n/api/catalog/products/{…}\n/api/catalog/search\n/api/catalog/stores\n(+1 rotas)" as CatalogController
+  component "TryOnController\n/api/try-on\n/api/try-on/preferences\n/api/try-on/renders\n/api/try-on/schemes" as TryOnController
+  component "WardrobeController\n/api/pieces\n/api/pieces/{…}" as WardrobeController
+}
+package "fai-application (casos de uso)" {
+  component "CatalogService" as CatalogService
+  component "TryOnService" as TryOnService
+  component "WardrobeService" as WardrobeService
+  component "CatalogIngestService" as CatalogIngestService <<apoio>>
+  component "OfficialCatalogDiscovery" as OfficialCatalogDiscovery <<apoio>>
+  component "SchemeService" as SchemeService <<apoio>>
+  component "TryOnCompositor" as TryOnCompositor <<apoio>>
+  component "MediaService" as MediaService <<apoio>>
+  component "Avatar3dService" as Avatar3dService <<apoio>>
+  component "OwnMedia" as OwnMedia <<apoio>>
+  component "FlatLayPipeline" as FlatLayPipeline <<apoio>>
+  component "JobQueuePort\n«InMemoryJobQueue»" as JobQueuePort <<port>>
+}
+package "fai-domain (repositórios)" {
+  component "CatalogProductRepository\nCatalogVariantRepository\nCatalogImageRepository\nCatalogProductAliasRepository\nCatalogSourceRepository\nBrandRepository\nBrandAliasRepository\nWardrobeItemRepository\nUserPreferencesRepository\nUserRepository\n(+9)" as REPO_MySQL
+}
+database "MySQL\n• brand_aliases\n• brands\n• catalog_images\n• catalog_product_aliases\n• catalog_products\n• catalog_sources\n• catalog_variants\n• moderation_queue\n• photos\n• pipeline_jobs\n• processing_jobs_log\n• quality_scores\n(+7)" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+APIC --> CatalogController : HTTPS/JSON
+APIC --> TryOnController : HTTPS/JSON
+APIC --> WardrobeController : HTTPS/JSON
+CatalogController --> CatalogService
+CatalogService --> REPO_MySQL
+CatalogService ..> CatalogIngestService
+CatalogService ..> OfficialCatalogDiscovery
+CatalogService ..> WardrobeService
+FE0 --> APIC
+FE1 --> APIC
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+TryOnController --> TryOnService
+TryOnService --> AI
+TryOnService --> REPO_MySQL
+TryOnService ..> Avatar3dService
+TryOnService ..> MediaService
+TryOnService ..> OwnMedia
+TryOnService ..> SchemeService
+TryOnService ..> TryOnCompositor
+TryOnService ..> WardrobeService
+WardrobeController --> WardrobeService
+WardrobeService --> AI
+WardrobeService --> EV
+WardrobeService --> JobQueuePort
+WardrobeService --> REPO_MySQL
+WardrobeService ..> FlatLayPipeline
+WardrobeService ..> MediaService
+WardrobeService ..> OwnMedia
 @enduml

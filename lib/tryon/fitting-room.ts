@@ -121,13 +121,15 @@ const MOTIFS: WallMotif[] = ["plain", "stripes", "grid", "chevron", "court", "pl
 
 /** Ambiente de uma marca: o tema escolhido à mão, ou um derivado do nome (estável — a mesma marca, o mesmo provador). */
 export function environmentFor(brand: FittingBrand): BrandEnvironment {
+  // marca só com slug (sem nome) vira o próprio slug no letreiro: nunca um nome indefinido na cena
+  if (!brand.name?.trim()) brand = { ...brand, name: brand.slug ?? "" };
   const key = brand.slug ? brandKey(brand.slug) : brandKey(brand.name);
   const curated = CURATED[key];
   if (curated) return { key, name: brand.name, logoUrl: brand.logoUrl ?? null, curated: true, ...curated };
-  const h = hash(key || brand.name); const hue = h % 360; const dark = (h >> 9) % 3 === 0;
+  const h = hash(key || brand.name); const hue = h % 360; const dark = (h >>> 9) % 3 === 0;
   return {
     key: key || "brand", name: brand.name, logoUrl: brand.logoUrl ?? null, curated: false,
-    style: STYLES[(h >> 3) % STYLES.length], motif: MOTIFS[(h >> 6) % MOTIFS.length],
+    style: STYLES[(h >>> 3) % STYLES.length], motif: MOTIFS[(h >>> 6) % MOTIFS.length],
     wall: dark ? hsl(hue, 14, 14) : hsl(hue, 16, 93), floor: dark ? hsl(hue, 10, 24) : hsl(hue, 12, 78),
     accent: hsl((hue + 180) % 360, 70, dark ? 58 : 44), ink: dark ? "#FFFFFF" : "#1A1A1A",
   };

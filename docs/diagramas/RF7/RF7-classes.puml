@@ -1,118 +1,174 @@
 @startuml RF7_Classes
-title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class WardrobeItem {
-  +user: User
-  +brand: Brand
-  +name: String
-  +category: String
-  +sex: String
-  +imageUrl: String
-  +visibility: Visibility
-  +disponivel: boolean
-  +availabilityStatus: AvailabilityStatus
-  +moderationStatus: ModerationStatus
-  +favorite: boolean
-  +forSale: boolean
-  +wearCount: int
-  +lastWornDate: LocalDate
-  +viewCount: long
+package "fai-domain (entidades JPA)" {
+  class Brand <<brands>> {
+    +id: UUID
+    +name: String
+    +slug: String
+    +logoUrl: String
+    +website: String
+    +source: BrandSource
+    +catalogOrigin: CatalogOrigin
+    +fixtureKey: String
+    +sourceConfidence: BigDecimal
+    +verifiedAt: Instant
+    .. +2 campos ..
+  }
+  class Comment <<comments>> {
+    +id: UUID
+    +author: User
+    +targetType: TargetType
+    +targetId: UUID
+    +parentCommentId: UUID
+    +content: String
+    +active: boolean
+  }
+  class Scheme <<schemes>> {
+    +id: UUID
+    +user: User
+    +originalScheme: Scheme
+    +title: String
+    +description: String
+    +creationMode: CreationMode
+    +origin: SchemeOrigin
+    +style: String
+    +occasion: String
+    +season: Season
+    .. +46 campos ..
+  }
+  class SchemeItem <<scheme_items>> {
+    +id: UUID
+    +scheme: Scheme
+    +wardrobeItem: WardrobeItem
+    +slot: SchemeSlot
+    +tryOnLayer: TryOnLayer
+    +sortOrder: int
+    +zIndex: int
+    +positionX: BigDecimal
+    +positionY: BigDecimal
+    +scale: BigDecimal
+    .. +4 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class WardrobeAvailabilityChange <<wardrobe_availability_log>> {
+    +id: UUID
+    +wardrobeItemId: UUID
+    +userId: UUID
+    +available: boolean
+    +changedAt: Instant
+  }
+  class WardrobeItem <<wardrobe_items>> {
+    +id: UUID
+    +user: User
+    +brandProfile: BrandProfile
+    +brand: Brand
+    +name: String
+    +category: String
+    +subcategory: String
+    +sex: String
+    +brandName: String
+    +brandLogoUrl: String
+    .. +70 campos ..
+  }
 }
-class Scheme {
-  +user: User
-  +title: String
-  +status: SchemeStatus
-  +visibility: Visibility
-  +coverImageUrl: String
-  +originalScheme: Scheme
+package "fai-domain (enums)" {
+  enum SchemeStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+  }
+  enum RenderStatus {
+    PENDING
+    RENDERING
+    ENHANCING
+    COMPOSITING
+    CACHED
+    COMPLETED
+    FAILED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
+  enum PhotoProcessingStatus {
+    NEW
+    MODERATING
+    PROCESSING
+    COMPLETED
+    NEEDS_REUPLOAD
+    FAILED
+  }
 }
-class SchemeItem {
-  +scheme: Scheme
-  +wardrobeItem: WardrobeItem
-  +slot: SchemeSlot
-  +sortOrder: int
-  +snapshotJson: String
+package "fai-application" {
+  class SocialService <<service>> {
+    +returnToOrigin()
+  }
 }
-class WardrobeAvailabilityChange {
-  +id: UUID
-  +wardrobeItemId: UUID
-  +userId: UUID
-  +available: boolean
-  +changedAt: Instant
-}
-class Comment {
-  +author: User
-  +targetType: TargetType
-  +targetId: UUID
-  +parentCommentId: UUID
-  +content: String
-  +active: boolean
-}
-}
-package "fai-domain · enums" {
-enum AvailabilityStatus {
-  AVAILABLE
-  UNAVAILABLE
-  ARCHIVED
-}
-enum Visibility {
-  PRIVATE
-  FOLLOWERS
-  PUBLIC
-}
-enum TargetType {
-  PIECE
-  SCHEME
-  DNA
-}
-}
-package "fai-application · service" {
-class WardrobeService {
-  +detail(viewer, id, fromSchemeId): Map
-  +update(user, id, PieceForm): PieceView
-  +toggles(user, id, favorite, disponivel, forSale): PieceView
-  +deletionImpact(user, id): Map
-  +delete(user, id): Map
-  {static} +effectiveVisibility(w): Visibility
-}
-class SchemeService {
-  +get(viewer, id): Map
-  +requireView(viewer, scheme)
-}
-class SocialService {
-  +returnToOrigin(user, pieceId, fromSchemeId): Map
-  +deleteComment(user, commentId)
-}
-class WardrobeEventListeners {
-  .. on AvailabilityChanged ..
-}
-}
+SocialService ..> Comment : usa
+SocialService ..> Scheme : usa
+SocialService ..> User : usa
+SocialService ..> WardrobeItem : usa
+Comment "*" --> "1" User : author
+Scheme "*" --> "1" User : user
+Scheme --> RenderStatus
+Scheme --> SchemeStatus
 SchemeItem "*" --> "1" Scheme : scheme
 SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
-Scheme "*" --> "0..1" Scheme : originalScheme
+User --> AccountStatus
+WardrobeAvailabilityChange ..> User : userId
 WardrobeAvailabilityChange ..> WardrobeItem : wardrobeItemId
-Comment ..> WardrobeItem : targetType = PIECE
+WardrobeItem "*" --> "1" Brand : brand
+WardrobeItem "*" --> "1" User : user
 WardrobeItem --> AvailabilityStatus
-WardrobeItem --> Visibility
-Comment --> TargetType
-WardrobeService ..> WardrobeItem : lê/atualiza
-WardrobeService ..> SchemeItem : snapshot ao excluir
-SchemeService ..> Scheme : lê
-SocialService ..> SchemeItem : esquemas de origem
-WardrobeEventListeners ..> WardrobeAvailabilityChange : grava
-note top of WardrobeItem : tabela wardrobe_items
-note top of SchemeItem : tabela scheme_items\n(snapshotJson = retrato da peça na publicação — CA03)
-note top of WardrobeAvailabilityChange : tabela wardrobe_availability_log
-note bottom of Comment : tabela comments
+WardrobeItem --> ModerationStatus
+WardrobeItem --> PhotoProcessingStatus
 @enduml

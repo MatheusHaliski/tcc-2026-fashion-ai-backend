@@ -1,84 +1,71 @@
 @startuml RF33_Componentes
-title RF33 — Passarela 3D: o Look do Dia de cada usuário desfilando num manequim\nDiagrama de componentes — frontend → API → serviços → HypeScore v2 e MySQL
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF33 — Passarela 3D: Look do Dia desfilando em manequins, Top 100 Global/Regional/País e filtros\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "explorer/page.tsx\n(aba runway + InsightStrip EXPLORER_RUNWAY)" as FE_PAGE
-  component "showcase/runway-panel.tsx\nRunwayPanel · RunwayFallback (2D)\nLookCard · RunwayHype · FilterBar" as FE_PANEL
-  component "three/runway-scene.tsx\nRunwayScene (desfile, plateia,\nreduzir movimento)" as FE_SCENE
-  component "three/mannequin.tsx → HumanAvatar\n(corpo por sexo, cabeça AVATAR/PADRAO,\nroupa no avatar — RF40)" as FE_MAN
-  component "hype/HypeBadge · HypeAnalyticsDrawer\n(lib/hype: hypeViewState)" as FE_HYPE
-  component "settings/page.tsx\n(«Desfilar meu Look do Dia»)" as FE_SET
+package "Frontend (Next.js)" {
+  component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  [ShowcaseController\nGET /api/explorer/runway] as SC
-  [PreferencesController\nPATCH /api/me/profile] as PC
-  [LookbookController · MirrorController\nPOST /api/me/daily-look · /api/me/mirror/use] as LC
+  component "ShowcaseController\n/api/explorer/runway" as ShowcaseController
+  component "LookbookController\n/api/me/daily-looks" as LookbookController
 }
-package "fai-application" {
-  [ShowcaseService\nrunway · runwayOrder · look · mannequin] as SS
-  [DailyLookService\nregister · today] as DLS
-  [SchemeService\ncanView] as SCH
-  [Avatar3dService\nforMannequin (RF40)] as AV
-  [PreferencesService\nupdateProfile (runwayOptOut)] as PS
-  [SearchService (estático)\nshowcaseAllows · publicScore\ntrendFor · risingFor · hypeSummary] as SEARCH
-  [WorldRegions\n(país → região do mundo)] as WR
+package "fai-application (casos de uso)" {
+  component "ShowcaseService" as ShowcaseService
+  component "DailyLookService" as DailyLookService
+  component "MediaService" as MediaService <<apoio>>
+  component "SchemeService" as SchemeService <<apoio>>
+  component "InstitutionalService" as InstitutionalService <<apoio>>
+  component "Model3dService" as Model3dService <<apoio>>
+  component "Avatar3dService" as Avatar3dService <<apoio>>
+  component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
 }
-package "fai-application · hype (RF53)" {
-  [HypeSignalRecorder\nLOOK_WORN (AFTER_COMMIT)\nhype_signal_daily] as REC
-  [HypeLiveRecalc\nmarkDirty · tick 30 s] as LIVE
-  [HypeSnapshotService\n@Scheduled 6/6 h] as JOB
-  [HypeScoreConfig\nalgorithmVersion] as CFG
+package "fai-domain (repositórios)" {
+  component "FollowRepository\nUserRepository\nSchemeRepository\nSchemeItemRepository\nWardrobeItemRepository\nSchemeGroupingRepository\nDailyLookRepository\nUserPreferencesRepository\nCelebrityProfileRepository\nHypeScoreCurrentRepository" as REPO_MySQL
 }
-package "fai-domain · repository" {
-  [DailyLookRepository\nUserRepository · FollowRepository\nSchemeRepository · SchemeItemRepository\nUserPreferencesRepository\nUserAvatar3dRepository] as REPOS
-  [HypeScoreCurrentRepository] as HREPO
-}
-database "MySQL · fashionai_app\n• daily_looks\n• users (country, sex, runway_opt_out)\n• schemes · scheme_items · wardrobe_items\n• follows · user_preferences\n• user_avatars_3d\n• hype_scores · hype_signal_daily" as DB
-interface "MediaStoragePort" <<port>> as MSP
-database "Storage de mídia\n(MediaStoragePort: fotos recortadas,\nGLB do RF16, textura do avatar)" as MEDIA
-
-FE_PAGE --> FE_PANEL
-FE_PANEL --> FE_SCENE : desfile 3D (sob demanda)
-FE_SCENE --> FE_MAN
-FE_PANEL --> FE_HYPE
-FE_PANEL --> SC : HTTPS/JSON
-FE_SET --> PC : HTTPS/JSON
-FE_MAN ..> MEDIA : imagens, GLB e textura
-AV --> MSP : textura do rosto
-MSP --> MEDIA
-SC --> SS
-PC --> PS
-LC --> DLS
-SS --> DLS : today()
-SS ..> SCH
-SS --> AV
-SS ..> SEARCH
-SS ..> WR
-SS ..> CFG
-SS --> REPOS
-SS --> HREPO : leitura em lote
-DLS --> REPOS
-DLS ..> REC : DailyLookRegistered
-DLS ..> LIVE : DailyLookRegistered
-LIVE --> JOB : recalculate()
-JOB --> HREPO : grava
-REC --> DB : sinal do dia
-JOB --> DB : lê sinais
-REPOS --> DB : JPA/Flyway
-HREPO --> DB : JPA/Flyway
+database "MySQL\n• celebrity_profiles\n• daily_looks\n• follows\n• hype_scores\n• scheme_groupings\n• scheme_items\n• schemes\n• user_preferences\n• users\n• wardrobe_items" as DB_MySQL
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+APIC --> LookbookController : HTTPS/JSON
+APIC --> ShowcaseController : HTTPS/JSON
+DailyLookService --> EV
+DailyLookService --> REPO_MySQL
+LookbookController --> DailyLookService
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+ShowcaseController --> ShowcaseService
+ShowcaseService --> REPO_MySQL
+ShowcaseService ..> Avatar3dService
+ShowcaseService ..> DailyLookService
+ShowcaseService ..> HypeScoreConfig
+ShowcaseService ..> InstitutionalService
+ShowcaseService ..> MediaService
+ShowcaseService ..> Model3dService
+ShowcaseService ..> SchemeService
 @enduml

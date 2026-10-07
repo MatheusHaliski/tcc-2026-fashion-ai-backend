@@ -1,49 +1,53 @@
 @startuml RF25_MaquinaDeEstados_Selo
 !pragma layout smetana
-title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de máquina de estados — selo (SealStatus × janela de validade × limite de emissões)
 skinparam backgroundColor #FFFFFF
-skinparam state {
-  BackgroundColor #F8F4FF
-  BorderColor #B695F5
-  FontColor #2D2438
-  ArrowColor #52606D
-}
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
 skinparam note {
   BackgroundColor #FFFDEB
   BorderColor #D8CE78
   FontColor #554F24
 }
-[*] --> Ativo : POST /api/seals (status padrão ACTIVE)\nou ensureDefaultSeals() na aprovação do emissor
-[*] --> Inativo : POST /api/seals com status INACTIVE
-
-state "ACTIVE" as Ativo {
-  state "Em breve\n(agora < availableFrom)" as EmBreve
-  state "Disponível\n(available = true)" as Disponivel
-  state "Expirado\n(agora ≥ availableUntil)" as Expirado
-  state "Esgotado\n(usageCount ≥ usageLimit)" as Esgotado
-  [*] --> EmBreve : availableFrom no futuro
-  [*] --> Disponivel : sem janela ou dentro dela
-  EmBreve --> Disponivel : chega availableFrom
-  Disponivel --> Disponivel : issue(): vínculo APPROVED,\nusageCount + 1, CouponRightsCheck
-  Disponivel --> Esgotado : última emissão do limite
-  Disponivel --> Expirado : passa availableUntil
-  Esgotado --> Disponivel : PUT /api/seals/{id}\n(limite maior ou sem limite)
-  Expirado --> Disponivel : PUT /api/seals/{id}\n(nova data de fim)
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "INACTIVE\n(motivo: o selo está inativo)" as Inativo
+title RF25 — ciclo de vida de SealBond.status\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum SealBondStatus · tabela seal_bonds
 
-Ativo --> Inativo : PUT /api/seals/{id} {status: INACTIVE}\n(botão "Desativar" do dono)
-Inativo --> Ativo : PUT /api/seals/{id} {status: ACTIVE}\n(botão "Ativar")
-
-note right of Disponivel
-  Só aqui o selo é concedido. Fora daqui o pedido
-  de vínculo vira REJECTED com o motivo
-  (409 SELO_INDISPONIVEL) — unavailableReason().
+state "SealBond.status" as Ciclo_SealBond {
+  state Ciclo_SealBond_SUGGESTED as "SUGGESTED"
+  state Ciclo_SealBond_ACCEPTED as "ACCEPTED"
+  state Ciclo_SealBond_EDITED as "EDITED"
+  state Ciclo_SealBond_REFUSED as "REFUSED"
+  state Ciclo_SealBond_PENDING_REVIEW as "PENDING_REVIEW"
+  state Ciclo_SealBond_APPROVED as "APPROVED"
+  state Ciclo_SealBond_REJECTED as "REJECTED"
+  state Ciclo_SealBond_REVOKED as "REVOKED"
+}
+[*] --> Ciclo_SealBond_SUGGESTED : criação
+Ciclo_SealBond --> Ciclo_SealBond_APPROVED : accept(), issue(), linkManually(),\nreview(), route()
+Ciclo_SealBond --> Ciclo_SealBond_EDITED : linkManually()\nPOST /api/schemes/{schemeId}/seal-bonds
+Ciclo_SealBond --> Ciclo_SealBond_PENDING_REVIEW : accept(), linkManually(), route()
+Ciclo_SealBond --> Ciclo_SealBond_REFUSED : refuseAll()\nPOST /api/schemes/{schemeId}/seal-bonds/refu…
+Ciclo_SealBond --> Ciclo_SealBond_REVOKED : revoke(), revokeForScheme(),\nrevokeInternal()
+Ciclo_SealBond --> Ciclo_SealBond_SUGGESTED : suggest()\nGET /api/schemes/{schemeId}/seal-suggestions
+Ciclo_SealBond_REFUSED --> Ciclo_SealBond_ACCEPTED : accept()\nPOST /api/seal-bonds/{bondId}/accept
+Ciclo_SealBond_SUGGESTED --> Ciclo_SealBond_ACCEPTED : accept()\nPOST /api/seal-bonds/{bondId}/accept
+Ciclo_SealBond_SUGGESTED --> Ciclo_SealBond_REFUSED : refuse()\nPOST /api/seal-bonds/{bondId}/refuse
+note bottom of Ciclo_SealBond
+  Sem mudança explícita no código para: REJECTED
+  (valor vindo de importação, regra calculada ou dado legado)
 end note
-note bottom of Inativo
-  Visitantes só veem selos ACTIVE; promoção ligada
-  a selo inativo fica indisponível e não se cria
-  promoção nova para ele (400 SELO_INATIVO).
-  Não há exclusão de selo pela API.
+note right of Ciclo_SealBond
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
 end note
 @enduml

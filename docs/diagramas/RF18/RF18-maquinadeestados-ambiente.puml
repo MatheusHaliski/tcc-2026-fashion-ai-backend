@@ -1,63 +1,39 @@
 @startuml RF18_MaquinaDeEstados_Ambiente
 !pragma layout smetana
-title RF18 — Usar o Provador virtual de lojas\nDiagrama de máquina de estados — ambiente 3D do provador (resolveEnvironment × modo escolhido)
 skinparam backgroundColor #FFFFFF
-skinparam state {
-  BackgroundColor #F8F4FF
-  BorderColor #B695F5
-  FontColor #2D2438
-  ArrowColor #52606D
-}
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
 skinparam note {
   BackgroundColor #FFFDEB
   BorderColor #D8CE78
   FontColor #554F24
 }
-[*] --> Auto : abre /try-on (mode = auto)
-
-state "Automático (mode = auto)" as Auto {
-  state "neutral\n(FashionAI: nenhuma peça com marca)" as AN
-  state "brand\n(uma marca vestida = destaque)" as AB
-  state "multibrand\n(destaque = marca da última peça;\naté 3 painéis laterais)" as AM
-  [*] --> AN
-  AN --> AB : veste peça com marca
-  AB --> AB : veste outra peça da mesma marca
-  AB --> AM : veste peça de outra marca
-  AM --> AM : veste mais uma marca\n(a nova vira destaque)
-  AM --> AB : removeSlot() deixa só uma marca
-  AB --> AN : remove a última peça com marca
-  AM --> AN : Limpar (commit([]))
-  AB --> AN : Limpar
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  StartColor #20A77A
+  EndColor #4B5563
 }
+title RF18 — resolveEnvironment(): estado calculado\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nlib/tryon/fitting-room.ts · vale a primeira regra verdadeira
 
-state "Marca fixada (mode = {pinned: key})" as Fixada {
-  state "pinned ok\n(destaque = marca fixada;\nas outras viram painéis)" as FP
-  state "fallback\n(marca fixada saiu do corpo:\ndestaque = última marca)" as FF
-  [*] --> FP
-  FP --> FP : continua provando\n(o destaque não muda)
-  FP --> FF : remove as peças da marca fixada
-  FF --> FP : veste de novo a marca fixada
+state "resolveEnvironment()" as C_resolveEnvironment {
+  state C_resolveEnvironment_avaliar <<choice>>
+  state "neutral" as C_resolveEnvironment_neutral
+  state "multibrand" as C_resolveEnvironment_multibrand
+  state "brand" as C_resolveEnvironment_brand
 }
-
-state "Neutro escolhido (mode = neutral)" as Neutro : kind = neutral mesmo com marcas vestidas
-
-Auto --> Fixada : ida: chip de uma marca vestida\nvolta: chip fixado de novo ou "Automático"
-Fixada --> Fixada : toca o chip de outra marca
-Fixada --> Auto
-Auto -down-> Neutro : chip "Neutro"
-Fixada -down-> Neutro : chip "Neutro"
-Neutro -up-> Auto : chip "Automático"
-Neutro -up-> Fixada : chip de\numa marca
-
-note as N1
-  Sem marca vestida ou modo Neutro:
-  NEUTRAL_ENVIRONMENT (FashionAI).
-  Cada troca anima cores e painéis;
-  com "reduzir movimento" troca na hora.
-end note
-note as N2
-  O modo vive só no estado da tela (useState);
-  a prova (peças) fica no sessionStorage;
-  nada vai ao servidor.
+[*] --> C_resolveEnvironment_avaliar : a cada mudança das peças vestidas
+C_resolveEnvironment_avaliar --> C_resolveEnvironment_neutral : [1] mode === 'neutral' || !brands.length
+C_resolveEnvironment_avaliar --> C_resolveEnvironment_multibrand : [2] others.length
+C_resolveEnvironment_avaliar --> C_resolveEnvironment_brand : [3] senão
+note right of C_resolveEnvironment
+  mode: 'auto' | 'neutral' | { pinned: string }
+  chamado por: page.tsx
+  Não é gravado: recalculado a cada chamada.
 end note
 @enduml

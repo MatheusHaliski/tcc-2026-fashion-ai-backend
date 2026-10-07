@@ -8,6 +8,8 @@ import { Mannequin, bodyParamsOf } from "@/components/three/mannequin";
 import { buildSpec, type BodyParams } from "@/lib/avatar3d/body-spec";
 import type { BrandEnvironment, LightMode, ResolvedEnvironment, RoomStyle, WallMotif } from "@/lib/tryon/fitting-room";
 import type { AvatarView } from "@/components/three/avatar-viewer";
+import { DenimTable, GarmentRack, HeroPedestal, ShoeWall, Vitrine, ZoneSign } from "@/components/three/store-fixtures";
+import type { StoreScene } from "@/lib/scene3d/scene";
 import { useI18n } from "@/lib/i18n/i18n";
 
 /*
@@ -18,6 +20,10 @@ import { useI18n } from "@/lib/i18n/i18n";
  *  - Cenografia de loja: cortina de provador, espelho de corpo inteiro, arara com cabides, banco e piso no estilo da loja.
  *  - Trocar de marca anima as cores (e o painel entra com uma escala suave); "reduzir movimento" troca na hora.
  * Tudo é desenhado no navegador (texturas em canvas, sem baixar cenários); a roupa no corpo é a prévia projetada do Mannequin.
+ *
+ * Com `scene` (perfil do motor de cenas, `lib/scene3d`), a Busca Catalogada monta a loja: a marca da busca é o contexto,
+ * a categoria vira a zona (parede de calçados, arara, mesa de jeans, vitrine) com as fotos dos resultados, e o produto
+ * escolhido sobe ao pedestal ao lado do avatar. Sem `scene`, o provador de antes (marca da última peça vestida).
  */
 
 const ANGLE: Record<AvatarView, number> = { front: 0, left34: -35, right34: 35, profile: 90, back: 180 };
@@ -78,7 +84,7 @@ function useFloorTexture(style: RoomStyle, floor: string, accent: string) {
 function useWordmark(name: string, ink: string, bg: string | null, w = 1024, h = 320) {
   return useCanvasTexture((g, W, H) => {
     if (bg) { g.fillStyle = bg; g.fillRect(0, 0, W, H); } else g.clearRect(0, 0, W, H);
-    const text = name.length > 22 ? `${name.slice(0, 21)}…` : name;
+    const label = name ?? ""; const text = label.length > 22 ? `${label.slice(0, 21)}…` : label;
     let size = Math.round(H * 0.5); g.font = `800 ${size}px Inter, Arial, sans-serif`;
     while (g.measureText(text.toUpperCase()).width > W * 0.88 && size > 24) { size -= 4; g.font = `800 ${size}px Inter, Arial, sans-serif`; }
     g.fillStyle = ink; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(text.toUpperCase(), W / 2, H / 2 + 4);
@@ -139,9 +145,9 @@ function Curtain({ env, reduced }: { env: BrandEnvironment; reduced: boolean }) 
 }
 
 /** Espelho de corpo inteiro (metal polido refletindo o ambiente) com moldura na cor de destaque. */
-function Mirror({ env }: { env: BrandEnvironment }) {
+function Mirror({ env, left = false }: { env: BrandEnvironment; left?: boolean }) {
   return (
-    <group position={[2.3, 1.1, -0.75]} rotation={[0, -Math.PI / 2.8, 0]}>
+    <group position={left ? [-2.75, 1.1, 0.75] : [2.3, 1.1, -0.75]} rotation={[0, left ? Math.PI / 2.2 : -Math.PI / 2.8, 0]}>
       <mesh><boxGeometry args={[0.84, 2.14, 0.05]} /><meshStandardMaterial color={env.accent} roughness={0.35} /></mesh>
       <mesh position={[0, 0, 0.028]}><planeGeometry args={[0.74, 2.02]} /><meshStandardMaterial color="#DCE3EA" metalness={1} roughness={0.04} /></mesh>
     </group>
@@ -179,7 +185,9 @@ function Bench({ env }: { env: BrandEnvironment }) {
   );
 }
 
-function Room({ env, others, light, reduced }: { env: BrandEnvironment; others: BrandEnvironment[]; light: LightMode; reduced: boolean }) {
+function Room({ env, others, light, reduced, scene }: { env: BrandEnvironment; others: BrandEnvironment[]; light: LightMode; reduced: boolean; scene?: StoreScene | null }) {
+  const { t } = useI18n();
+  const zone = scene?.zone ?? null;
   const wallTex = useWallTexture(env.motif, env.wall, env.accent, [ROOM_W / 2.4, WALL_H / 2.4]);
   const sideTex = useWallTexture(env.motif, env.wall, env.accent, [1.6, WALL_H / 2.4]);
   const floorTex = useFloorTexture(env.style, env.floor, env.accent);
@@ -210,9 +218,25 @@ function Room({ env, others, light, reduced }: { env: BrandEnvironment; others: 
       <NeonSign env={env} light={light} />
       {others.map((o, i) => <BrandPanel key={o.key} env={o} position={sidePos[i].position} width={1.05} height={0.72} reduced={reduced} rotationY={sidePos[i].rotationY} />)}
       <Curtain env={env} reduced={reduced} />
-      <Mirror env={env} />
-      <Rail env={env} />
-      <Bench env={env} />
+      <Mirror env={env} left={!!zone} />
+      {!zone && <><Rail env={env} /><Bench env={env} /></>}
+      {zone && scene && <ZoneFixtures scene={scene} env={env} label={t(`scene3d.zone.${zone.key}`)} />}
+      {scene?.hero && <HeroPedestal env={env} product={scene.hero} position={[-1.2, 0, 0.35]} reduced={reduced} label={t("scene3d.destaque")} />}
+    </group>
+  );
+}
+
+/** A zona da loja escolhida pela busca, à direita do avatar: o móvel da categoria com as fotos dos resultados e a placa. */
+function ZoneFixtures({ scene, env, label }: { scene: StoreScene; env: BrandEnvironment; label: string }) {
+  const z = scene.zone!; const products = scene.display.length ? scene.display : scene.hero ? [scene.hero] : [];
+  const brand = env.key === "neutral" ? null : env.name;
+  return (
+    <group>
+      {z.kind === "SHOE_WALL" && <ShoeWall env={env} products={products} position={[1.75, 0, BACK_Z + 0.12]} />}
+      {z.kind === "GARMENT_RACK" && <GarmentRack env={env} products={products} position={[1.85, 0, -0.95]} rotationY={-0.38} />}
+      {z.kind === "DENIM_TABLE" && <><DenimTable env={env} products={products} position={[1.7, 0, -0.35]} rotationY={-0.32} /><GarmentRack env={env} products={products} position={[1.6, 0, BACK_Z + 0.45]} /></>}
+      {z.kind === "VITRINE" && <Vitrine env={env} products={products} position={[1.75, 0, -0.55]} rotationY={-0.4} />}
+      <ZoneSign label={label} brand={brand} env={env} position={[1.75, 2.28, BACK_Z + 0.3]} width={1.3} />
     </group>
   );
 }
@@ -232,9 +256,9 @@ function Lights({ light, accent }: { light: LightMode; accent: string }) {
   );
 }
 
-export default function FittingRoomScene({ avatar, sex, build, skinTone, body, pieces, environment, light = "store", view = "front", onCanvas }: {
+export default function FittingRoomScene({ avatar, sex, build, skinTone, body, pieces, environment, scene, light = "store", view = "front", onCanvas }: {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; build?: string | null; skinTone?: string | null; body?: BodyParams | null;
-  pieces: Look3dPiece[]; environment: ResolvedEnvironment; light?: LightMode; view?: AvatarView; onCanvas?: (c: HTMLCanvasElement) => void;
+  pieces: Look3dPiece[]; environment: ResolvedEnvironment; scene?: StoreScene | null; light?: LightMode; view?: AvatarView; onCanvas?: (c: HTMLCanvasElement) => void;
 }) {
   const { t } = useI18n();
   const reduced = useReducedMotion();
@@ -243,7 +267,8 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
   const H = buildSpec(params).stature;
   const target: [number, number, number] = [0, H * 0.56, 0];
   const dist = H * 2.7;
-  const env = environment.featured;
+  const env = scene?.brand ?? environment.featured;
+  const others = scene ? scene.others : environment.others;
   return (
     <Canvas shadows camera={{ fov: 32, near: 0.05, far: 30, position: [0, target[1], dist] }} dpr={[1, 2]} gl={{ preserveDrawingBuffer: true, antialias: true }}
       onCreated={({ gl }) => { gl.toneMapping = THREE.NeutralToneMapping; gl.toneMappingExposure = 1; onCanvas?.(gl.domElement); }}
@@ -251,7 +276,7 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
       <color attach="background" args={[light === "night" ? "#0B0C0F" : env.wall]} />
       <fog attach="fog" args={[light === "night" ? "#0B0C0F" : env.wall, 9, 18]} />
       <Lights light={light} accent={env.accent} />
-      <Room env={env} others={environment.others} light={light} reduced={reduced} />
+      <Room env={env} others={others} light={light} reduced={reduced} scene={scene} />
       <group position={[0, 0.04, 0]}>
         <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={pieces} sway={false} body={params} />
       </group>

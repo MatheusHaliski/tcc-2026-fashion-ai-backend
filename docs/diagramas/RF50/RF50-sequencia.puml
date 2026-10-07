@@ -1,108 +1,90 @@
 @startuml RF50_Sequencia
-title RF50 — Verificar perfis de Marca e Celebridade (política v1.0)\nDiagrama de sequência — endpoints reais: cadastro → aviso → confirmação do e-mail → análise → decisão → reenvio
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam sequence {
-  ArrowColor #52606D
-  LifeLineBorderColor #B695F5
-  ParticipantBackgroundColor #F8F4FF
-  ParticipantBorderColor #B695F5
-  ActorBackgroundColor #F8F4FF
-  GroupBackgroundColor #FFF5F8
-}
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
 skinparam note {
   BackgroundColor #FFFDEB
   BorderColor #D8CE78
   FontColor #554F24
 }
-autonumber
-actor "Marca/Celebridade" as M
-participant "Frontend\nregister · IssuerCenter\n(issuer-review.tsx)" as F
-participant "AuthController\nIdentityService" as I
-participant "IssuerReviewController\nAdminController" as C
-participant "IssuerReviewService" as R
-participant "IssuerVerificationPolicy" as P
-participant "NotificationService" as N
-participant "SideEffectRunner\nEmailSenderPort\n(Resend | Logging)" as EM
-participant "MediaService\nMediaStoragePort\n(restricted/)" as ST
-actor "Administrador\n(AdminApprovals)" as A
-database "MySQL\nusers · brand_profiles ·\ncelebrity_profiles · audit_log" as DB
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+title RF50 — Verificar perfis de Marca e Celebridade (política v1.0)\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-== cadastro (1º envio) ==
-M -> F : dados de MARCA ou CELEBRIDADE\n+ documento (POST /api/auth/uploads)
-F -> I : POST /api/auth/register
-alt campo obrigatório ausente (celebrity.realName, CNPJ inválido, documento…)
-  I --> F : 400 com os campos destacados
-else cadastro válido
-  I -> DB : INSERT user (PENDING_EMAIL_VERIFICATION)\n+ perfil PENDENTE (reviewAttempts = 1)
-  I -> EM : código de confirmação + "cadastro recebido" (ao dono)
-  I -> R : submitted(userId)
-  I --> F : 201 Session
+actor "Pessoa usuária" as U
+boundary "Tela /admin/users" as P
+control "AdminController" as AdminController
+participant "IssuerReviewService" as IssuerReviewService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+participant "IssuerVerificationPolicy" as IssuerVerificationPolicy
+== Decidir a verificação: APROVAR (checklist completa), AJUSTES ou RECUS… ==
+U -> P : Decidir a verificação: APROVAR (checklist complet…
+P -> AdminController : POST /api/admin/approvals/{userId}
+AdminController -> IssuerReviewService : decide()
+activate IssuerReviewService
+IssuerReviewService -> Guard : requireAdmin()
+alt Um administrador não pode decidir a ver…
+IssuerReviewService --> AdminController : 403 ACESSO_NEGADO
+AdminController --> P : 403 + mensagem
 end
-== depois do commit (thread virtual) ==
-R -> DB : contas ADMIN ativas (findByRole)
-loop cada administrador
-  R -> N : ISSUER_REVIEW_REQUEST\n(href /admin/users?tab=approvals)
+IssuerReviewService -> DB_MySQL : SELECT users
+alt perfil pessoal
+IssuerReviewService --> AdminController : 400 PERFIL_PESSOAL
+AdminController --> P : 400 + mensagem
 end
-loop ADMIN verificados + ISSUER_REVIEW_NOTIFY_EMAILS (sem repetir endereço)
-  R -> EM : send(assunto_admin | assunto_admin_reenvio, corpo_admin, SYSTEM)
+IssuerReviewService -> DB_MySQL : SELECT brand_profiles
+IssuerReviewService -> DB_MySQL : SELECT celebrity_profiles
+alt decisao inválida
+IssuerReviewService --> AdminController : 400 DECISAO_INVALIDA
+AdminController --> P : 400 + mensagem
 end
-== confirmação do e-mail ==
-M -> I : POST /api/auth/email-verification
-I -> DB : emailVerified = true; status PENDING_VALIDATION
-I -> R : emailConfirmed(user)
-R -> DB : reviewSubmittedAt = agora\n(só se PENDENTE, 1º envio e ainda sem data)
-note right of R : o prazo de 3 dias úteis\ncomeça aqui
-== Central do emissor ==
-M -> F : abre a Central (aba CENTRAL do perfil / dashboard)
-F -> C : GET /api/me/issuer-review
-C -> R : status(current)
-R -> P : checks(user, perfil) · verificationCode(userId)
-R --> F : status, motivos, checklist, FAI-XXXXXX, envios/limite,\nprazo, adminsNotified, canResubmit, editable
-== análise ==
-A -> C : GET /api/admin/approvals
-C -> R : queue(admin)
-R --> A : pending (dossiês com reviewableSince, checks)\n+ waitingOwner, motivos, critérios, prazo
-A -> C : GET /api/admin/approvals/{userId}/documents/{kind}
-C -> R : document(admin, userId, kind)
-R -> ST : readRestricted(url)
-R -> DB : audit DOCUMENTO_VERIFICACAO_ABERTO
-R --> A : bytes (no-store)
-A -> C : POST /api/admin/approvals/{userId}\n{decision, reasons, notes, checklist}
-C -> R : decide(admin, userId, cmd)
-note right of R
-  formato antigo {approve: false, notes}:
-  vira OUTRO (com observação) ou
-  DADOS_INCOMPLETOS (sem observação)
-end note
-R -> P : checks(user, perfil)
-alt pedido inválido
-  R --> A : 403 próprio perfil · 400 PERFIL_PESSOAL | DECISAO_INVALIDA | MOTIVO_INVALIDO\n| MOTIVO_OBRIGATORIO | OBSERVACAO_OBRIGATORIA · 409 FORA_DA_FILA\n| EMAIL_NAO_CONFIRMADO | CRITERIOS_PENDENTES
-else decisão válida
-  R -> DB : status APROVADO | AJUSTES | RECUSADO; reviewReasons;\nreviewChecklist; approvedBy/At; verificationNotes
-  opt APROVADO
-    R -> DB : identityVerified; documentVerified (marca) |\nrequiresSealReview (celebridade); user ACTIVE + verified
-    R -> R : seals.ensureDefaultSeals(user)
-  end
-  R -> N : ACCOUNT_APPROVAL ao dono (href /brands/{slug}?tab=CENTRAL)
-  R -> EM : e-mail da decisão ao dono (depois do commit)
-  R -> DB : audit PERFIL_APROVADO | PERFIL_AJUSTES_SOLICITADOS | PERFIL_RECUSADO
-  R --> A : {userId, status, approved}
+alt fora da fila
+IssuerReviewService --> AdminController : 409 FORA_DA_FILA
+AdminController --> P : 409 + mensagem
 end
-== reenvio (AJUSTES ou RECUSADO) ==
-M -> F : corrige pela Central e reenvia
-F -> F : celebridade sem nome civil → erro no campo, sem chamar a API
-F -> C : POST /api/me/issuer-review/resubmit\n{message, links, contatos, realName, documentUrl}
-C -> R : resubmit(current, cmd)
-alt status fora de AJUSTES/RECUSADO ou envios = 5
-  R --> F : 409 REENVIO_INDISPONIVEL | LIMITE_DE_ENVIOS
-else link inválido, nome civil efetivo vazio ou documento inválido
-  R --> F : 400 FORMULARIO_INVALIDO {campo: erro} (nada é gravado)
-else tudo válido
-  R -> ST : copia o documento para restricted/users/{id}/documents/
-  R -> DB : campos corrigidos; PENDENTE; attempts + 1;\nreviewSubmittedAt = agora; reviewOwnerMessage
-  R -> DB : audit PERFIL_REENVIADO
-  R -> R : submitted(userId) → administradores avisados de novo
-  R --> F : status atualizado (prazo de 2 dias úteis)
+alt motivo inválido
+IssuerReviewService --> AdminController : 400 MOTIVO_INVALIDO
+AdminController --> P : 400 + mensagem
 end
+IssuerReviewService -> IssuerVerificationPolicy : checks()
+IssuerVerificationPolicy -> DB_MySQL : SELECT brand_profiles
+IssuerVerificationPolicy -> DB_MySQL : SELECT celebrity_profiles
+IssuerVerificationPolicy --> IssuerReviewService
+alt e-mail não confirmado
+IssuerReviewService --> AdminController : 409 EMAIL_NAO_CONFIRMADO
+AdminController --> P : 409 + mensagem
+end
+alt criterios pendentes
+IssuerReviewService --> AdminController : 409 CRITERIOS_PENDENTES
+AdminController --> P : 409 + mensagem
+end
+alt motivo obrigatório
+IssuerReviewService --> AdminController : 400 MOTIVO_OBRIGATORIO
+AdminController --> P : 400 + mensagem
+end
+alt observacao obrigatória
+IssuerReviewService --> AdminController : 400 OBSERVACAO_OBRIGATORIA
+AdminController --> P : 400 + mensagem
+end
+IssuerReviewService -> IssuerReviewService : approvedAt = set
+IssuerReviewService -> IssuerReviewService : identityVerified = true
+IssuerReviewService -> IssuerReviewService : documentVerified = true
+note over IssuerReviewService : … e mais 15 passos no código
+deactivate IssuerReviewService
+IssuerReviewService --> AdminController : resultado
+AdminController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

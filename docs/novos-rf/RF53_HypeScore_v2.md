@@ -180,7 +180,7 @@ dos selos e do Lens) está em [`docs/hype/EVIDENCIAS_E2E.md`](../hype/EVIDENCIAS
 
 Os diagramas dos RF afetados na primeira entrega continuam valendo: RF6 (Lookbook), RF10 (Copilot), RF19 (interações →
 sinais), RF26 (Em alta), RF31 (ordenações e filtro de Hype), RF42 (look do dia → LOOK_WORN), além dos globais
-`fashionai-classes-v4` e `fashionai-componentes-v4`. O Lens tem os próprios em `docs/diagramas/RF54/`.
+`fashionai-classes-v5` e `fashionai-componentes-v5` (regenerados do código por `scripts/diagramas/v5`). O Lens tem os próprios em `docs/diagramas/RF54/`.
 
 ## 6. Limites conhecidos e próximos passos
 

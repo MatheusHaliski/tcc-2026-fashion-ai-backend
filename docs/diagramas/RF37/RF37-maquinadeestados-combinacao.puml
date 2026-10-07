@@ -1,47 +1,36 @@
 @startuml RF37_MaquinaDeEstados_Combinacao
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-title RF37 — FLAIR: jogo de cartas de moda com 15 modos e combinações de lojas que rendem cupons\nDiagrama de máquina de estados — combinação da loja (flair_combinations) e cupom FLR (flair_redemptions)
-state "Combinação da loja" as Comb {
-  state "Ativa (active = true)" as Ativa {
-    state "Disponível\n(FlairService.available: loja ACTIVE e aprovada,\nentre startsAt e endsAt, redeemed < stock)" as Disp
-    state "Indisponível\n(antes de startsAt, depois de endsAt,\nestoque esgotado ou loja suspensa)" as Indisp
-    [*] --> Disp
-    [*] --> Indisp : startsAt no futuro
-    Disp --> Indisp : passa endsAt · redeemed = stock\n· conta da loja deixa de estar ACTIVE
-    Indisp --> Disp : chega startsAt · PUT aumenta stock\nou estende endsAt
-  }
-  state "Desativada (active = false)" as Desativada
-  [*] --> Ativa : POST /api/flair/brand/combinations\n(gameType COMBINACAO | COLECAO | DUELO_PATROCINADO)
-  Ativa -down-> Desativada : PUT …/combinations/{id} {active: false}\n· DELETE com cupons já emitidos
-  Desativada -up-> Ativa : PUT {active: true}
-  Ativa --> [*] : DELETE sem cupons emitidos
-  Desativada --> [*] : DELETE sem cupons emitidos
+title RF37 — ciclo de vida de FlairRedemption.status\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\ncampo texto · tabela flair_redemptions
+
+state "FlairRedemption.status" as Ciclo_FlairRedemption {
+  state Ciclo_FlairRedemption_EMITIDO as "EMITIDO"
+  state Ciclo_FlairRedemption_USADO as "USADO"
 }
-state "Deck do jogador" as Deck {
-  state "Incompleto\n(checks com ok = false)" as Incompleto
-  state "Completo\n(CATEGORY, STYLE, OCCASION, BRAND,\nPOWER, RARITY e WINS ok)" as Completo
-  [*] --> Incompleto : GET /api/flair/combinations\n(melhor deck + checklist)
-  Incompleto --> Completo : monta look (RF5), cadastra peça,\nvence partidas com peças da marca
-  Completo --> Incompleto : peça sai do look ou é arquivada
-}
-state "Cupom FLR (flair_redemptions)" as Cupom {
-  state "EMITIDO\n(code FLR-XXXX-XXXX,\nexpiresAt = agora + validDays)" as Emitido
-  state "USADO\n(usedAt)" as Usado
-  state "EXPIRADO\n(calculado na leitura,\nnão gravado)" as Expirado
-  Emitido --> Usado : POST /api/flair/brand/redemptions/validate\nou POST /api/me/coupons/validate (RF38)
-  Emitido --> Expirado : passa expiresAt
-}
-Disp --> Incompleto : jogador vê a combinação
-Completo --> Emitido : POST /api/flair/combinations/{id}/redeem\nou resgate do direito no RF38\n(409 COMBINACAO_INDISPONIVEL · 409 CUPOM_JA_EMITIDO\n· 422 COMBINACAO_INCOMPLETA)
-Usado --> [*]
-Expirado --> [*]
-note left of Cupom : um cupom por pessoa e combinação;\naparece em GET /api/flair/vouchers\ne em Meus cupons resgatados (RF38)
-note bottom of Deck : cartas e looks usam o HypeScore v2 PÚBLICO\n(raridade e atributo HYPE), lido de hype_scores
+[*] --> Ciclo_FlairRedemption_EMITIDO : criação
+Ciclo_FlairRedemption --> Ciclo_FlairRedemption_EMITIDO : redeem()\nPOST /api/flair/combinations/{id}/redeem
+Ciclo_FlairRedemption_EMITIDO --> Ciclo_FlairRedemption_USADO : validateCode()\nPOST /api/flair/brand/redemptions/validate
+note right of Ciclo_FlairRedemption
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
+end note
 @enduml

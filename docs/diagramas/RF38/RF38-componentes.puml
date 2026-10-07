@@ -1,70 +1,61 @@
 @startuml RF38_Componentes
-title RF38 — Meus cupons promocionais (marca/celebridade) e Meus cupons resgatados\nDiagrama de componentes — carteira única de cupons alimentada pelos selos (RF25) e pelo FLAIR (RF37)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF38 — Cupons Fashion AI: 'Meus cupons promocionais' (marca/celebridade) e 'Meus cupons resgatados' (lookbook)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "coupons/page.tsx (menu «Meus cupons»)\n→ coupons/my-coupons.tsx (MyCoupons)\npendentes + Meus cupons resgatados" as FE_MY
-  component "coupons/fai-coupon.tsx (FaiCoupon)\ncanhoto com logo FAI · abre a loja (https)" as FE_COUPON
-  component "brands/[slug]/page.tsx · aba CUPONS\n→ coupons/brand-coupons-tab.tsx\n(BrandCouponsTab: emitidos, validar, promoções)" as FE_BRAND
-  component "notifications/page.tsx (COUPON_AVAILABLE\n→ /coupons?right={id})" as FE_NOTIF
-  component "u/[username]/page.tsx\n(tab=cupons → redireciona para /coupons)" as FE_LB
-  component "flair/page.tsx (aba Lojas / Carteira)" as FE_FLAIR
+  component "/coupons\n(site)/(app)/coupons/page.tsx" as FE0
+  component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE1
+  component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  [CouponController\n/api/me/coupons · /api/me/coupon-rights/{id}/redeem|dismiss\n· /api/me/coupons/admin · /api/me/coupons/validate] as CC
-  [SealController (RF25)\n/api/promotions · /api/promotions/{id}/status] as SEC
-  [FlairController (RF37)\n/api/flair/combinations · /api/flair/brand/**] as FC
+  component "CouponController\n/api/me/coupon-rights/{…}/dismiss\n/api/me/coupon-rights/{…}/redeem\n/api/me/coupons\n/api/me/coupons/admin\n(+1 rotas)" as CouponController
 }
-package "fai-application" {
-  [CouponService\nscan · mine · redeem · dismiss · admin · validate] as CS
-  [SealService (RF25)\neligiblePromotions · redeem · unavailable] as SS
-  [FlairService (RF37)\ncombinationsFor · redeem · validateCode] as FS
-  [NotificationService (RNF10)] as NS
-  [Guard\nrequireOwner · requireApprovedInstitutional] as G
+package "fai-application (casos de uso)" {
+  component "CouponService" as CouponService
+  component "SealService" as SealService <<apoio>>
+  component "FlairService" as FlairService <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
 }
-interface "ApplicationEventPublisher\nCouponRightsCheck · SchemeSaved · PieceCreated\n(@TransactionalEventListener AFTER_COMMIT)" as EV
-package "fai-domain · repository" {
-  [CouponRightRepository\nPromotionRepository · PromotionRedemptionRepository\nFlairCombinationRepository · FlairRedemptionRepository\nBrandProfileRepository · CelebrityProfileRepository\nUserRepository] as REPOS
+package "fai-domain (repositórios)" {
+  component "CouponRightRepository\nPromotionRepository\nPromotionRedemptionRepository\nFlairCombinationRepository\nFlairRedemptionRepository\nBrandProfileRepository\nCelebrityProfileRepository\nUserRepository" as REPO_MySQL
 }
-database "MySQL · fashionai_app\n• coupon_rights (V19)\n• promotions · promotion_redemptions\n• flair_combinations · flair_redemptions\n• seal_bonds · notifications\n• brand_profiles · celebrity_profiles · users" as DB
-cloud "Loja externa da marca/celebridade\n(storeUrl https, fora do app)" as STORE
-
-FE_LB ..> FE_MY : redireciona
-FE_NOTIF ..> FE_MY : abre o direito
-FE_FLAIR ..> FE_MY : link Meus cupons resgatados
-FE_MY --> FE_COUPON
-FE_BRAND --> FE_COUPON
-FE_MY --> CC : HTTPS/JSON
-FE_BRAND --> CC : HTTPS/JSON
-FE_BRAND --> SEC : HTTPS/JSON
-FE_FLAIR --> FC : HTTPS/JSON
-FE_COUPON ..> STORE : nova aba
-CC --> CS
-SEC --> SS
-FC --> FS
-SS --> EV : selo emitido
-FS --> EV : rightsCheck
-EV ..> CS : onCheck · onScheme · onPiece
-CS --> SS : SELO
-CS --> FS : FLAIR
-CS --> NS : COUPON_AVAILABLE
-CS ..> G
-CS --> REPOS
-SS --> REPOS
-FS --> REPOS
-REPOS --> DB : JPA/Flyway
+database "MySQL\n• brand_profiles\n• celebrity_profiles\n• coupon_rights\n• flair_combinations\n• flair_redemptions\n• promotion_redemptions\n• promotions\n• users" as DB_MySQL
+APIC --> CouponController : HTTPS/JSON
+CouponController --> CouponService
+CouponService --> REPO_MySQL
+CouponService ..> FlairService
+CouponService ..> NotificationService
+CouponService ..> SealService
+FE0 --> APIC
+FE1 --> APIC
+REPO_MySQL --> DB_MySQL : JPA/Flyway
 @enduml

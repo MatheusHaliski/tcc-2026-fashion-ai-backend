@@ -1,69 +1,96 @@
 @startuml RF7_Sequencia
-title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as P
-participant "Frontend\ndetail-modal · expanded-card\n(pieces/[id] · schemes/[id])" as FE
-participant "SchemeController" as SCC
-participant "WardrobeController" as WC
-participant "CommentController" as CC
-participant "SchemeService" as SS
-participant "WardrobeService" as WS
-participant "SocialService" as SO
-participant "Guard" as G
-database "MySQL" as DB
+autonumber "<b>0."
+title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-P -> FE: clica num esquema da lista do Closet
-FE -> SCC: GET /api/schemes/{id}
-SCC -> SS: get(viewer, id)
-SS -> G: requireView(viewer, ownerId, visibilidade efetiva)
-SS -> DB: schemes · scheme_items · seals
-SCC --> FE: 200 {scheme, wearstyles, seals, sealBadges, remixedFrom, canEdit}
-P -> FE: clica numa peça (linha compacta do esquema)
-FE -> FE: empilha navegação (origem = schemeId) — CA01
-FE -> WC: GET /api/pieces/{id}?fromScheme={schemeId}
-WC -> WS: detail(viewer, id, fromScheme)
-WS -> WS: requireVisiblePiece (moderação APPROVED + Guard.requireView)
-alt sem permissão
-  WS --> FE: 404 / 403
-else peça ARCHIVED e quem pede não é o dono (CA03)
-  WS -> DB: scheme_items.snapshotJson do esquema de origem
-  WC --> FE: 200 {notAvailableAnymore: true, snapshot, fromSchemeId}
-else peça disponível
-  WS -> DB: touchView(id) · scheme_items (originSchemes)
-  WC --> FE: 200 {piece, wearstyles, originSchemes, fromSchemeId, canEdit}
+actor "Pessoa usuária" as U
+boundary "Tela /schemes/[id]/edit" as P
+control "WardrobeController" as WardrobeController
+participant "WardrobeService" as WardrobeService
+database "MySQL" as DB_MySQL
+participant "Guard" as Guard
+queue "Eventos de domínio" as EV
+participant "OwnMedia" as OwnMedia
+participant "MediaService" as MediaService
+participant "BrandLogoService" as BrandLogoService
+participant "ProjectionService" as ProjectionService
+participant "Audit" as Audit
+== Detalhe da peça (com contexto do esquema de origem, se houver) ==
+U -> P : Detalhe da peça (com contexto do esquema de orige…
+P -> WardrobeController : GET /api/pieces/{id}
+WardrobeController -> WardrobeService : detail()
+activate WardrobeService
+WardrobeService -> DB_MySQL : SELECT wardrobe_items
+alt Peça não encontrado(a)
+WardrobeService --> WardrobeController : 404 NAO_ENCONTRADO
+WardrobeController --> P : 404 + mensagem
 end
-alt canEdit = true (dono)
-  P -> FE: alterna disponível/indisponível
-  FE -> WC: PATCH /api/pieces/{id}/flags {disponivel}
-  WC -> WS: toggles(user, id, favorite, disponivel, forSale)
-  WS -> DB: wardrobe_items.availabilityStatus = AVAILABLE | UNAVAILABLE
-  WS -> WS: publishEvent(AvailabilityChanged)
-  WS -> DB: INSERT wardrobe_availability_log (WardrobeEventListeners, após o commit)
-  WC --> FE: 200 PieceView
-  opt editar
-    FE -> WC: PUT /api/pieces/{id} (PieceForm)
-    WC -> WS: update(user, id, form)
-    WC --> FE: 200 PieceView
-  end
-else visitante (CA02)
-  FE -> FE: dados públicos + InteractionBar (RF19), sem edição
-  opt voltar ao esquema de origem
-    FE -> CC: POST /api/pieces/{pieceId}/return-to-origin?fromScheme=
-    CC -> SO: returnToOrigin(user, pieceId, fromScheme)
-    alt peça indisponível
-      SO --> FE: 409 INDISPONIVEL
-    else
-      CC --> FE: 200 {originSchemeId, title, otherSchemes}
-    end
-  end
+WardrobeService -> Guard : requireView()
+WardrobeService -> DB_MySQL : SELECT scheme_items
+WardrobeService -> Guard : canView()
+Guard -> DB_MySQL : SELECT follows (×3)
+Guard --> WardrobeService
+WardrobeService -> DB_MySQL : UPDATE wardrobe_items
+WardrobeService ->> EV : HypeSignal
+WardrobeService -> DB_MySQL : SELECT reactions (×2)
+WardrobeService -> DB_MySQL : SELECT scheme_items
+WardrobeService -> Guard : canView()
+deactivate WardrobeService
+WardrobeService --> WardrobeController : resultado
+WardrobeController --> P : 200 JSON
+P --> U : atualiza a tela
+== Editar a peça ==
+U -> P : Editar a peça
+P -> WardrobeController : PUT /api/pieces/{id}
+WardrobeController -> WardrobeService : update()
+activate WardrobeService
+WardrobeService -> Guard : requireCanCreate()
+WardrobeService -> DB_MySQL : SELECT wardrobe_items
+WardrobeService -> Guard : requireOwner()
+alt formulario inválido
+WardrobeService --> WardrobeController : 400 FORMULARIO_INVALIDO
+WardrobeController --> P : 400 + mensagem
 end
-P -> FE: "voltar"
-FE -> FE: desempilha para o esquema de origem
+WardrobeService -> DB_MySQL : SELECT brands
+WardrobeService -> WardrobeService : brandLogoUrl = null
+WardrobeService -> OwnMedia : accepts()
+WardrobeService -> MediaService : read()
+WardrobeService -> WardrobeService : brandLogoUrl = set
+WardrobeService -> BrandLogoService : acceptWebLogo()
+BrandLogoService -> DB_MySQL : SELECT brand_logos (×2)
+BrandLogoService -> DB_MySQL : SELECT brands
+BrandLogoService -> DB_MySQL : INSERT/UPDATE brands
+BrandLogoService --> WardrobeService
+WardrobeService -> WardrobeService : brandLogoUrl = null (×2)
+WardrobeService -> ProjectionService : piece()
+ProjectionService -> DB_MySQL : SELECT item_embeddings
+ProjectionService -> DB_MySQL : INSERT/UPDATE item_embeddings
+ProjectionService --> WardrobeService
+WardrobeService -> Audit : log()
+WardrobeService ->> EV : PieceUpdated
+WardrobeService -> DB_MySQL : SELECT reactions
+deactivate WardrobeService
+WardrobeService --> WardrobeController : resultado
+WardrobeController --> P : 200 JSON
+P --> U : atualiza a tela
 @enduml

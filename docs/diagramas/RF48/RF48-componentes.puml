@@ -1,88 +1,57 @@
 @startuml RF48_Componentes
 !pragma layout smetana
-title RF48 — FAI Points: resgate em dinheiro e doações\nDiagrama de componentes (proposta hexagonal: web → aplicação → portas/adaptadores)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF48 — FAI Points: resgate em dinheiro e doações\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "LookbookTabs · aba daily pública\n+ RunwayPanel + /schemes/{id}\nbotão Apoiar com FAI Points" as FE1
-  component "points/page.tsx\naba Carteira (saldos, extrato,\nresgatar, KYC, taxas)" as FE2
-  component "admin/points\n(resgates, risco, fundo, usuário)" as FE3
+  component "lib/api/client.ts" as APIC
 }
-package "fai-web · controllers" {
-  [DailyLookPublicController\nGET /api/users/{id}/daily-look] as C0
-  [PointsTransferController\n/api/points/transfers] as C1
-  [PointsWalletController\n/api/me/points/*] as C2
-  [PayoutController\n/api/me/payout-*] as C3
-  [PayoutWebhookController\n/api/webhooks/payouts/{provider}] as C4
-  [AdminPointsController\n/api/admin/points/*] as C5
+package "fai-web (REST)" {
+  component "HighlightsController\n/api/me/points" as HighlightsController
 }
-package "fai-application · serviços" {
-  [DailyLookService (existente)] as S0
-  [PointsTransferService] as S1
-  [PointsWalletService] as S2
-  [PayoutService] as S3
-  [CreatorFundService] as S4
-  [PointsRiskEngine] as S5
-  [FaiPointsService (existente)\naward() com trava p/ sacáveis] as S6
-  [NotificationService (existente)] as S7
-  [AuditService (existente)] as S8
-  interface "PayoutProviderPort" as P1
+package "fai-application (casos de uso)" {
+  component "FaiPointsService" as FaiPointsService
+  component "RoomLayoutAccess" as RoomLayoutAccess <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
+  component "WardrobeCreatorService" as WardrobeCreatorService <<apoio>>
 }
-package "fai-infrastructure" {
-  [Adaptador do parceiro licenciado\n(PSP / IP autorizada pelo BCB)] as A1
-  database "MySQL (Flyway V33)" as DB {
-    [fai_points_rules / fai_points_ledger]
-    [points_transfers]
-    [payout_accounts]
-    [payout_requests]
-    [creator_fund_periods]
-    [risk_flags / points_wallet_status]
-  }
+package "fai-domain (repositórios)" {
+  component "FaiPointsLedgerEntryRepository\nFaiPointsRuleRepository\nRoomCatalogItemRepository\nRoomInventoryItemRepository" as REPO_MySQL
 }
-cloud "Parceiro de pagamento\n(KYC + PIX)" as EXT
-
-FE1 --> C0
-FE1 --> C1
-FE2 --> C2
-FE2 --> C3
-FE3 --> C5
-C0 --> S0
-C1 --> S1
-C2 --> S2
-C3 --> S3
-C4 --> S3
-C5 --> S1
-C5 --> S3
-C5 --> S4
-C5 --> S5
-S1 --> S2
-S1 --> S5
-S1 --> S7
-S1 --> S8
-S3 --> S2
-S3 --> S4
-S3 --> S5
-S3 --> P1
-S3 --> S7
-S3 --> S8
-S6 --> S2
-P1 <|.. A1
-A1 --> EXT
-EXT --> C4 : webhook assinado
-S1 --> DB
-S2 --> DB
-S3 --> DB
-S4 --> DB
-S5 --> DB
-S6 --> DB
+database "MySQL\n• fai_points_ledger\n• fai_points_rules\n• room_catalog\n• room_inventory" as DB_MySQL
+APIC --> HighlightsController : HTTPS/JSON
+FaiPointsService --> REPO_MySQL
+FaiPointsService ..> NotificationService
+FaiPointsService ..> RoomLayoutAccess
+FaiPointsService ..> WardrobeCreatorService
+HighlightsController --> FaiPointsService
+REPO_MySQL --> DB_MySQL : JPA/Flyway
 @enduml

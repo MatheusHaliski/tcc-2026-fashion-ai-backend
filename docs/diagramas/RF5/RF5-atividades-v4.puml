@@ -1,130 +1,99 @@
 @startuml RF5_Criar_Look_v4
-title RF5 — Criar um esquema de vestimenta na aba "Criar Look"\nDiagrama de atividades — construtor de looks (SchemeBuilder): modo, peças, dados, Background Studio, revisar e salvar
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
-  BackgroundColor #F4F2EF
-  BorderColor #4A4852
-  ArrowColor #4A4852
-  DiamondBackgroundColor #FBF0DC
-  DiamondBorderColor #8A5A12
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
 }
 skinparam swimlane {
   BorderColor #CBC6BE
-  TitleBackgroundColor #F4F2EF
+  TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FBF0DC
-  BorderColor #8A5A12
-}
+title RF5 — Criar Look (v4)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-|Pessoa|
-|Frontend (schemes/new · SchemeBuilder)|
-|API · Serviço (SchemeController · SchemeService)|
-|Banco/IA|
-|Pessoa|
+|Pessoa usuária|
 start
-:Abre "Criar Look" (/schemes/new)\n(?pieces=a,b chega com peças já escolhidas);
-|Frontend (schemes/new · SchemeBuilder)|
-:GET /api/schemes/builder;
-|API · Serviço (SchemeController · SchemeService)|
-if (Sessão?) then (não)
-  #FFE3E3:401 (curinga público de /api/schemes/*);
+:Abre /pieces/new, /schemes/[id]/edit,\n/schemes/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/schemes/builder\nGET /api/schemes/{id}\nGET /api/backgrounds/catalog\nGET /api/schemes/{id}/card.png;
+|Pessoa usuária|
+:Salvar esquema (manual, IA,\nautopiloto, remix);
+|Tela (Next.js)|
+:POST /api/schemes;
+|API (Spring Boot)|
+:SchemeController.create\n→ SchemeService.create;
+if (sem peças?) then (sim)
+  :400 SEM_PECAS\n«Adicione ao menos 1 peça para\nsalvar o esquema.»\n→ a tela mostra o aviso;
   stop
 endif
-:builder: wardrobe.eligible — só peças do próprio acervo,\nAVAILABLE e não reprovadas na moderação (CA07b);\nlistas por tipo + defaultVisibility do perfil (CA03);
-|Banco/IA|
-:MySQL: wardrobe_items do usuário;
-|Frontend (schemes/new · SchemeBuilder)|
-if (status = INSUFICIENTE (< 2 peças elegíveis)?) then (sim)
-  :Estado vazio com o atalho "Adicionar nova peça"\n→ /pieces/new (RF4) — CA02;
+if (formulario inválido?) then (sim)
+  :400 FORMULARIO_INVALIDO\n«Corrija os campos destacados.»\n→ a tela mostra o aviso;
   stop
 endif
-
-partition "Etapa 1 · Modo" {
-  |Pessoa|
-  if (Modo?) then (manual)
-  else (IA)
-    :Escolhe ocasião, estilo e orientação livre (≤ 500);
-    |Frontend (schemes/new · SchemeBuilder)|
-    :POST /api/schemes/compositions;
-    |API · Serviço (SchemeController · SchemeService)|
-    if (< 2 peças elegíveis?) then (sim)
-      #FFE3E3:422 ACERVO_INSUFICIENTE (href /pieces/new);
-      stop
-    endif
-    :compose: AiEngine.text(SCHEME_COMPOSER) com o acervo\n+ HypeScore v2 das peças → EXATAMENTE 3 looks\nsó com peças do acervo (CA04);
-    |Banco/IA|
-    :Provedor de IA (ou LocalSchemeComposer como plano B);\nai_inference_log;
-    |API · Serviço (SchemeController · SchemeService)|
-    :+ CopilotService.orientation (arte, ocasião, estilo,\nestação, humor) + LookPreviewService.compositions\n(os seis números de cada look; nulo se falhar);
-    |Pessoa|
-    :Escolhe uma das 3 composições\n(applyComposition: uma peça por tipo + arte sugerida);
-  endif
-}
-
-partition "Etapa 2 · Peças" {
-  |Pessoa|
-  :Seleciona peças do próprio Closet (PieceCard selecionável);
-  |Frontend (schemes/new · SchemeBuilder)|
-  :onePerType: uma peça por tipo (peça de corpo inteiro\nocupa cima e baixo); slot sugerido pela categoria;
-  :SlotBrand: a marca do slot vem da peça (nome + logo, 🔒);\no esquema não tem campo de marca;
-  :LookHypePreview: POST /api/schemes/scores\n(os seis números; nada é gravado, nenhum sinal de Hype);
-  if (≥ 2 peças?) then (não)
-    :"Próximo" desabilitado;
-    stop
-  endif
-}
-
-partition "Etapa 3 · Dados" {
-  |Pessoa|
-  :Título (2–120), descrição, ocasião e estilo (≤ 3 cada,\nvocabulário da taxonomia), estação, humor, tags,\nvisibilidade (padrão do perfil), Look do Dia;
-  |Frontend (schemes/new · SchemeBuilder)|
-  :Selos possíveis: POST /api/seal-suggestions/preview\n(nada é gravado; a pessoa marca os que quer pedir);
-  :Foto do look (opcional): POST /api/schemes/photos\n(400 IMAGEM_PEQUENA · PROPORCAO_INVALIDA);
-}
-
-partition "Etapa 4 · Aparência (Background Studio — RF11)" {
-  |Pessoa|
-  :Skin, anatomia do esquema e das peças, cor/gradiente,\narte com IA (GET /api/backgrounds/recommendations ·\nPOST /api/backgrounds/art), "Desfazer";
-}
-
-partition "Etapa 5 · Revisar e salvar" {
-  |Frontend (schemes/new · SchemeBuilder)|
-  :Prévia ao vivo do card (e POST /api/schemes/preview → PNG);
-  |Pessoa|
-  if (Ação?) then (Salvar)
-    :publish = false;
-  else (Publicar)
-    :publish = true\n(PRIVATE vira PUBLIC na publicação);
-  endif
-  |Frontend (schemes/new · SchemeBuilder)|
-  :POST /api/schemes (SchemeForm: items[wardrobeItemId, slot,\nsortOrder], background, cardSkin, layoutAnatomy, lookDoDia);
-  |API · Serviço (SchemeController · SchemeService)|
-  :Guard.requireCanCreate (401 · 403 EMAIL_NAO_CONFIRMADO…);
-  if (items vazio?) then (sim)
-    #FFE3E3:400 SEM_PECAS (CA06);
-    stop
-  endif
-  if (applyForm / replaceItems válidos?) then (não)
-    #FFE3E3:400 FORMULARIO_INVALIDO · PECA_DE_OUTRO_USUARIO\n· PECA_INDISPONIVEL · 404 peça;
-    stop
-  endif
-  :Scheme DRAFT, creationMode, origin CRIAR_LOOK,\nvisibilidade herdada do perfil se vazia (CA03);\nBackgroundStudioService.applyToScheme + foto do look;
-  if (publish?) then (sim)
-    :publishInternal: PUBLISHED, publishedAt,\ncommunityIndexed = PUBLIC, snapshot_json das peças\n(feed do RF8 respeita a visibilidade — CA05);
-  endif
-  |Banco/IA|
-  :INSERT schemes + scheme_items; projeções (OpenSearch/Cassandra);\nnotificação SCHEME_CREATED; audit CRIACAO_ESQUEMA;
-  :SchemeSaved (AFTER_COMMIT): FAI Points SCHEME_CREATED,\nHypeSignalRecorder/HypeLiveRecalc, desafios,\nconquistas, Inventory Score, cupons;
-  |API · Serviço (SchemeController · SchemeService)|
-  if (lookDoDia?) then (sim)
-    :DailyLookService.register (falha vira\ndailyLookWarning, sem desfazer o look);
-  endif
-  :Depois do commit (≥ 2 peças): suggestSealsAfterSave\n(falha → lista vazia + mensagem);
-  |Frontend (schemes/new · SchemeBuilder)|
-  :Para cada selo marcado: POST /api/schemes/{id}/seal-bonds\n(EDITED → aprovado pela política ou PENDING_REVIEW);\num pedido recusado não desfaz o look;
-  :Tela de sucesso → card do look;
-}
-|Pessoa|
+if (Esquema não encontrado[a]?) then (sim)
+  :404 NAO_ENCONTRADO\n«Esquema não encontrado(a)»\n→ a tela mostra o aviso;
+  stop
+endif
+if (indisponível?) then (sim)
+  :409 INDISPONIVEL\n«O autor marcou este look como\nindisponível para remix.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (formulario inválido?) then (sim)
+  :400 FORMULARIO_INVALIDO\n«Corrija os campos destacados.»\n→ a tela mostra o aviso;
+  stop
+endif
+note right
+  e mais 3 validações:
+  FOTO_INVALIDA, PECA_DE_OUTRO_USUARIO,
+  PECA_INDISPONIVEL
+end note
+|Dados e serviços|
+:Lê: users\nschemes\nwardrobe_items\nscheme_items\nreactions\nsaved_items;
+:Usa: Guard.requireCanCreate\nGuard.requireView\nBackgroundStudioService.applyToScheme\nMediaService.linkSource\nProjectionService.published\nCounterStorePort.increment (+5);
+:Grava: schemes\nscheme_items;
+:Estado: origin → REMIX\ncoverImageUrl → set\nstatus → PUBLISHED\npublishedAt → set\nlookDoDia → false;
+:Evento: InteractionReceived\nHypeSignal\nSchemeSaved;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Selos possíveis para um look aind…)
+    :POST /api/seal-suggestions/preview\n→ SealService.preview\nlê: wardrobe_items\nia: SEALBOND_MATCHER;
+  case (Foto do look [como um post]: pipe…)
+    :POST /api/schemes/photos\n→ SchemeService.uploadLookPhoto\nvalida: IMAGEM_PEQUENA, PROPORCAO_INVALIDA\nlê: users\nusa: Guard.requireCanCreate, MediaService.put,\nMediaService.register;
+  case (Pré-visualizar o card antes de sa…)
+    :POST /api/schemes/preview\n→ SchemeService.preview\nlê: users, wardrobe_items\nusa: BackgroundStudioService.applyToScheme,\nGuard.requireOwner,\nSchemeCardRenderer.render;
+  case (Gerar combinações com IA [ou moto…)
+    :POST /api/schemes/compositions\n→ SchemeService.compose\nvalida: ACERVO_INSUFICIENTE\nlê: hype_scores, users, style_dna\nusa: WardrobeService.eligible,\nHypeScoreConfig.algorithmVersion,\nHypeScoreConfig.level …\nia: IA;
+  case (Publicar com a visibilidade escol…)
+    :POST /api/schemes/{id}/publication\n→ SchemeService.publish\nvalida: SEM_PECAS\nlê: schemes, scheme_items, reactions …\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.published …\nestado: visibility → ?visibility, status →\nPUBLISHED, publishedAt → set;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Editar esquema, Remixar um esquema público pa…,
+  Fundo do card da peça, Cadastrar a peça a partir
+  do…, Enviar imagem própria de fund…, Selos
+  possíveis para uma peça…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

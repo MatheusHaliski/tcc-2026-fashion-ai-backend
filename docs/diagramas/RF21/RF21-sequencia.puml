@@ -1,74 +1,82 @@
 @startuml RF21_Sequencia
-title RF21 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma celebridade\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Usuário" as U
-actor "Celebridade" as CE
-participant "Frontend\n/schemes/new · brands/[slug]" as FE
-participant "SchemeController" as SCH
-participant "SealController" as C
-participant "SealService" as S
-participant "AiEngine (RF24)\nSEALBOND_MATCHER" as AI
-participant "NotificationService" as N
-participant "Audit" as A
-database "MySQL" as DB
-U -> FE: escolhe peças, estilo e ocasião (RF5)
-FE -> C: POST /api/seal-suggestions/preview {pieceIds, occasion, style}
-C -> S: preview(user, pieceIds, occasion, style)
-S -> DB: SELECT celebrity_profiles (verification_status = APROVADO, seal_consent_granted)
-S -> AI: local(SEALBOND_MATCHER, candidates()) — Similarity × style_signature_json
-AI --> S: Candidate {kind CELEBRITY, confidence, basis STYLE_SIGNATURE, eraLabel}
-S --> FE: 200 {suggestions, message}
-U -> FE: marca a celebridade + confirma direito de imagem; salva
-FE -> SCH: POST /api/schemes (SchemeForm)
-SCH -> DB: INSERT schemes, scheme_items
-SCH --> FE: 201 {scheme}
-FE -> C: POST /api/schemes/{schemeId}/seal-bonds {targetOwnerId, imageRightsConsent:true}
-C -> S: linkManually(user, schemeId, targetOwnerId, true)
+autonumber "<b>0."
+title RF21 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma celebridade\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /schemes/[id]/edit" as P
+control "SealController" as SealController
+participant "SealService" as SealService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+== Vincular manualmente o esquema a uma marca/celebridade ==
+U -> P : Vincular manualmente o esquema a uma marca/celebr…
+P -> SealController : POST /api/schemes/{schemeId}/seal-bonds
+SealController -> SealService : linkManually()
+activate SealService
+SealService -> Guard : requireCanCreate()
+SealService -> DB_MySQL : SELECT schemes
+SealService -> Guard : requireOwner()
+SealService -> DB_MySQL : SELECT users
+alt perfil inválido
+SealService --> SealController : 400 PERFIL_INVALIDO
+SealController --> P : 400 + mensagem
+end
+alt marca não validada
+SealService --> SealController : 400 MARCA_NAO_VALIDADA
+SealController --> P : 400 + mensagem
+end
 alt celebridade não verificada
-  S --> FE: 400 CELEBRIDADE_NAO_VERIFICADA (CA18)
-else sem consentimento de imagem
-  S --> FE: 400 CONSENTIMENTO_IMAGEM (CA19)
-else selo premium fora da janela / cota esgotada
-  S -> DB: UPDATE seal_bonds SET status = REJECTED, review_note
-  S -> A: log(MUDANCA_ESTADO_VINCULO_SELO, "RECUSADO_LIMITE")
-  S --> FE: 409 SELO_INDISPONIVEL (CA23)
-else ok
-  S -> DB: INSERT seal_bonds (origin MANUAL, EDITED, basis STYLE_SIGNATURE)
-  S -> S: route(): celebrity → requiresReview = true (sem auto-aprovação)
-  S -> DB: UPDATE seal_bonds SET status = PENDING_REVIEW, seal_id (premium)
-  S -> N: notify(celebridade, SEAL_BOND_REVIEW)
-  S -> A: log(…, "PENDENTE")
-  S --> FE: 201 bondView {kind CELEBRITY, sealKind PREMIUM_SEAL,\nvisualFamily vitreo-holografico}
+SealService --> SealController : 400 CELEBRIDADE_NAO_VERIFICADA
+SealController --> P : 400 + mensagem
 end
-CE -> FE: abre a fila de revisão
-FE -> C: GET /api/seal-bonds/review-queue
-C -> S: reviewQueue(user)
-S --> FE: 200 [bonds PENDING_REVIEW]
-CE -> FE: aprova
-FE -> C: POST /api/seal-bonds/{bondId}/review {approve:true}
-C -> S: review(user, bondId, true, null)
-S -> S: issue(b, celebridadeId): APPROVED, sealCode PRM-…, expiresAt
-S -> DB: UPDATE seal_bonds · seals.usage_count+1 · schemes.seal_ids_json
-S -> N: notify(autor, SEAL_GRANTED "Selo Premium emitido!") (CA20)
-S -> A: log(…, "EMITIDO")
-S ->> S: publishEvent(CouponRightsCheck) — promoções CA21/CA22 (RF38)
-S --> FE: 200 bondView (APPROVED)
-opt CA14 — revogação pela celebridade
-  FE -> C: POST /api/seal-bonds/{bondId}/revoke {reason}
-  C -> S: revoke(user, bondId, reason)
-  S -> DB: UPDATE seal_bonds SET status = REVOKED
-  S -> N: notify(autor, SEAL_BOND_REVIEW "selo revogado")
+SealService -> DB_MySQL : SELECT scheme_items
+SealService -> DB_MySQL : SELECT seal_bonds
+SealService -> SealService : new SealBond()
+SealService -> SealService : origin = MANUAL
+SealService -> SealService : status = EDITED
+SealService -> SealService : imageRightsConsent = ?imageRightsConsent
+SealService -> SealService : respondedAt = set
+SealService -> DB_MySQL : SELECT seal_bonds
+alt vinculo existente
+SealService --> SealController : 409 VINCULO_EXISTENTE
+SealController --> P : 409 + mensagem
 end
-U -> FE: resgata promoção da celebridade
-FE -> C: POST /api/promotions/{id}/redemptions
-C -> S: redeem(user, promotionId)
-S -> DB: SELECT seal_bonds APPROVED do usuário com a celebridade
-S --> FE: 201 {code} ou 409 SELO_INVALIDO / PROMOCAO_INDISPONIVEL
+SealService -> DB_MySQL : INSERT/UPDATE seal_bonds
+SealService -> DB_MySQL : SELECT seal_bonds
+alt vinculo existente
+SealService --> SealController : 409 VINCULO_EXISTENTE
+SealController --> P : 409 + mensagem
+end
+alt consentimento imagem
+SealService --> SealController : 400 CONSENTIMENTO_IMAGEM
+SealController --> P : 400 + mensagem
+end
+SealService -> DB_MySQL : SELECT seals
+SealService -> DB_MySQL : SELECT scheme_items
+note over SealService : … e mais 16 passos no código
+deactivate SealService
+SealService --> SealController : resultado
+SealController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

@@ -1,106 +1,121 @@
 @startuml RF5_Componentes
-title RF5 — Criar um esquema de vestimenta na aba "Criar Look"\nDiagrama de componentes — frontend → controllers → serviços → portas → infraestrutura
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
-skinparam interface {
-  BackgroundColor #FFFFFF
+skinparam cloud {
+  BackgroundColor #F0FBF6
   BorderColor #4A4852
 }
 left to right direction
+title RF5 — Criar um esquema de vestimenta na aba 'Criar Look'\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "(app)/schemes/new/page.tsx" as FE0
-  component "scheme-builder.tsx\nSchemeBuilder · SlotBrand · onePerType" as FE1
-  component "ai-compositions.tsx\n(AiCompositionCard)" as FE2
-  component "hype/look-hype-preview.tsx\n(LookHypePreview · PieceHypeTag)" as FE3
-  component "background-studio.tsx (RF11)" as FE4
-  component "scheme-card.tsx + scheme-anatomies.tsx" as FE5
+  component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE0
+  component "/schemes/[id]/edit\n(site)/(app)/schemes/[id]/edit/page.tsx" as FE1
+  component "/schemes/new\n(site)/(app)/schemes/new/page.tsx" as FE2
+  component "lib/api/client.ts" as APIC
 }
-package "fai-web · controllers" {
-  [SchemeController\nGET /api/schemes/builder\nPOST /api/schemes/compositions · /scores\nPOST /api/schemes · /photos · /preview] as SC
-  [SealController\nPOST /api/seal-suggestions/preview\nPOST /api/schemes/{id}/seal-bonds] as SEALC
-  [BackgroundController\nGET /api/backgrounds/recommendations\nPOST /api/backgrounds/art] as BGC
+package "fai-web (REST)" {
+  component "BackgroundController\n/api/backgrounds/art\n/api/backgrounds/catalog\n/api/backgrounds/recommendations\n/api/pieces/{…}/background" as BackgroundController
+  component "SchemeController\n/api/schemes\n/api/schemes/builder\n/api/schemes/compositions\n/api/schemes/photos\n(+4 rotas)" as SchemeController
+  component "SealController\n/api/seal-suggestions/preview\n/api/seal-suggestions/preview-piece" as SealController
+  component "WardrobeController\n/api/pieces\n/api/pieces/{…}/model3d\n/api/studio/backdrops" as WardrobeController
 }
-package "fai-application · serviços" {
-  [SchemeService] as SS
-  [WardrobeService\n(eligible)] as WS
-  [CopilotService\n(orientation)] as CP
-  [LookPreviewService\n(seis números · HypeScore v2)] as LP
-  [BackgroundStudioService] as BG
-  [SealService] as SEAL
-  [DailyLookService] as DL
-  [SchemeCardRenderer\n(imaging)] as REN
-  [LocalSchemeComposer\n(plano B local)] as LOC
-  [AiEngine (RF24)\nSCHEME_COMPOSER] as AI
-  [ProjectionService · NotificationService\nGuard · Audit · MediaService] as X
-  [Listeners de SchemeSaved (AFTER_COMMIT)\nWardrobeEventListeners · HypeSignalRecorder\nHypeLiveRecalc · ChallengeService\nAchievementService · InventoryScoreService\nCouponService] as EV
+package "fai-application (casos de uso)" {
+  component "BackgroundStudioService" as BackgroundStudioService
+  component "SchemeService" as SchemeService
+  component "CopilotService" as CopilotService
+  component "LookPreviewService" as LookPreviewService
+  component "SealService" as SealService
+  component "WardrobeService" as WardrobeService
+  component "AssetCatalogService" as AssetCatalogService <<apoio>>
+  component "MediaService" as MediaService <<apoio>>
+  component "SchemeCardRenderer" as SchemeCardRenderer <<apoio>>
+  component "ProjectionService" as ProjectionService <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
+  component "DailyLookService" as DailyLookService <<apoio>>
+  component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
+  component "RoomService" as RoomService <<apoio>>
+  component "CounterStorePort\n«InMemoryCounterStore»" as CounterStorePort <<port>>
+  component "JobQueuePort\n«InMemoryJobQueue»" as JobQueuePort <<port>>
 }
-package "portas" {
-  interface SearchIndexPort as P1
-  interface TimelineProjectionPort as P2
-  interface MediaStoragePort as P3
-  interface CounterStorePort as P4
+package "fai-domain (repositórios)" {
+  component "AssetPresetRepository\nSchemeRepository\nWardrobeItemRepository\nUserRepository\nCelebrityProfileRepository\nSchemeItemRepository\nReactionRepository\nSavedItemRepository\nStyleDnaRepository\nHypeScoreCurrentRepository\n(+13)" as REPO_MySQL
 }
-package "fai-infrastructure" {
-  [Repositórios JPA\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · UserRepository\nHypeScoreCurrentRepository · SealBondRepository] as REPOS
-  [OpenSearchIndexAdapter] as OS
-  [CassandraProjectionAdapter] as CAS
-  [S3MediaStorageAdapter / LocalFileMediaStorage] as S3
-  [RedisAdapters (contadores) /\nInMemoryCounterStore] as RED
-  [Provedores de IA\n(ai-providers)] as PROV
-}
-database "MySQL\n• schemes · scheme_items\n• wardrobe_items · users\n• hype_scores · seal_bonds\n• notifications · audit_log" as DB
-
-FE0 --> FE1
-FE1 --> FE2
-FE1 --> FE3
-FE1 --> FE4
-FE1 --> FE5
-FE1 --> SC : builder · compositions · preview · salvar
-FE3 --> SC : POST /api/schemes/scores
-FE1 --> SEALC : selos possíveis e pedidos
-FE4 --> BGC : arte de fundo
-SC --> SS
-SC --> CP
-SC --> LP
-SEALC --> SEAL
-BGC --> BG
-SS --> WS : peças elegíveis (CA01/CA07b)
-SS --> AI : 3 looks só do acervo (CA04)
-SS --> LOC : sem IA
-SS --> BG : applyToScheme
-SS --> SEAL : suggestSealsAfterSave
-SS --> DL : Look do Dia
-SS --> REN : prévia / card.png
-SS --> X
-SS ..> EV : publica SchemeSaved
-AI --> PROV
-X --> P1
-X --> P2
-X --> P3
-SS --> P4 : remixes
-OS ..|> P1
-CAS ..|> P2
-S3 ..|> P3
-RED ..|> P4
-SS --> REPOS
-LP --> REPOS
-REPOS --> DB : JPA / Flyway
-note bottom of SS
-  CA02: < 2 elegíveis → INSUFICIENTE (/pieces/new) e 422 ACERVO_INSUFICIENTE
-  CA06: items vazio → 400 SEM_PECAS · CA05: publish → PUBLISHED e feed (RF8)
-  CA03: visibilidade herdada do perfil (AccountService.defaultVisibility)
-end note
+database "MySQL\n• asset_presets\n• brand_profiles\n• brands\n• celebrity_profiles\n• daily_looks\n• hype_scores\n• moderation_queue\n• photos\n• pipeline_jobs\n• processing_jobs_log\n• promotion_redemptions\n• promotions\n(+11)" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+APIC --> BackgroundController : HTTPS/JSON
+APIC --> SchemeController : HTTPS/JSON
+APIC --> SealController : HTTPS/JSON
+APIC --> WardrobeController : HTTPS/JSON
+BackgroundController --> BackgroundStudioService
+BackgroundStudioService --> AI
+BackgroundStudioService --> REPO_MySQL
+BackgroundStudioService ..> AssetCatalogService
+BackgroundStudioService ..> MediaService
+CopilotService --> AI
+CopilotService --> REPO_MySQL
+CopilotService ..> BackgroundStudioService
+CopilotService ..> DailyLookService
+CopilotService ..> RoomService
+CopilotService ..> SchemeService
+CopilotService ..> WardrobeService
+FE0 --> APIC
+FE1 --> APIC
+FE2 --> APIC
+LookPreviewService --> REPO_MySQL
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+SchemeController --> CopilotService
+SchemeController --> LookPreviewService
+SchemeController --> SchemeService
+SchemeService --> AI
+SchemeService --> CounterStorePort
+SchemeService --> EV
+SchemeService --> REPO_MySQL
+SchemeService ..> BackgroundStudioService
+SchemeService ..> DailyLookService
+SchemeService ..> HypeScoreConfig
+SchemeService ..> MediaService
+SchemeService ..> NotificationService
+SchemeService ..> ProjectionService
+SchemeService ..> SchemeCardRenderer
+SchemeService ..> SealService
+SchemeService ..> WardrobeService
+SealController --> SealService
+SealService --> AI
+SealService --> EV
+SealService --> REPO_MySQL
+SealService ..> NotificationService
+WardrobeController --> WardrobeService
+WardrobeService --> AI
+WardrobeService --> EV
+WardrobeService --> JobQueuePort
+WardrobeService --> REPO_MySQL
+WardrobeService ..> AssetCatalogService
+WardrobeService ..> MediaService
+WardrobeService ..> NotificationService
+WardrobeService ..> ProjectionService
 @enduml

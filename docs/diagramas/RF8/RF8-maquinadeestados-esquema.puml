@@ -1,63 +1,46 @@
 @startuml RF8_MaquinaDeEstados_Esquema
 !pragma layout smetana
-title RF8 — Visualizar esquemas e peças de outros usuários na aba Buscar\nDiagrama de máquina de estados — Scheme (SchemeStatus × Visibility): quando o look aparece no feed, na busca e no Hype público
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "DRAFT\n(só o dono vê)" as Rascunho
-state "PUBLISHED" as Publicado {
-  state "PRIVATE\n(só o dono)" as Priv
-  state "FOLLOWERS\n(Follow ACEITO com o dono)" as Seg
-  state "PUBLIC" as Pub {
-    state "Fora do Hype público\n(perfil do dono PRIVATE\nou conta de teste)" as PubSemHype
-    state "public_eligible = true\n(entra na régua, no Em alta\ne no filtro hypeLevel)" as PubHype
-    [*] --> PubHype : perfil não PRIVATE\ne conta real
-    [*] --> PubSemHype : perfil PRIVATE\nou conta de teste
-    PubSemHype --> PubHype : dono abre o perfil +\npróximo cálculo do job
-    PubHype --> PubSemHype : dono fecha o perfil +\npróximo cálculo do job
-  }
-  [*] --> Priv : herdada do perfil\n(padrão PRIVATE)
-  [*] --> Seg : perfil FOLLOWERS
-  [*] --> Pub : perfil PUBLIC ou\nescolhida ao publicar
-  Priv --> Seg : PUT /api/schemes/{id} {visibility: FOLLOWERS}
-  Seg --> Pub : PUT /api/schemes/{id} {visibility: PUBLIC}
-  Priv --> Pub : PUT /api/schemes/{id} {visibility: PUBLIC}
-  Pub --> Seg : PUT /api/schemes/{id} {visibility: FOLLOWERS}
-  Pub --> Priv : PUT /api/schemes/{id} {visibility: PRIVATE}\n(revoga os selos — RF20.CA14)
-  Seg --> Priv : PUT /api/schemes/{id} {visibility: PRIVATE}\n(revoga os selos)
+title RF8 — ciclo de vida de Scheme.status e visibility\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum SchemeStatus · enum Visibility · tabela schemes
+
+state "Scheme.status" as Ciclo_Scheme {
+  state Ciclo_Scheme_DRAFT as "DRAFT"
+  state Ciclo_Scheme_PUBLISHED as "PUBLISHED"
+  state Ciclo_Scheme_ARCHIVED as "ARCHIVED"
 }
-state "ARCHIVED\n(excluído pelo dono)" as Arquivado
-
-[*] --> Rascunho : POST /api/schemes (sem publish)
-[*] --> Publicado : POST /api/schemes {publish: true}
-Rascunho --> Publicado : POST /api/schemes/{id}/publication {visibility}\nou PUT /api/schemes/{id} {publish: true}\n(sem peças = 400 SEM_PECAS)
-Rascunho --> Arquivado : POST /api/schemes/{id}/archive\nou DELETE /api/schemes/{id}
-Publicado --> Arquivado : POST /api/schemes/{id}/archive\nou DELETE /api/schemes/{id}
-Arquivado --> [*]
-
-note right of Pub
-  Aparece em GET /api/feed, GET /api/search (LOOKS)
-  e no "Em alta na comunidade" para qualquer pessoa
-  (inclusive sem login), exceto bloqueados nos dois
-  sentidos e conta de teste para quem não é de teste.
-  Visibilidade efetiva = moreRestrictive(look, perfil).
-end note
-note left of Seg
-  Não entra no feed da comunidade
-  (findPublicFeed só lê PUBLIC); aparece
-  na Passarela de quem segue (findFeedForFollowing)
-  e no perfil (Guard.canView).
-end note
-note bottom of Arquivado
-  publishInternal grava publishedAt, communityIndexed
-  (= PUBLIC) e o snapshot das peças. Arquivar revoga
-  os selos, remove as projeções (OpenSearch/Cassandra)
-  e tira a foto de Minhas Fotos. ARCHIVED só o dono vê
-  (SchemeService.canView), e o Hype público sai no
-  próximo cálculo.
+[*] --> Ciclo_Scheme_DRAFT : criação
+Ciclo_Scheme --> Ciclo_Scheme_ARCHIVED : purgeScheduledDeletions(), archive()
+Ciclo_Scheme --> Ciclo_Scheme_PUBLISHED : create(), publish(),\npublishInternal(), update()
+state "Scheme.visibility" as Ciclo_Scheme_visibility {
+  state Ciclo_Scheme_visibility_PRIVATE as "PRIVATE"
+  state Ciclo_Scheme_visibility_FOLLOWERS as "FOLLOWERS"
+  state Ciclo_Scheme_visibility_PUBLIC as "PUBLIC"
+}
+[*] --> Ciclo_Scheme_visibility_PRIVATE : criação
+Ciclo_Scheme_visibility --> Ciclo_Scheme_visibility_PRIVATE : publish(), purgeScheduledDeletions()
+Ciclo_Scheme_visibility --> Ciclo_Scheme_visibility_FOLLOWERS : publish()\nPOST /api/schemes/{id}/publication
+Ciclo_Scheme_visibility --> Ciclo_Scheme_visibility_PUBLIC : publish()\nPOST /api/schemes/{id}/publication
+note right of Ciclo_Scheme
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
 end note
 @enduml

@@ -1,224 +1,181 @@
 @startuml RF5_Classes
-title RF5 — Criar um esquema de vestimenta na aba "Criar Look"\nDiagrama de classes — entidades (fai-domain), formulários e serviços do construtor de looks
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF5 — Criar um esquema de vestimenta na aba 'Criar Look'\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-application · service" {
-class SchemeService {
-  +builder(user): Map
-  +compose(user, ComposeRequest, AiCapability): ComposeResult
-  +create(user, SchemeForm): Map
-  +suggestSealsAfterSave(user, schemeId): Map
-  +preview(user, SchemeForm): byte[]
-  +uploadLookPhoto(user, bytes): Map
-  +publish(user, id, Visibility): Map
-  +get(viewer, id): Map
-  +owned(user, id): Scheme
-  -replaceItems(user, s, forms): List<SchemeItem>
-  -publishInternal(s, items)
+package "fai-domain (entidades JPA)" {
+  class Scheme <<schemes>> {
+    +id: UUID
+    +user: User
+    +originalScheme: Scheme
+    +title: String
+    +description: String
+    +creationMode: CreationMode
+    +origin: SchemeOrigin
+    +style: String
+    +occasion: String
+    +season: Season
+    .. +46 campos ..
+  }
+  class SchemeItem <<scheme_items>> {
+    +id: UUID
+    +scheme: Scheme
+    +wardrobeItem: WardrobeItem
+    +slot: SchemeSlot
+    +tryOnLayer: TryOnLayer
+    +sortOrder: int
+    +zIndex: int
+    +positionX: BigDecimal
+    +positionY: BigDecimal
+    +scale: BigDecimal
+    .. +4 campos ..
+  }
+  class SealBond <<seal_bonds>> {
+    +id: UUID
+    +scheme: Scheme
+    +targetOwner: User
+    +requestedBy: User
+    +tier: SealTier
+    +linkedPieceIdsJson: String
+    +confidence: BigDecimal
+    +justification: String
+    +basis: SealBondBasis
+    +status: SealBondStatus
+    .. +13 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class WardrobeItem <<wardrobe_items>> {
+    +id: UUID
+    +user: User
+    +brandProfile: BrandProfile
+    +brand: Brand
+    +name: String
+    +category: String
+    +subcategory: String
+    +sex: String
+    +brandName: String
+    +brandLogoUrl: String
+    .. +70 campos ..
+  }
+  class Seal <<seals>> {
+    +id: UUID
+    +owner: User
+    +name: String
+    +tier: SealTier
+    +policyText: String
+    +status: SealStatus
+    +iconUrl: String
+    +premium: boolean
+    +backgroundConfigJson: String
+    +availableFrom: Instant
+    .. +4 campos ..
+  }
 }
-class "SchemeService.SchemeForm" as SchemeForm <<record>> {
-  +title: String
-  +description: String
-  +occasion: List<String>
-  +style: List<String>
-  +season: Season
-  +mood: Mood
-  +visibility: Visibility
-  +displayMode: DisplayMode
-  +items: List<ItemForm>
-  +creationMode: CreationMode
-  +origin: SchemeOrigin
-  +remixedFromId: UUID
-  +background: Map
-  +applyRecommendedDirection: Boolean
-  +cardSkin: String
-  +layoutAnatomy: String
-  +tags, seals: List<String>
-  +publish: Boolean
-  +lookDoDia: Boolean
+package "fai-domain (enums)" {
+  enum SchemeStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+  }
+  enum RenderStatus {
+    PENDING
+    RENDERING
+    ENHANCING
+    COMPOSITING
+    CACHED
+    COMPLETED
+    FAILED
+  }
+  enum SealBondStatus {
+    SUGGESTED
+    ACCEPTED
+    EDITED
+    REFUSED
+    PENDING_REVIEW
+    APPROVED
+    REJECTED
+    REVOKED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
 }
-class "SchemeService.ItemForm" as ItemForm <<record>> {
-  +wardrobeItemId: UUID
-  +slot: SchemeSlot
-  +sortOrder, zIndex: Integer
-  +positionX, positionY, scale,\n rotation, opacity: BigDecimal
-  +filters: Map
+package "fai-application" {
+  class SchemeService <<service>> {
+    +builder()
+    +compose()
+    +create()
+    +suggestSealsAfterSave()
+    +uploadLookPhoto()
+    +preview()
+    +get()
+    +publish()
+  }
 }
-class "SchemeService.ComposeRequest" as ComposeRequest <<record>> {
-  +occasion, style: List<String>
-  +mood, season, prompt: String
-  +excludeCombinations: List<String>
-}
-class "SchemeService.ComposeResult" as ComposeResult <<record>> {
-  +compositions: List<Composition>
-  +message: String
-  +fallbackUsed: boolean
-  +provider: String
-  +orientation: Map
-  +scores: List<Map>
-}
-class WardrobeService {
-  +eligible(userId): List<WardrobeItem>
-}
-class LocalSchemeComposer {
-  +compose(eligible, occasion, style, season, prompt, n): List<Composition>
-  +slotOf(w): SchemeSlot
-}
-class LookPreviewService {
-  +scores(user, PreviewRequest): Map
-  +compositions(user, list): List<Map>
-}
-class BackgroundStudioService {
-  +applyToScheme(s, background, applyRecommended)
-}
-class DailyLookService {
-  +register(user, s, source, date)
-}
-}
-
-package "fai-domain · model" {
-class User {
-  +username: String
-  +profileVisibility: Visibility
-  .. AccountService.defaultVisibility(u) (CA03) ..
-}
-class Scheme <<table schemes>> {
-  +user: User
-  +originalScheme: Scheme
-  +title: String
-  +description: String
-  +creationMode: CreationMode
-  +origin: SchemeOrigin
-  +style: String
-  +occasion: String
-  +season: Season
-  +mood: Mood
-  +visibility: Visibility
-  +status: SchemeStatus
-  +displayMode: DisplayMode
-  +disponivel: boolean
-  +favorite: boolean
-  +lookDoDia: boolean
-  +communityIndexed: boolean
-  +coverImageUrl: String
-  +backgroundColor, backgroundGradient,\n backgroundArtUrl, studioConfigJson: String
-  +cardSkin, layoutAnatomy: String
-  +sealIdsJson, tags: String
-  +totalPrice: BigDecimal
-  +revalidationPending: boolean
-  +publishedAt: Instant
-  .. contadores, render, container ..
-}
-class SchemeItem <<table scheme_items>> {
-  +scheme: Scheme
-  +wardrobeItem: WardrobeItem
-  +slot: SchemeSlot
-  +tryOnLayer: TryOnLayer
-  +sortOrder, zIndex: int
-  +positionX, positionY, scale,\n rotation, opacity: BigDecimal
-  +filtersJson: String
-  +snapshotJson: String
-}
-class WardrobeItem <<table wardrobe_items>> {
-  +user: User
-  +name, category, subcategory: String
-  +brandName, brandLogoUrl, brandSource: String
-  +imageUrl: String
-  +availabilityStatus: AvailabilityStatus
-  +disponivel: boolean
-  +schemeUsageCount: int
-}
-}
-
-package "fai-domain · enums" {
-enum SchemeStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
-enum SchemeOrigin {
-  CRIAR_LOOK
-  PROVADOR
-  REMIX
-  COPILOT
-  DNA_DUPLICATE
-  SMART_MIRROR
-  VISTA_ME
-  AUTOPILOTO
-}
-enum CreationMode {
-  MANUAL
-  AI_ASSISTED
-}
-enum SchemeSlot {
-  TOP
-  BOTTOM
-  SHOES
-  ACCESSORY
-  FULL_BODY
-  OUTERWEAR
-}
-enum Visibility {
-  PRIVATE
-  FOLLOWERS
-  PUBLIC
-}
-enum Season {
-  SPRING
-  SUMMER
-  AUTUMN
-  WINTER
-}
-enum Mood {
-  ENERGETIC
-  ELEGANT
-  COMFORTABLE
-  SOPHISTICATED
-}
-}
-
+SchemeService ..> Scheme : usa
+SchemeService ..> SchemeItem : usa
+SchemeService ..> User : usa
+SchemeService ..> WardrobeItem : usa
 Scheme "*" --> "1" User : user
-Scheme "*" --> "0..1" Scheme : originalScheme (remix)
+Scheme --> RenderStatus
+Scheme --> SchemeStatus
 SchemeItem "*" --> "1" Scheme : scheme
 SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
+Seal "*" --> "1" User : owner
+SealBond "*" --> "1" Scheme : scheme
+SealBond "*" --> "1" Seal : seal
+SealBond "*" --> "1" User : requestedBy
+SealBond "*" --> "1" User : targetOwner
+SealBond --> SealBondStatus
+User --> AccountStatus
 WardrobeItem "*" --> "1" User : user
-Scheme ..> SchemeStatus
-Scheme ..> SchemeOrigin
-Scheme ..> CreationMode
-Scheme ..> Visibility
-Scheme ..> Season
-Scheme ..> Mood
-SchemeItem ..> SchemeSlot
-SchemeService ..> SchemeForm : recebe
-SchemeForm *-- "1..*" ItemForm : items
-SchemeService ..> ComposeRequest
-SchemeService ..> ComposeResult
-SchemeService --> WardrobeService : eligible (CA01/CA07b)
-SchemeService --> LocalSchemeComposer : plano B sem IA
-SchemeService --> BackgroundStudioService : arte (RF11)
-SchemeService --> DailyLookService : Look do Dia (RF42)
-SchemeService ..> Scheme : cria/publica
-SchemeService ..> SchemeItem : replaceItems
-
-note bottom of Scheme
-  Sem campo de marca: a marca de cada slot vem de
-  WardrobeItem.brandName/brandLogoUrl (RF4).
-  O HypeScore v1 saiu da entidade (P3-16): o Hype
-  do look fica em hype_scores (HypeScore v2, RF46).
-end note
-note right of ItemForm
-  Regras (replaceItems): só peças do próprio
-  acervo (400 PECA_DE_OUTRO_USUARIO) e
-  disponíveis (400 PECA_INDISPONIVEL);
-  peça repetida é ignorada.
-end note
+WardrobeItem --> AvailabilityStatus
+WardrobeItem --> ModerationStatus
 @enduml

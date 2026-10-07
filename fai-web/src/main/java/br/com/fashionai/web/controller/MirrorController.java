@@ -54,6 +54,12 @@ public class MirrorController {
         return mirror.suggest(user, slot);
     }
 
+    @GetMapping("/wardrobe")
+    @Operation(summary = "RF33 — Peças do guarda-roupa que podem ir para um slot (escolha manual, sem IA)")
+    public Map<String, Object> wardrobe(CurrentUser user, @RequestParam String slot) {
+        return mirror.wardrobe(user, slot);
+    }
+
     public record VistaMeRequest(String prompt, List<UUID> anchorIds, UUID focusPieceId, Boolean keepMirror) {
     }
 

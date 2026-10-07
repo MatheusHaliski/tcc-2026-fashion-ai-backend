@@ -1,140 +1,195 @@
 @startuml RF22_Classes
-title RF22 — Visualizar a aba "Celebridades" — Feed de Perfil de Celebridades cadastradas dentro do sistema do FashionAI\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF22 — Visualizar a aba 'Celebridades' — Feed de Perfil de Celebridades cadastradas dentro do sistema do FashionAI\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +avatarUrl: String
-  +profileType: ProfileType
-  +verified: boolean
+package "fai-domain (entidades JPA)" {
+  class Follow <<follows>> {
+    +id: UUID
+    +follower: User
+    +following: User
+    +status: FollowStatus
+    +respondedAt: Instant
+  }
+  class CelebrityProfile <<celebrity_profiles>> {
+    +id: UUID
+    +owner: User
+    +stageName: String
+    +slug: String
+    +avatarUrl: String
+    +coverUrl: String
+    +bio: String
+    +realName: String
+    +areasJson: String
+    +verifiableFollowersJson: String
+    .. +20 campos ..
+  }
+  class DnaScheme <<dna_schemes>> {
+    +id: UUID
+    +user: User
+    +title: String
+    +identityPhrase: String
+    +archetype: StyleArchetype
+    +boldnessIndex: Integer
+    +iconSchemeId: UUID
+    +colorPaletteJson: String
+    +narrativeType: NarrativeType
+    +seasonalTheme: Season
+    .. +25 campos ..
+  }
+  class Promotion <<promotions>> {
+    +id: UUID
+    +seal: Seal
+    +sealBond: SealBond
+    +type: PromotionType
+    +code: String
+    +description: String
+    +discountPercent: Integer
+    +partnerBrandUserId: UUID
+    +campaignId: UUID
+    +campaignLimit: Integer
+    .. +13 campos ..
+  }
+  class SchemeGrouping <<scheme_groupings>> {
+    +id: UUID
+    +owner: User
+    +type: GroupingType
+    +label: String
+    +description: String
+    +coverUrl: String
+    +atmospherePrompt: String
+    +periodFrom: Integer
+    +periodTo: Integer
+    +accentColor: String
+    .. +1 campos ..
+  }
+  class Seal <<seals>> {
+    +id: UUID
+    +owner: User
+    +name: String
+    +tier: SealTier
+    +policyText: String
+    +status: SealStatus
+    +iconUrl: String
+    +premium: boolean
+    +backgroundConfigJson: String
+    +availableFrom: Instant
+    .. +4 campos ..
+  }
+  class SealBond <<seal_bonds>> {
+    +id: UUID
+    +scheme: Scheme
+    +targetOwner: User
+    +requestedBy: User
+    +tier: SealTier
+    +linkedPieceIdsJson: String
+    +confidence: BigDecimal
+    +justification: String
+    +basis: SealBondBasis
+    +status: SealBondStatus
+    .. +13 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
 }
-class CelebrityProfile {
-  +owner: User
-  +stageName: String
-  +slug: String
-  +avatarUrl: String
-  +coverUrl: String
-  +bio: String
-  +realName: String
-  +areasJson: String
-  +verifiableFollowersJson: String
-  +identityProofUrl: String
-  +professionalHistory: String
-  +fashionInterestsJson: String
-  +styleSignatureJson: String
-  +verificationStatus: ApprovalStatus
-  +verificationScore: BigDecimal
-  +approvedBy: UUID
-  +approvedAt: Instant
-  +identityVerified: boolean
-  +sealConsentGranted: boolean
-  +requiresSealReview: boolean
+package "fai-domain (enums)" {
+  enum FollowStatus {
+    PENDENTE
+    ACEITO
+    BLOQUEADO
+  }
+  enum ApprovalStatus {
+    PENDENTE
+    AJUSTES
+    APROVADO
+    RECUSADO
+    SUSPENSO
+  }
+  enum SchemeStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+  }
+  enum PromotionStatus {
+    AVAILABLE
+    REDEEMED
+    EXPIRED
+    REVOKED
+  }
+  enum SealStatus {
+    ACTIVE
+    INACTIVE
+  }
+  enum SealBondStatus {
+    SUGGESTED
+    ACCEPTED
+    EDITED
+    REFUSED
+    PENDING_REVIEW
+    APPROVED
+    REJECTED
+    REVOKED
+  }
 }
-class Follow {
-  +follower: User
-  +following: User
-  +status: FollowStatus
+package "fai-application" {
+  class InstitutionalService <<service>> {
+    +profile()
+    +tab()
+    +store()
+    +updateCelebrity()
+  }
 }
-class SealBond {
-  +targetOwner: User
-  +status: SealBondStatus
-}
-class Seal {
-  +owner: User
-  +premium: boolean
-  +status: SealStatus
-}
-class Promotion {
-  +ownerUserId: UUID
-  +type: PromotionType
-  +status: PromotionStatus
-}
-class SchemeGrouping {
-  +owner: User
-  +type: GroupingType
-  +label: String
-  +coverUrl: String
-  +periodFrom: Integer
-  +periodTo: Integer
-}
-class DnaScheme {
-  +user: User
-  +styleKeywords: String
-}
-}
-package "fai-domain · enums" {
-enum ApprovalStatus {
-  PENDENTE
-  APROVADO
-  RECUSADO
-  SUSPENSO
-}
-enum ProfileType {
-  PESSOAL
-  MARCA
-  CELEBRIDADE
-  ADMIN
-}
-enum FollowStatus {
-  PENDENTE
-  ACEITO
-  BLOQUEADO
-}
-enum GroupingType {
-  COLLECTION
-  PROMOTION
-  SIGNATURE_SERIES
-  EVOLUTION
-  STYLE_LINE
-  ERA
-  PHASE
-  SEASON
-  TOUR
-}
-}
-package "fai-application · service" {
-class InstitutionalService {
-  +celebrityFeed(viewer, term, order): Map
-  +brandFeed(viewer, term, order): Map
-  +profile(viewer, slugOrId): Map
-  +tab(viewer, slugOrId, tab, filter, groupingId): Object
-  +store(slugOrId): Map
-  +updateCelebrity(user, fields): Map
-  ~celebrityCard(c): Map
-  ~affinity(userStyles, ownerId): double
-}
-class AdminService {
-  +approvals(user): Map
-  +decide(user, userId, approve, notes): Map
-}
-}
+InstitutionalService ..> CelebrityProfile : usa
+InstitutionalService ..> Follow : usa
+InstitutionalService ..> SchemeGrouping : usa
+InstitutionalService ..> Seal : usa
+InstitutionalService ..> SealBond : usa
+InstitutionalService ..> User : usa
 CelebrityProfile "1" --> "1" User : owner
+CelebrityProfile --> ApprovalStatus
+DnaScheme "*" --> "1" User : user
+DnaScheme --> SchemeStatus
 Follow "*" --> "1" User : follower
 Follow "*" --> "1" User : following
-SealBond "*" --> "1" User : targetOwner
-Seal "*" --> "1" User : owner
+Follow --> FollowStatus
+Promotion "*" --> "1" Seal : seal
+Promotion "*" --> "1" SealBond : sealBond
+Promotion --> PromotionStatus
 SchemeGrouping "*" --> "1" User : owner
-DnaScheme "*" --> "1" User
-CelebrityProfile ..> ApprovalStatus
-User ..> ProfileType
-Follow ..> FollowStatus
-SchemeGrouping ..> GroupingType
-InstitutionalService ..> CelebrityProfile
-InstitutionalService ..> Follow : conta ACEITO
-InstitutionalService ..> SealBond : conta APPROVED
-InstitutionalService ..> DnaScheme : afinidade
-AdminService ..> CelebrityProfile : verificationStatus
-note bottom of CelebrityProfile : feed só com verificationStatus = APROVADO;\nmaterial do selo: VITREO_HOLOGRAFICO (RF21)
-note bottom of SchemeGrouping : aba "Eras" (type ERA) — ShowcaseController
+Seal "*" --> "1" User : owner
+Seal --> SealStatus
+SealBond "*" --> "1" Seal : seal
+SealBond "*" --> "1" User : requestedBy
+SealBond "*" --> "1" User : targetOwner
+SealBond --> SealBondStatus
 @enduml

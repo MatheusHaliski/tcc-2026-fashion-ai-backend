@@ -1,28 +1,59 @@
 @startuml RF41_MaquinaDeEstados_Nivel
 !pragma layout smetana
-title RF41 — FaiPointsService.Level: nível pelos pontos vitalícios (nunca diminui)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "ESTREIA (0)" as Estreia
-state "STUDIO (300)" as Studio
-state "LOFT (900)" as Loft
-state "CLOSET (2000)" as Closet
-state "ATELIER (4000)" as Atelier
-state "PENTHOUSE (7500)" as Penthouse
-state "MAISON (12000)" as Maison
-[*] --> Estreia : conta criada\n(room_layouts.level = ESTREIA)
-Estreia --> Studio : award() leva lifetime >= 300
-Studio --> Loft : lifetime >= 900
-Loft --> Closet : lifetime >= 2000
-Closet --> Atelier : lifetime >= 4000
-Atelier --> Penthouse : lifetime >= 7500
-Penthouse --> Maison : lifetime >= 12000
-Estreia --> Estreia : award() sem cruzar limiar\n(jogo, esquema, peça, 3D)
-note right of Studio : cada subida: RoomService.setLevel\n+ notificação ROOM_LEVEL_UP
-note right of Maison : lifetime = soma dos deltas > 0 com countsLifetime;\ngastar na loja (POST /api/points/shop/{sku}/purchase)\nreduz o saldo, não o nível
+title RF41 — FaiPointsService.Level: níveis por limiar de lifetime\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum FaiPointsService.Level · 7 níveis · sobe em FaiPointsService.award()
+
+state "FaiPointsService.Level (lifetime)" as N_Level {
+  state "ESTREIA\nlifetime ≥ 0" as ESTREIA
+  ESTREIA : FAI Origem, Smart Mirror, Vista-me,\nCopilot, gavetas com categoria
+  state "STUDIO\nlifetime ≥ 300" as STUDIO
+  STUDIO : Iluminação guiada personalizável e\nmonograma nas portas
+  state "LOFT\nlifetime ≥ 900" as LOFT
+  LOFT : +2 módulos e mais categorias próprias
+  state "CLOSET\nlifetime ≥ 2.000" as CLOSET
+  CLOSET : Sapateira, vitrine de bolsas e\nporta-joias
+  state "ATELIER\nlifetime ≥ 4.000" as ATELIER
+  ATELIER : Ilha central = bancada de looks\n(comparar 2–3 looks) e regras\nautomáticas de organização
+  state "PENTHOUSE\nlifetime ≥ 7.500" as PENTHOUSE
+  PENTHOUSE : Troca de estação: peças fora de\nestação no maleiro, ignoradas pelo\nVista-me
+  state "MAISON\nlifetime ≥ 12.000" as MAISON
+  MAISON : Closet de assinatura, itens exclusivos\ne Colabs Maison
+}
+[*] --> ESTREIA : lifetime = 0
+ESTREIA --> STUDIO : award()\nlifetime ≥ 300
+STUDIO --> LOFT : award()\nlifetime ≥ 900
+LOFT --> CLOSET : award()\nlifetime ≥ 2.000
+CLOSET --> ATELIER : award()\nlifetime ≥ 4.000
+ATELIER --> PENTHOUSE : award()\nlifetime ≥ 7.500
+PENTHOUSE --> MAISON : award()\nlifetime ≥ 12.000
+note right of N_Level
+  FaiPointsService.award() calcula o nível antes e depois do crédito
+  e só age quando after.ordinal() > before.ordinal():
+  grava o nível novo (setLevel())
+  notifica ROOM_LEVEL_UP
+  Não há caminho no código que desça de nível.
+end note
+note bottom of N_Level
+  lifetime soma só os lançamentos com FaiPointsLedgerEntry.countsLifetime = true
+  conta: award(), awardIsolated(), game()
+  não conta: buy()
+end note
 @enduml
