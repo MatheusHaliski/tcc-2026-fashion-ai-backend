@@ -239,11 +239,12 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 {pick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("catalog.preenchido_do_catalogo")}</p>}
                 <PieceFields value={value} onChange={(v) => { setValue(v); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors} />
               </section>
-              {/* RF4 · fotografia opcional, para um item mais personalizado: uma ou várias fotos, cada peça detectada vira uma
-                  peça no guarda-roupa (revisão foto por foto). Independe do tipo escolhido acima. */}
+              {/* RF4 · fotografia opcional: as duas formas de adicionar são separadas pela janela segmentada do topo; aqui só o
+                  atalho para a aba Fotografar (uma ou várias fotos, com o guia de fotografia por categoria) */}
               <section className="creator-section" aria-labelledby="piece-photo-label">
                 <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-photo-label" className="type-h3">{t("pieces.new.foto_opcional")}</h2><Badge tone="chalk">{t("common.optional")}</Badge></div>
-                <MultiPieceUpload onSaved={(count) => { toast.success(t("multiPiece.salvas", { count })); window.location.href = user ? `/u/${user.username}` : "/closet"; }} />
+                <p className="mb-2 type-body-sm text-muted">{t("pieces.new.prefere_fotografar")}</p>
+                <Button size="sm" onClick={() => { setMode("photos"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{t("pieces.new.modo_fotos")}</Button>
               </section>
               {nav}
             </Card>

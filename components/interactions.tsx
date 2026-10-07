@@ -244,9 +244,9 @@ export function CardActions({ type, id, counters, viewer, title, compact, extra,
   const [sharedNow, setSharedNow] = useState(0);   // compartilhamentos feitos agora (a contagem sobe na hora)
   const commentsN = counters?.comments ?? 0, sharesN = (counters?.shares ?? 0) + sharedNow, remixesN = counters?.remixes ?? 0;
   // remixar (RF19.CA13) fica na linha: na peça sempre (card compacto e detalhe; a dona também remixa, a peça vira
-  // semente de um look novo); no look só no detalhe e para quem não publicou (não se remixa o próprio look)
+  // semente de um look novo); no look, no card e no detalhe, para quem não publicou (não se remixa o próprio look)
   const { remix, busy: remixing } = useRemix(type === "DNA_SCHEME" ? "SCHEME" : type, id);
-  const canRemix = type === "PIECE" || (!!reactions && type === "SCHEME" && !(user && ownerId && user.id === ownerId));
+  const canRemix = type === "PIECE" || (type === "SCHEME" && !(user && ownerId && user.id === ownerId));
   // hideZero: remixar e reações sem nenhuma contagem mostram só o ícone (a linha única cabe no celular)
   const act = (key: string, icon: SocialIconName, label: string, onClick: () => void, opts: { pressed?: boolean; count?: number; haspopup?: boolean; busy?: boolean; hideZero?: boolean; className?: string } = {}) => (
     <button key={key} type="button" className={`c-act is-${key} ${opts.className ?? ""}`} aria-pressed={opts.pressed} aria-busy={busy[key] || opts.busy || undefined} aria-haspopup={opts.haspopup ? "dialog" : undefined} aria-label={label} title={label}

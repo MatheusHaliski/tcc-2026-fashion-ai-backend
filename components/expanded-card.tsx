@@ -249,17 +249,17 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
     : <><Button variant="primary" className="pd-cta" onClick={() => setMannequin3d(true)}>{t("pieceDetail.experimentar")}</Button>
         <button type="button" className="pd-alt" onClick={copyToWardrobe}>{t("pieceDetail.ou_guarde_copia")}</button></>;
   const more: MenuItem[] = [
-    { label: t("pieceDetail.editar_dados"), onSelect: startEdit, hidden: !mine },
-    { label: t("pieceDetail.editar_imagem"), onSelect: () => setEditImage(true), hidden: !mine || p.defaultImage && !p.imageUrl },
-    { label: t("pieceDetail.editar_arte"), onSelect: () => setEditArt(true), hidden: !mine },
-    { label: t("closet.replaceImage"), onSelect: () => replaceRef.current?.click(), hidden: !mine },
-    { label: p.disponivel ? t("pieceCard.markUnavailable") : t("pieceCard.markAvailable"), onSelect: () => flag("disponivel"), hidden: !mine },
-    { label: p.favorite ? t("pieceCard.unfavorite") : t("pieceCard.favorite"), onSelect: () => flag("favorite"), hidden: !mine },
-    { label: p.forSale ? t("pieceCard.unmarkForSale") : t("pieceCard.markForSale"), onSelect: () => flag("forSale"), hidden: !mine },
-    { label: p.forDonation ? t("pieceCard.unmarkForDonation") : t("pieceCard.markForDonation"), onSelect: () => flag("forDonation"), hidden: !mine },
-    { label: p.mannequinImageUrl ? t("mannequinPhoto.refazer_foto_com_meu_manequim") : t("mannequinPhoto.foto_com_meu_manequim"), onSelect: () => setMannequinPhoto(true), hidden: !mine || !MANNEQUIN_PHOTO_CATEGORIES.has(p.category) },
-    { label: t("pieces.id.mostrar_no_quarto"), href: `/room?piece=${p.id}`, hidden: !mine },
-    { label: t("common.delete"), onSelect: askDelete, hidden: !mine, danger: true },
+    { label: t("pieceDetail.editar_dados"), icon: <FaiIcon id="SOC-11" size={20} decorative />, onSelect: startEdit, hidden: !mine },
+    { label: t("pieceDetail.editar_imagem"), icon: <FaiIcon id="NAV-10" size={20} decorative />, onSelect: () => setEditImage(true), hidden: !mine || p.defaultImage && !p.imageUrl },
+    { label: t("pieceDetail.editar_arte"), icon: <FaiIcon id="ACT-14" size={20} decorative />, onSelect: () => setEditArt(true), hidden: !mine },
+    { label: t("closet.replaceImage"), icon: <FaiIcon id="ACT-07" size={20} decorative />, onSelect: () => replaceRef.current?.click(), hidden: !mine },
+    { label: p.disponivel ? t("pieceCard.markUnavailable") : t("pieceCard.markAvailable"), icon: <FaiIcon id={p.disponivel ? "SOC-15" : "SOC-14"} size={20} decorative />, onSelect: () => flag("disponivel"), hidden: !mine },
+    { label: p.favorite ? t("pieceCard.unfavorite") : t("pieceCard.favorite"), icon: <FaiIcon id="SOC-06" size={20} decorative />, onSelect: () => flag("favorite"), hidden: !mine },
+    { label: p.forSale ? t("pieceCard.unmarkForSale") : t("pieceCard.markForSale"), icon: <FaiIcon id="ACT-41" size={20} decorative />, onSelect: () => flag("forSale"), hidden: !mine },
+    { label: p.forDonation ? t("pieceCard.unmarkForDonation") : t("pieceCard.markForDonation"), icon: <FaiIcon id="SOC-03" size={20} decorative />, onSelect: () => flag("forDonation"), hidden: !mine },
+    { label: p.mannequinImageUrl ? t("mannequinPhoto.refazer_foto_com_meu_manequim") : t("mannequinPhoto.foto_com_meu_manequim"), icon: <FaiIcon id="ACT-23" size={20} decorative />, onSelect: () => setMannequinPhoto(true), hidden: !mine || !MANNEQUIN_PHOTO_CATEGORIES.has(p.category) },
+    { label: t("pieces.id.mostrar_no_quarto"), href: `/room?piece=${p.id}`, icon: <FaiIcon id="ACT-31" size={20} decorative />, hidden: !mine },
+    { label: t("common.delete"), icon: <FaiIcon id="ACT-18" size={20} decorative />, onSelect: askDelete, hidden: !mine, danger: true },
   ];
   const studioInfo = (p.flatLayMetadata as { studio?: Partial<StudioInfo> } | undefined)?.studio;
   // RF11: o detalhe usa as mesmas camadas do card, na densidade ampliada (faixas de 20–32 px e movimento opcional)
