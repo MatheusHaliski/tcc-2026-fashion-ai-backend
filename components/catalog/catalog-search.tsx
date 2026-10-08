@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ApiError } from "@/lib/api/client";
 import { catalogApi, enoughToSearch, type CatalogProduct, type CatalogVariant, type DesignTraits, type DiscoverResponse, type MatchReason, type SearchResponse } from "@/lib/api/catalog";
 import { label, useTaxonomy, subcategoryLabel } from "@/lib/api/taxonomy";
@@ -11,6 +12,7 @@ import { CatalogPhoto, photoAspect } from "@/components/catalog/catalog-photo";
 import { CategoryCards } from "@/components/catalog/category-cards";
 import { BrandAutocomplete, type CatalogBrand } from "@/components/catalog/brand-autocomplete";
 import { GarmentGlyph } from "@/components/capture/garment-glyphs";
+import { CatalogResultsGrid } from "@/components/catalog/catalog-results-grid";
 
 export interface CatalogSearchContext { category: string; subcategory: string; brand: string; query: string }
 const ILLUSTRATION: Record<string, "tshirt" | "pants_back" | "sneaker_side" | "bag" | "dress"> = { upper_piece: "tshirt", lower_piece: "pants_back", shoes_piece: "sneaker_side", accessory_piece: "bag", full_body_piece: "dress" };
@@ -21,7 +23,7 @@ const ILLUSTRATION: Record<string, "tshirt" | "pants_back" | "sneaker_side" | "b
  * certeza de que a peça física é aquela — quem confirma é a pessoa). Sem resultado: refinar, procurar nas lojas oficiais
  * da marca ou cair para a própria foto.
  */
-export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext, pickLabel, noResultHint, browse, onResults }: {
+export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext, pickLabel, noResultHint, browse, onResults, resultsMount, resultsLayout }: {
   initial?: Partial<CatalogSearchContext>; onPick: (p: CatalogProduct, v: CatalogVariant | null) => void;
   /** Sem ele, a busca não oferece "usar minha foto" (modo embutido no criador de peça, onde a foto fica logo abaixo). */
   onUsePhoto?: (ctx: CatalogSearchContext) => void;
@@ -37,6 +39,10 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   browse?: boolean;
   /** Contexto + resultados visíveis a cada busca (o provador monta a loja, a zona e os expositores com eles). */
   onResults?: (ctx: CatalogSearchContext, results: CatalogProduct[]) => void;
+  /** Move apenas a apresentação dos resultados; filtros e estado da busca continuam neste componente. */
+  resultsMount?: { target: HTMLElement | null };
+  /** O provador mostra até duas linhas paginadas; RF4 conserva os resultados em linha. */
+  resultsLayout?: "matrix";
 }) {
   const { t } = useI18n();
   const tax = useTaxonomy();
@@ -62,6 +68,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   const [refine, setRefine] = useState(false);
   const [code, setCode] = useState("");
   const [discover, setDiscover] = useState<{ busy: boolean; result: DiscoverResponse | null }>({ busy: false, result: null });
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, CatalogVariant>>({});
   const seq = useRef(0);
   const params = useMemo(() => ({ category: category || undefined, subcategory: subcategory || undefined, brand: brand.trim() || undefined,
     q: [query, code].filter((s) => s.trim()).join(" ").trim() || undefined, color: color || undefined }), [category, subcategory, brand, query, code, color]);
@@ -105,7 +112,11 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   const ctx: CatalogSearchContext = { category, subcategory, brand: brand.trim(), query: params.q ?? "" };
   const subs = category ? tax?.subcategories?.[category] ?? [] : [];
   const shown = discover.result?.results.length ? discover.result.results : res?.results ?? [];
-  const filtered = shown.filter((p) => (!gender || p.gender === gender));
+  const filtered = useMemo(() => shown.filter((p) => (!gender || p.gender === gender)), [shown, gender]);
+  const paginationKey = JSON.stringify([params.category, params.subcategory, params.brand, params.q, params.color, gender]);
+  useEffect(() => {
+    if (resultsLayout === "matrix") setSelectedVariants({});
+  }, [resultsLayout, paginationKey, res, discover.result]);
   const colors = Array.from(new Set(shown.flatMap((p) => [p.color, ...(p.variants ?? []).map((v) => v.color)]).filter((c): c is string => !!c)));
   const genders = Array.from(new Set(shown.map((p) => p.gender).filter((g): g is string => !!g)));
   const canSearchOfficial = !!res?.canSearchOfficial && !discover.busy && !discover.result;
@@ -116,40 +127,10 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
     reportRef.current?.({ category: p?.category ?? "", subcategory: p?.subcategory ?? "", brand: p?.brand ?? "", query: p?.q ?? "" }, p ? filtered : []);
   }, [res, ranWith, discover.result, gender, enough]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return (
-    <div className="grid gap-4">
-      {!embedded && <section aria-labelledby="cs-cat">
-        <p id="cs-cat" className="label">{t("catalog.q_categoria")}</p>
-        <CategoryCards compact columns={3} options={CATEGORY_CARDS} value={(category as CaptureCategory) || null} label={t("catalog.q_categoria")}
-          onChange={(c) => setCategory(c)} />
-      </section>}
-      {category && (
-        <section aria-labelledby="cs-sub">
-          <p id="cs-sub" className="label">{t("catalog.q_tipo")}</p>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="cs-sub">
-            {subs.map((s) => <Chip key={s} active={subcategory === s} onClick={() => setSubcategory(subcategory === s ? "" : s)}>{subcategoryLabel(s)}</Chip>)}
-          </div>
-        </section>
-      )}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label={t("catalog.q_marca")} id="cs-brand" hint={brand && res && !res.intent.brandKnown ? t("catalog.marca_desconhecida") : undefined}>
-          <BrandAutocomplete id="cs-brand" value={brand} onChange={(name, b) => { setBrand(name); setBrandRef(b); }} />
-        </Field>
-        <Field label={t("catalog.q_nome")} id="cs-q" hint={t("catalog.q_nome_hint")}>
-          <Input id="cs-q" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={placeholderFor(category, t)} autoComplete="off"
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); run(++seq.current); } }} />
-          {suggestions.length > 0 && <div className="mt-1.5 flex flex-wrap gap-1.5" aria-label={t("catalog.sugestoes")}>{suggestions.map((s) => <Chip key={s} onClick={() => setQuery(s)}>{s}</Chip>)}</div>}
-          {query.trim() && res?.intent.design && <DesignUnderstood design={res.intent.design} />}
-        </Field>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button variant="primary" onClick={() => run(++seq.current)} loading={loading} disabled={!enough && !brand && !subcategory}>{t("catalog.buscar_pecas")}</Button>
-        {!enough && <span className="type-caption text-muted">{t("catalog.duas_ou_tres_infos")}</span>}
-        {onUsePhoto && <Button variant="ghost" size="sm" onClick={() => onUsePhoto(ctx)}>{t("catalog.usar_minha_foto")}</Button>}
-      </div>
-
+  const results = (
+    <>
       {error && <p role="alert" className="error-text">{error}</p>}
-      {loading && !res && <div className="grid-cards"><Skeleton className="h-64" /><Skeleton className="h-64" /><Skeleton className="h-64" /></div>}
+      {loading && !res && <div className={resultsLayout === "matrix" ? "catalog-results-matrix" : "grid-cards"}><Skeleton className="h-64" /><Skeleton className="h-64" /><Skeleton className="h-64" /></div>}
       {res && (
         <section aria-live="polite" aria-labelledby="cs-results">
           <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -165,9 +146,25 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
             </div>
           )}
           {filtered.length > 0 && (
-            <ul className="grid-cards" aria-label={t("catalog.resultados")}>
-              {filtered.map((p) => <li key={p.id}><CatalogResultCard product={p} onPick={(v) => onPick(p, v)} pickLabel={pickLabel} /></li>)}
-            </ul>
+            resultsLayout === "matrix" ? (
+              <CatalogResultsGrid
+                products={filtered}
+                resetKey={paginationKey}
+                renderProduct={(product) => (
+                  <CatalogResultCard
+                    product={product}
+                    onPick={(variant) => onPick(product, variant)}
+                    pickLabel={pickLabel}
+                    selectedVariant={selectedVariants[product.id] ?? product.selectedVariant ?? null}
+                    onVariantChange={(variant) => setSelectedVariants((current) => ({ ...current, [product.id]: variant }))}
+                  />
+                )}
+              />
+            ) : (
+              <ul className="grid-cards" aria-label={t("catalog.resultados")}>
+                {filtered.map((p) => <li key={p.id}><CatalogResultCard product={p} onPick={(v) => onPick(p, v)} pickLabel={pickLabel} /></li>)}
+              </ul>
+            )
           )}
           <div className={cn("mt-4 rounded-md border border-line-soft bg-surface-2 p-3", !filtered.length && "border-dashed")}>
             {!filtered.length && !discover.result && <p className="type-body font-medium">{t("catalog.nao_encontramos")}</p>}
@@ -190,6 +187,41 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
           </div>
         </section>
       )}
+    </>
+  );
+
+  return (
+    <div className="grid gap-4">
+      {!embedded && <section aria-labelledby="cs-cat" className={resultsLayout === "matrix" ? "fitting-category-controls" : undefined}>
+        <p id="cs-cat" className="label">{t("catalog.q_categoria")}</p>
+        <CategoryCards compact columns={3} options={CATEGORY_CARDS} value={(category as CaptureCategory) || null} label={t("catalog.q_categoria")}
+          onChange={(c) => setCategory(c)} />
+      </section>}
+      {category && (
+        <section aria-labelledby="cs-sub">
+          <p id="cs-sub" className="label">{t("catalog.q_tipo")}</p>
+          <div className={cn("flex flex-wrap gap-1.5", resultsLayout === "matrix" && "fitting-category-controls")} role="group" aria-labelledby="cs-sub">
+            {subs.map((s) => <Chip key={s} active={subcategory === s} onClick={() => setSubcategory(subcategory === s ? "" : s)}>{subcategoryLabel(s)}</Chip>)}
+          </div>
+        </section>
+      )}
+      <div className="catalog-search-fields grid gap-3 sm:grid-cols-2">
+        <Field label={t("catalog.q_marca")} id="cs-brand" hint={brand && res && !res.intent.brandKnown ? t("catalog.marca_desconhecida") : undefined}>
+          <BrandAutocomplete id="cs-brand" value={brand} onChange={(name, b) => { setBrand(name); setBrandRef(b); }} />
+        </Field>
+        <Field label={t("catalog.q_nome")} id="cs-q" hint={t("catalog.q_nome_hint")}>
+          <Input id="cs-q" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={placeholderFor(category, t)} autoComplete="off"
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); run(++seq.current); } }} />
+          {suggestions.length > 0 && <div className="mt-1.5 flex flex-wrap gap-1.5" aria-label={t("catalog.sugestoes")}>{suggestions.map((s) => <Chip key={s} onClick={() => setQuery(s)}>{s}</Chip>)}</div>}
+          {query.trim() && res?.intent.design && <DesignUnderstood design={res.intent.design} />}
+        </Field>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="primary" onClick={() => run(++seq.current)} loading={loading} disabled={!enough && !brand && !subcategory}>{t("catalog.buscar_pecas")}</Button>
+        {!enough && <span className="type-caption text-muted">{t("catalog.duas_ou_tres_infos")}</span>}
+        {onUsePhoto && <Button variant="ghost" size="sm" onClick={() => onUsePhoto(ctx)}>{t("catalog.usar_minha_foto")}</Button>}
+      </div>
+      {resultsMount ? resultsMount.target ? createPortal(results, resultsMount.target) : null : results}
     </div>
   );
 }
@@ -240,10 +272,21 @@ function placeholderFor(category: string, t: (k: string) => string) {
 }
 
 /** Card de resultado: foto oficial dominante (ou a ilustração da categoria), marca, nome, modelo, cor, tipo e fonte. */
-export function CatalogResultCard({ product: p, onPick, pickLabel }: { product: CatalogProduct; onPick: (variant: CatalogVariant | null) => void; pickLabel?: string }) {
+export function CatalogResultCard({ product: p, onPick, pickLabel, selectedVariant: controlledVariant, onVariantChange }: {
+  product: CatalogProduct;
+  onPick: (variant: CatalogVariant | null) => void;
+  pickLabel?: string;
+  selectedVariant?: CatalogVariant | null;
+  onVariantChange?: (variant: CatalogVariant) => void;
+}) {
   const { t } = useI18n();
   const tax = useTaxonomy();
-  const [variant, setVariant] = useState<CatalogVariant | null>(p.selectedVariant ?? null);
+  const [localVariant, setLocalVariant] = useState<CatalogVariant | null>(p.selectedVariant ?? null);
+  const variant = controlledVariant === undefined ? localVariant : controlledVariant;
+  const setVariant = (next: CatalogVariant) => {
+    if (controlledVariant === undefined) setLocalVariant(next);
+    onVariantChange?.(next);
+  };
   const img = p.catalogImage?.url ?? p.imageUrl;
   const source = p.source?.domain && p.source.domain !== "null" ? p.source.domain : t("catalog.fonte_fashionai");
   return (

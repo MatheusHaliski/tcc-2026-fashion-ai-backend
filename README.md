@@ -183,6 +183,9 @@ npm run test:coverage    # testes + cobertura em coverage/index.html (resumo no 
 npx tsc --noEmit         # checagem de tipos
 ```
 
+A [refatoração do provador](docs/REFATORACAO_PROVADOR.md) explica a divisão da rota `/try-on`
+em componentes funcionais, hooks e conversões, com os testes de caracterização e a grade paginada do catálogo.
+
 ### Integração contínua
 
 `.github/workflows/ci.yml` roda em todo pull request e em todo push para a `main`: build e testes da API
