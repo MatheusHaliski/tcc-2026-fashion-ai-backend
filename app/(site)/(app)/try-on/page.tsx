@@ -188,8 +188,10 @@ const nextTick = () => Math.max(Date.now(), ++clock);
  */
 function toDatabaseTipoLook(
   value: Sex
-): "masculino" | "feminino" {
-  return value === "FEMININO" ? "feminino" : "masculino";
+): "masculino" | "feminino"| "unisex" {
+  if value === "FEMININO" return "feminino";
+  if value === "MASCULINO" return "masculino";
+  if value === "UNISEX" return "unisex";
 }
 
 function fromCatalog(
