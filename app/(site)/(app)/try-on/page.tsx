@@ -98,7 +98,7 @@ const FittingRoomScene = dynamic(
  * Não representa uma restrição de gênero do usuário.
  */
 
-type Sex = "MASCULINO" | "FEMININO";
+type Sex = "MASCULINO" | "FEMININO" | "UNISEX";
 
 interface Entry {
   piece: PieceView;
