@@ -430,6 +430,15 @@ public class InstitutionalService {
             Instant expires = shown.stream().map(SealBond::getExpiresAt).filter(Objects::nonNull).max(Comparator.naturalOrder()).orElse(null);
             out.add(new Promoted(s, shown, issued, expires, isExpired, s.isRevalidationPending()));
         }
+        List<Scheme> profileEligible = sealService.profileSchemes(u.getId(), s -> displayable(viewer, s), TAB_LIMIT);
+        if (!history && sealService.hasProfilePolicies(u.getId())) {
+            Set<UUID> eligibleIds = profileEligible.stream().map(Scheme::getId).collect(Collectors.toSet());
+            out.removeIf(p -> !eligibleIds.contains(p.scheme().getId()));
+        }
+        Set<UUID> present = out.stream().map(p -> p.scheme().getId()).collect(Collectors.toSet());
+        for (Scheme scheme : profileEligible) {
+            if (present.add(scheme.getId())) out.add(new Promoted(scheme, List.of(), null, null, false, false));
+        }
         Comparator<Promoted> byIssued = Comparator.comparing(Promoted::issuedAt, Comparator.nullsLast(Comparator.reverseOrder()));
         if (history) {
             out.sort(byIssued);
@@ -496,7 +505,26 @@ public class InstitutionalService {
 
     /** Peças que os selos vigentes destacam (cada peça aponta para o look e traz só os selos que a cobrem). */
     List<Map<String, Object>> highlightedPieces(CurrentUser viewer, User u, String filter, UUID groupingId) {
-        return pieceEntries(viewer, filterLooks(promoted(viewer, u, false, Instant.now()), filter, groupingId));
+        return withProfilePieces(viewer, u, pieceEntries(viewer, filterLooks(promoted(viewer, u, false, Instant.now()), filter, groupingId)), filter, groupingId);
+    }
+
+    private List<Map<String, Object>> withProfilePieces(CurrentUser viewer, User owner, List<Map<String, Object>> existing,
+                                                      String filter, UUID groupingId) {
+        List<WardrobeItem> eligible = sealService.profilePieces(owner.getId(), piece -> displayable(viewer, piece), TAB_LIMIT);
+        Set<UUID> eligibleIds = eligible.stream().map(WardrobeItem::getId).collect(Collectors.toSet());
+        List<Map<String, Object>> out = new ArrayList<>(existing);
+        if (sealService.hasProfilePolicies(owner.getId())) out.removeIf(e -> !eligibleIds.contains(((Views.PieceView) e.get("piece")).id()));
+        // Agrupamentos e filtros de look não se aplicam a peças avulsas.
+        if (groupingId != null || filter != null && !filter.isBlank() && !Set.of("ALL", "RECENT", "RECENTES", "DESTAQUES", "HYPE", "GROWTH", "CRESCIMENTO").contains(filter.toUpperCase(Locale.ROOT))) return out;
+        Set<Object> ids = out.stream().map(e -> ((Views.PieceView) e.get("piece")).id()).collect(Collectors.toSet());
+        for (WardrobeItem w : eligible) {
+            if (!ids.add(w.getId()) || out.size() >= TAB_LIMIT) continue;
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("piece", Views.piece(w, null, null)); entry.put("seals", List.of());
+            entry.put("author", Views.user(w.getUser())); entry.put("schemeId", null);
+            entry.put("profilePolicy", true); out.add(entry);
+        }
+        return out;
     }
 
     /** Legado: as duas listas juntas (mantido para compatibilidade da API; a interface usa as abas separadas). */
@@ -504,7 +532,7 @@ public class InstitutionalService {
         List<Promoted> looks = filterLooks(promoted(viewer, u, false, Instant.now()), filter, groupingId);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("schemes", looks.stream().map(p -> entry(viewer, p)).toList());
-        out.put("pieces", pieceEntries(viewer, looks));
+        out.put("pieces", withProfilePieces(viewer, u, pieceEntries(viewer, looks), filter, groupingId));
         out.put("empty", looks.isEmpty() ? Msg.t("institutional.nenhum_look_conquistou_um_selo") : null);
         return out;
     }
@@ -558,6 +586,7 @@ public class InstitutionalService {
         m.put("scheme", schemeService.view(viewer, p.scheme(), schemeItems.findBySchemeIdOrderBySortOrder(p.scheme().getId())));
         m.put("seals", p.bonds().stream().map(SealService::badge).toList());
         Map<String, Object> promotion = new LinkedHashMap<>();
+        promotion.put("profilePolicy", p.bonds().isEmpty());
         promotion.put("issuedAt", p.issuedAt());
         promotion.put("expiresAt", p.expiresAt());
         promotion.put("expired", p.expired());

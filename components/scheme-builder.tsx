@@ -120,12 +120,12 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
     if (picks.length) setSelected(picks.map((p) => ({ id: p.id, slot: slotOf(p) })));
   }, [b, seed]); // eslint-disable-line react-hooks/exhaustive-deps
   // selos possíveis: a IA procura sozinha na etapa de detalhes, e de novo quando as peças, o estilo ou a ocasião mudam
-  const sealKey = `${selected.map((x) => x.id).sort().join(",")}|${[...form.style].sort().join(",")}|${[...form.occasion].sort().join(",")}`;
+  const sealKey = JSON.stringify([selected.map((x) => x.id).sort(), form.style, form.occasion, bg, skin, anatomy]);
   useEffect(() => {
     if (step !== 2 || selected.length < 1) return;
     let alive = true; setSeals((x) => ({ ...x, loading: true, failed: false }));
     const h = setTimeout(() => {
-      api.post<{ suggestions: SealOption[]; message?: string | null; unregisteredMessage?: string | null }>("/api/seal-suggestions/preview", { pieceIds: selected.map((x) => x.id), occasion: form.occasion, style: form.style })
+      api.post<{ suggestions: SealOption[]; message?: string | null; unregisteredMessage?: string | null }>("/api/seal-suggestions/preview", { pieceIds: selected.map((x) => x.id), occasion: form.occasion, style: form.style, background: { ...bg, cardSkin: skin, layoutAnatomy: anatomy } })
         .then((r) => { if (!alive) return; setSeals({ loading: false, list: r.suggestions ?? [], message: r.message, unregisteredMessage: r.unregisteredMessage }); setSealPick((p) => p.filter((id) => (r.suggestions ?? []).some((s) => s.targetOwnerId === id))); })
         .catch(() => { if (alive) setSeals({ loading: false, list: [], failed: true }); });
     }, 350);

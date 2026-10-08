@@ -71,6 +71,10 @@ import java.util.stream.Collectors;
  */
 @Service
 public class CopilotService {
+    private SealService sealPolicyService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setSealPolicyService(SealService service) { this.sealPolicyService = service; }
     public static final int MIN_PIECES = 3;
     static final Pattern REF = Pattern.compile("\\[\\[(p\\d+)]]");
     static final Map<String, Set<String>> COLOR_WORDS = new LinkedHashMap<>();
@@ -691,6 +695,10 @@ public class CopilotService {
     // ================================================================== resposta principal
     @Transactional
     public Map<String, Object> ask(CurrentUser user, AskRequest req) {
+        if (SealPolicyCopilot.tagged(req.message())) {
+            if (sealPolicyService == null) throw new ApiException(503, "IA_INDISPONIVEL", Msg.t("sealCopilot.ia_indisponivel"));
+            return sealPolicyService.draft(user, null, req.message(), null);
+        }
         String message = InputSanitizer.clean(req.message() == null ? "" : req.message(), 600);
         if (message.isBlank()) {
             throw ApiException.badRequest("MENSAGEM_VAZIA", Msg.t("copilot.escreva_o_que_voce_precisa"));
