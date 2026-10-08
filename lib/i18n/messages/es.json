@@ -8183,5 +8183,6 @@
   "lookSeals.dnaTitle": "Verificación de sellos de los looks",
   "lookSeals.dnaHint": "Cada look se verifica por separado. Las solicitudes seleccionadas se envían al guardar el ADN.",
   "lookSeals.status.APPROVED": "Aprobado",
-  "lookSeals.status.PENDING_REVIEW": "Esperando aprobación"
+  "lookSeals.status.PENDING_REVIEW": "Esperando aprobación",
+  "tryOn.lookGender": "Look {gender}"
 }

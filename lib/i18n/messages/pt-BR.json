@@ -8183,5 +8183,6 @@
   "lookSeals.dnaTitle": "Verificação de selos dos looks",
   "lookSeals.dnaHint": "Cada look é verificado separadamente. Os pedidos selecionados serão enviados ao salvar o DNA.",
   "lookSeals.status.APPROVED": "Aprovado",
-  "lookSeals.status.PENDING_REVIEW": "Aguardando aprovação"
+  "lookSeals.status.PENDING_REVIEW": "Aguardando aprovação",
+  "tryOn.lookGender": "Look {gender}"
 }
