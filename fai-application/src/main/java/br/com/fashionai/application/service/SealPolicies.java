@@ -18,6 +18,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -69,13 +70,17 @@ public final class SealPolicies {
         }
     }
 
-    public record Policy(boolean any, List<Rule> rules, List<String> occasions, List<String> styles, HypeCriteria hype) {
+    public record Policy(boolean any, List<Rule> rules, List<String> occasions, List<String> styles, HypeCriteria hype,
+                         Map<String, Object> referenceModel) {
+        public Policy(boolean any, List<Rule> rules, List<String> occasions, List<String> styles, HypeCriteria hype) {
+            this(any, rules, occasions, styles, hype, null);
+        }
         public Policy(boolean any, List<Rule> rules, List<String> occasions, List<String> styles) {
             this(any, rules, occasions, styles, null);
         }
 
         public boolean isEmpty() {
-            return rules.isEmpty() && occasions.isEmpty() && styles.isEmpty() && hype == null;
+            return rules.isEmpty() && occasions.isEmpty() && styles.isEmpty() && hype == null && referenceModel == null;
         }
 
         /** A política usa Hype (critério da entidade ou {@code hypeMin} em alguma regra)? */
@@ -123,6 +128,8 @@ public final class SealPolicies {
                 return null;
             }
         };
+
+        default long earnedSealCount(UUID sealId, String scope, List<UUID> pieceIds) { return 0; }
 
         HypeFact piece(UUID pieceId);
 
@@ -220,7 +227,8 @@ public final class SealPolicies {
         List<String> occasions = tags(raw.get("occasions"), Taxonomy.OCCASIONS);
         List<String> styles = tags(raw.get("styles"), Taxonomy.STYLES);
         Map<String, Object> hype = normalizeHype(raw.get("hype"));
-        if (rules.isEmpty() && occasions.isEmpty() && styles.isEmpty() && hype == null) {
+        Map<String, Object> reference = raw.get("referenceModel") == null ? null : SealReferenceModels.normalize(raw.get("referenceModel"));
+        if (rules.isEmpty() && occasions.isEmpty() && styles.isEmpty() && hype == null && reference == null) {
             return null;
         }
         Map<String, Object> out = new LinkedHashMap<>();
@@ -231,6 +239,7 @@ public final class SealPolicies {
         if (hype != null) {
             out.put("hype", hype);
         }
+        if (reference != null) out.put("referenceModel", reference);
         return out;
     }
 
@@ -315,7 +324,7 @@ public final class SealPolicies {
             }
         }
         Policy p = new Policy("ANY".equals(upper(m.get("match"), "ALL")), rules, strings(m.get("occasions")), strings(m.get("styles")),
-                parseHype(m.get("hype")));
+                parseHype(m.get("hype")), m.get("referenceModel") == null ? null : SealReferenceModels.normalize(m.get("referenceModel")));
         return p.isEmpty() ? null : p;
     }
 
@@ -366,12 +375,35 @@ public final class SealPolicies {
      */
     public static Verdict evaluate(Policy p, SealTier tier, List<WardrobeItem> pieces, Collection<String> occasions, Collection<String> styles,
                                    HypeLookup hype) {
+        return evaluate(p, tier, pieces, occasions, styles, hype, Map.of());
+    }
+
+    public static Verdict evaluate(Policy p, SealTier tier, List<WardrobeItem> pieces, Collection<String> occasions, Collection<String> styles,
+                                   HypeLookup hype, Map<String, Object> background) {
         HypeLookup h = hype == null ? HypeLookup.NONE : hype;
         if (p == null || pieces.isEmpty()) {
             return new Verdict(false, List.of(), null);
         }
         if (!overlaps(p.occasions(), occasions) || !overlaps(p.styles(), styles)) {
             return new Verdict(false, List.of(), null);
+        }
+        Verdict reference = null;
+        if (p.referenceModel() != null) {
+            // Novas políticas são estritas: tags ausentes não podem aprovar um modelo que as exige.
+            if ((!p.occasions().isEmpty() && (occasions == null || occasions.isEmpty()))
+                    || (!p.styles().isEmpty() && (styles == null || styles.isEmpty()))) return new Verdict(false, List.of(), null);
+            reference = SealReferenceModels.evaluate(p.referenceModel(), tier, pieces, background);
+            if (!reference.matched()) return reference;
+        }
+        if (p.referenceModel() != null && p.referenceModel().get("earnedSeals") instanceof Map<?, ?> earned) {
+            List<UUID> ids = pieces.stream().map(WardrobeItem::getId).filter(Objects::nonNull).toList();
+            List<?> rules = (List<?>) earned.get("rules");
+            long hits = rules.stream().filter(item -> {
+                Map<?, ?> r = (Map<?, ?>) item;
+                return h.earnedSealCount(UUID.fromString((String) r.get("sealId")), (String) r.get("scope"), ids)
+                        >= ((Number) r.get("minCount")).longValue();
+            }).count();
+            if ("ANY".equals(earned.get("match")) ? hits == 0 : hits != rules.size()) return new Verdict(false, List.of(), null);
         }
         String hypeWhy = null;
         if (p.hype() != null) {
@@ -393,7 +425,8 @@ public final class SealPolicies {
             hypeWhy = describeHype(p.hype(), tier) + " " + Msg.t("sealPolicy.hype.atual", Math.round(fact.score()));
         }
         if (p.rules().isEmpty()) {
-            return new Verdict(true, pieces.stream().map(WardrobeItem::getId).toList(), why(null, hypeWhy, describeTags(p)));
+            return new Verdict(true, reference == null ? pieces.stream().map(WardrobeItem::getId).toList() : reference.pieceIds(),
+                    why(p.referenceModel() == null ? null : String.valueOf(p.referenceModel().get("description")), hypeWhy, describeTags(p)));
         }
         Set<UUID> support = new LinkedHashSet<>();
         List<String> hits = new ArrayList<>();
@@ -502,6 +535,7 @@ public final class SealPolicies {
             return null;
         }
         List<String> parts = new ArrayList<>();
+        if (p.referenceModel() != null) parts.add(String.valueOf(p.referenceModel().get("description")));
         for (Rule r : p.rules()) {
             parts.add(describe(r, tier));
         }

@@ -50,8 +50,8 @@ interface VerifiedBond { id: string; name: string; status: string }
 interface Preview { suggestions: SealOption[]; message?: string; unregisteredMessage?: string; bonds?: VerifiedBond[] }
 
 /** A changed composition invalidates its old choices, even when the details step is hidden. */
-export function useLookSeals({ pieceIds, occasion, style, enabled, schemeId }: { pieceIds: string[]; occasion: string[]; style: string[]; enabled: boolean; schemeId?: string }) {
-  const key = JSON.stringify([schemeId, [...pieceIds].sort(), [...occasion].sort(), [...style].sort()]);
+export function useLookSeals({ pieceIds, occasion, style, enabled, schemeId, background }: { pieceIds: string[]; occasion: string[]; style: string[]; enabled: boolean; schemeId?: string; background?: Record<string, unknown> }) {
+  const key = JSON.stringify([schemeId, [...pieceIds].sort(), [...occasion].sort(), [...style].sort(), background]);
   const [result, setResult] = useState<{ key: string; search: SealSearch; bonds: VerifiedBond[] } | null>(null);
   const [choice, setChoice] = useState<{ key: string; picked: string[]; consent: boolean }>({ key, picked: [], consent: false });
   const [attempt, setAttempt] = useState(0);
@@ -62,7 +62,7 @@ export function useLookSeals({ pieceIds, occasion, style, enabled, schemeId }: {
     const timer = setTimeout(async () => {
       try {
         const r = schemeId ? await api.get<Preview>(`/api/schemes/${schemeId}/seal-preview`, { signal: controller.signal })
-          : await api.post<Preview>("/api/seal-suggestions/preview", { pieceIds, occasion, style }, { signal: controller.signal });
+          : await api.post<Preview>("/api/seal-suggestions/preview", { pieceIds, occasion, style, ...(background ? { background } : {}) }, { signal: controller.signal });
         if (controller.signal.aborted) return;
         setResult({ key, search: { loading: false, list: r.suggestions ?? [], message: r.message, unregisteredMessage: r.unregisteredMessage }, bonds: r.bonds ?? [] });
         setChoice((c) => ({ key, consent: c.key === key && c.consent, picked: c.key === key ? c.picked.filter((id) => r.suggestions.some((s) => s.targetOwnerId === id)) : [] }));

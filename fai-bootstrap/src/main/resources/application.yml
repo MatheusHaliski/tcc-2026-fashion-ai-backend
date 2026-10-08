@@ -230,7 +230,7 @@ fashionai:
     rf16-3d-timeout-minutes: ${RF16_3D_TIMEOUT_MINUTES:10}
   catalog:
     image-pipeline:                                        # pipeline de imagens da Busca Catalogada (docs/catalogo/PIPELINE_IMAGENS_CATALOGO.md)
-      enabled: ${CATALOG_IMAGE_PIPELINE_ENABLED:false}     # worker desligado por padrão: liga depois de importar o acervo
+      enabled: ${CATALOG_IMAGE_PIPELINE_ENABLED:true}      # novas fotos do acervo entram automaticamente na fila
       batch: ${CATALOG_IMAGE_PIPELINE_BATCH:8}             # imagens por tick
       poll-ms: ${CATALOG_IMAGE_PIPELINE_POLL_MS:15000}
       max-attempts: ${CATALOG_IMAGE_PIPELINE_MAX_ATTEMPTS:3}

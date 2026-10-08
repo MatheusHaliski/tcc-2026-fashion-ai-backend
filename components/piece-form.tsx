@@ -20,6 +20,7 @@ export interface PieceFormValue {
   brandLogoUrl?: string | null; brandLogoWideUrl?: string | null; brandSource?: string | null; brandRef?: string | null; brandDomain?: string | null; brandEdgePx?: number | null;
   /** RF4 · Arte de fundo da peça (aura, material, skin, anatomia) — mesmo formato do look */
   background?: Record<string, unknown> | null;
+  variation?: string | null; attributes?: Record<string, string[]>;
 }
 export const EMPTY_PIECE: PieceFormValue = { draftId: null, useDefaultImage: false, name: "", category: "", subcategory: "", sex: "UNISSEX", brandName: "", color: "", material: "", size: "m", occasion: [], style: [], seals: [], price: "", visibility: "PRIVATE", tags: "", notes: "", condition: "", purchaseDate: "", purchaseLocation: "", sku: "", careInstructions: "", forSale: false, background: null };
 /** "Sem marca" é o que a análise escreve no campo quando não acha marca na peça; o backend salva a peça sem marca. */
@@ -46,12 +47,14 @@ const sealId = (s: SealOption) => `${s.kind}:${s.name}`;
 export function PieceSealSuggestions({ value, onChange }: { value: PieceFormValue; onChange: (v: PieceFormValue) => void }) {
   const { t, fmtNumber } = useI18n();
   const [search, setSearch] = useState<{ loading: boolean; list: SealOption[]; message?: string | null; failed?: boolean }>({ loading: false, list: [] });
-  const key = `${value.brandName}|${value.category}|${value.subcategory}|${value.color}|${[...value.occasion].sort().join(",")}|${[...value.style].sort().join(",")}`;
+  const key = JSON.stringify([value.name, value.brandName, value.category, value.subcategory, value.color, value.occasion, value.style,
+    value.material, value.variation, value.attributes, value.sex, value.size, value.market, value.background]);
   useEffect(() => {
     if (!value.brandName.trim() && !value.subcategory && value.style.length === 0) { setSearch({ loading: false, list: [] }); return; }
     let alive = true; setSearch((x) => ({ ...x, loading: true, failed: false }));
     const h = setTimeout(() => {
-      api.post<{ suggestions: SealOption[]; message?: string | null }>("/api/seal-suggestions/preview-piece", { name: value.name, category: value.category, subcategory: value.subcategory, color: value.color, brandName: value.brandName, occasion: value.occasion, style: value.style })
+      api.post<{ suggestions: SealOption[]; message?: string | null }>("/api/seal-suggestions/preview-piece", { name: value.name, category: value.category, subcategory: value.subcategory, color: value.color, brandName: value.brandName, occasion: value.occasion, style: value.style,
+        material: value.material, variation: value.variation, attributes: value.attributes, sex: value.sex, size: value.size, market: value.market, background: value.background })
         .then((r) => { if (alive) setSearch({ loading: false, list: r.suggestions ?? [], message: r.message }); })
         .catch(() => { if (alive) setSearch({ loading: false, list: [], failed: true }); });
     }, 400);

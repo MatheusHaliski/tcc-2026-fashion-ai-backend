@@ -133,6 +133,26 @@ class CatalogImagePipelineServiceTest {
     }
 
     @Test
+    void acervoCrescenteProcessaSomenteFotosNovas() {
+        CatalogImage existing = image("https://img.brand.com/first.jpg", CatalogImageType.FRONT,
+                CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
+        service.tick();
+        Instant processed = existing.getProcessedAt();
+        int attempts = existing.getAttempts();
+        // A foto antiga não pode voltar a ser baixada nem ter metadados alterados.
+        web.clear();
+        CatalogImage added = image("https://img.brand.com/new.jpg", CatalogImageType.FRONT,
+                CatalogPhotos.jpeg(CatalogPhotos.tee(220, 220, 1.0)));
+        service.tick();
+        assertThat(added.getProcessingStatus()).isEqualTo("APPROVED");
+        assertThat(existing.getProcessingStatus()).isEqualTo("APPROVED");
+        assertThat(existing.getAttempts()).isEqualTo(attempts);
+        assertThat(existing.getProcessedAt()).isEqualTo(processed);
+        service.tick();
+        assertThat(added.getAttempts()).isEqualTo(1);
+    }
+
+    @Test
     void fontesComPermissaoGanhamMasterNoStorage() {
         CatalogSource s = new CatalogSource();
         s.setDomain("brand.com");

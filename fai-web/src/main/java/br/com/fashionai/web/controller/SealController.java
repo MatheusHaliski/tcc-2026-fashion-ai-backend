@@ -49,13 +49,13 @@ public class SealController {
         return seals.createSeal(user, form);
     }
 
-    public record DraftRequest(SealTier tier) {
+    public record DraftRequest(SealTier tier, String message, Map<String, Object> previousPolicy) {
     }
 
-    @PostMapping("/api/seals/draft")
-    @Operation(summary = "RF25 — Criador de selo \"Com IA\": sugere nome, nível, política e arte a partir do perfil e das peças do emissor (nada é salvo)")
+    @PostMapping({"/api/seals/draft", "/api/copilot/seal-policy"})
+    @Operation(summary = "RF25 — Copilot #createsealpolicy: cria o modelo de referência a partir do pedido do emissor, sem publicar o selo")
     public Map<String, Object> draft(CurrentUser user, @RequestBody(required = false) DraftRequest req) {
-        return seals.draft(user, req == null ? null : req.tier());
+        return seals.draft(user, req == null ? null : req.tier(), req == null ? null : req.message(), req == null ? null : req.previousPolicy());
     }
 
     @PutMapping("/api/seals/{sealId}")
@@ -95,24 +95,25 @@ public class SealController {
         return seals.mySeals(user);
     }
 
-    public record PreviewRequest(java.util.List<UUID> pieceIds, java.util.List<String> occasion, java.util.List<String> style) {
+    public record PreviewRequest(java.util.List<UUID> pieceIds, java.util.List<String> occasion, java.util.List<String> style, Map<String, Object> background) {
     }
 
     @PostMapping("/api/seal-suggestions/preview")
     @Operation(summary = "RF5/RF21.CA01 — Selos possíveis para um look ainda não salvo (nada é gravado)")
     public Map<String, Object> preview(CurrentUser user, @RequestBody PreviewRequest body) {
-        return seals.preview(user, body.pieceIds(), body.occasion(), body.style());
+        return seals.preview(user, body.pieceIds(), body.occasion(), body.style(), body.background());
     }
 
     public record PiecePreviewRequest(String name, String category, String subcategory, String color, String brandName,
-                                      java.util.List<String> occasion, java.util.List<String> style) {
+                                      java.util.List<String> occasion, java.util.List<String> style, String material, String variation,
+                                      Map<String, java.util.List<String>> attributes, String sex, String size, String market, Map<String, Object> background) {
     }
 
     @PostMapping("/api/seal-suggestions/preview-piece")
     @Operation(summary = "RF4 — Selos possíveis para uma peça ainda não salva: marca/celebridade com peça semelhante (nada é gravado)")
     public Map<String, Object> previewPiece(CurrentUser user, @RequestBody PiecePreviewRequest body) {
         return seals.previewPiece(user, new SealService.PieceFields(body.name(), body.category(), body.subcategory(), body.color(),
-                body.brandName(), body.occasion(), body.style()));
+                body.brandName(), body.occasion(), body.style(), body.material(), body.variation(), body.attributes(), body.sex(), body.size(), body.market(), body.background()));
     }
 
     @GetMapping("/api/schemes/{schemeId}/seal-preview")

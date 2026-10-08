@@ -53,7 +53,7 @@ describe("RF5/RF13 seal verification", () => {
     const save = screen.getAllByRole("button", { name: /Salvar/ }).find((b) => b.classList.contains("btn-primary"))!;
     fireEvent.click(save);
     await waitFor(() => expect(calls.some((c) => c.path === "/api/schemes/s1/seal-bonds")).toBe(true));
-    expect(calls.find((c) => c.path === "/api/seal-suggestions/preview")?.body).toEqual({ pieceIds: ["p1", "p2"], occasion: SCHEME.occasion, style: SCHEME.style });
+    expect(calls.find((c) => c.path === "/api/seal-suggestions/preview")?.body).toMatchObject({ pieceIds: ["p1", "p2"], occasion: SCHEME.occasion, style: SCHEME.style, background: { cardSkin: "atelier", layoutAnatomy: "LISTA_VERTICAL" } });
   });
   it("RF13 checks both looks, shows existing approval, and sends the selected bond on save", async () => {
     const { calls } = loggedAs(undefined, {

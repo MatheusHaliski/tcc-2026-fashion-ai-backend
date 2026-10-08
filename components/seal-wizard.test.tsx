@@ -13,6 +13,11 @@ const TAXONOMY = {
 };
 const EMPTY: SealFormState = { open: true, name: "", tier: "LOOK", policyText: "", usageLimit: "", status: "ACTIVE", availableFrom: "", availableUntil: "", design: DEFAULT_DESIGN, policy: EMPTY_POLICY };
 
+const AI_POLICY = { ...EMPTY_POLICY, aiInferenceId: "inference-1", referenceModel: {
+  version: 1 as const, tier: "LOOK" as const, title: "Zara Azul", description: "Duas peças azuis da Zara",
+  match: "ALL" as const, minPieces: 2, pieces: [{ name: "Peças azuis", quantifier: "AT_LEAST" as const, count: 2, color: "blue", brand: "Zara" }],
+} };
+
 function Harness({ initial = EMPTY, onForm, onSave = async () => true }: { initial?: SealFormState; onForm?: (f: SealFormState) => void; onSave?: () => Promise<boolean> }) {
   const [form, setForm] = useState(initial);
   onForm?.(form);
@@ -22,16 +27,26 @@ function Harness({ initial = EMPTY, onForm, onSave = async () => true }: { initi
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("RF25 — criador de selo em etapas", () => {
-  it("começa pela escolha do modo e segue Dados → Arte → Revisar e salvar", async () => {
+  it("abre o Copilot especializado e impede avançar sem modelo da IA", () => {
     mockApi({ "GET /api/taxonomy": TAXONOMY });
     renderApp(<Harness />);
-    expect(screen.getByRole("radio", { name: /Com IA/ })).toBeTruthy();
-    fireEvent.click(screen.getByRole("radio", { name: /Sem IA/ }));
-    fireEvent.change(await screen.findByLabelText(/Nome/), { target: { value: "Zara Azul" } });
-    fireEvent.click(screen.getByRole("button", { name: "Avançar" }));
-    expect(screen.getByRole("radiogroup", { name: "Tipo de selo" })).toBeTruthy();
-    fireEvent.click(screen.getByRole("button", { name: "Avançar" }));
-    expect(screen.getByRole("button", { name: "Salvar selo" })).toBeTruthy();
+    expect(screen.getByText("#createsealpolicy")).toBeTruthy();
+    expect(screen.queryByRole("radio", { name: /Sem IA/ })).toBeNull();
+    expect(screen.getByRole("button", { name: "Avançar" }).hasAttribute("disabled")).toBe(true);
+  });
+
+  it("oferece Perfil, Peça e Look e envia o nível Perfil ao Copilot", async () => {
+    const api = mockApi({ "GET /api/taxonomy": TAXONOMY,
+      "POST /api/copilot/seal-policy": { status: "INCOMPLETE", questions: ["Quais selos são necessários?"] },
+    });
+    renderApp(<Harness />);
+    fireEvent.click(screen.getByRole("radio", { name: "Perfil" }));
+    expect(screen.getByRole("radio", { name: "Peça" })).toBeTruthy();
+    expect(screen.getByRole("radio", { name: "Look" })).toBeTruthy();
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Exibir peças e looks com os selos da Nike e Adidas" } });
+    fireEvent.click(screen.getByRole("button", { name: /Criar modelo com o Copilot/ }));
+    expect(await screen.findByText("Quais selos são necessários?")).toBeTruthy();
+    expect(api.calls.find((c) => c.path === "/api/copilot/seal-policy")?.body).toMatchObject({ tier: "PERFIL" });
   });
 
   it("o tipo escolhido na arte (Folha, Circular, Padrão FashionAI) é aplicado ao selo editado", async () => {
@@ -55,26 +70,42 @@ describe("RF25 — criador de selo em etapas", () => {
     expect(form.design.template).toBe(FOLHA_TEMPLATES[3].id);
   });
 
-  it("Com IA preenche dados e arte com a sugestão do backend e mostra o porquê", async () => {
+  it("envia o pedido ao Copilot e mostra o modelo de referência gerado", async () => {
     const api = mockApi({
       "GET /api/taxonomy": TAXONOMY,
-      "POST /api/seals/draft": { name: "Zara Azul", tier: "LOOK", policy: { match: "ALL", rules: [{ quantifier: "AT_LEAST", count: 1, color: "Azul", brand: "Zara" }], occasions: ["party"], styles: [] },
-        design: { kind: "CIRCULAR", mode: "TEMPLATE", template: CIRCULAR_TEMPLATES[2].id, element: { id: "BAG", text: "ZAR" } }, reasons: ["Cor mais frequente nas suas peças: azul (2 de 3)."] },
+      "POST /api/copilot/seal-policy": { status: "VALID", name: "Zara Azul", tier: "LOOK", policy: AI_POLICY,
+        design: DEFAULT_DESIGN, reasons: ["Modelo criado conforme seu pedido."] },
     });
     let form = EMPTY;
     renderApp(<Harness onForm={(f) => { form = f; }} />);
-    fireEvent.click(screen.getByRole("radio", { name: /Com IA/ }));
-    expect(await screen.findByText("Cor mais frequente nas suas peças: azul (2 de 3).")).toBeTruthy();
-    expect(api.calls.find((c) => c.path === "/api/seals/draft")?.body).toEqual({ tier: "LOOK" });
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Duas peças azuis da Zara" } });
+    fireEvent.click(screen.getByRole("button", { name: /Criar modelo com o Copilot/ }));
+    expect(await screen.findByText("Modelo criado conforme seu pedido.")).toBeTruthy();
+    expect(api.calls.find((c) => c.path === "/api/copilot/seal-policy")?.body).toMatchObject({ message: "#createsealpolicy Duas peças azuis da Zara" });
     expect(form.name).toBe("Zara Azul");
-    expect(form.design.template).toBe(CIRCULAR_TEMPLATES[2].id);
-    expect(form.policy.rules[0]).toMatchObject({ color: "Azul", brand: "Zara" });
+    expect(form.policy.referenceModel).toEqual(AI_POLICY.referenceModel);
+    expect(form.policy.aiInferenceId).toBe("inference-1");
+  });
+
+  it("mantém o pedido original ao responder perguntas do Copilot", async () => {
+    const api = mockApi({ "GET /api/taxonomy": TAXONOMY,
+      "POST /api/copilot/seal-policy": { status: "INCOMPLETE", questions: ["Qual marca?"] },
+    });
+    renderApp(<Harness />);
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Duas peças azuis" } });
+    fireEvent.click(screen.getByRole("button", { name: /Criar modelo com o Copilot/ }));
+    expect(await screen.findByText("Qual marca?")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Avançar" }).hasAttribute("disabled")).toBe(true);
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "Zara" } });
+    fireEvent.click(screen.getByRole("button", { name: /Criar modelo com o Copilot/ }));
+    await waitFor(() => expect(api.calls.filter((c) => c.path === "/api/copilot/seal-policy")).toHaveLength(2));
+    expect(api.calls.filter((c) => c.path === "/api/copilot/seal-policy")[1].body).toMatchObject({ message: "#createsealpolicy Duas peças azuis\nZara" });
   });
 
   it("salvar só no último passo e com nome", async () => {
     mockApi({ "GET /api/taxonomy": TAXONOMY });
     const onSave = vi.fn(async () => true);
-    renderApp(<Harness initial={{ ...EMPTY, id: "s1", name: "Selo X" }} onSave={onSave} />);
+    renderApp(<Harness initial={{ ...EMPTY, id: "s1", name: "Selo X", policy: AI_POLICY }} onSave={onSave} />);
     fireEvent.click(screen.getByRole("button", { name: /Revisar e salvar/ }));
     fireEvent.click(screen.getByRole("button", { name: "Salvar selo" }));
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
