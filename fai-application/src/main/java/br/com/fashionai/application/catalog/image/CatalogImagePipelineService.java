@@ -40,7 +40,7 @@ import java.util.UUID;
 
 /**
  * Worker e operação do pipeline de imagens da Busca Catalogada (docs/catalogo/PIPELINE_IMAGENS_CATALOGO.md).
- * Desligado por padrão ({@code fashionai.catalog.image-pipeline.enabled}); cada tick pega um lote de imagens PENDING
+ * Ligado por padrão ({@code fashionai.catalog.image-pipeline.enabled}); cada tick pega um lote de imagens PENDING
  * (ou de versão anterior do pipeline), baixa com o {@link WebFetchPort} (só https, só IP público, redirecionamento
  * revalidado a cada salto, limite de bytes), roda o {@link CatalogImagePipeline} e grava só metadados — ou, quando a
  * fonte permite persistência, também o master no storage. Depois reclassifica as fotos do produto e escolhe a canônica.
@@ -67,7 +67,7 @@ public class CatalogImagePipelineService {
     public CatalogImagePipelineService(CatalogImageRepository images, CatalogProductRepository products, CatalogSourceRepository sources,
                                        WebFetchPort web, MediaStoragePort storage, Guard guard, TransactionTemplate tx,
                                        ObjectProvider<PersonSegmentationPort> persons,
-                                       @Value("${fashionai.catalog.image-pipeline.enabled:false}") boolean enabled,
+                                       @Value("${fashionai.catalog.image-pipeline.enabled:true}") boolean enabled,
                                        @Value("${fashionai.catalog.image-pipeline.batch:8}") int batch,
                                        @Value("${fashionai.catalog.image-pipeline.max-attempts:3}") int maxAttempts) {
         this.images = images;

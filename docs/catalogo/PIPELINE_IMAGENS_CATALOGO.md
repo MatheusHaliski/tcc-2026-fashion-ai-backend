@@ -134,7 +134,7 @@ retângulos normalizados na foto original.
 `processing_status` é o estado do job: `PENDING → DOWNLOADING → APPROVED | NEEDS_REPROCESSING | REJECTED | FAILED`
 (ANALYZING/SEGMENTING/CLEANING/REFRAMING/VALIDATING ficam no log de estágios, sem uma escrita no banco por estágio).
 `@Scheduled` a cada 15 s, lote de 8, até 3 tentativas. Idempotência: `image_url_hash` + `pipeline_version` — subir a
-versão do pipeline reprocessa tudo sozinho. Configuração: `CATALOG_IMAGE_PIPELINE_ENABLED` (padrão **false**),
+versão do pipeline reprocessa tudo sozinho. Configuração: `CATALOG_IMAGE_PIPELINE_ENABLED` (padrão **true**),
 `_BATCH`, `_POLL_MS`, `_MAX_ATTEMPTS`. Log estruturado: `event=catalog_image_processed imageId productId status quality
 reasons persisted cached ms version` e `event=catalog_image_review imageId action admin`.
 
@@ -173,11 +173,13 @@ A canônica também alimenta a peça criada do catálogo (`from-catalog`) e, por
 - **Regressão visual**: as fixtures são determinísticas (semente fixa); mudança de algoritmo que altere veredito,
   foco ou ocupação quebra o teste.
 
+As imagens novas inseridas por `seed_catalog.py` e `import_products.py` recebem `processing_status=PENDING` pelo padrão da migração V43. Após o commit da importação, o backend em execução recolhe a fila automaticamente; não é necessário executar outro script Python. Fotos já concluídas na versão atual não voltam à fila ao repetir a importação. URLs continuam sendo apenas referências quando a fonte não autoriza persistir os arquivos.
+
 ## 16. Plano incremental
 
 1. ✅ Núcleo puro + registro + estratégias + gate + ranker + testes.
-2. ✅ V43, worker desligado por padrão, endpoints admin, card 4:5 com recorte, fix de SSRF.
-3. Importar o acervo no MySQL do Railway; ligar `CATALOG_IMAGE_PIPELINE_ENABLED` em homologação; acompanhar o painel.
+2. ✅ V43, worker automático por padrão, endpoints admin, card 4:5 com recorte, fix de SSRF.
+3. Importar o acervo no MySQL do Railway; acompanhar o processamento automático no painel. `CATALOG_IMAGE_PIPELINE_ENABLED=false` permite pausar o worker.
 4. Calibrar limiares com uma amostra real rotulada (100 fotos por piece_type) e versionar como V3 se mudar o veredito.
 5. Fixtures reais de marcas parceiras (nível B) quando houver contrato de persistência.
 6. Segmentador semântico de peça (ONNX) no lugar do recorte por cor, para fotos com fundo texturizado.
