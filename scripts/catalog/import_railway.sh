@@ -51,6 +51,9 @@ with c.cursor() as cur:
 print(f"MySQL {r['v']} · schema V{r['schema_v']} · {r['marcas']} marcas · {r['produtos']} produtos · TLS {ssl['Value'] or 'NÃO'}")
 if not ssl["Value"]:
     sys.exit("conexão sem TLS — abortando")
+if int(r["schema_v"] or 0) < 57:
+    print("[WARN] Atualize a API para aplicar a migração V57: faltam índices para acelerar as buscas de produto/variante. "
+          "A recuperação de conexão do importador já funciona sem esses índices.")
 c.close()
 EOF
 
