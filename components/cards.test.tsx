@@ -213,6 +213,12 @@ describe("ações sociais do card (RF8)", () => {
 });
 
 describe("card da peça (RF7)", () => {
+  it("mostra o feed de calça em 2:1 em prévia e seleção, sem recortar as laterais", () => {
+    mockApi({});
+    const pants = { ...PIECE, category: "lower_piece", studioFeedUrl: "/pants.feed.jpg", flatLayMetadata: { studio: { feed: { aspect: "2:1" } } } };
+    const { container } = renderApp(<><PieceCard piece={pants} href="#" /><PieceCard piece={pants} selectable onSelect={vi.fn()} /></>);
+    for (const frame of container.querySelectorAll<HTMLElement>(".pc-media")) expect(frame.style.aspectRatio).toBe("2 / 1");
+  });
   it("mostra nome, marca, preço à venda, favorita, indisponível e o selo de IA", () => {
     mockApi({});
     renderApp(<><PieceCard piece={PIECE} /><PieceCard piece={PIECE_2} href="#" /><PieceCard piece={PIECE} selectable selected onSelect={vi.fn()} /></>);

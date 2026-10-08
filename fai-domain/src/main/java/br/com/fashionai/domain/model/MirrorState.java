@@ -17,6 +17,10 @@ import java.util.UUID;
 @Entity
 @Table(name = "mirror_states")
 public class MirrorState extends AuditableEntity {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tipo_look_id")
+    private TipoLook tipoLook;
+
     @Column(name = "user_id", nullable = false, length = 36, unique = true)
     private UUID userId;
 

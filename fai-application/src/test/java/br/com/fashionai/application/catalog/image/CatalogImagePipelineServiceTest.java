@@ -158,13 +158,13 @@ class CatalogImagePipelineServiceTest {
         s.setDomain("brand.com");
         s.setAllowsImagePersistence(true);
         sources.add(s);
-        CatalogImage front = image("https://img.brand.com/front.jpg", CatalogImageType.FRONT, CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
+        CatalogImage front = image("https://img.brand.com/front.jpg", CatalogImageType.FRONT, CatalogPhotos.jpeg(br.com.fashionai.application.imaging.ImageOps.scale(CatalogPhotos.tee(200, 200, 1.0), 2000, 2000)));
         service.tick();
         assertThat(front.getUsageStatus()).isEqualTo(CatalogImageUsage.PERSISTED);
         assertThat(front.getStoredUrl()).endsWith("master.png");
         assertThat(stored.keySet()).anyMatch(k -> k.endsWith("card.jpg")).anyMatch(k -> k.endsWith("thumb.jpg"))
                 .anyMatch(k -> k.endsWith("white.jpg")).anyMatch(k -> k.endsWith("neutral.jpg"));
-        assertThat(CatalogImagePipelineService.cardImage(front)).containsEntry("mode", "PROCESSED");
+        assertThat(CatalogImagePipelineService.cardImage(front)).containsEntry("mode", "PROCESSED").containsEntry("aspect", "4:5");
     }
 
     @Test

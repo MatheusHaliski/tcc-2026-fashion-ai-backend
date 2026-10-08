@@ -8,6 +8,11 @@ import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.testkit.Kit;
 import br.com.fashionai.application.testkit.World;
 import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.model.TipoLook;
+import br.com.fashionai.domain.model.Scheme;
+import br.com.fashionai.domain.repository.TipoLookRepository;
+import br.com.fashionai.domain.repository.SchemeRepository;
+import br.com.fashionai.domain.repository.MirrorStateRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -118,6 +123,41 @@ class MirrorServiceTest {
         assertThat(saved).isNotEmpty();
         assertThat(mirror.save(ana, "De novo", false)).isNotEmpty();   // mesma combinação: reaproveita o look
         assertThat(mirror.useLook(ana)).containsKey("dailyLook");
+    }
+
+    @Test
+    void tipoLookPersisteNoEspelhoENoLookSalvoSemAlterarLookAnterior() {
+        TipoLook feminino = new TipoLook();
+        feminino.setCodigo("FEMININO"); feminino.setNome("Feminino");
+        kit.save(TipoLookRepository.class, feminino);
+        TipoLook masculino = new TipoLook();
+        masculino.setCodigo("MASCULINO"); masculino.setNome("Masculino");
+        kit.save(TipoLookRepository.class, masculino);
+        mirror.updateTipoLook(ana, feminino.getId());
+        assertThat(kit.dep(MirrorStateRepository.class).findByUserId(ana.id()).orElseThrow().getTipoLook()).isEqualTo(feminino);
+        // Uma nova instância do serviço representa voltar ao Espelho em outra sessão.
+        assertThat(((br.com.fashionai.application.view.Views.TipoLookView) kit.build(MirrorService.class).state(ana).get("tipoLook")).codigo()).isEqualTo("FEMININO");
+        mirror.place(ana, piece("t_shirt")); mirror.place(ana, piece("jeans"));
+        UUID firstId = (UUID) mirror.save(ana, "Meu look feminino", false).get("schemeId");
+        Scheme first = kit.dep(SchemeRepository.class).findById(firstId).orElseThrow();
+        assertThat(first.getTipoLook()).isEqualTo(feminino);
+        assertThat(((br.com.fashionai.application.view.Views.SchemeView) kit.dep(SchemeService.class).get(ana, firstId).get("scheme")).tipoLook().nome()).isEqualTo("Feminino");
+        assertThat(mirror.save(ana, "Mesmo tipo", false).get("schemeId")).isEqualTo(firstId);
+        mirror.updateTipoLook(ana, masculino.getId());
+        UUID secondId = (UUID) mirror.save(ana, "Meu look masculino", false).get("schemeId");
+        assertThat(secondId).isNotEqualTo(firstId);
+        assertThat(kit.dep(SchemeRepository.class).findById(secondId).orElseThrow().getTipoLook()).isEqualTo(masculino);
+        assertThat(first.getTipoLook()).isEqualTo(feminino);
+        // Limpar as peças mantém a preferência salva.
+        mirror.clear(ana);
+        assertThat(((br.com.fashionai.application.view.Views.TipoLookView) mirror.state(ana).get("tipoLook")).codigo()).isEqualTo("MASCULINO");
+    }
+
+    @Test
+    void tipoInexistenteNaoEGravadoENaoMudaOEstado() {
+        assertThatThrownBy(() -> mirror.updateTipoLook(ana, UUID.randomUUID())).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> mirror.updateTipoLook(ana, null)).isInstanceOf(ApiException.class);
+        assertThat(mirror.state(ana).get("tipoLook")).isNull();
     }
 
     @Test

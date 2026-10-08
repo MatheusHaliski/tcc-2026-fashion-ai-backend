@@ -20,7 +20,7 @@ from typing import Iterator
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from common_cli import banner, parser  # noqa: E402
-from db import connect, now  # noqa: E402
+from db import DatabaseUnavailable, connect, now  # noqa: E402
 from ingest import Ingestor, setup_logging  # noqa: E402
 
 
@@ -47,26 +47,39 @@ def main(argv=None) -> int:
     ap.add_argument("files", nargs="+", help="arquivos .json, .jsonl, .jsonl.gz ou .csv")
     ap.add_argument("--batch-size", type=int, default=100, help="itens entre linhas de progresso")
     ap.add_argument("--no-create-brands", action="store_true", help="recusa itens de marcas que ainda não existem")
-    ap.add_argument("--overwrite", action="store_true", help="curadoria: sobrescreve campos já preenchidos (padrão: só preenche vazios)")
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument("--overwrite", action="store_true", help="curadoria: sobrescreve campos já preenchidos (padrão: só preenche vazios)")
+    mode.add_argument("--skip-existing", action="store_true", help="pula registros existentes; insere somente produtos, imagens, variantes e apelidos novos")
     args = ap.parse_args(argv)
+    if args.batch_size < 1:
+        ap.error("--batch-size deve ser maior que zero")
     setup_logging(args.verbose)
     banner("Importação de produtos", args.dry_run)
     started = now()
     conn = connect()
-    ing = Ingestor(conn, dry_run=args.dry_run, create_brands=not args.no_create_brands, overwrite=args.overwrite)
-    for f in args.files:
-        path = Path(f)
-        if not path.exists():
-            print(f"[ERROR] arquivo não encontrado: {f}")
-            ing.report.errors += 1
-            continue
-        for n, (label, raw) in enumerate(read_items(path), 1):
-            ing.ingest(raw, label=label)
-            if n % args.batch_size == 0:
-                print(f"… {n} itens de {path.name} processados")
-    ing.record_run("INCREMENTAL", ",".join(args.files), started)
-    ing.report.print()
-    conn.close()
+    ing = Ingestor(conn, dry_run=args.dry_run, create_brands=not args.no_create_brands,
+                   overwrite=args.overwrite, skip_existing=args.skip_existing)
+    try:
+        for f in args.files:
+            path = Path(f)
+            if not path.exists():
+                print(f"[ERROR] arquivo não encontrado: {f}")
+                ing.report.errors += 1
+                continue
+            for n, (label, raw) in enumerate(read_items(path), 1):
+                ing.ingest(raw, label=label)
+                if n % args.batch_size == 0:
+                    print(f"… {n} itens de {path.name} processados", flush=True)
+        try:
+            ing.record_run("INCREMENTAL", ",".join(args.files), started)
+        except DatabaseUnavailable as e:
+            ing._error(str(e))
+    except DatabaseUnavailable:
+        print("[ERROR] Lote interrompido; relatório exibido abaixo, sem gravação no banco indisponível.")
+    finally:
+        ing.report.print()
+        if getattr(conn, "open", True):
+            conn.close()
     return 1 if ing.report.errors else 0
 
 

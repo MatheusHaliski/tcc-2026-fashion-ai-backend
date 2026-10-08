@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { api, mediaUrl, type ApiError } from "@/lib/api/client";
 import type { PieceView, SchemeView } from "@/lib/api/types";
 import type { CatalogCardImage } from "@/lib/api/catalog";
-import { CatalogPhoto, pieceCatalogCrop } from "@/components/catalog/catalog-photo";
+import { CatalogPhoto, pieceCatalogCrop, photoAspect } from "@/components/catalog/catalog-photo";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
@@ -130,7 +130,7 @@ function PieceGallery({ slides, onOpen }: { slides: Slide[]; onOpen: (i: number)
   if (!s) return <div className="pd-slide" />;
   return (
     <div className="pd-gallery" role="group" aria-roledescription={t("pieceDetail.carrossel")} aria-label={t("pieceDetail.fotos")}>
-      <button ref={slideRef} type="button" className={s.crop ? "pd-slide is-catalog-crop" : "pd-slide"} style={s.backdrop ? { background: bg ?? s.backdrop.edge } : undefined} onClick={() => onOpen(k)} aria-label={t("pieceDetail.ampliar", { name: s.alt })}>
+      <button ref={slideRef} type="button" className={s.crop ? "pd-slide is-catalog-crop" : "pd-slide"} style={{ ...(s.backdrop ? { background: bg ?? s.backdrop.edge } : {}), ...(s.crop ? { aspectRatio: photoAspect(s.crop.aspect) } : {}) }} onClick={() => onOpen(k)} aria-label={t("pieceDetail.ampliar", { name: s.alt })}>
         {s.crop ? <CatalogPhoto image={s.crop} alt="" /> : <img ref={imgRef} src={s.src} alt="" className={s.fit === "contain" ? "is-contain" : "is-cover"} onLoad={measure} />}
       </button>
       {n > 1 && (

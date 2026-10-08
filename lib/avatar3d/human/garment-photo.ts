@@ -121,3 +121,45 @@ export function prepareGarmentPhoto(img: CanvasImageSource & { width: number; he
     return c;
   } catch { return null; }
 }
+/** A full-length catalog model cannot be used as an upper-garment texture. */
+export function fullBodyUpperPhoto(raster: GarmentRaster): boolean {
+  let x0 = raster.width, x1 = -1, y0 = raster.height, y1 = -1;
+  for (let y = 0; y < raster.height; y++) for (let x = 0; x < raster.width; x++) {
+    if (raster.data[(y * raster.width + x) * 4 + 3] < 240) continue;
+    x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+  }
+  return x1 > x0 && (y1 - y0) / (x1 - x0) > 2;
+}
+
+const outfitPhotoCache = new WeakMap<object, Map<string, Promise<HTMLCanvasElement | null>>>();
+/** Reuse local person segmentation for full-length upper-piece catalog photos.
+ * If the selected garment cannot be isolated, use the piece's fabric color instead of painting the model onto it.
+ */
+export function prepareOutfitPhoto(img: CanvasImageSource & { width: number; height: number }, upper: boolean): Promise<HTMLCanvasElement | null> {
+  let cache = outfitPhotoCache.get(img);
+  if (!cache) { cache = new Map(); outfitPhotoCache.set(img, cache); }
+  const key = upper ? "upper" : "other";
+  const hit = cache.get(key); if (hit) return hit;
+  const task = (async () => {
+    const cutout = prepareGarmentPhoto(img);
+    if (!cutout || !upper) return cutout;
+    const pixels = cutout.getContext("2d", { willReadFrequently: true })?.getImageData(0, 0, cutout.width, cutout.height);
+    if (!pixels || !fullBodyUpperPhoto(pixels)) return cutout;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        (async () => {
+          const { stripPerson } = await import("@/lib/pieces/person-filter");
+          const blob = await new Promise<Blob | null>((resolve) => cutout.toBlob(resolve, "image/png"));
+          if (!blob) return null;
+          const result = await stripPerson(new File([blob], "catalog.png", { type: "image/png" }), { keep: "upper" });
+          if (!result.personFound || result.garments?.kept !== "upper" || result.garments.ambiguous) return null;
+          const { loadOriented } = await import("@/lib/avatar3d/pipeline");
+          return prepareGarmentPhoto(await loadOriented(result.file, 1024));
+        })(),
+        new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), 5000); }),
+      ]);
+    } catch { return null; } finally { if (timer) clearTimeout(timer); }
+  })();
+  cache.set(key, task); return task;
+}

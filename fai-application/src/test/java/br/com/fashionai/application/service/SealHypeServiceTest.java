@@ -441,6 +441,33 @@ class SealHypeServiceTest {
         assertThat(suggestions(seals.suggest(anaSession, look.getId()))).isEmpty();
     }
 
+    @Test
+    void dnaPreviewUsesSavedLookHypeAndDoesNotWriteBonds() {
+        seal(nike, "Nike em alta", SealTier.LOOK, Map.of("hype", Map.of("minScore", 60)));
+        Scheme look = look(Visibility.PUBLIC, p1, p2);
+        assertThat(suggestions(seals.previewScheme(anaSession, look.getId()))).isEmpty();
+        lookHype.put(look.getId(), hype(look.getId(), 72, HypeLevel.HOT, HypeMomentum.RISING, true));
+        assertThat(suggestions(seals.previewScheme(anaSession, look.getId()))).hasSize(1);
+        assertThat(allBonds).isEmpty();
+        org.mockito.Mockito.verify(bondRepo, org.mockito.Mockito.never()).save(any());
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> seals.previewScheme(visitor, look.getId()))
+                .isInstanceOf(br.com.fashionai.application.common.ApiException.class);
+    }
+
+    @Test
+    void dnaPreviewShowsApprovedAndPendingWithoutDuplicateSuggestions() {
+        Seal seal = seal(nike, "Nike", SealTier.LOOK, Map.of("rules", List.of(Map.of("brand", "Nike"))));
+        Scheme look = look(Visibility.PUBLIC, p1, p2);
+        SealBond bond = approved(seal, look, SealTier.LOOK, p1, p2);
+        assertThat(suggestions(seals.previewScheme(anaSession, look.getId()))).isEmpty();
+        assertThat((List<?>) seals.previewScheme(anaSession, look.getId()).get("bonds")).hasSize(1);
+        bond.setStatus(SealBondStatus.PENDING_REVIEW);
+        assertThat(suggestions(seals.previewScheme(anaSession, look.getId()))).isEmpty();
+        assertThat(bond.getStatus()).isEqualTo(SealBondStatus.PENDING_REVIEW);
+        bond.setStatus(SealBondStatus.REJECTED);
+        assertThat(suggestions(seals.previewScheme(anaSession, look.getId()))).hasSize(1);
+    }
+
     // ------------------------------------------------------------------ Hype do selo
 
     @Test

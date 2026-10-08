@@ -41,7 +41,8 @@ public final class ImageQualityAnalyzer {
         m.put("productVisibility", r(1 - seg.truncatedSides().size() / 4.0));
         m.put("garmentCompleteness", r(crop.best().parts().get("completeness") * (seg.truncatedSides().isEmpty() ? 1 : 0.6)));
         m.put("occupancyScore", r(crop.best().parts().get("occupancy")));
-        double maskArea = seg.coverage() / Math.max(1e-6, crop.best().crop().area());
+        double maskArea = crop.best().parts().getOrDefault("foregroundCoverage",
+                seg.coverage() / Math.max(1e-6, crop.best().crop().area()));
         double empty = 1 - Math.min(1, maskArea);
         m.put("emptySpace", r(empty));
         // com Regra de Enquadramento COVER/WIDTH a peça preenche o quadro de propósito: pouco fundo não é defeito

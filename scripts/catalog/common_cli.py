@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import argparse
 
-from db import describe_target
+from db import IMPORT_VERSION, describe_target
 
 
 def parser(description: str) -> argparse.ArgumentParser:
@@ -14,4 +14,4 @@ def parser(description: str) -> argparse.ArgumentParser:
 
 
 def banner(title: str, dry_run: bool):
-    print(f"{title} → {describe_target()}{'  [DRY-RUN: nada será gravado]' if dry_run else ''}")
+    print(f"{title} [{IMPORT_VERSION}] → {describe_target()}{'  [DRY-RUN: nada será gravado]' if dry_run else ''}", flush=True)
