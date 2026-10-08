@@ -31,6 +31,7 @@ O recorte de pálpebra em cena usa um shader que o glTF não transporta. Na expo
 ## Validação
 
 - Suite frontend: 110 arquivos e 1.020 testes passaram antes da última revisão visual; os testes afetados foram repetidos após os ajustes finais.
+- Verificação final: 62 testes de olhos/cabelo/integração e 49 testes de integração/limpeza/íris passaram; typecheck e build de produção com as checagens de i18n passaram.
 - Testes com o asset real verificam abertura estreita, assimetria, movimento da cabeça, fechamento pela pele, córnea, linha d’água e atributos da exportação.
 - Regressões verificam reconstrução após mudar somente um landmark do olho, limpeza de armação e olho fotografados, orelhas fora da calota, UV e tangentes dos fios, continuidade de colisão e limite de 8.000 triângulos para cards LOD2.
 - Chromium/WebGL com SwiftShader: vistas frontal, perfil e olhos; óculos presentes e removidos; abertura estreita; cabelo longo. Nenhum erro JavaScript ou compilação de shader. Capturas aguardam dois quadros completos após cada mudança.
