@@ -26,7 +26,9 @@ def main(argv=None) -> int:
     ap = parser("Bootstrap idempotente do catálogo FashionAI")
     ap.add_argument("--only", help="slugs das marcas a semear, separados por vírgula")
     ap.add_argument("--data", default=str(DATA), help="pasta com brands.json, aliases.json e products/*.json")
-    ap.add_argument("--overwrite", action="store_true", help="reaplica os dados do seed sobre campos já preenchidos")
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument("--overwrite", action="store_true", help="reaplica os dados do seed sobre campos já preenchidos")
+    mode.add_argument("--skip-existing", action="store_true", help="pula registros existentes e insere somente marcas, fontes, produtos e filhos novos")
     args = ap.parse_args(argv)
     setup_logging(args.verbose)
     data = Path(args.data)
@@ -34,7 +36,7 @@ def main(argv=None) -> int:
     banner("Seed do catálogo", args.dry_run)
     started = now()
     conn = connect()
-    ing = Ingestor(conn, dry_run=args.dry_run, overwrite=args.overwrite)
+    ing = Ingestor(conn, dry_run=args.dry_run, overwrite=args.overwrite, skip_existing=args.skip_existing)
     brands = json.loads((data / "brands.json").read_text(encoding="utf-8"))
     aliases = json.loads((data / "aliases.json").read_text(encoding="utf-8"))
     counts = {"brands": {}, "aliases": {}, "sources": {}}
@@ -56,9 +58,13 @@ def main(argv=None) -> int:
                         counts["sources"][r] = counts["sources"].get(r, 0) + 1
                         (log.debug if r == "SKIP" else log.info)("[%s] fonte oficial %s → %s", r, b["name"], src["domain"])
         except Exception as e:
+            ing.clear_caches()
             ing.report.errors += 1
             ing.report.error_details.append(f"marca {b['name']}: {e}")
             log.error("[ERROR] marca %s: %s", b["name"], e)
+        finally:
+            if args.dry_run:
+                ing.clear_caches()
     for f in sorted((data / "products").glob("*.json")):
         if only and f.stem not in only:
             continue

@@ -47,13 +47,16 @@ def main(argv=None) -> int:
     ap.add_argument("files", nargs="+", help="arquivos .json, .jsonl, .jsonl.gz ou .csv")
     ap.add_argument("--batch-size", type=int, default=100, help="itens entre linhas de progresso")
     ap.add_argument("--no-create-brands", action="store_true", help="recusa itens de marcas que ainda não existem")
-    ap.add_argument("--overwrite", action="store_true", help="curadoria: sobrescreve campos já preenchidos (padrão: só preenche vazios)")
+    mode = ap.add_mutually_exclusive_group()
+    mode.add_argument("--overwrite", action="store_true", help="curadoria: sobrescreve campos já preenchidos (padrão: só preenche vazios)")
+    mode.add_argument("--skip-existing", action="store_true", help="pula registros existentes; insere somente produtos, imagens, variantes e apelidos novos")
     args = ap.parse_args(argv)
     setup_logging(args.verbose)
     banner("Importação de produtos", args.dry_run)
     started = now()
     conn = connect()
-    ing = Ingestor(conn, dry_run=args.dry_run, create_brands=not args.no_create_brands, overwrite=args.overwrite)
+    ing = Ingestor(conn, dry_run=args.dry_run, create_brands=not args.no_create_brands,
+                   overwrite=args.overwrite, skip_existing=args.skip_existing)
     for f in args.files:
         path = Path(f)
         if not path.exists():

@@ -49,30 +49,50 @@ class Report:
 
 
 class Ingestor:
-    def __init__(self, conn, dry_run=False, create_brands=True, overwrite=False):
+    def __init__(self, conn, dry_run=False, create_brands=True, overwrite=False, skip_existing=False):
+        if skip_existing and overwrite:
+            raise ValueError("skip_existing e overwrite não podem ser usados juntos")
         self.conn = conn
         self.dry_run = dry_run
         self.create_brands = create_brands
         # merge seguro: produto existente só ganha campos que estavam vazios; --overwrite = curadoria explícita
         self.overwrite = overwrite
+        # Importação rápida: mantém registros existentes, mas admite novos filhos (imagens/variantes/apelidos).
+        self.skip_existing = skip_existing
+        self._brands = {}
+        self._sources = {}
+        self._brand_aliases = {}
         # identificadores já vistos nesta execução (o --dry-run desfaz cada item, então a memória detecta
         # duplicatas dentro do próprio lote)
         self.seen: dict[str, str] = {}
         self.n = Normalizer()
         self.report = Report()
 
+    def clear_caches(self):
+        """Descarta leituras e escritas locais após rollback, inclusive no dry-run do seed."""
+        self._brands.clear()
+        self._sources.clear()
+        self._brand_aliases.clear()
+
     # ───────────────────────── marcas
     def brand_by_name(self, cur, name: str):
         s = self.n.brand_slug(name)
+        cache_key = (s, key(name))
+        if self.skip_existing and cache_key in self._brands:
+            return self._brands[cache_key]
         cur.execute("SELECT * FROM brands WHERE slug = %s", (s,))
         row = cur.fetchone()
-        if row:
-            return row
-        cur.execute("SELECT b.* FROM brand_aliases a JOIN brands b ON b.id = a.brand_id WHERE a.alias_norm = %s", (key(name),))
-        return cur.fetchone()
+        if not row:
+            cur.execute("SELECT b.* FROM brand_aliases a JOIN brands b ON b.id = a.brand_id WHERE a.alias_norm = %s", (key(name),))
+            row = cur.fetchone()
+        if row and self.skip_existing:
+            self._brands[cache_key] = row
+        return row
 
     def upsert_brand(self, cur, b: dict) -> tuple[dict, str]:
         row = self.brand_by_name(cur, b["name"])
+        if row and self.skip_existing:
+            return row, "SKIP"
         ts = now()
         if row:
             changes = {k: b[k] for k in ("website", "country", "logo_url") if b.get(k) and row.get(k) != b.get(k)}
@@ -90,7 +110,10 @@ class Ingestor:
                     (bid, b["name"], self.n.brand_slug(b["name"]) if self.n.brand_slug(b["name"]) else slug(b["name"]),
                      b.get("logo_url"), b.get("website"), b.get("country"), ts, ts))
         cur.execute("SELECT * FROM brands WHERE id = %s", (bid,))
-        return cur.fetchone(), "CREATE"
+        row = cur.fetchone()
+        if self.skip_existing:
+            self._brands[(self.n.brand_slug(b["name"]), key(b["name"]))] = row
+        return row, "CREATE"
 
     def upsert_brand_alias(self, cur, brand_id: str, alias: str) -> str:
         k = key(alias)
@@ -105,6 +128,7 @@ class Ingestor:
         ts = now()
         cur.execute("INSERT INTO brand_aliases (id, brand_id, alias, alias_norm, version, created_at, updated_at) VALUES (%s,%s,%s,%s,0,%s,%s)",
                     (new_id(), brand_id, alias.strip(), k, ts, ts))
+        self._brand_aliases.pop(brand_id, None)
         return "CREATE"
 
     def upsert_source(self, cur, brand_id: str, src: dict) -> str:
@@ -113,27 +137,43 @@ class Ingestor:
         d = src["domain"].lower().removeprefix("www.")
         cur.execute("SELECT * FROM catalog_sources WHERE brand_id = %s AND domain = %s", (brand_id, d))
         row = cur.fetchone()
+        if row and self.skip_existing:
+            return "SKIP"
         ts = now()
         allows = bool(src.get("allows_image_persistence", False))
         if row:
             if row["source_type"] != src["source_type"] or bool(row["allows_image_persistence"]) != allows or row.get("country") != src.get("country"):
                 cur.execute("UPDATE catalog_sources SET source_type=%s, allows_image_persistence=%s, country=%s, active=TRUE, updated_at=%s, version=version+1 WHERE id=%s",
                             (src["source_type"], allows, src.get("country"), ts, row["id"]))
+                self._sources.pop(brand_id, None)
                 return "UPDATE"
             return "SKIP"
         cur.execute("INSERT INTO catalog_sources (id, brand_id, domain, source_type, country, allows_image_persistence, active, notes, version, created_at, updated_at) "
                     "VALUES (%s,%s,%s,%s,%s,%s,TRUE,%s,0,%s,%s)",
                     (new_id(), brand_id, d, src["source_type"], src.get("country"), allows, src.get("notes"), ts, ts))
+        self._sources.pop(brand_id, None)
         return "CREATE"
 
     def official_sources(self, cur, brand_id: str):
+        if self.skip_existing and brand_id in self._sources:
+            return self._sources[brand_id]
         cur.execute("SELECT domain, source_type, allows_image_persistence FROM catalog_sources WHERE brand_id = %s AND active = TRUE", (brand_id,))
-        return cur.fetchall()
+        rows = cur.fetchall()
+        if self.skip_existing:
+            self._sources[brand_id] = rows
+        return rows
 
     # ───────────────────────── produtos
     def search_text(self, cur, brand: dict, p: Product) -> str:
-        cur.execute("SELECT alias FROM brand_aliases WHERE brand_id = %s ORDER BY created_at", (brand["id"],))
-        parts = [brand["name"], *[r["alias"] for r in cur.fetchall()], p.product_name, p.model_name, p.color_name, p.color,
+        bid = brand["id"]
+        if self.skip_existing and bid in self._brand_aliases:
+            aliases = self._brand_aliases[bid]
+        else:
+            cur.execute("SELECT alias FROM brand_aliases WHERE brand_id = %s ORDER BY created_at", (bid,))
+            aliases = [r["alias"] for r in cur.fetchall()]
+            if self.skip_existing:
+                self._brand_aliases[bid] = aliases
+        parts = [brand["name"], *aliases, p.product_name, p.model_name, p.color_name, p.color,
                  p.collection, p.description, p.product_code, p.sku, p.gtin, p.subcategory.replace("_", " "), *p.aliases,
                  *[v.get("color_name") or v.get("color") or "" for v in p.variants]]
         seen, out = set(), []
@@ -155,9 +195,14 @@ class Ingestor:
                 with self.conn.cursor() as cur:
                     outcome = self._upsert(cur, p)
         except ValidationError as e:
+            self.clear_caches()
             return self._error(f"{label} {e}")
         except Exception as e:  # erro de banco: registra e segue o lote
+            self.clear_caches()
             return self._error(f"{label} {type(e).__name__}: {e}")
+        finally:
+            if self.dry_run:
+                self.clear_caches()
         for w in p.warnings:
             log.warning("[WARN] %s %s: %s", p.brand, p.product_name, w)
         return outcome
@@ -206,6 +251,19 @@ class Ingestor:
             self.report.skipped += 1
             log.info("[DUP] %s %s repete um item anterior do lote (%s)", brand["name"], p.product_name, earlier)
             return "DUPLICATE"
+        if existing is not None and self.skip_existing:
+            # Não monta cols/search_text nem atualiza o produto. Uma nova cor do mesmo modelo,
+            # uma foto nova ou um apelido novo ainda precisam ser inseridos.
+            sub_changes = (self._aliases(cur, existing["id"], p)
+                           + self._variants(cur, existing["id"], p)
+                           + self._images(cur, existing["id"], p, sources))
+            outcome = "UPDATE" if sub_changes else "SKIP"
+            counter = "updated" if sub_changes else "skipped"
+            setattr(self.report, counter, getattr(self.report, counter) + 1)
+            if why and not why.startswith("dedup_key"):
+                self.report.duplicates_found += 1
+            (log.info if sub_changes else log.debug)("[%s] %s %s", outcome, brand["name"], p.product_name)
+            return outcome
         ts = now()
         cols = dict(brand_id=brand["id"], category=p.category, subcategory=p.subcategory, product_name=p.product_name,
                     model_name=p.model_name, product_code=p.product_code, sku=p.sku, gtin=p.gtin, ean=p.ean, upc=p.upc,
@@ -250,54 +308,70 @@ class Ingestor:
         return outcome
 
     def _aliases(self, cur, pid, p) -> int:
+        if not p.aliases:
+            return 0
+        cur.execute("SELECT alias_norm FROM catalog_product_aliases WHERE product_id = %s", (pid,))
+        existing = {r["alias_norm"] for r in cur.fetchall()}
         n = 0
         for alias in p.aliases:
             k = key(alias)
-            cur.execute("SELECT 1 FROM catalog_product_aliases WHERE product_id = %s AND alias_norm = %s", (pid, k))
-            if k and not cur.fetchone():
+            if k and k not in existing:
                 ts = now()
                 cur.execute("INSERT INTO catalog_product_aliases (id, product_id, alias, alias_norm, version, created_at, updated_at) VALUES (%s,%s,%s,%s,0,%s,%s)",
                             (new_id(), pid, str(alias).strip(), k, ts, ts))
+                existing.add(k)
                 n += 1
         return n
 
     def _variants(self, cur, pid, p) -> int:
+        if not p.variants:
+            return 0
+        cur.execute("SELECT * FROM catalog_variants WHERE product_id = %s", (pid,))
+        existing = {r["variant_key"]: r for r in cur.fetchall()}
         n = 0
         for v in p.variants:
             vk = key(v.get("code") or v.get("sku") or v.get("gtin") or v.get("color_name") or v.get("color")).replace(" ", "-")
             if not vk:
                 continue
             color = self.n.color(v.get("color") or v.get("color_name"))
-            cur.execute("SELECT * FROM catalog_variants WHERE product_id = %s AND variant_key = %s", (pid, vk))
-            row = cur.fetchone()
+            row = existing.get(vk)
             ts = now()
             vals = (color, v.get("color_name"), v.get("code"), v.get("sku"), v.get("gtin"))
             if row:
+                if self.skip_existing:
+                    continue
                 if (row["color"], row["color_name"], row["variant_code"], row["sku"], row["gtin"]) != vals:
                     cur.execute("UPDATE catalog_variants SET color=%s, color_name=%s, variant_code=%s, sku=%s, gtin=%s, updated_at=%s, version=version+1 WHERE id=%s",
                                 (*vals, ts, row["id"]))
+                    existing[vk] = {**row, **dict(zip(("color", "color_name", "variant_code", "sku", "gtin"), vals))}
                     n += 1
                 continue
+            vid = new_id()
             cur.execute("INSERT INTO catalog_variants (id, product_id, variant_key, color, color_name, variant_code, sku, gtin, version, created_at, updated_at) "
-                        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,0,%s,%s)", (new_id(), pid, vk, *vals, ts, ts))
+                        "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,0,%s,%s)", (vid, pid, vk, *vals, ts, ts))
+            existing[vk] = dict(id=vid, color=color, color_name=v.get("color_name"), variant_code=v.get("code"), sku=v.get("sku"), gtin=v.get("gtin"))
             n += 1
         return n
 
     def _images(self, cur, pid, p, sources) -> int:
+        if not p.images:
+            return 0
         n = 0
-        cur.execute("SELECT COUNT(*) AS c FROM catalog_images WHERE product_id = %s AND is_primary = TRUE", (pid,))
-        has_primary = cur.fetchone()["c"] > 0
+        cur.execute("SELECT image_url_hash, is_primary FROM catalog_images WHERE product_id = %s", (pid,))
+        rows = cur.fetchall()
+        existing = {r["image_url_hash"] for r in rows}
+        has_primary = any(r["is_primary"] for r in rows)
         for img in p.images:
             url = (img or {}).get("url")
             if not url or not url.startswith("https://") or blocked(url):
                 log.warning("[SKIP] imagem sem origem permitida: %s", url)
                 continue
-            st, allows = classify(url, sources)
             h = url_hash(url)
-            cur.execute("SELECT id FROM catalog_images WHERE product_id = %s AND image_url_hash = %s", (pid, h))
-            if cur.fetchone():
-                cur.execute("UPDATE catalog_images SET last_verified_at = %s WHERE product_id = %s AND image_url_hash = %s", (now(), pid, h))
+            if h in existing:
+                if not self.skip_existing:
+                    cur.execute("UPDATE catalog_images SET last_verified_at = %s WHERE product_id = %s AND image_url_hash = %s", (now(), pid, h))
                 continue
+            st, allows = classify(url, sources)
             ts = now()
             cur.execute("INSERT INTO catalog_images (id, product_id, image_url, image_url_hash, image_type, source_url, source_domain, source_type, "
                         "is_primary, usage_status, retrieved_at, last_verified_at, version, created_at, updated_at) "
@@ -305,6 +379,7 @@ class Ingestor:
                         (new_id(), pid, url, h, image_type(img.get("type")), p.official_product_url, url.split("/")[2],
                          st or p.source_type, not has_primary, usage_status(allows), ts, ts, ts, ts))
             has_primary = True
+            existing.add(h)
             n += 1
         return n
 
