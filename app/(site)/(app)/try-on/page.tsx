@@ -370,7 +370,7 @@ function FittingRoom() {
     useState<Sex | null>(null);
 
   const selectedTipoLook: Sex =
-    tipoLook ?? data?.sex ?? "MASCULINO";
+    TipoLook ?? data?.sex ?? "MASCULINO";
 
   const tipoLookDatabase = useMemo(
     () => toDatabaseTipoLook(selectedTipoLook),
