@@ -1,8 +1,11 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, screen, within } from "@testing-library/react";
+import { useEffect } from "react";
+import { createRoot } from "react-dom/client";
+import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { loggedAs, renderApp } from "@/test-utils/render";
 import type { CatalogProduct } from "@/lib/api/catalog";
+import { I18nProvider } from "@/lib/i18n/i18n";
 import { CatalogResultsGrid } from "./catalog-results-grid";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
@@ -48,6 +51,48 @@ function viewport(initialWidth: number) {
 }
 
 describe("matriz do catálogo do provador", () => {
+  it("preserva o primeiro clique em avançar mesmo antes dos efeitos passivos da montagem", async () => {
+    const host = document.createElement("div");
+    document.body.append(host);
+    const root = createRoot(host);
+    let passiveEffectsFlushed = false;
+    function PassiveProbe() { useEffect(() => { passiveEffectsFlushed = true; }, []); return null; }
+    const actEnvironment = globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean };
+    const previousActEnvironment = actEnvironment.IS_REACT_ACT_ENVIRONMENT;
+    // This scenario intentionally delivers a browser event between commit and passive effects.
+    actEnvironment.IS_REACT_ACT_ENVIRONMENT = false;
+    let observer: MutationObserver | undefined;
+    try {
+      const clickedBeforeEffects = new Promise<boolean>((resolve) => {
+        observer = new MutationObserver(() => {
+          const advance = Array.from(host.querySelectorAll("button")).find((button) => button.textContent === "Avançar →");
+          if (!advance) return;
+          observer?.disconnect();
+          const beforeEffects = !passiveEffectsFlushed;
+          advance.click();
+          resolve(beforeEffects);
+        });
+        observer.observe(host, { childList: true, subtree: true });
+      });
+      root.render(
+        <I18nProvider initial="pt-BR">
+          <CatalogResultsGrid products={products} resetKey="Nike" renderProduct={renderProduct} />
+          <PassiveProbe />
+          {/* A substantial sibling commit makes React yield before passive effects under CPU pressure. */}
+          <div aria-hidden="true">{Array.from({ length: 4000 }, (_, index) => <span key={index}>{index}</span>)}</div>
+        </I18nProvider>
+      );
+      expect(await clickedBeforeEffects).toBe(true);
+      await waitFor(() => expect(host.querySelector("nav")?.textContent).toContain("Página 2 de 3"), { container: host.querySelector("nav")! });
+      expect(within(host.querySelector("ul")!).getByText("Produto 5")).toBeTruthy();
+    } finally {
+      observer?.disconnect();
+      actEnvironment.IS_REACT_ACT_ENVIRONMENT = previousActEnvironment;
+      await act(() => root.unmount());
+      host.remove();
+    }
+  });
+
   it("mostra no máximo duas linhas nos três tamanhos de tela e nunca deixa uma página vazia após redimensionar", () => {
     const resize = viewport(639);
     loggedAs();

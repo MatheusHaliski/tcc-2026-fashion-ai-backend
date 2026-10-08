@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useLayoutEffect, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Pagination } from "@/components/ui";
 import type { CatalogProduct } from "@/lib/api/catalog";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -34,7 +34,7 @@ export function CatalogResultsGrid({ products, resetKey, renderProduct }: Catalo
   const currentPage = Math.min(page, lastPage);
 
   // Nova busca, filtro ou distribuição de colunas começa na primeira página.
-  useEffect(() => { setPage(0); }, [resetKey, products, columns]);
+  useLayoutEffect(() => { setPage(0); }, [resetKey, products, columns]);
 
   return (
     <>
