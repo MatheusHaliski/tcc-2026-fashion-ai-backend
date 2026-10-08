@@ -1015,10 +1015,7 @@ function FittingRoom() {
             </div>
 
             <div className="grid gap-2 p-3">
-              {/*
-                NOVO CAMPO:
-                TipoLook Masculino/Feminino
-              */}
+   
               <div className="flex flex-wrap items-center gap-2">
                 <SegmentPicker
                   label="Tipo de Look"
@@ -1041,6 +1038,11 @@ function FittingRoom() {
                       label:
                         "Feminino",
                     },
+                    {
+                      id: "UNISEX",
+                      label:
+                        "Unisex",
+                    }
                   ]}
                 />
 
