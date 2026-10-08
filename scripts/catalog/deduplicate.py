@@ -9,25 +9,32 @@ STRONG = (("gtin", "gtin"), ("ean", "ean"), ("upc", "upc"), ("sku", "sku"), ("pr
 
 
 def find_existing(cur, p: Product, dedup_key: str):
-    """(linha existente, motivo) ou (None, None)."""
+    """Uma viagem ao MySQL, preservando a prioridade dos identificadores (cada ramo usa seu índice)."""
+    branches, params = [], []
+
+    def add(query, value, reason):
+        branches.append(query)
+        params.extend((len(branches), reason, value))
+
     for attr, column in STRONG:
         value = getattr(p, attr)
         if value:
-            cur.execute(f"SELECT * FROM catalog_products WHERE {column} = %s LIMIT 1", (value,))
-            row = cur.fetchone()
-            if row:
-                return row, f"{column}={value}"
+            add(f"SELECT p.*, %s AS match_priority, %s AS match_reason FROM catalog_products p WHERE p.{column} = %s",
+                value, f"{column}={value}")
     for attr, column in (("gtin", "gtin"), ("sku", "sku"), ("product_code", "variant_code")):
         value = getattr(p, attr)
         if value:
-            cur.execute(f"SELECT p.* FROM catalog_variants v JOIN catalog_products p ON p.id = v.product_id WHERE v.{column} = %s LIMIT 1", (value,))
-            row = cur.fetchone()
-            if row:
-                return row, f"variante {column}={value}"
-    cur.execute("SELECT * FROM catalog_products WHERE dedup_key = %s", (dedup_key,))
+            add(f"SELECT p.*, %s AS match_priority, %s AS match_reason FROM catalog_variants v "
+                f"JOIN catalog_products p ON p.id = v.product_id WHERE v.{column} = %s",
+                value, f"variante {column}={value}")
+    add("SELECT p.*, %s AS match_priority, %s AS match_reason FROM catalog_products p WHERE p.dedup_key = %s",
+        dedup_key, f"dedup_key={dedup_key}")
+    cur.execute(" UNION ALL ".join(branches) + " ORDER BY match_priority LIMIT 1", tuple(params))
     row = cur.fetchone()
     if row:
-        return row, f"dedup_key={dedup_key}"
+        reason = row.pop("match_reason")
+        row.pop("match_priority")
+        return row, reason
     return None, None
 
 

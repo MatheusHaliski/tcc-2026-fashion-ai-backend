@@ -6,7 +6,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 
-from db import new_id, now, transaction
+from db import DatabaseUnavailable, new_id, now, run_transaction
 from deduplicate import find_existing, find_same_model
 from image_metadata import image_type, url_hash, usage_status
 from normalize_product import Normalizer, Product, ValidationError, key, normalize_product, slug
@@ -65,6 +65,7 @@ class Ingestor:
         # identificadores já vistos nesta execução (o --dry-run desfaz cada item, então a memória detecta
         # duplicatas dentro do próprio lote)
         self.seen: dict[str, str] = {}
+        self._pending_seen: dict[str, str] = {}
         self.n = Normalizer()
         self.report = Report()
 
@@ -190,19 +191,42 @@ class Ingestor:
             p = normalize_product(raw, self.n)
         except ValidationError as e:
             return self._error(f"{label} {e}")
-        try:
-            with transaction(self.conn, self.dry_run):
-                with self.conn.cursor() as cur:
-                    outcome = self._upsert(cur, p)
-        except ValidationError as e:
+        counters = self.report.as_dict()
+        details = len(self.report.error_details)
+        attempts = 0
+
+        def restore():
             self.clear_caches()
+            self._pending_seen.clear()
+            for field, value in counters.items():
+                setattr(self.report, field, value)
+            del self.report.error_details[details:]
+
+        def write():
+            # _upsert adapta identificadores de variantes: cada tentativa usa o produto original.
+            nonlocal p, attempts
+            if attempts:
+                p = normalize_product(raw, self.n)
+            attempts += 1
+            self._pending_seen.clear()
+            with self.conn.cursor() as cur:
+                return self._upsert(cur, p)
+
+        try:
+            outcome = run_transaction(self.conn, write, self.dry_run, label=label or p.product_name, on_failure=restore)
+        except DatabaseUnavailable as e:
+            self._error(str(e))
+            raise
+        except ValidationError as e:
             return self._error(f"{label} {e}")
         except Exception as e:  # erro de banco: registra e segue o lote
-            self.clear_caches()
             return self._error(f"{label} {type(e).__name__}: {e}")
         finally:
             if self.dry_run:
                 self.clear_caches()
+        for identifier, name in self._pending_seen.items():
+            self.seen.setdefault(identifier, name)
+        self._pending_seen.clear()
         for w in p.warnings:
             log.warning("[WARN] %s %s: %s", p.brand, p.product_name, w)
         return outcome
@@ -245,7 +269,7 @@ class Ingestor:
         ids = [f"{a}:{getattr(p, a)}" for a in ("gtin", "ean", "upc", "sku", "product_code", "canonical_url") if getattr(p, a)] + [dedup]
         earlier = next((self.seen[i] for i in ids if i in self.seen), None)
         for i in ids:
-            self.seen.setdefault(i, p.product_name)
+            self._pending_seen.setdefault(i, p.product_name)
         if existing is None and earlier is not None and self.dry_run:
             self.report.duplicates_found += 1
             self.report.skipped += 1
@@ -388,14 +412,21 @@ class Ingestor:
         if self.dry_run:
             return
         ts = now()
-        with self.conn.cursor() as cur:
-            r = self.report
-            cur.execute("INSERT INTO catalog_ingestion_runs (id, kind, source, dry_run, total_read, created_count, updated_count, skipped_count, "
+        run_id = new_id()
+
+        def write():
+            with self.conn.cursor() as cur:
+                # COMMIT com resposta perdida não pode gerar dois relatórios da mesma execução.
+                cur.execute("SELECT id FROM catalog_ingestion_runs WHERE id = %s", (run_id,))
+                if cur.fetchone():
+                    return
+                r = self.report
+                cur.execute("INSERT INTO catalog_ingestion_runs (id, kind, source, dry_run, total_read, created_count, updated_count, skipped_count, "
                         "duplicates_count, error_count, report_json, started_at, finished_at, version, created_at, updated_at) "
                         "VALUES (%s,%s,%s,FALSE,%s,%s,%s,%s,%s,%s,%s,%s,%s,0,%s,%s)",
-                        (new_id(), kind, source[:255], r.total_read, r.created, r.updated, r.skipped, r.duplicates_found, r.errors,
+                        (run_id, kind, source[:255], r.total_read, r.created, r.updated, r.skipped, r.duplicates_found, r.errors,
                          json.dumps({"errors": r.error_details[:200]}), started, ts, ts, ts))
-        self.conn.commit()
+        run_transaction(self.conn, write, label="relatório da execução", on_failure=self.clear_caches)
 
 
 def setup_logging(verbose: bool):

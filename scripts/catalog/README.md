@@ -29,6 +29,39 @@ python -m unittest discover -s scripts/catalog/tests      # testes sem banco (in
 | Relatório | `total_read · created · updated · skipped · duplicates_found · errors` + `[CREATE]/[UPDATE]/[DUP]/[ERROR]` no log; execução gravada em `catalog_ingestion_runs` |
 | Segurança | credenciais só por variável de ambiente; nada de senha/connection string nos logs |
 
+## Importações longas no Railway: velocidade e recuperação
+
+A deduplicação reúne as buscas por identificadores do produto, variantes e chave normalizada em uma consulta
+`UNION ALL`, preservando a prioridade GTIN → EAN → UPC → SKU → código → URL → variantes → chave. A migração
+**V57** adiciona os índices de EAN/UPC e dos identificadores de variantes que faltavam. Atualize a API para executar
+o Flyway antes de importar um acervo grande com essa versão; sem os índices, esses ramos podem varrer tabelas.
+`--skip-existing` mantém os caches de marca/fontes/apelidos e a leitura em lote dos filhos; fotos e variantes novas
+continuam sendo inseridas. `--batch-size` controla só o progresso no terminal, não a transação nem o paralelismo.
+O cabeçalho deve mostrar **`CATALOG_IMPORT_V2`**. Se não aparecer, você ainda está executando os scripts antigos,
+mesmo que tenha reiniciado o terminal ou a importação. O wrapper avisa quando o schema ainda não chegou à V57.
+
+`InterfaceError: (0, '')` significa que o PyMySQL está tentando usar uma conexão fechada. O erro de transporte que a
+fechou pode ter sido ocultado por um segundo erro durante o rollback. O importador agora preserva a causa original,
+reconecta e repete **a transação inteira** do produto, com até três reconexões e esperas de 1, 2 e 4 segundos.
+Não faz ping em cada produto. Erros de validação/SQL continuam no relatório e não entram nessa repetição.
+Se o banco continuar indisponível, o lote para no item afetado e imprime o relatório parcial, em vez de descartar
+as milhares de linhas seguintes tentando usar o mesmo socket. A gravação final do relatório também é recuperável
+e usa o mesmo identificador em todas as tentativas, evitando dois registros se a resposta do COMMIT se perder.
+
+```bash
+# Após atualizar o código e aplicar V57 pelo Flyway, execute novamente o mesmo comando:
+bash scripts/catalog/import_railway.sh HOST_DO_PROXY PORTA_DO_PROXY
+# Ou, com MYSQL_* já configuradas:
+python scripts/catalog/import_products.py data/catalog/acervo/*.jsonl.gz --skip-existing --batch-size 1000
+```
+
+Produtos já confirmados no banco são preservados e as linhas que faltavam são importadas. Não existe checkpoint
+por número de linha: a retomada relê o arquivo e deduplica pelo banco. Não apague registros nem recomece com
+`--overwrite`. Se o servidor confirmou um produto mas a resposta do COMMIT se perdeu, a tentativa recuperada pode
+aparecer como `SKIP`: os contadores representam o resultado final observado, sem contar duas vezes a mesma linha.
+`MYSQL_READ_TIMEOUT` e `MYSQL_WRITE_TIMEOUT` valem 60 segundos por padrão, com conexão inicial limitada a 15 segundos.
+Os limites de rede e a repetição tratam quedas; a causa exata no servidor/proxy exige seu log do momento da primeira falha.
+
 Dados do seed em `data/catalog/` (`brands.json`, `aliases.json`, `products/<marca>.json`; `samples/` tem um CSV com
 erros propositais). As marcas semeadas aparecem no **Explorador › Buscar marcas & lojas** mesmo sem perfil cadastrado.
 
