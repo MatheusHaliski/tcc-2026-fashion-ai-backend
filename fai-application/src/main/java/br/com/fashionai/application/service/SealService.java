@@ -736,6 +736,25 @@ public class SealService {
         return out;
     }
 
+    /** RF13: check each referenced look without changing its existing seal bonds. */
+    @Transactional(readOnly = true)
+    public Map<String, Object> previewScheme(CurrentUser user, UUID schemeId) {
+        Scheme scheme = schemes.findById(schemeId).orElseThrow(() -> ApiException.notFound("Esquema"));
+        guard.requireOwner(user, scheme.getUser().getId(), "scheme:" + schemeId);
+        List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(schemeId);
+        List<SealBond> active = bonds.findBySchemeId(schemeId).stream()
+                .filter(b -> b.getStatus() == SealBondStatus.APPROVED || b.getStatus() == SealBondStatus.PENDING_REVIEW).toList();
+        List<String> unregistered = new ArrayList<>();
+        SealPolicies.HypeLookup hype = hypeLookup(scheme, items);
+        AiOutcome<List<Candidate>> outcome = ai.local(user.id(), AiCapability.SEALBOND_MATCHER,
+                List.of(Msg.t("seal.marcas_das_pecas"), Msg.t("seal.estilo_ocasiao_do_esquema")),
+                () -> candidates(scheme, items, unregistered, false, hype).stream()
+                        .filter(c -> active.stream().noneMatch(b -> b.getTargetOwner().getId().equals(c.targetOwnerId()))).toList());
+        Map<String, Object> result = previewResult(outcome, unregistered, hype);
+        result.put("bonds", active.stream().map(b -> Map.of("id", b.getId(), "name", java.util.Optional.ofNullable(b.getTargetOwner().getDisplayName()).orElse(b.getTargetOwner().getUsername()), "status", b.getStatus())).toList());
+        return result;
+    }
+
     /**
      * Criar Look (RF5 + RF21.CA01): antes de salvar, a IA procura marcas e celebridades com que o look pode ter selo, a
      * partir das peças escolhidas, do estilo e da ocasião. Nada é gravado: a pessoa marca as que quer pedir e o vínculo

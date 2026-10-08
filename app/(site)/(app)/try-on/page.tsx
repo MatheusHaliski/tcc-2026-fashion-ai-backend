@@ -1018,7 +1018,7 @@ function FittingRoom() {
    
               <div className="flex flex-wrap items-center gap-2">
                 <SegmentPicker
-                  label="Tipo de Look"
+                  label={t("lookType.label")}
                   value={
                     selectedTipoLook
                   }
@@ -1031,12 +1031,12 @@ function FittingRoom() {
                     {
                       id: "MASCULINO",
                       label:
-                        "Masculino",
+                        t("common.masculino"),
                     },
                     {
                       id: "FEMININO",
                       label:
-                        "Feminino",
+                        t("common.feminino"),
                     },
                     {
                       id: "UNISEX",
@@ -1054,10 +1054,7 @@ function FittingRoom() {
                     tipoLookDatabase
                   }
                 >
-                  {selectedTipoLook ===
-                  "MASCULINO"
-                    ? "Look masculino"
-                    : "Look feminino"}
+                  {t("tryOn.lookGender", { gender: t(selectedTipoLook === "MASCULINO" ? "common.masculino_2" : "common.feminino_2") })}
                 </span>
               </div>
 
