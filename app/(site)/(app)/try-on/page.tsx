@@ -182,16 +182,9 @@ let clock = 0;
 
 const nextTick = () => Math.max(Date.now(), ++clock);
 
-/**
- * Normalização para o banco MySQL:
- * ENUM('masculino', 'feminino')
- */
-function toDatabaseTipoLook(
-  value: Sex
-): "masculino" | "feminino"| "unisex" {
-  if value === "FEMININO" return "feminino";
-  if value === "MASCULINO" return "masculino";
-  if value === "UNISEX" return "unisex";
+/** Valor de apresentação enviado à preferência do provador. */
+function toDatabaseTipoLook(value: Sex): "masculino" | "feminino" | "unisex" {
+  return value === "FEMININO" ? "feminino" : value === "MASCULINO" ? "masculino" : "unisex";
 }
 
 function fromCatalog(
@@ -370,7 +363,7 @@ function FittingRoom() {
     useState<Sex | null>(null);
 
   const selectedTipoLook: Sex =
-    TipoLook ?? data?.sex ?? "MASCULINO";
+    tipoLook ?? data?.sex ?? "MASCULINO";
 
   const tipoLookDatabase = useMemo(
     () => toDatabaseTipoLook(selectedTipoLook),
@@ -612,13 +605,7 @@ function FittingRoom() {
 
     setTipoLook(next);
 
-    setStatus(
-      `Tipo de Look selecionado: ${
-        next === "MASCULINO"
-          ? "Masculino"
-          : "Feminino"
-      }`
-    );
+    setStatus(t("tryOn.look_tipo", { sex: next }));
   }
 
   function tryOn(item: FittingItem) {
@@ -972,9 +959,7 @@ function FittingRoom() {
               {avatar ? (
                 <FittingRoomScene
                   avatar={avatar}
-                  sex={
-                    selectedTipoLook
-                  }
+                  sex={selectedTipoLook === "UNISEX" ? (data.mannequin.sex === "FEMININO" ? "FEMININO" : "MASCULINO") : selectedTipoLook}
                   build={
                     data.mannequin.build
                   }
@@ -1041,7 +1026,7 @@ function FittingRoom() {
                     {
                       id: "UNISEX",
                       label:
-                        "Unisex",
+                        t("tryOn.unisex"),
                     }
                   ]}
                 />
@@ -1054,7 +1039,7 @@ function FittingRoom() {
                     tipoLookDatabase
                   }
                 >
-                  {t("tryOn.lookGender", { gender: t(selectedTipoLook === "MASCULINO" ? "common.masculino_2" : "common.feminino_2") })}
+                  {t("tryOn.look_tipo", { sex: selectedTipoLook })}
                 </span>
               </div>
 

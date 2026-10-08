@@ -483,6 +483,7 @@ public class CatalogImagePipelineService {
                 m.put("aspect", crop.get("aspect"));
             }
         }
+        if (canonical.getCropJson() != null) m.put("aspect", Json.map(canonical.getCropJson()).get("aspect"));
         m.put("imageId", canonical.getId());
         m.put("qualityScore", canonical.getQualityScore());
         m.put("pipelineVersion", canonical.getPipelineVersion());

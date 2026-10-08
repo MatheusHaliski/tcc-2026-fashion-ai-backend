@@ -7,7 +7,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { CATEGORY_CARDS, type CaptureCategory } from "@/lib/capture/capture-guides";
 import { Badge, Button, Chip, Field, Input, Skeleton, cn } from "@/components/ui";
 import { BrandLogo } from "@/components/brand-logo";
-import { CatalogPhoto } from "@/components/catalog/catalog-photo";
+import { CatalogPhoto, photoAspect } from "@/components/catalog/catalog-photo";
 import { CategoryCards } from "@/components/catalog/category-cards";
 import { BrandAutocomplete, type CatalogBrand } from "@/components/catalog/brand-autocomplete";
 import { GarmentGlyph } from "@/components/capture/garment-glyphs";
@@ -248,7 +248,7 @@ export function CatalogResultCard({ product: p, onPick, pickLabel }: { product: 
   const source = p.source?.domain && p.source.domain !== "null" ? p.source.domain : t("catalog.fonte_fashionai");
   return (
     <article className="catalog-card surface">
-      <div className="catalog-card-media" aria-hidden={!img}>
+      <div className="catalog-card-media" style={{ aspectRatio: photoAspect(p.catalogImage?.aspect) }} aria-hidden={!img}>
         {img ? <CatalogPhoto image={p.catalogImage} fallbackUrl={p.imageUrl} alt={`${p.brand?.name ?? ""} ${p.productName}`} /> : <GarmentGlyph id={ILLUSTRATION[p.category] ?? "generic"} size={120} animated={false} numbered={false} className="text-muted" />}
         {typeof p.matchPercent === "number" && <Badge tone="thread" className="catalog-card-match">{t("catalog.compativel", { pct: p.matchPercent })}</Badge>}
         {p.ingestionStatus === "DISCOVERED" && <Badge tone="chalk" className="catalog-card-new">{t("catalog.loja_oficial")}</Badge>}

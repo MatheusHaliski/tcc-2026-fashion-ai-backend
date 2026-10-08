@@ -1,18 +1,49 @@
-# Pipeline de imagens da Busca Catalogada — CATALOG_IMAGE_PIPELINE_V2
+# Pipeline de imagens da Busca Catalogada — CATALOG_IMAGE_PIPELINE_V4
 
 > 05/10/2026 · RF47 (Acervo & Busca Catalogada). Transforma cada foto oficial (marca, loja oficial, página oficial do
 > produto) numa foto de catálogo consistente e **validada por métricas automáticas**, ou a recusa com motivo.
 > Código: `fai-application/.../catalog/image/` · Registro: `catalog/semantic-regions.json` · Migração: `V43`.
 
+## Enquadramento RF4 — V4
+
+O feed usa um **recorte de tecido que ocupa o quadro inteiro**, conforme as referências de camisas, blazers e
+calças. `GarmentCrop` procura um retângulo com proporção fixa inteiramente dentro dos pixels opacos da máscara
+(alfa ≥ 250), com um pixel de segurança nas bordas. Lacunas entre mangas, gola e pernas não entram no recorte.
+O processamento não estica a imagem nem preenche espaços com tecido inventado.
+
+| Categoria | Quadro | Região |
+|---|---|---|
+| Superior, casaco e peça única | 4:5 | Tronco e detalhes do tecido/abotoamento |
+| Inferior (calça, short, saia) | 2:1 | Cós, bolsos, fechamento e quadril, acima da separação das pernas |
+| Calçado e acessório | Regra existente | Silhueta do objeto |
+
+O RF4 grava a proporção e `GARMENT_COVER_V1` em `studio.feed`; o catálogo devolve `catalogImage.aspect` nos dois
+níveis. Cards, seleção, editor, comparação de versões e revisão administrativa respeitam essa proporção. A foto
+original, a imagem completa processada e a região de análise continuam disponíveis para edição e provador.
+
+Para calças em fotos de corpo inteiro, a janela do quadril é estimada pela separação das pernas e pela evidência
+de pessoa, registrada como `ESTIMATED_PERSON_WAIST`. A análise de pele é repetida **no recorte**, sem reconstrução.
+Mãos/pele que continuem nele levam à revisão (A) ou rejeição (B). Essa estimativa local não substitui um parser
+semântico treinado: poses, roupas sobrepostas e fundos complexos ainda precisam de revisão/calibração.
+Se não houver tecido contínuo suficiente, `FULL_FRAME_UNAVAILABLE` impede a aprovação automática; não prometemos
+100% de preenchimento para uma máscara incerta. O nível B mantém o mínimo de 480 px do master, sem ampliação.
+
+**Imagens existentes:** a versão V4 invalida o cache do worker quando ele está habilitado e a imagem ainda está
+abaixo do limite de tentativas. Imagens que esgotaram tentativas podem ser reenviadas pela ação administrativa
+`REPROCESS`. Peças do RF4 já salvas exigem refazer o estúdio em “Editar imagem”; uma foto aprovada mantém o fluxo
+de aprovação da versão nova. O cache de imagens padrão só é reutilizado quando `studio.feed.pipelineVersion`
+corresponde à versão atual. Peças criadas anteriormente por referência ao catálogo guardam um snapshot do recorte:
+reprocessar a imagem do catálogo não modifica silenciosamente esse snapshot.
+
 ## 1. Decisão de licenciamento: dois níveis
 
 | Nível | Quando | O que se grava | O que o card mostra |
 |---|---|---|---|
-| **A — metadados** | toda fonte (hoje: todas) | recorte semântico 4:5, região de foco, métricas, veredito, pHash, dimensões | a **URL original** da marca com o recorte aplicado na exibição (nada é copiado; RN47.03 intacta) |
+| **A — metadados** | toda fonte (hoje: todas) | recorte semântico 4:5/2:1, região de foco, métricas, veredito, pHash, dimensões | a **URL original** da marca com o recorte aplicado na exibição (nada é copiado; RN47.03 intacta) |
 | **B — master** | fonte com `catalog_sources.allows_image_persistence = true` (parceria) | tudo do nível A + master PNG transparente e variantes branco/neutro/card/thumb no storage | o master processado (`stored_url` / `assets_json`) |
 
-Remover pessoa ou objeto da foto **sem copiar a foto** é impossível; por isso, no nível A, a foto com pessoa vai para
-revisão (ou cede a vez a outra foto oficial), e o distrator separado da peça fica **fora do recorte**.
+Recortar uma região que já contém apenas tecido dispensa remover ou reconstruir pessoas. Quando pele/objetos
+continuam no recorte, a imagem vai para revisão ou cede a vez a outra foto oficial.
 
 ## 2. Auditoria do fluxo anterior (antes desta mudança)
 
@@ -57,7 +88,7 @@ CatalogImagePipelineService (@Scheduled, desligado por padrão)
   └─ MediaStoragePort ........ master do nível B
 AdminCatalogImageController  /api/admin/catalog-images  (fila, decisão, métricas, depuração)
 CatalogService.card()        → catalogImage { url, mode, crop, background }
-CatalogPhoto (front)         → recorte 4:5 sobre a URL original, ou master processado
+CatalogPhoto (front)         → recorte 4:5/2:1 sobre a URL original, ou master processado
 ```
 
 Estágios e logs (cada um registra duração e nota em `metrics_json.stages`):
@@ -126,7 +157,7 @@ O produto **não** ganha colunas: `canonicalImageUrl` = imagem com `is_canonical
 `imageProcessingStatus`/`imageQualityScore`/`imagePipelineVersion` vêm dela. Proveniência já existia
 (`source_type`, `source_url`, `source_domain`, `retrieved_at`).
 
-`crop_json`: `{aspect:"4:5", crop, focus{name,rect,source}, product, analysis, detail?, background, padding}` — todos os
+`crop_json`: `{aspect:"4:5" | "2:1", crop, focus{name,rect,source}, product, analysis, detail?, background, padding}` — todos os
 retângulos normalizados na foto original.
 
 ## 11. Worker e estados
@@ -134,7 +165,7 @@ retângulos normalizados na foto original.
 `processing_status` é o estado do job: `PENDING → DOWNLOADING → APPROVED | NEEDS_REPROCESSING | REJECTED | FAILED`
 (ANALYZING/SEGMENTING/CLEANING/REFRAMING/VALIDATING ficam no log de estágios, sem uma escrita no banco por estágio).
 `@Scheduled` a cada 15 s, lote de 8, até 3 tentativas. Idempotência: `image_url_hash` + `pipeline_version` — subir a
-versão do pipeline reprocessa tudo sozinho. Configuração: `CATALOG_IMAGE_PIPELINE_ENABLED` (padrão **false**),
+versão do pipeline reenfileira imagens abaixo do limite de tentativas. Configuração: `CATALOG_IMAGE_PIPELINE_ENABLED` (padrão **false**),
 `_BATCH`, `_POLL_MS`, `_MAX_ATTEMPTS`. Log estruturado: `event=catalog_image_processed imageId productId status quality
 reasons persisted cached ms version` e `event=catalog_image_review imageId action admin`.
 
@@ -150,12 +181,12 @@ depende do proxy de saída — risco residual documentado.
 
 `/admin/catalog-images`: painel (por status, canônicas, fila, qualidade média, motivos), fila
 (CatalogImageReviewQueue) com **antes** (foto oficial + depuração visual: bbox, distratores, foco, regiões críticas,
-candidatos, recorte final) e **depois** (card 4:5), ações APPROVE / REPROCESS / SELECT_ALTERNATE_IMAGE / REJECT.
+candidatos, recorte final) e **depois** (card na proporção do recorte), ações APPROVE / REPROCESS / SELECT_ALTERNATE_IMAGE / REJECT.
 Antes/depois só no admin; a pessoa usuária vê só o card final.
 
 ## 14. Front
 
-`CatalogPhoto` + `semanticCropStyle`: quadro 4:5 (igual aos cards de peça), a foto original posicionada para mostrar
+`CatalogPhoto` + `semanticCropStyle`: quadro na proporção de `catalogImage.aspect`, a foto original posicionada para mostrar
 exatamente o recorte (largura 1/w, deslocamento −x/w, −y/h); recorte além da borda mostra a cor do fundo da foto.
 A canônica também alimenta a peça criada do catálogo (`from-catalog`) e, por ela, o analisador de IA.
 

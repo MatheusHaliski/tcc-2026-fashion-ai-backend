@@ -21,10 +21,10 @@ import { HypeCardBack } from "@/components/hype/hype-card-back";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { hypeViewState } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
-import { CatalogPhoto, pieceCatalogCrop } from "@/components/catalog/catalog-photo";
+import { CatalogPhoto, pieceCatalogCrop, piecePhotoAspect } from "@/components/catalog/catalog-photo";
 
 /**
- * Imagem da peça para o card: a foto do feed (4:5, enquadrada pelo template da categoria) quando existe; senão a
+ * Imagem da peça para o card: a foto do feed (na proporção da categoria) quando existe; senão a
  * miniatura/foto de estúdio (preenchendo o quadro); sem estúdio, o recorte inteiro, contido com respiro.
  */
 export function pieceCardImage(piece: PieceView): { src?: string; srcSet?: string; cover: boolean } {
@@ -63,6 +63,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   // Seção C: a posição do selo segue a anatomia da peça (padrão: "Categoria · marca · sexo · selos").
   const zone = pieceSealPlacement(anatomy ?? (piece as { background?: { anatomy?: string } }).background?.anatomy).zone;
   const img = pieceCardImage(piece);
+  const mediaStyle = { aspectRatio: piecePhotoAspect(piece) };
   // sem foto de estúdio, a peça do catálogo mostra a foto oficial com o mesmo recorte do card da busca
   const crop = piece.studioFeedUrl || piece.studioThumbUrl || piece.studioImageUrl ? null : pieceCatalogCrop(piece);
   const art = readPieceArt(piece.background);
@@ -101,15 +102,15 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
           {!selectable && <CardHeader owner={piece.owner} sub={visibility} linked={!preview} className="pc-header" />}
           {selectable ? (
             <button type="button" className="pc-select text-left" aria-pressed={selected} onClick={() => onSelect?.(piece)}>
-              <span className="pc-media">{media}</span>
+              <span className="pc-media" style={mediaStyle}>{media}</span>
               <span className="pc-id">{name}<span className="pc-sub">{secondary}</span></span>
             </button>
           ) : (
             <>
               {preview
-                ? <div className="pc-media">{media}</div>
+                ? <div className="pc-media" style={mediaStyle}>{media}</div>
                 // a foto repete o link do nome: fora da ordem de tabulação e do leitor de tela (um destino, um link)
-                : <Link href={link} onClick={openModal} className="pc-media" aria-hidden tabIndex={-1}>{media}</Link>}
+                : <Link href={link} onClick={openModal} className="pc-media" style={mediaStyle} aria-hidden tabIndex={-1}>{media}</Link>}
               <CardActions type="PIECE" id={piece.id} counters={piece.counters} viewer={piece.viewer} title={piece.name} compact preview={preview} />
               <div className="pc-id">
                 <span className="seal-row">
