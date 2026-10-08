@@ -851,6 +851,7 @@
   "brandSearchInput.usar_sem_logo_da_web": "Usar “{q}” sem logo da web (monograma)",
   "brands.afinidade": "Afinidade",
   "brands.afinidade_2": " · afinidade {Math}%",
+  "institutionalProfile.visibility.FOLLOWERS": "Só para seguidores",
   "brands.marcas_e_celebridades_validadas_ordene": "Marcas e celebridades validadas. Ordene por afinidade com o seu DNA de Estilo.",
   "brands.noOfficialHint": "Você ainda pode ver as peças públicas dessa marca que a comunidade cadastrou.",
   "brands.noOfficialTitle": "{name} ainda não tem página oficial no Fashion AI",

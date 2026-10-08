@@ -118,32 +118,58 @@ public class InstitutionalService {
     // ================================================================== feeds (RF14.CA01/CA02, RF22, RF24.CA06)
     Map<String, Object> brandCard(BrandProfile b) {
         UUID owner = b.getOwner().getId();
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("userId", owner);
+        Map<String, Object> m = publicProfile(b.getOwner(), "MARCA", b.getApprovalStatus());
         m.put("slug", b.getSlug());
         m.put("name", b.getBrandName());
         m.put("logoUrl", b.getLogoUrl());
         m.put("coverUrl", b.getCoverUrl());
         m.put("country", b.getCountry());
         m.put("category", b.getFashionCategory());
+        m.put("officialHashtag", b.getOfficialHashtag());
+        m.put("bio", b.getBio());
+        m.put("storeUrl", b.getStoreUrl());
+        m.put("status", b.getApprovalStatus() == ApprovalStatus.APROVADO ? "Validada" : b.getApprovalStatus().name());
         m.put("bonds", bonds.countByTargetOwnerIdAndStatus(owner, SealBondStatus.APPROVED));
-        m.put("followers", follows.countByFollowingIdAndStatus(owner, FollowStatus.ACEITO));
         m.put("material", "TEXTIL_DOURADO");
         return m;
     }
 
     Map<String, Object> celebrityCard(CelebrityProfile c) {
         UUID owner = c.getOwner().getId();
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("userId", owner);
+        Map<String, Object> m = publicProfile(c.getOwner(), "CELEBRIDADE", c.getVerificationStatus());
         m.put("slug", c.getSlug());
         m.put("name", c.getStageName());
         m.put("avatarUrl", c.getAvatarUrl());
         m.put("coverUrl", c.getCoverUrl());
+        m.put("country", c.getOwner().getCountry());
+        m.put("areas", Json.strings(c.getAreasJson()));
+        m.put("bio", c.getBio());
+        // Não há loja no cadastro da celebridade; o link de verificação não é um link comercial público.
+        m.put("storeUrl", null);
+        m.put("status", c.getVerificationStatus() == ApprovalStatus.APROVADO ? "Verificada" : c.getVerificationStatus().name());
         m.put("bonds", bonds.countByTargetOwnerIdAndStatus(owner, SealBondStatus.APPROVED));
-        m.put("followers", follows.countByFollowingIdAndStatus(owner, FollowStatus.ACEITO));
         m.put("styleSignature", Json.map(c.getStyleSignatureJson()));
         m.put("material", "VITREO_HOLOGRAFICO");
+        return m;
+    }
+
+    /** Projeção pública compartilhada pelo feed e pelo header; dados da análise e métricas administrativas ficam fora. */
+    private Map<String, Object> publicProfile(User owner, String kind, ApprovalStatus approval) {
+        UUID id = owner.getId();
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("userId", id);
+        m.put("username", owner.getUsername());
+        m.put("userAvatarUrl", owner.getAvatarUrl());
+        m.put("kind", kind);
+        m.put("verified", approval == ApprovalStatus.APROVADO || owner.isVerified());
+        m.put("privateAccount", owner.isPrivateAccount());
+        m.put("visibility", owner.getProfileVisibility() != null ? owner.getProfileVisibility().name()
+                : owner.isPrivateAccount() ? "PRIVATE" : "PUBLIC");
+        m.put("followers", follows.countByFollowingIdAndStatus(id, FollowStatus.ACEITO));
+        m.put("following", follows.countByFollowerIdAndStatus(id, FollowStatus.ACEITO));
+        m.put("pieces", pieces.countByUserIdAndAvailabilityStatusNot(id, AvailabilityStatus.ARCHIVED));
+        m.put("schemes", schemes.countByUserIdAndStatusNot(id, SchemeStatus.ARCHIVED));
+        m.put("activeSeals", seals.countByOwnerIdAndStatus(id, SealStatus.ACTIVE));
         return m;
     }
 
@@ -259,9 +285,6 @@ public class InstitutionalService {
                 throw ApiException.notFound("Marca"); // RF1.CA06 — pendente_validação não tem tela pública
             }
             header.putAll(brandCard(b));
-            header.put("bio", b.getBio());
-            header.put("storeUrl", b.getStoreUrl());
-            header.put("status", b.getApprovalStatus() == ApprovalStatus.APROVADO ? "Validada" : b.getApprovalStatus().name());
             header.put("coverLabel", groupings.findByOwnerIdAndType(u.getId(), GroupingType.COLLECTION).stream().findFirst().map(g -> g.getLabel()).orElse(null));
             header.put("autoApproval", !b.isRequiresSealReview());
         } else {
@@ -270,20 +293,10 @@ public class InstitutionalService {
                 throw ApiException.notFound("Celebridade");
             }
             header.putAll(celebrityCard(c));
-            header.put("bio", c.getBio());
-            header.put("status", c.getVerificationStatus() == ApprovalStatus.APROVADO ? "Verificada" : c.getVerificationStatus().name());
             header.put("coverLabel", groupings.findByOwnerIdAndType(u.getId(), GroupingType.ERA).stream().findFirst().map(g -> g.getLabel()).orElse(null));
             header.put("autoApproval", false);
             header.put("autoApprovalLocked", Msg.t("institutional.todo_vinculo_com_celebridade_exige"));
         }
-        header.put("username", u.getUsername());
-        header.put("following", follows.countByFollowerIdAndStatus(u.getId(), FollowStatus.ACEITO));
-        // header estilo Instagram (RF22): foto de perfil + seguidores/seguindo + peças + esquemas criados
-        header.put("userAvatarUrl", u.getAvatarUrl());
-        header.put("pieces", pieces.countByUserIdAndAvailabilityStatusNot(u.getId(), AvailabilityStatus.ARCHIVED));
-        header.put("schemes", schemes.countByUserIdAndStatusNot(u.getId(), SchemeStatus.ARCHIVED));
-        header.put("kind", brand ? "MARCA" : "CELEBRIDADE");
-        header.put("activeSeals", seals.findByOwnerIdAndStatusOrderByCreatedAtDesc(u.getId(), SealStatus.ACTIVE).size());
         header.put("viewerFollows", viewer != null && follows.findByFollowerIdAndFollowingId(viewer.id(), u.getId()).map(f -> f.getStatus() == FollowStatus.ACEITO).orElse(false));
         header.put("metrics", metrics(u.getId()));
         Map<String, Object> out = new LinkedHashMap<>();
