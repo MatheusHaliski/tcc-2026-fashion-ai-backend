@@ -107,6 +107,20 @@ class Shell {
     const l = Math.round((this.y0 - y) / this.dy); if (l < 0 || l > this.levels) return -1;
     return l * this.NA + (Math.floor(((Math.atan2(x, z) + Math.PI) / (2 * Math.PI)) * this.NA) % this.NA);
   }
+  /** Interpola a envoltória conservadora; a célula vizinha de máximo já garante folga na pele. */
+  private sample(m: Float32Array, rows: number, cols: number, row: number, col: number): number {
+    const y = Math.max(0, Math.min(rows - 1, row)), r = Math.floor(y), c = Math.floor(col);
+    const fy = y - r, fx = col - c, wrap = (x: number) => (x % cols + cols) % cols;
+    const a = lerp(m[r * cols + wrap(c)], m[r * cols + wrap(c + 1)], fx);
+    const b = lerp(m[Math.min(rows - 1, r + 1) * cols + wrap(c)], m[Math.min(rows - 1, r + 1) * cols + wrap(c + 1)], fx);
+    return lerp(a, b, fy);
+  }
+  private sphereRadius(m: Float32Array, v: V3): number {
+    const r = len(v); if (!r) return 0;
+    return this.sample(m, this.NT, this.NP,
+      Math.acos(Math.max(-1, Math.min(1, v[1] / r))) / Math.PI * this.NT - 0.5,
+      (Math.atan2(v[0], v[2]) + Math.PI) / (2 * Math.PI) * this.NP - 0.5);
+  }
   /** Buracos do mapa: o maior vizinho (varredura crescente) e um "máximo" de 1 célula, para a superfície não ter frestas. */
   private fill(m: Float32Array, rows: number, cols: number, passes = 6) {
     for (let pass = 0; pass < passes; pass++) {
@@ -122,12 +136,12 @@ class Shell {
   push(p: V3, off: number): V3 {
     let q = p;
     if (q[1] > this.fr.chinY) {
-      const v = sub(q, this.O); const r = len(v); const R = this.sph[this.sBin(v)];
+      const v = sub(q, this.O); const r = len(v); const R = this.sphereRadius(this.sph, v);
       if (R && r < R + off) q = add(this.O, mul(v, (R + off) / (r || 1)));
     }
     if (q[1] < this.y0) {
       const x = q[0] - this.fr.cx, z = q[2] - this.fr.cz; const k = this.cBin(x, q[1], z);
-      if (k >= 0) { const r = Math.hypot(x, z); const R = this.cyl[k]; if (R && r < R + off) { const f = (R + off) / (r || 1); q = [this.fr.cx + x * f, q[1], this.fr.cz + z * f]; } }
+      if (k >= 0) { const r = Math.hypot(x, z); const R = this.sample(this.cyl, this.levels + 1, this.NA, (this.y0 - q[1]) / this.dy, (Math.atan2(x, z) + Math.PI) / (2 * Math.PI) * this.NA - 0.5); if (R && r < R + off) { const f = (R + off) / (r || 1); q = [this.fr.cx + x * f, q[1], this.fr.cz + z * f]; } }
     }
     return q;
   }
@@ -137,23 +151,23 @@ class Shell {
    */
   hug(p: V3, off: number, slack: number): V3 {
     if (p[1] <= this.fr.chinY) return p;
-    const v = sub(p, this.O); const r = len(v); const R = this.sph[this.sBin(v)];
+    const v = sub(p, this.O); const r = len(v); const R = this.sphereRadius(this.sph, v);
     return R && r > R + off + slack ? add(this.O, mul(v, (R + off + slack) / (r || 1))) : p;
   }
   /** Ponto na pele da cabeça no azimute `phi` (0 = frente) e na altura `y` (duas iterações no mapa esférico). */
   skinAt(phi: number, y: number): V3 | null {
     let rho = 0.08;
     for (let it = 0; it < 3; it++) {
-      const d = norm([Math.sin(phi) * rho, y - this.O[1], Math.cos(phi) * rho]); const R = this.skin[this.sBin(d)]; if (!R) return null;
+      const d = norm([Math.sin(phi) * rho, y - this.O[1], Math.cos(phi) * rho]); const R = this.sphereRadius(this.skin, d); if (!R) return null;
       const p = add(this.O, mul(d, R)); const dy = p[1] - y; if (Math.abs(dy) < 0.0005) return p;
       rho = Math.max(0.01, rho * (1 + dy / Math.max(0.02, R)));
     }
-    const d = norm([Math.sin(phi) * rho, y - this.O[1], Math.cos(phi) * rho]); const R = this.skin[this.sBin(d)];
+    const d = norm([Math.sin(phi) * rho, y - this.O[1], Math.cos(phi) * rho]); const R = this.sphereRadius(this.skin, d);
     return R ? add(this.O, mul(d, R)) : null;
   }
   /** Distância (m) do ponto à pele da cabeça na direção radial (negativa = dentro); sem pele no setor, Infinity. */
   skinGap(p: V3): number {
-    const v = sub(p, this.O); const R = this.skin[this.sBin(v)]; return R ? len(v) - R : Infinity;
+    const v = sub(p, this.O); const R = this.sphereRadius(this.skin, v); return R ? len(v) - R : Infinity;
   }
   /** Direção "para fora" num ponto: radial da cabeça no alto, radial do tronco embaixo. */
   outward(p: V3): V3 {
@@ -177,16 +191,17 @@ function fiberTexture(): THREE.CanvasTexture | null {
   const gauss = () => (r() + r() + r() + r() - 2) / 1.15;                  // ~normal, desvio ≈ 0,5
   for (let c = 0; c < C; c++) {
     const x0 = (c * W) / C, cw = W / C, mid = x0 + cw / 2;
-    for (let x = 0; x < cw; x++) { const d = (x + 0.5 - cw / 2) / (cw * 0.28); g.fillStyle = `rgba(210,210,210,${(0.16 * Math.exp(-d * d)).toFixed(3)})`; g.fillRect(x0 + x, 0, 1, H); }
+    for (let x = 0; x < cw; x++) { const d = (x + 0.5 - cw / 2) / (cw * 0.28); g.fillStyle = `rgba(255,255,255,${(0.08 * Math.exp(-d * d)).toFixed(3)})`; g.fillRect(x0 + x, 0, 1, H); }
     for (let f = 0; f < 40; f++) {
       const o = Math.max(-0.45, Math.min(0.45, gauss() * 0.24)); const x = mid + o * cw; const edge = Math.abs(o) / 0.45;
-      const lum = Math.round(150 + r() * 105); const a = (0.55 + r() * 0.45) * (1 - 0.6 * edge);
+      const a = (0.65 + r() * 0.35) * (1 - 0.6 * edge);
       const ph = r() * 6.28, per = 70 + r() * 110, amp = 0.25 + r() * 0.6;
-      g.strokeStyle = `rgba(${lum},${lum},${lum},${a.toFixed(3)})`; g.lineWidth = 0.4 + r() * 0.8; g.beginPath();
+      // A textura só define cobertura. Pintar brilho nela somava faixas claras ao reflexo e cintilava ao girar.
+      g.strokeStyle = `rgba(255,255,255,${a.toFixed(3)})`; g.lineWidth = 0.7 + r() * 0.65; g.beginPath();
       let pen = true; g.moveTo(x + Math.sin(ph) * amp, 0);
       for (let y = 4; y <= H; y += 4) {
         const xx = x + Math.sin((y / per) * 6.283 + ph) * amp;
-        if (pen ? r() < 0.005 : r() < 0.06) pen = !pen;
+        if (pen ? r() < 0.001 : r() < 0.06) pen = !pen;
         if (pen) g.lineTo(xx, y); else g.moveTo(xx, y);
       }
       g.stroke();
@@ -289,9 +304,13 @@ export function growGroom(ctx: StrandContext, hair: AvatarHair, base: HairBuild,
     let want: V3;
     const bangs = fstyle === "wispy" && fringe > 0.3 && front && root[1] > fr.toY(8) && ny > 0.2;
     if (bangs) want = [side * 0.35, -0.35, 1];
-    else if (ny > 0.45) want = long ? [side * 1, -0.5, -0.25] : front ? [side * 0.45, 0.05, -1] : [side * 0.9, -0.25, -0.55];
-    else if (front) want = long ? [side * 0.9, -0.3, -0.45] : [side * 0.45, 0.15, -1];     // linha da testa: de lado/para trás
-    else want = [0, -1, -0.15];
+    else {
+      // Campo de penteado contínuo: a troca abrupta na normal/ângulo da raiz formava fileiras de mechas.
+      const face = 1 - smooth(0.45, 1.1, Math.abs(phi)), crown = smooth(0.12, 0.65, ny);
+      const top: V3 = long ? [side, -0.5, -0.25] : [side * lerp(0.9, 0.45, face), lerp(-0.25, 0.05, face), lerp(-0.55, -1, face)];
+      const edge: V3 = long ? [side * 0.9 * face, lerp(-1, -0.3, face), lerp(-0.15, -0.45, face)] : [side * 0.45 * face, lerp(-1, 0.15, face), lerp(-0.15, -1, face)];
+      want = add(mul(edge, 1 - crown), mul(top, crown));
+    }
     let tan = norm(sub(want, mul(n, dot(want, n)))); if (!len(tan)) tan = norm(sub(G, mul(n, dot(G, n))));
     // comprimento
     const crown = smooth(fr.earY, fr.headTop, root[1]);
@@ -471,9 +490,11 @@ export function strandsFromGroom(ctx: StrandContext, groom: HairGroom, lod: 0 | 
   let tris = 0;
   for (let g = 0; g < nGuides; g++) {
     if (pickRand() > spec.guideFraction) continue;
+    const kind = groom.kind[g]; if (cards && kind === BABY_KIND) continue;
     const segs = Math.min(spec.maxPoints, groom.start[g + 1] - groom.start[g]) - 1;
-    if (spec.maxTriangles && tris + segs * 2 * perGuide > spec.maxTriangles) break;
-    tris += segs * 2 * perGuide; use.push(g);
+    const ribbons = kind >= 2 && kind !== BABY_KIND ? perGuide * 2 : kind === BABY_KIND ? 1 : perGuide;
+    if (spec.maxTriangles && tris + segs * 2 * ribbons > spec.maxTriangles) break;
+    tris += segs * 2 * ribbons; use.push(g);
   }
   const pos: number[] = [], nor: number[] = [], tng: number[] = [], uv: number[] = [], col: number[] = [], si: number[] = [], sw: number[] = [], index: number[] = [];
   let ribbons = 0, stray = 0;
@@ -498,18 +519,22 @@ export function strandsFromGroom(ctx: StrandContext, groom: HairGroom, lod: 0 | 
       const isStray = !cards && !styled && rand() < spec.stray * (long ? 1 : 0.35);   // curto: quase sem fio solto (parecia espetado)
       const ob = cards ? 0 : (rand() - 0.5) * (styled ? 0.016 : 0.012), on = cards ? 0 : (rand() - 0.2) * (styled ? 0.0025 : 0.004);
       const lf = blunt ? 1 : styled ? 0.93 + rand() * 0.07 : isStray ? 0.95 + rand() * 0.15 : 0.78 + rand() * 0.26;
-      const w0 = (0.0032 + rand() * 0.0028) * (texture === "coily" && !styled ? 1.4 : 1) * spec.width * (isStray ? 0.35 : 1) * (styled ? 1.3 : baby ? 0.7 : 1);
+      const w0 = (0.0032 + rand() * 0.0028) * (texture === "coily" && !styled ? 1.4 : 1) * spec.width * (isStray ? 0.35 : 1) * (styled ? 1.3 : baby ? 0.45 : 1);
       const tone = 0.95 + rand() * 0.1;                                         // ±5% por fio (plano A3.3)
       const ao = cards ? 0.92 : 0.74 + 0.26 * smooth(-0.0012, 0.0028, on);     // oclusão: o interior da mecha escurece
-      const uSpan = cards ? 0.36 : 0.111 * Math.min(1, spec.width);
-      const colBand = Math.floor(rand() * (cards ? 6 : 8)) / 8; const ph = phG + (rand() - 0.5) * 0.35; const clump = styled ? 0.15 + rand() * 0.2 : 0.55 + rand() * 0.3;
+      // Todas as larguras/LODs usam uma coluna inteira. Cortar metade no nível alto ou atravessar três colunas
+      // nos cards alterava a densidade e criava descontinuidades de brilho no meio de uma mesma mecha.
+      const uSpan = 0.111;
+      const colBand = Math.floor(rand() * 8) / 8; const ph = phG + (rand() - 0.5) * 0.35; const clump = styled ? 0.15 + rand() * 0.2 : 0.55 + rand() * 0.3;
+      const frizzPhase = rand() * Math.PI * 2;
       const sDir: V3 = norm([rand() - 0.5, rand() - 0.5, rand() - 0.5]);       // fio solto: para onde ele escapa
-      const base0 = pos.length / 3; let made = 0;
+      const base0 = pos.length / 3; const centers: V3[] = [], samples: { s: number; tw: number; w: number }[] = [];
       for (let i = 0; i < nS; i++) {
         const t = arcs[i] / total2; if (t > lf + 1e-6 && i > 1) break;
         const s = arcs[i];
-        let off = add(mul(Bv[i], ob * (1 - clump * t)), mul(N[i], on * (1 - t)));
-        const fz = cards || styled ? 0 : (rand() - 0.5) * 0.0005 * t; off = add(off, mul(Bv[i], fz));
+        // Na raiz não há deslocamento para fora: o fio nasce na calota, depois ganha folga.
+        let off = add(mul(Bv[i], ob * (1 - clump * t)), mul(N[i], on * smooth(0, 0.18, t) * (1 - t)));
+        const fz = cards || styled ? 0 : Math.sin(frizzPhase + t * 5.2) * 0.00022 * t; off = add(off, mul(Bv[i], fz));
         if (isStray) off = add(off, add(mul(N[i], 0.006 * t ** 1.5), mul(sDir, 0.004 * t * t)));
         // ondulado; nos cards, cacho e crespo viram onda larga (a hélice não cabe em 7 pontos)
         if (styled || baby) { /* franja e linha do cabelo penteadas: sem onda nem cacho */ }
@@ -523,11 +548,22 @@ export function strandsFromGroom(ctx: StrandContext, groom: HairGroom, lod: 0 | 
         // escolhida tem a própria linha de corte (growStyledFringe)
         if (i > 1 && (fk === 0 ? inFace(center) || onSkin(center) : fk === 1 || baby ? inFace(center) : false)) break;
         const tw = t / lf; const w = w0 * (1 - (blunt ? 0.15 : cards ? 0.45 : 0.72) * Math.min(1, tw));
-        for (const sgn of [-1, 1]) {
-          // a borda da fita também fica por fora (no ombro curvo a borda afundava na pele mesmo com o centro fora)
-          const q = shell.push(add(center, mul(Bv[i], (sgn * w) / 2)), 0.0006);
-          pos.push(q[0], q[1], q[2]); nor.push(N[i][0], N[i][1], N[i][2]); tng.push(T[i][0], T[i][1], T[i][2], 1);
-          uv.push(colBand + (sgn > 0 ? uSpan + 0.007 : 0.007), s / 0.12);
+        centers.push(center); samples.push({ s, tw, w });
+      }
+      let made = 0;
+      for (let i = 0; i < centers.length; i++) {
+        const center = centers[i]; const { s, tw, w } = samples[i];
+        // A tangente pertence à fita depois de onda, frizz e colisão, e não à guia antes desses deslocamentos.
+        const tangent = norm(sub(centers[Math.min(centers.length - 1, i + 1)], centers[Math.max(0, i - 1)]));
+        const widthDir = norm(sub(Bv[i], mul(tangent, dot(Bv[i], tangent))));
+        const normal = norm(cross(widthDir, tangent));
+        // Cards largos também precisam deixar o rosto livre nas bordas, não só na linha central da guia.
+        const vertices = [-1, 1].map((sgn) => shell.push(add(center, mul(widthDir, (sgn * w) / 2)), 0.0006));
+        if (vertices.some((q) => fk === 0 ? inFace(q) || onSkin(q) : (fk === 1 || baby) && inFace(q))) break;
+        for (let side = 0; side < vertices.length; side++) {
+          const q = vertices[side];
+          pos.push(q[0], q[1], q[2]); nor.push(normal[0], normal[1], normal[2]); tng.push(tangent[0], tangent[1], tangent[2], 1);
+          uv.push(colBand + (side ? uSpan + 0.007 : 0.007), s / 0.12);
           // raiz mais escura, ponta mais clara (+6%), tom do fio e oclusão da mecha
           const shade = tone * ao * (0.6 + 0.4 * smooth(0, 0.3, tw)) * (1 + 0.06 * smooth(0.7, 1, tw));
           const tip = blunt ? 1 - 0.35 * smooth(0.95, 1, tw) : 1 - 0.9 * smooth(0.72, 1, tw);
@@ -535,7 +571,7 @@ export function strandsFromGroom(ctx: StrandContext, groom: HairGroom, lod: 0 | 
           const wH = smooth(fr.chinY - 0.08, fr.chinY + 0.02, q[1]), wS = 1 - smooth(shoulderY - 0.06, shoulderY + 0.02, q[1]);
           si.push(bones.head, bones.neck, bones.spine2, 0); sw.push(wH, Math.max(0, 1 - wH - wS), wS, 0);
         }
-        if (made) { const a0 = base0 + (made - 1) * 2; index.push(a0, a0 + 2, a0 + 1, a0 + 1, a0 + 2, a0 + 3); }
+        if (i) { const a0 = base0 + (i - 1) * 2; index.push(a0, a0 + 2, a0 + 1, a0 + 1, a0 + 2, a0 + 3); }
         made++;
       }
       if (made >= 2) { ribbons++; if (isStray) stray++; }
@@ -563,10 +599,26 @@ export function strandGeometry(a: BodyAsset, c: Composed, hair: AvatarHair, base
 
 // ------------------------------------------------------------------ sombreamento de fio
 
+// Preserva a cobertura real da fibra (inclusive os mipmaps) no MSAA. O recorte padrão de Three transforma alfa
+// filtrado acima do limiar em 100%, revelando a forma plana da fita. Sem MSAA continua o recorte convencional.
+const FIBER_COVERAGE = /* glsl */ `
+#ifdef USE_ALPHATEST
+  #ifdef ALPHA_TO_COVERAGE
+    if ( hairCoverageAA > 0.5 ) {
+      if ( diffuseColor.a < 0.004 ) discard;
+    } else {
+      if ( diffuseColor.a < alphaTest ) discard;
+    }
+  #else
+    if ( diffuseColor.a < alphaTest ) discard;
+  #endif
+#endif
+`;
+
 /** Brilho de fio (Kajiya-Kay, dois lóbulos) somado à luz direta, sobre a tangente do fio (tbn[0]). */
 const KAJIYA_KAY = /* glsl */ `
 #include <lights_fragment_end>
-#if defined( USE_TANGENT ) && ( NUM_DIR_LIGHTS > 0 )
+#if defined( USE_TANGENT )
 {
   vec3 hT = normalize( tbn[ 0 ] );
   float band = 0.0;
@@ -574,21 +626,40 @@ const KAJIYA_KAY = /* glsl */ `
   band = floor( vMapUv.x * 8.0 );
   #endif
   float jit = fract( sin( band * 12.9898 + 4.1414 ) * 43758.5453 ) - 0.5;      // variação do brilho por mecha
-  vec3 T1 = normalize( hT + normal * ( hairShift1 + 0.08 * jit ) );
-  vec3 T2 = normalize( hT + normal * ( hairShift2 + 0.08 * jit ) );
+  vec3 T1 = normalize( hT + normal * ( hairShift1 + 0.025 * jit ) );
+  vec3 T2 = normalize( hT + normal * ( hairShift2 + 0.025 * jit ) );
   // a fita é plana: o lóbulo GGX dela e o reflexo do ambiente em ângulo rasante deixam o fio prateado; o brilho de fio
   // (Kajiya-Kay) substitui o especular direto e o do ambiente fica só um resto
   reflectedLight.directSpecular = vec3( 0.0 );
   reflectedLight.indirectSpecular *= hairEnvSpec;
+  // Filtra lóbulos estreitos quando a direção muda mais que um pixel, evitando pontos cintilantes em movimento.
+  float specAA = 1.0 + 12.0 * length( fwidth( hT ) );
+  vec3 primaryTint = mix( diffuseColor.rgb, vec3( 1.0 ), 0.12 );
+  #if NUM_DIR_LIGHTS > 0
+  vec3 hairL, hairH;
+  float d1, d2, s1, s2, facing, hairShadow;
+  #if defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
+  DirectionalLightShadow hShadowInfo;
+  #endif
+  #pragma unroll_loop_start
   for ( int i = 0; i < NUM_DIR_LIGHTS; i ++ ) {
-    vec3 L = directionalLights[ i ].direction;
-    vec3 H = normalize( L + geometryViewDir );
-    float d1 = dot( T1, H ); float d2 = dot( T2, H );
-    float s1 = pow( sqrt( max( 0.0, 1.0 - d1 * d1 ) ), hairExp1 );
-    float s2 = pow( sqrt( max( 0.0, 1.0 - d2 * d2 ) ), hairExp2 );
-    float facing = smoothstep( -0.15, 0.35, dot( normal, L ) );
-    reflectedLight.directSpecular += directionalLights[ i ].color * facing * ( hairSpec1 * s1 + hairSpec2 * s2 * diffuseColor.rgb );
+    hairL = directionalLights[ i ].direction;
+    hairH = normalize( hairL + geometryViewDir );
+    d1 = dot( T1, hairH ); d2 = dot( T2, hairH );
+    s1 = pow( sqrt( max( 0.0, 1.0 - d1 * d1 ) ), hairExp1 / specAA );
+    s2 = pow( sqrt( max( 0.0, 1.0 - d2 * d2 ) ), hairExp2 / specAA );
+    facing = smoothstep( -0.15, 0.35, dot( normal, hairL ) );
+    hairShadow = 1.0;
+    #if defined( USE_SHADOWMAP ) && ( UNROLLED_LOOP_INDEX < NUM_DIR_LIGHT_SHADOWS )
+    hShadowInfo = directionalLightShadows[ i ];
+    hairShadow = receiveShadow ? getShadow( directionalShadowMap[ i ], hShadowInfo.shadowMapSize,
+      hShadowInfo.shadowIntensity, hShadowInfo.shadowBias, hShadowInfo.shadowRadius, vDirectionalShadowCoord[ i ] ) : 1.0;
+    #endif
+    reflectedLight.directSpecular += directionalLights[ i ].color * hairShadow * facing / sqrt( specAA ) *
+      ( hairSpec1 * s1 * primaryTint + hairSpec2 * s2 * diffuseColor.rgb );
   }
+  #pragma unroll_loop_end
+  #endif
 }
 #endif
 `;
@@ -600,21 +671,24 @@ const KAJIYA_KAY = /* glsl */ `
 export function strandMaterial(color: string, lod: HairLod = 1): THREE.MeshPhysicalMaterial {
   const m = new THREE.MeshPhysicalMaterial({
     color, map: fiberTexture(), vertexColors: true, side: THREE.DoubleSide,
-    alphaTest: 0.2, alphaToCoverage: true,                      // bordas de fio suaves com MSAA; sem ele, recorte em 0,2
-    roughness: 0.62, metalness: 0, anisotropy: 0.05,
-    polygonOffset: true, polygonOffsetFactor: -1.5, polygonOffsetUnits: -10,     // fator baixo: ver hair-geometry.ts
+    alphaTest: 0.12, alphaToCoverage: true, dithering: true,    // preserva pontas/fibras filtradas por mipmaps
+    roughness: 0.72, metalness: 0, anisotropy: 0.05,
+    // A geometria já tem folga. Viés dependente da inclinação trazia fios de trás para a frente da bochecha.
+    polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: -1,
   });
   const uniforms = {
-    hairShift1: { value: -0.09 }, hairShift2: { value: 0.12 },                 // primário para a raiz, secundário para a ponta
-    hairExp1: { value: lod === 2 ? 90 : 140 }, hairExp2: { value: 24 },
-    hairSpec1: { value: 0.5 }, hairSpec2: { value: 0.7 }, hairEnvSpec: { value: 0.3 },
+    hairShift1: { value: -0.12 }, hairShift2: { value: 0.2 },                // primário para a raiz, secundário para a ponta
+    hairExp1: { value: lod === 2 ? 48 : 64 }, hairExp2: { value: 18 },
+    hairSpec1: { value: 0.18 }, hairSpec2: { value: 0.22 }, hairEnvSpec: { value: 0.18 },
+    hairCoverageAA: { value: 1 },
   };
-  m.onBeforeCompile = (shader) => {
+  m.onBeforeCompile = (shader, renderer) => {
+    const gl = renderer?.getContext?.(); uniforms.hairCoverageAA.value = !gl || gl.getParameter(gl.SAMPLES) > 0 ? 1 : 0;
     Object.assign(shader.uniforms, uniforms);
-    shader.fragmentShader = "uniform float hairShift1, hairShift2, hairExp1, hairExp2, hairSpec1, hairSpec2, hairEnvSpec;\n" +
-      shader.fragmentShader.replace("#include <lights_fragment_end>", KAJIYA_KAY);
+    shader.fragmentShader = "uniform float hairShift1, hairShift2, hairExp1, hairExp2, hairSpec1, hairSpec2, hairEnvSpec, hairCoverageAA;\n" +
+      shader.fragmentShader.replace("#include <alphatest_fragment>", FIBER_COVERAGE).replace("#include <lights_fragment_end>", KAJIYA_KAY);
   };
-  m.customProgramCacheKey = () => "fai-hair-kk";
+  m.customProgramCacheKey = () => "fai-hair-kk-coverage-v3";
   m.userData.hairShading = "kajiya-kay"; m.userData.hairUniforms = uniforms;     // ajuste fino ao vivo (laboratório)
   m.name = "cabelo-fios";
   return m;

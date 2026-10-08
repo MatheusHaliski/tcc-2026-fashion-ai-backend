@@ -51,8 +51,10 @@ export function fitGlasses(a: BodyAsset, c: Composed): GlassesFit {
   const backExtent = Math.sin(WRAP) * (w / 2) + FRAME_RADIUS;
   let z0 = Math.max(front + 0.012 + backExtent, bridgeZ - 0.002);
   const behind: number[] = [];
-  for (let i = 0; i < lm.length / 3; i++) {
-    const [x, y, z] = P(lm, i);
+  // Face landmarks are sparse; personalized cheek/brow vertices between them can protrude farther forwards.
+  // Fit against the entire composed mesh so those areas cannot turn the frame into a skin-coloured incision.
+  for (let i = 0; i < c.body.length; i += 3) {
+    const x = c.body[i], y = c.body[i + 1], z = c.body[i + 2];
     for (const ctr of [center.left, center.right]) if (Math.abs(x - ctr[0]) < w / 2 && Math.abs(y - ctr[1]) < h / 2) behind.push(z);
   }
   if (behind.length) z0 = Math.max(z0, Math.max(...behind) + 0.004 + backExtent);
