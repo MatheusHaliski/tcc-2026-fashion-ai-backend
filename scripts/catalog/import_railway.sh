@@ -4,6 +4,7 @@
 #   2. import_products.py   — o acervo coletado dos sites oficiais (data/catalog/acervo/*.jsonl.gz)
 #   3. rebuild_search_index.py — texto de busca (FULLTEXT) de todos os produtos
 # Idempotente: rodar de novo não duplica nada (dedup por identificador forte / URL canônica / modelo+cor).
+# --skip-existing evita alterações em registros já existentes; novos filhos ainda são adicionados.
 #
 # Uso (o MySQL do Railway só aceita conexão externa por um TCP proxy temporário: MySQL → Settings → Networking):
 #   export RAILWAY_MYSQL_APP_PASSWORD=...        # valor de MYSQL_APP_PASSWORD do serviço MySQL (nunca no código/log)
@@ -20,6 +21,8 @@ HOST="${1:?informe o host do TCP proxy (ex.: mainline.proxy.rlwy.net)}"
 PORT="${2:?informe a porta do TCP proxy}"
 DRY="${3:-}"
 [ -z "$DRY" ] || [ "$DRY" = "--dry-run" ] || { echo "3º argumento só pode ser --dry-run" >&2; exit 2; }
+IMPORT_ARGS=(--skip-existing)
+[ -z "$DRY" ] || IMPORT_ARGS+=("$DRY")
 [ -n "${RAILWAY_MYSQL_APP_PASSWORD:-}" ] || { echo "defina RAILWAY_MYSQL_APP_PASSWORD (MYSQL_APP_PASSWORD do serviço MySQL)" >&2; exit 2; }
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
@@ -52,9 +55,9 @@ c.close()
 EOF
 
 echo "== 1/3 Seed (marcas, apelidos, fontes oficiais, produtos do seed)"
-python3 scripts/catalog/seed_catalog.py ${DRY}
+python3 scripts/catalog/seed_catalog.py "${IMPORT_ARGS[@]}"
 echo "== 2/3 Acervo oficial: ${ACERVO[*]##*/}"
-python3 scripts/catalog/import_products.py "${ACERVO[@]}" --batch-size 1000 ${DRY}
+python3 scripts/catalog/import_products.py "${ACERVO[@]}" --batch-size 1000 "${IMPORT_ARGS[@]}"
 echo "== 3/3 Índice de busca"
 if [ -z "$DRY" ]; then python3 scripts/catalog/rebuild_search_index.py; else echo "(pulado no dry-run)"; fi
 echo "== Pronto. Remova o TCP proxy do MySQL no Railway."
