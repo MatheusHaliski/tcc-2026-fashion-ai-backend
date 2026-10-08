@@ -4,8 +4,24 @@ import type { CatalogCardImage, NormRect } from "@/lib/api/catalog";
 import type { PieceView } from "@/lib/api/types";
 import { cn } from "@/components/ui";
 
+/** Only ratios emitted by the image pipeline; malformed/legacy metadata keeps the portrait frame. */
+export function photoAspect(aspect?: string | null): string {
+  const match = /^(\d+(?:\.\d+)?):(\d+(?:\.\d+)?)$/.exec(aspect ?? "");
+  if (!match) return "4 / 5";
+  const a = Number(match[1]), b = Number(match[2]);
+  return b > 0 && a / b >= 0.25 && a / b <= 4 ? `${a} / ${b}` : "4 / 5";
+}
+
+/** Image metadata only applies to the image it was produced for. */
+export function piecePhotoAspect(piece: PieceView): string {
+  const meta = piece.flatLayMetadata as { studio?: { feed?: { aspect?: string } }; catalogImage?: CatalogCardImage } | undefined;
+  if (piece.studioFeedUrl) return photoAspect(meta?.studio?.feed?.aspect);
+  if (meta?.catalogImage?.url === piece.imageUrl) return photoAspect(meta?.catalogImage?.aspect);
+  return photoAspect();
+}
+
 /**
- * Posição da foto original dentro do quadro 4:5 para mostrar só o recorte semântico, sem esticar: o recorte já tem
+ * Posição da foto original dentro do quadro informado pelo pipeline para mostrar só o recorte semântico, sem esticar: o recorte já tem
  * a proporção do quadro em pixels, então largura = 1/w do quadro e o deslocamento é proporcional a x/w e y/h.
  * Recorte que passa da borda da foto (smartPadding) deixa aparecer o fundo do quadro, pintado com a cor do fundo.
  */
@@ -23,7 +39,7 @@ export function pieceCatalogCrop(p: PieceView): CatalogCardImage | null {
   return ci?.mode === "SEMANTIC_CROP" && ci.crop && ci.url && ci.url === p.imageUrl ? ci : null;
 }
 
-/** Foto do card da Busca Catalogada: canônica do pipeline (recorte 4:5 ou master processado) ou a foto inteira. */
+/** Foto do card da Busca Catalogada: canônica do pipeline (recorte de tecido ou master processado) ou a foto inteira. */
 export function CatalogPhoto({ image, fallbackUrl, alt, className }: { image?: CatalogCardImage | null; fallbackUrl?: string | null; alt: string; className?: string }) {
   if (image?.mode === "SEMANTIC_CROP" && image.crop) {
     return (
