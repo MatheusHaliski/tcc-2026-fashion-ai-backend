@@ -21,6 +21,9 @@ public interface SealRepository extends JpaRepository<Seal, UUID> {
 
     List<Seal> findByOwnerIdAndStatusOrderByCreatedAtDesc(UUID ownerId, SealStatus status);
 
+    /** Contador público do perfil: não carrega políticas e arte de todos os selos para montar o header/feed. */
+    long countByOwnerIdAndStatus(UUID ownerId, SealStatus status);
+
     List<Seal> findByIdIn(Collection<UUID> ids);
 
     /** Selos ativos de todos os emissores: avaliação das políticas padronizadas (RF25) nos criadores de peça e look. */
