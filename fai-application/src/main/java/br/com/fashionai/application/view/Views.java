@@ -188,6 +188,12 @@ public final class Views {
                 Json.map(si.getFiltersJson()), row(si));
     }
 
+    public record TipoLookView(UUID id, String codigo, String nome) { }
+
+    public static TipoLookView tipoLook(br.com.fashionai.domain.model.TipoLook tipo) {
+        return tipo == null ? null : new TipoLookView(tipo.getId(), tipo.getCodigo(), tipo.getNome());
+    }
+
     public record SchemeView(UUID id, UserCard owner, String title, String description, String creationMode,
                              String origin, List<String> style, List<String> occasion, String season, String mood,
                              String visibility, String status, String displayMode, boolean disponivel,
@@ -198,7 +204,7 @@ public final class Views {
                              Map<String, Object> renderingMetadata,
                              UUID remixedFromId, boolean revalidationPending, Counters counters, ViewerState viewer,
                              Instant publishedAt, Instant createdAt, Instant updatedAt,
-                             List<Map<String, Object>> sealBadges, String mannequinImageUrl, String mannequinImageFace) {
+                             List<Map<String, Object>> sealBadges, String mannequinImageUrl, String mannequinImageFace, TipoLookView tipoLook) {
     }
 
     public static SchemeView scheme(Scheme s, List<SchemeItem> items, ViewerState viewer, Map<String, Long> reactions) {
@@ -226,7 +232,7 @@ public final class Views {
                 s.isRevalidationPending(), new Counters(s.getLikeCount(), s.getCommentCount(), s.getShareCount(),
                 s.getRemixCount(), s.getViewCount(), s.getSaveCount(), reactions == null ? Map.of() : reactions),
                 viewer == null ? ViewerState.NONE : viewer, s.getPublishedAt(), s.getCreatedAt(), s.getUpdatedAt(),
-                sealBadges == null ? List.of() : sealBadges, s.getMannequinImageUrl(), s.getMannequinImageFace());
+                sealBadges == null ? List.of() : sealBadges, s.getMannequinImageUrl(), s.getMannequinImageFace(), tipoLook(s.getTipoLook()));
     }
 
     public record PhotoView(UUID id, String origin, UUID sourceEntityId, String url, String thumbnailUrl,

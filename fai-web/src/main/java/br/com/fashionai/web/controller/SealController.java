@@ -115,6 +115,12 @@ public class SealController {
                 body.brandName(), body.occasion(), body.style()));
     }
 
+    @GetMapping("/api/schemes/{schemeId}/seal-preview")
+    @Operation(summary = "RF13 — Verificar selos do look usado no DNA, sem alterar vínculos")
+    public Map<String, Object> previewScheme(CurrentUser user, @PathVariable UUID schemeId) {
+        return seals.previewScheme(user, schemeId);
+    }
+
     @GetMapping("/api/schemes/{schemeId}/seal-suggestions")
     @Operation(summary = "RF21.CA01 — Sugestões de vínculo de selo para o esquema (SealBond Matcher)")
     public Map<String, Object> suggest(CurrentUser user, @PathVariable UUID schemeId) {

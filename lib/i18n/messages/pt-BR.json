@@ -8175,5 +8175,13 @@
   "multiPiece.box_height": "Altura",
   "multiPiece.confianca_recorte": "Confiança do recorte: {pct}%",
   "multiPiece.recorte_obrigatorio": "Ajuste o recorte desta peça para não cadastrar a foto com todas as roupas.",
-  "multiPiece.tempo_esgotado": "A análise demorou demais. Tente novamente com uma foto menor ou verifique a conexão."
+  "multiPiece.tempo_esgotado": "A análise demorou demais. Tente novamente com uma foto menor ou verifique a conexão.",
+  "lookType.label": "Tipo de look",
+  "lookType.hint": "Sua escolha fica salva no Espelho e acompanha o look ao salvá-lo.",
+  "lookType.select": "Selecione o tipo de look",
+  "lookSeals.verify": "Verificar selos",
+  "lookSeals.dnaTitle": "Verificação de selos dos looks",
+  "lookSeals.dnaHint": "Cada look é verificado separadamente. Os pedidos selecionados serão enviados ao salvar o DNA.",
+  "lookSeals.status.APPROVED": "Aprovado",
+  "lookSeals.status.PENDING_REVIEW": "Aguardando aprovação"
 }

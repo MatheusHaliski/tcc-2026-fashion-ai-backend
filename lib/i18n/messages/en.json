@@ -8175,5 +8175,13 @@
   "multiPiece.box_height": "Height",
   "multiPiece.confianca_recorte": "Crop confidence: {pct}%",
   "multiPiece.recorte_obrigatorio": "Adjust this crop so the photo with all the garments is not saved as one piece.",
-  "multiPiece.tempo_esgotado": "Analysis took too long. Retry with a smaller photo or check your connection."
+  "multiPiece.tempo_esgotado": "Analysis took too long. Retry with a smaller photo or check your connection.",
+  "lookType.label": "Look type",
+  "lookType.hint": "Your choice is saved in the Mirror and included when you save the look.",
+  "lookType.select": "Select the look type",
+  "lookSeals.verify": "Check seals",
+  "lookSeals.dnaTitle": "Look seal verification",
+  "lookSeals.dnaHint": "Each look is checked separately. Selected requests are sent when saving the DNA.",
+  "lookSeals.status.APPROVED": "Approved",
+  "lookSeals.status.PENDING_REVIEW": "Awaiting approval"
 }
