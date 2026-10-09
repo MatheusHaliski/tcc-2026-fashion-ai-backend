@@ -21,13 +21,57 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 PIPELINE_VERSION = "CATALOG_IMAGE_PIPELINE_V4"
 MAX_BYTES = 10 * 1024 * 1024  # Mesmo ImageOps.MAX_UPLOAD_BYTES da API Java.
+PROGRESS_INTERVAL = 5
+
+
+def progress(message):
+    """Keep phase/counter messages separate from the JSON result and omit inputs."""
+    print("[catalogo] " + message, file=sys.stderr, flush=True)
+
+
+class ProgressCounter:
+    def __init__(self, label, total):
+        self.label = label
+        self.total = total
+        self.last_report = time.monotonic()
+        progress(f"{label}: 0/{total}.")
+
+    def update(self, completed, *, detail="", force=False):
+        now = time.monotonic()
+        if force or now - self.last_report >= PROGRESS_INTERVAL:
+            progress(f"{self.label}: {completed}/{self.total}." + (" " + detail if detail else ""))
+            self.last_report = now
+
+
+def analyze_records(records, downloader, analyzer, checkpoint, *, workers):
+    """Report completions as they arrive while preserving the inventory's order."""
+    results = [None] * len(records)
+    counter = ProgressCounter("Analisando registros de imagem", len(records))
+    analyzed = failures = completed = 0
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        pending = {
+            pool.submit(audit_record, row, downloader, analyzer, checkpoint, apply=True): index
+            for index, row in enumerate(records)
+        }
+        while pending:
+            done, _ = wait(pending, timeout=PROGRESS_INTERVAL, return_when=FIRST_COMPLETED)
+            for future in done:
+                index = pending.pop(future)
+                result = future.result()
+                results[index] = result
+                completed += 1
+                analyzed += bool(result.get("analysis"))
+                failures += bool(result.get("error"))
+            counter.update(completed, detail=f"Análises concluídas: {analyzed}; falhas: {failures}.")
+    counter.update(completed, detail=f"Análises concluídas: {analyzed}; falhas: {failures}.", force=True)
+    return results
 
 
 class DownloadFailure(RuntimeError):
@@ -279,10 +323,14 @@ def main(argv=None):
     if args.database:
         configure_railway_environment()
     args.output.parent.mkdir(parents=True, exist_ok=True)
+    progress("Consultando o inventário atual do MySQL..." if args.database else "Lendo o inventário local...")
     records = list(load_database() if args.database else load_snapshot(args.snapshot))
     total = len(records)
+    progress(f"Inventário carregado: {len({r['product_id'] for r in records})} peças, "
+             f"{sum(bool(r.get('source_url')) for r in records)} imagens, {total} registros.")
     if args.limit:
         records = records[:args.limit]
+        progress(f"Amostra selecionada: {len(records)} registros.")
     summary = {"source_scope": "DATABASE" if args.database else "SNAPSHOT_LOCAL",
                "source": "MySQL configurado em MYSQL_*" if args.database else ", ".join(str(p) for p in args.snapshot),
                "pipeline_version": PIPELINE_VERSION, "sample": bool(args.limit), "inventory_rows": total,
@@ -290,6 +338,7 @@ def main(argv=None):
     if args.apply:
         from catalog_image_analyzer import CatalogImageAnalyzer, ensure_classpath
         from catalog_image_inventory import is_standardized
+        progress("Preparando e iniciando o pipeline Java...")
         classpath = ensure_classpath(Path(__file__).resolve().parents[2], classpath=args.java_classpath)
         checkpoint = AnalysisCheckpoint(args.checkpoint or args.output.with_suffix(".checkpoint.sqlite"))
         try:
@@ -305,8 +354,8 @@ def main(argv=None):
                                           stderr_path=args.output.with_suffix(".java.log")) as analyzer:
                     if analyzer.ready["pipelineVersion"] != PIPELINE_VERSION:
                         raise RuntimeError("JAR desatualizado: compile a versão atual do pipeline antes de aplicar")
-                    with ThreadPoolExecutor(max_workers=args.workers) as pool:
-                        records = list(pool.map(lambda row: audit_record(row, downloader, analyzer, checkpoint, apply=True), records))
+                    progress("Pipeline Java pronto.")
+                    records = analyze_records(records, downloader, analyzer, checkpoint, workers=args.workers)
                     summary["network_proxy_blocked"] = downloader.proxy_blocked
                     if args.database:
                         from catalog_image_updates import apply_product
@@ -314,13 +363,15 @@ def main(argv=None):
                         by_product = {}
                         for row in records:
                             by_product.setdefault(row["product_id"], []).append(row)
+                        counter = ProgressCounter("Verificando e gravando produtos no MySQL", len(by_product))
                         conn = connect()
                         try:
                             changed_total = 0
                             with args.output.with_suffix(".changes.audit.jsonl").open("a", encoding="utf-8") as journal:
-                                for rows in by_product.values():
+                                for completed, rows in enumerate(by_product.values(), 1):
                                     analyses = {r["image_id"]: r["analysis"] for r in rows if r.get("analysis")}
                                     if not analyses:
+                                        counter.update(completed, detail=f"Imagens alteradas: {changed_total}.")
                                         continue
                                     report = apply_product(conn, rows, analyses, analyzer.rank)
                                     committed = {change["image_id"]: change for change in report["changes"]}
@@ -337,6 +388,8 @@ def main(argv=None):
                                                                   else "Imagem canônica reclassificada no banco.")
                                         elif row["image_id"] in analyses:
                                             row["status_note"] = "Não alterado: registro mudou ou revisão humana preservada."
+                                    counter.update(completed, detail=f"Imagens alteradas: {changed_total}.")
+                            counter.update(len(by_product), detail=f"Imagens alteradas: {changed_total}.", force=True)
                             summary["database_images_changed"] = changed_total
                             summary["applied_to_database"] = changed_total > 0
                         finally:
@@ -345,6 +398,7 @@ def main(argv=None):
             checkpoint.close()
     else:
         records = [audit_record(row, None, None, None, apply=False) for row in records]
+    progress("Exportando a planilha e os relatórios de auditoria...")
     jsonl = args.output.with_suffix(".audit.jsonl")
     with jsonl.open("w", encoding="utf-8") as stream:
         for row in records:
@@ -357,6 +411,7 @@ def main(argv=None):
                    unknown=sum(r.get("standardized_after") is None for r in records),
                    failures=sum(bool(r.get("error")) for r in records))
     args.output.with_suffix(".summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    progress(f"Execução concluída: {summary['standardized']} imagens padronizadas; {summary['failures']} falhas.")
     print(json.dumps({"output": str(args.output), **summary}, ensure_ascii=False, indent=2))
     return 2 if args.apply and any(r.get("error") for r in records) else 0
 

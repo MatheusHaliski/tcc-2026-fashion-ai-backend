@@ -71,6 +71,15 @@ resultado local da análise, não uma atualização do app.
 
 ## Execução e retomada
 
+O terminal informa imediatamente as fases de leitura do inventário, inicialização
+do Java, análise, gravação no MySQL e exportação. Durante a análise, mostra a cada
+5 segundos quantos registros terminaram, quantas análises foram concluídas e
+quantas falharam, inclusive enquanto aguarda downloads. Essas mensagens ficam
+em `stderr`; o JSON final permanece em `stdout`, permitindo redirecionar cada
+saída separadamente. O progresso não imprime URLs nem credenciais. Se a senha
+for lida com `read -s`, a digitação fica invisível: cole a senha e pressione Enter.
+O avanço da análise não significa que uma alteração já foi gravada no banco.
+
 O pipeline é o `CatalogImageBatchCli` Java existente, reutilizado em uma única
 JVM. O fat JAR é extraído uma vez em cache por hash. É possível informar
 `--java`, `--java-classpath` ou `CATALOG_IMAGE_JAVA_CLASSPATH`; o script não
