@@ -13,8 +13,8 @@ export interface CatalogBrand { id: string; name: string; slug: string; logoUrl?
  * lista evita marcas duplicadas; texto livre continua permitido (marca ainda desconhecida vira "não encontrada no
  * catálogo", nunca criada em silêncio).
  */
-export function BrandAutocomplete({ value, onChange, id, placeholder, autoFocus }: {
-  value: string; onChange: (name: string, brand: CatalogBrand | null) => void; id?: string; placeholder?: string; autoFocus?: boolean;
+export function BrandAutocomplete({ value, onChange, id, placeholder, autoFocus, maxLength }: {
+  value: string; onChange: (name: string, brand: CatalogBrand | null) => void; id?: string; placeholder?: string; autoFocus?: boolean; maxLength?: number;
 }) {
   const { t } = useI18n();
   const listId = useId();
@@ -31,7 +31,7 @@ export function BrandAutocomplete({ value, onChange, id, placeholder, autoFocus 
     const h = setTimeout(async () => {
       try {
         const r = await api.get<{ brands: CatalogBrand[] }>(`/api/catalog/brands?q=${encodeURIComponent(term)}`, { signal: ctl.signal });
-        if (n === seq.current) { setOptions(r.brands ?? []); setOpen(true); setActive(0); }
+        if (n === seq.current) { setOptions(r.brands ?? []); setActive(0); }
       } catch { /* sem sugestões: texto livre segue valendo */ }
     }, 280);
     return () => { clearTimeout(h); ctl.abort(); };
@@ -39,9 +39,9 @@ export function BrandAutocomplete({ value, onChange, id, placeholder, autoFocus 
   const pick = (b: CatalogBrand) => { picked.current = b.name; onChange(b.name, b); setOptions([]); setOpen(false); };
   return (
     <div className="relative">
-      <Input id={id} value={value} autoFocus={autoFocus} placeholder={placeholder ?? t("catalog.brand_placeholder")} autoComplete="off"
+      <Input id={id} value={value} autoFocus={autoFocus} maxLength={maxLength} placeholder={placeholder ?? t("catalog.brand_placeholder")} autoComplete="off"
         role="combobox" aria-expanded={open && options.length > 0} aria-controls={listId} aria-autocomplete="list"
-        onChange={(e) => { picked.current = null; onChange(e.target.value, null); }}
+        onChange={(e) => { picked.current = null; setOptions([]); setOpen(true); onChange(e.target.value, null); }}
         onFocus={() => options.length && setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 120)}
         onKeyDown={(e) => {
           if (!open || !options.length) return;

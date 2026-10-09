@@ -19,6 +19,21 @@
       "scrollWidth": 375,
       "overflow": false
     },
+    "previewGeometry": {
+      "x": 42,
+      "y": 2600.5625,
+      "width": 291,
+      "height": 575.09375
+    },
+    "formGeometry": {
+      "x": 42,
+      "y": 964.578125,
+      "width": 291,
+      "height": 1615.984375
+    },
+    "mainEditorWiderAtDesktop": false,
+    "originalPhotoCollapsed": true,
+    "brandSelectionPersists": true,
     "artGeometry": {
       "viewport": 375,
       "scrollWidth": 375,
@@ -84,6 +99,21 @@
       "scrollWidth": 1280,
       "overflow": false
     },
+    "previewGeometry": {
+      "x": 934,
+      "y": 550.09375,
+      "width": 280,
+      "height": 559.796875
+    },
+    "formGeometry": {
+      "x": 326,
+      "y": 728.78125,
+      "width": 588,
+      "height": 791.734375
+    },
+    "mainEditorWiderAtDesktop": true,
+    "originalPhotoCollapsed": true,
+    "brandSelectionPersists": true,
     "artGeometry": {
       "viewport": 1280,
       "scrollWidth": 1280,
