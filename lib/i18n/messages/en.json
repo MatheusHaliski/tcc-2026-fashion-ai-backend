@@ -8320,5 +8320,7 @@
   "hypeGuide.automatic_title": "Automatic FashionAI seals",
   "hypeGuide.levels": "Required level",
   "sealHypeIssuer.view_policy": "View seal rules",
-  "sealHypeIssuer.view_piece": "View item"
+  "sealHypeIssuer.view_piece": "View item",
+  "tryOn.studio_conceptual": "Conceptual fitting studio",
+  "tryOn.reference_images": "Catalogue references"
 }

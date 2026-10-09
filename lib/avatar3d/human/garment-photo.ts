@@ -131,20 +131,29 @@ export function fullBodyUpperPhoto(raster: GarmentRaster): boolean {
   return x1 > x0 && (y1 - y0) / (x1 - x0) > 2;
 }
 
-const outfitPhotoCache = new WeakMap<object, Map<string, Promise<HTMLCanvasElement | null>>>();
-/** Reuse local person segmentation for full-length upper-piece catalog photos.
- * If the selected garment cannot be isolated, use the piece's fabric color instead of painting the model onto it.
+export type OutfitPhotoPart = "upper" | "lower" | "full" | "feet";
+
+/** Only a verified, isolated garment can supply the photographic material. A
+ * waist-up model is just as unsafe as a full-length model, regardless of aspect
+ * ratio. Timeout, missing segmentation and missing pose use the measured fabric
+ * color instead; they do not turn an unverified person into a clothing texture.
  */
-export function prepareOutfitPhoto(img: CanvasImageSource & { width: number; height: number }, upper: boolean): Promise<HTMLCanvasElement | null> {
+export function canUseOutfitPhoto(result: import("@/lib/pieces/person-filter").PersonFilterResult, part: OutfitPhotoPart): boolean {
+  if (!result.segmentationAvailable || result.people > 1) return false;
+  if (!result.personFound) return result.people === 0;
+  // With an explicit part, ‘ambiguous’ means both upper and lower garments exist,
+  // not that the requested garment was left unfiltered.
+  return result.garments?.kept === part && (part !== "full" || !result.garments.ambiguous);
+}
+
+const outfitPhotoCache = new WeakMap<object, Map<OutfitPhotoPart, Promise<HTMLCanvasElement | null>>>();
+export function prepareOutfitPhoto(img: CanvasImageSource & { width: number; height: number }, part: OutfitPhotoPart): Promise<HTMLCanvasElement | null> {
   let cache = outfitPhotoCache.get(img);
   if (!cache) { cache = new Map(); outfitPhotoCache.set(img, cache); }
-  const key = upper ? "upper" : "other";
-  const hit = cache.get(key); if (hit) return hit;
+  const hit = cache.get(part); if (hit) return hit;
   const task = (async () => {
     const cutout = prepareGarmentPhoto(img);
-    if (!cutout || !upper) return cutout;
-    const pixels = cutout.getContext("2d", { willReadFrequently: true })?.getImageData(0, 0, cutout.width, cutout.height);
-    if (!pixels || !fullBodyUpperPhoto(pixels)) return cutout;
+    if (!cutout) return null;
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       return await Promise.race([
@@ -152,14 +161,15 @@ export function prepareOutfitPhoto(img: CanvasImageSource & { width: number; hei
           const { stripPerson } = await import("@/lib/pieces/person-filter");
           const blob = await new Promise<Blob | null>((resolve) => cutout.toBlob(resolve, "image/png"));
           if (!blob) return null;
-          const result = await stripPerson(new File([blob], "catalog.png", { type: "image/png" }), { keep: "upper" });
-          if (!result.personFound || result.garments?.kept !== "upper" || result.garments.ambiguous) return null;
+          const result = await stripPerson(new File([blob], "catalog.png", { type: "image/png" }), { keep: part });
+          if (!canUseOutfitPhoto(result, part)) return null;
+          if (!result.personFound) return cutout;
           const { loadOriented } = await import("@/lib/avatar3d/pipeline");
           return prepareGarmentPhoto(await loadOriented(result.file, 1024));
         })(),
-        new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), 5000); }),
+        new Promise<null>((resolve) => { timer = setTimeout(() => resolve(null), 30000); }),
       ]);
     } catch { return null; } finally { if (timer) clearTimeout(timer); }
   })();
-  cache.set(key, task); return task;
+  cache.set(part, task); return task;
 }

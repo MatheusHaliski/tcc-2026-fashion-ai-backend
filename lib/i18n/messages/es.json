@@ -8320,5 +8320,7 @@
   "hypeGuide.automatic_title": "Sellos automáticos FashionAI",
   "hypeGuide.levels": "Nivel requerido",
   "sealHypeIssuer.view_policy": "Ver reglas del sello",
-  "sealHypeIssuer.view_piece": "Ver prenda"
+  "sealHypeIssuer.view_piece": "Ver prenda",
+  "tryOn.studio_conceptual": "Estudio de prueba conceptual",
+  "tryOn.reference_images": "Referencias del catálogo"
 }

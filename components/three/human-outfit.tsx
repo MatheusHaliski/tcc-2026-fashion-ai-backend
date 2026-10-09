@@ -14,7 +14,7 @@ import { foldGarment, relaxGarment, smoothBody } from "@/lib/avatar3d/human/garm
 import { SOLE_LIFT, shoeParts, shoeStyleOf } from "@/lib/avatar3d/human/shoes";
 import { garmentTrims } from "@/lib/avatar3d/human/garment-trims";
 import { occludeInnerGarment, visibleGarmentFinishes } from "@/lib/avatar3d/human/garment-layers";
-import { prepareOutfitPhoto } from "@/lib/avatar3d/human/garment-photo";
+import { prepareGarmentPhoto, prepareOutfitPhoto, type OutfitPhotoPart } from "@/lib/avatar3d/human/garment-photo";
 
 /*
  * Provador / vitrines 3D — as peças do look vestidas no corpo humano do avatar (lib/avatar3d/human/garments.ts): cada
@@ -34,6 +34,14 @@ export function outfitOf(pieces: Look3dPiece[]): OutfitItem[] {
   const hasOuter = pieces.some((p) => ["jacket", "coat"].includes(kindOf(p) ?? ""));
   for (const raw of withDefaultOutfit(pieces)) { const p = hasOuter && raw.id === DEFAULT_PIECES.upper.id ? { ...raw, imageUrl: null, colorHex: "#202020" } : raw; const k = kindOf(p); if (k) items.push({ key: p.id, spec: k === "jacket" && /blazer/i.test(p.subcategory ?? "") ? { ...SPECS[k], ease: 0.010, drape: 0.5 } : SPECS[k], piece: p }); }
   return items.sort((a, b) => a.spec.layer - b.spec.layer);
+}
+
+/** Garment category remains explicit throughout person/other-outfit isolation. */
+export function photoPart(kind: GarmentKind): OutfitPhotoPart {
+  if (kind === "dress" || kind === "jumpsuit" || kind === "coat") return "full";
+  if (kind === "shoes" || kind === "boots") return "feet";
+  if (["pants", "shorts", "leggings", "skirt"].includes(kind)) return "lower";
+  return "upper";
 }
 
 type Img = CanvasImageSource & { width: number; height: number };
@@ -167,7 +175,10 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
       const u = mediaUrl(i.piece.imageUrl ?? null);
       const t = u ? await loadTexture(u) : null;
       const img = t?.image as Img | undefined;
-      return [i.key, img ? await prepareOutfitPhoto(img, ["tee", "shirt", "longsleeve", "tank", "crop", "sweater", "hoodie", "jacket"].includes(i.spec.kind)) : null] as const;
+      // These exact bundled reference assets contain only the product. Avoid
+      // three unnecessary person/pose analyses while the catalogue piece loads.
+      const bundled = Object.values(DEFAULT_PIECES).some(p => p.id === i.piece.id && p.imageUrl === i.piece.imageUrl);
+      return [i.key, img ? bundled ? prepareGarmentPhoto(img) : await prepareOutfitPhoto(img, photoPart(i.spec.kind)) : null] as const;
     })).then((kv) => { if (alive) setLoaded({ key: urlKey, images: Object.fromEntries(kv) }); });
     return () => { alive = false; };
   }, [urlKey]); // eslint-disable-line react-hooks/exhaustive-deps
