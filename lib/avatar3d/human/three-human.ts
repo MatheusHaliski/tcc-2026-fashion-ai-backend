@@ -243,13 +243,30 @@ export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
   // linha d'água: faixa fina brilhante na borda da pálpebra de baixo (pontos do rosto na malha), presa ao Head
   const tearLines = new THREE.Group(); tearLines.name = "linha-dagua";
   // brilho úmido discreto (sem verniz): com luz forte não pode virar um traço branco sob a íris
-  const tearMat = new THREE.MeshPhysicalMaterial({ color: "#000000", roughness: 0.18, metalness: 0, specularIntensity: 0.45, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+  const tearMat = new THREE.MeshPhysicalMaterial({ color: "#000000", roughness: 0.3, metalness: 0, specularIntensity: 0.22, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false });
   tearMat.name = "linha-dagua";
   for (const side of ["right", "left"] as const) {
     const line = lowerLidLine(a, c.body, c.eye, side, rig, aperture);
     if (line.length < 4) continue;
     const pts = line.map((p) => new THREE.Vector3(p[0] - c.joints[hj * 3], p[1] - c.joints[hj * 3 + 1], p[2] - c.joints[hj * 3 + 2]));
-    const tg = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, "centripetal"), 32, 0.00012, 5, false);
+    // A waterline is a thin wet edge, not a raised cylindrical skin fold.
+    // Scale it with the measured eye and flatten its vertical cross-section;
+    // the contour and the skin aperture remain unchanged.
+    const curve = new THREE.CatmullRomCurve3(pts, false, "centripetal");
+    const radius = Math.min(0.00006, rig.iris[side].radius[1] * 0.012);
+    const tg = new THREE.TubeGeometry(curve, 32, radius, 6, false);
+    const rim = tg.getAttribute("position");
+    for (let segment = 0; segment <= 32; segment++) {
+      const u = segment / 32, center = curve.getPointAt(u);
+      const taper = 0.2 + 0.8 * Math.sin(Math.PI * u);
+      for (let radial = 0; radial <= 6; radial++) {
+        const vertex = segment * 7 + radial;
+        rim.setXYZ(vertex, center.x + (rim.getX(vertex) - center.x) * taper,
+          center.y + (rim.getY(vertex) - center.y) * taper * 0.45,
+          center.z + (rim.getZ(vertex) - center.z) * taper);
+      }
+    }
+    tg.computeVertexNormals();
     const t = new THREE.Mesh(tg, tearMat); t.renderOrder = 1; tearLines.add(t);
   }
   head.add(tearLines);
