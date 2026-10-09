@@ -36,7 +36,12 @@ class DownloadFailure(RuntimeError):
 
 def configure_railway_environment():
     """Accept Railway names without logging URLs/passwords or using root implicitly."""
-    public = urllib.parse.urlsplit(os.environ.get("MYSQL_PUBLIC_URL", ""))
+    public_url = os.environ.get("MYSQL_PUBLIC_URL", "").strip()
+    # urlsplit treats bare host:port as a scheme/path, not a network endpoint.
+    # Normalize only the parsed copy; preserve the original environment value.
+    if public_url and "://" not in public_url and not public_url.startswith("//"):
+        public_url = "mysql://" + public_url
+    public = urllib.parse.urlsplit(public_url)
     if not os.getenv("MYSQL_HOST"):
         host = public.hostname or os.getenv("MYSQLHOST")
         if host:
