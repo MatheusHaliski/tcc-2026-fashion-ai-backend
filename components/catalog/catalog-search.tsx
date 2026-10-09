@@ -41,7 +41,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   onResults?: (ctx: CatalogSearchContext, results: CatalogProduct[]) => void;
   /** Move apenas a apresentação dos resultados; filtros e estado da busca continuam neste componente. */
   resultsMount?: { target: HTMLElement | null };
-  /** O provador mostra até duas linhas paginadas; RF4 conserva os resultados em linha. */
+  /** Grade compartilhada pelo provador e RF4, com até duas linhas por página. */
   resultsLayout?: "matrix";
 }) {
   const { t } = useI18n();
@@ -139,6 +139,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
             </h2>
             {brandRef && <BrandLogo name={brandRef.name} src={brandRef.logoUrl} size={22} />}
           </div>
+          {resultsLayout === "matrix" && <p className="mb-3 type-body-sm tabular" role="status">{t("catalog.pecas_na_selecao", { count: filtered.length })}</p>}
           {(colors.length > 1 || genders.length > 1) && (
             <div className="mb-3 flex flex-wrap items-center gap-1.5" aria-label={t("catalog.filtros_rapidos")}>
               {colors.length > 1 && <><span className="type-caption text-muted">{t("common.color")}:</span>{colors.map((c) => <Chip key={c} active={color === c} onClick={() => setColor(color === c ? "" : c)}><span className="h-3 w-3 rounded-full border border-line-soft" style={{ background: tax?.colors?.[c] ?? "#999" }} />{label(c)}</Chip>)}</>}
