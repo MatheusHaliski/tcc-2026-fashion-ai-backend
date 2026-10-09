@@ -8235,5 +8235,11 @@
   "lookSeals.dnaHint": "Cada look é verificado separadamente. Os pedidos selecionados serão enviados ao salvar o DNA.",
   "lookSeals.status.APPROVED": "Aprovado",
   "lookSeals.status.PENDING_REVIEW": "Aguardando aprovação",
-  "tryOn.lookGender": "Look {gender}"
+  "tryOn.lookGender": "Look {gender}",
+  "nav.group.store": "Loja",
+  "publicProfile.kind": "Perfil pessoal",
+  "publicProfile.following": "Você segue",
+  "publicProfile.requested": "Pedido enviado",
+  "publicProfile.restricted": "As publicações deste perfil têm acesso restrito.",
+  "publicProfile.results": "Perfis encontrados"
 }

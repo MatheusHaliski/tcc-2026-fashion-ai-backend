@@ -63,6 +63,10 @@ public interface WardrobeItemRepository extends JpaRepository<WardrobeItem, UUID
     /** Header do perfil (estilo Instagram): peças no guarda-roupa, sem as arquivadas. */
     long countByUserIdAndAvailabilityStatusNot(UUID userId, AvailabilityStatus status);
 
+    /** Totais do cabeçalho em lote, sem carregar fotos ou dados de peças privadas. */
+    @Query("select w.user.id, count(w) from WardrobeItem w where w.user.id in :ids and w.availabilityStatus <> :status group by w.user.id")
+    List<Object[]> countByUserIdsAndAvailabilityStatusNot(@Param("ids") Collection<UUID> ids, @Param("status") AvailabilityStatus status);
+
     /** RF4 · Estúdio da imagem padrão: reaproveita a foto de estúdio já gerada para o mesmo arquivo de /public/assets_pecas. */
     Optional<WardrobeItem> findFirstByImageUrlAndDefaultImageTrueAndStudioImageUrlIsNotNull(String imageUrl);
 
