@@ -580,7 +580,7 @@ public class SearchService {
             // RF14.CA05 — seguir uma marca traz ao feed os esquemas vinculados a ela
             for (UUID f : following) {
                 users.findById(f).filter(u -> u.getProfileType() != ProfileType.PESSOAL).ifPresent(inst ->
-                        bonds.findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(inst.getId(), SealBondStatus.APPROVED).stream().limit(30)
+                        bonds.findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(inst.getId(), SealBondStatus.APPROVED).stream().filter(b -> b.getScheme() != null).limit(30)
                                 .forEach(b -> entries.putIfAbsent(b.getScheme().getId(), Map.of("reason", "VINCULO_" + inst.getProfileType().name(),
                                         "brand", Views.user(inst), "scheme", b.getScheme(), "at", b.getUpdatedAt()))));
             }

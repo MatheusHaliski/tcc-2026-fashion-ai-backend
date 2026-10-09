@@ -44,7 +44,7 @@ describe("RF25 — criador de selo em etapas", () => {
     expect(screen.getByRole("radio", { name: "Peça" })).toBeTruthy();
     expect(screen.getByRole("radio", { name: "Look" })).toBeTruthy();
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "Exibir peças e looks com os selos da Nike e Adidas" } });
-    fireEvent.click(screen.getByRole("button", { name: /Criar modelo com o Copilot/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Enviar/ }));
     expect(await screen.findByText("Quais selos são necessários?")).toBeTruthy();
     expect(api.calls.find((c) => c.path === "/api/copilot/seal-policy")?.body).toMatchObject({ tier: "PERFIL" });
   });
@@ -79,7 +79,10 @@ describe("RF25 — criador de selo em etapas", () => {
     let form = EMPTY;
     renderApp(<Harness onForm={(f) => { form = f; }} />);
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "Duas peças azuis da Zara" } });
-    fireEvent.click(screen.getByRole("button", { name: /Criar modelo com o Copilot/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Enviar/ }));
+    expect(await screen.findByRole("button", { name: "Aplicar política ao criador" })).toBeTruthy();
+    expect(form.name).toBe("");
+    fireEvent.click(screen.getByRole("button", { name: "Aplicar política ao criador" }));
     expect(await screen.findByText("Modelo criado conforme seu pedido.")).toBeTruthy();
     expect(api.calls.find((c) => c.path === "/api/copilot/seal-policy")?.body).toMatchObject({ message: "#createsealpolicy Duas peças azuis da Zara" });
     expect(form.name).toBe("Zara Azul");
@@ -93,13 +96,43 @@ describe("RF25 — criador de selo em etapas", () => {
     });
     renderApp(<Harness />);
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "Duas peças azuis" } });
-    fireEvent.click(screen.getByRole("button", { name: /Criar modelo com o Copilot/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Enviar/ }));
     expect(await screen.findByText("Qual marca?")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Avançar" }).hasAttribute("disabled")).toBe(true);
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "Zara" } });
-    fireEvent.click(screen.getByRole("button", { name: /Criar modelo com o Copilot/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Enviar/ }));
     await waitFor(() => expect(api.calls.filter((c) => c.path === "/api/copilot/seal-policy")).toHaveLength(2));
-    expect(api.calls.filter((c) => c.path === "/api/copilot/seal-policy")[1].body).toMatchObject({ message: "#createsealpolicy Duas peças azuis\nZara" });
+    expect(api.calls.filter((c) => c.path === "/api/copilot/seal-policy")[1].body).toMatchObject({ message: "#createsealpolicy Zara", conversation: [{ role: "user", text: "Duas peças azuis" }, { role: "assistant", text: "Qual marca?" }] });
+  });
+
+  it("cria uma política Hype independente do Copilot e conserva as metas ao alternar modalidades", async () => {
+    const api = mockApi({ "GET /api/taxonomy": TAXONOMY });
+    let form = EMPTY;
+    renderApp(<Harness onForm={(next) => { form = next; }} />);
+    fireEvent.click(screen.getByRole("radio", { name: "Selo de Hype" }));
+    expect(screen.queryByRole("radio", { name: "Perfil" })).toBeNull();
+    fireEvent.change(screen.getByLabelText("Score mínimo de Hype (0–100)"), { target: { value: "90" } });
+    fireEvent.click(screen.getByRole("radio", { name: "Peça" }));
+    expect(form.policy).toMatchObject({ mode: "HYPE", hype: { minScore: 90 }, rules: [] });
+    expect(form.tier).toBe("PECA");
+    fireEvent.click(screen.getByRole("radio", { name: "Política com Copilot" }));
+    expect(screen.getByRole("log")).toBeTruthy();
+    fireEvent.click(screen.getByRole("radio", { name: "Selo de Hype" }));
+    expect(screen.getByLabelText("Score mínimo de Hype (0–100)").getAttribute("value")).toBe("90");
+    fireEvent.click(screen.getByRole("button", { name: "Avançar" }));
+    expect(screen.getByLabelText(/Nome/)).toBeTruthy();
+    expect(api.calls.some((call) => call.method === "POST")).toBe(false);
+  });
+
+  it("recupera o nível Perfil do Copilot ao voltar de uma política Hype de Look", () => {
+    mockApi(); let form = EMPTY;
+    renderApp(<Harness onForm={(next) => { form = next; }} />);
+    fireEvent.click(screen.getByRole("radio", { name: "Perfil" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Selo de Hype" }));
+    expect(form.tier).toBe("LOOK");
+    fireEvent.click(screen.getByRole("radio", { name: "Política com Copilot" }));
+    expect(form.tier).toBe("PERFIL");
+    expect(screen.getByRole("radio", { name: "Perfil" }).getAttribute("aria-checked")).toBe("true");
   });
 
   it("salvar só no último passo e com nome", async () => {

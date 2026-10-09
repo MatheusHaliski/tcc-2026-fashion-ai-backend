@@ -22,7 +22,7 @@ const AVAILABLE: HypeSummary = {
 const summaries = (items: Record<string, HypeSummary>) => ({ type: "PIECE", algorithmVersion: "HYPE_V2", deltaWindowDays: 7, items });
 const card = (container: HTMLElement) => container.querySelector(".fcard") as HTMLElement;
 
-beforeEach(() => __resetHypeStore());
+beforeEach(() => { __resetHypeStore(); sessionStorage.setItem("fai:hype-guide:v1:u1", "seen"); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); document.cookie = "fai_rt_h=; max-age=0; path=/"; });
 
 describe("FashionCard — frente e verso", () => {
@@ -252,13 +252,14 @@ describe("análise completa conectada aos dados", () => {
       "GET /api/hype/looks/s1/positions": { eligible: true, window: 7, positions: [{ scope: "REGION", key: "AMERICA_DO_SUL", label: "América do Sul", rank: 3, total: 40 }] },
     });
     renderApp(<HypeAnalyticsDrawer type="SCHEME" id="s1" name="Look de sábado" open onClose={() => {}} />);
+    expect(await screen.findByText("Tênis branco")).toBeTruthy();
+    expect(await screen.findByText("de 40 na região América do Sul")).toBeTruthy();
+    fireEvent.click(screen.getByRole("radio", { name: "Evolução" }));
     expect(await screen.findByText("Sinais que alimentam o Hype")).toBeTruthy();
     expect(screen.getByRole("rowheader", { name: "curtidas" })).toBeTruthy();
     expect(screen.getByRole("rowheader", { name: "remixes" }).closest("tr")?.textContent).toContain("2");   // 1 + 1 na janela atual
     expect(screen.queryByRole("rowheader", { name: "salvamentos" })).toBeNull();
     expect(screen.getByText("peso 20%")).toBeTruthy();
-    expect(screen.getByText("Tênis branco")).toBeTruthy();
-    expect(await screen.findByText("de 40 na região América do Sul")).toBeTruthy();
   });
 
   it("peça recém-criada: avisa que o cálculo entra em minutos (sem barras zeradas)", async () => {

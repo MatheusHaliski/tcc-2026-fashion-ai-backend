@@ -17,6 +17,11 @@ import java.util.UUID;
 
 /** Repositório Spring Data de Scheme (MySQL — fonte da verdade). */
 public interface SchemeRepository extends JpaRepository<Scheme, UUID> {
+    /** Serializa pedidos de selo concorrentes para o mesmo look. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from Scheme s where s.id = :id")
+    Optional<Scheme> findForSealRequest(@Param("id") UUID id);
+
     List<Scheme> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
     Page<Scheme> findByUserId(UUID userId, Pageable pageable);

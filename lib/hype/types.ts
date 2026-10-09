@@ -19,7 +19,17 @@ export type HypeDimension = "POPULARITY" | "ENGAGEMENT" | "TREND" | "TREND_VELOC
  */
 export type HypeSealCode = "VIRAL" | "TRENDING" | "EMERGING" | "CLASSIC" | "RARE";
 /** Progresso de cada Selo de Hype no detalhe (drawer): conquistado ou o critério que falta (texto já traduzido). */
-export interface HypeSealProgress { code: HypeSealCode; earned: boolean; criteria: string }
+export interface HypeSealGoal { current: number | null; target: number; maximum: 100; missing: number | null; met: boolean | null }
+export interface HypeSealChoice { current: string | null; accepted: string[]; met: boolean | null }
+/** As metas vêm da régua do servidor, incluindo grupos alternativos; indisponível nunca vira zero. */
+export interface HypeSealRequirements {
+  rule: "ALL" | "ANY"; score?: HypeSealGoal; momentum?: HypeSealChoice; levels?: HypeSealChoice;
+  dimensions?: (HypeSealGoal & { dimension: HypeDimension })[]; alternatives?: HypeSealRequirements[];
+}
+export interface HypeSealProgress {
+  code: HypeSealCode; earned: boolean; criteria: string;
+  available?: boolean; publicEligible?: boolean; requirements?: HypeSealRequirements;
+}
 
 export interface HypeSummary {
   status: HypeStatus;

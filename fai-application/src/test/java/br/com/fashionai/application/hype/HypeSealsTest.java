@@ -104,4 +104,52 @@ class HypeSealsTest {
         // sem Hype: nada conquistado, critérios continuam visíveis ("o que falta")
         assertThat(HypeSeals.progress(null, t)).extracting(m -> m.get("earned")).containsOnly(false);
     }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void metasNumericasUsamOsLimiaresConfiguradosESemDadosNaoInventamZero() {
+        var viral = HypeSeals.progress(row(65, HypeLevel.HOT, HypeMomentum.RISING, null, null), new int[]{10,30,50,70,95}).get(0);
+        var requirement = (Map<String,Object>)viral.get("requirements");
+        assertThat((Map<String,Object>)requirement.get("score"))
+                .containsEntry("current",65L).containsEntry("target",95).containsEntry("missing",30L).containsEntry("met",false);
+        for (HypeScoreCurrent missing : new HypeScoreCurrent[]{null, row(10,HypeLevel.LOW_SIGNAL,HypeMomentum.STABLE,null,null)}) {
+            if (missing != null) missing.setStatus(HypeStatus.INSUFFICIENT_DATA);
+            var progress = HypeSeals.progress(missing,HypeScoreConfig.defaults().levelThresholds()).get(0);
+            assertThat(progress).containsEntry("available",false);
+            assertThat((Map<String,Object>)((Map<String,Object>)progress.get("requirements")).get("score"))
+                    .containsEntry("current",null).containsEntry("missing",null).containsEntry("met",null);
+        }
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void metasEstruturadasCoincidemComOsSelosEComAsAlternativasDoClassico() {
+        int[] thresholds = HypeScoreConfig.defaults().levelThresholds();
+        for (HypeLevel level : HypeLevel.values()) {
+            for (HypeMomentum momentum : HypeMomentum.values()) {
+                for (double longevity : new double[]{0,69.9,70,90}) {
+                    for (double rarity : new double[]{0,74.9,75,90}) {
+                        int score = level == HypeLevel.LOW_SIGNAL ? 0 : HypeSeals.threshold(thresholds,level);
+                        var rows = HypeSeals.progress(row(score,level,momentum,longevity,rarity),thresholds);
+                        for (var progress : rows) {
+                            assertThat(met((Map<String,Object>)progress.get("requirements")))
+                                    .as("%s at level %s / %s / longevity %s / rarity %s",progress.get("code"),level,momentum,longevity,rarity)
+                                    .isEqualTo(progress.get("earned"));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean met(Map<String,Object> group) {
+        if (group.get("alternatives") instanceof List<?> alternatives)
+            return alternatives.stream().anyMatch(value -> met((Map<String,Object>)value));
+        for (String field : List.of("score","momentum","levels"))
+            if (group.get(field) instanceof Map<?,?> value && !Boolean.TRUE.equals(value.get("met"))) return false;
+        if (group.get("dimensions") instanceof List<?> dimensions)
+            return dimensions.stream().allMatch(value -> Boolean.TRUE.equals(((Map<?,?>)value).get("met")));
+        return true;
+    }
 }
