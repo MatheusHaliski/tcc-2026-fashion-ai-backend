@@ -310,7 +310,7 @@ def main(argv=None):
     source = ap.add_mutually_exclusive_group(required=True)
     source.add_argument("--snapshot", nargs="+", type=Path, help="JSONL/JSONL.GZ: estado local, não produção")
     source.add_argument("--database", action="store_true", help="Inventário atual do MySQL via MYSQL_*")
-    ap.add_argument("--category-frame", action="store_true", help="Quadro 3:4 com largura 50%; focos estimados de zíper/cadarço exigem revisão (requer --apply)")
+    ap.add_argument("--category-frame", action="store_true", help="Quadro 3:4 com largura 50%%; focos estimados de zíper/cadarço exigem revisão (requer --apply)")
     ap.add_argument("--apply", action="store_true", help="Aplicar pipeline; com --database persiste os metadados")
     ap.add_argument("--output", required=True, type=Path, help="Planilha .xlsx")
     ap.add_argument("--checkpoint", type=Path, help="SQLite de análises para retomada")

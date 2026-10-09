@@ -224,5 +224,17 @@ class ProcessCatalogImagesTests(unittest.TestCase):
         self.assertEqual(result["error"], "NETWORK_PROXY_BLOCKED")
 
 
+class CliHelpTest(unittest.TestCase):
+    def test_help_formats_literal_percentage_without_database_access(self):
+        import subprocess
+        import sys
+        from pathlib import Path
+        script = Path(__file__).resolve().parents[1] / "process_catalog_images.py"
+        result = subprocess.run([sys.executable, str(script), "--help"], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("50%", result.stdout)
+        self.assertNotIn("50%%", result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
