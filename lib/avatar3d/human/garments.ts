@@ -691,8 +691,8 @@ export interface CollarBand { position: Float32Array; skinIndex: Uint16Array; sk
 /**
  * Gola 3D: uma faixa fechada que dá a volta inteira no decote (frente, lados e nuca), na borda da peça, com espessura —
  * de fora e de dentro ela é gola, nunca o tecido do corpo "preenchendo" o que a foto da frente não cobre. Seção: anel
- * externo em cima e embaixo, anel interno embaixo e em cima; cada vértice herda os pesos de pele do vértice do corpo
- * mais próximo (acompanha o pescoço e o tronco no movimento).
+ * externo em cima e embaixo, anel interno embaixo e em cima; pesos de pele interpolados e suaves
+ * no perímetro acompanham o pescoço e o tronco sem separar as bordas da faixa.
  */
 export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentSpec, under: UnderLayer | null = null): CollarBand | null {
   if (!HAS_COLLAR_BAND.has(sp.kind) || Number.isNaN(sp.hem)) return null;
@@ -718,17 +718,63 @@ export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentS
     const b = bins[j].sort((p, q) => p.dy - q.dy).slice(0, 4); if (!b.length) continue;
     const rs = b.map((x) => x.r).sort((p, q) => p - q); rAt[j] = rs[rs.length >> 1]; easeAt[j] = Math.max(...b.map((x) => x.e));
   }
-  for (let j = 0; j < NA; j++) if (!rAt[j]) {                       // ângulo sem vértice: o vizinho mais perto
-    for (let d = 1; d < NA / 2 && !rAt[j]; d++) { const k = rAt[(j + d) % NA] ? (j + d) % NA : (j - d + NA) % NA; if (rAt[k]) { rAt[j] = rAt[k]; easeAt[j] = easeAt[k]; } }
-  }
   if (!rAt.some((r) => r > 0)) return null;
-  const sm = Float32Array.from(rAt, (_, j) => (rAt[(j + NA - 1) % NA] + 2 * rAt[j] + rAt[(j + 1) % NA]) / 4);   // sem dentes
+  // Interpolate between measured bins on the closed curve. Never use a bin
+  // filled earlier in this loop as a new measurement: that creates plateaus.
+  const measured = rAt.slice(), measuredEase = easeAt.slice();
+  for (let j = 0; j < NA; j++) if (!measured[j]) {
+    let left = 1, right = 1;
+    while (!measured[(j - left + NA) % NA]) left++;
+    while (!measured[(j + right) % NA]) right++;
+    const l = (j - left + NA) % NA, r = (j + right) % NA;
+    rAt[j] = lerp(measured[l], measured[r], left / (left + right));
+    easeAt[j] = lerp(measuredEase[l], measuredEase[r], left / (left + right));
+  }
+  // Periodic smoothing includes the seam and preserves the anatomical oval.
+  let sm = rAt;
+  for (let pass = 0; pass < 12; pass++) sm = Float32Array.from(sm, (_, j) =>
+    (sm[(j + NA - 1) % NA] + 2 * sm[j] + sm[(j + 1) % NA]) / 4);
   const pos: number[] = [], si: number[] = [], sw: number[] = [];
-  const nearest = (x: number, y: number, z: number) => {
-    let best = cand[0], bd = Infinity;
-    for (const v of cand) { const d = (c.body[v * 3] - x) ** 2 + (c.body[v * 3 + 1] - y) ** 2 + (c.body[v * 3 + 2] - z) ** 2; if (d < bd) { bd = d; best = v; } }
-    return best;
-  };
+  // Blend nearby body influences instead of copying one vertex's bones.
+  // All four cross-section rings share the same influences at an angle, so
+  // tilting the head cannot pull their edges apart into spikes.
+  const influences = Array.from({ length: NA }, (_, j) => {
+    const phi = j / NA * 2 * Math.PI - Math.PI;
+    const r = sm[j] + sp.ease + easeAt[j];
+    const x = Math.sin(phi) * r, z = P.neckZ + Math.cos(phi) * r, y = yN(phi);
+    const near = cand.map(v => ({ v, d: (c.body[v * 3] - x) ** 2 + (c.body[v * 3 + 1] - y) ** 2 + (c.body[v * 3 + 2] - z) ** 2 }))
+      .sort((a, b) => a.d - b.d).slice(0, 8);
+    const weights = new Map<number, number>();
+    let total = 0;
+    for (const { v, d } of near) {
+      const proximity = 1 / Math.max(d, 0.000025); total += proximity;
+      for (let k = 0; k < 4; k++) {
+        const bone = a.body.skinIndex[v * 4 + k], w = a.body.skinWeight[v * 4 + k] / 255;
+        if (w) weights.set(bone, (weights.get(bone) ?? 0) + proximity * w);
+      }
+    }
+    for (const [bone, w] of weights) weights.set(bone, w / total);
+    return weights;
+  });
+  let smoothInfluences = influences;
+  for (let pass = 0; pass < 6; pass++) smoothInfluences = smoothInfluences.map((_, j) => {
+    const blend = new Map<number, number>();
+    for (const [offset, factor] of [[-1, .25], [0, .5], [1, .25]])
+      for (const [bone, weight] of smoothInfluences[(j + offset + NA) % NA])
+        blend.set(bone, (blend.get(bone) ?? 0) + weight * factor);
+    return blend;
+  });
+  // A consistent set of four bones prevents a fifth influence popping in and
+  // out when neighbouring samples have almost equal weights.
+  const boneTotals = new Map<number, number>();
+  for (const weights of smoothInfluences) for (const [bone, weight] of weights)
+    boneTotals.set(bone, (boneTotals.get(bone) ?? 0) + weight);
+  const bones = [...boneTotals].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([bone]) => bone);
+  const weightsAt = smoothInfluences.map(blend => {
+    const top = bones.map(bone => [bone, blend.get(bone) ?? 0]);
+    const total = top.reduce((sum, [, w]) => sum + w, 0) || 1;
+    return top.map(([bone, w]) => [bone, w / total]);
+  });
   // 4 anéis: externo-cima, externo-baixo, interno-baixo, interno-cima
   // a borda do tecido (alfa por vértice) é serrilhada: a faixa sobe 9 mm acima dela e fica 6 mm por fora para cobri-la
   const rings: [number, number][] = [[0.006, 0.009], [0.006, -band], [-0.0015, -band], [-0.0015, 0.009]];
@@ -736,8 +782,7 @@ export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentS
     const phi = (j / NA) * 2 * Math.PI - Math.PI; const r = sm[j] + sp.ease + easeAt[j] + dr;
     const x = Math.sin(phi) * r, z = P.neckZ + Math.cos(phi) * r, y = yN(phi) + dy;
     pos.push(x, y, z);
-    const v = nearest(x, y, z);
-    for (let k = 0; k < 4; k++) { const w = a.body.skinWeight[v * 4 + k]; si.push(w ? a.body.skinIndex[v * 4 + k] : 0); sw.push(w / 255); }
+    for (let k = 0; k < 4; k++) { si.push(weightsAt[j][k]?.[0] ?? 0); sw.push(weightsAt[j][k]?.[1] ?? 0); }
   }
   const idx: number[] = [];
   for (let ring = 0; ring < 4; ring++) {

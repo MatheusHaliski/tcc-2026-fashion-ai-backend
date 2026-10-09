@@ -225,6 +225,42 @@ describe("gola 3D (ribana) em volta do decote inteiro", () => {
     // pesos de pele válidos (somam 1) e só ossos do pescoço/tronco
     for (let i = 0; i < b.skinWeight.length; i += 4) expect(b.skinWeight[i] + b.skinWeight[i + 1] + b.skinWeight[i + 2] + b.skinWeight[i + 3]).toBeCloseTo(1, 3);
   });
+  for (const sex of ["MASCULINO", "FEMININO"] as const) for (const kind of ["tee", "shirt"] as const) {
+    it(`${sex}/${kind}: contorno suave e fechado, sem descolar a espessura ao mover o pescoço`, () => {
+      const body = compose(asset, fitBody(asset, { sex }).z, null, DEFAULT_BODY[sex].stature);
+      const param = bodyParam(asset, body), band = collarBand(asset, body, param, SPECS[kind])!;
+      const n = band.position.length / 12;
+      const radius = (j: number) => Math.hypot(band.position[j * 3], band.position[j * 3 + 2] - param.neckZ);
+      const weights = (j: number) => {
+        const m = new Map<number, number>();
+        for (let k = 0; k < 4; k++) m.set(band.skinIndex[j * 4 + k], (m.get(band.skinIndex[j * 4 + k]) ?? 0) + band.skinWeight[j * 4 + k]);
+        return m;
+      };
+      for (let j = 0; j < n; j++) {
+        const next = (j + 1) % n, prev = (j + n - 1) % n;
+        expect(Math.abs(radius(prev) - 2 * radius(j) + radius(next))).toBeLessThan(.003);
+        const a = weights(j), b = weights(next);
+        const change = [...new Set([...a.keys(), ...b.keys()])].reduce((sum, bone) => sum + Math.abs((a.get(bone) ?? 0) - (b.get(bone) ?? 0)), 0);
+        expect(change).toBeLessThan(.2);
+        for (let ring = 1; ring < 4; ring++) {
+          expect([...weights(ring * n + j)]).toEqual([...a]);
+        }
+        // The last segment joins the first: no duplicated/open seam.
+        expect([...band.index].some((v, i, ids) => v === j && ids.slice(Math.floor(i / 3) * 3, Math.floor(i / 3) * 3 + 3).includes(next))).toBe(true);
+      }
+      const human = buildHuman(asset, body, { skin: "#c99a6e" });
+      try {
+        const rest = applyRestPose(human); applyIdle(human, rest, 1.7, 1);
+        human.bone("Neck").rotateX(.35); human.bone("Neck").rotateZ(.22);
+        const posed = posedPositions(human.skeleton, human.body.bindMatrix, band.position, band.skinIndex, band.skinWeight);
+        const distance = (p: Float32Array, a: number, b: number) => Math.hypot(...[0, 1, 2].map(k => p[a * 3 + k] - p[b * 3 + k]));
+        for (let j = 0; j < n; j++) {
+          const ratio = distance(posed, j, 3 * n + j) / distance(band.position, j, 3 * n + j);
+          expect(ratio).toBeGreaterThan(.8); expect(ratio).toBeLessThan(1.05);
+        }
+      } finally { human.dispose(); }
+    });
+  }
   it("jaqueta e calçado não ganham faixa (aberta na frente / sem gola)", () => {
     expect(collarBand(asset, c, P, SPECS.jacket)).toBeNull();
     expect(collarBand(asset, c, P, SPECS.shoes)).toBeNull();
