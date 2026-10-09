@@ -14,7 +14,7 @@ export interface CatalogBrand { id: string; name: string; slug: string; logoUrl?
  * catálogo", nunca criada em silêncio).
  */
 export function BrandAutocomplete({ value, onChange, id, placeholder, autoFocus, maxLength }: {
-  value: string; onChange: (name: string, brand: CatalogBrand | null) => void; id?: string; placeholder?: string; autoFocus?: boolean; maxLength?: number;
+  value: string | null | undefined; onChange: (name: string, brand: CatalogBrand | null) => void; id?: string; placeholder?: string; autoFocus?: boolean; maxLength?: number;
 }) {
   const { t } = useI18n();
   const listId = useId();
@@ -24,7 +24,7 @@ export function BrandAutocomplete({ value, onChange, id, placeholder, autoFocus,
   const seq = useRef(0);
   const picked = useRef<string | null>(null);
   useEffect(() => {
-    const term = value.trim();
+    const term = (value ?? "").trim();
     if (term.length < 1 || picked.current === term) { setOptions([]); return; }
     const n = ++seq.current;
     const ctl = new AbortController();
@@ -39,7 +39,7 @@ export function BrandAutocomplete({ value, onChange, id, placeholder, autoFocus,
   const pick = (b: CatalogBrand) => { picked.current = b.name; onChange(b.name, b); setOptions([]); setOpen(false); };
   return (
     <div className="relative">
-      <Input id={id} value={value} autoFocus={autoFocus} maxLength={maxLength} placeholder={placeholder ?? t("catalog.brand_placeholder")} autoComplete="off"
+      <Input id={id} value={value ?? ""} autoFocus={autoFocus} maxLength={maxLength} placeholder={placeholder ?? t("catalog.brand_placeholder")} autoComplete="off"
         role="combobox" aria-expanded={open && options.length > 0} aria-controls={listId} aria-autocomplete="list"
         onChange={(e) => { picked.current = null; setOptions([]); setOpen(true); onChange(e.target.value, null); }}
         onFocus={() => options.length && setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 120)}
