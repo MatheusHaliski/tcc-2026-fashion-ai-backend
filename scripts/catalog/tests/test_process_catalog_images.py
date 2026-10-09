@@ -1,16 +1,91 @@
+import io
 import json
+import os
 import tempfile
+import threading
 import unittest
+from concurrent.futures import wait as futures_wait
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 from unittest.mock import patch
 
 from scripts.catalog.process_catalog_images import (
     AnalysisCheckpoint, DownloadFailure, ImageDownloader, audit_record, configure_railway_environment,
-    public_image_url, update_committed,
+    analyze_records, main, public_image_url, update_committed,
 )
 
 
 class ProcessCatalogImagesTests(unittest.TestCase):
+    def test_inventory_progress_is_visible_on_stderr_without_credentials_or_urls(self):
+        secret = "dummy-progress-password"
+        image_url = "https://images.example/private-photo.jpg?private-token=dummy-token"
+        record = {"source_scope": "SNAPSHOT_LOCAL", "product_id": "p", "image_id": "i",
+                  "source_url": image_url}
+        stdout, stderr = io.StringIO(), io.StringIO()
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {
+            "MYSQL_PASSWORD": secret,
+            "MYSQL_PUBLIC_URL": "mysql://fai_app:dummy-url-password@proxy.example:42234/fashionai",
+        }), patch("catalog_image_inventory.load_snapshot", return_value=iter([record])), \
+                patch("catalog_image_workbook.write_workbook"), \
+                redirect_stdout(stdout), redirect_stderr(stderr):
+            result = main(["--snapshot", "placeholder.jsonl", "--output", str(Path(directory) / "report.xlsx")])
+        self.assertEqual(result, 0)
+        self.assertEqual(json.loads(stdout.getvalue())["images"], 1)
+        self.assertIn("Lendo o inventário local", stderr.getvalue())
+        self.assertIn("Inventário carregado: 1 peças, 1 imagens, 1 registros", stderr.getvalue())
+        self.assertIn("Exportando a planilha", stderr.getvalue())
+        self.assertIn("Execução concluída", stderr.getvalue())
+        for sensitive in (secret, image_url, "dummy-token", "dummy-url-password", "proxy.example"):
+            self.assertNotIn(sensitive, stderr.getvalue())
+
+    def test_analysis_reports_completed_jobs_and_restores_order_after_out_of_order_completion(self):
+        release_first = threading.Event()
+        records = [{"image_id": "first", "source_url": "https://images.example/first.jpg"},
+                   {"image_id": "second", "source_url": "https://images.example/second.jpg"}]
+
+        def analyze(record, *args, **kwargs):
+            if record["image_id"] == "first":
+                if not release_first.wait(2):
+                    raise AssertionError("The first job was not released after the second completed")
+                return {**record, "analysis": {"columns": {}}}
+            return {**record, "error": "IMAGE_DOWNLOAD_UNAVAILABLE"}
+
+        def wait_after_second_completes(*args, **kwargs):
+            done, pending = futures_wait(*args, **kwargs)
+            if any(future.result()["image_id"] == "second" for future in done):
+                release_first.set()
+            return done, pending
+
+        stderr = io.StringIO()
+        with patch("scripts.catalog.process_catalog_images.audit_record", side_effect=analyze), \
+                patch("scripts.catalog.process_catalog_images.wait", side_effect=wait_after_second_completes), \
+                patch("scripts.catalog.process_catalog_images.PROGRESS_INTERVAL", 0), redirect_stderr(stderr):
+            results = analyze_records(records, None, None, None, workers=2)
+        self.assertEqual([row["image_id"] for row in results], ["first", "second"])
+        self.assertIn("1/2", stderr.getvalue())
+        self.assertIn("2/2", stderr.getvalue())
+        self.assertIn("Análises concluídas: 1; falhas: 1", stderr.getvalue())
+        self.assertNotIn("https://", stderr.getvalue())
+
+    def test_analysis_prints_a_heartbeat_while_waiting_for_a_job(self):
+        wait_count = 0
+
+        def waiting_once(*args, **kwargs):
+            nonlocal wait_count
+            wait_count += 1
+            if wait_count == 1:
+                return set(), set(args[0])
+            return futures_wait(*args, **kwargs)
+
+        stderr = io.StringIO()
+        with patch("scripts.catalog.process_catalog_images.audit_record", return_value={"analysis": {}}), \
+                patch("scripts.catalog.process_catalog_images.wait", side_effect=waiting_once), \
+                patch("scripts.catalog.process_catalog_images.time.monotonic", side_effect=[0, 5, 10, 10]), \
+                redirect_stderr(stderr):
+            analyze_records([{"image_id": "i"}], None, None, None, workers=1)
+        self.assertIn("0/1. Análises concluídas: 0; falhas: 0", stderr.getvalue())
+        self.assertIn("1/1", stderr.getvalue())
+
     def test_railway_names_use_public_proxy_and_app_user_without_root_password(self):
         import os
         with patch.dict(os.environ, {"MYSQLHOST": "mysql.railway.internal", "MYSQLPORT": "3306",
