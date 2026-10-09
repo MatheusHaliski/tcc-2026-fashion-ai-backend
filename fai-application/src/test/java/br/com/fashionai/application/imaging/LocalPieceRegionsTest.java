@@ -1,12 +1,80 @@
 package br.com.fashionai.application.imaging;
 
+import br.com.fashionai.application.testkit.MultiPiecePhotoFixtures;
 import org.junit.jupiter.api.Test;
 import java.awt.Color;
 import java.awt.Polygon;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class LocalPieceRegionsTest {
+    private static void drawShirt(Graphics2D g, int x, int y, Color color, double scale) {
+        int[] xs = { 0, 65, 100, 135, 200, 240, 190, 190, 50, 50 };
+        int[] ys = { 50, 0, 20, 0, 50, 100, 130, 270, 270, 130 };
+        for (int i = 0; i < xs.length; i++) { xs[i] = x + (int) (xs[i] * scale); ys[i] = y + (int) (ys[i] * scale); }
+        g.setColor(color); g.fillPolygon(new Polygon(xs, ys, xs.length));
+    }
+
+    @Test
+    void unevenBeddingAndFurnitureDoNotCollapseFiveShirtsIntoTheEntirePhoto() {
+        var regions = LocalPieceRegions.detect(MultiPiecePhotoFixtures.beddingWithFiveShirts());
+        assertThat(regions).hasSize(5);
+        assertThat(regions).allSatisfy(region -> {
+            assertThat(region.width()).isBetween(24.0, 30.0);
+            assertThat(region.height()).isBetween(36.0, 42.0);
+            assertThat(region.x()).isGreaterThan(3.0);
+            assertThat(region.x() + region.width()).isLessThan(94.5);
+        });
+        // Light fabric remains a separate region rather than becoming part of the sheet.
+        assertThat(regions).anySatisfy(region -> assertThat((region.rgb() >> 16) & 255).isGreaterThan(230));
+    }
+
+    @Test
+    void jpegCompressionDoesNotCollapseOrMultiplyTheFabricRegions() {
+        var compressed = ImageOps.decode(ImageOps.jpeg(MultiPiecePhotoFixtures.beddingWithFiveShirts(), .82f));
+        assertThat(LocalPieceRegions.detect(compressed)).hasSize(5);
+    }
+
+    @Test
+    void sleevesTouchingAcrossDifferentFabricColorsRemainSeparateRegions() {
+        var photo = new BufferedImage(500, 400, BufferedImage.TYPE_INT_RGB);
+        var g = photo.createGraphics();
+        g.setColor(new Color(215, 210, 200)); g.fillRect(0, 0, 500, 400);
+        drawShirt(g, 25, 50, new Color(107, 18, 32), 1.0);
+        drawShirt(g, 225, 50, new Color(27, 42, 74), 1.0);
+        g.dispose();
+        var regions = LocalPieceRegions.detect(photo);
+        assertThat(regions).hasSize(2);
+        assertThat(regions.get(0).width()).isLessThan(55.0);
+        assertThat(regions.get(1).width()).isLessThan(55.0);
+    }
+
+    @Test
+    void onePrintedShirtDoesNotBecomeSeveralGarments() {
+        var photo = new BufferedImage(500, 400, BufferedImage.TYPE_INT_RGB);
+        var g = photo.createGraphics();
+        g.setColor(new Color(215, 210, 200)); g.fillRect(0, 0, 500, 400);
+        var shirt = new Polygon(new int[]{125,190,225,260,325,365,315,315,175,175},
+                new int[]{100,50,70,50,100,150,180,320,320,180}, 10);
+        g.setColor(new Color(107, 18, 32)); g.fillPolygon(shirt);
+        g.setClip(shirt);
+        g.setColor(new Color(27, 42, 74)); g.fillRect(240, 45, 140, 280);
+        g.setColor(new Color(242, 242, 242)); g.fillRect(190, 140, 100, 100);
+        g.dispose();
+        assertThat(LocalPieceRegions.detect(photo)).hasSize(1);
+    }
+
+    @Test
+    void lowContrastFabricDoesNotInventInvisibleObjectBoundaries() {
+        var photo = new BufferedImage(500, 400, BufferedImage.TYPE_INT_RGB);
+        var g = photo.createGraphics();
+        g.setColor(Color.WHITE); g.fillRect(0, 0, 500, 400);
+        drawShirt(g, 125, 50, Color.WHITE, 1.0);
+        g.dispose();
+        assertThat(LocalPieceRegions.detect(photo)).isEmpty();
+    }
+
     @Test
     void fiveSeparatedShirtsHaveSeparateBoxesIncludingLightFabric() {
         var photo = new BufferedImage(1000, 800, BufferedImage.TYPE_INT_RGB);

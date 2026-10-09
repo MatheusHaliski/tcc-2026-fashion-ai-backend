@@ -4,6 +4,7 @@ import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
 import br.com.fashionai.application.ai.AiRequest;
+import br.com.fashionai.application.ai.local.ColorMath;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Hashing;
 import br.com.fashionai.application.common.InputSanitizer;
@@ -85,7 +86,11 @@ public class MultiPieceService {
     }
 
     public record DetectedPiece(int index, String name, String category, String subcategory, String color, String material,
-                                String sex, List<String> style, List<String> occasion, Box box, double confidence) {
+                                String sex, List<String> style, List<String> occasion, Box box, double confidence, String brandName) {
+        public DetectedPiece(int index, String name, String category, String subcategory, String color, String material,
+                             String sex, List<String> style, List<String> occasion, Box box, double confidence) {
+            this(index, name, category, subcategory, color, material, sex, style, occasion, box, confidence, null);
+        }
     }
 
     /** @param source "ia" quando a visão remota respondeu; "local" = regiões estimadas para revisão */
@@ -178,7 +183,7 @@ public class MultiPieceService {
         if (regions.isEmpty()) return List.of(localPiece());
         List<DetectedPiece> pieces = new ArrayList<>();
         for (LocalPieceRegions.Region region : regions) {
-            pieces.add(new DetectedPiece(pieces.size(), null, null, null, null, null, null, List.of(), List.of(),
+            pieces.add(new DetectedPiece(pieces.size(), null, null, null, ColorMath.nearestTaxonomyColor(region.rgb()), null, null, List.of(), List.of(),
                     new Box(region.x(), region.y(), region.width(), region.height()), 0.45));
         }
         return List.copyOf(pieces);
@@ -187,8 +192,12 @@ public class MultiPieceService {
     static final String DETECTOR_SYSTEM = """
             Você é o Multi-Piece Detector do Fashion AI. Você recebe UMA foto que pode ter várias peças (roupas, calçados e
             acessórios) — vestidas por alguém, penduradas ou dispostas numa superfície. Identifique CADA peça visível
-            separadamente e responda SOMENTE com JSON:
+            separadamente, inclusive peças do mesmo tipo em cores diferentes. Não agrupe camisetas
+            como um único conjunto: cada peça física recebe sua própria caixa. Responda SOMENTE com JSON:
             {"pieces": [{"name": nome curto da peça em português (ex.: "Camiseta branca lisa"),
+                         "brandName": nome da marca SOMENTE quando um logotipo ou etiqueta legível nesta peça
+                                      permitir reconhecê-la; caso contrário null (não inferir pela cor, estilo
+                                      nem copiar a marca de outra peça),
                          "category": um de [upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece],
                          "subcategory": código da lista de subtipos do tipo,
                          "color": código da paleta (a cor principal da peça), "material": código da lista de materiais,
@@ -247,6 +256,7 @@ public class MultiPieceService {
                 }
             }
             String name = WardrobeService.str(p.get("name"));
+            String brand = WardrobeService.str(p.get("brandName"));
             double conf = p.get("confidence") instanceof Number n ? Math.max(0, Math.min(1, n.doubleValue())) : 0.5;
             out.add(new DetectedPiece(out.size(),
                     name == null || name.isBlank() ? null : InputSanitizer.clean(name, 80),
@@ -256,7 +266,8 @@ public class MultiPieceService {
                     WardrobeService.oneOf(WardrobeService.str(p.get("sex")), Taxonomy.SEXES),
                     Taxonomy.keepAllowed(WardrobeService.strings(p.get("style")), Taxonomy.STYLES, Taxonomy.MAX_PIECE_TAGS),
                     Taxonomy.keepAllowed(WardrobeService.strings(p.get("occasion")), Taxonomy.allowedOccasions(category), Taxonomy.MAX_PIECE_TAGS),
-                    box, Math.round(conf * 100) / 100.0));
+                    box, Math.round(conf * 100) / 100.0,
+                    brand == null || brand.isBlank() ? null : InputSanitizer.clean(brand.trim(), 60)));
         }
         return out;
     }

@@ -20,13 +20,14 @@ import { FaiIcon } from "@/components/fai-icon";
 import { keepAllowed } from "@/lib/pieces/tags";
 import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
 import { MultiPieceUpload } from "@/components/multi-piece-review";
+import { PieceCreationSteps, PIECE_CREATION_STEPS, type PieceCreationStep } from "@/components/piece-creation-steps";
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
 import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePrefillParams } from "@/lib/pieces/prefill";
 
 /** Etapas do criador de peça (RF4/RF47): peça (busca catalogada + dados) → mais detalhes → arte de fundo → revisar e salvar. */
-type Step = "piece" | "more" | "art" | "review";
-const STEPS: Step[] = ["piece", "more", "art", "review"];
+type Step = PieceCreationStep;
+const STEPS = PIECE_CREATION_STEPS;
 /** Forma de adicionar (RF4): pela busca catalogada com o formulário, ou fotografando (uma ou várias fotos). */
 type AddMode = "catalog" | "photos";
 const GENERIC_ASSET = "/_derived/pecas_default/generic.svg";
@@ -171,7 +172,6 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   const origin = pick && officialImg
     ? t("catalog.origem_catalogo", { fonte: pick.product.source?.domain && pick.product.source.domain !== "null" ? pick.product.source.domain : t("catalog.fonte_fashionai") })
     : t("catalog.origem_sem_foto");
-  const stepLabel: Record<Step, string> = { piece: t("pieces.new.etapa_peca"), more: t("pieceForm.moreDetails"), art: t("pieces.new.etapa_arte"), review: t("builder.step.review") };
   const idx = STEPS.indexOf(step);
   const go = (s: Step) => { setStep(s); if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); };
   const nav = (
@@ -196,17 +196,16 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
         options={[{ id: "catalog", label: t("pieces.new.modo_catalogo") }, { id: "photos", label: t("pieces.new.modo_fotos") }]} />
       {mode === "photos" ? (
         <Card>
-          <h2 className="type-h3 mb-1">{t("pieces.new.modo_fotos")}</h2>
-          <div className="mb-3">
-            <p className="label" id="photo-type-label">{t("pieces.new.tipo_para_o_guia")}</p>
-            <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="photo-type-label">{CATEGORY_CARDS.map((c) => <Chip key={c.id} active={value.category === c.id} onClick={() => chooseCategory(c.id)}>{CATEGORY_LABEL[c.id] ?? label(c.id)}</Chip>)}</div>
-          </div>
           <MultiPieceUpload category={value.category} subcategory={value.subcategory}
+            captureControls={<><h2 className="type-h3 mb-1">{t("pieces.new.modo_fotos")}</h2><div className="mb-3">
+              <p className="label" id="photo-type-label">{t("pieces.new.tipo_para_o_guia")}</p>
+              <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="photo-type-label">{CATEGORY_CARDS.map((c) => <Chip key={c.id} active={value.category === c.id} onClick={() => chooseCategory(c.id)}>{CATEGORY_LABEL[c.id] ?? label(c.id)}</Chip>)}</div>
+            </div></>}
             onCategory={(c, sub) => { if (c !== value.category) chooseCategory(c); if (sub) setValue((v) => ({ ...v, subcategory: sub })); }}
             onSaved={(count) => { toast.success(t("multiPiece.salvas", { count })); window.location.href = user ? `/u/${user.username}` : "/closet"; }} />
         </Card>
       ) : (<>
-      <SegmentPicker className="mb-4" label={t("builder.stepsLabel")} value={step} onChange={go} options={STEPS.map((s, i) => ({ id: s, label: `${i + 1} · ${stepLabel[s]}` }))} />
+      <PieceCreationSteps value={step} onChange={go} />
       {/* na etapa da arte o editor tem a própria prévia (o mesmo card): a lateral some para não duplicar */}
       <div className={step === "art" ? "grid gap-5" : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]"}>
         <div className="min-w-0">

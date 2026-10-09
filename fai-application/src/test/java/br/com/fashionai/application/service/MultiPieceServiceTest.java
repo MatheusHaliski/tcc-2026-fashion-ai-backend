@@ -3,11 +3,13 @@ package br.com.fashionai.application.service;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.imaging.FlatLayPipeline;
+import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.testkit.Kit;
 import br.com.fashionai.application.testkit.World;
+import br.com.fashionai.application.testkit.MultiPiecePhotoFixtures;
 import br.com.fashionai.domain.model.PipelineJob;
 import br.com.fashionai.domain.repository.PipelineJobRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +31,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 /**
- * Várias peças numa foto (RF4): a detecção (sem IA de visão, uma peça cobrindo a foto), o rascunho de cada peça pelo
+ * Várias peças numa foto (RF4): as regiões locais quando a visão externa está indisponível, o rascunho de cada peça pelo
  * mesmo Flat Lay e moderação do cadastro, a cópia por IA (indisponível sem provedor de edição de imagem) e o rascunho
  * só de quem enviou a foto.
  */
@@ -69,6 +71,22 @@ class MultiPieceServiceTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         javax.imageio.ImageIO.write(img, "png", out);
         return out.toByteArray();
+    }
+
+    @Test
+    void detectorFallbackPersistsFiveIndependentDraftSlotsOnUnevenBedding() {
+        var detection = multi.detect(ana, ImageOps.png(MultiPiecePhotoFixtures.beddingWithFiveShirts()));
+        assertThat(detection.source()).isEqualTo("local");
+        assertThat(detection.pieces()).hasSize(5);
+        assertThat(detection.pieces()).allSatisfy(piece -> {
+            assertThat(piece.box().width()).isBetween(24.0, 30.0);
+            assertThat(piece.box().height()).isBetween(36.0, 42.0);
+            assertThat(piece.color()).isNotBlank();
+            assertThat(piece.material()).isNull();
+            assertThat(piece.brandName()).isNull();
+        });
+        PipelineJob draft = kit.dep(PipelineJobRepository.class).findById(detection.draftId()).orElseThrow();
+        assertThat(Json.map(draft.getResultJson()).get("pieces")).asList().hasSize(5);
     }
 
     @Test

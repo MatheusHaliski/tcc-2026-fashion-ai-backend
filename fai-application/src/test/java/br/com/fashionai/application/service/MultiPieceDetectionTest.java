@@ -1,8 +1,11 @@
 package br.com.fashionai.application.service;
 
+import br.com.fashionai.application.imaging.LocalVision;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import org.junit.jupiter.api.Test;
 
+import java.awt.Color;
+import java.awt.image.BufferedImage;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -66,6 +69,58 @@ class MultiPieceDetectionTest {
         MultiPieceService.DetectedPiece p = MultiPieceService.localPiece();
         assertThat(p.box()).isEqualTo(new MultiPieceService.Box(0, 0, 100, 100));
         assertThat(p.category()).isNull();
+    }
+
+    @Test
+    void localRegionsHaveIndependentColorsWithoutInventingGarmentMetadata() {
+        var photo = new BufferedImage(800, 600, BufferedImage.TYPE_INT_RGB);
+        var g = photo.createGraphics();
+        g.setColor(new Color(190, 180, 165)); g.fillRect(0, 0, 800, 600);
+        int[] rgb = {0x141414, 0xFFFFFF, 0x1B2A4A, 0x6B1220, 0x6E7A3C};
+        int[] x = {45, 305, 565, 150, 430}, y = {40, 40, 40, 325, 325};
+        for (int i = 0; i < rgb.length; i++) {
+            g.setColor(new Color(rgb[i])); g.fillRect(x[i], y[i], 180, 220);
+        }
+        g.dispose();
+        var pieces = MultiPieceService.localPieces(photo);
+        assertThat(pieces).hasSize(5);
+        assertThat(pieces).extracting(MultiPieceService.DetectedPiece::color)
+                .containsExactly("black", "white", "navy", "burgundy", "olive");
+        for (int i = 0; i < pieces.size(); i++) {
+            var piece = pieces.get(i);
+            assertThat(piece.index()).isEqualTo(i);
+            assertThat(piece.name()).isNull();
+            assertThat(piece.category()).isNull();
+            assertThat(piece.subcategory()).isNull();
+            assertThat(piece.material()).isNull();
+            assertThat(piece.brandName()).isNull();
+            assertThat(piece.sex()).isNull();
+            assertThat(piece.style()).isEmpty();
+            assertThat(piece.occasion()).isEmpty();
+            assertThat(piece.confidence()).isLessThan(LocalVision.PREFILL_CONFIDENCE);
+        }
+    }
+
+    @Test
+    void brandEvidenceBelongsToEachGarmentAndMissingEvidenceStaysEmpty() {
+        var pieces = MultiPieceService.parseDetections("""
+                {"pieces": [
+                  {"name": "Gorro", "category": "accessory_piece", "brandName": "Adidas",
+                   "box": {"x": 10, "y": 10, "width": 25, "height": 20}},
+                  {"name": "Camiseta", "category": "upper_piece", "brandName": "Nike",
+                   "box": {"x": 35, "y": 30, "width": 50, "height": 60}},
+                  {"name": "Calça", "category": "lower_piece",
+                   "box": {"x": 10, "y": 30, "width": 20, "height": 60}},
+                  {"name": "Outra camiseta", "category": "upper_piece", "brandName": "  ",
+                   "box": {"x": 65, "y": 10, "width": 20, "height": 20}}
+                ]}
+                """);
+        assertThat(pieces).hasSize(4);
+        assertThat(pieces.get(0).brandName()).isEqualTo("Adidas");
+        assertThat(pieces.get(1).brandName()).isEqualTo("Nike");
+        assertThat(pieces.get(2).brandName()).isNull();
+        assertThat(pieces.get(3).brandName()).isNull();
+        assertThat(MultiPieceService.localPiece().brandName()).isNull();
     }
 
     @Test
