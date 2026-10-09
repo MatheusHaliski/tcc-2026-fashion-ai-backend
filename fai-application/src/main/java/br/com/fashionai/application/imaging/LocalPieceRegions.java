@@ -8,13 +8,15 @@ import java.util.List;
 
 /**
  * Conservative region proposals for separated objects on a plain flat-lay background.
- * This is not a clothing classifier: touching objects, white fabric on white bedding and complex
- * scenes still require remote vision or manual boxes. Work is bounded to a 480px image.
+ * A plain background uses connected foreground regions; a nonuniform surface uses adaptive graph
+ * segmentation to separate touching fabrics by their boundaries. These are proposals, not a clothing
+ * classifier: indistinguishable fabrics and complex scenes still need vision or manual boxes.
+ * Work is bounded to a 480px image; no garment count or layout is assumed.
  */
 public final class LocalPieceRegions {
     private LocalPieceRegions() { }
 
-    public record Region(double x, double y, double width, double height) { }
+    public record Region(double x, double y, double width, double height, int rgb) { }
 
     public static List<Region> detect(BufferedImage photo) {
         BufferedImage img = ImageOps.scaleToFit(photo, 480, 480);
@@ -33,7 +35,7 @@ public final class LocalPieceRegions {
         int background = (channels[0][n / 2] << 16) | (channels[1][n / 2] << 8) | channels[2][n / 2];
         boolean alpha = transparent > n * 0.8;
         long uniform = Arrays.stream(border).filter(p -> distance(p, background) < 42 * 42).count();
-        if (!alpha && uniform < n * 0.8) return List.of();
+        if (!alpha && uniform < n * 0.8) return FabricRegionGraph.detect(img);
 
         boolean[] foreground = new boolean[size];
         for (int i = 0; i < size; i++) {
@@ -61,12 +63,24 @@ public final class LocalPieceRegions {
             // Discard background remnants, edge furniture and small speckles rather than creating fake garments.
             if (tail < size * 0.012 || tail > size * 0.75 || minX == 0 || minY == 0 || maxX == w - 1 || maxY == h - 1
                     || bw < w * 0.06 || bh < h * 0.06 || tail < bw * bh * 0.2) continue;
-            out.add(new Region(100.0 * minX / w, 100.0 * minY / h, 100.0 * bw / w, 100.0 * bh / h));
+            long red = 0, green = 0, blue = 0;
+            for (int j = 0; j < tail; j++) {
+                int color = pixels[queue[j]];
+                red += (color >> 16) & 255; green += (color >> 8) & 255; blue += color & 255;
+            }
+            int rgb = ((int) (red / tail) << 16) | ((int) (green / tail) << 8) | (int) (blue / tail);
+            out.add(new Region(100.0 * minX / w, 100.0 * minY / h, 100.0 * bw / w, 100.0 * bh / h, rgb));
         }
         // Stable reading order makes numbered slots correspond to the arrangement in the photo.
         out.sort(Comparator.comparingDouble(Region::y).thenComparingDouble(Region::x));
         // Excessive fragmentation is an unsupported background, not a collection of garments.
-        return out.size() > 12 ? List.of() : List.copyOf(out);
+        List<Region> simple = out.size() > 12 ? List.of() : List.copyOf(out);
+        // Connected foreground joins sleeves that touch; graph boundaries can keep their fabrics apart.
+        if (!alpha) {
+            List<Region> segmented = FabricRegionGraph.detect(img);
+            if (segmented.size() > simple.size()) return segmented;
+        }
+        return simple;
     }
 
     private static int distance(int a, int b) {
