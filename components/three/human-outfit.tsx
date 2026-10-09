@@ -120,14 +120,14 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
     if (!shoe) {
       const tc = trimColors(img, fabric); const rib = ribColor(img, fabric);
       for (const tb of garmentTrims(asset, cc, P, gg)) {
-        if (tb.part === "barra" ? !finishes.hem : !finishes.cuff) continue;
+        if (tb.part === "barra" ? !finishes.hem : tb.part === "punho" ? !finishes.cuff : above.length > 0) continue;
         const tg = new THREE.BufferGeometry();
         tg.setAttribute("position", new THREE.Float32BufferAttribute(tb.position, 3));
         tg.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(tb.skinIndex, 4));
         tg.setAttribute("skinWeight", new THREE.Float32BufferAttribute(tb.skinWeight, 4));
         tg.setIndex(Array.from(tb.index)); tg.computeVertexNormals();
         const ribbed = it.spec.kind === "hoodie" || it.spec.kind === "sweater";
-        const color = (tb.part === "barra" ? tc.hem : tc.cuff) ?? (ribbed ? rib : `#${new THREE.Color(fabric).multiplyScalar(0.92).getHexString()}`);
+        const color = tb.part === "botoes" ? "#514b42" : (tb.part === "barra" ? tc.hem : tb.part === "punho" ? tc.cuff : null) ?? (ribbed ? rib : `#${new THREE.Color(fabric).multiplyScalar(0.92).getHexString()}`);
         const tm = new THREE.MeshPhysicalMaterial({ color, roughness: 0.9, sheen: 0.45, sheenRoughness: 0.8, side: THREE.DoubleSide,
           polygonOffset: true, polygonOffsetFactor: -it.spec.layer - 1, polygonOffsetUnits: -it.spec.layer - 1 });
         tm.name = `acabamento-${tb.part}`;

@@ -135,6 +135,8 @@ class RoomServiceTest {
 
         Map<String, Object> r = room.room(ana);
         assertThat(r).containsKeys("modules", "pieces", "level", "closetLights", "drawerLabels");
+        assertThat((List<Map<String, Object>>) r.get("modules")).allSatisfy(module ->
+                assertThat(module).doesNotContainKeys("lookBoxes", "totalLooks"));
         assertThat(String.valueOf(r.get("saleRack"))).contains(mine.get(1).getId().toString());
         assertThat(String.valueOf(r.get("basket"))).contains(mine.get(2).getId().toString());
         assertThat(String.valueOf(r.get("showcase"))).contains(mine.get(6).getId().toString());

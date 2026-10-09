@@ -93,6 +93,7 @@ export interface HumanAvatarProps {
   atlas?: Img | null;                // textura do rosto (UV canônico) — sem ela, pele lisa no tom medido
   hair?: AvatarHair | null;          // cabelo/cobertura medidos na foto
   pieces: Look3dPiece[];             // peças do look — o que faltar (tronco, pernas, pés) vem do look padrão do FashionAI
+  externalPose?: boolean;            // locomotion/IK controller owns the skeleton
   motion?: boolean;                  // movimento parado (desligado com "reduzir movimento")
   wind?: number;                     // vento no cabelo, 0–1 (padrão 0,15: ar parado de ambiente fechado; palco/passarela, mais)
   onReady?: (p: HumanParts) => void;
@@ -123,7 +124,7 @@ function imageOf(src: Img): HTMLCanvasElement {
 
 const ZERO = new THREE.Vector3();
 
-export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, motion = true, onReady, children, fallback = null, debugHair, hairLod: forcedLod, adjust, wind }: HumanAvatarProps) {
+export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, motion = true, externalPose = false, onReady, children, fallback = null, debugHair, hairLod: forcedLod, adjust, wind }: HumanAvatarProps) {
   const asset = useBodyAsset();
   const key = JSON.stringify([body.sex, body.params ?? null, body.sources ?? null, stature, face?.shape ?? null, adjust?.headScale ?? 1, adjust?.neck ?? 0]);
   const built = useMemo(() => {
@@ -273,7 +274,7 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
     if (!built) return;
     if (forcedLod === undefined && hairMesh) { const next = budget.current.push(delta * 1000, autoLod); if (next !== null) setAutoLod(next); }
     built.h.root.visible = built.h.root.userData.dressed === true;   // guarda: sem as três zonas cobertas, não desenha
-    applyIdle(built.h, built.st, clock.elapsedTime + t0.current, motion ? 1 : 0);
+    if (!externalPose) applyIdle(built.h, built.st, clock.elapsedTime + t0.current, motion ? 1 : 0);
     // cabelo: o ponto da massa do cabelo (abaixo e atrás do centro da cabeça) puxa a mola; vento e atraso vão para o
     // espaço do objeto do cabelo. Sem movimento (reduzir movimento), tudo parado
     if (hairMesh) {

@@ -937,15 +937,6 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                 }
                 view.put("hangers", hangers);
                 view.put("accessibleLabel", Msg.t("room.pecas_2", (m.get("label")), content.size()));
-            } else if (slot.equals("TOP")) {
-                List<Scheme> boxes = owner ? schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(userId, SchemeStatus.ARCHIVED)
-                        : schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(userId, SchemeStatus.ARCHIVED).stream()
-                        .filter(s -> s.getVisibility() == Visibility.PUBLIC && s.getStatus() == SchemeStatus.PUBLISHED).toList();
-                view.put("lookBoxes", boxes.stream().limit(capacity(m)).map(s -> Map.of("id", s.getId(), "title", String.valueOf(s.getTitle()),
-                        "coverImageUrl", String.valueOf(s.getCoverImageUrl()), "cardSkin", String.valueOf(s.getCardSkin()),
-                        "lookDoDia", s.isLookDoDia())).toList());
-                view.put("totalLooks", boxes.size());
-                view.put("accessibleLabel", Msg.t("room.maleiro_caixas_de_look", boxes.size()));
             } else {
                 view.put("accessibleLabel", m.get("label") + ", " + content.size() + (content.size() == 1 ? Msg.t("room.peca") : Msg.t("room.pecas")));
             }
