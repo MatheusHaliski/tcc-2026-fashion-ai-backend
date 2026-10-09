@@ -41,6 +41,15 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     @Query("select u from User u where lower(u.username) like lower(concat('%', :term, '%'))") List<User> searchByUsername(@Param("term") String term, Pageable pageable);
 
+    /** RF8: filtra antes do limite e mantém uma ordem estável para a paginação de pessoas. */
+    @Query("select u from User u where u.profileType = br.com.fashionai.domain.model.enums.ProfileType.PESSOAL"
+            + " and u.status = br.com.fashionai.domain.model.enums.AccountStatus.ACTIVE"
+            + " and lower(u.username) like lower(concat('%', :term, '%'))"
+            + " and (:includeTest = true or u.accountOrigin not in (br.com.fashionai.domain.model.enums.AccountOrigin.TEST_SEED, br.com.fashionai.domain.model.enums.AccountOrigin.DEMO))"
+            + " and u.id not in :blocked order by lower(u.username), u.id")
+    List<User> searchPersonalProfiles(@Param("term") String term, @Param("includeTest") boolean includeTest,
+                                      @Param("blocked") Collection<UUID> blocked, Pageable pageable);
+
     long countByCountry(String country);
 
     @Query("select u.country, count(u) from User u where u.country is not null group by u.country") List<Object[]> countByCountryGrouped();
