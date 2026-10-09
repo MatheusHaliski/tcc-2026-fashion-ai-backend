@@ -269,7 +269,7 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
     if not apply:
         result["status_note"] = "Não verificado no banco atual; snapshot sem metadados." if before is None else "Auditoria dos metadados atuais."
         return result
-    if before is True:
+    if before is True and (not getattr(analyzer, "category_frame", False) or result.get("pipeline_version") == "CATALOG_FRAME_34_50_V1"):
         result["status_note"] = "Já aprovado e padronizado nesta versão; preservado."
         return result
     if result.get("review_status") in ("APPROVED", "REJECTED") or result.get("processing_status") == "DOWNLOADING":
@@ -282,6 +282,14 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
             response = analyzer.analyze(path, result.get("category"), result.get("subcategory"),
                                         result.get("image_type") or "PACKSHOT", image_id=result["image_id"])
             checkpoint.put(result, analyzer.ready["pipelineVersion"], response)
+        if getattr(analyzer, "category_frame", False):
+            from category_frame import apply_frame
+            response = apply_frame(response, result.get("category"))
+        if getattr(analyzer, "frame_storage", None):
+            if not result.get("allows_image_persistence"):
+                raise ValueError("SOURCE_DISALLOWS_IMAGE_PERSISTENCE")
+            path = downloader.get(result["source_url"])
+            response["framed_assets"] = analyzer.frame_storage.store(result, response, path)
         result["analysis"] = response
         analyzed = update_analysis(result, response)
         result["analysis_standardized"] = is_standardized(analyzed)
@@ -292,7 +300,7 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
         result["status_note"] = "Pipeline executado; " + ("enquadramento aprovado." if result["analysis_standardized"]
                                                          else "não aprovado para o enquadramento; requer revisão.")
     except Exception as error:
-        result["error"] = str(error) if isinstance(error, DownloadFailure) else type(error).__name__
+        result["error"] = str(error) if isinstance(error, (DownloadFailure, ValueError)) else type(error).__name__
         result["status_note"] = "Pipeline não aplicado: " + result["error"]
     return result
 
@@ -302,6 +310,7 @@ def main(argv=None):
     source = ap.add_mutually_exclusive_group(required=True)
     source.add_argument("--snapshot", nargs="+", type=Path, help="JSONL/JSONL.GZ: estado local, não produção")
     source.add_argument("--database", action="store_true", help="Inventário atual do MySQL via MYSQL_*")
+    ap.add_argument("--category-frame", action="store_true", help="Quadro 3:4 com largura 50%; focos estimados de zíper/cadarço exigem revisão (requer --apply)")
     ap.add_argument("--apply", action="store_true", help="Aplicar pipeline; com --database persiste os metadados")
     ap.add_argument("--output", required=True, type=Path, help="Planilha .xlsx")
     ap.add_argument("--checkpoint", type=Path, help="SQLite de análises para retomada")
@@ -312,6 +321,8 @@ def main(argv=None):
     ap.add_argument("--limit", type=int, help="Limitar imagens apenas para amostra explicitamente identificada")
     ap.add_argument("--timeout", type=float, default=25)
     args = ap.parse_args(argv)
+    if args.category_frame and not args.apply:
+        ap.error("--category-frame requer --apply")
     if args.output.suffix.lower() != ".xlsx":
         ap.error("--output deve terminar em .xlsx")
     if args.workers < 1 or args.workers > 16 or args.java_threads < 1 or args.java_threads > 16:
@@ -354,6 +365,10 @@ def main(argv=None):
                                           stderr_path=args.output.with_suffix(".java.log")) as analyzer:
                     if analyzer.ready["pipelineVersion"] != PIPELINE_VERSION:
                         raise RuntimeError("JAR desatualizado: compile a versão atual do pipeline antes de aplicar")
+                    analyzer.category_frame = args.category_frame
+                    if args.category_frame:
+                        from category_frame_storage import FrameStorage
+                        analyzer.frame_storage = FrameStorage()
                     progress("Pipeline Java pronto.")
                     records = analyze_records(records, downloader, analyzer, checkpoint, workers=args.workers)
                     summary["network_proxy_blocked"] = downloader.proxy_blocked

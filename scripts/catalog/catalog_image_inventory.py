@@ -83,6 +83,14 @@ def is_standardized(record: Mapping, current_version: str = CURRENT_VERSION) -> 
         return False
     if _value(record, "processing_status", "processingStatus") != "APPROVED":
         return False
+    if _value(record, "pipeline_version", "pipelineVersion") == "CATALOG_FRAME_34_50_V1":
+        crop = _metadata(record, "crop") or {}
+        frame = crop.get("editorFrame") or {}
+        return (_value(record, "review_status", "reviewStatus") != "REJECTED"
+                and _valid_crop(crop) and crop.get("aspect") == "3:4"
+                and frame.get("version") == "CATALOG_FRAME_34_50_V1"
+                and frame.get("widthPercent") == 50 and frame.get("requiresReview") is False
+                and crop.get("ruleCompliant") is True)
     if _value(record, "pipeline_version", "pipelineVersion") != current_version:
         return False
     if _value(record, "review_status", "reviewStatus") == "REJECTED":
@@ -195,7 +203,9 @@ SELECT p.id AS product_id, p.product_name, p.category, p.subcategory,
        i.source_sha256, i.phash, i.processing_status, i.pipeline_version,
        i.quality_score, i.gate_reasons, i.view_role, i.is_canonical, i.review_status,
        i.crop_json, i.metrics_json, i.assets_json, i.attempts, i.processed_at,
-       i.created_at, i.updated_at, i.version
+       i.created_at, i.updated_at, i.version,
+       EXISTS (SELECT 1 FROM catalog_sources s WHERE s.brand_id=p.brand_id AND s.active=true
+               AND s.allows_image_persistence=true AND s.domain=i.source_domain) AS allows_image_persistence
 FROM catalog_products p
 JOIN brands b ON b.id = p.brand_id
 LEFT JOIN catalog_images i ON i.product_id = p.id

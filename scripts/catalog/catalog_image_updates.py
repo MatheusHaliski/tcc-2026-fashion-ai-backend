@@ -158,6 +158,11 @@ def apply_product(conn, records, analyses_by_image_id, ranker):
         patch.update(stored_url=None, assets_json=None, usage_status="REFERENCE_ONLY",
                      review_status="PENDING" if patch["processing_status"] == "NEEDS_REPROCESSING" else "NONE",
                      processed_at=instant)
+        assets = analysis.get("framed_assets")
+        if assets:
+            if not by_id[image_id].get("allows_image_persistence") or patch["pipeline_version"] != "CATALOG_FRAME_34_50_V1":
+                raise ValueError("frame persistence is not authorized")
+            patch.update(stored_url=assets["stored_url"], assets_json=assets["assets_json"], usage_status="PERSISTED")
         patches[image_id] = patch
         prospective[image_id].update(patch)
     if not patches:
@@ -231,6 +236,11 @@ def apply_product(conn, records, analyses_by_image_id, ranker):
             if changed:
                 skipped = {**skips, **{image_id: "PRODUCT_CHANGED" for image_id in patches}}
                 return {"changed_ids": [], "skipped_ids": list(skipped), "skip_reasons": skipped, "changes": []}
+            for image_id, patch in patches.items():
+                if patch.get("assets_json"):
+                    cursor.execute("SELECT s.id FROM catalog_sources s JOIN catalog_products p ON p.brand_id=s.brand_id WHERE p.id=%s AND s.domain=%s AND s.active=true AND s.allows_image_persistence=true FOR UPDATE", (product_id, current[image_id].get("source_domain")))
+                    if cursor.fetchone() is None:
+                        raise ValueError("source persistence permission changed")
             changes = []
             for image_id, patch in patches.items():
                 row = current[image_id]

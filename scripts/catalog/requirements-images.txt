@@ -1,2 +1,4 @@
 -r requirements.txt
 openpyxl>=3.1,<4
+Pillow>=10.4,<13
+boto3>=1.35,<2
