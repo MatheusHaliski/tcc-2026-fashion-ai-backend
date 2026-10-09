@@ -70,6 +70,8 @@ describe("várias peças numa foto — revisão (RF4)", () => {
     expect(within(slots).getAllByRole("button", { name: /^Peça \d ·/ })).toHaveLength(5);
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(screen.queryByRole("button", { name: /^Salvar \d/ })).toBeNull();
+    expect(screen.getByRole("complementary", { name: "pré-visualização" })).toBeTruthy();
+    expect(container.querySelector("details")?.open).toBe(false);
     fireEvent.change(screen.getByDisplayValue("Camiseta 1"), { target: { value: "Minha Nike" } });
     expect((screen.getByLabelText("Marca") as HTMLInputElement).value).toBe("Nike");
     fireEvent.change(screen.getByLabelText("Marca"), { target: { value: "Nike Sportswear" } });
@@ -89,6 +91,8 @@ describe("várias peças numa foto — revisão (RF4)", () => {
     expect(screen.getByDisplayValue("Minha Nike")).toBeTruthy();
     expect(calls.filter((call) => call.path === "/api/pieces/analysis/multi")).toHaveLength(1);
     fireEvent.click(screen.getByRole("button", { name: "Avançar" }));
+    expect(screen.queryByRole("complementary", { name: "pré-visualização" })).toBeNull();
+    expect(container.querySelector("details")).toBeNull();
     fireEvent.change(screen.getByLabelText("Cor de fundo"), { target: { value: "#c51a53" } });
     fireEvent.click(screen.getByRole("button", { name: /Peça 2 · Minha Adidas/ }));
     expect((screen.getByLabelText("Cor de fundo") as HTMLInputElement).value).toBe("");
@@ -108,6 +112,29 @@ describe("várias peças numa foto — revisão (RF4)", () => {
     expect(calls.filter((call) => call.path.includes("/d1/pieces?")).map((call) => call.path)).toEqual([0, 1, 2, 3, 4].map((index) => `/api/pieces/analysis/multi/d1/pieces?index=${index}`));
   });
 
+  it("permite escolher uma marca cadastrada ou texto livre por slot e persiste a escolha sem copiar para outra peça", async () => {
+    const { calls } = mockApi({
+      "GET /api/taxonomy": TAXONOMY,
+      "GET /api/catalog/brands": (url: URL) => ({ brands: url.searchParams.get("q") === "Nik" ? [{ id: "brand-nike", name: "Nike", slug: "nike", logoUrl: "/media/nike.png" }] : [] }),
+      "POST /api/pieces/analysis/multi/d1/pieces": { draftId: "cropped" }, "POST /api/pieces": { id: "new" },
+    });
+    renderApp(<MultiPieceReview file={photo()} detection={DETECTION} onClose={() => {}} onSaved={() => {}} />);
+    await screen.findByLabelText("Marca");
+    fireEvent.change(screen.getByLabelText("Marca"), { target: { value: "Nik" } });
+    fireEvent.mouseDown(await screen.findByRole("option", { name: /Nike/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Peça 2 · Calça jeans/ }));
+    expect((screen.getByLabelText("Marca") as HTMLInputElement).value).toBe("");
+    fireEvent.change(screen.getByLabelText("Marca"), { target: { value: "Ateliê local" } });
+    fireEvent.click(screen.getByRole("button", { name: /Peça 1 · Saia azul/ }));
+    expect((screen.getByLabelText("Marca") as HTMLInputElement).value).toBe("Nike");
+    advanceToReview();
+    fireEvent.click(screen.getByRole("button", { name: "Salvar 2 peças" }));
+    await waitFor(() => expect(calls.filter((call) => call.path === "/api/pieces")).toHaveLength(2));
+    const payloads = calls.filter((call) => call.path === "/api/pieces").map((call) => call.body);
+    expect(payloads[0]).toMatchObject({ brandId: "brand-nike", brandName: "Nike", brandLogoUrl: "/media/nike.png" });
+    expect(payloads[1]).toMatchObject({ brandId: null, brandName: "Ateliê local", brandLogoUrl: null });
+  });
+
   it("edita cinco slots em Mais detalhes sem modal e preserva nome, cor e recorte ao alternar", async () => {
     mockApi({ "GET /api/taxonomy": TAXONOMY });
     const five = { ...DETECTION, pieces: Array.from({ length: 5 }, (_, index) => ({ ...DETECTION.pieces[0], index, name: `Camiseta ${index + 1}` })) };
@@ -122,7 +149,7 @@ describe("várias peças numa foto — revisão (RF4)", () => {
     fireEvent.click(screen.getByRole("button", { name: /Peça 5 · Camiseta 5/ }));
     expect(screen.queryByDisplayValue("Minha camiseta preta")).toBeNull();
     fireEvent.change(screen.getByDisplayValue("Camiseta 5"), { target: { value: "Minha camiseta branca" } });
-    fireEvent.click(screen.getByRole("button", { name: "Peça 1", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /Peça 1 · Minha camiseta preta/ }));
     expect(screen.getByDisplayValue("Minha camiseta preta")).toBeTruthy();
     expect(screen.getByLabelText(/Cor/).textContent).toContain("Preto");
     expect((screen.getByLabelText("Esquerda") as HTMLInputElement).value).toBe("20");

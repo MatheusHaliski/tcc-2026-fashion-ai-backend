@@ -13,6 +13,8 @@ import { useCaptureTutorialPrefs } from "@/lib/capture/tutorial-prefs";
 import { EMPTY_PIECE, PIECE_CATEGORIES, PIECE_MAX_TAGS, PieceMoreDetails, toPayload, validatePieceForm, type PieceFormValue } from "@/components/piece-form";
 import { PieceCreationSteps, type PieceCreationStep } from "@/components/piece-creation-steps";
 import { PieceArtEditor } from "@/components/piece-art-editor";
+import { PieceCard } from "@/components/piece-card";
+import { BrandAutocomplete } from "@/components/catalog/brand-autocomplete";
 import { useAuth } from "@/lib/auth/session";
 
 /** Caixa da peça em % (0–100) da largura e da altura da foto: x/y = canto superior esquerdo. */
@@ -239,6 +241,7 @@ function photoPreview(row: Row, user: UserCard | null, tax: Taxonomy | null): Pi
   return {
     id: `photo-preview-${row.index}`, owner: user ?? { id: "", username: "", displayName: "", profileType: "PESSOAL", verified: false, privateAccount: false },
     name: v.name, category: v.category, subcategory: v.subcategory, sex: v.sex, brandName: v.brandName || null,
+    brandLogoUrl: v.brandLogoUrl ?? null,
     color: v.color, colorHex: tax?.colors[v.color] ?? null, material: v.material, size: v.size, style: v.style, occasion: v.occasion,
     seals: v.seals, price: v.price === "" ? null : Number(v.price), imageUrl: image, thumbnailUrl: image,
     studioImageUrl: null, studioThumbUrl: null, studioFeedUrl: null, defaultImage: false, visibility: v.visibility,
@@ -393,24 +396,24 @@ export function MultiPieceReview({ file, detection, subtitle, onClose, onSaved, 
     <section aria-label={subtitle ? `${t("pieceForm.moreDetails")} · ${subtitle}` : t("pieceForm.moreDetails")} className="grid gap-4">
       {step === undefined && <PieceCreationSteps value={currentStep} onChange={go} />}
       <h2 className="type-h3">{currentStep === "art" ? t("pieces.new.etapa_arte") : currentStep === "review" ? t("builder.step.review") : t("pieceForm.moreDetails")}{subtitle ? ` · ${subtitle}` : ""}</h2>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,420px)_1fr]">
-        <div className="lg:sticky lg:top-0 lg:self-start">
-          <div className="relative overflow-hidden rounded-md border border-line-soft" role="group" aria-label={t("multiPiece.marcacoes")}>
-            <img src={photo} alt="" className="block h-auto w-full" />
-            {rows.map((r, i) => (
-              <button key={r.index} type="button" aria-label={t("multiPiece.peca_n", { n: i + 1 })}
-                aria-pressed={active === r.index} disabled={saving} onClick={() => setActive(r.index)}
-                className={cn("absolute rounded-sm border-2", r.include ? "border-solid" : "border-dashed opacity-50", active === r.index && "ring-2 ring-offset-1")}
-                style={{ left: `${r.box.x}%`, top: `${r.box.y}%`, width: `${r.box.width}%`, height: `${r.box.height}%`, borderColor: "var(--mark, #e4572e)" }}>
-                <span className="absolute left-0 top-0 min-w-5 rounded-br-sm px-1 type-caption font-medium text-white" style={{ background: "var(--mark, #e4572e)" }}>{i + 1}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+      <div role="group" aria-label={t("multiPiece.slots")} className="flex flex-wrap gap-2">
+        {rows.map((r, i) => <Button key={r.index} size="sm" aria-pressed={active === r.index} disabled={saving} onClick={() => setActive(r.index)}>
+          {t("multiPiece.peca_n", { n: i + 1 })} · {r.value.name}{r.status === "saved" ? " ✓" : r.status === "error" || r.errors ? " !" : ""}
+        </Button>)}
+        {currentStep === "more" && <Button size="sm" onClick={addWholePhoto} disabled={!tax || saving || rows.length >= 12}>{t("multiPiece.adicionar_slot")}</Button>}
+      </div>
+      <div className={currentStep === "art" ? "grid gap-5" : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]"}>
         <div className="grid min-w-0 content-start gap-3">
+          {currentStep === "more" && <>
           {detection.source === "local" ? <p role="note" className="rounded-md bg-thread-soft p-3 type-body-sm">{t("multiPiece.revisao_local")}</p>
             : rows.length > 0 && <p role="note" className="type-body-sm">{t("multiPiece.encontradas", { count: rows.length })}</p>}
           {detection.aiMessage && <p className="type-caption text-muted">{detection.aiMessage}</p>}
+          <details className="rounded-md border border-line-soft p-3">
+            <summary className="cursor-pointer font-medium">{t("multiPiece.marcacoes")}</summary>
+            <div className="mt-3 max-w-md">
+              <PhotoRegionMap source={photo} rows={rows} active={active} disabled={saving} onSelect={setActive} />
+            </div>
+          </details>
           {currentStep === "more" && rows.some((r) => r.index >= 0 && r.status !== "saved") && (
             <div className="flex flex-wrap items-center gap-2">
               <Button size="sm" onClick={cropAll} loading={cropping} disabled={saving || !uncropped.length}>{t("multiPiece.recortar_todas", { count: uncropped.length })}</Button>
@@ -420,12 +423,7 @@ export function MultiPieceReview({ file, detection, subtitle, onClose, onSaved, 
           {tax && rows.length === 0 && detection.pieces.length === 0 && (
             <div className="grid gap-2"><p>{t("multiPiece.nenhuma")}</p><Button onClick={addWholePhoto}>{t("multiPiece.usar_foto_inteira")}</Button></div>
           )}
-          <div role="group" aria-label={t("multiPiece.slots")} className="flex flex-wrap gap-2">
-            {rows.map((r, i) => <Button key={r.index} size="sm" aria-pressed={active === r.index} disabled={saving} onClick={() => setActive(r.index)}>
-              {t("multiPiece.peca_n", { n: i + 1 })} · {r.value.name}{r.status === "saved" ? " ✓" : r.status === "error" || r.errors ? " !" : ""}
-            </Button>)}
-            {currentStep === "more" && <Button size="sm" onClick={addWholePhoto} disabled={!tax || saving || rows.length >= 12}>{t("multiPiece.adicionar_slot")}</Button>}
-          </div>
+          </>}
           {currentStep === "more" && rows.filter((r) => r.index === active).map((r) => (
             <PieceRow key={r.index} id={`multi-piece-${detection.draftId}-${r.index}`} n={rows.indexOf(r) + 1} row={r} tax={tax} active disabled={saving}
               onInclude={(include) => update(r.index, { include })} onChange={(v) => setValue(r.index, v)}
@@ -447,9 +445,31 @@ export function MultiPieceReview({ file, detection, subtitle, onClose, onSaved, 
           </ul>}
           {problem && <p role="alert" className="error-text">{problem}</p>}
         </div>
+        {currentStep !== "art" && rows.filter((r) => r.index === active).map((r) => <aside key={r.index} aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start">
+          <p className="label">{t("scheme.card")}</p><PieceCard piece={photoPreview(r, user, tax)} href="#" />
+        </aside>)}
       </div>
       {footer}
     </section>
+  );
+}
+
+function PhotoRegionMap({ source, rows, active, disabled, onSelect }: {
+  source: string; rows: readonly Row[]; active: number | null; disabled: boolean; onSelect: (index: number) => void;
+}) {
+  const { t } = useI18n();
+  return (
+    <div className="relative overflow-hidden rounded-md border border-line-soft" role="group" aria-label={t("multiPiece.marcacoes")}>
+      <img src={source} alt="" className="block h-auto w-full" />
+      {rows.map((r, i) => (
+        <button key={r.index} type="button" aria-label={t("multiPiece.peca_n", { n: i + 1 })}
+          aria-pressed={active === r.index} disabled={disabled} onClick={() => onSelect(r.index)}
+          className={cn("absolute rounded-sm border-2", r.include ? "border-solid" : "border-dashed opacity-50", active === r.index && "ring-2 ring-offset-1")}
+          style={{ left: `${r.box.x}%`, top: `${r.box.y}%`, width: `${r.box.width}%`, height: `${r.box.height}%`, borderColor: "var(--mark, #e4572e)" }}>
+          <span className="absolute left-0 top-0 min-w-5 rounded-br-sm px-1 type-caption font-medium text-white" style={{ background: "var(--mark, #e4572e)" }}>{i + 1}</span>
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -511,7 +531,13 @@ function PieceRow({ id, n, row, tax, active, disabled, onInclude, onChange, onBo
       </div>
       <fieldset disabled={locked || !row.include} className="grid min-w-0 gap-x-3 sm:grid-cols-2">
         <Field label={t("common.nome")} id={fid("name")} required error={err.name} className="sm:col-span-2"><Input id={fid("name")} value={v.name} maxLength={80} onChange={(e) => set("name", e.target.value)} /></Field>
-        <Field label={t("common.brand")} id={fid("brand")} error={err.brandName} className="sm:col-span-2"><Input id={fid("brand")} value={v.brandName} maxLength={60} onChange={(e) => set("brandName", e.target.value)} /></Field>
+        <Field label={t("common.brand")} id={fid("brand")} error={err.brandName} className="sm:col-span-2">
+          <BrandAutocomplete id={fid("brand")} value={v.brandName} maxLength={60} onChange={(brandName, brand) => onChange({ ...v,
+            brandName, brandId: brand?.id ?? null, brandLogoUrl: brand?.logoUrl ?? null,
+            brandLogoWideUrl: null, brandDomain: null, brandEdgePx: null,
+            brandSource: brand ? "CATALOGO" : null, brandRef: brand?.id ?? null,
+          })} />
+        </Field>
         <Field label={t("common.category")} id={fid("category")} required error={err.category}>
           <Select id={fid("category")} value={v.category} onChange={(e) => onChange({ ...v, category: e.target.value, subcategory: tax?.subcategories?.[e.target.value]?.[0] ?? "", occasion: keepAllowed(v.occasion, allowedOccasions(e.target.value)) })}>
             {categories.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c] ?? label(c)}</option>)}
