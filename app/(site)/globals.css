@@ -2329,14 +2329,15 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .fitting-browser .fitting-store-name { overflow-wrap: anywhere; }
 .fitting-browser .fitting-category-filters, .fitting-browser .fitting-category-controls { min-width: 0; padding-top: 10px; border-top: 1px solid var(--line-soft); }
 .fitting-browser .fitting-category-filters .chip, .fitting-browser .fitting-category-controls .chip { min-width: 0; max-width: 100%; padding-inline: .7rem; }
-.fitting-workspace .catalog-results-matrix { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.fitting-workspace .catalog-results-matrix > li, .fitting-workspace .catalog-results-matrix .catalog-card { min-width: 0; }
-.fitting-workspace .catalog-results-matrix .catalog-card-media { height: clamp(145px, 20vw, 240px); }
-.fitting-workspace .catalog-results-matrix .catalog-card-body { min-width: 0; padding: .65rem; }
-.fitting-workspace .catalog-results-matrix .catalog-card-body h3 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: clamp(1rem, 1.5vw, 1.25rem); }
-.fitting-workspace .catalog-results-matrix .catalog-card-body p { overflow-wrap: anywhere; }
-@media (min-width: 640px) { .fitting-workspace .catalog-results-matrix { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (min-width: 1024px) { .fitting-workspace .catalog-results-matrix { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+/* Busca catalogada no RF4 e no provador: as colunas acompanham a paginação de duas linhas. */
+.catalog-results-matrix { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.catalog-results-matrix > li, .catalog-results-matrix .catalog-card { min-width: 0; }
+.catalog-results-matrix .catalog-card-media { height: clamp(145px, 20vw, 240px); }
+.catalog-results-matrix .catalog-card-body { min-width: 0; padding: .65rem; }
+.catalog-results-matrix .catalog-card-body h3 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: clamp(1rem, 1.5vw, 1.25rem); }
+.catalog-results-matrix .catalog-card-body p { overflow-wrap: anywhere; }
+@media (min-width: 640px) { .catalog-results-matrix { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .catalog-results-matrix { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .fitting-stage { position: relative; height: clamp(460px, 68vh, 760px); background: var(--surface-2); border-top: 3px solid var(--fitting-accent, var(--mark)); transition: border-color .4s; }
 .fitting-slots { display: grid; gap: 8px; }
 .fitting-slot { display: grid; gap: 4px; padding: 8px 10px; border: 1px solid var(--line-soft); border-radius: 10px; background: var(--surface); }

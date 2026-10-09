@@ -978,6 +978,7 @@
   "catalog.loja_oficial": "Loja oficial",
   "catalog.marca_desconhecida": "Ainda não conhecemos essa marca no catálogo; a busca segue pelo nome.",
   "catalog.n_produtos": "{count, plural, one {# produto} other {# produtos}}",
+  "catalog.pecas_na_selecao": "Peças nesta seleção: {count}",
   "catalog.nao_encontramos": "Ainda não encontramos essa peça no catálogo.",
   "catalog.nao_encontrei": "Não encontrei minha peça",
   "catalog.origem": "Origem da imagem",
