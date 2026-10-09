@@ -200,6 +200,79 @@ describe("abertura e reflexos das pálpebras medidas", () => {
     const normal = visibleHeight(CANON_POS), narrow = visibleHeight(narrowed());
     expect(narrow).toBeLessThan(normal * 0.9);
   });
+
+  it("a abertura inteira fica livre de faixas de pele, inclusive com olhos estreitos e inclinados, em cena e no GLB", () => {
+    const shape = narrowed();
+    for (const side of ["left", "right"] as const) {
+      const ids = EYES[side].contour, cx = ids.reduce((sum, i) => sum + shape[i * 3], 0) / ids.length;
+      for (const i of ids) shape[i * 3 + 1] += (shape[i * 3] - cx) * (side === "left" ? 0.2 : -0.14);
+    }
+    const cc = fitted(shape), rig = eyeRig(asset, cc.eye), aperture = eyeApertures(rig, shape)!;
+    const h = buildHuman(asset, cc, { skin: "#c8a080", eyeShape: shape });
+    const before = buildHuman(asset, cc, { skin: "#c8a080" });
+    const clipped = clipEyeGeometryForExport(h)!;
+    const localSkin = (geometry: THREE.BufferGeometry) => {
+      const g = geometry.clone(), p = g.getAttribute("position"), index = g.getIndex()!, kept: number[] = [];
+      for (let t = 0; t < index.count; t += 3) {
+        const ids = [index.getX(t), index.getX(t + 1), index.getX(t + 2)];
+        if (ids.some((i) => Math.abs(p.getX(i)) < 0.075 && Math.abs(p.getY(i) - rig.iris.left.center[1]) < 0.025)) kept.push(...ids);
+      }
+      g.setIndex(kept); g.computeBoundingSphere(); return g;
+    };
+    const skinGeometry = localSkin(h.body.geometry), originalGeometry = localSkin(before.body.geometry);
+    const skin = new THREE.Mesh(skinGeometry, h.body.material), original = new THREE.Mesh(originalGeometry, before.body.material);
+    const eye = new THREE.Mesh(clipped, h.eyes.material), ray = new THREE.Raycaster();
+    skin.updateMatrixWorld(true); original.updateMatrixWorld(true); eye.updateMatrixWorld(true);
+    let sampled = 0, previouslyBlocked = 0;
+    for (const side of ["left", "right"] as const) {
+      const xs = aperture[side].map((p) => p[0]), ys = aperture[side].map((p) => p[1]);
+      for (let col = 1; col < 20; col++) for (let row = 1; row < 12; row++) {
+        const x = Math.min(...xs) + (Math.max(...xs) - Math.min(...xs)) * col / 20;
+        const y = Math.min(...ys) + (Math.max(...ys) - Math.min(...ys)) * row / 12;
+        ray.set(new THREE.Vector3(x, y, 0.3), new THREE.Vector3(0, 0, -1));
+        const globe = ray.intersectObject(eye, false)[0]; if (!globe) continue;
+        const oldSkin = ray.intersectObject(original, false)[0], newSkin = ray.intersectObject(skin, false)[0];
+        if (oldSkin && oldSkin.distance < globe.distance - 1e-5) previouslyBlocked++;
+        expect(!newSkin || newSkin.distance >= globe.distance - 1e-5).toBe(true);
+        sampled++;
+      }
+    }
+    expect(sampled).toBeGreaterThan(150); expect(previouslyBlocked).toBeGreaterThan(0);
+    const p = h.body.geometry.getAttribute("position"), j = h.body.geometry.getAttribute("skinIndex"), w = h.body.geometry.getAttribute("skinWeight");
+    expect(p.count).toBeGreaterThan(asset.body.renderVertex.length);
+    for (let i = asset.body.renderVertex.length; i < p.count; i++) {
+      expect(w.getX(i) + w.getY(i) + w.getZ(i) + w.getW(i)).toBeCloseTo(1, 5);
+      for (let k = 0; k < 4; k++) expect(Number.isInteger(j.getComponent(i, k))).toBe(true);
+    }
+    // GLB uses this same carved skin geometry; it does not depend on an onBeforeCompile skin mask.
+    expect((h.body.material as THREE.Material).customProgramCacheKey()).not.toContain("observed-eye-aperture");
+    skinGeometry.dispose(); originalGeometry.dispose(); clipped.dispose(); h.dispose(); before.dispose();
+  });
+
+  it("a linha d'água segue a pálpebra inferior medida depois de retirar a pele que cruzava a órbita", () => {
+    const shape = narrowed(), cc = fitted(shape), rig = eyeRig(asset, cc.eye), aperture = eyeApertures(rig, shape)!;
+    for (const side of ["left", "right"] as const) {
+      const lower = aperture[side].slice(0, 9), line = lowerLidLine(asset, cc.body, cc.eye, side, rig, aperture);
+      expect(line.length).toBeGreaterThan(10);
+      for (const [x, y, z] of line) {
+        const edge = lower.slice(1).map((b, i) => [lower[i], b]).find(([a, b]) => x >= Math.min(a[0], b[0]) && x <= Math.max(a[0], b[0]))!;
+        const [a, b] = edge, expectedY = a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]);
+        expect(y).toBeCloseTo(expectedY, 7); expect(Number.isFinite(z)).toBe(true);
+      }
+    }
+  });
+
+  it("uma abertura fechada não deixa fendas no rosto nem triângulos de olho no arquivo", () => {
+    const shape = Float64Array.from(CANON_POS);
+    for (const side of ["left", "right"] as const) {
+      const ids = EYES[side].contour, cy = ids.reduce((sum, i) => sum + shape[i * 3 + 1], 0) / ids.length;
+      for (const i of ids) shape[i * 3 + 1] = cy;
+    }
+    const h = buildHuman(asset, c, { skin: "#c8a080", eyeShape: shape }), clipped = clipEyeGeometryForExport(h)!;
+    expect(clipped.getAttribute("position").count).toBe(0);
+    expect(h.body.geometry.getIndex()!.count).toBe(asset.body.index.length);
+    clipped.dispose(); h.dispose();
+  });
 });
 
 describe("ossos dos olhos no esqueleto (I4)", async () => {

@@ -17,6 +17,7 @@ import type { BodyAsset } from "./asset";
 import type { Composed } from "./compose";
 import { landmarksOn } from "./compose";
 import type { AvatarHair } from "../model";
+import { installHairCoverage } from "./hair-coverage";
 
 const CANON_FOREHEAD = 8.26, CANON_CHIN = -9.4, SKULL_TOP = 13;     // y no canônico do rosto (cm)
 
@@ -133,10 +134,8 @@ function strandTexture(color: string, texture: string, cover: boolean): THREE.Ca
       else { const len = 60 + rnd() * 200; g.moveTo(x, y0); const wav = texture === "wavy" ? 5 : 1.2; for (let t = 0; t <= len; t += 8) g.lineTo(x + Math.sin((y0 + t) / 24) * wav, y0 + t); }
       g.stroke();
     }
-    // alfa com "pontas": a borda (linha do cabelo, pontas da cortina) desfia em fios, sem recorte liso
-    const id = g.getImageData(0, 0, W, H);
-    for (let x = 0; x < W; x++) { const a = 150 + Math.floor(rnd() * 105); for (let y = 0; y < H; y++) id.data[(y * W + x) * 4 + 3] = Math.min(255, a + ((y * 7 + x * 13) % 23)); }
-    g.putImageData(id, 0, 0);
+    // A base cobre o miolo do cabelo; só a máscara geométrica da linha/ponta pode recortá-la.
+    // Alfa aleatório em toda a textura abria buracos no volume sob MSAA, inclusive no couro cabeludo.
   }
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4;
   return t;
@@ -161,13 +160,14 @@ function finish(pos: number[], uv: number[], col: number[], si: number[], sw: nu
   const mat = new THREE.MeshPhysicalMaterial({
     // base sob os fios: fosca e escura (a profundidade entre as mechas, não uma superfície com brilho), e a linha do
     // cabelo some aos poucos (alpha-to-coverage com MSAA) em vez do recorte duro que serrilhava nos triângulos da testa
-    color: "#ffffff", map: tex, vertexColors: true, alphaTest: base && !covered ? 0.3 : 0.5, alphaToCoverage: base && !covered, side: THREE.DoubleSide,
+    color: tex ? "#ffffff" : baseHex, map: tex, vertexColors: true, alphaTest: base && !covered ? 0.3 : 0.5, alphaToCoverage: !covered, side: THREE.DoubleSide,
     roughness: covered ? 0.9 : base ? 0.92 : 0.58, sheen: covered ? 0.2 : base ? 0.05 : 0.35, sheenRoughness: 0.55, sheenColor: new THREE.Color(baseHex).lerp(new THREE.Color("#ffffff"), 0.25),
     // fio: o brilho é uma faixa em anel em volta da cabeça (reflexo anisotrópico ao longo de u), não um ponto de plástico
     anisotropy: covered || base ? 0 : 0.3,
     // A folga geométrica mantém o cabelo fora da pele/roupa. O viés de inclinação atravessava o rosto em perfil.
     polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: -1,
   });
+  if (!covered) installHairCoverage(mat);
   mat.name = covered ? "cobertura" : "cabelo";
   return { geometry: g, material: mat, kind: covered ? "cover" : "hair" };
 }

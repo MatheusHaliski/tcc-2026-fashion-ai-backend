@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import * as THREE from "three";
 import { parseBodyAsset, type BodyMeta } from "./asset";
 import { compose, fitBody } from "./compose";
 import { baseNormals } from "./three-human";
@@ -79,6 +80,23 @@ describe("cabelo 3D do avatar (RF40) — geometria presa ao esqueleto", () => {
   it("topo cortado na foto e cabelo sem silhueta ainda geram um volume mínimo", () => {
     expect(buildHair(asset, m.c, m.normals, { ...base, cut: true, length: "short" })).not.toBeNull();
     expect(buildHair(asset, m.c, m.normals, { ...base, outline: undefined, top: 0, length: "short" })).not.toBeNull();
+  });
+
+  it("mantém o miolo opaco no cabelo longo e a cor loura quando não há canvas, inclusive no LOD de casca", () => {
+    for (const isBase of [false, true]) {
+      const hb = buildHair(asset, f.c, f.normals, { ...base, color: "#b98e58", length: "long", bottom: -24 }, 1, { base: isBase })!;
+      const mat = hb.material as THREE.MeshPhysicalMaterial;
+      const expected = new THREE.Color("#b98e58"); if (isBase) expected.multiplyScalar(0.62);
+      expect(mat.color.getHexString()).toBe(expected.getHexString());
+      expect(mat.transparent).toBe(false);
+      expect(mat.depthWrite).toBe(true);
+      const colors = hb.geometry.getAttribute("color").array;
+      const interior = Array.from(colors).filter((_, i) => i % 4 === 3 && colors[i] === 1);
+      expect(interior.length).toBeGreaterThan(hb.geometry.getAttribute("color").count / 2);
+      const compiled = { uniforms: {} as Record<string, THREE.IUniform>, vertexShader: "", fragmentShader: "#include <alphatest_fragment>" };
+      mat.onBeforeCompile(compiled as never, {} as THREE.WebGLRenderer);
+      expect(compiled.uniforms.hairCoverageAA.value).toBe(0);
+    }
   });
 
   it("cobertura de cabeça (lenço, boné) gera a cobertura mesmo sem cabelo visível", () => {
