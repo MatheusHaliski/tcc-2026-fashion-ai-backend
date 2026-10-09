@@ -108,7 +108,15 @@ python3 scripts/catalog/process_catalog_images.py --database --apply --category-
 ```
 
 Use primeiro `--limit 20` e um arquivo de saída diferente para conferir uma amostra.
-O modo grava `crop_json` para exibição sem substituir imagens originais. 50% é a
+O modo gera um JPEG 900×1200 e substitui a foto ativa por um arquivo no S3,
+verificando o conteúdo por SHA-256 antes de atualizar `stored_url`/`assets_json`.
+O card usa `PROCESSED`, sem aplicar o recorte novamente. A URL de origem e o
+objeto anterior ficam preservados para recuperação; não sobrescreve arquivos
+em servidores das marcas. Só fontes com `allows_image_persistence` habilitado
+e domínio correspondente podem persistir imagens. As demais são reportadas
+sem atualização. Configure `S3_BUCKET`, `S3_ENDPOINT`, região e credenciais,
+mais `STORAGE_PUBLIC_BASE_URL` (HTTPS) ou `S3_SERVE_THROUGH_API=true` com
+`APP_BASE_URL` (HTTPS) para o bucket privado. 50% é a
 largura normalizada do quadro, como no controle do editor, e não ocupação da peça.
 Camisas e acessórios usam o centro da caixa do produto. Partes de baixo e calçados
 usam a região de foco existente como estimativa do zíper/cadarço e ficam em

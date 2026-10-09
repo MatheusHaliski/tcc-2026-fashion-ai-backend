@@ -269,7 +269,7 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
     if not apply:
         result["status_note"] = "Não verificado no banco atual; snapshot sem metadados." if before is None else "Auditoria dos metadados atuais."
         return result
-    if before is True and not getattr(analyzer, "category_frame", False):
+    if before is True and (not getattr(analyzer, "category_frame", False) or result.get("pipeline_version") == "CATALOG_FRAME_34_50_V1"):
         result["status_note"] = "Já aprovado e padronizado nesta versão; preservado."
         return result
     if result.get("review_status") in ("APPROVED", "REJECTED") or result.get("processing_status") == "DOWNLOADING":
@@ -285,6 +285,11 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
         if getattr(analyzer, "category_frame", False):
             from category_frame import apply_frame
             response = apply_frame(response, result.get("category"))
+        if getattr(analyzer, "frame_storage", None):
+            if not result.get("allows_image_persistence"):
+                raise ValueError("SOURCE_DISALLOWS_IMAGE_PERSISTENCE")
+            path = downloader.get(result["source_url"])
+            response["framed_assets"] = analyzer.frame_storage.store(result, response, path)
         result["analysis"] = response
         analyzed = update_analysis(result, response)
         result["analysis_standardized"] = is_standardized(analyzed)
@@ -295,7 +300,7 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
         result["status_note"] = "Pipeline executado; " + ("enquadramento aprovado." if result["analysis_standardized"]
                                                          else "não aprovado para o enquadramento; requer revisão.")
     except Exception as error:
-        result["error"] = str(error) if isinstance(error, DownloadFailure) else type(error).__name__
+        result["error"] = str(error) if isinstance(error, (DownloadFailure, ValueError)) else type(error).__name__
         result["status_note"] = "Pipeline não aplicado: " + result["error"]
     return result
 
@@ -361,6 +366,9 @@ def main(argv=None):
                     if analyzer.ready["pipelineVersion"] != PIPELINE_VERSION:
                         raise RuntimeError("JAR desatualizado: compile a versão atual do pipeline antes de aplicar")
                     analyzer.category_frame = args.category_frame
+                    if args.category_frame:
+                        from category_frame_storage import FrameStorage
+                        analyzer.frame_storage = FrameStorage()
                     progress("Pipeline Java pronto.")
                     records = analyze_records(records, downloader, analyzer, checkpoint, workers=args.workers)
                     summary["network_proxy_blocked"] = downloader.proxy_blocked

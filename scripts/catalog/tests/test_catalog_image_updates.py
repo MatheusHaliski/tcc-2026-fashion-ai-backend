@@ -187,6 +187,25 @@ class ImageUpdatesTest(unittest.TestCase):
         self.addCleanup(conn.sql.close)
         return conn
 
+    def test_framed_asset_replaces_active_storage_after_permission_check(self):
+        conn = self.database(image(source_domain="brand.example.com"))
+        conn.sql.execute("ALTER TABLE catalog_products ADD COLUMN brand_id TEXT")
+        conn.sql.execute("UPDATE catalog_products SET brand_id='brand-1'")
+        conn.sql.execute("CREATE TABLE catalog_sources (id TEXT, brand_id TEXT, domain TEXT, active INTEGER, allows_image_persistence INTEGER)")
+        conn.sql.execute("INSERT INTO catalog_sources VALUES ('source-1','brand-1','brand.example.com',1,1)")
+        conn.sql.commit()
+        records = conn.records()
+        records[0]["allows_image_persistence"] = True
+        response = analysis(pipeline_version="CATALOG_FRAME_34_50_V1")
+        response["framed_assets"] = {"stored_url":"https://media.example.com/framed.jpg",
+                                    "assets_json":json.dumps({"card":"https://media.example.com/framed.jpg"})}
+        result = apply_product(conn, records, {"a":response}, Ranker(conn))
+        row = conn.rows()[0]
+        self.assertEqual(row["stored_url"], response["framed_assets"]["stored_url"])
+        self.assertEqual(row["usage_status"], "PERSISTED")
+        self.assertEqual(row["image_url"], records[0]["image_url"])
+        self.assertEqual(result["changed_ids"], ["a"])
+
     def test_level_a_metadata_keeps_original_and_provenance_clears_old_stored_crop(self):
         conn = self.database()
         before = conn.rows()[0]
