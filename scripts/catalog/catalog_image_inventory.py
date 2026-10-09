@@ -83,6 +83,14 @@ def is_standardized(record: Mapping, current_version: str = CURRENT_VERSION) -> 
         return False
     if _value(record, "processing_status", "processingStatus") != "APPROVED":
         return False
+    if _value(record, "pipeline_version", "pipelineVersion") == "CATALOG_FRAME_34_50_V1":
+        crop = _metadata(record, "crop") or {}
+        frame = crop.get("editorFrame") or {}
+        return (_value(record, "review_status", "reviewStatus") != "REJECTED"
+                and _valid_crop(crop) and crop.get("aspect") == "3:4"
+                and frame.get("version") == "CATALOG_FRAME_34_50_V1"
+                and frame.get("widthPercent") == 50 and frame.get("requiresReview") is False
+                and crop.get("ruleCompliant") is True)
     if _value(record, "pipeline_version", "pipelineVersion") != current_version:
         return False
     if _value(record, "review_status", "reviewStatus") == "REJECTED":

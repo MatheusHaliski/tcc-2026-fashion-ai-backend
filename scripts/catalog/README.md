@@ -97,3 +97,26 @@ o relatório diz por quê. Para sites com URLs de produto fora do padrão, `bran
 
 O coletor precisa de acesso direto aos sites das marcas. No ambiente de desenvolvimento em nuvem do projeto, o proxy
 bloqueia esses domínios: o relatório mostra `PAROU: … sem conexão`. Rode-o numa máquina com internet aberta.
+
+## Quadro do editor por categoria (3:4, 50%)
+
+Após compilar o JAR atual e instalar `requirements-images.txt`, execute na raiz:
+
+```bash
+python3 scripts/catalog/process_catalog_images.py --database --apply --category-frame \
+  --output data/catalog/frame-34-50.xlsx --workers 4 --java-threads 2
+```
+
+Use primeiro `--limit 20` e um arquivo de saída diferente para conferir uma amostra.
+O modo grava `crop_json` para exibição sem substituir imagens originais. 50% é a
+largura normalizada do quadro, como no controle do editor, e não ocupação da peça.
+Camisas e acessórios usam o centro da caixa do produto. Partes de baixo e calçados
+usam a região de foco existente como estimativa do zíper/cadarço e ficam em
+`NEEDS_REPROCESSING` para revisão: o analisador não confirma esses landmarks.
+Categorias não previstas e fotos onde o quadro de 50% não cabe são reportadas
+como erro, sem atualização. Revisões humanas e processamento ativo são preservados.
+O modo é explícito e não muda o pipeline automático da API. A versão dos metadados
+é `CATALOG_FRAME_34_50_V1`; checkpoints guardam a análise original, para reaplicar
+as regras sem baixar novamente. No Railway, execute em um job com o checkout,
+Python, Java, JAR compilado e as mesmas variáveis MySQL do backend; o container
+atual da API não deve ser presumido como contendo os scripts e suas dependências.
