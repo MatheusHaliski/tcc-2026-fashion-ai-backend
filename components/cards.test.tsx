@@ -3,6 +3,7 @@
  * Cards e peças de exibição (RF7, RF11, RF13, RF20): anatomias do card de look, medalha de selo, card de DNA, gráficos
  * do dashboard e ações sociais. Cada variante desenha sem quebrar e mostra o que a pessoa precisa ver.
  */
+import { router } from "@/test-utils/setup";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ME, cleanup, fireEvent, loggedAs, mockApi, renderApp, screen, waitFor } from "@/test-utils/render";
 import { PIECE, PIECE_2, SCHEME, OWNER } from "@/test-utils/fixtures";
@@ -188,6 +189,14 @@ describe("ações sociais do card (RF8)", () => {
     await waitFor(() => { fireEvent.click(screen.getByRole("button", { name: /Remixar/ })); expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/remixes"))).toBe(true); });
   });
 
+  it("API antiga devolve /create-look (rota que não existe): o remix da peça abre o criador de looks com ela", async () => {
+    const { calls } = loggedAs(undefined, { "POST /api/interactions/PIECE/p1/remixes": { next: "/create-look?seedPiece=p1" } });
+    renderApp(<CardActions type="PIECE" id="p1" counters={PIECE.counters} viewer={PIECE.viewer} title="Camiseta" ownerId={ME.user.id} reactions />);
+    await waitFor(() => { fireEvent.click(screen.getByRole("button", { name: /Remixar/ })); expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/remixes"))).toBe(true); });
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith("/schemes/new?pieces=p1"));
+    expect(router.push).not.toHaveBeenCalledWith(expect.stringContaining("create-look"));
+  });
+
   it("no look, quem publicou não vê remixar", async () => {
     loggedAs();
     const { container } = renderApp(<CardActions type="SCHEME" id="s1" counters={SCHEME.counters} viewer={SCHEME.viewer} title="Look" ownerId={ME.user.id} reactions />);
@@ -204,6 +213,12 @@ describe("ações sociais do card (RF8)", () => {
 });
 
 describe("card da peça (RF7)", () => {
+  it("mostra o feed de calça em 2:1 em prévia e seleção, sem recortar as laterais", () => {
+    mockApi({});
+    const pants = { ...PIECE, category: "lower_piece", studioFeedUrl: "/pants.feed.jpg", flatLayMetadata: { studio: { feed: { aspect: "2:1" } } } };
+    const { container } = renderApp(<><PieceCard piece={pants} href="#" /><PieceCard piece={pants} selectable onSelect={vi.fn()} /></>);
+    for (const frame of container.querySelectorAll<HTMLElement>(".pc-media")) expect(frame.style.aspectRatio).toBe("2 / 1");
+  });
   it("mostra nome, marca, preço à venda, favorita, indisponível e o selo de IA", () => {
     mockApi({});
     renderApp(<><PieceCard piece={PIECE} /><PieceCard piece={PIECE_2} href="#" /><PieceCard piece={PIECE} selectable selected onSelect={vi.fn()} /></>);

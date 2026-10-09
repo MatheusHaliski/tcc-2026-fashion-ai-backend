@@ -1,39 +1,42 @@
 @startuml RF39_MaquinaDeEstados_ItemDaLoja
 !pragma layout smetana
-title RF39 — Criar guarda-roupa 3D com a identidade de uma marca/celebridade e vender na loja do quarto\nDiagrama de máquina de estados — item da loja (WardrobeCreatorService.availability, calculado a cada leitura)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "EM_BREVE\n(agora < availableFrom)" as EM_BREVE
-state "DISPONIVEL" as DISPONIVEL
-state "ESGOTADO\n(soldCount >= stockLimit)" as ESGOTADO
-state "EXPIRADO\n(agora > availableUntil)" as EXPIRADO
-state "INATIVO\n(active = false)" as INATIVO
-state "Removido\n(sem vendas)" as Removido
-[*] --> EM_BREVE : POST /api/room-creator/items\ncom availableFrom futuro
-[*] --> DISPONIVEL : POST /api/room-creator/items\nsem janela ou já dentro dela
-EM_BREVE --> DISPONIVEL : chega availableFrom
-DISPONIVEL --> ESGOTADO : compra leva soldCount ao stockLimit\n(POST /api/points/shop/{sku}/purchase)
-DISPONIVEL --> EXPIRADO : passa availableUntil
-ESGOTADO --> DISPONIVEL : PUT …/items/{sku} aumenta o estoque
-EXPIRADO --> DISPONIVEL : PUT …/items/{sku} estende availableUntil
-DISPONIVEL --> INATIVO : PUT {active: false}\nou DELETE com vendas/unidades
-EM_BREVE --> INATIVO : PUT {active: false}
-INATIVO --> DISPONIVEL : PUT {active: true}
-DISPONIVEL --> Removido : DELETE /api/room-creator/items/{sku}\nsem vendas
-EM_BREVE --> Removido : DELETE sem vendas
-Removido --> [*]
-note right of DISPONIVEL
-Mesmo DISPONIVEL, a compra ainda checa (409):
-NIVEL_INSUFICIENTE, limite por pessoa e selo exigido
-(CONDICAO_DE_COMPRA) e SALDO_INSUFICIENTE.
-Criador pendente ou suspenso: o item sai da vitrine
-("item fora da loja"), sem mudar o estado.
+title RF39 — WardrobeCreatorService.availability(): estado calculado\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nrótulo único: vale a primeira regra verdadeira · 5 regras no código
+
+state "WardrobeCreatorService.availability()" as C_availability {
+  state C_availability_avaliar <<choice>>
+  state "INATIVO" as C_availability_INATIVO
+  state "EM_BREVE" as C_availability_EM_BREVE
+  state "EXPIRADO" as C_availability_EXPIRADO
+  state "ESGOTADO" as C_availability_ESGOTADO
+  state "DISPONIVEL" as C_availability_DISPONIVEL
+}
+[*] --> C_availability_avaliar : cada leitura
+C_availability_avaliar --> C_availability_INATIVO : [1] !c.isActive()
+C_availability_avaliar --> C_availability_EM_BREVE : [2] c.getAvailableFrom() != null &&\nnow.isBefore(c.getAvailableFrom())
+C_availability_avaliar --> C_availability_EXPIRADO : [3] c.getAvailableUntil() != null &&\nnow.isAfter(c.getAvailableUntil())
+C_availability_avaliar --> C_availability_ESGOTADO : [4] c.getStockLimit() != null &&\nc.getSoldCount() >= c.getStockLimit()
+C_availability_avaliar --> C_availability_DISPONIVEL : [5] caso contrário
+note right of C_availability
+  O estado não é gravado: é recalculado a cada leitura.
+  Vale a primeira regra verdadeira, na ordem do código.
 end note
-note bottom of EXPIRADO : some da loja para quem não tem;\nquem comprou continua com o item no quarto
-note bottom of INATIVO : GET /api/points/shop só lista active = true;\nas unidades compradas continuam no room_inventory
 @enduml

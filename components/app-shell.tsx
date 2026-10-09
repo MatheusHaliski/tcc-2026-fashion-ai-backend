@@ -10,12 +10,12 @@ import { FaiIcon } from "@/components/fai-icon";
 import { Avatar, Sheet, Skeleton, UiIcon, cn, useDismiss, useFocusTrap } from "@/components/ui";
 
 /**
- * Estrutura de todas as telas logadas: cabeçalho de altura fixa, menu lateral em 5 domínios (desktop), gaveta (tablet e
+ * Estrutura de todas as telas logadas: cabeçalho de altura fixa, menu lateral por domínios (desktop), gaveta (tablet e
  * celular) e barra inferior com os 5 destinos principais. O menu fica sempre num container branco (regra do RF23).
  */
 type NavItem = { href: string; key: string; icon: string; auth?: boolean };
 const GROUPS: { key: string; items: NavItem[] }[] = [
-  // domínios (docs/hype/01-AUDITORIA_E_PROPOSTA_IA.md §3.1): descobrir · guarda-roupa · looks · perfil · jogar
+  // domínios: descobrir · guarda-roupa · looks · perfil · jogar · loja
   { key: "nav.group.discover", items: [
     { href: "/feed", key: "nav.feed", icon: "NAV-05" },
     { href: "/search", key: "nav.search", icon: "NAV-09" },
@@ -46,9 +46,11 @@ const GROUPS: { key: string; items: NavItem[] }[] = [
   { key: "nav.group.play", items: [
     { href: "/moments", key: "nav.moments", icon: "NAV-13", auth: true },
     { href: "/flair", key: "nav.flair", icon: "ACT-46", auth: true },
-    { href: "/points", key: "nav.points", icon: "ACT-40", auth: true },
     { href: "/highlights", key: "nav.highlights", icon: "ACT-37", auth: true },
     { href: "/coupons", key: "nav.coupons", icon: "ACT-26", auth: true },
+  ] },
+  { key: "nav.group.store", items: [
+    { href: "/points", key: "nav.points", icon: "ACT-40", auth: true },
   ] },
 ];
 

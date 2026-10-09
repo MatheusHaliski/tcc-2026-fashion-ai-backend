@@ -1,186 +1,203 @@
 @startuml RF50_Classes
-title RF50 (evolução do RF25) — Criador de selo: modelo do desenho (JSON), catálogo de modelos e serviços\nDiagrama de classes
+!pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
-  BackgroundColor #F8F4FF
-  BorderColor #B695F5
-  FontColor #2D2438
-  ArrowColor #52606D
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
 }
-enum SealKind {
-  CIRCULAR
-  FOLHA
-  FASHIONAI
+hide empty members
+left to right direction
+title RF50 (evolução do RF25) — Criador de selo: modelo do desenho (JSON), catálogo de modelos e serviços\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "components/seal-medallion.tsx" {
+  class SealDesign as "SealDesign" <<interface>> {
+    +kind: SealKind
+    +mode: 'GENERATED' | 'UPLOAD' | 'TEMPLATE'
+    +template: string | null
+    +label: string | null
+    +caption: string | null
+    +texts: Partial<Record<Exclude<FolhaSlotKey, 't…
+    +core: SealCore | null
+    +palette: string | null
+    +border: { material?: string; color?: string; wi…
+    +field: { pattern?: string; material?: string;…
+    .. +3 ..
+  }
+  class SealCore as "SealCore" <<interface>> {
+    +mode: SealCoreMode
+    +imageUrl: string | null
+    +text: string | null
+    +textColor: string | null
+    +zoom: number
+  }
+  enum SealCoreMode as "SealCoreMode" {
+    ELEMENT
+    IMAGE
+    TEXT
+  }
+  class mod_seal_medallion_tsx as "seal-medallion.tsx" <<módulo>> {
+    +designFromPalette()
+    +sealKind()
+    +mix()
+    +lighten()
+    +darken()
+    +isLight()
+    +SealMedallion()
+    +validateSealImage()
+  }
 }
-enum DesignMode {
-  GENERATED
-  UPLOAD
-  TEMPLATE
+package "components/seal-policy-editor.tsx" {
+  class SealPolicy as "SealPolicy" <<interface>> {
+    +match: 'ALL' | 'ANY'
+    +rules: SealRule[]
+    +occasions: string[]
+    +styles: string[]
+    +hype: SealHypeCriteria | null
+  }
+  class SealRule as "SealRule" <<interface>> {
+    +quantifier: SealQuantifier
+    +count: number | null
+    +color: string | null
+    +brand: string | null
+    +category: string | null
+    +subcategory: string | null
+    +hypeMin: HypeLevel | null
+  }
+  class SealHypeCriteria as "SealHypeCriteria" <<interface>> {
+    +minLevel: HypeLevel | null
+    +minScore: number | null
+    +momentum: HypeMomentum[] | null
+  }
+  enum SealQuantifier as "SealQuantifier" {
+    AT_LEAST
+    ALL
+    NONE
+  }
+  enum SealTierId as "SealTierId" {
+    LOOK
+    PECA
+  }
+  class mod_seal_policy_editor_tsx as "seal-policy-editor.tsx" <<módulo>> {
+    +cleanHype()
+    +cleanPolicy()
+    +describeHype()
+    +describeRule()
+    +describePolicy()
+    +SealPolicyEditor()
+  }
 }
-enum SealCoreMode {
-  ELEMENT
-  IMAGE
-  TEXT
+package "lib/seals/templates.ts" {
+  class FolhaSlot as "FolhaSlot" <<interface>> {
+    +text: string
+    +x: number
+    +y: number
+    +m: number[]
+    +size: number
+    +weight: string
+    +family: string
+    +italic: boolean
+    +ls: number
+    +anchor: string
+    .. +3 ..
+  }
+  class FolhaTemplate as "FolhaTemplate" <<interface>> {
+    +id: string
+    +src: string
+    +emblem: { src: string; x: number; y: number; w:…
+    +ink: string
+    +style: string
+    +slots: Partial<Record<FolhaSlotKey, FolhaSlot>>
+  }
+  class CircularTemplate as "CircularTemplate" <<interface>> {
+    +id: string
+    +src: string
+    +center: number
+    +plain: boolean
+    +color: string
+  }
+  class mod_templates_ts as "templates.ts" <<módulo>> {
+    +kindOfTemplate()
+    +faiTemplate()
+    +circularTemplate()
+    +folhaTemplate()
+    +nearestByColor()
+  }
 }
-class SealDesign <<JSON em seals.background_config_json.design>> {
-  kind : SealKind
-  mode : DesignMode
-  template : String  «circular/07 · folha/col-01 · fai/03»
-  label : String  «título da folha (vazio = nome)»
-  caption : String
-  texts : Map<series|subtitle|style|year|emblem, String>
-  core : SealCore
-  palette : String
-  border / field / center : Parte
-  element : Elemento
-  uploadUrl : String
+package "Backend (Java)" {
+  class SealDesigns  {
+    +catalog()
+    +defaultDesign()
+    +normalize()
+    +fromPalette()
+    +item()
+    +palette()
+    +ids()
+    +part()
+  }
+  class SealDrafts  {
+    +suggest()
+    +initials()
+    +caption()
+    +familyLabel()
+    +capitalize()
+    +top()
+    +topTags()
+  }
+  class OwnMedia <<service>> {
+    +accepts()
+    +require()
+    +requireOrUnchanged()
+    +acceptsKey()
+  }
+  class SealDesignService <<service>> {
+    +catalog()
+    +upload()
+    +uploadCore()
+    +cornersClear()
+  }
+  class SealPolicies  {
+    +normalize()
+    +normalizeHype()
+    +level()
+    +parse()
+    +parseHype()
+    +parseEnum()
+    +evaluate()
+  }
+  class SealService <<service>> {
+    -ai: AiEngine
+    -guard: Guard
+    -audit: Audit
+    -events: ApplicationEventPublisher
+    -ownMedia: OwnMedia
+    -hypeQuery: ObjectProvider<HypeQueryService>
+    +setHypeQuery()
+    +setHypeCache()
+    +hype()
+    +hypeLookup()
+    +candidateHype()
+    +byHype()
+    +hypeView()
+  }
 }
-class SealCore {
-  mode : SealCoreMode
-  imageUrl : String  «users/{id}/seals/core-*.png»
-  text : String  «≤ 24»
-  textColor : #RRGGBB
-  zoom : 1..3
-}
-class Elemento {
-  id : BAG|HANGER|STAR|…|MONOGRAM
-  material : String
-  color : #RRGGBB
-  text : String  «≤ 3»
-}
-class SealPolicy <<JSON em ...policy>> {
-  match : ALL|ANY
-  rules : List<Rule>
-  occasions : List<String>
-  styles : List<String>
-}
-class Rule {
-  quantifier : AT_LEAST|ALL|NONE
-  count : int
-  color / brand / category / subcategory
-}
-class FolhaTemplate <<lib/seals/templates.json>> {
-  id, src  «arte sem textos»
-  emblem : {src, x, y, w, h}
-  ink : cor
-  slots : Map<FolhaSlotKey, FolhaSlot>
-}
-class FolhaSlot {
-  text  «padrão neutro»
-  x, y, m[6]  «posição e matriz»
-  size, weight, family, italic, ls, anchor, fill, opacity
-}
-class CircularTemplate {
-  id, src
-  center : fração do raio do disco liso
-  plain : boolean
-  color : cor dominante
-}
-class FaiTemplate {
-  id, src, color
-}
-class Seal <<Entity seals>> {
-  id : UUID
-  name, tier : SealTier
-  policyText : String
-  backgroundConfigJson : String
-  iconUrl, status, premium
-  availableFrom / availableUntil / usageLimit
-}
-enum SealStatus {
-  ACTIVE
-  INACTIVE
-}
-enum SealTier {
-  PECA
-  LOOK
-}
-enum SealBondStatus {
-  SUGGESTED
-  ACCEPTED
-  EDITED
-  REFUSED
-  PENDING_REVIEW
-  APPROVED
-  REJECTED
-  REVOKED
-}
-class SealBond <<Entity seal_bonds>> {
-  id : UUID
-  seal : Seal
-  scheme : Scheme  «look ou peça publicada»
-  tier : SealTier
-  linkedPieceIdsJson : String  «peças que atendem»
-  confidence : BigDecimal  «0,97 por política»
-  justification : String  «"atende: …"»
-  targetOwner : User  «emissor»
-  requestedBy : User
-  status : SealBondStatus
-  requiresReview : boolean
-  imageRightsConsent : Boolean
-}
-class Verdict <<record SealPolicies.Verdict>> {
-  matched : boolean
-  pieceIds : List<UUID>
-  why : String  «"atende: <frase da política>"»
-}
-class SealService {
-  +createSeal(user, SealForm)
-  +updateSeal(user, id, SealForm)
-  +draft(user, tier)
-  +preview(peças, ocasiões, estilos)  «sugestões no look»
-  +previewPiece(campos da peça)  «sugestões na peça»
-  +review(bond, aprovar?) / revoke(bond)
-  -applySeal(seal, form, owner)
-}
-class SealDrafts {
-  +suggest(nome, celebridade, tier, peças) : Map
-  ~initials(nome) : String
-}
-class SealDesigns {
-  +KINDS, LABEL_MAX, CAPTION_MAX, CORE_TEXT_MAX
-  +FOLHA_TEXT_LIMITS
-  +normalize(raw) : Map
-  +nearestCircular(hex) : String
-  +labelFrom(nome) : String
-  +catalog() : Map
-}
-class SealPolicies {
-  +normalize(raw) / parse(obj)
-  +evaluate(policy, tier, peças, ocasiões, estilos) : Verdict
-  +describe(policy, tier) : String
-}
-class SealDesignService {
-  +upload(user, bytes)  «selo pronto 1:1»
-  +uploadCore(user, bytes)  «núcleo ≤ 4:1»
-}
-class OwnMedia {
-  +require(owner, url, campo, catálogo?)
-}
-SealDesign *-- SealCore
-SealDesign *-- Elemento
-SealDesign ..> SealKind
-SealDesign ..> DesignMode
-SealCore ..> SealCoreMode
-SealPolicy *-- "0..6" Rule
-FolhaTemplate *-- "1..7" FolhaSlot
-SealDesign ..> FolhaTemplate : template (FOLHA)
-SealDesign ..> CircularTemplate : template (CIRCULAR)
-SealDesign ..> FaiTemplate : template (FASHIONAI)
-Seal o-- SealDesign
-Seal o-- SealPolicy
-SealService --> Seal
-SealService --> SealBond
-SealBond --> Seal
-SealBond ..> SealBondStatus
-Seal ..> SealStatus
-Seal ..> SealTier
-SealPolicies ..> Verdict : evaluate()
-SealService ..> SealDesigns
-SealService ..> SealPolicies
-SealService ..> SealDrafts
-SealService ..> OwnMedia
-SealDrafts ..> SealDesigns
-SealDesignService ..> SealDesigns
+SealService --> OwnMedia
+FolhaTemplate --> FolhaSlot : slots
+SealCore --> SealCoreMode : mode
+SealDesign --> SealCore : core
+SealPolicy --> SealHypeCriteria : hype
+SealPolicy --> SealRule : rules
+SealRule --> SealQuantifier : quantifier
 @enduml

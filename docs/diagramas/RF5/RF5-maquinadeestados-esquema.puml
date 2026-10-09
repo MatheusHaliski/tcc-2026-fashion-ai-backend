@@ -1,58 +1,46 @@
 @startuml RF5_MaquinaDeEstados_Esquema
 !pragma layout smetana
-title RF5 — Criar um esquema de vestimenta na aba "Criar Look"\nDiagrama de máquina de estados — ciclo de vida do esquema (Scheme.status × visibility)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-}
-state "DRAFT\n(rascunho: só o dono vê)" as Rascunho
-state "PUBLISHED\n(publishedAt · snapshot_json das peças)" as Publicado {
-  state "PRIVATE" as Privado
-  state "FOLLOWERS" as Seguidores
-  state "PUBLIC\n(communityIndexed = true → feed do RF8)" as Publico
-  [*] --> Publico : publish com PRIVATE\n(o builder troca para PUBLIC)
-  [*] --> Seguidores : visibility = FOLLOWERS
-  [*] --> Privado : POST /publication {PRIVATE}
-  Privado --> Seguidores : PUT /api/schemes/{id}
-  Seguidores --> Publico : PUT /api/schemes/{id}
-  Publico --> Privado : PUT /api/schemes/{id}\n(revoga selos — RF20.CA14)
-  Seguidores --> Privado : PUT /api/schemes/{id}\n(revoga selos)
-}
-state "ARCHIVED\n(fora do feed e das buscas)" as Arquivado
+title RF5 — ciclo de vida de Scheme.status e visibility\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum SchemeStatus · enum Visibility · tabela schemes
 
-[*] --> Rascunho : POST /api/schemes (publish = false)\n400 SEM_PECAS se items vazio (CA06)
-[*] --> Publicado : POST /api/schemes (publish = true)
-Rascunho --> Rascunho : PUT /api/schemes/{id}\n(peças, dados e arte — RF9)
-Rascunho --> Publicado : POST /api/schemes/{id}/publication {visibility}\nou PUT com publish = true (CA05)
-Publicado --> Publicado : PUT /api/schemes/{id}\n(peças mudaram → revalidação do selo, RF9)
-Rascunho --> Arquivado : POST /api/schemes/{id}/archive\nou DELETE /api/schemes/{id}
-Publicado --> Arquivado : POST .../archive ou DELETE\n(SealService.revokeForScheme, projeção removida,\nfoto do look sai de Minhas Fotos)
-Rascunho --> Arquivado : purgeScheduledDeletions\n(exclusão da conta, RF3)
-Publicado --> Arquivado : purgeScheduledDeletions
-Arquivado -[dashed]-> Publicado : POST /api/schemes/{id}/publication\n(sem trava de status no código)
-
-note right of Rascunho
-  Visibilidade inicial: a do formulário ou
-  AccountService.defaultVisibility(perfil) — CA03.
-  Visibilidade efetiva = a mais restritiva entre
-  esquema e perfil (SchemeService.moreRestrictive).
-end note
-note right of Arquivado
-  GET /api/schemes/{id}: 404 para quem não é o dono.
-  Não há "desarquivar" na interface; publish() e
-  update() usam owned(), que só confere o dono —
-  por isso a seta tracejada.
-end note
-note bottom of Publicado
-  Flags independentes do status: disponivel e favorite
-  (PATCH /api/schemes/{id}/flags, RF31) e lookDoDia (RF42).
-  Não há volta de PUBLISHED para DRAFT.
+state "Scheme.status" as Ciclo_Scheme {
+  state Ciclo_Scheme_DRAFT as "DRAFT"
+  state Ciclo_Scheme_PUBLISHED as "PUBLISHED"
+  state Ciclo_Scheme_ARCHIVED as "ARCHIVED"
+}
+[*] --> Ciclo_Scheme_DRAFT : criação
+Ciclo_Scheme --> Ciclo_Scheme_ARCHIVED : purgeScheduledDeletions(), archive()
+Ciclo_Scheme --> Ciclo_Scheme_PUBLISHED : create(), publish(),\npublishInternal(), update()
+state "Scheme.visibility" as Ciclo_Scheme_visibility {
+  state Ciclo_Scheme_visibility_PRIVATE as "PRIVATE"
+  state Ciclo_Scheme_visibility_FOLLOWERS as "FOLLOWERS"
+  state Ciclo_Scheme_visibility_PUBLIC as "PUBLIC"
+}
+[*] --> Ciclo_Scheme_visibility_PRIVATE : criação
+Ciclo_Scheme_visibility --> Ciclo_Scheme_visibility_PRIVATE : publish(), purgeScheduledDeletions()
+Ciclo_Scheme_visibility --> Ciclo_Scheme_visibility_FOLLOWERS : publish()\nPOST /api/schemes/{id}/publication
+Ciclo_Scheme_visibility --> Ciclo_Scheme_visibility_PUBLIC : publish()\nPOST /api/schemes/{id}/publication
+note right of Ciclo_Scheme
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
 end note
 @enduml

@@ -17,6 +17,11 @@ import java.util.UUID;
 
 /** Repositório Spring Data de Scheme (MySQL — fonte da verdade). */
 public interface SchemeRepository extends JpaRepository<Scheme, UUID> {
+    /** Serializa pedidos de selo concorrentes para o mesmo look. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from Scheme s where s.id = :id")
+    Optional<Scheme> findForSealRequest(@Param("id") UUID id);
+
     List<Scheme> findByUserIdOrderByCreatedAtDesc(UUID userId);
 
     Page<Scheme> findByUserId(UUID userId, Pageable pageable);
@@ -49,4 +54,8 @@ public interface SchemeRepository extends JpaRepository<Scheme, UUID> {
 
     /** Header do perfil (estilo Instagram): esquemas criados, sem os arquivados. */
     long countByUserIdAndStatusNot(UUID userId, SchemeStatus status);
+
+    /** Mesmos totais agregados do cabeçalho; nenhuma publicação ou título é carregado. */
+    @Query("select s.user.id, count(s) from Scheme s where s.user.id in :ids and s.status <> :status group by s.user.id")
+    List<Object[]> countByUserIdsAndStatusNot(@Param("ids") Collection<UUID> ids, @Param("status") SchemeStatus status);
 }

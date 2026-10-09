@@ -74,6 +74,26 @@ export function setArmOut(h: Human, st: PoseState, deg: number) {
 }
 
 const wave = (t: number, period: number, phase = 0) => Math.sin((2 * Math.PI * t) / period + phase);
+const smooth = (a: number, b: number, x: number) => { const k = Math.max(0, Math.min(1, (x - a) / (b - a))); return k * k * (3 - 2 * k); };
+const hash = (i: number) => { const v = Math.sin(i * 127.1 + 311.7) * 43758.5453; return v - Math.floor(v); };
+
+/**
+ * Olhada para o lado (gesto): a cada ~10,5 s a cabeça vira devagar para um lado (5–10°), fica ~2,5 s e volta. Sorteio
+ * determinístico por ciclo. Devolve o giro (graus, + = esquerda da pessoa) e o quanto o gesto está ativo (0–1).
+ */
+export function glance(t: number): { yaw: number; on: number } {
+  const P = 10.5; const k = Math.floor(t / P); const ph = t - k * P;
+  const on = smooth(0.6, 1.8, ph) * (1 - smooth(4.4, 5.8, ph));
+  return { yaw: (hash(k) > 0.5 ? 1 : -1) * (5 + 5 * hash(k + 7)) * on, on };
+}
+
+/**
+ * Troca de apoio com pausa: o peso fica numa perna e passa para a outra (tanh de uma senoide: anda, para, anda),
+ * em vez de balançar sem parar como um metrônomo. −1…1 (+ = peso na perna esquerda).
+ */
+export function weightShift(t: number): number {
+  return Math.tanh(2.2 * (0.85 * wave(t, 13.5) + 0.15 * wave(t, 5.9, 1.3))) / Math.tanh(2.2);
+}
 
 /** Movimento parado no instante t (s). `amount` 0 = estátua (reduzir movimento), 1 = normal. */
 export function applyIdle(h: Human, st: PoseState, t: number, amount = 1) {
@@ -82,36 +102,52 @@ export function applyIdle(h: Human, st: PoseState, t: number, amount = 1) {
   if (amount <= 0) return;
   const k = amount;
   const breath = wave(t, 4.6);
-  const sway = 0.8 * wave(t, 10.5) + 0.2 * wave(t, 5.9, 1.3);
+  const sway = weightShift(t);
   const look = 0.7 * wave(t, 12.3, 0.4) + 0.3 * wave(t, 7.1, 2.1);
   const nod = wave(t, 8.7, 0.9);
+  const g = glance(t);
   const Q = (axis: THREE.Vector3, deg: number) => new THREE.Quaternion().setFromAxisAngle(axis, deg * D * k);
   // respiração: o tórax sobe e abre, os ombros acompanham
-  rotateWorld(h.bone("Spine1"), Q(V(1, 0, 0), -0.7 * breath));
-  rotateWorld(h.bone("Spine2"), Q(V(1, 0, 0), -0.5 * breath));
-  rotateWorld(h.bone("LeftShoulder"), Q(V(0, 0, 1), 0.5 * breath));
-  rotateWorld(h.bone("RightShoulder"), Q(V(0, 0, 1), -0.5 * breath));
-  // troca de apoio: o quadril desliza e inclina; as pernas compensam para os pés ficarem no lugar
-  const shift = 0.007 * sway * k; const tilt = 0.9 * sway;
+  rotateWorld(h.bone("Spine1"), Q(V(1, 0, 0), -0.9 * breath));
+  rotateWorld(h.bone("Spine2"), Q(V(1, 0, 0), -0.6 * breath));
+  rotateWorld(h.bone("LeftShoulder"), Q(V(0, 0, 1), 0.6 * breath));
+  rotateWorld(h.bone("RightShoulder"), Q(V(0, 0, 1), -0.6 * breath));
+  // troca de apoio: o quadril desliza para a perna de apoio, cai do lado livre e gira um pouco; o tronco compensa
+  // (contraposto) e as pernas compensam para os pés ficarem no lugar; o joelho da perna livre relaxa
+  const shift = 0.011 * sway * k; const tilt = 1.5 * sway;
   h.bone("Hips").position.x = st.hips.x + shift;
   rotateWorld(h.bone("Hips"), Q(V(0, 0, 1), tilt));
-  rotateWorld(h.bone("Spine"), Q(V(0, 0, 1), -tilt * 0.8));
+  rotateWorld(h.bone("Hips"), Q(V(0, 1, 0), 1.2 * sway));
+  rotateWorld(h.bone("Spine"), Q(V(0, 0, 1), -tilt * 0.75));
+  rotateWorld(h.bone("Spine2"), Q(V(0, 1, 0), -1.4 * sway));
   const legComp = -tilt - (shift / Math.max(0.5, st.legLen)) / D / Math.max(k, 1e-3);
   rotateWorld(h.bone("LeftUpLeg"), Q(V(0, 0, 1), legComp));
   rotateWorld(h.bone("RightUpLeg"), Q(V(0, 0, 1), legComp));
   rotateWorld(h.bone("LeftFoot"), Q(V(0, 0, 1), -(legComp + tilt)));
   rotateWorld(h.bone("RightFoot"), Q(V(0, 0, 1), -(legComp + tilt)));
-  // cabeça: olha em volta devagar e mantém o olhar na horizontal apesar do quadril
-  rotateWorld(h.bone("Neck"), Q(V(0, 1, 0), 1.6 * look));
-  rotateWorld(h.bone("Head"), Q(V(0, 1, 0), 2.4 * look));
+  // perna sem peso: joelho solto — a coxa vem um pouco à frente e a canela volta o dobro, então o pé fica no lugar (só
+  // o calcanhar sobe); dobrar só o joelho arrastava o pé ~4 cm para trás (patinando)
+  const freeL = Math.max(0, -sway), freeR = Math.max(0, sway);
+  for (const [side, f] of [["Left", freeL], ["Right", freeR]] as const) {
+    rotateWorld(h.bone(`${side}UpLeg`), Q(V(1, 0, 0), -2.6 * f));
+    rotateWorld(h.bone(`${side}Leg`), Q(V(1, 0, 0), 5.2 * f));
+    rotateWorld(h.bone(`${side}Foot`), Q(V(1, 0, 0), -2.6 * f));
+  }
+  // cabeça: olha em volta devagar, de vez em quando vira para um lado (o cabelo atrasa e volta: hair-motion.ts) e
+  // mantém o olhar na horizontal apesar do quadril
+  rotateWorld(h.bone("Neck"), Q(V(0, 1, 0), 1.6 * look + 0.4 * g.yaw));
+  rotateWorld(h.bone("Head"), Q(V(0, 1, 0), 2.4 * look + 0.6 * g.yaw));
   rotateWorld(h.bone("Head"), Q(V(1, 0, 0), 1.1 * nod));
-  rotateWorld(h.bone("Neck"), Q(V(0, 0, 1), -tilt * 0.3));
-  // braços: balanço mínimo, em oposição
+  rotateWorld(h.bone("Head"), Q(V(0, 0, 1), -0.18 * g.yaw));
+  rotateWorld(h.bone("Neck"), Q(V(0, 0, 1), -tilt * 0.35));
+  // braços: balanço mínimo, em oposição, seguindo o tronco; antebraço e dedos respiram junto
   const arm = wave(t, 10.5, 0.9);
   rotateWorld(h.bone("LeftArm"), Q(V(1, 0, 0), 1.3 * arm + 0.3 * breath));
   rotateWorld(h.bone("RightArm"), Q(V(1, 0, 0), -1.3 * arm + 0.3 * breath));
-  rotateWorld(h.bone("LeftArm"), Q(V(0, 0, 1), 0.5 * breath));
-  rotateWorld(h.bone("RightArm"), Q(V(0, 0, 1), -0.5 * breath));
+  rotateWorld(h.bone("LeftArm"), Q(V(0, 0, 1), 0.5 * breath + 0.6 * sway));
+  rotateWorld(h.bone("RightArm"), Q(V(0, 0, 1), -0.5 * breath + 0.6 * sway));
+  rotateWorld(h.bone("LeftForeArm"), Q(V(1, 0, 0), 1.2 * wave(t, 9.3, 0.2)));
+  rotateWorld(h.bone("RightForeArm"), Q(V(1, 0, 0), 1.2 * wave(t, 9.3, 2.4)));
 }
 
 /** O mesmo movimento como AnimationClip (para exportar no GLB): `seconds` com `fps` quadros. */

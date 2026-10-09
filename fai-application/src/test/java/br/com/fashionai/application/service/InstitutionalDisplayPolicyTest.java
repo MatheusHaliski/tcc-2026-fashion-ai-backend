@@ -74,6 +74,7 @@ class InstitutionalDisplayPolicyTest {
     private BrandProfileRepository brandProfiles;
     private CelebrityProfileRepository celebrityProfiles;
     private InstitutionalService service;
+    private SealService sealPolicies;
     private User brand;
     private User ana;
     private Seal seal;
@@ -142,10 +143,33 @@ class InstitutionalDisplayPolicyTest {
             return out;
         });
 
+        sealPolicies = mock(SealService.class);
         service = new InstitutionalService(mock(UserRepository.class), brandProfiles, celebrityProfiles,
                 follows, mock(SealRepository.class), bonds, mock(SchemeRepository.class), schemeItems, pieces, mock(SavedItemRepository.class),
                 mock(ReactionRepository.class), mock(SchemeGroupingRepository.class), mock(StyleDnaRepository.class), schemeService,
-                mock(SealService.class), mock(AiEngine.class), guard, hype);
+                sealPolicies, mock(AiEngine.class), guard, hype);
+    }
+
+    @Test
+    void perfilAdicionaItensElegiveisSemInventarSelosConquistados() {
+        Scheme look = look("Elegível", tenis);
+        when(sealPolicies.hasProfilePolicies(brand.getId())).thenReturn(true);
+        when(sealPolicies.profileSchemes(eq(brand.getId()), any(), eq(60))).thenReturn(List.of(look));
+        when(sealPolicies.profilePieces(eq(brand.getId()), any(), eq(60))).thenReturn(List.of(tenis));
+        List<Map<String, Object>> looks = service.highlightedSchemes(visitor, brand, null, null);
+        assertThat(ids(looks)).containsExactly(look.getId());
+        assertThat(looks.get(0).get("seals")).isEqualTo(List.of());
+        assertThat(service.highlightedPieces(visitor, brand, "RECENTES", null))
+                .extracting(e -> ((Views.PieceView) e.get("piece")).id()).containsExactly(tenis.getId());
+        assertThat(allBonds).isEmpty();
+    }
+
+    @Test
+    void perfilComPoliticaAtivaFiltraDestaquesAntigosQueNaoAtendemMais() {
+        Scheme old = look("Antigo", jeans); approved(old);
+        when(sealPolicies.hasProfilePolicies(brand.getId())).thenReturn(true);
+        assertThat(service.highlightedSchemes(visitor, brand, null, null)).isEmpty();
+        assertThat(service.highlightedPieces(visitor, brand, null, null)).isEmpty();
     }
 
     // ------------------------------------------------------------------ fixtures

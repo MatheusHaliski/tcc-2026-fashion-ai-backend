@@ -1,117 +1,147 @@
 @startuml SEG_Classes
-title Fashion AI — Classes de segurança (gate, sessão, controle de acesso, custos de IA)
-!include _estilo.iuml
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
 left to right direction
+title Fashion AI — Classes de segurança (gate, sessão, controle de acesso, custos de IA)\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "frontend · lib/gate" <<Frame>> {
-  class GateConfig <<TS>> {
-    mode : "builtin" | "cloudflare"
-    apiToken : "legacy" | "v2"
-    secret : string (≥ 32)
-    allowedEmails : Set<string>
-    cloudflare : {teamDomain, aud}
+package "lib/gate/token.ts" {
+  class GateConfig as "GateConfig" <<interface>> {
+    +enabled: boolean
+    +mode: 'builtin' | 'cloudflare'
+    +user: string
+    +pinHash: string | null
+    +secret: string | null
+    +apiToken: 'legacy' | 'v2'
+    +google: boolean
+    +googleClientId: string | null
+    +googleClientSecret: string | null
+    +allowedEmails: string[]
+    .. +2 ..
   }
-  class "token.ts" as Token <<module>> {
-    +signGate(kind, id, jti, secret, ttl) : string
-    +verifyGate(kind, token, cfg) : GatePayload?
-    +signApiToken(cfg, id, jti, ttl) : string
-    +signLegacyApiToken(user, secret, ttl) : string
-    +verifyCloudflareAccess(jwt, cfg) : identidade?
-    +maskIdentity(id) : string
+  class Jwk as "Jwk" <<interface>> {
+    +kid: string
+    +kty: string
+    +n: string
+    +e: string
+    +alg: string
   }
-  class "safeNext(next, fallback)" as SafeNext <<function>>
-  Token ..> GateConfig
+  class GateIdentity as "GateIdentity" <<interface>> {
+    +id: string
+    +jti: string
+    +exp: number
+  }
+  enum GateKind as "GateKind" {
+    gp
+    ga
+  }
+  class mod_token_ts as "token.ts" <<módulo>> {
+    +sha256Hex()
+    +hmacB64url()
+    +safeEqual()
+    +gateConfig()
+    +identityAllowed()
+    +signValue()
+    +verifyValue()
+    +randomToken()
+  }
 }
-
-package "frontend · lib/api" <<Frame>> {
-  class TokenStore <<em memória>> {
-    -accessToken : string?
-    +restorable : boolean
+package "Backend (Java)" {
+  class AiBudget <<service>> {
+    -globalDaily: BigDecimal
+    -userDaily: BigDecimal
+    -clock: Clock
+    +check()
+    +globalDaily()
+    +userDaily()
+    +capped()
+    +exceeds()
+    +startOfUtcDay()
+    +orZero()
   }
-  class ApiClient <<module>> {
-    +restoreSession()
-    +renewGate()
-    -tryRefresh() «Web Lock»
-    -checkPath(path) «recusa .. e %2f»
+  class MediaService <<service>> {
+    +put()
+    +ownedMedia()
+    +requireOwnedMedia()
+    +pendingKind()
+    +safeKey()
+    +readableKey()
+    +readRestricted()
   }
-  ApiClient --> TokenStore
+  class OwnMedia <<service>> {
+    +accepts()
+    +require()
+    +requireOrUnchanged()
+    +acceptsKey()
+  }
+  class AesGcmStringConverter  {
+    +convertToDatabaseColumn()
+    +convertToEntityAttribute()
+    +key()
+  }
+  class MediaProxyController <<controller>> {
+    -serveAll: boolean
+    +media()
+    +cacheFor()
+  }
+  class AuthRateLimitFilter  {
+    -clientIp: ClientIpResolver
+    -enabled: boolean
+    -origins: List<String>
+    -hashing: Semaphore
+    -hashWaitMillis: long
+    +defaultHashPermits()
+    +ruleFor()
+    +bucketKey()
+    +shouldNotFilter()
+    +doFilterInternal()
+    +reject()
+  }
+  class ClientIpResolver  {
+    -edgeSecret: byte[]
+    -header: String
+    -nowEpochSeconds: LongSupplier
+    +resolve()
+    +cached()
+    +compute()
+    +socketAddress()
+    +signedIp()
+    +sign()
+    +signature()
+    +literalIp()
+  }
+  class DevGateFilter  {
+    -enabled: boolean
+    -cloudflareMode: boolean
+    -acceptLegacy: boolean
+    -user: String
+    -secret: String
+    -allowed: Set<String>
+    +cloudflareDecoder()
+    +csv()
+    +shouldNotFilter()
+    +doFilterInternal()
+    +validCloudflare()
+    +validLegacy()
+    +valid()
+  }
 }
-
-package "fai-web" <<Frame>> {
-  class DevGateFilter {
-    -mode : builtin | cloudflare
-    -allowedEmails : Set<String>
-    -acceptLegacy : boolean
-    +valid(token, secret, list, now) : boolean
-    +validLegacy(token, secret, user, now) : boolean
-  }
-  class ClientIpResolver {
-    +resolve(request) : String
-    -- aceita X-Fai-Client-Ip só com HMAC(ip|ts) e ts recente
-  }
-  class AuthRateLimitFilter {
-    -limit(caminhoNormalizado, ip)
-  }
-  class RequestPaths <<util>> {
-    +normalize(uri) : String
-  }
-  class MediaProxyController {
-    -- users/* e restricted/: Cache-Control private
-    -- exports/ e backups/: bloqueados
-  }
-  AuthRateLimitFilter ..> ClientIpResolver
-  AuthRateLimitFilter ..> RequestPaths
-}
-
-package "fai-application" <<Frame>> {
-  class AiBudget {
-    -globalDaily : BigDecimal = 5.00
-    -userDaily : BigDecimal = 0.50
-    +check(userId, custoEstimado) : Verdict
-  }
-  enum Verdict {
-    OK
-    GLOBAL_EXHAUSTED
-    USER_EXHAUSTED
-  }
-  class MediaService {
-    +{static} ownedMedia(storage, owner, url, scopes) : Optional<OwnedMedia>
-    +requireOwnedMedia(owner, url, scopes, campo) : OwnedMedia
-    +read(url) : bytes «nunca restricted/»
-    +readRestricted(key) : bytes
-  }
-  enum MediaScope {
-    OWNER
-    PENDING
-    CATALOG
-  }
-  class "OwnedMedia" as OwnedMedia <<record>> {
-    key : String
-    url : String
-  }
-  class OwnMedia {
-    +accepts(owner, url, allowCatalog) : boolean
-    +require(owner, url, campo, allowCatalog) : String
-  }
-  AiBudget --> Verdict
-  MediaService --> MediaScope
-  MediaService --> OwnedMedia
-  OwnMedia ..> MediaService
-}
-
-package "fai-domain" <<Frame>> {
-  class AesGcmStringConverter <<JPA>> {
-    -- nome, e-mail, bio, telefone, nascimento
-    -- AES-256-GCM · DATA_ENCRYPTION_KEY
-  }
-  class User {
-    -emailHash : String
-    -status : AccountStatus
-    -testAccount : boolean
-  }
-  User ..> AesGcmStringConverter
-}
-
-ApiClient ..> DevGateFilter : X-Dev-Gate (ga)
-Token ..> DevGateFilter : mesmo formato\n(vetor cruzado nos testes)
+AuthRateLimitFilter --> ClientIpResolver
 @enduml

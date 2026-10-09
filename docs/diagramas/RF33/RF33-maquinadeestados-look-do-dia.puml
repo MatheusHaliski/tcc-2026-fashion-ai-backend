@@ -1,50 +1,48 @@
 @startuml RF33_MaquinaDeEstados_LookDoDia
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-title RF33 — Passarela 3D: o Look do Dia de cada usuário desfilando num manequim\nDiagrama de máquina de estados — Look do Dia (daily_looks) na passarela que se renova a cada dia
-state "Sem look hoje" as Sem
-state "Registrado hoje\n(lookDate = hoje · source MANUAL | SMART_MIRROR |\nVISTA_ME | COPILOT | AUTOPILOTO)" as Registrado
-state "Materializado\n(materializedFrom = último look da semana)" as Materializado
-state "Na Passarela 3D\n(GET /api/explorer/runway)" as Passarela {
-  state "Fora do recorte\n(filtro de região, país, cor,\nocasião, estilo ou sexo)" as Filtrado
-  state "No ranking (até o Top 100)" as Ranking {
-    state "Top 100 Global / Seguindo\n(score público v2; sem Hype público = no fim)" as Top
-    state "Top 100 Regional / País\n(WorldRegions.of(users.country))" as Regional
-    state "Em alta\n(momentum RISING/EMERGING → TREND)" as Alta
-    state "Recentes\n(hora do Look do Dia)" as Recentes
-  }
-  Ranking --> Filtrado : pessoa aplica filtros
-  Filtrado --> Ranking : pessoa limpa filtros
-}
-state "Fora da passarela" as Fora
-state "Histórico\n(dia passado)" as Historico
+title RF33 — ciclo de vida de DailyLook.source e feedback\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum DailyLookSource · enum DailyLookFeedback · tabela daily_looks
 
-[*] --> Sem
-Sem --> Registrado : POST /api/me/daily-look · POST /api/me/mirror/use\n· Copilot / Autopiloto (DailyLookService.register)
-Sem --> Sem : register recusa — 409 PECA_INDISPONIVEL
-Sem --> Materializado : GET /api/explorer/runway vira o dia\n(DailyLookService.today) e houve look nos últimos 7 dias
-Registrado --> Registrado : novo registro no mesmo dia troca o esquema
-Materializado --> Registrado : novo registro hoje
-Registrado --> Passarela : conta ACTIVE, sem runwayOptOut, sem conta de teste,\nesquema não ARCHIVED e canView(viewer)
-Materializado --> Passarela : mesmas regras\n(cartão mostra "continua de ontem")
-Passarela --> Fora : PATCH /api/me/profile {runwayOptOut: true}\n· esquema arquivado · conta suspensa
-Fora --> Registrado : PATCH /api/me/profile {runwayOptOut: false}\n(o look de hoje volta às regras da passarela)
-Registrado --> Fora : esquema privado para quem não pode ver
-Passarela --> Historico : vira o dia
-Fora --> Historico : vira o dia
-Historico --> Historico : PUT /api/me/daily-looks/{date}/feedback\n(ADOREI | NAO_USEI | NAO_GOSTEI;\nvale também no próprio dia)
-Historico --> [*]
-note right of Passarela
-Cada viewer vê o seu recorte: o ranking e os filtros
-não mudam o registro, só a posição na tabela.
-Manequim montado no cliente: sexo do RF1 e cabeça
-AVATAR quando o Avatar 3D (RF40) é visível.
+state "DailyLook.source" as Ciclo_DailyLook {
+  state Ciclo_DailyLook_MANUAL as "MANUAL"
+  state Ciclo_DailyLook_AUTOPILOTO as "AUTOPILOTO"
+  state Ciclo_DailyLook_COPILOT as "COPILOT"
+  state Ciclo_DailyLook_VISTA_ME as "VISTA_ME"
+  state Ciclo_DailyLook_SMART_MIRROR as "SMART_MIRROR"
+}
+[*] --> Ciclo_DailyLook_MANUAL : criação
+note bottom of Ciclo_DailyLook
+  Recebe o valor escolhido em: register(source)
 end note
-note bottom of Materializado : esquema ARCHIVED no dia anterior não materializa:\na pessoa fica sem look e sai da passarela
+state "DailyLook.feedback" as Ciclo_DailyLook_feedback {
+  state Ciclo_DailyLook_feedback_ADOREI as "ADOREI"
+  state Ciclo_DailyLook_feedback_NAO_USEI as "NAO_USEI"
+  state Ciclo_DailyLook_feedback_NAO_GOSTEI as "NAO_GOSTEI"
+}
+Ciclo_DailyLook_feedback --> Ciclo_DailyLook_feedback_ADOREI : feedback()\nPUT /api/me/daily-looks/{date}/feedback
+Ciclo_DailyLook_feedback --> Ciclo_DailyLook_feedback_NAO_USEI : feedback()\nPUT /api/me/daily-looks/{date}/feedback
+Ciclo_DailyLook_feedback --> Ciclo_DailyLook_feedback_NAO_GOSTEI : feedback()\nPUT /api/me/daily-looks/{date}/feedback
+note right of Ciclo_DailyLook
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
+end note
 @enduml

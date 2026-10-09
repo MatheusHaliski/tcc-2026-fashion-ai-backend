@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { api, mediaUrl, type ApiError } from "@/lib/api/client";
 import type { PieceView, SchemeView } from "@/lib/api/types";
 import type { CatalogCardImage } from "@/lib/api/catalog";
-import { CatalogPhoto, pieceCatalogCrop } from "@/components/catalog/catalog-photo";
+import { CatalogPhoto, pieceCatalogCrop, photoAspect } from "@/components/catalog/catalog-photo";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
@@ -35,6 +35,7 @@ import { readPieceArt } from "@/lib/piece-art";
 import { CardHeader } from "@/components/card-header";
 import { PieceArtDialog } from "@/components/piece-art-editor";
 import { skinStyle } from "@/lib/skins";
+import { FlairPieceBlock } from "@/components/flair/flair-collection";
 
 const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("pieces.id.carregando_o_modelo_3d")}</div> });
 
@@ -129,7 +130,7 @@ function PieceGallery({ slides, onOpen }: { slides: Slide[]; onOpen: (i: number)
   if (!s) return <div className="pd-slide" />;
   return (
     <div className="pd-gallery" role="group" aria-roledescription={t("pieceDetail.carrossel")} aria-label={t("pieceDetail.fotos")}>
-      <button ref={slideRef} type="button" className={s.crop ? "pd-slide is-catalog-crop" : "pd-slide"} style={s.backdrop ? { background: bg ?? s.backdrop.edge } : undefined} onClick={() => onOpen(k)} aria-label={t("pieceDetail.ampliar", { name: s.alt })}>
+      <button ref={slideRef} type="button" className={s.crop ? "pd-slide is-catalog-crop" : "pd-slide"} style={{ ...(s.backdrop ? { background: bg ?? s.backdrop.edge } : {}), ...(s.crop ? { aspectRatio: photoAspect(s.crop.aspect) } : {}) }} onClick={() => onOpen(k)} aria-label={t("pieceDetail.ampliar", { name: s.alt })}>
         {s.crop ? <CatalogPhoto image={s.crop} alt="" /> : <img ref={imgRef} src={s.src} alt="" className={s.fit === "contain" ? "is-contain" : "is-cover"} onLoad={measure} />}
       </button>
       {n > 1 && (
@@ -248,17 +249,17 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
     : <><Button variant="primary" className="pd-cta" onClick={() => setMannequin3d(true)}>{t("pieceDetail.experimentar")}</Button>
         <button type="button" className="pd-alt" onClick={copyToWardrobe}>{t("pieceDetail.ou_guarde_copia")}</button></>;
   const more: MenuItem[] = [
-    { label: t("pieceDetail.editar_dados"), onSelect: startEdit, hidden: !mine },
-    { label: t("pieceDetail.editar_imagem"), onSelect: () => setEditImage(true), hidden: !mine || p.defaultImage && !p.imageUrl },
-    { label: t("pieceDetail.editar_arte"), onSelect: () => setEditArt(true), hidden: !mine },
-    { label: t("closet.replaceImage"), onSelect: () => replaceRef.current?.click(), hidden: !mine },
-    { label: p.disponivel ? t("pieceCard.markUnavailable") : t("pieceCard.markAvailable"), onSelect: () => flag("disponivel"), hidden: !mine },
-    { label: p.favorite ? t("pieceCard.unfavorite") : t("pieceCard.favorite"), onSelect: () => flag("favorite"), hidden: !mine },
-    { label: p.forSale ? t("pieceCard.unmarkForSale") : t("pieceCard.markForSale"), onSelect: () => flag("forSale"), hidden: !mine },
-    { label: p.forDonation ? t("pieceCard.unmarkForDonation") : t("pieceCard.markForDonation"), onSelect: () => flag("forDonation"), hidden: !mine },
-    { label: p.mannequinImageUrl ? t("mannequinPhoto.refazer_foto_com_meu_manequim") : t("mannequinPhoto.foto_com_meu_manequim"), onSelect: () => setMannequinPhoto(true), hidden: !mine || !MANNEQUIN_PHOTO_CATEGORIES.has(p.category) },
-    { label: t("pieces.id.mostrar_no_quarto"), href: `/room?piece=${p.id}`, hidden: !mine },
-    { label: t("common.delete"), onSelect: askDelete, hidden: !mine, danger: true },
+    { label: t("pieceDetail.editar_dados"), icon: <FaiIcon id="SOC-11" size={20} decorative />, onSelect: startEdit, hidden: !mine },
+    { label: t("pieceDetail.editar_imagem"), icon: <FaiIcon id="NAV-10" size={20} decorative />, onSelect: () => setEditImage(true), hidden: !mine || p.defaultImage && !p.imageUrl },
+    { label: t("pieceDetail.editar_arte"), icon: <FaiIcon id="ACT-14" size={20} decorative />, onSelect: () => setEditArt(true), hidden: !mine },
+    { label: t("closet.replaceImage"), icon: <FaiIcon id="ACT-07" size={20} decorative />, onSelect: () => replaceRef.current?.click(), hidden: !mine },
+    { label: p.disponivel ? t("pieceCard.markUnavailable") : t("pieceCard.markAvailable"), icon: <FaiIcon id={p.disponivel ? "SOC-15" : "SOC-14"} size={20} decorative />, onSelect: () => flag("disponivel"), hidden: !mine },
+    { label: p.favorite ? t("pieceCard.unfavorite") : t("pieceCard.favorite"), icon: <FaiIcon id="SOC-06" size={20} decorative />, onSelect: () => flag("favorite"), hidden: !mine },
+    { label: p.forSale ? t("pieceCard.unmarkForSale") : t("pieceCard.markForSale"), icon: <FaiIcon id="ACT-41" size={20} decorative />, onSelect: () => flag("forSale"), hidden: !mine },
+    { label: p.forDonation ? t("pieceCard.unmarkForDonation") : t("pieceCard.markForDonation"), icon: <FaiIcon id="SOC-03" size={20} decorative />, onSelect: () => flag("forDonation"), hidden: !mine },
+    { label: p.mannequinImageUrl ? t("mannequinPhoto.refazer_foto_com_meu_manequim") : t("mannequinPhoto.foto_com_meu_manequim"), icon: <FaiIcon id="ACT-23" size={20} decorative />, onSelect: () => setMannequinPhoto(true), hidden: !mine || !MANNEQUIN_PHOTO_CATEGORIES.has(p.category) },
+    { label: t("pieces.id.mostrar_no_quarto"), href: `/room?piece=${p.id}`, icon: <FaiIcon id="ACT-31" size={20} decorative />, hidden: !mine },
+    { label: t("common.delete"), icon: <FaiIcon id="ACT-18" size={20} decorative />, onSelect: askDelete, hidden: !mine, danger: true },
   ];
   const studioInfo = (p.flatLayMetadata as { studio?: Partial<StudioInfo> } | undefined)?.studio;
   // RF11: o detalhe usa as mesmas camadas do card, na densidade ampliada (faixas de 20–32 px e movimento opcional)
@@ -298,6 +299,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
                     <span className="min-w-0 flex-1 truncate type-body-sm">{s.title}</span><LookHype id={s.schemeId} /></button>))}</div>
               </section>
             )}
+            {mine && <FlairPieceBlock pieceId={p.id} />}
             <section className="pd-section pd-options" aria-label={t("pieceDetail.opcoes")}>
               {mine && studioNeedsReview(p) && (
                 <p className="pd-warn" role="status">{t("pieceDetail.estudio_para_aprovar")} <button type="button" className="underline" onClick={() => setEditImage(true)}>{t("pieceDetail.revisar_foto")}</button></p>

@@ -5,17 +5,18 @@ import type { PieceView } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
 import { Button, Dialog, SegmentPicker } from "@/components/ui";
 import { BeforeAfter } from "@/components/before-after";
+import { photoAspect, piecePhotoAspect } from "@/components/catalog/catalog-photo";
 import { BackdropChips } from "@/components/studio";
 
 /** Metadados do estúdio guardados na peça: template do feed, regiões faltando e o que foi achado (logo × estampa). */
-export interface FeedMeta { template?: string; missing?: string[]; estimated?: boolean; landmarks?: Record<string, number | null> }
+export interface FeedMeta { aspect?: string; template?: string; missing?: string[]; estimated?: boolean; landmarks?: Record<string, number | null> }
 export function studioMeta(p: PieceView): { feed: FeedMeta | null; logoKind: "logo" | "print" | null } {
   const st = (p.flatLayMetadata as { studio?: { feed?: FeedMeta; logo?: { kind?: string } | null } } | undefined)?.studio;
   const kind = st?.logo?.kind === "print" ? "print" : st?.logo || p.studioDetailUrl ? "logo" : null;
   return { feed: st?.feed ?? null, logoKind: kind };
 }
 /** Versão da foto de estúdio no ar, se a pessoa já aprovou, e a versão nova esperando aprovação (só o dono recebe). */
-export interface StudioVersion { version: number; approved: boolean; pending: { url?: string; feedUrl?: string; version?: number; backdrop?: string; createdAt?: string } | null }
+export interface StudioVersion { version: number; approved: boolean; pending: { feed?: FeedMeta; url?: string; feedUrl?: string; version?: number; backdrop?: string; createdAt?: string } | null }
 export function studioVersion(p: PieceView): StudioVersion {
   const st = (p.flatLayMetadata as { studio?: { version?: number; approved?: boolean; pending?: StudioVersion["pending"] } } | undefined)?.studio;
   return { version: st?.version ?? (p.studioImageUrl ? 1 : 0), approved: st?.approved !== false, pending: st?.pending ?? null };
@@ -64,7 +65,7 @@ export function EditImageDialog({ piece, open, onClose, onStudio, studioBusy, on
       {cur === "framing" && (
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <figure className="grid gap-1">
-            <div className="ei-frame is-feed">{feedSrc && <img src={feedSrc} alt={t("editImage.alt_feed", { name: piece.name })} />}</div>
+            <div className="ei-frame is-feed" style={{ aspectRatio: piecePhotoAspect(piece) }}>{feedSrc && <img src={feedSrc} alt={t("editImage.alt_feed", { name: piece.name })} />}</div>
             <figcaption className="type-caption text-muted">{t("editImage.no_feed")}</figcaption>
           </figure>
           <div className="grid content-start gap-3">
@@ -132,8 +133,8 @@ function ApprovalPanel({ piece, onApprove, onDiscard, busy }: { piece: PieceView
     <div className="ei-approval" role="region" aria-label={t("editImage.aprovacao")}>
       <p className="type-body-sm font-medium">{t("editImage.nova_versao", { v: v.pending.version ?? v.version + 1 })}</p>
       <div className="ei-compare">
-        <figure className="grid gap-1"><div className="ei-frame is-feed">{current && <img src={current} alt={t("editImage.alt_aprovada", { name: piece.name })} />}</div><figcaption className="type-caption text-muted">{t("editImage.aprovada_no_feed", { v: v.version })}</figcaption></figure>
-        <figure className="grid gap-1"><div className="ei-frame is-feed is-pending">{next && <img src={next} alt={t("editImage.alt_nova", { name: piece.name })} />}</div><figcaption className="type-caption text-muted">{t("editImage.nova_aguardando", { v: v.pending.version ?? v.version + 1 })}</figcaption></figure>
+        <figure className="grid gap-1"><div className="ei-frame is-feed" style={{ aspectRatio: piecePhotoAspect(piece) }}>{current && <img src={current} alt={t("editImage.alt_aprovada", { name: piece.name })} />}</div><figcaption className="type-caption text-muted">{t("editImage.aprovada_no_feed", { v: v.version })}</figcaption></figure>
+        <figure className="grid gap-1"><div className="ei-frame is-feed is-pending" style={{ aspectRatio: photoAspect(v.pending.feed?.aspect) }}>{next && <img src={next} alt={t("editImage.alt_nova", { name: piece.name })} />}</div><figcaption className="type-caption text-muted">{t("editImage.nova_aguardando", { v: v.pending.version ?? v.version + 1 })}</figcaption></figure>
       </div>
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="primary" onClick={onApprove} loading={busy}>{t("editImage.aprovar_nova")}</Button>

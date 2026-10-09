@@ -1,107 +1,120 @@
 @startuml RF53_Componentes_Integracoes
-title RF53 — HypeScore v2 nas outras funcionalidades\nDiagrama de componentes — Insights, Copilot/Autopiloto, Looks, Selos, perfil do emissor, Descobrir, painéis, FLAIR, marcos e LGPD
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
 }
 left to right direction
+title RF53 — HypeScore v2 nas outras funcionalidades\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "InsightStrip · InsightCard\n(Explorador, Cápsula, Copilot, Autopiloto,\nHistórico, Guarda-roupa, Meus looks)" as F_INS
-  component "copilot · autopilot\nLookScores (seis números, modos)" as F_COP
-  component "scheme-builder · my-looks\nLookHypePreview · PieceHypeTag\nanatomia Hype Focus" as F_LOOK
-  component "seal-policy-editor · brands/[slug]\nSealSuggestionHype · SealHypeStat\nselos no card (SealSlot)" as F_SEAL
-  component "feed · search · runway-panel\nshowcase-tabs (Eras/Coleções)" as F_DISC
-  component "dashboard · admin/dashboard\nadmin/system (hype-dashboards)" as F_DASH
-  component "flair (cartas, modos)" as F_FLAIR
-  component "settings (privacidade)\nnotifications · highlights" as F_ME
+  component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE0
+  component "/explorer\n(site)/(app)/explorer/page.tsx" as FE1
+  component "/feed\n(site)/(app)/feed/page.tsx" as FE2
+  component "/flair\n(site)/(app)/flair/page.tsx" as FE3
+  component "/looks\n(site)/(app)/looks/page.tsx" as FE4
+  component "/schemes/[id]/edit\n(site)/(app)/schemes/[id]/edit/page.tsx" as FE5
+  component "lib/api/client.ts" as APIC
 }
-package "fai-web · controllers" {
-  [InsightsController] as C_INS
-  [AutopilotController\n(/api/copilot/*, /api/autopilot/*)] as C_COP
-  [SchemeController\n(/api/schemes/scores, /api/me/schemes)] as C_SCH
-  [SealController\n(/api/seals, /api/seal-*, /api/pieces/seals)] as C_SEAL
-  [ProfileController\n(/api/institutional/{slug}/tabs/{tab})] as C_PROF
-  [DiscoveryController\n(feed, search, public-pieces, explorer)] as C_DISC
-  [DashboardController · AdminController] as C_DASH
-  [FlairController · FlairModesController] as C_FLAIR
-  [MeController (/api/me/exports)\nNotificationController] as C_ME
+package "fai-web (REST)" {
+  component "AdminController\n/api/admin/hype/recalibration" as AdminController
+  component "AutopilotController\n/api/copilot/context" as AutopilotController
+  component "DashboardController\n/api/admin/dashboard" as DashboardController
+  component "DiscoveryController\n/api/explorer/brands\n/api/explorer/insights\n/api/feed\n/api/runway\n(+1 rotas)" as DiscoveryController
+  component "FlairController\n/api/flair/me" as FlairController
+  component "FlairModesController\n/api/flair/modes/looks\n/api/flair/modes/runway" as FlairModesController
 }
-package "fai-application · insights" {
-  [InsightService] as S_INS
-  [PublicInsights\nPersonalInsights] as S_INS2
-  [InsightMath\n(números iguais na reescrita)] as S_MATH
+package "fai-application (casos de uso)" {
+  component "AdminService" as AdminService
+  component "CopilotService" as CopilotService
+  component "DashboardService" as DashboardService
+  component "SearchService" as SearchService
+  component "ExplorerService" as ExplorerService
+  component "FlairService" as FlairService
+  component "IdentityService" as IdentityService <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
+  component "AssetCatalogService" as AssetCatalogService <<apoio>>
+  component "ChallengeService" as ChallengeService <<apoio>>
+  component "HypeScoreService" as HypeScoreService <<apoio>>
+  component "InventoryScoreService" as InventoryScoreService <<apoio>>
+  component "UploadQuarantine" as UploadQuarantine <<apoio>>
+  component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
+  component "AnalyticsQueryPort\n«MysqlAnalyticsAdapter»" as AnalyticsQueryPort <<port>>
 }
-package "fai-application · services" {
-  [CopilotService · AutopilotService] as S_COP
-  [LookScorer\n(seis números)] as S_SCORER
-  [LookPreviewService\n(prévia; nada gravado)] as S_PREV
-  [SchemeService\n(sort/hypeLevel, PNG v2)] as S_SCH
-  [SealService · SealPolicies\n(policy.hype, hypeMin, Hype do selo,\nSealUnavailable + noRollbackFor)] as S_SEAL
-  [InstitutionalService\n(destaques APPROVED vigentes,\nordem pelo v2)] as S_INST
-  [SearchService · ShowcaseService\nExplorerService (marcas, insights)] as S_DISC
-  [LookbookService · DailyLookService\nDnaService · HypeScoreService.panel (v2)] as S_LB
-  [DashboardService · AdminService\nMysqlAnalyticsAdapter (consultas v2)] as S_DASH
-  [FlairService · FlairModesService\nFlairEngine · FlairLooks] as S_FLAIR
-  [AccountService\n(exportação LGPD)] as S_ACC
+package "fai-domain (repositórios)" {
+  component "UserRepository\nModerationQueueRepository\nWardrobeItemRepository\nCommentRepository\nAuditLogRepository\nAiInferenceLogRepository\nBackupRecordRepository\nSchemeRepository\nSchemeItemRepository\nDailyLookRepository\n(+18)" as REPO_MySQL
 }
-package "fai-application · hype (núcleo, ver RF53_Componentes)" {
-  [HypeQueryService] as HQ
-  [HypeScoreCurrentRepository\nHypeScoreSnapshotRepository\nHypeMilestoneRepository\n+ HypeScoreConfig] as HREPO
-  [HypeSeals] as HSEALS
-  [RecommendationScoring\nStyleCompatibility] as RS
-  [HypeCache] as HC
-}
-package "fai-application · ai" {
-  [AiEngine\n(INSIGHT_GENERATOR;\nid do log gerado pelo JPA)] as AI
-}
-
-F_INS --> C_INS : GET /api/insights?context=
-F_COP --> C_COP
-F_LOOK --> C_SCH : POST /api/schemes/scores\nGET /api/me/schemes?sort=&hypeLevel=
-F_SEAL --> C_SEAL
-F_SEAL --> C_PROF
-F_DISC --> C_DISC : ?hypeLevel=
-F_DASH --> C_DASH
-F_FLAIR --> C_FLAIR
-F_ME --> C_ME
-
-C_INS --> S_INS
-S_INS --> S_INS2
-S_INS --> S_MATH
-S_INS --> HC : contextos públicos
-S_INS --> AI : withAi = true (só texto)
-S_INS2 --> HQ
-S_INS2 --> HREPO
-C_COP --> S_COP
-S_COP --> S_SCORER
-S_COP --> HQ : hypeAnswer
-C_SCH --> S_PREV
-C_SCH --> S_SCH
-S_PREV --> S_SCORER
-S_SCORER --> RS
-S_SCORER --> HQ
-S_SCH --> HREPO : sem HypeQueryService\n(evita ciclo)
-C_SEAL --> S_SEAL
-S_SEAL --> HQ : Hype da entidade,\nHype do selo
-S_SEAL --> AI : sugestões com IA
-C_PROF --> S_INST
-S_INST --> HQ : ordem pelo v2
-C_DISC --> S_DISC
-S_DISC --> HREPO : só publicEligible
-S_DISC --> HQ : SearchService (resumos)
-S_LB --> HREPO
-C_DASH --> S_DASH
-S_DASH --> HREPO : consultas v2 sobre hype_scores\n(faixas, cobertura, looks vinculados)
-C_FLAIR --> S_FLAIR
-S_FLAIR --> HREPO : stat HYPE e raridade v2\n(público; neutro 50)
-C_ME --> S_ACC
-S_ACC --> HREPO : snapshots do Hype pessoal\ne marcos do dono
-HQ --> HSEALS
+database "MySQL\n• ai_inference_log\n• audit_log\n• backup_records\n• brand_profiles\n• brands\n• celebrity_profiles\n• comments\n• daily_looks\n• flair_coin_entries\n• flair_combinations\n• flair_match_entries\n• flair_matches\n(+16)" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+APIC --> AdminController : HTTPS/JSON
+APIC --> AutopilotController : HTTPS/JSON
+APIC --> DashboardController : HTTPS/JSON
+APIC --> DiscoveryController : HTTPS/JSON
+APIC --> FlairController : HTTPS/JSON
+APIC --> FlairModesController : HTTPS/JSON
+AdminController --> AdminService
+AdminService --> AI
+AdminService --> AnalyticsQueryPort
+AdminService --> REPO_MySQL
+AdminService ..> AssetCatalogService
+AdminService ..> ChallengeService
+AdminService ..> HypeScoreConfig
+AdminService ..> HypeScoreService
+AdminService ..> IdentityService
+AdminService ..> InventoryScoreService
+AdminService ..> NotificationService
+AdminService ..> UploadQuarantine
+AutopilotController --> CopilotService
+CopilotService --> AI
+CopilotService --> REPO_MySQL
+CopilotService ..> ChallengeService
+CopilotService ..> InventoryScoreService
+DashboardController --> DashboardService
+DashboardService --> AI
+DashboardService --> AnalyticsQueryPort
+DashboardService --> REPO_MySQL
+DashboardService ..> HypeScoreConfig
+DiscoveryController --> ExplorerService
+DiscoveryController --> SearchService
+ExplorerService --> AI
+ExplorerService --> AnalyticsQueryPort
+ExplorerService --> REPO_MySQL
+ExplorerService ..> HypeScoreConfig
+FE0 --> APIC
+FE1 --> APIC
+FE2 --> APIC
+FE3 --> APIC
+FE4 --> APIC
+FE5 --> APIC
+FlairController --> FlairService
+FlairService --> REPO_MySQL
+FlairService ..> HypeScoreConfig
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+SearchService --> REPO_MySQL
+SearchService ..> ChallengeService
+SearchService ..> HypeScoreConfig
 @enduml

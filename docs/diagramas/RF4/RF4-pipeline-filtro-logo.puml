@@ -1,78 +1,91 @@
 @startuml RF4_Pipeline_Filtro_Logo
-!pragma layout smetana
-title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de atividades — filtro do logo da marca (LogoFilter · SvgPathRenderer): fundo branco, letras pretas nítidas; borrado é recusado
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 16
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
   DiamondBackgroundColor #FFF5F8
   DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
 }
+title RF4 — Pipeline de filtro do logo da marca\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
+|Pessoa usuária|
 start
-:Baixar o logo de um dos 6 primeiros resultados\n(WebFetchPort → JdkWebFetchAdapter: só https,\nhost público, até 3 MB, 8 s, 3 redirecionamentos);
-if (Baixou?) then (Não)
-  :Recusar — LOGO_NAO_BAIXOU;
+:Abre /pieces/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/brand-search\nGET /api/studio/backdrops\nGET /api/taxonomy\nGET /api/brand-logos;
+|Pessoa usuária|
+:Cadastrar a peça a partir do\nrascunho analisado;
+|Tela (Next.js)|
+:POST /api/pieces;
+|API (Spring Boot)|
+:WardrobeController.create\n→ WardrobeService.create;
+if (formulario inválido?) then (sim)
+  :400 FORMULARIO_INVALIDO\n«Corrija os campos destacados.»\n→ a tela mostra o aviso;
   stop
 endif
-if (É vetor (SVG)?) then (Sim)
-  :Ler só o viewBox e os <path d>\n(nada de script, estilo, imagem\nembutida ou link externo);
-  :Desenhar o vetor em preto sobre branco,\n1024 px, com antisserrilhado;
-  note right: vetor nunca perde nitidez
-else (Não — PNG/JPG)
-  :Validar a imagem (tipo real, tamanho);
-  if (Lado maior ≥ 96 px?) then (Não)
-    :Recusar — RESOLUCAO_BAIXA;
-    stop
-  endif
-endif
-:Achatar a transparência sobre branco;
-:Estimar o fundo: PNG transparente → branco;\nsenão, a cor mais comum da moldura;
-if (≥ 60% da moldura tem a cor do fundo?) then (Não)
-  :Recusar — FUNDO_NAO_UNIFORME\n(foto, banner ou recorte ruim);
+if (erro?) then (sim)
+  :500 ERRO\n→ a tela mostra o aviso;
   stop
 endif
-:Tinta = distância de cada pixel à cor do fundo\n(serve para logo colorido, claro no escuro\ne escuro no claro — o desenho vira preto);
-if (Contraste do desenho ≥ 0,35?) then (Não)
-  :Recusar — CONTRASTE_BAIXO;
+if (foto obrigatória?) then (sim)
+  :400 FOTO_OBRIGATORIA\n«Envie uma foto ou escolha usar a\nimagem padrão da peça.»\n→ a tela mostra o aviso;
   stop
 endif
-:Limiar de Otsu separa desenho e fundo;
-if (Sobrou desenho depois do limiar?) then (não)
-  :Recusar — SEM_DESENHO;
+if (conteúdo bloqueado?) then (sim)
+  :400 CONTEUDO_BLOQUEADO\n«A foto viola a política de\nconteúdo e não pode ser usada.»\n→ a tela mostra o aviso;
   stop
 endif
-:Medir a nitidez no contorno:\nlargura da transição (pixels de meio-tom\npor pixel de contorno) e gradiente;
-if (Borda ≤ 2,2 px e gradiente ≥ 0,30?) then (Não)
-  :Recusar — SEM_NITIDEZ\n(logo borrado não é exibido);
-  stop
+|Dados e serviços|
+:Lê: users\npipeline_jobs\nwardrobe_items\nreactions\nbrands;
+:Usa: Guard.requireCanCreate\nOwnMedia.accepts\nMediaService.read\nBrandLogoService.acceptWebLogo\nAssetCatalogService.defaultPieceImage\nAssetCatalogService.publicFile (+6);
+:IA: STUDIO_ENHANCER;
+:Grava: wardrobe_items\nquality_scores\nprocessing_jobs_log\nmoderation_queue\npipeline_jobs;
+:Estado: brandLogoUrl → null\nbrandLogoUrl → set\nimageUrl → set\nthumbnailUrl → set\noriginalImageUrl → null\nmoderationStatus → APPROVED (+12);
+:Evento: PieceCreated\nPieceCapturedFromSession;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Reprocessar remoção de fundo)
+    :POST /api/pieces/{id}/background-removal\n→ WardrobeService.removeBackground\nlê: wardrobe_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.read …\nia: FLAT_LAY_STANDARDIZER, STUDIO_ENHANCER;
+  case (RF4 · Estúdio — refaz a foto de e…)
+    :POST /api/pieces/analysis/{draftId}/studio\n→ WardrobeService.studioDraft\nvalida: ERRO, ESTUDIO_INDISPONIVEL, SEM_RECORTE\nlê: pipeline_jobs\nusa: MediaService.read, MediaService.put\nia: STUDIO_ENHANCER;
+  case (Várias peças numa foto: a IA acha…)
+    :POST /api/pieces/analysis/multi\n→ MultiPieceService.detect\nlê: users\nusa: Guard.requireCanCreate, MediaService.put\nia: MULTI_PIECE_DETECTOR;
+  case (Nova tentativa de ler a marca: gr…)
+    :POST /api/pieces/analysis/{draftId}/brand\n→ WardrobeService.retryBrand\nvalida: ERRO\nlê: pipeline_jobs\nusa: MediaService.read, MediaService.put\nia: PIECE_ANALYZER;
+  case (RF4 · Estúdio — gera/refaz a foto…)
+    :POST /api/pieces/{id}/studio\n→ WardrobeService.studioPiece\nvalida: ESTUDIO_INDISPONIVEL, NAO_ENCONTRADO,\nSEM_RECORTE\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.read …\nia: STUDIO_ENHANCER;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Substituir a foto da peça (re…, Cópia da peça por
+  IA: recria…, Rascunho de uma peça da foto…, RF4 ·
+  Estúdio — leva ao estúd…, Rascunho da peça com a
+  cópia…, RF4 · Estúdio — aprova a foto…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-:Recorte justo no desenho;
-if (Cobertura do recorte > 92%?) then (Sim)
-  :Recusar — BLOCO_SOLIDO;
-  stop
-endif
-if (Precisaria ampliar mais de 2×\ne o recorte tem menos de 192 px?) then (Sim)
-  :Recusar — RESOLUCAO_BAIXA;
-  stop
-endif
-:Escalar (reduções pela metade, bicúbica)\ne binarizar com curva em S estreita:\npreto puro no desenho, branco puro no fundo,\n1 px de antisserrilhado no contorno;
-:Gerar as saídas:\n- quadrado 320×320 (avatar do logo)\n- faixa 160 px de altura (slot do formulário);
-:Conferir a borda final (métrica larguraDaBordaFinalPx);
-:Guardar no storage próprio\n(brands/logos/web/<marca>-<fonte>.png)\ne devolver url, wideUrl, métricas e etapas;
+|Pessoa usuária|
 stop
-note right
-  Testes: LogoFilterTest (vetor aceito e nítido,
-  borrado recusado, miniatura recusada, fundo
-  escuro invertido, logo colorido vira preto,
-  foto recusada) e BrandWebSearchServiceTest.
-end note
 @enduml

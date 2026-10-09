@@ -1,65 +1,59 @@
 @startuml RF29_Componentes
-title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings ("Destaques")\nDiagrama de componentes — tela Destaques → HighlightsController → InventoryScoreService → MySQL
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings do guarda-roupa\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "app/(site)/(app)/highlights/page.tsx\n(nota, dimensões, destaques, evolução,\nconquistas, opt-in de rankings)" as FE0
-  component "HypeGrowthCard\n(components/hype/hype-item-row)" as FE1
-  component "InsightStrip\n(components/insights)" as FE2
-  component "app/(site)/(app)/copilot/page.tsx\n(\"Como melhorar meu inventário?\")" as FE3
-  component "app/(site)/(app)/room/page.tsx\n(luzes do closet, RF27)" as FE4
+  component "/highlights\n(site)/(app)/highlights/page.tsx" as FE0
+  component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  [HighlightsController\n/api/me/highlights · /api/me/inventory-score/*\n/api/me/rankings* · /api/me/album\n/api/me/retrospective/{year} · /api/me/achievements] as HC
-  [HypeController\n/api/me/hype/wardrobe] as HYC
-  [InsightsController\n/api/insights] as IC
-  [AutopilotController\n/api/copilot/messages] as CC
+  component "HighlightsController\n/api/inventory-score/method\n/api/me/album\n/api/me/highlights\n/api/me/inventory-score/dimensions/{…}\n(+4 rotas)" as HighlightsController
 }
-package "fai-application" {
-  [InventoryScoreService\n(cache em memória 1 h;\njobs @Scheduled)] as ISS
-  [AchievementService] as AS
-  [FaiPointsService] as FP
-  [NotificationService] as NS
-  [CopilotService\n(IMPROVE_INVENTORY)] as CS
-  [RoomService] as RS
-  [HypeQueryService (RF46)] as HQ
-  [SideEffectRunner] as SE
+package "fai-application (casos de uso)" {
+  component "InventoryScoreService" as InventoryScoreService
+  component "RoomService" as RoomService <<apoio>>
+  component "AchievementService" as AchievementService <<apoio>>
+  component "SideEffectRunner" as SideEffectRunner <<apoio>>
 }
-package "fai-domain (repositórios JPA)" {
-  [WardrobeItemRepository · SchemeRepository · SchemeItemRepository\nPieceUsageDiaryEntryRepository\nWardrobeAvailabilityChangeRepository · StyleDnaRepository\nInventoryScoreSnapshotRepository · RankingOptInRepository\nRankingPositionRepository · ChallengeTemplateRepository\nUserAchievementRepository · UserRepository] as REPOS
+package "fai-domain (repositórios)" {
+  component "WardrobeItemRepository\nSchemeRepository\nSchemeItemRepository\nPieceUsageDiaryEntryRepository\nWardrobeAvailabilityChangeRepository\nStyleDnaRepository\nInventoryScoreSnapshotRepository\nRankingOptInRepository\nRankingPositionRepository\nChallengeTemplateRepository\n(+1)" as REPO_MySQL
 }
-database "MySQL · fashionai_app\n• inventory_score_snapshots\n• ranking_opt_ins · ranking_positions\n• user_achievements\n• wardrobe_items · wardrobe_availability_log\n• piece_usage_diary · schemes · scheme_items\n• style_dna · challenge_templates\n• fai_points_ledger · notifications" as DB
-
-FE0 --> HC : HTTPS/JSON
-FE1 --> HYC
-FE2 --> IC
-FE3 --> CC
-FE4 ..> RS : GET /api/me/room (closetLights)
-HC --> ISS
-HC --> AS
-CC --> CS
-CS --> ISS : improvementHints
-RS --> ISS : compute (luzes do closet)
-HYC --> HQ
-ISS --> AS : grant (conquistas)
-AS --> FP : award(ACHIEVEMENT)
-AS --> NS : ACHIEVEMENT_UNLOCKED
-AS --> SE : conquistas secretas (AFTER_COMMIT)
-ISS --> REPOS
-AS --> REPOS
-REPOS --> DB : JPA/Flyway (V5)
+database "MySQL\n• challenge_templates\n• inventory_score_snapshots\n• piece_usage_diary\n• ranking_opt_ins\n• ranking_positions\n• scheme_items\n• schemes\n• style_dna\n• users\n• wardrobe_availability_log\n• wardrobe_items" as DB_MySQL
+APIC --> HighlightsController : HTTPS/JSON
+FE0 --> APIC
+HighlightsController --> InventoryScoreService
+InventoryScoreService --> REPO_MySQL
+InventoryScoreService ..> AchievementService
+InventoryScoreService ..> RoomService
+InventoryScoreService ..> SideEffectRunner
+REPO_MySQL --> DB_MySQL : JPA/Flyway
 @enduml

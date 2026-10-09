@@ -1,29 +1,57 @@
 @startuml SEG_MaquinaDeEstados_Conta
-title Fashion AI — Máquina de estados: conta (AccountStatus) e origem (account_origin, V35)
-!include _estilo.iuml
-[*] --> PENDING_EMAIL_VERIFICATION : cadastro
-PENDING_EMAIL_VERIFICATION --> ACTIVE : código de e-mail ok\n(perfil pessoal)
-PENDING_EMAIL_VERIFICATION --> PENDING_VALIDATION : código ok\n(marca/celebridade)
-PENDING_VALIDATION --> ACTIVE : aprovação do admin
-ACTIVE --> SUSPENDED : admin suspende
-SUSPENDED --> ACTIVE : admin reativa
-ACTIVE --> DELETION_SCHEDULED : pessoa pede exclusão\n(prazo de arrependimento)
-DELETION_SCHEDULED --> ACTIVE : cancela no prazo
-DELETION_SCHEDULED --> DELETED : job diário: anonimiza (LGPD)\nnome/e-mail trocados, fotos e avatar 3D apagados
-DELETED --> [*]
-
-note right of DELETED
-  Conta real NUNCA sofre DELETE:
-  a linha fica, anonimizada.
-  DELETE FROM users (com as cascatas
-  da V34) é só do reset do universo
-  demo: account_origin IN (TEST_SEED, DEMO).
-end note
-
-state "Origem (imutável depois da criação)" as Origem {
-  state REAL
-  state TEST_SEED : contas e2e_* (V22)
-  state DEMO : fixtures do pipeline demo
-  state SYSTEM
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  StartColor #20A77A
+  EndColor #4B5563
+}
+title ciclo de vida de User.status e accountOrigin\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum AccountStatus · enum AccountOrigin · tabela users
+
+state "User.status" as Ciclo_User {
+  state Ciclo_User_PENDING_EMAIL_VERIFICATION as "PENDING_EMAIL_VERIFICATION"
+  state Ciclo_User_ACTIVE as "ACTIVE"
+  state Ciclo_User_PENDING_VALIDATION as "PENDING_VALIDATION"
+  state Ciclo_User_SUSPENDED as "SUSPENDED"
+  state Ciclo_User_DELETION_SCHEDULED as "DELETION_SCHEDULED"
+  state Ciclo_User_DELETED as "DELETED"
+}
+[*] --> Ciclo_User_PENDING_EMAIL_VERIFICATION : criação
+Ciclo_User --> Ciclo_User_ACTIVE : ensureAdmin(), decide()
+Ciclo_User --> Ciclo_User_DELETED : purgeScheduledDeletions()
+Ciclo_User --> Ciclo_User_DELETION_SCHEDULED : requestDeletion()\nPOST /api/me/deletion
+Ciclo_User --> Ciclo_User_PENDING_EMAIL_VERIFICATION : register()\nPOST /api/auth/register
+note bottom of Ciclo_User
+  Sem mudança explícita no código para: PENDING_VALIDATION, SUSPENDED
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
+state "User.accountOrigin" as Ciclo_User_accountOrigin {
+  state Ciclo_User_accountOrigin_REAL as "REAL"
+  state Ciclo_User_accountOrigin_TEST_SEED as "TEST_SEED"
+  state Ciclo_User_accountOrigin_DEMO as "DEMO"
+  state Ciclo_User_accountOrigin_SYSTEM as "SYSTEM"
+}
+[*] --> Ciclo_User_accountOrigin_REAL : criação
+note bottom of Ciclo_User_accountOrigin
+  Sem mudança explícita no código para: TEST_SEED, DEMO, SYSTEM
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
+note right of Ciclo_User
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
+end note
 @enduml

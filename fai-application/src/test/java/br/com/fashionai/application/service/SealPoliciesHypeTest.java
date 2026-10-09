@@ -26,6 +26,28 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 class SealPoliciesHypeTest {
 
+    @Test
+    void modalidadeHypePersisteDimensoesEExigeTodasSemInventarDados() {
+        Map<String,Object> raw = Map.of("mode", "HYPE", "hype", Map.of("dimensionMins", Map.of("ENGAGEMENT", 60, "ORIGINALITY", 70)));
+        Map<String,Object> normalized = SealPolicies.normalize(raw);
+        assertEquals("HYPE", normalized.get("mode"));
+        var criterion = SealPolicies.parse(normalized).hype();
+        assertTrue(SealPolicies.meets(criterion, new SealPolicies.HypeFact(80d, HypeLevel.TRENDING, HypeMomentum.RISING, true,
+                Map.of("ENGAGEMENT", 60d, "ORIGINALITY", 75d))));
+        assertFalse(SealPolicies.meets(criterion, new SealPolicies.HypeFact(90d, HypeLevel.VIRAL, HypeMomentum.RISING, true,
+                Map.of("ENGAGEMENT", 59d, "ORIGINALITY", 95d))));
+        assertFalse(SealPolicies.meets(criterion, new SealPolicies.HypeFact(90d, HypeLevel.VIRAL, HypeMomentum.RISING, true,
+                Map.of("ENGAGEMENT", 90d))));
+    }
+
+    @Test
+    void rejeitaModalidadeVaziaDimensoesDesconhecidasELimiaresInvalidos() {
+        assertThrows(ApiException.class, () -> SealPolicies.normalize(Map.of("mode", "HYPE")));
+        for (Object invalid : List.of(-1, 101, 1.5, "NaN", "Infinity", "texto"))
+            assertThrows(ApiException.class, () -> SealPolicies.normalize(Map.of("mode", "HYPE", "hype", Map.of("dimensionMins", Map.of("POPULARITY", invalid)))));
+        assertThrows(ApiException.class, () -> SealPolicies.normalize(Map.of("mode", "HYPE", "hype", Map.of("dimensionMins", Map.of("PURCHASES", 50)))));
+    }
+
     private static WardrobeItem piece(String color, String brand) {
         WardrobeItem w = new WardrobeItem();
         w.assignId(UUID.randomUUID());

@@ -1,9 +1,16 @@
 @startuml RF3_Atividades
-title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de atividades — dados sensíveis, troca de e-mail e troca de senha
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,81 +19,63 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre /settings, aba Conta\n(card "Dados sensíveis — pede a senha" e card "Trocar senha");
-|Frontend (settings)|
-:GET /api/me (dados da conta, status, deletionScheduledFor, consentimentos);
-|Pessoa|
-if (O que vai alterar?) then (dados sensíveis)
-  :Edita e-mail, telefone, nascimento ou 2FA\ne digita a senha atual;
-  |Frontend (settings)|
-  :PATCH /api/me/sensitive {password, email, phone, birthDate, twoFactorEnabled};
-  |API (MeController · AccountService · IdentityService)|
-  :reauthenticate: confere a senha no mesmo bloqueio do login (CA01);
-  if (Bloqueado (5 erros em 15 min)?) then (sim)
-    #FFE3E3:429 MUITAS_TENTATIVAS {resetAt};
-    stop
-  elseif (Senha errada?) then (sim)
-    #FFE3E3:401 REAUTENTICACAO_FALHOU;
-    stop
-  else (senha certa)
-  endif
-  if (Trocou o e-mail?) then (sim)
-    if (Formato válido e e-mail livre?) then (não)
-      #FFE3E3:400 EMAIL_INVALIDO / 409 EMAIL_EM_USO;
-      stop
-    endif
-    :VerificationCode EMAIL_CHANGE (6 dígitos, 2 h) para o e-mail novo\ne aviso mascarado para o e-mail antigo (CA02);
-  else (não)
-  endif
-  :Grava telefone, nascimento e 2FA; audita ALTERACAO_DADO_PESSOAL_SENSIVEL;\n200 {changed, emailChangePending};
-  if (Troca de e-mail pendente?) then (sim)
-    |Pessoa|
-    :Digita o código enviado ao e-mail novo;
-    |Frontend (settings)|
-    :POST /api/me/email-change/confirm {code};
-    |API (MeController · AccountService · IdentityService)|
-    if (Código aberto, correto e < 10 tentativas/h?) then (não)
-      #FFE3E3:400 CODIGO_INVALIDO / CODIGO_EXPIRADO · 429 MUITAS_TENTATIVAS;
-      stop
-    endif
-    if (E-mail tomado por outra conta nesse meio-tempo?) then (sim)
-      #FFE3E3:409 EMAIL_EM_USO (o código é consumido);
-      stop
-    endif
-    :Troca email e emailHash, emailVerified = true;\naudita ALTERACAO_DADO_PESSOAL_SENSIVEL → 200 UserCard;
-  else (não)
-  endif
-else (senha)
-  |Pessoa|
-  :Senha atual, nova e confirmação;
-  |Frontend (settings)|
-  :PUT /api/auth/password {currentPassword, newPassword, confirmPassword};
-  |API (AuthController · IdentityService)|
-  if (Senha atual confere (mesmo bloqueio)?) then (não)
-    #FFE3E3:400 SENHA_ATUAL_INCORRETA · 429 MUITAS_TENTATIVAS;
-    stop
-  endif
-  if (Nova senha na política e confirmação igual?) then (não)
-    #FFE3E3:400 FORMULARIO_INVALIDO;
-    stop
-  endif
-  :Novo hash Argon2id; invalida links de redefinição;\nrevoga as OUTRAS sessões; audita TROCA_SENHA;
-  :200 {revokedSessions, message};
+:Abre /settings, /notifications,\n/u/[username];
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/auth/sessions\nGET /api/me/exports\nGET /api/me\nGET /api/me/consents;
+|Pessoa usuária|
+:Alterar senha, e-mail, telefone,\nnascimento ou 2FA (pede re…;
+|Tela (Next.js)|
+:PATCH /api/me/sensitive;
+|API (Spring Boot)|
+:MeController.updateSensitive\n→ AccountService.updateSensitive;
+if (e-mail inválido?) then (sim)
+  :400 EMAIL_INVALIDO\n«Formato de e-mail inválido.»\n→ a tela mostra o aviso;
+  stop
 endif
-|Frontend (settings)|
-:Aviso de sucesso e refreshMe;
+if (e-mail em uso?) then (sim)
+  :409 EMAIL_EM_USO\n«Este e-mail já está em uso.»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: users\nuser_preferences;
+:Usa: IdentityService.reauthenticate\nIdentityService.invalidateCodes\nEmailSenderPort.send;
+:Grava: verification_codes;
+:Estado: purpose → EMAIL_CHANGE\nexpiresAt → set\nlastSentAt → set;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Editar nome de exibição, bio, paí…)
+    :PATCH /api/me/profile\n→ PreferencesService.updateProfile\nvalida: LINKS_DEMAIS, LINK_INVALIDO, PAIS_INVALIDO\nlê: users, user_preferences\nusa: MediaService.requireOwnedMedia\nestado: avatarUrl → set, coverUrl → set;
+  case (Enviar foto de perfil)
+    :POST /api/me/avatar\n→ PreferencesService.uploadProfileImage\nlê: users\nusa: MediaService.put, MediaService.register\nestado: coverUrl → set, avatarUrl → set;
+  case (Encerrar uma sessão específica)
+    :DELETE /api/auth/sessions/{sessionId}\n→ IdentityService.revokeSession\nvalida: NAO_ENCONTRADO\nlê: refresh_tokens\nestado: revokedAt → set;
+  case (Trocar senha [encerra as outras s…)
+    :PUT /api/auth/password\n→ IdentityService.changePassword\nvalida: FORMULARIO_INVALIDO, SENHA_ATUAL_INCORRETA\nlê: users, verification_codes, refresh_tokens\nusa: PasswordHasherPort.hash\nestado: consumedAt → set, revokedAt → set;
+  case (Confirmar troca de e-mail com o c…)
+    :POST /api/me/email-change/confirm\n→ AccountService.confirmEmailChange\nvalida: CODIGO_INVALIDO, EMAIL_EM_USO, ERRO\nlê: users, verification_codes\nusa: IdentityService.requireCodeAttemptQuota\nestado: consumedAt → set, emailVerified → true;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Solicitar exportação dos meus…, Enviar imagem de
+  capa, Sair de todos os outros dispo…, Visibilidade
+  padrão do perfil…, Agendar exclusão da conta (ja…,
+  Girar a foto de perfil em 90°
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

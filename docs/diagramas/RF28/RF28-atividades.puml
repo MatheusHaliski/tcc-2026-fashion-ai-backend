@@ -1,9 +1,16 @@
 @startuml RF28_Atividades
-title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de atividades — montar o look no espelho e decidir o que fazer com ele
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,94 +19,58 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF28 — Montar looks no Smart Mirror e pedir sugestões ao 'Vista-me' (só com peças do próprio guarda-roupa)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre **Smart Mirror** (/mirror) ou "Vestir no espelho"\nnuma peça (/mirror?piece={id});
-|Frontend (mirror/page.tsx)|
-:GET /api/me/mirror\n(com ?piece → POST /api/me/mirror/pieces);
-|Serviço (MirrorService)|
-:stateEntity(): cria mirror_states na 1ª vez (slots = {});
-:render(): tira do espelho peças apagadas ou de terceiros;\nslots upper · lower · dress · shoes · outer_layer · accessory[≤ 4];
-:Completude sem IA: (upper + lower) ou dress, mais shoes;\nmissing[] = "Esse look ainda não possui calçado." + ação [Sugerir…];
-:Também devolve: warnings (peça no cesto), actions, silhueta,\npost-it, luz (kelvin pela estação de cor do DNA),\nrestrição de desafio (10×10 / Cápsula) e **scores** (LookScorer);
-note right
-  scores = seis números lado a lado:
-  compatibilidade com o DNA, Hype (média v2 das peças),
-  novidade, reutilização, uso comprovado e sustentabilidade.
-  Espelho vazio → scores = null; dimensão sem base → "—".
-end note
-|Frontend (mirror/page.tsx)|
-if (Carregou?) then (não)
-  #FFE3E3:ErrorState com "Tentar de novo";
+:Abre /mirror, /room;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/mirror\nGET /api/me/mirror/suggestions\nGET /api/me/mirror/wardrobe\nGET /api/me/mirror/grwm;
+|Pessoa usuária|
+:Vestir uma peça no espelho;
+|Tela (Next.js)|
+:POST /api/me/mirror/pieces;
+|API (Spring Boot)|
+:MirrorController.place\n→ MirrorService.place;
+if (peça obrigatória?) then (sim)
+  :400 PECA_OBRIGATORIA\n«Escolha uma peça do guarda-roupa\npara levar ao espelho.»\n→ a tela mostra o aviso;
   stop
 endif
-:Reflexo do Avatar 3D com as peças (RF28_Espelho_*),\nlista de slots com avisos e card "seis números";
-repeat
-  switch (Ação no espelho)
-  case (veste uma peça)
-    :POST /api/me/mirror/pieces {pieceId}\n(só peça do dono; senão 403/404);
-    :Slot pela categoria; vestido tira superior e inferior\n(e vice-versa); 5º acessório devolve o mais antigo;\norigin vista_me vira smart_mirror;
-  case (pede sugestão p/ um slot)
-    :GET /api/me/mirror/suggestions?slot={slot};
-    if (Slot válido e há candidatas disponíveis?) then (sim)
-      :IA (SCHEME_COMPOSER) escolhe até 3 entre as candidatas;\nref fora da lista é descartada e auditada;\nsem IA → similaridade local (fallbackUsed);
-    else (não)
-      #FFE3E3:400 SLOT_INVALIDO ou\n422 SEM_CANDIDATAS (link /pieces/new);
-    endif
-  case (pede ao Vista-me)
-    :POST /api/me/mirror/vista-me {prompt, keepMirror}\n— ver RF28_Vista-me_Detalhado_Atividades;
-  case (troca uma peça / outro look)
-    :POST /api/me/mirror/slots/{slot}/swap (até 3 alternativas)\nou POST /api/me/mirror/another (mesmo pedido, sem repetir);
-  case ("Tira uma coisa")
-    :POST /api/me/mirror/take-one-off;
-    if (Look completo e com acessório ou camada externa?) then (sim)
-      :IA (STYLE_ADVISOR) escolhe a peça a tirar e explica;\nsem IA → regra local (estampa ou cor que menos combina);
-    else (não)
-      #FFE3E3:409 LOOK_INCOMPLETO ou 409 NADA_A_TIRAR;
-    endif
-  case (tira peça / limpa)
-    :DELETE /api/me/mirror/pieces/{pieceId}\nou DELETE /api/me/mirror;
+|Dados e serviços|
+:Lê: mirror_states\nwardrobe_items\nstyle_dna;
+:Usa: WardrobeService.owned\nRoomService.locateAll;
+:Grava: mirror_states;
+:Evento: MirrorAction;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Vista-me: look completo a partir…)
+    :POST /api/me/mirror/vista-me\n→ MirrorService.vistaMe\nvalida: ACERVO_SEM_SUPERIOR, SEM_COMBINACAO_NOVA\nlê: mirror_states, wardrobe_items, style_dna\nusa: RoomService.outOfSeason,\nWardrobeService.eligible,\nRoomService.locateAll\nia: COPILOT, SCHEME_COMPOSER;
+  case (Tirar uma peça)
+    :DELETE /api/me/mirror/pieces/{pieceId}\n→ MirrorService.remove\nlê: mirror_states, wardrobe_items, style_dna\nusa: RoomService.locateAll\ngrava: mirror_states;
+  case (Trocar só uma peça do look)
+    :POST /api/me/mirror/slots/{slot}/swap\n→ MirrorService.swap\nvalida: SEM_CANDIDATAS, SLOT_INVALIDO\nlê: mirror_states, wardrobe_items\nusa: RoomService.outOfSeason,\nWardrobeService.eligible,\nRoomService.locateAll\nia: SCHEME_COMPOSER;
+  case (Levar o look do espelho para o ed…)
+    :POST /api/me/mirror/draft\n→ MirrorService.draft\nlê: mirror_states\ngrava: mirror_states;
+  case (Outro look com o mesmo pedido)
+    :POST /api/me/mirror/another\n→ MirrorService.another\nvalida: ACERVO_SEM_SUPERIOR, SEM_COMBINACAO_NOVA\nlê: mirror_states, wardrobe_items, style_dna\nusa: RoomService.outOfSeason,\nWardrobeService.eligible,\nRoomService.locateAll\nia: COPILOT, SCHEME_COMPOSER;
   endswitch
-  :Novo estado do espelho (mesmo formato do GET);
-repeat while (Continua montando?) is (sim)
-->não;
-switch (O que fazer com o look?)
-case (Usar este look hoje)
-  :POST /api/me/mirror/use (botão só com look completo);
-  if (Completo e todas as peças disponíveis?) then (sim)
-    :materialize(): reaproveita esquema com as mesmas peças\nou cria um (origin SMART_MIRROR ou VISTA_ME);
-    :DailyLookService.register → daily_looks.source =\nSMART_MIRROR ou VISTA_ME;
-    :Após o commit: diário de uso, wearCount\ne +15 FAI Points se veio do Vista-me (1 por dia);
-  else (não)
-    #FFE3E3:409 LOOK_INCOMPLETO\nou 409 PECA_INDISPONIVEL;
-  endif
-case (Salvar como look)
-  :POST /api/me/mirror/save {title, publish: false};
-  if (Há ao menos 2 peças?) then (sim)
-    :Esquema criado (ou o existente) → /schemes/{id};
-  else (não)
-    #FFE3E3:400 SEM_PECAS;
-  endif
-case (Abrir no editor)
-  :POST /api/me/mirror/draft → RoomLookDraft\n(slots, accessories, origin, prompt);
   note right
-    a tela espera schemeId e não navega;
-    nenhuma tela lê "sai_room_look_draft"
-    (divergência: o RF5 não recebe os slots)
+  Outras ações deste RF:
+  Limpar o espelho, Usar o look de hoje (Look do…,
+  'Tira uma coisa': simplificar…, Salvar o look do
+  espelho como…
   end note
-case (GRWM)
-  :GET /api/me/mirror/grwm → storyboard 9:16 até 15 s\n(409 ESPELHO_VAZIO sem peças);
-endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

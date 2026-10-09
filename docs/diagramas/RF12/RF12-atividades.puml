@@ -1,9 +1,16 @@
 @startuml RF12_Atividades
-title RF12 — Visualizar & Editar a página "Minhas Fotos" & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,90 +19,52 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF12 — Visualizar & Editar a página 'Minhas Fotos' & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-if (O que deseja fazer?) then (Minhas Fotos)
-  :Abre /photos;
-  |Frontend (photos)|
-  :GET /api/me/photos?origin=&occasion=&style=&color=&month=&days=&page=&size=60;
-  |Backend (PhotoController · PhotoService)|
-  :gallery: acervo agrupado por origem (WARDROBE_ITEM, SCHEME,\nTRY_ON, STYLE_DNA...), mais recentes primeiro, com facetas (CA01);
-  |Frontend (photos)|
-  :Carrega sob demanda (InfiniteSentinel) — CA06 / RNF7;
-  |Pessoa|
-  if (Ação?) then (editar)
-    |Frontend (photos)|
-    :Abre o Editor Canvas 2D (PhotoEditor) com a foto (CA02 — RF15);
-    |Backend (PhotoController · PhotoService)|
-    :POST /api/photos/{id}/edits (multipart) — saveEdit;\noriginal preservada, nova foto origem EDITOR;
-  elseif (excluir uma)
-    |Backend (PhotoController · PhotoService)|
-    :DELETE /api/photos/{id};
-    if (Foto é a imagem de peça ativa e confirmed = false?) then (sim)
-      #FFE3E3:409 CONFIRMACAO_NECESSARIA {pieceId} (CA03);
-      |Pessoa|
-      :Confirma que a peça ficará sem imagem;
-      |Backend (PhotoController · PhotoService)|
-      :DELETE /api/photos/{id}?confirmed=true;
-    endif
-    :Peça volta à imagem padrão; photos.deletedAt = agora;
-  elseif (excluir em lote)
-    |Backend (PhotoController · PhotoService)|
-    :POST /api/photos/bulk-deletion {ids, confirmed: false};
-    :Devolve requiresConfirmation, count e linkedToPieces (CA04);
-    |Pessoa|
-    :Confirma UMA vez informando a quantidade;
-    |Backend (PhotoController · PhotoService)|
-    :POST /api/photos/bulk-deletion {ids, confirmed: true};
-  elseif (baixar)
-    |Backend (PhotoController · PhotoService)|
-    :GET /api/photos/{id}/file — original sem marca d'água,\nsó o dono (CA05);
-  else (curadoria por IA)
-    |Backend (PhotoController · PhotoService)|
-    :POST /api/me/photos/curation — AiEngine.local(PHOTO_CURATOR):\ndHash agrupa duplicatas e baixa qualidade;
-    note right: RF30.CA11 — a IA sugere qual manter, nunca exclui sozinha
-  endif
-else (várias peças por vez)
-  |Pessoa|
-  if (Várias fotos ou uma foto com várias peças?) then (várias fotos)
-    |Backend (WardrobeController · WardrobeService)|
-    :POST /api/pieces/analysis/batch (files[], category);
-    if (0 fotos ou mais de 12?) then (sim)
-      #FFE3E3:400 SEM_FOTOS / LOTE_GRANDE;
-      stop
-    endif
-    :Para cada foto: analyze (critérios de aceite, Flat Lay,\nsubtipo, marca, moderação, pré-preenchimento);
-    note right: foto recusada volta com rejection (motivo); as demais seguem
-  else (uma foto, várias peças)
-    |Backend (WardrobeController · MultiPieceService)|
-    :POST /api/pieces/analysis/multi — detect:\nAiEngine.text(MULTI_PIECE_DETECTOR) devolve caixas em %;
-    |Frontend (multi-piece-review)|
-    :MultiPieceReview: a pessoa revisa cada peça detectada;
-    |Backend (WardrobeController · MultiPieceService)|
-    :POST /api/pieces/analysis/multi/{draftId}/pieces?index=\n(recorte → Flat Lay + moderação → rascunho);
-    if (Quer cópia por IA?) then (sim)
-      :POST .../{draftId}/ai-image (PIECE_IMAGE_RECREATOR)\n→ POST .../ai-images/{aiImageId}/piece;
-      note right: sem IA de imagem → 503 IA_INDISPONIVEL; peça leva aiGeneratedImage = true
-    endif
-  endif
-  |Pessoa|
-  :Revisa e confirma os rascunhos;
-  |Backend (WardrobeController · WardrobeService)|
-  :POST /api/pieces (um a um) ou POST /api/pieces/batch (lista de PieceForm);
-  :Cada peça é gravada e a foto entra em Minhas Fotos (origem WARDROBE_ITEM);
+:Abre /photos, /pieces/[id], /pieces/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/photos/{id}/file\nGET /api/me/photos/insights\nGET /api/me/photos/timeline;
+|Pessoa usuária|
+:Minhas fotos com filtros (origem,\nocasião, estilo, cor, mês…;
+|Tela (Next.js)|
+:GET /api/me/photos;
+|API (Spring Boot)|
+:PhotoController.list\n→ PhotoService.gallery;
+|Dados e serviços|
+:Lê: photos\nwardrobe_items\nschemes;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Excluir várias fotos)
+    :POST /api/photos/bulk-deletion\n→ PhotoService.bulkDelete\nlê: photos, wardrobe_items\nestado: deletedAt → set;
+  case (Excluir foto [pede confirmação qu…)
+    :DELETE /api/photos/{id}\n→ PhotoService.delete\nvalida: CONFIRMACAO_NECESSARIA\nlê: photos, wardrobe_items\nusa: Guard.requireOwner\nestado: deletedAt → set;
+  case (Curadoria: duplicatas, baixa qual…)
+    :POST /api/me/photos/curation\n→ PhotoService.curate\nlê: photos\nusa: MediaService.readImage\nia: PHOTO_CURATOR;
+  case (Substituir a foto da peça [reproc…)
+    :PUT /api/pieces/{id}/image\n→ WardrobeService.replaceImage\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.put …\nia: STUDIO_ENHANCER;
+  case (RF12.CA02 / RF15.CA02 — Salvar a…)
+    :POST /api/photos/{id}/edits\n→ PhotoService.saveEdit\nlê: photos, wardrobe_items\nusa: Guard.requireOwner, Guard.requireCanCreate,\nWardrobeService.replaceImage …;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Marcar/desmarcar momento-chave, Editar a peça,
+  Excluir a peça, Cadastrar a peça a partir do…,
+  Analisar várias fotos de uma…, Várias peças numa
+  foto: a IA…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-|Frontend (photos)|
-:Atualiza a lista;
+|Pessoa usuária|
 stop
 @enduml

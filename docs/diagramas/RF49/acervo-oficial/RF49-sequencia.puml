@@ -1,148 +1,44 @@
 @startuml RF49_Sequencia
-title RF49 — Acervo oficial em escala\nDiagrama de sequência — coleta nos sites oficiais → fotos completas → importação idempotente → busca com milhares de produtos
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Operador" as OP
-participant "collect_official.py\nrun() · collect_brand()\nmake_fetch() · ascii_url()" as CO
-participant "official_sitemap.py\ncollect() · Site · Politeness\nstructured_product()\nto_catalog_item()" as SM
-participant "Site oficial\nda marca" as WEB
-collections "data/catalog/collected\n<marca>.jsonl\n.state/<marca>.visited" as FS
-participant "recheck_collected.py\nenrich_images.py" as REV
-participant "import_railway.sh\nimport_products.py\nIngestor (ingest.py)" as IMP
-database "MySQL" as DB
-participant "CatalogProductRepository" as REPO
-participant "CatalogMatchScorer" as M
-participant "CatalogService" as S
-participant "CatalogController" as C
-participant "Frontend\npieces/new\n(catalog-search.tsx)" as FE
-actor "Pessoa" as U
+autonumber "<b>0."
+title RF49 — Acervo oficial em escala\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-== Parte 1 · Coleta (1/3) — sites oficiais → JSONL (CLI, sem acesso ao banco) ==
-OP -> CO: collect_official.py ~--brands nike,levis\n~--max-per-brand 2000 ~--min-interval 1.5\n~--workers 12 [~--fresh] [~--dry-run]
-CO -> CO: official_sources(brands.json):\nsó OFFICIAL_BRAND / OFFICIAL_STORE /\nAUTHORIZED_RETAILER (RN47.04)
-note left of CO
-  brands.json: 100 marcas,
-  112 domínios oficiais.
-  A marca vem da fonte
-  (nunca inventada).
-end note
-par marcas em paralelo (~--workers) — cada site com 1 requisição por vez
-  CO -> FS: collect_brand(): lê .visited e o .jsonl\n(retomada; ~--fresh apaga)
-  loop cada domínio oficial da marca (um de cada vez)
-    CO -> SM: collect(Site(domínio, fetch de make_fetch,\nPoliteness, user_agent), marca, restantes,\nvisited, on_item)
-    SM -> WEB: Site.load_robots():\nGET /robots.txt\n(0/403/404 → tenta www.)
-    alt robots.txt 401/403 ou sem conexão
-      SM --> CO: StopDomain capturado →\nrelatório stopped ("PAROU")
-    else robots.txt lido (404 = sem regras)
-      WEB --> SM: regras + Crawl-delay\n+ "Sitemap:"
-      SM -> WEB: product_urls(): sitemaps\nde produto/pdp primeiro\n(ajuda, blog, lojas: fora)
-      WEB --> SM: URLs de produto\ndo domínio
-      loop cada URL nova (fora de visited) até ~--max-per-brand
-        SM -> WEB: allowed(url) · get(url)\n(Politeness.wait: Crawl-delay)
-        alt 403 / 429
-          WEB --> SM: 403 / 429 → StopDomain\n(encerra o domínio)
-        else 200 HTML
-          WEB --> SM: HTML
-          SM -> SM: structured_product():\nJSON-LD Product/ProductGroup\nou OpenGraph + og:image
-          SM -> SM: to_catalog_item(): clean_title ·\nsame_brand (outra marca → descarta) ·\nunsupported_reason · infer_subcategory\n· is_pack (sem subtipo → descarta,\nnunca chuta) · product_images\n+ brand_cdn_ok (só a URL)
-          SM -> CO: on_item(item)
-          CO -> FS: normalize_product(item) ok\n→ +1 linha em <marca>.jsonl
-        end
-      end
-    end
-    CO -> FS: URLs novas em\n.state/<marca>.visited
-  end
-end
-CO --> OP: Resumo: domínios · páginas · produtos\nnovos · inválidos · domínios que pararam
-
-== Parte 1 · Coleta (2/3) — revisão das regras e fotos completas (antes de importar) ==
-OP -> REV: recheck_collected.py [~--dry-run]
-REV -> FS: recheck(): fora_do_acervo · sem_tipo_no_nome ·\nkit_sem_tipo · tipo_corrigido · titulo_limpo ·\nfoto_https → reescreve via .jsonl.tmp
-OP -> REV: enrich_images.py [~--workers 8]
-loop cada produto sem foto com official_product_url (1 requisição por vez por site)
-  REV -> SM: Site(host).load_robots() · allowed(url) · get(url)
-  SM -> WEB: GET página oficial\n(403/429 → StopDomain)
-  WEB --> SM: HTML
-  SM --> REV: HTML
-  REV -> REV: structured_product()\n→ product_images()\n(nó → variantes →\nog:image; brand_cdn_ok)
-end
-REV -> FS: reescreve <marca>.jsonl\nvia .jsonl.tmp
-REV --> OP: Resumo: 4.059 de 4.371 produtos sem foto ganharam foto
-
-== Parte 1 · Coleta (3/3) — importação idempotente no MySQL ==
-OP -> IMP: import_railway.sh <host> <porta> [~--dry-run] — TCP proxy temporário ·\nusuário fai_app com TLS · senha só em RAILWAY_MYSQL_APP_PASSWORD
-note over IMP
-  1) seed_catalog.py
-  2) import_products.py
-     acervo-oficial-2026-10-05.jsonl.gz
-     (9.573 produtos)
-  3) rebuild_search_index.py
-end note
-IMP -> FS: read_items(): .jsonl.gz\nem streaming
-loop cada produto (Ingestor.ingest(): uma transação por produto)
-  IMP -> IMP: normalize_product\n(inválido → [ERROR])
-  IMP -> DB: brand_by_name · official_sources →\nclassify(URL): domínio oficial da marca?
-  IMP -> DB: find_existing: gtin › ean › upc ›\nsku › código › URL canônica ›\ndedup_key · find_same_model\n(mesmo modelo → nova variante)
-  alt não existe
-    IMP -> DB: INSERT catalog_products\n(VALIDATED, search_text) — [CREATE]
-  else já existe
-    IMP -> DB: só campos vazios — [UPDATE]\nnada novo — [SKIP] · [DUP] no log
-  end
-  IMP -> DB: catalog_variants · catalog_product_aliases ·\ncatalog_images (REFERENCE_ONLY)
-end
-IMP -> DB: record_run(): catalog_ingestion_runs
-IMP -> DB: rebuild_search_index.py:\nUPDATE search_text (FULLTEXT ngram)
-IMP --> OP: total_read · created · updated · skipped · duplicates_found · errors
-note over DB
-  8.810 produtos · 52 marcas
-  26.457 variantes
-  8.357 com foto (95%)
-  rodar de novo não duplica
-end note
-
-== Parte 2 · Busca catalogada em escala (milhares de produtos) ==
-U -> FE: tipo → marca →\n"camiseta azul"
-FE -> C: GET /api/catalog/search\n?category&subcategory&brand\n&q&color&limit=24
-C -> S: search(userId,\nSearchRequest)
-S -> S: resolve(): marca · subtipo\npela frase mais longa ·\ndesign (CatalogTextInterpreter\n/ CatalogDesignInterpreter)\n· cor · termos
-alt sem marca, tipo, termo nem design
-  S --> C: enoughInput = false
-else
-  opt subtipo e cor conhecidos
-    S -> REPO: candidatesWithColor(marca, categoria,\nsubtipo, cor, termos | null) — cor no\nproduto ou numa variante
-  end
-  opt subtipo conhecido
-    S -> REPO: candidates(marca, categoria, subtipo, termos)
-  end
-  opt estampa citada (≠ PLAIN)
-    S -> REPO: candidates(…, subtipo, patternTerms(estampa))
-  end
-  S -> REPO: candidates(…, subFilter, termos) — pool geral
-  opt pool < 8
-    S -> REPO: candidates(…, subFilter, null) — reforço
-  end
-  REPO -> DB: cada consulta: MATCH(search_text)\nAGAINST (BOOLEAN MODE) · ORDER BY\nowners_count DESC · LIMIT 200
-  DB --> REPO: produtos
-  REPO --> S: pool (sem repetir id)
-  S -> DB: rank(): findByProductIdInAndPrimaryTrue ·\nvariantes · apelidos do pool
-  loop cada produto do pool
-    S -> M: score(Intent, Candidate, null)
-    M --> S: Score (total + motivos)
-    S -> S: total < MIN_SCORE (0,35) → sai;\nsenão card + selectedVariant\n(variante da cor pedida) + matchPercent
-  end
-  S -> S: orderScore(): sem foto cede\nNO_PHOTO_PENALTY = 0,10\nsó na ordem (o "% compatível"\nmostrado não muda) ·\ndesempate ownersCount
-  S --> C: intent · results\n(imageUrl, selectedVariant,\nmatchPercent) · canSearchOfficial
-end
-C --> FE: 200 {intent, results, total,\nenoughInput, canSearchOfficial}
-FE --> U: cards com foto\noficial + "% compatível"\n(sem foto → ilustração)
-note over FE, U
-  12/12 buscas reais passaram
-  (docs/testes/busca-catalogada)
-end note
+actor "Pessoa usuária" as U
+participant "CatalogDesignInterpreter" as CatalogDesignInterpreter
+participant "CatalogNormalizer" as CatalogNormalizer
+participant "CatalogMatchScorer" as CatalogMatchScorer
+== CatalogDesignInterpreter · interpret() ==
+U -> CatalogDesignInterpreter : interpret()
+activate CatalogDesignInterpreter
+CatalogDesignInterpreter -> CatalogNormalizer : colorExact()
+deactivate CatalogDesignInterpreter
+CatalogDesignInterpreter --> U : resultado
+== CatalogMatchScorer · score() ==
+U -> CatalogMatchScorer : score()
+activate CatalogMatchScorer
+CatalogMatchScorer -> CatalogNormalizer : categoryOf()
+CatalogMatchScorer -> CatalogNormalizer : tokens() (×2)
+CatalogMatchScorer -> CatalogNormalizer : color()
+deactivate CatalogMatchScorer
+CatalogMatchScorer --> U : resultado
 @enduml

@@ -1,200 +1,217 @@
 @startuml RF39_Classes
-title RF39 — Criar guarda-roupa 3D com a identidade de uma marca/celebridade e vender na loja do quarto\nDiagrama de classes — criador, catálogo da loja, compra com FAI Points e montagem no quarto
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF39 — 'Criar guarda-roupa 3D': componentes ou guarda-roupa inteiro de marca/celebridade vendidos na loja do quarto\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-web" {
-class RoomCreatorController {
-  +options(user): Map  «GET /api/room-creator/options»
-  +mine(user): Map  «GET /api/room-creator/items»
-  +create(user, ItemForm): Map  «POST …/items (201)»
-  +update(user, sku, ItemForm): Map  «PUT …/items/{sku}»
-  +delete(user, sku)  «DELETE …/items/{sku} (204)»
-  +upload(user, file, kind): Map  «POST …/uploads?kind=logo|art»
+package "fai-domain (entidades JPA)" {
+  class BrandProfile <<brand_profiles>> {
+    +id: UUID
+    +owner: User
+    +brandName: String
+    +slug: String
+    +logoUrl: String
+    +coverUrl: String
+    +bio: String
+    +storeUrl: String
+    +cnpj: String
+    +razaoSocial: String
+    .. +21 campos ..
+  }
+  class CelebrityProfile <<celebrity_profiles>> {
+    +id: UUID
+    +owner: User
+    +stageName: String
+    +slug: String
+    +avatarUrl: String
+    +coverUrl: String
+    +bio: String
+    +realName: String
+    +areasJson: String
+    +verifiableFollowersJson: String
+    .. +20 campos ..
+  }
+  class FaiPointsLedgerEntry <<fai_points_ledger>> {
+    +id: UUID
+    +userId: UUID
+    +delta: int
+    +actionCode: String
+    +refType: String
+    +refId: String
+    +idempotencyKey: String
+    +countsLifetime: boolean
+  }
+  class RoomCatalogItem <<room_catalog>> {
+    +sku: String
+    +name: String
+    +moldId: String
+    +slotType: String
+    +widthCm: int
+    +finishJson: String
+    +rarity: String
+    +pricePoints: int
+    +requiredLevel: String
+    +stockLimit: Integer
+    .. +17 campos ..
+  }
+  class RoomInventoryItem <<room_inventory>> {
+    +id: UUID
+    +userId: UUID
+    +sku: String
+    +serial: Integer
+    +source: String
+    +appliedModule: String
+    +acquiredAt: Instant
+  }
+  class RoomLayout <<room_layouts>> {
+    +id: UUID
+    +user: User
+    +level: String
+    +modulesJson: String
+    +drawerLabelsJson: String
+    +previousMapJson: String
+  }
+  class Scheme <<schemes>> {
+    +id: UUID
+    +user: User
+    +originalScheme: Scheme
+    +title: String
+    +description: String
+    +creationMode: CreationMode
+    +origin: SchemeOrigin
+    +style: String
+    +occasion: String
+    +season: Season
+    .. +46 campos ..
+  }
+  class Seal <<seals>> {
+    +id: UUID
+    +owner: User
+    +name: String
+    +tier: SealTier
+    +policyText: String
+    +status: SealStatus
+    +iconUrl: String
+    +premium: boolean
+    +backgroundConfigJson: String
+    +availableFrom: Instant
+    .. +4 campos ..
+  }
+  class SealBond <<seal_bonds>> {
+    +id: UUID
+    +scheme: Scheme
+    +targetOwner: User
+    +requestedBy: User
+    +tier: SealTier
+    +linkedPieceIdsJson: String
+    +confidence: BigDecimal
+    +justification: String
+    +basis: SealBondBasis
+    +status: SealBondStatus
+    .. +13 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
 }
-class HighlightsController {
-  +shop(user): List<Map>  «GET /api/points/shop»
-  +tryOn(user, sku, ModuleRequest)  «POST …/{sku}/try-on»
-  +buy(user, sku)  «POST …/{sku}/purchase»
-  +apply(user, inventoryId, ModuleRequest)\n  «POST /api/me/room-inventory/{id}/apply»
-}
+package "fai-domain (enums)" {
+  enum ApprovalStatus {
+    PENDENTE
+    AJUSTES
+    APROVADO
+    RECUSADO
+    SUSPENSO
+  }
+  enum SchemeStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+  }
+  enum RenderStatus {
+    PENDING
+    RENDERING
+    ENHANCING
+    COMPOSITING
+    CACHED
+    COMPLETED
+    FAILED
+  }
+  enum SealStatus {
+    ACTIVE
+    INACTIVE
+  }
+  enum SealBondStatus {
+    SUGGESTED
+    ACCEPTED
+    EDITED
+    REFUSED
+    PENDING_REVIEW
+    APPROVED
+    REJECTED
+    REVOKED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
 }
 package "fai-application" {
-class WardrobeCreatorService {
-  +BLOCKS: List<Block> (20)
-  +MATERIALS: Map<String, Material> (22)
-  +COLORS: Map<String, String>
-  +LEVELS = ESTREIA … MAISON (7)
-  +options(user): Map
-  +save(user, sku, ItemForm): Map
-  +delete(user, sku)
-  +mine(user): Map
-  +uploadArt(user, bytes, kind): Map
-  +seedFactory(): int
-  +{static} availability(item, now): String
-  +blocker(buyer, item): String
-  +hasSeal(buyer, item): boolean
-  +sellerActive(item): boolean
-  +view(item, buyer): Map
-  ~creator(user): User
+  class FaiPointsService <<service>> {
+    +shop()
+    +apply()
+  }
 }
-class "WardrobeCreatorService.ItemForm" as ItemForm <<record>> {
-  +kind: COMPONENT | WARDROBE
-  +name, description, labelText
-  +slotType, moldId, material, colorName, color
-  +logoUrl, artUrl, sealId: UUID
-  +pricePoints, requiredLevel, stock, perUserLimit
-  +availableFrom, availableUntil: Instant
-  +requiresSeal, active: Boolean
-  +bundle: List<BundlePart>
-}
-class "WardrobeCreatorService.Block" as Block <<record>> {
-  +slotType, moldId
-  +widthCm, basePrice: int
-  +minLevel: String
-  +materials: List<String>
-}
-class "WardrobeCreatorService.Material" as Material <<record>> {
-  +code, label
-  +roughness, metalness, priceFactor: double
-  +minLevel: String
-  +colors: List<String>
-}
-class "WardrobeCreatorService.BundlePart" as BundlePart <<record>> {
-  +slotType, moldId, material, colorName, color
-}
-class FaiPointsService {
-  +shop(user): List<Map>
-  +tryOn(user, sku, moduleId): Map
-  +buy(user, sku): Map
-  +apply(user, inventoryId, moduleId): Map
-  +balance(userId): long
-  +level(userId): Level
-}
-enum "FaiPointsService.Level" as Level {
-  ESTREIA (0)
-  STUDIO (300)
-  LOFT (900)
-  CLOSET (2000)
-  ATELIER (4000)
-  PENTHOUSE (7500)
-  MAISON (12000)
-}
-interface "FaiPointsService.RoomLayoutAccess" as RLA {
-  +compatibleModules(userId, item): List<String>
-  +applyFinish(userId, moduleId, item)
-  +layout(userId): RoomLayout
-  +setLevel(userId, level)
-}
-class RoomService
-class MediaService {
-  +put(key, bytes, contentType): StoredObject
-}
-}
-package "fai-domain · model" {
-class RoomCatalogItem {
-  +sku: String  «FAI-… fábrica | BRD-… marca»
-  +name: String
-  +kind: String  «COMPONENT | WARDROBE»
-  +slotType, moldId: String
-  +widthCm: int
-  +material, colorName: String
-  +finishJson, bundleJson: String
-  +rarity: String
-  +pricePoints: int
-  +requiredLevel: String
-  +stockLimit: Integer
-  +soldCount: int
-  +perUserLimit: Integer
-  +availableFrom / availableUntil: Instant
-  +requiresSeal: boolean
-  +active: boolean
-  +creatorUserId, sealId, maisonBrandUserId: UUID
-  +logoUrl, artUrl, labelText: String
-}
-class RoomInventoryItem {
-  +userId: UUID
-  +sku: String
-  +serial: Integer
-  +source: String  «PURCHASE»
-  +appliedModule: String
-  +acquiredAt: Instant
-}
-class RoomLayout {
-  +user: User
-  +level: String
-  +modulesJson: String
-}
-class FaiPointsLedgerEntry {
-  +userId: UUID
-  +delta: int
-  +actionCode: String  «SHOP_PURCHASE»
-  +refType / refId: String
-  +idempotencyKey: String
-  +countsLifetime: boolean
-}
-class Seal {
-  +owner: User
-  +name: String
-  +status: SealStatus
-}
-class SealBond {
-  +requestedBy: User
-  +targetOwner: User
-  +seal: Seal
-  +status: SealBondStatus
-  +expiresAt: Instant
-}
-class User {
-  +profileType: ProfileType
-  +status: AccountStatus
-}
-}
-package "fai-domain · repository" {
-interface RoomCatalogItemRepository {
-  +findByActiveTrueOrderByPricePoints()
-  +findByCreatorUserIdOrderByCreatedAtDesc(id)
-  +lockBySku(sku): Optional
-}
-interface RoomInventoryItemRepository {
-  +findByUserId(id) · findBySku(sku)
-  +countByUserIdAndSku(id, sku): long
-}
-}
-RoomCreatorController --> WardrobeCreatorService
-HighlightsController --> FaiPointsService
-WardrobeCreatorService ..> ItemForm
-ItemForm "1" o-- "*" BundlePart
-WardrobeCreatorService ..> Block
-WardrobeCreatorService ..> Material
-WardrobeCreatorService --> MediaService : logo e arte
-FaiPointsService --> WardrobeCreatorService : view · blocker · sellerActive
-FaiPointsService --> RLA
-RoomService ..|> RLA
-FaiPointsService ..> Level
-WardrobeCreatorService --> RoomCatalogItemRepository
-FaiPointsService --> RoomCatalogItemRepository
-FaiPointsService --> RoomInventoryItemRepository
-RoomCatalogItemRepository ..> RoomCatalogItem
-RoomInventoryItemRepository ..> RoomInventoryItem
-RoomCatalogItem ..> User : creatorUserId (marca/celebridade)
-RoomCatalogItem ..> Seal : sealId (selo de identidade)
-RoomInventoryItem ..> RoomCatalogItem : sku
-RoomInventoryItem ..> User : userId
-RoomLayout "1" --> "1" User
+FaiPointsService ..> FaiPointsLedgerEntry : usa
+FaiPointsService ..> RoomCatalogItem : usa
+FaiPointsService ..> RoomInventoryItem : usa
+BrandProfile "1" --> "1" User : owner
+BrandProfile --> ApprovalStatus
+CelebrityProfile "1" --> "1" User : owner
+CelebrityProfile --> ApprovalStatus
 FaiPointsLedgerEntry ..> User : userId
+RoomInventoryItem ..> User : userId
+RoomLayout "*" --> "1" User : user
+Scheme "*" --> "1" User : user
+Scheme --> RenderStatus
+Scheme --> SchemeStatus
 Seal "*" --> "1" User : owner
-SealBond "*" --> "0..1" Seal
+Seal --> SealStatus
+SealBond "*" --> "1" Scheme : scheme
+SealBond "*" --> "1" Seal : seal
 SealBond "*" --> "1" User : requestedBy
 SealBond "*" --> "1" User : targetOwner
-note top of RoomCatalogItem : tabela room_catalog (V5; V20: criador, bundle, janela,\nlimite por pessoa, exige selo; V27: @Version); a fábrica FAI\n(seedFactory) cria todos os blocos × material × cor
-note bottom of SealBond : "exige selo": o comprador precisa de SealBond APPROVED\nnão vencido com a marca (e do selo do item, se houver)
+SealBond --> SealBondStatus
+User --> AccountStatus
 @enduml

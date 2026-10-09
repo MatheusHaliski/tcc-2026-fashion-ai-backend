@@ -1,116 +1,84 @@
 @startuml RF3_Sequencia
-title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de sequência — dados sensíveis, troca de e-mail, senha, sessões e recuperação de senha
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as P
-participant "settings/page.tsx\nforgot-password · reset-password" as FE
-participant "AuthRateLimitFilter" as RLF
-participant "MeController" as MC
-participant "AuthController" as AUC
-participant "AccountService" as AS
-participant "IdentityService" as IS
-participant "RateLimitPort" as RL
-participant "EmailSenderPort\n(Resend)" as EM
-participant "NotificationService" as NS
-database "MySQL" as DB
+autonumber "<b>0."
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-P -> FE: abre /settings
-FE -> MC: GET /api/me
-MC -> AS: me(user)
-AS -> DB: users · brand_profiles | celebrity_profiles · user_consents
-MC --> FE: 200 {user, email, emailVerified, phone, birthDate, status, role, twoFactorEnabled,\nprofileVisibility, defaultSchemeVisibility, deletionScheduledFor, consents, …}
-
-== Dados sensíveis (reautenticação) ==
-FE -> RLF: PATCH /api/me/sensitive {password, email, phone, birthDate, twoFactorEnabled}
-RLF -> MC: até 30/h por IP · teto de hashes
-MC -> AS: updateSensitive(user, SensitiveUpdate)
-AS -> IS: reauthenticate(userId, password)
-IS -> RL: tryAcquire(userId, "login-fail", 5, 15 min)
-alt bloqueado
-  IS --> FE: 429 MUITAS_TENTATIVAS {resetAt}
-else senha errada
-  IS --> FE: 401 REAUTENTICACAO_FALHOU
-else senha certa
-  IS -> RL: release(userId, "login-fail")
-  opt e-mail novo
-    AS -> DB: existsByEmailHash (409 EMAIL_EM_USO se tomado)
-    AS -> DB: invalida códigos EMAIL_CHANGE abertos · INSERT verification_codes (EMAIL_CHANGE, 2 h, target = novo e-mail)
-    AS -> EM: send(e-mail novo, código) · send(e-mail antigo, aviso mascarado)
-  end
-  AS -> DB: users.phone · birthDate · twoFactorEnabled · audit_log ALTERACAO_DADO_PESSOAL_SENSIVEL
-  MC --> FE: 200 {changed, emailChangePending}
+actor "Pessoa usuária" as U
+boundary "Tela /settings" as P
+control "MeController" as MeController
+participant "AccountService" as AccountService
+participant "IdentityService" as IdentityService
+database "MySQL" as DB_MySQL
+participant "EmailSenderPort\n(LoggingEmailSender, ResendEmailSender)" as EmailSenderPort
+participant "Audit" as Audit
+control "AuthController" as AuthController
+== Alterar senha, e-mail, telefone, nascimento ou 2FA (pede reautenticaç… ==
+U -> P : Alterar senha, e-mail, telefone, nascimento ou 2F…
+P -> MeController : PATCH /api/me/sensitive
+MeController -> AccountService : updateSensitive()
+activate AccountService
+AccountService -> IdentityService : reauthenticate()
+IdentityService -> DB_MySQL : SELECT users
+IdentityService --> AccountService
+AccountService -> DB_MySQL : SELECT users
+alt e-mail inválido
+AccountService --> MeController : 400 EMAIL_INVALIDO
+MeController --> P : 400 + mensagem
 end
-opt confirmar a troca de e-mail
-  FE -> MC: POST /api/me/email-change/confirm {code}
-  MC -> AS: confirmEmailChange(user, code)
-  AS -> IS: requireCodeAttemptQuota(userId, EMAIL_CHANGE) (10/h)
-  alt código inválido, vencido ou errado
-    AS -> DB: attempts + 1
-    AS --> FE: 400 CODIGO_INVALIDO | CODIGO_EXPIRADO · 429 MUITAS_TENTATIVAS
-  else e-mail tomado nesse meio-tempo
-    AS --> FE: 409 EMAIL_EM_USO
-  else
-    AS -> DB: users.email · emailHash · emailVerified = true · audit_log
-    MC --> FE: 200 UserCard
-  end
+alt e-mail em uso
+AccountService --> MeController : 409 EMAIL_EM_USO
+MeController --> P : 409 + mensagem
 end
-
-== Senha e sessões ==
-FE -> RLF: PUT /api/auth/password {currentPassword, newPassword, confirmPassword}
-RLF -> AUC: até 20/h por IP · teto de hashes
-AUC -> IS: changePassword(user, sid, …)
-alt senha atual errada ou bloqueio
-  IS --> FE: 400 SENHA_ATUAL_INCORRETA | 429 MUITAS_TENTATIVAS
-else nova senha fora da política
-  IS --> FE: 400 FORMULARIO_INVALIDO
-else
-  IS -> DB: users.passwordHash · invalida PASSWORD_RESET · revoga as outras famílias · audit_log TROCA_SENHA
-  AUC --> FE: 200 {revokedSessions, message}
+AccountService -> IdentityService : invalidateCodes()
+IdentityService -> DB_MySQL : SELECT verification_codes
+IdentityService --> AccountService
+AccountService -> AccountService : new VerificationCode()
+AccountService -> AccountService : purpose = EMAIL_CHANGE
+AccountService -> AccountService : expiresAt = set
+AccountService -> AccountService : lastSentAt = set
+AccountService -> DB_MySQL : INSERT/UPDATE verification_codes
+AccountService -> DB_MySQL : SELECT user_preferences
+AccountService -> EmailSenderPort : send() (×2)
+AccountService -> Audit : log()
+deactivate AccountService
+AccountService --> MeController : resultado
+MeController --> P : 200 JSON
+P --> U : atualiza a tela
+== Encerrar uma sessão específica ==
+U -> P : Encerrar uma sessão específica
+P -> AuthController : DELETE /api/auth/sessions/{sessionId}
+AuthController -> IdentityService : revokeSession()
+activate IdentityService
+IdentityService -> DB_MySQL : SELECT refresh_tokens
+alt Sessão não encontrado(a)
+IdentityService --> AuthController : 404 NAO_ENCONTRADO
+AuthController --> P : 404 + mensagem
 end
-FE -> AUC: GET /api/auth/sessions
-AUC -> IS: sessions(user, sid)
-IS -> DB: refresh_tokens ativos (o mais novo de cada família)
-AUC --> FE: 200 [{sessionId, device, userAgent, ip, location, lastUsedAt, expiresAt, current}]
-alt encerrar uma sessão
-  FE -> AUC: DELETE /api/auth/sessions/{sessionId}
-  AUC -> IS: revokeSession(user, sessionId)
-  IS -> DB: família de outra pessoa → 404 · senão revokedAt · audit_log SESSAO_REVOGADA
-  AUC --> FE: 204
-else sair de todos os outros dispositivos
-  FE -> AUC: DELETE /api/auth/sessions
-  AUC -> IS: revokeOtherSessions(userId, sid)
-  AUC --> FE: 200 {revokedSessions}
-end
-note right of FE: a aba Sessões lê s.id / s.deviceName;\na API manda sessionId / device (divergência)
-
-== Esqueci a senha (sem login) ==
-FE -> RLF: POST /api/auth/password-reset/request {email}
-RLF -> AUC: até 10/h por IP
-AUC -> IS: requestPasswordReset(email, ip, userAgent)
-opt conta existe e < 5 pedidos na última hora
-  IS -> DB: INSERT verification_codes (PASSWORD_RESET, token de 32 bytes, 30 min)
-  IS -> NS: notify(PASSWORD_RESET)
-  IS -> DB: audit_log RECUPERACAO_SENHA
-  IS -> EM: depois do commit, em thread virtual: send(link /reset-password?token=…)
-end
-AUC --> FE: 202 {message} igual exista ou não a conta
-P -> FE: abre o link do e-mail
-FE -> RLF: POST /api/auth/password-reset/confirm {token, newPassword, confirmPassword}
-RLF -> AUC: até 20/h por IP · teto de hashes
-AUC -> IS: confirmPasswordReset(token, newPassword, confirm)
-alt token inexistente, usado ou vencido
-  IS --> FE: 400 LINK_INVALIDO
-else nova senha inválida
-  IS --> FE: 400 FORMULARIO_INVALIDO
-else
-  IS -> DB: users.passwordHash · consome os links · revoga TODAS as famílias · audit_log TROCA_SENHA
-  IS -> RL: reset(userId, "login-fail") — sai do bloqueio
-  AUC --> FE: 204
-end
+IdentityService -> DB_MySQL : SELECT refresh_tokens
+IdentityService -> IdentityService : revokedAt = set
+IdentityService -> Audit : log()
+deactivate IdentityService
+IdentityService --> AuthController : resultado
+AuthController --> P : 200 JSON
+P --> U : atualiza a tela
 @enduml

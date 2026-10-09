@@ -1,13 +1,17 @@
 "use client";
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, mediaUrl } from "@/lib/api/client";
-import type { Counters, UserCard, ViewerState } from "@/lib/api/types";
+import { ApiError, api, mediaUrl } from "@/lib/api/client";
+import type { Counters, PieceView, SchemeView, UserCard, ViewerState } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
-import { Avatar, Button, Dialog, Textarea, useToast } from "@/components/ui";
+import { Avatar, Button, Dialog, Skeleton, Textarea, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
+// ciclo de módulos (piece-card e scheme-card usam CardActions daqui): seguro, os componentes são declarações de função
+// e só são usados na renderização
+import { PieceCard } from "@/components/piece-card";
+import { SchemeCard } from "@/components/scheme-card";
 
 type TargetType = "SCHEME" | "PIECE" | "COMMENT" | "DNA_SCHEME";
 interface Comment { id: string; author?: UserCard; user?: UserCard; content: string; createdAt: string; parentId?: string | null; parentCommentId?: string | null; replies?: Comment[]; canDelete?: boolean; }
@@ -20,25 +24,90 @@ export function InteractionBar({ type, id, counters, viewer, ownerId, title }: {
   return <CardActions type={type} id={id} counters={counters} viewer={viewer} ownerId={ownerId} title={title} reactions />;
 }
 
-/** Compartilhar (RF19): copiar o link ou publicar no feed, com legenda opcional. */
+/** Tipo do alvo na API: o DNA de estilo é DNA lá (no app, DNA_SCHEME); antes toda interação do DNA voltava 400. */
+export const interactionType = (type: TargetType) => (type === "DNA_SCHEME" ? "DNA" : type);
+/** Página do conteúdo no app (é o link copiado). */
+const contentPath = (type: TargetType, id: string) => `/${type === "PIECE" ? "pieces" : type === "DNA_SCHEME" ? "dna-schemes" : "schemes"}/${id}`;
+
+
+/**
+ * Prévia do post (pedido de 07/10): no FashionAI o post é o próprio card — sem descrição, diferente de outras redes — com
+ * "@você compartilhou" em cima, exatamente como sai no Feed e na Passarela. O card da prévia não tem ações (href="#").
+ */
+function SharePostPreview({ type, id }: { type: TargetType; id: string }) {
+  const { t } = useI18n(); const { user } = useAuth();
+  const path = type === "PIECE" ? `/api/pieces/${id}` : type === "SCHEME" ? `/api/schemes/${id}` : null;
+  const { data, error } = useApi<{ piece?: PieceView; scheme?: SchemeView }>((signal) => api.get(path!, { signal }), [path], { enabled: !!path });
+  if (!path || error) return null;
+  const note = user ? <span className="caption">{t("feed.shared_by", { username: user.username })}</span> : undefined;
+  return (
+    <figure className="share-post" aria-label={t("interactions.post_preview")}>
+      <figcaption className="label">{t("interactions.post_preview")}</figcaption>
+      {!data ? <Skeleton className="h-64" />
+        : data.piece ? <PieceCard piece={data.piece} href="#" flip={false} extra={note} />
+        : data.scheme ? <SchemeCard scheme={data.scheme} href="#" flip={false} extra={note} /> : null}
+    </figure>
+  );
+}
+
+/**
+ * Compartilhar (RF19.CA08/CA09). A ação principal cria um post no feed social do FashionAI (Feed da comunidade e
+ * Passarela de quem segue): o post é o próprio card, sem descrição, e o diálogo mostra a prévia dele. Se o conteúdo é
+ * meu e está privado, ninguém mais veria o post: o diálogo avisa e pede "Tornar público e publicar". Copiar o link
+ * registra o compartilhamento e copia o link que a API confirma; o ClipboardItem com promessa copia dentro do toque
+ * mesmo esperando a rede (o Safari recusa writeText depois de um await). Sem permissão de área de transferência, o link
+ * aparece selecionado para copiar à mão.
+ */
 export function ShareDialog({ type, id, open, onClose, onShared }: { type: TargetType; id: string; open: boolean; onClose: () => void; onShared?: () => void }) {
   const { t } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
-  const [caption, setCaption] = useState("");
-  async function doShare(channel: string) {
+  const [busy, setBusy] = useState<"" | "FEED" | "EXTERNAL">("");
+  const [needsPublish, setNeedsPublish] = useState(false);
+  const [manualLink, setManualLink] = useState<string | null>(null);
+  useEffect(() => { if (!open) { setNeedsPublish(false); setManualLink(null); } }, [open]);
+  const endpoint = `/api/interactions/${interactionType(type)}/${id}/shares`;
+  const absolute = (path: string) => (path.startsWith("/") ? `${window.location.origin}${path}` : path);
+  const done = (message: string) => { toast.success(message); onClose(); onShared?.(); };
+
+  async function toFeed(publish = false) {
     if (!user) { router.push("/login"); return; }
+    if (busy) return; setBusy("FEED");
     try {
-      const r = await api.post<{ url?: string; link?: string }>(`/api/interactions/${type}/${id}/shares`, { channel, caption });
-      // a API devolve o caminho no app (/pieces/…, /schemes/…, /dna-schemes/…): o link copiado leva o domínio
-      const path = r.url ?? r.link ?? `/${type === "PIECE" ? "pieces" : type === "DNA_SCHEME" ? "dna-schemes" : "schemes"}/${id}`;
-      const url = path.startsWith("/") ? `${window.location.origin}${path}` : path;
-      if (channel === "EXTERNAL") { await navigator.clipboard.writeText(url); toast.success(t("common.copied")); } else toast.success(t("interactions.sharedToFeed"));
-      onClose(); onShared?.();
-    } catch (e) { toast.fromError(e); }
+      await api.post(endpoint, { channel: "FEED", ...(publish ? { publish: true } : {}) });
+      done(t(publish ? "interactions.publishedAndShared" : "interactions.sharedToFeed"));
+    } catch (e) {
+      if (e instanceof ApiError && e.code === "PUBLICAR_PARA_COMPARTILHAR") setNeedsPublish(true); else toast.fromError(e);
+    } finally { setBusy(""); }
   }
+
+  async function copyLink() {
+    if (!user) { router.push("/login"); return; }
+    if (busy) return; setBusy("EXTERNAL");
+    const link = api.post<{ url?: string; link?: string }>(endpoint, { channel: "EXTERNAL" }).then((r) => absolute(r.url ?? r.link ?? contentPath(type, id)));
+    try {
+      try {
+        if (typeof ClipboardItem === "undefined" || !navigator.clipboard?.write) throw new Error("clipboard-item");
+        await navigator.clipboard.write([new ClipboardItem({ "text/plain": link.then((u) => new Blob([u], { type: "text/plain" })) })]);
+      } catch {
+        const url = await link;   // erro da API (conteúdo indisponível, sessão) sobe daqui para o aviso
+        try { await navigator.clipboard.writeText(url); } catch { setManualLink(url); onShared?.(); return; }
+      }
+      done(t("common.copied"));
+    } catch (e) { toast.fromError(e); } finally { setBusy(""); }
+  }
+
   return (
-    <Dialog open={open} onClose={onClose} title={t("common.share")} footer={<><Button onClick={() => doShare("EXTERNAL")}>{t("interactions.copyLink")}</Button><Button variant="primary" onClick={() => doShare("FEED")}>{t("interactions.shareToFeed")}</Button></>}>
-      <label htmlFor={`share-caption-${id}`} className="label">{t("interactions.legenda_opcional")}</label>
-      <Textarea id={`share-caption-${id}`} value={caption} onChange={(e) => setCaption(e.target.value)} maxLength={200} />
+    <Dialog open={open} onClose={onClose} title={t("common.share")} footer={needsPublish
+      ? <><Button onClick={() => setNeedsPublish(false)}>{t("common.cancel")}</Button><Button variant="primary" loading={busy === "FEED"} onClick={() => toFeed(true)}>{t("interactions.publishAndShare")}</Button></>
+      : <><Button loading={busy === "EXTERNAL"} onClick={copyLink}>{t("interactions.copyLink")}</Button><Button variant="primary" loading={busy === "FEED"} onClick={() => toFeed()}>{t("interactions.shareToFeed")}</Button></>}>
+      {open && <SharePostPreview type={type} id={id} />}
+      <p className="type-caption text-muted mt-2">{t("interactions.share_feed_hint")}</p>
+      {needsPublish && <p role="alert" className="type-body-sm mt-3">{t("interactions.share_private")}</p>}
+      {manualLink && (
+        <div className="mt-3">
+          <label htmlFor={`share-link-${id}`} className="label">{t("interactions.copy_manual")}</label>
+          <input id={`share-link-${id}`} className="input" readOnly value={manualLink} autoFocus onFocus={(e) => e.currentTarget.select()} />
+        </div>
+      )}
     </Dialog>
   );
 }
@@ -122,8 +191,10 @@ export function useRemix(type: TargetType, id: string) {
     if (!user) { router.push("/login"); return; }
     if (busy) return; setBusy(true);
     try {
-      const r = await api.post<{ scheme?: { id: string }; id?: string; next?: string; hint?: string }>(`/api/interactions/${type}/${id}/remixes`);
-      if (type === "PIECE") { if (r.hint) toast.success(r.hint); router.push(r.next?.startsWith("/") ? r.next : `/schemes/new?pieces=${id}`); return; }
+      const r = await api.post<{ scheme?: { id: string }; id?: string; next?: string; hint?: string; seedPieceId?: string }>(`/api/interactions/${interactionType(type)}/${id}/remixes`);
+      // a peça vira semente do criador de looks (/schemes/new?pieces=); só segue o `next` da API quando ele já aponta
+      // para o criador — versões antigas da API devolviam /create-look?seedPiece=, rota que o app não tem (404)
+      if (type === "PIECE") { if (r.hint) toast.success(r.hint); router.push(r.next?.startsWith("/schemes/new") ? r.next : `/schemes/new?pieces=${encodeURIComponent(r.seedPieceId ?? id)}`); return; }
       toast.success(t("interactions.remixDone")); const nid = r.scheme?.id ?? r.id; if (nid) router.push(`/schemes/${nid}`);
     } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
@@ -148,7 +219,7 @@ export function CardActions({ type, id, counters, viewer, title, compact, extra,
   const [comments, setComments] = useState(false); const [share, setShare] = useState(false);
   useEffect(() => { setLiked(!!viewer?.liked); setLikes(counters?.likes ?? 0); setSaved(!!viewer?.saved); }, [viewer?.liked, counters?.likes, viewer?.saved]);
   useEffect(() => { setMine3(viewer?.reactions ?? []); setRx(counters?.reactions ?? {}); }, [JSON.stringify(viewer?.reactions), JSON.stringify(counters?.reactions)]); // eslint-disable-line react-hooks/exhaustive-deps
-  const base = `/api/interactions/${type}/${id}`;
+  const base = `/api/interactions/${interactionType(type)}/${id}`;
   const guard = () => { if (!user) { router.push("/login"); return false; } return true; };
   // uma requisição por ação de cada vez: enquanto curtir/salvar está a caminho, novos toques são ignorados (sem pedidos
   // duplicados nem contagem que anda duas vezes); se o servidor recusar, o estado e a contagem voltam e aparece o erro
@@ -172,11 +243,12 @@ export function CardActions({ type, id, counters, viewer, title, compact, extra,
   const n = (v: number) => fmtNumber(v, { notation: "compact", maximumFractionDigits: compact ? 0 : 1 });
   // forma curta ("12 mil" no lugar de "12,3 mil"): o detalhe estreito troca por ela via CSS para a linha única caber
   const nShort = (v: number) => fmtNumber(v, { notation: "compact", maximumFractionDigits: 0 });
-  const commentsN = counters?.comments ?? 0, sharesN = counters?.shares ?? 0, remixesN = counters?.remixes ?? 0;
+  const [sharedNow, setSharedNow] = useState(0);   // compartilhamentos feitos agora (a contagem sobe na hora)
+  const commentsN = counters?.comments ?? 0, sharesN = (counters?.shares ?? 0) + sharedNow, remixesN = counters?.remixes ?? 0;
   // remixar (RF19.CA13) fica na linha: na peça sempre (card compacto e detalhe; a dona também remixa, a peça vira
-  // semente de um look novo); no look só no detalhe e para quem não publicou (não se remixa o próprio look)
+  // semente de um look novo); no look, no card e no detalhe, para quem não publicou (não se remixa o próprio look)
   const { remix, busy: remixing } = useRemix(type === "DNA_SCHEME" ? "SCHEME" : type, id);
-  const canRemix = type === "PIECE" || (!!reactions && type === "SCHEME" && !(user && ownerId && user.id === ownerId));
+  const canRemix = type === "PIECE" || (type === "SCHEME" && !(user && ownerId && user.id === ownerId));
   // hideZero: remixar e reações sem nenhuma contagem mostram só o ícone (a linha única cabe no celular)
   const act = (key: string, icon: SocialIconName, label: string, onClick: () => void, opts: { pressed?: boolean; count?: number; haspopup?: boolean; busy?: boolean; hideZero?: boolean; className?: string } = {}) => (
     <button key={key} type="button" className={`c-act is-${key} ${opts.className ?? ""}`} aria-pressed={opts.pressed} aria-busy={busy[key] || opts.busy || undefined} aria-haspopup={opts.haspopup ? "dialog" : undefined} aria-label={label} title={label}
@@ -206,7 +278,7 @@ export function CardActions({ type, id, counters, viewer, title, compact, extra,
       </div>
       {reactions && !preview && !canRemix && remixesN > 0 && <p className="c-remixes type-caption text-muted tabular">{t("interactions.count.remixes", { count: remixesN })}</p>}
       {!preview && <CommentsDialog type={type} id={id} open={comments} onClose={() => setComments(false)} title={title} />}
-      {!preview && <ShareDialog type={type} id={id} open={share} onClose={() => setShare(false)} />}
+      {!preview && <ShareDialog type={type} id={id} open={share} onClose={() => setShare(false)} onShared={() => setSharedNow((n) => n + 1)} />}
     </div>
   );
 }
@@ -241,11 +313,11 @@ export function CommentButton({ type, id, count, title, className }: { type: Tar
 function CommentsPanel({ type, id }: { type: TargetType; id: string }) {
   const { t, relative } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
   const [content, setContent] = useState(""); const [parentId, setParentId] = useState<string | null>(null);
-  const { data, loading, reload } = useApi<Comment[]>((signal) => api.get(`/api/interactions/${type}/${id}/comments`, { signal, anonymous: !user }), [type, id, !!user]);
+  const { data, loading, reload } = useApi<Comment[]>((signal) => api.get(`/api/interactions/${interactionType(type)}/${id}/comments`, { signal, anonymous: !user }), [type, id, !!user]);
   async function send() {
     if (!user) { router.push("/login"); return; }
     if (!content.trim()) return;
-    try { await api.post(`/api/interactions/${type}/${id}/comments`, { content, parentId }); setContent(""); setParentId(null); reload(); } catch (e) { toast.fromError(e); }
+    try { await api.post(`/api/interactions/${interactionType(type)}/${id}/comments`, { content, parentId }); setContent(""); setParentId(null); reload(); } catch (e) { toast.fromError(e); }
   }
   async function remove(cid: string) { try { await api.delete(`/api/comments/${cid}`); reload(); } catch (e) { toast.fromError(e); } }
   // A API devolve lista plana com parentCommentId: monta a árvore (respostas aninhadas sob o comentário de origem).

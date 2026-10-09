@@ -1,9 +1,16 @@
 @startuml RF31_Atividades
-title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de atividades
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,42 +19,41 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Usuário|
+title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Closet → filtro (Todas, Favoritas,\nDisponíveis, Indisponíveis, À venda);
-:Opcional: faixa mínima de Hype (hypeLevel) e ordenação\n(recent · hype_desc · hype_asc · growth · rarity\n· worn · least_worn · idle · name · price);
-note right
-  novo (RF53 · HypeScore v2): hype-filters.ts
-  (hypeSortOptions · hypeLevelFilter); antes a tela
-  mandava mais_usadas/nome/preco e a ordem era ignorada
-end note
-|Sistema (WardrobeService)|
-:GET /api/me/closet → closet(viewer, ownerId, ClosetFilter);\nSORT_ALIASES normaliza o sort (mais_usadas → worn, nome → name…);
-if (sort em HYPE_SORTS ou hypeLevel informado?) then (sim)
-  :Lê hype_scores das peças (HypeScoreCurrentRepository,\nalgorithmVersion do HypeScoreConfig);
-  :hypeLevel: tira peças abaixo do score mínimo da faixa\n(e as sem Hype); ordenação Hype: sem Hype por último;
+:Abre a tela do RF;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/users/{ownerId}/closet\nGET /api/me/closet\nGET /api/pieces/{id}\nGET /api/pieces/{id}/deletion-impact;
+|Pessoa usuária|
+:Favoritar, marcar\ndisponível/indisponível, à venda ou\npara…;
+|Tela (Next.js)|
+:PATCH /api/pieces/{id}/flags;
+|API (Spring Boot)|
+:WardrobeController.flags\n→ WardrobeService.toggles;
+|Dados e serviços|
+:Monta a resposta;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Editar a peça)
+    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
+  case (Registrar uso da peça hoje)
+    :POST /api/pieces/{id}/worn\n→ WardrobeService.markWorn\nlê: wardrobe_items, reactions\nusa: Guard.requireOwner\nevento: PieceWorn;
+  case (Excluir a peça)
+    :DELETE /api/pieces/{id}\n→ WardrobeService.delete\nlê: wardrobe_items, scheme_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.removePiece …\nestado: availabilityStatus → ARCHIVED, disponivel →\nfalse, visibility → PRIVATE;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-:Lista as peças do filtro;
-|Usuário|
-:Abre uma peça e muda o estado;
-|Sistema (WardrobeService)|
-:Atualiza as flags da peça\n(favorita, disponível, à venda);
-if (Disponibilidade mudou?) then (sim)
-  :Publica AvailabilityChanged;
-  |Sistema (WardrobeEventListeners)|
-  :Após o commit, registra a mudança\n(histórico usado no Inventory Score);
-endif
-:Reflete no Meu Quarto\n(cesto, cabide especial, arara de venda)\ne no Smart Mirror (não sugere indisponível);
+|Pessoa usuária|
 stop
 @enduml

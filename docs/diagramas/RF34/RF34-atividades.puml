@@ -1,9 +1,16 @@
 @startuml RF34_Atividades
-title RF34 — Explorar as "Eras" de uma celebridade: busca por era, Insights de Eras e My Stage 3D\nDiagrama de atividades
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,41 +19,46 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Visitante|
+title RF34 — Explorar as 'Eras' de uma celebridade: busca por era, Insights de Eras e My Stage 3D\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre o perfil da celebridade (RF22) → aba "Eras";
-|Sistema (ShowcaseService)|
-:Lista as eras (agrupamentos type=ERA)\ncom foto, período e contagem;
-|Visitante|
-split
-  :Busca por era, texto e ano;
-  |Sistema (ShowcaseService)|
-  :Esquemas e peças da era;
-split again
-  |Visitante|
-  :"Insights de Eras";
-  |Sistema (ShowcaseService)|
-  :Ranking das eras (hype, looks, salvamentos)\nem palcos 2D;
-split again
-  |Visitante|
-  :My Stage 3D;
-  |Sistema (ShowcaseService)|
-  :Foto da celebridade no manequim, no palco 3D;
-end split
-|Celebridade (dona)|
-:Cria/edita era, adiciona looks\ne envia a foto da era;
-|Sistema (LookbookService)|
-:Salva o agrupamento e os itens;
+:Abre /brands/[slug];
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/institutional/{slug}/stage\nGET /api/institutional/{slug}/showcase/{kind}/items\nGET /api/institutional/{slug}/showcase/{kind}/insights;
+|Pessoa usuária|
+:eras da celebridade (kind=eras) ou\ncoleções da marca (kind=…;
+|Tela (Next.js)|
+:GET /api/institutional/{slug}/showcase/{kind};
+|API (Spring Boot)|
+:ShowcaseController.list\n→ ShowcaseService.list;
+if (Eras [só perfis de celebridade] não enc…?) then (sim)
+  :404 NAO_ENCONTRADO\n«Eras (só perfis de celebridade)\nnão encontrado(a)»\n→ a tela mostra o aviso;
+  stop
+endif
+if (Coleções [só perfis de marca] não encon…?) then (sim)
+  :404 NAO_ENCONTRADO\n«Coleções (só perfis de marca) não\nencontrado(a)»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: schemes\nwardrobe_items\nscheme_groupings;
+:Usa: InstitutionalService.institutionalUser\nSchemeService.canView\nGuard.canView;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Foto da era ou arte da coleção [h…)
+    :POST /api/groupings/{id}/cover\n→ ShowcaseService.groupingCover\nlê: scheme_groupings\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.put\nestado: coverUrl → set;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

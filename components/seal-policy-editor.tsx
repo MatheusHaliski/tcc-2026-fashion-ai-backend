@@ -3,8 +3,9 @@ import { Button, ChipMultiSelect, Dropdown, Field, Input, SegmentPicker } from "
 import { CATEGORY_KEYS, label, useTaxonomy, subcategoryLabel } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
 import { tr } from "@/lib/i18n/core";
-import { LEVELS } from "@/lib/hype/model";
-import type { HypeLevel, HypeMomentum } from "@/lib/hype/types";
+import { DIMENSION_ORDER, LEVELS } from "@/lib/hype/model";
+import type { HypeDimension, HypeLevel, HypeMomentum } from "@/lib/hype/types";
+import type { SealReferenceModel } from "@/lib/seals/reference-model";
 
 /**
  * RF25 — política padronizada do selo. No lugar de um texto livre separado por vírgulas, o emissor monta regras que o
@@ -20,12 +21,12 @@ export type SealQuantifier = "AT_LEAST" | "ALL" | "NONE";
 export interface SealRule { quantifier: SealQuantifier; count?: number | null; color?: string | null; brand?: string | null; category?: string | null; subcategory?: string | null;
   /** RF53 — a peça só passa no filtro com Hype atual ≥ esse nível */ hypeMin?: HypeLevel | null }
 /** RF53 — critério de Hype da entidade avaliada: nível e score juntos = os dois precisam valer; momento = qualquer um da lista. */
-export interface SealHypeCriteria { minLevel?: HypeLevel | null; minScore?: number | null; momentum?: HypeMomentum[] | null }
-export interface SealPolicy { match: "ALL" | "ANY"; rules: SealRule[]; occasions: string[]; styles: string[]; hype?: SealHypeCriteria | null }
+export interface SealHypeCriteria { minLevel?: HypeLevel | null; minScore?: number | null; momentum?: HypeMomentum[] | null; dimensionMins?: Partial<Record<HypeDimension, number>> }
+export interface SealPolicy { match: "ALL" | "ANY"; rules: SealRule[]; occasions: string[]; styles: string[]; mode?: "HYPE"; hype?: SealHypeCriteria | null; referenceModel?: SealReferenceModel; aiInferenceId?: string }
 export const EMPTY_POLICY: SealPolicy = { match: "ALL", rules: [], occasions: [], styles: [] };
 export const MAX_RULES = 6;
 export const MAX_SEAL_TAGS = 4;
-export type SealTierId = "LOOK" | "PECA";
+export type SealTierId = "PERFIL" | "LOOK" | "PECA";
 /** Momentos oferecidos no editor (o backend aceita os 5 do HypeMomentum, até 3 por política). */
 export const HYPE_MOMENTUM_CHOICES: HypeMomentum[] = ["RISING", "EMERGING", "CLASSIC"];
 const MOMENTUMS: HypeMomentum[] = ["EMERGING", "RISING", "STABLE", "COOLING", "CLASSIC"];
@@ -44,8 +45,12 @@ export function cleanHype(h: SealHypeCriteria | null | undefined): SealHypeCrite
   const n = h.minScore == null ? NaN : Number(h.minScore);
   const minScore = Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n))) : null;
   const momentum = [...new Set(h.momentum ?? [])].filter((m) => MOMENTUMS.includes(m)).slice(0, MAX_HYPE_MOMENTUM);
-  if (!minLevel && minScore == null && !momentum.length) return null;
-  return { minLevel, minScore, momentum };
+  const dimensionMins = Object.fromEntries(DIMENSION_ORDER.flatMap((dimension) => {
+    const value = h.dimensionMins?.[dimension];
+    return value != null && Number.isFinite(Number(value)) ? [[dimension, Math.min(100, Math.max(0, Math.round(Number(value))))]] : [];
+  })) as Partial<Record<HypeDimension, number>>;
+  if (!minLevel && minScore == null && !momentum.length && !Object.keys(dimensionMins).length) return null;
+  return { minLevel, minScore, momentum, ...(Object.keys(dimensionMins).length ? { dimensionMins } : {}) };
 }
 
 /** Regra sem filtro nenhum não diz nada: some do envio (o backend faz o mesmo). Política só com Hype é válida. */
@@ -55,8 +60,10 @@ export function cleanPolicy(p: SealPolicy | null | undefined): SealPolicy | null
     .map((r) => ({ quantifier: r.quantifier, count: r.quantifier === "AT_LEAST" ? Math.min(4, Math.max(1, r.count ?? 1)) : null, color: r.color || null, brand: r.brand?.trim() || null, category: r.category || null, subcategory: r.subcategory || null,
       ...(isLevel(r.hypeMin) ? { hypeMin: r.hypeMin } : {}) }));
   const hype = cleanHype(p.hype);
-  if (!rules.length && !p.occasions.length && !p.styles.length && !hype) return null;
-  return { match: p.match, rules, occasions: p.occasions, styles: p.styles, ...(hype ? { hype } : {}) };
+  // A modalidade Hype tem critérios próprios: não reaproveita referências inferidas do Copilot.
+  if (p.mode === "HYPE") return hype ? { mode: "HYPE", match: "ALL", rules: [], occasions: [], styles: [], hype } : null;
+  if (!rules.length && !p.occasions.length && !p.styles.length && !hype && !p.referenceModel) return null;
+  return { match: p.match, rules, occasions: p.occasions, styles: p.styles, ...(hype ? { hype } : {}), ...(p.referenceModel ? { referenceModel: p.referenceModel } : {}), ...(p.aiInferenceId ? { aiInferenceId: p.aiInferenceId } : {}) };
 }
 
 function pieceWords(r: SealRule): string {
@@ -93,11 +100,14 @@ export function describeRule(r: SealRule, tier: SealTierId): string {
 
 /** A frase inteira da política (mesma do backend). */
 export function describePolicy(p: SealPolicy | null, tier: SealTierId): string {
+  if (p?.referenceModel) return p.referenceModel.description;
   const c = cleanPolicy(p);
   if (!c) return "";
   const rules = c.rules.map((r) => describeRule(r, tier)).join(c.match === "ANY" ? tr("sealPolicy.ou") : tr("sealPolicy.e"));
   // RF53: as regras e o Hype da entidade numa frase só ("ao menos 2 peças … com Hype ≥ Em alta; look com Hype ≥ 60 …")
-  const head = [rules, describeHype(c.hype, tier)].filter(Boolean).join(tr("sealPolicy.hype.separador"));
+  const dimensions = DIMENSION_ORDER.filter((dimension) => c.hype?.dimensionMins?.[dimension] != null)
+    .map((dimension) => tr("sealHypeIssuer.metric_criterion", { metric: tr(`hype.dimension.${dimension}`), min: c.hype!.dimensionMins![dimension]! })).join(tr("sealPolicy.e"));
+  const head = [rules, describeHype(c.hype, tier), dimensions].filter(Boolean).join(tr("sealPolicy.hype.separador"));
   const tags = [c.occasions.length ? tr("sealPolicy.ocasioes", { v: c.occasions.map(label).join(", ") }) : "", c.styles.length ? tr("sealPolicy.estilos", { v: c.styles.map(label).join(", ") }) : ""].filter(Boolean).join(" · ");
   return [head, tags].filter(Boolean).join(" · ");
 }

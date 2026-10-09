@@ -1,80 +1,37 @@
 @startuml RF24_MaquinaDeEstados_Inferencia
 !pragma layout smetana
-title RF24 — Usar a IA do sistema\nDiagrama de máquina de estados — uma inferência no AiEngine e o resultado gravado em ai_inference_log (AiCallResult)
 skinparam backgroundColor #FFFFFF
-skinparam state {
-  BackgroundColor #F8F4FF
-  BorderColor #B695F5
-  FontColor #2D2438
-  ArrowColor #52606D
-}
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
 skinparam note {
   BackgroundColor #FFFDEB
   BorderColor #D8CE78
   FontColor #554F24
 }
-state "Pedida\n(text / execute / local)" as Pedida
-state "Funil de governança" as Funil {
-  state "Validando prompt\n(CelebrityPromptValidator)" as Prompt
-  state "Checando escopo\n(inScope · flag rf16-3d)" as Escopo
-  state "Lendo consentimento\n(consentState)" as Consent
-  state "Checando provedores\n(remoteEnabled · available())" as Disp
-  state "Teto em US$\n(AiBudget.check)" as Teto
-  state "Cota diária\n(RateLimitPort, balde ai:CAPACIDADE)" as Cota
-  [*] --> Prompt
-  Prompt --> Escopo : aceito ou sem validação
-  Escopo --> Consent : em escopo
-  Consent --> Disp
-  Disp --> Teto : algum disponível e\nconsentState ≠ NEGADO
-  Teto --> Cota : OK (userId presente)
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "Chamando provedor\n(RemoteStep atual)" as Remoto
-state "Falha registrada\n(TIMEOUT · CIRCUIT_OPEN ·\nRATE_LIMITED · ERROR)" as Falha
-state "PROMPT_REJECTED" as PR
-state "CONSENT_DENIED" as CD
-state "RATE_LIMITED\n(local)" as RL
-state "FALLBACK_LOCAL" as FL
-state "SUCCESS\n(provedor remoto)" as OK
-state "SUCCESS\n(provider = local)" as OKL
+title RF24 — ciclo de vida de AiInferenceLog.result\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum AiCallResult · tabela ai_inference_log
 
-[*] --> Pedida : serviço hospedeiro chama o AiEngine
-Pedida --> OKL : local(engine)\n(motor local primário)
-Pedida --> Funil : text(TextCall) → execute(RemoteSteps)
-Prompt --> PR : prompt cita nome protegido\n→ 422 PROMPT_REJEITADO
-Escopo --> FL : fora de escopo
-Disp --> FL : remoto desligado ou\nnenhum provedor disponível
-Disp --> CD : consentState = NEGADO
-Teto --> RL : USER_EXHAUSTED
-Teto --> FL : GLOBAL_EXHAUSTED
-Teto --> Remoto : OK sem userId (sistema/job)
-Cota --> RL : cota esgotada\n(Quota limit/used/resetAt)
-Cota --> Remoto : vaga reservada (tryAcquire)
-Remoto --> OK : resposta dentro do contrato
-Remoto --> Falha : exceção / parser nulo
-Falha --> Remoto : próximo RemoteStep disponível\n(alternativo)
-Falha --> FL : acabaram os provedores
-
-OK --> [*]
-OKL --> [*]
-FL --> [*]
-CD --> [*]
-RL --> [*]
-PR --> [*]
-
-note right of OK
-  Cada estado final grava UMA linha em
-  ai_inference_log (+ audit_log CHAMADA_IA);
-  cada falha remota grava a sua linha
-  (fallbackUsed = true).
-end note
-note bottom of FL
-  Valor vem do fallback local (ai.local) e o
-  RF hospedeiro segue funcionando (RNF8);
-  AiOutcome leva fallbackUsed e a explicação.
-end note
-note left of CD
-  Consentimento é gerido no RF23
-  (PUT /api/me/consents/{purpose})
-  e pode ser revogado a qualquer momento.
+state "AiInferenceLog.result" as Ciclo_AiInferenceLog {
+  state Ciclo_AiInferenceLog_SUCCESS as "SUCCESS"
+  state Ciclo_AiInferenceLog_FALLBACK_LOCAL as "FALLBACK_LOCAL"
+  state Ciclo_AiInferenceLog_TIMEOUT as "TIMEOUT"
+  state Ciclo_AiInferenceLog_CIRCUIT_OPEN as "CIRCUIT_OPEN"
+  state Ciclo_AiInferenceLog_RATE_LIMITED as "RATE_LIMITED"
+  state Ciclo_AiInferenceLog_CONSENT_DENIED as "CONSENT_DENIED"
+  state Ciclo_AiInferenceLog_PROMPT_REJECTED as "PROMPT_REJECTED"
+  state Ciclo_AiInferenceLog_ERROR as "ERROR"
+}
+note bottom of Ciclo_AiInferenceLog
+  Recebe o valor escolhido em: execute(result), local(result), localOutcome(result), record(result), text(resu…
 end note
 @enduml

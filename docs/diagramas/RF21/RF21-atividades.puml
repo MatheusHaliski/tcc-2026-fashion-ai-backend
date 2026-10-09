@@ -1,9 +1,16 @@
 @startuml RF21_Atividades
-title RF21 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma celebridade\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,73 +19,77 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Usuário|
+title RF21 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma celebridade\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Cria o look em /schemes/new (RF5);
-|Frontend (scheme-builder.tsx)|
-:POST /api/seal-suggestions/preview\n{pieceIds, occasion, style};
-|Backend (SealService)|
-:SealBond Matcher (SEALBOND_MATCHER): Similarity.of(look)\n× styleSignatureJson da celebridade (CA17);
+:Abre /schemes/new, /brands/[slug];
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/schemes/{schemeId}/seal-suggestions\nGET /api/me/seals\nGET /api/seal-bonds/review-queue;
+|Pessoa usuária|
+:Vincular manualmente o esquema a uma\nmarca/celebridade;
+|Tela (Next.js)|
+:POST /api/schemes/{schemeId}/seal-bonds;
+|API (Spring Boot)|
+:SealController.link\n→ SealService.linkManually;
+if (perfil inválido?) then (sim)
+  :400 PERFIL_INVALIDO\n«Só marcas e celebridades\ncadastradas concedem selos.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (marca não validada?) then (sim)
+  :400 MARCA_NAO_VALIDADA\n«Somente marcas com perfil validado\npodem conceder selos.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (celebridade não verificada?) then (sim)
+  :400 CELEBRIDADE_NAO_VERIFICADA\n«Somente celebridades verificadas\nconcedem Selo Premium.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (vinculo existente?) then (sim)
+  :409 VINCULO_EXISTENTE\n«Este esquema já tem vínculo com\neste perfil.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (vinculo existente?) then (sim)
+  :409 VINCULO_EXISTENTE\n«Este esquema já tem vínculo com\neste perfil.»\n→ a tela mostra o aviso;
+  stop
+endif
 note right
-  Diferença do RF20: base STYLE_SIGNATURE
-  (estilos, cores, tipos de peça, ocasiões, era),
-  não a marca da peça
+  e mais 2 validações:
+  CONSENTIMENTO_IMAGEM, SealUnavailable
 end note
-:Só CelebrityProfile com verificationStatus APROVADO (CA18)\ne sealConsentGranted (CA19);
-:Confiança 0,3 + similaridade; descarta abaixo\nde sealConfidenceThreshold; eraLabel na justificativa;
-|Frontend (scheme-builder.tsx)|
-if (Há celebridade sugerida?) then (não)
-  :Look segue sem vínculo (CA05);
-else (sim)
-  |Usuário|
-  :Marca a celebridade e confirma o\nconsentimento de direito de imagem;
+|Dados e serviços|
+:Lê: schemes\nusers\nscheme_items\nseal_bonds\nseals\nbrand_profiles;
+:Usa: Guard.requireCanCreate\nGuard.requireOwner\nNotificationService.notify;
+:Grava: seal_bonds;
+:Estado: origin → MANUAL\nstatus → EDITED\nimageRightsConsent → ?imageRightsConsent\nrespondedAt → set\nrequiresReview → ?requiresReview\nstatus → PENDING_REVIEW (+4);
+:Evento: CouponRightsCheck;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Selos possíveis para um look aind…)
+    :POST /api/seal-suggestions/preview\n→ SealService.preview\nlê: wardrobe_items\nia: SEALBOND_MATCHER;
+  case (Aceitar sugestão de vínculo [com…)
+    :POST /api/seal-bonds/{bondId}/accept\n→ SealService.accept\nvalida: CONSENTIMENTO_IMAGEM, ESTADO_INVALIDO,\nSealUnavailable, VINCULO_EXISTENTE\nlê: seal_bonds, seals, scheme_items …\nusa: Guard.requireCanCreate, Guard.requireOwner,\nNotificationService.notify\nestado: status → ACCEPTED, imageRightsConsent →\n?imageRightsConsent, respondedAt → set …;
+  case (Recusar todas as sugestões do esq…)
+    :POST /api/schemes/{schemeId}/seal-bonds/refuse-all\n→ SealService.refuseAll\nlê: seal_bonds\nestado: status → REFUSED, respondedAt → set;
+  case (Recusar sugestão de vínculo)
+    :POST /api/seal-bonds/{bondId}/refuse\n→ SealService.refuse\nvalida: ESTADO_INVALIDO\nlê: seal_bonds, brand_profiles\nusa: Guard.requireOwner\nestado: status → REFUSED, respondedAt → set;
+  case (Emissor aprova ou rejeita o víncu…)
+    :POST /api/seal-bonds/{bondId}/review\n→ SealService.review\nvalida: ESTADO_INVALIDO, MOTIVO_OBRIGATORIO\nlê: seal_bonds, brand_profiles\nusa: Guard.requireApprovedInstitutional,\nGuard.requireOwner,\nNotificationService.notify\nestado: revalidationPending → false, status →\nAPPROVED, reviewedAt → set …;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Criar promoção/benefício liga…, Editar promoção
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-:Salva o look — POST /api/schemes;
-|Frontend (scheme-builder.tsx)|
-:POST /api/schemes/{id}/seal-bonds\n{targetOwnerId, imageRightsConsent};
-|Backend (SealService)|
-if (Celebridade não VERIFICADA?) then (sim)
-  #FFE3E3:400 CELEBRIDADE_NAO_VERIFICADA (CA18);
-  stop
-else (não)
-endif
-:SealBond origin=MANUAL, status=EDITED,\nbasis=STYLE_SIGNATURE;
-if (imageRightsConsent == true?) then (não)
-  #FFE3E3:400 CONSENTIMENTO_IMAGEM (CA19);
-  stop
-else (sim)
-endif
-:route(): Seal ATIVO do tier\n(Seal.premium = true — Selo Premium, CA20);
-if (Selo fora da janela ou usageCount = usageLimit?) then (sim)
-  #FFE3E3:REJECTED "RECUSADO_LIMITE" +\n409 SELO_INDISPONIVEL — teto da campanha (CA23);
-  stop
-else (não)
-endif
-:Celebridade SEMPRE revisa: PENDING_REVIEW\n+ notify(SEAL_BOND_REVIEW) (auto-aprovação bloqueada);
-note right: diferença do RF20: não existe\nauto-aprovação para celebridade
-|Celebridade|
-:brands/[slug] → aba Revisão\nGET /api/seal-bonds/review-queue;
-:POST /api/seal-bonds/{id}/review {approve, reason};
-|Backend (SealService)|
-if (Aprovou?) then (não)
-  :REJECTED + motivo + notify;
-  stop
-else (sim)
-endif
-:issue(): APPROVED, sealCode "PRM-…" (Premium),\nusageCount+1, notify(SEAL_GRANTED "Selo Premium emitido!");
-:AuditLog MUDANCA_ESTADO_VINCULO_SELO (CA16);
-:CouponRightsCheck → promoções da celebridade\n(SHOW, MEET_GREET, PRE_VENDA…) e com marca parceira\n(partnerBrandUserId) — CA21/CA22;
-note right: resgate em POST /api/promotions/{id}/redemptions (RF25/RF38)
+|Pessoa usuária|
 stop
 @enduml

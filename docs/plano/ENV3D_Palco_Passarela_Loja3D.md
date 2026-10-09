@@ -32,6 +32,18 @@ vale o custo?".
 | Avatar canônico | `human-avatar.tsx`, `avatar-viewer.tsx`, identidade versionada (AVATAR-ID I1, V42) | O mesmo avatar ainda não chega ao palco, à passarela nem à loja de rua |
 | Espelho e quarto | `/mirror`, `/room` (`room-scene.tsx`) | Fora do escopo direto; compartilham câmera, luz e avatar |
 
+**Reconferência de 06/10/2026** (detalhes no [plano mestre, seção 9](plano-mestre-2026-10-05.md)):
+
+- A passarela e o palco **já mostram o avatar canônico** do dono do look quando quem vê tem permissão: `Mannequin`
+  desenha o `HumanAvatar`, e `ShowcaseService` só envia o avatar nesse caso. O que falta na passarela é a caminhada: o
+  corpo desliza (o grupo só translada e gira), e cada um dos 12 do lote monta um avatar completo.
+- A plateia é cápsula + esfera instanciadas na passarela, no palco e na rua das lojas; a plateia comum (`CrowdKit`)
+  substitui as três.
+- Os quatro ambientes (provador, mini loja, mini palco e passarela) passam a usar um motor de cenas só
+  (`lib/scene3d/`): contexto → resolvedor puro → perfil de cena → cena persistente com módulos.
+- Fases: E1 vira o passo 6.1 e **não depende mais do GARMENT** para a cena. E2 (Passarela) anda com o avatar atual e
+  ganha tecido com movimento quando o GARMENT F4 chegar.
+
 ---
 
 ## 2. Requisitos, agrupados (1–59)
@@ -240,8 +252,8 @@ vale o custo?".
 | Fase | Entrega | Depende de |
 |---|---|---|
 | E0 | Auditoria + papéis + matriz de utilidade + arquitetura (entregáveis 1–7) | — |
-| E1 | Base comum de cena: shell, avatar canônico nos três ambientes, câmera e luz por modo, navegação, estados vazios e fallback | AVATAR-ID, GARMENT F0–F3 |
-| E2 | Passarela funcional: caminhada (WALK→TURN→STOP→POSE→RETURN), comparação A×B, câmeras, snapshot (absorve PASSARELA-REAL, seção 3.2 do plano) | E1 |
+| E1 | Base comum de cena: shell, avatar canônico nos três ambientes, câmera e luz por modo, navegação, estados vazios e fallback; motor de cenas `lib/scene3d/` e plateia comum (revisão de 06/10, plano seção 9.2) | E0 (a cena não espera o GARMENT; as roupas entram com o que houver) |
+| E2 | Passarela funcional: caminhada (WALK→STOP→POSE→TURN→RETURN), cena configurada pelos filtros do RF33, comparação A×B, câmeras, snapshot (absorve PASSARELA-REAL; revista no plano, seção 9.5) | E1 |
 | E3 | Loja 3D com preview e compra: objetos interativos, PREVIEW/OWNED/EQUIPPED, ligação com a loja de FAI Points e com o Provador (seção 8 do plano) | E1, PROVADOR-BUSCA |
 | E4 | Palco: Stage Mode, apresentação, snapshots e social; palcos por artista (absorve PALCOS-ARTISTAS, seção 3.3) | E1 |
 | E5 | Polimento visual, temas controlados, LOD, metas de performance e analytics | E2–E4 |

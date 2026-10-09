@@ -1,9 +1,16 @@
 @startuml RF37_Atividades
-title RF37 — FLAIR: jogo de cartas de moda com 15 modos e combinações de lojas que rendem cupons\nDiagrama de atividades — peça → carta → look → time/deck → competição, com HypeScore v2 nas cartas
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,88 +19,64 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Jogador|
+title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre a aba FLAIR (/flair);
-|Frontend (flair/page.tsx · FlairModes)|
-:GET /api/flair/me (coins, rank, skins)\n+ GET /api/flair/decks e /api/flair/cards;
-|API (FlairService · FlairModesService)|
-:Cada peça não arquivada vira carta:\nEDGE (estilos) · RANGE (ocasiões) · CLOUT (marca, selos)\nGLOW (foto) · ART (estúdio, logo, 3D, manequim) · SYNC (estação);
-|Banco (MySQL)|
-:Lê hype_scores (PIECE e SCHEME, versão do algoritmo)\nem lote — só o Hype PÚBLICO entra no jogo;
-|API (FlairService · FlairModesService)|
-:Raridade pelo Hype v2 da peça (preço nunca conta):\nRARE = RARITY ≥ 75 e faixa ≥ NICHE · LIMITED = RARITY ≥ 60,\nselo ou 3D · PREMIUM = faixa ≥ HOT ou estúdio · senão STANDARD;
-:Cada esquema com peças vira deck (poder e combos)\ne look (FlairLooks): HYPE, STYLE, COLOR, OCCASION,\nORIGINALITY, BRAND, RARITY, TREND, COMMUNITY, AI;
-note right
-HYPE = Hype v2 público do look;
-sem Hype público vale 50 (neutro)
-e nunca pesa mais que o menor peso
-dos outros nove atributos.
-end note
-|Jogador|
-:Escolhe o jogo e o deck/look;
-|API (FlairService · FlairModesService)|
-switch (Jogo escolhido?)
-case (Duelo 1×1)
-  :POST /api/flair/duels {schemeId, opponent | CASA};
-  if (deck sem peças · contra si\n· rival sem look público?) then (sim)
-    #FFE3E3:400 DECK_VAZIO · 400 DUELO_CONSIGO\n· 409 SEM_DECK_PUBLICO;
-    stop
-  endif
-  :5 rodadas: EDGE, RANGE, CLOUT, GLOW, ART;\ncoins só nos 5 primeiros duelos do dia;
-case (Arena do dia)
-  :POST /api/flair/arena {schemeId};
-  if (já inscreveu hoje?) then (sim)
-    #FFE3E3:409 JA_NA_ARENA;
-    stop
-  endif
-  :Nota pela ocasião sorteada pela data;
-case (Equipes 3×3)
-  :POST /api/flair/teams/battles {code};
-  if (sem equipe · mesma equipe\n· já duelaram hoje · sem 3 decks?) then (sim)
-    #FFE3E3:409 SEM_EQUIPE · 400 MESMA_EQUIPE\n· 409 JA_DUELARAM_HOJE · 409 SEM_DECKS;
-    stop
-  endif
-  :Os 3 melhores decks de cada lado se enfrentam;
-case (Um dos 15 modos)
-  :POST/PUT /api/flair/modes/* — battle, squad,\nleague, runway, tour, territories, draft, deck,\ncombo, tag-team, bosses, wardrobe-wars,\nchess, ultimate (FlairModesService);
-  :Pontua pelo tema (18 temas com pesos)\n+ sinergias: Streetwear, Classic Formal,\nMonocromático, Brand Loyalty, Mix & Match,\nVintage Revival (FlairLooks);
-  :finish(): flair_matches + entries;\ncoins 20 · 8 · 3 (vitória · empate · derrota)\nnas 3 primeiras partidas do modo no dia;
-  if (conquista (Runway, Liga, Tour,\nBoss, território…)?) then (sim)
-    :flair_trophies + notificação\nACHIEVEMENT_UNLOCKED;
-  endif
-case (Quest)
-  :POST /api/flair/quests/{code}/claim;
-  if (incompleta ou já resgatada?) then (sim)
-    #FFE3E3:409 QUEST_INCOMPLETA\n· 409 QUEST_JA_RESGATADA;
-    stop
-  endif
-  :Coins da quest + FAI Points FLAIR_QUEST (RF41);
-endswitch
-|API (FlairService · FlairModesService)|
-:FaiPointsService.game: GAME_PLAYED e, se venceu,\nGAME_WON — uma vez por partida, com teto diário (RF41;\na quest já lançou FLAIR_QUEST);
-:rightsCheck → CouponRightsCheck (após o commit)\nem duelo, arena, equipes e modos competitivos;\nCouponService cria o direito PENDENTE e avisa (RF38);
-|Loja (marca/celebridade)|
-:Perfil → aba FLAIR: publica combinação\n(COMBINACAO · COLECAO · DUELO_PATROCINADO,\nrequisitos, cupom, validade, estoque, link da loja);
-|Jogador|
-:Aba Lojas: GET /api/flair/combinations\n(melhor deck + checklist de requisitos);
-|API (FlairService · FlairModesService)|
-if (combinação completa e disponível?) then (sim)
-  :POST /api/flair/combinations/{id}/redeem\n→ cupom FLR-XXXX-XXXX em flair_redemptions;
-  :Cupom na carteira do FLAIR e em\n"Meus cupons resgatados" (RF38);
-else (não)
-  :Checklist mostra o que falta\n(redeem devolve 422 COMBINACAO_INCOMPLETA);
+:Abre /brands/[slug], /flair;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/flair/combinations/{id}/check\nGET /api/flair/combinations\nGET /api/flair/modes/deck\nGET /api/flair/decks/{schemeId};
+|Pessoa usuária|
+:FLAIR — troca o deck que completa a\ncombinação pelo cupom d…;
+|Tela (Next.js)|
+:POST /api/flair/combinations/{id}/redeem;
+|API (Spring Boot)|
+:FlairController.redeem\n→ FlairService.redeem;
+if (combinação indisponível?) then (sim)
+  :409 COMBINACAO_INDISPONIVEL\n«Esta combinação não está mais\ndisponível.»\n→ a tela mostra o aviso;
+  stop
 endif
+if (cupom já emitido?) then (sim)
+  :409 CUPOM_JA_EMITIDO\n«Você já completou esta combinação.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (deck arquivado?) then (sim)
+  :400 DECK_ARQUIVADO\n«Esse esquema está arquivado.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (combinação incompleta?) then (sim)
+  :422 COMBINACAO_INCOMPLETA\n«O deck ainda não completa a\ncombinação.»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: flair_combinations\nscheme_items\nhype_scores\nwardrobe_items\nbrand_profiles\nflair_match_entries (+4);
+:Usa: Guard.requireCanCreate\nSchemeService.owned\nHypeScoreConfig.algorithmVersion;
+:Grava: flair_redemptions\nflair_coin_entries\nflair_profiles;
+:Estado: status → EMITIDO\nexpiresAt → set;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (FLAIR — a loja edita uma combinaç…)
+    :PUT /api/flair/brand/combinations/{id}\n→ FlairService.saveCombination\nvalida: DESCONTO_OBRIGATORIO, ERRO, SEM_REQUISITOS,\nTIPO_INVALIDO\nlê: users, flair_combinations, brand_profiles …\nusa: Guard.requireApprovedInstitutional\ngrava: flair_combinations;
+  case (FLAIR — a loja cria uma combinaçã…)
+    :POST /api/flair/brand/combinations\n→ FlairService.saveCombination\nvalida: DESCONTO_OBRIGATORIO, ERRO, SEM_REQUISITOS,\nTIPO_INVALIDO\nlê: users, flair_combinations, brand_profiles …\nusa: Guard.requireApprovedInstitutional\ngrava: flair_combinations;
+  case (FLAIR Runway — desfila um look: q…)
+    :POST /api/flair/modes/runway\n→ FlairModesService.enterRunway\nvalida: JA_NA_RUNWAY, LOOK_ARQUIVADO\nlê: scheme_items, schemes, flair_trophies …\nusa: Guard.requireCanCreate, SchemeService.owned,\nFlairService.publicLookHype …\ngrava: flair_trophies, flair_mode_states,\nflair_matches …;
+  case (FLAIR — no caixa, a loja confere…)
+    :POST /api/flair/brand/redemptions/validate\n→ FlairService.validateCode\nvalida: CUPOM_EXPIRADO, CUPOM_USADO, NAO_ENCONTRADO\nlê: users, flair_redemptions, brand_profiles\nusa: Guard.requireApprovedInstitutional\nestado: status → USADO, usedAt → set;
+  case (FLAIR — a loja remove a combinaçã…)
+    :DELETE /api/flair/brand/combinations/{id}\n→ FlairService.deleteCombination\nvalida: ERRO\nlê: users, flair_combinations\nusa: Guard.requireApprovedInstitutional\ngrava: flair_combinations;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

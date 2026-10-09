@@ -1,222 +1,191 @@
 @startuml RF47_Classes
-title RF47 — Acervo & Busca Catalogada\nDiagrama de classes — entidades JPA reais (fai-domain), repositório de busca e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF47 — Acervo & Busca Catalogada\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class Brand {
-  +name: String
-  +slug: String
-  +logoUrl: String
-  +website: String
-  +country: String
+package "fai-domain (entidades JPA)" {
+  class Brand <<brands>> {
+    +id: UUID
+    +name: String
+    +slug: String
+    +logoUrl: String
+    +website: String
+    +source: BrandSource
+    +catalogOrigin: CatalogOrigin
+    +fixtureKey: String
+    +sourceConfidence: BigDecimal
+    +verifiedAt: Instant
+    .. +2 campos ..
+  }
+  class BrandAlias <<brand_aliases>> {
+    +id: UUID
+    +brandId: UUID
+    +alias: String
+    +aliasNorm: String
+  }
+  class CatalogImage <<catalog_images>> {
+    +id: UUID
+    +productId: UUID
+    +variantId: UUID
+    +imageUrl: String
+    +imageUrlHash: String
+    +imageType: CatalogImageType
+    +sourceUrl: String
+    +sourceDomain: String
+    +sourceType: CatalogSourceType
+    +primary: boolean
+    .. +4 campos ..
+  }
+  class CatalogIngestionRun <<catalog_ingestion_runs>> {
+    +id: UUID
+    +kind: String
+    +source: String
+    +dryRun: boolean
+    +totalRead: int
+    +createdCount: int
+    +updatedCount: int
+    +skippedCount: int
+    +duplicatesCount: int
+    +errorCount: int
+    .. +3 campos ..
+  }
+  class CatalogProduct <<catalog_products>> {
+    +id: UUID
+    +brandId: UUID
+    +category: String
+    +subcategory: String
+    +productName: String
+    +modelName: String
+    +productCode: String
+    +sku: String
+    +gtin: String
+    +ean: String
+    .. +20 campos ..
+  }
+  class CatalogProductAlias <<catalog_product_aliases>> {
+    +id: UUID
+    +productId: UUID
+    +alias: String
+    +aliasNorm: String
+  }
+  class CatalogSource <<catalog_sources>> {
+    +id: UUID
+    +brandId: UUID
+    +domain: String
+    +sourceType: CatalogSourceType
+    +country: String
+    +allowsImagePersistence: boolean
+    +active: boolean
+    +notes: String
+  }
+  class CatalogVariant <<catalog_variants>> {
+    +id: UUID
+    +productId: UUID
+    +variantKey: String
+    +color: String
+    +colorName: String
+    +variantCode: String
+    +sku: String
+    +gtin: String
+    +availability: String
+  }
+  class WardrobeItem <<wardrobe_items>> {
+    +id: UUID
+    +user: User
+    +brandProfile: BrandProfile
+    +brand: Brand
+    +name: String
+    +category: String
+    +subcategory: String
+    +sex: String
+    +brandName: String
+    +brandLogoUrl: String
+    .. +70 campos ..
+  }
 }
-class BrandAlias {
-  +brandId: UUID
-  +alias: String
-  +aliasNorm: String
+package "fai-domain (enums)" {
+  enum CatalogImageUsage {
+    REFERENCE_ONLY
+    PERSISTED
+    REJECTED
+  }
+  enum CatalogSourceStatus {
+    ACTIVE
+    UNAVAILABLE
+    SOURCE_REMOVED
+    NEEDS_REVALIDATION
+  }
+  enum CatalogIngestionStatus {
+    DISCOVERED
+    VALIDATED
+    PERSISTABLE
+    REFERENCE_ONLY
+    REJECTED
+  }
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
+  enum PhotoProcessingStatus {
+    NEW
+    MODERATING
+    PROCESSING
+    COMPLETED
+    NEEDS_REUPLOAD
+    FAILED
+  }
 }
-class CatalogSource {
-  +brandId: UUID
-  +domain: String
-  +sourceType: CatalogSourceType
-  +country: String
-  +allowsImagePersistence: boolean
-  +active: boolean
+package "fai-application" {
+  class CatalogService <<service>> {
+    +search()
+    +suggestions()
+    +brandSuggestions()
+    +catalogBrands()
+    +product()
+    +discover()
+    +addToWardrobe()
+  }
 }
-class CatalogProduct {
-  +brandId: UUID
-  +category: String
-  +subcategory: String
-  +productName: String
-  +modelName: String
-  +productCode / sku / gtin / ean / upc: String
-  +color / colorName / material: String
-  +officialProductUrl / canonicalUrl: String
-  +sourceType: CatalogSourceType
-  +sourceStatus: CatalogSourceStatus
-  +ingestionStatus: CatalogIngestionStatus
-  +dedupKey: String
-  +searchText: String
-  +description: String
-  {field} +designJson: String (JSON)
-  +ownersCount: int
-  +firstSeenAt / lastVerifiedAt: Instant
-}
-class CatalogProductAlias {
-  +productId: UUID
-  +alias: String
-  +aliasNorm: String
-}
-class CatalogVariant {
-  +productId: UUID
-  +variantKey: String
-  +color / colorName: String
-  +variantCode / sku / gtin: String
-  +availability: String
-}
-class CatalogImage {
-  +productId: UUID
-  +variantId: UUID
-  +imageUrl: String
-  +imageUrlHash: String
-  +imageType: CatalogImageType
-  +sourceDomain: String
-  +primary: boolean
-  +usageStatus: CatalogImageUsage
-  +storedUrl: String
-}
-class CatalogIngestionRun {
-  +kind: String
-  +source: String
-  +dryRun: boolean
-  +totalRead / createdCount / updatedCount: int
-  +skippedCount / duplicatesCount / errorCount: int
-  +reportJson: String
-}
-class WardrobeItem {
-  +catalogProductId: UUID
-  +catalogVariantId: UUID
-  +imageOrigin: ImageOrigin
-  +userImageUrl: String
-  +canonicalImageUrl: String
-  .. demais campos da peça (RF4) ..
-}
-}
-package "fai-domain · enums" {
-enum CatalogIngestionStatus {
-  DISCOVERED
-  VALIDATED
-  PERSISTABLE
-  REFERENCE_ONLY
-  REJECTED
-}
-enum CatalogSourceType {
-  OFFICIAL_BRAND
-  OFFICIAL_STORE
-  AUTHORIZED_RETAILER
-  PARTNER_API
-  MANUAL_ADMIN
-}
-enum CatalogSourceStatus {
-  ACTIVE
-  UNAVAILABLE
-  SOURCE_REMOVED
-  NEEDS_REVALIDATION
-}
-enum CatalogImageType {
-  FRONT
-  BACK
-  SIDE
-  TOP
-  DETAIL
-  SOLE
-  PACKSHOT
-  OTHER
-}
-enum CatalogImageUsage {
-  REFERENCE_ONLY
-  PERSISTED
-  REJECTED
-}
-enum ImageOrigin {
-  CATALOG
-  USER_PHOTO
-  DEFAULT
-}
-}
-package "fai-application · catalog" {
-class CatalogService {
-  {static} +MIN_SCORE = 0.35
-  {static} ~NO_PHOTO_PENALTY = 0.10
-  --
-  +search(SearchRequest): Map
-  ~patternTerms(String): String
-  ~rank(Resolved, List<CatalogProduct>, int): List<Map>
-  {static} ~orderScore(Map): double
-  +suggestions(SearchRequest): Map
-  +brandSuggestions(String): Map
-  +product(UUID): Map
-  +discover(CurrentUser, SearchRequest): Map
-  +addToWardrobe(CurrentUser, AddRequest): PieceView
-  +catalogBrands(): List<Map>
-}
-class DesignTraits <<record>> {
-  +pattern: String
-  +logoPlacement: String
-  +logoSize: String
-  +sides: Set<String>
-  +baseColors: List<String>
-  +printColors: List<String>
-  +anyColors: List<String>
-  +consumed: Set<String>
-  +source: LOCAL | AI | CATALOG
-}
-class CatalogDesignInterpreter {
-  +interpret(String): DesignTraits
-  +ofProduct(name, description, colorName, color): DesignTraits
-}
-class CatalogTextInterpreter {
-  +interpret(UUID, String): DesignTraits
-}
-class CatalogMatchScorer {
-  +score(Intent, Candidate, Double): Score
-  ~design(DesignTraits, Candidate, List<Reason>): double
-}
-class CatalogIngestService {
-  +resolveBrand(String, boolean): Optional<Brand>
-  +upsert(ProductInput, CatalogIngestionStatus, boolean): Result
-}
-}
-package "fai-domain · repository" {
-interface CatalogProductRepository {
-  List<CatalogProduct> · LIMIT 200 · MATCH(search_text)
-  pool: subtipo+cor (produto ou variante) → subtipo
-  → estampa (patternTerms) → geral; reforço se < 8
-  --
-  +findByDedupKey(String): Optional<CatalogProduct>
-  +candidates(brandId, category, subcategory, terms)
-  +candidatesWithColor(brandId, category, subcategory, color, terms)
-}
-}
-BrandAlias "*" ..> "1" Brand : brandId
-CatalogSource "*" ..> "1" Brand : brandId
-CatalogProduct "*" ..> "1" Brand : brandId
-CatalogProductAlias "*" ..> "1" CatalogProduct : productId
-CatalogVariant "*" ..> "1" CatalogProduct : productId
-CatalogImage "*" ..> "1" CatalogProduct : productId
-CatalogImage "*" ..> "0..1" CatalogVariant : variantId
-WardrobeItem "*" ..> "0..1" CatalogProduct : catalogProductId
-WardrobeItem "*" ..> "0..1" CatalogVariant : catalogVariantId
+CatalogService ..> Brand : usa
+CatalogService ..> BrandAlias : usa
+CatalogService ..> CatalogImage : usa
+CatalogService ..> CatalogProduct : usa
+CatalogService ..> CatalogProductAlias : usa
+CatalogService ..> CatalogSource : usa
+BrandAlias ..> Brand : brandId
+CatalogImage --> CatalogImageUsage
 CatalogProduct --> CatalogIngestionStatus
 CatalogProduct --> CatalogSourceStatus
-CatalogSource --> CatalogSourceType
-CatalogService --> CatalogTextInterpreter : interpreta o texto
-CatalogTextInterpreter --> CatalogDesignInterpreter : leitura local
-CatalogTextInterpreter ..> DesignTraits
-CatalogService --> CatalogMatchScorer : ranqueia
-CatalogService --> CatalogProductRepository : candidatesWithColor › candidates
-CatalogProductRepository ..> CatalogProduct : FULLTEXT ngram (search_text)
-CatalogDesignInterpreter -[hidden]down- CatalogProductRepository
-CatalogMatchScorer ..> DesignTraits : intenção × produto
-CatalogIngestService ..> CatalogDesignInterpreter : design da descrição
-CatalogProduct ..> DesignTraits : designJson
-CatalogImage --> CatalogImageType
-CatalogImage --> CatalogImageUsage
-WardrobeItem --> ImageOrigin
-CatalogService ..> CatalogIngestService : upsert(DISCOVERED)
-CatalogIngestService ..> CatalogProduct : grava
-CatalogIngestService ..> CatalogIngestionRun
-note bottom of CatalogProduct : tabela catalog_products\ndedup_key UNIQUE (gtin > ean > upc > sku > código >\nURL canônica > marca+subtipo+modelo+variante > marca+subtipo+título+cor)
-note top of WardrobeItem : tabela wardrobe_items\nposse do produto global, por referência
-note bottom of CatalogIngestionRun : tabela catalog_ingestion_runs\n(gravada pelo pipeline Python scripts/catalog)
-note bottom of CatalogImage : tabela catalog_images — REFERENCE_ONLY guarda só a URL;\nPERSISTED só se CatalogSource.allowsImagePersistence
+CatalogProduct ..> Brand : brandId
+CatalogSource ..> Brand : brandId
+WardrobeItem "*" --> "1" Brand : brand
+WardrobeItem --> AvailabilityStatus
+WardrobeItem --> ModerationStatus
+WardrobeItem --> PhotoProcessingStatus
 @enduml

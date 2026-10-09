@@ -148,9 +148,9 @@ public class IssuerReviewService {
         return p instanceof CelebrityProfile ? "issuerReview.tipo_celebridade" : "issuerReview.tipo_marca";
     }
 
-    /** A aba Central do emissor no perfil do próprio emissor (destino das notificações e dos e-mails da decisão). */
+    /** Aprovação abre o perfil; decisões que exigem ação do dono abrem a central de verificação. */
     private static String centralPath(ReviewableProfile p) {
-        return "/brands/" + p.getSlug() + "?tab=CENTRAL";
+        return "/brands/" + p.getSlug() + (p.reviewStatus() == ApprovalStatus.APROVADO ? "" : "?tab=CENTRAL");
     }
 
     private void afterCommit(String name, Runnable task) {

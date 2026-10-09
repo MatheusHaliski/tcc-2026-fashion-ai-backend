@@ -1,214 +1,149 @@
 @startuml RF25_Classes
-title RF25 — Criar & editar selo de marca ou celebridade\nDiagrama de classes — selo, vínculo, promoção, resgate e direito a cupom (fai-domain) + serviços (fai-application)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
-set separator none
+hide empty members
+left to right direction
+title RF25 — Criar & editar selo de marca/celebridade (formulário + arte) e política de promoção\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-application" {
-  class SealService <<service>> {
-    {static} +DEFAULT_SEAL_VALIDITY = 365 dias
-    +createSeal(user, SealForm): Map
-    +updateSeal(user, sealId, SealForm): Map
-    +draft(user, tier): Map
-    +sealsOf(viewer, ownerId): List<Map>
-    +ensureDefaultSeals(owner)
-    {static} +available(seal, now): boolean
-    {static} +unavailableReason(seal, now): String
-    ~sealHype(seals): Map<UUID, Map>  «Hype do selo»
-    +createPromotion(user, PromotionForm): Map
-    +updatePromotion(user, id, PromotionForm): Map
-    +setPromotionStatus(user, id, status): Map
-    +promotionsOf(viewer, ownerId): List<Map>
-    +eligiblePromotions(userId): List<Promotion>
-    +redeem(user, promotionId): Map
-    +issuerMetrics(user): Map
-    -applySeal(seal, form, owner)
-    -applyPromotion(user, promotion, form)
-    -issue(bond, decidedBy)  «emite o selo»
+package "app/(site)/(app)/brands/[slug]/page.tsx" {
+  class Seal as "Seal" <<interface>> {
+    +id: string
+    +name: string
+    +tier: string
+    +policyText: string
+    +iconUrl: string
+    +status: string
+    +available: boolean
+    +unavailableReason: string | null
+    +usageCount: number
+    +usageLimit: number | null
+    .. +6 ..
   }
-  class "SealService.SealForm" as SealForm <<record>> {
-    +name: String
-    +tier: SealTier
-    +policyText, iconUrl: String
-    +background, design, policy: Map
-    +availableFrom, availableUntil: Instant
-    +usageLimit: Integer
-    +status: SealStatus
+  class Promotion as "Promotion" <<interface>> {
+    +id: string
+    +type: string
+    +title: string
+    +description: string
+    +rules: string
+    +discountPercent: number
+    +status: string
+    +eligible: boolean
+    +requiredSealId: string
+    +redemptions: number
   }
-  class "SealService.PromotionForm" as PromotionForm <<record>> {
-    +type: PromotionType
-    +title, description, rules: String
-    +discountPercent: Integer
-    +sealId: UUID
-    +requiredSealKind: String
-    +startsAt, expiresAt: Instant
-    +totalQuota, perUserLimit: Integer
-    +partnerBrandUserId: UUID
-    +visibility: Visibility
-    +storeUrl: String
+  class Profile as "Profile" <<interface>> {
+    +user: UserCard
+    +brand: Record<string, unknown>
+    +celebrity: Record<string, unknown>
+    +header: { userId?: string; username?: string; n…
+    +mode: string
+    +tabs: ({ id: string; label: string; adminOnly…
+    +admin: boolean
+    +store: { url?: string; hashtag?: string }
   }
-  class SealPolicies <<final>> {
-    +MAX_RULES = 6 · MAX_TAGS = 4
-    {static} +normalize(raw): Map
-    {static} +parse(stored): Policy
-    {static} +evaluate(policy, tier, pieces, occasions, styles, hype): Verdict
-    {static} +describe(policy, tier): String
+  class IssuerHypeData as "IssuerHypeData" <<interface>> {
+    +bonded: number
+    +withHype: number
+    +avgScore: number | null
+    +level: HypeLevel | null
+    +deltaPoints: number | null
+    +direction: HypeDirection | null
+    +deltaWindowDays: number | null
+    +top: { schemeId: string; title?: string | nu…
   }
-  class HypeSeals <<final>> {
-    +CODES = VIRAL, TRENDING, EMERGING, CLASSIC, RARE
-    +CARD_MAX = 2
-    {static} +of(HypeScoreCurrent): List<String>
-    {static} +forCard(HypeScoreCurrent): List<String>
-    {static} +progress(c, levelThresholds): List<Map>
+  enum HighlightSort as "HighlightSort" {
+    RECENTES
+    HYPE
+    GROWTH
   }
-  class CouponService <<service>> {
-    +onCheck(CouponRightsCheck)  «AFTER_COMMIT»
-    +scan(userId): int
-    +mine(user) · redeem(user, rightId)
-    +dismiss(user, rightId) · validate(user, code)
+  class mod_page_tsx as "page.tsx" <<módulo>> {
+    +BrandPage()
   }
 }
-
-package "fai-domain · model" {
-  class Seal <<entity>> {
-    +owner: User
-    +name: String
-    +tier: SealTier
-    +policyText: String
-    +status: SealStatus
-    +iconUrl: String
-    +premium: boolean
-    +backgroundConfigJson: String  «{design, policy, …}»
-    +availableFrom, availableUntil: Instant
-    +usageLimit: Integer
-    +usageCount: int
-    +autoIssued: boolean
+package "components/coupons/fai-coupon.tsx" {
+  class Coupon as "Coupon" <<interface>> {
+    +id: string
+    +source: 'SELO' | 'FLAIR'
+    +origin: string | null
+    +code: string
+    +title: string
+    +subtitle: string | null
+    +discount: string
+    +discountPercent: number | null
+    +discountAmount: number | null
+    +minPurchase: number | null
+    .. +7 ..
   }
-  class SealBond <<entity>> {
-    +scheme: Scheme
-    +targetOwner, requestedBy: User
-    +seal: Seal
-    +tier: SealTier
-    +linkedPieceIdsJson: String
-    +status: SealBondStatus
-    +origin: SealBondOrigin
-    +basis: SealBondBasis
-    +sealCode: String
-    +issuedAt, expiresAt: Instant
-    +aiInferenceId: UUID
+  class CouponRight as "CouponRight" <<interface>> {
+    +id: string
+    +source: 'SELO' | 'FLAIR'
+    +title: string
+    +detail: string | null
+    +status: string
+    +createdAt: string
+    +owner: CouponOwner
+    +question: string
   }
-  class Promotion <<entity>> {
-    +seal: Seal
-    +ownerUserId: UUID
-    +type: PromotionType
-    +title, description, rules: String
-    +discountPercent: Integer
-    +requiredSealKind: String
-    +startsAt, expiresAt: Instant
-    +totalQuota: Integer
-    +perUserLimit: int
-    +redeemedCount: int
-    +partnerBrandUserId: UUID
-    +status: PromotionStatus
-    +visibility: Visibility
-    +storeUrl: String
+  class CouponOwner as "CouponOwner" <<interface>> {
+    +user: UserCard
+    +name: string
+    +kind: 'MARCA' | 'CELEBRIDADE' | 'PESSOAL'
+    +logoUrl: string | null
+    +slug: string | null
+    +storeUrl: string | null
   }
-  class PromotionRedemption <<entity>> {
-    +promotion: Promotion
-    +sealBond: SealBond
-    +user: User
-    +code: String
-    +issuerUserId, partnerBrandUserId: UUID
-    +status: RedemptionStatus
-    +redeemedAt, expiresAt: Instant
-  }
-  class CouponRight <<entity>> {
-    +user, owner: User
-    +sourceType: String  «SELO | FLAIR»
-    +sourceId: UUID
-    +title, detail: String
-    +status: String  «PENDENTE | RESGATADO | DISPENSADO»
-    +couponRef: UUID
-    +decidedAt: Instant
-  }
-  class User <<entity>> {
-    +profileType: ProfileType
-    +status: AccountStatus
-  }
-  class HypeScoreCurrent <<entity>> {
-    +entityType, entityId
-    +status: HypeStatus
-    +score: BigDecimal
-    +level: HypeLevel
-    +momentum: HypeMomentum
-    +publicEligible: boolean
+  class mod_fai_coupon_tsx as "fai-coupon.tsx" <<módulo>> {
+    +FaiCoupon()
   }
 }
-
-package "fai-domain · enums" {
-  enum SealTier {
-    PECA
-    LOOK
+package "app/(site)/(app)/notifications/page.tsx" {
+  class Notification as "Notification" <<interface>> {
+    +id: string
+    +type: string
+    +category: string
+    +actor: UserCard | null
+    +resourceType: string
+    +resourceId: string
+    +title: string
+    +body: string
+    +payload: Record<string, unknown>
+    +read: boolean
+    .. +1 ..
   }
-  enum SealStatus {
-    ACTIVE
-    INACTIVE
+  class Pref as "Pref" <<interface>> {
+    +type: string
+    +enabled: boolean
+    +category: string
+    +label: string
   }
-  enum SealBondStatus {
-    SUGGESTED · ACCEPTED · EDITED · REFUSED
-    PENDING_REVIEW · APPROVED · REJECTED · REVOKED
+  class Inbox as "Inbox" <<interface>> {
+    +unread: number
+    +items: Notification[]
+    +groups: Record<string, Notification[]>
   }
-  enum PromotionType {
-    DESCONTO_ECOMMERCE · CUPOM_LOJA · EVENTO
-    FRETE_GRATIS · BRINDE · ACESSO_ANTECIPADO
-    SHOW · MEET_GREET · PRE_VENDA · CONTEUDO_EXCLUSIVO
-  }
-  enum PromotionStatus {
-    AVAILABLE
-    REDEEMED
-    EXPIRED
-    REVOKED
-  }
-  enum RedemptionStatus {
-    ISSUED
-    USED
-    EXPIRED
+  class mod_page_tsx as "page.tsx" <<módulo>> {
+    +NotificationsPage()
   }
 }
-
-SealService ..> SealForm
-SealService ..> PromotionForm
-SealService ..> SealPolicies
-SealService ..> HypeScoreCurrent : Hype do selo\n(via HypeQueryService)
-HypeSeals ..> HypeScoreCurrent
-CouponService --> SealService : eligiblePromotions · redeem
-Seal "*" --> "1" User : owner
-Seal --> SealTier
-Seal --> SealStatus
-SealBond "*" --> "0..1" Seal
-SealBond --> SealBondStatus
-Promotion "*" --> "0..1" Seal : selo exigido
-Promotion --> PromotionType
-Promotion --> PromotionStatus
-PromotionRedemption "*" --> "1" Promotion
-PromotionRedemption "*" --> "1" SealBond : selo que deu direito
-PromotionRedemption --> RedemptionStatus
-CouponRight ..> Promotion : sourceId (SELO)
-CouponRight "*" --> "1" User : user
-
-note bottom of Seal
-  tabelas: seals, seal_bonds, promotions,
-  promotion_redemptions, coupon_rights.
-  Marca: só DESCONTO_ECOMMERCE, CUPOM_LOJA,
-  FRETE_GRATIS, BRINDE, ACESSO_ANTECIPADO, EVENTO;
-  celebridade: todos os tipos.
-end note
+Coupon --> CouponOwner : owner
+CouponRight --> CouponOwner : owner
+Inbox --> Notification : groups
+Inbox --> Notification : items
 @enduml

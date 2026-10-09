@@ -1,120 +1,206 @@
 @startuml Anatomia_Esquema_Classes
-title Anatomia do esquema (look): dados, peças posicionadas, arte do card e selos\nDiagrama de classes
+!pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
-  BackgroundColor #F8F4FF
-  BorderColor #B695F5
-  FontColor #2D2438
-  ArrowColor #52606D
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
 }
-skinparam package {
-  BorderColor #CBC6BE
-  FontColor #2D2438
-}
-package "Conteúdo" {
-  class Scheme <<schemes>> {
-    .. identidade ..
-    user, originalScheme «remix»
-    title, description, tags
-    .. classificação ..
-    creationMode : MANUAL|AI_ASSISTED
-    origin : CRIAR_LOOK|PROVADOR|REMIX|COPILOT|DNA_DUPLICATE|AUTOPILOTO
-    occasion, style «≤ 3 cada»
-    season, mood
-    .. estado ..
-    status : DRAFT|PUBLISHED|ARCHIVED
-    visibility : PRIVATE|FOLLOWERS|PUBLIC
-    disponivel, lookDoDia, lookDoDiaCount
-    communityIndexed, favorite, publishedAt
-    revalidationPending
-    .. métricas ..
-    like/comment/share/remix/view/saveCount
-    totalPrice, hypeScore, hypeScoreGlobal
-  }
-  class SchemeItem <<scheme_items>> {
-    slot : TOP|BOTTOM|SHOES|ACCESSORY|FULL_BODY|OUTERWEAR
-    tryOnLayer : BASE|INTERMEDIATE|OUTER|ACCESSORY
-    sortOrder, zIndex
-    positionX, positionY, scale, rotation, opacity
-    filtersJson
-    snapshotJson «cópia da peça no momento do look»
-  }
-  class WardrobeItem <<wardrobe_items>> {
-    category, subcategory, brand, color
-    occasionTags, styleTags «≤ 2 cada»
-    imageUrl, studioImageUrl, model3dUrl
-  }
-}
-package "Arte do card (RF11)" {
-  class Apresentacao <<colunas de schemes>> {
-    cardSkin «atelier, editorial_ivory, …»
-    layoutAnatomy «13 anatomias»
-    layoutDensity
-    displayMode : CAROUSEL|GRID|STACKED
-    containerOrigin : INDEFINIDA|MANUAL|AUTO
-    containerColor, containerMandatory
-  }
-  class Fundo <<colunas de schemes>> {
-    backgroundColor, backgroundGradient
-    backgroundAnimationType : NONE|SNOW|PETALS|LEAVES|SHIMMER
-    backgroundArtUrl «arte IA ou enviada»
-    backgroundVideoUrl «AURA × material»
-    coverImageUrl, mannequinImageUrl/Face
-  }
-  class StudioConfig <<schemes.studio_config_json>> {
-    aura {variantId, format IMAGEM_UNICA|MOSAICO}
-    materialId «proibido com LEGO»
-    gradient | gradientPresetId | seasonalPresetId
-    aiArt | uploadUrl
-    container, skin, direção
-  }
-}
-package "Provador e render" {
-  class Render <<colunas de schemes>> {
-    renderingStatus : PENDING…COMPLETED|FAILED
-    virtualTryOnUrl, renderingJobId
-    renderingQualityJson, renderingMetadataJson
-    cachedUntil
-  }
-}
-package "Selos (RF20/RF21/RF25)" {
-  class SealBond <<seal_bonds>> {
-    status : SUGGESTED|ACCEPTED|EDITED|REFUSED|PENDING_REVIEW|APPROVED|REJECTED|REVOKED
-    basis : BRAND_MATCH|STYLE_SIGNATURE
-    tier : LOOK|PECA, confidence, linkedPieceIds
-  }
-  class Seal <<seals>> {
-    design «Circular|Folha|Padrão FashionAI»
-    policy «regras + tags»
-  }
-  class ZonaDoSelo <<BackgroundStudioService.SEAL_PLACEMENT>> {
-    TITLE_ROW | META_BLOCK | COVER_CORNER | HEADER | STUDS
-    44 px no look · 36 px na peça
-  }
-}
-package "Agrupamentos" {
-  class SchemeGrouping <<scheme_groupings>> {
-    type : COLLECTION|PROMOTION|SIGNATURE_SERIES|EVOLUTION|STYLE_LINE|ERA|PHASE|SEASON|TOUR
+hide empty members
+left to right direction
+title Anatomia do esquema (look): dados, peças posicionadas, arte do card e selos\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "fai-domain (entidades JPA)" {
+  class DailyLook <<daily_looks>> {
+    +id: UUID
+    +user: User
+    +scheme: Scheme
+    +materializedFrom: DailyLook
+    +lookDate: LocalDate
+    +source: DailyLookSource
+    +feedback: DailyLookFeedback
+    +feedbackAt: Instant
+    +weekPlanDayId: UUID
   }
   class DnaScheme <<dna_schemes>> {
-    2 a 6 esquemas, narrativa (11), arquétipo
+    +id: UUID
+    +user: User
+    +title: String
+    +identityPhrase: String
+    +archetype: StyleArchetype
+    +boldnessIndex: Integer
+    +iconSchemeId: UUID
+    +colorPaletteJson: String
+    +narrativeType: NarrativeType
+    +seasonalTheme: Season
+    .. +25 campos ..
   }
-  class DailyLook <<daily_looks>>
-  class WeekPlanDay <<week_plan_days>>
+  class Scheme <<schemes>> {
+    +id: UUID
+    +user: User
+    +originalScheme: Scheme
+    +title: String
+    +description: String
+    +creationMode: CreationMode
+    +origin: SchemeOrigin
+    +style: String
+    +occasion: String
+    +season: Season
+    .. +46 campos ..
+  }
+  class SchemeGrouping <<scheme_groupings>> {
+    +id: UUID
+    +owner: User
+    +type: GroupingType
+    +label: String
+    +description: String
+    +coverUrl: String
+    +atmospherePrompt: String
+    +periodFrom: Integer
+    +periodTo: Integer
+    +accentColor: String
+    .. +1 campos ..
+  }
+  class SchemeItem <<scheme_items>> {
+    +id: UUID
+    +scheme: Scheme
+    +wardrobeItem: WardrobeItem
+    +slot: SchemeSlot
+    +tryOnLayer: TryOnLayer
+    +sortOrder: int
+    +zIndex: int
+    +positionX: BigDecimal
+    +positionY: BigDecimal
+    +scale: BigDecimal
+    .. +4 campos ..
+  }
+  class Seal <<seals>> {
+    +id: UUID
+    +owner: User
+    +name: String
+    +tier: SealTier
+    +policyText: String
+    +status: SealStatus
+    +iconUrl: String
+    +premium: boolean
+    +backgroundConfigJson: String
+    +availableFrom: Instant
+    .. +4 campos ..
+  }
+  class SealBond <<seal_bonds>> {
+    +id: UUID
+    +scheme: Scheme
+    +targetOwner: User
+    +requestedBy: User
+    +tier: SealTier
+    +linkedPieceIdsJson: String
+    +confidence: BigDecimal
+    +justification: String
+    +basis: SealBondBasis
+    +status: SealBondStatus
+    .. +13 campos ..
+  }
+  class WardrobeItem <<wardrobe_items>> {
+    +id: UUID
+    +user: User
+    +brandProfile: BrandProfile
+    +brand: Brand
+    +name: String
+    +category: String
+    +subcategory: String
+    +sex: String
+    +brandName: String
+    +brandLogoUrl: String
+    .. +70 campos ..
+  }
+  class WeekPlanDay <<week_plan_days>> {
+    +id: UUID
+    +weekPlan: WeekPlan
+    +dayDate: LocalDate
+    +eventLabel: String
+    +occasion: String
+    +scheme: Scheme
+    +pieceIdsJson: String
+    +combinationKey: String
+    +rationale: String
+    +editedManually: boolean
+  }
 }
-Scheme "1" *-- "1..n" SchemeItem
-SchemeItem "n" --> "1" WardrobeItem
-Scheme o-- Apresentacao
-Scheme o-- Fundo
-Fundo ..> StudioConfig
-Scheme o-- Render
-Scheme "1" -- "0..n" SealBond
-SealBond --> Seal
-Apresentacao ..> ZonaDoSelo : layoutAnatomy → zona
-Scheme --> Scheme : originalScheme (remix)
-Scheme "n" --> "0..1" SchemeGrouping : groupingId
-DnaScheme "1" o-- "2..6" Scheme
-DailyLook --> Scheme
-WeekPlanDay --> Scheme
+package "fai-domain (enums)" {
+  enum SchemeStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+  }
+  enum RenderStatus {
+    PENDING
+    RENDERING
+    ENHANCING
+    COMPOSITING
+    CACHED
+    COMPLETED
+    FAILED
+  }
+  enum SealStatus {
+    ACTIVE
+    INACTIVE
+  }
+  enum SealBondStatus {
+    SUGGESTED
+    ACCEPTED
+    EDITED
+    REFUSED
+    PENDING_REVIEW
+    APPROVED
+    REJECTED
+    REVOKED
+  }
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
+}
+package "fai-application" {
+  class BackgroundStudioService <<service>> {
+    +recommend()
+    +generateArt()
+    +upload()
+    +savePiece()
+    +catalog()
+  }
+}
+BackgroundStudioService ..> Scheme : usa
+BackgroundStudioService ..> WardrobeItem : usa
+DailyLook "*" --> "1" Scheme : scheme
+DnaScheme --> SchemeStatus
+Scheme --> RenderStatus
+Scheme --> SchemeStatus
+SchemeItem "*" --> "1" Scheme : scheme
+SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
+Seal --> SealStatus
+SealBond "*" --> "1" Scheme : scheme
+SealBond "*" --> "1" Seal : seal
+SealBond --> SealBondStatus
+WardrobeItem --> AvailabilityStatus
+WardrobeItem --> ModerationStatus
+WeekPlanDay "*" --> "1" Scheme : scheme
 @enduml

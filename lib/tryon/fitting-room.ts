@@ -25,6 +25,8 @@ export interface FittingItem {
   category: string;
   subcategory?: string | null;
   imageUrl?: string | null;
+  model3dUrl?: string | null;
+  model3dStatus?: string | null;
   colorHex?: string | null;
   colorName?: string | null;
   productId?: string;
@@ -46,11 +48,20 @@ export function wearOf(category: string, subcategory?: string | null): Wear {
   }
 }
 /** Lugar no corpo: a peça inteira (vestido, macacão) ocupa a parte de cima e cobre a de baixo. */
-export function slotOf(category: string): FittingSlot {
+export function slotOf(category: string): FittingSlot | null {
   if (category === "lower_piece") return "lower_piece";
   if (category === "shoes_piece") return "shoes_piece";
   if (category === "upper_piece" || category === "full_body_piece") return "upper_piece";
-  return "accessory_piece";
+  return category === "accessory_piece" ? "accessory_piece" : null;
+}
+
+/** Revalidate old browser sessions against persisted categories, not legacy layer names. */
+export function restoreFittingItems(items: FittingItem[]): FittingItem[] {
+  if (!Array.isArray(items)) return [];
+  return items.reduce<FittingItem[]>((restored, item) => {
+    const slot = item && slotOf(item.category);
+    return slot ? wearItem(restored, { ...item, slot, wear: wearOf(item.category, item.subcategory) }) : restored;
+  }, []);
 }
 
 /** Vestir: a nova peça toma o lugar dela; a peça inteira tira a parte de baixo do corpo (mas não do histórico da prova). */
@@ -121,13 +132,15 @@ const MOTIFS: WallMotif[] = ["plain", "stripes", "grid", "chevron", "court", "pl
 
 /** Ambiente de uma marca: o tema escolhido à mão, ou um derivado do nome (estável — a mesma marca, o mesmo provador). */
 export function environmentFor(brand: FittingBrand): BrandEnvironment {
+  // marca só com slug (sem nome) vira o próprio slug no letreiro: nunca um nome indefinido na cena
+  if (!brand.name?.trim()) brand = { ...brand, name: brand.slug ?? "" };
   const key = brand.slug ? brandKey(brand.slug) : brandKey(brand.name);
   const curated = CURATED[key];
   if (curated) return { key, name: brand.name, logoUrl: brand.logoUrl ?? null, curated: true, ...curated };
-  const h = hash(key || brand.name); const hue = h % 360; const dark = (h >> 9) % 3 === 0;
+  const h = hash(key || brand.name); const hue = h % 360; const dark = (h >>> 9) % 3 === 0;
   return {
     key: key || "brand", name: brand.name, logoUrl: brand.logoUrl ?? null, curated: false,
-    style: STYLES[(h >> 3) % STYLES.length], motif: MOTIFS[(h >> 6) % MOTIFS.length],
+    style: STYLES[(h >>> 3) % STYLES.length], motif: MOTIFS[(h >>> 6) % MOTIFS.length],
     wall: dark ? hsl(hue, 14, 14) : hsl(hue, 16, 93), floor: dark ? hsl(hue, 10, 24) : hsl(hue, 12, 78),
     accent: hsl((hue + 180) % 360, 70, dark ? 58 : 44), ink: dark ? "#FFFFFF" : "#1A1A1A",
   };

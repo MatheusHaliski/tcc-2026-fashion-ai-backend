@@ -1,47 +1,46 @@
 @startuml RF2_MaquinaDeEstados_Sessao
 !pragma layout smetana
-title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de máquina de estados — sessão (família de RefreshToken = sid do JWT)
 skinparam backgroundColor #FFFFFF
-skinparam state {
-  BackgroundColor #F8F4FF
-  BorderColor #B695F5
-  FontColor #2D2438
-  ArrowColor #52606D
-}
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
 skinparam note {
   BackgroundColor #FFFDEB
   BorderColor #D8CE78
   FontColor #554F24
 }
-state "Ativa\n(algum token da família sem revokedAt\ne com expiresAt > agora)" as Ativa {
-  state "Access token válido\n(JWT 15 min em memória)" as AccessOk
-  state "Access token vencido\n(refresh ainda usável no cookie fai_rt)" as AccessExp
-  [*] --> AccessOk
-  AccessOk --> AccessExp : passam 15 min
-  AccessExp --> AccessOk : POST /bff/auth/refresh → POST /api/auth/refresh\n(rotação: revokedAt no antigo, novo token\ncom rotatedFromId na mesma família)
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "Revogada\n(revokedAt em toda a família)" as Revogada
-state "Expirada\n(expiresAt < agora: 30 dias com\n«lembrar-me», senão 1 dia)" as Expirada
+title RF2 — ciclo de vida de User.status\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum AccountStatus · tabela users
 
-[*] --> Ativa : POST /api/auth/login\nou POST /api/auth/register (familyId novo)
-Ativa --> Revogada : POST /api/auth/logout
-Ativa --> Revogada : DELETE /api/auth/sessions/{sessionId}\nou DELETE /api/auth/sessions (as outras) — RF3
-Ativa --> Revogada : PUT /api/auth/password (as outras)\n· POST /api/auth/password-reset/confirm (todas) — RF3
-Ativa --> Revogada : reuso de refresh já rotacionado\n(audit REFRESH_REUTILIZADO)
-Ativa --> Revogada : PUT /api/admin/users/{userId}/status\nsuspend = true (todas)
-Ativa --> Expirada : expiresAt alcançado sem renovação
-Revogada --> [*] : SessionActiveFilter → 401 SESSAO_ENCERRADA\nBFF apaga fai_rt e fai_rt_h
-Expirada --> [*] : POST /api/auth/refresh → 401\n"sessão expirada, faça login novamente"
-
-note right of Ativa
-  Não há enum: o estado vem de RefreshToken.revokedAt
-  e expiresAt (IdentityService.sessionActive).
-  GET /api/auth/sessions lista uma linha por família ativa.
-  Conta DELETED ou SUSPENDED: o refresh responde 401.
+state "User.status" as Ciclo_User {
+  state Ciclo_User_PENDING_EMAIL_VERIFICATION as "PENDING_EMAIL_VERIFICATION"
+  state Ciclo_User_ACTIVE as "ACTIVE"
+  state Ciclo_User_PENDING_VALIDATION as "PENDING_VALIDATION"
+  state Ciclo_User_SUSPENDED as "SUSPENDED"
+  state Ciclo_User_DELETION_SCHEDULED as "DELETION_SCHEDULED"
+  state Ciclo_User_DELETED as "DELETED"
+}
+[*] --> Ciclo_User_PENDING_EMAIL_VERIFICATION : criação
+Ciclo_User --> Ciclo_User_ACTIVE : ensureAdmin(), decide()
+Ciclo_User --> Ciclo_User_DELETED : purgeScheduledDeletions()
+Ciclo_User --> Ciclo_User_DELETION_SCHEDULED : requestDeletion()\nPOST /api/me/deletion
+Ciclo_User --> Ciclo_User_PENDING_EMAIL_VERIFICATION : register()\nPOST /api/auth/register
+note bottom of Ciclo_User
+  Sem mudança explícita no código para: PENDING_VALIDATION, SUSPENDED
+  (valor vindo de importação, regra calculada ou dado legado)
 end note
-note bottom of Revogada
-  O access token já emitido continua assinado até vencer,
-  mas o SessionActiveFilter confere o sid a cada requisição
-  e responde 401 — a revogação vale na hora.
+note right of Ciclo_User
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
 end note
 @enduml

@@ -22,6 +22,7 @@ import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.ApprovalStatus;
+import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.FollowStatus;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
 import br.com.fashionai.domain.model.enums.HypeLevel;
@@ -30,7 +31,9 @@ import br.com.fashionai.domain.model.enums.HypeStatus;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.model.enums.SealBondStatus;
+import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.model.enums.ShareChannel;
+import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.repository.BrandProfileRepository;
 import br.com.fashionai.domain.repository.BrandRepository;
 import br.com.fashionai.domain.repository.CelebrityProfileRepository;
@@ -66,6 +69,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
@@ -259,11 +263,15 @@ public class SearchService {
      * para não punir conteúdo novo; o v1 ({@code Scheme.hypeScore}) não entra mais.
      */
     static double relevance(Scheme s, List<SchemeItem> items, Set<String> dnaStyles, Double publicHype) {
-        Instant at = s.getPublishedAt() == null ? s.getCreatedAt() : s.getPublishedAt();
+        return relevance(publishedAt(s), Json.csv(s.getStyle()), dnaStyles, publicHype);
+    }
+
+    /** A mesma conta para qualquer post do feed: recência pela hora do post (publicação ou compartilhamento). */
+    static double relevance(Instant at, Collection<String> styles, Set<String> dnaStyles, Double publicHype) {
         double hours = Math.max(0, Duration.between(at, Instant.now()).toHours());
         double recency = Math.pow(0.5, hours / 72.0);
         double hype = publicHype == null ? NEUTRAL_HYPE : Math.max(0, Math.min(100, publicHype)) / 100.0;
-        double affinity = dnaStyles.isEmpty() ? 0 : Similarity.jaccard(dnaStyles, new HashSet<>(Json.csv(s.getStyle())));
+        double affinity = dnaStyles.isEmpty() ? 0 : Similarity.jaccard(dnaStyles, new HashSet<>(styles));
         return 0.5 * recency + 0.3 * hype + 0.2 * affinity;
     }
 
@@ -399,6 +407,22 @@ public class SearchService {
     }
 
     // ================================================================== feed comunitário (CA01/CA06)
+    /**
+     * Um post do feed: o look publicado ou um compartilhamento no feed (RF19.CA08) de um look ou de uma peça, sem
+     * descrição (o post do FashionAI é o próprio card). {@code at} é a hora do post (publicação ou compartilhamento) e
+     * {@code id} é o do conteúdo — o mesmo conteúdo aparece uma vez só, pelo post mais recente.
+     */
+    record Post(Instant at, UUID id, Scheme scheme, WardrobeItem piece, Share share) {
+        Collection<String> styles() {
+            return scheme != null ? Json.csv(scheme.getStyle()) : Json.csv(piece.getStyleTags());
+        }
+    }
+
+    /** Hora de publicação do look (o rascunho antigo sem data usa a criação). */
+    static Instant publishedAt(Scheme s) {
+        return s.getPublishedAt() == null ? s.getCreatedAt() : s.getPublishedAt();
+    }
+
     @Transactional(readOnly = true)
     public Map<String, Object> communityFeed(CurrentUser viewer, String rawCursor, int size, Filters filters) {
         int limit = Math.max(1, Math.min(size <= 0 ? 20 : size, 50));
@@ -406,42 +430,129 @@ public class SearchService {
         Set<UUID> blocked = blockedFor(viewer == null ? null : viewer.id());
         Set<String> dna = dnaStyles(viewer == null ? null : viewer.id());
         HypeLevel minLevel = parseLevel(filters == null ? null : filters.hypeLevel());
-        List<Scheme> candidates = schemes.findPublicFeed(PageRequest.of(0, 400)).stream()
-                .filter(s -> cursor == null || cursor.before(s.getPublishedAt(), s.getId()))
-                .sorted(Comparator.comparing(Scheme::getPublishedAt).thenComparing(Scheme::getId).reversed())
-                .filter(s -> visible(viewer, s, blocked)).toList();
-        // com o filtro "Em alta" o Hype da janela inteira vem numa consulta só (antes de montar a página)
-        Map<UUID, HypeScoreCurrent> hype = minLevel == null ? new HashMap<>() : hypeRows(HypeEntityType.SCHEME, candidates.stream().map(Scheme::getId).toList());
-        List<Scheme> page = new ArrayList<>();
-        Map<UUID, List<SchemeItem>> itemsBy = new LinkedHashMap<>();
-        for (Scheme s : candidates) {
-            if (!meetsLevel(hype.get(s.getId()), minLevel, hypeConfig)) {
+        Map<UUID, Post> byTarget = new LinkedHashMap<>();
+        for (Scheme s : schemes.findPublicFeed(PageRequest.of(0, 400))) {
+            byTarget.put(s.getId(), new Post(publishedAt(s), s.getId(), s, null, null));
+        }
+        // RF19.CA08 — "Publicar no feed": o compartilhamento é um post (de qualquer pessoa, do mais novo para o mais antigo);
+        // o post só entra se quem vê pode abrir o conteúdo E o perfil de quem compartilhou (bloqueio, conta ativa)
+        for (Share sh : shares.findByChannelOrderByCreatedAtDesc(ShareChannel.FEED, PageRequest.of(0, 200))) {
+            Post prev = byTarget.get(sh.getTargetId());
+            if ((prev != null && !prev.at().isBefore(sh.getCreatedAt())) || !sharerVisible(viewer, sh.getUser(), blocked)) {
                 continue;
             }
-            List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(s.getId());
-            if (matches(filters, s, items)) {
-                page.add(s);
-                itemsBy.put(s.getId(), items);
+            Post post = switch (sh.getTargetType()) {
+                case SCHEME -> (prev != null && prev.scheme() != null ? Optional.of(prev.scheme()) : schemes.findById(sh.getTargetId()))
+                        .map(s -> new Post(sh.getCreatedAt(), s.getId(), s, null, sh)).orElse(null);
+                case PIECE -> pieces.findById(sh.getTargetId()).map(w -> new Post(sh.getCreatedAt(), w.getId(), null, w, sh)).orElse(null);
+                default -> null;
+            };
+            if (post != null) {
+                byTarget.put(post.id(), post);
+            }
+        }
+        List<Post> candidates = byTarget.values().stream()
+                .filter(p -> cursor == null || cursor.before(p.at(), p.id()))
+                .sorted(Comparator.comparing(Post::at).thenComparing(Post::id).reversed())
+                .filter(p -> p.scheme() != null ? visible(viewer, p.scheme(), blocked) : visible(viewer, p.piece(), blocked)).toList();
+        // com o filtro "Em alta" o Hype da janela inteira vem numa consulta por tipo (antes de montar a página)
+        Map<UUID, HypeScoreCurrent> hype = minLevel == null ? new HashMap<>() : hypeOfPosts(candidates);
+        List<Post> page = new ArrayList<>();
+        Map<UUID, List<SchemeItem>> itemsBy = new LinkedHashMap<>();
+        for (Post p : candidates) {
+            if (!meetsLevel(hype.get(p.id()), minLevel, hypeConfig)) {
+                continue;
+            }
+            if (p.scheme() != null) {
+                List<SchemeItem> items = schemeItems.findBySchemeIdOrderBySortOrder(p.id());
+                if (matches(filters, p.scheme(), items)) {
+                    page.add(p);
+                    itemsBy.put(p.id(), items);
+                }
+            } else if (matches(filters, p.piece())) {
+                page.add(p);
             }
             if (page.size() == limit) {
                 break;
             }
         }
-        String next = page.size() == limit ? new Cursor(page.get(page.size() - 1).getPublishedAt(), page.get(page.size() - 1).getId()).encode() : null;
-        // P1-01: sem filtro, o Hype v2 da página vem numa consulta antes de ordenar (só o público entra na relevância)
-        Map<UUID, HypeScoreCurrent> pageHype = minLevel == null ? hypeRows(HypeEntityType.SCHEME, page.stream().map(Scheme::getId).toList()) : hype;
-        List<Scheme> ordered = page.stream()
-                .sorted(Comparator.comparingDouble((Scheme s) -> relevance(s, itemsBy.get(s.getId()), dna, publicScore(pageHype.get(s.getId())))).reversed())
+        String next = page.size() == limit ? new Cursor(page.get(page.size() - 1).at(), page.get(page.size() - 1).id()).encode() : null;
+        // P1-01: sem filtro, o Hype v2 da página vem numa consulta por tipo antes de ordenar (só o público entra na relevância)
+        Map<UUID, HypeScoreCurrent> pageHype = minLevel == null ? hypeOfPosts(page) : hype;
+        List<Post> ordered = page.stream()
+                .sorted(Comparator.comparingDouble((Post p) -> relevance(p.at(), p.styles(), dna, publicScore(pageHype.get(p.id())))).reversed())
                 .toList();
+        List<Views.SchemeView> looks = new ArrayList<>();
+        List<Map<String, Object>> entries = new ArrayList<>();
+        for (Post p : ordered) {
+            Map<String, Object> e = new LinkedHashMap<>();
+            e.put("kind", p.scheme() != null ? "SCHEME" : "PIECE");
+            e.put("id", p.id());
+            e.put("at", p.at());
+            if (p.scheme() != null) {
+                Views.SchemeView v = schemeService.view(viewer, p.scheme(), itemsBy.get(p.id()));
+                looks.add(v);
+                e.put("scheme", v);
+            } else {
+                e.put("piece", Views.piece(p.piece(), null, null));
+            }
+            if (p.share() != null) {
+                e.put("sharedBy", Views.user(p.share().getUser()));   // o post não tem descrição: só quem compartilhou
+            }
+            entries.add(e);
+        }
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("items", ordered.stream().map(s -> schemeService.view(viewer, s, itemsBy.get(s.getId()))).toList());
+        out.put("items", looks);
+        out.put("entries", entries);
         out.put("nextCursor", next);
         out.put("chips", filters == null ? List.of() : filters.chips());
         out.put("order", Msg.t("search.relevancia_recencia_hype_afinidade"));
         return out;
     }
 
+    /** Quem compartilhou também precisa estar visível para quem lê o feed (sem bloqueio, conta ativa, vitrine). */
+    boolean sharerVisible(CurrentUser viewer, User sharer, Set<UUID> blocked) {
+        return sharer != null && !blocked.contains(sharer.getId()) && sharer.getStatus() == AccountStatus.ACTIVE && showcaseAllows(viewer, sharer);
+    }
+
+    /** Hype v2 dos posts: uma consulta para os looks e, se houver peça compartilhada, uma para as peças. */
+    private Map<UUID, HypeScoreCurrent> hypeOfPosts(List<Post> posts) {
+        Map<UUID, HypeScoreCurrent> out = new HashMap<>(hypeRows(HypeEntityType.SCHEME, posts.stream().filter(p -> p.scheme() != null).map(Post::id).toList()));
+        List<UUID> pieceIds = posts.stream().filter(p -> p.piece() != null).map(Post::id).toList();
+        if (!pieceIds.isEmpty()) {
+            out.putAll(hypeRows(HypeEntityType.PIECE, pieceIds));
+        }
+        return out;
+    }
+
     // ================================================================== The Runway (RF7/RF19)
+    /** Conteúdo de uma entrada do "Seguindo": o look ou a peça compartilhada. */
+    private static Object entryContent(Map<String, Object> e) {
+        return e.containsKey("scheme") ? e.get("scheme") : e.get("piece");
+    }
+
+    private static UUID entryId(Map<String, Object> e) {
+        return entryContent(e) instanceof Scheme s ? s.getId() : ((WardrobeItem) e.get("piece")).getId();
+    }
+
+    /** Entrada de compartilhamento no feed (RF19.CA08): look ou peça e quem compartilhou (o post não tem descrição). */
+    private Map<String, Object> sharedEntry(Share sh) {
+        Object content = switch (sh.getTargetType()) {
+            case SCHEME -> schemes.findById(sh.getTargetId()).orElse(null);
+            case PIECE -> pieces.findById(sh.getTargetId()).orElse(null);
+            default -> null;
+        };
+        if (content == null) {
+            return null;
+        }
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("reason", "COMPARTILHADO");
+        m.put("by", Views.user(sh.getUser()));
+        m.put(content instanceof Scheme ? "scheme" : "piece", content);
+        m.put("at", sh.getCreatedAt());
+        return m;
+    }
+
     @Transactional(readOnly = true)
     public Map<String, Object> runway(CurrentUser viewer, String rawCursor, int size) {
         int limit = Math.max(1, Math.min(size <= 0 ? 20 : size, 50));
@@ -457,16 +568,19 @@ public class SearchService {
             }
             List<Scheme> fromFollowing = ids.isEmpty() ? schemes.findFeedForFollowing(following, PageRequest.of(0, 300)) : schemes.findByIdIn(ids);
             fromFollowing.forEach(s -> entries.putIfAbsent(s.getId(), Map.of("reason", "SEGUINDO", "scheme", s, "at", s.getPublishedAt() == null ? s.getCreatedAt() : s.getPublishedAt())));
+            // compartilhamentos no feed de quem eu sigo: looks e peças (RF19.CA08)
             for (Share sh : shares.findFeedShares(following, ShareChannel.FEED, PageRequest.of(0, 200))) {
-                if (sh.getTargetType() == br.com.fashionai.domain.model.enums.TargetType.SCHEME) {
-                    schemes.findById(sh.getTargetId()).ifPresent(s -> entries.putIfAbsent(s.getId(), Map.of("reason", "COMPARTILHADO",
-                            "by", Views.user(sh.getUser()), "caption", String.valueOf(sh.getCaption()), "scheme", s, "at", sh.getCreatedAt())));
+                if (!entries.containsKey(sh.getTargetId()) && !blocked.contains(sh.getUser().getId())) {
+                    Map<String, Object> e = sharedEntry(sh);
+                    if (e != null) {
+                        entries.put(sh.getTargetId(), e);
+                    }
                 }
             }
             // RF14.CA05 — seguir uma marca traz ao feed os esquemas vinculados a ela
             for (UUID f : following) {
                 users.findById(f).filter(u -> u.getProfileType() != ProfileType.PESSOAL).ifPresent(inst ->
-                        bonds.findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(inst.getId(), SealBondStatus.APPROVED).stream().limit(30)
+                        bonds.findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(inst.getId(), SealBondStatus.APPROVED).stream().filter(b -> b.getScheme() != null).limit(30)
                                 .forEach(b -> entries.putIfAbsent(b.getScheme().getId(), Map.of("reason", "VINCULO_" + inst.getProfileType().name(),
                                         "brand", Views.user(inst), "scheme", b.getScheme(), "at", b.getUpdatedAt()))));
             }
@@ -475,18 +589,31 @@ public class SearchService {
         if (fallback) {
             schemes.findPublicFeed(PageRequest.of(0, 200)).forEach(s -> entries.putIfAbsent(s.getId(), Map.of("reason", "COMUNIDADE", "scheme", s, "at", s.getPublishedAt())));
         }
+        // o que EU publiquei no feed aparece no meu "Seguindo" (como numa rede social), por cima da entrada mais antiga
+        for (Share sh : shares.findFeedShares(List.of(viewer.id()), ShareChannel.FEED, PageRequest.of(0, 50))) {
+            Map<String, Object> prev = entries.get(sh.getTargetId());
+            if (prev == null || ((Instant) prev.get("at")).isBefore(sh.getCreatedAt())) {
+                Map<String, Object> e = sharedEntry(sh);
+                if (e != null) {
+                    entries.put(sh.getTargetId(), e);
+                }
+            }
+        }
         List<Map<String, Object>> sorted = entries.values().stream()
-                .filter(e -> visible(viewer, (Scheme) e.get("scheme"), blocked))
-                .filter(e -> cursor == null || cursor.before((Instant) e.get("at"), ((Scheme) e.get("scheme")).getId()))
-                .sorted(Comparator.comparing((Map<String, Object> e) -> (Instant) e.get("at")).thenComparing(e -> ((Scheme) e.get("scheme")).getId()).reversed())
+                .filter(e -> entryContent(e) instanceof Scheme s ? visible(viewer, s, blocked) : visible(viewer, (WardrobeItem) e.get("piece"), blocked))
+                .filter(e -> cursor == null || cursor.before((Instant) e.get("at"), entryId(e)))
+                .sorted(Comparator.comparing((Map<String, Object> e) -> (Instant) e.get("at")).thenComparing(SearchService::entryId).reversed())
                 .limit(limit).toList();
         List<Map<String, Object>> items = sorted.stream().map(e -> {
-            Scheme s = (Scheme) e.get("scheme");
             Map<String, Object> m = new LinkedHashMap<>(e);
-            m.put("scheme", schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId())));
+            if (entryContent(e) instanceof Scheme s) {
+                m.put("scheme", schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId())));
+            } else {
+                m.put("piece", Views.piece((WardrobeItem) e.get("piece"), null, null));
+            }
             return m;
         }).toList();
-        String next = sorted.size() == limit ? new Cursor((Instant) sorted.get(limit - 1).get("at"), ((Scheme) sorted.get(limit - 1).get("scheme")).getId()).encode() : null;
+        String next = sorted.size() == limit ? new Cursor((Instant) sorted.get(limit - 1).get("at"), entryId(sorted.get(limit - 1))).encode() : null;
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("items", items);
         out.put("nextCursor", next);
@@ -523,9 +650,8 @@ public class SearchService {
         List<?> all = switch (t) {
             case "LOOKS" -> looks(viewer, term, filters, blocked, page, want);
             case "PECAS" -> pieces(viewer, term, filters, blocked, page, want);
-            case "PESSOAS" -> users.searchByUsername(term, PageRequest.of(0, want)).stream()
-                    .filter(u -> u.getProfileType() == ProfileType.PESSOAL && u.getStatus() == AccountStatus.ACTIVE && !blocked.contains(u.getId()))
-                    .map(Views::user).toList();
+            case "PESSOAS" -> users.searchPersonalProfiles(term, viewer != null && User.isTestUsername(viewer.username()),
+                    blocked.isEmpty() ? List.of(new UUID(0, 0)) : blocked, PageRequest.of(0, want));
             case "MARCAS" -> brandResults(needle, want);
             default -> celebrities.findByVerificationStatusOrderByCreatedAtDesc(ApprovalStatus.APROVADO).stream()
                     .filter(c -> term.isEmpty() || c.getStageName().toLowerCase(Locale.ROOT).contains(needle))
@@ -537,7 +663,7 @@ public class SearchService {
         out.put("term", term);
         out.put("tab", t);
         out.put("tabs", TABS);
-        out.put("results", results);
+        out.put("results", "PESSOAS".equals(t) ? personProfiles(viewer, results.stream().map(User.class::cast).toList()) : results);
         out.put("nextCursor", nextCursor);
         out.put("chips", filters == null ? List.of() : filters.chips());
         out.put("engine", searchIndex.getIfAvailable() != null && searchIndex.getIfAvailable().enabled() ? "opensearch" : "mysql");
@@ -553,6 +679,40 @@ public class SearchService {
             out.put("empty", Map.of("message", Msg.t("search.nada_encontrado_para", term), "alternatives", alts, "trending", hot));
         }
         return out;
+    }
+
+    /** Apenas campos já públicos no cabeçalho do perfil; nunca e-mail, telefone, nascimento ou entidades JPA. */
+    public record PersonProfile(UUID id, String username, String displayName, String avatarUrl, String profileType,
+                                boolean verified, String country, boolean privateAccount, String coverUrl, String bio,
+                                String pronouns, List<Map<String, Object>> links, String visibility, boolean contentVisible,
+                                String relation, Map<String, Long> counters) { }
+
+    /** Quatro consultas de contadores por página, em vez de quatro consultas para cada pessoa. */
+    List<PersonProfile> personProfiles(CurrentUser viewer, List<User> page) {
+        if (page.isEmpty()) return List.of();
+        List<UUID> ids = page.stream().map(User::getId).toList();
+        Map<UUID, Long> followers = groupedCounts(follows.countFollowersByIds(ids, FollowStatus.ACEITO));
+        Map<UUID, Long> following = groupedCounts(follows.countFollowingByIds(ids, FollowStatus.ACEITO));
+        Map<UUID, Long> wardrobe = groupedCounts(pieces.countByUserIdsAndAvailabilityStatusNot(ids, AvailabilityStatus.ARCHIVED));
+        Map<UUID, Long> looks = groupedCounts(schemes.countByUserIdsAndStatusNot(ids, SchemeStatus.ARCHIVED));
+        Map<UUID, FollowStatus> relations = viewer == null ? Map.of() : follows.findByFollowerIdAndFollowingIdIn(viewer.id(), ids).stream()
+                .collect(Collectors.toMap(f -> f.getFollowing().getId(), f -> f.getStatus()));
+        return page.stream().map(u -> {
+            FollowStatus relation = relations.get(u.getId());
+            boolean self = viewer != null && viewer.id().equals(u.getId());
+            Visibility visibility = u.getProfileVisibility();
+            boolean contentVisible = self || visibility == Visibility.PUBLIC
+                    || (visibility == Visibility.FOLLOWERS && relation == FollowStatus.ACEITO);
+            return new PersonProfile(u.getId(), u.getUsername(), u.getDisplayName(), u.getAvatarUrl(), u.getProfileType().name(),
+                    u.isVerified(), u.getCountry(), u.isPrivateAccount(), u.getCoverUrl(), u.getBio(), u.getPronouns(),
+                    Json.list(u.getLinksJson()), visibility.name(), contentVisible, self ? "SELF" : relation == null ? "NENHUMA" : relation.name(),
+                    Map.of("followers", followers.getOrDefault(u.getId(), 0L), "following", following.getOrDefault(u.getId(), 0L),
+                            "pieces", wardrobe.getOrDefault(u.getId(), 0L), "schemes", looks.getOrDefault(u.getId(), 0L)));
+        }).toList();
+    }
+
+    private static Map<UUID, Long> groupedCounts(List<Object[]> rows) {
+        return rows.stream().collect(Collectors.toMap(r -> (UUID) r[0], r -> ((Number) r[1]).longValue()));
     }
 
     static int offsetOf(String raw) {

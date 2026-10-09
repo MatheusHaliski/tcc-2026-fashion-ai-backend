@@ -1,85 +1,73 @@
 @startuml RF37_Componentes
-title RF37 — FLAIR: jogo de cartas de moda com 15 modos e combinações de lojas que rendem cupons\nDiagrama de componentes — frontend → API → serviços e motor → HypeScore v2, FAI Points, cupons e MySQL
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "flair/page.tsx\nabas modos · jogar · cartas · decks\n· lojas · carteira (skins) · quests" as FE_PAGE
-  component "flair/modes.tsx · modes-shared.tsx\nFlairModes · LookPicker · ResultView\n(STAT HYPE = Hype v2 público)" as FE_MODES
-  component "flair/flair-card.tsx\nFlairCardView · DeckSummary\n(rarityBasis explica a raridade pelo Hype)" as FE_CARD
-  component "flair/flair-shared.tsx\nVoucherDialog · checkLabel" as FE_SHARED
-  component "brands/[slug]/page.tsx\n→ flair/brand-flair-tab.tsx (BrandFlairTab)" as FE_BRAND
-  component "coupons/page.tsx (RF38)" as FE_COUP
+  component "/flair\n(site)/(app)/flair/page.tsx" as FE0
+  component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE1
+  component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  [FlairController\n/api/flair/me · cards · decks · quests · duels\n· arena · teams · combinations · vouchers · skins\n· /api/flair/brand/** · /api/institutional/{slug}/flair] as FC
-  [FlairModesController\n/api/flair/modes/** (15 modos, looks, troféus)] as FMC
+  component "FlairController\n/api/flair/decks\n/api/flair/decks/{…}\n/api/flair/quests" as FlairController
+  component "FlairModesController\n/api/flair/modes/deck" as FlairModesController
 }
-package "fai-application" {
-  [FlairService\ncartas, decks, duelo, arena, equipes,\nquests, skins, combinações e cupons FLR] as FS
-  [FlairModesService\n15 modos · finish · trophy] as FMS
-  [FlairEngine · FlairLooks\n(motor puro, sem banco)] as ENG
-  [SchemeService\nowned · canView] as SCH
-  [InstitutionalService\ninstitutionalUser(slug)] as INST
-  [Guard\nrequireCanCreate · requireApprovedInstitutional] as G
-  [FaiPointsService (RF41)\ngame · award] as FP
-  [CouponService (RF38)\nonCheck → scan] as CS
-  [NotificationService\nACHIEVEMENT_UNLOCKED · COUPON_AVAILABLE] as NS
-  [HypeScoreConfig\nalgorithmVersion] as CFG
+package "fai-application (casos de uso)" {
+  component "FlairService" as FlairService
+  component "FlairModesService" as FlairModesService
+  component "SchemeService" as SchemeService <<apoio>>
+  component "InstitutionalService" as InstitutionalService <<apoio>>
+  component "FaiPointsService" as FaiPointsService <<apoio>>
+  component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
 }
-interface "ApplicationEventPublisher\nCouponRightsCheck (AFTER_COMMIT)" as EV
-package "fai-domain · repository" {
-  [FlairProfileRepository · FlairCoinEntryRepository\nFlairMatchRepository · FlairMatchEntryRepository\nFlairTeamRepository · FlairTeamMemberRepository\nFlairModeStateRepository · FlairTerritoryRepository\nFlairTrophyRepository · FlairCombinationRepository\nFlairRedemptionRepository] as FREPOS
-  [SchemeRepository · SchemeItemRepository\nWardrobeItemRepository · UserRepository\nBrandProfileRepository · ReactionRepository] as REPOS
-  [HypeScoreCurrentRepository] as HREPO
+package "fai-domain (repositórios)" {
+  component "FlairProfileRepository\nFlairCoinEntryRepository\nFlairCombinationRepository\nFlairRedemptionRepository\nFlairTeamRepository\nFlairTeamMemberRepository\nFlairMatchRepository\nFlairMatchEntryRepository\nUserRepository\nWardrobeItemRepository\n(+8)" as REPO_MySQL
 }
-database "MySQL · fashionai_app\n• flair_profiles · flair_coin_entries\n• flair_matches · flair_match_entries\n• flair_teams · flair_team_members\n• flair_mode_states · flair_territories · flair_trophies\n• flair_combinations · flair_redemptions\n• schemes · scheme_items · wardrobe_items\n• hype_scores · fai_points_ledger · coupon_rights" as DB
-
-FE_PAGE --> FE_MODES
-FE_PAGE --> FE_CARD
-FE_PAGE --> FE_SHARED
-FE_BRAND --> FE_SHARED
-FE_PAGE --> FC : HTTPS/JSON
-FE_MODES --> FMC : HTTPS/JSON
-FE_BRAND --> FC : HTTPS/JSON
-FE_PAGE ..> FE_COUP : "Meus cupons resgatados"
-FC --> FS
-FMC --> FMS
-FMS --> FS : profile · award · publicLookHype · rightsCheck
-FS --> ENG
-FMS --> ENG
-FS ..> SCH
-FMS ..> SCH
-FS ..> INST
-FS ..> G
-FMS ..> G
-FS --> FP
-FMS --> FP
-FMS --> NS
-FS --> EV : rightsCheck
-EV ..> CS
-CS --> FS : combinationsFor · redeem
-CS --> NS
-FS ..> CFG
-FS --> FREPOS
-FMS --> FREPOS
-FS --> REPOS
-FMS --> REPOS
-FS --> HREPO : Hype v2 (só leitura)
-FREPOS --> DB : JPA/Flyway
-REPOS --> DB : JPA/Flyway
-HREPO --> DB : JPA/Flyway
+database "MySQL\n• brand_profiles\n• flair_coin_entries\n• flair_combinations\n• flair_match_entries\n• flair_matches\n• flair_mode_states\n• flair_profiles\n• flair_redemptions\n• flair_team_members\n• flair_teams\n• flair_territories\n• flair_trophies\n(+6)" as DB_MySQL
+APIC --> FlairController : HTTPS/JSON
+APIC --> FlairModesController : HTTPS/JSON
+FE0 --> APIC
+FE1 --> APIC
+FlairController --> FlairService
+FlairModesController --> FlairModesService
+FlairModesService --> REPO_MySQL
+FlairModesService ..> FaiPointsService
+FlairModesService ..> FlairService
+FlairModesService ..> NotificationService
+FlairModesService ..> SchemeService
+FlairService --> REPO_MySQL
+FlairService ..> FaiPointsService
+FlairService ..> HypeScoreConfig
+FlairService ..> InstitutionalService
+FlairService ..> SchemeService
+REPO_MySQL --> DB_MySQL : JPA/Flyway
 @enduml

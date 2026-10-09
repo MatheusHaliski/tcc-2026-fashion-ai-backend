@@ -1,106 +1,79 @@
 @startuml RF4_Sequencia_v3
-!pragma layout smetana
-title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de sequência — criador catalog-first: busca catalogada, marca pelo buscador web e salvar
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as U
-participant "pieces/new/page.tsx\nPieceCreator · CatalogSearch\nPieceFields · BrandSearchInput" as FE
-participant "CatalogController" as CC
-participant "CatalogService" as CS
-participant "BrandLogoController" as BC
-participant "BrandWebSearchService\n+ LogoFilter" as BS
-participant "WardrobeController" as WC
-participant "WardrobeService" as WS
-participant "BrandLogoService" as BL
-participant "MediaService\n(MediaStoragePort)" as ST
-participant "Wikidata · Simple Icons\n· IA (BRAND_LOGO_FINDER)" as EXT
-database "MySQL" as DB
+autonumber "<b>0."
+title RF4 — Criar Peça (v3)\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-U -> FE: abre /pieces/new (?category, ?brand, ?q ou ?from=lens)
-FE -> FE: readPiecePrefill + validPiecePrefill (GET /api/taxonomy em cache)
-U -> FE: tipo da peça + subtipo/marca/nome na busca
-FE -> CC: GET /api/catalog/search?category=&subcategory=&brand=&q=&color=
-CC -> CS: search(userId, SearchRequest)
-CS -> DB: candidatos (FULLTEXT) em catalog_products\n+ brands/brand_aliases (só status visíveis)
-CS -> CS: CatalogMatchScorer (similaridade, apelidos,\nsinônimos, cor, design) — corte MIN_SCORE 0,35
-CC --> FE: 200 {intent, results[matchScore, foto oficial], total, enoughInput}
-opt sem resultado
-  U -> FE: "procurar nas lojas oficiais"
-  FE -> CC: POST /api/catalog/discover
-  CC -> CS: discover(user, SearchRequest)
-  alt marca desconhecida / sem catalog_sources
-    CS --> FE: 200 {status: BRAND_UNKNOWN | NO_OFFICIAL_SOURCE}
-  else achou nas fontes oficiais
-    CS -> DB: CatalogIngestService.upsert(..., DISCOVERED)
-    CS --> FE: 200 {status: FOUND, results}
-  end
+actor "Pessoa usuária" as U
+boundary "Tela /pieces/new" as P
+control "WardrobeController" as WardrobeController
+participant "WardrobeService" as WardrobeService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+participant "OwnMedia" as OwnMedia
+participant "MediaService" as MediaService
+participant "BrandLogoService" as BrandLogoService
+participant "AssetCatalogService" as AssetCatalogService
+== Cadastrar a peça a partir do rascunho analisado ==
+U -> P : Cadastrar a peça a partir do rascunho analisado
+P -> WardrobeController : POST /api/pieces
+WardrobeController -> WardrobeService : create()
+activate WardrobeService
+WardrobeService -> Guard : requireCanCreate()
+WardrobeService -> DB_MySQL : SELECT users
+alt formulario inválido
+WardrobeService --> WardrobeController : 400 FORMULARIO_INVALIDO
+WardrobeController --> P : 400 + mensagem
 end
-opt escolhe "É esta"
-  FE -> FE: applyCatalog — formulário preenchido;\nbrandSource CATALOGO, brandRef = productId
+WardrobeService -> DB_MySQL : SELECT pipeline_jobs
+alt erro
+WardrobeService --> WardrobeController : 500 ERRO
+WardrobeController --> P : 500 + mensagem
 end
-
-== Campo marca: buscador web (sem catálogo pré-cadastrado) ==
-U -> FE: digita a marca (2 a 60 letras, 380 ms)
-FE -> BC: GET /api/brand-search?q=
-BC -> BS: search(userId, q, allowAi = true)
-alt texto < 2 ou > 60
-  BS --> FE: 400 BUSCA_INVALIDA
-else em cache (30 min, só memória)
-  BS --> FE: 200 {..., cache: true}
-else busca nova
-  par
-    BS -> EXT: Wikidata (wbsearchentities + EntityData P154/P856)
-  else
-    BS -> EXT: Simple Icons (índice em memória, 12 h)
-  end
-  opt menos de 2 nomes iguais/começando pelo texto (q ≥ 3)
-    BS -> EXT: AiEngine BRAND_LOGO_FINDER (até 4 marcas)
-  end
-  BS -> BS: merge + ordenação; LogoFilter nos 6 primeiros\n(ver RF4-pipeline-filtro-logo)
-  BS -> ST: put(brands/logos/web/<marca>-<fonte>.png)
-  BS --> FE: 200 {results[nome, site, fonte, logoUrl, logoWideUrl],\nsources[status por fonte]}
+WardrobeService -> DB_MySQL : SELECT wardrobe_items
+WardrobeService -> DB_MySQL : SELECT reactions
+WardrobeService -> WardrobeService : new WardrobeItem()
+WardrobeService -> DB_MySQL : SELECT brands
+WardrobeService -> WardrobeService : brandLogoUrl = null
+WardrobeService -> OwnMedia : accepts()
+WardrobeService -> MediaService : read()
+WardrobeService -> WardrobeService : brandLogoUrl = set
+WardrobeService -> BrandLogoService : acceptWebLogo()
+BrandLogoService -> DB_MySQL : SELECT brand_logos (×2)
+BrandLogoService -> DB_MySQL : SELECT brands
+BrandLogoService -> DB_MySQL : INSERT/UPDATE brands
+BrandLogoService --> WardrobeService
+WardrobeService -> WardrobeService : brandLogoUrl = null (×2)
+alt foto obrigatória
+WardrobeService --> WardrobeController : 400 FOTO_OBRIGATORIA
+WardrobeController --> P : 400 + mensagem
 end
-U -> FE: escolhe a marca (ou fica com o texto livre)
-
-== Salvar (etapa 4 · Revisar) ==
-U -> FE: Salvar
-FE -> FE: validatePieceForm (erro → volta ao campo)
-alt produto do catálogo escolhido
-  FE -> CC: POST /api/pieces/from-catalog {productId, variantId, dados pessoais, background}
-  CC -> CS: addToWardrobe(user, AddRequest)
-  CS -> DB: catalog_products (REJECTED → 400 PRODUTO_RECUSADO;\nDISCOVERED → REFERENCE_ONLY; owners_count + 1)
-  CS -> DB: 1ª catalog_image não recusada (foto oficial)
-  CS -> WS: createFromCatalog(user, PieceForm, CatalogPick)
-else sem produto
-  FE -> WC: POST /api/pieces {PieceForm, useDefaultImage: true}
-  WC -> WS: create(user, form)
-end
-WS -> WS: Guard.requireCanCreate (401 · 403 EMAIL_NAO_CONFIRMADO…)
-WS -> WS: validate → 400 FORMULARIO_INVALIDO {campos}
-WS -> WS: resolveBrand + brandFromWebSearch
-opt logo da web escolhido
-  WS -> ST: logo está no storage próprio? (OwnMedia + read)
-  WS -> BL: acceptWebLogo(marca, logo, fonte)
-  BL -> DB: UPSERT brand_logos
-end
-alt com foto oficial
-  WS -> DB: INSERT wardrobe_items (image_origin CATALOG, catalog_product_id,\ncatalog_variant_id, moderation APPROVED, COMPLETED)
-else sem foto
-  WS -> DB: INSERT wardrobe_items (ilustração da subcategoria,\ndefault_image = true)
-  WS -> ST: defaultStudio — foto de estúdio da ilustração (aprovada)
-end
-WS -> DB: notifications (PIECE_CREATED) · audit_log (CADASTRO_PECA)
-WS --> FE: 201 PieceView
-FE --> U: CreationSuccess → perfil ou Closet
-WS ->> WS: PieceCreated (AFTER_COMMIT): FAI Points, Hype ao vivo,\nInventory Score, Meu Quarto, desafios, cupons
-note over FE, WS
-  Análise por foto (POST /api/pieces/analysis/batch e /analysis/multi) continua no backend,
-  mas o criador não envia foto desde 04/10: ver RF12. O passo "foto opcional" é <<planejado>> (RF15 §8.1).
-end note
+WardrobeService -> AssetCatalogService : defaultPieceImage()
+WardrobeService -> WardrobeService : imageUrl = set
+WardrobeService -> WardrobeService : thumbnailUrl = set
+WardrobeService -> WardrobeService : originalImageUrl = null
+note over WardrobeService : … e mais 62 passos no código
+deactivate WardrobeService
+WardrobeService --> WardrobeController : resultado
+WardrobeController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

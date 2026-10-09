@@ -1,5 +1,6 @@
 "use client";
-import { Children, Fragment, createContext, isValidElement, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, type ButtonHTMLAttributes, type ChangeEvent, type KeyboardEvent as ReactKeyboardEvent, type RefObject, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { Children, Fragment, createContext, isValidElement, useCallback, useContext, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type ButtonHTMLAttributes, type ChangeEvent, type KeyboardEvent as ReactKeyboardEvent, type RefObject, type InputHTMLAttributes, type ReactNode, type SelectHTMLAttributes, type TextareaHTMLAttributes } from "react";
+import { createPortal } from "react-dom";
 import { ApiError } from "@/lib/api/client";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { REQUIREMENT_CODE, useDevRefs } from "@/lib/dev-refs";
@@ -460,13 +461,26 @@ export function useDismiss(ref: RefObject<HTMLElement | null>, open: boolean, on
 }
 
 /* ---------- Dialog ---------- */
+const noSubscribe = () => () => {};
+/** true só no navegador (na hidratação vale o servidor: false), sem render extra fora dela. */
+function useIsClient() { return useSyncExternalStore(noSubscribe, () => true, () => false); }
+/**
+ * Diálogos e painéis vão para o fim do <body> (portal): dentro de um card, a contenção do card (container query,
+ * contain, transform, backdrop-filter) virava o "viewport" do position:fixed e o diálogo ficava preso e cortado no card.
+ */
+function Overlay({ children }: { children: ReactNode }) {
+  return createPortal(children, document.body);
+}
+
 export function Dialog({ open, onClose, title, children, footer, size, role = "dialog" }: { open: boolean; onClose: () => void; title: string; children: ReactNode; footer?: ReactNode; size?: "lg" | "xl"; role?: "dialog" | "alertdialog" }) {
   const { t } = useI18n();
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
-  useFocusTrap(ref, open, onClose);
-  if (!open) return null;
+  const client = useIsClient();
+  useFocusTrap(ref, open && client, onClose);
+  if (!open || !client) return null;
   return (
+    <Overlay>
     <div className="dialog-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div ref={ref} role={role} aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className={`dialog ${size ? `dialog-${size}` : ""}`}>
         <div className="dialog-head">
@@ -477,6 +491,7 @@ export function Dialog({ open, onClose, title, children, footer, size, role = "d
         {footer && <div className="dialog-foot">{footer}</div>}
       </div>
     </div>
+    </Overlay>
   );
 }
 
@@ -485,9 +500,11 @@ export function Sheet({ open, onClose, title, children, footer, side = "auto" }:
   const { t } = useI18n();
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
-  useFocusTrap(ref, open, onClose);
-  if (!open) return null;
+  const client = useIsClient();
+  useFocusTrap(ref, open && client, onClose);
+  if (!open || !client) return null;
   return (
+    <Overlay>
     <div className={cn("sheet-backdrop", side === "bottom" && "sheet-always-bottom")} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div ref={ref} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className="sheet">
         <div className="sheet-grip" aria-hidden />
@@ -499,6 +516,7 @@ export function Sheet({ open, onClose, title, children, footer, side = "auto" }:
         {footer && <div className="sheet-foot">{footer}</div>}
       </div>
     </div>
+    </Overlay>
   );
 }
 

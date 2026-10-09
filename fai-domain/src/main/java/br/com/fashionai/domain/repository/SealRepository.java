@@ -17,9 +17,17 @@ import java.util.UUID;
 
 /** Repositório Spring Data de Seal (MySQL — fonte da verdade). */
 public interface SealRepository extends JpaRepository<Seal, UUID> {
+    /** O teste da cota e o incremento da emissão compartilham o bloqueio do selo. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from Seal s where s.id = :id")
+    Optional<Seal> findForIssuance(@Param("id") UUID id);
+
     List<Seal> findByOwnerIdOrderByCreatedAtDesc(UUID ownerId);
 
     List<Seal> findByOwnerIdAndStatusOrderByCreatedAtDesc(UUID ownerId, SealStatus status);
+
+    /** Contador público do perfil: não carrega políticas e arte de todos os selos para montar o header/feed. */
+    long countByOwnerIdAndStatus(UUID ownerId, SealStatus status);
 
     List<Seal> findByIdIn(Collection<UUID> ids);
 

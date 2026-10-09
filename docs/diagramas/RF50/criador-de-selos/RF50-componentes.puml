@@ -1,83 +1,95 @@
 @startuml RF50_Componentes
-title RF50 (evolução do RF25) — Criador de selo: componentes (frontend, backend, catálogo de modelos e armazenamento)
+!pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
-  BackgroundColor #F8F4FF
-  BorderColor #B695F5
-  FontColor #2D2438
-  ArrowColor #52606D
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
-  FontColor #2D2438
+  FontColor #4A4852
 }
-package "Frontend (Next.js)" {
-  [brands/{slug}/page.tsx\n(aba Selos + Dialog)] as Page
-  [SealWizard\n(Modo · Dados · Arte · Revisar)] as Wizard
-  [SealPolicyEditor\n(regras + tags)] as Policy
-  [SealArt\n(tipo + galerias + textos da folha)] as Art
-  [SealCoreEditor\n(Elemento · Imagem · Texto)] as Core
-  [SealCreator\n(gerador circular / upload)] as Gen
-  [SealMedallion\n(render por tipo)] as Med
-  [lib/seals/templates.ts\n+ templates.json] as Cat
-  [scheme-card / cards\n(selos nos looks e peças)] as Cards
-  [Criador de peça (RF4)\ne de look (RF5)\n(selos sugeridos)] as Criadores
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
 }
-package "Assets públicos" {
-  [public/selos/fai/*.webp\n(13 medalhões)] as FAI
-  [public/selos/circular/*.webp\n(44 anéis, centro livre)] as CIRC
-  [public/selos/folha/*.webp\n(33 folhas + emblemas)] as FOL
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
 }
-package "Geração de modelos (scripts/selos)" {
-  [build_templates.py\n(OpenCV: recorte circular,\ndisco central, cor dominante)] as BT
-  [build_folhas.mjs\n(Chromium: camadas, slots\nde texto e emblema)] as BF
+left to right direction
+title RF50 (evolução do RF25) — Criador de selo: componentes (frontend, backend, catálogo de modelos e armazenamento)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "app/(site)" {
+  component "page.tsx" as m_app__site__page_tsx
+}
+package "lib/seals" {
+  component "templates.ts" as m_lib_seals_templates_ts
+}
+package "components/ui" {
+  component "index.tsx" as m_components_ui_index_tsx
+  component "icons.tsx" as m_components_ui_icons_tsx <<apoio>>
+}
+package "components" {
+  component "seal-wizard.tsx" as m_components_seal_wizard_tsx
+  component "seal-policy-editor.tsx" as m_components_seal_policy_editor_tsx
+  component "seal-core-editor.tsx" as m_components_seal_core_editor_tsx
+  component "seal-creator.tsx" as m_components_seal_creator_tsx <<apoio>>
+  component "seal-medallion.tsx" as m_components_seal_medallion_tsx <<apoio>>
+}
+package "lib" {
+  component "dev-refs.ts" as m_lib_dev_refs_ts <<apoio>>
+}
+package "lib/api" {
+  component "taxonomy.ts" as m_lib_api_taxonomy_ts <<apoio>>
+}
+package "lib/hype" {
+  component "model.ts" as m_lib_hype_model_ts <<apoio>>
 }
 package "Backend (Spring Boot)" {
-  [SealController\n/api/seals, /draft, /uploads,\n/api/seal-suggestions, /api/seal-bonds] as Ctl
-  [SealService] as Svc
-  [SealDrafts\n(IA local)] as Drafts
-  [SealDesigns\n(validação do desenho)] as Designs
-  [SealPolicies] as Pol
-  [SealDesignService\n(upload selo/núcleo)] as Up
-  [OwnMedia] as Own
-  [seals/templates.json\n(ids + cores)] as BCat
+  component "SealController" as SealController
+  component "WardrobeController" as WardrobeController
+  component "SealDesigns" as SealDesigns <<apoio>>
+  component "SealDrafts" as SealDrafts <<apoio>>
+  component "OwnMedia" as OwnMedia
+  component "SealDesignService" as SealDesignService
+  component "SealPolicies" as SealPolicies <<apoio>>
+  component "SealService" as SealService
 }
-database "MySQL\nseals, seal_bonds" as DB
-database "Storage S3/local\nusers/{id}/seals" as ST
-
-Page --> Wizard
-Wizard --> Policy
-Wizard --> Art
-Art --> Core
-Art --> Gen
-Gen --> Core
-Art --> Med
-Wizard --> Med
-Cards --> Med
-Med --> Cat
-Cat ..> FAI
-Cat ..> CIRC
-Cat ..> FOL
-BT --> FAI
-BT --> CIRC
-BF --> FOL
-BT --> Cat
-BF --> Cat
-BT --> BCat
-BF --> BCat
-Wizard --> Ctl : POST /api/seals/draft\nPOST/PUT /api/seals
-Criadores --> Ctl : POST /api/seal-suggestions/preview(-piece)\nPOST /api/schemes/{id}/seal-bonds
-Criadores --> Med
-Core --> Ctl : POST /api/seals/uploads?purpose=core
-Ctl --> Svc
-Ctl --> Up
-Svc --> Drafts
-Svc --> Designs
-Svc --> Pol
-Svc --> Own
-Drafts --> Designs
-Designs --> BCat
-Svc --> DB
-Up --> ST
+database "MySQL" as DB_MySQL
+SealController --> SealDesignService
+SealController --> SealService
+SealDesignService --> DB_MySQL : users
+SealService --> DB_MySQL : brand_profiles, celebrity_profiles,\npromotion_redemptions, promotions,\nscheme_items, schemes
+SealService --> OwnMedia
+m_components_seal_core_editor_tsx --> m_components_seal_medallion_tsx
+m_components_seal_core_editor_tsx --> m_components_ui_index_tsx
+m_components_seal_core_editor_tsx --> m_lib_seals_templates_ts
+m_components_seal_creator_tsx --> m_components_seal_core_editor_tsx
+m_components_seal_creator_tsx --> m_components_seal_medallion_tsx
+m_components_seal_creator_tsx --> m_components_ui_index_tsx
+m_components_seal_medallion_tsx --> m_lib_seals_templates_ts
+m_components_seal_policy_editor_tsx --> m_components_ui_index_tsx
+m_components_seal_policy_editor_tsx --> m_lib_api_taxonomy_ts
+m_components_seal_policy_editor_tsx --> m_lib_hype_model_ts
+m_components_seal_wizard_tsx --> m_components_seal_core_editor_tsx
+m_components_seal_wizard_tsx --> m_components_seal_creator_tsx
+m_components_seal_wizard_tsx --> m_components_seal_medallion_tsx
+m_components_seal_wizard_tsx --> m_components_seal_policy_editor_tsx
+m_components_seal_wizard_tsx --> m_components_ui_index_tsx
+m_components_seal_wizard_tsx --> m_lib_seals_templates_ts
+m_components_ui_index_tsx --> m_components_ui_icons_tsx
+m_components_ui_index_tsx --> m_lib_dev_refs_ts
+m_lib_api_taxonomy_ts --> WardrobeController : HTTPS
 @enduml

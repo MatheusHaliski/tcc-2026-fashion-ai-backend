@@ -281,7 +281,7 @@ function RoomInner() {
         {copilot.text && <p className="type-body-sm whitespace-pre-line">{copilot.text}</p>}
         {copilot.point && <p className="type-caption text-muted mt-1">{t("room.o_busto_esta_apontando_para", { replace: copilot.point.replace("door:", t("room.porta")).replace("drawer:", t("room.gaveta_2")) })}</p>}
       </Dialog>
-      <Dialog open={!!tag} onClose={() => setTag(null)} title={t("room.etiqueta_costurada")} footer={tag ? <><Button onClick={() => act(() => api.post("/api/me/mirror/pieces", { pieceId: tag.id }), t("room.peca_no_espelho")).then(() => mirror.reload())}>{t("room.levar_ao_espelho")}</Button><Button variant="primary" onClick={() => { const id = tag.id; setTag(null); modal?.openPiece(id); }}>{t("room.ver_peca_completa")}</Button></> : undefined}>
+      <Dialog open={!!tag} onClose={() => setTag(null)} title={t("room.etiqueta_costurada")} footer={tag ? <><Button onClick={() => { const id = tag.id; act(async () => { await api.post("/api/me/mirror/pieces", { pieceId: id }); setTag(null); frame("mirror"); }, t("room.peca_no_espelho")).then(() => mirror.reload()); }}>{t("room.levar_ao_espelho")}</Button><Button variant="primary" onClick={() => { const id = tag.id; setTag(null); modal?.openPiece(id); }}>{t("room.ver_peca_completa")}</Button></> : undefined}>
         {tag && <div className="sewn-tag">
           <p className="sewn-tag-brand">{t("room.fai", { name: tag.name })}</p>
           <dl>

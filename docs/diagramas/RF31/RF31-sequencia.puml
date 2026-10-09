@@ -1,34 +1,81 @@
 @startuml RF31_Sequencia
-title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor Usuário as U
-participant "Frontend\ncloset / pieces" as FE
-participant "WardrobeController" as C
-participant "WardrobeService" as S
-database "MySQL" as DB
-U -> FE: filtra "Indisponíveis"\n(+ faixa de Hype e ordenação, opcionais)
-FE -> C: GET /api/me/closet?state=indisponivel\n&hypeLevel=HOT&sort=hype_desc
-C -> S: closet(filter)
-S -> DB: SELECT wardrobe_items
-S -> S: SORT_ALIASES normaliza o sort\n(mais_usadas → worn, nome → name, preco → price…)
-opt sort ∈ HYPE_SORTS (hype, hype_desc, hype_asc, growth, rarity) ou hypeLevel
-  S -> DB: SELECT hype_scores (HypeScoreCurrentRepository,\nPIECE, algorithmVersion do HypeScoreConfig)
-  S -> S: hypeLevel → score mínimo (levelThresholds);\nsem Hype fica por último (nullsLast)
+autonumber "<b>0."
+title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /copilot" as P
+control "WardrobeController" as WardrobeController
+participant "WardrobeService" as WardrobeService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+participant "OwnMedia" as OwnMedia
+participant "MediaService" as MediaService
+participant "BrandLogoService" as BrandLogoService
+participant "ProjectionService" as ProjectionService
+participant "Audit" as Audit
+queue "Eventos de domínio" as EV
+== Favoritar, marcar disponível/indisponível, à venda ou para doar ==
+U -> P : Favoritar, marcar disponível/indisponível, à vend…
+P -> WardrobeController : PATCH /api/pieces/{id}/flags
+WardrobeController -> WardrobeService : toggles()
+activate WardrobeService
+deactivate WardrobeService
+WardrobeService --> WardrobeController : resultado
+WardrobeController --> P : 200 JSON
+P --> U : atualiza a tela
+== Editar a peça ==
+U -> P : Editar a peça
+P -> WardrobeController : PUT /api/pieces/{id}
+WardrobeController -> WardrobeService : update()
+activate WardrobeService
+WardrobeService -> Guard : requireCanCreate()
+WardrobeService -> DB_MySQL : SELECT wardrobe_items
+WardrobeService -> Guard : requireOwner()
+alt formulario inválido
+WardrobeService --> WardrobeController : 400 FORMULARIO_INVALIDO
+WardrobeController --> P : 400 + mensagem
 end
-note right of S: novo (RF53 · HypeScore v2):\nClosetFilter.hypeLevel e sorts canônicos
-S --> FE: Page<PieceView>
-U -> FE: marca "Indisponível"
-FE -> C: PATCH /api/pieces/{id}/flags
-C -> S: toggles(user, id, favorite,\ndisponivel, forSale)
-S -> DB: UPDATE wardrobe_items
-S ->> S: AvailabilityChanged (AFTER_COMMIT)
-S -> DB: INSERT wardrobe_availability_changes\n(WardrobeEventListeners)
-S --> FE: peça atualizada
+WardrobeService -> DB_MySQL : SELECT brands
+WardrobeService -> WardrobeService : brandLogoUrl = null
+WardrobeService -> OwnMedia : accepts()
+WardrobeService -> MediaService : read()
+WardrobeService -> WardrobeService : brandLogoUrl = set
+WardrobeService -> BrandLogoService : acceptWebLogo()
+BrandLogoService -> DB_MySQL : SELECT brand_logos (×2)
+BrandLogoService -> DB_MySQL : SELECT brands
+BrandLogoService -> DB_MySQL : INSERT/UPDATE brands
+BrandLogoService --> WardrobeService
+WardrobeService -> WardrobeService : brandLogoUrl = null (×2)
+WardrobeService -> ProjectionService : piece()
+ProjectionService -> DB_MySQL : SELECT item_embeddings
+ProjectionService -> DB_MySQL : INSERT/UPDATE item_embeddings
+ProjectionService --> WardrobeService
+WardrobeService -> Audit : log()
+WardrobeService ->> EV : PieceUpdated
+WardrobeService -> DB_MySQL : SELECT reactions
+deactivate WardrobeService
+WardrobeService --> WardrobeController : resultado
+WardrobeController --> P : 200 JSON
+P --> U : atualiza a tela
 @enduml

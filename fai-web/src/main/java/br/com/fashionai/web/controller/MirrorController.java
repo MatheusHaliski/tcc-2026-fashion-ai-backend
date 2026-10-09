@@ -27,6 +27,14 @@ public class MirrorController {
         return mirror.state(user);
     }
 
+    public record TipoLookRequest(@NotNull UUID tipoLookId) { }
+
+    @PutMapping("/tipo-look")
+    @Operation(summary = "Defesa — Persistir o tipo de look escolhido no Espelho")
+    public Map<String, Object> tipoLook(CurrentUser user, @jakarta.validation.Valid @RequestBody TipoLookRequest body) {
+        return mirror.updateTipoLook(user, body.tipoLookId());
+    }
+
     public record PieceRequest(@NotNull UUID pieceId) {
     }
 
@@ -52,6 +60,12 @@ public class MirrorController {
     @Operation(summary = "RF33.CA03 — Sugestões para um slot")
     public Map<String, Object> suggest(CurrentUser user, @RequestParam String slot) {
         return mirror.suggest(user, slot);
+    }
+
+    @GetMapping("/wardrobe")
+    @Operation(summary = "RF33 — Peças do guarda-roupa que podem ir para um slot (escolha manual, sem IA)")
+    public Map<String, Object> wardrobe(CurrentUser user, @RequestParam String slot) {
+        return mirror.wardrobe(user, slot);
     }
 
     public record VistaMeRequest(String prompt, List<UUID> anchorIds, UUID focusPieceId, Boolean keepMirror) {

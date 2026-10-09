@@ -1,71 +1,103 @@
 @startuml RF19_Componentes
-title RF19 — Interagir socialmente com esquemas e peças: reagir, comentar, salvar, compartilhar, remixar e retornar\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF19 — Interagir socialmente com esquemas e peças: reagir, comentar, salvar, compartilhar, remixar e retornar\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "components/interactions.tsx\nCardActions · InteractionBar\nShareDialog · Comments · useRemix" as FE0
-  component "components/scheme-card.tsx (PostMenu)\ncomponents/piece-card.tsx" as FE1
-  component "feed/page.tsx · schemes/[id]\npieces/[id] · lookbook (Looks Salvos)" as FE2
-  component "Botão \"Retornar\" <<planejado>>" as FE3 #FFF5F8
+  component "/schemes/[id]/edit\n(site)/(app)/schemes/[id]/edit/page.tsx" as FE0
+  component "/schemes/new\n(site)/(app)/schemes/new/page.tsx" as FE1
+  component "lib/api/client.ts" as APIC
 }
-package "fai-web · controllers" {
-  [SocialController\n/api/interactions/{type}/{id}/\nreactions · comments · saves\nsaves/favorite · shares · remixes · counters] as SC
-  [CommentController\nDELETE /api/comments/{id}\nPOST /api/pieces/{id}/return-to-origin] as CC
-  [SchemeController\nPOST /api/schemes/{id}/remix] as SCH
+package "fai-web (REST)" {
+  component "CommentController\n/api/comments/{…}" as CommentController
+  component "SchemeController\n/api/schemes\n/api/schemes/{…}\n/api/schemes/{…}/card.png\n/api/schemes/{…}/remix" as SchemeController
+  component "SocialController\n/api/interactions/{…}/{…}/comments\n/api/interactions/{…}/{…}/counters\n/api/interactions/{…}/{…}/remixes\n/api/interactions/{…}/{…}/saves/favorite" as SocialController
+  component "WardrobeController\n/api/pieces\n/api/pieces/{…}" as WardrobeController
 }
-package "fai-application · services" {
-  [SocialService] as S
-  [SchemeService\nremix() · renderCard()] as SS
-  [NotificationService (RNF10)] as N
-  [Guard\n(visibilidade, bloqueio)] as G
-  [WardrobeEventListeners\nInteractionReceived → FaiPoints (RF35)] as EV
-  [HypeScoreService\n(lê contadores — RF26)] as H
-  [WardrobeService\n(detalhe da peça)] as WS #FAFAFA
-  [HypeSignalRecorder <<RF49>>\n@TransactionalEventListener(AFTER_COMMIT)\n→ SideEffectRunner (REQUIRES_NEW)\n+ HypeIntegrityPolicy.weight(): próprio dono 0\n· dedupe 26 h · conta nova 0,5 · visitante 0] as HR
+package "fai-application (casos de uso)" {
+  component "SocialService" as SocialService
+  component "SchemeService" as SchemeService
+  component "WardrobeService" as WardrobeService
+  component "NotificationService" as NotificationService <<apoio>>
+  component "MediaService" as MediaService <<apoio>>
+  component "BackgroundStudioService" as BackgroundStudioService <<apoio>>
+  component "SealService" as SealService <<apoio>>
+  component "SchemeCardRenderer" as SchemeCardRenderer <<apoio>>
+  component "ProjectionService" as ProjectionService <<apoio>>
+  component "DailyLookService" as DailyLookService <<apoio>>
+  component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
+  component "CounterStorePort\n«InMemoryCounterStore»" as CounterStorePort <<port>>
+  component "JobQueuePort\n«InMemoryJobQueue»" as JobQueuePort <<port>>
 }
-package "fai-infrastructure · adapters" {
-  [InMemoryCounterStore\n(CounterStorePort)] as CT
-  [RenderCachePort <<RF49>>\n(Redis · InMemoryRenderCache)\nchaves hype:dedupe:*] as RC
-  [S3MediaStorageAdapter /\nLocalFileMediaStorage\n(MediaStoragePort — PNG exportado)] as ST
-  [Repositórios JPA (fai-domain · repository)\nReactionRepository · CommentRepository\nSavedItemRepository · ShareRepository\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · NotificationRepository\nHypeSignalDailyRepository <<RF49>>] as REPOS
+package "fai-domain (repositórios)" {
+  component "ReactionRepository\nCommentRepository\nSavedItemRepository\nShareRepository\nSchemeRepository\nWardrobeItemRepository\nDnaSchemeRepository\nUserRepository\nSchemeItemRepository\nStyleDnaRepository\n(+7)" as REPO_MySQL
 }
-database "MySQL · fashionai_app\n• reactions\n• comments\n• saved_items\n• shares\n• notifications\n• schemes · scheme_items\n• wardrobe_items\n• hype_signal_daily (RF49)" as DB
-
-FE0 --> SC : chama HTTPS/JSON
-FE0 --> CC : DELETE comentário
-FE1 --> FE0 : usa
-FE2 --> FE1 : renderiza cards
-FE3 ..> CC : return-to-origin\n(não implementado — conforme Trello)
-SC --> S : chama
-CC --> S : chama
-SCH --> SS : chama
-S --> G : requireCanCreate / deny
-S --> SS : remix · renderCard
-S --> N : notify(NEW_LIKE, NEW_REACTION,\nNEW_COMMENT, NEW_REMIX)
-S --> CT : increment / read
-S --> ST : grava PNG (EXTERNAL)
-S --> EV : publica InteractionReceived
-S --> HR : publica HypeSignal (LIKE · COMMENT · SAVE ·\nFAVORITE · SHARE · PIECE_REMIXED)
-HR <-- SS : HypeSignal LOOK_REMIXED (remix salvo)\n· LOOK_VIEWED (GET por não dono)
-HR <-- WS : HypeSignal PIECE_VIEWED
-HR --> RC : dedupe (TTL 26 h)
-HR --> REPOS : increment (upsert nativo)
-S --> REPOS : lê/grava
-N --> REPOS : grava notifications
-H --> REPOS : lê contadores
-REPOS --> DB : JPA/Flyway
+database "MySQL\n• brands\n• comments\n• dna_schemes\n• hype_scores\n• moderation_queue\n• photos\n• pipeline_jobs\n• processing_jobs_log\n• quality_scores\n• reactions\n• saved_items\n• scheme_items\n(+5)" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+APIC --> CommentController : HTTPS/JSON
+APIC --> SchemeController : HTTPS/JSON
+APIC --> SocialController : HTTPS/JSON
+APIC --> WardrobeController : HTTPS/JSON
+CommentController --> SocialService
+FE0 --> APIC
+FE1 --> APIC
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+SchemeController --> SchemeService
+SchemeService --> AI
+SchemeService --> CounterStorePort
+SchemeService --> EV
+SchemeService --> REPO_MySQL
+SchemeService ..> BackgroundStudioService
+SchemeService ..> DailyLookService
+SchemeService ..> HypeScoreConfig
+SchemeService ..> MediaService
+SchemeService ..> NotificationService
+SchemeService ..> ProjectionService
+SchemeService ..> SchemeCardRenderer
+SchemeService ..> SealService
+SchemeService ..> WardrobeService
+SocialController --> SocialService
+SocialService --> CounterStorePort
+SocialService --> EV
+SocialService --> REPO_MySQL
+SocialService ..> MediaService
+SocialService ..> NotificationService
+SocialService ..> SchemeService
+WardrobeController --> WardrobeService
+WardrobeService --> AI
+WardrobeService --> EV
+WardrobeService --> JobQueuePort
+WardrobeService --> REPO_MySQL
+WardrobeService ..> MediaService
+WardrobeService ..> NotificationService
+WardrobeService ..> ProjectionService
 @enduml

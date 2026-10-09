@@ -1,47 +1,48 @@
 @startuml RF12_MaquinaDeEstados_ItemLote
 !pragma layout smetana
-title RF12 — Item do lote (Draft + PipelineJob.status): de cada foto enviada até a peça cadastrada
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "Enviado\n(foto no lote, até 12)" as Env
-state "Recusado\n(Draft.rejection)" as Rec
-state "Rascunho analisado\nPipelineJob COMPLETED\n(PIECE_DRAFT · MULTI_PIECE_DRAFT)" as Rasc
-state "Cadastrado\n(wardrobe_items + photos WARDROBE_ITEM)" as Cad
-state "Reprocessamento do fundo" as Rep {
-  state "PENDING" as Pend
-  state "RUNNING" as Run
-  state "COMPLETED" as Ok
-  state "FAILED" as Fail
+title RF12 — ciclo de vida de PipelineJob.status\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum PipelineJobStatus · tabela pipeline_jobs
+
+state "PipelineJob.status" as Ciclo_PipelineJob {
+  state Ciclo_PipelineJob_PENDING as "PENDING"
+  state Ciclo_PipelineJob_RUNNING as "RUNNING"
+  state Ciclo_PipelineJob_RENDERING as "RENDERING"
+  state Ciclo_PipelineJob_ENHANCING as "ENHANCING"
+  state Ciclo_PipelineJob_COMPOSITING as "COMPOSITING"
+  state Ciclo_PipelineJob_COMPLETED as "COMPLETED"
+  state Ciclo_PipelineJob_FAILED as "FAILED"
+  state Ciclo_PipelineJob_CANCELLED as "CANCELLED"
 }
-
-[*] --> Env : POST /api/pieces/analysis/batch\nou /analysis/multi/{draftId}/pieces
-Env --> Rec : critérios de aceite da foto (422 FOTO_RECUSADA\nvira rejection no lote) · CONTEUDO_BLOQUEADO
-Env --> Rasc : analyze / pieceDraft ok\n(Flat Lay, subtipo, marca, moderação)
-Rasc --> Rasc : revisão na tela (MultiPieceReview)\ncópia por IA: .../ai-images/{aiImageId}/piece
-Rasc --> Cad : POST /api/pieces/batch\nou POST /api/pieces
-Rasc --> [*] : descartado na revisão (nada gravado no acervo)
-Rec --> [*] : a pessoa reenvia outra foto
-Cad --> Pend : fundo não removido no cadastro\n(PipelineJob PIECE_REPROCESS — RF4.CA06)
-Cad --> [*] : fundo removido
-Pend --> Run : job reprocessPending\n(provedor e cota disponíveis)
-Run --> Ok : fundo removido; notificação AI_JOB_FINISHED
-Run --> Pend : sem recorte e attempts < 3
-Run --> Fail : attempts ≥ 3 ou SEM_ORIGINAL
-Ok --> [*]
-Fail --> [*]
-
-note right of Rec
-  As demais fotos do lote seguem;
-  a recusada volta com code e message
+[*] --> Ciclo_PipelineJob_PENDING : criação
+Ciclo_PipelineJob --> Ciclo_PipelineJob_COMPLETED : complete(), follow(), start(),\naiPieceDraft(), detect() +6
+Ciclo_PipelineJob --> Ciclo_PipelineJob_FAILED : complete(), fail(), follow(),\nsafely(), start() +2
+Ciclo_PipelineJob --> Ciclo_PipelineJob_PENDING : request(), create(), createBatch(),\ncreateFromCatalog(),\ncreateInternal()
+Ciclo_PipelineJob --> Ciclo_PipelineJob_RUNNING : start(), reprocessPending()
+note bottom of Ciclo_PipelineJob
+  Sem mudança explícita no código para: RENDERING, ENHANCING, COMPOSITING, CANCELLED
+  (valor vindo de importação, regra calculada ou dado legado)
 end note
-note left of Rasc
-  RENDERING, ENHANCING, COMPOSITING e CANCELLED
-  existem no enum PipelineJobStatus mas não são
-  usados neste fluxo
+note right of Ciclo_PipelineJob
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
 end note
 @enduml

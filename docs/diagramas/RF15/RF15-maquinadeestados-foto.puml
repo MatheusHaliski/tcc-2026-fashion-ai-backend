@@ -1,37 +1,48 @@
 @startuml RF15_MaquinaDeEstados_Foto
 !pragma layout smetana
-title RF15 — Photo: da foto original da peça à cópia editada no Editor Canvas 2D (ModerationStatus / PhotoOrigin)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-[*] --> Original : cadastro da peça (RF4) ou esquema (RF5)\nMediaService.register(origin WARDROBE_ITEM | SCHEME)
-state "Foto original\n(photos · moderation_status)" as Original {
-  state "PENDING" as Pend
-  state "APPROVED" as Appr
-  state "REJECTED_POLICY /\nREJECTED_NOT_CLOTHING" as Rej
-  [*] --> Pend
-  Pend --> Appr : moderação de conteúdo (RF4)
-  Pend --> Rej : moderação de conteúdo (RF4)
-}
-state "Em edição no navegador\n(canvas 2D, histórico de passos)" as Editing
-state "Cópia editada\n(origin = EDITOR, APPROVED,\nedited_from_photo_id = original)" as Edited
-state "Imagem da peça substituída\n(wardrobe_items.image_url,\nphoto_processing_status = COMPLETED)" as Replaced
-state "Excluída\n(deleted_at)" as Deleted
+title RF15 — ciclo de vida de Photo.moderationStatus e origin\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum ModerationStatus · enum PhotoOrigin · tabela photos
 
-Appr --> Editing : GET /api/photos/{id}/file\nou card da peça → "Editar"
-Editing --> Editing : recortar · girar 90 · brilho · contraste\nPOST /api/photos/background-removal
-Editing --> Appr : fechar e descartar (confirmação, CA05)
-Editing --> Edited : POST /api/photos/{id}/edits\n(foto solta ou de esquema)
-Editing --> Replaced : POST /api/photos/{id}/edits (foto de peça ativa)\nou PUT /api/pieces/{id}/image
-Replaced --> Edited : registra também um Photo EDITOR
-Edited --> Editing : editar de novo (nova cópia)
-Edited --> Deleted : DELETE /api/photos/{id}
-Appr --> Deleted : DELETE /api/photos/{id}?confirmed=true\n(pede confirmação se há peça vinculada)
-Deleted --> [*]
-note right of Original : a original nunca é alterada (CA02):\noriginal_url preservado em "Minhas Fotos"
-note right of Edited : cada salvamento gera uma nova linha em photos;\nmoderação herdada como APPROVED
+state "Photo.moderationStatus" as Ciclo_Photo {
+  state Ciclo_Photo_PENDING as "PENDING"
+  state Ciclo_Photo_APPROVED as "APPROVED"
+  state Ciclo_Photo_REJECTED_POLICY as "REJECTED_POLICY"
+  state Ciclo_Photo_REJECTED_NOT_CLOTHING as "REJECTED_NOT_CLOTHING"
+}
+[*] --> Ciclo_Photo_PENDING : criação
+note bottom of Ciclo_Photo
+  Sem mudança explícita no código para: APPROVED, REJECTED_POLICY, REJECTED_NOT_CLOTHING
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
+state "Photo.origin" as Ciclo_Photo_origin {
+  state Ciclo_Photo_origin_WARDROBE_ITEM as "WARDROBE_ITEM"
+  state Ciclo_Photo_origin_SCHEME as "SCHEME"
+  state Ciclo_Photo_origin_TRY_ON as "TRY_ON"
+  state Ciclo_Photo_origin_STYLE_DNA as "STYLE_DNA"
+  state Ciclo_Photo_origin_PROFILE as "PROFILE"
+  state Ciclo_Photo_origin_BACKGROUND_STUDIO as "BACKGROUND_STUDIO"
+  state Ciclo_Photo_origin_LOOSE as "LOOSE"
+  state Ciclo_Photo_origin_EDITOR as "EDITOR"
+}
+note bottom of Ciclo_Photo_origin
+  Recebe o valor escolhido em: register(origin)
+end note
 @enduml

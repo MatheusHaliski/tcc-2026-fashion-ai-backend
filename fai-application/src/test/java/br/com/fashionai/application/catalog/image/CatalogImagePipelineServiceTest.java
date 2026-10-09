@@ -133,18 +133,38 @@ class CatalogImagePipelineServiceTest {
     }
 
     @Test
+    void acervoCrescenteProcessaSomenteFotosNovas() {
+        CatalogImage existing = image("https://img.brand.com/first.jpg", CatalogImageType.FRONT,
+                CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
+        service.tick();
+        Instant processed = existing.getProcessedAt();
+        int attempts = existing.getAttempts();
+        // A foto antiga não pode voltar a ser baixada nem ter metadados alterados.
+        web.clear();
+        CatalogImage added = image("https://img.brand.com/new.jpg", CatalogImageType.FRONT,
+                CatalogPhotos.jpeg(CatalogPhotos.tee(220, 220, 1.0)));
+        service.tick();
+        assertThat(added.getProcessingStatus()).isEqualTo("APPROVED");
+        assertThat(existing.getProcessingStatus()).isEqualTo("APPROVED");
+        assertThat(existing.getAttempts()).isEqualTo(attempts);
+        assertThat(existing.getProcessedAt()).isEqualTo(processed);
+        service.tick();
+        assertThat(added.getAttempts()).isEqualTo(1);
+    }
+
+    @Test
     void fontesComPermissaoGanhamMasterNoStorage() {
         CatalogSource s = new CatalogSource();
         s.setDomain("brand.com");
         s.setAllowsImagePersistence(true);
         sources.add(s);
-        CatalogImage front = image("https://img.brand.com/front.jpg", CatalogImageType.FRONT, CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
+        CatalogImage front = image("https://img.brand.com/front.jpg", CatalogImageType.FRONT, CatalogPhotos.jpeg(br.com.fashionai.application.imaging.ImageOps.scale(CatalogPhotos.tee(200, 200, 1.0), 2000, 2000)));
         service.tick();
         assertThat(front.getUsageStatus()).isEqualTo(CatalogImageUsage.PERSISTED);
         assertThat(front.getStoredUrl()).endsWith("master.png");
         assertThat(stored.keySet()).anyMatch(k -> k.endsWith("card.jpg")).anyMatch(k -> k.endsWith("thumb.jpg"))
                 .anyMatch(k -> k.endsWith("white.jpg")).anyMatch(k -> k.endsWith("neutral.jpg"));
-        assertThat(CatalogImagePipelineService.cardImage(front)).containsEntry("mode", "PROCESSED");
+        assertThat(CatalogImagePipelineService.cardImage(front)).containsEntry("mode", "PROCESSED").containsEntry("aspect", "4:5");
     }
 
     @Test

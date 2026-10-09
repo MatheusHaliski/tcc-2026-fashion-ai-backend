@@ -1,79 +1,71 @@
 @startuml RF53_Atividades_Selos
-!pragma layout smetana
-title RF53 — Selos × HypeScore\nDiagrama de atividades (o Hype alimenta os selos; selo nunca alimenta o Hype)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
 }
-|Emissor (marca/celebridade)|
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF53 — Selos × HypeScore\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Cria ou edita o selo com política padronizada\n(regras de cor, marca, categoria, subcategoria;\nhypeMin por regra; policy.hype {minLevel, minScore, momentum});
-|Backend · SealPolicies|
-if (nível fora de HypeLevel, score fora de 0–100,\nmomentum fora de HypeMomentum ou > 3 itens?) then (sim)
-  :400 POLITICA_INVALIDA;
-  stop
-else (não)
-  :grava em seals.background_config_json.policy\n(sem migração) + frase da política com o trecho de Hype;
+:Abre /brands, /history, /brands/[slug];
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/pieces/seals\nGET /api/hype/method\nGET /api/me/daily-look-tab;
+|Pessoa usuária|
+:Análise completa do Hype de um look;
+|Tela (Next.js)|
+:GET /api/hype/looks/{id};
+|API (Spring Boot)|
+:HypeController.look\n→ HypeQueryService.detail;
+|Dados e serviços|
+:Lê: wardrobe_items\nscheme_items\nschemes\nhype_scores\nstyle_dna;
+:Usa: Guard.canView\nHypeScoreConfig.algorithmVersion\nHypeScoreConfig.staleAfterHours\nHypeScoreConfig.describe\nHypeScoreConfig.levelThresholds;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Recalibrar percentis do Hype Score)
+    :POST /api/admin/hype/recalibration\n→ AdminService.runJob\nusa: Guard.requireAdmin,\nHypeScoreService.recalibrate,\nInventoryScoreService.recomputeRankings …;
+  case (Prévia do look no editor: os seis…)
+    :POST /api/schemes/scores\n→ LookPreviewService.scores\nvalida: NAO_AUTENTICADO, NAO_ENCONTRADO,\nPECAS_DEMAIS, PECA_DE_OUTRO_USUARIO …\nlê: wardrobe_items, style_dna, schemes …\nusa: LookScorer.context, LookScorer.hypeOf;
+  case (Sugerir agrupamentos por similari…)
+    :POST /api/me/similarity-groups/suggestions\n→ LookbookService.suggestGroups\nvalida: ACERVO_PEQUENO\nlê: wardrobe_items, schemes, scheme_items …\nia: ACERVO_GROUPING\ngrava: acervo_groups;
+  case (Descartar agrupamento sugerido; /…)
+    :DELETE /api/me/similarity-groups/{groupId}\n→ LookbookService.discardGroup\nlê: acervo_groups\nusa: Guard.requireOwner\ngrava: acervo_groups;
+  case (Favoritar look salvo)
+    :PUT /api/me/saved-looks/{schemeId}/favorite\n→ LookbookService.favorite\nlê: schemes\nusa: SchemeService.toggles,\nSocialService.favoriteSaved;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Escolher versão do painel, Adicionar
+  esquemas/peças ao a…, Marcar esquema como Look do
+  D…, Marcar item salvo como favori…, Salvar/remover
+  dos salvos, Criar agrupamento (coleção, t…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-|Autor do look|
-:Salva ou publica um look\n(ou abre as sugestões de um look/peça);
-|Backend · SealService|
-:Lê o HypeScore v2 ATUAL das peças e do look\n(hype_scores, versão corrente; GET nunca recalcula);
-while (para cada selo candidato) is (próximo)
-  :avalia regras (rule.hypeMin conta como filtro da peça);
-  if (política tem critério de Hype?) then (sim)
-    if (entidade avaliada (look no tier LOOK;\nmaior Hype das peças no tier PEÇA)\nAVAILABLE e atende minLevel/minScore/momentum?) then (sim)
-      :critério atendido;
-    else (não)
-      :não atende\n(NOT_CALCULATED / INSUFFICIENT_DATA também não);
-    endif
-  else (não)
-  endif
-  if (política atendida?) then (sim)
-    :sugestão SUGGESTED com hype {score, level}\ne "atende: …" com o trecho de Hype;
-  else (não)
-  endif
-endwhile (fim)
-:ordena as sugestões por Hype desc\n(sem Hype por último; ordenação estável);
-|Autor do look|
-if (aceita a sugestão?) then (não)
-  :REFUSED;
-  stop
-else (sim)
-endif
-|Backend · SealService|
-if (selo disponível (teto, janela, ativo)?) then (não)
-  :vínculo REJECTED + auditoria RECUSADO_LIMITE\n(SealUnavailable, noRollbackFor: o registro fica);
-  :409 SELO_INDISPONIVEL;
-  stop
-else (sim)
-endif
-if (emissor exige revisão\n(ex.: celebridade, selo de PEÇA)?) then (sim)
-  |Emissor (marca/celebridade)|
-  :revisa o vínculo PENDING_REVIEW;
-  if (aprova?) then (não)
-    :REJECTED;
-    stop
-  else (sim)
-  endif
-else (não)
-endif
-|Backend · SealService|
-:APPROVED + código rastreável (BRD… / PRM…)\ne contador de emissões;
-note right
-  nenhum vínculo, emissão ou selo
-  vira sinal em hype_signal_daily
-end note
-|Perfil do emissor (InstitutionalService)|
-:Looks em destaque: APPROVED vigente, sem revalidação,\nlook publicado e visível, autor ativo —\nordenados pelo HypeScore v2 (sem score no fim);
-:Peças em destaque: selo de LOOK → todas as peças;\nselo de PEÇA → só as linkedPieceIds;
-:aba Selos: Hype do selo {avgScore, level, bonded},\na média do Hype atual dos vínculos APPROVED;
-|Selos de Hype FashionAI (HypeSeals)|
-:Para cada item AVAILABLE e público elegível:\nVIRAL > TRENDING > EMERGING > CLASSIC > RARE\n(derivados do Hype atual; nada gravado, nada emitido);
-:card mostra até 2; drawer mostra todos\ncom o critério do que falta (sealProgress);
-:guarda-roupa: filtro "Com selo" (seal=hype|brand|any)\n+ GET /api/pieces/seals para os selos de marca;
+|Pessoa usuária|
 stop
 @enduml

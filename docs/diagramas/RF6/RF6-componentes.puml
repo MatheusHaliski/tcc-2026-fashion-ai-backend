@@ -1,104 +1,123 @@
 @startuml RF6_Componentes
-title RF6 — Acessar e gerenciar o Perfil Lookbook\nDiagrama de componentes — telas → controllers → serviços → portas/repositórios → MySQL, cache e IA
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
-  BackgroundColor<<RF49>> #EAF6EE
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF6 — Acessar e gerenciar o Perfil Lookbook (Closet Digital + Looks Salvos)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "(app)/lookbook/page.tsx\n(redireciona para /u/{username})" as FE0
-  component "(app)/u/[username]/page.tsx\nProfileHeader · CouponsRedirect" as FE1
-  component "components/lookbook-tabs.tsx\nClosetTab · LooksTab · PublicationsTab · FavoritesTab\nSavedTab (looks/saved-looks.tsx) · DnaLooksTab · DailyTab\nCapsuleTab · GroupsTab · aba Insights" as FE2
-  component "piece-card.tsx · scheme-card.tsx → fashion-card.tsx\nhype/: HypeBadge · HypeCardBack · HypeAnalyticsDrawer\nHypeInline · HypeStateNotice · HypeBreakdown\nlib/hype/use-hype.ts (lote até 100, cache 5 min)" as FE3
-  component "hype/hype-insights.tsx (HypeWardrobeInsights)\ninsights/insight-strip.tsx (CLOSET · CAPSULE · HISTORY)\nlook-exports.tsx (capa FAI Magazine)" as FE4
+  component "/lookbook\n(site)/(app)/lookbook/page.tsx" as FE0
+  component "/coupons\n(site)/(app)/coupons/page.tsx" as FE1
+  component "/history\n(site)/(app)/history/page.tsx" as FE2
+  component "/closet\n(site)/(app)/closet/page.tsx" as FE3
+  component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE4
+  component "/looks\n(site)/(app)/looks/page.tsx" as FE5
+  component "lib/api/client.ts" as APIC
 }
-package "fai-web · controllers" {
-  [LookbookController\n/api/users/{ownerId}/lookbook · publications · favorites\n/api/me/saved-looks · saved-pieces · daily-look(-tab)\ndaily-looks · hype-panel-version · capsule\nsimilarity-groups (alias hype-groups) · /api/groupings] as LC
-  [ProfileController\n/api/profiles/{idOrUsername}?sort=] as PC
-  [WardrobeController\n/api/users/{ownerId}/closet] as WC
-  [SocialController\n/api/interactions/{type}/{id}/saves(/favorite)] as SC
-  [HypeController\n/api/hype/summaries · pieces|looks/{id}\n(/history · /positions) · /api/me/hype/wardrobe] as HC
-  [InsightsController\n/api/insights?context=] as IC
-  [SealController\n/api/pieces/seals?ids=] as SLC
+package "fai-web (REST)" {
+  component "HypeController\n/api/hype/groups\n/api/hype/looks/{…}\n/api/hype/pieces/{…}\n/api/hype/summaries\n(+2 rotas)" as HypeController
+  component "LookbookController\n/api/groupings\n/api/groupings/{…}\n/api/groupings/{…}/items\n/api/groupings/{…}/schemes\n(+20 rotas)" as LookbookController
+  component "SocialController\n/api/interactions/{…}/{…}/saves\n/api/interactions/{…}/{…}/saves/favorite" as SocialController
+  component "WardrobeController\n/api/me/closet\n/api/me/pieces/studio\n/api/pieces/{…}\n/api/users/{…}/closet" as WardrobeController
 }
-package "fai-application" {
-  [LookbookService] as LS
-  [DailyLookService] as DS
-  [HypeScoreService\n(painel v2 só leitura, tip, cluster)] as HS
-  [ProfileService] as PS
-  [WardrobeService] as WS
-  [SocialService] as SO
-  [SchemeService] as SCH
-  [HypeQueryService] as HQ
-  [InsightService] as IS
-  [HypeCache] as HCA
-  [Guard\n(canView · requireOwner)] as G
-  [AiEngine (RF24)\nSTYLE_ADVISOR · ACERVO_GROUPING] as AI
+package "fai-application (casos de uso)" {
+  component "HypeQueryService" as HypeQueryService
+  component "LookbookService" as LookbookService
+  component "DailyLookService" as DailyLookService
+  component "HypeScoreService" as HypeScoreService
+  component "SocialService" as SocialService
+  component "WardrobeService" as WardrobeService
+  component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
+  component "SchemeService" as SchemeService <<apoio>>
+  component "HypeCache" as HypeCache <<apoio>>
+  component "OwnMedia" as OwnMedia <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
+  component "MediaService" as MediaService <<apoio>>
+  component "FlatLayPipeline" as FlatLayPipeline <<apoio>>
+  component "AssetCatalogService" as AssetCatalogService <<apoio>>
+  component "CounterStorePort\n«InMemoryCounterStore»" as CounterStorePort <<port>>
+  component "JobQueuePort\n«InMemoryJobQueue»" as JobQueuePort <<port>>
 }
-package "fai-domain · repositórios JPA" {
-  [SavedItemRepository · DailyLookRepository\nAcervoGroupRepository · SchemeGroupingRepository\nSchemeRepository · SchemeItemRepository\nWardrobeItemRepository · UserRepository] as REPOS
-  [HypeScoreCurrentRepository\nHypeScoreSnapshotRepository] as HREPOS
+package "fai-domain (repositórios)" {
+  component "HypeScoreCurrentRepository\nHypeScoreSnapshotRepository\nWardrobeItemRepository\nSchemeRepository\nSchemeItemRepository\nStyleDnaRepository\nBrandProfileRepository\nSavedItemRepository\nUserRepository\nAcervoGroupRepository\n(+15)" as REPO_MySQL
 }
-package "fai-infrastructure" {
-  [RenderCachePort\n(RedisAdapters · InMemoryRenderCache)] as RC <<port>>
-  [AiProviderPort\n(ClaudeProvider · GeminiProvider)] as AIP <<port>>
-}
-database "MySQL · fashionai_app\n• saved_items · daily_looks\n• acervo_groups · scheme_groupings\n• schemes · scheme_items · wardrobe_items · users\n• hype_scores · hype_score_snapshots (V31/V39)" as DB
-cloud "Provedores de IA\n(Anthropic · Google)" as CLOUD
-
-FE0 --> FE1 : router.replace
-FE1 --> PC : GET perfil (Looks com ?sort=)
-FE1 --> FE2 : abas
-FE2 --> LC : lookbook · salvos · look do dia · agrupamentos
-FE2 --> WC : Peças (sort, hypeLevel)
-FE2 --> SC : peça salva: favoritar/remover
-FE2 --> SLC : selos de marca dos cards
-FE2 --> FE3 : cards
-FE2 --> FE4 : Insights · Cápsula · Look do dia
-FE3 --> HC : summaries · detail · history · positions
-FE4 --> HC : GET /api/me/hype/wardrobe
-FE4 --> IC : GET /api/insights
-LC --> LS
-LC --> DS : history · feedback
-PC --> PS
-WC --> WS
-SC --> SO
-HC --> HQ
-IC --> IS
-LS --> DS : today · register
-LS --> HS : panel · cluster
-LS --> SO : favoriteSaved · toggleSave
-LS --> SCH : view · owned · canView
-LS --> WS : viewerState · owned
-LS --> AI : local(ACERVO_GROUPING)
-LS ..> G
-PS ..> G
-HS --> AI : text(STYLE_ADVISOR), opcional
-HS --> HREPOS : lê hype_scores
-LS --> HREPOS : ordenação e Hype médio dos grupos
-PS --> HREPOS : ordenação dos looks
-WS --> HREPOS : sort · hypeLevel
-HQ --> HREPOS : lê (GET nunca recalcula)
-HQ --> HCA : rankings/agregados por geração
-IS --> HQ
-HCA --> RC
-LS --> REPOS
-DS --> REPOS
-SO --> REPOS
-REPOS --> DB : JPA/Flyway
-HREPOS --> DB : JPA/Flyway
-AI --> AIP
-AIP --> CLOUD : HTTPS
+database "MySQL\n• acervo_groups\n• brand_profiles\n• brands\n• comments\n• daily_looks\n• dna_schemes\n• hype_groups\n• hype_score_metrics\n• hype_score_snapshots\n• hype_scores\n• metric_snapshots\n• moderation_queue\n(+13)" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+APIC --> HypeController : HTTPS/JSON
+APIC --> LookbookController : HTTPS/JSON
+APIC --> SocialController : HTTPS/JSON
+APIC --> WardrobeController : HTTPS/JSON
+DailyLookService --> EV
+DailyLookService --> REPO_MySQL
+FE0 --> APIC
+FE1 --> APIC
+FE2 --> APIC
+FE3 --> APIC
+FE4 --> APIC
+FE5 --> APIC
+HypeController --> HypeQueryService
+HypeQueryService --> REPO_MySQL
+HypeQueryService ..> HypeCache
+HypeQueryService ..> HypeScoreConfig
+HypeQueryService ..> SchemeService
+HypeQueryService ..> WardrobeService
+HypeScoreService --> AI
+HypeScoreService --> REPO_MySQL
+HypeScoreService ..> HypeScoreConfig
+LookbookController --> DailyLookService
+LookbookController --> HypeScoreService
+LookbookController --> LookbookService
+LookbookService --> AI
+LookbookService --> REPO_MySQL
+LookbookService ..> DailyLookService
+LookbookService ..> HypeScoreService
+LookbookService ..> OwnMedia
+LookbookService ..> SchemeService
+LookbookService ..> SocialService
+LookbookService ..> WardrobeService
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+SocialController --> SocialService
+SocialService --> CounterStorePort
+SocialService --> EV
+SocialService --> REPO_MySQL
+SocialService ..> MediaService
+SocialService ..> NotificationService
+SocialService ..> SchemeService
+WardrobeController --> WardrobeService
+WardrobeService --> AI
+WardrobeService --> EV
+WardrobeService --> JobQueuePort
+WardrobeService --> REPO_MySQL
+WardrobeService ..> AssetCatalogService
+WardrobeService ..> FlatLayPipeline
+WardrobeService ..> MediaService
+WardrobeService ..> NotificationService
+WardrobeService ..> OwnMedia
 @enduml

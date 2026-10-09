@@ -52,6 +52,7 @@ describe("tirar a pessoa da foto da peça", () => {
     const f = photo();
     const r = await stripPerson(f);
     expect(r.personFound).toBe(false);
+    expect(r.segmentationAvailable).toBe(false);
     expect(r.file).toBe(f);
   });
 
@@ -59,6 +60,7 @@ describe("tirar a pessoa da foto da peça", () => {
     detection = { people: 0, pose: null, world: null, mask: { width: W, height: H, data: new Uint8Array(W * H).fill(4) }, chin: null, ms: 1 };
     const r = await stripPerson(photo());
     expect(r.personFound).toBe(false);
+    expect(r.segmentationAvailable).toBe(true);
   });
 
   it("pessoa sem esqueleto: tira pele e fundo e mantém a roupa toda", async () => {

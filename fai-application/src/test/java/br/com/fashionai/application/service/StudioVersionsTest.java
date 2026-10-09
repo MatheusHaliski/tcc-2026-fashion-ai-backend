@@ -93,6 +93,15 @@ class StudioVersionsTest {
     }
 
     @Test
+    void cachedDefaultStudioRequiresTheCurrentFabricFramingVersion() {
+        assertThat(WardrobeService.currentFeedVersion(piece)).isFalse();
+        piece.setFlatLayMetadataJson(Json.write(Map.of("studio", Map.of("feed", Map.of("pipelineVersion", "OLD")))));
+        assertThat(WardrobeService.currentFeedVersion(piece)).isFalse();
+        piece.setFlatLayMetadataJson(Json.write(Map.of("studio", Map.of("feed", Map.of("pipelineVersion", br.com.fashionai.application.imaging.GarmentCrop.VERSION)))));
+        assertThat(WardrobeService.currentFeedVersion(piece)).isTrue();
+    }
+
+    @Test
     void reprocessingAnApprovedPhotoBecomesPendingAndTheApprovedOneStaysLive() {
         assertThat(service.offerStudio(piece, shot("v2"), false)).isEqualTo("pending");
         assertThat(piece.getStudioImageUrl()).isEqualTo("http://media/v1/studio-royal-1.jpg");

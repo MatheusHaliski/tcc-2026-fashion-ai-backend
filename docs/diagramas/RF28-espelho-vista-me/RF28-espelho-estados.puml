@@ -1,5 +1,5 @@
 @startuml RF28_Espelho_Estados
-title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de máquina de estados — a tela do espelho: avatar, reflexo vestido e seis números
+title RF28 — Vista-me: estado do espelho\nMáquina de estados
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
 skinparam state {
@@ -8,50 +8,32 @@ skinparam state {
   FontColor #2D2438
   ArrowColor #52606D
 }
-[*] --> Carregando : abre /mirror
-state "Carregando\n(GET /api/me/mirror · Skeleton)" as Carregando
-state "Erro\n(ErrorState + Tentar de novo)" as Erro
-state "Buscando avatar\n(GET /api/me/avatar3d)" as BuscandoAvatar
-state "Com avatar\n(o mesmo do perfil e do provador)" as ComAvatar
-state "Sem avatar\n(manequim de referência\n+ convite 'Criar meu avatar')" as SemAvatar
-state "Reflexo vazio\n(peças padrão FAI; mensagem\n'peça ao Vista-me'; sem números)" as Vazio
-state "Reflexo parcial\n(peças do espelho + padrão FAI\nno que falta; avisos missing[])" as Parcial
-state "Reflexo completo\n(look inteiro; ações Usar hoje,\nSalvar, GRWM, Tira uma coisa)" as Completo
-state "Atualizando\n(POST/DELETE em /api/me/mirror/*)" as Atualizando
-
-Carregando --> Erro : falha na API
-Erro --> Carregando : Tentar de novo
-Carregando --> BuscandoAvatar : estado do espelho recebido
-BuscandoAvatar --> ComAvatar : exists = true
-BuscandoAvatar --> SemAvatar : exists = false
-ComAvatar --> Vazio : slots vazios
-SemAvatar --> Vazio : slots vazios
-ComAvatar --> Parcial : complete = false
-SemAvatar --> Parcial : complete = false
-ComAvatar --> Completo : complete = true
-SemAvatar --> Completo : complete = true
-Vazio --> Atualizando : veste peça · Vista-me
-Parcial --> Atualizando : veste · tira · sugere · Vista-me · limpar
-Completo --> Atualizando : trocar · outro look · Tira uma coisa · limpar
-Atualizando --> Vazio : resposta sem peças
-Atualizando --> Parcial : resposta com complete = false
-Atualizando --> Completo : resposta com complete = true
-Completo --> [*] : Usar hoje (POST /use) · Salvar (POST /save → /schemes/{id})
-note left of Atualizando
-  erro (409/422): toast com a mensagem
-  e o reflexo continua como estava
-end note
-note right of Vazio
-  scores = null → o card "seis números" some
-end note
-note right of Parcial
-  card com os seis números (LookScores):
-  compatibilidade com o DNA, Hype, novidade,
-  reutilização, uso e sustentabilidade;
-  "—" = dimensão sem base, nunca 0
-end note
-note bottom of Completo
-  o reflexo nunca aparece sem roupa nem descalço
-  (withDefaultOutfit); "reduzir movimento" deixa a pose parada
-end note
+[*] --> Carregando
+Carregando --> SemAvatar : GET /api/me/avatar3d → exists=false
+Carregando --> ComAvatar : exists=true
+state SemAvatar : manequim de referência\n+ convite para criar o avatar
+state ComAvatar : o mesmo avatar do perfil
+SemAvatar --> Vazio
+ComAvatar --> Vazio
+state "Vazio (peças padrão FAI)" as Vazio
+Vazio --> Incompleto : coloca peça
+Incompleto --> Completo : slots obrigatórios preenchidos
+Completo --> Incompleto : "Tira uma coisa" / remover
+Incompleto --> Vazio : limpar
+Completo --> Completo : trocar slot / "outro look"
+Completo --> LookDoDia : "Usar este look hoje"
+Completo --> Salvo : salvar como esquema
+Incompleto --> Rascunho : "Abrir no editor"
+Completo --> Rascunho : "Abrir no editor"
+LookDoDia --> [*]
+Salvo --> [*]
+Rascunho --> [*]
+note right of Vazio : o reflexo nunca aparece\nsem roupa nem descalço
+' v5: diagrama do time mantido (sem alvo no código)
+legend bottom right
+  <b>Diagrama escrito pelo time e mantido como está.</b>
+  O código atual não tem um campo, enum ou método de estado equivalente
+  que scripts/diagramas/v5 consiga ler — não foi gerado nem verificado
+  contra o código em 2026-10-06.
+endlegend
 @enduml

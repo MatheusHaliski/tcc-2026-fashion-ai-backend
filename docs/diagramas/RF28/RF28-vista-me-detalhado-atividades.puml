@@ -1,9 +1,16 @@
 @startuml RF28_Vista-me_Detalhado_Atividades
-title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de atividades — Vista-me em detalhe: pedido, peças elegíveis, IA validada e localização no quarto
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -13,77 +20,57 @@ skinparam activity {
   StartColor #20A77A
   EndColor #4B5563
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
 }
+title RF28 (no código: RF33) — Smart Mirror 'Vista-me'\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-|Pessoa|
+|Pessoa usuária|
 start
-:Escreve o pedido no **Vista-me**\n(ex.: "algo confortável para trabalhar")\ne decide se mantém o que já está no espelho;
-
-|Frontend (mirror/page.tsx · room/page.tsx)|
-:POST /api/me/mirror/vista-me\n{prompt, keepMirror} (anchorIds e focusPieceId opcionais);
-
-|Serviço (MirrorService)|
-:Limpa o pedido (InputSanitizer, até 300 caracteres);
-:eligible(): peças disponíveis e não reprovadas na moderação\n(WardrobeService.eligible),\nmenos à venda e fora de estação (Penthouse),\nsó as do desafio ativo se houver 10×10 ou Cápsula;
-if (Há peça superior ou vestido elegível?) then (não)
-  #FFE3E3:422 ACERVO_SEM_SUPERIOR\n(link para cadastrar peça: /pieces/new);
+:Abre /mirror, /room;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/mirror\nGET /api/me/mirror/wardrobe\nGET /api/me/mirror/suggestions\nGET /api/me/mirror/grwm;
+|Pessoa usuária|
+:Vestir uma peça no espelho;
+|Tela (Next.js)|
+:POST /api/me/mirror/pieces;
+|API (Spring Boot)|
+:MirrorController.place\n→ MirrorService.place;
+if (peça obrigatória?) then (sim)
+  :400 PECA_OBRIGATORIA\n«Escolha uma peça do guarda-roupa\npara levar ao espelho.»\n→ a tela mostra o aviso;
   stop
-else (sim)
 endif
-:Âncoras = anchorIds elegíveis + peça em foco\nquando o pedido diz "esta/essa/usar…";
-:keepMirror → peças elegíveis já no espelho viram contexto;
-
-|IA (AiEngine, RF24)|
-:interpret() — COPILOT:\n{occasion (taxonomia, até 3), mood, constraints, season};
-if (IA respondeu e passou na validação?) then (sim)
-else (não / cota / sem consentimento)
-  :Interpretação local por palavras-chave\n(frio, calor, ousado, preto…; padrão "casual");
+|Dados e serviços|
+:Lê: mirror_states\nwardrobe_items\nstyle_dna;
+:Usa: WardrobeService.owned\nRoomService.locateAll;
+:Grava: mirror_states;
+:Evento: MirrorAction;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Tirar uma peça)
+    :DELETE /api/me/mirror/pieces/{pieceId}\n→ MirrorService.remove\nlê: mirror_states, wardrobe_items, style_dna\nusa: RoomService.locateAll\ngrava: mirror_states;
+  case (Vista-me: look completo a partir…)
+    :POST /api/me/mirror/vista-me\n→ MirrorService.vistaMe\nvalida: ACERVO_SEM_SUPERIOR, SEM_COMBINACAO_NOVA\nlê: mirror_states, wardrobe_items, style_dna\nusa: RoomService.outOfSeason,\nWardrobeService.eligible,\nRoomService.locateAll\nia: COPILOT, SCHEME_COMPOSER;
+  case (Trocar só uma peça do look)
+    :POST /api/me/mirror/slots/{slot}/swap\n→ MirrorService.swap\nvalida: SEM_CANDIDATAS, SLOT_INVALIDO\nlê: mirror_states, wardrobe_items\nusa: RoomService.outOfSeason,\nWardrobeService.eligible,\nRoomService.locateAll\nia: SCHEME_COMPOSER;
+  case (Limpar o espelho)
+    :DELETE /api/me/mirror\n→ MirrorService.clear\nlê: mirror_states, wardrobe_items, style_dna\nusa: RoomService.locateAll\ngrava: mirror_states;
+  case (Levar o look do espelho para o ed…)
+    :POST /api/me/mirror/draft\n→ MirrorService.draft\nlê: mirror_states\ngrava: mirror_states;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Outro look com o mesmo pedido, Usar o look de hoje
+  (Look do…, Salvar o look do espelho como…, 'Tira
+  uma coisa': simplificar…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-:compose() — SCHEME_COMPOSER: UM look só com refs\ndo acervo elegível, âncoras obrigatórias,\nsem repetir as combinações já mostradas;
-if (Todos os refs pertencem ao conjunto elegível?) then (sim)
-  if (Tem as âncoras, 2+ peças e é combinação nova?) then (sim)
-    :Usa o look da IA;
-  else (não)
-    :Descarta e monta localmente;
-  endif
-else (não)
-  :Descarta a sugestão inteira e audita\nVISTA_ME_SUGESTAO_DESCARTADA;
-  :Monta localmente (LocalSchemeComposer\nou melhor peça por slot faltante);
-endif
-
-|Serviço (MirrorService)|
-if (Encontrou combinação nova?) then (não)
-  #FFE3E3:422 SEM_COMBINACAO_NOVA;
-  stop
-else (sim)
-endif
-:Grava mirror_states: slots, origin = vista_me, prompt,\ninterpretation, last_prompt e shown_combinations_json (até 50);
-:Publica MirrorAction VISTA_ME\n(antes das 5 h: VISTA_ME_MADRUGADA → conquista secreta);
-:Endereço de cada peça (RoomService.locateAll)\n→ legenda "{peça} — Porta 2 / Gaveta 4 · Jeans";
-:render(): completude, avisos, scores (LookScorer),\nfallbackUsed, aviso do desafio e ações\nUSAR_ESTE_LOOK · TROCAR_UMA_PECA · REMIXAR · SALVAR\n· OUTRA_SUGESTAO · CRIAR_LOOK_COM_ESTAS_PECAS;
-
-|Frontend (mirror/page.tsx · room/page.tsx)|
-:No quarto: acende os módulos da sequência\ne abre as portas/gavetas;\nno /mirror: o reflexo veste o look novo;
-
-|Serviço (MirrorService)|
-switch (Ação escolhida pela pessoa)
-case (Usar este look)
-  :POST /api/me/mirror/use → esquema origin VISTA_ME\n(ou o existente) + Look do Dia source VISTA_ME;
-  :Após o commit: +15 FAI Points VISTA_ME_DAILY_LOOK\n(1 por dia, idempotente); no quarto as portas fecham;
-case (Trocar uma peça)
-  :POST /api/me/mirror/slots/{slot}/swap\n→ até 3 alternativas, mantendo as demais;
-case (Outra sugestão)
-  :POST /api/me/mirror/another → repete o Vista-me\ncom o último pedido, sem repetir combinações;
-case (Salvar)
-  :POST /api/me/mirror/save → esquema origin VISTA_ME;
-case (Criar Look com estas peças)
-  :POST /api/me/mirror/draft → RoomLookDraft\n(slots, origin, prompt, chave "sai_room_look_draft");
-  note right: a tela ainda não abre o RF5\ncom os slots (divergência)
-endswitch
+|Pessoa usuária|
 stop
-
 @enduml

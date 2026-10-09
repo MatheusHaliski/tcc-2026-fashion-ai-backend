@@ -23,6 +23,7 @@ import br.com.fashionai.domain.model.enums.NotificationType;
 import br.com.fashionai.domain.model.enums.ReactionType;
 import br.com.fashionai.domain.model.enums.ShareChannel;
 import br.com.fashionai.domain.model.enums.TargetType;
+import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.repository.CommentRepository;
 import br.com.fashionai.domain.repository.DnaSchemeRepository;
 import br.com.fashionai.domain.repository.ReactionRepository;
@@ -319,19 +320,37 @@ public class SocialService {
 
     // ------------------------------------------------------------------ CA08/CA09 compartilhar
     @Transactional
-    public Map<String, Object> share(CurrentUser user, TargetType type, UUID id, ShareChannel channel, String caption) {
+    public Map<String, Object> share(CurrentUser user, TargetType type, UUID id, ShareChannel channel) {
+        return share(user, type, id, channel, false);
+    }
+
+    /**
+     * Compartilhar (RF19.CA08/CA09). O post do FashionAI é o próprio card: diferente de outras redes, <b>não tem
+     * descrição</b> (pedido de 07/10), então nada de legenda é gravado. No feed, o post só aparece para quem pode abrir
+     * o conteúdo: se a dona compartilha a própria peça, look ou DNA ainda PRIVADO, a API recusa com
+     * {@code PUBLICAR_PARA_COMPARTILHAR} e o app pergunta antes; com {@code publish} (a pessoa confirmou ou ligou
+     * "Compartilhar no feed" no criador), o conteúdo vira público e o post sai.
+     */
+    @Transactional
+    public Map<String, Object> share(CurrentUser user, TargetType type, UUID id, ShareChannel channel, boolean publish) {
         guard.requireCanCreate(user);
         Target t = target(user, type, id);
         if (!t.available()) {
             throw ApiException.conflict("INDISPONIVEL", Msg.t("social.este_conteudo_esta_marcado_como"));
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        if (channel == ShareChannel.FEED && t.owner().getId().equals(user.id()) && visibilityOf(t) == Visibility.PRIVATE) {
+            if (!publish) {
+                throw ApiException.conflict("PUBLICAR_PARA_COMPARTILHAR", Msg.t("social.privado_para_compartilhar"));
+            }
+            makePublic(user, t);
+            out.put("published", true);
         }
         Share s = new Share();
         s.setUser(users.findById(user.id()).orElseThrow());
         s.setTargetType(type);
         s.setTargetId(id);
         s.setChannel(channel);
-        s.setCaption(InputSanitizer.moderated("caption", caption, 500));
-        Map<String, Object> out = new LinkedHashMap<>();
         if (channel == ShareChannel.EXTERNAL) {
             byte[] png = type == TargetType.SCHEME ? schemeService.renderCard(user, id, true) : null;
             if (png != null) {
@@ -354,6 +373,25 @@ public class SocialService {
         out.put("channel", channel);
         out.put("shares", shares.countByTargetTypeAndTargetId(type, id));
         return out;
+    }
+
+    /** Visibilidade escolhida para o conteúdo (sem o perfil): é ela que a dona troca ao publicar. */
+    private static Visibility visibilityOf(Target t) {
+        return switch (t.entity()) {
+            case Scheme s -> s.getVisibility();
+            case WardrobeItem w -> w.getVisibility();
+            case DnaScheme d -> d.getVisibility();
+            default -> Visibility.PUBLIC;
+        };
+    }
+
+    private void makePublic(CurrentUser user, Target t) {
+        switch (t.entity()) {
+            case Scheme s -> schemeService.publish(user, s.getId(), Visibility.PUBLIC);
+            case WardrobeItem w -> wardrobe.publishForFeed(user, w.getId());
+            case DnaScheme d -> d.setVisibility(Visibility.PUBLIC);
+            default -> { }
+        }
     }
 
     // ------------------------------------------------------------------ CA13/CA14 remixar e retornar

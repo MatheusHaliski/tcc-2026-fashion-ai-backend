@@ -1,38 +1,38 @@
 @startuml RF38_MaquinaDeEstados_Cupom
 !pragma layout smetana
-title RF38 — Meus cupons promocionais (marca/celebridade) e Meus cupons resgatados\nDiagrama de máquina de estados — direito ao cupom (coupon_rights.status) e cupom emitido
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "Direito ao cupom (CouponRight.status)" as D {
-  state "PENDENTE" as PENDENTE
-  state "RESGATADO\n(couponRef, decidedAt)" as RESGATADO
-  state "DISPENSADO\n(decidedAt)" as DISPENSADO
-  [*] --> PENDENTE : CouponService.scan após CouponRightsCheck,\nSchemeSaved ou PieceCreated (AFTER_COMMIT)\n+ notificação COUPON_AVAILABLE
-  PENDENTE --> RESGATADO : POST /api/me/coupon-rights/{id}/redeem\n(SealService.redeem ou FlairService.redeem)
-  PENDENTE --> RESGATADO : GET /api/me/coupons concilia: cupom já saiu\npor fora (troca direta no FLAIR ou limite da promoção)
-  PENDENTE --> DISPENSADO : POST /api/me/coupon-rights/{id}/dismiss
-  RESGATADO --> RESGATADO : novo redeem → 409 DIREITO_DECIDIDO
-  DISPENSADO --> DISPENSADO : redeem → 409 DIREITO_DECIDIDO
+title RF38 — ciclo de vida de CouponRight.status\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\ncampo texto · tabela coupon_rights
+
+state "CouponRight.status" as Ciclo_CouponRight {
+  state Ciclo_CouponRight_DISPENSADO as "DISPENSADO"
+  state Ciclo_CouponRight_PENDENTE as "PENDENTE"
+  state Ciclo_CouponRight_RESGATADO as "RESGATADO"
 }
-state "Cupom Fashion AI (carteira)" as C {
-  state "EMITIDO\n(promotion_redemptions.status = ISSUED\nou flair_redemptions.status = EMITIDO)" as EMITIDO
-  state "USADO\n(USED · USADO + usedAt)" as USADO
-  state "EXPIRADO\n(calculado na leitura: expiresAt no passado)" as EXPIRADO
-  [*] --> EMITIDO : código único, desconto, validade, storeUrl (https)
-  EMITIDO --> USADO : loja valida no caixa\nPOST /api/me/coupons/validate\n(ou POST /api/flair/brand/redemptions/validate)
-  EMITIDO --> EXPIRADO : passa expiresAt
-  EXPIRADO --> EXPIRADO : validate → 409 CUPOM_EXPIRADO
-  USADO --> USADO : validate → 409 CUPOM_USADO
-}
-RESGATADO --> C : emite (couponRef aponta o cupom)
-DISPENSADO --> [*]
-USADO --> [*]
-EXPIRADO --> [*]
-note right of D : status é String com as constantes de CouponService;\núnico por (user_id, source_type, source_id):\nnunca há dois direitos para a mesma fonte
-note right of C : nenhum job grava EXPIRED/EXPIRADO;\na promoção pode ir para REDEEMED quando\na cota total acaba (SealService.redeem)
+[*] --> Ciclo_CouponRight_PENDENTE : criação
+Ciclo_CouponRight --> Ciclo_CouponRight_DISPENSADO : dismiss()\nPOST /api/me/coupon-rights/{id}/dismiss
+Ciclo_CouponRight --> Ciclo_CouponRight_PENDENTE : grant(), mine()
+Ciclo_CouponRight --> Ciclo_CouponRight_RESGATADO : mine(), redeem()
+note right of Ciclo_CouponRight
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
+end note
 @enduml

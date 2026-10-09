@@ -1,23 +1,39 @@
 @startuml RF23_MaquinaDeEstados_Exportacao
 !pragma layout smetana
-title RF23 — DataExportRequest: pedido "Seus dados" (ExportStatus, LGPD Art. 18 V)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "REQUESTED" as Requested
-state "PROCESSING" as Processing
-state "READY" as Ready
-state "EXPIRED" as Expired
-[*] --> Requested : valor padrão da entidade
-Requested --> Processing : POST /api/me/exports\n(AccountService.requestExport salva já em PROCESSING)
-Processing --> Ready : JSON montado no idioma preferido,\ngravado em restricted/… (MediaStoragePort.put)\nreadyAt = agora, expiresAt = +7 dias
-Ready --> Ready : GET /api/me/exports/{id}/file\n(só o dono; 403 para outro usuário)
-Ready --> Expired : cron purgeExpiredExports (0 50 * * * *)\napaga o arquivo, fileKey = null
-Expired --> [*]
-note right of Ready : notificação DATA_EXPORT_READY\naudit EXPORTACAO_CONTA
-note bottom of Expired : GET …/file responde 410 EXPORTACAO_EXPIRADA;\nexportsOf mostra EXPIRED assim que passa expiresAt
+title RF23 — ciclo de vida de DataExportRequest.status\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum ExportStatus · tabela data_export_requests
+
+state "DataExportRequest.status" as Ciclo_DataExportRequest {
+  state Ciclo_DataExportRequest_REQUESTED as "REQUESTED"
+  state Ciclo_DataExportRequest_PROCESSING as "PROCESSING"
+  state Ciclo_DataExportRequest_READY as "READY"
+  state Ciclo_DataExportRequest_EXPIRED as "EXPIRED"
+}
+[*] --> Ciclo_DataExportRequest_REQUESTED : criação
+Ciclo_DataExportRequest --> Ciclo_DataExportRequest_EXPIRED : purgeExpiredExports()
+Ciclo_DataExportRequest --> Ciclo_DataExportRequest_PROCESSING : requestExport()\nPOST /api/me/exports
+Ciclo_DataExportRequest --> Ciclo_DataExportRequest_READY : requestExport()\nPOST /api/me/exports
+note right of Ciclo_DataExportRequest
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
+end note
 @enduml

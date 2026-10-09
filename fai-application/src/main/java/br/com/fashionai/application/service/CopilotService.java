@@ -71,6 +71,10 @@ import java.util.stream.Collectors;
  */
 @Service
 public class CopilotService {
+    private SealService sealPolicyService;
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setSealPolicyService(SealService service) { this.sealPolicyService = service; }
     public static final int MIN_PIECES = 3;
     static final Pattern REF = Pattern.compile("\\[\\[(p\\d+)]]");
     static final Map<String, Set<String>> COLOR_WORDS = new LinkedHashMap<>();
@@ -173,7 +177,13 @@ public class CopilotService {
      * histórico) — reordena os looks sugeridos pela pontuação multidimensional ({@link RecommendationScoring}).
      */
     public record AskRequest(String message, String view, List<UUID> selection, List<String> occasion, String mood, String city,
-                             Double latitude, Double longitude, List<String> excludeKeys, String mode) {
+                             Double latitude, Double longitude, List<String> excludeKeys, String mode,
+                             br.com.fashionai.domain.model.enums.SealTier tier, Map<String, Object> previousPolicy,
+                             List<SealPolicyCopilot.Message> conversation) {
+        public AskRequest(String message, String view, List<UUID> selection, List<String> occasion, String mood, String city,
+                          Double latitude, Double longitude, List<String> excludeKeys, String mode) {
+            this(message, view, selection, occasion, mood, city, latitude, longitude, excludeKeys, mode, null, null, null);
+        }
     }
 
     /** Momentos §17 — o Copilot conhece os Momentos ativos (injeção opcional: o construtor dos testes não muda). */
@@ -691,6 +701,10 @@ public class CopilotService {
     // ================================================================== resposta principal
     @Transactional
     public Map<String, Object> ask(CurrentUser user, AskRequest req) {
+        if (SealPolicyCopilot.active(req.message(), req.conversation())) {
+            if (sealPolicyService == null) throw new ApiException(503, "IA_INDISPONIVEL", Msg.t("sealCopilot.ia_indisponivel"));
+            return sealPolicyService.draft(user, req.tier(), req.message(), req.previousPolicy(), req.conversation());
+        }
         String message = InputSanitizer.clean(req.message() == null ? "" : req.message(), 600);
         if (message.isBlank()) {
             throw ApiException.badRequest("MENSAGEM_VAZIA", Msg.t("copilot.escreva_o_que_voce_precisa"));

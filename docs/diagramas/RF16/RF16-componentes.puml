@@ -1,74 +1,86 @@
 @startuml RF16_Componentes
-title RF16 — Implementar geração de imagem 3D das peças do guarda-roupa utilizando serviços de API externas\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF16 — Implementar geração de imagem 3D das peças do guarda-roupa utilizando serviços de API externas\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "pieces/[id] — ExpandedPiece\n(aba Modelo 3D)" as FE0
-  component "Model3dPanel\n(components/model3d-panel.tsx)" as FE1
-  component "PieceModelViewer\n(room3d/piece-model-viewer.tsx)" as FE2
-  component "Generate3d\n(components/generate-3d.tsx)" as FE3
+  component "/pieces/[id]\n(site)/(app)/pieces/[id]/page.tsx" as FE0
+  component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE1
+  component "/schemes/[id]\n(site)/(app)/schemes/[id]/page.tsx" as FE2
+  component "lib/api/client.ts" as APIC
 }
-package "fai-web · controllers" {
-  [WardrobeController] as WC
-  [ShowcaseController] as SC
+package "fai-web (REST)" {
+  component "ShowcaseController\n/api/pieces/{…}/look3d\n/api/schemes/{…}/look3d\n/api/schemes/{…}/model3d" as ShowcaseController
+  component "WardrobeController\n/api/pieces\n/api/pieces/{…}\n/api/pieces/{…}/model3d" as WardrobeController
 }
-package "fai-application · services" {
-  [WardrobeService] as WS
-  [ShowcaseService] as SS
-  [Model3dService\n(@Scheduled tick)] as M3
-  [AiEngine (RF24)\nAiCapability.THREE_D_GENERATOR] as AI
-  [ReliefModelGenerator\n(relevo local)] as REL
-  [MediaService] as MS
-  [NotificationService] as NS
-  [FaiPointsService] as FP
+package "fai-application (casos de uso)" {
+  component "ShowcaseService" as ShowcaseService
+  component "WardrobeService" as WardrobeService
+  component "MediaService" as MediaService <<apoio>>
+  component "DailyLookService" as DailyLookService <<apoio>>
+  component "SchemeService" as SchemeService <<apoio>>
+  component "InstitutionalService" as InstitutionalService <<apoio>>
+  component "Model3dService" as Model3dService <<apoio>>
+  component "Avatar3dService" as Avatar3dService <<apoio>>
+  component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
+  component "FlatLayPipeline" as FlatLayPipeline <<apoio>>
+  component "JobQueuePort\n«InMemoryJobQueue»" as JobQueuePort <<port>>
 }
-package "fai-infrastructure · adapters" {
-  [MeshyModel3dAdapter] as MESHY
-  [StabilityFast3dAdapter] as SF3D
-  [WebFetchPort (https)] as WEB
-  [PipelineJobRepository\nWardrobeItemRepository\nAiInferenceLogRepository] as REPOS
-  [storage-s3] as S3
+package "fai-domain (repositórios)" {
+  component "FollowRepository\nUserRepository\nSchemeRepository\nSchemeItemRepository\nWardrobeItemRepository\nSchemeGroupingRepository\nDailyLookRepository\nUserPreferencesRepository\nCelebrityProfileRepository\nHypeScoreCurrentRepository\n(+8)" as REPO_MySQL
 }
-database "MySQL\n• pipeline_jobs\n• wardrobe_items\n• ai_inference_log\n• notifications\n• fai_points_ledger" as DB
-cloud "Meshy image-to-3D" as X1
-cloud "Stability Stable Fast 3D" as X2
-component "Blender" <<planejado>> as BL
-note bottom of BL : não implementado — conforme Trello\n(dependência "Blender/cloud"; atendida pelos provedores cloud)
-
-FE0 --> FE1
-FE1 --> FE2
-FE1 --> WC : POST/GET /api/pieces/{id}/model3d
-FE3 --> SC : GET /api/pieces/{id}/look3d\nPOST /api/schemes/{id}/model3d
-WC --> WS : chama
-SC --> SS : chama
-WS --> M3 : request / status
-SS --> M3 : request
-M3 --> AI : execute
-AI --> MESHY : chama
-AI --> SF3D : chama
-M3 --> REL : plano B
-M3 --> WEB : baixa GLB
-M3 --> MS : grava .glb
-M3 --> NS : publica
-M3 --> FP : awardIsolated(PIECE_3D, 15 pts)
-MS --> S3
-MESHY --> X1
-SF3D --> X2
-M3 --> REPOS : lê/grava
-AI --> REPOS : grava log
-REPOS --> DB : JPA/Flyway
+database "MySQL\n• brands\n• celebrity_profiles\n• daily_looks\n• follows\n• hype_scores\n• moderation_queue\n• photos\n• pipeline_jobs\n• processing_jobs_log\n• quality_scores\n• reactions\n• saved_items\n(+6)" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+APIC --> ShowcaseController : HTTPS/JSON
+APIC --> WardrobeController : HTTPS/JSON
+FE0 --> APIC
+FE1 --> APIC
+FE2 --> APIC
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+ShowcaseController --> ShowcaseService
+ShowcaseService --> REPO_MySQL
+ShowcaseService ..> Avatar3dService
+ShowcaseService ..> DailyLookService
+ShowcaseService ..> HypeScoreConfig
+ShowcaseService ..> InstitutionalService
+ShowcaseService ..> MediaService
+ShowcaseService ..> Model3dService
+ShowcaseService ..> SchemeService
+WardrobeController --> WardrobeService
+WardrobeService --> AI
+WardrobeService --> EV
+WardrobeService --> JobQueuePort
+WardrobeService --> REPO_MySQL
+WardrobeService ..> FlatLayPipeline
+WardrobeService ..> MediaService
+WardrobeService ..> Model3dService
 @enduml

@@ -6,13 +6,13 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import { Badge, Button, EmptyState, PageHeader, Skeleton, useToast } from "@/components/ui";
-import { CatalogPhoto } from "@/components/catalog/catalog-photo";
+import { CatalogPhoto, photoAspect } from "@/components/catalog/catalog-photo";
 
 interface Debug { bbox?: NormRect; focus?: NormRect; finalCrop?: NormRect; critical?: { name: string; rect: NormRect }[]; distractors?: NormRect[]; candidates?: { crop: NormRect; score: number }[] }
 interface ReviewItem {
   id: string; productId: string; sourceUrl: string; processedUrl?: string | null; viewType?: string; viewRole?: string | null; canonical: boolean;
   processingStatus: string; reviewStatus: string; qualityScore?: number | null; reasons: string[]; width?: number; height?: number;
-  crop?: { crop?: NormRect; background?: string; focus?: { name: string; rect: NormRect } } | null;
+  crop?: { aspect?: string; crop?: NormRect; background?: string; focus?: { name: string; rect: NormRect } } | null;
   metrics?: (Record<string, number | string | boolean | unknown> & { debug?: Debug }) | null; assets?: Record<string, string> | null;
 }
 interface Metrics { pipelineVersion: string; enabled: boolean; byStatus: Record<string, number>; canonical: number; reviewPending: number; averageQuality?: number | null; topRejectionReasons: { reasons: string; count: number }[] }
@@ -45,8 +45,8 @@ function DebugOverlay({ item }: { item: ReviewItem }) {
 function ReviewCard({ item, onDone }: { item: ReviewItem; onDone: () => void }) {
   const { t } = useI18n(); const toast = useToast();
   const [alternates, setAlternates] = useState<CatalogProductImage[] | null>(null);
-  const after: CatalogCardImage | null = item.assets?.card ? { url: item.assets.card, mode: "PROCESSED" }
-    : item.crop?.crop ? { url: item.sourceUrl, mode: "SEMANTIC_CROP", crop: item.crop.crop, background: item.crop.background } : null;
+  const after: CatalogCardImage | null = item.assets?.card ? { url: item.assets.card, mode: "PROCESSED", aspect: item.crop?.aspect }
+    : item.crop?.crop ? { url: item.sourceUrl, mode: "SEMANTIC_CROP", crop: item.crop.crop, background: item.crop.background, aspect: item.crop.aspect } : null;
   async function decide(action: string, alternateImageId?: string) {
     try { await api.post(`/api/admin/catalog-images/${item.id}/review`, { action, alternateImageId }); toast.success(t("admin.catalogImages.decidido")); onDone(); } catch (e) { toast.fromError(e); }
   }
@@ -62,7 +62,7 @@ function ReviewCard({ item, onDone }: { item: ReviewItem; onDone: () => void }) 
       </div>
       <div className="cip-compare">
         <div><p className="type-caption text-muted">{t("admin.catalogImages.antes")}</p><DebugOverlay item={item} /></div>
-        <div><p className="type-caption text-muted">{t("admin.catalogImages.depois")}</p><div className="cip-frame">{after ? <CatalogPhoto image={after} alt="" /> : <EmptyState title={t("admin.catalogImages.sem_recorte")} />}</div></div>
+        <div><p className="type-caption text-muted">{t("admin.catalogImages.depois")}</p><div className="cip-frame" style={{ aspectRatio: photoAspect(after?.aspect) }}>{after ? <CatalogPhoto image={after} alt="" /> : <EmptyState title={t("admin.catalogImages.sem_recorte")} />}</div></div>
       </div>
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 sm:grid-cols-3">
         {SHOWN.filter((k) => typeof item.metrics?.[k] === "number").map((k) => <div key={k} className="flex justify-between gap-2"><dt className="type-caption text-muted">{k}</dt><dd className="type-data">{Math.round(Number(item.metrics![k]) * 100)}%</dd></div>)}

@@ -14,11 +14,11 @@ class SemanticRegionRegistryTest {
     void subcategoriaSobrescreveSoOQueDeclara() {
         SemanticRegionRegistry.Profile jeans = registry.profile(PieceType.LOWER_PIECE, "jeans");
         SemanticRegionRegistry.Profile base = registry.profile(PieceType.LOWER_PIECE, "cargo_pants");
-        assertThat(jeans.focus().name()).isEqualTo("waistband_patch_back_pockets");
+        assertThat(jeans.focus().name()).isEqualTo("waistband_pockets_fastening");
         assertThat(jeans.focus().rect().h()).isEqualTo(0.38);
         assertThat(base.focus().rect().h()).isEqualTo(0.40);
         assertThat(jeans.critical()).extracting(SemanticRegionRegistry.Region::name)
-                .containsExactly("waistband", "patch", "back_pocket_left", "back_pocket_right");
+                .containsExactly("waistband", "fastening", "pocket_left", "pocket_right");
         assertThat(registry.profile(PieceType.LOWER_PIECE, "skirt").critical()).extracting(SemanticRegionRegistry.Region::name)
                 .containsExactly("waistband");
         assertThat(jeans.occupancy()).isEqualTo(base.occupancy());
@@ -41,7 +41,7 @@ class SemanticRegionRegistryTest {
     @Test
     void regrasDoProdutoFinalPorCategoria() {
         assertRule(PieceType.UPPER_PIECE, "t_shirt", Fit.COVER, Align.TOP, "FRONT", true);
-        assertRule(PieceType.LOWER_PIECE, "jeans", Fit.COVER, Align.TOP, "BACK", true);
+        assertRule(PieceType.LOWER_PIECE, "jeans", Fit.COVER, Align.TOP, "ANY", true);
         assertRule(PieceType.SHOES_PIECE, "casual_sneakers", Fit.WIDTH, Align.CENTER, "SIDE", false);
         assertRule(PieceType.ACCESSORY_PIECE, "sunglasses", Fit.WIDTH, Align.CENTER, "FRONT", false);
         assertRule(PieceType.ACCESSORY_PIECE, "watch", Fit.COVER, Align.FOCUS, "ANY", false);

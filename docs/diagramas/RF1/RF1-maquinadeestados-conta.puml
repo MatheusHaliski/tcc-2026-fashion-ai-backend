@@ -1,66 +1,57 @@
 @startuml RF1_MaquinaDeEstados_Conta
 !pragma layout smetana
-title RF1 — Cadastrar conta na plataforma (Pessoal, Marca ou Celebridade)\nDiagrama de máquina de estados — conta (User.status · AccountStatus)
 skinparam backgroundColor #FFFFFF
-skinparam state {
-  BackgroundColor #F8F4FF
-  BorderColor #B695F5
-  FontColor #2D2438
-  ArrowColor #52606D
-}
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
 skinparam note {
   BackgroundColor #FFFDEB
   BorderColor #D8CE78
   FontColor #554F24
 }
-state "PENDING_EMAIL_VERIFICATION" as PendEmail
-state "PENDING_VALIDATION" as PendVal
-state "ACTIVE" as Ativa
-state "SUSPENDED" as Susp
-state "DELETION_SCHEDULED" as DelSched
-state "DELETED" as Del
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  StartColor #20A77A
+  EndColor #4B5563
+}
+title RF1 — ciclo de vida de User.status e profileType\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum AccountStatus · enum ProfileType · tabela users
 
-[*] --> PendEmail : POST /api/auth/register\n(201 Session com warnings)
-PendEmail --> Ativa : POST /api/auth/email-verification\n(PESSOAL, ou perfil já APROVADO)
-PendEmail --> PendVal : POST /api/auth/email-verification\n(MARCA/CELEBRIDADE ainda não APROVADO)
-PendVal --> Ativa : POST /api/admin/approvals/{userId}\ndecision = APROVAR (CA07/CA10)
-PendVal --> PendVal : decision = AJUSTES ou RECUSAR\n· POST /api/me/issuer-review/resubmit
-Ativa --> Susp : PUT /api/admin/users/{userId}/status\nsuspend = true (revoga as sessões)
-Susp --> Ativa : PUT /api/admin/users/{userId}/status\nsuspend = false
-Ativa --> DelSched : POST /api/me/deletion {password}\ndeletionScheduledFor = +30 dias (RF3)
-DelSched --> Ativa : DELETE /api/me/deletion\n(e-mail confirmado e perfil aprovado)
-DelSched --> PendEmail : DELETE /api/me/deletion\n(e-mail não confirmado)
-DelSched --> PendVal : DELETE /api/me/deletion\n(perfil institucional não aprovado)
-DelSched --> Del : AccountService.purgeScheduledDeletions()\n(anonimização irreversível)
-Del --> [*]
-
-note right of PendEmail
-  CA05 — acesso limitado: Guard.requireCanCreate
-  responde 403 EMAIL_NAO_CONFIRMADO; a pessoa só
-  navega e vê. Reenvio: POST /api/auth/email-verification/resend
+state "User.status" as Ciclo_User {
+  state Ciclo_User_PENDING_EMAIL_VERIFICATION as "PENDING_EMAIL_VERIFICATION"
+  state Ciclo_User_ACTIVE as "ACTIVE"
+  state Ciclo_User_PENDING_VALIDATION as "PENDING_VALIDATION"
+  state Ciclo_User_SUSPENDED as "SUSPENDED"
+  state Ciclo_User_DELETION_SCHEDULED as "DELETION_SCHEDULED"
+  state Ciclo_User_DELETED as "DELETED"
+}
+[*] --> Ciclo_User_PENDING_EMAIL_VERIFICATION : criação
+Ciclo_User --> Ciclo_User_ACTIVE : ensureAdmin(), decide()
+Ciclo_User --> Ciclo_User_DELETED : purgeScheduledDeletions()
+Ciclo_User --> Ciclo_User_DELETION_SCHEDULED : requestDeletion()\nPOST /api/me/deletion
+Ciclo_User --> Ciclo_User_PENDING_EMAIL_VERIFICATION : register()\nPOST /api/auth/register
+note bottom of Ciclo_User
+  Sem mudança explícita no código para: PENDING_VALIDATION, SUSPENDED
+  (valor vindo de importação, regra calculada ou dado legado)
 end note
-note right of PendVal
-  Sessão com o aviso "seu perfil aguarda a validação".
-  Guard.requireApprovedProfile → 403 PERFIL_EM_VALIDACAO;
-  marca e celebridade não vendem nem emitem selos.
-  Ciclo da análise: RF1_MaquinaDeEstados_Verificacao.
-end note
-note left of Susp
-  Login → 403 CONTA_INDISPONIVEL;
-  refresh → 401; criar/editar → 403 CONTA_SUSPENSA.
-  O PUT de status vale para qualquer estado:
-  reativar sempre grava ACTIVE.
-end note
-note right of DelSched
-  POST /api/me/deletion não confere o estado atual:
-  qualquer conta logada pode agendar a exclusão.
-  Criar/editar → 403 EXCLUSAO_AGENDADA.
-end note
-note bottom of Del
-  username → deleted_xxxxxxxx, e-mail → deleted+…@fashionai.invalid,
-  peças e looks ARCHIVED e privados, fotos, avatar 3D, scans do Lens
-  e marcos de Hype apagados, sessões revogadas.
-  <<planejado>> agendamento: o método existe, mas não tem @Scheduled
-  nem chamada no código — hoje nenhuma conta chega a DELETED sozinha.
+state "User.profileType" as Ciclo_User_profileType {
+  state Ciclo_User_profileType_PESSOAL as "PESSOAL"
+  state Ciclo_User_profileType_MARCA as "MARCA"
+  state Ciclo_User_profileType_CELEBRIDADE as "CELEBRIDADE"
+  state Ciclo_User_profileType_ADMIN as "ADMIN"
+}
+[*] --> Ciclo_User_profileType_ADMIN : criação
+Ciclo_User_profileType --> Ciclo_User_profileType_PESSOAL : register()\nPOST /api/auth/register
+Ciclo_User_profileType --> Ciclo_User_profileType_MARCA : register()\nPOST /api/auth/register
+Ciclo_User_profileType --> Ciclo_User_profileType_CELEBRIDADE : register()\nPOST /api/auth/register
+Ciclo_User_profileType --> Ciclo_User_profileType_ADMIN : register(), ensureAdmin()
+note right of Ciclo_User
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
 end note
 @enduml

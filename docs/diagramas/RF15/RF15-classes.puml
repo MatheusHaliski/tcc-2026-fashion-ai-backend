@@ -1,137 +1,140 @@
 @startuml RF15_Classes
-title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  .. +outros campos ..
+package "fai-domain (entidades JPA)" {
+  class Photo <<photos>> {
+    +id: UUID
+    +user: User
+    +origin: PhotoOrigin
+    +sourceEntityId: UUID
+    +storageKey: String
+    +publicUrl: String
+    +originalUrl: String
+    +thumbnailUrl: String
+    +contentHash: String
+    +mimeType: String
+    .. +10 campos ..
+  }
+  class PieceImage <<piece_images>> {
+    +id: UUID
+    +sessionId: UUID
+    +pieceId: UUID
+    +userId: UUID
+    +imageType: PieceImageType
+    +viewType: CaptureView
+    +captureRole: CaptureRole
+    +capturePurpose: CapturePurpose
+    +captureSource: CaptureSource
+    +storageKey: String
+    .. +19 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class WardrobeItem <<wardrobe_items>> {
+    +id: UUID
+    +user: User
+    +brandProfile: BrandProfile
+    +brand: Brand
+    +name: String
+    +category: String
+    +subcategory: String
+    +sex: String
+    +brandName: String
+    +brandLogoUrl: String
+    .. +70 campos ..
+  }
 }
-class Photo {
-  +user: User
-  +origin: PhotoOrigin
-  +sourceEntityId: UUID
-  +storageKey: String
-  +publicUrl: String
-  +originalUrl: String
-  +thumbnailUrl: String
-  +contentHash: String
-  +mimeType: String
-  +width: Integer
-  +height: Integer
-  +bytesSize: Long
-  +qualityScore: BigDecimal
-  +moderationStatus: ModerationStatus
-  +keyMoment: boolean
-  +editedFromPhotoId: UUID
-  +metadataJson: String
-  +deletedAt: Instant
+package "fai-domain (enums)" {
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
+  enum PieceImageStatus {
+    PENDING
+    PROCESSING
+    COMPLETED
+    NEEDS_REVIEW
+    FAILED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  enum PhotoProcessingStatus {
+    NEW
+    MODERATING
+    PROCESSING
+    COMPLETED
+    NEEDS_REUPLOAD
+    FAILED
+  }
+  enum Model3dStatus {
+    QUEUED
+    PROCESSING
+    COMPLETED
+    FAILED
+  }
 }
-class WardrobeItem {
-  +user: User
-  +name: String
-  +imageUrl: String
-  +originalImageUrl: String
-  +thumbnailUrl: String
-  +defaultImage: boolean
-  +aiGeneratedImage: boolean
-  +visibility: Visibility
-  +photoProcessingStatus: PhotoProcessingStatus
-  +availabilityStatus: AvailabilityStatus
-  .. +outros campos (RF4/RF7) ..
+package "fai-application" {
+  class PhotoService <<service>> {
+    +saveEdit()
+    +removeBackground()
+  }
 }
-class PieceImage {
-  +sessionId: UUID
-  +pieceId: UUID
-  +userId: UUID
-  +imageType: PieceImageType
-  +viewType: CaptureView
-  +storageKey: String
-  +url: String
-  +width: int
-  +height: int
-  +qualityScore: Integer
-  +derivedFromId: UUID
-  +processingStatus: PieceImageStatus
-  +superseded: boolean
-}
-}
-package "fai-domain · enums" {
-enum PhotoOrigin {
-  WARDROBE_ITEM
-  SCHEME
-  TRY_ON
-  STYLE_DNA
-  PROFILE
-  BACKGROUND_STUDIO
-  LOOSE
-  EDITOR
-}
-enum ModerationStatus {
-  PENDING
-  APPROVED
-  REJECTED_POLICY
-  REJECTED_NOT_CLOTHING
-}
-enum PhotoProcessingStatus {
-  NEW
-  MODERATING
-  PROCESSING
-  COMPLETED
-  NEEDS_REUPLOAD
-  FAILED
-}
-enum PieceImageType {
-  ORIGINAL
-  CANONICAL
-  DETAIL
-  LOGO_DETAIL
-  TEXTURE_DETAIL
-  SEGMENTATION_MASK
-}
-}
-package "fai-application · service" {
-class PhotoService {
-  +saveEdit(user, id, bytes): Map
-  +removeBackground(user, bytes): Map
-  +delete(user, id, confirmed): Map
-  +list(user, origin, page, size): Map
-}
-class WardrobeService {
-  +replaceImage(user, id, bytes, editedFromPhotoId): PieceView
-  +governedFlatLay(userId, bytes): FlatLayPipeline.Result
-  +addToWardrobe(user, sourceId): PieceView
-}
-class MediaService {
-  +put(key, bytes, mime): StoredObject
-  +register(owner, origin, sourceEntityId, stored, originalUrl, thumbUrl, ...): Photo
-}
-}
+PhotoService ..> Photo : usa
+PhotoService ..> WardrobeItem : usa
 Photo "*" --> "1" User : user
-Photo --> PhotoOrigin
 Photo --> ModerationStatus
-Photo ..> Photo : editedFromPhotoId
-Photo ..> WardrobeItem : sourceEntityId
-WardrobeItem "*" --> "1" User : user
-WardrobeItem --> PhotoProcessingStatus
+PieceImage --> PieceImageStatus
+PieceImage ..> User : userId
 PieceImage ..> WardrobeItem : pieceId
-PieceImage --> PieceImageType
-PhotoService ..> Photo
-PhotoService ..> WardrobeService
-WardrobeService ..> WardrobeItem
-WardrobeService ..> MediaService
-MediaService ..> Photo : register
-note top of Photo : tabela photos\nedição do canvas: origin = EDITOR
-note top of WardrobeItem : tabela wardrobe_items — ver RF4/RF7
-note top of PieceImage : tabela piece_images (captura adaptativa, RF4)
+User --> AccountStatus
+WardrobeItem "*" --> "1" User : user
+WardrobeItem --> AvailabilityStatus
+WardrobeItem --> Model3dStatus
+WardrobeItem --> ModerationStatus
+WardrobeItem --> PhotoProcessingStatus
 @enduml

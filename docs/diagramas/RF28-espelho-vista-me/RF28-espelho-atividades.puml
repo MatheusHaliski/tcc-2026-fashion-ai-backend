@@ -1,9 +1,16 @@
 @startuml RF28_Espelho_Atividades
-title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de atividades — o reflexo do Avatar 3D vestindo o look e os seis números do look
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,58 +19,50 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
+title RF28 — Vista-me: o espelho mostra o reflexo do Avatar 3D da pessoa vestindo as peças, em pose natural\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
 |Pessoa usuária|
 start
-:Abre /mirror (ou "Vestir no espelho" numa peça);
-|Frontend (mirror/page.tsx · MirrorStage)|
-fork
-  :GET /api/me/mirror;
-  |Serviço (MirrorService · LookScorer)|
-  :Estado do espelho: slots, complete, missing,\nluz (kelvin pela estação de cor do DNA);
-  if (Há peças no espelho?) then (sim)
-    :LookScorer.scoreLooks → seis números:\ncompatibilidade com o DNA, Hype (média v2 das peças),\nnovidade, reutilização, uso comprovado, sustentabilidade;
-  else (não)
-    :scores = null (espelho vazio não tem números);
+|Tela (React)|
+partition "c/ui/index.tsx · ChipMultiSelect()" {
+  :estado da tela: LimitHit = false;
+  :estado da tela: LimitHit = true;
+  :estado da tela: LimitHit = false;
+  :tr(), tr(), tr(), tr()\n<size:10>lib/i18n/i18n.tsx</size>;
+  :tr()\n<size:10>lib/i18n/i18n.tsx</size>;
+}
+|Tela (React)|
+partition "c/mirror/mirror-stage.tsx · MirrorStage()" {
+  :useI18n()\n<size:10>lib/i18n/i18n.tsx</size>;
+  :useAuth()\n<size:10>lib/auth/session.tsx</size>;
+  :useApi()\n<size:10>lib/hooks/use-api.ts</size>;
+  :GET /api/me/avatar3d\n→ Avatar3dController.get;
+  :validateBody()\n<size:10>lib/avatar3d/body-spec.ts</size>;
+  if (!kelvin?) then (sim)
+    :encerra este passo;
+    stop
   endif
-  |Frontend (mirror/page.tsx · MirrorStage)|
-fork again
-  :GET /api/me/avatar3d (Avatar3dController, RF40);
-end fork
-if (Tem avatar 3D salvo (exists = true)?) then (sim)
-  :Usa o mesmo avatar do perfil e do provador\n(corpo medido, pele, rosto, cabelo; textura\nem /api/avatar3d/{userId}/texture);
-else (não)
-  :Manequim de referência pelo sexo do perfil\n+ convite "Criar meu avatar" (/avatar);
-endif
-:mirrorPieces(slots) → peças 3D por slot (Look3dPiece);
-:withDefaultOutfit(): completa tronco, pernas e pés\ncom as peças padrão FAI (nunca sem roupa nem descalço);
-:AvatarViewer framing = "full", sem controles, visão frontal,\nfundo no tom da luz (glassTint); imagem não espelhada;
-:HumanAvatar + HumanOutfit: pose natural\n(respiração e apoio; parado com "reduzir movimento");
-if (Há peças e scores?) then (sim)
-  :Card **Os seis números do look** (LookScores):\nlado a lado, nunca somados; "—" = sem base, nunca 0;
-else (não)
-  :Card oculto;
-endif
+  if (kelvin < 3500?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  if (kelvin > 5000?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+}
+|Tela (React)|
+partition "c/three/avatar-viewer.tsx · AvatarViewer()" {
+  :useI18n()\n<size:10>lib/i18n/i18n.tsx</size>;
+  :bodyParamsOf()\n<size:10>c/three/mannequin.tsx</size>;
+  :buildSpec()\n<size:10>lib/avatar3d/body-spec.ts</size>;
+}
 |Pessoa usuária|
-repeat
-  :Ação no espelho: vestir peça, sugerir por slot, trocar,\n"Tira uma coisa", Vista-me com pedido (ver RF28_Atividades);
-  |Serviço (MirrorService · LookScorer)|
-  :Atualiza mirror_states e recalcula os seis números\n(lê o Hype gravado; nada é recalculado nem vira sinal de Hype);
-  |Frontend (mirror/page.tsx · MirrorStage)|
-  :O reflexo se veste com as novas peças\ne o card mostra os números novos;
-  |Pessoa usuária|
-repeat while (Continua experimentando?) is (sim)
-->não;
-:Usar hoje (POST /use) · Salvar (POST /save)\n· Abrir no editor (POST /draft);
+:Vê o resultado;
 stop
 @enduml

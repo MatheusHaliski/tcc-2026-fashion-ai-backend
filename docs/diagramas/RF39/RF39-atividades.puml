@@ -1,9 +1,16 @@
 @startuml RF39_Atividades
-title RF39 — Criar guarda-roupa 3D com a identidade de uma marca/celebridade e vender na loja do quarto\nDiagrama de atividades — criação do item, condições de venda, compra com FAI Points e montagem no quarto
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,76 +19,68 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Marca/Celebridade|
+title RF39 — 'Criar guarda-roupa 3D': componentes ou guarda-roupa inteiro de marca/celebridade vendidos na loja do quarto\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Perfil (brands/[slug]) → aba GUARDA_ROUPA\n(dono vê o WardrobeCreatorTab);
-|Frontend (WardrobeCreatorTab · WardrobePreview)|
-:GET /api/room-creator/options\n+ GET /api/room-creator/items;
-|API (WardrobeCreatorService)|
-if (marca/celebridade aprovada e com conta ativa?\n(Guard.requireApprovedInstitutional)) then (não)
-  #FFE3E3:403 — só marcas e celebridades criam;
+:Abre /brands/[slug], /points;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/room-creator/options\nGET /api/room-creator/items;
+|Pessoa usuária|
+:cria um componente (kind=COMPONENT)\nou um guarda-roupa inte…;
+|Tela (Next.js)|
+:POST /api/room-creator/items;
+|API (Spring Boot)|
+:RoomCreatorController.create\n→ WardrobeCreatorService.save;
+if (erro?) then (sim)
+  :500 ERRO\n→ a tela mostra o aviso;
   stop
 endif
-:Opções: 20 blocos (porta, gaveta, puxador, maleiro, base,\ncabides, logo, LED, tapete, sapateira, vitrine, porta-joias,\nilha, espelhos), 22 materiais com cores, 7 níveis\n(ESTREIA → MAISON), identidade e selos ACTIVE;
-|Marca/Celebridade|
-if (Componente ou guarda-roupa inteiro?) then (COMPONENT)
-  :Escolhe um bloco, material e cor;
-else (WARDROBE)
-  :Toca nos blocos da prévia 3D (WardrobePreview)\ne define material e cor de cada um;
-endif
-:Envia logo (PNG) e arte da marca;
-|Frontend (WardrobeCreatorTab · WardrobePreview)|
-:POST /api/room-creator/uploads?kind=logo|art;
-|Storage de mídia|
-:Imagem conferida e reduzida (≤ 1600 px):\nlogo em PNG, arte em JPEG\n(users/{id}/room-creator/…);
-|Marca/Celebridade|
-:Nome gravado na placa (labelText), selo de identidade,\npreço em FAI Points, nível, estoque, limite por pessoa,\ndisponível de / até, "exige selo", ativo;
-|Frontend (WardrobeCreatorTab · WardrobePreview)|
-:POST /api/room-creator/items (ou PUT …/items/{sku});
-|API (WardrobeCreatorService)|
-if (bloco e material aceitos, preço 0–20 000,\njanela coerente, URL de imagem válida,\nguarda-roupa com blocos, selo do próprio perfil?) then (não)
-  #FFE3E3:400 BLOCO_INVALIDO · MATERIAL_INVALIDO\n· PRECO_INVALIDO · PERIODO_INVALIDO\n· URL_INVALIDA · SEM_BLOCOS · 403 selo de outro perfil;
+if (url inválida?) then (sim)
+  :400 URL_INVALIDA\n«Use o upload de imagem ou um link\nhttps://»\n→ a tela mostra o aviso;
   stop
 endif
-:Nível final = o maior entre o escolhido, o do bloco\ne o do material; raridade MARCA ou CELEBRIDADE;
-:Salva em room_catalog (SKU BRD-…; kind COMPONENT\nou WARDROBE com bundle_json, um acabamento por bloco);
-|Comprador|
-:Loja do quarto (/points → RoomStore)\nou aba GUARDA_ROUPA do perfil da marca;
-|API (FaiPointsService · RoomService)|
-:GET /api/points/shop: itens ativos; EXPIRADO só para\nquem já tem; loja suspensa sai da vitrine;\ncada item com disponibilidade, blocker, nível e saldo;
-|Comprador|
-if (Provar antes?) then (sim)
-  :POST /api/points/shop/{sku}/try-on\n(prévia no módulo, nada é cobrado);
-endif
-:Comprar;
-|API (FaiPointsService · RoomService)|
-:POST /api/points/shop/{sku}/purchase\n(trava o comprador e depois o item);
-if (nível · estoque · disponibilidade · limite por pessoa\n· selo exigido · saldo ok?) then (não)
-  #FFE3E3:409 NIVEL_INSUFICIENTE · ESGOTADO · CONDICAO_DE_COMPRA\n(EM_BREVE, EXPIRADO, limite, selo) · SALDO_INSUFICIENTE;
+if (url inválida?) then (sim)
+  :400 URL_INVALIDA\n«Use o upload de imagem ou um link\nhttps://»\n→ a tela mostra o aviso;
   stop
 endif
-:Débito SHOP_PURCHASE em fai_points_ledger (não conta\npara o nível), soldCount + 1 e unidade em room_inventory\n(serial quando há estoque limitado);
-|Comprador|
-:Montar no quarto;
-|API (FaiPointsService · RoomService)|
-:POST /api/me/room-inventory/{id}/apply {moduleId};
-if (módulo compatível?\n(WARDROBE → só "ALL")) then (não)
-  #FFE3E3:409 ENCAIXE_INCOMPATIVEL;
+if (erro?) then (sim)
+  :500 ERRO\n→ a tela mostra o aviso;
   stop
 endif
-:RoomService.applyFinish: componente vai para o módulo;\nguarda-roupa inteiro aplica cada bloco em todos os\nmódulos do mesmo tipo (room_layouts.modules_json);
-|Comprador|
-:Meu Quarto 3D (RoomScene) mostra acabamento,\narte nas portas e placa com o logo;
+if (sem blocos?) then (sim)
+  :400 SEM_BLOCOS\n«Monte o guarda-roupa com ao menos\num bloco (porta, gaveta,\npuxador…).»\n→ a tela mostra o aviso;
+  stop
+endif
+note right
+  e mais 2 validações:
+  PERIODO_INVALIDO, PRECO_INVALIDO
+end note
+|Dados e serviços|
+:Lê: users\ncelebrity_profiles\nbrand_profiles\nroom_catalog\nseals\nroom_inventory (+1);
+:Usa: Guard.requireApprovedInstitutional;
+:Grava: room_catalog;
+:Estado: kind → ?kind\nlogoUrl → set\nartUrl → set;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (envia o logo [kind=logo, PNG] ou…)
+    :POST /api/room-creator/uploads\n→ WardrobeCreatorService.uploadArt\nlê: users\nusa: Guard.requireApprovedInstitutional,\nMediaService.put;
+  case (edita o item e as condições [preç…)
+    :PUT /api/room-creator/items/{sku}\n→ WardrobeCreatorService.save\nvalida: ERRO, PERIODO_INVALIDO, PRECO_INVALIDO,\nSEM_BLOCOS …\nlê: users, celebrity_profiles, brand_profiles …\nusa: Guard.requireApprovedInstitutional\ngrava: room_catalog;
+  case (remove o item [com vendas, só sai…)
+    :DELETE /api/room-creator/items/{sku}\n→ WardrobeCreatorService.delete\nvalida: ERRO\nlê: users, room_catalog, room_inventory\nusa: Guard.requireApprovedInstitutional\ngrava: room_catalog;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

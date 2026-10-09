@@ -5,7 +5,7 @@ import type { PieceView, SchemeView } from "@/lib/api/types";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
-import { Button, Chip, Stepper, EmptyState, ErrorState, Field, Input, Select, Skeleton, Spinner, Switch, Textarea, useToast } from "@/components/ui";
+import { Button, Chip, Stepper, EmptyState, ErrorState, Field, Input, Select, Skeleton, Switch, Textarea, useToast } from "@/components/ui";
 import { SchemeTags } from "@/components/scheme-tags";
 import { AiCompositionCard } from "@/components/ai-compositions";
 import { useUndo } from "@/lib/hooks/use-undo";
@@ -14,11 +14,10 @@ import { SchemeCard } from "@/components/scheme-card";
 import { BackgroundStudio, type BgConfig } from "@/components/background-studio";
 import { FaiIcon } from "@/components/fai-icon";
 import { BrandLogo } from "@/components/brand-logo";
-import { SealSuggestionHype } from "@/components/hype/hype-seals";
+import { SealSuggestions, useLookSeals } from "@/components/look-seal-verification";
 import { LookHypePreview, PieceHypeTag } from "@/components/hype/look-hype-preview";
 import { InsightStrip } from "@/components/insights/insight-strip";
 import type { LookScoreValues } from "@/components/hype/look-scores";
-import type { HypeLevel } from "@/lib/hype/types";
 import { studioOf } from "@/lib/card-art";
 import { CreationSuccess } from "@/components/expanded-card";
 import Link from "next/link";
@@ -33,42 +32,6 @@ const OUTER_SUBCATEGORIES = new Set(["jacket", "coat", "parka", "blazer", "windb
 const SLOT_BY_CATEGORY: Record<string, string> = { upper_piece: "TOP", lower_piece: "BOTTOM", shoes_piece: "SHOES", accessory_piece: "ACCESSORY", full_body_piece: "FULL_BODY" };
 const slotOf = (p: PieceView) => (p.category === "upper_piece" && OUTER_SUBCATEGORIES.has(p.subcategory ?? "") ? "OUTERWEAR" : SLOT_BY_CATEGORY[p.category] ?? "ACCESSORY");
 const SLOT_LABEL: Record<string, string> = { get OUTERWEAR() { return tr("schemeBuilder.sobreposicao"); }, get TOP() { return tr("schemeBuilder.parte_de_cima"); }, get FULL_BODY() { return tr("schemeBuilder.peca_unica"); }, get BOTTOM() { return tr("schemeBuilder.parte_de_baixo"); }, get SHOES() { return tr("common.calcado"); }, get ACCESSORY() { return tr("common.acessorio"); } };
-/** `hype`: HypeScore atual do look avaliado (RF53) — o backend já ordena as sugestões por Hype. */
-interface SealOption { targetOwnerId: string; kind: "BRAND" | "CELEBRITY"; name: string; logoUrl?: string | null; confidence: number; justification?: string; eraLabel?: string | null; hype?: { score: number | null; level: HypeLevel | null } | null }
-interface SealSearch { loading: boolean; list: SealOption[]; message?: string | null; unregisteredMessage?: string | null; failed?: boolean }
-
-/**
- * Selos do look (RF21): a IA procura sozinha, a partir das peças, do estilo e da ocasião, as marcas e celebridades com
- * que o look pode ter selo. Enquanto procura, avisa; a pessoa marca as que quer pedir e o pedido segue ao salvar.
- */
-function SealSuggestions({ search, picked, onToggle, consent, onConsent }: { search: SealSearch; picked: string[]; onToggle: (id: string) => void; consent: boolean; onConsent: (v: boolean) => void }) {
-  const { t, fmtNumber } = useI18n();
-  const celebrityPicked = search.list.some((s) => s.kind === "CELEBRITY" && picked.includes(s.targetOwnerId));
-  return (
-    <div className="grid gap-2" aria-busy={search.loading}>
-      {search.loading ? <p className="flex items-center gap-2 type-body-sm text-muted" role="status"><Spinner size={16} />{t("schemeBuilder.pesquisando_selos")}</p> : (
-        <>
-          {search.list.map((s) => {
-            const on = picked.includes(s.targetOwnerId);
-            return (
-              <button key={s.targetOwnerId} type="button" role="checkbox" aria-checked={on} onClick={() => onToggle(s.targetOwnerId)} className={`list-row is-action flex items-center gap-3 text-left ${on ? "is-active" : ""}`}>
-                <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-line-soft bg-surface">{s.logoUrl ? <img src={mediaUrl(s.logoUrl)} alt="" className="h-full w-full object-contain" /> : <FaiIcon id={s.kind === "CELEBRITY" ? "ACT-27" : "ACT-26"} size={20} decorative />}</span>
-                <span className="min-w-0 flex-1"><span className="block type-body"><b>{s.name}</b> <span className="text-faint">· {s.kind === "CELEBRITY" ? t("schemeBuilder.selo_celebridade") : t("schemeBuilder.selo_marca")}{s.eraLabel ? ` · ${s.eraLabel}` : ""}</span></span>{s.justification && <span className="block type-caption text-muted">{s.justification}</span>}<SealSuggestionHype hype={s.hype} /></span>
-                <span className="type-data text-muted">{fmtNumber(Math.round(s.confidence * 100))}%</span>
-                <span aria-hidden className={`grid h-5 w-5 place-items-center rounded border ${on ? "border-ink bg-ink text-surface" : "border-line"}`}>{on ? "✓" : ""}</span>
-              </button>
-            );
-          })}
-          {!search.list.length && <p className="type-body-sm text-muted">{search.failed ? t("schemeBuilder.selos_indisponiveis") : search.message ?? t("schemeBuilder.nenhum_selo")}</p>}
-          {search.unregisteredMessage && <p className="type-caption text-faint">{search.unregisteredMessage}</p>}
-          {celebrityPicked && <label className="flex items-start gap-2 type-body-sm"><input type="checkbox" checked={consent} onChange={(e) => onConsent(e.target.checked)} className="mt-1" />{t("schemeBuilder.consentimento_imagem")}</label>}
-        </>
-      )}
-      <p className="type-caption text-faint">{t("schemeBuilder.selos_vem_de_marca")}</p>
-    </div>
-  );
-}
-
 /** Humores aceitos pela API (enum Mood). Um valor fora desta lista fazia o salvar cair em JSON_INVALIDO. */
 const MOODS = ["COMFORTABLE", "ELEGANT", "SOPHISTICATED", "ENERGETIC"];
 /**
@@ -108,7 +71,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   const [photo, setPhoto] = useState<{ url?: string | null }>(() => ({ url: studioOf(initial?.background).photo?.url ?? null })); const [skin, setSkin] = useState(initial?.cardSkin ?? "atelier"); const [anatomy, setAnatomy] = useState(initial?.layoutAnatomy ?? "LISTA_VERTICAL"); const [pieceAnatomy, setPieceAnatomy] = useState<string>(((initial?.background as { pieces?: { anatomy?: string } })?.pieces?.anatomy) ?? "PECA_AMPLIADO");
   const [comps, setComps] = useState<Composition[] | null>(null); const [aiMsg, setAiMsg] = useState<string | null>(null); const [prompt, setPrompt] = useState(""); const [orientationNote, setOrientationNote] = useState<string | null>(null); const [busy, setBusy] = useState(false); const [preview, setPreview] = useState<string | null>(null); const [step, setStep] = useState(0);
   const [artNote, setArtNote] = useState<string | null>(null); const [done, setDone] = useState<string | null>(null);
-  const [seals, setSeals] = useState<SealSearch>({ loading: false, list: [] }); const [sealPick, setSealPick] = useState<string[]>([]); const [sealConsent, setSealConsent] = useState(false);
+  const sealVerification = useLookSeals({ pieceIds: selected.map((s) => s.id), occasion: form.occasion, style: form.style, background: { ...bg, cardSkin: skin, layoutAnatomy: anatomy }, enabled: step >= 2 });
   const all = useMemo(() => Object.values(b?.lists ?? {}).flat(), [b]);
   const byId = useMemo(() => new Map(all.map((p) => [p.id, p])), [all]);
   useEffect(() => { if (b && b.defaultVisibility && !initial) setForm((f) => ({ ...f, visibility: b.defaultVisibility })); }, [b, initial]);
@@ -119,18 +82,6 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
     const picks = seed.split(",").map((id) => byId.get(id)).filter((p): p is PieceView => !!p);
     if (picks.length) setSelected(picks.map((p) => ({ id: p.id, slot: slotOf(p) })));
   }, [b, seed]); // eslint-disable-line react-hooks/exhaustive-deps
-  // selos possíveis: a IA procura sozinha na etapa de detalhes, e de novo quando as peças, o estilo ou a ocasião mudam
-  const sealKey = `${selected.map((x) => x.id).sort().join(",")}|${[...form.style].sort().join(",")}|${[...form.occasion].sort().join(",")}`;
-  useEffect(() => {
-    if (step !== 2 || selected.length < 1) return;
-    let alive = true; setSeals((x) => ({ ...x, loading: true, failed: false }));
-    const h = setTimeout(() => {
-      api.post<{ suggestions: SealOption[]; message?: string | null; unregisteredMessage?: string | null }>("/api/seal-suggestions/preview", { pieceIds: selected.map((x) => x.id), occasion: form.occasion, style: form.style })
-        .then((r) => { if (!alive) return; setSeals({ loading: false, list: r.suggestions ?? [], message: r.message, unregisteredMessage: r.unregisteredMessage }); setSealPick((p) => p.filter((id) => (r.suggestions ?? []).some((s) => s.targetOwnerId === id))); })
-        .catch(() => { if (alive) setSeals({ loading: false, list: [], failed: true }); });
-    }, 350);
-    return () => { alive = false; clearTimeout(h); };
-  }, [step, sealKey]); // eslint-disable-line react-hooks/exhaustive-deps
   const toggle = (p: PieceView) => {
     if (selected.some((x) => x.id === p.id)) { setSelected((s) => s.filter((x) => x.id !== p.id)); return; }
     const out = selected.filter((x) => clashes(typeOf(byId.get(x.id)), typeOf(p)));
@@ -195,6 +146,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   }
   async function doPreview() { setBusy(true); try { const blob = await api.post<Blob>("/api/schemes/preview", payload(), { headers: { Accept: "image/png" } }); setPreview(URL.createObjectURL(blob)); } catch (e) { toast.fromError(e); } finally { setBusy(false); } }
   async function save(publish: boolean) {
+    if (!sealVerification.valid) { go(2); return; }
     setBusy(true);
     try {
       const body = { ...payload(), publish, visibility: publish && form.visibility === "PRIVATE" ? "PUBLIC" : form.visibility };
@@ -202,12 +154,12 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
       (r as { warnings?: string[] }).warnings?.forEach((w) => toast.info(w));
       const id = r.scheme?.id ?? initial?.id ?? null;
       // os selos marcados viram pedidos de vínculo (a marca ou a celebridade aprova); um pedido recusado não desfaz o look
-      if (id) for (const target of sealPick) {
-        const opt = seals.list.find((x) => x.targetOwnerId === target);
-        try { await api.post(`/api/schemes/${id}/seal-bonds`, { targetOwnerId: target, imageRightsConsent: opt?.kind === "CELEBRITY" ? sealConsent : undefined }); }
+      let requested = 0;
+      if (id) for (const request of sealVerification.requests) {
+        try { await api.post(`/api/schemes/${id}/seal-bonds`, request); requested++; }
         catch (e) { toast.fromError(e); }
       }
-      if (sealPick.length) toast.info(t("schemeBuilder.selos_pedidos", { count: sealPick.length }));
+      if (requested) toast.info(t("schemeBuilder.selos_pedidos", { count: requested }));
       setDone(id);
     } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
@@ -269,7 +221,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
             <Field label={t("common.mood")} id="mood"><Select id="mood" value={form.mood ?? ""} onChange={(e) => setForm({ ...form, mood: e.target.value })}><option value="">—</option>{MOODS.map((m) => <option key={m} value={m}>{label(m.toLowerCase())}</option>)}</Select></Field>
             <Field label={t("common.visibility")} id="visibility"><Select id="visibility" value={form.visibility} onChange={(e) => setForm({ ...form, visibility: e.target.value })}><option value="PRIVATE">{t("common.private")}</option><option value="FOLLOWERS">{t("common.followers")}</option><option value="PUBLIC">{t("common.public")}</option></Select></Field>
 
-            <Field label={t("schemeBuilder.selos_do_look")} className="sm:col-span-2"><SealSuggestions search={seals} picked={sealPick} onToggle={(id) => setSealPick((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]))} consent={sealConsent} onConsent={setSealConsent} /></Field>
+            <Field label={t("schemeBuilder.selos_do_look")} className="sm:col-span-2"><SealSuggestions {...sealVerification} /></Field>
             <Field label={t("schemeBuilder.foto_do_look_opcional_como")} className="sm:col-span-2" hint={t("schemeBuilder.foto_so_verificada")}>
               <div className="flex flex-wrap items-start gap-3">
                 <div className="h-40 w-32 overflow-hidden rounded-md border border-line-soft bg-surface-2">{photo.url ? <img src={mediaUrl(photo.url)} alt={t("schemeBuilder.foto_do_look")} className="h-full w-full object-cover" /> : <span className="flex h-full items-center justify-center p-2 text-center type-caption text-muted">{t("schemeBuilder.sem_foto_a_capa_usa")}</span>}</div>
@@ -277,7 +229,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
               </div>
             </Field>
             <div className="sm:col-span-2"><Switch checked={form.lookDoDia} onChange={(v) => setForm({ ...form, lookDoDia: v })} label={t("scheme.dailyLook")} /></div>
-            <div className="sm:col-span-2 flex justify-between"><Button onClick={() => go(1)}>{t("common.back")}</Button><Button variant="primary" disabled={!form.title.trim() || (sealPick.some((id) => seals.list.find((x) => x.targetOwnerId === id)?.kind === "CELEBRITY") && !sealConsent)} onClick={() => go(3)}>{t("common.next")}</Button></div>
+            <div className="sm:col-span-2 flex justify-between"><Button onClick={() => go(1)}>{t("common.back")}</Button><Button variant="primary" disabled={!form.title.trim() || !sealVerification.valid} onClick={() => go(3)}>{t("common.next")}</Button></div>
           </div>
         )}
         {step === 3 && (<div>{artNote && <p className="mb-3 type-body-sm text-muted" aria-live="polite">{artNote}</p>}<BackgroundStudio value={bg} onChange={setBg} skin={skin} onSkin={setSkin} anatomy={anatomy} onAnatomy={setAnatomy} pieceAnatomy={pieceAnatomy} onPieceAnatomy={setPieceAnatomy} styles={form.style} occasions={form.occasion} season={form.season || null} /><div className="mt-3 flex flex-wrap justify-between gap-2"><Button onClick={() => go(2)}>{t("common.back")}</Button><Button variant="primary" onClick={() => go(4)}>{t("common.next")}</Button></div></div>)}
