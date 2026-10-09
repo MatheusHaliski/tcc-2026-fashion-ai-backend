@@ -5,11 +5,19 @@ import { resolveFittingStudio, STUDIO_PALETTE } from "./fitting-studio";
 const product = (id: string, brand: string | null): SceneProduct => ({ id, name: id, category: "upper_piece", subcategory: "blazer", imageUrl: `/references/${id}.jpg`, brand: brand ? { name: brand } : null });
 
 describe("conceptual fitting studio with deliberate photographic references", () => {
-  it("keeps architecture and evaluation colours neutral for different brands", () => {
+  it("uses brand surfaces and preserves neutral floor and ceiling", () => {
     const allSaints = resolveFittingStudio(environmentFor({ name: "AllSaints" }));
     const lacoste = resolveFittingStudio(environmentFor({ name: "Lacoste" }));
     expect(allSaints.interpretation).toBe("CONCEPTUAL");
-    expect(allSaints.palette).toEqual(STUDIO_PALETTE); expect(lacoste.palette).toEqual(allSaints.palette);
+    for (const studio of [allSaints, lacoste]) {
+      expect(studio.palette.wall).toBe(studio.brand.wall);
+      expect(studio.palette.furniture).toBe(studio.brand.accent);
+      expect(studio.palette.metal).toBe(studio.brand.accent);
+      expect(studio.palette.floor).toBe(STUDIO_PALETTE.floor);
+      expect(studio.palette.ceiling).toBe(STUDIO_PALETTE.ceiling);
+      expect(studio.objects.some(object => String(object.id) === "curtain")).toBe(false);
+    }
+    expect(resolveFittingStudio(NEUTRAL_ENVIRONMENT).palette).toEqual(STUDIO_PALETTE);
     expect(lacoste.brand.key).not.toBe(allSaints.brand.key);
     expect(lacoste.brand.accent).not.toBe(allSaints.brand.accent);
   });

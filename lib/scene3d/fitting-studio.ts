@@ -3,7 +3,7 @@ import type { SceneProduct, StoreScene } from "./scene";
 
 /** No physical-store reference/assets are supplied by today's catalogue. Keep
  * the architecture explicitly conceptual and the clothing evaluation neutral.
- * Brand colour is used only in the identity plaque, never as an illuminant.
+ * Brand colours personalize surfaces; illumination remains neutral.
  */
 export const STUDIO_PALETTE = {
   wall: "#ECE8E2", floor: "#BFB8AE", ceiling: "#F4F2EE", curtain: "#CFC6B8",
@@ -12,7 +12,6 @@ export const STUDIO_PALETTE = {
 export const STUDIO_OBJECTS = [
   { id: "shell", purpose: "circulation" }, // Neutral walls and matte floor
   { id: "identity", purpose: "communication" }, // One brand identity plaque
-  { id: "curtain", purpose: "fitting" }, // Privacy curtain and horizontal rail
   { id: "mirror", purpose: "fitting" }, // Full-height mirror
   { id: "bench", purpose: "fitting" }, // Seat at ordinary furniture scale
   { id: "rail", purpose: "organization" }, // Hangers for the fitting area, without fake catalogue garments
@@ -22,7 +21,7 @@ export const STUDIO_OBJECTS = [
 export interface FittingStudioProfile {
   interpretation: "CONCEPTUAL";
   brand: BrandEnvironment;
-  palette: typeof STUDIO_PALETTE;
+  palette: { [K in keyof typeof STUDIO_PALETTE]: string };
   objects: typeof STUDIO_OBJECTS;
   photographs: SceneProduct[];
 }
@@ -39,5 +38,8 @@ export function resolveFittingStudio(brand: BrandEnvironment, scene?: StoreScene
     if (brand.key !== "neutral" && (!key || brandKey(key) !== brand.key)) return false;
     seen.add(product.id); return true;
   }).slice(0, 2);
-  return { interpretation: "CONCEPTUAL", brand, palette: STUDIO_PALETTE, objects: STUDIO_OBJECTS, photographs };
+  const palette = brand.key === "neutral" ? { ...STUDIO_PALETTE } : {
+    ...STUDIO_PALETTE, wall: brand.wall, furniture: brand.accent, metal: brand.accent,
+  };
+  return { interpretation: "CONCEPTUAL", brand, palette, objects: STUDIO_OBJECTS, photographs };
 }
