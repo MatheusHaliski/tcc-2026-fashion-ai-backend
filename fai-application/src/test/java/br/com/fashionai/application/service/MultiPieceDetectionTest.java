@@ -124,6 +124,24 @@ class MultiPieceDetectionTest {
     }
 
     @Test
+    void logoCloseupsMergeByIndexWithoutOverwritingOrLeakingBrands() {
+        var pieces = MultiPieceService.parseDetections("""
+            {"pieces":[
+              {"name":"Calça","brand":"Adidas","box":{"x":10,"y":10,"width":30,"height":70}},
+              {"name":"Tênis","box":{"x":40,"y":80,"width":30,"height":15}},
+              {"name":"Camisa","brandName":"unknown","box":{"x":50,"y":10,"width":40,"height":60}}
+            ]}
+            """);
+        var brands = MultiPieceService.parseBrands("""
+            {"brands":[{"index":1,"brandName":"Nike"},{"index":0,"brandName":"Puma"},
+                       {"index":2,"brandName":null},{"index":999,"brandName":"Gucci"}]}
+            """);
+        var merged = MultiPieceService.mergeBrands(pieces, brands);
+        assertThat(merged).extracting(MultiPieceService.DetectedPiece::brandName).containsExactly("Adidas", "Nike", null);
+        assertThat(merged.get(1).box()).isEqualTo(pieces.get(1).box());
+    }
+
+    @Test
     void promptDaCopiaPorIaUsaSoOQueEValidoEMantemAPeca() {
         String p = MultiPieceService.recreatePrompt("Camiseta \"branca\" lisa", "upper_piece", "white");
         assertThat(p).contains("Camiseta 'branca' lisa").contains("upper piece").contains("Main color: white")

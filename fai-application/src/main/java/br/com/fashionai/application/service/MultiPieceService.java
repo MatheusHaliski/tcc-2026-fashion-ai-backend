@@ -128,7 +128,54 @@ public class MultiPieceService {
                 List.of(new AiRequest.AiImage(ImageOps.jpeg(ImageOps.scaleToFit(photo, 1568, 1568), 0.9f), "image/jpeg")),
                 2500, List.of(Msg.t("multiPiece.foto_reduzida")), MultiPieceService::parseDetections, () -> local, null));
         List<DetectedPiece> pieces = outcome.value() == null ? local : outcome.value();
-        return new PieceDetection(pieces, pieces == local ? "local" : "ia", outcome);
+        boolean remote = pieces != local;
+        if (remote && pieces.stream().anyMatch(p -> p.brandName() == null)) {
+            pieces = recognizeMissingBrands(userId, photo, pieces);
+        }
+        return new PieceDetection(pieces, remote ? "ia" : "local", outcome);
+    }
+
+    /** One bounded close-up request for missing logos, preserving identity by explicit index. */
+    private List<DetectedPiece> recognizeMissingBrands(UUID userId, BufferedImage photo, List<DetectedPiece> pieces) {
+        List<DetectedPiece> missing = pieces.stream().filter(p -> p.brandName() == null).limit(6).toList();
+        List<AiRequest.AiImage> images = new ArrayList<>();
+        for (DetectedPiece piece : missing) {
+            Box b = piece.box();
+            int x = Math.max(0, Math.min(photo.getWidth() - 1, (int) (b.x() * photo.getWidth() / 100)));
+            int y = Math.max(0, Math.min(photo.getHeight() - 1, (int) (b.y() * photo.getHeight() / 100)));
+            int w = Math.max(1, Math.min(photo.getWidth() - x, (int) Math.ceil(b.width() * photo.getWidth() / 100)));
+            int h = Math.max(1, Math.min(photo.getHeight() - y, (int) Math.ceil(b.height() * photo.getHeight() / 100)));
+            BufferedImage crop = photo.getSubimage(x, y, w, h);
+            images.add(new AiRequest.AiImage(ImageOps.jpeg(ImageOps.scaleToFit(crop, 1024, 1024), .94f), "image/jpeg"));
+        }
+        String indices = missing.stream().map(p -> String.valueOf(p.index())).collect(java.util.stream.Collectors.joining(", "));
+        AiOutcome<Map<Integer, String>> brands = ai.text(new AiEngine.TextCall<>(userId, AiCapability.MULTI_PIECE_DETECTOR,
+                """
+                Examine cada recorte de roupa separadamente para identificar a marca por logotipo visível,
+                símbolo gráfico reconhecível (não precisa conter letras), etiqueta ou nome legível.
+                Exemplos: três barras/trevo Adidas, swoosh Nike. Não adivinhe pela cor ou pelo estilo.
+                Não transfira a marca entre imagens. Sem evidência reconhecível: brandName null.
+                Responda SOMENTE JSON: {"brands":[{"index": índice informado, "brandName": nome ou null}]}.
+                """, "Imagens em ordem, com estes índices: " + indices, images, 600, List.of(),
+                MultiPieceService::parseBrands, Map::of, null));
+        return mergeBrands(pieces, brands.value() == null ? Map.of() : brands.value());
+    }
+
+    static Map<Integer, String> parseBrands(String text) {
+        Map<String, Object> parsed = WardrobeService.extractJson(text);
+        Map<Integer, String> out = new LinkedHashMap<>();
+        if (parsed.get("brands") instanceof List<?> list) for (Object entry : list) {
+            if (!(entry instanceof Map<?, ?> row) || !(row.get("index") instanceof Number index)) continue;
+            String brand = WardrobeService.brandName(WardrobeService.str(row.get("brandName")));
+            if (brand != null) out.putIfAbsent(index.intValue(), brand);
+        }
+        return out;
+    }
+
+    static List<DetectedPiece> mergeBrands(List<DetectedPiece> pieces, Map<Integer, String> brands) {
+        return pieces.stream().map(p -> new DetectedPiece(p.index(), p.name(), p.category(), p.subcategory(), p.color(),
+                p.material(), p.sex(), p.style(), p.occasion(), p.box(), p.confidence(),
+                p.brandName() != null ? p.brandName() : brands.get(p.index()))).toList();
     }
 
     @Transactional
@@ -196,7 +243,7 @@ public class MultiPieceService {
             como um único conjunto: cada peça física recebe sua própria caixa. Responda SOMENTE com JSON:
             {"pieces": [{"name": nome curto da peça em português (ex.: "Camiseta branca lisa"),
                          "brandName": nome da marca SOMENTE quando um logotipo ou etiqueta legível nesta peça
-                                      permitir reconhecê-la; caso contrário null (não inferir pela cor, estilo
+                                      permitir reconhecê-la, inclusive símbolos sem texto como swoosh Nike e três barras/trevo Adidas; caso contrário null (não inferir pela cor, estilo
                                       nem copiar a marca de outra peça),
                          "category": um de [upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece],
                          "subcategory": código da lista de subtipos do tipo,
@@ -256,7 +303,8 @@ public class MultiPieceService {
                 }
             }
             String name = WardrobeService.str(p.get("name"));
-            String brand = WardrobeService.str(p.get("brandName"));
+            String brand = WardrobeService.brandName(WardrobeService.str(p.get("brandName")));
+            if (brand == null) brand = WardrobeService.brandName(WardrobeService.str(p.get("brand")));
             double conf = p.get("confidence") instanceof Number n ? Math.max(0, Math.min(1, n.doubleValue())) : 0.5;
             out.add(new DetectedPiece(out.size(),
                     name == null || name.isBlank() ? null : InputSanitizer.clean(name, 80),

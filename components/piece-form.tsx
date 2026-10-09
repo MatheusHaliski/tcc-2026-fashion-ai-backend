@@ -50,7 +50,7 @@ export function PieceSealSuggestions({ value, onChange }: { value: PieceFormValu
   const key = JSON.stringify([value.name, value.brandName, value.category, value.subcategory, value.color, value.occasion, value.style,
     value.material, value.variation, value.attributes, value.sex, value.size, value.market, value.background]);
   useEffect(() => {
-    if (!value.brandName.trim() && !value.subcategory && value.style.length === 0) { setSearch({ loading: false, list: [] }); return; }
+    if (!(value.brandName ?? "").trim() && !value.subcategory && value.style.length === 0) { setSearch({ loading: false, list: [] }); return; }
     let alive = true; setSearch((x) => ({ ...x, loading: true, failed: false }));
     const h = setTimeout(() => {
       api.post<{ suggestions: SealOption[]; message?: string | null }>("/api/seal-suggestions/preview-piece", { name: value.name, category: value.category, subcategory: value.subcategory, color: value.color, brandName: value.brandName, occasion: value.occasion, style: value.style,
@@ -157,7 +157,7 @@ export const PIECE_FIELD_STEP: Record<string, "data" | "more"> = {
 export function validatePieceForm(v: PieceFormValue, tax: ReturnType<typeof useTaxonomy>): Record<string, string> {
   const e: Record<string, string> = {};
   const need = (k: string, ok: boolean, msg: string) => { if (!ok) e[k] = msg; };
-  need("name", !!v.name.trim(), tr("pieceForm.err_nome"));
+  need("name", !!(v.name ?? "").trim(), tr("pieceForm.err_nome"));
   need("category", !!v.category, tr("pieceForm.err_escolha", { campo: tr("common.category").toLowerCase() }));
   need("subcategory", !!v.subcategory, tr("pieceForm.err_escolha", { campo: tr("common.subcategory").toLowerCase() }));
   need("color", !!v.color, tr("pieceForm.err_escolha", { campo: tr("common.color").toLowerCase() }));
