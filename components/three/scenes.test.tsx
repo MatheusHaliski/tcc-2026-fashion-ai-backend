@@ -6,10 +6,17 @@
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
+import { render as renderDOM, waitFor } from "@testing-library/react";
+import { I18nProvider } from "@/lib/i18n/i18n";
+
+const canvasCapture = vi.hoisted(() => ({ enabled: false, children: null as ReactNode }));
 
 vi.mock("@react-three/fiber", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@react-three/fiber")>();
-  return { ...actual, Canvas: ({ children }: { children?: ReactNode }) => children };
+  return { ...actual, Canvas: ({ children }: { children?: ReactNode }) => {
+    if (canvasCapture.enabled) { canvasCapture.children = children; return null; }
+    return children;
+  } };
 });
 // sombras de contato são desenhadas na GPU a cada quadro (render target): nos testes, um componente vazio
 vi.mock("@react-three/drei", async (importOriginal) => ({ ...(await importOriginal<typeof import("@react-three/drei")>()), ContactShadows: () => null }));
@@ -118,7 +125,17 @@ describe("cenas 3D", () => {
     await serveBodyAsset();
     const env = resolveEnvironment([]);
     for (const light of ["store", "daylight", "night"] as const) {
-      const r = await mount3d(<FittingRoomScene avatar={null} sex="FEMININO" skinTone="media" pieces={PIECES.slice(0, 3)} environment={env} light={light} view="left34" />);
+      // The room now includes a DOM caption outside Canvas. Render that shell
+      // with React DOM, then exercise the actual Canvas contents with R3F.
+      canvasCapture.enabled = true; canvasCapture.children = null;
+      const dom = renderDOM(<I18nProvider initial="pt-BR"><FittingRoomScene avatar={null} sex="FEMININO" skinTone="media" pieces={PIECES.slice(0, 3)} environment={env} light={light} view="left34" /></I18nProvider>);
+      let contents: ReactNode;
+      try {
+        await waitFor(() => expect(canvasCapture.children).toBeTruthy());
+        expect(dom.getByText("Ambiente de prova conceitual")).toBeTruthy();
+        contents = canvasCapture.children;
+      } finally { dom.unmount(); canvasCapture.enabled = false; }
+      const r = await mount3d(contents);
       await frames(r, 2);
       expect(r.scene.children.length).toBeGreaterThan(0);
       await r.unmount();
