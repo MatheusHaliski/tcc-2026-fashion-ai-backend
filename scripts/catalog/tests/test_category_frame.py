@@ -28,3 +28,16 @@ class CategoryFrameTest(unittest.TestCase):
     def test_frame_too_tall_and_unknown_category(self):
         with self.assertRaises(ValueError): apply_frame(self.response(4000, 1000), 'upper_piece')
         with self.assertRaises(ValueError): apply_frame(self.response(), 'full_body_piece')
+
+    def test_csv_gate_reasons_are_preserved(self):
+        response = self.response()
+        response['columns']['gate_reasons'] = 'LOW_RESOLUTION,FOCUS_UNCERTAIN'
+        result = apply_frame(response, 'shoes_piece')['columns']
+        self.assertEqual(result['gate_reasons'], 'LOW_RESOLUTION,FOCUS_UNCERTAIN,CATEGORY_FRAME_LANDMARK_REVIEW')
+
+    def test_missing_product_is_not_reported_as_unknown_category(self):
+        response = self.response()
+        response['columns']['crop_json'] = None
+        response['columns']['gate_reasons'] = 'NO_FOREGROUND'
+        with self.assertRaisesRegex(ValueError, 'MISSING_PRODUCT:NO_FOREGROUND'):
+            apply_frame(response, 'upper_piece')

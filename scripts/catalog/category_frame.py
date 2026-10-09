@@ -15,8 +15,11 @@ def apply_frame(response, category):
     columns = result['columns']
     crop = _object(columns.get('crop_json')) or {}
     product = crop.get('product')
-    if not product or category not in {'upper_piece', 'lower_piece', 'accessory_piece', 'shoes_piece'}:
-        raise ValueError('CATEGORY_FRAME_UNSUPPORTED')
+    if category not in {'upper_piece', 'lower_piece', 'accessory_piece', 'shoes_piece'}:
+        raise ValueError('CATEGORY_FRAME_UNSUPPORTED:' + str(category))
+    if not product:
+        reasons = columns.get('gate_reasons') or 'NO_PRODUCT_REGION'
+        raise ValueError('CATEGORY_FRAME_MISSING_PRODUCT:' + str(reasons))
     width, height = columns['width'], columns['height']
     if width <= 0 or height <= 0:
         raise ValueError('CATEGORY_FRAME_INVALID_DIMENSIONS')
@@ -49,6 +52,9 @@ def apply_frame(response, category):
     columns['pipeline_version'] = VERSION
     if review:
         columns['processing_status'] = 'NEEDS_REPROCESSING'
-        reasons = _object(columns.get('gate_reasons')) or []
-        columns['gate_reasons'] = json.dumps(list(reasons) + ['CATEGORY_FRAME_LANDMARK_REVIEW'])
+        reasons = columns.get('gate_reasons') or ''
+        if not isinstance(reasons, str):
+            raise ValueError('CATEGORY_FRAME_INVALID_GATE_REASONS')
+        columns['gate_reasons'] = (reasons + ',' if reasons else '') + 'CATEGORY_FRAME_LANDMARK_REVIEW'
+        columns['gate_reasons'] = columns['gate_reasons'][:500]
     return result
