@@ -9,6 +9,7 @@ import * as THREE from "three";
 import type { BodyAsset } from "./asset";
 import type { Composed } from "./compose";
 import { eyeRig, eyeApertures, isCorneaCap, lowerLidLine, type EyeApertures } from "./eyes";
+import { openEyeSockets } from "./eye-sockets";
 
 export interface Human {
   root: THREE.Group;
@@ -184,6 +185,7 @@ export function skinMaterial(look: HumanLook): THREE.MeshPhysicalMaterial {
 
 export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
   const root = new THREE.Group(); root.name = "avatar";
+  const rig = eyeRig(a, c.eye), aperture = eyeApertures(rig, look.eyeShape);
   const bones = buildSkeleton(a, c.joints);
   const byName = new Map(bones.map((b) => [b.name.replace("mixamorig:", ""), b]));
   // ---- corpo
@@ -196,13 +198,14 @@ export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
   g.setAttribute("skinIndex", new THREE.BufferAttribute(cleanJoints(expand(b.skinIndex, b.renderVertex, 4, Uint16Array) as Uint16Array, expand(b.skinWeight, b.renderVertex, 4, Uint8Array) as Uint8Array), 4));
   g.setAttribute("skinWeight", new THREE.BufferAttribute(expand(b.skinWeight, b.renderVertex, 4, Uint8Array), 4, true));
   g.setIndex(new THREE.BufferAttribute(b.index, 1));
+  if (aperture) openEyeSockets(g, aperture, rig);
   g.computeBoundingSphere();
   void nr;
   const body = new THREE.SkinnedMesh(g, skinMaterial(look)); body.name = "corpo"; body.castShadow = true; body.receiveShadow = true;
   body.add(bones[0]);
   // ---- olhos (textura CC0 do MakeHuman). AVATAR-ID I4: ossos LeftEye/RightEye (filhos do Head, no centro de cada globo,
   // nomes do Mixamo) — cada globo gira no próprio centro; a córnea vira uma malha à parte, só de reflexo
-  const e = a.eye; const rig = eyeRig(a, c.eye);
+  const e = a.eye;
   const head = byName.get("Head")!; const hj = bones.indexOf(head);
   const eyeBones = (["Left", "Right"] as const).map((S) => {
     const o = rig.center[S === "Left" ? "left" : "right"]; const bn = new THREE.Bone(); bn.name = `mixamorig:${S}Eye`;
@@ -243,7 +246,7 @@ export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
   const tearMat = new THREE.MeshPhysicalMaterial({ color: "#000000", roughness: 0.18, metalness: 0, specularIntensity: 0.45, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
   tearMat.name = "linha-dagua";
   for (const side of ["right", "left"] as const) {
-    const line = lowerLidLine(a, c.body, c.eye, side, rig);
+    const line = lowerLidLine(a, c.body, c.eye, side, rig, aperture);
     if (line.length < 4) continue;
     const pts = line.map((p) => new THREE.Vector3(p[0] - c.joints[hj * 3], p[1] - c.joints[hj * 3 + 1], p[2] - c.joints[hj * 3 + 2]));
     const tg = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, "centripetal"), 32, 0.00012, 5, false);
@@ -252,7 +255,6 @@ export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
   head.add(tearLines);
   root.add(body, eyes, cornea);
   root.updateMatrixWorld(true);
-  const aperture = eyeApertures(rig, look.eyeShape);
   if (aperture) {
     eyes.onBeforeRender = fitEyeOpening(eyeMat, aperture, head);
     cornea.onBeforeRender = fitEyeOpening(corneaMat, aperture, head);

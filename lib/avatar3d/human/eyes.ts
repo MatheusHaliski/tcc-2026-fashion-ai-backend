@@ -134,8 +134,27 @@ function frontAt(faces: ProjectedFace[], x: number, y: number): number {
  * rosto. Aqui amostramos a borda ocluída pela própria malha ajustada; sem uma abertura, não inventamos uma linha.
  * Feito uma vez por composição, com os triângulos filtrados por órbita/coluna, sem custo em cada quadro.
  */
-export function lowerLidLine(a: BodyAsset, body: ArrayLike<number>, eye: ArrayLike<number>, side: "left" | "right", rig = eyeRig(a, eye)): [number, number, number][] {
+export function lowerLidLine(a: BodyAsset, body: ArrayLike<number>, eye: ArrayLike<number>, side: "left" | "right", rig = eyeRig(a, eye), aperture?: EyeApertures | null): [number, number, number][] {
   const iris = rig.iris[side], s = side === "left" ? 1 : -1;
+  const e = a.eye;
+  const globe = projectedFaces(eye, e.index, e.renderVertex, (t) => rig.side[e.renderVertex[e.index[t]]] === s && !rig.cornea[e.index[t]]);
+  if (aperture) {
+    // The skin has been carved along this measured opening. Sampling its former intersections would leave a
+    // reflective line across the newly opened sclera; follow the measured lower lid instead.
+    const lower = aperture[side].slice(0, 9), minX = Math.min(...lower.map((p) => p[0])), maxX = Math.max(...lower.map((p) => p[0]));
+    const line: [number, number, number][] = [];
+    for (let col = 1; col < 24; col++) {
+      const x = minX + (maxX - minX) * col / 24;
+      for (let i = 1; i < lower.length; i++) {
+        const a0 = lower[i - 1], b0 = lower[i];
+        if (x < Math.min(a0[0], b0[0]) || x > Math.max(a0[0], b0[0]) || Math.abs(b0[0] - a0[0]) < 1e-10) continue;
+        const y = a0[1] + (b0[1] - a0[1]) * (x - a0[0]) / (b0[0] - a0[0]), z = frontAt(globe, x, y);
+        if (Number.isFinite(z)) line.push([x, y, z + 0.00005]);
+        break;
+      }
+    }
+    return line;
+  }
   const rx = iris.radius[0] * 2.2, ry = iris.radius[1] * 2.2;
   const local = (pos: ArrayLike<number>, index: ArrayLike<number>, map: ArrayLike<number>, t: number) => {
     for (let k = 0; k < 3; k++) {
@@ -144,9 +163,8 @@ export function lowerLidLine(a: BodyAsset, body: ArrayLike<number>, eye: ArrayLi
     }
     return false;
   };
-  const b = a.body, e = a.eye;
+  const b = a.body;
   const skin = projectedFaces(body, b.index, b.renderVertex, (t) => local(body, b.index, b.renderVertex, t));
-  const globe = projectedFaces(eye, e.index, e.renderVertex, (t) => rig.side[e.renderVertex[e.index[t]]] === s && !rig.cornea[e.index[t]]);
   const points: [number, number, number][] = [];
   for (let col = 0; col <= 24; col++) {
     const x = iris.center[0] + rx * 0.88 * (col / 12 - 1);

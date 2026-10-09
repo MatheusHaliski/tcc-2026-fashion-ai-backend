@@ -27,6 +27,7 @@ import type { HairTexture } from "../hair";
 import { hairline, headFrame, type HairBuild, type HeadFrame } from "./hair-geometry";
 import { HAIR_LODS, type HairLod } from "./hair-lod";
 import { baseHairS } from "./hair-motion";
+import { installHairCoverage } from "./hair-coverage";
 
 export interface StrandOptions { density?: number; seed?: number; lod?: HairLod; groom?: HairGroom | null }
 export interface StrandGeometry {
@@ -181,8 +182,8 @@ class Shell {
 
 /**
  * Atlas de fibras: 8 colunas (uma mecha cada) com ~40 fios finos (0,4–1,2 px) cada, mais densos no meio da mecha e
- * mais fracos e ralos na borda (a fita não tem borda dura), alguns interrompidos (fios que acabam e recomeçam) e um véu
- * muito leve por trás. Antes eram 9 traços largos por coluna sobre um fundo de 28%: cada fita lia como uma tira sólida.
+ * mais fracos e ralos na borda (a fita não tem borda dura), alguns interrompidos (fios que acabam e recomeçam).
+ * O fundo fica vazio: um véu de baixo alfa por trás revelava placas translúcidas nas mechas externas.
  */
 function fiberTexture(): THREE.CanvasTexture | null {
   if (typeof document === "undefined") return null;
@@ -191,7 +192,6 @@ function fiberTexture(): THREE.CanvasTexture | null {
   const gauss = () => (r() + r() + r() + r() - 2) / 1.15;                  // ~normal, desvio ≈ 0,5
   for (let c = 0; c < C; c++) {
     const x0 = (c * W) / C, cw = W / C, mid = x0 + cw / 2;
-    for (let x = 0; x < cw; x++) { const d = (x + 0.5 - cw / 2) / (cw * 0.28); g.fillStyle = `rgba(255,255,255,${(0.08 * Math.exp(-d * d)).toFixed(3)})`; g.fillRect(x0 + x, 0, 1, H); }
     for (let f = 0; f < 40; f++) {
       const o = Math.max(-0.45, Math.min(0.45, gauss() * 0.24)); const x = mid + o * cw; const edge = Math.abs(o) / 0.45;
       const a = (0.65 + r() * 0.35) * (1 - 0.6 * edge);
@@ -599,22 +599,6 @@ export function strandGeometry(a: BodyAsset, c: Composed, hair: AvatarHair, base
 
 // ------------------------------------------------------------------ sombreamento de fio
 
-// Preserva a cobertura real da fibra (inclusive os mipmaps) no MSAA. O recorte padrão de Three transforma alfa
-// filtrado acima do limiar em 100%, revelando a forma plana da fita. Sem MSAA continua o recorte convencional.
-const FIBER_COVERAGE = /* glsl */ `
-#ifdef USE_ALPHATEST
-  #ifdef ALPHA_TO_COVERAGE
-    if ( hairCoverageAA > 0.5 ) {
-      if ( diffuseColor.a < 0.004 ) discard;
-    } else {
-      if ( diffuseColor.a < alphaTest ) discard;
-    }
-  #else
-    if ( diffuseColor.a < alphaTest ) discard;
-  #endif
-#endif
-`;
-
 /** Brilho de fio (Kajiya-Kay, dois lóbulos) somado à luz direta, sobre a tangente do fio (tbn[0]). */
 const KAJIYA_KAY = /* glsl */ `
 #include <lights_fragment_end>
@@ -671,7 +655,7 @@ const KAJIYA_KAY = /* glsl */ `
 export function strandMaterial(color: string, lod: HairLod = 1): THREE.MeshPhysicalMaterial {
   const m = new THREE.MeshPhysicalMaterial({
     color, map: fiberTexture(), vertexColors: true, side: THREE.DoubleSide,
-    alphaTest: 0.12, alphaToCoverage: true, dithering: true,    // preserva pontas/fibras filtradas por mipmaps
+    alphaTest: 0.12, alphaToCoverage: true, dithering: true,    // recorte de fibras/pontas, sem transparência no miolo
     roughness: 0.72, metalness: 0, anisotropy: 0.05,
     // A geometria já tem folga. Viés dependente da inclinação trazia fios de trás para a frente da bochecha.
     polygonOffset: true, polygonOffsetFactor: 0, polygonOffsetUnits: -1,
@@ -680,16 +664,15 @@ export function strandMaterial(color: string, lod: HairLod = 1): THREE.MeshPhysi
     hairShift1: { value: -0.12 }, hairShift2: { value: 0.2 },                // primário para a raiz, secundário para a ponta
     hairExp1: { value: lod === 2 ? 48 : 64 }, hairExp2: { value: 18 },
     hairSpec1: { value: 0.18 }, hairSpec2: { value: 0.22 }, hairEnvSpec: { value: 0.18 },
-    hairCoverageAA: { value: 1 },
   };
-  m.onBeforeCompile = (shader, renderer) => {
-    const gl = renderer?.getContext?.(); uniforms.hairCoverageAA.value = !gl || gl.getParameter(gl.SAMPLES) > 0 ? 1 : 0;
+  m.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
-    shader.fragmentShader = "uniform float hairShift1, hairShift2, hairExp1, hairExp2, hairSpec1, hairSpec2, hairEnvSpec, hairCoverageAA;\n" +
-      shader.fragmentShader.replace("#include <alphatest_fragment>", FIBER_COVERAGE).replace("#include <lights_fragment_end>", KAJIYA_KAY);
+    shader.fragmentShader = "uniform float hairShift1, hairShift2, hairExp1, hairExp2, hairSpec1, hairSpec2, hairEnvSpec;\n" +
+      shader.fragmentShader.replace("#include <lights_fragment_end>", KAJIYA_KAY);
   };
-  m.customProgramCacheKey = () => "fai-hair-kk-coverage-v3";
-  m.userData.hairShading = "kajiya-kay"; m.userData.hairUniforms = uniforms;     // ajuste fino ao vivo (laboratório)
+  m.customProgramCacheKey = () => "fai-hair-kk-coverage-v4";
+  const hairCoverageAA = installHairCoverage(m);
+  m.userData.hairShading = "kajiya-kay"; m.userData.hairUniforms = { ...uniforms, hairCoverageAA };     // ajuste fino ao vivo (laboratório)
   m.name = "cabelo-fios";
   return m;
 }
