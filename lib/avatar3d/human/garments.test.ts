@@ -5,7 +5,7 @@ import { parseBodyAsset, type BodyMeta } from "./asset";
 import { compose, fitBody } from "./compose";
 import { buildHuman, baseNormals } from "./three-human";
 import { applyIdle, applyRestPose, setArmOut } from "./pose";
-import { SPECS, armOutFor, bodyParam, collarBand, garmentGeometry, kindOf, necklineH, posedPositions, texturedGeometry, tubeRadius, underLayer, type GarmentKind } from "./garments";
+import { SPECS, specOf, garmentMaterial, armOutFor, bodyParam, collarBand, garmentGeometry, kindOf, necklineH, posedPositions, texturedGeometry, tubeRadius, underLayer, type GarmentKind } from "./garments";
 import { DEFAULT_BODY } from "../body-spec";
 
 const dir = new URL("../../../public/avatar3d/body/", import.meta.url);
@@ -265,4 +265,39 @@ describe("gola 3D (ribana) em volta do decote inteiro", () => {
     expect(collarBand(asset, c, P, SPECS.jacket)).toBeNull();
     expect(collarBand(asset, c, P, SPECS.shoes)).toBeNull();
   });
+});
+
+
+describe("cargo trouser construction", () => {
+  it("raises the waist and distinguishes relaxed volume from ordinary pants", () => {
+    const regular = specOf({ subcategory: "Calça cargo" })!;
+    const relaxed = specOf({ subcategory: "Calça cargo", name: "Loose Fit Cargo Pants" })!;
+    expect(regular.waist).toBeGreaterThan(SPECS.pants.waist);
+    expect(regular.ease).toBeGreaterThan(SPECS.pants.ease);
+    expect(relaxed.ease).toBeGreaterThan(regular.ease);
+    expect(relaxed.flare).toBeGreaterThan(regular.flare);
+    expect(specOf({ subcategory: "jeans" })).toBe(SPECS.pants);
+    expect(SPECS.pants.waist).toBe(.18);
+  });
+  it("uses matte workwear material rather than glossy thin cloth", () => {
+    const texture = new THREE.Texture();
+    const cargo = garmentMaterial(texture, specOf({ subcategory: "cargo" })!);
+    expect(cargo.roughness).toBe(.94);
+    expect(cargo.sheen).toBe(.08);
+    cargo.dispose(); texture.dispose();
+  });
+});
+
+it("builds cargo on both body shapes with continuous fabric instead of a front photo decal", () => {
+  for (const sex of ["FEMININO", "MASCULINO"] as const) {
+    const { c, h } = dressed(sex, ["pants"]);
+    const P = bodyParam(asset, c), normals = baseNormals(c.body, asset.body.index, asset.body.renderVertex);
+    const g = garmentGeometry(asset, c, normals, P, specOf({ subcategory: "cargo", name: "Loose fit" })!)!;
+    expect(g.position.length).toBeGreaterThan(0);
+    expect(inside(c.body, normals, g.position, g.alpha)).toBeLessThan(.02);
+    const mesh = texturedGeometry(g, posedPositions(h.skeleton, h.body.bindMatrix, g.position, g.skinIndex, g.skinWeight), null);
+    expect(Array.from(mesh.getAttribute("photoWeight").array).every(weight => weight === 0)).toBe(true);
+    expect(Array.from(mesh.getAttribute("position").array).every(Number.isFinite)).toBe(true);
+    mesh.dispose(); h.dispose();
+  }
 });

@@ -6,7 +6,7 @@ import { loadTexture, type Look3dPiece } from "@/components/three/common";
 import type { HumanParts } from "@/components/three/human-avatar";
 import { applyIdle, setArmOut } from "@/lib/avatar3d/human/pose";
 import {
-  SPECS, armOutFor, bodyParam, collarBand, fabricColor, ribColor, shoeColors, trimColors, garmentGeometry, garmentMaterial, garmentTexture, kindOf, photoInfo, posedPositions, texturedGeometry, underLayer,
+  SPECS, specOf, armOutFor, bodyParam, collarBand, fabricColor, ribColor, shoeColors, trimColors, garmentGeometry, garmentMaterial, garmentTexture, kindOf, photoInfo, posedPositions, texturedGeometry, underLayer,
   type GarmentKind, type GarmentSpec,
 } from "@/lib/avatar3d/human/garments";
 import { DEFAULT_PIECES, ZONES, withDefaultOutfit, zonesCovered } from "@/lib/avatar3d/human/default-outfit";
@@ -32,7 +32,7 @@ export interface OutfitItem { key: string; spec: GarmentSpec; piece: Look3dPiece
 export function outfitOf(pieces: Look3dPiece[]): OutfitItem[] {
   const items: OutfitItem[] = [];
   const hasOuter = pieces.some((p) => ["jacket", "coat"].includes(kindOf(p) ?? ""));
-  for (const raw of withDefaultOutfit(pieces)) { const p = hasOuter && raw.id === DEFAULT_PIECES.upper.id ? { ...raw, imageUrl: null, colorHex: "#202020" } : raw; const k = kindOf(p); if (k) items.push({ key: p.id, spec: k === "jacket" && /blazer/i.test(p.subcategory ?? "") ? { ...SPECS[k], ease: 0.010, drape: 0.5 } : SPECS[k], piece: p }); }
+  for (const raw of withDefaultOutfit(pieces)) { const p = hasOuter && raw.id === DEFAULT_PIECES.upper.id ? { ...raw, imageUrl: null, colorHex: "#202020" } : raw; const spec = specOf(p); if (spec) items.push({ key: p.id, spec, piece: p }); }
   return items.sort((a, b) => a.spec.layer - b.spec.layer);
 }
 

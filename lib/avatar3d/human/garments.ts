@@ -29,6 +29,7 @@ export type GarmentKind =
 
 export interface GarmentSpec {
   kind: GarmentKind;
+  construction?: "cargo";
   ease: number;          // folga base (m)
   hem: number;           // barra do tronco em h (0 = articulação do quadril, 1 = base do pescoço); NaN = não cobre o tronco
   neck: number;          // gola: até onde sobe no tronco (h), na frente um pouco mais baixo
@@ -93,6 +94,18 @@ export function kindOf(p: { category?: string | null; subcategory?: string | nul
   if (any("LOWER", "BOTTOM", "PARTE_INFERIOR")) return "pants";
   if (any("SHOES", "FOOTWEAR", "CALCADOS")) return "shoes";
   return null;
+}
+
+/** Construction is independent of the broad category: cargo is not a tight generic trouser. */
+export function specOf(p: { name?: string; category?: string | null; subcategory?: string | null; slot?: string | null }): GarmentSpec | null {
+  const kind = kindOf(p);
+  if (!kind) return null;
+  const description = `${p.subcategory ?? ""} ${p.name ?? ""}`.toLowerCase();
+  if (kind === "pants" && /cargo/.test(description)) {
+    const loose = /loose|relaxed|wide|larga|ampla/.test(description);
+    return { ...SPECS.pants, construction: "cargo", ease: loose ? .026 : .019, waist: .29, flare: loose ? .045 : .032 };
+  }
+  return kind === "jacket" && /blazer/.test(description) ? { ...SPECS[kind], ease: .010, drape: .5 } : SPECS[kind];
 }
 
 /**
@@ -496,7 +509,7 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
       if (i === undefined) {
         i = pos.length / 3; cache.set(key, i);
         pos.push(gg.position[v * 3], gg.position[v * 3 + 1], gg.position[v * 3 + 2]);
-        const blend = isFront && !noPhoto?.(v) ? Math.min(1, Math.max(0, (normals[v * 3 + 2] - 0.05) / 0.7)) : 0;
+        const blend = sp.construction !== "cargo" && isFront && !noPhoto?.(v) ? Math.min(1, Math.max(0, (normals[v * 3 + 2] - 0.05) / 0.7)) : 0;
         if (blend > 0 && map) {
           const [u, w] = map(posed[v * 3], posed[v * 3 + 1]);
           uv.push(0.5 * Math.min(0.999, Math.max(0.001, u)), Math.min(0.999, Math.max(0.001, w)));
@@ -659,8 +672,8 @@ export function fabricColor(img: (CanvasImageSource & { width: number; height: n
 
 export function garmentMaterial(tex: THREE.Texture, sp: GarmentSpec): THREE.MeshPhysicalMaterial {
   const m = new THREE.MeshPhysicalMaterial({
-    map: tex, vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: sp.kind === "jacket" || sp.kind === "coat" ? 0.7 : 0.85,
-    sheen: sp.kind === "jacket" || sp.kind === "coat" ? 0.15 : 0.35, sheenRoughness: 0.8, sheenColor: new THREE.Color("#ffffff"), polygonOffset: true, polygonOffsetFactor: -sp.layer, polygonOffsetUnits: -sp.layer,
+    map: tex, vertexColors: true, alphaTest: 0.5, side: THREE.DoubleSide, roughness: sp.construction === "cargo" ? .94 : sp.kind === "jacket" || sp.kind === "coat" ? 0.7 : 0.85,
+    sheen: sp.construction === "cargo" ? .08 : sp.kind === "jacket" || sp.kind === "coat" ? 0.15 : 0.35, sheenRoughness: 0.8, sheenColor: new THREE.Color("#ffffff"), polygonOffset: true, polygonOffsetFactor: -sp.layer, polygonOffsetUnits: -sp.layer,
   });
   m.name = `roupa-${sp.kind}`;
   m.onBeforeCompile = (shader) => {
