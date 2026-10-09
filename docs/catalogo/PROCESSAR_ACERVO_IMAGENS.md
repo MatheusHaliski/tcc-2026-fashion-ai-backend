@@ -22,7 +22,10 @@ python scripts/catalog/process_catalog_images.py --database --apply \
 ```
 
 O runner também aceita as variáveis nativas do Railway `MYSQL_PUBLIC_URL`,
-`MYSQLDATABASE` e `MYSQL_APP_PASSWORD`. Usa o host/porta do proxy público e o
+`MYSQLDATABASE` e `MYSQL_APP_PASSWORD`. `MYSQL_PUBLIC_URL` aceita uma URL
+`mysql://host:porta/banco`, o endereço `host:porta` ou `//host:porta`; quando o
+endereço não inclui banco, informe `MYSQLDATABASE` ou `MYSQL_DATABASE`.
+Usa o host/porta do proxy público e o
 usuário `fai_app`, como `import_railway.sh`, com TLS. Não extrai a senha de root
 da URL pública nem utiliza `MYSQL_ROOT_PASSWORD` implicitamente. Variáveis
 explícitas `MYSQL_*` continuam tendo prioridade. A rede precisa permitir o host

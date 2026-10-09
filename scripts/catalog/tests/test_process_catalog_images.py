@@ -20,11 +20,63 @@ class ProcessCatalogImagesTests(unittest.TestCase):
             configure_railway_environment()
             self.assertEqual(os.environ["MYSQL_HOST"], "proxy.example")
             self.assertEqual(os.environ["MYSQL_PORT"], "42234")
+            self.assertEqual(os.environ["MYSQL_DATABASE"], "fashionai")
             self.assertEqual(os.environ["MYSQL_USER"], "fai_app")
             self.assertEqual(os.environ["MYSQL_PASSWORD"], "dummy-app")
             self.assertEqual(os.environ["MYSQL_SSL_MODE"], "REQUIRED")
         with patch.dict(os.environ, {"MYSQL_ROOT_PASSWORD": "dummy-root", "MYSQLUSER": "root"}, clear=True):
             configure_railway_environment()
+            self.assertNotIn("MYSQL_PASSWORD", os.environ)
+
+    def test_bare_public_endpoint_uses_proxy_without_treating_port_as_database(self):
+        import os
+        with patch.dict(os.environ, {"MYSQL_PUBLIC_URL": " proxy.example:42234 ",
+                                   "MYSQLHOST": "mysql.railway.internal", "MYSQLPORT": "3306",
+                                   "MYSQL_APP_PASSWORD": "dummy-app"}, clear=True):
+            configure_railway_environment()
+            self.assertEqual(os.environ["MYSQL_HOST"], "proxy.example")
+            self.assertEqual(os.environ["MYSQL_PORT"], "42234")
+            self.assertNotIn("MYSQL_DATABASE", os.environ)
+            self.assertEqual(os.environ["MYSQL_USER"], "fai_app")
+            self.assertEqual(os.environ["MYSQL_PASSWORD"], "dummy-app")
+            self.assertEqual(os.environ["MYSQL_SSL_MODE"], "REQUIRED")
+            self.assertEqual(os.environ["MYSQL_PUBLIC_URL"], " proxy.example:42234 ")
+
+    def test_scheme_relative_public_endpoint_preserves_native_database(self):
+        import os
+        with patch.dict(os.environ, {"MYSQL_PUBLIC_URL": "//proxy.example:42234",
+                                   "MYSQLDATABASE": "fashionai"}, clear=True):
+            configure_railway_environment()
+            self.assertEqual(os.environ["MYSQL_HOST"], "proxy.example")
+            self.assertEqual(os.environ["MYSQL_PORT"], "42234")
+            self.assertEqual(os.environ["MYSQL_DATABASE"], "fashionai")
+
+    def test_public_endpoint_never_overrides_explicit_mysql_configuration(self):
+        import os
+        explicit = {"MYSQL_HOST": "explicit.example", "MYSQL_PORT": "43306",
+                    "MYSQL_DATABASE": "explicit_database", "MYSQL_USER": "explicit_app",
+                    "MYSQL_PASSWORD": "dummy-explicit", "MYSQL_SSL_MODE": "VERIFY_IDENTITY"}
+        for endpoint in ("proxy.example:42234", "//proxy.example:42234",
+                         "mysql://root:dummy-root@proxy.example:42234/url_database"):
+            with self.subTest(endpoint=endpoint), patch.dict(os.environ, {
+                **explicit, "MYSQL_PUBLIC_URL": endpoint, "MYSQLDATABASE": "native_database",
+                "MYSQL_APP_PASSWORD": "dummy-app", "MYSQLUSER": "root",
+            }, clear=True):
+                configure_railway_environment()
+                for name, value in explicit.items():
+                    self.assertEqual(os.environ[name], value)
+
+    def test_embedded_public_url_credentials_are_not_adopted(self):
+        import os
+        with patch.dict(os.environ, {
+            "MYSQL_PUBLIC_URL": "mysql://root:dummy-root@proxy.example:42234/fashionai",
+            "MYSQL_ROOT_PASSWORD": "dummy-root", "MYSQLUSER": "root",
+        }, clear=True):
+            configure_railway_environment()
+            self.assertEqual(os.environ["MYSQL_HOST"], "proxy.example")
+            self.assertEqual(os.environ["MYSQL_PORT"], "42234")
+            self.assertEqual(os.environ["MYSQL_DATABASE"], "fashionai")
+            self.assertNotIn("MYSQL_USER", os.environ)
             self.assertNotIn("MYSQL_PASSWORD", os.environ)
 
     def test_committed_ranking_only_change_preserves_image_provenance_and_processed_url(self):
