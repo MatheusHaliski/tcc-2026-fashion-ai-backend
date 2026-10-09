@@ -85,8 +85,8 @@ public final class HypeSeals {
     }
 
     /**
-     * Progresso de todos os selos (detalhe/drawer): {@code [{code, earned, criteria}]}, com o critério traduzido e os
-     * limiares de faixa do {@link HypeScoreConfig} (ex.: "Nível Viral (≥ 90)").
+     * Progresso de todos os selos. O texto traduzido continua disponível aos clientes antigos; requirements fornece
+     * metas numéricas e grupos ALL/ANY para a interface explicar a regra sem interpretar aquele texto.
      */
     public static List<Map<String, Object>> progress(HypeScoreCurrent c, int[] levelThresholds) {
         List<String> earned = of(c);
@@ -96,9 +96,83 @@ public final class HypeSeals {
             m.put("code", code);
             m.put("earned", earned.contains(code));
             m.put("criteria", criteria(code, levelThresholds));
+            boolean available = c != null && c.getStatus() == HypeStatus.AVAILABLE && c.getScore() != null;
+            m.put("available", available);
+            m.put("publicEligible", c != null && c.isPublicEligible());
+            m.put("requirements", requirements(code, c, levelThresholds, available));
             out.add(m);
         }
         return out;
+    }
+
+    private static Map<String, Object> requirements(String code, HypeScoreCurrent c, int[] thresholds, boolean available) {
+        Map<String, Object> group = new LinkedHashMap<>();
+        group.put("rule", CLASSIC.equals(code) ? "ANY" : "ALL");
+        switch (code) {
+            case VIRAL -> group.put("score", score(c, thresholds, HypeLevel.VIRAL, available));
+            case TRENDING -> {
+                group.put("score", score(c, thresholds, HypeLevel.HOT, available));
+                group.put("levels", levels(c, List.of(HypeLevel.HOT, HypeLevel.TRENDING), available));
+                group.put("momentum", momentum(c, List.of(HypeMomentum.RISING, HypeMomentum.EMERGING), available));
+            }
+            case EMERGING -> {
+                group.put("momentum", momentum(c, List.of(HypeMomentum.EMERGING), available));
+                group.put("levels", levels(c, List.of(HypeLevel.LOW_SIGNAL, HypeLevel.NICHE, HypeLevel.RELEVANT), available));
+            }
+            case CLASSIC -> {
+                Map<String, Object> classicMoment = new LinkedHashMap<>();
+                classicMoment.put("rule", "ALL");
+                classicMoment.put("momentum", momentum(c, List.of(HypeMomentum.CLASSIC), available));
+                Map<String, Object> lasting = new LinkedHashMap<>();
+                lasting.put("rule", "ALL");
+                lasting.put("score", score(c, thresholds, CLASSIC_LEVEL_MIN, available));
+                lasting.put("dimensions", List.of(dimension(c, "LONGEVITY", CLASSIC_LONGEVITY_MIN, available)));
+                group.put("alternatives", List.of(classicMoment, lasting));
+            }
+            case RARE -> {
+                group.put("score", score(c, thresholds, RARE_LEVEL_MIN, available));
+                group.put("dimensions", List.of(dimension(c, "RARITY", RARE_RARITY_MIN, available)));
+            }
+            default -> { }
+        }
+        return group;
+    }
+
+    private static Map<String, Object> score(HypeScoreCurrent c, int[] thresholds, HypeLevel minimum, boolean available) {
+        int target = threshold(thresholds, minimum);
+        // As faixas do HypeScore usam o inteiro arredondado. A meta e os pontos faltantes usam a mesma régua.
+        Long current = available ? Math.round(c.getScore().doubleValue()) : null;
+        Map<String, Object> value = new LinkedHashMap<>();
+        value.put("current", current); value.put("target", target); value.put("maximum", 100);
+        value.put("missing", current == null ? null : Math.max(0, target - current));
+        value.put("met", available ? atLeast(c.getLevel(), minimum) : null);
+        return value;
+    }
+
+    private static Map<String, Object> momentum(HypeScoreCurrent c, List<HypeMomentum> accepted, boolean available) {
+        Map<String, Object> value = new LinkedHashMap<>();
+        value.put("current", available && c.getMomentum() != null ? c.getMomentum().name() : null);
+        value.put("accepted", accepted.stream().map(Enum::name).toList());
+        value.put("met", available ? c.getMomentum() != null && accepted.contains(c.getMomentum()) : null);
+        return value;
+    }
+
+    private static Map<String, Object> levels(HypeScoreCurrent c, List<HypeLevel> accepted, boolean available) {
+        Map<String, Object> value = new LinkedHashMap<>();
+        value.put("current", available && c.getLevel() != null ? c.getLevel().name() : null);
+        value.put("accepted", accepted.stream().map(Enum::name).toList());
+        value.put("met", available ? c.getLevel() != null && accepted.contains(c.getLevel()) : null);
+        return value;
+    }
+
+    private static Map<String, Object> dimension(HypeScoreCurrent c, String code, double target, boolean available) {
+        double raw = available ? dim(c, "LONGEVITY".equals(code) ? "longevity" : "rarity") : -1;
+        Double current = raw < 0 ? null : Math.round(raw * 10) / 10.0;
+        Map<String, Object> value = new LinkedHashMap<>();
+        value.put("dimension", code); value.put("current", current); value.put("target", target); value.put("maximum", 100);
+        value.put("missing", current == null ? null : Math.round(Math.max(0, target - raw) * 10) / 10.0);
+        value.put("met", current == null ? null : raw >= target);
+        return value;
     }
 
     /** Texto do critério no idioma de quem lê. */

@@ -5,6 +5,7 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.domain.model.HypeScoreCurrent;
+import br.com.fashionai.domain.model.HypeDimensions;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.HypeLevel;
 import br.com.fashionai.domain.model.enums.HypeMomentum;
@@ -52,6 +53,7 @@ public final class SealPolicies {
     public static final int MAX_TAGS = 4;
     /** RF53 — no máximo 3 momentos de Hype aceitos num critério (EMERGING, RISING, STABLE, COOLING, CLASSIC). */
     public static final int MAX_HYPE_MOMENTUM = 3;
+    public static final Set<String> HYPE_DIMENSIONS = Set.of("POPULARITY", "ENGAGEMENT", "TREND", "TREND_VELOCITY", "ORIGINALITY", "RARITY", "LONGEVITY", "NOVELTY", "INFLUENCE");
 
     private SealPolicies() {
     }
@@ -64,9 +66,12 @@ public final class SealPolicies {
     }
 
     /** RF53 — critério de Hype da entidade avaliada; campos nulos/vazios não restringem. */
-    public record HypeCriteria(HypeLevel minLevel, Integer minScore, List<HypeMomentum> momentum) {
+    public record HypeCriteria(HypeLevel minLevel, Integer minScore, List<HypeMomentum> momentum, Map<String, Integer> dimensionMins) {
+        public HypeCriteria(HypeLevel minLevel, Integer minScore, List<HypeMomentum> momentum) {
+            this(minLevel, minScore, momentum, Map.of());
+        }
         public boolean isEmpty() {
-            return minLevel == null && minScore == null && (momentum == null || momentum.isEmpty());
+            return minLevel == null && minScore == null && (momentum == null || momentum.isEmpty()) && (dimensionMins == null || dimensionMins.isEmpty());
         }
     }
 
@@ -93,13 +98,16 @@ public final class SealPolicies {
      * RF53 — fato de Hype de uma peça ou look: score (0–100), faixa, momento e se está disponível (status AVAILABLE com
      * score). Vem sempre do HypeScore v2 atual ({@code hype_scores}, versão corrente do algoritmo).
      */
-    public record HypeFact(Double score, HypeLevel level, HypeMomentum momentum, boolean available) {
+    public record HypeFact(Double score, HypeLevel level, HypeMomentum momentum, boolean available, Map<String, Double> dimensions) {
+        public HypeFact(Double score, HypeLevel level, HypeMomentum momentum, boolean available) {
+            this(score, level, momentum, available, Map.of());
+        }
         public static HypeFact of(HypeScoreCurrent c) {
             if (c == null) {
                 return null;
             }
             boolean ok = c.getStatus() == HypeStatus.AVAILABLE && c.getScore() != null;
-            return new HypeFact(c.getScore() == null ? null : c.getScore().doubleValue(), c.getLevel(), c.getMomentum(), ok);
+            return new HypeFact(c.getScore() == null ? null : c.getScore().doubleValue(), c.getLevel(), c.getMomentum(), ok, SealPolicies.dimensions(c.getDimensions()));
         }
 
         /** {@code {score, level}} das sugestões (score com 1 casa); nulo quando não há Hype disponível. */
@@ -112,6 +120,18 @@ public final class SealPolicies {
             m.put("level", level == null ? null : level.name());
             return m;
         }
+    }
+
+    public static Map<String, Double> dimensions(HypeDimensions d) {
+        Map<String, Double> out = new LinkedHashMap<>();
+        if (d == null) return out;
+        Map<String, java.math.BigDecimal> values = new LinkedHashMap<>();
+        values.put("POPULARITY", d.getPopularity()); values.put("ENGAGEMENT", d.getEngagement());
+        values.put("TREND", d.getTrend()); values.put("TREND_VELOCITY", d.getTrendVelocity());
+        values.put("ORIGINALITY", d.getOriginality()); values.put("RARITY", d.getRarity());
+        values.put("LONGEVITY", d.getLongevity()); values.put("NOVELTY", d.getNovelty()); values.put("INFLUENCE", d.getInfluence());
+        values.forEach((key, value) -> { if (value != null) out.put(key, value.doubleValue()); });
+        return out;
     }
 
     /** RF53 — de onde a avaliação tira o Hype: de cada peça e do look avaliado. Nulo = sem Hype (critério não atendido). */
@@ -228,6 +248,11 @@ public final class SealPolicies {
         List<String> styles = tags(raw.get("styles"), Taxonomy.STYLES);
         Map<String, Object> hype = normalizeHype(raw.get("hype"));
         Map<String, Object> reference = raw.get("referenceModel") == null ? null : SealReferenceModels.normalize(raw.get("referenceModel"));
+        String mode = upper(raw.get("mode"), "");
+        if (!mode.isEmpty() && !Set.of("HYPE", "REFERENCE").contains(mode))
+            throw ApiException.badRequest("POLITICA_INVALIDA", Msg.t("sealHype.invalid_policy"));
+        if ("HYPE".equals(mode) && (hype == null || reference != null))
+            throw ApiException.badRequest("POLITICA_INVALIDA", Msg.t("sealHype.invalid_policy"));
         if (rules.isEmpty() && occasions.isEmpty() && styles.isEmpty() && hype == null && reference == null) {
             return null;
         }
@@ -236,6 +261,7 @@ public final class SealPolicies {
         out.put("rules", rules);
         out.put("occasions", occasions);
         out.put("styles", styles);
+        if (!mode.isEmpty()) out.put("mode", mode);
         if (hype != null) {
             out.put("hype", hype);
         }
@@ -286,13 +312,29 @@ public final class SealPolicies {
                 momentum.add(k);
             }
         }
-        if (minLevel == null && minScore == null && momentum.isEmpty()) {
+        Map<String, Integer> dimensionMins = new LinkedHashMap<>();
+        if (m.get("dimensionMins") != null) {
+            if (!(m.get("dimensionMins") instanceof Map<?, ?> values))
+                throw ApiException.badRequest("POLITICA_INVALIDA", Msg.t("sealHype.invalid_dimension"));
+            for (Map.Entry<?, ?> entry : values.entrySet()) {
+                String key = String.valueOf(entry.getKey()).toUpperCase(Locale.ROOT);
+                if (!HYPE_DIMENSIONS.contains(key)) throw ApiException.badRequest("POLITICA_INVALIDA", Msg.t("sealHype.invalid_dimension"));
+                double value;
+                try { value = Double.parseDouble(String.valueOf(entry.getValue())); }
+                catch (NumberFormatException ex) { throw ApiException.badRequest("POLITICA_INVALIDA", Msg.t("sealPolicy.hype.score_invalido")); }
+                if (!Double.isFinite(value) || value < 0 || value > 100 || value != Math.rint(value))
+                    throw ApiException.badRequest("POLITICA_INVALIDA", Msg.t("sealPolicy.hype.score_invalido"));
+                dimensionMins.put(key, (int) value);
+            }
+        }
+        if (minLevel == null && minScore == null && momentum.isEmpty() && dimensionMins.isEmpty()) {
             return null;
         }
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("minLevel", minLevel == null ? null : minLevel.name());
         out.put("minScore", minScore);
         out.put("momentum", momentum);
+        if (!dimensionMins.isEmpty()) out.put("dimensionMins", dimensionMins);
         return out;
     }
 
@@ -341,7 +383,11 @@ public final class SealPolicies {
                 momentum.add(mm);
             }
         }
-        HypeCriteria c = new HypeCriteria(parseEnum(HypeLevel.class, m.get("minLevel")), minScore, List.copyOf(momentum));
+        Map<String, Integer> dimensions = new LinkedHashMap<>();
+        if (m.get("dimensionMins") instanceof Map<?, ?> values) values.forEach((key, value) -> {
+            if (HYPE_DIMENSIONS.contains(String.valueOf(key)) && value instanceof Number n) dimensions.put(String.valueOf(key), n.intValue());
+        });
+        HypeCriteria c = new HypeCriteria(parseEnum(HypeLevel.class, m.get("minLevel")), minScore, List.copyOf(momentum), dimensions);
         return c.isEmpty() ? null : c;
     }
 
@@ -467,7 +513,7 @@ public final class SealPolicies {
      * RF53 — o fato de Hype atende ao critério? Sem Hype disponível (não calculado, dados insuficientes) → não.
      * Nível compara a faixa; score compara o número exibido (arredondado), como a faixa.
      */
-    static boolean meets(HypeCriteria c, HypeFact f) {
+    public static boolean meets(HypeCriteria c, HypeFact f) {
         if (c == null) {
             return true;
         }
@@ -480,6 +526,8 @@ public final class SealPolicies {
         if (c.minScore() != null && Math.round(f.score()) < c.minScore()) {
             return false;
         }
+        if (c.dimensionMins() != null && c.dimensionMins().entrySet().stream().anyMatch(entry ->
+                f.dimensions() == null || f.dimensions().get(entry.getKey()) == null || f.dimensions().get(entry.getKey()) < entry.getValue())) return false;
         return c.momentum() == null || c.momentum().isEmpty() || (f.momentum() != null && c.momentum().contains(f.momentum()));
     }
 
@@ -560,6 +608,7 @@ public final class SealPolicies {
         if (c.momentum() != null && !c.momentum().isEmpty()) {
             crit.add(String.join(conj("sealPolicy.ou"), c.momentum().stream().map(m -> Msg.t("sealPolicy.hype.momento." + m.name())).toList()));
         }
+        if (c.dimensionMins() != null) c.dimensionMins().forEach((key, score) -> crit.add(Msg.t("sealHype.dimension_min", Msg.t("hype.dimension." + key), score)));
         String what = String.join(conj("sealPolicy.e"), crit);
         return Msg.t(tier == SealTier.PECA ? "sealPolicy.hype.peca" : "sealPolicy.hype.look", what);
     }

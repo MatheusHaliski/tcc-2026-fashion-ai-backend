@@ -171,6 +171,69 @@ public class SealService {
         return hypeQuery == null ? null : hypeQuery.getIfAvailable();
     }
 
+    static boolean freshHype(HypeScoreCurrent row, HypeQueryService query) {
+        return query != null && row != null && row.getStatus() == HypeStatus.AVAILABLE && row.getScore() != null
+                && query.config().algorithmVersion().equals(row.getAlgorithmVersion()) && row.getCalculatedAt() != null
+                && row.getCalculatedAt().isAfter(Instant.now().minus(Duration.ofHours(query.config().staleAfterHours())));
+    }
+
+    boolean hypeIssuerAvailable(User owner) {
+        return owner != null && owner.getStatus() == br.com.fashionai.domain.model.enums.AccountStatus.ACTIVE
+                && (owner.getProfileType() == ProfileType.MARCA || owner.getProfileType() == ProfileType.CELEBRIDADE) && issuer(owner) != null;
+    }
+
+    private void requireHypeMatch(SealBond bond, Seal seal) {
+        if (seal == null || !"HYPE".equals(Json.map(seal.getBackgroundConfigJson()).get("policy") instanceof Map<?, ?> p ? p.get("mode") : null)) return;
+        if (!hypeIssuerAvailable(seal.getOwner())) throw ApiException.forbidden(Msg.t("sealHype.issuer_unavailable"));
+        HypeQueryService query = hype();
+        List<WardrobeItem> pieces = bond.getPiece() == null
+                ? schemeItems.findBySchemeIdOrderBySortOrder(bond.getScheme().getId()).stream().map(SchemeItem::getWardrobeItem).filter(Objects::nonNull).toList()
+                : List.of(bond.getPiece());
+        HypeEntityType type = bond.getPiece() == null ? HypeEntityType.SCHEME : HypeEntityType.PIECE;
+        UUID id = bond.getPiece() == null ? bond.getScheme().getId() : bond.getPiece().getId();
+        HypeScoreCurrent row = query == null ? null : query.currentOf(type, List.of(id)).get(id);
+        if (!freshHype(row, query)) throw ApiException.conflict("HYPE_INDISPONIVEL", Msg.t("sealHype.metrics_unavailable"));
+        if (bond.getPiece() != null && (bond.getPiece().getAvailabilityStatus() == AvailabilityStatus.ARCHIVED
+                || bond.getPiece().getModerationStatus() != ModerationStatus.APPROVED)
+                || bond.getScheme() != null && (bond.getScheme().getStatus() != SchemeStatus.PUBLISHED || bond.getScheme().isRevalidationPending()))
+            throw ApiException.conflict("POLITICA_NAO_ATENDIDA", Msg.t("sealHype.not_eligible"));
+        SealPolicies.HypeLookup lookup = new SealPolicies.HypeLookup() {
+            public SealPolicies.HypeFact piece(UUID pieceId) {
+                HypeScoreCurrent value = query.currentOf(HypeEntityType.PIECE, List.of(pieceId)).get(pieceId);
+                return freshHype(value, query) ? SealPolicies.HypeFact.of(value) : null;
+            }
+            public SealPolicies.HypeFact look() { return type == HypeEntityType.SCHEME ? SealPolicies.HypeFact.of(row) : null; }
+        };
+        SealPolicies.Policy policy = SealPolicies.parse(Json.map(seal.getBackgroundConfigJson()).get("policy"));
+        List<String> occasions = Json.csv(bond.getPiece() == null ? bond.getScheme().getOccasion() : bond.getPiece().getOccasionTags());
+        List<String> styles = Json.csv(bond.getPiece() == null ? bond.getScheme().getStyle() : bond.getPiece().getStyleTags());
+        if (policy == null || !SealPolicies.evaluate(policy, bond.getTier(), pieces, occasions, styles, lookup).matched())
+            throw ApiException.conflict("POLITICA_NAO_ATENDIDA", Msg.t("sealHype.not_eligible"));
+    }
+
+    /** Pedido explícito no painel Hype; a emissão e a revisão seguem o mesmo fluxo de SealBond. */
+    @Transactional
+    public Map<String, Object> requestHype(CurrentUser user, Seal seal, Scheme scheme, WardrobeItem piece,
+                                          String justification, UUID inferenceId, Boolean consent) {
+        guard.requireCanCreate(user);
+        if ((scheme == null) == (piece == null) || !user.id().equals(piece == null ? scheme.getUser().getId() : piece.getUser().getId()))
+            throw ApiException.forbidden(Msg.t("guard.apenas_o_autor_pode_alterar"));
+        if (seal.getTier() != (piece == null ? SealTier.LOOK : SealTier.PECA))
+            throw ApiException.badRequest("POLITICA_INVALIDA", Msg.t("sealHype.invalid_policy"));
+        SealBond bond = new SealBond();
+        bond.setScheme(scheme); bond.setPiece(piece); bond.setSeal(seal); bond.setTier(seal.getTier());
+        bond.setTargetOwner(seal.getOwner()); bond.setRequestedBy(users.findById(user.id()).orElseThrow());
+        List<UUID> linked = piece == null ? schemeItems.findBySchemeIdOrderBySortOrder(scheme.getId()).stream()
+                .map(SchemeItem::getWardrobeItem).filter(Objects::nonNull).map(WardrobeItem::getId).toList() : List.of(piece.getId());
+        bond.setLinkedPieceIdsJson(Json.write(linked)); bond.setStatus(SealBondStatus.EDITED); bond.setOrigin(SealBondOrigin.MANUAL);
+        bond.setBasis(seal.getOwner().getProfileType() == ProfileType.CELEBRIDADE ? SealBondBasis.STYLE_SIGNATURE : SealBondBasis.BRAND_MATCH);
+        bond.setConfidence(BigDecimal.ONE); bond.setJustification(InputSanitizer.clean(justification, 1024));
+        bond.setAiInferenceId(inferenceId); bond.setImageRightsConsent(consent); bond.setRespondedAt(Instant.now());
+        requireHypeMatch(bond, seal); requireUnique(bond);
+        bonds.save(bond);
+        return route(user, bond);
+    }
+
     /**
      * Hype atual (em lote, pelo {@link HypeQueryService#currentOf}) das peças avaliadas e do look já salvo; look ainda não
      * salvo ({@code schemeId} nulo) não tem Hype. Sem o serviço de Hype: {@link SealPolicies.HypeLookup#NONE}.
@@ -194,13 +257,13 @@ public class SealService {
                                     .forEach(b -> rows.put(b.getId(), b)));
                     Instant now = Instant.now();
                     earned = rows.values().stream().filter(b -> b.getStatus() == SealBondStatus.APPROVED && b.getSeal() != null
-                            && (b.getExpiresAt() == null || b.getExpiresAt().isAfter(now)) && b.getScheme() != null
-                            && !b.getScheme().isRevalidationPending()).toList();
+                            && (b.getExpiresAt() == null || b.getExpiresAt().isAfter(now))
+                            && (b.getScheme() == null || !b.getScheme().isRevalidationPending())).toList();
                 }
                 Set<String> matched = new HashSet<>();
                 for (SealBond b : earned) {
                     if (!sealId.equals(b.getSeal().getId())) continue;
-                    if (!"PIECES".equals(scope) && b.getTier() == SealTier.LOOK && schemeId != null && schemeId.equals(b.getScheme().getId()))
+                    if (!"PIECES".equals(scope) && b.getTier() == SealTier.LOOK && schemeId != null && b.getScheme() != null && schemeId.equals(b.getScheme().getId()))
                         matched.add("LOOK:" + schemeId);
                     if (!"LOOK".equals(scope) && b.getTier() == SealTier.PECA) {
                         Set<String> linked = new HashSet<>(Json.strings(b.getLinkedPieceIdsJson()));
@@ -333,9 +396,16 @@ public class SealService {
 
     @Transactional
     public Map<String, Object> draft(CurrentUser user, SealTier tier, String message, Map<String, Object> previousPolicy) {
+        return draft(user, tier, message, previousPolicy, null);
+    }
+
+    @Transactional
+    public Map<String, Object> draft(CurrentUser user, SealTier tier, String message, Map<String, Object> previousPolicy,
+                                     List<SealPolicyCopilot.Message> conversation) {
         requireIssuer(user);
         String prompt = InputSanitizer.required("message", message, 1, 6000);
-        if (!SealPolicyCopilot.tagged(prompt) || prompt.trim().equalsIgnoreCase(SealPolicyCopilot.TAG)) {
+        List<SealPolicyCopilot.Message> history = SealPolicyCopilot.conversation(conversation);
+        if (!SealPolicyCopilot.active(prompt, history) || prompt.trim().equalsIgnoreCase(SealPolicyCopilot.TAG)) {
             throw ApiException.badRequest("PEDIDO_SELO_INVALIDO", Msg.t("sealCopilot.use_tag"));
         }
         User owner = users.findById(user.id()).orElseThrow();
@@ -355,6 +425,8 @@ public class SealService {
         Map<String, Object> context = new LinkedHashMap<>();
         context.put("issuer", name); context.put("celebrity", celebrity); context.put("tier", tier);
         context.put("pieces", examples); context.put("previousPolicy", previousPolicy);
+        context.put("requesterName", owner.getDisplayName() == null || owner.getDisplayName().isBlank() ? owner.getUsername() : owner.getDisplayName());
+        context.put("conversation", history);
         context.put("categories", Taxonomy.SUBCATEGORIES); context.put("colors", Taxonomy.COLOR_FAMILY);
         context.put("subcategories", TaxonomyRegistry.get().activeSubcategories().values().stream().flatMap(Collection::stream)
                 .map(code -> TaxonomyRegistry.get().subcategory(code).orElseThrow()).toList());
@@ -408,7 +480,9 @@ public class SealService {
             out.put("policy", policy);
         }
         out.put("inferenceId", outcome.inferenceId()); out.put("intent", "SEAL_POLICY");
-        out.put("text", "VALID".equals(out.get("status")) ? Msg.t("sealCopilot.modelo_pronto") : String.join(" ", (List<String>) out.get("questions")));
+        if (!(out.get("text") instanceof String text) || text.isBlank()) {
+            out.put("text", "VALID".equals(out.get("status")) ? Msg.t("sealCopilot.modelo_pronto") : String.join(" ", (List<String>) out.get("questions")));
+        }
         audit.log(user, AuditActions.SELO_EDITADO, "seal:draft", Map.of("op", "#createsealpolicy", "pieces", examples.size()));
         return out;
     }
@@ -429,9 +503,12 @@ public class SealService {
         // RF25 — política padronizada (regras avaliadas pelo sistema); o texto do card é gerado a partir delas. Sem regras,
         // vale o texto antigo (selos criados antes das regras continuam com a descrição que tinham).
         Map<String, Object> policy = SealPolicies.normalize(f.policy());
+        boolean hypeMode = policy != null && "HYPE".equals(policy.get("mode"));
+        if (hypeMode && (s.getTier() == SealTier.PERFIL || !hypeIssuerAvailable(owner)))
+            throw ApiException.badRequest("POLITICA_INVALIDA", Msg.t("sealHype.invalid_policy"));
         Object oldPolicy = Json.map(s.getBackgroundConfigJson()).get("policy");
         boolean hasReference = policy != null && policy.get("referenceModel") instanceof Map<?, ?>;
-        if ((s.getId() == null || oldPolicy instanceof Map<?, ?> op && op.containsKey("referenceModel")) && !hasReference) {
+        if (!hypeMode && (s.getId() == null || oldPolicy instanceof Map<?, ?> op && op.containsKey("referenceModel")) && !hasReference) {
             throw ApiException.badRequest("POLITICA_IA_OBRIGATORIA", Msg.t("sealCopilot.politica_obrigatoria"));
         }
         if (hasReference && !s.getTier().name().equals(((Map<?, ?>) policy.get("referenceModel")).get("tier"))) {
@@ -697,6 +774,7 @@ public class SealService {
         m.put("name", s.getName());
         m.put("tier", s.getTier());
         m.put("kind", s.isPremium() ? "PREMIUM_SEAL" : "BRAND_SEAL");
+        m.put("premium", s.isPremium());
         m.put("visualFamily", s.isPremium() ? "vitreo-holografico" : "textil-dourado");
         m.put("policyText", s.getPolicyText());
         m.put("iconUrl", s.getIconUrl());
@@ -779,12 +857,14 @@ public class SealService {
                 schemeIds.add(si.getScheme().getId());
             }
         }
-        if (schemeIds.isEmpty()) {
-            return Map.of();
-        }
         Instant now = Instant.now();
         Map<UUID, List<SealBond>> out = new LinkedHashMap<>();
-        for (SealBond b : bonds.findBySchemeIdInAndStatus(schemeIds, SealBondStatus.APPROVED)) {
+        for (SealBond b : bonds.findByPieceIdInAndStatus(wanted, SealBondStatus.APPROVED)) {
+            if (b.getTier() == SealTier.PECA && b.getPiece() != null && wanted.contains(b.getPiece().getId())
+                    && (b.getExpiresAt() == null || b.getExpiresAt().isAfter(now)))
+                out.computeIfAbsent(b.getPiece().getId(), ignored -> new ArrayList<>()).add(b);
+        }
+        for (SealBond b : schemeIds.isEmpty() ? List.<SealBond>of() : bonds.findBySchemeIdInAndStatus(schemeIds, SealBondStatus.APPROVED)) {
             if (b.getTier() != SealTier.PECA || (b.getExpiresAt() != null && b.getExpiresAt().isBefore(now))
                     || (schemeVisible != null && !schemeVisible.test(b.getScheme()))) {
                 continue;
@@ -1333,8 +1413,11 @@ public class SealService {
     }
 
     private void requireUnique(SealBond b) {
-        boolean dup = !bonds.findBySchemeIdAndTargetOwnerIdAndStatusIn(b.getScheme().getId(), b.getTargetOwner().getId(),
-                List.of(SealBondStatus.PENDING_REVIEW, SealBondStatus.APPROVED)).isEmpty();
+        boolean dup = b.getPiece() != null
+                ? bonds.findByPieceId(b.getPiece().getId()).stream().anyMatch(existing -> existing.getTargetOwner().getId().equals(b.getTargetOwner().getId())
+                    && (existing.getStatus() == SealBondStatus.PENDING_REVIEW || existing.getStatus() == SealBondStatus.APPROVED))
+                : !bonds.findBySchemeIdAndTargetOwnerIdAndStatusIn(b.getScheme().getId(), b.getTargetOwner().getId(),
+                    List.of(SealBondStatus.PENDING_REVIEW, SealBondStatus.APPROVED)).isEmpty();
         if (dup) {
             // RF20.CA09 — selo único por par esquema/emissor.
             throw ApiException.conflict("VINCULO_EXISTENTE", Msg.t("seal.este_esquema_ja_tem_vinculo"));
@@ -1345,6 +1428,7 @@ public class SealService {
     private Map<String, Object> route(CurrentUser user, SealBond b) {
         requireUnique(b);
         User target = b.getTargetOwner();
+        if (issuer(target) == null) throw ApiException.forbidden(Msg.t("sealHype.issuer_unavailable"));
         boolean celebrity = target.getProfileType() == ProfileType.CELEBRIDADE;
         if (celebrity && !Boolean.TRUE.equals(b.getImageRightsConsent())) {
             throw ApiException.badRequest("CONSENTIMENTO_IMAGEM",
@@ -1353,6 +1437,7 @@ public class SealService {
         Seal seal = b.getSeal() != null && b.getSeal().getOwner().getId().equals(target.getId())
                 && b.getSeal().getStatus() == SealStatus.ACTIVE ? b.getSeal() : sealFor(target, b.getTier(), b.getScheme());
         requireReferenceMatch(seal, target, b.getTier(), b.getScheme());
+        requireHypeMatch(b, seal);
         String reason = seal == null ? Msg.t("seal.o_perfil_nao_tem_selo") : unavailableReason(seal, Instant.now());
         if (reason != null) {
             // RF21.CA23 — teto atingido: recusa com mensagem explicativa, sem emissão.
@@ -1367,7 +1452,7 @@ public class SealService {
         if (requiresReview) {
             b.setStatus(SealBondStatus.PENDING_REVIEW);
             notifications.notify(target.getId(), b.getRequestedBy().getId(), NotificationType.SEAL_BOND_REVIEW, "SEAL_BOND",
-                    b.getId(), Msg.k("seal.novo_vinculo_para_revisar"), Msg.k("seal.vinculou_o_look_ao_seu", b.getRequestedBy().getUsername(), b.getScheme().getTitle()), null);
+                    b.getId(), Msg.k("seal.novo_vinculo_para_revisar"), Msg.k("seal.vinculou_o_look_ao_seu", b.getRequestedBy().getUsername(), targetTitle(b)), null);
             logBond(user, b, "PENDENTE");
         } else {
             issue(b, null);
@@ -1439,14 +1524,14 @@ public class SealService {
         b.setSealCode(code);
         seal.setUsageCount(seal.getUsageCount() + 1);
         Scheme scheme = b.getScheme();
-        List<String> ids = new ArrayList<>(Json.strings(scheme.getSealIdsJson()));
-        if (!ids.contains(b.getId().toString())) {
-            ids.add(b.getId().toString());
+        if (scheme != null) {
+            List<String> ids = new ArrayList<>(Json.strings(scheme.getSealIdsJson()));
+            if (!ids.contains(b.getId().toString())) ids.add(b.getId().toString());
+            scheme.setSealIdsJson(Json.write(ids));
         }
-        scheme.setSealIdsJson(Json.write(ids));
         notifications.notify(b.getRequestedBy().getId(), b.getTargetOwner().getId(), NotificationType.SEAL_GRANTED, "SEAL_BOND",
                 b.getId(), (seal.isPremium() ? Msg.k("seal.selo_premium_2") : Msg.k("seal.selo_de_marca")) + " emitido!",
-                Msg.k("seal.seu_look_recebeu_o_selo", scheme.getTitle(), seal.getName()), null);
+                Msg.k("seal.seu_look_recebeu_o_selo", targetTitle(b), seal.getName()), null);
         logBond(null, b, "EMITIDO");
         // o selo pode liberar promoções da marca/celebridade: direitos a cupom + notificação (card RF38)
         events.publishEvent(new DomainEvents.CouponRightsCheck(b.getRequestedBy().getId()));
@@ -1464,7 +1549,7 @@ public class SealService {
         }
         // revalidação pendente (RF9.CA05): vínculos aprovados cujo esquema mudou a lista de peças.
         for (SealBond b : bonds.findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(user.id(), SealBondStatus.APPROVED)) {
-            if (b.getScheme().isRevalidationPending()) {
+            if (b.getScheme() != null && b.getScheme().isRevalidationPending()) {
                 Map<String, Object> v = bondView(b);
                 v.put("revalidation", true);
                 v.put("scheme", schemeSummary(b.getScheme()));
@@ -1479,12 +1564,18 @@ public class SealService {
         requireIssuer(user);
         SealBond b = bonds.findById(bondId).orElseThrow(() -> ApiException.notFound(Msg.t("seal.vinculo")));
         guard.requireOwner(user, b.getTargetOwner().getId(), "seal-bond:" + bondId);
-        boolean revalidation = b.getStatus() == SealBondStatus.APPROVED && b.getScheme().isRevalidationPending();
+        boolean revalidation = b.getStatus() == SealBondStatus.APPROVED && b.getScheme() != null && b.getScheme().isRevalidationPending();
         if (b.getStatus() != SealBondStatus.PENDING_REVIEW && !revalidation) {
             throw ApiException.conflict("ESTADO_INVALIDO", Msg.t("seal.este_vinculo_nao_esta_aguardando"));
         }
         if (approve) {
+            if (issuer(b.getTargetOwner()) == null) throw ApiException.forbidden(Msg.t("sealHype.issuer_unavailable"));
+            if (b.getSeal() != null && Json.map(b.getSeal().getBackgroundConfigJson()).get("policy") instanceof Map<?, ?> policy
+                    && "HYPE".equals(policy.get("mode")))
+                b.setSeal(seals.findForIssuance(b.getSeal().getId()).orElseThrow(() -> ApiException.notFound(Msg.t("common.selo"))));
             requireReferenceMatch(b.getSeal(), b.getTargetOwner(), b.getTier(), b.getScheme());
+            requireHypeMatch(b, b.getSeal());
+            if (b.getSeal() == null || !available(b.getSeal(), Instant.now())) throw new SealUnavailable(Msg.t("sealHype.issuer_unavailable"));
             if (revalidation) {
                 b.getScheme().setRevalidationPending(false);
                 b.setReviewNote("revalidado");
@@ -1531,13 +1622,27 @@ public class SealService {
         }
     }
 
+    /** Exclusão da peça também encerra seus vínculos diretos; resgates anteriores seguem preservados. */
+    @org.springframework.context.event.EventListener
+    @Transactional
+    public void onPieceDeleted(DomainEvents.PieceDeleted event) {
+        for (SealBond bond : bonds.findByPieceId(event.pieceId())) {
+            if (bond.getStatus() == SealBondStatus.APPROVED) {
+                revokeInternal(bond, Msg.t("sealHype.piece_deleted"), null);
+            } else if (bond.getStatus() == SealBondStatus.SUGGESTED || bond.getStatus() == SealBondStatus.PENDING_REVIEW) {
+                bond.setStatus(SealBondStatus.REVOKED);
+                bond.setReviewNote(Msg.t("sealHype.piece_deleted"));
+            }
+        }
+    }
+
     private void revokeInternal(SealBond b, String reason, UUID by) {
         b.setStatus(SealBondStatus.REVOKED);
         b.setReviewNote(reason);
         b.setReviewedAt(Instant.now());
         b.setReviewedBy(by);
         notifications.notify(b.getRequestedBy().getId(), by, NotificationType.SEAL_BOND_REVIEW, "SEAL_BOND", b.getId(),
-                Msg.k("seal.selo_revogado"), Msg.k("seal.o_selo_do_look_foi", b.getScheme().getTitle(), reason), null);
+                Msg.k("seal.selo_revogado"), Msg.k("seal.o_selo_do_look_foi", targetTitle(b), reason), null);
         logBond(null, b, "REVOGADO");
     }
 
@@ -1927,7 +2032,8 @@ public class SealService {
         Map<String, Object> meta = new LinkedHashMap<>();
         meta.put("origin", b.getOrigin().name());
         meta.put("confidence", b.getConfidence());
-        meta.put("scheme", b.getScheme().getId().toString());
+        meta.put("scheme", b.getScheme() == null ? null : b.getScheme().getId().toString());
+        if (b.getPiece() != null) meta.put("piece", b.getPiece().getId().toString());
         meta.put("target", b.getTargetOwner().getId().toString());
         meta.put("status", b.getStatus().name());
         meta.put("decidedBy", b.getReviewedBy() == null ? (user == null ? Msg.t("seal.sistema_auto_aprovacao") : user.id().toString())
@@ -1940,7 +2046,10 @@ public class SealService {
         Map<String, Object> m = new LinkedHashMap<>();
         User t = b.getTargetOwner();
         m.put("id", b.getId());
-        m.put("schemeId", b.getScheme().getId());
+        m.put("schemeId", b.getScheme() == null ? null : b.getScheme().getId());
+        m.put("pieceId", b.getPiece() == null ? null : b.getPiece().getId());
+        m.put("piece", b.getPiece() == null ? null : Map.of("id",b.getPiece().getId(),"name",b.getPiece().getName(),
+                "imageUrl",String.valueOf(b.getPiece().getImageUrl()),"visibility",b.getPiece().getVisibility(),"owner",Views.user(b.getPiece().getUser())));
         m.put("target", Views.user(t));
         m.put("kind", t.getProfileType() == ProfileType.CELEBRIDADE ? "CELEBRITY" : "BRAND");
         m.put("sealKind", t.getProfileType() == ProfileType.CELEBRIDADE ? "PREMIUM_SEAL" : "BRAND_SEAL");
@@ -1966,8 +2075,13 @@ public class SealService {
     }
 
     private Map<String, Object> schemeSummary(Scheme s) {
+        if (s == null) return null;
         return Map.of("id", s.getId(), "title", s.getTitle(), "coverImageUrl", String.valueOf(s.getCoverImageUrl()),
                 "visibility", s.getVisibility(), "owner", Views.user(s.getUser()));
+    }
+
+    private static String targetTitle(SealBond b) {
+        return b.getScheme() == null ? b.getPiece().getName() : b.getScheme().getTitle();
     }
 
     static List<UUID> uuids(List<String> ids) {

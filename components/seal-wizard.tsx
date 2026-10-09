@@ -1,21 +1,21 @@
 "use client";
 import { useRef, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
-import { api } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
-import { Button, Chip, Field, Input, SegmentPicker, Select, Stepper, Textarea, cn, useToast } from "@/components/ui";
+import { Button, Chip, Field, Input, SegmentPicker, Select, Stepper, cn } from "@/components/ui";
 import { ELEMENTS, MATERIALS, SealMedallion, sealKind, type SealDesign } from "@/components/seal-medallion";
 import { SealCreator } from "@/components/seal-creator";
-import { EMPTY_POLICY, cleanPolicy, describePolicy, type SealPolicy, type SealTierId } from "@/components/seal-policy-editor";
+import { EMPTY_POLICY, cleanHype, cleanPolicy, describePolicy, type SealPolicy, type SealTierId } from "@/components/seal-policy-editor";
 import { CIRCULAR_TEMPLATES, FAI_TEMPLATES, FIRST_TEMPLATE, FOLHA_TEMPLATES, FOLHA_TEXT_LIMITS, LABEL_MAX, SEAL_KINDS, folhaTemplate, type FolhaSlotKey, type SealKind } from "@/lib/seals/templates";
 import { SealReferencePreview } from "@/components/seal-reference-model";
 import { SealCoreEditor } from "@/components/seal-core-editor";
+import { SealHypeEditor } from "@/components/seal-hype-editor";
+import { SealPolicyChat, type SealPolicyDraft } from "@/components/seal-policy-chat";
 
 /**
- * Criação exclusivamente pelo Copilot #createsealpolicy: pedido → modelo de referência → arte → revisão.
- * A política só muda em nova rodada do Copilot; os ajustes de apresentação e disponibilidade são independentes.
+ * Criação por conversa com Copilot ou metas de Hype: política → dados → arte → revisão.
+ * O rascunho do Copilot só entra no criador após aplicação explícita; as metas de Hype são conferidas no servidor.
  */
 export interface SealFormState { open: boolean; id?: string; name: string; tier: SealTierId; policyText: string; usageLimit: string; status: string; availableFrom: string; availableUntil: string; design: SealDesign; policy: SealPolicy }
-interface Draft { status: "VALID" | "INCOMPLETE"; name: string; tier: SealTierId; policy?: SealPolicy; design: SealDesign; reasons: string[]; questions: string[]; sources: string[] }
 
 /** Desenho como aparece no selo: a folha sem título usa o nome do selo (o backend grava o mesmo ao salvar). */
 export function displayDesign(d: SealDesign, name: string): SealDesign {
@@ -24,35 +24,35 @@ export function displayDesign(d: SealDesign, name: string): SealDesign {
 
 export function SealWizard({ form, setForm, premium, brandName, onSave }: { form: SealFormState; setForm: Dispatch<SetStateAction<SealFormState>>; premium?: boolean; brandName?: string | null; onSave: () => Promise<boolean> }) {
   const { t } = useI18n();
-  const toast = useToast();
   const editing = !!form.id;
-  const [request, setRequest] = useState("");
-  const [pendingRequest, setPendingRequest] = useState("");
-  const [questions, setQuestions] = useState<string[]>([]);
+  const [creationMode, setCreationMode] = useState<"COPILOT" | "HYPE">(form.policy.mode === "HYPE" ? "HYPE" : "COPILOT");
+  const policies = useRef<Record<"COPILOT" | "HYPE", { policy: SealPolicy; tier: SealTierId }>>({
+    COPILOT: { policy: form.policy.mode === "HYPE" ? EMPTY_POLICY : form.policy, tier: form.tier },
+    HYPE: { policy: form.policy.mode === "HYPE" ? form.policy : { ...EMPTY_POLICY, mode: "HYPE", hype: { minScore: 60 } }, tier: form.tier === "PERFIL" ? "LOOK" : form.tier },
+  });
   const [sources, setSources] = useState<string[]>([]);
   const [ready, setReady] = useState(!!form.policy.referenceModel);
-  const [step, setStep] = useState(editing && form.policy.referenceModel ? 1 : 0);
-  const [drafting, setDrafting] = useState(false);
+  const [step, setStep] = useState(editing && (form.policy.referenceModel || form.policy.mode === "HYPE") ? 1 : 0);
   const [saving, setSaving] = useState(false);
   const [reasons, setReasons] = useState<string[]>([]);
-  const steps = [t("sealCopilot.title"), t("sealWizard.passo_dados"), t("sealWizard.passo_arte"), t("sealWizard.passo_revisar")];
+  const steps = [t(creationMode === "HYPE" ? "sealHypeIssuer.criteria" : "sealCopilot.title"), t("sealWizard.passo_dados"), t("sealWizard.passo_arte"), t("sealWizard.passo_revisar")];
   const named = form.name.trim().length >= 2;
-  const canGo = (i: number) => !drafting && (i === 0 || ((ready || editing) && (i < 3 || named)));
+  const policyReady = creationMode === "HYPE" ? !!cleanHype(form.policy.hype) && form.tier !== "PERFIL" : ready;
+  const canGo = (i: number) => !saving && (i === 0 || ((policyReady || editing && creationMode === "COPILOT") && (i < 3 || named)));
 
-  async function chooseAi() {
-    if (!request.trim()) return;
-    const message = pendingRequest ? `${pendingRequest}\n${request.trim()}` : `#createsealpolicy ${request.trim()}`;
-    if (message.length > 6000) return;
-    setDrafting(true);
-    try {
-      const d = await api.post<Draft>("/api/copilot/seal-policy", { tier: form.tier, message, previousPolicy: cleanPolicy(form.policy) });
-      setReasons(d.reasons ?? []); setQuestions(d.questions ?? []); setSources(d.sources ?? []);
-      if (d.status !== "VALID" || !d.policy?.referenceModel) {
-        setPendingRequest(message); setRequest(""); setReady(false); return;
-      }
-      setForm((f) => ({ ...f, name: d.name, tier: d.tier, policy: { ...EMPTY_POLICY, ...d.policy }, design: d.design, policyText: "", usageLimit: d.tier === "PERFIL" ? "" : f.usageLimit }));
-      setReady(true); setPendingRequest(""); setRequest(""); setStep(1);
-    } catch (e) { toast.fromError(e); } finally { setDrafting(false); }
+  function applyDraft(draft: SealPolicyDraft) {
+    if (draft.status !== "VALID" || !draft.policy?.referenceModel) return;
+    setReasons(draft.reasons ?? []); setSources(draft.sources ?? []);
+    setForm((current) => ({ ...current, name: draft.name, tier: draft.tier, policy: { ...EMPTY_POLICY, ...draft.policy }, design: draft.design, policyText: "", usageLimit: draft.tier === "PERFIL" ? "" : current.usageLimit }));
+    setReady(true); setStep(1);
+  }
+  function chooseMode(next: "COPILOT" | "HYPE") {
+    if (next === creationMode || saving) return;
+    policies.current[creationMode] = { policy: form.policy, tier: form.tier };
+    const { policy, tier } = policies.current[next];
+    setCreationMode(next); setStep(0); setReasons([]); setSources([]);
+    setReady(!!policy.referenceModel);
+    setForm((current) => ({ ...current, policy, policyText: "", tier }));
   }
   async function save() { setSaving(true); try { await onSave(); } finally { setSaving(false); } }
 
@@ -60,27 +60,15 @@ export function SealWizard({ form, setForm, premium, brandName, onSave }: { form
     <div>
       <Stepper steps={steps} current={step} onStep={setStep} label={t("sealWizard.etapas")} canGo={canGo} />
       <div className="mt-4">
-        {step === 0 && (
-          <section aria-label={t("sealCopilot.title")}>
-            <p className="type-h3">{t("sealCopilot.title")}</p>
-            <p className="help mt-2">{t("sealCopilot.hint")}</p>
-            <p className="type-caption mt-2">#createsealpolicy</p>
-            {brandName && <p className="type-caption">{brandName}</p>}
-            {pendingRequest && <p className="type-body-sm mt-2">{pendingRequest}</p>}
-            {questions.length > 0 && <ul className="help mt-2" role="status">{questions.map((q) => <li key={q}>{q}</li>)}</ul>}
-            <SegmentPicker label={t("sealPolicy.nivel")} value={form.tier} onChange={(tier: SealTierId) => {
-              if (drafting) return;
-              setForm((f) => ({ ...f, tier })); setReady(false); setQuestions([]); setPendingRequest("");
-            }} options={[{ id: "PERFIL", label: t("sealCopilot.profile") }, { id: "PECA", label: t("sealPolicy.nivel_peca") }, { id: "LOOK", label: t("sealPolicy.nivel_look") }]} />
-            {form.tier === "PERFIL" && <p className="help mt-2">{t("sealCopilot.profile_hint")}</p>}
-            <Field label={t("sealCopilot.request")} id="seal-request" required>
-              <Textarea id="seal-request" value={request} maxLength={Math.max(0, 5900 - pendingRequest.length)} disabled={drafting}
-                placeholder={t("sealCopilot.example")} onChange={(e) => setRequest(e.target.value)} />
-            </Field>
-            <Button type="button" variant="primary" loading={drafting} disabled={!request.trim()} onClick={chooseAi}>{t("sealCopilot.generate")}</Button>
-            {pendingRequest && <Button type="button" onClick={() => { setPendingRequest(""); setQuestions([]); setRequest(""); }}>{t("sealCopilot.restart")}</Button>}
-          </section>
-        )}
+        <div hidden={step !== 0}>
+          <div className="grid gap-3">
+            <SegmentPicker label={t("sealHypeIssuer.creation_mode")} value={creationMode} onChange={chooseMode}
+              options={[{ id: "COPILOT", label: t("sealHypeIssuer.copilot_mode") }, { id: "HYPE", label: t("sealHypeIssuer.mode") }]} />
+            {creationMode === "HYPE" ? <SealHypeEditor value={form.policy.hype ?? {}} tier={form.tier}
+              onTier={(tier) => setForm((current) => ({ ...current, tier }))} onChange={(hype) => setForm((current) => ({ ...current, policy: { ...EMPTY_POLICY, mode: "HYPE", hype } }))} />
+              : <SealPolicyChat tier={form.tier} onTier={(tier) => { setForm((current) => ({ ...current, tier })); setReady(false); }} previousPolicy={form.policy} brandName={brandName} onApply={applyDraft} />}
+          </div>
+        </div>
         {step === 1 && (
           <div>
             {reasons.length > 0 && (
@@ -93,8 +81,9 @@ export function SealWizard({ form, setForm, premium, brandName, onSave }: { form
             <div className="mb-3">
               <p className="label">{t("sealWizard.politica")}</p>
               {form.policy.referenceModel && <SealReferencePreview model={form.policy.referenceModel} />}
+              {creationMode === "HYPE" && <p className="type-body-sm">{describePolicy(form.policy, form.tier)}</p>}
               {sources.length > 0 && <div className="mt-2"><p className="label">{t("sealCopilot.sources")}</p><ul className="help">{sources.map((source) => <li key={source}>{source}</li>)}</ul></div>}
-              <Button type="button" className="mt-2" onClick={() => setStep(0)}>{t("sealCopilot.adjust")}</Button>
+              <Button type="button" className="mt-2" onClick={() => setStep(0)}>{t(creationMode === "HYPE" ? "sealHypeIssuer.adjust" : "sealCopilot.adjust")}</Button>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label={t("common.disponivel_a_partir_de")} id="sfrom" hint={t("common.vazio_imediato")}><Input id="sfrom" type="datetime-local" value={form.availableFrom} onChange={(e) => setForm((f) => ({ ...f, availableFrom: e.target.value }))} /></Field>
@@ -111,7 +100,7 @@ export function SealWizard({ form, setForm, premium, brandName, onSave }: { form
         {step < 3 ? (
           <Button type="button" variant="primary" disabled={!canGo(step + 1)} onClick={() => setStep(step + 1)} title={!named && step === 2 ? t("sealWizard.falta_nome") : undefined}>{t("common.next")}</Button>
         ) : (
-          <Button type="button" variant="primary" loading={saving} disabled={!named || !ready || drafting} onClick={save}>{t("sealWizard.salvar_selo")}</Button>
+          <Button type="button" variant="primary" loading={saving} disabled={!named || !policyReady} onClick={save}>{t("sealWizard.salvar_selo")}</Button>
         )}
       </div>
     </div>

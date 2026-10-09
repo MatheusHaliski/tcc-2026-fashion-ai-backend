@@ -6,7 +6,7 @@ import { api, mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
-import { Button, Card, Input, PageHeader, SegmentPicker, Tabs, useToast } from "@/components/ui";
+import { Button, Card, PageHeader, SegmentPicker, Tabs, useToast } from "@/components/ui";
 import { HypeWardrobeInsights } from "@/components/hype/hype-insights";
 import { HypeRediscoveryCard } from "@/components/hype/hype-rediscovery";
 import { LookScores, type LookScoreValues } from "@/components/hype/look-scores";
@@ -21,6 +21,7 @@ import { label, subcategoryLabel } from "@/lib/api/taxonomy";
 import { SealReferencePreview } from "@/components/seal-reference-model";
 import type { SealReferenceModel } from "@/lib/seals/reference-model";
 import { resolveCardArt } from "@/lib/card-art";
+import { CopilotChatComposer, CopilotChatMessage } from "@/components/copilot-chat";
 
 interface Chip { pieceId: string; name: string; imageUrl?: string; available?: boolean; address?: string; addressLabel?: string; actions?: string[]; hype?: number | null; compatibility?: number | null; }
 interface Action { type: string; label?: string; href?: string; pieceIds?: string[]; title?: string; occasion?: string[]; }
@@ -178,7 +179,7 @@ function Copilot() {
         <div className="flex-1 space-y-3 overflow-auto p-4" role="log" aria-live="polite">
           {msgs.length === 0 && <p className="type-body text-muted">{t("copilot.ola_sou_o_copilot_do", { value: ctx?.available ?? 0 })}</p>}
           {msgs.map((m, i) => (
-            <div key={i} className={`max-w-[85%] rounded-lg p-3 ${m.role === "user" ? "ml-auto bg-ink text-surface" : "bg-surface-2"}`}>
+            <CopilotChatMessage key={i} role={m.role}>
               <p className="type-body whitespace-pre-wrap">{md(m.text)}</p>
               {m.reply?.chips?.length ? <div className="mt-2 flex flex-wrap gap-2">{m.reply.chips.map((c) => <Link key={c.pieceId} href={`/pieces/${c.pieceId}`} onClick={(e) => { if (detail) { e.preventDefault(); detail.openPiece(c.pieceId); } }} className="chip"><img src={mediaUrl(c.imageUrl)} alt="" className="h-6 w-6 rounded object-contain" />{c.name}{c.addressLabel && <span className="text-faint"> · {c.addressLabel}</span>}{c.hype != null && <span className="text-faint"> · {t("copilot.scores.chip_hype", { value: c.hype })}</span>}{c.compatibility != null && <span className="text-faint"> · {t("copilot.scores.chip_style", { value: c.compatibility })}</span>}</Link>)}</div> : null}
               {m.reply?.looks?.length ? <div className="mt-2 flex gap-2 overflow-x-auto">{m.reply.looks.map((l, j) => <Card key={j} className="min-w-56 max-w-64"><p className="truncate type-h3">{l.title}</p><Understood look={l} /><div className="mt-1 flex flex-wrap gap-1">{(l.pieces ?? []).map((p) => <button key={p.pieceId} type="button" title={p.name} aria-label={t("copilot.ver", { name: p.name })} onClick={() => detail?.openPiece(p.pieceId)}><img src={mediaUrl(p.imageUrl)} alt={p.name} className="h-12 w-12 rounded bg-surface object-contain hover:ring-2 hover:ring-mark" /></button>)}</div>{l.why && <p className="mt-1 type-caption text-muted">{l.why}</p>}<LookScores scores={l.scores} /><Button size="sm" className="mt-2" variant="primary" onClick={() => accept(l)}>{t("common.salvar_como_look")}</Button></Card>)}</div> : null}
@@ -189,7 +190,7 @@ function Copilot() {
               {m.reply?.challengeNotice && <p className="mt-2 type-caption text-chalk">{m.reply.challengeNotice}</p>}
               {m.reply?.momentNotice && <p className="mt-2 type-caption text-thread">{m.reply.momentNotice}{m.reply.moment && <> · <Link href={`/moments/${m.reply.moment.slug}`} className="underline">{m.reply.moment.name}</Link></>}</p>}
               {m.reply?.explanation?.provider && <p className="mt-1 type-caption text-faint">{m.reply.fallbackUsed ? t("copilot.motor_local") : m.reply.explanation.provider} · {m.reply.intent}</p>}
-            </div>
+            </CopilotChatMessage>
           ))}
           {busy && <p className="type-body text-muted">…</p>}
           <div ref={endRef} />
@@ -201,7 +202,7 @@ function Copilot() {
               options={[{ id: "SAFE", label: t("copilot.mode.SAFE") }, { id: "DISCOVERY", label: t("copilot.mode.DISCOVERY") }, { id: "EXPERIMENTAL", label: t("copilot.mode.EXPERIMENTAL") }]} />
             <span className="type-caption text-muted">{t(`copilot.mode.${mode}_hint`)}</span>
           </div>
-          <form className="flex gap-2" onSubmit={(e) => { e.preventDefault(); ask(input); }}><Input aria-label={t("copilot.mensagem")} value={input} onChange={(e) => setInput(e.target.value)} placeholder={t("copilot.onde_esta_meu_jeans_o")} /><Button type="submit" variant="primary" loading={busy}><FaiIcon id="ACT-13" size={24} decorative />{t("auth.send")}</Button></form>
+          <CopilotChatComposer value={input} onChange={setInput} onSend={ask} busy={busy} placeholder={t("copilot.onde_esta_meu_jeans_o")} />
         </div>
         </div>
       </div>

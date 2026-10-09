@@ -3,6 +3,7 @@ package br.com.fashionai.web.controller;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.SealDesignService;
 import br.com.fashionai.application.service.SealService;
+import br.com.fashionai.application.service.SealPolicyCopilot;
 import br.com.fashionai.domain.model.enums.SealTier;
 import br.com.fashionai.domain.model.enums.PromotionStatus;
 import io.swagger.v3.oas.annotations.Operation;
@@ -49,13 +50,17 @@ public class SealController {
         return seals.createSeal(user, form);
     }
 
-    public record DraftRequest(SealTier tier, String message, Map<String, Object> previousPolicy) {
+    public record DraftRequest(SealTier tier, String message, Map<String, Object> previousPolicy, List<SealPolicyCopilot.Message> conversation) {
+        public DraftRequest(SealTier tier, String message, Map<String, Object> previousPolicy) {
+            this(tier, message, previousPolicy, null);
+        }
     }
 
     @PostMapping({"/api/seals/draft", "/api/copilot/seal-policy"})
     @Operation(summary = "RF25 — Copilot #createsealpolicy: cria o modelo de referência a partir do pedido do emissor, sem publicar o selo")
     public Map<String, Object> draft(CurrentUser user, @RequestBody(required = false) DraftRequest req) {
-        return seals.draft(user, req == null ? null : req.tier(), req == null ? null : req.message(), req == null ? null : req.previousPolicy());
+        return seals.draft(user, req == null ? null : req.tier(), req == null ? null : req.message(),
+                req == null ? null : req.previousPolicy(), req == null ? null : req.conversation());
     }
 
     @PutMapping("/api/seals/{sealId}")
