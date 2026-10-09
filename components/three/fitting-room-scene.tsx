@@ -48,33 +48,21 @@ function IdentityPlaque({ env }: { env: BrandEnvironment }) {
   </group>;
 }
 
-function Curtain() {
-  const geometry = useMemo(() => {
-    const g = new THREE.PlaneGeometry(1.45, 2.5, 48, 1), p = g.attributes.position;
-    for (let i = 0; i < p.count; i++) p.setZ(i, Math.cos(p.getX(i) * 20) * .035);
-    g.computeVertexNormals(); return g;
-  }, []);
-  useEffect(() => () => geometry.dispose(), [geometry]);
-  return <group name="studio-privacy-curtain" position={[-2.25, 0, -.8]} rotation={[0, .7, 0]}>
-    <mesh position={[0, 2.72, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.012, .012, 1.6, 10]} /><meshStandardMaterial color={STUDIO_PALETTE.metal} metalness={.65} roughness={.4} /></mesh>
-    <mesh position={[0, 1.42, 0]} geometry={geometry} castShadow><meshStandardMaterial color={STUDIO_PALETTE.curtain} side={THREE.DoubleSide} roughness={.98} /></mesh>
-  </group>;
-}
 function Mirror() {
   return <group name="studio-full-height-mirror" position={[2.55, 1.18, -.6]} rotation={[0, -.7, 0]}>
     <mesh><boxGeometry args={[.82, 2.18, .04]} /><meshStandardMaterial color={STUDIO_PALETTE.metal} metalness={.6} roughness={.35} /></mesh>
     <mesh position={[0, 0, .025]}><planeGeometry args={[.75, 2.1]} /><meshStandardMaterial color="#ECEEEB" metalness={1} roughness={.04} /></mesh>
   </group>;
 }
-function BenchAndRail() {
+function BenchAndRail({ palette }: { palette: FittingStudioProfile["palette"] }) {
   return <group name="studio-bench-and-hangers" position={[-1.48, 0, BACK_Z + .43]}>
-    <mesh position={[0, .46, 0]} castShadow><boxGeometry args={[1.05, .10, .43]} /><meshStandardMaterial color={STUDIO_PALETTE.furniture} roughness={.75} /></mesh>
-    {[-.43, .43].map(x => <mesh key={x} position={[x, .22, 0]}><boxGeometry args={[.045, .44, .34]} /><meshStandardMaterial color={STUDIO_PALETTE.metal} roughness={.6} /></mesh>)}
-    <mesh position={[0, 1.7, -.25]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.012, .012, 1.1, 10]} /><meshStandardMaterial color={STUDIO_PALETTE.metal} metalness={.6} roughness={.35} /></mesh>
+    <mesh position={[0, .46, 0]} castShadow><boxGeometry args={[1.05, .10, .43]} /><meshStandardMaterial color={palette.furniture} roughness={.75} /></mesh>
+    {[-.43, .43].map(x => <mesh key={x} position={[x, .22, 0]}><boxGeometry args={[.045, .44, .34]} /><meshStandardMaterial color={palette.metal} roughness={.6} /></mesh>)}
+    <mesh position={[0, 1.7, -.25]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.012, .012, 1.1, 10]} /><meshStandardMaterial color={palette.metal} metalness={.6} roughness={.35} /></mesh>
     {[-.3, 0, .3].map(x => <group key={x} position={[x, 1.67, -.25]}>
-      <mesh position={[0, -.035, 0]}><torusGeometry args={[.026, .005, 6, 12, Math.PI * 1.4]} /><meshStandardMaterial color={STUDIO_PALETTE.metal} /></mesh>
-      <mesh position={[-.075, -.13, 0]} rotation={[0, 0, -.55]}><boxGeometry args={[.18, .014, .018]} /><meshStandardMaterial color={STUDIO_PALETTE.furniture} /></mesh>
-      <mesh position={[.075, -.13, 0]} rotation={[0, 0, .55]}><boxGeometry args={[.18, .014, .018]} /><meshStandardMaterial color={STUDIO_PALETTE.furniture} /></mesh>
+      <mesh position={[0, -.035, 0]}><torusGeometry args={[.026, .005, 6, 12, Math.PI * 1.4]} /><meshStandardMaterial color={palette.metal} /></mesh>
+      <mesh position={[-.075, -.13, 0]} rotation={[0, 0, -.55]}><boxGeometry args={[.18, .014, .018]} /><meshStandardMaterial color={palette.furniture} /></mesh>
+      <mesh position={[.075, -.13, 0]} rotation={[0, 0, .55]}><boxGeometry args={[.18, .014, .018]} /><meshStandardMaterial color={palette.furniture} /></mesh>
     </group>)}
   </group>;
 }
@@ -87,7 +75,7 @@ function Room({ profile }: { profile: FittingStudioProfile }) {
     <mesh position={[0, WALL_H, 1.1]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[ROOM_W, 6]} /><meshStandardMaterial color={p.ceiling} roughness={.95} /></mesh>
     <mesh position={[0, .02, BACK_Z + .02]}><boxGeometry args={[ROOM_W, .04, .025]} /><meshStandardMaterial color="#7C776F" roughness={.75} /></mesh>
     <IdentityPlaque env={profile.brand} />
-    <Curtain /><Mirror /><BenchAndRail />
+    <Mirror /><BenchAndRail palette={p} />
     <ReferenceGallery products={profile.photographs} label={t("tryOn.reference_images")} position={[1.72, 1.55, BACK_Z + .03]} />
   </group>;
 }
