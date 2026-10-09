@@ -8322,5 +8322,17 @@
   "sealHypeIssuer.view_policy": "Ver reglas del sello",
   "sealHypeIssuer.view_piece": "Ver prenda",
   "tryOn.studio_conceptual": "Estudio de prueba conceptual",
-  "tryOn.reference_images": "Referencias del catálogo"
+  "tryOn.reference_images": "Referencias del catálogo",
+  "room.walk.entrar": "Caminar con el avatar",
+  "room.walk.sair": "Salir del modo caminata",
+  "room.walk.painel": "Modo caminata",
+  "room.walk.dica": "Usa WASD o las flechas (o los botones) para ir al armario; toma prendas y llévalas al espejo.",
+  "room.walk.controles": "Controles de movimiento",
+  "room.walk.nos_bracos": "En los brazos: {n}/{max}",
+  "room.walk.pegar": "Tomar",
+  "room.walk.vazio": "Nada en esta puerta/columna de cajones. Ve a otra.",
+  "room.walk.provar": "Probar en el espejo",
+  "room.walk.devolver": "Devolver",
+  "room.walk.va_ate": "Ve al armario para tomar prendas o al espejo para probarlas.",
+  "room.walk.provando": "{n} prenda(s) en el espejo"
 }

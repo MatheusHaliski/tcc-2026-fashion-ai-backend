@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api, mediaUrl } from "@/lib/api/client";
@@ -12,7 +12,7 @@ import { useTheme } from "@/lib/theme/theme";
 import { FaiIcon } from "@/components/fai-icon";
 import dynamic from "next/dynamic";
 import { useDetailModal } from "@/components/detail-modal";
-import type { MirrorOverlay, RoomData3D } from "@/components/room3d/room-scene";
+import type { MirrorOverlay, RoomData3D, WalkZone } from "@/components/room3d/room-scene";
 import { feel, fabricOf } from "@/lib/sensory";
 import { newCanvas, saveCanvas } from "@/lib/export/canvas";
 import { mirrorPieces as lookOf, useMirrorAvatar, type MirrorPiece } from "@/components/mirror/mirror-stage";
@@ -63,6 +63,9 @@ function RoomInner() {
   const [tag, setTag] = useState<PieceTag | null>(null); const [keysOpen, setKeysOpen] = useState(false); const [guest, setGuest] = useState("");
   const [photo, setPhoto] = useState<{ framing: Framing; filter: PhotoFilter; dof: boolean } | null>(null); const [shooting, setShooting] = useState(false);
   const [unboxing, setUnboxing] = useState(false); const [addTo, setAddTo] = useState<string | null>(null); const [addPiece, setAddPiece] = useState("");
+  // Modo caminhada: o avatar anda até o armário, pega peças (na ordem) e as leva ao espelho para provar
+  const [walking, setWalking] = useState(false); const [zone, setZone] = useState<WalkZone>({ zone: null, moduleIds: [] }); const [carried, setCarried] = useState<RoomPiece[]>([]);
+  const walkInput = useRef({ dx: 0, dz: 0 });
   // reflexo do espelho 3D e prévia do Vista-me: o mesmo avatar (perfil, espelho, provador) vestindo o look do espelho
   const me3d = useMirrorAvatar(); const [reflection, setReflection] = useState<string | null>(null);
   const slotsOf = (m?: MirrorState | null) => (m?.slots ?? {}) as unknown as Record<string, MirrorPiece | MirrorPiece[] | null>;
@@ -162,6 +165,22 @@ function RoomInner() {
   const act = async (fn: () => Promise<unknown>, ok?: string) => { try { await fn(); if (ok) toast.success(ok); reload(); list.reload(); } catch (e) { toast.fromError(e); } };
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-96" />;
+  const CARRY_MAX = 6;
+  const reachable = zone.zone === "closet" ? zone.moduleIds.flatMap((id) => { const m = data.modules.find((x) => x.id === id); return m ? gridPiecesOf(m) : []; }).filter((p, i, a) => a.findIndex((q) => q.id === p.id) === i) : [];
+  function gridPiecesOf(m: Module) { const fromSlots = (m.hangers ?? m.slots ?? []).map((h) => (h.pieceId ? data!.pieces[h.pieceId] : null)).filter((x): x is RoomPiece => !!x); return fromSlots.length ? fromSlots : Object.values(data!.pieces).filter((p) => p.moduleId === m.id); }
+  function onZone(z: WalkZone) {
+    setZone(z);
+    if (z.zone === "closet") { setOpenSet(new Set(z.moduleIds.filter((id) => data?.modules.some((m) => m.id === id)))); setFocusModule(null); }
+    else setOpenSet(new Set());
+  }
+  function grab(p: RoomPiece) { setCarried((c) => (c.length >= CARRY_MAX || c.some((x) => x.id === p.id) ? c : [...c, p])); }
+  async function tryOn() {
+    const batch = carried; if (!batch.length) return;
+    try {
+      for (const p of batch) await api.post("/api/me/mirror/pieces", { pieceId: p.id });
+      setCarried([]); setFocusModule("mirror"); toast.success(t("room.walk.provando", { n: batch.length })); mirror.reload();
+    } catch (e) { toast.fromError(e); mirror.reload(); }
+  }
   const modulePieces = (m: Module) => (m.hangers ?? m.slots ?? []).map((h) => ({ ...h, piece: h.pieceId ? data.pieces[h.pieceId] : null }));
   const gridPieces = (m: Module) => { const fromSlots = modulePieces(m).filter((x) => x.piece); if (fromSlots.length) return fromSlots.map((x) => x.piece!); return Object.values(data.pieces).filter((p) => p.moduleId === m.id); };
   return (
@@ -187,6 +206,7 @@ function RoomInner() {
             <Button onClick={toggleTheme} aria-pressed={dark}>{dark ? t("room.acender") : t("room.apagar")}</Button>
             {["STUDIO", "LOFT", "CLOSET", "ATELIER", "PENTHOUSE", "MAISON"].includes(data.level) && <label className="room3d-light type-body-sm">{t("room.luz")}<input type="range" min={2700} max={6500} step={100} defaultValue={(data as unknown as RoomData3D).light?.kelvin ?? 4000} aria-label={t("room.iluminacao_guiada_kelvin")}
                   onChange={(e) => { const k = Number(e.target.value); clearTimeout((window as unknown as { __lt?: number }).__lt); (window as unknown as { __lt?: number }).__lt = window.setTimeout(() => act(() => api.put("/api/me/room/light", { kelvin: k })), 400); }} /></label>}
+            <Button onClick={() => { setWalking((w) => !w); setZone({ zone: null, moduleIds: [] }); setOpenSet(new Set()); setFocusModule(null); }} aria-pressed={walking}>{walking ? t("room.walk.sair") : t("room.walk.entrar")}</Button>
             <ActionMenu label={t("room.moreViews")} items={[
               { label: t("room.vista_3_4"), onSelect: () => { setFocusModule(null); setOpenSet(new Set()); setHighlight(null); } },
               { label: t("room.abrir_portas"), onSelect: () => setOpenSet(new Set(data.modules.filter((m) => m.slotType === "DOOR").map((m) => m.id))) },
@@ -201,10 +221,25 @@ function RoomInner() {
               mirror={{ pieces: mirrorPieces(mirror.data).map((p) => ({ id: p.id, imageUrl: p.imageUrl ?? p.thumbnailUrl })), postIt: mirror.data?.postIt, closingKey, celebrate, reflectionUrl: reflection,
                 onUse: acceptLook, onAnother: () => runVistaMe("/api/me/mirror/another"), onTakeOneOff: () => act(async () => mirror.setData(await api.post<MirrorState>("/api/me/mirror/take-one-off"))) } satisfies MirrorOverlay}
               onVistaMe={() => setVista((v) => ({ ...v, open: true }))} onCopilot={() => setCopilot((c) => ({ ...c, open: true }))} copilotPoint={copilot.point} copilotTalking={copilot.busy || copilot.open}
-              onKeys={() => setKeysOpen(true)} onUnbox={unbox} unboxing={unboxing} onAddToDrawer={(m) => { setAddTo(m); setAddPiece(""); }} />
+              onKeys={() => setKeysOpen(true)} onUnbox={unbox} unboxing={unboxing} onAddToDrawer={(m) => { setAddTo(m); setAddPiece(""); }}
+              walk={{ enabled: walking, input: walkInput, carried: carried.length, onZone }} />
             {photo?.dof && <div className="room3d-dof" aria-hidden />}
             {!me3d.loading && mirror.data && (me3d.avatar || mirrorLook.length > 0) && (
               <AvatarStill hidden avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={mirrorLook} background="#c9d2d8" onStill={setReflection} />
+            )}
+            {walking && (
+              <div className="rounded-md bg-surface-2 p-3 mt-2 space-y-2" role="region" aria-label={t("room.walk.painel")}>
+                <p className="type-caption text-muted">{t("room.walk.dica")}</p>
+                <div className="flex gap-1" role="group" aria-label={t("room.walk.controles")}>
+                  {([["←", -1, 0], ["↑", 0, -1], ["↓", 0, 1], ["→", 1, 0]] as const).map(([l, dx, dz]) => <button key={l} type="button" className="btn btn-sm" aria-label={l}
+                    onPointerDown={() => { walkInput.current = { dx, dz }; }} onPointerUp={() => { walkInput.current = { dx: 0, dz: 0 }; }} onPointerLeave={() => { walkInput.current = { dx: 0, dz: 0 }; }} onPointerCancel={() => { walkInput.current = { dx: 0, dz: 0 }; }}>{l}</button>)}
+                </div>
+                <p className="type-body-sm">{t("room.walk.nos_bracos", { n: carried.length, max: CARRY_MAX })}{carried.length ? `: ${carried.map((p) => p.name).join(" → ")}` : ""}</p>
+                {zone.zone === "closet" && (reachable.length ? <ul className="fai-list">{reachable.map((p) => <li key={p.id} className="flex items-center gap-2 py-1"><span className="min-w-0 flex-1 truncate type-body-sm">{p.name}</span>
+                  <Button size="sm" onClick={() => grab(p)} disabled={carried.length >= CARRY_MAX || carried.some((x) => x.id === p.id)}>{t("room.walk.pegar")}</Button></li>)}</ul> : <p className="type-body-sm text-muted">{t("room.walk.vazio")}</p>)}
+                {zone.zone === "mirror" && <div className="flex gap-2"><Button variant="primary" onClick={tryOn} disabled={!carried.length}>{t("room.walk.provar")}</Button><Button onClick={() => setCarried([])} disabled={!carried.length}>{t("room.walk.devolver")}</Button></div>}
+                {zone.zone === null && <p className="type-body-sm text-muted">{t("room.walk.va_ate")}</p>}
+              </div>
             )}
             <p className="room3d-hint">{t("room.arraste_para_girar_enquadramento_3")}</p>
           </div>

@@ -8322,5 +8322,17 @@
   "sealHypeIssuer.view_policy": "View seal rules",
   "sealHypeIssuer.view_piece": "View item",
   "tryOn.studio_conceptual": "Conceptual fitting studio",
-  "tryOn.reference_images": "Catalogue references"
+  "tryOn.reference_images": "Catalogue references",
+  "room.walk.entrar": "Walk with avatar",
+  "room.walk.sair": "Exit walk mode",
+  "room.walk.painel": "Walk mode",
+  "room.walk.dica": "Use WASD or arrow keys (or the buttons) to walk to the wardrobe; pick pieces and take them to the mirror.",
+  "room.walk.controles": "Movement controls",
+  "room.walk.nos_bracos": "In your arms: {n}/{max}",
+  "room.walk.pegar": "Pick up",
+  "room.walk.vazio": "Nothing at this door/drawer column. Walk to another.",
+  "room.walk.provar": "Try on at the mirror",
+  "room.walk.devolver": "Put back",
+  "room.walk.va_ate": "Go to the wardrobe to pick pieces or to the mirror to try them on.",
+  "room.walk.provando": "{n} piece(s) at the mirror"
 }

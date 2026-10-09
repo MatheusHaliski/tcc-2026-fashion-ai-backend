@@ -37,7 +37,10 @@ export interface RoomSceneProps {
   onPick: (pieceId: string) => void; onReady?: (canvas: HTMLCanvasElement) => void;
   lit?: Set<string>; mirror?: MirrorOverlay; dark?: boolean; onToggleTheme?: () => void; onVistaMe?: () => void; onCopilot?: () => void;
   copilotPoint?: string | null; copilotTalking?: boolean; onKeys?: () => void; onUnbox?: () => void; unboxing?: boolean; onAddToDrawer?: (moduleId: string) => void;
+  /** Modo caminhada: o usuário controla o avatar 3D (WASD/setas ou botões na tela) até o armário e o espelho */
+  walk?: { enabled: boolean; input: React.MutableRefObject<{ dx: number; dz: number }>; carried?: number; onZone: (z: WalkZone) => void };
 }
+export interface WalkZone { zone: "closet" | "mirror" | null; moduleIds: string[]; }
 
 export const LEVELS = ["ESTREIA", "STUDIO", "LOFT", "CLOSET", "ATELIER", "PENTHOUSE", "MAISON"];
 const atLeast = (level: string | undefined, want: string) => LEVELS.indexOf(level ?? "ESTREIA") >= LEVELS.indexOf(want);
@@ -485,8 +488,62 @@ export function moduleAnchor(id: string, level?: string): [number, number, numbe
   return [L.ext / 2, 1.2, 0];
 }
 
+const WALK_SPEED = 1.6;
+const WALK_KEYS: Record<string, [number, number]> = { ArrowLeft: [-1, 0], a: [-1, 0], ArrowRight: [1, 0], d: [1, 0], ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1] };
+
+/** Módulos (porta + gavetas da coluna) ao alcance do avatar diante do armário; vazio fora dele. */
+export function zoneAt(x: number, z: number, level?: string): WalkZone {
+  const L = layoutFor(level);
+  if (Math.hypot(x - L.mirror[0], z - L.mirror[2]) < 1.2) return { zone: "mirror", moduleIds: ["mirror"] };
+  if (z > 1.5 || x < -W / 2 - 0.15 || x > W / 2 + L.ext + 0.15) return { zone: null, moduleIds: [] };
+  const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+  if (x <= W / 2) {
+    const col = clamp(Math.floor((x + W / 2) / DRAWER_W), 0, 7), door = clamp(Math.floor((x + W / 2) / DOOR_W), 0, 3) + 1;
+    return { zone: "closet", moduleIds: [`door:${door}`, `drawer:${col + 1}`, `drawer:${col + 9}`, `drawer:${col + 17}`] };
+  }
+  const rx = x - W / 2 - 0.02, col = clamp(Math.floor(rx / EXT_DRAWER_W), 0, 3), door = clamp(Math.floor(rx / (EXT_W / 2)), 0, 1) + 5;
+  return { zone: "closet", moduleIds: [`door:${door}`, `drawer:${25 + col}`, `drawer:${29 + col}`, `drawer:${33 + col}`] };
+}
+
+/** Avatar 3D controlável: anda pelo quarto, vira para onde vai e leva as peças pegas nos braços. */
+function WalkAvatar({ walk, level, L, reduced }: { walk: NonNullable<RoomSceneProps["walk"]>; level: string; L: ReturnType<typeof layoutFor>; reduced: boolean }) {
+  const g = useRef<THREE.Group>(null); const pos = useRef({ x: L.mirror[0] + 1.3, z: 1.2 }); const keys = useRef({ dx: 0, dz: 0 }); const last = useRef("");
+  const down = useRef(new Set<string>());
+  useEffect(() => {
+    if (!walk.enabled) return;
+    const sync = () => { let dx = 0, dz = 0; down.current.forEach((k) => { const v = WALK_KEYS[k]; if (v) { dx += v[0]; dz += v[1]; } }); keys.current = { dx, dz }; };
+    const typing = (e: KeyboardEvent) => { const el = e.target as HTMLElement | null; return !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)); };
+    const kd = (e: KeyboardEvent) => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; if (!(k in WALK_KEYS) || typing(e)) return; e.preventDefault(); down.current.add(k); sync(); };
+    const ku = (e: KeyboardEvent) => { const k = e.key.length === 1 ? e.key.toLowerCase() : e.key; down.current.delete(k); sync(); };
+    const clear = () => { down.current.clear(); sync(); };
+    window.addEventListener("keydown", kd); window.addEventListener("keyup", ku); window.addEventListener("blur", clear);
+    return () => { window.removeEventListener("keydown", kd); window.removeEventListener("keyup", ku); window.removeEventListener("blur", clear); clear(); };
+  }, [walk.enabled]);
+  useFrame(({ clock }, dt) => {
+    if (!g.current || !walk.enabled) return;
+    const dx = keys.current.dx + walk.input.current.dx, dz = keys.current.dz + walk.input.current.dz, n = Math.hypot(dx, dz);
+    const p = pos.current;
+    if (n > 0) {
+      const step = WALK_SPEED * Math.min(dt, 0.05) / n;
+      p.x = Math.max(-W / 2 - 1.9, Math.min(W / 2 + L.ext + 0.6, p.x + dx * step)); p.z = Math.max(0.8, Math.min(2.4, p.z + dz * step));
+      g.current.rotation.y = Math.atan2(dx, dz);
+    }
+    g.current.position.set(p.x, n > 0 && !reduced ? Math.abs(Math.sin(clock.elapsedTime * 10)) * 0.03 : 0, p.z);
+    const z = zoneAt(p.x, p.z, level), sig = `${z.zone}|${z.moduleIds.join(",")}`;
+    if (sig !== last.current) { last.current = sig; walk.onZone(z); }
+  });
+  if (!walk.enabled) return null;
+  return (
+    <group ref={g} position={[pos.current.x, 0, pos.current.z]}>
+      <mesh position={[0, 0.55, 0]} castShadow><capsuleGeometry args={[0.16, 0.7, 6, 16]} /><meshStandardMaterial color="#6d5bd0" roughness={0.7} /></mesh>
+      <mesh position={[0, 1.38, 0]} castShadow><sphereGeometry args={[0.13, 20, 16]} /><meshStandardMaterial color="#e8c4a0" roughness={0.8} /></mesh>
+      {(walk.carried ?? 0) > 0 && <group position={[0, 0.95, 0.24]}>{Array.from({ length: Math.min(walk.carried ?? 0, 6) }, (_, i) => <mesh key={i} position={[0, i * 0.035, 0]} castShadow><boxGeometry args={[0.3, 0.03, 0.22]} /><meshStandardMaterial color={["#e9b949", "#d96b8a", "#4fa3c7", "#7bb274", "#b48be0", "#e0875b"][i]} /></mesh>)}</group>}
+    </group>
+  );
+}
+
 export default function RoomScene({ data, open, onToggle, highlight, focusModule, onPick, onReady, lit = new Set(), mirror, dark, onToggleTheme, onVistaMe, onCopilot,
-  copilotPoint, copilotTalking, onKeys, onUnbox, unboxing, onAddToDrawer }: RoomSceneProps) {
+  copilotPoint, copilotTalking, onKeys, onUnbox, unboxing, onAddToDrawer, walk }: RoomSceneProps) {
   const { t } = useI18n();
   const controls = useRef<unknown>(null);
   const reduced = !!data.ambient?.reduceMotion;
@@ -605,6 +662,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       {/* Caixa FAI: item comprado esperando o unboxing */}
       {(data.unboxing?.length ?? 0) > 0 && <FaiBox position={L.box} count={data.unboxing!.length} opening={!!unboxing} onOpen={() => onUnbox?.()} />}
 
+      {walk && <WalkAvatar walk={walk} level={level} L={L} reduced={reduced} />}
       <ContactShadows position={[L.ext / 2, 0.005, 0.4]} opacity={0.35} scale={10} blur={2.4} far={3} />
       <OrbitControls ref={controls as never} makeDefault enablePan={false} target={[L.ext / 2, 1.2, 0]}
         minAzimuthAngle={deg(az[0])} maxAzimuthAngle={deg(az[1])} minPolarAngle={deg(po[0])} maxPolarAngle={deg(po[1])}

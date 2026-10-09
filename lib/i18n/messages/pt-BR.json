@@ -8322,5 +8322,17 @@
   "sealHypeIssuer.view_policy": "Ver regras do selo",
   "sealHypeIssuer.view_piece": "Ver peça",
   "tryOn.studio_conceptual": "Ambiente de prova conceitual",
-  "tryOn.reference_images": "Referências do catálogo"
+  "tryOn.reference_images": "Referências do catálogo",
+  "room.walk.entrar": "Andar com o avatar",
+  "room.walk.sair": "Sair do modo caminhada",
+  "room.walk.painel": "Modo caminhada",
+  "room.walk.dica": "Use WASD ou as setas (ou os botões) para andar até o armário; pegue as peças e leve-as ao espelho.",
+  "room.walk.controles": "Controles de movimento",
+  "room.walk.nos_bracos": "Nos braços: {n}/{max}",
+  "room.walk.pegar": "Pegar",
+  "room.walk.vazio": "Nada nesta porta/coluna de gavetas. Ande até outra.",
+  "room.walk.provar": "Provar no espelho",
+  "room.walk.devolver": "Devolver",
+  "room.walk.va_ate": "Vá até o armário para pegar peças ou ao espelho para provar.",
+  "room.walk.provando": "{n} peça(s) no espelho"
 }
