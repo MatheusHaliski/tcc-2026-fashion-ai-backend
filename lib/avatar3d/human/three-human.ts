@@ -7,9 +7,9 @@
  */
 import * as THREE from "three";
 import type { BodyAsset } from "./asset";
-import { landmarksOn, type Composed } from "./compose";
-import { eyeRig } from "./eyes";
-import { EYES } from "../iris";
+import type { Composed } from "./compose";
+import { eyeRig, eyeApertures, isCorneaCap, lowerLidLine, type EyeApertures } from "./eyes";
+import { openEyeSockets } from "./eye-sockets";
 
 export interface Human {
   root: THREE.Group;
@@ -61,7 +61,118 @@ export function buildSkeleton(a: BodyAsset, joints: Float32Array): THREE.Bone[] 
   return bones;
 }
 
-export interface HumanLook { skin: string; skinMap?: THREE.Texture | null; eyeMap?: THREE.Texture | null; debugHair?: boolean }
+export interface HumanLook { skin: string; skinMap?: THREE.Texture | null; eyeMap?: THREE.Texture | null; debugHair?: boolean; eyeShape?: ArrayLike<number> | null }
+
+/** Abre cada globo apenas entre as pálpebras medidas, com cobertura MSAA e o contorno fixo na cabeça (não na íris). */
+function fitEyeOpening(material: THREE.MeshPhysicalMaterial, aperture: EyeApertures, head: THREE.Bone): () => void {
+  const uniforms = {
+    ocularLeft: { value: aperture.left.map((p) => new THREE.Vector2(...p)) },
+    ocularRight: { value: aperture.right.map((p) => new THREE.Vector2(...p)) },
+    ocularRestHead: { value: head.matrixWorld.clone() },
+    ocularHeadInverse: { value: new THREE.Matrix4() },
+  };
+  const update = () => uniforms.ocularHeadInverse.value.copy(head.matrixWorld).invert();
+  material.alphaToCoverage = true;
+  material.onBeforeCompile = (shader) => {
+    Object.assign(shader.uniforms, uniforms);
+    shader.vertexShader = shader.vertexShader.replace("#include <common>", `#include <common>
+      uniform mat4 ocularRestHead;
+      uniform mat4 ocularHeadInverse;
+      varying vec2 vOcularPosition;`);
+    shader.vertexShader = shader.vertexShader.replace("#include <project_vertex>", `#include <project_vertex>
+      vOcularPosition = (ocularRestHead * ocularHeadInverse * modelMatrix * vec4(transformed, 1.0)).xy;`);
+    shader.fragmentShader = shader.fragmentShader.replace("#include <common>", `#include <common>
+      uniform vec2 ocularLeft[16];
+      uniform vec2 ocularRight[16];
+      varying vec2 vOcularPosition;
+      float ocularEdge(vec2 p, vec2 contour[16]) {
+        bool inside = false;
+        float nearest = 1e6;
+        vec2 previous = contour[15];
+        for (int i = 0; i < 16; i++) {
+          vec2 current = contour[i];
+          vec2 e = current - previous;
+          float f = clamp(dot(p - previous, e) / max(dot(e, e), 1e-12), 0.0, 1.0);
+          nearest = min(nearest, length(p - previous - f * e));
+          if ((current.y > p.y) != (previous.y > p.y)) {
+            float crossing = current.x + (p.y - current.y) * (previous.x - current.x) / (previous.y - current.y);
+            if (p.x < crossing) inside = !inside;
+          }
+          previous = current;
+        }
+        float signedDistance = inside ? nearest : -nearest;
+        float aa = max(fwidth(signedDistance), 1e-5);
+        return smoothstep(-aa, aa, signedDistance);
+      }`);
+    shader.fragmentShader = shader.fragmentShader.replace("#include <alphatest_fragment>", `
+      float ocularCoverage = vOcularPosition.x > 0.0 ? ocularEdge(vOcularPosition, ocularLeft) : ocularEdge(vOcularPosition, ocularRight);
+      if (ocularCoverage < 0.001) discard;
+      diffuseColor.a *= ocularCoverage;
+      #include <alphatest_fragment>`);
+  };
+  material.customProgramCacheKey = () => "observed-eye-aperture-v1";
+  material.userData.eyeAperture = aperture;
+  return update;
+}
+
+/**
+ * glTF não guarda onBeforeCompile. Recorta os triângulos do globo na pose neutra, interpolando os atributos, para
+ * manter a abertura medida no arquivo. A animação exportada movimenta a cabeça, sem olhar independente dos olhos.
+ * Retorna uma malha temporária; o chamador deve restaurar a original e descartar esta após exportar.
+ */
+export function clipEyeGeometryForExport(h: Human): THREE.BufferGeometry | null {
+  const aperture = (h.eyes.material as THREE.Material).userData.eyeAperture as EyeApertures | undefined;
+  if (!aperture) return null;
+  const g = h.eyes.geometry, position = g.getAttribute("position") as THREE.BufferAttribute;
+  const index = g.getIndex()!;
+  const attributes = Object.entries(g.attributes) as [string, THREE.BufferAttribute][];
+  const layout = attributes.map(([name, attr]) => ({ name, attr, size: attr.itemSize }));
+  const values = layout.map(() => [] as number[]);
+  const vertex = (i: number) => layout.map(({ attr, size }) => Array.from({ length: size }, (_, k) => Number(attr.array[i * size + k])));
+  const posIndex = layout.findIndex((a) => a.name === "position");
+  const polygons = (s: "left" | "right") => {
+    const points = aperture[s].map((p) => new THREE.Vector2(...p));
+    return THREE.ShapeUtils.triangulateShape(points, []).map((tri) => tri.map((i) => points[i]));
+  };
+  const masks = { left: polygons("left"), right: polygons("right") };
+  const cross = (a: THREE.Vector2, b: THREE.Vector2, p: number[]) => (b.x - a.x) * (p[1] - a.y) - (b.y - a.y) * (p[0] - a.x);
+  for (let t = 0; t < index.count; t += 3) {
+    const ids = [index.getX(t), index.getX(t + 1), index.getX(t + 2)];
+    const side = position.getX(ids[0]) > 0 ? "left" : "right";
+    for (const mask of masks[side]) {
+      let poly = ids.map(vertex);
+      const orientation = Math.sign(cross(mask[0], mask[1], [mask[2].x, mask[2].y]));
+      for (let edge = 0; edge < 3 && poly.length; edge++) {
+        const a = mask[edge], b = mask[(edge + 1) % 3], output: number[][][] = [];
+        let previous = poly[poly.length - 1];
+        let pd = orientation * cross(a, b, previous[posIndex]);
+        for (const current of poly) {
+          const cd = orientation * cross(a, b, current[posIndex]);
+          if ((pd >= 0) !== (cd >= 0)) {
+            const f = pd / (pd - cd);
+            output.push(previous.map((attr, j) => attr.map((v, k) => v + (current[j][k] - v) * f)));
+          }
+          if (cd >= 0) output.push(current);
+          previous = current; pd = cd;
+        }
+        poly = output;
+      }
+      for (let k = 1; k < poly.length - 1; k++) {
+        const tri = [poly[0], poly[k], poly[k + 1]], a = tri[0][posIndex], b = tri[1][posIndex], c = tri[2][posIndex];
+        const area = Math.abs((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]));
+        if (area < 1e-12) continue;
+        for (const v of tri) v.forEach((attr, j) => values[j].push(...attr));
+      }
+    }
+  }
+  const out = new THREE.BufferGeometry();
+  layout.forEach(({ name, attr, size }, i) => {
+    const Ctor = attr.array.constructor as Float32ArrayConstructor | Uint16ArrayConstructor | Uint8ArrayConstructor;
+    out.setAttribute(name, new THREE.BufferAttribute(new Ctor(values[i]), size, attr.normalized));
+  });
+  out.normalizeNormals(); out.computeBoundingSphere();
+  return out;
+}
 
 export function skinMaterial(look: HumanLook): THREE.MeshPhysicalMaterial {
   const m = new THREE.MeshPhysicalMaterial({
@@ -74,6 +185,7 @@ export function skinMaterial(look: HumanLook): THREE.MeshPhysicalMaterial {
 
 export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
   const root = new THREE.Group(); root.name = "avatar";
+  const rig = eyeRig(a, c.eye), aperture = eyeApertures(rig, look.eyeShape);
   const bones = buildSkeleton(a, c.joints);
   const byName = new Map(bones.map((b) => [b.name.replace("mixamorig:", ""), b]));
   // ---- corpo
@@ -86,13 +198,14 @@ export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
   g.setAttribute("skinIndex", new THREE.BufferAttribute(cleanJoints(expand(b.skinIndex, b.renderVertex, 4, Uint16Array) as Uint16Array, expand(b.skinWeight, b.renderVertex, 4, Uint8Array) as Uint8Array), 4));
   g.setAttribute("skinWeight", new THREE.BufferAttribute(expand(b.skinWeight, b.renderVertex, 4, Uint8Array), 4, true));
   g.setIndex(new THREE.BufferAttribute(b.index, 1));
+  if (aperture) openEyeSockets(g, aperture, rig);
   g.computeBoundingSphere();
   void nr;
   const body = new THREE.SkinnedMesh(g, skinMaterial(look)); body.name = "corpo"; body.castShadow = true; body.receiveShadow = true;
   body.add(bones[0]);
   // ---- olhos (textura CC0 do MakeHuman). AVATAR-ID I4: ossos LeftEye/RightEye (filhos do Head, no centro de cada globo,
   // nomes do Mixamo) — cada globo gira no próprio centro; a córnea vira uma malha à parte, só de reflexo
-  const e = a.eye; const rig = eyeRig(a, c.eye);
+  const e = a.eye;
   const head = byName.get("Head")!; const hj = bones.indexOf(head);
   const eyeBones = (["Left", "Right"] as const).map((S) => {
     const o = rig.center[S === "Left" ? "left" : "right"]; const bn = new THREE.Bone(); bn.name = `mixamorig:${S}Eye`;
@@ -115,32 +228,57 @@ export function buildHuman(a: BodyAsset, c: Composed, look: HumanLook): Human {
     eg.setIndex(idx); return eg;
   };
   const isCornea = (t: number) => !!(rig.cornea[e.index[t]] && rig.cornea[e.index[t + 1]] && rig.cornea[e.index[t + 2]]);
-  const eg = eyeGeo((t) => !isCornea(t)), cg = eyeGeo(isCornea);
+  const eg = eyeGeo((t) => !isCornea(t)), cg = eyeGeo((t) => isCorneaCap(a, c.eye, rig, t));
   // globo fosco: o brilho do olho é só o da córnea. Com verniz (clearcoat) no próprio globo, de poucos polígonos, o
   // reflexo esticava numa faixa vertical sobre íris e pupila (o olho "riscado")
-  const eyeMat = new THREE.MeshPhysicalMaterial({ map: look.eyeMap ?? null, color: look.eyeMap ? "#ffffff" : "#ece6df", roughness: 0.55, specularIntensity: 0.25, envMapIntensity: 0.35 });
+  const eyeMat = new THREE.MeshPhysicalMaterial({ map: look.eyeMap ?? null, color: look.eyeMap ? "#ffffff" : "#ece6df", roughness: 0.4, specularIntensity: 0.3, envMapIntensity: 0.3 });
   eyeMat.name = "olhos";
   const eyes = new THREE.SkinnedMesh(eg, eyeMat); eyes.name = "olhos";
   // córnea: cor preta + mistura aditiva = só o brilho especular (IOR 1,376), a íris aparece por baixo como está
   // um lóbulo só (sem verniz por cima): reflexo pequeno e nítido, sem dobrar a mancha branca
-  const corneaMat = new THREE.MeshPhysicalMaterial({ color: "#000000", roughness: 0.06, metalness: 0, ior: 1.376, specularIntensity: 0.8, envMapIntensity: 0.6,
+  const corneaMat = new THREE.MeshPhysicalMaterial({ color: "#000000", roughness: 0.12, metalness: 0, ior: 1.376, specularIntensity: 0.65, envMapIntensity: 0.45,
     transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
   corneaMat.name = "córnea";
   const cornea = new THREE.SkinnedMesh(cg, corneaMat); cornea.name = "córnea"; cornea.renderOrder = 1;
   // linha d'água: faixa fina brilhante na borda da pálpebra de baixo (pontos do rosto na malha), presa ao Head
-  const lm = landmarksOn(a, c.body); const tearLines = new THREE.Group(); tearLines.name = "linha-dagua";
+  const tearLines = new THREE.Group(); tearLines.name = "linha-dagua";
   // brilho úmido discreto (sem verniz): com luz forte não pode virar um traço branco sob a íris
-  const tearMat = new THREE.MeshPhysicalMaterial({ color: "#000000", roughness: 0.18, metalness: 0, specularIntensity: 0.45, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+  const tearMat = new THREE.MeshPhysicalMaterial({ color: "#000000", roughness: 0.3, metalness: 0, specularIntensity: 0.22, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false });
   tearMat.name = "linha-dagua";
   for (const side of ["right", "left"] as const) {
-    const ids = EYES[side].contour.slice(0, 9);                   // canto externo → pálpebra de baixo → canto interno
-    const pts = ids.map((i) => new THREE.Vector3(lm[i * 3] - c.joints[hj * 3], lm[i * 3 + 1] - c.joints[hj * 3 + 1] + 0.0003, lm[i * 3 + 2] - c.joints[hj * 3 + 2] + 0.0004));
-    const tg = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts, false, "centripetal"), 24, 0.00035, 5, false);
+    const line = lowerLidLine(a, c.body, c.eye, side, rig, aperture);
+    if (line.length < 4) continue;
+    const pts = line.map((p) => new THREE.Vector3(p[0] - c.joints[hj * 3], p[1] - c.joints[hj * 3 + 1], p[2] - c.joints[hj * 3 + 2]));
+    // A waterline is a thin wet edge, not a raised cylindrical skin fold.
+    // Scale it with the measured eye and flatten its vertical cross-section;
+    // the contour and the skin aperture remain unchanged.
+    const curve = new THREE.CatmullRomCurve3(pts, false, "centripetal");
+    const radius = Math.min(0.00006, rig.iris[side].radius[1] * 0.012);
+    const tg = new THREE.TubeGeometry(curve, 32, radius, 6, false);
+    const rim = tg.getAttribute("position");
+    for (let segment = 0; segment <= 32; segment++) {
+      const u = segment / 32, center = curve.getPointAt(u);
+      const taper = 0.2 + 0.8 * Math.sin(Math.PI * u);
+      for (let radial = 0; radial <= 6; radial++) {
+        const vertex = segment * 7 + radial;
+        rim.setXYZ(vertex, center.x + (rim.getX(vertex) - center.x) * taper,
+          center.y + (rim.getY(vertex) - center.y) * taper * 0.45,
+          center.z + (rim.getZ(vertex) - center.z) * taper);
+      }
+    }
+    tg.computeVertexNormals();
     const t = new THREE.Mesh(tg, tearMat); t.renderOrder = 1; tearLines.add(t);
   }
   head.add(tearLines);
   root.add(body, eyes, cornea);
   root.updateMatrixWorld(true);
+  if (aperture) {
+    eyes.onBeforeRender = fitEyeOpening(eyeMat, aperture, head);
+    cornea.onBeforeRender = fitEyeOpening(corneaMat, aperture, head);
+    const updateTearOpening = fitEyeOpening(tearMat, aperture, head);
+    tearLines.children.forEach((m) => { (m as THREE.Mesh).onBeforeRender = updateTearOpening; });
+    eyeMat.alphaTest = 0.001;
+  }
   const skeleton = new THREE.Skeleton(bones);
   body.bind(skeleton); eyes.bind(skeleton); cornea.bind(skeleton);
   if (look.debugHair) {

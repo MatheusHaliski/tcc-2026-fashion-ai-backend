@@ -105,10 +105,12 @@ export const VITRINE = "#ECE6DC";
 export function StudioLight({ intensity = 0.9 }: { intensity?: number }) {
   const { gl, scene } = useThree();
   useEffect(() => {
-    const pm = new THREE.PMREMGenerator(gl); const env = pm.fromScene(new RoomEnvironment(), 0.04).texture;
+    const pm = new THREE.PMREMGenerator(gl); const room = new RoomEnvironment();
+    const target = pm.fromScene(room, 0.04); room.dispose(); pm.dispose();
+    const env = target.texture;
     const prev = scene.environment; const prevI = scene.environmentIntensity;
     scene.environment = env; scene.environmentIntensity = intensity;
-    return () => { scene.environment = prev; scene.environmentIntensity = prevI; env.dispose(); pm.dispose(); };
+    return () => { scene.environment = prev; scene.environmentIntensity = prevI; target.dispose(); };
   }, [gl, scene, intensity]);
   return null;
 }

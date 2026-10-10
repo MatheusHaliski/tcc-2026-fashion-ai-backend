@@ -2470,12 +2470,18 @@ public class WardrobeService {
      * é o mesmo para todas as peças que usam o arquivo, então é gerado uma vez e reaproveitado. Nunca usa a foto de
      * referência do estúdio como imagem padrão.
      */
+    static boolean currentFeedVersion(WardrobeItem item) {
+        Object studio = Json.map(item.getFlatLayMetadataJson()).get("studio");
+        if (!(studio instanceof Map<?, ?> st) || !(st.get("feed") instanceof Map<?, ?> feed)) return false;
+        return br.com.fashionai.application.imaging.GarmentCrop.VERSION.equals(feed.get("pipelineVersion"));
+    }
+
     void defaultStudio(WardrobeItem w) {
         if (!w.isDefaultImage() || w.getImageUrl() == null) {
             return;
         }
         var done = pieces.findFirstByImageUrlAndDefaultImageTrueAndStudioImageUrlIsNotNull(w.getImageUrl());
-        if (done.isPresent() && !done.get().getId().equals(w.getId())) {
+        if (done.isPresent() && !done.get().getId().equals(w.getId()) && currentFeedVersion(done.get())) {
             WardrobeItem src = done.get();
             w.setStudioImageUrl(src.getStudioImageUrl());
             w.setStudioBackdrop(src.getStudioBackdrop());

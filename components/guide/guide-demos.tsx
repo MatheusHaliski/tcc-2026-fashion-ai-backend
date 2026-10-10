@@ -21,10 +21,16 @@ const DEMO_OWNER: UserCard = { id: `${DEMO_ID_PREFIX}owner`, username: "exemplo"
 const DEMO_COUNTERS: Counters = { likes: 24, comments: 5, shares: 2, remixes: 1, views: 180, saves: 7, reactions: {} };
 const DEMO_VIEWER: ViewerState = { liked: false, reactions: [], saved: false, canEdit: false, following: false };
 const AT = "2026-10-01T12:00:00Z";
+/** nomes próprios do exemplo (marca fictícia e o nome do produto FAI Points): não se traduzem */
+const DEMO_BRAND = "Atelier Lumi";
+const POINTS_NAME = "FAI Points";
+/** dados fictícios do exemplo ilustrado (não vão à API nem viram conteúdo de ninguém) */
+const DEMO_PIECE_NAME = "Jaqueta jeans";
+const DEMO_SEAL_NAME = "Selo de exemplo";
 
 export function demoPiece(over: Partial<PieceView> = {}): PieceView {
   return {
-    id: `${DEMO_ID_PREFIX}piece`, owner: DEMO_OWNER, name: "Jaqueta jeans", category: "upper_piece", subcategory: "jacket", sex: "UNISSEX",
+    id: `${DEMO_ID_PREFIX}piece`, owner: DEMO_OWNER, name: DEMO_PIECE_NAME, category: "upper_piece", subcategory: "jacket", sex: "UNISSEX",
     brandName: null, brandLogoUrl: null, color: "denim", colorHex: "#4a6a8c", material: "DENIM", size: "m", style: ["streetwear"], occasion: ["casual"],
     seals: [], price: null, imageUrl: "/assets_pecas/14_jacket_jaqueta.png", originalImageUrl: null, thumbnailUrl: "/assets_pecas/14_jacket_jaqueta.png",
     defaultImage: true, aiGeneratedImage: false, visibility: "PUBLIC", disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: false,
@@ -37,13 +43,13 @@ export function demoPiece(over: Partial<PieceView> = {}): PieceView {
 export function demoCard(over: Partial<FlairCollectionCard> = {}): FlairCollectionCard {
   return {
     id: `${DEMO_ID_PREFIX}card`, originType: "PIECE", originId: `${DEMO_ID_PREFIX}piece`, season: "SPRING", tier: "OURO", ovr: 78, rare: false, position: "SUP",
-    name: "Jaqueta jeans", brandName: "Atelier Lumi", imageUrl: "/assets_pecas/14_jacket_jaqueta.png", category: "upper_piece", subcategory: "jacket",
+    name: DEMO_PIECE_NAME, brandName: DEMO_BRAND, imageUrl: "/assets_pecas/14_jacket_jaqueta.png", category: "upper_piece", subcategory: "jacket",
     hype: { POP: 71, RAR: 40, ENG: 66, LON: 58, TRD: 74, NOV: 62, ORI: 55, HYP: 68 }, priceVerified: true, state: "AVAILABLE", tradeable: true, acquiredVia: "GENERATED",
     ...over,
   };
 }
 
-export const DEMO_SCHEME_SEAL = { label: "LOOK", name: "Selo de exemplo", kind: "BRAND" as const, premium: false, design: null };
+export const DEMO_SCHEME_SEAL = { label: "LOOK", name: DEMO_SEAL_NAME, kind: "BRAND" as const, premium: false, design: null };
 // o Hype dos exemplos nasce no cache (nunca é pedido à API): um com números de exemplo, outro sem dados
 const DEMO_HYPE: Record<string, HypeSummary> = {
   [`${DEMO_ID_PREFIX}piece`]: { status: "INSUFFICIENT_DATA", score: null },
@@ -140,7 +146,7 @@ function ChallengeDemo() {
         <li className="gd-anim-check">✓ {t("guide.demo.challenge.req2")}</li>
       </ul>
       <div className="gd-progress" role="presentation"><i className="gd-anim-progress" /></div>
-      <span className="gd-reward"><FaiIcon id="ACT-40" size={20} decorative /> <b className="tabular">+20</b> FAI Points</span>
+      <span className="gd-reward"><FaiIcon id="ACT-40" size={20} decorative /> <b className="tabular">+20</b> {POINTS_NAME}</span>
     </div>
   );
 }
@@ -263,7 +269,7 @@ function BrandDemo({ operator }: { operator: boolean }) {
   return (
     <div className="gd-brand">
       <div className="gd-brand-cover" />
-      <div className="gd-brand-id"><span className="gd-brand-logo">A</span><div><b>Atelier Lumi</b><span className="type-caption text-muted block">{t("guide.demo.brand.kind")}</span></div></div>
+      <div className="gd-brand-id"><span className="gd-brand-logo">A</span><div><b>{DEMO_BRAND}</b><span className="type-caption text-muted block">{t("guide.demo.brand.kind")}</span></div></div>
       <div className="gd-brand-tabs">{tabs.map((x) => <span key={x.k} className={x.k === active ? "chip is-active" : "chip"}>{x.l}</span>)}</div>
       {operator ? (
         <div className="gd-specials">
@@ -280,7 +286,7 @@ function PointsDemo() {
   const rows = [{ k: "earn1", v: 20 }, { k: "earn2", v: 10 }, { k: "spend1", v: -180 }];
   return (
     <div className="gd-points surface">
-      <div className="gd-balance"><FaiIcon id="ACT-40" size={32} decorative /><b className="tabular">{fmtNumber(1240)}</b><span>FAI Points</span></div>
+      <div className="gd-balance"><FaiIcon id="ACT-40" size={32} decorative /><b className="tabular">{fmtNumber(1240)}</b><span>{POINTS_NAME}</span></div>
       <ul className="gd-ledger">{rows.map((r) => <li key={r.k}><span>{t(`guide.demo.points.${r.k}`)}</span><b className={r.v < 0 ? "is-debit tabular" : "tabular"}>{r.v > 0 ? `+${r.v}` : `−${Math.abs(r.v)}`}</b></li>)}</ul>
       <span className="type-caption text-muted">{t("guide.demo.points.units")}</span>
     </div>

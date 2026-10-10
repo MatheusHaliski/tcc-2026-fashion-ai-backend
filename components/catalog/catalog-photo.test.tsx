@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { render } from "@testing-library/react";
-import { CatalogPhoto, pieceCatalogCrop, semanticCropStyle } from "./catalog-photo";
+import { CatalogPhoto, pieceCatalogCrop, semanticCropStyle, photoAspect, piecePhotoAspect } from "./catalog-photo";
 import type { PieceView } from "@/lib/api/types";
 
 describe("semanticCropStyle", () => {
@@ -50,5 +50,21 @@ describe("pieceCatalogCrop", () => {
     expect(pieceCatalogCrop(piece("https://media.fashion-ai.app/minha.jpg", card))).toBeNull();
     expect(pieceCatalogCrop(piece(card.url, { ...card, mode: "PROCESSED" }))).toBeNull();
     expect(pieceCatalogCrop(piece(card.url, undefined))).toBeNull();
+  });
+});
+
+
+describe("proporção do recorte de tecido", () => {
+  it("mantém o quadril 2:1 e usa o retrato para metadados antigos ou inválidos", () => {
+    expect(photoAspect("2:1")).toBe("2 / 1");
+    expect(photoAspect("4:5")).toBe("4 / 5");
+    for (const invalid of [undefined, "oops", "2:0", "100:1"]) expect(photoAspect(invalid)).toBe("4 / 5");
+  });
+
+  it("a proporção acompanha a foto aprovada e não se aplica a uma foto substituída", () => {
+    const piece = { imageUrl: "official.jpg", flatLayMetadata: { catalogImage: { url: "official.jpg", aspect: "2:1" }, studio: { feed: { aspect: "4:5" } } } } as unknown as PieceView;
+    expect(piecePhotoAspect(piece)).toBe("2 / 1");
+    expect(piecePhotoAspect({ ...piece, imageUrl: "my-photo.jpg" })).toBe("4 / 5");
+    expect(piecePhotoAspect({ ...piece, studioFeedUrl: "studio.feed.jpg" })).toBe("4 / 5");
   });
 });

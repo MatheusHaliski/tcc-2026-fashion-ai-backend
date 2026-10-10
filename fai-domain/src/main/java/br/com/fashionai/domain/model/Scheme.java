@@ -38,6 +38,10 @@ import java.util.UUID;
 @Entity
 @Table(name = "schemes")
 public class Scheme extends VersionedAuditableEntity {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tipo_look_id")
+    private TipoLook tipoLook;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

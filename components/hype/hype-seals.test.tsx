@@ -96,13 +96,14 @@ describe("análise completa — Selos de Hype", () => {
       { code: "RARE", earned: false, criteria: "Raridade ≥ 75" },
     ] }));
     renderApp(<HypeAnalyticsDrawer type="PIECE" id="p1" name="Tênis" open onClose={() => {}} />);
+    fireEvent.click(screen.getByRole("radio", { name: "Selos e metas" }));
     const section = (await screen.findByRole("heading", { name: "Selos de Hype" })).closest("section") as HTMLElement;
     expect(within(section).getByText("Conquistado (1)")).toBeTruthy();
     const earned = within(section).getByText("Tendência").closest("li") as HTMLElement;
     expect(earned.className).toContain("is-earned");
     expect(earned.textContent).toContain("Conquistado");
     expect(within(section).getByText("Próximas metas")).toBeTruthy();
-    expect(within(section).getByText("Para conquistar: Nível Viral (≥ 90)")).toBeTruthy();
+    expect(within(section).getByText("Nível Viral (≥ 90)")).toBeTruthy();
     expect(within(section).getByTitle("Selo de Hype: Raro")).toBeTruthy();
   });
 

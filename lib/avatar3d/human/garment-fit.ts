@@ -11,11 +11,11 @@
  *
  * Nada aqui altera o corpo da pessoa: só a roupa muda para caber (nunca o contrário).
  */
-import { SPECS, kindOf, type GarmentKind, type GarmentSpec } from "./garments";
+import { SPECS, kindOf, specOf, type GarmentKind, type GarmentSpec } from "./garments";
 
 export type FitClass = "justa" | "regular" | "oversized" | "estruturada" | "fluida";
 
-export interface FitPiece { category?: string | null; subcategory?: string | null; slot?: string | null; variation?: string | null; attributes?: Record<string, string[]> | null }
+export interface FitPiece { name?: string | null; category?: string | null; subcategory?: string | null; slot?: string | null; variation?: string | null; attributes?: Record<string, string[]> | null }
 
 /** Variação de modelagem da taxonomia → classe de caimento. */
 export const VARIATION_FIT: Record<string, FitClass> = {
@@ -67,7 +67,8 @@ export function setFitMode(mode: "antes" | "depois") { FIT_MODE = mode; }
 export function specFor(p: FitPiece): GarmentSpec | null {
   const k = kindOf(p); if (!k) return null;
   if (FIT_MODE === "antes") return { ...SPECS[k], legColumn: 0, bustFall: 0.965 };
-  const base = SPECS[k]; const fit = fitClassOf(p);
+  // base: o molde da subcategoria com as construções próprias (calça cargo, blazer) de specOf
+  const base = specOf({ ...p, name: p.name ?? undefined }) ?? SPECS[k]; const fit = fitClassOf(p);
   const sp: GarmentSpec = { ...base };
   const legged = base.leg > 0, draped = base.drape > 0;
   switch (fit) {
@@ -82,7 +83,8 @@ export function specFor(p: FitPiece): GarmentSpec | null {
       if (!Number.isNaN(base.hem)) sp.hem = base.hem - 0.05;
       break;
     case "estruturada":
-      sp.ease = base.ease * 1.15; if (draped) sp.drape = Math.max(base.drape, 0.9); sp.bustFall = 1; if (legged) sp.legColumn = Math.max(base.legColumn, 1); break;
+      // blazer já vem com a folga de alfaiataria de specOf (justo no corpo); casaco e colete ganham +15%
+      sp.ease = /blazer/.test(`${p.subcategory ?? ""} ${p.name ?? ""}`.toLowerCase()) ? base.ease : base.ease * 1.15; if (draped) sp.drape = Math.max(base.drape, 0.9); sp.bustFall = 1; if (legged) sp.legColumn = Math.max(base.legColumn, 1); break;
     case "fluida":
       sp.ease = base.ease * 1.2; if (draped) sp.drape = 1; sp.bustFall = 1; sp.flare = base.flare * 1.5; if (legged) sp.legColumn = Math.max(base.legColumn, 1.3); break;
   }

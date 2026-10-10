@@ -5,7 +5,7 @@ import type { Look3dPiece } from "@/components/three/common";
 import { resolveEnvironment, type FittingItem, type LightMode } from "@/lib/tryon/fitting-room";
 import { resolveScene, type SceneContext, type SceneProduct } from "@/lib/scene3d/scene";
 import type { AvatarView } from "@/components/three/avatar-viewer";
-import { inventoryOf, type StorePlan } from "@/lib/scene3d/store-plan";
+import type { FittingStudioProfile } from "@/lib/scene3d/fitting-studio";
 import { ACERVO, acervoLook } from "@/lib/tryon/acervo";
 import { setFitMode } from "@/lib/avatar3d/human/garment-fit";
 import { DEFAULT_BODY, type BodyParams } from "@/lib/avatar3d/body-spec";
@@ -81,8 +81,9 @@ const FITTING: Record<string, SceneContext> = {
 };
 
 /** Inventário dos objetos da cena (função de cada um) para o script de capturas: o mesmo plano que a cena desenha. */
-function publishPlan(plan: StorePlan) {
-  (window as unknown as { __sceneInventory: unknown }).__sceneInventory = { profile: { key: plan.profile.key, name: plan.profile.name, fidelity: plan.profile.fidelity, materials: plan.profile.materials, lighting: plan.profile.lighting }, objects: inventoryOf(plan) };
+function publishProfile(p: FittingStudioProfile) {
+  // inventário do estúdio para a auditoria: objetos com função, paleta e as fotos de referência (só ids)
+  (window as unknown as { __sceneInventory: unknown }).__sceneInventory = { interpretation: p.interpretation, brand: p.brand.key, palette: p.palette, objects: p.objects, photographs: p.photographs.map((x) => x.id) };
 }
 
 export default function ScenesLab() {
@@ -125,7 +126,7 @@ export default function ScenesLab() {
         {["fitting-neutral", "fitting-brand", ...Object.keys(FITTING), "ministores", "ministage", "ministage-sem-logo"].map((k) => <button key={k} onClick={() => setS(k)} aria-pressed={s === k}>{k}</button>)}
       </nav>
       <div id="scene-viewer" style={{ width: 1100, height: 680, background: "#111" }}>
-        {s.startsWith("fitting") && lab.ready && <FittingRoomScene avatar={null} sex={lab.sex} body={lab.body} pieces={lab.pieces ?? LAB_LOOK} environment={env} view={view} onPlan={publishPlan}
+        {s.startsWith("fitting") && lab.ready && <FittingRoomScene avatar={null} sex={lab.sex} body={lab.body} pieces={lab.pieces ?? LAB_LOOK} environment={env} view={view} onProfile={publishProfile}
           debug={lab.debug} cameraYaw={lab.yaw} closeUp={lab.close} light={lab.light} scene={FITTING[s] ? resolveScene({ ...FITTING[s], worn: items }) : null} />}
         {s === "ministores" && <StoreStreetScene onPick={() => {}} selectedId="c1" brand={{ name: "Atelier Lumi" }} stores={[
           { id: "c1", label: "Verão Solar", rank: 1, audience: 70, fraction: 1, fireworks: 3, accentColor: "#F26A1B", artUrl: "/aura/geometry/geometry_01/imagem.png", score: 980, products: [TOPS[0], BAGS[1], SHOES[0]] },

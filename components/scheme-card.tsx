@@ -240,6 +240,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
       <span className="c-kicker">{t("anatomy.lookKicker", { count: items.length })}</span>
       <h3 className="c-title">{titleText}</h3>
       {priceLine}
+      {scheme.tipoLook && <p className="type-caption text-muted">{t("lookType.label")}: {scheme.tipoLook.nome}</p>}
       {scheme.description && <p className={`c-desc ${expanded ? "is-full" : ""}`}>{scheme.description}</p>}
     </div>
   );

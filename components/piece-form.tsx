@@ -20,6 +20,7 @@ export interface PieceFormValue {
   brandLogoUrl?: string | null; brandLogoWideUrl?: string | null; brandSource?: string | null; brandRef?: string | null; brandDomain?: string | null; brandEdgePx?: number | null;
   /** RF4 · Arte de fundo da peça (aura, material, skin, anatomia) — mesmo formato do look */
   background?: Record<string, unknown> | null;
+  variation?: string | null; attributes?: Record<string, string[]>;
 }
 export const EMPTY_PIECE: PieceFormValue = { draftId: null, useDefaultImage: false, name: "", category: "", subcategory: "", sex: "UNISSEX", brandName: "", color: "", material: "", size: "m", occasion: [], style: [], seals: [], price: "", visibility: "PRIVATE", tags: "", notes: "", condition: "", purchaseDate: "", purchaseLocation: "", sku: "", careInstructions: "", forSale: false, background: null };
 /** "Sem marca" é o que a análise escreve no campo quando não acha marca na peça; o backend salva a peça sem marca. */
@@ -46,12 +47,14 @@ const sealId = (s: SealOption) => `${s.kind}:${s.name}`;
 export function PieceSealSuggestions({ value, onChange }: { value: PieceFormValue; onChange: (v: PieceFormValue) => void }) {
   const { t, fmtNumber } = useI18n();
   const [search, setSearch] = useState<{ loading: boolean; list: SealOption[]; message?: string | null; failed?: boolean }>({ loading: false, list: [] });
-  const key = `${value.brandName}|${value.category}|${value.subcategory}|${value.color}|${[...value.occasion].sort().join(",")}|${[...value.style].sort().join(",")}`;
+  const key = JSON.stringify([value.name, value.brandName, value.category, value.subcategory, value.color, value.occasion, value.style,
+    value.material, value.variation, value.attributes, value.sex, value.size, value.market, value.background]);
   useEffect(() => {
-    if (!value.brandName.trim() && !value.subcategory && value.style.length === 0) { setSearch({ loading: false, list: [] }); return; }
+    if (!(value.brandName ?? "").trim() && !value.subcategory && value.style.length === 0) { setSearch({ loading: false, list: [] }); return; }
     let alive = true; setSearch((x) => ({ ...x, loading: true, failed: false }));
     const h = setTimeout(() => {
-      api.post<{ suggestions: SealOption[]; message?: string | null }>("/api/seal-suggestions/preview-piece", { name: value.name, category: value.category, subcategory: value.subcategory, color: value.color, brandName: value.brandName, occasion: value.occasion, style: value.style })
+      api.post<{ suggestions: SealOption[]; message?: string | null }>("/api/seal-suggestions/preview-piece", { name: value.name, category: value.category, subcategory: value.subcategory, color: value.color, brandName: value.brandName, occasion: value.occasion, style: value.style,
+        material: value.material, variation: value.variation, attributes: value.attributes, sex: value.sex, size: value.size, market: value.market, background: value.background })
         .then((r) => { if (alive) setSearch({ loading: false, list: r.suggestions ?? [], message: r.message }); })
         .catch(() => { if (alive) setSearch({ loading: false, list: [], failed: true }); });
     }, 400);
@@ -77,13 +80,13 @@ export function PieceSealSuggestions({ value, onChange }: { value: PieceFormValu
 }
 
 /** Campos de "Mais detalhes" (RF4): selos pela IA, visibilidade e à venda (RF4.CA8). */
-export function PieceMoreDetails({ value, onChange, error }: { value: PieceFormValue; onChange: (v: PieceFormValue) => void; error?: ApiError | null }) {
+export function PieceMoreDetails({ value, onChange, error, idPrefix = "" }: { value: PieceFormValue; onChange: (v: PieceFormValue) => void; error?: ApiError | null; idPrefix?: string }) {
   const { t } = useI18n(); const err = error?.fields ?? {};
   const set = <K extends keyof PieceFormValue>(k: K, v: PieceFormValue[K]) => onChange({ ...value, [k]: v });
   return (
     <div className="grid gap-x-4 sm:grid-cols-2">
       <Field label={t("pieceForm.selos_da_peca")} error={err.seals} className="sm:col-span-2"><PieceSealSuggestions value={value} onChange={onChange} /></Field>
-      <Field label={t("common.visibility")} id="visibility" error={err.visibility}><Select id="visibility" value={value.visibility} onChange={(e) => set("visibility", e.target.value)}><option value="PRIVATE">{t("common.private")}</option><option value="FOLLOWERS">{t("common.followers")}</option><option value="PUBLIC">{t("common.public")}</option></Select></Field>
+      <Field label={t("common.visibility")} id={`${idPrefix}visibility`} error={err.visibility}><Select id={`${idPrefix}visibility`} value={value.visibility} onChange={(e) => set("visibility", e.target.value)}><option value="PRIVATE">{t("common.private")}</option><option value="FOLLOWERS">{t("common.followers")}</option><option value="PUBLIC">{t("common.public")}</option></Select></Field>
       <label className="mb-3 flex items-start gap-2 self-end pb-3 type-body"><input type="checkbox" className="mt-1" checked={value.forSale} onChange={(e) => set("forSale", e.target.checked)} /><span><span className="whitespace-nowrap">{t("common.forSale")}</span><span className="block type-caption text-muted">{t("pieceForm.a_venda_aparece_na_sub_aba")}</span></span></label>
     </div>
   );
@@ -154,7 +157,7 @@ export const PIECE_FIELD_STEP: Record<string, "data" | "more"> = {
 export function validatePieceForm(v: PieceFormValue, tax: ReturnType<typeof useTaxonomy>): Record<string, string> {
   const e: Record<string, string> = {};
   const need = (k: string, ok: boolean, msg: string) => { if (!ok) e[k] = msg; };
-  need("name", !!v.name.trim(), tr("pieceForm.err_nome"));
+  need("name", !!(v.name ?? "").trim(), tr("pieceForm.err_nome"));
   need("category", !!v.category, tr("pieceForm.err_escolha", { campo: tr("common.category").toLowerCase() }));
   need("subcategory", !!v.subcategory, tr("pieceForm.err_escolha", { campo: tr("common.subcategory").toLowerCase() }));
   need("color", !!v.color, tr("pieceForm.err_escolha", { campo: tr("common.color").toLowerCase() }));

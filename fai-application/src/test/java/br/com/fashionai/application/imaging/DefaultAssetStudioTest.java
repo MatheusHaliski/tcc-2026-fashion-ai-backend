@@ -27,6 +27,8 @@ class DefaultAssetStudioTest {
             {"04_Acessorios/02_bolsa_mao.png", "ACCESSORY"},
             {"05_Corpo_inteiro/01_vestido.png", "FULL_BODY"},
             {"01_Parte_superior/14_jacket_jaqueta.png", "OUTERWEAR"},
+            {"01_Parte_superior/02_shirt_camisa.png", "TOP"},
+            {"01_Parte_superior/13_blazer.png", "OUTERWEAR"},
     };
 
     @Test
@@ -52,9 +54,18 @@ class DefaultAssetStudioTest {
             assertThat((List<?>) r.framing().get("bleed")).as("arte inteira não sangra em %s", a[0]).isEmpty();
             assertThat(r.logo()).as("logo FAI em %s", a[0]).isNotNull().containsEntry("source", "catalogo");
             assertThat(r.detailJpeg()).as("foto de detalhe do logo em %s", a[0]).isNotNull();
+            if (Set.of("TOP", "OUTERWEAR", "BOTTOM", "FULL_BODY").contains(a[1])) {
+                assertThat(r.feed()).as("recorte de tecido em %s", a[0]).containsEntry("mode", "GARMENT_COVER");
+                String aspect = "BOTTOM".equals(a[1]) ? "2:1" : "4:5";
+                BufferedImage feed = ImageIO.read(new java.io.ByteArrayInputStream(r.feedJpeg()));
+                assertThat(r.feed()).containsEntry("aspect", aspect);
+                assertThat(feed.getWidth()).isEqualTo(800);
+                assertThat(feed.getHeight()).isEqualTo("BOTTOM".equals(a[1]) ? 400 : 1000);
+            }
             if (dump) {
                 String base = "target/default-" + new File(a[0]).getName().replace(".png", "");
                 Files.write(new File(base + "-studio.jpg").toPath(), r.studioJpeg());
+                Files.write(new File(base + "-feed.jpg").toPath(), r.feedJpeg());
                 Files.write(new File(base + "-detail.jpg").toPath(), r.detailJpeg());
                 System.out.printf("%s: %s · logo %s%n", a[0], r.framing(), r.logo());
             }

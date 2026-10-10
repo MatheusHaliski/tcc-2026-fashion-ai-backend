@@ -26,6 +26,36 @@ function bodies() {
 }
 
 describe("óculos de grau como acessório 3D (I4)", () => {
+  it("o aro curvo inteiro mantém folga do rosto, incluindo a espessura da armação", () => {
+    for (const c of bodies()) {
+      const fit = fitGlasses(asset, c);
+      const group = buildGlasses(fit, [0, 0, 0]);
+      for (const [side, index] of [["left", 0], ["right", 3]] as const) {
+        const center = fit.lens.center[side];
+        let behind = -Infinity;
+        for (let i = 0; i < c.body.length; i += 3) {
+          if (Math.abs(c.body[i] - center[0]) < fit.lens.w / 2 && Math.abs(c.body[i + 1] - center[1]) < fit.lens.h / 2) behind = Math.max(behind, c.body[i + 2]);
+        }
+        const ring = group.children[index] as THREE.Mesh; ring.geometry.computeBoundingBox();
+        expect(ring.geometry.boundingBox!.min.z - behind).toBeGreaterThanOrEqual(0.004 - 1e-6);
+      }
+      group.userData.dispose();
+    }
+  });
+  it("reserves depth for a cheek vertex that projects ahead between the sparse face landmarks", () => {
+    const c = bodies()[0], before = fitGlasses(asset, c);
+    const body = new Float32Array(c.body), center = before.lens.center.left;
+    // A composed cheek detail inside the lens footprint. Looking only at landmarks would miss it.
+    const mapped = new Set(asset.landmark.tri);
+    let vertex = -1;
+    for (let i = 0; i < body.length; i += 3) if (!mapped.has(i / 3) && Math.abs(body[i] - center[0]) < before.lens.w * 0.3 && Math.abs(body[i + 1] - center[1]) < before.lens.h * 0.3) { vertex = i; break; }
+    expect(vertex).toBeGreaterThanOrEqual(0);
+    body[vertex + 2] = before.z0 + 0.004;
+    const fit = fitGlasses(asset, { ...c, body }), group = buildGlasses(fit, [0, 0, 0]);
+    const ring = group.children[0] as THREE.Mesh; ring.geometry.computeBoundingBox();
+    expect(ring.geometry.boundingBox!.min.z - body[vertex + 2]).toBeGreaterThanOrEqual(0.004 - 1e-6);
+    group.userData.dispose();
+  });
   it("lentes à frente da córnea e nunca encostadas no rosto (folga ≥ 4 mm), de tamanho humano", () => {
     for (const c of bodies()) {
       const f = fitGlasses(asset, c);

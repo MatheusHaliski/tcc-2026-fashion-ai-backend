@@ -10,6 +10,7 @@ import br.com.fashionai.domain.model.BrandProfile;
 import br.com.fashionai.domain.model.CelebrityProfile;
 import br.com.fashionai.domain.model.RoomCatalogItem;
 import br.com.fashionai.domain.model.RoomInventoryItem;
+import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.Seal;
 import br.com.fashionai.domain.model.SealBond;
 import br.com.fashionai.domain.model.User;
@@ -19,6 +20,7 @@ import br.com.fashionai.domain.repository.BrandProfileRepository;
 import br.com.fashionai.domain.repository.CelebrityProfileRepository;
 import br.com.fashionai.domain.repository.RoomCatalogItemRepository;
 import br.com.fashionai.domain.repository.RoomInventoryItemRepository;
+import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.SealBondRepository;
 import br.com.fashionai.domain.repository.SealRepository;
 import br.com.fashionai.domain.repository.UserRepository;
@@ -171,7 +173,12 @@ class WardrobeCreatorServiceTest {
         assertThat(map(item.get("seal"))).containsEntry("name", "Look da Estrela");
         RoomCatalogItem c = kit.dep(RoomCatalogItemRepository.class).findById(sku).orElseThrow();
         assertThat(creator.blocker(cliente.getId(), c)).contains("Estrela");   // sem selo
+        Scheme look = new Scheme();
+        look.setUser(cliente);
+        look.setTitle("Look com selo da Estrela");
+        kit.dep(SchemeRepository.class).save(look);
         SealBond bond = new SealBond();
+        bond.setScheme(look);
         bond.setRequestedBy(cliente);
         bond.setTargetOwner(estrela);
         bond.setSeal(selo);

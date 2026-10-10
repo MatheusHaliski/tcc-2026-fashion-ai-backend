@@ -385,6 +385,7 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
   const [pub, setPub] = useState(!!saved.publicOnRunway);
   const [busy, setBusy] = useState<"" | "patch" | "delete" | "body" | "glb">("");
   const [confirm, setConfirm] = useState(false);
+  const [textureEyes, setTextureEyes] = useState<AvatarEyes | null>(null);
   const body = validateBody(saved.model?.body);
   const dirty = JSON.stringify(clampAdjust(saved.adjust)) !== JSON.stringify(adjust);
 
@@ -428,13 +429,13 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
         <Card>
           <p className="label">{t("avatar3d.page.ajustes")}</p>
           <div className="mb-3"><BodySexPicker value={bodySex} guess={null} chosen={!!saved.model?.sex} onChange={(v) => { if (v !== bodySex) void patch({ sex: v }); }} /></div>
-          <AdjustSliders value={adjust} onChange={setAdjust} hair={saved.model?.hair} eyes={saved.model?.eyes} brows={saved.model?.brows} />
+          <AdjustSliders value={adjust} onChange={setAdjust} hair={saved.model?.hair} eyes={textureEyes ?? saved.model?.eyes} brows={saved.model?.brows} />
           <Button className="mt-3" variant="primary" size="sm" loading={busy === "patch"} disabled={!dirty || !!busy} onClick={() => patch({ adjust })}>{t("avatar3d.page.salvar_ajustes")}</Button>
         </Card>
       </div>
       <Card>
         <div className="aspect-[4/5] w-full overflow-hidden rounded-md bg-surface-2 sm:aspect-[5/4]">
-          {saved.model && <AvatarViewer avatar={{ model: saved.model, adjust, textureUrl: saved.textureUrl }} sex={bodySex} view={view} body={body?.params} framing={framing} onHuman={(p) => { human.current = p; }} />}
+          {saved.model && <AvatarViewer avatar={{ model: saved.model, adjust, textureUrl: saved.textureUrl }} sex={bodySex} view={view} body={body?.params} framing={framing} onHuman={(p) => { human.current = p; setTextureEyes(p.eyes ?? null); }} />}
         </div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <ViewButtons view={view} onView={setView} />

@@ -15,10 +15,10 @@ import { EditProfileButton } from "@/components/edit-profile";
 import { HypeGroupBadge } from "@/components/hype/hype-group-badge";
 import { InsightStrip } from "@/components/insights/insight-strip";
 
-interface Profile { user: UserCard; bio?: string | null; pronouns?: string | null; links?: { title: string; url: string }[]; coverUrl?: string | null; layout: "PESSOAL" | "INSTITUCIONAL"; self: boolean; relation: string; counters: { followers: number; following: number; published: number; pieces?: number; schemes?: number }; visibility: string; contentVisible: boolean; invite?: { message: string; action?: string }; }
+interface Profile { user: UserCard; bio?: string | null; pronouns?: string | null; links?: { title: string; url: string }[]; coverUrl?: string | null; layout: "PESSOAL" | "INSTITUCIONAL"; institutionalSlug?: string; self: boolean; relation: string; counters: { followers: number; following: number; published: number; pieces?: number; schemes?: number }; visibility: string; contentVisible: boolean; invite?: { message: string; action?: string }; }
 
 export default function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
-  const username = encodeURIComponent(use(params).username);   /* vai direto para caminhos da API */ const { t } = useI18n(); const initialTab = useSearchParams().get("tab"); const { user } = useAuth(); const toast = useToast();
+  const username = use(params).username;   /* vai direto para caminhos da API */ const { t } = useI18n(); const initialTab = useSearchParams().get("tab"); const { user } = useAuth(); const toast = useToast();
   const { data, loading, error, reload } = useApi<Profile>((signal) => api.get(`/api/profiles/${encodeURIComponent(username)}`, { signal, anonymous: !user }), [username, !!user]);
   const [conn, setConn] = useState(false); const [confirmBlock, setConfirmBlock] = useState(false);
   const connections = useApi<{ followers: UserCard[]; following: UserCard[] }>((signal) => api.get(`/api/users/${data?.user.id}/connections`, { signal, anonymous: !user }), [data?.user.id], { enabled: conn && !!data });
@@ -27,7 +27,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-64" />;
   // Marca e celebridade têm página oficial própria: vai direto para ela, sem tela intermediária.
-  if (data.layout === "INSTITUCIONAL") return <InstitutionalRedirect slug={data.user.username} />;
+  if (data.layout === "INSTITUCIONAL") return <InstitutionalRedirect slug={data.institutionalSlug ?? data.user.id} tab={initialTab} />;
   const following = data.relation === "ACEITO";
   return (
     <>
@@ -64,9 +64,9 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   );
 }
 
-function InstitutionalRedirect({ slug }: { slug: string }) {
+function InstitutionalRedirect({ slug, tab }: { slug: string; tab: string | null }) {
   const router = useRouter(); const { t } = useI18n();
-  useEffect(() => { router.replace(`/brands/${slug}`); }, [router, slug]);
+  useEffect(() => { router.replace(`/brands/${encodeURIComponent(slug)}${tab ? `?tab=${encodeURIComponent(tab)}` : ""}`); }, [router, slug, tab]);
   return <p className="type-body text-muted" role="status">{t("common.loading")}</p>;
 }
 

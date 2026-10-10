@@ -1,0 +1,56 @@
+[
+  {
+    "brand": "AllSaints",
+    "subcategory": "blazer",
+    "product_name": "Renegade Single Breasted Blazer",
+    "sku": "USM001QD-5",
+    "product_code": "USM001QD-5",
+    "color": "black",
+    "color_name": "Black",
+    "description": "<ul><li>Button closure</li><li>Lapel collar </li><li>Long sleeves</li><li>Flap pockets </li><li>Shoulder darts </li><li>Leopard lining</li><li>Measurements: Length: 75.5cm </li><li>Model is 6'1\" and wearing size 38</li></ul>",
+    "official_product_url": "https://www.allsaints.com/us/menswear/renegade-single-breasted-blazer/USM001QD-5.html",
+    "images": [
+      {
+        "url": "https://media.i.allsaints.com/image/list/fn_select:jq:first%28.%5B%5D%7Cif%20has%28%22metadata%22%29%20then%20select%28any%28.metadata%5B%5D%3B%20.external_id%20%3D%3D%20%22sfcc_pdp_gallery_position_prod%22%20and%20.value%20%3D%3D%201%29%29%20else%20empty%20end%29/f_auto,q_auto,dpr_auto,w_837,h_1046,c_fit/USM001QD-5.json?_i=AG",
+        "type": "PACKSHOT"
+      }
+    ],
+    "source_type": "OFFICIAL_BRAND"
+  },
+  {
+    "brand": "AllSaints",
+    "subcategory": "blazer",
+    "product_name": "Germain Satin Single Breasted Blazer",
+    "sku": "USM009QD-5",
+    "product_code": "USM009QD-5",
+    "color": "black",
+    "color_name": "Black",
+    "description": "<ul><li><p>Button closure </p></li><li><p>Peak lapel </p></li><li><p>Long sleeves </p></li><li><p>Single breasted </p></li><li><p>Flap pockets </p></li><li><p>Button cuff details </p></li><li><p>Textured fabric </p></li><li><p>Measurements (from SNP to hem): 73cm </p></li><li><p>Model is 6\" and wearing size 38</p></li></ul>",
+    "official_product_url": "https://www.allsaints.com/us/menswear/germain-satin-single-breasted-blazer-/USM009QD-5.html",
+    "images": [
+      {
+        "url": "https://media.i.allsaints.com/image/list/fn_select:jq:first%28.%5B%5D%7Cif%20has%28%22metadata%22%29%20then%20select%28any%28.metadata%5B%5D%3B%20.external_id%20%3D%3D%20%22sfcc_pdp_gallery_position_prod%22%20and%20.value%20%3D%3D%201%29%29%20else%20empty%20end%29/f_auto,q_auto,dpr_auto,w_837,h_1046,c_fit/USM009QD-5.json?_i=AG",
+        "type": "PACKSHOT"
+      }
+    ],
+    "source_type": "OFFICIAL_BRAND"
+  },
+  {
+    "brand": "AllSaints",
+    "subcategory": "blazer",
+    "product_name": "Leat Slim Fit Double Breasted Blazer",
+    "sku": "USM016QE-5",
+    "product_code": "USM016QE-5",
+    "color": "black",
+    "color_name": "Black",
+    "description": "<ul><li><p>Button closure </p></li><li><p>Collar </p></li><li><p>Long sleeves </p></li><li><p>Leather branding at neck </p></li><li><p>Measurements (taken from CB to hem): 71.5cm </p></li><li><p>Model is 6\" and wearing size Small</p></li></ul>",
+    "official_product_url": "https://www.allsaints.com/us/menswear/leat-slim-fit-double-breasted-blazer/USM016QE-5.html",
+    "images": [
+      {
+        "url": "https://media.i.allsaints.com/image/list/fn_select:jq:first%28.%5B%5D%7Cif%20has%28%22metadata%22%29%20then%20select%28any%28.metadata%5B%5D%3B%20.external_id%20%3D%3D%20%22sfcc_pdp_gallery_position_prod%22%20and%20.value%20%3D%3D%201%29%29%20else%20empty%20end%29/f_auto,q_auto,dpr_auto,w_837,h_1046,c_fit/USM016QE-5.json?_i=AG",
+        "type": "PACKSHOT"
+      }
+    ],
+    "source_type": "OFFICIAL_BRAND"
+  }
+]

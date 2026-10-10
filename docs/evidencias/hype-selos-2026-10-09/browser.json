@@ -1,0 +1,77 @@
+{
+  "externalApisMocked": true,
+  "results": [
+    {
+      "width": 375,
+      "geometry": {
+        "client": 375,
+        "scroll": 375
+      },
+      "chatContext": [
+        {
+          "tier": "LOOK",
+          "message": "#createsealpolicy Um look com duas peças azuis",
+          "conversation": [],
+          "previousPolicy": null
+        },
+        {
+          "tier": "LOOK",
+          "message": "#createsealpolicy Shakira",
+          "conversation": [
+            {
+              "role": "user",
+              "text": "Um look com duas peças azuis"
+            },
+            {
+              "role": "assistant",
+              "text": "Olá Shakira! Qual marca deve entrar nessa política?\nQual marca?"
+            }
+          ],
+          "previousPolicy": null
+        }
+      ],
+      "consentRequired": true,
+      "status": "PENDING_REVIEW",
+      "helpAutoOpened": true,
+      "doNotShowAgain": true,
+      "reopenHelp": true,
+      "pageErrors": []
+    },
+    {
+      "width": 1280,
+      "geometry": {
+        "client": 420,
+        "scroll": 420
+      },
+      "chatContext": [
+        {
+          "tier": "LOOK",
+          "message": "#createsealpolicy Um look com duas peças azuis",
+          "conversation": [],
+          "previousPolicy": null
+        },
+        {
+          "tier": "LOOK",
+          "message": "#createsealpolicy Shakira",
+          "conversation": [
+            {
+              "role": "user",
+              "text": "Um look com duas peças azuis"
+            },
+            {
+              "role": "assistant",
+              "text": "Olá Shakira! Qual marca deve entrar nessa política?\nQual marca?"
+            }
+          ],
+          "previousPolicy": null
+        }
+      ],
+      "consentRequired": true,
+      "status": "PENDING_REVIEW",
+      "helpAutoOpened": true,
+      "doNotShowAgain": true,
+      "reopenHelp": true,
+      "pageErrors": []
+    }
+  ]
+}

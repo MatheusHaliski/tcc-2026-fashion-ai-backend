@@ -29,6 +29,39 @@ python -m unittest discover -s scripts/catalog/tests      # testes sem banco (in
 | Relatório | `total_read · created · updated · skipped · duplicates_found · errors` + `[CREATE]/[UPDATE]/[DUP]/[ERROR]` no log; execução gravada em `catalog_ingestion_runs` |
 | Segurança | credenciais só por variável de ambiente; nada de senha/connection string nos logs |
 
+## Importações longas no Railway: velocidade e recuperação
+
+A deduplicação reúne as buscas por identificadores do produto, variantes e chave normalizada em uma consulta
+`UNION ALL`, preservando a prioridade GTIN → EAN → UPC → SKU → código → URL → variantes → chave. A migração
+**V57** adiciona os índices de EAN/UPC e dos identificadores de variantes que faltavam. Atualize a API para executar
+o Flyway antes de importar um acervo grande com essa versão; sem os índices, esses ramos podem varrer tabelas.
+`--skip-existing` mantém os caches de marca/fontes/apelidos e a leitura em lote dos filhos; fotos e variantes novas
+continuam sendo inseridas. `--batch-size` controla só o progresso no terminal, não a transação nem o paralelismo.
+O cabeçalho deve mostrar **`CATALOG_IMPORT_V2`**. Se não aparecer, você ainda está executando os scripts antigos,
+mesmo que tenha reiniciado o terminal ou a importação. O wrapper avisa quando o schema ainda não chegou à V57.
+
+`InterfaceError: (0, '')` significa que o PyMySQL está tentando usar uma conexão fechada. O erro de transporte que a
+fechou pode ter sido ocultado por um segundo erro durante o rollback. O importador agora preserva a causa original,
+reconecta e repete **a transação inteira** do produto, com até três reconexões e esperas de 1, 2 e 4 segundos.
+Não faz ping em cada produto. Erros de validação/SQL continuam no relatório e não entram nessa repetição.
+Se o banco continuar indisponível, o lote para no item afetado e imprime o relatório parcial, em vez de descartar
+as milhares de linhas seguintes tentando usar o mesmo socket. A gravação final do relatório também é recuperável
+e usa o mesmo identificador em todas as tentativas, evitando dois registros se a resposta do COMMIT se perder.
+
+```bash
+# Após atualizar o código e aplicar V57 pelo Flyway, execute novamente o mesmo comando:
+bash scripts/catalog/import_railway.sh HOST_DO_PROXY PORTA_DO_PROXY
+# Ou, com MYSQL_* já configuradas:
+python scripts/catalog/import_products.py data/catalog/acervo/*.jsonl.gz --skip-existing --batch-size 1000
+```
+
+Produtos já confirmados no banco são preservados e as linhas que faltavam são importadas. Não existe checkpoint
+por número de linha: a retomada relê o arquivo e deduplica pelo banco. Não apague registros nem recomece com
+`--overwrite`. Se o servidor confirmou um produto mas a resposta do COMMIT se perdeu, a tentativa recuperada pode
+aparecer como `SKIP`: os contadores representam o resultado final observado, sem contar duas vezes a mesma linha.
+`MYSQL_READ_TIMEOUT` e `MYSQL_WRITE_TIMEOUT` valem 60 segundos por padrão, com conexão inicial limitada a 15 segundos.
+Os limites de rede e a repetição tratam quedas; a causa exata no servidor/proxy exige seu log do momento da primeira falha.
+
 Dados do seed em `data/catalog/` (`brands.json`, `aliases.json`, `products/<marca>.json`; `samples/` tem um CSV com
 erros propositais). As marcas semeadas aparecem no **Explorador › Buscar marcas & lojas** mesmo sem perfil cadastrado.
 
@@ -64,3 +97,60 @@ o relatório diz por quê. Para sites com URLs de produto fora do padrão, `bran
 
 O coletor precisa de acesso direto aos sites das marcas. No ambiente de desenvolvimento em nuvem do projeto, o proxy
 bloqueia esses domínios: o relatório mostra `PAROU: … sem conexão`. Rode-o numa máquina com internet aberta.
+
+## Quadro do editor por categoria (3:4, 50%)
+
+Após compilar o JAR atual e instalar `requirements-images.txt`, execute na raiz:
+
+```bash
+python3 scripts/catalog/process_catalog_images.py --database --apply --category-frame \
+  --output data/catalog/frame-34-50.xlsx --workers 4 --java-threads 2
+```
+
+Use primeiro `--limit 20` e um arquivo de saída diferente para conferir uma amostra.
+O modo gera um JPEG 900×1200 e substitui a foto ativa por um arquivo no S3,
+verificando o conteúdo por SHA-256 antes de atualizar `stored_url`/`assets_json`.
+O card usa `PROCESSED`, sem aplicar o recorte novamente. A URL de origem e o
+objeto anterior ficam preservados para recuperação; não sobrescreve arquivos
+em servidores das marcas. Só fontes com `allows_image_persistence` habilitado
+e domínio correspondente podem persistir imagens. O domínio é normalizado
+(maiúsculas/`www.`) e também reconhece subdomínios da fonte na URL da foto,
+com a mesma regra de limite entre nomes usada pela API. As demais são reportadas
+sem atualização. Configure `S3_BUCKET`, `S3_ENDPOINT`, região e credenciais,
+mais `STORAGE_PUBLIC_BASE_URL` (HTTPS) ou `S3_SERVE_THROUGH_API=true` com
+`APP_BASE_URL` (HTTPS) para o bucket privado. 50% é a
+largura normalizada do quadro, como no controle do editor, e não ocupação da peça.
+Camisas, acessórios e peças inteiras (vestidos/macacões) usam o centro da caixa do produto. Partes de baixo e calçados
+usam a região de foco existente como estimativa do zíper/cadarço e ficam em
+`NEEDS_REPROCESSING` para revisão: o analisador não confirma esses landmarks.
+Categorias não previstas e fotos onde o quadro de 50% não cabe são reportadas
+como erro, sem atualização. Revisões humanas e processamento ativo são preservados.
+O modo é explícito e não muda o pipeline automático da API. A versão dos metadados
+é `CATALOG_FRAME_34_50_V1`; checkpoints guardam a análise original, para reaplicar
+as regras sem baixar novamente. No Railway, execute em um job com o checkout,
+Python, Java, JAR compilado e as mesmas variáveis MySQL do backend; o container
+atual da API não deve ser presumido como contendo os scripts e suas dependências.
+
+Antes de baixar/analisar, o modo verifica categoria e permissão da fonte. O
+progresso distingue análises Java concluídas de resultados prontos para gravação
+e mostra os motivos de falha mais frequentes; `failure_reasons` no relatório
+resume os bloqueios. Erros do S3 incluem o código do serviço sem expor credenciais.
+Permissões negativas continuam negativas: não são alteradas automaticamente.
+
+
+## Auditoria e direitos de persistência
+
+Consulte `docs/catalogo/AUDITORIA_PERSISTENCIA_PIPELINE.md` para a investigação,
+limites da validação, fila administrativa e execução controlada. Proveniência
+não autoriza um host terceiro. O inventário SQL fornece fontes da mesma marca;
+Python aplica uma única política no preflight e na transação. A flag FALSE
+legada é UNKNOWN (o schema não registra uma negativa explícita). CDN terceiro
+precisa de cadastro específico com direito de persistência.
+
+Antes de qualquer lote, execute `audit_catalog_persistence.py --output ...json`.
+Sem `--apply`, o processador principal não baixa, analisa, grava S3 ou altera
+MySQL. `--authorized-only --limit 20` prepara amostra de produtos elegíveis com
+seu inventário completo, para não invalidar a transação por seleção parcial.
+Novos objetos usam chaves exclusivas; falhas conhecidas removem apenas objetos
+sem referências confirmadas. Em COMMIT incerto/DB indisponível, a limpeza fica
+pendente para auditoria. `audit_catalog_storage.py` lista candidatos e nunca exclui.
