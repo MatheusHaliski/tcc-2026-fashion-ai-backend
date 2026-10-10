@@ -2916,8 +2916,15 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .photo-edit-stage { display: grid; place-items: center; min-height: 320px; background: repeating-conic-gradient(var(--surface-2) 0% 25%, var(--surface-3) 0% 50%) 50% / 16px 16px; border-radius: var(--radius); overflow: hidden; touch-action: none; user-select: none; }
 .photo-edit-stage.is-tool { cursor: crosshair; }
 .photo-edit-stage:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.photo-edit-topbar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin: 0 0 .75rem; padding: .5rem 0; background: var(--surface); border-bottom: 1px solid var(--line-soft, rgb(0 0 0 / .08)); }
-.photo-edit-topbar-mid { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 auto; }
+/* barra do editor (RF15): Cancelar à esquerda, Salvar à direita, desfazer/refazer/comparar no meio; no celular as ações
+   do meio descem para a segunda linha, sem separar Cancelar de Salvar */
+.photo-edit-topbar { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "cancel mid save"; align-items: center; gap: .5rem; margin: 0 0 .75rem; padding: .5rem 0; background: var(--surface); border-bottom: 1px solid var(--line-soft, rgb(0 0 0 / .08)); }
+.photo-edit-topbar > :first-child { grid-area: cancel; }
+.photo-edit-topbar > :last-child { grid-area: save; }
+.photo-edit-topbar-mid { grid-area: mid; display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; }
+@media (max-width: 639px) {
+  .photo-edit-topbar { grid-template-columns: auto 1fr auto; grid-template-areas: "cancel . save" "mid mid mid"; }
+}
 .look-compose-stage { position: relative; width: 100%; max-width: 420px; aspect-ratio: 3 / 5; margin: 0 auto; overflow: hidden; border-radius: var(--radius); background: repeating-conic-gradient(var(--surface-2) 0% 25%, var(--surface-3) 0% 50%) 50% / 16px 16px; touch-action: none; user-select: none; }
 .look-compose-stage:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .look-compose-stage.is-preview { aspect-ratio: auto; max-width: 520px; }
