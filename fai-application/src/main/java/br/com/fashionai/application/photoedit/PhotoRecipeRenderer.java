@@ -8,6 +8,7 @@ import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 /**
@@ -20,15 +21,29 @@ public final class PhotoRecipeRenderer {
     public static final int MAX_SIDE = 3200;
     public static final Color NEUTRAL = new Color(0xF4, 0xF3, 0xF1);
 
-    /** Recorte da peça (ARGB, alfa = máscara) para a imagem no ponto em que o fundo entra. */
-    private final UnaryOperator<BufferedImage> cutter;
+    /** Recorte da peça (ARGB, alfa = máscara, com a confiança) para a imagem no ponto em que o fundo entra. */
+    private final Function<BufferedImage, ImageOps.Cutout> cutter;
 
-    public PhotoRecipeRenderer(UnaryOperator<BufferedImage> cutter) {
+    public PhotoRecipeRenderer(Function<BufferedImage, ImageOps.Cutout> cutter) {
         this.cutter = cutter;
     }
 
-    public record Rendered(BufferedImage image, boolean backgroundRemoved, boolean syntheticShadow) {
+    /** Recortador só com a máscara (testes e recortes já confiáveis): confiança 1. */
+    public static PhotoRecipeRenderer withMask(UnaryOperator<BufferedImage> mask) {
+        return new PhotoRecipeRenderer(img -> new ImageOps.Cutout(mask.apply(img), 1, 1, 0xFFFFFF, null));
     }
+
+    /**
+     * @param cutConfidence confiança do recorte automático (0–1; 1 sem fundo removido): abaixo de {@link #UNCERTAIN_CUT}
+     *                      a prévia avisa "recorte incerto" — a pessoa confere com o pincel ou envia outra foto
+     */
+    public record Rendered(BufferedImage image, boolean backgroundRemoved, boolean syntheticShadow, double cutConfidence) {
+        public Rendered(BufferedImage image, boolean backgroundRemoved, boolean syntheticShadow) {
+            this(image, backgroundRemoved, syntheticShadow, 1);
+        }
+    }
+
+    public static final double UNCERTAIN_CUT = 0.45;
 
     public Rendered render(BufferedImage original, PhotoRecipe recipe) {
         return render(original, recipe.ops(), MAX_SIDE);
@@ -37,25 +52,63 @@ public final class PhotoRecipeRenderer {
     public Rendered render(BufferedImage original, List<PhotoRecipe.Op> ops, int maxSide) {
         BufferedImage img = ImageOps.toArgb(ImageOps.scaleToFit(original, maxSide, maxSide));
         boolean bg = false, shadow = false;
+        double confidence = 1;
         for (PhotoRecipe.Op op : ops) {
             switch (op) {
                 case PhotoRecipe.Rotate90 r -> img = rotate90(img, r.turns());
                 case PhotoRecipe.Straighten s -> img = straighten(img, s.deg());
+                case PhotoRecipe.Flip f -> img = flip(img, "V".equals(f.axis()));
                 case PhotoRecipe.Perspective p -> img = perspective(img, p.quad());
                 case PhotoRecipe.Crop c -> img = crop(img, c);
                 case PhotoRecipe.Background b -> {
-                    img = background(img, b);
+                    ImageOps.Cutout cut = cutter.apply(img);
+                    img = background(img, cut.image(), b);
                     bg = true;
                     shadow |= "SOFT".equals(b.shadow());
+                    confidence = Math.min(confidence, cut.confidence());
                 }
                 case PhotoRecipe.WhiteBalance w -> img = whiteBalance(img, w.x(), w.y());
                 case PhotoRecipe.Tone t -> img = tone(img, t);
+                case PhotoRecipe.Levels l -> img = levels(img, l.black(), l.white(), l.gamma());
                 case PhotoRecipe.Heal h -> img = heal(img, h.spots());
                 case PhotoRecipe.Sharpen s -> img = sharpen(img, s.amount());
                 case PhotoRecipe.Filter f -> img = filter(img, f.style(), f.strength());
             }
         }
-        return new Rendered(img, bg, shadow);
+        return new Rendered(img, bg, shadow, confidence);
+    }
+
+    /** Espelha horizontalmente (padrão) ou verticalmente — sem perder pixels. */
+    static BufferedImage flip(BufferedImage src, boolean vertical) {
+        int w = src.getWidth(), h = src.getHeight();
+        BufferedImage out = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = out.createGraphics();
+        AffineTransform at = vertical ? new AffineTransform(1, 0, 0, -1, 0, h) : new AffineTransform(-1, 0, 0, 1, w, 0);
+        g.drawImage(src, at, null);
+        g.dispose();
+        return out;
+    }
+
+    /**
+     * Níveis por tabela de 256 entradas: {@code v' = ((v − black) / (white − black)) ^ (1 / gamma)}, preso em 0–1, igual
+     * nos três canais (não muda a cor, só o tom); o alfa fica como está.
+     */
+    static BufferedImage levels(BufferedImage src, double black, double white, double gamma) {
+        int[] lut = new int[256];
+        double span = Math.max(1e-6, white - black), inv = 1 / Math.max(1e-6, gamma);
+        for (int i = 0; i < 256; i++) {
+            double v = Math.max(0, Math.min(1, (i / 255.0 - black) / span));
+            lut[i] = (int) Math.round(Math.pow(v, inv) * 255);
+        }
+        int w = src.getWidth(), h = src.getHeight();
+        int[] px = src.getRGB(0, 0, w, h, null, 0, w);
+        for (int i = 0; i < px.length; i++) {
+            int p = px[i];
+            px[i] = (p & 0xFF000000) | (lut[(p >> 16) & 0xFF] << 16) | (lut[(p >> 8) & 0xFF] << 8) | lut[p & 0xFF];
+        }
+        BufferedImage out = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        out.setRGB(0, 0, w, h, px, 0, w);
+        return out;
     }
 
     static BufferedImage rotate90(BufferedImage src, int turns) {
@@ -203,9 +256,8 @@ public final class PhotoRecipeRenderer {
         return out;
     }
 
-    BufferedImage background(BufferedImage src, PhotoRecipe.Background b) {
+    BufferedImage background(BufferedImage src, BufferedImage cut, PhotoRecipe.Background b) {
         int w = src.getWidth(), h = src.getHeight();
-        BufferedImage cut = cutter.apply(src);
         if (cut.getWidth() != w || cut.getHeight() != h) {
             cut = ImageOps.scale(cut, w, h);
         }
@@ -233,6 +285,9 @@ public final class PhotoRecipeRenderer {
                 prev = cur;
             }
         }
+        if (b.feather() > PhotoRecipe.DEFAULT_FEATHER + 0.5) {
+            alpha = featherAlpha(alpha, w, h, (int) Math.round(b.feather() - PhotoRecipe.DEFAULT_FEATHER));
+        }
         BufferedImage piece = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         int[] out = new int[w * h];
         for (int i = 0; i < out.length; i++) {
@@ -255,6 +310,59 @@ public final class PhotoRecipeRenderer {
         g.drawImage(piece, 0, 0, null);
         g.dispose();
         return result;
+    }
+
+    /** Borda da máscara suavizada: desfoque em caixa do alfa com raio {@code r} px (duas passagens separáveis). */
+    static int[] featherAlpha(int[] alpha, int w, int h, int r) {
+        if (r <= 0) {
+            return alpha;
+        }
+        int[] tmp = new int[alpha.length], out = new int[alpha.length];
+        for (int y = 0; y < h; y++) {
+            long sum = 0;
+            int n = 0;
+            for (int x = -r; x <= r; x++) {
+                if (x >= 0 && x < w) {
+                    sum += alpha[y * w + x];
+                    n++;
+                }
+            }
+            for (int x = 0; x < w; x++) {
+                tmp[y * w + x] = (int) (sum / n);
+                int add = x + r + 1, rem = x - r;
+                if (add < w) {
+                    sum += alpha[y * w + add];
+                    n++;
+                }
+                if (rem >= 0) {
+                    sum -= alpha[y * w + rem];
+                    n--;
+                }
+            }
+        }
+        for (int x = 0; x < w; x++) {
+            long sum = 0;
+            int n = 0;
+            for (int y = -r; y <= r; y++) {
+                if (y >= 0 && y < h) {
+                    sum += tmp[y * w + x];
+                    n++;
+                }
+            }
+            for (int y = 0; y < h; y++) {
+                out[y * w + x] = (int) (sum / n);
+                int add = y + r + 1, rem = y - r;
+                if (add < h) {
+                    sum += tmp[add * w + x];
+                    n++;
+                }
+                if (rem >= 0) {
+                    sum -= tmp[rem * w + x];
+                    n--;
+                }
+            }
+        }
+        return out;
     }
 
     /** Pincel com borda suave (2 px de transição) — a máscara não fica serrilhada. */

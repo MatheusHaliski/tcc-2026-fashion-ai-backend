@@ -10,7 +10,7 @@ import { cleanup, fireEvent, loggedAs, renderApp, screen, waitFor } from "@/test
 import { MirrorControls, wornOf, type MirrorData } from "./mirror-controls";
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
-const PIECE = { id: "a", name: "Camiseta preta", imageUrl: "/media/a.png", thumbnailUrl: "/media/a-thumb.png", addressLabel: "Porta 1" };
+const PIECE = { id: "a", name: "Camiseta preta", imageUrl: "/media/a.png", thumbnailUrl: "/media/a-thumb.png", addressLabel: "Porta 1", category: "upper_piece", subcategory: "t_shirt" };
 const EMPTY: MirrorData = { slots: { upper: null, lower: null }, complete: false, missing: [{ slot: "upper", action: "Sugerir", message: "Falta a parte de cima" }] };
 function Harness({ initial, compact }: { initial: MirrorData; compact?: boolean }) {
   // o estado vive em quem usa o painel (página ou quarto); aqui um estado simples para observar as trocas
@@ -41,6 +41,9 @@ describe("MirrorControls", () => {
     await waitFor(() => expect(calls.find((c) => c.method === "POST" && c.path === "/api/me/mirror/pieces")?.body).toEqual({ pieceId: "a" }));
     await waitFor(() => expect(screen.getAllByText("Camiseta preta").length).toBeGreaterThan(0));
     expect(wornOf(state).map((w) => w.slot)).toEqual(["upper"]);
+    // a peça vestida mostra o estado do asset (vocabulário do quarto) e leva ao provador
+    expect(screen.getByText("Molde 3D (aproximação)")).toBeTruthy();
+    expect((screen.getByRole("link", { name: /Provar no provador/ }) as HTMLAnchorElement).getAttribute("href")).toBe("/try-on?provar=w.a");
   });
   it("no modo compacto (dentro do quarto) não há link para o quarto; na aba Espelho há", async () => {
     loggedAs(undefined, { "GET /api/tipos-look": [] });

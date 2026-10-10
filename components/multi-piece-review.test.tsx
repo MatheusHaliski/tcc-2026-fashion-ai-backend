@@ -48,6 +48,34 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
 describe("várias peças numa foto — revisão (RF4)", () => {
+  it("marca lida com incerteza (tecido dobrado) vira sugestão com botão Usar, nunca preenchida sozinha", async () => {
+    const hinted: MultiDetection = { ...DETECTION, source: "local-pessoa", pieces: [
+      { ...DETECTION.pieces[0], index: 0, name: "Camiseta", category: "upper_piece", subcategory: "t_shirt", brandName: null,
+        brandHint: { brand: "Under Armour", alternatives: ["Umbro"], evidence: "UNPE INOER", zone: "centro_peito", confidence: 0.6 } },
+      { ...DETECTION.pieces[1], index: 1, name: "Calça", brandName: null, brandHint: { brand: null, evidence: "XQZW", zone: "centro_frente", confidence: 0.5 } },
+    ] };
+    mockApi({ "GET /api/taxonomy": TAXONOMY, "POST /api/pieces/analysis/multi": hinted });
+    const { container } = renderApp(<MultiPieceUpload onSaved={vi.fn()} />);
+    fireEvent.change(container.querySelector("input[type=file]")!, { target: { files: [photo()] } });
+    fireEvent.click(screen.getByRole("button", { name: "Analisar peças" }));
+    await screen.findByDisplayValue("Camiseta");
+    const brand = screen.getByRole("combobox", { name: "Marca" }) as HTMLInputElement;
+    expect(brand.value).toBe("");
+    const note = screen.getByRole("note", { name: "Marca lida com incerteza" });
+    expect(note.textContent).toContain("Under Armour?");
+    expect(note.textContent).toContain("Texto lido na peça: UNPE INOER");
+    expect(within(note).getByRole("button", { name: "Usar Umbro" })).toBeTruthy();
+    fireEvent.click(within(note).getByRole("button", { name: "Usar Under Armour" }));
+    expect((screen.getByRole("combobox", { name: "Marca" }) as HTMLInputElement).value).toBe("Under Armour");
+    expect(screen.queryByRole("note", { name: "Marca lida com incerteza" })).toBeNull();
+    // segunda peça: texto ilegível → pede a marca ou outra foto, sem botão
+    fireEvent.click(screen.getByRole("button", { name: /^Peça 2 ·/ }));
+    await screen.findByDisplayValue("Calça");
+    const illegible = screen.getByRole("note", { name: "Marca lida com incerteza" });
+    expect(illegible.textContent).toContain("não deu para ler");
+    expect(within(illegible).queryAllByRole("button")).toHaveLength(0);
+  });
+
   it("fotografar tem quatro etapas, avança para cinco slots e preserva dados, marcas e arte próprios até salvar", async () => {
     const saved = vi.fn();
     const five: MultiDetection = { ...DETECTION, pieces: ["black", "white", "blue", "red", "green"].map((color, index) => ({

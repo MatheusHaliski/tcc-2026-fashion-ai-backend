@@ -32,16 +32,23 @@ export interface SearchIntent { brand?: string | null; brandKnown: boolean; cate
 export interface SearchResponse { intent: SearchIntent; results: CatalogProduct[]; total: number; enoughInput: boolean; canSearchOfficial?: boolean; message?: string | null }
 export interface DiscoverResponse { results: CatalogProduct[]; status: "FOUND" | "NOT_FOUND" | "BRAND_UNKNOWN" | "NO_OFFICIAL_SOURCE"; message?: string; rejected?: number }
 export interface SearchParams { category?: string; subcategory?: string; brand?: string; q?: string; color?: string; limit?: number }
+/** Página do acervo inteiro (GET /api/catalog/products): filtros opcionais; `page` começa em 0; `size` até 96. */
+export interface BrowseParams { category?: string; subcategory?: string; brand?: string; q?: string; page?: number; size?: number }
+export interface BrowseResponse { items: CatalogProduct[]; page: number; size: number; total: number; hasMore: boolean; brandKnown?: boolean; brand?: CatalogBrandRef | null }
+/** Tamanho do acervo visível: o número mostrado como "acervo completo". */
+export interface CatalogSummary { products: number; brands: number }
 
-const qs = (p: SearchParams) => {
+const qs = (p: object) => {
   const u = new URLSearchParams();
-  Object.entries(p as Record<string, string | number | undefined>).forEach(([k, v]) => { if (v !== undefined && v !== "" && v !== null) u.set(k, String(v)); });
+  Object.entries(p as Record<string, string | number | undefined | null>).forEach(([k, v]) => { if (v !== undefined && v !== "" && v !== null) u.set(k, String(v)); });
   const s = u.toString();
   return s ? `?${s}` : "";
 };
 
 export const catalogApi = {
   search: (p: SearchParams, signal?: AbortSignal) => api.get<SearchResponse>(`/api/catalog/search${qs(p)}`, { signal }),
+  browse: (p: BrowseParams, signal?: AbortSignal) => api.get<BrowseResponse>(`/api/catalog/products${qs(p)}`, { signal }),
+  summary: (signal?: AbortSignal) => api.get<CatalogSummary>("/api/catalog/summary", { signal }),
   suggestions: (p: SearchParams, signal?: AbortSignal) => api.get<{ suggestions: string[] }>(`/api/catalog/suggestions${qs(p)}`, { signal }),
   product: (id: string) => api.get<CatalogProduct>(`/api/catalog/products/${id}`),
   discover: (p: { brand?: string; subcategory?: string; category?: string; query?: string; color?: string }) => api.post<DiscoverResponse>("/api/catalog/discover", p),

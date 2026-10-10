@@ -98,11 +98,46 @@ public class MultiPieceService {
     public record Box(double x, double y, double width, double height) {
     }
 
+    /**
+     * @param brandName marca com certeza (IA de visão ou OCR confirmado no catálogo); nula = a pessoa informa
+     * @param brandHint marca lida com incerteza pelo OCR local (tecido dobrado, texto pequeno): sugestão para a pessoa
+     *                  confirmar na revisão — nunca preenche {@code brandName} sozinha
+     */
     public record DetectedPiece(int index, String name, String category, String subcategory, String color, String material,
-                                String sex, List<String> style, List<String> occasion, Box box, double confidence, String brandName) {
+                                String sex, List<String> style, List<String> occasion, Box box, double confidence, String brandName,
+                                BrandHint brandHint) {
         public DetectedPiece(int index, String name, String category, String subcategory, String color, String material,
                              String sex, List<String> style, List<String> occasion, Box box, double confidence) {
-            this(index, name, category, subcategory, color, material, sex, style, occasion, box, confidence, null);
+            this(index, name, category, subcategory, color, material, sex, style, occasion, box, confidence, null, null);
+        }
+
+        public DetectedPiece(int index, String name, String category, String subcategory, String color, String material,
+                             String sex, List<String> style, List<String> occasion, Box box, double confidence, String brandName) {
+            this(index, name, category, subcategory, color, material, sex, style, occasion, box, confidence, brandName, null);
+        }
+
+        DetectedPiece withBrand(String brand) {
+            return new DetectedPiece(index, name, category, subcategory, color, material, sex, style, occasion, box, confidence, brand,
+                    brand == null ? brandHint : null);
+        }
+
+        DetectedPiece withBrandHint(BrandHint hint) {
+            return new DetectedPiece(index, name, category, subcategory, color, material, sex, style, occasion, box, confidence, brandName, hint);
+        }
+
+        DetectedPiece withColor(String c) {
+            return new DetectedPiece(index, name, category, subcategory, c, material, sex, style, occasion, box, confidence, brandName, brandHint);
+        }
+    }
+
+    /**
+     * Marca lida com incerteza (RF4 · tecido dobrado): {@code brand} é a marca do catálogo em que as leituras parciais
+     * votaram (ou uma palavra de logo fora do catálogo); nula = há texto/logo na peça mas ilegível. {@code alternatives}
+     * são outras marcas em que as leituras também votaram; {@code evidence} é o texto lido; {@code zone} onde.
+     */
+    public record BrandHint(String brand, List<String> alternatives, String evidence, String zone, double confidence) {
+        public BrandHint {
+            alternatives = alternatives == null ? List.of() : List.copyOf(alternatives);
         }
     }
 
@@ -197,35 +232,57 @@ public class MultiPieceService {
 
     /** Peças sem cor da IA recebem a cor dominante dos pixels da própria caixa (nunca a da foto inteira). */
     static List<DetectedPiece> fillColors(BufferedImage photo, List<DetectedPiece> pieces) {
-        return pieces.stream().map(p -> p.color() != null ? p : new DetectedPiece(p.index(), p.name(), p.category(), p.subcategory(),
-                ColorMath.nearestTaxonomyColor(ImageOps.dominantColor(crop(photo, p.box()))), p.material(), p.sex(), p.style(),
-                p.occasion(), p.box(), p.confidence(), p.brandName())).toList();
+        return pieces.stream().map(p -> p.color() != null ? p
+                : p.withColor(ColorMath.nearestTaxonomyColor(ImageOps.dominantColor(crop(photo, p.box()))))).toList();
     }
 
+    /** Peças (as maiores primeiro) que recebem a leitura robusta em tecido dobrado ({@link BrandReader#findRobust}). */
+    static final int ROBUST_BRAND_PIECES = 3;
+    /** Peças que recebem alguma leitura de marca por OCR local. */
+    static final int OCR_BRAND_PIECES = 6;
+
     /**
-     * Marca pelo texto do logo, lida no servidor (OCR local) no recorte de cada peça ainda sem marca — só o que o leitor
-     * confirma no catálogo de marcas; nada é inferido pela cor ou pelo estilo. Até 6 recortes, os maiores primeiro.
+     * Marca pelo texto do logo, lida no servidor (OCR local) no recorte de cada peça ainda sem marca. Só o que o leitor
+     * confirma no catálogo vira {@code brandName}; leitura incerta (tecido dobrado, texto pequeno, logo ilegível) vira
+     * {@link BrandHint} para a pessoa confirmar na revisão. Nada é inferido pela cor ou pelo estilo. Até
+     * {@value #OCR_BRAND_PIECES} recortes, os maiores primeiro; os {@value #ROBUST_BRAND_PIECES} maiores com a leitura
+     * robusta (variações de polaridade, inclinação e divisão de linhas).
      */
     List<DetectedPiece> readBrands(BufferedImage photo, List<DetectedPiece> pieces) {
         if (brandReader == null || !brandReader.available() || pieces.stream().noneMatch(p -> p.brandName() == null)) {
             return pieces;
         }
-        Map<Integer, String> found = new LinkedHashMap<>();
-        pieces.stream().filter(p -> p.brandName() == null)
-                .sorted(Comparator.comparingDouble((DetectedPiece p) -> p.box().width() * p.box().height()).reversed()).limit(6)
-                .forEach(p -> {
-                    BufferedImage crop = crop(photo, p.box());
-                    if (crop.getWidth() < 120 || crop.getHeight() < 120) {
-                        return;
-                    }
-                    try {
-                        brandReader.find(crop, BrandRegions.zones(crop, p.category() == null ? "upper_piece" : p.category()))
-                                .filter(BrandReader.Found::confirmed).ifPresent(f -> found.put(p.index(), f.brand()));
-                    } catch (RuntimeException ex) {
-                        log.debug("OCR da peça {} falhou: {}", p.index(), ex.getMessage());
-                    }
-                });
-        return found.isEmpty() ? pieces : mergeBrands(pieces, found);
+        Map<Integer, BrandReader.Found> found = new LinkedHashMap<>();
+        List<DetectedPiece> todo = pieces.stream().filter(p -> p.brandName() == null)
+                .sorted(Comparator.comparingDouble((DetectedPiece p) -> p.box().width() * p.box().height()).reversed())
+                .limit(OCR_BRAND_PIECES).toList();
+        for (int i = 0; i < todo.size(); i++) {
+            DetectedPiece p = todo.get(i);
+            BufferedImage crop = crop(photo, p.box());
+            if (crop.getWidth() < 120 || crop.getHeight() < 120) {
+                continue;
+            }
+            try {
+                List<BrandRegions.Zone> zones = BrandRegions.zones(crop, p.category() == null ? "upper_piece" : p.category());
+                (i < ROBUST_BRAND_PIECES ? brandReader.findRobust(crop, zones) : brandReader.find(crop, zones))
+                        .ifPresent(f -> found.put(p.index(), f));
+            } catch (RuntimeException ex) {
+                log.debug("OCR da peça {} falhou: {}", p.index(), ex.getMessage());
+            }
+        }
+        if (found.isEmpty()) {
+            return pieces;
+        }
+        return pieces.stream().map(p -> {
+            BrandReader.Found f = found.get(p.index());
+            if (f == null || p.brandName() != null) {
+                return p;
+            }
+            if (f.confirmed()) {
+                return p.withBrand(f.brand());
+            }
+            return p.withBrandHint(new BrandHint(f.brand(), f.alternatives(), f.evidence(), f.region(), f.confidence()));
+        }).toList();
     }
 
     static BufferedImage crop(BufferedImage photo, Box b) {
@@ -274,9 +331,7 @@ public class MultiPieceService {
     }
 
     static List<DetectedPiece> mergeBrands(List<DetectedPiece> pieces, Map<Integer, String> brands) {
-        return pieces.stream().map(p -> new DetectedPiece(p.index(), p.name(), p.category(), p.subcategory(), p.color(),
-                p.material(), p.sex(), p.style(), p.occasion(), p.box(), p.confidence(),
-                p.brandName() != null ? p.brandName() : brands.get(p.index()))).toList();
+        return pieces.stream().map(p -> p.brandName() != null || brands.get(p.index()) == null ? p : p.withBrand(brands.get(p.index()))).toList();
     }
 
     @Transactional

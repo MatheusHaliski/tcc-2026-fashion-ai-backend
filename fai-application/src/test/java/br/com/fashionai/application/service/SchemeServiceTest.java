@@ -33,6 +33,7 @@ import java.util.UUID;
 
 import static br.com.fashionai.application.testkit.World.map;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -240,5 +241,36 @@ class SchemeServiceTest {
         assertThat(SchemeService.cardHypeLabel(null, null, true)).isNull();
         assertThat(SchemeService.placeholder(mine.get(0)).getWidth()).isEqualTo(420);
         assertThat(schemes.suggestSealsAfterSave(ana, archived)).isNotNull();
+    }
+
+    @Test
+    void composicaoDoLookGravaPosicaoEscalaEOrdemSemMexerNasPecas() {
+        Scheme look = world.look(world.me, "Look das camadas", mine.get(0), mine.get(1));
+        UUID a = mine.get(0).getId(), b = mine.get(1).getId();
+        List<SchemeService.ItemForm> layout = List.of(
+                new SchemeService.ItemForm(a, null, null, 5, new BigDecimal("0.3"), new BigDecimal("0.4"), new BigDecimal("1.2"), new BigDecimal("-8"), new BigDecimal("0.9"), null),
+                new SchemeService.ItemForm(b, null, null, 1, null, null, null, null, null, null),
+                new SchemeService.ItemForm(UUID.randomUUID(), null, null, 9, BigDecimal.ONE, BigDecimal.ONE, null, null, null, null));
+        Views.SchemeView v = schemes.updateLayout(ana, look.getId(), layout);
+        assertThat(v.items()).hasSize(2);
+        Views.SchemeItemView first = v.items().stream().filter(i -> i.wardrobeItemId().equals(a)).findFirst().orElseThrow();
+        assertThat(first.positionX()).isEqualByComparingTo("0.3");
+        assertThat(first.scale()).isEqualByComparingTo("1.2");
+        assertThat(first.rotation()).isEqualByComparingTo("-8");
+        assertThat(first.zIndex()).isEqualTo(5);
+        Views.SchemeItemView second = v.items().stream().filter(i -> i.wardrobeItemId().equals(b)).findFirst().orElseThrow();
+        assertThat(second.positionX()).as("sem posição: o card usa o lugar padrão do slot").isNull();
+        assertThat(second.zIndex()).isEqualTo(1);
+        assertThatThrownBy(() -> schemes.updateLayout(ana, look.getId(), List.of(new SchemeService.ItemForm(a, null, null, null, new BigDecimal("1.5"), null, null, null, null, null))))
+                .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.code()).isEqualTo("LAYOUT_FORA_DA_FAIXA"));
+        // dono: owned() → Guard.requireOwner (o Guard do testkit é um mock; a regra tem teste próprio)
+        byte[] png = schemes.layoutPreview(ana, look.getId(), layout);
+        assertThat(png.length).isGreaterThan(1000);
+        assertThat(new String(png, 1, 3, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("PNG");
+        // evidência opcional (-Dfai.evidencias=<pasta>): a prévia real do renderizador do card, usada nas capturas do RF15
+        String out = System.getProperty("fai.evidencias");
+        if (out != null) {
+            assertThatCode(() -> java.nio.file.Files.write(java.nio.file.Path.of(out, "rf15-look-preview.png"), png)).doesNotThrowAnyException();
+        }
     }
 }

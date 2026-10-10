@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { Pagination } from "@/components/ui";
 import type { CatalogProduct } from "@/lib/api/catalog";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -22,10 +22,18 @@ export interface CatalogResultsGridProps {
   products: CatalogProduct[];
   resetKey: string;
   renderProduct: (product: CatalogProduct) => ReactNode;
+  /** Acervo paginado no servidor: total real (todas as peças, não só as já carregadas). */
+  total?: number;
+  /** Há mais páginas no servidor; "Próxima" na última página carregada busca a seguinte. */
+  hasMoreRemote?: boolean;
+  onNeedMore?: () => void;
 }
 
-/** Pagina os resultados retornados pela busca em até duas linhas por tela. */
-export function CatalogResultsGrid({ products, resetKey, renderProduct }: CatalogResultsGridProps) {
+/**
+ * Pagina os resultados em até duas linhas por tela. Com o acervo paginado no servidor, a contagem é a do banco e a
+ * página seguinte só é buscada quando a pessoa avança além do que já chegou — nada de carregar o acervo inteiro sozinho.
+ */
+export function CatalogResultsGrid({ products, resetKey, renderProduct, total, hasMoreRemote = false, onNeedMore }: CatalogResultsGridProps) {
   const { t } = useI18n();
   const columns = useSyncExternalStore(subscribeColumns, readColumns, () => 2);
   const size = columns * 2;
@@ -33,8 +41,16 @@ export function CatalogResultsGrid({ products, resetKey, renderProduct }: Catalo
   const lastPage = Math.max(0, Math.ceil(products.length / size) - 1);
   const currentPage = Math.min(page, lastPage);
 
-  // Nova busca, filtro ou distribuição de colunas começa na primeira página.
-  useLayoutEffect(() => { setPage(0); }, [resetKey, products, columns]);
+  // Nova busca, filtro ou distribuição de colunas começa na primeira página; páginas que chegam do servidor somam
+  // à lista sem tirar a pessoa de onde está (o primeiro item continua o mesmo).
+  const firstId = products[0]?.id;
+  useLayoutEffect(() => { setPage(0); }, [resetKey, firstId, columns]);
+  // avançou além do que já chegou: busca a próxima página e fica nela quando chegar
+  const waiting = page > lastPage && hasMoreRemote;
+  const asked = useRef(-1);
+  useEffect(() => {
+    if (waiting && asked.current !== products.length) { asked.current = products.length; onNeedMore?.(); }
+  }, [waiting, products.length, onNeedMore]);
 
   return (
     <>
@@ -46,9 +62,9 @@ export function CatalogResultsGrid({ products, resetKey, renderProduct }: Catalo
       <Pagination
         page={currentPage}
         size={size}
-        total={products.length}
-        hasMore={currentPage < lastPage}
-        onPage={(next) => setPage(Math.max(0, Math.min(next, lastPage)))}
+        total={total ?? products.length}
+        hasMore={currentPage < lastPage || hasMoreRemote}
+        onPage={(next) => setPage(Math.max(0, Math.min(next, hasMoreRemote ? lastPage + 1 : lastPage)))}
       />
     </>
   );
