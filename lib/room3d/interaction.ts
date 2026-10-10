@@ -50,19 +50,45 @@ export class RoomInteraction {
   blur() { this.keys.clear(); this.aiming = null; this.grip = null; this.notify(); }
   get state(): RoomPlayState { return { held: this.held, grip: this.grip?.id ?? null, nearMirror: !!this.held && this.actor.distanceTo(this.mirror) < 1, ready: this.ready }; }
 }
-/** Frame-independent movement, normalized diagonals, conservative wardrobe/room bounds. */
+/** Raio do tronco do personagem nos obstáculos (m). */
+export const BODY_RADIUS = .18;
+/**
+ * Obstáculo com caixa orientada: `userData.collider = { hx, hz }` são as meias-medidas no espaço local do objeto (o
+ * espelho fica girado 28°: a caixa alinhada aos eixos dele cobriria um triângulo vazio ou deixaria passar pela quina).
+ */
+export interface OrientedCollider { hx: number; hz: number }
+/** Quanto o tronco (raio BODY_RADIUS) entra no obstáculo: 0 = livre; > 0 = sobreposição na direção mais rasa (m). */
+export function penetration(solid: THREE.Object3D, position: THREE.Vector3): number {
+  const collider = solid.userData?.collider as OrientedCollider | undefined;
+  if (collider) {
+    const local = solid.worldToLocal(new THREE.Vector3(position.x, solid.getWorldPosition(new THREE.Vector3()).y, position.z));
+    const ox = collider.hx + BODY_RADIUS - Math.abs(local.x), oz = collider.hz + BODY_RADIUS - Math.abs(local.z);
+    return ox > 0 && oz > 0 ? Math.min(ox, oz) : 0;
+  }
+  const box = new THREE.Box3().setFromObject(solid).expandByScalar(BODY_RADIUS);
+  const ox = Math.min(position.x - box.min.x, box.max.x - position.x), oz = Math.min(position.z - box.min.z, box.max.z - position.z);
+  return ox > 0 && oz > 0 ? Math.min(ox, oz) : 0;
+}
+/**
+ * Frame-independent movement, normalized diagonals, conservative wardrobe/room bounds. Obstacles (wardrobe fronts, the
+ * mirror) block the step; a diagonal into an obstacle slides along it (x or z alone). Already overlapping (a door swung
+ * into the avatar), only steps that reduce the overlap are accepted, so the avatar walks out and never further in.
+ */
 export function moveInRoom(position: THREE.Vector3, keys: Set<string>, dt: number, closetRight: number, solids: Iterable<THREE.Object3D> = []): number {
   const dx = Number(keys.has("ArrowRight")) - Number(keys.has("ArrowLeft"));
   const dz = Number(keys.has("ArrowDown")) - Number(keys.has("ArrowUp"));
   if (!dx && !dz) return 0;
-  const original = position.clone();
+  const list = [...solids];
+  const overlap = (p: THREE.Vector3) => list.reduce((sum, solid) => sum + penetration(solid, p), 0);
   const step = new THREE.Vector3(dx, 0, dz).normalize().multiplyScalar(Math.min(dt, .05) * 1.05);
-  position.x = THREE.MathUtils.clamp(position.x + step.x, -2.85, closetRight + 1.6);
-  // Keep the torso outside the wardrobe; moving fronts add their own colliders below.
-  position.z = THREE.MathUtils.clamp(position.z + step.z, .55, 4.4);
-  for (const solid of solids) {
-    const box = new THREE.Box3().setFromObject(solid).expandByScalar(.18);
-    if (position.x > box.min.x && position.x < box.max.x && position.z > box.min.z && position.z < box.max.z) { position.copy(original); break; }
-  }
+  const start = overlap(position);
+  const attempt = (sx: number, sz: number) => {
+    // Keep the torso outside the wardrobe; moving fronts and the mirror add their own colliders.
+    const next = new THREE.Vector3(THREE.MathUtils.clamp(position.x + sx, -2.85, closetRight + 1.6), position.y, THREE.MathUtils.clamp(position.z + sz, .55, 4.4));
+    const after = overlap(next);
+    return after === 0 || after < start - 1e-6 ? next : null;
+  };
+  const next = attempt(step.x, step.z) ?? (step.x ? attempt(step.x, 0) : null) ?? (step.z ? attempt(0, step.z) : null);
+  if (next) position.copy(next);
   return Math.atan2(dx, dz);
 }

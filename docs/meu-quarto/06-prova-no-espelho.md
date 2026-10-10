@@ -33,6 +33,15 @@ Regras (em `lib/room3d/mirror-session.ts`, sem React):
   /api/me/mirror/pieces`, `GET /api/me/mirror/wardrobe?slot=`) e o reflexo (Prévia 2D no vidro) e a roupa do personagem
   seguem o mesmo estado do espelho.
 
+## Menu lateral e obstáculo
+
+- Com a prova aberta (fases `approach`/`tryon`) o menu lateral acende **Espelho** em vez de **Meu Quarto**, sem
+  trocar de rota (`lib/nav/active-override.ts`); ao sair da zona, Voltar ao quarto ou sair da tela, volta a seguir a rota.
+- O espelho é obstáculo com caixa orientada (vidro girado 28°, meias-medidas 0,47 × 0,08 m + raio do tronco 0,18 m):
+  o personagem para na frente do vidro e contorna pela lateral, nunca atravessa. Na diagonal contra um obstáculo ele
+  desliza ao longo dele; já sobreposto (porta abriu sobre ele), só aceita passos que diminuem a sobreposição.
+- A zona só conta na frente do vidro: atrás do espelho a prova não abre.
+
 ## Roupas em mãos
 
 Quatro lugares: **Parte de cima · Parte de baixo · Calçado · Acessório** (camada externa e vestido contam como parte de

@@ -140,6 +140,15 @@ export function facingYaw(actor: THREE.Vector3, mirror: THREE.Vector3): number {
 export const MIRROR_NORMAL = new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(28)), 0, Math.cos(THREE.MathUtils.degToRad(28)));
 
 /**
+ * Distância do personagem ao espelho que conta para a zona da prova: só na frente do vidro. Atrás do espelho (o
+ * personagem contornou pela lateral) a prova não abre e, se estava aberta pela distância, fecha.
+ */
+export function mirrorDistance(actor: THREE.Vector3, mirror: THREE.Vector3): number {
+  const d = new THREE.Vector3(actor.x - mirror.x, 0, actor.z - mirror.z);
+  return d.dot(MIRROR_NORMAL) > 0 ? d.length() : Infinity;
+}
+
+/**
  * Câmera da prova: de frente para o espelho e o personagem (os dois no quadro), vinda do ponto de vista do quarto por
  * interpolação suave. Na fase do quarto, a visão geral do guarda-roupa, personagem e espelho (RoomAvatarController).
  */

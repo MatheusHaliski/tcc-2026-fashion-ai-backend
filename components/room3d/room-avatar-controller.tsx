@@ -8,7 +8,7 @@ import type { Avatar3dRef, Look3dPiece } from "@/components/three/common";
 import type { BodyParams } from "@/lib/avatar3d/body-spec";
 import { applyIdle } from "@/lib/avatar3d/human/pose";
 import { moveInRoom, RoomInteraction, type Arm } from "@/lib/room3d/interaction";
-import { MirrorSession, REACTION_MS, cameraFor, facingYaw, reactionPose } from "@/lib/room3d/mirror-session";
+import { MirrorSession, REACTION_MS, cameraFor, facingYaw, mirrorDistance, reactionPose } from "@/lib/room3d/mirror-session";
 export interface RoomGameplay {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; body?: BodyParams | null; pieces: Look3dPiece[]; engine: RoomInteraction;
   /** prova no espelho dentro do quarto (lib/room3d/mirror-session.ts): fase pela distância, trocas e reação */
@@ -62,7 +62,7 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
     const p = parts.current, moving = !engine.grip && [...engine.keys].some(k => k.startsWith("Arrow"));
     // zona do espelho: a distância do personagem decide a fase da prova (histerese e tempos em mirror-session.ts)
     const session = gameplay.session, now = Date.now();
-    session?.update(engine.actor.distanceTo(engine.mirror), now);
+    session?.update(mirrorDistance(engine.actor, engine.mirror), now);
     const trying = !!session?.active;
     if (!engine.grip) {
       const heading = moveInRoom(engine.actor, engine.keys, dt, closetRight, engine.solids);
