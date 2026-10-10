@@ -10,6 +10,7 @@ from db import DatabaseUnavailable, new_id, now, run_transaction
 from deduplicate import find_existing, find_same_model
 from image_metadata import image_type, url_hash, usage_status
 from normalize_product import Normalizer, Product, ValidationError, key, normalize_product, slug
+from source_persistence import normalize_domain
 from validate_source import SOURCE_TYPES, blocked, classify
 
 log = logging.getLogger("catalog")
@@ -135,16 +136,20 @@ class Ingestor:
     def upsert_source(self, cur, brand_id: str, src: dict) -> str:
         if src.get("source_type") not in SOURCE_TYPES:
             raise ValidationError(f"tipo de fonte inválido: {src.get('source_type')}")
-        d = src["domain"].lower().removeprefix("www.")
+        d = normalize_domain(src["domain"])
+        if not d:
+            raise ValidationError("domínio da fonte inválido")
+        if "allows_image_persistence" in src and not isinstance(src["allows_image_persistence"], bool):
+            raise ValidationError("allows_image_persistence deve ser booleano explícito")
         cur.execute("SELECT * FROM catalog_sources WHERE brand_id = %s AND domain = %s", (brand_id, d))
         row = cur.fetchone()
         if row and self.skip_existing:
             return "SKIP"
         ts = now()
-        allows = bool(src.get("allows_image_persistence", False))
+        allows = src.get("allows_image_persistence", bool(row["allows_image_persistence"]) if row else False)
         if row:
             if row["source_type"] != src["source_type"] or bool(row["allows_image_persistence"]) != allows or row.get("country") != src.get("country"):
-                cur.execute("UPDATE catalog_sources SET source_type=%s, allows_image_persistence=%s, country=%s, active=TRUE, updated_at=%s, version=version+1 WHERE id=%s",
+                cur.execute("UPDATE catalog_sources SET source_type=%s, allows_image_persistence=%s, country=%s, updated_at=%s, version=version+1 WHERE id=%s",
                             (src["source_type"], allows, src.get("country"), ts, row["id"]))
                 self._sources.pop(brand_id, None)
                 return "UPDATE"

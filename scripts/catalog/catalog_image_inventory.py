@@ -87,6 +87,10 @@ def is_standardized(record: Mapping, current_version: str = CURRENT_VERSION) -> 
         crop = _metadata(record, "crop") or {}
         frame = crop.get("editorFrame") or {}
         return (_value(record, "review_status", "reviewStatus") != "REJECTED"
+                and bool(record.get("stored_url"))
+                and (_metadata(record, "assets") or {}).get("card") == record.get("stored_url")
+                and (_metadata(record, "assets") or {}).get("framingVersion") == "CATALOG_FRAME_34_50_V1"
+                and len(str((_metadata(record, "assets") or {}).get("sha256") or "")) == 64
                 and _valid_crop(crop) and crop.get("aspect") == "3:4"
                 and frame.get("version") == "CATALOG_FRAME_34_50_V1"
                 and frame.get("widthPercent") == 50 and frame.get("requiresReview") is False
@@ -194,9 +198,9 @@ def load_snapshot(paths: Iterable[str | Path]) -> Iterator[dict]:
 
 
 try:
-    from .source_persistence import SOURCE_MATCH_SQL
+    from .source_persistence import source_decision
 except ImportError:
-    from source_persistence import SOURCE_MATCH_SQL
+    from source_persistence import source_decision
 
 _SELECT = f"""
 SELECT p.id AS product_id, p.product_name, p.category, p.subcategory,
@@ -209,8 +213,9 @@ SELECT p.id AS product_id, p.product_name, p.category, p.subcategory,
        i.quality_score, i.gate_reasons, i.view_role, i.is_canonical, i.review_status,
        i.crop_json, i.metrics_json, i.assets_json, i.attempts, i.processed_at,
        i.created_at, i.updated_at, i.version,
-       EXISTS (SELECT 1 FROM catalog_sources s WHERE s.brand_id=p.brand_id AND s.active=true
-               AND s.allows_image_persistence=true AND {SOURCE_MATCH_SQL}) AS allows_image_persistence
+       COALESCE((SELECT JSON_ARRAYAGG(JSON_OBJECT('id',s.id,'domain',s.domain,
+                 'active',s.active,'allows_image_persistence',s.allows_image_persistence))
+                 FROM catalog_sources s WHERE s.brand_id=p.brand_id), JSON_ARRAY()) AS persistence_sources_json
 FROM catalog_products p
 JOIN brands b ON b.id = p.brand_id
 LEFT JOIN catalog_images i ON i.product_id = p.id
@@ -264,4 +269,11 @@ def load_database(connect_fn: Callable = db.connect, *, batch_size: int = 500,
     finally:
         conn.close()
     for row in rows:
+        sources = row.pop('persistence_sources_json', [])
+        if isinstance(sources, str):
+            sources = json.loads(sources)
+        row['persistence_sources'] = sources
+        decision = source_decision(sources, row.get('image_url'), row.get('source_domain'))
+        row['persistence_decision'] = decision
+        row['allows_image_persistence'] = decision['state'] == 'AUTHORIZED'
         yield _normalize_record(row, origin="DATABASE", source_scope="database:catalog_images")
