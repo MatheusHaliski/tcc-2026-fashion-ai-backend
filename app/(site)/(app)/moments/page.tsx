@@ -15,6 +15,7 @@ import { MomentNowHero } from "@/components/moments/moment-now";
 import { MomentCalendar } from "@/components/moments/moment-calendar";
 import { GroupMomentsPanel } from "@/components/moments/flair-moments";
 import { MomentsReplay } from "@/components/moments/moment-timeline";
+import { GuideAuto, HowItWorks } from "@/components/guide/guide";
 
 type Tab = "now" | "upcoming" | "calendar" | "mine" | "flair";
 const TABS: Tab[] = ["now", "upcoming", "calendar", "mine", "flair"];
@@ -38,7 +39,8 @@ function MomentsInner() {
     ...(user ? [{ id: "mine" as Tab, label: t("moments.tab.mine") }, { id: "flair" as Tab, label: t("moments.tab.flair"), count: h?.group ? h.group.activeCount + h.group.upcomingCount : undefined }] : [])];
   return (
     <>
-      <PageHeader title={t("nav.moments")} kicker={t("moments.kicker")} lead={h?.principle ?? t("moments.lead")} actions={<Link href="/challenges" className="btn btn-sm"><FaiIcon id="ACT-43" size={24} decorative />{t("moments.routine_challenges")}</Link>} />
+      <PageHeader title={t("nav.moments")} kicker={t("moments.kicker")} lead={h?.principle ?? t("moments.lead")} actions={<><HowItWorks id="moments.calendar" /><Link href="/challenges" className="btn btn-sm"><FaiIcon id="ACT-43" size={24} decorative />{t("moments.routine_challenges")}</Link></>} />
+      <GuideAuto id="moments.calendar" />
       <Tabs tabs={tabs} value={tab} onChange={setTab} label={t("nav.moments")} />
       {home.error && tab !== "calendar" && <ErrorState error={home.error} onRetry={home.reload} />}
       {tab === "now" && (home.loading ? <Skeleton className="h-72" /> : h && (

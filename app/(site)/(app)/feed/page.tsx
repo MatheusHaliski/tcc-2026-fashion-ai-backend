@@ -14,6 +14,7 @@ import { InfiniteSentinel, mergeById } from "@/components/infinite-sentinel";
 import { OnboardingChecklist } from "@/components/onboarding";
 import { InsightStrip } from "@/components/insights/insight-strip";
 import { MomentNowBanner } from "@/components/moments/moment-banner";
+import { GuideAuto, HowItWorks } from "@/components/guide/guide";
 
 type Chips = { label?: string; key: string; value: string }[];
 /**
@@ -75,7 +76,8 @@ export default function FeedPage() {
   const chips = (data?.chips ?? []).filter((c) => c.key !== "hypeLevel");
   return (
     <>
-      <PageHeader title={t("feed.title")} kicker="RF8" lead={t("feed.lead")} />
+      <PageHeader title={t("feed.title")} kicker="RF8" lead={t("feed.lead")} actions={<HowItWorks id="feed.posts" />} />
+      <GuideAuto id="feed.posts" />
       <OnboardingChecklist />
       {/* Momentos §43 — só aparece quando há um Momento ativo relevante */}
       <MomentNowBanner />
