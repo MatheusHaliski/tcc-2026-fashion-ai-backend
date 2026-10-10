@@ -178,4 +178,23 @@ describe("várias peças numa foto — revisão (RF4)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Remover foto 1" }));
     expect(screen.getAllByRole("img", { name: /^Foto \d+$/ }).length).toBe(9);
   });
+
+  it("antes de escolher as fotos abre o guia da categoria; com 'Não mostrar novamente' vai direto às fotos", async () => {
+    mockApi({ "GET /api/taxonomy": TAXONOMY });
+    localStorage.removeItem("fai.captureTutorial");
+    const click = vi.spyOn(HTMLInputElement.prototype, "click").mockImplementation(() => undefined);
+    const { unmount } = renderApp(<MultiPieceUpload category="lower_piece" onSaved={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Escolher fotos" }));
+    expect(await screen.findByText("Fotografe preferencialmente a parte de trás")).toBeTruthy();
+    fireEvent.click(screen.getByLabelText("Não mostrar novamente"));
+    fireEvent.click(screen.getByRole("button", { name: "Entendi, adicionar foto" }));
+    expect(click).toHaveBeenCalledTimes(1);
+    unmount();
+    renderApp(<MultiPieceUpload category="lower_piece" onSaved={vi.fn()} />);
+    await waitFor(() => expect(localStorage.getItem("fai.captureTutorial")).toContain("hidden"));
+    fireEvent.click(screen.getByRole("button", { name: "Escolher fotos" }));
+    expect(screen.queryByText("Fotografe preferencialmente a parte de trás")).toBeNull();
+    expect(click).toHaveBeenCalledTimes(2);
+    click.mockRestore();
+  });
 });

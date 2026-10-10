@@ -121,6 +121,8 @@ const MOTIFS: WallMotif[] = ["plain", "stripes", "grid", "chevron", "court", "pl
 
 /** Ambiente de uma marca: o tema escolhido à mão, ou um derivado do nome (estável — a mesma marca, o mesmo provador). */
 export function environmentFor(brand: FittingBrand): BrandEnvironment {
+  // marca só com slug (sem nome) vira o próprio slug no letreiro: nunca um nome indefinido na cena
+  if (!brand.name?.trim()) brand = { ...brand, name: brand.slug ?? "" };
   const key = brand.slug ? brandKey(brand.slug) : brandKey(brand.name);
   const curated = CURATED[key];
   if (curated) return { key, name: brand.name, logoUrl: brand.logoUrl ?? null, curated: true, ...curated };

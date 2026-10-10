@@ -251,6 +251,11 @@ h1, h2, h3, h4 { margin: 0; }
 .menu-item { display: flex; width: 100%; align-items: center; gap: 10px; min-height: var(--control-md); padding: 8px 12px; border-radius: 8px; text-align: left; font-size: var(--text-body); color: var(--ink); cursor: pointer; }
 .menu-item:hover, .menu-item:focus-visible { background: var(--surface-2); outline: none; }
 .menu-item.is-danger { color: var(--status-critical); }
+/* Remixar várias (Minhas peças): barra fixa no topo da grade com a contagem e a ação */
+.remix-pick-bar { position: sticky; top: 8px; z-index: var(--z-sticky, 20); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 12px; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line-soft); background: var(--surface); box-shadow: 0 8px 24px rgba(0,0,0,.10); }
+/* uma linha fina entre os itens (lista longa de ações fica escaneável); o ícone mantém o tamanho */
+.menu-pop > .menu-item + .menu-item { border-top: 1px solid var(--line-soft); border-top-left-radius: 0; border-top-right-radius: 0; }
+.menu-item > svg, .menu-item > img, .menu-item > span:first-child { flex: none; }
 .menu-item[aria-checked="true"] { font-weight: 600; }
 .menu-sep { height: 1px; margin: 6px 4px; background: var(--line-soft); }
 .menu-label { padding: 8px 12px 4px; font-family: var(--font-data); font-size: var(--text-label); letter-spacing: var(--tracking-label); text-transform: uppercase; color: var(--muted); }
@@ -1606,6 +1611,17 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .ei-frame.is-full { aspect-ratio: auto; max-height: 240px; }
 .ei-frame.is-full img { max-height: 240px; }
 .ei-frame.is-checker { background-color: #fff; background-image: linear-gradient(45deg, #e6e6e6 25%, transparent 25%), linear-gradient(-45deg, #e6e6e6 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #e6e6e6 75%), linear-gradient(-45deg, transparent 75%, #e6e6e6 75%); background-size: 20px 20px; background-position: 0 0, 0 10px, 10px -10px, -10px 0; }
+/* Editar imagem › Enquadramento (quadro 4:5 em escalas fixas) e Recorte (janela livre): o fora do quadro escurece;
+   alças nos cantos por dentro da janela (o palco corta o que passa da foto) */
+.qc-stage { position: relative; justify-self: center; max-width: 100%; overflow: hidden; border-radius: 8px; background: var(--surface-2); touch-action: none; user-select: none; }
+.qc-stage img { display: block; max-width: 100%; max-height: 60vh; pointer-events: none; }
+.qc-stage.is-window { cursor: crosshair; }
+.qc-rect { position: absolute; box-shadow: 0 0 0 9999px rgb(0 0 0 / 0.5); outline: 2px solid #fff; cursor: move; }
+.qc-handle { position: absolute; width: 16px; height: 16px; background: #fff; border: 2px solid var(--ink, #111); border-radius: 3px; }
+.qc-handle.is-nw { left: -2px; top: -2px; cursor: nwse-resize; }
+.qc-handle.is-ne { right: -2px; top: -2px; cursor: nesw-resize; }
+.qc-handle.is-sw { left: -2px; bottom: -2px; cursor: nesw-resize; }
+.qc-handle.is-se { right: -2px; bottom: -2px; cursor: nwse-resize; }
 @media (min-width: 900px) {
   .dialog-card.is-piece .piece-detail .pd-slide { max-height: calc(90dvh - 52px); }
   .dialog-card.is-piece .piece-detail .pd-info { max-height: calc(90dvh - 52px); overflow-y: auto; }
@@ -2030,8 +2046,9 @@ input[type="range"]:not(.before-after-range):disabled { opacity: .45; cursor: no
 /* RF4 + RF47 · criador de peça em uma etapa: seções (busca catalogada, dados) e o produto escolhido */
 .creator-section { border-top: 1px solid var(--line-soft); padding-top: 14px; margin-top: 14px; }
 .catalog-pick { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px 12px; border: 1.5px solid var(--thread); border-radius: 12px; background: var(--thread-soft); }
-.catalog-pick-art { width: 56px; height: 56px; border-radius: 8px; overflow: hidden; background: var(--surface); display: grid; place-items: center; }
-.catalog-pick-art img { width: 100%; height: 100%; object-fit: contain; }
+/* miniatura da peça escolhida: quadro 4:5 posicionado para o recorte do pipeline (.catalog-photo é absoluto) */
+.catalog-pick-art { position: relative; width: 56px; aspect-ratio: 4 / 5; flex-shrink: 0; border-radius: 8px; overflow: hidden; background: var(--surface); display: grid; place-items: center; }
+.catalog-pick-art > img { width: 100%; height: 100%; object-fit: contain; }
 @media (max-width: 480px) { .catalog-pick { grid-template-columns: 56px minmax(0, 1fr); } .catalog-pick > button { grid-column: 2; justify-self: start; } }
 
 /* RF1 — Painel do examinador: status da análise do perfil de marca/celebridade */
@@ -2827,6 +2844,17 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 :root[data-theme="contrast"] .xp-row-bar > span { background: var(--ink) !important; opacity: 1 !important; }
 @media (forced-colors: active) { .xp-row-bar { border: 1px solid CanvasText; } .xp-row-bar > span { forced-color-adjust: none; background: CanvasText !important; } }
 
+/* RF15 · Editor de fotografia da peça: prévia do servidor com o quadro 4:5 e as ferramentas por cima */
+.photo-edit-stage { display: grid; place-items: center; min-height: 320px; background: repeating-conic-gradient(var(--surface-2) 0% 25%, var(--surface-3) 0% 50%) 50% / 16px 16px; border-radius: var(--radius); overflow: hidden; touch-action: none; user-select: none; }
+.photo-edit-stage.is-tool { cursor: crosshair; }
+.photo-edit-frame { position: relative; display: inline-block; max-width: 100%; }
+.photo-edit-frame img { display: block; max-width: 100%; max-height: 70vh; width: auto; height: auto; }
+.photo-edit-crop { position: absolute; border: 2px solid var(--accent); box-shadow: 0 0 0 9999px rgb(0 0 0 / .45); cursor: move; }
+.photo-edit-crop-thirds { position: absolute; inset: 0; background: linear-gradient(to right, transparent 33.1%, rgb(255 255 255 / .5) 33.3%, transparent 33.5%, transparent 66.5%, rgb(255 255 255 / .5) 66.7%, transparent 66.9%), linear-gradient(to bottom, transparent 33.1%, rgb(255 255 255 / .5) 33.3%, transparent 33.5%, transparent 66.5%, rgb(255 255 255 / .5) 66.7%, transparent 66.9%); pointer-events: none; }
+.photo-edit-busy { position: absolute; right: .5rem; bottom: .5rem; padding: .2rem .5rem; border-radius: 999px; background: var(--surface); color: var(--muted); font-size: var(--text-caption); }
+.photo-edit-quality { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .4rem .8rem; margin: 0; }
+.photo-edit-quality dt { font-size: var(--text-caption); color: var(--muted); }
+.photo-edit-quality dd { margin: 0; font-family: var(--font-data); }
 /* ======================================================================================================================
    FashionAI MOMENTOS (docs/momentos/MOMENTOS.md) — o tema do Momento é uma CAMADA (--moment-*) sobre os tokens FashionAI.
    Sem tema, tudo cai nos tokens padrão; nada depende só de cor (ícone + nome + status em texto); reduced motion = sem

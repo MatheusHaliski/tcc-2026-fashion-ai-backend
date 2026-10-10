@@ -248,6 +248,73 @@ public final class FeedFraming {
      * @param template template da categoria
      * @param cut      lados que a foto original cortou (top/bottom/left/right)
      */
+    /**
+     * Foto do feed pela Regra de Enquadramento do Produto (docs/catalogo/PIPELINE_IMAGENS_CATALOGO.md §9.1), a mesma
+     * das fotos do acervo: o template continua medindo a peça (gola, cós, joelhos, o que falta na foto), e o quadro 4:5
+     * sai da regra da categoria no registro — parte de cima e de baixo preenchem o quadro pelo topo (gola / cós na
+     * metade superior), calçado e óculos ocupam a largura, relógio com o mostrador no centro, joias, gorro, cachecol,
+     * cinto e demais acessórios inteiros dentro do quadro. Sem categoria, o enquadramento antigo do template.
+     */
+    public static Feed frame(BufferedImage piece, Template template, Set<String> cut, String category, String subcategory) {
+        Feed base = frame(piece, template, cut);
+        if (category == null || category.isBlank()) {
+            return base;
+        }
+        br.com.fashionai.application.catalog.image.SemanticRegionRegistry.Profile profile =
+                br.com.fashionai.application.catalog.image.SemanticRegionRegistry.get()
+                        .profile(br.com.fashionai.application.catalog.image.PieceType.of(category), subcategory);
+        if (profile.rule() == null) {
+            return base;
+        }
+        Profile p = profile(piece);
+        br.com.fashionai.application.catalog.image.NRect product = new br.com.fashionai.application.catalog.image.NRect(
+                p.left() / (double) p.w(), p.top() / (double) p.h(), (p.right() - p.left() + 1) / (double) p.w(),
+                (p.bottom() - p.top() + 1) / (double) p.h());
+        br.com.fashionai.application.catalog.image.FramingStrategy.Focus focus = new br.com.fashionai.application.catalog.image.FramingStrategy.Focus(
+                profile.focus().name(), product.sub(profile.focus().rect()), List.of(), "REGISTRY");
+        br.com.fashionai.application.catalog.image.NRect c = br.com.fashionai.application.catalog.image.SemanticCropper.ruleCrop(
+                p.w(), p.h(), WIDTH / (double) HEIGHT, product, focus, profile.rule(), profile.margin()[0]);
+        double s = WIDTH / (c.w() * p.w()), ox = -c.x() * p.w() * s, oy = -c.y() * p.h() * s;
+        Set<String> cuts = cut == null ? Set.of() : cut;
+        Map<String, Object> lm = new LinkedHashMap<>(base.landmarks());
+        lm.put("rule", profile.rule().toMap());
+        lm.put("focus", profile.focus().name());
+        List<String> missing = new ArrayList<>(base.missing());
+        // regra 4 (calçado de lado): par fotografado de frente/de trás ou um pé de frente não vira lateral no recorte —
+        // a tela pede a foto de lado em vez de publicar como se a regra estivesse cumprida
+        if ("SIDE".equals(profile.rule().view()) && !looksSideView(p)) {
+            missing.add("side_view");
+            lm.put("view", "NOT_SIDE");
+        }
+        return new Feed(base.template(), place(p, s, ox, oy, WIDTH, HEIGHT, bleedOf(p, s, ox, oy, WIDTH, HEIGHT, cuts)), lm,
+                missing, base.estimated(), base.pieceSize());
+    }
+
+    /**
+     * Vista lateral do calçado pela máscara: um pé de frente é mais alto que largo, e o par visto de frente ou de trás são
+     * duas manchas com um vão vertical no meio (de lado os pés se sobrepõem e a silhueta é contínua e comprida).
+     */
+    static boolean looksSideView(Profile p) {
+        int bw = p.right() - p.left() + 1, bh = p.bottom() - p.top() + 1;
+        if (bw <= 0 || bh <= 0) {
+            return true;
+        }
+        if (bw / (double) bh < 0.9) {
+            return false;
+        }
+        int from = p.left() + (int) (bw * 0.3), to = p.left() + (int) (bw * 0.7);
+        for (int x = from; x <= to; x++) {
+            int filled = 0;
+            for (int y = p.top(); y <= p.bottom(); y++) {
+                filled += p.mask()[y * p.w() + x] ? 1 : 0;
+            }
+            if (filled < bh * 0.03) {
+                return false;   // coluna vazia no miolo: dois pés separados (par de frente/de trás)
+            }
+        }
+        return true;
+    }
+
     public static Feed frame(BufferedImage piece, Template template, Set<String> cut) {
         Set<String> cuts = cut == null ? Set.of() : cut;
         Profile p = profile(piece);

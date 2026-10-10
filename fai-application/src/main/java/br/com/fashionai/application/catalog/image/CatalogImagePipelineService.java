@@ -172,19 +172,12 @@ public class CatalogImagePipelineService {
 
     void apply(CatalogImage img, CatalogImagePipeline.Analysis a, boolean persist) {
         img.setMime(a.mime());
-        img.setWidth(a.width() == 0 ? null : a.width());
-        img.setHeight(a.height() == 0 ? null : a.height());
+        img.setWidth(dimension(a.width()));
+        img.setHeight(dimension(a.height()));
         img.setSourceSha256(a.sha256());
         img.setPhash(a.phash());
-        img.setCropJson(a.crop() == null ? null : Json.write(a.cropJson()));
-        Map<String, Object> metrics = new LinkedHashMap<>(a.metrics());
-        metrics.put("pieceType", a.pieceType() == null ? null : a.pieceType().name());
-        metrics.put("detailView", a.detailView());
-        metrics.put("confidence", a.confidence());
-        metrics.put("manualReview", a.manualReview());
-        metrics.put("stages", a.stages().stream().map(CatalogImagePipeline.Stage::toMap).toList());
-        metrics.put("debug", a.debug());
-        img.setMetricsJson(Json.write(metrics));
+        img.setCropJson(cropJson(a));
+        img.setMetricsJson(metricsJson(a));
         if (persist && a.rendered() != null && a.outcome() != CatalogImageValidator.Outcome.REJECTED) {
             Map<String, Object> assets = store(img, a.rendered());
             img.setAssetsJson(Json.write(assets));
@@ -196,8 +189,8 @@ public class CatalogImagePipelineService {
 
     private void finish(CatalogImage img, String status, List<String> reasons, Double quality) {
         img.setProcessingStatus(status);
-        img.setGateReasons(reasons.isEmpty() ? null : String.join(",", reasons).substring(0, Math.min(500, String.join(",", reasons).length())));
-        img.setQualityScore(quality == null ? null : BigDecimal.valueOf(quality).setScale(4, RoundingMode.HALF_UP));
+        img.setGateReasons(gateReasons(reasons));
+        img.setQualityScore(qualityScore(quality));
         img.setPipelineVersion(CatalogImagePipeline.VERSION);
         img.setProcessedAt(Instant.now());
         if ("NEEDS_REPROCESSING".equals(status) && !"APPROVED".equals(img.getReviewStatus())) {
@@ -206,6 +199,45 @@ public class CatalogImagePipelineService {
         if ("FAILED".equals(status)) {
             images.save(img);
         }
+    }
+
+    // ── colunas do nível A: o que apply()/finish() gravam a partir da Analysis; também usadas pelo
+    //    CatalogImageBatchCli (lote local), para o lote gravar no banco exatamente o que a API gravaria ──
+
+    /** width/height: 0 (foto rejeitada antes do decode) vira NULL. */
+    public static Integer dimension(int px) {
+        return px == 0 ? null : px;
+    }
+
+    /** crop_json: recorte 4:5 em coordenadas normalizadas da foto original; NULL quando não houve REFRAMING. */
+    public static String cropJson(CatalogImagePipeline.Analysis a) {
+        return a.crop() == null ? null : Json.write(a.cropJson());
+    }
+
+    /** metrics_json: métricas do QUALITY CHECK + tipo de peça, detalhe, confiança, revisão, estágios e depuração. */
+    public static String metricsJson(CatalogImagePipeline.Analysis a) {
+        Map<String, Object> metrics = new LinkedHashMap<>(a.metrics());
+        metrics.put("pieceType", a.pieceType() == null ? null : a.pieceType().name());
+        metrics.put("detailView", a.detailView());
+        metrics.put("confidence", a.confidence());
+        metrics.put("manualReview", a.manualReview());
+        metrics.put("stages", a.stages().stream().map(CatalogImagePipeline.Stage::toMap).toList());
+        metrics.put("debug", a.debug());
+        return Json.write(metrics);
+    }
+
+    /** gate_reasons: motivos separados por vírgula, cortados em 500 caracteres (tamanho da coluna); NULL sem motivo. */
+    public static String gateReasons(List<String> reasons) {
+        if (reasons.isEmpty()) {
+            return null;
+        }
+        String joined = String.join(",", reasons);
+        return joined.substring(0, Math.min(500, joined.length()));
+    }
+
+    /** quality_score: DECIMAL com 4 casas, arredondamento HALF_UP. */
+    public static BigDecimal qualityScore(Double quality) {
+        return quality == null ? null : BigDecimal.valueOf(quality).setScale(4, RoundingMode.HALF_UP);
     }
 
     /** Mesmo conteúdo em outra URL: reaproveita a análise (sourceImageHash), sem baixar o pipeline de novo. */
@@ -288,7 +320,8 @@ public class CatalogImagePipelineService {
                     outcome, i.getQualityScore() == null ? 0 : i.getQualityScore().doubleValue(), Boolean.TRUE.equals(m.get("detailView")),
                     i.getPhash()));
         }
-        List<ImageCandidateRanker.Ranked> ranked = ranker.rank(cands);
+        PieceType type = products.findById(productId).map(p -> PieceType.of(p.getCategory())).orElse(null);
+        List<ImageCandidateRanker.Ranked> ranked = ranker.rank(cands, type);
         boolean manualCanonical = all.stream().anyMatch(i -> i.isCanonical() && "APPROVED".equals(i.getReviewStatus()));
         for (ImageCandidateRanker.Ranked r : ranked) {
             CatalogImage i = byId.get(r.candidate().id());

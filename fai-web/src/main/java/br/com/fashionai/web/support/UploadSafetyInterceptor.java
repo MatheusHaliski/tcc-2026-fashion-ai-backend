@@ -6,7 +6,6 @@ import br.com.fashionai.application.common.Hashing;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.moderation.ImageSafety;
 import br.com.fashionai.application.moderation.UploadQuarantine;
-import br.com.fashionai.domain.model.enums.ModerationQueueStatus;
 import br.com.fashionai.domain.repository.ModerationQueueRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -33,8 +32,10 @@ import java.util.UUID;
  * {@link ImageSafety}:
  * <ul>
  *   <li>ALLOW — segue para o fluxo normal;</li>
- *   <li>REVIEW — a foto não entra no fluxo: vai para a quarentena ({@code restricted/}) e para a fila do admin; a
- *       resposta é 422 {@code IMAGEM_EM_REVISAO} com a explicação para a pessoa;</li>
+ *   <li>REVIEW — decidido na hora, sem revisão da equipe: sem classificador configurado (motor {@code indisponivel})
+ *       a foto segue para o fluxo e o pipeline de fotografia a processa; com sinal real de conteúdo sensível (pele
+ *       exposta demais, conteúdo sensível possível) é recusada na hora com 422 {@code IMAGEM_NAO_ACEITA}, pedindo outra
+ *       foto — nada fica retido esperando uma pessoa;</li>
  *   <li>BLOCK — recusada (422 {@code IMAGEM_RECUSADA}); o arquivo não é guardado, só o registro de auditoria com o hash.</li>
  * </ul>
  */
@@ -43,8 +44,8 @@ public class UploadSafetyInterceptor implements HandlerInterceptor {
     private static final Logger log = LoggerFactory.getLogger(UploadSafetyInterceptor.class);
     /** Rotas que não recebem foto de pessoa enviada pela própria pessoa: textura do rosto gerada pelo app (já em restricted/). */
     private static final List<String> EXEMPT = List.of("/api/me/avatar3d");
-    /** Itens pendentes por pessoa: acima disso a foto é recusada sem ir para a fila (evita encher a quarentena). */
-    static final int MAX_PENDING = 20;
+    /** Motor do veredito quando não há classificador configurado (ImageSafety): não é sinal de conteúdo sensível. */
+    static final String UNAVAILABLE = "indisponivel";
     /** Arquivos por requisição (o maior fluxo legítimo, a análise em lote de peças, aceita 12). */
     static final int MAX_FILE_PARTS = 12;
 
@@ -100,6 +101,9 @@ public class UploadSafetyInterceptor implements HandlerInterceptor {
                     // imagem que o servidor não consegue ler também não pode ser conferida: não entra (ex.: HEIC)
                     throw ApiException.badRequest("FORMATO_INVALIDO", Msg.t("imageOps.formato_nao_aceito_use_jpg"));
                 }
+                if (v.decision() == ImageSafety.Decision.REVIEW && UNAVAILABLE.equals(v.engine())) {
+                    continue;                                 // sem classificador: não há sinal a revisar, a foto segue
+                }
                 if (v.decision() != ImageSafety.Decision.ALLOW) {
                     refuse(request, path, bytes, v);
                 }
@@ -120,25 +124,12 @@ public class UploadSafetyInterceptor implements HandlerInterceptor {
             }
             throw new ApiException(422, "IMAGEM_RECUSADA", Msg.t("imageSafety.recusada"), Map.of("reasons", v.reasons()));
         }
-        UploadQuarantine q = quarantine.getIfAvailable();
-        if (userId != null && q != null && pending(userId) < MAX_PENDING) {
-            UUID item = q.hold(userId, bytes, path, v);
-            if (a != null) {
-                a.log(userId.toString(), "UPLOAD_RETIDO_MODERACAO", path, "PENDENTE", CorrelationIdFilter.clientIp(request),
-                        request.getHeader("User-Agent"), Map.of("item", item.toString(), "engine", v.engine(), "sha256", hash));
-            }
-            log.info("Foto retida para revisão humana: item {} ({}, {})", item, path, v.engine());
-            throw new ApiException(422, "IMAGEM_EM_REVISAO", Msg.t("imageSafety.em_revisao"), Map.of("reasons", v.reasons(), "reviewItem", item));
+        // sinal de conteúdo sensível: recusa automática na hora (sem quarentena nem fila da equipe), pede outra foto
+        if (a != null) {
+            a.log(userId == null ? "anonimo" : userId.toString(), "UPLOAD_RECUSADO_AUTOMATICO", path, "RECUSADO",
+                    CorrelationIdFilter.clientIp(request), request.getHeader("User-Agent"), meta);
         }
-        // sem conta (pré-cadastro) ou fila cheia: não guarda, pede outra foto
         throw new ApiException(422, "IMAGEM_NAO_ACEITA", Msg.t("imageSafety.envie_outra"), Map.of("reasons", v.reasons()));
-    }
-
-    private long pending(UUID userId) {
-        ModerationQueueRepository r = queue.getIfAvailable();
-        return r == null ? 0 : r.findByUserIdOrderByCreatedAtDesc(userId).stream()
-                .filter(i -> UploadQuarantine.TARGET.equals(i.getTargetType()) && i.getStatus() == ModerationQueueStatus.PENDING_REVIEW)
-                .count();
     }
 
     private static UUID userId() {

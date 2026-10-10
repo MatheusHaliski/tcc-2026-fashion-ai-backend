@@ -84,7 +84,7 @@ function useFloorTexture(style: RoomStyle, floor: string, accent: string) {
 function useWordmark(name: string, ink: string, bg: string | null, w = 1024, h = 320) {
   return useCanvasTexture((g, W, H) => {
     if (bg) { g.fillStyle = bg; g.fillRect(0, 0, W, H); } else g.clearRect(0, 0, W, H);
-    const text = name.length > 22 ? `${name.slice(0, 21)}…` : name;
+    const label = name ?? ""; const text = label.length > 22 ? `${label.slice(0, 21)}…` : label;
     let size = Math.round(H * 0.5); g.font = `800 ${size}px Inter, Arial, sans-serif`;
     while (g.measureText(text.toUpperCase()).width > W * 0.88 && size > 24) { size -= 4; g.font = `800 ${size}px Inter, Arial, sans-serif`; }
     g.fillStyle = ink; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(text.toUpperCase(), W / 2, H / 2 + 4);

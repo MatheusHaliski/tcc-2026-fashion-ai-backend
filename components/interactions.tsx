@@ -191,8 +191,10 @@ export function useRemix(type: TargetType, id: string) {
     if (!user) { router.push("/login"); return; }
     if (busy) return; setBusy(true);
     try {
-      const r = await api.post<{ scheme?: { id: string }; id?: string; next?: string; hint?: string }>(`/api/interactions/${interactionType(type)}/${id}/remixes`);
-      if (type === "PIECE") { if (r.hint) toast.success(r.hint); router.push(r.next?.startsWith("/") ? r.next : `/schemes/new?pieces=${id}`); return; }
+      const r = await api.post<{ scheme?: { id: string }; id?: string; next?: string; hint?: string; seedPieceId?: string }>(`/api/interactions/${interactionType(type)}/${id}/remixes`);
+      // a peça vira semente do criador de looks (/schemes/new?pieces=); só segue o `next` da API quando ele já aponta
+      // para o criador — versões antigas da API devolviam /create-look?seedPiece=, rota que o app não tem (404)
+      if (type === "PIECE") { if (r.hint) toast.success(r.hint); router.push(r.next?.startsWith("/schemes/new") ? r.next : `/schemes/new?pieces=${encodeURIComponent(r.seedPieceId ?? id)}`); return; }
       toast.success(t("interactions.remixDone")); const nid = r.scheme?.id ?? r.id; if (nid) router.push(`/schemes/${nid}`);
     } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
@@ -244,9 +246,9 @@ export function CardActions({ type, id, counters, viewer, title, compact, extra,
   const [sharedNow, setSharedNow] = useState(0);   // compartilhamentos feitos agora (a contagem sobe na hora)
   const commentsN = counters?.comments ?? 0, sharesN = (counters?.shares ?? 0) + sharedNow, remixesN = counters?.remixes ?? 0;
   // remixar (RF19.CA13) fica na linha: na peça sempre (card compacto e detalhe; a dona também remixa, a peça vira
-  // semente de um look novo); no look só no detalhe e para quem não publicou (não se remixa o próprio look)
+  // semente de um look novo); no look, no card e no detalhe, para quem não publicou (não se remixa o próprio look)
   const { remix, busy: remixing } = useRemix(type === "DNA_SCHEME" ? "SCHEME" : type, id);
-  const canRemix = type === "PIECE" || (!!reactions && type === "SCHEME" && !(user && ownerId && user.id === ownerId));
+  const canRemix = type === "PIECE" || (type === "SCHEME" && !(user && ownerId && user.id === ownerId));
   // hideZero: remixar e reações sem nenhuma contagem mostram só o ícone (a linha única cabe no celular)
   const act = (key: string, icon: SocialIconName, label: string, onClick: () => void, opts: { pressed?: boolean; count?: number; haspopup?: boolean; busy?: boolean; hideZero?: boolean; className?: string } = {}) => (
     <button key={key} type="button" className={`c-act is-${key} ${opts.className ?? ""}`} aria-pressed={opts.pressed} aria-busy={busy[key] || opts.busy || undefined} aria-haspopup={opts.haspopup ? "dialog" : undefined} aria-label={label} title={label}

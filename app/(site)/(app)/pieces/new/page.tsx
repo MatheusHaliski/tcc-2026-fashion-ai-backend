@@ -18,6 +18,7 @@ import { CreationSuccess } from "@/components/expanded-card";
 import { PieceArtEditor } from "@/components/piece-art-editor";
 import { FaiIcon } from "@/components/fai-icon";
 import { keepAllowed } from "@/lib/pieces/tags";
+import { CatalogPhoto } from "@/components/catalog/catalog-photo";
 import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
 import { MultiPieceUpload } from "@/components/multi-piece-review";
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
@@ -27,6 +28,8 @@ import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePref
 /** Etapas do criador de peça (RF4/RF47): peça (busca catalogada + dados) → mais detalhes → arte de fundo → revisar e salvar. */
 type Step = "piece" | "more" | "art" | "review";
 const STEPS: Step[] = ["piece", "more", "art", "review"];
+/** Forma de adicionar (RF4): pela busca catalogada com o formulário, ou fotografando (uma ou várias fotos). */
+type AddMode = "catalog" | "photos";
 const GENERIC_ASSET = "/_derived/pecas_default/generic.svg";
 /** Produto do catálogo escolhido na busca (RF47): a peça é criada por referência a ele. */
 interface CatalogPick { product: CatalogProduct; variant: CatalogVariant | null }
@@ -42,7 +45,8 @@ const CATEGORY_IDS = CATEGORY_CARDS.map((c) => c.id as string);
 function NewPiece() {
   const params = useSearchParams();
   const prefill = readPiecePrefill(params);
-  return <PieceCreator initial={{ category: validPieceCategory(prefill.category, CATEGORY_IDS) || undefined, brand: prefill.brand, query: prefill.query }} prefill={prefill} />;
+  return <PieceCreator initial={{ category: validPieceCategory(prefill.category, CATEGORY_IDS) || undefined, brand: prefill.brand, query: prefill.query }} prefill={prefill}
+    initialMode={params.get("mode") === "photos" ? "photos" : "catalog"} />;
 }
 
 /**
@@ -51,9 +55,11 @@ function NewPiece() {
  * preenche o formulário e a peça é criada por referência (POST /api/pieces/from-catalog); sem produto, a peça é salva com os
  * dados do formulário e a ilustração da categoria (POST /api/pieces).
  */
-function PieceCreator({ initial, prefill = {} }: { initial: Partial<CatalogSearchContext>; prefill?: PiecePrefillParams }) {
+function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { initial: Partial<CatalogSearchContext>; prefill?: PiecePrefillParams; initialMode?: AddMode }) {
   const { t } = useI18n(); const toast = useToast(); const tax = useTaxonomy(); const { user } = useAuth();
   const [step, setStep] = useState<Step>("piece");
+  // RF4 · duas formas de adicionar: busca catalogada (+ formulário) ou fotografar (várias fotos, várias peças por foto)
+  const [mode, setMode] = useState<AddMode>(initialMode);
   const [pick, setPick] = useState<CatalogPick | null>(null);
   // pré-preenchimento (Lens): validado na taxonomia já na primeira renderização quando ela está em cache; senão, o efeito
   // abaixo completa assim que ela chega
@@ -176,7 +182,7 @@ function PieceCreator({ initial, prefill = {} }: { initial: Partial<CatalogSearc
     </div>
   );
   // prévia do card da peça com o que já foi preenchido (RF7 · anatomia "peça de roupa")
-  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: officialImg ?? asset, thumbnailUrl: officialImg ?? asset, studioImageUrl: null, studioThumbUrl: null, studioFeedUrl: null, defaultImage: !officialImg, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: officialImg ?? asset, thumbnailUrl: officialImg ?? asset, ...(pick?.product.catalogImage && officialImg ? { flatLayMetadata: { catalogImage: pick.product.catalogImage } } : {}), studioImageUrl: null, studioThumbUrl: null, studioFeedUrl: null, defaultImage: !officialImg, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   return (
     <>
       <PageHeader title={t("closet.addPiece")} kicker="RF47" lead={t("pieces.new.lead_unica")} />
@@ -187,6 +193,20 @@ function PieceCreator({ initial, prefill = {} }: { initial: Partial<CatalogSearc
           {pre.scan && <Link className="underline" href={`/lens/${pre.scan}`}>{t("pieceForm.lens.voltar")}</Link>}
         </p>
       )}
+      <SegmentPicker className="mb-4" label={t("pieces.new.forma_de_adicionar")} value={mode} onChange={setMode}
+        options={[{ id: "catalog", label: t("pieces.new.modo_catalogo") }, { id: "photos", label: t("pieces.new.modo_fotos") }]} />
+      {mode === "photos" ? (
+        <Card>
+          <h2 className="type-h3 mb-1">{t("pieces.new.modo_fotos")}</h2>
+          <div className="mb-3">
+            <p className="label" id="photo-type-label">{t("pieces.new.tipo_para_o_guia")}</p>
+            <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="photo-type-label">{CATEGORY_CARDS.map((c) => <Chip key={c.id} active={value.category === c.id} onClick={() => chooseCategory(c.id)}>{CATEGORY_LABEL[c.id] ?? label(c.id)}</Chip>)}</div>
+          </div>
+          <MultiPieceUpload category={value.category} subcategory={value.subcategory}
+            onCategory={(c, sub) => { if (c !== value.category) chooseCategory(c); if (sub) setValue((v) => ({ ...v, subcategory: sub })); }}
+            onSaved={(count) => { toast.success(t("multiPiece.salvas", { count })); window.location.href = user ? `/u/${user.username}` : "/closet"; }} />
+        </Card>
+      ) : (<>
       <SegmentPicker className="mb-4" label={t("builder.stepsLabel")} value={step} onChange={go} options={STEPS.map((s, i) => ({ id: s, label: `${i + 1} · ${stepLabel[s]}` }))} />
       {/* na etapa da arte o editor tem a própria prévia (o mesmo card): a lateral some para não duplicar */}
       <div className={step === "art" ? "grid gap-5" : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]"}>
@@ -202,7 +222,7 @@ function PieceCreator({ initial, prefill = {} }: { initial: Partial<CatalogSearc
                 <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-catalog-label" className="type-h3">{t("catalog.buscar_no_catalogo")}</h2><Badge tone="thread">{t("catalog.recomendado")}</Badge><span className="type-caption text-muted">{t("catalog.lead_busca")}</span></div>
                 {pick ? (
                   <div className="catalog-pick" role="status">
-                    <span className="catalog-pick-art" aria-hidden><img src={officialImg ?? asset} alt="" /></span>
+                    <span className="catalog-pick-art" aria-hidden>{pick.product.catalogImage ? <CatalogPhoto image={pick.product.catalogImage} fallbackUrl={officialImg} alt="" /> : <img src={officialImg ?? asset} alt="" />}</span>
                     <div className="min-w-0">
                       <p className="type-caption text-muted">{t("catalog.peca_do_catalogo")}</p>
                       <p className="type-body font-medium truncate">{pick.product.brand?.name} · {pick.product.productName}{pick.variant?.colorName ? ` — ${pick.variant.colorName}` : ""}</p>
@@ -220,11 +240,12 @@ function PieceCreator({ initial, prefill = {} }: { initial: Partial<CatalogSearc
                 {pick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("catalog.preenchido_do_catalogo")}</p>}
                 <PieceFields value={value} onChange={(v) => { setValue(v); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors} />
               </section>
-              {/* RF4 · fotografia opcional, para um item mais personalizado: uma ou várias fotos, cada peça detectada vira uma
-                  peça no guarda-roupa (revisão foto por foto). Independe do tipo escolhido acima. */}
+              {/* RF4 · fotografia opcional: as duas formas de adicionar são separadas pela janela segmentada do topo; aqui só o
+                  atalho para a aba Fotografar (uma ou várias fotos, com o guia de fotografia por categoria) */}
               <section className="creator-section" aria-labelledby="piece-photo-label">
                 <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-photo-label" className="type-h3">{t("pieces.new.foto_opcional")}</h2><Badge tone="chalk">{t("common.optional")}</Badge></div>
-                <MultiPieceUpload onSaved={(count) => { toast.success(t("multiPiece.salvas", { count })); window.location.href = user ? `/u/${user.username}` : "/closet"; }} />
+                <p className="mb-2 type-body-sm text-muted">{t("pieces.new.prefere_fotografar")}</p>
+                <Button size="sm" onClick={() => { setMode("photos"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{t("pieces.new.modo_fotos")}</Button>
               </section>
               {nav}
             </Card>
@@ -264,6 +285,7 @@ function PieceCreator({ initial, prefill = {} }: { initial: Partial<CatalogSearc
       </div>
       <p className="mt-4 type-caption text-faint"><Link className="underline" href="/closet">← {t("closet.title")}</Link></p>
       {done && <CreationSuccess kind="piece" id={done} onDone={() => { window.location.href = user ? `/u/${user.username}` : "/closet"; }} />}
+      </>)}
     </>
   );
 }
