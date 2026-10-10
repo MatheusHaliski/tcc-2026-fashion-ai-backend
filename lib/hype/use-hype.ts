@@ -57,8 +57,12 @@ async function flush() {
   }
 }
 
+/** Prefixo dos IDs de exemplo (tutoriais "Como funciona"): nunca vão à API — a demonstração traz os próprios números. */
+export const DEMO_ID_PREFIX = "demo-";
+
 /** Pede o Hype de uma entidade (entra no próximo lote; respeita o TTL e pedidos em andamento). */
 export function requestHype(type: HypeEntity, id: string) {
+  if (id.startsWith(DEMO_ID_PREFIX)) return;
   const key = keyOf(type, id);
   const e = entries.get(key);
   if (e && (e.loading || Date.now() - e.at < TTL_MS)) return;

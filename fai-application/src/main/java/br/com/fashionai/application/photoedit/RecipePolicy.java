@@ -64,7 +64,9 @@ public final class RecipePolicy {
                     if (c.w() <= 0.02 || c.h() <= 0.02 || c.x() < -1e-6 || c.y() < -1e-6 || c.x() + c.w() > 1 + 1e-6 || c.y() + c.h() > 1 + 1e-6) {
                         v.add("RECORTE_FORA_DA_FOTO");
                     }
-                    if (canonical && !"4:5".equals(c.aspect())) {
+                    // canônica: quadro 4:5 (Enquadramento) ou a janela livre que a pessoa marcou (Recorte, aspect "FREE");
+                    // sem aspect declarado continua recusada — o recorte da canônica é sempre uma escolha explícita
+                    if (canonical && !"4:5".equals(c.aspect()) && !"FREE".equals(c.aspect())) {
                         v.add("CANONICA_EXIGE_QUADRO_4_5");
                     }
                 }

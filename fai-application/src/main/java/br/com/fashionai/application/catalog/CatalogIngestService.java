@@ -161,8 +161,8 @@ public class CatalogIngestService {
         p.setBrandId(brand.getId());
         p.setCategory(category);
         p.setSubcategory(subcategory);
-        p.setProductName(in.productName().trim());
-        p.setModelName(blankToNull(in.modelName()));
+        p.setProductName(plainText(in.productName()));
+        p.setModelName(blankToNull(plainText(in.modelName())));
         p.setProductCode(blankToNull(in.productCode()));
         p.setSku(blankToNull(in.sku()));
         p.setGtin(blankToNull(in.gtin()));
@@ -398,6 +398,18 @@ public class CatalogIngestService {
 
     private static boolean notBlank(String s) {
         return s != null && !s.isBlank();
+    }
+
+    private static final java.util.regex.Pattern TAG = java.util.regex.Pattern.compile("<[^>]{0,200}>");
+
+    /** Texto puro: tira marcação HTML que algumas lojas deixam no título ("Supima<sup>®</sup>") e as entidades comuns. */
+    static String plainText(String s) {
+        if (s == null) {
+            return null;
+        }
+        String t = TAG.matcher(s).replaceAll("").replace("&amp;", "&").replace("&#39;", "'").replace("&quot;", "\"")
+                .replace("&reg;", "®").replace("&trade;", "™").replace("&nbsp;", " ");
+        return t.replaceAll("\\s+", " ").trim();
     }
 
     private static String blankToNull(String s) {

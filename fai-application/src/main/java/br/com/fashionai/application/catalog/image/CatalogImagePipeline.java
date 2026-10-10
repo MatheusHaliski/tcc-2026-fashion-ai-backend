@@ -32,6 +32,8 @@ public final class CatalogImagePipeline {
     public static final String VERSION = "CATALOG_IMAGE_PIPELINE_V4";
     /** vistas que a origem declara de fato (PACKSHOT, OTHER e DETAIL não dizem qual lado da peça aparece) */
     static final Set<String> VIEWS = Set.of("FRONT", "BACK", "SIDE", "TOP");
+    /** Área mínima da peça num packshot (fração da foto): no acervo o menor acessório aprovado ocupa 13%; abaixo de 8% é fragmento. */
+    static final double MIN_PRODUCT_AREA = 0.08;
     public static final Set<String> ACCEPTED_MIME = Set.of("image/jpeg", "image/png", "image/webp");
 
     public record Request(byte[] bytes, String category, String subcategory, String imageType, boolean persist) {
@@ -197,6 +199,12 @@ public final class CatalogImagePipeline {
         // REGRA DE ENQUADRAMENTO (§9.1): recorte fora da regra ou vista declarada diferente da exigida vão para revisão
         if (crop.rule() != null && Boolean.FALSE.equals(crop.compliance().get("ok"))) {
             extra.add("FRAMING_RULE_NOT_MET");
+        }
+        // fragmento: num packshot a peça nunca ocupa só uma lasca da foto — peça clara sobre fundo claro faz a segmentação
+        // pegar só o detalhe escuro (patch, logo) e o recorte vira um close do detalhe. Foto de detalhe declarada fica de fora.
+        NRect box = seg.productBox();
+        if (!"DETAIL".equalsIgnoreCase(req.imageType()) && box.w() * box.h() < MIN_PRODUCT_AREA) {
+            extra.add("SEGMENTATION_FRAGMENT");
         }
         String required = crop.rule() == null ? "ANY" : crop.rule().view();
         String declared = req.imageType() == null ? null : req.imageType().toUpperCase(java.util.Locale.ROOT);

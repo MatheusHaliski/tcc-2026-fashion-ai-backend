@@ -21,7 +21,11 @@ import { label, subcategoryLabel } from "@/lib/api/taxonomy";
 import { SealReferencePreview } from "@/components/seal-reference-model";
 import type { SealReferenceModel } from "@/lib/seals/reference-model";
 import { resolveCardArt } from "@/lib/card-art";
+<<<<<<< HEAD
+import { GuideAuto, HowItWorks } from "@/components/guide/guide";
+=======
 import { CopilotChatComposer, CopilotChatMessage } from "@/components/copilot-chat";
+>>>>>>> origin/main
 
 interface Chip { pieceId: string; name: string; imageUrl?: string; available?: boolean; address?: string; addressLabel?: string; actions?: string[]; hype?: number | null; compatibility?: number | null; }
 interface Action { type: string; label?: string; href?: string; pieceIds?: string[]; title?: string; occasion?: string[]; }
@@ -154,7 +158,8 @@ function Copilot() {
   ];
   return (
     <>
-      <PageHeader title={t("nav.copilot")} kicker={t("copilot.rf10_ca08_ca16")} lead={t("copilot.pergunte_onde_esta_uma_peca")} />
+      <PageHeader title={t("nav.copilot")} kicker={t("copilot.rf10_ca08_ca16")} lead={t("copilot.pergunte_onde_esta_uma_peca")} actions={<HowItWorks id="copilot.suggest" />} />
+      <GuideAuto id="copilot.suggest" />
       {ctx?.limitation && <p className="mb-3 rounded-md bg-chalk-soft p-3 type-body-sm">{ctx.limitation.message} <Link href="/pieces/new" className="underline">{t("closet.addPiece")}</Link></p>}
       {ctx?.weather?.available && <p className="mb-3 type-caption text-muted">{ctx.weather.city} · {ctx.weather.temperatureC}°C · {ctx.weather.description}</p>}
       <div className="grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">

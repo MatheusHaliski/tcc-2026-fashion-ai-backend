@@ -632,3 +632,147 @@ qualquer a preço alto, e o comprador "paga" assim pontos que comprou por fora. 
   peça continua no guarda-roupa de quem a criou e o extrato das duas contas mostra débito, crédito e taxa.
 - Telas em claro e escuro, celular, leitor de tela: o formulário anuncia a faixa e a taxa, e o aviso de lance superado
   chega pela central de notificações.
+
+---
+
+## 14. Desafios de Montagem dentro dos Momentos (leitura de *O Império do Efêmero*)
+
+Pedido de 07/10: criar os jogos de **Card Building Challenge** (os Desafios de Montagem da §7) levando em conta o livro
+*O Império do Efêmero*, de Gilles Lipovetsky, e a camada **Momentos** (moda + tempo + ocasião + expressão individual +
+participação social). Este capítulo é a especificação da F5 e prevalece sobre a §7 onde as duas divergirem.
+
+### 14.1 Auditoria: os Momentos já existem
+
+A camada Momentos dos 61 pontos foi implementada em 06/10 (PR #151, `docs/momentos/MOMENTOS.md`). Reconferência:
+
+| Pontos do pedido | Onde está | Situação |
+|---|---|---|
+| 1–9 (Momentos no lugar de Desafios, princípio, calendário, região, entidade, tipos, home, Agora, contagem) | `Moment`, `MomentType`, `MomentNature`, `/moments`, `MomentTime` | Feito. "Desafio" é um tipo de Momento; a área antiga continua em `/challenges` |
+| 10–15 (pontos sazonais, reutilização, desafios do Momento, sem "certo/errado", MomentMatch) | `MomentPointsPolicy`, `MomentChallenge`, `MomentMatch` | Feito, determinístico, ledger idempotente |
+| 16–18 (verso do card, Copilot, descoberta × identidade) | `hype-card-back`, `CopilotService` | Feito |
+| 19–25 (calendário visual, temporadas, eventos reais com fonte, Momentos FashionAI, No-Buy, Rediscovery, One piece) | `/moments` (ano, mês, semana, linha do tempo), V53 | Feito; eventos externos só com fonte |
+| 26–34 (FLAIR privado, criação, privacidade, modos, cooperativo, votação, calendário e memória do grupo) | `createGroupMoment`, `FlairMomentMode`, `MomentVote`, `memory_json` | Feito |
+| 35–42 (Hype contextual, trend por Momento, histórico, ledger, anti-farming, insígnias, perfil, Replay) | `contextualHype`, `/trending`, `moment_participations`, `fai_points_ledger` | Feito |
+| 43–61 (home, notificações, passados e futuros, marcas, acessibilidade, mobile, tema, abstração, API, tempo, status, admin, IA) | banner do feed, 4 tipos de notificação, `MomentPage`, `/admin/moments` | Feito |
+| **Lacunas** | — | Clima no Copilot; Brand Moments com fluxo comercial; exportação LGPD das participações; comentários dentro do Momento; recorrência anual automática. E faltava o que este capítulo entrega: **jogos de montagem de cartas dentro dos Momentos** |
+
+### 14.2 O que o livro diz e o que vira regra
+
+Referência: LIPOVETSKY, Gilles. *O Império do Efêmero: a moda e seu destino nas sociedades modernas*. Tradução de
+Maria Lucia Machado. São Paulo: Companhia das Letras, 1989 (original *L'Empire de l'éphémère*, Gallimard, 1987). As
+ideias abaixo são **paráfrases**; antes de citar no texto do TCC, conferir página e redação no exemplar.
+
+| # | Ideia do livro (paráfrase) | O que significa no jogo | Regras (código) |
+|---|---|---|---|
+| L1 | **Efêmero.** A moda é o reino da mudança rápida e do presente: o novo vale porque é novo e passa | O desafio vive na janela do Momento. Quando acaba, não some: vira **Memória** | **E1** a janela do desafio é a do Momento (ou a própria, sem Momento). **E2** desafio encerrado não recebe entrega e mostra a Memória. **E3** a reedição é um desafio novo na temporada seguinte; um desafio encerrado nunca reabre |
+| L2 | **Sedução.** A moda moderna convence pelo prazer e pela escolha, não pela imposição | O desafio convida (cenário, história), nunca pressiona | **S1** contagem informativa ("termina em 3 dias"), nunca "última chance". **S2** não participar não custa nada: sem sequência que se perde, sem multa. **S3** os pontos previstos aparecem antes de entregar |
+| L3 | **Diferenciação marginal.** As versões se distinguem por pequenas diferenças | A mesma cena aceita muitas montagens, e cada carta muda a história | **D1** a história é escrita carta a carta: duas montagens diferentes nunca contam a mesma história. **D2** a Memória mostra a **variedade de leituras**, não um vencedor |
+| L4 | **Moda aberta.** Depois da "moda de cem anos" (alta-costura ditando uma linha por estação), vários estilos convivem e a aparência fica mais pessoal | Nenhum desafio de Momento tem um jeito certo de cumprir | **P1** o requisito de tema aceita **qualquer interpretação** do Momento. **P2** desafio ligado a Momento com requisito de tema exige um Momento com ≥ 2 interpretações (validado ao salvar). **P3** a pessoa escolhe uma interpretação ou **"Minha leitura"**; a escolha não muda os pontos |
+| L5 | **Imitar os contemporâneos e se distinguir.** Na moda, o modelo é o presente (os outros de agora), não a tradição, e ao mesmo tempo cada pessoa quer se diferenciar | Ver o que os outros montaram inspira, mas depois de a pessoa se expressar | **I1** montagens da comunidade só aparecem depois da sua entrega ou depois do fim. **I2** a Memória separa "leituras mais usadas" e "leituras raras" (< 15 % das entregas) |
+| L6 | **Moda consumada.** A lógica da moda (efêmero, sedução, diferenciação) se espalha para o consumo e para a obsolescência planejada | O novo vem da **recombinação**, não da compra | **C1** nenhuma regra premia compra. **C2** requisito **"Sem compras"**: só cartas de peças que já estavam no guarda-roupa antes do início. **C3** bônus **Redescoberta** (+10) por carta de peça sem uso há ≥ 60 dias. **C4** "Brechó de tesouros" é só Bronze |
+| L7 | **Moda e autonomia.** O livro lê a moda também como motor de autonomia individual e pluralismo, não só como marcação de classe | O nível vem do preço (D1), então o preço não pode ser a porta de entrada | **A1** todo Momento com desafios tem pelo menos um **aberto a qualquer nível**. **A2** existem desafios "só Bronze". **A3** a sintonia (combinar bem) conta mais que o nível na maioria dos desafios |
+| L8 | **Tradição × moda.** Nas sociedades da tradição, repete-se o passado; a moda valoriza o presente | O FashionAI respeita o que é rito e usa a tradição como fonte de estilo | **R1** Momento RELIGIOUS nunca tem desafio de montagem (validado). **R2** a tradição entra como interpretação (retrô, vintage), nunca como regra ("use fantasia") |
+| L9 | **O ritmo das estações** das coleções | A temporada FLAIR (D6) dá a edição da carta | **T1** desafios sazonais aceitam cartas de qualquer temporada: ninguém precisa gerar carta nova para jogar. **T2** a Memória guarda a temporada |
+
+### 14.3 Como funciona
+
+1. A pessoa abre um Momento (ou FLAIR → Desafios de Montagem) e vê os desafios: **Agora**, **Em breve** (pode montar e
+   conferir, mas só entrega quando abrir), **Sempre disponíveis**, **Grupos** e **Memórias**.
+2. Escolhe a leitura: uma interpretação do Momento ou "Minha leitura". O app sugere a interpretação que mais combina com
+   as cartas que a pessoa já tem (sem IA, por sobreposição de tags).
+3. Monta no cenário: cada vaga pede uma posição (SUP, INF, CAL, ACE, VES ou qualquer). Cada carta colocada acende a vaga
+   e escreve uma linha da história. A lista de requisitos e a sintonia vêm do servidor (`/check`), que é a fonte da
+   verdade.
+4. Entrega: o servidor valida de novo, bloqueia as cartas ("Entregue em ‹desafio›", D7), grava a história e lança os
+   pontos numa transação só. Se algo falhar, nada é aplicado. Desafio de Momento também registra a participação no
+   Momento (aparece em "Meus Momentos").
+5. Depois: a pessoa vê as montagens da comunidade (I1). Quando o Momento termina, o desafio vira Memória (E2, D2, I2).
+
+### 14.4 Modelo (V56)
+
+| Tabela | Campos |
+|---|---|
+| `flair_challenge_groups` | código, nome (i18n), pontos do grupo, insígnia |
+| `flair_challenges` | slug, nome e descrição (i18n), cenário, dificuldade (EASY, MEDIUM, HARD, LEGENDARY), Momento (opcional), janela própria (opcional), vagas (`[{key, position, label?, story?}]`), requisitos (JSON validado), pontos, limite de entregas por pessoa, grupo, bloqueia cartas (sim/não), estado (ACTIVE, DRAFT, ARCHIVED), oficial, quem criou, ordem |
+| `flair_challenge_submissions` | desafio, pessoa, tentativa, cartas por vaga (retrato), leitura escolhida, sintonia, história (chaves e variáveis, não texto: vale nos 3 idiomas), pontos, bônus |
+| `flair_card_instance` | + `tags_json` (estilos, ocasiões, cor e material da peça no dia da geração), `locked_challenge_id`, `locked_at` |
+
+### 14.5 Requisitos
+
+Todos verificados no servidor (`CbcRules`), cada um com estado e "tem / precisa" para a lista da tela:
+
+| Tipo | Exemplo | Regra do livro |
+|---|---|---|
+| `tier` | `{"type":"tier","min":"OURO","count":3}`, `{"type":"tier","only":"BRONZE"}`, `{"type":"tier","max":"PRATA"}` | A2, C4 |
+| `ovrAvg` / `ovrMin` | `{"type":"ovrAvg","min":68}` | — |
+| `sintonia` | `{"type":"sintonia","min":15}` | A3 |
+| `sameBrand` / `distinctBrands` | `{"type":"sameBrand","count":2}` | — |
+| `tag` | `{"type":"tag","field":"color","anyOf":["white"],"count":2}` (cor, estilo, ocasião ou material) | — |
+| `theme` | `{"type":"theme","count":3}`: cartas que combinam com **qualquer** interpretação do Momento (ou com a escolhida) | P1 |
+| `hype` | `{"type":"hype","dim":"TRD","min":80,"count":2}` | — |
+| `origin` | `{"type":"origin","only":"PIECE"}` | — |
+| `noBuy` | `{"type":"noBuy"}`: peça no guarda-roupa antes do início do desafio | C2 |
+| `rediscovery` | `{"type":"rediscovery","count":1,"idleDays":60}` | C3 |
+| `strictPosition` | `{"type":"strictPosition"}`: toda vaga com posição exige a posição certa | — |
+
+### 14.6 Sintonia e história
+
+- **Sintonia** (0 a 3 por carta, como §7.2): +1 posição certa (vaga "qualquer" conta); +1 vizinhança (mesma marca, um
+  estilo em comum ou cores em harmonia com uma vizinha); +1 tema (combina com a leitura escolhida ou, em "Minha
+  leitura", com qualquer interpretação ou tag do Momento e do desafio).
+- **História:** uma linha de abertura, uma por vaga (`cbc.scenario.<cenário>.<vaga>.story` com nome, marca e cor da
+  carta) e um fecho pela faixa de sintonia. Fica gravada como chaves e variáveis, então aparece no idioma de quem lê.
+  A IA não escreve a história nem decide pontos.
+
+### 14.7 Pontos
+
+| Ação | Pontos | Referência (1×) |
+|---|---|---|
+| `FLAIR_CBC` | valor do desafio × multiplicador do Momento quando ele está ativo | desafio (ou desafio:tentativa nos repetíveis) |
+| `FLAIR_CBC_REDISCOVERY` | +10 | desafio |
+| `FLAIR_CBC_GROUP` | valor do grupo, ao completar todos os desafios dele | grupo |
+
+Tetos diários seguram a repetição (5 desafios/dia). Desafio de Momento privado de grupo vale no máximo 15.
+
+### 14.8 Desafios semeados (V56)
+
+| Desafio | Cenário | Momento | Nível | Requisitos | Pontos |
+|---|---|---|---|---|---|
+| Verão em Ipanema | ipanema · 3 | — | Fácil | — | 15 |
+| Primeiro dia de estágio | estagio · 4 | — | Fácil | — | 15 |
+| Brechó de tesouros | brecho · 5 | — | Fácil | só Bronze (C4) | 20 |
+| Festival de música | festival · 5 | — | Médio | 2 da mesma marca | 25 |
+| Casamento no campo | casamento · 5 | — | Médio | nota média ≥ 68 | 25 |
+| Viagem a Paris | paris · 6 | — | Médio | 3 marcas diferentes | 30 |
+| Noite de gala | gala · 7 | — | Difícil | 3 Ouro, sintonia ≥ 15 | 50 |
+| Desfile da coleção cápsula | desfile · 8 | — | Difícil | 4 da mesma marca | 50 |
+| Loja pop-up de bairro | popup · 7 | — | Difícil | sintonia ≥ 14, só peças | 45 |
+| Primavera no jardim | primavera · 4 | Primavera 2026 | Fácil | tema em 2 cartas | 20 |
+| De volta do armário | armario · 3 | Primavera 2026 | Fácil | redescoberta em 1 carta | 25 |
+| Noite de Halloween | halloween · 6 | Halloween 2026 | Médio | tema em 3 cartas | 30 |
+| Halloween sem compras | halloween · 4 | Halloween 2026 | Fácil | sem compras, tema em 2 | 40 |
+| Carnaval no bloco | carnaval · 6 | Carnaval 2027 | Médio | tema em 3 | 30 |
+| Inverno na serra | serra · 5 | Inverno 2027 | Médio | tema em 3 | 30 |
+| Uma semana, um guarda-roupa | semana · 7 | No-Buy Week | Difícil | sem compras | 60 |
+| **Lenda do estilo** (grupo) | — | — | Lendário | Casamento + Paris + Gala + Desfile | 150 + insígnia |
+
+Natal e Festas (RELIGIOUS) não ganha desafio (R1). Cada Momento com desafio tem um aberto a qualquer nível (A1).
+
+### 14.9 API
+
+| Método | Rota | Para quê |
+|---|---|---|
+| GET | `/api/flair/challenges?moment=` | Agora, Em breve, Sempre, Grupos, Memórias (ou só os de um Momento) |
+| GET | `/api/flair/challenges/{id ou slug}` | Detalhe: cenário, vagas, requisitos, leituras, janela, pontos, minhas entregas, comunidade (I1) e Memória |
+| POST | `/api/flair/challenges/{id}/check` | Confere a montagem sem gravar |
+| POST | `/api/flair/challenges/{id}/submit` | Entrega (atômica) |
+| POST | `/api/flair/moments/{momentId}/challenges` | Dono de Momento privado de grupo adiciona um desafio a partir de um modelo |
+| GET/POST/PUT | `/api/admin/flair/challenges` | Administração sem deploy, com as validações R1, P2 e A1 |
+
+### 14.10 Fora deste lote
+
+- Carta Especial como prêmio da Lenda do estilo: depende da F7 (programas de cartas especiais). Por ora, pontos e
+  insígnia.
+- Cenários em 3D (F9) e mercado (F10).
+- Cenários novos com arte própria exigem deploy. Desafios novos em cenários existentes, ou no cenário **livre** (vagas
+  e textos definidos na administração), não exigem.

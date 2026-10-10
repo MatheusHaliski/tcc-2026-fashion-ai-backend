@@ -7,6 +7,7 @@ import { RequireAuth } from "@/components/app-shell";
 import { Card, ErrorState, PageHeader, Skeleton } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { RoomStore } from "@/components/room3d/room-store";
+import { GuideAuto, HowItWorks } from "@/components/guide/guide";
 
 interface Account {
   balance: number; lifetime: number; level: string; unlocks?: string; note?: string;
@@ -23,7 +24,8 @@ function Points() {
   const a = acc.data;
   return (
     <>
-      <PageHeader title={t("nav.points")} kicker={t("points.rf30_rf39")} lead={t("points.pontos_por_usar_o_que")} />
+      <PageHeader title={t("nav.points")} kicker={t("points.rf30_rf39")} lead={t("points.pontos_por_usar_o_que")} actions={<HowItWorks id="points.fai" />} />
+      <GuideAuto id="points.fai" />
       <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
         <div className="grid content-start gap-3">
           <Card className="text-center"><p className="label">{t("points.saldo")}</p><p className="hero-number text-6xl">{fmtNumber(a.balance)}</p><p className="type-caption text-muted">{rich("points.acumulado_nivel", { number: fmtNumber(a.lifetime), level: a.level }, { 0: ($c) => <b>{$c}</b> })}</p>{a.nextLevel && <><div className="hype-bar mt-3"><i style={{ width: `${Math.min(100, (100 * a.lifetime) / Math.max(1, a.nextLevel.threshold))}%`, background: "var(--chalk)" }} /></div><p className="mt-1 type-caption">{t("points.faltam_para", { missing: a.nextLevel.missing, level: a.nextLevel.level, unlocks: a.nextLevel.unlocks })}</p></>}{a.note && <p className="mt-2 type-caption text-faint">{a.note}</p>}</Card>

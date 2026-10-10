@@ -30,7 +30,64 @@ function Rig({ view, target, dist }: { view: AvatarView; target: [number, number
   return null;
 }
 
+<<<<<<< HEAD
+/** Material cuja cor caminha até o alvo (transição de marca); com movimento reduzido, troca na hora. */
+function useLerpColor(target: string, reduced: boolean) {
+  const ref = useRef<THREE.MeshStandardMaterial | THREE.MeshBasicMaterial | null>(null);
+  const goal = useMemo(() => new THREE.Color(target), [target]);
+  useEffect(() => { if (reduced && ref.current) ref.current.color.copy(goal); }, [goal, reduced]);
+  useFrame((_, dt) => { if (!reduced && ref.current) ref.current.color.lerp(goal, Math.min(1, dt * 3.2)); });
+  return ref;
+}
+
+/** Padrão da parede desenhado em canvas (cores do tema). */
+function useWallTexture(motif: WallMotif, wall: string, accent: string, repeat: [number, number]) {
+  const tex = useCanvasTexture((g, w, h) => {
+    g.fillStyle = wall; g.fillRect(0, 0, w, h);
+    const tint = (alpha: number, c = accent) => { g.globalAlpha = alpha; g.fillStyle = c; g.strokeStyle = c; };
+    if (motif === "stripes") { tint(0.18); for (let x = -h; x < w; x += 64) { g.beginPath(); g.moveTo(x, h); g.lineTo(x + h, 0); g.lineTo(x + h + 22, 0); g.lineTo(x + 22, h); g.fill(); } }
+    else if (motif === "checker") { tint(0.85, "#F4F1EA"); const s = 32; for (let y = 0; y < h; y += s) for (let x = (y / s) % 2 ? s : 0; x < w; x += s * 2) g.fillRect(x, y, s, s); }
+    else if (motif === "denim") { tint(0.16, "#FFFFFF"); g.lineWidth = 2; for (let x = -h; x < w; x += 7) { g.beginPath(); g.moveTo(x, h); g.lineTo(x + h, 0); g.stroke(); } tint(0.5); g.setLineDash([10, 8]); g.lineWidth = 3; for (let y = 40; y < h; y += 128) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); } g.setLineDash([]); }
+    else if (motif === "court") { tint(0.55); g.lineWidth = 5; g.strokeRect(24, 24, w - 48, h - 48); g.beginPath(); g.arc(w / 2, h / 2, h / 4, 0, Math.PI * 2); g.stroke(); g.beginPath(); g.moveTo(w / 2, 24); g.lineTo(w / 2, h - 24); g.stroke(); }
+    else if (motif === "grid") { tint(0.14, wall === "#FFFFFF" ? "#000000" : accent); g.lineWidth = 2; for (let x = 0; x < w; x += 48) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); } for (let y = 0; y < h; y += 48) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); } }
+    else if (motif === "chevron") { tint(0.2); g.lineWidth = 10; for (let y = 0; y < h + 60; y += 60) { g.beginPath(); for (let x = 0; x <= w; x += 60) g.lineTo(x, y + ((x / 60) % 2 ? 30 : 0)); g.stroke(); } }
+    g.globalAlpha = 1;
+  }, 512, 256, [motif, wall, accent]);
+  useEffect(() => { tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(repeat[0], repeat[1]); tex.needsUpdate = true; }, [tex, repeat]);
+  return tex;
+}
+
+/** Piso pelo estilo da loja: quadra, tábuas, concreto, mármore, galeria polida ou ateliê. */
+function useFloorTexture(style: RoomStyle, floor: string, accent: string) {
+  const tex = useCanvasTexture((g, w, h) => {
+    g.fillStyle = floor; g.fillRect(0, 0, w, h); const r = rng(w + style.length * 97);
+    if (style === "arena") { g.strokeStyle = accent; g.globalAlpha = 0.5; g.lineWidth = 6; g.strokeRect(30, 30, w - 60, h - 60); g.beginPath(); g.arc(w / 2, h / 2, 90, 0, Math.PI * 2); g.stroke(); }
+    else if (style === "heritage") { g.strokeStyle = "#000"; g.globalAlpha = 0.22; g.lineWidth = 3; for (let y = 0; y < h; y += 42) { g.beginPath(); g.moveTo(0, y); g.lineTo(w, y); g.stroke(); const off = r() * 200; for (let x = off; x < w; x += 220) { g.beginPath(); g.moveTo(x, y); g.lineTo(x, y + 42); g.stroke(); } } }
+    else if (style === "street") { for (let i = 0; i < 2600; i++) { g.globalAlpha = 0.05 + r() * 0.08; g.fillStyle = r() > 0.5 ? "#FFF" : "#000"; g.fillRect(r() * w, r() * h, 2, 2); } }
+    else if (style === "boutique") { g.strokeStyle = "#7d7363"; g.globalAlpha = 0.25; g.lineWidth = 1.5; for (let i = 0; i < 14; i++) { g.beginPath(); let x = r() * w, y = 0; g.moveTo(x, y); while (y < h) { x += (r() - 0.5) * 40; y += 24; g.lineTo(x, y); } g.stroke(); } }
+    else if (style === "gallery") { g.globalAlpha = 0.1; g.fillStyle = "#fff"; g.fillRect(0, 0, w, h / 2); }
+    g.globalAlpha = 1;
+  }, 512, 512, [style, floor, accent]);
+  useEffect(() => { tex.wrapS = tex.wrapT = THREE.RepeatWrapping; tex.repeat.set(2, 2); tex.needsUpdate = true; }, [tex]);
+  return tex;
+}
+
+/** Nome da marca escrito (sem fonte remota): letreiro e o painel quando o catálogo não tem logo. */
+function useWordmark(name: string, ink: string, bg: string | null, w = 1024, h = 320) {
+  return useCanvasTexture((g, W, H) => {
+    if (bg) { g.fillStyle = bg; g.fillRect(0, 0, W, H); } else g.clearRect(0, 0, W, H);
+    const label = name ?? ""; const text = label.length > 22 ? `${label.slice(0, 21)}…` : label;
+    let size = Math.round(H * 0.5); g.font = `800 ${size}px Inter, Arial, sans-serif`;
+    while (g.measureText(text.toUpperCase()).width > W * 0.88 && size > 24) { size -= 4; g.font = `800 ${size}px Inter, Arial, sans-serif`; }
+    g.fillStyle = ink; g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(text.toUpperCase(), W / 2, H / 2 + 4);
+  }, w, h, [name, ink, bg]);
+}
+
+/** Painel de marca: o logo do catálogo (se carregar) sobre o fundo, ou o nome escrito; entra com escala suave. */
+function BrandPanel({ env, position, width, height, reduced, rotationY = 0 }: { env: BrandEnvironment; position: [number, number, number]; width: number; height: number; reduced: boolean; rotationY?: number }) {
+=======
 function IdentityPlaque({ env }: { env: BrandEnvironment }) {
+>>>>>>> origin/main
   const logo = useTex(env.logoUrl);
   const word = useCanvasTexture((g, w, h) => {
     g.clearRect(0, 0, w, h); g.fillStyle = STUDIO_PALETTE.ink;

@@ -2,6 +2,7 @@
 fai-application/src/main/resources/catalog/normalization.json (taxonomia, sinônimos, apelidos de marca)."""
 from __future__ import annotations
 
+import html
 import json
 import re
 import unicodedata
@@ -174,11 +175,24 @@ FIELDS = ["brand", "category", "subcategory", "product_name", "model_name", "pro
           "color", "color_name", "material", "collection", "gender", "official_product_url", "source_type"]
 
 
+_TAG = re.compile(r"<[^>]{0,200}>")
+
+
+# título que diz "bolsa" em pt/es/ca/en (bossa = bolsa em catalão; "bolso" fica de fora: em português é o bolso da roupa)
+_BAG_WORDS = re.compile(r"\b(bolsa|bossa|bag|handbag|tote|clutch)\b", re.IGNORECASE)
+_BAG_SUBS = {"handbag", "tote_bag", "crossbody_bag", "backpack", "clutch", "shoulder_bag", "bag"}
+
+
+def plain_text(v: str) -> str:
+    """Texto puro: tira marcação HTML que algumas lojas deixam no título ("Supima<sup>®</sup>") e desfaz entidades."""
+    return re.sub(r"\s+", " ", html.unescape(_TAG.sub("", v))).strip()
+
+
 def normalize_product(raw: dict, n: Normalizer) -> Product:
     """Valida e normaliza um item cru (JSON ou linha de CSV). Valor fora da taxonomia → erro, nunca gravado como veio."""
     def s(name):
         v = raw.get(name)
-        return str(v).strip() if v not in (None, "") else None
+        return (plain_text(str(v)) or None) if v not in (None, "") else None
 
     for required in ("brand", "subcategory", "product_name"):
         if not s(required):
@@ -188,6 +202,9 @@ def normalize_product(raw: dict, n: Normalizer) -> Product:
         raise ValidationError(f"subcategoria fora da taxonomia: {s('subcategory')}")
     cat = n.sub_category[sub]
     new_sub, implied_variation, implied = n.resolve(sub)     # legado → padrão novo (docs/taxonomia, C.3)
+    if _BAG_WORDS.search(s("product_name")) and new_sub not in _BAG_SUBS:
+        # ex.: "Bossa denim mitjana" (bolsa jeans, Desigual) chegou como calça jeans: categoria errada nunca é gravada
+        raise ValidationError(f"título indica bolsa mas a subcategoria é {new_sub}: {s('product_name')}")
     p = Product(brand=s("brand"), category=cat, subcategory=new_sub, product_name=re.sub(r"\s+", " ", s("product_name")))
     p.variation = implied_variation
     for dim, code in implied.items():

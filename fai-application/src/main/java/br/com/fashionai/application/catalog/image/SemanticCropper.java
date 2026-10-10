@@ -92,7 +92,7 @@ public final class SemanticCropper {
      * WIDTH a largura da peça, CONTAIN o necessário para a peça inteira caber a partir do ponto de alinhamento.
      * {@code margin} é a folga de cada lado (fração do quadro).
      */
-    static NRect ruleCrop(int imgW, int imgH, double aspect, NRect product, FramingStrategy.Focus focus,
+    public static NRect ruleCrop(int imgW, int imgH, double aspect, NRect product, FramingStrategy.Focus focus,
                           SemanticRegionRegistry.FramingRule rule, double margin) {
         double px = product.x() * imgW, py = product.y() * imgH, pw = product.w() * imgW, ph = product.h() * imgH;
         double cx = product.cx() * imgW, cy = product.cy() * imgH;
@@ -103,7 +103,7 @@ public final class SemanticCropper {
         double k = 1 - 2 * margin, cw, ch;
         switch (rule.fit()) {
             case COVER -> {
-                ch = Math.min(ph, pw / aspect) / k;
+                ch = Math.min(ph, pw / aspect);           // preenche o quadro: a folga não se aplica (100% de peça)
                 cw = ch * aspect;
             }
             case WIDTH -> {

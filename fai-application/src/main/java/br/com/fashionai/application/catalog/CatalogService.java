@@ -322,8 +322,9 @@ public class CatalogService {
         m.put("id", p.getId());
         m.put("brand", b == null ? null : Map.of("id", b.getId(), "name", b.getName(), "slug", b.getSlug(),
                 "logoUrl", String.valueOf(b.getLogoUrl())));
-        m.put("productName", p.getProductName());
-        m.put("modelName", p.getModelName());
+        // produtos importados antes da limpeza podem trazer marcação HTML da loja no título
+        m.put("productName", CatalogIngestService.plainText(p.getProductName()));
+        m.put("modelName", CatalogIngestService.plainText(p.getModelName()));
         m.put("category", p.getCategory());
         m.put("subcategory", p.getSubcategory());
         m.put("color", p.getColor());
@@ -517,7 +518,7 @@ public class CatalogService {
         List<String> occasion = a.occasion() == null || a.occasion().isEmpty()
                 ? List.of(Taxonomy.allowedOccasions(p.getCategory()).get(0)) : a.occasion();
         List<String> style = a.style() == null || a.style().isEmpty() ? List.of("basic") : a.style();
-        String name = a.name() != null && !a.name().isBlank() ? a.name().trim() : p.getProductName();
+        String name = a.name() != null && !a.name().isBlank() ? a.name().trim() : CatalogIngestService.plainText(p.getProductName());
         CatalogImage chosen = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId()).stream()
                 .filter(i -> i.getUsageStatus() != br.com.fashionai.domain.model.enums.CatalogImageUsage.REJECTED)
                 .sorted(Comparator.comparing((CatalogImage i) -> !i.isCanonical())).findFirst().orElse(null);

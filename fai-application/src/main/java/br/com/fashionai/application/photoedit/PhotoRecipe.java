@@ -49,7 +49,7 @@ public record PhotoRecipe(int version, Target target, List<Op> ops) {
         }
     }
 
-    /** Recorte normalizado; {@code aspect} "4:5" quando travado no quadro do FashionAI. */
+    /** Recorte normalizado; {@code aspect} "4:5" quando travado no quadro do FashionAI, "FREE" para a janela livre do Recorte. */
     public record Crop(double x, double y, double w, double h, String aspect) implements Op {
         public String name() {
             return "crop";
