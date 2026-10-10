@@ -281,4 +281,14 @@ class CatalogImagePipelineServiceTest {
         off.tick();
         assertThat(front.getProcessingStatus()).isEqualTo("PENDING");
     }
+
+    /** Enquadramento por categoria gravado pelo lote (CATALOG_FRAME_*) é decisão final: a fila do worker não o refaz. */
+    @Test
+    void filaDoWorkerNaoRefazFotosEnquadradasPeloLote() throws Exception {
+        java.lang.reflect.Method queue = CatalogImageRepository.class.getMethod("pipelineQueue", String.class, int.class,
+                Instant.class, org.springframework.data.domain.Pageable.class);
+        String jpql = queue.getAnnotation(org.springframework.data.jpa.repository.Query.class).value();
+        assertThat(jpql).contains("i.pipelineVersion <> :version");
+        assertThat(jpql).contains("i.pipelineVersion not like 'CATALOG_FRAME_%'");
+    }
 }

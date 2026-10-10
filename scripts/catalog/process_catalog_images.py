@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import io
 import ipaddress
 import json
 import os
@@ -30,6 +31,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 PIPELINE_VERSION = "CATALOG_IMAGE_PIPELINE_V4"
 MAX_BYTES = 10 * 1024 * 1024  # Mesmo ImageOps.MAX_UPLOAD_BYTES da API Java.
 PROGRESS_INTERVAL = 5
+# Falhas do canal Java que valem para o lote inteiro: nunca viram enquadramento geométrico de uma foto.
+JAVA_TRANSPORT_ERRORS = {"PROCESS_EXITED", "PIPE_CLOSED", "REQUEST_TIMEOUT", "ANALYZER_CLOSED", "STARTUP_TIMEOUT",
+                         "JAVA_START_FAILED", "JAVA_UNAVAILABLE", "CLASSPATH_UNAVAILABLE", "PIPELINE_VERSION_MISMATCH",
+                         "PROTOCOL_ERROR", "DUPLICATE_REQUEST_ID", "BAD_REQUEST"}
 
 
 def safe_audit(value):
@@ -337,6 +342,30 @@ def cleanup_assets(storage, analyses):
                 progress("Limpeza pendente: não foi possível confirmar referência/remoção de asset.")
 
 
+def geometric_fallback_response(path, pipeline_version, code):
+    """Decoded-photo facts (dimensions, mime, hash) so the category frame can be built without the Java analysis.
+
+    Used only with --force-category-frame when the Java analysis failed for this photo or found no piece. The frame
+    then centres on the photo; the report records the fallback. A photo that cannot be decoded is a technical failure.
+    """
+    from PIL import Image, ImageOps, UnidentifiedImageError
+    data = Path(path).read_bytes()
+    try:
+        with Image.open(io.BytesIO(data)) as image:
+            mime = Image.MIME.get(image.format or "", "application/octet-stream")
+            oriented = ImageOps.exif_transpose(image)
+            width, height = oriented.size
+    except (UnidentifiedImageError, OSError, ValueError) as error:
+        raise ValueError("IMAGE_UNREADABLE") from error
+    if width <= 0 or height <= 0:
+        raise ValueError("IMAGE_UNREADABLE")
+    return {"ok": True, "op": "analyze", "outcome": "NEEDS_REPROCESSING", "fallback": code,
+            "columns": {"mime": mime, "width": width, "height": height, "source_sha256": hashlib.sha256(data).hexdigest(),
+                        "phash": None, "processing_status": "NEEDS_REPROCESSING", "pipeline_version": pipeline_version,
+                        "quality_score": None, "gate_reasons": ("JAVA_ANALYSIS_UNAVAILABLE:" + str(code))[:500],
+                        "crop_json": None, "metrics_json": json.dumps({"fallback": str(code)})}}
+
+
 def audit_record(record, downloader, analyzer, checkpoint, *, apply):
     from catalog_image_inventory import is_standardized
     result = dict(record)
@@ -357,36 +386,62 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
     if result.get("review_status") in ("APPROVED", "REJECTED") or result.get("processing_status") == "DOWNLOADING" or result.get("usage_status") == "REJECTED":
         result["status_note"] = "Preservado: revisão humana ou processamento em andamento."
         return result
+    category_frame = getattr(analyzer, "category_frame", False)
+    frame_storage = getattr(analyzer, "frame_storage", None)
+    # Decisão explícita do responsável (--force-category-frame): dispensa só a autorização da fonte e a
+    # identificação visual confirmada; as proteções técnicas de download continuam valendo.
+    force = bool(category_frame) and getattr(analyzer, "force_frame", False) is True
+    fallback = None
     try:
-        if getattr(analyzer, "category_frame", False):
+        if category_frame and not force:
             if result.get("category") not in {"upper_piece", "lower_piece", "shoes_piece", "accessory_piece", "full_body_piece"}:
                 raise ValueError("CATEGORY_FRAME_UNSUPPORTED:" + str(result.get("category")))
-            if getattr(analyzer, "frame_storage", None) and not result.get("allows_image_persistence"):
+            if frame_storage and not result.get("allows_image_persistence"):
                 raise ValueError((result.get("persistence_decision") or {}).get("reason", "SOURCE_RIGHTS_UNCONFIRMED"))
+        # Sem fonte cadastrada não há domínio autorizado para redirecionamentos: no modo forçado o download segue
+        # só com as proteções técnicas (HTTPS, sem credenciais, host público, tamanho, tipo).
+        allowed = None if force else (result["persistence_decision"]["domains"] if frame_storage else None)
         response = checkpoint.get(result, analyzer.ready["pipelineVersion"])
         if response is None:
-            path = (downloader.get(result["source_url"], allowed_domains=result["persistence_decision"]["domains"])
-                    if getattr(analyzer, "frame_storage", None) else downloader.get(result["source_url"]))
-            response = analyzer.analyze(path, result.get("category"), result.get("subcategory"),
-                                        result.get("image_type") or "PACKSHOT", image_id=result["image_id"])
-            checkpoint.put(result, analyzer.ready["pipelineVersion"], response)
-        result["java_analysis_completed"] = True
-        if getattr(analyzer, "category_frame", False):
-            from category_frame import apply_frame
-            response = apply_frame(response, result.get("category"))
-        if getattr(analyzer, "frame_storage", None):
-            if not result.get("allows_image_persistence"):
-                raise ValueError((result.get("persistence_decision") or {}).get("reason", "SOURCE_RIGHTS_UNCONFIRMED"))
-            path = (downloader.get(result["source_url"], allowed_domains=result["persistence_decision"]["domains"])
-                    if getattr(analyzer, "frame_storage", None) else downloader.get(result["source_url"]))
-            fresh = fresh_source_decision(result)
-            if fresh['state'] != 'AUTHORIZED':
-                raise ValueError(fresh['reason'])
-            from source_persistence import image_hostname, matches
-            if not any(matches(image_hostname(result['source_url']), d) for d in fresh['domains']):
-                raise ValueError('SOURCE_AUTHORIZATION_CHANGED')
-            authorize_download(downloader.final_urls.get(str(path), result["source_url"]), fresh["domains"])
-            response["framed_assets"] = analyzer.frame_storage.store(result, response, path)
+            path = downloader.get(result["source_url"], allowed_domains=allowed) if frame_storage else downloader.get(result["source_url"])
+            try:
+                response = analyzer.analyze(path, result.get("category"), result.get("subcategory"),
+                                            result.get("image_type") or "PACKSHOT", image_id=result["image_id"])
+                checkpoint.put(result, analyzer.ready["pipelineVersion"], response)
+            except Exception as error:
+                code = getattr(error, "code", None)
+                if not force or not code or code in JAVA_TRANSPORT_ERRORS:
+                    raise
+                # Java não analisou esta foto (ex.: IMAGE_TOO_SMALL, UNREADABLE_IMAGE): o quadro sai da foto decodificada.
+                fallback = str(code)
+                response = geometric_fallback_response(path, analyzer.ready["pipelineVersion"], fallback)
+        result["java_analysis_completed"] = fallback is None
+        if category_frame:
+            from category_frame import apply_frame, report_fields, FORCED_DECISION
+            if force and fallback is None and not json.loads(response["columns"].get("crop_json") or "{}").get("product"):
+                fallback = "NO_PRODUCT:" + str(response["columns"].get("gate_reasons") or response.get("outcome"))
+            response = apply_frame(response, result.get("category"), force=force, fallback=fallback)
+            result.update(report_fields(response))
+        if frame_storage:
+            path = downloader.get(result["source_url"], allowed_domains=allowed)
+            if force:
+                decision = {"mode": FORCED_DECISION, "sourceState": (result.get("persistence_decision") or {}).get("state"),
+                            "sourceReason": (result.get("persistence_decision") or {}).get("reason"),
+                            "host": (result.get("persistence_decision") or {}).get("host"), "decidedBy": "PROJECT_OWNER"}
+                public_image_url(downloader.final_urls.get(str(path), result["source_url"]))
+                response["framed_assets"] = analyzer.frame_storage.store(result, response, path, decision=decision)
+            else:
+                if not result.get("allows_image_persistence"):
+                    raise ValueError((result.get("persistence_decision") or {}).get("reason", "SOURCE_RIGHTS_UNCONFIRMED"))
+                fresh = fresh_source_decision(result)
+                if fresh['state'] != 'AUTHORIZED':
+                    raise ValueError(fresh['reason'])
+                from source_persistence import image_hostname, matches
+                if not any(matches(image_hostname(result['source_url']), d) for d in fresh['domains']):
+                    raise ValueError('SOURCE_AUTHORIZATION_CHANGED')
+                authorize_download(downloader.final_urls.get(str(path), result["source_url"]), fresh["domains"])
+                response["framed_assets"] = analyzer.frame_storage.store(result, response, path)
+            result["frame_render"] = response["framed_assets"].get("render_info")
         result["analysis"] = response
         analyzed = update_analysis(result, response)
         result["analysis_standardized"] = is_standardized(analyzed)
@@ -399,6 +454,8 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
     except Exception as error:
         if isinstance(error, (DownloadFailure, ValueError)):
             result["error"] = str(error)
+        elif getattr(error, "code", None):
+            result["error"] = "JAVA:" + str(error.code)
         elif isinstance(getattr(error, "response", None), dict):
             # AWS error messages can contain URLs; report codes, never credentials.
             code = str(error.response.get("Error", {}).get("Code", "UNKNOWN"))
@@ -430,6 +487,9 @@ def main(argv=None):
     source.add_argument("--snapshot", nargs="+", type=Path, help="JSONL/JSONL.GZ: estado local, não produção")
     source.add_argument("--database", action="store_true", help="Inventário atual do MySQL via MYSQL_*")
     ap.add_argument("--category-frame", action="store_true", help="Quadro 3:4 com largura 50%%; focos estimados de zíper/cadarço exigem revisão (requer --apply)")
+    ap.add_argument("--force-category-frame", action="store_true",
+                    help="Decisão do responsável: enquadra e persiste todas as fotos sem exigir autorização da fonte nem identificação "
+                         "visual confirmada; focos estimados e fallbacks viram observações no relatório (requer --database --apply --category-frame)")
     ap.add_argument("--apply", action="store_true", help="Aplicar pipeline; com --database persiste os metadados")
     ap.add_argument("--output", required=True, type=Path, help="Planilha .xlsx")
     ap.add_argument("--checkpoint", type=Path, help="SQLite de análises para retomada")
@@ -447,6 +507,8 @@ def main(argv=None):
         ap.error("--category-frame requer --database: snapshots não autorizam uploads")
     if args.category_frame and not args.apply:
         ap.error("--category-frame requer --apply")
+    if args.force_category_frame and not (args.database and args.apply and args.category_frame):
+        ap.error("--force-category-frame requer --database --apply --category-frame")
     if args.output.suffix.lower() != ".xlsx":
         ap.error("--output deve terminar em .xlsx")
     if args.workers < 1 or args.workers > 16 or args.java_threads < 1 or args.java_threads > 16:
@@ -470,6 +532,7 @@ def main(argv=None):
                "source": "MySQL configurado em MYSQL_*" if args.database else ", ".join(str(p) for p in args.snapshot),
                "pipeline_version": PIPELINE_VERSION,
                "framing_version": "CATALOG_FRAME_34_50_V1" if args.category_frame else None,
+               "forced_category_frame": bool(args.force_category_frame),
                "sample": bool(args.limit), "inventory_rows": total,
                "applied_to_database": False, "generated_at": datetime.now(timezone.utc).isoformat()}
     if args.apply:
@@ -492,6 +555,9 @@ def main(argv=None):
                     if analyzer.ready["pipelineVersion"] != PIPELINE_VERSION:
                         raise RuntimeError("JAR desatualizado: compile a versão atual do pipeline antes de aplicar")
                     analyzer.category_frame = args.category_frame
+                    analyzer.force_frame = args.force_category_frame
+                    if args.force_category_frame:
+                        progress("Modo forçado: autorização da fonte e identificação visual não bloqueiam; proteções técnicas de download mantidas.")
                     if args.category_frame:
                         from category_frame_storage import FrameStorage
                         analyzer.frame_storage = FrameStorage()
@@ -515,7 +581,8 @@ def main(argv=None):
                                         counter.update(completed, detail=f"Imagens alteradas: {changed_total}.")
                                         continue
                                     try:
-                                        report = apply_product(conn, rows, analyses, analyzer.rank)
+                                        report = apply_product(conn, rows, analyses, analyzer.rank,
+                                                               persistence_override="FORCED_CATEGORY_FRAME" if args.force_category_frame else None)
                                     finally:
                                         if args.category_frame:
                                             cleanup_assets(analyzer.frame_storage, analyses)
@@ -529,10 +596,13 @@ def main(argv=None):
                                         if row["image_id"] in committed:
                                             update_committed(row, committed[row["image_id"]])
                                             row["standardized_after"] = is_standardized(row)
-                                            row["status_note"] = ("Pipeline e enquadramento salvos no banco." if row.get("analysis")
+                                            row["status_note"] = ("Enquadramento salvo no S3 e referência ativa atualizada no banco." if (row.get("analysis") or {}).get("framed_assets")
+                                                                  else "Pipeline e enquadramento salvos no banco." if row.get("analysis")
                                                                   else "Imagem canônica reclassificada no banco.")
+                                            row["write_result"] = "COMMITTED"
                                         elif row["image_id"] in analyses:
                                             row["status_note"] = "Não alterado: registro mudou ou revisão humana preservada."
+                                            row["write_result"] = "SKIPPED:" + str(report.get("skip_reasons", {}).get(row["image_id"], "PRODUCT_CHANGED"))
                                     counter.update(completed, detail=f"Imagens alteradas: {changed_total}.")
                             counter.update(len(by_product), detail=f"Imagens alteradas: {changed_total}.", force=True)
                             summary["database_images_changed"] = changed_total
@@ -548,6 +618,9 @@ def main(argv=None):
     summary["persistence_states"] = dict(Counter((r.get("persistence_decision") or {}).get("state", "UNKNOWN") for r in records if r.get("source_url")))
     summary["persistence_reasons"] = dict(Counter((r.get("persistence_decision") or {}).get("reason", "SOURCE_RIGHTS_UNCONFIRMED") for r in records if r.get("source_url")))
     summary["failure_reasons"] = dict(Counter(r["error"].split(":", 1)[0] for r in records if r.get("error")))
+    summary["frame_observations"] = dict(Counter(o.split(":", 1)[0] for r in records for o in (r.get("frame_observations") or [])))
+    summary["frame_fallbacks"] = sum(bool(r.get("frame_fallback")) for r in records)
+    summary["write_results"] = dict(Counter(str(r.get("write_result")).split(":", 1)[0] for r in records if r.get("write_result")))
     progress("Exportando a planilha e os relatórios de auditoria...")
     jsonl = args.output.with_suffix(".audit.jsonl")
     with jsonl.open("w", encoding="utf-8") as stream:
