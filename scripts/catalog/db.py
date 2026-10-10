@@ -44,17 +44,11 @@ def connect():
     kwargs = dict(host=os.getenv("MYSQL_HOST", "localhost"), port=int(os.getenv("MYSQL_PORT", "3306")),
                   user=os.getenv("MYSQL_USER", "fashionai"), password=password,
                   database=os.getenv("MYSQL_DATABASE", "fashionai"), charset="utf8mb4",
-<<<<<<< HEAD
                   cursorclass=pymysql.cursors.DictCursor, autocommit=False,
                   # rede lenta (Wi-Fi fraco, proxy da empresa): espera mais antes de desistir de conectar/ler/gravar
                   connect_timeout=int(os.getenv("MYSQL_CONNECT_TIMEOUT", "30")),
                   read_timeout=int(os.getenv("MYSQL_READ_TIMEOUT", "120")),
                   write_timeout=int(os.getenv("MYSQL_WRITE_TIMEOUT", "120")))
-=======
-                  cursorclass=pymysql.cursors.DictCursor, autocommit=False, connect_timeout=15,
-                  read_timeout=int(os.getenv("MYSQL_READ_TIMEOUT", "60")),
-                  write_timeout=int(os.getenv("MYSQL_WRITE_TIMEOUT", "60")))
->>>>>>> origin/main
     if ssl_mode in ("REQUIRED", "VERIFY_CA", "VERIFY_IDENTITY"):
         kwargs["ssl"] = {"check_hostname": ssl_mode == "VERIFY_IDENTITY"}
     return pymysql.connect(**kwargs)
@@ -79,16 +73,6 @@ def transaction(conn, dry_run: bool):
         raise
 
 
-<<<<<<< HEAD
-def is_connection_lost(e: BaseException) -> bool:
-    """Queda de conexão (rede caiu, servidor fechou, timeout) — dá para reconectar e repetir o item. Erro de dado não."""
-    if pymysql is None:
-        return False
-    if isinstance(e, pymysql.err.InterfaceError):
-        return True
-    # 2003 não conecta, 2006 servidor sumiu, 2013 conexão perdida durante a consulta, 2055 perdida no meio da leitura
-    return isinstance(e, pymysql.err.OperationalError) and bool(e.args) and e.args[0] in (2003, 2006, 2013, 2055)
-=======
 class DatabaseUnavailable(RuntimeError):
     """Falha de conexão persistente: aborta o lote em vez de perder milhares de linhas."""
 
@@ -125,4 +109,3 @@ def run_transaction(conn, operation, dry_run=False, *, label="transação", on_f
                                           "importação interrompida. Execute novamente com --skip-existing.") from error
             logging.getLogger("catalog").warning("[RETRY] %s: conexão perdida; reconexão %s/%s", label, attempt + 1, retries)
             time.sleep(min(2 ** attempt, 4))
->>>>>>> origin/main

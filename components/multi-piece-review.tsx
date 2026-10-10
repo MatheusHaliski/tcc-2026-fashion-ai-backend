@@ -87,17 +87,12 @@ interface PhotoItem {
  * sistema detecta as peças de cada foto. A revisão abre foto por foto ("Foto 2 de 3") e cada peça confirmada vira uma
  * peça no guarda-roupa. Fotos com erro podem ser analisadas de novo sem refazer as outras.
  */
-<<<<<<< HEAD
-export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, onPick, picked, savedKeys, onAvailable }: {
+export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, captureControls, onPick, picked, savedKeys, onAvailable }: {
   onSaved?: (count: number) => void;
   /** criador em etapas: a peça escolhida segue pelo botão Avançar (como na busca catalogada), sem abrir a revisão em modal */
   onPick?: (p: PhotoPick) => void; picked?: string | null; savedKeys?: string[];
   /** chaves de todas as peças detectadas (para o criador saber se ainda há peças da foto por cadastrar) */
   onAvailable?: (keys: string[]) => void;
-=======
-export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, captureControls }: {
-  onSaved: (count: number) => void;
->>>>>>> origin/main
   /** tipo escolhido na página: o guia "Como fotografar" abre direto na orientação dessa categoria */
   category?: string | null; subcategory?: string | null;
   /** categoria escolhida dentro do guia (sincroniza a página) */
@@ -161,19 +156,14 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
         const fd = new FormData(); fd.append("file", reduced, it.file.name);
         const d = await api.upload<MultiDetection>("/api/pieces/analysis/multi", fd, "POST", { signal: controller.signal });
         patch(it.id, { status: "ready", detection: d });
-        if (!first) { setReviewing(it.id); setStep("more"); }
+        if (!first && !onPick) { setReviewing(it.id); setStep("more"); }
         first ??= it.id;
       } catch (e) {
         const err = e instanceof ApiError ? e : new ApiError(0, "ERRO", String(e));
         patch(it.id, { status: "error", error: controller.signal.aborted ? t("multiPiece.tempo_esgotado") : err.status === 0 || err.status === 413 ? t("piece.err_upload") : err.status >= 500 ? t("piece.err_analise") : err.message });
       } finally { clearTimeout(timeout); }
     }
-<<<<<<< HEAD
-    setAnalyzing(false);
-    if (first && !reviewing && !onPick) setReviewing(first);
-=======
     analysisLock.current = false; setAnalyzing(false);
->>>>>>> origin/main
   }
 
   /** Depois de salvar uma foto, abre a próxima pronta; sem mais nenhuma, avisa o total cadastrado. */
@@ -208,7 +198,7 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
 
   return (
     <div className="grid gap-2">
-      <PieceCreationSteps value={step} onChange={go} />
+      {!onPick && <PieceCreationSteps value={step} onChange={go} />}
       {step === "piece" && captureControls}
       {step === "piece" && <><p className="font-medium">{t("multiPiece.entrada")}</p>
       <p className="type-caption text-muted">{t("multiPiece.entrada_ajuda")}</p></>}
@@ -222,11 +212,7 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
                 <p className="type-body-sm font-medium">{t("multiPiece.foto_n", { n: n + 1 })}</p>
                 <p className={cn("type-caption", i.status === "error" ? "error-text" : "text-muted")} role={i.status === "error" ? "alert" : undefined}>{statusText(i)}</p>
               </div>
-<<<<<<< HEAD
-              {i.status === "ready" && !onPick && <Button size="sm" onClick={() => setReviewing(i.id)}>{t("multiPiece.revisar")}</Button>}
-=======
-              {i.status === "ready" && <Button size="sm" aria-pressed={current?.id === i.id && step !== "piece"} onClick={() => { if ([...reviews.current.values()].some((review) => review.isBusy())) return; setReviewing(i.id); if (step === "piece") setStep("more"); }}>{t("multiPiece.revisar")}</Button>}
->>>>>>> origin/main
+              {i.status === "ready" && !onPick && <Button size="sm" aria-pressed={current?.id === i.id && step !== "piece"} onClick={() => { if ([...reviews.current.values()].some((review) => review.isBusy())) return; setReviewing(i.id); if (step === "piece") setStep("more"); }}>{t("multiPiece.revisar")}</Button>}
               {(i.status === "idle" || i.status === "error") && <Button size="sm" variant="ghost" onClick={() => remove(i.id)} disabled={analyzing} aria-label={t("multiPiece.remover_foto", { n: n + 1 })}>✕</Button>}
             </li>
           ))}
@@ -240,18 +226,11 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
       <CaptureGuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} category={guideCat.category} subcategory={guideCat.subcategory} prefs={prefs}
         onCategory={(c, sub) => { setGuideCat({ category: c, subcategory: sub ?? null }); onCategory?.(c, sub); }}
         onConfirm={() => { setGuideOpen(false); inputRef.current?.click(); }} />
-<<<<<<< HEAD
       {onPick && items.some((i) => i.detection) && (
         <DetectedPieces items={items} onPick={onPick} picked={picked ?? null} savedKeys={savedKeys ?? []} onAvailable={onAvailable} />
       )}
-      {!onPick && current && current.detection && (
-        <MultiPieceReview key={current.id} file={current.file} detection={current.detection}
-          subtitle={order.length > 1 ? t("multiPiece.foto_de", { n: order.indexOf(current.id) + 1, total: order.length }) : undefined}
-          onClose={() => setReviewing(null)} onSaved={(count) => savedOne(current.id, count)} />
-      )}
-=======
       {/* Mantém os rascunhos montados: trocar de foto não descarta edições nem recortes. */}
-      {items.filter((item) => item.detection).map((item) => (
+      {!onPick && items.filter((item) => item.detection).map((item) => (
         <div key={item.id} hidden={step === "piece" || current?.id !== item.id}>
           <MultiPieceReview file={item.file} detection={item.detection!}
             step={step} onStepChange={go} controlRef={(handle) => { if (handle) reviews.current.set(item.id, handle); else reviews.current.delete(item.id); }}
@@ -259,7 +238,6 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
             onClose={() => setStep("piece")} onSaved={(count) => savedOne(item.id, count)} />
         </div>
       ))}
->>>>>>> origin/main
     </div>
   );
 }

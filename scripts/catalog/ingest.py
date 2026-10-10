@@ -6,13 +6,7 @@ import json
 import logging
 from dataclasses import dataclass, field
 
-<<<<<<< HEAD
-import time
-
-from db import is_connection_lost, new_id, now, transaction
-=======
 from db import DatabaseUnavailable, new_id, now, run_transaction
->>>>>>> origin/main
 from deduplicate import find_existing, find_same_model
 from image_metadata import image_type, url_hash, usage_status
 from normalize_product import Normalizer, Product, ValidationError, key, normalize_product, slug
@@ -56,18 +50,10 @@ class Report:
 
 
 class Ingestor:
-<<<<<<< HEAD
-    def __init__(self, conn, dry_run=False, create_brands=True, overwrite=False, reconnect=None, retries=4):
-=======
     def __init__(self, conn, dry_run=False, create_brands=True, overwrite=False, skip_existing=False):
         if skip_existing and overwrite:
             raise ValueError("skip_existing e overwrite não podem ser usados juntos")
->>>>>>> origin/main
         self.conn = conn
-        # queda de conexão no meio do lote: reconecta e repete o item (a transação por produto garante que nada ficou
-        # pela metade); sem isso, todo item depois da queda virava ERROR e o lote "terminava" sem inserir o resto
-        self.reconnect = reconnect
-        self.retries = retries
         self.dry_run = dry_run
         self.create_brands = create_brands
         # merge seguro: produto existente só ganha campos que estavam vazios; --overwrite = curadoria explícita
@@ -210,34 +196,6 @@ class Ingestor:
             p = normalize_product(raw, self.n)
         except ValidationError as e:
             return self._error(f"{label} {e}")
-<<<<<<< HEAD
-        attempt = 0
-        while True:
-            try:
-                with transaction(self.conn, self.dry_run):
-                    with self.conn.cursor() as cur:
-                        outcome = self._upsert(cur, p)
-                break
-            except ValidationError as e:
-                return self._error(f"{label} {e}")
-            except Exception as e:  # erro de banco: registra e segue o lote
-                if self.reconnect is not None and is_connection_lost(e) and attempt < self.retries:
-                    attempt += 1
-                    wait = min(60, 5 * 2 ** (attempt - 1))
-                    log.warning("[REDE] conexão perdida em %s (%s); reconectando em %ss (tentativa %s de %s)",
-                                label, type(e).__name__, wait, attempt, self.retries)
-                    time.sleep(wait)
-                    try:
-                        self.conn.close()
-                    except Exception:
-                        pass
-                    try:
-                        self.conn = self.reconnect()
-                    except Exception as e2:
-                        log.warning("[REDE] reconexão falhou: %s", type(e2).__name__)
-                    continue
-                return self._error(f"{label} {type(e).__name__}: {e}")
-=======
         counters = self.report.as_dict()
         details = len(self.report.error_details)
         attempts = 0
@@ -274,7 +232,6 @@ class Ingestor:
         for identifier, name in self._pending_seen.items():
             self.seen.setdefault(identifier, name)
         self._pending_seen.clear()
->>>>>>> origin/main
         for w in p.warnings:
             log.warning("[WARN] %s %s: %s", p.brand, p.product_name, w)
         return outcome
