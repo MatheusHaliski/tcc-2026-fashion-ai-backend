@@ -20,12 +20,8 @@ import { FaiIcon } from "@/components/fai-icon";
 import { keepAllowed } from "@/lib/pieces/tags";
 import { CatalogPhoto } from "@/components/catalog/catalog-photo";
 import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
-<<<<<<< HEAD
 import { MultiPieceUpload, type PhotoPick } from "@/components/multi-piece-review";
-=======
-import { MultiPieceUpload } from "@/components/multi-piece-review";
 import { PieceCreationSteps, PIECE_CREATION_STEPS, type PieceCreationStep } from "@/components/piece-creation-steps";
->>>>>>> origin/main
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
 import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePrefillParams } from "@/lib/pieces/prefill";
@@ -232,22 +228,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
       )}
       <SegmentPicker className="mb-4" label={t("pieces.new.forma_de_adicionar")} value={mode} onChange={setMode}
         options={[{ id: "catalog", label: t("pieces.new.modo_catalogo") }, { id: "photos", label: t("pieces.new.modo_fotos") }]} />
-<<<<<<< HEAD
-      <SegmentPicker className="mb-4" label={t("builder.stepsLabel")} value={step} onChange={go} options={STEPS.map((s, i) => ({ id: s, label: `${i + 1} · ${stepLabel[s]}` }))} />
-=======
-      {mode === "photos" ? (
-        <Card>
-          <MultiPieceUpload category={value.category} subcategory={value.subcategory}
-            captureControls={<><h2 className="type-h3 mb-1">{t("pieces.new.modo_fotos")}</h2><div className="mb-3">
-              <p className="label" id="photo-type-label">{t("pieces.new.tipo_para_o_guia")}</p>
-              <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="photo-type-label">{CATEGORY_CARDS.map((c) => <Chip key={c.id} active={value.category === c.id} onClick={() => chooseCategory(c.id)}>{CATEGORY_LABEL[c.id] ?? label(c.id)}</Chip>)}</div>
-            </div></>}
-            onCategory={(c, sub) => { if (c !== value.category) chooseCategory(c); if (sub) setValue((v) => ({ ...v, subcategory: sub })); }}
-            onSaved={(count) => { toast.success(t("multiPiece.salvas", { count })); window.location.href = user ? `/u/${user.username}` : "/closet"; }} />
-        </Card>
-      ) : (<>
       <PieceCreationSteps value={step} onChange={go} />
->>>>>>> origin/main
       {/* na etapa da arte o editor tem a própria prévia (o mesmo card): a lateral some para não duplicar */}
       <div className={step === "art" ? "grid gap-5" : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]"}>
         <div className="min-w-0">
@@ -294,19 +275,11 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
               </section>
               {/* RF4 · fotografia opcional: as duas formas de adicionar são separadas pela janela segmentada do topo; aqui só o
                   atalho para a aba Fotografar (uma ou várias fotos, com o guia de fotografia por categoria) */}
-<<<<<<< HEAD
               {mode === "catalog" && <section className="creator-section" aria-labelledby="piece-photo-label">
                 <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-photo-label" className="type-h3">{t("pieces.new.foto_opcional")}</h2><Badge tone="chalk">{t("common.optional")}</Badge></div>
                 <p className="mb-2 type-body-sm text-muted">{t("pieces.new.prefere_fotografar")}</p>
                 <Button size="sm" onClick={() => { setMode("photos"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{t("pieces.new.modo_fotos")}</Button>
               </section>}
-=======
-              <section className="creator-section" aria-labelledby="piece-photo-label">
-                <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-photo-label" className="type-h3">{t("pieces.new.foto_opcional")}</h2><Badge tone="chalk">{t("common.optional")}</Badge></div>
-                <p className="mb-2 type-body-sm text-muted">{t("pieces.new.prefere_fotografar")}</p>
-                <Button size="sm" onClick={() => { setMode("photos"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{t("pieces.new.modo_fotos")}</Button>
-              </section>
->>>>>>> origin/main
               {nav}
             </Card>
           )}

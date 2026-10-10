@@ -4,12 +4,8 @@ import { mediaUrl } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
 import { Button, Dialog, SegmentPicker } from "@/components/ui";
-<<<<<<< HEAD
 import { QuickCrop } from "@/components/photo-edit/quick-crop";
-=======
-import { BeforeAfter } from "@/components/before-after";
 import { photoAspect, piecePhotoAspect } from "@/components/catalog/catalog-photo";
->>>>>>> origin/main
 import { BackdropChips } from "@/components/studio";
 
 /** Metadados do estúdio guardados na peça: template do feed, regiões faltando e o que foi achado (logo × estampa). */

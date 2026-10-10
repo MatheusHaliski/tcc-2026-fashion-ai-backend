@@ -21,11 +21,8 @@ import { label, subcategoryLabel } from "@/lib/api/taxonomy";
 import { SealReferencePreview } from "@/components/seal-reference-model";
 import type { SealReferenceModel } from "@/lib/seals/reference-model";
 import { resolveCardArt } from "@/lib/card-art";
-<<<<<<< HEAD
 import { GuideAuto, HowItWorks } from "@/components/guide/guide";
-=======
 import { CopilotChatComposer, CopilotChatMessage } from "@/components/copilot-chat";
->>>>>>> origin/main
 
 interface Chip { pieceId: string; name: string; imageUrl?: string; available?: boolean; address?: string; addressLabel?: string; actions?: string[]; hype?: number | null; compatibility?: number | null; }
 interface Action { type: string; label?: string; href?: string; pieceIds?: string[]; title?: string; occasion?: string[]; }

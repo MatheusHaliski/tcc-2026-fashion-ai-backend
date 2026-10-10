@@ -3065,7 +3065,6 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .share-post > figcaption { justify-self: start; }
 .share-post > .fai-card { width: 100%; max-width: 260px; }
 
-<<<<<<< HEAD
 /* ── Orientação "Como funciona" (components/guide, docs/ux/ORIENTACAO.md) ──────────────────────────────────────────────
    O estado sem animação é sempre o quadro final (o que se aprende); a animação só roda com data-playing="true" e sem
    preferência por movimento reduzido. Pausar mostra o quadro final, nunca um quadro do meio. */
@@ -3175,7 +3174,6 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .gd-anim-progress { transform-origin: left center; }
 @keyframes gd-flip-front { 0%, 35% { visibility: visible; transform: none; } 50%, 100% { visibility: hidden; transform: rotateY(90deg); } }
 @keyframes gd-flip-back { 0%, 50% { visibility: hidden; transform: rotateY(-90deg); } 65%, 100% { visibility: visible; transform: none; } }
-=======
 /* RF14/RF22: cabeçalhos institucionais completos no feed, com links independentes. */
 .institutional-profile-feed { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; list-style: none; margin: 0; padding: 0; }
 .institutional-profile-card { min-width: 0; overflow: hidden; }
@@ -3220,4 +3218,3 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
   .institutional-profile-stats dt { font-size: 11px; }
   .institutional-profile-stats dd { font-size: 1rem; }
 }
->>>>>>> origin/main
