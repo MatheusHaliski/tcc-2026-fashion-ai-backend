@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
@@ -8,7 +9,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { DIMENSION_ORDER, hypeViewState, levelTone } from "@/lib/hype/model";
 import type { HypeDetail, HypeEntity, HypeHistory, HypePositions } from "@/lib/hype/types";
 import { label as taxonomyLabel } from "@/lib/api/taxonomy";
-import { Sheet, cn } from "@/components/ui";
+import { Button, SegmentPicker, Sheet, cn } from "@/components/ui";
 import { HypeBreakdown } from "./hype-breakdown";
 import { HypeExplanation } from "./hype-explanation";
 import { HypeHistoryChart } from "./hype-history-chart";
@@ -18,6 +19,8 @@ import { HypeTrendIndicator } from "./hype-trend-indicator";
 import { HypeVsStyle } from "./hype-vs-style";
 import { HypeBadge } from "./hype-badge";
 import { HypeSealProgressList } from "./hype-seals";
+import { HypeIssuerSealOffers } from "./hype-seal-offers";
+import { HypeGuide, HypeGuideIcon, useHypeGuide } from "./hype-guide";
 
 const path = (type: HypeEntity, id: string) => `/api/hype/${type === "PIECE" ? "pieces" : "looks"}/${id}`;
 
@@ -60,9 +63,16 @@ function DrawerContent({ type, id, name, open, onClose }: { type: HypeEntity; id
   const state = hypeViewState(d, { loading: detail.loading, error: !!detail.error });
   const rows = signalRows(d?.signals?.byType);
   const windowDays = 7;
+  const [segment, setSegment] = useState<"summary" | "seals" | "history">("summary");
+  const guide = useHypeGuide(open);
   return (
-    <Sheet open={open} onClose={onClose} title={t("hype.drawer.title", { name })}>
+    <>
+    <Sheet open={open && !guide.open} onClose={onClose} title={t("hype.drawer.title", { name })}>
       <div className="hype-drawer">
+        <div className="flex items-center justify-between gap-3"><p className="type-body">{t("hypeGuide.drawer_intro")}</p><Button size="sm" onClick={guide.show}><HypeGuideIcon kind="help" />{t("hypeGuide.help")}</Button></div>
+        <SegmentPicker label={t("hypeGuide.sections")} value={segment} onChange={setSegment} options={[
+          { id: "summary", label: t("hypeGuide.summary") }, { id: "seals", label: t("hypeGuide.seals") }, { id: "history", label: t("hypeGuide.history") },
+        ]} />
         {state.kind === "available" ? (
           <div className="hype-drawer-head">
             <HypeScoreGauge value={state.score} size={112} />
@@ -74,7 +84,8 @@ function DrawerContent({ type, id, name, open, onClose }: { type: HypeEntity; id
             </div>
           </div>
         ) : state.kind === "not_calculated" ? <p className="hype-state" role="status">{t("hype.drawer.calculating")}</p> : <HypeStateNotice state={state} onRetry={detail.reload} />}
-        {positions.data?.eligible && positions.data.positions.length > 0 && (
+        {segment === "summary" && <p className="type-body">{t("hypeGuide.score_scale")}</p>}
+        {segment === "summary" && positions.data?.eligible && positions.data.positions.length > 0 && (
           <section aria-label={t("hype.drawer.positions")}>
             <h3 className="type-h3 mb-2">{t("hype.drawer.positions")}</h3>
             <ul className="hype-positions">
@@ -86,20 +97,21 @@ function DrawerContent({ type, id, name, open, onClose }: { type: HypeEntity; id
           </section>
         )}
         {/* RF53: Selos de Hype conquistados e as próximas metas (some quando o detalhe não traz o progresso) */}
-        {d?.sealProgress && <HypeSealProgressList progress={d.sealProgress} />}
-        {d && <HypeVsStyle score={d.score} compatibility={d.compatibility} signedIn={!!user} />}
-        <section aria-label={t("hype.history.title")}>
+        {segment === "seals" && d?.sealProgress && <HypeSealProgressList progress={d.sealProgress} />}
+        {segment === "seals" && <HypeIssuerSealOffers key={`${type}:${id}`} type={type} id={id} enabled={open} />}
+        {segment === "summary" && d && <HypeVsStyle score={d.score} compatibility={d.compatibility} signedIn={!!user} />}
+        {segment === "history" && <section aria-label={t("hype.history.title")}>
           <h3 className="type-h3 mb-2">{t("hype.history.title")}</h3>
           {history.loading ? <div className="skeleton h-40" aria-hidden /> : <HypeHistoryChart points={history.data?.points ?? []} />}
-        </section>
-        {d && d.status !== "NOT_CALCULATED" && (
+        </section>}
+        {segment === "history" && d && d.status !== "NOT_CALCULATED" && (
           <section>
             <h3 className="type-h3 mb-2">{t("hype.drawer.breakdown")}</h3>
             {d.status === "INSUFFICIENT_DATA" && <p className="type-caption text-muted mb-2">{t("hype.drawer.structural_only")}</p>}
             <HypeBreakdown type={type} dimensions={d.dimensions} list={DIMENSION_ORDER} hints weights={d.weights} />
           </section>
         )}
-        {d && d.status !== "NOT_CALCULATED" && (
+        {segment === "history" && d && d.status !== "NOT_CALCULATED" && (
           <section aria-label={t("hype.drawer.signals")}>
             <h3 className="type-h3 mb-1">{t("hype.drawer.signals")}</h3>
             <p className="type-caption text-muted mb-2">{t("hype.drawer.signals_hint", { days: windowDays })}</p>
@@ -112,7 +124,7 @@ function DrawerContent({ type, id, name, open, onClose }: { type: HypeEntity; id
             {type === "PIECE" && d.inLooks != null && <p className="type-body-sm mt-2">{t("hype.drawer.in_looks", { n: d.inLooks })}</p>}
           </section>
         )}
-        {type === "SCHEME" && (d?.pieces?.length ?? 0) > 0 && (
+        {segment === "summary" && type === "SCHEME" && (d?.pieces?.length ?? 0) > 0 && (
           <section aria-label={t("hype.drawer.look_pieces")}>
             <h3 className="type-h3 mb-1">{t("hype.drawer.look_pieces")}</h3>
             <p className="type-caption text-muted mb-2">{t("hype.drawer.look_pieces_hint")}</p>
@@ -127,10 +139,12 @@ function DrawerContent({ type, id, name, open, onClose }: { type: HypeEntity; id
             </ul>
           </section>
         )}
-        {d && d.status !== "NOT_CALCULATED" && <HypeExplanation type={type} score={d.score} momentum={d.momentum} reasons={d.reasons ?? []} />}
+        {segment === "history" && d && d.status !== "NOT_CALCULATED" && <HypeExplanation type={type} score={d.score} momentum={d.momentum} reasons={d.reasons ?? []} />}
         {d && !d.publicEligible && d.status !== "NOT_CALCULATED" && <p className="type-caption text-muted">{t("hype.drawer.private")}</p>}
         {d?.algorithmVersion && <p className="type-caption text-faint">{t("hype.drawer.version", { version: d.algorithmVersion })}</p>}
       </div>
     </Sheet>
+    <HypeGuide guide={guide} />
+    </>
   );
 }

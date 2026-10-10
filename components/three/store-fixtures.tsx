@@ -1,16 +1,10 @@
 "use client";
-import { useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { rng, useCanvasTexture, useTex } from "@/components/three/common";
-import type { BrandEnvironment } from "@/lib/tryon/fitting-room";
-import type { SceneProduct, ZoneProfile } from "@/lib/scene3d/scene";
+import { useCanvasTexture, useTex } from "@/components/three/common";
+import type { SceneProduct } from "@/lib/scene3d/scene";
 
-/*
- * Expositores da Loja 3D (plano mestre, seção 9.3): cada zona do resolvedor de cena vira um móvel de loja com as FOTOS
- * dos produtos da busca — parede de calçados, arara, mesa de jeans, vitrine de acessórios — mais o pedestal do produto
- * em destaque e a placa da zona. As cores vêm do perfil da marca; nada aqui decide marca ou zona.
- */
+/* Photographic catalogue communication. This module does not create or certify
+ * a 3D product asset from its catalogue image. */
 
 /** Foto do produto (fundo transparente das fotos normalizadas) com altura fixa; sem foto, um volume neutro. */
 export function ProductImage({ url, height, position = [0, 0, 0], rotationY = 0, fallback = "#D9D4CC" }: { url?: string | null; height: number; position?: [number, number, number]; rotationY?: number; fallback?: string }) {
@@ -29,57 +23,27 @@ export function ProductImage({ url, height, position = [0, 0, 0], rotationY = 0,
   );
 }
 
-/** Placa pendurada com o nome da zona (e a marca, pequena) na cor de destaque. */
-export function ZoneSign({ label, brand, env, position, width = 1.5 }: { label: string; brand: string | null; env: BrandEnvironment; position: [number, number, number]; width?: number }) {
-  const tex = useCanvasTexture((g, w, h) => {
-    g.fillStyle = env.accent; g.fillRect(0, 0, w, h);
-    g.fillStyle = "rgba(0,0,0,0.12)"; g.fillRect(0, h - 10, w, 10);
-    const ink = pickInk(env.accent);
-    g.fillStyle = ink; g.textAlign = "center"; g.textBaseline = "middle";
-    let size = 96; g.font = `800 ${size}px Inter, Arial, sans-serif`;
-    const text = label.toUpperCase();
-    while (g.measureText(text).width > w * 0.9 && size > 30) { size -= 4; g.font = `800 ${size}px Inter, Arial, sans-serif`; }
-    g.fillText(text, w / 2, brand ? h * 0.42 : h / 2);
-    if (brand) { g.globalAlpha = 0.8; g.font = `600 40px Inter, Arial, sans-serif`; g.fillText(brand.toUpperCase(), w / 2, h * 0.8); g.globalAlpha = 1; }
-  }, 1024, 256, [label, brand, env.accent]);
-  return (
-    <group position={position}>
-      {[-width * 0.4, width * 0.4].map((x) => <mesh key={x} position={[x, 0.36, 0]}><cylinderGeometry args={[0.004, 0.004, 0.5, 6]} /><meshStandardMaterial color="#8A857C" metalness={0.8} roughness={0.3} /></mesh>)}
-      <mesh><boxGeometry args={[width, width / 4, 0.03]} /><meshStandardMaterial color={env.accent} roughness={0.5} /></mesh>
-      <mesh position={[0, 0, 0.017]}><planeGeometry args={[width * 0.98, width / 4 * 0.94]} /><meshBasicMaterial map={tex} toneMapped={false} /></mesh>
-    </group>
-  );
-}
-
 /** Texto escuro ou claro conforme a luminância do fundo (placas legíveis em qualquer cor de marca). */
 export function pickInk(bg: string): string {
   const c = new THREE.Color(bg); const l = 0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b;
   return l > 0.45 ? "#141414" : "#FFFFFF";
 }
 
-/** Parede de calçados: prateleiras de acrílico retroiluminadas, um par por nicho. */
-export function ShoeWall({ env, products, position }: { env: BrandEnvironment; products: SceneProduct[]; position: [number, number, number] }) {
-  const cols = 3, rows = 3, cw = 0.52, rh = 0.4;
-  const slots = Array.from({ length: cols * rows }, (_, i) => ({ c: i % cols, r: Math.floor(i / cols), p: products.length ? products[i % products.length] : null }));
-  return (
-    <group position={position}>
-      {/* painel do fundo e moldura */}
-      <mesh position={[0, 0.55 + (rows - 1) * rh / 2 + 0.1, -0.06]}><boxGeometry args={[cols * cw + 0.18, rows * rh + 0.3, 0.04]} /><meshStandardMaterial color={new THREE.Color(env.wall).lerp(new THREE.Color("#000"), 0.2)} roughness={0.7} /></mesh>
-      <mesh position={[0, 0.55 + (rows - 1) * rh / 2 + 0.1, -0.035]}><planeGeometry args={[cols * cw + 0.06, rows * rh + 0.18]} /><meshBasicMaterial color={new THREE.Color(env.accent).lerp(new THREE.Color("#fff"), 0.82)} toneMapped={false} /></mesh>
-      {slots.map(({ c, r, p }, i) => {
-        const x = (c - (cols - 1) / 2) * cw, y = 0.55 + r * rh;
-        return (
-          <group key={i} position={[x, y, 0]}>
-            <mesh position={[0, 0, 0.06]}><boxGeometry args={[cw * 0.86, 0.016, 0.2]} /><meshStandardMaterial color="#F5F7F8" transparent opacity={0.75} roughness={0.05} metalness={0.1} /></mesh>
-            <mesh position={[0, -0.006, 0.161]}><boxGeometry args={[cw * 0.86, 0.006, 0.004]} /><meshBasicMaterial color={env.accent} toneMapped={false} /></mesh>
-            {p && <ProductImage url={p.imageUrl} height={0.2} position={[0, 0.01, 0.07]} />}
-          </group>
-        );
-      })}
-      <pointLight position={[0, 1.4, 0.6]} intensity={1.1} distance={2.4} color="#FFF4E2" />
-    </group>
-  );
+/** Photographs remain photographs: a fixed print with a mat, frame and product
+ * caption. No billboards pretending to be hanging or pedestal-mounted garments.
+ */
+export function ReferenceGallery({ products, label, position }: { products: SceneProduct[]; label: string; position: [number, number, number] }) {
+  const title = useCanvasTexture((g, w, h) => {
+    g.clearRect(0, 0, w, h); g.fillStyle = "#4A4741"; g.font = "500 48px Inter, Arial, sans-serif";
+    g.textAlign = "center"; g.textBaseline = "middle"; g.fillText(label, w / 2, h / 2, w * .94);
+  }, 1024, 96, [label]);
+  if (!products.length) return null;
+  return <group name="catalog-reference-gallery" position={position}>
+    <mesh position={[0, .66, 0]}><planeGeometry args={[1.45, .135]} /><meshBasicMaterial map={title} transparent toneMapped={false} /></mesh>
+    {products.slice(0, 2).map((p, i) => <ReferencePrint key={`${p.id}:${p.imageUrl}`} product={p} position={[products.length === 1 ? 0 : -.39 + i * .78, 0, 0]} />)}
+  </group>;
 }
+<<<<<<< HEAD
 
 /** Arara de loja: barra cromada com cabides e as peças da busca penduradas, uma ao lado da outra. */
 export function GarmentRack({ env, products, position, rotationY = 0 }: { env: BrandEnvironment; products: SceneProduct[]; position: [number, number, number]; rotationY?: number }) {
@@ -172,4 +136,23 @@ export function HeroPedestal({ env, product, position, reduced, label }: { env: 
       <spotLight position={[0, 2.6, 0.6]} angle={0.28} penumbra={0.5} intensity={6} distance={4} color="#FFFFFF" target-position={[position[0], 0.9, position[2]]} />
     </group>
   );
+=======
+function ReferencePrint({ product, position }: { product: SceneProduct; position: [number, number, number] }) {
+  const tex = useTex(product.imageUrl);
+  const image = tex?.image as HTMLImageElement | undefined;
+  const aspect = image?.width ? image.width / Math.max(1, image.height) : 1;
+  const width = Math.min(.62, .77 * aspect), height = width / Math.max(.05, aspect);
+  const caption = useCanvasTexture((g, w, h) => {
+    g.fillStyle = "#F7F5F0"; g.fillRect(0, 0, w, h); g.fillStyle = "#33312C";
+    g.font = "500 40px Inter, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
+    const name = product.name.length > 28 ? product.name.slice(0, 27) + "…" : product.name;
+    g.fillText(name, w / 2, h / 2, w * .94);
+  }, 768, 100, [product.name]);
+  return <group name={`catalog-reference-${product.id}`} position={position}>
+    <mesh castShadow><boxGeometry args={[.73, 1.12, .028]} /><meshStandardMaterial color="#55534F" roughness={.55} /></mesh>
+    <mesh position={[0, 0, .015]}><planeGeometry args={[.69, 1.08]} /><meshStandardMaterial color="#F7F5F0" roughness={.95} /></mesh>
+    {tex && <mesh position={[0, .09, .019]}><planeGeometry args={[width, height]} /><meshBasicMaterial map={tex} transparent toneMapped={false} /></mesh>}
+    <mesh position={[0, -.45, .019]}><planeGeometry args={[.64, .085]} /><meshBasicMaterial map={caption} toneMapped={false} /></mesh>
+  </group>;
+>>>>>>> origin/main
 }

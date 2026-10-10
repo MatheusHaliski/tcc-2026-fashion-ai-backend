@@ -18,6 +18,8 @@ import { P, type PosePoint } from "@/lib/avatar3d/body";
 export type GarmentPart = "upper" | "lower" | "full" | "feet";
 export interface PersonFilterResult {
   file: File; personFound: boolean; removedPct: number; people: number; ms: number;
+  /** False means absence of people was not verified, rather than a clean product photograph. */
+  segmentationAvailable: boolean;
   /** partes com roupa na foto (fração da roupa em cada zona) e a parte mantida */
   garments?: { upper: number; lower: number; kept: GarmentPart; ambiguous: boolean } | null;
 }
@@ -43,7 +45,7 @@ export async function stripPerson(file: File, opts: { keep?: GarmentPart } = {})
   const img = await loadOriented(file, 1600);
   const det = await detectBody(img);
   const mask = det.mask;
-  const done = (f: File, found: boolean, pct: number, garments: PersonFilterResult["garments"] = null) => ({ file: f, personFound: found, removedPct: pct, people: det.people, ms: Math.round(performance.now() - t0), garments });
+  const done = (f: File, found: boolean, pct: number, garments: PersonFilterResult["garments"] = null) => ({ file: f, personFound: found, removedPct: pct, people: det.people, ms: Math.round(performance.now() - t0), segmentationAvailable: !!mask, garments });
   if (!mask) return done(file, false, 0);
   const { width: mw, height: mh, data } = mask;
   let person = 0;

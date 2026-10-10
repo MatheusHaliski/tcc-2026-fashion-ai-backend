@@ -1,6 +1,6 @@
 "use client";
 import { useUndo } from "@/lib/hooks/use-undo";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/api/client";
@@ -11,6 +11,7 @@ import { CreationSuccess } from "@/components/expanded-card";
 import { useApi } from "@/lib/hooks/use-api";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
 import { Button, Chip, EmptyState, ErrorState, Field, Input, Select, Skeleton, useToast, Stepper } from "@/components/ui";
+import { DnaLookSeals, type SealRequest } from "@/components/look-seal-verification";
 import { SchemeTags } from "@/components/scheme-tags";
 import { SchemeCard } from "@/components/scheme-card";
 import { BackgroundStudio, CLEAR_CARTELA, useLeaveCartela, type BgConfig } from "@/components/background-studio";
@@ -72,6 +73,9 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
   const [prompt, setPrompt] = useState(""); const [aiReq, setAiReq] = useState({ occasion: [] as string[], style: [] as string[], narrative: "", season: "" });
   const [proposals, setProposals] = useState<Proposal[] | null>(null); const [aiMsg, setAiMsg] = useState<string | null>(null); const [busy, setBusy] = useState(false);
   const [preview, setPreview] = useState<DnaView | null>(null); const [done, setDone] = useState<string | null>(null);
+  const [sealChoices, setSealChoices] = useState<Record<string, { requests: SealRequest[]; valid: boolean }>>({});
+  const onSealChange = useCallback((id: string, requests: SealRequest[], valid: boolean) => setSealChoices((old) => ({ ...old, [id]: { requests, valid } })), []);
+  const sealsValid = cells.every((c) => sealChoices[c.schemeId]?.valid !== false);
   const byId = useMemo(() => new Map((b?.schemes ?? []).map((s) => [s.id, s])), [b]);
   useEffect(() => { if (b?.defaultVisibility && !initial) setForm((f) => ({ ...f, visibility: b.defaultVisibility })); }, [b, initial]);
   const effNarrative = form.target === "DNA_COMPLETO" ? narrative : null;
@@ -107,10 +111,17 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
     setStep(1);
   }
   async function save(publish: boolean) {
+    if (!sealsValid) { setStep(2); return; }
     setBusy(true);
     try {
       const body = { ...payload(), publish, visibility: publish && form.visibility === "PRIVATE" ? "PUBLIC" : form.visibility };
       const r = initial?.id ? await api.put<DnaView>(`/api/dna-schemes/${initial.id}`, body) : await api.post<DnaView>("/api/dna-schemes", body);
+      let requested = 0;
+      for (const cell of cells) for (const request of sealChoices[cell.schemeId]?.requests ?? []) {
+        try { await api.post(`/api/schemes/${cell.schemeId}/seal-bonds`, request); requested++; }
+        catch (e) { toast.fromError(e); }
+      }
+      if (requested) toast.info(t("schemeBuilder.selos_pedidos", { count: requested }));
       toast.success(publish ? t("dnaBuilder.dna_publicado") : t("dnaBuilder.dna_salvo")); setDone(r.id ?? initial?.id ?? null);
     } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
@@ -188,6 +199,10 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
             <div className="mt-4 flex justify-between"><Button onClick={() => setStep(0)}>{t("common.back")}</Button><Button variant="primary" disabled={cells.length < 2} onClick={() => setStep(2)}>{t("common.next")} ({cells.length}/6)</Button></div>
           </div>
         )}
+        {cells.length >= 2 && <div className={step === 2 ? "surface p-4 mb-4 grid gap-3" : "hidden"}>
+          <h2 className="type-h3">{t("lookSeals.dnaTitle")}</h2><p className="type-body-sm text-muted">{t("lookSeals.dnaHint")}</p>
+          {cells.map((c) => <DnaLookSeals key={c.schemeId} schemeId={c.schemeId} title={byId.get(c.schemeId)?.title ?? c.schemeId} onChange={onSealChange} />)}
+        </div>}
         {step === 2 && (
           <div className="surface grid gap-x-4 p-4 sm:grid-cols-2">
             <Field label={t("scheme.title")} id="dtitle" required className="sm:col-span-2"><Input id="dtitle" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} maxLength={120} required /></Field>
@@ -196,7 +211,7 @@ export function DnaBuilder({ initial }: { initial?: DnaView }) {
             <SchemeTags k="occasion" form={form} setForm={setForm} tax={tax} className="sm:col-span-2" />
             <SchemeTags k="style" form={form} setForm={setForm} tax={tax} className="sm:col-span-2" />
             <Field label={t("dnaBuilder.estacao_cartela_sazonal")} id="dseason"><Select id="dseason" value={form.season} onChange={(e) => setForm({ ...form, season: e.target.value })}><option value="">—</option>{SEASONS.map((s) => <option key={s} value={s}>{SEASON_PRESETS[s].label}</option>)}</Select></Field>
-            <div className="sm:col-span-2 flex justify-between"><Button onClick={() => setStep(1)}>{t("common.back")}</Button><Button variant="primary" disabled={!form.title.trim()} onClick={() => setStep(3)}>{t("common.next")}</Button></div>
+            <div className="sm:col-span-2 flex justify-between"><Button onClick={() => setStep(1)}>{t("common.back")}</Button><Button variant="primary" disabled={!form.title.trim() || !sealsValid} onClick={() => setStep(3)}>{t("common.next")}</Button></div>
           </div>
         )}
         {step === 3 && (<div><BackgroundStudio value={bg} onChange={setBg} skin={skin} onSkin={setSkin} anatomy={effNarrative ?? layout} onAnatomy={() => undefined} styles={form.style} occasions={form.occasion} season={form.season || null} layoutPanel={layoutPanel} ownArt={ownArt} ownArtLabel={ownArt ? dnaNarrativeLabel(effNarrative) : undefined} /><div className="mt-3 flex justify-between"><Button onClick={() => setStep(2)}>{t("common.back")}</Button><Button variant="primary" onClick={() => setStep(4)}>{t("common.next")}</Button></div></div>)}

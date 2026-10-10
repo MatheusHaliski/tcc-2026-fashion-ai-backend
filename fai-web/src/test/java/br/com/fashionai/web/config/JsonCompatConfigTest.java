@@ -58,4 +58,13 @@ class JsonCompatConfigTest {
         assertNull(mood("null"));
         assertThrows(InvalidFormatException.class, () -> mood("\"TRISTE\""));
     }
+    @Test
+    void perfilEUmNivelDistintoDeLook() throws Exception {
+        assertEquals(br.com.fashionai.domain.model.enums.SealTier.PERFIL,
+                json.readValue("\"PERFIL\"", br.com.fashionai.domain.model.enums.SealTier.class));
+        assertEquals(br.com.fashionai.domain.model.enums.SealTier.PERFIL,
+                json.readValue("\"PROFILE\"", br.com.fashionai.domain.model.enums.SealTier.class));
+        assertEquals(br.com.fashionai.domain.model.enums.SealTier.LOOK,
+                json.readValue("\"LOOK\"", br.com.fashionai.domain.model.enums.SealTier.class));
+    }
 }

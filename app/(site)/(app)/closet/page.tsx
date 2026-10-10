@@ -70,10 +70,23 @@ function Closet() {
       stopRemix(); reload();
     } finally { setStudioBusy(false); }
   }
+<<<<<<< HEAD
   return (
     <>
       <PageHeader title={t("closet.title")} kicker={t("closet.rf7_rf31")} lead={data ? `${data.total} ${t("common.pieces")}` : undefined}
         actions={<><Link href="/pieces/new" className="btn btn-primary"><FaiIcon id="ACT-06" size={24} decorative />{t("closet.addPiece")}</Link><Button aria-pressed={remixMode} onClick={() => startSelect("remix")}><FaiIcon id="SOC-04" size={24} decorative />{t("closet.remix.varias")}</Button><Link href="/schemes/new" className="btn"><FaiIcon id="NAV-03" size={24} decorative />{t("scheme.create")}</Link><Button aria-pressed={selectMode === "studio"} onClick={() => startSelect("studio")} title={t("closet.gera_a_foto_de_produto")}><FaiIcon id="ACT-08" size={24} decorative />{t("closet.levar_pecas_ao_estudio")}</Button></>} />
+=======
+  // Remixar várias (RF19.CA13): escolhe 2+ peças do guarda-roupa e elas viram a semente de um look novo no criador
+  const [remixMode, setRemixMode] = useState(false); const [picked, setPicked] = useState<string[]>([]);
+  const togglePick = (p: PieceView) => setPicked((l) => (l.includes(p.id) ? l.filter((x) => x !== p.id) : [...l, p.id]));
+  const stopRemix = () => { setRemixMode(false); setPicked([]); };
+  const remixPicked = () => router.push(`/schemes/new?pieces=${picked.map(encodeURIComponent).join(",")}`);
+  const missingStudio = (data?.items ?? []).some((p) => !p.studioImageUrl && !p.defaultImage && p.photoProcessingStatus === "COMPLETED");
+  return (
+    <>
+      <PageHeader title={t("closet.title")} kicker={t("closet.rf7_rf31")} lead={data ? `${data.total} ${t("common.pieces")}` : undefined}
+        actions={<><Link href="/pieces/new" className="btn btn-primary"><FaiIcon id="ACT-06" size={24} decorative />{t("closet.addPiece")}</Link><Button aria-pressed={remixMode} onClick={() => (remixMode ? stopRemix() : setRemixMode(true))}><FaiIcon id="SOC-04" size={24} decorative />{t("closet.remix.varias")}</Button><Link href="/schemes/new" className="btn"><FaiIcon id="NAV-03" size={24} decorative />{t("scheme.create")}</Link>{missingStudio && <Button onClick={studioAll} loading={studioBusy} title={t("closet.gera_a_foto_de_produto")}><FaiIcon id="ACT-08" size={24} decorative />{t("closet.levar_pecas_ao_estudio")}</Button>}</>} />
+>>>>>>> origin/main
       <Tabs label={t("common.category")} value={parseTab(f.category)} onChange={changeTab}
         tabs={CATEGORY_TABS.map((c) => ({ id: c, label: c ? label(c) : t("closet.tab.all") }))} />
       {/* insights do guarda-roupa (RF53): fechados por padrão para não disputar espaço com a grade */}
@@ -104,6 +117,7 @@ function Closet() {
       {!loading && data && data.items.length === 0 && <EmptyState title={t("closet.empty")} hint={t("closet.emptyHint")} action={<Link href="/pieces/new" className="btn btn-primary">{t("closet.addPiece")}</Link>} />}
       {data && data.items.length > 0 && (
         <>
+<<<<<<< HEAD
           {selectMode && (
             <div className="remix-pick-bar" role="region" aria-label={selectMode === "remix" ? t("closet.remix.varias") : t("closet.levar_pecas_ao_estudio")}>
               <p className="type-body-sm"><b>{t("closet.remix.selecionadas", { count: picked.length })}</b> · {selectMode === "remix" ? t("closet.remix.dica") : t("closet.estudio.dica")}</p>
@@ -111,11 +125,22 @@ function Closet() {
                 {selectMode === "remix"
                   ? <Button variant="primary" disabled={picked.length < 2} onClick={remixPicked}><FaiIcon id="SOC-04" size={20} decorative />{t("closet.remix.ir")}</Button>
                   : <Button variant="primary" disabled={!picked.length} loading={studioBusy} onClick={() => { void studioPicked(); }}><FaiIcon id="ACT-08" size={20} decorative />{t("closet.estudio.ir")}</Button>}
+=======
+          {remixMode && (
+            <div className="remix-pick-bar" role="region" aria-label={t("closet.remix.varias")}>
+              <p className="type-body-sm"><b>{t("closet.remix.selecionadas", { count: picked.length })}</b> · {t("closet.remix.dica")}</p>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="primary" disabled={picked.length < 2} onClick={remixPicked}><FaiIcon id="SOC-04" size={20} decorative />{t("closet.remix.ir")}</Button>
+>>>>>>> origin/main
                 <Button variant="ghost" onClick={stopRemix}>{t("common.cancel")}</Button>
               </div>
             </div>
           )}
+<<<<<<< HEAD
           <div className="grid-cards">{data.items.map((p) => selectMode
+=======
+          <div className="grid-cards">{data.items.map((p) => remixMode
+>>>>>>> origin/main
             ? <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} selectable selected={picked.includes(p.id)} onSelect={togglePick} />
             : <PieceCard key={p.id} piece={p} seals={sealsOf(p.id)} />)}</div>
           <Pagination page={data.page} hasMore={data.hasMore} total={data.total} size={data.size} onPage={(p) => set("page", p)} />

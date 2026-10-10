@@ -22,6 +22,7 @@ import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.ApprovalStatus;
+import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.FollowStatus;
 import br.com.fashionai.domain.model.enums.HypeEntityType;
 import br.com.fashionai.domain.model.enums.HypeLevel;
@@ -30,7 +31,9 @@ import br.com.fashionai.domain.model.enums.HypeStatus;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.model.enums.SealBondStatus;
+import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.model.enums.ShareChannel;
+import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.repository.BrandProfileRepository;
 import br.com.fashionai.domain.repository.BrandRepository;
 import br.com.fashionai.domain.repository.CelebrityProfileRepository;
@@ -577,7 +580,7 @@ public class SearchService {
             // RF14.CA05 — seguir uma marca traz ao feed os esquemas vinculados a ela
             for (UUID f : following) {
                 users.findById(f).filter(u -> u.getProfileType() != ProfileType.PESSOAL).ifPresent(inst ->
-                        bonds.findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(inst.getId(), SealBondStatus.APPROVED).stream().limit(30)
+                        bonds.findByTargetOwnerIdAndStatusOrderByCreatedAtDesc(inst.getId(), SealBondStatus.APPROVED).stream().filter(b -> b.getScheme() != null).limit(30)
                                 .forEach(b -> entries.putIfAbsent(b.getScheme().getId(), Map.of("reason", "VINCULO_" + inst.getProfileType().name(),
                                         "brand", Views.user(inst), "scheme", b.getScheme(), "at", b.getUpdatedAt()))));
             }
@@ -647,9 +650,8 @@ public class SearchService {
         List<?> all = switch (t) {
             case "LOOKS" -> looks(viewer, term, filters, blocked, page, want);
             case "PECAS" -> pieces(viewer, term, filters, blocked, page, want);
-            case "PESSOAS" -> users.searchByUsername(term, PageRequest.of(0, want)).stream()
-                    .filter(u -> u.getProfileType() == ProfileType.PESSOAL && u.getStatus() == AccountStatus.ACTIVE && !blocked.contains(u.getId()))
-                    .map(Views::user).toList();
+            case "PESSOAS" -> users.searchPersonalProfiles(term, viewer != null && User.isTestUsername(viewer.username()),
+                    blocked.isEmpty() ? List.of(new UUID(0, 0)) : blocked, PageRequest.of(0, want));
             case "MARCAS" -> brandResults(needle, want);
             default -> celebrities.findByVerificationStatusOrderByCreatedAtDesc(ApprovalStatus.APROVADO).stream()
                     .filter(c -> term.isEmpty() || c.getStageName().toLowerCase(Locale.ROOT).contains(needle))
@@ -661,7 +663,7 @@ public class SearchService {
         out.put("term", term);
         out.put("tab", t);
         out.put("tabs", TABS);
-        out.put("results", results);
+        out.put("results", "PESSOAS".equals(t) ? personProfiles(viewer, results.stream().map(User.class::cast).toList()) : results);
         out.put("nextCursor", nextCursor);
         out.put("chips", filters == null ? List.of() : filters.chips());
         out.put("engine", searchIndex.getIfAvailable() != null && searchIndex.getIfAvailable().enabled() ? "opensearch" : "mysql");
@@ -677,6 +679,40 @@ public class SearchService {
             out.put("empty", Map.of("message", Msg.t("search.nada_encontrado_para", term), "alternatives", alts, "trending", hot));
         }
         return out;
+    }
+
+    /** Apenas campos já públicos no cabeçalho do perfil; nunca e-mail, telefone, nascimento ou entidades JPA. */
+    public record PersonProfile(UUID id, String username, String displayName, String avatarUrl, String profileType,
+                                boolean verified, String country, boolean privateAccount, String coverUrl, String bio,
+                                String pronouns, List<Map<String, Object>> links, String visibility, boolean contentVisible,
+                                String relation, Map<String, Long> counters) { }
+
+    /** Quatro consultas de contadores por página, em vez de quatro consultas para cada pessoa. */
+    List<PersonProfile> personProfiles(CurrentUser viewer, List<User> page) {
+        if (page.isEmpty()) return List.of();
+        List<UUID> ids = page.stream().map(User::getId).toList();
+        Map<UUID, Long> followers = groupedCounts(follows.countFollowersByIds(ids, FollowStatus.ACEITO));
+        Map<UUID, Long> following = groupedCounts(follows.countFollowingByIds(ids, FollowStatus.ACEITO));
+        Map<UUID, Long> wardrobe = groupedCounts(pieces.countByUserIdsAndAvailabilityStatusNot(ids, AvailabilityStatus.ARCHIVED));
+        Map<UUID, Long> looks = groupedCounts(schemes.countByUserIdsAndStatusNot(ids, SchemeStatus.ARCHIVED));
+        Map<UUID, FollowStatus> relations = viewer == null ? Map.of() : follows.findByFollowerIdAndFollowingIdIn(viewer.id(), ids).stream()
+                .collect(Collectors.toMap(f -> f.getFollowing().getId(), f -> f.getStatus()));
+        return page.stream().map(u -> {
+            FollowStatus relation = relations.get(u.getId());
+            boolean self = viewer != null && viewer.id().equals(u.getId());
+            Visibility visibility = u.getProfileVisibility();
+            boolean contentVisible = self || visibility == Visibility.PUBLIC
+                    || (visibility == Visibility.FOLLOWERS && relation == FollowStatus.ACEITO);
+            return new PersonProfile(u.getId(), u.getUsername(), u.getDisplayName(), u.getAvatarUrl(), u.getProfileType().name(),
+                    u.isVerified(), u.getCountry(), u.isPrivateAccount(), u.getCoverUrl(), u.getBio(), u.getPronouns(),
+                    Json.list(u.getLinksJson()), visibility.name(), contentVisible, self ? "SELF" : relation == null ? "NENHUMA" : relation.name(),
+                    Map.of("followers", followers.getOrDefault(u.getId(), 0L), "following", following.getOrDefault(u.getId(), 0L),
+                            "pieces", wardrobe.getOrDefault(u.getId(), 0L), "schemes", looks.getOrDefault(u.getId(), 0L)));
+        }).toList();
+    }
+
+    private static Map<UUID, Long> groupedCounts(List<Object[]> rows) {
+        return rows.stream().collect(Collectors.toMap(r -> (UUID) r[0], r -> ((Number) r[1]).longValue()));
     }
 
     static int offsetOf(String raw) {

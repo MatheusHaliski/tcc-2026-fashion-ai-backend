@@ -20,14 +20,19 @@ import { FaiIcon } from "@/components/fai-icon";
 import { keepAllowed } from "@/lib/pieces/tags";
 import { CatalogPhoto } from "@/components/catalog/catalog-photo";
 import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
+<<<<<<< HEAD
 import { MultiPieceUpload, type PhotoPick } from "@/components/multi-piece-review";
+=======
+import { MultiPieceUpload } from "@/components/multi-piece-review";
+import { PieceCreationSteps, PIECE_CREATION_STEPS, type PieceCreationStep } from "@/components/piece-creation-steps";
+>>>>>>> origin/main
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
 import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePrefillParams } from "@/lib/pieces/prefill";
 
 /** Etapas do criador de peça (RF4/RF47): peça (busca catalogada + dados) → mais detalhes → arte de fundo → revisar e salvar. */
-type Step = "piece" | "more" | "art" | "review";
-const STEPS: Step[] = ["piece", "more", "art", "review"];
+type Step = PieceCreationStep;
+const STEPS = PIECE_CREATION_STEPS;
 /** Forma de adicionar (RF4): pela busca catalogada com o formulário, ou fotografando (uma ou várias fotos). */
 type AddMode = "catalog" | "photos";
 const GENERIC_ASSET = "/_derived/pecas_default/generic.svg";
@@ -205,7 +210,6 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   const origin = mode === "photos" ? (photoPick ? t("pieces.new.origem_foto") : t("catalog.origem_sem_foto")) : pick && officialImg
     ? t("catalog.origem_catalogo", { fonte: pick.product.source?.domain && pick.product.source.domain !== "null" ? pick.product.source.domain : t("catalog.fonte_fashionai") })
     : t("catalog.origem_sem_foto");
-  const stepLabel: Record<Step, string> = { piece: t("pieces.new.etapa_peca"), more: t("pieceForm.moreDetails"), art: t("pieces.new.etapa_arte"), review: t("builder.step.review") };
   const idx = STEPS.indexOf(step);
   const go = (s: Step) => { setStep(s); if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); };
   const nav = (
@@ -228,7 +232,22 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
       )}
       <SegmentPicker className="mb-4" label={t("pieces.new.forma_de_adicionar")} value={mode} onChange={setMode}
         options={[{ id: "catalog", label: t("pieces.new.modo_catalogo") }, { id: "photos", label: t("pieces.new.modo_fotos") }]} />
+<<<<<<< HEAD
       <SegmentPicker className="mb-4" label={t("builder.stepsLabel")} value={step} onChange={go} options={STEPS.map((s, i) => ({ id: s, label: `${i + 1} · ${stepLabel[s]}` }))} />
+=======
+      {mode === "photos" ? (
+        <Card>
+          <MultiPieceUpload category={value.category} subcategory={value.subcategory}
+            captureControls={<><h2 className="type-h3 mb-1">{t("pieces.new.modo_fotos")}</h2><div className="mb-3">
+              <p className="label" id="photo-type-label">{t("pieces.new.tipo_para_o_guia")}</p>
+              <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="photo-type-label">{CATEGORY_CARDS.map((c) => <Chip key={c.id} active={value.category === c.id} onClick={() => chooseCategory(c.id)}>{CATEGORY_LABEL[c.id] ?? label(c.id)}</Chip>)}</div>
+            </div></>}
+            onCategory={(c, sub) => { if (c !== value.category) chooseCategory(c); if (sub) setValue((v) => ({ ...v, subcategory: sub })); }}
+            onSaved={(count) => { toast.success(t("multiPiece.salvas", { count })); window.location.href = user ? `/u/${user.username}` : "/closet"; }} />
+        </Card>
+      ) : (<>
+      <PieceCreationSteps value={step} onChange={go} />
+>>>>>>> origin/main
       {/* na etapa da arte o editor tem a própria prévia (o mesmo card): a lateral some para não duplicar */}
       <div className={step === "art" ? "grid gap-5" : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]"}>
         <div className="min-w-0">
@@ -263,7 +282,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                     <Button size="sm" variant="ghost" onClick={clearCatalog}>{t("catalog.remover_referencia")}</Button>
                   </div>
                 ) : (
-                  <CatalogSearch key={catalogSub} initial={catalogSub && value.subcategory === catalogSub ? { ...initial, subcategory: catalogSub } : initial} category={value.category} onPick={applyCatalog}
+                  <CatalogSearch key={catalogSub} initial={catalogSub && value.subcategory === catalogSub ? { ...initial, subcategory: catalogSub } : initial} category={value.category} onPick={applyCatalog} resultsLayout="matrix"
                     onContext={(ctx) => { if (ctx.subcategory !== undefined) setValue((v) => ({ ...v, subcategory: ctx.subcategory ?? "" })); }} />
                 )}
               </section>}
@@ -275,11 +294,19 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
               </section>
               {/* RF4 · fotografia opcional: as duas formas de adicionar são separadas pela janela segmentada do topo; aqui só o
                   atalho para a aba Fotografar (uma ou várias fotos, com o guia de fotografia por categoria) */}
+<<<<<<< HEAD
               {mode === "catalog" && <section className="creator-section" aria-labelledby="piece-photo-label">
                 <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-photo-label" className="type-h3">{t("pieces.new.foto_opcional")}</h2><Badge tone="chalk">{t("common.optional")}</Badge></div>
                 <p className="mb-2 type-body-sm text-muted">{t("pieces.new.prefere_fotografar")}</p>
                 <Button size="sm" onClick={() => { setMode("photos"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{t("pieces.new.modo_fotos")}</Button>
               </section>}
+=======
+              <section className="creator-section" aria-labelledby="piece-photo-label">
+                <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-photo-label" className="type-h3">{t("pieces.new.foto_opcional")}</h2><Badge tone="chalk">{t("common.optional")}</Badge></div>
+                <p className="mb-2 type-body-sm text-muted">{t("pieces.new.prefere_fotografar")}</p>
+                <Button size="sm" onClick={() => { setMode("photos"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{t("pieces.new.modo_fotos")}</Button>
+              </section>
+>>>>>>> origin/main
               {nav}
             </Card>
           )}

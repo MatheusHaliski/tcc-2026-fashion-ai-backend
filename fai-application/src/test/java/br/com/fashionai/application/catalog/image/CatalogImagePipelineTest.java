@@ -18,7 +18,7 @@ class CatalogImagePipelineTest {
     /** O recorte tem a proporção exata do quadro em pixels: a peça nunca é esticada. */
     private static void assertNoStretch(CatalogImagePipeline.Analysis a) {
         NRect c = a.crop().best().crop();
-        assertThat(c.w() * a.width() / (c.h() * a.height())).isCloseTo(0.8, org.assertj.core.data.Offset.offset(1e-6));
+        assertThat(c.w() * a.width() / (c.h() * a.height())).isCloseTo(a.pieceType() == PieceType.LOWER_PIECE ? 2.0 : 0.8, org.assertj.core.data.Offset.offset(1e-6));
     }
 
     private static java.util.Map<String, Object> compliance(CatalogImagePipeline.Analysis a) {
@@ -31,7 +31,7 @@ class CatalogImagePipelineTest {
     }
 
     @Test
-    void packshotDeCamisetaPreencheOQuadroComAGolaNaMetadeSuperior() {
+    void packshotDeCamisetaPreencheOQuadroComTecidoSemFundo() {
         CatalogImagePipeline.Analysis a = run(tee(200, 200, 1.0), "upper_piece", "t_shirt", false);
         assertThat(a.outcome()).as(a.reasons().toString()).isEqualTo(Outcome.APPROVED);
         assertThat(a.pieceType()).isEqualTo(PieceType.UPPER_PIECE);
@@ -39,7 +39,8 @@ class CatalogImagePipelineTest {
         assertThat(compliance(a)).containsEntry("ok", true).containsEntry("focusInTopHalf", true);
         assertThat((Double) compliance(a).get("frameFilledByProduct")).isGreaterThan(0.97);
         NRect c = a.crop().best().crop(), p = a.productBox();
-        assertThat(c.y()).as("topo do quadro na gola").isCloseTo(p.y(), org.assertj.core.data.Offset.offset(0.01));
+        assertThat(c.y()).as("recorte interno não inclui fundo junto à gola").isGreaterThan(p.y());
+        assertThat(compliance(a)).containsEntry("foregroundOnly", true);
         assertThat(focusY(a)).isLessThan(0.5);
         assertThat(a.cropJson()).containsKeys("rule", "ruleCompliant");
         assertThat(a.metrics()).containsKeys("segmentationConfidence", "productVisibility", "occupancyScore", "emptySpaceScore",
@@ -62,25 +63,45 @@ class CatalogImagePipelineTest {
     }
 
     @Test
-    void jeansMostraCosPatchEBolsosTraseirosNaMetadeSuperior() {
+    void jeansEnquadraCosBolsosEQuadrilEmPaisagem() {
         CatalogImagePipeline.Analysis a = run(jeans(), "lower_piece", "jeans", false);
         assertThat(a.outcome()).as(a.reasons().toString()).isEqualTo(Outcome.APPROVED);
-        assertThat(a.focus().name()).isEqualTo("waistband_patch_back_pockets");
+        assertThat(a.focus().name()).isEqualTo("waistband_pockets_fastening");
         NRect p = a.productBox(), f = a.focus().rect(), c = a.crop().best().crop();
         assertThat(f.y()).isLessThan(p.y() + 0.05 * p.h());
         assertThat(f.y2()).isLessThan(p.y() + 0.45 * p.h());
-        assertThat(compliance(a)).containsEntry("view", "BACK").containsEntry("focusInTopHalf", true).containsEntry("ok", true);
+        assertThat(compliance(a)).containsEntry("view", "ANY").containsEntry("focusInTopHalf", true).containsEntry("ok", true);
         assertThat((Double) compliance(a).get("widthFilledByProduct")).isGreaterThan(0.97);
         assertThat(c.y()).isCloseTo(p.y(), org.assertj.core.data.Offset.offset(0.01));
         assertNoStretch(a);
     }
 
     @Test
+    void modeloDeCorpoInteiroMostraQuadrilSemRostoCamisetaOuFundo() {
+        var a = pipeline.run(new CatalogImagePipeline.Request(png(pantsOnModel(false)), "lower_piece", "jeans", "FRONT", false));
+        assertThat(a.outcome()).as(a.reasons().toString()).isEqualTo(Outcome.APPROVED);
+        assertThat(a.focus().source()).isEqualTo("ESTIMATED_PERSON_WAIST");
+        assertThat(a.cropJson()).containsEntry("aspect", "2:1");
+        NRect c = a.crop().best().crop();
+        assertThat(c.y() * a.height()).isGreaterThan(650);
+        assertThat(c.y2() * a.height()).isLessThan(900);
+        assertThat(a.debug().get("cropHumanEvidence")).isEqualTo(0.0);
+        assertNoStretch(a);
+    }
+
+    @Test
+    void maoDentroDoQuadrilNaoEhTratadaComoTecido() {
+        var a = pipeline.run(new CatalogImagePipeline.Request(png(pantsOnModel(true)), "lower_piece", "jeans", "FRONT", false));
+        assertThat(a.outcome()).isEqualTo(Outcome.NEEDS_REPROCESSING);
+        assertThat(a.reasons()).contains("HUMAN_PRESENT");
+    }
+
+    @Test
     void vistaDeclaradaDiferenteDaExigidaVaiParaRevisao() {
-        CatalogImagePipeline.Analysis front = pipeline.run(new CatalogImagePipeline.Request(jpeg(jeans()), "lower_piece", "jeans", "FRONT", false));
+        CatalogImagePipeline.Analysis front = pipeline.run(new CatalogImagePipeline.Request(jpeg(tee(200, 200, 1.0)), "upper_piece", "t_shirt", "BACK", false));
         assertThat(front.outcome()).isEqualTo(Outcome.NEEDS_REPROCESSING);
-        assertThat(front.reasons()).contains("VIEW_MISMATCH_BACK");
-        CatalogImagePipeline.Analysis back = pipeline.run(new CatalogImagePipeline.Request(jpeg(jeans()), "lower_piece", "jeans", "BACK", false));
+        assertThat(front.reasons()).contains("VIEW_MISMATCH_FRONT");
+        CatalogImagePipeline.Analysis back = pipeline.run(new CatalogImagePipeline.Request(jpeg(tee(200, 200, 1.0)), "upper_piece", "t_shirt", "FRONT", false));
         assertThat(back.outcome()).as(back.reasons().toString()).isEqualTo(Outcome.APPROVED);
     }
 
@@ -177,16 +198,16 @@ class CatalogImagePipelineTest {
     }
 
     @Test
-    void nivelBGeraMasterTransparenteEVariantesSemAlterarACor() {
-        CatalogImagePipeline.Analysis a = run(tee(200, 200, 1.0), "upper_piece", "t_shirt", true);
+    void nivelBGeraMasterPreenchidoComTecidoSemAlterarACor() {
+        CatalogImagePipeline.Analysis a = run(br.com.fashionai.application.imaging.ImageOps.scale(tee(200, 200, 1.0), 2000, 2000), "upper_piece", "t_shirt", true);
         assertThat(a.outcome()).as(a.reasons().toString()).isEqualTo(Outcome.APPROVED);
         BackgroundNormalizer.Rendered r = a.rendered();
         assertThat(r).isNotNull();
-        assertThat((double) r.width() / r.height()).isCloseTo(0.8, org.assertj.core.data.Offset.offset(0.01));
+        assertThat((double) r.width() / r.height()).isCloseTo(a.pieceType() == PieceType.LOWER_PIECE ? 2.0 : 0.8, org.assertj.core.data.Offset.offset(0.01));
         assertThat(r.width()).isLessThanOrEqualTo(DetailPreserver.MASTER_MAX_WIDTH);
         assertThat(r.transparent().getColorModel().hasAlpha()).isTrue();
-        assertThat(r.transparent().getRGB(2, 2) >>> 24).as("canto do master é transparente").isZero();
-        assertThat(r.white().getRGB(2, 2) & 0xFFFFFF).isEqualTo(0xFFFFFF);
+        assertThat(r.transparent().getRGB(2, 2) >>> 24).as("canto do master mostra tecido opaco").isEqualTo(255);
+        assertThat(r.white().getRGB(2, 2) & 0xFFFFFF).isNotEqualTo(0xFFFFFF);
         assertThat(r.colorPreservation()).isGreaterThan(0.9);
         assertThat(r.thumbnail().getWidth()).isEqualTo(BackgroundNormalizer.THUMB_WIDTH);
     }

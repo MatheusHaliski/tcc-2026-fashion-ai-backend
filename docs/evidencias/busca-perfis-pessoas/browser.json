@@ -1,0 +1,120 @@
+[
+  {
+    "width": 375,
+    "geometry": {
+      "width": 375,
+      "scrollWidth": 375,
+      "overflow": false,
+      "cols": "325px"
+    },
+    "profileCount": 2,
+    "apiMocked": true,
+    "photosSynthetic": true,
+    "fullHeaderFields": true,
+    "restrictedState": true,
+    "keyboardFocus": true,
+    "individualProfileRequests": 0,
+    "calls": [
+      {
+        "method": "GET",
+        "path": "/api/taxonomy"
+      },
+      {
+        "method": "GET",
+        "path": "/api/search?tab=PESSOAS&size=24"
+      },
+      {
+        "method": "GET",
+        "path": "/api/taxonomy"
+      },
+      {
+        "method": "GET",
+        "path": "/api/search?tab=PESSOAS&size=24"
+      },
+      {
+        "method": "POST",
+        "path": "/bff/auth/refresh"
+      },
+      {
+        "method": "GET",
+        "path": "/api/me"
+      },
+      {
+        "method": "GET",
+        "path": "/api/hype/groups?type=CREATOR&keys=ana,rafael"
+      },
+      {
+        "method": "GET",
+        "path": "/api/search?tab=PESSOAS&size=24"
+      },
+      {
+        "method": "GET",
+        "path": "/api/notifications/unread-count"
+      },
+      {
+        "method": "GET",
+        "path": "/api/me/preferences"
+      }
+    ],
+    "pageErrors": []
+  },
+  {
+    "width": 1280,
+    "geometry": {
+      "width": 1280,
+      "scrollWidth": 1280,
+      "overflow": false,
+      "cols": "451px 451px"
+    },
+    "profileCount": 2,
+    "apiMocked": true,
+    "photosSynthetic": true,
+    "fullHeaderFields": true,
+    "restrictedState": true,
+    "keyboardFocus": true,
+    "individualProfileRequests": 0,
+    "calls": [
+      {
+        "method": "GET",
+        "path": "/api/taxonomy"
+      },
+      {
+        "method": "GET",
+        "path": "/api/search?tab=PESSOAS&size=24"
+      },
+      {
+        "method": "GET",
+        "path": "/api/taxonomy"
+      },
+      {
+        "method": "GET",
+        "path": "/api/search?tab=PESSOAS&size=24"
+      },
+      {
+        "method": "POST",
+        "path": "/bff/auth/refresh"
+      },
+      {
+        "method": "GET",
+        "path": "/api/me"
+      },
+      {
+        "method": "GET",
+        "path": "/api/hype/groups?type=CREATOR&keys=ana,rafael"
+      },
+      {
+        "method": "GET",
+        "path": "/api/search?tab=PESSOAS&size=24"
+      },
+      {
+        "method": "GET",
+        "path": "/api/notifications/unread-count"
+      },
+      {
+        "method": "GET",
+        "path": "/api/me/preferences"
+      }
+    ],
+    "pageErrors": []
+  }
+]

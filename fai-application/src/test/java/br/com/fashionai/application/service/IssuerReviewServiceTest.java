@@ -194,7 +194,7 @@ class IssuerReviewServiceTest {
         assertNull(b.getReviewReasons());
         verify(seals).ensureDefaultSeals(owner);
         verify(notifications).notify(eq(owner.getId()), eq(analyst.id()), eq(NotificationType.ACCOUNT_APPROVAL), eq("ISSUER_REVIEW"), eq(owner.getId()),
-                anyString(), anyString(), eq(Map.of("href", "/brands/atelier-lume?tab=CENTRAL")));
+                anyString(), anyString(), eq(Map.of("href", "/brands/atelier-lume")));
     }
 
     @Test
@@ -323,6 +323,33 @@ class IssuerReviewServiceTest {
         when(users.findById(owner.getId())).thenReturn(Optional.of(owner));
         when(celebrities.findByOwnerId(owner.getId())).thenReturn(Optional.of(c));
         return c;
+    }
+
+    @Test
+    void celebridadeAprovadaAbrePerfilSemCentralEPodeSerVisitada() {
+        User owner = user("mc_lume", ProfileType.CELEBRIDADE, "mc@lume.com", true);
+        CelebrityProfile c = celebrity(owner, ApprovalStatus.PENDENTE);
+        c.setRealName("Maria Clara Lume");
+        c.setIdentityProofUrl("https://cdn/restricted/identity.jpg");
+        c.setVerificationUrl("https://instagram.com/mclume");
+        when(celebrities.findBySlug("mc-lume")).thenReturn(Optional.of(c));
+        when(users.findByUsernameIgnoreCase("mc_lume")).thenReturn(Optional.of(owner));
+        br.com.fashionai.application.testkit.Kit kit = new br.com.fashionai.application.testkit.Kit().with(users, brands, celebrities);
+        InstitutionalService profile = kit.build(InstitutionalService.class);
+        ApiException pending = assertThrows(ApiException.class, () -> profile.profile(null, "mc-lume"));
+        assertEquals(404, pending.status());
+        Map<String, Boolean> checklist = new java.util.HashMap<>();
+        policy.checks(owner, c).forEach(ch -> checklist.put(ch.code(), true));
+        CurrentUser analyst = admin();
+        service("").decide(analyst, owner.getId(), new DecisionCommand("APROVAR", null, null, checklist, null));
+        assertEquals(ApprovalStatus.APROVADO, c.getVerificationStatus());
+        assertEquals(AccountStatus.ACTIVE, owner.getStatus());
+        assertTrue(owner.isVerified());
+        assertEquals("Verificada", ((Map<?, ?>) profile.profile(null, "mc-lume").get("header")).get("status"));
+        assertEquals("VISITANTE", profile.profile(null, "mc_lume").get("mode"));
+        assertEquals("ADMINISTRADOR", profile.profile(me(owner), owner.getId().toString()).get("mode"));
+        verify(notifications).notify(eq(owner.getId()), eq(analyst.id()), eq(NotificationType.ACCOUNT_APPROVAL), eq("ISSUER_REVIEW"), eq(owner.getId()),
+                anyString(), anyString(), eq(Map.of("href", "/brands/mc-lume")));
     }
 
     @Test

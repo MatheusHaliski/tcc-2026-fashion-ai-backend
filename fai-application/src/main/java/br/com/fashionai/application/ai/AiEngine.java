@@ -198,13 +198,18 @@ public class AiEngine {
         }
 
         AiCallResult failure = AiCallResult.ERROR;
+        // One budget for both providers, not a full timeout plus retries for each provider.
+        long visionDeadline = capability == AiCapability.MULTI_PIECE_DETECTOR
+                ? System.nanoTime() + Duration.ofSeconds(12).toNanos() : Long.MAX_VALUE;
         for (RemoteStep<T> step : remotes) {
+            if (System.nanoTime() >= visionDeadline) break;
             if (!step.available()) {
                 continue;
             }
             long started = System.nanoTime();
             try {
-                RemoteResult<T> result = step.call();
+                RemoteResult<T> result = capability == AiCapability.MULTI_PIECE_DETECTOR
+                        ? AiDeadline.call(step::call, visionDeadline) : step.call();
                 long latency = (System.nanoTime() - started) / 1_000_000;
                 BigDecimal cost = result.costUsd() == null ? BigDecimal.ZERO : result.costUsd();
                 UUID id = record(userId, capability, step.provider(), step.model(), latency, cost, AiCallResult.SUCCESS,

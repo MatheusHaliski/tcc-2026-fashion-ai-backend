@@ -10,6 +10,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class ProviderHelpersTest {
     @Test
+    void interactiveRequestsDoNotRetryAndInterruptedCallsAreNotRepeated() {
+        AtomicInteger calls = new AtomicInteger();
+        assertThatThrownBy(() -> ProviderCircuit.run("interactive-" + System.nanoTime(), () -> {
+            calls.incrementAndGet(); throw new java.io.IOException("timeout");
+        }, false)).isInstanceOf(java.io.IOException.class);
+        assertThat(calls).hasValue(1);
+        try {
+            assertThatThrownBy(() -> ProviderCircuit.run("interrupted-" + System.nanoTime(), () -> {
+                calls.incrementAndGet(); throw new InterruptedException();
+            })).isInstanceOf(InterruptedException.class);
+            assertThat(calls).hasValue(2);
+            assertThat(Thread.currentThread().isInterrupted()).isTrue();
+        } finally { Thread.interrupted(); }
+    }
+
+    @Test
     void stripsMarkdownFencesAroundJson() {
         assertThat(ClaudeProvider.stripFences("```json\n{\"a\":1}\n```")).isEqualTo("{\"a\":1}");
         assertThat(ClaudeProvider.stripFences("{\"a\":1}")).isEqualTo("{\"a\":1}");

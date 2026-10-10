@@ -1,0 +1,53 @@
+{
+  "mysql_version": "8.4.11",
+  "scope": "isolated_disposable_mysql_minimal_legacy_V2_seal_table",
+  "migration": "V58__selos_hype_de_peca.sql",
+  "checks": [
+    {
+      "case": "legacy_look_and_piece_scheme_bonds_preserved",
+      "pass": true,
+      "rows": 2
+    },
+    {
+      "case": "direct_piece",
+      "pass": true,
+      "accepted": true,
+      "mysql_error": null
+    },
+    {
+      "case": "scheme_only",
+      "pass": true,
+      "accepted": true,
+      "mysql_error": null
+    },
+    {
+      "case": "missing_both_targets",
+      "pass": true,
+      "accepted": false,
+      "mysql_error": "3819"
+    },
+    {
+      "case": "two_targets",
+      "pass": true,
+      "accepted": false,
+      "mysql_error": "3819"
+    },
+    {
+      "case": "piece_requires_PECA",
+      "pass": true,
+      "accepted": false,
+      "mysql_error": "3819"
+    },
+    {
+      "case": "piece_foreign_key",
+      "pass": true,
+      "accepted": false,
+      "mysql_error": "1452"
+    },
+    {
+      "case": "piece_status_index_created",
+      "pass": true
+    }
+  ],
+  "all_passed": true
+}

@@ -2,8 +2,10 @@
 MYSQL_SSL_MODE). Nunca imprime senha nem connection string."""
 from __future__ import annotations
 
+import logging
 import os
 import sys
+import time
 import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -13,6 +15,8 @@ try:
     import pymysql.cursors
 except ImportError:  # pragma: no cover - mensagem amigável
     pymysql = None
+
+IMPORT_VERSION = "CATALOG_IMPORT_V2"
 
 
 def now() -> datetime:
@@ -40,11 +44,17 @@ def connect():
     kwargs = dict(host=os.getenv("MYSQL_HOST", "localhost"), port=int(os.getenv("MYSQL_PORT", "3306")),
                   user=os.getenv("MYSQL_USER", "fashionai"), password=password,
                   database=os.getenv("MYSQL_DATABASE", "fashionai"), charset="utf8mb4",
+<<<<<<< HEAD
                   cursorclass=pymysql.cursors.DictCursor, autocommit=False,
                   # rede lenta (Wi-Fi fraco, proxy da empresa): espera mais antes de desistir de conectar/ler/gravar
                   connect_timeout=int(os.getenv("MYSQL_CONNECT_TIMEOUT", "30")),
                   read_timeout=int(os.getenv("MYSQL_READ_TIMEOUT", "120")),
                   write_timeout=int(os.getenv("MYSQL_WRITE_TIMEOUT", "120")))
+=======
+                  cursorclass=pymysql.cursors.DictCursor, autocommit=False, connect_timeout=15,
+                  read_timeout=int(os.getenv("MYSQL_READ_TIMEOUT", "60")),
+                  write_timeout=int(os.getenv("MYSQL_WRITE_TIMEOUT", "60")))
+>>>>>>> origin/main
     if ssl_mode in ("REQUIRED", "VERIFY_CA", "VERIFY_IDENTITY"):
         kwargs["ssl"] = {"check_hostname": ssl_mode == "VERIFY_IDENTITY"}
     return pymysql.connect(**kwargs)
@@ -61,10 +71,15 @@ def transaction(conn, dry_run: bool):
         else:
             conn.commit()
     except Exception:
-        conn.rollback()
+        try:
+            conn.rollback()
+        except Exception:
+            # Uma conexão morta também recusa rollback. Preserve a causa original da falha.
+            logging.getLogger("catalog").warning("[WARN] rollback indisponível; preservando o erro original")
         raise
 
 
+<<<<<<< HEAD
 def is_connection_lost(e: BaseException) -> bool:
     """Queda de conexão (rede caiu, servidor fechou, timeout) — dá para reconectar e repetir o item. Erro de dado não."""
     if pymysql is None:
@@ -73,3 +88,41 @@ def is_connection_lost(e: BaseException) -> bool:
         return True
     # 2003 não conecta, 2006 servidor sumiu, 2013 conexão perdida durante a consulta, 2055 perdida no meio da leitura
     return isinstance(e, pymysql.err.OperationalError) and bool(e.args) and e.args[0] in (2003, 2006, 2013, 2055)
+=======
+class DatabaseUnavailable(RuntimeError):
+    """Falha de conexão persistente: aborta o lote em vez de perder milhares de linhas."""
+
+
+def connection_lost(error: Exception) -> bool:
+    if pymysql is None:
+        return False
+    code = error.args[0] if error.args else None
+    return (isinstance(error, pymysql.err.InterfaceError) and code == 0
+            or isinstance(error, pymysql.err.OperationalError) and code in (2002, 2003, 2006, 2013, 2055))
+
+
+def run_transaction(conn, operation, dry_run=False, *, label="transação", on_failure=None, retries=3):
+    """Repete a unidade inteira após desconexão. Nunca reconecta no meio de uma transação.
+
+    O chamador deve usar operações idempotentes: o servidor pode ter confirmado o COMMIT antes de perder a resposta.
+    Não há ping por produto; a reconexão acontece somente após uma falha de transporte.
+    """
+    for attempt in range(retries + 1):
+        try:
+            if attempt:
+                if getattr(conn, "open", False):
+                    conn.close()
+                conn.connect()
+            with transaction(conn, dry_run):
+                return operation()
+        except Exception as error:
+            if on_failure:
+                on_failure()
+            if not connection_lost(error):
+                raise
+            if attempt == retries:
+                raise DatabaseUnavailable(f"{label}: MySQL indisponível após {retries} tentativas de reconexão; "
+                                          "importação interrompida. Execute novamente com --skip-existing.") from error
+            logging.getLogger("catalog").warning("[RETRY] %s: conexão perdida; reconexão %s/%s", label, attempt + 1, retries)
+            time.sleep(min(2 ** attempt, 4))
+>>>>>>> origin/main
