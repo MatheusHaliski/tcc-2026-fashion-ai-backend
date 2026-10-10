@@ -77,6 +77,7 @@ export function GuideDemo({ demo }: { demo: DemoId }) {
     case "brandOperator": return <BrandDemo operator />;
     case "points": return <PointsDemo />;
     case "shop": return <ShopDemo />;
+    case "pointsEarn": return <PointsEarnDemo />;
     case "flairMatch": return <FlairMatchDemo />;
     case "flairCards": return <FlairCardsDemo />;
     case "flairDecks": return <FlairDecksDemo />;
@@ -99,6 +100,18 @@ function GamesDemo() {
           <span className="type-caption text-muted">{t(`guide.demo.games.${c.hint}_hint`)}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Como ganhar: as ações que rendem pontos, com o limite por dia e a ação que acabou de contar. */
+function PointsEarnDemo() {
+  const { t } = useI18n();
+  const rows = [{ k: "look", v: 10, cap: true }, { k: "moment", v: 20 }, { k: "cbc", v: 15 }];
+  return (
+    <div className="gd-points surface">
+      <ul className="gd-ledger">{rows.map((r, i) => <li key={r.k} className={i === 0 ? "gd-anim-show" : undefined}><span>{t(`guide.demo.earn.${r.k}`)}{r.cap ? <small className="text-muted"> · {t("guide.demo.earn.cap")}</small> : null}</span><b className="tabular"><FaiIcon id="ACT-40" size={20} decorative /> +{r.v}</b></li>)}</ul>
+      <span className="type-caption text-muted">{t("guide.demo.earn.note")}</span>
     </div>
   );
 }

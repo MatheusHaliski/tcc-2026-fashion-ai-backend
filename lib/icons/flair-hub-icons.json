@@ -1,43 +1,72 @@
 {
-  "$comment": "Ícones originais da Central FLAIR (24×24, traço 1,8 px, pontas redondas). Cada um representa a mecânica do modo e se distingue pela forma, não só pela cor. O mesmo arquivo gera os SVGs de public/flair/icons (scripts/assets/flair-hub-icons.mjs) e o componente FlairHubIcon.",
+  "$comment": "Ícones originais das centrais de seleção (Central FLAIR e Central de FAI Points): 24×24, traço 1,8 px, pontas redondas. Cada um representa a mecânica do modo e se distingue pela forma, não só pela cor. O mesmo arquivo gera os SVGs de public/<dir>/icons (scripts/assets/flair-hub-icons.mjs) e o componente FlairHubIcon.",
   "viewBox": "0 0 24 24",
   "strokeWidth": 1.8,
   "icons": {
     "matches": {
       "title": "Carta que vira FLAIR: duas cartas, a da frente ganha a estrela",
-      "markup": "<rect x=\"9\" y=\"4\" width=\"10\" height=\"14\" rx=\"2\" transform=\"rotate(14 14 11)\"/><rect x=\"4.5\" y=\"6\" width=\"10\" height=\"14\" rx=\"2\"/><path d=\"M9.5 10.6l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z\" fill=\"currentColor\" stroke=\"none\"/><path d=\"M19.5 1.8v2.6M18.2 3.1h2.6\"/>"
+      "markup": "<rect x=\"9\" y=\"4\" width=\"10\" height=\"14\" rx=\"2\" transform=\"rotate(14 14 11)\"/><rect x=\"4.5\" y=\"6\" width=\"10\" height=\"14\" rx=\"2\"/><path d=\"M9.5 10.6l1.2 2.4 2.6.4-1.9 1.8.5 2.6-2.4-1.3-2.4 1.3.5-2.6-1.9-1.8 2.6-.4z\" fill=\"currentColor\" stroke=\"none\"/><path d=\"M19.5 1.8v2.6M18.2 3.1h2.6\"/>",
+      "dir": "flair"
     },
     "cbc": {
       "title": "Mosaico de quatro vagas: três já montadas, a última acende com a carta",
-      "markup": "<rect x=\"3.5\" y=\"3.5\" width=\"7\" height=\"7\" rx=\"1.3\"/><rect x=\"13.5\" y=\"3.5\" width=\"7\" height=\"7\" rx=\"1.3\"/><rect x=\"3.5\" y=\"13.5\" width=\"7\" height=\"7\" rx=\"1.3\"/><rect x=\"13.5\" y=\"13.5\" width=\"7\" height=\"7\" rx=\"1.3\" fill=\"currentColor\"/><path d=\"M7 5.8v2.4M5.8 7h2.4\"/>"
+      "markup": "<rect x=\"3.5\" y=\"3.5\" width=\"7\" height=\"7\" rx=\"1.3\"/><rect x=\"13.5\" y=\"3.5\" width=\"7\" height=\"7\" rx=\"1.3\"/><rect x=\"3.5\" y=\"13.5\" width=\"7\" height=\"7\" rx=\"1.3\"/><rect x=\"13.5\" y=\"13.5\" width=\"7\" height=\"7\" rx=\"1.3\" fill=\"currentColor\"/><path d=\"M7 5.8v2.4M5.8 7h2.4\"/>",
+      "dir": "flair"
     },
     "moments": {
       "title": "Calendário com um dia marcado por uma estrela",
-      "markup": "<rect x=\"3.5\" y=\"5\" width=\"17\" height=\"15.5\" rx=\"2\"/><path d=\"M3.5 9.5h17M8 3v4M16 3v4\"/><path d=\"M12 11.2l1 2.1 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3z\" fill=\"currentColor\" stroke=\"none\"/>"
+      "markup": "<rect x=\"3.5\" y=\"5\" width=\"17\" height=\"15.5\" rx=\"2\"/><path d=\"M3.5 9.5h17M8 3v4M16 3v4\"/><path d=\"M12 11.2l1 2.1 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3z\" fill=\"currentColor\" stroke=\"none\"/>",
+      "dir": "flair"
     },
     "challenges": {
       "title": "Bandeira de meta com a marca de concluído",
-      "markup": "<path d=\"M6 21.5V3.5\"/><path d=\"M6 4.5h11.8l-2.6 4 2.6 4H6\"/><path d=\"M9.6 8.6l1.7 1.7 3.1-3.1\"/>"
+      "markup": "<path d=\"M6 21.5V3.5\"/><path d=\"M6 4.5h11.8l-2.6 4 2.6 4H6\"/><path d=\"M9.6 8.6l1.7 1.7 3.1-3.1\"/>",
+      "dir": "flair"
     },
     "cards": {
       "title": "Álbum: três cartas empilhadas",
-      "markup": "<rect x=\"8\" y=\"3.5\" width=\"12\" height=\"15.5\" rx=\"2\"/><path d=\"M5.8 6.8v11.5a2.2 2.2 0 0 0 2.2 2.2h9.5\"/><path d=\"M3.5 9.8v10.3a2.4 2.4 0 0 0 2.4 2.4h9\"/><path d=\"M11.5 8h5M11.5 11h2.8\"/>"
+      "markup": "<rect x=\"8\" y=\"3.5\" width=\"12\" height=\"15.5\" rx=\"2\"/><path d=\"M5.8 6.8v11.5a2.2 2.2 0 0 0 2.2 2.2h9.5\"/><path d=\"M3.5 9.8v10.3a2.4 2.4 0 0 0 2.4 2.4h9\"/><path d=\"M11.5 8h5M11.5 11h2.8\"/>",
+      "dir": "flair"
     },
     "decks": {
       "title": "Leque de três cartas: o deck",
-      "markup": "<rect x=\"7.5\" y=\"5.5\" width=\"9\" height=\"13\" rx=\"1.8\"/><path d=\"M7.5 9.3 5.4 10a1.4 1.4 0 0 0-.9 1.7l2.1 7.6\"/><path d=\"M16.5 9.3l2.1.7a1.4 1.4 0 0 1 .9 1.7l-2.1 7.6\"/><path d=\"M10.5 9.5h3M10.5 12.5h2\"/>"
+      "markup": "<rect x=\"7.5\" y=\"5.5\" width=\"9\" height=\"13\" rx=\"1.8\"/><path d=\"M7.5 9.3 5.4 10a1.4 1.4 0 0 0-.9 1.7l2.1 7.6\"/><path d=\"M16.5 9.3l2.1.7a1.4 1.4 0 0 1 .9 1.7l-2.1 7.6\"/><path d=\"M10.5 9.5h3M10.5 12.5h2\"/>",
+      "dir": "flair"
     },
     "shops": {
       "title": "Vitrine de loja com toldo",
-      "markup": "<path d=\"M4 9.5 5.3 4.5h13.4L20 9.5\"/><path d=\"M4 9.5a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0\"/><path d=\"M5.5 12.2v8.3h13v-8.3\"/><path d=\"M10 20.5v-5h4v5\"/>"
+      "markup": "<path d=\"M4 9.5 5.3 4.5h13.4L20 9.5\"/><path d=\"M4 9.5a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0\"/><path d=\"M5.5 12.2v8.3h13v-8.3\"/><path d=\"M10 20.5v-5h4v5\"/>",
+      "dir": "flair"
     },
     "wallet": {
       "title": "Carteira com o fecho e um cupom aparecendo",
-      "markup": "<rect x=\"3.5\" y=\"7\" width=\"17\" height=\"13\" rx=\"2\"/><path d=\"M7 7V5.2A1.7 1.7 0 0 1 8.7 3.5h6.6A1.7 1.7 0 0 1 17 5.2V7\"/><path d=\"M20.5 11.7h-3.3a1.8 1.8 0 0 0 0 3.6h3.3\"/>"
+      "markup": "<rect x=\"3.5\" y=\"7\" width=\"17\" height=\"13\" rx=\"2\"/><path d=\"M7 7V5.2A1.7 1.7 0 0 1 8.7 3.5h6.6A1.7 1.7 0 0 1 17 5.2V7\"/><path d=\"M20.5 11.7h-3.3a1.8 1.8 0 0 0 0 3.6h3.3\"/>",
+      "dir": "flair"
     },
     "quests": {
       "title": "Prancheta de missões com itens concluídos",
-      "markup": "<rect x=\"5\" y=\"4\" width=\"14\" height=\"17\" rx=\"2\"/><path d=\"M9.5 4V2.8h5V4\"/><path d=\"M8.2 10.4l1.6 1.6 2.7-2.7M8.2 15.9l1.6 1.6 2.7-2.7\"/><path d=\"M14.5 10.8h2M14.5 16.3h2\"/>"
+      "markup": "<rect x=\"5\" y=\"4\" width=\"14\" height=\"17\" rx=\"2\"/><path d=\"M9.5 4V2.8h5V4\"/><path d=\"M8.2 10.4l1.6 1.6 2.7-2.7M8.2 15.9l1.6 1.6 2.7-2.7\"/><path d=\"M14.5 10.8h2M14.5 16.3h2\"/>",
+      "dir": "flair"
+    },
+    "balance": {
+      "dir": "points",
+      "title": "Saldo: três moedas empilhadas com o brilho da moeda de cima",
+      "markup": "<ellipse cx=\"12\" cy=\"6.5\" rx=\"7.5\" ry=\"3\"/><path d=\"M4.5 6.5v5c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-5\"/><path d=\"M4.5 11.5v5c0 1.7 3.4 3 7.5 3s7.5-1.3 7.5-3v-5\"/><path d=\"M9.5 6.5h5\" stroke-width=\"1.2\"/>"
+    },
+    "earn": {
+      "dir": "points",
+      "title": "Como ganhar: uma estrela com o sinal de mais",
+      "markup": "<path d=\"M12 3.2l2.5 5.2 5.7.7-4.2 3.9 1.1 5.6L12 15.9l-5.1 2.7 1.1-5.6-4.2-3.9 5.7-.7z\"/><path d=\"M12 8.8v4.6M9.7 11.1h4.6\"/>"
+    },
+    "store": {
+      "dir": "points",
+      "title": "Loja do quarto: um bloco do guarda-roupa com portas e puxadores",
+      "markup": "<rect x=\"4\" y=\"3.5\" width=\"16\" height=\"17\" rx=\"1.8\"/><path d=\"M12 3.5v17M4 9h16\"/><path d=\"M9.8 13.5v2.4M14.2 13.5v2.4\"/><path d=\"M6.5 20.5v1.5M17.5 20.5v1.5\"/>"
+    },
+    "statement": {
+      "dir": "points",
+      "title": "Extrato: recibo com linhas e o total",
+      "markup": "<path d=\"M6 2.8h12v18.4l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z\"/><path d=\"M9 7.5h6M9 11h6M9 14.5h3.5\"/><circle cx=\"15\" cy=\"14.6\" r=\"1\" fill=\"currentColor\" stroke=\"none\"/>"
     }
   }
 }

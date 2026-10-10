@@ -10,7 +10,7 @@
  */
 export type GuideDemo =
   | "games" | "cbc" | "calendar" | "challenge" | "feed" | "schemeSeal" | "seal" | "copilot" | "autopilot" | "explore" | "hype"
-  | "brandVisitor" | "brandOperator" | "points" | "shop" | "flairMatch" | "flairCards" | "flairDecks" | "flairShops" | "flairWallet" | "flairQuests";
+  | "brandVisitor" | "brandOperator" | "points" | "shop" | "pointsEarn" | "flairMatch" | "flairCards" | "flairDecks" | "flairShops" | "flairWallet" | "flairQuests";
 
 export interface GuideDef {
   key: string;
@@ -46,8 +46,11 @@ export const GUIDES: Record<string, GuideDef> = Object.fromEntries([
   g("hype.flip", "hype", 3),
   g("brand.visitor", "brandVisitor", 3, false),
   g("brand.operator", "brandOperator", 3, false),
-  g("points.fai", "points", 3, false),
-  g("shop.room", "shop", 3),
+  g("points.fai", "points", 3, false, 2),
+  g("points.balance", "points", 2, false, 1, "balance"),
+  g("points.earn", "pointsEarn", 3, true, 1, "earn"),
+  g("points.statement", "points", 2, false, 1, "statement"),
+  g("shop.room", "shop", 3, true, 1, "store"),
 ].map((d) => [d.key, d]));
 
 export type GuideKey = keyof typeof GUIDES;
