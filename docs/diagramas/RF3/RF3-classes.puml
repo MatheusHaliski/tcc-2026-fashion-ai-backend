@@ -1,0 +1,169 @@
+@startuml RF3_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "fai-domain (entidades JPA)" {
+  class AuditLog <<audit_log>> {
+    +id: UUID
+    +actor: String
+    +acao: String
+    +recurso: String
+    +resultado: String
+    +ip: String
+    +userAgent: String
+    +timestamp: Instant
+    +correlationId: String
+    +metadataJson: String
+  }
+  class DataExportRequest <<data_export_requests>> {
+    +id: UUID
+    +user: User
+    +status: ExportStatus
+    +fileKey: String
+    +readyAt: Instant
+    +expiresAt: Instant
+  }
+  class Notification <<notifications>> {
+    +id: UUID
+    +recipient: User
+    +actor: User
+    +type: NotificationType
+    +category: NotificationCategory
+    +resourceType: String
+    +resourceId: UUID
+    +title: String
+    +body: String
+    +payloadJson: String
+    .. +3 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class UserConsent <<user_consents>> {
+    +id: UUID
+    +user: User
+    +purpose: ConsentPurpose
+    +granted: boolean
+    +legalBasis: String
+    +policyVersion: String
+    +grantedAt: Instant
+    +revokedAt: Instant
+  }
+  class UserPreferences <<user_preferences>> {
+    +id: UUID
+    +user: User
+    +theme: ThemeMode
+    +language: UiLanguage
+    +density: UiDensity
+    +fontScale: int
+    +highContrast: boolean
+    +reduceMotion: boolean
+    +chromeBackgroundId: String
+    +sizeSystem: SizeSystem
+    .. +16 campos ..
+  }
+}
+package "fai-domain (enums)" {
+  enum ExportStatus {
+    REQUESTED
+    PROCESSING
+    READY
+    EXPIRED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum NotificationType {
+    PASSWORD_RESET
+    TWO_FACTOR_CODE
+    NEW_LOGIN_DEVICE
+    EMAIL_CONFIRMATION
+    DATA_EXPORT_READY
+    FOLLOW_REQUEST
+    FOLLOW_ACCEPTED
+    NEW_FOLLOWER
+    NEW_COMMENT
+    NEW_LIKE
+    ..
+  }
+  enum NotificationCategory {
+    SECURITY
+    SOCIAL
+    ACHIEVEMENT
+    SYSTEM
+    POINTS
+  }
+  enum Visibility {
+    PRIVATE
+    FOLLOWERS
+    PUBLIC
+  }
+  enum ConsentPurpose {
+    AI_RECOMMENDATION
+    AI_EXTERNAL_PHOTO_PROCESSING
+    HISTORY_FOR_RECOMMENDATION
+    PERSONALIZED_ADS
+    PARTNER_SHARING
+    BODY_MEASUREMENTS
+    FACIAL_RECOGNITION
+    LOCATION_HISTORY
+    AI_MODEL_TRAINING
+  }
+}
+package "fai-application" {
+  class IdentityService <<service>> {
+    +changePassword()
+    +sessions()
+    +revokeSession()
+    +revokeOtherSessions()
+  }
+}
+IdentityService ..> User : usa
+IdentityService ..> UserPreferences : usa
+DataExportRequest "*" --> "1" User : user
+DataExportRequest --> ExportStatus
+Notification "*" --> "1" User : actor
+Notification "*" --> "1" User : recipient
+Notification --> NotificationCategory
+Notification --> NotificationType
+User --> AccountStatus
+User --> Visibility
+UserConsent "*" --> "1" User : user
+UserConsent --> ConsentPurpose
+UserPreferences "1" --> "1" User : user
+@enduml

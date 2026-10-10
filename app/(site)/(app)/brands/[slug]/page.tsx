@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, use, useState } from "react";
+import { useEffect, use, useState, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
 import type { PieceView, SchemeView, UserCard } from "@/lib/api/types";
@@ -7,11 +8,12 @@ import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label } from "@/lib/api/taxonomy";
-import { Avatar, Badge, Button, Card, Dialog, EmptyState, ErrorState, Field, Input, Select, Skeleton, SkeletonGrid, Tabs, Textarea, useToast } from "@/components/ui";
+import { Avatar, Badge, Button, Card, Dialog, EmptyState, ErrorState, Field, Input, SegmentPicker, Select, Skeleton, SkeletonGrid, Tabs, Textarea, cn, useToast } from "@/components/ui";
 import { SchemeCard, toSealBadges } from "@/components/scheme-card";
-import { SealCreator } from "@/components/seal-creator";
-import { EMPTY_POLICY, SealPolicyEditor, cleanPolicy, type SealPolicy, type SealTierId } from "@/components/seal-policy-editor";
+import { SealWizard, type SealFormState } from "@/components/seal-wizard";
+import { EMPTY_POLICY, cleanPolicy, type SealPolicy, type SealTierId } from "@/components/seal-policy-editor";
 import { DEFAULT_DESIGN, SealMedallion, type SealDesign } from "@/components/seal-medallion";
+import { SealHypeStat, type SealHypeAggregate } from "@/components/hype/hype-seals";
 import { PieceCard } from "@/components/piece-card";
 import { BrandFlairTab } from "@/components/flair/brand-flair-tab";
 import { BrandCouponsTab, BRAND_PROMO_TYPES, CELEB_PROMO_TYPES } from "@/components/coupons/brand-coupons-tab";
@@ -21,32 +23,69 @@ import { ProfileHeader } from "@/components/profile-header";
 import { CollectionsTab, ErasTab } from "@/components/showcase/showcase-tabs";
 import { WardrobeCreatorTab } from "@/components/room3d/wardrobe-creator";
 import { RoomStore } from "@/components/room3d/room-store";
-import { IssuerReviewButton } from "@/components/issuer-review";
+import { IssuerCenter, IssuerCenterButton, useIssuerReview } from "@/components/issuer-review";
+import { HypeGroupBadge } from "@/components/hype/hype-group-badge";
+import { InsightStrip } from "@/components/insights/insight-strip";
+import { levelTone } from "@/lib/hype/model";
+import type { HypeDirection, HypeLevel } from "@/lib/hype/types";
 
-interface Seal { id: string; name: string; tier: string; policyText?: string; iconUrl?: string; status: string; available?: boolean; unavailableReason?: string | null; usageCount?: number; usageLimit?: number | null; premium?: boolean; availableFrom?: string | null; availableUntil?: string | null; design?: SealDesign | null; policy?: SealPolicy | null; }
+/**
+ * RF53 · Lote A2 (P3-17): ordenação das abas de destaque — "Recentes · Hype · Em crescimento" — é ORDENAÇÃO, não aba nem
+ * filtro: só muda a ordem do que a política do selo já deixa aparecer. Vai para o backend como `filter=` (InstitutionalService:
+ * RECENTES, HYPE e GROWTH = dimensão TREND do v2, crescimento e não curtidas); o Hype que ordena é só o público elegível.
+ * Cada aba tem a sua ordem padrão (a do backend sem `filter`): destaques pelo Hype, consagrados pela emissão mais recente.
+ */
+type HighlightSort = "RECENTES" | "HYPE" | "GROWTH";
+const SORTABLE_TABS: Record<string, HighlightSort> = { ESQUEMAS_DESTAQUE: "HYPE", PECAS_DESTAQUE: "HYPE", LOOKS_CONSAGRADOS: "RECENTES" };
+
+interface Seal { id: string; name: string; tier: string; policyText?: string; iconUrl?: string; status: string; available?: boolean; unavailableReason?: string | null; usageCount?: number; usageLimit?: number | null; premium?: boolean; availableFrom?: string | null; availableUntil?: string | null; design?: SealDesign | null; policy?: SealPolicy | null; /** RF53 — Hype do selo: média do Hype atual dos vinculados */ hype?: SealHypeAggregate | null; }
 interface Promotion { id: string; type: string; title: string; description?: string; rules?: string; discountPercent?: number; status: string; eligible?: boolean; requiredSealId?: string; redemptions?: number; }
 interface Profile { user?: UserCard; brand?: Record<string, unknown>; celebrity?: Record<string, unknown>; header: { userId?: string; username?: string; name?: string; slug?: string; logoUrl?: string | null; avatarUrl?: string | null; userAvatarUrl?: string | null; coverUrl?: string | null; bio?: string | null; storeUrl?: string | null; status?: string; kind?: string; profileType?: string; verified?: boolean; premium?: boolean; category?: string | null; followers?: number; following: number; pieces?: number; schemes?: number; activeSeals: number; viewerFollows: boolean; metrics?: Record<string, number> }; mode?: string; tabs?: ({ id: string; label: string; adminOnly?: boolean } | string)[]; admin?: boolean; store?: { url?: string; hashtag?: string }; [k: string]: unknown; }
 
 export default function BrandPage({ params }: { params: Promise<{ slug: string }> }) {
-  const slug = encodeURIComponent(use(params).slug);   /* vai direto para caminhos da API */ const { t, fmtDate, rich } = useI18n(); const { user } = useAuth(); const toast = useToast();
+  const slug = use(params).slug;   /* vai direto para caminhos da API */ const { t, fmtDate, rich } = useI18n(); const { user, refreshMe } = useAuth(); const router = useRouter(); const searchParams = useSearchParams(); const toast = useToast();
   const { data, loading, error, reload } = useApi<Profile>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}`, { signal, anonymous: !user }), [slug, !!user]);
   const [tab, setTab] = useState("ESQUEMAS_DESTAQUE"); const [flairNew, setFlairNew] = useState(0);
-  useEffect(() => { const q = new URLSearchParams(window.location.search).get("tab"); if (q) setTab(q.toUpperCase()); }, []);
+  const [sorts, setSorts] = useState<Record<string, HighlightSort>>({});
+  const sortDefault = SORTABLE_TABS[tab]; const sort = sorts[tab] ?? sortDefault;
+  const sortParam = sortDefault && sort !== sortDefault ? `?filter=${sort}` : "";
+  const requestedTab = searchParams.get("tab")?.toUpperCase();
+  useEffect(() => { setTab(requestedTab ?? "ESQUEMAS_DESTAQUE"); }, [slug, requestedTab]);
   const ownerId = data?.header?.userId ?? data?.user?.id;
   const seals = useApi<Seal[]>((signal) => api.get(`/api/users/${ownerId}/seals`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
   const promos = useApi<Promotion[]>((signal) => api.get(`/api/users/${ownerId}/promotions`, { signal, anonymous: !user }), [ownerId, !!user], { enabled: !!ownerId });
+  // Central do emissor (verificação do perfil): só para o dono; com o perfil ainda em verificação, a página abre nela
+  const review = useIssuerReview(!!data && (data.admin ?? data.mode === "ADMINISTRADOR"));
+  const reviewStatus = review.data?.status ?? (["Verificada", "Validada"].includes(data?.header.status ?? "") ? "APROVADO" : undefined);
+  const previousStatus = useRef(reviewStatus);
+  useEffect(() => {
+    if (reviewStatus === "APROVADO") {
+      if (previousStatus.current && previousStatus.current !== "APROVADO") { reload(); void refreshMe(); }
+      if (tab === "CENTRAL") setTab("ESQUEMAS_DESTAQUE");
+      if (requestedTab === "CENTRAL") {
+        const query = new URLSearchParams(searchParams.toString()); query.delete("tab");
+        router.replace(`/brands/${encodeURIComponent(slug)}${query.size ? `?${query}` : ""}`, { scroll: false });
+      }
+    } else if (reviewStatus && !requestedTab && previousStatus.current !== reviewStatus) setTab("CENTRAL");
+    previousStatus.current = reviewStatus;
+  }, [reviewStatus, tab, requestedTab, slug, searchParams, router, reload, refreshMe]);
   type SealBadgeSource = NonNullable<Parameters<typeof toSealBadges>[0]>[number];
   type HighlightedPieces = { piece: PieceView; author?: UserCard; schemeId?: string; schemeTitle?: string; seals?: SealBadgeSource[] }[];
   type SavedSchemes = { scheme: SchemeView; author?: UserCard; savedAt?: string }[];
   type SavedPieces = { piece: PieceView; author?: UserCard; snapshot?: boolean; savedAt?: string }[];
   type Catalog = { piece: PieceView; looks: number; neverInLook: boolean }[];
-  type Consecrated = { scheme: SchemeView; seals: SealBadgeSource[] }[];
+  /** promotion: vínculo que pôs o look no perfil (RF20/RF21) — emissão, validade, expirado, revalidação pendente */
+  type Consecrated = { scheme: SchemeView; seals: SealBadgeSource[]; promotion?: { issuedAt?: string | null; expiresAt?: string | null; expired?: boolean; revalidationPending?: boolean } }[];
+  const promotionNote = (p?: Consecrated[number]["promotion"]) => !p ? null : p.expired
+    ? <span className="caption promo-note is-expired">{t("brands.slug.promo_expirado", { date: fmtDate(p.expiresAt) })}</span>
+    : p.revalidationPending ? <span className="caption promo-note is-review">{t("brands.slug.promo_revalidacao")}</span>
+    : p.issuedAt ? <span className="caption promo-note">{p.expiresAt ? t("brands.slug.promo_vigente_ate", { date: fmtDate(p.issuedAt), until: fmtDate(p.expiresAt) }) : t("brands.slug.promo_vigente", { date: fmtDate(p.issuedAt) })}</span> : null;
   // Esquemas e peças sempre em abas separadas (RF14/RF22): cada aba carrega um único tipo de conteúdo.
-  const tabData = useApi<HighlightedPieces | Catalog | Consecrated | SavedSchemes | SavedPieces>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}/tabs/${tab === "LOOKS_CONSAGRADOS" && data?.mode === "ADMINISTRADOR" ? "MEUS_ESQUEMAS" : tab}`, { signal, anonymous: !user }), [slug, tab, !!user, data?.mode], { enabled: ["ESQUEMAS_DESTAQUE", "PECAS_DESTAQUE", "CATALOGO", "LOOKS_CONSAGRADOS", "ESQUEMAS_SALVOS", "PECAS_SALVAS"].includes(tab) && !!data });
+  const tabData = useApi<HighlightedPieces | Catalog | Consecrated | SavedSchemes | SavedPieces>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}/tabs/${tab === "LOOKS_CONSAGRADOS" && data?.mode === "ADMINISTRADOR" ? "MEUS_ESQUEMAS" : tab}${sortParam}`, { signal, anonymous: !user }), [slug, tab, !!user, data?.mode, sortParam], { enabled: ["ESQUEMAS_DESTAQUE", "PECAS_DESTAQUE", "CATALOGO", "LOOKS_CONSAGRADOS", "ESQUEMAS_SALVOS", "PECAS_SALVAS"].includes(tab) && !!data });
   const badges = toSealBadges;
   const emptySeal = { open: false, name: "", tier: "LOOK" as SealTierId, policyText: "", usageLimit: "", status: "ACTIVE", availableFrom: "", availableUntil: "", design: DEFAULT_DESIGN as SealDesign, policy: EMPTY_POLICY };
   // RF25 — política padronizada (regras + tags) no lugar do texto livre; policyText só guarda a descrição antiga, se houver
-  const [sealForm, setSealForm] = useState<{ open: boolean; id?: string; name: string; tier: SealTierId; policyText: string; usageLimit: string; status: string; availableFrom: string; availableUntil: string; design: SealDesign; policy: SealPolicy }>(emptySeal);
+  const [sealForm, setSealForm] = useState<SealFormState>(emptySeal);
   const [promoForm, setPromoForm] = useState<{ open: boolean; id?: string; type: string; title: string; description: string; rules: string; discountPercent: string }>({ open: false, type: "DESCONTO_ECOMMERCE", title: "", description: "", rules: "", discountPercent: "" });
   if (error) return <ErrorState error={error} onRetry={reload} page notFound={{ title: t("brands.noOfficialTitle", { name: decodeURIComponent(slug) }), hint: t("brands.noOfficialHint"), action: <Link href={`/search?tab=PECAS&q=${encodeURIComponent(decodeURIComponent(slug))}`} className="btn btn-primary">{t("brands.seePieces")}</Link> }} />;
   if (loading || !data) return <Skeleton className="h-64" />;
@@ -54,13 +93,13 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
   const isCeleb = (data.user?.profileType ?? h.profileType ?? h.kind) === "CELEBRIDADE" || h.premium === true || String(h.kind ?? "").toUpperCase().includes("CELEB");
   const owner: UserCard = data.user ?? ({ id: h.userId ?? "", username: h.username ?? h.slug ?? "", displayName: h.name ?? h.username ?? "", avatarUrl: h.logoUrl ?? null, profileType: isCeleb ? "CELEBRIDADE" : "MARCA", verified: h.verified } as unknown as UserCard);
   const tabs = [...(isCeleb ? [{ id: "ERAS", label: t("brands.slug.eras") }] : [{ id: "COLECOES", label: t("common.colecoes") }]), { id: "ESQUEMAS_DESTAQUE", label: t("brands.slug.esquemas_em_destaque") }, { id: "PECAS_DESTAQUE", label: t("brands.slug.pecas_em_destaque") }, { id: "LOOKS_CONSAGRADOS", label: admin ? t("lookbook.looks") : t("brands.slug.looks_consagrados") }, { id: "CATALOGO", label: t("brands.slug.catalogo_de_pecas") }, { id: "SELOS", label: t("brands.slug.selos", { value: seals.data?.length ?? data.header.activeSeals }) }, { id: "PROMOCOES", label: t("brands.slug.promocoes") }, { id: "FLAIR", label: admin ? t("brands.slug.minhas_combinacoes_flair") : t("brands.slug.combinacoes_flair") }, ...(admin ? [{ id: "CUPONS", label: t("brands.slug.meus_cupons_promocionais") }] : []), { id: "GUARDA_ROUPA", label: admin ? t("brands.slug.criar_guarda_roupa_3d") : t("brands.slug.guarda_roupa_3d") },
-    ...(admin ? [{ id: "ESQUEMAS_SALVOS", label: t("brands.slug.esquemas_salvos") }, { id: "PECAS_SALVAS", label: t("lookbook.savedPieces") }, { id: "REVISAO", label: t("brands.slug.revisao_de_vinculos") }, { id: "METRICAS", label: t("brands.slug.metricas") }] : [])];
+    ...(admin ? [...(reviewStatus !== "APROVADO" ? [{ id: "CENTRAL", label: t("issuerReview.central") }] : []), { id: "ESQUEMAS_SALVOS", label: t("brands.slug.esquemas_salvos") }, { id: "PECAS_SALVAS", label: t("lookbook.savedPieces") }, { id: "REVISAO", label: t("brands.slug.revisao_de_vinculos") }, { id: "METRICAS", label: t("brands.slug.metricas") }] : [])];
   async function follow() { try { if (data!.header.viewerFollows) await api.delete(`/api/users/${ownerId}/followers/me`); else await api.post(`/api/users/${ownerId}/followers`); reload(); } catch (e) { toast.fromError(e); } }
   async function saveSeal() {
     const iso = (v: string) => (v ? new Date(v).toISOString() : null);
     const policy = cleanPolicy(sealForm.policy);
     const body = { name: sealForm.name.trim(), tier: sealForm.tier, policy, policyText: policy ? null : sealForm.policyText || null, usageLimit: sealForm.usageLimit ? Number(sealForm.usageLimit) : null, status: sealForm.status, availableFrom: iso(sealForm.availableFrom), availableUntil: iso(sealForm.availableUntil), design: sealForm.design };
-    try { if (sealForm.id) await api.put(`/api/seals/${sealForm.id}`, body); else await api.post("/api/seals", body); setSealForm({ ...sealForm, open: false }); toast.success(t("common.saved")); seals.reload(); } catch (e) { toast.fromError(e); }
+    try { if (sealForm.id) await api.put(`/api/seals/${sealForm.id}`, body); else await api.post("/api/seals", body); setSealForm({ ...sealForm, open: false }); toast.success(t("common.saved")); seals.reload(); return true; } catch (e) { toast.fromError(e); return false; }
   }
   async function savePromo() {
     const body = { type: promoForm.type, title: promoForm.title, description: promoForm.description, rules: promoForm.rules, discountPercent: promoForm.discountPercent ? Number(promoForm.discountPercent) : null };
@@ -79,18 +118,29 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
         photoUrl={h.userAvatarUrl ?? (isCeleb ? ((brand.officialPhotoUrl as string) ?? h.avatarUrl ?? owner.avatarUrl) : null)}
         photo={!h.userAvatarUrl && !isCeleb ? <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-white"><BrandLogo name={(brand.brandName as string) ?? owner.displayName} src={(brand.logoUrl as string) ?? h.logoUrl ?? undefined} size={120} /></span> : undefined}
         counts={{ pieces: h.pieces, schemes: h.schemes, followers: h.followers, following: h.following }}
-        actions={<>{!admin && user && <Button size="sm" variant={data.header.viewerFollows ? "default" : "primary"} onClick={follow}><FaiIcon id="SOC-12" size={24} active={data.header.viewerFollows} decorative />{data.header.viewerFollows ? t("lookbook.unfollow") : t("lookbook.follow")}</Button>}{admin && <><Link href="/settings" className="btn btn-sm">{t("common.editar_perfil")}</Link><IssuerReviewButton /></>}<Button size="sm" onClick={() => setTab(isCeleb ? "ERAS" : "COLECOES")}>{isCeleb ? t("brands.slug.eras") : t("common.colecoes")}</Button></>} />
-      <Tabs tabs={tabs} value={tab} onChange={setTab} />
+        hype={isCeleb ? <HypeGroupBadge type="CREATOR" groupKey={ownerId} variant="header" /> : <HypeGroupBadge type="BRAND" groupKey={(brand.brandName as string) ?? h.name} variant="header" />}
+        actions={<>{!admin && user && <Button size="sm" variant={data.header.viewerFollows ? "default" : "primary"} onClick={follow}><FaiIcon id="SOC-12" size={24} active={data.header.viewerFollows} decorative />{data.header.viewerFollows ? t("lookbook.unfollow") : t("lookbook.follow")}</Button>}{admin && <><Link href="/settings" className="btn btn-sm">{t("common.editar_perfil")}</Link>{reviewStatus !== "APROVADO" && <IssuerCenterButton status={reviewStatus} onOpen={() => { setTab("CENTRAL"); document.getElementById("perfil-abas")?.scrollIntoView({ behavior: "smooth", block: "start" }); }} />}</>}<Button size="sm" onClick={() => setTab(isCeleb ? "ERAS" : "COLECOES")}>{isCeleb ? t("brands.slug.eras") : t("common.colecoes")}</Button></>} />
+      {/* RF53 · Lote A5 (P3-15): Hype agregado do perfil com o estilo ao lado, crescimento e looks com selo (só públicos) */}
+      <InsightStrip context="BRAND_PROFILE" params={{ key: decodeURIComponent(slug) }} collapsible className="mb-3" />
+      <div id="perfil-abas" className="scroll-mt-16"><Tabs tabs={tabs} value={tab} onChange={setTab} /></div>
+      {sortDefault && (
+        <div className="brand-sort">
+          <SegmentPicker<HighlightSort> label={t("hypeBrands.sort_label")} value={sort} onChange={(v) => setSorts((o) => ({ ...o, [tab]: v }))}
+            options={[{ id: "RECENTES", label: t("hypeBrands.sort_recent") }, { id: "HYPE", label: t("hypeBrands.sort_hype") }, { id: "GROWTH", label: t("hypeBrands.sort_growth") }]} />
+          <p className="brand-sort-hint">{t(`hypeBrands.sort_hint_${sort}`)}</p>
+        </div>
+      )}
+      {tab === "CENTRAL" && admin && reviewStatus !== "APROVADO" && <IssuerCenter review={review} />}
       {tab === "ERAS" && isCeleb && <ErasTab slug={slug} admin={admin} />}
-      {tab === "COLECOES" && !isCeleb && <CollectionsTab slug={slug} admin={admin} />}
+      {tab === "COLECOES" && !isCeleb && <CollectionsTab slug={slug} admin={admin} brand={{ name: (brand.brandName as string) ?? h.name ?? owner.displayName, logoUrl: (brand.logoUrl as string) ?? h.logoUrl ?? null }} />}
       {tab === "FLAIR" && <BrandFlairTab slug={slug} autoNew={flairNew} />}
       {tab === "GUARDA_ROUPA" && (admin ? <WardrobeCreatorTab /> : user ? <RoomStore creatorSlug={slug} compact /> : <EmptyState title={t("brands.slug.entre_para_ver_os_itens")} hint={t("brands.slug.componentes_e_guarda_roupas_inteiros")} />)}
       {tab === "CUPONS" && admin && <BrandCouponsTab ownerId={ownerId ?? ""} celebrity={isCeleb} onCreateFlair={() => { setTab("FLAIR"); setFlairNew((n) => n + 1); }} />}
-      {tab === "ESQUEMAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<Consecrated>("scheme").length ? <><p className="type-body-sm text-muted mb-3">{t("brands.slug.looks_de_qualquer_usuario_que")}</p><div className="grid-looks">{only<Consecrated>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} />)}</div></> : <EmptyState title={t("brands.slug.nenhum_esquema_em_destaque_ainda")} hint={t("brands.slug.aparecem_aqui_os_looks_que")} />)}
+      {tab === "ESQUEMAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<Consecrated>("scheme").length ? <><p className="type-body-sm text-muted mb-3">{t("brands.slug.looks_de_qualquer_usuario_que")}</p><div className="grid-looks">{only<Consecrated>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} extra={promotionNote(e.promotion)} />)}</div></> : <EmptyState title={t("brands.slug.nenhum_esquema_em_destaque_ainda")} hint={t("brands.slug.aparecem_aqui_os_looks_que")} />)}
       {tab === "PECAS_DESTAQUE" && (tabData.loading ? <SkeletonGrid /> : only<HighlightedPieces>("piece").length ? <><p className="type-body-sm text-muted mb-3">{t("brands.slug.pecas_que_compoem_os_looks")}</p><div className="grid-cards">{only<HighlightedPieces>("piece").map((e) => <PieceCard key={e.piece.id} piece={e.piece} seals={badges(e.seals)} extra={<span className="caption">{rich("brands.slug.no_look", { schemeTitle: e.schemeTitle, value: e.author ? ` · @${e.author.username}` : "" }, { 0: ($c) => <Link className="underline" href={`/schemes/${e.schemeId}`}>{$c}</Link> })}</span>} />)}</div></> : <EmptyState title={t("brands.slug.nenhuma_peca_em_destaque_ainda")} hint={t("brands.slug.as_pecas_dos_looks_com")} />)}
       {tab === "ESQUEMAS_SALVOS" && admin && (tabData.loading ? <SkeletonGrid /> : only<SavedSchemes>("scheme").length ? <div className="grid-looks">{only<SavedSchemes>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} />)}</div> : <EmptyState title={t("brands.slug.nenhum_esquema_salvo")} />)}
       {tab === "PECAS_SALVAS" && admin && (tabData.loading ? <SkeletonGrid /> : only<SavedPieces>("piece").length ? <div className="grid-cards">{only<SavedPieces>("piece").map((e) => <PieceCard key={e.piece.id} piece={e.piece} extra={e.author ? <span className="caption">{t("brands.slug.de_2", { username: e.author.username, value: e.snapshot ? t("brands.slug.arquivada_pelo_autor") : "" })}</span> : undefined} />)}</div> : <EmptyState title={t("common.nenhuma_peca_salva")} />)}
-      {tab === "LOOKS_CONSAGRADOS" && (tabData.loading ? <SkeletonGrid /> : only<Consecrated>("scheme").length ? <div className="grid-looks">{only<Consecrated>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} />)}</div> : <EmptyState title={t("common.empty")} />)}
+      {tab === "LOOKS_CONSAGRADOS" && (tabData.loading ? <SkeletonGrid /> : only<Consecrated>("scheme").length ? <div className="grid-looks">{only<Consecrated>("scheme").map((e) => <SchemeCard key={e.scheme.id} scheme={e.scheme} seals={badges(e.seals)} extra={admin ? undefined : promotionNote(e.promotion)} />)}</div> : <EmptyState title={t("common.empty")} />)}
       {tab === "CATALOGO" && (tabData.loading ? <SkeletonGrid /> : only<Catalog>("piece").length ? <div className="grid-cards">{only<Catalog>("piece").map((e) => <PieceCard key={e.piece.id} piece={e.piece} extra={<span className="caption tabular">{t("brands.slug.looks", { looks: e.looks, value: e.neverInLook ? t("brands.slug.nunca_usada_em_look") : "" })}</span>} />)}</div> : <EmptyState title={t("common.empty")} />)}
       {tab === "SELOS" && (
         <>
@@ -100,8 +150,9 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
             <Card key={s.id} className={s.premium ? "bg-gradient-to-br from-surface to-surface-3" : ""}>
               <div className="flex items-start gap-3"><SealMedallion design={s.design ?? DEFAULT_DESIGN} size={56} premium={s.premium} title={s.name} /><div className="min-w-0 flex-1"><p className="type-h3">{s.name}</p><p className="type-caption text-muted">{label(s.tier.toLowerCase())} · {s.available ? t("brands.slug.disponivel") : s.unavailableReason ?? label(s.status.toLowerCase())}</p></div></div>
               {s.policyText && <p className="mt-2 type-body-sm">{s.policyText}</p>}
-              <p className="mt-2 type-data text-faint tabular">{t("brands.slug.emissoes", { value: s.usageCount ?? 0, value2: s.usageLimit ? `/${s.usageLimit}` : "" })}{(s.availableFrom || s.availableUntil) && <>{t("brands.slug.valido", { value: s.availableFrom ? t("brands.slug.de", { date: fmtDate(s.availableFrom) }) : "", value2: s.availableUntil ? t("common.ate", { date: fmtDate(s.availableUntil) }) : "" })}</>}</p>
-              {admin && <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => setSealForm({ open: true, id: s.id, name: s.name, tier: s.tier === "PECA" ? "PECA" : "LOOK", policyText: s.policy ? "" : s.policyText ?? "", usageLimit: s.usageLimit?.toString() ?? "", status: s.status, availableFrom: s.availableFrom ? s.availableFrom.slice(0, 16) : "", availableUntil: s.availableUntil ? s.availableUntil.slice(0, 16) : "", design: s.design ?? DEFAULT_DESIGN, policy: s.policy ? { ...EMPTY_POLICY, ...s.policy } : EMPTY_POLICY })}>{t("common.edit")}</Button><Button size="sm" variant="danger" onClick={async () => { try { await api.put(`/api/seals/${s.id}`, { name: s.name, tier: s.tier, policyText: s.policyText, usageLimit: s.usageLimit, availableFrom: s.availableFrom, availableUntil: s.availableUntil, status: s.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }); seals.reload(); } catch (e) { toast.fromError(e); } }}>{s.status === "ACTIVE" ? t("common.desativar") : t("brands.slug.ativar")}</Button></div>}
+              {s.tier !== "PERFIL" && <SealHypeStat hype={s.hype} tier={s.tier} />}
+              <p className="mt-2 type-data text-faint tabular">{s.tier !== "PERFIL" && t("brands.slug.emissoes", { value: s.usageCount ?? 0, value2: s.usageLimit ? `/${s.usageLimit}` : "" })}{(s.availableFrom || s.availableUntil) && <>{t("brands.slug.valido", { value: s.availableFrom ? t("brands.slug.de", { date: fmtDate(s.availableFrom) }) : "", value2: s.availableUntil ? t("common.ate", { date: fmtDate(s.availableUntil) }) : "" })}</>}</p>
+              {admin && <div className="mt-2 flex gap-2"><Button size="sm" onClick={() => setSealForm({ open: true, id: s.id, name: s.name, tier: s.tier === "PERFIL" ? "PERFIL" : s.tier === "PECA" ? "PECA" : "LOOK", policyText: s.policy ? "" : s.policyText ?? "", usageLimit: s.usageLimit?.toString() ?? "", status: s.status, availableFrom: s.availableFrom ? s.availableFrom.slice(0, 16) : "", availableUntil: s.availableUntil ? s.availableUntil.slice(0, 16) : "", design: s.design ?? DEFAULT_DESIGN, policy: s.policy ? { ...EMPTY_POLICY, ...s.policy } : EMPTY_POLICY })}>{t("common.edit")}</Button><Button size="sm" variant="danger" onClick={async () => { try { await api.put(`/api/seals/${s.id}`, { name: s.name, tier: s.tier, policy: s.policy, design: s.design, policyText: s.policyText, usageLimit: s.usageLimit, availableFrom: s.availableFrom, availableUntil: s.availableUntil, status: s.status === "ACTIVE" ? "INACTIVE" : "ACTIVE" }); seals.reload(); } catch (e) { toast.fromError(e); } }}>{s.status === "ACTIVE" ? t("common.desativar") : t("brands.slug.ativar")}</Button></div>}
             </Card>))}</div>}
         </>
       )}
@@ -115,16 +166,9 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
       )}
       {tab === "REVISAO" && admin && <ReviewQueue />}
       {tab === "METRICAS" && admin && <IssuerMetrics />}
-      <Dialog open={sealForm.open} onClose={() => setSealForm({ ...sealForm, open: false })} title={sealForm.id ? t("brands.slug.editar_selo") : t("brands.slug.novo_selo")} footer={<Button variant="primary" onClick={saveSeal} disabled={sealForm.name.trim().length < 2}>{t("common.save")}</Button>}>
-        <Field label={t("common.nome")} id="sname" required><Input id="sname" value={sealForm.name} onChange={(e) => setSealForm({ ...sealForm, name: e.target.value })} /></Field>
-        <div className="mb-3"><p className="label mb-1">{t("brands.slug.desenho_do_selo_proporcoes_do")}</p><SealCreator value={sealForm.design} onChange={(dd) => setSealForm({ ...sealForm, design: dd })} premium={isCeleb} /></div>
-        <div className="mb-3">
-          <SealPolicyEditor value={sealForm.policy} onChange={(policy) => setSealForm((f) => ({ ...f, policy }))} tier={sealForm.tier} onTier={(tier) => setSealForm((f) => ({ ...f, tier }))}
-            brandName={!isCeleb ? ((brand.brandName as string) ?? h.name ?? null) : null} />
-          {sealForm.policyText && !cleanPolicy(sealForm.policy) && <p className="help mt-2">{t("sealPolicy.texto_antigo", { v: sealForm.policyText })}</p>}
-        </div>
-        <div className="grid grid-cols-2 gap-3"><Field label={t("common.disponivel_a_partir_de")} id="sfrom" hint={t("common.vazio_imediato")}><Input id="sfrom" type="datetime-local" value={sealForm.availableFrom} onChange={(e) => setSealForm({ ...sealForm, availableFrom: e.target.value })} /></Field><Field label={t("common.expira_em")} id="suntil" hint={t("common.vazio_sem_expiracao")}><Input id="suntil" type="datetime-local" value={sealForm.availableUntil} onChange={(e) => setSealForm({ ...sealForm, availableUntil: e.target.value })} /></Field></div>
-        <Field label={t("brands.slug.limite_de_emissoes")} id="slimit"><Input id="slimit" type="number" min={1} value={sealForm.usageLimit} onChange={(e) => setSealForm({ ...sealForm, usageLimit: e.target.value })} /></Field>
+      <Dialog open={sealForm.open} size="lg" onClose={() => setSealForm({ ...sealForm, open: false })} title={sealForm.id ? t("brands.slug.editar_selo") : t("brands.slug.novo_selo")}>
+        <SealWizard key={sealForm.id ?? "novo"} form={sealForm} setForm={setSealForm} premium={isCeleb} onSave={saveSeal}
+          brandName={!isCeleb ? ((brand.brandName as string) ?? h.name ?? null) : null} />
       </Dialog>
       <Dialog open={promoForm.open} onClose={() => setPromoForm({ ...promoForm, open: false })} title={promoForm.id ? t("brands.slug.editar_promocao") : t("brands.slug.nova_promocao")} footer={<Button variant="primary" onClick={savePromo} disabled={!promoForm.title.trim()}>{t("common.save")}</Button>}>
         <Field label={t("common.tipo")} id="ptype"><Select id="ptype" value={promoForm.type} onChange={(e) => setPromoForm({ ...promoForm, type: e.target.value })}>{(isCeleb ? CELEB_PROMO_TYPES : BRAND_PROMO_TYPES).map((x) => <option key={x} value={x}>{label(x.toLowerCase())}</option>)}</Select></Field>
@@ -140,15 +184,36 @@ export default function BrandPage({ params }: { params: Promise<{ slug: string }
 function ReviewQueue() {
   const { rich, t } = useI18n();
   const toast = useToast();
-  const { data, loading, reload } = useApi<{ id: string; scheme?: SchemeView; requestedBy?: UserCard; seal?: { name: string }; confidence?: number; basis?: string; createdAt?: string }[]>((signal) => api.get("/api/seal-bonds/review-queue", { signal }), []);
+  const { data, loading, reload } = useApi<{ id: string; scheme?: SchemeView | null; piece?: Pick<PieceView, "id" | "name" | "imageUrl" | "visibility" | "owner"> | null; requestedBy?: UserCard; seal?: { name: string }; confidence?: number; basis?: string; createdAt?: string }[]>((signal) => api.get("/api/seal-bonds/review-queue", { signal }), []);
   async function decide(id: string, approve: boolean) { try { await api.post(`/api/seal-bonds/${id}/review`, { approve, reason: approve ? null : t("brands.slug.nao_atende_a_politica_do") }); reload(); } catch (e) { toast.fromError(e); } }
   if (loading) return <Skeleton className="h-40" />;
   if (!data || data.length === 0) return <EmptyState title={t("brands.slug.nenhum_vinculo_aguardando_revisao")} />;
-  return <ul className="fai-list surface">{data.map((b) => <li key={b.id} className="flex flex-wrap items-center gap-3 p-3"><div className="min-w-0 flex-1"><p className="type-body">{rich("brands.slug.por", { value: b.scheme?.title ?? t("common.look"), value2: b.requestedBy?.username ?? b.scheme?.owner?.username }, { 0: ($c) => <b>{$c}</b> })}</p><p className="type-caption text-muted">{t("brands.slug.selo", { value: b.seal?.name ?? "", value2: b.basis ?? "", value3: b.confidence != null ? t("brands.slug.confianca", { Math: Math.round(b.confidence * 100) }) : "" })}</p></div>{b.scheme && <Link href={`/schemes/${b.scheme.id}`} className="btn btn-sm">{t("brands.slug.ver_look")}</Link>}<Button size="sm" variant="primary" onClick={() => decide(b.id, true)}>{t("common.aprovar")}</Button><Button size="sm" variant="danger" onClick={() => decide(b.id, false)}>{t("common.rejeitar")}</Button></li>)}</ul>;
+  return <ul className="fai-list surface">{data.map((b) => <li key={b.id} className="flex flex-wrap items-center gap-3 p-3"><div className="min-w-0 flex-1"><p className="type-body">{rich("brands.slug.por", { value: b.piece?.name ?? b.scheme?.title ?? t("common.look"), value2: b.requestedBy?.username ?? b.piece?.owner?.username ?? b.scheme?.owner?.username }, { 0: ($c) => <b>{$c}</b> })}</p><p className="type-caption text-muted">{t("brands.slug.selo", { value: b.seal?.name ?? "", value2: b.basis ?? "", value3: b.confidence != null ? t("brands.slug.confianca", { Math: Math.round(b.confidence * 100) }) : "" })}</p></div>{b.piece ? <Link href={`/pieces/${b.piece.id}`} className="btn btn-sm">{t("sealHypeIssuer.view_piece")}</Link> : b.scheme && <Link href={`/schemes/${b.scheme.id}`} className="btn btn-sm">{t("brands.slug.ver_look")}</Link>}<Button size="sm" variant="primary" onClick={() => decide(b.id, true)}>{t("common.aprovar")}</Button><Button size="sm" variant="danger" onClick={() => decide(b.id, false)}>{t("common.rejeitar")}</Button></li>)}</ul>;
 }
+/** P2-09 — Hype v2 dos looks vinculados (SealService.issuerMetrics.hype): só públicos elegíveis com Hype calculado. */
+interface IssuerHypeData { bonded: number; withHype: number; avgScore?: number | null; level?: HypeLevel | null; deltaPoints?: number | null; direction?: HypeDirection | null; deltaWindowDays?: number | null; top?: { schemeId: string; title?: string | null; score: number; level: HypeLevel }[] }
+const ARROWS: Record<HypeDirection, string> = { UP: "↑", DOWN: "↓", STABLE: "→" };
 function IssuerMetrics() {
-  const { t } = useI18n();
   const { data, loading } = useApi<Record<string, unknown>>((signal) => api.get("/api/me/issuer-metrics", { signal }), []);
   if (loading || !data) return <Skeleton className="h-40" />;
-  return <div className="grid gap-3 sm:grid-cols-3">{Object.entries(data).filter(([, v]) => typeof v === "number" || typeof v === "string").map(([k, v]) => <Card key={k}><p className="label">{k.replace(/([A-Z])/g, " $1").toLowerCase()}</p><p className="hero-number text-3xl">{String(v)}</p></Card>)}<Link href="/dashboard" className="btn sm:col-span-3">{t("brands.slug.abrir_dashboard_do_emissor")}</Link></div>;
+  const hype = data.hype && typeof data.hype === "object" ? data.hype as IssuerHypeData : null;
+  return <div className="grid gap-3 sm:grid-cols-3">{Object.entries(data).filter(([, v]) => typeof v === "number" || typeof v === "string").map(([k, v]) => <Card key={k}><p className="label">{k.replace(/([A-Z])/g, " $1").toLowerCase()}</p><p className="hero-number text-3xl">{String(v)}</p></Card>)}{hype && <IssuerHype hype={hype} />}</div>;
+}
+function IssuerHype({ hype }: { hype: IssuerHypeData }) {
+  const { t } = useI18n();
+  const has = hype.avgScore != null && !!hype.level;
+  return (
+    <Card className="issuer-hype sm:col-span-3">
+      <div className="issuer-hype-head">
+        <p className="label">{t("hypeBrands.issuer_title")}</p>
+        {has ? <><span className={cn("hype-level-chip", levelTone(hype.level!))}>{t(`hype.level.${hype.level}`)}</span><p className="hero-number text-3xl tabular">{Math.round(hype.avgScore!)}</p></>
+          : <p className="type-body text-muted">{t("hype.state.insufficient")}</p>}
+        {has && hype.direction && hype.deltaPoints != null && <span className="type-body-sm tabular">{t("hypeBrands.issuer_delta", { arrow: ARROWS[hype.direction], points: Math.round(Math.abs(hype.deltaPoints)), days: hype.deltaWindowDays ?? 7 })}</span>}
+      </div>
+      <p className="type-caption text-muted">{t("hypeBrands.issuer_base", { withHype: hype.withHype, bonded: hype.bonded })}</p>
+      {(hype.top ?? []).length > 0 && <ol className="issuer-hype-top" aria-label={t("hypeBrands.issuer_top")}>{(hype.top ?? []).map((x) => (
+        <li key={x.schemeId}><Link href={`/schemes/${x.schemeId}`} className="underline">{x.title || t("common.look")}</Link><span className={cn("hype-level-chip", levelTone(x.level))}>{t(`hype.level.${x.level}`)}</span><b className="tabular">🔥 {Math.round(x.score)}</b></li>))}</ol>}
+      <p className="type-caption text-muted">{t("hypeBrands.issuer_hint")}</p>
+    </Card>
+  );
 }

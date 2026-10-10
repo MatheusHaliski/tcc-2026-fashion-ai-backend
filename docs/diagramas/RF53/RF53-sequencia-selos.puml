@@ -1,0 +1,78 @@
+@startuml RF53_Sequencia_Selos
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+title RF53 — Selos × HypeScore\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela (Next.js)" as P
+control "SealController" as SealController
+participant "SealService" as SealService
+database "MySQL" as DB_MySQL
+participant "Guard" as Guard
+participant "OwnMedia" as OwnMedia
+participant "Audit" as Audit
+participant "HypeCache" as HypeCache
+== Selos de marca/celebridade das peças (vínculos APROVADOS de tier PEÇA… ==
+U -> P : Selos de marca/celebridade das peças (vínculos AP…
+P -> SealController : GET /api/pieces/seals
+SealController -> SealService : pieceSeals()
+activate SealService
+SealService -> DB_MySQL : SELECT wardrobe_items
+SealService -> Guard : canView()
+Guard -> DB_MySQL : SELECT follows (×3)
+Guard --> SealService
+SealService -> Guard : canView()
+SealService -> DB_MySQL : SELECT scheme_items
+SealService -> DB_MySQL : SELECT seal_bonds
+deactivate SealService
+SealService --> SealController : resultado
+SealController --> P : 200 JSON
+P --> U : atualiza a tela
+== Marca/celebridade cria um selo ==
+U -> P : Marca/celebridade cria um selo
+P -> SealController : POST /api/seals
+SealController -> SealService : createSeal()
+activate SealService
+SealService -> Guard : requireApprovedInstitutional()
+SealService -> DB_MySQL : SELECT users
+SealService -> SealService : new Seal()
+SealService -> OwnMedia : require()
+SealService -> OwnMedia : requireOrUnchanged() (×2)
+SealService -> SealService : iconUrl = set
+alt período inválido
+SealService --> SealController : 400 PERIODO_INVALIDO
+SealController --> P : 400 + mensagem
+end
+alt limite inválido
+SealService --> SealController : 400 LIMITE_INVALIDO
+SealController --> P : 400 + mensagem
+end
+SealService -> DB_MySQL : INSERT/UPDATE seals
+SealService -> Audit : log()
+SealService -> DB_MySQL : SELECT seal_bonds
+SealService -> HypeCache : get()
+deactivate SealService
+SealService --> SealController : resultado
+SealController --> P : 201 JSON
+P --> U : atualiza a tela
+@enduml

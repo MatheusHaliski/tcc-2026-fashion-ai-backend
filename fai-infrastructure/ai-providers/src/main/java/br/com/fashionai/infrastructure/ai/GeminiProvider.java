@@ -1,6 +1,7 @@
 package br.com.fashionai.infrastructure.ai;
 
 import br.com.fashionai.application.ai.AiProviderPort;
+import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiRequest;
 import br.com.fashionai.application.ai.AiResponse;
 import br.com.fashionai.infrastructure.platform.Http;
@@ -20,12 +21,14 @@ import java.util.Map;
 public class GeminiProvider implements AiProviderPort {
     public static final String ID = "gemini";
     private final RestClient client;
+    private final RestClient visionClient;
     private final String apiKey;
 
     public GeminiProvider(@Value("${fashionai.ai.google-ai-api-key:}") String apiKey,
                           @Value("${fashionai.ai.timeout-seconds:30}") int timeoutSeconds) {
         this.apiKey = apiKey == null ? "" : apiKey.trim();
         this.client = Http.client("https://generativelanguage.googleapis.com", timeoutSeconds);
+        this.visionClient = Http.client("https://generativelanguage.googleapis.com", Math.min(6, timeoutSeconds));
     }
 
     @Override
@@ -60,12 +63,14 @@ public class GeminiProvider implements AiProviderPort {
         }
         body.put("generationConfig", generation);
         Map<String, Object> res;
+        boolean interactive = request.capability() == AiCapability.MULTI_PIECE_DETECTOR;
+        RestClient selected = interactive ? visionClient : client;
         try {
-            res = ProviderCircuit.run(ID, () -> client.post()
+            res = ProviderCircuit.run(ID, () -> selected.post()
                     .uri("/v1beta/models/{model}:generateContent", request.model())
                     .header("x-goog-api-key", apiKey)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(body).retrieve().body(Map.class));
+                    .body(body).retrieve().body(Map.class), !interactive);
         } catch (Exception e) {
             throw new IllegalStateException("Gemini: " + e.getMessage(), e);
         }

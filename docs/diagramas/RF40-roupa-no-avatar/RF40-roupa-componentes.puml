@@ -1,0 +1,74 @@
+@startuml RF40_Roupa_Componentes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF40 — Avatar 3D: componentes da roupa no corpo\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "components/ui" {
+  component "index.tsx" as m_components_ui_index_tsx
+  component "icons.tsx" as m_components_ui_icons_tsx <<apoio>>
+}
+package "components/three" {
+  component "avatar-viewer.tsx" as m_components_three_avatar_viewer_tsx
+  component "human-avatar.tsx" as m_components_three_human_avatar_tsx
+  component "human-outfit.tsx" as m_components_three_human_outfit_tsx
+  component "common.tsx" as m_components_three_common_tsx <<apoio>>
+  component "mannequin.tsx" as m_components_three_mannequin_tsx <<apoio>>
+}
+package "lib" {
+  component "dev-refs.ts" as m_lib_dev_refs_ts <<apoio>>
+}
+package "lib/avatar3d" {
+  component "body-spec.ts" as m_lib_avatar3d_body_spec_ts <<apoio>>
+  component "hair-cut.ts" as m_lib_avatar3d_hair_cut_ts <<apoio>>
+  component "hair-tone.ts" as m_lib_avatar3d_hair_tone_ts <<apoio>>
+}
+package "lib/avatar3d/human" {
+  component "hair-lod.ts" as m_lib_avatar3d_human_hair_lod_ts <<apoio>>
+}
+m_components_three_avatar_viewer_tsx --> m_components_three_common_tsx
+m_components_three_avatar_viewer_tsx --> m_components_three_human_avatar_tsx
+m_components_three_avatar_viewer_tsx --> m_components_three_mannequin_tsx
+m_components_three_avatar_viewer_tsx --> m_lib_avatar3d_body_spec_ts
+m_components_three_avatar_viewer_tsx --> m_lib_avatar3d_human_hair_lod_ts
+m_components_three_human_avatar_tsx --> m_components_three_common_tsx
+m_components_three_human_avatar_tsx --> m_components_three_human_outfit_tsx
+m_components_three_human_avatar_tsx --> m_lib_avatar3d_hair_cut_ts
+m_components_three_human_avatar_tsx --> m_lib_avatar3d_hair_tone_ts
+m_components_three_human_avatar_tsx --> m_lib_avatar3d_human_hair_lod_ts
+m_components_three_human_outfit_tsx --> m_components_three_common_tsx
+m_components_three_human_outfit_tsx --> m_components_three_human_avatar_tsx
+m_components_three_mannequin_tsx --> m_components_three_common_tsx
+m_components_three_mannequin_tsx --> m_components_three_human_avatar_tsx
+m_components_three_mannequin_tsx --> m_lib_avatar3d_body_spec_ts
+m_components_three_mannequin_tsx --> m_lib_avatar3d_human_hair_lod_ts
+m_components_ui_index_tsx --> m_components_ui_icons_tsx
+m_components_ui_index_tsx --> m_lib_dev_refs_ts
+@enduml

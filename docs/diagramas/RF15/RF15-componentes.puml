@@ -1,70 +1,94 @@
 @startuml RF15_Componentes
-title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "photos/page.tsx\n(Minhas Fotos, RF12)" as FE0
-  component "components/expanded-card.tsx\n(card da peça / esquema)" as FE1
-  component "components/photo-editor.tsx\n<canvas> 2D: recorte, giro,\nbrilho/contraste, remover fundo,\ndesfazer/refazer" as FE2
-  component "components/edit-image.tsx\n(diálogo Estúdio / substituir)" as FE3
+  component "/photos\n(site)/(app)/photos/page.tsx" as FE0
+  component "/pieces/[id]\n(site)/(app)/pieces/[id]/page.tsx" as FE1
+  component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE2
+  component "/schemes/[id]\n(site)/(app)/schemes/[id]/page.tsx" as FE3
+  component "lib/api/client.ts" as APIC
 }
-package "fai-web · controllers" {
-  [PhotoController] as PhotoController
-  [WardrobeController] as WardrobeController
-  [DiscoveryController] as DiscoveryController
+package "fai-web (REST)" {
+  component "DiscoveryController\n/api/public-pieces" as DiscoveryController
+  component "PhotoController\n/api/photos/background-removal\n/api/photos/{…}\n/api/photos/{…}/edits" as PhotoController
+  component "WardrobeController\n/api/pieces\n/api/pieces/{…}\n/api/pieces/{…}/copy\n/api/pieces/{…}/image" as WardrobeController
 }
-package "fai-application · services" {
-  [PhotoService] as PhotoService
-  [WardrobeService] as WardrobeService
-  [MediaService] as MediaService
-  [FlatLayPipeline\n(imaging)] as FlatLay
-  [AiEngine (RF24)] as AiEngine
-  [SearchService\n(publicPieces)] as SearchService
+package "fai-application (casos de uso)" {
+  component "SearchService" as SearchService
+  component "PhotoService" as PhotoService
+  component "WardrobeService" as WardrobeService
+  component "SchemeService" as SchemeService <<apoio>>
+  component "ChallengeService" as ChallengeService <<apoio>>
+  component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
+  component "MediaService" as MediaService <<apoio>>
+  component "FlatLayPipeline" as FlatLayPipeline <<apoio>>
+  component "AssetCatalogService" as AssetCatalogService <<apoio>>
+  component "ProjectionService" as ProjectionService <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
+  component "JobQueuePort\n«InMemoryJobQueue»" as JobQueuePort <<port>>
 }
-package "fai-infrastructure · adapters" {
-  [PhotoRepository\nWardrobeItemRepository\nPieceImageRepository\nProcessingJobLogRepository] as REPOS
-  [MediaStoragePort\n(LocalFileMediaStorage / S3MediaStorageAdapter)] as STORAGE
-  [BackgroundRemovalPort\n(RemoveBgAdapter)] as BGPORT
+package "fai-domain (repositórios)" {
+  component "SchemeRepository\nSchemeItemRepository\nWardrobeItemRepository\nUserRepository\nBrandProfileRepository\nCelebrityProfileRepository\nFollowRepository\nShareRepository\nSealBondRepository\nStyleDnaRepository\n(+9)" as REPO_MySQL
 }
-database "MySQL\n• photos\n• wardrobe_items\n• piece_images\n• processing_jobs_log" as DB
-cloud "remove.bg\n(remoção de fundo paga)" as EXT
-
-FE0 --> FE2 : abre (photoId)
-FE1 --> FE2 : abre (pieceId)
-FE1 --> FE3 : abre
-FE2 --> PhotoController : GET /api/photos/{id}/file\nPOST /api/photos/{id}/edits\nPOST /api/photos/background-removal
-FE2 --> WardrobeController : PUT /api/pieces/{id}/image
-FE1 --> WardrobeController : POST /api/pieces/{id}/copy
-FE1 --> DiscoveryController : GET /api/public-pieces
-PhotoController --> PhotoService : chama
-WardrobeController --> WardrobeService : chama
-DiscoveryController --> SearchService : chama
-PhotoService --> WardrobeService : replaceImage · governedFlatLay
-PhotoService --> MediaService : grava cópia editada
-WardrobeService --> MediaService : grava imagem + thumb
-WardrobeService --> AiEngine : execute(FLAT_LAY_STANDARDIZER)
-AiEngine --> FlatLay : fallback local
-FlatLay --> BGPORT : chama
-BGPORT --> EXT : HTTPS
-MediaService --> STORAGE : put / register
-PhotoService --> REPOS : lê / grava
-WardrobeService --> REPOS : grava
-SearchService --> REPOS : lê
-REPOS --> DB : JPA/Flyway
-note bottom of FlatLay : ver RF4 (análise da foto e flat lay)
-note bottom of FE0 : galeria e curadoria: ver RF12
+database "MySQL\n• brand_profiles\n• brands\n• celebrity_profiles\n• follows\n• hype_scores\n• moderation_queue\n• photos\n• pipeline_jobs\n• processing_jobs_log\n• quality_scores\n• reactions\n• saved_items\n(+7)" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+APIC --> DiscoveryController : HTTPS/JSON
+APIC --> PhotoController : HTTPS/JSON
+APIC --> WardrobeController : HTTPS/JSON
+DiscoveryController --> SearchService
+FE0 --> APIC
+FE1 --> APIC
+FE2 --> APIC
+FE3 --> APIC
+PhotoController --> PhotoService
+PhotoService --> AI
+PhotoService --> REPO_MySQL
+PhotoService ..> MediaService
+PhotoService ..> WardrobeService
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+SearchService --> REPO_MySQL
+SearchService ..> ChallengeService
+SearchService ..> HypeScoreConfig
+SearchService ..> SchemeService
+WardrobeController --> WardrobeService
+WardrobeService --> AI
+WardrobeService --> EV
+WardrobeService --> JobQueuePort
+WardrobeService --> REPO_MySQL
+WardrobeService ..> AssetCatalogService
+WardrobeService ..> FlatLayPipeline
+WardrobeService ..> MediaService
+WardrobeService ..> NotificationService
+WardrobeService ..> ProjectionService
 @enduml

@@ -1,9 +1,16 @@
 @startuml RF16_Atividades
-title RF16 — Implementar geração de imagem 3D das peças do guarda-roupa utilizando serviços de API externas\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,84 +19,42 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF16 — Implementar geração de imagem 3D das peças do guarda-roupa utilizando serviços de API externas\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre a peça cadastrada (RF4)\nem pieces/[id];
-:Aba "Modelo 3D" → clica em Gerar 3D;
-|Frontend|
-:Model3dPanel envia\nPOST /api/pieces/{id}/model3d;
-|Backend|
-:WardrobeService.request3d\n(guard.requireCanCreate + posse da peça);
-if (fashionai.features.rf16-3d ligado?) then (sim)
-  if (peça tem foto real\n(imageUrl e não defaultImage)?) then (sim)
-    if (model3dStatus QUEUED ou PROCESSING?) then (sim)
-      :Devolve o mesmo job\n(sem duplicar — CA04);
-    else (não)
-      :Cria PipelineJob THREE_D_GENERATION\nstatus PENDING (freeRetry se a última falhou);
-      :wardrobe_items.model3d_status = QUEUED;
-    endif
-    :202 com status, label, progress, stages;
-  else (não)
-    :422 SEM_FOTO;
-    stop
-  endif
-else (não)
-  :409 RECURSO_DESLIGADO;
-  stop
+:Abre /pieces/[id], /pieces/new,\n/schemes/[id];
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/pieces/{id}/model3d\nGET /api/pieces/{id};
+|Pessoa usuária|
+:Solicitar modelo 3D da peça;
+|Tela (Next.js)|
+:POST /api/pieces/{id}/model3d;
+|API (Spring Boot)|
+:WardrobeController.request3d\n→ WardrobeService.request3d;
+|Dados e serviços|
+:Lê: wardrobe_items;
+:Usa: Guard.requireCanCreate\nGuard.requireOwner\nModel3dService.request;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Editar a peça)
+    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
+  case (Excluir a peça)
+    :DELETE /api/pieces/{id}\n→ WardrobeService.delete\nlê: wardrobe_items, scheme_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.removePiece …\nestado: availabilityStatus → ARCHIVED, disponivel →\nfalse, visibility → PRIVATE;
+  case (Cadastrar a peça a partir do rasc…)
+    :POST /api/pieces\n→ WardrobeService.create\nvalida: CONTEUDO_BLOQUEADO, ERRO,\nFORMULARIO_INVALIDO, FOTO_OBRIGATORIA\nlê: users, pipeline_jobs, wardrobe_items …\nusa: Guard.requireCanCreate, OwnMedia.accepts,\nMediaService.read …\nia: STUDIO_ENHANCER;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-|Frontend|
-:Linha do tempo de estados e barra de progresso;
-:Consulta GET /api/pieces/{id}/model3d\na cada 2,5 s enquanto o job anda;
-|Backend|
-:Model3dService.tick (a cada 5 s)\npega jobs PENDING → start();
-:job RUNNING, peça PROCESSING;
-note right
-  CA03: o reprocessamento grátis
-  não consome a cota diária (3/dia)
-  de AiCapability.THREE_D_GENERATOR
-end note
-|Bancos-serviços|
-:AiEngine (RF24) escolhe o provedor:\nMeshy → Stability SF3D → relevo local;
-if (Meshy (assíncrono)?) then (sim)
-  :submit(png) → externalJobId;
-  |Backend|
-  :follow(): poll da tarefa a cada tick;
-  if (SUCCEEDED com glbUrl?) then (sim)
-    :Baixa o GLB via WebFetchPort (até 40 MB);
-  elseif (FAILED ou passou do tempo-limite (10 min)?) then (sim)
-    :Plano B: ReliefModelGenerator (relevo local);
-  else (em andamento)
-    :Atualiza progress (10–95);
-  endif
-else (não)
-  :Stable Fast 3D (síncrono) ou\nrelevo local devolve o GLB;
-endif
-|Backend|
-if (GLB válido?) then (sim)
-  :MediaService.put(.glb) → model3dUrl;
-  :job COMPLETED, peça COMPLETED;
-  :Notificação AI_JOB_FINISHED "Modelo 3D pronto";
-  :FaiPointsService.awardIsolated(PIECE_3D) +15 (RF41);
-  |Frontend|
-  :PieceModelViewer (React Three Fiber)\ngira e dá zoom; 2D mantido (CA02);
-  |Pessoa|
-  :Vê a peça em 3D (também no Meu Quarto 3D);
-else (não)
-  |Backend|
-  :fail(): FAILED com errorCode\n(SEM_ARQUIVO, PECA_REMOVIDA, PROVEDOR_FALHOU,\nTEMPO_LIMITE, ERRO_INTERNO);
-  |Frontend|
-  :Mostra o motivo e "reprocessar\n(uma vez sem custo)";
-endif
+|Pessoa usuária|
 stop
 @enduml

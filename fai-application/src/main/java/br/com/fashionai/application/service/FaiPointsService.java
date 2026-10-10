@@ -24,6 +24,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -134,6 +135,7 @@ public class FaiPointsService {
         e.setIdempotencyKey(key);
         e.setCountsLifetime(true);
         ledger.save(e);
+        statement(e, null);
         Level after = level(userId);
         boolean up = after.ordinal() > before.ordinal();
         if (up) {
@@ -142,6 +144,23 @@ public class FaiPointsService {
                     Msg.k("faiPoints.nivel_liberado", after.name(), after.unlocks), Map.of("level", after.name()));
         }
         return new Award(true, points, false, Msg.t("faiPoints.fai_pts", points), after, up);
+    }
+
+    /**
+     * Extrato (RF30/RF39): cada lançamento do ledger vira uma notificação FAI_POINTS — "+40 FAI Points · Esquema criado"
+     * ou "−180 FAI Points · Compra na loja do quarto: …" —, que a central de notificações (sino da topbar) mostra
+     * agrupada por dia. {@code detail} entra no texto da ação (o nome do item comprado).
+     */
+    private void statement(FaiPointsLedgerEntry e, String detail) {
+        if (notifications == null) {
+            return;   // testes de unidade sem a central de notificações
+        }
+        String title = Msg.k(e.getDelta() >= 0 ? "faiPoints.extrato.credito" : "faiPoints.extrato.debito", Math.abs(e.getDelta()));
+        String action = "faiPoints.extrato." + e.getActionCode();
+        String body = !Msg.has(action) ? Msg.k("faiPoints.extrato.outro", e.getActionCode().toLowerCase(Locale.ROOT).replace('_', ' '))
+                : detail == null ? Msg.k(action) : Msg.k(action, detail);
+        notifications.notify(e.getUserId(), null, NotificationType.FAI_POINTS, "FAI_POINTS", e.getId(), title, body,
+                Map.of("delta", e.getDelta(), "action", e.getActionCode(), "href", "/points"));
     }
 
     /**
@@ -274,6 +293,7 @@ public class FaiPointsService {
             e.setIdempotencyKey(user.id() + ":SHOP_PURCHASE:" + sku + ":" + UUID.randomUUID());
             e.setCountsLifetime(false);
             ledger.save(e);
+            statement(e, c.getName());
         }
         c.setSoldCount(c.getSoldCount() + 1);
         RoomInventoryItem item = new RoomInventoryItem();

@@ -19,6 +19,8 @@ import java.util.UUID;
 public interface BrandRepository extends JpaRepository<Brand, UUID> {
     Optional<Brand> findBySlug(String slug);
 
+    Optional<Brand> findByFixtureKey(String fixtureKey);
+
     List<Brand> findTop20ByNameContainingIgnoreCaseOrderByName(String term);
 
     List<Brand> findAllByOrderByName();

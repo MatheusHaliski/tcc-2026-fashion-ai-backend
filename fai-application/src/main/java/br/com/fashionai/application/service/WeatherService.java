@@ -67,8 +67,8 @@ public class WeatherService {
         return t >= 28 ? "SUMMER" : t >= 18 ? "SPRING" : t >= 10 ? "AUTUMN" : "WINTER";
     }
 
-    static final Set<String> HEAVY = Set.of("coat", "parka", "sweater", "hoodie", "long_boots", "cardigan", "sweatshirt");
-    static final Set<String> LIGHT = Set.of("tank_top", "crop_top", "shorts", "bermuda_shorts", "denim_shorts", "sandals", "flip_flops", "skirt");
+    static final Set<String> HEAVY = Set.of("coat", "parka", "sweater", "hoodie", "long_boots", "boots", "cardigan", "sweatshirt");
+    static final Set<String> LIGHT = Set.of("tank_top", "crop_top", "top", "shorts", "bermuda_shorts", "denim_shorts", "sandals", "flip_flops", "skirt");
     static final Set<String> LAYERS = Set.of("jacket", "coat", "parka", "blazer", "windbreaker", "cardigan", "sweater", "hoodie", "sweatshirt", "kimono", "vest");
 
     /** Peça climaticamente inadequada para a faixa (filtro antes de pontuar). */

@@ -1,0 +1,71 @@
+@startuml RF6_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF6 — Acessar e gerenciar o Perfil Lookbook (Closet Digital + Looks Salvos)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
+start
+:Abre /coupons, /closet, /history;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/daily-look-tab\nGET /api/me/saved-looks\nGET /api/me/saved-pieces;
+|Pessoa usuária|
+:Visão geral do lookbook (closet\ndigital, looks, agrupamento…;
+|Tela (Next.js)|
+:GET /api/users/{ownerId}/lookbook;
+|API (Spring Boot)|
+:LookbookController.overview\n→ LookbookService.overview;
+|Dados e serviços|
+:Lê: users\nwardrobe_items\nschemes\nsaved_items\nscheme_items;
+:Usa: Guard.canView\nDailyLookService.today;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Remover dos salvos)
+    :DELETE /api/me/saved-looks/{schemeId}\n→ LookbookService.removeSaved\nvalida: NAO_ENCONTRADO\nusa: SocialService.toggleSave;
+  case (Marcar esquema como Look do Dia)
+    :POST /api/me/daily-look\n→ LookbookService.markDailyLook\nusa: SchemeService.owned,\nDailyLookService.register,\nDailyLookService.view;
+  case (Editar agrupamento)
+    :PUT /api/groupings/{id}\n→ LookbookService.updateGrouping\nvalida: COR_INVALIDA, PERIODO_INVALIDO\nlê: scheme_groupings\nusa: Guard.requireOwner,\nOwnMedia.requireOrUnchanged\ngrava: scheme_groupings;
+  case (Excluir agrupamento)
+    :DELETE /api/groupings/{id}\n→ LookbookService.deleteGrouping\nlê: scheme_groupings, schemes, wardrobe_items\nusa: Guard.requireOwner\ngrava: scheme_groupings;
+  case (Criar agrupamento [coleção, tempo…)
+    :POST /api/groupings\n→ LookbookService.createGrouping\nvalida: COR_INVALIDA, PERIODO_INVALIDO,\nTIPO_INVALIDO\nlê: users\nusa: OwnMedia.require\ngrava: scheme_groupings;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Favoritar look salvo, Adicionar esquemas/peças ao
+  a…, Sugerir agrupamentos por simi…, Descartar
+  agrupamento sugerid…, Escolher versão do painel,
+  Feedback do look (ADOREI / OK…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
+stop
+@enduml

@@ -79,13 +79,26 @@ class UploadSafetyInterceptorTest {
     }
 
     @Test
-    void fotoEmRevisaoFicaRetidaEAPessoaEAvisada() {
+    void sinalSensivelERecusadoNaHoraSemFilaDaEquipe() {
         login();
         ApiException ex = assertThrows(ApiException.class,
                 () -> interceptor(fixed(ImageSafety.Decision.REVIEW)).preHandle(upload("/api/schemes/photos"), new MockHttpServletResponse(), null));
         assertEquals(422, ex.status());
-        assertEquals("IMAGEM_EM_REVISAO", ex.code());
-        assertEquals(List.of(USER + " /api/schemes/photos"), held);
+        assertEquals("IMAGEM_NAO_ACEITA", ex.code());
+        assertTrue(held.isEmpty(), "nada fica retido esperando revisão de uma pessoa");
+    }
+
+    @Test
+    void semClassificadorAFotoSegueEEProcessadaNaHora() {
+        login();
+        ImageSafety unavailable = new ImageSafety(List.of(), List.of(), false) {
+            @Override
+            public Verdict check(byte[] bytes) {
+                return new Verdict(ImageSafety.Decision.REVIEW, UploadSafetyInterceptor.UNAVAILABLE, List.of("sem classificador"), Map.of());
+            }
+        };
+        assertTrue(interceptor(unavailable).preHandle(upload("/api/pieces/analysis/multi"), new MockHttpServletResponse(), null));
+        assertTrue(held.isEmpty());
     }
 
     @Test

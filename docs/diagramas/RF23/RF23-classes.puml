@@ -1,144 +1,131 @@
 @startuml RF23_Classes
-title RF23 — Criar as telas de configuração do usuário (Conta, Privacidade, Aparência, Idioma, Seus dados) no padrão LGPD, com i18n\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF23 — Criar as telas de configuração do usuário (Conta, Privacidade, Aparência, Idioma, Seus dados) no padrão LGPD, com i18n\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +bio: String
-  +avatarUrl: String
-  +coverUrl: String
-  +country: String
-  +interfaceBackgroundPresetId: String
-  +lookDoDiaPanelVersion: HypeScorePanelVersion
-  .. +campos sensíveis do RF3 ..
+package "fai-domain (entidades JPA)" {
+  class DataExportRequest <<data_export_requests>> {
+    +id: UUID
+    +user: User
+    +status: ExportStatus
+    +fileKey: String
+    +readyAt: Instant
+    +expiresAt: Instant
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class UserConsent <<user_consents>> {
+    +id: UUID
+    +user: User
+    +purpose: ConsentPurpose
+    +granted: boolean
+    +legalBasis: String
+    +policyVersion: String
+    +grantedAt: Instant
+    +revokedAt: Instant
+  }
+  class UserPreferences <<user_preferences>> {
+    +id: UUID
+    +user: User
+    +theme: ThemeMode
+    +language: UiLanguage
+    +density: UiDensity
+    +fontScale: int
+    +highContrast: boolean
+    +reduceMotion: boolean
+    +chromeBackgroundId: String
+    +sizeSystem: SizeSystem
+    .. +16 campos ..
+  }
 }
-class UserPreferences {
-  +user: User
-  +theme: ThemeMode
-  +language: UiLanguage
-  +density: UiDensity
-  +fontScale: int
-  +highContrast: boolean
-  +reduceMotion: boolean
-  +chromeBackgroundId: String
-  +contentContainerColor: String
-  +defaultCardSkin: String
-  +sizeSystem: SizeSystem
-  +unitSystem: UnitSystem
-  +soundEnabled: boolean
-  +hapticsEnabled: boolean
-  +clientUpdatedAt: Instant
-  .. +campos de manequim e notificações ..
+package "fai-domain (enums)" {
+  enum ExportStatus {
+    REQUESTED
+    PROCESSING
+    READY
+    EXPIRED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum HypeScorePanelVersion {
+    SPOTLIGHT_CLASSICO
+    PASSARELA
+    RAIO_X_ESTILO
+    BENTO_DIA
+    EDITORIAL_MINIMAL
+    COACH_ESTILO
+  }
+  enum Visibility {
+    PRIVATE
+    FOLLOWERS
+    PUBLIC
+  }
+  enum ConsentPurpose {
+    AI_RECOMMENDATION
+    AI_EXTERNAL_PHOTO_PROCESSING
+    HISTORY_FOR_RECOMMENDATION
+    PERSONALIZED_ADS
+    PARTNER_SHARING
+    BODY_MEASUREMENTS
+    FACIAL_RECOGNITION
+    LOCATION_HISTORY
+    AI_MODEL_TRAINING
+  }
+  enum ThemeMode {
+    LIGHT
+    DARK
+    AUTO
+  }
 }
-class UserConsent {
-  +user: User
-  +purpose: ConsentPurpose
-  +granted: boolean
-  +legalBasis: String
-  +policyVersion: String
-  +grantedAt: Instant
-  +revokedAt: Instant
+package "fai-application" {
+  class AssetCatalogService <<service>> {
+    +manifest()
+    +chromeBackgrounds()
+  }
 }
-class DataExportRequest {
-  +user: User
-  +status: ExportStatus
-  +fileKey: String
-  +readyAt: Instant
-  +expiresAt: Instant
-}
-}
-package "fai-domain · enums" {
-enum ThemeMode {
-  LIGHT
-  DARK
-  AUTO
-}
-enum UiLanguage {
-  PT_BR
-  EN
-  ES
-}
-enum UiDensity {
-  COMFORTABLE
-  COMPACT
-}
-enum Visibility {
-  PRIVATE
-  FOLLOWERS
-  PUBLIC
-}
-enum ExportStatus {
-  REQUESTED
-  PROCESSING
-  READY
-  EXPIRED
-}
-enum ConsentPurpose {
-  AI_RECOMMENDATION
-  AI_EXTERNAL_PHOTO_PROCESSING
-  HISTORY_FOR_RECOMMENDATION
-  PERSONALIZED_ADS
-  PARTNER_SHARING
-  BODY_MEASUREMENTS
-  FACIAL_RECOGNITION
-  LOCATION_HISTORY
-  AI_MODEL_TRAINING
-}
-}
-package "fai-application · service" {
-class PreferencesService {
-  +get(user): Map
-  +options(): Map
-  +update(user, Update): Map
-  +updateProfile(user, ProfileUpdate): Views.UserCard
-  +changeUsername(user, username): Map
-  +checkUsername(username): Map
-  +uploadProfileImage(user, bytes, cover): Views.UserCard
-}
-class AccountService {
-  +updatePrivacy(user, Visibility): Map
-  +consents(user): List
-  +setConsent(user, ConsentPurpose, granted): List
-  +requestExport(user): Map
-  +exportsOf(user): List
-  +downloadExport(user, exportId): byte[]
-  +purgeExpiredExports(): int
-}
-class Msg {
-  {static} +t(key, args): String
-  {static} +k(key, args): String
-  {static} +locale(): Locale
-  {static} +fromPreference(language): Locale
-  {static} +resolveDeep(locale, value): Object
-}
-}
-UserPreferences "1" --> "1" User : user
-UserConsent "*" --> "1" User : user
 DataExportRequest "*" --> "1" User : user
-UserPreferences --> ThemeMode
-UserPreferences --> UiLanguage
-UserPreferences --> UiDensity
-UserConsent --> ConsentPurpose
 DataExportRequest --> ExportStatus
-PreferencesService ..> UserPreferences
-AccountService ..> UserConsent
-AccountService ..> DataExportRequest
-AccountService ..> Visibility
-AccountService ..> Msg
-note top of User : tabela users
-note top of UserPreferences : tabela user_preferences\n(não é dado pessoal — salva sem reautenticação)
-note top of UserConsent : tabela user_consents
-note top of DataExportRequest : tabela data_export_requests
-note bottom of Msg : messages.properties · _en · _es\n(Accept-Language → Content-Language)
+User --> AccountStatus
+User --> HypeScorePanelVersion
+User --> Visibility
+UserConsent "*" --> "1" User : user
+UserConsent --> ConsentPurpose
+UserPreferences "1" --> "1" User : user
+UserPreferences --> ThemeMode
 @enduml

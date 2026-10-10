@@ -58,7 +58,7 @@ OBRIGATORIOS = [
                   "prova por endpoint do que foi gravado (general_log do MySQL) em docs/testes/; projeções Redis/Cassandra/OpenSearch e "
                   "mídia em S3 atrás de feature flags (docs/planilhas/Entidades_BD_por_RF_RNF.xlsx).",
         falta_codigo="—",
-        falta_equipe="Levar o diagrama de classes v4 (docs/diagramas/fashionai-classes-v4.puml) e a planilha de entidades por RF.",
+        falta_equipe="Levar o diagrama de classes v5 (docs/diagramas/fashionai-classes-v5.puml) e a planilha de entidades por RF.",
     ),
     dict(
         criterio="≥ 2 perfis de acesso validados no frontend E no backend",

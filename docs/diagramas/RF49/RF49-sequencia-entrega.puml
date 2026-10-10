@@ -1,0 +1,33 @@
+@startuml RF49_Sequencia_Entrega
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+title RF49 — Segurança, integridade e operação\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+participant "DemoFixtures" as DemoFixtures
+== DemoFixtures · personas() ==
+U -> DemoFixtures : personas()
+activate DemoFixtures
+deactivate DemoFixtures
+DemoFixtures --> U : resultado
+@enduml

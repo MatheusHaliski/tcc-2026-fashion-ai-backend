@@ -1,42 +1,82 @@
 @startuml RF39_Sequencia
-title RF39 — "Criar guarda-roupa 3D": componentes ou guarda-roupa inteiro de marca/celebridade vendidos na loja do quarto\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Marca/Celebridade" as M
-actor Comprador as U
-participant "Frontend\nWardrobeCreatorTab" as FE
-participant "RoomCreatorController" as RC
-participant "WardrobeCreatorService" as W
-participant "HighlightsController" as HC
-participant "FaiPointsService" as P
-participant "RoomService" as R
-database "MySQL" as DB
-database "Storage de mídia" as MS
-M -> FE: aba Criar guarda-roupa 3D
-FE -> RC: GET /api/room-creator/options
-RC -> W: options(user)
-M -> FE: envia logo e arte
-FE -> RC: POST /api/room-creator/uploads?kind=logo|art
-W -> MS: put(png/jpg)
-M -> FE: Publicar (bundle de blocos + condições)
-FE -> RC: POST /api/room-creator/items
-RC -> W: save(user, null, ItemForm)
-W -> DB: INSERT room_catalog (BRD-…)
-U -> FE: Loja do quarto
-FE -> HC: GET /api/points/shop
-HC -> P: shop(user)
-P -> W: view + blocker
-U -> FE: Comprar
-FE -> HC: POST /api/points/shop/{sku}/purchase
-P -> DB: INSERT fai_points_ledger, room_inventory
-U -> FE: Montar (guarda-roupa inteiro)
-FE -> HC: POST /api/me/room-inventory/{id}/apply {moduleId: ALL}
-P -> R: applyFinish → todos os módulos de cada bloco
-R -> DB: UPDATE room_layouts.modules_json
+autonumber "<b>0."
+title RF39 — 'Criar guarda-roupa 3D': componentes ou guarda-roupa inteiro de marca/celebridade vendidos na loja do quarto\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /brands/[slug]" as P
+control "RoomCreatorController" as RoomCreatorController
+participant "WardrobeCreatorService" as WardrobeCreatorService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+== cria um componente (kind=COMPONENT) ou um guarda-roupa inteiro (kind=… ==
+U -> P : cria um componente (kind=COMPONENT) ou um guarda-…
+P -> RoomCreatorController : POST /api/room-creator/items
+RoomCreatorController -> WardrobeCreatorService : save()
+activate WardrobeCreatorService
+WardrobeCreatorService -> Guard : requireApprovedInstitutional()
+WardrobeCreatorService -> DB_MySQL : SELECT users
+WardrobeCreatorService -> WardrobeCreatorService : new RoomCatalogItem()
+WardrobeCreatorService -> DB_MySQL : SELECT celebrity_profiles
+WardrobeCreatorService -> DB_MySQL : SELECT brand_profiles
+WardrobeCreatorService -> DB_MySQL : SELECT celebrity_profiles
+WardrobeCreatorService -> DB_MySQL : SELECT brand_profiles
+WardrobeCreatorService -> DB_MySQL : SELECT room_catalog (×2)
+alt erro
+WardrobeCreatorService --> RoomCreatorController : 500 ERRO
+RoomCreatorController --> P : 500 + mensagem
+end
+WardrobeCreatorService -> WardrobeCreatorService : kind = ?kind
+alt url inválida
+WardrobeCreatorService --> RoomCreatorController : 400 URL_INVALIDA
+RoomCreatorController --> P : 400 + mensagem
+end
+WardrobeCreatorService -> WardrobeCreatorService : logoUrl = set
+alt url inválida
+WardrobeCreatorService --> RoomCreatorController : 400 URL_INVALIDA
+RoomCreatorController --> P : 400 + mensagem
+end
+WardrobeCreatorService -> WardrobeCreatorService : artUrl = set
+WardrobeCreatorService -> DB_MySQL : SELECT seals
+alt erro
+WardrobeCreatorService --> RoomCreatorController : 500 ERRO
+RoomCreatorController --> P : 500 + mensagem
+end
+WardrobeCreatorService -> DB_MySQL : SELECT celebrity_profiles
+WardrobeCreatorService -> DB_MySQL : SELECT brand_profiles
+WardrobeCreatorService -> DB_MySQL : SELECT celebrity_profiles
+WardrobeCreatorService -> DB_MySQL : SELECT brand_profiles
+alt sem blocos
+WardrobeCreatorService --> RoomCreatorController : 400 SEM_BLOCOS
+RoomCreatorController --> P : 400 + mensagem
+end
+alt preco inválido
+WardrobeCreatorService --> RoomCreatorController : 400 PRECO_INVALIDO
+RoomCreatorController --> P : 400 + mensagem
+end
+note over WardrobeCreatorService : … e mais 11 passos no código
+deactivate WardrobeCreatorService
+WardrobeCreatorService --> RoomCreatorController : resultado
+RoomCreatorController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

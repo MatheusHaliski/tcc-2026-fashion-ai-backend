@@ -35,7 +35,9 @@ public enum AiCapability {
     MULTI_PIECE_DETECTOR(23, Msg.k("aiCapability.multi_piece_detector"), "RF4", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, true),
     PIECE_IMAGE_RECREATOR(24, Msg.k("aiCapability.piece_image_recreator"), "RF4", ConsentPurpose.AI_EXTERNAL_PHOTO_PROCESSING, true),
     /** RF47 · busca do produto nas fontes oficiais da marca quando ele ainda não está no catálogo (só texto público). */
-    CATALOG_DISCOVERY(25, Msg.k("aiCapability.catalog_discovery"), "RF47", null, true);
+    CATALOG_DISCOVERY(25, Msg.k("aiCapability.catalog_discovery"), "RF47", null, true),
+    /** RF47 · lê as características únicas da peça no texto da busca (estampa, logo, lados, cor da peça × da estampa). */
+    CATALOG_TEXT_INTERPRETER(26, Msg.k("aiCapability.catalog_text_interpreter"), "RF47", null, true);
 
     private final int number;
     private final String officialName;

@@ -1,0 +1,81 @@
+@startuml RF3_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
+start
+:Abre /settings, /notifications,\n/u/[username];
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/auth/sessions\nGET /api/me/exports\nGET /api/me\nGET /api/me/consents;
+|Pessoa usuária|
+:Alterar senha, e-mail, telefone,\nnascimento ou 2FA (pede re…;
+|Tela (Next.js)|
+:PATCH /api/me/sensitive;
+|API (Spring Boot)|
+:MeController.updateSensitive\n→ AccountService.updateSensitive;
+if (e-mail inválido?) then (sim)
+  :400 EMAIL_INVALIDO\n«Formato de e-mail inválido.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (e-mail em uso?) then (sim)
+  :409 EMAIL_EM_USO\n«Este e-mail já está em uso.»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: users\nuser_preferences;
+:Usa: IdentityService.reauthenticate\nIdentityService.invalidateCodes\nEmailSenderPort.send;
+:Grava: verification_codes;
+:Estado: purpose → EMAIL_CHANGE\nexpiresAt → set\nlastSentAt → set;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Editar nome de exibição, bio, paí…)
+    :PATCH /api/me/profile\n→ PreferencesService.updateProfile\nvalida: LINKS_DEMAIS, LINK_INVALIDO, PAIS_INVALIDO\nlê: users, user_preferences\nusa: MediaService.requireOwnedMedia\nestado: avatarUrl → set, coverUrl → set;
+  case (Enviar foto de perfil)
+    :POST /api/me/avatar\n→ PreferencesService.uploadProfileImage\nlê: users\nusa: MediaService.put, MediaService.register\nestado: coverUrl → set, avatarUrl → set;
+  case (Encerrar uma sessão específica)
+    :DELETE /api/auth/sessions/{sessionId}\n→ IdentityService.revokeSession\nvalida: NAO_ENCONTRADO\nlê: refresh_tokens\nestado: revokedAt → set;
+  case (Trocar senha [encerra as outras s…)
+    :PUT /api/auth/password\n→ IdentityService.changePassword\nvalida: FORMULARIO_INVALIDO, SENHA_ATUAL_INCORRETA\nlê: users, verification_codes, refresh_tokens\nusa: PasswordHasherPort.hash\nestado: consumedAt → set, revokedAt → set;
+  case (Confirmar troca de e-mail com o c…)
+    :POST /api/me/email-change/confirm\n→ AccountService.confirmEmailChange\nvalida: CODIGO_INVALIDO, EMAIL_EM_USO, ERRO\nlê: users, verification_codes\nusa: IdentityService.requireCodeAttemptQuota\nestado: consumedAt → set, emailVerified → true;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Solicitar exportação dos meus…, Enviar imagem de
+  capa, Sair de todos os outros dispo…, Visibilidade
+  padrão do perfil…, Agendar exclusão da conta (ja…,
+  Girar a foto de perfil em 90°
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
+stop
+@enduml

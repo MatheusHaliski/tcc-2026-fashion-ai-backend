@@ -1,0 +1,44 @@
+@startuml RF3_MaquinaDeEstados_Exclusao
+!pragma layout smetana
+title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de máquina de estados — exclusão da conta com carência de 30 dias (AccountStatus)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Estado anterior\n(PENDING_EMAIL_VERIFICATION,\nPENDING_VALIDATION ou ACTIVE)" as Antes
+state "DELETION_SCHEDULED\n(deletionScheduledFor = +30 dias)" as Agendada
+state "DELETED\n(anonimizada)" as Excluida
+
+[*] --> Antes
+Antes --> Agendada : POST /api/me/deletion {password}\n(reautenticação; 401 / 429)\ne-mail de aviso · audit EXCLUSAO_CONTA
+Agendada --> Antes : DELETE /api/me/deletion\n(volta pelo e-mail confirmado e pela aprovação)\naudit EXCLUSAO_CANCELADA
+Agendada --> Excluida : AccountService.purgeScheduledDeletions()\nquando deletionScheduledFor ≤ agora
+Excluida --> [*]
+
+note right of Agendada
+  Login continua possível, com o aviso
+  "sua conta será excluída em …".
+  Criar/editar → 403 EXCLUSAO_AGENDADA
+  (Guard.requireCanCreate).
+end note
+note right of Excluida
+  username deleted_xxxxxxxx, e-mail deleted+…@fashionai.invalid,
+  nome, telefone, nascimento, bio, avatar e capa apagados;
+  senha aleatória; peças e looks ARCHIVED e PRIVATE;
+  comentários "removido"; fotos, avatar 3D, scans do Lens e
+  marcos de Hype apagados; todas as sessões revogadas.
+  A linha de users fica (sem DELETE).
+end note
+note bottom of Excluida
+  <<planejado>> gatilho: o método existe e tem teste, mas não
+  há @Scheduled nem chamada (nem pelo POST /api/admin/jobs/{job}).
+end note
+@enduml

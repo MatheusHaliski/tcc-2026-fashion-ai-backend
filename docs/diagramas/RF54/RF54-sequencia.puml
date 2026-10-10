@@ -1,0 +1,78 @@
+@startuml RF54_Sequencia
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+title RF54 — FashionAI Lens (MVP)\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela (Next.js)" as P
+control "LensController" as LensController
+participant "LensService" as LensService
+participant "Guard" as Guard
+participant "LensConfig" as LensConfig
+participant "MultiPieceService" as MultiPieceService
+database "MySQL" as DB_MySQL
+participant "MediaStoragePort\n(LocalFileMediaStorage, S3MediaStorageAdapter)" as MediaStoragePort
+== Novo scan: imagem (rostos já borrados no aparelho) + source, intent,… ==
+U -> P : Novo scan: imagem (rostos já borrados no aparelho…
+P -> LensController : POST /api/lens/scans
+LensController -> LensService : create()
+activate LensService
+LensService -> Guard : requireCanCreate()
+alt origem inválida
+LensService --> LensController : 400 ORIGEM_INVALIDA
+LensController --> P : 400 + mensagem
+end
+alt arquivo vazio
+LensService --> LensController : 400 ARQUIVO_VAZIO
+LensController --> P : 400 + mensagem
+end
+LensService -> LensConfig : dailyScans()
+alt quota
+LensService --> LensController : 429 QUOTA
+LensController --> P : 429 + mensagem
+end
+LensService -> MultiPieceService : detectPieces()
+LensService -> LensService : new LensScan()
+LensService -> LensService : source = ?source
+LensService -> LensService : intent = ?intent
+LensService -> LensService : redactionConfirmed = ?redactionConfirmed
+LensService -> LensConfig : retentionDays()
+LensService -> LensService : expiresAt = set
+LensService -> LensService : processedAt = set
+LensService -> LensService : status = FAILED
+LensService -> LensService : status = NO_FASHION_FOUND
+LensService -> LensService : status = READY
+LensService -> DB_MySQL : INSERT/UPDATE lens_scans
+LensService -> MediaStoragePort : put() (×2)
+LensService -> LensService : imageKey = set
+LensService -> LensService : thumbKey = set
+LensService -> DB_MySQL : INSERT/UPDATE lens_scans
+LensService -> LensService : new LensDetection()
+LensService -> LensService : status = DETECTED
+LensService -> DB_MySQL : INSERT/UPDATE lens_detections
+note over LensService : … e mais 2 passos no código
+deactivate LensService
+LensService --> LensController : resultado
+LensController --> P : 201 JSON
+P --> U : atualiza a tela
+@enduml

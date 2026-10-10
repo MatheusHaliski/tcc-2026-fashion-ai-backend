@@ -1,9 +1,16 @@
 @startuml RF13_Atividades
-title RF13 — Criar um esquema de identidade pessoal de moda na página "DNA de Estilo"\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,79 +19,79 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF13 — Criar um esquema de identidade pessoal de moda na página 'DNA de Estilo'\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre a página "DNA de Estilo" (/dna);
-|Frontend (DnaBuilder)|
-:GET /api/dna-schemes/builder\n(meus esquemas, anatomias A1–A4, narrativas B1–B12);
-|Backend (DnaService)|
-if (Já existe style_dna sintetizado?) then (não)
-  :ensureDna: cria StyleDna e sintetiza a Camada 1\n(DNA Synthesizer · AiEngine RF24, fallback local);
-  :snapshot "GERACAO" em style_dna_versions;
-else (sim)
-  if (interações desde a síntese >= 10?) then (sim)
-    :Re-sintetiza ("EVOLUCAO") e notifica\nAI_JOB_FINISHED "Sua identidade evoluiu";
-  else (não)
-  endif
+:Abre /dna, /dna-schemes/[id]/edit,\n/dna-schemes/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/dna-schemes/builder\nGET /api/me/dna\nGET /api/dna-schemes/{id}\nGET /api/me/dna-schemes;
+|Pessoa usuária|
+:HU20 — Criar esquema de DNA (linha\ndo tempo de looks);
+|Tela (Next.js)|
+:POST /api/dna-schemes;
+|API (Spring Boot)|
+:DnaController.create\n→ DnaService.createDnaScheme;
+if (layout inválido?) then (sim)
+  :400 LAYOUT_INVALIDO\n«Anatomias:»\n→ a tela mostra o aviso;
+  stop
+endif
+if (alvo inválido?) then (sim)
+  :400 ALVO_INVALIDO\n«Elemento-alvo: DNA_COMPLETO ou\nESQUEMA.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (narrativa indisponível?) then (sim)
+  :400 NARRATIVA_INDISPONIVEL\n«As narrativas só aparecem quando o\nelemento-alvo é o DNA completo.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (celulas invalidas?) then (sim)
+  :400 CELULAS_INVALIDAS\n«Um DNA referencia de 2 a 6\nesquemas.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (marco único?) then (sim)
+  :400 MARCO_UNICO\n«Escolha uma única célula como\nmarco (Momentos Marcantes).»\n→ a tela mostra o aviso;
+  stop
 endif
 note right
-  RN: sem pré-requisito de desbloqueio;
-  10 peças e 5 looks "adorei" só deixam
-  a síntese mais precisa (precisionNote)
+  e mais 1 validações:
+  ESQUEMA_REPETIDO
 end note
-|Pessoa|
-:Escolhe o modo de criação;
-if (Modo IA?) then (sim)
-  |Frontend (DnaBuilder)|
-  :POST /api/dna-schemes/compositions\n(prompt, ocasião, estilo, narrativa, estação);
-  |Backend (DnaService)|
-  :DNA Synthesizer propõe até 3 DNAs\n(2 a 6 esquemas do próprio usuário);
-  |Pessoa|
-  :Escolhe uma proposta;
-else (não)
-  |Pessoa|
-  :Seleciona de 2 a 6 esquemas (células CELL_1..CELL_6),\nrótulo de época e marcos;
-endif
-:Define título, layout do card (AMPLIADO/GRADE/HORIZONTAL/LATERAL),\nnarrativa, visibilidade e fundo (Background Studio, RF11);
-|Frontend (DnaBuilder)|
-:POST /api/dna-schemes/preview (pré-visualização sem salvar);
-|Pessoa|
-if (Confirma?) then (não)
-  stop
-else (sim)
-endif
-|Frontend (DnaBuilder)|
-:POST /api/dna-schemes (ou PUT /api/dna-schemes/{id});
-|Backend (DnaService)|
-:guard.requireCanCreate + stamp(arquétipo, ousadia,\nfrase e paleta copiados do StyleDna);
-:Grava dna_schemes (status DRAFT, creationMode MANUAL/AI_ASSISTED)\ne dna_scheme_items;
-if (publish = true?) then (sim)
-  :status = PUBLISHED, publishedAt = agora;
-else (não)
-endif
-:Atualiza style_dna.latest_dna_scheme_id;
-|Frontend (DnaBuilder)|
-:Exibe o card de identidade de moda\n(anatomia_cards_DNA_v4_1);
-|Pessoa|
-if (Quer compartilhar o card?) then (sim)
-  |Backend (DnaService)|
-  :POST /api/me/dna/share-card → PNG 1080x1350\ncom marca d'água "Fashion AI", válido 30 dias;
+|Dados e serviços|
+:Lê: style_dna\nusers\nschemes\nscheme_items\ndaily_looks\nwardrobe_items (+1);
+:Usa: Guard.requireCanCreate\nGuard.requireOwner;
+:IA: DNA_SYNTHESIZER;
+:Grava: style_dna\nstyle_dna_versions\ndna_schemes\ndna_scheme_items;
+:Estado: synthesizedAt → set\ncardImageUrl → null\nstatus → DRAFT\nbackgroundVideoUrl → set\nseasonalTheme → AUTUMN\nstatus → PUBLISHED (+1);
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Pré-visualizar o card do Esquema…)
+    :POST /api/dna-schemes/preview\n→ DnaService.preview\nvalida: ALVO_INVALIDO, LAYOUT_INVALIDO,\nNARRATIVA_INDISPONIVEL\nlê: style_dna, users, schemes …\nusa: Guard.requireOwner\nia: DNA_SYNTHESIZER;
+  case (Modo IA: até 3 propostas de DNA a…)
+    :POST /api/dna-schemes/compositions\n→ DnaService.compositions\nvalida: ESQUEMAS_INSUFICIENTES\nlê: style_dna, users, schemes …\nusa: HypeScoreConfig.algorithmVersion\nia: DNA_SYNTHESIZER;
+  case (Gerar/regerar o DNA [com formulár…)
+    :POST /api/me/dna\n→ DnaService.generate\nvalida: FORMULARIO_INVALIDO\nlê: users, style_dna, schemes …\nia: DNA_SYNTHESIZER\ngrava: style_dna, style_dna_versions;
+  case (Gerar card PNG com marca d'água […)
+    :POST /api/me/dna/share-card\n→ DnaService.shareCard\nlê: style_dna\nusa: MediaService.put\ngrava: style_dna;
+  case (Definir estação de cor [coloração…)
+    :PUT /api/me/dna/color-season\n→ DnaService.setColorSeason\nvalida: ESTACAO_INVALIDA\nlê: style_dna\ngrava: style_dna;
+  endswitch
   note right
-    RN07: campos de vida marcados como
-    privados nunca aparecem na imagem
+  Outras ações deste RF:
+  Atualizar campos de vida (lug…, Marcar campos como
+  privados (…, HU20 — Editar esquema de DNA, HU20 —
+  Excluir esquema de DNA
   end note
-else (não)
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
+|Pessoa usuária|
 stop
 @enduml

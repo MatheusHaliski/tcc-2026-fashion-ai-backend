@@ -1,6 +1,8 @@
 package br.com.fashionai.application.flair;
 
 import br.com.fashionai.application.common.Msg;
+import br.com.fashionai.domain.model.enums.HypeLevel;
+
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.ArrayList;
@@ -24,8 +26,16 @@ import java.util.Set;
  *   <li>ART: 10 + fundo de estúdio 35 + detalhe do logo 10 + modelo 3D 20 + foto no manequim 15</li>
  *   <li>SYNC: 100 com a estação atual (hemisfério sul) ou peça de qualquer estação, 50 na vizinha, 0 na oposta</li>
  * </ul>
- * Raridade: RARE (hype ≥ 80 ou preço ≥ R$ 1.500), LIMITED (selo, hype ≥ 65 ou modelo 3D), PREMIUM (preço ≥ R$ 600 ou
- * foto de estúdio) e STANDARD — multiplicadores 1,0 · 1,15 · 1,30 · 1,50. Poder da carta = soma dos 6 atributos ÷ 2 × multiplicador.
+ * Raridade (RF53 · P2-18) — vem do HypeScore v2 PÚBLICO da peça ({@link Hype}), nunca do preço (sem pay-to-win):
+ * <ul>
+ *   <li>RARE: dimensão RARITY ≥ {@value #RARE_RARITY_MIN} (frequência do modelo entre os guarda-roupas) e faixa ≥ Nicho
+ *   — a mesma régua do selo de Hype "Raro"</li>
+ *   <li>LIMITED: RARITY ≥ {@value #LIMITED_RARITY_MIN} (modelo pouco comum), selo ou modelo 3D</li>
+ *   <li>PREMIUM: faixa ≥ Em alta (relevância pública) ou foto de estúdio</li>
+ *   <li>STANDARD: o resto. Sem Hype público (privado, dados insuficientes, não calculado) as regras de Hype só não
+ *   valem: nada vira 0 nem rebaixa a carta.</li>
+ * </ul>
+ * Multiplicadores 1,0 · 1,15 · 1,30 · 1,50. Poder da carta = soma dos 6 atributos ÷ 2 × multiplicador.
  */
 public final class FlairEngine {
     private FlairEngine() {
@@ -46,23 +56,68 @@ public final class FlairEngine {
             Map.entry("modern", 6), Map.entry("resort", 6), Map.entry("classic", 4), Map.entry("minimalist", 4), Map.entry("basic", 2));
 
     static final Set<String> COLD = Set.of("coat", "parka", "jacket", "blazer", "sweater", "sweatshirt", "hoodie", "cardigan",
-            "beanie", "gloves", "scarf", "long_boots", "combat_boots", "ankle_boots");
-    static final Set<String> WARM = Set.of("shorts", "denim_shorts", "bermuda_shorts", "tank_top", "crop_top", "sandals",
+            "beanie", "gloves", "scarf", "long_boots", "combat_boots", "ankle_boots", "boots");
+    static final Set<String> WARM = Set.of("shorts", "denim_shorts", "bermuda_shorts", "tank_top", "crop_top", "top", "sandals",
             "flip_flops", "sunglasses", "espadrilles", "skort", "kimono");
+
+    /** Raridade do modelo (0–100) a partir da qual a carta é RARE (com faixa ≥ Nicho) — igual ao selo de Hype "Raro". */
+    public static final double RARE_RARITY_MIN = 75;
+    /** Raridade do modelo a partir da qual a carta é LIMITED. */
+    public static final double LIMITED_RARITY_MIN = 60;
 
     public record Ability(String code, String label, String description) {
     }
 
-    /** Dados da peça que o motor usa (o serviço preenche a partir de WardrobeItem). */
+    /**
+     * HypeScore v2 PÚBLICO da peça, como o jogo enxerga: {@code score} e {@code level} só com status AVAILABLE;
+     * {@code rarity} = dimensão RARITY (frequência do modelo, estrutural — existe mesmo com dados insuficientes). Item
+     * privado, só para seguidores ou sem cálculo entra como {@link #NONE}: a mesma carta tem o mesmo poder para qualquer
+     * jogador (justo) e nenhum Hype pessoal vaza para o adversário (privacidade). Nulo = sem dado, nunca 0.
+     */
+    public record Hype(Double score, String level, Double rarity) {
+        public static final Hype NONE = new Hype(null, null, null);
+
+        /** Do estado gravado pelo job (hype_scores) para o jogo: só {@code publicEligible} conta. */
+        public static Hype of(boolean publicEligible, String status, Double score, String level, Double rarity) {
+            if (!publicEligible) {
+                return NONE;
+            }
+            boolean available = "AVAILABLE".equals(status) && score != null && level != null;
+            return new Hype(available ? score : null, available ? level : null, rarity);
+        }
+
+        /** Faixa v2 pelo menos {@code min} (sem faixa = falso). */
+        public boolean atLeast(HypeLevel min) {
+            if (level == null) {
+                return false;
+            }
+            try {
+                return HypeLevel.valueOf(level).ordinal() >= min.ordinal();
+            } catch (IllegalArgumentException e) {
+                return false;   // faixa desconhecida (versão nova do algoritmo): não conta
+            }
+        }
+
+        boolean rarityAtLeast(double min) {
+            return rarity != null && rarity >= min;
+        }
+    }
+
+    /**
+     * Dados da peça que o motor usa (o serviço preenche a partir de WardrobeItem). O preço saiu da entrada: não decide
+     * raridade nem poder (sem pay-to-win). {@code hype} = Hype v2 público ({@link Hype#NONE} sem dado).
+     */
     public record PieceInput(String id, String name, String category, String subcategory, String imageUrl, String colorHex,
                              String brandName, boolean registeredBrand, String brandOwner, List<String> styles,
                              List<String> occasions, String material, Double qualityOverall, boolean studio, boolean logoDetail,
-                             boolean model3d, boolean mannequinPhoto, boolean defaultImage, double price, double hype, int seals) {
+                             boolean model3d, boolean mannequinPhoto, boolean defaultImage, Hype hype, int seals) {
     }
 
+    /** Carta. {@code hype} (aditivo): o Hype v2 público que decidiu a raridade, para a interface explicar com texto. */
     public record Card(String id, String name, String category, String subcategory, String imageUrl, String colorHex,
                        String brandName, String brandOwner, List<String> styles, List<String> occasions, String material,
-                       String season, Map<String, Integer> stats, String rarity, double multiplier, int power, Ability ability) {
+                       String season, Map<String, Integer> stats, String rarity, double multiplier, int power, Ability ability,
+                       Hype hype) {
     }
 
     public record Combo(String code, String label, int points) {
@@ -117,14 +172,25 @@ public final class FlairEngine {
         stats.put("GLOW", glow);
         stats.put("ART", art);
         stats.put("SYNC", sync);
-        String rarity = p.hype() >= 80 || p.price() >= 1500 ? "RARE"
-                : p.seals() > 0 || p.hype() >= 65 || p.model3d() ? "LIMITED"
-                : p.price() >= 600 || p.studio() ? "PREMIUM" : "STANDARD";
+        Hype hype = p.hype() == null ? Hype.NONE : p.hype();
+        String rarity = rarity(hype, p.seals(), p.model3d(), p.studio());
         double mult = MULT.get(rarity);
         int power = (int) Math.round(stats.values().stream().mapToInt(Integer::intValue).sum() / 2.0 * mult);
         return new Card(p.id(), p.name(), p.category(), p.subcategory(), p.imageUrl(), p.colorHex(), p.brandName(),
                 p.brandOwner(), styles, occ, p.material(), season, stats, rarity, mult, power,
-                ability(rarity, stats, styles));
+                ability(rarity, stats, styles), hype);
+    }
+
+    /** Raridade da carta (P2-18): dimensão RARITY + faixa do Hype v2 público; preço nunca entra. */
+    public static String rarity(Hype hype, int seals, boolean model3d, boolean studio) {
+        Hype h = hype == null ? Hype.NONE : hype;
+        if (h.rarityAtLeast(RARE_RARITY_MIN) && h.atLeast(HypeLevel.NICHE)) {
+            return "RARE";
+        }
+        if (h.rarityAtLeast(LIMITED_RARITY_MIN) || seals > 0 || model3d) {
+            return "LIMITED";
+        }
+        return h.atLeast(HypeLevel.HOT) || studio ? "PREMIUM" : "STANDARD";
     }
 
     static Ability ability(String rarity, Map<String, Integer> s, List<String> styles) {
@@ -135,7 +201,8 @@ public final class FlairEngine {
             case "LIMITED" -> styles.contains("statement") || styles.contains("avant_garde")
                     ? new Ability("STATEMENT_LOCK", Msg.t("flair.statement_lock"), Msg.t("flair.bloqueia_a_carta_mais_forte"))
                     : styles.contains("streetwear") || styles.contains("urban")
-                    ? new Ability("HYPE_BOOST", Msg.t("flair.hype_boost"), Msg.t("flair.n15_de_edge_para_cada")) : null;
+                    // código HYPE_BOOST mantido (API/duelo); o nome exibido é "Street Boost": não deriva do HypeScore
+                    ? new Ability("HYPE_BOOST", Msg.t("hypeFlair.street_boost"), Msg.t("flair.n15_de_edge_para_cada")) : null;
             case "PREMIUM" -> new Ability("SHIELD", "Escudo", Msg.t("flair.rodada_perdida_por_menos_de"));
             default -> null;
         };

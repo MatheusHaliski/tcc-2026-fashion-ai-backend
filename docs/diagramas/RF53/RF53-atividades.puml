@@ -1,0 +1,64 @@
+@startuml RF53_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF53 — HypeScore v2: Hype de peças e looks\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
+start
+:Abre /history, /u/[username];
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/schemes\nGET /api/me/closet;
+|Pessoa usuária|
+:Marcar item salvo como favorito;
+|Tela (Next.js)|
+:PUT /api/interactions/{type}/{id}/saves/favorite;
+|API (Spring Boot)|
+:SocialController.favorite\n→ SocialService.favoriteSaved;
+if (Peça não encontrado[a]?) then (sim)
+  :404 NAO_ENCONTRADO\n«Peça não encontrado(a)»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: saved_items\nschemes\nwardrobe_items\ndna_schemes;
+:Usa: SchemeService.requireView\nGuard.requireView;
+:Estado: favorite → ?favorite;
+:Evento: HypeSignal;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Salvar/remover dos salvos)
+    :POST /api/interactions/{type}/{id}/saves\n→ SocialService.toggleSave\nvalida: NAO_ENCONTRADO\nlê: schemes, wardrobe_items, dna_schemes …\nusa: Guard.requireCanCreate,\nSchemeService.requireView, Guard.requireView\n…\ngrava: saved_items;
+  case (Favoritar / marcar disponibilidade)
+    :PATCH /api/schemes/{id}/flags\n→ SchemeService.toggles\nlê: schemes\nusa: Guard.requireCanCreate, Guard.requireOwner\nestado: favorite → ?favorite, disponivel →\n?disponivel;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
+stop
+@enduml

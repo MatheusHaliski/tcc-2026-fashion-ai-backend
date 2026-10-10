@@ -1,0 +1,193 @@
+@startuml RF49_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF49 — Acervo oficial em escala\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "lib/api/catalog.ts" {
+  class CatalogProduct as "CatalogProduct" <<interface>> {
+    +id: string
+    +brand: CatalogBrandRef | null
+    +productName: string
+    +modelName: string | null
+    +category: string
+    +subcategory: string
+    +color: string | null
+    +colorName: string | null
+    +colorHex: string | null
+    +material: string | null
+    .. +17 ..
+  }
+  class MatchScore as "MatchScore" <<interface>> {
+    +total: number
+    +brandMatch: number
+    +categoryMatch: number
+    +subcategoryMatch: number
+    +textSimilarity: number
+    +colorMatch: number
+    +visualSimilarity: number | null
+    +designMatch: number | null
+    +reasons: MatchReason[]
+  }
+  class CatalogVariant as "CatalogVariant" <<interface>> {
+    +id: string
+    +key: string
+    +color: string | null
+    +colorName: string | null
+    +code: string | null
+    +sku: string | null
+  }
+  class DesignTraits as "DesignTraits" <<interface>> {
+    +pattern: string | null
+    +logoPlacement: string | null
+    +logoSize: string | null
+    +sides: string[]
+    +baseColors: string[]
+    +printColors: string[]
+    +anyColors: string[]
+    +source: 'LOCAL' | 'AI' | 'CATALOG'
+  }
+  class ImageProvenance as "ImageProvenance" <<interface>> {
+    +sourceType: string
+    +sourceDomain: string
+    +productUrl: string
+    +imageUrl: string
+    +retrievedAt: string
+    +lastVerifiedAt: string
+    +usage: string
+  }
+  class SearchIntent as "SearchIntent" <<interface>> {
+    +brand: string | null
+    +brandKnown: boolean
+    +category: string | null
+    +subcategory: string | null
+    +keywords: string[]
+    +color: string | null
+    +design: DesignTraits | null
+  }
+  class SearchResponse as "SearchResponse" <<interface>> {
+    +intent: SearchIntent
+    +results: CatalogProduct[]
+    +total: number
+    +enoughInput: boolean
+    +canSearchOfficial: boolean
+    +message: string | null
+  }
+  class SearchParams as "SearchParams" <<interface>> {
+    +category: string
+    +subcategory: string
+    +brand: string
+    +q: string
+    +color: string
+    +limit: number
+  }
+  class CatalogBrandRef as "CatalogBrandRef" <<interface>> {
+    +id: string
+    +name: string
+    +slug: string
+    +logoUrl: string | null
+  }
+  class mod_catalog_ts as "catalog.ts" <<módulo>> {
+    +enoughToSearch()
+  }
+}
+package "app/(site)/(app)/search/page.tsx" {
+  class Brand as "Brand" <<interface>> {
+    +id: string
+    +userId: string
+    +slug: string
+    +name: string
+    +logoUrl: string | null
+    +registered: boolean
+    +publicPieces: number
+    +avatarUrl: string | null
+  }
+  class Filters as "Filters" <<type>> {
+    +style: string
+    +occasion: string
+    +color: string
+    +brand: string
+    +category: string
+    +hypeLevel: string
+  }
+  class Page as "Page" <<interface>> {
+    +items: Row[]
+    +nextCursor: string | null
+    +empty: { message?: string; alternatives?: stri…
+    +engine: string
+  }
+  enum Tab as "Tab" {
+    LOOKS
+    PECAS
+    PESSOAS
+    MARCAS
+    CELEBRIDADES
+  }
+  class mod_page_tsx as "page.tsx" <<módulo>> {
+    +SearchPage()
+  }
+}
+package "Backend (Java)" {
+  class CatalogMatchScorer  {
+    -norm: CatalogNormalizer
+    +score()
+    +patternSimilarity()
+    +design()
+    +colorIn()
+    +text()
+    +similarity()
+    +levenshtein()
+    +sameFamily()
+  }
+  class CatalogService <<service>> {
+    -discovery: OfficialCatalogDiscovery
+    -textInterpreter: CatalogTextInterpreter
+    -norm: CatalogNormalizer
+    -scorer: CatalogMatchScorer
+    +setTextInterpreter()
+    +resolve()
+    +search()
+    +orderScore()
+    +patternTerms()
+    +rank()
+  }
+  class CatalogController <<controller>> {
+    +search()
+    +suggestions()
+    +brands()
+    +stores()
+    +product()
+    +discover()
+    +fromCatalog()
+  }
+}
+CatalogController --> CatalogService
+CatalogProduct --> CatalogBrandRef : brand
+CatalogProduct --> CatalogVariant : selectedVariant
+CatalogProduct --> CatalogVariant : variants
+CatalogProduct --> DesignTraits : design
+CatalogProduct --> ImageProvenance : imageSource
+CatalogProduct --> ImageProvenance : images
+CatalogProduct --> MatchScore : matchScore
+SearchIntent --> DesignTraits : design
+SearchResponse --> CatalogProduct : results
+SearchResponse --> SearchIntent : intent
+@enduml

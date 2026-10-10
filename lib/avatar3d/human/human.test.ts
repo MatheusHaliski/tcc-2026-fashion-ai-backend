@@ -50,6 +50,19 @@ describe("corpo humano (MakeHuman CC0) — arquivo e composição", () => {
     expect(predict(asset, fitBody(asset, { sex: "FEMININO", params: tall.params, sources: tall.sources }).z).legLen).toBeGreaterThan(a.predicted.legLen + 0.01);
   });
 
+  it("o que a pessoa ajusta é seguido de perto: quadril largo com cintura fina chega a 80% do pedido (TWIN-FID)", () => {
+    const m0 = defaultBodyModel("FEMININO"); const ref = DEFAULT_BODY.FEMININO;
+    const curvy = setParam(setParam(setParam(m0, "hipW", 0.232), "waistW", 0.152), "chestW", 0.182);
+    const typ = fitBody(asset, { sex: "FEMININO" }).predicted;
+    const got = fitBody(asset, { sex: "FEMININO", params: curvy.params, sources: curvy.sources }).predicted;
+    expect(got.hipW - typ.hipW).toBeGreaterThan(0.8 * (0.232 - ref.hipW));
+    expect(Math.abs(got.waistW - typ.waistW - (0.152 - ref.waistW))).toBeLessThan(0.003);
+    // a foto ("observed") continua com a incerteza da medida: segue menos que o ajuste da pessoa
+    const obs = { ...curvy.sources, hipW: "observed", waistW: "observed", chestW: "observed" } as typeof curvy.sources;
+    const seen = fitBody(asset, { sex: "FEMININO", params: curvy.params, sources: obs }).predicted;
+    expect(seen.hipW - typ.hipW).toBeLessThan(got.hipW - typ.hipW);
+  });
+
   it("o rosto canônico do MediaPipe é reproduzido com erro de poucos milímetros", () => {
     const fit = fitBody(asset, { sex: "FEMININO" });
     const raw = compose(asset, fit.z, null, 1.7);

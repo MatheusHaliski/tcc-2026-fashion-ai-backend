@@ -1,27 +1,42 @@
 @startuml RF14_MaquinaDeEstados_PerfilMarca
 !pragma layout smetana
-title RF14 — BrandProfile: approval_status e presença no feed "Marcas"
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-[*] --> Pendente : cadastro de conta MARCA (RF1)\nIdentityService → approval_status = PENDENTE
-state "PENDENTE" as Pendente
-state "APROVADO" as Aprovado {
-  [*] --> NoFeed
-  state "Listada em GET /api/brands\ne com página /brands/{slug}" as NoFeed
-  NoFeed --> NoFeed : PATCH /api/me/brand-profile\n(dona edita bio, loja, categoria)
+title RF14 — ciclo de vida de BrandProfile.approvalStatus\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum ApprovalStatus · tabela brand_profiles
+
+state "BrandProfile.approvalStatus" as Ciclo_BrandProfile {
+  state Ciclo_BrandProfile_PENDENTE as "PENDENTE"
+  state Ciclo_BrandProfile_AJUSTES as "AJUSTES"
+  state Ciclo_BrandProfile_APROVADO as "APROVADO"
+  state Ciclo_BrandProfile_RECUSADO as "RECUSADO"
+  state Ciclo_BrandProfile_SUSPENSO as "SUSPENSO"
 }
-state "RECUSADO" as Recusado
-state "SUSPENSO" as Suspenso
-Pendente --> Aprovado : POST /api/admin/approvals/{userId} (approve=true)\nAdminService — approvedBy/approvedAt
-Pendente --> Recusado : POST /api/admin/approvals/{userId} (approve=false)
-Aprovado --> Suspenso : <<planejado>> suspensão pelo admin
-Suspenso --> Aprovado : <<planejado>> reativação
-note right of Pendente : sem tela pública (RF1.CA06):\nGET /api/institutional/{slug} → 404\npara quem não é dono nem admin
-note right of Aprovado : único estado visível no feed;\nordem AFINIDADE (DNA do visitante) ou RECENTES
-note bottom of Suspenso : valor existe no enum ApprovalStatus,\nmas nenhum endpoint o atribui —\nnão implementado, conforme Trello (RF27 habilita RF14)
+[*] --> Ciclo_BrandProfile_PENDENTE : criação
+Ciclo_BrandProfile --> Ciclo_BrandProfile_PENDENTE : register()\nPOST /api/auth/register
+note bottom of Ciclo_BrandProfile
+  Sem mudança explícita no código para: AJUSTES, APROVADO, RECUSADO, SUSPENSO
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
+note right of Ciclo_BrandProfile
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
+end note
 @enduml

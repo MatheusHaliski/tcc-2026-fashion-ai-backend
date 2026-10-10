@@ -9,7 +9,8 @@ import { useI18n } from "@/lib/i18n/i18n";
 
 /*
  * Passarela 3D (Explorar): cada manequim veste o Look do Dia de uma pessoa e desfila da coxia até a ponta da
- * passarela, para, gira e volta. A ordem segue o Hype Score do dia. Com "reduzir movimento", os manequins ficam
+ * passarela, para, gira e volta. A ordem é a do ranking escolhido (Top 100 = HypeScore v2 público, sem Hype público no
+ * fim; Em alta = crescimento, não curtidas), já resolvida no backend. Com "reduzir movimento", os manequins ficam
  * parados em fila ao longo da passarela (mesmo conteúdo, sem animação).
  */
 
@@ -87,7 +88,8 @@ function Walker({ entry, index, total, still, onPick, selected }: { entry: Runwa
   });
   return (
     <group ref={g}>
-      <Mannequin mannequin={entry.look.mannequin} pieces={entry.look.pieces} sway={false} onClick={() => onPick(entry)} />
+      {/* vários modelos em cena: cabelo em cards (nível 2, hair-lod.ts), leve de montar e de desenhar */}
+      <Mannequin mannequin={entry.look.mannequin} pieces={entry.look.pieces} sway={false} onClick={() => onPick(entry)} hairLod={2} />
       <NameTag text={`#${entry.position} @${entry.look.owner?.username ?? ""}`} you={entry.you || selected} />
     </group>
   );

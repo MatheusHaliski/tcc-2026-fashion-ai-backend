@@ -41,15 +41,19 @@ import java.util.List;
 public class SecurityConfig {
     private static final String[] PUBLIC_GET = {
             "/actuator/health", "/actuator/info", "/media/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
-            "/api/usernames/*/availability", "/api/preferences/options", "/api/taxonomy", "/api/assets/**",
+            "/api/usernames/*/availability", "/api/preferences/options", "/api/client/config", "/api/taxonomy", "/api/assets/**",
             "/api/backgrounds/catalog", "/api/backgrounds/combination", "/api/backgrounds/recommendations",
             "/api/feed", "/api/runway", "/api/search", "/api/public-pieces",
             "/api/profiles/*", "/api/brands", "/api/celebrities", "/api/institutional/**",
             "/api/schemes/*", "/api/schemes/*/card.png", "/api/schemes/*/look3d", "/api/pieces/*", "/api/pieces/*/look3d", "/api/dna-schemes/*",
             "/api/interactions/*/*/comments", "/api/interactions/*/*/counters",
             "/api/users/*/lookbook", "/api/users/*/closet", "/api/users/*/seals", "/api/users/*/promotions",
+            "/api/users/*/publications", "/api/users/*/favorites", "/api/users/*/flair/cards",
             "/api/users/*/groupings", "/api/users/*/connections", "/api/groupings/*/schemes",
-            "/api/hype/**", "/api/inventory-score/method", "/api/explorer/**", "/api/brand-logos", "/api/brand-logos/batch", "/api/studio/backdrops"
+            "/api/hype/**", "/api/insights",
+            // Momentos: leituras públicas (privados filtram por membro no serviço); ações e "meus" exigem sessão
+            "/api/moments", "/api/moments/active", "/api/moments/upcoming", "/api/moments/now", "/api/moments/calendar", "/api/moments/*",
+            "/api/moments/*/feed", "/api/moments/*/leaderboard", "/api/moments/*/trending", "/api/moments/context/*/*", "/api/users/*/moments", "/api/flair/challenges", "/api/flair/challenges/*", "/api/inventory-score/method", "/api/explorer/**", "/api/brand-logos", "/api/brand-logos/batch", "/api/studio/backdrops"
     };
 
     @Bean
@@ -114,8 +118,9 @@ public class SecurityConfig {
         CorsConfiguration cors = new CorsConfiguration();
         cors.setAllowedOrigins(Arrays.stream(origins.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList());
         cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        cors.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Correlation-Id", "Accept-Language", "X-Dev-Gate"));
-        cors.setExposedHeaders(List.of("X-Correlation-Id", "Content-Disposition", "X-Dev-Gate-Required"));
+        cors.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Correlation-Id", "Accept-Language", "X-Dev-Gate",
+                "X-FAI-Platform", "X-FAI-Quality", "X-FAI-App-Version", "If-Match"));
+        cors.setExposedHeaders(List.of("X-Correlation-Id", "Content-Disposition", "X-Dev-Gate-Required", "ETag"));
         cors.setAllowCredentials(true);
         cors.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

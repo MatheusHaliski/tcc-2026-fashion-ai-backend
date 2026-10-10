@@ -1,0 +1,85 @@
+@startuml RF50_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF50 — Verificar perfis de Marca e Celebridade (política v1.0)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
+start
+:Abre /admin/users, /brands,\n/brands/[slug];
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/issuer-review\nGET /api/admin/approvals/{userId}/documents/{kind}\nGET /api/admin/approvals;
+|Pessoa usuária|
+:Decidir a verificação: APROVAR\n(checklist completa), AJUSTE…;
+|Tela (Next.js)|
+:POST /api/admin/approvals/{userId};
+|API (Spring Boot)|
+:AdminController.decide\n→ IssuerReviewService.decide;
+if (Um administrador não pode decidir a ver…?) then (sim)
+  :403 ACESSO_NEGADO\n«Um administrador não pode decidir\na verificação do próprio perfil.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (perfil pessoal?) then (sim)
+  :400 PERFIL_PESSOAL\n«Perfis pessoais não passam por\nvalidação.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (decisao inválida?) then (sim)
+  :400 DECISAO_INVALIDA\n«Decisão inválida: use APROVAR,\nAJUSTES ou RECUSAR.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (fora da fila?) then (sim)
+  :409 FORA_DA_FILA\n«Este pedido não está aguardando\nanálise.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (motivo inválido?) then (sim)
+  :400 MOTIVO_INVALIDO\n«Motivo fora da lista da política\nde verificação.»\n→ a tela mostra o aviso;
+  stop
+endif
+note right
+  e mais 4 validações:
+  CRITERIOS_PENDENTES, EMAIL_NAO_CONFIRMADO,
+  MOTIVO_OBRIGATORIO, OBSERVACAO_OBRIGATORIA
+end note
+|Dados e serviços|
+:Lê: users\nbrand_profiles\ncelebrity_profiles;
+:Usa: Guard.requireAdmin\nIssuerVerificationPolicy.checks\nSealService.ensureDefaultSeals\nNotificationService.notify\nEmailSenderPort.send\nSideEffectRunner.run;
+:Grava: users;
+:Estado: approvedAt → set\nidentityVerified → true\ndocumentVerified → true\nrequiresSealReview → true\nstatus → ACTIVE\nverified → true;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Confirmar e-mail com o código rec…)
+    :POST /api/auth/email-verification\n→ IdentityService.verifyEmail\nvalida: CODIGO_EXPIRADO, ERRO, MUITAS_TENTATIVAS\nlê: users, verification_codes, brand_profiles …\nusa: IssuerReviewService.emailConfirmed\nestado: consumedAt → set, emailVerified → true;
+  case (Reenviar o perfil para a fila de…)
+    :POST /api/me/issuer-review/resubmit\n→ IssuerReviewService.resubmit\nvalida: ACESSO_NEGADO, FORMULARIO_INVALIDO,\nLIMITE_DE_ENVIOS, NAO_AUTENTICADO …\nlê: users, brand_profiles, celebrity_profiles\nusa: MediaStoragePort.get, MediaStoragePort.put,\nNotificationService.notify …\nestado: storeUrl → set, activityProofUrl → set,\nverificationUrl → set …;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
+stop
+@enduml

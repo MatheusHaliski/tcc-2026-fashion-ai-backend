@@ -1,0 +1,113 @@
+@startuml RF6_Sequencia_LookDoDia
+title RF6 — Acessar e gerenciar o Perfil Lookbook\nDiagrama de sequência — aba Look do dia (painel v2 só leitura, dica tip, histórico, avaliação) e Agrupamentos
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa (dono)" as P
+participant "LookbookTabs\nDailyTab · GroupsTab" as FE
+participant "LookbookController" as LC
+participant "LookbookService" as LS
+participant "DailyLookService" as DS
+participant "HypeScoreService" as HS
+participant "AiEngine (RF24)" as AI
+participant "HypeController\nHypeQueryService" as HQ
+database "MySQL" as DB
+
+== Look do dia ==
+P -> FE: abre ?tab=daily
+FE -> LC: GET /api/me/daily-look-tab?withAi=false
+LC -> LS: dailyLookTab(user, withAi)
+LS -> DS: today(userId)
+DS -> DB: daily_looks (user_id, look_date = hoje)
+alt sem registro hoje e há look anterior com esquema não arquivado
+  DS -> DB: INSERT daily_looks (cópia, materialized_from, mesma source)
+  note right of DS: a cópia não publica DailyLookRegistered:\nnão conta uso nem sinal de Hype
+end
+alt há Look do Dia
+  LS -> HS: panel(dailyLook, withAi)
+  HS -> DB: SELECT hype_scores (SCHEME, schemeId, HYPE_V2)
+  HS -> HS: v2Summary (NOT_CALCULATED | INSUFFICIENT_DATA | AVAILABLE,\nstale > 24 h) · localTip (dimensão v2 mais fraca)
+  opt withAi = true
+    HS -> AI: text(STYLE_ADVISOR, título, estilo, ocasião, dimensões v2)
+    AI --> HS: dica de até 2 frases (falha = dica local)
+  end
+  HS -> HS: magazineCover (faixa ≥ TRENDING)
+  HS -> DB: daily_looks anterior (previousDailyLook)
+  HS --> LS: {v2, magazineCover, tip, aiExplanation, previousDailyLook}
+  note right of HS: só leitura: o painel não grava nada\n(o v1 e hype_score_metrics saíram em P3-16)
+else sem Look do Dia
+  LS --> LC: empty {message, actions: /looks, /autopilot, /mirror}
+end
+LS -> DS: history(user) (até 60 linhas: date, source, schemeId,\ntitle, coverImageUrl, feedback, materialized)
+LS -> DS: pendingFeedback(user) (show = pendente e depois das 18 h)
+LC --> FE: 200 {panelVersion, panelVersions, today, scheme, panel,\nhistory, feedbackReminder, feedbackOptions}
+FE -> FE: primeHype(SCHEME, {schemeId: panel.v2}) (o card não pede de novo)
+FE -> HQ: GET /api/hype/summaries?type=SCHEME&ids=<schemeIds do histórico>
+HQ --> FE: 200 {items} (HypeBadge de cada dia)
+opt trocar a versão do painel
+  FE -> LC: PUT /api/me/hype-panel-version {version}
+  LC -> LS: setPanelVersion → UPDATE users.look_do_dia_panel_version
+end
+opt avaliar o look
+  P -> FE: ADOREI | NAO_USEI | NAO_GOSTEI
+  FE -> LC: PUT /api/me/daily-looks/{date}/feedback {feedback}
+  LC -> DS: feedback(user, date, feedback)
+  alt sem Look do Dia na data
+    DS --> FE: 404 SEM_LOOK_DO_DIA {href: /autopilot}
+  else
+    DS -> DB: UPDATE daily_looks (feedback, feedback_at)
+    DS --> FE: 200 view
+  end
+end
+
+== Agrupamentos ==
+FE -> LC: GET /api/users/{ownerId}/groupings
+LC -> LS: groupingsOf(viewer, ownerId)
+alt quem vê não pode ver o perfil
+  LS --> FE: 200 []
+else
+  LS -> DB: scheme_groupings + looks visíveis por grupo
+  LS --> FE: 200 [{id, type, label, cover, período, schemes}]
+end
+FE -> LC: GET /api/groupings/{id}/schemes
+LC --> FE: 200 SchemeView[] (só os visíveis)
+opt dono: sugerir por similaridade
+  FE -> LC: POST /api/me/similarity-groups/suggestions?type=SCHEME
+  LC -> LS: suggestGroups(user, type)
+  alt type = PIECE e menos de 20 peças
+    LS --> FE: 422 ACERVO_PEQUENO {pieces, missing}
+  else
+    LS -> AI: local(ACERVO_GROUPING, HypeScoreService.cluster)
+    AI --> LS: clusters (similaridade ≥ 0,70, 3+ membros)
+    LS -> DB: DELETE + INSERT acervo_groups
+    LC --> FE: 200 {groups, kind: SIMILARITY, explanation, note}
+  end
+  FE -> LC: GET /api/me/similarity-groups?type=SCHEME
+  LC -> LS: groups(user, type) + hype_scores dos membros
+  LC --> FE: 200 [{label, memberIds, count, hype {avgScore, level, items}}]
+end
+opt dono: descartar sugestão
+  FE -> LC: DELETE /api/me/similarity-groups/{groupId}
+  LC --> FE: 204 (outro dono = 403 auditado)
+end
+opt dono: novo agrupamento editorial
+  FE -> LC: POST /api/groupings {type, label, description, coverUrl,\natmospherePrompt, periodFrom, periodTo, accentColor}
+  LC -> LS: createGrouping(user, GroupingForm)
+  alt tipo fora do permitido para o perfil
+    LS --> FE: 400 TIPO_INVALIDO
+    note right of FE: a tela envia COLECAO/TEMPORADA/…,\nvalores que GroupingType não tem
+  else período ou cor inválidos
+    LS --> FE: 400 PERIODO_INVALIDO | COR_INVALIDA
+  else
+    LS -> DB: INSERT scheme_groupings
+    LC --> FE: 201 grupo
+  end
+  FE -> LC: POST /api/groupings/{id}/items {schemeIds, pieceIds}
+  LC -> LS: assignToGrouping → UPDATE schemes/wardrobe_items.grouping_id
+end
+@enduml

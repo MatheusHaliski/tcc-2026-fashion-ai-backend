@@ -1,0 +1,5292 @@
+{
+ "fai": [
+  {
+   "id": "fai/01",
+   "src": "/selos/fai/01.webp",
+   "color": "#3F3340"
+  },
+  {
+   "id": "fai/02",
+   "src": "/selos/fai/02.webp",
+   "color": "#276161"
+  },
+  {
+   "id": "fai/03",
+   "src": "/selos/fai/03.webp",
+   "color": "#B55214"
+  },
+  {
+   "id": "fai/04",
+   "src": "/selos/fai/04.webp",
+   "color": "#23302C"
+  },
+  {
+   "id": "fai/05",
+   "src": "/selos/fai/05.webp",
+   "color": "#1B3941"
+  },
+  {
+   "id": "fai/06",
+   "src": "/selos/fai/06.webp",
+   "color": "#4E5538"
+  },
+  {
+   "id": "fai/07",
+   "src": "/selos/fai/07.webp",
+   "color": "#08151E"
+  },
+  {
+   "id": "fai/08",
+   "src": "/selos/fai/08.webp",
+   "color": "#666A6D"
+  },
+  {
+   "id": "fai/09",
+   "src": "/selos/fai/09.webp",
+   "color": "#573E30"
+  },
+  {
+   "id": "fai/10",
+   "src": "/selos/fai/10.webp",
+   "color": "#351D0F"
+  },
+  {
+   "id": "fai/11",
+   "src": "/selos/fai/11.webp",
+   "color": "#C4CED6"
+  },
+  {
+   "id": "fai/12",
+   "src": "/selos/fai/12.webp",
+   "color": "#505F93"
+  },
+  {
+   "id": "fai/13",
+   "src": "/selos/fai/13.webp",
+   "color": "#3D333F"
+  }
+ ],
+ "circular": [
+  {
+   "id": "circular/01",
+   "src": "/selos/circular/01.webp",
+   "center": 0.476,
+   "plain": true,
+   "color": "#053F7D"
+  },
+  {
+   "id": "circular/02",
+   "src": "/selos/circular/02.webp",
+   "center": 0.464,
+   "plain": true,
+   "color": "#930C35"
+  },
+  {
+   "id": "circular/03",
+   "src": "/selos/circular/03.webp",
+   "center": 0.47,
+   "plain": true,
+   "color": "#044027"
+  },
+  {
+   "id": "circular/04",
+   "src": "/selos/circular/04.webp",
+   "center": 0.476,
+   "plain": true,
+   "color": "#CC2403"
+  },
+  {
+   "id": "circular/05",
+   "src": "/selos/circular/05.webp",
+   "center": 0.476,
+   "plain": true,
+   "color": "#298843"
+  },
+  {
+   "id": "circular/06",
+   "src": "/selos/circular/06.webp",
+   "center": 0.455,
+   "plain": true,
+   "color": "#743E0F"
+  },
+  {
+   "id": "circular/07",
+   "src": "/selos/circular/07.webp",
+   "center": 0.515,
+   "plain": true,
+   "color": "#B79681"
+  },
+  {
+   "id": "circular/08",
+   "src": "/selos/circular/08.webp",
+   "center": 0.511,
+   "plain": true,
+   "color": "#797A53"
+  },
+  {
+   "id": "circular/09",
+   "src": "/selos/circular/09.webp",
+   "center": 0.509,
+   "plain": true,
+   "color": "#9D5A31"
+  },
+  {
+   "id": "circular/10",
+   "src": "/selos/circular/10.webp",
+   "center": 0.52,
+   "plain": true,
+   "color": "#D67853"
+  },
+  {
+   "id": "circular/11",
+   "src": "/selos/circular/11.webp",
+   "center": 0.52,
+   "plain": true,
+   "color": "#807E74"
+  },
+  {
+   "id": "circular/12",
+   "src": "/selos/circular/12.webp",
+   "center": 0.519,
+   "plain": true,
+   "color": "#5F3E5C"
+  },
+  {
+   "id": "circular/13",
+   "src": "/selos/circular/13.webp",
+   "center": 0.57,
+   "plain": true,
+   "color": "#BF8A44"
+  },
+  {
+   "id": "circular/14",
+   "src": "/selos/circular/14.webp",
+   "center": 0.569,
+   "plain": true,
+   "color": "#4C7B6A"
+  },
+  {
+   "id": "circular/15",
+   "src": "/selos/circular/15.webp",
+   "center": 0.567,
+   "plain": true,
+   "color": "#306232"
+  },
+  {
+   "id": "circular/16",
+   "src": "/selos/circular/16.webp",
+   "center": 0.51,
+   "plain": true,
+   "color": "#185559"
+  },
+  {
+   "id": "circular/17",
+   "src": "/selos/circular/17.webp",
+   "center": 0.509,
+   "plain": true,
+   "color": "#6A4F60"
+  },
+  {
+   "id": "circular/18",
+   "src": "/selos/circular/18.webp",
+   "center": 0.508,
+   "plain": true,
+   "color": "#404828"
+  },
+  {
+   "id": "circular/19",
+   "src": "/selos/circular/19.webp",
+   "center": 0.52,
+   "plain": true,
+   "color": "#B27966"
+  },
+  {
+   "id": "circular/20",
+   "src": "/selos/circular/20.webp",
+   "center": 0.518,
+   "plain": true,
+   "color": "#1E4946"
+  },
+  {
+   "id": "circular/21",
+   "src": "/selos/circular/21.webp",
+   "center": 0.548,
+   "plain": true,
+   "color": "#3A232F"
+  },
+  {
+   "id": "circular/22",
+   "src": "/selos/circular/22.webp",
+   "center": 0.548,
+   "plain": true,
+   "color": "#697577"
+  },
+  {
+   "id": "circular/23",
+   "src": "/selos/circular/23.webp",
+   "center": 0.543,
+   "plain": true,
+   "color": "#A48A33"
+  },
+  {
+   "id": "circular/24",
+   "src": "/selos/circular/24.webp",
+   "center": 0.512,
+   "plain": true,
+   "color": "#4A1811"
+  },
+  {
+   "id": "circular/25",
+   "src": "/selos/circular/25.webp",
+   "center": 0.513,
+   "plain": true,
+   "color": "#595F2F"
+  },
+  {
+   "id": "circular/26",
+   "src": "/selos/circular/26.webp",
+   "center": 0.519,
+   "plain": true,
+   "color": "#A15427"
+  },
+  {
+   "id": "circular/27",
+   "src": "/selos/circular/27.webp",
+   "center": 0.52,
+   "plain": true,
+   "color": "#5E5443"
+  },
+  {
+   "id": "circular/28",
+   "src": "/selos/circular/28.webp",
+   "center": 0.521,
+   "plain": true,
+   "color": "#A12D8B"
+  },
+  {
+   "id": "circular/29",
+   "src": "/selos/circular/29.webp",
+   "center": 0.566,
+   "plain": true,
+   "color": "#C8891B"
+  },
+  {
+   "id": "circular/30",
+   "src": "/selos/circular/30.webp",
+   "center": 0.57,
+   "plain": true,
+   "color": "#202B38"
+  },
+  {
+   "id": "circular/31",
+   "src": "/selos/circular/31.webp",
+   "center": 0.508,
+   "plain": true,
+   "color": "#14252D"
+  },
+  {
+   "id": "circular/32",
+   "src": "/selos/circular/32.webp",
+   "center": 0.514,
+   "plain": true,
+   "color": "#494E36"
+  },
+  {
+   "id": "circular/33",
+   "src": "/selos/circular/33.webp",
+   "center": 0.515,
+   "plain": true,
+   "color": "#653033"
+  },
+  {
+   "id": "circular/34",
+   "src": "/selos/circular/34.webp",
+   "center": 0.515,
+   "plain": true,
+   "color": "#504232"
+  },
+  {
+   "id": "circular/35",
+   "src": "/selos/circular/35.webp",
+   "center": 0.561,
+   "plain": true,
+   "color": "#A65320"
+  },
+  {
+   "id": "circular/36",
+   "src": "/selos/circular/36.webp",
+   "center": 0.566,
+   "plain": true,
+   "color": "#AC8565"
+  },
+  {
+   "id": "circular/37",
+   "src": "/selos/circular/37.webp",
+   "center": 0.459,
+   "plain": true,
+   "color": "#350611"
+  },
+  {
+   "id": "circular/38",
+   "src": "/selos/circular/38.webp",
+   "center": 0.303,
+   "plain": true,
+   "color": "#5A4630"
+  },
+  {
+   "id": "circular/39",
+   "src": "/selos/circular/39.webp",
+   "center": 0.522,
+   "plain": true,
+   "color": "#DA600E"
+  },
+  {
+   "id": "circular/40",
+   "src": "/selos/circular/40.webp",
+   "center": 0.54,
+   "plain": true,
+   "color": "#D38610"
+  },
+  {
+   "id": "circular/41",
+   "src": "/selos/circular/41.webp",
+   "center": 0.54,
+   "plain": true,
+   "color": "#288043"
+  },
+  {
+   "id": "circular/42",
+   "src": "/selos/circular/42.webp",
+   "center": 0.478,
+   "plain": true,
+   "color": "#A36D4B"
+  },
+  {
+   "id": "circular/43",
+   "src": "/selos/circular/43.webp",
+   "center": 0.481,
+   "plain": true,
+   "color": "#B95213"
+  },
+  {
+   "id": "circular/44",
+   "src": "/selos/circular/44.webp",
+   "center": 0.495,
+   "plain": true,
+   "color": "#4D1A03"
+  }
+ ],
+ "folha": [
+  {
+   "id": "folha/fai-01",
+   "src": "/selos/folha/fai-01.webp",
+   "emblem": {
+    "src": "/selos/folha/fai-01-emblema.webp",
+    "x": 91.3,
+    "y": 126.7,
+    "w": 57.5,
+    "h": 74.2
+   },
+   "ink": "#F3E6C8",
+   "style": "OFICIAL",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.743,
+      0,
+      0,
+      0.743,
+      120,
+      154
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 33.5
+    },
+    "series": {
+     "text": "SÉRIE FASHION AI · Nº 01",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 140.5
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "OFICIAL",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#F3E6C8",
+     "opacity": 0.85,
+     "w": 37
+    },
+    "caption": {
+     "text": "Emblema fiel · paleta canônica",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#F3E6C8",
+     "opacity": 0.75,
+     "w": 94.8
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/fai-02",
+   "src": "/selos/folha/fai-02.webp",
+   "emblem": {
+    "src": "/selos/folha/fai-02-emblema.webp",
+    "x": 91.3,
+    "y": 126.7,
+    "w": 57.5,
+    "h": 74.2
+   },
+   "ink": "#F3E6C8",
+   "style": "NOTURNO",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.743,
+      0,
+      0,
+      0.743,
+      120,
+      154
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 33.5
+    },
+    "series": {
+     "text": "SÉRIE FASHION AI · Nº 02",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 140.5
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "NOTURNO",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#F3E6C8",
+     "opacity": 0.85,
+     "w": 45.2
+    },
+    "caption": {
+     "text": "Fundo escuro · acento laranja",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#F3E6C8",
+     "opacity": 0.75,
+     "w": 92
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/fai-03",
+   "src": "/selos/folha/fai-03.webp",
+   "emblem": {
+    "src": "/selos/folha/fai-03-emblema.webp",
+    "x": 91.3,
+    "y": 126.7,
+    "w": 57.5,
+    "h": 74.2
+   },
+   "ink": "#3B3428",
+   "style": "CREME",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.743,
+      0,
+      0,
+      0.743,
+      120,
+      154
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 33.5
+    },
+    "series": {
+     "text": "SÉRIE FASHION AI · Nº 03",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#3B3428",
+     "opacity": 1,
+     "w": 140.5
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#3B3428",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "CREME",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#3B3428",
+     "opacity": 0.85,
+     "w": 32.3
+    },
+    "caption": {
+     "text": "Fundo claro · rede em sépia",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#3B3428",
+     "opacity": 0.75,
+     "w": 85.3
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/fai-04",
+   "src": "/selos/folha/fai-04.webp",
+   "emblem": {
+    "src": "/selos/folha/fai-04-emblema.webp",
+    "x": 85.6,
+    "y": 121.4,
+    "w": 68.8,
+    "h": 89.1
+   },
+   "ink": "#F3E6C8",
+   "style": "REDE TOTAL",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.9,
+      0,
+      0,
+      0.9,
+      120,
+      154
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 40.7
+    },
+    "series": {
+     "text": "SÉRIE FASHION AI · Nº 04",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 140.5
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "REDE TOTAL",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#F3E6C8",
+     "opacity": 0.85,
+     "w": 57.2
+    },
+    "caption": {
+     "text": "Rede preenche o painel · sacola flutuante",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#F3E6C8",
+     "opacity": 0.75,
+     "w": 125.7
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/fai-05",
+   "src": "/selos/folha/fai-05.webp",
+   "emblem": {
+    "src": "/selos/folha/fai-05-emblema.webp",
+    "x": 104.2,
+    "y": 162.1,
+    "w": 31.7,
+    "h": 37.8
+   },
+   "ink": "#F3E6C8",
+   "style": "VESTÍVEL",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.384,
+      0,
+      0,
+      0.384,
+      120,
+      177.16
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#1C1A17",
+     "opacity": 1,
+     "w": 17.3
+    },
+    "series": {
+     "text": "SÉRIE FASHION AI · Nº 05",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 140.5
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "VESTÍVEL",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#F3E6C8",
+     "opacity": 0.85,
+     "w": 44.7
+    },
+    "caption": {
+     "text": "Camisa 3D · estampa com a sacola",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#F3E6C8",
+     "opacity": 0.75,
+     "w": 106.3
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/fai-06",
+   "src": "/selos/folha/fai-06.webp",
+   "emblem": null,
+   "ink": "#3B3428",
+   "style": "MONOGRAMA",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 120,
+     "y": 194,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 34,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -1,
+     "anchor": "middle",
+     "fill": "#1C1A17",
+     "opacity": 1,
+     "w": 49.9
+    },
+    "series": {
+     "text": "SÉRIE FASHION AI · Nº 06",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#3B3428",
+     "opacity": 1,
+     "w": 140.5
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#3B3428",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "MONOGRAMA",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#3B3428",
+     "opacity": 0.85,
+     "w": 60
+    },
+    "caption": {
+     "text": "Sacola como painel · rede interna",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#3B3428",
+     "opacity": 0.75,
+     "w": 101.6
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/mat-01",
+   "src": "/selos/folha/mat-01.webp",
+   "emblem": {
+    "src": "/selos/folha/mat-01-emblema.webp",
+    "x": 91.3,
+    "y": 126.7,
+    "w": 57.5,
+    "h": 74.2
+   },
+   "ink": "#3B3428",
+   "style": "PLÁSTICO",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.743,
+      0,
+      0,
+      0.743,
+      120,
+      154
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 33.5
+    },
+    "series": {
+     "text": "SÉRIE MATERIAIS · Nº 01",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#3B3428",
+     "opacity": 1,
+     "w": 136.6
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#3B3428",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "PLÁSTICO",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#3B3428",
+     "opacity": 0.85,
+     "w": 45.8
+    },
+    "caption": {
+     "text": "Nós brilhantes · tubos com reflexo",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#3B3428",
+     "opacity": 0.75,
+     "w": 103.9
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/mat-02",
+   "src": "/selos/folha/mat-02.webp",
+   "emblem": {
+    "src": "/selos/folha/mat-02-emblema.webp",
+    "x": 91.3,
+    "y": 126.7,
+    "w": 57.5,
+    "h": 74.2
+   },
+   "ink": "#2A2C30",
+   "style": "METAL",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.743,
+      0,
+      0,
+      0.743,
+      120,
+      154
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 33.5
+    },
+    "series": {
+     "text": "SÉRIE MATERIAIS · Nº 02",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#2A2C30",
+     "opacity": 1,
+     "w": 136.6
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#2A2C30",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "METAL",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#2A2C30",
+     "opacity": 0.85,
+     "w": 29.8
+    },
+    "caption": {
+     "text": "Aço escovado · nós cromados",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#2A2C30",
+     "opacity": 0.75,
+     "w": 89.7
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/mat-03",
+   "src": "/selos/folha/mat-03.webp",
+   "emblem": {
+    "src": "/selos/folha/mat-03-emblema.webp",
+    "x": 91.3,
+    "y": 126.7,
+    "w": 57.5,
+    "h": 74.2
+   },
+   "ink": "#3A2210",
+   "style": "MADEIRA",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.743,
+      0,
+      0,
+      0.743,
+      120,
+      154
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 33.5
+    },
+    "series": {
+     "text": "SÉRIE MATERIAIS · Nº 03",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#3A2210",
+     "opacity": 1,
+     "w": 136.6
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#3A2210",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "MADEIRA",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#3A2210",
+     "opacity": 0.85,
+     "w": 41.7
+    },
+    "caption": {
+     "text": "Veios de carvalho · botões torneados",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#3A2210",
+     "opacity": 0.75,
+     "w": 110.5
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/mat-04",
+   "src": "/selos/folha/mat-04.webp",
+   "emblem": {
+    "src": "/selos/folha/mat-04-emblema.webp",
+    "x": 91.3,
+    "y": 126.7,
+    "w": 57.5,
+    "h": 74.2
+   },
+   "ink": "#1F3F48",
+   "style": "VIDRO",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.743,
+      0,
+      0,
+      0.743,
+      120,
+      154
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 33.5
+    },
+    "series": {
+     "text": "SÉRIE MATERIAIS · Nº 04",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#1F3F48",
+     "opacity": 1,
+     "w": 136.6
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#1F3F48",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "VIDRO",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#1F3F48",
+     "opacity": 0.85,
+     "w": 29.2
+    },
+    "caption": {
+     "text": "Esferas translúcidas · reflexos de luz",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#1F3F48",
+     "opacity": 0.75,
+     "w": 111.2
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/mat-05",
+   "src": "/selos/folha/mat-05.webp",
+   "emblem": {
+    "src": "/selos/folha/mat-05-emblema.webp",
+    "x": 91.3,
+    "y": 126.7,
+    "w": 57.5,
+    "h": 74.2
+   },
+   "ink": "#3B3428",
+   "style": "MÁRMORE",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.743,
+      0,
+      0,
+      0.743,
+      120,
+      154
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 33.5
+    },
+    "series": {
+     "text": "SÉRIE MATERIAIS · Nº 05",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#3B3428",
+     "opacity": 1,
+     "w": 136.6
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#3B3428",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "MÁRMORE",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#3B3428",
+     "opacity": 0.85,
+     "w": 46.4
+    },
+    "caption": {
+     "text": "Veios de Carrara · embutidos em latão",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#3B3428",
+     "opacity": 0.75,
+     "w": 116.3
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/mat-06",
+   "src": "/selos/folha/mat-06.webp",
+   "emblem": {
+    "src": "/selos/folha/mat-06-emblema.webp",
+    "x": 91.3,
+    "y": 126.7,
+    "w": 57.5,
+    "h": 74.2
+   },
+   "ink": "#F3E6C8",
+   "style": "TECIDO",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.743,
+      0,
+      0,
+      0.743,
+      120,
+      154
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 33.5
+    },
+    "series": {
+     "text": "SÉRIE MATERIAIS · Nº 06",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 136.6
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "TECIDO",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#F3E6C8",
+     "opacity": 0.85,
+     "w": 34.9
+    },
+    "caption": {
+     "text": "Denim · costura em linha amarela · botões",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#F3E6C8",
+     "opacity": 0.75,
+     "w": 128.9
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/mat-07",
+   "src": "/selos/folha/mat-07.webp",
+   "emblem": {
+    "src": "/selos/folha/mat-07-emblema.webp",
+    "x": 91.3,
+    "y": 126.7,
+    "w": 57.5,
+    "h": 74.2
+   },
+   "ink": "#F3E6C8",
+   "style": "COURO",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.743,
+      0,
+      0,
+      0.743,
+      120,
+      154
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 33.5
+    },
+    "series": {
+     "text": "SÉRIE MATERIAIS · Nº 07",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 136.6
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "COURO",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#F3E6C8",
+     "opacity": 0.85,
+     "w": 33.1
+    },
+    "caption": {
+     "text": "Grão natural · pesponto · rebites de latão",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#F3E6C8",
+     "opacity": 0.75,
+     "w": 124.8
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/mat-08",
+   "src": "/selos/folha/mat-08.webp",
+   "emblem": {
+    "src": "/selos/folha/mat-08-emblema.webp",
+    "x": 91.3,
+    "y": 126.7,
+    "w": 57.5,
+    "h": 74.2
+   },
+   "ink": "#1F4E9C",
+   "style": "CERÂMICA",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.743,
+      0,
+      0,
+      0.743,
+      120,
+      154
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 33.5
+    },
+    "series": {
+     "text": "SÉRIE MATERIAIS · Nº 08",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#1F4E9C",
+     "opacity": 1,
+     "w": 136.6
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#1F4E9C",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "CERÂMICA",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#1F4E9C",
+     "opacity": 0.85,
+     "w": 48.2
+    },
+    "caption": {
+     "text": "Esmalte craquelado · traço em azul cobalto",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#1F4E9C",
+     "opacity": 0.75,
+     "w": 132.3
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#FFFFFF",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/mat-09",
+   "src": "/selos/folha/mat-09.webp",
+   "emblem": {
+    "src": "/selos/folha/mat-09-emblema.webp",
+    "x": 91.3,
+    "y": 126.7,
+    "w": 57.5,
+    "h": 74.2
+   },
+   "ink": "#F5F2FF",
+   "style": "NEON",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.743,
+      0,
+      0,
+      0.743,
+      120,
+      154
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 33.5
+    },
+    "series": {
+     "text": "SÉRIE MATERIAIS · Nº 09",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#F5F2FF",
+     "opacity": 1,
+     "w": 136.6
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#F5F2FF",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "NEON",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#F5F2FF",
+     "opacity": 0.85,
+     "w": 25.8
+    },
+    "caption": {
+     "text": "Acrílico iluminado · tubos com halo",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#F5F2FF",
+     "opacity": 0.75,
+     "w": 109.2
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/mat-10",
+   "src": "/selos/folha/mat-10.webp",
+   "emblem": {
+    "src": "/selos/folha/mat-10-emblema.webp",
+    "x": 91.3,
+    "y": 126.7,
+    "w": 57.5,
+    "h": 74.2
+   },
+   "ink": "#2A2A28",
+   "style": "CONCRETO",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.743,
+      0,
+      0,
+      0.743,
+      120,
+      154
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 33.5
+    },
+    "series": {
+     "text": "SÉRIE MATERIAIS · Nº 10",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#2A2A28",
+     "opacity": 1,
+     "w": 136.6
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#2A2A28",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "CONCRETO",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#2A2A28",
+     "opacity": 0.85,
+     "w": 51.1
+    },
+    "caption": {
+     "text": "Superfície porosa · sulcos e discos foscos",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#2A2A28",
+     "opacity": 0.75,
+     "w": 123.8
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/mat-11",
+   "src": "/selos/folha/mat-11.webp",
+   "emblem": {
+    "src": "/selos/folha/mat-11-emblema.webp",
+    "x": 91.3,
+    "y": 126.7,
+    "w": 57.5,
+    "h": 74.2
+   },
+   "ink": "#3B2A08",
+   "style": "OURO MARTELADO",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.743,
+      0,
+      0,
+      0.743,
+      120,
+      154
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 33.5
+    },
+    "series": {
+     "text": "SÉRIE MATERIAIS · Nº 11",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#3B2A08",
+     "opacity": 1,
+     "w": 136
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#3B2A08",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "OURO MARTELADO",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#3B2A08",
+     "opacity": 0.85,
+     "w": 86
+    },
+    "caption": {
+     "text": "Marcas de martelo · domos polidos",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#3B2A08",
+     "opacity": 0.75,
+     "w": 107
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/mat-12",
+   "src": "/selos/folha/mat-12.webp",
+   "emblem": {
+    "src": "/selos/folha/mat-12-emblema.webp",
+    "x": 91.3,
+    "y": 126.7,
+    "w": 57.5,
+    "h": 74.2
+   },
+   "ink": "#3A2E6B",
+   "style": "HOLOGRÁFICO",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 0,
+     "y": 34,
+     "m": [
+      0.743,
+      0,
+      0,
+      0.743,
+      120,
+      154
+     ],
+     "size": 30,
+     "weight": "800",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 33.5
+    },
+    "series": {
+     "text": "SÉRIE MATERIAIS · Nº 12",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#3A2E6B",
+     "opacity": 1,
+     "w": 136.6
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#3A2E6B",
+     "opacity": 1,
+     "w": 113
+    },
+    "style": {
+     "text": "HOLOGRÁFICO",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#3A2E6B",
+     "opacity": 0.85,
+     "w": 67.1
+    },
+    "caption": {
+     "text": "Iridescência · aberração cromática",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#3A2E6B",
+     "opacity": 0.75,
+     "w": 107.2
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/col-01",
+   "src": "/selos/folha/col-01.webp",
+   "emblem": {
+    "src": "/selos/folha/col-01-emblema.webp",
+    "x": 67.2,
+    "y": 114.4,
+    "w": 105.7,
+    "h": 110
+   },
+   "ink": "#FBF9F4",
+   "style": "EDIÇÃO OFICIAL",
+   "slots": {
+    "series": {
+     "text": "SÉRIE STREETWEAR · Nº 01",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 1,
+     "w": 150.5
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 82,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 30,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 1,
+     "w": 69.7
+    },
+    "subtitle": {
+     "text": "Performance · Movimento",
+     "x": 120,
+     "y": 96,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 9.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 0.85,
+     "w": 100.7
+    },
+    "style": {
+     "text": "EDIÇÃO OFICIAL",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#FBF9F4",
+     "opacity": 0.85,
+     "w": 101.2
+    },
+    "caption": {
+     "text": "Edição colecionador · vetor",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#FBF9F4",
+     "opacity": 0.7,
+     "w": 84.8
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#111111",
+     "opacity": 1,
+     "w": 24.5
+    }
+   }
+  },
+  {
+   "id": "folha/col-02",
+   "src": "/selos/folha/col-02.webp",
+   "emblem": {
+    "src": "/selos/folha/col-02-emblema.webp",
+    "x": 67.2,
+    "y": 114.4,
+    "w": 105.7,
+    "h": 110
+   },
+   "ink": "#15151A",
+   "style": "EDIÇÃO OFICIAL",
+   "slots": {
+    "series": {
+     "text": "SÉRIE STREETWEAR · Nº 02",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 150.5
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 82,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 30,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 112
+    },
+    "subtitle": {
+     "text": "Esporte · Herança",
+     "x": 120,
+     "y": 96,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 9.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 0.85,
+     "w": 71.2
+    },
+    "style": {
+     "text": "EDIÇÃO OFICIAL",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#15151A",
+     "opacity": 0.85,
+     "w": 108
+    },
+    "caption": {
+     "text": "Edição colecionador · vetor",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#15151A",
+     "opacity": 0.7,
+     "w": 84.8
+    },
+    "emblem": {
+     "text": "FAI",
+     "x": 100,
+     "y": 128,
+     "m": [
+      0.62,
+      0,
+      0,
+      0.62,
+      58,
+      104
+     ],
+     "size": 40,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -1,
+     "anchor": "middle",
+     "fill": "#1A1A1A",
+     "opacity": 1,
+     "w": 52.7
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/col-03",
+   "src": "/selos/folha/col-03.webp",
+   "emblem": {
+    "src": "/selos/folha/col-03-emblema.webp",
+    "x": 67.2,
+    "y": 114.4,
+    "w": 105.7,
+    "h": 110
+   },
+   "ink": "#FBF9F4",
+   "style": "EDIÇÃO OFICIAL",
+   "slots": {
+    "series": {
+     "text": "SÉRIE STREETWEAR · Nº 03",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 1,
+     "w": 150.5
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 82,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 30,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 1,
+     "w": 86.3
+    },
+    "subtitle": {
+     "text": "Velocidade · Atitude",
+     "x": 120,
+     "y": 96,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 9.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 0.85,
+     "w": 76.1
+    },
+    "style": {
+     "text": "EDIÇÃO OFICIAL",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#FBF9F4",
+     "opacity": 0.85,
+     "w": 108
+    },
+    "caption": {
+     "text": "Edição colecionador · vetor",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#FBF9F4",
+     "opacity": 0.7,
+     "w": 84.8
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/col-04",
+   "src": "/selos/folha/col-04.webp",
+   "emblem": {
+    "src": "/selos/folha/col-04-emblema.webp",
+    "x": 67.2,
+    "y": 114.4,
+    "w": 105.7,
+    "h": 110
+   },
+   "ink": "#15151A",
+   "style": "EDIÇÃO OFICIAL",
+   "slots": {
+    "series": {
+     "text": "SÉRIE STREETWEAR · Nº 04",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 150.5
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 82,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 22,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 170.5
+    },
+    "subtitle": {
+     "text": "Conforto · Tradição",
+     "x": 120,
+     "y": 96,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 9.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 0.85,
+     "w": 76
+    },
+    "style": {
+     "text": "EDIÇÃO OFICIAL",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#15151A",
+     "opacity": 0.85,
+     "w": 57.8
+    },
+    "caption": {
+     "text": "Edição colecionador · vetor",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#15151A",
+     "opacity": 0.7,
+     "w": 84.8
+    },
+    "emblem": {
+     "text": "FAI",
+     "x": 100,
+     "y": 128,
+     "m": [
+      0.62,
+      0,
+      0,
+      0.62,
+      58,
+      104
+     ],
+     "size": 40,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -1,
+     "anchor": "middle",
+     "fill": "#1F2A44",
+     "opacity": 1,
+     "w": 52.7
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/col-05",
+   "src": "/selos/folha/col-05.webp",
+   "emblem": {
+    "src": "/selos/folha/col-05-emblema.webp",
+    "x": 67.2,
+    "y": 114.4,
+    "w": 105.7,
+    "h": 110
+   },
+   "ink": "#FBF9F4",
+   "style": "EDIÇÃO OFICIAL",
+   "slots": {
+    "series": {
+     "text": "SÉRIE STREETWEAR · Nº 05",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 1,
+     "w": 150.5
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 82,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 30,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 1,
+     "w": 123.7
+    },
+    "subtitle": {
+     "text": "Basquete · Lenda",
+     "x": 120,
+     "y": 96,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 9.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 0.85,
+     "w": 65.9
+    },
+    "style": {
+     "text": "EDIÇÃO OFICIAL",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#FBF9F4",
+     "opacity": 0.85,
+     "w": 89.2
+    },
+    "caption": {
+     "text": "Edição colecionador · vetor",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#FBF9F4",
+     "opacity": 0.7,
+     "w": 84.8
+    },
+    "emblem": {
+     "text": "FAI",
+     "x": 100,
+     "y": 134,
+     "m": [
+      0.62,
+      0,
+      0,
+      0.62,
+      58,
+      104
+     ],
+     "size": 54,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -2,
+     "anchor": "middle",
+     "fill": "#CE1141",
+     "opacity": 1,
+     "w": 35.4
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/col-06",
+   "src": "/selos/folha/col-06.webp",
+   "emblem": {
+    "src": "/selos/folha/col-06-emblema.webp",
+    "x": 67.2,
+    "y": 114.4,
+    "w": 105.7,
+    "h": 110
+   },
+   "ink": "#F3E6CF",
+   "style": "EDIÇÃO OFICIAL",
+   "slots": {
+    "series": {
+     "text": "SÉRIE ÍCONES · Nº 06",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#F3E6CF",
+     "opacity": 1,
+     "w": 119.3
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 82,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 30,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#F3E6CF",
+     "opacity": 1,
+     "w": 134.8
+    },
+    "subtitle": {
+     "text": "Música · Beleza · Moda",
+     "x": 120,
+     "y": 96,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 9.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "middle",
+     "fill": "#F3E6CF",
+     "opacity": 0.85,
+     "w": 91
+    },
+    "style": {
+     "text": "EDIÇÃO OFICIAL",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#F3E6CF",
+     "opacity": 0.85,
+     "w": 118.9
+    },
+    "caption": {
+     "text": "Edição colecionador · vetor",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#F3E6CF",
+     "opacity": 0.7,
+     "w": 84.8
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#2A0F14",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/col-07",
+   "src": "/selos/folha/col-07.webp",
+   "emblem": {
+    "src": "/selos/folha/col-07-emblema.webp",
+    "x": 67.2,
+    "y": 114.4,
+    "w": 105.7,
+    "h": 110
+   },
+   "ink": "#FBF3DC",
+   "style": "EDIÇÃO OFICIAL",
+   "slots": {
+    "series": {
+     "text": "SÉRIE ÍCONES · Nº 07",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#FBF3DC",
+     "opacity": 1,
+     "w": 119.3
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 82,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 22,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#FBF3DC",
+     "opacity": 1,
+     "w": 123.8
+    },
+    "subtitle": {
+     "text": "Produtor · Diretor Criativo",
+     "x": 120,
+     "y": 96,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 9.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "middle",
+     "fill": "#FBF3DC",
+     "opacity": 0.85,
+     "w": 105
+    },
+    "style": {
+     "text": "EDIÇÃO OFICIAL",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#FBF3DC",
+     "opacity": 0.85,
+     "w": 94.3
+    },
+    "caption": {
+     "text": "Edição colecionador · vetor",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#FBF3DC",
+     "opacity": 0.7,
+     "w": 84.8
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/col-08",
+   "src": "/selos/folha/col-08.webp",
+   "emblem": {
+    "src": "/selos/folha/col-08-emblema.webp",
+    "x": 67.2,
+    "y": 114.4,
+    "w": 105.7,
+    "h": 110
+   },
+   "ink": "#2B2140",
+   "style": "EDIÇÃO OFICIAL",
+   "slots": {
+    "series": {
+     "text": "SÉRIE ÍCONES · Nº 08",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#2B2140",
+     "opacity": 1,
+     "w": 119.3
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 82,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 30,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.5,
+     "anchor": "middle",
+     "fill": "#2B2140",
+     "opacity": 1,
+     "w": 136
+    },
+    "subtitle": {
+     "text": "Atriz · Ícone de Estilo",
+     "x": 120,
+     "y": 96,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 9.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "middle",
+     "fill": "#2B2140",
+     "opacity": 0.85,
+     "w": 83.8
+    },
+    "style": {
+     "text": "EDIÇÃO OFICIAL",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#2B2140",
+     "opacity": 0.85,
+     "w": 106
+    },
+    "caption": {
+     "text": "Edição colecionador · vetor",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#2B2140",
+     "opacity": 0.7,
+     "w": 84.8
+    },
+    "emblem": {
+     "text": "FAI",
+     "x": 100,
+     "y": 134,
+     "m": [
+      0.62,
+      0,
+      0,
+      0.62,
+      58,
+      104
+     ],
+     "size": 60,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "middle",
+     "fill": "#C9B6E8",
+     "opacity": 1,
+     "w": 21
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/col-09",
+   "src": "/selos/folha/col-09.webp",
+   "emblem": {
+    "src": "/selos/folha/col-09-emblema.webp",
+    "x": 67.2,
+    "y": 114.4,
+    "w": 105.7,
+    "h": 110
+   },
+   "ink": "#3E3A36",
+   "style": "EDIÇÃO OFICIAL",
+   "slots": {
+    "series": {
+     "text": "SÉRIE ÍCONES · Nº 09",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#3E3A36",
+     "opacity": 1,
+     "w": 119.3
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 82,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#3E3A36",
+     "opacity": 1,
+     "w": 151.7
+    },
+    "subtitle": {
+     "text": "Música · Estilo",
+     "x": 120,
+     "y": 96,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 9.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "middle",
+     "fill": "#3E3A36",
+     "opacity": 0.85,
+     "w": 69.6
+    },
+    "style": {
+     "text": "EDIÇÃO OFICIAL",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#3E3A36",
+     "opacity": 0.85,
+     "w": 112.3
+    },
+    "caption": {
+     "text": "Edição colecionador · vetor",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#3E3A36",
+     "opacity": 0.7,
+     "w": 84.8
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 1,
+     "w": 24.5
+    }
+   }
+  },
+  {
+   "id": "folha/col-10",
+   "src": "/selos/folha/col-10.webp",
+   "emblem": {
+    "src": "/selos/folha/col-10-emblema.webp",
+    "x": 67.2,
+    "y": 114.4,
+    "w": 105.7,
+    "h": 110
+   },
+   "ink": "#FFF1E8",
+   "style": "EDIÇÃO OFICIAL",
+   "slots": {
+    "series": {
+     "text": "SÉRIE ÍCONES · Nº 10",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.2,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2.2,
+     "anchor": "middle",
+     "fill": "#FFF1E8",
+     "opacity": 1,
+     "w": 119.3
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 82,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 22,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#FFF1E8",
+     "opacity": 1,
+     "w": 136.5
+    },
+    "subtitle": {
+     "text": "Reggaetón · Cultura",
+     "x": 120,
+     "y": 96,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 9.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "middle",
+     "fill": "#FFF1E8",
+     "opacity": 0.85,
+     "w": 78.6
+    },
+    "style": {
+     "text": "EDIÇÃO OFICIAL",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#FFF1E8",
+     "opacity": 0.85,
+     "w": 115.9
+    },
+    "caption": {
+     "text": "Edição colecionador · vetor",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#FFF1E8",
+     "opacity": 0.7,
+     "w": 84.8
+    },
+    "emblem": {
+     "text": "FAI",
+     "x": 100,
+     "y": 130,
+     "m": [
+      0.62,
+      0,
+      0,
+      0.62,
+      58,
+      104
+     ],
+     "size": 44,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 2,
+     "anchor": "middle",
+     "fill": "#FF6F3C",
+     "opacity": 1,
+     "w": 40.4
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 24.5
+    }
+   }
+  },
+  {
+   "id": "folha/cmat-01",
+   "src": "/selos/folha/cmat-01.webp",
+   "emblem": {
+    "src": "/selos/folha/cmat-01-emblema.webp",
+    "x": 67.2,
+    "y": 114.4,
+    "w": 105.7,
+    "h": 110
+   },
+   "ink": "#3B3428",
+   "style": "PLÁSTICO",
+   "slots": {
+    "series": {
+     "text": "STREETWEAR · MATERIAL · Nº 01",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 6.4,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.3,
+     "anchor": "middle",
+     "fill": "#3B3428",
+     "opacity": 1,
+     "w": 140.5
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#3B3428",
+     "opacity": 1,
+     "w": 47.4
+    },
+    "style": {
+     "text": "PLÁSTICO",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#3B3428",
+     "opacity": 0.85,
+     "w": 45.8
+    },
+    "caption": {
+     "text": "Nós brilhantes · tubos com reflexo",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#3B3428",
+     "opacity": 0.75,
+     "w": 103.9
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#FBF9F4",
+     "opacity": 1,
+     "w": 24.5
+    }
+   }
+  },
+  {
+   "id": "folha/cmat-02",
+   "src": "/selos/folha/cmat-02.webp",
+   "emblem": {
+    "src": "/selos/folha/cmat-02-emblema.webp",
+    "x": 67.2,
+    "y": 114.4,
+    "w": 105.7,
+    "h": 110
+   },
+   "ink": "#1F4E9C",
+   "style": "CERÂMICA",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 100,
+     "y": 128,
+     "m": [
+      0.62,
+      0,
+      0,
+      0.62,
+      58,
+      104
+     ],
+     "size": 40,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -1,
+     "anchor": "middle",
+     "fill": "#1A1A1A",
+     "opacity": 1,
+     "w": 52.7
+    },
+    "series": {
+     "text": "STREETWEAR · MATERIAL · Nº 02",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 6.4,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.3,
+     "anchor": "middle",
+     "fill": "#1F4E9C",
+     "opacity": 1,
+     "w": 140.5
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#1F4E9C",
+     "opacity": 1,
+     "w": 75.8
+    },
+    "style": {
+     "text": "CERÂMICA",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#1F4E9C",
+     "opacity": 0.85,
+     "w": 48.2
+    },
+    "caption": {
+     "text": "Esmalte craquelado · traço em azul cobalto",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#1F4E9C",
+     "opacity": 0.75,
+     "w": 132.3
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#FFFFFF",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/cmat-03",
+   "src": "/selos/folha/cmat-03.webp",
+   "emblem": {
+    "src": "/selos/folha/cmat-03-emblema.webp",
+    "x": 67.2,
+    "y": 114.4,
+    "w": 105.7,
+    "h": 110
+   },
+   "ink": "#2A2C30",
+   "style": "METAL",
+   "slots": {
+    "series": {
+     "text": "STREETWEAR · MATERIAL · Nº 03",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 6.4,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.3,
+     "anchor": "middle",
+     "fill": "#2A2C30",
+     "opacity": 1,
+     "w": 140.5
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#2A2C30",
+     "opacity": 1,
+     "w": 58
+    },
+    "style": {
+     "text": "METAL",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#2A2C30",
+     "opacity": 0.85,
+     "w": 29.8
+    },
+    "caption": {
+     "text": "Aço escovado · nós cromados",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#2A2C30",
+     "opacity": 0.75,
+     "w": 89.7
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/cmat-04",
+   "src": "/selos/folha/cmat-04.webp",
+   "emblem": {
+    "src": "/selos/folha/cmat-04-emblema.webp",
+    "x": 67.2,
+    "y": 114.4,
+    "w": 105.7,
+    "h": 110
+   },
+   "ink": "#F3E6C8",
+   "style": "TECIDO",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 100,
+     "y": 128,
+     "m": [
+      0.62,
+      0,
+      0,
+      0.62,
+      58,
+      104
+     ],
+     "size": 40,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -1,
+     "anchor": "middle",
+     "fill": "#1F2A44",
+     "opacity": 1,
+     "w": 52.7
+    },
+    "series": {
+     "text": "STREETWEAR · MATERIAL · Nº 04",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 6.4,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.3,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 140.5
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 148
+    },
+    "style": {
+     "text": "TECIDO",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#F3E6C8",
+     "opacity": 0.85,
+     "w": 34.9
+    },
+    "caption": {
+     "text": "Denim · costura em linha amarela · botões",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#F3E6C8",
+     "opacity": 0.75,
+     "w": 128.9
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  },
+  {
+   "id": "folha/cmat-05",
+   "src": "/selos/folha/cmat-05.webp",
+   "emblem": {
+    "src": "/selos/folha/cmat-05-emblema.webp",
+    "x": 67.2,
+    "y": 114.4,
+    "w": 105.7,
+    "h": 110
+   },
+   "ink": "#F3E6C8",
+   "style": "COURO",
+   "slots": {
+    "emblem": {
+     "text": "FAI",
+     "x": 100,
+     "y": 134,
+     "m": [
+      0.62,
+      0,
+      0,
+      0.62,
+      58,
+      104
+     ],
+     "size": 54,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -2,
+     "anchor": "middle",
+     "fill": "#CE1141",
+     "opacity": 1,
+     "w": 35.4
+    },
+    "series": {
+     "text": "STREETWEAR · MATERIAL · Nº 05",
+     "x": 120,
+     "y": 48,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 6.4,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.3,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 140.5
+    },
+    "title": {
+     "text": "",
+     "x": 120,
+     "y": 70,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 19,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 0.5,
+     "anchor": "middle",
+     "fill": "#F3E6C8",
+     "opacity": 1,
+     "w": 83.2
+    },
+    "style": {
+     "text": "COURO",
+     "x": 40,
+     "y": 258,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7,
+     "weight": "500",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": 1.4,
+     "anchor": "start",
+     "fill": "#F3E6C8",
+     "opacity": 0.85,
+     "w": 33.1
+    },
+    "caption": {
+     "text": "Grão natural · pesponto · rebites de latão",
+     "x": 40,
+     "y": 269,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+     ],
+     "size": 7.5,
+     "weight": "400",
+     "family": "Georgia, 'Times New Roman', serif",
+     "italic": true,
+     "ls": 0,
+     "anchor": "start",
+     "fill": "#F3E6C8",
+     "opacity": 0.75,
+     "w": 124.8
+    },
+    "year": {
+     "text": "2026",
+     "x": 0,
+     "y": 4,
+     "m": [
+      1,
+      0,
+      0,
+      1,
+      184,
+      248
+     ],
+     "size": 11,
+     "weight": "700",
+     "family": "'Helvetica Neue', Helvetica, Arial, sans-serif",
+     "italic": false,
+     "ls": -0.3,
+     "anchor": "middle",
+     "fill": "#15151A",
+     "opacity": 1,
+     "w": 23.5
+    }
+   }
+  }
+ ]
+}

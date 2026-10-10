@@ -1,0 +1,53 @@
+{
+ "data": "2026-10-05",
+ "fase": "AVATAR-ID I3 (pele: balanço de branco pela esclera, rosto casado com o corpo)",
+ "conjunto": "16 retratos autorizados; 15 montados (1 recusado pelo filtro de qualidade); só agregados",
+ "pele": {
+  "skinColorErrorMediana": 0.2,
+  "skinColorErrorMax": 0.5,
+  "costuraDeltaEMediana": 1.5,
+  "costuraDeltaEMax": 3.6,
+  "costuras": 0,
+  "balancoDeBranco": {
+   "esclera": 15,
+   "grayWorld": 0
+  }
+ },
+ "rosto": {
+  "reprojecaoTodosMmMediana": 0.6,
+  "assimetriaPreservadaMediana": 0.895,
+  "assimetriaMedidaMmMediana": 1.54
+ },
+ "gateNoAparelho": {
+  "passaram": 14,
+  "total": 15
+ },
+ "semelhanca": {
+  "frente": {
+   "n": 15,
+   "I2": {
+    "sfaceMediana": 0.476,
+    "sfaceAcimaDoLimiar": 14,
+    "top1": 15
+   },
+   "I3": {
+    "sfaceMediana": 0.45,
+    "sfaceAcimaDoLimiar": 14,
+    "top1": 15
+   }
+  },
+  "tres_quartos": {
+   "n": 14,
+   "I2": {
+    "sfaceMediana": 0.404,
+    "sfaceAcimaDoLimiar": 9,
+    "top1": 13
+   },
+   "I3": {
+    "sfaceMediana": 0.372,
+    "sfaceAcimaDoLimiar": 8,
+    "top1": 13
+   }
+  }
+ }
+}

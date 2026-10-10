@@ -1,0 +1,28 @@
+register maison.e2e 429 {'code': 'MUITAS_TENTATIVAS', 'message': 'Muitas tentativas a partir desta rede. Aguarde alguns minutos e tente de novo.'}
+register estrela.e2e 429 {'code': 'MUITAS_TENTATIVAS', 'message': 'Muitas tentativas a partir desta rede. Aguarde alguns minutos e tente de novo.'}
+OK    marca cria selo com política (201)
+OK    celebridade cria selo de peça com política (201)
+OK    ana cria look com Nike + peça preta
+OK    sugestões do look 1 (200)
+OK    política da marca atendida → sugestão Maison
+OK    política da celebridade atendida → sugestão Estrela (selo de PEÇA)
+OK    look 2 sem Nike não recebe sugestão da Maison
+OK    antes do aceite o look não está em destaque (marca)
+OK    aceite da sugestão da marca → APPROVED
+OK    código rastreável BRD
+OK    look promovido aparece em Esquemas em destaque (anônimo)
+OK    entrada traz promotion vigente
+OK    Looks consagrados (visitante bia)
+OK    Peças em destaque incluem as peças do look (selo de LOOK)
+OK    aceite da celebridade sem consentimento de imagem → 400
+OK    aceite com consentimento → PENDING_REVIEW
+OK    pendente não aparece no perfil da celebridade
+OK    celebridade aprova → APPROVED (PRM)
+OK    look aparece no perfil da celebridade
+OK    selo de PEÇA destaca só a peça preta (Nike Dunk), nunca o jeans do mesmo look
+OK    look tornado privado (200)
+OK    look privado some do destaque da marca
+OK    look privado some dos consagrados
+OK    vínculos do look privado revogados (CA14)
+
+0 falha(s)

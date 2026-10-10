@@ -1,0 +1,120 @@
+@startuml RF53_Componentes_Integracoes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF53 — HypeScore v2 nas outras funcionalidades\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "Frontend (Next.js)" {
+  component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE0
+  component "/explorer\n(site)/(app)/explorer/page.tsx" as FE1
+  component "/feed\n(site)/(app)/feed/page.tsx" as FE2
+  component "/flair\n(site)/(app)/flair/page.tsx" as FE3
+  component "/looks\n(site)/(app)/looks/page.tsx" as FE4
+  component "/schemes/[id]/edit\n(site)/(app)/schemes/[id]/edit/page.tsx" as FE5
+  component "lib/api/client.ts" as APIC
+}
+package "fai-web (REST)" {
+  component "AdminController\n/api/admin/hype/recalibration" as AdminController
+  component "AutopilotController\n/api/copilot/context" as AutopilotController
+  component "DashboardController\n/api/admin/dashboard" as DashboardController
+  component "DiscoveryController\n/api/explorer/brands\n/api/explorer/insights\n/api/feed\n/api/runway\n(+1 rotas)" as DiscoveryController
+  component "FlairController\n/api/flair/me" as FlairController
+  component "FlairModesController\n/api/flair/modes/looks\n/api/flair/modes/runway" as FlairModesController
+}
+package "fai-application (casos de uso)" {
+  component "AdminService" as AdminService
+  component "CopilotService" as CopilotService
+  component "DashboardService" as DashboardService
+  component "SearchService" as SearchService
+  component "ExplorerService" as ExplorerService
+  component "FlairService" as FlairService
+  component "IdentityService" as IdentityService <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
+  component "AssetCatalogService" as AssetCatalogService <<apoio>>
+  component "ChallengeService" as ChallengeService <<apoio>>
+  component "HypeScoreService" as HypeScoreService <<apoio>>
+  component "InventoryScoreService" as InventoryScoreService <<apoio>>
+  component "UploadQuarantine" as UploadQuarantine <<apoio>>
+  component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
+  component "AnalyticsQueryPort\n«MysqlAnalyticsAdapter»" as AnalyticsQueryPort <<port>>
+}
+package "fai-domain (repositórios)" {
+  component "UserRepository\nModerationQueueRepository\nWardrobeItemRepository\nCommentRepository\nAuditLogRepository\nAiInferenceLogRepository\nBackupRecordRepository\nSchemeRepository\nSchemeItemRepository\nDailyLookRepository\n(+18)" as REPO_MySQL
+}
+database "MySQL\n• ai_inference_log\n• audit_log\n• backup_records\n• brand_profiles\n• brands\n• celebrity_profiles\n• comments\n• daily_looks\n• flair_coin_entries\n• flair_combinations\n• flair_match_entries\n• flair_matches\n(+16)" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+APIC --> AdminController : HTTPS/JSON
+APIC --> AutopilotController : HTTPS/JSON
+APIC --> DashboardController : HTTPS/JSON
+APIC --> DiscoveryController : HTTPS/JSON
+APIC --> FlairController : HTTPS/JSON
+APIC --> FlairModesController : HTTPS/JSON
+AdminController --> AdminService
+AdminService --> AI
+AdminService --> AnalyticsQueryPort
+AdminService --> REPO_MySQL
+AdminService ..> AssetCatalogService
+AdminService ..> ChallengeService
+AdminService ..> HypeScoreConfig
+AdminService ..> HypeScoreService
+AdminService ..> IdentityService
+AdminService ..> InventoryScoreService
+AdminService ..> NotificationService
+AdminService ..> UploadQuarantine
+AutopilotController --> CopilotService
+CopilotService --> AI
+CopilotService --> REPO_MySQL
+CopilotService ..> ChallengeService
+CopilotService ..> InventoryScoreService
+DashboardController --> DashboardService
+DashboardService --> AI
+DashboardService --> AnalyticsQueryPort
+DashboardService --> REPO_MySQL
+DashboardService ..> HypeScoreConfig
+DiscoveryController --> ExplorerService
+DiscoveryController --> SearchService
+ExplorerService --> AI
+ExplorerService --> AnalyticsQueryPort
+ExplorerService --> REPO_MySQL
+ExplorerService ..> HypeScoreConfig
+FE0 --> APIC
+FE1 --> APIC
+FE2 --> APIC
+FE3 --> APIC
+FE4 --> APIC
+FE5 --> APIC
+FlairController --> FlairService
+FlairService --> REPO_MySQL
+FlairService ..> HypeScoreConfig
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+SearchService --> REPO_MySQL
+SearchService ..> ChallengeService
+SearchService ..> HypeScoreConfig
+@enduml

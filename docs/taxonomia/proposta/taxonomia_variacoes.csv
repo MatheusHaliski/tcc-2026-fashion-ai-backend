@@ -1,0 +1,542 @@
+category,subcategory,variation,displayNamePtBr,displayNameEn,descriptionPtBr,tier,priority,aliases
+upper_piece,t_shirt,BABY_TEE,Baby look,Baby tee,"Camiseta pequena e ajustada, geralmente curta, de silhueta feminina.",EXTENDED,2,baby tee|baby look|babylook|camiseta baby look|shrunken tee|baby t
+upper_piece,t_shirt,POCKET_TEE,Com bolso,Pocket tee,Camiseta com bolso aplicado no peito.,EXTENDED,3,pocket tee|pocket t-shirt|camiseta com bolso|com bolso|pocket
+upper_piece,t_shirt,RINGER,Ringer,Ringer,Camiseta com ribana contrastante na gola e nas mangas.,NICHE,4,ringer|ringer tee|contrast trim tee|camiseta ringer
+upper_piece,shirt,DRESS_SHIRT,Social,Dress shirt,"Camisa formal estruturada, colarinho firme e punho, feita para gravata.",CORE,1,dress shirt|camisa social|social|formal shirt|camisa de punho|camisa de colarinho
+upper_piece,shirt,OVERSHIRT,Overshirt,Overshirt,"Camisa de tecido pesado usada aberta como terceira peça, entre camisa e jaqueta.",CORE,2,overshirt|over shirt|sobrecamisa|shacket|shirt jacket|camisa jaqueta|camisa pesada
+upper_piece,shirt,WESTERN,Western,Western,"Camisa com pala recortada no peito e nas costas, geralmente com botões de pressão.",EXTENDED,3,western|western shirt|camisa western|camisa country|cowboy shirt
+upper_piece,shirt,WORK_SHIRT,Utilitária,Work shirt,"Camisa de trabalho em tecido resistente, bolsos com lapela e costuras reforçadas.",EXTENDED,3,work shirt|utility shirt|camisa utilitária|camisa utilitaria|workwear shirt|camisa de trabalho
+upper_piece,shirt,TUXEDO_SHIRT,Camisa de smoking,Tuxedo shirt,Camisa de gala com peitilho plissado e punho duplo.,NICHE,4,tuxedo shirt|camisa de smoking|camisa de gala|peitilho
+upper_piece,shirt,GUAYABERA,Guayabera,Guayabera,"Camisa leve com pregas verticais e quatro bolsos, tradicional do Caribe.",NICHE,5,guayabera|camisa cubana de pregas
+upper_piece,shirt,POPOVER,Popover,Popover,"Camisa vestida pela cabeça, com abotoamento só até o meio do peito.",NICHE,5,popover|popover shirt|meia abotoadura|half placket shirt
+upper_piece,shirt,SAFARI,Safári,Safari,"Peça com quatro bolsos com lapela, cinto e ombreiras, inspirada no uniforme de campo.",NICHE,5,safari|safári|safari shirt|safari jacket|bush jacket
+upper_piece,blouse,PEASANT,Bata camponesa,Peasant,"Blusa solta com decote franzido e mangas amplas, de inspiração folk.",CORE,1,peasant|peasant blouse|bata|bata camponesa|ciganinha|boho blouse
+upper_piece,blouse,WRAP,Transpassado(a),Wrap,Painel frontal cruza sobre o outro e fecha com amarração ou botão lateral.,CORE,1,wrap|transpassado|transpassada|envelope|wrap dress|wrap skirt|wrap top|faux wrap|amarração lateral
+upper_piece,blouse,CAMISOLE,Alcinha (cami),Camisole,"Top leve de alças finas, tradicionalmente em tecido fluido.",CORE,2,camisole|cami|alcinha|blusa de alcinha|regata de alcinha|spaghetti strap|regata de seda
+upper_piece,blouse,TUNIC,Túnica,Tunic,Blusa longa e reta que cobre o quadril.,EXTENDED,2,tunic|túnica|tunica|blusa túnica|batão
+upper_piece,blouse,CORSET,Corset,Corset,"Corpo estruturado com barbatanas, recortes e ajuste de espartilho.",EXTENDED,3,corset|corselet|corselete|espartilho|bustier|corset top|vestido corset|body corset
+upper_piece,blouse,PEPLUM,Peplum,Peplum,Babado ou recorte evasê preso logo abaixo da cintura.,EXTENDED,3,peplum|péplum
+upper_piece,blouse,RUFFLED,Com babados,Ruffled,"Blusa construída com babados aplicados no corpo, gola ou mangas.",EXTENDED,3,ruffled|ruffle|babado|babados|blusa de babado|frill
+upper_piece,blouse,SMOCKED,Lastex (franzido),Smocked,Franzido elástico tipo lastex que ajusta ao corpo.,EXTENDED,3,smocked|lastex|shirred|franzido|franzida|com lastex|smocking
+upper_piece,blouse,KNOT_FRONT,Nó frontal,Knot front,Fechamento ou acabamento com nó amarrado na frente.,NICHE,4,knot front|tie front|nó frontal|amarração frontal|amarrar na frente|nozinho
+upper_piece,tank_top,MUSCLE_TANK,Machão (cavada),Muscle tank,Regata de cava profunda e alças largas.,CORE,1,muscle tank|muscle tee|machão|machao|regata machão|cavada|regata cavada|tank cavada
+upper_piece,tank_top,RACERBACK,Nadador,Racerback,Costas em Y com cavas profundas que liberam as escápulas.,CORE,1,racerback|racer back|nadador|costas nadador|regata nadador
+upper_piece,tank_top,CAMISOLE,Alcinha (cami),Camisole,"Top leve de alças finas, tradicionalmente em tecido fluido.",CORE,2,camisole|cami|alcinha|blusa de alcinha|regata de alcinha|spaghetti strap|regata de seda
+upper_piece,crop_top,BANDEAU,Faixa (tomara que caia),Bandeau,Top em faixa sem alças que envolve o busto.,CORE,1,bandeau|tube top|faixa|top faixa|tomara que caia top|top tubo
+upper_piece,crop_top,CORSET,Corset,Corset,"Corpo estruturado com barbatanas, recortes e ajuste de espartilho.",CORE,2,corset|corselet|corselete|espartilho|bustier|corset top|vestido corset|body corset
+upper_piece,crop_top,BABY_TEE,Baby look,Baby tee,"Camiseta pequena e ajustada, geralmente curta, de silhueta feminina.",EXTENDED,2,baby tee|baby look|babylook|camiseta baby look|shrunken tee|baby t
+upper_piece,crop_top,KNOT_FRONT,Nó frontal,Knot front,Fechamento ou acabamento com nó amarrado na frente.,EXTENDED,2,knot front|tie front|nó frontal|amarração frontal|amarrar na frente|nozinho
+upper_piece,crop_top,BRALETTE,Bralette,Bralette,"Top curto com estrutura de sutiã sem bojo nem aro, usado aparente.",EXTENDED,3,bralette|top sutiã|top sutia|bra top
+upper_piece,crop_top,WRAP,Transpassado(a),Wrap,Painel frontal cruza sobre o outro e fecha com amarração ou botão lateral.,EXTENDED,3,wrap|transpassado|transpassada|envelope|wrap dress|wrap skirt|wrap top|faux wrap|amarração lateral
+upper_piece,polo_shirt,KNIT_POLO,Polo de tricô,Knit polo,"Polo feita em tricô, geralmente com gola aberta e textura de malharia.",EXTENDED,2,knit polo|polo de tricô|polo tricot|polo tricô|polo de malha retilínea|sweater polo
+upper_piece,polo_shirt,RUGBY,Rugby,Rugby,Malha pesada de manga longa com gola de camisa branca e botões emborrachados.,EXTENDED,3,rugby|rugby shirt|camisa rugby|polo rugby
+upper_piece,polo_shirt,JOHNNY_COLLAR,Gola johnny,Johnny collar,"Polo sem botões, com decote em V raso abaixo da gola.",NICHE,4,johnny collar|gola johnny|polo sem botão|polo decote v
+upper_piece,bodysuit,CORSET,Corset,Corset,"Corpo estruturado com barbatanas, recortes e ajuste de espartilho.",EXTENDED,2,corset|corselet|corselete|espartilho|bustier|corset top|vestido corset|body corset
+upper_piece,bodysuit,WRAP,Transpassado(a),Wrap,Painel frontal cruza sobre o outro e fecha com amarração ou botão lateral.,EXTENDED,2,wrap|transpassado|transpassada|envelope|wrap dress|wrap skirt|wrap top|faux wrap|amarração lateral
+upper_piece,bodysuit,CUTOUT,Vazado,Cutout,Recortes vazados que expõem partes do corpo como elemento de construção.,EXTENDED,3,cutout|cut out|cut-out|vazado|recortes vazados
+upper_piece,bodysuit,LEOTARD,Collant,Leotard,"Body de malha elástica de dança, inteiriço e ajustado.",NICHE,5,leotard|collant|body de balé|maiô de balé
+upper_piece,sweater,CHUNKY_KNIT,Tricô grosso,Chunky knit,"Malharia de fio grosso e pontos aparentes, volumosa.",CORE,1,chunky knit|chunky|tricô grosso|trico grosso|fio grosso|maxi tricô|heavy knit
+upper_piece,sweater,FINE_KNIT,Tricô fino,Fine knit,"Malharia de fio fino e trama fechada, lisa e leve.",CORE,1,fine knit|fine gauge|tricô fino|trico fino|fio fino|merino fino|lightweight knit
+upper_piece,sweater,CABLE_KNIT,Trança,Cable knit,"Pontos em trança em relevo, tradição do suéter de pescador irlandês.",CORE,2,cable knit|cable|trança|tranca|tricô trançado|aran|fisherman sweater|suéter de tranças
+upper_piece,sweater,QUARTER_ZIP,Meio zíper,Quarter zip,Peça vestida pela cabeça com zíper curto no peito e gola alta.,EXTENDED,2,quarter zip|1/4 zip|half zip|meio zíper|meio ziper|meio-zíper|zip curto
+upper_piece,sweater,POINTELLE,Pointelle,Pointelle,Malha com pequenos furos vazados em padrão delicado.,NICHE,4,pointelle|tricô vazado|malha vazada
+upper_piece,sweatshirt,CREWNECK,Careca (gola redonda),Crewneck,Moletom fechado de gola redonda sem capuz nem zíper.,CORE,1,crewneck|crew neck|careca|moletom careca|gola careca|crew sweatshirt
+upper_piece,sweatshirt,QUARTER_ZIP,Meio zíper,Quarter zip,Peça vestida pela cabeça com zíper curto no peito e gola alta.,CORE,2,quarter zip|1/4 zip|half zip|meio zíper|meio ziper|meio-zíper|zip curto
+upper_piece,sweatshirt,FULL_ZIP,Aberto com zíper,Full zip,Abertura frontal com zíper de cima a baixo.,EXTENDED,3,full zip|zip up|zip-up|com zíper|com ziper|aberto|moletom aberto|zip hoodie|canguru aberto
+upper_piece,sweatshirt,MOCK_NECK,Gola alta curta,Mock neck,"Gola alta curta que não dobra, colada ao pescoço.",NICHE,4,mock neck|mockneck|gola alta curta|meia gola
+upper_piece,hoodie,FULL_ZIP,Aberto com zíper,Full zip,Abertura frontal com zíper de cima a baixo.,CORE,1,full zip|zip up|zip-up|com zíper|com ziper|aberto|moletom aberto|zip hoodie|canguru aberto
+upper_piece,hoodie,PULLOVER,Fechado (pullover),Pullover,"Vestido pela cabeça, sem abertura frontal.",CORE,1,pullover|fechado|canguru|moletom fechado|pull over
+upper_piece,hoodie,QUARTER_ZIP,Meio zíper,Quarter zip,Peça vestida pela cabeça com zíper curto no peito e gola alta.,NICHE,4,quarter zip|1/4 zip|half zip|meio zíper|meio ziper|meio-zíper|zip curto
+upper_piece,cardigan,CHUNKY_KNIT,Tricô grosso,Chunky knit,"Malharia de fio grosso e pontos aparentes, volumosa.",CORE,1,chunky knit|chunky|tricô grosso|trico grosso|fio grosso|maxi tricô|heavy knit
+upper_piece,cardigan,FINE_KNIT,Tricô fino,Fine knit,"Malharia de fio fino e trama fechada, lisa e leve.",CORE,1,fine knit|fine gauge|tricô fino|trico fino|fio fino|merino fino|lightweight knit
+upper_piece,cardigan,OPEN_FRONT,Aberto sem fechamento,Open front,"Cardigã sem botões nem zíper, usado aberto.",CORE,2,open front|sem botão|sem botões|aberto|kimono cardigan|waterfall
+upper_piece,cardigan,CABLE_KNIT,Trança,Cable knit,"Pontos em trança em relevo, tradição do suéter de pescador irlandês.",EXTENDED,2,cable knit|cable|trança|tranca|tricô trançado|aran|fisherman sweater|suéter de tranças
+upper_piece,cardigan,BOLERO,Bolero,Bolero / shrug,Casaquinho muito curto que cobre só ombros e braços.,EXTENDED,3,bolero|shrug|casaquinho curto
+upper_piece,cardigan,WRAP,Transpassado(a),Wrap,Painel frontal cruza sobre o outro e fecha com amarração ou botão lateral.,EXTENDED,3,wrap|transpassado|transpassada|envelope|wrap dress|wrap skirt|wrap top|faux wrap|amarração lateral
+upper_piece,vest,PUFFER,Puffer (acolchoado),Puffer,"Gomos acolchoados com enchimento de pluma ou fibra, com aspecto inflado.",CORE,1,puffer|puffer jacket|jaqueta puffer|colete puffer|puffer vest|parka puffer|acolchoado|acolchoada|baiacu|jaqueta baiacu|down jacket|nuvem|gilet
+upper_piece,vest,WAISTCOAT,Colete de alfaiataria,Waistcoat,"Colete social de botões, parte do terno de três peças.",CORE,1,waistcoat|colete social|colete de alfaiataria|colete de terno|suit vest|gilet de alfaiataria
+upper_piece,vest,SWEATER_VEST,Colete de tricô,Sweater vest,"Colete de malharia sem mangas, usado sobre camisa ou camiseta.",CORE,2,sweater vest|colete de tricô|colete tricot|colete de lã|slipover|knit vest
+upper_piece,vest,UTILITY_VEST,Colete utilitário,Utility vest,"Colete com muitos bolsos aplicados, de inspiração pesca ou tática.",EXTENDED,3,utility vest|colete utilitário|colete utilitario|fishing vest|colete de bolsos|colete tático|cargo vest
+upper_piece,blazer,TAILORED,Alfaiataria,Tailored,"Construção de alfaiataria com pences, vincos, entretela ou cós estruturado.",CORE,1,tailored|alfaiataria|de alfaiataria|social|dress shorts|estruturado|estruturada
+upper_piece,blazer,UNSTRUCTURED,Desestruturado,Unstructured,"Blazer sem entretela nem ombreira, com caimento macio.",CORE,1,unstructured|desestruturado|desconstruído|deconstructed|soft blazer|sport coat
+upper_piece,blazer,TUXEDO,Smoking,Tuxedo,Paletó de gala com lapela em cetim ou gorgorão.,EXTENDED,3,tuxedo|smoking|dinner jacket|blazer smoking|paletó smoking
+upper_piece,blazer,NORFOLK,Norfolk,Norfolk,Paletó esportivo com pregas verticais nas costas e cinto.,NICHE,5,norfolk|norfolk jacket
+upper_piece,blazer,SPENCER,Spencer,Spencer,Paletó curto na altura da cintura.,NICHE,5,spencer|spencer jacket|blazer curto
+upper_piece,jacket,BIKER,Biker (perfecto),Biker,"Jaqueta curta e ajustada com zíper assimétrico, lapelas largas e fivelas.",CORE,1,biker|biker jacket|perfecto|moto jacket|jaqueta de motoqueiro|jaqueta perfecto|rider jacket
+upper_piece,jacket,BOMBER,Bomber,Bomber,"Jaqueta curta com ribana na cintura e nos punhos e zíper frontal, de origem militar.",CORE,1,bomber|bomber jacket|jaqueta bomber|flight jacket|ma-1|ma1|blouson|jaqueta aviador
+upper_piece,jacket,PUFFER,Puffer (acolchoado),Puffer,"Gomos acolchoados com enchimento de pluma ou fibra, com aspecto inflado.",CORE,1,puffer|puffer jacket|jaqueta puffer|colete puffer|puffer vest|parka puffer|acolchoado|acolchoada|baiacu|jaqueta baiacu|down jacket|nuvem|gilet
+upper_piece,jacket,TRUCKER,Trucker (jaqueta jeans),Trucker,"Jaqueta curta e quadrada com dois bolsos de lapela no peito e recortes, clássica no jeans.",CORE,1,trucker|trucker jacket|jaqueta jeans|jaqueta de jeans|denim jacket|jean jacket|type iii
+upper_piece,jacket,TRACK_JACKET,Jaqueta de agasalho,Track jacket,"Jaqueta esportiva leve com zíper e gola alta, de tricot ou tactel.",CORE,2,track jacket|track top|jaqueta de agasalho|jaqueta tactel|jaqueta tricot|firebird|agasalho
+upper_piece,jacket,QUILTED,Matelassê,Quilted,Pespontos em losango ou gomos planos com enchimento fino.,EXTENDED,2,quilted|matelassê|matelasse|matelassado|jaqueta matelassê|diamond quilted|liner jacket
+upper_piece,jacket,VARSITY,College (varsity),Varsity,"Jaqueta de beisebol com corpo em lã, mangas contrastantes e ribanas.",EXTENDED,2,varsity|varsity jacket|letterman|college|jaqueta college|baseball jacket|jaqueta de beisebol
+upper_piece,jacket,CHORE,Chore coat,Chore coat,"Jaqueta de trabalho reta e quadrada com bolsos chapados, em lona ou sarja.",EXTENDED,3,chore|chore coat|chore jacket|work jacket|jaqueta de trabalho|french work jacket
+upper_piece,jacket,COACH,Coach,Coach jacket,Jaqueta leve de nylon com botões de pressão e gola de camisa.,EXTENDED,3,coach|coach jacket|jaqueta coach
+upper_piece,jacket,FIELD,Field (M-65),Field jacket,Jaqueta militar de campo com quatro bolsos frontais e capuz embutido.,EXTENDED,3,field jacket|field|m65|m-65|jaqueta militar|jaqueta de campo
+upper_piece,jacket,HARRINGTON,Harrington,Harrington,"Jaqueta leve na cintura com gola de padre, mangas raglã e forro xadrez.",EXTENDED,3,harrington|harrington jacket|g9
+upper_piece,jacket,SAFARI,Safári,Safari,"Peça com quatro bolsos com lapela, cinto e ombreiras, inspirada no uniforme de campo.",NICHE,5,safari|safári|safari shirt|safari jacket|bush jacket
+upper_piece,coat,OVERCOAT,Sobretudo,Overcoat,"Casaco longo e estruturado abaixo do joelho, usado sobre o terno.",CORE,1,overcoat|sobretudo|topcoat|top coat|casaco longo de lã|maxi casaco
+upper_piece,coat,PEACOAT,Peacoat,Peacoat,"Casaco curto transpassado em lã pesada, de origem naval.",CORE,1,peacoat|pea coat|pea-coat|casaco marinheiro|japona
+upper_piece,coat,TRENCH,Trench coat,Trench coat,"Casaco transpassado com cinto, dragonas e pala, tradicionalmente em gabardine.",CORE,1,trench|trench coat|trenchcoat|gabardine|capa trench
+upper_piece,coat,PUFFER,Puffer (acolchoado),Puffer,"Gomos acolchoados com enchimento de pluma ou fibra, com aspecto inflado.",CORE,2,puffer|puffer jacket|jaqueta puffer|colete puffer|puffer vest|parka puffer|acolchoado|acolchoada|baiacu|jaqueta baiacu|down jacket|nuvem|gilet
+upper_piece,coat,WRAP,Transpassado(a),Wrap,Painel frontal cruza sobre o outro e fecha com amarração ou botão lateral.,CORE,2,wrap|transpassado|transpassada|envelope|wrap dress|wrap skirt|wrap top|faux wrap|amarração lateral
+upper_piece,coat,CAPE,Capa / poncho,Cape,Peça sem mangas definidas que cai dos ombros envolvendo o corpo.,EXTENDED,3,cape|capa|poncho|capelet|manta poncho|ponche
+upper_piece,coat,CAR_COAT,Car coat,Car coat,Casaco reto e prático na altura do meio da coxa.,EXTENDED,3,car coat|carcoat
+upper_piece,coat,COCOON,Casulo,Cocoon,"Casaco arredondado nos ombros e na barra, em forma de casulo.",EXTENDED,3,cocoon|casulo|cocoon coat|egg coat
+upper_piece,coat,DUFFLE,Duffle,Duffle coat,Casaco com capuz e fechamento por alamares de madeira ou chifre.,EXTENDED,3,duffle|duffle coat|duffel coat|montgomery|alamar
+upper_piece,coat,RAINCOAT,Capa de chuva,Raincoat,Casaco impermeável de construção vedada contra chuva.,EXTENDED,3,raincoat|capa de chuva|impermeável|impermeavel|mac|mackintosh|slicker|rain jacket
+upper_piece,coat,CHESTERFIELD,Chesterfield,Chesterfield,Sobretudo formal de abotoamento simples com gola de veludo.,NICHE,4,chesterfield|chesterfield coat
+upper_piece,parka,PUFFER,Puffer (acolchoado),Puffer,"Gomos acolchoados com enchimento de pluma ou fibra, com aspecto inflado.",CORE,1,puffer|puffer jacket|jaqueta puffer|colete puffer|puffer vest|parka puffer|acolchoado|acolchoada|baiacu|jaqueta baiacu|down jacket|nuvem|gilet
+upper_piece,parka,SNORKEL,Snorkel (N-3B),Snorkel parka,Parka de capuz profundo com borda de pelo formando um túnel.,CORE,1,snorkel|snorkel parka|n3b|n-3b|parka com pelo
+upper_piece,parka,FISHTAIL,Fishtail (M-51),Fishtail parka,Parka militar com barra traseira em cauda de peixe.,EXTENDED,3,fishtail|fishtail parka|m51|m-51|parka mod
+upper_piece,parka,SHELL,Shell técnico,Shell,"Casca técnica impermeável e respirável, para sobrepor camadas.",EXTENDED,3,shell|hardshell|hard shell|softshell|soft shell|3 em 1|3-in-1|gore-tex|goretex
+upper_piece,windbreaker,ANORAK,Anoraque,Anorak,"Corta-vento vestido pela cabeça com meio zíper, capuz e bolso canguru.",CORE,1,anorak|anoraque|pullover windbreaker|anorak jacket
+upper_piece,windbreaker,SHELL,Shell técnico,Shell,"Casca técnica impermeável e respirável, para sobrepor camadas.",EXTENDED,2,shell|hardshell|hard shell|softshell|soft shell|3 em 1|3-in-1|gore-tex|goretex
+upper_piece,windbreaker,PACKABLE,Dobrável,Packable,Corta-vento leve que se guarda no próprio bolso.,EXTENDED,3,packable|dobrável|dobravel|compactável|pocketable
+upper_piece,kimono,KIMONO_CARDIGAN,Kimono aberto,Kimono cardigan,Kimono leve e fluido usado aberto como terceira peça ou saída de praia.,CORE,1,kimono cardigan|kimono aberto|saída de praia kimono|quimono leve|kimono de praia|cover up kimono
+upper_piece,kimono,ROBE_KIMONO,Kimono robe,Robe kimono,Kimono longo transpassado com faixa na cintura.,EXTENDED,3,robe kimono|kimono robe|kimono com faixa|kimono longo
+upper_piece,kimono,HAORI,Haori,Haori,"Kimono curto estruturado como jaqueta, de gola reta.",NICHE,4,haori|kimono jacket|jaqueta kimono
+lower_piece,jeans,REGULAR,Regular,Regular,"Reta com folga padrão no quadril e na coxa, o corte tradicional.",CORE,1,regular|regular fit|regular straight|tradicional|classic fit|corte tradicional
+lower_piece,jeans,SKINNY,Skinny,Skinny,"Justa do quadril ao tornozelo, colada na coxa e na panturrilha.",CORE,1,skinny|super skinny|extra skinny|skinny fit|calça skinny|jeans skinny|spray on|jegging|jeggings
+lower_piece,jeans,SLIM,Slim,Slim,"Ajustada na coxa e estreita até a barra, sem colar como a skinny.",CORE,1,slim|slim fit|slim leg|ajustada|calça slim|jeans slim
+lower_piece,jeans,STRAIGHT,Reta,Straight,"Largura constante da coxa à barra, em linha reta.",CORE,1,straight|straight leg|straight fit|reta|perna reta|calça reta|jeans reto|reto
+lower_piece,jeans,WIDE_LEG,Wide leg,Wide leg,"Perna larga e reta desde o quadril, com barra bem mais larga que a coxa.",CORE,1,wide leg|wide|wide fit|wide-leg|perna larga|pernas largas|calça larga|pantalona|jeans pantalona
+lower_piece,jeans,BAGGY,Baggy,Baggy,"Muito ampla e com sobra de tecido, normalmente caída no quadril e empilhada na barra.",CORE,2,baggy|baggy fit|super baggy|extra baggy|jorts baggy
+lower_piece,jeans,BOOTCUT,Bootcut,Bootcut,Ajustada até o joelho e levemente aberta na barra para passar sobre a bota.,CORE,2,bootcut|boot cut|boot-cut|semi flare|semi-flare|flare suave|slim boot
+lower_piece,jeans,BOYFRIEND,Boyfriend,Boyfriend,"Corte feminino emprestado do masculino: reto, folgado e caído no quadril.",CORE,2,boyfriend|boyfriend jeans|boyfriend fit|boy friend
+lower_piece,jeans,FLARE,Flare,Flare,"Justa no quadril e na coxa, abrindo a partir do joelho em formato de sino.",CORE,2,flare|flared|calça flare|jeans flare|kick flare|flare leg
+lower_piece,jeans,LOOSE,Loose,Loose,"Ampla do quadril à barra, mais folgada que a relaxed e menos que a baggy.",CORE,2,loose|loose fit|solta|folgada
+lower_piece,jeans,MOM,Mom,Mom,"Cintura alta, quadril folgado e perna que afunila até a barra.",CORE,2,mom|mom jeans|mom fit|calça mom|short mom|mom short
+lower_piece,jeans,RELAXED,Relaxed,Relaxed,"Reta com folga extra no quadril e na coxa, sem chegar ao volume da baggy.",CORE,2,relaxed|relaxed fit|relax|confort|comfort fit
+lower_piece,jeans,TAPERED,Tapered,Tapered,Folgada na coxa e afunilando progressivamente até a barra estreita.,CORE,2,tapered|taper|slim taper|slim tapered|afunilada|cenoura leve|regular taper
+lower_piece,jeans,ATHLETIC,Athletic,Athletic,"Mais espaço no assento e na coxa, afunilando até o tornozelo, para corpos musculosos.",EXTENDED,3,athletic|athletic fit|athletic taper|athletic slim
+lower_piece,jeans,BARREL,Barrel,Barrel,"Perna curva com volume no joelho que se fecha na barra, em formato de barril ou ferradura.",EXTENDED,3,barrel|barrel leg|barrel fit|horseshoe|horseshoe jeans|ferradura|curved leg|curve leg
+lower_piece,jeans,CARPENTER,Carpinteiro,Carpenter,Modelagem de trabalho com alça lateral para martelo e bolsos utilitários.,EXTENDED,3,carpenter|carpinteiro|carpenter pants|carpenter jeans|utility carpenter|painter pants
+lower_piece,jeans,CARROT,Cenoura,Carrot,Volume no quadril com pregas ou recortes e perna afunilando forte até a barra.,EXTENDED,3,carrot|carrot fit|cenoura|calça cenoura|carrot leg
+lower_piece,jeans,CIGARETTE,Cigarrete,Cigarette,"Reta e estreita, normalmente no comprimento do tornozelo.",EXTENDED,3,cigarette|cigarrete|cigarrete pants|cigarette pants|calça cigarrete
+lower_piece,jeans,DAD,Dad,Dad,"Versão masculina e reta da mom, com cintura média e folga uniforme.",EXTENDED,4,dad|dad jeans|dad fit
+lower_piece,jeans,BALLOON,Balão,Balloon,"Volume arredondado em toda a perna, mais exagerado que a barrel, preso na barra.",NICHE,4,balloon|balloon leg|balão|calça balão|bubble leg
+lower_piece,jeans,BELL_BOTTOM,Boca de sino,Bell-bottom,"Flare acentuado com abertura muito larga na barra, típico dos anos 70.",NICHE,4,bell bottom|bell-bottom|boca de sino|bellbottom|super flare
+lower_piece,jeans,GIRLFRIEND,Girlfriend,Girlfriend,"Versão mais ajustada da boyfriend, com cintura mais alta e perna afunilada.",NICHE,4,girlfriend|girlfriend jeans|girlfriend fit
+lower_piece,jeans,JOGGER_JEANS,Jogger jeans,Jogger jeans,"Jeans com modelagem de jogger, cós ou barra com elástico e punho.",NICHE,5,jogger jeans|jogg jeans|jeans jogger|denim jogger
+lower_piece,tailored_pants,SLIM,Slim,Slim,"Ajustada na coxa e estreita até a barra, sem colar como a skinny.",CORE,1,slim|slim fit|slim leg|ajustada|calça slim|jeans slim
+lower_piece,tailored_pants,STRAIGHT,Reta,Straight,"Largura constante da coxa à barra, em linha reta.",CORE,1,straight|straight leg|straight fit|reta|perna reta|calça reta|jeans reto|reto
+lower_piece,tailored_pants,WIDE_LEG,Wide leg,Wide leg,"Perna larga e reta desde o quadril, com barra bem mais larga que a coxa.",CORE,1,wide leg|wide|wide fit|wide-leg|perna larga|pernas largas|calça larga
+lower_piece,tailored_pants,CIGARETTE,Cigarrete,Cigarette,"Reta e estreita, normalmente no comprimento do tornozelo.",CORE,2,cigarette|cigarrete|cigarrete pants|cigarette pants|calça cigarrete
+lower_piece,tailored_pants,PALAZZO,Pantalona,Palazzo,"Muito ampla e fluida desde a cintura alta, com caimento quase de saia.",CORE,2,palazzo|pantalona|calça pantalona|palazzo pants
+lower_piece,tailored_pants,TAPERED,Tapered,Tapered,Folgada na coxa e afunilando progressivamente até a barra estreita.,CORE,2,tapered|taper|slim taper|slim tapered|afunilada|cenoura leve|regular taper
+lower_piece,tailored_pants,BOOTCUT,Bootcut,Bootcut,Ajustada até o joelho e levemente aberta na barra para passar sobre a bota.,EXTENDED,3,bootcut|boot cut|boot-cut|semi flare|semi-flare|flare suave|slim boot
+lower_piece,tailored_pants,CARROT,Cenoura,Carrot,Volume no quadril com pregas ou recortes e perna afunilando forte até a barra.,EXTENDED,3,carrot|carrot fit|cenoura|calça cenoura|carrot leg
+lower_piece,tailored_pants,FLARE,Flare,Flare,"Justa no quadril e na coxa, abrindo a partir do joelho em formato de sino.",EXTENDED,3,flare|flared|calça flare|jeans flare|kick flare|flare leg
+lower_piece,tailored_pants,BARREL,Barrel,Barrel,"Perna curva com volume no joelho que se fecha na barra, em formato de barril ou ferradura.",NICHE,4,barrel|barrel leg|barrel fit|horseshoe|horseshoe jeans|ferradura|curved leg|curve leg
+lower_piece,casual_pants,SLIM,Slim,Slim,"Ajustada na coxa e estreita até a barra, sem colar como a skinny.",CORE,1,slim|slim fit|slim leg|ajustada|calça slim|jeans slim
+lower_piece,casual_pants,STRAIGHT,Reta,Straight,"Largura constante da coxa à barra, em linha reta.",CORE,1,straight|straight leg|straight fit|reta|perna reta|calça reta|jeans reto|reto
+lower_piece,casual_pants,WIDE_LEG,Wide leg,Wide leg,"Perna larga e reta desde o quadril, com barra bem mais larga que a coxa.",CORE,1,wide leg|wide|wide fit|wide-leg|perna larga|pernas largas|calça larga
+lower_piece,casual_pants,PALAZZO,Pantalona,Palazzo,"Muito ampla e fluida desde a cintura alta, com caimento quase de saia.",CORE,2,palazzo|pantalona|calça pantalona|palazzo pants
+lower_piece,casual_pants,RELAXED,Relaxed,Relaxed,"Reta com folga extra no quadril e na coxa, sem chegar ao volume da baggy.",CORE,2,relaxed|relaxed fit|relax|confort|comfort fit
+lower_piece,casual_pants,TAPERED,Tapered,Tapered,Folgada na coxa e afunilando progressivamente até a barra estreita.,CORE,2,tapered|taper|slim taper|slim tapered|afunilada|cenoura leve|regular taper
+lower_piece,casual_pants,BAGGY,Baggy,Baggy,"Muito ampla e com sobra de tecido, normalmente caída no quadril e empilhada na barra.",EXTENDED,2,baggy|baggy fit|super baggy|extra baggy|jorts baggy
+lower_piece,casual_pants,FLARE,Flare,Flare,"Justa no quadril e na coxa, abrindo a partir do joelho em formato de sino.",EXTENDED,2,flare|flared|calça flare|jeans flare|kick flare|flare leg
+lower_piece,casual_pants,BARREL,Barrel,Barrel,"Perna curva com volume no joelho que se fecha na barra, em formato de barril ou ferradura.",EXTENDED,3,barrel|barrel leg|barrel fit|horseshoe|horseshoe jeans|ferradura|curved leg|curve leg
+lower_piece,casual_pants,CARPENTER,Carpinteiro,Carpenter,Modelagem de trabalho com alça lateral para martelo e bolsos utilitários.,EXTENDED,3,carpenter|carpinteiro|carpenter pants|carpenter jeans|utility carpenter|painter pants
+lower_piece,casual_pants,CARROT,Cenoura,Carrot,Volume no quadril com pregas ou recortes e perna afunilando forte até a barra.,EXTENDED,3,carrot|carrot fit|cenoura|calça cenoura|carrot leg
+lower_piece,casual_pants,CIGARETTE,Cigarrete,Cigarette,"Reta e estreita, normalmente no comprimento do tornozelo.",EXTENDED,3,cigarette|cigarrete|cigarrete pants|cigarette pants|calça cigarrete
+lower_piece,casual_pants,LOOSE,Loose,Loose,"Ampla do quadril à barra, mais folgada que a relaxed e menos que a baggy.",EXTENDED,3,loose|loose fit|solta|folgada
+lower_piece,casual_pants,PAPERBAG,Clochard,Paperbag,"Cintura franzida e alta presa por faixa ou cinto, formando babado acima do cós.",EXTENDED,3,paperbag|paper bag|paperbag waist|clochard|calça clochard|short clochard
+lower_piece,casual_pants,PARACHUTE,Paraquedas,Parachute,"Ampla, em tecido leve tipo nylon, com elásticos ou cordões ajustáveis na barra.",EXTENDED,3,parachute|parachute pants|paraquedas|calça paraquedas|nylon parachute
+lower_piece,casual_pants,SKINNY,Skinny,Skinny,"Justa do quadril ao tornozelo, colada na coxa e na panturrilha.",EXTENDED,3,skinny|super skinny|extra skinny|skinny fit|calça skinny|jeans skinny|spray on|jegging|jeggings
+lower_piece,casual_pants,HAREM,Saruel,Harem,"Gancho baixo e volume no quadril, afunilando na barra.",NICHE,5,harem|harem pants|saruel|calça saruel|drop crotch
+lower_piece,chino_pants,SLIM,Slim,Slim,"Ajustada na coxa e estreita até a barra, sem colar como a skinny.",CORE,1,slim|slim fit|slim leg|ajustada|calça slim|jeans slim
+lower_piece,chino_pants,STRAIGHT,Reta,Straight,"Largura constante da coxa à barra, em linha reta.",CORE,1,straight|straight leg|straight fit|reta|perna reta|calça reta|jeans reto|reto
+lower_piece,chino_pants,TAPERED,Tapered,Tapered,Folgada na coxa e afunilando progressivamente até a barra estreita.,CORE,2,tapered|taper|slim taper|slim tapered|afunilada|cenoura leve|regular taper
+lower_piece,chino_pants,RELAXED,Relaxed,Relaxed,"Reta com folga extra no quadril e na coxa, sem chegar ao volume da baggy.",EXTENDED,2,relaxed|relaxed fit|relax|confort|comfort fit
+lower_piece,chino_pants,WIDE_LEG,Wide leg,Wide leg,"Perna larga e reta desde o quadril, com barra bem mais larga que a coxa.",EXTENDED,3,wide leg|wide|wide fit|wide-leg|perna larga|pernas largas|calça larga
+lower_piece,chino_pants,SKINNY,Skinny,Skinny,"Justa do quadril ao tornozelo, colada na coxa e na panturrilha.",NICHE,4,skinny|super skinny|extra skinny|skinny fit|calça skinny|jeans skinny|spray on|jegging|jeggings
+lower_piece,cargo_pants,BAGGY,Baggy,Baggy,"Muito ampla e com sobra de tecido, normalmente caída no quadril e empilhada na barra.",CORE,1,baggy|baggy fit|super baggy|extra baggy|jorts baggy
+lower_piece,cargo_pants,RELAXED,Relaxed,Relaxed,"Reta com folga extra no quadril e na coxa, sem chegar ao volume da baggy.",CORE,1,relaxed|relaxed fit|relax|confort|comfort fit
+lower_piece,cargo_pants,STRAIGHT,Reta,Straight,"Largura constante da coxa à barra, em linha reta.",CORE,1,straight|straight leg|straight fit|reta|perna reta|calça reta|jeans reto|reto
+lower_piece,cargo_pants,CUFFED_JOGGER,Jogger com punho,Cuffed jogger,Perna afunilada terminando em punho de ribana ou elástico no tornozelo.,CORE,2,cuffed|com punho|punho na barra|cuffed jogger|cargo jogger|jogger cargo
+lower_piece,cargo_pants,WIDE_LEG,Wide leg,Wide leg,"Perna larga e reta desde o quadril, com barra bem mais larga que a coxa.",CORE,2,wide leg|wide|wide fit|wide-leg|perna larga|pernas largas|calça larga
+lower_piece,cargo_pants,PARACHUTE,Paraquedas,Parachute,"Ampla, em tecido leve tipo nylon, com elásticos ou cordões ajustáveis na barra.",EXTENDED,3,parachute|parachute pants|paraquedas|calça paraquedas|nylon parachute
+lower_piece,cargo_pants,SLIM,Slim,Slim,"Ajustada na coxa e estreita até a barra, sem colar como a skinny.",EXTENDED,3,slim|slim fit|slim leg|ajustada|calça slim|jeans slim
+lower_piece,cargo_pants,TAPERED,Tapered,Tapered,Folgada na coxa e afunilando progressivamente até a barra estreita.,EXTENDED,3,tapered|taper|slim taper|slim tapered|afunilada|cenoura leve|regular taper
+lower_piece,cargo_pants,BARREL,Barrel,Barrel,"Perna curva com volume no joelho que se fecha na barra, em formato de barril ou ferradura.",NICHE,4,barrel|barrel leg|barrel fit|horseshoe|horseshoe jeans|ferradura|curved leg|curve leg
+lower_piece,jogger_pants,RELAXED,Relaxed,Relaxed,"Reta com folga extra no quadril e na coxa, sem chegar ao volume da baggy.",CORE,1,relaxed|relaxed fit|relax|confort|comfort fit
+lower_piece,jogger_pants,SLIM,Slim,Slim,"Ajustada na coxa e estreita até a barra, sem colar como a skinny.",CORE,1,slim|slim fit|slim leg|ajustada|calça slim|jeans slim
+lower_piece,jogger_pants,CARGO_JOGGER,Jogger cargo,Cargo jogger,Jogger com bolsos laterais tipo cargo na coxa.,EXTENDED,2,cargo jogger|jogger cargo|jogger com bolsos
+lower_piece,sweatpants,CUFFED_JOGGER,Jogger com punho,Cuffed jogger,Perna afunilada terminando em punho de ribana ou elástico no tornozelo.,CORE,1,cuffed|com punho|punho na barra|cuffed jogger|cargo jogger|jogger cargo
+lower_piece,sweatpants,OPEN_HEM,Barra reta,Open hem,"Perna reta sem punho, barra aberta como calça comum.",CORE,1,open hem|open-hem|barra aberta|barra reta|straight hem|sem punho
+lower_piece,sweatpants,WIDE_LEG,Wide leg,Wide leg,"Perna larga e reta desde o quadril, com barra bem mais larga que a coxa.",CORE,2,wide leg|wide|wide fit|wide-leg|perna larga|pernas largas|calça larga
+lower_piece,sweatpants,BAGGY,Baggy,Baggy,"Muito ampla e com sobra de tecido, normalmente caída no quadril e empilhada na barra.",EXTENDED,2,baggy|baggy fit|super baggy|extra baggy|jorts baggy
+lower_piece,sweatpants,TRACK_PANTS,Calça de agasalho,Track pants,"Calça esportiva leve de tactel ou tricot, com faixas laterais e zíper na barra.",EXTENDED,2,track pants|trackpants|calça de agasalho|calça tactel|calça tricot|tear away|track pant
+lower_piece,sweatpants,FLARE,Flare,Flare,"Justa no quadril e na coxa, abrindo a partir do joelho em formato de sino.",EXTENDED,3,flare|flared|calça flare|jeans flare|kick flare|flare leg
+lower_piece,leggings,FLARE_LEGGING,Legging flare,Flare legging,Legging justa até o joelho que abre em flare até a barra.,CORE,1,flare legging|legging flare|yoga flare|flared leggings|bootcut legging|legging bailarina
+lower_piece,leggings,COMPRESSION,Compressão,Compression,Construção de alta compressão que modela e sustenta a musculatura.,EXTENDED,2,compression|compressão|compressao|modeladora|sculpt|contour|shaping
+lower_piece,leggings,SEAMLESS,Sem costura,Seamless,Tecida em tubo sem costuras laterais.,EXTENDED,2,seamless|sem costura|sem costuras
+lower_piece,leggings,SCRUNCH,Franzida (empina),Scrunch,Franzido no centro traseiro que realça o glúteo.,EXTENDED,3,scrunch|scrunch butt|empina bumbum|franzida atrás|ruched butt
+lower_piece,leggings,STIRRUP,Estribo,Stirrup,Legging com faixa que passa sob a sola do pé.,NICHE,5,stirrup|estribo|legging com pezinho|stirrup legging
+lower_piece,culottes,WIDE_LEG,Wide leg,Wide leg,"Perna larga e reta desde o quadril, com barra bem mais larga que a coxa.",CORE,1,wide leg|wide|wide fit|wide-leg|perna larga|pernas largas|calça larga
+lower_piece,culottes,PANTSKIRT,Saia-calça,Skirt pants,Pantacourt tão ampla que parece saia em movimento.,EXTENDED,2,saia calça|saia-calça|skirt pants|pant skirt|culotte saia
+lower_piece,culottes,GAUCHO,Gaúcha,Gaucho,"Pantacourt ampla e evasê na altura da panturrilha, inspirada na bombacha.",NICHE,4,gaucho|gaúcho|gaucha|gaúcha|bombacha
+lower_piece,shorts,BIKE_SHORT,Ciclista,Bike short,"Justo e elástico até a metade da coxa, como bermuda de ciclismo.",CORE,1,bike short|biker short|biker shorts|bike shorts|ciclista|bermuda ciclista|short ciclista|shorts ciclista|short legging
+lower_piece,shorts,CARGO,Cargo,Cargo,"Bolsos laterais grandes com lapela na coxa, aplicados em short, bermuda ou saia.",CORE,1,cargo|short cargo|bermuda cargo|saia cargo|cargo shorts|cargo skirt
+lower_piece,shorts,CHINO,Chino,Chino,"Corte de alfaiataria casual em sarja, com bolso faca e cós limpo.",CORE,1,chino|chinos|short chino|bermuda chino|chino shorts
+lower_piece,shorts,TAILORED,Alfaiataria,Tailored,"Construção de alfaiataria com pences, vincos, entretela ou cós estruturado.",CORE,2,tailored|alfaiataria|de alfaiataria|social|dress shorts|estruturado|estruturada
+lower_piece,shorts,VOLLEY,Short de praia,Volley short,Short curto de tecido leve com cós de elástico e forro de tela.,CORE,2,volley|volley short|swim short|swim trunks|short de praia|short de banho|short tactel|shorts tactel
+lower_piece,shorts,BOARD,Boardshort,Boardshort,"Short de surf comprido, sem elástico, com fechamento de amarração frontal.",EXTENDED,2,boardshort|board short|board shorts|boardshorts|bermuda de surf|short de surf
+lower_piece,shorts,MOM,Mom,Mom,"Cintura alta, quadril folgado e perna que afunila até a barra.",EXTENDED,2,mom|mom jeans|mom fit|calça mom|short mom|mom short
+lower_piece,shorts,BOYFRIEND,Boyfriend,Boyfriend,"Corte feminino emprestado do masculino: reto, folgado e caído no quadril.",EXTENDED,3,boyfriend|boyfriend jeans|boyfriend fit|boy friend
+lower_piece,shorts,PAPERBAG,Clochard,Paperbag,"Cintura franzida e alta presa por faixa ou cinto, formando babado acima do cós.",EXTENDED,3,paperbag|paper bag|paperbag waist|clochard|calça clochard|short clochard
+lower_piece,shorts,RELAXED,Relaxed,Relaxed,"Reta com folga extra no quadril e na coxa, sem chegar ao volume da baggy.",EXTENDED,3,relaxed|relaxed fit|relax|confort|comfort fit
+lower_piece,shorts,DOLPHIN,Dolphin,Dolphin,Short esportivo curto com barra arredondada e fendas laterais.,NICHE,4,dolphin|dolphin shorts|split hem short|short de corrida curto
+lower_piece,bermuda_shorts,CARGO,Cargo,Cargo,"Bolsos laterais grandes com lapela na coxa, aplicados em short, bermuda ou saia.",CORE,1,cargo|short cargo|bermuda cargo|saia cargo|cargo shorts|cargo skirt
+lower_piece,bermuda_shorts,CHINO,Chino,Chino,"Corte de alfaiataria casual em sarja, com bolso faca e cós limpo.",CORE,1,chino|chinos|short chino|bermuda chino|chino shorts
+lower_piece,bermuda_shorts,BIKE_SHORT,Ciclista,Bike short,"Justo e elástico até a metade da coxa, como bermuda de ciclismo.",CORE,2,bike short|biker short|biker shorts|bike shorts|ciclista|bermuda ciclista|short ciclista|shorts ciclista|short legging
+lower_piece,bermuda_shorts,TAILORED,Alfaiataria,Tailored,"Construção de alfaiataria com pences, vincos, entretela ou cós estruturado.",CORE,2,tailored|alfaiataria|de alfaiataria|social|dress shorts|estruturado|estruturada
+lower_piece,bermuda_shorts,BOARD,Boardshort,Boardshort,"Short de surf comprido, sem elástico, com fechamento de amarração frontal.",EXTENDED,2,boardshort|board short|board shorts|boardshorts|bermuda de surf|short de surf
+lower_piece,bermuda_shorts,BAGGY,Baggy,Baggy,"Muito ampla e com sobra de tecido, normalmente caída no quadril e empilhada na barra.",EXTENDED,3,baggy|baggy fit|super baggy|extra baggy|jorts baggy
+lower_piece,bermuda_shorts,RELAXED,Relaxed,Relaxed,"Reta com folga extra no quadril e na coxa, sem chegar ao volume da baggy.",EXTENDED,3,relaxed|relaxed fit|relax|confort|comfort fit
+lower_piece,denim_shorts,MOM,Mom,Mom,"Cintura alta, quadril folgado e perna que afunila até a barra.",CORE,1,mom|mom jeans|mom fit|calça mom|short mom|mom short
+lower_piece,denim_shorts,BOYFRIEND,Boyfriend,Boyfriend,"Corte feminino emprestado do masculino: reto, folgado e caído no quadril.",CORE,2,boyfriend|boyfriend jeans|boyfriend fit|boy friend
+lower_piece,denim_shorts,STRAIGHT,Reta,Straight,"Largura constante da coxa à barra, em linha reta.",CORE,2,straight|straight leg|straight fit|reta|perna reta|calça reta|jeans reto|reto
+lower_piece,denim_shorts,BAGGY,Baggy,Baggy,"Muito ampla e com sobra de tecido, normalmente caída no quadril e empilhada na barra.",EXTENDED,2,baggy|baggy fit|super baggy|extra baggy|jorts baggy|jorts
+lower_piece,denim_shorts,RELAXED,Relaxed,Relaxed,"Reta com folga extra no quadril e na coxa, sem chegar ao volume da baggy.",EXTENDED,2,relaxed|relaxed fit|relax|confort|comfort fit
+lower_piece,denim_shorts,CARGO,Cargo,Cargo,"Bolsos laterais grandes com lapela na coxa, aplicados em short, bermuda ou saia.",EXTENDED,3,cargo|short cargo|bermuda cargo|saia cargo|cargo shorts|cargo skirt
+lower_piece,denim_shorts,A_LINE,Evasê,A-line,"Ajustada na cintura e abrindo gradualmente até a barra, em formato de A.",NICHE,4,a line|a-line|aline|evasê|evase|trapézio|trapezio
+lower_piece,skirt,A_LINE,Evasê,A-line,"Ajustada na cintura e abrindo gradualmente até a barra, em formato de A.",CORE,1,a line|a-line|aline|evasê|evase|trapézio|trapezio
+lower_piece,skirt,PENCIL,Lápis,Pencil,"Reta e ajustada ao corpo, afunilando levemente até a barra.",CORE,1,pencil|pencil skirt|lápis|lapis|saia lápis|saia lapis|tubinho saia
+lower_piece,skirt,PLEATED,Plissada / pregueada,Pleated,Pregas em toda a volta que dão movimento e volume controlado.,CORE,1,pleated|plissada|plissado|plissê|plisse|pregueada|de pregas|pleats|knife pleat|box pleat|saia de prega
+lower_piece,skirt,SLIP,Slip,Slip,"Cortada no viés em tecido fluido, desliza sobre o corpo sem pences.",CORE,2,slip|slip dress|slip skirt|vestido slip|saia slip|camisola|viés|bias cut
+lower_piece,skirt,STRAIGHT_SKIRT,Reta,Straight skirt,"Saia reta da cintura à barra, sem afunilar nem abrir.",CORE,2,straight skirt|saia reta|column skirt|saia reta midi
+lower_piece,skirt,WRAP,Transpassado(a),Wrap,Painel frontal cruza sobre o outro e fecha com amarração ou botão lateral.,CORE,2,wrap|transpassado|transpassada|envelope|wrap dress|wrap skirt|wrap top|faux wrap|amarração lateral
+lower_piece,skirt,CIRCLE,Godê,Circle,"Cortada em círculo, abre muito a partir da cintura com bastante movimento.",EXTENDED,2,circle|circle skirt|godê|gode|saia godê|rodada|saia rodada|skater skirt|skater
+lower_piece,skirt,CARGO,Cargo,Cargo,"Bolsos laterais grandes com lapela na coxa, aplicados em short, bermuda ou saia.",EXTENDED,3,cargo|short cargo|bermuda cargo|saia cargo|cargo shorts|cargo skirt
+lower_piece,skirt,TIERED,Em camadas,Tiered,"Faixas horizontais franzidas sobrepostas, cada uma mais larga que a anterior.",EXTENDED,3,tiered|camadas|em camadas|três marias|tres marias|babados em camadas|prairie
+lower_piece,skirt,BUBBLE,Balonê,Bubble,"Volume arredondado preso de volta na barra, formando um balão.",NICHE,4,bubble|balonê|balone|puffball|bubble hem|barra balonê
+lower_piece,skirt,MERMAID,Sereia,Mermaid,"Justa até o joelho e abrindo em godê na barra, como cauda de sereia.",NICHE,4,mermaid|sereia|trumpet|trompete|fishtail skirt
+lower_piece,skirt,TULIP,Tulipa,Tulip,"Painéis sobrepostos que formam barra em pétala, lembrando uma tulipa invertida.",NICHE,4,tulip|tulipa|petal skirt|pétala
+lower_piece,skirt,GODET,Godet (recortes),Godet,Recortes triangulares inseridos na barra que dão movimento sem volume no quadril.,NICHE,5,godet|godet skirt|godets
+lower_piece,skirt,SARONG,Pareô,Sarong,"Peça de tecido amarrada no corpo, aberta e assimétrica.",NICHE,5,sarong|pareô|pareo|canga saia
+lower_piece,skort,A_LINE,Evasê,A-line,"Ajustada na cintura e abrindo gradualmente até a barra, em formato de A.",CORE,1,a line|a-line|aline|evasê|evase|trapézio|trapezio
+lower_piece,skort,PLEATED,Plissada / pregueada,Pleated,Pregas em toda a volta que dão movimento e volume controlado.,CORE,1,pleated|plissada|plissado|plissê|plisse|pregueada|de pregas|pleats|knife pleat|box pleat|saia de prega|saia de tênis|tennis skirt
+lower_piece,skort,WRAP,Transpassado(a),Wrap,Painel frontal cruza sobre o outro e fecha com amarração ou botão lateral.,EXTENDED,3,wrap|transpassado|transpassada|envelope|wrap dress|wrap skirt|wrap top|faux wrap|amarração lateral
+shoes_piece,casual_sneakers,COURT,Court (quadra),Court,"Tênis baixo de cabedal liso e sola plana, inspirado nos tênis de quadra.",CORE,1,court|court sneaker|tênis de quadra casual|tenis branco|cupsole court|minimalist sneaker
+shoes_piece,casual_sneakers,LIFESTYLE_RUNNER,Runner casual,Lifestyle runner,"Tênis de corrida retrô usado no dia a dia, com entressola de espuma.",CORE,1,lifestyle runner|retro runner|runner|jogging retrô|tênis runner|tenis runner
+shoes_piece,casual_sneakers,VULCANIZED,Vulcanizado (lona),Vulcanized,"Sola de borracha vulcanizada colada ao cabedal, típica do tênis de lona.",CORE,1,vulcanized|vulcanizado|vulc|plimsoll|canvas sneaker|tênis de lona|tenis de lona|sapatênis lona
+shoes_piece,casual_sneakers,CHUNKY,Chunky (dad shoe),Chunky,Tênis de sola grossa e proporções exageradas.,CORE,2,chunky|chunky sneaker|dad shoe|dad sneaker|tênis chunky|tenis chunky|tênis robusto|ugly sneaker
+shoes_piece,casual_sneakers,TERRACE,Terrace,Terrace,"Tênis baixo e fino com sola de borracha crua, de raiz no futebol de salão.",CORE,2,terrace|terrace sneaker|gum sole|low profile|low-profile|tênis fininho|indoor retro
+shoes_piece,casual_sneakers,SOCK_SNEAKER,Tênis meia,Sock sneaker,"Cabedal de malha que veste como meia, sem lingueta.",EXTENDED,3,sock sneaker|tênis meia|tenis meia|knit sneaker|sock trainer
+shoes_piece,casual_sneakers,TRAIL_INSPIRED,Trail casual,Trail-inspired,Tênis casual com solado e reforços de trilha (estética outdoor).,EXTENDED,3,trail inspired|gorpcore|outdoor sneaker|trail sneaker|hiking sneaker
+shoes_piece,casual_sneakers,BALLET_SNEAKER,Sneakerina,Ballet sneaker,"Híbrido de sapatilha e tênis, de cabedal baixo e fino.",NICHE,4,ballet sneaker|sneakerina|sapatilha tênis
+shoes_piece,casual_sneakers,SNEAKER_MULE,Tênis mule,Sneaker mule,"Tênis sem calcanhar, calçado como tamanco.",NICHE,5,sneaker mule|tênis mule|tenis mule|backless sneaker
+shoes_piece,running_shoes,ROAD,Asfalto,Road,"Tênis de corrida para asfalto, com amortecimento e sola lisa.",CORE,1,road|road running|asfalto|corrida de rua|daily trainer
+shoes_piece,running_shoes,TRAIL,Trilha,Trail,Solado com cravos e proteção para terreno irregular.,CORE,1,trail|trail running|trilha|tênis de trilha|tenis de trilha|trail runner
+shoes_piece,running_shoes,MAX_CUSHION,Máximo amortecimento,Max cushion,Entressola muito alta e macia para longas distâncias.,EXTENDED,2,max cushion|maximal|máximo amortecimento|super amortecido|max cushioning
+shoes_piece,running_shoes,STABILITY,Estabilidade,Stability,Corrida com suporte medial para controle de pronação.,EXTENDED,2,stability|estabilidade|pronação|pronacao|suporte|motion control
+shoes_piece,running_shoes,RACING,Competição (placa),Racing,"Leve, com placa de carbono ou nylon, para prova e ritmo.",EXTENDED,3,racing|racer|placa de carbono|carbon plate|competição|super shoe|tênis de prova
+shoes_piece,running_shoes,TRACK_SPIKE,Sapatilha de pista,Track spike,Calçado de atletismo com pregos na sola.,NICHE,5,spike|spikes|track spike|sapatilha de atletismo|sapatilha com pregos
+shoes_piece,training_shoes,CROSS_TRAINING,Cross training,Cross-training,Base larga e estável para treino funcional e academia.,CORE,1,cross training|crosstraining|cross-training|cross|treino funcional|hiit|crossfit
+shoes_piece,training_shoes,MINIMALIST,Minimalista (barefoot),Minimalist,"Sola fina e flexível sem drop, que imita o pé descalço.",EXTENDED,3,minimalist|minimalista|barefoot|zero drop|drop zero
+shoes_piece,training_shoes,WEIGHTLIFTING,Levantamento de peso,Weightlifting,Salto rígido elevado e cabedal firme para levantamento olímpico.,EXTENDED,3,weightlifting|lifting shoe|levantamento de peso|lpo|lifter
+shoes_piece,basketball_shoes,PERFORMANCE,Performance,Performance,Construção moderna de alto desempenho para a quadra.,CORE,1,performance|quadra|on court|tênis de jogo
+shoes_piece,basketball_shoes,RETRO_HERITAGE,Retrô / clássico,Retro heritage,Relançamento de modelo clássico de quadra usado como lifestyle.,CORE,1,retro|retrô|heritage|og|clássico de quadra|retro basketball
+shoes_piece,skate_shoes,CUPSOLE,Cupsole,Cupsole,"Sola em peça única costurada ao cabedal, mais estruturada e protegida.",CORE,1,cupsole|cup sole|sola costurada
+shoes_piece,skate_shoes,VULCANIZED,Vulcanizado (lona),Vulcanized,"Sola de borracha vulcanizada colada ao cabedal, típica do tênis de lona.",CORE,1,vulcanized|vulcanizado|vulc|plimsoll|canvas sneaker|tênis de lona|tenis de lona|sapatênis lona
+shoes_piece,skate_shoes,PUFFY,Puffy (anos 90),Puffy,"Tênis de skate acolchoado e volumoso, estética dos anos 90.",EXTENDED,3,puffy|puffy skate|skate chunky|fat skate shoe
+shoes_piece,high_top_sneakers,COURT,Court (quadra),Court,"Tênis baixo de cabedal liso e sola plana, inspirado nos tênis de quadra.",CORE,1,court|court sneaker|tênis de quadra casual|tenis branco|cupsole court|minimalist sneaker
+shoes_piece,high_top_sneakers,VULCANIZED,Vulcanizado (lona),Vulcanized,"Sola de borracha vulcanizada colada ao cabedal, típica do tênis de lona.",CORE,1,vulcanized|vulcanizado|vulc|plimsoll|canvas sneaker|tênis de lona|tenis de lona|sapatênis lona
+shoes_piece,high_top_sneakers,RETRO_HERITAGE,Retrô / clássico,Retro heritage,Relançamento de modelo clássico de quadra usado como lifestyle.,CORE,2,retro|retrô|heritage|og|clássico de quadra|retro basketball
+shoes_piece,high_top_sneakers,CHUNKY,Chunky (dad shoe),Chunky,Tênis de sola grossa e proporções exageradas.,EXTENDED,3,chunky|chunky sneaker|dad shoe|dad sneaker|tênis chunky|tenis chunky|tênis robusto|ugly sneaker
+shoes_piece,high_top_sneakers,SNEAKER_BOOT,Tênis bota,Sneaker boot,Tênis de cano alto com estrutura e solado de bota.,EXTENDED,3,sneaker boot|tênis bota|tenis bota|bota tênis
+shoes_piece,high_top_sneakers,WEDGE_SNEAKER,Sneaker anabela,Wedge sneaker,Tênis de cano alto com salto anabela interno.,NICHE,5,wedge sneaker|sneaker anabela|tênis anabela|tenis anabela
+shoes_piece,loafers,HORSEBIT,Horsebit,Horsebit loafer,Mocassim com fivela metálica em forma de freio de cavalo.,CORE,1,horsebit|horse bit|bit loafer|loafer com fivela|loafer com metal
+shoes_piece,loafers,PENNY,Penny,Penny loafer,Mocassim com tira recortada sobre o peito do pé.,CORE,1,penny|penny loafer|loafer penny|college loafer
+shoes_piece,loafers,TASSEL,Tassel,Tassel loafer,Mocassim com pingentes de couro (borlas) no peito do pé.,CORE,2,tassel|tassel loafer|loafer com franja|borla
+shoes_piece,loafers,VENETIAN,Veneziano,Venetian loafer,Mocassim liso sem adornos.,EXTENDED,2,venetian|veneziano|plain loafer|loafer liso
+shoes_piece,loafers,MULE,Mule,Mule,"Calçado sem calcanhar, aberto atrás.",EXTENDED,3,mule|mules|backless|tamanquinho|mule de salto|mule loafer
+shoes_piece,loafers,SMOKING_SLIPPER,Slipper,Smoking slipper,"Slipper de veludo ou couro macio, de origem formal.",EXTENDED,3,smoking slipper|slipper|velvet slipper|slipper de veludo|albert slipper
+shoes_piece,loafers,BELGIAN,Belga,Belgian loafer,Loafer macio com pequeno laço na frente.,NICHE,5,belgian|belgian loafer|loafer belga
+shoes_piece,loafers,KILTIE,Kiltie,Kiltie,Lingueta franjada sobre os cadarços ou o peito do pé.,NICHE,5,kiltie|franja kiltie
+shoes_piece,moccasins,BOAT_SHOE,Dockside,Boat shoe,Mocassim náutico com cadarço de couro em volta e sola antiderrapante.,CORE,1,boat shoe|dockside|docksider|sapato náutico|deck shoe|top sider
+shoes_piece,moccasins,DRIVING,Driver,Driving,Mocassim macio com cravos de borracha que sobem pelo calcanhar.,CORE,1,driving|driver|driving moccasin|driving loafer|gommino|mocassim driver
+shoes_piece,moccasins,SOFT_SOLE_MOC,Mocassim tradicional,Soft-sole moccasin,"Mocassim de couro macio com sola fina, sem salto.",EXTENDED,3,moccasin|soft sole|mocassim tradicional|mocassim de couro macio
+shoes_piece,moccasins,CAMP_MOC,Camp moc,Camp moc,Mocassim com costura aparente no peito do pé e cadarço.,NICHE,4,camp moc|camp moccasin
+shoes_piece,oxford_shoes,BROGUE,Brogue,Brogue,Sapato com perfurações decorativas; full brogue tem biqueira em asa (wingtip).,CORE,1,brogue|brogues|wingtip|wing tip|full brogue|semi brogue|semi-brogue|quarter brogue|perfurado
+shoes_piece,oxford_shoes,CAP_TOE,Biqueira (cap toe),Cap toe,Biqueira costurada atravessando a ponta do sapato.,CORE,1,cap toe|captoe|biqueira|com biqueira
+shoes_piece,oxford_shoes,PLAIN_TOE,Bico liso,Plain toe,Sapato de bico liso sem costuras decorativas.,CORE,1,plain toe|bico liso|liso
+shoes_piece,oxford_shoes,WHOLECUT,Wholecut,Wholecut,Cabedal feito de uma única peça de couro.,EXTENDED,3,wholecut|whole cut|peça única
+shoes_piece,oxford_shoes,SADDLE_SHOE,Saddle,Saddle shoe,Sapato com faixa de couro contrastante no meio do pé.,NICHE,5,saddle shoe|saddle oxford|bicolor saddle
+shoes_piece,derby_shoes,BROGUE,Brogue,Brogue,Sapato com perfurações decorativas; full brogue tem biqueira em asa (wingtip).,CORE,1,brogue|brogues|wingtip|wing tip|full brogue|semi brogue|semi-brogue|quarter brogue|perfurado
+shoes_piece,derby_shoes,PLAIN_TOE,Bico liso,Plain toe,Sapato de bico liso sem costuras decorativas.,CORE,1,plain toe|bico liso|liso
+shoes_piece,derby_shoes,APRON_TOE,Moc toe,Apron toe,"Costura em U sobre a frente do pé, como mocassim.",EXTENDED,2,apron toe|moc toe|moc-toe|split toe
+shoes_piece,derby_shoes,CAP_TOE,Biqueira (cap toe),Cap toe,Biqueira costurada atravessando a ponta do sapato.,EXTENDED,2,cap toe|captoe|biqueira|com biqueira
+shoes_piece,derby_shoes,MONK_STRAP,Monk,Monk strap,Sapato fechado por uma ou duas tiras com fivela.,EXTENDED,2,monk|monk strap|double monk|single monk|monkstrap|sapato de fivela
+shoes_piece,ankle_boots,CHELSEA,Chelsea,Chelsea,Bota de cano curto com elástico nas laterais e puxador.,CORE,1,chelsea|chelsea boot|bota chelsea|botina chelsea|elástico lateral
+shoes_piece,ankle_boots,CHUKKA,Chukka,Chukka,Bota no tornozelo com dois ou três pares de ilhoses e cabedal simples.,CORE,1,chukka|chukka boot|bota chukka
+shoes_piece,ankle_boots,WORK,Work boot,Work boot,"Bota de trabalho robusta com cadarço, couro grosso e sola resistente.",CORE,1,work boot|work|botina|botina de trabalho|bota de trabalho|moc toe boot|bota de segurança
+shoes_piece,ankle_boots,COWBOY,Texana / western,Cowboy,"Bota de cano com bico fino, salto cubano e pespontos decorativos.",CORE,2,cowboy|cowboy boot|western boot|texana|bota texana|bota country|bota western|botina country
+shoes_piece,ankle_boots,HIKING,Trekking,Hiking,"Bota de trilha com cano no tornozelo, suporte e sola com cravos.",CORE,2,hiking|hiking boot|trekking|bota de trilha|bota trekking|bota adventure|hiker
+shoes_piece,ankle_boots,DESERT,Desert,Desert boot,Chukka casual de camurça com sola de crepe.,EXTENDED,2,desert|desert boot|bota desert
+shoes_piece,ankle_boots,LACE_UP_BOOT,Bota de amarrar,Lace-up boot,Bota com cadarço ao longo de todo o cano.,EXTENDED,2,lace up boot|lace-up boot|bota de amarrar|bota com cadarço|bota de cadarço
+shoes_piece,ankle_boots,ENGINEER,Biker / engineer,Engineer,"Bota sem cadarço com fivelas no cano e no peito do pé, de motociclista.",EXTENDED,3,engineer|engineer boot|biker boot|bota motociclista|bota biker|bota de motoqueiro|harness boot
+shoes_piece,ankle_boots,RAIN,Galocha,Rain boot,Bota impermeável de borracha.,EXTENDED,3,rain boot|galocha|wellington|wellies|bota de chuva|bota de borracha
+shoes_piece,ankle_boots,SOCK_BOOT,Bota meia,Sock boot,Bota de material elástico justo que veste como meia.,EXTENDED,3,sock boot|bota meia|bota de malha|stretch bootie
+shoes_piece,ankle_boots,JODHPUR,Jodhpur,Jodhpur,Bota curta de montaria com tira envolvendo o tornozelo.,NICHE,5,jodhpur|jodhpur boot
+shoes_piece,ankle_boots,SNOW,Neve,Snow boot,"Bota térmica impermeável para neve, acolchoada.",NICHE,5,snow boot|bota de neve|moon boot|après ski|apres ski|after ski
+shoes_piece,long_boots,COWBOY,Texana / western,Cowboy,"Bota de cano com bico fino, salto cubano e pespontos decorativos.",CORE,1,cowboy|cowboy boot|western boot|texana|bota texana|bota country|bota western|botina country
+shoes_piece,long_boots,RIDING,Montaria,Riding,"Bota alta de cano reto e justo, inspirada na equitação.",CORE,1,riding|riding boot|montaria|bota de montaria|equestrian|bota equestre
+shoes_piece,long_boots,SLOUCH,Slouch,Slouch,Cano alto mole que franze sobre a perna.,CORE,2,slouch|slouchy boot|slouch boot|bota sanfonada|cano sanfonado
+shoes_piece,long_boots,LACE_UP_BOOT,Bota de amarrar,Lace-up boot,Bota com cadarço ao longo de todo o cano.,EXTENDED,2,lace up boot|lace-up boot|bota de amarrar|bota com cadarço|bota de cadarço
+shoes_piece,long_boots,RAIN,Galocha,Rain boot,Bota impermeável de borracha.,EXTENDED,2,rain boot|galocha|wellington|wellies|bota de chuva|bota de borracha
+shoes_piece,long_boots,SOCK_BOOT,Bota meia,Sock boot,Bota de material elástico justo que veste como meia.,EXTENDED,2,sock boot|bota meia|bota de malha|stretch bootie
+shoes_piece,long_boots,ENGINEER,Biker / engineer,Engineer,"Bota sem cadarço com fivelas no cano e no peito do pé, de motociclista.",EXTENDED,3,engineer|engineer boot|biker boot|bota motociclista|bota biker|bota de motoqueiro|harness boot
+shoes_piece,long_boots,SNOW,Neve,Snow boot,"Bota térmica impermeável para neve, acolchoada.",NICHE,4,snow boot|bota de neve|moon boot|après ski|apres ski|after ski
+shoes_piece,combat_boots,MILITARY,Militar,Military,Coturno clássico de cano médio com muitos ilhoses e sola de borracha.,CORE,1,military|militar|coturno militar|army boot|combat boot|1460|8 furos
+shoes_piece,combat_boots,TACTICAL,Tático,Tactical,Coturno técnico leve com materiais sintéticos e reforços.,EXTENDED,3,tactical|tático|tatico|coturno tático|tactical boot
+shoes_piece,combat_boots,JUNGLE,Selva,Jungle,"Coturno com painéis de lona e drenos, de uso militar em clima quente.",NICHE,5,jungle|jungle boot|selva|coturno selva
+shoes_piece,sandals,FOOTBED,Palmilha anatômica,Footbed,Sandália com palmilha anatômica de cortiça e tiras com fivela.,CORE,1,footbed|birken|birkenstock style|sandália birken|palmilha anatômica|cork footbed|arizona
+shoes_piece,sandals,SLIDE,Slide,Slide,"Sem calcanhar, com tira única larga sobre o peito do pé.",CORE,1,slide|slides|chinelo slide|sandália slide|slider|papete slide
+shoes_piece,sandals,STRAPPY,Tiras (rasteira),Strappy,Sandália de várias tiras finas sobre o pé e o tornozelo.,CORE,1,strappy|tiras|rasteira|rasteirinha|sandália de tiras|sandalia de tiras|flat sandal
+shoes_piece,sandals,SPORT_SANDAL,Papete,Sport sandal,Sandália esportiva com tiras de velcro e sola de borracha.,CORE,2,sport sandal|papete|sandália papete|trekking sandal|hiking sandal|sandália esportiva
+shoes_piece,sandals,ANKLE_STRAP,Tira no tornozelo,Ankle strap,Tira que fecha em volta do tornozelo.,EXTENDED,2,ankle strap|tira no tornozelo|pulseira no tornozelo|sandália de pulseira
+shoes_piece,sandals,FISHERMAN,Fisherman,Fisherman,Sandália de bico fechado com tiras trançadas.,EXTENDED,2,fisherman|fisherman sandal|sandália fisherman|sandália pescador
+shoes_piece,sandals,GLADIATOR,Gladiadora,Gladiator,Tiras horizontais que sobem pelo tornozelo ou pela perna.,EXTENDED,2,gladiator|gladiadora|sandália gladiadora|lace up sandal
+shoes_piece,sandals,CLOG,Tamanco / clog,Clog,"Calçado de solado grosso e cabedal fechado na frente, sem calcanhar.",EXTENDED,3,clog|clogs|tamanco|babuche|clog de borracha
+shoes_piece,sandals,TOE_POST,De dedo,Toe post,"Sandália com tira entre os dedos, mais estruturada que o chinelo.",EXTENDED,3,toe post|toe-post|de dedo|sandália de dedo|thong sandal
+shoes_piece,sandals,T_STRAP,Tira em T,T-strap,Tira vertical sobre o peito do pé unida à tira do tornozelo.,EXTENDED,3,t strap|t-strap|tira em t|salomé
+shoes_piece,sandals,HUARACHE,Huarache,Huarache,Sandália de couro trançado de origem mexicana.,NICHE,5,huarache|huaraches
+shoes_piece,flip_flops,SLIDE,Slide,Slide,"Sem calcanhar, com tira única larga sobre o peito do pé.",CORE,1,slide|slides|chinelo slide|sandália slide|slider|papete slide
+shoes_piece,flip_flops,THONG,Chinelo de dedo,Thong flip-flop,Chinelo de borracha com tira em Y entre os dedos.,CORE,1,thong|chinelo de dedo|flip flop|classic flip flop|chinelo tradicional
+shoes_piece,flip_flops,SLIM_STRAP,Tira fina,Slim strap,Chinelo de tiras estreitas e delicadas.,EXTENDED,3,slim strap|tira fina|tiras finas|chinelo slim
+shoes_piece,heels,HEELED_SANDAL,Sandália de salto,Heeled sandal,Sandália aberta de tiras sobre salto.,CORE,1,heeled sandal|sandália de salto|sandalia de salto|sandália salto|strappy heel|sandália meia pata
+shoes_piece,heels,PUMP,Scarpin,Pump,"Sapato de salto fechado na frente e atrás, sem tiras.",CORE,1,pump|pumps|scarpin|scarpins|court shoe|escarpim
+shoes_piece,heels,SLINGBACK,Chanel (slingback),Slingback,"Fechado na frente e aberto atrás, com tira passando pelo calcanhar.",CORE,1,slingback|sling back|chanel|sapato chanel|slingbacks
+shoes_piece,heels,ANKLE_STRAP,Tira no tornozelo,Ankle strap,Tira que fecha em volta do tornozelo.,CORE,2,ankle strap|tira no tornozelo|pulseira no tornozelo|sandália de pulseira
+shoes_piece,heels,MARY_JANE,Boneca (Mary Jane),Mary Jane,Sapato de bico redondo com tira sobre o peito do pé.,CORE,2,mary jane|mary janes|boneca|sapato boneca|sapatilha boneca
+shoes_piece,heels,MULE,Mule,Mule,"Calçado sem calcanhar, aberto atrás.",CORE,2,mule|mules|backless|tamanquinho|mule de salto|mule loafer
+shoes_piece,heels,D_ORSAY,D'Orsay,D'Orsay,Sapato com laterais recortadas que expõem o arco do pé.,EXTENDED,3,d orsay|d'orsay|dorsay|recorte lateral
+shoes_piece,heels,T_STRAP,Tira em T,T-strap,Tira vertical sobre o peito do pé unida à tira do tornozelo.,EXTENDED,3,t strap|t-strap|tira em t|salomé
+shoes_piece,heels,GLADIATOR,Gladiadora,Gladiator,Tiras horizontais que sobem pelo tornozelo ou pela perna.,NICHE,4,gladiator|gladiadora|sandália gladiadora|lace up sandal
+shoes_piece,flats,BALLET,Bailarina,Ballet flat,Sapatilha baixa e arredondada que lembra sapatilha de balé.,CORE,1,ballet|ballet flat|ballerina|bailarina|sapatilha bailarina
+shoes_piece,flats,MARY_JANE,Boneca (Mary Jane),Mary Jane,Sapato de bico redondo com tira sobre o peito do pé.,CORE,1,mary jane|mary janes|boneca|sapato boneca|sapatilha boneca
+shoes_piece,flats,MULE,Mule,Mule,"Calçado sem calcanhar, aberto atrás.",CORE,2,mule|mules|backless|tamanquinho|mule de salto|mule loafer
+shoes_piece,flats,SLINGBACK,Chanel (slingback),Slingback,"Fechado na frente e aberto atrás, com tira passando pelo calcanhar.",EXTENDED,2,slingback|sling back|chanel|sapato chanel|slingbacks
+shoes_piece,flats,D_ORSAY,D'Orsay,D'Orsay,Sapato com laterais recortadas que expõem o arco do pé.,NICHE,4,d orsay|d'orsay|dorsay|recorte lateral
+shoes_piece,espadrilles,ANKLE_TIE,Amarração no tornozelo,Ankle tie,Fitas que sobem e amarram no tornozelo.,EXTENDED,2,ankle tie|lace up espadrille|amarração no tornozelo|fita no tornozelo
+shoes_piece,espadrilles,MULE,Mule,Mule,"Calçado sem calcanhar, aberto atrás.",EXTENDED,2,mule|mules|backless|tamanquinho|mule de salto|mule loafer
+shoes_piece,espadrilles,SLINGBACK,Chanel (slingback),Slingback,"Fechado na frente e aberto atrás, com tira passando pelo calcanhar.",EXTENDED,3,slingback|sling back|chanel|sapato chanel|slingbacks
+accessory_piece,handbag,BUCKET,Saco (bucket),Bucket,Bolsa funda e cilíndrica fechada por cordão.,CORE,1,bucket|bucket bag|bolsa saco|bolsa balde|bolsa bucket
+accessory_piece,handbag,HOBO,Hobo,Hobo,"Bolsa mole em meia-lua que cede com o peso, de alça única.",CORE,1,hobo|hobo bag|bolsa hobo|slouchy bag
+accessory_piece,handbag,SHOULDER,Ombro,Shoulder bag,Bolsa de alça média usada no ombro.,CORE,1,shoulder bag|shoulder|bolsa de ombro|bolsa ombro
+accessory_piece,handbag,SATCHEL,Satchel,Satchel,"Bolsa estruturada de fundo plano, alça de mão e alça transversal.",CORE,2,satchel|satchel bag|bolsa satchel|bolsa carteiro estruturada
+accessory_piece,handbag,TOP_HANDLE,Alça de mão,Top handle,Bolsa estruturada carregada pela alça curta superior.,CORE,2,top handle|top-handle|alça de mão|bolsa de mão estruturada|lady bag
+accessory_piece,handbag,BAGUETTE,Baguete,Baguette,Bolsa pequena e alongada de alça curta usada sob o braço.,EXTENDED,2,baguette|baguete|baguette bag|bolsa baguete
+accessory_piece,handbag,BOWLING,Boliche,Bowling bag,Bolsa arredondada com zíper em arco e duas alças de mão.,EXTENDED,2,bowling|bowling bag|bolsa boliche|boston bag|speedy
+accessory_piece,handbag,BOX,Baú (box),Box bag,Bolsa rígida em formato de caixa.,EXTENDED,3,box|box bag|bolsa baú|bolsa bau|baú|vanity|box clutch
+accessory_piece,handbag,BRIEFCASE,Pasta,Briefcase,Pasta executiva rígida ou semirrígida para documentos e notebook.,EXTENDED,3,briefcase|pasta|pasta executiva|maleta|attaché|porta documentos
+accessory_piece,handbag,DUFFEL,Mala de mão (duffel),Duffel,Bolsa cilíndrica grande de viagem ou academia com duas alças.,EXTENDED,3,duffel|duffle bag|duffel bag|weekender|mala de mão|bolsa de viagem|bolsa de academia|holdall
+accessory_piece,handbag,SADDLE,Saddle,Saddle bag,Bolsa em formato de sela com aba curva e alça longa.,EXTENDED,3,saddle|saddle bag|bolsa sela|bolsa saddle
+accessory_piece,handbag,CRESCENT,Meia-lua,Crescent,Bolsa de ombro curta em formato de meia-lua estruturada.,NICHE,4,crescent|half moon|meia lua|meia-lua|bolsa meia lua
+accessory_piece,handbag,FRAME,Fecho de beijo,Frame bag,Bolsa com armação metálica e fecho kiss-lock.,NICHE,5,frame|frame bag|kiss lock|fecho de beijo|doctor bag
+accessory_piece,crossbody_bag,BELT_BAG,Pochete,Belt bag,Bolsa pequena com cinto usada na cintura ou atravessada no peito.,CORE,1,belt bag|pochete|fanny pack|bum bag|waist bag|doleira
+accessory_piece,crossbody_bag,CAMERA,Câmera,Camera bag,Bolsa transversal pequena e retangular com zíper superior.,CORE,1,camera bag|camera|bolsa câmera|bolsa camera
+accessory_piece,crossbody_bag,MESSENGER,Carteiro,Messenger,Bolsa transversal retangular com aba frontal e alça longa.,CORE,1,messenger|messenger bag|carteiro|bolsa carteiro|bolsa mensageiro
+accessory_piece,crossbody_bag,SLING,Sling,Sling,"Bolsa de alça única que atravessa o tronco, usada nas costas ou no peito.",CORE,2,sling|sling bag|bolsa sling|chest bag|mochila de um ombro
+accessory_piece,crossbody_bag,SADDLE,Saddle,Saddle bag,Bolsa em formato de sela com aba curva e alça longa.,EXTENDED,2,saddle|saddle bag|bolsa sela|bolsa saddle
+accessory_piece,crossbody_bag,BOX,Baú (box),Box bag,Bolsa rígida em formato de caixa.,EXTENDED,3,box|box bag|bolsa baú|bolsa bau|baú|vanity|box clutch
+accessory_piece,crossbody_bag,PHONE_POUCH,Porta-celular,Phone pouch,Bolsinha transversal do tamanho do celular.,EXTENDED,3,phone pouch|phone bag|porta celular|porta-celular|bolsa de celular
+accessory_piece,tote_bag,SHOPPER,Shopper (sacola),Shopper,"Tote grande e aberta, de alças longas, para o dia a dia.",CORE,1,shopper|shopper bag|sacola|bolsa sacola|tote grande|tote shopper
+accessory_piece,tote_bag,STRUCTURED_TOTE,Tote estruturada,Structured tote,Tote rígida de base firme que fica em pé.,CORE,1,structured tote|tote estruturada|tote rígida|work tote
+accessory_piece,tote_bag,EAST_WEST,Horizontal (east-west),East-west,"Bolsa mais larga que alta, em formato horizontal alongado.",EXTENDED,3,east west|east-west|horizontal|tote horizontal
+accessory_piece,tote_bag,NORTH_SOUTH,Vertical (north-south),North-south,Bolsa mais alta que larga.,EXTENDED,3,north south|north-south|vertical|tote vertical
+accessory_piece,tote_bag,BOAT_TOTE,Tote de lona aberta,Boat tote,"Tote de lona resistente, aberta, com base e alças reforçadas.",NICHE,4,boat tote|boat and tote|tote de lona|book tote
+accessory_piece,clutch,BOX_CLUTCH,Clutch rígida,Box clutch,"Clutch rígida pequena, muitas vezes metálica ou bordada (minaudière).",CORE,1,box clutch|minaudiere|minaudière|clutch rígida|clutch de festa rígida
+accessory_piece,clutch,ENVELOPE,Envelope,Envelope clutch,Clutch plana com aba triangular como envelope.,CORE,1,envelope|envelope clutch|clutch envelope
+accessory_piece,clutch,POUCH,Pouch,Pouch,"Clutch macia e maleável, geralmente com zíper ou franzido.",CORE,2,pouch|clutch pouch|necessaire clutch|clutch mole
+accessory_piece,clutch,WRISTLET,De pulso,Wristlet,Clutch pequena com alça curta presa ao pulso.,EXTENDED,3,wristlet|clutch de pulso|carteira de pulso|pulseira clutch
+accessory_piece,clutch,FRAME,Fecho de beijo,Frame bag,Bolsa com armação metálica e fecho kiss-lock.,NICHE,4,frame|frame bag|kiss lock|fecho de beijo|doctor bag
+accessory_piece,backpack,DAYPACK,Clássica (daypack),Daypack,Mochila de uso diário com compartimento principal e bolso frontal.,CORE,1,daypack|classic backpack|mochila clássica|mochila escolar|school backpack|mochila tradicional
+accessory_piece,backpack,DRAWSTRING,Saco (gym sack),Drawstring,Mochila leve tipo saco fechada por cordões.,CORE,2,drawstring|gym sack|gymsack|mochila saco|sacochila|string bag
+accessory_piece,backpack,LAPTOP,Notebook (executiva),Laptop backpack,Mochila com compartimento acolchoado para notebook.,CORE,2,laptop backpack|mochila notebook|mochila executiva|commuter backpack|mochila para notebook
+accessory_piece,backpack,RUCKSACK,Com aba (rucksack),Rucksack,"Mochila com aba superior e fechos ou fivelas, estilo montanhista.",EXTENDED,2,rucksack|mochila com aba|flap backpack|mochila tipo saco com aba
+accessory_piece,backpack,HIKING_PACK,Cargueira / trekking,Hiking pack,"Mochila técnica com barrigueira, armação e volume em litros.",EXTENDED,3,hiking pack|hiking backpack|cargueira|mochila de trilha|mochila trekking|mochila de ataque
+accessory_piece,backpack,ROLLTOP,Rolltop,Rolltop,Mochila fechada por topo enrolado com fivela.,EXTENDED,3,rolltop|roll top|roll-top|mochila rolltop
+accessory_piece,backpack,CONVERTIBLE_BAG,Conversível,Convertible,Mochila que vira bolsa ou tote ajustando as alças.,NICHE,4,convertible backpack|mochila conversível|backpack tote|mochila bolsa
+accessory_piece,belt,DRESS_BELT,Social,Dress belt,Cinto fino de couro liso com fivela discreta.,CORE,1,dress belt|cinto social|social|cinto fino
+accessory_piece,belt,PLATE_BUCKLE,Fivela placa,Plate buckle,Cinto com fivela em placa ou logotipo metálico.,CORE,1,plate buckle|fivela placa|logo buckle|fivela logo|fivela de logo
+accessory_piece,belt,BRAIDED,Trançado,Braided,"Cinto trançado em couro, elástico ou corda.",CORE,2,braided|trançado|trancado|woven belt|cinto trançado
+accessory_piece,belt,WEB,Lona / militar,Web belt,Cinto de fita de lona ou nylon com fivela de pressão ou deslizante.,CORE,2,web belt|cinto de lona|canvas belt|cinto militar|cinto de nylon|cobra buckle|rollerbuckle
+accessory_piece,belt,REVERSIBLE,Dupla face,Reversible,Cinto com dois lados utilizáveis e fivela giratória.,EXTENDED,2,reversible|dupla face|reversível|reversivel
+accessory_piece,belt,D_RING,Argola,D-ring,"Cinto fechado por duas argolas, sem furos.",EXTENDED,3,d ring|d-ring|argola|o ring|cinto de argola
+accessory_piece,belt,WESTERN_BELT,Western,Western belt,Cinto trabalhado com fivela e ponteira metálicas.,EXTENDED,3,western belt|cinto western|cinto country|cinto texano
+accessory_piece,belt,WIDE_WAIST,Cinto largo (corset),Wide waist belt,"Cinto largo usado na cintura natural, às vezes com amarração.",EXTENDED,3,wide belt|waist belt|cinto largo|cinto corset|obi belt|cintura alta cinto
+accessory_piece,belt,CHAIN_BELT,Corrente,Chain belt,Cinto feito de corrente metálica.,NICHE,4,chain belt|cinto de corrente|cinto corrente
+accessory_piece,cap,BASEBALL,Beisebol,Baseball cap,Boné estruturado de seis gomos e aba curva.,CORE,1,baseball|baseball cap|boné de beisebol|aba curva|curved brim|6 panel|six panel|strapback
+accessory_piece,cap,DAD_CAP,Dad cap,Dad cap,"Boné desestruturado, baixo e de aba curva, com aspecto amaciado.",CORE,1,dad cap|dad hat|unstructured cap|boné desestruturado|low profile cap
+accessory_piece,cap,TRUCKER_CAP,Trucker (tela),Trucker,Boné com frente alta de espuma e traseira em tela.,CORE,1,trucker|trucker cap|trucker hat|boné de tela|bone telinha|boné trucker
+accessory_piece,cap,SNAPBACK,Snapback (aba reta),Snapback,Boné estruturado de aba reta e regulagem por pressão.,CORE,2,snapback|snap back|aba reta|flat brim|flatbrim|boné aba reta
+accessory_piece,cap,FITTED,Fitted (fechado),Fitted,"Boné estruturado de traseira fechada, numerado por tamanho.",EXTENDED,3,fitted|fitted cap|59fifty|boné fechado|closed back
+accessory_piece,cap,FIVE_PANEL,Cinco gomos,Five-panel,"Boné de cinco gomos com frente lisa, baixo e de aba reta curta.",EXTENDED,3,five panel|5 panel|5-panel|camp cap|cinco gomos
+accessory_piece,cap,VISOR,Viseira,Visor,"Só aba e faixa, sem copa.",EXTENDED,3,visor|viseira|sun visor
+accessory_piece,hat,BUCKET_HAT,Bucket,Bucket hat,Chapéu de copa mole e aba caída em toda a volta.,CORE,1,bucket hat|bucket|chapéu bucket|chapeu bucket|bucket de pescador|fisherman hat
+accessory_piece,hat,FEDORA,Fedora / panamá,Fedora,Copa vincada e aba média flexível; o panamá é o fedora de palha toquilla.,CORE,1,fedora|chapéu fedora|panama|panamá|panama hat|chapéu panamá|trilby largo
+accessory_piece,hat,SUN_HAT,Aba larga (praia),Sun hat,Chapéu de aba larga e mole para sol e praia.,CORE,1,sun hat|floppy|floppy hat|aba larga|chapéu de praia|chapeu de praia|chapéu de sol
+accessory_piece,hat,BERET,Boina (beret),Beret,"Copa macia, redonda e sem aba.",CORE,2,beret|boina|boina francesa|beret francês
+accessory_piece,hat,FLAT_CAP,Boina inglesa,Flat cap,Boina com pala curta e copa achatada (inclui newsboy).,EXTENDED,2,flat cap|boina inglesa|boina italiana|newsboy|baker boy|ivy cap|gatsby
+accessory_piece,hat,COWBOY_HAT,Chapéu country,Cowboy hat,Copa alta vincada e aba larga curvada nas laterais.,EXTENDED,3,cowboy hat|chapéu country|chapeu country|chapéu de cowboy|western hat
+accessory_piece,hat,TRILBY,Trilby,Trilby,Parente do fedora com aba curta e inclinada para baixo atrás.,EXTENDED,3,trilby|chapéu trilby
+accessory_piece,hat,BOATER,Palheta,Boater,Chapéu de palha rígido com copa e aba planas.,NICHE,4,boater|palheta|canotier|straw boater
+accessory_piece,hat,BOWLER,Coco (bowler),Bowler,Chapéu rígido de copa arredondada.,NICHE,5,bowler|derby hat|chapéu coco|chapeu coco
+accessory_piece,hat,CLOCHE,Cloche,Cloche,"Chapéu justo em forma de sino, aba curta caída.",NICHE,5,cloche|chapéu cloche
+accessory_piece,hat,PORKPIE,Porkpie,Porkpie,Copa baixa achatada com vinco circular e aba curta virada.,NICHE,5,porkpie|pork pie
+accessory_piece,beanie,CUFFED_BEANIE,Com dobra,Cuffed beanie,Gorro com barra dobrada.,CORE,1,cuffed beanie|gorro com dobra|watch cap|dobra
+accessory_piece,beanie,SLOUCHY,Slouchy,Slouchy beanie,Gorro comprido que sobra caído atrás.,CORE,1,slouchy|slouchy beanie|gorro caído|gorro largo
+accessory_piece,beanie,POM_POM,Pompom,Pom-pom beanie,Gorro com pompom no topo.,CORE,2,pom pom|pompom|pompon|gorro com pompom|bobble hat
+accessory_piece,beanie,FISHERMAN_BEANIE,Curto (fisherman),Fisherman beanie,Gorro curto acima das orelhas.,EXTENDED,2,fisherman beanie|gorro curto|short beanie|docker beanie
+accessory_piece,beanie,BALACLAVA,Balaclava,Balaclava,Touca que cobre cabeça e pescoço deixando o rosto aberto.,EXTENDED,3,balaclava|touca ninja|balaclava de tricô
+accessory_piece,beanie,TRAPPER,Protetor de orelha,Trapper,Gorro ou chapéu com abas sobre as orelhas.,NICHE,4,trapper|earflap|ear flap|gorro peruano|chullo|protetor de orelha
+accessory_piece,scarf,OBLONG,Cachecol,Oblong scarf,Faixa longa e retangular enrolada no pescoço.,CORE,1,oblong|cachecol|long scarf|scarf longo|cachecol de lã
+accessory_piece,scarf,SQUARE_SCARF,Lenço quadrado,Square scarf,"Lenço quadrado de seda ou similar, dobrado no pescoço ou cabelo.",CORE,1,square scarf|lenço quadrado|lenco quadrado|foulard|carré|lenço de seda
+accessory_piece,scarf,STOLE,Echarpe / pashmina,Stole,Echarpe larga e longa usada sobre os ombros.,CORE,1,stole|echarpe|pashmina|xale|shawl|blanket scarf|wrap scarf
+accessory_piece,scarf,BANDANA,Bandana,Bandana,"Lenço quadrado de algodão leve, geralmente com estampa paisley.",EXTENDED,2,bandana|bandanna
+accessory_piece,scarf,INFINITY,Gola infinita,Infinity scarf,"Cachecol fechado em anel, sem pontas.",EXTENDED,2,infinity|infinity scarf|gola infinita|snood|gola tubo|cachecol circular
+accessory_piece,scarf,SKINNY_SCARF,Lenço fino,Skinny scarf,"Lenço estreito e comprido para pescoço, alça ou cabelo.",EXTENDED,3,skinny scarf|lenço fino|twilly|neckerchief|lenço de pescoço
+accessory_piece,scarf,NECK_GAITER,Gola tubular,Neck gaiter,Tubo de malha técnica para pescoço e rosto.,NICHE,4,neck gaiter|buff|gola tubular|bandana tubular|neck warmer|gola polar
+accessory_piece,tie,SKINNY_TIE,Gravata fina,Skinny tie,"Gravata estreita, de 5 a 6 cm.",CORE,1,skinny tie|gravata fina|gravata slim|slim tie
+accessory_piece,tie,KNIT_TIE,Gravata de tricô,Knit tie,Gravata de malha com ponta reta.,EXTENDED,2,knit tie|gravata de tricô|gravata tricot|gravata de crochê
+accessory_piece,tie,ASCOT,Plastron (ascot),Ascot,Gravata larga de tecido usada dentro do colarinho ou em gala.,NICHE,4,ascot|plastron|cravat|lenço de pescoço masculino
+accessory_piece,tie,BOLO,Bolo,Bolo tie,"Cordão com ponteiras metálicas e fecho decorativo, tradição western.",NICHE,5,bolo|bolo tie|gravata country
+accessory_piece,tie,SEVEN_FOLD,Sete dobras,Seven-fold,Gravata sem entretela dobrada sete vezes sobre si.,NICHE,5,seven fold|seven-fold|sete dobras
+accessory_piece,bow_tie,PRE_TIED,Pronta,Pre-tied,Gravata-borboleta com laço pronto e fecho regulável.,CORE,1,pre tied|pre-tied|pronta|laço pronto|com regulagem
+accessory_piece,bow_tie,SELF_TIE,De dar nó,Self-tie,Gravata-borboleta que se amarra à mão.,CORE,1,self tie|self-tie|de dar nó|de amarrar
+accessory_piece,bow_tie,BATWING,Batwing,Batwing,"Laço estreito e reto, mais moderno.",EXTENDED,3,batwing|bat wing|laço reto|slim bow tie
+accessory_piece,bow_tie,BUTTERFLY,Borboleta,Butterfly,Laço de pontas largas e arredondadas.,EXTENDED,3,butterfly|thistle|borboleta clássica
+accessory_piece,bow_tie,DIAMOND_POINT,Ponta diamante,Diamond point,Laço com pontas em bico.,NICHE,5,diamond point|ponta diamante|pointed bow tie
+accessory_piece,sunglasses,AVIATOR,Aviador,Aviator,"Lentes em gota, armação fina de metal e ponte dupla.",CORE,1,aviator|aviador|pilot|piloto|navigator|óculos aviador|oculos aviador|teardrop
+accessory_piece,sunglasses,CAT_EYE,Gatinho,Cat-eye,"Cantos externos superiores elevados, como olho de gato.",CORE,1,cat eye|cat-eye|cateye|gatinho|olho de gato
+accessory_piece,sunglasses,ROUND,Redondo,Round,Lentes circulares.,CORE,1,round|redondo|redonda|circular|lennon|panto
+accessory_piece,sunglasses,SQUARE,Quadrado,Square,Lentes quadradas de cantos marcados.,CORE,1,square|quadrado|quadrada
+accessory_piece,sunglasses,WAYFARER,Wayfarer,Wayfarer,"Armação trapezoidal grossa de acetato, levemente inclinada para cima.",CORE,1,wayfarer|estilo wayfarer|trapezoidal
+accessory_piece,sunglasses,BROWLINE,Clubmaster,Browline,Parte superior grossa como sobrancelha e inferior fina ou sem aro.,EXTENDED,2,browline|clubmaster|club master|clubround|meio aro superior
+accessory_piece,sunglasses,OVAL,Oval,Oval,Lentes ovais suaves.,EXTENDED,2,oval|ovalado
+accessory_piece,sunglasses,RECTANGLE,Retangular,Rectangle,"Lentes mais largas que altas, de cantos retos.",EXTENDED,2,rectangle|rectangular|retangular
+accessory_piece,sunglasses,GEOMETRIC,Geométrico,Geometric,"Lentes hexagonais, octogonais ou poligonais.",EXTENDED,3,geometric|geométrico|geometrico|hexagonal|octogonal|hexagon
+accessory_piece,sunglasses,SHIELD,Máscara (shield),Shield,Lente única ou contínua cobrindo os dois olhos.,EXTENDED,3,shield|máscara|mascara|mask|visor sunglasses|lente única
+accessory_piece,sunglasses,WRAPAROUND,Esportivo envolvente,Wraparound,Armação curva que envolve a lateral do rosto.,EXTENDED,3,wraparound|wrap around|wrap|envolvente|esportivo|sport sunglasses
+accessory_piece,sunglasses,BUTTERFLY_FRAME,Borboleta,Butterfly,"Lentes grandes alargadas na parte de baixo, como asas.",NICHE,4,butterfly|borboleta|butterfly sunglasses
+accessory_piece,eyeglasses,RECTANGLE,Retangular,Rectangle,"Lentes mais largas que altas, de cantos retos.",CORE,1,rectangle|rectangular|retangular
+accessory_piece,eyeglasses,ROUND,Redondo,Round,Lentes circulares.,CORE,1,round|redondo|redonda|circular|lennon|panto
+accessory_piece,eyeglasses,SQUARE,Quadrado,Square,Lentes quadradas de cantos marcados.,CORE,1,square|quadrado|quadrada
+accessory_piece,eyeglasses,CAT_EYE,Gatinho,Cat-eye,"Cantos externos superiores elevados, como olho de gato.",CORE,2,cat eye|cat-eye|cateye|gatinho|olho de gato
+accessory_piece,eyeglasses,OVAL,Oval,Oval,Lentes ovais suaves.,CORE,2,oval|ovalado
+accessory_piece,eyeglasses,BROWLINE,Clubmaster,Browline,Parte superior grossa como sobrancelha e inferior fina ou sem aro.,EXTENDED,2,browline|clubmaster|club master|clubround|meio aro superior
+accessory_piece,eyeglasses,AVIATOR,Aviador,Aviator,"Lentes em gota, armação fina de metal e ponte dupla.",EXTENDED,3,aviator|aviador|pilot|piloto|navigator|óculos aviador|oculos aviador|teardrop
+accessory_piece,eyeglasses,GEOMETRIC,Geométrico,Geometric,"Lentes hexagonais, octogonais ou poligonais.",EXTENDED,3,geometric|geométrico|geometrico|hexagonal|octogonal|hexagon
+accessory_piece,eyeglasses,WAYFARER,Wayfarer,Wayfarer,"Armação trapezoidal grossa de acetato, levemente inclinada para cima.",EXTENDED,3,wayfarer|estilo wayfarer|trapezoidal
+accessory_piece,necklace,CHAIN,Corrente,Chain,Corrente simples usada sozinha.,CORE,1,chain|corrente|cordão|cordao|chain necklace|chain bracelet|pulseira de corrente|elos
+accessory_piece,necklace,CHOKER,Choker / gargantilha,Choker,Colar curto e justo ao pescoço.,CORE,1,choker|gargantilha|colar curto|chocker
+accessory_piece,necklace,PENDANT,Pingente,Pendant,Corrente com um elemento decorativo pendurado.,CORE,1,pendant|pingente|colar com pingente|medalha|charm necklace
+accessory_piece,necklace,BEADED,Contas / miçangas,Beaded,"Feito de contas, miçangas ou pérolas enfiadas.",EXTENDED,2,beaded|miçanga|miçangas|micanga|contas|pérolas|perolas|pearl strand|beads
+accessory_piece,necklace,LAYERED,Camadas,Layered,Várias correntes de comprimentos diferentes unidas.,EXTENDED,2,layered|multi strand|multi-strand|camadas|colar de camadas|mix de correntes
+accessory_piece,necklace,BIB,Maxi colar,Bib / statement,Colar volumoso que cobre o colo.,EXTENDED,3,bib|statement necklace|maxi colar|colar statement|colar peitoral
+accessory_piece,necklace,LARIAT,Gravatinha (Y),Lariat,Colar em Y com ponta pendente que desce do centro.,EXTENDED,3,lariat|y necklace|colar y|gravatinha|colar gravata
+accessory_piece,necklace,LOCKET,Medalhão,Locket,Pingente que abre para guardar foto.,NICHE,4,locket|medalhão|medalhao|relicário|relicario
+accessory_piece,necklace,TENNIS,Riviera (tennis),Tennis,Linha contínua de pedras do mesmo tamanho.,NICHE,4,tennis|tennis necklace|tennis bracelet|riviera|colar riviera|pulseira riviera
+accessory_piece,bracelet,BANGLE,Bracelete rígido,Bangle,Aro rígido fechado que entra pela mão.,CORE,1,bangle|bracelete rígido|argola de pulso|aro
+accessory_piece,bracelet,CHAIN,Corrente,Chain,Corrente simples usada sozinha.,CORE,1,chain|corrente|cordão|cordao|chain necklace|chain bracelet|pulseira de corrente|elos
+accessory_piece,bracelet,CUFF,Bracelete aberto,Cuff,Peça rígida aberta que se encaixa no pulso.,CORE,1,cuff|cuff bracelet|bracelete|bracelete aberto|algema
+accessory_piece,bracelet,BEADED,Contas / miçangas,Beaded,"Feito de contas, miçangas ou pérolas enfiadas.",CORE,2,beaded|miçanga|miçangas|micanga|contas|pérolas|perolas|pearl strand|beads
+accessory_piece,bracelet,CHARM,Berloque,Charm,Pulseira com pingentes intercambiáveis.,CORE,2,charm|charm bracelet|berloque|berloques|pulseira de berloques
+accessory_piece,bracelet,CORD,Cordão / fio,Cord,"Pulseira de fio, cordão ou macramê, muitas vezes regulável.",EXTENDED,2,cord|cord bracelet|string bracelet|macramê|pulseira de fio|friendship bracelet|fitinha
+accessory_piece,bracelet,MULTI_WRAP,Várias voltas,Multi-wrap,Pulseira longa que dá várias voltas no pulso.,EXTENDED,3,wrap bracelet|várias voltas|multi wrap|pulseira de voltas
+accessory_piece,bracelet,TENNIS,Riviera (tennis),Tennis,Linha contínua de pedras do mesmo tamanho.,EXTENDED,3,tennis|tennis necklace|tennis bracelet|riviera|colar riviera|pulseira riviera
+accessory_piece,earrings,DROP,Pendente,Drop,Brinco com elemento que pende abaixo do lóbulo.,CORE,1,drop|dangle|pendente|brinco pendente|gota|drop earrings|dangle earrings
+accessory_piece,earrings,HOOP,Argola,Hoop,Aro circular ou oval que passa pelo lóbulo.,CORE,1,hoop|hoops|argola|argolas|brinco argola|maxi argola
+accessory_piece,earrings,HUGGIE,Argolinha (huggie),Huggie,Argola pequena e grossa que abraça o lóbulo.,CORE,1,huggie|huggies|argolinha|argola pequena|mini argola
+accessory_piece,earrings,STUD,Ponto de luz / botão,Stud,"Brinco fixo rente ao lóbulo, sem pendente.",CORE,1,stud|studs|ponto de luz|brinco de pressão|brinco botão|tarraxa|brinquinho
+accessory_piece,earrings,CHANDELIER,Lustre,Chandelier,"Brinco longo e ramificado em camadas, como lustre.",EXTENDED,3,chandelier|lustre|brinco lustre|maxi brinco
+accessory_piece,earrings,CLIP_ON,De pressão (sem furo),Clip-on,Brinco com presilha para orelha sem furo.,EXTENDED,3,clip on|clip-on|brinco de pressão sem furo|brinco sem furo
+accessory_piece,earrings,EAR_CUFF,Ear cuff,Ear cuff,Peça presa à cartilagem sem necessidade de furo.,EXTENDED,3,ear cuff|earcuff|piercing fake
+accessory_piece,earrings,CLIMBER,Ear climber,Ear climber,Brinco que sobe pela borda da orelha.,NICHE,4,climber|ear climber|ear crawler|brinco escalada
+accessory_piece,earrings,THREADER,Corrente passante,Threader,Corrente fina que atravessa o furo e pende dos dois lados.,NICHE,4,threader|ear threader|brinco corrente
+accessory_piece,ring,BAND,Aliança / aro liso,Band,Aro uniforme sem pedra central.,CORE,1,band|aliança|alianca|aro liso|wedding band|anel liso
+accessory_piece,ring,SIGNET,Sinete (chevalier),Signet,Anel com face plana gravável.,CORE,1,signet|sinete|chevalier|anel de formatura|anel brasão
+accessory_piece,ring,SOLITAIRE,Solitário,Solitaire,Anel com uma única pedra em destaque.,CORE,1,solitaire|solitário|solitario|anel de noivado
+accessory_piece,ring,STACKABLE,Empilhável,Stackable,Anel fino feito para usar vários juntos.,EXTENDED,2,stackable|empilhável|empilhavel|anel fino|skinny ring
+accessory_piece,ring,COCKTAIL,Coquetel (statement),Cocktail,Anel grande e chamativo com pedra ou design volumoso.,EXTENDED,3,cocktail|cocktail ring|statement ring|anel grande|maxi anel
+accessory_piece,ring,ETERNITY,Meia aliança,Eternity,Aro cravejado de pedras na frente ou em toda a volta.,EXTENDED,3,eternity|meia aliança|meia alianca|aliança cravejada|half eternity
+accessory_piece,ring,OPEN_RING,Aberto / ajustável,Open ring,Aro aberto que se ajusta ao dedo.,EXTENDED,3,open ring|anel aberto|ajustável|ajustavel|adjustable ring
+accessory_piece,watch,CHRONOGRAPH,Cronógrafo,Chronograph,Relógio com cronômetro e subdials acionados por botões laterais.,CORE,1,chronograph|cronógrafo|cronografo|chrono|cronometro
+accessory_piece,watch,DIVER,Mergulho,Diver,Resistente à água com luneta giratória unidirecional e índices luminosos.,CORE,1,diver|dive watch|mergulho|relógio de mergulho|submariner style
+accessory_piece,watch,DRESS_WATCH,Social,Dress watch,"Caixa fina e mostrador limpo, para ocasiões formais.",CORE,1,dress watch|relógio social|relogio social|social
+accessory_piece,watch,SMARTWATCH,Smartwatch,Smartwatch,Relógio inteligente com tela e conectividade.,CORE,1,smartwatch|smart watch|relógio inteligente|relogio inteligente|fitness watch
+accessory_piece,watch,FIELD_WATCH,Militar (field),Field watch,"Mostrador simples, legível e robusto de origem militar.",EXTENDED,2,field watch|relógio militar|relogio militar|military watch
+accessory_piece,watch,PILOT,Aviador,Pilot,"Mostrador grande e legível com coroa grande, de origem aeronáutica.",EXTENDED,2,pilot watch|aviador|flieger|relógio aviador|aviation watch
+accessory_piece,watch,GMT,GMT,GMT,Ponteiro extra de 24 horas para um segundo fuso horário.,EXTENDED,3,gmt|dual time|segundo fuso|travel watch
+accessory_piece,watch,INTEGRATED_BRACELET,Pulseira integrada,Integrated bracelet,"Caixa e pulseira de metal unidas sem alças aparentes, esportivo de luxo.",EXTENDED,3,integrated bracelet|pulseira integrada|luxury sports watch|royal oak style
+accessory_piece,watch,RECTANGULAR_CASE,Caixa retangular,Rectangular,"Caixa retangular ou quadrada, estilo tank.",EXTENDED,3,rectangular watch|tank|caixa retangular|caixa quadrada|square watch
+accessory_piece,watch,SKELETON,Esqueleto,Skeleton,Mostrador vazado que expõe o mecanismo.,NICHE,5,skeleton|esqueleto|skeletonized|open heart
+accessory_piece,wallet,BIFOLD,Dobra simples,Bifold,Carteira que dobra ao meio.,CORE,1,bifold|bi-fold|carteira dobrável|carteira masculina tradicional
+accessory_piece,wallet,CARD_HOLDER,Porta-cartão,Card holder,Estojo fino só para cartões.,CORE,1,card holder|cardholder|porta cartão|porta-cartão|porta cartoes|card case|slim wallet
+accessory_piece,wallet,CONTINENTAL,Carteira longa,Continental,"Carteira longa e retangular, frequentemente com zíper em volta.",CORE,2,continental|carteira longa|long wallet|zip around|zip-around|carteira feminina grande
+accessory_piece,wallet,COIN_PURSE,Porta-moedas,Coin purse,Bolsinha pequena para moedas.,EXTENDED,3,coin purse|porta moedas|porta-moedas|moedeiro
+accessory_piece,wallet,MONEY_CLIP,Prendedor de notas,Money clip,Prendedor metálico ou de couro para notas e cartões.,EXTENDED,3,money clip|prendedor de notas|prendedor de dinheiro
+accessory_piece,wallet,TRIFOLD,Três dobras,Trifold,Carteira que dobra em três partes.,EXTENDED,3,trifold|tri-fold|três dobras
+accessory_piece,wallet,PASSPORT_HOLDER,Porta-passaporte,Passport holder,Capa ou carteira do tamanho do passaporte.,NICHE,5,passport holder|porta passaporte|porta-passaporte
+accessory_piece,gloves,FINGERLESS,Sem dedos (mitene),Fingerless,Luva com as pontas dos dedos abertas.,CORE,1,fingerless|sem dedos|mitene|meia luva|half finger
+accessory_piece,gloves,MITTENS,Mitten (sem divisão),Mittens,Luva que separa só o polegar.,EXTENDED,2,mittens|mitten|luva sem divisão de dedos|luva mitten
+accessory_piece,gloves,DRIVING_GLOVE,De dirigir,Driving glove,Luva de couro fina perfurada com abertura no dorso.,NICHE,4,driving glove|luva de dirigir|luva para dirigir
+accessory_piece,gloves,CONVERTIBLE_GLOVE,Conversível,Convertible,Luva sem dedos com capa que vira mitten.,NICHE,5,convertible glove|flip top|flip-top|luva conversível
+accessory_piece,socks,CUSHIONED,Atlética acolchoada,Cushioned athletic,Meia com sola atoalhada para impacto.,CORE,1,cushioned|athletic sock|meia esportiva|meia atoalhada|terry sole|meia de academia|sport sock
+accessory_piece,socks,DRESS_SOCK,Social,Dress sock,Meia fina de cano médio a alto para sapato social.,CORE,1,dress sock|meia social|social
+accessory_piece,socks,COMPRESSION_SOCK,Compressão,Compression sock,Meia de compressão graduada.,EXTENDED,3,compression sock|meia de compressão|meia de compressao|meia 3/4 compressão
+accessory_piece,socks,GRIP,Antiderrapante,Grip sock,Meia com pontos de borracha na sola.,NICHE,4,grip sock|antiderrapante|meia pilates|meia com grip
+accessory_piece,socks,TOE_SOCK,De dedinhos,Toe sock,Meia com cada dedo separado.,NICHE,5,toe sock|toe socks|meia de dedinho|meia de dedos
+accessory_piece,hair_accessory,CLAW_CLIP,Piranha,Claw clip,Presilha de garras que prende o coque.,CORE,1,claw clip|piranha|hair claw|garra
+accessory_piece,hair_accessory,HEADBAND,Tiara (arco),Headband,Arco rígido ou faixa que contorna a cabeça.,CORE,1,headband|tiara|arco|arco de cabelo|faixa de cabelo|alice band
+accessory_piece,hair_accessory,SCRUNCHIE,Scrunchie,Scrunchie,Elástico de cabelo revestido de tecido franzido.,CORE,1,scrunchie|scrunchies|xuxinha|chuchinha|elástico de tecido
+accessory_piece,hair_accessory,BARRETTE,Presilha / fivela,Barrette,Presilha com fecho de mola.,CORE,2,barrette|presilha|fivela de cabelo|hair clip
+accessory_piece,hair_accessory,HAIR_BOW,Laço,Hair bow,Laço de tecido preso a presilha ou elástico.,CORE,2,hair bow|laço|laco|laço de cabelo|bow clip
+accessory_piece,hair_accessory,HAIR_TIE,Elástico,Hair tie,Elástico simples para prender o cabelo.,CORE,2,hair tie|elástico de cabelo|elastico|liga de cabelo|rabicó
+accessory_piece,hair_accessory,BOBBY_PIN,Grampo,Bobby pin,Grampo fino de metal.,EXTENDED,3,bobby pin|grampo|grampos|hair pin
+accessory_piece,hair_accessory,SNAP_CLIP,Tic-tac,Snap clip,Presilha plana de pressão.,EXTENDED,3,snap clip|tic tac|tic-tac|tictac
+accessory_piece,hair_accessory,TURBAN,Turbante,Turban,Faixa larga ou lenço amarrado envolvendo a cabeça.,EXTENDED,3,turban|turbante|head wrap|headwrap
+accessory_piece,hair_accessory,CROWN,Coroa / tiara de festa,Crown / tiara,"Ornamento de cabeça de festa, cravejado.",NICHE,5,crown|coroa|tiara de noiva|diadema
+full_body_piece,dress,A_LINE,Evasê,A-line,"Ajustada na cintura e abrindo gradualmente até a barra, em formato de A.",CORE,1,a line|a-line|aline|evasê|evase|trapézio|trapezio
+full_body_piece,dress,BODYCON,Bodycon,Bodycon,"Justo e elástico, colado ao corpo do busto à barra.",CORE,1,bodycon|body con|colado|justo ao corpo|vestido colado|vestido justo
+full_body_piece,dress,FIT_AND_FLARE,Fit and flare,Fit and flare,Corpo ajustado até a cintura e saia abrindo em godê.,CORE,1,fit and flare|fit & flare|fit-and-flare|acinturado godê|princesinha
+full_body_piece,dress,SHEATH,Tubinho,Sheath,"Ajustado à cintura por pences, reto e próximo ao corpo, sem costura na cintura.",CORE,1,sheath|tubinho|vestido tubinho|sheath dress|pencil dress
+full_body_piece,dress,SHIFT,Reto (shift),Shift,"Reto e solto, cai dos ombros sem marcar a cintura.",CORE,1,shift|shift dress|vestido reto|reto solto|trapeze|vestido trapézio
+full_body_piece,dress,SHIRT_DRESS,Chemise,Shirt dress,"Vestido com construção de camisa: gola, abotoamento frontal e punhos.",CORE,1,shirt dress|shirtdress|chemise|vestido chemise|vestido camisa|chemisier
+full_body_piece,dress,SLIP,Slip,Slip,"Cortada no viés em tecido fluido, desliza sobre o corpo sem pences.",CORE,1,slip|slip dress|slip skirt|vestido slip|saia slip|camisola|viés|bias cut
+full_body_piece,dress,WRAP,Transpassado(a),Wrap,Painel frontal cruza sobre o outro e fecha com amarração ou botão lateral.,CORE,1,wrap|transpassado|transpassada|envelope|wrap dress|wrap skirt|wrap top|faux wrap|amarração lateral
+full_body_piece,dress,CORSET,Corset,Corset,"Corpo estruturado com barbatanas, recortes e ajuste de espartilho.",EXTENDED,2,corset|corselet|corselete|espartilho|bustier|corset top|vestido corset|body corset
+full_body_piece,dress,TIERED,Em camadas,Tiered,"Faixas horizontais franzidas sobrepostas, cada uma mais larga que a anterior.",EXTENDED,2,tiered|camadas|em camadas|três marias|tres marias|babados em camadas|prairie
+full_body_piece,dress,T_SHIRT_DRESS,Vestido camisetão,T-shirt dress,Vestido de malha com a silhueta reta de uma camiseta.,EXTENDED,2,t shirt dress|t-shirt dress|tee dress|camisetão|vestido camiseta|vestido camisetão
+full_body_piece,dress,BABYDOLL,Babydoll,Babydoll,"Curto, com recorte sob o busto e saia ampla e solta.",EXTENDED,3,babydoll|baby doll|vestido babydoll
+full_body_piece,dress,EMPIRE,Império,Empire,Cintura marcada logo abaixo do busto e saia caindo solta.,EXTENDED,3,empire|empire waist|império|imperio|cintura império
+full_body_piece,dress,KAFTAN,Kaftan,Kaftan,"Peça ampla e reta com mangas largas integradas, tipo túnica.",EXTENDED,3,kaftan|caftan|cafetã|kaftã|túnica longa
+full_body_piece,dress,MERMAID,Sereia,Mermaid,"Justa até o joelho e abrindo em godê na barra, como cauda de sereia.",EXTENDED,3,mermaid|sereia|trumpet|trompete|fishtail skirt
+full_body_piece,dress,SMOCKED,Lastex (franzido),Smocked,Franzido elástico tipo lastex que ajusta ao corpo.,EXTENDED,3,smocked|lastex|shirred|franzido|franzida|com lastex|smocking
+full_body_piece,dress,BALL_GOWN,Princesa (baile),Ball gown,Corpo ajustado e saia muito volumosa até o chão.,NICHE,4,ball gown|princesa|vestido de baile|debutante|gown
+full_body_piece,dress,PEPLUM,Peplum,Peplum,Babado ou recorte evasê preso logo abaixo da cintura.,NICHE,4,peplum|péplum
+full_body_piece,jumpsuit,BOILERSUIT,Utilitário (boilersuit),Boilersuit,"Macacão de trabalho de manga, zíper ou botões frontais e bolsos.",CORE,1,boilersuit|boiler suit|macacão utilitário|macacao utilitario|coverall|macacão de mecânico|flightsuit
+full_body_piece,jumpsuit,STRAIGHT,Reta,Straight,"Largura constante da coxa à barra, em linha reta.",CORE,1,straight|straight leg|straight fit|reta|perna reta|calça reta|jeans reto|reto
+full_body_piece,jumpsuit,WIDE_LEG,Wide leg,Wide leg,"Perna larga e reta desde o quadril, com barra bem mais larga que a coxa.",CORE,1,wide leg|wide|wide fit|wide-leg|perna larga|pernas largas|calça larga
+full_body_piece,jumpsuit,FLARE,Flare,Flare,"Justa no quadril e na coxa, abrindo a partir do joelho em formato de sino.",EXTENDED,2,flare|flared|calça flare|jeans flare|kick flare|flare leg
+full_body_piece,jumpsuit,WRAP,Transpassado(a),Wrap,Painel frontal cruza sobre o outro e fecha com amarração ou botão lateral.,EXTENDED,2,wrap|transpassado|transpassada|envelope|wrap dress|wrap skirt|wrap top|faux wrap|amarração lateral
+full_body_piece,jumpsuit,CATSUIT,Catsuit,Catsuit,Macacão justo e elástico de corpo inteiro.,NICHE,5,catsuit|unitard|macacão colado
+full_body_piece,romper,WRAP,Transpassado(a),Wrap,Painel frontal cruza sobre o outro e fecha com amarração ou botão lateral.,CORE,1,wrap|transpassado|transpassada|envelope|wrap dress|wrap skirt|wrap top|faux wrap|amarração lateral
+full_body_piece,romper,SMOCKED,Lastex (franzido),Smocked,Franzido elástico tipo lastex que ajusta ao corpo.,EXTENDED,2,smocked|lastex|shirred|franzido|franzida|com lastex|smocking
+full_body_piece,romper,TAILORED,Alfaiataria,Tailored,"Construção de alfaiataria com pences, vincos, entretela ou cós estruturado.",EXTENDED,3,tailored|alfaiataria|de alfaiataria|social|dress shorts|estruturado|estruturada
+full_body_piece,romper,SKORT_ROMPER,Macaquinho saia,Skort romper,Macaquinho cuja parte de baixo parece saia.,NICHE,4,skort romper|macaquinho saia|macaquinho com saia
+full_body_piece,matching_set,CO_ORD,Coordenado (co-ord),Co-ord,Top e parte de baixo combinando no mesmo tecido.,CORE,1,co-ord|coord|co ord|conjuntinho|two piece|conjunto top e saia|conjunto cropped
+full_body_piece,matching_set,SUIT,Terno / tailleur calça,Suit,Paletó e calça do mesmo tecido vendidos juntos.,CORE,1,suit|terno|tailleur|costume|pantsuit|terno completo|power suit
+full_body_piece,matching_set,TRACKSUIT,Agasalho completo,Tracksuit,Jaqueta e calça esportivas combinando.,CORE,1,tracksuit|track suit|agasalho|conjunto de moletom|conjunto esportivo|jogging|abrigo
+full_body_piece,matching_set,SKIRT_SUIT,Tailleur saia,Skirt suit,Paletó e saia do mesmo tecido.,EXTENDED,2,skirt suit|tailleur saia|conjunto blazer e saia
+full_body_piece,matching_set,RESORT_SET,Conjunto resort,Resort set,Camisa e bermuda ou calça leves combinando.,EXTENDED,3,resort set|conjunto resort|conjunto camisa e bermuda|conjunto de linho
+full_body_piece,matching_set,TWINSET,Twinset,Twinset,Cardigã e blusa de malha combinando.,NICHE,5,twinset|twin set
+full_body_piece,overalls,RELAXED,Relaxed,Relaxed,"Reta com folga extra no quadril e na coxa, sem chegar ao volume da baggy.",CORE,1,relaxed|relaxed fit|relax|confort|comfort fit
+full_body_piece,overalls,SKIRTALL,Jardineira saia,Skirtall,Jardineira com parte de baixo em saia (pinafore).,CORE,1,skirtall|pinafore|jardineira saia|salopete saia|vestido jardineira
+full_body_piece,overalls,SLIM,Slim,Slim,"Ajustada na coxa e estreita até a barra, sem colar como a skinny.",EXTENDED,2,slim|slim fit|slim leg|ajustada|calça slim|jeans slim
+full_body_piece,overalls,WIDE_LEG,Wide leg,Wide leg,"Perna larga e reta desde o quadril, com barra bem mais larga que a coxa.",EXTENDED,2,wide leg|wide|wide fit|wide-leg|perna larga|pernas largas|calça larga
+full_body_piece,overalls,CARPENTER,Carpinteiro,Carpenter,Modelagem de trabalho com alça lateral para martelo e bolsos utilitários.,EXTENDED,3,carpenter|carpinteiro|carpenter pants|carpenter jeans|utility carpenter|painter pants

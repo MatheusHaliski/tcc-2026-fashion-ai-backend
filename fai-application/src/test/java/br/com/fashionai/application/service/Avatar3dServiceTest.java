@@ -8,9 +8,13 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.application.audit.AuditEvent;
+import br.com.fashionai.domain.model.AvatarIdentityVersion;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.UserAvatar3d;
 import br.com.fashionai.domain.model.enums.AiCallResult;
+import br.com.fashionai.domain.model.enums.ModerationStatus;
+import br.com.fashionai.domain.repository.AvatarIdentityVersionRepository;
 import br.com.fashionai.domain.repository.UserAvatar3dRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +26,7 @@ import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -42,6 +47,8 @@ class Avatar3dServiceTest {
     private final Map<UUID, UserAvatar3d> rows = new HashMap<>();
     private final Map<String, byte[]> blobs = new LinkedHashMap<>();
     private final List<String> audited = new ArrayList<>();
+    private final List<AuditEvent> events = new ArrayList<>();
+    private final List<AvatarIdentityVersion> versionRows = new ArrayList<>();
     private Avatar3dService service;
     private final List<AiEngine.TextCall<?>> moderations = new ArrayList<>();
     /** Resposta do moderador remoto; null = sem provedor (fallback local sem veredito). */
@@ -91,7 +98,23 @@ class Avatar3dServiceTest {
             return new AiOutcome<>(value, UUID.randomUUID(), AiCallResult.SUCCESS, moderatorAnswer == null, "gemini", "m", 1,
                     BigDecimal.ZERO, null, null, null);
         });
-        service = new Avatar3dService(avatars, users, storage, new Audit(e -> audited.add(e.acao())), ai);
+        AvatarIdentityVersionRepository versions = proxy(AvatarIdentityVersionRepository.class, (name, args) -> switch (name) {
+            case "findByUserIdOrderByVersionNoDesc" -> versionRows.stream().filter(v -> v.getUser().getId().equals(args[0]))
+                    .sorted(Comparator.comparingInt(AvatarIdentityVersion::getVersionNo).reversed()).toList();
+            case "findByUserIdAndVersionNo" -> versionRows.stream()
+                    .filter(v -> v.getUser().getId().equals(args[0]) && v.getVersionNo() == (Integer) args[1]).findFirst();
+            case "save" -> {
+                AvatarIdentityVersion v = (AvatarIdentityVersion) args[0];
+                if (!versionRows.contains(v)) versionRows.add(v);
+                yield v;
+            }
+            case "delete" -> {
+                versionRows.remove(args[0]);
+                yield null;
+            }
+            default -> throw new UnsupportedOperationException(name);
+        });
+        service = new Avatar3dService(avatars, versions, users, storage, new Audit(e -> { audited.add(e.acao()); events.add(e); }), ai);
     }
 
     @SuppressWarnings("unchecked")
@@ -130,7 +153,7 @@ class Avatar3dServiceTest {
     }
 
     @Test
-    void salvaComTexturaPrivadaERefazerApagaATexturaAntiga() {
+    void salvaComTexturaPrivadaERefazerCriaVersaoNova() {
         Map<String, Object> v = service.save(me, cmd(true, null), texture(512, 512));
         assertEquals(true, v.get("exists"));
         String first = blobs.keySet().iterator().next();
@@ -142,8 +165,10 @@ class Avatar3dServiceTest {
         } catch (InterruptedException ignored) {
         }
         service.save(me, cmd(true, null), texture(512, 512));
-        assertEquals(1, blobs.size());
-        assertFalse(blobs.containsKey(first));
+        // AVATAR-ID I1: refazer cria a versão 2 e NÃO apaga a 1 (a história e a textura aprovada ficam)
+        assertEquals(2, blobs.size());
+        assertTrue(blobs.containsKey(first));
+        assertEquals(List.of(2, 1), service.listVersions(me).stream().map(x -> x.get("version")).toList());
         assertTrue(audited.contains("AVATAR3D_SALVO"));
     }
 
@@ -204,6 +229,57 @@ class Avatar3dServiceTest {
         assertEquals(8, adj.get("hairTone"));
         assertEquals(14, Avatar3dService.clampAdjust(Map.of("hairTone", 99)).get("hairTone"));
         assertEquals(0, Avatar3dService.clampAdjust(Map.of()).get("hairTone"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void olhosMedidosSaoValidadosEDescartadosSemDerrubarOAvatar() {
+        // AVATAR-ID I4: cor da íris, classe, padrão, confiança, óculos; heterocromia com a cor de cada olho
+        Map<String, Object> m = model();
+        Map<String, Object> eyes = new LinkedHashMap<>(Map.of("color", "#5a7896", "secondary", "#6b5a3a", "cls", "BLUE", "pattern", "RING",
+                "confidence", 0.82, "source", "IMAGE_ANALYSIS", "glasses", "PRESCRIPTION", "frame", "#1c1a1e"));
+        eyes.put("right", Map.of("color", "#5a7896", "secondary", "#6b5a3a"));
+        eyes.put("left", Map.of("color", "#4a2f1f", "secondary", "#3a2418"));
+        eyes.put("photoUrl", "https://x");
+        m.put("eyes", eyes);
+        Map<String, Object> ok = (Map<String, Object>) Avatar3dService.validateModel(m).get("eyes");
+        assertEquals("BLUE", ok.get("cls"));
+        assertEquals("PRESCRIPTION", ok.get("glasses"));
+        assertEquals("#1c1a1e", ok.get("frame"));
+        assertEquals("#4a2f1f", ((Map<String, Object>) ok.get("left")).get("color"));
+        assertFalse(ok.containsKey("photoUrl"));                              // só os campos conhecidos
+        // um olho só não basta para heterocromia; cor inválida da armação some
+        eyes.remove("left");
+        eyes.put("frame", "preto");
+        ok = (Map<String, Object>) Avatar3dService.validateModel(m).get("eyes");
+        assertFalse(ok.containsKey("right"));
+        assertFalse(ok.containsKey("frame"));
+        // valor fora das listas, cor que não é #rrggbb ou confiança fora de 0–1: os olhos saem, o avatar fica
+        for (Map.Entry<String, Object> bad : List.of(Map.entry("cls", (Object) "ROXO"), Map.entry("color", (Object) "azul"),
+                Map.entry("confidence", (Object) 1.5), Map.entry("glasses", (Object) "MONOCULO"), Map.entry("source", (Object) "USER"))) {
+            Map<String, Object> e2 = new LinkedHashMap<>(eyes);
+            e2.put(bad.getKey(), bad.getValue());
+            m.put("eyes", e2);
+            Map<String, Object> v = Avatar3dService.validateModel(m);
+            assertFalse(v.containsKey("eyes"), bad.getKey());
+            assertEquals("#c8966e", v.get("skin"));
+        }
+        // sobrancelhas: medidas nas faixas; fora delas saem sem derrubar o avatar
+        m.remove("eyes");
+        m.put("brows", new LinkedHashMap<>(Map.of("color", "#3a2a1e", "thickness", 0.22, "arch", 0.06, "shape", "SOFT_ARCH", "density", 0.8, "confidence", 0.8, "extra", 1)));
+        Map<String, Object> brows = (Map<String, Object>) Avatar3dService.validateModel(m).get("brows");
+        assertEquals("SOFT_ARCH", brows.get("shape"));
+        assertFalse(brows.containsKey("extra"));
+        ((Map<String, Object>) m.get("brows")).put("arch", 3);
+        assertFalse(Avatar3dService.validateModel(m).containsKey("brows"));
+        // óculos: 1 = mostra os de grau vistos na foto (padrão), 0 = sem; inteiro e limitado
+        assertEquals(1, Avatar3dService.clampAdjust(Map.of()).get("glasses"));
+        assertEquals(0, Avatar3dService.clampAdjust(Map.of("glasses", -3)).get("glasses"));
+        assertEquals(1, Avatar3dService.clampAdjust(Map.of("glasses", 0.7)).get("glasses"));
+        // franja escolhida (HAIR-MOTION): 0 = a da foto; 1–5 inteiros, fora da faixa é limitado
+        assertEquals(0, Avatar3dService.clampAdjust(Map.of()).get("hairFringe"));
+        assertEquals(2, Avatar3dService.clampAdjust(Map.of("hairFringe", 2.4)).get("hairFringe"));
+        assertEquals(5, Avatar3dService.clampAdjust(Map.of("hairFringe", 9)).get("hairFringe"));
     }
 
     @Test
@@ -290,6 +366,130 @@ class Avatar3dServiceTest {
         service.save(me, cmd(true, true), texture(512, 512));
         service.deleteAllFor(owner.getId());                           // exclusão da conta
         assertTrue(rows.isEmpty());
+        assertTrue(blobs.isEmpty());
+    }
+
+    // ------------------------------------------------------------------ AVATAR-ID I1: identidade versionada
+
+    /** Relatório medido no aparelho: assimetria de 2 mm perdida (reprova) ou preservada (passa). */
+    private static Map<String, Object> quality(double asymmetryPreservation) {
+        Map<String, Object> q = new LinkedHashMap<>();
+        q.put("reprojectionMm", Map.of("all", 1.1, "eyes", 1.0, "nose", 0.9, "mouth", 1.0));
+        q.put("asymmetry", Map.of("measuredMm", 2.0, "avatarMm", 0.1, "preservation", asymmetryPreservation));
+        q.put("capture", 0.6);
+        q.put("gate", Map.of("passed", true));                 // o "passou" do cliente é ignorado: o servidor recalcula
+        q.put("shape", List.of(1, 2, 3));                       // chave desconhecida: descartada
+        return q;
+    }
+
+    private Avatar3dService.SaveCommand cmdQ(Map<String, Object> q, boolean pub) {
+        return new Avatar3dService.SaveCommand(model(), Map.of(), 1, List.of(), true, pub, q);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void versaoQueReprovaNoGateNaoSubstituiAAprovadaParaOsOutros() {
+        service.save(me, cmdQ(quality(0.9), true), texture(512, 512));                 // v1: passa → aprovada
+        Map<String, Object> m2 = model();
+        m2.put("skin", "#8d5a3b");
+        service.save(me, new Avatar3dService.SaveCommand(m2, Map.of(), 1, List.of(), true, true, quality(0.0)), texture(512, 512));
+        Map<String, Object> identity = (Map<String, Object>) service.get(me).get("identity");
+        assertEquals(2, identity.get("version"));
+        assertEquals("NEEDS_REFINEMENT", identity.get("status"));
+        assertEquals(1, identity.get("approvedVersion"));
+        Map<String, Object> gate = (Map<String, Object>) ((Map<String, Object>) identity.get("quality")).get("gate");
+        assertEquals(false, gate.get("passed"));
+        assertEquals(List.of("asymmetry"), gate.get("failed"));
+        assertFalse(((Map<String, Object>) identity.get("quality")).containsKey("shape"));
+        // o dono vê a v2; as outras pessoas continuam vendo a v1 (forma e textura)
+        assertEquals("#8d5a3b", ((Map<String, Object>) service.forMannequin(owner.getId(), me.id()).orElseThrow().get("model")).get("skin"));
+        Map<String, Object> pub = service.forMannequin(owner.getId(), other.id()).orElseThrow();
+        assertEquals("#c8966e", ((Map<String, Object>) pub.get("model")).get("skin"));
+        assertEquals("/api/avatar3d/" + owner.getId() + "/texture?version=1", pub.get("textureUrl"));
+        assertTrue(service.texture(other, owner.getId(), 1).length > 0);
+        assertThrows(ApiException.class, () -> service.texture(other, owner.getId(), 2));
+        assertTrue(service.texture(me, owner.getId(), 2).length > 0);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void tornarPublicoAoSalvarVersaoReprovadaModeraAAprovadaAnterior() {
+        service.save(me, cmdQ(quality(0.9), false), texture(512, 512));                // v1 aprovada, privada: sem moderação
+        assertTrue(moderations.isEmpty());
+        service.save(me, cmdQ(quality(0.0), true), texture(512, 512));                 // v2 reprova no gate e torna público
+        Map<String, Object> identity = (Map<String, Object>) service.get(me).get("identity");
+        assertEquals(1, identity.get("approvedVersion"));
+        assertEquals(2, moderations.size());                                            // a v2 e a v1 (a que os outros veem)
+        AvatarIdentityVersion v1 = versionRows.stream().filter(v -> v.getVersionNo() == 1).findFirst().orElseThrow();
+        assertEquals(ModerationStatus.APPROVED, v1.getTextureModeration());
+        assertEquals("/api/avatar3d/" + owner.getId() + "/texture?version=1", service.forMannequin(owner.getId(), other.id()).orElseThrow().get("textureUrl"));
+        assertTrue(service.texture(other, owner.getId(), 1).length > 0);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void aprovarVersaoComAvisosExigeConfirmacaoEDepoisValeParaTodos() {
+        service.save(me, cmdQ(quality(0.0), true), texture(512, 512));                 // v1 reprova: ninguém de fora vê
+        assertTrue(service.forMannequin(owner.getId(), other.id()).isEmpty());
+        assertEquals("IDENTIDADE_PRECISA_REFINAR", code(() -> service.approve(me, 1, false)));
+        Map<String, Object> v = service.approve(me, 1, true);
+        assertEquals("APPROVED", ((Map<String, Object>) v.get("identity")).get("status"));
+        assertEquals(true, service.listVersions(me).get(0).get("approvedWithWarnings"));
+        assertTrue(service.forMannequin(owner.getId(), other.id()).isPresent());
+        assertTrue(audited.contains("AVATAR3D_VERSAO_APROVADA"));
+        assertEquals("AVATAR3D_VERSAO_APROVADA", events.get(events.size() - 1).acao());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void restaurarCriaVersaoNovaIgualAAntiga() {
+        service.save(me, cmdQ(quality(0.9), false), texture(512, 512));
+        Map<String, Object> m2 = model();
+        m2.put("skin", "#8d5a3b");
+        service.save(me, new Avatar3dService.SaveCommand(m2, Map.of(), 1, List.of(), true, false, quality(0.9)), texture(512, 512));
+        Map<String, Object> v = service.restore(me, 1);
+        Map<String, Object> identity = (Map<String, Object>) v.get("identity");
+        assertEquals(3, identity.get("version"));
+        assertEquals(3, identity.get("approvedVersion"));
+        assertEquals("#c8966e", ((Map<String, Object>) v.get("model")).get("skin"));
+        assertEquals(1, service.listVersions(me).get(0).get("basedOn"));
+        assertThrows(ApiException.class, () -> service.restore(me, 99));
+    }
+
+    @Test
+    void guardaAAtualAAprovadaEAsCincoMaisRecentes() {
+        service.save(me, cmdQ(quality(0.9), false), texture(512, 512));                // v1 aprovada
+        for (int i = 0; i < 8; i++) {
+            service.save(me, cmdQ(quality(0.0), false), texture(512, 512));            // v2..v9 reprovam
+        }
+        List<Object> kept = service.listVersions(me).stream().map(x -> x.get("version")).toList();
+        assertEquals(List.of(9, 8, 7, 6, 5, 4, 1), kept);                             // atual, 5 recentes e a aprovada
+        assertEquals(kept.size(), blobs.size());                                       // textura só das guardadas
+    }
+
+    @Test
+    void auditoriaDoAvatarNaoRecebeDadoPessoal() {
+        service.save(me, cmdQ(quality(0.0), true), texture(512, 512));
+        service.approve(me, 1, true);
+        service.update(me, new Avatar3dService.SettingsCommand(Map.of("headScale", 1.02), true, null));
+        service.delete(me);
+        java.util.Set<String> allowed = java.util.Set.of("photos", "version", "status", "gatePassed", "failedChecks", "photo");
+        for (AuditEvent e : events) {
+            if (!e.acao().startsWith("AVATAR3D")) continue;
+            Map<String, Object> md = e.metadata() == null ? Map.of() : e.metadata();
+            assertTrue(allowed.containsAll(md.keySet()), e.acao() + " " + md.keySet());
+            for (Object val : md.values()) {
+                assertFalse(String.valueOf(val).matches(".*#[0-9a-fA-F]{6}.*"), "cor em auditoria: " + val);
+            }
+        }
+    }
+
+    @Test
+    void excluirApagaTodasAsVersoes() {
+        service.save(me, cmdQ(quality(0.9), true), texture(512, 512));
+        service.save(me, cmdQ(quality(0.0), true), texture(512, 512));
+        service.delete(me);
+        assertTrue(versionRows.isEmpty());
         assertTrue(blobs.isEmpty());
     }
 

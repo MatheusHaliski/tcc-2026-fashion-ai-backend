@@ -249,6 +249,8 @@ Como cada coluna foi obtida:
 
 ## RF15  (3 passos, 3 endpoints)
 
+> 06/10/2026 · CA01 e CA02 abaixo são do fluxo "copiar peça pública" (Explorar), rotulados como RF15 por engano. O editor de fotografia da peça (RF15) passou a usar `GET/POST /api/pieces/{id}/photo-edits` (`/session`, `/auto`, `/preview`, `/{versionId}/restore`) — ainda sem execução e2e nesta tabela. Ver `docs/novos-rf/RF15_Editor_Fotografia_Pecas.md`.
+
 | CA | Endpoint | Passo | Usuário | Status | Salvou em qual banco? | Exibiu no frontend (GET buscou do banco)? |
 |----|----------|-------|---------|--------|-----------------------|-------------------------------------------|
 | CA01 | `GET /api/public-pieces` | peças públicas | ny_ava | 200 | — (não grava) | sim — search · lê MySQL: follows, refresh_tokens, users, wardrobe_items |

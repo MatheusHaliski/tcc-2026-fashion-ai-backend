@@ -71,7 +71,7 @@ class StudioVersionsTest {
         media = mock(MediaService.class);
         service = new WardrobeService(pieces, null, null, null, null, null, null, null, null, mock(ReactionRepository.class),
                 mock(SavedItemRepository.class), null, null, null, media, null, null, null, null, null, null, guard, mock(Audit.class),
-                null, null, null, null, null);
+                null, null, null, null, null, null, null);
     }
 
     static Map<String, Object> shot(String id) {
@@ -90,6 +90,15 @@ class StudioVersionsTest {
     @SuppressWarnings("unchecked")
     Map<String, Object> studio() {
         return (Map<String, Object>) Json.map(piece.getFlatLayMetadataJson()).get("studio");
+    }
+
+    @Test
+    void cachedDefaultStudioRequiresTheCurrentFabricFramingVersion() {
+        assertThat(WardrobeService.currentFeedVersion(piece)).isFalse();
+        piece.setFlatLayMetadataJson(Json.write(Map.of("studio", Map.of("feed", Map.of("pipelineVersion", "OLD")))));
+        assertThat(WardrobeService.currentFeedVersion(piece)).isFalse();
+        piece.setFlatLayMetadataJson(Json.write(Map.of("studio", Map.of("feed", Map.of("pipelineVersion", br.com.fashionai.application.imaging.GarmentCrop.VERSION)))));
+        assertThat(WardrobeService.currentFeedVersion(piece)).isTrue();
     }
 
     @Test

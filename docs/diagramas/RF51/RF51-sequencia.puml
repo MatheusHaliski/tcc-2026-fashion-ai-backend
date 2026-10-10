@@ -1,0 +1,226 @@
+@startuml RF51_Sequencia
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+title RF51 — Cartela sazonal e animação no modal do Background Studio\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+participant "lib/card-art.ts" as lib_card_art_ts
+participant "lib/i18n/i18n.tsx" as lib_i18n_i18n_tsx
+boundary "c/scheme-builder.tsx" as c_scheme_builder_tsx
+participant "c/ui/index.tsx" as c_ui_index_tsx
+participant "lib/api/taxonomy.ts" as lib_api_taxonomy_ts
+participant "lib/hooks/use-api.ts" as lib_hooks_use_api_ts
+participant "API (Spring Boot)" as API
+participant "lib/hooks/use-undo.ts" as lib_hooks_use_undo_ts
+participant "lib/api/client.ts" as lib_api_client_ts
+participant "SchemeService" as SchemeService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+participant "BackgroundStudioService" as BackgroundStudioService
+participant "MediaService" as MediaService
+participant "ProjectionService" as ProjectionService
+participant "CounterStorePort" as CounterStorePort
+participant "NotificationService" as NotificationService
+queue "Eventos de domínio" as EV
+participant "DailyLookService" as DailyLookService
+== lib/card-art.ts · resolveCardArt() ==
+U -> lib_card_art_ts : resolveCardArt()
+activate lib_card_art_ts
+opt !bg
+lib_card_art_ts --> U : encerra
+end
+lib_card_art_ts -> lib_i18n_i18n_tsx : tr()
+opt !g
+lib_card_art_ts --> U : encerra
+end
+opt g.includes('gradient('
+lib_card_art_ts --> U : encerra
+end
+opt !o.stops?.length
+lib_card_art_ts --> U : encerra
+end
+opt !g
+lib_card_art_ts --> U : encerra
+end
+opt g.includes('gradient('
+lib_card_art_ts --> U : encerra
+end
+opt !o.stops?.length
+lib_card_art_ts --> U : encerra
+end
+opt ai || upload
+lib_card_art_ts --> U : encerra
+end
+opt !id
+lib_card_art_ts --> U : encerra
+end
+opt ART_INDEX.variants[id]
+lib_card_art_ts --> U : encerra
+end
+opt !list.length
+lib_card_art_ts --> U : encerra
+end
+opt s.aura?.format === 'MOSAICO' && combo?.mosaic
+lib_card_art_ts --> U : encerra
+end
+opt combo?.single && s.aura?.format
+lib_card_art_ts --> U : encerra
+end
+opt isVideo(v.animated
+lib_card_art_ts --> U : encerra
+end
+opt isVideo(v.animated
+lib_card_art_ts --> U : encerra
+end
+opt m
+lib_card_art_ts --> U : encerra
+end
+opt !bg
+lib_card_art_ts --> U : encerra
+end
+opt !motion
+lib_card_art_ts --> U : encerra
+end
+lib_card_art_ts -> lib_i18n_i18n_tsx : tr()
+deactivate lib_card_art_ts
+lib_card_art_ts --> U : resultado
+== lib/card-art.ts · cartelaSeason() ==
+U -> lib_card_art_ts : cartelaSeason()
+activate lib_card_art_ts
+opt !bg
+lib_card_art_ts --> U : encerra
+end
+deactivate lib_card_art_ts
+lib_card_art_ts --> U : resultado
+== c/scheme-builder.tsx · SchemeBuilder() ==
+U -> c_scheme_builder_tsx : SchemeBuilder()
+activate c_scheme_builder_tsx
+c_scheme_builder_tsx -> lib_i18n_i18n_tsx : useI18n()
+c_scheme_builder_tsx -> c_ui_index_tsx : useToast()
+c_scheme_builder_tsx -> lib_api_taxonomy_ts : useTaxonomy()
+c_scheme_builder_tsx -> lib_hooks_use_api_ts : useApi()
+c_scheme_builder_tsx -> API : GET /api/schemes/builder\nSchemeController.builder
+API --> c_scheme_builder_tsx : JSON
+c_scheme_builder_tsx -> lib_card_art_ts : studioOf()
+c_scheme_builder_tsx -> lib_hooks_use_undo_ts : useUndo()
+c_scheme_builder_tsx -> lib_card_art_ts : studioOf()
+opt initial || !seed || !b || selected.length
+c_scheme_builder_tsx --> U : encerra
+end
+opt step !== 2 || selected.length < 1
+c_scheme_builder_tsx --> U : encerra
+end
+c_scheme_builder_tsx -> API : POST /api/seal-suggestions/preview\nSealController.preview
+API --> c_scheme_builder_tsx : JSON
+c_scheme_builder_tsx -> API : POST /api/seal-suggestions/preview\nSealController.preview
+API --> c_scheme_builder_tsx : JSON
+c_scheme_builder_tsx -> API : POST /api/seal-suggestions/preview\nSealController.preview
+API --> c_scheme_builder_tsx : JSON
+opt !alive
+c_scheme_builder_tsx --> U : encerra
+end
+c_scheme_builder_tsx -> c_scheme_builder_tsx : setArtNote("null")
+c_scheme_builder_tsx -> c_scheme_builder_tsx : setOrientationNote("null")
+c_scheme_builder_tsx -> lib_api_taxonomy_ts : label() (×2)
+c_scheme_builder_tsx -> c_scheme_builder_tsx : setBusy("true")
+c_scheme_builder_tsx -> c_scheme_builder_tsx : setComps("null")
+c_scheme_builder_tsx -> c_scheme_builder_tsx : setBusy("false")
+c_scheme_builder_tsx -> c_scheme_builder_tsx : setBusy("true")
+c_scheme_builder_tsx -> c_scheme_builder_tsx : setBusy("false")
+c_scheme_builder_tsx -> c_scheme_builder_tsx : setBusy("true")
+c_scheme_builder_tsx -> API : POST /api/schemes/${id}/seal-bonds\nSealController.link
+API --> c_scheme_builder_tsx : JSON
+c_scheme_builder_tsx -> c_scheme_builder_tsx : setBusy("false")
+opt error
+c_scheme_builder_tsx --> U : encerra
+end
+opt loading || !b
+c_scheme_builder_tsx --> U : encerra
+end
+opt b.status === 'INSUFICIENTE' && !initial
+c_scheme_builder_tsx --> U : encerra
+end
+c_scheme_builder_tsx -> c_scheme_builder_tsx : setMode("manual")
+c_scheme_builder_tsx -> c_scheme_builder_tsx : setMode("ai")
+c_scheme_builder_tsx -> lib_api_client_ts : mediaUrl()
+c_scheme_builder_tsx -> lib_api_taxonomy_ts : label() (×2)
+note over c_scheme_builder_tsx : … e mais 3 passos
+deactivate c_scheme_builder_tsx
+c_scheme_builder_tsx --> U : resultado
+== SchemeService · create() ==
+U -> SchemeService : create()
+activate SchemeService
+SchemeService -> Guard : requireCanCreate()
+SchemeService -> DB_MySQL : SELECT users
+alt sem peças
+SchemeService --> U : 400 SEM_PECAS
+end
+alt formulario inválido
+SchemeService --> U : 400 FORMULARIO_INVALIDO
+end
+SchemeService -> DB_MySQL : SELECT schemes
+alt não encontrado
+SchemeService --> U : 404 NAO_ENCONTRADO
+end
+SchemeService -> Guard : requireView()
+alt indisponível
+SchemeService --> U : 409 INDISPONIVEL
+end
+SchemeService -> SchemeService : origin = REMIX
+SchemeService -> DB_MySQL : INSERT/UPDATE schemes
+alt formulario inválido
+SchemeService --> U : 400 FORMULARIO_INVALIDO
+end
+SchemeService -> DB_MySQL : SELECT wardrobe_items
+alt peça de outro usuário
+SchemeService --> U : 400 PECA_DE_OUTRO_USUARIO
+end
+alt peça indisponível
+SchemeService --> U : 400 PECA_INDISPONIVEL
+end
+SchemeService -> DB_MySQL : SELECT scheme_items
+SchemeService -> DB_MySQL : INSERT/UPDATE scheme_items
+SchemeService -> DB_MySQL : DELETE scheme_items
+SchemeService -> SchemeService : coverImageUrl = set
+SchemeService -> BackgroundStudioService : applyToScheme()
+SchemeService -> SchemeService : coverImageUrl = set
+alt foto inválida
+SchemeService --> U : 400 FOTO_INVALIDA
+end
+SchemeService -> SchemeService : coverImageUrl = set
+SchemeService -> MediaService : linkSource()
+SchemeService -> SchemeService : status = PUBLISHED
+SchemeService -> SchemeService : publishedAt = set
+SchemeService -> ProjectionService : published()
+SchemeService -> CounterStorePort : increment()
+SchemeService -> NotificationService : notify()
+SchemeService ->> EV : InteractionReceived
+SchemeService ->> EV : HypeSignal
+SchemeService -> ProjectionService : scheme()
+SchemeService ->> EV : SchemeSaved
+SchemeService -> DailyLookService : register()
+SchemeService -> SchemeService : lookDoDia = false
+note over SchemeService : … e mais 17 passos
+deactivate SchemeService
+SchemeService --> U : resultado
+@enduml

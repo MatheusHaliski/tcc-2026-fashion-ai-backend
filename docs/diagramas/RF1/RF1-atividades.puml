@@ -1,9 +1,16 @@
 @startuml RF1_Atividades
-title RF1 — Cadastrar conta na plataforma (perfil Pessoal, Marca ou Celebridade)\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,89 +19,62 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF1 — Cadastrar conta na plataforma (perfil Pessoal, Marca ou Celebridade)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre /register e escolhe o tipo de perfil\n(PESSOAL, MARCA ou CELEBRIDADE);
-:Preenche nome completo, e-mail, senha,\nconfirmar senha e aceita os termos (CA01);
-if (Tipo de perfil?) then (MARCA)
-  :Informa razão social, CNPJ e envia o logo (CA06);
-elseif (CELEBRIDADE)
-  :Informa nome artístico, envia documento\ne foto oficial (CA09);
-else (PESSOAL)
-  :Escolhe o manequim (sex) e, se quiser, a foto de perfil;
-endif
-|Frontend (register)|
-:POST /api/auth/uploads?kind=avatar|logo|identity|official-photo\n(antes da conta existir; documentos vão para restricted/);
-:GET /api/usernames/{username}/availability\n(ou sugestões em GET /api/auth/username-suggestions);
-:POST /bff/auth/register → POST /api/auth/register;
-|Backend (AuthController · IdentityService)|
-if (Formulário válido?) then (não)
-  #FFE3E3:400 FORMULARIO_INVALIDO\n(campos destacados);
-  note right
-    CA03 senha: mín. 8, 1 maiúscula, 1 dígito, 1 especial
-    idade mínima 13 anos; CNPJ validado por dígitos;
-    MARCA exige razão social + CNPJ + logo;
-    CELEBRIDADE exige nome artístico + documento + foto oficial
-  end note
+:Abre /verify-email, /register, /closet;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/auth/username-suggestions\nGET /api/admin/approvals\nGET /api/admin/approvals/{userId}/documents/{kind};
+|Pessoa usuária|
+:Cadastrar conta (pessoal, marca ou\ncelebridade) e abrir ses…;
+|Tela (Next.js)|
+:POST /api/auth/register;
+|API (Spring Boot)|
+:AuthController.register\n→ IdentityService.register;
+if (tipo inválido?) then (sim)
+  :400 TIPO_INVALIDO\n«Tipo de perfil não permitido no\ncadastro.»\n→ a tela mostra o aviso;
   stop
 endif
-if (E-mail já em uso (emailHash)?) then (sim)
-  #FFE3E3:409 EMAIL_EM_USO\n(sem vazar dados da conta existente — CA02);
+if (formulario inválido?) then (sim)
+  :400 FORMULARIO_INVALIDO\n«Corrija os campos destacados.»\n→ a tela mostra o aviso;
   stop
 endif
-:Gera passwordHash (Argon2) — CA04:\nnenhum campo de senha em log;
-:Grava users (status PENDING_EMAIL_VERIFICATION,\nprivateAccount = true, termsAcceptedAt) e user_preferences;
-if (Perfil institucional?) then (sim)
-  :Grava brand_profiles ou celebrity_profiles\ncom ApprovalStatus PENDENTE;
-  :E-mail "cadastro recebido, pendente de validação" (CA06/CA09);
-else (não)
-endif
-:Copia os uploads pendentes para a conta\n(users/{id}/profile ou restricted/users/{id}/documents);
-:Cria VerificationCode EMAIL_VERIFICATION (6 dígitos, 24 h)\ne envia por e-mail; notificações WELCOME + EMAIL_CONFIRMATION;
-:Audita CADASTRO_CONTA e abre sessão\n(201 Session com warnings);
-|Frontend (register)|
-:Redireciona para /verify-email;
-note right
-  CA05 — e-mail não confirmado: Guard.requireCanCreate
-  devolve 403 EMAIL_NAO_CONFIRMADO em qualquer criação/edição;
-  a pessoa só navega e visualiza (aviso persistente)
-end note
-|Pessoa|
-:Digita o código recebido;
-|Backend (AuthController · IdentityService)|
-:POST /api/auth/email-verification;
-if (Código correto, não expirado e < 5 tentativas?) then (não)
-  #FFE3E3:400 CODIGO_INVALIDO / CODIGO_EXPIRADO\n(reenvio: POST /api/auth/email-verification/resend, 5/dia);
+if (e-mail em uso?) then (sim)
+  :409 EMAIL_EM_USO\n«Este e-mail já está cadastrado.\nFaça login ou recupere a senha.»\n→ a tela mostra o aviso;
   stop
 endif
-:emailVerified = true; audita EMAIL_CONFIRMADO;
-if (Perfil institucional ainda não aprovado?) then (sim)
-  :status = PENDING_VALIDATION;
-  |Administrador (AdminController · AdminService)|
-  :GET /api/admin/approvals — fila de marcas e celebridades PENDENTE;
-  :POST /api/admin/approvals/{userId} {approve, notes};
-  if (Aprovado?) then (sim)
-    :ApprovalStatus APROVADO; status ACTIVE;\nensureDefaultSeals; notificação ACCOUNT_APPROVAL (CA07/CA10);
-    note right: libera o perfil da marca (RF14) ou da celebridade (RF22)
-  else (não)
-    :ApprovalStatus RECUSADO; notificação com o motivo;
-    stop
-  endif
-else (não)
-  :status = ACTIVE;
+if (username em uso?) then (sim)
+  :400 USERNAME_EM_USO\n«Este @ já está em uso.»\n→ a tela mostra o aviso;
+  stop
 endif
-|Frontend (register)|
-:Entra no app (/closet);
+|Dados e serviços|
+:Lê: users\nbrand_profiles\ncelebrity_profiles\nverification_codes\nuser_preferences;
+:Usa: MediaStoragePort.get\nPasswordHasherPort.hash\nMediaStoragePort.put\nEmailSenderPort.send\nIssuerReviewService.submitted\nNotificationService.notify (+2);
+:Grava: users\nuser_preferences\nbrand_profiles\ncelebrity_profiles\nverification_codes\nrefresh_tokens;
+:Estado: profileType → ?type\nprivateAccount → true\ntermsAcceptedAt → set\nstatus → PENDING_EMAIL_VERIFICATION\navatarUrl → set\nlogoUrl → set (+12);
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Enviar foto de perfil [ou logo, f…)
+    :POST /api/auth/uploads\n→ IdentityService.preRegistrationUpload\nvalida: ARQUIVO_GRANDE, LIMITE_ENVIOS, TIPO_INVALIDO\nusa: MediaStoragePort.put;
+  case (Confirmar e-mail com o código rec…)
+    :POST /api/auth/email-verification\n→ IdentityService.verifyEmail\nvalida: CODIGO_EXPIRADO, ERRO, MUITAS_TENTATIVAS\nlê: users, verification_codes, brand_profiles …\nusa: IssuerReviewService.emailConfirmed\nestado: consumedAt → set, emailVerified → true;
+  case (Reenviar código de confirmação de…)
+    :POST /api/auth/email-verification/resend\n→ IdentityService.resendEmailVerification\nvalida: MUITAS_TENTATIVAS\nlê: users, verification_codes, user_preferences\nusa: EmailSenderPort.send\ngrava: verification_codes;
+  case (Decidir a verificação: APROVAR [c…)
+    :POST /api/admin/approvals/{userId}\n→ IssuerReviewService.decide\nvalida: ACESSO_NEGADO, CRITERIOS_PENDENTES,\nDECISAO_INVALIDA, EMAIL_NAO_CONFIRMADO …\nlê: users, brand_profiles, celebrity_profiles\nusa: Guard.requireAdmin,\nIssuerVerificationPolicy.checks,\nSealService.ensureDefaultSeals …\ngrava: users;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

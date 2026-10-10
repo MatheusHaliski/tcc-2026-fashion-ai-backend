@@ -1,0 +1,82 @@
+@startuml RF54_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF54 — FashionAI Lens (MVP)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
+start
+:Abre /lens, /pieces/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/lens/scans/{id}\nGET /api/lens/scans/{id}/matches\nGET /api/lens/scans/{id}/reading\nGET /api/lens/scans/{id}/image;
+|Pessoa usuária|
+:Novo scan: imagem (rostos já\nborrados no aparelho) + source…;
+|Tela (Next.js)|
+:POST /api/lens/scans;
+|API (Spring Boot)|
+:LensController.create\n→ LensService.create;
+if (origem inválida?) then (sim)
+  :400 ORIGEM_INVALIDA\n«Origem inválida para o envio: use\nCAMERA, GALLERY ou UPLOAD.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (arquivo vazio?) then (sim)
+  :400 ARQUIVO_VAZIO\n«Envie uma imagem.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (quota?) then (sim)
+  :429 QUOTA\n«Você já fez os … scans de hoje.\nVolte a escanear a partir de ….»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Usa: Guard.requireCanCreate\nLensConfig.dailyScans\nMultiPieceService.detectPieces\nLensConfig.retentionDays\nMediaStoragePort.put\nRateLimitPort.release;
+:Grava: lens_scans\nlens_detections;
+:Estado: source → ?source\nintent → ?intent\nredactionConfirmed → ?redactionConfirmed\nexpiresAt → set\nprocessedAt → set\nstatus → FAILED (+5);
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Salvar [inspiração, não expira] o…)
+    :PATCH /api/lens/scans/{id}\n→ LensService.setSaved\nvalida: NAO_AUTENTICADO, NAO_ENCONTRADO\nlê: lens_scans, lens_detections\nusa: LensConfig.retentionDays, LensConfig.floor\ngrava: lens_scans;
+  case (Excluir o scan [imagem, peças det…)
+    :DELETE /api/lens/scans/{id}\n→ LensService.delete\nvalida: NAO_AUTENTICADO, NAO_ENCONTRADO\nlê: lens_scans, lens_feedback, lens_detections\nusa: MediaStoragePort.delete\ngrava: lens_feedback, lens_detections, lens_scans;
+  case (Corrigir atributos da peça [refaz…)
+    :PATCH /api/lens/scans/{id}/detections/{did}\n→ LensService.correct\nvalida: ERRO, NAO_AUTENTICADO, NAO_ENCONTRADO\nlê: lens_scans, lens_detections, user_consents\nusa: LensConfig.floor\ngrava: lens_detections, lens_feedback;
+  case (Ver no Lens: scan da foto de uma…)
+    :POST /api/lens/scans/from-app\n→ LensService.fromApp\nvalida: LENS_SEM_IMAGEM, QUOTA, TIPO_INVALIDO\nlê: wardrobe_items, schemes\nusa: Guard.requireCanCreate, Guard.canView,\nMediaService.read …\ngrava: lens_scans, lens_detections;
+  case (Marcar uma peça que o detector nã…)
+    :POST /api/lens/scans/{id}/detections\n→ LensService.add\nvalida: ERRO, NAO_AUTENTICADO, NAO_ENCONTRADO\nlê: lens_scans, lens_detections, user_consents\nusa: MediaStoragePort.get, LensConfig.floor\ngrava: lens_detections, lens_scans, lens_feedback;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Recriar o look com as suas pe…, 'Eu tenho': liga a
+  uma peça s…, 'Quero' (lista de desejos das…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
+stop
+@enduml

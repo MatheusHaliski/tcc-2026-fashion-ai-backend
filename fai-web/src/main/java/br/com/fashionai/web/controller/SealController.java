@@ -3,6 +3,8 @@ package br.com.fashionai.web.controller;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.SealDesignService;
 import br.com.fashionai.application.service.SealService;
+import br.com.fashionai.application.service.SealPolicyCopilot;
+import br.com.fashionai.domain.model.enums.SealTier;
 import br.com.fashionai.domain.model.enums.PromotionStatus;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,9 +37,10 @@ public class SealController {
     }
 
     @PostMapping(value = "/api/seals/uploads", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "RF25 — Enviar selo pronto (só é aceito nas proporções do logo FashionAI: 1:1, circular, 256–4096 px)")
-    public Map<String, Object> uploadSeal(CurrentUser user, @RequestPart("file") MultipartFile file) {
-        return designs.upload(user, Uploads.image(file));
+    @Operation(summary = "RF25 — Enviar selo pronto (1:1, circular, 256–4096 px) ou, com purpose=core, a imagem do núcleo/emblema do selo")
+    public Map<String, Object> uploadSeal(CurrentUser user, @RequestPart("file") MultipartFile file,
+                                          @RequestParam(value = "purpose", required = false) String purpose) {
+        return "core".equalsIgnoreCase(purpose) ? designs.uploadCore(user, Uploads.image(file)) : designs.upload(user, Uploads.image(file));
     }
 
     @PostMapping("/api/seals")
@@ -45,6 +48,19 @@ public class SealController {
     @Operation(summary = "RF20 — Marca/celebridade cria um selo")
     public Map<String, Object> createSeal(CurrentUser user, @RequestBody SealService.SealForm form) {
         return seals.createSeal(user, form);
+    }
+
+    public record DraftRequest(SealTier tier, String message, Map<String, Object> previousPolicy, List<SealPolicyCopilot.Message> conversation) {
+        public DraftRequest(SealTier tier, String message, Map<String, Object> previousPolicy) {
+            this(tier, message, previousPolicy, null);
+        }
+    }
+
+    @PostMapping({"/api/seals/draft", "/api/copilot/seal-policy"})
+    @Operation(summary = "RF25 — Copilot #createsealpolicy: cria o modelo de referência a partir do pedido do emissor, sem publicar o selo")
+    public Map<String, Object> draft(CurrentUser user, @RequestBody(required = false) DraftRequest req) {
+        return seals.draft(user, req == null ? null : req.tier(), req == null ? null : req.message(),
+                req == null ? null : req.previousPolicy(), req == null ? null : req.conversation());
     }
 
     @PutMapping("/api/seals/{sealId}")
@@ -59,30 +75,56 @@ public class SealController {
         return seals.sealsOf(viewer, ownerId);
     }
 
+    @GetMapping("/api/pieces/seals")
+    @Operation(summary = "RF53 — Selos de marca/celebridade das peças (vínculos APROVADOS de tier PEÇA), em lote: ids=a,b,c (até 60; respeita visibilidade)")
+    public Map<String, Object> pieceSeals(CurrentUser viewer, @RequestParam(value = "ids", required = false) String ids) {
+        List<UUID> out = new java.util.ArrayList<>();
+        if (ids != null) {
+            for (String part : ids.split(",")) {
+                try {
+                    out.add(UUID.fromString(part.trim()));
+                } catch (IllegalArgumentException ignored) {
+                    // id malformado: ignorado (o lote continua)
+                }
+                if (out.size() >= SealService.MAX_PIECE_SEALS) {
+                    break;
+                }
+            }
+        }
+        return seals.pieceSeals(viewer, out);
+    }
+
     @GetMapping("/api/me/seals")
     @Operation(summary = "RF21 — Meus selos conquistados e vínculos pendentes")
     public Map<String, Object> mySeals(CurrentUser user) {
         return seals.mySeals(user);
     }
 
-    public record PreviewRequest(java.util.List<UUID> pieceIds, java.util.List<String> occasion, java.util.List<String> style) {
+    public record PreviewRequest(java.util.List<UUID> pieceIds, java.util.List<String> occasion, java.util.List<String> style, Map<String, Object> background) {
     }
 
     @PostMapping("/api/seal-suggestions/preview")
     @Operation(summary = "RF5/RF21.CA01 — Selos possíveis para um look ainda não salvo (nada é gravado)")
     public Map<String, Object> preview(CurrentUser user, @RequestBody PreviewRequest body) {
-        return seals.preview(user, body.pieceIds(), body.occasion(), body.style());
+        return seals.preview(user, body.pieceIds(), body.occasion(), body.style(), body.background());
     }
 
     public record PiecePreviewRequest(String name, String category, String subcategory, String color, String brandName,
-                                      java.util.List<String> occasion, java.util.List<String> style) {
+                                      java.util.List<String> occasion, java.util.List<String> style, String material, String variation,
+                                      Map<String, java.util.List<String>> attributes, String sex, String size, String market, Map<String, Object> background) {
     }
 
     @PostMapping("/api/seal-suggestions/preview-piece")
     @Operation(summary = "RF4 — Selos possíveis para uma peça ainda não salva: marca/celebridade com peça semelhante (nada é gravado)")
     public Map<String, Object> previewPiece(CurrentUser user, @RequestBody PiecePreviewRequest body) {
         return seals.previewPiece(user, new SealService.PieceFields(body.name(), body.category(), body.subcategory(), body.color(),
-                body.brandName(), body.occasion(), body.style()));
+                body.brandName(), body.occasion(), body.style(), body.material(), body.variation(), body.attributes(), body.sex(), body.size(), body.market(), body.background()));
+    }
+
+    @GetMapping("/api/schemes/{schemeId}/seal-preview")
+    @Operation(summary = "RF13 — Verificar selos do look usado no DNA, sem alterar vínculos")
+    public Map<String, Object> previewScheme(CurrentUser user, @PathVariable UUID schemeId) {
+        return seals.previewScheme(user, schemeId);
     }
 
     @GetMapping("/api/schemes/{schemeId}/seal-suggestions")

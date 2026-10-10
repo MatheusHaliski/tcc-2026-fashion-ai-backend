@@ -21,6 +21,9 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     Optional<User> findByEmailHash(String emailHash);
 
+    /** Conta de fixture do Demo/Test Data Pipeline (fixture_key é UNIQUE; contas reais têm null). */
+    Optional<User> findByFixtureKey(String fixtureKey);
+
     Optional<User> findByUsernameIgnoreCase(String username);
 
     boolean existsByUsernameIgnoreCase(String username);
@@ -33,7 +36,19 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
     List<User> findByStatus(AccountStatus status);
 
+    /** Contas com o papel informado (ex.: ADMIN, que recebe os pedidos de verificação de marca/celebridade). */
+    List<User> findByRole(String role);
+
     @Query("select u from User u where lower(u.username) like lower(concat('%', :term, '%'))") List<User> searchByUsername(@Param("term") String term, Pageable pageable);
+
+    /** RF8: filtra antes do limite e mantém uma ordem estável para a paginação de pessoas. */
+    @Query("select u from User u where u.profileType = br.com.fashionai.domain.model.enums.ProfileType.PESSOAL"
+            + " and u.status = br.com.fashionai.domain.model.enums.AccountStatus.ACTIVE"
+            + " and lower(u.username) like lower(concat('%', :term, '%'))"
+            + " and (:includeTest = true or u.accountOrigin not in (br.com.fashionai.domain.model.enums.AccountOrigin.TEST_SEED, br.com.fashionai.domain.model.enums.AccountOrigin.DEMO))"
+            + " and u.id not in :blocked order by lower(u.username), u.id")
+    List<User> searchPersonalProfiles(@Param("term") String term, @Param("includeTest") boolean includeTest,
+                                      @Param("blocked") Collection<UUID> blocked, Pageable pageable);
 
     long countByCountry(String country);
 

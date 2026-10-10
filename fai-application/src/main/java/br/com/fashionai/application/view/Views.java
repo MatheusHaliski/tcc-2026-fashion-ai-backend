@@ -6,6 +6,7 @@ import br.com.fashionai.domain.model.Notification;
 import br.com.fashionai.domain.model.Photo;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.SchemeItem;
+import br.com.fashionai.domain.model.TaxonomyAttribute;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
@@ -50,14 +51,15 @@ public final class Views {
                             String availabilityStatus, String condition, boolean favorite, boolean forSale,
                             int wearCount, LocalDate lastWornDate, String moderationStatus,
                             String photoProcessingStatus, Map<String, Object> photoQuality,
-                            Map<String, Object> flatLayMetadata, Map<String, Object> background, BigDecimal hypeScore,
-                            BigDecimal hypeScoreGlobal, UUID remixedFromPieceId, List<String> tags, String notes,
+                            Map<String, Object> flatLayMetadata, Map<String, Object> background,
+                            UUID remixedFromPieceId, List<String> tags, String notes,
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
                             String model3dStatus, String model3dUrl, Counters counters, ViewerState viewer,
                             boolean notAvailableAnymore, Instant createdAt, Instant updatedAt, String studioImageUrl,
                             String studioBackdrop, String studioThumbUrl, String studioDetailUrl,
                             String mannequinImageUrl, String mannequinImageFace, String brandSource, String studioFeedUrl,
-                            boolean aiGeneratedImage) {
+                            boolean aiGeneratedImage, boolean forDonation,
+                            String variation, Map<String, List<String>> attributes) {
     }
 
     /** A miniatura do estúdio (640 px, para grades) fica ao lado da foto grande: {@code studio-x.jpg} → {@code studio-x.thumb.jpg}. */
@@ -98,14 +100,18 @@ public final class Views {
                 w.getLastWornDate(), w.getModerationStatus().name(),
                 w.getPhotoProcessingStatus() == null ? null : w.getPhotoProcessingStatus().name(),
                 Json.map(w.getPhotoQualityScoresJson()), pieceMeta(w.getFlatLayMetadataJson(), viewer),
-                Json.map(w.getBackgroundConfigJson()), w.getHypeScore(), w.getHypeScoreGlobal(), w.getRemixedFromPieceId(),
+                Json.map(w.getBackgroundConfigJson()), w.getRemixedFromPieceId(),
                 Json.csv(w.getTags()), w.getNotes(), w.getPurchaseDate(), w.getPurchaseLocation(), w.getSku(),
                 w.getCareInstructions(), w.getModel3dStatus() == null ? null : w.getModel3dStatus().name(),
                 w.getModel3dUrl(), new Counters(w.getLikesCount(), w.getCommentCount(), w.getSharesCount(),
                 w.getRemixesCount(), w.getViewCount(), 0, reactions == null ? Map.of() : reactions),
                 viewer == null ? ViewerState.NONE : viewer, w.getAvailabilityStatus() == AvailabilityStatus.ARCHIVED,
                 w.getCreatedAt(), w.getUpdatedAt(), w.getStudioImageUrl(), w.getStudioBackdrop(), studioThumb(w.getStudioImageUrl()), w.getStudioDetailUrl(),
-                w.getMannequinImageUrl(), w.getMannequinImageFace(), w.getBrandSource(), studioFeed(w), w.isAiGeneratedImage());
+                w.getMannequinImageUrl(), w.getMannequinImageFace(), w.getBrandSource(), studioFeed(w), w.isAiGeneratedImage(),
+                w.isForDonation(),
+                // taxonomia nova: variação da peça e atributos por dimensão; cor, material, sexo, estilo e ocasião já têm
+                // campo próprio na view e não se repetem aqui
+                w.getVariationCode(), TaxonomyAttribute.toMap(w.getAttributes(), Taxonomy.FIELD_DIMENSIONS));
     }
 
     /**
@@ -130,7 +136,7 @@ public final class Views {
     public record PieceRow(UUID id, String name, String brandName, String brandLogoUrl, String subcategory,
                            String category, String size, String sex, String color, String colorHex, String imageUrl,
                            String thumbnailUrl, BigDecimal price, boolean notAvailableAnymore, UUID ownerId,
-                           String material, int wearCount, long likes, BigDecimal hypeScore, BigDecimal hypeScoreGlobal) {
+                           String material, int wearCount, long likes) {
     }
 
     public static PieceRow row(SchemeItem si) {
@@ -143,12 +149,12 @@ public final class Views {
                     (String) snap.get("size"), (String) snap.get("sex"), (String) snap.get("color"),
                     Taxonomy.hex((String) snap.get("color")), (String) snap.get("imageUrl"), (String) snap.get("thumbnailUrl"),
                     snap.get("price") == null ? null : new BigDecimal(String.valueOf(snap.get("price"))), true,
-                    w == null ? null : w.getUser().getId(), (String) snap.get("material"), 0, 0, null, null);
+                    w == null ? null : w.getUser().getId(), (String) snap.get("material"), 0, 0);
         }
         return new PieceRow(w.getId(), w.getName(), w.getBrand() != null ? w.getBrand().getName() : w.getBrandName(),
                 brandLogo(w), w.getSubcategory(), w.getCategory(), w.getSizeLabel(),
                 w.getSex(), w.getColor(), Taxonomy.hex(w.getColor()), w.getImageUrl(), w.getThumbnailUrl(), w.getPrice(), gone,
-                w.getUser().getId(), w.getMaterial(), w.getWearCount(), w.getLikesCount(), w.getHypeScore(), w.getHypeScoreGlobal());
+                w.getUser().getId(), w.getMaterial(), w.getWearCount(), w.getLikesCount());
     }
 
     public static Map<String, Object> snapshot(WardrobeItem w) {
@@ -182,6 +188,12 @@ public final class Views {
                 Json.map(si.getFiltersJson()), row(si));
     }
 
+    public record TipoLookView(UUID id, String codigo, String nome) { }
+
+    public static TipoLookView tipoLook(br.com.fashionai.domain.model.TipoLook tipo) {
+        return tipo == null ? null : new TipoLookView(tipo.getId(), tipo.getCodigo(), tipo.getNome());
+    }
+
     public record SchemeView(UUID id, UserCard owner, String title, String description, String creationMode,
                              String origin, List<String> style, List<String> occasion, String season, String mood,
                              String visibility, String status, String displayMode, boolean disponivel,
@@ -189,10 +201,10 @@ public final class Views {
                              String cardSkin, String layoutAnatomy, String containerOrigin, String containerColor,
                              List<SchemeItemView> items, BigDecimal totalPrice, List<String> seals, List<String> tags,
                              String renderingStatus, String virtualTryOnUrl, Map<String, Object> renderingQuality,
-                             Map<String, Object> renderingMetadata, BigDecimal hypeScore, BigDecimal hypeScoreGlobal,
+                             Map<String, Object> renderingMetadata,
                              UUID remixedFromId, boolean revalidationPending, Counters counters, ViewerState viewer,
                              Instant publishedAt, Instant createdAt, Instant updatedAt,
-                             List<Map<String, Object>> sealBadges, String mannequinImageUrl, String mannequinImageFace) {
+                             List<Map<String, Object>> sealBadges, String mannequinImageUrl, String mannequinImageFace, TipoLookView tipoLook) {
     }
 
     public static SchemeView scheme(Scheme s, List<SchemeItem> items, ViewerState viewer, Map<String, Long> reactions) {
@@ -216,11 +228,11 @@ public final class Views {
                 items.stream().map(Views::item).toList(), s.getTotalPrice(), Json.strings(s.getSealIdsJson()),
                 Json.csv(s.getTags()), s.getRenderingStatus() == null ? null : s.getRenderingStatus().name(),
                 s.getVirtualTryOnUrl(), Json.map(s.getRenderingQualityJson()), Json.map(s.getRenderingMetadataJson()),
-                s.getHypeScore(), s.getHypeScoreGlobal(), s.getOriginalScheme() == null ? null : s.getOriginalScheme().getId(),
+                s.getOriginalScheme() == null ? null : s.getOriginalScheme().getId(),
                 s.isRevalidationPending(), new Counters(s.getLikeCount(), s.getCommentCount(), s.getShareCount(),
                 s.getRemixCount(), s.getViewCount(), s.getSaveCount(), reactions == null ? Map.of() : reactions),
                 viewer == null ? ViewerState.NONE : viewer, s.getPublishedAt(), s.getCreatedAt(), s.getUpdatedAt(),
-                sealBadges == null ? List.of() : sealBadges, s.getMannequinImageUrl(), s.getMannequinImageFace());
+                sealBadges == null ? List.of() : sealBadges, s.getMannequinImageUrl(), s.getMannequinImageFace(), tipoLook(s.getTipoLook()));
     }
 
     public record PhotoView(UUID id, String origin, UUID sourceEntityId, String url, String thumbnailUrl,

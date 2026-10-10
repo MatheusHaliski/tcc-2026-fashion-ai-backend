@@ -48,7 +48,7 @@ describe("cliente da API (RF2: sessão, erros e renovação do token)", () => {
     const { api } = await fresh();
     fetchMock.mockResolvedValueOnce(json(200, {}));
     const fd = new FormData(); fd.append("file", new Blob(["x"]), "a.jpg");
-    await api.upload("/api/pieces/analysis", fd, "PUT");
+    await api.upload("/api/me/avatar", fd, "PUT");
     const init = fetchMock.mock.calls[0][1];
     expect(init.method).toBe("PUT");
     expect(init.body).toBe(fd);

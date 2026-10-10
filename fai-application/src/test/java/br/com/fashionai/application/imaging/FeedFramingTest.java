@@ -89,7 +89,7 @@ class FeedFramingTest {
                 tee(1.15, 380, 620, 140, 0.60, 0, new Color(0x93A266)));    // tronco estreito
         List<double[]> seen = new ArrayList<>();
         for (BufferedImage t : tees) {
-            FeedFraming.Feed f = FeedFraming.frame(t, FeedFraming.Template.TOP, Set.of());
+            FeedFraming.Feed f = FeedFraming.silhouette(t, FeedFraming.Template.TOP, Set.of());
             assertThat(f.frame().width() * 5).isEqualTo(f.frame().height() * 4);          // 4:5
             Map<String, Object> lm = f.landmarks();
             double top = 0;                                                                // gola no topo da peça
@@ -116,7 +116,7 @@ class FeedFramingTest {
                 pants(0.80, 340, 230, 780, 120, false),   // skinny
                 pants(1.10, 400, 280, 640, 180, false));  // cropped (entreperna curta)
         for (BufferedImage img : list) {
-            FeedFraming.Feed f = FeedFraming.frame(img, FeedFraming.Template.PANTS, Set.of());
+            FeedFraming.Feed f = FeedFraming.silhouette(img, FeedFraming.Template.PANTS, Set.of());
             Map<String, Object> lm = f.landmarks();
             assertThat(lm.get("crotchY")).as("gancho medido").isNotNull();
             double knee = ((Number) lm.get("kneeY")).doubleValue() * img.getHeight();
@@ -133,7 +133,7 @@ class FeedFramingTest {
     @Test
     void fotoQueNaoChegaAosJoelhosPedeOutraFoto() {
         BufferedImage cut = pants(1.0, 380, 260, 760, 170, true);
-        FeedFraming.Feed f = FeedFraming.frame(cut, FeedFraming.Template.PANTS, Set.of("bottom"));
+        FeedFraming.Feed f = FeedFraming.silhouette(cut, FeedFraming.Template.PANTS, Set.of("bottom"));
         assertThat(f.missing()).contains("knees");
         assertThat(f.estimated()).isTrue();
     }
@@ -142,7 +142,7 @@ class FeedFramingTest {
     void camisetaSemGolaNaFotoPedeOutraFoto() {
         BufferedImage t = tee(1.0, 420, 600, 150, 0.55, 0, Color.RED);
         BufferedImage noCollar = t.getSubimage(0, 40, t.getWidth(), t.getHeight() - 40);
-        FeedFraming.Feed f = FeedFraming.frame(ImageOps.toArgb(noCollar), FeedFraming.Template.TOP, Set.of("top"));
+        FeedFraming.Feed f = FeedFraming.silhouette(ImageOps.toArgb(noCollar), FeedFraming.Template.TOP, Set.of("top"));
         assertThat(f.missing()).contains("collar");
     }
 
@@ -150,12 +150,12 @@ class FeedFramingTest {
     @Test
     void parteEncobertaNaFotoVestidaPedeOutraFoto() {
         BufferedImage t = tee(1.0, 420, 600, 150, 0.55, 0, Color.RED);
-        assertThat(FeedFraming.frame(t, FeedFraming.Template.TOP, Set.of()).missing()).doesNotContain("occluded");
+        assertThat(FeedFraming.silhouette(t, FeedFraming.Template.TOP, Set.of()).missing()).doesNotContain("occluded");
         Graphics2D g = t.createGraphics();
         g.setComposite(java.awt.AlphaComposite.Clear);
         g.fillOval(t.getWidth() / 2 - 70, t.getHeight() / 2 - 40, 140, 90);
         g.dispose();
-        FeedFraming.Feed f = FeedFraming.frame(t, FeedFraming.Template.TOP, Set.of());
+        FeedFraming.Feed f = FeedFraming.silhouette(t, FeedFraming.Template.TOP, Set.of());
         assertThat(f.missing()).contains("occluded");
         // o buraco não parte o tronco: o peito continua medido na silhueta inteira
         assertThat(((Number) f.landmarks().get("chestWidth")).doubleValue()).isGreaterThan(0.4);
@@ -182,7 +182,7 @@ class FeedFramingTest {
         g.setColor(Color.DARK_GRAY);
         g.fillRoundRect(40, 120, 820, 240, 120, 120);
         g.dispose();
-        FeedFraming.Feed f = FeedFraming.frame(cropScaled(shoe, 1), FeedFraming.Template.SHOES, Set.of());
+        FeedFraming.Feed f = FeedFraming.silhouette(cropScaled(shoe, 1), FeedFraming.Template.SHOES, Set.of());
         assertThat(f.frame().bleed()).isEmpty();
         assertThat(fy(f, cropScaled(shoe, 1).getHeight())).isCloseTo(FeedFraming.SHOE_GROUND_Y, within(0.01));
         BufferedImage bag = new BufferedImage(500, 600, BufferedImage.TYPE_INT_ARGB);
@@ -190,7 +190,7 @@ class FeedFramingTest {
         g.setColor(new Color(0x8B4513));
         g.fillRect(50, 150, 400, 400);
         g.dispose();
-        FeedFraming.Feed b = FeedFraming.frame(cropScaled(bag, 1), FeedFraming.Template.BAG, Set.of());
+        FeedFraming.Feed b = FeedFraming.silhouette(cropScaled(bag, 1), FeedFraming.Template.BAG, Set.of());
         assertThat(b.frame().bleed()).isEmpty();
     }
 
@@ -218,7 +218,7 @@ class FeedFramingTest {
             BufferedImage big = asset((String) c[0]);
             BufferedImage small = ImageOps.scale(big, big.getWidth() / 2, big.getHeight() / 2);
             FeedFraming.Template tpl = (FeedFraming.Template) c[1];
-            FeedFraming.Feed a = FeedFraming.frame(big, tpl, Set.of()), b = FeedFraming.frame(small, tpl, Set.of());
+            FeedFraming.Feed a = FeedFraming.silhouette(big, tpl, Set.of()), b = FeedFraming.silhouette(small, tpl, Set.of());
             assertThat(a.missing()).as("%s sem regiões faltando", c[0]).isEmpty();
             assertThat(fy(a, 0)).as("%s: topo na mesma altura", c[0]).isCloseTo(fy(b, 0), within(0.01));
             assertThat(fy(a, big.getHeight())).as("%s: base na mesma altura", c[0]).isCloseTo(fy(b, small.getHeight()), within(0.015));
@@ -228,8 +228,8 @@ class FeedFramingTest {
             }
         }
         // jaqueta e blazer: a gola na mesma altura (como nas camisetas), para a grade de peças de cima ficar alinhada
-        FeedFraming.Feed jacket = FeedFraming.frame(asset("01_Parte_superior/14_jacket_jaqueta.png"), FeedFraming.Template.OUTERWEAR, Set.of());
-        FeedFraming.Feed blazer = FeedFraming.frame(asset("01_Parte_superior/13_blazer.png"), FeedFraming.Template.OUTERWEAR, Set.of());
+        FeedFraming.Feed jacket = FeedFraming.silhouette(asset("01_Parte_superior/14_jacket_jaqueta.png"), FeedFraming.Template.OUTERWEAR, Set.of());
+        FeedFraming.Feed blazer = FeedFraming.silhouette(asset("01_Parte_superior/13_blazer.png"), FeedFraming.Template.OUTERWEAR, Set.of());
         assertThat(fy(jacket, 0)).isCloseTo(FeedFraming.TOP_COLLAR_Y, within(0.01));
         assertThat(fy(blazer, 0)).isCloseTo(FeedFraming.TOP_COLLAR_Y, within(0.01));
     }
@@ -288,7 +288,7 @@ class FeedFramingTest {
     @Test
     void escalaUniformeSemDistorcer() {
         BufferedImage t = tee(1.0, 420, 600, 150, 0.55, 0, Color.GRAY);
-        FeedFraming.Feed f = FeedFraming.frame(t, FeedFraming.Template.TOP, Set.of());
+        FeedFraming.Feed f = FeedFraming.silhouette(t, FeedFraming.Template.TOP, Set.of());
         // o quadro guarda uma escala só (x = y) e a proporção da peça no quadro é a do recorte
         double pw = t.getWidth() * f.frame().scale(), ph = t.getHeight() * f.frame().scale();
         assertThat(pw / ph).isCloseTo(t.getWidth() / (double) t.getHeight(), within(1e-9));

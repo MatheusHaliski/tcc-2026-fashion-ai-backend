@@ -21,6 +21,8 @@ const TAXONOMY = {
   defaultImages: { upper_piece: "/assets/upper.png", generic: "/assets/generic.png" },
 };
 
+const MODO_FOTOS = "Fotografar (várias fotos)";
+
 describe("casca do app", () => {
   for (const [label, me, path] of [["pessoa", ME, "/closet"], ["admin", { ...ME, role: "ADMIN" as const }, "/admin/dashboard"], ["marca", { ...ME, user: { ...ME.user, profileType: "MARCA" as const } }, "/feed"]] as const) {
     it(`menu e atalhos para ${label}`, async () => {
@@ -64,14 +66,19 @@ describe("abas do perfil (Lookbook)", () => {
   }
 });
 
-describe("adicionar peça (RF4/RF47) — etapa única Peça, sem envio de foto", () => {
-  it("não há seção de foto: tipo, busca catalogada e dados ficam na mesma etapa", async () => {
+describe("adicionar peça (RF4/RF47) — etapa única Peça, foto opcional", () => {
+  it("tipo, busca catalogada e dados na mesma etapa; a foto é opcional, na aba Fotografar, e aceita várias fotos", async () => {
     loggedAs(ME, { "GET /api/taxonomy": TAXONOMY, "GET /api/catalog/brands": { brands: [] } });
     const { container } = renderApp(<NewPiecePage />);
     expect(await screen.findByRole("heading", { name: "Buscar no catálogo" })).toBeTruthy();
     expect(screen.getByRole("heading", { name: "Dados" })).toBeTruthy();
+    // as duas formas de adicionar ficam separadas: a busca catalogada não repete o envio de fotos, só aponta a aba
+    expect(screen.getByRole("heading", { name: "Prefere fotografar?" })).toBeTruthy();
     expect(container.querySelector("input[type=file]")).toBeNull();
-    expect(screen.queryByRole("button", { name: /Enviar foto/ })).toBeNull();
+    fireEvent.click(screen.getAllByRole("button", { name: MODO_FOTOS })[0]);
+    expect(await screen.findByRole("heading", { name: MODO_FOTOS })).toBeTruthy();
+    const input = container.querySelector("input[type=file]")!;
+    expect(input.hasAttribute("multiple")).toBe(true);
   });
 
   it("sem produto do catálogo, salva a peça com os dados do formulário e a ilustração da categoria", async () => {

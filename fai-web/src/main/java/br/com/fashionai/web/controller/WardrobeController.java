@@ -27,15 +27,6 @@ public class WardrobeController {
         this.multiPiece = multiPiece;
     }
 
-    @PostMapping(value = "/api/pieces/analysis", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @Operation(summary = "RF4.CA02–CA04 — Analisar foto: critérios de aceite, remoção de fundo, flat lay, subtipo por "
-            + "similaridade dentro do tipo escolhido (category), marca nas zonas da peça e pré-preenchimento por IA. "
-            + "Foto fora dos critérios → 422 FOTO_RECUSADA com details.checks")
-    public WardrobeService.Draft analyze(CurrentUser user, @RequestPart("file") MultipartFile file,
-                                         @RequestParam(value = "category", required = false) String category) {
-        return wardrobe.analyze(user, Uploads.image(file), category);
-    }
-
     @PostMapping(value = "/api/pieces/analysis/batch", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "RF4.CA11 — Analisar várias fotos de uma vez (até 10)")
     public List<WardrobeService.Draft> analyzeBatch(CurrentUser user, @RequestPart("files") List<MultipartFile> files,
@@ -104,12 +95,16 @@ public class WardrobeController {
                                                @RequestParam(required = false) String q,
                                                @RequestParam(required = false) String sort,
                                                @RequestParam(defaultValue = "0") int page,
-                                               @RequestParam(defaultValue = "24") int size) {
-        return wardrobe.closet(user, user.id(), new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size));
+                                               @RequestParam(defaultValue = "24") int size,
+                                               @RequestParam(required = false) String hypeLevel,
+                                               @RequestParam(required = false) String seal) {
+        // seal (RF53): hype | brand | any — peças com selo de Hype, com selo de marca/celebridade, ou qualquer um
+        return wardrobe.closet(user, user.id(), new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel, seal));
     }
 
     @GetMapping("/api/users/{ownerId}/closet")
-    @Operation(summary = "RF7/RF17 — Closet de outro usuário (respeita visibilidade)")
+    @Operation(summary = "RF7/RF17 — Closet de outro usuário (respeita visibilidade); sort=recent|hype_desc|growth… e "
+            + "hypeLevel (faixa mínima). Para quem não é o dono, só o Hype público (publicEligible) ordena e filtra")
     public Views.Page<Views.PieceView> closet(CurrentUser viewer, @PathVariable UUID ownerId,
                                              @RequestParam(required = false) String category,
                                              @RequestParam(required = false) String color,
@@ -120,9 +115,12 @@ public class WardrobeController {
                                              @RequestParam(required = false) String q,
                                              @RequestParam(required = false) String sort,
                                              @RequestParam(defaultValue = "0") int page,
-                                             @RequestParam(defaultValue = "24") int size) {
+                                             @RequestParam(defaultValue = "24") int size,
+                                             @RequestParam(required = false) String hypeLevel) {
         // estado (disponível / indisponível / à venda) também vale no perfil: são dados públicos da peça
-        return wardrobe.closet(viewer, ownerId, new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size));
+        // hypeLevel (P2-11, Lookbook › Peças): FILTRO por faixa mínima, mesma regra do /api/me/closet; o serviço aplica a
+        // guarda de privacidade (terceiros só com score publicEligible; o resto fica "—", por último e fora do filtro)
+        return wardrobe.closet(viewer, ownerId, new WardrobeService.ClosetFilter(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel));
     }
 
     @GetMapping("/api/pieces/{id}")
@@ -137,13 +135,13 @@ public class WardrobeController {
         return wardrobe.update(user, id, form);
     }
 
-    public record Flags(Boolean favorite, Boolean disponivel, Boolean forSale) {
+    public record Flags(Boolean favorite, Boolean disponivel, Boolean forSale, Boolean forDonation) {
     }
 
     @PatchMapping("/api/pieces/{id}/flags")
-    @Operation(summary = "RF7 — Favoritar, marcar disponível/indisponível ou à venda")
+    @Operation(summary = "RF7/RF31 — Favoritar, marcar disponível/indisponível, à venda ou para doar")
     public Views.PieceView flags(CurrentUser user, @PathVariable UUID id, @RequestBody Flags body) {
-        return wardrobe.toggles(user, id, body.favorite(), body.disponivel(), body.forSale());
+        return wardrobe.toggles(user, id, body.favorite(), body.disponivel(), body.forSale(), body.forDonation());
     }
 
     @PostMapping("/api/pieces/{id}/worn")
@@ -235,7 +233,7 @@ public class WardrobeController {
 
     @PostMapping("/api/pieces/{id}/copy")
     @ResponseStatus(HttpStatus.CREATED)
-    @Operation(summary = "RF15 — Adicionar uma peça pública ao meu guarda-roupa")
+    @Operation(summary = "Explorar — Adicionar uma peça pública ao meu guarda-roupa")
     public Views.PieceView copy(CurrentUser user, @PathVariable UUID id) {
         return wardrobe.addToWardrobe(user, id);
     }

@@ -1,0 +1,65 @@
+{
+ "_comment": "Modelos de look: título + estilo + ocasião da taxonomia (Taxonomy.STYLES / OCCASIONS).",
+ "looks": [
+  {
+   "title": "Casual de domingo",
+   "style": "basic",
+   "occasion": "casual"
+  },
+  {
+   "title": "Reunião às nove",
+   "style": "tailored",
+   "occasion": "work"
+  },
+  {
+   "title": "Noite na cidade",
+   "style": "chic",
+   "occasion": "night_out"
+  },
+  {
+   "title": "Treino leve",
+   "style": "athleisure",
+   "occasion": "gym"
+  },
+  {
+   "title": "Fim de semana na praia",
+   "style": "resort",
+   "occasion": "beach"
+  },
+  {
+   "title": "Street de sábado",
+   "style": "streetwear",
+   "occasion": "social"
+  },
+  {
+   "title": "Jantar a dois",
+   "style": "romantic",
+   "occasion": "date"
+  },
+  {
+   "title": "Viagem confortável",
+   "style": "minimalist",
+   "occasion": "travel"
+  },
+  {
+   "title": "Festival de verão",
+   "style": "boho",
+   "occasion": "festival"
+  },
+  {
+   "title": "Formatura",
+   "style": "classic",
+   "occasion": "ceremony"
+  },
+  {
+   "title": "Aula cedo",
+   "style": "preppy",
+   "occasion": "university"
+  },
+  {
+   "title": "Trilha leve",
+   "style": "utility",
+   "occasion": "outdoor"
+  }
+ ]
+}

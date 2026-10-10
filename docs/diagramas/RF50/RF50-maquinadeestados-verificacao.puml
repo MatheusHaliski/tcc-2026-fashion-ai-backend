@@ -1,0 +1,42 @@
+@startuml RF50_MaquinaDeEstados_Verificacao
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  StartColor #20A77A
+  EndColor #4B5563
+}
+title RF50 — ciclo de vida de BrandProfile.approvalStatus\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum ApprovalStatus · tabela brand_profiles
+
+state "BrandProfile.approvalStatus" as Ciclo_BrandProfile {
+  state Ciclo_BrandProfile_PENDENTE as "PENDENTE"
+  state Ciclo_BrandProfile_AJUSTES as "AJUSTES"
+  state Ciclo_BrandProfile_APROVADO as "APROVADO"
+  state Ciclo_BrandProfile_RECUSADO as "RECUSADO"
+  state Ciclo_BrandProfile_SUSPENSO as "SUSPENSO"
+}
+[*] --> Ciclo_BrandProfile_PENDENTE : criação
+Ciclo_BrandProfile --> Ciclo_BrandProfile_PENDENTE : register()\nPOST /api/auth/register
+note bottom of Ciclo_BrandProfile
+  Sem mudança explícita no código para: AJUSTES, APROVADO, RECUSADO, SUSPENSO
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
+note right of Ciclo_BrandProfile
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
+end note
+@enduml

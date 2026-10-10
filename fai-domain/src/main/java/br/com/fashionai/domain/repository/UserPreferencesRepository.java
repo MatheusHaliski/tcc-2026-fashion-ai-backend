@@ -18,4 +18,8 @@ import java.util.UUID;
 /** Repositório Spring Data de UserPreferences (MySQL — fonte da verdade). */
 public interface UserPreferencesRepository extends JpaRepository<UserPreferences, UUID> {
     Optional<UserPreferences> findByUserId(UUID userId);
+
+    /** RF53 · P3-12 — quem pediu para não aparecer em "Criadores em alta" (ids das pessoas). */
+    @Query("select p.user.id from UserPreferences p where p.hypeCreatorOptOut = true")
+    List<UUID> findHypeCreatorOptOutUserIds();
 }

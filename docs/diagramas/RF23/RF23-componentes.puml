@@ -1,71 +1,87 @@
 @startuml RF23_Componentes
-title RF23 — Criar as telas de configuração do usuário (Conta, Privacidade, Aparência, Idioma, Seus dados) no padrão LGPD, com i18n\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF23 — Criar as telas de configuração do usuário (Conta, Privacidade, Aparência, Idioma, Seus dados) no padrão LGPD, com i18n\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "settings/page.tsx\n(abas Conta · Aparência · Privacidade · Seus dados · Sessões)" as FE0
-  component "components/edit-profile.tsx\n(EditProfileForm)" as FE1
-  component "lib/theme/theme.tsx\n(ThemeProvider · CHROME_BACKGROUNDS · CONTAINER_PRESETS)" as FE2
-  component "lib/i18n (i18n.tsx · core.ts · state.ts · icu.ts)\nmessages/pt-BR.json · en.json · es.json" as FE3
-  component "scripts/i18n (extract · scan · check · qa · JavaExtract)" as FE4
-  component "components/app-shell.tsx\n(carrega preferências no login)" as FE5
+  component "/settings\n(site)/(app)/settings/page.tsx" as FE0
+  component "/u/[username]\n(site)/(app)/u/[username]/page.tsx" as FE1
+  component "lib/api/client.ts" as APIC
 }
-package "fai-web · controllers" {
-  [PreferencesController] as PC
-  [MeController] as MC
-  [BackgroundController] as BC
-  [RequestLocaleFilter + I18nConfig\n(Accept-Language → Content-Language)] as LF
+package "fai-web (REST)" {
+  component "BackgroundController\n/api/assets/chrome\n/api/assets/manifest" as BackgroundController
+  component "MeController\n/api/me\n/api/me/consents\n/api/me/consents/{…}\n/api/me/exports\n(+1 rotas)" as MeController
+  component "PreferencesController\n/api/me/avatar\n/api/me/cover\n/api/me/preferences\n/api/me/profile\n(+1 rotas)" as PreferencesController
 }
-package "fai-application · services" {
-  [PreferencesService] as PS
-  [AccountService] as AS
-  [AssetCatalogService] as AC
-  [IdentityService\n(usernameSuggestions)] as IS
-  [Msg (common)\ni18n/messages*.properties] as MSG
-  [NotificationService] as NS
-  [Audit] as AU
+package "fai-application (casos de uso)" {
+  component "AssetCatalogService" as AssetCatalogService
+  component "AccountService" as AccountService
+  component "PreferencesService" as PreferencesService
+  component "IdentityService" as IdentityService <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
+  component "Avatar3dService" as Avatar3dService <<apoio>>
+  component "LensService" as LensService <<apoio>>
+  component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
+  component "MediaService" as MediaService <<apoio>>
+  component "MediaStoragePort\n«LocalFileMediaStorage / S3MediaStorageAdapter»" as MediaStoragePort <<port>>
+  component "EmailSenderPort\n«LoggingEmailSender / ResendEmailSender»" as EmailSenderPort <<port>>
 }
-package "fai-infrastructure · adapters" {
-  [UserPreferencesRepository\nUserRepository\nUserConsentRepository\nDataExportRequestRepository\nAssetPresetRepository] as REPOS
-  [MediaStoragePort\n(local / S3 — restricted/)] as ST
+package "fai-domain (repositórios)" {
+  component "AssetPresetRepository\nUserRepository\nUserPreferencesRepository\nUserConsentRepository\nVerificationCodeRepository\nDataExportRequestRepository\nWardrobeItemRepository\nSchemeRepository\nSchemeItemRepository\nCommentRepository\n(+13)" as REPO_MySQL
 }
-database "MySQL · fashionai_app\n• user_preferences\n• users\n• user_consents\n• data_export_requests\n• audit_log\n• notifications" as DB
-
-FE0 --> PC : GET/PUT /api/me/preferences\nPATCH /api/me/profile · PUT /api/me/username
-FE1 --> PC : PATCH /api/me/profile\nPOST /api/me/avatar · /api/me/cover
-FE0 --> MC : GET/PUT /api/me/consents/{purpose}\nPUT /api/me/privacy · POST/GET /api/me/exports
-FE2 --> BC : GET /api/assets/chrome · /api/assets/manifest
-FE5 --> PC : GET /api/me/preferences
-FE3 --> LF : Accept-Language em toda chamada
-FE4 ..> FE3 : gera/valida catálogos
-PC --> PS : chama
-MC --> AS : chama
-BC --> AC : chama
-PS --> AC : valida chromeBackgroundId / skin
-PS --> IS : sugestões de @
-PS --> AU : audita
-AS --> NS : DATA_EXPORT_READY
-AS --> AU : audita
-AS --> ST : grava/lê exportação JSON
-PS --> MSG : Msg.t (idioma da requisição)
-AS --> MSG : Msg.resolveDeep (idioma preferido)
-LF --> MSG : LocaleContextHolder
-PS --> REPOS : lê/grava
-AS --> REPOS : lê/grava
-AC --> REPOS : lê presets
-REPOS --> DB : JPA/Flyway
+database "MySQL\n• ai_inference_log\n• asset_presets\n• brand_profiles\n• celebrity_profiles\n• comments\n• data_export_requests\n• dna_schemes\n• follows\n• hype_milestones\n• hype_score_snapshots\n• hype_scores\n• notifications\n(+11)" as DB_MySQL
+cloud "S3" as CL_S3
+cloud "Resend" as CL_Resend
+APIC --> BackgroundController : HTTPS/JSON
+APIC --> MeController : HTTPS/JSON
+APIC --> PreferencesController : HTTPS/JSON
+AccountService --> EmailSenderPort
+AccountService --> MediaStoragePort
+AccountService --> REPO_MySQL
+AccountService ..> Avatar3dService
+AccountService ..> HypeScoreConfig
+AccountService ..> IdentityService
+AccountService ..> LensService
+AccountService ..> NotificationService
+AssetCatalogService --> REPO_MySQL
+BackgroundController --> AssetCatalogService
+EmailSenderPort --> CL_Resend
+FE0 --> APIC
+FE1 --> APIC
+MeController --> AccountService
+MediaStoragePort --> CL_S3
+PreferencesController --> PreferencesService
+PreferencesService --> REPO_MySQL
+PreferencesService ..> AssetCatalogService
+PreferencesService ..> IdentityService
+PreferencesService ..> MediaService
+REPO_MySQL --> DB_MySQL : JPA/Flyway
 @enduml

@@ -1,0 +1,162 @@
+@startuml RF52_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF52 — Reproduzir as Auras animadas dos cards sem travar\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "lib/card-art.ts" {
+  class CardArt as "CardArt" <<interface>> {
+    +kind: ArtKind
+    +base: string
+    +image: string
+    +video: { src: string; poster?: string | null }
+    +material: string
+    +animation: string | null
+    +season: string | null
+    +label: string
+    +presetId: string
+    +frame: boolean
+    .. +2 ..
+  }
+  class Idx as "Idx" <<type>> {
+    +presets: Record<string, { name: string; archetyp…
+    +variants: Record<string, { presetId: string; code…
+    +materials: Record<string, { name: string; code?: s…
+    +combos: Record<string, { single?: { url: string…
+    +seasonal: Record<string, { season: string; name:…
+    +gradients: Record<string, { name: string; type?: s…
+    +skins: Record<string, { nativeContainer?: stri…
+  }
+  class Studio as "Studio" <<interface>> {
+    +color: string | null
+    +gradient: unknown
+    +gradientPresetId: string | null
+    +seasonalPresetId: string | null
+    +seasonalAuto: boolean
+    +aura: { variantId?: string; format?: string }…
+    +materialId: string | null
+    +aiArt: { url?: string } | null
+    +uploadUrl: string | null
+    +container: { color?: string | null; ink?: string |…
+    .. +4 ..
+  }
+  class AuraPresetOption as "AuraPresetOption" <<interface>> {
+    +id: string
+    +name: string
+    +archetype: string
+    +palette: string[]
+    +recommendedMaterials: string[]
+    +variants: { id: string; code?: string; theme?: st…
+  }
+  class mod_card_art_ts as "card-art.ts" <<módulo>> {
+    +motionOf()
+    +auraVariantId()
+    +bundledAuraPresets()
+    +studioOf()
+    +cartelaSeason()
+    +resolveCardArt()
+    +containerColorOf()
+    +containerInkOf()
+  }
+}
+package "components/card-art.tsx" {
+  class mod_card_art_tsx as "card-art.tsx" <<módulo>> {
+    +CardArtLayer()
+    +ArtVideo()
+    +MotionFall()
+    +Snowflake()
+    +Leaf()
+    +Blossom()
+    +Palm()
+    +Sun()
+  }
+}
+package "components/scheme-card.tsx" {
+  class SealBadge as "SealBadge" <<interface>> {
+    +label: string
+    +premium: boolean
+    +iconUrl: string | null
+    +tier: string
+    +owner: string
+    +name: string | null
+    +design: SealDesign | null
+    +linkedPieceIds: string[]
+    +kind: 'BRAND' | 'CELEBRITY' | 'LOOK' | 'HYPE'
+  }
+  class mod_scheme_card_tsx as "scheme-card.tsx" <<módulo>> {
+    +toSealBadges()
+    +SealSlot()
+    +SealStuds()
+    +SchemeCard()
+  }
+}
+package "components/dna-card.tsx" {
+  class DnaView as "DnaView" <<interface>> {
+    +id: string | null
+    +owner: UserCard
+    +title: string
+    +archetype: string | null
+    +archetypeLabel: string | null
+    +boldnessIndex: number | null
+    +identityPhrase: string | null
+    +palette: string[]
+    +cardLayout: string
+    +targetElement: string
+    .. +17 ..
+  }
+  class DnaCellView as "DnaCellView" <<interface>> {
+    +cell: string
+    +schemeId: string
+    +title: string
+    +description: string | null
+    +coverImageUrl: string | null
+    +occasion: string[]
+    +style: string[]
+    +season: string | null
+    +eraLabel: string | null
+    +milestone: boolean
+    .. +7 ..
+  }
+  class DnaLogo as "DnaLogo" <<interface>> {
+    +brand: string
+    +pieces: number
+    +structural: number
+    +logoUrl: string | null
+  }
+  class mod_dna_card_tsx as "dna-card.tsx" <<módulo>> {
+    +dnaLayoutLabel()
+    +dnaNarrativeLabel()
+    +narrativeHasOwnArt()
+    +DnaCard()
+    +dnaHypeScore()
+  }
+}
+package "components/piece-art.tsx" {
+  class mod_piece_art_tsx as "piece-art.tsx" <<módulo>> {
+    +accentOf()
+    +useInView()
+    +ArtStage()
+    +artSurfaceProps()
+  }
+}
+DnaView --> DnaCellView : cells
+DnaView --> DnaLogo : logos
+@enduml

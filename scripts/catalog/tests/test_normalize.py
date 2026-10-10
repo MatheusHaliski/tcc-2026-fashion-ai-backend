@@ -65,5 +65,42 @@ class NormalizeTest(unittest.TestCase):
                 keys.add(k)
 
 
+class PlainTextTest(unittest.TestCase):
+    def test_bolsa_com_subcategoria_de_roupa_nao_entra(self):
+        n = Normalizer()
+        with self.assertRaises(ValidationError):
+            normalize_product({"brand": "Desigual", "subcategory": "jeans", "product_name": "Bossa denim mitjana blau"}, n)
+        # "bolso" é o bolso da roupa, e "baggy" não é bolsa
+        self.assertEqual(normalize_product({"brand": "X", "subcategory": "jeans", "product_name": "Calça jeans baggy com bolso"}, n).subcategory, "jeans")
+
+    def test_titulo_com_marcacao_html_vira_texto_puro(self):
+        from normalize_product import plain_text
+        self.assertEqual(plain_text("Supima<sup>®</sup> Cotton Pique Polo Shirt"), "Supima® Cotton Pique Polo Shirt")
+        self.assertEqual(plain_text("Levi&#39;s 501 &amp; Co."), "Levi's 501 & Co.")
+
+
 if __name__ == "__main__":
     unittest.main()
+
+
+class DesignTest(unittest.TestCase):
+    """RF47 · design da peça só com o vocabulário compartilhado (normalization.json → design)."""
+
+    def setUp(self):
+        self.n = Normalizer()
+
+    def test_design_valido_e_normalizado(self):
+        p = normalize_product({"brand": "Calvin Klein", "subcategory": "t_shirt", "product_name": "Camiseta Monogram Allover",
+                               "description": "Monograma CK  em toda a superfície.",
+                               "design": {"pattern": "allover_logo", "logoPlacement": "ALLOVER", "sides": ["front", "back"],
+                                          "baseColors": ["cinza"], "printColors": ["preto"]}}, self.n)
+        self.assertEqual(p.description, "Monograma CK em toda a superfície.")
+        self.assertEqual(p.design, {"pattern": "ALLOVER_LOGO", "logoPlacement": "ALLOVER", "sides": ["FRONT", "BACK"],
+                                    "baseColors": ["gray"], "printColors": ["black"]})
+
+    def test_fora_do_vocabulario_vira_aviso(self):
+        p = normalize_product({"brand": "X", "subcategory": "t_shirt", "product_name": "Y",
+                               "design": {"pattern": "GALAXY", "baseColors": ["azul", "furta-cor"]}}, self.n)
+        self.assertEqual(p.design, {"baseColors": ["blue"]})
+        self.assertTrue(any("GALAXY" in w for w in p.warnings))
+        self.assertTrue(any("furta-cor" in w for w in p.warnings))

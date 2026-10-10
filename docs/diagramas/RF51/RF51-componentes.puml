@@ -1,0 +1,111 @@
+@startuml RF51_Componentes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF51 — Cartela sazonal e animação no modal do Background Studio\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "components" {
+  component "scheme-builder.tsx" as m_components_scheme_builder_tsx
+  component "dna-builder.tsx" as m_components_dna_builder_tsx
+  component "piece-art-editor.tsx" as m_components_piece_art_editor_tsx
+  component "scheme-anatomies.tsx" as m_components_scheme_anatomies_tsx
+  component "dna-card.tsx" as m_components_dna_card_tsx
+  component "card-art.tsx" as m_components_card_art_tsx
+  component "ai-compositions.tsx" as m_components_ai_compositions_tsx <<apoio>>
+  component "background-studio.tsx" as m_components_background_studio_tsx <<apoio>>
+  component "brand-logo.tsx" as m_components_brand_logo_tsx <<apoio>>
+  component "expanded-card.tsx" as m_components_expanded_card_tsx <<apoio>>
+}
+package "lib" {
+  component "card-art.ts" as m_lib_card_art_ts
+}
+package "components/hype" {
+  component "hype-seals.tsx" as m_components_hype_hype_seals_tsx <<apoio>>
+}
+package "Backend (Spring Boot)" {
+  component "BackgroundController" as BackgroundController
+  component "DnaController" as DnaController
+  component "LookbookController" as LookbookController
+  component "SchemeController" as SchemeController
+  component "SealController" as SealController
+  component "WardrobeController" as WardrobeController
+  component "AssetCatalogService" as AssetCatalogService
+  component "BackgroundStudioService" as BackgroundStudioService
+  component "DnaService" as DnaService
+  component "SchemeService" as SchemeService
+  component "Views" as Views <<apoio>>
+}
+database "MySQL" as DB_MySQL
+AssetCatalogService --> DB_MySQL : asset_presets
+BackgroundController --> AssetCatalogService
+BackgroundController --> BackgroundStudioService
+BackgroundStudioService --> AssetCatalogService
+BackgroundStudioService --> DB_MySQL : asset_presets, celebrity_profiles, schemes, users, wardrobe_items
+DnaController --> DnaService
+DnaService --> DB_MySQL : daily_looks, dna_scheme_items,\ndna_schemes, hype_scores, scheme_items,\nschemes
+DnaService --> SchemeService
+SchemeController --> SchemeService
+SchemeService --> BackgroundStudioService
+SchemeService --> DB_MySQL : hype_scores, reactions, saved_items,\nscheme_items, schemes, style_dna
+m_components_background_studio_tsx --> BackgroundController : HTTPS
+m_components_background_studio_tsx --> m_components_scheme_anatomies_tsx
+m_components_background_studio_tsx --> m_lib_card_art_ts
+m_components_card_art_tsx --> m_lib_card_art_ts
+m_components_dna_builder_tsx --> DnaController : HTTPS
+m_components_dna_builder_tsx --> m_components_background_studio_tsx
+m_components_dna_builder_tsx --> m_components_brand_logo_tsx
+m_components_dna_builder_tsx --> m_components_dna_card_tsx
+m_components_dna_builder_tsx --> m_components_expanded_card_tsx
+m_components_dna_builder_tsx --> m_lib_card_art_ts
+m_components_dna_card_tsx --> m_components_brand_logo_tsx
+m_components_dna_card_tsx --> m_components_card_art_tsx
+m_components_dna_card_tsx --> m_lib_card_art_ts
+m_components_expanded_card_tsx --> DnaController : HTTPS
+m_components_expanded_card_tsx --> LookbookController : HTTPS
+m_components_expanded_card_tsx --> SchemeController : HTTPS
+m_components_expanded_card_tsx --> SealController : HTTPS
+m_components_expanded_card_tsx --> WardrobeController : HTTPS
+m_components_expanded_card_tsx --> m_components_brand_logo_tsx
+m_components_expanded_card_tsx --> m_components_dna_card_tsx
+m_components_expanded_card_tsx --> m_components_piece_art_editor_tsx
+m_components_piece_art_editor_tsx --> m_components_background_studio_tsx
+m_components_piece_art_editor_tsx --> m_lib_card_art_ts
+m_components_scheme_anatomies_tsx --> m_components_brand_logo_tsx
+m_components_scheme_anatomies_tsx --> m_components_card_art_tsx
+m_components_scheme_anatomies_tsx --> m_lib_card_art_ts
+m_components_scheme_builder_tsx --> SchemeController : HTTPS
+m_components_scheme_builder_tsx --> SealController : HTTPS
+m_components_scheme_builder_tsx --> m_components_ai_compositions_tsx
+m_components_scheme_builder_tsx --> m_components_background_studio_tsx
+m_components_scheme_builder_tsx --> m_components_brand_logo_tsx
+m_components_scheme_builder_tsx --> m_components_expanded_card_tsx
+m_components_scheme_builder_tsx --> m_components_hype_hype_seals_tsx
+m_components_scheme_builder_tsx --> m_lib_card_art_ts
+@enduml
