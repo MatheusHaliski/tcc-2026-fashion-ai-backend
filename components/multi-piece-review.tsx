@@ -70,6 +70,12 @@ function initialValue(p: Pick<DetectedPiece, "name" | "brandName" | "category" |
 /** Teto de fotos por envio: cada foto passa pela IA de visão e por uma revisão, então o lote fica revisável. */
 export const MAX_PHOTOS = 10;
 
+/**
+ * Peça detectada escolhida para seguir pelo criador em etapas (sem modal): o recorte (ou a foto inteira), o rascunho da
+ * análise e os dados que a IA leu, para conferir em Dados → Mais detalhes → Arte → Revisar.
+ */
+export interface PhotoPick { key: string; file: File; preview: string; draftId: string; index: number; value: PieceFormValue; photo: number; piece: number }
+
 interface PhotoItem {
   id: string; file: File; preview: string;
   status: "idle" | "analyzing" | "ready" | "error" | "done";
@@ -81,8 +87,12 @@ interface PhotoItem {
  * sistema detecta as peças de cada foto. A revisão abre foto por foto ("Foto 2 de 3") e cada peça confirmada vira uma
  * peça no guarda-roupa. Fotos com erro podem ser analisadas de novo sem refazer as outras.
  */
-export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, captureControls }: {
-  onSaved: (count: number) => void;
+export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, captureControls, onPick, picked, savedKeys, onAvailable }: {
+  onSaved?: (count: number) => void;
+  /** criador em etapas: a peça escolhida segue pelo botão Avançar (como na busca catalogada), sem abrir a revisão em modal */
+  onPick?: (p: PhotoPick) => void; picked?: string | null; savedKeys?: string[];
+  /** chaves de todas as peças detectadas (para o criador saber se ainda há peças da foto por cadastrar) */
+  onAvailable?: (keys: string[]) => void;
   /** tipo escolhido na página: o guia "Como fotografar" abre direto na orientação dessa categoria */
   category?: string | null; subcategory?: string | null;
   /** categoria escolhida dentro do guia (sincroniza a página) */
@@ -146,7 +156,7 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
         const fd = new FormData(); fd.append("file", reduced, it.file.name);
         const d = await api.upload<MultiDetection>("/api/pieces/analysis/multi", fd, "POST", { signal: controller.signal });
         patch(it.id, { status: "ready", detection: d });
-        if (!first) { setReviewing(it.id); setStep("more"); }
+        if (!first && !onPick) { setReviewing(it.id); setStep("more"); }
         first ??= it.id;
       } catch (e) {
         const err = e instanceof ApiError ? e : new ApiError(0, "ERRO", String(e));
@@ -163,7 +173,7 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
     const pending = next.find((x) => x.status === "ready");
     if (pending) { setReviewing(pending.id); return; }
     setReviewing(null);
-    if (!next.some((x) => x.status === "idle" || x.status === "analyzing" || x.status === "error")) onSaved(next.reduce((n, x) => n + (x.saved ?? 0), 0));
+    if (!next.some((x) => x.status === "idle" || x.status === "analyzing" || x.status === "error")) onSaved?.(next.reduce((n, x) => n + (x.saved ?? 0), 0));
   }
 
   const current = items.find((i) => i.id === reviewing && i.detection);
@@ -188,7 +198,7 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
 
   return (
     <div className="grid gap-2">
-      <PieceCreationSteps value={step} onChange={go} />
+      {!onPick && <PieceCreationSteps value={step} onChange={go} />}
       {step === "piece" && captureControls}
       {step === "piece" && <><p className="font-medium">{t("multiPiece.entrada")}</p>
       <p className="type-caption text-muted">{t("multiPiece.entrada_ajuda")}</p></>}
@@ -202,7 +212,7 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
                 <p className="type-body-sm font-medium">{t("multiPiece.foto_n", { n: n + 1 })}</p>
                 <p className={cn("type-caption", i.status === "error" ? "error-text" : "text-muted")} role={i.status === "error" ? "alert" : undefined}>{statusText(i)}</p>
               </div>
-              {i.status === "ready" && <Button size="sm" aria-pressed={current?.id === i.id && step !== "piece"} onClick={() => { if ([...reviews.current.values()].some((review) => review.isBusy())) return; setReviewing(i.id); if (step === "piece") setStep("more"); }}>{t("multiPiece.revisar")}</Button>}
+              {i.status === "ready" && !onPick && <Button size="sm" aria-pressed={current?.id === i.id && step !== "piece"} onClick={() => { if ([...reviews.current.values()].some((review) => review.isBusy())) return; setReviewing(i.id); if (step === "piece") setStep("more"); }}>{t("multiPiece.revisar")}</Button>}
               {(i.status === "idle" || i.status === "error") && <Button size="sm" variant="ghost" onClick={() => remove(i.id)} disabled={analyzing} aria-label={t("multiPiece.remover_foto", { n: n + 1 })}>✕</Button>}
             </li>
           ))}
@@ -216,8 +226,11 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
       <CaptureGuideDialog open={guideOpen} onClose={() => setGuideOpen(false)} category={guideCat.category} subcategory={guideCat.subcategory} prefs={prefs}
         onCategory={(c, sub) => { setGuideCat({ category: c, subcategory: sub ?? null }); onCategory?.(c, sub); }}
         onConfirm={() => { setGuideOpen(false); inputRef.current?.click(); }} />
+      {onPick && items.some((i) => i.detection) && (
+        <DetectedPieces items={items} onPick={onPick} picked={picked ?? null} savedKeys={savedKeys ?? []} onAvailable={onAvailable} />
+      )}
       {/* Mantém os rascunhos montados: trocar de foto não descarta edições nem recortes. */}
-      {items.filter((item) => item.detection).map((item) => (
+      {!onPick && items.filter((item) => item.detection).map((item) => (
         <div key={item.id} hidden={step === "piece" || current?.id !== item.id}>
           <MultiPieceReview file={item.file} detection={item.detection!}
             step={step} onStepChange={go} controlRef={(handle) => { if (handle) reviews.current.set(item.id, handle); else reviews.current.delete(item.id); }}
@@ -226,6 +239,62 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
         </div>
       ))}
     </div>
+  );
+}
+
+/**
+ * Peças achadas em cada foto, na própria página do criador: miniatura recortada, nome lido e "Usar esta peça". A escolhida
+ * segue pelas etapas do criador; as já salvas ficam marcadas e a pessoa volta aqui para a próxima.
+ */
+function DetectedPieces({ items, onPick, picked, savedKeys, onAvailable }: { items: PhotoItem[]; onPick: (p: PhotoPick) => void; picked: string | null; savedKeys: string[]; onAvailable?: (keys: string[]) => void }) {
+  const { t } = useI18n(); const tax = useTaxonomy();
+  const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const urls = useRef<string[]>([]);
+  useEffect(() => () => urls.current.forEach((u) => URL.revokeObjectURL(u)), []);
+  const ready = items.filter((i) => i.detection);
+  const entries = ready.flatMap((it) => {
+    const photo = items.indexOf(it) + 1;
+    const pieces = it.detection!.pieces.length ? it.detection!.pieces : [{ index: -1, box: FULL, confidence: 0 } as DetectedPiece];
+    return pieces.map((p, n) => ({ key: `${it.id}#${p.index}`, it, p, photo, piece: n + 1 }));
+  });
+  const keys = entries.map((e) => e.key).join("|");
+  useEffect(() => { onAvailable?.(keys ? keys.split("|") : []); }, [keys]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    entries.forEach((e) => {
+      if (thumbs[e.key]) return;
+      (e.p.index < 0 ? Promise.resolve(e.it.file as Blob) : cropBox(e.it.file, e.p.box, 240))
+        .then((b) => { const u = URL.createObjectURL(b); urls.current.push(u); setThumbs((m) => ({ ...m, [e.key]: u })); }).catch(() => undefined);
+    });
+  }, [keys]); // eslint-disable-line react-hooks/exhaustive-deps
+  async function use(e: (typeof entries)[number]) {
+    const blob = e.p.index < 0 ? e.it.file : await cropBox(e.it.file, e.p.box);
+    const file = blob instanceof File ? blob : new File([blob], `peca-${e.photo}-${e.piece}.${blob.type === "image/png" ? "png" : "jpg"}`, { type: blob.type });
+    const preview = URL.createObjectURL(file); urls.current.push(preview);
+    onPick({ key: e.key, file, preview, draftId: e.it.detection!.draftId, index: e.p.index, photo: e.photo, piece: e.piece,
+      value: initialValue(e.p, tax, t("multiPiece.peca_n", { n: e.piece })) });
+  }
+  return (
+    <section className="grid gap-2" aria-label={t("multiPiece.pecas_detectadas")}>
+      <p className="font-medium">{t("multiPiece.pecas_detectadas")}</p>
+      <p className="type-caption text-muted">{t("multiPiece.escolha_e_avance")}</p>
+      <ul className="grid gap-2 sm:grid-cols-2">
+        {entries.map((e) => {
+          const saved = savedKeys.includes(e.key), active = picked === e.key;
+          return (
+            <li key={e.key} className={cn("flex items-center gap-2 rounded border bg-surface p-2", active ? "border-ink" : "border-line-soft")} data-testid="detected-piece">
+              {thumbs[e.key] ? <img src={thumbs[e.key]} alt="" className="h-14 w-14 shrink-0 rounded object-contain bg-surface-2" /> : <span className="h-14 w-14 shrink-0 rounded bg-surface-2" />}
+              <div className="min-w-0 flex-1">
+                <p className="type-body-sm font-medium truncate">{e.p.name || t("multiPiece.peca_n", { n: e.piece })}</p>
+                <p className="type-caption text-muted">{t("multiPiece.foto_n", { n: e.photo })}{e.p.category ? ` · ${CATEGORY_LABEL[e.p.category] ?? label(e.p.category)}` : ""}</p>
+              </div>
+              {saved ? <span className="type-caption font-medium">✓ {t("multiPiece.salva")}</span>
+                : active ? <span className="type-caption font-medium">{t("multiPiece.em_edicao")}</span>
+                : <Button size="sm" onClick={() => void use(e)}>{t("multiPiece.usar_esta_peca")}</Button>}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 

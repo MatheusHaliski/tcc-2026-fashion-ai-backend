@@ -6,11 +6,14 @@ import { loadTexture, type Look3dPiece } from "@/components/three/common";
 import type { HumanParts } from "@/components/three/human-avatar";
 import { applyIdle, setArmOut } from "@/lib/avatar3d/human/pose";
 import {
-  SPECS, specOf, armOutFor, bodyParam, collarBand, fabricColor, ribColor, shoeColors, trimColors, garmentGeometry, garmentMaterial, garmentTexture, kindOf, photoInfo, posedPositions, texturedGeometry, underLayer,
+  armOutFor, bodyParam, collarBand, fabricColor, ribColor, shoeColors, trimColors, garmentMaterial, garmentTexture, kindOf, photoInfo, posedPositions, texturedGeometry,
   type GarmentKind, type GarmentSpec,
 } from "@/lib/avatar3d/human/garments";
-import { DEFAULT_PIECES, ZONES, withDefaultOutfit, zonesCovered } from "@/lib/avatar3d/human/default-outfit";
-import { foldGarment, relaxGarment, smoothBody } from "@/lib/avatar3d/human/garment-relax";
+import { DEFAULT_PIECES, ZONES, withDefaultOutfit, zonesCovered, type Zone } from "@/lib/avatar3d/human/default-outfit";
+import { specFor } from "@/lib/avatar3d/human/garment-fit";
+import { publishPhotoStates } from "@/lib/tryon/garment-status";
+import type { PhotoState } from "@/lib/tryon/garment-asset";
+import { buildGarment, softBodyOf } from "@/lib/avatar3d/human/dress";
 import { SOLE_LIFT, shoeParts, shoeStyleOf } from "@/lib/avatar3d/human/shoes";
 import { garmentTrims } from "@/lib/avatar3d/human/garment-trims";
 import { garmentContractOf } from "@/lib/avatar3d/garment-contract";
@@ -32,8 +35,10 @@ export interface OutfitItem { key: string; spec: GarmentSpec; piece: Look3dPiece
 
 export function outfitOf(pieces: Look3dPiece[]): OutfitItem[] {
   const items: OutfitItem[] = [];
+  // molde da subcategoria ajustado pela classe de caimento e comprimentos declarados (lib/avatar3d/human/garment-fit.ts);
+  // com casaco/jaqueta por cima, a camiseta padrão por baixo vira só a base escura
   const hasOuter = pieces.some((p) => ["jacket", "coat"].includes(kindOf(p) ?? ""));
-  for (const raw of withDefaultOutfit(pieces)) { const p = hasOuter && raw.id === DEFAULT_PIECES.upper.id ? { ...raw, imageUrl: null, colorHex: "#202020" } : raw; const spec = specOf(p); if (spec) items.push({ key: p.id, spec, piece: p }); }
+  for (const raw of withDefaultOutfit(pieces)) { const p = hasOuter && raw.id === DEFAULT_PIECES.upper.id ? { ...raw, imageUrl: null, colorHex: "#202020" } : raw; const spec = specFor(p); if (spec) items.push({ key: p.id, spec, piece: p }); }
   return items.sort((a, b) => a.spec.layer - b.spec.layer);
 }
 
@@ -45,6 +50,32 @@ export function photoPart(kind: GarmentKind): OutfitPhotoPart {
   return "upper";
 }
 
+/** Zona do corpo que a peça cobre (para trocar pela peça padrão se a foto dela não puder ser usada). */
+function zoneOf(spec: GarmentSpec): Zone | null {
+  const covered = zonesCovered([spec.kind]);
+  return covered.has("upper") ? "upper" : covered.has("lower") ? "lower" : covered.has("feet") ? "feet" : null;
+}
+
+/**
+ * Peças cuja foto falhou no 3D (ex.: imagem externa sem CORS): nunca viram uma casca lisa "pintada" no corpo. A zona
+ * recebe a peça padrão do FashionAI (a peça de cima por fora, como colete e jaqueta, simplesmente sai) e o estado vai
+ * para a página como ERRO, com a foto 2D na lista.
+ */
+function usable(items: OutfitItem[], images: Record<string, Img | null>, settled: boolean): OutfitItem[] {
+  if (!settled) return items;
+  const out: OutfitItem[] = []; const missing = new Set<Zone>();
+  for (const it of items) {
+    const url = it.piece.imageUrl ?? it.piece.studioUrl;
+    if (!it.piece.defaultImage && url && !images[it.key]) { const z = zoneOf(it.spec); if (z) missing.add(z); continue; }
+    out.push(it);
+  }
+  for (const z of missing) {
+    if (zonesCovered(out.map((i) => i.spec.kind)).has(z)) continue;
+    const p = DEFAULT_PIECES[z]; const spec = specFor(p); if (spec) out.push({ key: p.id, spec, piece: p });
+  }
+  return out.sort((a, b) => a.spec.layer - b.spec.layer);
+}
+
 type Img = CanvasImageSource & { width: number; height: number };
 
 /** Veste o corpo com as peças (síncrono). Devolve as malhas criadas e se as três zonas ficaram cobertas. */
@@ -54,17 +85,13 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
   applyIdle(human, pose, 0, 0);                                    // pose de exibição, sem o movimento, para projetar a foto
   const P = bodyParam(asset, composed);
   // a roupa nasce do corpo suavizado (sem mamilos, clavícula e músculos desenhados no tecido); o calçado, do pé real
-  const soft = { ...composed, body: smoothBody(asset, composed, 12) };
+  const soft = softBodyOf(asset, composed);
   let floorY = Infinity; for (let v = 0; v < P.group.length; v++) if (P.group[v] === 4) floorY = Math.min(floorY, composed.body[v * 3 + 1]);
   const meshes: THREE.SkinnedMesh[] = []; const below: GarmentSpec[] = []; const built: GarmentKind[] = [];
   const prepare = (it: OutfitItem, beneath: GarmentSpec[]) => {
-    const shoeKind = it.spec.kind === "shoes" || it.spec.kind === "boots";
-    const cc = shoeKind ? composed : soft;
-    const under = beneath.length ? underLayer(cc, P, beneath) : null;
-    const gg = garmentGeometry(asset, cc, human.rest.normals, P, it.spec, under);
+    // molde → caimento (relaxa, perna em coluna) → dobras, punho e barra: o mesmo caminho do harness (lib/avatar3d/human/dress.ts)
+    const { gg, base: cc, under } = buildGarment(asset, composed, soft, human.rest.normals, P, it.spec, beneath);
     if (!gg) return null;
-    // caimento: o tecido relaxa (sem o desenho do corpo por baixo) e ganha dobras, punho e barra (garment-relax.ts)
-    relaxGarment(gg, cc, human.rest.normals, P, under); foldGarment(gg, cc, human.rest.normals, P);
     return { cc, under, gg };
   };
   // Validate all outer meshes before hiding any inner fabric. A failed outer mold
@@ -113,7 +140,7 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
       }
     }
     built.push(it.spec.kind);
-    // tênis e sapato: o cabedal é a fôrma modelada (shoes.ts); o molde do pé só serve à bota (cano)
+    // tênis e sapato: o cabedal é a fôrma modelada (shoes.ts); na bota o molde fica só no cano (o pé também é a fôrma)
     if (it.spec.kind !== "shoes") {
       const m = new THREE.SkinnedMesh(geo, garmentMaterial(tex, it.spec)); m.name = `peca-${it.piece.id}`;
       m.castShadow = true; m.frustumCulled = false;
@@ -158,8 +185,8 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
   // molde que falhou: a zona recebe a peça padrão (sem foto ainda — a cor do tecido cobre)
   for (const z of ZONES) {
     if (zonesCovered(built).has(z)) continue;
-    const p = DEFAULT_PIECES[z]; const k = kindOf(p);
-    if (k) wear({ key: p.id, spec: SPECS[k], piece: p });
+    const p = DEFAULT_PIECES[z]; const spec = specFor(p);
+    if (spec) wear({ key: p.id, spec, piece: p });
   }
   // sola do calçado: o corpo sobe o que a sola desce
   human.root.position.y = built.some((k) => k === "shoes" || k === "boots") ? SOLE_LIFT - floorY : 0;
@@ -170,18 +197,28 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
 export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look3dPiece[] }) {
   // fotos das peças com a chave do look a que pertencem: a Prévia 2D só fotografa quando as fotos do look atual chegaram
   const [loaded, setLoaded] = useState<{ key: string; images: Record<string, Img | null> }>({ key: "", images: {} });
-  const items = outfitOf(pieces);
-  // a foto da peça recortada (imageUrl: PNG com alfa) vem antes da foto de estúdio (JPEG com fundo colorido): o molde
-  // projeta a peça pela caixa do alfa; na opaca o fundo é separado por cor (recorte em garment-photo.ts e máscara
-  // em garments.ts), que é menos preciso
-  const photoUrl = (p: Look3dPiece) => p.imageUrl ?? p.studioUrl ?? null;
-  const urlKey = items.map((i) => `${i.key}:${photoUrl(i.piece) ?? ""}`).join("|");
-  const images = loaded.key === urlKey ? loaded.images : {};
+  const all = outfitOf(pieces);
+  // a foto recortada (imageUrl: PNG com alfa) vem antes da de estúdio/processada (studioUrl): o molde projeta a peça pela
+  // caixa do alfa. Se a recortada não carrega no 3D (imagem externa sem CORS), entra a processada, servida por nós.
+  const photoUrls = (p: Look3dPiece) => [p.imageUrl, p.studioUrl].filter((u, k, a): u is string => !!u && a.indexOf(u) === k);
+  const urlKey = all.map((i) => `${i.key}:${photoUrls(i.piece).join(",")}`).join("|");
+  const settled = loaded.key === urlKey;
+  const images = settled ? loaded.images : {};              // nunca as fotos de outro look
+  const items = usable(all, images, settled);
+  // estado da foto de cada peça do look (não as padrão) para a página: carregando, ok, falhou ou sem foto
+  useEffect(() => {
+    const photos: Record<string, PhotoState> = {};
+    for (const i of all) {
+      if (i.piece.defaultImage && i.key.startsWith("fai-padrao-")) continue;
+      photos[i.key] = !photoUrls(i.piece).length ? "sem-foto" : !settled ? "carregando" : images[i.key] ? "ok" : "falhou";
+    }
+    publishPhotoStates(photos);
+  }, [urlKey, settled, images]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     let alive = true;
-    Promise.all(items.map(async (i) => {
-      const u = mediaUrl(photoUrl(i.piece));
-      const t = u ? await loadTexture(u) : null;
+    Promise.all(all.map(async (i) => {
+      let t: THREE.Texture | null = null;
+      for (const url of photoUrls(i.piece)) { const u = mediaUrl(url); t = u ? await loadTexture(u) : null; if (t) break; }
       const img = t?.image as Img | undefined;
       // These exact bundled reference assets contain only the product. Avoid
       // three unnecessary person/pose analyses while the catalogue piece loads.
@@ -206,6 +243,6 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
       root.position.y = 0;
     };
     // só o corpo (não o cabelo): trocar o nível de detalhe do cabelo não refaz as roupas
-  }, [parts.human, parts.pose, parts.composed, parts.asset, urlKey, loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [parts.human, parts.pose, parts.composed, parts.asset, urlKey, loaded, items.length]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }

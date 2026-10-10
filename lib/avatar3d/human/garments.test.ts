@@ -155,7 +155,7 @@ describe("roupa que veste — moldes presos ao esqueleto", () => {
     expect(armOutFor([SPECS.pants, SPECS.tee, SPECS.shoes])).toBe(10);
     expect(armOutFor([SPECS.dress])).toBe(15);
     expect(armOutFor([SPECS.pants, SPECS.tee, SPECS.jacket])).toBeGreaterThanOrEqual(16);
-    expect(armOutFor([SPECS.pants, SPECS.sweater, SPECS.coat])).toBeLessThanOrEqual(18);
+    expect(armOutFor([SPECS.pants, SPECS.sweater, SPECS.coat])).toBeLessThanOrEqual(22);     // casaco por cima: axila aberta até 22° (PROVADOR-3D)
   });
 
   it("a peça de cima passa por fora da de baixo na cintura", () => {

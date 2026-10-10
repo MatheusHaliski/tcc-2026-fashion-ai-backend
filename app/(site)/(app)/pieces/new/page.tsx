@@ -20,7 +20,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { keepAllowed } from "@/lib/pieces/tags";
 import { CatalogPhoto } from "@/components/catalog/catalog-photo";
 import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
-import { MultiPieceUpload } from "@/components/multi-piece-review";
+import { MultiPieceUpload, type PhotoPick } from "@/components/multi-piece-review";
 import { PieceCreationSteps, PIECE_CREATION_STEPS, type PieceCreationStep } from "@/components/piece-creation-steps";
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
@@ -62,6 +62,10 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   // RF4 · duas formas de adicionar: busca catalogada (+ formulário) ou fotografar (várias fotos, várias peças por foto)
   const [mode, setMode] = useState<AddMode>(initialMode);
   const [pick, setPick] = useState<CatalogPick | null>(null);
+  // modo Fotografar: a peça detectada escolhida segue pelas mesmas etapas (Avançar → Mais detalhes…), sem modal
+  const [photoPick, setPhotoPick] = useState<PhotoPick | null>(null);
+  const [savedKeys, setSavedKeys] = useState<string[]>([]);
+  const [availableKeys, setAvailableKeys] = useState<string[]>([]);
   // pré-preenchimento (Lens): validado na taxonomia já na primeira renderização quando ela está em cache; senão, o efeito
   // abaixo completa assim que ela chega
   const [pre] = useState(() => validPiecePrefill(prefill, tax, CATEGORY_IDS));
@@ -120,6 +124,15 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
     setFieldErrors({}); setSaveProblem(null);
     if (typeof window !== "undefined") document.getElementById("piece-form-fields")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+  /** "Usar esta peça" no modo Fotografar: o que a análise leu preenche os dados; o recorte vira a foto da peça. */
+  function applyPhoto(p: PhotoPick) {
+    setPhotoPick(p); setPick(null);
+    setValue((v) => ({ ...v, name: p.value.name, category: p.value.category, subcategory: p.value.subcategory, color: p.value.color || v.color, material: p.value.material || v.material,
+      sex: p.value.sex || v.sex, style: p.value.style.length ? p.value.style : v.style, occasion: p.value.occasion.length ? p.value.occasion : v.occasion,
+      size: v.size || p.value.size, price: v.price || p.value.price, useDefaultImage: false, brandSource: v.brandSource === "CATALOGO" ? null : v.brandSource, brandRef: null }));
+    setFieldErrors({}); setSaveProblem(null);
+    if (typeof window !== "undefined") document.getElementById("piece-form-fields")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   /** Tira a referência ao produto: os campos preenchidos ficam, a imagem volta à ilustração da categoria. */
   function clearCatalog() { setPick(null); setValue((v) => ({ ...v, brandSource: v.brandSource === "CATALOGO" ? null : v.brandSource, brandRef: null })); }
   /** Leva a pessoa à etapa do primeiro campo com problema e mostra o erro junto do campo. */
@@ -131,13 +144,21 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   async function submit() {
     if (saving.current || done) return;                                         // já salvando ou já salvo: nada de novo pedido
     setSaveProblem(null);
+    if (mode === "photos" && !photoPick) { setSaveProblem(t("pieces.new.escolha_peca_da_foto")); return; }
     const local = validatePieceForm(value, tax);
     if (Object.keys(local).length) { showFieldErrors(local); return; }          // validação: nem chega a enviar
     saving.current = true; setBusy(true);
     try {
-      const payload = toPayload({ ...value, useDefaultImage: true, background });
+      // foto: o recorte vai ao rascunho da análise (Flat Lay + moderação) e a peça é criada com ele, como na revisão em lote
+      let draftId: string | undefined;
+      if (mode === "photos" && photoPick) {
+        const fd = new FormData(); fd.append("file", photoPick.file, photoPick.file.name);
+        const q = photoPick.index >= 0 ? `?index=${photoPick.index}` : "";
+        draftId = (await api.upload<{ draftId: string }>(`/api/pieces/analysis/multi/${photoPick.draftId}/pieces${q}`, fd)).draftId;
+      }
+      const payload = toPayload({ ...value, useDefaultImage: !draftId, background, ...(draftId ? { draftId } : {}) });
       // produto do catálogo: criação por referência (RF47); sem produto, a peça leva os dados do formulário (RF4)
-      const p = pick
+      const p = pick && mode === "catalog"
         ? await api.post<PieceView>("/api/pieces/from-catalog", { productId: pick.product.id, variantId: pick.variant?.id ?? null, size: value.size || null, condition: value.condition || null,
             price: payload.price, purchaseDate: payload.purchaseDate, purchaseLocation: value.purchaseLocation || null, favorite: false, forSale: value.forSale, notes: value.notes || null,
             visibility: value.visibility, occasion: value.occasion, style: value.style, color: value.color || null, material: value.material || null, sex: value.sex || null, name: value.name || null, background })
@@ -156,6 +177,18 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
           toast.success(t("pieces.new.flair_feito", { tier: t(`flairCard.tier.${card.tier}`), ovr: card.ovr }));
         } catch (e) { toast.fromError(e, t("pieces.new.flair_falhou")); }
       }
+      // foto com outras peças ainda por cadastrar: volta à etapa Peça para escolher a próxima, sem sair da página
+      if (mode === "photos" && photoPick) {
+        const savedNow = [...savedKeys, photoPick.key];
+        setSavedKeys(savedNow);
+        if (availableKeys.some((k) => !savedNow.includes(k))) {
+          setPhotoPick(null);
+          setValue((v) => ({ ...EMPTY_PIECE, useDefaultImage: true, category: v.category, visibility: v.visibility }));
+          toast.success(t("pieces.new.proxima_peca_da_foto"));
+          go("piece");
+          return;
+        }
+      }
       setDone(p.id);
     } catch (e) {
       // campos continuam no estado da página: nada se perde numa falha
@@ -169,8 +202,8 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   // sem foto oficial: o asset da categoria (ou o genérico) é a imagem que a peça terá
   // (a subcategoria escolhida troca o asset: camiseta, camisa, regata… cada uma com a sua imagem)
   const asset = (value.subcategory && tax?.defaultImagesBySubcategory?.[value.subcategory]) || tax?.defaultImages?.[value.category] || tax?.defaultImages?.generic || GENERIC_ASSET;
-  const officialImg = pick?.product.imageUrl ?? null;
-  const origin = pick && officialImg
+  const officialImg = mode === "photos" ? photoPick?.preview ?? null : pick?.product.imageUrl ?? null;
+  const origin = mode === "photos" ? (photoPick ? t("pieces.new.origem_foto") : t("catalog.origem_sem_foto")) : pick && officialImg
     ? t("catalog.origem_catalogo", { fonte: pick.product.source?.domain && pick.product.source.domain !== "null" ? pick.product.source.domain : t("catalog.fonte_fashionai") })
     : t("catalog.origem_sem_foto");
   const idx = STEPS.indexOf(step);
@@ -182,7 +215,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
     </div>
   );
   // prévia do card da peça com o que já foi preenchido (RF7 · anatomia "peça de roupa")
-  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: officialImg ?? asset, thumbnailUrl: officialImg ?? asset, ...(pick?.product.catalogImage && officialImg ? { flatLayMetadata: { catalogImage: pick.product.catalogImage } } : {}), studioImageUrl: null, studioThumbUrl: null, studioFeedUrl: null, defaultImage: !officialImg, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+  const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: officialImg ?? asset, thumbnailUrl: officialImg ?? asset, ...(mode === "catalog" && pick?.product.catalogImage && officialImg ? { flatLayMetadata: { catalogImage: pick.product.catalogImage } } : {}), studioImageUrl: null, studioThumbUrl: null, studioFeedUrl: null, defaultImage: !officialImg, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   return (
     <>
       <PageHeader title={t("closet.addPiece")} kicker="RF47" lead={t("pieces.new.lead_unica")} />
@@ -195,21 +228,21 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
       )}
       <SegmentPicker className="mb-4" label={t("pieces.new.forma_de_adicionar")} value={mode} onChange={setMode}
         options={[{ id: "catalog", label: t("pieces.new.modo_catalogo") }, { id: "photos", label: t("pieces.new.modo_fotos") }]} />
-      {mode === "photos" ? (
-        <Card>
-          <MultiPieceUpload category={value.category} subcategory={value.subcategory}
-            captureControls={<><h2 className="type-h3 mb-1">{t("pieces.new.modo_fotos")}</h2><div className="mb-3">
-              <p className="label" id="photo-type-label">{t("pieces.new.tipo_para_o_guia")}</p>
-              <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="photo-type-label">{CATEGORY_CARDS.map((c) => <Chip key={c.id} active={value.category === c.id} onClick={() => chooseCategory(c.id)}>{CATEGORY_LABEL[c.id] ?? label(c.id)}</Chip>)}</div>
-            </div></>}
-            onCategory={(c, sub) => { if (c !== value.category) chooseCategory(c); if (sub) setValue((v) => ({ ...v, subcategory: sub })); }}
-            onSaved={(count) => { toast.success(t("multiPiece.salvas", { count })); window.location.href = user ? `/u/${user.username}` : "/closet"; }} />
-        </Card>
-      ) : (<>
       <PieceCreationSteps value={step} onChange={go} />
       {/* na etapa da arte o editor tem a própria prévia (o mesmo card): a lateral some para não duplicar */}
       <div className={step === "art" ? "grid gap-5" : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]"}>
         <div className="min-w-0">
+          {/* as fotos analisadas ficam montadas entre as etapas (só escondidas): voltar para a próxima peça não perde nada */}
+          {mode === "photos" && (
+            <div className="mb-4" hidden={step !== "piece"}><Card>
+              <section aria-labelledby="piece-photos-label">
+                <h2 id="piece-photos-label" className="type-h3 mb-1">{t("pieces.new.modo_fotos")}</h2>
+                <MultiPieceUpload category={value.category} subcategory={value.subcategory}
+                  onCategory={(c, sub) => { if (c !== value.category) chooseCategory(c); if (sub) setValue((v) => ({ ...v, subcategory: sub })); }}
+                  onPick={applyPhoto} picked={photoPick?.key ?? null} savedKeys={savedKeys} onAvailable={setAvailableKeys} />
+              </section>
+            </Card></div>
+          )}
           {step === "piece" && (
             <Card>
               <div className="mb-3">
@@ -217,7 +250,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 <div className="flex flex-wrap gap-1.5" role="group" aria-labelledby="piece-type-label">{CATEGORY_CARDS.map((c) => <Chip key={c.id} active={value.category === c.id} onClick={() => chooseCategory(c.id)}>{CATEGORY_LABEL[c.id] ?? label(c.id)}</Chip>)}</div>
               </div>
               {/* RF47 · busca catalogada: o produto oficial preenche o formulário e traz a foto */}
-              <section className="creator-section" aria-labelledby="piece-catalog-label">
+              {mode === "catalog" && <section className="creator-section" aria-labelledby="piece-catalog-label">
                 <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-catalog-label" className="type-h3">{t("catalog.buscar_no_catalogo")}</h2><Badge tone="thread">{t("catalog.recomendado")}</Badge><span className="type-caption text-muted">{t("catalog.lead_busca")}</span></div>
                 {pick ? (
                   <div className="catalog-pick" role="status">
@@ -233,19 +266,20 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                   <CatalogSearch key={catalogSub} initial={catalogSub && value.subcategory === catalogSub ? { ...initial, subcategory: catalogSub } : initial} category={value.category} onPick={applyCatalog} resultsLayout="matrix"
                     onContext={(ctx) => { if (ctx.subcategory !== undefined) setValue((v) => ({ ...v, subcategory: ctx.subcategory ?? "" })); }} />
                 )}
-              </section>
+              </section>}
               <section className="creator-section" aria-labelledby="piece-form-label" id="piece-form-fields">
                 <h2 id="piece-form-label" className="type-h3 mb-2">{t("pieces.new.etapa_dados")}</h2>
-                {pick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("catalog.preenchido_do_catalogo")}</p>}
+                {mode === "catalog" && pick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("catalog.preenchido_do_catalogo")}</p>}
+                {mode === "photos" && photoPick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("pieces.new.preenchido_da_foto", { photo: photoPick.photo, piece: photoPick.piece })}</p>}
                 <PieceFields value={value} onChange={(v) => { setValue(v); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors} />
               </section>
               {/* RF4 · fotografia opcional: as duas formas de adicionar são separadas pela janela segmentada do topo; aqui só o
                   atalho para a aba Fotografar (uma ou várias fotos, com o guia de fotografia por categoria) */}
-              <section className="creator-section" aria-labelledby="piece-photo-label">
+              {mode === "catalog" && <section className="creator-section" aria-labelledby="piece-photo-label">
                 <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-photo-label" className="type-h3">{t("pieces.new.foto_opcional")}</h2><Badge tone="chalk">{t("common.optional")}</Badge></div>
                 <p className="mb-2 type-body-sm text-muted">{t("pieces.new.prefere_fotografar")}</p>
                 <Button size="sm" onClick={() => { setMode("photos"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>{t("pieces.new.modo_fotos")}</Button>
-              </section>
+              </section>}
               {nav}
             </Card>
           )}
@@ -284,7 +318,6 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
       </div>
       <p className="mt-4 type-caption text-faint"><Link className="underline" href="/closet">← {t("closet.title")}</Link></p>
       {done && <CreationSuccess kind="piece" id={done} onDone={() => { window.location.href = user ? `/u/${user.username}` : "/closet"; }} />}
-      </>)}
     </>
   );
 }

@@ -53,7 +53,7 @@ describe("contrato de dados da vestimenta", () => {
       if (category === "accessory_piece") expect(c.asset.path, sub).toBe("IMAGE_2D");
       else expect(c.cut.kind.value, sub).toBe(kindOf({ category, subcategory: sub }));
       // a categoria do cadastro decide o molde mesmo com o lugar do look errado (ex.: calça marcada em "upper")
-      if (category === "lower_piece") expect(["pants", "shorts", "skirt", "leggings"], sub).toContain(kindOf({ category, subcategory: sub, slot: "upper" }));
+      if (category === "lower_piece") expect(["pants", "culottes", "shorts", "bermuda", "skirt", "leggings"], sub).toContain(kindOf({ category, subcategory: sub, slot: "upper" }));
       rows.push(`${category}/${sub}: ${c.identity.family}/${c.cut.kind.value ?? "—"} ${c.asset.path}`);
     }
     expect(rows.length).toBeGreaterThan(50);

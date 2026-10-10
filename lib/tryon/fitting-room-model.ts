@@ -103,6 +103,7 @@ export function fromCatalog(
       (color ? label(color) : null),
     productId: p.id,
     variantId: variant?.id ?? null,
+    processedUrl: processedImageOf(p),
     officialUrl:
       p.source?.productUrl && p.source.productUrl !== "null"
         ? p.source.productUrl
@@ -142,7 +143,21 @@ export function fromWardrobe(e: Entry): FittingItem {
     addedAt: nextTick(),
     model3dUrl: p.model3dUrl ?? null,
     model3dStatus: p.model3dStatus ?? null,
+    // a foto do guarda-roupa já é nossa (mesma origem); variação e atributos dão a classe de caimento e os comprimentos
+    processedUrl: p.imageUrl ?? null,
+    variation: (p as { variation?: string | null }).variation ?? null,
+    attributes: (p as { attributes?: Record<string, string[]> | null }).attributes ?? null,
   };
+}
+
+/** Foto do catálogo que o 3D consegue ler: a processada no nosso armazenamento (servida por /media com CORS). A externa
+ * (site da marca) normalmente não libera CORS: a textura falharia e a peça viraria uma casca lisa "pintada". */
+export function processedImageOf(p: CatalogProduct): string | null {
+  const ci = (p as { catalogImage?: { mode?: string; url?: string | null } }).catalogImage;
+  if (ci?.mode === "PROCESSED" && ci.url) return ci.url;
+  const imgs = ((p as { images?: { primary?: boolean; processedUrl?: string | null }[] }).images ?? []);
+  const img = imgs.find((x) => x.primary && x.processedUrl) ?? imgs.find((x) => x.processedUrl);
+  return img?.processedUrl ?? null;
 }
 
 export const toSceneProduct = (p: CatalogProduct): SceneProduct => ({
@@ -167,6 +182,9 @@ export const toLook3d = (i: FittingItem): Look3dPiece => ({
   category: i.category,
   subcategory: i.subcategory ?? undefined,
   imageUrl: i.imageUrl,
+  studioUrl: i.processedUrl ?? null,
+  variation: i.variation ?? null,
+  attributes: i.attributes ?? null,
   colorHex: i.colorHex,
   model3dUrl: i.model3dUrl,
   model3dStatus: i.model3dStatus,

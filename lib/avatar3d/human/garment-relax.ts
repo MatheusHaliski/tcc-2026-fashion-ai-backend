@@ -51,7 +51,7 @@ export function smoothBody(a: BodyAsset, c: Composed, iterations = 8): Float32Ar
 /** Quantas iterações de relaxamento por tipo de peça (peças soltas relaxam mais). */
 export const RELAX: Record<string, number> = {
   leggings: 1, pants: 6, shorts: 6, skirt: 4, tank: 5, crop: 5, tee: 7, longsleeve: 7, shirt: 8,
-  sweater: 12, hoodie: 14, jacket: 10, coat: 10, dress: 6, jumpsuit: 6, shoes: 16, boots: 12,
+  sweater: 12, hoodie: 14, jacket: 10, coat: 10, vest: 10, dress: 6, jumpsuit: 6, romper: 6, culottes: 6, bermuda: 6, shoes: 16, boots: 12,
 };
 
 /** Peças de malha com punho e barra de ribana. */
@@ -161,5 +161,52 @@ export function foldGarment(gg: GarmentGeometry, c: Composed, normals: Float32Ar
       d += 0.0012 * bell(l, 0.47, 0.06) * Math.sin(l / 0.035 * Math.PI * 2 + wob(ang));      // atrás do joelho
     }
     if (d) { p[v * 3] += normals[s * 3] * d; p[v * 3 + 1] += normals[s * 3 + 1] * d; p[v * 3 + 2] += normals[s * 3 + 2] * d; }
+  }
+}
+
+/**
+ * Perna em coluna (calça reta, ampla ou pantalona — GarmentSpec.legColumn): depois do relaxamento, o tecido da perna deixa
+ * de seguir a panturrilha e o músculo da coxa. Da coxa ao joelho, uma reta entre o anel da coxa e o do joelho; do joelho à
+ * barra, o anel do joelho (afinando 5% na reta; abrindo na ampla). Só empurra para FORA (nunca entra na pele) e não
+ * passa do meio do corpo (as pernas não se atravessam). Em coordenadas de repouso, pelo eixo quadril→joelho→tornozelo.
+ */
+export function columnLegs(gg: GarmentGeometry, c: Composed, P: BodyParam): void {
+  const sp = gg.spec; if (!(sp.legColumn > 0) || !(sp.leg > 0.4) || !P.legs) return;
+  const NA = 48; const p = gg.position; const nb = P.h.length;
+  type Leg = { hip: number[]; knee: number[]; ankle: number[] };
+  const axis = (L: Leg, y: number): [number, number] => {
+    const [a, b] = y >= L.knee[1] ? [L.hip, L.knee] : [L.knee, L.ankle]; const t = (y - a[1]) / ((b[1] - a[1]) || 1e-6);
+    return [a[0] + (b[0] - a[0]) * t, a[2] + (b[2] - a[2]) * t];
+  };
+  const legY = (l: number) => P.hipY - (P.hipY - P.ankleY) * l;
+  /** anel do corpo (raio por ângulo em volta do eixo) da perna `side` na altura do parâmetro `l` */
+  const ring = (side: 1 | -1, L: Leg, l: number): Float32Array => {
+    const y = legY(l); const [ax, az] = axis(L, y); const r = new Float32Array(NA);
+    for (let v = 0; v < nb; v++) {
+      if (P.group[v] !== 3 || P.side[v] !== side || Math.abs(c.body[v * 3 + 1] - y) > 0.015) continue;
+      const dx = c.body[v * 3] - ax, dz = c.body[v * 3 + 2] - az; const j = Math.floor(((Math.atan2(dx, dz) + Math.PI) / (2 * Math.PI)) * NA) % NA;
+      r[j] = Math.max(r[j], Math.hypot(dx, dz));
+    }
+    for (let j = 0; j < NA; j++) if (!r[j]) { for (let d = 1; d < NA / 2 && !r[j]; d++) r[j] = Math.max(r[(j + d) % NA], r[(j - d + NA) % NA]); }
+    return Float32Array.from(r, (_, j) => Math.max(r[(j + NA - 1) % NA], r[j], r[(j + 1) % NA]));   // casco: sem reentrâncias
+  };
+  const legs = { 1: { L: P.legs.L, thigh: ring(1, P.legs.L, 0.18), knee: ring(1, P.legs.L, 0.5) }, [-1]: { L: P.legs.R, thigh: ring(-1, P.legs.R, 0.18), knee: ring(-1, P.legs.R, 0.5) } } as const;
+  const wide = sp.legColumn - 1;
+  for (let i = 0; i < p.length / 3; i++) {
+    const s = gg.source[i]; if (s < 0 || P.group[s] !== 3) continue;
+    const l = P.leg[s]; if (l < 0.12 || l > sp.leg + 0.02) continue;
+    const side = P.side[s] as 1 | -1; const g = legs[side];
+    const x = p[i * 3], y = p[i * 3 + 1], z = p[i * 3 + 2]; const [ax, az] = axis(g.L, y);
+    const dx = x - ax, dz = z - az; const r = Math.hypot(dx, dz); if (r < 1e-4) continue;
+    const j = Math.floor(((Math.atan2(dx, dz) + Math.PI) / (2 * Math.PI)) * NA) % NA;
+    const ease = sp.ease;
+    let col: number;
+    if (l >= 0.5) { const t = Math.min(1, (l - 0.5) / Math.max(0.05, sp.leg - 0.5)); col = g.knee[j] * (1 + wide * (0.4 + 0.6 * t)) * (1 - 0.05 * t * (wide > 0 ? 0 : 1)); }
+    else { const u = (l - 0.18) / 0.32; col = g.thigh[j] + (g.knee[j] * (1 + wide * 0.4) - g.thigh[j]) * Math.max(0, u); }
+    const target = col + ease * 1.2; const k = Math.min(1, Math.max(0, (l - 0.12) / 0.08));
+    let nr = Math.max(r, r + (target - r) * k);
+    // não passa do meio do corpo: a perna esquerda (x > 0) não cruza x = 4 mm, a direita idem
+    const nx = ax + (dx * nr) / r; if (side * nx < 0.004) nr = r;
+    p[i * 3] = ax + (dx * nr) / r; p[i * 3 + 2] = az + (dz * nr) / r;
   }
 }

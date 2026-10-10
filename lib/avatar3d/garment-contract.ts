@@ -45,8 +45,8 @@ const missing = <T,>(source: string): Attr<T> => ({ value: null, provenance: "MI
 
 const FAMILY: Record<GarmentKind, GarmentFamily> = {
   tee: "TOPS", tank: "TOPS", longsleeve: "TOPS", shirt: "TOPS", sweater: "TOPS", hoodie: "TOPS", crop: "TOPS",
-  jacket: "OUTERWEAR", coat: "OUTERWEAR", dress: "FULL_BODY", jumpsuit: "FULL_BODY",
-  skirt: "SKIRTS", pants: "BOTTOMS", shorts: "BOTTOMS", leggings: "BOTTOMS", shoes: "SHOES", boots: "SHOES",
+  jacket: "OUTERWEAR", coat: "OUTERWEAR", vest: "OUTERWEAR", dress: "FULL_BODY", jumpsuit: "FULL_BODY", romper: "FULL_BODY",
+  skirt: "SKIRTS", pants: "BOTTOMS", culottes: "BOTTOMS", shorts: "BOTTOMS", bermuda: "BOTTOMS", leggings: "BOTTOMS", shoes: "SHOES", boots: "SHOES",
 };
 /** O que cada família do molde controla hoje (§4); o que não está aqui é MISSING no contrato. */
 export const FAMILY_PARAMETERS: Record<GarmentFamily, string[]> = {

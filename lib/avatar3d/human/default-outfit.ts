@@ -29,10 +29,10 @@ export const DEFAULT_PIECES: Record<Zone, Look3dPiece> = {
 export type Zone = "upper" | "lower" | "feet";
 export const ZONES: Zone[] = ["upper", "lower", "feet"];
 
-// peças que cobrem o tronco por baixo (jaqueta e casaco abertos na frente não bastam: vão por cima de uma camiseta)
-const TORSO: GarmentKind[] = ["tee", "tank", "crop", "longsleeve", "shirt", "sweater", "hoodie", "dress", "jumpsuit"];
+// peças que cobrem o tronco por baixo (jaqueta, casaco e colete abertos na frente não bastam: vão por cima de uma camiseta)
+const TORSO: GarmentKind[] = ["tee", "tank", "crop", "longsleeve", "shirt", "sweater", "hoodie", "dress", "jumpsuit", "romper"];
 // peças que cobrem as pernas (o casaco longo não: por baixo dele vai uma calça)
-const LEGS: GarmentKind[] = ["pants", "shorts", "skirt", "leggings", "dress", "jumpsuit"];
+const LEGS: GarmentKind[] = ["pants", "culottes", "shorts", "bermuda", "skirt", "leggings", "dress", "jumpsuit", "romper"];
 const FEET: GarmentKind[] = ["shoes", "boots"];
 
 /** Zonas do corpo que um conjunto de moldes cobre. */
