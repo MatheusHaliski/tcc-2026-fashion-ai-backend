@@ -26,6 +26,10 @@ except ImportError:
     import db
     from import_products import read_items
     from normalize_product import Normalizer
+try:
+    from .category_frame import LEGACY_VERSIONS as LEGACY_FRAME_VERSIONS, POLICY as FRAME_POLICY, VERSION as FRAME_VERSION
+except ImportError:
+    from category_frame import LEGACY_VERSIONS as LEGACY_FRAME_VERSIONS, POLICY as FRAME_POLICY, VERSION as FRAME_VERSION
 
 CURRENT_VERSION = "CATALOG_IMAGE_PIPELINE_V4"
 VISIBLE_STATUSES = ("VALIDATED", "PERSISTABLE", "REFERENCE_ONLY")
@@ -70,15 +74,12 @@ def _valid_crop(crop: Mapping) -> bool:
     return x >= 0 and y >= 0 and w > 0 and h > 0 and x + w <= 1.0001 and y + h <= 1.0001
 
 
-def _frame_width_ok(frame: Mapping) -> bool:
-    """50% do quadro do editor; ou menos, só quando o próprio quadro registra que foi reduzido para caber na foto
-    (foto mais larga que alta demais, modo forçado) — senão a mesma foto seria reenquadrada e reenviada a cada execução."""
-    width = frame.get("widthPercent")
-    if isinstance(width, bool) or not isinstance(width, (int, float)) or not math.isfinite(width):
-        return False
-    if width == 50:
-        return True
-    return 0 < width < 50 and "FRAME_REDUCED_TO_FIT_IMAGE" in (frame.get("observations") or [])
+def _fabric_frame_ok(frame: Mapping) -> bool:
+    """Quadro só de tecido (CATALOG_FRAME_34_FABRIC_V2): a política registrada e 100% da área coberta pela peça. O quadro
+    antigo de 50% da largura (V1) podia mostrar fundo e não conta como padronizado — é refeito na próxima execução."""
+    coverage = frame.get("fabricCoverage")
+    return (frame.get("version") == FRAME_VERSION and frame.get("policy") == FRAME_POLICY
+            and isinstance(coverage, (int, float)) and not isinstance(coverage, bool) and coverage == 1)
 
 
 def is_standardized(record: Mapping, current_version: str = CURRENT_VERSION) -> bool:
@@ -94,17 +95,18 @@ def is_standardized(record: Mapping, current_version: str = CURRENT_VERSION) -> 
         return False
     if _value(record, "processing_status", "processingStatus") != "APPROVED":
         return False
-    if _value(record, "pipeline_version", "pipelineVersion") == "CATALOG_FRAME_34_50_V1":
+    if _value(record, "pipeline_version", "pipelineVersion") in LEGACY_FRAME_VERSIONS:
+        return False
+    if _value(record, "pipeline_version", "pipelineVersion") == FRAME_VERSION:
         crop = _metadata(record, "crop") or {}
         frame = crop.get("editorFrame") or {}
         return (_value(record, "review_status", "reviewStatus") != "REJECTED"
                 and bool(record.get("stored_url"))
                 and (_metadata(record, "assets") or {}).get("card") == record.get("stored_url")
-                and (_metadata(record, "assets") or {}).get("framingVersion") == "CATALOG_FRAME_34_50_V1"
+                and (_metadata(record, "assets") or {}).get("framingVersion") == FRAME_VERSION
                 and len(str((_metadata(record, "assets") or {}).get("sha256") or "")) == 64
                 and _valid_crop(crop) and crop.get("aspect") == "3:4"
-                and frame.get("version") == "CATALOG_FRAME_34_50_V1"
-                and _frame_width_ok(frame) and frame.get("requiresReview") is False
+                and _fabric_frame_ok(frame) and frame.get("requiresReview") is False
                 and crop.get("ruleCompliant") is True)
     if _value(record, "pipeline_version", "pipelineVersion") != current_version:
         return False

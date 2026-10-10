@@ -247,7 +247,7 @@ class CliHelpTest(unittest.TestCase):
         script = Path(__file__).resolve().parents[1] / "process_catalog_images.py"
         result = subprocess.run([sys.executable, str(script), "--help"], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("50%", result.stdout)
+        self.assertIn("100%", result.stdout)
         self.assertNotIn("50%%", result.stdout)
 
 

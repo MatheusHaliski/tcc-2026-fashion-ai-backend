@@ -17,6 +17,10 @@ try:
 except ImportError:  # direct script execution, like the other catalog commands
     from db import now, run_transaction
     from source_persistence import allows_persistence, source_decision
+try:
+    from .category_frame import VERSION as FRAME_VERSION
+except ImportError:
+    from category_frame import VERSION as FRAME_VERSION
 
 
 METADATA_COLUMNS = (
@@ -168,7 +172,7 @@ def apply_product(conn, records, analyses_by_image_id, ranker, *, persistence_ov
                      processed_at=instant)
         assets = analysis.get("framed_assets")
         if assets:
-            if patch["pipeline_version"] != "CATALOG_FRAME_34_50_V1":
+            if patch["pipeline_version"] != FRAME_VERSION:
                 raise ValueError("frame persistence is not authorized")
             if persistence_override is None:
                 if not by_id[image_id].get("allows_image_persistence"):
