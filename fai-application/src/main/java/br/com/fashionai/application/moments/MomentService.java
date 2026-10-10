@@ -730,6 +730,28 @@ public class MomentService {
         return out;
     }
 
+    /**
+     * FLAIR-UT §14.3 — um Desafio de Montagem entregue dentro do Momento conta como participação (aparece em "Meus
+     * Momentos" e na linha do tempo). Não lança pontos de Momento: os do desafio já vêm do ledger do FLAIR.
+     */
+    @Transactional
+    public void recordCardChallenge(Moment m, UUID userId) {
+        MomentParticipation p = participations.findByMomentIdAndUserId(m.getId(), userId).orElseGet(() -> fresh(m, userId));
+        boolean first = p.getJoinedAt() == null;
+        if (p.getStatus() == MomentParticipationStatus.INTERESTED || p.getStatus() == MomentParticipationStatus.LEFT) {
+            p.setStatus(MomentParticipationStatus.JOINED);
+        }
+        if (first) {
+            p.setJoinedAt(now());
+        }
+        p.setLeftAt(null);
+        participations.save(p);
+        if (first) {
+            m.setParticipantCount(m.getParticipantCount() + 1);
+            moments.save(m);
+        }
+    }
+
     @Transactional
     public Map<String, Object> leave(CurrentUser user, String idOrSlug) {
         Moment m = visible(user, idOrSlug);

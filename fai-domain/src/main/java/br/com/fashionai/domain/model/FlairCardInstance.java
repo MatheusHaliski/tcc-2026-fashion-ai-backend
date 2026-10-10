@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.util.UUID;
 
 /**
@@ -93,4 +94,15 @@ public class FlairCardInstance extends VersionedAuditableEntity {
     /** GENERATED, MARKET, REWARD, STORE_POINTS, STORE_MONEY ou SEAL. */
     @Column(name = "acquired_via", nullable = false, length = 20)
     private String acquiredVia = "GENERATED";
+
+    /** Estilos, ocasiões, cor e material da peça no dia da geração (requisitos e sintonia dos Desafios de Montagem). */
+    @Column(name = "tags_json", columnDefinition = "TEXT")
+    private String tagsJson;
+
+    /** Desafio de Montagem em que a carta foi entregue (D7): ela fica como memória, fora de jogo e de troca. */
+    @Column(name = "locked_challenge_id", length = 36)
+    private UUID lockedChallengeId;
+
+    @Column(name = "locked_at")
+    private Instant lockedAt;
 }

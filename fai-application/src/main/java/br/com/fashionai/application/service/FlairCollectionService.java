@@ -20,6 +20,7 @@ import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.repository.BrandRepository;
 import br.com.fashionai.domain.repository.CatalogProductRepository;
 import br.com.fashionai.domain.repository.FlairCardInstanceRepository;
+import br.com.fashionai.domain.repository.FlairChallengeRepository;
 import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
 import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.springframework.stereotype.Service;
@@ -60,10 +61,12 @@ public class FlairCollectionService {
     private final HypeScoreCurrentRepository hypeScores;
     private final HypeScoreConfig hypeConfig;
     private final Guard guard;
+    private final FlairChallengeRepository challengeRepo;
 
     public FlairCollectionService(FlairCardInstanceRepository cards, WardrobeItemRepository pieces, CatalogProductRepository catalog,
                                   BrandRepository brands, WardrobeService wardrobe, FlairService flair,
-                                  HypeScoreCurrentRepository hypeScores, HypeScoreConfig hypeConfig, Guard guard) {
+                                  HypeScoreCurrentRepository hypeScores, HypeScoreConfig hypeConfig, Guard guard, FlairChallengeRepository challengeRepo) {
+        this.challengeRepo = challengeRepo;
         this.cards = cards;
         this.pieces = pieces;
         this.catalog = catalog;
@@ -133,6 +136,7 @@ public class FlairCollectionService {
         c.setCategory(w.getCategory());
         c.setSubcategory(w.getSubcategory());
         c.setHypeJson(hypeSnapshot(w.getId()));
+        c.setTagsJson(Json.write(tagsOf(w)));
         Map<String, Object> stats = new LinkedHashMap<>();
         stats.put("stats", engine.stats());
         stats.put("rarity", engine.rarity());
@@ -212,6 +216,16 @@ public class FlairCollectionService {
         return out;
     }
 
+    /** Estilos, ocasiões, cor e material da peça (requisitos e sintonia dos Desafios de Montagem, FLAIR-UT §14.5). */
+    static Map<String, Object> tagsOf(WardrobeItem w) {
+        Map<String, Object> t = new LinkedHashMap<>();
+        t.put("styles", w == null ? List.of() : Json.csv(w.getStyleTags()));
+        t.put("occasions", w == null ? List.of() : Json.csv(w.getOccasionTags()));
+        t.put("colors", w == null || !notBlank(w.getColor()) ? List.of() : List.of(w.getColor()));
+        t.put("materials", w == null || !notBlank(w.getMaterial()) ? List.of() : List.of(w.getMaterial().toLowerCase(java.util.Locale.ROOT)));
+        return t;
+    }
+
     /** As 7 dimensões do verso + o score, só do Hype PÚBLICO; sem ele, nada (a carta mostra "—", nunca 0). */
     private String hypeSnapshot(UUID pieceId) {
         HypeScoreCurrent h = hypeScores.findByEntityTypeAndEntityIdInAndAlgorithmVersion(HypeEntityType.PIECE, List.of(pieceId),
@@ -259,7 +273,13 @@ public class FlairCollectionService {
         m.put("createdAt", c.getCreatedAt());
         if (mine) {
             m.put("basis", c.getBasisJson() == null ? null : Json.map(c.getBasisJson()));
+            m.put("tags", c.getTagsJson() == null ? null : Json.map(c.getTagsJson()));
         }
+        // D7: entregue num Desafio de Montagem, a carta fica como memória — "Entregue em ‹desafio›"
+        m.put("lockedIn", c.getLockedChallengeId() == null ? null : challengeRepo.findById(c.getLockedChallengeId())
+                .map(x -> Map.<String, Object>of("id", x.getId(), "slug", x.getSlug(),
+                        "name", br.com.fashionai.application.moments.MomentViews.localized(x.getName(), x.getNamesJson())))
+                .orElse(null));
         return m;
     }
 

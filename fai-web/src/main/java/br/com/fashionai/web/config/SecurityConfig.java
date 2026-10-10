@@ -53,7 +53,7 @@ public class SecurityConfig {
             "/api/hype/**", "/api/insights",
             // Momentos: leituras públicas (privados filtram por membro no serviço); ações e "meus" exigem sessão
             "/api/moments", "/api/moments/active", "/api/moments/upcoming", "/api/moments/now", "/api/moments/calendar", "/api/moments/*",
-            "/api/moments/*/feed", "/api/moments/*/leaderboard", "/api/moments/*/trending", "/api/moments/context/*/*", "/api/users/*/moments", "/api/inventory-score/method", "/api/explorer/**", "/api/brand-logos", "/api/brand-logos/batch", "/api/studio/backdrops"
+            "/api/moments/*/feed", "/api/moments/*/leaderboard", "/api/moments/*/trending", "/api/moments/context/*/*", "/api/users/*/moments", "/api/flair/challenges", "/api/flair/challenges/*", "/api/inventory-score/method", "/api/explorer/**", "/api/brand-logos", "/api/brand-logos/batch", "/api/studio/backdrops"
     };
 
     @Bean
