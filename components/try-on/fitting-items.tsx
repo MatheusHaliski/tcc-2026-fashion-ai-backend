@@ -10,6 +10,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { FITTING_SLOTS, type FittingItem, type FittingSlot } from "@/lib/tryon/fitting-room";
 import { useGarmentStatus } from "@/lib/tryon/garment-status";
 import { GarmentState } from "@/components/try-on/garment-state";
+import { Model3dRow } from "@/components/try-on/model3d-row";
 
 export interface FittingItemsProps {
   items: FittingItem[];
@@ -70,9 +71,7 @@ export function FittingItems({
                       {item.name}{item.colorName ? ` · ${item.colorName}` : ""}
                     </p>
                     <GarmentState item={item} photo={garment.photos[item.key]} />
-                    {item.pieceId && (
-                      <Link href={`/pieces/${item.pieceId}`} className="type-caption underline">{t("tryOn.review_piece")}</Link>
-                    )}
+                    <Model3dRow item={item} ownedId={owned[item.key]} busyOwn={busyOwn === item.key} onOwn={onOwn} />
                     {covered && (
                       <p className="fitting-slot-state text-muted">
                         <FaiIcon id="NAV-07" size={24} decorative /><span>{t("tryOn.coberta_pela_peca_inteira", { name: fullBody!.name })}</span>
