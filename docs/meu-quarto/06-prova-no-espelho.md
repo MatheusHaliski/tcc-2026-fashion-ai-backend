@@ -46,8 +46,76 @@ não vestiu) e o estado do asset:
 | Só na prévia 2D | sem molde (acessórios): aparece só na Prévia 2D/reflexo |
 | Foto em processamento | foto ainda sem a versão final |
 
-Ações: **Vestir** (peça na mão), **Tirar** (vestida), **Trocar** (escolha manual do guarda-roupa para o lugar, a mesma
+Ações: **Vestir** (peça na mão ou na lista), **Tirar** (vestida: sai do corpo, fica na lista), **Remover** (sai da
+lista do espelho e do corpo, nunca do guarda-roupa), **Trocar** (escolha manual do guarda-roupa para o lugar, a mesma
 lista da tela Espelho) e **Voltar ao quarto**.
+
+## Lista do espelho (QUARTO-ESPELHO)
+
+O que a pessoa traz do quarto para provar fica numa **lista persistida no servidor**, separada do que está vestido. As
+"roupas em mãos" mostram, em cada lugar do corpo, primeiro o vestido, depois o resto da lista e por fim a peça segurada
+que ainda não entrou nela — cada peça uma vez só (`handsOf` em `lib/room3d/mirror-session.ts`).
+
+| Estado da peça | Onde está | Como mostra | Ações |
+|---|---|---|---|
+| **segurada** | na mão do personagem (`RoomInteraction.held`), fora da lista | "na mão", contorno tracejado | Vestir |
+| **na lista** (selecionada para prova) | `rack` do estado do espelho, `worn: false` | "para provar", contorno fino | Vestir, Remover |
+| **vestida** | `rack` com `worn: true` **e** um slot do espelho | "no espelho" | Tirar, Remover |
+| acabou de chegar | a última levada ao espelho | contorno de destaque | — |
+
+Transições:
+
+```
+segurada ──(prova abre com ela na mão: zona do espelho ou "Levar ao espelho" da etiqueta)──► na lista
+na lista ──Vestir──► vestida ──Tirar──► na lista
+na lista / vestida ──Remover──► fora da lista (continua no guarda-roupa)
+segurada ──Vestir──► vestida (entra na lista também)
+```
+
+- **Fonte única da verdade**: o estado do espelho no servidor (`GET /api/me/mirror` → `slots` e `rack`). A tela só
+  pede e mostra; o personagem do quarto, o reflexo e a tela `/mirror` leem o mesmo estado.
+- **Persistência**: a lista e o vestido ficam no estado do espelho da pessoa (o mesmo JSON dos slots, `MirrorService`),
+  valem entre sessões e aparelhos, com teto de 24 peças. **Limpar** e **Tirar** não esvaziam a lista; **Vista-me**
+  mantém a lista e acrescenta o look sugerido. Nada aqui cria ou salva look: não existe "Salvar como look" na prova.
+- **Sem duplicar**: `POST /api/me/mirror/rack {pieceId}` é idempotente (`added: false` na repetida); chegar ao espelho
+  segurando a peça manda um pedido só por aproximação (sair da zona e voltar é outra) e a peça sai da mão
+  (`engine.consume`).
+- **Remover nunca apaga**: `DELETE /api/me/mirror/rack/{pieceId}` tira da lista e do corpo; a peça continua no
+  guarda-roupa (teste Java abaixo confere o repositório).
+- **A peça anterior fica até a nova estar pronta**: Vestir pré-carrega a foto (recortada → estúdio) antes do pedido; o
+  avatar (`HumanOutfit`) mantém o look anterior — peças e fotos dele — até as fotos do novo ficarem prontas. Se outra
+  escolha chega no meio, ela vence (número do pedido); se o pedido falha, nada muda.
+- **Mesmo pipeline do provador**: a peça da lista leva foto recortada, foto de estúdio, modelagem (`variation`) e
+  dimensões (`attributes`) para o 3D (`mirrorLook3d` em `lib/mirror/mirror-list.ts`), as mesmas entradas do provador —
+  molde por subcategoria, classe de caimento, foto como textura.
+
+### Provador × espelho do quarto
+
+| | Provador 3D (`/try-on`) | Espelho do quarto (`/room`) |
+|---|---|---|
+| De onde vêm as peças | catálogo e guarda-roupa, escolha na tela | o que a pessoa trouxe do quarto (lista persistida) e a peça na mão |
+| Lugares | 4 slots (cima, baixo, calçado, acessório) | os mesmos 4 lugares |
+| Avatar | o mesmo avatar da pessoa (perfil) | o mesmo, andando no quarto; parado de frente para o espelho na prova |
+| Roupa no corpo | `HumanOutfit`: molde por subcategoria, caimento por classe, foto recortada → estúdio | o mesmo componente e as mesmas entradas |
+| Troca | a anterior fica até a nova carregar | igual (pré-carga + look anterior mantido) e o pedido mais recente vence |
+| Persistência | estado do provador | estado do espelho (lista + vestido), entre sessões |
+| Salvar look | não salva | não salva |
+| Cenário | estúdio conceitual da loja | o quarto da pessoa |
+
+### Matriz de testes
+
+| Caso | Peças (ids reais do acervo/teste) | Onde é verificado |
+|---|---|---|
+| levar sem vestir, sem duplicar | `t_shirt` (camiseta) | `MirrorServiceTest.listaDoEspelhoSemDuplicarSeparadaDoQueEstaVestido` |
+| vestir mantém na lista, outra vestida entra | `t_shirt` + `jeans` | idem |
+| tirar e limpar não esvaziam a lista | `jeans`, `t_shirt` | idem |
+| remover tira do corpo e não apaga do guarda-roupa | `t_shirt` | idem (repositório do guarda-roupa) |
+| lista leva modelagem, atributos e foto de estúdio | `t_shirt` | idem; `mirror-list.test.ts` (`jeans` com `STRAIGHT`, `FULL_LENGTH`) |
+| cada peça uma vez: vestida → lista → na mão | `tee` vestida, `saia` segurada e já na lista, `bolsa`, `jeans` só na mão | `mirror-session.test.ts` (lista do espelho) |
+| 4 lugares, vestido/casaco em cima | `jaqueta`, `tee`, `jeans`, `tenis`, `bolsa`, `vestido` | `mirror-session.test.ts` (roupas em mãos) |
+| pedido mais recente vence, falha mantém a roupa | — | `mirror-session.test.ts` (trocas) |
+| camiseta vermelha/branca/preta/estampada vestem a foto, não a peça padrão | `01_parte_superior_01_camiseta_referencia` recolorida (`public/lab/cores`) | `person-filter.test.ts` + teste de cor em `docs/provador/` |
+| zona com histerese, abrir/fechar à mão | — | `mirror-session.test.ts` (zona), `mirror-hands.test.tsx` |
 
 ## Reação à troca
 
@@ -69,6 +137,8 @@ passo "Provar a roupa" descrevendo o fluxo novo.
   com movimento reduzido).
 - `components/room3d/mirror-hands.test.tsx`: ajuda com "Não mostrar novamente" persistida, abrir à mão, quatro lugares,
   Vestir/Tirar/Trocar/Voltar, troca em andamento, falha e sucesso.
+- `MirrorServiceTest` (Java): lista do espelho sem duplicar, separada do vestido, persistida e sem apagar do
+  guarda-roupa; `lib/mirror/mirror-list.test.ts`: a peça vai para o 3D no formato do provador.
 - `lib/room3d/interaction.test.ts`: andar, pegar, carregar e soltar continuam iguais.
 
 ## Evidências
