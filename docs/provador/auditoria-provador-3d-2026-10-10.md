@@ -181,7 +181,23 @@ ambiente não entra no material da peça.
 Teste (`scripts/tryon/capture-colors.mjs` + `color-report.py`): a mesma camiseta trocada na mesma cena, sem recarregar,
 vermelha → branca → preta → estampada → vermelha, sob luz de dia, de loja e de noite, na loja neutra e na loja com cor de
 destaque. Fixtures em `public/lab/cores/` (a camiseta de referência do acervo recolorida; gola, punhos e selo
-intactos). (teste em execução; o relatório de ΔE entra no próximo commit)
+intactos). Relatório completo: [`cores-2026-10-10.md`](cores-2026-10-10.md).
+
+| medida | resultado | leitura |
+|---|---|---|
+| herança entre peças (1ª × 5ª vermelha, mesma cena) | **ΔE ≤ 0,38** nas 6 combinações loja × luz | a peça anterior não deixa cor na seguinte |
+| tingimento pelo ambiente, cores lisas (loja da marca × neutra) | **ΔE ≤ 0,80** | a cor de destaque da loja não entra no material |
+| branco na loja da marca | **C\* 2,0–2,6** | continua branco (neutro), não puxa para a cor da marca |
+| estampada, ambiente | ΔE 0,8 / 2,0 / 6,7 (dia / loja / noite) | a caixa do peito pega trechos diferentes da estampa conforme o tecido balança; nas lisas não aparece |
+| foto × render (loja neutra) | ΔE 2–23 | sombreamento da luz da cena sobre a foto (o preto aparece `#595859` de dia): é iluminação, igual em todas as lojas, não troca de cor |
+
+**Defeito achado por este teste e corrigido.** Na primeira rodada só a vermelha vestia; branca, preta e estampada
+viravam a camiseta padrão azul. O filtro de pessoa lia parte da malha como "pele" (1,6 % a 2,9 % da imagem, sem
+esqueleto, sem rosto, sem cabelo), recusava a foto e o provador caía na peça padrão. Agora, sem esqueleto, rosto ou
+cabelo, "pele" abaixo de 5 % é ruído do segmentador (`lib/pieces/person-filter.ts`, com teste); `__lab.probe(url,
+parte)` no laboratório mostra por que uma foto não vira textura. Na mesma rodada: a troca de look mostrava a peça nova
+na cor lisa do tecido enquanto a foto carregava; agora o look anterior fica até as fotos do novo ficarem prontas
+(`HumanOutfit`).
 
 ## 8. Matriz, métricas e tolerâncias
 
