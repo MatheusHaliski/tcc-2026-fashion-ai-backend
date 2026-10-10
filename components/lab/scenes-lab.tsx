@@ -109,6 +109,18 @@ export default function ScenesLab() {
       set: ({ look, ...patch }: { yaw?: number; debug?: SceneDebugOptions | null; close?: boolean; light?: LightMode; look?: string }) =>
         setLab((l) => ({ ...l, ...patch, ...(look !== undefined ? { pieces: labLook(look) } : {}) })),
       canvas: () => (document.querySelector("#scene-viewer canvas") as HTMLCanvasElement | null)?.toDataURL("image/png"),
+      // diagnóstico: por que a foto de uma peça não vira textura (recorte, segmentação, pessoa, parte mantida)
+      probe: async (url: string, part: "upper" | "lower" | "full" | "feet") => {
+        const [{ loadTexture }, gp, { stripPerson }] = await Promise.all([import("@/components/three/common"), import("@/lib/avatar3d/human/garment-photo"), import("@/lib/pieces/person-filter")]);
+        const t = await loadTexture(url); const img = t?.image as HTMLImageElement | undefined; if (!img) return { loaded: false };
+        const cut = gp.prepareGarmentPhoto(img); if (!cut) return { loaded: true, cutout: false };
+        const blob = await new Promise<Blob | null>((r) => cut.toBlob(r, "image/png"));
+        const res = await stripPerson(new File([blob!], "p.png", { type: "image/png" }), { keep: part });
+        const { detectBody } = await import("@/lib/avatar3d/body-detect"); const { loadOriented } = await import("@/lib/avatar3d/pipeline");
+        const det = await detectBody(await loadOriented(new File([blob!], "p.png", { type: "image/png" }), 1600));
+        const hist: Record<number, number> = {}; for (const k of det.mask?.data ?? []) hist[k] = (hist[k] ?? 0) + 1;
+        return { loaded: true, cutout: true, usable: gp.canUseOutfitPhoto(res, part), segmentation: res.segmentationAvailable, people: res.people, personFound: res.personFound, garments: res.garments ?? null, classes: hist };
+      },
     };
   }, []);
   const items = useMemo(() => [item("a", "Norte Sport", "shoes_piece", "shoes_piece", 2), item("b", "Atelier Lumi", "upper_piece", "upper_piece", 1)], []);

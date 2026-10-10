@@ -196,15 +196,20 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
 
 export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look3dPiece[] }) {
   // fotos das peças com a chave do look a que pertencem: a Prévia 2D só fotografa quando as fotos do look atual chegaram
-  const [loaded, setLoaded] = useState<{ key: string; images: Record<string, Img | null> }>({ key: "", images: {} });
+  const [loaded, setLoaded] = useState<{ key: string; images: Record<string, Img | null>; pieces: Look3dPiece[] }>({ key: "", images: {}, pieces: [] });
   const all = outfitOf(pieces);
   // a foto recortada (imageUrl: PNG com alfa) vem antes da de estúdio/processada (studioUrl): o molde projeta a peça pela
   // caixa do alfa. Se a recortada não carrega no 3D (imagem externa sem CORS), entra a processada, servida por nós.
   const photoUrls = (p: Look3dPiece) => [p.imageUrl, p.studioUrl].filter((u, k, a): u is string => !!u && a.indexOf(u) === k);
   const urlKey = all.map((i) => `${i.key}:${photoUrls(i.piece).join(",")}`).join("|");
   const settled = loaded.key === urlKey;
-  const images = settled ? loaded.images : {};              // nunca as fotos de outro look
-  const items = usable(all, images, settled);
+  // troca de look: o look anterior (peças E fotos dele, nunca misturadas) fica vestido até as fotos do novo ficarem
+  // prontas; só no primeiro look, sem anterior, as peças entram na cor do tecido enquanto as fotos carregam
+  const keepPrevious = !settled && loaded.key !== "";
+  const shown = keepPrevious ? outfitOf(loaded.pieces) : all;
+  const shownKey = keepPrevious ? loaded.key : urlKey;
+  const images = settled || keepPrevious ? loaded.images : {};
+  const items = usable(shown, images, settled || keepPrevious);
   // estado da foto de cada peça do look (não as padrão) para a página: carregando, ok, falhou ou sem foto
   useEffect(() => {
     const photos: Record<string, PhotoState> = {};
@@ -224,7 +229,7 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
       // three unnecessary person/pose analyses while the catalogue piece loads.
       const bundled = Object.values(DEFAULT_PIECES).some(p => p.id === i.piece.id && p.imageUrl === i.piece.imageUrl);
       return [i.key, img ? bundled ? prepareGarmentPhoto(img) : await prepareOutfitPhoto(img, photoPart(i.spec.kind)) : null] as const;
-    })).then((kv) => { if (alive) setLoaded({ key: urlKey, images: Object.fromEntries(kv) }); });
+    })).then((kv) => { if (alive) setLoaded({ key: urlKey, images: Object.fromEntries(kv), pieces }); });
     return () => { alive = false; };
   }, [urlKey]); // eslint-disable-line react-hooks/exhaustive-deps
   // antes da pintura: o corpo nunca é desenhado sem as peças (sem foto ainda, na cor do tecido)
@@ -243,6 +248,8 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
       root.position.y = 0;
     };
     // só o corpo (não o cabelo): trocar o nível de detalhe do cabelo não refaz as roupas
-  }, [parts.human, parts.pose, parts.composed, parts.asset, urlKey, loaded, items.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [parts.human, parts.pose, parts.composed, parts.asset, shownKey, loaded, items.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  // "pronto" é do look PEDIDO: enquanto o anterior segura a tela, a Prévia 2D e as capturas esperam
+  useLayoutEffect(() => { parts.human.root.userData.outfitReady = settled; }, [parts.human, settled, shownKey, loaded]);
   return null;
 }

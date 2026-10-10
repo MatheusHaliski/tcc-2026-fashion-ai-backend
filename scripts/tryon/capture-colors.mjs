@@ -13,7 +13,9 @@ const REST = "02_parte_inferior_01_jeans,03_calcados_01_tenis_casual";
 const browser = await pw.chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
 const page = await browser.newPage({ viewport: { width: 1140, height: 760 } });
 const errors = []; page.on("pageerror", (e) => errors.push(e.message));
-const shot = async (name) => { const d = await page.evaluate(() => window.__lab.canvas()); writeFileSync(join(OUT, `${name}.png`), Buffer.from(d.split(",")[1], "base64")); };
+const shot = async (name) => {
+  await page.waitForFunction(() => !!window.__lab?.canvas?.(), null, { timeout: 60000 });
+  const d = await page.evaluate(() => window.__lab.canvas()); writeFileSync(join(OUT, `${name}.png`), Buffer.from(d.split(",")[1], "base64")); };
 const set = async (patch, wait) => { await page.evaluate((p) => window.__lab.set(p), patch); await page.waitForTimeout(wait); };
 mkdirSync(OUT, { recursive: true });
 for (const store of ["fitting-neutral", "fitting-brand"]) {
@@ -22,7 +24,7 @@ for (const store of ["fitting-neutral", "fitting-brand"]) {
   for (const light of ["daylight", "store", "night"]) {
     await set({ light }, 1500);
     for (let i = 0; i < SEQ.length; i++) {
-      await set({ look: `cor-${SEQ[i]},${REST}` }, Number(process.env.SWAP ?? 7000));
+      await set({ look: `cor-${SEQ[i]},${REST}` }, Number(process.env.SWAP ?? 15000));
       await shot(`${store}-${light}-${i}-${SEQ[i]}`);
     }
   }

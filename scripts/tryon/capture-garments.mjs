@@ -17,14 +17,16 @@ const CASES = [
 const browser = await pw.chromium.launch({ args: ["--use-gl=angle", "--use-angle=swiftshader", "--enable-unsafe-swiftshader"] });
 const page = await browser.newPage({ viewport: { width: 1140, height: 760 } });
 const errors = []; page.on("pageerror", (e) => errors.push(e.message));
-const shot = async (dir, name) => { const d = await page.evaluate(() => window.__lab.canvas()); writeFileSync(join(dir, `${name}.png`), Buffer.from(d.split(",")[1], "base64")); };
+const shot = async (dir, name) => {
+  // a cena pode estar se recriando (recarga do Next): espera o quadro voltar em vez de abortar a captura inteira
+  await page.waitForFunction(() => !!window.__lab?.canvas?.(), null, { timeout: 60000 });
+  const d = await page.evaluate(() => window.__lab.canvas()); writeFileSync(join(dir, `${name}.png`), Buffer.from(d.split(",")[1], "base64")); };
 const set = async (patch, wait = 900) => { await page.evaluate((p) => window.__lab.set(p), patch); await page.waitForTimeout(wait); };
 const open = async (c, fit) => {
   await page.goto(`${BASE}/lab/scenes?s=fitting-neutral&pieces=${c.pieces}&body=${c.body}&close=1&yaw=0&fit=${fit}`, { waitUntil: "networkidle", timeout: 180000 });
   await page.waitForFunction(() => !!window.__lab, null, { timeout: 120000 }); await page.waitForTimeout(Number(process.env.WAIT ?? 12000));
 };
-for (const c of CASES) {
-  const dir = join(OUT, c.id); mkdirSync(dir, { recursive: true });
+const run = async (c, dir) => {
   await open(c, "antes");
   for (const y of [0, 90, 180]) { await set({ yaw: y }); await shot(dir, `antes-${String(y).padStart(3, "0")}`); }
   await open(c, "depois");
@@ -35,7 +37,12 @@ for (const c of CASES) {
   for (let f = 0; f < 16; f++) { await shot(dir, `caminhada-${String(f).padStart(2, "0")}`); await page.waitForTimeout(80); }
   await set({ yaw: 0, debug: { view: "pesos" } }); await shot(dir, "pesos-000");
   await set({ yaw: 180, debug: { view: "pesos" } }); await shot(dir, "pesos-180");
-  console.log(c.id, "ok");
+};
+for (const c of CASES) {
+  const dir = join(OUT, c.id); mkdirSync(dir, { recursive: true });
+  for (let tent = 1; ; tent++) {
+    try { await run(c, dir); console.log(c.id, "ok"); break; } catch (e) { console.log(c.id, "falhou", tent, e.message.split("\n")[0]); if (tent >= 3) break; }
+  }
 }
 writeFileSync(join(OUT, "erros.json"), JSON.stringify(errors, null, 1));
 await browser.close();
