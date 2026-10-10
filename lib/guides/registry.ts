@@ -10,7 +10,7 @@
  */
 export type GuideDemo =
   | "games" | "cbc" | "calendar" | "challenge" | "feed" | "schemeSeal" | "seal" | "copilot" | "autopilot" | "explore" | "hype"
-  | "brandVisitor" | "brandOperator" | "points" | "shop";
+  | "brandVisitor" | "brandOperator" | "points" | "shop" | "flairMatch" | "flairCards" | "flairDecks" | "flairShops" | "flairWallet" | "flairQuests";
 
 export interface GuideDef {
   key: string;
@@ -20,15 +20,23 @@ export interface GuideDef {
   steps: number;
   /** O exemplo tem animação curta (oferece pausar; com movimento reduzido mostra o quadro final). */
   animated: boolean;
+  /** Modo da Central FLAIR que o tutorial apresenta: o ícone do modo aparece no título e o botão vira "Entendi, começar". */
+  hubMode?: string;
 }
 
-const g = (key: string, demo: GuideDemo, steps: number, animated = true, version = 1): GuideDef => ({ key, version, demo, steps, animated });
+const g = (key: string, demo: GuideDemo, steps: number, animated = true, version = 1, hubMode?: string): GuideDef => ({ key, version, demo, steps, animated, hubMode });
 
 export const GUIDES: Record<string, GuideDef> = Object.fromEntries([
-  g("games.hub", "games", 3, false),
-  g("flair.cbc", "cbc", 3),
-  g("moments.calendar", "calendar", 3),
-  g("challenges.progress", "challenge", 3),
+  g("games.hub", "games", 3, false, 2),
+  g("flair.matches", "flairMatch", 3, true, 1, "matches"),
+  g("flair.cbc", "cbc", 3, true, 1, "cbc"),
+  g("moments.calendar", "calendar", 3, true, 1, "moments"),
+  g("challenges.progress", "challenge", 3, true, 1, "challenges"),
+  g("flair.cards", "flairCards", 3, true, 1, "cards"),
+  g("flair.decks", "flairDecks", 2, false, 1, "decks"),
+  g("flair.shops", "flairShops", 3, true, 1, "shops"),
+  g("flair.wallet", "flairWallet", 2, false, 1, "wallet"),
+  g("flair.quests", "flairQuests", 3, true, 1, "quests"),
   g("feed.posts", "feed", 3),
   g("schemes.seal", "schemeSeal", 2, false),
   g("seals.about", "seal", 3),

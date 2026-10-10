@@ -19,7 +19,7 @@ export function GroupMomentsPanel({ group }: { group?: GroupSummary | null }) {
   const [create, setCreate] = useState(false);
   const data = useApi<GroupMoments>((signal) => api.get(`/api/flair/groups/${encodeURIComponent(group!.id)}/moments`, { signal }), [group?.id], { enabled: !!group });
   const at = Date.now();
-  if (!group) return <EmptyState title={t("moments.flair.no_group")} hint={t("moments.flair.no_group_hint")} action={<Link href="/flair?tab=jogar" className="btn btn-primary">{t("moments.flair.open_flair")}</Link>} />;
+  if (!group) return <EmptyState title={t("moments.flair.no_group")} hint={t("moments.flair.no_group_hint")} action={<Link href="/flair/partidas" className="btn btn-primary">{t("moments.flair.open_flair")}</Link>} />;
   if (data.error) return <ErrorState error={data.error} onRetry={data.reload} />;
   if (data.loading || !data.data) return <Skeleton className="h-48" />;
   const g = data.data;

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
 import type { UserCard } from "@/lib/api/types";
@@ -8,6 +8,8 @@ import { FlairCardView, type FlairCard } from "@/components/flair/flair-card";
 import { LookPicker, LookTile, OpponentField, PlayButton, ResultView, STAT_LABEL, ThemeBadge, type ModeLook, type ModeResult, type Theme } from "@/components/flair/modes-shared";
 import { tr, trRich, useI18n } from "@/lib/i18n/i18n";
 import { currentIntl } from "@/lib/i18n/state";
+import { FaiIcon } from "@/components/fai-icon";
+import { ArenaPanel, DuelPanel, TeamPanel } from "@/components/flair/classic-modes";
 
 interface Mode { code: string; name: string; emoji: string; group: "NUCLEO" | "ESPECIAL"; summary: string; how: string; }
 interface Square { index: number; city: string; title: string; emoji: string; type: string; theme: string; target: number; reward: number; rule: string; }
@@ -25,11 +27,21 @@ function usePlay() {
   return { busy, result, setResult, play };
 }
 
+/** Modos clássicos (RF37) apresentados no mesmo catálogo: duelo 1×1 e treino, batalha de ocasião, equipes e liga. */
+const CLASSIC_ICON: Record<string, string> = { DUEL: "ACT-46", ARENA: "ACT-44", TEAM: "ACT-45" };
+function classicModes(): Mode[] {
+  return [
+    { code: "DUEL", name: tr("flair.duelo_de_estilo_1_1"), emoji: "", group: "NUCLEO", summary: tr("flair.n5_rodadas_edge_range_clout"), how: tr("flair.recompensa_do_sistema_vitoria_40") },
+    { code: "ARENA", name: tr("flair.batalha_de_ocasiao_do_dia"), emoji: "", group: "NUCLEO", summary: tr("flair.modes.arena_resumo"), how: tr("flair.modes.arena_como") },
+    { code: "TEAM", name: tr("flair.equipes_3_3_e_liga"), emoji: "", group: "NUCLEO", summary: tr("flair.modes.team_resumo"), how: tr("flair.modes.team_como") },
+  ];
+}
+
 /**
- * Modos do FLAIR: o guarda-roupa é a coleção de cartas, os looks são as unidades de combate e vários looks formam um
- * time/deck. Núcleo (6) + eventos especiais (9), todos sobre o mesmo banco de atributos do Fashion AI.
+ * Catálogo de partidas do FLAIR: os modos clássicos (duelo, ocasião, equipes), o núcleo (6) e os eventos especiais (9),
+ * todos sobre o mesmo banco de atributos do Fashion AI. Escolher um modo abre o painel dele nesta mesma tela.
  */
-export function FlairModes({ initial }: { initial?: string | null }) {
+export function FlairModes({ initial, onPlayed, skin }: { initial?: string | null; onPlayed?: () => void; skin?: string | null }) {
   const { t } = useI18n();
   const catalog = useApi<Catalog>((signal) => api.get("/api/flair/modes", { signal }), []);
   const looks = useApi<{ looks: ModeLook[] }>((signal) => api.get("/api/flair/modes/looks", { signal }), []);
@@ -38,21 +50,27 @@ export function FlairModes({ initial }: { initial?: string | null }) {
   if (catalog.error) return <ErrorState error={catalog.error} onRetry={catalog.reload} />;
   if (catalog.loading || !catalog.data) return <Skeleton className="h-64" />;
   const c = catalog.data; const my = looks.data?.looks ?? [];
-  const current = c.modes.find((m) => m.code === mode);
-  const props = { looks: my, catalog: c, onDone: () => trophies.reload() };
+  const classic = classicModes();
+  const current = c.modes.find((m) => m.code === mode) ?? classic.find((m) => m.code === mode);
+  const isClassic = !!current && !!CLASSIC_ICON[current.code];
+  const played = () => { trophies.reload(); onPlayed?.(); };
+  const props = { looks: my, catalog: c, onDone: played };
   return (
     <div className="grid gap-4">
-      <div className="mode-arch" aria-label={t("flair.modes.arquitetura_do_flair")}>{c.architecture.map((x, i) => <span key={x}>{i > 0 && <em aria-hidden>→</em>}<b>{x}</b></span>)}</div>
-      {(trophies.data?.length ?? 0) > 0 && <div className="flex flex-wrap gap-1.5" aria-label={t("flair.modes.trofeus_flair")}>{trophies.data!.slice(0, 8).map((t) => <span key={t.id} className="mode-trophy">🏆 {t.title}</span>)}</div>}
+      {(trophies.data?.length ?? 0) > 0 && <div className="flex flex-wrap gap-1.5" aria-label={t("flair.modes.trofeus_flair")}>{trophies.data!.slice(0, 8).map((x) => <span key={x.id} className="mode-trophy">🏆 {x.title}</span>)}</div>}
       {!current && <>
+        <section><h2 className="type-h3 mb-2">{t("flair.duelos_e_equipes")}</h2><div className="mode-grid">{classic.map((m) => <ModeCard key={m.code} m={m} icon={<FaiIcon id={CLASSIC_ICON[m.code]} size={24} decorative />} onOpen={() => setMode(m.code)} />)}</div></section>
         <section><h2 className="type-h3 mb-2">{t("flair.modes.nucleo_do_flair")}</h2><div className="mode-grid">{c.modes.filter((m) => m.group === "NUCLEO").map((m) => <ModeCard key={m.code} m={m} onOpen={() => setMode(m.code)} />)}</div></section>
         <section><h2 className="type-h3 mb-2">{t("flair.modes.eventos_e_modos_especiais")}</h2><div className="mode-grid">{c.modes.filter((m) => m.group === "ESPECIAL").map((m) => <ModeCard key={m.code} m={m} onOpen={() => setMode(m.code)} />)}</div></section>
         <p className="type-caption text-muted">{t("hypeFlair.modes_nota", { ethics: c.ethics })}</p>
       </>}
       {current && (
         <Card>
-          <div className="mb-3 flex flex-wrap items-center gap-2"><Button size="sm" onClick={() => setMode(null)}>{t("flair.modes.modos")}</Button><h2 className="type-h2">{current.emoji} {current.name}</h2><Badge tone={current.group === "NUCLEO" ? "thread" : "chalk"}>{current.group === "NUCLEO" ? t("flair.modes.nucleo") : t("flair.modes.especial")}</Badge></div>
-          <p className="type-body-sm text-muted mb-3">{current.how}</p>
+          <div className="fm-head"><Button size="sm" onClick={() => setMode(null)}>{t("flair.modes.modos")}</Button><h2 className="type-h2">{isClassic ? <FaiIcon id={CLASSIC_ICON[current.code]} size={28} decorative className="mr-1 inline-block align-middle" /> : `${current.emoji} `}{current.name}</h2><Badge tone={current.group === "NUCLEO" ? "thread" : "chalk"}>{isClassic ? t("flair.modes.classico") : current.group === "NUCLEO" ? t("flair.modes.nucleo") : t("flair.modes.especial")}</Badge></div>
+          <p className="type-body text-muted mb-3">{current.how}</p>
+          {current.code === "DUEL" && <DuelPanel onPlayed={played} skin={skin} />}
+          {current.code === "ARENA" && <ArenaPanel onPlayed={played} />}
+          {current.code === "TEAM" && <TeamPanel onPlayed={played} />}
           {current.code === "BATTLE" && <BattlePanel {...props} />}
           {current.code === "SQUAD" && <SquadPanel {...props} />}
           {current.code === "LEAGUE" && <LeaguePanel {...props} />}
@@ -73,8 +91,8 @@ export function FlairModes({ initial }: { initial?: string | null }) {
   );
 }
 
-function ModeCard({ m, onOpen }: { m: Mode; onOpen: () => void }) {
-  return <button type="button" className="mode-card text-left" onClick={onOpen}><span className="mode-card-emoji" aria-hidden>{m.emoji}</span><p className="type-h3">{m.name}</p><p className="type-body-sm text-muted">{m.summary}</p></button>;
+function ModeCard({ m, icon, onOpen }: { m: Mode; icon?: ReactNode; onOpen: () => void }) {
+  return <button type="button" className="fm-card" onClick={onOpen}><span className="fm-card-emoji" aria-hidden>{icon ?? m.emoji}</span><p className="type-h3">{m.name}</p><p className="type-body-sm text-muted">{m.summary}</p></button>;
 }
 
 type PanelProps = { looks: ModeLook[]; catalog: Catalog; onDone: () => void };
@@ -314,7 +332,7 @@ function BossPanel({ looks, catalog, onDone }: PanelProps) {
   const b = catalog.bosses.find((x) => x.code === boss);
   return (
     <div className="grid gap-3">
-      <div className="mode-grid">{catalog.bosses.map((x) => <button key={x.code} type="button" className={cn("mode-card text-left", boss === x.code && "mode-card-on")} onClick={() => setBoss(x.code)}><span className="mode-card-emoji">{x.emoji}</span><p className="type-h3">{x.name}</p><p className="type-caption">{Object.entries(x.stats).map(([k, v]) => `${STAT_LABEL[k]} ${v}`).join(" · ")}</p></button>)}</div>
+      <div className="mode-grid">{catalog.bosses.map((x) => <button key={x.code} type="button" className={cn("fm-card", boss === x.code && "fm-card-on")} aria-pressed={boss === x.code} onClick={() => setBoss(x.code)}><span className="fm-card-emoji" aria-hidden>{x.emoji}</span><p className="type-h3">{x.name}</p><p className="type-caption">{Object.entries(x.stats).map(([k, v]) => `${STAT_LABEL[k]} ${v}`).join(" · ")}</p></button>)}</div>
       {b && <><p className="mode-banner">💡 {b.lesson}</p><LookPicker looks={looks} value={pick} onChange={setPick} max={3} label={t("flair.modes.n1_a_3_looks_contra")} />
         <div><PlayButton busy={busy} disabled={pick.length === 0} onClick={() => play(() => api.post(`/api/flair/modes/bosses/${b.code}`, { schemeIds: pick })).then(onDone)}>{t("flair.modes.enfrentar", { name: b.name })}</PlayButton></div></>}
       <ResultView result={result} labelB={b?.name} />
