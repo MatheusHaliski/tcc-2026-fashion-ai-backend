@@ -14,9 +14,9 @@ const demo = (id: PointsModeId, seconds: number): HubDemo => ({ mp4: `/points/de
 
 export const POINTS_MODES: PointsMode[] = [
   { id: "balance", group: "balance", href: "/points/saldo", guide: "points.balance", demo: demo("balance", 12) },
-  { id: "earn", group: "earn", href: "/points/ganhar", guide: "points.earn", demo: demo("earn", 12) },
-  { id: "store", group: "spend", href: "/points/loja", guide: "shop.room", demo: demo("store", 16) },
-  { id: "statement", group: "history", href: "/notifications?cat=POINTS", guide: "points.statement", demo: demo("statement", 10) },
+  { id: "earn", group: "earn", href: "/points/ganhar", guide: "points.earn", demo: demo("earn", 13) },
+  { id: "store", group: "spend", href: "/points/loja", guide: "shop.room", demo: demo("store", 11) },
+  { id: "statement", group: "history", href: "/notifications?cat=POINTS", guide: "points.statement", demo: demo("statement", 12) },
 ];
 export const POINTS_GROUPS: PointsGroup[] = ["balance", "earn", "spend", "history"];
 

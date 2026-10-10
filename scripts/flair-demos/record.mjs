@@ -9,7 +9,7 @@
  *      PW_CHROMIUM=/caminho/chrome   executável do Chromium (padrão: o do Playwright instalado)
  */
 import { chromium } from "playwright";
-import { mkdirSync, renameSync } from "node:fs";
+import { mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -62,7 +62,13 @@ async function moveTo(page, locator, { steps = 28 } = {}) {
 async function click(page, locator, { before = 300, after = 700 } = {}) {
   await moveTo(page, locator); await sleep(before); await locator.click(); await sleep(after);
 }
-async function go(page, path) { await page.goto(`${APP}${path}`, { waitUntil: "networkidle" }); await sleep(700); }
+/** Momento (s desde o início da gravação) em que a primeira tela do roteiro ficou pronta: o encode corta tudo antes dele. */
+let clock = { t0: 0, ready: null };
+async function go(page, path) {
+  await page.goto(`${APP}${path}`, { waitUntil: "networkidle" });
+  if (clock.ready == null) { await page.locator("[aria-busy='true']").first().waitFor({ state: "detached", timeout: 15000 }).catch(() => undefined); await sleep(250); clock.ready = (Date.now() - clock.t0) / 1000; }
+  await sleep(700);
+}
 async function escape(page, after = 600) { await page.keyboard.press("Escape"); await sleep(after); }
 
 // ---------------------------------------------------------------- roteiros (uma sequência compreensível por modo)
@@ -111,12 +117,12 @@ const SCRIPTS = {
     await go(page, "/challenges");
     await click(page, page.getByRole("tab", { name: /Meus desafios/ }), { after: 2000 });
   },
-  async cards(page) { await go(page, "/flair/cartas"); await sleep(1500); await page.mouse.wheel(0, 420); await sleep(1800); await moveTo(page, page.locator(".flair-grid > *").first()); await sleep(1800); await page.mouse.wheel(0, 300); await sleep(1800); },
-  async decks(page) { await go(page, "/flair/decks"); await sleep(1200); await moveTo(page, page.locator(".surface").nth(1)); await sleep(1500); await page.mouse.wheel(0, 300); await sleep(1500); await moveTo(page, page.getByRole("link", { name: "Jogar com este deck" }).first()); await sleep(1800); },
+  async cards(page) { await go(page, "/flair/cartas"); await sleep(2200); await moveTo(page, page.locator(".flair-album").first()); await sleep(1600); await page.mouse.wheel(0, 420); await sleep(1800); await moveTo(page, page.locator(".flair-grid > *").first()); await sleep(1800); await page.mouse.wheel(0, 300); await sleep(2200); },
+  async decks(page) { await go(page, "/flair/decks"); await sleep(1800); await moveTo(page, page.locator(".surface").nth(1)); await sleep(1800); await moveTo(page, page.locator(".flair-card, .fai-card, .surface img").first()); await sleep(1600); await page.mouse.wheel(0, 300); await sleep(1800); await moveTo(page, page.getByRole("link", { name: "Jogar com este deck" }).first()); await sleep(2400); },
   async shops(page) { await go(page, "/flair/lojas"); await sleep(900); await moveTo(page, page.locator(".flair-combo-head").first()); await sleep(1200); await click(page, page.getByRole("button", { name: "Prontas para trocar" }), { after: 1400 }); await click(page, page.getByRole("button", { name: "Trocar pelo cupom" }).first(), { after: 3000 }); },
   // FAI Points: saldo e níveis → como ganhar (atalho) → loja (filtro, compra, módulo) → extrato
-  async balance(page) { await go(page, "/points/saldo"); await sleep(1200); await moveTo(page, page.locator(".hype-bar").first()); await sleep(1400); await moveTo(page, page.locator(".points-levels li").nth(2)); await sleep(1600); await moveTo(page, page.getByRole("link", { name: "Loja do quarto" })); await sleep(1400); },
-  async earn(page) { await go(page, "/points/ganhar"); await sleep(1000); await moveTo(page, page.locator(".points-rule").nth(1)); await sleep(1200); await moveTo(page, page.locator(".points-rule").nth(3)); await sleep(1200); await click(page, page.locator(".points-rule").nth(3).getByRole("link", { name: "Ir" }), { after: 2200 }); },
+  async balance(page) { await go(page, "/points/saldo"); await sleep(2200); await moveTo(page, page.locator(".hero-number").first()); await sleep(1400); await moveTo(page, page.locator(".hype-bar").first()); await sleep(1400); await moveTo(page, page.locator(".points-levels li").nth(2)); await sleep(1800); await moveTo(page, page.getByRole("link", { name: "Loja do quarto" })); await sleep(1800); },
+  async earn(page) { await go(page, "/points/ganhar"); await sleep(1800); await moveTo(page, page.locator(".points-rule").nth(0)); await sleep(1400); await moveTo(page, page.locator(".points-rule").nth(1)); await sleep(1400); await moveTo(page, page.locator(".points-rule").nth(3)); await sleep(1600); await click(page, page.locator(".points-rule").nth(3).getByRole("link", { name: "Ir" }), { after: 2800 }); },
   async store(page) {
     await go(page, "/points/loja"); await sleep(900);
     await click(page, page.getByRole("button", { name: "Componentes" }).first(), { after: 1200 });
@@ -125,8 +131,8 @@ const SCRIPTS = {
     await click(page, page.getByRole("dialog").getByRole("button", { name: /^Montar$/ }), { after: 2400 });
   },
   async statement(page) { await go(page, "/notifications?cat=POINTS"); await sleep(1400); await moveTo(page, page.locator("summary.notif-summary").first()); await sleep(900); await click(page, page.locator("summary.notif-summary").first(), { after: 2000 }); await click(page, page.locator("summary.notif-summary").nth(1), { after: 2000 }); await page.mouse.wheel(0, 200); await sleep(1800); },
-  async wallet(page) { await go(page, "/flair/carteira"); await sleep(1000); await click(page, page.locator(".flair-voucher").first(), { after: 2400 }); await click(page, page.getByRole("dialog").getByRole("button", { name: /fechar/i }).first(), { after: 800 }); await page.mouse.wheel(0, 200); await sleep(1500); },
-  async quests(page) { await go(page, "/flair/missoes"); await sleep(1200); await moveTo(page, page.locator(".hype-bar").first()); await sleep(1200); await click(page, page.getByRole("button", { name: "Resgatar" }).first(), { after: 2600 }); },
+  async wallet(page) { await go(page, "/flair/carteira"); await sleep(2200); await moveTo(page, page.locator(".flair-stats").first()); await sleep(1400); await click(page, page.locator(".flair-voucher").first(), { after: 2600 }); await click(page, page.getByRole("dialog").getByRole("button", { name: /fechar/i }).first(), { after: 800 }); await page.mouse.wheel(0, 200); await sleep(1500); },
+  async quests(page) { await go(page, "/flair/missoes"); await sleep(2200); await moveTo(page, page.locator(".hype-bar").first()); await sleep(1600); await moveTo(page, page.locator(".hype-bar").nth(1)); await sleep(1400); await click(page, page.getByRole("button", { name: "Resgatar" }).first(), { after: 3200 }); },
 };
 
 const wanted = process.argv.slice(2).length ? process.argv.slice(2) : Object.keys(SCRIPTS);
@@ -135,6 +141,7 @@ const storageState = await sessionState(browser);
 for (const id of wanted) {
   const ctx = await browser.newContext({ viewport: SIZE, locale: "pt-BR", deviceScaleFactor: 1, recordVideo: { dir: OUT, size: SIZE }, reducedMotion: "no-preference", storageState });
   await ctx.addInitScript(CURSOR); await ctx.addInitScript(HIDE_DEV);
+  clock = { t0: Date.now(), ready: null };
   const page = await ctx.newPage();
   page.on("pageerror", (e) => console.log(`[${id}] pageerror`, String(e).slice(0, 160)));
   try { await SCRIPTS[id](page); }
@@ -143,6 +150,7 @@ for (const id of wanted) {
   await ctx.close();
   const path = await video.path();
   renameSync(path, join(OUT, `${id}.raw.webm`));
-  console.log(`[${id}] gravado → out/${id}.raw.webm`);
+  writeFileSync(join(OUT, `${id}.json`), JSON.stringify({ ready: clock.ready }));
+  console.log(`[${id}] gravado → out/${id}.raw.webm (interface pronta aos ${clock.ready?.toFixed(1) ?? "?"} s)`);
 }
 await browser.close();
