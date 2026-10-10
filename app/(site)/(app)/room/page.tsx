@@ -14,12 +14,14 @@ import dynamic from "next/dynamic";
 import { useDetailModal } from "@/components/detail-modal";
 import RoomControlsTutorial from "@/components/room3d/room-controls-tutorial";
 import { RoomInteraction, type RoomPlayState } from "@/lib/room3d/interaction";
+import { HAND_TO_API, MirrorSession, handsOf, type HandPiece, type HandSlot } from "@/lib/room3d/mirror-session";
+import { MirrorHands } from "@/components/room3d/mirror-hands";
 import type { MirrorOverlay, RoomData3D } from "@/components/room3d/room-scene";
 import { feel, fabricOf } from "@/lib/sensory";
 import { newCanvas, saveCanvas } from "@/lib/export/canvas";
 import { mirrorPieces as lookOf, useMirrorAvatar, type MirrorPiece } from "@/components/mirror/mirror-stage";
-import { MirrorPanel, type MirrorPanelState } from "@/components/mirror/mirror-panel";
-import type { MirrorRackPiece } from "@/lib/mirror/mirror-list";
+import { mirrorLook3d, type MirrorRackPiece } from "@/lib/mirror/mirror-list";
+import { loadTexture } from "@/components/three/common";
 
 // three.js só no navegador (RF32 · cena 3D); o SSR recebe um marcador leve
 const RoomScene = dynamic(() => import("@/components/room3d/room-scene"), { ssr: false, loading: () => <div className="room3d-loading">{tr("room.montando_o_quarto_em_3d")}</div> });
@@ -40,6 +42,7 @@ interface PieceTag { id: string; name: string; composition?: string | null; care
 interface Unbox { inventoryId: string; sku: string; name: string; slotType: string; }
 const CARE: Record<string, string> = { get COTTON() { return tr("room.n30_medio_secar_a_sombra"); }, get WOOL() { return tr("room.lavar_a_mao_secadora_baixo"); }, get SILK() { return tr("room.a_mao_torcer_baixo"); }, get LEATHER() { return tr("room.agua_pano_umido_hidratar"); }, get POLYESTER() { return tr("room.n40_baixo"); }, get SYNTHETIC() { return tr("room.n30_baixo"); }, get BLEND() { return tr("room.n30_medio"); } };
 const ORIGIN: Record<string, string> = { COMPRADA: "comprada", GARIMPADA: "garimpada", HERDADA: "herdada", PRESENTE: "presente", get FEITA_A_MAO() { return tr("room.feita_a_mao"); }, TROCADA: "trocada" };
+interface SwapPiece { id: string; name: string; imageUrl?: string; thumbnailUrl?: string; category?: string; subcategory?: string; inMirror?: boolean; }
 const mirrorPieces = (m?: MirrorState | null) => Object.values(m?.slots ?? {}).flatMap((v) => (Array.isArray(v) ? v : v ? [v] : []));
 interface ListRow { moduleId: string; label: string; count: number; pieces: RoomPiece[]; actions: string[]; }
 
@@ -70,29 +73,37 @@ function RoomInner() {
   // reflexo do espelho 3D e prévia do Vista-me: o mesmo avatar (perfil, espelho, provador) vestindo o look do espelho
   const engine = useMemo(() => new RoomInteraction(), []);
   const [play, setPlay] = useState<RoomPlayState>(engine.state);
-  const [walking, setWalking] = useState(true), [wearBusy, setWearBusy] = useState(false);
-  // QUARTO-ESPELHO: painel do espelho (avatar 3D + lista) e a peça que acabou de chegar à lista
-  const [mirrorOpen, setMirrorOpen] = useState(false); const [arrived, setArrived] = useState<string | null>(null);
+  const [walking, setWalking] = useState(true);
+  // prova no espelho dentro do quarto (RF27 ↔ RF28): zona de aproximação, "roupas em mãos", trocas e reação do personagem
+  const session = useMemo(() => new MirrorSession(), []);
+  const [, mirrorTick] = useState(0);
+  useEffect(() => { const update = () => mirrorTick((n) => n + 1); session.listeners.add(update); return () => { session.listeners.delete(update); }; }, [session]);
+  const [changed, setChanged] = useState<{ slot: HandSlot; name: string } | null>(null);
+  const [swap, setSwap] = useState<{ slot: HandSlot; pieces: SwapPiece[]; message?: string; href?: string } | null>(null);
+  // QUARTO-ESPELHO: a peça que acabou de chegar à lista do espelho (destaque) e o pedido de levar em andamento
+  const [arrived, setArrived] = useState<string | null>(null);
   const bringing = useRef<string | null>(null);
-  /** Leva a peça ao espelho: entra na lista (sem vestir, sem duplicar — o servidor ignora a repetida) e o painel abre. */
+  /** Leva a peça ao espelho: entra na lista (sem vestir, sem duplicar — o servidor ignora a repetida) e a prova abre. */
   async function bringToMirror(pieceId: string) {
     if (bringing.current === pieceId) return;                    // clique repetido / borda da área: um pedido só
     bringing.current = pieceId;
     try {
       const r = await api.post<MirrorState>("/api/me/mirror/rack", { pieceId });
-      mirror.setData(r); setArrived(pieceId); setMirrorOpen(true);
+      mirror.setData(r); setArrived(pieceId);
       if (engine.held === pieceId) engine.consume(pieceId);        // saiu da mão: está na lista do espelho
+      if (session.phase !== "tryon") session.open();
       if (!walking) frame("mirror");                               // câmera vai ao espelho (no modo andar, a câmera segue o avatar)
     } catch (e) { toast.fromError(e); } finally { bringing.current = null; }
   }
   useEffect(() => { const update = () => setPlay(engine.state); engine.listeners.add(update); return () => { engine.listeners.delete(update); }; }, [engine]);
-  // chegar ao espelho segurando uma peça: ela entra na lista UMA vez por aproximação (sair e voltar à área é outra)
-  const wasNear = useRef(false);
+  // chegar ao espelho segurando uma peça: quando a prova abre (zona com histerese da sessão), ela entra na lista UMA vez
+  // por aproximação — sair da zona e voltar é outra
+  const wasTrying = useRef(false);
   useEffect(() => {
-    const near = play.nearMirror && !!play.held;
-    if (near && !wasNear.current && play.held) void bringToMirror(play.held);
-    wasNear.current = near;
-  }, [play.nearMirror, play.held]); // eslint-disable-line react-hooks/exhaustive-deps
+    const trying = session.phase === "tryon" && !!play.held;
+    if (trying && !wasTrying.current && play.held) void bringToMirror(play.held);
+    wasTrying.current = trying;
+  }, [session.phase, play.held]); // eslint-disable-line react-hooks/exhaustive-deps
   const me3d = useMirrorAvatar(); const [reflection, setReflection] = useState<string | null>(null);
   const slotsOf = (m?: MirrorState | null) => (m?.slots ?? {}) as unknown as Record<string, MirrorPiece | MirrorPiece[] | null>;
   const mirrorLook = useMemo(() => lookOf(slotsOf(mirror.data)), [mirror.data?.slots]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -105,6 +116,42 @@ function RoomInner() {
     if (cl.lit > before) { setCelebrate(true); const m = cl.milestones.filter((x) => x.lit).pop(); if (before > 0 && m) toast.success(t("room.nova_luz_do_closet_acesa", { label: m.label })); setTimeout(() => setCelebrate(false), 6000); }
     try { localStorage.setItem("fai.room.lights", String(cl.lit)); } catch { /* sem storage */ }
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+  /** Veste uma peça no espelho: o pedido mais recente prevalece (resposta de pedido antigo é ignorada); falha mantém a roupa anterior. */
+  async function wearInMirror(pieceId: string, slot: HandSlot, name: string) {
+    const n = session.request(slot);
+    try {
+      // a roupa anterior fica até a nova estar pronta: a foto (recortada → estúdio) carrega antes do pedido
+      const src = mirror.data?.rack?.find((r) => r.id === pieceId) ?? (data?.pieces[pieceId] as MirrorRackPiece | undefined);
+      if (src) { const l = mirrorLook3d(src); for (const u of [l.imageUrl, l.studioUrl]) { const m = mediaUrl(u ?? undefined); if (m && await loadTexture(m)) break; } }
+      if (n !== session.seq) return;                                // outra escolha chegou durante o carregamento: ela vence
+      const r = await api.post<MirrorState>("/api/me/mirror/pieces", { pieceId });
+      if (!session.settle(n, true, slot, Date.now())) return;
+      mirror.setData(r); engine.consume(pieceId); setChanged({ slot, name }); setSwap(null);
+    } catch (e) { session.settle(n, false, slot, Date.now(), e instanceof Error ? e.message : t("common.erro")); }
+  }
+  async function removeFromMirror(p: HandPiece) {
+    const n = session.request(p.slot);
+    try {
+      const r = await api.delete<MirrorState | Record<string, unknown>>(`/api/me/mirror/pieces/${encodeURIComponent(p.id)}`);
+      if (!session.settle(n, true, p.slot, Date.now())) return;
+      if ((r as MirrorState)?.slots) mirror.setData(r as MirrorState); else await mirror.reload();
+      setChanged(null);
+    } catch (e) { session.settle(n, false, p.slot, Date.now(), e instanceof Error ? e.message : t("common.erro")); }
+  }
+  /** Tirar da lista do espelho: sai da lista (e do corpo, se vestida); nunca sai do guarda-roupa. */
+  async function unlist(p: HandPiece) {
+    const n = session.request(p.slot);
+    try {
+      const r = await api.delete<MirrorState>(`/api/me/mirror/rack/${encodeURIComponent(p.id)}`);
+      if (!session.settle(n, true, p.slot, Date.now())) return;
+      mirror.setData(r); if (arrived === p.id) setArrived(null);
+    } catch (e) { session.settle(n, false, p.slot, Date.now(), e instanceof Error ? e.message : t("common.erro")); }
+  }
+  /** Trocar: as peças do guarda-roupa que podem ir para o lugar (escolha manual, sem IA — a mesma lista da tela Espelho). */
+  async function openSwap(slot: HandSlot) {
+    try { const r = await api.get<{ pieces?: SwapPiece[]; message?: string; href?: string }>(`/api/me/mirror/wardrobe?slot=${HAND_TO_API[slot]}`); setSwap({ slot, pieces: r.pieces ?? [], message: r.message, href: r.href }); }
+    catch (e) { toast.fromError(e); }
+  }
   async function toggleTheme() {
     const next = dark ? "LIGHT" : "DARK";
     theme.update({ theme: next as typeof theme.prefs.theme, highContrast: false });
@@ -193,6 +240,8 @@ function RoomInner() {
   if (loading || !data) return <Skeleton className="h-96" />;
   const modulePieces = (m: Module) => (m.hangers ?? m.slots ?? []).map((h) => ({ ...h, piece: h.pieceId ? data.pieces[h.pieceId] : null }));
   const gridPieces = (m: Module) => { const fromSlots = modulePieces(m).filter((x) => x.piece); if (fromSlots.length) return fromSlots.map((x) => x.piece!); return Object.values(data.pieces).filter((p) => p.moduleId === m.id); };
+  const heldPiece = play.held ? data.pieces[play.held] ?? null : null;
+  const hands = handsOf(slotsOf(mirror.data), heldPiece, (id) => data.pieces[id] ?? null, mirror.data?.rack ?? []);
   return (
     <>
       <PageHeader title={t("nav.room")} kicker="RF27" lead={t("room.nivel_pecas_em_posicoes", { level: data.level, aesthetic: data.levelInfo.aesthetic, value: data.capacity?.pieces ?? 0, value2: data.capacity?.positions ?? 0, value3: data.forgottenCount ? ` · ${data.forgottenCount} esquecidas` : "" })}
@@ -224,7 +273,7 @@ function RoomInner() {
           </div>)}
         <div className="room3d">
           <div className={`room3d-stage${photo ? " is-photo" : ""}`} data-filter={photo?.filter ?? undefined}>
-            <RoomScene gameplay={walking && !photo && !me3d.loading ? { avatar: me3d.avatar, sex: me3d.sex, body: me3d.body, pieces: mirrorLook, engine } : undefined} data={data as unknown as RoomData3D} open={openSet} highlight={highlight} focusModule={focusModule} onReady={setCanvas}
+            <RoomScene gameplay={walking && !photo && !me3d.loading ? { avatar: me3d.avatar, sex: me3d.sex, body: me3d.body, pieces: mirrorLook, engine, session, reduced: !!data.ambient?.reduceMotion } : undefined} data={data as unknown as RoomData3D} open={openSet} highlight={highlight} focusModule={focusModule} onReady={setCanvas}
               onToggle={(id) => { if (!openSet.has(id)) touch(id); setOpenSet((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); setFocusModule(id); }}
               onPick={openTag} lit={lit} dark={dark} onToggleTheme={toggleTheme}
               mirror={{ pieces: mirrorPieces(mirror.data).map((p) => ({ id: p.id, imageUrl: p.imageUrl ?? p.thumbnailUrl })), postIt: mirror.data?.postIt, closingKey, celebrate, reflectionUrl: reflection,
@@ -238,11 +287,6 @@ function RoomInner() {
             <p className="room3d-hint">{t("room.arraste_para_girar_enquadramento_3")}</p>
           </div>
           <nav className="room3d-positions" aria-label={t("room.posicoes_do_quarto")}>
-            <div className="mb-3 flex flex-wrap gap-2">
-              <Button aria-pressed={mirrorOpen} onClick={() => setMirrorOpen((v) => !v)}><FaiIcon id="ACT-32" size={20} decorative />{t(mirrorOpen ? "room.mirror.fechar" : "room.mirror.abrir")}{(mirror.data?.rack?.length ?? 0) > 0 && <Badge tone="chalk">{mirror.data!.rack!.length}</Badge>}</Button>
-            </div>
-            {mirrorOpen && <MirrorPanel state={(mirror.data ?? null) as unknown as MirrorPanelState | null} onState={(r) => mirror.setData(r as unknown as MirrorState)} arrivedId={arrived}
-              held={play.held ? data.pieces[play.held]?.name ?? null : null} />}
             <section className="mb-4 space-y-3 rounded-xl border p-3" aria-label={t("room.play.title")}>
               <h2 className="font-semibold">{t("room.play.title")}</h2>
               <RoomControlsTutorial enabled={walking} />
@@ -251,11 +295,10 @@ function RoomInner() {
                 <p>{t("room.play.instructions")}</p>
                 <p className="font-semibold" role="status">{t(!play.ready ? "room.play.loading" : play.grip ? "room.play.handle" : play.held ? "room.play.carrying" : "room.play.ready")}</p>
                 {play.held && <p>{data.pieces[play.held]?.name}</p>}
-                {play.nearMirror && play.held && <div className="rounded-lg border-2 border-teal-700 p-3">
-                  <p className="font-semibold">{t("room.mirror.levando")}</p>
-                  <Button disabled={wearBusy} onClick={() => { const id = engine.held; if (id) void bringToMirror(id); }}>{t("room.mirror.por_na_lista")}</Button>
-                </div>}
               </>}
+              <MirrorHands phase={session.phase} hands={hands} busy={session.busy} error={session.error} changed={changed} reduced={!!data.ambient?.reduceMotion} arrivedId={arrived}
+                onWear={(p) => wearInMirror(p.id, p.slot, p.name)} onRemove={removeFromMirror} onUnlist={unlist} onSwap={openSwap}
+                onBack={() => { session.back(engine.actor.distanceTo(engine.mirror)); setChanged(null); setArrived(null); }} onOpen={() => session.open()} />
             </section>
             <p className="label mb-1">{t("room.posicoes")}</p>
             <ul className="fai-list">{data.modules.filter((m) => ["DOOR", "DRAWER", "TOP", "BASE"].includes(m.slotType) && (m.slotType !== "DRAWER" || gridPieces(m).length > 0 || (m as { category?: string }).category)).map((m) => { const n = gridPieces(m).length; return (
@@ -347,6 +390,11 @@ function RoomInner() {
         <p className="type-body-sm mb-2">{t("room.quem_tem_a_chave_pode")}</p>
         <ul className="mb-3 flex flex-wrap gap-1">{((data as unknown as RoomData3D).keys ?? []).map((k) => <li key={k.id} className="chip">🔑 @{k.username}</li>)}{((data as unknown as RoomData3D).keys ?? []).length === 0 && <li className="type-caption text-muted">{t("room.nenhuma_chave_entregue_ainda")}</li>}</ul>
         <Field label={t("room.entregar_a_chave_para_usuario")} id="key-guest"><Input id="key-guest" value={guest} onChange={(e) => setGuest(e.target.value)} placeholder="@paris_lea" /></Field>
+      </Dialog>
+      <Dialog open={!!swap} onClose={() => setSwap(null)} title={t("room.mirror.pick_title", { slot: swap ? t(`room.mirror.slot.${swap.slot}`) : "" })}>
+        <p className="type-body-sm text-muted mb-2">{swap?.message ?? t("room.mirror.pick_hint")}{swap?.href && <> <Link href={swap.href} className="underline">{t("mirror.adicionar_peca")}</Link></>}</p>
+        {swap && swap.pieces.length === 0 && <p className="type-body">{t("room.mirror.pick_empty")}</p>}
+        <div className="grid grid-cols-3 gap-2" data-testid="room-mirror-picker">{(swap?.pieces ?? []).map((p) => <button key={p.id} type="button" className="surface p-2 text-left hover:bg-surface-2 disabled:opacity-60" disabled={p.inMirror || session.busy !== null} aria-pressed={p.inMirror} onClick={() => swap && wearInMirror(p.id, swap.slot, p.name)}><img src={mediaUrl(p.thumbnailUrl ?? p.imageUrl)} alt="" className="aspect-square w-full rounded bg-surface object-contain" /><span className="type-caption block truncate">{p.name}</span></button>)}</div>
       </Dialog>
       <Dialog open={!!addTo} onClose={() => setAddTo(null)} title={t("room.adicionar_peca_a_esta_gaveta", { value: addTo ? ` (${addTo.replace("drawer:", t("room.gaveta_2"))})` : "" })}
         footer={<><Link className="btn" href="/pieces/new">{t("room.cadastrar_peca_nova")}</Link><Button variant="primary" disabled={!addPiece} onClick={() => act(() => api.put(`/api/pieces/${addPiece}/room-address`, { address: addTo }), t("room.peca_guardada_na_gaveta")).then(() => setAddTo(null))}>{t("room.guardar_aqui")}</Button></>}>

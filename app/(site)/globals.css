@@ -1108,6 +1108,18 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 .room3d-positions ul { display: grid; gap: 2px; }
 .room3d-positions button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 8px; border-radius: 8px; font-size: 13px; text-align: left; }
 .room3d-positions button:hover, .room3d-positions button[aria-pressed="true"] { background: var(--surface-2); }
+/* Prova no espelho dentro do quarto (RF27 ↔ RF28): "roupas em mãos" por lugar do corpo, ajuda de primeiro uso, estados */
+.mirror-hands { display: grid; gap: 8px; margin-top: 8px; }
+.mirror-hands.is-tryon { padding: 10px; border: 2px solid #1F7A76; border-radius: 12px; background: var(--surface-2); }
+.mirror-hands.is-transition { justify-self: start; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); font-size: 13px; }
+.mirror-hands-help { display: grid; gap: 4px; padding: 10px; border-radius: 12px; background: var(--chalk-soft, #f6efd9); }
+.mirror-hands-slot { display: grid; gap: 4px; padding-top: 6px; border-top: 1px solid var(--line-soft); }
+.mirror-hands-piece { display: flex; align-items: center; gap: 8px; padding: 4px; border-radius: 8px; background: var(--surface); }
+.mirror-hands-piece[data-worn="false"] { outline: 2px dashed #1F7A76; outline-offset: -2px; }
+/* QUARTO-ESPELHO: na lista do espelho (persistida) × só na mão; a que acabou de chegar fica destacada */
+.mirror-hands-piece[data-worn="false"][data-listed="true"] { outline: 1px solid var(--line-soft); }
+.mirror-hands-piece[data-arrived="true"] { outline: 2px solid var(--mark); outline-offset: 1px; }
+.room3d-positions .mirror-hands button { display: inline-flex; width: auto; justify-content: center; }
 
 /* LEGO (prancha 10 · C7 · narrativa B12): montagem animada — os blocos caem e encaixam de cima para baixo (60 ms entre
    peças, via animation-delay); "montar de novo" repete. Com "reduzir movimento" o card aparece já montado. */
@@ -3219,15 +3231,3 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
   .institutional-profile-stats dd { font-size: 1rem; }
 }
 
-/* Espelho do quarto (QUARTO-ESPELHO): avatar 3D + lista das peças trazidas para provar */
-.mirror-panel { display: grid; gap: 12px; margin-bottom: 16px; padding: 12px; border: 1px solid var(--line-soft); border-radius: var(--radius); background: var(--surface); }
-.mirror-panel-stage { position: relative; height: 360px; border-radius: var(--radius-sm); overflow: hidden; }
-.mirror-panel-stage .mirror-frame { height: 100%; }
-.mirror-panel-status { position: absolute; left: 50%; bottom: 10px; transform: translateX(-50%); margin: 0; padding: 4px 12px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 90%, transparent); font-size: var(--text-caption); }
-.mirror-rack-item { display: flex; align-items: center; gap: 10px; padding: 6px; border-radius: var(--radius-sm); border: 1px solid transparent; }
-.mirror-rack-item.is-worn { border-color: var(--thread); background: var(--thread-soft); }
-.mirror-rack-item.is-arrived { outline: 2px solid var(--mark); outline-offset: 1px; }
-@media (prefers-reduced-motion: no-preference) {
-  .mirror-panel-stage.is-dressed { animation: mirror-dressed 0.7s ease-out; }
-  @keyframes mirror-dressed { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--thread) 55%, transparent); } 100% { box-shadow: 0 0 0 14px transparent; } }
-}
