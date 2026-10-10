@@ -82,7 +82,7 @@ class MultiPieceDetectionTest {
             g.setColor(new Color(rgb[i])); g.fillRect(x[i], y[i], 180, 220);
         }
         g.dispose();
-        var pieces = MultiPieceService.localPieces(photo);
+        var pieces = MultiPieceService.surfacePieces(photo);
         assertThat(pieces).hasSize(5);
         assertThat(pieces).extracting(MultiPieceService.DetectedPiece::color)
                 .containsExactly("black", "white", "navy", "burgundy", "olive");

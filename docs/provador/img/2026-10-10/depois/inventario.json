@@ -1,0 +1,248 @@
+{
+ "errors": [],
+ "scenes": {
+  "fitting-neutral": {
+   "interpretation": "CONCEPTUAL",
+   "brand": "neutral",
+   "palette": {
+    "wall": "#ECE8E2",
+    "floor": "#BFB8AE",
+    "ceiling": "#F4F2EE",
+    "curtain": "#CFC6B8",
+    "furniture": "#685747",
+    "metal": "#55534F",
+    "ink": "#262522"
+   },
+   "objects": [
+    {
+     "id": "shell",
+     "purpose": "circulation"
+    },
+    {
+     "id": "identity",
+     "purpose": "communication"
+    },
+    {
+     "id": "mirror",
+     "purpose": "fitting"
+    },
+    {
+     "id": "bench",
+     "purpose": "fitting"
+    },
+    {
+     "id": "rail",
+     "purpose": "organization"
+    },
+    {
+     "id": "gallery",
+     "purpose": "communication"
+    }
+   ],
+   "photographs": []
+  },
+  "fitting-brand": {
+   "interpretation": "CONCEPTUAL",
+   "brand": "norte-sport",
+   "palette": {
+    "wall": "#22291f",
+    "floor": "#BFB8AE",
+    "ceiling": "#F4F2EE",
+    "curtain": "#CFC6B8",
+    "furniture": "#ad49df",
+    "metal": "#ad49df",
+    "ink": "#262522"
+   },
+   "objects": [
+    {
+     "id": "shell",
+     "purpose": "circulation"
+    },
+    {
+     "id": "identity",
+     "purpose": "communication"
+    },
+    {
+     "id": "mirror",
+     "purpose": "fitting"
+    },
+    {
+     "id": "bench",
+     "purpose": "fitting"
+    },
+    {
+     "id": "rail",
+     "purpose": "organization"
+    },
+    {
+     "id": "gallery",
+     "purpose": "communication"
+    }
+   ],
+   "photographs": []
+  },
+  "fitting-sneakers": {
+   "interpretation": "CONCEPTUAL",
+   "brand": "norte-sport",
+   "palette": {
+    "wall": "#22291f",
+    "floor": "#BFB8AE",
+    "ceiling": "#F4F2EE",
+    "curtain": "#CFC6B8",
+    "furniture": "#ad49df",
+    "metal": "#ad49df",
+    "ink": "#262522"
+   },
+   "objects": [
+    {
+     "id": "shell",
+     "purpose": "circulation"
+    },
+    {
+     "id": "identity",
+     "purpose": "communication"
+    },
+    {
+     "id": "mirror",
+     "purpose": "fitting"
+    },
+    {
+     "id": "bench",
+     "purpose": "fitting"
+    },
+    {
+     "id": "rail",
+     "purpose": "organization"
+    },
+    {
+     "id": "gallery",
+     "purpose": "communication"
+    }
+   ],
+   "photographs": []
+  },
+  "fitting-denim": {
+   "interpretation": "CONCEPTUAL",
+   "brand": "neutral",
+   "palette": {
+    "wall": "#ECE8E2",
+    "floor": "#BFB8AE",
+    "ceiling": "#F4F2EE",
+    "curtain": "#CFC6B8",
+    "furniture": "#685747",
+    "metal": "#55534F",
+    "ink": "#262522"
+   },
+   "objects": [
+    {
+     "id": "shell",
+     "purpose": "circulation"
+    },
+    {
+     "id": "identity",
+     "purpose": "communication"
+    },
+    {
+     "id": "mirror",
+     "purpose": "fitting"
+    },
+    {
+     "id": "bench",
+     "purpose": "fitting"
+    },
+    {
+     "id": "rail",
+     "purpose": "organization"
+    },
+    {
+     "id": "gallery",
+     "purpose": "communication"
+    }
+   ],
+   "photographs": [
+    "b1",
+    "b2"
+   ]
+  },
+  "fitting-bags": {
+   "interpretation": "CONCEPTUAL",
+   "brand": "atelier-lumi",
+   "palette": {
+    "wall": "#eaf0eb",
+    "floor": "#BFB8AE",
+    "ceiling": "#F4F2EE",
+    "curtain": "#CFC6B8",
+    "furniture": "#bf22ac",
+    "metal": "#bf22ac",
+    "ink": "#262522"
+   },
+   "objects": [
+    {
+     "id": "shell",
+     "purpose": "circulation"
+    },
+    {
+     "id": "identity",
+     "purpose": "communication"
+    },
+    {
+     "id": "mirror",
+     "purpose": "fitting"
+    },
+    {
+     "id": "bench",
+     "purpose": "fitting"
+    },
+    {
+     "id": "rail",
+     "purpose": "organization"
+    },
+    {
+     "id": "gallery",
+     "purpose": "communication"
+    }
+   ],
+   "photographs": []
+  },
+  "fitting-tops": {
+   "interpretation": "CONCEPTUAL",
+   "brand": "costa-linho",
+   "palette": {
+    "wall": "#f0eaeb",
+    "floor": "#BFB8AE",
+    "ceiling": "#F4F2EE",
+    "curtain": "#CFC6B8",
+    "furniture": "#22bfaa",
+    "metal": "#22bfaa",
+    "ink": "#262522"
+   },
+   "objects": [
+    {
+     "id": "shell",
+     "purpose": "circulation"
+    },
+    {
+     "id": "identity",
+     "purpose": "communication"
+    },
+    {
+     "id": "mirror",
+     "purpose": "fitting"
+    },
+    {
+     "id": "bench",
+     "purpose": "fitting"
+    },
+    {
+     "id": "rail",
+     "purpose": "organization"
+    },
+    {
+     "id": "gallery",
+     "purpose": "communication"
+    }
+   ],
+   "photographs": []
+  }
+ }
+}

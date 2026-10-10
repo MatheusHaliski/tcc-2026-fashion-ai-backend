@@ -12,7 +12,7 @@ import type { BodyAsset } from "./asset";
 import type { Composed } from "./compose";
 import type { BodyParam, GarmentGeometry, GarmentSpec } from "./garments";
 
-export interface TrimBand { part: "barra" | "punho" | "carcela" | "botoes"; position: Float32Array; skinIndex: Uint16Array; skinWeight: Float32Array; index: Uint32Array }
+export interface TrimBand { part: "barra" | "punho" | "carcela" | "costura" | "botoes" | "botoes-borda" | "gola-ponta"; position: Float32Array; skinIndex: Uint16Array; skinWeight: Float32Array; index: Uint32Array }
 
 const RIB = new Set(["sweater", "hoodie"]);
 const TORSO_HEM = new Set(["tee", "longsleeve", "shirt", "sweater", "hoodie", "crop", "tank"]);
@@ -93,10 +93,17 @@ function basis(d: number[]) {
 }
 
 /** Button placket follows the centre front of the fitted mesh, never the photo silhouette. */
+/**
+ * Carcela, pespontos, botões e pontas da gola da camisa (acabamentos 3D sobre a frente, alinhados ao centro):
+ *  - carcela: tira de 18 mm do decote à barra; pesponto: dois fios de 1,2 mm nas bordas dela (cor da linha);
+ *  - botões: 7 discos claros de 5 mm com aro escuro (nítidos e geométricos, não um ponto escuro);
+ *  - gola: duas pontas (quadriláteros) deitadas no peito a partir do decote, na cor da gola da foto.
+ */
 export function shirtPlacket(a: BodyAsset, c: Composed, P: BodyParam, gg: GarmentGeometry): TrimBand[] {
   if (gg.spec.kind !== "shirt") return [];
   const candidates = Array.from(P.group.keys()).filter(v => P.group[v] === 1);
-  const vertices = Array.from(gg.source.keys()).filter(v => gg.alpha[v] > .5 && Math.abs(gg.position[v * 3]) < .065 && gg.position[v * 3 + 2] > P.torsoZ);
+  const front = Array.from(gg.source.keys()).filter(v => gg.alpha[v] > .5 && gg.position[v * 3 + 2] > P.torsoZ && gg.source[v] >= 0 && P.group[gg.source[v]] === 1);
+  const vertices = front.filter(v => Math.abs(gg.position[v * 3]) < .065);
   if (!vertices.length || !candidates.length) return [];
   const low = P.hipY + gg.spec.hem * (P.neckY - P.hipY) + .012;
   const high = P.hipY + (gg.spec.neck - gg.spec.vneck) * (P.neckY - P.hipY) - .035;
@@ -104,23 +111,46 @@ export function shirtPlacket(a: BodyAsset, c: Composed, P: BodyParam, gg: Garmen
     const near = [...vertices].sort((u, v) => Math.abs(gg.position[u * 3 + 1] - y) - Math.abs(gg.position[v * 3 + 1] - y)).slice(0, 12);
     return Math.max(...near.map(v => gg.position[v * 3 + 2])) + .002;
   };
+  // superfície da peça num ponto (x, y) do peito: z dos vértices mais próximos
+  const atXY = (x: number, y: number) => {
+    const near = [...front].sort((u, v) => Math.hypot(gg.position[u * 3] - x, gg.position[u * 3 + 1] - y) - Math.hypot(gg.position[v * 3] - x, gg.position[v * 3 + 1] - y)).slice(0, 8);
+    return Math.max(...near.map(v => gg.position[v * 3 + 2])) + .002;
+  };
   const build = (part: TrimBand["part"]) => ({ part, position: [] as number[], skinIndex: [] as number[], skinWeight: [] as number[], index: [] as number[] });
-  const strip = build("carcela"), buttons = build("botoes");
+  const strip = build("carcela"), seams = build("costura"), buttons = build("botoes"), rims = build("botoes-borda"), collar = build("gola-ponta");
   const push = (mesh: ReturnType<typeof build>, x: number, y: number, z: number) => {
     mesh.position.push(x, y, z); const [si, sw] = weightsNear(a, c, candidates, x, y, z); mesh.skinIndex.push(...si); mesh.skinWeight.push(...sw);
   };
-  for (let row = 0; row <= 40; row++) {
-    const y = low + (high - low) * row / 40, z = at(y);
-    push(strip, -.009, y, z); push(strip, .009, y, z);
-    if (row) { const i = row * 2; strip.index.push(i - 2, i - 1, i, i, i - 1, i + 1); }
-  }
+  const ribbon = (mesh: ReturnType<typeof build>, xa: number, xb: number, dz: number) => {
+    const start = mesh.position.length / 3;
+    for (let row = 0; row <= 40; row++) {
+      const y = low + (high - low) * row / 40, z = at(y) + dz;
+      push(mesh, xa, y, z); push(mesh, xb, y, z);
+      if (row) { const i = start + row * 2; mesh.index.push(i - 2, i - 1, i, i, i - 1, i + 1); }
+    }
+  };
+  ribbon(strip, -.009, .009, 0);
+  ribbon(seams, -.0081, -.0069, .0012); ribbon(seams, .0069, .0081, .0012);          // pesponto nas duas bordas
   for (let row = 0; row < 7; row++) {
-    const y = low + .04 + (high - low - .08) * row / 6, z = at(y) + .0025, start = buttons.position.length / 3;
-    push(buttons, 0, y, z + .001);
-    for (let j = 0; j < 12; j++) { const angle = j * Math.PI / 6; push(buttons, Math.cos(angle) * .004, y + Math.sin(angle) * .004, z); }
+    const y = low + .04 + (high - low - .08) * row / 6, z = at(y) + .0026;
+    const start = buttons.position.length / 3;
+    push(buttons, 0, y, z + .0012);
+    for (let j = 0; j < 12; j++) { const angle = j * Math.PI / 6; push(buttons, Math.cos(angle) * .005, y + Math.sin(angle) * .005, z + .0008); }
     for (let j = 0; j < 12; j++) buttons.index.push(start, start + 1 + j, start + 1 + (j + 1) % 12);
+    const r0 = rims.position.length / 3;                                              // aro: anel entre 5 e 6,3 mm, um pouco abaixo do disco
+    for (let j = 0; j < 12; j++) { const angle = j * Math.PI / 6; push(rims, Math.cos(angle) * .0048, y + Math.sin(angle) * .0048, z + .0004); push(rims, Math.cos(angle) * .0063, y + Math.sin(angle) * .0063, z); }
+    for (let j = 0; j < 12; j++) { const i = r0 + j * 2, n = r0 + ((j + 1) % 12) * 2; rims.index.push(i, i + 1, n, n, i + 1, n + 1); }
   }
-  return [strip, buttons].map(mesh => ({ part: mesh.part, position: Float32Array.from(mesh.position), skinIndex: Uint16Array.from(mesh.skinIndex), skinWeight: Float32Array.from(mesh.skinWeight), index: Uint32Array.from(mesh.index) }));
+  // pontas da gola: do decote (junto à faixa da gola) para fora e para baixo sobre o peito, uma de cada lado
+  const yTop = high + .035;
+  for (const s of [-1, 1]) {
+    // ponta clássica: ~5 cm de comprimento, 3 cm de abertura — não uma lapela
+    const quad: [number, number][] = [[s * .012, yTop + .01], [s * .04, yTop - .006], [s * .034, yTop - .052], [s * .011, yTop - .034]];
+    const start = collar.position.length / 3;
+    for (const [x, y] of quad) push(collar, x, y, atXY(x, y) + .004);
+    collar.index.push(start, start + 1, start + 2, start, start + 2, start + 3);
+  }
+  return [strip, seams, buttons, rims, collar].map(mesh => ({ part: mesh.part, position: Float32Array.from(mesh.position), skinIndex: Uint16Array.from(mesh.skinIndex), skinWeight: Float32Array.from(mesh.skinWeight), index: Uint32Array.from(mesh.index) }));
 }
 
 /** Barra do tronco e barras/punhos das mangas da peça (faixas 3D). */

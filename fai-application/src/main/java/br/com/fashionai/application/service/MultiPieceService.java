@@ -11,6 +11,10 @@ import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.imaging.AiSeal;
+import br.com.fashionai.application.imaging.BrandReader;
+import br.com.fashionai.application.imaging.BrandRegions;
+import br.com.fashionai.application.imaging.WornPieceRegions;
+import br.com.fashionai.application.moderation.ImageSafetyPorts;
 import br.com.fashionai.application.imaging.FlatLayPipeline;
 import br.com.fashionai.application.imaging.ImageProviderPorts;
 import br.com.fashionai.application.imaging.ImageOps;
@@ -34,6 +38,7 @@ import java.awt.image.BufferedImage;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -54,8 +59,9 @@ import java.util.UUID;
  */
 @Service
 public class MultiPieceService {
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(MultiPieceService.class);
     /** Teto de peças por foto: acima disso a revisão fica ilegível e a caixa de cada peça, pequena demais. */
-    static final int MAX_PIECES = 12;
+    static final int MAX_PIECES = 16;
     /** Lado menor mínimo de uma caixa (% da foto): menos que isso é ruído da detecção, não uma peça. */
     static final double MIN_BOX_PCT = 3.0;
 
@@ -67,10 +73,15 @@ public class MultiPieceService {
     private final Guard guard;
     private final WardrobeService wardrobe;
     private final List<ImageProviderPorts.ImageEditPort> editors;
+    /** segmentador de pessoa local (ONNX): separa a roupa vestida em peças sem IA remota; vazio = só regiões de superfície */
+    private final List<ImageSafetyPorts.PersonSegmentationPort> segmenters;
+    /** OCR local: a marca escrita no recorte de cada peça quando a visão remota não a leu */
+    private final BrandReader brandReader;
 
     public MultiPieceService(UserRepository users, PipelineJobRepository jobs, FlatLayPipeline flatLay, AiEngine ai,
                              MediaService media, Guard guard, WardrobeService wardrobe,
-                             List<ImageProviderPorts.ImageEditPort> editors) {
+                             List<ImageProviderPorts.ImageEditPort> editors,
+                             List<ImageSafetyPorts.PersonSegmentationPort> segmenters, BrandReader brandReader) {
         this.users = users;
         this.jobs = jobs;
         this.flatLay = flatLay;
@@ -79,6 +90,8 @@ public class MultiPieceService {
         this.guard = guard;
         this.wardrobe = wardrobe;
         this.editors = editors;
+        this.segmenters = segmenters == null ? List.of() : segmenters;
+        this.brandReader = brandReader;
     }
 
     /** Caixa da peça em porcentagem (0–100) da largura e da altura da foto: x/y = canto superior esquerdo. */
@@ -122,17 +135,105 @@ public class MultiPieceService {
      * pelo cadastro de várias peças ({@link #detect}) e pelo FashionAI Lens (RF54).
      */
     public PieceDetection detectPieces(UUID userId, BufferedImage photo) {
-        List<DetectedPiece> local = localPieces(photo);
+        LocalDetection local = localPieces(photo);
         AiOutcome<List<DetectedPiece>> outcome = ai.text(new AiEngine.TextCall<>(userId, AiCapability.MULTI_PIECE_DETECTOR,
                 DETECTOR_SYSTEM, detectorPrompt(),
                 List.of(new AiRequest.AiImage(ImageOps.jpeg(ImageOps.scaleToFit(photo, 1568, 1568), 0.9f), "image/jpeg")),
-                2500, List.of(Msg.t("multiPiece.foto_reduzida")), MultiPieceService::parseDetections, () -> local, null));
-        List<DetectedPiece> pieces = outcome.value() == null ? local : outcome.value();
-        boolean remote = pieces != local;
-        if (remote && pieces.stream().anyMatch(p -> p.brandName() == null)) {
-            pieces = recognizeMissingBrands(userId, photo, pieces);
+                2500, List.of(Msg.t("multiPiece.foto_reduzida")), MultiPieceService::parseDetections, local::pieces, null));
+        List<DetectedPiece> pieces = outcome.value() == null ? local.pieces() : outcome.value();
+        boolean remote = pieces != local.pieces();
+        if (remote) {
+            pieces = fillColors(photo, pieces);
+            if (pieces.stream().anyMatch(p -> p.brandName() == null)) {
+                pieces = recognizeMissingBrands(userId, photo, pieces);
+            }
         }
-        return new PieceDetection(pieces, remote ? "ia" : "local", outcome);
+        pieces = readBrands(photo, pieces);
+        return new PieceDetection(pieces, remote ? "ia" : local.source(), outcome);
+    }
+
+    /** Peças achadas sem IA remota e de onde vieram: "local-pessoa" (roupa vestida), "local-superficie" ou "local". */
+    public record LocalDetection(List<DetectedPiece> pieces, String source) {
+    }
+
+    /**
+     * Sem IA remota: com uma pessoa na foto, o segmentador local separa a roupa vestida por lugar do corpo (boné, peça
+     * de cima, de baixo, calçado); sem pessoa, as regiões de superfície. A cor vem dos pixels da própria peça.
+     */
+    LocalDetection localPieces(BufferedImage photo) {
+        List<WornPieceRegions.Worn> worn = segmenters.stream().filter(ImageSafetyPorts.PersonSegmentationPort::available)
+                .findFirst().flatMap(s -> s.classes(photo)).map(m -> WornPieceRegions.detect(photo, m)).orElse(List.of());
+        if (!worn.isEmpty()) {
+            List<DetectedPiece> pieces = new ArrayList<>();
+            for (WornPieceRegions.Worn r : worn) {
+                String category = switch (r.kind()) {
+                    case HEADWEAR -> "accessory_piece";
+                    case UPPER -> "upper_piece";
+                    case LOWER -> "lower_piece";
+                    case FULL -> "full_body_piece";
+                    case SHOES -> "shoes_piece";
+                };
+                String sub = switch (r.kind()) {
+                    case HEADWEAR -> "cap";
+                    case UPPER -> "t_shirt";
+                    case LOWER -> r.bottomFrac() < SHORTS_BOTTOM_FRAC ? "shorts" : "casual_pants";
+                    case FULL -> "dress";
+                    case SHOES -> "casual_sneakers";
+                };
+                if (!Taxonomy.SUBCATEGORIES.getOrDefault(category, List.of()).contains(sub)) {
+                    sub = Taxonomy.SUBCATEGORIES.getOrDefault(category, List.of()).stream().findFirst().orElse(null);
+                }
+                pieces.add(new DetectedPiece(pieces.size(), null, category, sub, ColorMath.nearestTaxonomyColor(r.rgb()), null, null,
+                        List.of(), List.of(), new Box(r.x(), r.y(), r.width(), r.height()), 0.6));
+            }
+            return new LocalDetection(List.copyOf(pieces), "local-pessoa");
+        }
+        List<DetectedPiece> surface = surfacePieces(photo);
+        return new LocalDetection(surface, surface.size() == 1 && surface.get(0).box().width() == 100 ? "local" : "local-superficie");
+    }
+
+    /** Peça de baixo que termina acima disto (fração da altura da pessoa, do topo da cabeça à sola) é bermuda/short. */
+    static final double SHORTS_BOTTOM_FRAC = 0.80;
+
+    /** Peças sem cor da IA recebem a cor dominante dos pixels da própria caixa (nunca a da foto inteira). */
+    static List<DetectedPiece> fillColors(BufferedImage photo, List<DetectedPiece> pieces) {
+        return pieces.stream().map(p -> p.color() != null ? p : new DetectedPiece(p.index(), p.name(), p.category(), p.subcategory(),
+                ColorMath.nearestTaxonomyColor(ImageOps.dominantColor(crop(photo, p.box()))), p.material(), p.sex(), p.style(),
+                p.occasion(), p.box(), p.confidence(), p.brandName())).toList();
+    }
+
+    /**
+     * Marca pelo texto do logo, lida no servidor (OCR local) no recorte de cada peça ainda sem marca — só o que o leitor
+     * confirma no catálogo de marcas; nada é inferido pela cor ou pelo estilo. Até 6 recortes, os maiores primeiro.
+     */
+    List<DetectedPiece> readBrands(BufferedImage photo, List<DetectedPiece> pieces) {
+        if (brandReader == null || !brandReader.available() || pieces.stream().noneMatch(p -> p.brandName() == null)) {
+            return pieces;
+        }
+        Map<Integer, String> found = new LinkedHashMap<>();
+        pieces.stream().filter(p -> p.brandName() == null)
+                .sorted(Comparator.comparingDouble((DetectedPiece p) -> p.box().width() * p.box().height()).reversed()).limit(6)
+                .forEach(p -> {
+                    BufferedImage crop = crop(photo, p.box());
+                    if (crop.getWidth() < 120 || crop.getHeight() < 120) {
+                        return;
+                    }
+                    try {
+                        brandReader.find(crop, BrandRegions.zones(crop, p.category() == null ? "upper_piece" : p.category()))
+                                .filter(BrandReader.Found::confirmed).ifPresent(f -> found.put(p.index(), f.brand()));
+                    } catch (RuntimeException ex) {
+                        log.debug("OCR da peça {} falhou: {}", p.index(), ex.getMessage());
+                    }
+                });
+        return found.isEmpty() ? pieces : mergeBrands(pieces, found);
+    }
+
+    static BufferedImage crop(BufferedImage photo, Box b) {
+        int x = (int) Math.max(0, Math.min(photo.getWidth() - 1, b.x() * photo.getWidth() / 100));
+        int y = (int) Math.max(0, Math.min(photo.getHeight() - 1, b.y() * photo.getHeight() / 100));
+        int w = (int) Math.max(1, Math.min(photo.getWidth() - x, Math.ceil(b.width() * photo.getWidth() / 100)));
+        int h = (int) Math.max(1, Math.min(photo.getHeight() - y, Math.ceil(b.height() * photo.getHeight() / 100)));
+        return photo.getSubimage(x, y, w, h);
     }
 
     /** One bounded close-up request for missing logos, preserving identity by explicit index. */
@@ -225,7 +326,7 @@ public class MultiPieceService {
         return new DetectedPiece(0, null, null, null, null, null, null, List.of(), List.of(), new Box(0, 0, 100, 100), 0);
     }
 
-    static List<DetectedPiece> localPieces(BufferedImage photo) {
+    static List<DetectedPiece> surfacePieces(BufferedImage photo) {
         List<LocalPieceRegions.Region> regions = LocalPieceRegions.detect(photo);
         if (regions.isEmpty()) return List.of(localPiece());
         List<DetectedPiece> pieces = new ArrayList<>();
@@ -258,7 +359,7 @@ public class MultiPieceService {
             - Não separe partes da mesma peça nem repita a mesma peça.
             - A caixa cobre só a peça: nada de rosto, cabelo ou cenário além do necessário.
             - Peça quase toda escondida ou cortada pela borda (menos de ~30% visível) fica de fora.
-            - No máximo 12 peças, das maiores para as menores.
+            - No máximo 16 peças, das maiores para as menores.
             Nunca descreva pessoas. Sem nenhuma peça na foto, devolva {"pieces": []}.""";
 
     /** Vocabulário permitido (docs/taxonomia): o que vier fora dele é descartado no parser. */

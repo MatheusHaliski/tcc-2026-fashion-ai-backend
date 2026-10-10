@@ -27,6 +27,13 @@ export interface PersonFilterResult {
 const PERSON = new Set([1, 2, 3]); // 1 cabelo · 2 pele do corpo · 3 pele do rosto
 const CLOTHES = 4, OTHERS = 5;      // 4 roupa · 5 acessórios (bolsa, óculos, chapéu)
 const MIN_FRACTION = 0.012; // abaixo disto é ruído da segmentação, não uma pessoa
+/**
+ * Sem esqueleto, sem rosto e sem cabelo, "pele do corpo" até esta fração é o segmentador confundindo o tecido (malha
+ * branca, preta ou estampada lida como pele perto da gola e da barra), não uma pessoa: medido nas camisetas do teste de
+ * cor (public/lab/cores) — 0,9 % a 2,9 % da imagem, sempre só a classe 2. Uma pessoa de verdade traz o esqueleto ou o
+ * rosto/cabelo; o que sobra sem eles (mãos segurando a peça) continua tratado como pessoa acima deste limite.
+ */
+const NO_POSE_SKIN_FRACTION = 0.05;
 
 type Zones = { shoulder: number; hip: number; torso: number; ankle: number };
 function zones(pose: PosePoint[] | null): Zones | null {
@@ -50,8 +57,10 @@ export async function stripPerson(file: File, opts: { keep?: GarmentPart } = {})
   const { width: mw, height: mh, data } = mask;
   let person = 0;
   const flag = new Uint8Array(mw * mh);
-  for (let i = 0; i < data.length; i++) if (PERSON.has(data[i])) { flag[i] = 1; person++; }
+  let head = 0;                                                     // rosto e cabelo: sinal de pessoa, não de tecido
+  for (let i = 0; i < data.length; i++) if (PERSON.has(data[i])) { flag[i] = 1; person++; if (data[i] !== 2) head++; }
   if (person / (mw * mh) < MIN_FRACTION && det.people === 0) return done(file, false, 0);
+  if (det.people === 0 && head / (mw * mh) < MIN_FRACTION && person / (mw * mh) < NO_POSE_SKIN_FRACTION) return done(file, false, 0);
   // 1 px de folga (na resolução da máscara) em volta da pele, para não sobrar um fio de pele na borda da roupa
   const skin = new Uint8Array(mw * mh);
   for (let y = 0; y < mh; y++) for (let x = 0; x < mw; x++) {

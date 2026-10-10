@@ -1,11 +1,12 @@
 "use client";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { StudioLight, useCanvasTexture, useTex, type Avatar3dRef, type Look3dPiece } from "@/components/three/common";
 import { Mannequin, bodyParamsOf } from "@/components/three/mannequin";
-import { useBodyAsset } from "@/components/three/human-avatar";
+import { useBodyAsset, type HumanParts } from "@/components/three/human-avatar";
+import { SceneDebug, type SceneDebugOptions } from "@/components/three/scene-debug";
 import { buildSpec, type BodyParams } from "@/lib/avatar3d/body-spec";
 import type { BrandEnvironment, LightMode, ResolvedEnvironment } from "@/lib/tryon/fitting-room";
 import type { AvatarView } from "@/components/three/avatar-viewer";
@@ -20,13 +21,13 @@ import { useI18n } from "@/lib/i18n/i18n";
  */
 const ANGLE: Record<AvatarView, number> = { front: 0, left34: -35, right34: 35, profile: 90, back: 180 };
 const BACK_Z = -1.9, WALL_H = 3.2, ROOM_W = 7.2, SIDE_X = 3.0;
-function Rig({ view, target, dist }: { view: AvatarView; target: [number, number, number]; dist: number }) {
+function Rig({ view, target, dist, yaw }: { view: AvatarView; target: [number, number, number]; dist: number; yaw?: number }) {
   const { camera } = useThree();
   useEffect(() => {
-    const angle = ANGLE[view] * Math.PI / 180;
+    const angle = (yaw ?? ANGLE[view]) * Math.PI / 180;
     camera.position.set(target[0] + Math.sin(angle) * dist, target[1] + .12, target[2] + Math.cos(angle) * dist);
     camera.lookAt(...target); camera.updateProjectionMatrix();
-  }, [view, camera, target, dist]);
+  }, [view, camera, target, dist, yaw]);
   return null;
 }
 
@@ -92,15 +93,23 @@ function Lights({ light }: { light: LightMode }) {
   </>;
 }
 
-export default function FittingRoomScene({ avatar, sex, build, skinTone, body, pieces, environment, scene, light = "store", view = "front", onCanvas }: {
+export default function FittingRoomScene({ avatar, sex, build, skinTone, body, pieces, environment, scene, light = "store", view = "front", onCanvas, onProfile, debug, cameraYaw, closeUp = false }: {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; build?: string | null; skinTone?: string | null; body?: BodyParams | null;
   pieces: Look3dPiece[]; environment: ResolvedEnvironment; scene?: StoreScene | null; light?: LightMode; view?: AvatarView; onCanvas?: (c: HTMLCanvasElement) => void;
+  /** o perfil do estúdio desenhado (objetos com função, paleta, fotos de referência) — inventário da auditoria */
+  onProfile?: (profile: FittingStudioProfile) => void;
+  /** laboratório/auditoria: wireframe, corpo oculto, pesos e poses de verificação (components/three/scene-debug.tsx) */
+  debug?: SceneDebugOptions | null;
+  /** laboratório: ângulo livre da câmera (graus) para o giro de 360°, e enquadramento só do avatar */
+  cameraYaw?: number; closeUp?: boolean;
 }) {
   const { t } = useI18n(), asset = useBodyAsset();
+  const [parts, setParts] = useState<HumanParts | null>(null);
   sex = avatar?.model?.sex ?? sex;
   const params = body ?? bodyParamsOf({ sex, build, avatar }), height = buildSpec(params).stature;
-  const target: [number, number, number] = [0, height * .60, 0], dist = height * 2.2;
+  const target: [number, number, number] = closeUp ? [0, height * .52, 0] : [0, height * .60, 0], dist = closeUp ? height * 1.55 : height * 2.2;
   const env = scene?.brand ?? environment.featured, profile = resolveFittingStudio(env, scene);
+  useEffect(() => { onProfile?.(profile); }, [profile.brand.key, profile.photographs.map((p) => p.id).join(",")]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!asset || asset === "error") return <div role="status" className="grid h-full content-center justify-items-center gap-3 p-6 text-center">
     <p>{t(asset === "error" ? "tryOn.avatar_load_failed" : "tryOn.avatar_loading")}</p>
     {asset === "error" && <button type="button" className="btn btn-sm" onClick={() => window.location.reload()}>{t("common.retry")}</button>}
@@ -110,8 +119,10 @@ export default function FittingRoomScene({ avatar, sex, build, skinTone, body, p
       onCreated={({ gl }) => { gl.toneMapping = THREE.NeutralToneMapping; gl.toneMappingExposure = 1; onCanvas?.(gl.domElement); }} aria-label={t("tryOn.cena_aria", { marca: env.name })}>
       <color attach="background" args={[profile.palette.wall]} /><fog attach="fog" args={[profile.palette.wall, 9, 18]} />
       <Lights light={light} /><Room key={env.key} profile={profile} />
-      <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={pieces} sway={false} body={params} />
-      <Rig view={view} target={target} dist={dist} /><OrbitControls target={target} enablePan={false} minDistance={1.4} maxDistance={dist * 1.25} maxPolarAngle={Math.PI * .52} />
+      <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={pieces} sway={false} body={params}
+        fallback={null} still={!!debug?.pose} onHuman={setParts} />
+      {debug && <SceneDebug parts={parts} options={debug} />}
+      <Rig view={view} target={target} dist={dist} yaw={cameraYaw} /><OrbitControls target={target} enablePan={false} minDistance={1.4} maxDistance={dist * 1.25} maxPolarAngle={Math.PI * .52} />
     </Canvas>
     <p className="pointer-events-none absolute bottom-3 left-3 rounded-md bg-white/90 px-3 py-1 text-xs text-neutral-700">{t("tryOn.studio_conceptual")}</p>
   </div>;

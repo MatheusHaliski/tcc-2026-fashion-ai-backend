@@ -371,6 +371,21 @@ public final class ImageOps {
         return img.getSubimage(x, y, side, side);
     }
 
+    /** Cor dominante da imagem (modo do histograma, {@link PixelStats}) — a cor da peça, não a média com o fundo. */
+    public static int dominantColor(BufferedImage img) {
+        BufferedImage small = scaleToFit(img, 160, 160);
+        int w = small.getWidth(), h = small.getHeight();
+        int[] px = small.getRGB(0, 0, w, h, null, 0, w);
+        int[] idx = new int[w * h];
+        int n = 0;
+        for (int i = 0; i < px.length; i++) {
+            if ((px[i] >>> 24) >= 40) {
+                idx[n++] = i;
+            }
+        }
+        return PixelStats.dominant(px, idx, n);
+    }
+
     public static BufferedImage scaleToFit(BufferedImage img, int maxW, int maxH) {
         double s = Math.min(maxW / (double) img.getWidth(), maxH / (double) img.getHeight());
         if (s >= 1) {

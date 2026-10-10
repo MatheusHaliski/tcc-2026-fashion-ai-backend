@@ -44,6 +44,18 @@ public class MirrorController {
         return mirror.place(user, body.pieceId());
     }
 
+    @PostMapping("/rack")
+    @Operation(summary = "QUARTO-ESPELHO — Levar a peça ao espelho (entra na lista para provar, sem vestir; sem duplicar)")
+    public Map<String, Object> bring(CurrentUser user, @RequestBody PieceRequest body) {
+        return mirror.bring(user, body.pieceId());
+    }
+
+    @DeleteMapping("/rack/{pieceId}")
+    @Operation(summary = "QUARTO-ESPELHO — Tirar a peça da lista do espelho (e do corpo); continua no guarda-roupa")
+    public Map<String, Object> unbring(CurrentUser user, @PathVariable UUID pieceId) {
+        return mirror.unbring(user, pieceId);
+    }
+
     @DeleteMapping("/pieces/{pieceId}")
     @Operation(summary = "RF33.CA02 — Tirar uma peça")
     public Map<String, Object> remove(CurrentUser user, @PathVariable UUID pieceId) {

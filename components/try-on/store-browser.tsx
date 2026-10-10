@@ -74,7 +74,7 @@ export function StoreBrowser({
       </div>
       </section>
 
-      <CatalogSearch
+      <CatalogSearch brandGrid={false}
         key={store}
         initial={{ brand: store }}
         category={category}

@@ -8,18 +8,17 @@ import type { PublicProfileSummary } from "@/lib/api/public-profiles";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
-import { Avatar, Button, Chip, EmptyState, ErrorState, Input, PageHeader, SkeletonGrid, Tabs } from "@/components/ui";
+import { Button, Chip, EmptyState, ErrorState, Input, PageHeader, SkeletonGrid, Tabs } from "@/components/ui";
 import { FilterBar } from "@/components/filter-bar";
 import { useDevRefs } from "@/lib/dev-refs";
 import { SchemeCard } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
 import { FaiIcon } from "@/components/fai-icon";
 import { InfiniteSentinel, mergeById } from "@/components/infinite-sentinel";
-import { BrandLogo } from "@/components/brand-logo";
-import { HypeGroupBadge } from "@/components/hype/hype-group-badge";
 import { hypeLevelFilter } from "@/components/hype/hype-filters";
 import { InsightStrip } from "@/components/insights/insight-strip";
 import { PublicProfileCard } from "@/components/public-profile-card";
+import { SearchEntityCard } from "@/components/search-entity-card";
 
 type Tab = "LOOKS" | "PECAS" | "PESSOAS" | "MARCAS" | "CELEBRIDADES";
 interface Brand { id?: string; userId?: string; slug?: string; name?: string; logoUrl?: string | null; registered?: boolean; publicPieces?: number; avatarUrl?: string | null; }
@@ -111,11 +110,9 @@ function SearchInner() {
         : tab === "PECAS" ? <div className="grid-cards">{(items as PieceView[]).map((p) => <PieceCard key={p.id} piece={p} />)}</div>
         : tab === "PESSOAS" ? <ul className="institutional-profile-feed" aria-label={t("publicProfile.results")}>
           {(items as PublicProfileSummary[]).map((profile) => <li key={profile.id}><PublicProfileCard profile={profile} /></li>)}</ul>
-        : <ul className="fai-list surface">{(items as Brand[]).map((b, i) => (
-            <li key={keyOf(b, i)} className="flex items-center gap-3 p-3">{tab === "MARCAS" ? <BrandLogo name={b.name} src={b.logoUrl} size={40} /> : <Avatar src={mediaUrl(b.logoUrl ?? b.avatarUrl)} name={b.name} size={40} />}
-              <div className="min-w-0 flex-1"><p className="type-body truncate"><b>{b.name}</b></p>{tab === "CELEBRIDADES" ? <HypeGroupBadge type="CREATOR" groupKey={b.userId} /> : <HypeGroupBadge type="BRAND" groupKey={b.name} />}<p className="type-caption text-muted">{tab === "CELEBRIDADES" ? t("search.celebridade_verificada") : b.registered === false ? t("search.marca_do_catalogo_sem_perfil", { value: b.publicPieces ?? 0 }) : t("search.perfil_de_marca_no_fashion")}</p></div>
-              {b.registered === false ? <Button size="sm" onClick={() => { setTab("PECAS"); setF({ ...NO_FILTERS, brand: b.name ?? "" }); }}>{t("search.ver_pecas")}</Button> : b.slug ? <Link href={tab === "CELEBRIDADES" ? `/u/${b.slug}` : `/brands/${b.slug}`} className="btn btn-sm">{t("search.abrir_perfil")}</Link> : null}
-            </li>))}</ul>
+        : <ul className="institutional-profile-feed" aria-label={t(tab === "MARCAS" ? "search.resultados_marcas" : "search.resultados_celebridades")}>
+          {(items as Brand[]).map((b, i) => <li key={keyOf(b, i)}><SearchEntityCard kind={tab === "MARCAS" ? "MARCAS" : "CELEBRIDADES"} row={b}
+            onSeePieces={(brand) => { setTab("PECAS"); setF({ ...NO_FILTERS, brand }); }} /></li>)}</ul>
       )}
       <InfiniteSentinel hasMore={!!next} loading={loading} onMore={more} />
       {devRefs && meta?.engine && <p className="mt-4 type-caption text-muted">{t("search.busca", { engine: meta.engine, value: items.length ? t("search.itens_carregados", { itemsCount: items.length }) : "" })}</p>}

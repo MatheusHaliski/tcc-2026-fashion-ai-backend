@@ -1096,7 +1096,7 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 
 /* RF32 — Meu Quarto 3D: palco WebGL + painel de posições acessível (mesmas ações da lista) */
 .room3d { display: grid; gap: 12px; }
-@media (min-width: 1024px) { .room3d { grid-template-columns: minmax(0, 1fr) 260px; } }
+@media (min-width: 1024px) { .room3d { grid-template-columns: minmax(0, 1fr) 260px; } .room3d[data-mode="mirror"] { grid-template-columns: minmax(0, 1fr) 360px; } }
 .room3d-stage { position: relative; height: min(72vh, 680px); min-height: 420px; overflow: hidden; border-radius: 14px; border: 1px solid var(--line-soft); background: #efe9df; }
 .room3d-stage canvas { touch-action: none; }
 .room3d-loading { display: grid; height: 100%; place-items: center; color: var(--muted); font-size: 14px; }
@@ -1108,6 +1108,20 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 .room3d-positions ul { display: grid; gap: 2px; }
 .room3d-positions button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 8px; border-radius: 8px; font-size: 13px; text-align: left; }
 .room3d-positions button:hover, .room3d-positions button[aria-pressed="true"] { background: var(--surface-2); }
+/* Prova no espelho dentro do quarto (RF27 ↔ RF28): "roupas em mãos" por lugar do corpo, ajuda de primeiro uso, estados */
+.mirror-hands { display: grid; gap: 8px; margin-top: 8px; }
+.mirror-hands.is-tryon { padding: 10px; border: 2px solid #1F7A76; border-radius: 12px; background: var(--surface-2); }
+.mirror-hands.is-transition { justify-self: start; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); font-size: 13px; }
+.mirror-hands-help { display: grid; gap: 4px; padding: 10px; border-radius: 12px; background: var(--chalk-soft, #f6efd9); }
+.mirror-hands-slot { display: grid; gap: 4px; padding-top: 6px; border-top: 1px solid var(--line-soft); }
+.mirror-hands-piece { display: flex; align-items: center; gap: 8px; padding: 4px; border-radius: 8px; background: var(--surface); }
+.mirror-hands-piece[data-worn="false"] { outline: 2px dashed #1F7A76; outline-offset: -2px; }
+/* QUARTO-ESPELHO: na lista do espelho (persistida) × só na mão; a que acabou de chegar fica destacada */
+.mirror-hands-piece[data-worn="false"][data-listed="true"] { outline: 1px solid var(--line-soft); }
+.mirror-hands-piece[data-arrived="true"] { outline: 2px solid var(--mark); outline-offset: 1px; }
+.room3d-positions .mirror-hands button { display: inline-flex; width: auto; justify-content: center; }
+/* QUARTO-ESPELHO: na prova, as opções de vestimenta (o painel da aba Espelho) ficam ao lado da cena */
+.room3d-positions .mirror-controls button { display: inline-flex; width: auto; justify-content: center; }
 
 /* LEGO (prancha 10 · C7 · narrativa B12): montagem animada — os blocos caem e encaixam de cima para baixo (60 ms entre
    peças, via animation-delay); "montar de novo" repete. Com "reduzir movimento" o card aparece já montado. */
@@ -2359,7 +2373,20 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .fitting-slot-thumb { flex: none; display: grid; place-items: center; width: 52px; height: 52px; overflow: hidden; border-radius: 8px; border: 1px solid var(--line-soft); }
 .fitting-slot-thumb img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
 .fitting-slot-thumb.is-small { width: 34px; height: 34px; border: 2px solid var(--surface); }
+/* linha do slot: texto em corpo normal com ícone, ações em botões, barra de progresso do 3D (sem legenda miúda) */
+.fitting-slot-state { display: flex; align-items: center; gap: 6px; font-size: var(--text-body-sm); line-height: 1.35; }
+.fitting-slot-state > span:last-child { min-width: 0; }
+.fitting-slot-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.fitting-slot-3d { display: grid; gap: 4px; }
+.fitting-slot-3d .m3d-bar { width: 100%; max-width: 280px; height: 8px; }
+.fitting-slot-empty { display: grid; gap: 6px; }
+/* aba Espelho: partes do look com miniatura, estado do asset (o mesmo vocabulário do quarto e do provador) e ação */
+.mirror-slot-row { display: grid; gap: 6px; padding: 8px 0; }
+.mirror-slot-piece { display: flex; align-items: center; gap: 10px; }
+.mirror-link-hint { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: var(--text-body-sm); color: var(--muted); }
 .fitting-stores { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+/* RF47 · criador de peça: a mesma grade de marcas do provador, rolável como lá */
+.catalog-brand-grid .fitting-stores { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 3px; }
 .fitting-store { display: grid; justify-items: center; gap: 4px; padding: 10px 6px; border: 1.5px solid var(--line-soft); border-radius: 12px; background: var(--surface); text-align: center; transition: border-color .15s, background .15s; }
 .fitting-store:hover { border-color: var(--line); }
 .fitting-store.is-active { border-color: var(--thread); background: var(--thread-soft); }

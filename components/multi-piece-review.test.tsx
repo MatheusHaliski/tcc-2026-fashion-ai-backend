@@ -311,6 +311,19 @@ describe("várias peças numa foto — revisão (RF4)", () => {
     await waitFor(() => expect(screen.getByDisplayValue("Peça 1")).toBeTruthy());
   });
 
+  it("detector local do servidor (roupa vestida): aviso pela origem e o nome vem do tipo lido, não \"Peça 1\"", async () => {
+    mockApi({ "GET /api/taxonomy": TAXONOMY });
+    const worn: MultiDetection = { ...DETECTION, source: "local-pessoa", pieces: [
+      { ...DETECTION.pieces[0], index: 0, name: null, brandName: null, category: "upper_piece", subcategory: "t_shirt", color: "white", box: { x: 30, y: 20, width: 40, height: 30 }, confidence: 0.6 },
+      { ...DETECTION.pieces[0], index: 1, name: null, brandName: null, category: "lower_piece", subcategory: "shorts", color: "blue", box: { x: 32, y: 52, width: 36, height: 20 }, confidence: 0.6 },
+    ] };
+    renderApp(<MultiPieceReview file={photo()} detection={worn} onClose={vi.fn()} onSaved={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText(/separadas pela silhueta da pessoa/)).toBeTruthy());
+    expect(screen.queryByText(/A IA de visão está indisponível/)).toBeNull();
+    await waitFor(() => expect(screen.getByDisplayValue("Camiseta")).toBeTruthy());
+    expect(screen.queryByDisplayValue("Peça 1")).toBeNull();
+  });
+
   it("entrada: escolhe a foto, analisa e abre a revisão; erro de análise aparece", async () => {
     mockApi({ "GET /api/taxonomy": TAXONOMY, "POST /api/pieces/analysis/multi": DETECTION });
     const { container } = renderApp(<MultiPieceUpload onSaved={vi.fn()} />);

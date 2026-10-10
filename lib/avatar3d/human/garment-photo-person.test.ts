@@ -53,24 +53,56 @@ describe("verified model isolation before clothing projection", () => {
     expect(await prepareOutfitPhoto(photograph(), "upper")).toBeNull();
     expect(mocks.loadOriented).not.toHaveBeenCalled();
   });
-  it("rejects mixed clothing when the selected part could not be determined", async () => {
+  it("sem esqueleto: a pessoa já saiu; peça de cima/baixo segue e a barra é achada pela cor; peça inteira não", async () => {
     mocks.stripPerson.mockResolvedValue(verified({ garments: null }));
-    expect(await prepareOutfitPhoto(photograph(), "upper")).toBeNull();
-    expect(await prepareOutfitPhoto(photograph(), "lower")).toBeNull();
+    expect(await prepareOutfitPhoto(photograph(), "upper")).toBeInstanceOf(HTMLCanvasElement);
+    expect(await prepareOutfitPhoto(photograph(), "lower")).toBeInstanceOf(HTMLCanvasElement);
     expect(await prepareOutfitPhoto(photograph(), "full")).toBeNull();
     expect(canUseOutfitPhoto(verified({ garments: { upper: .5, lower: .35, kept: "full", ambiguous: true } }), "full")).toBe(false);
+  });
+  it("fundo de estúdio com molduras (cantos diferentes): a foto segue inteira para o filtro de pessoa", async () => {
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(function (this: HTMLCanvasElement, kind: string) {
+      if (kind !== "2d") return null;
+      const c = this;
+      // desenhar a foto sem pessoa num canvas de trabalho carrega a marca junto
+      return { drawImage(src: HTMLCanvasElement) { if (src?.dataset?.stripped === "1") c.dataset.stripped = "1"; }, putImageData() {}, getImageData() {
+        // a foto do catálogo: moldura escura na borda (cantos diferentes); a foto devolvida pelo filtro (loadOriented,
+        // marcada com data-stripped): pessoa e cenário já transparentes
+        const stripped = c.dataset.stripped === "1";
+        const data = new Uint8ClampedArray(c.width * c.height * 4).fill(stripped ? 0 : 255);
+        if (!stripped) for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (x < 8 || y > c.height - 8) data.set([60, 50, 40, 255], (y * c.width + x) * 4);
+        for (let y = 10; y < c.height - 10; y++) for (let x = 25; x < c.width - 25; x++) data.set([145, 25, 50, 255], (y * c.width + x) * 4);
+        return { width: c.width, height: c.height, data };
+      } } as unknown as CanvasRenderingContext2D;
+    } as typeof HTMLCanvasElement.prototype.getContext);
+    const strippedPhoto = photograph(); strippedPhoto.dataset.stripped = "1"; mocks.loadOriented.mockResolvedValue(strippedPhoto);
+    mocks.stripPerson.mockResolvedValue(verified());
+    expect(await prepareOutfitPhoto(photograph(), "upper")).toBeInstanceOf(HTMLCanvasElement);
+    expect(mocks.stripPerson).toHaveBeenCalledTimes(1);
+    // sem pessoa nessa foto não há recorte possível: nada vira textura
+    mocks.stripPerson.mockResolvedValue(verified({ personFound: false, people: 0, garments: null }));
+    expect(await prepareOutfitPhoto(photograph(), "upper")).toBeNull();
   });
   it("rejects multiple people rather than choosing their combined clothes", () => {
     expect(canUseOutfitPhoto(verified({ people: 2 }), "upper")).toBe(false);
     expect(canUseOutfitPhoto(verified({ personFound: false, people: 1 }), "upper")).toBe(false);
   });
-  it("uses uniform fabric when isolation fails or times out", async () => {
+  it("uses uniform fabric when isolation fails or times out twice", async () => {
     mocks.stripPerson.mockRejectedValueOnce(new Error("model unavailable"));
     expect(await prepareOutfitPhoto(photograph(), "feet")).toBeNull();
-    vi.useFakeTimers(); mocks.stripPerson.mockImplementationOnce(() => new Promise(() => {}));
+    vi.useFakeTimers(); mocks.stripPerson.mockImplementation(() => new Promise(() => {}));
     const pending = prepareOutfitPhoto(photograph(), "upper");
-    await vi.advanceTimersByTimeAsync(30000);
+    await vi.advanceTimersByTimeAsync(45000); await vi.advanceTimersByTimeAsync(45000);
     expect(await pending).toBeNull();
+    expect(mocks.stripPerson).toHaveBeenCalledTimes(3);
+  });
+  it("a primeira foto da sessão paga o segmentador: um timeout vale uma segunda tentativa", async () => {
+    vi.useFakeTimers();
+    mocks.stripPerson.mockImplementationOnce(() => new Promise(() => {})).mockResolvedValueOnce(verified());
+    const pending = prepareOutfitPhoto(photograph(), "upper");
+    await vi.advanceTimersByTimeAsync(45000); await vi.advanceTimersByTimeAsync(10);
+    expect(await pending).toBeInstanceOf(HTMLCanvasElement);
+    expect(mocks.stripPerson).toHaveBeenCalledTimes(2);
   });
   it("reuses one photo analysis per garment part without mixing upper and lower results", async () => {
     const img = photograph(); mocks.stripPerson.mockResolvedValue(verified());

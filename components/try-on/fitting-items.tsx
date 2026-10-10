@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { BrandLogo } from "@/components/brand-logo";
+import { FaiIcon } from "@/components/fai-icon";
 import { Badge, Button, Card, cn } from "@/components/ui";
 import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
 import { mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { FITTING_SLOTS, type FittingItem, type FittingSlot } from "@/lib/tryon/fitting-room";
+import { useGarmentStatus } from "@/lib/tryon/garment-status";
+import { GarmentState } from "@/components/try-on/garment-state";
 
 export interface FittingItemsProps {
   items: FittingItem[];
@@ -19,13 +22,23 @@ export interface FittingItemsProps {
   onVariantChange: (item: FittingItem, variant: CatalogVariant) => void;
   onOwn: (item: FittingItem) => void;
   onRemove: (slot: FittingSlot) => void;
+  /** abre a prévia 2D no espelho (o mesmo avatar, de frente e parado) com o look atual */
+  onPreview2d?: (item: FittingItem) => void;
+  /** lugar vazio: ir às lojas (com a categoria do lugar) ou ao guarda-roupa */
+  onPickFromStores?: (slot: FittingSlot) => void;
+  onPickFromWardrobe?: (slot: FittingSlot) => void;
 }
 
-/** Slots e ações da prova atual; o componente recebe o estado e comunica a intenção. */
+/**
+ * Slots e ações da prova atual; o componente recebe o estado e comunica a intenção. Na linha de cada peça não há
+ * legenda miúda: todo texto vem em corpo normal com ícone, ou dentro de um botão (prévia 2D no espelho, loja, guarda-roupa,
+ * remover), e o modelo 3D tem barra de progresso e botão de gerar/gerar novamente.
+ */
 export function FittingItems({
-  items, products, colors, owned, busyOwn, status, slotNames, onVariantChange, onOwn, onRemove,
+  items, products, colors, owned, busyOwn, status, slotNames, onVariantChange, onOwn, onRemove, onPreview2d, onPickFromStores, onPickFromWardrobe,
 }: FittingItemsProps) {
   const { t } = useI18n();
+  const garment = useGarmentStatus();   // estado das fotos no 3D (publicado pela cena)
 
   return (
     <Card>
@@ -45,30 +58,28 @@ export function FittingItems({
                   <span className="fitting-slot-thumb" style={{ background: item.colorHex ?? "var(--surface-2)" }}>
                     {item.imageUrl ? <img src={mediaUrl(item.imageUrl) ?? undefined} alt="" /> : null}
                   </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="flex items-center gap-1.5 type-caption text-muted">
-                      {item.brand && <BrandLogo name={item.brand.name} src={item.brand.logoUrl} size={16} />}
-                      {item.brand?.name ?? t("tryOn.sem_marca")}
+                  <div className="min-w-0 flex-1 grid gap-1.5">
+                    <p className="flex flex-wrap items-center gap-1.5 type-body-sm">
+                      {item.brand && <BrandLogo name={item.brand.name} src={item.brand.logoUrl} size={20} />}
+                      <span className="font-medium">{item.brand?.name ?? t("tryOn.sem_marca")}</span>
                       <Badge tone={item.source === "catalog" ? "thread" : "chalk"}>
                         {t(item.source === "catalog" ? "tryOn.origem_loja" : "tryOn.origem_guarda_roupa")}
                       </Badge>
                     </p>
-                    <p className="truncate type-body-sm font-medium">
+                    <p className="truncate type-body font-medium">
                       {item.name}{item.colorName ? ` · ${item.colorName}` : ""}
                     </p>
-                    <p className="type-caption text-muted">
-                      {t(item.model3dUrl ? "tryOn.model_requires_fitting" : "tryOn.model_missing")}
-                    </p>
+                    <GarmentState item={item} photo={garment.photos[item.key]} />
                     {item.pieceId && (
                       <Link href={`/pieces/${item.pieceId}`} className="type-caption underline">{t("tryOn.review_piece")}</Link>
                     )}
                     {covered && (
-                      <p className="type-caption text-muted">
-                        {t("tryOn.coberta_pela_peca_inteira", { name: fullBody!.name })}
+                      <p className="fitting-slot-state text-muted">
+                        <FaiIcon id="NAV-07" size={24} decorative /><span>{t("tryOn.coberta_pela_peca_inteira", { name: fullBody!.name })}</span>
                       </p>
                     )}
                     {product && (product.variants?.length ?? 0) > 1 && (
-                      <div className="mt-1 flex flex-wrap gap-1" role="group" aria-label={t("tryOn.trocar_cor")}>
+                      <div className="flex flex-wrap gap-1" role="group" aria-label={t("tryOn.trocar_cor")}>
                         {product.variants!.map((variant) => (
                           <button
                             key={variant.id}
@@ -83,24 +94,23 @@ export function FittingItems({
                         ))}
                       </div>
                     )}
-                    <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 type-caption">
+                    <div className="fitting-slot-actions">
+                      <Button size="sm" onClick={() => onPreview2d?.(item)}><FaiIcon id="NAV-07" size={24} decorative />{t("tryOn.ver_previa_2d")}</Button>
                       {item.officialUrl && (
-                        <a href={item.officialUrl} target="_blank" rel="noreferrer noopener" className="underline">
-                          {t("tryOn.ver_na_loja", { loja: item.sourceDomain ?? item.brand?.name ?? "" })}
+                        <a href={item.officialUrl} target="_blank" rel="noreferrer noopener" className="btn btn-sm">
+                          <FaiIcon id="NAV-11" size={24} decorative />{t("tryOn.ver_na_loja", { loja: item.sourceDomain ?? item.brand?.name ?? "" })}
                         </a>
                       )}
                       {item.source === "catalog" && (owned[item.key] ? (
-                        <Link href={`/pieces/${owned[item.key]}`} className="underline">{t("tryOn.ja_no_guarda_roupa")}</Link>
+                        <Link href={`/pieces/${owned[item.key]}`} className="btn btn-sm"><FaiIcon id="NAV-02" size={24} decorative />{t("tryOn.ja_no_guarda_roupa")}</Link>
                       ) : (
-                        <button
-                          type="button"
-                          className="underline"
-                          disabled={busyOwn === item.key}
-                          onClick={() => onOwn(item)}
-                        >
-                          {t(busyOwn === item.key ? "tryOn.salvando" : "tryOn.ja_tenho")}
-                        </button>
+                        <Button size="sm" disabled={busyOwn === item.key} onClick={() => onOwn(item)}>
+                          <FaiIcon id="ACT-06" size={24} decorative />{t(busyOwn === item.key ? "tryOn.salvando" : "tryOn.ja_tenho")}
+                        </Button>
                       ))}
+                      {item.pieceId && (
+                        <Link href={`/pieces/${item.pieceId}`} className="btn btn-sm"><FaiIcon id="NAV-02" size={24} decorative />{t("tryOn.review_piece")}</Link>
+                      )}
                     </div>
                   </div>
                   <Button
@@ -109,11 +119,17 @@ export function FittingItems({
                     aria-label={t("tryOn.remover_de", { name: item.name, slot: slotNames[slot] })}
                     onClick={() => onRemove(slot)}
                   >
-                    {t("tryOn.remover")}
+                    <FaiIcon id="ACT-33" size={24} decorative />{t("tryOn.remover")}
                   </Button>
                 </div>
               ) : (
-                <p className="type-caption text-faint">{t("tryOn.slot_vazio_lojas")}</p>
+                <div className="fitting-slot-empty">
+                  <p className="fitting-slot-state text-muted"><FaiIcon id="ACT-06" size={24} decorative /><span>{t("tryOn.slot_vazio_curto")}</span></p>
+                  <div className="fitting-slot-actions">
+                    <Button size="sm" onClick={() => onPickFromStores?.(slot)}><FaiIcon id="NAV-11" size={24} decorative />{t("tryOn.escolher_nas_lojas")}</Button>
+                    <Button size="sm" onClick={() => onPickFromWardrobe?.(slot)}><FaiIcon id="NAV-02" size={24} decorative />{t("tryOn.escolher_no_guarda_roupa")}</Button>
+                  </div>
+                </div>
               )}
             </li>
           );

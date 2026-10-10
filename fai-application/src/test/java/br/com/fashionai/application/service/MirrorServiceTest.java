@@ -60,6 +60,40 @@ class MirrorServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void listaDoEspelhoSemDuplicarSeparadaDoQueEstaVestido() {
+        UUID tee = piece("t_shirt"), jeans = piece("jeans");
+        // levar ao espelho: entra na lista, não veste; repetir o pedido não duplica
+        Map<String, Object> r = mirror.bring(ana, tee);
+        assertThat(r.get("added")).isEqualTo(true);
+        r = mirror.bring(ana, tee);
+        assertThat(r.get("added")).isEqualTo(false);
+        List<Map<String, Object>> rack = (List<Map<String, Object>>) r.get("rack");
+        assertThat(rack).hasSize(1);
+        assertThat(rack.get(0).get("worn")).isEqualTo(false);
+        assertThat(((Map<String, Object>) r.get("slots")).get("upper")).isNull();
+        // vestir mantém a peça na lista, marcada como vestida; outra peça vestida também entra na lista
+        mirror.place(ana, tee);
+        r = mirror.place(ana, jeans);
+        rack = (List<Map<String, Object>>) r.get("rack");
+        assertThat(rack).extracting(m -> m.get("id")).containsExactly(tee, jeans);
+        assertThat(rack).allMatch(m -> Boolean.TRUE.equals(m.get("worn")));
+        // tirar do corpo não tira da lista; limpar também não
+        r = mirror.remove(ana, jeans);
+        assertThat((List<?>) r.get("rack")).hasSize(2);
+        r = mirror.clear(ana);
+        assertThat((List<?>) r.get("rack")).hasSize(2);
+        // tirar da lista tira do corpo e nunca apaga a peça do guarda-roupa
+        mirror.place(ana, tee);
+        r = mirror.unbring(ana, tee);
+        assertThat((List<?>) r.get("rack")).hasSize(1);
+        assertThat(((Map<String, Object>) r.get("slots")).get("upper")).isNull();
+        assertThat(kit.dep(WardrobeItemRepository.class).findById(tee)).isPresent();
+        // a peça leva modelagem e atributos para o 3D (mesmo caimento do provador)
+        assertThat(((List<Map<String, Object>>) r.get("rack")).get(0)).containsKeys("variation", "attributes", "studioImageUrl");
+    }
+
+    @Test
     void montarPecaAPecaComAsRegrasDosSlots() {
         assertThat(mirror.state(ana)).isNotEmpty();
         mirror.place(ana, piece("t_shirt"));

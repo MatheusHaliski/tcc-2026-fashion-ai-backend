@@ -3,6 +3,7 @@ package br.com.fashionai.infrastructure.ai.moderation;
 import ai.onnxruntime.OnnxTensor;
 import ai.onnxruntime.OrtEnvironment;
 import ai.onnxruntime.OrtSession;
+import br.com.fashionai.application.moderation.ImageSafetyPorts;
 import br.com.fashionai.application.moderation.ImageSafetyPorts.PersonParts;
 import br.com.fashionai.application.moderation.ImageSafetyPorts.PersonSegmentationPort;
 import org.slf4j.Logger;
@@ -44,6 +45,20 @@ public class OnnxPersonSegmenter implements PersonSegmentationPort {
 
     @Override
     public Optional<PersonParts> segment(BufferedImage image) {
+        return classes(image).map(map -> {
+            long[] count = new long[CLASSES];
+            for (byte c : map.classes()) {
+                count[c]++;
+            }
+            long valid = (long) map.width() * map.height(), person = valid - count[0];
+            double p = Math.max(1, person);
+            return new PersonParts(person / (double) valid, count[BODY_SKIN] / p, count[FACE_SKIN] / p, count[CLOTHES] / p);
+        });
+    }
+
+    /** A mesma inferência da moderação, devolvendo a classe de cada pixel (sem as faixas de encaixe). */
+    @Override
+    public Optional<ImageSafetyPorts.ClassMap> classes(BufferedImage image) {
         OrtSession s = session();
         if (s == null) {
             return Optional.empty();
@@ -69,7 +84,7 @@ public class OnnxPersonSegmenter implements PersonSegmentationPort {
         try (OnnxTensor t = OnnxTensor.createTensor(env, in, new long[]{1, SIZE, SIZE, 3});
              OrtSession.Result r = s.run(Map.of(input, t))) {
             FloatBuffer out = ((OnnxTensor) r.get(0)).getFloatBuffer();
-            long[] count = new long[CLASSES];
+            byte[] classes = new byte[sw * sh];
             for (int y = oy; y < oy + sh; y++) {
                 for (int x = ox; x < ox + sw; x++) {
                     int base = (y * SIZE + x) * CLASSES, best = 0;
@@ -78,12 +93,10 @@ public class OnnxPersonSegmenter implements PersonSegmentationPort {
                             best = c;
                         }
                     }
-                    count[best]++;
+                    classes[(y - oy) * sw + (x - ox)] = (byte) best;
                 }
             }
-            long valid = (long) sw * sh, person = valid - count[0];
-            double p = Math.max(1, person);
-            return Optional.of(new PersonParts(person / (double) valid, count[BODY_SKIN] / p, count[FACE_SKIN] / p, count[CLOTHES] / p));
+            return Optional.of(new ImageSafetyPorts.ClassMap(sw, sh, classes));
         } catch (Exception ex) {
             log.warn("Segmentação de pessoa falhou: {}", ex.getMessage());
             return Optional.empty();
