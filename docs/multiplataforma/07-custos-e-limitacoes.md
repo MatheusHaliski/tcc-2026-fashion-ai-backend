@@ -50,3 +50,6 @@
 11. Criação do registro de sessão do provador por duas plataformas **ao mesmo tempo, na primeira vez** cai na
     restrição única do banco e devolve conflito (409) em vez de 412; o cliente trata os dois da mesma forma (reler e
     reaplicar).
+12. A migração **V55 não foi executada contra um MySQL real** nesta sessão (sem Docker/MySQL no ambiente). Os testes
+    do serviço usam repositórios em memória; rodar `docker compose -f docker-compose.dev.yml up -d mysql` e subir a
+    aplicação antes de mesclar.
