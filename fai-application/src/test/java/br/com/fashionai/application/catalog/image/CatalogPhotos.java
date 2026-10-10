@@ -125,6 +125,18 @@ final class CatalogPhotos {
         return tee(200, 500, 1.0);
     }
 
+    static BufferedImage pantsOnModel(boolean handOnHip) {
+        BufferedImage img = new BufferedImage(1000, 1500, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = pen(img, SKIN);
+        g.fillOval(440, 80, 120, 180); g.fillRect(475, 220, 50, 60);
+        g.fillRect(315, 370, 50, 350); g.fillRect(635, 370, 50, 350);
+        g.setColor(new Color(0x202020)); g.fillRect(365, 260, 270, 390);
+        g.setColor(new Color(0x111111)); g.fillRect(365, 650, 270, 250);
+        g.fillRect(365, 900, 125, 500); g.fillRect(510, 900, 125, 500);
+        if (handOnHip) { g.setColor(SKIN); g.fillRect(480, 670, 40, 140); }
+        g.dispose(); return img;
+    }
+
     static byte[] jpeg(BufferedImage img) {
         return ImageOps.jpeg(img, 0.92f);
     }

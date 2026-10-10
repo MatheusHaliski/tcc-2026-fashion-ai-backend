@@ -1,0 +1,22 @@
+{
+  "result": {
+    "people": 0,
+    "pose": false,
+    "chin": false,
+    "mask": true,
+    "counts": [
+      265482,
+      0,
+      0,
+      0,
+      149238,
+      0
+    ],
+    "ms": 15363
+  },
+  "errors": [
+    "INFO: Created TensorFlow Lite XNNPACK delegate for CPU.",
+    "INFO: Created TensorFlow Lite XNNPACK delegate for CPU.",
+    "INFO: Created TensorFlow Lite XNNPACK delegate for CPU."
+  ]
+}

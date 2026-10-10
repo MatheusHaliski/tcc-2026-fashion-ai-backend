@@ -118,32 +118,58 @@ public class InstitutionalService {
     // ================================================================== feeds (RF14.CA01/CA02, RF22, RF24.CA06)
     Map<String, Object> brandCard(BrandProfile b) {
         UUID owner = b.getOwner().getId();
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("userId", owner);
+        Map<String, Object> m = publicProfile(b.getOwner(), "MARCA", b.getApprovalStatus());
         m.put("slug", b.getSlug());
         m.put("name", b.getBrandName());
         m.put("logoUrl", b.getLogoUrl());
         m.put("coverUrl", b.getCoverUrl());
         m.put("country", b.getCountry());
         m.put("category", b.getFashionCategory());
+        m.put("officialHashtag", b.getOfficialHashtag());
+        m.put("bio", b.getBio());
+        m.put("storeUrl", b.getStoreUrl());
+        m.put("status", b.getApprovalStatus() == ApprovalStatus.APROVADO ? "Validada" : b.getApprovalStatus().name());
         m.put("bonds", bonds.countByTargetOwnerIdAndStatus(owner, SealBondStatus.APPROVED));
-        m.put("followers", follows.countByFollowingIdAndStatus(owner, FollowStatus.ACEITO));
         m.put("material", "TEXTIL_DOURADO");
         return m;
     }
 
     Map<String, Object> celebrityCard(CelebrityProfile c) {
         UUID owner = c.getOwner().getId();
-        Map<String, Object> m = new LinkedHashMap<>();
-        m.put("userId", owner);
+        Map<String, Object> m = publicProfile(c.getOwner(), "CELEBRIDADE", c.getVerificationStatus());
         m.put("slug", c.getSlug());
         m.put("name", c.getStageName());
         m.put("avatarUrl", c.getAvatarUrl());
         m.put("coverUrl", c.getCoverUrl());
+        m.put("country", c.getOwner().getCountry());
+        m.put("areas", Json.strings(c.getAreasJson()));
+        m.put("bio", c.getBio());
+        // Não há loja no cadastro da celebridade; o link de verificação não é um link comercial público.
+        m.put("storeUrl", null);
+        m.put("status", c.getVerificationStatus() == ApprovalStatus.APROVADO ? "Verificada" : c.getVerificationStatus().name());
         m.put("bonds", bonds.countByTargetOwnerIdAndStatus(owner, SealBondStatus.APPROVED));
-        m.put("followers", follows.countByFollowingIdAndStatus(owner, FollowStatus.ACEITO));
         m.put("styleSignature", Json.map(c.getStyleSignatureJson()));
         m.put("material", "VITREO_HOLOGRAFICO");
+        return m;
+    }
+
+    /** Projeção pública compartilhada pelo feed e pelo header; dados da análise e métricas administrativas ficam fora. */
+    private Map<String, Object> publicProfile(User owner, String kind, ApprovalStatus approval) {
+        UUID id = owner.getId();
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("userId", id);
+        m.put("username", owner.getUsername());
+        m.put("userAvatarUrl", owner.getAvatarUrl());
+        m.put("kind", kind);
+        m.put("verified", approval == ApprovalStatus.APROVADO || owner.isVerified());
+        m.put("privateAccount", owner.isPrivateAccount());
+        m.put("visibility", owner.getProfileVisibility() != null ? owner.getProfileVisibility().name()
+                : owner.isPrivateAccount() ? "PRIVATE" : "PUBLIC");
+        m.put("followers", follows.countByFollowingIdAndStatus(id, FollowStatus.ACEITO));
+        m.put("following", follows.countByFollowerIdAndStatus(id, FollowStatus.ACEITO));
+        m.put("pieces", pieces.countByUserIdAndAvailabilityStatusNot(id, AvailabilityStatus.ARCHIVED));
+        m.put("schemes", schemes.countByUserIdAndStatusNot(id, SchemeStatus.ARCHIVED));
+        m.put("activeSeals", seals.countByOwnerIdAndStatus(id, SealStatus.ACTIVE));
         return m;
     }
 
@@ -238,7 +264,8 @@ public class InstitutionalService {
         try {
             u = users.findById(UUID.fromString(slugOrId)).orElse(null);
         } catch (IllegalArgumentException ex) {
-            u = brands.findBySlug(slugOrId).map(BrandProfile::getOwner).orElseGet(() -> celebrities.findBySlug(slugOrId).map(CelebrityProfile::getOwner).orElse(null));
+            u = brands.findBySlug(slugOrId).map(BrandProfile::getOwner).orElseGet(() -> celebrities.findBySlug(slugOrId).map(CelebrityProfile::getOwner)
+                    .orElseGet(() -> users.findByUsernameIgnoreCase(slugOrId).orElse(null)));
         }
         if (u == null || u.getProfileType() == ProfileType.PESSOAL) {
             throw ApiException.notFound(Msg.t("institutional.perfil_institucional"));
@@ -254,35 +281,22 @@ public class InstitutionalService {
         Map<String, Object> header = new LinkedHashMap<>();
         if (brand) {
             BrandProfile b = brands.findByOwnerId(u.getId()).orElseThrow(() -> ApiException.notFound("Marca"));
-            if (b.getApprovalStatus() != ApprovalStatus.APROVADO && !admin && !viewer.admin()) {
+            if (b.getApprovalStatus() != ApprovalStatus.APROVADO && !admin && (viewer == null || !viewer.admin())) {
                 throw ApiException.notFound("Marca"); // RF1.CA06 — pendente_validação não tem tela pública
             }
             header.putAll(brandCard(b));
-            header.put("bio", b.getBio());
-            header.put("storeUrl", b.getStoreUrl());
-            header.put("status", b.getApprovalStatus() == ApprovalStatus.APROVADO ? "Validada" : b.getApprovalStatus().name());
             header.put("coverLabel", groupings.findByOwnerIdAndType(u.getId(), GroupingType.COLLECTION).stream().findFirst().map(g -> g.getLabel()).orElse(null));
             header.put("autoApproval", !b.isRequiresSealReview());
         } else {
             CelebrityProfile c = celebrities.findByOwnerId(u.getId()).orElseThrow(() -> ApiException.notFound("Celebridade"));
-            if (c.getVerificationStatus() != ApprovalStatus.APROVADO && !admin && !viewer.admin()) {
+            if (c.getVerificationStatus() != ApprovalStatus.APROVADO && !admin && (viewer == null || !viewer.admin())) {
                 throw ApiException.notFound("Celebridade");
             }
             header.putAll(celebrityCard(c));
-            header.put("bio", c.getBio());
-            header.put("status", c.getVerificationStatus() == ApprovalStatus.APROVADO ? "Verificada" : c.getVerificationStatus().name());
             header.put("coverLabel", groupings.findByOwnerIdAndType(u.getId(), GroupingType.ERA).stream().findFirst().map(g -> g.getLabel()).orElse(null));
             header.put("autoApproval", false);
             header.put("autoApprovalLocked", Msg.t("institutional.todo_vinculo_com_celebridade_exige"));
         }
-        header.put("username", u.getUsername());
-        header.put("following", follows.countByFollowerIdAndStatus(u.getId(), FollowStatus.ACEITO));
-        // header estilo Instagram (RF22): foto de perfil + seguidores/seguindo + peças + esquemas criados
-        header.put("userAvatarUrl", u.getAvatarUrl());
-        header.put("pieces", pieces.countByUserIdAndAvailabilityStatusNot(u.getId(), AvailabilityStatus.ARCHIVED));
-        header.put("schemes", schemes.countByUserIdAndStatusNot(u.getId(), SchemeStatus.ARCHIVED));
-        header.put("kind", brand ? "MARCA" : "CELEBRIDADE");
-        header.put("activeSeals", seals.findByOwnerIdAndStatusOrderByCreatedAtDesc(u.getId(), SealStatus.ACTIVE).size());
         header.put("viewerFollows", viewer != null && follows.findByFollowerIdAndFollowingId(viewer.id(), u.getId()).map(f -> f.getStatus() == FollowStatus.ACEITO).orElse(false));
         header.put("metrics", metrics(u.getId()));
         Map<String, Object> out = new LinkedHashMap<>();
@@ -429,6 +443,15 @@ public class InstitutionalService {
             Instant expires = shown.stream().map(SealBond::getExpiresAt).filter(Objects::nonNull).max(Comparator.naturalOrder()).orElse(null);
             out.add(new Promoted(s, shown, issued, expires, isExpired, s.isRevalidationPending()));
         }
+        List<Scheme> profileEligible = sealService.profileSchemes(u.getId(), s -> displayable(viewer, s), TAB_LIMIT);
+        if (!history && sealService.hasProfilePolicies(u.getId())) {
+            Set<UUID> eligibleIds = profileEligible.stream().map(Scheme::getId).collect(Collectors.toSet());
+            out.removeIf(p -> !eligibleIds.contains(p.scheme().getId()));
+        }
+        Set<UUID> present = out.stream().map(p -> p.scheme().getId()).collect(Collectors.toSet());
+        for (Scheme scheme : profileEligible) {
+            if (present.add(scheme.getId())) out.add(new Promoted(scheme, List.of(), null, null, false, false));
+        }
         Comparator<Promoted> byIssued = Comparator.comparing(Promoted::issuedAt, Comparator.nullsLast(Comparator.reverseOrder()));
         if (history) {
             out.sort(byIssued);
@@ -495,7 +518,26 @@ public class InstitutionalService {
 
     /** Peças que os selos vigentes destacam (cada peça aponta para o look e traz só os selos que a cobrem). */
     List<Map<String, Object>> highlightedPieces(CurrentUser viewer, User u, String filter, UUID groupingId) {
-        return pieceEntries(viewer, filterLooks(promoted(viewer, u, false, Instant.now()), filter, groupingId));
+        return withProfilePieces(viewer, u, pieceEntries(viewer, filterLooks(promoted(viewer, u, false, Instant.now()), filter, groupingId)), filter, groupingId);
+    }
+
+    private List<Map<String, Object>> withProfilePieces(CurrentUser viewer, User owner, List<Map<String, Object>> existing,
+                                                      String filter, UUID groupingId) {
+        List<WardrobeItem> eligible = sealService.profilePieces(owner.getId(), piece -> displayable(viewer, piece), TAB_LIMIT);
+        Set<UUID> eligibleIds = eligible.stream().map(WardrobeItem::getId).collect(Collectors.toSet());
+        List<Map<String, Object>> out = new ArrayList<>(existing);
+        if (sealService.hasProfilePolicies(owner.getId())) out.removeIf(e -> !eligibleIds.contains(((Views.PieceView) e.get("piece")).id()));
+        // Agrupamentos e filtros de look não se aplicam a peças avulsas.
+        if (groupingId != null || filter != null && !filter.isBlank() && !Set.of("ALL", "RECENT", "RECENTES", "DESTAQUES", "HYPE", "GROWTH", "CRESCIMENTO").contains(filter.toUpperCase(Locale.ROOT))) return out;
+        Set<Object> ids = out.stream().map(e -> ((Views.PieceView) e.get("piece")).id()).collect(Collectors.toSet());
+        for (WardrobeItem w : eligible) {
+            if (!ids.add(w.getId()) || out.size() >= TAB_LIMIT) continue;
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("piece", Views.piece(w, null, null)); entry.put("seals", List.of());
+            entry.put("author", Views.user(w.getUser())); entry.put("schemeId", null);
+            entry.put("profilePolicy", true); out.add(entry);
+        }
+        return out;
     }
 
     /** Legado: as duas listas juntas (mantido para compatibilidade da API; a interface usa as abas separadas). */
@@ -503,7 +545,7 @@ public class InstitutionalService {
         List<Promoted> looks = filterLooks(promoted(viewer, u, false, Instant.now()), filter, groupingId);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("schemes", looks.stream().map(p -> entry(viewer, p)).toList());
-        out.put("pieces", pieceEntries(viewer, looks));
+        out.put("pieces", withProfilePieces(viewer, u, pieceEntries(viewer, looks), filter, groupingId));
         out.put("empty", looks.isEmpty() ? Msg.t("institutional.nenhum_look_conquistou_um_selo") : null);
         return out;
     }
@@ -557,6 +599,7 @@ public class InstitutionalService {
         m.put("scheme", schemeService.view(viewer, p.scheme(), schemeItems.findBySchemeIdOrderBySortOrder(p.scheme().getId())));
         m.put("seals", p.bonds().stream().map(SealService::badge).toList());
         Map<String, Object> promotion = new LinkedHashMap<>();
+        promotion.put("profilePolicy", p.bonds().isEmpty());
         promotion.put("issuedAt", p.issuedAt());
         promotion.put("expiresAt", p.expiresAt());
         promotion.put("expired", p.expired());

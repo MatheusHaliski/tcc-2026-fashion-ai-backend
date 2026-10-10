@@ -14,6 +14,11 @@ vi.mock("@react-three/fiber", async (importOriginal) => {
 });
 vi.mock("@react-three/drei", async (importOriginal) => ({ ...(await importOriginal<typeof import("@react-three/drei")>()), ContactShadows: () => null }));
 // a foto da peça estampada: uma textura pronta (o jsdom não carrega imagens), com uma imagem de 64×80
+// o recorte da foto e o isolamento da pessoa (garment-photo.ts) usam canvas real e a IA de visão: aqui a foto já é a peça
+vi.mock("@/lib/avatar3d/human/garment-photo", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/avatar3d/human/garment-photo")>();
+  return { ...actual, prepareGarmentPhoto: (img: unknown) => img, prepareOutfitPhoto: async (img: unknown) => img };
+});
 vi.mock("@/components/three/common", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/components/three/common")>();
   return { ...actual, loadTexture: async (url: string) => { if (!url.includes("estampa")) return null; const t = new THREE.Texture(); t.image = { width: 64, height: 80 }; return t; } };

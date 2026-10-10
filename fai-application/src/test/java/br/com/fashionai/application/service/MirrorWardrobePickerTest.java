@@ -61,7 +61,7 @@ class MirrorWardrobePickerTest {
         when(room.locateAll(userId)).thenReturn(Map.of());
         service = new MirrorService(mirrors, mock(WardrobeItemRepository.class), wardrobe, room, mock(SchemeService.class),
                 mock(SchemeRepository.class), mock(SchemeItemRepository.class), mock(DailyLookService.class), mock(StyleDnaRepository.class),
-                restrictions, ai, mock(Audit.class), mock(ApplicationEventPublisher.class), mock(HypeQueryService.class));
+                restrictions, ai, mock(Audit.class), mock(ApplicationEventPublisher.class), mock(HypeQueryService.class), mock(br.com.fashionai.domain.repository.TipoLookRepository.class));
     }
 
     private WardrobeItem piece(String name, String category) {

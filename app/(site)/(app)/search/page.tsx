@@ -3,7 +3,8 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { api, mediaUrl, qs } from "@/lib/api/client";
-import type { PieceView, SchemeView, UserCard } from "@/lib/api/types";
+import type { PieceView, SchemeView } from "@/lib/api/types";
+import type { PublicProfileSummary } from "@/lib/api/public-profiles";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { label, useTaxonomy } from "@/lib/api/taxonomy";
@@ -18,10 +19,11 @@ import { BrandLogo } from "@/components/brand-logo";
 import { HypeGroupBadge } from "@/components/hype/hype-group-badge";
 import { hypeLevelFilter } from "@/components/hype/hype-filters";
 import { InsightStrip } from "@/components/insights/insight-strip";
+import { PublicProfileCard } from "@/components/public-profile-card";
 
 type Tab = "LOOKS" | "PECAS" | "PESSOAS" | "MARCAS" | "CELEBRIDADES";
 interface Brand { id?: string; userId?: string; slug?: string; name?: string; logoUrl?: string | null; registered?: boolean; publicPieces?: number; avatarUrl?: string | null; }
-type Row = SchemeView | PieceView | (UserCard & { relation?: string }) | Brand;
+type Row = SchemeView | PieceView | PublicProfileSummary | Brand;
 interface Page { items: Row[]; nextCursor: string | null; empty?: { message?: string; alternatives?: string[]; trending?: SchemeView[] }; engine?: string; }
 /** hypeLevel = "Em alta" como faixa mínima do Hype público (P2-01: filtro, nunca ordenação nem aba) — só Looks e Peças. */
 type Filters = { style: string; occasion: string; color: string; brand: string; category: string; hypeLevel: string };
@@ -107,7 +109,8 @@ function SearchInner() {
       {items.length > 0 && (
         tab === "LOOKS" ? <div className="grid-looks">{(items as SchemeView[]).map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>
         : tab === "PECAS" ? <div className="grid-cards">{(items as PieceView[]).map((p) => <PieceCard key={p.id} piece={p} />)}</div>
-        : tab === "PESSOAS" ? <ul className="fai-list surface">{(items as (UserCard & { relation?: string })[]).map((u) => <li key={u.id} className="flex items-center gap-3 p-3"><Avatar src={mediaUrl(u.avatarUrl)} name={u.displayName} size={40} /><div className="min-w-0 flex-1"><p className="type-body truncate"><b>{u.displayName}</b> · @{u.username}</p><HypeGroupBadge type="CREATOR" groupKey={u.id} /><p className="type-caption text-muted">{u.country ?? ""}{u.relation ? ` · ${u.relation}` : ""}</p></div><Link href={`/u/${u.username}`} className="btn btn-sm">{t("common.ver_perfil")}</Link></li>)}</ul>
+        : tab === "PESSOAS" ? <ul className="institutional-profile-feed" aria-label={t("publicProfile.results")}>
+          {(items as PublicProfileSummary[]).map((profile) => <li key={profile.id}><PublicProfileCard profile={profile} /></li>)}</ul>
         : <ul className="fai-list surface">{(items as Brand[]).map((b, i) => (
             <li key={keyOf(b, i)} className="flex items-center gap-3 p-3">{tab === "MARCAS" ? <BrandLogo name={b.name} src={b.logoUrl} size={40} /> : <Avatar src={mediaUrl(b.logoUrl ?? b.avatarUrl)} name={b.name} size={40} />}
               <div className="min-w-0 flex-1"><p className="type-body truncate"><b>{b.name}</b></p>{tab === "CELEBRIDADES" ? <HypeGroupBadge type="CREATOR" groupKey={b.userId} /> : <HypeGroupBadge type="BRAND" groupKey={b.name} />}<p className="type-caption text-muted">{tab === "CELEBRIDADES" ? t("search.celebridade_verificada") : b.registered === false ? t("search.marca_do_catalogo_sem_perfil", { value: b.publicPieces ?? 0 }) : t("search.perfil_de_marca_no_fashion")}</p></div>

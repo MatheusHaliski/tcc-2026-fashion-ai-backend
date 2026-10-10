@@ -2,6 +2,7 @@ package br.com.fashionai.application.catalog.image;
 
 import br.com.fashionai.application.imaging.BrandRegions;
 import br.com.fashionai.application.imaging.ImageOps;
+import br.com.fashionai.application.imaging.GarmentCrop;
 import br.com.fashionai.application.moderation.ImageSafetyPorts.PersonParts;
 import br.com.fashionai.application.moderation.ImageSafetyPorts.PersonSegmentationPort;
 import br.com.fashionai.application.vision.landmarks.LandmarkDetector;
@@ -19,7 +20,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Pipeline de imagens da Busca Catalogada (CATALOG_IMAGE_PIPELINE_V3), puro (sem rede, banco ou disco):
+ * Pipeline de imagens da Busca Catalogada (CATALOG_IMAGE_PIPELINE_V4), puro (sem rede, banco ou disco):
  * SOURCE → VALIDATION → PRODUCT DETECTION → SEGMENTATION → DISTRACTOR REMOVAL → CATEGORY-AWARE ROI → SEMANTIC REFRAMING
  * → BACKGROUND NORMALIZATION → DETAIL PRESERVATION → QUALITY CHECK → CATALOG MASTER IMAGE.
  *
@@ -28,7 +29,7 @@ import java.util.Set;
  * master (PNG transparente + variantes branco/neutro/card/thumb) para o storage do FashionAI.
  */
 public final class CatalogImagePipeline {
-    public static final String VERSION = "CATALOG_IMAGE_PIPELINE_V3";
+    public static final String VERSION = "CATALOG_IMAGE_PIPELINE_V4";
     /** vistas que a origem declara de fato (PACKSHOT, OTHER e DETAIL não dizem qual lado da peça aparece) */
     static final Set<String> VIEWS = Set.of("FRONT", "BACK", "SIDE", "TOP");
     /** Área mínima da peça num packshot (fração da foto): no acervo o menor acessório aprovado ocupa 13%; abaixo de 8% é fragmento. */
@@ -64,7 +65,7 @@ public final class CatalogImagePipeline {
             if (crop == null) {
                 return m;
             }
-            m.put("aspect", "4:5");
+            m.put("aspect", crop.compliance().getOrDefault("aspect", "4:5"));
             m.put("crop", crop.best().crop().toMap());
             m.put("focus", Map.of("name", focus.name(), "rect", focus.rect().toMap(), "source", focus.source()));
             m.put("product", productBox.toMap());
@@ -149,21 +150,42 @@ public final class CatalogImagePipeline {
         BufferedImage product = seg.productOnly();
         LandmarkDetector.Result lm = landmarks.detect(product, type.landmarkFamily(req.subcategory()));
         FramingStrategy.Focus focus = FramingStrategy.forType(type).focus(seg.productBox(), profile, lm);
+        GarmentCrop.LowerRegion lower = type == PieceType.LOWER_PIECE ? GarmentCrop.lowerRegion(product, human >= 0.06) : null;
+        if (lower != null) {
+            ImageOps.Box region = lower.box();
+            NRect waist = new NRect(region.x() / (double) seg.width(), region.y() / (double) seg.height(),
+                    region.w() / (double) seg.width(), region.h() / (double) seg.height());
+            focus = new FramingStrategy.Focus(profile.focus().name(), waist.sub(new NRect(0, 0, 1, 0.50)),
+                    List.of(new SemanticRegionRegistry.Region("waistband", waist.sub(new NRect(0.05, 0, 0.9, 0.12)))),
+                    lower.estimatedPerson() ? "ESTIMATED_PERSON_WAIST" : "WAIST_TO_CROTCH_MASK");
+        }
         stages.add(stage("ROI", t, focus.name() + " via " + focus.source()));
 
         // SEMANTIC REFRAMING
         t = System.nanoTime();
         SemanticCropper.Result crop = cropper.crop(w, h, registry.aspectRatio(), seg.productBox(), centroid(seg), focus, profile,
                 seg.distractors(), seg.truncatedSides());
+        if (type == PieceType.UPPER_PIECE || type == PieceType.LOWER_PIECE || type == PieceType.FULL_BODY_PIECE) {
+            crop = fabricCover(seg, product, crop, focus, lower == null ? ImageOps.alphaBounds(product) : lower.box(), type == PieceType.LOWER_PIECE);
+        }
         stages.add(stage("REFRAMING", t, "cropScore=" + NRect.r4(crop.best().score()) + " fill=" + NRect.r4(crop.best().fill())));
+
+        double sourceHuman = human;
+        if (lower != null && lower.estimatedPerson() && Boolean.TRUE.equals(crop.compliance().get("foregroundOnly"))) {
+            NRect c = crop.best().crop();
+            BufferedImage selected = ImageOps.crop(product, new ImageOps.Box((int) Math.round(c.x() * seg.width()), (int) Math.round(c.y() * seg.height()),
+                    (int) Math.round(c.w() * seg.width()), (int) Math.round(c.h() * seg.height())));
+            human = cropHumanEvidence(selected);
+        }
 
         // BACKGROUND NORMALIZATION + DETAIL PRESERVATION (só nível B)
         BackgroundNormalizer.Rendered rendered = null;
         double color = 1, reconstruction = 1;
         List<String> extra = new ArrayList<>();
+        if (Boolean.FALSE.equals(crop.compliance().get("foregroundOnly"))) extra.add("FULL_FRAME_UNAVAILABLE");
         if (req.persist()) {
             t = System.nanoTime();
-            rendered = normalizer.render(seg, crop.best().crop(), registry.aspectRatio());
+            rendered = normalizer.render(seg, crop.best().crop(), Boolean.TRUE.equals(crop.compliance().get("foregroundOnly")) && type == PieceType.LOWER_PIECE ? 2.0 : registry.aspectRatio());
             if (rendered == null) {
                 extra.add("IMAGE_TOO_SMALL_FOR_MASTER");
             } else {
@@ -214,6 +236,8 @@ public final class CatalogImagePipeline {
         debug.put("truncated", seg.truncatedSides());
         debug.put("hangerTrimmed", seg.hangerTrimmed());
         debug.put("registryVersion", registry.version());
+        debug.put("sourceHumanEvidence", NRect.r4(sourceHuman));
+        debug.put("cropHumanEvidence", NRect.r4(human));
         if (crop.rule() != null) {
             debug.put("framingRule", crop.rule().toMap());
             debug.put("ruleCompliance", crop.compliance());
@@ -221,6 +245,62 @@ public final class CatalogImagePipeline {
         return new Analysis(outcome, List.copyOf(reasons), verdict.manualReview() || outcome == CatalogImageValidator.Outcome.NEEDS_REPROCESSING,
                 verdict.confidence(), mime, w, h, sha, phash, type, seg.productBox(), focus, crop, report.metrics(), report.overall(),
                 String.format("#%06x", seg.backgroundRgb() & 0xFFFFFF), detailView, rendered, List.copyOf(stages), debug);
+    }
+
+    private static SemanticCropper.Result fabricCover(ProductSegmenter.Segmentation seg, BufferedImage product,
+                                                       SemanticCropper.Result prior, FramingStrategy.Focus focus, ImageOps.Box region, boolean lower) {
+        var found = GarmentCrop.find(product, lower ? 2 : 4, lower ? 1 : 5, focus.rect().cx() * seg.width(), lower ? region.y() + Math.min(region.h(), region.w() / 2.0) * 0.32 : focus.rect().cy() * seg.height(), region);
+        Map<String, Object> compliance = new LinkedHashMap<>(prior.compliance());
+        compliance.put("mode", "GARMENT_COVER");
+        compliance.put("pipelineVersion", GarmentCrop.VERSION);
+        if (found.isEmpty()) {
+            compliance.put("foregroundOnly", false);
+            compliance.put("ok", false);
+            return new SemanticCropper.Result(prior.best(), prior.detail(), prior.analysis(), prior.candidates(), prior.rule(), compliance);
+        }
+        ImageOps.Box box = found.get();
+        NRect crop = new NRect(box.x() / (double) seg.width(), box.y() / (double) seg.height(),
+                box.w() / (double) seg.width(), box.h() / (double) seg.height());
+        double fx = (focus.rect().cx() - crop.x()) / crop.w(), fy = (focus.rect().cy() - crop.y()) / crop.h();
+        boolean focused = fx >= 0 && fx <= 1 && fy >= 0 && fy <= 1;
+        double critical = focus.critical().stream().mapToDouble(r -> r.rect().insideOf(crop)).max().orElse(1);
+        Map<String, Double> parts = new LinkedHashMap<>(prior.best().parts());
+        parts.put("completeness", 1.0); // the whole-piece analysis ROI and source are retained separately
+        parts.put("critical", critical);
+        parts.put("focus", focused ? 1.0 : focus.rect().insideOf(crop));
+        parts.put("occupancy", 1.0);
+        parts.put("margin", 1.0);
+        parts.put("padding", 1.0);
+        parts.put("foregroundCoverage", 1.0);
+        compliance.put("aspect", lower ? "2:1" : "4:5");
+        compliance.put("foregroundOnly", true);
+        compliance.put("foregroundCoverage", 1.0);
+        compliance.put("frameFilledByProduct", 1.0);
+        compliance.put("widthFilledByProduct", 1.0);
+        compliance.put("productInsideFrame", NRect.r4(seg.productBox().insideOf(crop)));
+        compliance.put("focusCenter", Map.of("x", NRect.r4(fx), "y", NRect.r4(fy)));
+        compliance.put("focusInTopHalf", focused && fy <= 0.5);
+        compliance.put("ok", focused && (prior.rule() == null || !prior.rule().focusTopHalf() || fy <= 0.5));
+        double score = 0.7 + 0.2 * parts.get("focus") + 0.1 * parts.get("distractor");
+        var candidate = new SemanticCropper.Candidate(crop, score, 1, 0, parts);
+        List<SemanticCropper.Candidate> candidates = new ArrayList<>();
+        candidates.add(candidate); candidates.addAll(prior.candidates());
+        return new SemanticCropper.Result(candidate, prior.detail(), prior.analysis(), List.copyOf(candidates), prior.rule(), compliance);
+    }
+
+    private double cropHumanEvidence(BufferedImage selected) {
+        int[] pixels = selected.getRGB(0, 0, selected.getWidth(), selected.getHeight(), null, 0, selected.getWidth());
+        boolean[] opaque = new boolean[pixels.length];
+        java.util.Arrays.fill(opaque, true);
+        double skin = ProductSegmenter.foreignSkin(pixels, opaque);
+        if (persons != null && persons.available()) {
+            try {
+                Optional<PersonParts> parts = persons.segment(selected);
+                if (parts.isPresent()) skin = Math.max(skin, parts.get().person() * (parts.get().bodySkin() + parts.get().faceSkin()));
+            } catch (RuntimeException ignored) { /* local evidence remains available */ }
+        }
+        // This crop promises fabric only: residual hands/skin require review even when they occupy a small region.
+        return skin > 0.005 ? Math.max(0.06, skin) : 0;
     }
 
     /** Pele estranha à peça (segmentador próprio) combinada com o segmentador de pessoa, quando disponível. */

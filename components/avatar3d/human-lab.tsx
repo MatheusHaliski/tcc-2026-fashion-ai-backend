@@ -5,7 +5,8 @@ import * as THREE from "three";
 import { HumanAvatar, type HumanParts } from "@/components/three/human-avatar";
 import { FileButton } from "@/components/ui";
 import { exportAvatarGlb } from "@/lib/avatar3d/human/export-glb";
-import { StudioLight, type Look3dPiece } from "@/components/three/common";
+import { type Look3dPiece } from "@/components/three/common";
+import { AvatarLighting } from "@/components/three/avatar-lighting";
 import { DEFAULT_BODY, type BodyParams, type BodySources } from "@/lib/avatar3d/body-spec";
 import { analyzePhoto, buildAvatar, type AnalyzedPhoto, type BuiltAvatar } from "@/lib/avatar3d/pipeline";
 import type { Pt } from "@/lib/avatar3d/image-stats";
@@ -152,13 +153,9 @@ export default function HumanLab() {
       <p id="human-status">{status} · {ready ? "ready" : "loading"}</p>
       <div style={{ display: "flex", gap: 12 }}>
         <div id="human-viewer" style={{ width: 520, height: 720, background: "#e9e4dc" }}>
-          <Canvas camera={{ fov: 30, near: 0.05, far: 30 }} gl={{ preserveDrawingBuffer: true, antialias: true }} onCreated={({ gl }) => { gl.toneMapping = THREE.NeutralToneMapping; }}>
+          <Canvas shadows="percentage" camera={{ fov: 30, near: 0.05, far: 30 }} gl={{ preserveDrawingBuffer: true, antialias: true }} onCreated={({ gl }) => { gl.toneMapping = THREE.NeutralToneMapping; gl.toneMappingExposure = 0.95; }}>
             <color attach="background" args={["#e9e4dc"]} />
-            <StudioLight />
-            <hemisphereLight args={["#ffffff", "#cfc6b8", 0.5]} />
-            <directionalLight position={[1.2, 2.6, 2.4]} intensity={0.9} />
-            <directionalLight position={[-1.6, 2.0, 1.8]} intensity={0.45} />
-            <directionalLight position={[0, 2.2, -2.5]} intensity={0.4} />
+            <AvatarLighting />
             <HumanAvatar key={bodySex + (model ? "a" : "") + (bodyParams ? JSON.stringify(bodyParams) : "")} hairLod={hairLod} body={bodyParams ? { sex: bodySex, params: bodyParams, sources: Object.fromEntries(Object.keys(bodyParams).map((k) => [k, "user"])) as BodySources } : { sex: bodySex }} stature={H} adjust={{ hairCut: cut, glasses: glassesOn }} skin={model?.skin ?? (bodySex === "FEMININO" ? "#c99a6e" : "#a97c50")}
               face={model} atlas={built?.atlas ?? null} hair={(hairPreset ? HAIR_PRESETS[hairPreset] : null) ?? model?.hair ?? null} motion={motion} wind={wind}
               debugHair={typeof window !== "undefined" && location.hash === "#hair"} onReady={(p) => { parts.current = p; setReady((r) => r + 1); }}

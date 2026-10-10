@@ -38,7 +38,7 @@ public final class BackgroundNormalizer {
         g.dispose();
         int outH = (int) Math.round(outW / aspect);
         BufferedImage master = DetailPreserver.downscale(canvas, outW, outH);
-        double color = colorPreservation(product, master);
+        double color = colorPreservation(canvas, master);
         BufferedImage card = DetailPreserver.downscale(flatten(master, NEUTRAL), Math.min(CARD_WIDTH, outW), (int) Math.round(Math.min(CARD_WIDTH, outW) / aspect));
         BufferedImage thumb = DetailPreserver.downscale(card, THUMB_WIDTH, (int) Math.round(THUMB_WIDTH / aspect));
         return new Rendered(master, flatten(master, WHITE), flatten(master, NEUTRAL), card, thumb, color, outW, outH);

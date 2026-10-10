@@ -6,7 +6,7 @@
  */
 import * as THREE from "three";
 import { GLTFExporter } from "three/examples/jsm/exporters/GLTFExporter.js";
-import type { Human } from "./three-human";
+import { clipEyeGeometryForExport, type Human } from "./three-human";
 import { applyIdle, idleClip, type PoseState } from "./pose";
 
 /** Código do erro quando o avatar ainda não está vestido (a tela traduz). */
@@ -31,12 +31,18 @@ export async function exportAvatarGlb(human: Human, pose: PoseState, opts: { ani
   // sem a córnea no arquivo, o globo leva o verniz (em cena ele é fosco e o brilho é o da córnea)
   const eyeMat = human.eyes.material as THREE.MeshPhysicalMaterial; const eyeCoat = [eyeMat.clearcoat, eyeMat.clearcoatRoughness] as const;
   eyeMat.clearcoat = 1; eyeMat.clearcoatRoughness = 0.08;
+  const eyeGeometry = human.eyes.geometry;
+  let clippedEyeGeometry: THREE.BufferGeometry | null = null;
   try {
+    // glTF does not carry the live eyelid shader: bake the measured opening into export-only geometry.
+    clippedEyeGeometry = clipEyeGeometryForExport(human);
+    if (clippedEyeGeometry) human.eyes.geometry = clippedEyeGeometry;
     human.root.updateMatrixWorld(true);
     const exporter = new GLTFExporter();
     const out = await exporter.parseAsync(human.root, { binary: true, animations: clips, onlyVisible: true, maxTextureSize: 2048 });
     return new Blob([out as ArrayBuffer], { type: "model/gltf-binary" });
   } finally {
+    human.eyes.geometry = eyeGeometry; clippedEyeGeometry?.dispose();
     if (fileHair) {
       fileHair.removeFromParent(); fileHair.geometry.dispose();
       for (const m of ([] as THREE.Material[]).concat(fileHair.material)) { (m as THREE.MeshPhysicalMaterial).map?.dispose(); m.dispose(); }

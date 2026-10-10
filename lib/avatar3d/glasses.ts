@@ -18,8 +18,8 @@
  */
 import type { Pt, Raster } from "./image-stats";
 import { hex, luma, median, polygonMask } from "./image-stats";
-import { FACE_OVAL } from "./canonical-face";
-import { EYES, type EyeSide, type GlassesKind } from "./iris";
+import { CANON_UV, FACE_OVAL } from "./canonical-face";
+import { defaultEyes, EYES, type AvatarEyes, type EyeSide, type GlassesKind } from "./iris";
 import { deltaE2000, rgbToLab } from "./identity/metrics";
 
 export interface GlassesDetection {
@@ -158,6 +158,79 @@ function lensScore(img: Raster, px: Pt[], f: EyeFrame, skin: [number, number, nu
 
 export const NO_GLASSES: GlassesDetection = { kind: "NONE", confidence: 0, scores: { bridge: 0, lowerR: 0, lowerL: 0, outerR: 0, outerL: 0, lensR: 0, lensL: 0 }, frame: null };
 
+/**
+ * Repair stored face atlases as well as newly generated ones. Older avatars have no eyewear metadata:
+ * recognize a frame only with structural evidence, remove its pixels from a copy, then render it in 3D.
+ * The source texture and saved identity are never mutated by viewing an avatar.
+ */
+export function prepareFaceTexture(img: Raster, skin: [number, number, number], eyes?: AvatarEyes | null,
+  px: Pt[] = Array.from({ length: 468 }, (_, i) => [CANON_UV[i * 2] * img.width, CANON_UV[i * 2 + 1] * img.height] as Pt)) {
+  // Saved metadata can identify the accessory without a frame colour. Still measure the atlas to constrain
+  // the repair to the actual frame; never replace an iris colour already measured for this person.
+  const detected = detectGlasses(img, px, skin);
+  const inferred = detected.confidence >= 0.65 ? defaultEyes(detected.kind, detected.frame) : null;
+  const resolved = eyes && eyes.glasses !== "NONE"
+    ? { ...eyes, ...(!eyes.frame && detected.kind === "PRESCRIPTION" && detected.frame ? { frame: detected.frame } : {}) }
+    : inferred ? { ...(eyes ?? inferred), glasses: inferred.glasses, ...(inferred.frame ? { frame: inferred.frame } : {}) } : eyes ?? null;
+  if (!resolved || resolved.glasses === "NONE") return { image: img, eyes: resolved, removed: 0 };
+  const copy: Raster = { width: img.width, height: img.height, data: new Uint8ClampedArray(img.data) };
+  const removed = removeGlasses(copy, px, skin, resolved.glasses, resolved.frame);
+  return { image: removed ? copy : img, eyes: resolved, removed };
+}
+
+/**
+ * The iris and sclera belong to the eye mesh, not to the skin atlas. A photographed eye on the orbital skin
+ * otherwise appears as a second white/black patch below the moving eye. Keep a thin dark lash/waterline border,
+ * but remove sclera and coloured iris pixels to the antialiased edge. A fixed protected ring used to leave white
+ * triangles beneath the real eye when its fitted aperture was smaller than the photograph's aperture.
+ * This edits the working raster; the saved source atlas remains untouched by the caller.
+ */
+export function removePhotographedEyes(img: Raster, skin: [number, number, number],
+  px: Pt[] = Array.from({ length: 468 }, (_, i) => [CANON_UV[i * 2] * img.width, CANON_UV[i * 2 + 1] * img.height] as Pt)): number {
+  if (px.length < 468) return 0;
+  const { width: w, height: h, data } = img;
+  const skinSum = skin[0] + skin[1] + skin[2] || 1, skinLuma = luma(...skin) || 1;
+  let removed = 0;
+  for (const side of ["right", "left"] as const) {
+    const f = eyeFrame(px, side);
+    const aperture = polygonMask(w, h, EYES[side].contour.map((i) => px[i]));
+    const edgeRadius = Math.max(1, Math.round(f.ew * 0.006));
+    const mask = erode(aperture, w, h, edgeRadius);
+    const edge = dilate(aperture, w, h, edgeRadius);
+    const donors: { p: Pt; color: [number, number, number] }[] = [];
+    for (let s = -0.55; s <= 0.5501; s += 0.11) for (const t of [-0.42, -0.32, 0.32, 0.42]) {
+      const p = at(f.c, f.u, f.v, s * f.ew, t * f.ew), color = pixel(img, p); if (!color) continue;
+      const i = Math.round(p[1]) * w + Math.round(p[0]); if (aperture[i]) continue;
+      const sum = color[0] + color[1] + color[2] || 1, lum = luma(...color);
+      // Ignore lashes, eyebrows, missed frame pixels and bright lens reflections as skin donors.
+      if (lum < skinLuma * 0.45 || lum > skinLuma * 1.45 || Math.hypot(color[0] / sum - skin[0] / skinSum, color[1] / sum - skin[1] / skinSum) > 0.07) continue;
+      donors.push({ p, color });
+    }
+    const reference = donors.length ? [0, 1, 2].map((k) => median(donors.map((d) => d.color[k]))) : skin;
+    const referenceLuma = luma(reference[0], reference[1], reference[2]);
+    const referenceSum = reference[0] + reference[1] + reference[2] || 1;
+    for (let i = 0; i < edge.length; i++) if (edge[i] && !mask[i]) {
+      const o = i * 4, r = data[o], g = data[o + 1], b = data[o + 2], sum = r + g + b || 1, lum = luma(r, g, b);
+      const lessWarm = reference[0] / referenceSum - r / sum;
+      const moreBlue = b / sum - reference[2] / referenceSum;
+      // Light sclera (including skin-blended antialias pixels) and cool iris colours are not lashes or canthi.
+      // Very dark boundary pixels stay as the thin natural eyelash/waterline; the pupil inside was already masked.
+      if (lum > referenceLuma * 1.08 || (lum > referenceLuma * 0.85 && lessWarm > 0.016)
+        || (lum > referenceLuma * 0.18 && (lessWarm > 0.05 || moreBlue > 0.055))) mask[i] = 1;
+    }
+    for (let i = 0; i < mask.length; i++) if (mask[i]) {
+      const x = i % w, y = (i - x) / w, rgb = [0, 0, 0]; let weight = 0;
+      for (const donor of donors) {
+        const q = 1 / ((x - donor.p[0]) ** 2 + (y - donor.p[1]) ** 2 + 4);
+        weight += q; for (let k = 0; k < 3; k++) rgb[k] += donor.color[k] * q;
+      }
+      for (let k = 0; k < 3; k++) data[i * 4 + k] = weight ? Math.round(rgb[k] / weight) : skin[k];
+      removed++;
+    }
+  }
+  return removed;
+}
+
 export function detectGlasses(img: Raster, px: Pt[], skin: [number, number, number]): GlassesDetection {
   if (px.length < 468) return NO_GLASSES;
   const R = eyeFrame(px, "right"), L = eyeFrame(px, "left");
@@ -219,23 +292,20 @@ export function glassesMask(img: Raster, px: Pt[], skin: [number, number, number
   const inside = new Uint8Array(w * h);
   for (const p of region) { const m = polygonMask(w, h, p); for (let i = 0; i < m.length; i++) if (m[i]) inside[i] = 1; }
   const face = polygonMask(w, h, FACE_OVAL.map((i) => px[i]));
-  // nunca o olho (cílios), a pálpebra de cima com o vinco, nem a sobrancelha — com margem em pixels: crescer em volta
+  // Nunca o olho (cílios) nem a sobrancelha — com margem em pixels: crescer em volta
   // do centro quase não engrossa um polígono fino como a sobrancelha. Lente escura: só a sobrancelha (o olho some atrás)
   const keep = new Uint8Array(w * h);
   const protect = (poly: Pt[], r: number) => { let m = polygonMask(w, h, poly); if (r > 0) m = dilate(m, w, h, r); for (let i = 0; i < m.length; i++) if (m[i]) keep[i] = 1; };
   for (const [side, f] of [["right", R], ["left", L]] as const) {
     const brow = BROWS[side].map((i) => px[i]);
-    protect(hull(brow), sun ? 0 : Math.round(0.06 * ew));
+    // The landmarks already follow the brow outline. Its convex hull also covers the bare skin under the arch,
+    // which used to protect the photographed upper rim from removal.
+    protect(brow, sun ? 0 : Math.round(0.025 * ew));
     if (sun) continue;
     const eye = EYES[side].contour.map((i) => px[i]);
-    protect(eye, Math.round(0.2 * ew));                         // cílios, pálpebras e a linha de baixo (o aro fica a ≥ 0,5)
-    // da pálpebra de cima até a sobrancelha (vinco): em pele escura o vinco é quase da cor de uma armação preta — fica
-    // protegido; o aro de cima, quando encosta na sobrancelha, fica na textura (o aro 3D cobre)
-    const upper = eye.filter(([x, y]) => (x - f.c[0]) * f.v[0] + (y - f.c[1]) * f.v[1] <= 0);
-    protect(hull([...upper, ...brow]), Math.round(0.03 * ew));
-    // logo abaixo da pálpebra de baixo (vinco, olheira funda): até 0,3 × a largura do olho; o aro de baixo fica além
-    const lower = eye.filter(([x, y]) => (x - f.c[0]) * f.v[0] + (y - f.c[1]) * f.v[1] >= 0);
-    protect(hull([...lower, ...lower.map(([x, y]) => [x + f.v[0] * 0.3 * f.ew, y + f.v[1] * 0.3 * f.ew] as Pt)]), 0);
+    protect(eye, Math.max(1, Math.round(0.06 * f.ew)));
+    // Do not keep the upper rim baked into the skin: it remains visible in profile or with the accessory removed.
+    // Colour, local contrast and stroke thickness below distinguish it from a natural lid crease/dark circle.
   }
   // o que não é pele: lente escura comparada à bochecha (a lente é grande demais para uma média local); armação comparada
   // à média da vizinhança (sombra sob o olho e olheira são largas e entram na média, um traço fino de armação não)
@@ -259,7 +329,7 @@ export function glassesMask(img: Raster, px: Pt[], skin: [number, number, number
   if (kind === "PRESCRIPTION") {
     // top-hat: só o que é FINO (a abertura com um disco do tamanho de uma armação grossa apaga traços finos e deixa
     // regiões largas — olheira, sombra, barba — que continuam na textura como são)
-    const rad = Math.max(2, Math.round(0.09 * ew));
+    const rad = Math.max(2, Math.round(0.12 * ew));
     const opened = dilate(erode(dev, w, h, rad), w, h, rad);
     mask = new Uint8Array(w * h); for (let i = 0; i < mask.length; i++) mask[i] = dev[i] && !opened[i] ? 1 : 0;
     // armação é um traço longo e bem marcado; ruga e pé de galinha são curtos ou fracos e ficam na textura
@@ -268,20 +338,11 @@ export function glassesMask(img: Raster, px: Pt[], skin: [number, number, number
   } else {
     // lente: fecha os buracos (reflexos) e cobre a borda da armação e o contorno suavizado da lente
     mask = dilate(erode(dilate(dev, w, h, 3), w, h, 3), w, h, Math.max(2, Math.round(0.05 * ew)));
-    for (let i = 0; i < mask.length; i++) if (keep[i] || !face[i]) mask[i] = 0;
   }
+  // Dilation adds the antialiased frame edge, but must not leak back into the protected eyes or brows.
+  for (let i = 0; i < mask.length; i++) if (keep[i] || !face[i] || !inside[i]) mask[i] = 0;
   let n = 0; for (let i = 0; i < mask.length; i++) n += mask[i];
   return n ? mask : null;
-}
-
-/** Fecho convexo (cadeia monótona). */
-function hull(pts: Pt[]): Pt[] {
-  const p = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]); if (p.length < 3) return p;
-  const cross = (o: Pt, a: Pt, b: Pt) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
-  const lo: Pt[] = [], up: Pt[] = [];
-  for (const q of p) { while (lo.length >= 2 && cross(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
-  for (const q of p.reverse()) { while (up.length >= 2 && cross(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
-  return [...lo.slice(0, -1), ...up.slice(0, -1)];
 }
 
 /** Médias locais (janela quadrada 2r+1) de luminância e cromaticidade, por tabela de somas, só no retângulo da região. */

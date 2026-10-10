@@ -40,7 +40,7 @@ import java.util.UUID;
 
 /**
  * Worker e operação do pipeline de imagens da Busca Catalogada (docs/catalogo/PIPELINE_IMAGENS_CATALOGO.md).
- * Desligado por padrão ({@code fashionai.catalog.image-pipeline.enabled}); cada tick pega um lote de imagens PENDING
+ * Ligado por padrão ({@code fashionai.catalog.image-pipeline.enabled}); cada tick pega um lote de imagens PENDING
  * (ou de versão anterior do pipeline), baixa com o {@link WebFetchPort} (só https, só IP público, redirecionamento
  * revalidado a cada salto, limite de bytes), roda o {@link CatalogImagePipeline} e grava só metadados — ou, quando a
  * fonte permite persistência, também o master no storage. Depois reclassifica as fotos do produto e escolhe a canônica.
@@ -67,7 +67,7 @@ public class CatalogImagePipelineService {
     public CatalogImagePipelineService(CatalogImageRepository images, CatalogProductRepository products, CatalogSourceRepository sources,
                                        WebFetchPort web, MediaStoragePort storage, Guard guard, TransactionTemplate tx,
                                        ObjectProvider<PersonSegmentationPort> persons,
-                                       @Value("${fashionai.catalog.image-pipeline.enabled:false}") boolean enabled,
+                                       @Value("${fashionai.catalog.image-pipeline.enabled:true}") boolean enabled,
                                        @Value("${fashionai.catalog.image-pipeline.batch:8}") int batch,
                                        @Value("${fashionai.catalog.image-pipeline.max-attempts:3}") int maxAttempts) {
         this.images = images;
@@ -261,13 +261,13 @@ public class CatalogImagePipelineService {
 
     /** Nível B só quando a fonte oficial do domínio da foto declara allows_image_persistence (RN47.03). */
     boolean allowsPersistence(CatalogProduct product, CatalogImage img) {
-        String host = host(img.getImageUrl()), sourceDomain = img.getSourceDomain();
+        String host = host(img.getImageUrl());
         for (CatalogSource s : sources.findByBrandIdAndActiveTrue(product.getBrandId())) {
             if (!s.isAllowsImagePersistence() || s.getDomain() == null) {
                 continue;
             }
-            String d = s.getDomain().toLowerCase(Locale.ROOT).replaceFirst("^www\\.", "");
-            if ((host != null && (host.equals(d) || host.endsWith("." + d))) || d.equalsIgnoreCase(sourceDomain)) {
+            String d = s.getDomain().toLowerCase(Locale.ROOT).replaceFirst("^www\\.", "").replaceAll("\\.+$", "");
+            if ((host != null && (host.equals(d) || host.endsWith("." + d)))) {
                 return true;
             }
         }
@@ -276,8 +276,11 @@ public class CatalogImagePipelineService {
 
     static String host(String url) {
         try {
-            String h = URI.create(url).getHost();
-            return h == null ? null : h.toLowerCase(Locale.ROOT);
+            URI uri = URI.create(url);
+            if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getRawUserInfo() != null
+                    || (uri.getPort() != -1 && uri.getPort() != 443)) return null;
+            String h = uri.getHost();
+            return h == null ? null : h.toLowerCase(Locale.ROOT).replaceAll("\\.+$", "");
         } catch (IllegalArgumentException e) {
             return null;
         }
@@ -483,6 +486,7 @@ public class CatalogImagePipelineService {
                 m.put("aspect", crop.get("aspect"));
             }
         }
+        if (canonical.getCropJson() != null) m.put("aspect", Json.map(canonical.getCropJson()).get("aspect"));
         m.put("imageId", canonical.getId());
         m.put("qualityScore", canonical.getQualityScore());
         m.put("pipelineVersion", canonical.getPipelineVersion());

@@ -19,6 +19,8 @@ import br.com.fashionai.domain.model.enums.NotificationType;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
+import br.com.fashionai.domain.repository.BrandProfileRepository;
+import br.com.fashionai.domain.repository.CelebrityProfileRepository;
 import br.com.fashionai.domain.repository.FollowRepository;
 import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
@@ -47,6 +49,8 @@ import java.util.UUID;
 @Service
 public class ProfileService {
     private final UserRepository users;
+    private final BrandProfileRepository brands;
+    private final CelebrityProfileRepository celebrities;
     private final FollowRepository follows;
     private final SchemeRepository schemes;
     private final SchemeItemRepository schemeItems;
@@ -60,7 +64,10 @@ public class ProfileService {
 
     public ProfileService(UserRepository users, FollowRepository follows, SchemeRepository schemes, SchemeItemRepository schemeItems,
                           WardrobeItemRepository pieces, SchemeService schemeService, NotificationService notifications, Guard guard,
-                          HypeScoreCurrentRepository hypeV2, HypeScoreConfig hypeV2Config) {
+                          HypeScoreCurrentRepository hypeV2, HypeScoreConfig hypeV2Config,
+                          BrandProfileRepository brands, CelebrityProfileRepository celebrities) {
+        this.brands = brands;
+        this.celebrities = celebrities;
         this.hypeV2 = hypeV2;
         this.hypeV2Config = hypeV2Config;
         this.users = users;
@@ -115,6 +122,11 @@ public class ProfileService {
         out.put("links", Json.list(u.getLinksJson()));
         out.put("coverUrl", u.getCoverUrl());
         out.put("layout", u.getProfileType() == ProfileType.PESSOAL ? "PESSOAL" : "INSTITUCIONAL");
+        if (u.getProfileType() == ProfileType.MARCA) {
+            out.put("institutionalSlug", brands.findByOwnerId(u.getId()).map(b -> b.getSlug()).orElse(u.getId().toString()));
+        } else if (u.getProfileType() == ProfileType.CELEBRIDADE) {
+            out.put("institutionalSlug", celebrities.findByOwnerId(u.getId()).map(c -> c.getSlug()).orElse(u.getId().toString()));
+        }
         out.put("self", self);
         out.put("relation", rel == null ? "NENHUMA" : rel.name());
         out.put("counters", counters(u.getId(), published.size()));

@@ -3,21 +3,23 @@ import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { api, mediaUrl } from "@/lib/api/client";
+import type { TipoLook } from "@/lib/api/types";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
-import { Button, Card, Dialog, ErrorState, Field, Input, PageHeader, SegmentPicker, Skeleton, Switch, useToast } from "@/components/ui";
+import { Button, Card, Dialog, ErrorState, Field, Input, PageHeader, SegmentPicker, Select, Skeleton, Switch, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { MirrorStage, MirrorWornStrip, type MirrorMode } from "@/components/mirror/mirror-stage";
 import { LookScores, type LookScoreValues } from "@/components/hype/look-scores";
 
 interface MPiece { id: string; name: string; imageUrl?: string; thumbnailUrl?: string; category?: string; subcategory?: string; color?: string; colorHex?: string; addressLabel?: string; inMirror?: boolean; }
-interface State { slots: Record<string, MPiece | MPiece[] | null>; complete: boolean; missing: { slot: string; action: string; message: string }[]; warnings?: string[]; origin?: string; prompt?: string | null; interpretation?: Record<string, unknown> | null; actions?: string[]; silhouette?: string | null; postIt?: string | null; light?: { kelvin: number; label?: string }; restriction?: { challenge: string } | null; shownCount?: number; scores?: LookScoreValues | null; }
+interface State { tipoLook?: TipoLook | null; slots: Record<string, MPiece | MPiece[] | null>; complete: boolean; missing: { slot: string; action: string; message: string }[]; warnings?: string[]; origin?: string; prompt?: string | null; interpretation?: Record<string, unknown> | null; actions?: string[]; silhouette?: string | null; postIt?: string | null; light?: { kelvin: number; label?: string }; restriction?: { challenge: string } | null; shownCount?: number; scores?: LookScoreValues | null; }
 const SLOT_LABEL: Record<string, string> = { get outer_layer() { return tr("common.camada_externa"); }, get upper() { return tr("common.superior"); }, get dress() { return tr("mirror.vestido"); }, get lower() { return tr("common.inferior"); }, get shoes() { return tr("mirror.calcados"); }, get accessory() { return tr("mirror.acessorios"); } };
 
 function MirrorInner() {
   const { t } = useI18n(); const toast = useToast(); const sp = useSearchParams();
   const { data, loading, error, reload, setData } = useApi<State>((signal) => api.get("/api/me/mirror", { signal }), []);
+  const tipos = useApi<TipoLook[]>((signal) => api.get("/api/tipos-look", { signal }), []);
   const [prompt, setPrompt] = useState(""); const [keep, setKeep] = useState(false); const [busy, setBusy] = useState<string | null>(null);
   // Reflexo 3D (cena viva) ou Prévia 2D (a foto parada do mesmo avatar); ?vista=2d abre direto na prévia
   const [mode, setMode] = useState<MirrorMode>(() => (sp.get("vista") === "2d" ? "2d" : "3d"));
@@ -56,6 +58,16 @@ function MirrorInner() {
           </div>
         </Card>
         <div className="grid min-w-0 gap-3">
+          <Card>
+            <Field id="mirror-tipo-look" label={t("lookType.label")} hint={t("lookType.hint")}>
+              <Select id="mirror-tipo-look" value={data.tipoLook?.id ?? ""} disabled={tipos.loading || !!tipos.error || busy === "tipo-look"}
+                onChange={(e) => run("tipo-look", () => api.put("/api/me/mirror/tipo-look", { tipoLookId: e.target.value }))}>
+                <option value="" disabled>{tipos.loading ? t("common.loading") : t("lookType.select")}</option>
+                {(tipos.data ?? []).map((tipo) => <option key={tipo.id} value={tipo.id}>{tipo.nome}</option>)}
+              </Select>
+            </Field>
+            {tipos.error && <ErrorState error={tipos.error} onRetry={tipos.reload} />}
+          </Card>
           <Card>
             <h2 className="type-h3 mb-2">{t("mirror.vista_me")}</h2>
             <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); run("vista", () => api.post("/api/me/mirror/vista-me", { prompt, keepMirror: keep }), undefined); }}>

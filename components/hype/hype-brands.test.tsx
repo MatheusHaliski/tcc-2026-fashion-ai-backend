@@ -18,8 +18,8 @@ const groups = (url: URL) => ({ type: url.searchParams.get("type"), window: 7, a
 beforeEach(() => { __resetHypeStore(); __resetHypeGroupStore(); nav.search = new URLSearchParams(); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); document.cookie = "fai_rt_h=; max-age=0; path=/"; });
 
-describe("/brands: ordem Em alta e chip de Hype (P2-05)", () => {
-  it("o chip Em alta pede order=EM_ALTA; o Hype vem no feed (sem outra requisição) e só aparece com base", async () => {
+describe("/brands: ordem Em alta e Hype do perfil (P2-05)", () => {
+  it("a ordem Em alta pede order=EM_ALTA; o Hype vem no feed (sem outra requisição) e só aparece com base", async () => {
     const feed = (url: URL) => ({ order: url.searchParams.get("order") || "RECENTES", orders: ["AFINIDADE", "RECENTES", "EM_ALTA"], brands: [
       { slug: "nike", name: "Nike", affinity: 42, hype: hot },
       { slug: "zara", name: "Zara", hype: { key: "zara", sufficient: false, items: 2, pieces: 2, looks: 0 } },
@@ -28,9 +28,10 @@ describe("/brands: ordem Em alta e chip de Hype (P2-05)", () => {
     const api = mockApi({ "GET /api/brands": feed });
     const { container } = renderApp(<BrandsPage />);
     expect(await screen.findByText("Nike")).toBeTruthy();
-    expect(container.querySelectorAll(".hype-group-badge")).toHaveLength(1);
-    expect(screen.getByText("Marca em alta")).toBeTruthy();
+    expect(container.querySelectorAll(".hype-group-header")).toHaveLength(1);
+    expect(screen.getByRole("link", { name: /Hype da marca/ })).toBeTruthy();
     expect(screen.getByText("Tendência")).toBeTruthy();                 // a faixa sempre em texto
+    expect(screen.getByText("6 itens públicos · nº 2 em Em alta")).toBeTruthy();
     expect(screen.getByText(/afinidade 42%/)).toBeTruthy();             // 0–100 do backend, sem multiplicar de novo
     fireEvent.click(screen.getByRole("button", { name: "Em alta" }));
     await waitFor(() => expect(api.calls.some((c) => c.path.includes("order=EM_ALTA"))).toBe(true));

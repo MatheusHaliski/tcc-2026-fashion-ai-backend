@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { EYES, eyesProfile, irisClass, IRIS_PROTOTYPES, measureIris, defaultEyes, irisColorOf } from "./iris";
-import { detectGlasses, inpaint, removeGlasses, glassesMask } from "./glasses";
+import { detectGlasses, inpaint, removeGlasses, glassesMask, prepareFaceTexture } from "./glasses";
 import { deltaE2000, rgbToLab, hexToLab, type Lab } from "./identity/metrics";
-import { FACE_OVAL } from "./canonical-face";
+import { CANON_UV, FACE_OVAL } from "./canonical-face";
 import type { Pt } from "./image-stats";
 
 /**
@@ -149,6 +149,53 @@ describe("cor da íris (I4)", () => {
 });
 
 describe("óculos na foto (I4)", () => {
+  it("repara um atlas no UV canônico usado por avatares salvos", () => {
+    const width = 512, height = 512;
+    const px: Pt[] = Array.from({ length: 468 }, (_, i) => [CANON_UV[i * 2] * width, CANON_UV[i * 2 + 1] * height]);
+    const data = new Uint8ClampedArray(width * height * 4);
+    const centers = (["right", "left"] as const).map((side) => {
+      const e = EYES[side];
+      const cx = e.contour.reduce((a, i) => a + px[i][0], 0) / e.contour.length;
+      const cy = e.contour.reduce((a, i) => a + px[i][1], 0) / e.contour.length;
+      const ew = Math.hypot(px[e.corners[0]][0] - px[e.corners[1]][0], px[e.corners[0]][1] - px[e.corners[1]][1]);
+      return { cx, cy, ew };
+    });
+    for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+      const ring = centers.some(({ cx, cy, ew }) => {
+        const outer = ((x - cx) / (ew * 0.95)) ** 4 + ((y - cy - ew * 0.12) / (ew * 0.7)) ** 4;
+        const inner = ((x - cx) / (ew * 0.88)) ** 4 + ((y - cy - ew * 0.12) / (ew * 0.63)) ** 4;
+        return outer < 1 && inner >= 1;
+      });
+      const bridge = x > px[133][0] && x < px[362][0] && Math.abs(y - ((centers[0].cy + centers[1].cy) / 2 - centers[0].ew * 0.2)) < 2;
+      const k = (y * width + x) * 4;
+      data[k] = ring || bridge ? 28 : SKIN[0]; data[k + 1] = ring || bridge ? 26 : SKIN[1]; data[k + 2] = ring || bridge ? 30 : SKIN[2]; data[k + 3] = 255;
+    }
+    const repaired = prepareFaceTexture({ data, width, height }, SKIN);
+    expect(repaired.eyes?.glasses).toBe("PRESCRIPTION");
+    expect(repaired.removed).toBeGreaterThan(0);
+  });
+
+  it("avatar antigo sem metadados: separa a armação da textura sem alterar o arquivo original", () => {
+    const f = face({ glasses: "frame", darkCircles: true, iris: { right: BLUE } });
+    const before = Uint8ClampedArray.from(f.img.data);
+    const repaired = prepareFaceTexture(f.img, f.skin, null, f.px);
+    expect(repaired.eyes?.glasses).toBe("PRESCRIPTION");
+    expect(repaired.removed).toBeGreaterThan(0);
+    expect(f.img.data).toEqual(before);
+    const k = (224 * W + 140) * 4;
+    expect(repaired.image.data[k]).toBeGreaterThan(before[k] + 50);
+    const eye = (180 * W + 140) * 4;
+    expect(Array.from(repaired.image.data.slice(eye, eye + 4))).toEqual(Array.from(before.slice(eye, eye + 4)));
+  });
+
+  it("textura limpa não inventa óculos e preserva as cores de íris já medidas", () => {
+    const f = face({ darkCircles: true, wrinkle: true, iris: { right: BLUE } });
+    const legacy = prepareFaceTexture(f.img, f.skin, null, f.px);
+    expect(legacy.image).toBe(f.img); expect(legacy.eyes).toBeNull();
+    const eyes = eyesProfile(f.img, f.px);
+    const clean = prepareFaceTexture(f.img, f.skin, eyes, f.px);
+    expect(clean.eyes).toBe(eyes); expect(clean.removed).toBe(0); expect(clean.image).toBe(f.img);
+  });
   it("rosto sem óculos: nada", () => {
     for (const o of [{}, { darkCircles: true }, { wrinkle: true }, { skin: [92, 62, 46] as RGB }]) {
       const f = face(o);

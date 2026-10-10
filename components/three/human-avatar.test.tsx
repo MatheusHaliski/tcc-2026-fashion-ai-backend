@@ -16,6 +16,10 @@ import { frames, meshes, mount3d, serveBodyAsset, untilReady } from "@/test-util
 import { HumanAvatar, type HumanParts } from "./human-avatar";
 import type { Look3dPiece } from "./common";
 import { DEFAULT_BODY } from "@/lib/avatar3d/body-spec";
+import { CANON_POS } from "@/lib/avatar3d/canonical-face";
+import { faceMetrics } from "@/lib/avatar3d/geometry";
+import type { AvatarModel } from "@/lib/avatar3d/model";
+import { I18nProvider } from "@/lib/i18n/i18n";
 
 const piece = (id: string, slot: string, category: string, subcategory: string, colorHex: string): Look3dPiece => ({ id, name: id, slot, category, subcategory, colorHex });
 
@@ -36,6 +40,25 @@ const LOOKS: Record<string, Look3dPiece[]> = {
 afterEach(() => { vi.unstubAllGlobals(); });
 
 describe("avatar humano vestido", () => {
+  it("rebuilds the fitted face when only an eye contour changes, and attaches measured brows to the head", async () => {
+    await serveBodyAsset();
+    const shape = Array.from(CANON_POS);
+    const face: AvatarModel = { v: 1, shape, skin: "#c99a6e", hair: { present: false, color: null, top: 14, side: 8, bottom: null, fringe: 0, cut: false },
+      metrics: faceMetrics(shape), views: [], warnings: [],
+      brows: { color: "#5a3620", thickness: 0.18, arch: 0.16, shape: "SOFT_ARCH", density: 0.55, confidence: 0.8 } };
+    let parts: HumanParts | null = null;
+    const avatar = (model: AvatarModel) => <HumanAvatar body={{ sex: "FEMININO" }} stature={1.66} skin={face.skin} face={model} pieces={[]} motion={false} onReady={(p) => { parts = p; }} />;
+    const r = await mount3d(avatar(face));
+    await untilReady(() => parts !== null);
+    const first = parts! as HumanParts;
+    expect(first.human.bone("Head").getObjectByName("sobrancelhas")).toBeTruthy();
+    // The old cache keyed only the first eight landmarks. Lid 159 was absent from that key.
+    const changed = [...shape]; changed[159 * 3 + 1] -= 0.3;
+    await r.update(<I18nProvider initial="pt-BR">{avatar({ ...face, shape: changed })}</I18nProvider>);
+    await untilReady(() => parts !== null && parts.human !== first.human);
+    expect((parts! as HumanParts).composed.body).not.toEqual(first.composed.body);
+    await r.unmount();
+  }, 20000);
   for (const [name, pieces] of Object.entries(LOOKS)) {
     for (const sex of ["FEMININO", "MASCULINO"] as const) {
       it(`${sex.toLowerCase()} com o look ${name}`, async () => {

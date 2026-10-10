@@ -9,6 +9,8 @@ import {
   ClosetLights, Cobweb, CorkBoard, deg, DressForm, DustPuff, EmptyDrawerCharm, FaiBox, GoldDot, HangTag, KeyHook, Label3D, Lamp, LightSwitch,
   pointer, RoomWindow, sketchDraw, Sparkles, TailorTape, useCanvasTex, WallCalendar,
 } from "@/components/room3d/room-props";
+import RoomAvatarController, { type RoomGameplay } from "./room-avatar-controller";
+import { RoomInteraction } from "@/lib/room3d/interaction";
 import { useI18n } from "@/lib/i18n/i18n";
 
 /* RF27/RF32 — Meu Quarto 3D (React Three Fiber). Móvel FAI Origem paramétrico (molde = função de parâmetros, acabamento =
@@ -33,6 +35,7 @@ export interface MirrorOverlay { pieces: { id: string; imageUrl?: string | null 
   /** RF28 — botões 3D dentro do vidro: usar o look pendurado, pedir outra sugestão, tirar uma peça */
   onUse?: () => void; onAnother?: () => void; onTakeOneOff?: () => void; }
 export interface RoomSceneProps {
+  gameplay?: RoomGameplay;
   data: RoomData3D; open: Set<string>; onToggle: (moduleId: string) => void; highlight: string | null; focusModule: string | null;
   onPick: (pieceId: string) => void; onReady?: (canvas: HTMLCanvasElement) => void;
   lit?: Set<string>; mirror?: MirrorOverlay; dark?: boolean; onToggleTheme?: () => void; onVistaMe?: () => void; onCopilot?: () => void;
@@ -96,7 +99,22 @@ function useReflection(url?: string | null) {
   return t;
 }
 
-interface Ctx { highlight: string | null; onPick: (id: string) => void; reduced: boolean; tagged: Set<string>; hanger?: THREE.MeshStandardMaterialParameters; }
+interface Ctx { highlight: string | null; onPick: (id: string) => void; reduced: boolean; tagged: Set<string>; hanger?: THREE.MeshStandardMaterialParameters; engine?: RoomInteraction; }
+
+/** Register actual world anchors, not screen-space click areas. */
+function InteractionAnchor({ ctx, id, kind, available = true, position = [0, 0, 0], children, progress }: {
+  ctx: Ctx; id: string; kind: "handle" | "piece"; available?: boolean; position?: [number, number, number]; children?: React.ReactNode; progress?: (delta: number) => void;
+}) {
+  const object = useRef<THREE.Group>(null), marker = useRef<THREE.Mesh>(null);
+  useFrame(() => { if (marker.current) { const near = ctx.engine?.hover === id; marker.current.scale.setScalar(near ? 1.6 : 1); (marker.current.material as THREE.MeshBasicMaterial).color.set(near ? "#4ade80" : "#fbbf24"); } });
+  useEffect(() => {
+    if (!ctx.engine || !object.current) return;
+    const target = { id, kind, object: object.current, available: () => available && (kind !== "piece" || !ctx.engine!.hidden.has(id)), progress };
+    ctx.engine.targets.set(id, target);
+    return () => { if (ctx.engine?.targets.get(id) === target) ctx.engine.targets.delete(id); };
+  }, [ctx.engine, id, kind, available, progress]);
+  return <group ref={object} position={position}>{children}{ctx.engine && available && <mesh ref={marker}><sphereGeometry args={[.016, 8, 6]} /><meshBasicMaterial color="#fbbf24" transparent opacity={.85} /></mesh>}</group>;
+}
 
 /**
  * Peça: plano com a foto sem fundo; GLB quando existir. Estados: esquecida (poeira + teia, "puff" ao resgatar),
@@ -112,7 +130,7 @@ function PieceMesh({ p, w, h, ctx, lying = false, onPuff }: { p: RoomPiece3D; w:
   const highlight = ctx.highlight === p.id;
   useEffect(() => {
     if (!p.model3dUrl) return; let alive = true; const u = mediaUrl(p.model3dUrl); if (!u) return;
-    new GLTFLoader().load(u, (g) => { if (!alive) return; const box = new THREE.Box3().setFromObject(g.scene); const s = box.getSize(new THREE.Vector3()); const k = Math.min(w / s.x, h / s.y); g.scene.scale.setScalar(k); setGlb(g.scene); }, undefined, () => undefined);
+    new GLTFLoader().load(u, (g) => { if (!alive) return; const box = new THREE.Box3().setFromObject(g.scene); const s = box.getSize(new THREE.Vector3()); const k = Math.min(w / Math.max(.001, s.x), h / Math.max(.001, s.y), .04 / Math.max(.001, s.z)); const center = box.getCenter(new THREE.Vector3()); g.scene.scale.multiplyScalar(k); g.scene.position.multiplyScalar(k).addScaledVector(center, -k); setGlb(g.scene); }, undefined, () => undefined);
     return () => { alive = false; };
   }, [p.model3dUrl, w, h]);
   // croqui → foto: transição de ~600 ms quando a foto aprovada chega (DET-M03)
@@ -130,7 +148,7 @@ function PieceMesh({ p, w, h, ctx, lying = false, onPuff }: { p: RoomPiece3D; w:
   };
   const map = croqui ? sketch : tex ?? undefined;
   return (
-    <group rotation={lying ? [-0.3, 0, 0] : [0, 0, 0]}>
+    <group visible={!ctx.engine?.hidden.has(p.id)} rotation={lying ? [-Math.PI / 2, 0, 0] : [0, 0, 0]}>
       {glb && !croqui ? <primitive object={glb} onClick={click} /> : (
         <mesh ref={ref} onClick={click} castShadow {...pointer}>
           <planeGeometry args={[w, h]} />
@@ -165,11 +183,37 @@ function HangingPiece({ p, x, z, pw, ph, ctx }: { p: RoomPiece3D; x: number; z: 
   const g = useRef<THREE.Group>(null); const swing = useRef(-1);
   useFrame(() => { if (!g.current) return; const t = swing.current < 0 ? 99 : (performance.now() - swing.current) / 1000; g.current.rotation.z = t < 1.6 ? Math.sin(t * 14) * 0.12 * (1 - t / 1.6) : 0; });
   return (
-    <group ref={g} position={[x, 0, z]}>
+    <group ref={g} position={[x, 0, z]} visible={!ctx.engine?.hidden.has(p.id)}>
+      <InteractionAnchor ctx={ctx} id={p.id} kind="piece" available={!!p.moduleId && !!ctx.engine?.progress.get(p.moduleId) && ctx.engine.progress.get(p.moduleId)! > .6} />
       <Hanger gold={p.states?.includes("FAVORITA")} finish={ctx.hanger} />
       <group position={[0, -ph / 2 - 0.05, 0.01]}><PieceMesh p={p} w={pw} h={ph} ctx={ctx} onPuff={() => { if (!ctx.reduced) swing.current = performance.now(); }} /></group>
     </group>
   );
+}
+
+function LoosePiece({ engine, p, ctx }: { engine: RoomInteraction; p: RoomPiece3D; ctx: Ctx }) {
+  const object = useRef<THREE.Group>(null), velocity = useRef(0);
+  useEffect(() => {
+    if (!object.current) return;
+    const carry = { id: `carry:${p.id}`, kind: "piece" as const, object: object.current, available: () => false };
+    const ground = { id: p.id, kind: "piece" as const, object: object.current, available: () => engine.dropped.has(p.id) && object.current!.position.y < .08 };
+    engine.targets.set(carry.id, carry);
+    const original = engine.targets.get(p.id); engine.targets.set(p.id, ground);
+    return () => { engine.targets.delete(carry.id); if (engine.targets.get(p.id) === ground) { if (original) engine.targets.set(p.id, original); else engine.targets.delete(p.id); } };
+  }, [engine, p.id]);
+  useFrame((_, dt) => {
+    const dropped = engine.dropped.get(p.id); if (!object.current || !dropped) { velocity.current = 0; return; }
+    velocity.current += Math.min(dt, .05) * 9.8;
+    dropped.y = Math.max(.035, dropped.y - velocity.current * Math.min(dt, .05));
+    dropped.x = THREE.MathUtils.clamp(dropped.x, -2.8, 5.5); dropped.z = THREE.MathUtils.clamp(dropped.z, .8, 4.4);
+    object.current.position.copy(dropped); object.current.rotation.set(-Math.PI / 2, 0, 0);
+  });
+  return <group ref={object} name={`room-carried-${p.id}`} position={engine.dropped.get(p.id)?.toArray() ?? [0, 1, 1]}>
+    <Hanger finish={ctx.hanger} /><group position={[0, -.32, 0]}><PieceMesh p={p} w={.38} h={.52} ctx={{ ...ctx, engine: undefined }} /></group>
+  </group>;
+}
+function LoosePieces({ engine, pieces, ctx }: { engine: RoomInteraction; pieces: Record<string, RoomPiece3D>; ctx: Ctx }) {
+  return <>{[...new Set([...(engine.held ? [engine.held] : []), ...engine.dropped.keys()])].map(id => pieces[id] ? <LoosePiece key={id} engine={engine} p={pieces[id]} ctx={ctx} /> : null)}</>;
 }
 
 /** Frente com o logo de fábrica, ou o monograma a partir do Studio (DET-K03). */
@@ -194,18 +238,20 @@ function DoorBay({ m, x0, doorW, hingeLeft, open, lit, onToggle, finish, handle,
   const h = Y.doors1 - Y.drawers1;
   const art = useTex(m.finish?.artUrl); // arte da marca/celebridade aplicada na porta (RF39)
   const door = useRef<THREE.Group>(null); const front = useRef<THREE.Mesh>(null);
-  const target = open ? (hingeLeft ? -deg(105) : deg(105)) : 0;
+  useEffect(() => { ctx.engine?.progress.set(m.id, Number(open)); }, [open, m.id, ctx.engine]);
+  useEffect(() => { const mesh = front.current; if (!ctx.engine || !mesh) return; ctx.engine.solids.add(mesh); return () => { ctx.engine?.solids.delete(mesh); }; }, [ctx.engine]);
   useFrame(({ clock }, dt) => {
-    if (door.current) door.current.rotation.y = ctx.reduced ? target : THREE.MathUtils.damp(door.current.rotation.y, target, 7, dt);
+    const angle = (ctx.engine?.progress.get(m.id) ?? Number(open)) * (hingeLeft ? -deg(105) : deg(105));
+    if (door.current) door.current.rotation.y = ctx.reduced ? angle : THREE.MathUtils.damp(door.current.rotation.y, angle, 7, dt);
     if (front.current) (front.current.material as THREE.MeshStandardMaterial).emissiveIntensity = lit ? 0.35 + 0.15 * Math.sin(clock.elapsedTime * 3) : 0;
   });
-  const pieces = m.pieces ?? []; const n = Math.min(doorW > 0.7 ? 8 : 6, pieces.length);
+  const pieces = (m.pieces ?? []).filter(p => !ctx.engine?.hidden.has(p.id)); const n = Math.min(doorW > 0.7 ? 8 : 6, pieces.length);
   return (
     <group position={[x0, Y.drawers1, 0]}>
-      <mesh position={[doorW / 2, h - 0.12, -D / 2 + 0.28]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.012, 0.012, doorW - 0.04, 12]} /><meshStandardMaterial color={ctx.hanger?.color ? String(ctx.hanger.color) : "#b7b7b7"} metalness={ctx.hanger?.metalness ?? 0.8} roughness={ctx.hanger?.roughness ?? 0.3} /></mesh>
+      <mesh position={[doorW / 2, h - .45, 0]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[0.012, 0.012, D - .08, 12]} /><meshStandardMaterial color={ctx.hanger?.color ? String(ctx.hanger.color) : "#b7b7b7"} metalness={ctx.hanger?.metalness ?? 0.8} roughness={ctx.hanger?.roughness ?? 0.3} /></mesh>
       {pieces.slice(0, n).map((p, i) => (
-        <group key={p.id} position={[0, h - 0.16, 0]}>
-          <HangingPiece p={p} x={n === 1 ? doorW / 2 : 0.1 + (i * (doorW - 0.2)) / Math.max(1, n - 1)} z={-D / 2 + 0.28 + (i % 2) * 0.02} pw={0.42} ph={0.62} ctx={ctx} />
+        <group key={p.id} position={[0, h - .48, 0]}>
+          <HangingPiece p={{ ...p, moduleId: m.id }} x={doorW / 2} z={.16 - i * .32 / Math.max(1, n - 1)} pw={Math.min(.42, doorW - .08)} ph={0.62} ctx={ctx} />
         </group>
       ))}
       {(open || lit) && <pointLight position={[doorW / 2, h - 0.05, 0]} intensity={lit ? 1.4 : 0.8} distance={1.4} color={lit ? "#ffe6a0" : light} />}
@@ -213,7 +259,8 @@ function DoorBay({ m, x0, doorW, hingeLeft, open, lit, onToggle, finish, handle,
         <mesh ref={front} position={[hingeLeft ? doorW / 2 : -doorW / 2, h / 2, 0.01]} castShadow onClick={(e) => { e.stopPropagation(); onToggle(); }} {...pointer}>
           <boxGeometry args={[doorW - 0.006, h - 0.006, 0.02]} /><meshStandardMaterial key={art ? art.uuid : "plain"} {...finish} color={art ? "#ffffff" : finish.color} map={art ?? undefined} emissive="#ffd27a" emissiveIntensity={0} />
         </mesh>
-        <mesh position={[hingeLeft ? doorW - 0.03 : -doorW + 0.03, h / 2, 0.021]}><boxGeometry args={[0.012, 0.28, 0.004]} /><meshStandardMaterial color={handle} roughness={0.9} /></mesh>
+        <InteractionAnchor ctx={ctx} id={m.id} kind="handle" position={[hingeLeft ? doorW - .03 : -doorW + .03, h / 2, .021]} progress={delta => { ctx.engine?.progress.set(m.id, THREE.MathUtils.clamp((ctx.engine.progress.get(m.id) ?? Number(open)) + delta, 0, 1)); ctx.engine?.notify(); }}>
+        <mesh><boxGeometry args={[0.012, 0.28, 0.004]} /><meshStandardMaterial color={handle} roughness={0.9} /></mesh></InteractionAnchor>
         <DoorMark text={mark} w={0.16} h={0.08} plate={plate} position={[hingeLeft ? doorW / 2 : -doorW / 2, h * 0.72, 0.0215]} />
         {taped && <TailorTape width={0.2} position={[hingeLeft ? doorW - 0.03 : -doorW + 0.03, h / 2, 0.028]} rotation={[0, 0, 0.5]} />}
       </group>
@@ -226,8 +273,11 @@ function Drawer({ m, x, y, w, open, lit, onToggle, finish, handle, taped, onAdd,
   m: RoomModule3D; x: number; y: number; w: number; open: boolean; lit: boolean; onToggle: () => void; finish: THREE.MeshStandardMaterialParameters; handle: string; taped: boolean; onAdd: () => void; ctx: Ctx;
 }) {
   const g = useRef<THREE.Group>(null); const front = useRef<THREE.Mesh>(null);
+  useEffect(() => { ctx.engine?.progress.set(m.id, Number(open)); }, [open, m.id, ctx.engine]);
+  useEffect(() => { const mesh = front.current; if (!ctx.engine || !mesh) return; ctx.engine.solids.add(mesh); return () => { ctx.engine?.solids.delete(mesh); }; }, [ctx.engine]);
   useFrame(({ clock }, dt) => {
-    if (g.current) g.current.position.z = ctx.reduced ? (open ? 0.34 : 0) : THREE.MathUtils.damp(g.current.position.z, open ? 0.34 : 0, 8, dt);
+    const extension = (ctx.engine?.progress.get(m.id) ?? Number(open)) * .34;
+    if (g.current) g.current.position.z = ctx.reduced ? extension : THREE.MathUtils.damp(g.current.position.z, extension, 8, dt);
     if (front.current) (front.current.material as THREE.MeshStandardMaterial).emissiveIntensity = lit ? 0.35 + 0.15 * Math.sin(clock.elapsedTime * 3) : 0;
   });
   const pieces = m.pieces ?? [];
@@ -236,15 +286,16 @@ function Drawer({ m, x, y, w, open, lit, onToggle, finish, handle, taped, onAdd,
       <mesh ref={front} position={[0, 0, D / 2 - 0.01]} castShadow onClick={(e) => { e.stopPropagation(); onToggle(); }} {...pointer}>
         <boxGeometry args={[w - 0.008, DRAWER_H - 0.008, 0.02]} /><meshStandardMaterial {...finish} emissive="#ffd27a" emissiveIntensity={0} />
       </mesh>
-      <mesh position={[0, DRAWER_H / 2 - 0.035, D / 2 + 0.0012]}><boxGeometry args={[w * 0.5, 0.01, 0.004]} /><meshStandardMaterial color={handle} /></mesh>
+      <InteractionAnchor ctx={ctx} id={m.id} kind="handle" position={[0, DRAWER_H / 2 - .035, D / 2 + .0012]} progress={delta => { ctx.engine?.progress.set(m.id, THREE.MathUtils.clamp((ctx.engine.progress.get(m.id) ?? Number(open)) + delta, 0, 1)); ctx.engine?.notify(); }}><mesh><boxGeometry args={[w * 0.5, 0.01, 0.004]} /><meshStandardMaterial color={handle} /></mesh></InteractionAnchor>
       <Label3D text={m.category ?? m.label} w={w * 0.86} h={0.045} fg="#4a453c" position={[0, -0.02, D / 2 + 0.001]} />
       {pieces.length > 0 && <mesh position={[w / 2 - 0.03, DRAWER_H / 2 - 0.03, D / 2 + 0.002]}><circleGeometry args={[0.012, 16]} /><meshBasicMaterial color="#1F7A76" /></mesh>}
       {taped && <TailorTape width={w * 0.9} position={[0, DRAWER_H / 2 - 0.035, D / 2 + 0.008]} />}
       <mesh position={[0, -DRAWER_H / 2 + 0.02, 0.05]}><boxGeometry args={[w - 0.03, 0.01, D - 0.14]} /><meshStandardMaterial color="#efeae1" /></mesh>
       {open && pieces.length === 0 && <group position={[0, -DRAWER_H / 2 + 0.03, D / 2 - 0.12]}><EmptyDrawerCharm width={w} onAdd={onAdd} /></group>}
-      {open && pieces.slice(0, 4).map((p, i) => (
-        <group key={p.id} position={[pieces.length === 1 ? 0 : (i - (Math.min(4, pieces.length) - 1) / 2) * w * 0.62, DRAWER_H / 2 + 0.1, 0.12 + (i % 2) * 0.02]}>
-          <PieceMesh p={p} w={w * 0.62} h={0.2} ctx={ctx} lying />
+      {(open || (ctx.engine?.progress.get(m.id) ?? 0) > .6) && pieces.slice(0, 4).map((p, i) => (
+        <group key={p.id} position={[(i % 2 ? 1 : -1) * w / 4, -DRAWER_H / 2 + .04, -.08 + Math.floor(i / 2) * .18]}>
+          <InteractionAnchor ctx={ctx} id={p.id} kind="piece" available={(ctx.engine?.progress.get(m.id) ?? Number(open)) > .6} />
+          <PieceMesh p={p} w={(w - .06) / 2} h={.15} ctx={ctx} lying />
         </group>))}
       {lit && <pointLight position={[0, 0, D / 2 + 0.2]} intensity={0.6} distance={0.6} color="#ffe6a0" />}
     </group>
@@ -303,8 +354,8 @@ function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module }: 
     m.scale.y = Math.max(0.01, t); m.position.y = 0.1 + (1.7 * t) / 2; (m.material as THREE.MeshBasicMaterial).opacity = 0.55 * (1 - t * 0.6);
   });
   const mold = module?.mold ?? "ESP-RET"; const f = module?.finish ?? {};
-  const frameGeo = useMemo(() => new THREE.ExtrudeGeometry(mirrorShape(mold, 0.62, 1.8), { depth: 0.04, bevelEnabled: false, curveSegments: 48 }), [mold]);
-  const glassGeo = useMemo(() => new THREE.ShapeGeometry(mirrorShape(mold, 0.54, 1.7), 48), [mold]);
+  const frameGeo = useMemo(() => new THREE.ExtrudeGeometry(mirrorShape(mold, .9, 1.8), { depth: 0.04, bevelEnabled: false, curveSegments: 48 }), [mold]);
+  const glassGeo = useMemo(() => new THREE.ShapeGeometry(mirrorShape(mold, .82, 1.7), 48), [mold]);
   const hanging = overlay?.pieces ?? [];
   const vanity = mold === "ESP-CAM";
   return (
@@ -316,16 +367,8 @@ function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module }: 
       {reflection && <mesh position={[0, 1.2, 0.024]}><planeGeometry args={[0.5, 1.0]} /><meshBasicMaterial map={reflection} color="#ececec" /></mesh>}
       {!reflection && tex && hanging.length === 0 && <mesh position={[0, 1.08, 0.024]}><planeGeometry args={[0.4, 0.8]} /><meshStandardMaterial map={tex} transparent alphaTest={0.05} /></mesh>}
       {!reflection && hanging.slice(0, 4).map((p, i) => <MirrorPiece key={p.id} url={p.imageUrl} position={[i % 2 ? 0.12 : -0.12, 1.38 - Math.floor(i / 2) * 0.38, 0.026]} />)}
-      <Label3D text={look?.title ? t("room3d.roomScene.look_do_dia", { title: look.title }) : hanging.length ? t("room3d.roomScene.look_pendurado_no_espelho") : t("room3d.roomScene.monte_o_look_de_hoje")} w={0.46} h={0.055} px={512} fg="#f6f1e7" bg="rgba(20,20,24,.55)" position={[0, 0.3, 0.025]} />
-      {theme && <Label3D text={t("room3d.roomScene.batalha", { theme })} w={0.46} h={0.07} px={512} fg="rgba(198,39,94,.85)" font="italic 700 34px Georgia, serif" position={[0, mold === "ESP-ARC" ? 1.55 : 1.72, 0.026]} />}
-      {overlay?.postIt && <group position={[0.2, 0.74, 0.03]} rotation={[0, 0, -0.08]}><Label3D text={overlay.postIt} w={0.2} h={0.14} px={256} bg="#ffe98a" fg="#4a3b00" font="600 24px 'Comic Sans MS', Inter, sans-serif" /></group>}
       <mesh ref={riser} position={[0, 0.1, 0.03]} visible={false}><planeGeometry args={[0.54, 1.7]} /><meshBasicMaterial color="#fff4cf" transparent opacity={0.5} depthWrite={false} /></mesh>
       {overlay?.celebrate && <group position={[0, 0.4, 0.03]}><Sparkles reduced={reduced} /></group>}
-      {/* botões 3D do RF28 dentro do vidro */}
-      {onVistaMe && <GlassButton text={`✨ ${t("common.vista_me")}`} w={0.34} position={[0, 0.58, 0.03]} onClick={onVistaMe} primary />}
-      {hanging.length > 0 && overlay?.onUse && <GlassButton text={t("room3d.mirror.usar")} w={0.24} position={[-0.125, 0.48, 0.03]} onClick={overlay.onUse} />}
-      {hanging.length > 0 && overlay?.onAnother && <GlassButton text={t("room3d.mirror.outra")} w={0.2} position={[0.135, 0.48, 0.03]} onClick={overlay.onAnother} />}
-      {hanging.length > 2 && overlay?.onTakeOneOff && <GlassButton text={t("room3d.mirror.tira_uma")} w={0.3} position={[0, 0.39, 0.03]} onClick={overlay.onTakeOneOff} />}
     </group>
   );
 }
@@ -450,7 +493,7 @@ function layoutFor(level?: string) {
     window: [xr + (atLeast(level, "CLOSET") ? 1.5 : 1.05), 2.05, -D / 2 - 0.005] as [number, number, number],
     lamp: [xr + (atLeast(level, "CLOSET") ? 2.5 : 1.9), 0, 0.35] as [number, number, number],
     calendar: [xr + 0.35, 1.72, -D / 2 - 0.005] as [number, number, number],
-    mirror: [-W / 2 - 1.1, 0, 0.3] as [number, number, number],
+    mirror: [xr + .75, 0, 1.1] as [number, number, number],
     chair: [-W / 2 - 0.75, 0, 1.75] as [number, number, number],
     bust: [-W / 2 - 0.45, 0, 0.0] as [number, number, number],
     switch: [-W / 2 - 0.2, 1.15, -D / 2 - 0.005] as [number, number, number],
@@ -486,14 +529,17 @@ export function moduleAnchor(id: string, level?: string): [number, number, numbe
 }
 
 export default function RoomScene({ data, open, onToggle, highlight, focusModule, onPick, onReady, lit = new Set(), mirror, dark, onToggleTheme, onVistaMe, onCopilot,
-  copilotPoint, copilotTalking, onKeys, onUnbox, unboxing, onAddToDrawer }: RoomSceneProps) {
+  copilotPoint, copilotTalking, onKeys, onUnbox, unboxing, onAddToDrawer, gameplay }: RoomSceneProps) {
   const { t } = useI18n();
   const controls = useRef<unknown>(null);
+  const [, refreshInteractions] = useState(0);
+  useEffect(() => { if (!gameplay) return; const refresh = () => refreshInteractions(n => n + 1); gameplay.engine.listeners.add(refresh); return () => { gameplay.engine.listeners.delete(refresh); }; }, [gameplay?.engine]);
   const reduced = !!data.ambient?.reduceMotion;
   const period = dark ? "night" : data.ambient?.period === "fixed" ? "afternoon" : data.ambient?.period ?? "afternoon";
   const night = period === "night";
   const level = data.level ?? "ESTREIA";
   const L = useMemo(() => layoutFor(level), [level]);
+  useEffect(() => { gameplay?.engine.mirror.set(...L.mirror); }, [gameplay?.engine, L]);
   const byId = useMemo(() => Object.fromEntries(data.modules.map((m) => [m.id, m])), [data.modules]);
   const doorFinish = byId["door:1"]?.finish ?? { color: "#F4F2EF", roughness: 0.8 };
   const signature = atLeast(level, "MAISON") && !!byId["signature"];
@@ -518,19 +564,19 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
   const tagged = useMemo(() => new Set(deco("etiqueta_2a_chance")?.taggedPieceIds ?? []), [decos]); // eslint-disable-line react-hooks/exhaustive-deps
   const tapedIds = useMemo(() => new Set(deco("fita_alfaiate")?.tapedPieceIds ?? []), [decos]); // eslint-disable-line react-hooks/exhaustive-deps
   const taped = (m?: RoomModule3D) => !!m && tapedIds.size > 0 && (m.pieces ?? []).some((p) => tapedIds.has(p.id));
-  const ctx: Ctx = { highlight, onPick, reduced, tagged, hanger: hangerFinish };
-  const boxes = byId["top"]?.lookBoxes ?? [];
+  const ctx: Ctx = { highlight, onPick, reduced, tagged, hanger: hangerFinish, engine: gameplay?.engine };
+  const boxes: NonNullable<RoomModule3D["lookBoxes"]> = [];
   const penthouse = atLeast(level, "PENTHOUSE") && !!byId["season"];
   const pointAt = copilotPoint ? moduleAnchor(copilotPoint, level) : null;
   const litAny = (ids: string[]) => ids.some((i) => lit.has(i));
   const closetW = W + L.ext;
   return (
-    <Canvas shadows dpr={[1, 2]} gl={{ preserveDrawingBuffer: true, antialias: true }} camera={{ fov: 38, position: [1.75 + L.ext / 2, 2.35, 4.8 + L.ext * 0.8], near: 0.05, far: 40 }}
+    <Canvas shadows dpr={gameplay ? [1, 1.5] : [1, 2]} gl={{ preserveDrawingBuffer: true, antialias: true }} camera={{ fov: 38, position: [1.75 + L.ext / 2, 2.35, 4.8 + L.ext * 0.8], near: 0.05, far: 40 }}
       onCreated={({ gl }) => { gl.toneMapping = THREE.ACESFilmicToneMapping; onReady?.(gl.domElement); }} aria-label={t("room3d.roomScene.meu_quarto_em_3d")}>
       <color attach="background" args={[night ? "#1d1f2a" : "#efe9df"]} />
       <fog attach="fog" args={[night ? "#1d1f2a" : "#efe9df", 8, 16]} />
       <hemisphereLight args={[night ? "#9aa0c8" : period === "morning" ? "#eef4ff" : "#fff6e8", night ? "#2a2433" : "#d9cbb5", night ? 0.55 : 0.9]} />
-      <directionalLight position={[3, 5, 4]} intensity={night ? 0.35 : period === "golden" ? 1.3 : 1.6} color={period === "golden" ? "#ffd2a0" : period === "morning" ? "#f1f6ff" : "#ffffff"} castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-5} shadow-camera-right={6} shadow-camera-top={4} shadow-camera-bottom={-2} />
+      <directionalLight position={[3, 5, 4]} intensity={night ? 0.35 : period === "golden" ? 1.3 : 1.6} color={period === "golden" ? "#ffd2a0" : period === "morning" ? "#f1f6ff" : "#ffffff"} castShadow shadow-mapSize={gameplay ? [1024, 1024] : [2048, 2048]} shadow-camera-left={-5} shadow-camera-right={6} shadow-camera-top={4} shadow-camera-bottom={-2} />
       {/* quarto: piso, parede do fundo e lateral, tapete */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow><planeGeometry args={[16, 12]} /><meshStandardMaterial color={night ? "#5a4636" : "#b8906a"} roughness={0.75} /></mesh>
       <mesh position={[0, 2, -D / 2 - 0.02]} receiveShadow><planeGeometry args={[16, 4]} /><meshStandardMaterial color={night ? "#343747" : "#e8e1d4"} roughness={1} /></mesh>
@@ -606,10 +652,12 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       {(data.unboxing?.length ?? 0) > 0 && <FaiBox position={L.box} count={data.unboxing!.length} opening={!!unboxing} onOpen={() => onUnbox?.()} />}
 
       <ContactShadows position={[L.ext / 2, 0.005, 0.4]} opacity={0.35} scale={10} blur={2.4} far={3} />
-      <OrbitControls ref={controls as never} makeDefault enablePan={false} target={[L.ext / 2, 1.2, 0]}
+      {gameplay && <RoomAvatarController gameplay={gameplay} closetRight={W / 2 + L.ext} />}
+      {gameplay && <LoosePieces engine={gameplay.engine} pieces={data.pieces} ctx={ctx} />}
+      {!gameplay && <OrbitControls ref={controls as never} makeDefault enablePan={false} target={[L.ext / 2, 1.2, 0]}
         minAzimuthAngle={deg(az[0])} maxAzimuthAngle={deg(az[1])} minPolarAngle={deg(po[0])} maxPolarAngle={deg(po[1])}
-        minDistance={homeDist / zoom[1]} maxDistance={homeDist / zoom[0]} enableDamping dampingFactor={0.08} />
-      <CameraRig focus={focus} home={[L.ext / 2, 1.2, 0]} homeDist={homeDist} controls={controls} />
+        minDistance={homeDist / zoom[1]} maxDistance={homeDist / zoom[0]} enableDamping dampingFactor={0.08} />}
+      {!gameplay && <CameraRig focus={focus} home={[L.ext / 2, 1.2, 0]} homeDist={homeDist} controls={controls} />}
       <ResponsiveFov />
     </Canvas>
   );

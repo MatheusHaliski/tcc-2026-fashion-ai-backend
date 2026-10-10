@@ -24,14 +24,22 @@ const hex = (c: string): [number, number, number] => [1, 3, 5].map((i) => parseI
  * mais próximo, getImageData/putImageData leem e gravam o buffer, fillRect pinta com fillStyle.
  */
 class FakeCanvas {
-  width = 0; height = 0; private buf: Uint8ClampedArray | null = null; fillStyle = "#000000";
+  width = 0; height = 0; private buf: Uint8ClampedArray | null = null; fillStyle: string | { stops: string[] } | { pattern: true } = "#000000";
+  get pixels() { return this.data(); }
   private data() { if (!this.buf || this.buf.length !== this.width * this.height * 4) this.buf = new Uint8ClampedArray(this.width * this.height * 4); return this.buf; }
   getContext() {
     const cv = this;
     return {
-      get fillStyle() { return cv.fillStyle; }, set fillStyle(v: string) { cv.fillStyle = v; },
+      get fillStyle() { return cv.fillStyle; }, set fillStyle(v: FakeCanvas["fillStyle"]) { cv.fillStyle = v; },
+      // degradê: pinta com a primeira parada (rgb(r,g,b) ou #hex); padrão repetido: não pinta (fica o que estava)
+      createLinearGradient() { const g = { stops: [] as string[], addColorStop(_o: number, c: string) { g.stops.push(c); } }; return g; },
+      createPattern() { return { pattern: true as const }; },
+      save() {}, restore() {}, translate() {}, scale() {},
       fillRect(x: number, y: number, w: number, h: number) {
-        const d = cv.data(); const c = hex(cv.fillStyle);
+        const fs = cv.fillStyle; if (typeof fs === "object" && "pattern" in fs) return;
+        const first = typeof fs === "string" ? fs : fs.stops[0] ?? "#000000";
+        const m = /^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/.exec(first);
+        const d = cv.data(); const c: [number, number, number] = m ? [Number(m[1]), Number(m[2]), Number(m[3])] : hex(first);
         for (let yy = y; yy < Math.min(cv.height, y + h); yy++) for (let xx = x; xx < Math.min(cv.width, x + w); xx++) d.set([c[0], c[1], c[2], 255], (yy * cv.width + xx) * 4);
       },
       drawImage(img: Img, ...a: number[]) {
@@ -101,11 +109,11 @@ describe("cores e textura vêm de dentro da peça", () => {
     const img = opaque() as unknown as HTMLImageElement; const info = photoInfo(img)!;
     expect(fabricColor(img, "#123456")).toBe("#f6f6f6");           // sem a caixa: a cor vinha do fundo (o bug)
     expect(fabricColor(img, "#123456", info)).toBe("#dc1e1e");     // com a caixa: a cor da camiseta
-    const tex = garmentTexture(img, "#dc1e1e", info); const cv = tex.image as unknown as FakeCanvas;
+    const tex = garmentTexture(img, "#dc1e1e", null, info); const cv = tex.image as unknown as FakeCanvas;
     expect(cv.pixel(5, 5)).toEqual([220, 30, 30, 255]);             // fundo de estúdio → cor do tecido
     expect(cv.pixel(50, 50)).toEqual([220, 30, 30, 255]);           // a peça continua
-    expect(cv.pixel(1, 1)).toEqual([220, 30, 30, 255]);             // canto 3×3 liso para costas e laterais
-    const ref = garmentTexture(cutout() as unknown as HTMLImageElement, "#dc1e1e", photoInfo(cutout() as unknown as HTMLImageElement));
+    expect(cv.pixel(cv.width / 2 + 5, 5)).toEqual([220, 30, 30, 255]); // painel do tecido (costas, laterais): a cor da peça, não a do fundo
+    const ref = garmentTexture(cutout() as unknown as HTMLImageElement, "#dc1e1e", null, photoInfo(cutout() as unknown as HTMLImageElement));
     expect((ref.image as unknown as FakeCanvas).pixel(5, 5)).toEqual([220, 30, 30, 255]);
     expect(BACKDROP_TOLERANCE).toBeGreaterThan(0);
   });

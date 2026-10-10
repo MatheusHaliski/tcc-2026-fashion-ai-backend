@@ -71,13 +71,13 @@ describe("HypeGroupBadge (P2-02, P2-03, P2-10)", () => {
 });
 
 describe("Busca: chips de criador e marca e filtro Em alta (P2-01, P2-02, P2-03)", () => {
-  it("Pessoas: o chip aparece sem reordenar os resultados", async () => {
+  it("Pessoas: o Hype completo do cabeçalho aparece sem reordenar os resultados", async () => {
     nav.search = new URLSearchParams("q=a&tab=PESSOAS");
     const results = [person("u3", "Caio"), person("u1", "Ana"), person("u2", "Bia")];
     const api = mockApi({ "GET /api/search": { results, nextCursor: null }, "GET /api/hype/groups": groups });
     const { container } = renderApp(<Suspense fallback={null}><SearchPage /></Suspense>);
-    await waitFor(() => expect(container.querySelectorAll(".hype-group-badge")).toHaveLength(2));
-    const names = [...container.querySelectorAll(".fai-list li p.type-body b")].map((b) => b.textContent);
+    await waitFor(() => expect(container.querySelectorAll(".institutional-profile-signals .hype-group-header")).toHaveLength(3));
+    const names = [...container.querySelectorAll(".institutional-profile-name-link h2")].map((heading) => heading.textContent);
     expect(names).toEqual(["Caio", "Ana", "Bia"]);   // a ordem é a da busca, nunca a do Hype
     expect(api.calls.filter((c) => c.path.startsWith("/api/hype/groups"))).toHaveLength(1);
   });

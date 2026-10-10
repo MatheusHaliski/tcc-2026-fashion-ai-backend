@@ -278,7 +278,7 @@ public class StudioPipeline {
         // padrão da peça: quadro quadrado (1:1), o mesmo do card — com 9:16/2:3 o card cortava calça e vestido no "cover"
         StudioFraming.Frame frame = StudioFraming.frame(lit.getWidth(), lit.getHeight(), bleed, flush, SIZE, false);
         StudioFraming.Frame thumbFrame = StudioFraming.frame(lit.getWidth(), lit.getHeight(), bleed, flush, THUMB, false);
-        // foto do feed: template da categoria por pontos de referência da peça (gola/peito, cós/joelhos…), sempre 4:5
+        // Foto do feed: recorte interno com tecido (4:5 superiores, 2:1 inferiores); objetos preservam a silhueta.
         // (só os lados que a própria foto cortou contam como região faltando; barra ou cós retos não são corte)
         FeedFraming.Feed feed = FeedFraming.frame(lit, hint.feedTemplate(), hint.truncated() == null ? Set.of() : hint.truncated(),
                 hint.category(), hint.subcategory());
@@ -322,7 +322,8 @@ public class StudioPipeline {
             stages.add(new Stage("COMPOSICAO", "local", ms(t5), BigDecimal.ZERO, true, false, frame.width() + "×" + frame.height() + " + miniatura " + THUMB + "×" + THUMB));
         }
         BufferedImage thumb = StudioFraming.compose(lit, bd, thumbFrame);
-        BufferedImage feedShot = StudioFraming.compose(lit, bd, feed.frame());
+        BufferedImage feedShot = feed.fabricCrop() == null ? StudioFraming.compose(lit, bd, feed.frame())
+                : GarmentCrop.render(lit, feed.fabricCrop(), feed.frame().width(), feed.frame().height());
         stages.add(new Stage("FEED", "local", 0, BigDecimal.ZERO, feed.missing().isEmpty(), false,
                 Msg.t("studio.feed_template", feed.template().name(), String.format(java.util.Locale.ROOT, "%.0f", feed.frame().fill() * 100))
                         + (feed.missing().isEmpty() ? "" : Msg.t("studio.feed_falta", String.join(", ", feed.missing())))));

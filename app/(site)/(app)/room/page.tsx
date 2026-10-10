@@ -12,6 +12,8 @@ import { useTheme } from "@/lib/theme/theme";
 import { FaiIcon } from "@/components/fai-icon";
 import dynamic from "next/dynamic";
 import { useDetailModal } from "@/components/detail-modal";
+import RoomControlsTutorial from "@/components/room3d/room-controls-tutorial";
+import { RoomInteraction, type RoomPlayState } from "@/lib/room3d/interaction";
 import type { MirrorOverlay, RoomData3D } from "@/components/room3d/room-scene";
 import { feel, fabricOf } from "@/lib/sensory";
 import { newCanvas, saveCanvas } from "@/lib/export/canvas";
@@ -64,6 +66,10 @@ function RoomInner() {
   const [photo, setPhoto] = useState<{ framing: Framing; filter: PhotoFilter; dof: boolean } | null>(null); const [shooting, setShooting] = useState(false);
   const [unboxing, setUnboxing] = useState(false); const [addTo, setAddTo] = useState<string | null>(null); const [addPiece, setAddPiece] = useState("");
   // reflexo do espelho 3D e prévia do Vista-me: o mesmo avatar (perfil, espelho, provador) vestindo o look do espelho
+  const engine = useMemo(() => new RoomInteraction(), []);
+  const [play, setPlay] = useState<RoomPlayState>(engine.state);
+  const [walking, setWalking] = useState(true), [wearBusy, setWearBusy] = useState(false);
+  useEffect(() => { const update = () => setPlay(engine.state); engine.listeners.add(update); return () => { engine.listeners.delete(update); }; }, [engine]);
   const me3d = useMirrorAvatar(); const [reflection, setReflection] = useState<string | null>(null);
   const slotsOf = (m?: MirrorState | null) => (m?.slots ?? {}) as unknown as Record<string, MirrorPiece | MirrorPiece[] | null>;
   const mirrorLook = useMemo(() => lookOf(slotsOf(mirror.data)), [mirror.data?.slots]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -195,7 +201,7 @@ function RoomInner() {
           </div>)}
         <div className="room3d">
           <div className={`room3d-stage${photo ? " is-photo" : ""}`} data-filter={photo?.filter ?? undefined}>
-            <RoomScene data={data as unknown as RoomData3D} open={openSet} highlight={highlight} focusModule={focusModule} onReady={setCanvas}
+            <RoomScene gameplay={walking && !photo && !me3d.loading ? { avatar: me3d.avatar, sex: me3d.sex, body: me3d.body, pieces: mirrorLook, engine } : undefined} data={data as unknown as RoomData3D} open={openSet} highlight={highlight} focusModule={focusModule} onReady={setCanvas}
               onToggle={(id) => { if (!openSet.has(id)) touch(id); setOpenSet((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); setFocusModule(id); }}
               onPick={openTag} lit={lit} dark={dark} onToggleTheme={toggleTheme}
               mirror={{ pieces: mirrorPieces(mirror.data).map((p) => ({ id: p.id, imageUrl: p.imageUrl ?? p.thumbnailUrl })), postIt: mirror.data?.postIt, closingKey, celebrate, reflectionUrl: reflection,
@@ -209,8 +215,28 @@ function RoomInner() {
             <p className="room3d-hint">{t("room.arraste_para_girar_enquadramento_3")}</p>
           </div>
           <nav className="room3d-positions" aria-label={t("room.posicoes_do_quarto")}>
+            <section className="mb-4 space-y-3 rounded-xl border p-3" aria-label={t("room.play.title")}>
+              <h2 className="font-semibold">{t("room.play.title")}</h2>
+              <RoomControlsTutorial enabled={walking} />
+              <Button onClick={() => setWalking(v => !v)}>{t(walking ? "room.play.orbit" : "room.play.start")}</Button>
+              {walking && <>
+                <p>{t("room.play.instructions")}</p>
+                <p className="font-semibold" role="status">{t(!play.ready ? "room.play.loading" : play.grip ? "room.play.handle" : play.held ? "room.play.carrying" : "room.play.ready")}</p>
+                {play.held && <p>{data.pieces[play.held]?.name}</p>}
+                {play.nearMirror && play.held && <div className="rounded-lg border-2 border-teal-700 p-3">
+                  <p className="font-semibold">{t("room.play.try_question")}</p>
+                  <Button disabled={wearBusy} onClick={async () => {
+                    const id = engine.held; if (!id || !engine.state.nearMirror) return;
+                    setWearBusy(true);
+                    try { await api.post("/api/me/mirror/pieces", { pieceId: id }); await mirror.reload(); engine.consume(id); }
+                    catch (error) { toast.error(error instanceof Error ? error.message : t("common.erro")); }
+                    finally { setWearBusy(false); }
+                  }}>{t("room.play.try")}</Button>
+                </div>}
+              </>}
+            </section>
             <p className="label mb-1">{t("room.posicoes")}</p>
-            <ul className="fai-list">{data.modules.filter((m) => ["DOOR", "DRAWER", "TOP", "BASE"].includes(m.slotType) && (m.slotType !== "DRAWER" || gridPieces(m).length > 0 || (m as { category?: string }).category)).map((m) => { const n = m.slotType === "TOP" ? ((m as { totalLooks?: number }).totalLooks ?? 0) : gridPieces(m).length; return (
+            <ul className="fai-list">{data.modules.filter((m) => ["DOOR", "DRAWER", "TOP", "BASE"].includes(m.slotType) && (m.slotType !== "DRAWER" || gridPieces(m).length > 0 || (m as { category?: string }).category)).map((m) => { const n = gridPieces(m).length; return (
               <li key={m.id}><button type="button" aria-label={(m as { accessibleLabel?: string }).accessibleLabel ?? `${m.label}, ${n}`} aria-pressed={focusModule === m.id}
                 onClick={() => { setFocusModule(m.id); if (m.slotType === "DOOR" || m.slotType === "DRAWER") setOpenSet(new Set([m.id])); }}>
                 <span>{ZONE_ICON[m.slotType] ?? "▢"} {m.slotType === "DRAWER" ? t("room.gaveta", { item: m.id.split(":")[1], label: m.label }) : m.label}</span><b className="tabular">{n}</b></button></li>); })}
