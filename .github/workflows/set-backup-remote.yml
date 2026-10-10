@@ -1,0 +1,28 @@
+name: Set Backup Remote URL
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  set-backup-remote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Ensure backup remote exists
+        run: |
+          if git remote get-url backup >/dev/null 2>&1; then
+            echo "backup remote already exists"
+          else
+            git remote add backup git@github.com:MatheusHaliski/tcc-2026-fashion-ai-backend-backup001.git
+          fi
+
+      - name: Set backup remote URL
+        run: git remote set-url backup git@github.com:MatheusHaliski/tcc-2026-fashion-ai-backend-backup001.git
+
+      - name: Show backup remote URL
+        run: git remote get-url backup
