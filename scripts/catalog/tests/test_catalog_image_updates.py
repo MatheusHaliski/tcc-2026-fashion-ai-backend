@@ -222,6 +222,39 @@ class ImageUpdatesTest(unittest.TestCase):
         self.assertEqual(conn.rows()[0],before)
         self.assertEqual(conn.rollbacks,1)
 
+    def test_forced_decision_persists_frame_without_source_authorization_and_records_it(self):
+        conn = self.database(image(source_domain="brand.example.com"))
+        conn.sql.execute("ALTER TABLE catalog_products ADD COLUMN brand_id TEXT")
+        conn.sql.execute("UPDATE catalog_products SET brand_id='brand-1'")
+        conn.sql.execute("CREATE TABLE catalog_sources (id TEXT, brand_id TEXT, domain TEXT, active INTEGER, allows_image_persistence INTEGER)")
+        conn.sql.commit()                      # fonte não cadastrada: SOURCE_HOST_NOT_REGISTERED / SOURCE_MISSING
+        records = conn.records()
+        records[0]["allows_image_persistence"] = False
+        assets_json = json.dumps({"card": "https://media.example.com/framed.jpg", "originalUrl": records[0]["image_url"],
+                                  "persistenceDecision": {"mode": "FORCED_CATEGORY_FRAME", "sourceReason": "SOURCE_MISSING"}})
+        response = analysis(pipeline_version="CATALOG_FRAME_34_50_V1")
+        response["framed_assets"] = {"stored_url": "https://media.example.com/framed.jpg", "assets_json": assets_json}
+        # padrão: continua recusado
+        with self.assertRaisesRegex(ValueError, "not authorized"):
+            apply_product(conn, records, {"a": copy.deepcopy(response)}, Ranker(conn))
+        self.assertEqual(conn.rows()[0]["stored_url"], image()["stored_url"])
+        # decisão explícita: grava, mantém a original e registra a decisão da fonte no COMMIT
+        result = apply_product(conn, records, {"a": response}, Ranker(conn), persistence_override="FORCED_CATEGORY_FRAME")
+        row = conn.rows()[0]
+        self.assertEqual(row["stored_url"], "https://media.example.com/framed.jpg")
+        self.assertEqual(json.loads(row["assets_json"])["card"], "https://media.example.com/framed.jpg")
+        self.assertEqual(row["image_url"], records[0]["image_url"])
+        self.assertEqual(row["usage_status"], "PERSISTED")
+        self.assertEqual(result["changed_ids"], ["a"])
+        decision = result["changes"][0]["persistence_decision_at_commit"]
+        self.assertEqual(decision["override"], "FORCED_CATEGORY_FRAME")
+        self.assertEqual(decision["state"], "UNKNOWN")
+        # a decisão precisa estar gravada no próprio asset
+        unrecorded = analysis(pipeline_version="CATALOG_FRAME_34_50_V1")
+        unrecorded["framed_assets"] = {"stored_url": "https://media.example.com/other.jpg", "assets_json": "{}"}
+        with self.assertRaisesRegex(ValueError, "decision recorded"):
+            apply_product(conn, conn.records(), {"a": unrecorded}, Ranker(conn), persistence_override="FORCED_CATEGORY_FRAME")
+
     def test_level_a_metadata_keeps_original_and_provenance_clears_old_stored_crop(self):
         conn = self.database()
         before = conn.rows()[0]

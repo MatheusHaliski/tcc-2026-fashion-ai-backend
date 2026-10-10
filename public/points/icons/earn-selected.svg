@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" role="img" aria-label="Como ganhar: uma estrela com o sinal de mais">
+  <title>Como ganhar: uma estrela com o sinal de mais</title>
+  <circle cx="20" cy="20" r="18.5" fill="#191A19" stroke="none" stroke-width="1.5"/>
+  <g transform="translate(8 8)" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2l2.5 5.2 5.7.7-4.2 3.9 1.1 5.6L12 15.9l-5.1 2.7 1.1-5.6-4.2-3.9 5.7-.7z"/><path d="M12 8.8v4.6M9.7 11.1h4.6"/></g>
+</svg>

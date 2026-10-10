@@ -28,12 +28,14 @@
         <mapstruct.version>1.6.3</mapstruct.version>
         <resilience4j.version>2.4.0</resilience4j.version>
         <springdoc.version>3.1.1</springdoc.version>
-        <aws-sdk.version>2.29.6</aws-sdk.version>
+        <aws-sdk.version>2.55.9</aws-sdk.version>
         <anthropic-java.version>2.34.0</anthropic-java.version>
         <onnxruntime.version>1.20.0</onnxruntime.version>
-        <bouncycastle.version>1.79</bouncycastle.version>
+        <bouncycastle.version>1.86</bouncycastle.version>
         <lombok.version>1.18.46</lombok.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
+        <!-- `mvn -pl fai-bootstrap -am spring-boot:run` executa o goal em todo o reactor: só o fai-bootstrap tem main class -->
+        <spring-boot.run.skip>true</spring-boot.run.skip>
     </properties>
 
     <dependencyManagement>
@@ -90,7 +92,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.13.0</version>
+                    <version>3.16.0</version>
                     <configuration>
                         <release>${maven.compiler.release}</release>
                         <parameters>true</parameters>
@@ -116,12 +118,16 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.5.2</version>
+                    <version>3.6.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                     <version>${spring-boot.version}</version>
+                    <configuration>
+                        <!-- `spring-boot:run` com -am só deve executar no fai-bootstrap -->
+                        <skip>true</skip>
+                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

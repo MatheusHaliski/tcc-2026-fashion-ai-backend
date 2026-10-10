@@ -10,6 +10,8 @@ import { PieceCard } from "@/components/piece-card";
 import { SealMedallion } from "@/components/seal-medallion";
 import { FlairGameCard, type FlairCollectionCard } from "@/components/flair/flair-game-card";
 import { CbcSceneArt } from "@/components/flair/cbc-scene";
+import { FlairHubIcon } from "@/components/flair/hub-icons";
+import type { HubModeId } from "@/lib/flair/hub";
 
 /**
  * Exemplos ilustrados dos tutoriais "Como funciona". Usam os componentes reais (PieceCard, FlairGameCard, selo, ícone
@@ -26,6 +28,7 @@ const DEMO_BRAND = "Atelier Lumi";
 const POINTS_NAME = "FAI Points";
 /** dados fictícios do exemplo ilustrado (não vão à API nem viram conteúdo de ninguém) */
 const DEMO_PIECE_NAME = "Jaqueta jeans";
+const DEMO_PIECE_NAME_2 = "Camisa de linho";
 const DEMO_SEAL_NAME = "Selo de exemplo";
 
 export function demoPiece(over: Partial<PieceView> = {}): PieceView {
@@ -74,22 +77,141 @@ export function GuideDemo({ demo }: { demo: DemoId }) {
     case "brandOperator": return <BrandDemo operator />;
     case "points": return <PointsDemo />;
     case "shop": return <ShopDemo />;
+    case "pointsEarn": return <PointsEarnDemo />;
+    case "highlights": return <HighlightsDemo />;
+    case "flairMatch": return <FlairMatchDemo />;
+    case "flairCards": return <FlairCardsDemo />;
+    case "flairDecks": return <FlairDecksDemo />;
+    case "flairShops": return <FlairShopsDemo />;
+    case "flairWallet": return <FlairWalletDemo />;
+    case "flairQuests": return <FlairQuestsDemo />;
     default: return null;
   }
 }
 
 function GamesDemo() {
   const { t } = useI18n();
-  const cols = [{ k: "flair", icon: "ACT-46" }, { k: "moments", icon: "NAV-13" }, { k: "challenges", icon: "ACT-43" }];
+  const cols: { k: HubModeId; hint: string }[] = [{ k: "matches", hint: "flair" }, { k: "cbc", hint: "cbc" }, { k: "moments", hint: "moments" }, { k: "challenges", hint: "challenges" }];
   return (
-    <div className="gd-games">
-      {cols.map((c) => (
-        <div key={c.k} className="gd-tile">
-          <FaiIcon id={c.icon} size={32} variant="glyph" decorative />
-          <b>{t(`guide.demo.games.${c.k}`)}</b>
-          <span className="type-caption text-muted">{t(`guide.demo.games.${c.k}_hint`)}</span>
+    <div className="gd-games gd-games-4">
+      {cols.map((c, i) => (
+        <div key={c.k} className={i === 0 ? "gd-tile is-on" : "gd-tile"}>
+          <FlairHubIcon id={c.k} size={24} state={i === 0 ? "selected" : "normal"} />
+          <b>{t(`flair.hub.mode.${c.k}.title`)}</b>
+          <span className="type-caption text-muted">{t(`guide.demo.games.${c.hint}_hint`)}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Destaques: o Inventory Score com a faixa, três das sete dimensões (uma subindo) e uma conquista desbloqueada. */
+function HighlightsDemo() {
+  const { t } = useI18n();
+  const dims = [{ k: "use", v: 82 }, { k: "variety", v: 64, anim: true }, { k: "rescue", v: 45 }];
+  return (
+    <div className="gd-highlights">
+      <div className="gd-score surface">
+        <span className="type-label text-muted">{t("highlights.inventory_score")}</span>
+        <b className="gd-score-value tabular">712</b>
+        <span className="type-caption">{t("guide.demo.highlights.band")}</span>
+        <span className="gd-score-bands" aria-hidden><i /><i /><i className="is-here" /><i /></span>
+      </div>
+      <ul className="gd-dims surface">
+        {dims.map((d) => <li key={d.k}><span>{t(`guide.demo.highlights.${d.k}`)}</span><i><b className={d.anim ? "gd-anim-progress" : undefined} style={{ width: `${d.v}%` }} /></i><em className="tabular">{d.v}</em></li>)}
+        <li className="gd-dims-foot"><span className="chip is-active gd-anim-show">🏅 {t("guide.demo.highlights.achievement")}</span><span className="type-caption text-muted">{t("guide.demo.highlights.why")}</span></li>
+      </ul>
+    </div>
+  );
+}
+
+/** Como ganhar: as ações que rendem pontos, com o limite por dia e a ação que acabou de contar. */
+function PointsEarnDemo() {
+  const { t } = useI18n();
+  const rows = [{ k: "look", v: 10, cap: true }, { k: "moment", v: 20 }, { k: "cbc", v: 15 }];
+  return (
+    <div className="gd-points surface">
+      <ul className="gd-ledger">{rows.map((r, i) => <li key={r.k} className={i === 0 ? "gd-anim-show" : undefined}><span>{t(`guide.demo.earn.${r.k}`)}{r.cap ? <small className="text-muted"> · {t("guide.demo.earn.cap")}</small> : null}</span><b className="tabular"><FaiIcon id="ACT-40" size={20} decorative /> +{r.v}</b></li>)}</ul>
+      <span className="type-caption text-muted">{t("guide.demo.earn.note")}</span>
+    </div>
+  );
+}
+
+/** Partidas: duas cartas FLAIR frente a frente e o placar das rodadas (o exemplo nunca chama a API). */
+function FlairMatchDemo() {
+  const { t } = useI18n();
+  return (
+    <div className="gd-match">
+      <div className="gd-match-side"><FlairGameCard card={demoCard()} size="sm" flip={false} /><span className="type-caption">{t("flair.voce")}</span></div>
+      <div className="gd-match-score surface">
+        <b className="tabular">3 × 2</b>
+        <ul className="gd-rounds">{["EDGE", "RANGE", "CLOUT", "GLOW", "ART"].map((s, i) => <li key={s} className={i < 3 ? "is-win" : undefined}><span>{s}</span><i className={i === 2 ? "gd-anim-show" : undefined} /></li>)}</ul>
+        <span className="badge badge-thread gd-anim-show2">{t("common.vitoria")}</span>
+      </div>
+      <div className="gd-match-side"><FlairGameCard card={demoCard({ tier: "PRATA", ovr: 70, name: DEMO_PIECE_NAME_2, brandName: null })} size="sm" flip={false} /><span className="type-caption">{t("flair.modesShared.a_casa_comunidade")}</span></div>
+    </div>
+  );
+}
+
+/** Minhas cartas: a peça vira cópia FLAIR (converter) e entra na coleção por nível. */
+function FlairCardsDemo() {
+  const { t } = useI18n();
+  return (
+    <div className="gd-convert">
+      <div className="gd-card-frame"><PieceCard piece={demoPiece()} flip={false} /></div>
+      <div className="gd-convert-arrow" aria-hidden><span className="btn btn-sm">{t("flairCollection.convert")}</span><span className="gd-arrow">→</span></div>
+      <div className="gd-anim-show"><FlairGameCard card={demoCard()} size="sm" flip={false} /></div>
+    </div>
+  );
+}
+
+/** Decks: o esquema com peças vira um deck com poder e combos. */
+function FlairDecksDemo() {
+  const { t } = useI18n();
+  return (
+    <div className="gd-deck surface">
+      <div className="gd-thumbs">{["/assets_pecas/14_jacket_jaqueta.png", "/assets_pecas/02_shirt_camisa.png", "/assets_pecas/03_Calcados/03_tenis_treino.png"].map((src) => <img key={src} src={src} alt="" />)}</div>
+      <div className="gd-deck-power"><span className="type-caption text-muted">{t("guide.demo.decks.power")}</span><b className="tabular">312</b></div>
+      <ul className="gd-reasons"><li>{t("guide.demo.decks.combo")}</li><li>{t("guide.demo.decks.season")}</li></ul>
+    </div>
+  );
+}
+
+/** Combinações das lojas: requisitos conferidos e o cupom que sai quando tudo bate. */
+function FlairShopsDemo() {
+  const { t } = useI18n();
+  return (
+    <div className="gd-challenge surface">
+      <span className="badge badge-chalk">{DEMO_BRAND}</span>
+      <b>{t("guide.demo.shops.combo")}</b>
+      <ul className="gd-checklist"><li className="is-done">✓ {t("guide.demo.shops.req1")}</li><li className="gd-anim-check">✓ {t("guide.demo.shops.req2")}</li></ul>
+      <span className="btn btn-sm btn-primary gd-anim-show">{t("flair.trocar_pelo_cupom")}</span>
+    </div>
+  );
+}
+
+/** Carteira: cupom emitido com código, e as moedas só compram cosméticos. */
+function FlairWalletDemo() {
+  const { t } = useI18n();
+  return (
+    <div className="gd-points surface">
+      <div className="gd-balance"><b className="tabular">240</b><span>{t("guide.demo.wallet.coins")}</span></div>
+      <div className="gd-voucher"><span className="type-caption text-muted">{DEMO_BRAND}</span><b>{t("guide.demo.wallet.coupon")}</b><code className="flair-code">FAI-7K2Q</code></div>
+      <span className="type-caption text-muted">{t("guide.demo.wallet.note")}</span>
+    </div>
+  );
+}
+
+/** Missões: barra de progresso que completa e o botão de resgatar que aparece. */
+function FlairQuestsDemo() {
+  const { t } = useI18n();
+  return (
+    <div className="gd-challenge surface">
+      <span className="badge badge-thread">{t("flair.diaria")}</span>
+      <b>{t("guide.demo.quests.title")}</b>
+      <div className="gd-progress" role="presentation"><i className="gd-anim-progress" /></div>
+      <span className="type-caption tabular">3/3</span>
+      <span className="btn btn-sm btn-primary gd-anim-show">{t("common.resgatar")}</span>
     </div>
   );
 }

@@ -47,8 +47,8 @@ class CatalogImageWorkbookTest(unittest.TestCase):
             self.assertEqual(sheet["F2"].hyperlink.target, original)
             self.assertEqual(sheet["G2"].hyperlink.target, "imagens/shirt.png")
             self.assertEqual(sheet.freeze_panes, "C2")
-            self.assertEqual(sheet.auto_filter.ref, "A1:O2")
-            self.assertEqual(sheet.tables["InventarioImagens"].ref, "A1:O2")
+            self.assertEqual(sheet.auto_filter.ref, "A1:R2")
+            self.assertEqual(sheet.tables["InventarioImagens"].ref, "A1:R2")
             overview = {row[0].value: row[1].value for row in book["Resumo"]}
             self.assertEqual(overview["Estado anterior: Não verificado"], 1)
             self.assertEqual(overview["Após execução: Sim"], 1)

@@ -11,6 +11,7 @@ import { chronological } from "@/components/history/history-style";
 import { InsightStrip } from "@/components/insights/insight-strip";
 import { HypeItemRow } from "@/components/hype/hype-item-row";
 import type { HypeWardrobe } from "@/lib/hype/types";
+import { GuideAuto, HowItWorks } from "@/components/guide/guide";
 
 interface Highlights { eligible: boolean; pieces: number; progress?: { missing: number; target: number; message: string; steps: { label: string; done: boolean }[] }; manifesto: string; score?: number; band?: string; bands?: { min: number; max: number; label: string }[]; k?: number; kNote?: string; dimensions?: { code: string; name: string; value?: number; weight: number; rule?: string; pullingDown?: { name?: string; id?: string }[] }[]; dims?: Record<string, number>; delta?: { score?: number; previous?: number }; highlights?: { emoji?: string; title?: string; name?: string; value?: string; pieceId?: string; text?: string }[]; evolution?: { history?: { date: string; score: number }[]; title?: string }; records?: { noRepeatStreak?: number; currentStreak?: number; rescuedInAWeek?: number; uniqueLooks?: number; note?: string }; achievements?: { code: string; name?: string; emoji?: string; unlocked?: boolean; unlockedAt?: string; secret?: boolean }[]; suggestedChallenges?: { code: string; name: string }[]; rankingsOptIn?: boolean; computedAt?: string; }
 const bandColor = (s?: number) => (s ?? 0) >= 800 ? "var(--status-good)" : (s ?? 0) >= 500 ? "var(--thread)" : (s ?? 0) >= 300 ? "var(--status-warning)" : "var(--status-serious)";
@@ -48,7 +49,8 @@ function Highlights() {
   if (loading || !data) return <Skeleton className="h-80" />;
   return (
     <>
-      <PageHeader title={t("nav.highlights")} kicker="RF29" lead={data.manifesto} actions={data.eligible ? <><Button onClick={async () => { try { setRank(await api.get("/api/me/rankings")); } catch (e) { toast.fromError(e); } }}><FaiIcon id="ACT-39" size={24} decorative />{t("highlights.rankings")}</Button><Link href="/challenges" className="btn"><FaiIcon id="ACT-43" size={24} decorative />{t("nav.challenges")}</Link></> : undefined} />
+      <PageHeader title={t("nav.highlights")} kicker="RF29" lead={data.manifesto} actions={<><HowItWorks id="highlights.score" />{data.eligible && <><Button onClick={async () => { try { setRank(await api.get("/api/me/rankings")); } catch (e) { toast.fromError(e); } }}><FaiIcon id="ACT-39" size={24} decorative />{t("highlights.rankings")}</Button><Link href="/challenges" className="btn"><FaiIcon id="ACT-43" size={24} decorative />{t("nav.challenges")}</Link></>}</>} />
+      <GuideAuto id="highlights.score" />
       {/* insights do guarda-roupa (RF53): o Inventory Score vem com a leitura do contexto, não só o número */}
       {data.eligible && <InsightStrip context="CLOSET" className="mb-4" />}
       {!data.eligible && data.progress && <Card><p className="type-body mb-2">{data.progress.message}</p><ul className="fai-list mb-3">{data.progress.steps.map((s) => <li key={s.label} className="type-body">{s.done ? "✅" : "⬜"} {s.label}</li>)}</ul><Link href="/pieces/new" className="btn btn-primary">{t("closet.addPiece")}</Link></Card>}
@@ -68,7 +70,7 @@ function Highlights() {
             {data.evolution?.history?.length ? <Card><h2 className="type-h3 mb-2">{data.evolution.title ?? t("highlights.evolucao")}</h2><div className="flex h-24 items-end gap-1">{/* do mais antigo para o mais novo (a API manda do mais novo): os 24 dias mais recentes, em ordem */}{chronological(data.evolution.history).slice(-24).map((p) => <span key={p.date} title={`${fmtDate(p.date)}: ${p.score}`} className="flex-1 rounded-t bg-thread" style={{ height: `${p.score / 10}%` }} />)}</div></Card> : null}
             <Card><h2 className="type-h3 mb-2">{t("highlights.conquistas")}</h2><div className="flex flex-wrap gap-2">{(data.achievements ?? []).map((a) => <span key={a.code} className={`chip ${a.unlocked ? "active" : ""}`} title={a.unlockedAt ? fmtDate(a.unlockedAt) : t("highlights.bloqueada")}>{a.emoji ?? "🏅"} {a.name ?? a.code}{a.secret && " 🤫"}</span>)}</div></Card>
             {data.suggestedChallenges?.length ? <Card><h2 className="type-h3 mb-2">{t("highlights.desafios_sugeridos")}</h2><div className="flex flex-wrap gap-2">{data.suggestedChallenges.map((c) => <Link key={c.code} href={`/challenges?start=${c.code}`} className="chip">{c.name}</Link>)}</div></Card> : null}
-            <p className="type-caption text-faint">{rich("highlights.calculado_em_album", { date: fmtDate(data.computedAt), txt: t("nav.points") }, { 0: ($c) => <Link className="underline" href="/points">{$c}</Link>, 1: ($c) => <Link className="underline" href="/flair?tab=cartas">{$c}</Link> })}</p>
+            <p className="type-caption text-faint">{rich("highlights.calculado_em_album", { date: fmtDate(data.computedAt), txt: t("nav.points") }, { 0: ($c) => <Link className="underline" href="/points">{$c}</Link>, 1: ($c) => <Link className="underline" href="/flair/cartas">{$c}</Link> })}</p>
           </div>
         </div>
       )}

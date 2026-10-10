@@ -8,7 +8,8 @@ import threading
 from urllib.parse import quote, urlsplit
 
 
-def render_frame(path, crop, width=900):
+def render_frame_info(path, crop, width=900):
+    """JPEG 3:4 of the frame plus what happened to the pixels (source crop size, upscale factor)."""
     from PIL import Image, ImageOps
     rect = crop['crop']
     with Image.open(path) as original:
@@ -19,10 +20,19 @@ def render_frame(path, crop, width=900):
                     (rect['x']+rect['w'])*image.width, (rect['y']+rect['h'])*image.height))
         if box[2] <= box[0] or box[3] <= box[1]:
             raise ValueError('INVALID_FRAME')
+        source_w, source_h = box[2] - box[0], box[3] - box[1]
         framed = image.crop(box).resize((width, width*4//3), Image.Resampling.LANCZOS)
         output = io.BytesIO()
         framed.save(output, format='JPEG', quality=95)
-        return output.getvalue()
+        upscale = round(width / source_w, 3)
+        info = {'sourceWidth': image.width, 'sourceHeight': image.height, 'sourceCropWidth': source_w,
+                'sourceCropHeight': source_h, 'outputWidth': width, 'outputHeight': width*4//3,
+                'upscaleFactor': upscale, 'qualityNote': 'UPSCALED_REDUCED_QUALITY' if upscale > 1 else None}
+        return output.getvalue(), info
+
+
+def render_frame(path, crop, width=900):
+    return render_frame_info(path, crop, width)[0]
 
 
 class FrameStorage:
@@ -47,11 +57,13 @@ class FrameStorage:
                               connect_timeout=15, read_timeout=30, retries={'max_attempts':3}))
         self.client = client
 
-    def store(self, record, response, path):
+    def store(self, record, response, path, *, decision=None):
+        """Upload the framed JPEG and return the DB patch. ``decision`` (forced batch) is recorded in assets_json."""
         expected = response['columns'].get('source_sha256')
         if not expected or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
             raise ValueError('SOURCE_CHANGED_SINCE_ANALYSIS')
-        data = render_frame(path, json.loads(response['columns']['crop_json']))
+        crop = json.loads(response['columns']['crop_json'])
+        data, info = render_frame_info(path, crop)
         digest = hashlib.sha256(data).hexdigest()
         key = 'catalog/framed/' + uuid.uuid4().hex + '/' + digest + '.jpg'
         self.client.put_object(Bucket=self.bucket, Key=key, Body=data, ContentType='image/jpeg', IfNoneMatch='*')
@@ -71,9 +83,13 @@ class FrameStorage:
                 self._pending.pop(key, None)
             raise
         url = self.base + '/' + quote(key, safe='/')
-        return {'owned_key':key, 'stored_url':url, 'assets_json':json.dumps({'card':url, 'master':url,
-                'framingVersion':'CATALOG_FRAME_34_50_V1', 'sha256':digest, 'width':900, 'height':1200,
-                'previousStoredUrl':record.get('stored_url'), 'originalUrl':record['source_url']})}
+        assets = {'card':url, 'master':url, 'framingVersion':'CATALOG_FRAME_34_50_V1', 'sha256':digest,
+                  'width':900, 'height':1200, 'previousStoredUrl':record.get('stored_url'),
+                  'previousAssets':record.get('assets_json') if isinstance(record.get('assets_json'), str) else None,
+                  'originalUrl':record['source_url'], 'render':info, 'editorFrame':crop.get('editorFrame')}
+        if decision is not None:
+            assets['persistenceDecision'] = decision
+        return {'owned_key':key, 'stored_url':url, 'assets_json':json.dumps(assets, ensure_ascii=False), 'render_info':info}
 
     def discard_unreferenced(self, assets, is_referenced):
         # A fresh DB lookup is mandatory even when COMMIT raised: it may have succeeded.
