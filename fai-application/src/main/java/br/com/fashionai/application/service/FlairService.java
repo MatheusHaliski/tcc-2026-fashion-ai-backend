@@ -7,6 +7,7 @@ import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.flair.FlairEngine;
 import br.com.fashionai.application.flair.FlairEngine.Card;
 import br.com.fashionai.application.flair.FlairEngine.Deck;
+import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.taxonomy.Taxonomy;
@@ -20,6 +21,7 @@ import br.com.fashionai.domain.model.FlairProfile;
 import br.com.fashionai.domain.model.FlairRedemption;
 import br.com.fashionai.domain.model.FlairTeam;
 import br.com.fashionai.domain.model.FlairTeamMember;
+import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.SchemeItem;
 import br.com.fashionai.domain.model.User;
@@ -27,6 +29,7 @@ import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.Model3dStatus;
 import br.com.fashionai.domain.model.enums.AccountStatus;
+import br.com.fashionai.domain.model.enums.HypeEntityType;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.repository.BrandProfileRepository;
@@ -38,6 +41,7 @@ import br.com.fashionai.domain.repository.FlairProfileRepository;
 import br.com.fashionai.domain.repository.FlairRedemptionRepository;
 import br.com.fashionai.domain.repository.FlairTeamMemberRepository;
 import br.com.fashionai.domain.repository.FlairTeamRepository;
+import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
 import br.com.fashionai.domain.repository.ReactionRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
@@ -55,6 +59,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -65,6 +70,8 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * FLAIR (card Trello · jogo de cartas): as cartas são as peças e os decks são os esquemas do usuário. Jogos:
@@ -80,6 +87,11 @@ import java.util.UUID;
  * </ol>
  * Limites éticos: não há aposta de coins (o público começa aos 13 anos); a recompensa de duelo vem do sistema, com teto
  * diário; coins só compram itens cosméticos (skins de carta); nenhum aviso de "você vai perder".
+ *
+ * <p>HypeScore v2 (RF53 · Lote 8): a raridade das cartas e o atributo HYPE dos looks leem o estado v2 gravado pelo job
+ * ({@code hype_scores}, nunca recalculado aqui), e só o Hype PÚBLICO ({@code publicEligible}) entra no jogo: a mesma
+ * carta vale o mesmo para qualquer jogador e nenhum Hype pessoal de item privado aparece para o adversário. O preço da
+ * peça não dá poder (sem pay-to-win).</p>
  */
 @Service
 public class FlairService {
@@ -109,6 +121,8 @@ public class FlairService {
     private final Guard guard;
     private final org.springframework.context.ApplicationEventPublisher events;
     private final FaiPointsService faiPoints;
+    private final HypeScoreCurrentRepository hypeScores;
+    private final HypeScoreConfig hypeConfig;
 
     public FlairService(FlairProfileRepository profiles, FlairCoinEntryRepository coins, FlairCombinationRepository combinations,
                         FlairRedemptionRepository redemptions, FlairTeamRepository teams, FlairTeamMemberRepository members,
@@ -116,7 +130,9 @@ public class FlairService {
                         WardrobeItemRepository pieces, SchemeRepository schemes, SchemeItemRepository schemeItems,
                         BrandProfileRepository brands, ReactionRepository reactions, SchemeService schemeService,
                         InstitutionalService institutional, Guard guard, org.springframework.context.ApplicationEventPublisher events,
-                        FaiPointsService faiPoints) {
+                        FaiPointsService faiPoints, HypeScoreCurrentRepository hypeScores, HypeScoreConfig hypeConfig) {
+        this.hypeScores = hypeScores;
+        this.hypeConfig = hypeConfig;
         this.events = events;
         this.faiPoints = faiPoints;
         this.profiles = profiles;
@@ -148,7 +164,53 @@ public class FlairService {
 
     // ================================================================== cartas e decks
 
-    FlairEngine.PieceInput input(WardrobeItem w) {
+    // ================================================================== HypeScore v2 (RF53 · Lote 8)
+
+    /** Estados v2 de várias entidades numa consulta (o que o job gravou; o jogo nunca recalcula). */
+    Map<UUID, HypeScoreCurrent> hypeStates(HypeEntityType type, Collection<UUID> ids) {
+        List<UUID> list = ids == null ? List.of() : ids.stream().filter(Objects::nonNull).distinct().toList();
+        if (list.isEmpty()) {
+            return Map.of();
+        }
+        return hypeScores.findByEntityTypeAndEntityIdInAndAlgorithmVersion(type, list, hypeConfig.algorithmVersion()).stream()
+                .collect(Collectors.toMap(HypeScoreCurrent::getEntityId, Function.identity(), (a, b) -> a));
+    }
+
+    /** Hype v2 como o jogo enxerga a peça: só o público ({@link FlairEngine.Hype#of}); sem linha = {@code NONE}. */
+    static FlairEngine.Hype gameHype(HypeScoreCurrent c) {
+        if (c == null) {
+            return FlairEngine.Hype.NONE;
+        }
+        BigDecimal rarity = c.getDimensions() == null ? null : c.getDimensions().getRarity();
+        return FlairEngine.Hype.of(c.isPublicEligible(), c.getStatus() == null ? null : c.getStatus().name(),
+                c.getScore() == null ? null : c.getScore().doubleValue(), c.getLevel() == null ? null : c.getLevel().name(),
+                rarity == null ? null : rarity.doubleValue());
+    }
+
+    /** HypeScore v2 PÚBLICO de looks (atributo HYPE do FLAIR): ausente no mapa = sem Hype público (neutro no jogo). */
+    public Map<UUID, Double> publicLookHype(Collection<UUID> schemeIds) {
+        Map<UUID, Double> out = new LinkedHashMap<>();
+        hypeStates(HypeEntityType.SCHEME, schemeIds).forEach((id, c) -> {
+            Double score = gameHype(c).score();
+            if (score != null) {
+                out.put(id, score);
+            }
+        });
+        return out;
+    }
+
+    public Double publicLookHype(UUID schemeId) {
+        return schemeId == null ? null : publicLookHype(List.of(schemeId)).get(schemeId);
+    }
+
+    /** Cartas de várias peças com o Hype v2 em lote (uma consulta para todas). */
+    public List<Card> cardsOf(List<WardrobeItem> ws) {
+        Map<UUID, HypeScoreCurrent> states = hypeStates(HypeEntityType.PIECE, ws.stream().map(WardrobeItem::getId).toList());
+        String season = season();
+        return ws.stream().map(w -> FlairEngine.card(input(w, gameHype(states.get(w.getId()))), season)).toList();
+    }
+
+    FlairEngine.PieceInput input(WardrobeItem w, FlairEngine.Hype hype) {
         BrandProfile bp = w.getBrandProfile();
         Object overall = Json.map(w.getPhotoQualityScoresJson()).get("overall");
         String brandName = w.getBrandName() != null && !w.getBrandName().isBlank() ? w.getBrandName() : bp != null ? bp.getBrandName() : null;
@@ -157,24 +219,24 @@ public class FlairService {
                 Taxonomy.hex(w.getColor()), brandName, bp != null || w.getBrand() != null, bp == null ? null : bp.getOwner().getId().toString(),
                 Json.csv(w.getStyleTags()), Json.csv(w.getOccasionTags()), w.getMaterial(), overall instanceof Number n ? n.doubleValue() : null,
                 w.getStudioImageUrl() != null, w.getStudioDetailUrl() != null, w.getModel3dStatus() == Model3dStatus.COMPLETED,
-                w.getMannequinImageUrl() != null, w.isDefaultImage(), w.getPrice() == null ? 0 : w.getPrice().doubleValue(),
-                w.getHypeScore() == null ? 0 : w.getHypeScore().doubleValue(), Json.strings(w.getSealIdsJson()).size());
+                w.getMannequinImageUrl() != null, w.isDefaultImage(), hype, Json.strings(w.getSealIdsJson()).size());
     }
 
+    /** Uma carta (o Hype v2 da peça numa consulta); para várias, {@link #cardsOf}. */
     Card card(WardrobeItem w) {
-        return FlairEngine.card(input(w), season());
+        return cardsOf(List.of(w)).get(0);
     }
 
     Deck deck(Scheme s) {
-        List<Card> cards = schemeItems.findBySchemeIdOrderBySortOrder(s.getId()).stream().map(SchemeItem::getWardrobeItem)
-                .filter(Objects::nonNull).map(this::card).toList();
+        List<Card> cards = cardsOf(schemeItems.findBySchemeIdOrderBySortOrder(s.getId()).stream().map(SchemeItem::getWardrobeItem)
+                .filter(Objects::nonNull).toList());
         return FlairEngine.deck(s.getId().toString(), s.getTitle(), cards, s.getSeason() == null ? null : s.getSeason().name(), season());
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> cards(CurrentUser user) {
-        List<Card> cs = pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream()
-                .filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).map(this::card).toList();
+        List<Card> cs = cardsOf(pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream()
+                .filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList());
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("season", season());
         out.put("cards", cs);
@@ -367,14 +429,14 @@ public class FlairService {
     Deck houseDeck() {
         List<WardrobeItem> pub = pieces.findAllPublic(PageRequest.of(0, 400));
         Random r = new Random(today().toEpochDay());
-        List<Card> cs = new ArrayList<>();
+        List<WardrobeItem> picked = new ArrayList<>();
         for (String cat : List.of("upper_piece", "lower_piece", "shoes_piece", "accessory_piece")) {
             List<WardrobeItem> c = pub.stream().filter(w -> cat.equals(w.getCategory())).toList();
             if (!c.isEmpty()) {
-                cs.add(card(c.get(r.nextInt(c.size()))));
+                picked.add(c.get(r.nextInt(c.size())));
             }
         }
-        return FlairEngine.deck(null, Msg.t("flair.deck_da_casa", today()), cs, season(), season());
+        return FlairEngine.deck(null, Msg.t("flair.deck_da_casa", today()), cardsOf(picked), season(), season());
     }
 
     /** Melhor deck público de outra pessoa (o que ela mostraria numa vitrine). */
@@ -893,8 +955,8 @@ public class FlairService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> combinationsFor(CurrentUser user) {
         List<Deck> ds = user == null ? List.of() : decks(user);
-        List<Card> wardrobe = user == null ? List.of() : pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream()
-                .filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).map(this::card).toList();
+        List<Card> wardrobe = user == null ? List.of() : cardsOf(pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream()
+                .filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList());
         List<Map<String, Object>> out = new ArrayList<>();
         for (FlairCombination c : combinations.findByActiveTrueOrderByCreatedAtDesc()) {
             if (!sellerActive(c.getBrand())) {
@@ -929,7 +991,7 @@ public class FlairService {
     public Map<String, Object> checkCombination(CurrentUser user, UUID id, UUID schemeId) {
         FlairCombination c = combinations.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("flair.combinacao")));
         Deck d = schemeId == null ? null : deck(schemeService.owned(user, schemeId));
-        List<Card> wardrobe = pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).map(this::card).toList();
+        List<Card> wardrobe = cardsOf(pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList());
         List<Map<String, Object>> checks = check(c, d, wardrobe, user);
         return Map.of("combination", combinationView(c, user, d), "deck", d == null ? Map.of() : d, "checks", checks,
                 "complete", !checks.isEmpty() && checks.stream().allMatch(x -> Boolean.TRUE.equals(x.get("ok"))));
@@ -948,7 +1010,7 @@ public class FlairService {
         }
         Scheme s = "COLECAO".equals(c.getGameType()) || schemeId == null ? null : ownDeckScheme(user, schemeId);
         Deck d = s == null ? null : deck(s);
-        List<Card> wardrobe = pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).map(this::card).toList();
+        List<Card> wardrobe = cardsOf(pieces.findByUserIdOrderByCreatedAtDesc(user.id()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED).toList());
         List<Map<String, Object>> checks = check(c, d, wardrobe, user);
         if (checks.isEmpty() || !checks.stream().allMatch(x -> Boolean.TRUE.equals(x.get("ok")))) {
             throw new ApiException(422, "COMBINACAO_INCOMPLETA", Msg.t("flair.o_deck_ainda_nao_completa"), Map.of("checks", checks));

@@ -10,6 +10,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { InfiniteSentinel } from "@/components/infinite-sentinel";
 import { PhotoEditor } from "@/components/photo-editor";
 import { useDetailModal } from "@/components/detail-modal";
+import { InsightStrip } from "@/components/insights/insight-strip";
 
 interface Subject { kind: "PIECE" | "SCHEME"; id: string; title: string; activeImage: boolean; occasion: string[]; style: string[]; color?: string | null; category?: string | null }
 interface Photo { id: string; origin: string; sourceEntityId?: string | null; url?: string | null; thumbnailUrl?: string | null; mimeType?: string | null; width?: number | null; height?: number | null; bytes?: number | null; keyMoment: boolean; editedFromPhotoId?: string | null; createdAt: string; month: string; subject?: Subject | null }
@@ -203,6 +204,8 @@ function Photos() {
           </div>
         )
       ))}
+      {/* insights dinâmicos do histórico (RF53) acima das leituras das fotos */}
+      {mode === "insights" && <InsightStrip context="HISTORY" className="mb-3" />}
       {mode === "insights" && (insights.loading ? <SkeletonGrid n={3} /> : insights.error ? <ErrorState error={insights.error} onRetry={insights.reload} /> : insights.data && (
         <div className="grid gap-3">
           <div className="surface p-3">

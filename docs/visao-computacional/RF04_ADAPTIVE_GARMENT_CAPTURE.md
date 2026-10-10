@@ -1,5 +1,9 @@
 # RF04 · Adaptive Garment Capture + Garment Computer Vision
 
+> **04/10/2026:** `POST /api/pieces/analysis` (uma foto) foi removida junto com o envio de foto do criador de peças
+> (RF47). A análise segue por `/api/pieces/analysis/batch` e `/api/pieces/analysis/multi`; as menções abaixo à rota
+> de uma foto descrevem o desenho original.
+
 Relatório técnico e plano de execução da refatoração do pipeline de imagens do cadastro de peças (RF04).
 Data: 03/10/2026 · Branch: `claude/adaptive-garment-capture`.
 

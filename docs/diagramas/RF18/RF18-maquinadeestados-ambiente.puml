@@ -1,0 +1,39 @@
+@startuml RF18_MaquinaDeEstados_Ambiente
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  StartColor #20A77A
+  EndColor #4B5563
+}
+title RF18 — resolveEnvironment(): estado calculado\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nlib/tryon/fitting-room.ts · vale a primeira regra verdadeira
+
+state "resolveEnvironment()" as C_resolveEnvironment {
+  state C_resolveEnvironment_avaliar <<choice>>
+  state "neutral" as C_resolveEnvironment_neutral
+  state "multibrand" as C_resolveEnvironment_multibrand
+  state "brand" as C_resolveEnvironment_brand
+}
+[*] --> C_resolveEnvironment_avaliar : a cada mudança das peças vestidas
+C_resolveEnvironment_avaliar --> C_resolveEnvironment_neutral : [1] mode === 'neutral' || !brands.length
+C_resolveEnvironment_avaliar --> C_resolveEnvironment_multibrand : [2] others.length
+C_resolveEnvironment_avaliar --> C_resolveEnvironment_brand : [3] senão
+note right of C_resolveEnvironment
+  mode: 'auto' | 'neutral' | { pinned: string }
+  chamado por: page.tsx
+  Não é gravado: recalculado a cada chamada.
+end note
+@enduml

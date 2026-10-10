@@ -1,60 +1,81 @@
 @startuml RF30_Componentes
-title RF30 — Ganhar e usar FAI Points, evoluir o nível do "Meu Quarto" e comprar na loja do quarto\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF30 — Ganhar e usar FAI Points, evoluir o nível do 'Meu Quarto' e comprar na loja do quarto\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "points — Saldo, níveis e extrato" as FE0
-  component "points — Loja do quarto (RoomStore)" as FE1
-  component "room — caixa de entrega" as FE2
+package "Frontend (Next.js)" {
+  component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE0
+  component "/points\n(site)/(app)/points/page.tsx" as FE1
+  component "/room\n(site)/(app)/room/page.tsx" as FE2
+  component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  [HighlightsController] as HighlightsController
+  component "HighlightsController\n/api/me/achievements\n/api/me/points\n/api/me/room-inventory/{…}/apply\n/api/points/shop\n(+2 rotas)" as HighlightsController
+  component "RoomController\n/api/me/room/light" as RoomController
 }
 package "fai-application (casos de uso)" {
-  [InventoryScoreService] as InventoryScoreService
-  [FaiPointsService] as FaiPointsService
-  [AchievementService] as AchievementService
-  [RoomService] as RoomService #FAFAFA
-  [WardrobeCreatorService] as WardrobeCreatorService #FAFAFA
+  component "FaiPointsService" as FaiPointsService
+  component "AchievementService" as AchievementService
+  component "RoomService" as RoomService
+  component "RoomLayoutAccess" as RoomLayoutAccess <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
+  component "WardrobeCreatorService" as WardrobeCreatorService <<apoio>>
+  component "SideEffectRunner" as SideEffectRunner <<apoio>>
 }
-package "fai-domain (repositórios JPA)" {
-  [ChallengeTemplateRepository\nFaiPointsLedgerEntryRepository\nFaiPointsRuleRepository\nInventoryScoreSnapshotRepository\nPieceUsageDiaryEntryRepository\nRankingOptInRepository\nRankingPositionRepository\nRoomCatalogItemRepository\nRoomInventoryItemRepository\nSchemeItemRepository\nSchemeRepository\nStyleDnaRepository\nUserAchievementRepository\nUserRepository\nWardrobeAvailabilityChangeRepository\nWardrobeItemRepository] as REPOS
+package "fai-domain (repositórios)" {
+  component "FaiPointsLedgerEntryRepository\nFaiPointsRuleRepository\nRoomCatalogItemRepository\nRoomInventoryItemRepository\nUserAchievementRepository\nSchemeRepository\nSchemeItemRepository\nRoomLayoutRepository\nRoomStorageEntryRepository\nWardrobeItemRepository\n(+5)" as REPO_MySQL
 }
-database "MySQL · fashionai_app\n• challenge_templates\n• fai_points_ledger\n• fai_points_rules\n• inventory_score_snapshots\n• piece_usage_diary\n• ranking_opt_ins\n• ranking_positions\n• room_catalog\n• room_inventory\n• scheme_items\n• schemes\n• style_dna\n• user_achievements\n• users\n• wardrobe_availability_log\n• wardrobe_items" as DB
-[Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
-[NotificationService\n(RNF10)] as P_notif
-[SideEffectRunner\n(efeitos colaterais isolados)] as P_side
-
-FE0 --> HighlightsController : HTTPS/JSON
-FE1 --> HighlightsController : HTTPS/JSON
-FE2 --> HighlightsController : HTTPS/JSON
-HighlightsController --> InventoryScoreService
-HighlightsController --> FaiPointsService
-HighlightsController --> AchievementService
-InventoryScoreService ..> RoomService
-InventoryScoreService ..> AchievementService
-InventoryScoreService --> REPOS
-FaiPointsService ..> WardrobeCreatorService
-FaiPointsService --> REPOS
-FaiPointsService --> P_notif
+database "MySQL\n• daily_looks\n• fai_points_ledger\n• fai_points_rules\n• piece_usage_diary\n• room_catalog\n• room_inventory\n• room_layouts\n• room_storage_map\n• scheme_items\n• schemes\n• style_dna\n• user_achievements\n(+3)" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+APIC --> HighlightsController : HTTPS/JSON
+APIC --> RoomController : HTTPS/JSON
+AchievementService --> EV
+AchievementService --> REPO_MySQL
 AchievementService ..> FaiPointsService
-AchievementService --> REPOS
-AchievementService --> P_notif
-AchievementService --> P_events
-AchievementService --> P_side
-REPOS --> DB : JPA/Flyway
+AchievementService ..> NotificationService
+AchievementService ..> SideEffectRunner
+FE0 --> APIC
+FE1 --> APIC
+FE2 --> APIC
+FaiPointsService --> REPO_MySQL
+FaiPointsService ..> NotificationService
+FaiPointsService ..> RoomLayoutAccess
+FaiPointsService ..> WardrobeCreatorService
+HighlightsController --> AchievementService
+HighlightsController --> FaiPointsService
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+RoomController --> RoomService
+RoomService --> AI
+RoomService --> EV
+RoomService --> REPO_MySQL
+RoomService ..> SideEffectRunner
 @enduml

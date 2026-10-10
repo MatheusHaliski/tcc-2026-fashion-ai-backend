@@ -12,6 +12,8 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -30,9 +32,21 @@ import java.time.Instant;
 @Entity
 @Table(name = "seal_bonds")
 public class SealBond extends VersionedAuditableEntity {
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "scheme_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "scheme_id")
     private Scheme scheme;
+
+    /** Selo solicitado diretamente para uma peça; vínculos antigos continuam ligados ao esquema. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "piece_id")
+    private WardrobeItem piece;
+
+    @PrePersist
+    @PreUpdate
+    void validateTarget() {
+        if ((scheme == null) == (piece == null) || piece != null && tier != SealTier.PECA)
+            throw new IllegalStateException("SealBond requires exactly one target; direct pieces require tier PECA");
+    }
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "target_owner_user_id", nullable = false)

@@ -1,29 +1,65 @@
 @startuml RF36_Sequencia
-title RF36 — "Foto com meu manequim": peça (RF4) ou look inteiro (RF5) no manequim com rosto 3D da foto de perfil\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Usuário (dono)" as U
-participant "Frontend\nMannequinPhotoDialog" as FE
-participant "ShowcaseController" as C
-participant "ShowcaseService" as S
-database "MySQL" as DB
-database "Storage de mídia" as MS
-U -> FE: Foto com meu manequim
-FE -> C: GET /api/schemes/{id}/look3d
-C -> S: look3d(viewer, schemeId)
-S -> DB: SELECT users (sexo, avatar), user_preferences\n(rosto), scheme_items, wardrobe_items (GLB/recorte)
-S --> FE: manequim + peças por slot
-FE -> FE: Three.js renderiza, usuário ajusta o rosto
-U -> FE: Gerar foto (usar como capa)
-FE -> C: POST /api/schemes/{id}/mannequin-photo?asCover=true
-C -> S: schemeMannequinPhoto(bytes, asCover)
-S -> MS: put(users/…/schemes/{id}.png)
-S -> DB: UPDATE schemes.mannequin_image_url (+ capa)
-FE -> C: PUT /api/me/preferences (mannequinFace)
+autonumber "<b>0."
+title RF36 — 'Foto com meu manequim': peça (RF4) ou look inteiro (RF5) no manequim com rosto 3D da foto de perfil\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela (Next.js)" as P
+control "ShowcaseController" as ShowcaseController
+participant "ShowcaseService" as ShowcaseService
+participant "Guard" as Guard
+participant "SchemeService" as SchemeService
+database "MySQL" as DB_MySQL
+participant "MediaService" as MediaService
+== RF5 · Foto com meu manequim — o look inteiro no manequim; asCover=tru… ==
+U -> P : RF5 · Foto com meu manequim — o look inteiro no m…
+P -> ShowcaseController : POST /api/schemes/{id}/mannequin-photo
+ShowcaseController -> ShowcaseService : schemeMannequinPhoto()
+activate ShowcaseService
+ShowcaseService -> Guard : requireCanCreate()
+ShowcaseService -> SchemeService : owned()
+SchemeService -> DB_MySQL : SELECT schemes
+SchemeService --> ShowcaseService
+ShowcaseService -> MediaService : put()
+ShowcaseService -> ShowcaseService : mannequinImageUrl = set
+ShowcaseService -> ShowcaseService : coverImageUrl = set
+deactivate ShowcaseService
+ShowcaseService --> ShowcaseController : resultado
+ShowcaseController --> P : 201 JSON
+P --> U : atualiza a tela
+== RF4/RF5 · Remover a foto com manequim ==
+U -> P : RF4/RF5 · Remover a foto com manequim
+P -> ShowcaseController : DELETE /api/{kind:pieces|schemes}/{id}/mannequin-photo
+ShowcaseController -> ShowcaseService : deleteMannequinPhoto()
+activate ShowcaseService
+ShowcaseService -> SchemeService : owned()
+ShowcaseService -> ShowcaseService : coverImageUrl = null
+ShowcaseService -> ShowcaseService : mannequinImageUrl = null
+ShowcaseService -> DB_MySQL : SELECT wardrobe_items
+ShowcaseService -> Guard : requireOwner()
+ShowcaseService -> ShowcaseService : mannequinImageUrl = null
+deactivate ShowcaseService
+ShowcaseService --> ShowcaseController : resultado
+ShowcaseController --> P : 200 JSON
+P --> U : atualiza a tela
 @enduml

@@ -1,0 +1,105 @@
+@startuml RF48_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF48 — FAI Points: resgate em dinheiro e doações\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "fai-domain (entidades JPA)" {
+  class DailyLook <<daily_looks>> {
+    +id: UUID
+    +user: User
+    +scheme: Scheme
+    +materializedFrom: DailyLook
+    +lookDate: LocalDate
+    +source: DailyLookSource
+    +feedback: DailyLookFeedback
+    +feedbackAt: Instant
+    +weekPlanDayId: UUID
+  }
+  class FaiPointsLedgerEntry <<fai_points_ledger>> {
+    +id: UUID
+    +userId: UUID
+    +delta: int
+    +actionCode: String
+    +refType: String
+    +refId: String
+    +idempotencyKey: String
+    +countsLifetime: boolean
+  }
+  class FaiPointsRule <<fai_points_rules>> {
+    +actionCode: String
+    +points: int
+    +dailyCap: Integer
+    +weeklyCap: Integer
+    +oncePerRef: boolean
+    +active: boolean
+    +description: String
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+}
+package "fai-domain (enums)" {
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum DailyLookSource {
+    MANUAL
+    AUTOPILOTO
+    COPILOT
+    VISTA_ME
+    SMART_MIRROR
+  }
+  enum ProfileType {
+    PESSOAL
+    MARCA
+    CELEBRIDADE
+    ADMIN
+  }
+}
+package "fai-application" {
+  class FaiPointsService <<service>> {
+    +account()
+  }
+}
+FaiPointsService ..> FaiPointsLedgerEntry : usa
+FaiPointsService ..> FaiPointsRule : usa
+DailyLook "*" --> "1" User : user
+DailyLook --> DailyLookSource
+FaiPointsLedgerEntry ..> User : userId
+User --> AccountStatus
+User --> ProfileType
+@enduml

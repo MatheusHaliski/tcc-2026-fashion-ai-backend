@@ -5,7 +5,11 @@
  */
 import { detectFace, segmentHair } from "./detect";
 import { N, faceMetrics, fitView, fuseShape, type Landmark, type Role, type ViewFit } from "./geometry";
-import { faceStats, fit2D, hairStats, occlusion, sampleSkin, type FaceStats, type HairStats, type Pt } from "./image-stats";
+import { faceStats, fit2D, hairStats, hex, occlusion, rgbOf, sampleSkin, type FaceStats, type HairStats, type Pt } from "./image-stats";
+import { applyGains, balanceRaster, estimateIlluminant, type Gains, type Illuminant } from "./skin-tone";
+import { detectGlasses, NO_GLASSES, removeGlasses, type GlassesDetection } from "./glasses";
+import { eyesProfile, type AvatarEyes } from "./iris";
+import { browsProfile, type AvatarBrows } from "./identity/brows";
 import { checkPhoto, checkSet, blocking, type Issue } from "./quality";
 import { bakeAtlas } from "./atlas";
 import { MODEL_VERSION, roundShape, type AvatarModel } from "./model";
@@ -33,6 +37,7 @@ export interface AnalyzedPhoto {
   blend: Record<string, number>; issues: Issue[]; hairMask: Float32Array | null;
   skin: [number, number, number] | null; occlusion: number | null; classMask: ClassMask | null;
   sex: SexGuess | null;                                   // sexo estimado pelo rosto (lib/avatar3d/sex-detect.ts)
+  glasses: GlassesDetection | null;                       // óculos vistos na foto (AVATAR-ID I4, glasses.ts)
 }
 
 /**
@@ -84,7 +89,7 @@ export async function analyzePhoto(src: Blob | HTMLCanvasElement, role: Role | "
   const { width, height } = canvas;
   const det = await detectFace(canvas);
   let fit: ViewFit | null = null, stats: FaceStats | null = null, px: Pt[] | null = null; let r: Role = role === "side" ? "left" : role;
-  let skin: [number, number, number] | null = null, occ: number | null = null;
+  let skin: [number, number, number] | null = null, occ: number | null = null; let glasses: GlassesDetection | null = null;
   if (det.lm && det.faces === 1) {
     px = det.lm.map((p) => [p.x * width, p.y * height] as Pt);
     fit = fitView(det.lm, width, height, "front");
@@ -92,12 +97,13 @@ export async function analyzePhoto(src: Blob | HTMLCanvasElement, role: Role | "
     fit.role = r;
     const g = canvas.getContext("2d", { willReadFrequently: true })!; const img = g.getImageData(0, 0, width, height);
     stats = faceStats(img, px); skin = sampleSkin(img, px).rgb; occ = occlusion(img, px, skin);
+    glasses = GLASSES ? detectGlasses(img, px, skin) : NO_GLASSES;
   }
   const inFrame = det.lm ? det.lm.slice(0, N).every((p) => p.x > 0.005 && p.x < 0.995 && p.y > 0.005 && p.y < 0.995) : undefined;
-  const issues = checkPhoto({ role: r, faces: det.faces, width, height, inFrame, pose: fit?.pose, stats: stats ?? undefined, blend: det.blend, rms: fit?.rms, occlusion: occ ?? undefined });
+  const issues = checkPhoto({ role: r, faces: det.faces, width, height, inFrame, pose: fit?.pose, stats: stats ?? undefined, blend: det.blend, rms: fit?.rms, occlusion: occ ?? undefined, glasses: glasses?.kind });
   const masks = r === "front" && det.faces === 1 && px ? await headMasks(canvas, px) : { hair: null, classes: null };
   const sex = r === "front" && det.faces === 1 && px ? await detectSex(canvas, px) : null;
-  return { role: r, canvas, width, height, faces: det.faces, lm: det.lm, px, fit, stats, blend: det.blend, issues, hairMask: masks.hair, skin, occlusion: occ, classMask: masks.classes, sex };
+  return { role: r, canvas, width, height, faces: det.faces, lm: det.lm, px, fit, stats, blend: det.blend, issues, hairMask: masks.hair, skin, occlusion: occ, classMask: masks.classes, sex, glasses };
 }
 
 /** Máscara de cabelo (0/1, do tamanho da foto) a partir da classe "cabelo" do segmentador de classes. */
@@ -120,29 +126,51 @@ export function buildAvatar(photos: AnalyzedPhoto[], opts: { sex?: Sex | null; p
   const ok = photos.filter((p) => p.fit && p.px && !blocking(p.issues));
   const front = ok.find((p) => p.role === "front");
   const sides = ok.filter((p) => p.role !== "front").slice(0, 2);
-  const g0 = front?.canvas.getContext("2d", { willReadFrequently: true });
+  // AVATAR-ID I3: cada foto com a cor da luz corrigida (esclera; senão gray-world fraco) antes de medir pele, cabelo e atlas
+  const fixed = new Map<AnalyzedPhoto, { canvas: HTMLCanvasElement; wb: Illuminant }>();
+  for (const v of [front, ...sides]) if (v) fixed.set(v, whiteBalanced(v));
+  const wb0 = front ? fixed.get(front)!.wb : null;
+  // AVATAR-ID I4: a íris é medida na foto corrigida; depois os óculos saem da cópia que vira textura (a original fica)
+  const glasses = front?.glasses ?? NO_GLASSES;
+  let eyes: AvatarEyes | null = null, brows: AvatarBrows | null = null;
+  if (front?.px) {
+    const fc = fixed.get(front)!.canvas; const id = fc.getContext("2d", { willReadFrequently: true })!.getImageData(0, 0, front.width, front.height);
+    eyes = eyesProfile(id, front.px, { glasses: glasses.kind, frame: glasses.frame, wb: wb0?.source });
+    // lente escura costuma cobrir a sobrancelha; armação de grau pode cruzar com ela
+    brows = glasses.kind === "SUNGLASSES" ? null : browsProfile(id, front.px, front.hairMask);
+    if (brows && glasses.kind === "PRESCRIPTION") brows = { ...brows, confidence: Math.round(brows.confidence * 0.6 * 100) / 100 };
+  }
+  if (glasses.kind !== "NONE") for (const v of [front, ...sides]) {
+    if (!v?.px || !v.skin) continue;
+    const c = fixed.get(v)!.canvas; const g = c.getContext("2d", { willReadFrequently: true })!; const id = g.getImageData(0, 0, v.width, v.height);
+    // a cor da armação foi medida na foto original; a cópia corrigida tem os ganhos da luz aplicados
+    const fr = glasses.frame ? hex(applyGains(rgbOf(glasses.frame), fixed.get(v)!.wb.gains)) : null;
+    if (removeGlasses(id, v.px, applyGains(v.skin, fixed.get(v)!.wb.gains), glasses.kind, fr) > 0) g.putImageData(id, 0, 0);
+  }
+  const g0 = front ? fixed.get(front)!.canvas.getContext("2d", { willReadFrequently: true }) : null;
   const toCanon = front?.fit && front.px ? fit2D(front.px.slice(0, N), Array.from({ length: N }, (_, i) => [front.fit!.shape[i * 3], front.fit!.shape[i * 3 + 1]] as Pt)) : null;
   const img0 = front && g0 ? g0.getImageData(0, 0, front.width, front.height) : null;
+  const skin0 = front?.skin && wb0 ? applyGains(front.skin, wb0.gains) : front?.skin ?? undefined;
   let hairMask = front?.hairMask ?? null;
-  let hair = front && img0 && hairMask && toCanon ? hairStats(img0, hairMask, front.px!, toCanon, front.fit!.shape[10 * 3 + 1], front.skin ?? undefined) : null;
+  let hair = front && img0 && hairMask && toCanon ? hairStats(img0, hairMask, front.px!, toCanon, front.fit!.shape[10 * 3 + 1], skin0) : null;
   // o segmentador fino não viu cabelo (escuro sobre fundo escuro, claro sobre claro): a classe "cabelo" do segmentador
   // de classes dá a segunda opinião, com a mesma medida (comprimento, silhueta) — antes isso virava "raspado" ou careca
   if (front && img0 && toCanon && front.classMask && (!hair || !hair.present)) {
     const alt = classHairMask(front.classMask, front.width, front.height);
-    const h2 = hairStats(img0, alt, front.px!, toCanon, front.fit!.shape[10 * 3 + 1], front.skin ?? undefined);
+    const h2 = hairStats(img0, alt, front.px!, toCanon, front.fit!.shape[10 * 3 + 1], skin0);
     if (h2.present) { hair = h2; hairMask = alt; }
   }
   // sem máscara nenhuma (segmentador indisponível): o perfil ainda decide pelas classes e pelo corpo base, nunca careca à toa
-  if (front && img0 && toCanon && !hair) { hairMask = new Float32Array(front.width * front.height); hair = hairStats(img0, hairMask, front.px!, toCanon, front.fit!.shape[10 * 3 + 1], front.skin ?? undefined); }
+  if (front && img0 && toCanon && !hair) { hairMask = new Float32Array(front.width * front.height); hair = hairStats(img0, hairMask, front.px!, toCanon, front.fit!.shape[10 * 3 + 1], skin0); }
   const sexGuess = front?.sex ?? null;
   const sex: Sex = opts.sex ?? bodySex(sexGuess, opts.profileSex);
-  const profile: HairProfile | null = hair && img0 && toCanon && front?.skin ? hairProfile(img0, hairMask!, front.classMask, front.px!, toCanon, front.fit!.shape[10 * 3 + 1], front.skin, hair, HAIR_FALLBACK[sex].length) : null;
+  const profile: HairProfile | null = hair && img0 && toCanon && skin0 ? hairProfile(img0, hairMask!, front!.classMask, front!.px!, toCanon, front!.fit!.shape[10 * 3 + 1], skin0, hair, HAIR_FALLBACK[sex].length) : null;
   const set = checkSet(photos.map((p) => ({ role: p.role, issues: p.issues })), hair);
   if (!front || !g0) return null;
   const views = [front, ...sides];
   const shape = fuseShape(views.map((v) => v.fit!));
   const skin = sampleSkin(g0.getImageData(0, 0, front.width, front.height), front.px!);
-  const baked = bakeAtlas(views.map((v) => ({ role: v.role, canvas: v.canvas, px: v.px!, sim: v.fit!.sim })), skin.hex);
+  const baked = bakeAtlas(views.map((v) => ({ role: v.role, canvas: fixed.get(v)?.canvas ?? v.canvas, px: v.px!, sim: v.fit!.sim })), skin.hex);
   // cabelo presente: o que o perfil decidiu (cabelo medido, raspado visto pela classe, ou suposto sem evidência de
   // careca). Antes valia só o segmentador fino — e cabelo que ele não via virava cabeça careca.
   const hairColor = profile ? profile.color ?? (profile.estimated && profile.tone ? renderColor(profile.tone) : null) : hair?.color ?? null;
@@ -156,9 +184,31 @@ export function buildAvatar(photos: AnalyzedPhoto[], opts: { sex?: Sex | null; p
       : { present: false, color: null, top: 0, side: 0, bottom: null, fringe: 0, cut: false },
     metrics: faceMetrics(shape),
     views: views.map((v) => ({ role: v.role, yaw: +v.fit!.pose.yaw.toFixed(1), pitch: +v.fit!.pose.pitch.toFixed(1), roll: +v.fit!.pose.roll.toFixed(1) })),
-    warnings: [...new Set([...set.issues.filter((i) => i.severity === "warn").map((i) => i.code), ...views.flatMap((v) => v.issues.filter((i) => i.severity === "warn").map((i) => i.code)), ...(profile?.estimated ? ["HAIR_ESTIMATED"] : [])])],
+    warnings: [...new Set([...set.issues.filter((i) => i.severity === "warn").map((i) => i.code), ...views.flatMap((v) => v.issues.filter((i) => i.severity === "warn").map((i) => i.code)), ...(profile?.estimated ? ["HAIR_ESTIMATED"] : []),
+      ...(wb0?.source === "GRAY_WORLD" ? ["WB_GRAY_WORLD"] : wb0?.source === "NONE" && SKIN_WB ? ["WB_NONE"] : []), ...(wb0?.limited != null ? ["WB_LIMITED"] : []),
+      ...(glasses.kind === "SUNGLASSES" ? ["GLASSES_SUNGLASSES"] : glasses.kind === "PRESCRIPTION" ? ["GLASSES_PRESCRIPTION"] : []),
+      ...(eyes && eyes.source === "IMAGE_ANALYSIS" && eyes.confidence < 0.5 ? ["IRIS_LOW_CONFIDENCE"] : [])])],
+    ...(eyes ? { eyes } : {}), ...(brows ? { brows } : {}),
   };
   return { model, atlas: baked.canvas, hair, hairProfile: profile, set, lightEvened: baked.light.applied, sexGuess };
+}
+
+/** Óculos na foto (AVATAR-ID I4); NEXT_PUBLIC_AVATAR_GLASSES=off não procura óculos (nem tira da textura). */
+const GLASSES = process.env.NEXT_PUBLIC_AVATAR_GLASSES !== "off";
+
+/** Balanço de branco da pele (AVATAR-ID I3); NEXT_PUBLIC_SKIN_WB=off volta à cor da foto sem correção. */
+const SKIN_WB = process.env.NEXT_PUBLIC_SKIN_WB !== "off";
+
+/** Cópia da foto com a cor da luz corrigida (AVATAR-ID I3). A original não muda. */
+function whiteBalanced(v: AnalyzedPhoto): { canvas: HTMLCanvasElement; wb: Illuminant } {
+  if (!SKIN_WB) return { canvas: v.canvas, wb: { gains: [1, 1, 1], source: "NONE", confidence: 0, samples: 0 } };
+  const c = document.createElement("canvas"); c.width = v.width; c.height = v.height;
+  const g = c.getContext("2d", { willReadFrequently: true })!; g.drawImage(v.canvas, 0, 0);
+  const id = g.getImageData(0, 0, v.width, v.height);
+  // a pele medida na foto liga as travas (esclera escura não vale; a correção não tira a pele da faixa humana)
+  const wb = v.px ? estimateIlluminant(id, v.px, 0.95, v.skin) : { gains: [1, 1, 1] as Gains, source: "NONE" as const, confidence: 0, samples: 0 };
+  if (wb.source !== "NONE") { balanceRaster(id, wb.gains); g.putImageData(id, 0, 0); }
+  return { canvas: c, wb };
 }
 
 export const atlasBlob = (c: HTMLCanvasElement) => new Promise<Blob>((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error("atlas"))), "image/jpeg", 0.9));

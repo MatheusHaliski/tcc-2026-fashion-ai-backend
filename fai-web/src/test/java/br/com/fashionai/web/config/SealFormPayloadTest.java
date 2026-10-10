@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * O criador de selos (app/(site)/(app)/brands/[slug]/page.tsx, função saveSeal) manda este JSON. O nível "PERFIL" que a
- * tela oferecia não existe no enum e o backend respondia 400 "JSON inválido".
+ * tela oferece deve ser preservado como política de vitrine, separado de LOOK.
  */
 class SealFormPayloadTest {
     private final ObjectMapper json = JsonMapper.builder()
@@ -41,9 +41,9 @@ class SealFormPayloadTest {
     }
 
     @Test
-    void nivelPerfilDeClienteAntigoNaoViraJsonInvalido() throws Exception {
+    void nivelPerfilEConservadoSemSerConvertidoEmLook() throws Exception {
         SealService.SealForm f = json.readValue(PAYLOAD.replace("\"tier\":\"LOOK\"", "\"tier\":\"PERFIL\""), SealService.SealForm.class);
-        assertEquals(SealTier.LOOK, f.tier());
+        assertEquals(SealTier.PERFIL, f.tier());
         assertEquals(SealTier.PECA, json.readValue(PAYLOAD.replace("\"tier\":\"LOOK\"", "\"tier\":\"PIECE\""), SealService.SealForm.class).tier());
     }
 }

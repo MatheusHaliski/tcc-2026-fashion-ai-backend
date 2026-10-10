@@ -6,7 +6,9 @@ import br.com.fashionai.domain.model.enums.Model3dStatus;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.PhotoProcessingStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -17,16 +19,20 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.BatchSize;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * ClothesPiece (taxonomia §02) — peça do guarda-roupa (RF4, RF6, RF7, RF9, RF18). Campos de formulário,
  * de sistema (pipeline Flat Lay, moderação, contadores sociais, hype score) e de lineage de remix.
- * Listas curtas (occasion/style ≤ 2, tags, selos ≤ 2) são armazenadas como JSON.
+ * Listas curtas (occasion/style ≤ 2, tags, selos ≤ 2) são armazenadas como CSV; estilo e ocasião também vão para
+ * {@link #attributes} junto das outras dimensões da taxonomia.
  */
 @Getter
 @Setter
@@ -55,6 +61,27 @@ public class WardrobeItem extends VersionedAuditableEntity {
 
     @Column(nullable = false, length = 120)
     private String subcategory;
+
+    /** Variação (corte/silhueta/construção) da subcategoria — docs/taxonomia; null = não informada. */
+    @Column(name = "variation_code", length = 60)
+    private String variationCode;
+
+    /** USER_CONFIRMED · AI_SUGGESTED · NEEDS_REVIEW · UNKNOWN */
+    @Column(name = "variation_status", length = 16)
+    private String variationStatus;
+
+    @Column(name = "variation_confidence", precision = 4, scale = 3)
+    private BigDecimal variationConfidence;
+
+    /** Quem escreveu a variação: USER · AI · CATALOG · RULE (V45). */
+    @Column(name = "variation_source", length = 12)
+    private String variationSource;
+
+    /** Atributos por dimensão (acabamento, comprimento, cintura, estilo, ocasião…), tabela wardrobe_item_attributes (V43). */
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "wardrobe_item_attributes", joinColumns = @JoinColumn(name = "item_id"))
+    @BatchSize(size = 100)
+    private Set<TaxonomyAttribute> attributes = new HashSet<>();
 
     /** MASCULINO · FEMININO · UNISSEX — obrigatório (RF4.CA07), filtra o provador (RF18.CA08). */
     @Column(length = 40)
@@ -124,6 +151,10 @@ public class WardrobeItem extends VersionedAuditableEntity {
     @Column(precision = 10, scale = 2)
     private BigDecimal price;
 
+    /** ISO 4217 (o preço da peça é em reais por padrão). */
+    @Column(name = "price_currency", nullable = false, length = 3)
+    private String priceCurrency = "BRL";
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Visibility visibility = Visibility.PRIVATE;
@@ -144,6 +175,10 @@ public class WardrobeItem extends VersionedAuditableEntity {
 
     @Column(name = "for_sale", nullable = false)
     private boolean forSale;
+
+    /** RF31/RF53 — "Para doar": estado público da peça, exclusivo com "à venda". */
+    @Column(name = "for_donation", nullable = false)
+    private boolean forDonation;
 
     @Column(name = "wear_count", nullable = false)
     private int wearCount;
@@ -201,15 +236,6 @@ public class WardrobeItem extends VersionedAuditableEntity {
     /** Arte de fundo da peça isolada (RF11 subetapa 4.2 / RF9.CA6). */
     @Column(name = "background_config_json", columnDefinition = "json")
     private String backgroundConfigJson;
-
-    @Column(name = "hype_score", precision = 6, scale = 2)
-    private BigDecimal hypeScore;
-
-    @Column(name = "hype_score_global", precision = 6, scale = 2)
-    private BigDecimal hypeScoreGlobal;
-
-    @Column(name = "hype_group_id", length = 36)
-    private UUID hypeGroupId;
 
     @Column(name = "remixed_from_piece_id", length = 36)
     private UUID remixedFromPieceId;

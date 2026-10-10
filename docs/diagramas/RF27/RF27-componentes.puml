@@ -1,47 +1,59 @@
 @startuml RF27_Componentes
-title RF27 — Visualizar e organizar o guarda-roupa num quarto 3D interativo ("Meu Quarto")\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF27 — Visualizar e organizar o guarda-roupa num quarto 3D interativo ('Meu Quarto')\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "room — Quarto 3D (RoomScene)" as FE0
-  component "room — 2.5D e Lista" as FE1
-  component "RoomProps (espelho, cesto, cadeira, arara)" as FE2
+package "Frontend (Next.js)" {
+  component "/room\n(site)/(app)/room/page.tsx" as FE0
+  component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  [RoomController] as RoomController
+  component "RoomController\n/api/me/room\n/api/me/room/drawers/{…}\n/api/me/room/island\n/api/me/room/keys\n(+11 rotas)" as RoomController
 }
 package "fai-application (casos de uso)" {
-  [RoomService] as RoomService
+  component "RoomService" as RoomService
+  component "SideEffectRunner" as SideEffectRunner <<apoio>>
 }
-package "fai-domain (repositórios JPA)" {
-  [DailyLookRepository\nFaiPointsLedgerEntryRepository\nPieceUsageDiaryEntryRepository\nRoomCatalogItemRepository\nRoomInventoryItemRepository\nRoomLayoutRepository\nRoomStorageEntryRepository\nSchemeItemRepository\nSchemeRepository\nStyleDnaRepository\nUserAchievementRepository\nUserPreferencesRepository\nUserRepository\nWardrobeItemRepository] as REPOS
+package "fai-domain (repositórios)" {
+  component "RoomLayoutRepository\nRoomStorageEntryRepository\nWardrobeItemRepository\nSchemeRepository\nSchemeItemRepository\nDailyLookRepository\nStyleDnaRepository\nPieceUsageDiaryEntryRepository\nUserAchievementRepository\nUserPreferencesRepository\n(+4)" as REPO_MySQL
 }
-database "MySQL · fashionai_app\n• daily_looks\n• fai_points_ledger\n• piece_usage_diary\n• room_catalog\n• room_inventory\n• room_layouts\n• room_storage_map\n• scheme_items\n• schemes\n• style_dna\n• user_achievements\n• user_preferences\n• users\n• wardrobe_items" as DB
-cloud "Motor de IA transversal (RF24)\nprovedores externos + fallback local" as P_ai
-[Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
-[SideEffectRunner\n(efeitos colaterais isolados)] as P_side
-
-FE0 --> RoomController : HTTPS/JSON
-FE1 --> RoomController : HTTPS/JSON
-FE2 --> RoomController : HTTPS/JSON
+database "MySQL\n• daily_looks\n• fai_points_ledger\n• piece_usage_diary\n• room_catalog\n• room_inventory\n• room_layouts\n• room_storage_map\n• scheme_items\n• schemes\n• style_dna\n• user_achievements\n• user_preferences\n(+2)" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+APIC --> RoomController : HTTPS/JSON
+FE0 --> APIC
+REPO_MySQL --> DB_MySQL : JPA/Flyway
 RoomController --> RoomService
-RoomService --> REPOS
-RoomService --> P_ai
-RoomService --> P_events
-RoomService --> P_side
-REPOS --> DB : JPA/Flyway
+RoomService --> AI
+RoomService --> EV
+RoomService --> REPO_MySQL
+RoomService ..> SideEffectRunner
 @enduml

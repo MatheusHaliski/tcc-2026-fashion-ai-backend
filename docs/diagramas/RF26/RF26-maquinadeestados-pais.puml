@@ -1,28 +1,35 @@
 @startuml RF26_MaquinaDeEstados_Pais
 !pragma layout smetana
-title RF26 — Ponto do país no globo: dados suficientes × seleção (ExplorerService.globalPanel)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-[*] --> Ausente : nenhuma peça/esquema PUBLIC\ncom users.country = país
-state "Ausente (fora de countries[])" as Ausente
-state "sufficient = false\n(badge 'poucos dados')" as Insuficiente
-state "sufficient = true\n(ponto luminoso aceso)" as Aceso {
-  [*] --> Intensidade
-  state "intensity = avg_hype\n(faixas DESPRETENSIOSO…ICONE_DE_ESTILO)" as Intensidade
+title RF26 — ExplorerService.globalPanel(): sufficient por limiar\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nsufficient = total ≥ MIN_DATA (3) · recalculado a cada chamada
+
+state "ExplorerService.globalPanel() — sufficient" as T_sufficient {
+  state "sufficient = false\ntotal < 3" as T_sufficient_F
+  state "sufficient = true\ntotal ≥ 3 (MIN_DATA)" as T_sufficient_T
 }
-state "Selecionado\n(selected: hypeBySeason + topColors)" as Selecionado
-Ausente --> Insuficiente : 1º item público do país\n(total < MIN_DATA = 3)
-Insuficiente --> Aceso : total >= 3
-Aceso --> Insuficiente : filtro season/color/hypeBand\nreduz o recorte
-Aceso --> Selecionado : toque no globo →\nGET /api/explorer/global?country=XX
-Insuficiente --> Selecionado : toque na lista →\nGET /api/explorer/global?country=XX
-Selecionado --> Aceso : troca de país / limpa seleção
-Aceso --> Ausente : itens arquivados ou\nvisibilidade deixa de ser PUBLIC
-note right of Aceso : CA01 — um ponto por país com dados suficientes;\nregião = users.country do dono (CA04)
-note bottom of Selecionado : o estado é só de leitura; nada é gravado
+[*] --> T_sufficient_F : globalPanel()\nGET /api/explorer/global
+T_sufficient_F --> T_sufficient_T : total chega a 3
+T_sufficient_T --> T_sufficient_F : total cai abaixo de 3
+note right of T_sufficient
+  Não é gravado: globalPanel() recalcula a cada chamada
+  (por isso pode voltar a false).
+end note
 @enduml

@@ -26,4 +26,12 @@ public interface FollowRepository extends JpaRepository<Follow, UUID> {
     long countByFollowingIdAndStatus(UUID followingId, FollowStatus status);
 
     long countByFollowerIdAndStatus(UUID followerId, FollowStatus status);
+
+    @Query("select f.following.id, count(f) from Follow f where f.following.id in :ids and f.status = :status group by f.following.id")
+    List<Object[]> countFollowersByIds(@Param("ids") Collection<UUID> ids, @Param("status") FollowStatus status);
+
+    @Query("select f.follower.id, count(f) from Follow f where f.follower.id in :ids and f.status = :status group by f.follower.id")
+    List<Object[]> countFollowingByIds(@Param("ids") Collection<UUID> ids, @Param("status") FollowStatus status);
+
+    List<Follow> findByFollowerIdAndFollowingIdIn(UUID followerId, Collection<UUID> followingIds);
 }

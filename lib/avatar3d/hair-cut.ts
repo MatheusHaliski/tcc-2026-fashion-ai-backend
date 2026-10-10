@@ -12,7 +12,7 @@
  * Textura, cor e tom continuam os medidos (ou os escolhidos). Sem cabelo medido (careca, ou a foto não mostrou), o
  * corte escolhido aparece em castanho médio — a pessoa troca o tom ao lado.
  */
-import type { AvatarHair } from "./model";
+import type { AvatarHair, FringeStyle } from "./model";
 import type { HairLength } from "./hair";
 import { HAIR_LEVELS } from "./image-stats";
 
@@ -49,4 +49,25 @@ export function hairWithCut(hair: AvatarHair, cut: number | null | undefined): A
     });
   }
   return out;
+}
+
+/**
+ * Franja escolhida pela pessoa (ajuste "Franja"): 0 = a medida na foto; 1–5 = nenhuma, reta, lateral, cortina,
+ * desfiada. A franja nasce no alto da frente e cai sobre a testa (hair-strands.ts); a linha do cabelo da base fica no
+ * lugar (a franja cobre a testa com fios, não com uma superfície).
+ */
+export const HAIR_FRINGES: { id: number; style: FringeStyle; fringe: number }[] = [
+  { id: 1, style: "none", fringe: 0 },
+  { id: 2, style: "blunt", fringe: 0.9 },
+  { id: 3, style: "side", fringe: 0.7 },
+  { id: 4, style: "curtain", fringe: 0.6 },
+  { id: 5, style: "wispy", fringe: 0.6 },
+];
+export const HAIR_FRINGE_MAX = HAIR_FRINGES.length;
+
+/** Cabelo com a franja escolhida (1–5); 0/ausente, sem cabelo, raspado ou cobertura de cabeça: o cabelo como está. */
+export function hairWithFringe(hair: AvatarHair, choice: number | null | undefined): AvatarHair {
+  const f = HAIR_FRINGES.find((x) => x.id === Math.round(choice ?? 0));
+  if (!f || hair.cover || !hair.present || hair.length === "bald" || hair.length === "buzz") return hair;
+  return { ...hair, fringe: f.fringe, fringeStyle: f.style };
 }

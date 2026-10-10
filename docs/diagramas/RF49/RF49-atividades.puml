@@ -1,0 +1,93 @@
+@startuml RF49_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF49 — Segurança, integridade e operação\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
+start
+|Borda (middleware Next.js)|
+partition "middleware.ts · middleware()" {
+  :gateConfig()\n<size:10>lib/gate/token.ts</size>;
+  if (cfg.mode === 'cloudflare'?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  :verifyGate()\n<size:10>lib/gate/token.ts</size>;
+  if (path.startsWith['/bff/'?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  :tokenExp(), apiTokenMatches(), signApiToken()\n<size:10>lib/gate/token.ts</size>;
+}
+|API (Spring Boot)|
+partition "IdentityService.register()" {
+  if (tipo inválido?) then (sim)
+    :400 TIPO_INVALIDO\n«Tipo de perfil não permitido no\ncadastro.»;
+    stop
+  endif
+  :MediaStoragePort.get();
+  if (formulario inválido?) then (sim)
+    :400 FORMULARIO_INVALIDO\n«Corrija os campos destacados.»;
+    stop
+  endif
+  if (e-mail em uso?) then (sim)
+    :409 EMAIL_EM_USO\n«Este e-mail já está cadastrado.\nFaça login ou recupere a senha.»;
+    stop
+  endif
+  :lê users;
+  if (username em uso?) then (sim)
+    :400 USERNAME_EM_USO\n«Este @ já está em uso.»;
+    stop
+  endif
+  :cria User;
+  :PasswordHasherPort.hash();
+  :profileType → ?type;
+  :privateAccount → true;
+  :termsAcceptedAt → set;
+  :status → PENDING_EMAIL_VERIFICATION;
+  :grava users;
+  :MediaStoragePort.put();
+  :avatarUrl → set;
+  :avatarUrl → set;
+  :avatarUrl → set;
+  :cria UserPreferences;
+  :grava user_preferences;
+  :cria BrandProfile;
+  :lê brand_profiles;
+  :logoUrl → set;
+  :storeUrl → set;
+  :activityProofUrl → set;
+  :… e mais 37 passos no código;
+}
+|Backend (Java)|
+partition "AuthRateLimitFilter.doFilterInternal()" {
+  :ClientIpResolver.resolve();
+  :RateLimitPort.tryAcquire();
+}
+|Pessoa usuária|
+:Vê o resultado;
+stop
+@enduml

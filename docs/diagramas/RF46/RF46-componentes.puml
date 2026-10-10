@@ -1,74 +1,80 @@
 @startuml RF46_Componentes
-title RF46 — Gerar assets criativos do FashionAI por meio do FAI Creative Engine e serviços Adobe\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF46 — Gerar assets criativos do FashionAI por meio do FAI Creative Engine e serviços Adobe\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "components/background-studio.tsx" as FE0
-  component "components/scheme-builder.tsx" as FE1
-  component "components/seal-creator.tsx\n+ seal-medallion.tsx" as FE2
+  component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE0
+  component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE1
+  component "lib/api/client.ts" as APIC
 }
-package "fai-web · controllers" {
-  [BackgroundController\n/api/backgrounds/** · /api/assets/**\n/api/schemes/{id}/background · /api/pieces/{id}/background] as BC
-  [SealController\n/api/seals/design-catalog · /api/seals/uploads] as SC
-  [CreativeController\n<<planejado>>] as CC #FAFAFA
+package "fai-web (REST)" {
+  component "BackgroundController\n/api/backgrounds/catalog\n/api/backgrounds/uploads\n/api/pieces/{…}/background\n/api/schemes/{…}/background" as BackgroundController
+  component "SealController\n/api/seals\n/api/seals/design-catalog\n/api/seals/uploads\n/api/seals/{…}" as SealController
 }
-package "fai-application · services" {
-  [BackgroundStudioService\ngenerateArt · upload · savePiece · saveScheme] as BSS
-  [SealDesignService\ncatalog · upload] as SDS
-  [AssetCatalogService] as ACS
-  [AiEngine (RF24)\nAiCapability.BACKGROUND_GENERATOR] as AIE
-  package "FAI Creative Engine <<planejado>>" {
-    [CreativeRequest → TemplateResolver\n→ Prompt/Composition Resolver\n→ Quality Validation] as CE #FAFAFA
-  }
-  [ImageGenerationPort\n(provider abstrato)] as IGP
-  [MediaService] as MS
-  [MediaStoragePort] as MSP
+package "fai-application (casos de uso)" {
+  component "BackgroundStudioService" as BackgroundStudioService
+  component "SealDesignService" as SealDesignService
+  component "SealService" as SealService
+  component "AssetCatalogService" as AssetCatalogService <<apoio>>
+  component "MediaService" as MediaService <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
+  component "OwnMedia" as OwnMedia <<apoio>>
+  component "MediaStoragePort\n«LocalFileMediaStorage / S3MediaStorageAdapter»" as MediaStoragePort <<port>>
 }
-package "fai-infrastructure · adapters" {
-  [ReplicateImageGenerationAdapter] as REP
-  [FireflyAdapter / Photoshop API\n<<planejado>>] as FF #FAFAFA
-  [S3MediaStorageAdapter\nLocalFileMediaStorage] as S3
-  [AssetPresetRepository\nPipelineJobRepository\nSchemeRepository · WardrobeItemRepository\nPhotoRepository] as REPOS
+package "fai-domain (repositórios)" {
+  component "AssetPresetRepository\nSchemeRepository\nWardrobeItemRepository\nUserRepository\nCelebrityProfileRepository\nSealRepository\nSealBondRepository\nPromotionRepository\nPromotionRedemptionRepository\nSchemeItemRepository\n(+1)" as REPO_MySQL
 }
-database "MySQL\n• asset_presets\n• pipeline_jobs\n• schemes\n• photos\n• wardrobe_items\n• piece_images (canônicos RF45, só leitura)" as DB
-cloud "Replicate (flux-schnell / SDXL)" as EXT1
-cloud "Adobe Firefly · Photoshop API · Express\n<<planejado>>" as EXT2
-
-FE0 --> BC : chama (HTTPS/JSON)
-FE1 --> BC : chama
-FE2 --> SC : chama
-BC --> BSS : chama
-SC --> SDS : chama
-BSS --> ACS : lê catálogo de assets
-BSS --> AIE : chama
-AIE --> IGP : fallback entre provedores
-IGP <|.. REP
-IGP <|.. FF
-REP --> EXT1 : chama
-FF ..> EXT2 : chama
-BSS --> MS : grava PNG + registra (photos)
-MS --> MSP : put
-SDS --> MSP : grava arte do selo
-MSP <|.. S3
-BSS --> REPOS : lê/grava
-CC ..> CE : chama
-CE ..> IGP : provider criativo
-CE ..> REPOS : PipelineJob assíncrono
-CE ..> DB : lê asset canônico (RF45)
-REPOS --> DB : JPA/Flyway
-note bottom of CE : RF45 = verdade visual (pipeline de confiança)\nRF46 = expressão criativa (pipeline criativo)\no criativo lê o canônico, nunca o substitui (RN46.01)
+database "MySQL\n• asset_presets\n• brand_profiles\n• celebrity_profiles\n• promotion_redemptions\n• promotions\n• scheme_items\n• schemes\n• seal_bonds\n• seals\n• users\n• wardrobe_items" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+cloud "S3" as CL_S3
+APIC --> BackgroundController : HTTPS/JSON
+APIC --> SealController : HTTPS/JSON
+BackgroundController --> BackgroundStudioService
+BackgroundStudioService --> AI
+BackgroundStudioService --> REPO_MySQL
+BackgroundStudioService ..> AssetCatalogService
+BackgroundStudioService ..> MediaService
+FE0 --> APIC
+FE1 --> APIC
+MediaStoragePort --> CL_S3
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+SealController --> SealDesignService
+SealController --> SealService
+SealDesignService --> MediaStoragePort
+SealDesignService --> REPO_MySQL
+SealService --> AI
+SealService --> EV
+SealService --> REPO_MySQL
+SealService ..> NotificationService
+SealService ..> OwnMedia
 @enduml

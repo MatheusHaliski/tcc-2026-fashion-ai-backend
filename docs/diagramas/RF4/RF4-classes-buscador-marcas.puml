@@ -1,105 +1,93 @@
 @startuml RF4_Classes_Buscador_Marcas
 !pragma layout smetana
-title RF4 — Classes do buscador web de marcas e do filtro de logo (código real)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam classAttributeIconSize 0
-skinparam class {
-  BackgroundColor #F8F4FF
-  BorderColor #7C5FC0
-  ArrowColor #52606D
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
 }
-package "fai-web" {
-  class BrandLogoController <<RestController>> {
-    +searchBrands(user, q) : Map  «GET /api/brand-search»
-    +logo(name) : Map  «GET /api/brand-logos»
-    +batch(names) : Map  «GET /api/brand-logos/batch»
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF4 — Classes do buscador web de marcas e do filtro de logo (código real)\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "fai-domain (entidades JPA)" {
+  class BrandLogo <<brand_logos>> {
+    +id: UUID
+    +nameKey: String
+    +displayName: String
+    +logoUrl: String
+    +source: String
+    +status: String
+    +domain: String
+    +originUrl: String
+    +confidence: BigDecimal
+    +attempts: int
+    .. +2 campos ..
   }
-  class WardrobeController <<RestController>> {
-    +create(form) «POST /api/pieces»
-    +update(id, form) «PUT /api/pieces/{id}»
+  class WardrobeItem <<wardrobe_items>> {
+    +id: UUID
+    +user: User
+    +brandProfile: BrandProfile
+    +brand: Brand
+    +name: String
+    +category: String
+    +subcategory: String
+    +sex: String
+    +brandName: String
+    +brandLogoUrl: String
+    .. +70 campos ..
+  }
+}
+package "fai-domain (enums)" {
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
+  enum PhotoProcessingStatus {
+    NEW
+    MODERATING
+    PROCESSING
+    COMPLETED
+    NEEDS_REUPLOAD
+    FAILED
+  }
+  enum Model3dStatus {
+    QUEUED
+    PROCESSING
+    COMPLETED
+    FAILED
   }
 }
 package "fai-application" {
-  class BrandWebSearchService <<Service>> {
-    -queries : cache em memória (30 min)
-    -simpleIcons : índice em memória (12 h)
-    +search(userId, q, allowAi) : Map
-    ~wikidata(q) : List<Hit>
-    ~simpleIcons(q) : List<Hit>
-    ~aiSearch(userId, q) : List<Hit>
-    ~merge(hits) : List<Hit>
-    ~logoOf(hit) : Map
-  }
-  class LogoFilter <<pipeline>> {
-    +SQUARE = 320
-    +WIDE_H = 160
-    +fromVector(vector) : Result
-    +fromRaster(image) : Result
-    ~sharpness(ink, w, h, t) : Sharpness
-    ~otsu(values) : double
-  }
-  class SvgPathRenderer {
-    +parse(svg) : Vector
-    +render(vector, longSide, margin) : BufferedImage
-    ~path(d) : Path2D
-    ~arc(...)
-  }
-  class BrandLogoService <<Service>> {
-    +logo(name, force) : Map
-    +acceptWebLogo(name, url, source, domain, origin)
-  }
-  class WardrobeService <<Service>> {
-    +create(user, form) : PieceView
-    -resolveBrand(w, brandId, brandName)
-    -brandFromWebSearch(w, form, previousBrand)
-  }
-  class "PieceForm" as PieceForm <<record>> {
-    brandName : String
-    brandLogoUrl : String
-    brandSource : String
-    brandRef : String
-  }
-  interface WebFetchPort {
-    +get(url, maxBytes, acceptPrefix) : Optional<Fetched>
-  }
-  class MediaService {
-    +put(key, bytes, type)
-    +read(url) : Optional<byte[]>
-  }
-  class AiEngine {
-    +text(TextCall) : AiOutcome
+  class BrandLogoService <<service>> {
+    +cached()
+    +logo()
+    +batch()
   }
 }
-package "fai-domain" {
-  class WardrobeItem <<Entity>> {
-    brandName : String
-    brandLogoUrl : String  «V21»
-    brandSource : String  «V21»
-    brandRef : String  «V21»
-  }
-  class BrandLogo <<Entity>> {
-    nameKey : String
-    logoUrl : String
-    source : String
-    status : String
-  }
-}
-BrandLogoController --> BrandWebSearchService
-WardrobeController --> WardrobeService
-WardrobeService ..> PieceForm
-BrandWebSearchService --> WebFetchPort : Wikidata · GitHub · URLs de logo
-BrandWebSearchService --> AiEngine : BRAND_LOGO_FINDER\n(com busca na web)
-BrandWebSearchService --> LogoFilter
-LogoFilter ..> SvgPathRenderer
-BrandWebSearchService --> MediaService : logo filtrado
-WardrobeService --> MediaService : valida o logo (storage próprio)
-WardrobeService --> BrandLogoService : acceptWebLogo
-BrandLogoService --> BrandLogo
-WardrobeService --> WardrobeItem
-note bottom of BrandWebSearchService
-  Sem catálogo de marcas pré-cadastrado:
-  toda busca vai à internet; só a marca
-  escolhida é gravada (peça + brand_logos).
-end note
+BrandLogoService ..> BrandLogo : usa
+BrandLogoService ..> WardrobeItem : usa
+WardrobeItem --> AvailabilityStatus
+WardrobeItem --> Model3dStatus
+WardrobeItem --> ModerationStatus
+WardrobeItem --> PhotoProcessingStatus
 @enduml

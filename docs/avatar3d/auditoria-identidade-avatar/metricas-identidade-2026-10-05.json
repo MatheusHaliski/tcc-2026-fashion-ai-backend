@@ -1,0 +1,189 @@
+{
+ "data": "2026-10-05",
+ "conjunto": "16 retratos de teste autorizados (docs/testes); 15 aceitos pelo filtro de qualidade; só agregados",
+ "semelhanca": {
+  "limiares": {
+   "sface": 0.363,
+   "arcface": 0.3
+  },
+  "busto_2026_09_27": {
+   "front": {
+    "n": 15,
+    "sface": {
+     "mediana": 0.54,
+     "min": 0.34,
+     "max": 0.66
+    },
+    "sfaceAcimaDoLimiar": 14,
+    "arcface": {
+     "mediana": 0.6,
+     "min": 0.47,
+     "max": 0.71
+    },
+    "arcfaceAcimaDoLimiar": 15,
+    "top1": 15
+   },
+   "left34": {
+    "n": 15,
+    "sface": {
+     "mediana": 0.5,
+     "min": 0.26,
+     "max": 0.62
+    },
+    "sfaceAcimaDoLimiar": 14,
+    "arcface": {
+     "mediana": 0.51,
+     "min": 0.23,
+     "max": 0.65
+    },
+    "arcfaceAcimaDoLimiar": 14,
+    "top1": 14
+   }
+  },
+  "corpoHumano_2026_10_05": {
+   "front": {
+    "n": 15,
+    "sface": {
+     "mediana": 0.37,
+     "min": 0.22,
+     "max": 0.57
+    },
+    "sfaceAcimaDoLimiar": 8,
+    "arcface": {
+     "mediana": 0.31,
+     "min": 0.21,
+     "max": 0.59
+    },
+    "arcfaceAcimaDoLimiar": 9,
+    "top1": 11
+   },
+   "left34": {
+    "n": 15,
+    "sface": {
+     "mediana": 0.27,
+     "min": 0.05,
+     "max": 0.52
+    },
+    "sfaceAcimaDoLimiar": 2,
+    "arcface": {
+     "mediana": 0.28,
+     "min": 0.09,
+     "max": 0.54
+    },
+    "arcfaceAcimaDoLimiar": 6,
+    "top1": 10
+   }
+  },
+  "labAvatar_2026_10_05": {
+   "front": {
+    "n": 15,
+    "sface": {
+     "mediana": 0.35,
+     "min": 0.2,
+     "max": 0.57
+    },
+    "sfaceAcimaDoLimiar": 7,
+    "arcface": {
+     "mediana": 0.31,
+     "min": 0.14,
+     "max": 0.56
+    },
+    "arcfaceAcimaDoLimiar": 9,
+    "top1": 11
+   },
+   "left34": {
+    "n": 15,
+    "sface": {
+     "mediana": 0.35,
+     "min": 0.07,
+     "max": 0.59
+    },
+    "sfaceAcimaDoLimiar": 7,
+    "arcface": {
+     "mediana": 0.25,
+     "min": -0.01,
+     "max": 0.6
+    },
+    "arcfaceAcimaDoLimiar": 6,
+    "top1": 11
+   }
+  }
+ },
+ "formaDoRosto": {
+  "residuoAposAjusteMm": {
+   "todos": {
+    "mediana": 2.2,
+    "min": 1.7,
+    "max": 3.4
+   },
+   "olhos": {
+    "mediana": 2.3,
+    "min": 1.5,
+    "max": 2.8
+   },
+   "sobrancelhas": {
+    "mediana": 2.5,
+    "min": 1.6,
+    "max": 4.5
+   },
+   "nariz": {
+    "mediana": 1.7,
+    "min": 1.5,
+    "max": 3.2
+   },
+   "boca": {
+    "mediana": 2.2,
+    "min": 1.8,
+    "max": 3.5
+   },
+   "contorno": {
+    "mediana": 2.9,
+    "min": 1.9,
+    "max": 5.2
+   },
+   "profundidadeTodos": {
+    "mediana": 2.7,
+    "min": 2.2,
+    "max": 3.9
+   }
+  },
+  "desvioDoRostoMedioMm": {
+   "mediana": 3.6,
+   "min": 2.8,
+   "max": 6.9
+  },
+  "fracaoDaFormaIndividualPreservada": {
+   "mediana": 0.64,
+   "min": 0.42,
+   "max": 0.76
+  },
+  "assimetriaMedidaMm": {
+   "mediana": 1.5,
+   "min": 0.3,
+   "max": 4.5
+  },
+  "assimetriaNoAvatarMm": {
+   "mediana": 0.1,
+   "min": 0.1,
+   "max": 0.1
+  },
+  "componentesDoEspacoDeRostos": 38
+ },
+ "pele": {
+  "deltaE_modelo_x_bochechaDaFoto": {
+   "mediana": 8.1,
+   "min": 2.1,
+   "max": 20.1
+  },
+  "deltaE_desvioPorCorDaLuz_grayWorld": {
+   "mediana": 6.5,
+   "min": 2.3,
+   "max": 62.7
+  },
+  "deltaE_modelo_x_render": {
+   "mediana": 12.2,
+   "min": 3.1,
+   "max": 25.2
+  }
+ }
+}

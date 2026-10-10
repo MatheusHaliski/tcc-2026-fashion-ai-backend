@@ -16,11 +16,14 @@ import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.Share;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
+import br.com.fashionai.domain.model.enums.HypeEntityType;
+import br.com.fashionai.domain.model.enums.HypeSignalType;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.NotificationType;
 import br.com.fashionai.domain.model.enums.ReactionType;
 import br.com.fashionai.domain.model.enums.ShareChannel;
 import br.com.fashionai.domain.model.enums.TargetType;
+import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.repository.CommentRepository;
 import br.com.fashionai.domain.repository.DnaSchemeRepository;
 import br.com.fashionai.domain.repository.ReactionRepository;
@@ -61,6 +64,7 @@ public class SocialService {
     private final br.com.fashionai.domain.repository.SchemeItemRepository schemeItems;
     private final UserRepository users;
     private final SchemeService schemeService;
+    private final WardrobeService wardrobe;
     private final NotificationService notifications;
     private final CounterStorePort counters;
     private final MediaService media;
@@ -70,7 +74,7 @@ public class SocialService {
     public SocialService(ReactionRepository reactions, CommentRepository comments, SavedItemRepository saved,
                          ShareRepository shares, SchemeRepository schemes, WardrobeItemRepository pieces,
                          DnaSchemeRepository dnas, br.com.fashionai.domain.repository.SchemeItemRepository schemeItems,
-                         UserRepository users, SchemeService schemeService,
+                         UserRepository users, SchemeService schemeService, WardrobeService wardrobe,
                          NotificationService notifications, CounterStorePort counters, MediaService media, Guard guard,
                          ApplicationEventPublisher events) {
         this.reactions = reactions;
@@ -83,6 +87,7 @@ public class SocialService {
         this.schemeItems = schemeItems;
         this.users = users;
         this.schemeService = schemeService;
+        this.wardrobe = wardrobe;
         this.notifications = notifications;
         this.counters = counters;
         this.media = media;
@@ -163,6 +168,14 @@ public class SocialService {
         }
     }
 
+    /** HypeScore v2 — sinal de comportamento sobre peça/look (DNA de estilo não tem Hype). Filtrado no HypeSignalRecorder. */
+    private void hypeSignal(Target t, UUID actorId, HypeSignalType signal) {
+        HypeEntityType type = t.type() == TargetType.PIECE ? HypeEntityType.PIECE : t.type() == TargetType.SCHEME ? HypeEntityType.SCHEME : null;
+        if (type != null) {
+            events.publishEvent(new DomainEvents.HypeSignal(signal, type, t.id(), actorId, t.owner().getId()));
+        }
+    }
+
     // ------------------------------------------------------------------ CA01–CA03 curtir e reações
     @Transactional
     public Map<String, Object> react(CurrentUser user, TargetType type, UUID id, ReactionType reaction) {
@@ -195,6 +208,7 @@ public class SocialService {
             if (reaction == ReactionType.LIKE) {
                 // RF35 §5.2 — curtida recebida (+1, 50/dia no total; interação consigo mesmo não pontua)
                 events.publishEvent(new DomainEvents.InteractionReceived(t.owner().getId(), user.id(), "LIKE", id));
+                hypeSignal(t, user.id(), HypeSignalType.LIKE_CREATED);
             }
         }
         Map<String, Object> out = new LinkedHashMap<>();
@@ -254,6 +268,7 @@ public class SocialService {
         notifications.notify(t.owner().getId(), user.id(), NotificationType.NEW_COMMENT, type.name(), id,
                 Msg.k("social.comentou_em", user.username(), t.title()), text.length() > 120 ? text.substring(0, 117) + "…" : text, null);
         events.publishEvent(new DomainEvents.InteractionReceived(t.owner().getId(), user.id(), "COMMENT", c.getId()));
+        hypeSignal(t, user.id(), HypeSignalType.COMMENT_CREATED);
         return Map.of("id", c.getId(), "author", Views.user(c.getAuthor()), "content", c.getContent(), "createdAt", String.valueOf(c.getCreatedAt()));
     }
 
@@ -287,6 +302,7 @@ public class SocialService {
         s.setTargetId(id);
         saved.save(s);
         bump(t, "saves", 1);
+        hypeSignal(t, user.id(), HypeSignalType.SAVE_CREATED);
         return Map.of("saved", true);
     }
 
@@ -296,24 +312,45 @@ public class SocialService {
         SavedItem s = saved.findByUserIdAndTargetTypeAndTargetId(user.id(), type, id)
                 .orElseThrow(() -> ApiException.notFound(Msg.t("common.look_salvo")));
         s.setFavorite(favorite);
+        if (favorite) {
+            hypeSignal(target(user, type, id), user.id(), HypeSignalType.FAVORITE_CREATED);
+        }
         return Map.of("favorite", favorite);
     }
 
     // ------------------------------------------------------------------ CA08/CA09 compartilhar
     @Transactional
-    public Map<String, Object> share(CurrentUser user, TargetType type, UUID id, ShareChannel channel, String caption) {
+    public Map<String, Object> share(CurrentUser user, TargetType type, UUID id, ShareChannel channel) {
+        return share(user, type, id, channel, false);
+    }
+
+    /**
+     * Compartilhar (RF19.CA08/CA09). O post do FashionAI é o próprio card: diferente de outras redes, <b>não tem
+     * descrição</b> (pedido de 07/10), então nada de legenda é gravado. No feed, o post só aparece para quem pode abrir
+     * o conteúdo: se a dona compartilha a própria peça, look ou DNA ainda PRIVADO, a API recusa com
+     * {@code PUBLICAR_PARA_COMPARTILHAR} e o app pergunta antes; com {@code publish} (a pessoa confirmou ou ligou
+     * "Compartilhar no feed" no criador), o conteúdo vira público e o post sai.
+     */
+    @Transactional
+    public Map<String, Object> share(CurrentUser user, TargetType type, UUID id, ShareChannel channel, boolean publish) {
         guard.requireCanCreate(user);
         Target t = target(user, type, id);
         if (!t.available()) {
             throw ApiException.conflict("INDISPONIVEL", Msg.t("social.este_conteudo_esta_marcado_como"));
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        if (channel == ShareChannel.FEED && t.owner().getId().equals(user.id()) && visibilityOf(t) == Visibility.PRIVATE) {
+            if (!publish) {
+                throw ApiException.conflict("PUBLICAR_PARA_COMPARTILHAR", Msg.t("social.privado_para_compartilhar"));
+            }
+            makePublic(user, t);
+            out.put("published", true);
         }
         Share s = new Share();
         s.setUser(users.findById(user.id()).orElseThrow());
         s.setTargetType(type);
         s.setTargetId(id);
         s.setChannel(channel);
-        s.setCaption(InputSanitizer.moderated("caption", caption, 500));
-        Map<String, Object> out = new LinkedHashMap<>();
         if (channel == ShareChannel.EXTERNAL) {
             byte[] png = type == TargetType.SCHEME ? schemeService.renderCard(user, id, true) : null;
             if (png != null) {
@@ -329,6 +366,7 @@ public class SocialService {
         }
         shares.save(s);
         bump(t, "shares", 1);
+        hypeSignal(t, user.id(), HypeSignalType.SHARE_CREATED);
         notifications.notify(t.owner().getId(), user.id(), NotificationType.NEW_REACTION, type.name(), id,
                 "@" + user.username() + " compartilhou \"" + t.title() + "\"", null, Map.of("channel", channel.name()));
         out.put("shareId", s.getId());
@@ -337,28 +375,63 @@ public class SocialService {
         return out;
     }
 
+    /** Visibilidade escolhida para o conteúdo (sem o perfil): é ela que a dona troca ao publicar. */
+    private static Visibility visibilityOf(Target t) {
+        return switch (t.entity()) {
+            case Scheme s -> s.getVisibility();
+            case WardrobeItem w -> w.getVisibility();
+            case DnaScheme d -> d.getVisibility();
+            default -> Visibility.PUBLIC;
+        };
+    }
+
+    private void makePublic(CurrentUser user, Target t) {
+        switch (t.entity()) {
+            case Scheme s -> schemeService.publish(user, s.getId(), Visibility.PUBLIC);
+            case WardrobeItem w -> wardrobe.publishForFeed(user, w.getId());
+            case DnaScheme d -> d.setVisibility(Visibility.PUBLIC);
+            default -> { }
+        }
+    }
+
     // ------------------------------------------------------------------ CA13/CA14 remixar e retornar
     @Transactional
     public Map<String, Object> remix(CurrentUser user, TargetType type, UUID id) {
         guard.requireCanCreate(user);
         Target t = target(user, type, id);
-        if (!t.available()) {
+        // indisponível vale para os outros: a dona remixa a própria peça mesmo marcada como indisponível (vira semente)
+        boolean ownPiece = type == TargetType.PIECE && t.owner().getId().equals(user.id());
+        if (!t.available() && !ownPiece) {
             throw ApiException.conflict("INDISPONIVEL", Msg.t("social.o_autor_marcou_este_conteudo"));
         }
         if (type == TargetType.SCHEME) {
             return schemeService.remix(user, id);
         }
         if (type == TargetType.PIECE) {
-            bump(t, "remixes", 1);
             WardrobeItem w = (WardrobeItem) t.entity();
+            // o criador de looks só aceita peças do acervo de quem compõe (wardrobe.eligible): a peça de outra
+            // pessoa é importada (ou reaproveitada, se já foi importada antes) ANTES de contar o remix
+            UUID seedId = ownPiece ? id : importedCopy(user, w);
+            bump(t, "remixes", 1);
+            hypeSignal(t, user.id(), HypeSignalType.PIECE_REMIXED);
             notifications.notify(t.owner().getId(), user.id(), NotificationType.NEW_REMIX, "PIECE", id,
                     Msg.k("social.remixou_a_peca", user.username(), w.getName()), null, null);
-            return Map.of("next", "/create-look?seedPiece=" + id, "sourcePiece", Views.piece(w, null, null),
-                    "hint", w.getUser().getId().equals(user.id()) ? Msg.t("social.a_peca_entra_como_semente")
-                            : Msg.t("social.adicione_a_peca_ao_seu"));
+            // a peça entra como semente no criador de looks (scheme-builder lê ?pieces=)
+            return Map.of("next", "/schemes/new?pieces=" + seedId, "sourcePiece", Views.piece(w, null, null),
+                    "seedPieceId", seedId,
+                    "hint", ownPiece ? Msg.t("social.a_peca_entra_como_semente") : Msg.t("social.peca_importada_para_o_remix"));
         }
         bump(t, "remixes", 1);
         return Map.of("next", "/dna/new?remix=" + id);
+    }
+
+    /** Cópia da peça alheia no acervo de quem remixa: reaproveita uma cópia elegível já existente, senão importa. */
+    private UUID importedCopy(CurrentUser user, WardrobeItem source) {
+        return wardrobe.eligible(user.id()).stream()
+                .filter(c -> source.getId().equals(c.getRemixedFromPieceId()))
+                .map(WardrobeItem::getId)
+                .findFirst()
+                .orElseGet(() -> wardrobe.addToWardrobe(user, source.getId()).id());
     }
 
     /** CA14 — a partir de uma peça da lista, abre o esquema de ORIGEM que usou aquela peça (o mais antigo visível). */

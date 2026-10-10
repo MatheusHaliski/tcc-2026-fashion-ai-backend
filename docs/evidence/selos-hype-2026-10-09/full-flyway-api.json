@@ -1,0 +1,13 @@
+{
+  "scope": "ISOLATED_LOCAL_MYSQL_FULL_FLYWAY",
+  "mysql": "8.4.11",
+  "migrationsApplied": 58,
+  "backendHealth": "UP",
+  "publicSearchHTTP": 200,
+  "profiles": 2,
+  "batchedCountersVerified": true,
+  "privateProfileRestricted": true,
+  "noEmailExposed": true,
+  "hypeOffersHTTP": 200,
+  "missingMetricsNoOffers": true
+}

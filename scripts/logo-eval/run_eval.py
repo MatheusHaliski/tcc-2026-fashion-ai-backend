@@ -2,7 +2,7 @@
 Avaliação do RF4 (tipo, cor, logo, marca) com as fotos de dataset.json.
 
 Para cada foto:
-  1. RF4 atual: POST /api/pieces/analysis no backend (o mesmo endpoint do app), guardando categoria, subcategoria,
+  1. RF4 atual: POST /api/pieces/analysis/batch no backend (o mesmo endpoint do app), guardando categoria, subcategoria,
      cor, marca e o logo apontado pelo estúdio;
   2. pipeline proposto (pipeline.py): OCR + símbolo em recortes ampliados, com as probabilidades brutas.
 
@@ -43,13 +43,16 @@ def fetch(item):
 def rf4(path):
     for attempt in range(5):
         with open(path, "rb") as f:
-            r = requests.post(f"{API}/api/pieces/analysis", headers={"Authorization": f"Bearer {TOKEN}"},
-                              files={"file": (os.path.basename(path), f, "image/jpeg")}, timeout=180)
+            r = requests.post(f"{API}/api/pieces/analysis/batch", headers={"Authorization": f"Bearer {TOKEN}"},
+                              files={"files": (os.path.basename(path), f, "image/jpeg")}, timeout=180)
         if r.status_code == 429:
             time.sleep(15 * (attempt + 1)); continue
         if r.status_code >= 400:
             return {"erro": f"{r.status_code} {r.text[:160]}"}
-        d = r.json(); pf = d.get("prefill") or {}; st = d.get("studio") or {}
+        d = (r.json() or [{}])[0]
+        if d.get("rejection"):
+            return {"erro": f"recusada: {d['rejection'].get('code')}"}
+        pf = d.get("prefill") or {}; st = d.get("studio") or {}
         return {"category": pf.get("category"), "subcategory": pf.get("subcategory"), "color": pf.get("color"),
                 "brand": pf.get("brand"), "confidence": pf.get("confidence"), "aiLogo": pf.get("logo"),
                 "studioLogo": st.get("logo"), "backgroundRemoved": d.get("backgroundRemoved"),

@@ -7,10 +7,11 @@ import type { UserCard } from "@/lib/api/types";
 import { label } from "@/lib/api/taxonomy";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { skinStyle, surfaceToneStyle } from "@/lib/skins";
-import { FRAME_BAND_VARS, brickColor, containerColorOf, containerInkOf, resolveCardArt, studioOf } from "@/lib/card-art";
-import { CardArtLayer, SeasonDecor } from "@/components/card-art";
+import { FRAME_BAND_VARS, brickColor, cartelaSeason, containerColorOf, containerInkOf, motionOf, resolveCardArt, studioOf } from "@/lib/card-art";
+import { CardArtLayer, MotionFall, SeasonDecor } from "@/components/card-art";
 import { CardActions } from "@/components/interactions";
-import { hypeColor } from "@/components/scheme-card";
+import { displayScore, levelForScore, levelTone } from "@/lib/hype/model";
+import type { HypeSummary } from "@/lib/hype/types";
 import { BrandLogo } from "@/components/brand-logo";
 import { CardHeader } from "@/components/card-header";
 
@@ -18,7 +19,12 @@ import { CardHeader } from "@/components/card-header";
 export interface DnaCellView {
   cell: string; schemeId: string; title: string; description?: string | null; coverImageUrl?: string | null; occasion: string[]; style: string[]; season?: string | null;
   eraLabel?: string | null; milestone: boolean; createdAt?: string; dominantBrand?: string | null; dominantBrandLogoUrl?: string | null; dominantColor?: string | null;
-  hypeScoreGlobal?: number | null; pieces: { id: string; name: string; imageUrl?: string | null; brand?: string | null; category?: string; color?: string }[];
+  /**
+   * HypeScore v2 do look (DnaService, P2-12): Hype pessoal para o dono; para quem visita, só o público elegível. "Sem
+   * dados" chega como status (INSUFFICIENT_DATA/NOT_CALCULATED) e score nulo — nunca 0. Hype ≠ DNA: é só um dado da célula.
+   */
+  hype?: Pick<HypeSummary, "status" | "score" | "level" | "direction" | "deltaPoints" | "deltaPercent"> | null;
+  pieces: { id: string; name: string; imageUrl?: string | null; brand?: string | null; category?: string; color?: string }[];
 }
 export interface DnaLogo { brand: string; pieces: number; structural: number; logoUrl?: string | null; }
 export interface DnaView {
@@ -47,7 +53,7 @@ export const DNA_NARRATIVES = [
   { id: "PALETA_DOMINANTE", code: "B7", get label() { return tr("dnaCard.paleta_dominante"); }, get hint() { return tr("dnaCard.faixa_de_5_cores_celulas"); }, ownArt: false },
   { id: "HARMONIA_CROMATICA", code: "B8", get label() { return tr("dnaCard.harmonia_cromatica"); }, get hint() { return tr("dnaCard.roda_de_matiz_itten_e"); }, ownArt: false },
   { id: "MARCAS_FAVORITAS", code: "B9", get label() { return tr("dnaCard.marcas_favoritas"); }, get hint() { return tr("dnaCard.ranking_de_marcas_o_logo"); }, ownArt: false },
-  { id: "HYPE_FOCUS", code: "B10", get label() { return tr("common.hype_focus"); }, get hint() { return tr("dnaCard.medidor_do_hype_score_global"); }, ownArt: false },
+  { id: "HYPE_FOCUS", code: "B10", get label() { return tr("common.hype_focus"); }, get hint() { return tr("hypeDna.narrative_hint"); }, ownArt: false },
   { id: "CARTELA_SAZONAL", code: "B11", get label() { return tr("common.cartela_sazonal"); }, get hint() { return tr("dnaCard.a_estacao_assume_o_card"); }, ownArt: true },
   { id: "LEGO", code: "B12", label: "LEGO", get hint() { return tr("dnaCard.o_dna_inteiro_em_blocos"); }, ownArt: true },
 ] as const;
@@ -240,15 +246,23 @@ function NarrativeBody({ dna, narrative, heroStyle, fmtEra, expanded }: { dna: D
         <p className="dna-stat">{t("dnaCard.base_do_ranking_pecas_esquemas", { total, cellsCount: cells.length })}</p></div>);
     }
     case "HYPE_FOCUS": {
-      const sorted = [...cells].sort((a, b) => (b.hypeScoreGlobal ?? 0) - (a.hypeScoreGlobal ?? 0)); const top = sorted[0]; const h = Math.round(top.hypeScoreGlobal ?? 0);
-      return (<div className="dna-hype"><p className="dna-list-head">{t("dnaCard.em_destaque_agora")}</p><div className="dna-gauge" style={{ ["--p" as string]: h, ["--c" as string]: hypeColor(h) }}><span><b>🔥 {h}%</b><em>{top.title}{top.dominantBrand ? ` · ${top.dominantBrand.toUpperCase()}` : ""}</em></span></div>
-        <div className="dna-hype-list">{sorted.slice(1).map((c) => { const v = Math.round(c.hypeScoreGlobal ?? 0); return <div key={c.schemeId} className="dna-hype-row"><Thumb c={c} /><span className="dna-row-txt"><b>{c.title}</b><span>{(c.dominantBrand ?? "").toUpperCase()}</span></span><span className="dna-mini"><em>🔥 {v}%</em><span className="hype-bar w-16"><i style={{ width: `${v}%`, background: hypeColor(v) }} /></span></span></div>; })}</div>
-        <span className="dna-hint">{t("dnaCard.valores_recalculam_ao_longo_do")}</span></div>);
+      // P2-12 — HypeScore v2 de cada look (número + faixa em texto, sem "%"): maior Hype primeiro; sem Hype por último, como
+      // "Dados insuficientes"/"—", nunca 0. A cor do medidor é decorativa; a faixa vai sempre escrita.
+      const sorted = [...cells].sort((a, b) => (dnaHypeScore(b) ?? -1) - (dnaHypeScore(a) ?? -1)); const top = sorted[0];
+      if (!top) return null;
+      const h = dnaHypeScore(top);
+      return (<div className="dna-hype"><p className="dna-list-head">{t("dnaCard.em_destaque_agora")}</p>
+        <div className="dna-gauge" style={{ ["--p" as string]: h ?? 0, ["--c" as string]: "var(--thread)" }}><span><b className="tabular">🔥 {h != null ? displayScore(h) : "—"}</b><em>{top.title}{top.dominantBrand ? ` · ${top.dominantBrand.toUpperCase()}` : ""}</em></span></div>
+        <p className="dna-hype-level"><DnaHypeLevel hype={top.hype} /></p>
+        <div className="dna-hype-list">{sorted.slice(1).map((c) => { const v = dnaHypeScore(c); return <div key={c.schemeId} className="dna-hype-row"><Thumb c={c} /><span className="dna-row-txt"><b>{c.title}</b><span>{(c.dominantBrand ?? "").toUpperCase()}</span></span><span className="dna-mini"><em>🔥 {v != null ? displayScore(v) : "—"}</em><DnaHypeLevel hype={c.hype} compact />{v != null && <span className="hype-bar w-16"><i style={{ width: `${Math.max(0, Math.min(100, v))}%`, background: "var(--thread)" }} /></span>}</span></div>; })}</div>
+        <span className="dna-hint">{t("hypeDna.hint")}</span></div>);
     }
     case "CARTELA_SAZONAL": {
-      const season = dna.seasonalTheme ?? "AUTUMN"; const p = SEASON_PRESETS[season] ?? SEASON_PRESETS.AUTUMN;
+      // cartela e animação escolhidas no modal do layout Cartela sazonal (Background Studio); sem cartela, vale o seasonalTheme
+      const season = cartelaSeason(dna.background, dna.seasonalTheme) ?? "AUTUMN"; const p = SEASON_PRESETS[season] ?? SEASON_PRESETS.AUTUMN;
+      const chosen = studioOf(dna.background).animation; const motion = motionOf(chosen);
       const ordered = [...cells].sort((a, b) => Number(b.season === season) - Number(a.season === season));
-      return (<><div className={`dna-season anim-${p.animation.toLowerCase()}`} style={{ backgroundImage: `linear-gradient(135deg, ${p.stops.join(",")})` }}><SeasonDecor season={season} count={14} /><span className="dna-season-icon" aria-hidden>{p.icon}</span><b>{p.label}</b><em>{t("dnaCard.seasonaltheme_animacao", { season, animation: p.animation })}</em></div>
+      return (<><div className={`dna-season anim-${p.animation.toLowerCase()}${motion === "shimmer" ? " motion-shimmer" : ""}`} style={{ backgroundImage: `linear-gradient(135deg, ${p.stops.join(",")})` }}><SeasonDecor season={season} count={14} />{motion && motion !== "shimmer" && <MotionFall kind={motion} count={14} />}<span className="dna-season-icon" aria-hidden>{p.icon}</span><b>{p.label}</b><em>{t("dnaCard.seasonaltheme_animacao", { season, animation: (motion && chosen) || p.animation })}</em></div>
         <div className="dna-grid">{ordered.slice(0, expanded ? 6 : 4).map((c) => <div key={c.schemeId} className={`dna-grid-cell ${c.season === season ? "" : "secondary"}`}><Thumb c={c} /><b>{c.title}</b><span>{(c.dominantBrand ?? label(c.occasion[0] ?? "livre")).toUpperCase()}</span></div>)}</div></>);
     }
     case "LEGO": return <BlocksBody dna={dna} heroStyle={heroStyle} fmtEra={fmtEra} />;
@@ -272,4 +286,19 @@ function BlocksBody({ dna, heroStyle, fmtEra }: { dna: DnaView; heroStyle: CSSPr
       <button type="button" className="brick-replay" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setRound((r) => r + 1); }}>{t("common.montar_de_novo")}</button>
     </div>
   );
+}
+
+/** Score v2 que ordena e aparece no medidor: só AVAILABLE; o resto ("sem dados") é null — nunca 0. */
+export function dnaHypeScore(c: Pick<DnaCellView, "hype">): number | null {
+  return c.hype?.status === "AVAILABLE" && c.hype.score != null ? c.hype.score : null;
+}
+
+/** Faixa v2 em texto (sempre com rótulo) ou o motivo de não haver número: "Dados insuficientes" / "Hype ainda não calculado". */
+function DnaHypeLevel({ hype, compact }: { hype?: DnaCellView["hype"]; compact?: boolean }) {
+  const { t } = useI18n();
+  const score = hype?.status === "AVAILABLE" ? hype.score ?? null : null;
+  const level = score != null ? hype?.level ?? levelForScore(score) : null;
+  if (level) return <span className={`hype-level-chip ${levelTone(level)}`}>{t(`hype.level.${level}`)}</span>;
+  const why = hype?.status === "INSUFFICIENT_DATA" ? t("hype.state.insufficient") : t("hype.state.not_calculated");
+  return compact ? <span className="type-caption text-faint" title={why}>{t("hypeDna.sem_dados_curto")}</span> : <span className="type-caption text-muted">{why}</span>;
 }

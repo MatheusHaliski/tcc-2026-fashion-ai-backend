@@ -1,34 +1,48 @@
 @startuml RF33_MaquinaDeEstados_LookDoDia
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-title RF33 — DailyLook (daily_looks): do Look do Dia à Passarela 3D que se renova a cada dia
-[*] --> Registrado : POST /api/me/daily-look · POST /api/me/mirror/use\n· Copilot / Autopiloto (source MANUAL | SMART_MIRROR | VISTA_ME | COPILOT | AUTOPILOTO)
-state "Registrado hoje\n(lookDate = hoje, 1 por usuário/dia)" as Registrado
-state "Na Passarela 3D\n(GET /api/explorer/runway)" as Passarela {
-  state "TOP100_GLOBAL" as Global
-  state "TOP100_REGIONAL\n(WorldRegions.of(users.country))" as Regional
-  state "TOP100_PAIS" as Pais
-  state "SEGUINDO · EM_ALTA · RECENTES" as Outros
+title RF33 — ciclo de vida de DailyLook.source e feedback\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum DailyLookSource · enum DailyLookFeedback · tabela daily_looks
+
+state "DailyLook.source" as Ciclo_DailyLook {
+  state Ciclo_DailyLook_MANUAL as "MANUAL"
+  state Ciclo_DailyLook_AUTOPILOTO as "AUTOPILOTO"
+  state Ciclo_DailyLook_COPILOT as "COPILOT"
+  state Ciclo_DailyLook_VISTA_ME as "VISTA_ME"
+  state Ciclo_DailyLook_SMART_MIRROR as "SMART_MIRROR"
 }
-state "Fora da passarela" as Oculto
-state "Materializado\n(materializedFrom = dia anterior)" as Materializado
-state "Avaliado\n(feedback ADOREI | NAO_USEI | NAO_GOSTEI)" as Avaliado
-Registrado --> Registrado : novo registro no mesmo dia\nsubstitui o esquema (replaced)
-Registrado --> Passarela : esquema visível ao viewer\n(canView, status != ARCHIVED)
-Registrado --> Oculto : visibility PRIVATE para quem não segue\nou esquema arquivado
-Passarela --> Passarela : filtros region/country/colors/\noccasions/styles/sex reordenam
-Registrado --> Materializado : vira o dia sem novo registro\n(DailyLookService.today copia o anterior)
-Materializado --> Passarela : continua desfilando no novo dia
-Materializado --> Registrado : POST /api/me/daily-look (novo look)
-Registrado --> Avaliado : PUT /api/me/daily-looks/{date}/feedback
-Avaliado --> [*]
-Oculto --> [*]
-note right of Passarela : manequim montado no cliente: corpo por sexo (RF1)\ne cabeça com users.avatar_url quando existe
-note bottom of Materializado : se o esquema do dia anterior foi ARCHIVED,\nnão materializa (sem look → sai da passarela)
+[*] --> Ciclo_DailyLook_MANUAL : criação
+note bottom of Ciclo_DailyLook
+  Recebe o valor escolhido em: register(source)
+end note
+state "DailyLook.feedback" as Ciclo_DailyLook_feedback {
+  state Ciclo_DailyLook_feedback_ADOREI as "ADOREI"
+  state Ciclo_DailyLook_feedback_NAO_USEI as "NAO_USEI"
+  state Ciclo_DailyLook_feedback_NAO_GOSTEI as "NAO_GOSTEI"
+}
+Ciclo_DailyLook_feedback --> Ciclo_DailyLook_feedback_ADOREI : feedback()\nPUT /api/me/daily-looks/{date}/feedback
+Ciclo_DailyLook_feedback --> Ciclo_DailyLook_feedback_NAO_USEI : feedback()\nPUT /api/me/daily-looks/{date}/feedback
+Ciclo_DailyLook_feedback --> Ciclo_DailyLook_feedback_NAO_GOSTEI : feedback()\nPUT /api/me/daily-looks/{date}/feedback
+note right of Ciclo_DailyLook
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
+end note
 @enduml

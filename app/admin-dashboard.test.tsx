@@ -19,7 +19,7 @@ const DASH = {
   series: { users: series("users"), pieces: series("pieces"), schemes: series("schemes"), ai: series("ai") },
   aiUsage: [{ capability: "PIECE_ANALYZER", provider: "claude", result: "SUCCESS", calls: 40, cost: 1.2 }, { capability: "COPILOT", provider: "local", result: "FALLBACK_LOCAL", calls: 20, cost: 0 }],
   aiByCountry: [{ country: "BR", calls: 90, cost: 1.5, users: 3 }], aiProviders: { claude: true, gemini: false },
-  brands: [{ brand: "Nike", pieces: 5 }], countries: [{ country: "BR", users: 3 }], hypeBands: [{ band: "70-100", total: 2 }], inventoryBands: [{ band: "50-70", total: 1 }],
+  brands: [{ brand: "Nike", pieces: 5 }], countries: [{ country: "BR", users: 3 }], inventoryBands: [{ band: "50-70", total: 1 }],
   sealFunnel: [{ step: "requested", total: 3 }, { step: "approved", total: 1 }], challenges: [{ status: "OPEN", total: 1 }], points: [{ reason: "PIECE_CREATED", total: 29 }],
   profiles: [{ profileType: "PESSOAL", total: 3 }], alerts: [{ level: "warning", title: "Custo de IA subiu", action: "Ver uso de IA" }, { level: "critical", title: "Falhas de login" }],
   funnel: [{ step: "cadastro", total: 3 }, { step: "peça", total: 2 }], heatmap: [{ dow: 1, hour: 10, total: 4 }], topUsers: [{ username: "ana", pieces: 20 }], categories: [{ category: "upper_piece", total: 12 }],

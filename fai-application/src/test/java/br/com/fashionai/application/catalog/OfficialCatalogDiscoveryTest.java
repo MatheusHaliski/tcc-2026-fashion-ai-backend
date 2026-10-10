@@ -28,6 +28,14 @@ class OfficialCatalogDiscoveryTest {
     }
 
     @Test
+    void cdnDaPlataformaDaLojaEHostComRotuloDaMarcaValemComoNoColetorPython() {
+        assertThat(OfficialCatalogDiscovery.imageAllowed("https://lojarenner.vtexassets.com/a.jpg", List.of("lojasrenner.com.br"))).isTrue();
+        assertThat(OfficialCatalogDiscovery.imageAllowed("https://cdn.shopify.com/s/files/a.jpg", List.of("everlane.com"))).isTrue();
+        assertThat(OfficialCatalogDiscovery.imageAllowed("https://valentino-cdn.thron.com/a.jpg", List.of("valentino.com"))).isTrue();
+        assertThat(OfficialCatalogDiscovery.imageAllowed("https://evilshopify.com/a.jpg", List.of("everlane.com"))).isFalse();
+    }
+
+    @Test
     void respostaInvalidaNaoInventaResultado() {
         assertThat(OfficialCatalogDiscovery.parse("sem json", List.of("nike.com"))).isNull();
         assertThat(OfficialCatalogDiscovery.parse("{\"products\":[]}", List.of("nike.com"))).isEmpty();

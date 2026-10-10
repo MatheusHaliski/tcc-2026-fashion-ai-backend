@@ -14,19 +14,17 @@ import br.com.fashionai.domain.model.CatalogProduct;
 import br.com.fashionai.domain.model.CatalogProductAlias;
 import br.com.fashionai.domain.model.CatalogSource;
 import br.com.fashionai.domain.model.CatalogVariant;
-import br.com.fashionai.domain.model.UserPreferences;
 import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
 import br.com.fashionai.domain.model.enums.ItemCondition;
 import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.repository.BrandAliasRepository;
 import br.com.fashionai.domain.repository.BrandRepository;
 import br.com.fashionai.domain.repository.CatalogImageRepository;
+import br.com.fashionai.application.catalog.image.CatalogImagePipelineService;
 import br.com.fashionai.domain.repository.CatalogProductAliasRepository;
 import br.com.fashionai.domain.repository.CatalogProductRepository;
 import br.com.fashionai.domain.repository.CatalogSourceRepository;
 import br.com.fashionai.domain.repository.CatalogVariantRepository;
-import br.com.fashionai.domain.repository.UserPreferencesRepository;
-import br.com.fashionai.domain.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,15 +67,14 @@ public class CatalogService {
     private final CatalogIngestService ingest;
     private final OfficialCatalogDiscovery discovery;
     private final WardrobeService wardrobe;
-    private final UserPreferencesRepository preferences;
-    private final UserRepository users;
+    private CatalogTextInterpreter textInterpreter;
     private final CatalogNormalizer norm = CatalogNormalizer.get();
     private final CatalogMatchScorer scorer = new CatalogMatchScorer(norm);
 
     public CatalogService(CatalogProductRepository products, CatalogVariantRepository variants, CatalogImageRepository images,
                           CatalogProductAliasRepository productAliases, CatalogSourceRepository sources, BrandRepository brands,
                           BrandAliasRepository brandAliases, CatalogIngestService ingest, OfficialCatalogDiscovery discovery,
-                          WardrobeService wardrobe, UserPreferencesRepository preferences, UserRepository users) {
+                          WardrobeService wardrobe) {
         this.products = products;
         this.variants = variants;
         this.images = images;
@@ -88,8 +85,12 @@ public class CatalogService {
         this.ingest = ingest;
         this.discovery = discovery;
         this.wardrobe = wardrobe;
-        this.preferences = preferences;
-        this.users = users;
+    }
+
+    /** Leitor das características únicas da peça no texto (com IA, RF24); sem ele, só a leitura local. */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setTextInterpreter(CatalogTextInterpreter textInterpreter) {
+        this.textInterpreter = textInterpreter;
     }
 
     /** Campos do formulário de busca (qualquer combinação de 2–3 já basta). */
@@ -97,10 +98,17 @@ public class CatalogService {
     }
 
     /** Intenção normalizada + marca resolvida (null = marca desconhecida no catálogo). */
-    record Resolved(CatalogMatchScorer.Intent intent, Brand brand, String rawBrand) {
+    record Resolved(CatalogMatchScorer.Intent intent, Brand brand, String rawBrand, boolean subcategoryFromText) {
+        Resolved(CatalogMatchScorer.Intent intent, Brand brand, String rawBrand) {
+            this(intent, brand, rawBrand, false);
+        }
     }
 
     Resolved resolve(SearchRequest r) {
+        return resolve(null, r);
+    }
+
+    Resolved resolve(UUID userId, SearchRequest r) {
         Brand brand = null;
         if (r.brand() != null && !r.brand().isBlank()) {
             brand = ingest.resolveBrand(r.brand(), false).orElse(null);
@@ -110,8 +118,33 @@ public class CatalogService {
         String color = r.color() == null ? null : norm.color(r.color()).orElse(null);
         List<String> keywords = new ArrayList<>();
         Set<String> brandWords = brand == null ? Set.of() : new LinkedHashSet<>(norm.tokens(brand.getName()));
+        // características únicas da peça no texto ("logo CK em toda a superfície, cinza e preto" × "toda azul, um logo branco")
+        DesignTraits design = r.query() == null || r.query().isBlank() ? DesignTraits.EMPTY
+                : textInterpreter != null ? textInterpreter.interpret(userId, r.query()) : CatalogDesignInterpreter.get().interpret(r.query());
+        if (color == null && !design.isEmpty()) {
+            color = !design.baseColors().isEmpty() ? design.baseColors().get(0) : !design.anyColors().isEmpty() ? design.anyColors().get(0) : null;
+        }
+        // subtipo pela FRASE mais longa do texto: "moletom com capuz" é hoodie (não "moletom" + a palavra solta "capuz")
+        Set<String> subWords = new LinkedHashSet<>();
+        if (sub == null && r.query() != null && !r.query().isBlank()) {
+            String[] w = CatalogNormalizer.key(r.query()).split(" ");
+            phrase:
+            for (int size = Math.min(4, w.length); size >= 2; size--) {
+                for (int i = 0; i + size <= w.length; i++) {
+                    Optional<String> s = norm.subcategory(String.join(" ", java.util.Arrays.copyOfRange(w, i, i + size)));
+                    if (s.isPresent()) {
+                        sub = s.get();
+                        if (cat == null) {
+                            cat = norm.categoryOf(sub);
+                        }
+                        subWords.addAll(java.util.Arrays.asList(w).subList(i, i + size));
+                        break phrase;
+                    }
+                }
+            }
+        }
         for (String t : norm.tokens(r.query())) {
-            if (brandWords.contains(t)) {
+            if (brandWords.contains(t) || design.consumed().contains(t) || subWords.contains(t)) {
                 continue;
             }
             if (color == null && norm.color(t).isPresent()) {
@@ -134,27 +167,50 @@ public class CatalogService {
             }
             keywords.add(t);
         }
-        return new Resolved(new CatalogMatchScorer.Intent(brand == null ? null : brand.getSlug(), cat, sub, keywords, color), brand, r.brand());
+        boolean subFromText = sub != null && (r.subcategory() == null || r.subcategory().isBlank());
+        return new Resolved(new CatalogMatchScorer.Intent(brand == null ? null : brand.getSlug(), cat, sub, keywords, color, design), brand, r.brand(), subFromText);
     }
 
     @Transactional(readOnly = true)
     public Map<String, Object> search(SearchRequest r) {
-        Resolved res = resolve(r);
+        return search(null, r);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> search(UUID userId, SearchRequest r) {
+        Resolved res = resolve(userId, r);
         CatalogMatchScorer.Intent q = res.intent();
         int limit = r.limit() == null ? 24 : Math.max(1, Math.min(48, r.limit()));
-        if (q.brandSlug() == null && q.subcategory() == null && q.category() == null && q.keywords().isEmpty()) {
+        if (q.brandSlug() == null && q.subcategory() == null && q.category() == null && q.keywords().isEmpty() && q.design().isEmpty()) {
             return Map.of("intent", intentMap(res), "results", List.of(), "total", 0, "enoughInput", false);
         }
         String brandId = res.brand() == null ? null : res.brand().getId().toString();
         String terms = q.keywords().isEmpty() ? null : String.join(" ", q.keywords());
         Map<UUID, CatalogProduct> pool = new LinkedHashMap<>();
+        // subtipo deduzido do texto ("camisa") só pontua, não filtra: no Brasil "camisa" também é camiseta
+        String subFilter = res.subcategoryFromText() ? null : q.subcategory();
         try {
-            products.candidates(brandId, q.category(), q.subcategory(), terms).forEach(p -> pool.put(p.getId(), p));
+            // com milhares de produtos o pool (200 por consulta) começa pelo que a pessoa descreveu: subtipo (mesmo o lido
+            // do texto, que só pontua) com a cor, depois só o subtipo, depois a estampa citada, e por fim o pool geral
+            if (q.subcategory() != null && q.color() != null) {
+                products.candidatesWithColor(brandId, q.category(), q.subcategory(), q.color(), terms).forEach(p -> pool.putIfAbsent(p.getId(), p));
+                if (terms != null) {
+                    products.candidatesWithColor(brandId, q.category(), q.subcategory(), q.color(), null).forEach(p -> pool.putIfAbsent(p.getId(), p));
+                }
+            }
+            if (q.subcategory() != null) {
+                products.candidates(brandId, q.category(), q.subcategory(), terms).forEach(p -> pool.putIfAbsent(p.getId(), p));
+            }
+            String patternTerms = patternTerms(q.design().pattern());
+            if (patternTerms != null) {
+                products.candidates(brandId, q.category(), q.subcategory(), patternTerms).forEach(p -> pool.putIfAbsent(p.getId(), p));
+            }
+            products.candidates(brandId, q.category(), subFilter, terms).forEach(p -> pool.putIfAbsent(p.getId(), p));
         } catch (RuntimeException ex) {
             // índice FULLTEXT indisponível (banco de teste): segue só com os filtros estruturados
         }
         if (pool.size() < 8) {
-            products.candidates(brandId, q.category(), q.subcategory(), null).forEach(p -> pool.putIfAbsent(p.getId(), p));
+            products.candidates(brandId, q.category(), subFilter, null).forEach(p -> pool.putIfAbsent(p.getId(), p));
         }
         List<Map<String, Object>> ranked = rank(res, new ArrayList<>(pool.values()), limit);
         Map<String, Object> out = new LinkedHashMap<>();
@@ -167,6 +223,28 @@ public class CatalogService {
         return out;
     }
 
+    static final double NO_PHOTO_PENALTY = 0.10;
+
+    static double orderScore(Map<String, Object> m) {
+        double total = ((Number) ((Map<?, ?>) m.get("matchScore")).get("total")).doubleValue();
+        return m.get("imageUrl") == null ? total - NO_PHOTO_PENALTY : total;
+    }
+
+    /** Palavras da estampa no vocabulário (pt/en/es: "listrada stripe striped rayas") para o índice FULLTEXT. */
+    String patternTerms(String pattern) {
+        if (pattern == null || "PLAIN".equals(pattern)) {
+            return null;
+        }
+        List<String> words = new ArrayList<>();
+        norm.design().path("patterns").path(pattern).forEach(n -> {
+            String k = CatalogNormalizer.key(n.asString());
+            if (k.length() >= 3) {
+                words.add(k.contains(" ") ? "\"" + k + "\"" : k);
+            }
+        });
+        return words.isEmpty() ? null : String.join(" ", words);
+    }
+
     List<Map<String, Object>> rank(Resolved res, List<CatalogProduct> pool, int limit) {
         if (pool.isEmpty()) {
             return List.of();
@@ -176,6 +254,8 @@ public class CatalogService {
                 .collect(Collectors.groupingBy(CatalogProductAlias::getProductId, Collectors.mapping(CatalogProductAlias::getAlias, Collectors.toList())));
         Map<UUID, CatalogImage> primary = images.findByProductIdInAndPrimaryTrue(ids).stream()
                 .collect(Collectors.toMap(CatalogImage::getProductId, Function.identity(), (a, b) -> a));
+        // a foto canônica do pipeline de imagens (aprovada pelo Quality Gate) passa na frente da principal da ingestão
+        images.findByProductIdInAndCanonicalTrue(ids).forEach(c -> primary.put(c.getProductId(), c));
         Map<UUID, List<CatalogVariant>> variantsBy = variants.findByProductIdIn(ids).stream()
                 .collect(Collectors.groupingBy(CatalogVariant::getProductId));
         Map<UUID, Brand> brandById = new HashMap<>();
@@ -201,8 +281,10 @@ public class CatalogService {
             m.put("matchPercent", (int) Math.round(s.total() * 100));
             out.add(m);
         }
-        out.sort(Comparator.comparingDouble((Map<String, Object> m) -> ((Number) ((Map<?, ?>) m.get("matchScore")).get("total")).doubleValue())
-                .reversed().thenComparing(m -> -((Number) m.get("ownersCount")).intValue()));
+        // ordem: o produto sem foto cede até 10 pontos para o que tem foto oficial (a pessoa reconhece a peça pela foto);
+        // o "% compatível" mostrado não muda
+        out.sort(Comparator.comparingDouble((Map<String, Object> m) -> orderScore(m)).reversed()
+                .thenComparing(m -> -((Number) m.get("ownersCount")).intValue()));
         return out.size() > limit ? out.subList(0, limit) : out;
     }
 
@@ -221,7 +303,18 @@ public class CatalogService {
         }
         return new CatalogMatchScorer.Candidate(b == null ? null : b.getSlug(), p.getCategory(), p.getSubcategory(), p.getProductName(),
                 p.getModelName(), p.getColor(), p.getColorName(), p.getCollection(), all, codes,
-                vs.stream().map(CatalogVariant::getColor).filter(java.util.Objects::nonNull).toList());
+                vs.stream().map(CatalogVariant::getColor).filter(java.util.Objects::nonNull).toList(), designOf(p), p.getDescription());
+    }
+
+    /** Design gravado no produto; sem ele, lido do nome + descrição + cor pelo mesmo intérprete da busca. */
+    static DesignTraits designOf(CatalogProduct p) {
+        if (p.getDesignJson() != null && !p.getDesignJson().isBlank()) {
+            DesignTraits d = DesignTraits.fromMap(br.com.fashionai.application.common.Json.map(p.getDesignJson()), "CATALOG");
+            if (!d.isEmpty()) {
+                return d;
+            }
+        }
+        return CatalogDesignInterpreter.get().ofProduct(p.getProductName(), p.getDescription(), p.getColorName(), p.getColor());
     }
 
     Map<String, Object> card(CatalogProduct p, Brand b, CatalogImage img) {
@@ -229,8 +322,9 @@ public class CatalogService {
         m.put("id", p.getId());
         m.put("brand", b == null ? null : Map.of("id", b.getId(), "name", b.getName(), "slug", b.getSlug(),
                 "logoUrl", String.valueOf(b.getLogoUrl())));
-        m.put("productName", p.getProductName());
-        m.put("modelName", p.getModelName());
+        // produtos importados antes da limpeza podem trazer marcação HTML da loja no título
+        m.put("productName", CatalogIngestService.plainText(p.getProductName()));
+        m.put("modelName", CatalogIngestService.plainText(p.getModelName()));
         m.put("category", p.getCategory());
         m.put("subcategory", p.getSubcategory());
         m.put("color", p.getColor());
@@ -238,10 +332,15 @@ public class CatalogService {
         m.put("colorHex", p.getColor() == null ? null : Taxonomy.hex(p.getColor()));
         m.put("material", p.getMaterial());
         m.put("collection", p.getCollection());
+        m.put("description", p.getDescription());
+        DesignTraits design = designOf(p);
+        m.put("design", design.isEmpty() ? null : design.toMap());
         m.put("gender", p.getGender());
         m.put("productCode", p.getProductCode());
         m.put("sku", p.getSku());
-        m.put("imageUrl", img == null ? null : img.getImageUrl());
+        Map<String, Object> catalogImage = CatalogImagePipelineService.cardImage(img);
+        m.put("imageUrl", catalogImage != null ? catalogImage.get("url") : img == null ? null : img.getImageUrl());
+        m.put("catalogImage", catalogImage);
         m.put("imageSource", img == null ? null : CatalogIngestService.provenance(img));
         m.put("source", Map.of("type", p.getSourceType().name(), "domain", String.valueOf(p.getSourceDomain()),
                 "productUrl", String.valueOf(p.getOfficialProductUrl()), "status", p.getSourceStatus().name(),
@@ -259,6 +358,7 @@ public class CatalogService {
         m.put("subcategory", r.intent().subcategory());
         m.put("keywords", r.intent().keywords());
         m.put("color", r.intent().color());
+        m.put("design", r.intent().design().isEmpty() ? null : r.intent().design().toMap());
         return m;
     }
 
@@ -313,9 +413,25 @@ public class CatalogService {
         CatalogProduct p = products.findById(id).orElseThrow(() -> ApiException.notFound(Msg.t("catalog.produto")));
         Brand b = brands.findById(p.getBrandId()).orElse(null);
         List<CatalogImage> imgs = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId());
-        Map<String, Object> m = card(p, b, imgs.isEmpty() ? null : imgs.get(0));
-        m.put("images", imgs.stream().map(i -> Map.of("id", i.getId(), "url", i.getImageUrl(), "type", i.getImageType().name(),
-                "primary", i.isPrimary(), "provenance", CatalogIngestService.provenance(i))).toList());
+        Map<String, Object> m = card(p, b, imgs.stream().filter(CatalogImage::isCanonical).findFirst()
+                .orElse(imgs.isEmpty() ? null : imgs.get(0)));
+        // CatalogProductImage: viewType, qualityScore, sourceUrl, processedUrl e papel (canônica, alternativa, detalhe)
+        m.put("images", imgs.stream().map(i -> {
+            Map<String, Object> im = new LinkedHashMap<>();
+            im.put("id", i.getId());
+            im.put("url", i.getImageUrl());
+            im.put("sourceUrl", i.getImageUrl());
+            im.put("processedUrl", i.getStoredUrl());
+            im.put("type", i.getImageType().name());
+            im.put("viewType", i.getImageType().name());
+            im.put("primary", i.isPrimary());
+            im.put("canonical", i.isCanonical());
+            im.put("viewRole", i.getViewRole());
+            im.put("qualityScore", i.getQualityScore());
+            im.put("processingStatus", i.getProcessingStatus());
+            im.put("provenance", CatalogIngestService.provenance(i));
+            return im;
+        }).toList());
         m.put("variants", variants.findByProductIdOrderByVariantKey(p.getId()).stream().map(this::variantMap).toList());
         m.put("aliases", productAliases.findByProductId(p.getId()).stream().map(CatalogProductAlias::getAlias).toList());
         return m;
@@ -338,7 +454,7 @@ public class CatalogService {
      */
     @Transactional
     public Map<String, Object> discover(CurrentUser user, SearchRequest r) {
-        Resolved res = resolve(r);
+        Resolved res = resolve(user.id(), r);
         if (res.brand() == null) {
             return Map.of("results", List.of(), "status", "BRAND_UNKNOWN", "message", Msg.t("catalog.marca_sem_fonte_oficial"));
         }
@@ -402,17 +518,22 @@ public class CatalogService {
         List<String> occasion = a.occasion() == null || a.occasion().isEmpty()
                 ? List.of(Taxonomy.allowedOccasions(p.getCategory()).get(0)) : a.occasion();
         List<String> style = a.style() == null || a.style().isEmpty() ? List.of("basic") : a.style();
-        String name = a.name() != null && !a.name().isBlank() ? a.name().trim() : p.getProductName();
-        String image = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId()).stream()
+        String name = a.name() != null && !a.name().isBlank() ? a.name().trim() : CatalogIngestService.plainText(p.getProductName());
+        CatalogImage chosen = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(p.getId()).stream()
                 .filter(i -> i.getUsageStatus() != br.com.fashionai.domain.model.enums.CatalogImageUsage.REJECTED)
-                .map(i -> i.getStoredUrl() != null ? i.getStoredUrl() : i.getImageUrl()).findFirst().orElse(null);
+                .sorted(Comparator.comparing((CatalogImage i) -> !i.isCanonical())).findFirst().orElse(null);
+        // a peça herda a foto do card: master processado (nível B) ou a URL oficial COM o recorte semântico (nível A) —
+        // nunca a foto original inteira quando o pipeline já a enquadrou
+        Map<String, Object> card = CatalogImagePipelineService.cardImage(chosen);
+        String image = card != null ? String.valueOf(card.get("url"))
+                : chosen == null ? null : chosen.getStoredUrl() != null ? chosen.getStoredUrl() : chosen.getImageUrl();
         WardrobeService.PieceForm form = new WardrobeService.PieceForm(null, true, name, p.getCategory(), p.getSubcategory(), sex,
                 b.getId(), b.getName(), color, material, a.size(), null, occasion, style, List.of(),
                 a.price() == null ? BigDecimal.ZERO : a.price(), a.visibility(), List.of(), a.notes(), a.condition(), a.purchaseDate(),
                 a.purchaseLocation(), p.getSku(), null, a.forSale(), false, b.getLogoUrl(), "CATALOGO", p.getId().toString(),
                 a.background());
         Views.PieceView view = wardrobe.createFromCatalog(user, form, new WardrobeService.CatalogPick(p.getId(),
-                variant == null ? null : variant.getId(), image));
+                variant == null ? null : variant.getId(), image, card == null ? null : (String) card.get("thumbnailUrl"), card));
         if (Boolean.TRUE.equals(a.favorite())) {
             view = wardrobe.toggles(user, view.id(), true, null, null);
         }
@@ -426,31 +547,6 @@ public class CatalogService {
             }
         }
         return fallback;
-    }
-
-    // ───────────────────────────── tutorial "Como fotografar" (por guia, sincronizado na conta)
-
-    @Transactional(readOnly = true)
-    public Map<String, Object> tutorialPreferences(CurrentUser user) {
-        return preferences.findByUserId(user.id()).map(UserPreferences::getCaptureTutorialJson).map(Json::map)
-                .map(m -> Map.<String, Object>of("captureTutorialPreferences", m)).orElse(Map.of("captureTutorialPreferences", Map.of()));
-    }
-
-    @Transactional
-    public Map<String, Object> setTutorialHidden(CurrentUser user, String guide, boolean hidden) {
-        if (guide == null || !guide.matches("[a-z_]{3,40}")) {
-            throw ApiException.badRequest("GUIA_INVALIDO", Msg.t("catalog.guia_invalido"));
-        }
-        UserPreferences prefs = preferences.findByUserId(user.id()).orElseGet(() -> {
-            UserPreferences np = new UserPreferences();
-            np.setUser(users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario"))));
-            return np;
-        });
-        Map<String, Object> m = new LinkedHashMap<>(prefs.getCaptureTutorialJson() == null ? Map.of() : Json.map(prefs.getCaptureTutorialJson()));
-        m.put(guide, Map.of("hidden", hidden));
-        prefs.setCaptureTutorialJson(Json.write(m));
-        preferences.save(prefs);
-        return Map.of("captureTutorialPreferences", m);
     }
 
     // ───────────────────────────── Explorador (RF26): marcas do catálogo sem perfil cadastrado

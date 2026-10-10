@@ -1,9 +1,16 @@
 @startuml RF35_Atividades
-title RF35 — Explorar as "Coleções" de uma marca: busca por coleção, Collections Insights e mini lojas 3D\nDiagrama de atividades
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,36 +19,46 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Visitante|
+title RF35 — Explorar as 'Coleções' de uma marca: busca por coleção, Collections Insights e mini lojas 3D\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre o perfil da marca (RF14) → aba "Coleções";
-|Sistema (ShowcaseService)|
-:Lista as coleções (type=COLLECTION)\ncom arte, temporada e contagem;
-|Visitante|
-split
-  :Busca por coleção, texto e ano;
-  |Sistema (ShowcaseService)|
-  :Esquemas e peças da coleção;
-split again
-  |Visitante|
-  :"Collections Insights";
-  |Sistema (ShowcaseService)|
-  :Ranking das coleções como mini lojas 3D\n(vitrine com a arte da coleção);
-end split
-|Marca (dona)|
-:Cria/edita coleção, adiciona peças/looks\ne envia a arte da coleção;
-|Sistema (LookbookService)|
-:Salva o agrupamento e os itens;
+:Abre /brands/[slug], /u/[username];
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/institutional/{slug}/showcase/{kind}/items\nGET /api/institutional/{slug}/showcase/{kind}/insights\nGET /api/institutional/{slug}/stage;
+|Pessoa usuária|
+:eras da celebridade (kind=eras) ou\ncoleções da marca (kind=…;
+|Tela (Next.js)|
+:GET /api/institutional/{slug}/showcase/{kind};
+|API (Spring Boot)|
+:ShowcaseController.list\n→ ShowcaseService.list;
+if (Eras [só perfis de celebridade] não enc…?) then (sim)
+  :404 NAO_ENCONTRADO\n«Eras (só perfis de celebridade)\nnão encontrado(a)»\n→ a tela mostra o aviso;
+  stop
+endif
+if (Coleções [só perfis de marca] não encon…?) then (sim)
+  :404 NAO_ENCONTRADO\n«Coleções (só perfis de marca) não\nencontrado(a)»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: schemes\nwardrobe_items\nscheme_groupings;
+:Usa: InstitutionalService.institutionalUser\nSchemeService.canView\nGuard.canView;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Foto da era ou arte da coleção [h…)
+    :POST /api/groupings/{id}/cover\n→ ShowcaseService.groupingCover\nlê: scheme_groupings\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.put\nestado: coverUrl → set;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

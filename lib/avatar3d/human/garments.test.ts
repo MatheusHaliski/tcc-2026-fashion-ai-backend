@@ -5,7 +5,7 @@ import { parseBodyAsset, type BodyMeta } from "./asset";
 import { compose, fitBody } from "./compose";
 import { buildHuman, baseNormals } from "./three-human";
 import { applyIdle, applyRestPose, setArmOut } from "./pose";
-import { SPECS, armOutFor, bodyParam, collarBand, garmentGeometry, kindOf, necklineH, posedPositions, tubeRadius, underLayer, type GarmentKind } from "./garments";
+import { SPECS, specOf, garmentMaterial, armOutFor, bodyParam, collarBand, garmentGeometry, kindOf, necklineH, posedPositions, texturedGeometry, tubeRadius, underLayer, type GarmentKind } from "./garments";
 import { DEFAULT_BODY } from "../body-spec";
 
 const dir = new URL("../../../public/avatar3d/body/", import.meta.url);
@@ -44,6 +44,53 @@ function dressed(sex: "FEMININO" | "MASCULINO", kinds: GarmentKind[]) {
 }
 
 describe("roupa que veste — moldes presos ao esqueleto", () => {
+  it("shirts and jackets have a continuous hip-bound hem instead of independently skinned thigh scraps", () => {
+    for (const sex of ["MASCULINO", "FEMININO"] as const) for (const kind of ["shirt", "jacket"] as const) {
+      const { c, h, gs } = dressed(sex, ["pants", "tee", kind]);
+      const gg = gs.at(-1)!, P = bodyParam(asset, c);
+      let hem = 0;
+      for (let v = 0; v < gg.source.length; v++) {
+        const source = gg.source[v];
+        if (source >= 0) { if (P.group[source] === 3) expect(P.h[source]).toBeGreaterThan(-0.03); }
+        else {
+          hem++;
+          expect(gg.alpha[v]).toBe(1);
+          expect(gg.skinWeight[v * 4]).toBe(1);
+          expect(gg.skinWeight[v * 4 + 1]).toBe(0);
+        }
+      }
+      expect(hem).toBeGreaterThan(128); h.dispose();
+    }
+  });
+  it("outer layers clear the accumulated thickness of all inner layers", () => {
+    const { c, h } = dressed("MASCULINO", ["pants", "tee"]);
+    const P = bodyParam(asset, c);
+    const pants = underLayer(c, P, [SPECS.pants]).ease;
+    const tee = underLayer(c, P, [SPECS.tee]).ease;
+    const both = underLayer(c, P, [SPECS.pants, SPECS.tee]).ease;
+    let overlaps = 0;
+    for (let v = 0; v < both.length; v++) if (pants[v] > 0 && tee[v] > 0) {
+      overlaps++; expect(both[v]).toBeCloseTo(pants[v] + tee[v], 6);
+    }
+    expect(overlaps).toBeGreaterThan(10); h.dispose();
+  });
+
+  it("shirt sleeves and back have fabric UV coverage instead of sampling a flat-color pixel", () => {
+    const { h, gs } = dressed("MASCULINO", ["shirt"]);
+    const gg = gs[0];
+    const geo = texturedGeometry(gg, gg.position, null);
+    const uv = geo.getAttribute("uv"), position = geo.getAttribute("position");
+    const samples = new Set<string>();
+    let front = 0, back = 0;
+    for (let i = 0; i < uv.count; i++) {
+      expect(uv.getX(i)).toBeGreaterThan(0.5); expect(uv.getX(i)).toBeLessThan(1);
+      samples.add(`${uv.getX(i).toFixed(3)}:${uv.getY(i).toFixed(3)}`);
+      if (position.getZ(i) > 0) front++; else back++;
+    }
+    expect(samples.size).toBeGreaterThan(100); expect(front).toBeGreaterThan(100); expect(back).toBeGreaterThan(100);
+    expect(geo.userData.fabricMapping.width).toBeGreaterThan(0.3);
+    geo.dispose(); h.dispose();
+  });
   it("reconhece o tipo de molde pela subcategoria da peça", () => {
     expect(kindOf({ subcategory: "t_shirt" })).toBe("tee");
     expect(kindOf({ subcategory: "jeans" })).toBe("pants");
@@ -178,8 +225,79 @@ describe("gola 3D (ribana) em volta do decote inteiro", () => {
     // pesos de pele válidos (somam 1) e só ossos do pescoço/tronco
     for (let i = 0; i < b.skinWeight.length; i += 4) expect(b.skinWeight[i] + b.skinWeight[i + 1] + b.skinWeight[i + 2] + b.skinWeight[i + 3]).toBeCloseTo(1, 3);
   });
+  for (const sex of ["MASCULINO", "FEMININO"] as const) for (const kind of ["tee", "shirt"] as const) {
+    it(`${sex}/${kind}: contorno suave e fechado, sem descolar a espessura ao mover o pescoço`, () => {
+      const body = compose(asset, fitBody(asset, { sex }).z, null, DEFAULT_BODY[sex].stature);
+      const param = bodyParam(asset, body), band = collarBand(asset, body, param, SPECS[kind])!;
+      const n = band.position.length / 12;
+      const radius = (j: number) => Math.hypot(band.position[j * 3], band.position[j * 3 + 2] - param.neckZ);
+      const weights = (j: number) => {
+        const m = new Map<number, number>();
+        for (let k = 0; k < 4; k++) m.set(band.skinIndex[j * 4 + k], (m.get(band.skinIndex[j * 4 + k]) ?? 0) + band.skinWeight[j * 4 + k]);
+        return m;
+      };
+      for (let j = 0; j < n; j++) {
+        const next = (j + 1) % n, prev = (j + n - 1) % n;
+        expect(Math.abs(radius(prev) - 2 * radius(j) + radius(next))).toBeLessThan(.003);
+        const a = weights(j), b = weights(next);
+        const change = [...new Set([...a.keys(), ...b.keys()])].reduce((sum, bone) => sum + Math.abs((a.get(bone) ?? 0) - (b.get(bone) ?? 0)), 0);
+        expect(change).toBeLessThan(.2);
+        for (let ring = 1; ring < 4; ring++) {
+          expect([...weights(ring * n + j)]).toEqual([...a]);
+        }
+        // The last segment joins the first: no duplicated/open seam.
+        expect([...band.index].some((v, i, ids) => v === j && ids.slice(Math.floor(i / 3) * 3, Math.floor(i / 3) * 3 + 3).includes(next))).toBe(true);
+      }
+      const human = buildHuman(asset, body, { skin: "#c99a6e" });
+      try {
+        const rest = applyRestPose(human); applyIdle(human, rest, 1.7, 1);
+        human.bone("Neck").rotateX(.35); human.bone("Neck").rotateZ(.22);
+        const posed = posedPositions(human.skeleton, human.body.bindMatrix, band.position, band.skinIndex, band.skinWeight);
+        const distance = (p: Float32Array, a: number, b: number) => Math.hypot(...[0, 1, 2].map(k => p[a * 3 + k] - p[b * 3 + k]));
+        for (let j = 0; j < n; j++) {
+          const ratio = distance(posed, j, 3 * n + j) / distance(band.position, j, 3 * n + j);
+          expect(ratio).toBeGreaterThan(.8); expect(ratio).toBeLessThan(1.05);
+        }
+      } finally { human.dispose(); }
+    });
+  }
   it("jaqueta e calçado não ganham faixa (aberta na frente / sem gola)", () => {
     expect(collarBand(asset, c, P, SPECS.jacket)).toBeNull();
     expect(collarBand(asset, c, P, SPECS.shoes)).toBeNull();
   });
+});
+
+
+describe("cargo trouser construction", () => {
+  it("raises the waist and distinguishes relaxed volume from ordinary pants", () => {
+    const regular = specOf({ subcategory: "Calça cargo" })!;
+    const relaxed = specOf({ subcategory: "Calça cargo", name: "Loose Fit Cargo Pants" })!;
+    expect(regular.waist).toBeGreaterThan(SPECS.pants.waist);
+    expect(regular.ease).toBeGreaterThan(SPECS.pants.ease);
+    expect(relaxed.ease).toBeGreaterThan(regular.ease);
+    expect(relaxed.flare).toBeGreaterThan(regular.flare);
+    expect(specOf({ subcategory: "jeans" })).toBe(SPECS.pants);
+    expect(SPECS.pants.waist).toBe(.18);
+  });
+  it("uses matte workwear material rather than glossy thin cloth", () => {
+    const texture = new THREE.Texture();
+    const cargo = garmentMaterial(texture, specOf({ subcategory: "cargo" })!);
+    expect(cargo.roughness).toBe(.94);
+    expect(cargo.sheen).toBe(.08);
+    cargo.dispose(); texture.dispose();
+  });
+});
+
+it("builds cargo on both body shapes with continuous fabric instead of a front photo decal", () => {
+  for (const sex of ["FEMININO", "MASCULINO"] as const) {
+    const { c, h } = dressed(sex, ["pants"]);
+    const P = bodyParam(asset, c), normals = baseNormals(c.body, asset.body.index, asset.body.renderVertex);
+    const g = garmentGeometry(asset, c, normals, P, specOf({ subcategory: "cargo", name: "Loose fit" })!)!;
+    expect(g.position.length).toBeGreaterThan(0);
+    expect(inside(c.body, normals, g.position, g.alpha)).toBeLessThan(.02);
+    const mesh = texturedGeometry(g, posedPositions(h.skeleton, h.body.bindMatrix, g.position, g.skinIndex, g.skinWeight), null);
+    expect(Array.from(mesh.getAttribute("photoWeight").array).every(weight => weight === 0)).toBe(true);
+    expect(Array.from(mesh.getAttribute("position").array).every(Number.isFinite)).toBe(true);
+    mesh.dispose(); h.dispose();
+  }
 });

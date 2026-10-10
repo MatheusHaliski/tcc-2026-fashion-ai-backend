@@ -66,11 +66,28 @@ public class StudioPipeline {
      * @param logoBox   caixa do logo relativa à peça (x0, y0, x1, y1 em 0–1), vinda da IA de visão; null = detector local
      * @param feed      template de enquadramento do feed (categoria + subcategoria); null = deduzido de {@code kind}
      */
-    public record Hints(String kind, Set<String> truncated, double[] logoBox, String logoSource, FeedFraming.Template feed) {
+    /**
+     * @param category    categoria do cadastro (upper_piece…): com ela a foto do feed segue a Regra de Enquadramento do
+     *                    Produto do registro (catalog/semantic-regions.json), a mesma das fotos do acervo
+     * @param subcategory subcategoria do cadastro (óculos, relógio, cinto… têm regra própria)
+     */
+    public record Hints(String kind, Set<String> truncated, double[] logoBox, String logoSource, FeedFraming.Template feed,
+                        String category, String subcategory) {
         public static final Hints NONE = new Hints(null, null, null, null);
 
         public Hints(String kind, Set<String> truncated, double[] logoBox, String logoSource) {
-            this(kind, truncated, logoBox, logoSource, null);
+            this(kind, truncated, logoBox, logoSource, null, null, null);
+        }
+
+        public Hints(String kind, Set<String> truncated, double[] logoBox, String logoSource, FeedFraming.Template feed) {
+            this(kind, truncated, logoBox, logoSource, feed, null, null);
+        }
+
+        /** Peça com categoria conhecida: template de medição + regra de enquadramento da categoria. */
+        public static Hints forPiece(String kind, Set<String> truncated, double[] logoBox, String logoSource, String category,
+                                     String subcategory) {
+            return new Hints(kind, truncated, logoBox, logoSource, FeedFraming.template(category, subcategory, kind), category,
+                    subcategory);
         }
 
         public FeedFraming.Template feedTemplate() {
@@ -261,9 +278,10 @@ public class StudioPipeline {
         // padrão da peça: quadro quadrado (1:1), o mesmo do card — com 9:16/2:3 o card cortava calça e vestido no "cover"
         StudioFraming.Frame frame = StudioFraming.frame(lit.getWidth(), lit.getHeight(), bleed, flush, SIZE, false);
         StudioFraming.Frame thumbFrame = StudioFraming.frame(lit.getWidth(), lit.getHeight(), bleed, flush, THUMB, false);
-        // foto do feed: template da categoria por pontos de referência da peça (gola/peito, cós/joelhos…), sempre 4:5
+        // Foto do feed: recorte interno com tecido (4:5 superiores, 2:1 inferiores); objetos preservam a silhueta.
         // (só os lados que a própria foto cortou contam como região faltando; barra ou cós retos não são corte)
-        FeedFraming.Feed feed = FeedFraming.frame(lit, hint.feedTemplate(), hint.truncated() == null ? Set.of() : hint.truncated());
+        FeedFraming.Feed feed = FeedFraming.frame(lit, hint.feedTemplate(), hint.truncated() == null ? Set.of() : hint.truncated(),
+                hint.category(), hint.subcategory());
         stages.add(new Stage("ENQUADRAMENTO", "local", 0, BigDecimal.ZERO, true, false,
                 Msg.t("studio.peca_ocupa_do_quadro", frame.aspect(), String.valueOf(frame.width()), String.valueOf(frame.height()), String.format(java.util.Locale.ROOT, "%.0f", frame.fill() * 100))
                         + (bleed.isEmpty() ? Msg.t("studio.peca_inteira_com_margem_minima")
@@ -304,7 +322,8 @@ public class StudioPipeline {
             stages.add(new Stage("COMPOSICAO", "local", ms(t5), BigDecimal.ZERO, true, false, frame.width() + "×" + frame.height() + " + miniatura " + THUMB + "×" + THUMB));
         }
         BufferedImage thumb = StudioFraming.compose(lit, bd, thumbFrame);
-        BufferedImage feedShot = StudioFraming.compose(lit, bd, feed.frame());
+        BufferedImage feedShot = feed.fabricCrop() == null ? StudioFraming.compose(lit, bd, feed.frame())
+                : GarmentCrop.render(lit, feed.fabricCrop(), feed.frame().width(), feed.frame().height());
         stages.add(new Stage("FEED", "local", 0, BigDecimal.ZERO, feed.missing().isEmpty(), false,
                 Msg.t("studio.feed_template", feed.template().name(), String.format(java.util.Locale.ROOT, "%.0f", feed.frame().fill() * 100))
                         + (feed.missing().isEmpty() ? "" : Msg.t("studio.feed_falta", String.join(", ", feed.missing())))));

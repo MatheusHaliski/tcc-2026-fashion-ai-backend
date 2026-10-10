@@ -1,0 +1,106 @@
+@startuml RF1_Sequencia_Verificacao
+title RF1 — Cadastrar conta na plataforma (Pessoal, Marca ou Celebridade)\nDiagrama de sequência — verificação de marca e celebridade (aviso, fila, decisão e reenvio — CA06–CA10)
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Administrador" as ADM
+participant "admin/users/page.tsx\n(AdminApprovals)" as FEA
+participant "AdminController\n/api/admin/approvals" as ADC
+participant "IssuerReviewService" as IRS
+participant "IssuerVerificationPolicy" as POL
+participant "MediaService" as MS
+participant "SealService" as SS
+participant "NotificationService" as NS
+participant "EmailSenderPort\n(Resend)" as EM
+database "MySQL" as DB
+participant "IssuerReviewController\n/api/me/issuer-review" as IRC
+participant "brands/[slug]/page.tsx\n(IssuerCenter)" as FEO
+actor "Dono do perfil\n(marca ou celebridade)" as OWN
+
+== Aviso à administração (depois do commit do cadastro ou do reenvio) ==
+IRS -> DB: findByRole("ADMIN") (só contas ACTIVE)
+loop cada administrador
+  IRS -> NS: notify(ISSUER_REVIEW_REQUEST, href /admin/users?tab=approvals)
+end
+IRS -> EM: send(ADMIN com e-mail confirmado + ISSUER_REVIEW_NOTIFY_EMAILS)
+note right of IRS: sem destinatário: só log de aviso;\nfalha do e-mail não desfaz o cadastro
+
+== Fila do analista ==
+ADM -> FEA: abre a aba Aprovações
+FEA -> ADC: GET /api/admin/approvals
+ADC -> IRS: queue(admin)
+IRS -> IRS: guard.requireAdmin (403 auditado)
+IRS -> DB: brand_profiles / celebrity_profiles em PENDENTE e em AJUSTES
+IRS -> POL: checks(user, profile) — verificação automática por critério
+ADC --> FEA: 200 {pending, waitingOwner, criteria, reasons, policyVersion 1.0, slaBusinessDays 3, maxSubmissions 5}
+opt abrir documento do pedido
+  FEA -> ADC: GET /api/admin/approvals/{userId}/documents/{identity | activity-proof}
+  ADC -> IRS: document(admin, userId, kind)
+  IRS -> MS: readRestricted(url)
+  alt sem documento
+    IRS --> FEA: 404
+  else
+    IRS -> DB: audit_log DOCUMENTO_VERIFICACAO_ABERTO
+    ADC --> FEA: 200 imagem (Cache-Control: no-store)
+  end
+end
+
+== Decisão ==
+ADM -> FEA: checklist + APROVAR | AJUSTES | RECUSAR (motivos, observação)
+FEA -> ADC: POST /api/admin/approvals/{userId} {decision, reasons, notes, checklist}
+ADC -> IRS: decide(admin, userId, DecisionCommand)
+alt o próprio perfil · perfil PESSOAL · decisão ou motivo inválido
+  IRS --> FEA: 403 · 400 PERFIL_PESSOAL · 400 DECISAO_INVALIDA · 400 MOTIVO_INVALIDO
+else fora da fila (não PENDENTE; em AJUSTES só RECUSAR)
+  IRS --> FEA: 409 FORA_DA_FILA
+else APROVAR sem e-mail confirmado ou com critério obrigatório aberto
+  IRS -> POL: checks(user, profile)
+  IRS --> FEA: 409 EMAIL_NAO_CONFIRMADO | 409 CRITERIOS_PENDENTES {criteria}
+else AJUSTES/RECUSAR sem motivo (ou OUTRO sem observação)
+  IRS --> FEA: 400 MOTIVO_OBRIGATORIO | 400 OBSERVACAO_OBRIGATORIA
+else decisão aceita
+  IRS -> DB: approvalStatus | verificationStatus = APROVADO | AJUSTES | RECUSADO\napprovedBy, approvedAt, verificationNotes, reviewReasons, reviewChecklist
+  opt APROVADO (CA07/CA10)
+    IRS -> DB: identityVerified · documentVerified (marca) · requiresSealReview (celebridade)
+    IRS -> DB: users.status = ACTIVE · users.verified = true
+    IRS -> SS: ensureDefaultSeals(user)
+  end
+  IRS -> NS: notify(ACCOUNT_APPROVAL, href /brands/{slug}?tab=CENTRAL)
+  IRS -> DB: audit_log PERFIL_APROVADO | PERFIL_AJUSTES_SOLICITADOS | PERFIL_RECUSADO
+  ADC --> FEA: 200 {userId, status, approved}
+  IRS -> EM: depois do commit: send(dono, "decisão da verificação")
+end
+
+== Central do emissor (dono do perfil) ==
+OWN -> FEO: abre /brands/{slug}?tab=CENTRAL
+FEO -> IRC: GET /api/me/issuer-review
+IRC -> IRS: status(user)
+alt conta PESSOAL
+  IRS --> FEO: 403
+else
+  IRS -> POL: checks · verificationCode(userId)
+  IRC --> FEO: 200 {status, reasons, notes, attempts, maxAttempts 5, canResubmit, checks, verificationCode, editable}
+end
+opt AJUSTES ou RECUSADO e menos de 5 envios
+  OWN -> FEO: corrige links, contato, nome civil; novo documento e mensagem
+  FEO -> IRC: POST /api/me/issuer-review/resubmit {message, storeUrl | verificationUrl, ..., documentUrl, realName}
+  IRC -> IRS: resubmit(user, ResubmitCommand)
+  alt status não é AJUSTES nem RECUSADO
+    IRS --> FEO: 409 REENVIO_INDISPONIVEL
+  else 5 envios já feitos
+    IRS --> FEO: 409 LIMITE_DE_ENVIOS
+  else link inválido, nome civil vazio ou documento fora do formulário
+    IRS --> FEO: 400 FORMULARIO_INVALIDO
+  else reenvio aceito
+    IRS -> DB: novos dados · PENDENTE · reviewAttempts + 1 · reviewSubmittedAt · reviewOwnerMessage
+    IRS -> DB: audit_log PERFIL_REENVIADO
+    IRS -> IRS: submitted(userId) → novo aviso aos administradores depois do commit
+    IRC --> FEO: 200 status atualizado
+  end
+end
+@enduml

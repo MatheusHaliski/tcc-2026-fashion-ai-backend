@@ -95,7 +95,7 @@ export default function RegisterPage() {
           <fieldset className="mb-3 rounded-md border border-line-soft p-3">
             <legend className="label px-1">{t("auth.brandData")}</legend>
             {([["razaoSocial", t("register.razao_social")], ["cnpj", "CNPJ"], ["nomeFantasia", t("register.nome_fantasia")], ["fashionCategory", t("register.categoria_de_moda")], ["storeUrl", t("register.loja_site")], ["commercialContact", t("register.contato_comercial")], ["officialHashtag", t("register.hashtag_oficial")]] as const).map(([k, label]) => (
-              <Field key={k} label={label} id={k} error={err[`brand.${k}`] ?? err[k]}><Input id={k} value={brand[k]} onChange={(e) => setBrand((b) => ({ ...b, [k]: e.target.value }))} /></Field>
+              <Field key={k} label={label} id={k} required={k === "storeUrl"} hint={k === "storeUrl" ? t("register.site_oficial_dica") : undefined} error={err[`brand.${k}`] ?? err[k]}><Input id={k} value={brand[k]} {...(k === "storeUrl" ? { type: "url", inputMode: "url" as const, placeholder: "https://", required: true } : {})} onChange={(e) => setBrand((b) => ({ ...b, [k]: e.target.value }))} /></Field>
             ))}
             <PhotoPicker kind="logo" value={docs.logoUrl} onChange={(u) => setDocs((d) => ({ ...d, logoUrl: u }))} label={t("register.logo_da_marca")} hint={t("register.png_com_fundo_transparente_fica")} error={err["brand.logoUrl"]} />
             <PhotoPicker kind="activity-proof" value={docs.activityProofUrl} onChange={(u) => setDocs((d) => ({ ...d, activityProofUrl: u }))} label={t("register.comprovante_de_atividade_opcional")} hint={t("register.so_a_administracao_ve_para")} error={err["brand.activityProofUrl"]} />
@@ -105,7 +105,7 @@ export default function RegisterPage() {
           <fieldset className="mb-3 rounded-md border border-line-soft p-3">
             <legend className="label px-1">{t("auth.celebrityData")}</legend>
             {([["stageName", t("register.nome_artistico")], ["realName", t("register.nome_real")], ["areas", t("register.areas_separe_por_virgula")], ["verificationUrl", t("register.link_para_verificacao")], ["representationContact", t("register.contato_da_representacao")]] as const).map(([k, label]) => (
-              <Field key={k} label={label} id={k} error={err[`celebrity.${k}`] ?? err[k]}><Input id={k} value={celeb[k]} onChange={(e) => setCeleb((c) => ({ ...c, [k]: e.target.value }))} /></Field>
+              <Field key={k} label={label} id={k} required={k === "stageName" || k === "realName" || k === "verificationUrl"} hint={k === "verificationUrl" ? t("register.link_perfil_oficial_dica") : undefined} error={err[`celebrity.${k}`] ?? err[k]}><Input id={k} value={celeb[k]} {...(k === "verificationUrl" ? { type: "url", inputMode: "url" as const, placeholder: "https://instagram.com/…", required: true } : {})} onChange={(e) => setCeleb((c) => ({ ...c, [k]: e.target.value }))} /></Field>
             ))}
             <PhotoPicker kind="official-photo" value={docs.officialPhotoUrl} onChange={(u) => setDocs((d) => ({ ...d, officialPhotoUrl: u }))} label={t("register.foto_oficial")} hint={t("register.usada_no_perfil_nos_selos")} error={err["celebrity.officialPhotoUrl"]} />
             <PhotoPicker kind="identity" value={docs.identityProofUrl} onChange={(u) => setDocs((d) => ({ ...d, identityProofUrl: u }))} label={t("register.documento_de_identificacao")} hint={t("register.so_a_administracao_ve_para_2")} error={err["celebrity.identityProofUrl"]} />

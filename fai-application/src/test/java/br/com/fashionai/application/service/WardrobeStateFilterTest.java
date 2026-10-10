@@ -39,4 +39,23 @@ class WardrobeStateFilterTest {
         assertTrue(WardrobeService.stateMatches(item(false, false, false), ""));
         assertTrue(WardrobeService.stateMatches(item(false, false, false), null));
     }
+
+    @Test
+    void paraDoarFiltraEEExclusivoComAVenda() {
+        WardrobeItem w = item(true, true, false);
+        WardrobeService.applyListing(w, null, true);   // marcar "para doar" tira de "à venda"
+        assertTrue(w.isForDonation());
+        assertFalse(w.isForSale());
+        for (String s : new String[]{"doar", "para_doar", "for_donation"}) {
+            assertTrue(WardrobeService.stateMatches(w, s), s);
+        }
+        assertFalse(WardrobeService.stateMatches(w, "venda"));
+        WardrobeService.applyListing(w, true, null);   // e o contrário
+        assertTrue(w.isForSale());
+        assertFalse(w.isForDonation());
+        assertFalse(WardrobeService.stateMatches(w, "doar"));
+        WardrobeService.applyListing(w, false, null);  // desmarcar não liga o outro
+        assertFalse(w.isForSale());
+        assertFalse(w.isForDonation());
+    }
 }

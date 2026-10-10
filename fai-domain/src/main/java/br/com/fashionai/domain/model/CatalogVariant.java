@@ -38,4 +38,11 @@ public class CatalogVariant extends VersionedAuditableEntity {
 
     @Column(name = "availability", length = 30)
     private String availability;
+
+    /** Preço da cor/SKU quando a página traz um por variante (JSON-LD hasVariant.offers). */
+    @Column(name = "price", precision = 12, scale = 2)
+    private java.math.BigDecimal price;
+
+    @Column(name = "price_currency", length = 3)
+    private String priceCurrency;
 }

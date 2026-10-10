@@ -12,7 +12,7 @@ import type { BodyAsset } from "./asset";
 import type { Composed } from "./compose";
 import type { BodyParam, GarmentGeometry, GarmentSpec } from "./garments";
 
-export interface TrimBand { part: "barra" | "punho"; position: Float32Array; skinIndex: Uint16Array; skinWeight: Float32Array; index: Uint32Array }
+export interface TrimBand { part: "barra" | "punho" | "carcela" | "botoes"; position: Float32Array; skinIndex: Uint16Array; skinWeight: Float32Array; index: Uint32Array }
 
 const RIB = new Set(["sweater", "hoodie"]);
 const TORSO_HEM = new Set(["tee", "longsleeve", "shirt", "sweater", "hoodie", "crop", "tank"]);
@@ -92,6 +92,37 @@ function basis(d: number[]) {
   return { e1, e2 };
 }
 
+/** Button placket follows the centre front of the fitted mesh, never the photo silhouette. */
+export function shirtPlacket(a: BodyAsset, c: Composed, P: BodyParam, gg: GarmentGeometry): TrimBand[] {
+  if (gg.spec.kind !== "shirt") return [];
+  const candidates = Array.from(P.group.keys()).filter(v => P.group[v] === 1);
+  const vertices = Array.from(gg.source.keys()).filter(v => gg.alpha[v] > .5 && Math.abs(gg.position[v * 3]) < .065 && gg.position[v * 3 + 2] > P.torsoZ);
+  if (!vertices.length || !candidates.length) return [];
+  const low = P.hipY + gg.spec.hem * (P.neckY - P.hipY) + .012;
+  const high = P.hipY + (gg.spec.neck - gg.spec.vneck) * (P.neckY - P.hipY) - .035;
+  const at = (y: number) => {
+    const near = [...vertices].sort((u, v) => Math.abs(gg.position[u * 3 + 1] - y) - Math.abs(gg.position[v * 3 + 1] - y)).slice(0, 12);
+    return Math.max(...near.map(v => gg.position[v * 3 + 2])) + .002;
+  };
+  const build = (part: TrimBand["part"]) => ({ part, position: [] as number[], skinIndex: [] as number[], skinWeight: [] as number[], index: [] as number[] });
+  const strip = build("carcela"), buttons = build("botoes");
+  const push = (mesh: ReturnType<typeof build>, x: number, y: number, z: number) => {
+    mesh.position.push(x, y, z); const [si, sw] = weightsNear(a, c, candidates, x, y, z); mesh.skinIndex.push(...si); mesh.skinWeight.push(...sw);
+  };
+  for (let row = 0; row <= 40; row++) {
+    const y = low + (high - low) * row / 40, z = at(y);
+    push(strip, -.009, y, z); push(strip, .009, y, z);
+    if (row) { const i = row * 2; strip.index.push(i - 2, i - 1, i, i, i - 1, i + 1); }
+  }
+  for (let row = 0; row < 7; row++) {
+    const y = low + .04 + (high - low - .08) * row / 6, z = at(y) + .0025, start = buttons.position.length / 3;
+    push(buttons, 0, y, z + .001);
+    for (let j = 0; j < 12; j++) { const angle = j * Math.PI / 6; push(buttons, Math.cos(angle) * .004, y + Math.sin(angle) * .004, z); }
+    for (let j = 0; j < 12; j++) buttons.index.push(start, start + 1 + j, start + 1 + (j + 1) % 12);
+  }
+  return [strip, buttons].map(mesh => ({ part: mesh.part, position: Float32Array.from(mesh.position), skinIndex: Uint16Array.from(mesh.skinIndex), skinWeight: Float32Array.from(mesh.skinWeight), index: Uint32Array.from(mesh.index) }));
+}
+
 /** Barra do tronco e barras/punhos das mangas da peça (faixas 3D). */
 export function garmentTrims(a: BodyAsset, c: Composed, P: BodyParam, gg: GarmentGeometry): TrimBand[] {
   const sp = gg.spec; const out: TrimBand[] = []; const nb = P.h.length;
@@ -117,5 +148,5 @@ export function garmentTrims(a: BodyAsset, c: Composed, P: BodyParam, gg: Garmen
       const tEnd = sp.sleeve * L; const b = tube(a, c, armCand[s], S, d, tEnd - w + 0.004, tEnd + 0.006, R, "punho"); if (b) out.push(b);
     }
   }
-  return out;
+  return [...out, ...shirtPlacket(a, c, P, gg)];
 }

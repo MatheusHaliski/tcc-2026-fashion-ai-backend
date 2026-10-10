@@ -1,0 +1,76 @@
+@startuml RF7_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
+start
+:Abre /schemes/[id]/edit, /schemes/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/schemes/{id}\nGET /api/me/closet\nGET /api/users/{ownerId}/closet;
+|Pessoa usuária|
+:Detalhe da peça (com contexto do\nesquema de origem, se houv…;
+|Tela (Next.js)|
+:GET /api/pieces/{id};
+|API (Spring Boot)|
+:WardrobeController.detail\n→ WardrobeService.detail;
+if (Peça não encontrado[a]?) then (sim)
+  :404 NAO_ENCONTRADO\n«Peça não encontrado(a)»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: wardrobe_items\nscheme_items\nreactions;
+:Usa: Guard.requireView\nGuard.canView;
+:Grava: wardrobe_items;
+:Evento: HypeSignal;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Editar a peça)
+    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
+  case (Excluir a peça)
+    :DELETE /api/pieces/{id}\n→ WardrobeService.delete\nlê: wardrobe_items, scheme_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.removePiece …\nestado: availabilityStatus → ARCHIVED, disponivel →\nfalse, visibility → PRIVATE;
+  case (Excluir o look [menu ⋯ do dono];…)
+    :DELETE /api/schemes/{id}\n→ SchemeService.archive\nlê: schemes\nusa: Guard.requireCanCreate, Guard.requireOwner,\nSealService.revokeForScheme …\nestado: status → ARCHIVED;
+  case (Voltar da peça para o esquema de…)
+    :POST /api/pieces/{pieceId}/return-to-origin\n→ SocialService.returnToOrigin\nvalida: INDISPONIVEL, NAO_ENCONTRADO\nlê: wardrobe_items\nusa: SchemeService.canView;
+  case (Registrar uso da peça hoje)
+    :POST /api/pieces/{id}/worn\n→ WardrobeService.markWorn\nlê: wardrobe_items, reactions\nusa: Guard.requireOwner\nevento: PieceWorn;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Favoritar, marcar disponível/…, Editar esquema,
+  Salvar esquema (manual, IA, a…, Cadastrar a peça a
+  partir do…, Favoritar / marcar disponibil…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
+stop
+@enduml

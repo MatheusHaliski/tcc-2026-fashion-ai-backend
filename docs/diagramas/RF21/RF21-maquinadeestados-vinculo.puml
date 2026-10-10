@@ -1,38 +1,53 @@
 @startuml RF21_MaquinaDeEstados_Vinculo
 !pragma layout smetana
-title RF21 — SealBond: vínculo esquema × celebridade verificada (SealBondStatus) — sempre com revisão
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-[*] --> Sugerido : GET /api/schemes/{id}/seal-suggestions\n(basis STYLE_SIGNATURE, só celebridade\nAPROVADA com sealConsentGranted)
-[*] --> Editado : POST /api/schemes/{id}/seal-bonds\n{targetOwnerId, imageRightsConsent} (MANUAL)
-state "SUGGESTED" as Sugerido
-state "ACCEPTED" as Aceito
-state "EDITED" as Editado
-state "REFUSED" as Recusado
-state "PENDING_REVIEW" as EmRevisao
-state "APPROVED" as Aprovado
-state "REJECTED" as Rejeitado
-state "REVOKED" as Revogado
-Sugerido --> Aceito : POST /api/seal-bonds/{id}/accept\n{imageRightsConsent:true} (CA02/CA19)
-Sugerido --> Recusado : POST /api/seal-bonds/{id}/refuse · refuse-all (CA04)
-Recusado --> Aceito : accept() depois ("Meus Selos · recusados")
-Aceito --> EmRevisao : route(): celebridade → requiresReview = true\nnotify SEAL_BOND_REVIEW
-Editado --> EmRevisao : route(): sempre revisão\n(sem auto-aprovação — diferença do RF20)
-Aceito --> Rejeitado : route(): imageRightsConsent != true →\n400 CONSENTIMENTO_IMAGEM (CA19)
-Editado --> Rejeitado : route(): Selo Premium fora da janela\nou usageCount = usageLimit → RECUSADO_LIMITE (CA23)
-EmRevisao --> Aprovado : POST /api/seal-bonds/{id}/review {approve:true}\n→ issue(): sealCode PRM-…, Seal.premium (CA20)
-EmRevisao --> Rejeitado : review {approve:false, reason}
-Aprovado --> Revogado : POST /api/seal-bonds/{id}/revoke · revokeForScheme\n(esquema excluído/privado) — CA14
-Aprovado --> Revogado : revalidação rejeitada (peças do look mudaram)
-Sugerido --> Revogado : revokeForScheme
-EmRevisao --> Revogado : revokeForScheme
-Aprovado --> [*] : expiresAt passou → "EXPIRADO" em GET /api/me/seals
-note right of Aprovado : notify SEAL_GRANTED "Selo Premium emitido!"\nCouponRightsCheck → promoções SHOW / MEET_GREET /\nPRE_VENDA e marca parceira (CA21/CA22; RF38)
-note right of Rejeitado : CA23 — recusa com motivo explicativo\n(review_note), sem emissão
-note bottom of Recusado : toda transição grava AuditLog\nMUDANCA_ESTADO_VINCULO_SELO (CA16)
+title RF21 — ciclo de vida de SealBond.status\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum SealBondStatus · tabela seal_bonds
+
+state "SealBond.status" as Ciclo_SealBond {
+  state Ciclo_SealBond_SUGGESTED as "SUGGESTED"
+  state Ciclo_SealBond_ACCEPTED as "ACCEPTED"
+  state Ciclo_SealBond_EDITED as "EDITED"
+  state Ciclo_SealBond_REFUSED as "REFUSED"
+  state Ciclo_SealBond_PENDING_REVIEW as "PENDING_REVIEW"
+  state Ciclo_SealBond_APPROVED as "APPROVED"
+  state Ciclo_SealBond_REJECTED as "REJECTED"
+  state Ciclo_SealBond_REVOKED as "REVOKED"
+}
+[*] --> Ciclo_SealBond_SUGGESTED : criação
+Ciclo_SealBond --> Ciclo_SealBond_APPROVED : accept(), issue(), linkManually(),\nreview(), route()
+Ciclo_SealBond --> Ciclo_SealBond_EDITED : linkManually()\nPOST /api/schemes/{schemeId}/seal-bonds
+Ciclo_SealBond --> Ciclo_SealBond_PENDING_REVIEW : accept(), linkManually(), route()
+Ciclo_SealBond --> Ciclo_SealBond_REFUSED : refuseAll()\nPOST /api/schemes/{schemeId}/seal-bonds/refu…
+Ciclo_SealBond --> Ciclo_SealBond_REVOKED : revoke(), revokeForScheme(),\nrevokeInternal()
+Ciclo_SealBond --> Ciclo_SealBond_SUGGESTED : suggest()\nGET /api/schemes/{schemeId}/seal-suggestions
+Ciclo_SealBond_REFUSED --> Ciclo_SealBond_ACCEPTED : accept()\nPOST /api/seal-bonds/{bondId}/accept
+Ciclo_SealBond_SUGGESTED --> Ciclo_SealBond_ACCEPTED : accept()\nPOST /api/seal-bonds/{bondId}/accept
+Ciclo_SealBond_SUGGESTED --> Ciclo_SealBond_REFUSED : refuse()\nPOST /api/seal-bonds/{bondId}/refuse
+note bottom of Ciclo_SealBond
+  Sem mudança explícita no código para: REJECTED
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
+note right of Ciclo_SealBond
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
+end note
 @enduml

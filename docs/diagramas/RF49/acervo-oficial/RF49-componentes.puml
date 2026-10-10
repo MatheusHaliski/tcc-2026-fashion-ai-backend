@@ -1,0 +1,82 @@
+@startuml RF49_Componentes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF49 — Acervo oficial em escala\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "app/(site)" {
+  component "page.tsx" as m_app__site__page_tsx
+}
+package "components/catalog" {
+  component "catalog-search.tsx" as m_components_catalog_catalog_search_tsx
+  component "brand-autocomplete.tsx" as m_components_catalog_brand_autocomplete_tsx <<apoio>>
+  component "category-cards.tsx" as m_components_catalog_category_cards_tsx <<apoio>>
+}
+package "lib/api" {
+  component "catalog.ts" as m_lib_api_catalog_ts
+  component "taxonomy.ts" as m_lib_api_taxonomy_ts <<apoio>>
+}
+package "components" {
+  component "brand-logo.tsx" as m_components_brand_logo_tsx <<apoio>>
+}
+package "components/capture" {
+  component "garment-glyphs.tsx" as m_components_capture_garment_glyphs_tsx <<apoio>>
+}
+package "components/ui" {
+  component "index.tsx" as m_components_ui_index_tsx <<apoio>>
+}
+package "lib/capture" {
+  component "capture-guides.ts" as m_lib_capture_capture_guides_ts <<apoio>>
+}
+package "Backend (Spring Boot)" {
+  component "CatalogController" as CatalogController
+  component "WardrobeController" as WardrobeController
+  component "CatalogMatchScorer" as CatalogMatchScorer <<apoio>>
+  component "CatalogService" as CatalogService
+}
+database "MySQL" as DB_MySQL
+CatalogController --> CatalogService
+CatalogService --> DB_MySQL : brand_aliases, brands, catalog_images,\ncatalog_product_aliases,\ncatalog_products, catalog_sources
+m_components_capture_garment_glyphs_tsx --> m_lib_capture_capture_guides_ts
+m_components_catalog_brand_autocomplete_tsx --> m_components_brand_logo_tsx
+m_components_catalog_brand_autocomplete_tsx --> m_components_ui_index_tsx
+m_components_catalog_catalog_search_tsx --> m_components_brand_logo_tsx
+m_components_catalog_catalog_search_tsx --> m_components_capture_garment_glyphs_tsx
+m_components_catalog_catalog_search_tsx --> m_components_catalog_brand_autocomplete_tsx
+m_components_catalog_catalog_search_tsx --> m_components_catalog_category_cards_tsx
+m_components_catalog_catalog_search_tsx --> m_components_ui_index_tsx
+m_components_catalog_catalog_search_tsx --> m_lib_api_catalog_ts
+m_components_catalog_catalog_search_tsx --> m_lib_api_taxonomy_ts
+m_components_catalog_catalog_search_tsx --> m_lib_capture_capture_guides_ts
+m_components_catalog_category_cards_tsx --> m_components_capture_garment_glyphs_tsx
+m_components_catalog_category_cards_tsx --> m_components_ui_index_tsx
+m_components_catalog_category_cards_tsx --> m_lib_capture_capture_guides_ts
+m_lib_api_taxonomy_ts --> WardrobeController : HTTPS
+@enduml

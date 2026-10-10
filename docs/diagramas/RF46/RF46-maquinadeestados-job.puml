@@ -1,51 +1,48 @@
 @startuml RF46_MaquinaDeEstados_Job
 !pragma layout smetana
-title RF46 — PipelineJob: ciclo do job assíncrono de geração (Trello × enum real PipelineJobStatus)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "PENDING" as Pendente
-state "RUNNING" as Rodando : Trello: PROCESSING
-state "Etapas de render" as Etapas {
-  state "RENDERING" as Render
-  state "ENHANCING" as Enhance
-  state "COMPOSITING" as Compose
-  Render --> Enhance
-  Enhance --> Compose
-}
-state "COMPLETED" as Concluido
-state "FAILED" as Falhou
-state "CANCELLED" as Cancelado
-state "REQUIRES_REVIEW\n<<planejado>>" as Revisao #FAFAFA
+title RF46 — ciclo de vida de PipelineJob.status\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum PipelineJobStatus · tabela pipeline_jobs
 
-[*] --> Pendente : job criado (queuedAt)
-Pendente --> Rodando : worker pega o job (startedAt, attempts++)
-Rodando --> Etapas : composição criativa
-Etapas --> Concluido
-Rodando --> Concluido : outputUrl + resultJson (finishedAt)
-Rodando --> Pendente : erro transitório e attempts < 3
-Rodando --> Falhou : attempts >= 3 (errorCode, errorMessage)
-Pendente --> Cancelado : pessoa/admin cancela
-Rodando --> Revisao : asset de marca/celebridade\nou validação de qualidade reprovada
-Revisao --> Concluido : aprovado
-Revisao --> Falhou : recusado
-Concluido --> [*]
-Falhou --> [*]
-Cancelado --> [*]
-note right of Revisao
-  Divergências Trello × código:
-  • PROCESSING (Trello) = RUNNING (enum real)
-  • REQUIRES_REVIEW não existe no enum → <<planejado>>
-  • RENDERING / ENHANCING / COMPOSITING existem no enum
-    mas nenhum serviço os atribui hoje
-  • CANCELLED existe no enum, sem endpoint que o atribua
-  • Hoje só FLAT_LAY_STANDARDIZATION (WardrobeService) e
-    THREE_D_GENERATION (Model3dService) usam o ciclo
-    PENDING → RUNNING → COMPLETED/FAILED; a arte de fundo
-    (BACKGROUND_GENERATION) ainda é gerada de forma síncrona
+state "PipelineJob.status" as Ciclo_PipelineJob {
+  state Ciclo_PipelineJob_PENDING as "PENDING"
+  state Ciclo_PipelineJob_RUNNING as "RUNNING"
+  state Ciclo_PipelineJob_RENDERING as "RENDERING"
+  state Ciclo_PipelineJob_ENHANCING as "ENHANCING"
+  state Ciclo_PipelineJob_COMPOSITING as "COMPOSITING"
+  state Ciclo_PipelineJob_COMPLETED as "COMPLETED"
+  state Ciclo_PipelineJob_FAILED as "FAILED"
+  state Ciclo_PipelineJob_CANCELLED as "CANCELLED"
+}
+[*] --> Ciclo_PipelineJob_PENDING : criação
+Ciclo_PipelineJob --> Ciclo_PipelineJob_COMPLETED : complete(), follow(), start(),\naiPieceDraft(), detect() +6
+Ciclo_PipelineJob --> Ciclo_PipelineJob_FAILED : complete(), fail(), follow(),\nsafely(), start() +2
+Ciclo_PipelineJob --> Ciclo_PipelineJob_PENDING : request(), create(), createBatch(),\ncreateFromCatalog(),\ncreateInternal()
+Ciclo_PipelineJob --> Ciclo_PipelineJob_RUNNING : start(), reprocessPending()
+note bottom of Ciclo_PipelineJob
+  Sem mudança explícita no código para: RENDERING, ENHANCING, COMPOSITING, CANCELLED
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
+note right of Ciclo_PipelineJob
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
 end note
 @enduml

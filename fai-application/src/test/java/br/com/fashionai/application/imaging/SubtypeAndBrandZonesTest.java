@@ -45,7 +45,7 @@ class SubtypeAndBrandZonesTest {
     @Test
     void comparaSoComOsSubtiposDaCategoriaEscolhida() throws Exception {
         List<SubtypeReferences.Match> skirt = refs.rank("lower_piece", piece("02_Parte_inferior/12_saia.png", 1600, 1400, 0.8));
-        assertThat(skirt).hasSize(14);
+        assertThat(skirt).hasSize(br.com.fashionai.application.taxonomy.Taxonomy.SUBCATEGORIES.get("lower_piece").size());   // legado conta para o novo
         assertThat(skirt.get(0).subcategory()).isEqualTo("skirt");
         assertThat(skirt).allMatch(m -> br.com.fashionai.application.taxonomy.Taxonomy.SUBCATEGORIES.get("lower_piece").contains(m.subcategory()));
         List<SubtypeReferences.Match> jeans = refs.rank("lower_piece", piece("02_Parte_inferior/01_jeans.png", 1200, 1600, 0.85));

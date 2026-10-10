@@ -1,123 +1,188 @@
 @startuml RF32_Classes
-title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade ("Desafios")\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade ('Desafios')\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +email: String
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String
-  +birthDate: String
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  .. +20 campos ..
+package "fai-domain (entidades JPA)" {
+  class ChallengeEvent <<challenge_events>> {
+    +id: UUID
+    +instanceId: UUID
+    +userId: UUID
+    +evidenceType: String
+    +refId: UUID
+    +newEntity: boolean
+  }
+  class ChallengeInstance <<challenge_instances>> {
+    +id: UUID
+    +templateCode: String
+    +mode: String
+    +state: String
+    +paramsJson: String
+    +startsAt: Instant
+    +endsAt: Instant
+    +acceptDeadline: Instant
+    +resultJson: String
+    +newEntity: boolean
+  }
+  class ChallengeNote <<challenge_notes>> {
+    +id: UUID
+    +instanceId: UUID
+    +userId: UUID
+    +kind: String
+    +content: String
+    +newEntity: boolean
+  }
+  class ChallengeParticipant <<challenge_participants>> {
+    +id: UUID
+    +instanceId: UUID
+    +userId: UUID
+    +team: String
+    +status: String
+    +joinedAt: Instant
+    +leftAt: Instant
+    +personalGoalJson: String
+    +progressFraction: BigDecimal
+    +bestRecord: int
+    .. +1 campos ..
+  }
+  class ChallengeTemplate <<challenge_templates>> {
+    +code: String
+    +name: String
+    +ruleText: String
+    +ruleBlocksJson: String
+    +modesAllowedJson: String
+    +durationDays: Integer
+    +scoreDimensionsJson: String
+    +rewardPoints: int
+    +effort: String
+    +minParticipants: int
+    .. +5 campos ..
+  }
+  class ChallengeVote <<challenge_votes>> {
+    +id: UUID
+    +instanceId: UUID
+    +voterUserId: UUID
+    +entrySchemeId: UUID
+    +newEntity: boolean
+  }
+  class Scheme <<schemes>> {
+    +id: UUID
+    +user: User
+    +originalScheme: Scheme
+    +title: String
+    +description: String
+    +creationMode: CreationMode
+    +origin: SchemeOrigin
+    +style: String
+    +occasion: String
+    +season: Season
+    .. +46 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
 }
-class ChallengeTemplate {
-  +code: String
-  +name: String
-  +ruleText: String
-  +ruleBlocksJson: String
-  +modesAllowedJson: String
-  +durationDays: Integer
-  +scoreDimensionsJson: String
-  +rewardPoints: int
-  +effort: String
-  +minParticipants: int
-  +maxParticipants: int
-  +origin: String
-  +authorUserId: UUID
-  +roomDecoration: String
-  .. +1 campos ..
+package "fai-domain (enums)" {
+  enum SchemeStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+  }
+  enum RenderStatus {
+    PENDING
+    RENDERING
+    ENHANCING
+    COMPOSITING
+    CACHED
+    COMPLETED
+    FAILED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum CreationMode {
+    MANUAL
+    AI_ASSISTED
+  }
+  enum SchemeOrigin {
+    CRIAR_LOOK
+    PROVADOR
+    REMIX
+    COPILOT
+    DNA_DUPLICATE
+    SMART_MIRROR
+    VISTA_ME
+    AUTOPILOTO
+  }
+  enum Season {
+    SPRING
+    SUMMER
+    AUTUMN
+    WINTER
+  }
 }
-class ChallengeInstance {
-  +id: UUID
-  +templateCode: String
-  +mode: String
-  +state: String
-  +paramsJson: String
-  +startsAt: Instant
-  +endsAt: Instant
-  +acceptDeadline: Instant
-  +resultJson: String
-  +createdAt: Instant
-  +updatedAt: Instant
+package "fai-application" {
+  class ChallengeService <<service>> {
+    +catalog()
+    +mine()
+    +start()
+    +launchDraft()
+    +accept()
+    +decline()
+    +startNow()
+    +leave()
+    +cancel()
+    +detail()
+  }
 }
-class ChallengeParticipant {
-  +id: UUID
-  +instanceId: UUID
-  +userId: UUID
-  +team: String
-  +status: String
-  +joinedAt: Instant
-  +leftAt: Instant
-  +personalGoalJson: String
-  +progressFraction: BigDecimal
-  +bestRecord: int
-}
-class ChallengeEvent {
-  +id: UUID
-  +instanceId: UUID
-  +userId: UUID
-  +evidenceType: String
-  +refId: UUID
-  +createdAt: Instant
-}
-class ChallengeNote {
-  +id: UUID
-  +instanceId: UUID
-  +userId: UUID
-  +kind: String
-  +content: String
-  +createdAt: Instant
-}
-class ChallengeVote {
-  +id: UUID
-  +instanceId: UUID
-  +voterUserId: UUID
-  +entrySchemeId: UUID
-  +createdAt: Instant
-}
-class Scheme {
-  +user: User
-  +originalScheme: Scheme
-  +title: String
-  +description: String
-  +creationMode: CreationMode
-  +origin: SchemeOrigin
-  +style: String
-  +occasion: String
-  +season: Season
-  +mood: Mood
-  +visibility: Visibility
-  +status: SchemeStatus
-  +displayMode: DisplayMode
-  +disponivel: boolean
-  .. +41 campos ..
-}
-}
+ChallengeService ..> ChallengeEvent : usa
+ChallengeService ..> ChallengeInstance : usa
+ChallengeService ..> ChallengeNote : usa
+ChallengeService ..> ChallengeParticipant : usa
+ChallengeService ..> ChallengeTemplate : usa
+ChallengeService ..> ChallengeVote : usa
 ChallengeEvent ..> User : userId
 ChallengeNote ..> User : userId
 ChallengeParticipant ..> User : userId
 Scheme "*" --> "1" User : user
-note top of User : tabela users
-note top of ChallengeTemplate : tabela challenge_templates
-note top of ChallengeInstance : tabela challenge_instances
-note top of ChallengeParticipant : tabela challenge_participants
-note top of ChallengeEvent : tabela challenge_events
-note top of ChallengeNote : tabela challenge_notes
-note top of ChallengeVote : tabela challenge_votes
-note top of Scheme : tabela schemes
+Scheme --> CreationMode
+Scheme --> RenderStatus
+Scheme --> SchemeOrigin
+Scheme --> SchemeStatus
+Scheme --> Season
+User --> AccountStatus
 @enduml

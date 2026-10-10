@@ -19,6 +19,11 @@ import java.util.UUID;
 public interface NotificationRepository extends JpaRepository<Notification, UUID> {
     List<Notification> findTop100ByRecipientIdAndDeliveredTrueOrderByCreatedAtDesc(UUID recipientId);
 
+    /** Caixa de entrada: o extrato dos FAI Points (categoria POINTS) tem cota própria e não empurra o resto para fora. */
+    List<Notification> findTop100ByRecipientIdAndDeliveredTrueAndCategoryNotOrderByCreatedAtDesc(UUID recipientId, NotificationCategory category);
+
+    List<Notification> findTop100ByRecipientIdAndDeliveredTrueAndCategoryOrderByCreatedAtDesc(UUID recipientId, NotificationCategory category);
+
     long countByRecipientIdAndReadFalseAndDeliveredTrue(UUID recipientId);
 
     List<Notification> findByRecipientIdAndReadFalse(UUID recipientId);

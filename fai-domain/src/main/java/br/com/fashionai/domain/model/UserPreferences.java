@@ -127,7 +127,10 @@ public class UserPreferences extends VersionedAuditableEntity {
     @Column(name = "mannequin_face_json", columnDefinition = "json")
     private String mannequinFaceJson;
 
-    /** RF47 · "Não mostrar novamente" do tutorial de fotografia, por guia: {"upper_piece":{"hidden":true},…}. */
-    @Column(name = "capture_tutorial_json", columnDefinition = "json")
-    private String captureTutorialJson;
+    /**
+     * RF53 · P3-12 — não aparecer em "Criadores em alta" (agregado público de criadores do HypeScore). Só o agregado: as
+     * peças e looks públicos da pessoa continuam com o próprio Hype. Desligado por padrão.
+     */
+    @Column(name = "hype_creator_opt_out", nullable = false)
+    private boolean hypeCreatorOptOut;
 }

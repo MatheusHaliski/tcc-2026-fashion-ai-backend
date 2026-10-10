@@ -27,6 +27,7 @@ import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.taxonomy.Taxonomy;
+import br.com.fashionai.application.taxonomy.TaxonomyRegistry;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.Brand;
 import br.com.fashionai.domain.model.ModerationQueueItem;
@@ -36,12 +37,15 @@ import br.com.fashionai.domain.model.ProcessingJobLog;
 import br.com.fashionai.domain.model.QualityScore;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.SchemeItem;
+import br.com.fashionai.domain.model.TaxonomyAttribute;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.ItemCondition;
 import br.com.fashionai.domain.model.enums.Model3dStatus;
 import br.com.fashionai.domain.model.enums.ModerationQueueStatus;
+import br.com.fashionai.domain.model.enums.HypeEntityType;
+import br.com.fashionai.domain.model.enums.HypeSignalType;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
 import br.com.fashionai.domain.model.enums.NotificationType;
 import br.com.fashionai.domain.model.enums.PhotoOrigin;
@@ -123,6 +127,9 @@ public class WardrobeService {
     private final Guard guard;
     private final Audit audit;
     private final ApplicationEventPublisher events;
+    /** HypeScore v2 — estado atual (ordenações e filtro por faixa de Hype do closet) */
+    private final br.com.fashionai.domain.repository.HypeScoreCurrentRepository hypeScores;
+    private final br.com.fashionai.application.hype.HypeScoreConfig hypeConfig;
     private final BrandLogoService brandLogos;
     private final br.com.fashionai.domain.repository.BrandProfileRepository brandProfiles;
     private final PieceReferenceCatalog pieceReferences;
@@ -135,6 +142,14 @@ public class WardrobeService {
         this.brandReader = brandReader;
     }
 
+    /** RF53 — vínculos de selo (filtro "com selo de marca/celebridade" do closet). Opcional nos testes. */
+    private br.com.fashionai.domain.repository.SealBondRepository sealBonds;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setSealBonds(br.com.fashionai.domain.repository.SealBondRepository sealBonds) {
+        this.sealBonds = sealBonds;
+    }
+
     public WardrobeService(WardrobeItemRepository pieces, UserRepository users, BrandRepository brands,
                            PipelineJobRepository jobs, ProcessingJobLogRepository processingLogs,
                            QualityScoreRepository qualityScores, ModerationQueueRepository moderationQueue,
@@ -145,7 +160,11 @@ public class WardrobeService {
                            Model3dService model3d, br.com.fashionai.application.imaging.StudioPipeline studio, Guard guard, Audit audit,
                            ApplicationEventPublisher events, BrandLogoService brandLogos,
                            br.com.fashionai.domain.repository.BrandProfileRepository brandProfiles,
-                           PieceReferenceCatalog pieceReferences, OwnMedia ownMedia) {
+                           PieceReferenceCatalog pieceReferences, OwnMedia ownMedia,
+                           br.com.fashionai.domain.repository.HypeScoreCurrentRepository hypeScores,
+                           br.com.fashionai.application.hype.HypeScoreConfig hypeConfig) {
+        this.hypeScores = hypeScores;
+        this.hypeConfig = hypeConfig;
         this.pieces = pieces;
         this.users = users;
         this.brands = brands;
@@ -187,7 +206,8 @@ public class WardrobeService {
                           Map<String, Double> confidence, double overall, boolean manualFillRequired, String warning,
                           Map<String, Object> logo, String size, BigDecimal price,
                           List<Map<String, Object>> subcategoryCandidates, Map<String, Object> brandSearch,
-                          List<Map<String, Object>> photoChecks) {
+                          List<Map<String, Object>> photoChecks, String variation, Double variationConfidence,
+                          Map<String, List<String>> attributes) {
     }
 
     /** @param rejection só na análise em lote: a foto recusada pelos critérios (as demais seguem) */
@@ -398,7 +418,8 @@ public class WardrobeService {
             studioSourceUrl = media.put(base + "studio-source.png", ImageOps.png(r.studioSource()), "image/png").url();
             studioInfo = studioShot(user.id(), r.studioSource(), "auto", base, new br.com.fashionai.application.imaging.StudioPipeline.Hints(
                     studioKind(prefill.category(), prefill.subcategory()), r.truncated(), logoRel, logoSource,
-                    br.com.fashionai.application.imaging.FeedFraming.template(prefill.category(), prefill.subcategory(), null)));
+                    br.com.fashionai.application.imaging.FeedFraming.template(prefill.category(), prefill.subcategory(), null),
+                    prefill.category(), prefill.subcategory()));
         }
 
         Map<String, Object> quality = new LinkedHashMap<>();
@@ -693,7 +714,11 @@ public class WardrobeService {
              "matchesCategory": boolean (a foto é mesmo do tipo escolhido pela pessoa?),
              "detectedCategory": um de [upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece],
              "subcategory": código da lista de subtipos, "subcategoryRanking": [{"code": código, "similarity": 0-1}] (os 3 mais parecidos),
-             "color": código da paleta, "material": um de [COTTON, POLYESTER, WOOL, SILK, LEATHER, SYNTHETIC, BLEND],
+             "color": código da paleta, "material": código da lista de materiais,
+             "variation": {"code": código da lista de modelagens do subtipo escolhido (corte/silhueta/construção) ou null
+                           se a foto não deixar claro, "confidence": 0-1},
+             "attributes": {"DIMENSÃO": {"codes": [códigos dessa dimensão], "confidence": 0-1}} só com as dimensões e os
+                           códigos listados na mensagem e só o que dá para VER na foto (omita o resto; nunca invente código),
              "sex": um de [MASCULINO, FEMININO, UNISSEX], "occasion": até 2 códigos da lista de ocasiões,
              "style": até 2 códigos da lista de estilos,
              "brand": nome da marca ou null, "brandZone": id da zona em que a marca foi lida (ou "outra") ou null,
@@ -718,6 +743,10 @@ public class WardrobeService {
             p.append("Tipo não informado: descubra pela foto. Subtipos por tipo: ").append(Taxonomy.SUBCATEGORIES).append(".\n");
         }
         p.append("Ocasiões permitidas: ").append(String.join(", ", Taxonomy.allowedOccasions(category))).append(".\n");
+        p.append("Materiais: ").append(String.join(", ", Taxonomy.MATERIALS)).append(".\n");
+        if (category != null) {
+            p.append(analyzerVocabulary(category));
+        }
         p.append("Estilos: ").append(String.join(", ", Taxonomy.STYLES)).append(".\n");
         p.append("Cores (códigos): ").append(String.join(", ", Taxonomy.COLORS.keySet())).append(".\n");
         int n = 1;
@@ -742,8 +771,74 @@ public class WardrobeService {
             {"isClothing": boolean, "safe": boolean, "categories": [strings de violação, ex.: nudity, violence, hate, minor],
              "confidence": 0-1}. Em dúvida, safe=false.""";
 
+    /** Dimensões que a IA pode ler numa foto (docs/taxonomia, C.6); estilo e ocasião têm campos próprios. */
+    static final List<String> ANALYZER_DIMENSIONS = List.of("PATTERN", "FINISH", "LENGTH", "SHAFT_HEIGHT", "RISE", "HEM",
+            "SLEEVE_LENGTH", "SLEEVE_STYLE", "NECKLINE", "CLOSURE", "HEEL_TYPE", "HEEL_HEIGHT", "TOE_SHAPE", "SOLE_TYPE",
+            "CARRY_MODE", "FRAME_RIM");
+
+    /**
+     * Vocabulário fechado da variação e dos atributos para o tipo escolhido: modelagens de cada subtipo (código + nome) e,
+     * por dimensão que vale para o tipo, os códigos possíveis. A IA só pode responder com esses códigos.
+     */
+    static String analyzerVocabulary(String category) {
+        TaxonomyRegistry reg = TaxonomyRegistry.get();
+        StringBuilder p = new StringBuilder("Modelagens por subtipo (código = nome): ");
+        List<String> subs = Taxonomy.SUBCATEGORIES.getOrDefault(category, List.of());
+        p.append(String.join("; ", subs.stream().map(sub -> sub + ": " + String.join(", ", reg.variationsOf(sub).stream()
+                .map(l -> l.code() + " = " + reg.label(l.code(), Msg.PT_BR).orElse(l.code())).toList())).toList())).append(".\n");
+        p.append("Características (dimensão: códigos):");
+        for (String dim : ANALYZER_DIMENSIONS) {
+            java.util.LinkedHashSet<String> codes = new java.util.LinkedHashSet<>();
+            subs.forEach(sub -> reg.valuesFor(dim, category, sub).forEach(v -> codes.add(v.code())));
+            if (!codes.isEmpty()) {
+                p.append(" ").append(dim).append(": ").append(String.join(", ", codes)).append(".");
+            }
+        }
+        return p.append("\n").toString();
+    }
+
     static LocalVision.PieceGuess parseAnalysis(String text) {
         return parseAnalysis(text, null);
+    }
+
+    /**
+     * Variação e atributos da resposta da IA (C.6): só códigos do vocabulário da subcategoria (código exato ou alias),
+     * atributos só com confiança ≥ 0,75 e no máximo o teto de cada dimensão. O resto é descartado, nunca gravado como veio.
+     */
+    static LocalVision.Insights withTaxonomy(LocalVision.Insights base, Map<String, Object> m, String category, String sub) {
+        if (sub == null || category == null) {
+            return base;
+        }
+        TaxonomyRegistry reg = TaxonomyRegistry.get();
+        String variation = null;
+        double vConf = 0;
+        if (m.get("variation") instanceof Map<?, ?> vm && str(vm.get("code")) != null) {
+            String raw = str(vm.get("code")).trim();
+            String up = raw.toUpperCase(Locale.ROOT);
+            variation = reg.isVariationOf(sub, up) ? up : reg.variationByText(sub, raw).orElse(null);
+            vConf = vm.get("confidence") instanceof Number n ? Math.max(0, Math.min(1, n.doubleValue())) : 0;
+        }
+        Map<String, List<String>> attrs = new LinkedHashMap<>();
+        if (m.get("attributes") instanceof Map<?, ?> am) {
+            am.forEach((k, v) -> {
+                String dim = String.valueOf(k).toUpperCase(Locale.ROOT);
+                if (!ANALYZER_DIMENSIONS.contains(dim) || !(v instanceof Map<?, ?> dm)) {
+                    return;
+                }
+                double conf = dm.get("confidence") instanceof Number n ? n.doubleValue() : 0;
+                int max = reg.dimension(dim).map(TaxonomyRegistry.Dimension::maxPerPiece).orElse(1);
+                List<String> codes = strings(dm.get("codes")).stream()
+                        .map(x -> reg.isAllowed(dim, x.trim().toUpperCase(Locale.ROOT), category, sub) ? x.trim().toUpperCase(Locale.ROOT)
+                                : reg.valueByText(dim, category, sub, x).orElse(null))
+                        .filter(java.util.Objects::nonNull).distinct().limit(max).toList();
+                if (conf >= 0.75 && !codes.isEmpty()) {
+                    attrs.put(dim, codes);
+                }
+            });
+        }
+        return new LocalVision.Insights(base.name(), base.occasion(), base.style(), base.brandZone(), base.brandEvidence(),
+                base.matchesCategory(), base.detectedCategory(), base.fullyVisible(), base.viewAngle(), base.singlePiece(),
+                base.photoConfidence(), base.ranking(), vConf >= 0.40 ? variation : null, Math.round(vConf * 100) / 100.0, attrs);
     }
 
     /**
@@ -756,7 +851,7 @@ public class WardrobeService {
             return null;
         }
         String category = str(m.get("category"));
-        String sub = str(m.get("subcategory"));
+        String sub = Taxonomy.activeSubcategory(str(m.get("subcategory")));          // legado → código novo
         String detected = Taxonomy.isValidCategory(str(m.get("detectedCategory"))) ? str(m.get("detectedCategory"))
                 : Taxonomy.isValidCategory(category) ? category : null;
         List<SubtypeReferences.Match> ranking = new ArrayList<>();
@@ -764,7 +859,10 @@ public class WardrobeService {
             for (Object o : rl) {
                 if (o instanceof Map<?, ?> rm && str(rm.get("code")) != null && Taxonomy.categoryOf(str(rm.get("code"))) != null) {
                     double sim = rm.get("similarity") instanceof Number n ? Math.max(0, Math.min(1, n.doubleValue())) : 0;
-                    ranking.add(new SubtypeReferences.Match(str(rm.get("code")), Math.round(sim * 1000) / 1000.0));
+                    String code = Taxonomy.activeSubcategory(str(rm.get("code")));
+                    if (ranking.stream().noneMatch(x -> x.subcategory().equals(code))) {
+                        ranking.add(new SubtypeReferences.Match(code, Math.round(sim * 1000) / 1000.0));
+                    }
                 }
             }
         }
@@ -806,6 +904,7 @@ public class WardrobeService {
                 m.get("matchesCategory") instanceof Boolean b ? b : null, detected,
                 photo.get("fullyVisible") instanceof Boolean b ? b : null, str(photo.get("viewAngle")),
                 photo.get("singlePiece") instanceof Boolean b ? b : null, photoConf, ranking);
+        insights = withTaxonomy(insights, m, category, sub);
         return new LocalVision.PieceGuess(category, sub, color, material, brandName(str(m.get("brand"))), sex, conf,
                 Math.round(overall * 100) / 100.0, List.of(), logoBox(m.get("logo")), insights);
     }
@@ -914,7 +1013,10 @@ public class WardrobeService {
         }
         return new Prefill(name, category, sub, color, material, brand, sex, occasion, style, List.of(), c, g.overall(), manual,
                 manual ? Msg.t("wardrobe.a_ia_nao_reconheceu_a") : null, logo, "m", estimatedPrice(category, sub),
-                candidates == null ? List.of() : candidates, brandSearch, photoChecks == null ? List.of() : photoChecks);
+                candidates == null ? List.of() : candidates, brandSearch, photoChecks == null ? List.of() : photoChecks,
+                TaxonomyRegistry.get().isVariationOf(sub, seen.variation()) ? seen.variation() : null,
+                seen.variation() == null ? null : seen.variationConfidence(),
+                Taxonomy.variationErrors(category, sub, null, seen.attributes()).isEmpty() ? seen.attributes() : Map.of());
     }
 
     static String firstNonBlank(String... values) {
@@ -964,7 +1066,7 @@ public class WardrobeService {
         Map<String, Integer> bySub = Map.ofEntries(Map.entry("t_shirt", 79), Map.entry("shirt", 149), Map.entry("blouse", 129),
                 Map.entry("blazer", 349), Map.entry("jacket", 299), Map.entry("coat", 449), Map.entry("hoodie", 179), Map.entry("sweater", 199),
                 Map.entry("jeans", 199), Map.entry("tailored_pants", 229), Map.entry("shorts", 99), Map.entry("skirt", 139),
-                Map.entry("casual_sneakers", 299), Map.entry("running_shoes", 399), Map.entry("heels", 249), Map.entry("ankle_boots", 349),
+                Map.entry("casual_sneakers", 299), Map.entry("running_shoes", 399), Map.entry("heels", 249), Map.entry("ankle_boots", 349), Map.entry("boots", 349),
                 Map.entry("handbag", 249), Map.entry("backpack", 199), Map.entry("watch", 399), Map.entry("sunglasses", 199),
                 Map.entry("dress", 249), Map.entry("jumpsuit", 229));
         Integer v = bySub.get(sub);
@@ -1007,11 +1109,71 @@ public class WardrobeService {
                             Visibility visibility, List<String> tags, String notes, ItemCondition condition,
                             LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
                             Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
-                            Map<String, Object> background, UUID captureSessionId) {
+                            Map<String, Object> background, UUID captureSessionId, String variation,
+                            Map<String, List<String>> attributes, List<String> confirmed) {
         /** Ocasião e estilo chegam da tela como listas de códigos: espaços, maiúsculas e repetidos não derrubam o cadastro. */
         public PieceForm {
             occasion = Taxonomy.normalizeTags(occasion);
             style = Taxonomy.normalizeTags(style);
+            variation = variation == null || variation.isBlank() ? null : variation.trim().toUpperCase(java.util.Locale.ROOT);
+        }
+
+        /**
+         * Formulário com variação/atributos, sem a lista {@code confirmed} (campos que a pessoa tocou ou confirmou — só
+         * servem para promover a origem a USER; a origem AI/CATALOG/RULE é deduzida no servidor, nunca declarada).
+         */
+        public PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,
+                         String sex, UUID brandId, String brandName, String color, String material, String size,
+                         String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
+                         Visibility visibility, List<String> tags, String notes, ItemCondition condition,
+                         LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
+                         Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
+                         Map<String, Object> background, UUID captureSessionId, String variation,
+                         Map<String, List<String>> attributes) {
+            this(draftId, useDefaultImage, name, category, subcategory, sex, brandId, brandName, color, material, size, market,
+                    occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
+                    careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId,
+                    variation, attributes, null);
+        }
+
+        /** Formulário sem variação/atributos (versões anteriores da tela, cadastro pelo catálogo, lote). */
+        public PieceForm(UUID draftId, boolean useDefaultImage, String name, String category, String subcategory,
+                         String sex, UUID brandId, String brandName, String color, String material, String size,
+                         String market, List<String> occasion, List<String> style, List<String> seals, BigDecimal price,
+                         Visibility visibility, List<String> tags, String notes, ItemCondition condition,
+                         LocalDate purchaseDate, String purchaseLocation, String sku, String careInstructions,
+                         Boolean forSale, Boolean studio, String brandLogoUrl, String brandSource, String brandRef,
+                         Map<String, Object> background, UUID captureSessionId) {
+            this(draftId, useDefaultImage, name, category, subcategory, sex, brandId, brandName, color, material, size, market,
+                    occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
+                    careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId, null, null);
+        }
+
+        /**
+         * Subcategoria LEGACY no padrão novo (docs/taxonomia, C.3): bermuda_shorts vira shorts + LENGTH=KNEE, coturno vira
+         * boots + COMBAT, short jeans vira shorts + material DENIM. O que a pessoa já escolheu (variação, atributo,
+         * material) vale mais que o implícito.
+         */
+        public PieceForm resolveTaxonomy() {
+            TaxonomyRegistry.Resolved r = TaxonomyRegistry.get().resolve(subcategory);
+            if (r == null || r.legacyCode() == null) {
+                return this;
+            }
+            Map<String, List<String>> attrs = new LinkedHashMap<>(attributes == null ? Map.of() : attributes);
+            String mat = material;
+            for (Map.Entry<String, String> e : r.implied().entrySet()) {
+                if ("MATERIAL".equals(e.getKey())) {
+                    if (mat == null || Set.of("COTTON", "BLEND", "SYNTHETIC").contains(mat)) {
+                        mat = e.getValue();                      // short jeans antigo: algodão → denim
+                    }
+                } else {
+                    attrs.putIfAbsent(e.getKey(), List.of(e.getValue()));
+                }
+            }
+            return new PieceForm(draftId, useDefaultImage, name, category, r.subcategory(), sex, brandId, brandName, color, mat, size,
+                    market, occasion, style, seals, price, visibility, tags, notes, condition, purchaseDate, purchaseLocation, sku,
+                    careInstructions, forSale, studio, brandLogoUrl, brandSource, brandRef, background, captureSessionId,
+                    variation != null ? variation : r.variation(), attrs, confirmed);
         }
 
         /** Formulário sem sessão de captura adaptativa (lote, várias peças numa foto, edição). */
@@ -1036,8 +1198,13 @@ public class WardrobeService {
     /**
      * RF47 · produto escolhido no catálogo global: a peça pessoal referencia o produto (sem copiar foto nem metadados)
      * e usa a foto oficial (proveniência no catálogo) como imagem principal até a pessoa adicionar a própria foto.
+     * {@code catalogImage}: a imagem do card ({@code CatalogImagePipelineService.cardImage}) — com o recorte semântico
+     * da canônica (nível A, a foto não é copiada) ou os assets processados (nível B); null = foto inteira.
      */
-    public record CatalogPick(UUID productId, UUID variantId, String imageUrl) {
+    public record CatalogPick(UUID productId, UUID variantId, String imageUrl, String thumbnailUrl, Map<String, Object> catalogImage) {
+        public CatalogPick(UUID productId, UUID variantId, String imageUrl) {
+            this(productId, variantId, imageUrl, null, null);
+        }
     }
 
     @Transactional
@@ -1048,6 +1215,7 @@ public class WardrobeService {
     private Views.PieceView createInternal(CurrentUser user, PieceForm form, CatalogPick pick) {
         guard.requireCanCreate(user);
         User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
+        form = form.resolveTaxonomy();
         validate(form);
         // o rascunho é travado (SELECT … FOR UPDATE): dois envios simultâneos do mesmo rascunho são atendidos um depois do outro
         PipelineJob draft = form.draftId() == null ? null : jobs.findByIdForUpdate(form.draftId()).orElse(null);
@@ -1064,7 +1232,9 @@ public class WardrobeService {
         }
         WardrobeItem w = new WardrobeItem();
         w.setUser(owner);
-        apply(w, form, true);
+        // a origem da variação (IA × pessoa) é deduzida do pré-preenchimento guardado no rascunho, nunca declarada
+        Map<?, ?> aiPrefill = draft != null && Json.map(draft.getResultJson()).get("prefill") instanceof Map<?, ?> prefill ? prefill : null;
+        apply(w, form, true, aiPrefill);
         w.setVisibility(form.visibility() != null ? form.visibility() : AccountService.defaultVisibility(owner));
         if (draft == null && !form.useDefaultImage() && pick == null) {
             throw ApiException.badRequest("FOTO_OBRIGATORIA", Msg.t("wardrobe.envie_uma_foto_ou_escolha"));
@@ -1075,8 +1245,12 @@ public class WardrobeService {
             boolean hasImage = pick.imageUrl() != null && !pick.imageUrl().isBlank();
             String url = hasImage ? pick.imageUrl() : assets.defaultPieceImage(w.getCategory(), w.getSubcategory());
             w.setImageUrl(url);
-            w.setThumbnailUrl(url);
+            w.setThumbnailUrl(hasImage && pick.thumbnailUrl() != null && !pick.thumbnailUrl().isBlank() ? pick.thumbnailUrl() : url);
             w.setOriginalImageUrl(null);
+            if (hasImage && pick.catalogImage() != null) {
+                // o recorte semântico vai junto da peça: quem mostra a foto aplica o mesmo enquadramento do card
+                w.setFlatLayMetadataJson(Json.write(Map.of("catalogImage", pick.catalogImage())));
+            }
             w.setDefaultImage(!hasImage);
             w.setImageOrigin(hasImage ? br.com.fashionai.domain.model.enums.ImageOrigin.CATALOG
                     : br.com.fashionai.domain.model.enums.ImageOrigin.DEFAULT);
@@ -1209,8 +1383,7 @@ public class WardrobeService {
         qs.setIssuesJson(Json.write(q.get("issues")));
         qs.setRecommendationsJson(Json.write(q.get("recommendations")));
         qualityScores.save(qs);
-        ProcessingJobLog log = new ProcessingJobLog();
-        log.setId(UUID.randomUUID());
+        ProcessingJobLog log = new ProcessingJobLog();   // id gerado pelo JPA (atribuir à mão vira merge e falha no Hibernate 6.6+)
         log.setPipelineJobId(draft.getId());
         log.setWardrobeItemId(w.getId());
         log.setUserId(w.getUser().getId());
@@ -1243,6 +1416,9 @@ public class WardrobeService {
         // uma resposta com TODOS os campos a corrigir (antes: primeiro a taxonomia, depois nome e preço, em duas rodadas)
         Map<String, Object> errors = new LinkedHashMap<>(Taxonomy.pieceErrors(f.category(), f.subcategory(), f.sex(), f.color(),
                 f.material(), f.size(), f.occasion(), f.style()));
+        if (!errors.containsKey("category") && !errors.containsKey("subcategory")) {
+            errors.putAll(Taxonomy.variationErrors(f.category(), f.subcategory(), f.variation(), f.attributes()));
+        }
         if (f.name() == null || f.name().isBlank()) {
             errors.put("name", Msg.t("wardrobe.informe_o_nome_da_peca"));
         }
@@ -1261,9 +1437,14 @@ public class WardrobeService {
     }
 
     private void apply(WardrobeItem w, PieceForm f, boolean creating) {
+        apply(w, f, creating, null);
+    }
+
+    private void apply(WardrobeItem w, PieceForm f, boolean creating, Map<?, ?> aiPrefill) {
         w.setName(InputSanitizer.moderated("name", f.name(), 120));
         w.setCategory(f.category());
         w.setSubcategory(f.subcategory());
+        applyTaxonomy(w, f, aiPrefill);
         w.setSex(f.sex());
         w.setColor(f.color());
         w.setMaterial(f.material());
@@ -1290,6 +1471,56 @@ public class WardrobeService {
         String previousBrand = w.getBrandName();
         resolveBrand(w, f.brandId(), f.brandName());
         brandFromWebSearch(w, f, previousBrand);
+    }
+
+    /**
+     * Variação e atributos da peça (docs/taxonomia, C.6). Formulário sem variação nem atributos (tela antiga, lote,
+     * catálogo) mantém os que a peça já tinha — só some a variação que deixou de valer para a subcategoria nova.
+     * Estilo e ocasião também vão para os atributos (as colunas CSV continuam, para compatibilidade).
+     */
+    static void applyTaxonomy(WardrobeItem w, PieceForm f) {
+        applyTaxonomy(w, f, null);
+    }
+
+    /**
+     * @param aiPrefill pré-preenchimento da IA guardado no rascunho da foto (só no cadastro). A variação que volta igual
+     *                  à sugerida e que a pessoa não confirmou ({@code confirmed} sem "variation") continua AI_SUGGESTED/AI,
+     *                  com a confiança da IA; só a troca ou a confirmação explícita vira USER_CONFIRMED/USER.
+     */
+    static void applyTaxonomy(WardrobeItem w, PieceForm f, Map<?, ?> aiPrefill) {
+        boolean full = f.attributes() != null || f.variation() != null;
+        if (full) {
+            boolean confirmedByUser = f.confirmed() != null && f.confirmed().contains("variation");
+            if (!java.util.Objects.equals(w.getVariationCode(), f.variation())) {
+                w.setVariationCode(f.variation());
+                String suggested = aiPrefill == null || aiPrefill.get("variation") == null ? null
+                        : String.valueOf(aiPrefill.get("variation")).trim().toUpperCase(java.util.Locale.ROOT);
+                if (f.variation() == null) {
+                    setVariationProvenance(w, null, null, null);
+                } else if (f.variation().equals(suggested) && !confirmedByUser) {
+                    setVariationProvenance(w, "AI_SUGGESTED", "AI", aiPrefill.get("variationConfidence") instanceof Number n
+                            ? BigDecimal.valueOf(n.doubleValue()) : null);
+                } else {
+                    setVariationProvenance(w, "USER_CONFIRMED", "USER", null);
+                }
+            } else if (confirmedByUser && f.variation() != null && !"USER_CONFIRMED".equals(w.getVariationStatus())) {
+                setVariationProvenance(w, "USER_CONFIRMED", "USER", null);     // a pessoa confirmou a sugestão da IA
+            }
+            Map<String, List<String>> attrs = f.attributes() == null ? Map.of() : f.attributes();
+            w.getAttributes().removeIf(a -> !Taxonomy.FIELD_DIMENSIONS.contains(a.getDimensionCode()) && !attrs.containsKey(a.getDimensionCode()));
+            attrs.forEach((dim, codes) -> TaxonomyAttribute.replace(w.getAttributes(), dim, codes, "USER", null));
+        } else if (w.getVariationCode() != null && !TaxonomyRegistry.get().isVariationOf(f.subcategory(), w.getVariationCode())) {
+            w.setVariationCode(null);
+            setVariationProvenance(w, null, null, null);
+        }
+        TaxonomyAttribute.replace(w.getAttributes(), "STYLE", Taxonomy.canonicalTags(f.style()), "USER", null);
+        TaxonomyAttribute.replace(w.getAttributes(), "OCCASION", Taxonomy.canonicalTags(f.occasion()), "USER", null);
+    }
+
+    private static void setVariationProvenance(WardrobeItem w, String status, String source, BigDecimal confidence) {
+        w.setVariationStatus(status);
+        w.setVariationSource(source);
+        w.setVariationConfidence(confidence);
     }
 
     /**
@@ -1416,8 +1647,62 @@ public class WardrobeService {
     }
 
     // ================================================================== RF6 — Closet Digital
+    /**
+     * Filtros do closet. {@code hypeLevel} é FILTRO (faixa mínima: NICHE, RELEVANT, HOT, TRENDING, VIRAL), não aba.
+     * Ordenações: recent, name, price, worn (mais usada), least_worn, idle (mais tempo sem uso) e, do HypeScore v2,
+     * hype/hype_desc, hype_asc, growth (maior crescimento) e rarity (mais rara). {@code seal} (RF53) também é FILTRO:
+     * {@code hype} (peças com selo de Hype FashionAI), {@code brand} (com selo de marca/celebridade aprovado na peça) ou
+     * {@code any} (qualquer um dos dois).
+     */
     public record ClosetFilter(String category, String color, String season, String occasion, String style, String state,
-                               String q, String sort, int page, int size) {
+                               String q, String sort, int page, int size, String hypeLevel, String seal) {
+        public ClosetFilter(String category, String color, String season, String occasion, String style, String state, String q, String sort, int page, int size) {
+            this(category, color, season, occasion, style, state, q, sort, page, size, null, null);
+        }
+
+        public ClosetFilter(String category, String color, String season, String occasion, String style, String state, String q, String sort,
+                            int page, int size, String hypeLevel) {
+            this(category, color, season, occasion, style, state, q, sort, page, size, hypeLevel, null);
+        }
+    }
+
+    /** RF53 — valor do filtro "com selo": hype, brand ou any (nulo = sem filtro; valor desconhecido é ignorado). */
+    static String sealFilter(String raw) {
+        if (blank(raw)) {
+            return null;
+        }
+        return switch (raw.trim().toLowerCase(Locale.ROOT)) {
+            case "hype" -> "hype";
+            case "brand", "marca", "celebrity", "celebridade" -> "brand";
+            case "any", "qualquer", "all" -> "any";
+            default -> null;
+        };
+    }
+
+    static final java.util.Set<String> HYPE_SORTS = java.util.Set.of("hype", "hype_desc", "hype_asc", "growth", "rarity");
+    /** nomes em português que telas antigas enviavam (antes caíam no padrão e a ordenação era ignorada) */
+    static final Map<String, String> SORT_ALIASES = Map.of("recentes", "recent", "mais_usadas", "worn", "menos_usadas", "least_worn",
+            "nome", "name", "preco", "price", "mais_tempo_sem_uso", "idle");
+
+    /**
+     * Score v2 de cada peça (nulo = sem Hype: dados insuficientes ou ainda não calculado — sempre por último).
+     * Privacidade (HYPE_AUDITORIA_ABAS §3.1, P2-11): o dono vê o Hype pessoal de todas as peças; para terceiros (perfil
+     * de outra pessoa, visitante sem conta) só entra o score {@code publicEligible} — o resto conta como "sem Hype"
+     * ("—" no card, por último na ordem, fora do filtro por faixa), mesmo que a peça seja visível para quem segue.
+     */
+    private Map<UUID, br.com.fashionai.domain.model.HypeScoreCurrent> hypeOf(List<WardrobeItem> list, boolean self) {
+        if (hypeScores == null || hypeConfig == null || list.isEmpty()) {
+            return Map.of();
+        }
+        return hypeScores.findByEntityTypeAndEntityIdInAndAlgorithmVersion(br.com.fashionai.domain.model.enums.HypeEntityType.PIECE,
+                        list.stream().map(WardrobeItem::getId).toList(), hypeConfig.algorithmVersion()).stream()
+                .filter(h -> self || h.isPublicEligible())
+                .collect(Collectors.toMap(br.com.fashionai.domain.model.HypeScoreCurrent::getEntityId, h -> h, (a, b) -> a));
+    }
+
+    private static Comparator<WardrobeItem> nullsLast(java.util.function.Function<WardrobeItem, BigDecimal> key, boolean desc) {
+        Comparator<BigDecimal> cmp = desc ? Comparator.<BigDecimal>reverseOrder() : Comparator.<BigDecimal>naturalOrder();
+        return Comparator.comparing(key, Comparator.nullsLast(cmp));
     }
 
     @Transactional(readOnly = true)
@@ -1438,8 +1723,41 @@ public class WardrobeService {
                 .filter(w -> blank(f.q()) || contains(w.getName(), f.q()) || contains(w.getBrandName(), f.q())
                         || contains(w.getSubcategory(), f.q()))
                 .collect(Collectors.toCollection(ArrayList::new));
-        Comparator<WardrobeItem> order = switch (f.sort() == null ? "recent" : f.sort()) {
-            case "hype" -> Comparator.comparing((WardrobeItem w) -> w.getHypeScore() == null ? BigDecimal.ZERO : w.getHypeScore()).reversed();
+        String sort = SORT_ALIASES.getOrDefault(f.sort() == null ? "recent" : f.sort(), f.sort() == null ? "recent" : f.sort());
+        String seal = sealFilter(f.seal());
+        Map<UUID, br.com.fashionai.domain.model.HypeScoreCurrent> hype = HYPE_SORTS.contains(sort) || !blank(f.hypeLevel())
+                || (seal != null && !"brand".equals(seal)) ? hypeOf(all, self) : Map.of();
+        if (!blank(f.hypeLevel()) && hypeConfig != null) {
+            // faixa mínima sobre o número EXIBIDO (arredondado): 59,6 aparece como 60 e já é "Em alta"
+            int min = hypeMinimum(f.hypeLevel());
+            all.removeIf(w -> hype.get(w.getId()) == null || hype.get(w.getId()).getScore() == null || hype.get(w.getId()).getScore().doubleValue() < min - 0.5);
+        }
+        if (seal != null) {
+            // RF53 — selo de Hype: derivado do Hype atual (peça privada não tem: só item público elegível); selo de marca:
+            // vínculo APROVADO de tier PEÇA vindo de um look que quem vê consegue ver
+            Set<UUID> branded = "hype".equals(seal) ? Set.of()
+                    : SealService.approvedPieceBonds(all.stream().map(WardrobeItem::getId).toList(), schemeItems, sealBonds,
+                    sc -> SealService.canViewScheme(guard, viewer, sc)).keySet();
+            all.removeIf(w -> {
+                boolean hasHype = !br.com.fashionai.application.hype.HypeSeals.of(hype.get(w.getId())).isEmpty();
+                boolean hasBrand = branded.contains(w.getId());
+                return switch (seal) {
+                    case "hype" -> !hasHype;
+                    case "brand" -> !hasBrand;
+                    default -> !hasHype && !hasBrand;
+                };
+            });
+        }
+        java.util.function.Function<WardrobeItem, BigDecimal> score = w -> hype.containsKey(w.getId()) ? hype.get(w.getId()).getScore() : null;
+        LocalDate today = LocalDate.now(br.com.fashionai.application.hype.HypeSignalRecorder.ZONE);
+        Comparator<WardrobeItem> order = switch (sort) {
+            case "hype", "hype_desc" -> nullsLast(score, true);
+            case "hype_asc" -> nullsLast(score, false);
+            case "growth" -> nullsLast(w -> hype.containsKey(w.getId()) ? hype.get(w.getId()).getDeltaPoints() : null, true)
+                    .thenComparing(nullsLast(w -> hype.containsKey(w.getId()) ? hype.get(w.getId()).getDimensions().getTrend() : null, true));
+            case "rarity" -> nullsLast(w -> hype.containsKey(w.getId()) ? hype.get(w.getId()).getDimensions().getRarity() : null, true);
+            case "least_worn" -> Comparator.comparingInt(WardrobeItem::getWearCount).thenComparing(WardrobeItem::getCreatedAt);
+            case "idle" -> Comparator.comparingLong((WardrobeItem w) -> br.com.fashionai.application.hype.HypeQueryService.idleDays(w, today)).reversed();
             case "worn" -> Comparator.comparingInt(WardrobeItem::getWearCount).reversed();
             case "name" -> Comparator.comparing(w -> w.getName().toLowerCase(Locale.ROOT));
             case "price" -> Comparator.comparing((WardrobeItem w) -> w.getPrice() == null ? BigDecimal.ZERO : w.getPrice()).reversed();
@@ -1454,6 +1772,19 @@ public class WardrobeService {
         return new Views.Page<>(items, page, size, all.size(), to < all.size());
     }
 
+    /** Faixa mínima de Hype → score mínimo (limiares centralizados no HypeScoreConfig). */
+    int hypeMinimum(String level) {
+        int[] t = hypeConfig.levelThresholds();
+        return switch (level.toUpperCase(Locale.ROOT)) {
+            case "NICHE" -> t[0];
+            case "RELEVANT" -> t[1];
+            case "HOT" -> t[2];
+            case "TRENDING" -> t[3];
+            case "VIRAL" -> t[4];
+            default -> 0;
+        };
+    }
+
     static boolean stateMatches(WardrobeItem w, String state) {
         if (blank(state) || "todos".equalsIgnoreCase(state)) {
             return true;
@@ -1463,6 +1794,7 @@ public class WardrobeService {
             case "disponivel", "disponiveis", "available" -> w.isDisponivel();
             case "indisponivel", "indisponiveis", "unavailable" -> !w.isDisponivel();
             case "venda", "a_venda", "for_sale", "forsale" -> w.isForSale();
+            case "doar", "para_doar", "doacao", "for_donation", "donation" -> w.isForDonation();
             default -> true;
         };
     }
@@ -1489,6 +1821,9 @@ public class WardrobeService {
         // Atualização direta (sem @Version): o detalhe é aberto em paralelo (ex.: antes/depois de a sessão carregar)
         // e mexer na entidade gerava conflito de versão (409) num simples GET.
         pieces.touchView(w.getId(), owner ? 0 : 1, Instant.now());
+        if (!owner && viewer != null) {
+            events.publishEvent(new DomainEvents.HypeSignal(HypeSignalType.PIECE_VIEWED, HypeEntityType.PIECE, id, viewer.id(), w.getUser().getId()));
+        }
         out.put("piece", Views.piece(w, viewerState(viewer, w), reactionCounts(TargetType.PIECE, w.getId())));
         out.put("fromSchemeId", fromSchemeId);
         out.put("wearstyles", Taxonomy.wearstylesOf(w.getCategory(), Json.csv(w.getOccasionTags())));
@@ -1556,6 +1891,7 @@ public class WardrobeService {
     public Views.PieceView update(CurrentUser user, UUID id, PieceForm form) {
         guard.requireCanCreate(user);
         WardrobeItem w = owned(user, id);
+        form = form.resolveTaxonomy();
         validate(form);
         apply(w, form, false);
         if (form.visibility() != null) {
@@ -1567,9 +1903,40 @@ public class WardrobeService {
         return Views.piece(w, viewerState(user, w), null);
     }
 
+    /** RF19.CA08 — publicar no feed: a dona confirmou no diálogo de compartilhar que a peça privada passa a ser pública. */
+    @Transactional
+    public void publishForFeed(CurrentUser user, UUID id) {
+        WardrobeItem w = owned(user, id);
+        w.setVisibility(Visibility.PUBLIC);
+        projections.piece(w);
+        audit.log(user, AuditActions.EDICAO_PECA, "piece:" + id, Map.of("visibility", Visibility.PUBLIC.name()));
+    }
+
+    /** "À venda" e "para doar" são exclusivos: marcar um desmarca o outro; desmarcar não mexe no outro. */
+    static void applyListing(WardrobeItem w, Boolean forSale, Boolean forDonation) {
+        if (forSale != null) {
+            w.setForSale(forSale);
+            if (forSale) {
+                w.setForDonation(false);
+            }
+        }
+        if (forDonation != null) {
+            w.setForDonation(forDonation);
+            if (forDonation) {
+                w.setForSale(false);
+            }
+        }
+    }
+
     // ================================================================== RF31 — toggles da faixa superior
     @Transactional
     public Views.PieceView toggles(CurrentUser user, UUID id, Boolean favorite, Boolean disponivel, Boolean forSale) {
+        return toggles(user, id, favorite, disponivel, forSale, null);
+    }
+
+    /** Estados da peça; "à venda" e "para doar" são exclusivos entre si (marcar um desmarca o outro). */
+    @Transactional
+    public Views.PieceView toggles(CurrentUser user, UUID id, Boolean favorite, Boolean disponivel, Boolean forSale, Boolean forDonation) {
         guard.requireCanCreate(user);
         WardrobeItem w = owned(user, id);
         if (favorite != null) {
@@ -1585,9 +1952,7 @@ public class WardrobeService {
                 events.publishEvent(new DomainEvents.AvailabilityChanged(user.id(), id, disponivel));
             }
         }
-        if (forSale != null) {
-            w.setForSale(forSale);
-        }
+        applyListing(w, forSale, forDonation);
         return Views.piece(w, viewerState(user, w), null);
     }
 
@@ -1813,7 +2178,7 @@ public class WardrobeService {
             box = b.stream().mapToDouble(v -> ((Number) v).doubleValue()).toArray();
         }
         return new br.com.fashionai.application.imaging.StudioPipeline.Hints(kind, truncated, box, box == null ? null : "ia",
-                br.com.fashionai.application.imaging.FeedFraming.template(category, subcategory, kind));
+                br.com.fashionai.application.imaging.FeedFraming.template(category, subcategory, kind), category, subcategory);
     }
 
     br.com.fashionai.application.imaging.StudioPipeline.Hints studioHints(WardrobeItem w) {
@@ -2105,12 +2470,18 @@ public class WardrobeService {
      * é o mesmo para todas as peças que usam o arquivo, então é gerado uma vez e reaproveitado. Nunca usa a foto de
      * referência do estúdio como imagem padrão.
      */
+    static boolean currentFeedVersion(WardrobeItem item) {
+        Object studio = Json.map(item.getFlatLayMetadataJson()).get("studio");
+        if (!(studio instanceof Map<?, ?> st) || !(st.get("feed") instanceof Map<?, ?> feed)) return false;
+        return br.com.fashionai.application.imaging.GarmentCrop.VERSION.equals(feed.get("pipelineVersion"));
+    }
+
     void defaultStudio(WardrobeItem w) {
         if (!w.isDefaultImage() || w.getImageUrl() == null) {
             return;
         }
         var done = pieces.findFirstByImageUrlAndDefaultImageTrueAndStudioImageUrlIsNotNull(w.getImageUrl());
-        if (done.isPresent() && !done.get().getId().equals(w.getId())) {
+        if (done.isPresent() && !done.get().getId().equals(w.getId()) && currentFeedVersion(done.get())) {
             WardrobeItem src = done.get();
             w.setStudioImageUrl(src.getStudioImageUrl());
             w.setStudioBackdrop(src.getStudioBackdrop());
@@ -2137,7 +2508,8 @@ public class WardrobeService {
         Map<String, Object> info = studioShot(w.getUser().getId(), art, "auto", "defaults/studio/" + stem + "/",
                 new br.com.fashionai.application.imaging.StudioPipeline.Hints(studioKind(w.getCategory(), w.getSubcategory()), Set.of(),
                         assets.defaultPieceLogo(w.getImageUrl()).orElse(null), "catalogo",
-                        br.com.fashionai.application.imaging.FeedFraming.template(w.getCategory(), w.getSubcategory(), null)));
+                        br.com.fashionai.application.imaging.FeedFraming.template(w.getCategory(), w.getSubcategory(), null),
+                        w.getCategory(), w.getSubcategory()));
         if (info != null) {
             applyStudio(w, info, true);                         // arte padrão do catálogo: não há foto da pessoa a aprovar
         }
@@ -2353,8 +2725,61 @@ public class WardrobeService {
         Map<String, String> bySub = new LinkedHashMap<>();
         Taxonomy.SUBCATEGORIES.forEach((c, subs) -> subs.forEach(sub -> bySub.putIfAbsent(sub, assets.defaultPieceImage(c, sub))));
         out.put("defaultImagesBySubcategory", bySub);
+        TaxonomyRegistry.get().legacySubcategories()
+                .forEach(l -> bySub.putIfAbsent(l.code(), assets.defaultPieceImage(l.category(), l.code())));
         out.put("brands", brands.findAllByOrderByName().stream().map(b -> Map.of("id", b.getId(), "name", b.getName(),
                 "slug", b.getSlug(), "logoUrl", String.valueOf(b.getLogoUrl()))).toList());
+        out.putAll(taxonomyV2());
+        return out;
+    }
+
+    /**
+     * Taxonomia CATEGORY → SUBCATEGORY → VARIATION + dimensões (docs/taxonomia, seções C e H): variações por subcategoria
+     * (CORE primeiro), catálogo de variações com rótulos e descrição, dimensões com escopo e valores (sem os de legado),
+     * subcategorias LEGACY com o equivalente novo e os rótulos dos códigos novos em pt-BR/en/es.
+     */
+    static Map<String, Object> taxonomyV2() {
+        TaxonomyRegistry reg = TaxonomyRegistry.get();
+        Map<String, Object> out = new LinkedHashMap<>();
+        Map<String, Object> bySub = new LinkedHashMap<>();
+        Taxonomy.SUBCATEGORIES.values().forEach(subs -> subs.forEach(sub -> bySub.put(sub, reg.variationsOf(sub).stream()
+                .map(l -> Map.of("code", l.code(), "tier", l.tier(), "priority", l.priority())).toList())));
+        out.put("variationsBySubcategory", bySub);
+        Map<String, Object> variations = new LinkedHashMap<>();
+        reg.variations().forEach((code, v) -> variations.put(code, Map.of("labels", v.labels(), "description", v.description())));
+        out.put("variations", variations);
+        out.put("dimensions", reg.dimensions().stream().map(d -> {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("code", d.code());
+            m.put("labels", d.labels());
+            m.put("multiValued", d.multiValued());
+            m.put("maxPerPiece", d.maxPerPiece());
+            m.put("maxPerScheme", d.maxPerScheme());
+            m.put("attribute", d.attribute() && !Taxonomy.FIELD_DIMENSIONS.contains(d.code()));
+            m.put("appliesTo", d.appliesTo());
+            m.put("values", d.values().stream().filter(v -> !v.legacy()).map(v -> {
+                Map<String, Object> x = new LinkedHashMap<>();
+                x.put("code", v.code());
+                x.put("labels", v.labels());
+                x.put("tier", v.tier());
+                x.put("priority", v.priority());
+                if (v.group() != null) {
+                    x.put("group", v.group());
+                }
+                if (!v.appliesTo().isEmpty()) {
+                    x.put("appliesTo", v.appliesTo());
+                }
+                return x;
+            }).toList());
+            return m;
+        }).toList());
+        Map<String, Object> legacy = new LinkedHashMap<>();
+        reg.legacySubcategories().forEach(l -> legacy.put(l.code(), Map.of("category", l.category(), "replacedBy", l.replacedBy(),
+                "implies", l.implies(), "labels", l.labels())));
+        out.put("legacySubcategories", legacy);
+        Map<String, Object> subLabels = new LinkedHashMap<>();
+        Taxonomy.SUBCATEGORIES.values().forEach(subs -> subs.forEach(sub -> reg.subcategory(sub).ifPresent(x -> subLabels.put(sub, x.labels()))));
+        out.put("subcategoryLabels", subLabels);
         return out;
     }
 

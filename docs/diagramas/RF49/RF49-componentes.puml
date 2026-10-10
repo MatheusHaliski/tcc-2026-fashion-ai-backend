@@ -1,0 +1,60 @@
+@startuml RF49_Componentes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF49 — Segurança, integridade e operação\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "raiz" {
+  component "middleware.ts" as m_middleware_ts
+}
+package "app/(gate)/gate/verify" {
+  component "route.ts" as m_app__gate__gate_verify_route_ts
+}
+package "lib/gate" {
+  component "token.ts" as m_lib_gate_token_ts <<apoio>>
+}
+package "Backend (Spring Boot)" {
+  component "AiBudget" as AiBudget
+  component "DemoFixtures" as DemoFixtures
+  component "BackupJob" as BackupJob <<apoio>>
+  component "IdentityService" as IdentityService
+  component "OwnMedia" as OwnMedia
+  component "AuthRateLimitFilter" as AuthRateLimitFilter <<apoio>>
+  component "ClientIpResolver" as ClientIpResolver <<apoio>>
+  component "CorrelationIdFilter" as CorrelationIdFilter <<apoio>>
+}
+database "MySQL" as DB_MySQL
+AiBudget --> DB_MySQL : ai_inference_log
+AuthRateLimitFilter --> ClientIpResolver
+BackupJob --> DB_MySQL : backup_records
+IdentityService --> DB_MySQL : brand_profiles, celebrity_profiles,\nrefresh_tokens, user_preferences, users,\nverification_codes
+m_app__gate__gate_verify_route_ts --> m_lib_gate_token_ts
+m_middleware_ts --> m_lib_gate_token_ts
+@enduml

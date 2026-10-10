@@ -10,11 +10,13 @@ export interface ProfileCounts { pieces?: number; schemes?: number; followers?: 
  * redonda com anel, @ e ações na primeira linha, contadores (peças, esquemas criados, seguidores, seguindo) na
  * segunda, e nome + categoria + bio embaixo. No celular a foto fica à esquerda dos contadores e o texto desce.
  * O branco é fixo (pedido do layout), inclusive no tema escuro; o texto usa tinta escura própria para manter contraste.
+ * `hype` (RF53 · Lote A1): o Hype agregado do criador ou da marca (HypeGroupBadge "header"), logo abaixo da categoria;
+ * quando o agregado não tem base, o próprio componente não desenha nada.
  */
-export function ProfileHeader({ photoUrl, photo, username, displayName, verified, kindLabel, category, bio, link, counts, actions, onCounts, cover }: {
+export function ProfileHeader({ photoUrl, photo, username, displayName, verified, kindLabel, category, bio, link, counts, actions, onCounts, cover, hype }: {
   photoUrl?: string | null; photo?: ReactNode; username: string; displayName: string; verified?: boolean; kindLabel?: string; category?: string | null;
   bio?: string | null; link?: { href: string; label: string } | null; counts: ProfileCounts; actions?: ReactNode;
-  onCounts?: (which: "followers" | "following") => void; cover?: string | null;
+  onCounts?: (which: "followers" | "following") => void; cover?: string | null; hype?: ReactNode;
 }) {
   const { fmtNumber, t } = useI18n();
   const stat = (n: number | undefined, label: string, which?: "followers" | "following") => {
@@ -51,6 +53,7 @@ export function ProfileHeader({ photoUrl, photo, username, displayName, verified
         <div className="col-span-2 min-w-0 sm:col-span-1 sm:col-start-2">
           <p className="text-[14px] font-semibold text-[#111]">{displayName}</p>
           {category && <p className="text-[14px] text-[#737373]">{category}</p>}
+          {hype && <div className="profile-header-hype">{hype}</div>}
           {bio && <p className="whitespace-pre-line text-[14px] text-[#111]">{bio}</p>}
           {link && <a href={link.href} target="_blank" rel="noreferrer" className="text-[14px] font-semibold text-[#00376B] hover:underline">{link.label}</a>}
         </div>

@@ -1,0 +1,26 @@
+{
+  "result": {
+    "prepared": true,
+    "prepareMs": 6669,
+    "width": 819,
+    "height": 1024,
+    "cutout": true,
+    "filter": {
+      "personFound": false,
+      "people": 0,
+      "segmentationAvailable": true,
+      "garments": null,
+      "ms": 581
+    },
+    "allowed": true
+  },
+  "diagnostics": [
+    "INFO: Created TensorFlow Lite XNNPACK delegate for CPU.",
+    "INFO: Created TensorFlow Lite XNNPACK delegate for CPU.",
+    "INFO: Created TensorFlow Lite XNNPACK delegate for CPU."
+  ],
+  "runtimeErrors": [],
+  "source": "SNAPSHOT_LOCAL",
+  "productId": "USM001QD-5",
+  "runtime": "Chromium software rendering; local MediaPipe; provider not mocked"
+}

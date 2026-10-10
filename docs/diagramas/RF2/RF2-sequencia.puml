@@ -1,83 +1,90 @@
 @startuml RF2_Sequencia
-title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as P
-participant "Frontend\n(auth)/login · forgot-password · reset-password" as FE
-participant "BFF Next\n/bff/auth/[action]" as BFF
-participant "AuthController" as AC
-participant "IdentityService" as IS
-participant "Argon2PasswordHasher" as H
-participant "RateLimitPort" as RL
-participant "JwtTokenIssuer" as JWT
-participant "EmailSenderPort\n(Resend)" as EM
-participant "SessionActiveFilter" as SF
-database "MySQL" as DB
+autonumber "<b>0."
+title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-P -> FE: e-mail ou username + senha (+ lembrar-me)
-FE -> BFF: POST /bff/auth/login
-BFF -> AC: POST /api/auth/login (LoginCommand)
-AC -> IS: login(cmd, ip, userAgent)
-IS -> DB: findByEmailHash | findByUsernameIgnoreCase
-IS -> RL: status(userId, "login-fail", 5, 15 min)
-IS -> H: matches(password, passwordHash)
-alt conta inexistente, bloqueada ou senha errada
-  IS -> DB: audit LOGIN_FALHO / LOGIN_BLOQUEADO_TENTATIVAS
-  AC --> BFF: 401 NAO_AUTENTICADO (resposta idêntica nos três casos)
-else twoFactorEnabled e sem código
-  IS -> DB: INSERT verification_codes (TWO_FACTOR, 10 min)
-  IS -> EM: send("Seu código de acesso")
-  AC --> BFF: 401 DOIS_FATORES_NECESSARIO {twoFactorRequired: true}
-  P -> FE: digita o código → novo POST /api/auth/login com twoFactorCode
-else credenciais válidas
-  IS -> RL: reset(userId, "login-fail")
-  IS -> DB: users.lastLoginAt · audit LOGIN_SUCESSO · notifications NEW_LOGIN_DEVICE (se dispositivo novo)
-  IS -> DB: INSERT refresh_tokens (familyId novo, tokenHash, 30 d | 1 d)
-  IS -> JWT: issueAccessToken(user, familyId)
-  JWT --> IS: JWT RS256 (15 min; sid, user_id, role, profile_type)
-  AC --> BFF: 200 Session {accessToken, expiresInSeconds, refreshToken, user, status, warnings}
-  BFF --> FE: 200 Session sem refreshToken + Set-Cookie fai_rt (HttpOnly, SameSite=Strict)
-  FE -> FE: access token em memória; vai para ?next= ou /verify-email
+actor "Pessoa usuária" as U
+boundary "Tela (Next.js)" as P
+control "AuthController" as AuthController
+participant "IdentityService" as IdentityService
+database "MySQL" as DB_MySQL
+participant "RateLimitPort\n(InMemoryRateLimit)" as RateLimitPort
+participant "PasswordHasherPort\n(Argon2PasswordHasher)" as PasswordHasherPort
+participant "Audit" as Audit
+participant "NotificationService" as NotificationService
+== Autenticar por e-mail/username e senha (2FA opcional) ==
+U -> P : Autenticar por e-mail/username e senha (2FA opcio…
+P -> AuthController : POST /api/auth/login
+AuthController -> IdentityService : login()
+activate IdentityService
+IdentityService -> DB_MySQL : SELECT users (×2)
+alt erro
+IdentityService --> AuthController : 500 ERRO
+AuthController --> P : 500 + mensagem
 end
-== Requisições autenticadas ==
-FE -> SF: GET /api/... (Authorization: Bearer)
-SF -> IS: sessionActive(sid)
-IS -> DB: refresh_tokens.findByFamilyId (revokedAt null, não expirado)
-alt família revogada
-  SF --> FE: 401 SESSAO_ENCERRADA
+IdentityService -> RateLimitPort : tryAcquire()
+IdentityService -> PasswordHasherPort : matches()
+alt erro
+IdentityService --> AuthController : 500 ERRO
+AuthController --> P : 500 + mensagem
 end
-== Renovação (access expirado) ==
-FE -> BFF: POST /bff/auth/refresh (cookie fai_rt)
-BFF -> AC: POST /api/auth/refresh {refreshToken}
-AC -> IS: refresh(raw, ip, userAgent)
-IS -> DB: findByTokenHash
-alt token já rotacionado (reuso)
-  IS -> DB: revoga a família inteira · audit REFRESH_REUTILIZADO
-  AC --> BFF: 401 sessão encerrada por segurança
-else token válido
-  IS -> DB: revokedAt = agora · INSERT refresh_tokens (rotatedFromId, mesma família)
-  AC --> BFF: 200 Session (novo par)
+alt erro
+IdentityService --> AuthController : 500 ERRO
+AuthController --> P : 500 + mensagem
 end
-== Sair ==
-FE -> BFF: POST /bff/auth/logout
-BFF -> AC: POST /api/auth/logout (Bearer)
-AC -> IS: logout(user, sid)
-IS -> DB: revokedAt em toda a família · audit LOGOUT
-BFF --> FE: 204 + cookies apagados
-== Esqueci a senha (RF2.CA06) ==
-FE -> AC: POST /api/auth/password-reset/request {email}
-AC -> IS: requestPasswordReset(email, ip, userAgent)
-IS -> DB: INSERT verification_codes (PASSWORD_RESET, 30 min) (só se a conta existir)
-IS -> EM: send(link com token) — após o commit, em thread própria
-AC --> FE: 202 mensagem uniforme (não revela se o e-mail existe)
-FE -> AC: POST /api/auth/password-reset/confirm {token, newPassword, confirmPassword}
-AC -> IS: confirmPasswordReset(token, newPassword, confirm)
-IS -> DB: users.passwordHash · consome o código · revoga as outras sessões · audit TROCA_SENHA
-AC --> FE: 204
+IdentityService -> RateLimitPort : release()
+alt conta indisponível
+IdentityService --> AuthController : 403 CONTA_INDISPONIVEL
+AuthController --> P : 403 + mensagem
+end
+IdentityService -> PasswordHasherPort : needsRehash()
+IdentityService -> PasswordHasherPort : hash()
+alt dois fatores necessario
+IdentityService --> AuthController : 401 DOIS_FATORES_NECESSARIO
+AuthController --> P : 401 + mensagem
+end
+IdentityService -> DB_MySQL : SELECT verification_codes
+alt não autenticado
+IdentityService --> AuthController : 401 NAO_AUTENTICADO
+AuthController --> P : 401 + mensagem
+end
+alt não autenticado
+IdentityService --> AuthController : 401 NAO_AUTENTICADO
+AuthController --> P : 401 + mensagem
+end
+IdentityService -> IdentityService : consumedAt = set
+IdentityService -> RateLimitPort : reset()
+IdentityService -> DB_MySQL : SELECT refresh_tokens
+IdentityService -> IdentityService : lastLoginAt = set
+IdentityService -> Audit : log()
+IdentityService -> NotificationService : notify()
+NotificationService -> DB_MySQL : SELECT users (×2)
+NotificationService -> DB_MySQL : SELECT user_preferences
+NotificationService -> DB_MySQL : INSERT/UPDATE notifications
+NotificationService --> IdentityService
+note over IdentityService : … e mais 7 passos no código
+deactivate IdentityService
+IdentityService --> AuthController : resultado
+AuthController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

@@ -6,9 +6,14 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
 import { Button, useToast } from "@/components/ui";
 import { drawContain, drawCover, fileSlug, loadImage, newCanvas, saveCanvas, wrapText } from "@/lib/export/canvas";
+import { displayScore, levelAtLeast, levelForScore } from "@/lib/hype/model";
+import type { HypeLevel } from "@/lib/hype/types";
 
-/** Faixa "Arrasando no Look" começa em 85 (RF6); a capa da FAI Magazine só aparece dali para cima (DET-K07). */
-export const MAGAZINE_MIN_HYPE = 85;
+/**
+ * Capa da FAI Magazine (DET-K07) liberada pela faixa do HypeScore v2 do look: a partir de "Tendência" (P2-13). Era o v1
+ * ≥ 85 ("Arrasando no Look"), um juízo de qualidade; a faixa v2 descreve relevância atual, não qualidade.
+ */
+export const MAGAZINE_MIN_LEVEL: HypeLevel = "TRENDING";
 const W = 1080, H = 1350; // 4:5 — formato de feed
 
 /** Foto do look: a capa do esquema ou, sem capa, um mosaico das peças sobre fundo claro. */
@@ -24,10 +29,11 @@ async function drawLook(ctx: CanvasRenderingContext2D, s: SchemeView, x: number,
 
 /**
  * DET-C10 — #lookdodia: o Look do Dia sai num formato pronto para o feed (4:5, 1080×1350).
- * DET-K07 — capa FAI Magazine: com Hype Score na faixa "Arrasando no Look" ou acima, o usuário ganha uma capa editorial
+ * DET-K07 — capa FAI Magazine: com o HypeScore v2 do look na faixa Tendência ou acima, o usuário ganha uma capa editorial
  * com o look e o nome dele. O desenho é próprio da FashionAI; nenhuma marca editorial real é imitada.
+ * `score`/`level` = HypeScore v2 do look (Hype pessoal do dono); sem dados = null, e a capa fica bloqueada (nunca "0").
  */
-export function LookExports({ scheme, hype, bandLabel, date }: { scheme: SchemeView; hype: number; bandLabel?: string; date?: string }) {
+export function LookExports({ scheme, score, level, date }: { scheme: SchemeView; score?: number | null; level?: HypeLevel | null; date?: string }) {
   const { t, fmtDate } = useI18n(); const toast = useToast(); const { user } = useAuth();
   const [busy, setBusy] = useState<"feed" | "cover" | null>(null);
   const name = user?.displayName ?? scheme.owner?.displayName ?? scheme.owner?.username ?? "";
@@ -65,10 +71,10 @@ export function LookExports({ scheme, hype, bandLabel, date }: { scheme: SchemeV
       ctx.font = "700 220px Georgia, 'Times New Roman', serif"; ctx.fillText("FAI", W / 2, 230);
       ctx.font = "600 34px system-ui, sans-serif"; const mag = "M A G A Z I N E"; ctx.fillText(mag, W / 2, 284);
       ctx.font = "400 24px system-ui, sans-serif"; ctx.textAlign = "left"; ctx.fillText(t("lookExports.edicao", { date: day }), 56, 340);
-      ctx.textAlign = "right"; ctx.fillText(`HYPE ${Math.round(hype)}`, W - 56, 340);
+      if (score != null) { ctx.textAlign = "right"; ctx.fillText(t("hypeLookbook.capa_numero", { n: displayScore(score) }), W - 56, 340); }
       // chamadas de capa
       ctx.textAlign = "left"; ctx.fillStyle = "#FFFFFF";
-      ctx.font = "600 30px system-ui, sans-serif"; ctx.fillText((bandLabel || t("lookExports.arrasando")).toUpperCase(), 56, H - 290);
+      ctx.font = "600 30px system-ui, sans-serif"; ctx.fillText(t("hypeLookbook.capa_faixa", { level: band ? t(`hype.level.${band}`) : "" }).toUpperCase(), 56, H - 290);
       ctx.font = "700 76px Georgia, 'Times New Roman', serif"; const y = wrapText(ctx, name, 56, H - 206, W - 112, 80, 2);
       ctx.font = "400 34px system-ui, sans-serif"; ctx.fillStyle = "rgba(255,255,255,0.9)"; wrapText(ctx, t("lookExports.chamada", { title: scheme.title }), 56, Math.max(y + 8, H - 110), W - 112, 42, 2);
       ctx.font = "600 22px system-ui, sans-serif"; ctx.textAlign = "right"; ctx.fillStyle = "rgba(255,255,255,0.8)"; ctx.fillText("fashionai", W - 56, H - 40);
@@ -77,14 +83,18 @@ export function LookExports({ scheme, hype, bandLabel, date }: { scheme: SchemeV
     } catch (e) { toast.fromError(e); } finally { setBusy(null); }
   }
 
-  const magazine = hype >= MAGAZINE_MIN_HYPE;
+  const band = level ?? levelForScore(score);
+  const magazine = score != null && levelAtLeast(band, MAGAZINE_MIN_LEVEL);
+  const status = magazine ? t("hypeLookbook.capa_liberada", { n: displayScore(score!), level: t(`hype.level.${band}`) })
+    : score == null ? t("hypeLookbook.capa_sem_dados", { level: t(`hype.level.${MAGAZINE_MIN_LEVEL}`) })
+    : t("hypeLookbook.capa_bloqueada", { level: t(`hype.level.${MAGAZINE_MIN_LEVEL}`), current: band ? t(`hype.level.${band}`) : "—" });
   return (
     <div className="mt-3 grid gap-2">
       <div className="flex flex-wrap gap-2">
         <Button size="sm" onClick={feed} loading={busy === "feed"}>{t("lookExports.exportar_lookdodia")}</Button>
         {magazine && <Button size="sm" variant="primary" onClick={cover} loading={busy === "cover"}>{t("lookExports.baixar_capa")}</Button>}
       </div>
-      <p className="type-caption text-muted">{magazine ? t("lookExports.capa_liberada", { n: Math.round(hype) }) : t("lookExports.capa_bloqueada", { n: MAGAZINE_MIN_HYPE })}</p>
+      <p className="type-caption text-muted">{status}</p>
     </div>
   );
 }

@@ -1,9 +1,16 @@
 @startuml RF9_Atividades
-title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,78 +19,78 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre o esquema (menu ⋯ → Editar);
-|Frontend (Next.js)|
-:GET /api/schemes/{id};
-|Backend (SchemeService)|
-if (É o autor? (canEdit)) then (não)
-  :Botão "Editar" não aparece (CA04);
-  |Pessoa|
+:Abre /schemes/[id]/edit, /schemes/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/schemes/{id}\nGET /api/pieces/{id};
+|Pessoa usuária|
+:Editar esquema;
+|Tela (Next.js)|
+:PUT /api/schemes/{id};
+|API (Spring Boot)|
+:SchemeController.update\n→ SchemeService.update;
+if (formulario inválido?) then (sim)
+  :400 FORMULARIO_INVALIDO\n«Corrija os campos destacados.»\n→ a tela mostra o aviso;
   stop
-else (sim)
 endif
-|Frontend (Next.js)|
-:schemes/[id]/edit → SchemeBuilder(initial)\ncarrega nome, ocasião, descrição, visibilidade,\narte e lista de peças atuais (CA01);
-|Pessoa|
-:Altera campos, remove/adiciona peças,\nmuda visibilidade ou arte de fundo;
-if (Pediu "melhorar com IA"?) then (sim)
-  |Frontend (Next.js)|
-  :POST /api/schemes/{id}/improvements {instruction};
-  |Backend (SchemeService)|
-  :Edit Assistant (AiCapability.EDIT_ASSISTANT)\npropõe diff por campo; fallback LocalAdvisors;
-  note right: ver RF24 (motor de IA) — RF30.CA10
-  |Pessoa|
-  :Aceita ou recusa item a item;
-  |Frontend (Next.js)|
-  :POST /api/schemes/{id}/improvements/apply {campo: valor};
-  |Backend (SchemeService)|
-  :validChange por campo; grava só o aceito;\naudita EDICAO_ESQUEMA (aiDiffFields);
+if (formulario inválido?) then (sim)
+  :400 FORMULARIO_INVALIDO\n«Corrija os campos destacados.»\n→ a tela mostra o aviso;
+  stop
 endif
-|Pessoa|
-:Salvar;
-|Frontend (Next.js)|
-:PUT /api/schemes/{id} (SchemeForm);
-|Backend (SchemeService)|
-:Guard.requireOwner — não-autor recebe\n403 e audit_log ACESSO_NEGADO_403 (CA04);
-:applyForm + replaceItems (scheme_items);
-if (Ficou sem peças?) then (sim)
-  #FFE3E3:400 SEM_PECAS;
+if (peça de outro usuário?) then (sim)
+  :400 PECA_DE_OUTRO_USUARIO\n«Use apenas peças do seu\nguarda-roupa.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (peça indisponível?) then (sim)
+  :400 PECA_INDISPONIVEL\n«A peça '…' está marcada como\nindisponível.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (sem peças?) then (sim)
+  :400 SEM_PECAS\n«O esquema precisa de ao menos 1\npeça.»\n→ a tela mostra o aviso;
   stop
 endif
 note right
-  CA02: remover peça do esquema apaga só o
-  scheme_item — a WardrobeItem continua no Closet
-  CA03: updatedAt registrado (AuditableEntity)
+  e mais 1 validações:
+  FOTO_INVALIDA
 end note
-if (Peças mudaram e status = PUBLISHED?) then (sim)
-  :SealService.flagRevalidation: vínculo APPROVED →\nrevalidationPending = true e notifica a marca\n(SEAL_BOND_REVIEW) (CA05);
+|Dados e serviços|
+:Lê: schemes\nscheme_items\nwardrobe_items\nreactions\nsaved_items;
+:Usa: Guard.requireCanCreate\nGuard.requireOwner\nBackgroundStudioService.applyToScheme\nMediaService.linkSource\nSealService.flagRevalidation\nSealService.revokeForScheme (+4);
+:Grava: scheme_items;
+:Estado: coverImageUrl → set\nstatus → PUBLISHED\npublishedAt → set;
+:Evento: SchemeSaved;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Arquivar esquema)
+    :POST /api/schemes/{id}/archive\n→ SchemeService.archive\nlê: schemes\nusa: Guard.requireCanCreate, Guard.requireOwner,\nSealService.revokeForScheme …\nestado: status → ARCHIVED;
+  case (Pedir melhoria por instrução [Edi…)
+    :POST /api/schemes/{id}/improvements\n→ SchemeService.improve\nlê: schemes\nusa: Guard.requireCanCreate, Guard.requireOwner\nia: EDIT_ASSISTANT;
+  case (Aplicar o diff aceito)
+    :POST /api/schemes/{id}/improvements/apply\n→ SchemeService.applyDiff\nvalida: DIFF_INVALIDO\nlê: schemes, scheme_items, reactions …\nusa: Guard.requireCanCreate, Guard.requireOwner,\nWardrobeService.reactionCounts …;
+  case (Salvar esquema [manual, IA, autop…)
+    :POST /api/schemes\n→ SchemeService.create\nvalida: FORMULARIO_INVALIDO, FOTO_INVALIDA,\nINDISPONIVEL, NAO_ENCONTRADO …\nlê: users, schemes, wardrobe_items …\nusa: Guard.requireCanCreate, Guard.requireView,\nBackgroundStudioService.applyToScheme …\ngrava: schemes, scheme_items;
+  case (Editar a peça)
+    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Excluir o look (menu ⋯ do don…, Excluir a peça,
+  Cadastrar a peça a partir do…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-if (Virou PRIVATE?) then (sim)
-  :revokeForScheme (RF20.CA14);
-endif
-:projections.scheme + audit EDICAO_ESQUEMA\n+ evento SchemeSaved;
-|Frontend (Next.js)|
-:Mostra esquema atualizado e aviso\n"revalidação pendente" quando houver;
-|Pessoa|
-if (Edita uma peça do esquema?) then (sim)
-  |Frontend (Next.js)|
-  :PUT /api/pieces/{id} (PieceForm);
-  |Backend (WardrobeService)|
-  :owned + validate + apply; projections.piece;\naudit EDICAO_PECA; evento PieceUpdated;
-  note right: CA07 — a peça muda no acervo e em todos\nos esquemas dali em diante; esquemas publicados\nguardam snapshot_json da publicação (RF7.CA03)
-endif
+|Pessoa usuária|
 stop
 @enduml

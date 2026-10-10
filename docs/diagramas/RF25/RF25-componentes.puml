@@ -1,52 +1,68 @@
 @startuml RF25_Componentes
-title RF25 — Criar & editar selo de marca/celebridade (formulário + arte) e política de promoção\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF25 — Criar & editar selo de marca/celebridade (formulário + arte) e política de promoção\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "brands/[slug] — aba Selos" as FE0
-  component "brands/[slug] — aba Promoções" as FE1
-  component "SealCreator + SealMedallion" as FE2
+package "Frontend (Next.js)" {
+  component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE0
+  component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  [SealController] as SealController
+  component "SealController\n/api/seals/design-catalog\n/api/seals/draft\n/api/seals/uploads" as SealController
 }
 package "fai-application (casos de uso)" {
-  [SealService] as SealService
-  [SealDesignService] as SealDesignService
-  [MediaStoragePort] as MediaStoragePort #FAFAFA
+  component "SealDesignService" as SealDesignService
+  component "SealService" as SealService
+  component "NotificationService" as NotificationService <<apoio>>
+  component "OwnMedia" as OwnMedia <<apoio>>
+  component "MediaStoragePort\n«LocalFileMediaStorage / S3MediaStorageAdapter»" as MediaStoragePort <<port>>
 }
-package "fai-domain (repositórios JPA)" {
-  [BrandProfileRepository\nCelebrityProfileRepository\nPromotionRedemptionRepository\nPromotionRepository\nSchemeItemRepository\nSchemeRepository\nSealBondRepository\nSealRepository\nUserRepository] as REPOS
+package "fai-domain (repositórios)" {
+  component "UserRepository\nSealRepository\nSealBondRepository\nPromotionRepository\nPromotionRedemptionRepository\nSchemeRepository\nSchemeItemRepository\nBrandProfileRepository\nCelebrityProfileRepository\nWardrobeItemRepository" as REPO_MySQL
 }
-database "MySQL · fashionai_app\n• brand_profiles\n• celebrity_profiles\n• promotion_redemptions\n• promotions\n• scheme_items\n• schemes\n• seal_bonds\n• seals\n• users" as DB
-cloud "Motor de IA transversal (RF24)\nprovedores externos + fallback local" as P_ai
-[Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
-[NotificationService\n(RNF10)] as P_notif
-
-FE0 --> SealController : HTTPS/JSON
-FE1 --> SealController : HTTPS/JSON
-FE2 --> SealController : HTTPS/JSON
-SealController --> SealService
+database "MySQL\n• brand_profiles\n• celebrity_profiles\n• promotion_redemptions\n• promotions\n• scheme_items\n• schemes\n• seal_bonds\n• seals\n• users\n• wardrobe_items" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+cloud "S3" as CL_S3
+APIC --> SealController : HTTPS/JSON
+FE0 --> APIC
+MediaStoragePort --> CL_S3
+REPO_MySQL --> DB_MySQL : JPA/Flyway
 SealController --> SealDesignService
-SealService --> REPOS
-SealService --> P_notif
-SealService --> P_ai
-SealService --> P_events
-SealDesignService ..> MediaStoragePort
-SealDesignService --> REPOS
-REPOS --> DB : JPA/Flyway
+SealController --> SealService
+SealDesignService --> MediaStoragePort
+SealDesignService --> REPO_MySQL
+SealService --> AI
+SealService --> EV
+SealService --> REPO_MySQL
+SealService ..> NotificationService
+SealService ..> OwnMedia
 @enduml

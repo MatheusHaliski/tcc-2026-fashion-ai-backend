@@ -1,20 +1,42 @@
 @startuml RF39_MaquinaDeEstados_ItemDaLoja
 !pragma layout smetana
-title RF39 — Item da loja do quarto (WardrobeCreatorService.availability)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-[*] --> EM_BREVE : criado com availableFrom futuro
-[*] --> DISPONIVEL : criado sem janela
-EM_BREVE --> DISPONIVEL : chega availableFrom
-DISPONIVEL --> ESGOTADO : soldCount >= stockLimit
-DISPONIVEL --> EXPIRADO : passa availableUntil
-DISPONIVEL --> INATIVO : marca desativa /\nexclui com vendas
-INATIVO --> DISPONIVEL : marca reativa
-note right of DISPONIVEL : compra ainda checa nível, limite\npor pessoa, selo exigido e saldo\n(409 com o motivo)
-note bottom of EXPIRADO : some da loja, mas quem\ncomprou continua com o item
+title RF39 — WardrobeCreatorService.availability(): estado calculado\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nrótulo único: vale a primeira regra verdadeira · 5 regras no código
+
+state "WardrobeCreatorService.availability()" as C_availability {
+  state C_availability_avaliar <<choice>>
+  state "INATIVO" as C_availability_INATIVO
+  state "EM_BREVE" as C_availability_EM_BREVE
+  state "EXPIRADO" as C_availability_EXPIRADO
+  state "ESGOTADO" as C_availability_ESGOTADO
+  state "DISPONIVEL" as C_availability_DISPONIVEL
+}
+[*] --> C_availability_avaliar : cada leitura
+C_availability_avaliar --> C_availability_INATIVO : [1] !c.isActive()
+C_availability_avaliar --> C_availability_EM_BREVE : [2] c.getAvailableFrom() != null &&\nnow.isBefore(c.getAvailableFrom())
+C_availability_avaliar --> C_availability_EXPIRADO : [3] c.getAvailableUntil() != null &&\nnow.isAfter(c.getAvailableUntil())
+C_availability_avaliar --> C_availability_ESGOTADO : [4] c.getStockLimit() != null &&\nc.getSoldCount() >= c.getStockLimit()
+C_availability_avaliar --> C_availability_DISPONIVEL : [5] caso contrário
+note right of C_availability
+  O estado não é gravado: é recalculado a cada leitura.
+  Vale a primeira regra verdadeira, na ordem do código.
+end note
 @enduml

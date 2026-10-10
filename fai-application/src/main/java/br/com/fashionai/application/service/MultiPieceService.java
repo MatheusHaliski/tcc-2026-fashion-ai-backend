@@ -4,6 +4,7 @@ import br.com.fashionai.application.ai.AiCapability;
 import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
 import br.com.fashionai.application.ai.AiRequest;
+import br.com.fashionai.application.ai.local.ColorMath;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Hashing;
 import br.com.fashionai.application.common.InputSanitizer;
@@ -14,6 +15,7 @@ import br.com.fashionai.application.imaging.FlatLayPipeline;
 import br.com.fashionai.application.imaging.ImageProviderPorts;
 import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.imaging.LocalVision;
+import br.com.fashionai.application.imaging.LocalPieceRegions;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
@@ -84,10 +86,14 @@ public class MultiPieceService {
     }
 
     public record DetectedPiece(int index, String name, String category, String subcategory, String color, String material,
-                                String sex, List<String> style, List<String> occasion, Box box, double confidence) {
+                                String sex, List<String> style, List<String> occasion, Box box, double confidence, String brandName) {
+        public DetectedPiece(int index, String name, String category, String subcategory, String color, String material,
+                             String sex, List<String> style, List<String> occasion, Box box, double confidence) {
+            this(index, name, category, subcategory, color, material, sex, style, occasion, box, confidence, null);
+        }
     }
 
-    /** @param source "ia" quando a visão remota respondeu; "local" = sem IA, uma peça cobrindo a foto inteira */
+    /** @param source "ia" quando a visão remota respondeu; "local" = regiões estimadas para revisão */
     public record Detection(UUID draftId, String originalUrl, int width, int height, List<DetectedPiece> pieces,
                             String source, String aiMessage, AiOutcome.Explanation explanation, AiOutcome.Quota quota) {
     }
@@ -103,6 +109,75 @@ public class MultiPieceService {
 
     // ================================================================== 1 — detectar
 
+    /**
+     * Resultado do núcleo de detecção: as peças, de onde vieram ("ia" ou "local") e o desfecho governado da chamada
+     * (consentimento, cota, custo, id da inferência).
+     */
+    public record PieceDetection(List<DetectedPiece> pieces, String source, AiOutcome<List<DetectedPiece>> outcome) {
+    }
+
+    /**
+     * Núcleo da detecção, sem efeito colateral fora do motor de IA (nenhum rascunho, job ou arquivo): a IA de visão acha
+     * as peças da foto já orientada; sem IA (consentimento, cota, orçamento, provedor), regiões locais a conferir. Usado
+     * pelo cadastro de várias peças ({@link #detect}) e pelo FashionAI Lens (RF54).
+     */
+    public PieceDetection detectPieces(UUID userId, BufferedImage photo) {
+        List<DetectedPiece> local = localPieces(photo);
+        AiOutcome<List<DetectedPiece>> outcome = ai.text(new AiEngine.TextCall<>(userId, AiCapability.MULTI_PIECE_DETECTOR,
+                DETECTOR_SYSTEM, detectorPrompt(),
+                List.of(new AiRequest.AiImage(ImageOps.jpeg(ImageOps.scaleToFit(photo, 1568, 1568), 0.9f), "image/jpeg")),
+                2500, List.of(Msg.t("multiPiece.foto_reduzida")), MultiPieceService::parseDetections, () -> local, null));
+        List<DetectedPiece> pieces = outcome.value() == null ? local : outcome.value();
+        boolean remote = pieces != local;
+        if (remote && pieces.stream().anyMatch(p -> p.brandName() == null)) {
+            pieces = recognizeMissingBrands(userId, photo, pieces);
+        }
+        return new PieceDetection(pieces, remote ? "ia" : "local", outcome);
+    }
+
+    /** One bounded close-up request for missing logos, preserving identity by explicit index. */
+    private List<DetectedPiece> recognizeMissingBrands(UUID userId, BufferedImage photo, List<DetectedPiece> pieces) {
+        List<DetectedPiece> missing = pieces.stream().filter(p -> p.brandName() == null).limit(6).toList();
+        List<AiRequest.AiImage> images = new ArrayList<>();
+        for (DetectedPiece piece : missing) {
+            Box b = piece.box();
+            int x = Math.max(0, Math.min(photo.getWidth() - 1, (int) (b.x() * photo.getWidth() / 100)));
+            int y = Math.max(0, Math.min(photo.getHeight() - 1, (int) (b.y() * photo.getHeight() / 100)));
+            int w = Math.max(1, Math.min(photo.getWidth() - x, (int) Math.ceil(b.width() * photo.getWidth() / 100)));
+            int h = Math.max(1, Math.min(photo.getHeight() - y, (int) Math.ceil(b.height() * photo.getHeight() / 100)));
+            BufferedImage crop = photo.getSubimage(x, y, w, h);
+            images.add(new AiRequest.AiImage(ImageOps.jpeg(ImageOps.scaleToFit(crop, 1024, 1024), .94f), "image/jpeg"));
+        }
+        String indices = missing.stream().map(p -> String.valueOf(p.index())).collect(java.util.stream.Collectors.joining(", "));
+        AiOutcome<Map<Integer, String>> brands = ai.text(new AiEngine.TextCall<>(userId, AiCapability.MULTI_PIECE_DETECTOR,
+                """
+                Examine cada recorte de roupa separadamente para identificar a marca por logotipo visível,
+                símbolo gráfico reconhecível (não precisa conter letras), etiqueta ou nome legível.
+                Exemplos: três barras/trevo Adidas, swoosh Nike. Não adivinhe pela cor ou pelo estilo.
+                Não transfira a marca entre imagens. Sem evidência reconhecível: brandName null.
+                Responda SOMENTE JSON: {"brands":[{"index": índice informado, "brandName": nome ou null}]}.
+                """, "Imagens em ordem, com estes índices: " + indices, images, 600, List.of(),
+                MultiPieceService::parseBrands, Map::of, null));
+        return mergeBrands(pieces, brands.value() == null ? Map.of() : brands.value());
+    }
+
+    static Map<Integer, String> parseBrands(String text) {
+        Map<String, Object> parsed = WardrobeService.extractJson(text);
+        Map<Integer, String> out = new LinkedHashMap<>();
+        if (parsed.get("brands") instanceof List<?> list) for (Object entry : list) {
+            if (!(entry instanceof Map<?, ?> row) || !(row.get("index") instanceof Number index)) continue;
+            String brand = WardrobeService.brandName(WardrobeService.str(row.get("brandName")));
+            if (brand != null) out.putIfAbsent(index.intValue(), brand);
+        }
+        return out;
+    }
+
+    static List<DetectedPiece> mergeBrands(List<DetectedPiece> pieces, Map<Integer, String> brands) {
+        return pieces.stream().map(p -> new DetectedPiece(p.index(), p.name(), p.category(), p.subcategory(), p.color(),
+                p.material(), p.sex(), p.style(), p.occasion(), p.box(), p.confidence(),
+                p.brandName() != null ? p.brandName() : brands.get(p.index()))).toList();
+    }
+
     @Transactional
     public Detection detect(CurrentUser user, byte[] bytes) {
         guard.requireCanCreate(user);
@@ -110,13 +185,10 @@ public class MultiPieceService {
         User owner = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         BufferedImage photo = ImageOps.decode(bytes);
 
-        List<DetectedPiece> local = List.of(localPiece());
-        AiOutcome<List<DetectedPiece>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.MULTI_PIECE_DETECTOR,
-                DETECTOR_SYSTEM, detectorPrompt(),
-                List.of(new AiRequest.AiImage(ImageOps.jpeg(ImageOps.scaleToFit(photo, 1568, 1568), 0.9f), "image/jpeg")),
-                2500, List.of(Msg.t("multiPiece.foto_reduzida")), MultiPieceService::parseDetections, () -> local, null));
-        List<DetectedPiece> pieces = outcome.value() == null ? local : outcome.value();
-        String source = pieces == local ? "local" : "ia";
+        PieceDetection detection = detectPieces(user.id(), photo);
+        AiOutcome<List<DetectedPiece>> outcome = detection.outcome();
+        List<DetectedPiece> pieces = detection.pieces();
+        String source = detection.source();
 
         PipelineJob job = new PipelineJob();
         job.setUser(owner);
@@ -149,18 +221,33 @@ public class MultiPieceService {
     }
 
     /** Sem IA de visão: uma peça cobrindo a foto inteira, sem campos — a pessoa preenche e recorta na revisão. */
-    static DetectedPiece localPiece() {
+    public static DetectedPiece localPiece() {
         return new DetectedPiece(0, null, null, null, null, null, null, List.of(), List.of(), new Box(0, 0, 100, 100), 0);
+    }
+
+    static List<DetectedPiece> localPieces(BufferedImage photo) {
+        List<LocalPieceRegions.Region> regions = LocalPieceRegions.detect(photo);
+        if (regions.isEmpty()) return List.of(localPiece());
+        List<DetectedPiece> pieces = new ArrayList<>();
+        for (LocalPieceRegions.Region region : regions) {
+            pieces.add(new DetectedPiece(pieces.size(), null, null, null, ColorMath.nearestTaxonomyColor(region.rgb()), null, null, List.of(), List.of(),
+                    new Box(region.x(), region.y(), region.width(), region.height()), 0.45));
+        }
+        return List.copyOf(pieces);
     }
 
     static final String DETECTOR_SYSTEM = """
             Você é o Multi-Piece Detector do Fashion AI. Você recebe UMA foto que pode ter várias peças (roupas, calçados e
             acessórios) — vestidas por alguém, penduradas ou dispostas numa superfície. Identifique CADA peça visível
-            separadamente e responda SOMENTE com JSON:
+            separadamente, inclusive peças do mesmo tipo em cores diferentes. Não agrupe camisetas
+            como um único conjunto: cada peça física recebe sua própria caixa. Responda SOMENTE com JSON:
             {"pieces": [{"name": nome curto da peça em português (ex.: "Camiseta branca lisa"),
+                         "brandName": nome da marca SOMENTE quando um logotipo ou etiqueta legível nesta peça
+                                      permitir reconhecê-la, inclusive símbolos sem texto como swoosh Nike e três barras/trevo Adidas; caso contrário null (não inferir pela cor, estilo
+                                      nem copiar a marca de outra peça),
                          "category": um de [upper_piece, lower_piece, shoes_piece, accessory_piece, full_body_piece],
                          "subcategory": código da lista de subtipos do tipo,
-                         "color": código da paleta (a cor principal da peça), "material": um de [COTTON, POLYESTER, WOOL, SILK, LEATHER, SYNTHETIC, BLEND],
+                         "color": código da paleta (a cor principal da peça), "material": código da lista de materiais,
                          "sex": um de [MASCULINO, FEMININO, UNISSEX],
                          "style": até 2 códigos da lista de estilos, "occasion": até 2 códigos da lista de ocasiões,
                          "box": {"x": borda esquerda, "y": borda de cima, "width": largura, "height": altura} em PORCENTAGEM
@@ -174,12 +261,13 @@ public class MultiPieceService {
             - No máximo 12 peças, das maiores para as menores.
             Nunca descreva pessoas. Sem nenhuma peça na foto, devolva {"pieces": []}.""";
 
-    /** Vocabulário permitido (a taxonomia v3.7): o que vier fora dele é descartado no parser. */
+    /** Vocabulário permitido (docs/taxonomia): o que vier fora dele é descartado no parser. */
     static String detectorPrompt() {
         return "Subtipos por tipo: " + Taxonomy.SUBCATEGORIES + ".\n"
                 + "Ocasiões: " + String.join(", ", Taxonomy.OCCASIONS) + ".\n"
                 + "Estilos: " + String.join(", ", Taxonomy.STYLES) + ".\n"
                 + "Cores (códigos): " + String.join(", ", Taxonomy.COLORS.keySet()) + ".\n"
+                + "Materiais: " + String.join(", ", Taxonomy.MATERIALS) + ".\n"
                 + "Identifique todas as peças da foto e responda só com o JSON.";
     }
 
@@ -204,7 +292,7 @@ public class MultiPieceService {
             if (box == null) {
                 continue;
             }
-            String sub = WardrobeService.str(p.get("subcategory"));
+            String sub = Taxonomy.activeSubcategory(WardrobeService.str(p.get("subcategory")));   // legado → código novo
             String category = WardrobeService.str(p.get("category"));
             if (sub != null && Taxonomy.categoryOf(sub) != null) {
                 category = Taxonomy.categoryOf(sub);
@@ -215,6 +303,8 @@ public class MultiPieceService {
                 }
             }
             String name = WardrobeService.str(p.get("name"));
+            String brand = WardrobeService.brandName(WardrobeService.str(p.get("brandName")));
+            if (brand == null) brand = WardrobeService.brandName(WardrobeService.str(p.get("brand")));
             double conf = p.get("confidence") instanceof Number n ? Math.max(0, Math.min(1, n.doubleValue())) : 0.5;
             out.add(new DetectedPiece(out.size(),
                     name == null || name.isBlank() ? null : InputSanitizer.clean(name, 80),
@@ -224,7 +314,8 @@ public class MultiPieceService {
                     WardrobeService.oneOf(WardrobeService.str(p.get("sex")), Taxonomy.SEXES),
                     Taxonomy.keepAllowed(WardrobeService.strings(p.get("style")), Taxonomy.STYLES, Taxonomy.MAX_PIECE_TAGS),
                     Taxonomy.keepAllowed(WardrobeService.strings(p.get("occasion")), Taxonomy.allowedOccasions(category), Taxonomy.MAX_PIECE_TAGS),
-                    box, Math.round(conf * 100) / 100.0));
+                    box, Math.round(conf * 100) / 100.0,
+                    brand == null || brand.isBlank() ? null : InputSanitizer.clean(brand.trim(), 60)));
         }
         return out;
     }

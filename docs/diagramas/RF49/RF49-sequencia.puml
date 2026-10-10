@@ -1,0 +1,82 @@
+@startuml RF49_Sequencia
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+title RF49 — Segurança, integridade e operação\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+participant "lib/api/client.ts" as lib_api_client_ts
+participant "lib/i18n/state.ts" as lib_i18n_state_ts
+participant "lib/i18n/core.ts" as lib_i18n_core_ts
+participant "Audit" as Audit
+participant "AuditService" as AuditService
+== lib/api/client.ts · request() ==
+U -> lib_api_client_ts : request()
+activate lib_api_client_ts
+opt /[\u0000-\u001F\\]/.test(bare) || /(^|\/)(\.|%2e)…
+lib_api_client_ts --> U : erro
+end
+lib_api_client_ts -> lib_i18n_state_ts : acceptLanguage()
+lib_api_client_ts -> lib_i18n_state_ts : getCurrentLocale()
+opt typeof document === 'undefined'
+lib_api_client_ts --> U : encerra
+end
+opt e as Error).name === 'AbortError'
+lib_api_client_ts --> U : erro
+end
+lib_api_client_ts -> lib_i18n_core_ts : tr()
+opt refreshing
+lib_api_client_ts --> U : encerra
+end
+opt sharedAt > startedAt && accessToken
+lib_api_client_ts --> U : encerra
+end
+opt !res.ok
+lib_api_client_ts --> U : encerra
+end
+opt typeof s.accessToken !== 'string'
+lib_api_client_ts --> U : encerra
+end
+opt ok
+lib_api_client_ts --> U : encerra
+end
+opt retryGate && await renewGate
+lib_api_client_ts --> U : encerra
+end
+opt !res.ok
+lib_api_client_ts --> U : erro
+end
+opt res.status === 204
+lib_api_client_ts --> U : encerra
+end
+opt ct.includes('application/json'
+lib_api_client_ts --> U : encerra
+end
+deactivate lib_api_client_ts
+lib_api_client_ts --> U : resultado
+== Audit · log() ==
+U -> Audit : log()
+activate Audit
+Audit -> AuditService : record()
+deactivate Audit
+Audit --> U : resultado
+@enduml

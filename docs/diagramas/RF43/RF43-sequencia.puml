@@ -1,76 +1,70 @@
 @startuml RF43_Sequencia
-title RF43 — Autopiloto gera combinações de vestimentas com IA de acordo com as especificações do usuário\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor Pessoa as U
-participant "Frontend\nautopilot" as FE
-participant "AutopilotController" as C
-participant "AutopilotService" as S
-participant "WeatherService" as W
-participant "Open-Meteo\n(OpenMeteoAdapter)" as OM
-participant "AiEngine (RF24)" as AI
-participant "SchemeService" as SS
-participant "DailyLookService" as DL
-database "MySQL" as DB
+autonumber "<b>0."
+title RF43 — Autopiloto gera combinações de vestimentas com IA de acordo com as especificações do usuário\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-U -> FE: ocasião, humor, cidade → "Sugerir look de hoje"
-FE -> C: POST /api/autopilot/daily {occasion, mood, city, excludeKeys}
-C -> S: daily(user, DailyRequest)
-S -> DB: SELECT wardrobe_items disponíveis (wardrobe.eligible)
-alt menos de 3 peças elegíveis
-  S --> FE: 422 ACERVO_INSUFICIENTE {href: /pieces/new}
-else acervo suficiente
-  S -> W: resolve(latitude, longitude, city)
-  opt cidade informada e sem cache (TTL 30 min)
-    W -> OM: geocodificação + previsão
-    OM --> W: temperatura, descrição
-  end
-  W --> S: Context {band, season, note, available}
-  S -> S: candidates(): LocalSchemeComposer.compose\n+ pontuação (ocasião, clima, preferências, diversidade)
-  S -> AI: text(COPILOT) — escolher 3 de c1..c10 e justificar
-  alt IA devolve JSON {picks}
-    AI --> S: picks com rationale
-  else quota/erro/JSON inválido
-    AI --> S: fallback local (3 melhores, localRationale)
-  end
-  S --> C: {weather, suggestions[3], excludeKeys, fallbackUsed, explanation, quota}
-  C --> FE: 200 Map<String,Object>
-  FE --> U: 3 looks com peças, score e motivo
+actor "Pessoa usuária" as U
+boundary "Tela /autopilot" as P
+control "AutopilotController" as AutopilotController
+participant "AutopilotService" as AutopilotService
+participant "WardrobeService" as WardrobeService
+database "MySQL" as DB_MySQL
+participant "WeatherService" as WeatherService
+participant "LookScorer" as LookScorer
+== Planejar a semana (um look por dia sem repetir peças) ==
+U -> P : Planejar a semana (um look por dia sem repetir pe…
+P -> AutopilotController : POST /api/autopilot/weeks
+AutopilotController -> AutopilotService : planWeek()
+activate AutopilotService
+AutopilotService -> WardrobeService : eligible()
+WardrobeService -> DB_MySQL : SELECT wardrobe_items
+WardrobeService --> AutopilotService
+alt acervo insuficiente
+AutopilotService --> AutopilotController : 422 ACERVO_INSUFICIENTE
+AutopilotController --> P : 422 + mensagem
 end
-
-U -> FE: "Usar hoje" em um look
-FE -> C: POST /api/autopilot/daily/confirmation {pieceIds, title, occasion, mood}
-C -> S: confirmDaily(user, pieceIds, title, occasion, mood)
-S -> DB: SELECT schemes não arquivados (mesma combinationKey?)
-alt já existe esquema com as mesmas peças
-  S -> S: reaproveita o Scheme existente
-else combinação nova
-  S -> SS: create(user, SchemeForm origin=AUTOPILOTO, AI_ASSISTED)
-  SS -> DB: INSERT schemes, scheme_items
-end
-S -> DL: register(user, scheme, AUTOPILOTO, hoje)
-DL -> DB: INSERT/UPDATE daily_looks
-S --> C: {schemeId, dailyLook}
-C --> FE: 201 Created
-FE --> U: redireciona para /schemes/{schemeId}
-
-opt Aba Semana
-  U -> FE: "Planejar" (weekStart, cidade, evento/ocasião por dia)
-  FE -> C: POST /api/autopilot/weeks {weekStart, days[], city}
-  C -> S: planWeek(user, WeekRequest)
-  S -> DB: UPDATE week_plans ACTIVE anterior → DISCARDED
-  S -> DB: INSERT week_plans (ACTIVE) + 7 week_plan_days
-  S --> FE: 201 planView (days, gaps, distinctLooks)
-  FE -> C: GET /api/autopilot/weeks/current
-  U -> FE: "Usar hoje" num dia
-  FE -> C: POST /api/autopilot/days/{dayId}/use
-  C -> S: useDay(user, dayId)
-  S -> DL: register(user, scheme, AUTOPILOTO, dayDate)
-end
+AutopilotService -> DB_MySQL : SELECT week_plans
+AutopilotService -> AutopilotService : status = DISCARDED
+AutopilotService -> DB_MySQL : INSERT/UPDATE week_plans
+AutopilotService -> DB_MySQL : SELECT users
+AutopilotService -> AutopilotService : new WeekPlan()
+AutopilotService -> AutopilotService : status = ACTIVE
+AutopilotService -> DB_MySQL : INSERT/UPDATE week_plans
+AutopilotService -> WeatherService : resolve()
+AutopilotService -> AutopilotService : new WeekPlanDay()
+AutopilotService -> DB_MySQL : SELECT wardrobe_items
+AutopilotService -> AutopilotService : combinationKey = set
+AutopilotService -> DB_MySQL : INSERT/UPDATE week_plan_days
+AutopilotService -> DB_MySQL : INSERT/UPDATE week_plans
+AutopilotService -> DB_MySQL : SELECT week_plan_days
+AutopilotService -> DB_MySQL : SELECT wardrobe_items
+AutopilotService -> LookScorer : scoreLooks()
+LookScorer -> DB_MySQL : SELECT style_dna
+LookScorer -> DB_MySQL : SELECT schemes
+LookScorer -> DB_MySQL : SELECT scheme_items
+LookScorer --> AutopilotService
+deactivate AutopilotService
+AutopilotService --> AutopilotController : resultado
+AutopilotController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

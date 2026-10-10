@@ -1,14 +1,27 @@
 "use client";
-import { label } from "@/lib/api/taxonomy";
+import { label, subcategoryLabel } from "@/lib/api/taxonomy";
 import { cn } from "@/components/ui";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 
 /** Tipos do FLAIR (espelham FlairEngine no backend). */
 export interface FlairAbility { code: string; label: string; description: string; }
+/**
+ * Hype v2 PÚBLICO que decidiu a raridade da carta (RF53 · P2-18): `rarity` = raridade do modelo (0–100, quantas pessoas têm
+ * o mesmo modelo); `level` = faixa. Nulos = sem dado (item privado, dados insuficientes ou não calculado), nunca 0.
+ */
+export interface FlairCardHype { score?: number | null; level?: string | null; rarity?: number | null; }
 export interface FlairCard {
   id: string; name: string; category: string; subcategory: string; imageUrl?: string | null; colorHex?: string | null; brandName?: string | null;
   styles: string[]; occasions: string[]; material?: string | null; season: string; stats: Record<string, number>; rarity: string; multiplier: number; power: number;
-  ability?: FlairAbility | null;
+  ability?: FlairAbility | null; hype?: FlairCardHype | null;
+}
+
+/** De onde veio a raridade, em texto: "Raridade do modelo 82 · Em alta" ou "Sem Hype público: só selo, 3D e foto contam". Preço nunca entra. */
+export function rarityBasis(card: Pick<FlairCard, "hype">): string {
+  const h = card.hype;
+  if (!h || (h.level == null && h.rarity == null)) return tr("hypeFlair.carta_sem_hype");
+  const level = h.level ? tr(`hype.level.${h.level}`) : tr("hype.state.insufficient");
+  return h.rarity == null ? tr("hypeFlair.carta_base_sem_modelo", { level }) : tr("hypeFlair.carta_base", { rarity: Math.round(h.rarity), level });
 }
 export interface FlairCombo { code: string; label: string; points: number; }
 export interface FlairDeck {
@@ -38,23 +51,24 @@ const SKIN_BG: Record<string, string> = {
   CHAMPION: "linear-gradient(160deg,#141414,#3a2f12 60%,#8a6a1c)",
 };
 
-/** Carta FLAIR: moldura por raridade, foto da peça, poder, 6 atributos e a habilidade especial. */
+/** Carta FLAIR: moldura por raridade (com a base da raridade em texto), foto da peça, poder, 6 atributos e a habilidade especial. */
 export function FlairCardView({ card, skin, size = "md", selected, onClick, dim }: { card: FlairCard; skin?: string | null; size?: "sm" | "md"; selected?: boolean; onClick?: () => void; dim?: boolean }) {
   const { t } = useI18n();
   const r = RARITY_META[card.rarity] ?? RARITY_META.STANDARD;
+  const basis = rarityBasis(card);
   const Tag = onClick ? "button" : "div";
   return (
     <Tag type={onClick ? "button" : undefined} onClick={onClick}
       className={cn("flair-card text-left", size === "sm" && "flair-card-sm", selected && "flair-card-selected", dim && "opacity-40")}
       style={{ background: r.frame, boxShadow: `0 6px 22px ${r.glow}` }}
-      aria-label={t("flair.flairCard.carta_poder", { name: card.name, label: r.label, power: card.power })}>
+      aria-label={t("hypeFlair.carta_aria", { base: t("flair.flairCard.carta_poder", { name: card.name, label: r.label, power: card.power }), basis })}>
       <div className="flair-card-inner" style={skin && SKIN_BG[skin] ? { background: SKIN_BG[skin] } : undefined}>
         <div className="flex items-center justify-between gap-1 px-2 pt-1.5">
-          <span className="flair-rarity">{r.label}</span>
+          <span className="flair-rarity" title={basis}>{r.label}</span>
           <span className="flair-power tabular" title={t("flair.flairCard.poder_da_carta")}>{card.power}</span>
         </div>
         <div className="flair-art" style={{ background: card.colorHex ? `radial-gradient(circle at 50% 40%, #fff 0%, ${card.colorHex}22 70%)` : undefined }}>
-          {card.imageUrl ? <img src={card.imageUrl} alt="" loading="lazy" draggable={false} /> : <span className="type-caption text-faint">{label(card.subcategory)}</span>}
+          {card.imageUrl ? <img src={card.imageUrl} alt="" loading="lazy" draggable={false} /> : <span className="type-caption text-faint">{subcategoryLabel(card.subcategory)}</span>}
           {card.brandName && <span className="flair-brand">{card.brandName}</span>}
         </div>
         <p className="flair-name" title={card.name}>{card.name}</p>
