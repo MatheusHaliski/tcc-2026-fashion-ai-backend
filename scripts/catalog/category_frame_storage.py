@@ -3,6 +3,8 @@ import hashlib
 import io
 import json
 import os
+import uuid
+import threading
 from urllib.parse import quote, urlsplit
 
 
@@ -25,6 +27,8 @@ def render_frame(path, crop, width=900):
 
 class FrameStorage:
     def __init__(self, client=None):
+        self._pending = {}
+        self._lock = threading.Lock()
         self.bucket = os.environ['S3_BUCKET']
         base = os.getenv('STORAGE_PUBLIC_BASE_URL', '').rstrip('/')
         if os.getenv('S3_SERVE_THROUGH_API', '').lower() == 'true':
@@ -44,18 +48,40 @@ class FrameStorage:
         self.client = client
 
     def store(self, record, response, path):
+        expected = response['columns'].get('source_sha256')
+        if not expected or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+            raise ValueError('SOURCE_CHANGED_SINCE_ANALYSIS')
         data = render_frame(path, json.loads(response['columns']['crop_json']))
         digest = hashlib.sha256(data).hexdigest()
-        key = 'catalog/framed/' + digest + '.jpg'
-        self.client.put_object(Bucket=self.bucket, Key=key, Body=data, ContentType='image/jpeg')
-        body = self.client.get_object(Bucket=self.bucket, Key=key)['Body']
+        key = 'catalog/framed/' + uuid.uuid4().hex + '/' + digest + '.jpg'
+        self.client.put_object(Bucket=self.bucket, Key=key, Body=data, ContentType='image/jpeg', IfNoneMatch='*')
+        with self._lock:
+            self._pending[key] = {'owned_key':key, 'stored_url':self.base + '/' + quote(key, safe='/')}
         try:
-            verified = body.read(len(data)+1)
-        finally:
-            body.close()
-        if hashlib.sha256(verified).hexdigest() != digest:
-            raise ValueError('FRAME_UPLOAD_VERIFICATION_FAILED')
+            body = self.client.get_object(Bucket=self.bucket, Key=key)['Body']
+            try:
+                verified = body.read(len(data)+1)
+            finally:
+                body.close()
+            if hashlib.sha256(verified).hexdigest() != digest:
+                raise ValueError('FRAME_UPLOAD_VERIFICATION_FAILED')
+        except Exception:
+            self.client.delete_object(Bucket=self.bucket, Key=key)
+            with self._lock:
+                self._pending.pop(key, None)
+            raise
         url = self.base + '/' + quote(key, safe='/')
-        return {'stored_url':url, 'assets_json':json.dumps({'card':url, 'master':url,
-                'framingVersion':'CATALOG_FRAME_34_50_V1', 'sha256':digest,
+        return {'owned_key':key, 'stored_url':url, 'assets_json':json.dumps({'card':url, 'master':url,
+                'framingVersion':'CATALOG_FRAME_34_50_V1', 'sha256':digest, 'width':900, 'height':1200,
                 'previousStoredUrl':record.get('stored_url'), 'originalUrl':record['source_url']})}
+
+    def discard_unreferenced(self, assets, is_referenced):
+        # A fresh DB lookup is mandatory even when COMMIT raised: it may have succeeded.
+        if not is_referenced(assets['stored_url']):
+            self.client.delete_object(Bucket=self.bucket, Key=assets['owned_key'])
+        with self._lock:
+            self._pending.pop(assets['owned_key'], None)
+
+    def pending_assets(self):
+        with self._lock:
+            return list(self._pending.values())

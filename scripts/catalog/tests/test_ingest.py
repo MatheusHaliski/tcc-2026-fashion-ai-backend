@@ -148,6 +148,19 @@ class SkipExistingTest(unittest.TestCase):
         self.conn.commit()
         self.assertFalse(self.conn.rows("catalog_sources")[0]["allows_image_persistence"])
 
+    def test_source_permission_requires_boolean_and_omission_preserves_existing(self):
+        from normalize_product import ValidationError
+        bid = self.conn.rows("brands")[0]["id"]
+        with self.conn.cursor() as cur:
+            src = {"domain":"authorized.example", "source_type":"OFFICIAL_BRAND", "allows_image_persistence":True}
+            self.ing.upsert_source(cur,bid,src)
+            self.ing.upsert_source(cur,bid,{"domain":"authorized.example", "source_type":"OFFICIAL_BRAND", "country":"BR"})
+            for value in ['false','true',1,None]:
+                with self.assertRaises(ValidationError):
+                    self.ing.upsert_source(cur,bid,{**src,"allows_image_persistence":value})
+        row = next(r for r in self.conn.rows("catalog_sources") if r['domain']=='authorized.example')
+        self.assertTrue(row['allows_image_persistence'])
+
     def test_brand_sources_are_cached_and_new_source_invalidates_cache(self):
         self.assertEqual(self.ing.ingest(self.raw), "SKIP")
         self.conn.statements.clear()

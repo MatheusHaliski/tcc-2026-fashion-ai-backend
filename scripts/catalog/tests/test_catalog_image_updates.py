@@ -192,7 +192,7 @@ class ImageUpdatesTest(unittest.TestCase):
         conn.sql.execute("ALTER TABLE catalog_products ADD COLUMN brand_id TEXT")
         conn.sql.execute("UPDATE catalog_products SET brand_id='brand-1'")
         conn.sql.execute("CREATE TABLE catalog_sources (id TEXT, brand_id TEXT, domain TEXT, active INTEGER, allows_image_persistence INTEGER)")
-        conn.sql.execute("INSERT INTO catalog_sources VALUES ('source-1','brand-1','brand.example.com',1,1)")
+        conn.sql.execute("INSERT INTO catalog_sources VALUES ('source-1','brand-1','example.com',1,1)")
         conn.sql.commit()
         records = conn.records()
         records[0]["allows_image_persistence"] = True
@@ -205,6 +205,22 @@ class ImageUpdatesTest(unittest.TestCase):
         self.assertEqual(row["usage_status"], "PERSISTED")
         self.assertEqual(row["image_url"], records[0]["image_url"])
         self.assertEqual(result["changed_ids"], ["a"])
+
+    def test_revoked_source_rolls_back_asset_reference(self):
+        conn = self.database()
+        conn.sql.execute("ALTER TABLE catalog_products ADD COLUMN brand_id TEXT")
+        conn.sql.execute("UPDATE catalog_products SET brand_id='brand-1'")
+        conn.sql.execute("CREATE TABLE catalog_sources (id TEXT, brand_id TEXT, domain TEXT, active INTEGER, allows_image_persistence INTEGER)")
+        conn.sql.execute("INSERT INTO catalog_sources VALUES ('source-1','brand-1','example.com',1,0)")
+        conn.sql.commit()
+        before = conn.rows()[0]
+        records = conn.records();records[0]['allows_image_persistence'] = True
+        response = analysis(pipeline_version='CATALOG_FRAME_34_50_V1')
+        response['framed_assets'] = {'stored_url':'https://media.example/framed.jpg', 'assets_json':'{}'}
+        with self.assertRaisesRegex(ValueError,'permission changed'):
+            apply_product(conn,records,{'a':response},Ranker(conn))
+        self.assertEqual(conn.rows()[0],before)
+        self.assertEqual(conn.rollbacks,1)
 
     def test_level_a_metadata_keeps_original_and_provenance_clears_old_stored_crop(self):
         conn = self.database()

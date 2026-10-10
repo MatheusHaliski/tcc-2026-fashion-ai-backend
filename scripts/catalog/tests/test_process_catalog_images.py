@@ -233,7 +233,7 @@ class FramePreflightTest(unittest.TestCase):
         analyzer.frame_storage = Mock()
         record = {"category":"upper_piece", "source_url":"https://brand.example/a.jpg", "image_id":"a", "allows_image_persistence":False}
         result = audit_record(record, downloader, analyzer, checkpoint, apply=True)
-        self.assertEqual(result["error"], "SOURCE_DISALLOWS_IMAGE_PERSISTENCE")
+        self.assertEqual(result["error"], "SOURCE_RIGHTS_UNCONFIRMED")
         downloader.get.assert_not_called()
         analyzer.analyze.assert_not_called()
         checkpoint.get.assert_not_called()
@@ -253,3 +253,21 @@ class CliHelpTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class DownloadAuthorizationTest(unittest.TestCase):
+    def test_redirect_cannot_leave_authorized_domains(self):
+        from process_catalog_images import CheckedRedirect, DownloadFailure
+        from unittest.mock import patch
+        import urllib.request
+        with patch('process_catalog_images.public_image_url', side_effect=lambda url:url):
+            with self.assertRaisesRegex(DownloadFailure,'UNAUTHORIZED'):
+                CheckedRedirect(['brand.example']).redirect_request(
+                    urllib.request.Request('https://brand.example/a'),None,302,'redirect',{},'https://evil.example?x=.brand.example')
+
+    def test_private_dns_answer_is_rejected(self):
+        from process_catalog_images import public_image_url, DownloadFailure
+        from unittest.mock import patch
+        import socket
+        with patch('socket.getaddrinfo',return_value=[(socket.AF_INET,socket.SOCK_STREAM,6,'',('127.0.0.1',443))]):
+            with self.assertRaisesRegex(DownloadFailure,'NON_PUBLIC_IMAGE_HOST'):
+                public_image_url('https://brand.example/a.jpg')

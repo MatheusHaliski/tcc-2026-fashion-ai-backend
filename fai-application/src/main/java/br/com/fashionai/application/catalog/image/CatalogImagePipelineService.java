@@ -261,13 +261,13 @@ public class CatalogImagePipelineService {
 
     /** Nível B só quando a fonte oficial do domínio da foto declara allows_image_persistence (RN47.03). */
     boolean allowsPersistence(CatalogProduct product, CatalogImage img) {
-        String host = host(img.getImageUrl()), sourceDomain = img.getSourceDomain();
+        String host = host(img.getImageUrl());
         for (CatalogSource s : sources.findByBrandIdAndActiveTrue(product.getBrandId())) {
             if (!s.isAllowsImagePersistence() || s.getDomain() == null) {
                 continue;
             }
-            String d = s.getDomain().toLowerCase(Locale.ROOT).replaceFirst("^www\\.", "");
-            if ((host != null && (host.equals(d) || host.endsWith("." + d))) || d.equalsIgnoreCase(sourceDomain)) {
+            String d = s.getDomain().toLowerCase(Locale.ROOT).replaceFirst("^www\\.", "").replaceAll("\\.+$", "");
+            if ((host != null && (host.equals(d) || host.endsWith("." + d)))) {
                 return true;
             }
         }
@@ -276,8 +276,11 @@ public class CatalogImagePipelineService {
 
     static String host(String url) {
         try {
-            String h = URI.create(url).getHost();
-            return h == null ? null : h.toLowerCase(Locale.ROOT);
+            URI uri = URI.create(url);
+            if (!"https".equalsIgnoreCase(uri.getScheme()) || uri.getRawUserInfo() != null
+                    || (uri.getPort() != -1 && uri.getPort() != 443)) return null;
+            String h = uri.getHost();
+            return h == null ? null : h.toLowerCase(Locale.ROOT).replaceAll("\\.+$", "");
         } catch (IllegalArgumentException e) {
             return null;
         }

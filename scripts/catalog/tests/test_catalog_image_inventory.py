@@ -148,7 +148,7 @@ class Cursor:
         rows = sorted(self.conn.rows, key=lambda row: (row["product_id"], row["image_id"] or ""))
         if "p.ingestion_status IN" in sql:
             rows = [row for row in rows if row.get("ingestion_status") in params[:3]]
-        if "COALESCE" in sql:
+        if "COALESCE(i.id" in sql:
             product, _, image = params[-4:-1]
             rows = [row for row in rows if (row["product_id"], row["image_id"] or "") > (product, image)]
         self.page = copy.deepcopy(rows[:params[-1]])

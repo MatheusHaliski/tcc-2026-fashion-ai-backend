@@ -153,6 +153,23 @@ class CatalogImagePipelineServiceTest {
     }
 
     @Test
+    void provenienciaNaoAutorizaHostTerceiroOuUserinfo() {
+        CatalogSource source = new CatalogSource();
+        source.setDomain("www.brand.com.");
+        source.setAllowsImagePersistence(true);
+        sources.add(source);
+        CatalogImage img = new CatalogImage();
+        img.setSourceDomain("brand.com");
+        for (String url : List.of("https://evil.com?x=.brand.com", "https://evil.com#x=.brand.com",
+                "https://brand.com@evil.com", "https://user@img.brand.com", "http://brand.com", "https://brand.com:444")) {
+            img.setImageUrl(url);
+            assertThat(service.allowsPersistence(product, img)).as(url).isFalse();
+        }
+        img.setImageUrl("https://IMG.BRAND.COM.:443?x=1");
+        assertThat(service.allowsPersistence(product, img)).isTrue();
+    }
+
+    @Test
     void fontesComPermissaoGanhamMasterNoStorage() {
         CatalogSource s = new CatalogSource();
         s.setDomain("brand.com");

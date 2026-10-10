@@ -136,3 +136,21 @@ progresso distingue análises Java concluídas de resultados prontos para grava�
 e mostra os motivos de falha mais frequentes; `failure_reasons` no relatório
 resume os bloqueios. Erros do S3 incluem o código do serviço sem expor credenciais.
 Permissões negativas continuam negativas: não são alteradas automaticamente.
+
+
+## Auditoria e direitos de persistência
+
+Consulte `docs/catalogo/AUDITORIA_PERSISTENCIA_PIPELINE.md` para a investigação,
+limites da validação, fila administrativa e execução controlada. Proveniência
+não autoriza um host terceiro. O inventário SQL fornece fontes da mesma marca;
+Python aplica uma única política no preflight e na transação. A flag FALSE
+legada é UNKNOWN (o schema não registra uma negativa explícita). CDN terceiro
+precisa de cadastro específico com direito de persistência.
+
+Antes de qualquer lote, execute `audit_catalog_persistence.py --output ...json`.
+Sem `--apply`, o processador principal não baixa, analisa, grava S3 ou altera
+MySQL. `--authorized-only --limit 20` prepara amostra de produtos elegíveis com
+seu inventário completo, para não invalidar a transação por seleção parcial.
+Novos objetos usam chaves exclusivas; falhas conhecidas removem apenas objetos
+sem referências confirmadas. Em COMMIT incerto/DB indisponível, a limpeza fica
+pendente para auditoria. `audit_catalog_storage.py` lista candidatos e nunca exclui.

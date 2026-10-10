@@ -32,6 +32,27 @@ MAX_BYTES = 10 * 1024 * 1024  # Mesmo ImageOps.MAX_UPLOAD_BYTES da API Java.
 PROGRESS_INTERVAL = 5
 
 
+def safe_audit(value):
+    """Audit artifacts retain identity hashes, never URL credentials/signatures."""
+    if isinstance(value, dict):
+        return {key: safe_audit(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [safe_audit(item) for item in value]
+    if isinstance(value, str):
+        if value.startswith(("https://", "http://")):
+            try:
+                host = urllib.parse.urlsplit(value).hostname or "invalid"
+            except ValueError:
+                host = "invalid"
+            return {"host": host, "url_sha256": hashlib.sha256(value.encode()).hexdigest()}
+        if value.startswith(("{", "[")):
+            try:
+                return safe_audit(json.loads(value))
+            except ValueError:
+                pass
+    return value
+
+
 def progress(message):
     """Keep phase/counter messages separate from the JSON result and omit inputs."""
     print("[catalogo] " + message, file=sys.stderr, flush=True)
@@ -129,9 +150,23 @@ def public_image_url(url: str) -> str:
     return url
 
 
+def authorize_download(url, allowed_domains):
+    if allowed_domains is None:
+        return
+    from source_persistence import image_hostname, matches
+    host = image_hostname(url)
+    if not any(matches(host, domain) for domain in allowed_domains):
+        raise DownloadFailure("REDIRECT_OR_HOST_UNAUTHORIZED")
+
+
 class CheckedRedirect(urllib.request.HTTPRedirectHandler):
+    def __init__(self, allowed_domains=None):
+        super().__init__()
+        self.allowed_domains = allowed_domains
+
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         public_image_url(newurl)
+        authorize_download(newurl, self.allowed_domains)
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
@@ -146,8 +181,10 @@ class ImageDownloader:
         self.last_request = {}
         self.stopped_domains = {}
         self.proxy_blocked = False
+        self.final_urls = {}
 
-    def get(self, url: str) -> Path:
+    def get(self, url: str, *, allowed_domains=None) -> Path:
+        authorize_download(url, allowed_domains)
         host = urllib.parse.urlsplit(url).hostname or ""
         key = hashlib.sha256(url.encode()).hexdigest()
         path = self.directory / (key + ".img")
@@ -165,6 +202,7 @@ class ImageDownloader:
                     self.stopped_domains[host] = str(error)
                 raise
             if path.exists() and 0 < path.stat().st_size <= MAX_BYTES:
+                authorize_download(self.final_urls.get(str(path), url), allowed_domains)
                 return path
             for attempt in range(3):
                 delay = self.min_interval - (time.monotonic() - self.last_request.get(host, 0))
@@ -176,8 +214,11 @@ class ImageDownloader:
                     "Accept": "image/*", "Accept-Encoding": "identity",
                 })
                 try:
-                    opener = urllib.request.build_opener(CheckedRedirect())
+                    opener = urllib.request.build_opener(CheckedRedirect(allowed_domains))
                     with opener.open(request, timeout=self.timeout) as response:
+                        public_image_url(response.geturl())
+                        authorize_download(response.geturl(), allowed_domains)
+                        self.final_urls[str(path)] = response.geturl()
                         if response.headers.get_content_maintype() != "image":
                             raise DownloadFailure("NOT_AN_IMAGE")
                         if int(response.headers.get("Content-Length", "0")) > MAX_BYTES:
@@ -260,6 +301,42 @@ def update_committed(record, change):
     return record
 
 
+def fresh_source_decision(record):
+    from db import connect
+    from source_persistence import source_decision
+    conn = connect()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT s.domain, s.active, s.allows_image_persistence FROM catalog_sources s JOIN catalog_products p ON p.brand_id=s.brand_id WHERE p.id=%s", (record["product_id"],))
+            return source_decision(cursor.fetchall(), record["source_url"], record.get("source_domain"))
+    finally:
+        conn.rollback()
+        conn.close()
+
+
+def asset_referenced(url):
+    from db import connect
+    conn = connect()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT id FROM catalog_images WHERE stored_url=%s OR JSON_SEARCH(assets_json, 'one', %s) IS NOT NULL LIMIT 1", (url, url))
+            return cursor.fetchone() is not None
+    finally:
+        conn.rollback()
+        conn.close()
+
+
+def cleanup_assets(storage, analyses):
+    for analysis in analyses.values():
+        assets = analysis.get("framed_assets")
+        if assets:
+            try:
+                storage.discard_unreferenced(assets, asset_referenced)
+            except Exception:
+                # Never delete if reference status is uncertain. Retain for operator audit.
+                progress("Limpeza pendente: não foi possível confirmar referência/remoção de asset.")
+
+
 def audit_record(record, downloader, analyzer, checkpoint, *, apply):
     from catalog_image_inventory import is_standardized
     result = dict(record)
@@ -277,7 +354,7 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
     if before is True and (not getattr(analyzer, "category_frame", False) or result.get("pipeline_version") == "CATALOG_FRAME_34_50_V1"):
         result["status_note"] = "Já aprovado e padronizado nesta versão; preservado."
         return result
-    if result.get("review_status") in ("APPROVED", "REJECTED") or result.get("processing_status") == "DOWNLOADING":
+    if result.get("review_status") in ("APPROVED", "REJECTED") or result.get("processing_status") == "DOWNLOADING" or result.get("usage_status") == "REJECTED":
         result["status_note"] = "Preservado: revisão humana ou processamento em andamento."
         return result
     try:
@@ -285,10 +362,11 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
             if result.get("category") not in {"upper_piece", "lower_piece", "shoes_piece", "accessory_piece", "full_body_piece"}:
                 raise ValueError("CATEGORY_FRAME_UNSUPPORTED:" + str(result.get("category")))
             if getattr(analyzer, "frame_storage", None) and not result.get("allows_image_persistence"):
-                raise ValueError("SOURCE_DISALLOWS_IMAGE_PERSISTENCE")
+                raise ValueError((result.get("persistence_decision") or {}).get("reason", "SOURCE_RIGHTS_UNCONFIRMED"))
         response = checkpoint.get(result, analyzer.ready["pipelineVersion"])
         if response is None:
-            path = downloader.get(result["source_url"])
+            path = (downloader.get(result["source_url"], allowed_domains=result["persistence_decision"]["domains"])
+                    if getattr(analyzer, "frame_storage", None) else downloader.get(result["source_url"]))
             response = analyzer.analyze(path, result.get("category"), result.get("subcategory"),
                                         result.get("image_type") or "PACKSHOT", image_id=result["image_id"])
             checkpoint.put(result, analyzer.ready["pipelineVersion"], response)
@@ -298,8 +376,16 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
             response = apply_frame(response, result.get("category"))
         if getattr(analyzer, "frame_storage", None):
             if not result.get("allows_image_persistence"):
-                raise ValueError("SOURCE_DISALLOWS_IMAGE_PERSISTENCE")
-            path = downloader.get(result["source_url"])
+                raise ValueError((result.get("persistence_decision") or {}).get("reason", "SOURCE_RIGHTS_UNCONFIRMED"))
+            path = (downloader.get(result["source_url"], allowed_domains=result["persistence_decision"]["domains"])
+                    if getattr(analyzer, "frame_storage", None) else downloader.get(result["source_url"]))
+            fresh = fresh_source_decision(result)
+            if fresh['state'] != 'AUTHORIZED':
+                raise ValueError(fresh['reason'])
+            from source_persistence import image_hostname, matches
+            if not any(matches(image_hostname(result['source_url']), d) for d in fresh['domains']):
+                raise ValueError('SOURCE_AUTHORIZATION_CHANGED')
+            authorize_download(downloader.final_urls.get(str(path), result["source_url"]), fresh["domains"])
             response["framed_assets"] = analyzer.frame_storage.store(result, response, path)
         result["analysis"] = response
         analyzed = update_analysis(result, response)
@@ -323,6 +409,21 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
     return result
 
 
+def select_records(records, limit=None, authorized_only=False, database=False):
+    if authorized_only:
+        products = {r['product_id'] for r in records if r.get('allows_image_persistence')}
+        records = [r for r in records if r['product_id'] in products]
+    if limit:
+        if database:
+            candidates = [r for r in records if r.get('allows_image_persistence')] if authorized_only else records
+            products = {r['product_id'] for r in candidates[:limit]}
+            # SQL optimistic guards require every image of each selected product.
+            records = [r for r in records if r['product_id'] in products]
+        else:
+            records = records[:limit]
+    return records
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__)
     source = ap.add_mutually_exclusive_group(required=True)
@@ -336,9 +437,14 @@ def main(argv=None):
     ap.add_argument("--java")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--java-threads", type=int, default=2)
+    ap.add_argument("--authorized-only", action="store_true", help="Selecionar produtos com ao menos uma imagem autorizada; preservar inventário completo por produto")
     ap.add_argument("--limit", type=int, help="Limitar imagens apenas para amostra explicitamente identificada")
     ap.add_argument("--timeout", type=float, default=25)
     args = ap.parse_args(argv)
+    if args.authorized_only and not args.database:
+        ap.error("--authorized-only requer --database")
+    if args.category_frame and not args.database:
+        ap.error("--category-frame requer --database: snapshots não autorizam uploads")
     if args.category_frame and not args.apply:
         ap.error("--category-frame requer --apply")
     if args.output.suffix.lower() != ".xlsx":
@@ -357,9 +463,9 @@ def main(argv=None):
     total = len(records)
     progress(f"Inventário carregado: {len({r['product_id'] for r in records})} peças, "
              f"{sum(bool(r.get('source_url')) for r in records)} imagens, {total} registros.")
-    if args.limit:
-        records = records[:args.limit]
-        progress(f"Amostra selecionada: {len(records)} registros.")
+    records = select_records(records, args.limit, args.authorized_only, args.database)
+    if args.limit or args.authorized_only:
+        progress(f"Seleção com inventário completo por produto: {len(records)} registros.")
     summary = {"source_scope": "DATABASE" if args.database else "SNAPSHOT_LOCAL",
                "source": "MySQL configurado em MYSQL_*" if args.database else ", ".join(str(p) for p in args.snapshot),
                "pipeline_version": PIPELINE_VERSION,
@@ -378,7 +484,7 @@ def main(argv=None):
                 if not before.exists():
                     with before.open("w", encoding="utf-8") as stream:
                         for row in records:
-                            stream.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
+                            stream.write(json.dumps(safe_audit(row), ensure_ascii=False, default=str) + "\n")
             with tempfile.TemporaryDirectory(prefix="fashionai-catalog-images-") as directory:
                 downloader = ImageDownloader(Path(directory), timeout=args.timeout)
                 with CatalogImageAnalyzer(classpath, java=args.java, threads=args.java_threads,
@@ -408,10 +514,14 @@ def main(argv=None):
                                     if not analyses:
                                         counter.update(completed, detail=f"Imagens alteradas: {changed_total}.")
                                         continue
-                                    report = apply_product(conn, rows, analyses, analyzer.rank)
+                                    try:
+                                        report = apply_product(conn, rows, analyses, analyzer.rank)
+                                    finally:
+                                        if args.category_frame:
+                                            cleanup_assets(analyzer.frame_storage, analyses)
                                     committed = {change["image_id"]: change for change in report["changes"]}
                                     for change in committed.values():
-                                        journal.write(json.dumps(change, ensure_ascii=False, default=str) + "\n")
+                                        journal.write(json.dumps(safe_audit(change), ensure_ascii=False, default=str) + "\n")
                                     journal.flush()
                                     os.fsync(journal.fileno())
                                     changed_total += len(committed)
@@ -430,15 +540,19 @@ def main(argv=None):
                         finally:
                             conn.close()
         finally:
+            if args.category_frame and "analyzer" in locals() and getattr(analyzer, "frame_storage", None):
+                cleanup_assets(analyzer.frame_storage, {str(i): {"framed_assets": assets} for i, assets in enumerate(analyzer.frame_storage.pending_assets())})
             checkpoint.close()
     else:
         records = [audit_record(row, None, None, None, apply=False) for row in records]
+    summary["persistence_states"] = dict(Counter((r.get("persistence_decision") or {}).get("state", "UNKNOWN") for r in records if r.get("source_url")))
+    summary["persistence_reasons"] = dict(Counter((r.get("persistence_decision") or {}).get("reason", "SOURCE_RIGHTS_UNCONFIRMED") for r in records if r.get("source_url")))
     summary["failure_reasons"] = dict(Counter(r["error"].split(":", 1)[0] for r in records if r.get("error")))
     progress("Exportando a planilha e os relatórios de auditoria...")
     jsonl = args.output.with_suffix(".audit.jsonl")
     with jsonl.open("w", encoding="utf-8") as stream:
         for row in records:
-            stream.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
+            stream.write(json.dumps(safe_audit(row), ensure_ascii=False, default=str) + "\n")
     write_workbook(records, args.output, summary)
     summary.update(rows=len(records), products=len({r["product_id"] for r in records}),
                    images=sum(bool(r.get("source_url")) for r in records),
