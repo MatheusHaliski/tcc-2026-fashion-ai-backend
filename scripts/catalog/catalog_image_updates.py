@@ -13,8 +13,10 @@ from decimal import Decimal
 
 try:
     from .db import now, run_transaction
+    from .source_persistence import allows_persistence
 except ImportError:  # direct script execution, like the other catalog commands
     from db import now, run_transaction
+    from source_persistence import allows_persistence
 
 
 METADATA_COLUMNS = (
@@ -238,8 +240,8 @@ def apply_product(conn, records, analyses_by_image_id, ranker):
                 return {"changed_ids": [], "skipped_ids": list(skipped), "skip_reasons": skipped, "changes": []}
             for image_id, patch in patches.items():
                 if patch.get("assets_json"):
-                    cursor.execute("SELECT s.id FROM catalog_sources s JOIN catalog_products p ON p.brand_id=s.brand_id WHERE p.id=%s AND s.domain=%s AND s.active=true AND s.allows_image_persistence=true FOR UPDATE", (product_id, current[image_id].get("source_domain")))
-                    if cursor.fetchone() is None:
+                    cursor.execute("SELECT s.domain, s.active, s.allows_image_persistence FROM catalog_sources s JOIN catalog_products p ON p.brand_id=s.brand_id WHERE p.id=%s FOR UPDATE", (product_id,))
+                    if not allows_persistence(cursor.fetchall(), current[image_id].get("image_url"), current[image_id].get("source_domain")):
                         raise ValueError("source persistence permission changed")
             changes = []
             for image_id, patch in patches.items():

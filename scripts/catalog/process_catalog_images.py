@@ -21,6 +21,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
+from collections import Counter
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
 from pathlib import Path
 
@@ -54,7 +55,8 @@ def analyze_records(records, downloader, analyzer, checkpoint, *, workers):
     """Report completions as they arrive while preserving the inventory's order."""
     results = [None] * len(records)
     counter = ProgressCounter("Analisando registros de imagem", len(records))
-    analyzed = failures = completed = 0
+    analyzed = failures = completed = java_completed = 0
+    failure_reasons = Counter()
     with ThreadPoolExecutor(max_workers=workers) as pool:
         pending = {
             pool.submit(audit_record, row, downloader, analyzer, checkpoint, apply=True): index
@@ -67,10 +69,13 @@ def analyze_records(records, downloader, analyzer, checkpoint, *, workers):
                 result = future.result()
                 results[index] = result
                 completed += 1
+                java_completed += bool(result.get("java_analysis_completed"))
                 analyzed += bool(result.get("analysis"))
+                if result.get("error"):
+                    failure_reasons[result["error"].split(":", 1)[0]] += 1
                 failures += bool(result.get("error"))
-            counter.update(completed, detail=f"Análises concluídas: {analyzed}; falhas: {failures}.")
-    counter.update(completed, detail=f"Análises concluídas: {analyzed}; falhas: {failures}.", force=True)
+            counter.update(completed, detail=f"Java concluído: {java_completed}; prontas para gravação: {analyzed}; falhas: {failures}. Motivos: {dict(failure_reasons.most_common(4))}")
+    counter.update(completed, detail=f"Java concluído: {java_completed}; prontas para gravação: {analyzed}; falhas: {failures}. Motivos: {dict(failure_reasons)}", force=True)
     return results
 
 
@@ -276,12 +281,18 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
         result["status_note"] = "Preservado: revisão humana ou processamento em andamento."
         return result
     try:
+        if getattr(analyzer, "category_frame", False):
+            if result.get("category") not in {"upper_piece", "lower_piece", "shoes_piece", "accessory_piece", "full_body_piece"}:
+                raise ValueError("CATEGORY_FRAME_UNSUPPORTED:" + str(result.get("category")))
+            if getattr(analyzer, "frame_storage", None) and not result.get("allows_image_persistence"):
+                raise ValueError("SOURCE_DISALLOWS_IMAGE_PERSISTENCE")
         response = checkpoint.get(result, analyzer.ready["pipelineVersion"])
         if response is None:
             path = downloader.get(result["source_url"])
             response = analyzer.analyze(path, result.get("category"), result.get("subcategory"),
                                         result.get("image_type") or "PACKSHOT", image_id=result["image_id"])
             checkpoint.put(result, analyzer.ready["pipelineVersion"], response)
+        result["java_analysis_completed"] = True
         if getattr(analyzer, "category_frame", False):
             from category_frame import apply_frame
             response = apply_frame(response, result.get("category"))
@@ -300,7 +311,14 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
         result["status_note"] = "Pipeline executado; " + ("enquadramento aprovado." if result["analysis_standardized"]
                                                          else "não aprovado para o enquadramento; requer revisão.")
     except Exception as error:
-        result["error"] = str(error) if isinstance(error, (DownloadFailure, ValueError)) else type(error).__name__
+        if isinstance(error, (DownloadFailure, ValueError)):
+            result["error"] = str(error)
+        elif isinstance(getattr(error, "response", None), dict):
+            # AWS error messages can contain URLs; report codes, never credentials.
+            code = str(error.response.get("Error", {}).get("Code", "UNKNOWN"))
+            result["error"] = "STORAGE_ERROR:" + code if code.replace("_", "").isalnum() else "STORAGE_ERROR"
+        else:
+            result["error"] = type(error).__name__
         result["status_note"] = "Pipeline não aplicado: " + result["error"]
     return result
 
@@ -344,7 +362,9 @@ def main(argv=None):
         progress(f"Amostra selecionada: {len(records)} registros.")
     summary = {"source_scope": "DATABASE" if args.database else "SNAPSHOT_LOCAL",
                "source": "MySQL configurado em MYSQL_*" if args.database else ", ".join(str(p) for p in args.snapshot),
-               "pipeline_version": PIPELINE_VERSION, "sample": bool(args.limit), "inventory_rows": total,
+               "pipeline_version": PIPELINE_VERSION,
+               "framing_version": "CATALOG_FRAME_34_50_V1" if args.category_frame else None,
+               "sample": bool(args.limit), "inventory_rows": total,
                "applied_to_database": False, "generated_at": datetime.now(timezone.utc).isoformat()}
     if args.apply:
         from catalog_image_analyzer import CatalogImageAnalyzer, ensure_classpath
@@ -413,6 +433,7 @@ def main(argv=None):
             checkpoint.close()
     else:
         records = [audit_record(row, None, None, None, apply=False) for row in records]
+    summary["failure_reasons"] = dict(Counter(r["error"].split(":", 1)[0] for r in records if r.get("error")))
     progress("Exportando a planilha e os relatórios de auditoria...")
     jsonl = args.output.with_suffix(".audit.jsonl")
     with jsonl.open("w", encoding="utf-8") as stream:

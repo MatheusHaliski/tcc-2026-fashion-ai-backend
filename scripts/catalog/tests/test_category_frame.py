@@ -27,7 +27,7 @@ class CategoryFrameTest(unittest.TestCase):
 
     def test_frame_too_tall_and_unknown_category(self):
         with self.assertRaises(ValueError): apply_frame(self.response(4000, 1000), 'upper_piece')
-        with self.assertRaises(ValueError): apply_frame(self.response(), 'full_body_piece')
+        with self.assertRaises(ValueError): apply_frame(self.response(), 'unknown')
 
     def test_csv_gate_reasons_are_preserved(self):
         response = self.response()
@@ -41,3 +41,9 @@ class CategoryFrameTest(unittest.TestCase):
         response['columns']['gate_reasons'] = 'NO_FOREGROUND'
         with self.assertRaisesRegex(ValueError, 'MISSING_PRODUCT:NO_FOREGROUND'):
             apply_frame(response, 'upper_piece')
+
+    def test_full_body_uses_product_center(self):
+        result = apply_frame(self.response(), 'full_body_piece')['columns']
+        crop = json.loads(result['crop_json'])
+        self.assertEqual(crop['editorFrame']['target'], 'garment_center')
+        self.assertAlmostEqual(crop['crop']['y'] + crop['crop']['h']/2, .5)

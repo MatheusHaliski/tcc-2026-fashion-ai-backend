@@ -15,7 +15,7 @@ def apply_frame(response, category):
     columns = result['columns']
     crop = _object(columns.get('crop_json')) or {}
     product = crop.get('product')
-    if category not in {'upper_piece', 'lower_piece', 'accessory_piece', 'shoes_piece'}:
+    if category not in {'upper_piece', 'lower_piece', 'accessory_piece', 'shoes_piece', 'full_body_piece'}:
         raise ValueError('CATEGORY_FRAME_UNSUPPORTED:' + str(category))
     if not product:
         reasons = columns.get('gate_reasons') or 'NO_PRODUCT_REGION'
@@ -38,7 +38,7 @@ def apply_frame(response, category):
     review = category in {'lower_piece', 'shoes_piece'}
     crop.update(aspect='3:4', crop=dict(x=x, y=y, w=w, h=h), ruleCompliant=not review)
     crop['editorFrame'] = dict(version=VERSION, widthPercent=50, category=category,
-                              target={'upper_piece':'shirt_center','lower_piece':'zipper','accessory_piece':'center','shoes_piece':'laces'}[category],
+                              target={'upper_piece':'shirt_center','lower_piece':'zipper','accessory_piece':'center','shoes_piece':'laces','full_body_piece':'garment_center'}[category],
                               focusSource='PIPELINE_REGION_ESTIMATE' if review else 'PRODUCT_CENTER',
                               requiresReview=review, clamped=x != cx-w/2 or y != cy-h/2)
     # Old crop scores/rules describe a different geometry and must not survive.

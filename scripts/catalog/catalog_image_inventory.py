@@ -193,7 +193,12 @@ def load_snapshot(paths: Iterable[str | Path]) -> Iterator[dict]:
                 yield _normalize_record(row, origin="SNAPSHOT", source_scope=f"snapshot:{path.name}")
 
 
-_SELECT = """
+try:
+    from .source_persistence import SOURCE_MATCH_SQL
+except ImportError:
+    from source_persistence import SOURCE_MATCH_SQL
+
+_SELECT = f"""
 SELECT p.id AS product_id, p.product_name, p.category, p.subcategory,
        p.version AS product_version, p.official_product_url, p.ingestion_status,
        p.source_status, b.name AS brand, b.slug AS brand_slug,
@@ -205,7 +210,7 @@ SELECT p.id AS product_id, p.product_name, p.category, p.subcategory,
        i.crop_json, i.metrics_json, i.assets_json, i.attempts, i.processed_at,
        i.created_at, i.updated_at, i.version,
        EXISTS (SELECT 1 FROM catalog_sources s WHERE s.brand_id=p.brand_id AND s.active=true
-               AND s.allows_image_persistence=true AND s.domain=i.source_domain) AS allows_image_persistence
+               AND s.allows_image_persistence=true AND {SOURCE_MATCH_SQL}) AS allows_image_persistence
 FROM catalog_products p
 JOIN brands b ON b.id = p.brand_id
 LEFT JOIN catalog_images i ON i.product_id = p.id
