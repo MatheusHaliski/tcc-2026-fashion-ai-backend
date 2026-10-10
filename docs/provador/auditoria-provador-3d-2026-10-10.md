@@ -154,7 +154,7 @@ blazer/casaco/colete → estruturada) e comprimentos pelas dimensões `LENGTH`, 
 Perna em coluna (`columnLegs` em `garment-relax.ts`): abaixo do joelho a perna da calça segue o anel do joelho (não a
 panturrilha), só para fora, sem cruzar o meio.
 
-Resultado medido (F-ref e M-ref, `vestir-antes` × `vestir-depois`): 
+Resultado medido (F-ref e M-ref, `vestir-antes` × `vestir-depois`):
 
 | corpo | peça | medida | antes | depois | corpo nu |
 |---|---|---|---|---|---|

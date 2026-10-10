@@ -7,7 +7,7 @@
  * Uso: node scripts/flair-demos/encode.mjs [modo…]
  */
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -16,7 +16,7 @@ const OUT = join(HERE, "out");
 /** clipes da central de FAI Points vão para public/points/demos; os demais, public/flair/demos */
 const POINTS = new Set(["balance", "earn", "store", "statement"]);
 const destOf = (id) => { const d = join(HERE, "..", "..", "public", POINTS.has(id) ? "points" : "flair", "demos"); mkdirSync(d, { recursive: true }); return d; };
-const TRIM = Number(process.env.DEMO_TRIM ?? "1.6");   // segundos cortados do início (carregamento)
+const TRIM_DEFAULT = Number(process.env.DEMO_TRIM ?? "1.6");   // corte do início quando a gravação não registrou o instante em que a interface ficou pronta
 const MAX = Number(process.env.DEMO_MAX ?? "19.5");    // duração máxima: acima disso o clipe é levemente acelerado (até 1,6×) para caber em 10–20 s
 const args = process.argv.slice(2);
 const POSTERS_ONLY = args.includes("--posters");   // só regenera as capas (quadro já com a interface carregada)
@@ -29,6 +29,9 @@ for (const id of ids) {
   const src = join(OUT, `${id}.raw.webm`);
   if (!existsSync(src)) { console.log(`[${id}] sem gravação`); continue; }
   const DEST = destOf(id);
+  // corte do início: o instante em que a interface ficou pronta (gravado pelo record.mjs) ou DEMO_TRIM
+  const meta = existsSync(join(OUT, `${id}.json`)) ? JSON.parse(readFileSync(join(OUT, `${id}.json`), "utf8")) : {};
+  const TRIM = typeof meta.ready === "number" ? meta.ready + 0.15 : TRIM_DEFAULT;
   const dur = probe(src) - TRIM;
   const speed = Math.min(1.6, Math.max(1, dur / MAX));
   const common = ["-ss", String(TRIM), "-i", src, "-an", "-vf", `setpts=PTS/${speed.toFixed(3)},scale=1280:720:flags=lanczos,format=yuv420p`, "-r", "30"];
