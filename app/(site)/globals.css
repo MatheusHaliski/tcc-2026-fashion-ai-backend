@@ -1108,6 +1108,15 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 .room3d-positions ul { display: grid; gap: 2px; }
 .room3d-positions button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 8px; border-radius: 8px; font-size: 13px; text-align: left; }
 .room3d-positions button:hover, .room3d-positions button[aria-pressed="true"] { background: var(--surface-2); }
+/* Prova no espelho dentro do quarto (RF27 ↔ RF28): "roupas em mãos" por lugar do corpo, ajuda de primeiro uso, estados */
+.mirror-hands { display: grid; gap: 8px; margin-top: 8px; }
+.mirror-hands.is-tryon { padding: 10px; border: 2px solid #1F7A76; border-radius: 12px; background: var(--surface-2); }
+.mirror-hands.is-transition { justify-self: start; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); font-size: 13px; }
+.mirror-hands-help { display: grid; gap: 4px; padding: 10px; border-radius: 12px; background: var(--chalk-soft, #f6efd9); }
+.mirror-hands-slot { display: grid; gap: 4px; padding-top: 6px; border-top: 1px solid var(--line-soft); }
+.mirror-hands-piece { display: flex; align-items: center; gap: 8px; padding: 4px; border-radius: 8px; background: var(--surface); }
+.mirror-hands-piece[data-worn="false"] { outline: 2px dashed #1F7A76; outline-offset: -2px; }
+.room3d-positions .mirror-hands button { display: inline-flex; width: auto; justify-content: center; }
 
 /* LEGO (prancha 10 · C7 · narrativa B12): montagem animada — os blocos caem e encaixam de cima para baixo (60 ms entre
    peças, via animation-delay); "montar de novo" repete. Com "reduzir movimento" o card aparece já montado. */

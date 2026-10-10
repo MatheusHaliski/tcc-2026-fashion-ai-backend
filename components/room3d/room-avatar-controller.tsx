@@ -8,7 +8,12 @@ import type { Avatar3dRef, Look3dPiece } from "@/components/three/common";
 import type { BodyParams } from "@/lib/avatar3d/body-spec";
 import { applyIdle } from "@/lib/avatar3d/human/pose";
 import { moveInRoom, RoomInteraction, type Arm } from "@/lib/room3d/interaction";
-export interface RoomGameplay { avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; body?: BodyParams | null; pieces: Look3dPiece[]; engine: RoomInteraction }
+import { MirrorSession, REACTION_MS, cameraFor, facingYaw, reactionPose } from "@/lib/room3d/mirror-session";
+export interface RoomGameplay {
+  avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; body?: BodyParams | null; pieces: Look3dPiece[]; engine: RoomInteraction;
+  /** prova no espelho dentro do quarto (lib/room3d/mirror-session.ts): fase pela distância, trocas e reação */
+  session?: MirrorSession; reduced?: boolean;
+}
 /** CCD solves actual hand bones in world space. Targets remain within arm reach. */
 export function reachHand(parts: HumanParts, arm: Arm, desired: THREE.Vector3) {
   const human = parts.human, hand = human.bone(`${arm}Hand`), shoulder = human.bone(`${arm}Arm`);
@@ -31,6 +36,7 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
   const actor = useRef<THREE.Group>(null), parts = useRef<HumanParts | null>(null);
   const pointer = useRef(new THREE.Vector2(0, 0)), desired = useRef(new THREE.Vector3(0, 1.5, .3));
   const phase = useRef(0), yaw = useRef(Math.PI), lastState = useRef("");
+  const look = useRef(new THREE.Vector3(closetRight * .25, 1.1, .85));   // alvo da câmera, interpolado (sem salto ao abrir a prova)
   useEffect(() => {
     const canvas = gl.domElement; canvas.tabIndex = 0; canvas.dataset.roomControls = "true";
     const editable = (target: EventTarget | null) => target instanceof HTMLElement && (!!target.closest("input,textarea,select,[contenteditable=true]"));
@@ -54,9 +60,17 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
   useFrame(({ clock }, dt) => {
     if (!actor.current || !parts.current) return;
     const p = parts.current, moving = !engine.grip && [...engine.keys].some(k => k.startsWith("Arrow"));
+    // zona do espelho: a distância do personagem decide a fase da prova (histerese e tempos em mirror-session.ts)
+    const session = gameplay.session, now = Date.now();
+    session?.update(engine.actor.distanceTo(engine.mirror), now);
+    const trying = !!session?.active;
     if (!engine.grip) {
       const heading = moveInRoom(engine.actor, engine.keys, dt, closetRight, engine.solids);
       if (moving && !engine.aiming) yaw.current += Math.atan2(Math.sin(heading - yaw.current), Math.cos(heading - yaw.current)) * Math.min(1, dt * 9);
+      else if (trying && !engine.aiming) {                                   // parado na prova: vira de frente para o espelho
+        const want = facingYaw(engine.actor, engine.mirror);
+        yaw.current += Math.atan2(Math.sin(want - yaw.current), Math.cos(want - yaw.current)) * Math.min(1, dt * 6);
+      }
     }
     actor.current.position.copy(engine.actor); actor.current.rotation.y = yaw.current;
     applyIdle(p.human, p.pose, clock.elapsedTime, moving ? 0 : .3);
@@ -65,6 +79,19 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
       const swing = Math.sin(phase.current + offset) * .32;
       p.human.bone(`${side}UpLeg`).rotateX(swing); p.human.bone(`${side}Leg`).rotateX(Math.max(0, -swing) * .8);
       if (!(engine.held && engine.heldArm === side)) p.human.bone(`${side}Arm`).rotateX(-swing * .6);
+    }
+    // reação à troca de roupa, por lugar do corpo, sobre a pose parada; com movimento reduzido é menor e mais curta
+    const reaction = session?.reaction;
+    if (reaction && !moving) {
+      const reduced = !!gameplay.reduced, tt = (now - reaction.at) / (reduced ? REACTION_MS.reduced : REACTION_MS.normal);
+      if (tt < 1) {
+        const r = reactionPose(reaction.slot, tt, reduced);
+        for (const [side, sign] of [["Left", 1], ["Right", -1]] as const) if (!(engine.held && engine.heldArm === side)) p.human.bone(`${side}Arm`).rotateZ(sign * r.arms);
+        p.human.bone("Spine1").rotateY(r.spine);
+        p.human.bone("RightUpLeg").rotateX(-r.knee); p.human.bone("RightLeg").rotateX(r.knee * 1.5);
+        p.human.bone("RightFoot").rotateX(-r.foot);
+        p.human.bone("Head").rotateZ(r.head);
+      }
     }
     actor.current.updateWorldMatrix(true, true);
     if (engine.aiming) {
@@ -96,9 +123,11 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
       target?.object.position.copy(p.human.bone(`${engine.heldArm}Hand`).getWorldPosition(new THREE.Vector3()));
       if (target) { target.object.rotation.set(0, Math.atan2(camera.position.x - target.object.position.x, camera.position.z - target.object.position.z), Math.sin(clock.elapsedTime * 4) * (moving ? .045 : .008)); }
     }
-    // Stable overview keeps wardrobe, avatar and mirror visible throughout the route.
-    camera.position.lerp(new THREE.Vector3(1 + closetRight * .25, 2.65, 5.8), Math.min(1, dt * 3));
-    camera.lookAt(closetRight * .25, 1.1, .85);
+    // câmera: a visão geral (guarda-roupa, personagem e espelho) no quarto; na prova, de frente para o espelho com o
+    // personagem no quadro — sempre por interpolação (com movimento reduzido, direto, sem o percurso)
+    const cam = cameraFor(session?.phase ?? "room", engine.actor, engine.mirror, closetRight);
+    const k = gameplay.reduced ? 1 : Math.min(1, dt * 3);
+    camera.position.lerp(cam.position, k); look.current.lerp(cam.target, k); camera.lookAt(look.current);
     const state = JSON.stringify(engine.state); if (state !== lastState.current) { lastState.current = state; engine.notify(); }
   });
   return <group ref={actor} name="room-user-avatar" position={engine.actor.toArray()}>
