@@ -62,17 +62,24 @@ class PhotoEditServiceTest {
         when(images.findByPieceIdOrderByCreatedAtAsc(pieceId)).thenAnswer(inv -> List.copyOf(rows));
         when(images.findById(any())).thenAnswer(inv -> rows.stream().filter(r -> r.getId().equals(inv.getArgument(0))).findFirst());
         // recorte de teste: a camiseta azul do centro é a peça
-        service = new PhotoEditService(wardrobe, media, images, img -> {
-            BufferedImage m = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            for (int y = 0; y < img.getHeight(); y++) {
-                for (int x = 0; x < img.getWidth(); x++) {
-                    if ((img.getRGB(x, y) & 0xFF) > 120) {
-                        m.setRGB(x, y, 0xFF000000);
-                    }
+        service = new PhotoEditService(wardrobe, media, images, img -> new br.com.fashionai.application.imaging.ImageOps.Cutout(mask(img), 1, cutConfidence, 0xFFFFFF, null),
+                img -> textOrLogo);
+    }
+
+    /** Confiança que o recortador de teste declara e se a "peça" tem texto/logo — cada teste ajusta. */
+    private double cutConfidence = 1;
+    private boolean textOrLogo = false;
+
+    static BufferedImage mask(BufferedImage img) {
+        BufferedImage m = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
+        for (int y = 0; y < img.getHeight(); y++) {
+            for (int x = 0; x < img.getWidth(); x++) {
+                if ((img.getRGB(x, y) & 0xFF) > 120) {
+                    m.setRGB(x, y, 0xFF000000);
                 }
             }
-            return m;
-        });
+        }
+        return m;
     }
 
     static Map<String, Object> canonical(Object... extra) {
@@ -148,5 +155,28 @@ class PhotoEditServiceTest {
         PhotoRecipe parsed = PhotoRecipe.parse(recipe);
         assertThat(RecipePolicy.violations(parsed, 1)).isEmpty();
         assertThat(parsed.ops()).anyMatch(o -> o instanceof PhotoRecipe.Crop c && "4:5".equals(c.aspect()));
+    }
+
+    @Test
+    void espelharComTextoNaPecaEhRecusadoNaCanonicaEAvisadoNaApresentacao() {
+        textOrLogo = true;
+        assertThatThrownBy(() -> service.preview(user, pieceId, canonical(Map.of("op", "flip", "axis", "H"))))
+                .isInstanceOfSatisfying(ApiException.class, e -> assertThat(e.getMessage()).contains("ESPELHAR_INVERTE_TEXTO_OU_LOGO"));
+        Map<String, Object> pres = service.preview(user, pieceId, Map.of("version", 1, "target", "PRESENTATION", "ops", List.of(Map.of("op", "flip", "axis", "H"))));
+        assertThat((List<String>) pres.get("warnings")).contains("ESPELHO_COM_TEXTO_OU_LOGO");
+        textOrLogo = false;
+        assertThat((List<String>) service.preview(user, pieceId, canonical(Map.of("op", "flip", "axis", "H"))).get("warnings")).doesNotContain("ESPELHO_COM_TEXTO_OU_LOGO");
+    }
+
+    @Test
+    void recorteIncertoAvisaNaPreviaENiveisEntramNaReceita() {
+        cutConfidence = 0.2;
+        Map<String, Object> out = service.preview(user, pieceId, canonical(Map.of("op", "levels", "black", 0.05, "white", 0.95, "gamma", 1.1)));
+        assertThat((List<String>) out.get("warnings")).contains("RECORTE_INCERTO");
+        assertThat(((Map<?, ?>) out.get("quality")).get("cutConfidence")).isEqualTo(0.2);
+        cutConfidence = 0.9;
+        assertThat((List<String>) service.preview(user, pieceId, canonical()).get("warnings")).doesNotContain("RECORTE_INCERTO");
+        Map<String, Object> limits = (Map<String, Object>) service.session(user, pieceId).get("limits");
+        assertThat(limits).containsKeys("canonicalBlack", "canonicalWhite", "canonicalGamma", "feather", "uncertainCut");
     }
 }

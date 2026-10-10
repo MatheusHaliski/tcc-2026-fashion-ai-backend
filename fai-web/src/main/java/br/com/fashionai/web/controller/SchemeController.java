@@ -113,6 +113,18 @@ public class SchemeController {
         return schemes.mine(user, occasion, state, kind, sort, hypeLevel, page, size);
     }
 
+    @PutMapping("/api/schemes/{id}/layout")
+    @Operation(summary = "RF15 — Composição do look: posição, escala, rotação, opacidade e ordem de cada peça (só o dono)")
+    public Views.SchemeView updateLayout(CurrentUser user, @PathVariable UUID id, @RequestBody List<SchemeService.ItemForm> layout) {
+        return schemes.updateLayout(user, id, layout);
+    }
+
+    @PostMapping(value = "/api/schemes/{id}/layout/preview", produces = MediaType.IMAGE_PNG_VALUE)
+    @Operation(summary = "RF15 — Prévia da composição do look com o layout dado (PNG do card ampliado), sem gravar")
+    public byte[] layoutPreview(CurrentUser user, @PathVariable UUID id, @RequestBody List<SchemeService.ItemForm> layout) {
+        return schemes.layoutPreview(user, id, layout);
+    }
+
     @PutMapping("/api/schemes/{id}")
     @Operation(summary = "RF9 — Editar esquema")
     public Map<String, Object> update(CurrentUser user, @PathVariable UUID id, @RequestBody SchemeService.SchemeForm form) {
