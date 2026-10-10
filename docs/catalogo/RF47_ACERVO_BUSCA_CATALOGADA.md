@@ -72,7 +72,7 @@ Usuário pesquisa → produto não existe → busca externa (só domínios ofici
 | POST | `/api/catalog/discover` | busca nas lojas oficiais (RF24/`CATALOG_DISCOVERY`) |
 | POST | `/api/pieces/from-catalog` | cria a peça por referência (dados pessoais no corpo) |
 | GET | `/api/catalog/stores` | marcas do catálogo com produtos (grade de marcas do criador, vitrine do Provador, RF18) — uma consulta agrupada por marca e categoria |
-| GET | `/api/catalog/products?brand&category&subcategory&q&page&size` | **acervo inteiro**, paginado (padrão 48, máximo 96 por página), em ordem estável (nome, id), com o **total real** do banco — ver §4.1 |
+| GET | `/api/catalog/products?brand&brandId&category&subcategory&q&page&size` | **acervo inteiro**, paginado (padrão 48, máximo 96 por página), em ordem estável (nome, id), com o **total real** do banco — ver §4.1 |
 | GET | `/api/catalog/summary` | tamanho do acervo visível: `{products, brands}` |
 
 Removidas em 04/10/2026, sem uso desde que o criador deixou de ter foto: `GET/PUT /api/me/capture-tutorial[/{guide}]` (com a
@@ -110,7 +110,14 @@ das duas telas fazia isso:
   categoria, termo opcional, "Mostrando X de N" e "Usar no criador" (abre `/pieces/new` preenchido com marca, nome,
   categoria e tipo). Em Buscar → Marcas, "Ver peças" de uma marca só do catálogo abre o acervo dessa marca.
 - **Provador:** usa o mesmo componente; tocar numa loja lista todas as peças dela, paginadas.
-- A grade de marcas sai de **uma** consulta agrupada (`visibleCountsByBrandAndCategory`).
+- A grade de marcas sai de **uma** consulta agrupada (`visibleCountsByBrandAndCategory`), com `categoryCounts` por
+  marca: no criador e no Provador, o bloco mostra quantas peças a marca tem **no tipo escolhido**; marca sem peças
+  daquele tipo continua na grade, apagada ("0 produtos"). Falha ao carregar a grade mostra aviso e "Tentar de novo"
+  (servidor antigo sem a rota continua sem grade, sem erro).
+- Busca com texto: os cards ranqueados continuam ("as mais parecidas") e o botão **"Ver todas as peças com …"** troca
+  para o acervo inteiro com aquelas palavras (até três, todas exigidas no nome, modelo ou texto de busca).
+- Tocar numa marca da grade manda também o `brandId`, sem depender do nome; id inexistente devolve
+  `brandKnown=false`, nunca outra marca.
 
 **Números.** O ambiente de desenvolvimento não acessa o banco de produção, então o total de produção não foi
 conferido aqui; as telas mostram o número real de cada ambiente. No repositório: arquivo do acervo

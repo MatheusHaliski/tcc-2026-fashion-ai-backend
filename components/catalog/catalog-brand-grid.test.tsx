@@ -63,6 +63,45 @@ describe("grade de marcas na busca catalogada", () => {
     expect(calls.filter((c) => c.path.startsWith("/api/catalog/products")).map((c) => new URL(c.path, "http://x").searchParams.get("page"))).toEqual(["0", "1"]);
   });
 
+  it("o bloco da marca mostra as peças do tipo escolhido, não o total da marca; o id da marca vai junto", async () => {
+    const stores = { stores: [{ ...STORES.stores[0], catalogProducts: 21, categoryCounts: { upper_piece: 15, shoes_piece: 6 } }, { ...STORES.stores[1], categoryCounts: { shoes_piece: 9 } }] };
+    const { calls } = mockApi({ "GET /api/taxonomy": TAXONOMY, "GET /api/catalog/stores": stores, "GET /api/catalog/brands": { brands: [] },
+      "GET /api/catalog/summary": SUMMARY, "GET /api/catalog/products": (url: URL) => page(0, url.searchParams.get("brand") ?? "") });
+    renderApp(<CatalogSearch onPick={vi.fn()} category="upper_piece" />);
+    const nike = await screen.findByRole("button", { name: /Nike/ });
+    expect(nike.textContent).toContain("15 produtos");
+    const adidas = screen.getByRole("button", { name: /Adidas/ });
+    expect(adidas.textContent).toContain("0 produtos");
+    expect(adidas.className).toContain("is-empty");
+    fireEvent.click(nike);
+    await waitFor(() => expect(calls.some((c) => c.path.startsWith("/api/catalog/products") && c.path.includes("brandId=b1"))).toBe(true));
+  });
+
+  it("busca com texto mostra as mais parecidas e oferece ver todas as peças com aquelas palavras", async () => {
+    const { calls } = mockApi({ "GET /api/taxonomy": TAXONOMY, "GET /api/catalog/stores": STORES, "GET /api/catalog/brands": { brands: [] }, "GET /api/catalog/suggestions": { suggestions: [] },
+      "GET /api/catalog/summary": SUMMARY, "GET /api/catalog/products": (url: URL) => ({ ...page(0, "Nike"), total: 61 }),
+      "GET /api/catalog/search": { intent: { brand: "Nike", brandKnown: true, keywords: ["camiseta"] }, results: [product(1, "Nike")], total: 1, enoughInput: true } });
+    renderApp(<CatalogSearch onPick={vi.fn()} category="upper_piece" />);
+    fireEvent.click(await screen.findByRole("button", { name: /Nike/ }));
+    fireEvent.change(screen.getByLabelText(/Como ela se chama/), { target: { value: "camiseta dry" } });
+    fireEvent.click(await screen.findByRole("button", { name: /Ver todas as peças com “camiseta dry”/ }, { timeout: 4000 }));
+    expect(await screen.findByRole("heading", { name: /^61 peças com “camiseta dry”$/ })).toBeTruthy();
+    const browse = calls.filter((c) => c.path.startsWith("/api/catalog/products")).pop();
+    expect(browse?.path).toContain("q=camiseta+dry");
+    expect(browse?.path).toContain("brand=Nike");
+  });
+
+  it("falha ao carregar as marcas: avisa e deixa tentar de novo (servidor antigo, sem a rota, segue calado)", async () => {
+    let fail = true;
+    mockApi({ "GET /api/taxonomy": TAXONOMY, "GET /api/catalog/brands": { brands: [] }, "GET /api/catalog/summary": SUMMARY,
+      "GET /api/catalog/stores": () => (fail ? new Response(JSON.stringify({ code: "ERRO", message: "falhou" }), { status: 500 }) : STORES) });
+    renderApp(<CatalogSearch onPick={vi.fn()} category="upper_piece" />);
+    expect(await screen.findByText("Não foi possível carregar as marcas do catálogo.")).toBeTruthy();
+    fail = false;
+    fireEvent.click(screen.getByRole("button", { name: "Tentar de novo" }));
+    expect(await screen.findByRole("group", { name: /Marcas do catálogo \(3\)/ })).toBeTruthy();
+  });
+
   it("'Ver todo o acervo' percorre o catálogo sem marca nem tipo", async () => {
     const { calls } = mockApi({ "GET /api/taxonomy": TAXONOMY, "GET /api/catalog/stores": STORES, "GET /api/catalog/brands": { brands: [] },
       "GET /api/catalog/summary": SUMMARY, "GET /api/catalog/products": (url: URL) => page(Number(url.searchParams.get("page") ?? 0), url.searchParams.get("brand") ?? "") });

@@ -6889,5 +6889,9 @@
   "search.acervo_lead": "The whole catalogue archive, from every brand, page by page. Filter by brand or category, or type a term.",
   "search.acervo_resultado": "{total, number} pieces in the archive",
   "search.acervo_resultado_termo": "{total, number} pieces for \"{q}\"",
-  "search.acervo_vazio": "No archive piece matches these filters."
+  "search.acervo_vazio": "No archive piece matches these filters.",
+  "catalog.mais_parecidas": "These are the closest matches.",
+  "catalog.ver_todas_com": "See every piece with “{q}”",
+  "catalog.todas_com": "{total, number} pieces with “{q}”",
+  "catalog.marcas_erro": "Could not load the catalogue brands."
 }

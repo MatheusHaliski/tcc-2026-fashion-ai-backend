@@ -39,12 +39,12 @@ class PersistedEvidenceTest(unittest.TestCase):
     def test_framing_metadata_without_asset_is_not_standardized(self):
         from scripts.catalog.catalog_image_inventory import is_standardized
         crop={'aspect':'3:4','crop':{'x':.25,'y':.25,'w':.5,'h':.5},'ruleCompliant':True,
-              'editorFrame':{'version':'CATALOG_FRAME_34_50_V1','widthPercent':50,'requiresReview':False}}
+              'editorFrame':{'version':'CATALOG_FRAME_34_FABRIC_V2','policy':'FABRIC_ONLY_100','fabricCoverage':1.0,'requiresReview':False}}
         row={'source_url':'https://brand.example/a.jpg','processing_status':'APPROVED',
-             'pipeline_version':'CATALOG_FRAME_34_50_V1','crop_json':crop}
+             'pipeline_version':'CATALOG_FRAME_34_FABRIC_V2','crop_json':crop}
         self.assertFalse(is_standardized(row))
         row.update(stored_url='https://media.example/a.jpg',assets_json={'card':'https://media.example/a.jpg',
-                   'framingVersion':'CATALOG_FRAME_34_50_V1','sha256':'a'*64})
+                   'framingVersion':'CATALOG_FRAME_34_FABRIC_V2','sha256':'a'*64})
         self.assertTrue(is_standardized(row))
 
 

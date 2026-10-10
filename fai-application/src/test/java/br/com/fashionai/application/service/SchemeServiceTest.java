@@ -33,6 +33,7 @@ import java.util.UUID;
 
 import static br.com.fashionai.application.testkit.World.map;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -266,5 +267,10 @@ class SchemeServiceTest {
         byte[] png = schemes.layoutPreview(ana, look.getId(), layout);
         assertThat(png.length).isGreaterThan(1000);
         assertThat(new String(png, 1, 3, java.nio.charset.StandardCharsets.US_ASCII)).isEqualTo("PNG");
+        // evidência opcional (-Dfai.evidencias=<pasta>): a prévia real do renderizador do card, usada nas capturas do RF15
+        String out = System.getProperty("fai.evidencias");
+        if (out != null) {
+            assertThatCode(() -> java.nio.file.Files.write(java.nio.file.Path.of(out, "rf15-look-preview.png"), png)).doesNotThrowAnyException();
+        }
     }
 }

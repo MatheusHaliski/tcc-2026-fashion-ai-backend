@@ -33,7 +33,7 @@ export interface SearchResponse { intent: SearchIntent; results: CatalogProduct[
 export interface DiscoverResponse { results: CatalogProduct[]; status: "FOUND" | "NOT_FOUND" | "BRAND_UNKNOWN" | "NO_OFFICIAL_SOURCE"; message?: string; rejected?: number }
 export interface SearchParams { category?: string; subcategory?: string; brand?: string; q?: string; color?: string; limit?: number }
 /** Página do acervo inteiro (GET /api/catalog/products): filtros opcionais; `page` começa em 0; `size` até 96. */
-export interface BrowseParams { category?: string; subcategory?: string; brand?: string; q?: string; page?: number; size?: number }
+export interface BrowseParams { category?: string; subcategory?: string; brand?: string; brandId?: string; q?: string; page?: number; size?: number }
 export interface BrowseResponse { items: CatalogProduct[]; page: number; size: number; total: number; hasMore: boolean; brandKnown?: boolean; brand?: CatalogBrandRef | null }
 /** Tamanho do acervo visível: o número mostrado como "acervo completo". */
 export interface CatalogSummary { products: number; brands: number }

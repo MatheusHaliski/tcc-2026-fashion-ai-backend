@@ -260,3 +260,14 @@ API: `GET /api/pieces/{id}/photo-edits/session`, `POST …/auto`, `POST …/prev
 `POST …/{versionId}/restore`. Página: `/pieces/{id}/photo` (o "Ajustar manual" do diálogo Editar imagem abre aqui).
 Decisões do §12 adotadas por padrão, reversíveis: sombra sintética permitida na canônica com rótulo; retoque de
 fiapo/poeira até 1% da área na canônica. O editor antigo (`photo-editor.tsx`) continua só em Minhas Fotos.
+
+### 13.1 Atualização (10/10/2026)
+
+Editor reorganizado como no app Fotos: barra Cancelar/Desfazer/Refazer/Comparar/Salvar e ferramentas Ajustar,
+Recortar, Recorte da peça, Apresentação e Revisão. Novos na receita: **espelhar** (recusado na canônica quando o OCR
+local acha texto ou logo), **níveis** (preto, branco, gama, com limites na canônica) e **suavizar borda** do recorte;
+a prévia avisa **recorte incerto** (confiança < 0,45). Proporções livres e fixas na apresentação. Novo editor de
+**composição do look** (`/schemes/{id}/photo`): camadas com posição, escala, rotação, opacidade e ordem, gravadas em
+`PUT /api/schemes/{id}/layout`, com prévia PNG em `POST /api/schemes/{id}/layout/preview`. Etapa 8 continua parcial:
+sem pinça/rotação com dois dedos. Diagnóstico completo, testes e limitações:
+[`docs/rf15-editor-canvas-2026-10-10.md`](../rf15-editor-canvas-2026-10-10.md).

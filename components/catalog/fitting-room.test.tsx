@@ -56,9 +56,10 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
   it("prova peças de duas marcas: o ambiente segue a última marca e a outra vira painel lateral", async () => {
     const { calls } = loggedAs(ME, {
       "GET /api/taxonomy": TAXONOMY, "GET /api/try-on": STATE, "GET /api/catalog/stores": STORES,
-      "GET /api/catalog/search": (url: URL) => {
+      // a loja escolhida lista o acervo inteiro da marca (paginado), não a busca ranqueada
+      "GET /api/catalog/products": (url: URL) => {
         const brand = url.searchParams.get("brand");
-        return { intent: { brand, brandKnown: true, keywords: [] }, results: brand === "Levi's" ? [L501] : [AF1], total: 1, enoughInput: true, canSearchOfficial: false };
+        return { items: brand === "Levi's" ? [L501] : [AF1], page: 0, size: 48, total: 1, hasMore: false, brandKnown: true };
       },
       "POST /api/pieces/from-catalog": { id: "nova", name: "Air Force 1 '07" },
     });
@@ -66,7 +67,8 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     expect(await screen.findByRole("heading", { name: "Provador virtual" })).toBeTruthy();
     // a vitrine da loja abre só com a marca escolhida
     fireEvent.click(await screen.findByRole("button", { name: /Levi's/ }));
-    await waitFor(() => expect(calls.some((c) => c.path.startsWith("/api/catalog/search") && c.path.includes("Levi"))).toBe(true), { timeout: 4000 });
+    await waitFor(() => expect(calls.some((c) => c.path.startsWith("/api/catalog/products") && c.path.includes("brand=Levi"))).toBe(true), { timeout: 4000 });
+    expect(calls.some((c) => c.path.startsWith("/api/catalog/search"))).toBe(false);
     fireEvent.click(await screen.findByRole("button", { name: "Provar" }));
     expect(await screen.findByText("Provador Levi's")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Nike/ }));

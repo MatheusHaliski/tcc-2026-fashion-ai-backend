@@ -59,8 +59,9 @@ public class CatalogController {
     @Operation(summary = "RF47 — O acervo inteiro, paginado (marca, categoria, subtipo e texto opcionais; total real e hasMore): todas as peças, não só as mais parecidas")
     public Map<String, Object> browse(@RequestParam(required = false) String brand, @RequestParam(required = false) String category,
                                       @RequestParam(required = false) String subcategory, @RequestParam(required = false) String q,
-                                      @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
-        return catalog.browse(new CatalogService.BrowseRequest(brand, category, subcategory, q, page, size));
+                                      @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size,
+                                      @RequestParam(required = false) String brandId) {
+        return catalog.browse(new CatalogService.BrowseRequest(brand, category, subcategory, q, page, size, brandId));
     }
 
     @GetMapping("/api/catalog/summary")

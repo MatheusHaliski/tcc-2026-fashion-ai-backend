@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import io
 import ipaddress
 import json
 import os
@@ -342,32 +341,9 @@ def cleanup_assets(storage, analyses):
                 progress("Limpeza pendente: não foi possível confirmar referência/remoção de asset.")
 
 
-def geometric_fallback_response(path, pipeline_version, code):
-    """Decoded-photo facts (dimensions, mime, hash) so the category frame can be built without the Java analysis.
-
-    Used only with --force-category-frame when the Java analysis failed for this photo or found no piece. The frame
-    then centres on the photo; the report records the fallback. A photo that cannot be decoded is a technical failure.
-    """
-    from PIL import Image, ImageOps, UnidentifiedImageError
-    data = Path(path).read_bytes()
-    try:
-        with Image.open(io.BytesIO(data)) as image:
-            mime = Image.MIME.get(image.format or "", "application/octet-stream")
-            oriented = ImageOps.exif_transpose(image)
-            width, height = oriented.size
-    except (UnidentifiedImageError, OSError, ValueError) as error:
-        raise ValueError("IMAGE_UNREADABLE") from error
-    if width <= 0 or height <= 0:
-        raise ValueError("IMAGE_UNREADABLE")
-    return {"ok": True, "op": "analyze", "outcome": "NEEDS_REPROCESSING", "fallback": code,
-            "columns": {"mime": mime, "width": width, "height": height, "source_sha256": hashlib.sha256(data).hexdigest(),
-                        "phash": None, "processing_status": "NEEDS_REPROCESSING", "pipeline_version": pipeline_version,
-                        "quality_score": None, "gate_reasons": ("JAVA_ANALYSIS_UNAVAILABLE:" + str(code))[:500],
-                        "crop_json": None, "metrics_json": json.dumps({"fallback": str(code)})}}
-
-
 def audit_record(record, downloader, analyzer, checkpoint, *, apply):
     from catalog_image_inventory import is_standardized
+    from category_frame import VERSION as FRAME_VERSION
     result = dict(record)
     snapshot = (result.get("origin") == "SNAPSHOT" or result.get("source_scope") == "SNAPSHOT_LOCAL"
                 or str(result.get("source_scope", "")).startswith("snapshot:"))
@@ -380,7 +356,7 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
     if not apply:
         result["status_note"] = "Não verificado no banco atual; snapshot sem metadados." if before is None else "Auditoria dos metadados atuais."
         return result
-    if before is True and (not getattr(analyzer, "category_frame", False) or result.get("pipeline_version") == "CATALOG_FRAME_34_50_V1"):
+    if before is True and (not getattr(analyzer, "category_frame", False) or result.get("pipeline_version") == FRAME_VERSION):
         result["status_note"] = "Já aprovado e padronizado nesta versão; preservado."
         return result
     if result.get("review_status") in ("APPROVED", "REJECTED") or result.get("processing_status") == "DOWNLOADING" or result.get("usage_status") == "REJECTED":
@@ -391,7 +367,6 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
     # Decisão explícita do responsável (--force-category-frame): dispensa só a autorização da fonte e a
     # identificação visual confirmada; as proteções técnicas de download continuam valendo.
     force = bool(category_frame) and getattr(analyzer, "force_frame", False) is True
-    fallback = None
     try:
         if category_frame and not force:
             if result.get("category") not in {"upper_piece", "lower_piece", "shoes_piece", "accessory_piece", "full_body_piece"}:
@@ -402,6 +377,8 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
         # só com as proteções técnicas (HTTPS, sem credenciais, host público, tamanho, tipo).
         allowed = None if force else (result["persistence_decision"]["domains"] if frame_storage else None)
         response = checkpoint.get(result, analyzer.ready["pipelineVersion"])
+        if response is not None and category_frame and "fabricFrame" not in response:
+            response = None                     # análise guardada antes do quadro só de tecido: refaz
         if response is None:
             path = downloader.get(result["source_url"], allowed_domains=allowed) if frame_storage else downloader.get(result["source_url"])
             try:
@@ -410,17 +387,15 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
                 checkpoint.put(result, analyzer.ready["pipelineVersion"], response)
             except Exception as error:
                 code = getattr(error, "code", None)
-                if not force or not code or code in JAVA_TRANSPORT_ERRORS:
+                if not category_frame or not code or code in JAVA_TRANSPORT_ERRORS:
                     raise
-                # Java não analisou esta foto (ex.: IMAGE_TOO_SMALL, UNREADABLE_IMAGE): o quadro sai da foto decodificada.
-                fallback = str(code)
-                response = geometric_fallback_response(path, analyzer.ready["pipelineVersion"], fallback)
-        result["java_analysis_completed"] = fallback is None
+                # Java não analisou esta foto (ex.: IMAGE_TOO_SMALL): sem a máscara de tecido não há quadro — a foto não é
+                # reenquadrada (um quadro calculado só pela geometria mostraria fundo)
+                raise ValueError("FABRIC_FRAME_UNAVAILABLE:JAVA_" + str(code)) from error
+        result["java_analysis_completed"] = True
         if category_frame:
             from category_frame import apply_frame, report_fields, FORCED_DECISION
-            if force and fallback is None and not json.loads(response["columns"].get("crop_json") or "{}").get("product"):
-                fallback = "NO_PRODUCT:" + str(response["columns"].get("gate_reasons") or response.get("outcome"))
-            response = apply_frame(response, result.get("category"), force=force, fallback=fallback)
+            response = apply_frame(response, result.get("category"), force=force, subcategory=result.get("subcategory"))
             result.update(report_fields(response))
         if frame_storage:
             path = downloader.get(result["source_url"], allowed_domains=allowed)
@@ -482,14 +457,17 @@ def select_records(records, limit=None, authorized_only=False, database=False):
 
 
 def main(argv=None):
+    from category_frame import VERSION as FRAME_VERSION
     ap = argparse.ArgumentParser(description=__doc__)
     source = ap.add_mutually_exclusive_group(required=True)
     source.add_argument("--snapshot", nargs="+", type=Path, help="JSONL/JSONL.GZ: estado local, não produção")
     source.add_argument("--database", action="store_true", help="Inventário atual do MySQL via MYSQL_*")
-    ap.add_argument("--category-frame", action="store_true", help="Quadro 3:4 com largura 50%%; focos estimados de zíper/cadarço exigem revisão (requer --apply)")
+    ap.add_argument("--category-frame", action="store_true", help="Quadro 3:4 100%% tecido (sem fundo, pessoa ou objeto), no lugar da categoria/subcategoria; "
+                    "sem tecido suficiente a foto não é reenquadrada; focos estimados de zíper/cadarço exigem revisão (requer --apply)")
     ap.add_argument("--force-category-frame", action="store_true",
                     help="Decisão do responsável: enquadra e persiste todas as fotos sem exigir autorização da fonte nem identificação "
-                         "visual confirmada; focos estimados e fallbacks viram observações no relatório (requer --database --apply --category-frame)")
+                         "visual confirmada; focos estimados viram observações no relatório. O quadro continua 100%% tecido: sem ele a foto "
+                         "não é gravada (requer --database --apply --category-frame)")
     ap.add_argument("--apply", action="store_true", help="Aplicar pipeline; com --database persiste os metadados")
     ap.add_argument("--output", required=True, type=Path, help="Planilha .xlsx")
     ap.add_argument("--checkpoint", type=Path, help="SQLite de análises para retomada")
@@ -531,7 +509,7 @@ def main(argv=None):
     summary = {"source_scope": "DATABASE" if args.database else "SNAPSHOT_LOCAL",
                "source": "MySQL configurado em MYSQL_*" if args.database else ", ".join(str(p) for p in args.snapshot),
                "pipeline_version": PIPELINE_VERSION,
-               "framing_version": "CATALOG_FRAME_34_50_V1" if args.category_frame else None,
+               "framing_version": FRAME_VERSION if args.category_frame else None,
                "forced_category_frame": bool(args.force_category_frame),
                "sample": bool(args.limit), "inventory_rows": total,
                "applied_to_database": False, "generated_at": datetime.now(timezone.utc).isoformat()}
@@ -554,6 +532,8 @@ def main(argv=None):
                                           stderr_path=args.output.with_suffix(".java.log")) as analyzer:
                     if analyzer.ready["pipelineVersion"] != PIPELINE_VERSION:
                         raise RuntimeError("JAR desatualizado: compile a versão atual do pipeline antes de aplicar")
+                    if args.category_frame and not analyzer.ready.get("fabricFrameVersion"):
+                        raise RuntimeError("JAR sem o quadro só de tecido: rode `mvn -q -DskipTests package` antes de aplicar")
                     analyzer.category_frame = args.category_frame
                     analyzer.force_frame = args.force_category_frame
                     if args.force_category_frame:
@@ -620,6 +600,8 @@ def main(argv=None):
     summary["failure_reasons"] = dict(Counter(r["error"].split(":", 1)[0] for r in records if r.get("error")))
     summary["frame_observations"] = dict(Counter(o.split(":", 1)[0] for r in records for o in (r.get("frame_observations") or [])))
     summary["frame_fallbacks"] = sum(bool(r.get("frame_fallback")) for r in records)
+    summary["fabric_frame_unavailable"] = dict(Counter(r["error"].split(":", 2)[1] for r in records
+                                                        if str(r.get("error", "")).startswith("FABRIC_FRAME_UNAVAILABLE:")))
     summary["write_results"] = dict(Counter(str(r.get("write_result")).split(":", 1)[0] for r in records if r.get("write_result")))
     progress("Exportando a planilha e os relatórios de auditoria...")
     jsonl = args.output.with_suffix(".audit.jsonl")
