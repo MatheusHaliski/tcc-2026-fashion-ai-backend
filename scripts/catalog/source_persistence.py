@@ -27,6 +27,10 @@ def _normalized(expression):
 # Sources are joined to the product brand; no wildcard or unrelated suffix match.
 DOMAIN = _normalized('s.domain')
 ORIGIN = _normalized('i.source_domain')
-HOST = "LOWER(SUBSTRING_INDEX(SUBSTRING_INDEX(i.image_url,'/',3),'://',-1))"
+# Remove query/fragment before extracting authority, including URLs with no path.
+# Then discard userinfo and port. IPv6 authorities fail closed for DNS grants.
+URL_WITHOUT_SUFFIX = "SUBSTRING_INDEX(SUBSTRING_INDEX(i.image_url,'?',1),'#',1)"
+AUTHORITY = f"SUBSTRING_INDEX(SUBSTRING_INDEX({URL_WITHOUT_SUFFIX},'://',-1),'/',1)"
+HOST = f"LOWER(SUBSTRING_INDEX(SUBSTRING_INDEX({AUTHORITY},'@',-1),':',1))"
 SOURCE_MATCH_SQL = (f"({DOMAIN} <> '' AND ({ORIGIN}={DOMAIN} OR {HOST}={DOMAIN} "
                     f"OR RIGHT({HOST},CHAR_LENGTH({DOMAIN})+1)=CONCAT('.',{DOMAIN})))")
