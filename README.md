@@ -41,7 +41,7 @@ export DATA_ENCRYPTION_KEY=$(openssl rand -base64 32)   # chave AES para campos 
 mvn -DskipTests package            # rode na raiz do repositório (onde está o pom.xml)
 ls fai-bootstrap/target/fai-bootstrap-*.jar   # o jar só existe se o build terminar com BUILD SUCCESS
 java -jar fai-bootstrap/target/fai-bootstrap-*.jar
-# alternativa sem java -jar: mvn -DskipTests install && mvn -pl fai-bootstrap spring-boot:run
+# alternativa sem java -jar: mvn -pl fai-bootstrap -am spring-boot:run
 ```
 
 > **`Error: Unable to access jarfile fai-bootstrap/target/...jar`**: o jar não foi gerado. Causas comuns:
