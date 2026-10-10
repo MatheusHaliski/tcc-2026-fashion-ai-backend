@@ -26,7 +26,8 @@ function MirrorInner() {
   const [suggest, setSuggest] = useState<{ slot: string; alternatives: MPiece[]; message?: string } | null>(null);
   // escolher à mão, do guarda-roupa (sem IA): todas as peças que podem ir para o slot
   const [pick, setPick] = useState<{ slot: string; pieces: MPiece[]; message?: string; href?: string } | null>(null); const [grwm, setGrwm] = useState<{ steps?: { title?: string; text?: string; pieceId?: string }[]; title?: string } | null>(null); const [saveTitle, setSaveTitle] = useState<string | null>(null);
-  useEffect(() => { const pid = sp.get("piece"); if (pid) api.post<State>("/api/me/mirror/pieces", { pieceId: pid }).then(setData).catch((e) => toast.fromError(e)); }, [sp]); // eslint-disable-line react-hooks/exhaustive-deps
+  // vindo do quarto (?piece=): a peça entra na lista do espelho e é vestida (sem duplicar na lista)
+  useEffect(() => { const pid = sp.get("piece"); if (pid) api.post<State>("/api/me/mirror/rack", { pieceId: pid }).then(() => api.post<State>("/api/me/mirror/pieces", { pieceId: pid })).then(setData).catch((e) => toast.fromError(e)); }, [sp]); // eslint-disable-line react-hooks/exhaustive-deps
   const run = async (key: string, fn: () => Promise<State | Record<string, unknown>>, ok?: string) => { setBusy(key); try { const r = await fn(); if ((r as State).slots) setData(r as State); else reload(); if (ok) toast.success(ok); if ((r as { message?: string }).message && !(r as State).slots) toast.info(String((r as { message?: string }).message)); return r; } catch (e) { toast.fromError(e); } finally { setBusy(null); } };
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-96" />;
