@@ -2388,6 +2388,8 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 /* RF47 · criador de peça: a mesma grade de marcas do provador, rolável como lá */
 .catalog-brand-grid .fitting-stores { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 3px; }
 .fitting-store { display: grid; justify-items: center; gap: 4px; padding: 10px 6px; border: 1.5px solid var(--line-soft); border-radius: 12px; background: var(--surface); text-align: center; transition: border-color .15s, background .15s; }
+/* marca sem peças do tipo escolhido: continua na grade (todas as marcas), apagada */
+.fitting-store.is-empty:not(.is-active) { opacity: .55; }
 .fitting-store:hover { border-color: var(--line); }
 .fitting-store.is-active { border-color: var(--thread); background: var(--thread-soft); }
 .fitting-store:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }

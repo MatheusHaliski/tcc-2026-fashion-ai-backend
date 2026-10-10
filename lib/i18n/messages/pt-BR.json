@@ -6889,5 +6889,9 @@
   "search.acervo_lead": "O acervo inteiro do catálogo, de todas as marcas, página a página. Filtre por marca ou categoria, ou digite um termo.",
   "search.acervo_resultado": "{total, number} peças no acervo",
   "search.acervo_resultado_termo": "{total, number} peças para \"{q}\"",
-  "search.acervo_vazio": "Nenhuma peça do acervo com esses filtros."
+  "search.acervo_vazio": "Nenhuma peça do acervo com esses filtros.",
+  "catalog.mais_parecidas": "Estas são as mais parecidas.",
+  "catalog.ver_todas_com": "Ver todas as peças com “{q}”",
+  "catalog.todas_com": "{total, number} peças com “{q}”",
+  "catalog.marcas_erro": "Não foi possível carregar as marcas do catálogo."
 }

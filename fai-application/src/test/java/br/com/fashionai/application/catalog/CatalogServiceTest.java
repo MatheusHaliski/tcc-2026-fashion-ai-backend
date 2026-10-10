@@ -126,6 +126,7 @@ class CatalogServiceTest {
         assertThat(grid).extracting(m -> m.get("name")).containsExactly("Adidas", "Nike");
         assertThat(grid.get(0)).containsEntry("catalogProducts", 7000L).containsEntry("categories", List.of("upper_piece"));
         assertThat(grid.get(1)).containsEntry("catalogProducts", 4L).containsEntry("categories", List.of("shoes_piece", "upper_piece"));
+        assertThat(map(grid.get(1).get("categoryCounts"))).containsEntry("shoes_piece", 2L).containsEntry("upper_piece", 2L);
     }
 
     @Test
@@ -178,8 +179,15 @@ class CatalogServiceTest {
         CatalogProductRepository products = kit.dep(CatalogProductRepository.class);
         List<CatalogProduct> all = MemoryRepository.rows(products);
         // o repositório em memória não executa a consulta nativa: a página vem estubada como o banco devolveria
-        when(products.browse(any(), any(), any(), any(), any())).thenAnswer(inv -> {
-            org.springframework.data.domain.Pageable pg = inv.getArgument(4);
+        java.util.List<String> lastWords = new java.util.ArrayList<>();
+        when(products.browse(any(), any(), any(), any(), any(), any(), any())).thenAnswer(inv -> {
+            org.springframework.data.domain.Pageable pg = inv.getArgument(6);
+            lastWords.clear();
+            for (int i = 3; i <= 5; i++) {
+                if (inv.getArgument(i) != null) {
+                    lastWords.add(inv.getArgument(i));
+                }
+            }
             String brandId = inv.getArgument(0);
             List<CatalogProduct> rows = all.stream().filter(p -> brandId == null || p.getBrandId().toString().equals(brandId)).toList();
             int from = (int) Math.min(pg.getOffset(), rows.size()), to = Math.min(from + pg.getPageSize(), rows.size());
@@ -196,6 +204,14 @@ class CatalogServiceTest {
         assertThat(last).containsEntry("hasMore", false);
         assertThat(catalog.browse(new CatalogService.BrowseRequest("Marca Inexistente", null, null, null, 0, 48))).containsEntry("brandKnown", false).containsEntry("total", 0L);
         assertThat(catalog.browse(new CatalogService.BrowseRequest(null, null, null, null, 0, 500))).containsEntry("size", CatalogService.BROWSE_MAX_SIZE);
+        // a grade manda o id da marca; id inexistente não cai em outra marca
+        assertThat(catalog.browse(new CatalogService.BrowseRequest(null, null, null, null, 0, 48, nike.getId().toString()))).containsEntry("brandKnown", true)
+                .containsEntry("total", (long) all.size());
+        assertThat(catalog.browse(new CatalogService.BrowseRequest("Nike", null, null, null, 0, 48, UUID.randomUUID().toString())))
+                .containsEntry("brandKnown", false).containsEntry("total", 0L);
+        // "ver todas" com texto: até três palavras, normalizadas, todas exigidas
+        catalog.browse(new CatalogService.BrowseRequest(null, null, null, "Calça  jeans azul escura", 0, 48));
+        assertThat(lastWords).containsExactly("%calca%", "%jeans%", "%azul%");
         Map<String, Object> summary = catalog.summary();
         assertThat(summary).containsEntry("products", (long) all.size()).containsEntry("brands", 1);
     }

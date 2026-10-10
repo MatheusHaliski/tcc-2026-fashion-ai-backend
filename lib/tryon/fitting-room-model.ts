@@ -39,6 +39,8 @@ export interface Store {
   logoUrl?: string | null;
   catalogProducts: number;
   categories: string[];
+  /** Peças por categoria (servidor novo); sem ela, só o total da marca. */
+  categoryCounts?: Record<string, number>;
 }
 
 export interface SavedTry {

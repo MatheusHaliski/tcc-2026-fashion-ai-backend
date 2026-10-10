@@ -6889,5 +6889,9 @@
   "search.acervo_lead": "Todo el acervo del catálogo, de todas las marcas, página a página. Filtra por marca o categoría, o escribe un término.",
   "search.acervo_resultado": "{total, number} piezas en el acervo",
   "search.acervo_resultado_termo": "{total, number} piezas para \"{q}\"",
-  "search.acervo_vazio": "Ninguna pieza del acervo coincide con esos filtros."
+  "search.acervo_vazio": "Ninguna pieza del acervo coincide con esos filtros.",
+  "catalog.mais_parecidas": "Estas son las más parecidas.",
+  "catalog.ver_todas_com": "Ver todas las piezas con «{q}»",
+  "catalog.todas_com": "{total, number} piezas con «{q}»",
+  "catalog.marcas_erro": "No se pudieron cargar las marcas del catálogo."
 }
