@@ -8,15 +8,13 @@ import { useApi } from "@/lib/hooks/use-api";
 import { Button, Card, Dialog, ErrorState, Field, Input, Select, Switch, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { LookScores, type LookScoreValues } from "@/components/hype/look-scores";
-import { Badge } from "@/components/ui";
-import { assetStateOf } from "@/lib/room3d/mirror-session";
 
 /*
  * Opções de vestimenta do espelho (RF28) — o MESMO painel na aba Espelho e no modo Espelho dentro do Meu Quarto
  * (QUARTO-ESPELHO: a prova abre ao se aproximar do espelho e fecha ao se afastar; nada de trocar de página).
  * Fonte única da verdade: o estado do espelho no servidor; aqui só pedidos e a apresentação.
  */
-export interface MirrorPieceRef { id: string; name: string; imageUrl?: string | null; thumbnailUrl?: string | null; category?: string | null; subcategory?: string | null; colorHex?: string | null; addressLabel?: string | null; inMirror?: boolean; model3dUrl?: string | null; photoProcessingStatus?: string | null }
+export interface MirrorPieceRef { id: string; name: string; imageUrl?: string | null; thumbnailUrl?: string | null; category?: string | null; subcategory?: string | null; colorHex?: string | null; addressLabel?: string | null; inMirror?: boolean }
 export interface MirrorData {
   tipoLook?: TipoLook | null; slots: Record<string, MirrorPieceRef | MirrorPieceRef[] | null>; complete: boolean;
   missing?: { slot: string; action: string; message: string }[]; warnings?: string[]; prompt?: string | null; shownCount?: number;
@@ -80,9 +78,7 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
           <Button type="submit" variant="primary" loading={busy === "vista"}><FaiIcon id="ACT-32" size={24} decorative />{t("mirror.vista_me")}</Button>
         </form>
         <Switch checked={keep} onChange={setKeep} label={t("mirror.manter_o_que_ja_esta")} />
-        {data.prompt && <p className="type-body-sm text-muted">{t("mirror.ultimo_pedido_combinacoes_mostradas", { prompt: data.prompt, value: data.shownCount ?? 0 })}</p>}
-        {/* o mesmo look em três lugares: espelho do Meu Quarto, prévia 2D e provador — um estado só, o do servidor */}
-        <p className="mirror-link-hint"><FaiIcon id="NAV-16" size={24} decorative /><FaiIcon id="NAV-07" size={24} decorative /><span>{t("mirror.conexao_hint")}</span></p>
+        {data.prompt && <p className="type-caption text-muted">{t("mirror.ultimo_pedido_combinacoes_mostradas", { prompt: data.prompt, value: data.shownCount ?? 0 })}</p>}
         <div className="mt-2 flex flex-wrap gap-2">
           <Button size="sm" onClick={() => run("another", () => api.post("/api/me/mirror/another"))} disabled={!data.prompt}>{t("mirror.outro_look")}</Button>
           {worn.map((w) => <Button key={w.p.id} size="sm" onClick={() => run("swap", () => api.post(`/api/me/mirror/slots/${w.slot}/swap`))}><FaiIcon id="ACT-34" size={24} decorative />{t("mirror.trocar", { value: SLOT_LABEL[w.slot] ?? w.slot })}</Button>)}
@@ -93,21 +89,9 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
         <ul className="fai-list">{Object.entries(SLOT_LABEL).map(([slot, lbl]) => {
           const v = data.slots[slot]; const items = Array.isArray(v) ? v : v ? [v] : []; const miss = (data.missing ?? []).find((m) => m.slot === slot);
           return (
-            <li key={slot} className="mirror-slot-row">
-              <span className="tryon-slot-name">{lbl}</span>
-              {items.length ? items.map((p) => {
-                const asset = assetStateOf(p);
-                return (
-                  <span key={p.id} className="mirror-slot-piece">
-                    <span className="fitting-slot-thumb is-small" style={{ background: p.colorHex ?? "var(--surface-2)" }}>{(p.thumbnailUrl ?? p.imageUrl) && <img src={mediaUrl(p.thumbnailUrl ?? p.imageUrl ?? undefined)} alt="" />}</span>
-                    <span className="min-w-0 flex-1 grid gap-0.5">
-                      <span className="type-body font-medium truncate">{p.name}</span>
-                      <span className="flex flex-wrap items-center gap-1.5"><Badge tone={asset === "PENDING" ? "mark" : asset === "IMAGE_2D" ? "chalk" : undefined}>{t(`room.mirror.asset.${asset}`)}</Badge>{p.addressLabel && <span className="type-body-sm text-muted">{p.addressLabel}</span>}</span>
-                    </span>
-                    <Link href={`/try-on?provar=w.${encodeURIComponent(p.id)}`} className="btn btn-sm"><FaiIcon id="NAV-07" size={24} decorative />{t("mirror.provar_no_provador")}</Link>
-                  </span>
-                );
-              }) : <p className="fitting-slot-state text-muted"><FaiIcon id="ACT-06" size={24} decorative /><span>{miss?.message ?? t("mirror.lugar_vazio")}</span></p>}
+            <li key={slot} className="flex flex-wrap items-center gap-x-3 gap-y-2 py-2">
+              <span className="w-28 type-label text-muted">{lbl}</span>
+              <span className={compact ? "min-w-0 flex-1 type-body-sm" : "min-w-[12rem] flex-1 type-body"}>{items.length ? items.map((p) => p.name).join(", ") : <span className="text-faint">{miss?.message ?? "—"}</span>}</span>
               <span className="flex flex-wrap gap-2">
                 <Button size="sm" disabled={picking} onClick={async () => { setPicking(true); try { setPick({ slot, ...(await api.get<{ pieces: MirrorPieceRef[]; message?: string; href?: string }>(`/api/me/mirror/wardrobe?slot=${slot}`)) }); } catch (e) { toast.fromError(e); } finally { setPicking(false); } }}><FaiIcon id="ACT-32" size={24} decorative />{t("mirror.do_guarda_roupa")}</Button>
                 <Button size="sm" onClick={async () => { const r = await run("sug", () => api.get(`/api/me/mirror/suggestions?slot=${slot}`)); if (r) setSuggest({ slot, ...(r as { alternatives: MirrorPieceRef[]; message?: string }) }); }}><FaiIcon id={slot === "shoes" ? "ACT-35" : "ACT-34"} size={24} decorative />{miss?.action ?? t("mirror.sugerir")}</Button>
@@ -128,8 +112,7 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
         <Button variant="accent" disabled={!data.complete} onClick={() => run("use", () => api.post("/api/me/mirror/use"), t("mirror.look_do_dia_registrado"))}><FaiIcon id="ACT-36" size={24} decorative />{t("mirror.usar_este_look_hoje")}</Button>
         <Button variant="primary" disabled={worn.length === 0} onClick={() => setSaveTitle("")}><FaiIcon id="ACT-10" size={24} decorative />{t("common.salvar_como_look")}</Button>
         <Button disabled={worn.length === 0} onClick={async () => { const r = await run("draft", () => api.post("/api/me/mirror/draft", { origin: "MIRROR" })); const id = (r as { schemeId?: string } | null)?.schemeId; if (id) window.location.href = `/schemes/${id}/edit`; }}>{t("mirror.abrir_no_editor")}</Button>
-        {!compact && <Link href="/room" className="btn"><FaiIcon id="NAV-16" size={24} decorative />{t("mirror.ver_no_quarto")}</Link>}
-        {!compact && <Link href="/try-on" className="btn"><FaiIcon id="NAV-07" size={24} decorative />{t("nav.tryon")}</Link>}
+        {!compact && <Link href="/room" className="btn"><FaiIcon id="NAV-16" size={24} decorative />{t("nav.room")}</Link>}
       </div>
       <Dialog open={!!pick} onClose={() => setPick(null)} title={t("mirror.escolher_do_guarda_roupa", { value: SLOT_LABEL[pick?.slot ?? ""] ?? "" })}>
         {pick?.message && <p className="type-body text-muted mb-2">{pick.message} {pick.href && <Link href={pick.href} className="underline">{t("mirror.adicionar_peca")}</Link>}</p>}
