@@ -24,6 +24,7 @@ import { defaultEyes, irisColorOf, type AvatarEyes } from "@/lib/avatar3d/iris";
 import type { AvatarHair, AvatarModel } from "@/lib/avatar3d/model";
 import { loadTexture, type Look3dPiece } from "@/components/three/common";
 import { HumanOutfit } from "@/components/three/human-outfit";
+import { publishBodyState } from "@/lib/tryon/garment-status";
 
 /**
  * Cabelo em fios (HAIR-F2): nível de detalhe pelo aparelho (hair-lod.ts) e rebaixado se o tempo de quadro estourar.
@@ -232,6 +233,8 @@ export function HumanAvatar({ body, stature, skin, face, atlas, hair, pieces, mo
   }, [built, showGlasses, eyes?.frame]); // eslint-disable-line react-hooks/exhaustive-deps
   const parts = useMemo<HumanParts | null>(() => (built ? { human: built.h, pose: built.st, composed: built.c, asset: built.asset, hair: hairMesh, exportHair: () => { const m = makeHair(GLB_HAIR_LOD); return m && attach(m); }, hairLod: (hairMesh?.userData.hairLod ?? 3) as HairLod, identity: built.identity } : null), [built, hairMesh]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (parts) onReady?.(parts); }, [parts]); // eslint-disable-line react-hooks/exhaustive-deps
+  // estado do corpo para quem mostra o 3D (o provador escreve "carregando" ou o erro em vez de desenhar um substituto)
+  useEffect(() => { publishBodyState(asset === "error" ? "erro" : parts ? "pronto" : "carregando"); }, [asset, parts]);
   const t0 = useRef(Math.random() * 20);
   const anchor = useMemo(() => new THREE.Vector3(), []); const inv = useMemo(() => new THREE.Matrix3(), []);
   useFrame(({ clock }, delta) => {

@@ -3134,3 +3134,6 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .gd-anim-progress { transform-origin: left center; }
 @keyframes gd-flip-front { 0%, 35% { visibility: visible; transform: none; } 50%, 100% { visibility: hidden; transform: rotateY(90deg); } }
 @keyframes gd-flip-back { 0%, 50% { visibility: hidden; transform: rotateY(-90deg); } 65%, 100% { visibility: visible; transform: none; } }
+
+/* Provador 3D: estado do corpo sobre o palco (carregando/erro) — no lugar de um substituto com a roupa pintada */
+.fitting-stage-note { position: absolute; inset: auto 0 45% 0; z-index: 1; margin: 0 auto; width: max-content; max-width: calc(100% - 32px); padding: 8px 14px; border-radius: 999px; background: color-mix(in srgb, var(--surface) 88%, transparent); color: var(--ink); font-size: var(--text-body-sm); text-align: center; pointer-events: none; }

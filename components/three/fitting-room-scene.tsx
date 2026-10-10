@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -8,9 +8,12 @@ import { Mannequin, bodyParamsOf } from "@/components/three/mannequin";
 import { buildSpec, type BodyParams } from "@/lib/avatar3d/body-spec";
 import type { BrandEnvironment, LightMode, ResolvedEnvironment, RoomStyle, WallMotif } from "@/lib/tryon/fitting-room";
 import type { AvatarView } from "@/components/three/avatar-viewer";
-import { DenimTable, GarmentRack, HeroPedestal, ShoeWall, Vitrine, ZoneSign } from "@/components/three/store-fixtures";
+import { AccessoryNiche, FeaturedPrint, FittingBench, FittingDoor, PhotoTable, ShoeShelves, ZonePhotoWall, ZoneSign } from "@/components/three/store-fixtures";
 import type { StoreScene } from "@/lib/scene3d/scene";
+import { ROOM, planStore, type FixturePlan, type StorePlan } from "@/lib/scene3d/store-plan";
 import { useI18n } from "@/lib/i18n/i18n";
+import { SceneDebug, type SceneDebugOptions } from "@/components/three/scene-debug";
+import type { HumanParts } from "@/components/three/human-avatar";
 
 /*
  * Provador virtual de lojas (RF18): o Avatar 3D da pessoa num provador que muda conforme a marca do que ela prova.
@@ -22,20 +25,24 @@ import { useI18n } from "@/lib/i18n/i18n";
  * Tudo é desenhado no navegador (texturas em canvas, sem baixar cenários); a roupa no corpo é a prévia projetada do Mannequin.
  *
  * Com `scene` (perfil do motor de cenas, `lib/scene3d`), a Busca Catalogada monta a loja: a marca da busca é o contexto,
- * a categoria vira a zona (parede de calçados, arara, mesa de jeans, vitrine) com as fotos dos resultados, e o produto
- * escolhido sobe ao pedestal ao lado do avatar. Sem `scene`, o provador de antes (marca da última peça vestida).
+ * a categoria vira a zona e o produto escolhido vai para o cavalete ao lado do avatar. Sem `scene`, a marca da última
+ * peça vestida.
+ *
+ * A sala só desenha o PLANO (lib/scene3d/store-plan.ts): cada objeto tem função (exposição, organização, circulação,
+ * prova, comunicação, iluminação); fotos de catálogo só em suportes (quadro, bloco, cavalete); loja de marca sem nada de
+ * outra marca; luz colorida só na parede da marca (a roupa é vista em luz branca — a paleta da loja não tinge a peça).
  */
 
 const ANGLE: Record<AvatarView, number> = { front: 0, left34: -35, right34: 35, profile: 90, back: 180 };
-const BACK_Z = -1.9, WALL_H = 3.2, ROOM_W = 7.2, SIDE_X = 3.0;
+const BACK_Z = ROOM.backZ, WALL_H = ROOM.height, ROOM_W = ROOM.width, SIDE_X = ROOM.sideX;
 
-function Rig({ view, target, dist }: { view: AvatarView; target: [number, number, number]; dist: number }) {
+function Rig({ view, target, dist, yaw }: { view: AvatarView; target: [number, number, number]; dist: number; yaw?: number }) {
   const { camera } = useThree();
   useEffect(() => {
-    const a = (ANGLE[view] * Math.PI) / 180;
+    const a = ((yaw ?? ANGLE[view]) * Math.PI) / 180;
     camera.position.set(target[0] + Math.sin(a) * dist, target[1] + 0.12, target[2] + Math.cos(a) * dist);
     camera.lookAt(...target); camera.updateProjectionMatrix();
-  }, [view, camera, target, dist]);
+  }, [view, camera, target, dist, yaw]);
   return null;
 }
 
@@ -115,18 +122,6 @@ function BrandPanel({ env, position, width, height, reduced, rotationY = 0 }: { 
   );
 }
 
-/** Letreiro iluminado com o nome da marca em destaque (mais forte à noite). */
-function NeonSign({ env, light }: { env: BrandEnvironment; light: LightMode }) {
-  const word = useWordmark(env.name, env.accent, "#0E0F12", 1024, 192);
-  return (
-    <group position={[-2.05, 2.42, BACK_Z + 0.06]}>
-      <mesh><boxGeometry args={[1.5, 0.3, 0.06]} /><meshStandardMaterial color="#0E0F12" roughness={0.3} /></mesh>
-      <mesh position={[0, 0, 0.032]}><planeGeometry args={[1.44, 0.26]} /><meshBasicMaterial map={word} toneMapped={false} /></mesh>
-      <pointLight position={[0, -0.2, 0.5]} color={env.accent} intensity={light === "night" ? 3.2 : 1.1} distance={3.4} />
-    </group>
-  );
-}
-
 /** Cortina de provador (pregas por cosseno) presa num trilho, na cor de destaque misturada à parede. */
 function Curtain({ env, reduced }: { env: BrandEnvironment; reduced: boolean }) {
   const geo = useMemo(() => {
@@ -149,100 +144,77 @@ function Mirror({ env, left = false }: { env: BrandEnvironment; left?: boolean }
   return (
     <group position={left ? [-2.75, 1.1, 0.75] : [2.3, 1.1, -0.75]} rotation={[0, left ? Math.PI / 2.2 : -Math.PI / 2.8, 0]}>
       <mesh><boxGeometry args={[0.84, 2.14, 0.05]} /><meshStandardMaterial color={env.accent} roughness={0.35} /></mesh>
-      <mesh position={[0, 0, 0.028]}><planeGeometry args={[0.74, 2.02]} /><meshStandardMaterial color="#DCE3EA" metalness={1} roughness={0.04} /></mesh>
+      {/* vidro do espelho: claro e liso (sem mapa de ambiente, metal puro sairia preto) */}
+      <mesh position={[0, 0, 0.028]}><planeGeometry args={[0.74, 2.02]} /><meshStandardMaterial color="#D6DEE5" metalness={0.15} roughness={0.08} emissive="#9FB0BE" emissiveIntensity={0.18} /></mesh>
     </group>
   );
 }
 
-/** Arara com cabides e peças dobradas nas cores do tema (posições determinísticas por marca). */
-function Rail({ env }: { env: BrandEnvironment }) {
-  const items = useMemo(() => {
-    const r = rng(env.key.split("").reduce((a, c) => a + c.charCodeAt(0), 0) + 7);
-    const palette = [env.accent, env.ink, new THREE.Color(env.accent).lerp(new THREE.Color("#ffffff"), 0.5).getStyle(), new THREE.Color(env.wall).lerp(new THREE.Color("#000000"), 0.35).getStyle()];
-    return Array.from({ length: 7 }, (_, i) => ({ x: -0.62 + i * 0.2 + (r() - 0.5) * 0.04, color: palette[Math.floor(r() * palette.length)], len: 0.62 + r() * 0.3 }));
-  }, [env.key, env.accent, env.ink, env.wall]);
-  return (
-    <group position={[1.75, 0, BACK_Z + 0.55]}>
-      {[-0.78, 0.78].map((x) => <mesh key={x} position={[x, 0.82, 0]}><cylinderGeometry args={[0.018, 0.018, 1.64, 8]} /><meshStandardMaterial color="#9A948A" metalness={0.85} roughness={0.25} /></mesh>)}
-      <mesh position={[0, 1.62, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.016, 0.016, 1.6, 8]} /><meshStandardMaterial color="#9A948A" metalness={0.85} roughness={0.25} /></mesh>
-      {items.map((it, i) => (
-        <group key={i} position={[it.x, 1.6, 0]}>
-          <mesh position={[0, -0.04, 0]} rotation={[0, 0, Math.PI / 2]}><torusGeometry args={[0.1, 0.006, 6, 16, Math.PI]} /><meshStandardMaterial color="#6E6A63" /></mesh>
-          <mesh position={[0, -0.08 - it.len / 2, 0]} castShadow><boxGeometry args={[0.15, it.len, 0.34]} /><meshStandardMaterial color={it.color} roughness={0.85} /></mesh>
-        </group>
-      ))}
-    </group>
-  );
-}
-
-function Bench({ env }: { env: BrandEnvironment }) {
-  return (
-    <group position={[-1.7, 0, BACK_Z + 0.75]}>
-      <mesh position={[0, 0.22, 0]} castShadow><boxGeometry args={[1.1, 0.12, 0.42]} /><meshStandardMaterial color={env.style === "heritage" ? "#7A5236" : "#3B3D42"} roughness={0.6} /></mesh>
-      {[-0.45, 0.45].map((x) => <mesh key={x} position={[x, 0.1, 0]}><boxGeometry args={[0.06, 0.2, 0.36]} /><meshStandardMaterial color="#2A2B2F" /></mesh>)}
-      <mesh position={[0.25, 0.33, 0]} castShadow><boxGeometry args={[0.34, 0.1, 0.26]} /><meshStandardMaterial color={env.accent} roughness={0.7} /></mesh>
-    </group>
-  );
-}
-
-function Room({ env, others, light, reduced, scene }: { env: BrandEnvironment; others: BrandEnvironment[]; light: LightMode; reduced: boolean; scene?: StoreScene | null }) {
+function Room({ env, plan, light, reduced }: { env: BrandEnvironment; plan: StorePlan; light: LightMode; reduced: boolean }) {
   const { t } = useI18n();
-  const zone = scene?.zone ?? null;
   const wallTex = useWallTexture(env.motif, env.wall, env.accent, [ROOM_W / 2.4, WALL_H / 2.4]);
   const sideTex = useWallTexture(env.motif, env.wall, env.accent, [1.6, WALL_H / 2.4]);
   const floorTex = useFloorTexture(env.style, env.floor, env.accent);
   const accentStrip = useLerpColor(env.accent, reduced);
   const ring = useLerpColor(env.accent, reduced);
-  const sidePos: { position: [number, number, number]; rotationY: number }[] = [
-    { position: [-2.2, 1.5, BACK_Z + 0.02], rotationY: 0 },
-    { position: [2.2, 2.3, BACK_Z + 0.02], rotationY: 0 },
-    { position: [-SIDE_X + 0.03, 1.9, 0.3], rotationY: Math.PI / 2 },
-  ];
-  return (
-    <group>
-      {/* piso, paredes e teto */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow><planeGeometry args={[ROOM_W, 6]} /><meshStandardMaterial map={floorTex} roughness={env.style === "gallery" ? 0.18 : env.style === "boutique" ? 0.3 : 0.75} /></mesh>
-      <mesh position={[0, WALL_H / 2, BACK_Z]} receiveShadow><planeGeometry args={[ROOM_W, WALL_H]} /><meshStandardMaterial map={wallTex} roughness={0.85} /></mesh>
-      <mesh position={[-SIDE_X, WALL_H / 2, 1.1]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[6, WALL_H]} /><meshStandardMaterial map={sideTex} roughness={0.85} /></mesh>
-      <mesh position={[SIDE_X, WALL_H / 2, 1.1]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[6, WALL_H]} /><meshStandardMaterial map={sideTex} roughness={0.85} /></mesh>
-      <mesh position={[0, WALL_H, 1.1]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[ROOM_W, 6]} /><meshStandardMaterial color={light === "night" ? "#121316" : "#F3F1EC"} /></mesh>
-      {/* faixa de luz no teto e rodapé iluminado na cor da marca */}
-      <mesh position={[0, WALL_H - 0.02, 0.2]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[3.6, 0.08]} /><meshBasicMaterial ref={accentStrip as React.Ref<THREE.MeshBasicMaterial>} toneMapped={false} /></mesh>
-      <mesh position={[0, 0.03, BACK_Z + 0.01]}><planeGeometry args={[ROOM_W, 0.05]} /><meshBasicMaterial color={env.accent} toneMapped={false} /></mesh>
-      {/* palco do avatar com anel na cor de destaque */}
-      <mesh position={[0, 0.02, 0]} receiveShadow><cylinderGeometry args={[0.72, 0.76, 0.04, 64]} /><meshStandardMaterial color={light === "night" ? "#1B1C20" : "#F6F3EE"} roughness={0.35} /></mesh>
-      <mesh position={[0, 0.042, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.66, 0.72, 64]} /><meshBasicMaterial ref={ring as React.Ref<THREE.MeshBasicMaterial>} toneMapped={false} /></mesh>
-      {/* marca em destaque no fundo; as outras marcas vestidas nas laterais */}
-      {/* faixa da marca acima da cabeça do avatar (o corpo não cobre o logo) */}
-      <BrandPanel key={env.key} env={env} position={[0, 2.12, BACK_Z + 0.03]} width={2.5} height={0.72} reduced={reduced} />
-      <NeonSign env={env} light={light} />
-      {others.map((o, i) => <BrandPanel key={o.key} env={o} position={sidePos[i].position} width={1.05} height={0.72} reduced={reduced} rotationY={sidePos[i].rotationY} />)}
-      <Curtain env={env} reduced={reduced} />
-      <Mirror env={env} left={!!zone} />
-      {!zone && <><Rail env={env} /><Bench env={env} /></>}
-      {zone && scene && <ZoneFixtures scene={scene} env={env} label={t(`scene3d.zone.${zone.key}`)} />}
-      {scene?.hero && <HeroPedestal env={env} product={scene.hero} position={[-1.2, 0, 0.35]} reduced={reduced} label={t("scene3d.destaque")} />}
-    </group>
-  );
-}
-
-/** A zona da loja escolhida pela busca, à direita do avatar: o móvel da categoria com as fotos dos resultados e a placa. */
-function ZoneFixtures({ scene, env, label }: { scene: StoreScene; env: BrandEnvironment; label: string }) {
-  const z = scene.zone!; const products = scene.display.length ? scene.display : scene.hero ? [scene.hero] : [];
   const brand = env.key === "neutral" ? null : env.name;
+  const draw = (x: FixturePlan) => {
+    switch (x.kind) {
+      case "piso": return <mesh key={x.id} rotation={[-Math.PI / 2, 0, 0]} receiveShadow><planeGeometry args={[ROOM_W, ROOM.depth]} /><meshStandardMaterial map={floorTex} roughness={env.style === "gallery" ? 0.18 : env.style === "boutique" ? 0.3 : 0.75} /></mesh>;
+      case "paredes": return (
+        <group key={x.id}>
+          <mesh position={[0, WALL_H / 2, BACK_Z]} receiveShadow><planeGeometry args={[ROOM_W, WALL_H]} /><meshStandardMaterial map={wallTex} roughness={0.85} /></mesh>
+          <mesh position={[-SIDE_X, WALL_H / 2, 1.1]} rotation={[0, Math.PI / 2, 0]}><planeGeometry args={[ROOM.depth, WALL_H]} /><meshStandardMaterial map={sideTex} roughness={0.85} /></mesh>
+          <mesh position={[SIDE_X, WALL_H / 2, 1.1]} rotation={[0, -Math.PI / 2, 0]}><planeGeometry args={[ROOM.depth, WALL_H]} /><meshStandardMaterial map={sideTex} roughness={0.85} /></mesh>
+        </group>);
+      case "teto": return <mesh key={x.id} position={[0, WALL_H, 1.1]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[ROOM_W, ROOM.depth]} /><meshStandardMaterial color={light === "night" ? "#121316" : "#F3F1EC"} /></mesh>;
+      case "trilho-de-luz": return <mesh key={x.id} position={x.position} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[x.size[0], x.size[2]]} /><meshBasicMaterial color="#FFF6E8" toneMapped={false} /></mesh>;
+      case "luz-de-parede": return <WallWash key={x.id} accent={env.accent} light={light} position={x.position} />;
+      case "faixa-de-luz": return <mesh key={x.id} position={x.position}><planeGeometry args={[x.size[0], x.size[1]]} /><meshBasicMaterial ref={accentStrip as React.Ref<THREE.MeshBasicMaterial>} toneMapped={false} /></mesh>;
+      case "parede-da-marca": return <BrandPanel key={`${x.id}:${env.key}`} env={env} position={x.position} width={x.size[0]} height={x.size[1]} reduced={reduced} />;
+      case "palco-de-prova": return (
+        <group key={x.id}>
+          <mesh position={x.position} receiveShadow><cylinderGeometry args={[0.72, 0.76, x.size[1], 64]} /><meshStandardMaterial color={light === "night" ? "#1B1C20" : "#F6F3EE"} roughness={0.35} /></mesh>
+          <mesh position={[0, 0.042, 0]} rotation={[-Math.PI / 2, 0, 0]}><ringGeometry args={[0.66, 0.72, 64]} /><meshBasicMaterial ref={ring as React.Ref<THREE.MeshBasicMaterial>} toneMapped={false} /></mesh>
+        </group>);
+      case "cabine-cortina": return <Curtain key={x.id} env={env} reduced={reduced} />;
+      case "espelho": return <Mirror key={x.id} env={env} left={x.position[0] < 0} />;
+      case "porta-provadores": return <FittingDoor key={x.id} env={env} position={x.position} label={t("scene3d.provadores")} />;
+      case "banco-de-prova": return <FittingBench key={x.id} env={env} position={x.position} />;
+      case "placa-da-zona": return <ZoneSign key={x.id} label={t(x.labelKey ?? "scene3d.destaque")} brand={brand} env={env} position={x.position} width={x.size[0]} />;
+      case "prateleiras-calcados": return <ShoeShelves key={x.id} env={env} products={x.products ?? []} position={x.position} />;
+      case "quadros-da-zona": return <ZonePhotoWall key={x.id} env={env} products={x.products ?? []} position={x.position} />;
+      case "mesa-de-fotos": return <PhotoTable key={x.id} env={env} products={x.products ?? []} position={x.position} rotationY={x.rotationY} />;
+      case "nicho-acessorios": return <AccessoryNiche key={x.id} env={env} products={x.products ?? []} position={x.position} rotationY={x.rotationY} />;
+      case "foto-em-destaque": return x.products?.[0] ? <FeaturedPrint key={x.id} env={env} product={x.products[0]} position={x.position} rotationY={x.rotationY} label={t("scene3d.destaque")} /> : null;
+      case "paineis-multimarca": return (
+        <group key={x.id}>
+          {(x.brands ?? []).map((o, i) => {
+            const slot: { position: [number, number, number]; rotationY: number }[] = [
+              { position: [1.75, 1.45, BACK_Z + 0.02], rotationY: 0 }, { position: [1.75, 0.6, BACK_Z + 0.02], rotationY: 0 }, { position: [-SIDE_X + 0.03, 1.9, 0.3], rotationY: Math.PI / 2 },
+            ];
+            return <BrandPanel key={o.key} env={o} position={slot[i].position} width={x.size[0]} height={x.size[1]} reduced={reduced} rotationY={slot[i].rotationY} />;
+          })}
+        </group>);
+      default: return null;
+    }
+  };
+  return <group>{plan.fixtures.map(draw)}</group>;
+}
+
+/** Luz na cor da marca só lavando a parede do fundo (spot de cima para a parede): não alcança o avatar no palco. */
+function WallWash({ accent, light, position }: { accent: string; light: LightMode; position: [number, number, number] }) {
+  const target = useMemo(() => { const o = new THREE.Object3D(); o.position.set(position[0], 0.9, BACK_Z); return o; }, [position]);
   return (
-    <group>
-      {z.kind === "SHOE_WALL" && <ShoeWall env={env} products={products} position={[1.75, 0, BACK_Z + 0.12]} />}
-      {z.kind === "GARMENT_RACK" && <GarmentRack env={env} products={products} position={[1.85, 0, -0.95]} rotationY={-0.38} />}
-      {z.kind === "DENIM_TABLE" && <><DenimTable env={env} products={products} position={[1.7, 0, -0.35]} rotationY={-0.32} /><GarmentRack env={env} products={products} position={[1.6, 0, BACK_Z + 0.45]} /></>}
-      {z.kind === "VITRINE" && <Vitrine env={env} products={products} position={[1.75, 0, -0.55]} rotationY={-0.4} />}
-      <ZoneSign label={label} brand={brand} env={env} position={[1.75, 2.28, BACK_Z + 0.3]} width={1.3} />
-    </group>
+    <>
+      <primitive object={target} />
+      <spotLight position={position} target={target} color={accent} angle={0.9} penumbra={0.8} intensity={light === "night" ? 6 : 2.5} distance={3.2} decay={2} />
+    </>
   );
 }
 
-/** Luz por modo: loja (spots quentes), luz do dia (clara e fria) e noite (baixa, com o letreiro e o anel brilhando). */
-function Lights({ light, accent }: { light: LightMode; accent: string }) {
+/** Luz por modo: loja (spots quentes), luz do dia (clara e fria) e noite (baixa). Só luz branca/quente alcança o avatar. */
+function Lights({ light }: { light: LightMode }) {
   const night = light === "night", day = light === "daylight";
   return (
     <>
@@ -251,36 +223,45 @@ function Lights({ light, accent }: { light: LightMode; accent: string }) {
       <spotLight position={[0, WALL_H - 0.1, 1.1]} angle={0.55} penumbra={0.6} intensity={night ? 14 : day ? 6 : 11} color={day ? "#FFFFFF" : "#FFE8CC"} castShadow target-position={[0, 0.8, 0]} />
       <directionalLight position={[1.4, 2.6, 3]} intensity={night ? 0.25 : day ? 0.9 : 0.55} />
       <directionalLight position={[-1.6, 2.0, 2.4]} intensity={night ? 0.15 : 0.35} />
-      <pointLight position={[0, 1.4, -1.2]} color={accent} intensity={night ? 2.4 : 0.8} distance={3} />
     </>
   );
 }
 
-export default function FittingRoomScene({ avatar, sex, build, skinTone, body, pieces, environment, scene, light = "store", view = "front", onCanvas }: {
+export default function FittingRoomScene({ avatar, sex, build, skinTone, body, pieces, environment, scene, light = "store", view = "front", onCanvas, onPlan, debug, cameraYaw, closeUp = false }: {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; build?: string | null; skinTone?: string | null; body?: BodyParams | null;
   pieces: Look3dPiece[]; environment: ResolvedEnvironment; scene?: StoreScene | null; light?: LightMode; view?: AvatarView; onCanvas?: (c: HTMLCanvasElement) => void;
+  /** o plano da loja desenhado (inventário dos objetos com função) */
+  onPlan?: (plan: StorePlan) => void;
+  /** laboratório/auditoria: wireframe, corpo oculto, pesos e poses de verificação (components/three/scene-debug.tsx) */
+  debug?: SceneDebugOptions | null;
+  /** laboratório: ângulo livre da câmera (graus) para o giro de 360°, e enquadramento só do avatar */
+  cameraYaw?: number; closeUp?: boolean;
 }) {
   const { t } = useI18n();
   const reduced = useReducedMotion();
   sex = avatar?.model?.sex ?? sex;
   const params = body ?? bodyParamsOf({ sex, build, avatar });
   const H = buildSpec(params).stature;
-  const target: [number, number, number] = [0, H * 0.56, 0];
-  const dist = H * 2.7;
+  const target: [number, number, number] = [0, H * (closeUp ? 0.52 : 0.56), 0];
+  const dist = H * (closeUp ? 1.75 : 2.7);
+  const [parts, setParts] = useState<HumanParts | null>(null);
   const env = scene?.brand ?? environment.featured;
   const others = scene ? scene.others : environment.others;
+  const plan = useMemo(() => planStore(env, others, scene ?? null), [env, others, scene]);
+  useEffect(() => { onPlan?.(plan); }, [plan, onPlan]);
   return (
     <Canvas shadows camera={{ fov: 32, near: 0.05, far: 30, position: [0, target[1], dist] }} dpr={[1, 2]} gl={{ preserveDrawingBuffer: true, antialias: true }}
       onCreated={({ gl }) => { gl.toneMapping = THREE.NeutralToneMapping; gl.toneMappingExposure = 1; onCanvas?.(gl.domElement); }}
       aria-label={t("tryOn.cena_aria", { marca: env.name })}>
       <color attach="background" args={[light === "night" ? "#0B0C0F" : env.wall]} />
       <fog attach="fog" args={[light === "night" ? "#0B0C0F" : env.wall, 9, 18]} />
-      <Lights light={light} accent={env.accent} />
-      <Room env={env} others={others} light={light} reduced={reduced} scene={scene} />
+      <Lights light={light} />
+      <Room env={env} plan={plan} light={light} reduced={reduced} />
       <group position={[0, 0.04, 0]}>
-        <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={pieces} sway={false} body={params} />
+        <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={pieces} sway={false} body={params} fallback={null} still={!!debug?.pose} onHuman={setParts} />
       </group>
-      <Rig view={view} target={target} dist={dist} />
+      {debug && <SceneDebug parts={parts} options={debug} />}
+      <Rig view={view} target={target} dist={dist} yaw={cameraYaw} />
       <OrbitControls target={target} enablePan={false} minDistance={1.4} maxDistance={dist * 1.25} maxPolarAngle={Math.PI * 0.52} />
     </Canvas>
   );

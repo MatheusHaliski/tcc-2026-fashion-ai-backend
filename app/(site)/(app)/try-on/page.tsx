@@ -24,6 +24,9 @@ import {
   type EnvironmentMode, type FittingItem, type FittingSlot, type LightMode,
 } from "@/lib/tryon/fitting-room";
 import { resolveScene, type SceneProduct } from "@/lib/scene3d/scene";
+import { storeProfileFor } from "@/lib/scene3d/store-plan";
+import { garmentContract, type PhotoState, type TryOnState } from "@/lib/tryon/garment-asset";
+import { useGarmentStatus } from "@/lib/tryon/garment-status";
 
 const FittingRoomScene = dynamic(() => retryImport(() => import("@/components/three/fitting-room-scene")), { ssr: false, loading: () => <Skeleton className="h-full w-full" /> });
 
@@ -59,24 +62,47 @@ function fromCatalog(p: CatalogProduct, variant: CatalogVariant | null, colors: 
     key: `c:${p.id}`, source: "catalog", slot: slotOf(p.category), wear: wearOf(p.category, p.subcategory), name: p.productName,
     brand: p.brand ? { name: p.brand.name, slug: p.brand.slug, logoUrl: p.brand.logoUrl ?? null } : null, category: p.category, subcategory: p.subcategory,
     imageUrl: p.imageUrl ?? null, colorHex: (color && colors?.[color]) || p.colorHex || null, colorName: variant?.colorName ?? p.colorName ?? (color ? label(color) : null),
-    productId: p.id, variantId: variant?.id ?? null,
+    productId: p.id, variantId: variant?.id ?? null, processedUrl: processedImageOf(p),
     officialUrl: p.source?.productUrl && p.source.productUrl !== "null" ? p.source.productUrl : null, sourceDomain: p.source?.domain && p.source.domain !== "null" ? p.source.domain : null,
     addedAt: nextTick(),
   };
 }
+const STATE_TONE: Record<TryOnState, "thread" | "chalk" | "mark" | undefined> = { APROVADA: "thread", ESTIMADA: "chalk", PROCESSANDO: undefined, SEM_3D: undefined, ERRO: "mark" };
+
+/** Estado da peça no 3D (contrato da vestimenta): aprovada, estimada, carregando, sem 3D ou erro — e o porquê. */
+function GarmentState({ item, photo }: { item: FittingItem; photo?: PhotoState }) {
+  const { t } = useI18n();
+  const c = garmentContract(toLook3d(item), photo ?? (item.imageUrl || item.processedUrl ? "carregando" : "sem-foto"));
+  const st = c.validation.state;
+  return (
+    <div className="mt-0.5 grid gap-0.5">
+      <p className="flex flex-wrap items-center gap-1.5 type-caption"><Badge tone={STATE_TONE[st]}>{t(`tryOn.estado.${st}`)}</Badge><span className="text-muted">{t(`tryOn.motivo.${c.validation.reason}`)}</span></p>
+      {c.compatibility.restrictions.map((r) => <p key={r} className="type-caption text-muted">{t(`tryOn.limite.${r}`)}</p>)}
+    </div>
+  );
+}
+
 function fromWardrobe(e: Entry): FittingItem {
   const p = e.piece;
   return {
     key: `w:${p.id}`, source: "wardrobe", slot: e.slot, wear: (e.wear as FittingItem["wear"]) ?? wearOf(p.category, p.subcategory), name: p.name,
     brand: p.brandName ? { name: p.brandName, logoUrl: p.brandLogoUrl ?? null } : null, category: p.category, subcategory: p.subcategory,
     imageUrl: p.imageUrl ?? p.thumbnailUrl ?? null, colorHex: p.colorHex ?? null, colorName: p.color ? label(p.color) : null, pieceId: p.id, addedAt: nextTick(),
+    processedUrl: p.imageUrl ?? null, variation: p.variation ?? null, attributes: p.attributes ?? null,
   };
 }
 const toSceneProduct = (p: CatalogProduct): SceneProduct => ({
   id: p.id, name: p.productName, imageUrl: p.imageUrl ?? null, category: p.category, subcategory: p.subcategory,
   brand: p.brand ? { name: p.brand.name, slug: p.brand.slug, logoUrl: p.brand.logoUrl ?? null } : null,
 });
-const toLook3d = (i: FittingItem): Look3dPiece => ({ id: i.key, name: i.name, slot: WEAR3D[i.wear] ?? "accessory", category: i.category, subcategory: i.subcategory ?? undefined, imageUrl: i.imageUrl, colorHex: i.colorHex, model3dUrl: null, defaultImage: !i.imageUrl });
+const toLook3d = (i: FittingItem): Look3dPiece => ({ id: i.key, name: i.name, slot: WEAR3D[i.wear] ?? "accessory", category: i.category, subcategory: i.subcategory ?? undefined, imageUrl: i.imageUrl, studioUrl: i.processedUrl ?? null, colorHex: i.colorHex, model3dUrl: null, defaultImage: !i.imageUrl, variation: i.variation ?? null, attributes: i.attributes ?? null });
+/** Foto do catálogo que o 3D consegue ler: a processada no nosso armazenamento (servida por /media com CORS). A externa
+ * (site da marca) normalmente não libera CORS: a textura falharia e a peça viraria uma casca lisa "pintada". */
+function processedImageOf(p: CatalogProduct): string | null {
+  if (p.catalogImage?.mode === "PROCESSED" && p.catalogImage.url) return p.catalogImage.url;
+  const img = (p.images ?? []).find((x) => x.primary && x.processedUrl) ?? (p.images ?? []).find((x) => x.processedUrl);
+  return img?.processedUrl ?? null;
+}
 
 function FittingRoom() {
   const { t } = useI18n(); const toast = useToast(); const sp = useSearchParams(); const tax = useTaxonomy();
@@ -142,6 +168,7 @@ function FittingRoom() {
   }, [mode, search, stores.data, heroId, products, items]);
   const onSearchResults = useCallback((ctx: CatalogSearchContext, results: CatalogProduct[]) => setSearch({ ctx, results }), []);
   const shown = useMemo(() => visibleItems(items), [items]);
+  const garment = useGarmentStatus();   // estado do corpo e das fotos no 3D (publicado pela cena)
   const brandsWorn = env.brands;
 
   function tryOn(item: FittingItem) {
@@ -211,6 +238,7 @@ function FittingRoom() {
             </div>
             <div className="fitting-stage" role="region" aria-label={t("tryOn.palco_lojas_aria", { n: shown.length, marca: env.featured.name })}
               style={{ ["--fitting-accent" as string]: env.featured.accent }}>
+              {garment.body !== "pronto" && <p className="fitting-stage-note" role="status">{t(garment.body === "erro" ? "tryOn.corpo_erro" : "tryOn.corpo_carregando")}</p>}
               <FittingRoomScene avatar={avatar} sex={data.sex} build={data.mannequin.build} skinTone={avatar ? null : data.mannequin.skinTone} body={bodyParams}
                 pieces={shown.map(toLook3d)} environment={env} scene={scene} light={light} view={view} onCanvas={(c) => { canvas.current = c; }} />
             </div>
@@ -234,6 +262,7 @@ function FittingRoom() {
               </div>
               <p className="type-caption text-muted">{t("tryOn.girar_dica")}</p>
               <p className="type-caption text-muted" role="note">{t("tryOn.previa_lojas_nota")}</p>
+              {storeProfileFor(scene?.brand ?? env.featured).fidelity === "conceptual" && (scene?.brand ?? env.featured).key !== "neutral" && <p className="type-caption text-muted" role="note">{t("tryOn.ambiente_conceitual", { marca: (scene?.brand ?? env.featured).name })}</p>}
             </div>
           </Card>
           <Card>
@@ -252,6 +281,7 @@ function FittingRoom() {
                           <p className="flex items-center gap-1.5 type-caption text-muted">{i.brand && <BrandLogo name={i.brand.name} src={i.brand.logoUrl} size={16} />}{i.brand?.name ?? t("tryOn.sem_marca")}
                             <Badge tone={i.source === "catalog" ? "thread" : "chalk"}>{i.source === "catalog" ? t("tryOn.origem_loja") : t("tryOn.origem_guarda_roupa")}</Badge></p>
                           <p className="truncate type-body-sm font-medium">{i.name}{i.colorName ? ` · ${i.colorName}` : ""}</p>
+                          <GarmentState item={i} photo={garment.photos[i.key]} />
                           {covered && <p className="type-caption text-muted">{t("tryOn.coberta_pela_peca_inteira", { name: items.find((x) => x.wear === "FULL_BODY")!.name })}</p>}
                           {p && (p.variants?.length ?? 0) > 1 && (
                             <div className="mt-1 flex flex-wrap gap-1" role="group" aria-label={t("tryOn.trocar_cor")}>

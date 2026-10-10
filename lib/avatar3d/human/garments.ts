@@ -22,8 +22,8 @@ import type { BodyAsset } from "./asset";
 import type { Composed } from "./compose";
 
 export type GarmentKind =
-  | "tee" | "tank" | "longsleeve" | "shirt" | "sweater" | "hoodie" | "jacket" | "coat" | "crop"
-  | "dress" | "jumpsuit" | "skirt" | "pants" | "shorts" | "leggings" | "shoes" | "boots";
+  | "tee" | "tank" | "longsleeve" | "shirt" | "sweater" | "hoodie" | "jacket" | "coat" | "crop" | "vest"
+  | "dress" | "jumpsuit" | "romper" | "skirt" | "pants" | "culottes" | "shorts" | "bermuda" | "leggings" | "shoes" | "boots";
 
 export interface GarmentSpec {
   kind: GarmentKind;
@@ -38,13 +38,21 @@ export interface GarmentSpec {
   drape: number;         // 0–1: quanto cai reto do busto
   flare: number;         // abertura na barra (m por unidade de comprimento)
   layer: number;         // ordem de camada (maior = mais por fora)
+  /** perna: 0 = acompanha a perna (legging, skinny); 1 = cai reta do joelho para baixo (jeans reto); >1 = mais ampla */
+  legColumn: number;
+  /** abaixo do busto: o tecido cai até este raio do anel do busto (justa < 1 ≤ solta) */
+  bustFall: number;
+  /** bota: onde começa o cano, ao longo da perna (0 = quadril, 1 = tornozelo) */
+  shaft: number;
 }
 
-const S = (kind: GarmentKind, o: Partial<GarmentSpec>): GarmentSpec => ({ kind, ease: 0.006, hem: NaN, neck: 1, vneck: 0.04, waist: NaN, sleeve: 0, leg: 0, skirt: 0, drape: 0, flare: 0, layer: 3, ...o });
+const S = (kind: GarmentKind, o: Partial<GarmentSpec>): GarmentSpec => ({ kind, ease: 0.006, hem: NaN, neck: 1, vneck: 0.04, waist: NaN, sleeve: 0, leg: 0, skirt: 0, drape: 0, flare: 0, layer: 3, legColumn: 0, bustFall: 0.965, shaft: 0.72, ...o });
 export const SPECS: Record<GarmentKind, GarmentSpec> = {
   leggings: S("leggings", { ease: 0.002, waist: 0.2, leg: 0.97, layer: 1 }),
-  pants: S("pants", { ease: 0.009, waist: 0.18, leg: 0.985, flare: 0.03, layer: 2 }),
+  pants: S("pants", { ease: 0.009, waist: 0.18, leg: 0.985, flare: 0.03, layer: 2, legColumn: 1 }),
+  culottes: S("culottes", { ease: 0.012, waist: 0.18, leg: 0.74, flare: 0.08, layer: 2, legColumn: 1.3 }),
   shorts: S("shorts", { ease: 0.007, waist: 0.18, leg: 0.36, flare: 0.012, layer: 2 }),
+  bermuda: S("bermuda", { ease: 0.009, waist: 0.18, leg: 0.5, flare: 0.015, layer: 2, legColumn: 1 }),
   skirt: S("skirt", { ease: 0.008, waist: 0.2, skirt: 0.42, flare: 0.1, layer: 2 }),
   tank: S("tank", { ease: 0.005, hem: -0.03, neck: 0.9, vneck: 0.14, drape: 0.35, layer: 3 }),
   crop: S("crop", { ease: 0.005, hem: 0.45, neck: 0.95, vneck: 0.09, sleeve: 0.28, drape: 0.2, layer: 3 }),
@@ -54,9 +62,11 @@ export const SPECS: Record<GarmentKind, GarmentSpec> = {
   sweater: S("sweater", { ease: 0.011, hem: -0.07, neck: 1.0, vneck: 0.08, sleeve: 0.97, drape: 0.75, layer: 4 }),
   hoodie: S("hoodie", { ease: 0.014, hem: -0.08, neck: 1.03, vneck: 0.07, sleeve: 0.97, drape: 0.8, layer: 4 }),
   jacket: S("jacket", { ease: 0.018, hem: -0.08, neck: 1.03, vneck: 0.12, sleeve: 0.98, drape: 0.85, layer: 5 }),
+  vest: S("vest", { ease: 0.014, hem: -0.06, neck: 1.0, vneck: 0.18, drape: 0.85, layer: 5 }),
   coat: S("coat", { ease: 0.022, hem: -0.08, neck: 1.03, vneck: 0.14, sleeve: 0.99, drape: 0.9, skirt: 0.5, flare: 0.08, layer: 6 }),
   dress: S("dress", { ease: 0.006, hem: 0.36, neck: 0.9, vneck: 0.1, skirt: 0.5, flare: 0.14, drape: 0.2, layer: 3 }),
-  jumpsuit: S("jumpsuit", { ease: 0.008, hem: -0.2, neck: 0.95, vneck: 0.1, waist: 1, leg: 0.97, flare: 0.01, drape: 0.3, layer: 3 }),
+  jumpsuit: S("jumpsuit", { ease: 0.008, hem: -0.2, neck: 0.95, vneck: 0.1, waist: 1, leg: 0.97, flare: 0.01, drape: 0.3, layer: 3, legColumn: 1 }),
+  romper: S("romper", { ease: 0.008, hem: -0.2, neck: 0.95, vneck: 0.1, waist: 1, leg: 0.34, flare: 0.012, drape: 0.3, layer: 3 }),
   shoes: S("shoes", { ease: 0.008, layer: 2 }),
   boots: S("boots", { ease: 0.009, layer: 2 }),
 };
@@ -66,19 +76,26 @@ export function kindOf(p: { category?: string | null; subcategory?: string | nul
   const sub = (p.subcategory ?? "").toLowerCase(); const cat = (p.category ?? p.slot ?? "").toUpperCase();
   const is = (...k: string[]) => k.some((x) => sub.includes(x));
   if (is("legging")) return "leggings";
+  if (is("skort", "short_saia", "short-saia")) return "skirt";                    // saia-short: a frente é de saia
   if (is("skirt", "saia") && !is("short")) return "skirt";
-  if (is("short", "bermuda")) return "shorts";
+  if (is("bermuda")) return "bermuda";
+  if (is("short")) return "shorts";
+  if (is("culotte", "pantacourt", "pantalona_curta")) return "culottes";
   if (is("pant", "jean", "trouser", "calca", "calça", "jogger", "chino", "cargo", "sweatpant")) return "pants";
   if (is("dress", "vestido")) return "dress";
-  if (is("jumpsuit", "macac", "overall", "romper", "playsuit")) return "jumpsuit";
+  if (is("romper", "playsuit", "macaquinho")) return "romper";
+  if (is("jumpsuit", "macac", "overall", "jardineira", "matching_set", "conjunto")) return "jumpsuit";
   if (is("boot", "bota", "coturno")) return "boots";
   if (is("sneaker", "tenis", "tênis", "shoe", "sapato", "loafer", "oxford", "derby", "mocass", "sandal", "sandál", "heel", "salto", "slipper", "chinelo", "flat", "sapatilha", "alpargata", "espadrille")) return "shoes";
   if (is("coat", "casaco", "parka", "trench", "overcoat")) return "coat";
-  if (is("jacket", "jaqueta", "blazer", "windbreaker", "corta", "bomber", "cardigan", "kimono", "quimono", "vest", "colete")) return "jacket";
+  if (is("vest", "colete") && !is("vestido")) return "vest";                      // colete: sem manga
+  if (is("jacket", "jaqueta", "blazer", "windbreaker", "corta", "bomber", "cardigan", "kimono", "quimono")) return "jacket";
   if (is("hoodie", "capuz")) return "hoodie";
   if (is("sweater", "sueter", "suéter", "sweatshirt", "moletom", "pullover", "knit")) return "sweater";
-  if (is("tank", "regata", "camisole", "bodysuit", "body")) return "tank";
+  // "body" só a peça (bodysuit/body): "crossbody_bag" contém "body" e virava regata
+  if (is("tank", "regata", "camisole", "bodysuit") || sub === "body") return "tank";
   if (is("crop")) return "crop";
+  if (is("polo")) return "tee";                                                     // polo: manga curta (antes virava camisa de manga longa)
   if (is("shirt", "camisa", "blouse", "blusa")) return is("t_shirt", "tshirt", "t-shirt", "camiseta") ? "tee" : "shirt";
   if (is("long_sleeve", "manga_longa", "longsleeve")) return "longsleeve";
   if (is("tee", "camiseta", "polo", "top")) return "tee";
@@ -104,7 +121,7 @@ export function armOutFor(specs: GarmentSpec[]): number {
     if (sp.skirt > 0) out = Math.max(out, 15);
     if (Number.isNaN(sp.hem)) continue;                                  // não cobre o tronco
     const thick = sp.ease + under;
-    out = Math.max(out, Math.min(18, 10 + (thick - 0.012) * 350));
+    out = Math.max(out, Math.min(22, 10 + (thick - 0.012) * 350));    // casaco por cima: a axila abre até 22°
     under = Math.max(under, sp.ease + 0.004 + sp.flare * 0.3);
   }
   return Math.round(out * 10) / 10;
@@ -122,6 +139,8 @@ export interface BodyParam {
   neckZ: number;              // eixo do pescoço (z da articulação Neck): centro do decote e da gola
   /** ombro e punho (articulações) de cada lado: eixo do braço, para punhos e barras de manga */
   shoulder?: { L: number[]; R: number[] }; wrist?: { L: number[]; R: number[] };
+  /** quadril, joelho e tornozelo de cada lado: eixo da perna (caimento reto da calça) */
+  legs?: { L: { hip: number[]; knee: number[]; ankle: number[] }; R: { hip: number[]; knee: number[]; ankle: number[] } };
 }
 
 export function bodyParam(a: BodyAsset, c: Composed): BodyParam {
@@ -132,6 +151,7 @@ export function bodyParam(a: BodyAsset, c: Composed): BodyParam {
   const out: BodyParam = { group: new Uint8Array(nb), side: new Int8Array(nb), h: new Float32Array(nb), arm: new Float32Array(nb), leg: new Float32Array(nb), hipY, neckY, ankleY, torsoZ: J("Spine1")[2], neckZ: J("Neck")[2] };
   const S0 = { L: J("LeftArm"), R: J("RightArm") }, W0 = { L: J("LeftHand"), R: J("RightHand") };
   out.shoulder = S0; out.wrist = W0;
+  out.legs = { L: { hip: J("LeftUpLeg"), knee: J("LeftLeg"), ankle: J("LeftFoot") }, R: { hip: J("RightUpLeg"), knee: J("RightLeg"), ankle: J("RightFoot") } };
   for (let v = 0; v < nb; v++) {
     const x = c.body[v * 3], y = c.body[v * 3 + 1], z = c.body[v * 3 + 2];
     out.group[v] = grp[a.body.skinIndex[v * 4]]; out.side[v] = x >= 0 ? 1 : -1;
@@ -164,7 +184,7 @@ function coverage(sp: GarmentSpec, P: BodyParam, v: number, x: number, z: number
   const neckTop = necklineH(sp, x, z - P.neckZ);
   if (sp.kind === "shoes" || sp.kind === "boots") {
     if (g === 4) return 1;
-    return g === 3 ? smooth(sp.kind === "boots" ? 0.72 : 0.955, sp.kind === "boots" ? 0.74 : 0.975, leg) : 0;
+    return g === 3 ? smooth(sp.kind === "boots" ? sp.shaft : 0.955, sp.kind === "boots" ? sp.shaft + 0.02 : 0.975, leg) : 0;
   }
   let c = 0;
   if (!Number.isNaN(sp.hem) && (g === 1 || g === 2 || g === 3)) {
@@ -312,7 +332,7 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
     // cai reto do busto (não cola na cintura nem na barriga)
     if (bust && (g === 1 || g === 3) && h < 0.72 && h > sp.hem - 0.1) {
       const zz = z - P.torsoZ; const r = Math.hypot(x, zz); const j = Math.round(((Math.atan2(x, zz) + Math.PI) / (2 * Math.PI)) * NA) % NA;
-      const target = bust[j] * 0.965 + e; const k = sp.drape * smooth(0.72, 0.5, h) * (0.15 + 0.85 * Math.abs(zz) / r);   // cai reto na frente e atrás; dos lados, o braço encosta
+      const target = bust[j] * sp.bustFall + e; const k = sp.drape * smooth(0.72, 0.5, h) * (0.15 + 0.85 * Math.abs(zz) / r);   // cai reto na frente e atrás; dos lados, o braço encosta
       if (target > r && r > 1e-4) { const nr = lerp(r, target, k); x *= nr / r; z = P.torsoZ + (zz * nr) / r; }
     }
     // peito: o tecido passa reto por cima do vão entre os seios (frente), sem desenhar o corpo
@@ -343,6 +363,8 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
     const [p, q, r] = [tris[t], tris[t + 1], tris[t + 2]];
     // a saia/vestido de baixo é o tubo: o molde não desce pelas pernas abaixo do começo da saia
     if (!Number.isNaN(top) && [p, q, r].every((v) => P.group[v] === 3 || P.h[v] < top - 0.02)) continue;
+    // bota: o pé é a fôrma modelada (shoes.ts); o molde do pé copiaria os dedos — fica só o cano (perna)
+    if (sp.kind === "boots" && [p, q, r].every((v) => P.group[v] === 4)) continue;
     index.push(add(p), add(q), add(r));
   }
   // ---- tubo da saia (saia, vestido, casaco longo)
@@ -356,8 +378,10 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
         const r = tube.r[i][j]; const phi = (j / TUBE_NA) * 2 * Math.PI - Math.PI;
         pos.push(Math.sin(phi) * r, y, P.torsoZ + Math.cos(phi) * r);
         al.push(1); src.push(-1);
-        const leg = Math.sin(phi) >= 0 ? upL : upR; const wl = 0.55 * smooth(0.1, 0.9, t) * Math.min(1, Math.abs(Math.sin(phi)) * 1.6);
-        si.push(hips, leg, 0, 0); sw.push(1 - wl, wl, 0, 0);
+        // abaixo do quadril o tubo acompanha as coxas (frente e laterais mais que as costas), dividido entre as duas
+        // pernas pelo lado: no agachamento as coxas sobem e levam a frente da saia, em vez de atravessá-la
+        const w = smooth(-0.12, 0.15, P.hipY - y) * (0.7 + 0.3 * Math.max(0, Math.cos(phi))); const wl = w * Math.min(1, Math.max(0, 0.5 + Math.sin(phi) * 2));
+        si.push(hips, upL, upR, 0); sw.push(1 - w, wl, w - wl, 0);
       }
     }
     for (let i = 0; i < rows; i++) for (let j = 0; j < TUBE_NA; j++) {
@@ -605,7 +629,7 @@ export function garmentMaterial(tex: THREE.Texture, sp: GarmentSpec): THREE.Mesh
 // ================================================================== gola (ribana) em volta do pescoço inteiro
 
 /** Peças com gola de malha/ribana contornando o decote (jaqueta e casaco são abertos na frente: sem faixa). */
-export const HAS_COLLAR_BAND: ReadonlySet<GarmentKind> = new Set(["tee", "longsleeve", "tank", "crop", "sweater", "hoodie", "shirt", "dress", "jumpsuit"]);
+export const HAS_COLLAR_BAND: ReadonlySet<GarmentKind> = new Set(["tee", "longsleeve", "tank", "crop", "sweater", "hoodie", "shirt", "dress", "jumpsuit", "romper"]);
 
 export interface CollarBand { position: Float32Array; skinIndex: Uint16Array; skinWeight: Float32Array; index: Uint32Array }
 
