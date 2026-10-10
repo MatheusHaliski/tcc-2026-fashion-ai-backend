@@ -1,0 +1,478 @@
+[
+ {
+  "n": 1,
+  "nome": "RF1-Cadastrar usuário na plataforma com dados de acesso (perfil Pessoal, Restaurante, Chef ou Marca de alimentos)",
+  "sprint": 1,
+  "desc": "**Tela de Cadastro (/signup)** · Sprint 1\n\nWizard de 3 passos: tipo de perfil → dados de acesso → preferências alimentares e consentimentos LGPD. Senha Argon2id, verificação de e-mail por código de 6 dígitos, passkey (WebAuthn) opcional e login social OIDC (Google/Apple). Restaurante/Marca exigem CNPJ e passam por aprovação (PENDING_VALIDATION).\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `AuthController` → `IdentityService`\n- `POST /api/auth/register`\n- `GET /api/auth/username-suggestions`\n- `POST /api/auth/verify-email`\n- `POST /api/auth/verify-email/resend`\n- `POST /api/auth/passkeys/register`\n\n**Entidades × banco**\n- **MySQL**: User, UserPreferences, RestaurantProfile, ChefProfile, FoodBrandProfile, UserConsent, VerificationCode\n- **Cassandra**: AuditEvent\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF1/` (atividades, sequência, componentes, máquina de estados Conta, classes)",
+  "telas": [
+   "Escolha do tipo de perfil (Pessoal · Restaurante · Chef · Marca de alimentos)",
+   "Dados de acesso (nome, @username com sugestões, e-mail, senha com medidor de força, data de nascimento)",
+   "Dados empresariais (CNPJ com consulta Receita, endereço com geocodificação, tipo de cozinha)",
+   "Preferências alimentares (dieta, alergias, cozinhas favoritas) — opcional e com consentimento de saúde separado",
+   "Termos + Política de Privacidade (checkbox não pré-marcado) e consentimentos por finalidade",
+   "Verificação de e-mail (código de 6 dígitos, reenviar com cooldown)"
+  ],
+  "erros": [
+   "EMAIL_EM_USO",
+   "USERNAME_EM_USO",
+   "SENHA_FRACA",
+   "MENOR_DE_IDADE",
+   "CNPJ_INVALIDO",
+   "TERMOS_NAO_ACEITOS"
+  ]
+ },
+ {
+  "n": 2,
+  "nome": "RF2-Autenticar usuário na plataforma com credenciais de acesso",
+  "sprint": 1,
+  "desc": "**Tela de Login (/login)** · Sprint 1\n\nLogin por e-mail/@username + senha, passkey (WebAuthn) ou OIDC (Google/Apple). 2FA TOTP opcional. Access token JWT (15 min, ES256) + refresh token rotativo em cookie HttpOnly/SameSite=Strict. Rate limit progressivo no Redis e bloqueio temporário após 5 falhas; 'Esqueci minha senha' por código.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `AuthController` → `IdentityService`\n- `POST /api/auth/login`\n- `POST /api/auth/login/2fa`\n- `POST /api/auth/refresh`\n- `POST /api/auth/passkeys/assert`\n- `POST /api/auth/password/forgot`\n- `POST /api/auth/password/reset`\n\n**Entidades × banco**\n- **MySQL**: User, RefreshToken, VerificationCode\n- **Redis**: SessionCache\n- **Cassandra**: AuditEvent\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF2/` (atividades, sequência, componentes, máquina de estados Sessao, classes)",
+  "telas": [
+   "Login (e-mail/username, senha, mostrar senha, lembrar dispositivo)",
+   "Botões 'Entrar com passkey', 'Google', 'Apple'",
+   "Desafio 2FA (TOTP 6 dígitos ou código de recuperação)",
+   "Esqueci minha senha → código → nova senha",
+   "Conta bloqueada temporariamente (contagem regressiva)"
+  ],
+  "erros": [
+   "NAO_AUTENTICADO",
+   "CONTA_INDISPONIVEL",
+   "DOIS_FATORES_NECESSARIO",
+   "MUITAS_TENTATIVAS",
+   "TOKEN_REUTILIZADO"
+  ]
+ },
+ {
+  "n": 3,
+  "nome": "RF3-Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações",
+  "sprint": 1,
+  "desc": "**Minha Conta (/settings/account)** · Sprint 1\n\nCentral de conta: editar perfil (nome, foto, bio, cidade, preferências alimentares), alterar e-mail/senha/telefone com reautenticação, ver e encerrar sessões/dispositivos, ativar 2FA e passkeys, gerir consentimentos por finalidade, exportar dados (portabilidade), excluir conta com carência de 30 dias e configurar notificações por canal/tipo/horário de silêncio.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `MeController` → `AccountService`\n- `GET /api/me`\n- `PATCH /api/me/profile`\n- `PATCH /api/me/sensitive`\n- `GET /api/auth/sessions`\n- `DELETE /api/auth/sessions/{id}`\n- `PUT /api/me/consents/{purpose}`\n- `POST /api/me/exports`\n- `POST /api/me/deletion`\n- `PUT /api/notifications/preferences`\n\n**Entidades × banco**\n- **MySQL**: User, UserPreferences, RefreshToken, UserConsent, DataExportRequest, NotificationPreference\n- **Redis**: SessionCache\n- **S3**: DataExportArchive\n- **Cassandra**: Notification, AuditEvent\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF3/` (atividades, sequência, componentes, máquina de estados Exclusao, classes)",
+  "telas": [
+   "Dados pessoais (nome, @username, foto, capa, bio, cidade, dieta, alergias)",
+   "Segurança (senha, e-mail, telefone, 2FA TOTP, passkeys, códigos de recuperação)",
+   "Sessões e dispositivos (lista, encerrar uma, encerrar todas)",
+   "Privacidade LGPD (consentimentos por finalidade, visibilidade do perfil, exportar meus dados, excluir conta)",
+   "Notificações (push, e-mail, in-app × reações, comentários, pedidos, reservas, rankings; horário de silêncio)"
+  ],
+  "erros": [
+   "REAUTENTICACAO_NECESSARIA",
+   "EMAIL_EM_USO",
+   "SESSAO_INEXISTENTE",
+   "EXPORTACAO_EM_ANDAMENTO",
+   "FINALIDADE_INVALIDA"
+  ]
+ },
+ {
+  "n": 4,
+  "nome": "RF4-Adicionar uma nova peça de alimento ao inventário pessoal através de formulário e fotografia",
+  "sprint": 2,
+  "desc": "**Adicionar Peça de Alimento (/pieces/new)** · Sprint 2\n\nFormulário com foto (câmera/galeria). A IA reconhece o alimento, sugere nome, categoria, cozinha, ingredientes, alérgenos e macros; o usuário confirma. Segue a Diretriz de Peça de Alimento (RF25).\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `FoodPieceController` → `FoodPieceService`\n- `POST /api/pieces/photo (multipart / presigned)`\n- `POST /api/pieces/recognize`\n- `POST /api/pieces`\n- `PATCH /api/pieces/{id}/status`\n\n**Entidades × banco**\n- **MySQL**: FoodPiece, FoodInventory\n- **S3**: FoodPhoto\n- **OpenSearch**: FoodPieceDoc\n- **Cassandra**: AiInferenceLog\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF4/` (atividades, sequência, componentes, máquina de estados Peca, classes)",
+  "telas": [
+   "Captura/Upload de foto (recorte 4:5, remoção de fundo)",
+   "Formulário: nome, categoria, cozinha, país de origem, ingredientes, alérgenos, porção, macros",
+   "Sugestões da IA com nível de confiança",
+   "Status da peça (Tenho em casa · Quero provar · Favorita · Receita própria)"
+  ],
+  "erros": [
+   "FOTO_INVALIDA",
+   "CAMPO_OBRIGATORIO",
+   "ALERGENO_DESCONHECIDO",
+   "VIOLA_DIRETRIZ"
+  ]
+ },
+ {
+  "n": 5,
+  "nome": "RF5-Criar um esquema de alimentação & sua respectiva lista de peças de alimento, através da aba \"Criar Prato\"",
+  "sprint": 2,
+  "desc": "**Criar Prato (/create)** · Sprint 2\n\nMonta um esquema (refeição) escolhendo peças do inventário, porções e posição no prato; calcula kcal/macros e Health Score; assistente de IA sugere combinações. Publica no feed conforme a Diretriz de Esquema de Alimentação (RF25).\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `MealSchemeController` → `MealSchemeService`\n- `POST /api/schemes`\n- `PUT /api/schemes/{id}/items`\n- `POST /api/schemes/{id}/publish`\n- `POST /api/schemes/assist`\n\n**Entidades × banco**\n- **MySQL**: MealScheme, MealSchemeItem, FoodPiece\n- **OpenSearch**: MealSchemeDoc\n- **Cassandra**: FeedEntry\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF5/` (atividades, sequência, componentes, máquina de estados Esquema, classes)",
+  "telas": [
+   "Seleção de peças do inventário (filtros por categoria/cozinha)",
+   "Composição: porções, camadas e ordem",
+   "Resumo nutricional + Health Score",
+   "Dados do esquema (título, tipo de refeição, ocasião, tempo, dificuldade, porções)",
+   "Pré-visualização do card (botões de reação culinária) e publicar"
+  ],
+  "erros": [
+   "ESQUEMA_VAZIO",
+   "PECA_NAO_E_SUA",
+   "VIOLA_DIRETRIZ",
+   "TITULO_OBRIGATORIO"
+  ]
+ },
+ {
+  "n": 6,
+  "nome": "RF6-Acessar & Gerenciar a página do Inventário de Alimentação Virtual do perfil Usuário",
+  "sprint": 2,
+  "desc": "**Inventário de Alimentação (/inventory)** · Sprint 2\n\nGrade de peças e esquemas do usuário com filtros (categoria, cozinha, status, alérgenos), busca, ordenação, ações em lote e 'Prato do dia'.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `InventoryController` → `InventoryService`\n- `GET /api/inventory`\n- `GET /api/inventory/pieces`\n- `GET /api/inventory/schemes`\n- `POST /api/inventory/bulk`\n\n**Entidades × banco**\n- **MySQL**: FoodInventory, FoodPiece, MealScheme, SavedItem\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF6/` (atividades, sequência, componentes, máquina de estados PratoDoDia, classes)",
+  "telas": [
+   "Abas Peças · Esquemas · Salvos",
+   "Filtros e busca",
+   "Seleção múltipla (arquivar, mudar status, mover para coleção)",
+   "Prato do dia em destaque"
+  ],
+  "erros": [
+   "ITEM_NAO_E_SEU",
+   "LOTE_GRANDE_DEMAIS"
+  ]
+ },
+ {
+  "n": 7,
+  "nome": "RF7-Acessar um item de peça de alimento disponível na lista de um esquema de alimentação salvo",
+  "sprint": 2,
+  "desc": "**Detalhe da Peça (/pieces/{id})** · Sprint 2\n\nAbre a peça a partir do esquema: foto, ficha nutricional, alérgenos, origem, em quais esquemas aparece e onde comprar/pedir (RF29).\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `FoodPieceController` → `FoodPieceService`\n- `GET /api/pieces/{id}`\n- `GET /api/pieces/{id}/schemes`\n- `GET /api/pieces/{id}/where-to-eat`\n\n**Entidades × banco**\n- **MySQL**: FoodPiece, MealSchemeItem, MenuItem\n- **OpenSearch**: RestaurantDoc\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF7/` (atividades, sequência, componentes, máquina de estados Disponibilidade, classes)",
+  "telas": [
+   "Ficha da peça (foto, macros, alérgenos, origem)",
+   "Esquemas que usam a peça",
+   "Restaurantes que servem (link varejo)"
+  ],
+  "erros": [
+   "PECA_INEXISTENTE",
+   "PECA_PRIVADA"
+  ]
+ },
+ {
+  "n": 8,
+  "nome": "RF8-Visualizar esquemas de alimentação & peças de alimento criados por outros usuários na rede social, através da aba \"Buscar\"",
+  "sprint": 2,
+  "desc": "**Buscar (/search)** · Sprint 2\n\nFeed descoberta com busca full-text e semântica, filtros (cozinha, dieta, kcal, tipo de refeição, país) e cards com as reações culinárias.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `SearchController` → `SearchService`\n- `GET /api/search?q=&filters=`\n- `GET /api/search/suggest`\n\n**Entidades × banco**\n- **OpenSearch**: MealSchemeDoc, FoodPieceDoc\n- **MySQL**: DineHypeScore\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF8/` (atividades, sequência, componentes, máquina de estados Esquema, classes)",
+  "telas": [
+   "Barra de busca com autocomplete",
+   "Chips de filtro",
+   "Grade de cards (esquemas e peças)",
+   "Abrir card → detalhe"
+  ],
+  "erros": [
+   "CONSULTA_INVALIDA"
+  ]
+ },
+ {
+  "n": 9,
+  "nome": "RF9-Editar os dados de um esquema de alimentação & seus respectivos esquemas de peça de alimento salvos",
+  "sprint": 2,
+  "desc": "**Editar Esquema (/schemes/{id}/edit)** · Sprint 2\n\nEdição com controle otimista (@Version), histórico de versões e revalidação da diretriz antes de republicar.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `MealSchemeController` → `MealSchemeService`\n- `PATCH /api/schemes/{id}`\n- `PATCH /api/pieces/{id}`\n- `GET /api/schemes/{id}/versions`\n\n**Entidades × banco**\n- **MySQL**: MealScheme, MealSchemeItem, FoodPiece, SchemeValidationReport\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF9/` (atividades, sequência, componentes, máquina de estados Edicao, classes)",
+  "telas": [
+   "Editor do esquema",
+   "Editor das peças vinculadas",
+   "Histórico de versões e restaurar"
+  ],
+  "erros": [
+   "CONFLITO_DE_VERSAO",
+   "VIOLA_DIRETRIZ"
+  ]
+ },
+ {
+  "n": 10,
+  "nome": "RF10-Gerar recomendações de esquemas de alimentação & de peças de alimento através da aba \"Copilot\"",
+  "sprint": 3,
+  "desc": "**Copilot (/copilot)** · Sprint 3\n\nChat com IA (Spring AI + RAG sobre OpenSearch k-NN) que monta cardápio do dia/semana respeitando dieta, alergias, kcal, orçamento e o DNA de Alimentação; sugere restaurantes próximos e pratos para pedir.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `CopilotController` → `CopilotService`\n- `POST /api/copilot/recommendations (SSE)`\n- `POST /api/copilot/week-plan`\n- `POST /api/copilot/{id}/save`\n\n**Entidades × banco**\n- **MySQL**: Recommendation, TasteDna, MealScheme\n- **Redis**: RecoCache\n- **Cassandra**: AiInferenceLog\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF10/` (atividades, sequência, componentes, máquina de estados Semana, classes)",
+  "telas": [
+   "Chat Copilot",
+   "Restrições (kcal, dieta, orçamento, tempo)",
+   "Plano semanal gerado (arrastar e soltar)",
+   "Salvar como esquemas"
+  ],
+  "erros": [
+   "SEM_CONSENTIMENTO_IA",
+   "COTA_EXCEDIDA"
+  ]
+ },
+ {
+  "n": 11,
+  "nome": "RF11-Utilizar o \"Background Studio\" para confeccionar a arte de estilo e personalização de esquemas & peças de alimento",
+  "sprint": 2,
+  "desc": "**Background Studio (modal)** · Sprint 2\n\nEditor de fundo do card: paletas sazonais/culinárias (toalha xadrez, mármore, madeira rústica, neon street food), padrões, texturas e animação leve.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `BackgroundStudioController` → `BackgroundStudioService`\n- `GET /api/studio/presets`\n- `POST /api/studio/arts`\n- `PUT /api/schemes/{id}/background`\n\n**Entidades × banco**\n- **MySQL**: BackgroundArt, MealScheme\n- **S3**: BackgroundAsset\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF11/` (atividades, sequência, componentes, máquina de estados Arte, classes)",
+  "telas": [
+   "Paletas e texturas",
+   "Padrões (xadrez, azulejo, mármore...)",
+   "Animação (vapor, faíscas, confete de especiarias)",
+   "Pré-visualização do card"
+  ],
+  "erros": [
+   "PRESET_INVALIDO"
+  ]
+ },
+ {
+  "n": 12,
+  "nome": "RF12-Visualizar & Editar a página \"Minhas Fotos\" — fotos cadastradas através da adição de peças & criação de esquemas",
+  "sprint": 3,
+  "desc": "**Minhas Fotos (/photos)** · Sprint 3\n\nGaleria das fotos enviadas, com upload em lote (várias peças por vez) e reaproveitamento de foto em novas peças.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `PhotoController` → `PhotoService`\n- `GET /api/photos`\n- `POST /api/photos/batch`\n- `DELETE /api/photos/{id}`\n\n**Entidades × banco**\n- **S3**: FoodPhoto\n- **MySQL**: FoodPiece\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF12/` (atividades, sequência, componentes, máquina de estados ItemLote, classes)",
+  "telas": [
+   "Galeria (grid com blurhash)",
+   "Upload em lote com fila",
+   "Detalhe da foto → peças vinculadas"
+  ],
+  "erros": [
+   "LIMITE_LOTE",
+   "FOTO_EM_USO"
+  ]
+ },
+ {
+  "n": 13,
+  "nome": "RF13-Criar um esquema de identidade pessoal de alimentação na página \"DNA de Alimentação\"",
+  "sprint": 4,
+  "desc": "**DNA de Alimentação (/dna)** · Sprint 4\n\nQuiz de paladar (doce, salgado, ácido, amargo, umami, picante), cozinhas favoritas, dieta e aventura gastronômica → radar e embedding usado nas recomendações.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `TasteDnaController` → `TasteDnaService`\n- `GET /api/dna`\n- `PUT /api/dna`\n- `POST /api/dna/quiz`\n\n**Entidades × banco**\n- **MySQL**: TasteDna, UserPreferences\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF13/` (atividades, sequência, componentes, máquina de estados Esquema, classes)",
+  "telas": [
+   "Quiz de paladar (cards swipe)",
+   "Radar de sabores",
+   "Cozinhas do coração (mapa)",
+   "Compartilhar DNA"
+  ],
+  "erros": [
+   "QUIZ_INCOMPLETO"
+  ]
+ },
+ {
+  "n": 14,
+  "nome": "RF14-Visualizar a aba \"Marcas\" — Feed de Perfil de Marcas de alimentos cadastradas no Dine Explorer",
+  "sprint": 3,
+  "desc": "**Marcas de alimentos (/brands)** · Sprint 3\n\nFeed de marcas com top bar de filtros (categoria, país, selo, mais seguidas), perfil da marca com produtos e esquemas vinculados.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `BrandController` → `BrandService`\n- `GET /api/brands`\n- `GET /api/brands/{slug}`\n\n**Entidades × banco**\n- **MySQL**: FoodBrandProfile, SchemeBrandLink, Follow\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF14/` (atividades, sequência, componentes, máquina de estados PerfilMarca, classes)",
+  "telas": [
+   "Top bar de filtros",
+   "Grade de marcas",
+   "Perfil da marca (produtos, esquemas, seguidores)"
+  ],
+  "erros": [
+   "MARCA_INEXISTENTE"
+  ]
+ },
+ {
+  "n": 15,
+  "nome": "RF15-Editar a fotografia de uma peça de alimento através de um Editor Canvas Interativo 2D",
+  "sprint": 4,
+  "desc": "**Editor de Foto (modal canvas)** · Sprint 4\n\nEdição não destrutiva: recorte, rotação, remoção de fundo, filtros food-friendly (realce de cor, brilho, vapor), salvando receita de edição.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `PhotoEditController` → `PhotoEditService`\n- `POST /api/photos/{id}/edits`\n- `GET /api/photos/{id}/edits`\n\n**Entidades × banco**\n- **MySQL**: PhotoEditRecipe\n- **S3**: FoodPhoto\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF15/` (atividades, sequência, componentes, máquina de estados Foto, classes)",
+  "telas": [
+   "Canvas (Konva.js)",
+   "Ferramentas de recorte/rotação",
+   "Filtros",
+   "Comparar antes/depois"
+  ],
+  "erros": [
+   "RECEITA_INVALIDA"
+  ]
+ },
+ {
+  "n": 16,
+  "nome": "RF16-Implementar geração de imagem 3D das peças de alimento do inventário utilizando serviços de API externas",
+  "sprint": 4,
+  "desc": "**Visualizador 3D (/pieces/{id}/3d)** · Sprint 4\n\nJob assíncrono (fila SQS/Kafka) que gera modelo glTF/USDZ da peça a partir das fotos; visualização com React Three Fiber e AR Quick Look.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `Food3DController` → `Food3DService`\n- `POST /api/pieces/{id}/3d`\n- `GET /api/3d-jobs/{id}`\n\n**Entidades × banco**\n- **MySQL**: Food3DJob, FoodPiece\n- **S3**: Food3DModel\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF16/` (atividades, sequência, componentes, máquina de estados Job, classes)",
+  "telas": [
+   "Botão 'Gerar 3D'",
+   "Progresso do job",
+   "Visualizador 3D/AR"
+  ],
+  "erros": [
+   "JOB_EM_ANDAMENTO"
+  ]
+ },
+ {
+  "n": 17,
+  "nome": "RF17-Visualizar a página de perfil de outros Usuários cadastrados na rede social do Dine Explorer",
+  "sprint": 3,
+  "desc": "**Perfil público (/u/{username})** · Sprint 3\n\nPerfil com capa, DNA de Alimentação, esquemas publicados, peças, métricas sociais (RF24), seguir/deixar de seguir e respeito à visibilidade.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `ProfileController` → `ProfileService`\n- `GET /api/users/{username}`\n- `POST /api/users/{id}/follow`\n- `DELETE /api/users/{id}/follow`\n\n**Entidades × banco**\n- **MySQL**: User, Follow, MealScheme, TasteDna\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF17/` (atividades, sequência, componentes, máquina de estados Follow, classes)",
+  "telas": [
+   "Cabeçalho do perfil",
+   "Abas Esquemas · Peças · Restaurantes favoritos · DNA",
+   "Seguir / Mensagem / Denunciar"
+  ],
+  "erros": [
+   "PERFIL_PRIVADO",
+   "USUARIO_BLOQUEADO"
+  ]
+ },
+ {
+  "n": 18,
+  "nome": "RF18-Possibilitar ao usuário o uso do Criador de prato virtual 2D do Dine Explorer",
+  "sprint": 2,
+  "desc": "**Criador de Prato 2D (/plate-builder)** · Sprint 2\n\nPrato virtual em canvas: arrastar peças (recortadas sem fundo) sobre louças/mesas, camadas, porções proporcionais e exportar para o esquema (RF5).\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `PlateBuilderController` → `PlateBuilderService`\n- `GET /api/plate-builder/tableware`\n- `POST /api/schemes/{id}/plate`\n\n**Entidades × banco**\n- **MySQL**: MealSchemeItem, MealScheme\n- **S3**: BackgroundAsset\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF18/` (atividades, sequência, componentes, máquina de estados Prato, classes)",
+  "telas": [
+   "Mesa e louça (prato raso, bowl, tábua, bento)",
+   "Arrastar peças do inventário",
+   "Camadas e escala por porção",
+   "Exportar imagem do prato"
+  ],
+  "erros": [
+   "PECA_SEM_RECORTE"
+  ]
+ },
+ {
+  "n": 19,
+  "nome": "RF19-Usar as interações de rede social culinárias (curtir, comentar, compartilhar, salvar + reações Delicioso, Saboroso, Enjoei, Eca, Saudável...) em esquemas, peças e restaurantes",
+  "sprint": 3,
+  "desc": "**Card do esquema (feed / detalhe)** · Sprint 3\n\nLinha de ações do card idêntica à do card de moda do Fashion AI (curtir · comentar · compartilhar · salvar) + barra de reações culinárias únicas: 😋 Delicioso, 🤤 Saboroso, 🤢 Enjoei, 🤮 Eca, 🥗 Saudável, 🌶️ Apimentado, 👵 Comida de vó, 🍽️ Quero provar, 💸 Vale o preço, ✨ Gourmet, 🔥 Viciante, 🧂 Sem sal. Comentários com moderação por IA.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `InteractionController` → `InteractionService`\n- `PUT /api/{targetType}/{id}/reactions/{kind}`\n- `DELETE /api/{targetType}/{id}/reactions/{kind}`\n- `POST /api/{targetType}/{id}/comments`\n- `POST /api/{targetType}/{id}/share`\n- `POST /api/{targetType}/{id}/save`\n\n**Entidades × banco**\n- **MySQL**: Reaction, Comment, SavedItem\n- **Cassandra**: ReactionCounter, ShareEvent, EngagementEvent, Notification\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF19/` (atividades, sequência, componentes, máquina de estados Comentario, classes)",
+  "telas": [
+   "Barra de ações do card (♥ · 💬 · ↗ · 🔖)",
+   "Seletor de reações culinárias (long-press)",
+   "Folha de comentários com respostas",
+   "Compartilhar (link, WhatsApp, Instagram Stories com arte do card)"
+  ],
+  "erros": [
+   "REACAO_INVALIDA",
+   "COMENTARIO_TOXICO",
+   "ALVO_PRIVADO"
+  ]
+ },
+ {
+  "n": 20,
+  "nome": "RF20-Criar & publicar um esquema de alimentação vinculado a uma marca de alimentos cadastrada (aba \"Marcas de alimentos\")",
+  "sprint": 4,
+  "desc": "**Publicar com marca (/create → vincular marca)** · Sprint 4\n\nAo publicar, o usuário marca produtos de uma marca; a marca aprova/recusa o vínculo e o esquema aparece no perfil da marca.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `BrandLinkController` → `BrandLinkService`\n- `POST /api/schemes/{id}/brand-links`\n- `PATCH /api/brand-links/{id}`\n\n**Entidades × banco**\n- **MySQL**: SchemeBrandLink, FoodBrandProfile, MealScheme\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF20/` (atividades, sequência, componentes, máquina de estados Vinculo, classes)",
+  "telas": [
+   "Buscar marca e produto",
+   "Pedido de vínculo",
+   "Painel da marca: aprovar/recusar"
+  ],
+  "erros": [
+   "MARCA_NAO_APROVADA"
+  ]
+ },
+ {
+  "n": 21,
+  "nome": "RF21-Acessar a aba BioDine™ — serviço de sistema ciber-físico dentro do Dine Explorer",
+  "sprint": 4,
+  "desc": "**BioDine™ (/biodine)** · Sprint 4\n\nPareamento de balança/sensor IoT (MQTT via AWS IoT Core), painel de consumo diário, diário nutricional e metas — dado de saúde com consentimento específico.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `BioDineController` → `BioDineService`\n- `POST /api/biodine/devices`\n- `GET /api/biodine/dashboard`\n- `GET /api/biodine/diary`\n\n**Entidades × banco**\n- **MySQL**: BioDineDevice, NutritionDiary, UserConsent\n- **Cassandra**: BioDineReading\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF21/` (atividades, sequência, componentes, máquina de estados Dispositivo, classes)",
+  "telas": [
+   "Parear dispositivo (QR/BLE)",
+   "Painel diário (kcal, macros, água)",
+   "Histórico e metas",
+   "Consentimento DADOS_SAUDE_NUTRICAO"
+  ],
+  "erros": [
+   "SEM_CONSENTIMENTO_SAUDE",
+   "DISPOSITIVO_JA_PAREADO"
+  ]
+ },
+ {
+  "n": 22,
+  "nome": "RF22-Criar um esquema de alimentação através do BioDine™ Snapshot — Sensor IoT de Captura Fotográfica do Prato",
+  "sprint": 4,
+  "desc": "**BioDine™ Snapshot** · Sprint 4\n\nO sensor fotografa o prato; a IA detecta as peças e o peso (balança) e propõe um esquema pré-preenchido para o usuário confirmar.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `SnapshotController` → `SnapshotService`\n- `POST /api/iot/snapshots (device)`\n- `GET /api/snapshots/{id}`\n- `POST /api/snapshots/{id}/confirm`\n\n**Entidades × banco**\n- **MySQL**: PlateSnapshot, MealScheme\n- **S3**: PlateSnapshotImage\n- **Cassandra**: BioDineReading\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF22/` (atividades, sequência, componentes, máquina de estados Snapshot, classes)",
+  "telas": [
+   "Notificação 'Prato capturado'",
+   "Revisão das peças detectadas",
+   "Confirmar → esquema (RF5)"
+  ],
+  "erros": [
+   "IMAGEM_ILEGIVEL"
+  ]
+ },
+ {
+  "n": 23,
+  "nome": "RF23-Criar as telas de configuração do usuário (Conta, Privacidade/LGPD, Aparência, Idioma, Seus dados) no padrão LGPD, com i18n",
+  "sprint": 1,
+  "desc": "**Configurações (/settings)** · Sprint 1\n\nMesmo esqueleto do RF23 do Fashion AI: menu lateral de configurações com as telas Conta, Privacidade (LGPD), Aparência (tema claro/escuro/auto, cor de destaque, tamanho de fonte, alto contraste, reduzir animações, densidade dos cards), Idioma & Região (pt-BR/en/es, moeda, sistema métrico), Preferências alimentares e 'Seus dados' (exportar, histórico de consentimentos, excluir conta). Last-write-wins por clientUpdatedAt.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `PreferencesController` → `PreferencesService`\n- `GET /api/me/preferences`\n- `PUT /api/me/preferences`\n- `GET /api/me/consents`\n- `PUT /api/me/privacy`\n- `GET /api/me/exports`\n- `POST /api/me/exports`\n\n**Entidades × banco**\n- **MySQL**: UserPreferences, User, UserConsent, DataExportRequest\n- **S3**: DataExportArchive\n- **Cassandra**: AuditEvent\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF23/` (atividades, sequência, componentes, máquina de estados Exportacao, classes)",
+  "telas": [
+   "Conta (atalhos para RF3: perfil, segurança, sessões)",
+   "Privacidade / LGPD (consentimentos por finalidade com texto claro, visibilidade do perfil, quem pode reagir/comentar, localização)",
+   "Aparência (tema, cor de destaque, fonte 80–160%, alto contraste, reduzir animações do globo, densidade)",
+   "Idioma & Região (idioma da UI, moeda, unidades, país para rankings regionais)",
+   "Seus dados (baixar meus dados, histórico de consentimentos, encarregado/DPO, excluir conta)"
+  ],
+  "erros": [
+   "FONTE_INVALIDA",
+   "COR_INVALIDA",
+   "IDIOMA_INVALIDO",
+   "MOEDA_INVALIDA",
+   "VISIBILIDADE_INVALIDA"
+  ]
+ },
+ {
+  "n": 24,
+  "nome": "RF24-Calcular e exibir as métricas da rede social (DineHype Score, engajamento, sentimento culinário e rankings)",
+  "sprint": 3,
+  "desc": "**Métricas (/me/insights e painel do restaurante)** · Sprint 3\n\nPipeline de eventos (Kafka → Cassandra) e agregação (Spring Batch / Kafka Streams) que calcula, por peça, esquema, usuário e restaurante: views, alcance, reações por tipo, Índice de Sentimento Culinário (Delicioso/Saboroso/Saudável vs Eca/Enjoei/Sem sal), comentários, shares, salvos, taxa de engajamento e DineHype Score com decaimento temporal. Alimenta o Top 10 mundial e o Top 20 regional do Explorador (RF27).\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `MetricsController` → `MetricsService`\n- `GET /api/metrics/{targetType}/{id}?period=`\n- `GET /api/rankings?scope=WORLD|REGION&region=`\n- `GET /api/me/insights`\n\n**Entidades × banco**\n- **Cassandra**: EngagementEvent, ReactionCounter\n- **MySQL**: MetricSnapshot, DineHypeScore\n- **Redis**: HypeRanking\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF24/` (atividades, sequência, componentes, máquina de estados Hype, classes)",
+  "telas": [
+   "Insights do meu perfil (gráficos 7/30/90 dias)",
+   "Painel do restaurante (alcance, sentimento, conversão em pedidos)",
+   "Distribuição das reações culinárias",
+   "Posição nos rankings (região/país/mundo)"
+  ],
+  "erros": [
+   "PERIODO_INVALIDO",
+   "METRICA_PRIVADA"
+  ]
+ },
+ {
+  "n": 25,
+  "nome": "RF25-Definir e aplicar as diretrizes dos esquemas: Esquema de Alimentação, Esquema de Peça de Alimento e Esquema de Restaurante",
+  "sprint": 2,
+  "desc": "**Validação de esquema (inline nos formulários) + /admin/guidelines** · Sprint 2\n\nAnatomia obrigatória de cada esquema, na mesma lógica dos esquemas de vestimenta do Fashion AI, versionada e validada no backend: PEÇA = foto 4:5 + nome + categoria + cozinha + ingredientes + alérgenos + porção + macros; ALIMENTAÇÃO = título + tipo de refeição + ≥ 1 peça + porções + kcal total + Health Score + arte de fundo; RESTAURANTE = perfil aprovado + geolocalização + faixa de preço + ≥ 3 pratos assinatura + horário + opções de dieta. Todos compartilham o mesmo card: mídia, título, selos, linha de ações (curtir · comentar · compartilhar · salvar) e barra de reações culinárias (RF19).\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `GuidelineController` → `GuidelineService`\n- `GET /api/guidelines/{kind}`\n- `POST /api/guidelines/{kind}/validate`\n- `POST /api/admin/guidelines`\n- `POST /api/admin/guidelines/{id}/publish`\n\n**Entidades × banco**\n- **MySQL**: SchemeGuideline, GuidelineRule, SchemeValidationReport\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF25/` (atividades, sequência, componentes, máquina de estados Diretriz, classes)",
+  "telas": [
+   "Painel de diretrizes (admin): versões, regras, severidade",
+   "Validação inline nos formulários (RF4, RF5, RF26)",
+   "Relatório de violações antes de publicar"
+  ],
+  "erros": [
+   "VIOLA_DIRETRIZ",
+   "VERSAO_INEXISTENTE"
+  ]
+ },
+ {
+  "n": 26,
+  "nome": "RF26-Criar & gerenciar o Esquema de Restaurante (card do restaurante, cardápio, pratos assinatura e horários)",
+  "sprint": 3,
+  "desc": "**Meu Restaurante (/restaurant/manage)** · Sprint 3\n\nRestaurante aprovado publica seu card (mesmo formato dos cards de esquema), cardápio vendável com preços, fotos, pratos assinatura, horários, ambiente e opções de dieta.\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `RestaurantController` → `RestaurantService`\n- `PUT /api/restaurants/{id}/scheme`\n- `POST /api/restaurants/{id}/menu-items`\n- `PATCH /api/menu-items/{id}`\n- `POST /api/restaurants/{id}/scheme/publish`\n\n**Entidades × banco**\n- **MySQL**: RestaurantScheme, RestaurantProfile, MenuItem\n- **OpenSearch**: RestaurantDoc\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF26/` (atividades, sequência, componentes, máquina de estados Restaurante, classes)",
+  "telas": [
+   "Card do restaurante (capa, selo, faixa de preço, cozinhas)",
+   "Cardápio por seções com preços e disponibilidade",
+   "Pratos assinatura",
+   "Horários, delivery e reservas"
+  ],
+  "erros": [
+   "RESTAURANTE_NAO_APROVADO",
+   "VIOLA_DIRETRIZ",
+   "PRECO_INVALIDO"
+  ]
+ },
+ {
+  "n": 27,
+  "nome": "RF27-Acessar a aba \"Explorador\": globo 3D animado com comidas de cada região do mundo, mapas de calor e rankings",
+  "sprint": 4,
+  "desc": "**Explorador (/explore) — Globo** · Sprint 4\n\nGlobo 3D (React Three Fiber + three-globe/deck.gl GlobeView) com desenhos ilustrativos animados (Lottie/Rive) das comidas típicas de cada região. Camadas de mapa de calor (hexágonos H3): obesidade adulta por país (OMS/NCD-RisC, dado público agregado), restaurantes mais caros, mais populares, destaques de comidas típicas, sentimento culinário. Painel lateral com Top 20 restaurantes mais populares da região focada e Top 10 do mundo, calculados pelas métricas da rede social (RF24).\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `ExplorerController` → `ExplorerService`\n- `GET /api/explorer/layers`\n- `GET /api/explorer/layers/{code}?bbox=&zoom=`\n- `GET /api/explorer/dishes?region=`\n- `GET /api/rankings?scope=REGION&region=&limit=20`\n- `GET /api/rankings?scope=WORLD&limit=10`\n\n**Entidades × banco**\n- **MySQL**: GlobeLayer, RegionalDish, HealthIndicator\n- **S3**: GlobeTileSet, DishIllustration\n- **Redis**: GlobeLayerCache, HypeRanking\n- **OpenSearch**: RestaurantDoc\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF27/` (atividades, sequência, componentes, máquina de estados Globo, classes)",
+  "telas": [
+   "Globo 3D com rotação e zoom (região → país → cidade)",
+   "Ilustrações animadas das comidas típicas sobre cada região",
+   "Seletor de camadas de calor: Obesidade · Mais caros · Mais populares · Comidas típicas · Sentimento · Saudável",
+   "Painel 'Top 20 da região' (atualiza ao girar o globo)",
+   "Painel 'Top 10 do mundo'",
+   "Legenda e fonte dos dados",
+   "Sub-aba Restaurantes do Mundo (RF28)"
+  ],
+  "erros": [
+   "CAMADA_INEXISTENTE",
+   "BBOX_INVALIDO"
+  ]
+ },
+ {
+  "n": 28,
+  "nome": "RF28-Visualizar a sub-aba \"Restaurantes do Mundo\" do Explorador, com filtros na top bar (como a sub-aba Marcas), cobrindo restaurantes de todas as regiões do mundo",
+  "sprint": 4,
+  "desc": "**Explorador › Restaurantes do Mundo (/explore/restaurants)** · Sprint 4\n\nVisualizador em grade/mapa com top bar de filtros idêntica à da aba Marcas: continente, país, cidade, cozinha, faixa de preço, avaliação, DineHype, dieta (vegano, sem glúten, halal, kosher), aberto agora, delivery, reserva, distância. Paginação por search_after (infinite scroll) sobre o índice OpenSearch com milhões de restaurantes (cadastrados + base aberta importada: OpenStreetMap/Overture Places, com atribuição).\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `RestaurantExplorerController` → `RestaurantExplorerService`\n- `GET /api/explorer/restaurants?continent=&country=&city=&cuisine=&price=&diet=&openNow=&sort=&after=`\n- `GET /api/explorer/restaurants/facets`\n\n**Entidades × banco**\n- **OpenSearch**: RestaurantDoc\n- **MySQL**: RestaurantProfile, RestaurantScheme, DineHypeScore\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF28/` (atividades, sequência, componentes, máquina de estados Visualizador, classes)",
+  "telas": [
+   "Top bar de filtros (chips + dropdowns, contagem por facet)",
+   "Alternar Grade · Mapa · Lista",
+   "Card do restaurante (mesmo layout do esquema)",
+   "Ordenação: Popularidade, Avaliação, Preço, Distância, Novos"
+  ],
+  "erros": [
+   "FILTRO_INVALIDO",
+   "CURSOR_EXPIRADO"
+  ]
+ },
+ {
+  "n": 29,
+  "nome": "RF29-Realizar pedidos (delivery/retirada) e reservas de mesa nos restaurantes — varejo culinário",
+  "sprint": 4,
+  "desc": "**Pedir & Reservar (/restaurants/{slug}/order)** · Sprint 4\n\nCarrinho no Redis, checkout com pagamento (Pix/cartão via gateway com tokenização PCI), acompanhamento do pedido em tempo real (WebSocket/SSE) e reservas com escolha de horário. Cada pedido/reserva gera evento de engajamento (RF24).\n\n**Backend (Spring Boot 4.0 · Java 25 (virtual threads))**: `OrderController` → `OrderService`\n- `PUT /api/cart/items`\n- `POST /api/orders`\n- `GET /api/orders/{id}/stream (SSE)`\n- `POST /api/reservations`\n- `POST /api/payments/webhook`\n\n**Entidades × banco**\n- **Redis**: Cart\n- **MySQL**: Order, OrderItem, Reservation, MenuItem\n- **Cassandra**: OrderTracking\n\n**Diagramas UML**: `docs/dine-explorer/diagramas/RF29/` (atividades, sequência, componentes, máquina de estados Pedido, classes)",
+  "telas": [
+   "Cardápio do restaurante com 'Adicionar'",
+   "Carrinho",
+   "Checkout (endereço, pagamento Pix/cartão, cupom)",
+   "Acompanhar pedido (linha do tempo + mapa)",
+   "Reservar mesa"
+  ],
+  "erros": [
+   "RESTAURANTE_FECHADO",
+   "ITEM_INDISPONIVEL",
+   "PAGAMENTO_RECUSADO"
+  ]
+ }
+]

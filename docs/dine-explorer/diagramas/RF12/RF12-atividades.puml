@@ -1,0 +1,64 @@
+@startuml RF12_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  DiamondBackgroundColor #FFF4E5
+  DiamondBorderColor #C9822B
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF12 — Visualizar & Editar a página "Minhas Fotos" — fotos cadastradas através da adição de peças & criação de esq…\nDiagrama de atividades — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+|Pessoa usuária|
+start
+:Abre Minhas Fotos (/photos);
+|App (Next.js 15 / React Native)|
+:Carrega os dados da tela\nGET /api/photos;
+|Pessoa usuária|
+:Galeria (grid com blurhash);
+|App (Next.js 15 / React Native)|
+:Valida no cliente (Zod)\nPOST /api/photos/batch;
+|API (Spring Boot 4.0)|
+:PhotoController\n→ PhotoService.list()\n(Bean Validation + Spring Security 7);
+if (limite lote?) then (sim)
+  :4xx LIMITE_LOTE\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (foto em uso?) then (sim)
+  :4xx FOTO_EM_USO\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:S3: s3://dine-media/food/{ownerId}/{photoId}.webp;
+:MySQL: food_pieces;
+:MediaStoragePort;
+:Publica evento de domínio\n(Spring Modulith → Kafka)\n→ métricas RF24 / auditoria;
+|App (Next.js 15 / React Native)|
+:Atualiza a tela (TanStack Query)\ne mostra feedback;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Upload em lote com fila)
+    :Upload em lote com fila\n→ POST /api/photos/batch;
+  case (Detalhe da foto → peças vinculadas)
+    :Detalhe da foto → peças vinculadas\n→ DELETE /api/photos/{id};
+  endswitch
+endif
+stop
+@enduml

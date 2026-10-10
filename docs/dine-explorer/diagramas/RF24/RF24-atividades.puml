@@ -1,0 +1,69 @@
+@startuml RF24_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  DiamondBackgroundColor #FFF4E5
+  DiamondBorderColor #C9822B
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF24 — Calcular e exibir as métricas da rede social (DineHype Score, engajamento, sentimento culinário e rankings)\nDiagrama de atividades — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+|Pessoa usuária|
+start
+:Abre Métricas (/me/insights e painel do restaurante);
+|App (Next.js 15 / React Native)|
+:Carrega os dados da tela\nGET /api/metrics/{targetType}/{id}?period=\nGET /api/rankings?scope=WORLD|REGION&region=\nGET /api/me/insights;
+|Pessoa usuária|
+:Insights do meu perfil (gráficos\n7/30/90 dias);
+|App (Next.js 15 / React Native)|
+:Valida no cliente (Zod)\nGET /api/metrics/{targetType}/{id}?period=;
+|API (Spring Boot 4.0)|
+:MetricsController\n→ MetricsService.ingest()\n(Bean Validation + Spring Security 7);
+if (periodo invalido?) then (sim)
+  :4xx PERIODO_INVALIDO\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (metrica privada?) then (sim)
+  :4xx METRICA_PRIVADA\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Cassandra: engagement_events_by_target_day,\nreaction_counters_by_target;
+:MySQL: metric_snapshots, dine_hype_scores;
+:Redis: rank:{scope}:{region}:{period};
+:EventStreamPort;
+:CounterPort;
+:RankingPort;
+:Publica evento de domínio\n(Spring Modulith → Kafka)\n→ métricas RF24 / auditoria;
+|App (Next.js 15 / React Native)|
+:Atualiza a tela (TanStack Query)\ne mostra feedback;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Painel do restaurante (alcance, se…)
+    :Painel do restaurante (alcance,\nsentimento, conversão em pedidos)\n→ GET /api/rankings?scope=WORLD|REGION&region=;
+  case (Distribuição das reações culinária…)
+    :Distribuição das reações culinárias\n→ GET /api/me/insights;
+  case (Posição nos rankings (região/país/…)
+    :Posição nos rankings (região/país/mundo)\n→ GET /api/metrics/{targetType}/{id}?period=;
+  endswitch
+endif
+stop
+@enduml

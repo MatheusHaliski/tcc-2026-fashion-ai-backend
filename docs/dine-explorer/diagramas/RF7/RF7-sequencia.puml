@@ -1,0 +1,78 @@
+@startuml RF7_Sequencia
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+
+title RF7 — Acessar um item de peça de alimento disponível na lista de um esquema de alimentação salvo\nDiagrama de sequência — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+actor "Pessoa usuária" as U
+boundary "App (Next.js / RN)" as P
+participant "API Gateway\n(Spring Cloud Gateway)" as GW
+control "FoodPieceController" as C
+participant "FoodPieceService" as S
+participant "SearchIndexPort\n(OpenSearch geo)" as P0
+participant "CachePort\n(Redis)" as P1
+database "MySQL 8.4\n(Spring Data JPA + Flyway)" as DB_MySQL
+database "OpenSearch 2\n(opensearch-java)" as DB_OpenSearch
+queue "Kafka" as K
+== Ficha da peça (foto, macros, alérgenos, origem) ==
+U -> P : interage na tela
+P -> GW : GET /api/pieces/{id}\nAuthorization: Bearer JWT
+GW -> GW : valida JWT (ES256) + rate limit (Redis)
+GW -> C : GET /api/pieces/{id}
+C -> S : detail()
+activate S
+S -> DB_MySQL : SELECT food_pieces, meal_scheme_items, menu_items
+alt peca inexistente
+S --> C : PECA_INEXISTENTE
+C --> P : 4xx ProblemDetail {code: PECA_INEXISTENTE}
+P --> U : mostra aviso
+end
+alt peca privada
+S --> C : PECA_PRIVADA
+C --> P : 4xx ProblemDetail {code: PECA_PRIVADA}
+P --> U : mostra aviso
+end
+S -> P0 : detail()
+P0 --> S : ok
+S -> P1 : usedIn()
+P1 --> S : ok
+S -> DB_MySQL : INSERT/UPDATE (@Transactional)
+S -> DB_OpenSearch : index/search idx_restaurants
+S ->> K : evento de domínio (outbox)
+deactivate S
+S --> C : DTO (record)
+C --> P : 200/201 JSON
+P --> U : atualiza a tela
+== Esquemas que usam a peça ==
+U -> P : Esquemas que usam a peça
+P -> C : GET /api/pieces/{id}/schemes
+C -> S : usedIn()
+S --> C : resultado
+C --> P : 200 JSON
+== Restaurantes que servem (link varejo) ==
+U -> P : Restaurantes que servem (link varejo)
+P -> C : GET /api/pieces/{id}/where-to-eat
+C -> S : usedIn()
+S --> C : resultado
+C --> P : 200 JSON
+@enduml

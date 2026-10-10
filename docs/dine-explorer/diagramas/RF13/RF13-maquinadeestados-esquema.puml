@@ -1,0 +1,26 @@
+@startuml RF13_MaquinaDeEstados_Esquema
+!pragma layout smetana
+title RF13 — Criar um esquema de identidade pessoal de alimentação na página "DNA de Alimentação"\nDiagrama de máquina de estados — Esquema — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Novo" as NOV
+state "Quiz em andamento" as QUI
+state "DNA definido" as DEF
+state "Desatualizado" as DES
+
+[*] --> NOV
+NOV --> QUI : iniciar
+QUI --> DEF : concluir
+DEF --> DES : 90 dias
+DES --> QUI : refazer
+@enduml

@@ -1,0 +1,198 @@
+@startuml RF1_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF1 — Cadastrar usuário na plataforma com dados de acesso (perfil Pessoal, Restaurante, Chef ou Marca de alimentos)\nDiagrama de classes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "MySQL" {
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: LocalDate
+    +passwordHash: String (Argon2id)
+    +profileType: ProfileType
+    +accountStatus: AccountStatus
+    +countryCode: String
+    +city: String
+    +avatarUrl: String
+    +bio: String
+    +createdAt: Instant
+    +lastLoginAt: Instant
+    +deletedAt: Instant
+  }
+  class UserPreferences <<user_preferences>> {
+    +id: UUID
+    +user: User
+    +theme: ThemeMode (LIGHT/DARK/AUTO)
+    +language: UiLanguage
+    +fontScale: int
+    +highContrast: boolean
+    +reduceMotion: boolean
+    +accentColor: String
+    +cardDensity: UiDensity
+    +unitSystem: UnitSystem (METRIC/IMPERIAL)
+    +currency: String
+    +dietaryRestrictions: Set<Diet>
+    +allergens: Set<Allergen>
+    +clientUpdatedAt: Instant
+  }
+  class RestaurantProfile <<restaurant_profiles>> {
+    +id: UUID
+    +owner: User
+    +tradeName: String
+    +slug: String
+    +cnpj: String
+    +razaoSocial: String
+    +cuisineTypes: Set<Cuisine>
+    +priceLevel: int (1-4)
+    +latitude: double
+    +longitude: double
+    +address: Address
+    +countryCode: String
+    +regionCode: String
+    +openingHours: JSON
+    +approvalStatus: ApprovalStatus
+    +logoUrl: String
+    +coverUrl: String
+    +deliveryEnabled: boolean
+    +reservationEnabled: boolean
+  }
+  class ChefProfile <<chef_profiles>> {
+    +id: UUID
+    +owner: User
+    +stageName: String
+    +slug: String
+    +specialties: Set<Cuisine>
+    +michelinStars: int
+    +verifiedFollowers: JSON
+    +approvalStatus: ApprovalStatus
+  }
+  class FoodBrandProfile <<food_brand_profiles>> {
+    +id: UUID
+    +owner: User
+    +brandName: String
+    +slug: String
+    +cnpj: String
+    +category: BrandCategory
+    +countryCode: String
+    +logoUrl: String
+    +approvalStatus: ApprovalStatus
+  }
+  class UserConsent <<user_consents>> {
+    +id: UUID
+    +user: User
+    +purpose: ConsentPurpose
+    +granted: boolean
+    +legalBasis: LegalBasis
+    +policyVersion: String
+    +grantedAt: Instant
+    +revokedAt: Instant
+    +ip: String
+  }
+  class VerificationCode <<verification_codes>> {
+    +id: UUID
+    +user: User
+    +purpose: VerificationPurpose
+    +codeHash: String
+    +target: String
+    +expiresAt: Instant
+    +consumedAt: Instant
+    +attempts: int
+    +sendCount: int
+  }
+}
+package "Cassandra" {
+  class AuditEvent <<audit_events>> {
+    +userId: UUID (partition)
+    +day: LocalDate (partition)
+    +ts: TimeUUID (clustering)
+    +action: String
+    +ip: String
+    +userAgent: String
+    +payload: Map<String,String>
+  }
+}
+package "dominio (enums)" {
+  enum ProfileType {
+    PESSOAL
+    RESTAURANTE
+    CHEF
+    MARCA_ALIMENTOS
+    ADMIN
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+}
+package "aplicacao (casos de uso)" {
+  class IdentityService <<@Service>> {
+    +register()
+    +suggestUsername()
+    +verifyEmail()
+    +resendVerification()
+    +registerPasskey()
+  }
+  class AuthController <<@RestController>> {
+    +POST /api/auth/register
+    +GET /api/auth/username-suggestions
+    +POST /api/auth/verify-email
+    +POST /api/auth/verify-email/resend
+    +POST /api/auth/passkeys/register
+  }
+  interface PasswordHasherPort <<port>>
+  IdentityService ..> PasswordHasherPort
+  interface EmailSenderPort <<port>>
+  IdentityService ..> EmailSenderPort
+  interface CnpjLookupPort <<port>>
+  IdentityService ..> CnpjLookupPort
+  interface GeocodingPort <<port>>
+  IdentityService ..> GeocodingPort
+  interface RateLimitPort <<port>>
+  IdentityService ..> RateLimitPort
+}
+AuthController --> IdentityService
+IdentityService ..> User : usa
+IdentityService ..> UserPreferences : usa
+IdentityService ..> RestaurantProfile : usa
+IdentityService ..> ChefProfile : usa
+IdentityService ..> FoodBrandProfile : usa
+IdentityService ..> UserConsent : usa
+IdentityService ..> VerificationCode : usa
+IdentityService ..> AuditEvent : usa
+User --> ProfileType
+User --> AccountStatus
+UserPreferences "*" --> "1" User : user
+RestaurantProfile "*" --> "1" User : owner
+ChefProfile "*" --> "1" User : owner
+FoodBrandProfile "*" --> "1" User : owner
+UserConsent "*" --> "1" User : user
+VerificationCode "*" --> "1" User : user
+@enduml

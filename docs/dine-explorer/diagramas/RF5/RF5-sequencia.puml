@@ -1,0 +1,86 @@
+@startuml RF5_Sequencia
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+
+title RF5 — Criar um esquema de alimentação & sua respectiva lista de peças de alimento, através da aba "Criar Prato"\nDiagrama de sequência — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+actor "Pessoa usuária" as U
+boundary "App (Next.js / RN)" as P
+participant "API Gateway\n(Spring Cloud Gateway)" as GW
+control "MealSchemeController" as C
+participant "MealSchemeService" as S
+participant "GuidelinePort (RF25)" as P0
+participant "SearchIndexPort\n(OpenSearch)" as P1
+participant "FeedFanoutPort\n(Kafka → Cassandra)" as P2
+participant "LlmPort\n(Spring AI)" as P3
+database "MySQL 8.4\n(Spring Data JPA + Flyway)" as DB_MySQL
+database "OpenSearch 2\n(opensearch-java)" as DB_OpenSearch
+database "Cassandra 5\n(Spring Data Cassandra)" as DB_Cassandra
+queue "Kafka" as K
+== Seleção de peças do inventário (filtros por categoria/cozinha) ==
+U -> P : interage na tela
+P -> GW : POST /api/schemes\nAuthorization: Bearer JWT
+GW -> GW : valida JWT (ES256) + rate limit (Redis)
+GW -> C : POST /api/schemes
+C -> S : createDraft()
+activate S
+S -> DB_MySQL : SELECT meal_schemes, meal_scheme_items, food_pieces
+alt esquema vazio
+S --> C : ESQUEMA_VAZIO
+C --> P : 4xx ProblemDetail {code: ESQUEMA_VAZIO}
+P --> U : mostra aviso
+end
+alt peca nao e sua
+S --> C : PECA_NAO_E_SUA
+C --> P : 4xx ProblemDetail {code: PECA_NAO_E_SUA}
+P --> U : mostra aviso
+end
+S -> P0 : createDraft()
+P0 --> S : ok
+S -> P1 : setItems()
+P1 --> S : ok
+S -> P2 : computeNutrition()
+P2 --> S : ok
+S -> P3 : publish()
+P3 --> S : ok
+S -> DB_MySQL : INSERT/UPDATE (@Transactional)
+S -> DB_Cassandra : INSERT home_feed_by_user
+S -> DB_OpenSearch : index/search idx_meal_schemes
+S ->> K : evento de domínio (outbox)
+deactivate S
+S --> C : DTO (record)
+C --> P : 200/201 JSON
+P --> U : atualiza a tela
+== Composição: porções, camadas e ordem ==
+U -> P : Composição: porções, camadas e ordem
+P -> C : PUT /api/schemes/{id}/items
+C -> S : setItems()
+S --> C : resultado
+C --> P : 200 JSON
+== Resumo nutricional + Health Score ==
+U -> P : Resumo nutricional + Health Score
+P -> C : POST /api/schemes/{id}/publish
+C -> S : setItems()
+S --> C : resultado
+C --> P : 200 JSON
+@enduml

@@ -1,0 +1,67 @@
+@startuml RF21_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  DiamondBackgroundColor #FFF4E5
+  DiamondBorderColor #C9822B
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF21 — Acessar a aba BioDine™ — serviço de sistema ciber-físico dentro do Dine Explorer\nDiagrama de atividades — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+|Pessoa usuária|
+start
+:Abre BioDine™ (/biodine);
+|App (Next.js 15 / React Native)|
+:Carrega os dados da tela\nGET /api/biodine/dashboard\nGET /api/biodine/diary;
+|Pessoa usuária|
+:Parear dispositivo (QR/BLE);
+|App (Next.js 15 / React Native)|
+:Valida no cliente (Zod)\nPOST /api/biodine/devices;
+|API (Spring Boot 4.0)|
+:BioDineController\n→ BioDineService.pair()\n(Bean Validation + Spring Security 7);
+if (sem consentimento saude?) then (sim)
+  :4xx SEM_CONSENTIMENTO_SAUDE\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (dispositivo ja pareado?) then (sim)
+  :4xx DISPOSITIVO_JA_PAREADO\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:MySQL: biodine_devices, nutrition_diary,\nuser_consents;
+:Cassandra: biodine_readings_by_device_day;
+:IotPort;
+:ConsentPort (DADOS_SAUDE_NUTRICAO);
+:Publica evento de domínio\n(Spring Modulith → Kafka)\n→ métricas RF24 / auditoria;
+|App (Next.js 15 / React Native)|
+:Atualiza a tela (TanStack Query)\ne mostra feedback;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Painel diário (kcal, macros, água))
+    :Painel diário (kcal, macros, água)\n→ GET /api/biodine/dashboard;
+  case (Histórico e metas)
+    :Histórico e metas\n→ GET /api/biodine/diary;
+  case (Consentimento DADOS_SAUDE_NUTRICAO)
+    :Consentimento DADOS_SAUDE_NUTRICAO\n→ POST /api/biodine/devices;
+  endswitch
+endif
+stop
+@enduml

@@ -1,0 +1,70 @@
+@startuml RF16_Sequencia
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+
+title RF16 — Implementar geração de imagem 3D das peças de alimento do inventário utilizando serviços de API externas\nDiagrama de sequência — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+actor "Pessoa usuária" as U
+boundary "App (Next.js / RN)" as P
+participant "API Gateway\n(Spring Cloud Gateway)" as GW
+control "Food3DController" as C
+participant "Food3DService" as S
+participant "Model3DProviderPort\n(API externa image-to-3D)" as P0
+participant "MediaStoragePort\n(S3)" as P1
+participant "JobQueuePort\n(Kafka)" as P2
+database "MySQL 8.4\n(Spring Data JPA + Flyway)" as DB_MySQL
+database "Amazon S3\n(AWS SDK v2)" as DB_S3
+queue "Kafka" as K
+== Botão 'Gerar 3D' ==
+U -> P : interage na tela
+P -> GW : POST /api/pieces/{id}/3d\nAuthorization: Bearer JWT
+GW -> GW : valida JWT (ES256) + rate limit (Redis)
+GW -> C : POST /api/pieces/{id}/3d
+C -> S : request()
+activate S
+S -> DB_MySQL : SELECT food_3d_jobs, food_pieces
+alt job em andamento
+S --> C : JOB_EM_ANDAMENTO
+C --> P : 4xx ProblemDetail {code: JOB_EM_ANDAMENTO}
+P --> U : mostra aviso
+end
+S -> P0 : request()
+P0 --> S : ok
+S -> P1 : status()
+P1 --> S : ok
+S -> P2 : onProviderCallback()
+P2 --> S : ok
+S -> DB_MySQL : INSERT/UPDATE (@Transactional)
+S -> DB_S3 : PUT/GET presigned s3://dine-media/3d/{pieceId}.glb
+S ->> K : evento de domínio (outbox)
+deactivate S
+S --> C : DTO (record)
+C --> P : 200/201 JSON
+P --> U : atualiza a tela
+== Progresso do job ==
+U -> P : Progresso do job
+P -> C : GET /api/3d-jobs/{id}
+C -> S : status()
+S --> C : resultado
+C --> P : 200 JSON
+@enduml

@@ -1,0 +1,68 @@
+@startuml RF28_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  DiamondBackgroundColor #FFF4E5
+  DiamondBorderColor #C9822B
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF28 — Visualizar a sub-aba "Restaurantes do Mundo" do Explorador, com filtros na top bar (como a sub-aba Marcas),…\nDiagrama de atividades — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+|Pessoa usuária|
+start
+:Abre Explorador › Restaurantes do Mundo (/explore/restaurants);
+|App (Next.js 15 / React Native)|
+:Carrega os dados da tela\nGET /api/explorer/restaurants?continent=&country=&city=&cuisine=&price=&diet=&openNow=&sort=&after=\nGET /api/explorer/restaurants/facets;
+|Pessoa usuária|
+:Top bar de filtros (chips + dropdowns,\ncontagem por facet);
+|App (Next.js 15 / React Native)|
+:Valida no cliente (Zod)\nGET /api/explorer/restaurants?continent=&country=&city=&cuisine=&price=&diet=&openNow=&sort=&after=;
+|API (Spring Boot 4.0)|
+:RestaurantExplorerController\n→ RestaurantExplorerService.search()\n(Bean Validation + Spring Security 7);
+if (filtro invalido?) then (sim)
+  :4xx FILTRO_INVALIDO\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (cursor expirado?) then (sim)
+  :4xx CURSOR_EXPIRADO\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:OpenSearch: idx_restaurants;
+:MySQL: restaurant_profiles, restaurant_schemes,\ndine_hype_scores;
+:SearchIndexPort;
+:CachePort;
+:PlacesImportPort;
+:Publica evento de domínio\n(Spring Modulith → Kafka)\n→ métricas RF24 / auditoria;
+|App (Next.js 15 / React Native)|
+:Atualiza a tela (TanStack Query)\ne mostra feedback;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Alternar Grade · Mapa · Lista)
+    :Alternar Grade · Mapa · Lista\n→ GET /api/explorer/restaurants/facets;
+  case (Card do restaurante (mesmo layout …)
+    :Card do restaurante (mesmo layout do\nesquema)\n→ GET /api/explorer/restaurants?continent=&country=&city=&cuisine=&price=&diet=&openNow=&sort=&after=;
+  case (Ordenação: Popularidade, Avaliação…)
+    :Ordenação: Popularidade, Avaliação,\nPreço, Distância, Novos\n→ GET /api/explorer/restaurants/facets;
+  endswitch
+endif
+stop
+@enduml

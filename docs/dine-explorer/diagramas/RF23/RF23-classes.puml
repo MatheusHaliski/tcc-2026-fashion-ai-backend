@@ -1,0 +1,156 @@
+@startuml RF23_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF23 — Criar as telas de configuração do usuário (Conta, Privacidade/LGPD, Aparência, Idioma, Seus dados) no padrã…\nDiagrama de classes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "MySQL" {
+  class UserPreferences <<user_preferences>> {
+    +id: UUID
+    +user: User
+    +theme: ThemeMode (LIGHT/DARK/AUTO)
+    +language: UiLanguage
+    +fontScale: int
+    +highContrast: boolean
+    +reduceMotion: boolean
+    +accentColor: String
+    +cardDensity: UiDensity
+    +unitSystem: UnitSystem (METRIC/IMPERIAL)
+    +currency: String
+    +dietaryRestrictions: Set<Diet>
+    +allergens: Set<Allergen>
+    +clientUpdatedAt: Instant
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: LocalDate
+    +passwordHash: String (Argon2id)
+    +profileType: ProfileType
+    +accountStatus: AccountStatus
+    +countryCode: String
+    +city: String
+    +avatarUrl: String
+    +bio: String
+    +createdAt: Instant
+    +lastLoginAt: Instant
+    +deletedAt: Instant
+  }
+  class UserConsent <<user_consents>> {
+    +id: UUID
+    +user: User
+    +purpose: ConsentPurpose
+    +granted: boolean
+    +legalBasis: LegalBasis
+    +policyVersion: String
+    +grantedAt: Instant
+    +revokedAt: Instant
+    +ip: String
+  }
+  class DataExportRequest <<data_export_requests>> {
+    +id: UUID
+    +user: User
+    +status: ExportStatus
+    +requestedAt: Instant
+    +readyAt: Instant
+    +expiresAt: Instant
+    +s3Key: String
+    +sha256: String
+  }
+}
+package "S3" {
+  class DataExportArchive <<s3://dine-lgpd-exports/{userId}/{id}.zip>> {
+    +key: String
+    +sizeBytes: long
+    +sseKms: true
+    +presignedUrlTtl: 24h
+    +lifecycle: 7 dias
+  }
+}
+package "Cassandra" {
+  class AuditEvent <<audit_events>> {
+    +userId: UUID (partition)
+    +day: LocalDate (partition)
+    +ts: TimeUUID (clustering)
+    +action: String
+    +ip: String
+    +userAgent: String
+    +payload: Map<String,String>
+  }
+}
+package "dominio (enums)" {
+  enum ThemeMode {
+    LIGHT
+    DARK
+    AUTO
+  }
+  enum UiLanguage {
+    PT_BR
+    EN
+    ES
+  }
+  enum UnitSystem {
+    METRIC
+    IMPERIAL
+  }
+}
+package "aplicacao (casos de uso)" {
+  class PreferencesService <<@Service>> {
+    +get()
+    +update()
+    +updatePrivacy()
+    +listConsents()
+    +listExports()
+  }
+  class PreferencesController <<@RestController>> {
+    +GET /api/me/preferences
+    +PUT /api/me/preferences
+    +GET /api/me/consents
+    +PUT /api/me/privacy
+    +GET /api/me/exports
+    +POST /api/me/exports
+  }
+  interface CachePort <<port>>
+  PreferencesService ..> CachePort
+  interface MediaStoragePort <<port>>
+  PreferencesService ..> MediaStoragePort
+  interface I18nPort <<port>>
+  PreferencesService ..> I18nPort
+}
+PreferencesController --> PreferencesService
+PreferencesService ..> UserPreferences : usa
+PreferencesService ..> User : usa
+PreferencesService ..> UserConsent : usa
+PreferencesService ..> DataExportRequest : usa
+PreferencesService ..> DataExportArchive : usa
+PreferencesService ..> AuditEvent : usa
+UserPreferences "*" --> "1" User : user
+UserPreferences --> ThemeMode
+UserPreferences --> UiLanguage
+UserPreferences --> UnitSystem
+UserConsent "*" --> "1" User : user
+DataExportRequest "*" --> "1" User : user
+@enduml

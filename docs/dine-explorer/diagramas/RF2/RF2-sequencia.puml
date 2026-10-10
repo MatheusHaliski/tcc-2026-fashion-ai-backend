@@ -1,0 +1,87 @@
+@startuml RF2_Sequencia
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+
+title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de sequência — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+actor "Pessoa usuária" as U
+boundary "App (Next.js / RN)" as P
+participant "API Gateway\n(Spring Cloud Gateway)" as GW
+control "AuthController" as C
+participant "IdentityService" as S
+participant "PasswordHasherPort\n(Argon2PasswordHasher)" as P0
+participant "TokenIssuerPort\n(JwtTokenIssuer (ES256))" as P1
+participant "RateLimitPort\n(RedisRateLimit)" as P2
+participant "OidcPort\n(Spring Security OAuth2 Client)" as P3
+database "MySQL 8.4\n(Spring Data JPA + Flyway)" as DB_MySQL
+database "Redis 7\n(Spring Data Redis)" as DB_Redis
+database "Cassandra 5\n(Spring Data Cassandra)" as DB_Cassandra
+queue "Kafka" as K
+== Login (e-mail/username, senha, mostrar senha, lembrar dispositivo) ==
+U -> P : interage na tela
+P -> GW : POST /api/auth/login\nAuthorization: Bearer JWT
+GW -> GW : valida JWT (ES256) + rate limit (Redis)
+GW -> C : POST /api/auth/login
+C -> S : login()
+activate S
+S -> DB_Redis : GET cache / lock
+S -> DB_MySQL : SELECT users, refresh_tokens, verification_codes
+alt nao autenticado
+S --> C : NAO_AUTENTICADO
+C --> P : 4xx ProblemDetail {code: NAO_AUTENTICADO}
+P --> U : mostra aviso
+end
+alt conta indisponivel
+S --> C : CONTA_INDISPONIVEL
+C --> P : 4xx ProblemDetail {code: CONTA_INDISPONIVEL}
+P --> U : mostra aviso
+end
+S -> P0 : login()
+P0 --> S : ok
+S -> P1 : verifySecondFactor()
+P1 --> S : ok
+S -> P2 : refresh()
+P2 --> S : ok
+S -> P3 : assertPasskey()
+P3 --> S : ok
+S -> DB_MySQL : INSERT/UPDATE (@Transactional)
+S -> DB_Cassandra : INSERT audit_events
+S -> DB_Redis : SET/ZADD (invalida cache)
+S ->> K : evento de domínio (outbox)
+deactivate S
+S --> C : DTO (record)
+C --> P : 200/201 JSON
+P --> U : atualiza a tela
+== Botões 'Entrar com passkey', 'Google', 'Apple' ==
+U -> P : Botões 'Entrar com passkey', 'Google', 'Apple'
+P -> C : POST /api/auth/login/2fa
+C -> S : verifySecondFactor()
+S --> C : resultado
+C --> P : 200 JSON
+== Desafio 2FA (TOTP 6 dígitos ou código de recuperação) ==
+U -> P : Desafio 2FA (TOTP 6 dígitos ou código de recuperaç
+P -> C : POST /api/auth/refresh
+C -> S : verifySecondFactor()
+S --> C : resultado
+C --> P : 200 JSON
+@enduml

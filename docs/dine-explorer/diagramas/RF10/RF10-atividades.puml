@@ -1,0 +1,68 @@
+@startuml RF10_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  DiamondBackgroundColor #FFF4E5
+  DiamondBorderColor #C9822B
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF10 — Gerar recomendações de esquemas de alimentação & de peças de alimento através da aba "Copilot"\nDiagrama de atividades — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+|Pessoa usuária|
+start
+:Abre Copilot (/copilot);
+|App (Next.js 15 / React Native)|
+|Pessoa usuária|
+:Chat Copilot;
+|App (Next.js 15 / React Native)|
+:Valida no cliente (Zod)\nPOST /api/copilot/recommendations (SSE);
+|API (Spring Boot 4.0)|
+:CopilotController\n→ CopilotService.recommend()\n(Bean Validation + Spring Security 7);
+if (sem consentimento ia?) then (sim)
+  :4xx SEM_CONSENTIMENTO_IA\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (cota excedida?) then (sim)
+  :4xx COTA_EXCEDIDA\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:MySQL: recommendations, taste_dna, meal_schemes;
+:Redis: reco:{userId}:{hash};
+:Cassandra: ai_inference_log;
+:LlmPort;
+:VectorStorePort;
+:CachePort;
+:Publica evento de domínio\n(Spring Modulith → Kafka)\n→ métricas RF24 / auditoria;
+|App (Next.js 15 / React Native)|
+:Atualiza a tela (TanStack Query)\ne mostra feedback;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Restrições (kcal, dieta, orçamento…)
+    :Restrições (kcal, dieta, orçamento,\ntempo)\n→ POST /api/copilot/week-plan;
+  case (Plano semanal gerado (arrastar e s…)
+    :Plano semanal gerado (arrastar e soltar)\n→ POST /api/copilot/{id}/save;
+  case (Salvar como esquemas)
+    :Salvar como esquemas\n→ POST /api/copilot/recommendations (SSE);
+  endswitch
+endif
+stop
+@enduml

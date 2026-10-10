@@ -1,0 +1,78 @@
+@startuml RF28_Componentes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF28 — Visualizar a sub-aba "Restaurantes do Mundo" do Explorador, com filtros na top bar (como a sub-aba Marcas),…\nDiagrama de componentes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "Frontend (Next.js 15 · React 19 · TanStack Query)" {
+  component "Explorador › Restaurantes do Mundo (/explore/restaurants)" as FE
+  component "GlobeView\n(React Three Fiber + three-globe\n+ deck.gl H3HexagonLayer + Lottie/Rive)" as FE3D
+  component "lib/api (OpenAPI client gerado)" as APIC
+}
+package "Borda" {
+  component "CloudFront + WAF" as CDN
+  component "Spring Cloud Gateway\n(JWT, rate limit, CORS)" as GW
+}
+package "dine-web (REST · Spring Boot 4.0)" {
+  component "RestaurantExplorerController\nGET /api/explorer/restaurants?continent=&country=&city=&cuisine=&price=&diet=&openNow=&sort=&after=\nGET /api/explorer/restaurants/facets" as CT
+}
+package "dine-application (Spring Modulith · casos de uso)" {
+  component "RestaurantExplorerService" as SV
+  component "SearchIndexPort\n«OpenSearch (geo_distance, aggs, search_after)»" as PT0 <<port>>
+  component "CachePort\n«Redis facets»" as PT1 <<port>>
+  component "PlacesImportPort\n«Overture/OSM batch»" as PT2 <<port>>
+}
+package "dine-domain (entidades + repositórios)" {
+  component "RestaurantDocRepository" as REPO_OpenSearch
+  component "RestaurantProfileRepository\nRestaurantSchemeRepository\nDineHypeScoreRepository" as REPO_MySQL
+}
+database "OpenSearch 2\n(opensearch-java)\n• idx_restaurants" as DB_OpenSearch
+database "MySQL 8.4\n(Spring Data JPA + Flyway)\n• restaurant_profiles\n• restaurant_schemes\n• dine_hype_scores" as DB_MySQL
+cloud "Overture Maps / OpenStreetMap" as EX0
+cloud "OpenSearch" as EX1
+component "Observabilidade\n(Micrometer + OpenTelemetry\n→ Grafana/Tempo/Loki)" as OBS
+FE --> APIC
+FE --> FE3D
+FE3D --> CDN : tiles H3 / Lottie
+APIC --> CDN : HTTPS/JSON
+CDN --> GW
+GW --> CT
+CT --> SV
+SV ..> OBS
+SV --> PT0
+SV --> PT1
+SV --> PT2
+SV --> REPO_OpenSearch
+REPO_OpenSearch --> DB_OpenSearch
+SV --> REPO_MySQL
+REPO_MySQL --> DB_MySQL
+PT2 --> EX0
+PT0 --> EX1
+@enduml

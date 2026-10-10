@@ -1,0 +1,73 @@
+@startuml RF11_Sequencia
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+
+title RF11 — Utilizar o "Background Studio" para confeccionar a arte de estilo e personalização de esquemas & peças de a…\nDiagrama de sequência — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+actor "Pessoa usuária" as U
+boundary "App (Next.js / RN)" as P
+participant "API Gateway\n(Spring Cloud Gateway)" as GW
+control "BackgroundStudioController" as C
+participant "BackgroundStudioService" as S
+participant "MediaStoragePort\n(S3)" as P0
+participant "RenderPort\n(Sharp/ImageMagick worker)" as P1
+database "MySQL 8.4\n(Spring Data JPA + Flyway)" as DB_MySQL
+database "Amazon S3\n(AWS SDK v2)" as DB_S3
+queue "Kafka" as K
+== Paletas e texturas ==
+U -> P : interage na tela
+P -> GW : POST /api/studio/arts\nAuthorization: Bearer JWT
+GW -> GW : valida JWT (ES256) + rate limit (Redis)
+GW -> C : POST /api/studio/arts
+C -> S : presets()
+activate S
+S -> DB_MySQL : SELECT background_arts, meal_schemes
+alt preset invalido
+S --> C : PRESET_INVALIDO
+C --> P : 4xx ProblemDetail {code: PRESET_INVALIDO}
+P --> U : mostra aviso
+end
+S -> P0 : presets()
+P0 --> S : ok
+S -> P1 : render()
+P1 --> S : ok
+S -> DB_MySQL : INSERT/UPDATE (@Transactional)
+S -> DB_S3 : PUT/GET presigned s3://dine-media/art/{artId}.webp
+S ->> K : evento de domínio (outbox)
+deactivate S
+S --> C : DTO (record)
+C --> P : 200/201 JSON
+P --> U : atualiza a tela
+== Padrões (xadrez, azulejo, mármore...) ==
+U -> P : Padrões (xadrez, azulejo, mármore...)
+P -> C : POST /api/studio/arts
+C -> S : render()
+S --> C : resultado
+C --> P : 200 JSON
+== Animação (vapor, faíscas, confete de especiarias) ==
+U -> P : Animação (vapor, faíscas, confete de especiarias)
+P -> C : PUT /api/schemes/{id}/background
+C -> S : render()
+S --> C : resultado
+C --> P : 200 JSON
+@enduml

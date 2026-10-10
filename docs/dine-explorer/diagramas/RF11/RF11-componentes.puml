@@ -1,0 +1,69 @@
+@startuml RF11_Componentes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF11 — Utilizar o "Background Studio" para confeccionar a arte de estilo e personalização de esquemas & peças de a…\nDiagrama de componentes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "Frontend (Next.js 15 · React 19 · TanStack Query)" {
+  component "Background Studio (modal)" as FE
+  component "lib/api (OpenAPI client gerado)" as APIC
+}
+package "Borda" {
+  component "CloudFront + WAF" as CDN
+  component "Spring Cloud Gateway\n(JWT, rate limit, CORS)" as GW
+}
+package "dine-web (REST · Spring Boot 4.0)" {
+  component "BackgroundStudioController\nGET /api/studio/presets\nPOST /api/studio/arts\nPUT /api/schemes/{id}/background" as CT
+}
+package "dine-application (Spring Modulith · casos de uso)" {
+  component "BackgroundStudioService" as SV
+  component "MediaStoragePort\n«S3»" as PT0 <<port>>
+  component "RenderPort\n«Sharp/ImageMagick worker»" as PT1 <<port>>
+}
+package "dine-domain (entidades + repositórios)" {
+  component "BackgroundArtRepository\nMealSchemeRepository" as REPO_MySQL
+}
+database "MySQL 8.4\n(Spring Data JPA + Flyway)\n• background_arts\n• meal_schemes" as DB_MySQL
+database "Amazon S3\n(AWS SDK v2)\n• s3://dine-media/art/{artId}.webp" as DB_S3
+cloud "AWS S3" as EX0
+component "Observabilidade\n(Micrometer + OpenTelemetry\n→ Grafana/Tempo/Loki)" as OBS
+FE --> APIC
+APIC --> CDN : HTTPS/JSON
+CDN --> GW
+GW --> CT
+CT --> SV
+SV ..> OBS
+SV --> PT0
+SV --> PT1
+SV --> REPO_MySQL
+REPO_MySQL --> DB_MySQL
+PT0 --> DB_S3
+SV --> EX0
+@enduml

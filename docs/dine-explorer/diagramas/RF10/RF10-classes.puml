@@ -1,0 +1,122 @@
+@startuml RF10_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF10 — Gerar recomendações de esquemas de alimentação & de peças de alimento através da aba "Copilot"\nDiagrama de classes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "MySQL" {
+  class Recommendation <<recommendations>> {
+    +id: UUID
+    +user: User
+    +prompt: String
+    +constraints: JSON (kcal, diet, budget)
+    +status: RecoStatus
+    +result: JSON
+    +model: String
+    +createdAt: Instant
+  }
+  class TasteDna <<taste_dna>> {
+    +id: UUID
+    +user: User
+    +flavorProfile: Map<Flavor,int> (doce, salgado, ácido, amargo, umami, picante)
+    +favoriteCuisines: List<Cuisine>
+    +diet: Diet
+    +spiceTolerance: int
+    +adventurousness: int
+    +embedding: vector
+    +updatedAt: Instant
+  }
+  class MealScheme <<meal_schemes>> {
+    +id: UUID
+    +owner: User
+    +title: String
+    +mealType: MealType
+    +occasion: Occasion
+    +cuisine: Cuisine
+    +servings: int
+    +prepMinutes: int
+    +difficulty: Difficulty
+    +totalKcal: int
+    +healthScore: int (0-100)
+    +status: SchemeStatus
+    +visibility: Visibility
+    +backgroundArtId: UUID
+    +restaurant: RestaurantProfile (opcional)
+    +publishedAt: Instant
+  }
+}
+package "Redis" {
+  class RecoCache <<reco:{userId}:{hash}>> {
+    +key
+    +value: JSON
+    +ttl: 6h
+  }
+}
+package "Cassandra" {
+  class AiInferenceLog <<ai_inference_log>> {
+    +day: date (partition)
+    +ts: TimeUUID
+    +userId: UUID
+    +feature: text
+    +model: text
+    +latencyMs: int
+    +tokensIn: int
+    +tokensOut: int
+    +costUsd: decimal
+  }
+}
+package "dominio (enums)" {
+  enum RecoStatus {
+    PENDENTE
+    GERANDO
+    PRONTA
+    FALHOU
+    SALVA
+  }
+}
+package "aplicacao (casos de uso)" {
+  class CopilotService <<@Service>> {
+    +recommend()
+    +weekPlan()
+    +save()
+  }
+  class CopilotController <<@RestController>> {
+    +POST /api/copilot/recommendations
+    +POST /api/copilot/week-plan
+    +POST /api/copilot/{id}/save
+  }
+  interface LlmPort <<port>>
+  CopilotService ..> LlmPort
+  interface VectorStorePort <<port>>
+  CopilotService ..> VectorStorePort
+  interface CachePort <<port>>
+  CopilotService ..> CachePort
+  interface ConsentPort <<port>>
+  CopilotService ..> ConsentPort
+}
+CopilotController --> CopilotService
+CopilotService ..> Recommendation : usa
+CopilotService ..> RecoCache : usa
+CopilotService ..> TasteDna : usa
+CopilotService ..> AiInferenceLog : usa
+CopilotService ..> MealScheme : usa
+Recommendation --> RecoStatus
+@enduml

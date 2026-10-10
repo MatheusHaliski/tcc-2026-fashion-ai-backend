@@ -1,0 +1,87 @@
+@startuml RF8_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF8 — Visualizar esquemas de alimentação & peças de alimento criados por outros usuários na rede social, através …\nDiagrama de classes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "OpenSearch" {
+  class MealSchemeDoc <<idx_meal_schemes>> {
+    +id: keyword
+    +title: text
+    +cuisine: keyword
+    +mealType: keyword
+    +countryCode: keyword
+    +location: geo_point
+    +healthScore: integer
+    +hype: float
+    +publishedAt: date
+  }
+  class FoodPieceDoc <<idx_food_pieces>> {
+    +id: keyword
+    +name: text (pt/en/es analyzers)
+    +cuisine: keyword
+    +category: keyword
+    +allergens: keyword[]
+    +kcal: integer
+    +ownerId: keyword
+    +hype: float
+    +embedding: knn_vector(768)
+  }
+}
+package "MySQL" {
+  class DineHypeScore <<dine_hype_scores>> {
+    +id: UUID
+    +targetType: TargetType
+    +targetId: UUID
+    +score: decimal
+    +algorithmVersion: String
+    +computedAt: Instant
+    +regionCode: String
+    +countryCode: String
+  }
+}
+package "dominio (enums)" {
+  enum SortMode {
+    RELEVANCIA
+    HYPE
+    RECENTES
+    MAIS_SAUDAVEIS
+  }
+}
+package "aplicacao (casos de uso)" {
+  class SearchService <<@Service>> {
+    +search()
+    +suggest()
+  }
+  class SearchController <<@RestController>> {
+    +GET /api/search?q=&filters=
+    +GET /api/search/suggest
+  }
+  interface SearchIndexPort <<port>>
+  SearchService ..> SearchIndexPort
+  interface CachePort <<port>>
+  SearchService ..> CachePort
+}
+SearchController --> SearchService
+SearchService ..> MealSchemeDoc : usa
+SearchService ..> FoodPieceDoc : usa
+SearchService ..> DineHypeScore : usa
+@enduml

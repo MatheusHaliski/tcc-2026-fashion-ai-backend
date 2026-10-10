@@ -1,0 +1,141 @@
+@startuml RF4_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF4 — Adicionar uma nova peça de alimento ao inventário pessoal através de formulário e fotografia\nDiagrama de classes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "MySQL" {
+  class FoodPiece <<food_pieces>> {
+    +id: UUID
+    +owner: User
+    +name: String
+    +category: FoodCategory
+    +cuisine: Cuisine
+    +originCountry: String
+    +ingredients: List<Ingredient>
+    +allergens: Set<Allergen>
+    +kcalPer100g: int
+    +proteinG: decimal
+    +carbsG: decimal
+    +fatG: decimal
+    +portionG: int
+    +status: PieceStatus
+    +visibility: Visibility
+    +photoKey: String
+    +createdAt: Instant
+  }
+  class FoodInventory <<food_inventories>> {
+    +id: UUID
+    +owner: User
+    +name: String
+    +totalPieces: int
+    +totalSchemes: int
+    +updatedAt: Instant
+  }
+}
+package "S3" {
+  class FoodPhoto <<s3://dine-media/food/{ownerId}/{photoId}.webp>> {
+    +key: String
+    +originalKey: String
+    +width: int
+    +height: int
+    +contentType: image/webp
+    +variants: thumb/card/full
+    +blurHash: String
+  }
+}
+package "OpenSearch" {
+  class FoodPieceDoc <<idx_food_pieces>> {
+    +id: keyword
+    +name: text (pt/en/es analyzers)
+    +cuisine: keyword
+    +category: keyword
+    +allergens: keyword[]
+    +kcal: integer
+    +ownerId: keyword
+    +hype: float
+    +embedding: knn_vector(768)
+  }
+}
+package "Cassandra" {
+  class AiInferenceLog <<ai_inference_log>> {
+    +day: date (partition)
+    +ts: TimeUUID
+    +userId: UUID
+    +feature: text
+    +model: text
+    +latencyMs: int
+    +tokensIn: int
+    +tokensOut: int
+    +costUsd: decimal
+  }
+}
+package "dominio (enums)" {
+  enum FoodCategory {
+    PRATO_PRINCIPAL
+    ENTRADA
+    SOBREMESA
+    BEBIDA
+    INGREDIENTE
+    LANCHE
+    MOLHO
+  }
+  enum PieceStatus {
+    RASCUNHO
+    NO_INVENTARIO
+    QUERO_PROVAR
+    FAVORITA
+    ARQUIVADA
+  }
+}
+package "aplicacao (casos de uso)" {
+  class FoodPieceService <<@Service>> {
+    +uploadPhoto()
+    +recognize()
+    +create()
+    +changeStatus()
+  }
+  class FoodPieceController <<@RestController>> {
+    +POST /api/pieces/photo
+    +POST /api/pieces/recognize
+    +POST /api/pieces
+    +PATCH /api/pieces/{id}/status
+  }
+  interface MediaStoragePort <<port>>
+  FoodPieceService ..> MediaStoragePort
+  interface FoodVisionPort <<port>>
+  FoodPieceService ..> FoodVisionPort
+  interface NutritionPort <<port>>
+  FoodPieceService ..> NutritionPort
+  interface SearchIndexPort <<port>>
+  FoodPieceService ..> SearchIndexPort
+  interface GuidelinePort <<port>>
+  FoodPieceService ..> GuidelinePort
+}
+FoodPieceController --> FoodPieceService
+FoodPieceService ..> FoodPiece : usa
+FoodPieceService ..> FoodPhoto : usa
+FoodPieceService ..> FoodPieceDoc : usa
+FoodPieceService ..> FoodInventory : usa
+FoodPieceService ..> AiInferenceLog : usa
+FoodPiece --> FoodCategory
+FoodPiece --> PieceStatus
+@enduml

@@ -1,0 +1,76 @@
+@startuml RF6_Sequencia
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+
+title RF6 — Acessar & Gerenciar a página do Inventário de Alimentação Virtual do perfil Usuário\nDiagrama de sequência — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+actor "Pessoa usuária" as U
+boundary "App (Next.js / RN)" as P
+participant "API Gateway\n(Spring Cloud Gateway)" as GW
+control "InventoryController" as C
+participant "InventoryService" as S
+participant "SearchIndexPort\n(OpenSearch)" as P0
+participant "CachePort\n(Redis)" as P1
+database "MySQL 8.4\n(Spring Data JPA + Flyway)" as DB_MySQL
+queue "Kafka" as K
+== Abas Peças · Esquemas · Salvos ==
+U -> P : interage na tela
+P -> GW : POST /api/inventory/bulk\nAuthorization: Bearer JWT
+GW -> GW : valida JWT (ES256) + rate limit (Redis)
+GW -> C : POST /api/inventory/bulk
+C -> S : overview()
+activate S
+S -> DB_MySQL : SELECT food_inventories, food_pieces, meal_schemes
+alt item nao e seu
+S --> C : ITEM_NAO_E_SEU
+C --> P : 4xx ProblemDetail {code: ITEM_NAO_E_SEU}
+P --> U : mostra aviso
+end
+alt lote grande demais
+S --> C : LOTE_GRANDE_DEMAIS
+C --> P : 4xx ProblemDetail {code: LOTE_GRANDE_DEMAIS}
+P --> U : mostra aviso
+end
+S -> P0 : overview()
+P0 --> S : ok
+S -> P1 : listPieces()
+P1 --> S : ok
+S -> DB_MySQL : INSERT/UPDATE (@Transactional)
+S ->> K : evento de domínio (outbox)
+deactivate S
+S --> C : DTO (record)
+C --> P : 200/201 JSON
+P --> U : atualiza a tela
+== Filtros e busca ==
+U -> P : Filtros e busca
+P -> C : GET /api/inventory/pieces
+C -> S : listPieces()
+S --> C : resultado
+C --> P : 200 JSON
+== Seleção múltipla (arquivar, mudar status, mover para coleção) ==
+U -> P : Seleção múltipla (arquivar, mudar status, mover pa
+P -> C : GET /api/inventory/schemes
+C -> S : listPieces()
+S --> C : resultado
+C --> P : 200 JSON
+@enduml

@@ -1,0 +1,67 @@
+@startuml RF15_Sequencia
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+
+title RF15 — Editar a fotografia de uma peça de alimento através de um Editor Canvas Interativo 2D\nDiagrama de sequência — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+actor "Pessoa usuária" as U
+boundary "App (Next.js / RN)" as P
+participant "API Gateway\n(Spring Cloud Gateway)" as GW
+control "PhotoEditController" as C
+participant "PhotoEditService" as S
+participant "MediaStoragePort\n(S3)" as P0
+participant "BgRemovalPort\n(modelo de segmentação)" as P1
+database "MySQL 8.4\n(Spring Data JPA + Flyway)" as DB_MySQL
+database "Amazon S3\n(AWS SDK v2)" as DB_S3
+queue "Kafka" as K
+== Canvas (Konva.js) ==
+U -> P : interage na tela
+P -> GW : POST /api/photos/{id}/edits\nAuthorization: Bearer JWT
+GW -> GW : valida JWT (ES256) + rate limit (Redis)
+GW -> C : POST /api/photos/{id}/edits
+C -> S : apply()
+activate S
+S -> DB_MySQL : SELECT photo_edit_recipes
+alt receita invalida
+S --> C : RECEITA_INVALIDA
+C --> P : 4xx ProblemDetail {code: RECEITA_INVALIDA}
+P --> U : mostra aviso
+end
+S -> P0 : apply()
+P0 --> S : ok
+S -> P1 : history()
+P1 --> S : ok
+S -> DB_MySQL : INSERT/UPDATE (@Transactional)
+S -> DB_S3 : PUT/GET presigned s3://dine-media/food/{ownerId}/{photoId}.webp
+S ->> K : evento de domínio (outbox)
+deactivate S
+S --> C : DTO (record)
+C --> P : 200/201 JSON
+P --> U : atualiza a tela
+== Ferramentas de recorte/rotação ==
+U -> P : Ferramentas de recorte/rotação
+P -> C : GET /api/photos/{id}/edits
+C -> S : history()
+S --> C : resultado
+C --> P : 200 JSON
+@enduml

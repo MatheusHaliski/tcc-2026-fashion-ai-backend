@@ -1,0 +1,39 @@
+@startuml RF4_MaquinaDeEstados_Peca
+!pragma layout smetana
+title RF4 — Adicionar uma nova peça de alimento ao inventário pessoal através de formulário e fotografia\nDiagrama de máquina de estados — Peca — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Rascunho" as RAS
+state "Reconhecendo (IA)" as REC
+state "Revisão do usuário" as REV
+state "No inventário" as INV
+state "Quero provar" as QP
+state "Favorita" as FAV
+state "Arquivada" as ARQ
+
+[*] --> RAS : foto enviada
+RAS --> REC : POST /recognize
+REC --> REV : sugestões prontas
+REC --> REV : IA falhou → preenchimento manual
+REV --> INV : salvar [diretriz ok]
+INV --> FAV : favoritar
+INV --> QP : marcar quero provar
+QP --> INV : provei
+FAV --> INV : desfavoritar
+INV --> ARQ : arquivar
+ARQ --> INV : restaurar
+note right of RAS
+  A peça só entra no inventário se
+  passar na Diretriz de Peça (RF25).
+end note
+@enduml

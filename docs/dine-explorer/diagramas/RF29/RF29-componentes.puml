@@ -1,0 +1,81 @@
+@startuml RF29_Componentes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF29 — Realizar pedidos (delivery/retirada) e reservas de mesa nos restaurantes — varejo culinário\nDiagrama de componentes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "Frontend (Next.js 15 · React 19 · TanStack Query)" {
+  component "Pedir & Reservar (/restaurants/{slug}/order)" as FE
+  component "lib/api (OpenAPI client gerado)" as APIC
+}
+package "Borda" {
+  component "CloudFront + WAF" as CDN
+  component "Spring Cloud Gateway\n(JWT, rate limit, CORS)" as GW
+}
+package "dine-web (REST · Spring Boot 4.0)" {
+  component "OrderController\nPUT /api/cart/items\nPOST /api/orders\nGET /api/orders/{id}/stream\nPOST /api/reservations\nPOST /api/payments/webhook" as CT
+}
+package "dine-application (Spring Modulith · casos de uso)" {
+  component "OrderService" as SV
+  component "PaymentPort\n«Gateway (Stripe/Pagar.me) tokenizado»" as PT0 <<port>>
+  component "CartPort\n«Redis»" as PT1 <<port>>
+  component "EventPublisherPort\n«Kafka»" as PT2 <<port>>
+  component "NotificationService" as PT3 <<port>>
+}
+package "dine-domain (entidades + repositórios)" {
+  component "CartRepository" as REPO_Redis
+  component "OrderRepository\nOrderItemRepository\nReservationRepository\nMenuItemRepository" as REPO_MySQL
+  component "OrderTrackingRepository" as REPO_Cassandra
+}
+database "Redis 7\n(Spring Data Redis)\n• cart:{userId}" as DB_Redis
+database "MySQL 8.4\n(Spring Data JPA + Flyway)\n• orders\n• order_items\n• reservations\n• menu_items" as DB_MySQL
+database "Cassandra 5\n(Spring Data Cassandra)\n• order_tracking_by_order" as DB_Cassandra
+cloud "Gateway de pagamento" as EX0
+cloud "Kafka" as EX1
+component "Observabilidade\n(Micrometer + OpenTelemetry\n→ Grafana/Tempo/Loki)" as OBS
+FE --> APIC
+APIC --> CDN : HTTPS/JSON
+CDN --> GW
+GW --> CT
+CT --> SV
+SV ..> OBS
+SV --> PT0
+SV --> PT1
+SV --> PT2
+SV --> PT3
+SV --> REPO_Redis
+REPO_Redis --> DB_Redis
+SV --> REPO_MySQL
+REPO_MySQL --> DB_MySQL
+SV --> REPO_Cassandra
+REPO_Cassandra --> DB_Cassandra
+PT0 --> EX0
+PT2 --> EX1
+@enduml

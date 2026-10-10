@@ -1,0 +1,84 @@
+@startuml RF1_Sequencia
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+
+title RF1 — Cadastrar usuário na plataforma com dados de acesso (perfil Pessoal, Restaurante, Chef ou Marca de alimentos)\nDiagrama de sequência — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+actor "Pessoa usuária" as U
+boundary "App (Next.js / RN)" as P
+participant "API Gateway\n(Spring Cloud Gateway)" as GW
+control "AuthController" as C
+participant "IdentityService" as S
+participant "PasswordHasherPort\n(Argon2PasswordHasher)" as P0
+participant "EmailSenderPort\n(SesEmailSender)" as P1
+participant "CnpjLookupPort\n(ReceitaWsAdapter)" as P2
+participant "GeocodingPort\n(MapboxGeocoder)" as P3
+database "MySQL 8.4\n(Spring Data JPA + Flyway)" as DB_MySQL
+database "Cassandra 5\n(Spring Data Cassandra)" as DB_Cassandra
+queue "Kafka" as K
+== Escolha do tipo de perfil (Pessoal · Restaurante · Chef · Marca de alimentos) ==
+U -> P : interage na tela
+P -> GW : POST /api/auth/register\nAuthorization: Bearer JWT
+GW -> GW : valida JWT (ES256) + rate limit (Redis)
+GW -> C : POST /api/auth/register
+C -> S : register()
+activate S
+S -> DB_MySQL : SELECT users, user_preferences, restaurant_profiles
+alt email em uso
+S --> C : EMAIL_EM_USO
+C --> P : 4xx ProblemDetail {code: EMAIL_EM_USO}
+P --> U : mostra aviso
+end
+alt username em uso
+S --> C : USERNAME_EM_USO
+C --> P : 4xx ProblemDetail {code: USERNAME_EM_USO}
+P --> U : mostra aviso
+end
+S -> P0 : register()
+P0 --> S : ok
+S -> P1 : suggestUsername()
+P1 --> S : ok
+S -> P2 : verifyEmail()
+P2 --> S : ok
+S -> P3 : resendVerification()
+P3 --> S : ok
+S -> DB_MySQL : INSERT/UPDATE (@Transactional)
+S -> DB_Cassandra : INSERT audit_events
+S ->> K : evento de domínio (outbox)
+deactivate S
+S --> C : DTO (record)
+C --> P : 200/201 JSON
+P --> U : atualiza a tela
+== Dados de acesso (nome, @username com sugestões, e-mail, senha com medidor de for ==
+U -> P : Dados de acesso (nome, @username com sugestões, e-
+P -> C : GET /api/auth/username-suggestions
+C -> S : suggestUsername()
+S --> C : resultado
+C --> P : 200 JSON
+== Dados empresariais (CNPJ com consulta Receita, endereço com geocodificação, tipo ==
+U -> P : Dados empresariais (CNPJ com consulta Receita, end
+P -> C : POST /api/auth/verify-email
+C -> S : suggestUsername()
+S --> C : resultado
+C --> P : 200 JSON
+@enduml

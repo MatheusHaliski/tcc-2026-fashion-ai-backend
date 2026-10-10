@@ -1,0 +1,78 @@
+@startuml RF5_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  DiamondBackgroundColor #FFF4E5
+  DiamondBorderColor #C9822B
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF5 — Criar um esquema de alimentação & sua respectiva lista de peças de alimento, através da aba "Criar Prato"\nDiagrama de atividades — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+|Pessoa usuária|
+start
+:Abre Criar Prato (/create);
+|App (Next.js 15 / React Native)|
+|Pessoa usuária|
+:Seleção de peças do inventário\n(filtros por categoria/cozinha);
+|App (Next.js 15 / React Native)|
+:Valida no cliente (Zod)\nPOST /api/schemes;
+|API (Spring Boot 4.0)|
+:MealSchemeController\n→ MealSchemeService.createDraft()\n(Bean Validation + Spring Security 7);
+if (esquema vazio?) then (sim)
+  :4xx ESQUEMA_VAZIO\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (peca nao e sua?) then (sim)
+  :4xx PECA_NAO_E_SUA\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (viola diretriz?) then (sim)
+  :4xx VIOLA_DIRETRIZ\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (titulo obrigatorio?) then (sim)
+  :4xx TITULO_OBRIGATORIO\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:MySQL: meal_schemes, meal_scheme_items,\nfood_pieces;
+:OpenSearch: idx_meal_schemes;
+:Cassandra: home_feed_by_user;
+:GuidelinePort (RF25);
+:SearchIndexPort;
+:FeedFanoutPort;
+:Publica evento de domínio\n(Spring Modulith → Kafka)\n→ métricas RF24 / auditoria;
+|App (Next.js 15 / React Native)|
+:Atualiza a tela (TanStack Query)\ne mostra feedback;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Composição: porções, camadas e ord…)
+    :Composição: porções, camadas e ordem\n→ PUT /api/schemes/{id}/items;
+  case (Resumo nutricional + Health Score)
+    :Resumo nutricional + Health Score\n→ POST /api/schemes/{id}/publish;
+  case (Dados do esquema (título, tipo de …)
+    :Dados do esquema (título, tipo de\nrefeição, ocasião, tempo, dificuldade,\nporções)\n→ POST /api/schemes/assist;
+  case (Pré-visualização do card (botões d…)
+    :Pré-visualização do card (botões de\nreação culinária) e publicar\n→ POST /api/schemes;
+  endswitch
+endif
+stop
+@enduml

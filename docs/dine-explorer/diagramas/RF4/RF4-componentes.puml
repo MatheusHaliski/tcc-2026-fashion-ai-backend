@@ -1,0 +1,87 @@
+@startuml RF4_Componentes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF4 — Adicionar uma nova peça de alimento ao inventário pessoal através de formulário e fotografia\nDiagrama de componentes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "Frontend (Next.js 15 · React 19 · TanStack Query)" {
+  component "Adicionar Peça de Alimento (/pieces/new)" as FE
+  component "lib/api (OpenAPI client gerado)" as APIC
+}
+package "Borda" {
+  component "CloudFront + WAF" as CDN
+  component "Spring Cloud Gateway\n(JWT, rate limit, CORS)" as GW
+}
+package "dine-web (REST · Spring Boot 4.0)" {
+  component "FoodPieceController\nPOST /api/pieces/photo\nPOST /api/pieces/recognize\nPOST /api/pieces\nPATCH /api/pieces/{id}/status" as CT
+}
+package "dine-application (Spring Modulith · casos de uso)" {
+  component "FoodPieceService" as SV
+  component "MediaStoragePort\n«S3»" as PT0 <<port>>
+  component "FoodVisionPort\n«Spring AI + modelo de visão»" as PT1 <<port>>
+  component "NutritionPort\n«USDA FoodData / TACO»" as PT2 <<port>>
+  component "SearchIndexPort\n«OpenSearch»" as PT3 <<port>>
+  component "GuidelinePort (RF25)" as PT4 <<port>>
+}
+package "dine-domain (entidades + repositórios)" {
+  component "FoodPieceRepository\nFoodInventoryRepository" as REPO_MySQL
+  component "FoodPieceDocRepository" as REPO_OpenSearch
+  component "AiInferenceLogRepository" as REPO_Cassandra
+}
+database "MySQL 8.4\n(Spring Data JPA + Flyway)\n• food_pieces\n• food_inventories" as DB_MySQL
+database "Amazon S3\n(AWS SDK v2)\n• s3://dine-media/food/{ownerId}/{photoId}.webp" as DB_S3
+database "OpenSearch 2\n(opensearch-java)\n• idx_food_pieces" as DB_OpenSearch
+database "Cassandra 5\n(Spring Data Cassandra)\n• ai_inference_log" as DB_Cassandra
+cloud "AWS S3" as EX0
+cloud "Modelo de visão (Spring AI)" as EX1
+cloud "USDA FoodData Central / TACO" as EX2
+component "Observabilidade\n(Micrometer + OpenTelemetry\n→ Grafana/Tempo/Loki)" as OBS
+FE --> APIC
+APIC --> CDN : HTTPS/JSON
+CDN --> GW
+GW --> CT
+CT --> SV
+SV ..> OBS
+SV --> PT0
+SV --> PT1
+SV --> PT2
+SV --> PT3
+SV --> PT4
+SV --> REPO_MySQL
+REPO_MySQL --> DB_MySQL
+SV --> REPO_OpenSearch
+REPO_OpenSearch --> DB_OpenSearch
+SV --> REPO_Cassandra
+REPO_Cassandra --> DB_Cassandra
+PT0 --> DB_S3
+SV --> EX0
+PT1 --> EX1
+PT2 --> EX2
+@enduml

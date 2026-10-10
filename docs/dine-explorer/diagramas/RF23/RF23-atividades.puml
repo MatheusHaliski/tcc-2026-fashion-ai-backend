@@ -1,0 +1,82 @@
+@startuml RF23_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  DiamondBackgroundColor #FFF4E5
+  DiamondBorderColor #C9822B
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF23 — Criar as telas de configuração do usuário (Conta, Privacidade/LGPD, Aparência, Idioma, Seus dados) no padrã…\nDiagrama de atividades — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+|Pessoa usuária|
+start
+:Abre Configurações (/settings);
+|App (Next.js 15 / React Native)|
+:Carrega os dados da tela\nGET /api/me/preferences\nGET /api/me/consents\nGET /api/me/exports;
+|Pessoa usuária|
+:Conta (atalhos para RF3: perfil,\nsegurança, sessões);
+|App (Next.js 15 / React Native)|
+:Valida no cliente (Zod)\nPUT /api/me/preferences;
+|API (Spring Boot 4.0)|
+:PreferencesController\n→ PreferencesService.get()\n(Bean Validation + Spring Security 7);
+if (fonte invalida?) then (sim)
+  :4xx FONTE_INVALIDA\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (cor invalida?) then (sim)
+  :4xx COR_INVALIDA\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (idioma invalido?) then (sim)
+  :4xx IDIOMA_INVALIDO\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (moeda invalida?) then (sim)
+  :4xx MOEDA_INVALIDA\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+note right
+  e mais: VISIBILIDADE_INVALIDA
+end note
+|Dados e serviços|
+:MySQL: user_preferences, users, user_consents,\ndata_export_requests;
+:S3: s3://dine-lgpd-exports/{userId}/{id}.zip;
+:Cassandra: audit_events;
+:CachePort;
+:MediaStoragePort;
+:I18nPort;
+:Publica evento de domínio\n(Spring Modulith → Kafka)\n→ métricas RF24 / auditoria;
+|App (Next.js 15 / React Native)|
+:Atualiza a tela (TanStack Query)\ne mostra feedback;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Privacidade / LGPD (consentimentos…)
+    :Privacidade / LGPD (consentimentos por\nfinalidade com texto claro, visibilidade\ndo perfil, quem pode reagir/comentar,\nlocalização)\n→ PUT /api/me/preferences;
+  case (Aparência (tema, cor de destaque, …)
+    :Aparência (tema, cor de destaque, fonte\n80–160%, alto contraste, reduzir\nanimações do globo, densidade)\n→ GET /api/me/consents;
+  case (Idioma & Região (idioma da UI, moe…)
+    :Idioma & Região (idioma da UI, moeda,\nunidades, país para rankings regionais)\n→ PUT /api/me/privacy;
+  case (Seus dados (baixar meus dados, his…)
+    :Seus dados (baixar meus dados, histórico\nde consentimentos, encarregado/DPO,\nexcluir conta)\n→ GET /api/me/exports;
+  endswitch
+endif
+stop
+@enduml

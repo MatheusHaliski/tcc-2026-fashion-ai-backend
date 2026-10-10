@@ -1,0 +1,128 @@
+@startuml RF24_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF24 — Calcular e exibir as métricas da rede social (DineHype Score, engajamento, sentimento culinário e rankings)\nDiagrama de classes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "Cassandra" {
+  class EngagementEvent <<engagement_events_by_target_day>> {
+    +targetId: UUID (partition)
+    +day: date (partition)
+    +ts: TimeUUID
+    +userId: UUID
+    +event: EngagementType
+    +weight: float
+    +countryCode: text
+    +regionCode: text
+  }
+  class ReactionCounter <<reaction_counters_by_target>> {
+    +targetId: UUID (partition)
+    +kind: text (clustering)
+    +count: counter
+  }
+}
+package "MySQL" {
+  class MetricSnapshot <<metric_snapshots>> {
+    +id: UUID
+    +targetType: TargetType
+    +targetId: UUID
+    +period: Period
+    +views: long
+    +uniqueViewers: long
+    +reactions: Map<ReactionKind,long>
+    +comments: long
+    +shares: long
+    +saves: long
+    +engagementRate: decimal
+    +sentimentIndex: decimal
+    +computedAt: Instant
+  }
+  class DineHypeScore <<dine_hype_scores>> {
+    +id: UUID
+    +targetType: TargetType
+    +targetId: UUID
+    +score: decimal
+    +algorithmVersion: String
+    +computedAt: Instant
+    +regionCode: String
+    +countryCode: String
+  }
+}
+package "Redis" {
+  class HypeRanking <<rank:{scope}:{region}:{period}>> {
+    +key: String
+    +type: ZSET
+    +member: targetId
+    +score: double
+    +ttl: 1h
+  }
+}
+package "dominio (enums)" {
+  enum EngagementType {
+    VIEW
+    DWELL_3S
+    REACAO
+    COMENTARIO
+    SHARE
+    SAVE
+    FOLLOW
+    CHECK_IN
+    PEDIDO
+    RESERVA
+  }
+  enum Period {
+    DIA
+    SEMANA
+    MES
+    TRIMESTRE
+  }
+}
+package "aplicacao (casos de uso)" {
+  class MetricsService <<@Service>> {
+    +ingest()
+    +aggregate()
+    +computeHype()
+    +rankings()
+    +insights()
+  }
+  class MetricsController <<@RestController>> {
+    +GET /api/metrics/{targetType}/{id}?period=
+    +GET /api/rankings?scope=WORLD|REGION&region=
+    +GET /api/me/insights
+  }
+  interface EventStreamPort <<port>>
+  MetricsService ..> EventStreamPort
+  interface CounterPort <<port>>
+  MetricsService ..> CounterPort
+  interface RankingPort <<port>>
+  MetricsService ..> RankingPort
+  interface SearchIndexPort <<port>>
+  MetricsService ..> SearchIndexPort
+}
+MetricsController --> MetricsService
+MetricsService ..> EngagementEvent : usa
+MetricsService ..> MetricSnapshot : usa
+MetricsService ..> DineHypeScore : usa
+MetricsService ..> HypeRanking : usa
+MetricsService ..> ReactionCounter : usa
+EngagementEvent --> EngagementType
+MetricSnapshot --> Period
+@enduml

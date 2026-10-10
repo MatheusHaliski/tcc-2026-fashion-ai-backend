@@ -1,0 +1,29 @@
+@startuml RF21_MaquinaDeEstados_Dispositivo
+!pragma layout smetana
+title RF21 — Acessar a aba BioDine™ — serviço de sistema ciber-físico dentro do Dine Explorer\nDiagrama de máquina de estados — Dispositivo — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Não pareado" as NP
+state "Pareando" as PAR
+state "Online" as ON
+state "Offline" as OFF
+state "Despareado" as DES
+
+[*] --> NP
+NP --> PAR : ler QR
+PAR --> ON : certificado X.509 ok
+ON --> OFF : sem heartbeat 5 min
+OFF --> ON : heartbeat
+ON --> DES : desparear
+DES --> [*]
+@enduml

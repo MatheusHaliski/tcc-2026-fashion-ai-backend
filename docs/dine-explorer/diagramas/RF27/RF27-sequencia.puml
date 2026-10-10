@@ -1,0 +1,89 @@
+@startuml RF27_Sequencia
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+
+title RF27 — Acessar a aba "Explorador": globo 3D animado com comidas de cada região do mundo, mapas de calor e rankings\nDiagrama de sequência — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+actor "Pessoa usuária" as U
+boundary "App (Next.js / RN)" as P
+participant "API Gateway\n(Spring Cloud Gateway)" as GW
+control "ExplorerController" as C
+participant "ExplorerService" as S
+participant "GeoAggregationPort\n(OpenSearch geohex_grid)" as P0
+participant "RankingPort\n(Redis ZSET)" as P1
+participant "TileStoragePort\n(S3 + CloudFront)" as P2
+participant "OpenDataPort\n(OMS GHO API)" as P3
+database "MySQL 8.4\n(Spring Data JPA + Flyway)" as DB_MySQL
+database "Amazon S3\n(AWS SDK v2)" as DB_S3
+database "Redis 7\n(Spring Data Redis)" as DB_Redis
+database "OpenSearch 2\n(opensearch-java)" as DB_OpenSearch
+queue "Kafka" as K
+== Globo 3D com rotação e zoom (região → país → cidade) ==
+U -> P : interage na tela
+P -> GW : GET /api/explorer/layers\nAuthorization: Bearer JWT
+GW -> GW : valida JWT (ES256) + rate limit (Redis)
+GW -> C : GET /api/explorer/layers
+C -> S : layers()
+activate S
+S -> DB_Redis : GET cache / lock
+S -> DB_MySQL : SELECT globe_layers, regional_dishes, health_indicators
+alt camada inexistente
+S --> C : CAMADA_INEXISTENTE
+C --> P : 4xx ProblemDetail {code: CAMADA_INEXISTENTE}
+P --> U : mostra aviso
+end
+alt bbox invalido
+S --> C : BBOX_INVALIDO
+C --> P : 4xx ProblemDetail {code: BBOX_INVALIDO}
+P --> U : mostra aviso
+end
+S -> P0 : layers()
+P0 --> S : ok
+S -> P1 : heatmap()
+P1 --> S : ok
+S -> P2 : typicalDishes()
+P2 --> S : ok
+S -> P3 : topRegion()
+P3 --> S : ok
+S -> DB_MySQL : INSERT/UPDATE (@Transactional)
+S -> DB_OpenSearch : index/search idx_restaurants
+S -> DB_S3 : PUT/GET presigned s3://dine-globe/{layer}/{version}/h3-{res}.pbf, s3://dine-globe/illustrations/{dishId}.lottie
+S -> DB_Redis : SET/ZADD (invalida cache)
+S ->> K : evento de domínio (outbox)
+deactivate S
+S --> C : DTO (record)
+C --> P : 200/201 JSON
+P --> U : atualiza a tela
+== Ilustrações animadas das comidas típicas sobre cada região ==
+U -> P : Ilustrações animadas das comidas típicas sobre cad
+P -> C : GET /api/explorer/layers/{code}?bbox=&zoom=
+C -> S : heatmap()
+S --> C : resultado
+C --> P : 200 JSON
+== Seletor de camadas de calor: Obesidade · Mais caros · Mais populares · Comidas t ==
+U -> P : Seletor de camadas de calor: Obesidade · Mais caro
+P -> C : GET /api/explorer/dishes?region=
+C -> S : heatmap()
+S --> C : resultado
+C --> P : 200 JSON
+@enduml

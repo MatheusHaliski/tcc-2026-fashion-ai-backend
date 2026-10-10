@@ -1,0 +1,31 @@
+@startuml RF3_MaquinaDeEstados_Exclusao
+!pragma layout smetana
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de máquina de estados — Exclusao — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Ativa" as ATV
+state "Exclusão agendada\n(carência 30 dias)" as AGD
+state "Anonimizada" as ANO
+state "Purgada\n(backups expirados)" as PUR
+
+[*] --> ATV
+ATV --> AGD : POST /api/me/deletion + senha
+AGD --> ATV : login + 'cancelar exclusão'
+AGD --> ANO : job D+30: anonimiza MySQL,\napaga S3, tombstone Cassandra,\nremove docs OpenSearch, chaves Redis
+ANO --> PUR : D+90 rotação de backups
+PUR --> [*]
+note right of ATV
+  Direitos do titular (LGPD art. 18): acesso,
+  correção, portabilidade, eliminação e revogação.
+end note
+@enduml

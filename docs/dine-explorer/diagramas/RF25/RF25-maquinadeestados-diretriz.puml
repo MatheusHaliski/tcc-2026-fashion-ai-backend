@@ -1,0 +1,31 @@
+@startuml RF25_MaquinaDeEstados_Diretriz
+!pragma layout smetana
+title RF25 — Definir e aplicar as diretrizes dos esquemas: Esquema de Alimentação, Esquema de Peça de Alimento e Esquema…\nDiagrama de máquina de estados — Diretriz — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Rascunho" as RAS
+state "Em revisão" as REV
+state "Vigente" as VIG
+state "Obsoleta" as OBS
+
+[*] --> RAS : criar versão
+RAS --> REV : enviar
+REV --> RAS : ajustes
+REV --> VIG : publicar\n(a anterior fica obsoleta)
+VIG --> OBS : nova versão vigente
+OBS --> [*]
+note right of RAS
+  Esquemas já publicados guardam a versão
+  da diretriz com que foram validados.
+end note
+@enduml

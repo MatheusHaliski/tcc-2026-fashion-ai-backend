@@ -1,0 +1,39 @@
+@startuml RF1_MaquinaDeEstados_Conta
+!pragma layout smetana
+title RF1 — Cadastrar usuário na plataforma com dados de acesso (perfil Pessoal, Restaurante, Chef ou Marca de alimentos)\nDiagrama de máquina de estados — Conta — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "PENDING_EMAIL_VERIFICATION" as PEV
+state "PENDING_VALIDATION\n(Restaurante/Chef/Marca)" as PV
+state "ACTIVE" as ACT
+state "SUSPENDED" as SUS
+state "DELETION_SCHEDULED" as DS
+state "DELETED\n(anonimizada)" as DEL
+
+[*] --> PEV : POST /register
+PEV --> ACT : código válido [Pessoal]
+PEV --> PV : código válido [Restaurante/Chef/Marca]
+PV --> ACT : moderação aprova CNPJ
+PV --> SUS : moderação recusa
+ACT --> SUS : violação de política
+SUS --> ACT : recurso aceito
+ACT --> DS : pedido de exclusão (RF3)
+DS --> ACT : cancelou em 30 dias
+DS --> DEL : job D+30
+PEV --> DEL : não verificou em 7 dias
+DEL --> [*]
+note right of PEV
+  Pessoal ativa direto após o e-mail;
+  perfis empresariais aguardam validação do CNPJ.
+end note
+@enduml

@@ -1,0 +1,25 @@
+@startuml RF6_MaquinaDeEstados_PratoDoDia
+!pragma layout smetana
+title RF6 — Acessar & Gerenciar a página do Inventário de Alimentação Virtual do perfil Usuário\nDiagrama de máquina de estados — PratoDoDia — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Nenhum" as NEN
+state "Definido hoje" as DEF
+state "Expirado (00:00 local)" as EXP
+
+[*] --> NEN
+NEN --> DEF : marcar prato do dia
+DEF --> DEF : trocar
+DEF --> EXP : meia-noite
+EXP --> NEN
+@enduml

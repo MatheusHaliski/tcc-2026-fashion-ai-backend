@@ -1,0 +1,114 @@
+@startuml RF7_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF7 — Acessar um item de peça de alimento disponível na lista de um esquema de alimentação salvo\nDiagrama de classes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "MySQL" {
+  class FoodPiece <<food_pieces>> {
+    +id: UUID
+    +owner: User
+    +name: String
+    +category: FoodCategory
+    +cuisine: Cuisine
+    +originCountry: String
+    +ingredients: List<Ingredient>
+    +allergens: Set<Allergen>
+    +kcalPer100g: int
+    +proteinG: decimal
+    +carbsG: decimal
+    +fatG: decimal
+    +portionG: int
+    +status: PieceStatus
+    +visibility: Visibility
+    +photoKey: String
+    +createdAt: Instant
+  }
+  class MealSchemeItem <<meal_scheme_items>> {
+    +id: UUID
+    +scheme: MealScheme
+    +piece: FoodPiece
+    +quantityG: int
+    +layer: PlateLayer
+    +posX: decimal
+    +posY: decimal
+    +zIndex: int
+    +note: String
+  }
+  class MenuItem <<menu_items>> {
+    +id: UUID
+    +restaurant: RestaurantProfile
+    +piece: FoodPiece
+    +price: Money
+    +available: boolean
+    +section: MenuSection
+    +prepMinutes: int
+  }
+}
+package "OpenSearch" {
+  class RestaurantDoc <<idx_restaurants>> {
+    +id: keyword
+    +name: text
+    +cuisines: keyword[]
+    +priceLevel: integer
+    +location: geo_point
+    +countryCode: keyword
+    +regionCode: keyword
+    +city: keyword
+    +rating: float
+    +hype: float
+    +avgTicketUsd: float
+    +dietOptions: keyword[]
+    +openNow: boolean
+  }
+}
+package "dominio (enums)" {
+  enum Visibility {
+    PUBLICA
+    SEGUIDORES
+    PRIVADA
+  }
+}
+package "aplicacao (casos de uso)" {
+  class FoodPieceService <<@Service>> {
+    +detail()
+    +usedIn()
+    +whereToEat()
+  }
+  class FoodPieceController <<@RestController>> {
+    +GET /api/pieces/{id}
+    +GET /api/pieces/{id}/schemes
+    +GET /api/pieces/{id}/where-to-eat
+  }
+  interface SearchIndexPort <<port>>
+  FoodPieceService ..> SearchIndexPort
+  interface CachePort <<port>>
+  FoodPieceService ..> CachePort
+}
+FoodPieceController --> FoodPieceService
+FoodPieceService ..> FoodPiece : usa
+FoodPieceService ..> MealSchemeItem : usa
+FoodPieceService ..> MenuItem : usa
+FoodPieceService ..> RestaurantDoc : usa
+FoodPiece --> Visibility
+MealSchemeItem "*" --> "1" FoodPiece : piece
+MenuItem "*" --> "1" FoodPiece : piece
+@enduml

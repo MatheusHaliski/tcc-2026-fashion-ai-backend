@@ -1,0 +1,30 @@
+@startuml RF28_MaquinaDeEstados_Visualizador
+!pragma layout smetana
+title RF28 — Visualizar a sub-aba "Restaurantes do Mundo" do Explorador, com filtros na top bar (como a sub-aba Marcas),…\nDiagrama de máquina de estados — Visualizador — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Inicial (região do usuário)" as INI
+state "Filtrando" as FIL
+state "Resultados" as RES
+state "Sem resultados" as VAZ
+state "Carregando mais" as MAI
+
+[*] --> INI
+INI --> FIL : alterar filtro
+FIL --> RES : hits > 0
+FIL --> VAZ : hits = 0
+RES --> MAI : fim da rolagem
+MAI --> RES : search_after
+VAZ --> FIL : limpar filtro
+RES --> FIL : alterar filtro
+@enduml

@@ -1,0 +1,73 @@
+@startuml RF26_Componentes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF26 — Criar & gerenciar o Esquema de Restaurante (card do restaurante, cardápio, pratos assinatura e horários)\nDiagrama de componentes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "Frontend (Next.js 15 · React 19 · TanStack Query)" {
+  component "Meu Restaurante (/restaurant/manage)" as FE
+  component "lib/api (OpenAPI client gerado)" as APIC
+}
+package "Borda" {
+  component "CloudFront + WAF" as CDN
+  component "Spring Cloud Gateway\n(JWT, rate limit, CORS)" as GW
+}
+package "dine-web (REST · Spring Boot 4.0)" {
+  component "RestaurantController\nPUT /api/restaurants/{id}/scheme\nPOST /api/restaurants/{id}/menu-items\nPATCH /api/menu-items/{id}\nPOST /api/restaurants/{id}/scheme/publish" as CT
+}
+package "dine-application (Spring Modulith · casos de uso)" {
+  component "RestaurantService" as SV
+  component "GuidelinePort (RF25)" as PT0 <<port>>
+  component "SearchIndexPort\n«OpenSearch idx_restaurants»" as PT1 <<port>>
+  component "MediaStoragePort\n«S3»" as PT2 <<port>>
+}
+package "dine-domain (entidades + repositórios)" {
+  component "RestaurantSchemeRepository\nRestaurantProfileRepository\nMenuItemRepository" as REPO_MySQL
+  component "RestaurantDocRepository" as REPO_OpenSearch
+}
+database "MySQL 8.4\n(Spring Data JPA + Flyway)\n• restaurant_schemes\n• restaurant_profiles\n• menu_items" as DB_MySQL
+database "OpenSearch 2\n(opensearch-java)\n• idx_restaurants" as DB_OpenSearch
+cloud "AWS S3" as EX0
+component "Observabilidade\n(Micrometer + OpenTelemetry\n→ Grafana/Tempo/Loki)" as OBS
+FE --> APIC
+APIC --> CDN : HTTPS/JSON
+CDN --> GW
+GW --> CT
+CT --> SV
+SV ..> OBS
+SV --> PT0
+SV --> PT1
+SV --> PT2
+SV --> REPO_MySQL
+REPO_MySQL --> DB_MySQL
+SV --> REPO_OpenSearch
+REPO_OpenSearch --> DB_OpenSearch
+SV --> EX0
+@enduml

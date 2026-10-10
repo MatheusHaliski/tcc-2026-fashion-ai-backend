@@ -1,0 +1,38 @@
+@startuml RF2_MaquinaDeEstados_Sessao
+!pragma layout smetana
+title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de máquina de estados — Sessao — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Anônima" as ANON
+state "Aguardando 2FA" as MFA
+state "Autenticada\n(access 15 min)" as AUT
+state "Access expirado" as EXP
+state "Bloqueada\n(5 falhas / 15 min)" as BLK
+state "Revogada" as REV
+
+[*] --> ANON
+ANON --> AUT : senha/passkey/OIDC ok
+ANON --> MFA : senha ok + 2FA ativo
+MFA --> AUT : TOTP válido
+ANON --> BLK : 5ª falha
+BLK --> ANON : 15 min
+AUT --> EXP : 15 min
+EXP --> AUT : POST /refresh (rotação)
+EXP --> REV : refresh reutilizado → revoga família
+AUT --> REV : logout / encerrar sessão (RF3)
+REV --> [*]
+note right of ANON
+  Reuso de refresh token = roubo provável:
+  revoga toda a família e notifica.
+end note
+@enduml

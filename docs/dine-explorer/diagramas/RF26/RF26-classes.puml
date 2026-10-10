@@ -1,0 +1,139 @@
+@startuml RF26_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF26 — Criar & gerenciar o Esquema de Restaurante (card do restaurante, cardápio, pratos assinatura e horários)\nDiagrama de classes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "MySQL" {
+  class RestaurantScheme <<restaurant_schemes>> {
+    +id: UUID
+    +restaurant: RestaurantProfile
+    +headline: String
+    +signatureDishes: List<FoodPiece>
+    +ambience: Set<Ambience>
+    +priceLevel: int
+    +avgTicket: Money
+    +dietOptions: Set<Diet>
+    +status: SchemeStatus
+    +backgroundArtId: UUID
+    +publishedAt: Instant
+  }
+  class RestaurantProfile <<restaurant_profiles>> {
+    +id: UUID
+    +owner: User
+    +tradeName: String
+    +slug: String
+    +cnpj: String
+    +razaoSocial: String
+    +cuisineTypes: Set<Cuisine>
+    +priceLevel: int (1-4)
+    +latitude: double
+    +longitude: double
+    +address: Address
+    +countryCode: String
+    +regionCode: String
+    +openingHours: JSON
+    +approvalStatus: ApprovalStatus
+    +logoUrl: String
+    +coverUrl: String
+    +deliveryEnabled: boolean
+    +reservationEnabled: boolean
+  }
+  class MenuItem <<menu_items>> {
+    +id: UUID
+    +restaurant: RestaurantProfile
+    +piece: FoodPiece
+    +price: Money
+    +available: boolean
+    +section: MenuSection
+    +prepMinutes: int
+  }
+}
+package "OpenSearch" {
+  class RestaurantDoc <<idx_restaurants>> {
+    +id: keyword
+    +name: text
+    +cuisines: keyword[]
+    +priceLevel: integer
+    +location: geo_point
+    +countryCode: keyword
+    +regionCode: keyword
+    +city: keyword
+    +rating: float
+    +hype: float
+    +avgTicketUsd: float
+    +dietOptions: keyword[]
+    +openNow: boolean
+  }
+}
+package "dominio (enums)" {
+  enum Ambience {
+    FAMILIAR
+    ROMANTICO
+    CASUAL
+    FINE_DINING
+    STREET_FOOD
+    BAR
+  }
+  enum Cuisine {
+    BRASILEIRA
+    ITALIANA
+    JAPONESA
+    MEXICANA
+    INDIANA
+    FRANCESA
+    TAILANDESA
+    ARABE
+    PERUANA
+    CHINESA
+    ...
+  }
+}
+package "aplicacao (casos de uso)" {
+  class RestaurantService <<@Service>> {
+    +upsertScheme()
+    +addMenuItem()
+    +updateMenuItem()
+    +publish()
+  }
+  class RestaurantController <<@RestController>> {
+    +PUT /api/restaurants/{id}/scheme
+    +POST /api/restaurants/{id}/menu-items
+    +PATCH /api/menu-items/{id}
+    +POST /api/restaurants/{id}/scheme/publish
+  }
+  interface GuidelinePort <<port>>
+  RestaurantService ..> GuidelinePort
+  interface SearchIndexPort <<port>>
+  RestaurantService ..> SearchIndexPort
+  interface MediaStoragePort <<port>>
+  RestaurantService ..> MediaStoragePort
+}
+RestaurantController --> RestaurantService
+RestaurantService ..> RestaurantScheme : usa
+RestaurantService ..> RestaurantProfile : usa
+RestaurantService ..> MenuItem : usa
+RestaurantService ..> RestaurantDoc : usa
+RestaurantScheme "*" --> "1" RestaurantProfile : restaurant
+RestaurantScheme --> Ambience
+RestaurantProfile --> Cuisine
+MenuItem "*" --> "1" RestaurantProfile : restaurant
+@enduml

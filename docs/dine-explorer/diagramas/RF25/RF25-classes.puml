@@ -1,0 +1,97 @@
+@startuml RF25_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF25 — Definir e aplicar as diretrizes dos esquemas: Esquema de Alimentação, Esquema de Peça de Alimento e Esquema…\nDiagrama de classes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "MySQL" {
+  class SchemeGuideline <<scheme_guidelines>> {
+    +id: UUID
+    +schemeKind: SchemeKind (MEAL/FOOD_PIECE/RESTAURANT)
+    +version: String
+    +requiredFields: JSON Schema
+    +rules: List<GuidelineRule>
+    +status: GuidelineStatus
+    +publishedAt: Instant
+  }
+  class GuidelineRule <<guideline_rules>> {
+    +id: UUID
+    +guideline: SchemeGuideline
+    +code: String
+    +severity: Severity (BLOQUEANTE/AVISO)
+    +expression: String (SpEL)
+    +message: String
+  }
+  class SchemeValidationReport <<scheme_validation_reports>> {
+    +id: UUID
+    +schemeKind: SchemeKind
+    +schemeId: UUID
+    +guidelineVersion: String
+    +passed: boolean
+    +violations: JSON
+    +validatedAt: Instant
+  }
+}
+package "dominio (enums)" {
+  enum SchemeKind {
+    MEAL
+    FOOD_PIECE
+    RESTAURANT
+  }
+  enum Severity {
+    BLOQUEANTE
+    AVISO
+  }
+  enum GuidelineStatus {
+    RASCUNHO
+    VIGENTE
+    OBSOLETA
+  }
+}
+package "aplicacao (casos de uso)" {
+  class GuidelineService <<@Service>> {
+    +current()
+    +validate()
+    +createVersion()
+    +publish()
+  }
+  class GuidelineController <<@RestController>> {
+    +GET /api/guidelines/{kind}
+    +POST /api/guidelines/{kind}/validate
+    +POST /api/admin/guidelines
+    +POST /api/admin/guidelines/{id}/publish
+  }
+  interface RuleEnginePort <<port>>
+  GuidelineService ..> RuleEnginePort
+  interface CachePort <<port>>
+  GuidelineService ..> CachePort
+}
+GuidelineController --> GuidelineService
+GuidelineService ..> SchemeGuideline : usa
+GuidelineService ..> GuidelineRule : usa
+GuidelineService ..> SchemeValidationReport : usa
+SchemeGuideline "*" --> "*" GuidelineRule : rules
+SchemeGuideline --> SchemeKind
+SchemeGuideline --> GuidelineStatus
+GuidelineRule "*" --> "1" SchemeGuideline : guideline
+GuidelineRule --> Severity
+SchemeValidationReport --> SchemeKind
+@enduml

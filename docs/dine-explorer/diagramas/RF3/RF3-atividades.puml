@@ -1,0 +1,83 @@
+@startuml RF3_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  DiamondBackgroundColor #FFF4E5
+  DiamondBorderColor #C9822B
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de atividades — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+|Pessoa usuária|
+start
+:Abre Minha Conta (/settings/account);
+|App (Next.js 15 / React Native)|
+:Carrega os dados da tela\nGET /api/me\nGET /api/auth/sessions;
+|Pessoa usuária|
+:Dados pessoais (nome, @username, foto,\ncapa, bio, cidade, dieta, alergias);
+|App (Next.js 15 / React Native)|
+:Valida no cliente (Zod)\nPATCH /api/me/profile;
+|API (Spring Boot 4.0)|
+:MeController\n→ AccountService.updateProfile()\n(Bean Validation + Spring Security 7);
+if (reautenticacao necessaria?) then (sim)
+  :4xx REAUTENTICACAO_NECESSARIA\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (email em uso?) then (sim)
+  :4xx EMAIL_EM_USO\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (sessao inexistente?) then (sim)
+  :4xx SESSAO_INEXISTENTE\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (exportacao em andamento?) then (sim)
+  :4xx EXPORTACAO_EM_ANDAMENTO\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+note right
+  e mais: FINALIDADE_INVALIDA
+end note
+|Dados e serviços|
+:MySQL: users, user_preferences, refresh_tokens,\nuser_consents, data_export_requests,\nnotification_preferences;
+:Redis: session:{jti};
+:S3: s3://dine-lgpd-exports/{userId}/{id}.zip;
+:Cassandra: notifications_by_user, audit_events;
+:MediaStoragePort;
+:EmailSenderPort;
+:PushPort;
+:Publica evento de domínio\n(Spring Modulith → Kafka)\n→ métricas RF24 / auditoria;
+|App (Next.js 15 / React Native)|
+:Atualiza a tela (TanStack Query)\ne mostra feedback;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Segurança (senha, e-mail, telefone…)
+    :Segurança (senha, e-mail, telefone, 2FA\nTOTP, passkeys, códigos de recuperação)\n→ PATCH /api/me/profile;
+  case (Sessões e dispositivos (lista, enc…)
+    :Sessões e dispositivos (lista, encerrar\numa, encerrar todas)\n→ PATCH /api/me/sensitive;
+  case (Privacidade LGPD (consentimentos p…)
+    :Privacidade LGPD (consentimentos por\nfinalidade, visibilidade do perfil,\nexportar meus dados, excluir conta)\n→ GET /api/auth/sessions;
+  case (Notificações (push, e-mail, in-app…)
+    :Notificações (push, e-mail, in-app ×\nreações, comentários, pedidos, reservas,\nrankings; horário de silêncio)\n→ DELETE /api/auth/sessions/{id};
+  endswitch
+endif
+stop
+@enduml

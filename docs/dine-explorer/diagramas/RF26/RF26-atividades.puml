@@ -1,0 +1,71 @@
+@startuml RF26_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  DiamondBackgroundColor #FFF4E5
+  DiamondBorderColor #C9822B
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF26 — Criar & gerenciar o Esquema de Restaurante (card do restaurante, cardápio, pratos assinatura e horários)\nDiagrama de atividades — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+|Pessoa usuária|
+start
+:Abre Meu Restaurante (/restaurant/manage);
+|App (Next.js 15 / React Native)|
+|Pessoa usuária|
+:Card do restaurante (capa, selo, faixa\nde preço, cozinhas);
+|App (Next.js 15 / React Native)|
+:Valida no cliente (Zod)\nPUT /api/restaurants/{id}/scheme;
+|API (Spring Boot 4.0)|
+:RestaurantController\n→ RestaurantService.upsertScheme()\n(Bean Validation + Spring Security 7);
+if (restaurante nao aprovado?) then (sim)
+  :4xx RESTAURANTE_NAO_APROVADO\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (viola diretriz?) then (sim)
+  :4xx VIOLA_DIRETRIZ\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (preco invalido?) then (sim)
+  :4xx PRECO_INVALIDO\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:MySQL: restaurant_schemes, restaurant_profiles,\nmenu_items;
+:OpenSearch: idx_restaurants;
+:GuidelinePort (RF25);
+:SearchIndexPort;
+:MediaStoragePort;
+:Publica evento de domínio\n(Spring Modulith → Kafka)\n→ métricas RF24 / auditoria;
+|App (Next.js 15 / React Native)|
+:Atualiza a tela (TanStack Query)\ne mostra feedback;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Cardápio por seções com preços e d…)
+    :Cardápio por seções com preços e\ndisponibilidade\n→ POST /api/restaurants/{id}/menu-items;
+  case (Pratos assinatura)
+    :Pratos assinatura\n→ PATCH /api/menu-items/{id};
+  case (Horários, delivery e reservas)
+    :Horários, delivery e reservas\n→ POST /api/restaurants/{id}/scheme/publish;
+  endswitch
+endif
+stop
+@enduml

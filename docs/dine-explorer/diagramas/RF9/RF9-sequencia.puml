@@ -1,0 +1,76 @@
+@startuml RF9_Sequencia
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+
+title RF9 — Editar os dados de um esquema de alimentação & seus respectivos esquemas de peça de alimento salvos\nDiagrama de sequência — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+actor "Pessoa usuária" as U
+boundary "App (Next.js / RN)" as P
+participant "API Gateway\n(Spring Cloud Gateway)" as GW
+control "MealSchemeController" as C
+participant "MealSchemeService" as S
+participant "GuidelinePort (RF25)" as P0
+participant "SearchIndexPort\n(OpenSearch)" as P1
+database "MySQL 8.4\n(Spring Data JPA + Flyway)" as DB_MySQL
+queue "Kafka" as K
+== Editor do esquema ==
+U -> P : interage na tela
+P -> GW : PATCH /api/schemes/{id}\nAuthorization: Bearer JWT
+GW -> GW : valida JWT (ES256) + rate limit (Redis)
+GW -> C : PATCH /api/schemes/{id}
+C -> S : update()
+activate S
+S -> DB_MySQL : SELECT meal_schemes, meal_scheme_items, food_pieces
+alt conflito de versao
+S --> C : CONFLITO_DE_VERSAO
+C --> P : 4xx ProblemDetail {code: CONFLITO_DE_VERSAO}
+P --> U : mostra aviso
+end
+alt viola diretriz
+S --> C : VIOLA_DIRETRIZ
+C --> P : 4xx ProblemDetail {code: VIOLA_DIRETRIZ}
+P --> U : mostra aviso
+end
+S -> P0 : update()
+P0 --> S : ok
+S -> P1 : updatePiece()
+P1 --> S : ok
+S -> DB_MySQL : INSERT/UPDATE (@Transactional)
+S ->> K : evento de domínio (outbox)
+deactivate S
+S --> C : DTO (record)
+C --> P : 200/201 JSON
+P --> U : atualiza a tela
+== Editor das peças vinculadas ==
+U -> P : Editor das peças vinculadas
+P -> C : PATCH /api/pieces/{id}
+C -> S : updatePiece()
+S --> C : resultado
+C --> P : 200 JSON
+== Histórico de versões e restaurar ==
+U -> P : Histórico de versões e restaurar
+P -> C : GET /api/schemes/{id}/versions
+C -> S : updatePiece()
+S --> C : resultado
+C --> P : 200 JSON
+@enduml

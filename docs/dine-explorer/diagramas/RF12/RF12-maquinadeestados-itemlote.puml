@@ -1,0 +1,28 @@
+@startuml RF12_MaquinaDeEstados_ItemLote
+!pragma layout smetana
+title RF12 — Visualizar & Editar a página "Minhas Fotos" — fotos cadastradas através da adição de peças & criação de esq…\nDiagrama de máquina de estados — ItemLote — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Na fila" as FIL
+state "Enviando" as ENV
+state "Reconhecendo" as REC
+state "Pronto" as PRO
+state "Erro" as ERR
+
+[*] --> FIL
+FIL --> ENV
+ENV --> REC : upload ok
+REC --> PRO
+ENV --> ERR
+ERR --> FIL : tentar de novo
+@enduml

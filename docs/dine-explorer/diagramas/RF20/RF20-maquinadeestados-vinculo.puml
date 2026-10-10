@@ -1,0 +1,25 @@
+@startuml RF20_MaquinaDeEstados_Vinculo
+!pragma layout smetana
+title RF20 — Criar & publicar um esquema de alimentação vinculado a uma marca de alimentos cadastrada (aba "Marcas de al…\nDiagrama de máquina de estados — Vinculo — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Solicitado" as SOL
+state "Aprovado" as APR
+state "Recusado" as REC
+state "Revogado" as REV
+
+[*] --> SOL
+SOL --> APR : marca aprova
+SOL --> REC : marca recusa
+APR --> REV : qualquer lado revoga
+@enduml

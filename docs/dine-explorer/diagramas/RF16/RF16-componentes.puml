@@ -1,0 +1,73 @@
+@startuml RF16_Componentes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF16 — Implementar geração de imagem 3D das peças de alimento do inventário utilizando serviços de API externas\nDiagrama de componentes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "Frontend (Next.js 15 · React 19 · TanStack Query)" {
+  component "Visualizador 3D (/pieces/{id}/3d)" as FE
+  component "lib/api (OpenAPI client gerado)" as APIC
+}
+package "Borda" {
+  component "CloudFront + WAF" as CDN
+  component "Spring Cloud Gateway\n(JWT, rate limit, CORS)" as GW
+}
+package "dine-web (REST · Spring Boot 4.0)" {
+  component "Food3DController\nPOST /api/pieces/{id}/3d\nGET /api/3d-jobs/{id}" as CT
+}
+package "dine-application (Spring Modulith · casos de uso)" {
+  component "Food3DService" as SV
+  component "Model3DProviderPort\n«API externa image-to-3D»" as PT0 <<port>>
+  component "MediaStoragePort\n«S3»" as PT1 <<port>>
+  component "JobQueuePort\n«Kafka»" as PT2 <<port>>
+}
+package "dine-domain (entidades + repositórios)" {
+  component "Food3DJobRepository\nFoodPieceRepository" as REPO_MySQL
+}
+database "MySQL 8.4\n(Spring Data JPA + Flyway)\n• food_3d_jobs\n• food_pieces" as DB_MySQL
+database "Amazon S3\n(AWS SDK v2)\n• s3://dine-media/3d/{pieceId}.glb" as DB_S3
+cloud "API image-to-3D" as EX0
+cloud "AWS S3" as EX1
+component "Observabilidade\n(Micrometer + OpenTelemetry\n→ Grafana/Tempo/Loki)" as OBS
+FE --> APIC
+APIC --> CDN : HTTPS/JSON
+CDN --> GW
+GW --> CT
+CT --> SV
+SV ..> OBS
+SV --> PT0
+SV --> PT1
+SV --> PT2
+SV --> REPO_MySQL
+REPO_MySQL --> DB_MySQL
+PT1 --> DB_S3
+PT0 --> EX0
+SV --> EX1
+@enduml

@@ -1,0 +1,94 @@
+@startuml RF11_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF11 — Utilizar o "Background Studio" para confeccionar a arte de estilo e personalização de esquemas & peças de a…\nDiagrama de classes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "MySQL" {
+  class BackgroundArt <<background_arts>> {
+    +id: UUID
+    +owner: User
+    +palette: List<Color>
+    +pattern: PatternKind
+    +animation: AnimationKind
+    +texture: String
+    +assetKey: String
+    +createdAt: Instant
+  }
+  class MealScheme <<meal_schemes>> {
+    +id: UUID
+    +owner: User
+    +title: String
+    +mealType: MealType
+    +occasion: Occasion
+    +cuisine: Cuisine
+    +servings: int
+    +prepMinutes: int
+    +difficulty: Difficulty
+    +totalKcal: int
+    +healthScore: int (0-100)
+    +status: SchemeStatus
+    +visibility: Visibility
+    +backgroundArtId: UUID
+    +restaurant: RestaurantProfile (opcional)
+    +publishedAt: Instant
+  }
+}
+package "S3" {
+  class BackgroundAsset <<s3://dine-media/art/{artId}.webp>> {
+    +key: String
+    +width: int
+    +height: int
+    +animated: boolean
+  }
+}
+package "dominio (enums)" {
+  enum PatternKind {
+    LISO
+    XADREZ
+    MARMORE
+    MADEIRA
+    AZULEJO
+    NEON
+  }
+}
+package "aplicacao (casos de uso)" {
+  class BackgroundStudioService <<@Service>> {
+    +presets()
+    +render()
+    +apply()
+  }
+  class BackgroundStudioController <<@RestController>> {
+    +GET /api/studio/presets
+    +POST /api/studio/arts
+    +PUT /api/schemes/{id}/background
+  }
+  interface MediaStoragePort <<port>>
+  BackgroundStudioService ..> MediaStoragePort
+  interface RenderPort <<port>>
+  BackgroundStudioService ..> RenderPort
+}
+BackgroundStudioController --> BackgroundStudioService
+BackgroundStudioService ..> BackgroundArt : usa
+BackgroundStudioService ..> BackgroundAsset : usa
+BackgroundStudioService ..> MealScheme : usa
+BackgroundArt --> PatternKind
+@enduml

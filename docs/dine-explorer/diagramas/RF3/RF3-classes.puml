@@ -1,0 +1,207 @@
+@startuml RF3_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de classes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "MySQL" {
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: LocalDate
+    +passwordHash: String (Argon2id)
+    +profileType: ProfileType
+    +accountStatus: AccountStatus
+    +countryCode: String
+    +city: String
+    +avatarUrl: String
+    +bio: String
+    +createdAt: Instant
+    +lastLoginAt: Instant
+    +deletedAt: Instant
+  }
+  class UserPreferences <<user_preferences>> {
+    +id: UUID
+    +user: User
+    +theme: ThemeMode (LIGHT/DARK/AUTO)
+    +language: UiLanguage
+    +fontScale: int
+    +highContrast: boolean
+    +reduceMotion: boolean
+    +accentColor: String
+    +cardDensity: UiDensity
+    +unitSystem: UnitSystem (METRIC/IMPERIAL)
+    +currency: String
+    +dietaryRestrictions: Set<Diet>
+    +allergens: Set<Allergen>
+    +clientUpdatedAt: Instant
+  }
+  class RefreshToken <<refresh_tokens>> {
+    +id: UUID
+    +user: User
+    +tokenHash: String
+    +familyId: UUID
+    +expiresAt: Instant
+    +revokedAt: Instant
+    +rotatedFromId: UUID
+    +createdIp: String
+    +userAgent: String
+    +deviceName: String
+  }
+  class UserConsent <<user_consents>> {
+    +id: UUID
+    +user: User
+    +purpose: ConsentPurpose
+    +granted: boolean
+    +legalBasis: LegalBasis
+    +policyVersion: String
+    +grantedAt: Instant
+    +revokedAt: Instant
+    +ip: String
+  }
+  class DataExportRequest <<data_export_requests>> {
+    +id: UUID
+    +user: User
+    +status: ExportStatus
+    +requestedAt: Instant
+    +readyAt: Instant
+    +expiresAt: Instant
+    +s3Key: String
+    +sha256: String
+  }
+  class NotificationPreference <<notification_preferences>> {
+    +id: UUID
+    +user: User
+    +channel: Channel (PUSH/EMAIL/IN_APP)
+    +type: NotificationType
+    +enabled: boolean
+    +quietHoursStart: LocalTime
+    +quietHoursEnd: LocalTime
+  }
+}
+package "Redis" {
+  class SessionCache <<session:{jti}>> {
+    +jti: String
+    +userId: UUID
+    +deviceName: String
+    +ip: String
+    +issuedAt: Instant
+    +ttl: 15 min
+  }
+}
+package "S3" {
+  class DataExportArchive <<s3://dine-lgpd-exports/{userId}/{id}.zip>> {
+    +key: String
+    +sizeBytes: long
+    +sseKms: true
+    +presignedUrlTtl: 24h
+    +lifecycle: 7 dias
+  }
+}
+package "Cassandra" {
+  class Notification <<notifications_by_user>> {
+    +userId: UUID (partition)
+    +createdAt: TimeUUID (clustering DESC)
+    +type: NotificationType
+    +title: String
+    +body: String
+    +deepLink: String
+    +readAt: Instant
+  }
+  class AuditEvent <<audit_events>> {
+    +userId: UUID (partition)
+    +day: LocalDate (partition)
+    +ts: TimeUUID (clustering)
+    +action: String
+    +ip: String
+    +userAgent: String
+    +payload: Map<String,String>
+  }
+}
+package "dominio (enums)" {
+  enum ConsentPurpose {
+    MARKETING
+    PERSONALIZACAO_IA
+    DADOS_SAUDE_NUTRICAO
+    LOCALIZACAO_PRECISA
+    COMPARTILHAR_PARCEIROS
+  }
+  enum ExportStatus {
+    SOLICITADA
+    PROCESSANDO
+    PRONTA
+    BAIXADA
+    EXPIRADA
+    FALHOU
+  }
+}
+package "aplicacao (casos de uso)" {
+  class AccountService <<@Service>> {
+    +updateProfile()
+    +updateSensitive()
+    +listSessions()
+    +revokeSession()
+    +setConsent()
+    +requestExport()
+    +scheduleDeletion()
+    +updateNotificationPrefs()
+  }
+  class MeController <<@RestController>> {
+    +GET /api/me
+    +PATCH /api/me/profile
+    +PATCH /api/me/sensitive
+    +GET /api/auth/sessions
+    +DELETE /api/auth/sessions/{id}
+    +PUT /api/me/consents/{purpose}
+  }
+  interface MediaStoragePort <<port>>
+  AccountService ..> MediaStoragePort
+  interface EmailSenderPort <<port>>
+  AccountService ..> EmailSenderPort
+  interface PushPort <<port>>
+  AccountService ..> PushPort
+  interface EventPublisherPort <<port>>
+  AccountService ..> EventPublisherPort
+}
+MeController --> AccountService
+AccountService ..> User : usa
+AccountService ..> UserPreferences : usa
+AccountService ..> RefreshToken : usa
+AccountService ..> SessionCache : usa
+AccountService ..> UserConsent : usa
+AccountService ..> DataExportRequest : usa
+AccountService ..> DataExportArchive : usa
+AccountService ..> Notification : usa
+AccountService ..> NotificationPreference : usa
+AccountService ..> AuditEvent : usa
+UserPreferences "*" --> "1" User : user
+RefreshToken "*" --> "1" User : user
+UserConsent "*" --> "1" User : user
+UserConsent --> ConsentPurpose
+DataExportRequest "*" --> "1" User : user
+DataExportRequest --> ExportStatus
+NotificationPreference "*" --> "1" User : user
+@enduml

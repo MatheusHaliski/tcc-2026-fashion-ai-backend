@@ -1,0 +1,33 @@
+@startuml RF5_MaquinaDeEstados_Esquema
+!pragma layout smetana
+title RF5 — Criar um esquema de alimentação & sua respectiva lista de peças de alimento, através da aba "Criar Prato"\nDiagrama de máquina de estados — Esquema — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Rascunho" as RAS
+state "Validando diretriz" as VAL
+state "Publicado" as PUB
+state "Privado" as PRV
+state "Arquivado" as ARQ
+state "Removido (moderação)" as REM
+
+[*] --> RAS : criar
+RAS --> VAL : publicar
+VAL --> RAS : violação bloqueante
+VAL --> PUB : ok → indexa + fan-out
+RAS --> PRV : salvar privado
+PRV --> VAL : publicar
+PUB --> PRV : tornar privado
+PUB --> ARQ : arquivar
+PUB --> REM : denúncia procedente
+ARQ --> PRV : restaurar
+@enduml

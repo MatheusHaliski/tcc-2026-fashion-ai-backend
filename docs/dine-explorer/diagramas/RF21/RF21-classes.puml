@@ -1,0 +1,103 @@
+@startuml RF21_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF21 — Acessar a aba BioDine™ — serviço de sistema ciber-físico dentro do Dine Explorer\nDiagrama de classes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "MySQL" {
+  class BioDineDevice <<biodine_devices>> {
+    +id: UUID
+    +owner: User
+    +serial: String
+    +model: String
+    +firmware: String
+    +status: DeviceStatus
+    +pairedAt: Instant
+    +lastSeenAt: Instant
+    +mqttClientId: String
+  }
+  class NutritionDiary <<nutrition_diary>> {
+    +id: UUID
+    +user: User
+    +date: LocalDate
+    +kcal: int
+    +proteinG: decimal
+    +carbsG: decimal
+    +fatG: decimal
+    +waterMl: int
+    +source: DiarySource
+  }
+  class UserConsent <<user_consents>> {
+    +id: UUID
+    +user: User
+    +purpose: ConsentPurpose
+    +granted: boolean
+    +legalBasis: LegalBasis
+    +policyVersion: String
+    +grantedAt: Instant
+    +revokedAt: Instant
+    +ip: String
+  }
+}
+package "Cassandra" {
+  class BioDineReading <<biodine_readings_by_device_day>> {
+    +deviceId: UUID (partition)
+    +day: date (partition)
+    +ts: TimeUUID
+    +weightG: int
+    +temperatureC: decimal
+    +humidity: decimal
+    +kcalEstimated: int
+  }
+}
+package "dominio (enums)" {
+  enum DeviceStatus {
+    NAO_PAREADO
+    PAREANDO
+    ONLINE
+    OFFLINE
+    DESPAREADO
+  }
+}
+package "aplicacao (casos de uso)" {
+  class BioDineService <<@Service>> {
+    +pair()
+    +dashboard()
+    +diary()
+    +ingestTelemetry()
+  }
+  class BioDineController <<@RestController>> {
+    +POST /api/biodine/devices
+    +GET /api/biodine/dashboard
+    +GET /api/biodine/diary
+  }
+  interface IotPort <<port>>
+  BioDineService ..> IotPort
+  interface ConsentPort <<port>>
+  BioDineService ..> ConsentPort
+}
+BioDineController --> BioDineService
+BioDineService ..> BioDineDevice : usa
+BioDineService ..> BioDineReading : usa
+BioDineService ..> NutritionDiary : usa
+BioDineService ..> UserConsent : usa
+BioDineDevice --> DeviceStatus
+@enduml

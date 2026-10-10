@@ -1,0 +1,38 @@
+@startuml RF29_MaquinaDeEstados_Pedido
+!pragma layout smetana
+title RF29 — Realizar pedidos (delivery/retirada) e reservas de mesa nos restaurantes — varejo culinário\nDiagrama de máquina de estados — Pedido — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Criado" as CRI
+state "Aguardando pagamento" as AGP
+state "Pago" as PAG
+state "Em preparo" as PRE
+state "Saiu para entrega" as SAI
+state "Entregue" as ENT
+state "Cancelado" as CAN
+state "Estornado" as EST
+
+[*] --> CRI : checkout
+CRI --> AGP : intenção de pagamento
+AGP --> PAG : webhook aprovado
+AGP --> CAN : recusado/expirou
+PAG --> PRE : restaurante aceita
+PAG --> EST : restaurante recusa
+PRE --> SAI : despachado
+SAI --> ENT : entregue
+ENT --> [*]
+note right of CRI
+  Idempotency-Key no POST /orders e
+  no webhook de pagamento.
+end note
+@enduml

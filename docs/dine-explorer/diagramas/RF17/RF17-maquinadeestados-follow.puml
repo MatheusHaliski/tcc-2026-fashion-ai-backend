@@ -1,0 +1,28 @@
+@startuml RF17_MaquinaDeEstados_Follow
+!pragma layout smetana
+title RF17 — Visualizar a página de perfil de outros Usuários cadastrados na rede social do Dine Explorer\nDiagrama de máquina de estados — Follow — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Não segue" as NAO
+state "Solicitado (perfil privado)" as SOL
+state "Seguindo" as SEG
+state "Bloqueado" as BLO
+
+[*] --> NAO
+NAO --> SEG : seguir [público]
+NAO --> SOL : seguir [privado]
+SOL --> SEG : aceito
+SEG --> NAO : deixar de seguir
+SEG --> BLO : bloquear
+BLO --> NAO : desbloquear
+@enduml

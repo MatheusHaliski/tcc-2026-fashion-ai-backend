@@ -1,0 +1,156 @@
+@startuml RF27_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF27 — Acessar a aba "Explorador": globo 3D animado com comidas de cada região do mundo, mapas de calor e rankings\nDiagrama de classes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "MySQL" {
+  class GlobeLayer <<globe_layers>> {
+    +id: UUID
+    +code: LayerCode
+    +title: String
+    +metric: String
+    +colorScale: String
+    +source: String
+    +refreshCron: String
+    +lastBuiltAt: Instant
+  }
+  class RegionalDish <<regional_dishes>> {
+    +id: UUID
+    +name: String
+    +countryCode: String
+    +regionCode: String
+    +lat: double
+    +lng: double
+    +illustrationKey: String
+    +lottieKey: String
+    +description: String
+    +isTypical: boolean
+  }
+  class HealthIndicator <<health_indicators>> {
+    +id: UUID
+    +countryCode: String
+    +regionCode: String
+    +year: int
+    +obesityRateAdult: decimal
+    +source: String (OMS/NCD-RisC)
+    +importedAt: Instant
+  }
+}
+package "S3" {
+  class GlobeTileSet <<s3://dine-globe/{layer}/{version}/h3-{res}.pbf>> {
+    +key: String
+    +h3Resolution: int
+    +format: MVT/PBF
+    +cdn: CloudFront
+    +version: String
+  }
+  class DishIllustration <<s3://dine-globe/illustrations/{dishId}.lottie>> {
+    +key: String
+    +format: Lottie/Rive/WebM
+    +frames: int
+    +loop: boolean
+  }
+}
+package "Redis" {
+  class GlobeLayerCache <<globe:{layer}:{bbox}:{zoom}>> {
+    +key: String
+    +value: GeoJSON compactado
+    +ttl: 10 min
+  }
+  class HypeRanking <<rank:{scope}:{region}:{period}>> {
+    +key: String
+    +type: ZSET
+    +member: targetId
+    +score: double
+    +ttl: 1h
+  }
+}
+package "OpenSearch" {
+  class RestaurantDoc <<idx_restaurants>> {
+    +id: keyword
+    +name: text
+    +cuisines: keyword[]
+    +priceLevel: integer
+    +location: geo_point
+    +countryCode: keyword
+    +regionCode: keyword
+    +city: keyword
+    +rating: float
+    +hype: float
+    +avgTicketUsd: float
+    +dietOptions: keyword[]
+    +openNow: boolean
+  }
+}
+package "dominio (enums)" {
+  enum LayerCode {
+    OBESIDADE
+    MAIS_CAROS
+    MAIS_POPULARES
+    COMIDAS_TIPICAS
+    SENTIMENTO
+    SAUDAVEL
+    DENSIDADE_RESTAURANTES
+  }
+  enum RankScope {
+    WORLD
+    CONTINENT
+    REGION
+    COUNTRY
+    CITY
+  }
+}
+package "aplicacao (casos de uso)" {
+  class ExplorerService <<@Service>> {
+    +layers()
+    +heatmap()
+    +typicalDishes()
+    +topRegion()
+    +topWorld()
+  }
+  class ExplorerController <<@RestController>> {
+    +GET /api/explorer/layers
+    +GET /api/explorer/layers/{code}?bbox=&zoom=
+    +GET /api/explorer/dishes?region=
+    +GET /api/rankings?scope=REGION&region=&limit=20
+    +GET /api/rankings?scope=WORLD&limit=10
+  }
+  interface GeoAggregationPort <<port>>
+  ExplorerService ..> GeoAggregationPort
+  interface RankingPort <<port>>
+  ExplorerService ..> RankingPort
+  interface TileStoragePort <<port>>
+  ExplorerService ..> TileStoragePort
+  interface OpenDataPort <<port>>
+  ExplorerService ..> OpenDataPort
+}
+ExplorerController --> ExplorerService
+ExplorerService ..> GlobeLayer : usa
+ExplorerService ..> GlobeTileSet : usa
+ExplorerService ..> GlobeLayerCache : usa
+ExplorerService ..> RegionalDish : usa
+ExplorerService ..> DishIllustration : usa
+ExplorerService ..> HealthIndicator : usa
+ExplorerService ..> HypeRanking : usa
+ExplorerService ..> RestaurantDoc : usa
+GlobeLayer --> LayerCode
+@enduml

@@ -1,0 +1,71 @@
+@startuml RF19_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  DiamondBackgroundColor #FFF4E5
+  DiamondBorderColor #C9822B
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF19 — Usar as interações de rede social culinárias (curtir, comentar, compartilhar, salvar + reações Delicioso, S…\nDiagrama de atividades — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+|Pessoa usuária|
+start
+:Abre Card do esquema (feed / detalhe);
+|App (Next.js 15 / React Native)|
+|Pessoa usuária|
+:Barra de ações do card (♥ · 💬 · ↗ · 🔖);
+|App (Next.js 15 / React Native)|
+:Valida no cliente (Zod)\nPUT /api/{targetType}/{id}/reactions/{kind};
+|API (Spring Boot 4.0)|
+:InteractionController\n→ InteractionService.react()\n(Bean Validation + Spring Security 7);
+if (reacao invalida?) then (sim)
+  :4xx REACAO_INVALIDA\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (comentario toxico?) then (sim)
+  :4xx COMENTARIO_TOXICO\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (alvo privado?) then (sim)
+  :4xx ALVO_PRIVADO\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:MySQL: reactions, comments, saved_items;
+:Cassandra: reaction_counters_by_target,\nshare_events_by_target,\nengagement_events_by_target_day,\nnotifications_by_user;
+:ModerationPort;
+:EventPublisherPort;
+:CounterPort;
+:Publica evento de domínio\n(Spring Modulith → Kafka)\n→ métricas RF24 / auditoria;
+|App (Next.js 15 / React Native)|
+:Atualiza a tela (TanStack Query)\ne mostra feedback;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Seletor de reações culinárias (lon…)
+    :Seletor de reações culinárias\n(long-press)\n→ DELETE /api/{targetType}/{id}/reactions/{kind};
+  case (Folha de comentários com respostas)
+    :Folha de comentários com respostas\n→ POST /api/{targetType}/{id}/comments;
+  case (Compartilhar (link, WhatsApp, Inst…)
+    :Compartilhar (link, WhatsApp, Instagram\nStories com arte do card)\n→ POST /api/{targetType}/{id}/share;
+  endswitch
+endif
+stop
+@enduml

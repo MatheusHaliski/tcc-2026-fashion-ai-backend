@@ -1,0 +1,91 @@
+@startuml RF20_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF20 — Criar & publicar um esquema de alimentação vinculado a uma marca de alimentos cadastrada (aba "Marcas de al…\nDiagrama de classes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "MySQL" {
+  class SchemeBrandLink <<scheme_brand_links>> {
+    +id: UUID
+    +scheme: MealScheme
+    +brand: FoodBrandProfile
+    +status: LinkStatus
+    +requestedAt: Instant
+    +decidedAt: Instant
+  }
+  class FoodBrandProfile <<food_brand_profiles>> {
+    +id: UUID
+    +owner: User
+    +brandName: String
+    +slug: String
+    +cnpj: String
+    +category: BrandCategory
+    +countryCode: String
+    +logoUrl: String
+    +approvalStatus: ApprovalStatus
+  }
+  class MealScheme <<meal_schemes>> {
+    +id: UUID
+    +owner: User
+    +title: String
+    +mealType: MealType
+    +occasion: Occasion
+    +cuisine: Cuisine
+    +servings: int
+    +prepMinutes: int
+    +difficulty: Difficulty
+    +totalKcal: int
+    +healthScore: int (0-100)
+    +status: SchemeStatus
+    +visibility: Visibility
+    +backgroundArtId: UUID
+    +restaurant: RestaurantProfile (opcional)
+    +publishedAt: Instant
+  }
+}
+package "dominio (enums)" {
+  enum LinkStatus {
+    SOLICITADO
+    APROVADO
+    RECUSADO
+    REVOGADO
+  }
+}
+package "aplicacao (casos de uso)" {
+  class BrandLinkService <<@Service>> {
+    +request()
+    +decide()
+  }
+  class BrandLinkController <<@RestController>> {
+    +POST /api/schemes/{id}/brand-links
+    +PATCH /api/brand-links/{id}
+  }
+  interface NotificationService <<port>>
+  BrandLinkService ..> NotificationService
+}
+BrandLinkController --> BrandLinkService
+BrandLinkService ..> SchemeBrandLink : usa
+BrandLinkService ..> FoodBrandProfile : usa
+BrandLinkService ..> MealScheme : usa
+SchemeBrandLink "*" --> "1" MealScheme : scheme
+SchemeBrandLink "*" --> "1" FoodBrandProfile : brand
+SchemeBrandLink --> LinkStatus
+@enduml

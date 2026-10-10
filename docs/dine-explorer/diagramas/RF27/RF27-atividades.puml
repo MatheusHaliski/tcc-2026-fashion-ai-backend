@@ -1,0 +1,76 @@
+@startuml RF27_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  DiamondBackgroundColor #FFF4E5
+  DiamondBorderColor #C9822B
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF27 — Acessar a aba "Explorador": globo 3D animado com comidas de cada região do mundo, mapas de calor e rankings\nDiagrama de atividades — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+|Pessoa usuária|
+start
+:Abre Explorador (/explore) — Globo;
+|App (Next.js 15 / React Native)|
+:Carrega os dados da tela\nGET /api/explorer/layers\nGET /api/explorer/layers/{code}?bbox=&zoom=\nGET /api/explorer/dishes?region=;
+|Pessoa usuária|
+:Globo 3D com rotação e zoom (região →\npaís → cidade);
+|App (Next.js 15 / React Native)|
+:Valida no cliente (Zod)\nGET /api/explorer/layers;
+|API (Spring Boot 4.0)|
+:ExplorerController\n→ ExplorerService.layers()\n(Bean Validation + Spring Security 7);
+if (camada inexistente?) then (sim)
+  :4xx CAMADA_INEXISTENTE\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+if (bbox invalido?) then (sim)
+  :4xx BBOX_INVALIDO\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:MySQL: globe_layers, regional_dishes,\nhealth_indicators;
+:S3: s3://dine-globe/{layer}/{version}/h3-{res}.pbf,\ns3://dine-globe/illustrations/{dishId}.lottie;
+:Redis: globe:{layer}:{bbox}:{zoom},\nrank:{scope}:{region}:{period};
+:OpenSearch: idx_restaurants;
+:GeoAggregationPort;
+:RankingPort;
+:TileStoragePort;
+:Publica evento de domínio\n(Spring Modulith → Kafka)\n→ métricas RF24 / auditoria;
+|App (Next.js 15 / React Native)|
+:Atualiza a tela (TanStack Query)\ne mostra feedback;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Ilustrações animadas das comidas t…)
+    :Ilustrações animadas das comidas típicas\nsobre cada região\n→ GET /api/explorer/layers/{code}?bbox=&zoom=;
+  case (Seletor de camadas de calor: Obesi…)
+    :Seletor de camadas de calor: Obesidade ·\nMais caros · Mais populares · Comidas\ntípicas · Sentimento · Saudável\n→ GET /api/explorer/dishes?region=;
+  case (Painel 'Top 20 da região' (atualiz…)
+    :Painel 'Top 20 da região' (atualiza ao\ngirar o globo)\n→ GET /api/rankings?scope=REGION&region=&limit=20;
+  case (Painel 'Top 10 do mundo')
+    :Painel 'Top 10 do mundo'\n→ GET /api/rankings?scope=WORLD&limit=10;
+  case (Legenda e fonte dos dados)
+    :Legenda e fonte dos dados\n→ GET /api/explorer/layers;
+  case (Sub-aba Restaurantes do Mundo (RF2…)
+    :Sub-aba Restaurantes do Mundo (RF28)\n→ GET /api/explorer/layers/{code}?bbox=&zoom=;
+  endswitch
+endif
+stop
+@enduml

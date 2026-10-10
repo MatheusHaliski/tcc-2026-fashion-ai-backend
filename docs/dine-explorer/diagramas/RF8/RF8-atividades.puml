@@ -1,0 +1,63 @@
+@startuml RF8_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  DiamondBackgroundColor #FFF4E5
+  DiamondBorderColor #C9822B
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF8 — Visualizar esquemas de alimentação & peças de alimento criados por outros usuários na rede social, através …\nDiagrama de atividades — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+|Pessoa usuária|
+start
+:Abre Buscar (/search);
+|App (Next.js 15 / React Native)|
+:Carrega os dados da tela\nGET /api/search?q=&filters=\nGET /api/search/suggest;
+|Pessoa usuária|
+:Barra de busca com autocomplete;
+|App (Next.js 15 / React Native)|
+:Valida no cliente (Zod)\nGET /api/search?q=&filters=;
+|API (Spring Boot 4.0)|
+:SearchController\n→ SearchService.search()\n(Bean Validation + Spring Security 7);
+if (consulta invalida?) then (sim)
+  :4xx CONSULTA_INVALIDA\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:OpenSearch: idx_meal_schemes, idx_food_pieces;
+:MySQL: dine_hype_scores;
+:SearchIndexPort;
+:CachePort;
+:Publica evento de domínio\n(Spring Modulith → Kafka)\n→ métricas RF24 / auditoria;
+|App (Next.js 15 / React Native)|
+:Atualiza a tela (TanStack Query)\ne mostra feedback;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Chips de filtro)
+    :Chips de filtro\n→ GET /api/search/suggest;
+  case (Grade de cards (esquemas e peças))
+    :Grade de cards (esquemas e peças)\n→ GET /api/search?q=&filters=;
+  case (Abrir card → detalhe)
+    :Abrir card → detalhe\n→ GET /api/search/suggest;
+  endswitch
+endif
+stop
+@enduml

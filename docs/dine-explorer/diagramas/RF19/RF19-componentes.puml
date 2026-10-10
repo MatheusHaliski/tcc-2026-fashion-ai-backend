@@ -1,0 +1,75 @@
+@startuml RF19_Componentes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF19 — Usar as interações de rede social culinárias (curtir, comentar, compartilhar, salvar + reações Delicioso, S…\nDiagrama de componentes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "Frontend (Next.js 15 · React 19 · TanStack Query)" {
+  component "Card do esquema (feed / detalhe)" as FE
+  component "lib/api (OpenAPI client gerado)" as APIC
+}
+package "Borda" {
+  component "CloudFront + WAF" as CDN
+  component "Spring Cloud Gateway\n(JWT, rate limit, CORS)" as GW
+}
+package "dine-web (REST · Spring Boot 4.0)" {
+  component "InteractionController\nPUT /api/{targetType}/{id}/reactions/{kind}\nDELETE /api/{targetType}/{id}/reactions/{kind}\nPOST /api/{targetType}/{id}/comments\nPOST /api/{targetType}/{id}/share\nPOST /api/{targetType}/{id}/save" as CT
+}
+package "dine-application (Spring Modulith · casos de uso)" {
+  component "InteractionService" as SV
+  component "ModerationPort\n«Spring AI classificador»" as PT0 <<port>>
+  component "EventPublisherPort\n«Kafka engagement-events»" as PT1 <<port>>
+  component "CounterPort\n«Cassandra counters»" as PT2 <<port>>
+  component "NotificationService" as PT3 <<port>>
+}
+package "dine-domain (entidades + repositórios)" {
+  component "ReactionRepository\nCommentRepository\nSavedItemRepository" as REPO_MySQL
+  component "ReactionCounterRepository\nShareEventRepository\nEngagementEventRepository\nNotificationRepository" as REPO_Cassandra
+}
+database "MySQL 8.4\n(Spring Data JPA + Flyway)\n• reactions\n• comments\n• saved_items" as DB_MySQL
+database "Cassandra 5\n(Spring Data Cassandra)\n• reaction_counters_by_target\n• share_events_by_target\n• engagement_events_by_target_day\n• notifications_by_user" as DB_Cassandra
+cloud "Kafka" as EX0
+component "Observabilidade\n(Micrometer + OpenTelemetry\n→ Grafana/Tempo/Loki)" as OBS
+FE --> APIC
+APIC --> CDN : HTTPS/JSON
+CDN --> GW
+GW --> CT
+CT --> SV
+SV ..> OBS
+SV --> PT0
+SV --> PT1
+SV --> PT2
+SV --> PT3
+SV --> REPO_MySQL
+REPO_MySQL --> DB_MySQL
+SV --> REPO_Cassandra
+REPO_Cassandra --> DB_Cassandra
+PT1 --> EX0
+@enduml

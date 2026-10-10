@@ -1,0 +1,84 @@
+@startuml RF13_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF13 — Criar um esquema de identidade pessoal de alimentação na página "DNA de Alimentação"\nDiagrama de classes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "MySQL" {
+  class TasteDna <<taste_dna>> {
+    +id: UUID
+    +user: User
+    +flavorProfile: Map<Flavor,int> (doce, salgado, ácido, amargo, umami, picante)
+    +favoriteCuisines: List<Cuisine>
+    +diet: Diet
+    +spiceTolerance: int
+    +adventurousness: int
+    +embedding: vector
+    +updatedAt: Instant
+  }
+  class UserPreferences <<user_preferences>> {
+    +id: UUID
+    +user: User
+    +theme: ThemeMode (LIGHT/DARK/AUTO)
+    +language: UiLanguage
+    +fontScale: int
+    +highContrast: boolean
+    +reduceMotion: boolean
+    +accentColor: String
+    +cardDensity: UiDensity
+    +unitSystem: UnitSystem (METRIC/IMPERIAL)
+    +currency: String
+    +dietaryRestrictions: Set<Diet>
+    +allergens: Set<Allergen>
+    +clientUpdatedAt: Instant
+  }
+}
+package "dominio (enums)" {
+  enum Flavor {
+    DOCE
+    SALGADO
+    ACIDO
+    AMARGO
+    UMAMI
+    PICANTE
+  }
+}
+package "aplicacao (casos de uso)" {
+  class TasteDnaService <<@Service>> {
+    +get()
+    +update()
+    +scoreQuiz()
+  }
+  class TasteDnaController <<@RestController>> {
+    +GET /api/dna
+    +PUT /api/dna
+    +POST /api/dna/quiz
+  }
+  interface EmbeddingPort <<port>>
+  TasteDnaService ..> EmbeddingPort
+  interface ConsentPort <<port>>
+  TasteDnaService ..> ConsentPort
+}
+TasteDnaController --> TasteDnaService
+TasteDnaService ..> TasteDna : usa
+TasteDnaService ..> UserPreferences : usa
+TasteDna --> Flavor
+@enduml

@@ -1,0 +1,87 @@
+@startuml RF3_Componentes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de componentes — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+package "Frontend (Next.js 15 · React 19 · TanStack Query)" {
+  component "Minha Conta (/settings/account)" as FE
+  component "lib/api (OpenAPI client gerado)" as APIC
+}
+package "Borda" {
+  component "CloudFront + WAF" as CDN
+  component "Spring Cloud Gateway\n(JWT, rate limit, CORS)" as GW
+}
+package "dine-web (REST · Spring Boot 4.0)" {
+  component "MeController\nGET /api/me\nPATCH /api/me/profile\nPATCH /api/me/sensitive\nGET /api/auth/sessions\nDELETE /api/auth/sessions/{id}\n(+4 rotas)" as CT
+}
+package "dine-application (Spring Modulith · casos de uso)" {
+  component "AccountService" as SV
+  component "MediaStoragePort\n«S3MediaStorageAdapter»" as PT0 <<port>>
+  component "EmailSenderPort\n«SesEmailSender»" as PT1 <<port>>
+  component "PushPort\n«FirebaseCloudMessaging»" as PT2 <<port>>
+  component "EventPublisherPort\n«Kafka (Spring Cloud Stream)»" as PT3 <<port>>
+}
+package "dine-domain (entidades + repositórios)" {
+  component "UserRepository\nUserPreferencesRepository\nRefreshTokenRepository\nUserConsentRepository\nDataExportRequestRepository\nNotificationPreferenceRepository" as REPO_MySQL
+  component "SessionCacheRepository" as REPO_Redis
+  component "NotificationRepository\nAuditEventRepository" as REPO_Cassandra
+}
+database "MySQL 8.4\n(Spring Data JPA + Flyway)\n• users\n• user_preferences\n• refresh_tokens\n• user_consents\n• data_export_requests\n• notification_preferences" as DB_MySQL
+database "Redis 7\n(Spring Data Redis)\n• session:{jti}" as DB_Redis
+database "Amazon S3\n(AWS SDK v2)\n• s3://dine-lgpd-exports/{userId}/{id}.zip" as DB_S3
+database "Cassandra 5\n(Spring Data Cassandra)\n• notifications_by_user\n• audit_events" as DB_Cassandra
+cloud "AWS S3" as EX0
+cloud "AWS SES" as EX1
+cloud "FCM / APNs" as EX2
+cloud "Kafka" as EX3
+component "Observabilidade\n(Micrometer + OpenTelemetry\n→ Grafana/Tempo/Loki)" as OBS
+FE --> APIC
+APIC --> CDN : HTTPS/JSON
+CDN --> GW
+GW --> CT
+CT --> SV
+SV ..> OBS
+SV --> PT0
+SV --> PT1
+SV --> PT2
+SV --> PT3
+SV --> REPO_MySQL
+REPO_MySQL --> DB_MySQL
+SV --> REPO_Redis
+REPO_Redis --> DB_Redis
+SV --> REPO_Cassandra
+REPO_Cassandra --> DB_Cassandra
+PT0 --> DB_S3
+SV --> EX0
+PT1 --> EX1
+SV --> EX2
+PT3 --> EX3
+@enduml

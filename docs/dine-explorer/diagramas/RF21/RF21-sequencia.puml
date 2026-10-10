@@ -1,0 +1,78 @@
+@startuml RF21_Sequencia
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+
+title RF21 — Acessar a aba BioDine™ — serviço de sistema ciber-físico dentro do Dine Explorer\nDiagrama de sequência — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+actor "Pessoa usuária" as U
+boundary "App (Next.js / RN)" as P
+participant "API Gateway\n(Spring Cloud Gateway)" as GW
+control "BioDineController" as C
+participant "BioDineService" as S
+participant "IotPort\n(AWS IoT Core MQTT)" as P0
+participant "ConsentPort (DADOS_SAUDE_NUTRICAO)" as P1
+database "MySQL 8.4\n(Spring Data JPA + Flyway)" as DB_MySQL
+database "Cassandra 5\n(Spring Data Cassandra)" as DB_Cassandra
+queue "Kafka" as K
+== Parear dispositivo (QR/BLE) ==
+U -> P : interage na tela
+P -> GW : POST /api/biodine/devices\nAuthorization: Bearer JWT
+GW -> GW : valida JWT (ES256) + rate limit (Redis)
+GW -> C : POST /api/biodine/devices
+C -> S : pair()
+activate S
+S -> DB_MySQL : SELECT biodine_devices, nutrition_diary, user_consents
+alt sem consentimento saude
+S --> C : SEM_CONSENTIMENTO_SAUDE
+C --> P : 4xx ProblemDetail {code: SEM_CONSENTIMENTO_SAUDE}
+P --> U : mostra aviso
+end
+alt dispositivo ja pareado
+S --> C : DISPOSITIVO_JA_PAREADO
+C --> P : 4xx ProblemDetail {code: DISPOSITIVO_JA_PAREADO}
+P --> U : mostra aviso
+end
+S -> P0 : pair()
+P0 --> S : ok
+S -> P1 : dashboard()
+P1 --> S : ok
+S -> DB_MySQL : INSERT/UPDATE (@Transactional)
+S -> DB_Cassandra : INSERT biodine_readings_by_device_day
+S ->> K : evento de domínio (outbox)
+deactivate S
+S --> C : DTO (record)
+C --> P : 200/201 JSON
+P --> U : atualiza a tela
+== Painel diário (kcal, macros, água) ==
+U -> P : Painel diário (kcal, macros, água)
+P -> C : GET /api/biodine/dashboard
+C -> S : dashboard()
+S --> C : resultado
+C --> P : 200 JSON
+== Histórico e metas ==
+U -> P : Histórico e metas
+P -> C : GET /api/biodine/diary
+C -> S : dashboard()
+S --> C : resultado
+C --> P : 200 JSON
+@enduml

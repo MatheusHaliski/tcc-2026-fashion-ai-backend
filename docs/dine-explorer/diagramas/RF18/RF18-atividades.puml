@@ -1,0 +1,62 @@
+@startuml RF18_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  DiamondBackgroundColor #FFF4E5
+  DiamondBorderColor #C9822B
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF18 — Possibilitar ao usuário o uso do Criador de prato virtual 2D do Dine Explorer\nDiagrama de atividades — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+
+|Pessoa usuária|
+start
+:Abre Criador de Prato 2D (/plate-builder);
+|App (Next.js 15 / React Native)|
+:Carrega os dados da tela\nGET /api/plate-builder/tableware;
+|Pessoa usuária|
+:Mesa e louça (prato raso, bowl, tábua,\nbento);
+|App (Next.js 15 / React Native)|
+:Valida no cliente (Zod)\nPOST /api/schemes/{id}/plate;
+|API (Spring Boot 4.0)|
+:PlateBuilderController\n→ PlateBuilderService.tableware()\n(Bean Validation + Spring Security 7);
+if (peca sem recorte?) then (sim)
+  :4xx PECA_SEM_RECORTE\n(ProblemDetail RFC 9457)\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:MySQL: meal_scheme_items, meal_schemes;
+:S3: s3://dine-media/art/{artId}.webp;
+:MediaStoragePort;
+:Publica evento de domínio\n(Spring Modulith → Kafka)\n→ métricas RF24 / auditoria;
+|App (Next.js 15 / React Native)|
+:Atualiza a tela (TanStack Query)\ne mostra feedback;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Arrastar peças do inventário)
+    :Arrastar peças do inventário\n→ POST /api/schemes/{id}/plate;
+  case (Camadas e escala por porção)
+    :Camadas e escala por porção\n→ GET /api/plate-builder/tableware;
+  case (Exportar imagem do prato)
+    :Exportar imagem do prato\n→ POST /api/schemes/{id}/plate;
+  endswitch
+endif
+stop
+@enduml

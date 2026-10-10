@@ -1,0 +1,34 @@
+@startuml RF27_MaquinaDeEstados_Globo
+!pragma layout smetana
+title RF27 — Acessar a aba "Explorador": globo 3D animado com comidas de cada região do mundo, mapas de calor e rankings\nDiagrama de máquina de estados — Globo — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Carregando tiles" as CAR
+state "Órbita (rotação automática)" as ORB
+state "Região focada" as FOC
+state "Camada de calor ativa" as CAM
+state "Detalhe do restaurante/prato" as DET
+
+[*] --> CAR
+CAR --> ORB : tiles prontos
+ORB --> FOC : clique/zoom numa região\n→ Top 20 da região
+FOC --> ORB : afastar
+FOC --> CAM : escolher camada
+CAM --> FOC : remover camada
+FOC --> DET : clicar ilustração/marcador
+DET --> FOC : fechar
+note right of CAR
+  reduceMotion (RF23) desliga a rotação
+  e as animações Lottie.
+end note
+@enduml

@@ -1,0 +1,33 @@
+@startuml RF19_MaquinaDeEstados_Comentario
+!pragma layout smetana
+title RF19 — Usar as interações de rede social culinárias (curtir, comentar, compartilhar, salvar + reações Delicioso, S…\nDiagrama de máquina de estados — Comentario — Dine Explorer · Spring Boot 4.0 · Java 25 (virtual threads)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Enviado" as ENV
+state "Em moderação (IA)" as MOD
+state "Publicado" as PUB
+state "Oculto" as OCU
+state "Excluído" as EXC
+
+[*] --> ENV
+ENV --> MOD
+MOD --> PUB : toxicidade < 0.7
+MOD --> OCU : toxicidade ≥ 0.7
+PUB --> OCU : denúncia procedente
+PUB --> EXC : autor exclui
+OCU --> PUB : revisão humana
+note right of ENV
+  Reações positivas e negativas pesam
+  diferente no DineHype (RF24).
+end note
+@enduml
