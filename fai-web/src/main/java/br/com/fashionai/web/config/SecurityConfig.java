@@ -41,7 +41,7 @@ import java.util.List;
 public class SecurityConfig {
     private static final String[] PUBLIC_GET = {
             "/actuator/health", "/actuator/info", "/media/**", "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
-            "/api/usernames/*/availability", "/api/preferences/options", "/api/taxonomy", "/api/assets/**",
+            "/api/usernames/*/availability", "/api/preferences/options", "/api/client/config", "/api/taxonomy", "/api/assets/**",
             "/api/backgrounds/catalog", "/api/backgrounds/combination", "/api/backgrounds/recommendations",
             "/api/feed", "/api/runway", "/api/search", "/api/public-pieces",
             "/api/profiles/*", "/api/brands", "/api/celebrities", "/api/institutional/**",
@@ -118,8 +118,9 @@ public class SecurityConfig {
         CorsConfiguration cors = new CorsConfiguration();
         cors.setAllowedOrigins(Arrays.stream(origins.split(",")).map(String::trim).filter(s -> !s.isEmpty()).toList());
         cors.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        cors.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Correlation-Id", "Accept-Language", "X-Dev-Gate"));
-        cors.setExposedHeaders(List.of("X-Correlation-Id", "Content-Disposition", "X-Dev-Gate-Required"));
+        cors.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Correlation-Id", "Accept-Language", "X-Dev-Gate",
+                "X-FAI-Platform", "X-FAI-Quality", "X-FAI-App-Version", "If-Match"));
+        cors.setExposedHeaders(List.of("X-Correlation-Id", "Content-Disposition", "X-Dev-Gate-Required", "ETag"));
         cors.setAllowCredentials(true);
         cors.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
