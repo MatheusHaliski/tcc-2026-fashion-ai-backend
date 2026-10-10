@@ -43,6 +43,8 @@ public class AiEngine {
     private static final Logger log = LoggerFactory.getLogger(AiEngine.class);
     private static final DateTimeFormatter HOUR = DateTimeFormatter.ofPattern("dd/MM HH:mm").withZone(ZoneId.of("America/Sao_Paulo"));
 
+    /** Orçamento total (s) do Multi-Piece Detector entre os provedores remotos antes do detector local. */
+    static final long VISION_BUDGET_SECONDS = 45;
     private final Map<String, AiProviderPort> providers = new LinkedHashMap<>();
     private final RateLimitPort rateLimit;
     private final UserConsentRepository consents;
@@ -198,9 +200,11 @@ public class AiEngine {
         }
 
         AiCallResult failure = AiCallResult.ERROR;
-        // One budget for both providers, not a full timeout plus retries for each provider.
+        // One budget for both providers, not a full timeout plus retries for each provider. The detector reads a whole
+        // photo and writes one JSON per piece: 12 s left every call to the local fallback in production (logs 10/10),
+        // so the budget covers one provider's timeout plus the retry of the other.
         long visionDeadline = capability == AiCapability.MULTI_PIECE_DETECTOR
-                ? System.nanoTime() + Duration.ofSeconds(12).toNanos() : Long.MAX_VALUE;
+                ? System.nanoTime() + Duration.ofSeconds(VISION_BUDGET_SECONDS).toNanos() : Long.MAX_VALUE;
         for (RemoteStep<T> step : remotes) {
             if (System.nanoTime() >= visionDeadline) break;
             if (!step.available()) {

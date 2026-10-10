@@ -76,7 +76,7 @@ class MultiPieceServiceTest {
     @Test
     void detectorFallbackPersistsFiveIndependentDraftSlotsOnUnevenBedding() {
         var detection = multi.detect(ana, ImageOps.png(MultiPiecePhotoFixtures.beddingWithFiveShirts()));
-        assertThat(detection.source()).isEqualTo("local");
+        assertThat(detection.source()).isEqualTo("local-superficie");
         assertThat(detection.pieces()).hasSize(5);
         assertThat(detection.pieces()).allSatisfy(piece -> {
             assertThat(piece.box().width()).isBetween(24.0, 30.0);
@@ -93,7 +93,7 @@ class MultiPieceServiceTest {
     void detectarECriarORascunhoDeCadaPeca() {
         MultiPieceService.Detection d = multi.detect(ana, photo);
         assertThat(d.pieces()).hasSize(2);
-        assertThat(d.source()).isEqualTo("local");
+        assertThat(d.source()).isEqualTo("local-superficie");
         assertThat(d.originalUrl()).endsWith("original.png");
         PipelineJob parent = kit.dep(PipelineJobRepository.class).findById(d.draftId()).orElseThrow();
         assertThat(Json.map(parent.getResultJson())).containsKeys("pieces", "width", "height");

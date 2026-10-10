@@ -6095,6 +6095,8 @@
   "tryOn.avatar_loading": "Loading your 3D Avatar…",
   "tryOn.avatar_load_failed": "Your 3D Avatar could not be loaded. Please try again.",
   "multiPiece.revisao_local": "Vision AI is unavailable. Check the suggested regions: add a piece and adjust its crop if an item was not separated.",
+  "multiPiece.revisao_local_pessoa": "Vision AI is unavailable right now: the pieces were separated by the person's silhouette (cap, top, bottom, footwear) and each colour was read from its own pixels. Check type, name and brand before saving.",
+  "multiPiece.revisao_local_superficie": "Vision AI is unavailable right now: the pieces were separated by their outline on the surface and each colour was read from its own pixels. Check type, name and brand before saving.",
   "multiPiece.slots": "Select piece to edit",
   "multiPiece.adicionar_slot": "Add piece",
   "multiPiece.ajustar_caixa": "Adjust crop (%)",

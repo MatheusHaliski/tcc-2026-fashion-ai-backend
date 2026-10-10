@@ -6095,6 +6095,8 @@
   "tryOn.avatar_loading": "Carregando seu Avatar 3D…",
   "tryOn.avatar_load_failed": "Não foi possível carregar seu Avatar 3D. Tente novamente.",
   "multiPiece.revisao_local": "A IA de visão está indisponível. Confira as regiões sugeridas: adicione uma peça e ajuste seu recorte se alguma roupa não foi separada.",
+  "multiPiece.revisao_local_pessoa": "Sem IA de visão agora: as peças foram separadas pela silhueta da pessoa (boné, parte de cima, parte de baixo, calçado) e a cor foi lida nos pixels de cada uma. Confira tipo, nome e marca antes de salvar.",
+  "multiPiece.revisao_local_superficie": "Sem IA de visão agora: as peças foram separadas pelo contorno sobre a superfície e a cor foi lida em cada uma. Confira tipo, nome e marca antes de salvar.",
   "multiPiece.slots": "Selecionar peça para editar",
   "multiPiece.adicionar_slot": "Adicionar peça",
   "multiPiece.ajustar_caixa": "Ajustar recorte (%)",

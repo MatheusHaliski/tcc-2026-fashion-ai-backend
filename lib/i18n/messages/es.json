@@ -6095,6 +6095,8 @@
   "tryOn.avatar_loading": "Cargando tu Avatar 3D…",
   "tryOn.avatar_load_failed": "No se pudo cargar tu Avatar 3D. Inténtalo de nuevo.",
   "multiPiece.revisao_local": "La IA de visión no está disponible. Revisa las regiones sugeridas: añade una prenda y ajusta su recorte si alguna no se separó.",
+  "multiPiece.revisao_local_pessoa": "La IA de visión no está disponible ahora: las prendas se separaron por la silueta de la persona (gorra, parte de arriba, parte de abajo, calzado) y el color se leyó en los píxeles de cada una. Revisa tipo, nombre y marca antes de guardar.",
+  "multiPiece.revisao_local_superficie": "La IA de visión no está disponible ahora: las prendas se separaron por su contorno sobre la superficie y el color se leyó en cada una. Revisa tipo, nombre y marca antes de guardar.",
   "multiPiece.slots": "Seleccionar prenda para editar",
   "multiPiece.adicionar_slot": "Añadir prenda",
   "multiPiece.ajustar_caixa": "Ajustar recorte (%)",
