@@ -69,7 +69,69 @@ com a cor certa; cor dominante ≠ média), `MultiPieceServiceTest`/`MultiPieceD
 - Boné preto é lido como cabelo pelo segmentador: não vira peça (o chapéu claro vira). A pessoa adiciona pelo "+".
 - Sem IA remota, o tipo é o padrão do lugar do corpo (camiseta, bermuda/calça, tênis, boné): polo × camiseta, jeans ×
   chino e o material ficam para a revisão.
-- O OCR não leu "UNDER ARMOUR" na camiseta vestida (texto pequeno, dobrado); a marca segue vazia em vez de inventada.
+- O OCR não leu "UNDER ARMOUR" na camiseta vestida na cópia de 768 px (texto de ~10 px por letra, dobrado); a marca
+  segue vazia em vez de inventada. A leitura em tecido dobrado está na seção seguinte.
 - A marca por logotipo sem texto (swoosh, três listras) continua exigindo a IA de visão. **Em produção a conta Claude
   está sem créditos** (`credit balance is too low`): até isso ser resolvido no painel do provedor, só o Gemini responde —
   o detector local garante o cadastro, mas nome, subtipo e marca ficam para a pessoa confirmar.
+
+## Marca em tecido dobrado (10/10/2026)
+
+**Problema.** Na camiseta vestida, o logo "UNDER ARMOUR" tem duas linhas com polaridades opostas ("UNDER" escuro
+sobre o tecido claro, "ARMOUR" claro sobre uma faixa escura), o tecido está amassado (a linha ondula e inclina) e o
+detector de texto junta as duas linhas numa caixa alta; o reconhecedor lê só pedaços da primeira ("UNPS", "INOER",
+"UNPE"). A leitura normal (`BrandReader.find`) exige uma linha que case com o catálogo — e, certa, deixava a marca
+vazia em vez de inventar.
+
+**Solução — leitura robusta (`BrandReader.findRobust`).** Só nas 3 maiores peças da foto (as outras até 6 seguem com a
+leitura normal), e só se a leitura normal não confirmar:
+
+1. **Detector na polaridade invertida** em cada zona do peito (centro, peito esquerdo, peito direito; nunca a gola):
+   acha a linha clara sobre a faixa escura que o detector normal não vê.
+2. **Reconhecimento, sem detector, de cada caixa achada em variações baratas** (`TextReaderPort.recognize`, só o
+   CRNN, ~30 ms cada): normal e invertida, cada uma reta e inclinada ±8° (a dobra inclina a linha); caixa alta
+   (altura > 45 % da largura: duas linhas juntas) também a metade de cima e a de baixo nas duas polaridades.
+3. **Decisão pelo catálogo**, nesta ordem: uma linha que casa (`match`) → **confirmada**; as linhas de uma passagem
+   juntas em ordem de leitura ("UNDER" + "ARMOUR") → confirmada; **duas palavras distintas da mesma marca lidas em
+   separado** (em variações diferentes) → confirmada; uma palavra inteira de marca de várias palavras ("UNDER",
+   "TOMMY") → **possível** (7+ letras distintivas, como "HILFIGER", confirma sozinha); pedaços que **votam** na mesma
+   marca (semelhança = 1 − distância/comprimento, também contra o começo e o fim da palavra, pois a dobra esconde o
+   fim; voto ≥ 0,5 ponderado pela confiança; soma ≥ 0,9, duas leituras, uma ≥ 0,6 e vantagem de 1,3× sobre a segunda
+   marca) → possível, com até 2 **alternativas**; texto firme que não casou → **ilegível** (`brand` nulo); nada → sem
+   marca.
+4. **Orçamento**: 6 s por peça; a passagem para quando estoura. Medido nas fotos de teste: 2,5–4 s por peça (antes do
+   reconhecimento-sem-detector a mesma grade custava 7–9 s).
+
+**Contrato.** `DetectedPiece.brandHint { brand, alternatives, evidence, zone, confidence }` (persistido no rascunho
+junto com as peças). Só a marca **confirmada** entra em `brandName`; a lida com incerteza nunca preenche o campo: a
+revisão mostra a nota "Marca lida com incerteza (tecido dobrado ou texto pequeno): Under Armour? Confirme ou corrija"
+com os botões **Usar Under Armour** (e as alternativas) e o texto lido; com `brand` nulo, "Há um texto ou logo na peça
+que não deu para ler (tecido dobrado?). Informe a marca ou fotografe a peça esticada." A nota some quando o campo é
+preenchido. O criador de peça (modo Fotografar → "Usar esta peça") recebe a mesma nota abaixo do campo Marca — e a
+marca confirmada passa a preencher o campo nesse caminho (antes não passava).
+
+**Validação.**
+
+| Caso | Leitura normal | Leitura robusta |
+|---|---|---|
+| Logo sintético de duas linhas, polaridades opostas, letras de 32 px, dobra de 20 px (`BrandReaderFoldedOcrTest`, OCR real) | nada | **Under Armour confirmada** ("UNDER" e "ARMOUR" lidos em separado), 2,5 s |
+| Mesmo logo, 64 px, dobra de 9 px, inclinado 5° | confirmada | confirmada |
+| Só "UNDER" visível (a dobra esconde a segunda linha) | — | **possível** Under Armour, não preenchida |
+| Camiseta lisa | nada | nada (sem marca inventada) |
+| Fotos de teste da pessoa (cópias de 768 px, 4 fotos, 7 peças ≥ 120 px) | nada | nada em 6; na camiseta Under Armour (recorte de 160×197 px): **ilegível** com o texto lido — nenhuma marca inventada |
+
+Na cópia de 768 px cada letra do logo tem ~10 px: abaixo do que o PP-OCRv4 lê (os pedaços saem "INRIERE", "AMUE").
+A foto original do celular (3 000–4 000 px) dá ~40 px por letra — a faixa em que a leitura robusta confirma no
+sintético. O servidor usa a foto original inteira nos recortes (`MultiPieceService.crop`), não a cópia reduzida.
+
+**Testes.** `BrandReaderTest` (semelhança com começo/fim da palavra; duas palavras do logo em variações diferentes →
+confirmada; "UNDER" → possível e "HILFIGER" → confirmada; pedaços "UNPS/INOER/UNPE/INPIER" votam em Under Armour só
+na robusta; texto firme sem casar → ilegível só na robusta; zonas da robusta; variações da caixa alta),
+`BrandReaderFoldedOcrTest` (OCR ONNX real, casos da tabela), `MultiPieceServiceTest` (sugestão vira `brandHint` e não
+preenche; confirmada preenche; persistida no rascunho), `multi-piece-review.test.tsx` (nota com "Usar", campo vazio
+até tocar, ilegível sem botão). Sondas fora do repositório: `BrandRobustProbeTest` (`-Dfai.probe.dir`, com
+`-Dfai.probe.debug` lista cada leitura por zona e variação) e `BrandOcrProbeTest`.
+
+**Evidências.** `docs/evidencias/rf4-marca-dobrada-2026-10-10/` — nota de marca incerta com "Usar Under Armour", campo
+preenchido ao tocar e texto ilegível, desktop e mobile (API simulada; a foto é a camiseta de referência do acervo).
+

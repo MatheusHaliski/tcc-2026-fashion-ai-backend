@@ -19,7 +19,13 @@ import { useAuth } from "@/lib/auth/session";
 
 /** Caixa da peça em % (0–100) da largura e da altura da foto: x/y = canto superior esquerdo. */
 export interface MultiBox { x: number; y: number; width: number; height: number }
-export interface DetectedPiece { index: number; name?: string | null; brandName?: string | null; category?: string | null; subcategory?: string | null; color?: string | null; material?: string | null; sex?: string | null; style?: string[]; occasion?: string[]; box: MultiBox; confidence: number }
+/**
+ * Marca lida com incerteza pelo OCR do servidor (tecido dobrado, texto pequeno): `brand` é a marca do catálogo em que as
+ * leituras parciais votaram (nula = há texto/logo na peça, mas ilegível), `alternatives` outras marcas possíveis,
+ * `evidence` o texto lido. Nunca preenche o campo sozinha: a pessoa toca em "Usar …" ou digita.
+ */
+export interface BrandHint { brand?: string | null; alternatives?: string[]; evidence?: string | null; zone?: string | null; confidence?: number }
+export interface DetectedPiece { index: number; name?: string | null; brandName?: string | null; brandHint?: BrandHint | null; category?: string | null; subcategory?: string | null; color?: string | null; material?: string | null; sex?: string | null; style?: string[]; occasion?: string[]; box: MultiBox; confidence: number }
 /**
  * POST /api/pieces/analysis/multi — source: "ia" (visão remota); sem ela, o detector local do servidor: "local-pessoa"
  * (roupa vestida separada pela silhueta: boné, peça de cima, de baixo, calçado), "local-superficie" (peças sobre uma
@@ -31,6 +37,8 @@ export interface MultiDetection { draftId: string; originalUrl: string; width: n
 interface Row {
   /** posição na detecção; -1 = foto inteira que a pessoa adicionou (sem pré-preenchimento no servidor) */
   index: number; box: MultiBox; confidence: number; include: boolean; value: PieceFormValue;
+  /** marca lida com incerteza pelo servidor (tecido dobrado): sugestão a confirmar */
+  hint?: BrandHint | null;
   thumb?: string; crop?: File; status: "idle" | "saving" | "saved" | "error"; error?: string; errors?: Record<string, string>;
   /** cópia da peça recriada por IA (a prévia já vem com o selo); useAi = salvar com ela no lugar da foto */
   ai?: { id: string; url: string }; useAi?: boolean; aiBusy?: boolean; aiError?: string;
@@ -81,7 +89,7 @@ export const MAX_PHOTOS = 10;
  * Peça detectada escolhida para seguir pelo criador em etapas (sem modal): o recorte (ou a foto inteira), o rascunho da
  * análise e os dados que a IA leu, para conferir em Dados → Mais detalhes → Arte → Revisar.
  */
-export interface PhotoPick { key: string; file: File; preview: string; draftId: string; index: number; value: PieceFormValue; photo: number; piece: number }
+export interface PhotoPick { key: string; file: File; preview: string; draftId: string; index: number; value: PieceFormValue; photo: number; piece: number; hint?: BrandHint | null }
 
 interface PhotoItem {
   id: string; file: File; preview: string;
@@ -278,7 +286,7 @@ function DetectedPieces({ items, onPick, picked, savedKeys, onAvailable }: { ite
     const file = blob instanceof File ? blob : new File([blob], `peca-${e.photo}-${e.piece}.${blob.type === "image/png" ? "png" : "jpg"}`, { type: blob.type });
     const preview = URL.createObjectURL(file); urls.current.push(preview);
     onPick({ key: e.key, file, preview, draftId: e.it.detection!.draftId, index: e.p.index, photo: e.photo, piece: e.piece,
-      value: initialValue(e.p, tax, t("multiPiece.peca_n", { n: e.piece })) });
+      value: initialValue(e.p, tax, t("multiPiece.peca_n", { n: e.piece })), hint: e.p.brandHint ?? null });
   }
   return (
     <section className="grid gap-2" aria-label={t("multiPiece.pecas_detectadas")}>
@@ -349,7 +357,7 @@ export function MultiPieceReview({ file, detection, subtitle, onClose, onSaved, 
     if (!tax || initialized.current) return;
     initialized.current = true;
     const initial: Row[] = detection.pieces.map((p, i) => ({ index: p.index, box: p.box, confidence: p.confidence, include: true, status: "idle",
-      value: initialValue(p, tax, t("multiPiece.peca_n", { n: i + 1 })) }));
+      hint: p.brandHint ?? null, value: initialValue(p, tax, t("multiPiece.peca_n", { n: i + 1 })) }));
     setRows(initial);
     setActive(initial[0]?.index ?? null);
     initial.forEach((r) => { cropBox(file, r.box, 240).then((b) => { const u = track(URL.createObjectURL(b)); setRows((rs) => rs.map((x) => (x.index === r.index && x.box === r.box ? { ...x, thumb: u } : x))); }).catch(() => undefined); });
@@ -549,6 +557,24 @@ function PhotoRegionMap({ source, rows, active, disabled, onSelect }: {
   );
 }
 
+/**
+ * RF4 · marca lida com incerteza (tecido dobrado, texto pequeno): a nota diz o que foi lido e oferece "Usar {marca}" para a
+ * marca mais votada e as alternativas; sem marca (logo ilegível), pede a marca ou outra foto com a peça esticada.
+ */
+export function BrandHintNote({ hint, disabled, onUse }: { hint: BrandHint; disabled: boolean; onUse: (brand: string) => void }) {
+  const { t } = useI18n();
+  const options = [hint.brand, ...(hint.alternatives ?? [])].filter((b): b is string => !!b && b.trim().length > 0);
+  return (
+    <div role="note" aria-label={t("multiPiece.marca_incerta_titulo")} className="grid gap-2 rounded-md bg-thread-soft p-3 sm:col-span-2">
+      <p className="type-body-sm">{hint.brand ? t("multiPiece.marca_incerta", { brand: hint.brand }) : t("multiPiece.logo_ilegivel")}</p>
+      {options.length > 0 && <div className="flex flex-wrap gap-2">
+        {options.map((b) => <Button key={b} size="sm" variant={b === hint.brand ? "primary" : "default"} disabled={disabled} onClick={() => onUse(b)}>{t("multiPiece.usar_marca", { brand: b })}</Button>)}
+      </div>}
+      {hint.evidence && <p className="type-caption text-muted">{t("multiPiece.texto_lido", { text: hint.evidence })}</p>}
+    </div>
+  );
+}
+
 function PieceRow({ id, n, row, tax, active, disabled, onInclude, onChange, onBox, onCrop, onUncrop, onMakeAi, onUseAi }: {
   id: string; n: number; row: Row; tax: Taxonomy | null; active: boolean; disabled: boolean;
   onInclude: (v: boolean) => void; onChange: (v: PieceFormValue) => void; onCrop: () => void; onUncrop: () => void;
@@ -614,6 +640,8 @@ function PieceRow({ id, n, row, tax, active, disabled, onInclude, onChange, onBo
             brandSource: brand ? "CATALOGO" : null, brandRef: brand?.id ?? null,
           })} />
         </Field>
+        {row.hint && !v.brandName && <BrandHintNote hint={row.hint} disabled={locked || !row.include} onUse={(brandName) => onChange({ ...v,
+          brandName, brandId: null, brandLogoUrl: null, brandLogoWideUrl: null, brandDomain: null, brandEdgePx: null, brandSource: null, brandRef: null })} />}
         <Field label={t("common.category")} id={fid("category")} required error={err.category}>
           <Select id={fid("category")} value={v.category} onChange={(e) => onChange({ ...v, category: e.target.value, subcategory: tax?.subcategories?.[e.target.value]?.[0] ?? "", occasion: keepAllowed(v.occasion, allowedOccasions(e.target.value)) })}>
             {categories.map((c) => <option key={c} value={c}>{CATEGORY_LABEL[c] ?? label(c)}</option>)}

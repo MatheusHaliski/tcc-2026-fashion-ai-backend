@@ -16,6 +16,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class BrandReaderTest {
 
     private static BrandReader reader(List<TextReaderPort.Line> lines) {
+        return reader(img -> lines);
+    }
+
+    /** Leitor falso que responde conforme a imagem recebida (variações da leitura robusta chegam em tamanhos diferentes). */
+    private static BrandReader reader(java.util.function.Function<BufferedImage, List<TextReaderPort.Line>> answer) {
         StaticListableBeanFactory beans = new StaticListableBeanFactory();
         beans.addBean("ocr", new TextReaderPort() {
             public boolean available() {
@@ -23,12 +28,23 @@ class BrandReaderTest {
             }
 
             public List<Line> read(BufferedImage image) {
-                return lines;
+                return answer.apply(image);
             }
         });
         BrandReader r = new BrandReader(beans.getBeanProvider(TextReaderPort.class), beans.getBeanProvider(br.com.fashionai.domain.repository.BrandRepository.class));
-        r.useCatalog(Map.of("lacoste", "Lacoste", "nike", "Nike", "tommyhilfiger", "Tommy Hilfiger", "gap", "Gap", "vans", "Vans"));
+        r.useCatalog(Map.of("lacoste", "Lacoste", "nike", "Nike", "tommyhilfiger", "Tommy Hilfiger", "gap", "Gap", "vans", "Vans",
+                "underarmour", "Under Armour", "umbro", "Umbro", "puma", "Puma", "newbalance", "New Balance"));
         return r;
+    }
+
+    private static final List<BrandRegions.Zone> CHEST = List.of(
+            new BrandRegions.Zone("gola", new double[]{0.3, 0, 0.7, 0.15}),
+            new BrandRegions.Zone("peito_esquerdo", new double[]{0.5, 0.1, 0.95, 0.45}),
+            new BrandRegions.Zone("peito_direito", new double[]{0.05, 0.1, 0.5, 0.45}),
+            new BrandRegions.Zone("centro_peito", new double[]{0.2, 0.15, 0.8, 0.5}));
+
+    private static BufferedImage piece() {
+        return new BufferedImage(400, 500, BufferedImage.TYPE_INT_ARGB);
     }
 
     @Test
@@ -87,5 +103,90 @@ class BrandReaderTest {
         List<BrandRegions.Zone> withLogo = BrandRegions.tiles(piece, new double[]{0.4, 0.2, 0.6, 0.3}, 4);
         assertEquals("logo", withLogo.get(0).id());
         assertEquals(1 + 4 + 16, withLogo.size());
+    }
+
+    @Test
+    void semelhancaComparaTambemComOComecoEOFimDaPalavra() {
+        assertEquals(1.0, BrandReader.similarity("armour", "armour"), 1e-9);
+        assertTrue(BrandReader.similarity("unpe", "under") > 0.6, "pedaço com o fim escondido pela dobra: começo da palavra");
+        assertTrue(BrandReader.similarity("mour", "armour") > 0.8, "pedaço com o começo escondido: fim da palavra");
+        assertTrue(BrandReader.similarity("inoer", "under") >= 0.6);
+        assertTrue(BrandReader.similarity("unps", "puma") < 0.5, "pedaço de outra marca não vota");
+        assertEquals(List.of("under", "armour"), BrandReader.brandWords("Under Armour"));
+        assertEquals(List.of("tommy", "hilfiger"), BrandReader.brandWords("Tommy Hilfiger"));
+    }
+
+    @Test
+    void duasLinhasDoLogoLidasEmSeparadoConfirmamAMarca() {
+        // tecido dobrado: "UNDER" numa leitura, "ARMOUR" noutra (a linha de baixo só aparece invertida)
+        BrandReader r = reader(img -> img.getWidth() == 400 ? List.of()
+                : List.of(new TextReaderPort.Line(img.getRGB(0, 0) == 0xFF000000 ? "ARMOUR" : "UNDER", 0.8, new double[]{0.2, 0.3, 0.8, 0.45})));
+        BrandReader.Found f = r.findRobust(piece(), CHEST).orElseThrow();
+        assertEquals("Under Armour", f.brand());
+        assertTrue(f.confirmed(), "duas palavras distintas da mesma marca = confirmada");
+    }
+
+    @Test
+    void umaPalavraDeMarcaCompostaEhSoPossivel() {
+        BrandReader r = reader(List.of(new TextReaderPort.Line("UNDER", 0.9, new double[]{0.2, 0.3, 0.8, 0.4})));
+        BrandReader.Found f = r.find(piece(), CHEST).orElseThrow();
+        assertEquals("Under Armour", f.brand());
+        assertFalse(f.confirmed(), "\"UNDER\" sozinho pode ser estampa: a pessoa confirma");
+        BrandReader.Found h = reader(List.of(new TextReaderPort.Line("HILFIGER", 0.9, null))).find(piece(), CHEST).orElseThrow();
+        assertEquals("Tommy Hilfiger", h.brand());
+        assertTrue(h.confirmed(), "palavra distintiva (7+ letras) confirma sozinha");
+    }
+
+    @Test
+    void leiturasParciaisDoTecidoDobradoVotamNaMarcaDoCatalogo() {
+        // o que o OCR devolveu de verdade para "UNDER ARMOUR" dobrado: pedaços da primeira linha em cada variação
+        List<TextReaderPort.Line> pieces = List.of(new TextReaderPort.Line("UNPS", 0.67, new double[]{0.2, 0.3, 0.8, 0.5}),
+                new TextReaderPort.Line("INOER", 0.64, new double[]{0.2, 0.3, 0.8, 0.5}), new TextReaderPort.Line("UNPE", 0.62, new double[]{0.2, 0.3, 0.8, 0.5}),
+                new TextReaderPort.Line("INPIER", 0.74, new double[]{0.2, 0.3, 0.8, 0.5}));
+        java.util.concurrent.atomic.AtomicInteger calls = new java.util.concurrent.atomic.AtomicInteger();
+        BrandReader r = reader(img -> img.getWidth() == 400 ? List.of() : List.of(pieces.get(calls.getAndIncrement() % pieces.size())));
+        assertTrue(r.find(piece(), CHEST).isEmpty(), "a leitura normal não inventa marca com pedaços");
+        BrandReader.Found f = r.findRobust(piece(), CHEST).orElseThrow();
+        assertEquals("Under Armour", f.brand());
+        assertFalse(f.confirmed(), "sugestão para confirmar, nunca preenchida sozinha");
+        assertFalse(f.evidence().isBlank());
+        assertFalse(f.alternatives().contains("Under Armour"));
+    }
+
+    @Test
+    void textoFirmeQueNaoCasaViraLogoIlegivel() {
+        BrandReader r = reader(img -> img.getWidth() == 400 ? List.of() : List.of(new TextReaderPort.Line("XQZW", 0.5, new double[]{0.2, 0.3, 0.8, 0.4})));
+        BrandReader.Found f = r.findRobust(piece(), CHEST).orElseThrow();
+        assertNull(f.brand(), "há texto, mas nada do catálogo: a tela pede a marca ou outra foto");
+        assertFalse(f.confirmed());
+        assertTrue(r.find(piece(), CHEST).isEmpty(), "a leitura normal continua sem resultado");
+    }
+
+    @Test
+    void semTextoNenhumNaoHaSugestao() {
+        BrandReader r = reader(List.of());
+        assertTrue(r.findRobust(piece(), CHEST).isEmpty());
+    }
+
+    @Test
+    void zonasDaLeituraRobustaSaoOPeitoNuncaAGola() {
+        List<BrandRegions.Zone> z = BrandReader.robustZones(CHEST);
+        assertEquals(List.of("centro_peito", "peito_esquerdo", "peito_direito"), z.stream().map(BrandRegions.Zone::id).toList());
+    }
+
+    @Test
+    void caixaAltaGanhaAsDuasMetadesNasVariacoes() {
+        BufferedImage base = new BufferedImage(300, 200, BufferedImage.TYPE_INT_RGB);
+        List<BrandReader.LineCrop> wide = BrandReader.lineVariants(base, BrandReader.invert(base), new double[]{0.1, 0.4, 0.9, 0.5});
+        assertEquals(List.of("linha", "linha+8", "linha-8", "linha-inv", "linha+8-inv", "linha-8-inv"), wide.stream().map(BrandReader.LineCrop::variant).toList());
+        List<BrandReader.LineCrop> tall = BrandReader.lineVariants(base, BrandReader.invert(base), new double[]{0.2, 0.2, 0.6, 0.7});
+        assertEquals(10, tall.size(), "caixa alta (duas linhas juntas): + metade de cima e de baixo nas duas polaridades");
+        BrandReader.LineCrop top = tall.stream().filter(v -> v.variant().equals("metade-cima")).findFirst().orElseThrow();
+        BrandReader.LineCrop bottom = tall.stream().filter(v -> v.variant().equals("metade-baixo")).findFirst().orElseThrow();
+        assertTrue(top.box()[3] <= bottom.box()[1] + 1e-9, "as metades ficam em ordem de leitura (cima, baixo)");
+        assertTrue(top.image().getHeight() < 0.6 * tall.get(0).image().getHeight());
+        assertEquals(0xFFFFFF, BrandReader.invert(base).getRGB(0, 0) & 0xFFFFFF, "preto vira branco");
+        assertTrue(BrandReader.overlap(new double[]{0, 0, 1, 1}, new double[]{0, 0, 1, 1}) > 0.99);
+        assertEquals(0.0, BrandReader.overlap(new double[]{0, 0, 0.5, 1}, new double[]{0.5, 0, 1, 1}), 1e-9);
     }
 }

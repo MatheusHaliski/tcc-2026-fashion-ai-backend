@@ -20,7 +20,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { keepAllowed } from "@/lib/pieces/tags";
 import { CatalogPhoto } from "@/components/catalog/catalog-photo";
 import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
-import { MultiPieceUpload, type PhotoPick } from "@/components/multi-piece-review";
+import { BrandHintNote, MultiPieceUpload, type PhotoPick } from "@/components/multi-piece-review";
 import { PieceCreationSteps, PIECE_CREATION_STEPS, type PieceCreationStep } from "@/components/piece-creation-steps";
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
@@ -127,9 +127,12 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   /** "Usar esta peça" no modo Fotografar: o que a análise leu preenche os dados; o recorte vira a foto da peça. */
   function applyPhoto(p: PhotoPick) {
     setPhotoPick(p); setPick(null);
+    // marca: só a confirmada pelo servidor preenche o campo; a lida com incerteza vira a nota "Usar {marca}" abaixo do campo
     setValue((v) => ({ ...v, name: p.value.name, category: p.value.category, subcategory: p.value.subcategory, color: p.value.color || v.color, material: p.value.material || v.material,
       sex: p.value.sex || v.sex, style: p.value.style.length ? p.value.style : v.style, occasion: p.value.occasion.length ? p.value.occasion : v.occasion,
-      size: v.size || p.value.size, price: v.price || p.value.price, useDefaultImage: false, brandSource: v.brandSource === "CATALOGO" ? null : v.brandSource, brandRef: null }));
+      size: v.size || p.value.size, price: v.price || p.value.price, useDefaultImage: false,
+      // cada peça da foto tem a própria marca: a confirmada pelo servidor entra; sem ela o campo volta vazio (nada herda da peça anterior)
+      brandName: p.value.brandName || "", brandId: null, brandLogoUrl: null, brandLogoWideUrl: null, brandDomain: null, brandEdgePx: null, brandSource: null, brandRef: null }));
     setFieldErrors({}); setSaveProblem(null);
     if (typeof window !== "undefined") document.getElementById("piece-form-fields")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -271,7 +274,9 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 <h2 id="piece-form-label" className="type-h3 mb-2">{t("pieces.new.etapa_dados")}</h2>
                 {mode === "catalog" && pick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("catalog.preenchido_do_catalogo")}</p>}
                 {mode === "photos" && photoPick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("pieces.new.preenchido_da_foto", { photo: photoPick.photo, piece: photoPick.piece })}</p>}
-                <PieceFields value={value} onChange={(v) => { setValue(v); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors} />
+                <PieceFields value={value} onChange={(v) => { setValue(v); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors}
+                  afterBrand={mode === "photos" && photoPick?.hint && !value.brandName ? <BrandHintNote hint={photoPick.hint} disabled={false}
+                    onUse={(brandName) => setValue((v) => ({ ...v, brandName, brandId: null, brandLogoUrl: null, brandLogoWideUrl: null, brandDomain: null, brandEdgePx: null, brandSource: null, brandRef: null }))} /> : null} />
               </section>
               {/* RF4 · fotografia opcional: as duas formas de adicionar são separadas pela janela segmentada do topo; aqui só o
                   atalho para a aba Fotografar (uma ou várias fotos, com o guia de fotografia por categoria) */}
