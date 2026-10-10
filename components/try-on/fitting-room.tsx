@@ -20,6 +20,8 @@ import { fromWardrobe, nextTick, type SavedTry, type Sex, type State, type Store
 import { FittingStage } from "./fitting-stage";
 import { FittingControls } from "./fitting-controls";
 import { FittingItems } from "./fitting-items";
+import { MirrorStage, type MirrorPiece } from "@/components/mirror/mirror-stage";
+import type { FittingItem } from "@/lib/tryon/fitting-room";
 import { StoreBrowser } from "./store-browser";
 import { WardrobeBrowser } from "./wardrobe-browser";
 import { SavedTries } from "./saved-tries";
@@ -38,6 +40,8 @@ export function FittingRoom() {
   const [view, setView] = useState<AvatarView>("front");
   const [tab, setTab] = useState<Tab>("stores");
   const [category, setCategory] = useState("");
+  // prévia 2D no espelho (o mesmo avatar, de frente e parado) com o look atual, aberta pelo botão do slot
+  const [preview2d, setPreview2d] = useState<FittingItem | null>(null);
   const [store, setStore] = useState(searchParams.get("marca") ?? "");
   const [confirmClear, setConfirmClear] = useState(false);
   const [status, setStatus] = useState("");
@@ -153,9 +157,24 @@ export function FittingRoom() {
             items={session.items} products={session.products} colors={taxonomy?.colors}
             owned={session.owned} busyOwn={session.busyOwn} status={status} slotNames={session.slotNames}
             onVariantChange={session.changeVariant} onOwn={session.ownIt} onRemove={session.remove}
+            onPreview2d={setPreview2d}
+            onPickFromStores={(slot) => { setTab("stores"); setCategory(slot); }}
+            onPickFromWardrobe={() => setTab("wardrobe")}
           />
         </div>
       </div>
+      <Dialog open={!!preview2d} onClose={() => setPreview2d(null)} title={t("tryOn.previa_2d_titulo")} size="lg"
+        footer={<Link href="/mirror?vista=2d" className="btn btn-sm">{t("tryOn.ir_ao_espelho")}<span aria-hidden="true">→</span></Link>}>
+        {preview2d && (
+          <div className="grid gap-3 md:grid-cols-[minmax(240px,360px)_1fr]">
+            <MirrorStage slots={mirrorSlotsOf(session.items)} mode="2d" />
+            <div className="grid content-start gap-2">
+              <p className="type-body">{t("tryOn.previa_2d_de", { name: preview2d.name })}</p>
+              <p className="type-body-sm text-muted">{t("mirror.previa_2d_nota")}</p>
+            </div>
+          </div>
+        )}
+      </Dialog>
       <Dialog
         open={confirmClear} onClose={() => setConfirmClear(false)} title={t("tryOn.limpar_o_provador")}
         footer={(
@@ -169,4 +188,14 @@ export function FittingRoom() {
       </Dialog>
     </>
   );
+}
+
+const MIRROR_SLOT: Record<string, string> = { upper_piece: "upper", lower_piece: "lower", shoes_piece: "shoes", accessory_piece: "accessory" };
+/** As peças do provador no formato do espelho (mesmo contrato do 3D): peça inteira vai ao lugar "dress". */
+function mirrorSlotsOf(items: FittingItem[]): Record<string, MirrorPiece | null> {
+  const slots: Record<string, MirrorPiece | null> = {};
+  for (const i of items) {
+    slots[i.wear === "FULL_BODY" ? "dress" : MIRROR_SLOT[i.slot] ?? i.slot] = { id: i.key, name: i.name, imageUrl: i.processedUrl ?? i.imageUrl ?? null, category: i.category, subcategory: i.subcategory ?? null, colorHex: i.colorHex ?? null, variation: i.variation ?? null };
+  }
+  return slots;
 }

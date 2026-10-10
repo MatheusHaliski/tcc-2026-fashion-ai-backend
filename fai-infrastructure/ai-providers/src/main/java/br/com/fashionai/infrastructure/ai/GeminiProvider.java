@@ -28,7 +28,8 @@ public class GeminiProvider implements AiProviderPort {
                           @Value("${fashionai.ai.timeout-seconds:30}") int timeoutSeconds) {
         this.apiKey = apiKey == null ? "" : apiKey.trim();
         this.client = Http.client("https://generativelanguage.googleapis.com", timeoutSeconds);
-        this.visionClient = Http.client("https://generativelanguage.googleapis.com", Math.min(6, timeoutSeconds));
+        // visão interativa (várias peças numa foto): a resposta é um JSON por peça; 6 s cancelava toda chamada real
+        this.visionClient = Http.client("https://generativelanguage.googleapis.com", Math.min(20, timeoutSeconds));
     }
 
     @Override
@@ -70,7 +71,7 @@ public class GeminiProvider implements AiProviderPort {
                     .uri("/v1beta/models/{model}:generateContent", request.model())
                     .header("x-goog-api-key", apiKey)
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(body).retrieve().body(Map.class), !interactive);
+                    .body(body).retrieve().body(Map.class), true);   // 503 "alta demanda" e 429: uma repetição após 500 ms
         } catch (Exception e) {
             throw new IllegalStateException("Gemini: " + e.getMessage(), e);
         }

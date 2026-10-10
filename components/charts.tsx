@@ -64,7 +64,7 @@ export function Bars({ data, x, y, height = 220, horizontal, colorBy, format }: 
         {horizontal
           ? [<XAxis key="x" type="number" tick={AXIS} axisLine={false} tickLine={false} tickFormatter={format ? (v: number) => format(v) : undefined} />, <YAxis key="y" type="category" dataKey="name" tick={{ fontSize: 12, fill: "var(--ink)" }} width={labelW} interval={0} axisLine={false} tickLine={false} />]
           : [<XAxis key="x" dataKey="name" tick={AXIS} interval={0} axisLine={{ stroke: "var(--line-soft)" }} tickLine={false} />, <YAxis key="y" tick={AXIS} width={40} axisLine={false} tickLine={false} tickFormatter={format ? (v: number) => format(v) : undefined} />]}
-        <Tooltip contentStyle={TIP} cursor={{ fill: "var(--surface-2)" }} formatter={format ? (v: number) => format(v) : undefined} />
+        <Tooltip contentStyle={TIP} cursor={{ fill: "var(--surface-2)" }} formatter={format ? (v) => format(Number(v)) : undefined} />
         <Bar dataKey="value" maxBarSize={24} radius={horizontal ? [0, 4, 4, 0] : [4, 4, 0, 0]} fill={SERIES[0]}>
           {colorBy ? rows.map((r) => <Cell key={r.name} fill={colorBy(r.name)} />) : null}
         </Bar>

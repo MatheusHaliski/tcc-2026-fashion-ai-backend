@@ -20,8 +20,13 @@ import { useAuth } from "@/lib/auth/session";
 /** Caixa da peça em % (0–100) da largura e da altura da foto: x/y = canto superior esquerdo. */
 export interface MultiBox { x: number; y: number; width: number; height: number }
 export interface DetectedPiece { index: number; name?: string | null; brandName?: string | null; category?: string | null; subcategory?: string | null; color?: string | null; material?: string | null; sex?: string | null; style?: string[]; occasion?: string[]; box: MultiBox; confidence: number }
-/** POST /api/pieces/analysis/multi — source "local" = regiões estimadas localmente, a conferir. */
-export interface MultiDetection { draftId: string; originalUrl: string; width: number; height: number; pieces: DetectedPiece[]; source: "ia" | "local"; aiMessage?: string | null }
+/**
+ * POST /api/pieces/analysis/multi — source: "ia" (visão remota); sem ela, o detector local do servidor: "local-pessoa"
+ * (roupa vestida separada pela silhueta: boné, peça de cima, de baixo, calçado), "local-superficie" (peças sobre uma
+ * superfície, por contorno e cor) ou "local" (nada separado: a foto inteira, a conferir).
+ */
+export type DetectionSource = "ia" | "local" | "local-pessoa" | "local-superficie";
+export interface MultiDetection { draftId: string; originalUrl: string; width: number; height: number; pieces: DetectedPiece[]; source: DetectionSource; aiMessage?: string | null }
 
 interface Row {
   /** posição na detecção; -1 = foto inteira que a pessoa adicionou (sem pré-preenchimento no servidor) */
@@ -61,7 +66,9 @@ function initialValue(p: Pick<DetectedPiece, "name" | "brandName" | "category" |
   const cat = p.category && tax?.subcategories?.[p.category] ? p.category : "upper_piece";
   const allowedOccasions = tax?.allowedOccasionsByCategory?.[cat] ?? tax?.occasions;
   const occasion = keepAllowed(p.occasion, allowedOccasions); const style = keepAllowed(p.style, tax?.styles);
-  return { ...EMPTY_PIECE, useDefaultImage: false, name: p.name || fallbackName, brandName: p.brandName ?? "", category: cat,
+  // sem nome da IA mas com o tipo lido localmente ("Camiseta", "Bermuda"), o nome é o tipo — não "Peça 1"
+  const typed = p.subcategory && tax?.subcategories?.[cat]?.includes(p.subcategory) ? subcategoryLabel(p.subcategory) : "";
+  return { ...EMPTY_PIECE, useDefaultImage: false, name: p.name || typed || fallbackName, brandName: p.brandName ?? "", category: cat,
     subcategory: p.subcategory && tax?.subcategories?.[cat]?.includes(p.subcategory) ? p.subcategory : tax?.subcategories?.[cat]?.[0] ?? "",
     color: p.color ?? "black", material: p.material ?? "COTTON", sex: p.sex ?? "UNISSEX", size: "m", price: "0",
     occasion: occasion.length ? occasion : [allowedOccasions?.[0] ?? "casual"], style: style.length ? style : ["basic"], background: { skin: "atelier" } };
@@ -149,7 +156,7 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
     for (const it of queue) {
       patch(it.id, { status: "analyzing", error: undefined });
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 25_000);
+      const timeout = setTimeout(() => controller.abort(), 60_000);   // a visão remota tem 45 s de orçamento + o detector local
       try {
         // A visão recebe uma imagem leve; recortes finais continuam usando o arquivo original.
         const reduced = await cropBox(it.file, FULL, 1568).catch(() => it.file);
@@ -474,7 +481,7 @@ export function MultiPieceReview({ file, detection, subtitle, onClose, onSaved, 
       <div className={currentStep === "art" ? "grid gap-5" : "grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]"}>
         <div className="grid min-w-0 content-start gap-3">
           {currentStep === "more" && <>
-          {detection.source === "local" ? <p role="note" className="rounded-md bg-thread-soft p-3 type-body-sm">{t("multiPiece.revisao_local")}</p>
+          {detection.source !== "ia" ? <p role="note" className="rounded-md bg-thread-soft p-3 type-body-sm">{t(detection.source === "local-pessoa" ? "multiPiece.revisao_local_pessoa" : detection.source === "local-superficie" ? "multiPiece.revisao_local_superficie" : "multiPiece.revisao_local")}</p>
             : rows.length > 0 && <p role="note" className="type-body-sm">{t("multiPiece.encontradas", { count: rows.length })}</p>}
           {detection.aiMessage && <p className="type-caption text-muted">{detection.aiMessage}</p>}
           <details className="rounded-md border border-line-soft p-3">
