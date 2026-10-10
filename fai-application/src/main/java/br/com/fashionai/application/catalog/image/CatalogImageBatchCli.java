@@ -227,6 +227,7 @@ public final class CatalogImageBatchCli {
         m.put("op", "ready");
         m.put("pipelineVersion", CatalogImagePipeline.VERSION);
         m.put("registryVersion", registry.version());
+        m.put("fabricFrameVersion", FabricFrame.VERSION);
         return Json.write(m);
     }
 
@@ -296,6 +297,8 @@ public final class CatalogImageBatchCli {
         m.put("rule", crop == null || crop.rule() == null ? null : crop.rule().toMap());
         m.put("compliance", crop == null || crop.rule() == null ? Map.of() : crop.compliance());
         m.put("ms", (System.nanoTime() - t0) / 1_000_000);
+        // quadro só de tecido (scripts/catalog/category_frame.py); null quando a análise parou antes (foto recusada)
+        m.put("fabricFrame", a.debug() == null ? null : a.debug().get("fabricFrame"));
         m.put("columns", columns(a));
         return Json.write(m);
     }

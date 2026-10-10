@@ -118,15 +118,19 @@ e domínio correspondente podem persistir imagens. O domínio é normalizado
 com a mesma regra de limite entre nomes usada pela API. As demais são reportadas
 sem atualização. Configure `S3_BUCKET`, `S3_ENDPOINT`, região e credenciais,
 mais `STORAGE_PUBLIC_BASE_URL` (HTTPS) ou `S3_SERVE_THROUGH_API=true` com
-`APP_BASE_URL` (HTTPS) para o bucket privado. 50% é a
-largura normalizada do quadro, como no controle do editor, e não ocupação da peça.
-Camisas, acessórios e peças inteiras (vestidos/macacões) usam o centro da caixa do produto. Partes de baixo e calçados
-usam a região de foco existente como estimativa do zíper/cadarço e ficam em
-`NEEDS_REPROCESSING` para revisão: o analisador não confirma esses landmarks.
-Categorias não previstas e fotos onde o quadro de 50% não cabe são reportadas
-como erro, sem atualização. Revisões humanas e processamento ativo são preservados.
+`APP_BASE_URL` (HTTPS) para o bucket privado. O quadro 3:4 contém só tecido da
+peça (política `FABRIC_ONLY_100`): o Java (`FabricFrame`) devolve o maior
+retângulo 3:4 dentro da máscara de tecido, na região da categoria/subcategoria
+(peito, painel frontal de peça aberta, braguilha ou frente abaixo do cós, cabedal,
+corpo do acessório), e o script só aceita cobertura de tecido 1,0. Sem esse
+quadro (acessório sem tecido, peça da cor do fundo, região pequena demais…) a foto
+não é gravada (`FABRIC_FRAME_UNAVAILABLE:<motivo>`); regras e motivos em
+`docs/catalogo/PROCESSAR_ACERVO_IMAGENS.md`. Zíper/cadarço estimados (não
+detectados pelo pipeline) ficam em `NEEDS_REPROCESSING` para revisão.
+Revisões humanas e processamento ativo são preservados.
 O modo é explícito e não muda o pipeline automático da API. A versão dos metadados
-é `CATALOG_FRAME_34_50_V1`; checkpoints guardam a análise original, para reaplicar
+é `CATALOG_FRAME_34_FABRIC_V2` (a `CATALOG_FRAME_34_50_V1`, de quadro com 50% da
+largura, conta como pendente e é refeita); checkpoints guardam a análise original (os gravados antes do `FabricFrame` são analisados de novo), para reaplicar
 as regras sem baixar novamente. No Railway, execute em um job com o checkout,
 Python, Java, JAR compilado e as mesmas variáveis MySQL do backend; o container
 atual da API não deve ser presumido como contendo os scripts e suas dependências.

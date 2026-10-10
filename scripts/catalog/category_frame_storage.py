@@ -2,10 +2,16 @@
 import hashlib
 import io
 import json
+import math
 import os
 import uuid
 import threading
 from urllib.parse import quote, urlsplit
+
+try:
+    from .category_frame import VERSION as FRAME_VERSION
+except ImportError:
+    from category_frame import VERSION as FRAME_VERSION
 
 
 def render_frame_info(path, crop, width=900):
@@ -16,8 +22,19 @@ def render_frame_info(path, crop, width=900):
         if original.width * original.height > 40_000_000:
             raise ValueError('IMAGE_TOO_LARGE')
         image = ImageOps.exif_transpose(original).convert('RGB')
-        box = tuple(round(v) for v in (rect['x']*image.width, rect['y']*image.height,
-                    (rect['x']+rect['w'])*image.width, (rect['y']+rect['h'])*image.height))
+        # para dentro: a janela é só de tecido; arredondar para fora poderia trazer 1 px de fundo da borda
+        x0, y0 = math.ceil(rect['x']*image.width - 1e-6), math.ceil(rect['y']*image.height - 1e-6)
+        x1, y1 = math.floor((rect['x']+rect['w'])*image.width + 1e-6), math.floor((rect['y']+rect['h'])*image.height + 1e-6)
+        x0, y0, x1, y1 = max(0, x0), max(0, y0), min(image.width, x1), min(image.height, y1)
+        if x1 <= x0 or y1 <= y0:
+            raise ValueError('INVALID_FRAME')
+        # 3:4 exato encolhendo o lado maior (centrado), para a ampliação não esticar a peça
+        w, h = x1 - x0, y1 - y0
+        if w * 4 > h * 3:
+            nw = h * 3 // 4; x0 += (w - nw) // 2; x1 = x0 + nw
+        elif w * 4 < h * 3:
+            nh = w * 4 // 3; y0 += (h - nh) // 2; y1 = y0 + nh
+        box = (x0, y0, x1, y1)
         if box[2] <= box[0] or box[3] <= box[1]:
             raise ValueError('INVALID_FRAME')
         source_w, source_h = box[2] - box[0], box[3] - box[1]
@@ -33,6 +50,22 @@ def render_frame_info(path, crop, width=900):
 
 def render_frame(path, crop, width=900):
     return render_frame_info(path, crop, width)[0]
+
+
+def previous_assets(record):
+    """assets_json anterior como objeto: o inventário do banco já o entrega decodificado (dict); um snapshot pode trazer
+    o texto JSON. Qualquer outra coisa (vazio, inválido) não é metadado recuperável e fica None."""
+    value = record.get('assets_json')
+    if value is None:
+        value = record.get('assets')
+    if isinstance(value, (bytes, bytearray)):
+        value = value.decode('utf-8', 'replace')
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except ValueError:
+            return None
+    return dict(value) if isinstance(value, dict) else None
 
 
 class FrameStorage:
@@ -83,9 +116,9 @@ class FrameStorage:
                 self._pending.pop(key, None)
             raise
         url = self.base + '/' + quote(key, safe='/')
-        assets = {'card':url, 'master':url, 'framingVersion':'CATALOG_FRAME_34_50_V1', 'sha256':digest,
+        assets = {'card':url, 'master':url, 'framingVersion':FRAME_VERSION, 'sha256':digest,
                   'width':900, 'height':1200, 'previousStoredUrl':record.get('stored_url'),
-                  'previousAssets':record.get('assets_json') if isinstance(record.get('assets_json'), str) else None,
+                  'previousAssets':previous_assets(record),
                   'originalUrl':record['source_url'], 'render':info, 'editorFrame':crop.get('editorFrame')}
         if decision is not None:
             assets['persistenceDecision'] = decision

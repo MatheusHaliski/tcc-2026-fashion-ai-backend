@@ -196,7 +196,7 @@ class ImageUpdatesTest(unittest.TestCase):
         conn.sql.commit()
         records = conn.records()
         records[0]["allows_image_persistence"] = True
-        response = analysis(pipeline_version="CATALOG_FRAME_34_50_V1")
+        response = analysis(pipeline_version="CATALOG_FRAME_34_FABRIC_V2")
         response["framed_assets"] = {"stored_url":"https://media.example.com/framed.jpg",
                                     "assets_json":json.dumps({"card":"https://media.example.com/framed.jpg"})}
         result = apply_product(conn, records, {"a":response}, Ranker(conn))
@@ -215,7 +215,7 @@ class ImageUpdatesTest(unittest.TestCase):
         conn.sql.commit()
         before = conn.rows()[0]
         records = conn.records();records[0]['allows_image_persistence'] = True
-        response = analysis(pipeline_version='CATALOG_FRAME_34_50_V1')
+        response = analysis(pipeline_version='CATALOG_FRAME_34_FABRIC_V2')
         response['framed_assets'] = {'stored_url':'https://media.example/framed.jpg', 'assets_json':'{}'}
         with self.assertRaisesRegex(ValueError,'permission changed'):
             apply_product(conn,records,{'a':response},Ranker(conn))
@@ -232,7 +232,7 @@ class ImageUpdatesTest(unittest.TestCase):
         records[0]["allows_image_persistence"] = False
         assets_json = json.dumps({"card": "https://media.example.com/framed.jpg", "originalUrl": records[0]["image_url"],
                                   "persistenceDecision": {"mode": "FORCED_CATEGORY_FRAME", "sourceReason": "SOURCE_MISSING"}})
-        response = analysis(pipeline_version="CATALOG_FRAME_34_50_V1")
+        response = analysis(pipeline_version="CATALOG_FRAME_34_FABRIC_V2")
         response["framed_assets"] = {"stored_url": "https://media.example.com/framed.jpg", "assets_json": assets_json}
         # padrão: continua recusado
         with self.assertRaisesRegex(ValueError, "not authorized"):
@@ -250,7 +250,7 @@ class ImageUpdatesTest(unittest.TestCase):
         self.assertEqual(decision["override"], "FORCED_CATEGORY_FRAME")
         self.assertEqual(decision["state"], "UNKNOWN")
         # a decisão precisa estar gravada no próprio asset
-        unrecorded = analysis(pipeline_version="CATALOG_FRAME_34_50_V1")
+        unrecorded = analysis(pipeline_version="CATALOG_FRAME_34_FABRIC_V2")
         unrecorded["framed_assets"] = {"stored_url": "https://media.example.com/other.jpg", "assets_json": "{}"}
         with self.assertRaisesRegex(ValueError, "decision recorded"):
             apply_product(conn, conn.records(), {"a": unrecorded}, Ranker(conn), persistence_override="FORCED_CATEGORY_FRAME")

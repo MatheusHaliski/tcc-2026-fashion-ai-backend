@@ -55,8 +55,12 @@ public final class CatalogImagePipeline {
                            Map<String, Double> metrics, double qualityScore, String background, boolean detailView,
                            BackgroundNormalizer.Rendered rendered, List<Stage> stages, Map<String, Object> debug) {
         public static Analysis rejected(String reason, String mime, int w, int h, String sha, List<Stage> stages) {
+            return rejected(reason, mime, w, h, sha, stages, Map.of());
+        }
+
+        public static Analysis rejected(String reason, String mime, int w, int h, String sha, List<Stage> stages, Map<String, Object> debug) {
             return new Analysis(CatalogImageValidator.Outcome.REJECTED, List.of(reason), false, 0, mime, w, h, sha, null, null,
-                    null, null, null, Map.of(), 0, null, false, null, stages, Map.of());
+                    null, null, null, Map.of(), 0, null, false, null, stages, debug);
         }
 
         /** Metadados do recorte gravados em crop_json e lidos pelo card (coordenadas normalizadas da foto original). */
@@ -132,12 +136,11 @@ public final class CatalogImagePipeline {
         PieceType type = PieceType.of(req.category());
         ProductSegmenter.Segmentation seg = segmenter.segment(src, type);
         stages.add(stage("SEGMENTATION", t, "coverage=" + NRect.r4(seg.coverage()) + " conf=" + NRect.r4(seg.confidence())));
-        if (seg.empty()) {
-            return Analysis.rejected("NO_PRODUCT", mime, w, h, sha, stages);
-        }
         double productPx = Math.min(seg.productBox().w() * w, seg.productBox().h() * h);
-        if (productPx < ImageQualityAnalyzer.MIN_PRODUCT_PX) {
-            return Analysis.rejected("IMAGE_TOO_SMALL", mime, w, h, sha, stages);
+        if (seg.empty() || productPx < ImageQualityAnalyzer.MIN_PRODUCT_PX) {
+            // o recorte local perdeu a peça (escura/clara demais para ele): o quadro só de tecido tem máscara própria
+            FabricFrame.Result fabric = FabricFrame.find(seg, type, req.subcategory(), null);
+            return Analysis.rejected(seg.empty() ? "NO_PRODUCT" : "IMAGE_TOO_SMALL", mime, w, h, sha, stages, Map.of("fabricFrame", fabric.toMap()));
         }
         t = System.nanoTime();
         double human = humanEvidence(src, seg);
@@ -160,6 +163,21 @@ public final class CatalogImagePipeline {
                     lower.estimatedPerson() ? "ESTIMATED_PERSON_WAIST" : "WAIST_TO_CROTCH_MASK");
         }
         stages.add(stage("ROI", t, focus.name() + " via " + focus.source()));
+
+        // QUADRO SÓ DE TECIDO (lote de enquadramento por categoria): maior 3:4 dentro da máscara do tecido, sem fundo,
+        // cabide nem pessoa; o segmentador de pessoa, quando existe, confere o quadro escolhido
+        t = System.nanoTime();
+        FabricFrame.Result fabric = FabricFrame.find(seg, type, req.subcategory(), focus);
+        if (fabric.ok()) {
+            NRect fc = fabric.crop();
+            BufferedImage selected = ImageOps.crop(seg.cutout(), new ImageOps.Box((int) Math.round(fc.x() * seg.width()), (int) Math.round(fc.y() * seg.height()),
+                    (int) Math.round(fc.w() * seg.width()), (int) Math.round(fc.h() * seg.height())));
+            if (fabricHumanEvidence(selected)) {
+                fabric = new FabricFrame.Result(false, "HUMAN_IN_FABRIC_FRAME", fc, fabric.target(), fabric.anchorSource(), fabric.anchorX(),
+                        fabric.anchorY(), fabric.region(), fabric.fabricCoverage(), fabric.skinExcluded(), fabric.cropWidthPx(), fabric.erosionPx());
+            }
+        }
+        stages.add(stage("FABRIC_FRAME", t, fabric.ok() ? "ok " + fabric.target() : String.valueOf(fabric.reason())));
 
         // SEMANTIC REFRAMING
         t = System.nanoTime();
@@ -238,6 +256,7 @@ public final class CatalogImagePipeline {
         debug.put("registryVersion", registry.version());
         debug.put("sourceHumanEvidence", NRect.r4(sourceHuman));
         debug.put("cropHumanEvidence", NRect.r4(human));
+        debug.put("fabricFrame", fabric.toMap());
         if (crop.rule() != null) {
             debug.put("framingRule", crop.rule().toMap());
             debug.put("ruleCompliance", crop.compliance());
@@ -301,6 +320,21 @@ public final class CatalogImagePipeline {
         }
         // This crop promises fabric only: residual hands/skin require review even when they occupy a small region.
         return skin > 0.005 ? Math.max(0.06, skin) : 0;
+    }
+
+    /**
+     * Segunda opinião sobre o quadro só de tecido: o segmentador de pessoa, quando existe, não pode ver pele/rosto no quadro.
+     * Sem ele vale a máscara do tecido (que já tirou as manchas de pele); a heurística local de pele daria falso positivo em
+     * estampas bege/rosadas.
+     */
+    private boolean fabricHumanEvidence(BufferedImage selected) {
+        if (persons == null || !persons.available()) return false;
+        try {
+            Optional<PersonParts> parts = persons.segment(selected);
+            return parts.isPresent() && parts.get().person() * (parts.get().bodySkin() + parts.get().faceSkin()) > 0.02;
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     /** Pele estranha à peça (segmentador próprio) combinada com o segmentador de pessoa, quando disponível. */
