@@ -3,6 +3,7 @@
 
     python scripts/catalog/import_products.py ./data/catalog/products/nike.json [--dry-run] [--verbose]
     python scripts/catalog/import_products.py ./lote.csv --batch-size 200 [--no-create-brands]
+    python scripts/catalog/import_products.py ./lote.json --start-at 1201   # retoma depois de uma queda
 
 CSV: brand,category,subcategory,product_name,model_name,product_code,sku,gtin,ean,upc,color,color_name,collection,
 material,gender,official_product_url,primary_image_url,source_domain,source_type[,aliases separados por |].

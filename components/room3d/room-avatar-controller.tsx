@@ -8,7 +8,7 @@ import type { Avatar3dRef, Look3dPiece } from "@/components/three/common";
 import type { BodyParams } from "@/lib/avatar3d/body-spec";
 import { applyIdle } from "@/lib/avatar3d/human/pose";
 import { arrowAnywhere, moveInRoom, RoomInteraction, type Arm } from "@/lib/room3d/interaction";
-import { MIRROR_NORMAL, MirrorSession, REACTION_MS, cameraFor, facingYaw, reactionPose } from "@/lib/room3d/mirror-session";
+import { MIRROR_NORMAL, MirrorSession, REACTION_MS, cameraFor, facingYaw, mirrorDistance, reactionPose } from "@/lib/room3d/mirror-session";
 export interface RoomGameplay {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; body?: BodyParams | null; pieces: Look3dPiece[]; engine: RoomInteraction;
   /** prova no espelho dentro do quarto (lib/room3d/mirror-session.ts): fase pela distância, trocas e reação */
@@ -69,7 +69,7 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
     const p = parts.current, moving = !engine.grip && [...engine.keys].some(k => k.startsWith("Arrow"));
     // zona do espelho: a distância do personagem decide a fase da prova (histerese e tempos em mirror-session.ts)
     const session = gameplay.session, now = Date.now();
-    session?.update(engine.actor.distanceTo(engine.mirror), now, moving);
+    session?.update(mirrorDistance(engine.actor, engine.mirror), now, moving);
     const trying = !!session?.active;
     // ao entrar na prova, o vidro guarda a vista do quarto daquela ocasião: uma foto tirada do espelho para o guarda-roupa,
     // sem o personagem (o reflexo dele é desenhado por cima, em room-scene.tsx)

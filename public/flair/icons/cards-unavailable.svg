@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" role="img" aria-label="Álbum: três cartas empilhadas">
+  <title>Álbum: três cartas empilhadas</title>
+  <circle cx="20" cy="20" r="18.5" fill="none" stroke="#D8D6CC" stroke-width="1.5" stroke-dasharray="3 2.4"/>
+  <g transform="translate(8 8)" fill="none" stroke="#6B6F66" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="3.5" width="12" height="15.5" rx="2"/><path d="M5.8 6.8v11.5a2.2 2.2 0 0 0 2.2 2.2h9.5"/><path d="M3.5 9.8v10.3a2.4 2.4 0 0 0 2.4 2.4h9"/><path d="M11.5 8h5M11.5 11h2.8"/></g>
+</svg>

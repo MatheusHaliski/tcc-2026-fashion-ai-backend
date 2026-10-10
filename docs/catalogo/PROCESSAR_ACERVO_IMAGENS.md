@@ -45,6 +45,107 @@ python scripts/catalog/process_catalog_images.py \
   --output /tmp/catalogo-snapshot.xlsx
 ```
 
+## Enquadramento por categoria em todo o acervo (`--force-category-frame`)
+
+Decisão explícita do responsável pelo projeto (10/10/2026): para este
+processamento, a autorização de persistência da fonte, o cadastro do domínio em
+`catalog_sources` e a identificação visual confirmada **não bloqueiam o lote**.
+Sem a opção, o comportamento padrão continua: `SOURCE_RIGHTS_UNCONFIRMED`,
+`SOURCE_HOST_NOT_REGISTERED` e `INVALID_IMAGE_AUTHORITY` impedem o upload e a
+gravação, e nenhuma permissão de `catalog_sources` é alterada pelo script.
+
+A opção exige `--database --apply --category-frame`. Nesse modo:
+
+- A decisão fica registrada em cada imagem (`assets_json.persistenceDecision`:
+  modo `FORCED_CATEGORY_FRAME`, estado e motivo da fonte no momento, host) e a
+  decisão da fonte no instante do COMMIT vai para `.changes.audit.jsonl`.
+- As proteções técnicas de download não mudam: só HTTPS, sem credenciais na
+  URL, porta 443, host público (DNS conferido), redirecionamentos validados,
+  tipo `image/*` e até 10 MiB. URL inválida é falha técnica individual
+  (`UNSAFE_IMAGE_URL`, `NON_PUBLIC_IMAGE_HOST`, `IMAGE_HTTP_404`…), e o lote segue.
+- Checksums (SHA-256 da origem conferido antes de renderizar; SHA-256 do JPEG
+  conferido após o upload), guardas de concorrência por produto, preservação de
+  revisões humanas e limpeza só de uploads criados nesta execução e sem
+  referência confirmada continuam iguais. Com COMMIT incerto nada é apagado.
+- A referência ativa passa a ser a imagem enquadrada: `stored_url` e
+  `assets_json.card` (que o card da busca usa, modo `PROCESSED`). A URL original
+  continua em `image_url` e em `assets_json.originalUrl`; o asset anterior fica em
+  `previousStoredUrl`/`previousAssets`. Nenhum objeto antigo é apagado.
+- Imagens já enquadradas na mesma versão (`CATALOG_FRAME_34_50_V1`, com
+  `stored_url` e `assets_json.card` iguais) são preservadas: repetir o comando só
+  processa as pendências e as falhas.
+
+### Regras de enquadramento (geometria de "Editar foto")
+
+Quadro 3:4 em pixels, largura = 50% da largura da foto (a mesma leitura do
+controle "Tamanho do quadro" do editor), centrado no alvo e sempre dentro da foto:
+
+| Categoria | Foco | Quando não detectado |
+|---|---|---|
+| `upper_piece` | centro da peça | — |
+| `lower_piece` | zíper/fechamento (região `*fastening*`/`zipper` do pipeline) | centro superior da peça (25% da altura) · `ZIPPER_NOT_DETECTED_ESTIMATED` |
+| `shoes_piece` | cadarços (região `laces*`) | centro do cabedal (40% da altura) · `LACES_NOT_DETECTED_ESTIMATED` |
+| `accessory_piece` | centro do objeto | — |
+| `full_body_piece` | centro da peça | — |
+| ausente/desconhecida | centro do objeto · `CATEGORY_UNKNOWN` | centro da fotografia · `NO_PRODUCT_REGION` |
+
+Quando o Java falha para a foto (ex.: `IMAGE_TOO_SMALL`, `UNREADABLE_IMAGE`) ou
+não identifica a peça, o quadro sai da foto decodificada (fallback geométrico,
+`JAVA_ANALYSIS_FALLBACK:<motivo>`). Fotos pequenas são ampliadas para 900×1200
+com `render.upscaleFactor` e `qualityNote=UPSCALED_REDUCED_QUALITY`. Uma foto
+mais larga que alta demais para o quadro de 50% tem o quadro reduzido à altura
+da foto (`FRAME_REDUCED_TO_FIT_IMAGE`, `widthPercent` real registrado). Baixa
+confiança da segmentação, foco estimado, categoria desconhecida e quadro
+encostado na borda viram observações, não bloqueios. Falhas do canal Java
+(JVM caiu, timeout, protocolo) nunca viram fallback: continuam falha.
+
+### Execução no Mac
+
+```bash
+cd tcc-2026-fashion-ai-backend
+python3 -m pip install -r scripts/catalog/requirements-images.txt
+mvn -q -DskipTests package                      # fat JAR do backend (Java 21)
+
+# MYSQL_HOST/PORT/DATABASE/USER/PASSWORD (ou MYSQL_PUBLIC_URL + MYSQL_APP_PASSWORD do Railway)
+# S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_REGION/S3_ENDPOINT e
+# STORAGE_PUBLIC_BASE_URL (ou APP_BASE_URL com S3_SERVE_THROUGH_API=true) já exportados; nada vai na linha de comando.
+
+# 1) amostra: 20 registros (todas as imagens dos produtos desses registros)
+python3 scripts/catalog/process_catalog_images.py --database --apply --category-frame --force-category-frame \
+  --limit 20 --workers 4 --java-threads 2 --output ~/catalogo/amostra-20.xlsx
+
+# 2) acervo completo (retomável: repita o mesmo comando com o mesmo --output/checkpoint)
+python3 scripts/catalog/process_catalog_images.py --database --apply --category-frame --force-category-frame \
+  --workers 6 --java-threads 3 --output ~/catalogo/acervo-enquadrado.xlsx
+```
+
+Código de saída 2 significa que houve falhas individuais; o resumo JSON no
+`stdout` e o `.summary.json` trazem `failure_reasons`, `frame_observations`,
+`frame_fallbacks` e `write_results`. Rode de novo para repetir só as pendências.
+
+### Como conferir que as imagens foram substituídas
+
+Na planilha (aba **Acervo**): **Pipeline após a execução = Sim**, **Imagem
+processada / recorte** com link `…/catalog/framed/…jpg`, **Versão do pipeline**
+`CATALOG_FRAME_34_50_V1`, **Motivo / observações** = "Enquadramento salvo no S3 e
+referência ativa atualizada no banco", **Enquadramento: foco** (categoria → alvo e
+origem do foco), **Enquadramento: observações** e **Dimensões (origem → saída)**.
+No `.changes.audit.jsonl`, cada linha confirmada traz `before`/`after` com
+`stored_url`, `assets_json` e `persistence_decision_at_commit`. No banco:
+
+```sql
+SELECT COUNT(*) FROM catalog_images
+ WHERE pipeline_version = 'CATALOG_FRAME_34_50_V1' AND stored_url LIKE '%/catalog/framed/%';
+```
+
+No catálogo: a busca (`GET /api/catalog/search`) e o produto devolvem
+`catalogImage.mode = "PROCESSED"` com `catalogImage.url` igual ao `stored_url` da
+imagem canônica; o card da Busca Catalogada mostra essa URL. Só a canônica de
+cada produto aparece no card; as alternativas também ficam enquadradas e são
+usadas se a canônica mudar. O worker da API ignora imagens com
+`pipeline_version` `CATALOG_FRAME_*`: uma nova versão do pipeline não refaz um
+enquadramento decidido pelo responsável.
+
 ## Como interpretar a planilha
 
 As primeiras colunas são **Nome da peça**, **Marca**, **Imagem URL** e **Pipeline

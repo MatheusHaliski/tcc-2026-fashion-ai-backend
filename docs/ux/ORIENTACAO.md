@@ -25,6 +25,7 @@ Código: `components/guide/guide.tsx` (provedor, diálogo, `GuideAuto`, `HowItWo
 | "Não mostrar novamente" | vale só para aquele tutorial e aquela versão |
 | Versão do tutorial sobe | reapresenta uma vez (zera "escondido" e a contagem) |
 | "Como funciona" | abre sempre; não conta como abertura automática |
+| Primeira entrada num modo pela Central FLAIR (`gate`) | "Jogar" abre a explicação antes de ir ao modo, com o botão **"Entendi, começar"** e o ícone do modo; só esse botão leva ao jogo (Esc, X e clique fora fecham e a pessoa continua na central). Conta como abertura automática e obedece às mesmas regras (versão, "Não mostrar novamente", no máximo 2 vezes). Depois disso, "Jogar" vai direto |
 | Desmarcar a caixa ao reabrir | volta a mostrar (`UNHIDDEN`) |
 | Esc, botão fechar, clique fora | fecham como "Entendi" sem marcar (fechamento previsível) |
 | Outro tutorial já aberto | o pedido automático é ignorado (nunca empilha) |
@@ -61,8 +62,14 @@ custo diferente). Ajuste de texto ou visual não sobe a versão.
 
 | Chave | Onde | Exemplo | Estado |
 |---|---|---|---|
-| `games.hub` | /flair | as três áreas de jogo | montado |
-| `flair.cbc` | Desafio de Montagem | carta entra no mosaico | entra com a tela do desafio (CBC-MOM-2) |
+| `games.hub` | /flair (Central FLAIR) | os modos da central, com o primeiro selecionado | montado (versão 2: a central nova) |
+| `flair.matches` | /flair/partidas | duas cartas frente a frente e o placar | montado |
+| `flair.cbc` | /flair/desafios (Desafio de Montagem) | carta entra no mosaico | montado |
+| `flair.cards` | /flair/cartas | a peça e a carta FLAIR gerada dela | montado |
+| `flair.decks` | /flair/decks | deck com poder e combos | montado |
+| `flair.shops` | /flair/lojas | requisitos cumpridos e o cupom | montado |
+| `flair.wallet` | /flair/carteira | saldo e um cupom emitido | montado |
+| `flair.quests` | /flair/missoes | missão chegando a 3/3 e Resgatar | montado |
 | `moments.calendar` | /moments | calendário e detalhe do Momento | montado |
 | `challenges.progress` | /challenges | requisitos, progresso, recompensa | montado |
 | `feed.posts` | /feed | card de peça com áreas numeradas | montado |
@@ -74,8 +81,12 @@ custo diferente). Ajuste de texto ou visual não sobe a versão.
 | `hype.flip` | verso do card | card vira para o Hype | entra com HYPE-1 |
 | `brand.visitor` | perfil de marca | abas do perfil | entra com PERFIS-2 |
 | `brand.operator` | cartas Especiais | estados da carta | entra com GAMES-3 |
-| `points.fai` | /points | extrato e unidades | montado |
-| `shop.room` | loja do quarto | item → confirmação → inventário | entra com PONTOS-LOJA |
+| `points.fai` | /points (Central de FAI Points) | extrato e unidades | montado (versão 2: a central nova) |
+| `points.balance` | /points/saldo | extrato e saldo | montado |
+| `points.earn` | /points/ganhar | ações com pontos e limite diário | montado |
+| `points.statement` | /notifications?cat=POINTS | extrato e saldo | montado |
+| `highlights.score` | /highlights (Destaques) | nota com faixa, dimensões e conquista | montado |
+| `shop.room` | /points/loja (loja do quarto) | item → confirmação → inventário | montado |
 
 Os textos descrevem o comportamento atual do código (verificado em cada tela). Um tutorial só é montado quando o
 recurso que ele descreve existe.

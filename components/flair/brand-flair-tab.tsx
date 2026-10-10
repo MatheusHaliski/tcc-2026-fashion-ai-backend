@@ -68,7 +68,7 @@ export function BrandFlairTab({ slug, autoNew = 0 }: { slug: string; autoNew?: n
         <p className="type-body-sm text-muted max-w-2xl">{d.admin
           ? t("flair.brandFlairTab.defina_qual_combinacao_de_cartas")
           : t("flair.brandFlairTab.complete_uma_destas_combinacoes_no", { brandName: d.brandName })}</p>
-        {d.admin ? <Button variant="primary" onClick={() => setForm({ ...EMPTY })}>{t("flair.brandFlairTab.nova_combinacao")}</Button> : <Link className="btn btn-sm btn-primary" href="/flair?tab=lojas">{t("flair.brandFlairTab.jogar_no_flair")}</Link>}
+        {d.admin ? <Button variant="primary" onClick={() => setForm({ ...EMPTY })}>{t("flair.brandFlairTab.nova_combinacao")}</Button> : <Link className="btn btn-sm btn-primary" href="/flair/lojas">{t("flair.brandFlairTab.jogar_no_flair")}</Link>}
       </div>
       {d.admin && d.stats && (
         <div className="grid gap-3 md:grid-cols-3">

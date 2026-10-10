@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { MIRROR_ZONE, MirrorSession, assetStateOf, cameraFor, facingYaw, handSlotOf, handsOf, reactionPose, snapshotCrop } from "./mirror-session";
+import { MIRROR_NORMAL, MIRROR_ZONE, MirrorSession, assetStateOf, cameraFor, facingYaw, handSlotOf, handsOf, mirrorDistance, reactionPose, snapshotCrop } from "./mirror-session";
 
 describe("zona do espelho", () => {
   it("entra perto, só sai mais longe e espera o tempo mínimo em cada borda (sem piscar na divisa)", () => {
@@ -109,6 +109,18 @@ describe("câmera, orientação e reação", () => {
     }
     expect(reactionPose("upper", 0.5, false).arms).toBeGreaterThan(0); expect(reactionPose("lower", 0.5, false).knee).toBeGreaterThan(0);
     expect(reactionPose("shoes", 1 / 6, false).foot).toBeGreaterThan(0); expect(reactionPose("accessory", 0.25, false).head).toBeGreaterThan(0);
+  });
+});
+
+describe("zona só na frente do vidro", () => {
+  it("na frente conta a distância; atrás do espelho a prova não abre (e fecha se estava aberta pela distância)", () => {
+    const mirror = new THREE.Vector3(2, 0, 1.1);
+    const front = mirror.clone().add(MIRROR_NORMAL.clone().multiplyScalar(.9)), back = mirror.clone().add(MIRROR_NORMAL.clone().multiplyScalar(-.9));
+    expect(mirrorDistance(front, mirror)).toBeCloseTo(.9); expect(mirrorDistance(back, mirror)).toBe(Infinity);
+    const s = new MirrorSession();
+    s.update(mirrorDistance(back, mirror), 0); s.update(mirrorDistance(back, mirror), 1000); expect(s.phase).toBe("room");
+    s.update(mirrorDistance(front, mirror), 2000); s.update(mirrorDistance(front, mirror), 2000 + MIRROR_ZONE.dwellMs); expect(s.phase).toBe("tryon");
+    s.update(mirrorDistance(back, mirror), 3000); expect(s.phase).toBe("exit");
   });
 });
 

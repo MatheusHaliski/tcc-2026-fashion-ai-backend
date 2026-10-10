@@ -344,7 +344,7 @@ function GlassButton({ text, position, w, onClick, primary }: { text: string; po
  * (Vista-me, Usar este look, Outra sugestão, Tira uma coisa). O formato e a moldura vêm do módulo "mirror" do quarto,
  * trocável na loja como qualquer outro componente (retangular, arco, oval, camarim com luzes).
  */
-function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module }: { position: [number, number, number]; look?: RoomData3D["mirrorDailyLook"]; overlay?: MirrorOverlay; theme?: string | null; onVistaMe?: () => void; reduced: boolean; module?: RoomModule3D }) {
+function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module, engine }: { engine?: RoomInteraction; position: [number, number, number]; look?: RoomData3D["mirrorDailyLook"]; overlay?: MirrorOverlay; theme?: string | null; onVistaMe?: () => void; reduced: boolean; module?: RoomModule3D }) {
   const { t } = useI18n();
   const tex = useTex(look?.coverImageUrl);
   const reflection = useReflection(overlay?.reflectionUrl);
@@ -352,6 +352,9 @@ function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module }: 
   // o vidro é alto e estreito; a foto tem a proporção do canvas: fica o miolo, sem esticar
   useEffect(() => { if (!snapshot || !overlay?.snapshot) return; const c = snapshotCrop(0.82 / 1.7, overlay.snapshot.aspect); snapshot.repeat.set(...c.repeat); snapshot.offset.set(...c.offset); snapshot.needsUpdate = true; }, [snapshot, overlay?.snapshot]);
   const riser = useRef<THREE.Mesh>(null); const start = useRef(-1);
+  // o espelho é um obstáculo: o personagem para na frente do vidro (e contorna pela lateral), nunca o atravessa
+  const body = useRef<THREE.Group>(null);
+  useEffect(() => { const g = body.current; if (!engine || !g) return; g.userData.collider = { hx: 0.47, hz: 0.08 }; engine.solids.add(g); return () => { engine.solids.delete(g); }; }, [engine]);
   useEffect(() => { if (overlay?.closingKey) start.current = performance.now(); }, [overlay?.closingKey]);
   useFrame(() => {
     const m = riser.current; if (!m) return;
@@ -365,7 +368,7 @@ function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module }: 
   const hanging = overlay?.pieces ?? [];
   const vanity = mold === "ESP-CAM";
   return (
-    <group position={position} rotation={[0, deg(28), 0]}>
+    <group ref={body} name="espelho" position={position} rotation={[0, deg(28), 0]}>
       <mesh geometry={frameGeo} position={[0, 0.95, -0.02]} castShadow><meshStandardMaterial color={f.color ?? "#2b2622"} metalness={f.metalness ?? 0.4} roughness={f.roughness ?? 0.35} /></mesh>
       <mesh geometry={glassGeo} position={[0, 0.95, 0.021]}><meshStandardMaterial color="#b7c3cb" metalness={0.55} roughness={0.12} /></mesh>
       {vanity && [-1, 1].flatMap((side) => [0, 1, 2, 3, 4].map((i) => <mesh key={`${side}-${i}`} position={[side * 0.28, 0.3 + i * 0.32, 0.04]}><sphereGeometry args={[0.024, 16, 12]} /><meshStandardMaterial color="#fff4d6" emissive="#ffd9a0" emissiveIntensity={1.2} toneMapped={false} /></mesh>))}
@@ -642,7 +645,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       {atLeast(level, "CLOSET") && (byId["bags"] || byId["jewelry"]) && <BagDisplay position={L.bags} bags={byId["bags"]?.pieces ?? []} jewelry={byId["jewelry"]?.pieces ?? []} ctx={ctx} />}
       {atLeast(level, "ATELIER") && byId["island"] && <Island position={L.island} boxes={boxes.slice(0, 3)} />}
 
-      <Mirror position={L.mirror} look={data.mirrorDailyLook} overlay={mirror} theme={deco("tema_espelho")?.theme ?? null} onVistaMe={onVistaMe} reduced={reduced} module={byId["mirror"]} />
+      <Mirror position={L.mirror} look={data.mirrorDailyLook} overlay={mirror} theme={deco("tema_espelho")?.theme ?? null} onVistaMe={onVistaMe} reduced={reduced} module={byId["mirror"]} engine={gameplay?.engine} />
       <DressForm position={L.bust} pointAt={pointAt} talking={!!copilotTalking} onClick={() => onCopilot?.()} reduced={reduced} />
       {(data.basket ?? []).length > 0 && <Basket position={L.basket} pieces={data.basket ?? []} ctx={ctx} />}
       {data.saleRack && data.saleRack.pieces.length > 0 && <SaleRack position={L.sale} rack={data.saleRack} ctx={ctx} />}

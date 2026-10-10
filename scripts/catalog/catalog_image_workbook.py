@@ -23,7 +23,9 @@ HEADERS = (
     "Pipeline após a execução", "Imagem original URL", "Imagem processada / recorte",
     "Status de processamento", "Motivo / observações", "Origem dos dados", "Versão do pipeline",
     "ID do produto", "ID da imagem", "Recorte JSON", "Erro",
+    "Enquadramento: foco", "Enquadramento: observações", "Dimensões (origem → saída)",
 )
+LAST_COLUMN = "R"
 UNKNOWN = "Não verificado"
 STATUS_COLORS = {"Sim": "E0F0EE", "Não": "FBE7EE", UNKNOWN: "F1F0EA"}
 URL_PATTERN = re.compile(r"https?://[^\s<>\"']+", re.IGNORECASE)
@@ -113,6 +115,37 @@ def _processed_link(record: Mapping[str, Any], workbook_path: Path) -> tuple[str
     return _url(current) if current and current != original else ("", None)
 
 
+def _frame_focus(record: Mapping[str, Any]) -> str:
+    """Categoria → alvo e origem do foco (detectado, estimado, centro da foto) do enquadramento por categoria."""
+    target = record.get("frame_target")
+    if not target:
+        return ""
+    focus = record.get("frame_focus") or {}
+    point = f" ({focus.get('x')}, {focus.get('y')})" if isinstance(focus, Mapping) and "x" in focus else ""
+    parts = [f"{record.get('frame_category') or '?'} → {target}", str(record.get("frame_focus_source") or "")]
+    if record.get("frame_fallback"):
+        parts.append("fallback: " + str(record["frame_fallback"]))
+    if record.get("frame_width_percent") not in (None, 50):
+        parts.append(f"quadro {record['frame_width_percent']}%")
+    return " · ".join(p for p in parts if p) + point
+
+
+def _frame_dimensions(record: Mapping[str, Any]) -> str:
+    """Recorte na foto original → saída gravada, com a ampliação quando a origem é menor que a saída."""
+    info = record.get("frame_render")
+    if not isinstance(info, Mapping):
+        assets = record.get("assets") or {}
+        info = assets.get("render") if isinstance(assets, Mapping) else None
+    if not isinstance(info, Mapping):
+        return ""
+    text = (f"foto {info.get('sourceWidth')}×{info.get('sourceHeight')} · recorte {info.get('sourceCropWidth')}×{info.get('sourceCropHeight')} px"
+            f" → {info.get('outputWidth')}×{info.get('outputHeight')}")
+    factor = info.get("upscaleFactor")
+    if isinstance(factor, (int, float)) and factor > 1:
+        text += f" (ampliação {factor:.2f}×, qualidade reduzida)".replace(".", ",")
+    return text
+
+
 def _generated_at(summary: Mapping[str, Any]) -> datetime:
     value = summary.get("generated_at")
     if isinstance(value, str):
@@ -138,7 +171,7 @@ def write_workbook(records: Iterable[Mapping[str, Any]], path: str | Path,
     sheet.sheet_view.showGridLines = False
     sheet.freeze_panes = "C2"
     sheet.row_dimensions[1].height = 36
-    widths = (46, 24, 54, 28, 28, 54, 54, 28, 72, 28, 32, 40, 40, 70, 60)
+    widths = (46, 24, 54, 28, 28, 54, 54, 28, 72, 28, 32, 40, 40, 70, 60, 40, 60, 34)
     for column, (header, width) in enumerate(zip(HEADERS, widths), 1):
         cell = _cell(sheet, 1, column, header)
         cell.fill = PatternFill("solid", fgColor="1F504D")
@@ -167,6 +200,7 @@ def write_workbook(records: Iterable[Mapping[str, Any]], path: str | Path,
             source_text, processed_text, record.get("processing_status"), record.get("status_note"),
             scope, record.get("pipeline_version"), record.get("product_id"), record.get("image_id"),
             record.get("crop_json", record.get("crop")), record.get("error"),
+            _frame_focus(record), "; ".join(record.get("frame_observations") or []), _frame_dimensions(record),
         )
         row = count + 1
         for column, value in enumerate(values, 1):
@@ -187,11 +221,11 @@ def write_workbook(records: Iterable[Mapping[str, Any]], path: str | Path,
         error_count += bool(record.get("error"))
 
     if count:
-        table = Table(displayName="InventarioImagens", ref=f"A1:O{count + 1}")
+        table = Table(displayName="InventarioImagens", ref=f"A1:{LAST_COLUMN}{count + 1}")
         table.tableStyleInfo = TableStyleInfo(name="TableStyleMedium2", showFirstColumn=False, showLastColumn=False,
                                              showRowStripes=True, showColumnStripes=False)
         sheet.add_table(table)
-    sheet.auto_filter.ref = f"A1:O{count + 1}"
+    sheet.auto_filter.ref = f"A1:{LAST_COLUMN}{count + 1}"
 
     overview = book.create_sheet("Resumo", 0)
     overview.sheet_view.showGridLines = False

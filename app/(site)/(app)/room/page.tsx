@@ -16,6 +16,7 @@ import RoomControlsTutorial from "@/components/room3d/room-controls-tutorial";
 import { RoomInteraction, type RoomPlayState } from "@/lib/room3d/interaction";
 import { HAND_TO_API, MirrorSession, handsOf, type HandPiece, type HandSlot } from "@/lib/room3d/mirror-session";
 import { MirrorHands } from "@/components/room3d/mirror-hands";
+import { setNavActiveOverride } from "@/lib/nav/active-override";
 import { MirrorControls } from "@/components/mirror/mirror-controls";
 import type { MirrorOverlay, RoomData3D } from "@/components/room3d/room-scene";
 import { feel, fabricOf } from "@/lib/sensory";
@@ -80,6 +81,9 @@ function RoomInner() {
   const [, mirrorTick] = useState(0);
   useEffect(() => { const update = () => mirrorTick((n) => n + 1); session.listeners.add(update); return () => { session.listeners.delete(update); }; }, [session]);
   const inMirror = session.phase === "tryon";                     // aba Espelho aberta dentro do quarto
+  // prova aberta (a aba Espelho embutida no quarto): o menu lateral passa para "Espelho"; saindo, volta a "Meu Quarto"
+  useEffect(() => { setNavActiveOverride(inMirror ? "/mirror" : null); }, [inMirror]);
+  useEffect(() => () => setNavActiveOverride(null), []);
   const [changed, setChanged] = useState<{ slot: HandSlot; name: string } | null>(null);
   const [swap, setSwap] = useState<{ slot: HandSlot; pieces: SwapPiece[]; message?: string; href?: string } | null>(null);
   // QUARTO-ESPELHO: a peça que acabou de chegar à lista do espelho (destaque) e o pedido de levar em andamento
