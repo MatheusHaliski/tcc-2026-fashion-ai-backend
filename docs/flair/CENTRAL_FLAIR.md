@@ -93,6 +93,7 @@ mídia falhar, fica a capa com o aviso. Assistir não chama a API.
 Durações finais (`encode.mjs` corta o carregamento inicial e, acima de 19,5 s, acelera de leve, até 1,6×, para o
 clipe caber em 10–20 s): matches 19,5 s (1,36×) · cbc 19,5 s (1,49×) · challenges 19,5 s · moments 16,4 s ·
 cards 10,5 s · decks 12,6 s · shops ≈10 s · wallet 11,8 s · quests 10,5 s. MP4 de 0,2 a 1,2 MB; capa JPG de 30 KB.
+A tabela de geração e o log do codificador também estão em `scripts/flair-demos/README.md`.
 
 ## 5.1 Central de FAI Points (`/points`), no mesmo formato
 
