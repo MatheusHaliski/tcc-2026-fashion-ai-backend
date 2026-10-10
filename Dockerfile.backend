@@ -4,7 +4,7 @@
 #   docker build -f Dockerfile.backend -t fashionai-api .
 #   docker run --env-file .env -p 8080:8080 fashionai-api
 # Java 25 = LTS (o 24 não recebe mais correções de segurança); o código continua compilado com --release 21
-FROM maven:3-eclipse-temurin-25 AS build
+FROM maven:3-eclipse-temurin-27 AS build
 WORKDIR /src
 COPY pom.xml .
 COPY fai-domain fai-domain
