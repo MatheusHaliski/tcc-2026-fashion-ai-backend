@@ -51,6 +51,13 @@ export class RoomInteraction {
   get state(): RoomPlayState { return { held: this.held, grip: this.grip?.id ?? null, nearMirror: !!this.held && this.actor.distanceTo(this.mirror) < 1, ready: this.ready }; }
 }
 /** Frame-independent movement, normalized diagonals, conservative wardrobe/room bounds. */
+/**
+ * QUARTO-ESPELHO: na prova, as setas valem na página inteira — o foco está nas opções de vestimenta ao lado, e basta andar
+ * para fora do espelho para voltar ao quarto. Fora de campos de texto e fora do canvas (que já trata as próprias teclas).
+ */
+export function arrowAnywhere(event: { code: string; target: EventTarget | null }, canvas: EventTarget | null, active: boolean, editable: (target: EventTarget | null) => boolean): boolean {
+  return active && event.target !== canvas && !editable(event.target) && event.code.startsWith("Arrow");
+}
 export function moveInRoom(position: THREE.Vector3, keys: Set<string>, dt: number, closetRight: number, solids: Iterable<THREE.Object3D> = []): number {
   const dx = Number(keys.has("ArrowRight")) - Number(keys.has("ArrowLeft"));
   const dz = Number(keys.has("ArrowDown")) - Number(keys.has("ArrowUp"));

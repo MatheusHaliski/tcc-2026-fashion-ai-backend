@@ -59,7 +59,7 @@ export default function AvatarViewer({ avatar, sex, build, skinTone, view = "fro
     <Canvas shadows="percentage" camera={{ fov: 30, near: 0.05, far: 20, position: [0, target[1], dist] }} dpr={[1, 2]} gl={{ preserveDrawingBuffer: true, antialias: true }}
       onCreated={({ gl }) => { gl.toneMapping = THREE.NeutralToneMapping; gl.toneMappingExposure = 0.95; onCanvas?.(gl.domElement); }}
       aria-label={t("avatar3d.viewer.aria")}>
-      <color attach="background" args={[background]} />
+      {background !== "transparent" && <color attach="background" args={[background]} />}
       <AvatarLighting />
       <Mannequin mannequin={{ sex, build: build ?? "MEDIUM", skinTone: avatar ? null : skinTone ?? null, head: avatar ? "AVATAR" : "PADRAO", avatar }} pieces={pieces} sway={false} body={params} onHuman={onHuman} still={still} hairLod={hairLod} />
       <Rig view={view} target={target} dist={dist} fitWidth={framing === "full" ? H * 0.74 : 0} />

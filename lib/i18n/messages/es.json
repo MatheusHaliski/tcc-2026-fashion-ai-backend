@@ -6154,6 +6154,7 @@
   "sealCopilot.earned_count": "Al menos {n} elemento(s) con este sello",
   "lookType.label": "Tipo de look",
   "lookType.hint": "Tu elección se guarda en el Espejo y acompaña al look cuando lo guardas.",
+  "lookType.unavailable": "Los tipos de look no están disponibles ahora; el espejo sigue funcionando.",
   "lookType.select": "Selecciona el tipo de look",
   "lookSeals.verify": "Verificar sellos",
   "lookSeals.dnaTitle": "Verificación de sellos de los looks",

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { moveInRoom, RoomInteraction } from "./interaction";
+import { arrowAnywhere, moveInRoom, RoomInteraction } from "./interaction";
 function target(engine: RoomInteraction, id: string, kind: "handle" | "piece", available = true) {
   const object = new THREE.Group(); object.position.set(0, 1, 0);
   engine.targets.set(id, { id, kind, object, available: () => available }); return object;
@@ -35,5 +35,17 @@ describe("wardrobe interaction lifecycle", () => {
     expect(straight.distanceTo(new THREE.Vector3(0, 0, 2))).toBeCloseTo(diagonal.distanceTo(new THREE.Vector3(0, 0, 2)));
     const solid = new THREE.Mesh(new THREE.BoxGeometry(.5, 1, .5)); solid.position.set(0, .5, 1); solid.updateMatrixWorld();
     const position = new THREE.Vector3(0, 0, 1.44); moveInRoom(position, new Set(["ArrowUp"]), .05, 1.2, [solid]); expect(position.z).toBe(1.44);
+  });
+});
+describe("setas na página inteira durante a prova (QUARTO-ESPELHO)", () => {
+  it("valem só na prova, só para setas, fora do canvas e fora de campos de texto", () => {
+    const canvas = {} as EventTarget, input = {} as EventTarget, body = {} as EventTarget;
+    const editable = (t: EventTarget | null) => t === input;
+    expect(arrowAnywhere({ code: "ArrowUp", target: body }, canvas, true, editable)).toBe(true);
+    expect(arrowAnywhere({ code: "ArrowLeft", target: null }, canvas, true, editable)).toBe(true);
+    expect(arrowAnywhere({ code: "ArrowUp", target: body }, canvas, false, editable)).toBe(false);   // fora da prova: só com o canvas focado
+    expect(arrowAnywhere({ code: "ArrowUp", target: canvas }, canvas, true, editable)).toBe(false);  // o canvas já trata as próprias teclas
+    expect(arrowAnywhere({ code: "ArrowUp", target: input }, canvas, true, editable)).toBe(false);   // digitando no Vista-me
+    expect(arrowAnywhere({ code: "KeyA", target: body }, canvas, true, editable)).toBe(false);       // pegar/largar só com o canvas focado
   });
 });

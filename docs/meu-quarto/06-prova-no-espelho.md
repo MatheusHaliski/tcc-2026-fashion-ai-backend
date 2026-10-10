@@ -151,6 +151,39 @@ vestida no personagem e "Pronto: Camiseta azul no espelho."), `07-sem-tenis` (Ti
 zona: câmera e painel de volta ao quarto) e `10-abrir-a-mao`. O vídeo da mesma sequência (`quarto-espelho-960.webm`)
 fica na pasta quando couber no repositório; o roteiro da captura é o mesmo da descrição acima.
 
+## Aba Espelho embutida no quarto (QUARTO-ESPELHO · 10/10)
+
+A aba **Espelho** deixa de ser uma tela separada durante a prova: ela é uma **navegação derivada do movimento** dentro
+do Meu Quarto. Ao chegar ao espelho (zona acima), a coluna ao lado da cena troca a lista de posições pelas **opções de
+vestimenta** da aba Espelho — o mesmo painel de `/mirror` (`components/mirror/mirror-controls.tsx`: tipo de look,
+Vista-me, partes do look com "Do guarda-roupa"/"Sugerir", notas, Usar hoje/Salvar como look/Abrir no editor), em modo
+compacto (sem o link para o quarto, que já é a tela atual). A página `/mirror` passa a usar o mesmo componente, então
+uma correção vale nos dois lugares.
+
+- **Foto do quarto no vidro.** Ao entrar na prova, `RoomAvatarController` tira uma foto da cena **do ponto de vista do
+  espelho** (câmera no vidro olhando para o guarda-roupa, personagem oculto; `MIRROR_NORMAL` em `mirror-session.ts`) e
+  guarda em `MirrorSession.snapshot`. O vidro mostra essa foto recortada ao miolo (`snapshotCrop`, sem esticar) e, por
+  cima, o reflexo do avatar vestido (PNG/WebP com alfa — `AvatarStill` com fundo transparente). A foto some ao voltar
+  ao quarto (pelas setas ou por "Voltar ao quarto").
+- **Sair só com as setas.** Durante a prova as setas valem na **página inteira** (`arrowAnywhere` em
+  `lib/room3d/interaction.ts`): o foco pode estar no painel ao lado e, mesmo assim, andar para fora da zona fecha a
+  prova e devolve a lista de posições. Fora da prova, as setas só valem com a cena focada (evita roubar a rolagem).
+  A prova aberta pelo botão "Abrir espelho" fica aberta parada em qualquer distância, mas **andar para fora da zona
+  também a fecha** (`MirrorSession.update(distance, now, moving)`).
+- **Tipo de look fora do ar.** Em produção o `GET /api/tipos-look` respondia 404 e o painel mostrava a caixa "Não
+  encontramos esta página". Agora 404/405 viram um aviso curto (`lookType.unavailable`) e o resto do painel segue
+  funcionando; outros erros continuam com "tentar de novo".
+- **Layout.** `.room3d[data-mode="mirror"]` alarga a coluna lateral (360 px) no desktop; no celular o painel fica
+  abaixo da cena, como o resto do quarto.
+
+Capturas com a API simulada (Chromium headless, SwiftShader) em `docs/evidencias/quarto-espelho-2026-10-10/`: `aba-01-quarto-desktop` (lista de posições),
+`aba-02-espelho-desktop` (chegou ao espelho andando: painel do espelho ao lado, foto do quarto no vidro, reflexo por
+cima), `aba-03-volta-desktop` (saiu andando com as setas, foco fora da cena: lista de posições de volta),
+`aba-02-espelho-mobile` e `aba-04-aba-espelho-tipos-404` (`/mirror` com o catálogo de tipos fora do ar: aviso curto, sem
+"página não encontrada"). Testes: `lib/room3d/mirror-session.test.ts` (foto na sessão, recorte, sair andando),
+`lib/room3d/interaction.test.ts` (setas na página inteira), `components/mirror/mirror-controls.test.tsx` (tipos 404,
+Do guarda-roupa, modo compacto) e `app/room-page.test.tsx` (abrir o espelho troca a coluna; voltar devolve).
+
 ## Limites
 
 - A cena exige WebGL; sem ele o quarto abre em 2.5D e a prova continua pela tela Espelho.

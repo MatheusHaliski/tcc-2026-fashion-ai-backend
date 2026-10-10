@@ -10,6 +10,7 @@ import {
   pointer, RoomWindow, sketchDraw, Sparkles, TailorTape, useCanvasTex, WallCalendar,
 } from "@/components/room3d/room-props";
 import RoomAvatarController, { type RoomGameplay } from "./room-avatar-controller";
+import { snapshotCrop } from "@/lib/room3d/mirror-session";
 import { RoomInteraction } from "@/lib/room3d/interaction";
 import { useI18n } from "@/lib/i18n/i18n";
 
@@ -32,6 +33,8 @@ export interface RoomData3D {
 export interface MirrorOverlay { pieces: { id: string; imageUrl?: string | null }[]; postIt?: string | null; closingKey?: number; celebrate?: boolean;
   /** PROV-2D — reflexo no vidro: a Prévia 2D do Avatar 3D vestindo as peças do espelho (só em memória) */
   reflectionUrl?: string | null;
+  /** vista do guarda-roupa tirada do espelho ao abrir a prova (QUARTO-ESPELHO): fundo do reflexo */
+  snapshot?: { url: string; aspect: number } | null;
   /** RF28 — botões 3D dentro do vidro: usar o look pendurado, pedir outra sugestão, tirar uma peça */
   onUse?: () => void; onAnother?: () => void; onTakeOneOff?: () => void; }
 export interface RoomSceneProps {
@@ -345,6 +348,9 @@ function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module }: 
   const { t } = useI18n();
   const tex = useTex(look?.coverImageUrl);
   const reflection = useReflection(overlay?.reflectionUrl);
+  const snapshot = useReflection(overlay?.snapshot?.url);
+  // o vidro é alto e estreito; a foto tem a proporção do canvas: fica o miolo, sem esticar
+  useEffect(() => { if (!snapshot || !overlay?.snapshot) return; const c = snapshotCrop(0.82 / 1.7, overlay.snapshot.aspect); snapshot.repeat.set(...c.repeat); snapshot.offset.set(...c.offset); snapshot.needsUpdate = true; }, [snapshot, overlay?.snapshot]);
   const riser = useRef<THREE.Mesh>(null); const start = useRef(-1);
   useEffect(() => { if (overlay?.closingKey) start.current = performance.now(); }, [overlay?.closingKey]);
   useFrame(() => {
@@ -364,7 +370,9 @@ function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module }: 
       <mesh geometry={glassGeo} position={[0, 0.95, 0.021]}><meshStandardMaterial color="#b7c3cb" metalness={0.55} roughness={0.12} /></mesh>
       {vanity && [-1, 1].flatMap((side) => [0, 1, 2, 3, 4].map((i) => <mesh key={`${side}-${i}`} position={[side * 0.28, 0.3 + i * 0.32, 0.04]}><sphereGeometry args={[0.024, 16, 12]} /><meshStandardMaterial color="#fff4d6" emissive="#ffd9a0" emissiveIntensity={1.2} toneMapped={false} /></mesh>))}
       {/* reflexo: o avatar da pessoa vestindo o look do espelho; sem ele, a capa do Look do Dia ou as peças penduradas */}
-      {reflection && <mesh position={[0, 1.2, 0.024]}><planeGeometry args={[0.5, 1.0]} /><meshBasicMaterial map={reflection} color="#ececec" /></mesh>}
+      {/* fundo do reflexo: a vista do guarda-roupa tirada do espelho ao abrir a prova; o avatar (PNG com alfa) por cima */}
+      {snapshot && <mesh position={[0, 0.95, 0.0225]}><planeGeometry args={[0.8, 1.66]} /><meshBasicMaterial map={snapshot} color="#dfe5e9" toneMapped={false} /></mesh>}
+      {reflection && <mesh position={[0, 1.2, 0.024]}><planeGeometry args={[0.5, 1.0]} /><meshBasicMaterial map={reflection} color="#ececec" transparent alphaTest={0.02} /></mesh>}
       {!reflection && tex && hanging.length === 0 && <mesh position={[0, 1.08, 0.024]}><planeGeometry args={[0.4, 0.8]} /><meshStandardMaterial map={tex} transparent alphaTest={0.05} /></mesh>}
       {!reflection && hanging.slice(0, 4).map((p, i) => <MirrorPiece key={p.id} url={p.imageUrl} position={[i % 2 ? 0.12 : -0.12, 1.38 - Math.floor(i / 2) * 0.38, 0.026]} />)}
       <mesh ref={riser} position={[0, 0.1, 0.03]} visible={false}><planeGeometry args={[0.54, 1.7]} /><meshBasicMaterial color="#fff4cf" transparent opacity={0.5} depthWrite={false} /></mesh>
