@@ -5,7 +5,13 @@ import { act, cleanup, fireEvent, loggedAs, renderApp, screen } from "@/test-uti
 import { ME } from "@/test-utils/render";
 import RoomPage from "@/app/(site)/(app)/room/page";
 
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+// a cena 3D e a foto do reflexo não rodam no jsdom: aqui só a página (abas, listas, painel ao lado da cena)
+vi.mock("@/components/room3d/room-scene", () => ({ default: () => <div data-testid="room-scene" /> }));
+vi.mock("@/components/three/avatar-still", () => ({ default: () => null }));
+
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+/** o jsdom não tem WebGL: a página abre a aba 3D só quando o canvas responde a webgl/webgl2 */
+const withWebgl = () => { const real = HTMLCanvasElement.prototype.getContext; vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(function (this: HTMLCanvasElement, kind: string, ...rest: unknown[]) { return kind === "webgl" || kind === "webgl2" ? ({} as unknown as RenderingContext) : (real as (this: HTMLCanvasElement, k: string, ...r: unknown[]) => RenderingContext | null).call(this, kind, ...rest); }); };
 
 const P = (id: string, moduleId: string) => ({ id, name: `Peça ${id}`, category: "upper_piece", subcategory: "t_shirt", colorHex: "#336699", imageUrl: `/media/${id}.png`, moduleId, addressLabel: moduleId, wearCount: 3, states: [] });
 const ROOM = {
@@ -47,6 +53,27 @@ describe("Meu Quarto (RF27)", () => {
     container.querySelectorAll("input").forEach((i) => fireEvent.change(i, { target: { value: i.type === "range" ? "4000" : "Camisetas" } }));
     await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
     expect(calls.some((c) => c.path === "/api/me/room")).toBe(true);
+  });
+
+  it("QUARTO-ESPELHO: abrir o espelho troca a lista de posições pelas opções de vestimenta ao lado da cena; Voltar ao quarto devolve a lista", async () => {
+    withWebgl();
+    loggedAs(ME, { "GET /api/me/room": ROOM, "GET /api/me/room/list": LIST, "GET /api/me/mirror": MIRROR, "GET /api/me/avatar3d": { exists: false }, "GET /api/tipos-look": [{ id: "t1", codigo: "UNISEX", nome: "Unisex" }] });
+    const { container } = renderApp(<RoomPage />);
+    await act(async () => { await new Promise((r) => setTimeout(r, 80)); });
+    const room3d = container.querySelector(".room3d")!;
+    expect(room3d.getAttribute("data-mode")).toBeNull();
+    expect(screen.getByText("Posições")).toBeTruthy(); expect(screen.queryByTestId("mirror-controls")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Abrir espelho/ }));
+    await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
+    expect(room3d.getAttribute("data-mode")).toBe("mirror");
+    expect(screen.getByTestId("mirror-controls")).toBeTruthy();                       // as opções de vestimenta, na aba Espelho embutida
+    expect(screen.queryByText("Posições")).toBeNull();
+    expect(screen.queryByRole("link", { name: /Meu Quarto/ })).toBeNull();            // já estamos no quarto
+    expect(screen.getByRole("navigation", { name: "Espelho" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Voltar ao quarto/ }));
+    await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
+    expect(room3d.getAttribute("data-mode")).toBeNull();
+    expect(screen.queryByTestId("mirror-controls")).toBeNull(); expect(screen.getByText("Posições")).toBeTruthy();
   });
 
   it("quarto que não carrega mostra o erro com tentar de novo", async () => {

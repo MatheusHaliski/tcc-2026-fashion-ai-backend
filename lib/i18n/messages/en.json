@@ -6154,6 +6154,7 @@
   "sealCopilot.earned_count": "At least {n} item(s) with this seal",
   "lookType.label": "Look type",
   "lookType.hint": "Your choice is saved in the Mirror and included when you save the look.",
+  "lookType.unavailable": "Look types are unavailable right now; the mirror keeps working.",
   "lookType.select": "Select the look type",
   "lookSeals.verify": "Check seals",
   "lookSeals.dnaTitle": "Look seal verification",

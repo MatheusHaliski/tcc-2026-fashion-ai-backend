@@ -1096,7 +1096,7 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 
 /* RF32 — Meu Quarto 3D: palco WebGL + painel de posições acessível (mesmas ações da lista) */
 .room3d { display: grid; gap: 12px; }
-@media (min-width: 1024px) { .room3d { grid-template-columns: minmax(0, 1fr) 260px; } }
+@media (min-width: 1024px) { .room3d { grid-template-columns: minmax(0, 1fr) 260px; } .room3d[data-mode="mirror"] { grid-template-columns: minmax(0, 1fr) 360px; } }
 .room3d-stage { position: relative; height: min(72vh, 680px); min-height: 420px; overflow: hidden; border-radius: 14px; border: 1px solid var(--line-soft); background: #efe9df; }
 .room3d-stage canvas { touch-action: none; }
 .room3d-loading { display: grid; height: 100%; place-items: center; color: var(--muted); font-size: 14px; }
@@ -1120,6 +1120,8 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 .mirror-hands-piece[data-worn="false"][data-listed="true"] { outline: 1px solid var(--line-soft); }
 .mirror-hands-piece[data-arrived="true"] { outline: 2px solid var(--mark); outline-offset: 1px; }
 .room3d-positions .mirror-hands button { display: inline-flex; width: auto; justify-content: center; }
+/* QUARTO-ESPELHO: na prova, as opções de vestimenta (o painel da aba Espelho) ficam ao lado da cena */
+.room3d-positions .mirror-controls button { display: inline-flex; width: auto; justify-content: center; }
 
 /* LEGO (prancha 10 · C7 · narrativa B12): montagem animada — os blocos caem e encaixam de cima para baixo (60 ms entre
    peças, via animation-delay); "montar de novo" repete. Com "reduzir movimento" o card aparece já montado. */

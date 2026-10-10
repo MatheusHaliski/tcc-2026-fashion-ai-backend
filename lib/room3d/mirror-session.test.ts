@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { MIRROR_NORMAL, MIRROR_ZONE, MirrorSession, assetStateOf, cameraFor, facingYaw, handSlotOf, handsOf, mirrorDistance, reactionPose } from "./mirror-session";
+import { MIRROR_NORMAL, MIRROR_ZONE, MirrorSession, assetStateOf, cameraFor, facingYaw, handSlotOf, handsOf, mirrorDistance, reactionPose, snapshotCrop } from "./mirror-session";
 
 describe("zona do espelho", () => {
   it("entra perto, só sai mais longe e espera o tempo mínimo em cada borda (sem piscar na divisa)", () => {
@@ -124,3 +124,32 @@ describe("zona só na frente do vidro", () => {
   });
 });
 
+describe("sair do espelho pelas setas (QUARTO-ESPELHO)", () => {
+  it("aberta pelo botão, a prova fica aberta parada em qualquer distância, mas andar para fora da zona fecha", () => {
+    const s = new MirrorSession(); s.open(); s.update(3, 0); expect(s.phase).toBe("tryon");
+    s.update(1.4, 100, true); expect(s.phase).toBe("tryon");                                    // andando dentro da zona: segue
+    s.update(2.2, 200, true); expect(s.phase).toBe("exit"); expect(s.manual).toBe(false);        // saiu andando: fecha como sempre
+    s.update(2.5, 200 + MIRROR_ZONE.exitMs); expect(s.phase).toBe("room");
+    s.update(1.0, 300); s.update(1.0, 300 + MIRROR_ZONE.dwellMs); expect(s.phase).toBe("tryon"); // chegar de novo reabre sozinha
+  });
+});
+describe("foto do quarto no vidro (QUARTO-ESPELHO)", () => {
+  it("a foto tirada ao abrir a prova fica na sessão e some ao sair do espelho pelas setas ou por Voltar ao quarto", () => {
+    const s = new MirrorSession(); let changes = 0; s.listeners.add(() => changes++);
+    s.update(1.0, 0); s.update(1.0, MIRROR_ZONE.dwellMs); expect(s.phase).toBe("tryon");
+    s.setSnapshot({ url: "data:image/jpeg;base64,AAA", aspect: 16 / 9, at: 10 });
+    expect(s.snapshot?.url).toBe("data:image/jpeg;base64,AAA"); expect(changes).toBe(3);
+    s.update(1.8, 1000); expect(s.phase).toBe("exit"); expect(s.snapshot).not.toBeNull();     // na divisa a foto ainda vale
+    s.update(2.5, 1000 + MIRROR_ZONE.exitMs); expect(s.phase).toBe("room"); expect(s.snapshot).toBeNull();
+    s.open(); s.setSnapshot({ url: "x", aspect: 1, at: 20 }); s.back(3); expect(s.snapshot).toBeNull();
+  });
+  it("o recorte mantém o miolo da foto sem esticar: foto larga perde as laterais, foto alta perde topo e base", () => {
+    const wide = snapshotCrop(0.82 / 1.7, 16 / 9);                                               // canvas paisagem no vidro estreito
+    expect(wide.repeat[1]).toBe(1); expect(wide.repeat[0]).toBeCloseTo((0.82 / 1.7) / (16 / 9), 6);
+    expect(wide.offset[0]).toBeCloseTo((1 - wide.repeat[0]) / 2, 6); expect(wide.offset[1]).toBe(0);
+    const tall = snapshotCrop(0.82 / 1.7, 0.3);
+    expect(tall.repeat[0]).toBe(1); expect(tall.repeat[1]).toBeCloseTo(0.3 / (0.82 / 1.7), 6); expect(tall.offset[1]).toBeCloseTo((1 - tall.repeat[1]) / 2, 6);
+    expect(snapshotCrop(0.5, 0.5)).toEqual({ repeat: [1, 1], offset: [0, 0] });
+    expect(snapshotCrop(0, 1)).toEqual({ repeat: [1, 1], offset: [0, 0] });                     // proporção inválida: sem recorte
+  });
+});

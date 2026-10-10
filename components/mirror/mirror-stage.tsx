@@ -22,7 +22,7 @@ const AvatarStill = dynamic(() => retryImport(() => import("@/components/three/a
  * FashionAI (o avatar nunca aparece sem roupa nem descalço). Sem avatar criado, aparece o manequim de referência com o
  * convite para criar o seu. A imagem não é espelhada horizontalmente: o logo das peças continua legível.
  */
-export interface MirrorPiece { id: string; name: string; imageUrl?: string; thumbnailUrl?: string; studioImageUrl?: string | null; category?: string; subcategory?: string; colorHex?: string; variation?: string | null; attributes?: Record<string, string[]> | null }
+export interface MirrorPiece { id: string; name: string; imageUrl?: string | null; thumbnailUrl?: string | null; studioImageUrl?: string | null; category?: string | null; subcategory?: string | null; colorHex?: string | null; variation?: string | null; attributes?: Record<string, string[]> | null }
 interface SavedAvatar { exists: boolean; model?: AvatarModel; adjust?: Partial<AvatarAdjust>; textureUrl?: string }
 
 /** Peças vestidas no espelho no formato do 3D — o mesmo do provador (foto, processada, modelagem e dimensões). */

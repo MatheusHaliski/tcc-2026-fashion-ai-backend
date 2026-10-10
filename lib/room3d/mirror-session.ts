@@ -77,22 +77,42 @@ export function handsOf(slots: MirrorSlots, held: SourcePiece | null, lookup: (i
 }
 
 export interface Reaction { slot: HandSlot; at: number }
+/** Foto da vista do guarda-roupa tirada do ponto de vista do espelho ao abrir a prova (fundo do reflexo). */
+export interface MirrorSnapshot { url: string; aspect: number; at: number }
+
+/**
+ * Recorte da foto do quarto para o vidro do espelho: a foto tem a proporção do canvas; o vidro é alto e estreito. Fica
+ * o miolo da foto (repeat/offset de textura), sem esticar.
+ */
+export function snapshotCrop(glassAspect: number, imageAspect: number): { repeat: [number, number]; offset: [number, number] } {
+  if (!(glassAspect > 0) || !(imageAspect > 0)) return { repeat: [1, 1], offset: [0, 0] };
+  if (imageAspect >= glassAspect) { const rx = glassAspect / imageAspect; return { repeat: [rx, 1], offset: [(1 - rx) / 2, 0] }; }
+  const ry = imageAspect / glassAspect; return { repeat: [1, ry], offset: [0, (1 - ry) / 2] };
+}
 
 export class MirrorSession {
   phase: MirrorPhase = "room";
-  /** aberta à mão: só "Voltar ao quarto" fecha (afastar-se não fecha) */
+  /** aberta à mão (botão): parada, fica aberta a qualquer distância; andar para fora da zona fecha como na prova automática */
   manual = false;
   /** fechada à mão dentro da zona: não reabre sozinha até a pessoa sair da zona */
   private latched = false;
   private since = 0;
   /** número do último pedido de troca e do último aplicado; `busy` é o lugar em troca */
   seq = 0; applied = 0; busy: HandSlot | null = null; error: string | null = null; reaction: Reaction | null = null;
+  /** a vista do guarda-roupa no espelho (tirada ao entrar na prova; some ao voltar ao quarto) */
+  snapshot: MirrorSnapshot | null = null;
   listeners = new Set<() => void>();
   notify() { this.listeners.forEach((l) => l()); }
+  setSnapshot(s: MirrorSnapshot | null) { this.snapshot = s; this.notify(); }
 
-  /** Avança a fase pela distância do personagem ao espelho (m) no instante `now` (ms). Devolve true se a fase mudou. */
-  update(distance: number, now: number): boolean {
+  /**
+   * Avança a fase pela distância do personagem ao espelho (m) no instante `now` (ms). Devolve true se a fase mudou.
+   * `moving`: a pessoa está andando (setas) — a aba Espelho é uma navegação derivada do movimento, então andar para fora
+   * da zona fecha a prova mesmo quando ela foi aberta pelo botão.
+   */
+  update(distance: number, now: number, moving = false): boolean {
     const before = this.phase;
+    if (this.manual && moving && distance > MIRROR_ZONE.exit) this.manual = false;
     if (this.latched && distance > MIRROR_ZONE.exit) this.latched = false;
     switch (this.phase) {
       case "room": if (distance < MIRROR_ZONE.enter && !this.latched) { this.phase = "approach"; this.since = now; } break;
@@ -103,17 +123,17 @@ export class MirrorSession {
       case "tryon": if (!this.manual && distance > MIRROR_ZONE.exit) { this.phase = "exit"; this.since = now; } break;
       case "exit":
         if (distance < MIRROR_ZONE.enter) this.phase = "tryon";
-        else if (now - this.since >= MIRROR_ZONE.exitMs) { this.phase = "room"; this.error = null; }
+        else if (now - this.since >= MIRROR_ZONE.exitMs) { this.phase = "room"; this.error = null; this.snapshot = null; }
         break;
     }
     if (before !== this.phase) { this.notify(); return true; }
     return false;
   }
-  /** Abrir o espelho à mão (botão): a prova fica aberta até "Voltar ao quarto". */
+  /** Abrir o espelho à mão (botão): a prova fica aberta até "Voltar ao quarto" ou até a pessoa andar para fora da zona. */
   open() { this.manual = true; this.latched = false; if (this.phase !== "tryon") { this.phase = "tryon"; this.notify(); } }
   /** "Voltar ao quarto": fecha e, se o personagem ainda estiver na zona, não reabre sozinha até ele sair dela. */
   back(distance: number) {
-    this.manual = false; this.latched = distance <= MIRROR_ZONE.exit; this.error = null;
+    this.manual = false; this.latched = distance <= MIRROR_ZONE.exit; this.error = null; this.snapshot = null;
     if (this.phase !== "room") { this.phase = "room"; this.notify(); }
   }
   /** Pedido de troca num lugar do corpo: devolve o número do pedido (o mais recente prevalece). */
