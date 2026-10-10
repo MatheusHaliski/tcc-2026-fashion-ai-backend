@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ApiError } from "@/lib/api/client";
+import { ApiError, api } from "@/lib/api/client";
+import { useApi } from "@/lib/hooks/use-api";
+import type { Store } from "@/lib/tryon/fitting-room-model";
 import { catalogApi, enoughToSearch, type CatalogProduct, type CatalogVariant, type DesignTraits, type DiscoverResponse, type MatchReason, type SearchResponse } from "@/lib/api/catalog";
 import { label, useTaxonomy, subcategoryLabel } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -23,7 +25,7 @@ const ILLUSTRATION: Record<string, "tshirt" | "pants_back" | "sneaker_side" | "b
  * certeza de que a peça física é aquela — quem confirma é a pessoa). Sem resultado: refinar, procurar nas lojas oficiais
  * da marca ou cair para a própria foto.
  */
-export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext, pickLabel, noResultHint, browse, onResults, resultsMount, resultsLayout }: {
+export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext, pickLabel, noResultHint, browse, onResults, resultsMount, resultsLayout, brandGrid = true }: {
   initial?: Partial<CatalogSearchContext>; onPick: (p: CatalogProduct, v: CatalogVariant | null) => void;
   /** Sem ele, a busca não oferece "usar minha foto" (modo embutido no criador de peça, onde a foto fica logo abaixo). */
   onUsePhoto?: (ctx: CatalogSearchContext) => void;
@@ -43,6 +45,8 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   resultsMount?: { target: HTMLElement | null };
   /** Grade compartilhada pelo provador e RF4, com até duas linhas por página. */
   resultsLayout?: "matrix";
+  /** Marcas do catálogo em grade acima do campo (RF4); o provador já tem a própria vitrine e desliga esta. */
+  brandGrid?: boolean;
 }) {
   const { t } = useI18n();
   const tax = useTaxonomy();
@@ -57,6 +61,17 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   useEffect(() => { if (prevCat.current !== category) { prevCat.current = category; setSubcategoryState(""); } }, [category]);
   const [brand, setBrand] = useState(initial?.brand ?? "");
   const [brandRef, setBrandRef] = useState<CatalogBrand | null>(null);
+  // as marcas do catálogo em grade (a mesma vitrine do provador): escolher é um toque, sem digitar; o campo de texto
+  // filtra a grade e continua aceitando uma marca que não está nela
+  const stores = useApi<{ stores: Store[] }>((signal) => (brandGrid ? api.get("/api/catalog/stores", { signal }) : Promise.resolve({ stores: [] })), [brandGrid]);
+  const storeList = brandGrid ? stores.data?.stores ?? [] : [];
+  const typed = brand.trim().toLowerCase();
+  const storesShown = typed && !storeList.some((s) => s.name === brand) ? storeList.filter((s) => s.name.toLowerCase().includes(typed)) : storeList;
+  const pickStore = (s: Store) => {
+    const next = brand === s.name ? "" : s.name;
+    setBrand(next);
+    setBrandRef(next ? { id: s.brandId, name: s.name, slug: s.slug, logoUrl: s.logoUrl, products: s.catalogProducts } : null);
+  };
   const [query, setQuery] = useState(initial?.query ?? "");
   const [color, setColor] = useState("");
   const [gender, setGender] = useState("");
@@ -204,6 +219,22 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
           <div className={cn("flex flex-wrap gap-1.5", resultsLayout === "matrix" && "fitting-category-controls")} role="group" aria-labelledby="cs-sub">
             {subs.map((s) => <Chip key={s} active={subcategory === s} onClick={() => setSubcategory(subcategory === s ? "" : s)}>{subcategoryLabel(s)}</Chip>)}
           </div>
+        </section>
+      )}
+      {storeList.length > 0 && (
+        <section className="catalog-brand-grid" aria-labelledby="cs-stores">
+          <p id="cs-stores" className="label">{t("catalog.marcas_do_catalogo", { n: storeList.length })}</p>
+          {storesShown.length ? (
+            <div className="fitting-stores" role="group" aria-labelledby="cs-stores">
+              {storesShown.map((s) => (
+                <button key={s.brandId} type="button" className={cn("fitting-store", brand === s.name && "is-active")} aria-pressed={brand === s.name} onClick={() => pickStore(s)}>
+                  <BrandLogo name={s.name} src={s.logoUrl} size={32} shape="square" />
+                  <span className="fitting-store-name">{s.name}</span>
+                  <span className="type-caption text-muted">{t("tryOn.n_produtos", { n: s.catalogProducts })}</span>
+                </button>
+              ))}
+            </div>
+          ) : <p className="type-caption text-muted">{t("catalog.nenhuma_marca_com", { q: brand.trim() })}</p>}
         </section>
       )}
       <div className="catalog-search-fields grid gap-3 sm:grid-cols-2">
