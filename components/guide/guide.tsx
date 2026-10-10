@@ -8,7 +8,11 @@ import { GUIDES, shouldAutoOpen, type GuidePref } from "@/lib/guides/registry";
 import { Button, Dialog, UiIcon } from "@/components/ui";
 import { GuideDemo } from "@/components/guide/guide-demos";
 import { FlairHubIcon } from "@/components/flair/hub-icons";
-import type { HubModeId } from "@/lib/flair/hub";
+import type { HubIconId } from "@/components/flair/hub-icons";
+import { POINTS_MODES } from "@/lib/points/hub";
+
+/** Nome do modo para o cabeçalho do tutorial: os modos de FAI Points e os do FLAIR têm catálogos de texto distintos. */
+const hubTitleKey = (hubMode: string) => (POINTS_MODES.some((m) => m.id === hubMode) ? `points.hub.mode.${hubMode}.title` : `flair.hub.mode.${hubMode}.title`);
 
 /**
  * Orientação "Como funciona" (docs/ux/ORIENTACAO.md).
@@ -181,7 +185,7 @@ export function GuideDialog({ guideKey, initiallyHidden, onClose, gate }: { guid
         <Button variant="primary" onClick={() => onClose(hide, true)} data-autofocus>{gate ? t("guide.got_it_start") : t("guide.got_it")}</Button>
       </>}>
       <div className="guide">
-        {def.hubMode && <div className="guide-mode" aria-hidden><FlairHubIcon id={def.hubMode as HubModeId} size={24} state="selected" /><span className="type-label text-muted">{t(`flair.hub.mode.${def.hubMode}.title`)}</span></div>}
+        {def.hubMode && <div className="guide-mode" aria-hidden><FlairHubIcon id={def.hubMode as HubIconId} size={24} state="selected" /><span className="type-label text-muted">{t(hubTitleKey(def.hubMode))}</span></div>}
         <p className="type-body">{t(`${base}.body`)}</p>
         <figure className="guide-demo">
           <div className="guide-demo-head">

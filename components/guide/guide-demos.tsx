@@ -77,6 +77,8 @@ export function GuideDemo({ demo }: { demo: DemoId }) {
     case "brandOperator": return <BrandDemo operator />;
     case "points": return <PointsDemo />;
     case "shop": return <ShopDemo />;
+    case "pointsEarn": return <PointsEarnDemo />;
+    case "highlights": return <HighlightsDemo />;
     case "flairMatch": return <FlairMatchDemo />;
     case "flairCards": return <FlairCardsDemo />;
     case "flairDecks": return <FlairDecksDemo />;
@@ -99,6 +101,38 @@ function GamesDemo() {
           <span className="type-caption text-muted">{t(`guide.demo.games.${c.hint}_hint`)}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+/** Destaques: o Inventory Score com a faixa, três das sete dimensões (uma subindo) e uma conquista desbloqueada. */
+function HighlightsDemo() {
+  const { t } = useI18n();
+  const dims = [{ k: "use", v: 82 }, { k: "variety", v: 64, anim: true }, { k: "rescue", v: 45 }];
+  return (
+    <div className="gd-highlights">
+      <div className="gd-score surface">
+        <span className="type-label text-muted">{t("highlights.inventory_score")}</span>
+        <b className="gd-score-value tabular">712</b>
+        <span className="type-caption">{t("guide.demo.highlights.band")}</span>
+        <span className="gd-score-bands" aria-hidden><i /><i /><i className="is-here" /><i /></span>
+      </div>
+      <ul className="gd-dims surface">
+        {dims.map((d) => <li key={d.k}><span>{t(`guide.demo.highlights.${d.k}`)}</span><i><b className={d.anim ? "gd-anim-progress" : undefined} style={{ width: `${d.v}%` }} /></i><em className="tabular">{d.v}</em></li>)}
+        <li className="gd-dims-foot"><span className="chip is-active gd-anim-show">🏅 {t("guide.demo.highlights.achievement")}</span><span className="type-caption text-muted">{t("guide.demo.highlights.why")}</span></li>
+      </ul>
+    </div>
+  );
+}
+
+/** Como ganhar: as ações que rendem pontos, com o limite por dia e a ação que acabou de contar. */
+function PointsEarnDemo() {
+  const { t } = useI18n();
+  const rows = [{ k: "look", v: 10, cap: true }, { k: "moment", v: 20 }, { k: "cbc", v: 15 }];
+  return (
+    <div className="gd-points surface">
+      <ul className="gd-ledger">{rows.map((r, i) => <li key={r.k} className={i === 0 ? "gd-anim-show" : undefined}><span>{t(`guide.demo.earn.${r.k}`)}{r.cap ? <small className="text-muted"> · {t("guide.demo.earn.cap")}</small> : null}</span><b className="tabular"><FaiIcon id="ACT-40" size={20} decorative /> +{r.v}</b></li>)}</ul>
+      <span className="type-caption text-muted">{t("guide.demo.earn.note")}</span>
     </div>
   );
 }

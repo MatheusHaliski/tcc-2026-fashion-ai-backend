@@ -81,8 +81,12 @@ custo diferente). Ajuste de texto ou visual não sobe a versão.
 | `hype.flip` | verso do card | card vira para o Hype | entra com HYPE-1 |
 | `brand.visitor` | perfil de marca | abas do perfil | entra com PERFIS-2 |
 | `brand.operator` | cartas Especiais | estados da carta | entra com GAMES-3 |
-| `points.fai` | /points | extrato e unidades | montado |
-| `shop.room` | loja do quarto | item → confirmação → inventário | entra com PONTOS-LOJA |
+| `points.fai` | /points (Central de FAI Points) | extrato e unidades | montado (versão 2: a central nova) |
+| `points.balance` | /points/saldo | extrato e saldo | montado |
+| `points.earn` | /points/ganhar | ações com pontos e limite diário | montado |
+| `points.statement` | /notifications?cat=POINTS | extrato e saldo | montado |
+| `highlights.score` | /highlights (Destaques) | nota com faixa, dimensões e conquista | montado |
+| `shop.room` | /points/loja (loja do quarto) | item → confirmação → inventário | montado |
 
 Os textos descrevem o comportamento atual do código (verificado em cada tela). Um tutorial só é montado quando o
 recurso que ele descreve existe.

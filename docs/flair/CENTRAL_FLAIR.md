@@ -90,8 +90,27 @@ mídia falhar, fica a capa com o aviso. Assistir não chama a API.
 | challenges | Catálogo → Começar "7 dias sem repetir look" → modo → desafio aberto com progresso → Meus desafios | `challenges.*` |
 | cards / decks / shops / wallet / quests | a tela da coleção em uso | `cards.*` … `quests.*` |
 
-Durações e tamanhos finais: ver a tabela gerada em `scripts/flair-demos/README.md` e o log do `encode.mjs`
-(todos entre 10 e 20 s; MP4 de 0,2 a 1,5 MB).
+Durações finais (`encode.mjs` corta o carregamento inicial e, acima de 19,5 s, acelera de leve, até 1,6×, para o
+clipe caber em 10–20 s): matches 19,5 s (1,36×) · cbc 19,5 s (1,49×) · challenges 19,5 s · moments 16,4 s ·
+cards 10,5 s · decks 12,6 s · shops ≈10 s · wallet 11,8 s · quests 10,5 s. MP4 de 0,2 a 1,2 MB; capa JPG de 30 KB.
+A tabela de geração e o log do codificador também estão em `scripts/flair-demos/README.md`.
+
+## 5.1 Central de FAI Points (`/points`), no mesmo formato
+
+Pedido de 10/10 (continuação): a tela de FAI Points (Loja → FAI Points) ganhou a mesma navegação lateral com vídeo
+em destaque. A tela de seleção virou um componente comum (`components/hub/mode-hub.tsx`), usado pelas duas centrais.
+
+| Grupo | Lugar | Rota | Situação mostrada |
+|---|---|---|---|
+| Saldo | Saldo e níveis | `/points/saldo` | pontos e nível |
+| Ganhar | Como ganhar | `/points/ganhar` | formas de ganhar (regras da API, com limite por dia e atalho "Ir" para a tela da ação) |
+| Gastar | Loja do quarto | `/points/loja` (RoomStore, RF35 + RF39) | itens ao seu alcance / disponíveis; indisponível sem itens |
+| Histórico | Extrato | `/notifications?cat=POINTS` | movimentos recentes |
+
+Antes: uma página única com saldo, níveis, regras, extrato e a loja empilhados. Depois: central + três sub-rotas;
+ícones próprios (`balance`, `earn`, `store`, `statement` no mesmo catálogo, exportados em `public/points/icons`);
+tutoriais `points.fai` (v2), `points.balance`, `points.earn`, `points.statement` e `shop.room` com "Entendi, começar";
+demonstrações gravadas em `public/points/demos`; testes em `components/points/hub.test.tsx`.
 
 ## 6. Arquivos
 
