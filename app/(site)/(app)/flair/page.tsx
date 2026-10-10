@@ -13,6 +13,7 @@ import { DeckSummary, FlairCardView, RARITY_META, SEASON_LABEL, STAT_META, type 
 import { FlairModes } from "@/components/flair/modes";
 import { checkLabel, couponText, GAME_TYPE_LABEL, VoucherDialog, type Combination, type Voucher } from "@/components/flair/flair-shared";
 import { tr, useI18n } from "@/lib/i18n/i18n";
+import { GuideAuto, HowItWorks } from "@/components/guide/guide";
 
 interface Rank { code: string; label: string; points: number; next?: { label: string; at: number } | null; }
 interface Team { id: string; name: string; code: string; color: string; points: number; owner: UserCard; members: { user: UserCard; role: string }[]; mine: boolean; }
@@ -98,7 +99,8 @@ function FlairInner() {
     <>
       <PageHeader title="FLAIR" kicker={t("flair.rf37_jogo_de_cartas")}
         lead={t("flair.o_guarda_roupa_e_a")}
-        actions={m ? <div className="flex flex-wrap items-center gap-2"><Badge tone="thread"><span title={t("flair.rankHint")}>{m.rank.label}</span></Badge><Badge><span title={t("flair.coinsHint")}>{t("flair.coins_3", { coins: m.coins })}</span></Badge><Badge tone="chalk"><span aria-label={t("flair.recordLong", { wins: m.wins, draws: m.draws, losses: m.losses })} title={t("flair.recordLong", { wins: m.wins, draws: m.draws, losses: m.losses })}>{t("flair.recordShort", { wins: m.wins, draws: m.draws, losses: m.losses })}</span></Badge></div> : undefined} />
+        actions={<div className="flex flex-wrap items-center gap-2"><HowItWorks id="games.hub" />{m && <><Badge tone="thread"><span title={t("flair.rankHint")}>{m.rank.label}</span></Badge><Badge><span title={t("flair.coinsHint")}>{t("flair.coins_3", { coins: m.coins })}</span></Badge><Badge tone="chalk"><span aria-label={t("flair.recordLong", { wins: m.wins, draws: m.draws, losses: m.losses })} title={t("flair.recordLong", { wins: m.wins, draws: m.draws, losses: m.losses })}>{t("flair.recordShort", { wins: m.wins, draws: m.draws, losses: m.losses })}</span></Badge></>}</div>} />
+      <GuideAuto id="games.hub" />
       {m && (
         <div className="surface mb-4 flex flex-wrap items-center gap-4 p-3">
           <div className="min-w-[180px] flex-1">

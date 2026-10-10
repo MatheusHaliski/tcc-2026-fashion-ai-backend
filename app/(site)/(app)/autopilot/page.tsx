@@ -11,6 +11,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { LookScores, type LookScoreValues } from "@/components/hype/look-scores";
 import { InsightStrip } from "@/components/insights/insight-strip";
 import type { Insight } from "@/lib/insights/types";
+import { GuideAuto, HowItWorks } from "@/components/guide/guide";
 
 interface Weather { available: boolean; temperatureC?: number | null; description?: string | null; city?: string | null; band?: string | null; season?: string | null; note?: string | null; }
 interface Pick { key: string; title?: string; pieces?: { id: string; name: string; imageUrl?: string; thumbnailUrl?: string; category?: string; subcategory?: string }[]; pieceIds?: string[]; why?: string; reason?: string; score?: number; layers?: string[]; /** dimensões lado a lado (compatibilidade, Hype, novidade…), nunca somadas */ scores?: LookScoreValues | null; }
@@ -46,7 +47,8 @@ function Autopilot() {
   )); };
   return (
     <>
-      <PageHeader title={t("nav.autopilot")} kicker="RF10" lead={t("autopilot.look_do_dia_por_ocasiao")} />
+      <PageHeader title={t("nav.autopilot")} kicker="RF10" lead={t("autopilot.look_do_dia_por_ocasiao")} actions={<HowItWorks id="autopilot.plan" />} />
+      <GuideAuto id="autopilot.plan" />
       <Tabs tabs={[{ id: "daily", label: t("autopilot.hoje") }, { id: "week", label: t("autopilot.semana") }]} value={tab} onChange={setTab} />
       {tab === "daily" && (<>
         {/* insights do contexto: os que vieram com a sugestão têm prioridade; antes de gerar, a faixa busca os do AUTOPILOT */}

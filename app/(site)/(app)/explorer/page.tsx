@@ -20,6 +20,7 @@ import { HypeAnalyticsDrawer } from "@/components/hype/hype-analytics-drawer";
 import { globeQuery, hypeShown } from "@/lib/hype/globe";
 import { displayScore, levelForScore, levelTone, LEVELS } from "@/lib/hype/model";
 import type { HypeGlobe, HypeGlobeCountry, HypeGlobeTop, HypeLevel } from "@/lib/hype/types";
+import { GuideAuto, HowItWorks } from "@/components/guide/guide";
 
 interface Global { countries: (GlobePoint & { dominantColor?: string | null })[]; minData?: number; facets?: { seasons: string[]; colors: string[] }; selected?: { country: string; looksBySeason?: { season: string; total?: number }[]; topColors?: { color: string; total: number }[] }; legend?: string; }
 
@@ -77,7 +78,8 @@ function Explorer() {
   const brandMin = brands.data?.minItems ?? 3;
   return (
     <>
-      <PageHeader title={t("nav.explorer")} kicker={t("explorer.rf26_explorador_global")} lead={t("explorer.tendencias_agregadas_por_pais_estacao")} />
+      <PageHeader title={t("nav.explorer")} kicker={t("explorer.rf26_explorador_global")} lead={t("explorer.tendencias_agregadas_por_pais_estacao")} actions={<HowItWorks id="explore.search" />} />
+      <GuideAuto id="explore.search" />
       <Tabs tabs={[{ id: "runway", label: t("common.passarela_3d") }, { id: "trending", label: t("hypeTrending.title") }, { id: "ranking", label: t("hypeRanking.title") }, { id: "map", label: t("explorer.painel_global") }, { id: "brands", label: t("explorer.buscar_marcas_lojas") }, { id: "insights", label: t("explorer.insights_globais") }]} value={tab} onChange={setTab} />
       {/* RF53 · cada aba abre com os insights dinâmicos do seu contexto (públicos, agregados; o Em alta passa a janela e a categoria) */}
       {tab === "runway" && <><InsightStrip context="EXPLORER_RUNWAY" className="mb-4" /><RunwayPanel /></>}
