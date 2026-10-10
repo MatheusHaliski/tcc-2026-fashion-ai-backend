@@ -186,6 +186,49 @@ public class MirrorService {
         }
     }
 
+    /** Teto da lista do espelho (peças trazidas para provar). */
+    static final int MAX_RACK = 24;
+
+    /**
+     * Lista do espelho (QUARTO-ESPELHO): as peças trazidas do quarto para provar, na ordem em que chegaram. É separada do
+     * que está vestido (slots): vestir tira da lista para o corpo e a peça continua na lista; tirar da lista nunca apaga
+     * a peça do guarda-roupa.
+     */
+    static List<UUID> rack(Map<String, Object> slots) {
+        List<UUID> out = new ArrayList<>();
+        if (slots.get("rack") instanceof List<?> l) {
+            for (Object o : l) {
+                try {
+                    UUID id = UUID.fromString(String.valueOf(o));
+                    if (!out.contains(id)) {
+                        out.add(id);
+                    }
+                } catch (IllegalArgumentException ignored) {
+                    // id inválido é ignorado
+                }
+            }
+        }
+        return out;
+    }
+
+    static void putRack(Map<String, Object> slots, List<UUID> rack) {
+        slots.put("rack", rack.stream().map(UUID::toString).toList());
+    }
+
+    /** Põe a peça na lista do espelho (sem duplicar; a mais antiga sai quando passa do teto). @return se entrou agora */
+    static boolean addToRack(Map<String, Object> slots, UUID pieceId) {
+        List<UUID> rack = rack(slots);
+        if (rack.contains(pieceId)) {
+            return false;
+        }
+        rack.add(pieceId);
+        while (rack.size() > MAX_RACK) {
+            rack.remove(0);
+        }
+        putRack(slots, rack);
+        return true;
+    }
+
     static List<UUID> allIds(Map<String, Object> slots) {
         List<UUID> ids = new ArrayList<>();
         for (String slot : List.of("outer_layer", "upper", "dress", "lower", "shoes")) {
@@ -257,6 +300,14 @@ public class MirrorService {
         m.put("colorHex", Taxonomy.hex(w.getColor()));
         m.put("imageUrl", w.getImageUrl());
         m.put("thumbnailUrl", w.getThumbnailUrl());
+        m.put("studioImageUrl", w.getStudioImageUrl());
+        // modelagem e dimensões da taxonomia: o espelho veste com o mesmo caimento do provador (classe, comprimentos)
+        m.put("variation", w.getVariationCode());
+        Map<String, List<String>> attrs = new LinkedHashMap<>();
+        if (w.getAttributes() != null) {
+            w.getAttributes().forEach(a -> attrs.computeIfAbsent(a.getDimensionCode(), k -> new ArrayList<>()).add(a.getValueCode()));
+        }
+        m.put("attributes", attrs);
         m.put("available", available(w));
         m.put("slot", slotOf(w));
         RoomService.Location loc = where.get(w.getId());
@@ -284,7 +335,10 @@ public class MirrorService {
     }
 
     Map<String, Object> render(CurrentUser user, MirrorState s, Map<String, Object> slots, Map<String, Object> extra) {
-        Map<UUID, WardrobeItem> loaded = load(user.id(), allIds(slots));
+        List<UUID> wantRack = rack(slots);
+        List<UUID> toLoad = new ArrayList<>(allIds(slots));
+        wantRack.stream().filter(id -> !toLoad.contains(id)).forEach(toLoad::add);
+        Map<UUID, WardrobeItem> loaded = load(user.id(), toLoad);
         // peças apagadas ou de terceiros somem do espelho
         boolean dirty = false;
         for (String slot : List.of("upper", "lower", "dress", "shoes", "outer_layer")) {
@@ -297,6 +351,11 @@ public class MirrorService {
         List<UUID> acc = accessories(slots).stream().filter(loaded::containsKey).toList();
         if (acc.size() != accessories(slots).size()) {
             slots.put("accessory", acc.stream().map(UUID::toString).toList());
+            dirty = true;
+        }
+        List<UUID> rackIds = wantRack.stream().filter(loaded::containsKey).toList();
+        if (rackIds.size() != wantRack.size()) {
+            putRack(slots, rackIds);
             dirty = true;
         }
         if (dirty) {
@@ -312,6 +371,12 @@ public class MirrorService {
         }
         slotViews.put("accessory", acc.stream().map(id -> pieceView(loaded.get(id), where)).toList());
         out.put("slots", slotViews);
+        Set<UUID> worn = new HashSet<>(allIds(slots));
+        out.put("rack", rackIds.stream().map(id -> {
+            Map<String, Object> v = pieceView(loaded.get(id), where);
+            v.put("worn", worn.contains(id));
+            return v;
+        }).toList());
         out.put("tipoLook", Views.tipoLook(s.getTipoLook()));
         List<WardrobeItem> look = allIds(slots).stream().map(loaded::get).filter(Objects::nonNull).toList();
         boolean complete = complete(slots);
@@ -423,6 +488,7 @@ public class MirrorService {
                 }
             }
         }
+        addToRack(slots, pieceId);   // vestida também fica na lista do espelho (para trocar e voltar a ela)
         if ("vista_me".equals(slots.get("origin"))) {
             slots.put("origin", "smart_mirror");
         } else {
@@ -439,6 +505,48 @@ public class MirrorService {
             extra.put("notice", Msg.t("mirror.esta_no_cesto_indisponivel_pode", w.getName()));
         }
         return render(user, s, slots, extra);
+    }
+
+    // ================================================================== lista do espelho (QUARTO-ESPELHO)
+    /** Leva a peça ao espelho: entra na lista para provar (sem vestir). Repetir o pedido não duplica. */
+    @Transactional
+    public Map<String, Object> bring(CurrentUser user, UUID pieceId) {
+        if (pieceId == null) {
+            throw ApiException.badRequest("PECA_OBRIGATORIA", Msg.t("mirror.escolha_uma_peca"));
+        }
+        WardrobeItem w = wardrobe.owned(user, pieceId);
+        MirrorState s = stateEntity(user.id());
+        Map<String, Object> slots = slots(s);
+        boolean added = addToRack(slots, w.getId());
+        if (added) {
+            slots.put("updatedAt", Instant.now().toString());
+            s.setSlotsJson(Json.write(slots));
+            mirrors.save(s);
+            events.publishEvent(new DomainEvents.MirrorAction(user.id(), "BRING"));
+        }
+        Map<String, Object> extra = new LinkedHashMap<>();
+        extra.put("brought", w.getId());
+        extra.put("added", added);
+        return render(user, s, slots, extra);
+    }
+
+    /** Tira a peça da lista do espelho (e do corpo, se estava vestida). A peça continua no guarda-roupa. */
+    @Transactional
+    public Map<String, Object> unbring(CurrentUser user, UUID pieceId) {
+        MirrorState s = stateEntity(user.id());
+        Map<String, Object> slots = slots(s);
+        List<UUID> rack = rack(slots);
+        rack.remove(pieceId);
+        putRack(slots, rack);
+        for (String slot : List.of("upper", "lower", "dress", "shoes", "outer_layer")) {
+            if (pieceId.equals(single(slots, slot))) {
+                slots.remove(slot);
+            }
+        }
+        slots.put("accessory", accessories(slots).stream().filter(id -> !id.equals(pieceId)).map(UUID::toString).toList());
+        s.setSlotsJson(Json.write(slots));
+        mirrors.save(s);
+        return render(user, s, slots, Map.of("unbrought", pieceId));
     }
 
     @Transactional
@@ -460,7 +568,9 @@ public class MirrorService {
     @Transactional
     public Map<String, Object> clear(CurrentUser user) {
         MirrorState s = stateEntity(user.id());
+        // limpar tira tudo do corpo; a lista do espelho fica (tirar da lista é pedido a pedido)
         Map<String, Object> slots = new LinkedHashMap<>();
+        putRack(slots, rack(slots(s)));
         s.setSlotsJson(Json.write(slots));
         mirrors.save(s);
         return render(user, s, slots, Map.of());
@@ -868,6 +978,9 @@ public class MirrorService {
         newSlots.put("interpretation", Map.of("occasion", it.occasion(), "mood", String.valueOf(it.mood()), "anchors", it.anchors().stream().map(UUID::toString).toList(),
                 "constraints", it.constraints(), "season", String.valueOf(it.season())));
         newSlots.put("updatedAt", Instant.now().toString());
+        // a lista do espelho continua: o look sugerido entra nela, as peças que a pessoa trouxe ficam
+        putRack(newSlots, rack(slots(s)));
+        look.forEach(w -> addToRack(newSlots, w.getId()));
         shown.add(key(look.stream().map(WardrobeItem::getId).toList()));
         List<String> shownList = new ArrayList<>(shown);
         if (shownList.size() > MAX_SHOWN) {
@@ -928,7 +1041,10 @@ public class MirrorService {
         if (!complete(slots)) {
             throw new ApiException(409, "LOOK_INCOMPLETO", Msg.t("mirror.complete_o_look_superior_inferior"));
         }
-        Map<UUID, WardrobeItem> loaded = load(user.id(), allIds(slots));
+        List<UUID> wantRack = rack(slots);
+        List<UUID> toLoad = new ArrayList<>(allIds(slots));
+        wantRack.stream().filter(id -> !toLoad.contains(id)).forEach(toLoad::add);
+        Map<UUID, WardrobeItem> loaded = load(user.id(), toLoad);
         List<WardrobeItem> removable = new ArrayList<>();
         accessories(slots).stream().map(loaded::get).filter(Objects::nonNull).forEach(removable::add);
         UUID outer = single(slots, "outer_layer");

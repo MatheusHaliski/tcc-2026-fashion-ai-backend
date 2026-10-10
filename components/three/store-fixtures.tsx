@@ -51,7 +51,7 @@ function ReferencePrint({ product, position }: { product: SceneProduct; position
   const caption = useCanvasTexture((g, w, h) => {
     g.fillStyle = "#F7F5F0"; g.fillRect(0, 0, w, h); g.fillStyle = "#33312C";
     g.font = "500 40px Inter, Arial, sans-serif"; g.textAlign = "center"; g.textBaseline = "middle";
-    const name = product.name.length > 28 ? product.name.slice(0, 27) + "…" : product.name;
+    const full = product.name ?? ""; const name = full.length > 28 ? full.slice(0, 27) + "…" : full;
     g.fillText(name, w / 2, h / 2, w * .94);
   }, 768, 100, [product.name]);
   return <group name={`catalog-reference-${product.id}`} position={position}>

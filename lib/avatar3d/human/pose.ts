@@ -166,3 +166,35 @@ export function idleClip(h: Human, st: PoseState, seconds = 21, fps = 15): THREE
   tracks.push(new THREE.VectorKeyframeTrack(`${h.bone("Hips").uuid}.position`, times, p));
   return new THREE.AnimationClip("idle", seconds, tracks);
 }
+
+export type TestPose = "repouso" | "bracos" | "caminhada" | "agachamento";
+
+/**
+ * Poses de verificação do provador (PROVADOR-3D): braços erguidos à frente, passo de caminhada (t = fase do passo, 0–1)
+ * e agachamento. Não fazem parte do movimento parado: servem para medir interseção e estiramento da roupa em movimento.
+ */
+export function applyTestPose(h: Human, st: PoseState, kind: TestPose, t = 0.25) {
+  for (const [b, q] of st.base) b.quaternion.copy(q);
+  h.bone("Hips").position.copy(st.hips);
+  const X = V(1, 0, 0), Y = V(0, 1, 0);
+  const Q = (axis: THREE.Vector3, deg: number) => new THREE.Quaternion().setFromAxisAngle(axis, deg * D);
+  if (kind === "bracos") {
+    // braços à frente quase na horizontal, cotovelo solto
+    rotateWorld(h.bone("LeftArm"), Q(X, -80)); rotateWorld(h.bone("RightArm"), Q(X, -80));
+    rotateWorld(h.bone("LeftShoulder"), Q(V(0, 0, 1), 4)); rotateWorld(h.bone("RightShoulder"), Q(V(0, 0, 1), -4));
+  } else if (kind === "caminhada") {
+    const s = Math.sin(2 * Math.PI * t);
+    rotateWorld(h.bone("LeftUpLeg"), Q(X, -24 * s)); rotateWorld(h.bone("RightUpLeg"), Q(X, 24 * s));
+    rotateWorld(h.bone("LeftLeg"), Q(X, 8 + 26 * Math.max(0, -s))); rotateWorld(h.bone("RightLeg"), Q(X, 8 + 26 * Math.max(0, s)));
+    rotateWorld(h.bone("LeftArm"), Q(X, 16 * s)); rotateWorld(h.bone("RightArm"), Q(X, -16 * s));
+    rotateWorld(h.bone("Hips"), Q(Y, 5 * s)); rotateWorld(h.bone("Spine1"), Q(Y, -4 * s));
+  } else if (kind === "agachamento") {
+    // coxas para a frente, canelas para trás, tronco inclinado e braços à frente para equilibrar; o quadril desce
+    rotateWorld(h.bone("LeftUpLeg"), Q(X, -70)); rotateWorld(h.bone("RightUpLeg"), Q(X, -70));
+    rotateWorld(h.bone("LeftLeg"), Q(X, 105)); rotateWorld(h.bone("RightLeg"), Q(X, 105));
+    rotateWorld(h.bone("LeftFoot"), Q(X, -35)); rotateWorld(h.bone("RightFoot"), Q(X, -35));
+    rotateWorld(h.bone("Spine"), Q(X, -18));
+    rotateWorld(h.bone("LeftArm"), Q(X, -70)); rotateWorld(h.bone("RightArm"), Q(X, -70));
+    h.bone("Hips").position.y = st.hips.y - st.legLen * 0.36;
+  }
+}

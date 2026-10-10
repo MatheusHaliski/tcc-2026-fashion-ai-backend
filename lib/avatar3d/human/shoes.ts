@@ -1,7 +1,7 @@
 /*
  * Avatar 3D (RF40) / Provador — calçado de verdade, não meia. Tênis e sapatos ganham um cabedal modelado (fôrma com bico
- * arredondado, contraforte e abertura do tornozelo — os dedos do corpo ficam dentro); a bota continua com o molde do pé
- * (garments.ts) para o cano. Além do cabedal:
+ * arredondado, contraforte e abertura do tornozelo — os dedos do corpo ficam dentro); a bota usa a mesma fôrma no pé e o
+ * molde da perna (garments.ts) só no cano. Além do cabedal:
  *
  *   sola    — contorno do pé no chão (com margem), espessura de 2 cm no calcanhar e 1,4 cm na frente, ponta levantada
  *             (toe spring), bordas arredondadas; entressola na cor da sola da foto e solado mais escuro embaixo;
@@ -152,7 +152,7 @@ export function shoeParts(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentSp
   for (const side of [1, -1]) {
     const f = footOf(c, P, side); if (!f) continue;
     const r0 = outline(c, f, NA);
-    if (sp.kind === "shoes") {
+    {                                                              // bota também: a fôrma cobre o pé (dedos dentro); o molde fica só no cano
       const main = lin(colors.upper); const toe = main.map((v) => v * 0.9) as [number, number, number];
       upperOf(a, c, P, f, r0, style, { main, toe, heel: collarRgb }, upper);
     }

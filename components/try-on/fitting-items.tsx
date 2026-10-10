@@ -7,6 +7,8 @@ import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
 import { mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { FITTING_SLOTS, type FittingItem, type FittingSlot } from "@/lib/tryon/fitting-room";
+import { useGarmentStatus } from "@/lib/tryon/garment-status";
+import { GarmentState } from "@/components/try-on/garment-state";
 
 export interface FittingItemsProps {
   items: FittingItem[];
@@ -26,6 +28,7 @@ export function FittingItems({
   items, products, colors, owned, busyOwn, status, slotNames, onVariantChange, onOwn, onRemove,
 }: FittingItemsProps) {
   const { t } = useI18n();
+  const garment = useGarmentStatus();   // estado das fotos no 3D (publicado pela cena)
 
   return (
     <Card>
@@ -56,9 +59,7 @@ export function FittingItems({
                     <p className="truncate type-body-sm font-medium">
                       {item.name}{item.colorName ? ` · ${item.colorName}` : ""}
                     </p>
-                    <p className="type-caption text-muted">
-                      {t(item.model3dUrl ? "tryOn.model_requires_fitting" : "tryOn.model_missing")}
-                    </p>
+                    <GarmentState item={item} photo={garment.photos[item.key]} />
                     {item.pieceId && (
                       <Link href={`/pieces/${item.pieceId}`} className="type-caption underline">{t("tryOn.review_piece")}</Link>
                     )}

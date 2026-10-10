@@ -10,6 +10,7 @@ import { retryImport } from "@/lib/chunk-recovery";
 import { validateBody } from "@/lib/avatar3d/body-spec";
 import type { AvatarAdjust, AvatarModel } from "@/lib/avatar3d/model";
 import type { Look3dPiece } from "@/components/three/common";
+import { mirrorLook3d } from "@/lib/mirror/mirror-list";
 import { Skeleton } from "@/components/ui";
 
 const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full w-full" /> });
@@ -21,16 +22,12 @@ const AvatarStill = dynamic(() => retryImport(() => import("@/components/three/a
  * FashionAI (o avatar nunca aparece sem roupa nem descalço). Sem avatar criado, aparece o manequim de referência com o
  * convite para criar o seu. A imagem não é espelhada horizontalmente: o logo das peças continua legível.
  */
-export interface MirrorPiece { id: string; name: string; imageUrl?: string; thumbnailUrl?: string; category?: string; subcategory?: string; colorHex?: string }
+export interface MirrorPiece { id: string; name: string; imageUrl?: string | null; thumbnailUrl?: string | null; studioImageUrl?: string | null; category?: string | null; subcategory?: string | null; colorHex?: string | null; variation?: string | null; attributes?: Record<string, string[]> | null }
 interface SavedAvatar { exists: boolean; model?: AvatarModel; adjust?: Partial<AvatarAdjust>; textureUrl?: string }
 
-const SLOT3D: Record<string, string> = { outer_layer: "outer_layer", upper: "upper", dress: "dress", lower: "lower", shoes: "shoes", accessory: "accessory" };
-
+/** Peças vestidas no espelho no formato do 3D — o mesmo do provador (foto, processada, modelagem e dimensões). */
 export function mirrorPieces(slots: Record<string, MirrorPiece | MirrorPiece[] | null>): Look3dPiece[] {
-  return Object.entries(slots).flatMap(([slot, v]) => (Array.isArray(v) ? v : v ? [v] : []).map((p) => ({
-    id: p.id, name: p.name, slot: SLOT3D[slot] ?? "accessory", category: p.category, subcategory: p.subcategory,
-    imageUrl: p.imageUrl ?? p.thumbnailUrl, colorHex: p.colorHex, model3dUrl: null,
-  } as Look3dPiece)));
+  return Object.entries(slots).flatMap(([slot, v]) => (Array.isArray(v) ? v : v ? [v] : []).map((p) => mirrorLook3d(p, slot)));
 }
 
 /**

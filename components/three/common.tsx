@@ -10,7 +10,11 @@ import type { HypeSummary } from "@/lib/hype/types";
 
 /* Vitrines 3D (Passarela, My Stage, mini lojas, "Gerar 3D"): utilitários compartilhados. Unidades em metros. */
 
-export interface Look3dPiece { id: string; name: string; slot: string; category?: string; subcategory?: string; imageUrl?: string | null; studioUrl?: string | null; colorHex?: string | null; model3dUrl?: string | null; model3dStatus?: string | null; defaultImage?: boolean; }
+export interface Look3dPiece {
+  id: string; name: string; slot: string; category?: string; subcategory?: string; imageUrl?: string | null; studioUrl?: string | null; colorHex?: string | null; model3dUrl?: string | null; model3dStatus?: string | null; defaultImage?: boolean;
+  /** modelagem declarada (taxonomia: SKINNY, STRAIGHT, OVERSIZED…) e dimensões (LENGTH, SLEEVE_LENGTH, SHAFT_HEIGHT) → caimento no 3D */
+  variation?: string | null; attributes?: Record<string, string[]> | null;
+}
 export interface FaceFit { offsetX?: number; offsetY?: number; scale?: number }
 /** Avatar 3D (RF40) confirmado pela pessoa: forma do rosto + textura (rota autenticada) + ajustes finos. */
 export interface Avatar3dRef { version?: number; model: AvatarModel; adjust?: Partial<AvatarAdjust> | null; textureUrl?: string | null; texture?: THREE.Texture | null }

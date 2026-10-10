@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useNavActiveOverride } from "@/lib/nav/active-override";
 import { useEffect, useId, useRef, useState, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -60,8 +61,10 @@ const THEMES: { mode: ThemeMode; key: string }[] = [
 ];
 
 function useIsActive() {
-  const pathname = usePathname(); const { user } = useAuth();
+  const pathname = usePathname(); const { user } = useAuth(); const override = useNavActiveOverride();
   return (href: string) => {
+    // a tela pediu outra aba acesa sem trocar de rota (prova no espelho dentro do Meu Quarto): só ela fica acesa
+    if (override) return href === override;
     if (href === "/lookbook") return pathname === "/lookbook" || (!!user && pathname === `/u/${user.username}`);
     if (href === "/schemes/new" || href === "/feed") return pathname === href;
     return pathname === href || pathname.startsWith(href + "/");

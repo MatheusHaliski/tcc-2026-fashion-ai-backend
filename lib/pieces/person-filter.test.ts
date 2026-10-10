@@ -56,6 +56,20 @@ describe("tirar a pessoa da foto da peça", () => {
     expect(r.file).toBe(f);
   });
 
+  it("tecido lido como pele (sem esqueleto, sem rosto nem cabelo, abaixo de 5 %): é ruído, a foto segue como veio", async () => {
+    const data = new Uint8Array(W * H).fill(4); for (let i = 0; i < Math.round(W * H * 0.03); i++) data[i * 7 % (W * H)] = 2;
+    detection = { people: 0, pose: null, world: null, mask: { width: W, height: H, data }, chin: null, ms: 1 };
+    const f = photo(); const r = await stripPerson(f);
+    expect(r.personFound).toBe(false); expect(r.file).toBe(f);
+    // com rosto/cabelo, ou com muita pele, continua sendo pessoa mesmo sem esqueleto
+    const face = data.slice(); for (let i = 0; i < Math.round(W * H * 0.02); i++) face[i] = 3;
+    detection = { ...detection, mask: { width: W, height: H, data: face } };
+    expect((await stripPerson(photo())).personFound).toBe(true);
+    const arms = new Uint8Array(W * H).fill(4); for (let i = 0; i < Math.round(W * H * 0.08); i++) arms[i] = 2;
+    detection = { ...detection, mask: { width: W, height: H, data: arms } };
+    expect((await stripPerson(photo())).personFound).toBe(true);
+  });
+
   it("pouca pele e ninguém detectado: é ruído, a foto segue como veio", async () => {
     detection = { people: 0, pose: null, world: null, mask: { width: W, height: H, data: new Uint8Array(W * H).fill(4) }, chin: null, ms: 1 };
     const r = await stripPerson(photo());
