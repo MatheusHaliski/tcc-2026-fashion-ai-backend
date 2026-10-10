@@ -314,6 +314,10 @@ public class MirrorService {
         m.put("address", loc == null ? null : loc.address().toString());
         m.put("addressLabel", loc == null ? null : loc.label());
         m.put("moduleId", loc == null ? null : loc.moduleId());
+        // estado dos assets da peça (RF16 e foto): o espelho mostra "Modelo 3D", "Foto em processamento" etc. de verdade
+        m.put("model3dUrl", w.getModel3dUrl());
+        m.put("model3dStatus", w.getModel3dStatus() == null ? null : w.getModel3dStatus().name());
+        m.put("photoProcessingStatus", w.getPhotoProcessingStatus() == null ? null : w.getPhotoProcessingStatus().name());
         return m;
     }
 
@@ -722,7 +726,7 @@ public class MirrorService {
     // ================================================================== Vista-me (CA08–CA15)
     static final Map<String, List<String>> KEYWORDS = Map.ofEntries(
             Map.entry("faculdade", List.of("university")), Map.entry("aula", List.of("university", "school")), Map.entry("escola", List.of("school")),
-            Map.entry("trabalho", List.of("work")), Map.entry("escritório", List.of("work", "business")), Map.entry("reunião", List.of("business")),
+            Map.entry("trabalho", List.of("work")), Map.entry("trabajo", List.of("work")), Map.entry("escritório", List.of("work", "business")), Map.entry("reunião", List.of("business")),
             Map.entry("apresentação", List.of("business", "formal")), Map.entry("entrevista", List.of("business", "formal")),
             Map.entry("festa", List.of("party")), Map.entry("balada", List.of("night_out")), Map.entry("jantar", List.of("date", "social")),
             Map.entry("encontro", List.of("date")), Map.entry("casamento", List.of("wedding")), Map.entry("formatura", List.of("ceremony", "formal")),
@@ -744,6 +748,11 @@ public class MirrorService {
             Map.entry("playa", List.of("beach")), Map.entry("viaje", List.of("travel")), Map.entry("gimnasio", List.of("gym")), Map.entry("entrenamiento", List.of("gym", "sport")),
             Map.entry("carrera", List.of("sport")), Map.entry("deporte", List.of("sport")), Map.entry("concierto", List.of("festival")), Map.entry("paseo", List.of("casual", "outdoor")));
 
+    /** palavra inteira (inglês): "hot" não casa com "photo", "cold" não casa com "scolding" */
+    static boolean hasWord(String text, String word) {
+        return java.util.regex.Pattern.compile("\\b" + java.util.regex.Pattern.quote(word) + "\\b").matcher(text).find();
+    }
+
     static Interpretation localInterpretation(String prompt, List<UUID> anchors) {
         String p = prompt == null ? "" : prompt.toLowerCase(Locale.ROOT);
         LinkedHashSet<String> occ = new LinkedHashSet<>();
@@ -752,13 +761,15 @@ public class MirrorService {
                 occ.addAll(v);
             }
         });
-        String mood = p.contains("confort") || p.contains("relax") ? "COMFORTABLE" : p.contains("eleg") || p.contains("chique") ? "ELEGANT"
+        // humor e clima também em inglês e espanhol (as células do Vista-me mandam o rótulo no idioma da pessoa)
+        String mood = p.contains("confort") || p.contains("comfort") || p.contains("cómod") || p.contains("comod") || p.contains("relax") ? "COMFORTABLE"
+                : p.contains("eleg") || p.contains("chique") ? "ELEGANT"
                 : p.contains("sofistic") ? "SOPHISTICATED" : p.contains("energ") || p.contains("anim") ? "ENERGETIC" : null;
         List<String> constraints = new ArrayList<>();
-        if (p.contains("frio") || p.contains("chuva")) {
+        if (p.contains("frio") || p.contains("frío") || p.contains("chuva") || hasWord(p, "cold") || hasWord(p, "rainy") || p.contains("lluvia")) {
             constraints.add("cold");
         }
-        if (p.contains("calor") || p.contains("quente") || p.contains("sol")) {
+        if (p.contains("calor") || p.contains("quente") || p.contains("sol") || hasWord(p, "hot") || hasWord(p, "warm") || p.contains("caluroso")) {
             constraints.add("hot");
         }
         if (p.contains("diferente") || p.contains("ousad")) {

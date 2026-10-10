@@ -91,6 +91,13 @@ class MirrorServiceTest {
         assertThat(kit.dep(WardrobeItemRepository.class).findById(tee)).isPresent();
         // a peça leva modelagem e atributos para o 3D (mesmo caimento do provador)
         assertThat(((List<Map<String, Object>>) r.get("rack")).get(0)).containsKeys("variation", "attributes", "studioImageUrl");
+        // e o estado real dos assets (modelo 3D e foto): os selos do espelho deixam de ser só "molde" ou "2D"
+        WardrobeItem withModel = kit.dep(WardrobeItemRepository.class).findById(jeans).orElseThrow();
+        withModel.setModel3dUrl("/media/jeans.glb");
+        withModel.setModel3dStatus(br.com.fashionai.domain.model.enums.Model3dStatus.COMPLETED);
+        r = mirror.place(ana, jeans);
+        Map<String, Object> lower = (Map<String, Object>) ((Map<String, Object>) r.get("slots")).get("lower");
+        assertThat(lower).containsEntry("model3dUrl", "/media/jeans.glb").containsEntry("model3dStatus", "COMPLETED").containsKey("photoProcessingStatus");
     }
 
     @Test
@@ -136,6 +143,16 @@ class MirrorServiceTest {
         assertThat(focus).isNotEmpty();
         MirrorService.Interpretation it = MirrorService.localInterpretation("trabalho formal no inverno sem salto", List.of());
         assertThat(it).isNotNull();
+        // as células do Vista-me mandam o rótulo no idioma da pessoa: ocasião, humor e clima valem em pt, en e es
+        MirrorService.Interpretation en = MirrorService.localInterpretation("Work, comfortable, cold", List.of());
+        assertThat(en.occasion()).contains("work");
+        assertThat(en.mood()).isEqualTo("COMFORTABLE");
+        assertThat(en.constraints()).contains("cold");
+        MirrorService.Interpretation es = MirrorService.localInterpretation("Trabajo, cómodo, calor", List.of());
+        assertThat(es.occasion()).contains("work");
+        assertThat(es.mood()).isEqualTo("COMFORTABLE");
+        assertThat(es.constraints()).contains("hot");
+        assertThat(MirrorService.localInterpretation("photo shoot", List.of()).constraints()).doesNotContain("hot");
         assertThat(MirrorService.localCompose(it, world.piecesOf(world.me), java.util.Set.of())).isNotEmpty();
     }
 
