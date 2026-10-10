@@ -113,12 +113,14 @@ verificando o conteúdo por SHA-256 antes de atualizar `stored_url`/`assets_json
 O card usa `PROCESSED`, sem aplicar o recorte novamente. A URL de origem e o
 objeto anterior ficam preservados para recuperação; não sobrescreve arquivos
 em servidores das marcas. Só fontes com `allows_image_persistence` habilitado
-e domínio correspondente podem persistir imagens. As demais são reportadas
+e domínio correspondente podem persistir imagens. O domínio é normalizado
+(maiúsculas/`www.`) e também reconhece subdomínios da fonte na URL da foto,
+com a mesma regra de limite entre nomes usada pela API. As demais são reportadas
 sem atualização. Configure `S3_BUCKET`, `S3_ENDPOINT`, região e credenciais,
 mais `STORAGE_PUBLIC_BASE_URL` (HTTPS) ou `S3_SERVE_THROUGH_API=true` com
 `APP_BASE_URL` (HTTPS) para o bucket privado. 50% é a
 largura normalizada do quadro, como no controle do editor, e não ocupação da peça.
-Camisas e acessórios usam o centro da caixa do produto. Partes de baixo e calçados
+Camisas, acessórios e peças inteiras (vestidos/macacões) usam o centro da caixa do produto. Partes de baixo e calçados
 usam a região de foco existente como estimativa do zíper/cadarço e ficam em
 `NEEDS_REPROCESSING` para revisão: o analisador não confirma esses landmarks.
 Categorias não previstas e fotos onde o quadro de 50% não cabe são reportadas
@@ -128,3 +130,9 @@ O modo é explícito e não muda o pipeline automático da API. A versão dos me
 as regras sem baixar novamente. No Railway, execute em um job com o checkout,
 Python, Java, JAR compilado e as mesmas variáveis MySQL do backend; o container
 atual da API não deve ser presumido como contendo os scripts e suas dependências.
+
+Antes de baixar/analisar, o modo verifica categoria e permissão da fonte. O
+progresso distingue análises Java concluídas de resultados prontos para gravação
+e mostra os motivos de falha mais frequentes; `failure_reasons` no relatório
+resume os bloqueios. Erros do S3 incluem o código do serviço sem expor credenciais.
+Permissões negativas continuam negativas: não são alteradas automaticamente.
