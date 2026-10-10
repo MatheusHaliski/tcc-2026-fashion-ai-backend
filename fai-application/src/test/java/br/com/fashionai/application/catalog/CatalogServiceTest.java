@@ -58,6 +58,10 @@ class CatalogServiceTest {
         CatalogProductRepository products = kit.dep(CatalogProductRepository.class);
         lenient().when(products.candidates(any(), any(), any(), any())).thenAnswer(i -> visible(i.getArgument(0)));
         lenient().when(products.candidatesWithColor(any(), any(), any(), any(), any())).thenAnswer(i -> visible(i.getArgument(0)));
+        // a consulta agrupada da grade de marcas é nativa: o repositório em memória devolve o que o banco agruparia
+        lenient().when(products.visibleCountsByBrandAndCategory()).thenAnswer(i -> visible(null).stream()
+                .collect(java.util.stream.Collectors.groupingBy(p -> List.of(p.getBrandId().toString(), p.getCategory()), java.util.stream.Collectors.counting()))
+                .entrySet().stream().map(e -> new Object[]{e.getKey().get(0), e.getKey().get(1), e.getValue()}).toList());
         nike = kit.dep(BrandRepository.class).save(new Brand("Nike", CatalogNormalizer.get().brandSlug("Nike"), BrandSource.SEEDED));
         BrandAlias alias = new BrandAlias();
         alias.setBrandId(nike.getId());
@@ -111,6 +115,20 @@ class CatalogServiceTest {
     }
 
     @Test
+    void gradeDeMarcasContaTodasAsPecasEmUmaConsultaAgrupada() {
+        Brand adidas = kit.dep(BrandRepository.class).save(new Brand("Adidas", CatalogNormalizer.get().brandSlug("Adidas"), BrandSource.SEEDED));
+        kit.dep(BrandRepository.class).save(new Brand("Sem Peças", CatalogNormalizer.get().brandSlug("Sem Peças"), BrandSource.SEEDED));
+        CatalogProductRepository products = kit.dep(CatalogProductRepository.class);
+        when(products.visibleCountsByBrandAndCategory()).thenReturn(List.of(
+                new Object[]{nike.getId().toString(), "shoes_piece", 2L}, new Object[]{nike.getId().toString(), "upper_piece", 2L},
+                new Object[]{adidas.getId().toString(), "upper_piece", 7000L}));
+        List<Map<String, Object>> grid = catalog.catalogBrands();
+        assertThat(grid).extracting(m -> m.get("name")).containsExactly("Adidas", "Nike");
+        assertThat(grid.get(0)).containsEntry("catalogProducts", 7000L).containsEntry("categories", List.of("upper_piece"));
+        assertThat(grid.get(1)).containsEntry("catalogProducts", 4L).containsEntry("categories", List.of("shoes_piece", "upper_piece"));
+    }
+
+    @Test
     void fichaDoProdutoComImagensEVariantes() {
         CatalogProduct p = MemoryRepository.<CatalogProduct>rows(kit.dep(CatalogProductRepository.class)).get(0);
         Map<String, Object> m = catalog.product(p.getId());
@@ -153,5 +171,32 @@ class CatalogServiceTest {
         assertThatThrownBy(() -> catalog.addToWardrobe(ana, new CatalogService.AddRequest(p.getId(), null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null))).isInstanceOf(ApiException.class);
         assertThat(CatalogService.orderScore(Map.of("matchScore", Map.of("total", 0.8)))).isLessThan(0.8);
+    }
+
+    @Test
+    void acervoInteiroPaginadoComTotalRealEResumo() {
+        CatalogProductRepository products = kit.dep(CatalogProductRepository.class);
+        List<CatalogProduct> all = MemoryRepository.rows(products);
+        // o repositório em memória não executa a consulta nativa: a página vem estubada como o banco devolveria
+        when(products.browse(any(), any(), any(), any(), any())).thenAnswer(inv -> {
+            org.springframework.data.domain.Pageable pg = inv.getArgument(4);
+            String brandId = inv.getArgument(0);
+            List<CatalogProduct> rows = all.stream().filter(p -> brandId == null || p.getBrandId().toString().equals(brandId)).toList();
+            int from = (int) Math.min(pg.getOffset(), rows.size()), to = Math.min(from + pg.getPageSize(), rows.size());
+            return new org.springframework.data.domain.PageImpl<>(rows.subList(from, to), pg, rows.size());
+        });
+        when(products.countVisible()).thenReturn((long) all.size());
+        Map<String, Object> page = catalog.browse(new CatalogService.BrowseRequest("Nike", null, null, null, 0, 1));
+        assertThat(page).containsEntry("total", (long) all.size()).containsEntry("page", 0).containsEntry("size", 1).containsEntry("brandKnown", true);
+        assertThat((List<?>) page.get("items")).hasSize(1);
+        assertThat(map(((List<?>) page.get("items")).get(0))).containsKeys("productName", "variants", "source");
+        assertThat(page.get("hasMore")).isEqualTo(all.size() > 1);
+        Map<String, Object> last = catalog.browse(new CatalogService.BrowseRequest("Nike", null, null, null, all.size(), 1));
+        assertThat((List<?>) last.get("items")).isEmpty();
+        assertThat(last).containsEntry("hasMore", false);
+        assertThat(catalog.browse(new CatalogService.BrowseRequest("Marca Inexistente", null, null, null, 0, 48))).containsEntry("brandKnown", false).containsEntry("total", 0L);
+        assertThat(catalog.browse(new CatalogService.BrowseRequest(null, null, null, null, 0, 500))).containsEntry("size", CatalogService.BROWSE_MAX_SIZE);
+        Map<String, Object> summary = catalog.summary();
+        assertThat(summary).containsEntry("products", (long) all.size()).containsEntry("brands", 1);
     }
 }

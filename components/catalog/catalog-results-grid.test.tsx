@@ -133,4 +133,20 @@ describe("matriz do catálogo do provador", () => {
     const previous = screen.queryByRole("button", { name: "← Voltar" }) as HTMLButtonElement | null;
     expect(previous === null || previous.disabled).toBe(true);
   });
+
+  it("acervo paginado no servidor: mostra o total real e busca a página seguinte só ao avançar além do que chegou", () => {
+    viewport(400);
+    loggedAs();
+    const onNeedMore = vi.fn();
+    const rendered = renderApp(<CatalogResultsGrid products={products.slice(0, 4)} resetKey="Farm" total={300} hasMoreRemote onNeedMore={onNeedMore} renderProduct={renderProduct} />);
+    expect(screen.getByText("Página 1 de 75 · 300 resultados")).toBeTruthy();
+    expect(onNeedMore).not.toHaveBeenCalled();
+    fireEvent.click(next());
+    expect(onNeedMore).toHaveBeenCalledTimes(1);
+    // a página seguinte chega: a pessoa fica nela (não volta à primeira) e vê as novas peças
+    rendered.rerender(<CatalogResultsGrid products={products.slice(0, 8)} resetKey="Farm" total={300} hasMoreRemote onNeedMore={onNeedMore} renderProduct={renderProduct} />);
+    expect(within(list()).getByText("Produto 5")).toBeTruthy();
+    expect(screen.getByText("Página 2 de 75 · 300 resultados")).toBeTruthy();
+    expect(onNeedMore).toHaveBeenCalledTimes(1);
+  });
 });

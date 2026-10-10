@@ -55,6 +55,20 @@ public class CatalogController {
         return Map.of("stores", catalog.catalogBrands());
     }
 
+    @GetMapping("/api/catalog/products")
+    @Operation(summary = "RF47 — O acervo inteiro, paginado (marca, categoria, subtipo e texto opcionais; total real e hasMore): todas as peças, não só as mais parecidas")
+    public Map<String, Object> browse(@RequestParam(required = false) String brand, @RequestParam(required = false) String category,
+                                      @RequestParam(required = false) String subcategory, @RequestParam(required = false) String q,
+                                      @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
+        return catalog.browse(new CatalogService.BrowseRequest(brand, category, subcategory, q, page, size));
+    }
+
+    @GetMapping("/api/catalog/summary")
+    @Operation(summary = "RF47 — Tamanho do acervo visível: peças e marcas com peças")
+    public Map<String, Object> summary() {
+        return catalog.summary();
+    }
+
     @GetMapping("/api/catalog/products/{id}")
     @Operation(summary = "RF47 — Produto do catálogo com variantes, fotos oficiais e proveniência")
     public Map<String, Object> product(@PathVariable UUID id) {

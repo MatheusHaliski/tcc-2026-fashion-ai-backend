@@ -3,6 +3,7 @@ package br.com.fashionai.domain.repository;
 import br.com.fashionai.domain.model.*;
 import br.com.fashionai.domain.model.enums.*;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -38,6 +39,36 @@ public interface CatalogProductRepository extends JpaRepository<CatalogProduct, 
     List<CatalogProduct> findByIngestionStatusAndCreatedAtBefore(CatalogIngestionStatus status, Instant before);
 
     List<CatalogProduct> findTop200BySourceStatusInOrderByLastVerifiedAtAsc(Collection<CatalogSourceStatus> status);
+
+    /**
+     * O acervo inteiro, paginado e em ordem estável (nome, id), com filtros opcionais por marca, categoria, subtipo e
+     * texto (LIKE no nome, modelo e texto de busca): é o que "ver todas as peças" percorre — sem pool, sem corte por
+     * pontuação. {@code q} já vem como padrão LIKE em minúsculas ("%camiseta%").
+     */
+    @Query(value = "SELECT p.* FROM catalog_products p WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') "
+            + "AND (:brandId IS NULL OR p.brand_id = :brandId) AND (:category IS NULL OR p.category = :category) "
+            + "AND (:subcategory IS NULL OR p.subcategory = :subcategory) "
+            + "AND (:q IS NULL OR LOWER(p.product_name) LIKE :q OR LOWER(p.model_name) LIKE :q OR LOWER(p.search_text) LIKE :q) "
+            + "ORDER BY p.product_name, p.id",
+            countQuery = "SELECT COUNT(*) FROM catalog_products p WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') "
+                    + "AND (:brandId IS NULL OR p.brand_id = :brandId) AND (:category IS NULL OR p.category = :category) "
+                    + "AND (:subcategory IS NULL OR p.subcategory = :subcategory) "
+                    + "AND (:q IS NULL OR LOWER(p.product_name) LIKE :q OR LOWER(p.model_name) LIKE :q OR LOWER(p.search_text) LIKE :q)",
+            nativeQuery = true)
+    Page<CatalogProduct> browse(@Param("brandId") String brandId, @Param("category") String category, @Param("subcategory") String subcategory,
+                                @Param("q") String q, Pageable pageable);
+
+    /**
+     * Peças visíveis por marca e categoria numa consulta só ({@code [brand_id, category, total]}): a grade de marcas do
+     * criador, do Provador e do Explorador sai daqui, sem carregar as peças de cada marca para contar.
+     */
+    @Query(value = "SELECT p.brand_id, p.category, COUNT(*) FROM catalog_products p "
+            + "WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') GROUP BY p.brand_id, p.category", nativeQuery = true)
+    List<Object[]> visibleCountsByBrandAndCategory();
+
+    /** Quantas peças visíveis há no acervo (o total mostrado nas telas). */
+    @Query(value = "SELECT COUNT(*) FROM catalog_products p WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY')", nativeQuery = true)
+    long countVisible();
 
     /** Candidatos pelo índice FULLTEXT (ngram), filtrados por marca/categoria/subcategoria quando informados. */
     @Query(value = "SELECT p.* FROM catalog_products p WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') "

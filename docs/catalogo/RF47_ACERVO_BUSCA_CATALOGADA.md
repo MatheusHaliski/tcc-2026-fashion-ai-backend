@@ -71,7 +71,9 @@ Usuário pesquisa → produto não existe → busca externa (só domínios ofici
 | GET | `/api/catalog/products/{id}` | produto com variantes, imagens (proveniência) e apelidos |
 | POST | `/api/catalog/discover` | busca nas lojas oficiais (RF24/`CATALOG_DISCOVERY`) |
 | POST | `/api/pieces/from-catalog` | cria a peça por referência (dados pessoais no corpo) |
-| GET | `/api/catalog/stores` | marcas do catálogo com produtos (vitrine do Provador, RF18) |
+| GET | `/api/catalog/stores` | marcas do catálogo com produtos (grade de marcas do criador, vitrine do Provador, RF18) — uma consulta agrupada por marca e categoria |
+| GET | `/api/catalog/products?brand&category&subcategory&q&page&size` | **acervo inteiro**, paginado (padrão 48, máximo 96 por página), em ordem estável (nome, id), com o **total real** do banco — ver §4.1 |
+| GET | `/api/catalog/summary` | tamanho do acervo visível: `{products, brands}` |
 
 Removidas em 04/10/2026, sem uso desde que o criador deixou de ter foto: `GET/PUT /api/me/capture-tutorial[/{guide}]` (com a
 coluna `user_preferences.capture_tutorial_json`, apagada na V32) e `POST /api/pieces/analysis` (análise de uma foto; a
@@ -81,6 +83,41 @@ Controller: `CatalogController`. Serviços: `CatalogService` (busca, sugestões,
 marcas para o Explorador e o Provador), `CatalogIngestService` (upsert idempotente), `CatalogNormalizer`,
 `CatalogMatchScorer`, `OfficialCatalogDiscovery`; `WardrobeService.createFromCatalog`;
 `ExplorerService.brandsAndStores`.
+
+### 4.1 Acervo inteiro × busca ranqueada (10/10/2026)
+
+**Problema verificado.** O pedido era que o criador de peças e a Busca mostrassem **todas** as peças do acervo. Nenhuma
+das duas telas fazia isso:
+
+| Onde | Antes | Por quê |
+|---|---|---|
+| Criador de peça (busca catalogada) | no máximo 24 cards por busca, e só depois de 2–3 informações | `GET /api/catalog/search` pega até 200 candidatos, corta em `limit` (máx. 48) e devolve `total` = tamanho da página |
+| Criador de peça (grade de marcas) | marca escolhida sozinha não listava nada | a busca exigia duas ou três informações |
+| Buscar | aba Peças mostra peças **públicas de pessoas**, não o catálogo; marca só do catálogo levava a essas peças | não havia rota para percorrer o catálogo |
+| Grade de marcas (criador, Provador, Explorador) | 2 consultas **por marca**, uma delas carregando todas as peças da marca só para listar as categorias | lento com o acervo inteiro; podia estourar o tempo da requisição |
+
+**Agora.**
+
+- `GET /api/catalog/products` percorre o acervo visível (`VALIDATED`, `PERSISTABLE`, `REFERENCE_ONLY`) sem pool e sem
+  corte por pontuação, com filtros opcionais e `total` vindo de `COUNT(*)`. Marca desconhecida devolve
+  `brandKnown=false` e lista vazia (nunca outra marca no lugar).
+- **Criador de peça:** escolher só a marca, só o tipo ou tocar em "Ver todo o acervo" lista **todas** as peças da
+  seleção ("300 peças de Farm Rio"). A grade mostra duas linhas por vez; a paginação mostra o total real
+  ("Página 1 de 38 · 300 resultados") e "Avançar" além das peças já carregadas busca a próxima página do servidor —
+  sem carregar o acervo inteiro de uma vez. Ao digitar um nome (ou escolher cor), volta a busca ranqueada com
+  "% compatível". A linha "Acervo completo: N peças de M marcas" vem de `/api/catalog/summary`.
+- **Buscar → Acervo** (aba nova): o catálogo inteiro em páginas de 24 com rolagem infinita, filtros de marca e
+  categoria, termo opcional, "Mostrando X de N" e "Usar no criador" (abre `/pieces/new` preenchido com marca, nome,
+  categoria e tipo). Em Buscar → Marcas, "Ver peças" de uma marca só do catálogo abre o acervo dessa marca.
+- **Provador:** usa o mesmo componente; tocar numa loja lista todas as peças dela, paginadas.
+- A grade de marcas sai de **uma** consulta agrupada (`visibleCountsByBrandAndCategory`).
+
+**Números.** O ambiente de desenvolvimento não acessa o banco de produção, então o total de produção não foi
+conferido aqui; as telas mostram o número real de cada ambiente. No repositório: arquivo do acervo
+`data/catalog/acervo/acervo-oficial-2026-10-05.jsonl.gz` com **9 573 produtos de 45 marcas**, mais **182** do seed
+(`data/catalog/products/`, 11 marcas); `brands.json` lista 100 marcas, das quais só as com produto visível aparecem na
+grade. Evidências (API simulada com os nomes, marcas e tipos desse arquivo; fotos trocadas pela imagem padrão FAI da
+categoria): [`docs/evidencias/catalogo-completo-2026-10-10/`](../evidencias/catalogo-completo-2026-10-10/).
 
 ## 5. Ranqueamento ("% compatível")
 
@@ -179,6 +216,8 @@ ignorados → 168 ignorados). Credenciais só pelas variáveis do backend (`MYSQ
 - CA06 Seed e importação rodam duas vezes sem duplicar marcas, produtos, variantes ou imagens.
 - CA07 As marcas do catálogo aparecem no Explorador com atalho para a busca catalogada.
 - CA08 A etapa Peça não tem envio de foto; sem produto, a peça é salva com a ilustração da categoria.
+- CA09 Marca, tipo ou "Ver todo o acervo" sem texto listam **todas** as peças da seleção, paginadas, com o total real do banco.
+- CA10 Buscar → Acervo percorre o catálogo inteiro (filtros de marca e categoria, termo opcional) e leva a peça ao criador.
 
 ## 10. Testes
 
@@ -186,4 +225,7 @@ Java: `CatalogNormalizerTest`, `CatalogMatchScorerTest`, `OfficialCatalogDiscove
 Python: `scripts/catalog/tests/test_normalize.py`. Frontend (vitest): `components/catalog/catalog-flow.test.tsx`
 (busca → "É esta" → salva por referência; sem resultado → lojas oficiais → preencher os dados),
 `lib/capture/capture-guides.test.ts`, fluxos RF4/RF47 em `components/shell-and-flows.test.tsx` (sem seção de foto;
-salvar sem produto).
+salvar sem produto). Acervo inteiro (10/10/2026): `CatalogServiceTest.acervoInteiroPaginadoComTotalRealEResumo` e
+`gradeDeMarcasContaTodasAsPecasEmUmaConsultaAgrupada` (Java); `catalog-brand-grid.test.tsx` (marca → acervo inteiro
+paginado; "Ver todo o acervo"), `catalog-results-grid.test.tsx` (paginação ligada ao servidor),
+`app/search-entities.test.tsx` (aba Acervo; "Ver peças" de marca do catálogo).
