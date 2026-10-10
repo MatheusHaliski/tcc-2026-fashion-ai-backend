@@ -29,6 +29,7 @@ jobs:
           persist-credentials: true
 
       - name: Configure dedicated backup SSH key
+        id: ssh
         env:
           BACKUP_SSH_KEY: ${{ secrets.BACKUP_SSH_KEY }}
         shell: bash
@@ -37,9 +38,9 @@ jobs:
           # Register this key's public half as a write-enabled Deploy Key on
           # MatheusHaliski/tcc-2026-fashion-ai-backend-backup001.
           if [[ -z "${BACKUP_SSH_KEY:-}" ]]; then
-            printf '%s\n' \
-              "Required repository secret BACKUP_SSH_KEY is not configured." >&2
-            exit 1
+            echo "::warning::Repository secret BACKUP_SSH_KEY is not configured; skipping backup."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
 
           install -m 700 -d "$HOME/.ssh"
@@ -66,8 +67,10 @@ jobs:
             UserKnownHostsFile $HOME/.ssh/known_hosts
           EOF
           chmod 600 "$HOME/.ssh/config"
+          echo "configured=true" >> "$GITHUB_OUTPUT"
 
       - name: Fetch all source branches and tags
+        if: steps.ssh.outputs.configured == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -82,6 +85,7 @@ jobs:
           git config --local --unset-all "$credential_key" || true
 
       - name: Configure and check backup remote
+        if: steps.ssh.outputs.configured == 'true'
         env:
           BACKUP_URL: git@github.com:MatheusHaliski/tcc-2026-fashion-ai-backend-backup001.git
         shell: bash
@@ -103,6 +107,7 @@ jobs:
           echo "Backup repository reachable"
 
       - name: Synchronize source branches and tags
+        if: steps.ssh.outputs.configured == 'true'
         id: synchronize
         shell: bash
         run: |
@@ -155,6 +160,7 @@ jobs:
           echo "tag_count=$tag_count" >> "$GITHUB_OUTPUT"
 
       - name: Verify backup refs and summarize
+        if: steps.ssh.outputs.configured == 'true'
         env:
           BRANCH_COUNT: ${{ steps.synchronize.outputs.branch_count }}
           TAG_COUNT: ${{ steps.synchronize.outputs.tag_count }}
