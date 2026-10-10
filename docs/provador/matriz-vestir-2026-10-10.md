@@ -4,78 +4,78 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 
 | ID do acervo | molde | corpo | pose | resultado | defeito | correção (antes→depois) | evidência |
 |---|---|---|---|---|---|---|---|
-| `01_parte_superior_01_camiseta_referencia` | tee | F-ref | exibicao | ok · penetração 2.0% | — | cintura/busto 0.98→0.99 (corpo 0.94) | vestir/camiseta-jeans |
+| `01_parte_superior_01_camiseta_referencia` | tee | F-ref | exibicao | ok · penetração 1.6% | — | cintura/busto 0.98→0.99 (corpo 0.94) | vestir/camiseta-jeans |
 | `01_parte_superior_01_camiseta_referencia` | tee | F-ref | bracos | ok · penetração 0.4% | — | — | vestir/camiseta-jeans |
-| `01_parte_superior_01_camiseta_referencia` | tee | F-ref | caminhada | ok · penetração 2.0% | — | — | vestir/camiseta-jeans |
-| `01_parte_superior_01_camiseta_referencia` | tee | F-ref | agachamento | ok · penetração 2.7% | — | — | vestir/camiseta-jeans |
-| `01_parte_superior_02_shirt_camisa` | shirt | F-ref | exibicao | ok · penetração 0.7% | — | cintura/busto 0.98→1 (corpo 0.94) | vestir/camisa-chino |
+| `01_parte_superior_01_camiseta_referencia` | tee | F-ref | caminhada | ok · penetração 1.8% | — | — | vestir/camiseta-jeans |
+| `01_parte_superior_01_camiseta_referencia` | tee | F-ref | agachamento | ok · penetração 4.4% | — | — | vestir/camiseta-jeans |
+| `01_parte_superior_02_shirt_camisa` | shirt | F-ref | exibicao | ok · penetração 0.5% | — | cintura/busto 0.98→1 (corpo 0.94) | vestir/camisa-chino |
 | `01_parte_superior_02_shirt_camisa` | shirt | F-ref | bracos | ok · penetração 0.4% | — | — | vestir/camisa-chino |
-| `01_parte_superior_02_shirt_camisa` | shirt | F-ref | caminhada | ok · penetração 0.8% | — | — | vestir/camisa-chino |
-| `01_parte_superior_02_shirt_camisa` | shirt | F-ref | agachamento | ok · penetração 1.8% | — | — | vestir/camisa-chino |
-| `01_parte_superior_03_blouse_blusa` | shirt | F-ref | exibicao | ok · penetração 0.7% | — | cintura/busto 0.98→1 (corpo 0.94) | métricas JSON |
+| `01_parte_superior_02_shirt_camisa` | shirt | F-ref | caminhada | ok · penetração 0.7% | — | — | vestir/camisa-chino |
+| `01_parte_superior_02_shirt_camisa` | shirt | F-ref | agachamento | ok · penetração 3.3% | — | — | vestir/camisa-chino |
+| `01_parte_superior_03_blouse_blusa` | shirt | F-ref | exibicao | ok · penetração 0.5% | — | cintura/busto 0.98→1 (corpo 0.94) | métricas JSON |
 | `01_parte_superior_03_blouse_blusa` | shirt | F-ref | bracos | ok · penetração 0.4% | — | — | métricas JSON |
-| `01_parte_superior_03_blouse_blusa` | shirt | F-ref | caminhada | ok · penetração 0.8% | — | — | métricas JSON |
-| `01_parte_superior_03_blouse_blusa` | shirt | F-ref | agachamento | ok · penetração 1.8% | — | — | métricas JSON |
+| `01_parte_superior_03_blouse_blusa` | shirt | F-ref | caminhada | ok · penetração 0.7% | — | — | métricas JSON |
+| `01_parte_superior_03_blouse_blusa` | shirt | F-ref | agachamento | ok · penetração 3.3% | — | — | métricas JSON |
 | `01_parte_superior_04_tank_top_regata` | tank | F-ref | exibicao | ok · penetração 0.2% | — | cintura/busto 0.96→0.94 (corpo 0.94) | métricas JSON |
 | `01_parte_superior_04_tank_top_regata` | tank | F-ref | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `01_parte_superior_04_tank_top_regata` | tank | F-ref | caminhada | ok · penetração 0.2% | — | — | métricas JSON |
-| `01_parte_superior_04_tank_top_regata` | tank | F-ref | agachamento | ok · penetração 1.7% | — | — | métricas JSON |
+| `01_parte_superior_04_tank_top_regata` | tank | F-ref | agachamento | ok · penetração 4.0% | — | — | métricas JSON |
 | `01_parte_superior_05_crop_top_cropped` | crop | F-ref | exibicao | ok · penetração 1.1% | — | — | métricas JSON |
 | `01_parte_superior_05_crop_top_cropped` | crop | F-ref | bracos | ok · penetração 0.6% | — | — | métricas JSON |
 | `01_parte_superior_05_crop_top_cropped` | crop | F-ref | caminhada | ok · penetração 1.0% | — | — | métricas JSON |
 | `01_parte_superior_05_crop_top_cropped` | crop | F-ref | agachamento | ok · penetração 1.1% | — | — | métricas JSON |
-| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | F-ref | exibicao | ok · penetração 2.0% | — | cintura/busto 0.98→0.99 (corpo 0.94) | métricas JSON |
+| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | F-ref | exibicao | ok · penetração 1.6% | — | cintura/busto 0.98→0.99 (corpo 0.94) | métricas JSON |
 | `01_parte_superior_06_polo_shirt_camisa_polo` | tee | F-ref | bracos | ok · penetração 0.4% | — | — | métricas JSON |
-| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | F-ref | caminhada | ok · penetração 2.0% | — | — | métricas JSON |
-| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | F-ref | agachamento | ok · penetração 2.7% | — | — | métricas JSON |
+| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | F-ref | caminhada | ok · penetração 1.8% | — | — | métricas JSON |
+| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | F-ref | agachamento | ok · penetração 4.4% | — | — | métricas JSON |
 | `01_parte_superior_07_bodysuit_body` | tank | F-ref | exibicao | ok · penetração 0.2% | — | cintura/busto 0.96→0.94 (corpo 0.94) | métricas JSON |
 | `01_parte_superior_07_bodysuit_body` | tank | F-ref | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `01_parte_superior_07_bodysuit_body` | tank | F-ref | caminhada | ok · penetração 0.2% | — | — | métricas JSON |
-| `01_parte_superior_07_bodysuit_body` | tank | F-ref | agachamento | ok · penetração 1.7% | — | — | métricas JSON |
-| `01_parte_superior_08_sweater_sueter` | sweater | F-ref | exibicao | ok · penetração 1.0% | — | cintura/busto 0.97→0.98 (corpo 0.94) | métricas JSON |
-| `01_parte_superior_08_sweater_sueter` | sweater | F-ref | bracos | ok · penetração 0.6% | — | — | métricas JSON |
-| `01_parte_superior_08_sweater_sueter` | sweater | F-ref | caminhada | ok · penetração 1.1% | — | — | métricas JSON |
-| `01_parte_superior_08_sweater_sueter` | sweater | F-ref | agachamento | ok · penetração 1.5% | — | — | métricas JSON |
-| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | F-ref | exibicao | ok · penetração 2.7% | — | cintura/busto 0.97→1.05 (corpo 0.93) | métricas JSON |
-| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | F-ref | bracos | ok · penetração 1.1% | — | — | métricas JSON |
-| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | F-ref | caminhada | ok · penetração 2.0% | — | — | métricas JSON |
-| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | F-ref | agachamento | ok · penetração 2.4% | — | — | métricas JSON |
-| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | F-ref | exibicao | ok · penetração 2.9% | — | cintura/busto 0.97→1.05 (corpo 0.93) | vestir/moletom-saia |
-| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | F-ref | bracos | ok · penetração 1.2% | — | — | vestir/moletom-saia |
-| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | F-ref | caminhada | ok · penetração 2.4% | — | — | vestir/moletom-saia |
-| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | F-ref | agachamento | ok · penetração 2.3% | — | — | vestir/moletom-saia |
-| `01_parte_superior_11_cardigan` | jacket | F-ref | exibicao | ok · penetração 3.0% | — | cintura/busto 1.02→1.04 (corpo 0.92) | métricas JSON |
-| `01_parte_superior_11_cardigan` | jacket | F-ref | bracos | ok · penetração 0.9% | — | — | métricas JSON |
-| `01_parte_superior_11_cardigan` | jacket | F-ref | caminhada | ok · penetração 2.7% | — | — | métricas JSON |
-| `01_parte_superior_11_cardigan` | jacket | F-ref | agachamento | ok · penetração 2.8% | — | — | métricas JSON |
-| `01_parte_superior_12_vest_colete` | vest | F-ref | exibicao | ok · penetração 2.1% | — | cintura/busto 1→1.02 (corpo 0.92) | métricas JSON |
-| `01_parte_superior_12_vest_colete` | vest | F-ref | bracos | ok · penetração 0.3% | — | — | métricas JSON |
-| `01_parte_superior_12_vest_colete` | vest | F-ref | caminhada | ok · penetração 1.9% | — | — | métricas JSON |
-| `01_parte_superior_12_vest_colete` | vest | F-ref | agachamento | ok · penetração 2.8% | — | — | métricas JSON |
-| `01_parte_superior_13_blazer` | jacket | F-ref | exibicao | ok · penetração 3.0% | — | cintura/busto 1.02→1.04 (corpo 0.92) | métricas JSON |
-| `01_parte_superior_13_blazer` | jacket | F-ref | bracos | ok · penetração 0.9% | — | — | métricas JSON |
-| `01_parte_superior_13_blazer` | jacket | F-ref | caminhada | ok · penetração 2.7% | — | — | métricas JSON |
-| `01_parte_superior_13_blazer` | jacket | F-ref | agachamento | ok · penetração 2.8% | — | — | métricas JSON |
-| `01_parte_superior_14_jacket_jaqueta` | jacket | F-ref | exibicao | ok · penetração 3.0% | — | cintura/busto 1.02→1.04 (corpo 0.92) | vestir/jaqueta-shorts |
-| `01_parte_superior_14_jacket_jaqueta` | jacket | F-ref | bracos | ok · penetração 0.9% | — | — | vestir/jaqueta-shorts |
-| `01_parte_superior_14_jacket_jaqueta` | jacket | F-ref | caminhada | ok · penetração 2.7% | — | — | vestir/jaqueta-shorts |
-| `01_parte_superior_14_jacket_jaqueta` | jacket | F-ref | agachamento | ok · penetração 2.8% | — | — | vestir/jaqueta-shorts |
-| `01_parte_superior_15_coat_casaco` | coat | F-ref | exibicao | ok · penetração 1.4% | — | cintura/busto 1.03→1.04 (corpo 0.92); folga coxa 5.05→5.09 cm | métricas JSON |
+| `01_parte_superior_07_bodysuit_body` | tank | F-ref | agachamento | ok · penetração 4.0% | — | — | métricas JSON |
+| `01_parte_superior_08_sweater_sueter` | sweater | F-ref | exibicao | ok · penetração 0.8% | — | cintura/busto 0.97→0.98 (corpo 0.94) | métricas JSON |
+| `01_parte_superior_08_sweater_sueter` | sweater | F-ref | bracos | ok · penetração 0.5% | — | — | métricas JSON |
+| `01_parte_superior_08_sweater_sueter` | sweater | F-ref | caminhada | ok · penetração 1.0% | — | — | métricas JSON |
+| `01_parte_superior_08_sweater_sueter` | sweater | F-ref | agachamento | ok · penetração 3.4% | — | — | métricas JSON |
+| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | F-ref | exibicao | ok · penetração 2.2% | — | cintura/busto 0.97→1.05 (corpo 0.93) | métricas JSON |
+| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | F-ref | bracos | ok · penetração 0.9% | — | — | métricas JSON |
+| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | F-ref | caminhada | ok · penetração 1.6% | — | — | métricas JSON |
+| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | F-ref | agachamento | ok · penetração 4.3% | — | — | métricas JSON |
+| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | F-ref | exibicao | ok · penetração 2.4% | — | cintura/busto 0.97→1.05 (corpo 0.93) | vestir/moletom-saia |
+| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | F-ref | bracos | ok · penetração 0.9% | — | — | vestir/moletom-saia |
+| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | F-ref | caminhada | ok · penetração 1.9% | — | — | vestir/moletom-saia |
+| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | F-ref | agachamento | ok · penetração 4.2% | — | — | vestir/moletom-saia |
+| `01_parte_superior_11_cardigan` | jacket | F-ref | exibicao | ok · penetração 2.5% | — | cintura/busto 1.02→1.04 (corpo 0.92) | métricas JSON |
+| `01_parte_superior_11_cardigan` | jacket | F-ref | bracos | ok · penetração 0.7% | — | — | métricas JSON |
+| `01_parte_superior_11_cardigan` | jacket | F-ref | caminhada | ok · penetração 2.3% | — | — | métricas JSON |
+| `01_parte_superior_11_cardigan` | jacket | F-ref | agachamento | ok · penetração 4.1% | — | — | métricas JSON |
+| `01_parte_superior_12_vest_colete` | vest | F-ref | exibicao | ok · penetração 1.6% | — | cintura/busto 1→1.02 (corpo 0.92) | métricas JSON |
+| `01_parte_superior_12_vest_colete` | vest | F-ref | bracos | ok · penetração 0.2% | — | — | métricas JSON |
+| `01_parte_superior_12_vest_colete` | vest | F-ref | caminhada | ok · penetração 1.5% | — | — | métricas JSON |
+| `01_parte_superior_12_vest_colete` | vest | F-ref | agachamento | ok · penetração 5.0% | — | — | métricas JSON |
+| `01_parte_superior_13_blazer` | jacket | F-ref | exibicao | ok · penetração 2.7% | — | cintura/busto 1.02→1.01 (corpo 0.93) | métricas JSON |
+| `01_parte_superior_13_blazer` | jacket | F-ref | bracos | ok · penetração 1.0% | — | — | métricas JSON |
+| `01_parte_superior_13_blazer` | jacket | F-ref | caminhada | ok · penetração 2.5% | — | — | métricas JSON |
+| `01_parte_superior_13_blazer` | jacket | F-ref | agachamento | ok · penetração 4.2% | — | — | métricas JSON |
+| `01_parte_superior_14_jacket_jaqueta` | jacket | F-ref | exibicao | ok · penetração 2.5% | — | cintura/busto 1.02→1.04 (corpo 0.92) | vestir/jaqueta-shorts |
+| `01_parte_superior_14_jacket_jaqueta` | jacket | F-ref | bracos | ok · penetração 0.7% | — | — | vestir/jaqueta-shorts |
+| `01_parte_superior_14_jacket_jaqueta` | jacket | F-ref | caminhada | ok · penetração 2.3% | — | — | vestir/jaqueta-shorts |
+| `01_parte_superior_14_jacket_jaqueta` | jacket | F-ref | agachamento | ok · penetração 4.1% | — | — | vestir/jaqueta-shorts |
+| `01_parte_superior_15_coat_casaco` | coat | F-ref | exibicao | ok · penetração 1.4% | — | cintura/busto 1.03→1.04 (corpo 0.92); folga coxa 4.87→5.09 cm | métricas JSON |
 | `01_parte_superior_15_coat_casaco` | coat | F-ref | bracos | ok · penetração 0.4% | — | — | métricas JSON |
 | `01_parte_superior_15_coat_casaco` | coat | F-ref | caminhada | ok · penetração 1.3% | — | — | métricas JSON |
-| `01_parte_superior_15_coat_casaco` | coat | F-ref | agachamento | ok · penetração 4.0% | — | — | métricas JSON |
-| `01_parte_superior_16_parka` | coat | F-ref | exibicao | ok · penetração 1.4% | — | cintura/busto 1.03→1.04 (corpo 0.92); folga coxa 5.05→5.09 cm | métricas JSON |
+| `01_parte_superior_15_coat_casaco` | coat | F-ref | agachamento | ok · penetração 3.9% | — | — | métricas JSON |
+| `01_parte_superior_16_parka` | coat | F-ref | exibicao | ok · penetração 1.4% | — | cintura/busto 1.03→1.04 (corpo 0.92); folga coxa 4.87→5.09 cm | métricas JSON |
 | `01_parte_superior_16_parka` | coat | F-ref | bracos | ok · penetração 0.4% | — | — | métricas JSON |
 | `01_parte_superior_16_parka` | coat | F-ref | caminhada | ok · penetração 1.3% | — | — | métricas JSON |
-| `01_parte_superior_16_parka` | coat | F-ref | agachamento | ok · penetração 4.0% | — | — | métricas JSON |
-| `01_parte_superior_17_windbreaker_corta_vento` | jacket | F-ref | exibicao | acima da tolerância · penetração 3.1% | interseção (braco 1.8%, tronco 1.2%) | cintura/busto 1.02→1.07 (corpo 0.92) | métricas JSON |
-| `01_parte_superior_17_windbreaker_corta_vento` | jacket | F-ref | bracos | ok · penetração 0.7% | — | — | métricas JSON |
-| `01_parte_superior_17_windbreaker_corta_vento` | jacket | F-ref | caminhada | ok · penetração 2.8% | — | — | métricas JSON |
-| `01_parte_superior_17_windbreaker_corta_vento` | jacket | F-ref | agachamento | ok · penetração 2.3% | — | — | métricas JSON |
-| `01_parte_superior_18_kimono_quimono` | jacket | F-ref | exibicao | ok · penetração 3.0% | — · limitação: quimono sem manga ampla | cintura/busto 1.02→1.04 (corpo 0.92) | métricas JSON |
-| `01_parte_superior_18_kimono_quimono` | jacket | F-ref | bracos | ok · penetração 0.9% | — · limitação: quimono sem manga ampla | — | métricas JSON |
-| `01_parte_superior_18_kimono_quimono` | jacket | F-ref | caminhada | ok · penetração 2.7% | — · limitação: quimono sem manga ampla | — | métricas JSON |
-| `01_parte_superior_18_kimono_quimono` | jacket | F-ref | agachamento | ok · penetração 2.7% | — · limitação: quimono sem manga ampla | — | métricas JSON |
+| `01_parte_superior_16_parka` | coat | F-ref | agachamento | ok · penetração 3.9% | — | — | métricas JSON |
+| `01_parte_superior_17_windbreaker_corta_vento` | jacket | F-ref | exibicao | ok · penetração 2.5% | — | cintura/busto 1.02→1.07 (corpo 0.92) | métricas JSON |
+| `01_parte_superior_17_windbreaker_corta_vento` | jacket | F-ref | bracos | ok · penetração 0.6% | — | — | métricas JSON |
+| `01_parte_superior_17_windbreaker_corta_vento` | jacket | F-ref | caminhada | ok · penetração 2.3% | — | — | métricas JSON |
+| `01_parte_superior_17_windbreaker_corta_vento` | jacket | F-ref | agachamento | ok · penetração 3.9% | — | — | métricas JSON |
+| `01_parte_superior_18_kimono_quimono` | jacket | F-ref | exibicao | ok · penetração 2.5% | — · limitação: quimono sem manga ampla | cintura/busto 1.02→1.04 (corpo 0.92) | métricas JSON |
+| `01_parte_superior_18_kimono_quimono` | jacket | F-ref | bracos | ok · penetração 0.7% | — · limitação: quimono sem manga ampla | — | métricas JSON |
+| `01_parte_superior_18_kimono_quimono` | jacket | F-ref | caminhada | ok · penetração 2.3% | — · limitação: quimono sem manga ampla | — | métricas JSON |
+| `01_parte_superior_18_kimono_quimono` | jacket | F-ref | agachamento | ok · penetração 4.1% | — · limitação: quimono sem manga ampla | — | métricas JSON |
 | `02_parte_inferior_01_jeans` | pants | F-ref | exibicao | ok · penetração 0.0% | — | barra/joelho 0.84→0.93; folga coxa 0.49→1.26 cm; folga joelho 0.62→1.79 cm; folga panturrilha 1.07→2.25 cm | vestir/camiseta-jeans |
 | `02_parte_inferior_01_jeans` | pants | F-ref | bracos | ok · penetração 0.0% | — | — | vestir/camiseta-jeans |
 | `02_parte_inferior_01_jeans` | pants | F-ref | caminhada | ok · penetração 0.0% | — | — | vestir/camiseta-jeans |
@@ -88,10 +88,10 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `02_parte_inferior_03_calca_alfaiataria` | pants | F-ref | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `02_parte_inferior_03_calca_alfaiataria` | pants | F-ref | caminhada | ok · penetração 0.0% | — | — | métricas JSON |
 | `02_parte_inferior_03_calca_alfaiataria` | pants | F-ref | agachamento | ok · penetração 2.9% | — | — | métricas JSON |
-| `02_parte_inferior_04_calca_cargo` | pants | F-ref | exibicao | ok · penetração 0.0% | — | barra/joelho 0.84→1.03; folga coxa 0.49→1.95 cm; folga joelho 0.62→2.89 cm; folga panturrilha 1.07→3.39 cm | métricas JSON |
+| `02_parte_inferior_04_calca_cargo` | pants | F-ref | exibicao | ok · penetração 0.0% | — | barra/joelho 0.84→1.03; folga coxa 0.49→3.46 cm; folga joelho 0.62→5.03 cm; folga panturrilha 1.07→4.61 cm | métricas JSON |
 | `02_parte_inferior_04_calca_cargo` | pants | F-ref | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `02_parte_inferior_04_calca_cargo` | pants | F-ref | caminhada | ok · penetração 0.0% | — | — | métricas JSON |
-| `02_parte_inferior_04_calca_cargo` | pants | F-ref | agachamento | ok · penetração 4.8% | — | — | métricas JSON |
+| `02_parte_inferior_04_calca_cargo` | pants | F-ref | agachamento | ok · penetração 5.2% | — | — | métricas JSON |
 | `02_parte_inferior_05_calca_chino` | pants | F-ref | exibicao | ok · penetração 0.0% | — | barra/joelho 0.84→0.93; folga coxa 0.49→1.26 cm; folga joelho 0.62→1.79 cm; folga panturrilha 1.07→2.25 cm | vestir/camisa-chino |
 | `02_parte_inferior_05_calca_chino` | pants | F-ref | bracos | ok · penetração 0.0% | — | — | vestir/camisa-chino |
 | `02_parte_inferior_05_calca_chino` | pants | F-ref | caminhada | ok · penetração 0.0% | — | — | vestir/camisa-chino |
@@ -120,7 +120,7 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `02_parte_inferior_11_shorts_jeans` | shorts | F-ref | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `02_parte_inferior_11_shorts_jeans` | shorts | F-ref | caminhada | ok · penetração 0.0% | — | — | métricas JSON |
 | `02_parte_inferior_11_shorts_jeans` | shorts | F-ref | agachamento | ok · penetração 2.2% | — | — | métricas JSON |
-| `02_parte_inferior_12_saia` | skirt | F-ref | exibicao | ok · penetração 0.0% | — | folga coxa 5.2→5.85 cm | vestir/moletom-saia |
+| `02_parte_inferior_12_saia` | skirt | F-ref | exibicao | ok · penetração 0.0% | — | folga coxa 5.28→5.85 cm | vestir/moletom-saia |
 | `02_parte_inferior_12_saia` | skirt | F-ref | bracos | ok · penetração 0.0% | — | — | vestir/moletom-saia |
 | `02_parte_inferior_12_saia` | skirt | F-ref | caminhada | ok · penetração 0.0% | — | — | vestir/moletom-saia |
 | `02_parte_inferior_12_saia` | skirt | F-ref | agachamento | ok · penetração 5.4% | — | — | vestir/moletom-saia |
@@ -128,7 +128,7 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `02_parte_inferior_13_shorts` | shorts | F-ref | bracos | ok · penetração 0.0% | — | — | vestir/jaqueta-shorts |
 | `02_parte_inferior_13_shorts` | shorts | F-ref | caminhada | ok · penetração 0.0% | — | — | vestir/jaqueta-shorts |
 | `02_parte_inferior_13_shorts` | shorts | F-ref | agachamento | ok · penetração 2.2% | — | — | vestir/jaqueta-shorts |
-| `02_parte_inferior_14_short_saia` | skirt | F-ref | exibicao | ok · penetração 0.0% | — · limitação: saia-short como saia | folga coxa 5.2→5.85 cm | métricas JSON |
+| `02_parte_inferior_14_short_saia` | skirt | F-ref | exibicao | ok · penetração 0.0% | — · limitação: saia-short como saia | folga coxa 5.28→5.85 cm | métricas JSON |
 | `02_parte_inferior_14_short_saia` | skirt | F-ref | bracos | ok · penetração 0.0% | — · limitação: saia-short como saia | — | métricas JSON |
 | `02_parte_inferior_14_short_saia` | skirt | F-ref | caminhada | ok · penetração 0.0% | — · limitação: saia-short como saia | — | métricas JSON |
 | `02_parte_inferior_14_short_saia` | skirt | F-ref | agachamento | ok · penetração 5.4% | — · limitação: saia-short como saia | — | métricas JSON |
@@ -136,19 +136,19 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `05_corpo_inteiro_01_vestido` | dress | F-ref | bracos | ok · penetração 0.0% | — | — | vestir/vestido-bota |
 | `05_corpo_inteiro_01_vestido` | dress | F-ref | caminhada | ok · penetração 0.4% | — | — | vestir/vestido-bota |
 | `05_corpo_inteiro_01_vestido` | dress | F-ref | agachamento | ok · penetração 0.9% | — | — | vestir/vestido-bota |
-| `05_corpo_inteiro_02_macacao` | jumpsuit | F-ref | exibicao | ok · penetração 0.7% | — | barra/joelho 0.76→0.94; cintura/busto 0.96→1 (corpo 0.94); folga coxa 0.45→1.24 cm; folga joelho 0.48→1.63 cm; folga panturrilha 0.55→1.99 cm | métricas JSON |
+| `05_corpo_inteiro_02_macacao` | jumpsuit | F-ref | exibicao | ok · penetração 0.7% | — | barra/joelho –→0.94; cintura/busto 0.96→1 (corpo 0.94); folga coxa 3.44→1.24 cm | métricas JSON |
 | `05_corpo_inteiro_02_macacao` | jumpsuit | F-ref | bracos | ok · penetração 0.1% | — | — | métricas JSON |
 | `05_corpo_inteiro_02_macacao` | jumpsuit | F-ref | caminhada | ok · penetração 0.5% | — | — | métricas JSON |
 | `05_corpo_inteiro_02_macacao` | jumpsuit | F-ref | agachamento | ok · penetração 2.2% | — | — | métricas JSON |
-| `05_corpo_inteiro_03_macaquinho` | romper | F-ref | exibicao | ok · penetração 0.9% | — | cintura/busto 0.96→1 (corpo 0.94); folga coxa 0.45→0.75 cm | métricas JSON |
+| `05_corpo_inteiro_03_macaquinho` | romper | F-ref | exibicao | ok · penetração 0.9% | — | cintura/busto 0.96→1 (corpo 0.94); folga coxa 3.53→0.75 cm | métricas JSON |
 | `05_corpo_inteiro_03_macaquinho` | romper | F-ref | bracos | ok · penetração 0.2% | — | — | métricas JSON |
 | `05_corpo_inteiro_03_macaquinho` | romper | F-ref | caminhada | ok · penetração 0.7% | — | — | métricas JSON |
 | `05_corpo_inteiro_03_macaquinho` | romper | F-ref | agachamento | ok · penetração 1.6% | — | — | métricas JSON |
-| `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | F-ref | exibicao | ok · penetração 0.7% | — · limitação: conjunto como peça única | barra/joelho 0.76→0.94; cintura/busto 0.96→1 (corpo 0.94); folga coxa 0.45→1.24 cm; folga joelho 0.48→1.63 cm; folga panturrilha 0.55→1.99 cm | métricas JSON |
+| `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | F-ref | exibicao | ok · penetração 0.7% | — · limitação: conjunto como peça única | barra/joelho –→0.94; cintura/busto 0.96→1 (corpo 0.94); folga coxa 3.44→1.24 cm | métricas JSON |
 | `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | F-ref | bracos | ok · penetração 0.1% | — · limitação: conjunto como peça única | — | métricas JSON |
 | `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | F-ref | caminhada | ok · penetração 0.5% | — · limitação: conjunto como peça única | — | métricas JSON |
 | `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | F-ref | agachamento | ok · penetração 2.2% | — · limitação: conjunto como peça única | — | métricas JSON |
-| `05_corpo_inteiro_05_jardineira` | jumpsuit | F-ref | exibicao | ok · penetração 0.7% | — · limitação: jardineira sem peitilho | barra/joelho 0.76→0.94; cintura/busto 0.96→1 (corpo 0.94); folga coxa 0.45→1.24 cm; folga joelho 0.48→1.63 cm; folga panturrilha 0.55→1.99 cm | métricas JSON |
+| `05_corpo_inteiro_05_jardineira` | jumpsuit | F-ref | exibicao | ok · penetração 0.7% | — · limitação: jardineira sem peitilho | barra/joelho –→0.94; cintura/busto 0.96→1 (corpo 0.94); folga coxa 3.44→1.24 cm | métricas JSON |
 | `05_corpo_inteiro_05_jardineira` | jumpsuit | F-ref | bracos | ok · penetração 0.1% | — · limitação: jardineira sem peitilho | — | métricas JSON |
 | `05_corpo_inteiro_05_jardineira` | jumpsuit | F-ref | caminhada | ok · penetração 0.5% | — · limitação: jardineira sem peitilho | — | métricas JSON |
 | `05_corpo_inteiro_05_jardineira` | jumpsuit | F-ref | agachamento | ok · penetração 2.2% | — · limitação: jardineira sem peitilho | — | métricas JSON |
@@ -188,78 +188,78 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `03_calcados_16_salto_alto` | shoes | F-ref | bracos | forma do calçado (molde do pé oculto) | — · limitação: salto sem salto modelado | — | métricas JSON |
 | `03_calcados_16_salto_alto` | shoes | F-ref | caminhada | forma do calçado (molde do pé oculto) | — · limitação: salto sem salto modelado | — | métricas JSON |
 | `03_calcados_16_salto_alto` | shoes | F-ref | agachamento | forma do calçado (molde do pé oculto) | — · limitação: salto sem salto modelado | — | métricas JSON |
-| `01_parte_superior_01_camiseta_referencia` | tee | M-ref | exibicao | ok · penetração 1.9% | — | cintura/busto 1.01→1.03 (corpo 1.02) | vestir/camiseta-jeans |
+| `01_parte_superior_01_camiseta_referencia` | tee | M-ref | exibicao | ok · penetração 1.5% | — | cintura/busto 1.01→1.03 (corpo 1.02) | vestir/camiseta-jeans |
 | `01_parte_superior_01_camiseta_referencia` | tee | M-ref | bracos | ok · penetração 0.4% | — | — | vestir/camiseta-jeans |
-| `01_parte_superior_01_camiseta_referencia` | tee | M-ref | caminhada | ok · penetração 1.6% | — | — | vestir/camiseta-jeans |
-| `01_parte_superior_01_camiseta_referencia` | tee | M-ref | agachamento | ok · penetração 1.9% | — | — | vestir/camiseta-jeans |
-| `01_parte_superior_02_shirt_camisa` | shirt | M-ref | exibicao | ok · penetração 0.7% | — | cintura/busto 1.02→1.03 (corpo 1.02) | vestir/camisa-chino |
-| `01_parte_superior_02_shirt_camisa` | shirt | M-ref | bracos | ok · penetração 0.3% | — | — | vestir/camisa-chino |
-| `01_parte_superior_02_shirt_camisa` | shirt | M-ref | caminhada | ok · penetração 0.7% | — | — | vestir/camisa-chino |
-| `01_parte_superior_02_shirt_camisa` | shirt | M-ref | agachamento | ok · penetração 1.5% | — | — | vestir/camisa-chino |
-| `01_parte_superior_03_blouse_blusa` | shirt | M-ref | exibicao | ok · penetração 0.7% | — | cintura/busto 1.02→1.03 (corpo 1.02) | métricas JSON |
-| `01_parte_superior_03_blouse_blusa` | shirt | M-ref | bracos | ok · penetração 0.3% | — | — | métricas JSON |
-| `01_parte_superior_03_blouse_blusa` | shirt | M-ref | caminhada | ok · penetração 0.7% | — | — | métricas JSON |
-| `01_parte_superior_03_blouse_blusa` | shirt | M-ref | agachamento | ok · penetração 1.5% | — | — | métricas JSON |
+| `01_parte_superior_01_camiseta_referencia` | tee | M-ref | caminhada | ok · penetração 1.3% | — | — | vestir/camiseta-jeans |
+| `01_parte_superior_01_camiseta_referencia` | tee | M-ref | agachamento | ok · penetração 3.8% | — | — | vestir/camiseta-jeans |
+| `01_parte_superior_02_shirt_camisa` | shirt | M-ref | exibicao | ok · penetração 0.6% | — | cintura/busto 1.02→1.03 (corpo 1.02) | vestir/camisa-chino |
+| `01_parte_superior_02_shirt_camisa` | shirt | M-ref | bracos | ok · penetração 0.2% | — | — | vestir/camisa-chino |
+| `01_parte_superior_02_shirt_camisa` | shirt | M-ref | caminhada | ok · penetração 0.6% | — | — | vestir/camisa-chino |
+| `01_parte_superior_02_shirt_camisa` | shirt | M-ref | agachamento | ok · penetração 3.2% | — | — | vestir/camisa-chino |
+| `01_parte_superior_03_blouse_blusa` | shirt | M-ref | exibicao | ok · penetração 0.6% | — | cintura/busto 1.02→1.03 (corpo 1.02) | métricas JSON |
+| `01_parte_superior_03_blouse_blusa` | shirt | M-ref | bracos | ok · penetração 0.2% | — | — | métricas JSON |
+| `01_parte_superior_03_blouse_blusa` | shirt | M-ref | caminhada | ok · penetração 0.6% | — | — | métricas JSON |
+| `01_parte_superior_03_blouse_blusa` | shirt | M-ref | agachamento | ok · penetração 3.2% | — | — | métricas JSON |
 | `01_parte_superior_04_tank_top_regata` | tank | M-ref | exibicao | ok · penetração 0.1% | — | cintura/busto 1.01→1 (corpo 1.02) | métricas JSON |
 | `01_parte_superior_04_tank_top_regata` | tank | M-ref | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `01_parte_superior_04_tank_top_regata` | tank | M-ref | caminhada | ok · penetração 0.2% | — | — | métricas JSON |
-| `01_parte_superior_04_tank_top_regata` | tank | M-ref | agachamento | ok · penetração 1.7% | — | — | métricas JSON |
+| `01_parte_superior_04_tank_top_regata` | tank | M-ref | agachamento | ok · penetração 3.7% | — | — | métricas JSON |
 | `01_parte_superior_05_crop_top_cropped` | crop | M-ref | exibicao | ok · penetração 1.6% | — | — | métricas JSON |
 | `01_parte_superior_05_crop_top_cropped` | crop | M-ref | bracos | ok · penetração 0.4% | — | — | métricas JSON |
 | `01_parte_superior_05_crop_top_cropped` | crop | M-ref | caminhada | ok · penetração 1.4% | — | — | métricas JSON |
 | `01_parte_superior_05_crop_top_cropped` | crop | M-ref | agachamento | ok · penetração 0.7% | — | — | métricas JSON |
-| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | M-ref | exibicao | ok · penetração 1.9% | — | cintura/busto 1.01→1.03 (corpo 1.02) | métricas JSON |
+| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | M-ref | exibicao | ok · penetração 1.5% | — | cintura/busto 1.01→1.03 (corpo 1.02) | métricas JSON |
 | `01_parte_superior_06_polo_shirt_camisa_polo` | tee | M-ref | bracos | ok · penetração 0.4% | — | — | métricas JSON |
-| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | M-ref | caminhada | ok · penetração 1.6% | — | — | métricas JSON |
-| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | M-ref | agachamento | ok · penetração 1.9% | — | — | métricas JSON |
+| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | M-ref | caminhada | ok · penetração 1.3% | — | — | métricas JSON |
+| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | M-ref | agachamento | ok · penetração 3.8% | — | — | métricas JSON |
 | `01_parte_superior_07_bodysuit_body` | tank | M-ref | exibicao | ok · penetração 0.1% | — | cintura/busto 1.01→1 (corpo 1.02) | métricas JSON |
 | `01_parte_superior_07_bodysuit_body` | tank | M-ref | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `01_parte_superior_07_bodysuit_body` | tank | M-ref | caminhada | ok · penetração 0.2% | — | — | métricas JSON |
-| `01_parte_superior_07_bodysuit_body` | tank | M-ref | agachamento | ok · penetração 1.7% | — | — | métricas JSON |
-| `01_parte_superior_08_sweater_sueter` | sweater | M-ref | exibicao | ok · penetração 1.0% | — | cintura/busto 1.02→1.03 (corpo 1.02) | métricas JSON |
+| `01_parte_superior_07_bodysuit_body` | tank | M-ref | agachamento | ok · penetração 3.7% | — | — | métricas JSON |
+| `01_parte_superior_08_sweater_sueter` | sweater | M-ref | exibicao | ok · penetração 0.9% | — | cintura/busto 1.02→1.03 (corpo 1.02) | métricas JSON |
 | `01_parte_superior_08_sweater_sueter` | sweater | M-ref | bracos | ok · penetração 0.3% | — | — | métricas JSON |
-| `01_parte_superior_08_sweater_sueter` | sweater | M-ref | caminhada | ok · penetração 0.8% | — | — | métricas JSON |
-| `01_parte_superior_08_sweater_sueter` | sweater | M-ref | agachamento | ok · penetração 1.6% | — | — | métricas JSON |
-| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | M-ref | exibicao | ok · penetração 1.9% | — | cintura/busto 1.02→1.1 (corpo 1.01) | métricas JSON |
-| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | M-ref | bracos | ok · penetração 0.8% | — | — | métricas JSON |
-| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | M-ref | caminhada | ok · penetração 1.6% | — | — | métricas JSON |
-| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | M-ref | agachamento | ok · penetração 2.1% | — | — | métricas JSON |
-| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | M-ref | exibicao | ok · penetração 1.8% | — | cintura/busto 1.02→1.11 (corpo 1.01) | vestir/moletom-saia |
-| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | M-ref | bracos | ok · penetração 0.9% | — | — | vestir/moletom-saia |
-| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | M-ref | caminhada | ok · penetração 1.5% | — | — | vestir/moletom-saia |
-| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | M-ref | agachamento | ok · penetração 2.2% | — | — | vestir/moletom-saia |
-| `01_parte_superior_11_cardigan` | jacket | M-ref | exibicao | ok · penetração 1.8% | — | cintura/busto 1.11→1.13 (corpo 1.01) | métricas JSON |
-| `01_parte_superior_11_cardigan` | jacket | M-ref | bracos | ok · penetração 0.7% | — | — | métricas JSON |
-| `01_parte_superior_11_cardigan` | jacket | M-ref | caminhada | ok · penetração 1.7% | — | — | métricas JSON |
-| `01_parte_superior_11_cardigan` | jacket | M-ref | agachamento | ok · penetração 2.4% | — | — | métricas JSON |
-| `01_parte_superior_12_vest_colete` | vest | M-ref | exibicao | ok · penetração 0.6% | — | cintura/busto 1.1→1.12 (corpo 1.01) | métricas JSON |
+| `01_parte_superior_08_sweater_sueter` | sweater | M-ref | caminhada | ok · penetração 0.7% | — | — | métricas JSON |
+| `01_parte_superior_08_sweater_sueter` | sweater | M-ref | agachamento | ok · penetração 3.2% | — | — | métricas JSON |
+| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | M-ref | exibicao | ok · penetração 1.6% | — | cintura/busto 1.02→1.1 (corpo 1.01) | métricas JSON |
+| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | M-ref | bracos | ok · penetração 0.6% | — | — | métricas JSON |
+| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | M-ref | caminhada | ok · penetração 1.2% | — | — | métricas JSON |
+| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | M-ref | agachamento | ok · penetração 4.2% | — | — | métricas JSON |
+| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | M-ref | exibicao | ok · penetração 1.4% | — | cintura/busto 1.02→1.11 (corpo 1.01) | vestir/moletom-saia |
+| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | M-ref | bracos | ok · penetração 0.8% | — | — | vestir/moletom-saia |
+| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | M-ref | caminhada | ok · penetração 1.2% | — | — | vestir/moletom-saia |
+| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | M-ref | agachamento | ok · penetração 4.2% | — | — | vestir/moletom-saia |
+| `01_parte_superior_11_cardigan` | jacket | M-ref | exibicao | ok · penetração 1.5% | — | cintura/busto 1.11→1.13 (corpo 1.01) | métricas JSON |
+| `01_parte_superior_11_cardigan` | jacket | M-ref | bracos | ok · penetração 0.6% | — | — | métricas JSON |
+| `01_parte_superior_11_cardigan` | jacket | M-ref | caminhada | ok · penetração 1.5% | — | — | métricas JSON |
+| `01_parte_superior_11_cardigan` | jacket | M-ref | agachamento | ok · penetração 4.0% | — | — | métricas JSON |
+| `01_parte_superior_12_vest_colete` | vest | M-ref | exibicao | ok · penetração 0.5% | — | cintura/busto 1.1→1.12 (corpo 1.01) | métricas JSON |
 | `01_parte_superior_12_vest_colete` | vest | M-ref | bracos | ok · penetração 0.1% | — | — | métricas JSON |
-| `01_parte_superior_12_vest_colete` | vest | M-ref | caminhada | ok · penetração 0.6% | — | — | métricas JSON |
-| `01_parte_superior_12_vest_colete` | vest | M-ref | agachamento | ok · penetração 2.6% | — | — | métricas JSON |
-| `01_parte_superior_13_blazer` | jacket | M-ref | exibicao | ok · penetração 1.8% | — | cintura/busto 1.11→1.13 (corpo 1.01) | métricas JSON |
+| `01_parte_superior_12_vest_colete` | vest | M-ref | caminhada | ok · penetração 0.5% | — | — | métricas JSON |
+| `01_parte_superior_12_vest_colete` | vest | M-ref | agachamento | ok · penetração 5.0% | — | — | métricas JSON |
+| `01_parte_superior_13_blazer` | jacket | M-ref | exibicao | ok · penetração 1.9% | — | cintura/busto 1.11→1.08 (corpo 1.01) | métricas JSON |
 | `01_parte_superior_13_blazer` | jacket | M-ref | bracos | ok · penetração 0.7% | — | — | métricas JSON |
 | `01_parte_superior_13_blazer` | jacket | M-ref | caminhada | ok · penetração 1.7% | — | — | métricas JSON |
-| `01_parte_superior_13_blazer` | jacket | M-ref | agachamento | ok · penetração 2.4% | — | — | métricas JSON |
-| `01_parte_superior_14_jacket_jaqueta` | jacket | M-ref | exibicao | ok · penetração 1.8% | — | cintura/busto 1.11→1.13 (corpo 1.01) | vestir/jaqueta-shorts |
-| `01_parte_superior_14_jacket_jaqueta` | jacket | M-ref | bracos | ok · penetração 0.7% | — | — | vestir/jaqueta-shorts |
-| `01_parte_superior_14_jacket_jaqueta` | jacket | M-ref | caminhada | ok · penetração 1.7% | — | — | vestir/jaqueta-shorts |
-| `01_parte_superior_14_jacket_jaqueta` | jacket | M-ref | agachamento | ok · penetração 2.4% | — | — | vestir/jaqueta-shorts |
-| `01_parte_superior_15_coat_casaco` | coat | M-ref | exibicao | ok · penetração 0.8% | — | cintura/busto 1.12→1.14 (corpo 1.01); folga coxa 5.24→5.33 cm | métricas JSON |
+| `01_parte_superior_13_blazer` | jacket | M-ref | agachamento | ok · penetração 3.7% | — | — | métricas JSON |
+| `01_parte_superior_14_jacket_jaqueta` | jacket | M-ref | exibicao | ok · penetração 1.5% | — | cintura/busto 1.11→1.13 (corpo 1.01) | vestir/jaqueta-shorts |
+| `01_parte_superior_14_jacket_jaqueta` | jacket | M-ref | bracos | ok · penetração 0.6% | — | — | vestir/jaqueta-shorts |
+| `01_parte_superior_14_jacket_jaqueta` | jacket | M-ref | caminhada | ok · penetração 1.5% | — | — | vestir/jaqueta-shorts |
+| `01_parte_superior_14_jacket_jaqueta` | jacket | M-ref | agachamento | ok · penetração 4.0% | — | — | vestir/jaqueta-shorts |
+| `01_parte_superior_15_coat_casaco` | coat | M-ref | exibicao | ok · penetração 0.8% | — | cintura/busto 1.12→1.14 (corpo 1.01); folga coxa 5.17→5.33 cm | métricas JSON |
 | `01_parte_superior_15_coat_casaco` | coat | M-ref | bracos | ok · penetração 0.3% | — | — | métricas JSON |
 | `01_parte_superior_15_coat_casaco` | coat | M-ref | caminhada | ok · penetração 0.7% | — | — | métricas JSON |
-| `01_parte_superior_15_coat_casaco` | coat | M-ref | agachamento | ok · penetração 3.5% | — | — | métricas JSON |
-| `01_parte_superior_16_parka` | coat | M-ref | exibicao | ok · penetração 0.8% | — | cintura/busto 1.12→1.14 (corpo 1.01); folga coxa 5.24→5.33 cm | métricas JSON |
+| `01_parte_superior_15_coat_casaco` | coat | M-ref | agachamento | ok · penetração 3.3% | — | — | métricas JSON |
+| `01_parte_superior_16_parka` | coat | M-ref | exibicao | ok · penetração 0.8% | — | cintura/busto 1.12→1.14 (corpo 1.01); folga coxa 5.17→5.33 cm | métricas JSON |
 | `01_parte_superior_16_parka` | coat | M-ref | bracos | ok · penetração 0.3% | — | — | métricas JSON |
 | `01_parte_superior_16_parka` | coat | M-ref | caminhada | ok · penetração 0.7% | — | — | métricas JSON |
-| `01_parte_superior_16_parka` | coat | M-ref | agachamento | ok · penetração 3.5% | — | — | métricas JSON |
-| `01_parte_superior_17_windbreaker_corta_vento` | jacket | M-ref | exibicao | ok · penetração 1.7% | — | cintura/busto 1.11→1.2 (corpo 1.01) | métricas JSON |
-| `01_parte_superior_17_windbreaker_corta_vento` | jacket | M-ref | bracos | ok · penetração 0.5% | — | — | métricas JSON |
-| `01_parte_superior_17_windbreaker_corta_vento` | jacket | M-ref | caminhada | ok · penetração 1.8% | — | — | métricas JSON |
-| `01_parte_superior_17_windbreaker_corta_vento` | jacket | M-ref | agachamento | ok · penetração 1.6% | — | — | métricas JSON |
-| `01_parte_superior_18_kimono_quimono` | jacket | M-ref | exibicao | ok · penetração 1.7% | — · limitação: quimono sem manga ampla | cintura/busto 1.11→1.14 (corpo 1.01) | métricas JSON |
-| `01_parte_superior_18_kimono_quimono` | jacket | M-ref | bracos | ok · penetração 0.7% | — · limitação: quimono sem manga ampla | — | métricas JSON |
-| `01_parte_superior_18_kimono_quimono` | jacket | M-ref | caminhada | ok · penetração 1.7% | — · limitação: quimono sem manga ampla | — | métricas JSON |
-| `01_parte_superior_18_kimono_quimono` | jacket | M-ref | agachamento | ok · penetração 2.4% | — · limitação: quimono sem manga ampla | — | métricas JSON |
+| `01_parte_superior_16_parka` | coat | M-ref | agachamento | ok · penetração 3.3% | — | — | métricas JSON |
+| `01_parte_superior_17_windbreaker_corta_vento` | jacket | M-ref | exibicao | ok · penetração 1.4% | — | cintura/busto 1.11→1.2 (corpo 1.01) | métricas JSON |
+| `01_parte_superior_17_windbreaker_corta_vento` | jacket | M-ref | bracos | ok · penetração 0.4% | — | — | métricas JSON |
+| `01_parte_superior_17_windbreaker_corta_vento` | jacket | M-ref | caminhada | ok · penetração 1.4% | — | — | métricas JSON |
+| `01_parte_superior_17_windbreaker_corta_vento` | jacket | M-ref | agachamento | ok · penetração 3.9% | — | — | métricas JSON |
+| `01_parte_superior_18_kimono_quimono` | jacket | M-ref | exibicao | ok · penetração 1.5% | — · limitação: quimono sem manga ampla | cintura/busto 1.11→1.14 (corpo 1.01) | métricas JSON |
+| `01_parte_superior_18_kimono_quimono` | jacket | M-ref | bracos | ok · penetração 0.6% | — · limitação: quimono sem manga ampla | — | métricas JSON |
+| `01_parte_superior_18_kimono_quimono` | jacket | M-ref | caminhada | ok · penetração 1.5% | — · limitação: quimono sem manga ampla | — | métricas JSON |
+| `01_parte_superior_18_kimono_quimono` | jacket | M-ref | agachamento | ok · penetração 3.9% | — · limitação: quimono sem manga ampla | — | métricas JSON |
 | `02_parte_inferior_01_jeans` | pants | M-ref | exibicao | ok · penetração 0.0% | — | barra/joelho 0.88→0.92; folga coxa 0.49→1.21 cm; folga joelho 0.62→1.76 cm; folga panturrilha 0.91→1.87 cm | vestir/camiseta-jeans |
 | `02_parte_inferior_01_jeans` | pants | M-ref | bracos | ok · penetração 0.0% | — | — | vestir/camiseta-jeans |
 | `02_parte_inferior_01_jeans` | pants | M-ref | caminhada | ok · penetração 0.0% | — | — | vestir/camiseta-jeans |
@@ -272,10 +272,10 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `02_parte_inferior_03_calca_alfaiataria` | pants | M-ref | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `02_parte_inferior_03_calca_alfaiataria` | pants | M-ref | caminhada | ok · penetração 0.0% | — | — | métricas JSON |
 | `02_parte_inferior_03_calca_alfaiataria` | pants | M-ref | agachamento | ok · penetração 4.1% | — | — | métricas JSON |
-| `02_parte_inferior_04_calca_cargo` | pants | M-ref | exibicao | ok · penetração 0.0% | — | barra/joelho 0.88→1.02; folga coxa 0.49→1.93 cm; folga joelho 0.62→2.91 cm; folga panturrilha 0.91→3.04 cm | métricas JSON |
-| `02_parte_inferior_04_calca_cargo` | pants | M-ref | bracos | ok · penetração 0.0% | — | — | métricas JSON |
-| `02_parte_inferior_04_calca_cargo` | pants | M-ref | caminhada | ok · penetração 0.1% | — | — | métricas JSON |
-| `02_parte_inferior_04_calca_cargo` | pants | M-ref | agachamento | ok · penetração 5.0% | — | — | métricas JSON |
+| `02_parte_inferior_04_calca_cargo` | pants | M-ref | exibicao | ok · penetração 0.3% | — | barra/joelho 0.88→1.03; folga coxa 0.49→3.42 cm; folga joelho 0.62→5.12 cm; folga panturrilha 0.91→4.69 cm | métricas JSON |
+| `02_parte_inferior_04_calca_cargo` | pants | M-ref | bracos | ok · penetração 0.3% | — | — | métricas JSON |
+| `02_parte_inferior_04_calca_cargo` | pants | M-ref | caminhada | ok · penetração 0.2% | — | — | métricas JSON |
+| `02_parte_inferior_04_calca_cargo` | pants | M-ref | agachamento | ok · penetração 5.6% | — | — | métricas JSON |
 | `02_parte_inferior_05_calca_chino` | pants | M-ref | exibicao | ok · penetração 0.0% | — | barra/joelho 0.88→0.92; folga coxa 0.49→1.21 cm; folga joelho 0.62→1.76 cm; folga panturrilha 0.91→1.87 cm | vestir/camisa-chino |
 | `02_parte_inferior_05_calca_chino` | pants | M-ref | bracos | ok · penetração 0.0% | — | — | vestir/camisa-chino |
 | `02_parte_inferior_05_calca_chino` | pants | M-ref | caminhada | ok · penetração 0.0% | — | — | vestir/camisa-chino |
@@ -304,7 +304,7 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `02_parte_inferior_11_shorts_jeans` | shorts | M-ref | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `02_parte_inferior_11_shorts_jeans` | shorts | M-ref | caminhada | ok · penetração 0.0% | — | — | métricas JSON |
 | `02_parte_inferior_11_shorts_jeans` | shorts | M-ref | agachamento | ok · penetração 3.2% | — | — | métricas JSON |
-| `02_parte_inferior_12_saia` | skirt | M-ref | exibicao | ok · penetração 0.0% | — | folga coxa 5.74→6.21 cm | vestir/moletom-saia |
+| `02_parte_inferior_12_saia` | skirt | M-ref | exibicao | ok · penetração 0.0% | — | folga coxa 5.73→6.21 cm | vestir/moletom-saia |
 | `02_parte_inferior_12_saia` | skirt | M-ref | bracos | ok · penetração 0.0% | — | — | vestir/moletom-saia |
 | `02_parte_inferior_12_saia` | skirt | M-ref | caminhada | ok · penetração 0.1% | — | — | vestir/moletom-saia |
 | `02_parte_inferior_12_saia` | skirt | M-ref | agachamento | acima da tolerância · penetração 6.6% | interseção (perna 3.6%, tronco 3.0%) | — | vestir/moletom-saia |
@@ -312,7 +312,7 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `02_parte_inferior_13_shorts` | shorts | M-ref | bracos | ok · penetração 0.0% | — | — | vestir/jaqueta-shorts |
 | `02_parte_inferior_13_shorts` | shorts | M-ref | caminhada | ok · penetração 0.0% | — | — | vestir/jaqueta-shorts |
 | `02_parte_inferior_13_shorts` | shorts | M-ref | agachamento | ok · penetração 3.2% | — | — | vestir/jaqueta-shorts |
-| `02_parte_inferior_14_short_saia` | skirt | M-ref | exibicao | ok · penetração 0.0% | — · limitação: saia-short como saia | folga coxa 5.74→6.21 cm | métricas JSON |
+| `02_parte_inferior_14_short_saia` | skirt | M-ref | exibicao | ok · penetração 0.0% | — · limitação: saia-short como saia | folga coxa 5.73→6.21 cm | métricas JSON |
 | `02_parte_inferior_14_short_saia` | skirt | M-ref | bracos | ok · penetração 0.0% | — · limitação: saia-short como saia | — | métricas JSON |
 | `02_parte_inferior_14_short_saia` | skirt | M-ref | caminhada | ok · penetração 0.1% | — · limitação: saia-short como saia | — | métricas JSON |
 | `02_parte_inferior_14_short_saia` | skirt | M-ref | agachamento | acima da tolerância · penetração 6.6% | interseção (perna 3.6%, tronco 3.0%) · limitação: saia-short como saia | — | métricas JSON |
@@ -320,19 +320,19 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `05_corpo_inteiro_01_vestido` | dress | M-ref | bracos | ok · penetração 0.0% | — | — | vestir/vestido-bota |
 | `05_corpo_inteiro_01_vestido` | dress | M-ref | caminhada | ok · penetração 0.2% | — | — | vestir/vestido-bota |
 | `05_corpo_inteiro_01_vestido` | dress | M-ref | agachamento | ok · penetração 1.7% | — | — | vestir/vestido-bota |
-| `05_corpo_inteiro_02_macacao` | jumpsuit | M-ref | exibicao | ok · penetração 0.3% | — | barra/joelho 0.83→0.92; cintura/busto 1.02→1.06 (corpo 1.02); folga coxa 0.47→1.35 cm; folga joelho 0.49→1.62 cm; folga panturrilha 0.48→1.69 cm | métricas JSON |
+| `05_corpo_inteiro_02_macacao` | jumpsuit | M-ref | exibicao | ok · penetração 0.3% | — | barra/joelho –→0.92; cintura/busto 1.02→1.06 (corpo 1.02); folga coxa 3.6→1.35 cm | métricas JSON |
 | `05_corpo_inteiro_02_macacao` | jumpsuit | M-ref | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `05_corpo_inteiro_02_macacao` | jumpsuit | M-ref | caminhada | ok · penetração 0.2% | — | — | métricas JSON |
 | `05_corpo_inteiro_02_macacao` | jumpsuit | M-ref | agachamento | ok · penetração 3.1% | — | — | métricas JSON |
-| `05_corpo_inteiro_03_macaquinho` | romper | M-ref | exibicao | ok · penetração 0.4% | — | cintura/busto 1.02→1.06 (corpo 1.02); folga coxa 0.47→0.9 cm | métricas JSON |
+| `05_corpo_inteiro_03_macaquinho` | romper | M-ref | exibicao | ok · penetração 0.4% | — | cintura/busto 1.02→1.06 (corpo 1.02); folga coxa 3.71→0.9 cm | métricas JSON |
 | `05_corpo_inteiro_03_macaquinho` | romper | M-ref | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `05_corpo_inteiro_03_macaquinho` | romper | M-ref | caminhada | ok · penetração 0.2% | — | — | métricas JSON |
 | `05_corpo_inteiro_03_macaquinho` | romper | M-ref | agachamento | ok · penetração 2.8% | — | — | métricas JSON |
-| `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | M-ref | exibicao | ok · penetração 0.3% | — · limitação: conjunto como peça única | barra/joelho 0.83→0.92; cintura/busto 1.02→1.06 (corpo 1.02); folga coxa 0.47→1.35 cm; folga joelho 0.49→1.62 cm; folga panturrilha 0.48→1.69 cm | métricas JSON |
+| `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | M-ref | exibicao | ok · penetração 0.3% | — · limitação: conjunto como peça única | barra/joelho –→0.92; cintura/busto 1.02→1.06 (corpo 1.02); folga coxa 3.6→1.35 cm | métricas JSON |
 | `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | M-ref | bracos | ok · penetração 0.0% | — · limitação: conjunto como peça única | — | métricas JSON |
 | `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | M-ref | caminhada | ok · penetração 0.2% | — · limitação: conjunto como peça única | — | métricas JSON |
 | `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | M-ref | agachamento | ok · penetração 3.1% | — · limitação: conjunto como peça única | — | métricas JSON |
-| `05_corpo_inteiro_05_jardineira` | jumpsuit | M-ref | exibicao | ok · penetração 0.3% | — · limitação: jardineira sem peitilho | barra/joelho 0.83→0.92; cintura/busto 1.02→1.06 (corpo 1.02); folga coxa 0.47→1.35 cm; folga joelho 0.49→1.62 cm; folga panturrilha 0.48→1.69 cm | métricas JSON |
+| `05_corpo_inteiro_05_jardineira` | jumpsuit | M-ref | exibicao | ok · penetração 0.3% | — · limitação: jardineira sem peitilho | barra/joelho –→0.92; cintura/busto 1.02→1.06 (corpo 1.02); folga coxa 3.6→1.35 cm | métricas JSON |
 | `05_corpo_inteiro_05_jardineira` | jumpsuit | M-ref | bracos | ok · penetração 0.0% | — · limitação: jardineira sem peitilho | — | métricas JSON |
 | `05_corpo_inteiro_05_jardineira` | jumpsuit | M-ref | caminhada | ok · penetração 0.2% | — · limitação: jardineira sem peitilho | — | métricas JSON |
 | `05_corpo_inteiro_05_jardineira` | jumpsuit | M-ref | agachamento | ok · penetração 3.1% | — · limitação: jardineira sem peitilho | — | métricas JSON |
@@ -372,78 +372,78 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `03_calcados_16_salto_alto` | shoes | M-ref | bracos | forma do calçado (molde do pé oculto) | — · limitação: salto sem salto modelado | — | métricas JSON |
 | `03_calcados_16_salto_alto` | shoes | M-ref | caminhada | forma do calçado (molde do pé oculto) | — · limitação: salto sem salto modelado | — | métricas JSON |
 | `03_calcados_16_salto_alto` | shoes | M-ref | agachamento | forma do calçado (molde do pé oculto) | — · limitação: salto sem salto modelado | — | métricas JSON |
-| `01_parte_superior_01_camiseta_referencia` | tee | F-plus | exibicao | ok · penetração 1.6% | — | cintura/busto 0.98→1 (corpo 0.94) | vestir/camiseta-jeans |
-| `01_parte_superior_01_camiseta_referencia` | tee | F-plus | bracos | ok · penetração 0.9% | — | — | vestir/camiseta-jeans |
-| `01_parte_superior_01_camiseta_referencia` | tee | F-plus | caminhada | ok · penetração 1.9% | — | — | vestir/camiseta-jeans |
-| `01_parte_superior_01_camiseta_referencia` | tee | F-plus | agachamento | ok · penetração 2.8% | — | — | vestir/camiseta-jeans |
-| `01_parte_superior_02_shirt_camisa` | shirt | F-plus | exibicao | ok · penetração 0.6% | — | cintura/busto 0.99→1 (corpo 0.94) | vestir/camisa-chino |
-| `01_parte_superior_02_shirt_camisa` | shirt | F-plus | bracos | ok · penetração 0.5% | — | — | vestir/camisa-chino |
-| `01_parte_superior_02_shirt_camisa` | shirt | F-plus | caminhada | ok · penetração 0.9% | — | — | vestir/camisa-chino |
-| `01_parte_superior_02_shirt_camisa` | shirt | F-plus | agachamento | ok · penetração 2.0% | — | — | vestir/camisa-chino |
-| `01_parte_superior_03_blouse_blusa` | shirt | F-plus | exibicao | ok · penetração 0.6% | — | cintura/busto 0.99→1 (corpo 0.94) | métricas JSON |
-| `01_parte_superior_03_blouse_blusa` | shirt | F-plus | bracos | ok · penetração 0.5% | — | — | métricas JSON |
-| `01_parte_superior_03_blouse_blusa` | shirt | F-plus | caminhada | ok · penetração 0.9% | — | — | métricas JSON |
-| `01_parte_superior_03_blouse_blusa` | shirt | F-plus | agachamento | ok · penetração 2.0% | — | — | métricas JSON |
+| `01_parte_superior_01_camiseta_referencia` | tee | F-plus | exibicao | ok · penetração 1.3% | — | cintura/busto 0.98→1 (corpo 0.94) | vestir/camiseta-jeans |
+| `01_parte_superior_01_camiseta_referencia` | tee | F-plus | bracos | ok · penetração 0.7% | — | — | vestir/camiseta-jeans |
+| `01_parte_superior_01_camiseta_referencia` | tee | F-plus | caminhada | ok · penetração 1.6% | — | — | vestir/camiseta-jeans |
+| `01_parte_superior_01_camiseta_referencia` | tee | F-plus | agachamento | ok · penetração 4.5% | — | — | vestir/camiseta-jeans |
+| `01_parte_superior_02_shirt_camisa` | shirt | F-plus | exibicao | ok · penetração 0.5% | — | cintura/busto 0.99→1 (corpo 0.94) | vestir/camisa-chino |
+| `01_parte_superior_02_shirt_camisa` | shirt | F-plus | bracos | ok · penetração 0.4% | — | — | vestir/camisa-chino |
+| `01_parte_superior_02_shirt_camisa` | shirt | F-plus | caminhada | ok · penetração 0.8% | — | — | vestir/camisa-chino |
+| `01_parte_superior_02_shirt_camisa` | shirt | F-plus | agachamento | ok · penetração 3.7% | — | — | vestir/camisa-chino |
+| `01_parte_superior_03_blouse_blusa` | shirt | F-plus | exibicao | ok · penetração 0.5% | — | cintura/busto 0.99→1 (corpo 0.94) | métricas JSON |
+| `01_parte_superior_03_blouse_blusa` | shirt | F-plus | bracos | ok · penetração 0.4% | — | — | métricas JSON |
+| `01_parte_superior_03_blouse_blusa` | shirt | F-plus | caminhada | ok · penetração 0.8% | — | — | métricas JSON |
+| `01_parte_superior_03_blouse_blusa` | shirt | F-plus | agachamento | ok · penetração 3.7% | — | — | métricas JSON |
 | `01_parte_superior_04_tank_top_regata` | tank | F-plus | exibicao | ok · penetração 0.1% | — | cintura/busto 0.96→0.94 (corpo 0.94) | métricas JSON |
 | `01_parte_superior_04_tank_top_regata` | tank | F-plus | bracos | ok · penetração 0.0% | — | — | métricas JSON |
-| `01_parte_superior_04_tank_top_regata` | tank | F-plus | caminhada | ok · penetração 0.2% | — | — | métricas JSON |
-| `01_parte_superior_04_tank_top_regata` | tank | F-plus | agachamento | ok · penetração 2.1% | — | — | métricas JSON |
+| `01_parte_superior_04_tank_top_regata` | tank | F-plus | caminhada | ok · penetração 0.1% | — | — | métricas JSON |
+| `01_parte_superior_04_tank_top_regata` | tank | F-plus | agachamento | ok · penetração 4.7% | — | — | métricas JSON |
 | `01_parte_superior_05_crop_top_cropped` | crop | F-plus | exibicao | ok · penetração 0.7% | — | — | métricas JSON |
 | `01_parte_superior_05_crop_top_cropped` | crop | F-plus | bracos | ok · penetração 0.8% | — | — | métricas JSON |
 | `01_parte_superior_05_crop_top_cropped` | crop | F-plus | caminhada | ok · penetração 1.2% | — | — | métricas JSON |
 | `01_parte_superior_05_crop_top_cropped` | crop | F-plus | agachamento | ok · penetração 0.9% | — | — | métricas JSON |
-| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | F-plus | exibicao | ok · penetração 1.6% | — | cintura/busto 0.98→1 (corpo 0.94) | métricas JSON |
-| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | F-plus | bracos | ok · penetração 0.9% | — | — | métricas JSON |
-| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | F-plus | caminhada | ok · penetração 1.9% | — | — | métricas JSON |
-| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | F-plus | agachamento | ok · penetração 2.8% | — | — | métricas JSON |
+| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | F-plus | exibicao | ok · penetração 1.3% | — | cintura/busto 0.98→1 (corpo 0.94) | métricas JSON |
+| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | F-plus | bracos | ok · penetração 0.7% | — | — | métricas JSON |
+| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | F-plus | caminhada | ok · penetração 1.6% | — | — | métricas JSON |
+| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | F-plus | agachamento | ok · penetração 4.5% | — | — | métricas JSON |
 | `01_parte_superior_07_bodysuit_body` | tank | F-plus | exibicao | ok · penetração 0.1% | — | cintura/busto 0.96→0.94 (corpo 0.94) | métricas JSON |
 | `01_parte_superior_07_bodysuit_body` | tank | F-plus | bracos | ok · penetração 0.0% | — | — | métricas JSON |
-| `01_parte_superior_07_bodysuit_body` | tank | F-plus | caminhada | ok · penetração 0.2% | — | — | métricas JSON |
-| `01_parte_superior_07_bodysuit_body` | tank | F-plus | agachamento | ok · penetração 2.1% | — | — | métricas JSON |
-| `01_parte_superior_08_sweater_sueter` | sweater | F-plus | exibicao | ok · penetração 0.9% | — | cintura/busto 0.95→0.97 (corpo 0.94) | métricas JSON |
-| `01_parte_superior_08_sweater_sueter` | sweater | F-plus | bracos | ok · penetração 0.6% | — | — | métricas JSON |
-| `01_parte_superior_08_sweater_sueter` | sweater | F-plus | caminhada | ok · penetração 1.1% | — | — | métricas JSON |
-| `01_parte_superior_08_sweater_sueter` | sweater | F-plus | agachamento | ok · penetração 1.9% | — | — | métricas JSON |
-| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | F-plus | exibicao | ok · penetração 2.4% | — | cintura/busto 0.95→1.06 (corpo 0.93) | métricas JSON |
-| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | F-plus | bracos | ok · penetração 1.0% | — | — | métricas JSON |
-| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | F-plus | caminhada | ok · penetração 2.1% | — | — | métricas JSON |
-| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | F-plus | agachamento | ok · penetração 2.6% | — | — | métricas JSON |
-| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | F-plus | exibicao | ok · penetração 2.9% | — | cintura/busto 0.96→1.06 (corpo 0.93) | vestir/moletom-saia |
-| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | F-plus | bracos | ok · penetração 1.2% | — | — | vestir/moletom-saia |
-| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | F-plus | caminhada | ok · penetração 2.4% | — | — | vestir/moletom-saia |
-| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | F-plus | agachamento | ok · penetração 2.7% | — | — | vestir/moletom-saia |
-| `01_parte_superior_11_cardigan` | jacket | F-plus | exibicao | acima da tolerância · penetração 3.2% | interseção (braco 1.9%, tronco 1.2%) | cintura/busto 1.02→1.04 (corpo 0.93) | métricas JSON |
-| `01_parte_superior_11_cardigan` | jacket | F-plus | bracos | ok · penetração 1.0% | — | — | métricas JSON |
-| `01_parte_superior_11_cardigan` | jacket | F-plus | caminhada | ok · penetração 2.8% | — | — | métricas JSON |
-| `01_parte_superior_11_cardigan` | jacket | F-plus | agachamento | ok · penetração 3.1% | — | — | métricas JSON |
-| `01_parte_superior_12_vest_colete` | vest | F-plus | exibicao | ok · penetração 2.3% | — | cintura/busto 1.01→1.03 (corpo 0.93) | métricas JSON |
-| `01_parte_superior_12_vest_colete` | vest | F-plus | bracos | ok · penetração 0.4% | — | — | métricas JSON |
-| `01_parte_superior_12_vest_colete` | vest | F-plus | caminhada | ok · penetração 2.1% | — | — | métricas JSON |
-| `01_parte_superior_12_vest_colete` | vest | F-plus | agachamento | ok · penetração 3.0% | — | — | métricas JSON |
-| `01_parte_superior_13_blazer` | jacket | F-plus | exibicao | acima da tolerância · penetração 3.2% | interseção (braco 1.9%, tronco 1.2%) | cintura/busto 1.02→1.04 (corpo 0.93) | métricas JSON |
-| `01_parte_superior_13_blazer` | jacket | F-plus | bracos | ok · penetração 1.0% | — | — | métricas JSON |
-| `01_parte_superior_13_blazer` | jacket | F-plus | caminhada | ok · penetração 2.8% | — | — | métricas JSON |
-| `01_parte_superior_13_blazer` | jacket | F-plus | agachamento | ok · penetração 3.1% | — | — | métricas JSON |
-| `01_parte_superior_14_jacket_jaqueta` | jacket | F-plus | exibicao | acima da tolerância · penetração 3.2% | interseção (braco 1.9%, tronco 1.2%) | cintura/busto 1.02→1.04 (corpo 0.93) | vestir/jaqueta-shorts |
-| `01_parte_superior_14_jacket_jaqueta` | jacket | F-plus | bracos | ok · penetração 1.0% | — | — | vestir/jaqueta-shorts |
-| `01_parte_superior_14_jacket_jaqueta` | jacket | F-plus | caminhada | ok · penetração 2.8% | — | — | vestir/jaqueta-shorts |
-| `01_parte_superior_14_jacket_jaqueta` | jacket | F-plus | agachamento | ok · penetração 3.1% | — | — | vestir/jaqueta-shorts |
-| `01_parte_superior_15_coat_casaco` | coat | F-plus | exibicao | ok · penetração 1.5% | — | cintura/busto 1.04→1.06 (corpo 0.92); folga coxa 5.01→5.02 cm | métricas JSON |
+| `01_parte_superior_07_bodysuit_body` | tank | F-plus | caminhada | ok · penetração 0.1% | — | — | métricas JSON |
+| `01_parte_superior_07_bodysuit_body` | tank | F-plus | agachamento | ok · penetração 4.7% | — | — | métricas JSON |
+| `01_parte_superior_08_sweater_sueter` | sweater | F-plus | exibicao | ok · penetração 0.7% | — | cintura/busto 0.95→0.97 (corpo 0.94) | métricas JSON |
+| `01_parte_superior_08_sweater_sueter` | sweater | F-plus | bracos | ok · penetração 0.5% | — | — | métricas JSON |
+| `01_parte_superior_08_sweater_sueter` | sweater | F-plus | caminhada | ok · penetração 0.9% | — | — | métricas JSON |
+| `01_parte_superior_08_sweater_sueter` | sweater | F-plus | agachamento | ok · penetração 3.8% | — | — | métricas JSON |
+| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | F-plus | exibicao | ok · penetração 1.9% | — | cintura/busto 0.95→1.06 (corpo 0.93) | métricas JSON |
+| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | F-plus | bracos | ok · penetração 0.8% | — | — | métricas JSON |
+| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | F-plus | caminhada | ok · penetração 1.7% | — | — | métricas JSON |
+| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | F-plus | agachamento | ok · penetração 4.6% | — | — | métricas JSON |
+| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | F-plus | exibicao | ok · penetração 2.3% | — | cintura/busto 0.96→1.06 (corpo 0.93) | vestir/moletom-saia |
+| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | F-plus | bracos | ok · penetração 0.9% | — | — | vestir/moletom-saia |
+| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | F-plus | caminhada | ok · penetração 1.9% | — | — | vestir/moletom-saia |
+| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | F-plus | agachamento | ok · penetração 4.8% | — | — | vestir/moletom-saia |
+| `01_parte_superior_11_cardigan` | jacket | F-plus | exibicao | ok · penetração 2.7% | — | cintura/busto 1.02→1.05 (corpo 0.93) | métricas JSON |
+| `01_parte_superior_11_cardigan` | jacket | F-plus | bracos | ok · penetração 0.9% | — | — | métricas JSON |
+| `01_parte_superior_11_cardigan` | jacket | F-plus | caminhada | ok · penetração 2.4% | — | — | métricas JSON |
+| `01_parte_superior_11_cardigan` | jacket | F-plus | agachamento | ok · penetração 4.6% | — | — | métricas JSON |
+| `01_parte_superior_12_vest_colete` | vest | F-plus | exibicao | ok · penetração 1.8% | — | cintura/busto 1.01→1.03 (corpo 0.93) | métricas JSON |
+| `01_parte_superior_12_vest_colete` | vest | F-plus | bracos | ok · penetração 0.3% | — | — | métricas JSON |
+| `01_parte_superior_12_vest_colete` | vest | F-plus | caminhada | ok · penetração 1.6% | — | — | métricas JSON |
+| `01_parte_superior_12_vest_colete` | vest | F-plus | agachamento | ok · penetração 5.2% | — | — | métricas JSON |
+| `01_parte_superior_13_blazer` | jacket | F-plus | exibicao | ok · penetração 2.7% | — | cintura/busto 1.02→1.02 (corpo 0.93) | métricas JSON |
+| `01_parte_superior_13_blazer` | jacket | F-plus | bracos | ok · penetração 1.1% | — | — | métricas JSON |
+| `01_parte_superior_13_blazer` | jacket | F-plus | caminhada | ok · penetração 2.5% | — | — | métricas JSON |
+| `01_parte_superior_13_blazer` | jacket | F-plus | agachamento | ok · penetração 4.2% | — | — | métricas JSON |
+| `01_parte_superior_14_jacket_jaqueta` | jacket | F-plus | exibicao | ok · penetração 2.7% | — | cintura/busto 1.02→1.05 (corpo 0.93) | vestir/jaqueta-shorts |
+| `01_parte_superior_14_jacket_jaqueta` | jacket | F-plus | bracos | ok · penetração 0.9% | — | — | vestir/jaqueta-shorts |
+| `01_parte_superior_14_jacket_jaqueta` | jacket | F-plus | caminhada | ok · penetração 2.4% | — | — | vestir/jaqueta-shorts |
+| `01_parte_superior_14_jacket_jaqueta` | jacket | F-plus | agachamento | ok · penetração 4.6% | — | — | vestir/jaqueta-shorts |
+| `01_parte_superior_15_coat_casaco` | coat | F-plus | exibicao | ok · penetração 1.5% | — | cintura/busto 1.04→1.06 (corpo 0.92); folga coxa 4.86→5.02 cm | métricas JSON |
 | `01_parte_superior_15_coat_casaco` | coat | F-plus | bracos | ok · penetração 0.4% | — | — | métricas JSON |
 | `01_parte_superior_15_coat_casaco` | coat | F-plus | caminhada | ok · penetração 1.4% | — | — | métricas JSON |
 | `01_parte_superior_15_coat_casaco` | coat | F-plus | agachamento | ok · penetração 4.2% | — | — | métricas JSON |
-| `01_parte_superior_16_parka` | coat | F-plus | exibicao | ok · penetração 1.5% | — | cintura/busto 1.04→1.06 (corpo 0.92); folga coxa 5.01→5.02 cm | métricas JSON |
+| `01_parte_superior_16_parka` | coat | F-plus | exibicao | ok · penetração 1.5% | — | cintura/busto 1.04→1.06 (corpo 0.92); folga coxa 4.86→5.02 cm | métricas JSON |
 | `01_parte_superior_16_parka` | coat | F-plus | bracos | ok · penetração 0.4% | — | — | métricas JSON |
 | `01_parte_superior_16_parka` | coat | F-plus | caminhada | ok · penetração 1.4% | — | — | métricas JSON |
 | `01_parte_superior_16_parka` | coat | F-plus | agachamento | ok · penetração 4.2% | — | — | métricas JSON |
-| `01_parte_superior_17_windbreaker_corta_vento` | jacket | F-plus | exibicao | acima da tolerância · penetração 3.2% | interseção (braco 1.9%, tronco 1.3%) | cintura/busto 1.02→1.08 (corpo 0.92) | métricas JSON |
-| `01_parte_superior_17_windbreaker_corta_vento` | jacket | F-plus | bracos | ok · penetração 0.8% | — | — | métricas JSON |
-| `01_parte_superior_17_windbreaker_corta_vento` | jacket | F-plus | caminhada | ok · penetração 2.8% | — | — | métricas JSON |
-| `01_parte_superior_17_windbreaker_corta_vento` | jacket | F-plus | agachamento | ok · penetração 2.5% | — | — | métricas JSON |
-| `01_parte_superior_18_kimono_quimono` | jacket | F-plus | exibicao | acima da tolerância · penetração 3.2% | interseção (braco 1.9%, tronco 1.2%) · limitação: quimono sem manga ampla | cintura/busto 1.02→1.06 (corpo 0.92) | métricas JSON |
-| `01_parte_superior_18_kimono_quimono` | jacket | F-plus | bracos | ok · penetração 1.0% | — · limitação: quimono sem manga ampla | — | métricas JSON |
-| `01_parte_superior_18_kimono_quimono` | jacket | F-plus | caminhada | ok · penetração 2.8% | — · limitação: quimono sem manga ampla | — | métricas JSON |
-| `01_parte_superior_18_kimono_quimono` | jacket | F-plus | agachamento | ok · penetração 3.0% | — · limitação: quimono sem manga ampla | — | métricas JSON |
+| `01_parte_superior_17_windbreaker_corta_vento` | jacket | F-plus | exibicao | ok · penetração 2.6% | — | cintura/busto 1.02→1.09 (corpo 0.92) | métricas JSON |
+| `01_parte_superior_17_windbreaker_corta_vento` | jacket | F-plus | bracos | ok · penetração 0.6% | — | — | métricas JSON |
+| `01_parte_superior_17_windbreaker_corta_vento` | jacket | F-plus | caminhada | ok · penetração 2.2% | — | — | métricas JSON |
+| `01_parte_superior_17_windbreaker_corta_vento` | jacket | F-plus | agachamento | ok · penetração 4.6% | — | — | métricas JSON |
+| `01_parte_superior_18_kimono_quimono` | jacket | F-plus | exibicao | ok · penetração 2.7% | — · limitação: quimono sem manga ampla | cintura/busto 1.02→1.06 (corpo 0.92) | métricas JSON |
+| `01_parte_superior_18_kimono_quimono` | jacket | F-plus | bracos | ok · penetração 0.9% | — · limitação: quimono sem manga ampla | — | métricas JSON |
+| `01_parte_superior_18_kimono_quimono` | jacket | F-plus | caminhada | ok · penetração 2.4% | — · limitação: quimono sem manga ampla | — | métricas JSON |
+| `01_parte_superior_18_kimono_quimono` | jacket | F-plus | agachamento | ok · penetração 4.5% | — · limitação: quimono sem manga ampla | — | métricas JSON |
 | `02_parte_inferior_01_jeans` | pants | F-plus | exibicao | ok · penetração 0.0% | — | barra/joelho 0.84→0.94; folga coxa 0.49→1.24 cm; folga joelho 0.63→1.72 cm; folga panturrilha 1→2.02 cm | vestir/camiseta-jeans |
 | `02_parte_inferior_01_jeans` | pants | F-plus | bracos | ok · penetração 0.0% | — | — | vestir/camiseta-jeans |
 | `02_parte_inferior_01_jeans` | pants | F-plus | caminhada | ok · penetração 0.0% | — | — | vestir/camiseta-jeans |
@@ -456,10 +456,10 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `02_parte_inferior_03_calca_alfaiataria` | pants | F-plus | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `02_parte_inferior_03_calca_alfaiataria` | pants | F-plus | caminhada | ok · penetração 0.0% | — | — | métricas JSON |
 | `02_parte_inferior_03_calca_alfaiataria` | pants | F-plus | agachamento | ok · penetração 3.2% | — | — | métricas JSON |
-| `02_parte_inferior_04_calca_cargo` | pants | F-plus | exibicao | ok · penetração 0.0% | — | barra/joelho 0.84→1.03; folga coxa 0.49→1.92 cm; folga joelho 0.63→2.83 cm; folga panturrilha 1→3.35 cm | métricas JSON |
-| `02_parte_inferior_04_calca_cargo` | pants | F-plus | bracos | ok · penetração 0.0% | — | — | métricas JSON |
+| `02_parte_inferior_04_calca_cargo` | pants | F-plus | exibicao | ok · penetração 0.8% | — | barra/joelho 0.84→1.03; folga coxa 0.49→3.24 cm; folga joelho 0.63→5.06 cm; folga panturrilha 1→4.9 cm | métricas JSON |
+| `02_parte_inferior_04_calca_cargo` | pants | F-plus | bracos | ok · penetração 0.8% | — | — | métricas JSON |
 | `02_parte_inferior_04_calca_cargo` | pants | F-plus | caminhada | ok · penetração 0.0% | — | — | métricas JSON |
-| `02_parte_inferior_04_calca_cargo` | pants | F-plus | agachamento | ok · penetração 4.5% | — | — | métricas JSON |
+| `02_parte_inferior_04_calca_cargo` | pants | F-plus | agachamento | acima da tolerância · penetração 6.4% | interseção (tronco 1.6%, perna 4.7%) | — | métricas JSON |
 | `02_parte_inferior_05_calca_chino` | pants | F-plus | exibicao | ok · penetração 0.0% | — | barra/joelho 0.84→0.94; folga coxa 0.49→1.24 cm; folga joelho 0.63→1.72 cm; folga panturrilha 1→2.02 cm | vestir/camisa-chino |
 | `02_parte_inferior_05_calca_chino` | pants | F-plus | bracos | ok · penetração 0.0% | — | — | vestir/camisa-chino |
 | `02_parte_inferior_05_calca_chino` | pants | F-plus | caminhada | ok · penetração 0.0% | — | — | vestir/camisa-chino |
@@ -504,19 +504,19 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `05_corpo_inteiro_01_vestido` | dress | F-plus | bracos | ok · penetração 0.1% | — | — | vestir/vestido-bota |
 | `05_corpo_inteiro_01_vestido` | dress | F-plus | caminhada | ok · penetração 0.4% | — | — | vestir/vestido-bota |
 | `05_corpo_inteiro_01_vestido` | dress | F-plus | agachamento | ok · penetração 1.6% | — | — | vestir/vestido-bota |
-| `05_corpo_inteiro_02_macacao` | jumpsuit | F-plus | exibicao | ok · penetração 0.6% | — | barra/joelho 0.77→0.95; cintura/busto 0.96→1.01 (corpo 0.94); folga coxa 0.46→1.28 cm; folga joelho 0.48→1.57 cm; folga panturrilha 0.52→1.79 cm | métricas JSON |
+| `05_corpo_inteiro_02_macacao` | jumpsuit | F-plus | exibicao | ok · penetração 0.6% | — | barra/joelho –→0.95; cintura/busto 0.96→1.01 (corpo 0.94); folga coxa 3.45→1.28 cm | métricas JSON |
 | `05_corpo_inteiro_02_macacao` | jumpsuit | F-plus | bracos | ok · penetração 0.1% | — | — | métricas JSON |
 | `05_corpo_inteiro_02_macacao` | jumpsuit | F-plus | caminhada | ok · penetração 0.5% | — | — | métricas JSON |
 | `05_corpo_inteiro_02_macacao` | jumpsuit | F-plus | agachamento | ok · penetração 2.5% | — | — | métricas JSON |
-| `05_corpo_inteiro_03_macaquinho` | romper | F-plus | exibicao | ok · penetração 0.8% | — | cintura/busto 0.96→1.01 (corpo 0.94); folga coxa 0.46→0.8 cm | métricas JSON |
+| `05_corpo_inteiro_03_macaquinho` | romper | F-plus | exibicao | ok · penetração 0.8% | — | cintura/busto 0.96→1.01 (corpo 0.94); folga coxa 3.58→0.8 cm | métricas JSON |
 | `05_corpo_inteiro_03_macaquinho` | romper | F-plus | bracos | ok · penetração 0.2% | — | — | métricas JSON |
 | `05_corpo_inteiro_03_macaquinho` | romper | F-plus | caminhada | ok · penetração 0.7% | — | — | métricas JSON |
 | `05_corpo_inteiro_03_macaquinho` | romper | F-plus | agachamento | ok · penetração 1.8% | — | — | métricas JSON |
-| `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | F-plus | exibicao | ok · penetração 0.6% | — · limitação: conjunto como peça única | barra/joelho 0.77→0.95; cintura/busto 0.96→1.01 (corpo 0.94); folga coxa 0.46→1.28 cm; folga joelho 0.48→1.57 cm; folga panturrilha 0.52→1.79 cm | métricas JSON |
+| `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | F-plus | exibicao | ok · penetração 0.6% | — · limitação: conjunto como peça única | barra/joelho –→0.95; cintura/busto 0.96→1.01 (corpo 0.94); folga coxa 3.45→1.28 cm | métricas JSON |
 | `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | F-plus | bracos | ok · penetração 0.1% | — · limitação: conjunto como peça única | — | métricas JSON |
 | `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | F-plus | caminhada | ok · penetração 0.5% | — · limitação: conjunto como peça única | — | métricas JSON |
 | `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | F-plus | agachamento | ok · penetração 2.5% | — · limitação: conjunto como peça única | — | métricas JSON |
-| `05_corpo_inteiro_05_jardineira` | jumpsuit | F-plus | exibicao | ok · penetração 0.6% | — · limitação: jardineira sem peitilho | barra/joelho 0.77→0.95; cintura/busto 0.96→1.01 (corpo 0.94); folga coxa 0.46→1.28 cm; folga joelho 0.48→1.57 cm; folga panturrilha 0.52→1.79 cm | métricas JSON |
+| `05_corpo_inteiro_05_jardineira` | jumpsuit | F-plus | exibicao | ok · penetração 0.6% | — · limitação: jardineira sem peitilho | barra/joelho –→0.95; cintura/busto 0.96→1.01 (corpo 0.94); folga coxa 3.45→1.28 cm | métricas JSON |
 | `05_corpo_inteiro_05_jardineira` | jumpsuit | F-plus | bracos | ok · penetração 0.1% | — · limitação: jardineira sem peitilho | — | métricas JSON |
 | `05_corpo_inteiro_05_jardineira` | jumpsuit | F-plus | caminhada | ok · penetração 0.5% | — · limitação: jardineira sem peitilho | — | métricas JSON |
 | `05_corpo_inteiro_05_jardineira` | jumpsuit | F-plus | agachamento | ok · penetração 2.5% | — · limitação: jardineira sem peitilho | — | métricas JSON |
@@ -556,78 +556,78 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `03_calcados_16_salto_alto` | shoes | F-plus | bracos | forma do calçado (molde do pé oculto) | — · limitação: salto sem salto modelado | — | métricas JSON |
 | `03_calcados_16_salto_alto` | shoes | F-plus | caminhada | forma do calçado (molde do pé oculto) | — · limitação: salto sem salto modelado | — | métricas JSON |
 | `03_calcados_16_salto_alto` | shoes | F-plus | agachamento | forma do calçado (molde do pé oculto) | — · limitação: salto sem salto modelado | — | métricas JSON |
-| `01_parte_superior_01_camiseta_referencia` | tee | M-slim | exibicao | ok · penetração 1.8% | — | cintura/busto 1.03→1.05 (corpo 1.03) | vestir/camiseta-jeans |
-| `01_parte_superior_01_camiseta_referencia` | tee | M-slim | bracos | ok · penetração 0.5% | — | — | vestir/camiseta-jeans |
-| `01_parte_superior_01_camiseta_referencia` | tee | M-slim | caminhada | ok · penetração 1.4% | — | — | vestir/camiseta-jeans |
-| `01_parte_superior_01_camiseta_referencia` | tee | M-slim | agachamento | ok · penetração 1.8% | — | — | vestir/camiseta-jeans |
-| `01_parte_superior_02_shirt_camisa` | shirt | M-slim | exibicao | ok · penetração 0.6% | — | cintura/busto 1.03→1.05 (corpo 1.03) | vestir/camisa-chino |
-| `01_parte_superior_02_shirt_camisa` | shirt | M-slim | bracos | ok · penetração 0.4% | — | — | vestir/camisa-chino |
-| `01_parte_superior_02_shirt_camisa` | shirt | M-slim | caminhada | ok · penetração 0.6% | — | — | vestir/camisa-chino |
-| `01_parte_superior_02_shirt_camisa` | shirt | M-slim | agachamento | ok · penetração 1.4% | — | — | vestir/camisa-chino |
-| `01_parte_superior_03_blouse_blusa` | shirt | M-slim | exibicao | ok · penetração 0.6% | — | cintura/busto 1.03→1.05 (corpo 1.03) | métricas JSON |
-| `01_parte_superior_03_blouse_blusa` | shirt | M-slim | bracos | ok · penetração 0.4% | — | — | métricas JSON |
-| `01_parte_superior_03_blouse_blusa` | shirt | M-slim | caminhada | ok · penetração 0.6% | — | — | métricas JSON |
-| `01_parte_superior_03_blouse_blusa` | shirt | M-slim | agachamento | ok · penetração 1.4% | — | — | métricas JSON |
+| `01_parte_superior_01_camiseta_referencia` | tee | M-slim | exibicao | ok · penetração 1.5% | — | cintura/busto 1.03→1.05 (corpo 1.03) | vestir/camiseta-jeans |
+| `01_parte_superior_01_camiseta_referencia` | tee | M-slim | bracos | ok · penetração 0.4% | — | — | vestir/camiseta-jeans |
+| `01_parte_superior_01_camiseta_referencia` | tee | M-slim | caminhada | ok · penetração 1.1% | — | — | vestir/camiseta-jeans |
+| `01_parte_superior_01_camiseta_referencia` | tee | M-slim | agachamento | ok · penetração 3.7% | — | — | vestir/camiseta-jeans |
+| `01_parte_superior_02_shirt_camisa` | shirt | M-slim | exibicao | ok · penetração 0.5% | — | cintura/busto 1.03→1.05 (corpo 1.03) | vestir/camisa-chino |
+| `01_parte_superior_02_shirt_camisa` | shirt | M-slim | bracos | ok · penetração 0.3% | — | — | vestir/camisa-chino |
+| `01_parte_superior_02_shirt_camisa` | shirt | M-slim | caminhada | ok · penetração 0.5% | — | — | vestir/camisa-chino |
+| `01_parte_superior_02_shirt_camisa` | shirt | M-slim | agachamento | ok · penetração 3.2% | — | — | vestir/camisa-chino |
+| `01_parte_superior_03_blouse_blusa` | shirt | M-slim | exibicao | ok · penetração 0.5% | — | cintura/busto 1.03→1.05 (corpo 1.03) | métricas JSON |
+| `01_parte_superior_03_blouse_blusa` | shirt | M-slim | bracos | ok · penetração 0.3% | — | — | métricas JSON |
+| `01_parte_superior_03_blouse_blusa` | shirt | M-slim | caminhada | ok · penetração 0.5% | — | — | métricas JSON |
+| `01_parte_superior_03_blouse_blusa` | shirt | M-slim | agachamento | ok · penetração 3.2% | — | — | métricas JSON |
 | `01_parte_superior_04_tank_top_regata` | tank | M-slim | exibicao | ok · penetração 0.0% | — | cintura/busto 1.02→1.01 (corpo 1.03) | métricas JSON |
 | `01_parte_superior_04_tank_top_regata` | tank | M-slim | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `01_parte_superior_04_tank_top_regata` | tank | M-slim | caminhada | ok · penetração 0.1% | — | — | métricas JSON |
-| `01_parte_superior_04_tank_top_regata` | tank | M-slim | agachamento | ok · penetração 1.6% | — | — | métricas JSON |
+| `01_parte_superior_04_tank_top_regata` | tank | M-slim | agachamento | ok · penetração 3.7% | — | — | métricas JSON |
 | `01_parte_superior_05_crop_top_cropped` | crop | M-slim | exibicao | ok · penetração 1.5% | — | — | métricas JSON |
 | `01_parte_superior_05_crop_top_cropped` | crop | M-slim | bracos | ok · penetração 0.5% | — | — | métricas JSON |
 | `01_parte_superior_05_crop_top_cropped` | crop | M-slim | caminhada | ok · penetração 1.2% | — | — | métricas JSON |
 | `01_parte_superior_05_crop_top_cropped` | crop | M-slim | agachamento | ok · penetração 0.7% | — | — | métricas JSON |
-| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | M-slim | exibicao | ok · penetração 1.8% | — | cintura/busto 1.03→1.05 (corpo 1.03) | métricas JSON |
-| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | M-slim | bracos | ok · penetração 0.5% | — | — | métricas JSON |
-| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | M-slim | caminhada | ok · penetração 1.4% | — | — | métricas JSON |
-| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | M-slim | agachamento | ok · penetração 1.8% | — | — | métricas JSON |
+| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | M-slim | exibicao | ok · penetração 1.5% | — | cintura/busto 1.03→1.05 (corpo 1.03) | métricas JSON |
+| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | M-slim | bracos | ok · penetração 0.4% | — | — | métricas JSON |
+| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | M-slim | caminhada | ok · penetração 1.1% | — | — | métricas JSON |
+| `01_parte_superior_06_polo_shirt_camisa_polo` | tee | M-slim | agachamento | ok · penetração 3.7% | — | — | métricas JSON |
 | `01_parte_superior_07_bodysuit_body` | tank | M-slim | exibicao | ok · penetração 0.0% | — | cintura/busto 1.02→1.01 (corpo 1.03) | métricas JSON |
 | `01_parte_superior_07_bodysuit_body` | tank | M-slim | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `01_parte_superior_07_bodysuit_body` | tank | M-slim | caminhada | ok · penetração 0.1% | — | — | métricas JSON |
-| `01_parte_superior_07_bodysuit_body` | tank | M-slim | agachamento | ok · penetração 1.6% | — | — | métricas JSON |
-| `01_parte_superior_08_sweater_sueter` | sweater | M-slim | exibicao | ok · penetração 1.1% | — | cintura/busto 1.02→1.03 (corpo 1.03) | métricas JSON |
-| `01_parte_superior_08_sweater_sueter` | sweater | M-slim | bracos | ok · penetração 0.3% | — | — | métricas JSON |
-| `01_parte_superior_08_sweater_sueter` | sweater | M-slim | caminhada | ok · penetração 0.7% | — | — | métricas JSON |
-| `01_parte_superior_08_sweater_sueter` | sweater | M-slim | agachamento | ok · penetração 1.5% | — | — | métricas JSON |
-| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | M-slim | exibicao | ok · penetração 1.6% | — | cintura/busto 1.02→1.1 (corpo 1.03) | métricas JSON |
-| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | M-slim | bracos | ok · penetração 0.7% | — | — | métricas JSON |
-| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | M-slim | caminhada | ok · penetração 1.3% | — | — | métricas JSON |
-| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | M-slim | agachamento | ok · penetração 2.0% | — | — | métricas JSON |
-| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | M-slim | exibicao | ok · penetração 1.5% | — | cintura/busto 1.02→1.11 (corpo 1.03) | vestir/moletom-saia |
-| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | M-slim | bracos | ok · penetração 0.9% | — | — | vestir/moletom-saia |
-| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | M-slim | caminhada | ok · penetração 1.2% | — | — | vestir/moletom-saia |
-| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | M-slim | agachamento | ok · penetração 1.9% | — | — | vestir/moletom-saia |
-| `01_parte_superior_11_cardigan` | jacket | M-slim | exibicao | ok · penetração 1.6% | — | cintura/busto 1.1→1.13 (corpo 1.03) | métricas JSON |
-| `01_parte_superior_11_cardigan` | jacket | M-slim | bracos | ok · penetração 0.5% | — | — | métricas JSON |
-| `01_parte_superior_11_cardigan` | jacket | M-slim | caminhada | ok · penetração 1.5% | — | — | métricas JSON |
-| `01_parte_superior_11_cardigan` | jacket | M-slim | agachamento | ok · penetração 2.2% | — | — | métricas JSON |
-| `01_parte_superior_12_vest_colete` | vest | M-slim | exibicao | ok · penetração 0.4% | — | cintura/busto 1.1→1.12 (corpo 1.03) | métricas JSON |
+| `01_parte_superior_07_bodysuit_body` | tank | M-slim | agachamento | ok · penetração 3.7% | — | — | métricas JSON |
+| `01_parte_superior_08_sweater_sueter` | sweater | M-slim | exibicao | ok · penetração 0.9% | — | cintura/busto 1.02→1.03 (corpo 1.03) | métricas JSON |
+| `01_parte_superior_08_sweater_sueter` | sweater | M-slim | bracos | ok · penetração 0.2% | — | — | métricas JSON |
+| `01_parte_superior_08_sweater_sueter` | sweater | M-slim | caminhada | ok · penetração 0.6% | — | — | métricas JSON |
+| `01_parte_superior_08_sweater_sueter` | sweater | M-slim | agachamento | ok · penetração 3.3% | — | — | métricas JSON |
+| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | M-slim | exibicao | ok · penetração 1.3% | — | cintura/busto 1.02→1.1 (corpo 1.03) | métricas JSON |
+| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | M-slim | bracos | ok · penetração 0.6% | — | — | métricas JSON |
+| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | M-slim | caminhada | ok · penetração 1.1% | — | — | métricas JSON |
+| `01_parte_superior_09_sweatshirt_moletom_sem_capuz` | sweater | M-slim | agachamento | ok · penetração 4.0% | — | — | métricas JSON |
+| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | M-slim | exibicao | ok · penetração 1.2% | — | cintura/busto 1.02→1.11 (corpo 1.03) | vestir/moletom-saia |
+| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | M-slim | bracos | ok · penetração 0.7% | — | — | vestir/moletom-saia |
+| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | M-slim | caminhada | ok · penetração 1.0% | — | — | vestir/moletom-saia |
+| `01_parte_superior_10_hoodie_moletom_com_capuz` | hoodie | M-slim | agachamento | ok · penetração 4.1% | — | — | vestir/moletom-saia |
+| `01_parte_superior_11_cardigan` | jacket | M-slim | exibicao | ok · penetração 1.3% | — | cintura/busto 1.1→1.13 (corpo 1.03) | métricas JSON |
+| `01_parte_superior_11_cardigan` | jacket | M-slim | bracos | ok · penetração 0.4% | — | — | métricas JSON |
+| `01_parte_superior_11_cardigan` | jacket | M-slim | caminhada | ok · penetração 1.3% | — | — | métricas JSON |
+| `01_parte_superior_11_cardigan` | jacket | M-slim | agachamento | ok · penetração 3.8% | — | — | métricas JSON |
+| `01_parte_superior_12_vest_colete` | vest | M-slim | exibicao | ok · penetração 0.3% | — | cintura/busto 1.1→1.12 (corpo 1.03) | métricas JSON |
 | `01_parte_superior_12_vest_colete` | vest | M-slim | bracos | ok · penetração 0.0% | — | — | métricas JSON |
-| `01_parte_superior_12_vest_colete` | vest | M-slim | caminhada | ok · penetração 0.4% | — | — | métricas JSON |
-| `01_parte_superior_12_vest_colete` | vest | M-slim | agachamento | ok · penetração 2.3% | — | — | métricas JSON |
-| `01_parte_superior_13_blazer` | jacket | M-slim | exibicao | ok · penetração 1.6% | — | cintura/busto 1.1→1.13 (corpo 1.03) | métricas JSON |
-| `01_parte_superior_13_blazer` | jacket | M-slim | bracos | ok · penetração 0.5% | — | — | métricas JSON |
+| `01_parte_superior_12_vest_colete` | vest | M-slim | caminhada | ok · penetração 0.3% | — | — | métricas JSON |
+| `01_parte_superior_12_vest_colete` | vest | M-slim | agachamento | ok · penetração 4.8% | — | — | métricas JSON |
+| `01_parte_superior_13_blazer` | jacket | M-slim | exibicao | ok · penetração 1.6% | — | cintura/busto 1.1→1.09 (corpo 1.03) | métricas JSON |
+| `01_parte_superior_13_blazer` | jacket | M-slim | bracos | ok · penetração 0.4% | — | — | métricas JSON |
 | `01_parte_superior_13_blazer` | jacket | M-slim | caminhada | ok · penetração 1.5% | — | — | métricas JSON |
-| `01_parte_superior_13_blazer` | jacket | M-slim | agachamento | ok · penetração 2.2% | — | — | métricas JSON |
-| `01_parte_superior_14_jacket_jaqueta` | jacket | M-slim | exibicao | ok · penetração 1.6% | — | cintura/busto 1.1→1.13 (corpo 1.03) | vestir/jaqueta-shorts |
-| `01_parte_superior_14_jacket_jaqueta` | jacket | M-slim | bracos | ok · penetração 0.5% | — | — | vestir/jaqueta-shorts |
-| `01_parte_superior_14_jacket_jaqueta` | jacket | M-slim | caminhada | ok · penetração 1.5% | — | — | vestir/jaqueta-shorts |
-| `01_parte_superior_14_jacket_jaqueta` | jacket | M-slim | agachamento | ok · penetração 2.2% | — | — | vestir/jaqueta-shorts |
-| `01_parte_superior_15_coat_casaco` | coat | M-slim | exibicao | ok · penetração 0.7% | — | cintura/busto 1.12→1.14 (corpo 1.03); folga coxa 5.25→5.35 cm | métricas JSON |
+| `01_parte_superior_13_blazer` | jacket | M-slim | agachamento | ok · penetração 3.5% | — | — | métricas JSON |
+| `01_parte_superior_14_jacket_jaqueta` | jacket | M-slim | exibicao | ok · penetração 1.3% | — | cintura/busto 1.1→1.13 (corpo 1.03) | vestir/jaqueta-shorts |
+| `01_parte_superior_14_jacket_jaqueta` | jacket | M-slim | bracos | ok · penetração 0.4% | — | — | vestir/jaqueta-shorts |
+| `01_parte_superior_14_jacket_jaqueta` | jacket | M-slim | caminhada | ok · penetração 1.3% | — | — | vestir/jaqueta-shorts |
+| `01_parte_superior_14_jacket_jaqueta` | jacket | M-slim | agachamento | ok · penetração 3.8% | — | — | vestir/jaqueta-shorts |
+| `01_parte_superior_15_coat_casaco` | coat | M-slim | exibicao | ok · penetração 0.7% | — | cintura/busto 1.12→1.14 (corpo 1.03); folga coxa 5.14→5.35 cm | métricas JSON |
 | `01_parte_superior_15_coat_casaco` | coat | M-slim | bracos | ok · penetração 0.2% | — | — | métricas JSON |
 | `01_parte_superior_15_coat_casaco` | coat | M-slim | caminhada | ok · penetração 0.6% | — | — | métricas JSON |
-| `01_parte_superior_15_coat_casaco` | coat | M-slim | agachamento | ok · penetração 3.7% | — | — | métricas JSON |
-| `01_parte_superior_16_parka` | coat | M-slim | exibicao | ok · penetração 0.7% | — | cintura/busto 1.12→1.14 (corpo 1.03); folga coxa 5.25→5.35 cm | métricas JSON |
+| `01_parte_superior_15_coat_casaco` | coat | M-slim | agachamento | ok · penetração 3.5% | — | — | métricas JSON |
+| `01_parte_superior_16_parka` | coat | M-slim | exibicao | ok · penetração 0.7% | — | cintura/busto 1.12→1.14 (corpo 1.03); folga coxa 5.14→5.35 cm | métricas JSON |
 | `01_parte_superior_16_parka` | coat | M-slim | bracos | ok · penetração 0.2% | — | — | métricas JSON |
 | `01_parte_superior_16_parka` | coat | M-slim | caminhada | ok · penetração 0.6% | — | — | métricas JSON |
-| `01_parte_superior_16_parka` | coat | M-slim | agachamento | ok · penetração 3.7% | — | — | métricas JSON |
-| `01_parte_superior_17_windbreaker_corta_vento` | jacket | M-slim | exibicao | ok · penetração 1.6% | — | cintura/busto 1.1→1.19 (corpo 1.03) | métricas JSON |
-| `01_parte_superior_17_windbreaker_corta_vento` | jacket | M-slim | bracos | ok · penetração 0.4% | — | — | métricas JSON |
-| `01_parte_superior_17_windbreaker_corta_vento` | jacket | M-slim | caminhada | ok · penetração 1.5% | — | — | métricas JSON |
-| `01_parte_superior_17_windbreaker_corta_vento` | jacket | M-slim | agachamento | ok · penetração 1.6% | — | — | métricas JSON |
-| `01_parte_superior_18_kimono_quimono` | jacket | M-slim | exibicao | ok · penetração 1.6% | — · limitação: quimono sem manga ampla | cintura/busto 1.1→1.14 (corpo 1.03) | métricas JSON |
-| `01_parte_superior_18_kimono_quimono` | jacket | M-slim | bracos | ok · penetração 0.5% | — · limitação: quimono sem manga ampla | — | métricas JSON |
-| `01_parte_superior_18_kimono_quimono` | jacket | M-slim | caminhada | ok · penetração 1.5% | — · limitação: quimono sem manga ampla | — | métricas JSON |
-| `01_parte_superior_18_kimono_quimono` | jacket | M-slim | agachamento | ok · penetração 2.2% | — · limitação: quimono sem manga ampla | — | métricas JSON |
+| `01_parte_superior_16_parka` | coat | M-slim | agachamento | ok · penetração 3.5% | — | — | métricas JSON |
+| `01_parte_superior_17_windbreaker_corta_vento` | jacket | M-slim | exibicao | ok · penetração 1.3% | — | cintura/busto 1.1→1.19 (corpo 1.03) | métricas JSON |
+| `01_parte_superior_17_windbreaker_corta_vento` | jacket | M-slim | bracos | ok · penetração 0.3% | — | — | métricas JSON |
+| `01_parte_superior_17_windbreaker_corta_vento` | jacket | M-slim | caminhada | ok · penetração 1.1% | — | — | métricas JSON |
+| `01_parte_superior_17_windbreaker_corta_vento` | jacket | M-slim | agachamento | ok · penetração 3.8% | — | — | métricas JSON |
+| `01_parte_superior_18_kimono_quimono` | jacket | M-slim | exibicao | ok · penetração 1.3% | — · limitação: quimono sem manga ampla | cintura/busto 1.1→1.14 (corpo 1.03) | métricas JSON |
+| `01_parte_superior_18_kimono_quimono` | jacket | M-slim | bracos | ok · penetração 0.4% | — · limitação: quimono sem manga ampla | — | métricas JSON |
+| `01_parte_superior_18_kimono_quimono` | jacket | M-slim | caminhada | ok · penetração 1.2% | — · limitação: quimono sem manga ampla | — | métricas JSON |
+| `01_parte_superior_18_kimono_quimono` | jacket | M-slim | agachamento | ok · penetração 3.8% | — · limitação: quimono sem manga ampla | — | métricas JSON |
 | `02_parte_inferior_01_jeans` | pants | M-slim | exibicao | ok · penetração 0.0% | — | barra/joelho 0.88→0.92; folga coxa 0.49→1.24 cm; folga joelho 0.61→1.75 cm; folga panturrilha 0.91→1.9 cm | vestir/camiseta-jeans |
 | `02_parte_inferior_01_jeans` | pants | M-slim | bracos | ok · penetração 0.0% | — | — | vestir/camiseta-jeans |
 | `02_parte_inferior_01_jeans` | pants | M-slim | caminhada | ok · penetração 0.0% | — | — | vestir/camiseta-jeans |
@@ -640,10 +640,10 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `02_parte_inferior_03_calca_alfaiataria` | pants | M-slim | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `02_parte_inferior_03_calca_alfaiataria` | pants | M-slim | caminhada | ok · penetração 0.0% | — | — | métricas JSON |
 | `02_parte_inferior_03_calca_alfaiataria` | pants | M-slim | agachamento | ok · penetração 4.0% | — | — | métricas JSON |
-| `02_parte_inferior_04_calca_cargo` | pants | M-slim | exibicao | ok · penetração 0.0% | — | barra/joelho 0.88→1.01; folga coxa 0.49→1.95 cm; folga joelho 0.61→2.89 cm; folga panturrilha 0.91→3.06 cm | métricas JSON |
+| `02_parte_inferior_04_calca_cargo` | pants | M-slim | exibicao | ok · penetração 0.0% | — | barra/joelho 0.88→1.04; folga coxa 0.49→3.67 cm; folga joelho 0.61→4.91 cm; folga panturrilha 0.91→4.7 cm | métricas JSON |
 | `02_parte_inferior_04_calca_cargo` | pants | M-slim | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `02_parte_inferior_04_calca_cargo` | pants | M-slim | caminhada | ok · penetração 0.0% | — | — | métricas JSON |
-| `02_parte_inferior_04_calca_cargo` | pants | M-slim | agachamento | ok · penetração 4.5% | — | — | métricas JSON |
+| `02_parte_inferior_04_calca_cargo` | pants | M-slim | agachamento | ok · penetração 5.6% | — | — | métricas JSON |
 | `02_parte_inferior_05_calca_chino` | pants | M-slim | exibicao | ok · penetração 0.0% | — | barra/joelho 0.88→0.92; folga coxa 0.49→1.24 cm; folga joelho 0.61→1.75 cm; folga panturrilha 0.91→1.9 cm | vestir/camisa-chino |
 | `02_parte_inferior_05_calca_chino` | pants | M-slim | bracos | ok · penetração 0.0% | — | — | vestir/camisa-chino |
 | `02_parte_inferior_05_calca_chino` | pants | M-slim | caminhada | ok · penetração 0.0% | — | — | vestir/camisa-chino |
@@ -672,7 +672,7 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `02_parte_inferior_11_shorts_jeans` | shorts | M-slim | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `02_parte_inferior_11_shorts_jeans` | shorts | M-slim | caminhada | ok · penetração 0.0% | — | — | métricas JSON |
 | `02_parte_inferior_11_shorts_jeans` | shorts | M-slim | agachamento | ok · penetração 3.2% | — | — | métricas JSON |
-| `02_parte_inferior_12_saia` | skirt | M-slim | exibicao | ok · penetração 0.0% | — | folga coxa 5.76→6.73 cm | vestir/moletom-saia |
+| `02_parte_inferior_12_saia` | skirt | M-slim | exibicao | ok · penetração 0.0% | — | folga coxa 5.72→6.73 cm | vestir/moletom-saia |
 | `02_parte_inferior_12_saia` | skirt | M-slim | bracos | ok · penetração 0.0% | — | — | vestir/moletom-saia |
 | `02_parte_inferior_12_saia` | skirt | M-slim | caminhada | ok · penetração 0.1% | — | — | vestir/moletom-saia |
 | `02_parte_inferior_12_saia` | skirt | M-slim | agachamento | acima da tolerância · penetração 6.6% | interseção (perna 3.4%, tronco 3.3%) | — | vestir/moletom-saia |
@@ -680,7 +680,7 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `02_parte_inferior_13_shorts` | shorts | M-slim | bracos | ok · penetração 0.0% | — | — | vestir/jaqueta-shorts |
 | `02_parte_inferior_13_shorts` | shorts | M-slim | caminhada | ok · penetração 0.0% | — | — | vestir/jaqueta-shorts |
 | `02_parte_inferior_13_shorts` | shorts | M-slim | agachamento | ok · penetração 3.2% | — | — | vestir/jaqueta-shorts |
-| `02_parte_inferior_14_short_saia` | skirt | M-slim | exibicao | ok · penetração 0.0% | — · limitação: saia-short como saia | folga coxa 5.76→6.73 cm | métricas JSON |
+| `02_parte_inferior_14_short_saia` | skirt | M-slim | exibicao | ok · penetração 0.0% | — · limitação: saia-short como saia | folga coxa 5.72→6.73 cm | métricas JSON |
 | `02_parte_inferior_14_short_saia` | skirt | M-slim | bracos | ok · penetração 0.0% | — · limitação: saia-short como saia | — | métricas JSON |
 | `02_parte_inferior_14_short_saia` | skirt | M-slim | caminhada | ok · penetração 0.1% | — · limitação: saia-short como saia | — | métricas JSON |
 | `02_parte_inferior_14_short_saia` | skirt | M-slim | agachamento | acima da tolerância · penetração 6.6% | interseção (perna 3.4%, tronco 3.3%) · limitação: saia-short como saia | — | métricas JSON |
@@ -688,19 +688,19 @@ Gerada por `scripts/tryon/matrix-report.py` a partir de `metricas/vestir-antes-2
 | `05_corpo_inteiro_01_vestido` | dress | M-slim | bracos | ok · penetração 0.0% | — | — | vestir/vestido-bota |
 | `05_corpo_inteiro_01_vestido` | dress | M-slim | caminhada | ok · penetração 0.2% | — | — | vestir/vestido-bota |
 | `05_corpo_inteiro_01_vestido` | dress | M-slim | agachamento | ok · penetração 1.6% | — | — | vestir/vestido-bota |
-| `05_corpo_inteiro_02_macacao` | jumpsuit | M-slim | exibicao | ok · penetração 0.1% | — | barra/joelho 0.82→0.92; cintura/busto 1.03→1.07 (corpo 1.03); folga coxa 0.47→1.34 cm; folga joelho 0.49→1.6 cm; folga panturrilha 0.48→1.74 cm | métricas JSON |
+| `05_corpo_inteiro_02_macacao` | jumpsuit | M-slim | exibicao | ok · penetração 0.1% | — | barra/joelho –→0.92; cintura/busto 1.03→1.07 (corpo 1.03); folga coxa 3.81→1.34 cm | métricas JSON |
 | `05_corpo_inteiro_02_macacao` | jumpsuit | M-slim | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `05_corpo_inteiro_02_macacao` | jumpsuit | M-slim | caminhada | ok · penetração 0.1% | — | — | métricas JSON |
 | `05_corpo_inteiro_02_macacao` | jumpsuit | M-slim | agachamento | ok · penetração 3.1% | — | — | métricas JSON |
-| `05_corpo_inteiro_03_macaquinho` | romper | M-slim | exibicao | ok · penetração 0.1% | — | cintura/busto 1.03→1.07 (corpo 1.03); folga coxa 0.47→0.85 cm | métricas JSON |
+| `05_corpo_inteiro_03_macaquinho` | romper | M-slim | exibicao | ok · penetração 0.1% | — | cintura/busto 1.03→1.07 (corpo 1.03); folga coxa 3.93→0.85 cm | métricas JSON |
 | `05_corpo_inteiro_03_macaquinho` | romper | M-slim | bracos | ok · penetração 0.0% | — | — | métricas JSON |
 | `05_corpo_inteiro_03_macaquinho` | romper | M-slim | caminhada | ok · penetração 0.2% | — | — | métricas JSON |
 | `05_corpo_inteiro_03_macaquinho` | romper | M-slim | agachamento | ok · penetração 2.6% | — | — | métricas JSON |
-| `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | M-slim | exibicao | ok · penetração 0.1% | — · limitação: conjunto como peça única | barra/joelho 0.82→0.92; cintura/busto 1.03→1.07 (corpo 1.03); folga coxa 0.47→1.34 cm; folga joelho 0.49→1.6 cm; folga panturrilha 0.48→1.74 cm | métricas JSON |
+| `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | M-slim | exibicao | ok · penetração 0.1% | — · limitação: conjunto como peça única | barra/joelho –→0.92; cintura/busto 1.03→1.07 (corpo 1.03); folga coxa 3.81→1.34 cm | métricas JSON |
 | `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | M-slim | bracos | ok · penetração 0.0% | — · limitação: conjunto como peça única | — | métricas JSON |
 | `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | M-slim | caminhada | ok · penetração 0.1% | — · limitação: conjunto como peça única | — | métricas JSON |
 | `05_corpo_inteiro_04_conjunto_coordenado` | jumpsuit | M-slim | agachamento | ok · penetração 3.1% | — · limitação: conjunto como peça única | — | métricas JSON |
-| `05_corpo_inteiro_05_jardineira` | jumpsuit | M-slim | exibicao | ok · penetração 0.1% | — · limitação: jardineira sem peitilho | barra/joelho 0.82→0.92; cintura/busto 1.03→1.07 (corpo 1.03); folga coxa 0.47→1.34 cm; folga joelho 0.49→1.6 cm; folga panturrilha 0.48→1.74 cm | métricas JSON |
+| `05_corpo_inteiro_05_jardineira` | jumpsuit | M-slim | exibicao | ok · penetração 0.1% | — · limitação: jardineira sem peitilho | barra/joelho –→0.92; cintura/busto 1.03→1.07 (corpo 1.03); folga coxa 3.81→1.34 cm | métricas JSON |
 | `05_corpo_inteiro_05_jardineira` | jumpsuit | M-slim | bracos | ok · penetração 0.0% | — · limitação: jardineira sem peitilho | — | métricas JSON |
 | `05_corpo_inteiro_05_jardineira` | jumpsuit | M-slim | caminhada | ok · penetração 0.1% | — · limitação: jardineira sem peitilho | — | métricas JSON |
 | `05_corpo_inteiro_05_jardineira` | jumpsuit | M-slim | agachamento | ok · penetração 3.1% | — · limitação: jardineira sem peitilho | — | métricas JSON |

@@ -294,6 +294,24 @@ function skirtTube(c: Composed, P: BodyParam, sp: GarmentSpec, under: UnderLayer
   return { y0, len: sp.skirt, r };
 }
 
+/** Pesos de pele (4 ossos, normalizados) do vértice do tronco ou da coxa mais próximo de (x, y, z). */
+function nearestSkinWeights(a: BodyAsset, c: Composed, P: BodyParam, x: number, y: number, z: number): [number[], number[]] {
+  let best = -1, bd = Infinity; const nb = a.meta.counts.body;
+  for (let v = 0; v < nb; v++) {
+    if (P.group[v] !== 1 && P.group[v] !== 3) continue;
+    const dy = c.body[v * 3 + 1] - y; if (dy * dy > bd) continue;
+    const d = (c.body[v * 3] - x) ** 2 + dy * dy + (c.body[v * 3 + 2] - z) ** 2; if (d < bd) { bd = d; best = v; }
+  }
+  const names = a.meta.bones.map((b) => b.name); const hips = names.indexOf("mixamorig:Hips");
+  const ix: number[] = [], wt: number[] = []; let tot = 0;
+  for (let k = 0; k < 4; k++) {
+    const bone = a.body.skinIndex[best * 4 + k]; const w = best >= 0 ? a.body.skinWeight[best * 4 + k] : 0;
+    ix.push(w ? bone : 0); wt.push(w); tot += w;
+  }
+  if (!tot) return [[hips, 0, 0, 0], [1, 0, 0, 0]];
+  return [ix, wt.map((w) => w / tot)];
+}
+
 /** Raio do tubo na altura y e no ângulo j (0 fora do comprimento do tubo). */
 export function tubeRadius(tb: SkirtTube, y: number, j: number): number {
   const f = ((tb.y0 - y) / tb.len) * (tb.r.length - 1);
@@ -331,7 +349,7 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
   }
   // Below the hip a shirt is a single fabric envelope, not two copied thigh meshes.
   // The latter split at the crotch and created dangling, independently skinned scraps.
-  const shortHem = sp.skirt === 0 && Number.isFinite(sp.hem) && sp.hem < 0;
+  const shortHem = sp.skirt === 0 && !(sp.leg > 0) && Number.isFinite(sp.hem) && sp.hem < 0;   // macacão e macaquinho têm perna: não são barra de blusa
   const tubeSpec = shortHem ? { ...sp, skirt: (0.07 - sp.hem) * (P.neckY - P.hipY), waist: 0.07 } : sp;
   const top = shortHem ? 0.02 : sp.skirt > 0 ? skirtTop(sp) : NaN;
   const pos: number[] = [], al: number[] = [], si: number[] = [], sw: number[] = [], src: number[] = [];
@@ -410,8 +428,22 @@ export function garmentGeometry(a: BodyAsset, c: Composed, normals: Float32Array
         al.push(1); src.push(-1);
         // abaixo do quadril o tubo acompanha as coxas (frente e laterais mais que as costas), dividido entre as duas
         // pernas pelo lado: no agachamento as coxas sobem e levam a frente da saia, em vez de atravessá-la.
-        // Barra curta de blusa (shortHem) não desce pelas coxas: fica só no quadril.
-        const w = shortHem ? 0 : smooth(-0.12, 0.15, P.hipY - y) * (0.7 + 0.3 * Math.max(0, Math.cos(phi))); const wl = w * Math.min(1, Math.max(0, 0.5 + Math.sin(phi) * 2));
+        // A barra curta de blusa (shortHem) é um envelope contínuo colado ao corpo: herda os pesos da pele mais próxima
+        // (quadril, coluna e o alto das coxas) — presa só ao osso do quadril, a barriga e as coxas a atravessavam no
+        // agachamento. A malha continua uma só (sem retalhos soltos entre as pernas).
+        const w = smooth(-0.12, 0.15, P.hipY - y) * (0.7 + 0.3 * Math.max(0, Math.cos(phi))); const wl = w * Math.min(1, Math.max(0, 0.5 + Math.sin(phi) * 2));
+        if (shortHem) {
+          const [ix, wt] = nearestSkinWeights(a, c, P, Math.sin(phi) * r, y, P.torsoZ + Math.cos(phi) * r);
+          // o total de coxa vem da pele; a divisão entre as duas é contínua pelo lado (no meio da frente e das costas,
+          // metade para cada uma) — nada de a barra pular de uma coxa para a outra no meio
+          const m = new Map<number, number>(); let legW = 0;
+          ix.forEach((b, k) => { if (!wt[k]) return; if (b === upL || b === upR) legW += wt[k]; else m.set(b, (m.get(b) ?? 0) + wt[k]); });
+          const side = Math.min(1, Math.max(0, 0.5 + Math.sin(phi) * 2));
+          if (legW) { m.set(upL, legW * side); m.set(upR, legW * (1 - side)); }
+          const top = [...m].filter(([, x]) => x > 0).sort((p1, p2) => p2[1] - p1[1]).slice(0, 4); const tot = top.reduce((n, [, x]) => n + x, 0) || 1;
+          for (let k = 0; k < 4; k++) { si.push(top[k]?.[0] ?? hips); sw.push((top[k]?.[1] ?? 0) / tot); }
+          continue;
+        }
         si.push(hips, upL, upR, 0); sw.push(1 - w, wl, w - wl, 0);
       }
     }
