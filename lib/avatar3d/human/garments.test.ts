@@ -48,6 +48,7 @@ describe("roupa que veste — moldes presos ao esqueleto", () => {
     for (const sex of ["MASCULINO", "FEMININO"] as const) for (const kind of ["shirt", "jacket"] as const) {
       const { c, h, gs } = dressed(sex, ["pants", "tee", kind]);
       const gg = gs.at(-1)!, P = bodyParam(asset, c);
+      const boneName = asset.meta.bones.map((b) => b.name);
       let hem = 0;
       for (let v = 0; v < gg.source.length; v++) {
         const source = gg.source[v];
@@ -55,8 +56,11 @@ describe("roupa que veste — moldes presos ao esqueleto", () => {
         else {
           hem++;
           expect(gg.alpha[v]).toBe(1);
-          expect(gg.skinWeight[v * 4]).toBe(1);
-          expect(gg.skinWeight[v * 4 + 1]).toBe(0);
+          // envelope contínuo: no meio da frente e das costas as duas coxas pesam igual (nenhum retalho preso a uma só)
+          if (Math.abs(gg.position[v * 3]) < 0.006) {
+            const leg = (re: RegExp) => [0, 1, 2, 3].reduce((n, k) => n + (re.test(boneName[gg.skinIndex[v * 4 + k]] ?? "") ? gg.skinWeight[v * 4 + k] : 0), 0);
+            expect(Math.abs(leg(/LeftUpLeg$/) - leg(/RightUpLeg$/))).toBeLessThan(0.15);
+          }
         }
       }
       expect(hem).toBeGreaterThan(128); h.dispose();
