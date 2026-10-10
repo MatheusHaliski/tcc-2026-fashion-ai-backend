@@ -7,6 +7,8 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { GUIDES, shouldAutoOpen, type GuidePref } from "@/lib/guides/registry";
 import { Button, Dialog, UiIcon } from "@/components/ui";
 import { GuideDemo } from "@/components/guide/guide-demos";
+import { FlairHubIcon } from "@/components/flair/hub-icons";
+import type { HubModeId } from "@/lib/flair/hub";
 
 /**
  * Orientação "Como funciona" (docs/ux/ORIENTACAO.md).
@@ -17,8 +19,17 @@ import { GuideDemo } from "@/components/guide/guide-demos";
  * - "Como funciona" reabre a qualquer momento.
  * - A preferência é guardada no servidor, por pessoa (troca de conta não herda); visitante sem conta usa o navegador.
  */
-type Mode = "auto" | "manual";
-interface Ctx { open: (key: string) => void; requestAuto: (key: string) => void; ready: boolean }
+type Mode = "auto" | "manual" | "gate";
+interface Ctx {
+  open: (key: string) => void;
+  requestAuto: (key: string) => void;
+  /**
+   * Primeira entrada num modo (Central FLAIR): abre a explicação com "Entendi, começar" e só então chama `proceed`.
+   * Quando a pessoa já pediu para não ver (ou já viu as vezes previstas), `proceed` roda na hora, sem modal.
+   */
+  gate: (key: string, proceed: () => void) => void;
+  ready: boolean;
+}
 const GuideCtx = createContext<Ctx | null>(null);
 const ANON_KEY = "fai.guides.anon";
 
@@ -44,7 +55,7 @@ export function GuideProvider({ children }: { children: ReactNode }) {
   const { user, ready: authReady } = useAuth();
   const pathname = usePathname();
   const [prefs, setPrefs] = useState<Record<string, GuidePref> | null>(null);
-  const [active, setActive] = useState<{ key: string; mode: Mode; hidden: boolean } | null>(null);
+  const [active, setActive] = useState<{ key: string; mode: Mode; hidden: boolean; proceed?: () => void } | null>(null);
   const closed = useRef(new Set<string>());
   const autoThisView = useRef(false);
   const pending = useRef<string | null>(null);
@@ -102,26 +113,36 @@ export function GuideProvider({ children }: { children: ReactNode }) {
     record(key, def.version, "MANUAL_SHOWN");
   }, [prefs, record]);
 
-  const close = useCallback((key: string, hide: boolean, wasHidden: boolean) => {
+  const gate = useCallback((key: string, proceed: () => void) => {
+    const def = GUIDES[key];
+    // sem tutorial, sem preferência carregada, já fechado nesta visita ou já visto o bastante: segue direto
+    if (!def || !prefs || active || closed.current.has(key) || !shouldAutoOpen(prefs[key], def.version)) { proceed(); return; }
+    setActive({ key, mode: "gate", hidden: false, proceed });
+    record(key, def.version, "AUTO_SHOWN");
+  }, [prefs, active, record]);
+
+  const close = useCallback((key: string, hide: boolean, wasHidden: boolean, proceed?: () => void, confirmed = false) => {
     const def = GUIDES[key]; if (!def) return;
     closed.current.add(key);
     record(key, def.version, hide ? "HIDDEN" : wasHidden ? "UNHIDDEN" : "CLOSED");
     setActive(null);
+    // só "Entendi, começar" leva ao modo; Esc, o X ou o clique fora fecham e a pessoa continua na central
+    if (confirmed) proceed?.();
   }, [record]);
 
-  const value = useMemo<Ctx>(() => ({ open, requestAuto, ready: prefs != null }), [open, requestAuto, prefs]);
+  const value = useMemo<Ctx>(() => ({ open, requestAuto, gate, ready: prefs != null }), [open, requestAuto, gate, prefs]);
   const def = active ? GUIDES[active.key] : null;
   return (
     <GuideCtx.Provider value={value}>
       {children}
-      {active && def && <GuideDialog key={active.key} guideKey={active.key} initiallyHidden={active.hidden} onClose={(hide) => close(active.key, hide, active.hidden)} />}
+      {active && def && <GuideDialog key={active.key} guideKey={active.key} initiallyHidden={active.hidden} gate={active.mode === "gate"} onClose={(hide, confirmed) => close(active.key, hide, active.hidden, active.proceed, confirmed)} />}
     </GuideCtx.Provider>
   );
 }
 
 export function useGuide() {
   const ctx = useContext(GuideCtx);
-  return ctx ?? { open: () => undefined, requestAuto: () => undefined, ready: false };
+  return ctx ?? { open: () => undefined, requestAuto: () => undefined, gate: (_k, proceed) => proceed(), ready: false };
 }
 
 /** Abre o tutorial sozinho na primeira visita pertinente (se ainda for o caso para esta pessoa e esta versão). */
@@ -145,7 +166,8 @@ function prefersReducedMotion() {
   return typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 }
 
-export function GuideDialog({ guideKey, initiallyHidden, onClose }: { guideKey: string; initiallyHidden: boolean; onClose: (hide: boolean) => void }) {
+/** `gate`: aberto na primeira entrada de um modo da Central FLAIR; o botão vira "Entendi, começar" e fechar leva ao modo. */
+export function GuideDialog({ guideKey, initiallyHidden, onClose, gate }: { guideKey: string; initiallyHidden: boolean; onClose: (hide: boolean, confirmed: boolean) => void; gate?: boolean }) {
   const { t } = useI18n();
   const def = GUIDES[guideKey];
   const [hide, setHide] = useState(initiallyHidden);
@@ -153,12 +175,13 @@ export function GuideDialog({ guideKey, initiallyHidden, onClose }: { guideKey: 
   const base = `guide.${guideKey}`;
   const steps = Array.from({ length: Math.min(3, def.steps) }, (_, i) => t(`${base}.step${i + 1}`));
   return (
-    <Dialog open title={t(`${base}.title`)} onClose={() => onClose(hide)} size="lg"
+    <Dialog open title={t(`${base}.title`)} onClose={() => onClose(hide, false)} size="lg"
       footer={<>
         <label className="guide-hide"><input type="checkbox" checked={hide} onChange={(e) => setHide(e.target.checked)} />{t("guide.dont_show_again")}</label>
-        <Button variant="primary" onClick={() => onClose(hide)} data-autofocus>{t("guide.got_it")}</Button>
+        <Button variant="primary" onClick={() => onClose(hide, true)} data-autofocus>{gate ? t("guide.got_it_start") : t("guide.got_it")}</Button>
       </>}>
       <div className="guide">
+        {def.hubMode && <div className="guide-mode" aria-hidden><FlairHubIcon id={def.hubMode as HubModeId} size={24} state="selected" /><span className="type-label text-muted">{t(`flair.hub.mode.${def.hubMode}.title`)}</span></div>}
         <p className="type-body">{t(`${base}.body`)}</p>
         <figure className="guide-demo">
           <div className="guide-demo-head">
