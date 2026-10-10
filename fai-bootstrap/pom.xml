@@ -13,6 +13,10 @@
     <artifactId>fai-bootstrap</artifactId>
     <name>fai-bootstrap</name>
 
+    <properties>
+        <spring-boot.run.skip>false</spring-boot.run.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>br.com.fashionai</groupId>
