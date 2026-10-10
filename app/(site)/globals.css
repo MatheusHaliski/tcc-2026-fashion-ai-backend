@@ -2373,6 +2373,17 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .fitting-slot-thumb { flex: none; display: grid; place-items: center; width: 52px; height: 52px; overflow: hidden; border-radius: 8px; border: 1px solid var(--line-soft); }
 .fitting-slot-thumb img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
 .fitting-slot-thumb.is-small { width: 34px; height: 34px; border: 2px solid var(--surface); }
+/* linha do slot: texto em corpo normal com ícone, ações em botões, barra de progresso do 3D (sem legenda miúda) */
+.fitting-slot-state { display: flex; align-items: center; gap: 6px; font-size: var(--text-body-sm); line-height: 1.35; }
+.fitting-slot-state > span:last-child { min-width: 0; }
+.fitting-slot-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.fitting-slot-3d { display: grid; gap: 4px; }
+.fitting-slot-3d .m3d-bar { width: 100%; max-width: 280px; height: 8px; }
+.fitting-slot-empty { display: grid; gap: 6px; }
+/* aba Espelho: partes do look com miniatura, estado do asset (o mesmo vocabulário do quarto e do provador) e ação */
+.mirror-slot-row { display: grid; gap: 6px; padding: 8px 0; }
+.mirror-slot-piece { display: flex; align-items: center; gap: 10px; }
+.mirror-link-hint { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: var(--text-body-sm); color: var(--muted); }
 .fitting-stores { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
 /* RF47 · criador de peça: a mesma grade de marcas do provador, rolável como lá */
 .catalog-brand-grid .fitting-stores { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 3px; }
