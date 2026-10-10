@@ -64,7 +64,7 @@ class ProcessCatalogImagesTests(unittest.TestCase):
         self.assertEqual([row["image_id"] for row in results], ["first", "second"])
         self.assertIn("1/2", stderr.getvalue())
         self.assertIn("2/2", stderr.getvalue())
-        self.assertIn("Análises concluídas: 1; falhas: 1", stderr.getvalue())
+        self.assertIn("prontas para gravação: 1; falhas: 1", stderr.getvalue())
         self.assertNotIn("https://", stderr.getvalue())
 
     def test_analysis_prints_a_heartbeat_while_waiting_for_a_job(self):
@@ -83,7 +83,7 @@ class ProcessCatalogImagesTests(unittest.TestCase):
                 patch("scripts.catalog.process_catalog_images.time.monotonic", side_effect=[0, 5, 10, 10]), \
                 redirect_stderr(stderr):
             analyze_records([{"image_id": "i"}], None, None, None, workers=1)
-        self.assertIn("0/1. Análises concluídas: 0; falhas: 0", stderr.getvalue())
+        self.assertIn("0/1. Java concluído: 0; prontas para gravação: 0; falhas: 0", stderr.getvalue())
         self.assertIn("1/1", stderr.getvalue())
 
     def test_railway_names_use_public_proxy_and_app_user_without_root_password(self):
@@ -222,6 +222,33 @@ class ProcessCatalogImagesTests(unittest.TestCase):
         self.assertIsNone(result["standardized_after"])
         self.assertNotIn("analysis", result)
         self.assertEqual(result["error"], "NETWORK_PROXY_BLOCKED")
+
+
+class FramePreflightTest(unittest.TestCase):
+    def test_disallowed_source_is_rejected_before_download_or_java(self):
+        from unittest.mock import Mock
+        downloader, checkpoint = Mock(), Mock()
+        analyzer = Mock()
+        analyzer.category_frame = True
+        analyzer.frame_storage = Mock()
+        record = {"category":"upper_piece", "source_url":"https://brand.example/a.jpg", "image_id":"a", "allows_image_persistence":False}
+        result = audit_record(record, downloader, analyzer, checkpoint, apply=True)
+        self.assertEqual(result["error"], "SOURCE_DISALLOWS_IMAGE_PERSISTENCE")
+        downloader.get.assert_not_called()
+        analyzer.analyze.assert_not_called()
+        checkpoint.get.assert_not_called()
+
+
+class CliHelpTest(unittest.TestCase):
+    def test_help_formats_literal_percentage_without_database_access(self):
+        import subprocess
+        import sys
+        from pathlib import Path
+        script = Path(__file__).resolve().parents[1] / "process_catalog_images.py"
+        result = subprocess.run([sys.executable, str(script), "--help"], capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("50%", result.stdout)
+        self.assertNotIn("50%%", result.stdout)
 
 
 if __name__ == "__main__":
