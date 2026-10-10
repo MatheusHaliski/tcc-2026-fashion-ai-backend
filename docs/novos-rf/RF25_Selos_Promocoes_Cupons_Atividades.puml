@@ -1,10 +1,16 @@
 @startuml RF25_Selos_Promocoes_Cupons_Atividades
-title RF25 — Selo / jogo FLAIR → direito promocional → cupom Fashion AI\n(atualizado com o card RF38 — Meus cupons promocionais e Meus cupons resgatados)
-
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -14,64 +20,44 @@ skinparam activity {
   StartColor #20A77A
   EndColor #4B5563
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
 }
+title RF25 — Selo / jogo FLAIR → direito promocional → cupom Fashion AI\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-|Marca / Celebridade|
+|Pessoa usuária|
 start
-:Abrir o perfil (RF14/RF22) →\naba "Meus cupons promocionais";
-:Sub-aba "Todas as promoções" →\n"Criar promoção";
-if (Qual fonte de cupom?) then (Selo)
-  :Criar & editar o selo pelo formulário\ne arte de background (RF25);
-  :Definir a política de promoção do selo\n(tipo, % ou benefício, período, estoque,\nlimite por pessoa, link da loja);
-else (Jogo FLAIR)
-  :Aba "Minhas combinações FLAIR":\ncategorias, styles, occasions, peças da marca,\npoder mínimo, raridade ou vitórias na semana;
-  :Definir o cupom (título, % ou R$,\nvalidade, estoque, link da loja);
-endif
-:Promoção fica ATIVA\n(ou inativa fora do período / sem estoque);
-note right
-  "Todas as promoções" lista ativas e inativas
-  das duas fontes; o botão "Criar promoção"
-  leva direto ao formulário do RF25 ou ao FLAIR.
-end note
-
-|Usuário|
-:Usar o app normalmente\n(montar looks, publicar, jogar FLAIR);
-
-|Sistema|
-if (Conquistou o direito?) then (Selo)
-  :Look recebe o selo da marca/celebridade\n(vínculo aprovado — RF20/RF21);
-else (FLAIR)
-  :Deck/guarda-roupa completa a combinação\n(ou vence os duelos patrocinados);
-endif
-:Criar o direito promocional PENDENTE\n(coupon_rights: usuário, fonte, promoção);
-:Notificar o usuário (COUPON_AVAILABLE);
-
-|Usuário|
-:Receber a notificação:\n"Parabéns! Deseja resgatar o CUPOM?";
-if (Resgatar agora?) then (Sim)
-  |Sistema|
-  :Emitir o cupom Fashion AI da marca/celebridade\n(código único, validade, estoque, limite por pessoa);
-  :Registrar o resgate (promotion_redemptions\nou flair_redemptions) e contar na promoção;
-  |Usuário|
-  :Cupom aparece na aba\n"Meus cupons resgatados" (lookbook);
-  :Tocar no cupom;
-  :Abrir a loja terceira, fora do app FAI\n(link da promoção → site da marca → link do perfil);
-  |Marca / Celebridade|
-  :Conferir o código no caixa ou no e-commerce\n("Meus cupons promocionais" → validar);
-  :Cupom marcado como USADO;
+:Abre /coupons, /brands/[slug];
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/coupons\nGET /api/me/coupons/admin;
+|Pessoa usuária|
+:sim, resgatar: emite o cupom Fashion\nAI da marca/celebridade;
+|Tela (Next.js)|
+:POST /api/me/coupon-rights/{id}/redeem;
+|API (Spring Boot)|
+:CouponController.redeem\n→ CouponService.redeem;
+if (direito decidido?) then (sim)
+  :409 DIREITO_DECIDIDO\n«Este cupom já foi …»\n→ a tela mostra o aviso;
   stop
-else (Agora não / Dispensar)
-  |Usuário|
-  if (Dispensar?) then (Sim)
-    :Direito DISPENSADO;
-    stop
-  else (Agora não)
-    :Continua em "Cupons conquistados"\npara decidir depois;
-    stop
-  endif
 endif
+|Dados e serviços|
+:Lê: coupon_rights\npromotion_redemptions\nusers\nbrand_profiles\nflair_redemptions;
+:Usa: Guard.requireOwner\nSealService.redeem\nFlairService.redeem;
+:Estado: status → RESGATADO\ndecidedAt → set;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (dispensar o cupom conquistado)
+    :POST /api/me/coupon-rights/{id}/dismiss\n→ CouponService.dismiss\nlê: coupon_rights, celebrity_profiles,\nbrand_profiles\nusa: Guard.requireOwner\nestado: status → DISPENSADO, decidedAt → set;
+  case (confere o código de um cupom Fash…)
+    :POST /api/me/coupons/validate\n→ CouponService.validate\nvalida: CUPOM_EXPIRADO, CUPOM_USADO, NAO_ENCONTRADO\nlê: users, flair_redemptions, brand_profiles …\nusa: Guard.requireApprovedInstitutional,\nFlairService.validateCode\nestado: status → USED;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
+stop
 @enduml

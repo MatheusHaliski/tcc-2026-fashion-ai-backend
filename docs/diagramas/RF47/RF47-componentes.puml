@@ -1,79 +1,95 @@
 @startuml RF47_Componentes
-title RF47 — Acervo & Busca Catalogada\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports) + pipeline Python
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF47 — Acervo & Busca Catalogada\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "(app)/pieces/new/page.tsx\n(tipo → catálogo → dados;\nsem seção Foto)" as FE0
-  component "components/catalog/\ncatalog-search.tsx\ncategory-cards.tsx" as FE1
-  component "components/catalog/\nbrand-autocomplete.tsx" as FE2
-  component "lib/api/catalog.ts (catalogApi)" as FE3
+  component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE0
+  component "/try-on\n(site)/(app)/try-on/page.tsx" as FE1
+  component "lib/api/client.ts" as APIC
 }
-package "fai-web · controllers" {
-  [CatalogController\nGET /api/catalog/search\nGET /api/catalog/suggestions\nGET /api/catalog/brands\nGET /api/catalog/products/{id}\nPOST /api/catalog/discover\nPOST /api/pieces/from-catalog\nGET/PUT /api/me/capture-tutorial\n(sem uso no frontend)] as CC
-  [WardrobeController\nPOST /api/pieces\n(sem produto)] as WC
-  [DiscoveryController\nGET /api/explorer/brands] as DC
+package "fai-web (REST)" {
+  component "CatalogController\n/api/catalog/brands\n/api/catalog/discover\n/api/catalog/products/{…}\n/api/catalog/search\n(+3 rotas)" as CatalogController
+  component "DiscoveryController\n/api/explorer/brands\n/api/search" as DiscoveryController
+  component "WardrobeController\n/api/pieces\n/api/pieces/{…}" as WardrobeController
 }
-package "fai-application · services" {
-  [CatalogService] as CS
-  [CatalogIngestService] as CIS
-  [CatalogNormalizer\n(catalog/normalization.json)] as CN
-  [CatalogMatchScorer] as CMS
-  [OfficialCatalogDiscovery] as OCD
-  [AiEngine (RF24)\nCATALOG_DISCOVERY] as AIE
-  [WardrobeService\ncreateFromCatalog · create] as WS
-  [ExplorerService\nbrandsAndStores] as ES
+package "fai-application (casos de uso)" {
+  component "CatalogService" as CatalogService
+  component "SearchService" as SearchService
+  component "ExplorerService" as ExplorerService
+  component "WardrobeService" as WardrobeService
+  component "CatalogIngestService" as CatalogIngestService <<apoio>>
+  component "OfficialCatalogDiscovery" as OfficialCatalogDiscovery <<apoio>>
+  component "SchemeService" as SchemeService <<apoio>>
+  component "ChallengeService" as ChallengeService <<apoio>>
+  component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
+  component "FlatLayPipeline" as FlatLayPipeline <<apoio>>
+  component "MediaService" as MediaService <<apoio>>
+  component "AssetCatalogService" as AssetCatalogService <<apoio>>
+  component "AnalyticsQueryPort\n«MysqlAnalyticsAdapter»" as AnalyticsQueryPort <<port>>
+  component "JobQueuePort\n«InMemoryJobQueue»" as JobQueuePort <<port>>
 }
-package "fai-infrastructure · adapters" {
-  [CatalogProductRepository\nCatalogVariantRepository\nCatalogImageRepository\nCatalogSourceRepository\nCatalogProductAliasRepository\nCatalogIngestionRunRepository\nBrandRepository · BrandAliasRepository\nWardrobeItemRepository] as REPOS
+package "fai-domain (repositórios)" {
+  component "CatalogProductRepository\nCatalogVariantRepository\nCatalogImageRepository\nCatalogProductAliasRepository\nCatalogSourceRepository\nBrandRepository\nBrandAliasRepository\nSchemeRepository\nSchemeItemRepository\nWardrobeItemRepository\n(+15)" as REPO_MySQL
 }
-package "scripts/catalog (Python)" {
-  [seed_catalog.py · import_products.py\n(ingest.py → VALIDATED)] as PY1
-  [normalize_product.py · deduplicate.py\nvalidate_source.py] as PY2
-  [rebuild_search_index.py\nrevalidate_catalog.py] as PY3
-}
-database "MySQL\n• brands / brand_aliases\n• catalog_sources\n• catalog_products (dedup_key UNIQUE,\n  FULLTEXT ngram search_text)\n• catalog_product_aliases\n• catalog_variants\n• catalog_images\n• catalog_ingestion_runs\n• wardrobe_items (catalog_product_id,\n  catalog_variant_id, image_origin, user_image_url)\n• user_preferences.capture_tutorial_json" as DB
-cloud "Sites oficiais das marcas\n(domínios de catalog_sources)" as WEB
-cloud "Provedor LLM com busca web\n(Claude; fallback local vazio)" as LLM
-
-FE0 --> FE1
-FE1 --> FE2
-FE1 --> FE3
-FE2 --> CC : GET /api/catalog/brands
-FE3 --> CC : chama (HTTPS/JSON)
-CC --> CS : chama
-FE0 --> WC : chama (ilustração da categoria)
-WC --> WS : create
-DC --> ES : chama
-ES --> CS : catalogBrands()
-CS --> CN : normaliza intenção
-CS --> CMS : score
-CS --> OCD : discover
-OCD --> AIE : chama
-AIE --> LLM : chama
-LLM ..> WEB : lê só domínios oficiais
-CS --> CIS : upsert(DISCOVERED)
-CIS --> CN : dedupKey / taxonomia
-CS --> WS : createFromCatalog
-CS --> REPOS : lê/grava
-CIS --> REPOS : grava
-WS --> REPOS : grava
-REPOS --> DB : JPA/Flyway (V30)
-PY1 --> PY2 : usa (normalization.json\ncompartilhado com CatalogNormalizer)
-PY1 --> DB : grava
-PY3 --> DB : search_text / source_status
-PY3 ..> WEB : HEAD nas fontes
+database "MySQL\n• brand_aliases\n• brand_profiles\n• brands\n• catalog_images\n• catalog_product_aliases\n• catalog_products\n• catalog_sources\n• catalog_variants\n• celebrity_profiles\n• follows\n• hype_scores\n• moderation_queue\n(+13)" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+APIC --> CatalogController : HTTPS/JSON
+APIC --> DiscoveryController : HTTPS/JSON
+APIC --> WardrobeController : HTTPS/JSON
+CatalogController --> CatalogService
+CatalogService --> REPO_MySQL
+CatalogService ..> CatalogIngestService
+CatalogService ..> OfficialCatalogDiscovery
+CatalogService ..> WardrobeService
+DiscoveryController --> ExplorerService
+DiscoveryController --> SearchService
+ExplorerService --> AI
+ExplorerService --> AnalyticsQueryPort
+ExplorerService --> REPO_MySQL
+ExplorerService ..> HypeScoreConfig
+FE0 --> APIC
+FE1 --> APIC
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+SearchService --> REPO_MySQL
+SearchService ..> ChallengeService
+SearchService ..> HypeScoreConfig
+SearchService ..> SchemeService
+WardrobeController --> WardrobeService
+WardrobeService --> AI
+WardrobeService --> EV
+WardrobeService --> JobQueuePort
+WardrobeService --> REPO_MySQL
+WardrobeService ..> AssetCatalogService
+WardrobeService ..> FlatLayPipeline
+WardrobeService ..> MediaService
 @enduml

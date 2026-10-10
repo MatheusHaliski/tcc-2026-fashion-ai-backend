@@ -1,45 +1,77 @@
 @startuml RF25_Sequencia
-title RF25 — Criar & editar selo de marca/celebridade (formulário + arte) e política de promoção\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Marca/Celebridade" as M
-actor "Usuário" as U
-participant "Frontend\nbrands/[slug]" as FE
-participant "SealController" as C
-participant "SealService" as S
-participant "AiEngine (RF24)" as AI
-participant "CouponService" as CS
-database "MySQL" as DB
-M -> FE: Novo selo (nome, tipo, política, arte,\ndisponível de / expira em)
-FE -> C: POST /api/seals
-C -> S: createSeal(user, SealForm)
-S -> S: requireIssuer + valida janela
-S -> DB: INSERT seals
-S --> FE: 201 selo
-M -> FE: Nova promoção (tipo, desconto, cota,\nselo exigido, storeUrl)
-FE -> C: POST /api/promotions
-C -> S: createPromotion(user, PromotionForm)
-S -> DB: INSERT promotions
-U -> FE: publica look
-FE -> C: GET /api/schemes/{id}/seal-suggestions
-C -> S: suggest(user, schemeId)
-S -> AI: SealBond Matcher (política × look)
-AI --> S: selos compatíveis
-U -> FE: aceita sugestão
-FE -> C: POST /api/schemes/{id}/seal-bonds
-M -> FE: aprova na fila de revisão
-FE -> C: POST /api/seal-bonds/{id}/review
-C -> S: review(user, bondId, approve=true)
-S -> DB: UPDATE seal_bonds (APPROVED)
-S ->> CS: CouponRightsCheck (evento AFTER_COMMIT)
-CS -> DB: INSERT coupon_rights (se houver promoção elegível)
-CS -> DB: INSERT notifications (COUPON_AVAILABLE)
-FE -> C: GET /api/users/{ownerId}/seals
-C --> FE: selos com available, unavailableReason,\navailableFrom/Until e emissões
+autonumber "<b>0."
+title RF25 — Criar & editar selo de marca/celebridade (formulário + arte) e política de promoção\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /brands/[slug]" as P
+control "SealController" as SealController
+participant "SealService" as SealService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+participant "OwnMedia" as OwnMedia
+participant "Audit" as Audit
+participant "HypeCache" as HypeCache
+== Marca/celebridade cria um selo ==
+U -> P : Marca/celebridade cria um selo
+P -> SealController : POST /api/seals
+SealController -> SealService : createSeal()
+activate SealService
+SealService -> Guard : requireApprovedInstitutional()
+SealService -> DB_MySQL : SELECT users
+SealService -> SealService : new Seal()
+SealService -> OwnMedia : require()
+SealService -> OwnMedia : requireOrUnchanged() (×2)
+SealService -> SealService : iconUrl = set
+alt período inválido
+SealService --> SealController : 400 PERIODO_INVALIDO
+SealController --> P : 400 + mensagem
+end
+alt limite inválido
+SealService --> SealController : 400 LIMITE_INVALIDO
+SealController --> P : 400 + mensagem
+end
+SealService -> DB_MySQL : INSERT/UPDATE seals
+SealService -> Audit : log()
+SealService -> DB_MySQL : SELECT seal_bonds
+SealService -> HypeCache : get()
+deactivate SealService
+SealService --> SealController : resultado
+SealController --> P : 201 JSON
+P --> U : atualiza a tela
+== Criador de selo 'Com IA': sugere nome, nível, política e arte a parti… ==
+U -> P : Criador de selo 'Com IA': sugere nome, nível, pol…
+P -> SealController : POST /api/seals/draft
+SealController -> SealService : draft()
+activate SealService
+SealService -> Guard : requireApprovedInstitutional()
+SealService -> DB_MySQL : SELECT users
+SealService -> DB_MySQL : SELECT celebrity_profiles
+SealService -> DB_MySQL : SELECT brand_profiles
+SealService -> DB_MySQL : SELECT wardrobe_items
+SealService -> Audit : log()
+deactivate SealService
+SealService --> SealController : resultado
+SealController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

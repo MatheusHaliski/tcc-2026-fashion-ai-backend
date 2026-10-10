@@ -1,0 +1,92 @@
+@startuml RF50_Componentes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF50 — Verificar perfis de Marca e Celebridade\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "Frontend (Next.js)" {
+  component "/admin/users\n(site)/(app)/admin/users/page.tsx" as FE0
+  component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE1
+  component "/dashboard\n(site)/(app)/dashboard/page.tsx" as FE2
+  component "lib/api/client.ts" as APIC
+}
+package "fai-web (REST)" {
+  component "AdminController\n/api/admin/approvals\n/api/admin/approvals/{…}" as AdminController
+  component "AuthController\n/api/auth/email-verification\n/api/auth/register\n/api/auth/uploads" as AuthController
+  component "IssuerReviewController\n/api/me/issuer-review\n/api/me/issuer-review/resubmit" as IssuerReviewController
+}
+package "fai-application (casos de uso)" {
+  component "IssuerReviewService" as IssuerReviewService
+  component "IdentityService" as IdentityService
+  component "SideEffectRunner" as SideEffectRunner <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
+  component "IssuerVerificationPolicy" as IssuerVerificationPolicy <<apoio>>
+  component "SealService" as SealService <<apoio>>
+  component "MediaService" as MediaService <<apoio>>
+  component "EmailSenderPort\n«LoggingEmailSender / ResendEmailSender»" as EmailSenderPort <<port>>
+  component "MediaStoragePort\n«LocalFileMediaStorage / S3MediaStorageAdapter»" as MediaStoragePort <<port>>
+  component "PasswordHasherPort\n«Argon2PasswordHasher»" as PasswordHasherPort <<port>>
+  component "TokenIssuerPort\n«JwtTokenIssuer»" as TokenIssuerPort <<port>>
+  component "RateLimitPort\n«InMemoryRateLimit»" as RateLimitPort <<port>>
+}
+package "fai-domain (repositórios)" {
+  component "UserRepository\nBrandProfileRepository\nCelebrityProfileRepository\nUserPreferencesRepository\nRefreshTokenRepository\nVerificationCodeRepository" as REPO_MySQL
+}
+database "MySQL\n• brand_profiles\n• celebrity_profiles\n• refresh_tokens\n• user_preferences\n• users\n• verification_codes" as DB_MySQL
+cloud "Resend" as CL_Resend
+cloud "S3" as CL_S3
+APIC --> AdminController : HTTPS/JSON
+APIC --> AuthController : HTTPS/JSON
+APIC --> IssuerReviewController : HTTPS/JSON
+AdminController --> IssuerReviewService
+AuthController --> IdentityService
+EmailSenderPort --> CL_Resend
+FE0 --> APIC
+FE1 --> APIC
+FE2 --> APIC
+IdentityService --> EmailSenderPort
+IdentityService --> MediaStoragePort
+IdentityService --> PasswordHasherPort
+IdentityService --> REPO_MySQL
+IdentityService --> RateLimitPort
+IdentityService --> TokenIssuerPort
+IdentityService ..> NotificationService
+IssuerReviewController --> IssuerReviewService
+IssuerReviewService --> EmailSenderPort
+IssuerReviewService --> MediaStoragePort
+IssuerReviewService --> REPO_MySQL
+IssuerReviewService ..> IssuerVerificationPolicy
+IssuerReviewService ..> MediaService
+IssuerReviewService ..> NotificationService
+IssuerReviewService ..> SealService
+IssuerReviewService ..> SideEffectRunner
+MediaStoragePort --> CL_S3
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+@enduml

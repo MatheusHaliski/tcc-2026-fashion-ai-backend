@@ -1,0 +1,92 @@
+@startuml RF40_Roupa_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF40 — Avatar 3D: montagem da roupa (caimento de tecido, acabamentos e tênis) sobre o corpo com esqueleto\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
+start
+|Tela (React)|
+partition "c/ui/index.tsx · ChipMultiSelect()" {
+  :estado da tela: LimitHit = false;
+  :estado da tela: LimitHit = true;
+  :estado da tela: LimitHit = false;
+  :tr(), tr(), tr(), tr()\n<size:10>lib/i18n/i18n.tsx</size>;
+  :tr()\n<size:10>lib/i18n/i18n.tsx</size>;
+}
+|Tela (React)|
+partition "c/three/human-outfit.tsx · HumanOutfit()" {
+  :withDefaultOutfit()\n<size:10>lib/avatar3d/human/default-outfit.ts</size>;
+  :kindOf()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :mediaUrl()\n<size:10>lib/api/client.ts</size>;
+  :loadTexture()\n<size:10>c/three/common.tsx</size>;
+  :setArmOut()\n<size:10>lib/avatar3d/human/pose.ts</size>;
+  :armOutFor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :applyIdle()\n<size:10>lib/avatar3d/human/pose.ts</size>;
+  :bodyParam()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :smoothBody()\n<size:10>lib/avatar3d/human/garment-relax.ts</size>;
+  :underLayer(), garmentGeometry()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  if (!gg?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  :relaxGarment(), foldGarment()\n<size:10>lib/avatar3d/human/garment-relax.ts</size>;
+  :posedPositions(), texturedGeometry(), photoInfo(), fabricColor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :garmentTexture(), shoeColors()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :shoeParts(), shoeStyleOf()\n<size:10>lib/avatar3d/human/shoes.ts</size>;
+  :garmentMaterial(), trimColors(), ribColor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :garmentTrims()\n<size:10>lib/avatar3d/human/garment-trims.ts</size>;
+  :collarBand(), ribColor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :zonesCovered()\n<size:10>lib/avatar3d/human/default-outfit.ts</size>;
+  :kindOf()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :zonesCovered(), every()\n<size:10>lib/avatar3d/human/default-outfit.ts</size>;
+}
+|Tela (React)|
+partition "c/three/human-outfit.tsx · dress()" {
+  :setArmOut()\n<size:10>lib/avatar3d/human/pose.ts</size>;
+  :armOutFor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :applyIdle()\n<size:10>lib/avatar3d/human/pose.ts</size>;
+  :bodyParam()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :smoothBody()\n<size:10>lib/avatar3d/human/garment-relax.ts</size>;
+  :underLayer(), garmentGeometry()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  if (!gg?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  :relaxGarment(), foldGarment()\n<size:10>lib/avatar3d/human/garment-relax.ts</size>;
+  :posedPositions(), texturedGeometry(), photoInfo(), fabricColor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :garmentTexture(), shoeColors()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :shoeParts(), shoeStyleOf()\n<size:10>lib/avatar3d/human/shoes.ts</size>;
+  :garmentMaterial(), trimColors(), ribColor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :garmentTrims()\n<size:10>lib/avatar3d/human/garment-trims.ts</size>;
+  :collarBand(), ribColor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :zonesCovered()\n<size:10>lib/avatar3d/human/default-outfit.ts</size>;
+  :kindOf()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :zonesCovered(), every()\n<size:10>lib/avatar3d/human/default-outfit.ts</size>;
+}
+|Pessoa usuária|
+:Vê o resultado;
+stop
+@enduml

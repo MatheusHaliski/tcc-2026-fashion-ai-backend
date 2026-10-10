@@ -1,49 +1,37 @@
 @startuml RF24_MaquinaDeEstados_Inferencia
 !pragma layout smetana
-title RF24 — Inferência (AiEngine.execute): resultado registrado em ai_inference_log (AiCallResult)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "Solicitada\n(TextCall do RF hospedeiro)" as Pedida
-state "Validando funil\n(prompt → escopo → consentimento → teto US$ → cota)" as Funil
-state "Chamando provedor\n(primário → alternativo)" as Remoto
-state "PROMPT_REJECTED" as PromptRejected
-state "CONSENT_DENIED" as ConsentDenied
-state "RATE_LIMITED" as RateLimited
-state "TIMEOUT" as Timeout
-state "CIRCUIT_OPEN" as CircuitOpen
-state "ERROR" as Error
-state "SUCCESS" as Success
-state "FALLBACK_LOCAL" as FallbackLocal
-[*] --> Pedida : serviço hospedeiro chama AiEngine.text(...)
-Pedida --> Funil : AiCatalog.spec(capability)
-Funil --> PromptRejected : CelebrityPromptValidator recusa\n(422 PROMPT_REJEITADO)
-Funil --> FallbackLocal : capacidade fora de escopo\nou nenhum provedor disponível
-Funil --> ConsentDenied : user_consents.granted = false\npara a finalidade da capacidade
-Funil --> RateLimited : AiBudget USER_EXHAUSTED ou\ncota diária ai:CAPABILITY esgotada
-Funil --> FallbackLocal : AiBudget GLOBAL_EXHAUSTED
-Funil --> Remoto : tudo liberado (consentState CONCEDIDO ou n/a)
-Remoto --> Success : AiProviderPort.invoke respondeu\ndentro do contrato JSON
-Remoto --> Timeout : latência > timeoutSeconds
-Remoto --> CircuitOpen : circuito do provedor aberto
-Remoto --> RateLimited : provedor devolveu 429
-Remoto --> Error : exceção / resposta fora do contrato
-Timeout --> Remoto : há provedor alternativo
-CircuitOpen --> Remoto : há provedor alternativo
-Error --> Remoto : há provedor alternativo
-Timeout --> FallbackLocal : sem alternativo
-CircuitOpen --> FallbackLocal : sem alternativo
-Error --> FallbackLocal : sem alternativo
-Success --> [*]
-FallbackLocal --> [*]
-ConsentDenied --> [*]
-RateLimited --> [*]
-PromptRejected --> [*]
-note right of Success : INSERT ai_inference_log (fallbackUsed=false)\ncom Explanation "por quê?" (CA12/RNF6)
-note bottom of FallbackLocal : o valor vem de ai.local (LocalAdvisors, LocalSchemeComposer…);\ncada falha remota também fica registrada (fallbackUsed=true)
-note left of ConsentDenied : consentimento gerido no RF23\n(PUT /api/me/consents/{purpose}); revogável a qualquer momento
+title RF24 — ciclo de vida de AiInferenceLog.result\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum AiCallResult · tabela ai_inference_log
+
+state "AiInferenceLog.result" as Ciclo_AiInferenceLog {
+  state Ciclo_AiInferenceLog_SUCCESS as "SUCCESS"
+  state Ciclo_AiInferenceLog_FALLBACK_LOCAL as "FALLBACK_LOCAL"
+  state Ciclo_AiInferenceLog_TIMEOUT as "TIMEOUT"
+  state Ciclo_AiInferenceLog_CIRCUIT_OPEN as "CIRCUIT_OPEN"
+  state Ciclo_AiInferenceLog_RATE_LIMITED as "RATE_LIMITED"
+  state Ciclo_AiInferenceLog_CONSENT_DENIED as "CONSENT_DENIED"
+  state Ciclo_AiInferenceLog_PROMPT_REJECTED as "PROMPT_REJECTED"
+  state Ciclo_AiInferenceLog_ERROR as "ERROR"
+}
+note bottom of Ciclo_AiInferenceLog
+  Recebe o valor escolhido em: execute(result), local(result), localOutcome(result), record(result), text(resu…
+end note
 @enduml

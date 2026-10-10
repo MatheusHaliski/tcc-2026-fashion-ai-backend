@@ -1,67 +1,75 @@
 @startuml RF13_Sequencia
-title RF13 — Criar um esquema de identidade pessoal de moda na página "DNA de Estilo"\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Usuário" as U
-participant "Frontend\n/dna · DnaBuilder" as FE
-participant "DnaController" as C
-participant "DnaService" as S
-participant "AiEngine (RF24)\nDNA Synthesizer" as AI
-participant "MediaService\n(MediaStoragePort)" as M
-database "MySQL" as DB
-U -> FE: abre "DNA de Estilo"
-FE -> C: GET /api/me/dna
-C -> S: overview(user)
-S -> DB: SELECT style_dna, wardrobe_items, daily_looks
-alt sem DNA sintetizado
-  S -> AI: local(DNA_SYNTHESIZER) · LocalDnaSynthesizer
-  AI --> S: arquétipo, ousadia, paleta, silhueta
-  S -> AI: text(DNA_SYNTHESIZER) · frase de identidade
-  AI --> S: frase (ou fallback local)
-  S -> DB: INSERT style_dna + style_dna_versions ("GERACAO")
-else interações desde a síntese >= 10
-  S -> DB: UPDATE style_dna + INSERT style_dna_versions ("EVOLUCAO")
-  S -> DB: INSERT notifications (AI_JOB_FINISHED)
+autonumber "<b>0."
+title RF13 — Criar um esquema de identidade pessoal de moda na página 'DNA de Estilo'\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /dna-schemes/[id]/edit" as P
+control "DnaController" as DnaController
+participant "DnaService" as DnaService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+participant "AiEngine\n(provedor de IA + reserva local)" as AI
+== HU20 — Criar esquema de DNA (linha do tempo de looks) ==
+U -> P : HU20 — Criar esquema de DNA (linha do tempo de lo…
+P -> DnaController : POST /api/dna-schemes
+DnaController -> DnaService : createDnaScheme()
+activate DnaService
+DnaService -> Guard : requireCanCreate()
+DnaService -> DB_MySQL : SELECT style_dna
+DnaService -> DB_MySQL : SELECT users
+DnaService -> DnaService : new StyleDna()
+DnaService -> DB_MySQL : INSERT/UPDATE style_dna
+DnaService -> DB_MySQL : SELECT schemes
+DnaService -> DB_MySQL : SELECT scheme_items
+DnaService -> DB_MySQL : SELECT daily_looks
+DnaService -> DB_MySQL : SELECT wardrobe_items
+DnaService -> AI : DNA_SYNTHESIZER
+AI --> DnaService : resposta (ou reserva local)
+DnaService -> DB_MySQL : SELECT wardrobe_items
+DnaService -> DnaService : synthesizedAt = set
+DnaService -> DB_MySQL : SELECT schemes
+DnaService -> DB_MySQL : SELECT daily_looks
+DnaService -> AI : DNA_SYNTHESIZER
+AI --> DnaService : resposta (ou reserva local)
+DnaService -> DnaService : cardImageUrl = null
+DnaService -> DB_MySQL : INSERT/UPDATE style_dna
+DnaService -> DnaService : new StyleDnaVersion()
+DnaService -> DB_MySQL : INSERT/UPDATE style_dna_versions
+DnaService -> DnaService : new DnaScheme()
+DnaService -> DB_MySQL : SELECT users
+DnaService -> DnaService : status = DRAFT
+alt layout inválido
+DnaService --> DnaController : 400 LAYOUT_INVALIDO
+DnaController --> P : 400 + mensagem
 end
-S --> FE: 200 {prerequisites, dna, versions, lifeForm}
-FE -> C: GET /api/dna-schemes/builder
-C -> S: builder(user)
-S -> DB: SELECT schemes (não ARCHIVED), scheme_items
-S --> FE: 200 {schemes, layouts, narratives}
-opt Modo IA
-  U -> FE: descreve o DNA desejado
-  FE -> C: POST /api/dna-schemes/compositions
-  C -> S: compositions(user, DnaComposeRequest)
-  S -> AI: text(DNA_SYNTHESIZER) · até 3 propostas
-  AI --> S: propostas (ou localProposals)
-  S --> FE: 200 {compositions, fallbackUsed, provider}
+alt alvo inválido
+DnaService --> DnaController : 400 ALVO_INVALIDO
+DnaController --> P : 400 + mensagem
 end
-U -> FE: escolhe 2 a 6 esquemas, layout e narrativa
-loop a cada alteração (debounce 250 ms)
-  FE -> C: POST /api/dna-schemes/preview
-  C -> S: preview(user, DnaSchemeForm)
-  S --> FE: 200 card pré-visualizado
-end
-U -> FE: salva (ou publica)
-FE -> C: POST /api/dna-schemes
-C -> S: createDnaScheme(user, DnaSchemeForm)
-S -> S: guard.requireCanCreate · ensureDna · stamp
-S -> DB: INSERT dna_schemes (DRAFT ou PUBLISHED) + dna_scheme_items
-S -> DB: UPDATE style_dna.latest_dna_scheme_id
-S --> FE: 201 dnaSchemeView
-opt compartilhar o card
-  FE -> C: POST /api/me/dna/share-card
-  C -> S: shareCard(user)
-  S -> S: renderCard (PNG 1080x1350, marca d'água)
-  S -> M: put("dna/{userId}/card-*.png")
-  M --> S: url
-  S -> DB: UPDATE style_dna (card_image_url, card_expires_at +30d)
-  S --> FE: 200 {url, expiresAt, hiddenFields}
-end
+note over DnaService : … e mais 21 passos no código
+deactivate DnaService
+DnaService --> DnaController : resultado
+DnaController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

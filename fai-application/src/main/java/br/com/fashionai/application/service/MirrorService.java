@@ -11,10 +11,13 @@ import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.events.DomainEvents;
+import br.com.fashionai.application.hype.HypeQueryService;
+import br.com.fashionai.application.hype.RecommendationScoring;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.MirrorState;
+import br.com.fashionai.domain.model.TipoLook;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.SchemeItem;
 import br.com.fashionai.domain.model.WardrobeItem;
@@ -26,6 +29,7 @@ import br.com.fashionai.domain.model.enums.SchemeSlot;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.repository.MirrorStateRepository;
+import br.com.fashionai.domain.repository.TipoLookRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.StyleDnaRepository;
@@ -57,6 +61,9 @@ import java.util.stream.Collectors;
  * cópia dele: montagem manual por slots (§2.1), completude determinística sem IA, Vista-me com interpretação,
  * elegibilidade, validação anti-alucinação (CA09), localização no quarto (CA10), "Usar este look" que sempre
  * materializa um Esquema (§2.3) e entrega para o RF5 via RoomLookDraft (§2.4).
+ * <p>
+ * RF53 · P3-07 — o look no espelho traz os mesmos seis números do Copilot e do Autopiloto ({@link LookScorer}):
+ * compatibilidade com o DNA, Hype, novidade, reutilização, uso comprovado e sustentabilidade, lado a lado e nunca somados.
  */
 @Service
 public class MirrorService {
@@ -80,6 +87,7 @@ public class MirrorService {
     private final WardrobeItemRepository pieces;
     private final WardrobeService wardrobe;
     private final RoomService room;
+    private final TipoLookRepository tiposLook;
     private final SchemeService schemeService;
     private final SchemeRepository schemes;
     private final SchemeItemRepository schemeItems;
@@ -89,11 +97,15 @@ public class MirrorService {
     private final AiEngine ai;
     private final Audit audit;
     private final ApplicationEventPublisher events;
+    /** P3-07 — a mesma régua de looks do Copilot e do Autopiloto (só lê o Hype gravado; nada recalcula nem vira sinal). */
+    private final LookScorer scorer;
 
     public MirrorService(MirrorStateRepository mirrors, WardrobeItemRepository pieces, WardrobeService wardrobe, RoomService room,
                          SchemeService schemeService, SchemeRepository schemes, SchemeItemRepository schemeItems,
                          DailyLookService dailyLooks, StyleDnaRepository dnas, ObjectProvider<PieceRestrictionProvider> restrictions,
-                         AiEngine ai, Audit audit, ApplicationEventPublisher events) {
+                         AiEngine ai, Audit audit, ApplicationEventPublisher events, HypeQueryService hype,
+                         TipoLookRepository tiposLook) {
+        this.tiposLook = tiposLook;
         this.mirrors = mirrors;
         this.pieces = pieces;
         this.wardrobe = wardrobe;
@@ -107,13 +119,14 @@ public class MirrorService {
         this.ai = ai;
         this.audit = audit;
         this.events = events;
+        this.scorer = new LookScorer(pieces, schemes, schemeItems, dnas, hype);
     }
 
     // ================================================================== slots
     public static String slotOf(WardrobeItem w) {
         String cat = w.getCategory() == null ? "" : w.getCategory();
         return switch (cat) {
-            case "upper_piece" -> RoomService.OUTERWEAR.contains(w.getSubcategory()) ? "outer_layer" : "upper";
+            case "upper_piece" -> w.getSubcategory() != null && RoomService.OUTERWEAR.contains(w.getSubcategory()) ? "outer_layer" : "upper";
             case "lower_piece" -> "lower";
             case "full_body_piece" -> "dress";
             case "shoes_piece" -> "shoes";
@@ -224,7 +237,7 @@ public class MirrorService {
         boolean wideLower = subs.stream().anyMatch(Set.of("culottes", "skirt", "cargo_pants", "casual_pants", "sweatpants", "jogger_pants")::contains);
         boolean fittedLower = subs.stream().anyMatch(Set.of("leggings", "jeans", "tailored_pants", "chino_pants", "skort")::contains);
         boolean volUpper = subs.stream().anyMatch(Set.of("hoodie", "coat", "parka", "sweatshirt", "kimono", "jacket", "blazer")::contains);
-        boolean fittedUpper = subs.stream().anyMatch(Set.of("tank_top", "crop_top", "bodysuit", "polo_shirt", "t_shirt")::contains);
+        boolean fittedUpper = subs.stream().anyMatch(Set.of("tank_top", "crop_top", "top", "bodysuit", "polo_shirt", "t_shirt")::contains);
         boolean dress = subs.stream().anyMatch(Set.of("dress", "jumpsuit", "romper")::contains);
         boolean belt = subs.contains("belt");
         String letter = dress || belt ? "X" : wideLower && fittedUpper ? "A" : volUpper && fittedLower ? "V" : volUpper && wideLower ? "H" : "H";
@@ -260,6 +273,16 @@ public class MirrorService {
         return render(user, s, slots, Map.of());
     }
 
+    @Transactional
+    public Map<String, Object> updateTipoLook(CurrentUser user, UUID tipoLookId) {
+        if (tipoLookId == null) throw ApiException.badRequest("TIPO_LOOK_INVALIDO", Msg.t("mirror.tipo_look_invalido"));
+        var tipo = tiposLook.findById(tipoLookId).orElseThrow(() -> ApiException.badRequest("TIPO_LOOK_INVALIDO", Msg.t("mirror.tipo_look_invalido")));
+        MirrorState state = stateEntity(user.id());
+        state.setTipoLook(tipo);
+        mirrors.save(state);
+        return render(user, state, slots(state), Map.of());
+    }
+
     Map<String, Object> render(CurrentUser user, MirrorState s, Map<String, Object> slots, Map<String, Object> extra) {
         Map<UUID, WardrobeItem> loaded = load(user.id(), allIds(slots));
         // peças apagadas ou de terceiros somem do espelho
@@ -289,6 +312,7 @@ public class MirrorService {
         }
         slotViews.put("accessory", acc.stream().map(id -> pieceView(loaded.get(id), where)).toList());
         out.put("slots", slotViews);
+        out.put("tipoLook", Views.tipoLook(s.getTipoLook()));
         List<WardrobeItem> look = allIds(slots).stream().map(loaded::get).filter(Objects::nonNull).toList();
         boolean complete = complete(slots);
         out.put("complete", complete);
@@ -334,13 +358,33 @@ public class MirrorService {
         }, "colorSeason", String.valueOf(colorSeason)));
         out.put("restriction", restriction(user.id()).map(r -> Map.of("challenge", r.challengeName(), "allowed", r.allowedPieceIds().size())).orElse(null));
         out.put("shownCount", Json.strings(s.getShownCombinationsJson()).size());
+        out.put("scores", lookScores(user.id(), look));
         out.putAll(extra);
         return out;
+    }
+
+    /**
+     * RF53 · P3-07 — os seis números do look no espelho ({@link LookScorer}, a mesma régua do Copilot e do Autopiloto):
+     * compatibilidade com o DNA, Hype, novidade, reutilização, uso comprovado e sustentabilidade. Só entram as peças do
+     * próprio dono (o {@link #load} já descarta as de terceiros), então o Hype é o pessoal dele — a média do v2 das peças,
+     * lida do estado gravado: nada é recalculado nem vira sinal de Hype. Sem modo escolhido, nada é reordenado (o Hype não
+     * pesa nada aqui; nos modos do Copilot nunca passa de 20%). Dimensão sem base fica nula ("—" na tela, nunca 0);
+     * espelho vazio não tem números.
+     */
+    Map<String, Object> lookScores(UUID userId, List<WardrobeItem> look) {
+        if (look.isEmpty()) {
+            return null;
+        }
+        List<RecommendationScoring.Scores> scored = scorer.scoreLooks(userId, List.of(look));
+        return scored.isEmpty() ? null : scored.get(0).toMap();
     }
 
     // ================================================================== montagem manual (CA01/CA02/CA05)
     @Transactional
     public Map<String, Object> place(CurrentUser user, UUID pieceId) {
+        if (pieceId == null) {   // corpo sem pieceId: 400 com a mensagem, não erro interno ao buscar id nulo
+            throw ApiException.badRequest("PECA_OBRIGATORIA", Msg.t("mirror.escolha_uma_peca"));
+        }
         WardrobeItem w = wardrobe.owned(user, pieceId);
         MirrorState s = stateEntity(user.id());
         Map<String, Object> slots = slots(s);
@@ -517,6 +561,37 @@ public class MirrorService {
         out.put("explanation", outcome.explanation());
         out.put("quota", outcome.quota());
         out.put("message", outcome.userMessage());
+        return out;
+    }
+
+    // ================================================================== escolher do guarda-roupa (WARDROBE-FIX)
+    /**
+     * Todas as peças que podem ir para o slot, para a pessoa escolher à mão: sem IA e sem custo. As mesmas regras do
+     * Vista-me valem aqui (só disponíveis, dentro da estação, permitidas pelo desafio ativo); as que já estão no espelho
+     * vêm marcadas.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> wardrobe(CurrentUser user, String slot) {
+        if (!SLOTS.contains(slot)) {
+            throw ApiException.badRequest("SLOT_INVALIDO", "Slots: " + SLOTS);
+        }
+        Set<UUID> inMirror = new HashSet<>(mirrors.findByUserId(user.id()).map(s -> allIds(slots(s))).orElse(List.of()));
+        Map<UUID, RoomService.Location> where = room.locateAll(user.id());
+        List<Map<String, Object>> pieces = new ArrayList<>();
+        for (WardrobeItem w : eligible(user.id())) {
+            if (slotOf(w).equals(slot)) {
+                Map<String, Object> m = pieceView(w, where);
+                m.put("inMirror", inMirror.contains(w.getId()));
+                pieces.add(m);
+            }
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("slot", slot);
+        out.put("pieces", pieces);
+        if (pieces.isEmpty()) {
+            out.put("message", Msg.t("mirror.voce_nao_tem_peca_disponivel"));
+            out.put("href", "/pieces/new");
+        }
         return out;
     }
 
@@ -908,23 +983,24 @@ public class MirrorService {
     }
 
     // ================================================================== usar / salvar / entregar ao RF5
-    private Scheme findExistingScheme(UUID userId, List<UUID> ids) {
+    private Scheme findExistingScheme(UUID userId, List<UUID> ids, TipoLook tipo) {
         String key = key(ids);
         for (Scheme s : schemes.findByUserIdAndStatusNotOrderByCreatedAtDesc(userId, SchemeStatus.ARCHIVED)) {
             List<UUID> sIds = schemeItems.findBySchemeIdOrderBySortOrder(s.getId()).stream().map(si -> si.getWardrobeItem().getId()).toList();
-            if (sIds.size() == ids.size() && key(sIds).equals(key)) {
+            if (sIds.size() == ids.size() && key(sIds).equals(key)
+                    && Objects.equals(s.getTipoLook() == null ? null : s.getTipoLook().getId(), tipo == null ? null : tipo.getId())) {
                 return s;
             }
         }
         return null;
     }
 
-    private Scheme materialize(CurrentUser user, Map<String, Object> slots, String title, boolean publish) {
+    private Scheme materialize(CurrentUser user, MirrorState mirror, Map<String, Object> slots, String title, boolean publish) {
         List<UUID> ids = allIds(slots);
         if (ids.size() < 2) {
             throw ApiException.badRequest("SEM_PECAS", Msg.t("mirror.leve_ao_menos_2_pecas"));
         }
-        Scheme existing = findExistingScheme(user.id(), ids);
+        Scheme existing = findExistingScheme(user.id(), ids, mirror.getTipoLook());
         if (existing != null) {
             return existing;
         }
@@ -952,7 +1028,9 @@ public class MirrorService {
                 null, null, null, null, publish, null);
         Map<String, Object> created = schemeService.create(user, form);
         Views.SchemeView view = (Views.SchemeView) created.get("scheme");
-        return schemes.findById(view.id()).orElseThrow();
+        Scheme scheme = schemes.findById(view.id()).orElseThrow();
+        scheme.setTipoLook(mirror.getTipoLook());
+        return schemes.save(scheme);
     }
 
     /** RF33.CA11 / §2.3 — "Usar este look": cria o esquema se necessário e registra o Look do Dia. */
@@ -963,7 +1041,7 @@ public class MirrorService {
         if (!complete(slots)) {
             throw new ApiException(409, "LOOK_INCOMPLETO", Msg.t("mirror.o_look_do_dia_precisa"));
         }
-        Scheme scheme = materialize(user, slots, null, false);
+        Scheme scheme = materialize(user, s, slots, null, false);
         DailyLookSource source = scheme.getOrigin() == SchemeOrigin.VISTA_ME ? DailyLookSource.VISTA_ME : DailyLookSource.SMART_MIRROR;
         var dl = dailyLooks.register(user, scheme, source, LocalDate.now(FaiPointsService.ZONE));
         events.publishEvent(new DomainEvents.MirrorAction(user.id(), "USE_LOOK"));
@@ -979,7 +1057,7 @@ public class MirrorService {
     @Transactional
     public Map<String, Object> save(CurrentUser user, String title, boolean publish) {
         MirrorState s = stateEntity(user.id());
-        Scheme scheme = materialize(user, slots(s), title, publish);
+        Scheme scheme = materialize(user, s, slots(s), title, publish);
         return Map.of("schemeId", scheme.getId(), "title", String.valueOf(scheme.getTitle()), "origin", scheme.getOrigin().name());
     }
 
@@ -999,6 +1077,7 @@ public class MirrorService {
             }
         }
         d.put("slots", ss);
+        d.put("tipoLook", Views.tipoLook(s.getTipoLook()));
         d.put("accessories", accessories(slots).stream().map(UUID::toString).toList());
         if (slots.get("interpretation") instanceof Map<?, ?> m && m.get("occasion") instanceof List<?> l && !l.isEmpty()) {
             d.put("occasion", String.valueOf(l.get(0)));

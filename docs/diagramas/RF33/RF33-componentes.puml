@@ -1,51 +1,71 @@
 @startuml RF33_Componentes
-title RF33 — Passarela 3D: Look do Dia desfilando em manequins, Top 100 Global/Regional/País e filtros\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF33 — Passarela 3D: Look do Dia desfilando em manequins, Top 100 Global/Regional/País e filtros\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "explorer — RunwayPanel (filtros, rankings, lotes)" as FE0
-  component "Runway3D (manequins no palco)" as FE1
-  component "Tabela Top 100" as FE2
+package "Frontend (Next.js)" {
+  component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  [ShowcaseController] as ShowcaseController
+  component "ShowcaseController\n/api/explorer/runway" as ShowcaseController
+  component "LookbookController\n/api/me/daily-looks" as LookbookController
 }
 package "fai-application (casos de uso)" {
-  [ShowcaseService] as ShowcaseService
-  [DailyLookService] as DailyLookService #FAFAFA
-  [SchemeService] as SchemeService #FAFAFA
-  [InstitutionalService] as InstitutionalService #FAFAFA
-  [Model3dService] as Model3dService #FAFAFA
+  component "ShowcaseService" as ShowcaseService
+  component "DailyLookService" as DailyLookService
+  component "MediaService" as MediaService <<apoio>>
+  component "SchemeService" as SchemeService <<apoio>>
+  component "InstitutionalService" as InstitutionalService <<apoio>>
+  component "Model3dService" as Model3dService <<apoio>>
+  component "Avatar3dService" as Avatar3dService <<apoio>>
+  component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
 }
-package "fai-domain (repositórios JPA)" {
-  [CelebrityProfileRepository\nDailyLookRepository\nFollowRepository\nSchemeGroupingRepository\nSchemeItemRepository\nSchemeRepository\nUserPreferencesRepository\nUserRepository\nWardrobeItemRepository] as REPOS
+package "fai-domain (repositórios)" {
+  component "FollowRepository\nUserRepository\nSchemeRepository\nSchemeItemRepository\nWardrobeItemRepository\nSchemeGroupingRepository\nDailyLookRepository\nUserPreferencesRepository\nCelebrityProfileRepository\nHypeScoreCurrentRepository" as REPO_MySQL
 }
-database "MySQL · fashionai_app\n• celebrity_profiles\n• daily_looks\n• follows\n• scheme_groupings\n• scheme_items\n• schemes\n• user_preferences\n• users\n• wardrobe_items" as DB
-database "Storage de mídia\n(local / S3, MediaStoragePort)" as P_media
-
-FE0 --> ShowcaseController : HTTPS/JSON
-FE1 --> ShowcaseController : HTTPS/JSON
-FE2 --> ShowcaseController : HTTPS/JSON
+database "MySQL\n• celebrity_profiles\n• daily_looks\n• follows\n• hype_scores\n• scheme_groupings\n• scheme_items\n• schemes\n• user_preferences\n• users\n• wardrobe_items" as DB_MySQL
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+APIC --> LookbookController : HTTPS/JSON
+APIC --> ShowcaseController : HTTPS/JSON
+DailyLookService --> EV
+DailyLookService --> REPO_MySQL
+LookbookController --> DailyLookService
+REPO_MySQL --> DB_MySQL : JPA/Flyway
 ShowcaseController --> ShowcaseService
+ShowcaseService --> REPO_MySQL
+ShowcaseService ..> Avatar3dService
 ShowcaseService ..> DailyLookService
-ShowcaseService ..> SchemeService
+ShowcaseService ..> HypeScoreConfig
 ShowcaseService ..> InstitutionalService
+ShowcaseService ..> MediaService
 ShowcaseService ..> Model3dService
-ShowcaseService --> REPOS
-ShowcaseService --> P_media
-REPOS --> DB : JPA/Flyway
+ShowcaseService ..> SchemeService
 @enduml

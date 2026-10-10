@@ -5,15 +5,19 @@ import br.com.fashionai.application.ai.AiEngine;
 import br.com.fashionai.application.ai.AiOutcome;
 import br.com.fashionai.application.ai.AiRequest;
 import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.avatar.IdentityQuality;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
+import br.com.fashionai.domain.model.AvatarIdentityVersion;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.UserAvatar3d;
+import br.com.fashionai.domain.model.enums.IdentityStatus;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
+import br.com.fashionai.domain.repository.AvatarIdentityVersionRepository;
 import br.com.fashionai.domain.repository.UserAvatar3dRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -21,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.awt.image.BufferedImage;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +35,8 @@ import java.util.regex.Pattern;
 
 /**
  * RF40 — Meu Avatar 3D. O rosto é reconstruído no navegador (lib/avatar3d); aqui só chega o resultado: a forma em pose
- * neutra (468 pontos), pele e cabelo medidos, avisos da qualidade e o atlas do rosto (textura). Regras:
+ * neutra (468 pontos), pele e cabelo medidos, avisos da qualidade, o relatório do gate de identidade (números
+ * agregados) e o atlas do rosto (textura). Regras:
  * <ul>
  *   <li>consentimento explícito obrigatório (dado biométrico, LGPD art. 11): sem ele nada é gravado;</li>
  *   <li>a textura fica em {@code restricted/} (o proxy de mídia só a entrega a ADMIN) e sai por
@@ -39,24 +45,34 @@ import java.util.regex.Pattern;
  *       avatar é público — rosto de avatar privado não sai para provedor externo; sem veredito, fica pendente;</li>
  *   <li>o modelo é validado com as mesmas regras do cliente (lib/avatar3d/model.ts): nada de NaN ou tamanho errado
  *       quebrando a cena de outra pessoa;</li>
- *   <li>excluir apaga o registro e a textura; a exclusão da conta faz o mesmo.</li>
+ *   <li><b>identidade versionada</b> (AVATAR-ID I1): cada salvamento cria uma versão; a que passou no gate e foi
+ *       confirmada é APPROVED; a que reprovou fica NEEDS_REFINEMENT (a pessoa vê com aviso, as outras pessoas continuam
+ *       vendo a última aprovada). Refazer não apaga a versão aprovada. Guardamos a atual, a aprovada e as
+ *       {@value #KEEP_VERSIONS} mais recentes; as outras somem com a textura (minimização, LGPD);</li>
+ *   <li>excluir apaga todas as versões e texturas; a exclusão da conta faz o mesmo;</li>
+ *   <li>a auditoria recebe só ids, número da versão, status e os nomes das métricas reprovadas.</li>
  * </ul>
  */
 @Service
 public class Avatar3dService {
     static final int MODEL_VERSION = 1;
     static final int SHAPE_LEN = 468 * 3;
+    /** Versões guardadas além da atual e da aprovada. */
+    static final int KEEP_VERSIONS = 5;
     private static final Pattern HEX = Pattern.compile("^#[0-9a-fA-F]{6}$");
     private static final long MAX_TEXTURE_BYTES = 4L * 1024 * 1024;
     /** Tons de cabelo da paleta (lib/avatar3d/hair-tone.ts, HAIR_TONES): 0 = o medido na foto, 1–14 = escolhido. */
     static final int HAIR_TONES = 14;
     /** Cortes de cabelo (lib/avatar3d/hair-cut.ts, HAIR_CUTS): 0 = o medido na foto, 1–7 = escolhido. */
     static final int HAIR_CUTS = 7;
+    /** Franjas (lib/avatar3d/hair-cut.ts, HAIR_FRINGES): 0 = a medida na foto, 1–5 = nenhuma, reta, lateral, cortina, desfiada. */
+    static final int HAIR_FRINGES = 5;
     /** Ajustes finos: faixas pequenas de propósito (ajuste, não outra pessoa). Iguais a ADJUST_RANGE do cliente. */
     private static final Map<String, double[]> ADJUST = Map.of(
             "headScale", new double[]{0.94, 1.06, 1}, "neck", new double[]{-0.02, 0.02, 0},
             "hairVolume", new double[]{0.6, 1.6, 1}, "skinLight", new double[]{-0.08, 0.08, 0},
-            "hairTone", new double[]{0, HAIR_TONES, 0}, "hairCut", new double[]{0, HAIR_CUTS, 0});
+            "hairTone", new double[]{0, HAIR_TONES, 0}, "hairCut", new double[]{0, HAIR_CUTS, 0},
+            "glasses", new double[]{0, 1, 1}, "hairFringe", new double[]{0, HAIR_FRINGES, 0});
 
     /** Moderação da textura do rosto (mesma capacidade CONTENT_MODERATOR, com critério de rosto em vez de peça). */
     static final String TEXTURE_MODERATION_SYSTEM = "Você é o moderador de conteúdo do Fashion AI. A imagem é a textura (atlas) do "
@@ -65,22 +81,32 @@ public class Avatar3dService {
             + "não seja um rosto. Responda só JSON: {\"approved\": true|false, \"reason\": \"motivo curto\"}.";
 
     private final UserAvatar3dRepository avatars;
+    private final AvatarIdentityVersionRepository versions;
     private final UserRepository users;
     private final MediaStoragePort storage;
     private final Audit audit;
     private final AiEngine ai;
 
-    public Avatar3dService(UserAvatar3dRepository avatars, UserRepository users, MediaStoragePort storage, Audit audit, AiEngine ai) {
+    public Avatar3dService(UserAvatar3dRepository avatars, AvatarIdentityVersionRepository versions, UserRepository users,
+                           MediaStoragePort storage, Audit audit, AiEngine ai) {
         this.avatars = avatars;
+        this.versions = versions;
         this.users = users;
         this.storage = storage;
         this.audit = audit;
         this.ai = ai;
     }
 
-    /** O que o cliente envia junto com a textura (parte "meta" do multipart). */
+    /**
+     * O que o cliente envia junto com a textura (parte "meta" do multipart). {@code quality}: o relatório do gate de
+     * identidade medido no aparelho (lib/avatar3d/identity), só números agregados; ausente em clientes antigos.
+     */
     public record SaveCommand(Map<String, Object> model, Map<String, Object> adjust, Integer photos, List<String> warnings,
-                              Boolean consent, Boolean publicOnRunway) {
+                              Boolean consent, Boolean publicOnRunway, Map<String, Object> quality) {
+        public SaveCommand(Map<String, Object> model, Map<String, Object> adjust, Integer photos, List<String> warnings,
+                           Boolean consent, Boolean publicOnRunway) {
+            this(model, adjust, photos, warnings, consent, publicOnRunway, null);
+        }
     }
 
     /** sex: corpo base do avatar (FEMININO/MASCULINO), estimado pelo rosto ou trocado pela pessoa; null = sem mudança. */
@@ -102,33 +128,144 @@ public class Avatar3dService {
         }
         Map<String, Object> model = validateModel(cmd.model());
         byte[] jpeg = normalizeTexture(texture);
+        Map<String, Object> quality = IdentityQuality.sanitize(cmd.quality());
+        IdentityStatus status = IdentityQuality.passed(quality) ? IdentityStatus.APPROVED : IdentityStatus.NEEDS_REFINEMENT;
         User u = users.findById(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
         UserAvatar3d a = avatars.findByUserId(u.getId()).orElseGet(() -> {
             UserAvatar3d n = new UserAvatar3d();
             n.setUser(u);
+            n.setIdentityId(UUID.randomUUID());
+            n.setCurrentVersion(0);
             return n;
         });
-        String oldKey = a.getTextureKey();
-        String key = "restricted/users/" + u.getId() + "/avatar3d/face-" + System.currentTimeMillis() + ".jpg";
+        if (a.getIdentityId() == null) {
+            a.setIdentityId(UUID.randomUUID());
+        }
+        Integer basedOn = a.getTextureKey() == null ? null : a.getCurrentVersion();
+        if (basedOn != null) {
+            ensureVersionRow(a);                       // avatar de antes das versões: vira a versão atual guardada
+        }
+        int next = nextVersion(u.getId(), a);
+        String key = "restricted/users/" + u.getId() + "/avatar3d/face-" + System.currentTimeMillis() + "-v" + next + ".jpg";
         storage.put(key, jpeg, "image/jpeg");
-        a.setModelVersion(MODEL_VERSION);
-        a.setModelJson(Json.write(model));
-        a.setAdjustJson(Json.write(clampAdjust(cmd.adjust())));
-        a.setTextureKey(key);
-        a.setPhotosCount(cmd.photos() == null ? 1 : Math.max(1, Math.min(3, cmd.photos())));
-        a.setWarningsJson(Json.write(cmd.warnings() == null ? List.of() : cmd.warnings().stream().limit(20)
-                .map(w -> w == null ? "" : w.replaceAll("[^A-Z0-9_]", "")).filter(w -> !w.isEmpty()).toList()));
         if (cmd.publicOnRunway() != null) {
             a.setPublicOnRunway(cmd.publicOnRunway());
         }
-        a.setConsentAt(Instant.now());
         // textura nova: moderada agora se o avatar for público; privado, só quando a pessoa o tornar público
-        a.setTextureModeration(a.isPublicOnRunway() ? moderateTexture(u.getId(), jpeg) : ModerationStatus.PENDING);
-        avatars.save(a);
-        if (oldKey != null && !oldKey.equals(key)) {
-            deleteQuietly(oldKey);
+        ModerationStatus moderation = a.isPublicOnRunway() ? moderateTexture(u.getId(), jpeg) : ModerationStatus.PENDING;
+        AvatarIdentityVersion v = new AvatarIdentityVersion();
+        v.setUser(u);
+        v.setIdentityId(a.getIdentityId());
+        v.setVersionNo(next);
+        v.setBasedOn(basedOn);
+        v.setStatus(status);
+        v.setModelVersion(MODEL_VERSION);
+        v.setModelJson(Json.write(model));
+        v.setAdjustJson(Json.write(clampAdjust(cmd.adjust())));
+        v.setTextureKey(key);
+        v.setPhotosCount(cmd.photos() == null ? 1 : Math.max(1, Math.min(3, cmd.photos())));
+        v.setWarningsJson(Json.write(cmd.warnings() == null ? List.of() : cmd.warnings().stream().limit(20)
+                .map(w -> w == null ? "" : w.replaceAll("[^A-Z0-9_]", "")).filter(w -> !w.isEmpty()).toList()));
+        v.setQualityJson(quality == null ? null : Json.write(quality));
+        v.setTextureModeration(moderation);
+        if (status == IdentityStatus.APPROVED) {
+            v.setApprovedAt(Instant.now());
         }
-        audit.log(user, "AVATAR3D_SALVO", "avatar3d:" + u.getId(), Map.of("photos", a.getPhotosCount()));
+        versions.save(v);
+        makeCurrent(a, v);
+        a.setConsentAt(Instant.now());
+        avatars.save(a);
+        // versão nova reprovada no gate num avatar público: quem os outros veem continua sendo a aprovada anterior
+        moderateApproved(u.getId(), a);
+        prune(a);
+        audit.log(user, "AVATAR3D_SALVO", "avatar3d:" + u.getId(), auditDetails(v, quality));
+        return view(a);
+    }
+
+    /** As versões da identidade da pessoa, da mais nova para a mais antiga (sem modelo nem textura). */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> listVersions(CurrentUser user) {
+        UserAvatar3d a = avatars.findByUserId(user.id()).orElse(null);
+        if (a == null) {
+            return List.of();
+        }
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (AvatarIdentityVersion v : versions.findByUserIdOrderByVersionNoDesc(user.id())) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("version", v.getVersionNo());
+            m.put("status", v.getStatus().name());
+            m.put("basedOn", v.getBasedOn());
+            m.put("current", v.getVersionNo() == a.getCurrentVersion());
+            m.put("approved", a.getApprovedVersion() != null && v.getVersionNo() == a.getApprovedVersion());
+            m.put("approvedWithWarnings", v.isApprovedWithWarnings());
+            m.put("createdAt", v.getCreatedAt());
+            m.put("approvedAt", v.getApprovedAt());
+            Map<String, Object> q = v.getQualityJson() == null ? null : Json.map(v.getQualityJson());
+            m.put("gate", q == null ? null : q.get("gate"));
+            out.add(m);
+        }
+        return out;
+    }
+
+    /**
+     * A pessoa aprova uma versão. Versão que reprovou no gate só com {@code acceptWarnings} (aprovar mesmo assim):
+     * fica marcada como aprovada com avisos.
+     */
+    @Transactional
+    public Map<String, Object> approve(CurrentUser user, int versionNo, boolean acceptWarnings) {
+        UserAvatar3d a = avatars.findByUserId(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("avatar3d.avatar")));
+        AvatarIdentityVersion v = version(user.id(), versionNo);
+        if (v.getStatus() == IdentityStatus.NEEDS_REFINEMENT && !acceptWarnings) {
+            throw ApiException.conflict("IDENTIDADE_PRECISA_REFINAR", Msg.t("avatar3d.identidade_precisa_refinar"));
+        }
+        if (v.getStatus() != IdentityStatus.APPROVED) {
+            v.setApprovedWithWarnings(v.getStatus() == IdentityStatus.NEEDS_REFINEMENT);
+            v.setStatus(IdentityStatus.APPROVED);
+            v.setApprovedAt(Instant.now());
+        }
+        if (a.isPublicOnRunway() && v.getTextureModeration() == ModerationStatus.PENDING) {
+            v.setTextureModeration(moderateTexture(user.id(), storage.get(v.getTextureKey())));
+        }
+        versions.save(v);
+        a.setApprovedVersion(v.getVersionNo());
+        if (v.getVersionNo() == a.getCurrentVersion()) {
+            a.setIdentityStatus(IdentityStatus.APPROVED);
+            a.setTextureModeration(v.getTextureModeration());
+        }
+        avatars.save(a);
+        audit.log(user, "AVATAR3D_VERSAO_APROVADA", "avatar3d:" + user.id(), auditDetails(v, null));
+        return view(a);
+    }
+
+    /** Volta para uma versão anterior: cria uma versão nova igual a ela (a história não é reescrita). */
+    @Transactional
+    public Map<String, Object> restore(CurrentUser user, int versionNo) {
+        UserAvatar3d a = avatars.findByUserId(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("avatar3d.avatar")));
+        AvatarIdentityVersion src = version(user.id(), versionNo);
+        int next = nextVersion(user.id(), a);
+        String key = "restricted/users/" + user.id() + "/avatar3d/face-" + System.currentTimeMillis() + "-v" + next + ".jpg";
+        storage.put(key, storage.get(src.getTextureKey()), "image/jpeg");
+        AvatarIdentityVersion v = new AvatarIdentityVersion();
+        v.setUser(src.getUser());
+        v.setIdentityId(src.getIdentityId());
+        v.setVersionNo(next);
+        v.setBasedOn(src.getVersionNo());
+        v.setStatus(src.getStatus());
+        v.setApprovedWithWarnings(src.isApprovedWithWarnings());
+        v.setApprovedAt(src.getStatus() == IdentityStatus.APPROVED ? Instant.now() : null);
+        v.setModelVersion(src.getModelVersion());
+        v.setModelJson(src.getModelJson());
+        v.setAdjustJson(src.getAdjustJson());
+        v.setTextureKey(key);
+        v.setPhotosCount(src.getPhotosCount());
+        v.setWarningsJson(src.getWarningsJson());
+        v.setQualityJson(src.getQualityJson());
+        v.setTextureModeration(src.getTextureModeration());
+        versions.save(v);
+        makeCurrent(a, v);
+        avatars.save(a);
+        prune(a);
+        audit.log(user, "AVATAR3D_VERSAO_RESTAURADA", "avatar3d:" + user.id(), auditDetails(v, null));
         return view(a);
     }
 
@@ -161,39 +298,85 @@ public class Avatar3dService {
             audit.log(user, "AVATAR3D_CORPO", "avatar3d:" + user.id(), Map.of("photo", Boolean.TRUE.equals(model.get("body") instanceof Map<?, ?> b ? b.get("photo") : null)));
         }
         avatars.save(a);
+        // ajustes finos, sexo e corpo são da versão atual: a versão guardada acompanha (restaurar devolve tudo)
+        versions.findByUserIdAndVersionNo(user.id(), a.getCurrentVersion()).ifPresent(v -> {
+            v.setAdjustJson(a.getAdjustJson());
+            v.setModelJson(a.getModelJson());
+            v.setTextureModeration(a.getTextureModeration());
+            versions.save(v);
+        });
+        moderateApproved(user.id(), a);
         return view(a);
+    }
+
+    /** Avatar público: a versão aprovada (a que outras pessoas veem), se não for a atual, também passa pela moderação. */
+    private void moderateApproved(UUID userId, UserAvatar3d a) {
+        if (a.isPublicOnRunway() && a.getApprovedVersion() != null && a.getApprovedVersion() != a.getCurrentVersion()) {
+            versions.findByUserIdAndVersionNo(userId, a.getApprovedVersion())
+                    .filter(v -> v.getTextureModeration() == ModerationStatus.PENDING)
+                    .ifPresent(v -> {
+                        v.setTextureModeration(moderateTexture(userId, storage.get(v.getTextureKey())));
+                        versions.save(v);
+                    });
+        }
     }
 
     @Transactional
     public void delete(CurrentUser user) {
         avatars.findByUserId(user.id()).ifPresent(a -> {
-            deleteQuietly(a.getTextureKey());
-            avatars.delete(a);
+            purge(user.id(), a);
             audit.log(user, "AVATAR3D_EXCLUIDO", "avatar3d:" + user.id(), Map.of());
         });
     }
 
-    /** Exclusão da conta: some com o avatar e a textura, sem usuário logado. */
+    /** Exclusão da conta: some com o avatar, todas as versões e as texturas, sem usuário logado. */
     @Transactional
     public void deleteAllFor(UUID userId) {
-        avatars.findByUserId(userId).ifPresent(a -> {
-            deleteQuietly(a.getTextureKey());
-            avatars.delete(a);
-        });
+        avatars.findByUserId(userId).ifPresent(a -> purge(userId, a));
+    }
+
+    private void purge(UUID userId, UserAvatar3d a) {
+        for (AvatarIdentityVersion v : versions.findByUserIdOrderByVersionNoDesc(userId)) {
+            deleteQuietly(v.getTextureKey());
+            versions.delete(v);
+        }
+        deleteQuietly(a.getTextureKey());
+        avatars.delete(a);
     }
 
     /**
-     * Textura do rosto: o dono sempre; outra pessoa só se o avatar for público e a textura aprovada na moderação. Senão,
-     * 404 (não revela que existe).
+     * Textura do rosto: o dono sempre (de qualquer versão guardada); outra pessoa só a da versão aprovada, se o avatar
+     * for público e a textura dessa versão passou na moderação. Senão, 404 (não revela que existe).
      */
     @Transactional(readOnly = true)
     public byte[] texture(CurrentUser viewer, UUID ownerId) {
+        return texture(viewer, ownerId, null);
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] texture(CurrentUser viewer, UUID ownerId, Integer versionNo) {
         UserAvatar3d a = avatars.findByUserId(ownerId).orElseThrow(() -> ApiException.notFound(Msg.t("avatar3d.avatar")));
         boolean owner = viewer != null && viewer.id().equals(ownerId);
-        if (!owner && !publicTexture(a)) {
+        if (owner) {
+            if (versionNo == null || versionNo == a.getCurrentVersion()) {
+                return storage.get(a.getTextureKey());
+            }
+            return storage.get(version(ownerId, versionNo).getTextureKey());
+        }
+        Integer approved = a.getApprovedVersion();
+        if (approved == null || (versionNo != null && !versionNo.equals(approved)) || !a.isPublicOnRunway()) {
             throw ApiException.notFound(Msg.t("avatar3d.avatar"));
         }
-        return storage.get(a.getTextureKey());
+        if (approved == a.getCurrentVersion()) {
+            if (!publicTexture(a)) {
+                throw ApiException.notFound(Msg.t("avatar3d.avatar"));
+            }
+            return storage.get(a.getTextureKey());
+        }
+        AvatarIdentityVersion v = versions.findByUserIdAndVersionNo(ownerId, approved)
+                .filter(x -> x.getTextureModeration() == ModerationStatus.APPROVED)
+                .orElseThrow(() -> ApiException.notFound(Msg.t("avatar3d.avatar")));
+        return storage.get(v.getTextureKey());
     }
 
     /** A textura pode ser vista por outras pessoas: avatar público e textura aprovada na moderação. */
@@ -218,19 +401,37 @@ public class Avatar3dService {
         return Json.map(text).get("approved") instanceof Boolean b ? b : null;
     }
 
-    /** Referência do avatar para o manequim (look3d, Passarela, Quarto, Espelho), ou vazio quando quem vê não pode. */
+    /**
+     * Referência do avatar para o manequim (look3d, Passarela, Quarto, Espelho), ou vazio quando quem vê não pode. O dono
+     * vê a versão atual; as outras pessoas, a última versão aprovada (nunca uma que precisa de refinamento).
+     */
     @Transactional(readOnly = true)
     public Optional<Map<String, Object>> forMannequin(UUID ownerId, UUID viewerId) {
         return avatars.findByUserId(ownerId)
                 .filter(a -> a.isPublicOnRunway() || ownerId.equals(viewerId))
-                .map(a -> {
-                    Map<String, Object> m = new LinkedHashMap<>();
-                    m.put("version", a.getUpdatedAt() == null ? 0 : a.getUpdatedAt().toEpochMilli());
-                    m.put("model", Json.map(a.getModelJson()));
-                    m.put("adjust", a.getAdjustJson() == null ? Map.of() : Json.map(a.getAdjustJson()));
-                    // textura ainda não aprovada: quem não é o dono vê a forma com o rosto padrão (sem a foto)
-                    m.put("textureUrl", ownerId.equals(viewerId) || publicTexture(a) ? textureUrl(a) : null);
-                    return m;
+                .flatMap(a -> {
+                    boolean owner = ownerId.equals(viewerId);
+                    if (owner || (a.getApprovedVersion() != null && a.getApprovedVersion() == a.getCurrentVersion())) {
+                        Map<String, Object> m = new LinkedHashMap<>();
+                        m.put("version", a.getUpdatedAt() == null ? 0 : a.getUpdatedAt().toEpochMilli());
+                        m.put("model", Json.map(a.getModelJson()));
+                        m.put("adjust", a.getAdjustJson() == null ? Map.of() : Json.map(a.getAdjustJson()));
+                        // textura ainda não aprovada: quem não é o dono vê a forma com o rosto padrão (sem a foto)
+                        m.put("textureUrl", owner || publicTexture(a) ? textureUrl(a) : null);
+                        return Optional.of(m);
+                    }
+                    if (a.getApprovedVersion() == null) {
+                        return Optional.empty();
+                    }
+                    return versions.findByUserIdAndVersionNo(ownerId, a.getApprovedVersion()).map(v -> {
+                        Map<String, Object> m = new LinkedHashMap<>();
+                        m.put("version", v.getUpdatedAt() == null ? v.getVersionNo() : v.getUpdatedAt().toEpochMilli());
+                        m.put("model", Json.map(v.getModelJson()));
+                        m.put("adjust", v.getAdjustJson() == null ? Map.of() : Json.map(v.getAdjustJson()));
+                        m.put("textureUrl", v.getTextureModeration() == ModerationStatus.APPROVED
+                                ? "/api/avatar3d/" + ownerId + "/texture?version=" + v.getVersionNo() : null);
+                        return m;
+                    });
                 });
     }
 
@@ -246,12 +447,105 @@ public class Avatar3dService {
         m.put("textureModeration", a.getTextureModeration() == null ? ModerationStatus.PENDING.name() : a.getTextureModeration().name());
         m.put("consentAt", a.getConsentAt());
         m.put("updatedAt", a.getUpdatedAt());
+        Map<String, Object> identity = new LinkedHashMap<>();
+        identity.put("identityId", a.getIdentityId());
+        identity.put("version", a.getCurrentVersion());
+        identity.put("status", a.getIdentityStatus() == null ? IdentityStatus.APPROVED.name() : a.getIdentityStatus().name());
+        identity.put("approvedVersion", a.getApprovedVersion());
+        identity.put("quality", a.getQualityJson() == null ? null : Json.map(a.getQualityJson()));
+        m.put("identity", identity);
         return m;
     }
 
     private static String textureUrl(UserAvatar3d a) {
         long v = a.getUpdatedAt() == null ? 0 : a.getUpdatedAt().toEpochMilli();
         return "/api/avatar3d/" + a.getUser().getId() + "/texture?v=" + v;
+    }
+
+    private AvatarIdentityVersion version(UUID userId, int versionNo) {
+        return versions.findByUserIdAndVersionNo(userId, versionNo)
+                .orElseThrow(() -> ApiException.notFound(Msg.t("avatar3d.versao_nao_encontrada")));
+    }
+
+    private int nextVersion(UUID userId, UserAvatar3d a) {
+        List<AvatarIdentityVersion> all = versions.findByUserIdOrderByVersionNoDesc(userId);
+        int max = all.isEmpty() ? 0 : all.get(0).getVersionNo();
+        return Math.max(max, a.getCurrentVersion()) + 1;
+    }
+
+    /** A versão vira a atual: o registro do avatar (o que o app e as vitrines leem) passa a ser ela. */
+    private static void makeCurrent(UserAvatar3d a, AvatarIdentityVersion v) {
+        a.setModelVersion(v.getModelVersion());
+        a.setModelJson(v.getModelJson());
+        a.setAdjustJson(v.getAdjustJson());
+        a.setTextureKey(v.getTextureKey());
+        a.setPhotosCount(v.getPhotosCount());
+        a.setWarningsJson(v.getWarningsJson());
+        a.setQualityJson(v.getQualityJson());
+        a.setTextureModeration(v.getTextureModeration());
+        a.setCurrentVersion(v.getVersionNo());
+        a.setIdentityStatus(v.getStatus());
+        if (v.getStatus() == IdentityStatus.APPROVED) {
+            a.setApprovedVersion(v.getVersionNo());
+        }
+    }
+
+    /** Avatar salvo antes das versões (sem linha de versão): guarda o atual como versão aprovada antes de seguir. */
+    private void ensureVersionRow(UserAvatar3d a) {
+        UUID userId = a.getUser().getId();
+        if (versions.findByUserIdAndVersionNo(userId, a.getCurrentVersion()).isPresent()) {
+            return;
+        }
+        AvatarIdentityVersion v = new AvatarIdentityVersion();
+        v.setUser(a.getUser());
+        v.setIdentityId(a.getIdentityId());
+        v.setVersionNo(Math.max(1, a.getCurrentVersion()));
+        v.setStatus(a.getIdentityStatus() == null ? IdentityStatus.APPROVED : a.getIdentityStatus());
+        v.setModelVersion(a.getModelVersion());
+        v.setModelJson(a.getModelJson());
+        v.setAdjustJson(a.getAdjustJson());
+        v.setTextureKey(a.getTextureKey());
+        v.setPhotosCount(a.getPhotosCount());
+        v.setWarningsJson(a.getWarningsJson());
+        v.setQualityJson(a.getQualityJson());
+        v.setTextureModeration(a.getTextureModeration() == null ? ModerationStatus.PENDING : a.getTextureModeration());
+        v.setApprovedAt(a.getConsentAt());
+        versions.save(v);
+        a.setCurrentVersion(v.getVersionNo());
+        if (v.getStatus() == IdentityStatus.APPROVED && a.getApprovedVersion() == null) {
+            a.setApprovedVersion(v.getVersionNo());
+        }
+    }
+
+    /** Guarda a atual, a aprovada e as {@value #KEEP_VERSIONS} mais recentes; o resto some com a textura. */
+    private void prune(UserAvatar3d a) {
+        List<AvatarIdentityVersion> all = versions.findByUserIdOrderByVersionNoDesc(a.getUser().getId());
+        int kept = 0;
+        for (AvatarIdentityVersion v : all) {
+            boolean pinned = v.getVersionNo() == a.getCurrentVersion()
+                    || (a.getApprovedVersion() != null && v.getVersionNo() == a.getApprovedVersion());
+            if (pinned || kept < KEEP_VERSIONS) {
+                if (!pinned) kept++;
+                continue;
+            }
+            if (!v.getTextureKey().equals(a.getTextureKey())) {
+                deleteQuietly(v.getTextureKey());
+            }
+            versions.delete(v);
+        }
+    }
+
+    /** Auditoria sem dado pessoal: versão, status e os NOMES das métricas reprovadas (lista permitida). */
+    static Map<String, Object> auditDetails(AvatarIdentityVersion v, Map<String, Object> quality) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("photos", v.getPhotosCount());
+        m.put("version", v.getVersionNo());
+        m.put("status", v.getStatus().name());
+        if (quality != null) {
+            m.put("gatePassed", IdentityQuality.passed(quality));
+            m.put("failedChecks", List.copyOf(IdentityQuality.failed(quality)));
+        }
+        return m;
     }
 
     private void deleteQuietly(String key) {
@@ -320,7 +614,83 @@ public class Avatar3dService {
             out.put("sex", m.get("sex"));
         }
         out.put("hair", h);
+        // olhos (AVATAR-ID I4): opcionais; fora das regras são descartados, o avatar continua (como no app)
+        Map<String, Object> eyes = validEyes(m.get("eyes"));
+        if (eyes != null) {
+            out.put("eyes", eyes);
+        }
+        Map<String, Object> brows = validBrows(m.get("brows"));
+        if (brows != null) {
+            out.put("brows", brows);
+        }
         return out;
+    }
+
+    /** Sobrancelhas (lib/avatar3d/identity/brows.ts): cor "#rrggbb", medidas nas faixas, forma da lista. */
+    static final List<String> BROW_SHAPES = List.of("STRAIGHT", "SOFT_ARCH", "HIGH_ARCH");
+
+    static Map<String, Object> validBrows(Object o) {
+        if (!(o instanceof Map<?, ?> b) || !isHex(b.get("color")) || !BROW_SHAPES.contains(b.get("shape"))) {
+            return null;
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("color", b.get("color"));
+        for (Map.Entry<String, Double> e : Map.of("thickness", 1.0, "arch", 0.5, "density", 1.0, "confidence", 1.0).entrySet()) {
+            if (!(b.get(e.getKey()) instanceof Number n) || !Double.isFinite(n.doubleValue()) || n.doubleValue() < 0 || n.doubleValue() > e.getValue()) {
+                return null;
+            }
+            out.put(e.getKey(), n.doubleValue());
+        }
+        out.put("shape", b.get("shape"));
+        return out;
+    }
+
+    /** Olhos (lib/avatar3d/iris.ts, AvatarEyes): cores "#rrggbb", valores das listas, confiança 0–1. */
+    static final List<String> IRIS_CLASSES = List.of("DARK_BROWN", "MEDIUM_BROWN", "LIGHT_BROWN", "HAZEL", "AMBER", "GREEN", "GREEN_GRAY", "GRAY", "GRAY_BLUE", "BLUE", "BLUE_GRAY");
+    static final List<String> IRIS_PATTERNS = List.of("RADIAL", "CRYPT", "RING", "UNIFORM");
+    static final List<String> GLASSES_KINDS = List.of("NONE", "PRESCRIPTION", "SUNGLASSES");
+
+    static Map<String, Object> validEyes(Object o) {
+        if (!(o instanceof Map<?, ?> e) || !isHex(e.get("color")) || !isHex(e.get("secondary"))) {
+            return null;
+        }
+        if (!IRIS_CLASSES.contains(e.get("cls")) || !IRIS_PATTERNS.contains(e.get("pattern")) || !GLASSES_KINDS.contains(e.get("glasses"))) {
+            return null;
+        }
+        if (!"IMAGE_ANALYSIS".equals(e.get("source")) && !"DEFAULT".equals(e.get("source"))) {
+            return null;
+        }
+        if (!(e.get("confidence") instanceof Number c) || !Double.isFinite(c.doubleValue()) || c.doubleValue() < 0 || c.doubleValue() > 1) {
+            return null;
+        }
+        Map<String, Object> out = new LinkedHashMap<>();
+        for (String k : List.of("color", "secondary", "cls", "pattern")) {
+            out.put(k, e.get(k));
+        }
+        out.put("confidence", c.doubleValue());
+        out.put("source", e.get("source"));
+        out.put("glasses", e.get("glasses"));
+        if (isHex(e.get("frame"))) {
+            out.put("frame", e.get("frame"));
+        }
+        // heterocromia: a cor de cada olho, só quando os dois vêm certos
+        Map<String, Object> r = irisColor(e.get("right")), l = irisColor(e.get("left"));
+        if (r != null && l != null) {
+            out.put("right", r);
+            out.put("left", l);
+        }
+        return out;
+    }
+
+    private static boolean isHex(Object o) {
+        return o instanceof String s && HEX.matcher(s).matches();
+    }
+
+    private static Map<String, Object> irisColor(Object o) {
+        if (!(o instanceof Map<?, ?> m) || !isHex(m.get("color")) || !isHex(m.get("secondary"))) {
+            return null;
+        }
+        return new LinkedHashMap<>(Map.of("color", m.get("color"), "secondary", m.get("secondary")));
     }
 
     /** Cabelo: comprimento e textura medidos na foto (lib/avatar3d/hair.ts) e a silhueta por altura. */
@@ -429,12 +799,15 @@ public class Avatar3dService {
         return n.doubleValue();
     }
 
+    /** Ajustes inteiros: tom e corte do cabelo (índices) e óculos (1 = mostra os de grau vistos na foto, 0 = sem). */
+    static final java.util.Set<String> INT_ADJUSTS = java.util.Set.of("hairTone", "hairCut", "glasses", "hairFringe");
+
     static Map<String, Object> clampAdjust(Map<String, Object> a) {
         Map<String, Object> out = new LinkedHashMap<>();
         ADJUST.forEach((k, r) -> {
             Object v = a == null ? null : a.get(k);
             double d = v instanceof Number n && Double.isFinite(n.doubleValue()) ? Math.min(r[1], Math.max(r[0], n.doubleValue())) : r[2];
-            out.put(k, "hairTone".equals(k) || "hairCut".equals(k) ? (Object) (int) Math.round(d) : (Object) d);
+            out.put(k, INT_ADJUSTS.contains(k) ? (Object) (int) Math.round(d) : (Object) d);
         });
         return out;
     }

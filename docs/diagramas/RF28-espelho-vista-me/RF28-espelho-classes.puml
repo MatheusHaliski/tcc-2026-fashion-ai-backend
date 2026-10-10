@@ -1,0 +1,200 @@
+@startuml RF28_Espelho_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF28 — Vista-me: classes\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "app/(site)/(app)/room/page.tsx" {
+  class MirrorState as "MirrorState" <<interface>> {
+    +slots: Record<string, MirrorPieceView | Mirror…
+    +complete: boolean
+    +postIt: string | null
+    +sequence: { pieceId: string; name: string; module…
+    +message: string | null
+  }
+  class Room as "Room" <<interface>> {
+    +owner: boolean
+    +level: string
+    +levelInfo: { unlocks: string; aesthetic: string }
+    +modules: Module[]
+    +drawerLabels: Record<string, string>
+    +pieces: Record<string, RoomPiece>
+    +basket: RoomPiece[]
+    +saleRack: { name: string; pieces: RoomPiece[] }
+    +showcase: unknown
+    +chair: RoomPiece[]
+    .. +7 ..
+  }
+  class RoomPiece as "RoomPiece" <<interface>> {
+    +id: string
+    +name: string
+    +category: string
+    +subcategory: string
+    +color: string
+    +colorHex: string
+    +imageUrl: string
+    +thumbnailUrl: string
+    +address: string | null
+    +addressLabel: string | null
+    .. +4 ..
+  }
+  class Module as "Module" <<interface>> {
+    +id: string
+    +slotType: string
+    +mold: string
+    +widthCm: number
+    +capacity: number
+    +label: string
+    +sku: string
+    +finish: { color?: string; texture?: string; rou…
+    +hangers: { k: number; address: string; pieceId?:…
+    +slots: { address: string; pieceId?: string | n…
+    .. +2 ..
+  }
+  class PieceTag as "PieceTag" <<interface>> {
+    +id: string
+    +name: string
+    +composition: string | null
+    +care: string | null
+    +origin: string | null
+    +garimpo: boolean
+    +wearCount: number
+    +thirtyWears: boolean
+    +costPerUse: number | null
+    +location: { address: string; label: string } | nu…
+    .. +1 ..
+  }
+  class mod_page_tsx as "page.tsx" <<módulo>> {
+    +RoomPage()
+  }
+}
+package "components/mirror/mirror-stage.tsx" {
+  class MirrorPiece as "MirrorPiece" <<interface>> {
+    +id: string
+    +name: string
+    +imageUrl: string
+    +thumbnailUrl: string
+    +category: string
+    +subcategory: string
+    +colorHex: string
+  }
+  class SavedAvatar as "SavedAvatar" <<interface>> {
+    +exists: boolean
+    +model: AvatarModel
+    +adjust: Partial<AvatarAdjust>
+    +textureUrl: string
+  }
+  enum MirrorMode as "MirrorMode" {
+    3d
+    2d
+  }
+  class mod_mirror_stage_tsx as "mirror-stage.tsx" <<módulo>> {
+    +mirrorPieces()
+    +useMirrorAvatar()
+    +glassTint()
+    +MirrorStage()
+    +MirrorWornStrip()
+  }
+}
+package "components/three/common.tsx" {
+  class Look3d as "Look3d" <<interface>> {
+    +schemeId: string
+    +pieceId: string
+    +title: string
+    +owner: { id: string; username: string; display…
+    +hypeScore: number | null
+    +hype: HypeSummary | null
+    +likes: number
+    +mannequin: Mannequin3d
+    +pieces: Look3dPiece[]
+    +ready3d: number
+    .. +2 ..
+  }
+  class Look3dPiece as "Look3dPiece" <<interface>> {
+    +id: string
+    +name: string
+    +slot: string
+    +category: string
+    +subcategory: string
+    +imageUrl: string | null
+    +studioUrl: string | null
+    +colorHex: string | null
+    +model3dUrl: string | null
+    +model3dStatus: string | null
+    .. +1 ..
+  }
+  class Mannequin3d as "Mannequin3d" <<interface>> {
+    +sex: 'FEMININO' | 'MASCULINO'
+    +sexSource: string
+    +photoUrl: string | null
+    +head: 'FOTO' | 'PADRAO' | 'AVATAR'
+    +skinTone: string | null
+    +build: string | null
+    +face: FaceFit | null
+    +avatar: Avatar3dRef | null
+  }
+  class mod_common_tsx as "common.tsx" <<módulo>> {
+    +useReducedMotion()
+    +useWebGL()
+    +loadTexture()
+    +useTex()
+    +useGlb()
+    +useCanvasTexture()
+    +rng()
+    +StudioLight()
+  }
+}
+package "components/three/avatar-viewer.tsx" {
+  enum AvatarView as "AvatarView" {
+    front
+    left34
+    right34
+    profile
+    back
+  }
+  class mod_avatar_viewer_tsx as "avatar-viewer.tsx" <<módulo>> {
+    +AvatarViewer()
+  }
+}
+package "Backend (Java)" {
+  class MirrorService <<service>> {
+    -restrictions: ObjectProvider<PieceRestrictionProv…
+    -ai: AiEngine
+    -audit: Audit
+    -events: ApplicationEventPublisher
+    +slotOf()
+    +schemeSlot()
+    +stateEntity()
+    +slots()
+    +accessories()
+    +single()
+    +allIds()
+    +load()
+  }
+}
+Look3d --> Look3dPiece : pieces
+Look3d --> Mannequin3d : mannequin
+Room --> Module : modules
+Room --> RoomPiece : basket
+Room --> RoomPiece : chair
+Room --> RoomPiece : pieces
+Room --> RoomPiece : saleRack
+@enduml

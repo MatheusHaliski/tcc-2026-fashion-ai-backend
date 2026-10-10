@@ -4,18 +4,19 @@ import { mediaUrl } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 import { useI18n } from "@/lib/i18n/i18n";
 import { Button, Dialog, SegmentPicker } from "@/components/ui";
-import { BeforeAfter } from "@/components/before-after";
+import { QuickCrop } from "@/components/photo-edit/quick-crop";
+import { photoAspect, piecePhotoAspect } from "@/components/catalog/catalog-photo";
 import { BackdropChips } from "@/components/studio";
 
 /** Metadados do estúdio guardados na peça: template do feed, regiões faltando e o que foi achado (logo × estampa). */
-export interface FeedMeta { template?: string; missing?: string[]; estimated?: boolean; landmarks?: Record<string, number | null> }
+export interface FeedMeta { aspect?: string; template?: string; missing?: string[]; estimated?: boolean; landmarks?: Record<string, number | null> }
 export function studioMeta(p: PieceView): { feed: FeedMeta | null; logoKind: "logo" | "print" | null } {
   const st = (p.flatLayMetadata as { studio?: { feed?: FeedMeta; logo?: { kind?: string } | null } } | undefined)?.studio;
   const kind = st?.logo?.kind === "print" ? "print" : st?.logo || p.studioDetailUrl ? "logo" : null;
   return { feed: st?.feed ?? null, logoKind: kind };
 }
 /** Versão da foto de estúdio no ar, se a pessoa já aprovou, e a versão nova esperando aprovação (só o dono recebe). */
-export interface StudioVersion { version: number; approved: boolean; pending: { url?: string; feedUrl?: string; version?: number; backdrop?: string; createdAt?: string } | null }
+export interface StudioVersion { version: number; approved: boolean; pending: { feed?: FeedMeta; url?: string; feedUrl?: string; version?: number; backdrop?: string; createdAt?: string } | null }
 export function studioVersion(p: PieceView): StudioVersion {
   const st = (p.flatLayMetadata as { studio?: { version?: number; approved?: boolean; pending?: StudioVersion["pending"] } } | undefined)?.studio;
   return { version: st?.version ?? (p.studioImageUrl ? 1 : 0), approved: st?.approved !== false, pending: st?.pending ?? null };
@@ -26,27 +27,29 @@ export const studioNeedsReview = (p: PieceView) => { const v = studioVersion(p);
 /** Há logo de verdade para inspecionar: foto de detalhe gerada e o achado não é estampa. */
 export const hasRealLogo = (p: PieceView) => !!p.studioDetailUrl && studioMeta(p).logoKind !== "print";
 
-type Section = "framing" | "cut" | "compare" | "logo";
+type Section = "framing" | "cut" | "studio" | "logo";
 
 /**
  * "Editar imagem" (só o dono): as ferramentas do pipeline de foto, fora da leitura social da peça. Enquadramento
- * (template da categoria, regiões que a foto não mostra, fundo do estúdio), revisão do recorte (correção da máscara no
- * editor), original × processado e — só quando há logo real — o detalhe do logo. Nada aqui aparece para visitantes.
+ * (quadro 4:5 em escalas fixas), Recorte (janela retangular livre da região da captura) — ambos salvos como versão
+ * canônica do editor RF15 —, Estúdio (template da categoria, regiões que a foto não mostra, fundo) e — só quando há logo
+ * real — o detalhe do logo. Nada aqui aparece para visitantes.
  */
-export function EditImageDialog({ piece, open, onClose, onStudio, studioBusy, onReplace, onManual, onApprove, onDiscard, approvalBusy }: {
+export function EditImageDialog({ piece, open, onClose, onStudio, studioBusy, onReplace, onManual, onSaved, onApprove, onDiscard, approvalBusy }: {
   piece: PieceView; open: boolean; onClose: () => void; onStudio: (backdrop: string) => void; studioBusy?: boolean;
   onReplace: (file: File) => void; onManual: () => void;
+  /** Enquadramento/Recorte salvos: a peça volta com a foto nova */
+  onSaved?: (p: PieceView) => void;
   /** aprovação da foto de estúdio: a versão nova só vai ao feed depois de aprovada */
   onApprove?: () => void; onDiscard?: () => void; approvalBusy?: boolean;
 }) {
   const { t } = useI18n();
   const file = useRef<HTMLInputElement>(null);
   const { feed, logoKind } = studioMeta(piece);
-  const canCompare = !!piece.originalImageUrl && !!piece.imageUrl && piece.originalImageUrl !== piece.imageUrl;
-  const sections: Section[] = ["framing", "cut", ...(canCompare ? ["compare" as const] : []), ...(hasRealLogo(piece) ? ["logo" as const] : [])];
+  const sections: Section[] = ["framing", "cut", "studio", ...(hasRealLogo(piece) ? ["logo" as const] : [])];
   const [section, setSection] = useState<Section>("framing");
   const cur = sections.includes(section) ? section : "framing";
-  const label: Record<Section, string> = { framing: t("editImage.enquadramento"), cut: t("editImage.recorte"), compare: t("editImage.original_processado"), logo: t("editImage.logo") };
+  const label: Record<Section, string> = { framing: t("editImage.enquadramento"), cut: t("editImage.recorte"), studio: t("editImage.estudio"), logo: t("editImage.logo") };
   const missing = feed?.missing ?? [];
   const feedSrc = mediaUrl(piece.studioFeedUrl ?? piece.studioThumbUrl ?? piece.studioImageUrl);
   const fullSrc = mediaUrl(piece.studioImageUrl ?? piece.imageUrl);
@@ -61,10 +64,12 @@ export function EditImageDialog({ piece, open, onClose, onStudio, studioBusy, on
       <input ref={file} type="file" accept="image/*" className="sr-only" tabIndex={-1} aria-label={t("closet.replaceImage")} onChange={(e) => e.target.files?.[0] && onReplace(e.target.files[0])} />
       <ApprovalPanel piece={piece} onApprove={onApprove} onDiscard={onDiscard} busy={approvalBusy} />
       <SegmentPicker className="mb-3" label={t("editImage.etapas")} value={cur} onChange={setSection} options={sections.map((s) => ({ id: s, label: label[s] }))} />
-      {cur === "framing" && (
+      {cur === "framing" && <QuickCrop pieceId={piece.id} mode="framing" onSaved={(p) => onSaved?.(p)} onReplace={() => file.current?.click()} />}
+      {cur === "cut" && <QuickCrop pieceId={piece.id} mode="window" onSaved={(p) => onSaved?.(p)} onReplace={() => file.current?.click()} />}
+      {cur === "studio" && (
         <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <figure className="grid gap-1">
-            <div className="ei-frame is-feed">{feedSrc && <img src={feedSrc} alt={t("editImage.alt_feed", { name: piece.name })} />}</div>
+            <div className="ei-frame is-feed" style={{ aspectRatio: piecePhotoAspect(piece) }}>{feedSrc && <img src={feedSrc} alt={t("editImage.alt_feed", { name: piece.name })} />}</div>
             <figcaption className="type-caption text-muted">{t("editImage.no_feed")}</figcaption>
           </figure>
           <div className="grid content-start gap-3">
@@ -89,24 +94,13 @@ export function EditImageDialog({ piece, open, onClose, onStudio, studioBusy, on
           </div>
         </div>
       )}
-      {cur === "cut" && (
-        <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <div className="ei-frame is-checker">{piece.imageUrl && <img src={mediaUrl(piece.imageUrl)} alt={t("editImage.alt_recorte", { name: piece.name })} />}</div>
-          <div className="grid content-start gap-2">
-            <p className="type-body-sm">{t("editImage.recorte_dica")}</p>
-            <Button size="sm" variant="primary" onClick={onManual}>{t("editImage.corrigir_recorte")}</Button>
-            <Button size="sm" onClick={() => file.current?.click()}>{t("closet.replaceImage")}</Button>
-          </div>
-        </div>
-      )}
-      {cur === "compare" && canCompare && <BeforeAfter before={mediaUrl(piece.originalImageUrl)!} after={mediaUrl(piece.imageUrl)!} name={piece.name} />}
       {cur === "logo" && (
         <div className="grid gap-2">
           <div className="ei-frame is-feed">{piece.studioDetailUrl && <img src={mediaUrl(piece.studioDetailUrl)} alt={t("pieces.id.detalhe_do_logo_2", { name: piece.name })} />}</div>
           <p className="type-caption text-muted">{t("editImage.logo_dica")}</p>
         </div>
       )}
-      {logoKind === "print" && cur === "framing" && <p className="mt-3 type-caption text-muted">{t("editImage.estampa_preservada")}</p>}
+      {logoKind === "print" && cur === "studio" && <p className="mt-3 type-caption text-muted">{t("editImage.estampa_preservada")}</p>}
     </Dialog>
   );
 }
@@ -132,8 +126,8 @@ function ApprovalPanel({ piece, onApprove, onDiscard, busy }: { piece: PieceView
     <div className="ei-approval" role="region" aria-label={t("editImage.aprovacao")}>
       <p className="type-body-sm font-medium">{t("editImage.nova_versao", { v: v.pending.version ?? v.version + 1 })}</p>
       <div className="ei-compare">
-        <figure className="grid gap-1"><div className="ei-frame is-feed">{current && <img src={current} alt={t("editImage.alt_aprovada", { name: piece.name })} />}</div><figcaption className="type-caption text-muted">{t("editImage.aprovada_no_feed", { v: v.version })}</figcaption></figure>
-        <figure className="grid gap-1"><div className="ei-frame is-feed is-pending">{next && <img src={next} alt={t("editImage.alt_nova", { name: piece.name })} />}</div><figcaption className="type-caption text-muted">{t("editImage.nova_aguardando", { v: v.pending.version ?? v.version + 1 })}</figcaption></figure>
+        <figure className="grid gap-1"><div className="ei-frame is-feed" style={{ aspectRatio: piecePhotoAspect(piece) }}>{current && <img src={current} alt={t("editImage.alt_aprovada", { name: piece.name })} />}</div><figcaption className="type-caption text-muted">{t("editImage.aprovada_no_feed", { v: v.version })}</figcaption></figure>
+        <figure className="grid gap-1"><div className="ei-frame is-feed is-pending" style={{ aspectRatio: photoAspect(v.pending.feed?.aspect) }}>{next && <img src={next} alt={t("editImage.alt_nova", { name: piece.name })} />}</div><figcaption className="type-caption text-muted">{t("editImage.nova_aguardando", { v: v.pending.version ?? v.version + 1 })}</figcaption></figure>
       </div>
       <div className="flex flex-wrap gap-2">
         <Button size="sm" variant="primary" onClick={onApprove} loading={busy}>{t("editImage.aprovar_nova")}</Button>

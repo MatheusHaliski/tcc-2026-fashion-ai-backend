@@ -1,72 +1,68 @@
 @startuml RF16_Sequencia
-title RF16 — Implementar geração de imagem 3D das peças do guarda-roupa utilizando serviços de API externas\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Usuário (dono)" as U
-participant "Frontend\npieces/[id]\n(Model3dPanel)" as FE
-participant "WardrobeController" as C
-participant "WardrobeService" as WS
-participant "Model3dService" as M
-participant "AiEngine (RF24)" as AI
-participant "Meshy / Stability SF3D\n(Model3dPort)" as EXT
-participant "MediaService\n(storage)" as ST
-participant "NotificationService" as NS
-participant "FaiPointsService" as FP
-database "MySQL" as DB
-U -> FE: Gerar 3D
-FE -> C: POST /api/pieces/{id}/model3d
-C -> WS: request3d(user, id)
-WS -> M: request(owned(user, id))
-alt recurso desligado / sem foto
-  M --> FE: 409 RECURSO_DESLIGADO / 422 SEM_FOTO
-else job já QUEUED/PROCESSING
-  M --> FE: 200 status do mesmo job
-else novo pedido
-  M -> DB: INSERT pipeline_jobs (THREE_D_GENERATION, PENDING)
-  M -> DB: UPDATE wardrobe_items.model3d_status = QUEUED
-  M --> FE: 202 {status, jobId, progress, stages, freeRetry}
-end
-loop a cada 5 s — @Scheduled tick()
-  M -> DB: findByStatusOrderByQueuedAtAsc(PENDING)
-  M -> DB: job RUNNING / peça PROCESSING
-  M -> AI: execute(userId|null, THREE_D_GENERATOR, steps, fallback)
-  AI -> DB: INSERT ai_inference_log
-  alt Meshy (assíncrono)
-    AI -> EXT: submit(png)
-    EXT --> M: taskId (externalJobId)
-    M -> EXT: poll(taskId) (próximos ticks)
-    EXT --> M: SUCCEEDED + glbUrl
-    M -> EXT: WebFetchPort.get(glbUrl, 40 MB)
-  else Stable Fast 3D (síncrono)
-    AI -> EXT: generateNow(png)
-    EXT --> M: GLB
-  else sem chave / cota esgotada / falha
-    AI -> M: fallback ReliefModelGenerator (relevo local)
-  end
-  alt GLB válido
-    M -> ST: put(users/.../model-*.glb)
-    M -> DB: job COMPLETED, wardrobe_items.model3d_url
-    M -> NS: notify(AI_JOB_FINISHED, "Modelo 3D pronto")
-    M -> FP: awardIsolated(PIECE_3D) (+15, RF41)
-  else erro ou TEMPO_LIMITE
-    M -> DB: job FAILED (errorCode, errorMessage), peça FAILED
-  end
-end
-loop a cada 2,5 s enquanto QUEUED/PROCESSING
-  FE -> C: GET /api/pieces/{id}/model3d
-  C -> WS: status3d(user, id)
-  WS -> M: status(w)
-  M --> FE: 200 {status, label, progress, stages, modelUrl, error, canRetryFree}
-end
-FE -> U: PieceModelViewer (girar e zoom)
-opt look completo
-  FE -> C: POST /api/schemes/{id}/model3d (ShowcaseController)
-  note right: ShowcaseService.requestModels pede o 3D\nde todas as peças do esquema sem modelo
-end
+autonumber "<b>0."
+title RF16 — Implementar geração de imagem 3D das peças do guarda-roupa utilizando serviços de API externas\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /pieces/[id]" as P
+control "WardrobeController" as WardrobeController
+participant "WardrobeService" as WardrobeService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+participant "Model3dService" as Model3dService
+control "ShowcaseController" as ShowcaseController
+participant "ShowcaseService" as ShowcaseService
+participant "SchemeService" as SchemeService
+== Solicitar modelo 3D da peça ==
+U -> P : Solicitar modelo 3D da peça
+P -> WardrobeController : POST /api/pieces/{id}/model3d
+WardrobeController -> WardrobeService : request3d()
+activate WardrobeService
+WardrobeService -> Guard : requireCanCreate()
+WardrobeService -> DB_MySQL : SELECT wardrobe_items
+WardrobeService -> Guard : requireOwner()
+WardrobeService -> Model3dService : request()
+Model3dService -> DB_MySQL : SELECT pipeline_jobs (×2)
+Model3dService -> DB_MySQL : INSERT/UPDATE pipeline_jobs
+Model3dService -> DB_MySQL : SELECT pipeline_jobs
+Model3dService --> WardrobeService
+deactivate WardrobeService
+WardrobeService --> WardrobeController : resultado
+WardrobeController --> P : 201 JSON
+P --> U : atualiza a tela
+== Gerar 3D — dono pede o modelo 3D (RF16) de todas as peças do esquema… ==
+U -> P : Gerar 3D — dono pede o modelo 3D (RF16) de todas…
+P -> ShowcaseController : POST /api/schemes/{id}/model3d
+ShowcaseController -> ShowcaseService : requestModels()
+activate ShowcaseService
+ShowcaseService -> Guard : requireCanCreate()
+ShowcaseService -> SchemeService : owned()
+SchemeService -> DB_MySQL : SELECT schemes
+SchemeService --> ShowcaseService
+ShowcaseService -> DB_MySQL : SELECT scheme_items
+ShowcaseService -> Model3dService : request()
+deactivate ShowcaseService
+ShowcaseService --> ShowcaseController : resultado
+ShowcaseController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

@@ -12,11 +12,16 @@ import { Avatar, Button, Card, EmptyState, ErrorState, Skeleton } from "@/compon
 import { FilterBar } from "@/components/filter-bar";
 import { useWebGL, type Look3d } from "@/components/three/common";
 import type { RunwayEntry } from "@/components/three/runway-scene";
+import { HypeBadge } from "@/components/hype/hype-badge";
+import { HypeAnalyticsDrawer } from "@/components/hype/hype-analytics-drawer";
+import { hypeViewState } from "@/lib/hype/model";
+import type { HypeSummary } from "@/lib/hype/types";
 
 const RunwayScene = dynamic(() => retryImport(() => import("@/components/three/runway-scene")), { ssr: false, loading: () => <div className="showcase-3d-loading">{tr("showcase.runwayPanel.acendendo_a_passarela")}</div> });
 
 interface Facet { value: string; count: number; }
-interface Row { position: number; schemeId: string; title: string; owner: { username: string; displayName: string; avatarUrl?: string | null }; hypeScore?: number | null; likes: number; country?: string | null; region: string; you: boolean; }
+/** Linha do Top 100. `hype` = resumo v2 (público; pessoal só para o dono). */
+interface Row { position: number; schemeId: string; title: string; owner: { username: string; displayName: string; avatarUrl?: string | null }; hype?: HypeSummary | null; likes: number; country?: string | null; region: string; you: boolean; }
 interface Runway {
   date: string; nextUpdate: string; total: number; totalToday: number; ranking: string; rankings: string[]; looks: (RunwayEntry & { country?: string | null; region?: string })[];
   table: Row[]; batch: { offset: number; limit: number; from: number; to: number; hasNext: boolean; hasPrev: boolean };
@@ -25,12 +30,16 @@ interface Runway {
 }
 const RANKING_LABEL: Record<string, string> = { get TOP100_GLOBAL() { return tr("showcase.runwayPanel.top_100_global"); }, get TOP100_REGIONAL() { return tr("showcase.runwayPanel.top_100_regional"); }, get TOP100_PAIS() { return tr("showcase.runwayPanel.top_100_do_pais"); }, get SEGUINDO() { return tr("showcase.runwayPanel.seguindo"); }, get EM_ALTA() { return tr("showcase.runwayPanel.em_alta"); }, get RECENTES() { return tr("brands.recentes"); } };
 const BATCH = 12;
+/** Como cada ranking ordena (texto descritivo: Hype = relevância atual, Em alta = crescimento, nunca curtidas). */
+const ORDER_HINT: Record<string, string> = { get EM_ALTA() { return tr("hypeRunway.order_em_alta"); }, get RECENTES() { return tr("hypeRunway.order_recentes"); } };
 
 /**
  * Passarela 3D (RF33 · Explorar): o desfile do dia com o Look do Dia de cada perfil visível. Rankings (Top 100 Global,
  * Top 100 Regional por região do mundo, Top 100 do país, Seguindo, Em alta, Recentes) e filtros por região, cores,
  * ocasiões, estilos e manequim. Como é inviável desfilar todo mundo, a passarela mostra um lote de 12 por vez e a
  * tabela ao lado vai até o Top 100.
+ * RF53 (Lote 1): a tabela e o card do look mostram o HypeScore v2 (`HypeBadge` + faixa em texto, "—" sem Hype público)
+ * e as curtidas à parte.
  */
 export function RunwayPanel() {
   const { user } = useAuth(); const { fmtDate, t } = useI18n(); const webgl = useWebGL();
@@ -110,9 +119,10 @@ export function RunwayPanel() {
                     onClick={() => { const hit = data.looks.find((l) => l.look.schemeId === r.schemeId); if (hit) setSel(hit); else setOffset(Math.floor((r.position - 1) / BATCH) * BATCH); }}>
                     <span className="w-8 type-data tabular">#{r.position}</span><Avatar src={mediaUrl(r.owner?.avatarUrl)} name={r.owner?.displayName} size={24} />
                     <span className="min-w-0 flex-1 truncate type-body-sm">@{r.owner?.username}{r.you ? t("showcase.runwayPanel.voce") : ""}<span className="type-caption text-muted"> · {r.country ?? "—"}</span></span>
-                    <span className="type-caption text-muted tabular">{r.hypeScore != null ? Math.round(Number(r.hypeScore)) : "—"}</span>
+                    <RunwayHype summary={r.hype} />
                   </button></li>);
               })}</ol>
+              <p className="mt-2 type-caption text-faint">{ORDER_HINT[data.ranking] ?? t("hypeRunway.order_top")}</p>
             </Card>
           </div>
         </div>
@@ -121,15 +131,40 @@ export function RunwayPanel() {
   );
 }
 
-function LookCard({ e }: { e: RunwayEntry }) {
+/**
+ * Hype v2 de uma linha ou look da Passarela: o badge ("🔥 82 ↑") e a faixa em texto ao lado. Sem Hype público (ou ainda
+ * não calculado, ou dados insuficientes) é "🔥 —", nunca 0.
+ */
+export function RunwayHype({ summary, className }: { summary?: HypeSummary | null; className?: string }) {
+  const { t } = useI18n();
+  const state = hypeViewState(summary);
+  return (
+    <span className={`inline-flex shrink-0 items-center gap-1 ${className ?? ""}`}>
+      <HypeBadge state={state} summary={summary} />
+      {state.kind === "available" && <span className="type-caption text-muted" aria-hidden>{t(`hype.level.${state.level}`)}</span>}
+    </span>
+  );
+}
+
+export function LookCard({ e }: { e: RunwayEntry }) {
   const { t } = useI18n();
   const l: Look3d = e.look;
+  const [analysis, setAnalysis] = useState(false);
+  // a análise completa só faz sentido com Hype visível para quem vê (público, ou o pessoal do dono)
+  const canAnalyse = !!l.schemeId && (l.hype?.status === "AVAILABLE" || l.hype?.status === "INSUFFICIENT_DATA");
   return (
     <Card>
       <div className="flex items-center gap-2"><Avatar src={mediaUrl(l.owner?.avatarUrl)} name={l.owner?.displayName} size={36} /><div className="min-w-0"><p className="type-body font-semibold truncate">{l.title}</p><p className="type-caption text-muted">{t("showcase.runwayPanel.manequim", { username: l.owner?.username, value: l.mannequin.sex === "MASCULINO" ? t("common.masculino_2") : t("common.feminino_2"), value2: l.mannequin.head === "FOTO" ? t("showcase.runwayPanel.com_foto") : t("common.padrao") })}</p></div></div>
       <ul className="mt-2 flex flex-wrap gap-1">{l.pieces.map((p) => <li key={p.id} title={p.name} className="h-12 w-12 overflow-hidden rounded bg-surface-2">{p.imageUrl && <img src={mediaUrl(p.imageUrl)} alt={p.name} className="h-full w-full object-contain" />}</li>)}</ul>
-      <p className="mt-2 type-caption text-muted tabular">{t("showcase.runwayPanel.hype", { value: l.likes ?? 0, value2: l.hypeScore != null ? Math.round(Number(l.hypeScore)) : "—", value3: e.carriedOver ? t("showcase.runwayPanel.continua_de_ontem") : "" })}</p>
-      {l.schemeId && <Link className="btn btn-sm mt-2" href={`/schemes/${l.schemeId}`}>{t("showcase.runwayPanel.abrir_o_look")}</Link>}
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <RunwayHype summary={l.hype} />
+        <span className="type-caption text-muted tabular">{t("hypeRunway.likes", { count: l.likes ?? 0 })}{e.carriedOver ? t("showcase.runwayPanel.continua_de_ontem") : ""}</span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {l.schemeId && <Link className="btn btn-sm" href={`/schemes/${l.schemeId}`}>{t("showcase.runwayPanel.abrir_o_look")}</Link>}
+        {canAnalyse && <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAnalysis(true)} aria-haspopup="dialog">{t("hype.card.full_analysis")}</button>}
+      </div>
+      {analysis && l.schemeId && <HypeAnalyticsDrawer type="SCHEME" id={l.schemeId} name={l.title} open={analysis} onClose={() => setAnalysis(false)} />}
     </Card>
   );
 }

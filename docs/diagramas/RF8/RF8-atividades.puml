@@ -1,9 +1,16 @@
 @startuml RF8_Atividades
-title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba "Buscar"\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,65 +19,51 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba 'Buscar'\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre a aba "Buscar" (search) ou "Feed" (feed);
-if (Digitou um termo?) then (sim)
-  :Escolhe a aba: LOOKS, PECAS, PESSOAS,\nMARCAS ou CELEBRIDADES;
-  :Aplica chips de filtro\n(estilo, ocasião, cor, marca, categoria);
-  |Frontend (Next.js)|
-  :GET /api/search?q=&tab=&cursor=;
-else (não)
-  |Frontend (Next.js)|
-  :GET /api/feed (comunidade) ou\nGET /api/runway (quem eu sigo);
+:Abre /feed, /schemes/[id]/edit,\n/schemes/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/search\nGET /api/runway\nGET /api/interactions/{type}/{id}/counters;
+|Pessoa usuária|
+:Feed da comunidade (cursor opaco,\nrelevância = recência + H…;
+|Tela (Next.js)|
+:GET /api/feed;
+|API (Spring Boot)|
+:DiscoveryController.feed\n→ SearchService.communityFeed;
+|Dados e serviços|
+:Lê: follows\nstyle_dna\nschemes\nscheme_items;
+:Usa: SchemeService.canView\nSchemeService.view;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Reagir [curtir etc.] a esquema, p…)
+    :POST /api/interactions/{type}/{id}/reactions\n→ SocialService.react\nvalida: NAO_ENCONTRADO\nlê: schemes, wardrobe_items, dna_schemes …\nusa: Guard.requireCanCreate,\nSchemeService.requireView, Guard.requireView\n…\ngrava: reactions;
+  case (Compartilhar [link, timeline, red…)
+    :POST /api/interactions/{type}/{id}/shares\n→ SocialService.share\nvalida: INDISPONIVEL, NAO_ENCONTRADO\nlê: schemes, wardrobe_items, dna_schemes …\nusa: Guard.requireCanCreate,\nSchemeService.requireView, Guard.requireView\n…\ngrava: shares;
+  case (Comentar [ou responder a um comen…)
+    :POST /api/interactions/{type}/{id}/comments\n→ SocialService.comment\nvalida: COMENTARIO_LONGO, COMENTARIO_VAZIO,\nCONTEUDO_BLOQUEADO, NAO_ENCONTRADO\nlê: schemes, wardrobe_items, dna_schemes …\nusa: Guard.requireCanCreate,\nSchemeService.requireView, Guard.requireView\n…\ngrava: comments;
+  case (Salvar/remover dos salvos)
+    :POST /api/interactions/{type}/{id}/saves\n→ SocialService.toggleSave\nvalida: NAO_ENCONTRADO\nlê: schemes, wardrobe_items, dna_schemes …\nusa: Guard.requireCanCreate,\nSchemeService.requireView, Guard.requireView\n…\ngrava: saved_items;
+  case (Editar esquema)
+    :PUT /api/schemes/{id}\n→ SchemeService.update\nvalida: FORMULARIO_INVALIDO, FOTO_INVALIDA,\nPECA_DE_OUTRO_USUARIO, PECA_INDISPONIVEL …\nlê: schemes, scheme_items, wardrobe_items …\nusa: Guard.requireCanCreate, Guard.requireOwner,\nBackgroundStudioService.applyToScheme …\ngrava: scheme_items;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Salvar esquema (manual, IA, a…, Excluir o look
+  (menu ⋯ do don…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-|Backend (SearchService)|
-if (Aba válida?) then (não)
-  #FFE3E3:400 ABA_INVALIDA;
-  stop
-endif
-:Monta lista de bloqueios (Follow BLOQUEADO\nnos dois sentidos) e estilos do meu StyleDna;
-:Lê candidatos públicos:\nSchemeRepository.findPublicFeed /\nWardrobeItemRepository;
-:Filtra por visibilidade efetiva\n(moreRestrictive(esquema, perfil) + Guard.canView);
-note right
-  RN: esquema ARCHIVED só aparece para o dono;
-  peça só com ModerationStatus APPROVED;
-  dono com AccountStatus ACTIVE;
-  bloqueados nunca aparecem (RF17)
-end note
-:Aplica os filtros (SearchService.matches);
-:Ordena por relevância =\n0,5·recência + 0,3·hype + 0,2·afinidade (DNA);
-note right: afinidade = Affinity AI (AiCapability.AFFINITY,\nmotor local — ver RF24)
-if (Houve resultado?) then (não)
-  :Monta "empty": termos alternativos +\nlooks em alta (trending);
-endif
-:Responde results + nextCursor + chips + engine (mysql|opensearch);
-|Frontend (Next.js)|
-:Renderiza SchemeCard / PieceCard / Avatar;
-:InfiniteSentinel pede a próxima página pelo cursor;
-|Pessoa|
-:Abre um card de outra pessoa;
-|Frontend (Next.js)|
-:GET /api/schemes/{id} ou GET /api/pieces/{id}\n+ GET /api/interactions/{type}/{id}/counters;
-|Backend (SearchService)|
-:SchemeService.requireView — 403 auditado\nse a visibilidade não permitir;
-:Incrementa viewCount quando não é o dono;
-|Pessoa|
-if (Interage?) then (sim)
-  |Frontend (Next.js)|
-  :POST /api/interactions/{type}/{id}/reactions | comments | saves | shares;
-  note right: SocialController (RF8/RF17/RF19)
-endif
+|Pessoa usuária|
 stop
 @enduml

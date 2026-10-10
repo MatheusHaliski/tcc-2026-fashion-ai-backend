@@ -1,0 +1,36 @@
+@startuml RF53_MaquinaDeEstados_Marco
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  StartColor #20A77A
+  EndColor #4B5563
+}
+title RF53 — ciclo de vida de HypeMilestone.level\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum HypeLevel · tabela hype_milestones
+
+state "HypeMilestone.level" as Ciclo_HypeMilestone {
+  state Ciclo_HypeMilestone_LOW_SIGNAL as "LOW_SIGNAL"
+  state Ciclo_HypeMilestone_NICHE as "NICHE"
+  state Ciclo_HypeMilestone_RELEVANT as "RELEVANT"
+  state Ciclo_HypeMilestone_HOT as "HOT"
+  state Ciclo_HypeMilestone_TRENDING as "TRENDING"
+  state Ciclo_HypeMilestone_VIRAL as "VIRAL"
+}
+note bottom of Ciclo_HypeMilestone
+  Sem mudança explícita no código para: LOW_SIGNAL, NICHE, RELEVANT, HOT, TRENDING, VIRAL
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
+@enduml

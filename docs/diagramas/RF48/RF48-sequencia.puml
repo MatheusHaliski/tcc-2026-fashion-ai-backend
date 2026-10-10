@@ -1,0 +1,43 @@
+@startuml RF48_Sequencia
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+title RF48 — FAI Points: resgate em dinheiro e doações\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /points" as P
+control "HighlightsController" as HighlightsController
+participant "FaiPointsService" as FaiPointsService
+database "MySQL" as DB_MySQL
+== Saldo, nível e extrato de FAI Points ==
+U -> P : Saldo, nível e extrato de FAI Points
+P -> HighlightsController : GET /api/me/points
+HighlightsController -> FaiPointsService : account()
+activate FaiPointsService
+FaiPointsService -> DB_MySQL : SELECT fai_points_ledger (×2)
+FaiPointsService -> DB_MySQL : SELECT fai_points_rules
+FaiPointsService -> DB_MySQL : SELECT fai_points_ledger
+deactivate FaiPointsService
+FaiPointsService --> HighlightsController : resultado
+HighlightsController --> P : 200 JSON
+P --> U : atualiza a tela
+@enduml

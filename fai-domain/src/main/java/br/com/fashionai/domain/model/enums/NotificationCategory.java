@@ -5,5 +5,7 @@ public enum NotificationCategory {
     SECURITY,
     SOCIAL,
     ACHIEVEMENT,
-    SYSTEM
+    SYSTEM,
+    /** Extrato dos FAI Points: cada crédito e débito do ledger (RF30/RF39). */
+    POINTS
 }

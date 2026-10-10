@@ -1,0 +1,387 @@
+{
+  "syntheticFixture": true,
+  "errors": [],
+  "results": [
+    {
+      "label": "front-lod2",
+      "elapsedMs": 24899,
+      "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "WebKit WebGL",
+      "samples": 4,
+      "hairLod": 2,
+      "hairMaterials": [
+        {
+          "name": "cabelo",
+          "alphaTest": 0.3,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true
+        },
+        {
+          "name": "cabelo-fios",
+          "alphaTest": 0.12,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true,
+          "coverageAA": 1
+        }
+      ],
+      "skin": "baked",
+      "bodyVertices": 22638,
+      "eyeVertices": 1076,
+      "programs": [
+        "",
+        "",
+        "pele",
+        "olhos",
+        "cabelo",
+        "cabelo-fios",
+        "roupa-pants",
+        "calcado-cabedal",
+        "calcado-sola",
+        "acabamento-punho",
+        "pelos-sobrancelhas",
+        "córnea",
+        "linha-dagua"
+      ]
+    },
+    {
+      "label": "eyes-narrow",
+      "elapsedMs": 29224,
+      "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "WebKit WebGL",
+      "samples": 4,
+      "hairLod": 2,
+      "hairMaterials": [
+        {
+          "name": "cabelo",
+          "alphaTest": 0.3,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true
+        },
+        {
+          "name": "cabelo-fios",
+          "alphaTest": 0.12,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true,
+          "coverageAA": 1
+        }
+      ],
+      "skin": "baked",
+      "bodyVertices": 20397,
+      "eyeVertices": 1076,
+      "programs": [
+        "",
+        "pelos-sobrancelhas",
+        "pele",
+        "olhos",
+        "cabelo",
+        "cabelo-fios",
+        "linha-dagua",
+        "córnea"
+      ]
+    },
+    {
+      "label": "eyes-narrow-tilted",
+      "elapsedMs": 46812,
+      "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "WebKit WebGL",
+      "samples": 4,
+      "hairLod": 2,
+      "hairMaterials": [
+        {
+          "name": "cabelo",
+          "alphaTest": 0.3,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true
+        },
+        {
+          "name": "cabelo-fios",
+          "alphaTest": 0.12,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true,
+          "coverageAA": 1
+        }
+      ],
+      "skin": "baked",
+      "bodyVertices": 22557,
+      "eyeVertices": 1076,
+      "programs": [
+        "",
+        "",
+        "pele",
+        "olhos",
+        "cabelo",
+        "cabelo-fios",
+        "roupa-pants",
+        "calcado-cabedal",
+        "calcado-sola",
+        "acabamento-punho",
+        "pelos-sobrancelhas",
+        "córnea",
+        "linha-dagua"
+      ]
+    },
+    {
+      "label": "natural-lips",
+      "elapsedMs": 38785,
+      "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "WebKit WebGL",
+      "samples": 4,
+      "hairLod": 2,
+      "hairMaterials": [
+        {
+          "name": "cabelo",
+          "alphaTest": 0.3,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true
+        },
+        {
+          "name": "cabelo-fios",
+          "alphaTest": 0.12,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true,
+          "coverageAA": 1
+        }
+      ],
+      "skin": "baked",
+      "bodyVertices": 22638,
+      "eyeVertices": 1076,
+      "programs": [
+        "",
+        "",
+        "pele",
+        "olhos",
+        "cabelo",
+        "cabelo-fios",
+        "roupa-pants",
+        "calcado-cabedal",
+        "calcado-sola",
+        "acabamento-punho",
+        "pelos-sobrancelhas",
+        "córnea",
+        "linha-dagua"
+      ]
+    },
+    {
+      "label": "front-lod0",
+      "elapsedMs": 50417,
+      "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "WebKit WebGL",
+      "samples": 4,
+      "hairLod": 0,
+      "hairMaterials": [
+        {
+          "name": "cabelo",
+          "alphaTest": 0.3,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true
+        },
+        {
+          "name": "cabelo-fios",
+          "alphaTest": 0.12,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true,
+          "coverageAA": 1
+        }
+      ],
+      "skin": "baked",
+      "bodyVertices": 22638,
+      "eyeVertices": 1076,
+      "programs": [
+        "",
+        "",
+        "pele",
+        "olhos",
+        "cabelo",
+        "cabelo-fios",
+        "roupa-pants",
+        "calcado-cabedal",
+        "calcado-sola",
+        "acabamento-punho",
+        "pelos-sobrancelhas",
+        "córnea",
+        "linha-dagua"
+      ]
+    },
+    {
+      "label": "front-lod1",
+      "elapsedMs": 28472,
+      "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "WebKit WebGL",
+      "samples": 4,
+      "hairLod": 1,
+      "hairMaterials": [
+        {
+          "name": "cabelo",
+          "alphaTest": 0.3,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true
+        },
+        {
+          "name": "cabelo-fios",
+          "alphaTest": 0.12,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true,
+          "coverageAA": 1
+        }
+      ],
+      "skin": "baked",
+      "bodyVertices": 22638,
+      "eyeVertices": 1076,
+      "programs": [
+        "",
+        "pelos-sobrancelhas",
+        "pele",
+        "olhos",
+        "cabelo",
+        "cabelo-fios",
+        "linha-dagua",
+        "córnea"
+      ]
+    },
+    {
+      "label": "front-lod3",
+      "elapsedMs": 16517,
+      "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "WebKit WebGL",
+      "samples": 4,
+      "hairLod": 3,
+      "hairMaterials": [
+        {
+          "name": "cabelo",
+          "alphaTest": 0.5,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true
+        }
+      ],
+      "skin": "baked",
+      "bodyVertices": 22638,
+      "eyeVertices": 1076,
+      "programs": [
+        "",
+        "",
+        "pele",
+        "olhos",
+        "cabelo",
+        "roupa-pants",
+        "calcado-cabedal",
+        "calcado-sola",
+        "acabamento-punho",
+        "pelos-sobrancelhas",
+        "córnea",
+        "linha-dagua"
+      ]
+    },
+    {
+      "label": "glasses",
+      "elapsedMs": 19353,
+      "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "WebKit WebGL",
+      "samples": 4,
+      "hairLod": 2,
+      "hairMaterials": [
+        {
+          "name": "cabelo",
+          "alphaTest": 0.3,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true
+        },
+        {
+          "name": "cabelo-fios",
+          "alphaTest": 0.12,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true,
+          "coverageAA": 1
+        }
+      ],
+      "skin": "baked",
+      "bodyVertices": 22638,
+      "eyeVertices": 1076,
+      "programs": [
+        "",
+        "",
+        "",
+        "",
+        "pele",
+        "olhos",
+        "cabelo",
+        "cabelo-fios",
+        "roupa-pants",
+        "calcado-cabedal",
+        "calcado-sola",
+        "acabamento-punho",
+        "armação",
+        "pelos-sobrancelhas",
+        "córnea",
+        "linha-dagua",
+        "lente"
+      ]
+    },
+    {
+      "label": "eye-sockets-before",
+      "elapsedMs": 23245,
+      "webglVersion": "WebGL 2.0 (OpenGL ES 3.0 Chromium)",
+      "renderer": "WebKit WebGL",
+      "samples": 4,
+      "hairLod": 2,
+      "hairMaterials": [
+        {
+          "name": "cabelo",
+          "alphaTest": 0.3,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true
+        },
+        {
+          "name": "cabelo-fios",
+          "alphaTest": 0.12,
+          "alphaToCoverage": true,
+          "transparent": false,
+          "depthWrite": true,
+          "coverageAA": 1
+        }
+      ],
+      "skin": "baked",
+      "bodyVertices": 14517,
+      "eyeVertices": 1076,
+      "programs": [
+        "",
+        "",
+        "pele",
+        "olhos",
+        "cabelo",
+        "cabelo-fios",
+        "roupa-pants",
+        "calcado-cabedal",
+        "calcado-sola",
+        "acabamento-punho",
+        "pelos-sobrancelhas",
+        "córnea",
+        "linha-dagua"
+      ]
+    }
+  ],
+  "externalApisMocked": true,
+  "staticAssets": "repository public/avatar3d files",
+  "softwareRenderer": true,
+  "continuousAnimationLoop": false,
+  "limitations": [
+    "Synthetic face texture, not reconstruction of user photos",
+    "Software GPU timings do not represent device FPS",
+    "Procedural hair cards still limit realism"
+  ]
+}

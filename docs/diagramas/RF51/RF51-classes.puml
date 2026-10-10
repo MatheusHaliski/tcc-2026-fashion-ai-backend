@@ -1,0 +1,191 @@
+@startuml RF51_Classes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam class {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+  StereotypeFontColor #6B6470
+}
+hide empty members
+left to right direction
+title RF51 — Cartela sazonal e animação no modal do Background Studio\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "components/background-studio.tsx" {
+  class BgConfig as "BgConfig" <<interface>> {
+    +color: string | null
+    +gradient: string | null
+    +gradientPresetId: string | null
+    +seasonalPresetId: string | null
+    +aura: { variantId: string; format?: 'IMAGEM_U…
+    +materialId: string | null
+    +aiArt: { url: string } | null
+    +uploadUrl: string | null
+    +animation: string | null
+    +seasonalAuto: boolean
+    .. +4 ..
+  }
+  class BgCatalog as "BgCatalog" <<interface>> {
+    +colors: string[]
+    +gradients: { id: string; name: string; stops: stri…
+    +seasonal: { id: string; name: string; season: str…
+    +auraPresets: { id: string; name: string; archetype?:…
+    +materials: { id: string; name: string; finish?: st…
+    +skins: { id: string; displayName?: string }[]
+    +directions: Record<string, { label: string; skin?:…
+    +anatomies: string[]
+    +pieceAnatomies: string[]
+    +animations: string[]
+    .. +1 ..
+  }
+  class Variant as "Variant" <<interface>> {
+    +id: string
+    +theme: string
+    +description: string
+    +code: string
+    +static: { previewUrl?: string; url?: string; ca…
+  }
+  enum ArtSegment as "ArtSegment" {
+    cor
+    aura
+    layout
+    container
+  }
+  class mod_background_studio_tsx as "background-studio.tsx" <<módulo>> {
+    +ArtSegments()
+    +OptionStrip()
+    +useBgCatalog()
+    +useLeaveCartela()
+    +SeasonalOptions()
+    +SeasonalDialog()
+    +ColorPanel()
+    +AuraMaterialPanel()
+  }
+}
+package "lib/card-art.ts" {
+  class Studio as "Studio" <<interface>> {
+    +color: string | null
+    +gradient: unknown
+    +gradientPresetId: string | null
+    +seasonalPresetId: string | null
+    +seasonalAuto: boolean
+    +aura: { variantId?: string; format?: string }…
+    +materialId: string | null
+    +aiArt: { url?: string } | null
+    +uploadUrl: string | null
+    +container: { color?: string | null; ink?: string |…
+    .. +4 ..
+  }
+  class CardArt as "CardArt" <<interface>> {
+    +kind: ArtKind
+    +base: string
+    +image: string
+    +video: { src: string; poster?: string | null }
+    +material: string
+    +animation: string | null
+    +season: string | null
+    +label: string
+    +presetId: string
+    +frame: boolean
+    .. +2 ..
+  }
+  class Idx as "Idx" <<type>> {
+    +presets: Record<string, { name: string; archetyp…
+    +variants: Record<string, { presetId: string; code…
+    +materials: Record<string, { name: string; code?: s…
+    +combos: Record<string, { single?: { url: string…
+    +seasonal: Record<string, { season: string; name:…
+    +gradients: Record<string, { name: string; type?: s…
+    +skins: Record<string, { nativeContainer?: stri…
+  }
+  class mod_card_art_ts as "card-art.ts" <<módulo>> {
+    +motionOf()
+    +auraVariantId()
+    +bundledAuraPresets()
+    +studioOf()
+    +cartelaSeason()
+    +resolveCardArt()
+    +containerColorOf()
+    +containerInkOf()
+  }
+}
+package "components/scheme-builder.tsx" {
+  class Builder as "Builder" <<interface>> {
+    +totalPieces: number
+    +eligiblePieces: number
+    +hiddenPieces: number
+    +source: string
+    +status: string
+    +message: string
+    +action: { label: string; href: string }
+    +lists: Record<string, PieceView[]>
+    +defaultVisibility: string
+    +steps: string[]
+    .. +1 ..
+  }
+  class SealOption as "SealOption" <<interface>> {
+    +targetOwnerId: string
+    +kind: 'BRAND' | 'CELEBRITY'
+    +name: string
+    +logoUrl: string | null
+    +confidence: number
+    +justification: string
+    +eraLabel: string | null
+    +hype: { score: number | null; level: HypeLeve…
+  }
+  class mod_scheme_builder_tsx as "scheme-builder.tsx" <<módulo>> {
+    +onePerType()
+    +SlotBrand()
+    +SchemeBuilder()
+  }
+}
+package "components/dna-builder.tsx" {
+  class Proposal as "Proposal" <<interface>> {
+    +title: string
+    +narrativeType: string | null
+    +cardLayout: string
+    +cells: { schemeId: string; title?: string; era…
+    +occasion: string[]
+    +style: string[]
+    +seasonalTheme: string | null
+    +rationale: string | null
+  }
+  class mod_dna_builder_tsx as "dna-builder.tsx" <<módulo>> {
+    +DnaBuilder()
+  }
+}
+package "components/piece-art-editor.tsx" {
+  class mod_piece_art_editor_tsx as "piece-art-editor.tsx" <<módulo>> {
+    +PieceArtEditor()
+    +restoredArt()
+    +PieceArtDialog()
+  }
+}
+package "Backend (Java)" {
+  class BackgroundStudioService <<service>> {
+    -generators: List<ImageProviderPorts.ImageGenera…
+    -ai: AiEngine
+    -guard: Guard
+    +seal()
+    +catalog()
+    +combination()
+    +recommend()
+    +generateArt()
+    +gallerySuggestions()
+    +upload()
+    +cropTo()
+  }
+}
+BgCatalog --> Variant : auraPresets
+@enduml

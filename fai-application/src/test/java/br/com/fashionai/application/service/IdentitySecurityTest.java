@@ -1,6 +1,7 @@
 package br.com.fashionai.application.service;
 
 import br.com.fashionai.application.audit.Audit;
+import br.com.fashionai.application.audit.AuditActions;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Hashing;
 import br.com.fashionai.application.identity.PasswordHasherPort;
@@ -38,11 +39,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -58,8 +65,10 @@ class IdentitySecurityTest {
     final List<VerificationCode> codeRows = new ArrayList<>();
     final List<String> mails = new ArrayList<>();
     final List<Runnable> queuedMails = new ArrayList<>();
-    final List<String> audited = new ArrayList<>();
-    final Map<String, Long> buckets = new HashMap<>();
+    final List<String> audited = java.util.Collections.synchronizedList(new ArrayList<>());
+    final Map<String, Long> buckets = new ConcurrentHashMap<>();
+    /** Atraso do hash falso: abre a janela entre ler o contador e somar a falha (teste da corrida). */
+    volatile long hashDelayMs;
     IdentityService identity;
     User user;
 
@@ -78,6 +87,11 @@ class IdentitySecurityTest {
         @Override
         public void reset(UUID userId, String bucket) {
             buckets.remove(bucket + ":" + userId);
+        }
+
+        @Override
+        public void release(UUID userId, String bucket) {
+            buckets.computeIfPresent(bucket + ":" + userId, (k, v) -> Math.max(0L, v - 1));
         }
     };
 
@@ -143,7 +157,16 @@ class IdentitySecurityTest {
         userRows.put(user.getId(), user);
         PasswordHasherPort hasher = new PasswordHasherPort() {
             public String hash(String raw) { return "h:" + raw; }
-            public boolean matches(String raw, String encoded) { return ("h:" + raw).equals(encoded); }
+            public boolean matches(String raw, String encoded) {
+                if (hashDelayMs > 0) {
+                    try {
+                        Thread.sleep(hashDelayMs);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+                return ("h:" + raw).equals(encoded);
+            }
         };
         TokenIssuerPort tokens = new TokenIssuerPort() {
             public String issueAccessToken(User u, UUID sessionId) { return "jwt"; }
@@ -320,6 +343,67 @@ class IdentitySecurityTest {
         assertNotNull(identity.login(login("maria", PASSWORD, null), "1.1.1.1", "ua").accessToken());
     }
 
+    /**
+     * Corrida: o contador era lido antes do hash e somado depois — 40 pedidos em paralelo liam "0 falhas" e avaliavam
+     * 40 senhas. Com a reserva atômica antes do hash, só 5 palpites são avaliados, venha de quantos IPs vier.
+     */
+    @Test
+    void palpitesEmParaleloNaoPassamDoLimiteDoBloqueio() throws Exception {
+        hashDelayMs = 30;
+        ExecutorService pool = Executors.newFixedThreadPool(40);
+        try {
+            List<Future<?>> all = new ArrayList<>();
+            for (int i = 0; i < 40; i++) {
+                String guess = "errada" + i;
+                String ip = "100.64.0." + (i + 1);
+                all.add(pool.submit(() -> error(() -> identity.login(login("maria", guess, null), ip, "ua"))));
+            }
+            for (Future<?> f : all) {
+                f.get(30, TimeUnit.SECONDS);
+            }
+        } finally {
+            pool.shutdownNow();
+        }
+        long evaluated = audited.stream().filter(a -> a.startsWith(AuditActions.LOGIN_FALHO + ":")).count();
+        assertEquals(5, evaluated, "palpites de senha avaliados");
+        hashDelayMs = 0;
+        assertEquals("NAO_AUTENTICADO", error(() -> identity.login(login("maria", PASSWORD, null), "1.1.1.1", "ua")).code());
+    }
+
+    @Test
+    void senhaCertaNaoContaComoFalha() {
+        for (int i = 0; i < 4; i++) {
+            error(() -> identity.login(login("maria", "errada", null), "1.1.1.1", "ua"));
+        }
+        user.setTwoFactorEnabled(true);           // senha certa sem o código: não zera nem soma
+        assertEquals("DOIS_FATORES_NECESSARIO", error(() -> identity.login(login("maria", PASSWORD, null), "1.1.1.1", "ua")).code());
+        assertEquals(4, rateLimit.status(user.getId(), IdentityService.LOGIN_FAIL, 5, Duration.ofMinutes(15)).used());
+    }
+
+    /** Sessão roubada (token de 15 min) tentando descobrir a senha atual pela troca de senha: mesmo bloqueio do login. */
+    @Test
+    void trocaDeSenhaContaNoBloqueioENaoViraOraculo() {
+        CurrentUser me = CurrentUser.of(user, "1.1.1.1", "ua");
+        for (int i = 0; i < 5; i++) {
+            String guess = "chute" + i;
+            assertEquals("SENHA_ATUAL_INCORRETA",
+                    error(() -> identity.changePassword(me, UUID.randomUUID(), guess, "Nova@Forte123", "Nova@Forte123")).code());
+        }
+        ApiException blocked = error(() -> identity.changePassword(me, UUID.randomUUID(), PASSWORD, "Nova@Forte123", "Nova@Forte123"));
+        assertEquals(429, blocked.status());
+        assertEquals("MUITAS_TENTATIVAS", blocked.code());
+        assertEquals("h:" + PASSWORD, user.getPasswordHash());
+        assertEquals("NAO_AUTENTICADO", error(() -> identity.login(login("maria", PASSWORD, null), "1.1.1.1", "ua")).code());
+    }
+
+    @Test
+    void reautenticacaoTambemContaNoBloqueio() {
+        for (int i = 0; i < 5; i++) {
+            assertEquals("REAUTENTICACAO_FALHOU", error(() -> identity.reauthenticate(user.getId(), "chute")).code());
+        }
+        assertEquals(429, error(() -> identity.reauthenticate(user.getId(), PASSWORD)).status());
+    }
+
     @Test
     void codigo2faErradoContaTentativasEAlimentaOBloqueio() {
         user.setTwoFactorEnabled(true);
@@ -403,5 +487,44 @@ class IdentitySecurityTest {
         }
         assertTrue(IdentityService.reservedUsername("moderador"));
         assertNotEquals("admin", identity.suggestUsername("Admin"));
+    }
+
+    // ------------------------------------------------------------------ link oficial no cadastro de emissor
+
+    /**
+     * Política de verificação: o perfil oficial da celebridade (onde o analista procura o código FAI-…) e o site da marca
+     * são critérios obrigatórios — sem eles o pedido nunca poderia ser aprovado, então o cadastro já os exige.
+     */
+    @Test
+    void cadastroDeCelebridadeExigeOLinkDoPerfilOficial() {
+        for (String link : new String[]{null, " ", "@samuelrosa"}) {
+            var celeb = new IdentityService.CelebrityData("Samuel Rosa", "Samuel Rosa Silva", "pending/x/id.png", "pending/x/foto.png", List.of("música"),
+                    Map.of(), link, null, null, List.of(), true);
+            var cmd = new IdentityService.RegisterCommand(ProfileType.CELEBRIDADE, "Samuel Rosa", "samuel", "samuel@exemplo.com", "Senha@Forte1",
+                    "Senha@Forte1", true, "1990-01-01", "BR", null, celeb, null, MannequinSex.MASCULINO);
+            ApiException ex = error(() -> identity.register(cmd, "1.1.1.1", "ua"));
+            assertEquals("FORMULARIO_INVALIDO", ex.code(), String.valueOf(link));
+            assertTrue(((Map<?, ?>) ex.details()).containsKey("celebrity.verificationUrl"), String.valueOf(link));
+        }
+    }
+
+    @Test
+    void cadastroDeMarcaExigeOSiteOficial() {
+        var brand = new IdentityService.BrandData("Atelier Lume Ltda", "11.222.333/0001-81", "Atelier Lume", "pending/x/logo.png", "casual",
+                null, null, null, null);
+        var cmd = new IdentityService.RegisterCommand(ProfileType.MARCA, "Atelier Lume", "atelierlume", "contato@exemplo.com", "Senha@Forte1",
+                "Senha@Forte1", true, "1990-01-01", "BR", brand, null, null, null);
+        ApiException ex = error(() -> identity.register(cmd, "1.1.1.1", "ua"));
+        assertTrue(((Map<?, ?>) ex.details()).containsKey("brand.storeUrl"));
+    }
+
+    @Test
+    void linkDigitadoSemHttpsViraUrlCompleta() {
+        assertEquals("https://instagram.com/samuelrosa", IssuerVerificationPolicy.normalizeUrl(" instagram.com/samuelrosa "));
+        assertEquals("https://www.atelierlume.com.br", IssuerVerificationPolicy.normalizeUrl("www.atelierlume.com.br"));
+        assertEquals("https://x.com/a", IssuerVerificationPolicy.normalizeUrl("https://x.com/a"));
+        assertEquals("@samuelrosa", IssuerVerificationPolicy.normalizeUrl("@samuelrosa"));     // sem domínio: a validação recusa
+        assertNull(IssuerVerificationPolicy.normalizeUrl("  "));
+        assertTrue(IssuerVerificationPolicy.webUrl(IssuerVerificationPolicy.normalizeUrl("tiktok.com/@samuel")));
     }
 }

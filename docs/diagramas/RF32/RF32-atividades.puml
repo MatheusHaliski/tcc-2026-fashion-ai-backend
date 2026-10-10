@@ -1,9 +1,16 @@
 @startuml RF32_Atividades
-title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade ("Desafios")\nDiagrama de atividades
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,39 +19,80 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Usuário|
+title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade ('Desafios')\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre "Desafios" → catálogo com elegibilidade;
-:Escolhe modalidade: solo, duelo, grupo ou equipes;
-|Sistema (ChallengeService)|
-:Cria o desafio (rascunho) e convida;
-|Convidados|
-if (Aceitam?) then (sim)
-  :Entram no desafio;
-else (não)
-  :Recusam (criador pode começar mesmo assim);
+:Abre /challenges/[id], /challenges;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/challenges/catalog\nGET /api/challenges/{id}\nGET /api/me/challenges\nGET /api/challenges/votes;
+|Pessoa usuária|
+:Iniciar desafio (solo, duelo, grupo,\nequipes);
+|Tela (Next.js)|
+:POST /api/challenges;
+|API (Spring Boot)|
+:ChallengeController.start\n→ ChallengeService.start;
+if (modo indisponível?) then (sim)
+  :400 MODO_INDISPONIVEL\n«O desafio … não aceita o modo ….»\n→ a tela mostra o aviso;
+  stop
 endif
-|Usuário|
-repeat
-  :Envia look como entrada\n(só peças do próprio guarda-roupa);
-  :Foto no espelho real como evidência (opcional);
-  |Convidados|
-  :Confirmam evidência, reagem e deixam recados;
-repeat while (Prazo aberto?) is (sim)
-|Comunidade|
-:Vota nas entradas (feed de votação);
-|Sistema (ChallengeService)|
-:Apura resultado, credita FAI Points\ne gera o card de resultado;
+if (limite desafios?) then (sim)
+  :409 LIMITE_DESAFIOS\n«Você já tem … desafios ativos.\nEncerre um deles para começar\noutro.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (erro?) then (sim)
+  :500 ERRO\n→ a tela mostra o aviso;
+  stop
+endif
+if (limite desafios?) then (sim)
+  :409 LIMITE_DESAFIOS\n«Você já tem … desafios ativos.\nEncerre um deles para começar\noutro.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (peças invalidas?) then (sim)
+  :400 PECAS_INVALIDAS\n«Escolha as peças do desafio: ….»\n→ a tela mostra o aviso;
+  stop
+endif
+note right
+  e mais 8 validações:
+  ERRO, PARTICIPANTES_DEMAIS, PECAS_INVALIDAS,
+  SEM_COLORACAO, SEM_CONVIDADOS
+end note
+|Dados e serviços|
+:Lê: challenge_templates\nchallenge_instances\nchallenge_participants\nwardrobe_items\nchallenge_events\nschemes (+6);
+:Usa: Guard.requireCanCreate\nRoomService.lastDiaryDates\nNotificationService.notify;
+:Grava: challenge_instances\nchallenge_participants;
+:Estado: state → ATIVO\nstartsAt → set\nendsAt → set\njoinedAt → set\nstatus → ATIVO\nleftAt → null (+3);
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Lançar rascunho com convidados/eq…)
+    :POST /api/challenges/{id}/launch\n→ ChallengeService.launchDraft\nvalida: ERRO, ESTADO_INVALIDO, LIMITE_DESAFIOS,\nPARTICIPANTES_DEMAIS …\nlê: challenge_instances, challenge_templates,\nchallenge_participants …\nusa: NotificationService.notify\ngrava: challenge_instances, challenge_participants;
+  case (Sair do desafio)
+    :POST /api/challenges/{id}/leave\n→ ChallengeService.leave\nlê: challenge_instances, challenge_participants\ngrava: challenge_participants, challenge_instances\nestado: status → SAIU, leftAt → set, state →\nEXPIRADO;
+  case (Cancelar [criador])
+    :POST /api/challenges/{id}/cancel\n→ ChallengeService.cancel\nvalida: ERRO, ESTADO_INVALIDO\nlê: challenge_instances, challenge_participants,\nchallenge_templates …\ngrava: challenge_participants, challenge_instances\nestado: status → CANCELADO, state → RASCUNHO,\nstartsAt → null …;
+  case (Recado no mural do desafio)
+    :POST /api/challenges/{id}/notes\n→ ChallengeService.note\nvalida: BILHETE_VAZIO, FRASE_INVALIDA, SEM_INTERACAO\nlê: challenge_instances, challenge_participants\nusa: Guard.deny\ngrava: challenge_notes;
+  case (Enviar look como entrada)
+    :POST /api/challenges/{id}/entries\n→ ChallengeService.submitEntry\nvalida: ERRO, ESTADO_INVALIDO, JA_INSCRITO,\nLOOK_INVALIDO\nlê: challenge_instances, challenge_templates,\nchallenge_participants …\nusa: Guard.deny, Guard.requireOwner,\nFaiPointsService.game …\ngrava: challenge_events, challenge_participants,\nchallenge_instances;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Começar agora (sem esperar to…, Foto no espelho
+  real como evi…, Propor um novo desafio para a…,
+  Votar em uma entrada, Aceitar convite, Recusar
+  convite
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

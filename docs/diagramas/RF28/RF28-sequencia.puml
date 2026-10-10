@@ -1,36 +1,107 @@
 @startuml RF28_Sequencia
-title RF28 — Montar looks no Smart Mirror e pedir sugestões ao "Vista-me" (só com peças do próprio guarda-roupa)\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor Usuário as U
-participant "Frontend\nmirror" as FE
-participant "MirrorController" as C
-participant "MirrorService" as S
-participant "AiEngine (RF24)" as AI
-participant "DailyLookService" as DL
-database "MySQL" as DB
-U -> FE: abre o espelho
-FE -> C: GET /api/me/mirror
-C -> S: state(user)
-S -> DB: SELECT mirror_state
-U -> FE: "Vista-me: jantar sexta, frio"
-FE -> C: POST /api/me/mirror/vista-me
-C -> S: vistaMe(user, prompt, ...)
-S -> AI: interpretar pedido + DNA (opt-in)
-AI --> S: ocasião, clima, paleta\n(ou fallback local)
-S -> DB: SELECT wardrobe_items disponíveis
-S --> FE: look completo + explicação
-U -> FE: trocar só o calçado
-FE -> C: POST /api/me/mirror/slots/SHOES/swap
-U -> FE: Usar hoje
-FE -> C: POST /api/me/mirror/use
-C -> S: useLook(user)
-S -> DL: marca Look do Dia
-DL -> DB: INSERT daily_looks + piece_usage_diary
+autonumber "<b>0."
+title RF28 — Montar looks no Smart Mirror e pedir sugestões ao 'Vista-me' (só com peças do próprio guarda-roupa)\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /mirror" as P
+control "MirrorController" as MirrorController
+participant "MirrorService" as MirrorService
+participant "WardrobeService" as WardrobeService
+database "MySQL" as DB_MySQL
+participant "RoomService" as RoomService
+queue "Eventos de domínio" as EV
+participant "AiEngine\n(provedor de IA + reserva local)" as AI
+participant "Audit" as Audit
+== Vestir uma peça no espelho ==
+U -> P : Vestir uma peça no espelho
+P -> MirrorController : POST /api/me/mirror/pieces
+MirrorController -> MirrorService : place()
+activate MirrorService
+alt peça obrigatória
+MirrorService --> MirrorController : 400 PECA_OBRIGATORIA
+MirrorController --> P : 400 + mensagem
+end
+MirrorService -> WardrobeService : owned()
+WardrobeService -> DB_MySQL : SELECT wardrobe_items
+WardrobeService --> MirrorService
+MirrorService -> DB_MySQL : SELECT mirror_states
+MirrorService -> MirrorService : new MirrorState()
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService -> RoomService : locateAll()
+RoomService -> DB_MySQL : SELECT room_layouts
+RoomService -> DB_MySQL : SELECT users
+RoomService -> DB_MySQL : SELECT fai_points_ledger
+RoomService -> DB_MySQL : INSERT/UPDATE room_layouts
+RoomService --> MirrorService
+MirrorService -> DB_MySQL : SELECT wardrobe_items (×4)
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService ->> EV : MirrorAction
+MirrorService -> DB_MySQL : SELECT wardrobe_items
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService -> RoomService : locateAll()
+MirrorService -> DB_MySQL : SELECT style_dna
+deactivate MirrorService
+MirrorService --> MirrorController : resultado
+MirrorController --> P : 201 JSON
+P --> U : atualiza a tela
+== Vista-me: look completo a partir de um pedido em linguagem natural ==
+U -> P : Vista-me: look completo a partir de um pedido em…
+P -> MirrorController : POST /api/me/mirror/vista-me
+MirrorController -> MirrorService : vistaMe()
+activate MirrorService
+MirrorService -> DB_MySQL : SELECT mirror_states
+MirrorService -> MirrorService : new MirrorState()
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService -> RoomService : outOfSeason()
+RoomService -> DB_MySQL : SELECT room_storage_map
+RoomService --> MirrorService
+MirrorService -> WardrobeService : eligible()
+WardrobeService -> DB_MySQL : SELECT wardrobe_items
+WardrobeService --> MirrorService
+alt acervo sem superior
+MirrorService --> MirrorController : 422 ACERVO_SEM_SUPERIOR
+MirrorController --> P : 422 + mensagem
+end
+MirrorService -> DB_MySQL : SELECT wardrobe_items
+MirrorService -> AI : COPILOT
+AI --> MirrorService : resposta (ou reserva local)
+MirrorService -> Audit : log() (×2)
+MirrorService -> AI : SCHEME_COMPOSER
+AI --> MirrorService : resposta (ou reserva local)
+alt sem combinação nova
+MirrorService --> MirrorController : 422 SEM_COMBINACAO_NOVA
+MirrorController --> P : 422 + mensagem
+end
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService ->> EV : MirrorAction
+MirrorService -> RoomService : locateAll()
+MirrorService -> DB_MySQL : SELECT wardrobe_items
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService -> RoomService : locateAll()
+MirrorService -> DB_MySQL : SELECT style_dna
+deactivate MirrorService
+MirrorService --> MirrorController : resultado
+MirrorController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

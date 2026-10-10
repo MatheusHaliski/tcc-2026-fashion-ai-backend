@@ -1,6 +1,6 @@
 {
  "_doc": "RF47 · Fonte única de normalização do catálogo (Java: CatalogNormalizer via classpath; Python: scripts/catalog). Teste CatalogNormalizerTest garante que 'taxonomy' é igual a Taxonomy.java.",
- "version": "1.0.0",
+ "version": "1.1.0",
  "taxonomy": {
   "subcategories": {
    "upper_piece": [
@@ -8,7 +8,7 @@
     "shirt",
     "blouse",
     "tank_top",
-    "crop_top",
+    "top",
     "polo_shirt",
     "bodysuit",
     "sweater",
@@ -34,10 +34,15 @@
     "leggings",
     "culottes",
     "shorts",
-    "bermuda_shorts",
-    "denim_shorts",
     "skirt",
     "skort"
+   ],
+   "full_body_piece": [
+    "dress",
+    "jumpsuit",
+    "romper",
+    "matching_set",
+    "overalls"
    ],
    "shoes_piece": [
     "casual_sneakers",
@@ -45,14 +50,11 @@
     "training_shoes",
     "basketball_shoes",
     "skate_shoes",
-    "high_top_sneakers",
     "loafers",
     "moccasins",
     "oxford_shoes",
     "derby_shoes",
-    "ankle_boots",
-    "long_boots",
-    "combat_boots",
+    "boots",
     "sandals",
     "flip_flops",
     "heels",
@@ -61,7 +63,6 @@
    ],
    "accessory_piece": [
     "handbag",
-    "crossbody_bag",
     "tote_bag",
     "clutch",
     "backpack",
@@ -83,13 +84,6 @@
     "gloves",
     "socks",
     "hair_accessory"
-   ],
-   "full_body_piece": [
-    "dress",
-    "jumpsuit",
-    "romper",
-    "matching_set",
-    "overalls"
    ]
   },
   "colors": [
@@ -155,13 +149,105 @@
   ],
   "materials": [
    "COTTON",
-   "POLYESTER",
+   "DENIM",
+   "LINEN",
    "WOOL",
+   "CASHMERE",
    "SILK",
+   "SATIN",
+   "VISCOSE",
+   "POLYESTER",
+   "NYLON",
+   "ACRYLIC",
+   "FLEECE",
+   "KNIT",
+   "CORDUROY",
+   "VELVET",
+   "CANVAS",
+   "MESH",
    "LEATHER",
+   "SUEDE",
+   "FAUX_LEATHER",
+   "SHEARLING",
+   "RUBBER",
+   "EVA",
+   "CORK",
+   "STRAW",
+   "METAL",
+   "GOLD",
+   "SILVER",
+   "PLATED",
+   "PEARL",
+   "ACETATE",
    "SYNTHETIC",
    "BLEND"
   ]
+ },
+ "legacySubcategories": {
+  "crop_top": {
+   "category": "upper_piece",
+   "replacedBy": "top",
+   "implies": {
+    "LENGTH": "CROPPED"
+   },
+   "needsReview": true
+  },
+  "bermuda_shorts": {
+   "category": "lower_piece",
+   "replacedBy": "shorts",
+   "implies": {
+    "LENGTH": "KNEE"
+   },
+   "needsReview": false
+  },
+  "denim_shorts": {
+   "category": "lower_piece",
+   "replacedBy": "shorts",
+   "implies": {
+    "MATERIAL": "DENIM"
+   },
+   "needsReview": false
+  },
+  "high_top_sneakers": {
+   "category": "shoes_piece",
+   "replacedBy": "casual_sneakers",
+   "implies": {
+    "SHAFT_HEIGHT": "HIGH_TOP"
+   },
+   "needsReview": false
+  },
+  "ankle_boots": {
+   "category": "shoes_piece",
+   "replacedBy": "boots",
+   "implies": {
+    "SHAFT_HEIGHT": "ANKLE"
+   },
+   "needsReview": false
+  },
+  "long_boots": {
+   "category": "shoes_piece",
+   "replacedBy": "boots",
+   "implies": {
+    "SHAFT_HEIGHT": "KNEE_HIGH"
+   },
+   "needsReview": true
+  },
+  "combat_boots": {
+   "category": "shoes_piece",
+   "replacedBy": "boots",
+   "implies": {
+    "VARIATION": "COMBAT"
+   },
+   "needsReview": false
+  },
+  "crossbody_bag": {
+   "category": "accessory_piece",
+   "replacedBy": "handbag",
+   "implies": {
+    "CARRY_MODE": "CROSSBODY"
+   },
+   "needsReview": false
+  }
  },
  "categorySynonyms": {
   "upper_piece": [
@@ -271,7 +357,10 @@
    "sweatshirt",
    "moletom",
    "crewneck",
-   "blusa de moletom"
+   "blusa de moletom",
+   "quarter zip",
+   "half zip",
+   "1/4 zip"
   ],
   "hoodie": [
    "hoodie",
@@ -296,7 +385,9 @@
    "jaqueta",
    "jaquetas",
    "bomber",
-   "trucker jacket"
+   "trucker jacket",
+   "track jacket",
+   "track top"
   ],
   "coat": [
    "coat",
@@ -338,7 +429,8 @@
    "pants",
    "calcas",
    "calças",
-   "trousers"
+   "trousers",
+   "pant"
   ],
   "chino_pants": [
    "chino",
@@ -404,7 +496,8 @@
    "tênis",
    "tenis casual",
    "tênis casual",
-   "trainers"
+   "trainers",
+   "trainer"
   ],
   "running_shoes": [
    "running",
@@ -513,7 +606,8 @@
   "crossbody_bag": [
    "crossbody",
    "bolsa transversal",
-   "bolsa tiracolo"
+   "bolsa tiracolo",
+   "sling bag"
   ],
   "tote_bag": [
    "tote",
@@ -659,6 +753,32 @@
   "overalls": [
    "overalls",
    "jardineira"
+  ],
+  "top": [
+   "top",
+   "corset",
+   "corselet",
+   "corpete",
+   "top faixa",
+   "bralette",
+   "top fitness",
+   "top esportivo",
+   "top de academia",
+   "bustie",
+   "bustiê",
+   "bustier",
+   "sports bra"
+  ],
+  "boots": [
+   "bota",
+   "botas",
+   "boot",
+   "boots",
+   "chelsea",
+   "galocha",
+   "bota de montaria",
+   "bota texana",
+   "botina"
   ]
  },
  "colorSynonyms": {
@@ -943,71 +1063,162 @@
  },
  "materialSynonyms": {
   "COTTON": [
-   "cotton",
-   "algodao",
    "algodão",
    "piquet",
-   "pique",
-   "piqué",
    "jersey",
-   "denim",
    "sarja",
    "twill",
-   "canvas",
-   "lona"
+   "pique",
+   "denim",
+   "canvas"
+  ],
+  "DENIM": [
+   "jeans",
+   "índigo"
+  ],
+  "LINEN": [
+   "linho"
+  ],
+  "WOOL": [
+   "lã",
+   "merino",
+   "lã batida",
+   "cashmere"
+  ],
+  "CASHMERE": [
+   "caxemira"
+  ],
+  "SILK": [
+   "seda"
+  ],
+  "SATIN": [
+   "cetim"
+  ],
+  "VISCOSE": [
+   "rayon",
+   "modal",
+   "liocel",
+   "lyocell"
   ],
   "POLYESTER": [
-   "polyester",
-   "poliester",
    "poliéster",
-   "dri-fit",
    "dri fit",
    "climalite"
   ],
-  "WOOL": [
-   "wool",
-   "la",
-   "lã",
-   "merino",
-   "cashmere",
-   "caxemira",
-   "tricot"
+  "NYLON": [
+   "poliamida",
+   "tactel",
+   "polyamide"
   ],
-  "SILK": [
-   "silk",
-   "seda",
-   "cetim"
+  "ACRYLIC": [
+   "acrílico"
+  ],
+  "FLEECE": [
+   "moletom",
+   "flanelado",
+   "soft",
+   "french terry"
+  ],
+  "KNIT": [
+   "malha",
+   "tricô",
+   "tricot",
+   "knitwear"
+  ],
+  "CORDUROY": [
+   "cotelê",
+   "veludo cotelê"
+  ],
+  "VELVET": [
+   "veludo",
+   "plush"
+  ],
+  "CANVAS": [
+   "lona"
+  ],
+  "MESH": [
+   "tela",
+   "arrastão"
   ],
   "LEATHER": [
-   "leather",
    "couro",
-   "suede",
-   "camurca",
+   "couro legítimo",
+   "suede"
+  ],
+  "SUEDE": [
    "camurça",
    "nobuck",
    "nubuck"
   ],
+  "FAUX_LEATHER": [
+   "couro sintético",
+   "couro ecológico",
+   "corino",
+   "pu",
+   "vegan leather"
+  ],
+  "SHEARLING": [
+   "pelo",
+   "pelúcia",
+   "teddy",
+   "pele sintética",
+   "faux fur"
+  ],
+  "RUBBER": [
+   "borracha"
+  ],
+  "EVA": [],
+  "CORK": [
+   "cortiça"
+  ],
+  "STRAW": [
+   "palha",
+   "ráfia",
+   "vime",
+   "raffia",
+   "wicker"
+  ],
+  "METAL": [
+   "aço",
+   "aço inox",
+   "steel",
+   "stainless steel"
+  ],
+  "GOLD": [
+   "ouro",
+   "ouro 18k"
+  ],
+  "SILVER": [
+   "prata",
+   "prata 925",
+   "sterling silver"
+  ],
+  "PLATED": [
+   "folheado",
+   "semijoia",
+   "banhado",
+   "gold plated"
+  ],
+  "PEARL": [
+   "pérola",
+   "pérolas"
+  ],
+  "ACETATE": [
+   "acetato"
+  ],
   "SYNTHETIC": [
-   "synthetic",
-   "sintetico",
    "sintético",
    "nylon",
-   "poliamida",
    "mesh",
    "flyknit",
    "primeknit",
-   "borracha",
    "rubber",
    "eva",
    "pvc",
    "plastico",
-   "acetato",
-   "metal",
-   "aco",
-   "aço"
+   "metal"
   ],
   "BLEND": [
-   "blend",
    "misto",
    "mesclado"
   ]
@@ -1148,5 +1359,253 @@
   "new",
   "novo",
   "nova"
- ]
+ ],
+ "design": {
+  "_doc": "Características únicas da peça lidas do texto (RF47): estampa, posição e tamanho do logo, lados e o papel das cores (cor da peça × cor da estampa). Lido por CatalogDesignInterpreter (Java) e validado por scripts/catalog/normalize_product.py. Frases em pt/en/es; a comparação usa CatalogNormalizer.key (sem acento, minúsculas).",
+  "patterns": {
+   "ALLOVER_LOGO": [
+    "monograma",
+    "monogram",
+    "allover",
+    "all over",
+    "logomania",
+    "logo em toda",
+    "logos em toda",
+    "logo por toda",
+    "logos por toda",
+    "logo espalhado",
+    "logos espalhados",
+    "logo repetido",
+    "logos repetidos",
+    "estampa de logo",
+    "estampa de logos",
+    "estampa logo",
+    "estampada com o logo",
+    "estampada com logos",
+    "logo print",
+    "print de logo",
+    "logo jacquard",
+    "jacquard de logo",
+    "logo en toda",
+    "logos en toda",
+    "full logo print"
+   ],
+   "SINGLE_LOGO": [
+    "logo central",
+    "logo centralizado",
+    "logo unico",
+    "um logo",
+    "um unico logo",
+    "uma logo",
+    "logo grande",
+    "logo no peito",
+    "logo no centro",
+    "logo no meio",
+    "logo frontal",
+    "logo na frente",
+    "logo pequeno",
+    "logo bordado",
+    "single logo",
+    "big logo",
+    "chest logo",
+    "center logo",
+    "small logo",
+    "embroidered logo",
+    "logo en el pecho",
+    "logo centrado"
+   ],
+   "STRIPES": [
+    "listrada",
+    "listrado",
+    "listras",
+    "listra",
+    "stripes",
+    "striped",
+    "stripe",
+    "rayas",
+    "rayada",
+    "rayado"
+   ],
+   "PLAID": [
+    "xadrez",
+    "quadriculada",
+    "quadriculado",
+    "plaid",
+    "tartan",
+    "cuadros"
+   ],
+   "FLORAL": [
+    "floral",
+    "florida",
+    "florido",
+    "flores",
+    "flowers",
+    "flower"
+   ],
+   "CAMO": [
+    "camuflada",
+    "camuflado",
+    "camuflagem",
+    "camo",
+    "camouflage"
+   ],
+   "TIE_DYE": [
+    "tie dye",
+    "tiedye",
+    "tingida",
+    "tingido"
+   ],
+   "COLOR_BLOCK": [
+    "color block",
+    "colorblock",
+    "blocos de cor",
+    "bicolor"
+   ],
+   "GRAPHIC": [
+    "estampa",
+    "estampada",
+    "estampado",
+    "grafica",
+    "grafico",
+    "graphic",
+    "print",
+    "desenho",
+    "ilustracao",
+    "artwork"
+   ],
+   "PLAIN": [
+    "lisa",
+    "liso",
+    "basica",
+    "basico",
+    "sem estampa",
+    "plain",
+    "solid",
+    "basic",
+    "lisa sem logo"
+   ]
+  },
+  "placements": {
+   "ALLOVER": [
+    "em toda",
+    "por toda",
+    "toda a superficie",
+    "toda superficie",
+    "em toda a superficie",
+    "em toda a camisa",
+    "em toda a peca",
+    "por toda a peca",
+    "espalhado",
+    "espalhados",
+    "repetido",
+    "repetidos",
+    "allover",
+    "all over",
+    "en toda"
+   ],
+   "CENTER_CHEST": [
+    "central",
+    "centralizado",
+    "centralizada",
+    "no centro",
+    "no meio",
+    "centro do peito",
+    "meio do peito",
+    "center",
+    "centered",
+    "centrado"
+   ],
+   "LEFT_CHEST": [
+    "peito esquerdo",
+    "lado esquerdo",
+    "left chest",
+    "no peito do lado esquerdo",
+    "pecho izquierdo"
+   ],
+   "BACK": [
+    "nas costas",
+    "atras",
+    "back print",
+    "en la espalda"
+   ],
+   "SLEEVE": [
+    "na manga",
+    "nas mangas",
+    "sleeve",
+    "en la manga"
+   ]
+  },
+  "sizes": {
+   "LARGE": [
+    "grande",
+    "enorme",
+    "big",
+    "large",
+    "maxi",
+    "gigante"
+   ],
+   "SMALL": [
+    "pequeno",
+    "pequena",
+    "discreto",
+    "discreta",
+    "small",
+    "mini",
+    "pequeño"
+   ]
+  },
+  "sides": {
+   "FRONT": [
+    "frente",
+    "frontal",
+    "front",
+    "na frente",
+    "delante"
+   ],
+   "BACK": [
+    "verso",
+    "costas",
+    "back",
+    "atras",
+    "espalda"
+   ]
+  },
+  "printNouns": [
+   "logo",
+   "logos",
+   "logotipo",
+   "monograma",
+   "monogram",
+   "estampa",
+   "print",
+   "letras",
+   "letra",
+   "sigla",
+   "siglas",
+   "escrita",
+   "bordado",
+   "desenho",
+   "lettering",
+   "marca"
+  ],
+  "baseCues": [
+   "toda",
+   "todo",
+   "inteira",
+   "inteiro",
+   "fundo",
+   "base",
+   "totalmente",
+   "enteramente",
+   "all"
+  ],
+  "connectors": [
+   "e",
+   "and",
+   "y",
+   "com",
+   "with",
+   "con"
+  ]
+ }
 }

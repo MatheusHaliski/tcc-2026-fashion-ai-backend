@@ -18,19 +18,17 @@ import { CardActions, useRemix } from "@/components/interactions";
 import { Generate3DDialog } from "@/components/generate-3d";
 import { useDetailModal } from "@/components/detail-modal";
 import { CardHeader } from "@/components/card-header";
+import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "@/components/fashion-card";
+import { HypeAnalyticsDrawer } from "@/components/hype/hype-analytics-drawer";
+import { HypeBadge } from "@/components/hype/hype-badge";
+import { HypeCardBack } from "@/components/hype/hype-card-back";
+import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
+import { hypeViewState } from "@/lib/hype/model";
+import { useHypeSummary } from "@/lib/hype/use-hype";
 
-/** Escala da popularidade (Hype): sem vermelho — nota baixa não é erro, é look novo ou pouco visto. */
-export const hypeColor = (h?: number | null) => (h ?? 0) >= 70 ? "var(--thread)" : (h ?? 0) >= 40 ? "var(--chalk)" : "var(--muted)";
-/** Faixa qualitativa do Hype mostrada nos cards (o número exato fica no detalhe, com a explicação). */
-export const hypeBand = (h?: number | null): "hot" | "rising" | null => (h ?? 0) >= 70 ? "hot" : (h ?? 0) >= 40 ? "rising" : null;
-export function HypeBadge({ score }: { score?: number | null }) {
-  const { t } = useI18n();
-  const band = hypeBand(score);
-  if (!band) return null;
-  return <span className={`hype-chip is-${band}`} title={t("hype.explain")}>{band === "hot" ? t("hype.hot") : t("hype.rising")}</span>;
-}
 
-export interface SealBadge { label: string; premium?: boolean; iconUrl?: string | null; tier?: string; owner?: string; name?: string | null; design?: SealDesign | null; linkedPieceIds?: string[]; kind?: "BRAND" | "CELEBRITY" | "LOOK"; }
+/** `kind: "HYPE"` = Selo de Hype FashionAI (RF53): automático, derivado do Hype atual — sem emissor nem vínculo. */
+export interface SealBadge { label: string; premium?: boolean; iconUrl?: string | null; tier?: string; owner?: string; name?: string | null; design?: SealDesign | null; linkedPieceIds?: string[]; kind?: "BRAND" | "CELEBRITY" | "LOOK" | "HYPE"; }
 /** Converte o "badge" que a API devolve nos vínculos aprovados (tier, owner, premium, name, iconUrl, design) em SealBadge. */
 export function toSealBadges(list?: { tier: string; owner: string; premium: boolean; name?: string | null; iconUrl?: string | null; design?: SealDesign | null; linkedPieceIds?: string[] }[] | null): SealBadge[] {
   return (list ?? []).map((b) => ({ label: b.tier === "PECA" ? tr("schemeCard.peca") : "LOOK", premium: b.premium, owner: b.owner, tier: b.tier, name: b.name ?? null, iconUrl: b.iconUrl ?? null, design: b.design ?? null, linkedPieceIds: b.linkedPieceIds ?? [], kind: b.premium ? "CELEBRITY" : "BRAND" }));
@@ -45,20 +43,20 @@ export function SealSlot({ seals, size, inline, px }: { seals?: SealBadge[]; siz
     <span className={`seal-slot ${inline ? "inline" : ""} ${list.length > 1 ? "many" : ""}`} role="img" aria-label={t("schemeCard.selos", { join: list.map((s) => s.name ?? s.label).join(", ") })}>
       {list.map((s, i) => {
         const title = `${s.name ?? s.label}${s.owner ? ` · @${s.owner}` : ""}${s.tier ? ` · ${s.tier}` : ""}`;
-        if (s.design) return <SealMedallion key={i} design={s.design} size={dim} premium={s.premium} title={title} />;
+        if (s.design) return <SealMedallion key={i} design={s.design} size={dim} premium={s.premium} title={title} className={s.kind === "HYPE" ? "is-hype" : undefined} />;
         return <span key={i} className={`seal-medallion relative ${s.premium ? "premium" : ""}`} title={title}>{s.iconUrl ? <img src={mediaUrl(s.iconUrl)} alt="" /> : s.label.replace(/[^A-Za-z0-9]/g, "").slice(0, 3).toUpperCase() || "FAI"}</span>;
       })}
     </span>
   );
 }
 
-/** Blocos: selos como placas redondas 1×1 nas cores de sistema — verde marca, vermelho celebridade, amarelo look. */
+/** Blocos: selos como placas redondas 1×1 nas cores de sistema — verde marca, vermelho celebridade, amarelo look, laranja Hype. */
 export function SealStuds({ seals }: { seals: SealBadge[] }) {
   const { t } = useI18n();
-  const color = (s: SealBadge) => (s.kind === "CELEBRITY" || s.premium ? "#C8102E" : s.tier === "LOOK" && !s.owner ? "#F2C200" : "#237841");
+  const color = (s: SealBadge) => (s.kind === "HYPE" ? "#F58220" : s.kind === "CELEBRITY" || s.premium ? "#C8102E" : s.tier === "LOOK" && !s.owner ? "#F2C200" : "#237841");
   return (
     <div className="seal-studs" aria-label={t("schemeCard.selos_2", { sealsCount: seals.length })}>
-      {seals.length === 0 ? <span className="seal-stud empty" aria-hidden title={t("schemeCard.espaco_reservado_para_selo")} /> : seals.slice(0, 4).map((s, i) => <span key={i} className="seal-stud" style={{ ["--stud" as string]: color(s) }} title={`${s.name ?? s.label}${s.owner ? ` · @${s.owner}` : ""}`}>{s.design ? <SealMedallion design={s.design} size={30} premium={s.premium} /> : null}</span>)}
+      {seals.length === 0 ? <span className="seal-stud empty" aria-hidden title={t("schemeCard.espaco_reservado_para_selo")} /> : seals.slice(0, 4).map((s, i) => <span key={i} className="seal-stud" style={{ ["--stud" as string]: color(s) }} title={`${s.name ?? s.label}${s.owner ? ` · @${s.owner}` : ""}`}>{s.design ? <SealMedallion design={s.design} size={30} premium={s.premium} className={s.kind === "HYPE" ? "is-hype" : undefined} /> : null}</span>)}
       <span className="seal-stud-tile">{t("schemeCard.selo", { sealsCount: seals.length })}</span>
     </div>
   );
@@ -178,11 +176,16 @@ function PieceLayout({ anatomy, pieces, side, sealsOf, onPiece }: { anatomy: Pie
  * inteiro (área de clique estendida); botões internos ficam por cima. `compact` usa miniatura, título, preço e a
  * assinatura da anatomia. Em pré-visualização (href "#") e no detalhe expandido as ações ficam de fora.
  */
-export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onPiece, extra, footer, headerExtra }: { scheme: SchemeView; layout?: "lista" | "grade" | "lateral"; href?: string; compact?: boolean; seals?: SealBadge[]; expanded?: boolean; onPiece?: (pieceId: string) => void; extra?: ReactNode;
+export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onPiece, extra, footer, headerExtra, flip = true }: { scheme: SchemeView; layout?: "lista" | "grade" | "lateral"; href?: string; compact?: boolean; seals?: SealBadge[]; expanded?: boolean; onPiece?: (pieceId: string) => void; extra?: ReactNode;
   /** ampliado (RF7.CA11): botões do dono, sempre DENTRO do card, depois das ações do post */ footer?: ReactNode;
-  /** ampliado no modal: voltar/fechar no próprio cabeçalho do card (borda do card = borda do modal) */ headerExtra?: ReactNode }) {
+  /** ampliado no modal: voltar/fechar no próprio cabeçalho do card (borda do card = borda do modal) */ headerExtra?: ReactNode;
+  /** verso com o Hype (↻) nas grades e no feed; desligado na prévia e no card ampliado (lá a análise abre direto) */ flip?: boolean }) {
   const detail = useDetailModal();
   const preview = href === "#";
+  const flippable = flip && !preview && !expanded;
+  const hype = useHypeSummary("SCHEME", scheme.id, !preview);
+  const hypeState = hypeViewState(hype.summary, hype);
+  const [analysis, setAnalysis] = useState(false);
   // Clique no título abre o modal com o esquema ampliado (RF7); a página continua acessível por nova aba.
   const openModal = (e: React.MouseEvent) => { if (!detail || expanded || preview || e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1) return; e.preventDefault(); detail.openScheme(scheme.id); };
   const { t, fmtMoney, relative } = useI18n();
@@ -205,6 +208,8 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const placement = sealPlacement(anatomy === "LISTA_VERTICAL" && l !== "lista" ? (l === "grade" ? "GRADE_PECAS" : "HERO_LISTA") : anatomy);
   const badges: SealBadge[] = seals ?? (scheme.sealBadges?.length ? toSealBadges(scheme.sealBadges) : (scheme.seals ?? []).filter((x) => /^[A-Z0-9_]+:/.test(x)).map((x) => ({ label: x.split(":")[1] ?? x })));
   const pieceSeals = (id?: string) => (id ? badges.filter((b) => b.tier === "PECA" && (b.linkedPieceIds ?? []).includes(id)) : []);
+  // RF53: os Selos de Hype do look (do resumo de Hype já carregado) entram no mesmo espaço dos selos de marca, no máx. 2
+  const lookSeals = withHypeSeals(badges, hypeSealCodes(hype.summary)) ?? badges;
   // Arte do Background Studio fica no palco do card, atrás do container (passe-partout) — nunca sobre a foto do conjunto.
   const studio = studioOf(scheme.background);
   const art = ownArt ? null : resolveCardArt(scheme.background, { season: scheme.season });
@@ -223,9 +228,11 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const titleText = preview ? <span>{scheme.title}</span> : <Link href={link} onClick={openModal} className="c-link">{scheme.title}</Link>;
   const priceLine = (
     <p className="c-priceline">
-      {placement.zone === "TITLE_ROW" && <SealSlot inline px={28} seals={badges} />}
+      {placement.zone === "TITLE_ROW" && <SealSlot inline px={28} seals={lookSeals} />}
       <span className="c-total tabular">{total != null ? fmtMoney(total, "BRL") : t("anatomy.noPrice")}</span>
-      <HypeBadge score={scheme.hypeScore} />
+      {!preview && <HypeBadge state={hypeState} summary={hype.summary} className="c-hype" />}
+      {flippable && <CardFlipButton side="front" className="c-flip" />}
+      {expanded && !preview && <button type="button" className="btn btn-ghost btn-sm c-hype-more" onClick={() => setAnalysis(true)} aria-haspopup="dialog">{t("hype.card.full_analysis")}</button>}
     </p>
   );
   const titleBlock = (
@@ -233,13 +240,14 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
       <span className="c-kicker">{t("anatomy.lookKicker", { count: items.length })}</span>
       <h3 className="c-title">{titleText}</h3>
       {priceLine}
+      {scheme.tipoLook && <p className="type-caption text-muted">{t("lookType.label")}: {scheme.tipoLook.nome}</p>}
       {scheme.description && <p className={`c-desc ${expanded ? "is-full" : ""}`}>{scheme.description}</p>}
     </div>
   );
   const photo = (extraClass = "") => <div className={`c-photo is-look ${extraClass}`}>{cover && <img src={cover} srcSet={coverSet} sizes="(max-width: 639px) 92vw, 320px" alt="" loading="lazy" decoding="async" />}</div>;
   const chips = [...(scheme.occasion ?? []), ...(scheme.style ?? [])].map((x) => label(x)).concat(scheme.season ? [label(scheme.season.toLowerCase())] : []);
 
-  return (
+  const card = (
     <article className={`fai-card ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""} ${preview ? "is-preview" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
       <CardHeader owner={scheme.owner} linked={!preview} sub={<>{relative(scheme.publishedAt ?? scheme.createdAt)} · {vis}</>}
         trailing={<>{scheme.lookDoDia && <span className="badge badge-chalk">{t("lookbook.daily")}</span>}{!preview && <PostMenu scheme={scheme} remixInRow={expanded} />}{headerExtra}</>} />
@@ -259,7 +267,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
           </div>
         ) : (
           <div className="scheme-container" data-anatomy={anatomy} data-piece-anatomy={pieceAnatomy} style={boxTone} data-label={scheme.origin === "AUTOPILOTO" ? t("schemeCard.madeByAutopilot") : scheme.creationMode === "AI_ASSISTED" ? t("schemeCard.madeWithAi") : undefined}>
-            {(placement.zone === "COVER_CORNER" || placement.zone === "HEADER") && <SealSlot seals={badges} />}
+            {(placement.zone === "COVER_CORNER" || placement.zone === "HEADER") && <SealSlot seals={lookSeals} />}
             {ownArt ? (
               <AnatomyBody scheme={scheme} pieces={detailPieces} />
             ) : l === "lateral" && !expanded ? (
@@ -283,14 +291,23 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
                 {pieceSeals(p.id).length > 0 && <SealSlot inline px={22} seals={pieceSeals(p.id)} />}
               </div>
             ))}
-            {placement.zone === "STUDS" && <SealStuds seals={badges} />}
-            {(chips.length > 0 || placement.zone === "META_BLOCK") && <div className="c-chips">{chips.map((c) => <span key={c} className="c-chip">{c}</span>)}{placement.zone === "META_BLOCK" && <SealSlot inline px={28} seals={badges} />}</div>}
+            {placement.zone === "STUDS" && <SealStuds seals={lookSeals} />}
+            {(chips.length > 0 || placement.zone === "META_BLOCK") && <div className="c-chips">{chips.map((c) => <span key={c} className="c-chip">{c}</span>)}{placement.zone === "META_BLOCK" && <SealSlot inline px={28} seals={lookSeals} />}</div>}
           </div>
         )}
       </div>
       {!preview && <CardActions type="SCHEME" id={scheme.id} counters={scheme.counters} viewer={scheme.viewer} ownerId={scheme.owner?.id} title={scheme.title} compact={compact} reactions={expanded} />}
       {footer && <div className="c-owner">{footer}</div>}
       {extra && <div className="c-extra">{extra}</div>}
+      {analysis && <HypeAnalyticsDrawer type="SCHEME" id={scheme.id} name={scheme.title} open={analysis} onClose={() => setAnalysis(false)} />}
     </article>
+  );
+  if (!flippable) return card;
+  // frente = o post (identidade + moda + social); verso = HYPE ANALYTICS do look
+  return (
+    <FashionCard name={scheme.title}>
+      <FashionCardFront>{card}</FashionCardFront>
+      <FashionCardBack><HypeCardBack type="SCHEME" id={scheme.id} name={scheme.title} /></FashionCardBack>
+    </FashionCard>
   );
 }

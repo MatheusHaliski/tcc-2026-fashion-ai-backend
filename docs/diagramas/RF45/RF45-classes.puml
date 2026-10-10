@@ -1,181 +1,67 @@
 @startuml RF45_Classes
-title RF45 — Processar e padronizar imagens canônicas de peças, calçados e acessórios (pipeline de validação e padronização)\nDiagrama de classes — entidades JPA reais (fai-domain), enums e motores de visão
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF45 — Processar e padronizar imagens canônicas de peças, calçados e acessórios (pipeline de validação e padronização)\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class CaptureSession {
-  +userId: UUID
-  +draftJobId: UUID
-  +category: String
-  +subcategory: String
-  +profileId: String
-  +primaryView: CaptureView
-  +status: CaptureSessionStatus
-  +identifyModel: boolean
-  +complementaryCount: int
-  +consecutiveSkips: int
-  +identificationJson: String
-  +decisionJson: String
-  +qualityJson: String
-  +pieceId: UUID
-  +completedAt: Instant
+package "Backend (Java)" {
+  class CanonicalPhotographer  {
+    +render()
+    +detail()
+    +anchorAngle()
+    +expand()
+    +textureSquare()
+    +overlapsLogo()
+    +solid()
+    +resize()
+  }
+  class AdaptiveCaptureEngine  {
+    -t: Thresholds
+    +thresholds()
+    +decide()
+    +importance()
+    +uncertainty()
+    +conditionHolds()
+    +visibilityModifier()
+    +needOf()
+    +purposeOf()
+  }
+  class BrandEnsembleResolver  {
+    +resolve()
+    +canonical()
+    +round()
+  }
+  class PhotographyQualityGate  {
+    +evaluate()
+    +add()
+  }
+  class PhotographySpec  {
+    -id: String
+    -version: int
+    -view: CaptureView
+    -aspectRatio: String
+    -canvasWidth: int
+    -canvasHeight: int
+    +isDetail()
+    +toMap()
+  }
 }
-class CaptureRequest {
-  +sessionId: UUID
-  +viewType: CaptureView
-  +purpose: CapturePurpose
-  +need: CaptureNeed
-  +reasonCode: String
-  +expectedGain: BigDecimal
-  +status: CaptureRequestStatus
-  +fulfilledImageId: UUID
-  +confidenceBefore: BigDecimal
-  +confidenceAfter: BigDecimal
-}
-class PieceImage {
-  +sessionId: UUID
-  +pieceId: UUID
-  +imageType: PieceImageType
-  +viewType: CaptureView
-  +captureRole: CaptureRole
-  +storageKey: String
-  +url: String
-  +qualityScore: Integer
-  +blurScore / lightingScore: BigDecimal
-  +garmentCoverage: BigDecimal
-  +photographySpec: String
-  +derivedFromId: UUID
-  +processingStatus: PieceImageStatus
-  +modelVersion: String
-  +superseded: boolean
-}
-class BrandPrediction {
-  +sessionId: UUID
-  +pieceId: UUID
-  +level: IdentificationLevel
-  +value: String
-  +confidence: BigDecimal
-  +evidenceJson: String
-  +alternativesJson: String
-  +resolverVersion: String
-}
-class ModelInference {
-  +modelName: String
-  +modelVersion: String
-  +task: String
-  +sessionId: UUID
-  +imageId: UUID
-  +latencyMs: Integer
-  +confidence: BigDecimal
-}
-class ModelRegistryEntry {
-  +name: String
-  +modelVersion: String
-  +task: String
-  +provider: String
-  +deploymentStatus: ModelDeploymentStatus
-}
-class AiReviewItem {
-  +kind: AiReviewKind
-  +status: AiReviewStatus
-  +field: String
-  +aiValue / userValue: String
-  +adminDecision: AiReviewDecision
-  +finalValue: String
-  +addToTraining: boolean
-}
-class "GarmentLandmark\nGarmentEmbedding\nTrainingCandidate\nDatasetSource\nKb* (evidência)" as Others
-}
-package "fai-domain · enums" {
-enum CaptureSessionStatus {
-  ANALYZING
-  AWAITING_CAPTURE
-  READY_FOR_REVIEW
-  COMPLETED
-  ABANDONED
-}
-enum CaptureRequestStatus {
-  PENDING
-  FULFILLED
-  SKIPPED
-  SUPERSEDED
-}
-enum PieceImageType {
-  ORIGINAL
-  CANONICAL
-  DETAIL
-  LOGO_DETAIL
-  TEXTURE_DETAIL
-  SEGMENTATION_MASK
-}
-enum PieceImageStatus {
-  PENDING
-  PROCESSING
-  COMPLETED
-  NEEDS_REVIEW
-  FAILED
-}
-enum IdentificationLevel {
-  CATEGORY
-  SUBCATEGORY
-  BRAND
-  PRODUCT_LINE
-  MODEL
-  VARIANT
-}
-enum ModelDeploymentStatus {
-  CANDIDATE
-  SHADOW
-  CANARY
-  PRODUCTION
-  RETIRED
-}
-}
-package "fai-application · vision" {
-class AdaptiveCaptureEngine {
-  +decide(Context): Decision
-}
-class PhotographyQualityGate {
-  +ACCEPT = 75
-  +GUIDE = 50
-  +evaluate(profile, view, Signals): Report
-}
-class BrandEnsembleResolver {
-  +resolve(List<Evidence>): Resolution
-}
-class CanonicalPhotographer {
-  +render(cutout, spec, landmarks, clipped): Result
-  +detail(cutout, spec, logoBox): Result
-}
-}
-CaptureRequest "*" ..> "1" CaptureSession : sessionId
-PieceImage "*" ..> "0..1" CaptureSession : sessionId
-PieceImage ..> PieceImage : derivedFromId (ORIGINAL)
-BrandPrediction "*" ..> "1" CaptureSession : sessionId
-ModelInference "*" ..> "0..1" CaptureSession : sessionId
-ModelInference ..> ModelRegistryEntry : name + version
-AiReviewItem ..> PieceImage : imageId
-Others ..> PieceImage : imageId
-CaptureSession --> CaptureSessionStatus
-CaptureRequest --> CaptureRequestStatus
-PieceImage --> PieceImageType
-PieceImage --> PieceImageStatus
-BrandPrediction --> IdentificationLevel
-ModelRegistryEntry --> ModelDeploymentStatus
-AdaptiveCaptureEngine ..> CaptureRequest : gera Recommendation
-PhotographyQualityGate ..> PieceImage : qualityScore
-BrandEnsembleResolver ..> BrandPrediction : Resolution
-CanonicalPhotographer ..> PieceImage : CANONICAL / DETAIL
-note bottom of CaptureSession : tabela capture_sessions (V29)\nCaptureSessionService <<planejado>>
-note top of PieceImage : tabela piece_images — ORIGINAL nunca\nsobrescrito (RN45.01); derivados por spec versionada
-note "Candidatas do Trello sem classe própria:\nPhotographySpecification → record PhotographySpec\nCaptureRecommendation → Recommendation\nCanonicalAsset/AssetVersion → PieceImage\nPieceImageAnalysis → PieceImage.analysisJson" as N1
 @enduml

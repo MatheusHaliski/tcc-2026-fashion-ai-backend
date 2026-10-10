@@ -25,6 +25,8 @@ public enum NotificationType {
     SCHEME_CREATED(NotificationCategory.SYSTEM, true),
     AI_JOB_FINISHED(NotificationCategory.SYSTEM, true),
     ACCOUNT_APPROVAL(NotificationCategory.SYSTEM, false),
+    /** Para administradores: perfil de marca/celebridade enviado (ou reenviado) para a fila de verificação. */
+    ISSUER_REVIEW_REQUEST(NotificationCategory.SYSTEM, false),
     /** Foto enviada retida pela moderação (docs/seguranca/moderacao-de-imagens.md): aprovada ou recusada na revisão humana. */
     CONTENT_REVIEW(NotificationCategory.SYSTEM, false),
     DAILY_LOOK(NotificationCategory.SOCIAL, true),
@@ -34,8 +36,24 @@ public enum NotificationType {
     /** RF34 §4.3 / RF35 §5.3 — conquista desbloqueada e evolução do quarto. */
     ACHIEVEMENT_UNLOCKED(NotificationCategory.ACHIEVEMENT, true),
     ROOM_LEVEL_UP(NotificationCategory.ACHIEVEMENT, true),
+    /**
+     * RF53 · P1-10 — marco de Hype: peça ou look do dono SOBE pela 1ª vez para Em alta, Tendência ou Viral, ou passa a
+     * ser emergente. Nunca avisa queda (ETI-02); no máximo um resumo por dono por dia; só o dono recebe.
+     */
+    HYPE_MILESTONE(NotificationCategory.ACHIEVEMENT, true),
     /** Card Trello RF38 — "Parabéns! Deseja resgatar o CUPOM?" (direito promocional conquistado no app). */
-    COUPON_AVAILABLE(NotificationCategory.ACHIEVEMENT, true);
+    COUPON_AVAILABLE(NotificationCategory.ACHIEVEMENT, true),
+    /** RF30/RF39 — extrato dos FAI Points: cada lançamento do ledger (ganho ou gasto) vira uma notificação. */
+    FAI_POINTS(NotificationCategory.POINTS, true),
+    /**
+     * FashionAI Momentos (§44): linguagem informativa, nunca FOMO. "Halloween começa esta semana", "Seu grupo criou um
+     * novo Momento", "Faltam dois dias para enviar seu look", "Seu Momento foi concluído". Todas desativáveis por tipo;
+     * no máximo um aviso por Momento por motivo (dedupe no serviço), nunca spam diário.
+     */
+    MOMENT_STARTING(NotificationCategory.SOCIAL, true),
+    MOMENT_GROUP_CREATED(NotificationCategory.SOCIAL, true),
+    MOMENT_DEADLINE(NotificationCategory.SOCIAL, true),
+    MOMENT_COMPLETED(NotificationCategory.ACHIEVEMENT, true);
 
     private final NotificationCategory category;
     private final boolean optOutAllowed;

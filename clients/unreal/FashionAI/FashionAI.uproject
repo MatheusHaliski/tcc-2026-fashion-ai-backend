@@ -1,0 +1,20 @@
+{
+	"FileVersion": 3,
+	"EngineAssociation": "5.8",
+	"Category": "",
+	"Description": "FashionAI — cliente instalado (iOS, iPadOS, Android, Windows, macOS; consoles quando houver SDK autorizado)",
+	"Modules": [
+		{
+			"Name": "FashionAI",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{ "Name": "CommonUI", "Enabled": true },
+		{ "Name": "EnhancedInput", "Enabled": true },
+		{ "Name": "HairStrands", "Enabled": true },
+		{ "Name": "ChaosCloth", "Enabled": true }
+	],
+	"TargetPlatforms": [ "IOS", "Android", "Windows", "Mac" ]
+}

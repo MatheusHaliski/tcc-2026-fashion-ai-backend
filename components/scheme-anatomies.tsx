@@ -3,9 +3,13 @@ import type { SchemeView } from "@/lib/api/types";
 import { mediaUrl, thumbUrl } from "@/lib/api/client";
 import { CATEGORY_LABEL, label } from "@/lib/api/taxonomy";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
-import { SeasonDecor, Spotlights } from "@/components/card-art";
-import { BLOCKS_TEXTURE, brickColor, hueChroma, studioOf } from "@/lib/card-art";
+import { MotionFall, SeasonDecor, Spotlights } from "@/components/card-art";
+import { BLOCKS_TEXTURE, brickColor, cartelaSeason, hueChroma, motionOf, studioOf, type CardArt } from "@/lib/card-art";
 import { BrandLogo } from "@/components/brand-logo";
+import { HypeScoreGauge } from "@/components/hype/hype-score-gauge";
+import { usePiecesHype, type PieceHype } from "@/components/hype/look-hype-preview";
+import { LEVELS, displayScore, hypeViewState, levelTone, type HypeViewState } from "@/lib/hype/model";
+import type { HypeLevel } from "@/lib/hype/types";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 import { currentIntl } from "@/lib/i18n/state";
 
@@ -96,18 +100,22 @@ export const silhouetteLabel = (s?: string | null) => (s && (SILHOUETTES as read
  * Anatomia que o card realmente mostra. Custo por uso usa dado pessoal e só aparece para quem é dono do look; Cartela
  * sazonal só existe com a estação preenchida. Nos demais casos o card cai na Lista vertical.
  */
-export function effectiveAnatomy(s: Pick<SchemeView, "layoutAnatomy" | "season" | "viewer">): string {
+export function effectiveAnatomy(s: Pick<SchemeView, "layoutAnatomy" | "season" | "viewer" | "background">): string {
   const a = s.layoutAnatomy ?? "LISTA_VERTICAL";
   if (a === "CUSTO_POR_USO" && !s.viewer?.canEdit) return "LISTA_VERTICAL";
-  if (a === "CARTELA_SAZONAL" && !s.season) return "LISTA_VERTICAL";
+  // a estação vem da cartela escolhida no modal do layout ou, sem ela, da estação do look
+  if (a === "CARTELA_SAZONAL" && !cartelaSeason(s.background, s.season)) return "LISTA_VERTICAL";
   return a;
 }
 
-export interface AnatomyPiece { id: string; name: string; img?: string; brand?: string | null; material?: string | null; price?: number | null; colorHex?: string | null; color?: string | null; wearCount?: number; likes?: number; hype?: number | null; hypeGlobal?: number | null; slot: string; category?: string; size?: string; }
+export interface AnatomyPiece {
+  id: string; name: string; img?: string; brand?: string | null; material?: string | null; price?: number | null; colorHex?: string | null; color?: string | null; wearCount?: number; likes?: number;
+  slot: string; category?: string; size?: string;
+}
 export const toAnatomyPieces = (s: SchemeView): AnatomyPiece[] => (s.items ?? []).map((it) => ({
   id: it.wardrobeItemId, name: it.piece?.name ?? (it.name as string) ?? it.slot, img: thumbUrl(it.piece?.thumbnailUrl ?? it.piece?.imageUrl ?? (it.imageUrl as string), 320), brand: it.piece?.brandName, price: it.piece?.price,
   colorHex: it.piece?.colorHex, color: it.piece?.color, wearCount: it.piece?.wearCount ?? 0, likes: it.piece?.likes ?? it.piece?.counters?.likes ?? 0,
-  hype: it.piece?.hypeScore ?? null, hypeGlobal: it.piece?.hypeScoreGlobal ?? null, slot: it.slot, category: it.piece?.category, size: it.piece?.size, material: it.piece?.material,
+  slot: it.slot, category: it.piece?.category, size: it.piece?.size, material: it.piece?.material,
 }));
 /** Capa do look: a composição/foto do look ou, sem ela, a foto da primeira peça. */
 export const coverOf = (s: SchemeView) => mediaUrl(s.coverImageUrl) ?? thumbUrl(s.items?.[0]?.piece?.imageUrl ?? (s.items?.[0]?.imageUrl as string), 640);
@@ -152,8 +160,21 @@ const sizeLabel = (s?: string | null) => (!s ? "—" : s === "one_size" ? tr("co
 const stop = (e: { preventDefault: () => void; stopPropagation: () => void }) => { e.preventDefault(); e.stopPropagation(); };
 const tint = (hex?: string | null) => (hex && hex.startsWith("#") ? hex : "#9A958C");
 const rgb = (hex: string) => { const n = parseInt(hex.slice(1), 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
-/** Faixas fixas do Hype (paleta de status, igual à legenda). */
-export const hypeStatus = (v?: number | null) => ((v ?? 0) >= 70 ? "var(--status-good)" : (v ?? 0) >= 50 ? "var(--status-warning)" : (v ?? 0) >= 30 ? "var(--status-serious)" : "var(--status-critical)");
+/**
+ * Cor DECORATIVA de cada faixa do HypeScore v2 (as mesmas famílias do `hype-level-chip`). O número e a faixa em texto
+ * carregam a informação; não há vermelho de alerta: Hype baixo é conteúdo novo ou pouco visto, não erro.
+ */
+export const HYPE_LEVEL_COLOR: Record<HypeLevel, string> = { LOW_SIGNAL: "var(--line)", NICHE: "var(--faint)", RELEVANT: "var(--chalk)", HOT: "var(--mark)", TRENDING: "var(--thread)", VIRAL: "var(--accent)" };
+/**
+ * @deprecated Escala v1 (0–29 · 30–49 · 50–69 · 70–100, com paleta "crítica"). Mantida só para quem ainda importa:
+ * agora devolve a cor decorativa da faixa v2 do número (limiares padrão 20/40/60/75/90) e, sem dado, a cor neutra —
+ * nunca a cor de "0". A anatomia usa a faixa que vem do backend (`HYPE_LEVEL_COLOR`).
+ */
+export const hypeStatus = (v?: number | null) => {
+  if (v == null) return HYPE_LEVEL_COLOR.LOW_SIGNAL;
+  const n = Math.round(v);
+  return HYPE_LEVEL_COLOR[n >= 90 ? "VIRAL" : n >= 75 ? "TRENDING" : n >= 60 ? "HOT" : n >= 40 ? "RELEVANT" : n >= 20 ? "NICHE" : "LOW_SIGNAL"];
+};
 /** Nível "Clássica do armário": a peça ganha o acabamento pelo uso (30 vezes ou mais), nunca pelo preço. */
 export const CLASSIC_USES = 30;
 const GOAL = 20;
@@ -176,7 +197,7 @@ export function AnatomyBody({ scheme, pieces }: { scheme: SchemeView; pieces: An
     case "CUSTO_POR_USO": return <CostPerUse pieces={pieces} />;
     case "SILHUETA_PROPORCAO": return <Silhouette pieces={pieces} declared={studioOf(scheme.background).silhouette as string | undefined} />;
     case "HYPE_FOCUS": return <HypeFocus pieces={pieces} />;
-    case "CARTELA_SAZONAL": return <SeasonCard pieces={pieces} season={scheme.season!} />;
+    case "CARTELA_SAZONAL": return <SeasonCard pieces={pieces} season={cartelaSeason(scheme.background, scheme.season)!} motion={motionOf(studioOf(scheme.background).animation)} />;
     case "LEGO": return <Blocks pieces={pieces} />;
     default: return null;
   }
@@ -369,38 +390,94 @@ function Silhouette({ pieces, declared }: { pieces: AnatomyPiece[]; declared?: s
   );
 }
 
-function Gauge({ v, size = 92 }: { v: number; size?: number }) {
-  return <svg width={size} height={Math.round(size * 0.58)} viewBox="0 0 92 54" aria-hidden><path d="M8 48 A38 38 0 0 1 84 48" fill="none" stroke="var(--line-soft)" strokeWidth="9" strokeLinecap="round" /><path d="M8 48 A38 38 0 0 1 84 48" fill="none" stroke={hypeStatus(v)} strokeWidth="9" strokeLinecap="round" strokeDasharray={`${(v / 100) * 119.4} 200`} /><text x="46" y="45" textAnchor="middle" fontSize="15" fontWeight="700" fill="currentColor">{v}%</text></svg>;
+/** Medidor do Hype Focus: o mesmo componente do Hype (HypeScoreGauge), na cor da faixa v2 e sem "%" (o score é 0–100, não percentual). */
+function Gauge({ score, level, size = 92 }: { score: number; level: HypeLevel; size?: number }) {
+  return <HypeScoreGauge value={score} size={size} color={HYPE_LEVEL_COLOR[level]} text={String(displayScore(score))} />;
 }
-/** 08 Hype Focus: a peça mais em alta (Hype global) com o valor desta peça ao lado; mede popularidade, não qualidade. */
+
+type ScoredPiece = { p: AnatomyPiece; score: number; level: HypeLevel };
+/**
+ * Peças do look pelo HypeScore v2: as com score, da maior para a menor; as demais (dados insuficientes, ainda não
+ * calculado, carregando) ficam por último com o estado em texto — nunca como 0. `pending` = nenhuma tem score ainda e
+ * alguma continua carregando.
+ */
+export function rankPiecesByHype(pieces: AnatomyPiece[], byId: Record<string, PieceHype>): { ranked: ScoredPiece[]; others: { p: AnatomyPiece; state: HypeViewState }[]; pending: boolean } {
+  const ranked: ScoredPiece[] = []; const others: { p: AnatomyPiece; state: HypeViewState }[] = [];
+  for (const p of pieces) {
+    const h = byId[p.id];
+    const state = hypeViewState(h?.summary, h ?? { loading: true });
+    if (state.kind === "available") ranked.push({ p, score: state.score, level: state.level });
+    else others.push({ p, state });
+  }
+  ranked.sort((a, b) => b.score - a.score);   // sort estável: empate mantém a ordem das peças no look
+  return { ranked, others, pending: !ranked.length && others.some((o) => o.state.kind === "loading") };
+}
+
+/** "Dados insuficientes", "Hype ainda não calculado" ou "Carregando" — o motivo do "—". */
+function noScoreLabel(state: HypeViewState) {
+  return state.kind === "loading" ? tr("hype.state.loading") : state.kind === "not_calculated" || state.kind === "error" ? tr("hype.state.not_calculated") : tr("hype.state.insufficient");
+}
+
+/**
+ * 08 Hype Focus: a peça do look com o maior HypeScore v2 (medidor + faixa em texto) e as demais ranqueadas; mede a
+ * relevância atual de cada peça no FashionAI, não qualidade. O Hype vem em lote do cache dos cards (para o dono, o Hype
+ * pessoal; para quem visita, só o que a visibilidade permite). Sem dados: "—" e o motivo, nunca 0.
+ */
 function HypeFocus({ pieces }: { pieces: AnatomyPiece[] }) {
   const { t } = useI18n();
-  const score = (p: AnatomyPiece) => p.hypeGlobal ?? p.hype;
-  const ranked = [...pieces].filter((p) => score(p) != null).sort((x, y) => (score(y) ?? 0) - (score(x) ?? 0)).slice(0, 4);
-  if (!ranked.length) return <div className="hypef"><p className="hypef-forming"><span className="anat-badge">{t("anatomy.hype.forming")}</span>{t("anatomy.hype.formingText")}</p></div>;
-  const f = ranked[0], g = Math.round(score(f) ?? 0);
-  const pct = (v?: number | null) => (v == null ? "—" : `${Math.round(v)} %`);
+  const { byId, probes } = usePiecesHype(pieces.map((p) => p.id));
+  const { ranked, others, pending } = rankPiecesByHype(pieces, byId);
+  const top = ranked[0];
+  if (!top) {
+    return (
+      <div className="hypef">{probes}
+        <p className="hypef-forming" role="status">{pending ? <span className="anat-badge">{t("hype.state.loading")}</span> : <><span className="anat-badge">{t("anatomy.hype.forming")}</span>{t("anatomy.hype.formingText")}</>}</p>
+      </div>
+    );
+  }
+  const rest: { p: AnatomyPiece; r: ScoredPiece | null; state?: HypeViewState }[] = [...ranked.slice(1).map((r) => ({ p: r.p, r })), ...others.map((o) => ({ p: o.p, r: null, state: o.state }))].slice(0, 3);
   return (
     <div className="hypef" aria-label={t("schemeAnatomies.hype_focus")}>
+      {probes}
       <div className="hypef-top">
-        <Thumb p={f} size={64} />
+        <Thumb p={top.p} size={64} />
         <div className="min-w-0 flex-1">
           <span className="anat-kicker">{t("anatomy.hype.top")}</span>
-          <p className="truncate font-semibold">{f.name}</p>
-          <div className="hypef-gauge"><Gauge v={g} size={84} /><span className="hypef-vals"><span>{t("anatomy.hype.global")} <b>{pct(f.hypeGlobal)}</b></span><span>{t("anatomy.hype.thisPiece")} <b>{pct(f.hype)}</b></span></span></div>
+          <p className="truncate font-semibold">{top.p.name}</p>
+          <div className="hypef-gauge">
+            <Gauge score={top.score} level={top.level} size={84} />
+            <span className="hypef-vals"><span className={`hype-level-chip ${levelTone(top.level)}`}>{t(`hype.level.${top.level}`)}</span><span>{t("anatomy.hype.scale")}</span></span>
+            <span className="sr-only">{t("anatomy.hype.score_aria", { name: top.p.name, score: displayScore(top.score), level: t(`hype.level.${top.level}`) })}</span>
+          </div>
         </div>
       </div>
-      {ranked.slice(1).map((p) => (
-        <div key={p.id} className="hypef-row"><Thumb p={p} /><span className="min-w-0 flex-1"><b className="block truncate">{p.name}</b><em className="block truncate">{t("anatomy.hype.thisPiece")} {pct(p.hype)}</em></span>
-          <span className="hypef-meter"><span><b>{pct(p.hypeGlobal)}</b> {t("anatomy.hype.globalShort")}</span><span className="hype-bar"><i style={{ width: `${p.hypeGlobal ?? 0}%`, background: hypeStatus(p.hypeGlobal) }} /></span></span></div>))}
-      <p className="hypef-legend">{[["var(--status-critical)", "0–29"], ["var(--status-serious)", "30–49"], ["var(--status-warning)", "50–69"], ["var(--status-good)", "70–100"]].map(([c, r]) => <span key={r}><i style={{ background: c }} />{r}</span>)}</p>
+      {rest.map((x) => (
+        <div key={x.p.id} className="hypef-row"><Thumb p={x.p} />
+          <span className="min-w-0 flex-1"><b className="block truncate">{x.p.name}</b><em className="block truncate">{x.r ? t(`hype.level.${x.r.level}`) : noScoreLabel(x.state ?? { kind: "loading" })}</em></span>
+          <span className="hypef-meter"><span><b>{x.r ? displayScore(x.r.score) : "—"}</b></span><span className="hype-bar">{x.r && <i style={{ width: `${Math.max(0, Math.min(100, x.r.score))}%`, background: HYPE_LEVEL_COLOR[x.r.level] }} />}</span></span>
+        </div>))}
+      <p className="hypef-legend" aria-label={t("anatomy.hype.legend")}>{LEVELS.map((l) => <span key={l}><i style={{ background: HYPE_LEVEL_COLOR[l] }} />{t(`hype.level.${l}`)}</span>)}</p>
       <How summary={t("anatomy.hype.how")}>{t("anatomy.hype.howText")}</How>
     </div>
   );
 }
 
+/** Assinatura compacta do Hype Focus: medidor da peça com mais Hype v2 + nome + faixa em texto (sem dados: o motivo, nunca 0). */
+function CompactHype({ pieces }: { pieces: AnatomyPiece[] }) {
+  const { t } = useI18n();
+  const { byId, probes } = usePiecesHype(pieces.map((p) => p.id));
+  const { ranked, pending } = rankPiecesByHype(pieces, byId);
+  const top = ranked[0];
+  return (
+    <div className="csig">{probes}
+      {top ? <><Gauge score={top.score} level={top.level} size={52} /><span className="csig-text">{top.p.name} · {t(`hype.level.${top.level}`)}</span><span className="sr-only">{t("anatomy.hype.score_aria", { name: top.p.name, score: displayScore(top.score), level: t(`hype.level.${top.level}`) })}</span></>
+        : <span className="anat-badge">{pending ? t("hype.state.loading") : t("anatomy.hype.forming")}</span>}
+    </div>
+  );
+}
+
 /** 09 Cartela sazonal: as peças sobre a arte da estação do look; indica quais peças conversam com a paleta. */
-function SeasonCard({ pieces, season }: { pieces: AnatomyPiece[]; season: string }) {
+function SeasonCard({ pieces, season, motion }: { pieces: AnatomyPiece[]; season: string; motion?: CardArt["motion"] }) {
   const { t } = useI18n(); const [ref, play] = useInViewOnce<HTMLDivElement>();
   const meta = SEASON_NAME[season] ?? SEASON_NAME.SPRING;
   const inP: string[] = [], neu: string[] = [], out: string[] = [];
@@ -411,8 +488,9 @@ function SeasonCard({ pieces, season }: { pieces: AnatomyPiece[]; season: string
   });
   return (
     <div className="season-card" aria-label={t("schemeAnatomies.cartela_sazonal", { label: meta.label })}>
-      <div ref={ref} className="season-hero" data-play={play || undefined} style={{ backgroundImage: SEASON_ART[season] }}>
+      <div ref={ref} className={`season-hero${motion === "shimmer" ? " motion-shimmer" : ""}`} data-play={play || undefined} style={{ backgroundImage: SEASON_ART[season] }}>
         <SeasonDecor season={season} count={10} once />
+        {motion && motion !== "shimmer" && <MotionFall kind={motion} count={14} />}
         <span className="season-title">{meta.label}</span>
         <div className="season-pieces">{pieces.slice(0, 4).map((p, i) => <span key={p.id} className="season-polaroid" style={{ ["--tilt" as string]: `${(i % 2 ? 1 : -1) * 2}deg` }}>{p.img && <img src={p.img} alt={p.name} />}<em>{p.name}</em></span>)}</div>
       </div>
@@ -449,15 +527,14 @@ function Blocks({ pieces }: { pieces: AnatomyPiece[] }) {
 export function CompactSignature({ scheme, pieces }: { scheme: SchemeView; pieces: AnatomyPiece[] }) {
   const { t, fmtNumber } = useI18n();
   const a = effectiveAnatomy(scheme);
-  const hyp = (p: AnatomyPiece) => p.hypeGlobal ?? p.hype;
   if (a === "PASSARELA") { const s = [...pieces].sort((x, y) => (y.likes ?? 0) - (x.likes ?? 0)).slice(0, 4); return <div className="csig"><span className="csig-strip dark">{s.map((p, i) => <span key={p.id}><Thumb p={p} size={36} /><i>#{i + 1}</i></span>)}</span><span className="csig-text">♥ {fmtNumber(s[0]?.likes ?? 0)} · {s[0]?.name}</span></div>; }
   if (a === "ETIQUETA") return <div className="csig">{pieces.slice(0, 4).map((p) => <span key={p.id} className="csig-tag">{(p.brand ?? "—").slice(0, 6).toUpperCase()} {p.price != null ? brl(p.price, 0) : "—"}</span>)}</div>;
   if (a === "RAIO_X") { const k = anchorIndex(pieces); return <div className="csig"><span className="csig-text">{t("anatomy.xray.anchorOf", { name: pieces[k]?.name ?? "—" })}</span></div>; }
   if (a === "ESPECTRO") { const sh = areaShares(pieces); return <div className="csig"><span className="spectrum-band csig-band" role="img" aria-label={t("anatomy.spectrum.aria", { list: pieces.map((p, i) => `${p.color ? label(p.color) : "—"} ≈ ${sh[i]}%`).join(", ") })}>{pieces.map((p, i) => <i key={p.id} style={{ background: tint(p.colorHex), flexGrow: sh[i] }} />)}</span><span className="csig-text">{t("anatomy.spectrum.estimated")}</span></div>; }
   if (a === "CUSTO_POR_USO") { const pr = pieces.filter((p) => p.price != null), spent = pr.reduce((x, p) => x + (p.price ?? 0), 0), uses = pr.reduce((x, p) => x + (p.wearCount ?? 0), 0); return <div className="csig"><b className="csig-text">{uses ? t("anatomy.cpu.perUse", { value: brl(spent / uses) }) : t("anatomy.cpu.notUsed")}</b><em className="anat-lock">{t("anatomy.onlyYou")}</em></div>; }
   if (a === "SILHUETA_PROPORCAO") { const d = studioOf(scheme.background).silhouette as string | undefined; return <div className="csig"><span className="csig-text">{t("anatomy.silhouette.family")}: {silhouetteLabel(d) ?? t("anatomy.silhouette.notDeclared")}</span></div>; }
-  if (a === "HYPE_FOCUS") { const s = [...pieces].filter((p) => hyp(p) != null).sort((x, y) => (hyp(y) ?? 0) - (hyp(x) ?? 0))[0]; return <div className="csig">{s ? <><Gauge v={Math.round(hyp(s) ?? 0)} size={52} /><span className="csig-text">{s.name} · {t("anatomy.hype.global")} {s.hypeGlobal != null ? `${Math.round(s.hypeGlobal)} %` : "—"}</span></> : <span className="anat-badge">{t("anatomy.hype.forming")}</span>}</div>; }
-  if (a === "CARTELA_SAZONAL") { const m = SEASON_NAME[scheme.season ?? ""]; return m ? <div className="csig"><span className="csig-palette">{m.palette.map((c) => <i key={c} style={{ background: c }} />)}</span><span className="csig-text">{m.label}</span></div> : null; }
+  if (a === "HYPE_FOCUS") return <CompactHype pieces={pieces} />;
+  if (a === "CARTELA_SAZONAL") { const m = SEASON_NAME[cartelaSeason(scheme.background, scheme.season) ?? ""]; return m ? <div className="csig"><span className="csig-palette">{m.palette.map((c) => <i key={c} style={{ background: c }} />)}</span><span className="csig-text">{m.label}</span></div> : null; }
   if (a === "LEGO") return <div className="csig" role="img" aria-label={pieces.map((p) => p.name).join(", ")}>{pieces.slice(0, 6).map((p) => <span key={p.id} className="csig-stud" style={{ background: brickColor(p.colorHex) }} />)}</div>;
   return <div className="csig"><span className="csig-strip">{pieces.slice(0, 4).map((p) => <Thumb key={p.id} p={p} size={36} />)}</span></div>;
 }

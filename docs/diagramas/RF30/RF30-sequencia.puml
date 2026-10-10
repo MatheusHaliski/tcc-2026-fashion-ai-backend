@@ -1,38 +1,80 @@
 @startuml RF30_Sequencia
-title RF30 — Ganhar e usar FAI Points, evoluir o nível do "Meu Quarto" e comprar na loja do quarto\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor Usuário as U
-participant "Frontend\npoints + RoomStore" as FE
-participant "HighlightsController" as C
-participant "FaiPointsService" as P
-participant "WardrobeCreatorService" as W
-participant "RoomService" as R
-database "MySQL" as DB
-U -> FE: abre FAI Points
-FE -> C: GET /api/me/points
-C -> P: account(user)
-P -> DB: SUM fai_points_ledger (saldo e vitalício)
-FE -> C: GET /api/points/shop
-C -> P: shop(user)
-P -> DB: SELECT room_catalog ativos + room_inventory
-P -> W: view(item, buyer) + blocker
-P -> R: compatibleModules
-P --> FE: itens com condições e motivo do bloqueio
-U -> FE: Comprar
-FE -> C: POST /api/points/shop/{sku}/purchase
-C -> P: buy(user, sku)
-P -> W: blocker(buyer, item)
-P -> DB: INSERT fai_points_ledger (−preço)\nINSERT room_inventory\nUPDATE room_catalog.sold_count
-U -> FE: Montar em "Porta 1"
-FE -> C: POST /api/me/room-inventory/{id}/apply
-C -> P: apply
-P -> R: applyFinish(user, moduleId, item)
-R -> DB: UPDATE room_layouts.modules_json
+autonumber "<b>0."
+title RF30 — Ganhar e usar FAI Points, evoluir o nível do 'Meu Quarto' e comprar na loja do quarto\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /brands/[slug]" as P
+control "HighlightsController" as HighlightsController
+participant "FaiPointsService" as FaiPointsService
+database "MySQL" as DB_MySQL
+participant "WardrobeCreatorService" as WardrobeCreatorService
+participant "NotificationService" as NotificationService
+== Comprar com FAI Points ==
+U -> P : Comprar com FAI Points
+P -> HighlightsController : POST /api/points/shop/{sku}/purchase
+HighlightsController -> FaiPointsService : buy()
+activate FaiPointsService
+FaiPointsService -> DB_MySQL : SELECT fai_points_ledger
+FaiPointsService -> DB_MySQL : SELECT room_catalog
+FaiPointsService -> DB_MySQL : SELECT fai_points_ledger
+alt nível insuficiente
+FaiPointsService --> HighlightsController : 409 NIVEL_INSUFICIENTE
+HighlightsController --> P : 409 + mensagem
+end
+alt esgotado
+FaiPointsService --> HighlightsController : 409 ESGOTADO
+HighlightsController --> P : 409 + mensagem
+end
+FaiPointsService -> WardrobeCreatorService : blocker()
+WardrobeCreatorService -> DB_MySQL : SELECT users
+WardrobeCreatorService -> DB_MySQL : SELECT room_inventory
+WardrobeCreatorService -> DB_MySQL : SELECT seal_bonds
+WardrobeCreatorService -> DB_MySQL : SELECT users
+WardrobeCreatorService --> FaiPointsService
+alt condicao de compra
+FaiPointsService --> HighlightsController : 409 CONDICAO_DE_COMPRA
+HighlightsController --> P : 409 + mensagem
+end
+FaiPointsService -> DB_MySQL : SELECT fai_points_ledger
+alt saldo insuficiente
+FaiPointsService --> HighlightsController : 409 SALDO_INSUFICIENTE
+HighlightsController --> P : 409 + mensagem
+end
+FaiPointsService -> FaiPointsService : new FaiPointsLedgerEntry()
+FaiPointsService -> FaiPointsService : idempotencyKey = set
+FaiPointsService -> FaiPointsService : countsLifetime = false
+FaiPointsService -> DB_MySQL : INSERT/UPDATE fai_points_ledger
+FaiPointsService -> NotificationService : notify()
+NotificationService -> DB_MySQL : SELECT users (×2)
+NotificationService -> DB_MySQL : SELECT user_preferences
+NotificationService -> DB_MySQL : INSERT/UPDATE notifications
+NotificationService --> FaiPointsService
+FaiPointsService -> FaiPointsService : new RoomInventoryItem()
+FaiPointsService -> FaiPointsService : acquiredAt = set
+note over FaiPointsService : … e mais 4 passos no código
+deactivate FaiPointsService
+FaiPointsService --> HighlightsController : resultado
+HighlightsController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

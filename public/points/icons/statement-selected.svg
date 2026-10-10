@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 40 40" role="img" aria-label="Extrato: recibo com linhas e o total">
+  <title>Extrato: recibo com linhas e o total</title>
+  <circle cx="20" cy="20" r="18.5" fill="#191A19" stroke="none" stroke-width="1.5"/>
+  <g transform="translate(8 8)" fill="none" stroke="#FFFFFF" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.8h12v18.4l-2-1.4-2 1.4-2-1.4-2 1.4-2-1.4-2 1.4z"/><path d="M9 7.5h6M9 11h6M9 14.5h3.5"/><circle cx="15" cy="14.6" r="1" fill="#FFFFFF" stroke="none"/></g>
+</svg>

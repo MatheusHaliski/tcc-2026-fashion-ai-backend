@@ -10,38 +10,47 @@ import { FaiIcon } from "@/components/fai-icon";
 import { Avatar, Sheet, Skeleton, UiIcon, cn, useDismiss, useFocusTrap } from "@/components/ui";
 
 /**
- * Estrutura de todas as telas logadas: cabeçalho de altura fixa, menu lateral em 4 grupos (desktop), gaveta (tablet e
+ * Estrutura de todas as telas logadas: cabeçalho de altura fixa, menu lateral por domínios (desktop), gaveta (tablet e
  * celular) e barra inferior com os 5 destinos principais. O menu fica sempre num container branco (regra do RF23).
  */
 type NavItem = { href: string; key: string; icon: string; auth?: boolean };
 const GROUPS: { key: string; items: NavItem[] }[] = [
+  // domínios: descobrir · guarda-roupa · looks · perfil · jogar · loja
   { key: "nav.group.discover", items: [
     { href: "/feed", key: "nav.feed", icon: "NAV-05" },
     { href: "/search", key: "nav.search", icon: "NAV-09" },
     { href: "/explorer", key: "nav.explorer", icon: "NAV-08" },
     { href: "/brands", key: "nav.brands", icon: "NAV-11" },
+    { href: "/lens", key: "nav.lens", icon: "ACT-08", auth: true },
   ] },
   { key: "nav.group.wardrobe", items: [
-    { href: "/lookbook", key: "nav.profile", icon: "NAV-15", auth: true },
     { href: "/closet", key: "nav.closet", icon: "NAV-02", auth: true },
-    { href: "/photos", key: "nav.photos", icon: "NAV-10", auth: true },
+    { href: "/pieces/new", key: "nav.addPiece", icon: "ACT-06", auth: true },
     { href: "/room", key: "nav.room", icon: "NAV-16", auth: true },
+    { href: "/photos", key: "nav.photos", icon: "NAV-10", auth: true },
+    { href: "/try-on", key: "nav.tryon", icon: "NAV-07", auth: true },
     { href: "/mirror", key: "nav.mirror", icon: "ACT-32", auth: true },
     { href: "/avatar", key: "nav.avatar3d", icon: "ACT-20", auth: true },
-    { href: "/try-on", key: "nav.tryon", icon: "NAV-07", auth: true },
   ] },
   { key: "nav.group.create", items: [
+    { href: "/looks", key: "nav.myLooks", icon: "NAV-04", auth: true },
     { href: "/schemes/new", key: "nav.create", icon: "NAV-03", auth: true },
-    { href: "/dna", key: "nav.dna", icon: "ACT-19", auth: true },
-    { href: "/autopilot", key: "nav.autopilot", icon: "NAV-06", auth: true },
     { href: "/copilot", key: "nav.copilot", icon: "ACT-13", auth: true },
+    { href: "/autopilot", key: "nav.autopilot", icon: "NAV-06", auth: true },
+    { href: "/dna", key: "nav.dna", icon: "ACT-19", auth: true },
+  ] },
+  { key: "nav.group.profile", items: [
+    { href: "/lookbook", key: "nav.profile", icon: "NAV-15", auth: true },
+    { href: "/history", key: "nav.history", icon: "SOC-07", auth: true },
   ] },
   { key: "nav.group.play", items: [
-    { href: "/challenges", key: "nav.challenges", icon: "ACT-43", auth: true },
+    { href: "/moments", key: "nav.moments", icon: "NAV-13", auth: true },
     { href: "/flair", key: "nav.flair", icon: "ACT-46", auth: true },
-    { href: "/points", key: "nav.points", icon: "ACT-40", auth: true },
     { href: "/highlights", key: "nav.highlights", icon: "ACT-37", auth: true },
     { href: "/coupons", key: "nav.coupons", icon: "ACT-26", auth: true },
+  ] },
+  { key: "nav.group.store", items: [
+    { href: "/points", key: "nav.points", icon: "ACT-40", auth: true },
   ] },
 ];
 
@@ -243,7 +252,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const bottom = user
-    ? [{ href: "/feed", key: "nav.feed", icon: "NAV-05" }, { href: "/search", key: "nav.search", icon: "NAV-09" }, null, { href: "/closet", key: "nav.closet", icon: "NAV-02" }, { href: "/lookbook", key: "nav.profileShort", icon: "NAV-15" }]
+    ? [{ href: "/feed", key: "nav.feed", icon: "NAV-05" }, { href: "/search", key: "nav.search", icon: "NAV-09" }, null, { href: "/closet", key: "nav.closetShort", icon: "NAV-02" }, { href: "/lookbook", key: "nav.profileShort", icon: "NAV-15" }]
     : [{ href: "/feed", key: "nav.feed", icon: "NAV-05" }, { href: "/search", key: "nav.search", icon: "NAV-09" }, { href: "/explorer", key: "nav.explorer", icon: "NAV-08" }, { href: "/brands", key: "nav.brands", icon: "NAV-11" }];
 
   return (

@@ -2,6 +2,7 @@
 fai-application/src/main/resources/catalog/normalization.json (taxonomia, sinônimos, apelidos de marca)."""
 from __future__ import annotations
 
+import html
 import json
 import re
 import unicodedata
@@ -49,6 +50,9 @@ class Normalizer:
         self.version = data.get("version")
         self.taxonomy: dict[str, list[str]] = data["taxonomy"]["subcategories"]
         self.sub_category = {s: c for c, subs in self.taxonomy.items() for s in subs}
+        # subcategorias LEGACY (bermuda_shorts…): continuam reconhecidas e viram a nova + o que implicam
+        self.legacy: dict[str, dict] = data.get("legacySubcategories", {})
+        self.sub_category.update({code: x["category"] for code, x in self.legacy.items()})
         self.categories = {key(c): c for c in self.taxonomy}
         self.subcategories = {key(s): s for s in self.sub_category}
         self.colors = {key(c): c for c in data["taxonomy"]["colors"]}
@@ -63,12 +67,26 @@ class Normalizer:
                 for s in syns:
                     target.setdefault(key(s), canon)
         self.stopwords = {key(s) for s in data.get("stopwords", [])}
+        # vocabulário das características únicas da peça (o mesmo do CatalogDesignInterpreter no Java)
+        design = data.get("design", {})
+        self.design_patterns = set(design.get("patterns", {}))
+        self.design_placements = set(design.get("placements", {}))
+        self.design_sizes = set(design.get("sizes", {}))
+        self.design_sides = set(design.get("sides", {}))
 
     def category(self, raw):
         return self.categories.get(key(raw))
 
     def subcategory(self, raw):
         return self.subcategories.get(key(raw))
+
+    def resolve(self, sub):
+        """(subcategoria nova, variação implícita, atributos implícitos) — bermuda_shorts → (shorts, None, {LENGTH: KNEE})."""
+        x = self.legacy.get(sub)
+        if not x:
+            return sub, None, {}
+        implies = dict(x.get("implies") or {})
+        return x["replacedBy"], implies.pop("VARIATION", None), implies
 
     def color(self, raw):
         k = key(raw)
@@ -83,7 +101,8 @@ class Normalizer:
         k = key(raw)
         if k in self.materials:
             return self.materials[k]
-        return next((self.materials[t] for t in k.split() if t in self.materials), None)
+        # palavra solta de 1–2 letras não decide ("lã" sem acento vira "la": "de la marca" não é lã) — igual ao Java
+        return next((self.materials[t] for t in k.split() if len(t) > 2 and t in self.materials), None)
 
     def gender(self, raw):
         return self.genders.get(key(raw))
@@ -132,6 +151,8 @@ class Product:
     color: Optional[str] = None
     color_name: Optional[str] = None
     material: Optional[str] = None
+    variation: Optional[str] = None
+    attributes: dict = field(default_factory=dict)   # dimensão → [códigos] (LENGTH, FINISH, RISE…), ver taxonomy.json
     collection: Optional[str] = None
     gender: Optional[str] = None
     official_product_url: Optional[str] = None
@@ -141,6 +162,8 @@ class Product:
     images: list = field(default_factory=list)
     aliases: list = field(default_factory=list)
     variants: list = field(default_factory=list)
+    description: Optional[str] = None
+    design: Optional[dict] = None
     warnings: list = field(default_factory=list)
 
 
@@ -152,11 +175,24 @@ FIELDS = ["brand", "category", "subcategory", "product_name", "model_name", "pro
           "color", "color_name", "material", "collection", "gender", "official_product_url", "source_type"]
 
 
+_TAG = re.compile(r"<[^>]{0,200}>")
+
+
+# título que diz "bolsa" em pt/es/ca/en (bossa = bolsa em catalão; "bolso" fica de fora: em português é o bolso da roupa)
+_BAG_WORDS = re.compile(r"\b(bolsa|bossa|bag|handbag|tote|clutch)\b", re.IGNORECASE)
+_BAG_SUBS = {"handbag", "tote_bag", "crossbody_bag", "backpack", "clutch", "shoulder_bag", "bag"}
+
+
+def plain_text(v: str) -> str:
+    """Texto puro: tira marcação HTML que algumas lojas deixam no título ("Supima<sup>®</sup>") e desfaz entidades."""
+    return re.sub(r"\s+", " ", html.unescape(_TAG.sub("", v))).strip()
+
+
 def normalize_product(raw: dict, n: Normalizer) -> Product:
     """Valida e normaliza um item cru (JSON ou linha de CSV). Valor fora da taxonomia → erro, nunca gravado como veio."""
     def s(name):
         v = raw.get(name)
-        return str(v).strip() if v not in (None, "") else None
+        return (plain_text(str(v)) or None) if v not in (None, "") else None
 
     for required in ("brand", "subcategory", "product_name"):
         if not s(required):
@@ -165,7 +201,15 @@ def normalize_product(raw: dict, n: Normalizer) -> Product:
     if not sub:
         raise ValidationError(f"subcategoria fora da taxonomia: {s('subcategory')}")
     cat = n.sub_category[sub]
-    p = Product(brand=s("brand"), category=cat, subcategory=sub, product_name=re.sub(r"\s+", " ", s("product_name")))
+    new_sub, implied_variation, implied = n.resolve(sub)     # legado → padrão novo (docs/taxonomia, C.3)
+    if _BAG_WORDS.search(s("product_name")) and new_sub not in _BAG_SUBS:
+        # ex.: "Bossa denim mitjana" (bolsa jeans, Desigual) chegou como calça jeans: categoria errada nunca é gravada
+        raise ValidationError(f"título indica bolsa mas a subcategoria é {new_sub}: {s('product_name')}")
+    p = Product(brand=s("brand"), category=cat, subcategory=new_sub, product_name=re.sub(r"\s+", " ", s("product_name")))
+    p.variation = implied_variation
+    for dim, code in implied.items():
+        if dim != "MATERIAL":
+            p.attributes[dim] = [code]
     if s("category") and n.category(s("category")) not in (None, cat):
         p.warnings.append(f"categoria {s('category')} corrigida para {cat} pela subcategoria")
     elif s("category") and n.category(s("category")) is None:
@@ -179,7 +223,7 @@ def normalize_product(raw: dict, n: Normalizer) -> Product:
     p.color = n.color(s("color")) if s("color") else (n.color(s("color_name")) if s("color_name") else None)
     if s("color") and not p.color:
         p.warnings.append(f"cor fora da taxonomia ignorada: {s('color')}")
-    p.material = n.material(s("material")) if s("material") else None
+    p.material = n.material(s("material")) if s("material") else implied.get("MATERIAL")
     p.gender = n.gender(s("gender")) if s("gender") else None
     url = s("official_product_url")
     if url:
@@ -196,4 +240,43 @@ def normalize_product(raw: dict, n: Normalizer) -> Product:
     aliases = raw.get("aliases") or []
     p.aliases = [a for a in (aliases.split("|") if isinstance(aliases, str) else aliases) if str(a).strip()]
     p.variants = list(raw.get("variants") or [])
+    p.description = re.sub(r"\s+", " ", s("description")) if s("description") else None
+    p.design = normalize_design(raw.get("design"), n, p.warnings)
     return p
+
+
+def normalize_design(raw, n: Normalizer, warnings: list) -> Optional[dict]:
+    """Design da peça (estampa, logo, lados, cores da peça × da estampa) só com o vocabulário de normalization.json → design.
+    Valor fora do vocabulário vira aviso e sai do design (nunca é gravado como veio). Sem design, o backend lê a descrição."""
+    if not raw:
+        return None
+    if not isinstance(raw, dict):
+        warnings.append("design ignorado: não é um objeto")
+        return None
+    out: dict = {}
+    for name, allowed in (("pattern", n.design_patterns), ("logoPlacement", n.design_placements), ("logoSize", n.design_sizes)):
+        v = raw.get(name)
+        if v in (None, ""):
+            continue
+        v = str(v).strip().upper()
+        if v in allowed:
+            out[name] = v
+        else:
+            warnings.append(f"design.{name} fora do vocabulário ignorado: {v}")
+    sides = [str(x).strip().upper() for x in raw.get("sides") or []]
+    bad = [x for x in sides if x not in n.design_sides]
+    if bad:
+        warnings.append(f"design.sides fora do vocabulário ignorado: {', '.join(bad)}")
+    if [x for x in sides if x in n.design_sides]:
+        out["sides"] = [x for x in sides if x in n.design_sides]
+    for name in ("baseColors", "printColors", "anyColors"):
+        colors = []
+        for c in raw.get(name) or []:
+            code = n.color(c)
+            if code and code not in ("print", "multicolor"):
+                colors.append(code)
+            else:
+                warnings.append(f"design.{name}: cor fora da taxonomia ignorada: {c}")
+        if colors:
+            out[name] = list(dict.fromkeys(colors))
+    return out or None

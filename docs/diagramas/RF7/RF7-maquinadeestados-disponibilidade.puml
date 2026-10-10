@@ -1,0 +1,41 @@
+@startuml RF7_MaquinaDeEstados_Disponibilidade
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  StartColor #20A77A
+  EndColor #4B5563
+}
+title RF7 — ciclo de vida de WardrobeItem.availabilityStatus\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum AvailabilityStatus · tabela wardrobe_items
+
+state "WardrobeItem.availabilityStatus" as Ciclo_WardrobeItem {
+  state Ciclo_WardrobeItem_AVAILABLE as "AVAILABLE"
+  state Ciclo_WardrobeItem_UNAVAILABLE as "UNAVAILABLE"
+  state Ciclo_WardrobeItem_ARCHIVED as "ARCHIVED"
+}
+[*] --> Ciclo_WardrobeItem_AVAILABLE : criação
+Ciclo_WardrobeItem --> Ciclo_WardrobeItem_ARCHIVED : purgeScheduledDeletions(), delete()
+Ciclo_WardrobeItem --> Ciclo_WardrobeItem_AVAILABLE : ask(), diagnosis(),\npurchaseSuggestions()
+note bottom of Ciclo_WardrobeItem
+  Sem mudança explícita no código para: UNAVAILABLE
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
+note right of Ciclo_WardrobeItem
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
+end note
+@enduml

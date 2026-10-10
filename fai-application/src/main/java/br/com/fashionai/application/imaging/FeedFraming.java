@@ -9,22 +9,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * RF4 · Foto do feed — enquadramento por template de categoria. Em vez de um corte fixo em pixels, cada template
- * posiciona a peça por <b>pontos de referência da própria roupa</b> medidos na máscara do recorte, para que peças do
- * mesmo tipo fiquem com escala e posição comparáveis na grade:
- * <ul>
- *   <li><b>TOP</b> (camiseta, blusa, polo, regata…): gola no topo do quadro, largura do peito (logo abaixo das cavas)
- *       sempre com a mesma fração da largura, centro no tronco — ombros, extremidades das mangas e estampa frontal
- *       ficam visíveis; a barra pode sair pela base;</li>
- *   <li><b>OUTERWEAR</b> (jaqueta, casaco, blazer…): mesmas âncoras do TOP, mas a barra continua dentro do quadro;</li>
- *   <li><b>PANTS</b> (calças): cós no topo e o recorte termina na metade dos joelhos (gancho + 47% da entreperna),
- *       preservando cintura, bolsos, fechamento e o formato das pernas;</li>
- *   <li><b>SHORTS</b>, <b>SKIRT</b>, <b>FULL_BODY</b>: peça inteira, cós/decote na mesma altura;</li>
- *   <li><b>SHOES</b>: sola numa linha de chão fixa; <b>BAG</b> e <b>ACCESSORY</b>: objeto inteiro centralizado.</li>
- * </ul>
- * O quadro é sempre 4:5. Nada é inventado: quando a foto não contém a região exigida (gola, mangas, cós, joelhos), o
- * resultado lista o que falta em {@code missing} — a tela pede outra foto ou ajuste manual. A peça nunca é distorcida:
- * só escala uniforme e translação.
+ * RF4 feed image. Clothing uses an opaque interior crop: portrait 4:5 for tops/outerwear/full-body pieces,
+ * landscape 2:1 at the waist and hips for lower pieces. The mask prevents sleeve/neckline/leg gaps entering
+ * the frame. Original whole-piece measurements remain available for source checks; shoes and accessories
+ * keep their silhouette framing. Only uniform scale and translation are used.
  */
 public final class FeedFraming {
     private FeedFraming() {
@@ -45,7 +33,10 @@ public final class FeedFraming {
      * @param estimated algum ponto foi estimado por proporção (não medido)
      */
     public record Feed(Template template, StudioFraming.Frame frame, Map<String, Object> landmarks, List<String> missing,
-                       boolean estimated, double[] pieceSize) {
+                       boolean estimated, double[] pieceSize, ImageOps.Box fabricCrop) {
+        public Feed(Template template, StudioFraming.Frame frame, Map<String, Object> landmarks, List<String> missing, boolean estimated, double[] pieceSize) {
+            this(template, frame, landmarks, missing, estimated, pieceSize, null);
+        }
         /** Caixa da peça no quadro (frações: esquerda, topo, direita, base) — pode passar de 0–1 onde a peça sangra. */
         public List<Double> box() {
             double l = frame.ox() / frame.width(), t = frame.oy() / frame.height();
@@ -56,7 +47,14 @@ public final class FeedFraming {
         public Map<String, Object> toMap() {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("template", template.name());
-            m.put("aspect", "4:5");
+            m.put("mode", fabricCrop == null ? "SILHOUETTE" : "GARMENT_COVER");
+            m.put("pipelineVersion", GarmentCrop.VERSION);
+            if (fabricCrop != null) {
+                m.put("crop", Map.of("x", fabricCrop.x() / pieceSize[0], "y", fabricCrop.y() / pieceSize[1],
+                        "w", fabricCrop.w() / pieceSize[0], "h", fabricCrop.h() / pieceSize[1]));
+                m.put("foregroundCoverage", 1.0);
+            }
+            m.put("aspect", frame.aspect());
             m.put("width", frame.width());
             m.put("height", frame.height());
             m.put("fill", Math.round(frame.fill() * 100) / 100.0);
@@ -248,7 +246,98 @@ public final class FeedFraming {
      * @param template template da categoria
      * @param cut      lados que a foto original cortou (top/bottom/left/right)
      */
+    /**
+     * Foto do feed pela Regra de Enquadramento do Produto (docs/catalogo/PIPELINE_IMAGENS_CATALOGO.md §9.1), a mesma
+     * das fotos do acervo: o template continua medindo a peça (gola, cós, joelhos, o que falta na foto), e o quadro 4:5
+     * sai da regra da categoria no registro — parte de cima e de baixo preenchem o quadro pelo topo (gola / cós na
+     * metade superior), calçado e óculos ocupam a largura, relógio com o mostrador no centro, joias, gorro, cachecol,
+     * cinto e demais acessórios inteiros dentro do quadro. Sem categoria, o enquadramento antigo do template.
+     */
+    public static Feed frame(BufferedImage piece, Template template, Set<String> cut, String category, String subcategory) {
+        Feed base = frame(piece, template, cut);
+        if (category == null || category.isBlank()) {
+            return base;
+        }
+        br.com.fashionai.application.catalog.image.SemanticRegionRegistry.Profile profile =
+                br.com.fashionai.application.catalog.image.SemanticRegionRegistry.get()
+                        .profile(br.com.fashionai.application.catalog.image.PieceType.of(category), subcategory);
+        if (profile.rule() == null) {
+            return base;
+        }
+        Profile p = profile(piece);
+        br.com.fashionai.application.catalog.image.NRect product = new br.com.fashionai.application.catalog.image.NRect(
+                p.left() / (double) p.w(), p.top() / (double) p.h(), (p.right() - p.left() + 1) / (double) p.w(),
+                (p.bottom() - p.top() + 1) / (double) p.h());
+        br.com.fashionai.application.catalog.image.FramingStrategy.Focus focus = new br.com.fashionai.application.catalog.image.FramingStrategy.Focus(
+                profile.focus().name(), product.sub(profile.focus().rect()), List.of(), "REGISTRY");
+        br.com.fashionai.application.catalog.image.NRect c = br.com.fashionai.application.catalog.image.SemanticCropper.ruleCrop(
+                p.w(), p.h(), WIDTH / (double) HEIGHT, product, focus, profile.rule(), profile.margin()[0]);
+        double s = WIDTH / (c.w() * p.w()), ox = -c.x() * p.w() * s, oy = -c.y() * p.h() * s;
+        Set<String> cuts = cut == null ? Set.of() : cut;
+        Map<String, Object> lm = new LinkedHashMap<>(base.landmarks());
+        lm.put("rule", profile.rule().toMap());
+        lm.put("focus", profile.focus().name());
+        List<String> missing = new ArrayList<>(base.missing());
+        // regra 4 (calçado de lado): par fotografado de frente/de trás ou um pé de frente não vira lateral no recorte —
+        // a tela pede a foto de lado em vez de publicar como se a regra estivesse cumprida
+        if ("SIDE".equals(profile.rule().view()) && !looksSideView(p)) {
+            missing.add("side_view");
+            lm.put("view", "NOT_SIDE");
+        }
+        return new Feed(base.template(), place(p, s, ox, oy, WIDTH, HEIGHT, bleedOf(p, s, ox, oy, WIDTH, HEIGHT, cuts)), lm,
+                missing, base.estimated(), base.pieceSize());
+    }
+
+    /**
+     * Vista lateral do calçado pela máscara: um pé de frente é mais alto que largo, e o par visto de frente ou de trás são
+     * duas manchas com um vão vertical no meio (de lado os pés se sobrepõem e a silhueta é contínua e comprida).
+     */
+    static boolean looksSideView(Profile p) {
+        int bw = p.right() - p.left() + 1, bh = p.bottom() - p.top() + 1;
+        if (bw <= 0 || bh <= 0) {
+            return true;
+        }
+        if (bw / (double) bh < 0.9) {
+            return false;
+        }
+        int from = p.left() + (int) (bw * 0.3), to = p.left() + (int) (bw * 0.7);
+        for (int x = from; x <= to; x++) {
+            int filled = 0;
+            for (int y = p.top(); y <= p.bottom(); y++) {
+                filled += p.mask()[y * p.w() + x] ? 1 : 0;
+            }
+            if (filled < bh * 0.03) {
+                return false;   // coluna vazia no miolo: dois pés separados (par de frente/de trás)
+            }
+        }
+        return true;
+    }
+
     public static Feed frame(BufferedImage piece, Template template, Set<String> cut) {
+        Feed measured = silhouette(piece, template, cut);
+        if (template == Template.SHOES || template == Template.BAG || template == Template.ACCESSORY) return measured;
+        double fx = piece.getWidth() * 0.5, fy = piece.getHeight() * 0.25;
+        Object center = measured.landmarks().get("torsoCenterX");
+        if (center instanceof Number n) fx = n.doubleValue() * piece.getWidth();
+        boolean lower = template == Template.PANTS || template == Template.SHORTS || template == Template.SKIRT;
+        ImageOps.Box region = lower ? GarmentCrop.lowerRegion(piece, false).box() : ImageOps.alphaBounds(piece);
+        if (lower) { fx = region.x() + region.w() * 0.5; fy = region.y() + Math.min(region.h(), region.w() / 2.0) * 0.32; }
+        int aw = lower ? 2 : 4, ah = lower ? 1 : 5, height = lower ? WIDTH / 2 : HEIGHT;
+        var found = GarmentCrop.find(piece, aw, ah, fx, fy, region);
+        if (found.isEmpty()) {
+            measured.missing().add("fabric_region");
+            return measured;
+        }
+        ImageOps.Box c = found.get();
+        double scale = WIDTH / (double) c.w();
+        StudioFraming.Frame frame = new StudioFraming.Frame(WIDTH, height, scale, -c.x() * scale, -c.y() * scale,
+                Set.of("top", "bottom", "left", "right"), 1.0, lower ? "2:1" : "4:5");
+        return new Feed(template, frame, measured.landmarks(), measured.missing(), measured.estimated(),
+                new double[]{piece.getWidth(), piece.getHeight()}, c);
+    }
+
+    /** Whole-piece measurements retained for source checks and objects whose silhouette must remain visible. */
+    public static Feed silhouette(BufferedImage piece, Template template, Set<String> cut) {
         Set<String> cuts = cut == null ? Set.of() : cut;
         Profile p = profile(piece);
         if (p.top() < 0) {

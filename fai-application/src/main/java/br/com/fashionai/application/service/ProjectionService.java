@@ -66,7 +66,6 @@ public class ProjectionService {
                 doc.put("visibility", w.getVisibility().name());
                 doc.put("moderation", w.getModerationStatus().name());
                 doc.put("ownerId", w.getUser().getId().toString());
-                doc.put("hypeScore", w.getHypeScore());
                 search.index("pieces", w.getId(), doc);
             }
         } catch (RuntimeException ex) {
@@ -95,7 +94,6 @@ public class ProjectionService {
                 doc.put("visibility", s.getVisibility().name());
                 doc.put("status", s.getStatus().name());
                 doc.put("ownerId", s.getUser().getId().toString());
-                doc.put("hypeScore", s.getHypeScore());
                 search.index("schemes", s.getId(), doc);
             }
         } catch (RuntimeException ex) {

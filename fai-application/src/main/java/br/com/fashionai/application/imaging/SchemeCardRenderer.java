@@ -142,11 +142,35 @@ public class SchemeCardRenderer {
         g.setColor(bgInk);
         g.setFont(new Font(Font.SERIF, Font.BOLD | Font.ITALIC, 38));
         g.drawString("Fashion AI", pad, H - 6 * PX_PER_MM);
+        int brandW = g.getFontMetrics().stringWidth("Fashion AI");
         g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 30));
-        String right = (card.hypeLabel() == null ? "" : card.hypeLabel() + "   ") + (card.priceLabel() == null ? "" : card.priceLabel());
-        g.drawString(Msg.resolve(right), W - pad - g.getFontMetrics().stringWidth(right), H - 6 * PX_PER_MM);
+        String price = card.priceLabel() == null ? "" : Msg.resolve(card.priceLabel());
+        int baseline = H - 6 * PX_PER_MM;
+        int priceW = price.isEmpty() ? 0 : g.getFontMetrics().stringWidth(price);
+        if (!price.isEmpty()) {
+            g.drawString(price, W - pad - priceW, baseline);
+        }
+        if (card.hypeLabel() != null && !card.hypeLabel().isBlank()) {
+            // RF53 — HypeScore v2 + faixa em texto num chip; sem espaço ao lado do preço, sobe para a linha de cima
+            String hype = Msg.resolve(card.hypeLabel());
+            g.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 24));
+            int chipW = g.getFontMetrics().stringWidth(hype) + 36;
+            boolean sameLine = hypeFitsBeside(W, pad, brandW, priceW, chipW);
+            int chipRight = sameLine ? W - pad - priceW - (priceW > 0 ? 18 : 0) : W - pad;
+            int chipBase = sameLine ? baseline : baseline - 52;
+            g.setColor(new Color(bgInk.getRed(), bgInk.getGreen(), bgInk.getBlue(), 40));
+            g.fill(new RoundRectangle2D.Double(chipRight - chipW, chipBase - 32, chipW, 44, 44, 44));
+            g.setColor(bgInk);
+            g.drawString(hype, chipRight - chipW + 18, chipBase);
+        }
         g.dispose();
         return img;
+    }
+
+    /** O chip do Hype cabe na linha do rodapé, entre a marca "Fashion AI" e o preço (com folga de 24 px de cada lado)? */
+    public static boolean hypeFitsBeside(int width, int pad, int brandWidth, int priceWidth, int chipWidth) {
+        int free = width - 2 * pad - brandWidth - priceWidth - (priceWidth > 0 ? 18 : 0) - 24;
+        return chipWidth <= free;
     }
 
     private void drawItem(Graphics2D g, CardItem item, int cx, int cy, int cw, int ch, Map<SchemeSlot, Integer> slotCount) {

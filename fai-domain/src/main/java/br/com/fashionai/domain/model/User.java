@@ -1,6 +1,7 @@
 package br.com.fashionai.domain.model;
 
 import br.com.fashionai.domain.model.enums.Visibility;
+import br.com.fashionai.domain.model.enums.AccountOrigin;
 import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.HypeScorePanelVersion;
 import br.com.fashionai.domain.model.enums.ProfileType;
@@ -10,6 +11,7 @@ import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -67,9 +69,18 @@ public class User extends VersionedAuditableEntity {
     @Column(nullable = false, length = 30)
     private AccountStatus status = AccountStatus.PENDING_EMAIL_VERIFICATION;
 
-    /** Conta criada por teste automatizado (prefixo {@link #TEST_PREFIX}): fica fora da vitrine pública. */
-    @Column(name = "test_account", nullable = false)
-    private boolean testAccount;
+    /** Origem da conta (V30): só TEST_SEED e DEMO são de teste e entram no reset do ambiente demo. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "account_origin", nullable = false, length = 20)
+    private AccountOrigin accountOrigin = AccountOrigin.REAL;
+
+    /** Chave imutável da fixture do Demo/Test Data Pipeline (ex.: USER_PUBLIC); null fora do universo demo. */
+    @Column(name = "fixture_key", length = 80, unique = true)
+    private String fixtureKey;
+
+    /** Coluna GERADA pelo MySQL a partir de account_origin (V30): só leitura aqui, usada nas consultas nativas. */
+    @Column(name = "test_account", insertable = false, updatable = false)
+    private Boolean testAccountColumn;
 
     @Column(name = "avatar_url", length = 1024)
     private String avatarUrl;
@@ -93,6 +104,10 @@ public class User extends VersionedAuditableEntity {
 
     @Column(length = 2)
     private String country;
+
+    /** Momentos §4/§54 — fuso IANA da pessoa (opcional); sem ele vale o fuso do Momento, nunca o do cliente. */
+    @Column(length = 50)
+    private String timezone;
 
     @Column(name = "interface_background_preset_id", length = 80)
     private String interfaceBackgroundPresetId;
@@ -123,17 +138,28 @@ public class User extends VersionedAuditableEntity {
         this.emailHash = emailHash;
         this.passwordHash = passwordHash;
         this.profileType = profileType;
-        this.testAccount = username != null && username.startsWith(TEST_PREFIX);
+        markTestOriginFromUsername();
     }
 
     public static final String TEST_PREFIX = "e2e_";
+    /** Prefixo das contas do Demo/Test Data Pipeline; reservado no cadastro público. */
+    public static final String DEMO_PREFIX = "demo_";
 
+    /** Conta de teste automatizado ou de demo: fica fora da vitrine pública para contas reais. */
     public boolean isTestAccount() {
-        return testAccount;
+        return accountOrigin != null && accountOrigin.isTest();
     }
 
-    public void setTestAccount(boolean testAccount) {
-        this.testAccount = testAccount;
+    /** Mantém o comportamento da V22: cadastro com o prefixo e2e_ nasce como conta de teste. */
+    @PrePersist
+    void markTestOriginFromUsername() {
+        if ((accountOrigin == null || accountOrigin == AccountOrigin.REAL) && username != null && username.startsWith(TEST_PREFIX)) {
+            accountOrigin = AccountOrigin.TEST_SEED;
+        }
+    }
+
+    public static boolean isTestUsername(String username) {
+        return username != null && (username.startsWith(TEST_PREFIX) || username.startsWith(DEMO_PREFIX));
     }
 
     public boolean isBrand() {

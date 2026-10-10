@@ -1,25 +1,12 @@
 package br.com.fashionai.application.service;
 
 import br.com.fashionai.application.common.Msg;
-import br.com.fashionai.domain.model.enums.HypeScoreBand;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/** Faixas do Inventory Score (RF29). As 7 faixas de juízo do HypeScore v1 saíram na limpeza do v1 (P3-16). */
 class ScoreBandsTest {
-    @Test
-    void hypeScoreHasSevenContiguousBands() {
-        assertThat(HypeScoreService.BANDS).hasSize(7);
-        for (int i = 1; i < HypeScoreService.BANDS.size(); i++) {
-            assertThat(HypeScoreService.BANDS.get(i).min()).isEqualTo(HypeScoreService.BANDS.get(i - 1).max() + 1);
-        }
-        assertThat(HypeScoreService.band(0).code()).isEqualTo(HypeScoreBand.DESPRETENSIOSO);
-        assertThat(HypeScoreService.band(14.4).code()).isEqualTo(HypeScoreBand.DESPRETENSIOSO);
-        assertThat(HypeScoreService.band(14.6).code()).isEqualTo(HypeScoreBand.EM_CONSTRUCAO);
-        assertThat(HypeScoreService.band(72).code()).isEqualTo(HypeScoreBand.MUITO_ESTILOSO);
-        assertThat(HypeScoreService.band(100).code()).isEqualTo(HypeScoreBand.ICONE_DE_ESTILO);
-    }
-
     @Test
     void inventoryScoreBandsCoverZeroToOneThousand() {
         assertThat(InventoryScoreService.BANDS).hasSize(7);

@@ -3,8 +3,9 @@
  * Cards e peças de exibição (RF7, RF11, RF13, RF20): anatomias do card de look, medalha de selo, card de DNA, gráficos
  * do dashboard e ações sociais. Cada variante desenha sem quebrar e mostra o que a pessoa precisa ver.
  */
+import { router } from "@/test-utils/setup";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, loggedAs, mockApi, renderApp, screen, waitFor } from "@/test-utils/render";
+import { ME, cleanup, fireEvent, loggedAs, mockApi, renderApp, screen, waitFor } from "@/test-utils/render";
 import { PIECE, PIECE_2, SCHEME, OWNER } from "@/test-utils/fixtures";
 import type { SchemeView } from "@/lib/api/types";
 import {
@@ -25,6 +26,8 @@ describe("anatomias do card de look (RF11)", () => {
   it("regras de anatomia: efetiva, arte própria, selo, silhueta e cor do hype", () => {
     expect(effectiveAnatomy({ layoutAnatomy: "CUSTO_POR_USO", season: null, viewer: { ...SCHEME.viewer, canEdit: false } })).toBe("LISTA_VERTICAL");
     expect(effectiveAnatomy({ layoutAnatomy: "CARTELA_SAZONAL", season: null, viewer: SCHEME.viewer })).toBe("LISTA_VERTICAL");
+    // sem estação no look, a cartela escolhida no modal do layout dá a estação do card
+    expect(effectiveAnatomy({ layoutAnatomy: "CARTELA_SAZONAL", season: null, viewer: SCHEME.viewer, background: { seasonalPresetId: "frost" } })).toBe("CARTELA_SAZONAL");
     expect(effectiveAnatomy({ layoutAnatomy: "BENTO", season: "summer", viewer: SCHEME.viewer })).toBe("BENTO");
     expect(hasOwnArt("PASSARELA")).toBe(true);
     expect(sealPlacement("inexistente")).toBe(sealPlacement("LISTA_VERTICAL"));
@@ -167,6 +170,39 @@ describe("ações sociais do card (RF8)", () => {
     await waitFor(() => expect(calls.length).toBeGreaterThan(2));
   });
 
+  it("remixar fica na linha: detalhe de peça com 7 ações + salvar, card compacto com 4 + salvar", () => {
+    loggedAs();
+    const row = (c: HTMLElement) => Array.from(c.querySelectorAll(".c-actions .c-act"));
+    const detail = renderApp(<CardActions type="PIECE" id="p1" counters={PIECE.counters} viewer={PIECE.viewer} title="Camiseta" ownerId="u2" reactions />);
+    expect(row(detail.container).map((b) => b.className.match(/is-([\w-]+)/)?.[1]))
+      .toEqual(["like", "comment", "share", "rx-TREND", "rx-ELEGANTE", "rx-CRIATIVO", "remix", "save"]);
+    expect(screen.getByRole("button", { name: /Remixar/ })).toBeTruthy();
+    cleanup();
+    const card = renderApp(<CardActions type="PIECE" id="p1" counters={PIECE.counters} viewer={PIECE.viewer} title="Camiseta" compact />);
+    expect(row(card.container).map((b) => b.className.match(/is-([\w-]+)/)?.[1])).toEqual(["like", "comment", "share", "remix", "save"]);
+  });
+
+  it("a dona também remixa a própria peça e vai ao criador de looks com ela", async () => {
+    const { calls } = loggedAs(undefined, { "POST /api/interactions/PIECE/p1/remixes": { next: "/schemes/new?pieces=p1", hint: "A peça entra como semente do novo look." } });
+    renderApp(<CardActions type="PIECE" id="p1" counters={PIECE.counters} viewer={PIECE.viewer} title="Camiseta" ownerId={ME.user.id} reactions />);
+    // a sessão carrega depois do primeiro render: clica até o usuário existir (antes disso o clique leva ao login)
+    await waitFor(() => { fireEvent.click(screen.getByRole("button", { name: /Remixar/ })); expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/remixes"))).toBe(true); });
+  });
+
+  it("API antiga devolve /create-look (rota que não existe): o remix da peça abre o criador de looks com ela", async () => {
+    const { calls } = loggedAs(undefined, { "POST /api/interactions/PIECE/p1/remixes": { next: "/create-look?seedPiece=p1" } });
+    renderApp(<CardActions type="PIECE" id="p1" counters={PIECE.counters} viewer={PIECE.viewer} title="Camiseta" ownerId={ME.user.id} reactions />);
+    await waitFor(() => { fireEvent.click(screen.getByRole("button", { name: /Remixar/ })); expect(calls.some((c) => c.method === "POST" && c.path.endsWith("/remixes"))).toBe(true); });
+    await waitFor(() => expect(router.push).toHaveBeenCalledWith("/schemes/new?pieces=p1"));
+    expect(router.push).not.toHaveBeenCalledWith(expect.stringContaining("create-look"));
+  });
+
+  it("no look, quem publicou não vê remixar", async () => {
+    loggedAs();
+    const { container } = renderApp(<CardActions type="SCHEME" id="s1" counters={SCHEME.counters} viewer={SCHEME.viewer} title="Look" ownerId={ME.user.id} reactions />);
+    await waitFor(() => expect(container.querySelector(".c-act.is-remix")).toBeNull());
+  });
+
   it("diálogo de compartilhar e ícones sociais", () => {
     mockApi({ "POST /api/shares": {} });
     const onClose = vi.fn();
@@ -177,6 +213,12 @@ describe("ações sociais do card (RF8)", () => {
 });
 
 describe("card da peça (RF7)", () => {
+  it("mostra o feed de calça em 2:1 em prévia e seleção, sem recortar as laterais", () => {
+    mockApi({});
+    const pants = { ...PIECE, category: "lower_piece", studioFeedUrl: "/pants.feed.jpg", flatLayMetadata: { studio: { feed: { aspect: "2:1" } } } };
+    const { container } = renderApp(<><PieceCard piece={pants} href="#" /><PieceCard piece={pants} selectable onSelect={vi.fn()} /></>);
+    for (const frame of container.querySelectorAll<HTMLElement>(".pc-media")) expect(frame.style.aspectRatio).toBe("2 / 1");
+  });
   it("mostra nome, marca, preço à venda, favorita, indisponível e o selo de IA", () => {
     mockApi({});
     renderApp(<><PieceCard piece={PIECE} /><PieceCard piece={PIECE_2} href="#" /><PieceCard piece={PIECE} selectable selected onSelect={vi.fn()} /></>);

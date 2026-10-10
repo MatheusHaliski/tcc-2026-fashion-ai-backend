@@ -8,6 +8,8 @@ import br.com.fashionai.application.audit.Audit;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.hype.HypeLiveRecalc;
+import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.moderation.UploadQuarantine;
 import br.com.fashionai.application.ports.AnalyticsQueryPort;
 import br.com.fashionai.application.ports.BackupPort;
@@ -15,21 +17,14 @@ import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.BackupRecord;
-import br.com.fashionai.domain.model.BrandProfile;
-import br.com.fashionai.domain.model.CelebrityProfile;
 import br.com.fashionai.domain.model.ModerationQueueItem;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.enums.AccountStatus;
-import br.com.fashionai.domain.model.enums.ApprovalStatus;
 import br.com.fashionai.domain.model.enums.ModerationQueueStatus;
 import br.com.fashionai.domain.model.enums.ModerationStatus;
-import br.com.fashionai.domain.model.enums.NotificationType;
-import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.repository.AiInferenceLogRepository;
 import br.com.fashionai.domain.repository.AuditLogRepository;
 import br.com.fashionai.domain.repository.BackupRecordRepository;
-import br.com.fashionai.domain.repository.BrandProfileRepository;
-import br.com.fashionai.domain.repository.CelebrityProfileRepository;
 import br.com.fashionai.domain.repository.CommentRepository;
 import br.com.fashionai.domain.repository.ModerationQueueRepository;
 import br.com.fashionai.domain.repository.UserRepository;
@@ -55,8 +50,6 @@ import java.util.UUID;
 @Service
 public class AdminService {
     private final UserRepository users;
-    private final BrandProfileRepository brands;
-    private final CelebrityProfileRepository celebrities;
     private final ModerationQueueRepository moderation;
     private final WardrobeItemRepository pieces;
     private final CommentRepository comments;
@@ -65,13 +58,13 @@ public class AdminService {
     private final BackupRecordRepository backups;
     private final ObjectProvider<BackupPort> backupPort;
     private final AnalyticsQueryPort analytics;
-    private final SealService seals;
     private final IdentityService identity;
     private final NotificationService notifications;
     private final UploadQuarantine quarantine;
     private final AssetCatalogService assets;
     private final ChallengeService challenges;
-    private final HypeScoreService hype;
+    /** HypeScore v2 — snapshots multidimensionais com algorithmVersion (o job "hype"; o v1 do RF6 saiu em P3-16) */
+    private final br.com.fashionai.application.hype.HypeSnapshotService hypeV2;
     private final InventoryScoreService inventory;
     private final AiEngine ai;
     private final Guard guard;
@@ -79,17 +72,29 @@ public class AdminService {
     /** Quantos backups COMPLETED manter (os mais antigos têm o arquivo apagado do storage). */
     @Value("${fashionai.backup.retention-count:14}")
     private int backupRetention = 14;
+    /** HypeScore v2 (P3-14): configuração ativa e recálculo ao vivo, só para exibir o estado em Admin › Sistema. */
+    private final HypeScoreConfig hypeConfig;
+    private final ObjectProvider<HypeLiveRecalc> hypeLive;
+    /** Mesmas propriedades (e padrões) de HypeSnapshotService e HypeLiveRecalc: aqui só são lidas para exibição. */
+    @Value("${fashionai.hype.cron:0 20 */6 * * *}")
+    private String hypeCron = "0 20 */6 * * *";
+    @Value("${fashionai.hype.live-recalc-enabled:true}")
+    private boolean hypeLiveEnabled = true;
+    @Value("${fashionai.hype.live-recalc-seconds:120}")
+    private long hypeLiveSeconds = 120;
 
-    public AdminService(UserRepository users, BrandProfileRepository brands, CelebrityProfileRepository celebrities, ModerationQueueRepository moderation,
+    public AdminService(UserRepository users, ModerationQueueRepository moderation,
                         WardrobeItemRepository pieces, CommentRepository comments, AuditLogRepository auditLogs, AiInferenceLogRepository aiLogs,
-                        BackupRecordRepository backups, ObjectProvider<BackupPort> backupPort, AnalyticsQueryPort analytics, SealService seals,
+                        BackupRecordRepository backups, ObjectProvider<BackupPort> backupPort, AnalyticsQueryPort analytics,
                         IdentityService identity, NotificationService notifications, AssetCatalogService assets, ChallengeService challenges,
-                        HypeScoreService hype, InventoryScoreService inventory, AiEngine ai, Guard guard, Audit audit,
-                        UploadQuarantine quarantine) {
+                        InventoryScoreService inventory, AiEngine ai, Guard guard, Audit audit,
+                        UploadQuarantine quarantine, br.com.fashionai.application.hype.HypeSnapshotService hypeV2,
+                        HypeScoreConfig hypeConfig, ObjectProvider<HypeLiveRecalc> hypeLive) {
         this.quarantine = quarantine;
+        this.hypeV2 = hypeV2;
+        this.hypeConfig = hypeConfig;
+        this.hypeLive = hypeLive;
         this.users = users;
-        this.brands = brands;
-        this.celebrities = celebrities;
         this.moderation = moderation;
         this.pieces = pieces;
         this.comments = comments;
@@ -98,62 +103,17 @@ public class AdminService {
         this.backups = backups;
         this.backupPort = backupPort;
         this.analytics = analytics;
-        this.seals = seals;
         this.identity = identity;
         this.notifications = notifications;
         this.assets = assets;
         this.challenges = challenges;
-        this.hype = hype;
         this.inventory = inventory;
         this.ai = ai;
         this.guard = guard;
         this.audit = audit;
     }
 
-    // ================================================================== aprovações (RF1.CA07/CA09)
-    @Transactional(readOnly = true)
-    public Map<String, Object> approvals(CurrentUser admin) {
-        guard.requireAdmin(admin);
-        return Map.of(
-                "brands", brands.findByApprovalStatusOrderByCreatedAtDesc(ApprovalStatus.PENDENTE).stream().map(b -> Map.<String, Object>of("userId", b.getOwner().getId(),
-                        "name", b.getBrandName(), "slug", b.getSlug(), "logoUrl", String.valueOf(b.getLogoUrl()), "category", String.valueOf(b.getFashionCategory()),
-                        "verificationScore", String.valueOf(b.getVerificationScore()), "createdAt", b.getCreatedAt())).toList(),
-                "celebrities", celebrities.findByVerificationStatusOrderByCreatedAtDesc(ApprovalStatus.PENDENTE).stream().map(c -> Map.<String, Object>of(
-                        "userId", c.getOwner().getId(), "name", c.getStageName(), "slug", c.getSlug(), "avatarUrl", String.valueOf(c.getAvatarUrl()),
-                        "verificationScore", String.valueOf(c.getVerificationScore()), "createdAt", c.getCreatedAt())).toList());
-    }
-
-    @Transactional
-    public Map<String, Object> decide(CurrentUser admin, UUID userId, boolean approve, String notes) {
-        guard.requireAdmin(admin);
-        User u = users.findById(userId).orElseThrow(() -> ApiException.notFound("Conta"));
-        String clean = notes == null ? null : InputSanitizer.clean(notes, 500);
-        if (u.getProfileType() == ProfileType.MARCA) {
-            BrandProfile b = brands.findByOwnerId(userId).orElseThrow(() -> ApiException.notFound("Marca"));
-            b.setApprovalStatus(approve ? ApprovalStatus.APROVADO : ApprovalStatus.RECUSADO);
-            b.setApprovedBy(admin.id());
-            b.setApprovedAt(Instant.now());
-            b.setVerificationNotes(clean);
-        } else if (u.getProfileType() == ProfileType.CELEBRIDADE) {
-            CelebrityProfile c = celebrities.findByOwnerId(userId).orElseThrow(() -> ApiException.notFound("Celebridade"));
-            c.setVerificationStatus(approve ? ApprovalStatus.APROVADO : ApprovalStatus.RECUSADO);
-            c.setApprovedBy(admin.id());
-            c.setApprovedAt(Instant.now());
-            c.setVerificationNotes(clean);
-            c.setRequiresSealReview(true); // RF21.CA19 — celebridade sempre revisa
-        } else {
-            throw ApiException.badRequest("PERFIL_PESSOAL", Msg.t("admin.perfis_pessoais_nao_passam_por"));
-        }
-        if (approve) {
-            u.setStatus(AccountStatus.ACTIVE);
-            seals.ensureDefaultSeals(u);
-        }
-        users.save(u);
-        notifications.notify(userId, admin.id(), NotificationType.ACCOUNT_APPROVAL, "USER", userId, approve ? Msg.k("admin.perfil_validado") : Msg.k("admin.cadastro_nao_aprovado"),
-                approve ? Msg.k("admin.seu_perfil_ja_aparece_no") : "Motivo: " + (clean == null ? Msg.k("admin.documentacao_insuficiente") : clean), Map.of());
-        audit.log(admin, approve ? "PERFIL_APROVADO" : "PERFIL_RECUSADO", "user:" + userId, Map.of("profileType", u.getProfileType().name()));
-        return Map.of("userId", userId, "approved", approve);
-    }
+    // aprovações de marca/celebridade (RF1.CA07–CA09): IssuerReviewService, com a política de verificação
 
     // ================================================================== moderação
     @Transactional(readOnly = true)
@@ -260,13 +220,38 @@ public class AdminService {
     @Transactional(readOnly = true)
     public Map<String, Object> aiOverview(CurrentUser admin) {
         guard.requireAdmin(admin);
-        return Map.of("providers", ai.providerAvailability(), "remoteEnabled", ai.remoteEnabled(),
-                "catalog", AiCatalog.all().stream().map(s -> Map.of("capability", s.capability().name(), "name", s.capability().officialName(),
-                        "hostRf", s.capability().hostRf(), "primary", s.primary() == null ? "" : s.primary().service() + " · " + s.primary().model(),
-                        "fallback", s.fallbackBehavior(), "dailyQuota", s.dailyQuotaPerUser(), "status", s.status())).toList(),
-                "recent", aiLogs.findTop300ByOrderByCreatedAtDesc().stream().limit(100).map(l -> Map.<String, Object>of("capability", l.getCapability(),
-                        "provider", l.getProvider(), "model", String.valueOf(l.getModel()), "latencyMs", l.getLatencyMs(), "costUsd", String.valueOf(l.getEstimatedCostUsd()),
-                        "result", l.getResult().name(), "fallback", l.isFallbackUsed(), "at", l.getCreatedAt())).toList());
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("providers", ai.providerAvailability());
+        out.put("remoteEnabled", ai.remoteEnabled());
+        out.put("catalog", AiCatalog.all().stream().map(s -> Map.of("capability", s.capability().name(), "name", s.capability().officialName(),
+                "hostRf", s.capability().hostRf(), "primary", s.primary() == null ? "" : s.primary().service() + " · " + s.primary().model(),
+                "fallback", s.fallbackBehavior(), "dailyQuota", s.dailyQuotaPerUser(), "status", s.status())).toList());
+        out.put("recent", aiLogs.findTop300ByOrderByCreatedAtDesc().stream().limit(100).map(l -> Map.<String, Object>of("capability", l.getCapability(),
+                "provider", l.getProvider(), "model", String.valueOf(l.getModel()), "latencyMs", l.getLatencyMs(), "costUsd", String.valueOf(l.getEstimatedCostUsd()),
+                "result", l.getResult().name(), "fallback", l.isFallbackUsed(), "at", l.getCreatedAt())).toList());
+        // Admin › Sistema (IA & sistema) lê o estado do job v2 deste mesmo endpoint (campo aditivo, P3-14)
+        out.put("hypeV2", hypeV2State());
+        return out;
+    }
+
+    /**
+     * HypeScore v2 em Admin › Sistema (P3-14): versão do algoritmo, último cálculo gravado (job de 6 h ou recálculo ao
+     * vivo — lido de hype_scores, nada é recalculado aqui), agenda do job, recálculo ao vivo (ligado, intervalo, pendente)
+     * e cobertura por tipo (AVAILABLE · INSUFFICIENT · NOT_CALCULATED). O v1 continua no mesmo job "hype" até P3-16.
+     */
+    Map<String, Object> hypeV2State() {
+        String version = hypeConfig.algorithmVersion();
+        Map<String, Object> m = new LinkedHashMap<>(DashboardService.hypeJob(analytics.hypeJobV2(version), hypeConfig, Instant.now()));
+        m.put("cron", hypeCron);
+        HypeLiveRecalc live = hypeLive.getIfAvailable();
+        Map<String, Object> l = new LinkedHashMap<>();
+        l.put("enabled", hypeLiveEnabled && live != null);
+        l.put("intervalSeconds", Math.max(10, hypeLiveSeconds));
+        l.put("pending", live != null && live.isDirty());
+        m.put("live", l);
+        m.put("coverage", DashboardService.hypeV2Block(List.of(), analytics.hypeCoverageV2(
+                new AnalyticsQueryPort.Filter(Instant.EPOCH, Instant.now(), null, null), version), Map.of(), hypeConfig, Instant.now()).get("coverage"));
+        return m;
     }
 
     // ================================================================== backups (RNF) e jobs
@@ -298,13 +283,22 @@ public class AdminService {
         new BackupJob(backups, backupPort.getIfAvailable(), backupRetention).run("agendado");
     }
 
+    private br.com.fashionai.application.moments.MomentService moments;
+
+    /** Momentos: job de status/avisos pelo painel (injeção opcional para não alterar o construtor usado nos testes). */
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    public void setMoments(br.com.fashionai.application.moments.MomentService moments) {
+        this.moments = moments;
+    }
+
     @Transactional
     public Map<String, Object> runJob(CurrentUser admin, String job) {
         guard.requireAdmin(admin);
         Object result = switch (job == null ? "" : job) {
-            case "hype" -> hype.recalibrate();
+            case "hype" -> Map.of("v2", hypeV2.recalculate());
             case "rankings" -> inventory.recomputeRankings();
             case "challenges" -> challenges.tick();
+            case "moments" -> moments == null ? Map.of() : moments.tick();
             case "assets" -> assets.syncPresets();
             case "notifications" -> analytics.purgeNotifications((int) NotificationService.RETENTION.toDays());
             default -> throw ApiException.badRequest("JOB_INVALIDO", Msg.t("admin.jobs_hype_rankings_challenges_assets"));

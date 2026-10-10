@@ -5,7 +5,10 @@ import { Badge, Button, Chip, cn, Field, Input } from "@/components/ui";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 
 /** Tipos e peças de interface compartilhados pelos modos do FLAIR (PEÇA → CARD → LOOK → TEAM/DECK → COMPETIÇÃO). */
-export const STAT_LABEL: Record<string, string> = { HYPE: "HypeScore", get STYLE() { return tr("flair.modesShared.style"); }, get COLOR() { return tr("flair.modesShared.color_harmony"); }, get OCCASION() { return tr("flair.modesShared.occasion_fit"); }, get ORIGINALITY() { return tr("flair.modesShared.originality"); }, get BRAND() { return tr("flair.modesShared.brand_power"); }, get RARITY() { return tr("flair.modesShared.rarity"); }, get TREND() { return tr("flair.modesShared.trend"); }, get COMMUNITY() { return tr("flair.modesShared.community"); }, get AI() { return tr("flair.modesShared.ai_score"); } };
+/** HYPE = HypeScore v2 PÚBLICO do look (RF53 · P2-17): relevância, não qualidade; sem dados = 50 neutro. */
+export const STAT_LABEL: Record<string, string> = { get HYPE() { return tr("hypeFlair.stat_hype"); }, get STYLE() { return tr("flair.modesShared.style"); }, get COLOR() { return tr("flair.modesShared.color_harmony"); }, get OCCASION() { return tr("flair.modesShared.occasion_fit"); }, get ORIGINALITY() { return tr("flair.modesShared.originality"); }, get BRAND() { return tr("flair.modesShared.brand_power"); }, get RARITY() { return tr("flair.modesShared.rarity"); }, get TREND() { return tr("flair.modesShared.trend"); }, get COMMUNITY() { return tr("flair.modesShared.community"); }, get AI() { return tr("flair.modesShared.ai_score"); } };
+/** Dica dos atributos que precisam de contexto (o title nunca é o único lugar do rótulo). */
+export const STAT_HINT: Record<string, string> = { get HYPE() { return tr("hypeFlair.stat_hype_hint"); } };
 export const STAT_COLOR: Record<string, string> = { HYPE: "#C6275E", STYLE: "#E0457B", COLOR: "#E9B949", OCCASION: "#2D55C9", ORIGINALITY: "#7B4FD6", BRAND: "#B8860B", RARITY: "#8a6a1c", TREND: "#1F7A76", COMMUNITY: "#F08DB1", AI: "#3a86ff" };
 export interface Synergy { code: string; label: string; emoji: string; stat: string; bonus: number; }
 export interface LookCardMini { id: string; name: string; imageUrl: string; category: string; rarity: string; power: number; }
@@ -31,7 +34,7 @@ export function LookTile({ look, selected, onClick, compact }: { look: ModeLook;
         </div>
         <span className="mode-rating tabular" title={t("flair.modesShared.rating_do_look")}>{look.rating}</span>
       </div>
-      {!compact && <ul className="mode-stats">{Object.entries(look.stats).map(([k, v]) => <li key={k} title={STAT_LABEL[k]}><span>{STAT_LABEL[k]}</span><i><b style={{ width: `${Math.min(100, v)}%`, background: STAT_COLOR[k] }} /></i><em className="tabular">{v}</em></li>)}</ul>}
+      {!compact && <ul className="mode-stats">{Object.entries(look.stats).map(([k, v]) => <li key={k} title={STAT_HINT[k] ?? STAT_LABEL[k]}><span>{STAT_LABEL[k]}</span><i><b style={{ width: `${Math.min(100, v)}%`, background: STAT_COLOR[k] }} /></i><em className="tabular">{v}</em></li>)}</ul>}
     </Tag>
   );
 }

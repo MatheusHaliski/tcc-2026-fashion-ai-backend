@@ -1,44 +1,69 @@
 @startuml RF38_Sequencia
-title RF38 — Cupons Fashion AI: "Meus cupons promocionais" (marca/celebridade) e "Meus cupons resgatados" (lookbook)\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor Usuário as U
-actor Loja as L
-participant "Frontend" as FE
-participant "CouponController" as C
-participant "CouponService" as S
-participant "SealService / FlairService" as SRC
-participant "NotificationService" as N
-database "MySQL" as DB
-SRC ->> S: CouponRightsCheck(userId) (AFTER_COMMIT)
-S -> SRC: eligiblePromotions(userId)
-S -> DB: INSERT coupon_rights (sem duplicar)
-S -> N: COUPON_AVAILABLE
-N -> DB: INSERT notifications
-U -> FE: notificação → "Sim, resgatar"
-FE -> C: POST /api/me/coupon-rights/{id}/redeem
-C -> S: redeem(user, id)
-alt status != PENDENTE
-  S --> FE: 409 DIREITO_DECIDIDO
+autonumber "<b>0."
+title RF38 — Cupons Fashion AI: 'Meus cupons promocionais' (marca/celebridade) e 'Meus cupons resgatados' (lookbook)\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /coupons" as P
+control "CouponController" as CouponController
+participant "CouponService" as CouponService
+database "MySQL" as DB_MySQL
+participant "Guard" as Guard
+participant "SealService" as SealService
+participant "FlairService" as FlairService
+== sim, resgatar: emite o cupom Fashion AI da marca/celebridade ==
+U -> P : sim, resgatar: emite o cupom Fashion AI da marca/…
+P -> CouponController : POST /api/me/coupon-rights/{id}/redeem
+CouponController -> CouponService : redeem()
+activate CouponService
+CouponService -> DB_MySQL : SELECT coupon_rights
+CouponService -> Guard : requireOwner()
+alt direito decidido
+CouponService --> CouponController : 409 DIREITO_DECIDIDO
+CouponController --> P : 409 + mensagem
 end
-S -> SRC: SealService.redeem / FlairService.redeem
-SRC -> DB: INSERT promotion_redemptions / flair_redemptions
-S -> DB: UPDATE coupon_rights (RESGATADO, couponRef)
-S --> FE: cupom (código, desconto, validade, storeUrl)
-U -> FE: Meus cupons resgatados
-FE -> C: GET /api/me/coupons
-C -> S: mine(user) → scan + pending + coupons
-U -> FE: toca no cupom → abre storeUrl (nova aba)
-L -> FE: Meus cupons promocionais
-FE -> C: GET /api/me/coupons/admin
-L -> FE: valida código no caixa
-FE -> C: POST /api/me/coupons/validate
-C -> S: validate(user, code)
-S -> DB: UPDATE promotion_redemptions.status = USED\n(código FLR-… → FlairService.validateCode)
+CouponService -> SealService : redeem()
+SealService -> DB_MySQL : SELECT promotions
+SealService -> DB_MySQL : SELECT users
+SealService -> DB_MySQL : SELECT seal_bonds
+SealService -> DB_MySQL : SELECT promotion_redemptions
+SealService --> CouponService
+CouponService -> FlairService : redeem()
+FlairService -> DB_MySQL : SELECT flair_combinations
+FlairService -> DB_MySQL : SELECT scheme_items
+FlairService -> DB_MySQL : SELECT hype_scores
+FlairService -> DB_MySQL : SELECT wardrobe_items
+FlairService --> CouponService
+CouponService -> CouponService : status = RESGATADO
+CouponService -> CouponService : decidedAt = set
+CouponService -> DB_MySQL : SELECT promotion_redemptions
+CouponService -> DB_MySQL : SELECT users
+CouponService -> DB_MySQL : SELECT brand_profiles (×2)
+CouponService -> DB_MySQL : SELECT flair_redemptions
+CouponService -> DB_MySQL : SELECT users
+CouponService -> DB_MySQL : SELECT brand_profiles (×2)
+deactivate CouponService
+CouponService --> CouponController : resultado
+CouponController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

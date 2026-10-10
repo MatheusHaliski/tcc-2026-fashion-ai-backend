@@ -1,0 +1,76 @@
+@startuml RF27_Atividades_Organizar
+title RF27 — Meu Quarto (guarda-roupa num quarto 3D interativo)\nDiagrama de atividades — organizar o quarto (prévia com ou sem IA, aplicar e desfazer)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:Toca em **Organizar** (com ou sem IA);
+|Frontend (room/page.tsx)|
+:GET /api/me/room/organization/preview?useAi=true|false;
+|Serviço (RoomService)|
+:organizePreview(): lê gavetas, rótulos e peças\n(room_layouts, room_storage_map, wardrobe_items);
+:Rótulo local por gaveta: categoria dominante\n(vale se ≥ 50% das peças concordam);
+if (useAi = true?) then (sim)
+  |Banco/IA|
+  :AiEngine.text(COPILOT): pede rótulos curtos (≤ 24)\nsó para gavetas com peças;
+  if (Provedor respondeu JSON válido?) then (sim)
+    :Usa os rótulos da IA;
+  else (não / cota / sem consentimento)
+    :Fallback local (rótulos por categoria),\nfallbackUsed = true;
+  endif
+  |Serviço (RoomService)|
+endif
+:Mantém quem já está coerente e cabe;\nreposiciona o resto com place()\n(sem vaga → Cadeira);
+:Devolve prévia: labels, changedLabels, moves\n(de → para, motivo), summary, explanation;
+note right: nada é gravado na prévia
+|Pessoa|
+if (Aplica a prévia?) then (sim)
+  |Frontend (room/page.tsx)|
+  :POST /api/me/room/organization {labels, moves};
+  |Serviço (RoomService)|
+  :Guarda o mapa anterior em previous_map_json;
+  :Atualiza rótulos (source = AI) e endereços\n(assigned_by = AI);
+  :Publica RoomOrganized;
+  |Banco/IA|
+  :InventoryScoreService limpa o cache da nota (@EventListener);\napós o commit, WardrobeEventListeners\n→ FaiPointsService.award(ROOM_ORGANIZED) (+20, 1 por semana);
+  |Pessoa|
+  if (Quer desfazer?) then (sim)
+    |Frontend (room/page.tsx)|
+    :DELETE /api/me/room/organization;
+    |Serviço (RoomService)|
+    if (Há previous_map_json?) then (sim)
+      :Restaura rótulos e endereços\n(assigned_by = USER) e limpa o mapa anterior;
+    else (não)
+      #FFE3E3:409 NADA_A_DESFAZER;
+    endif
+  else (não)
+  endif
+else (não)
+  |Frontend (room/page.tsx)|
+  :Fecha a prévia sem mudar nada;
+endif
+|Frontend (room/page.tsx)|
+:Recarrega o quarto;
+stop
+@enduml

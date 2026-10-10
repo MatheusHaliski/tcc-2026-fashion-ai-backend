@@ -8,10 +8,12 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.RedisScript;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,6 +26,10 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 @ConditionalOnProperty(name = "fashionai.redis.enabled", havingValue = "true")
 public class RedisAdapters {
+    /** Devolve uma unidade do balde sem recriá-lo nem tirar o TTL (chave ausente ou zerada fica como está). */
+    static final RedisScript<Long> RELEASE = RedisScript.of(
+            "local v = tonumber(redis.call('GET', KEYS[1]) or '0') if v > 0 then return redis.call('DECR', KEYS[1]) end return 0",
+            Long.class);
 
     @Bean
     RateLimitPort redisRateLimit(StringRedisTemplate redis) {
@@ -47,6 +53,12 @@ public class RedisAdapters {
             @Override
             public void reset(UUID userId, String bucket) {
                 redis.delete(key(userId, bucket));
+            }
+
+            @Override
+            public void release(UUID userId, String bucket) {
+                // DECR só se a chave existe e está acima de zero: um script, para não recriar a chave sem TTL
+                redis.execute(RELEASE, List.of(key(userId, bucket)));
             }
 
             @Override

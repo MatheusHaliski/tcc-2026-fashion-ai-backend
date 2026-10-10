@@ -62,7 +62,7 @@ class CopilotLexiconTest {
         assertThat(CopilotLexicon.WEATHER.values()).allMatch(Set.of("VERAO_LEVE", "MEIA_ESTACAO", "CAMADAS", "INVERNO_PESADO")::contains);
         assertThat(CopilotLexicon.COLOR_PREFIXES.values()).allMatch(codes -> Taxonomy.COLORS.keySet().containsAll(codes));
         assertThat(CopilotLexicon.TYPE_PREFIXES.values()).allMatch(subcategories::containsAll);
-        assertThat(CopilotLexicon.PIECE_MATERIALS.values()).allMatch(codes -> Taxonomy.MATERIALS.containsAll(codes));
+        assertThat(CopilotLexicon.PIECE_MATERIALS.values()).allMatch(codes -> codes.stream().allMatch(Taxonomy::isMaterial));   // inclui os de legado
 
         Set<String> auraPresets = ids("auraPresets");
         Set<String> auraVariants = list("auraPresets").stream().flatMap(p -> ((List<?>) p.get("variants")).stream())

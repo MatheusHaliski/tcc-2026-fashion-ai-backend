@@ -6,12 +6,14 @@ import { api, mediaUrl, qs } from "@/lib/api/client";
 import type { Page, PieceView, SchemeView, UserCard } from "@/lib/api/types";
 import { useAuth } from "@/lib/auth/session";
 import { useApi } from "@/lib/hooks/use-api";
-import { Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input, Select, Skeleton, SkeletonGrid, Textarea, useToast } from "@/components/ui";
+import { Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input, SegmentPicker, Select, Skeleton, SkeletonGrid, Textarea, useToast } from "@/components/ui";
 import { SchemeCard } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
 import { useReducedMotion, useWebGL, type Look3d, type Mannequin3d } from "@/components/three/common";
 import type { StoreEntry } from "@/components/three/store-street-scene";
+import type { FittingBrand } from "@/lib/tryon/fitting-room";
 import { tr, useI18n } from "@/lib/i18n/i18n";
+import type { HypeLevel } from "@/lib/hype/types";
 
 const StageScene = dynamic(() => retryImport(() => import("@/components/three/stage-scene")), { ssr: false, loading: () => <div className="showcase-3d-loading">{tr("showcase.showcaseTabs.montando_o_palco")}</div> });
 const StoreStreetScene = dynamic(() => retryImport(() => import("@/components/three/store-street-scene")), { ssr: false, loading: () => <div className="showcase-3d-loading">{tr("showcase.showcaseTabs.abrindo_as_lojas")}</div> });
@@ -19,15 +21,19 @@ const StoreStreetScene = dynamic(() => retryImport(() => import("@/components/th
 /*
  * RF22 — aba Eras (celebridade) e aba Coleções (marca). As duas usam os mesmos agrupamentos (eras/fases/turnês ou
  * coleções) já ligados a esquemas e peças: busca com filtro por era/coleção e header com a foto/arte; insights com
- * ranking (curtidas totais, maior Hype Score, volume); e a vitrine 3D — My Stage (palco com a foto da celebridade no
- * manequim) ou a rua de mini lojas (arte da coleção na vitrine, público e fogos crescendo com o ranking).
+ * ranking de popularidade (curtidas totais e volume) e, à parte, o HypeScore v2 (maior e médio, com a faixa em texto —
+ * popularidade ≠ Hype); e a vitrine 3D — My Stage (palco com a foto da celebridade no manequim, vestindo o look de maior
+ * Hype) ou a rua de mini lojas (arte da coleção na vitrine, público e fogos crescendo com o ranking).
+ * A busca ordena por HypeScore v2 (sem Hype = por último), "Em crescimento", curtidas ou recentes.
  */
 
 type Kind = "eras" | "collections";
 interface Grouping { id: string; type: string; label: string; description?: string | null; periodFrom?: number | null; periodTo?: number | null; period?: string | null; accentColor: string; coverUrl?: string | null; coverSource?: string; schemes: number; pieces: number }
 interface ListRes { kind: string; owner: UserCard; items: Grouping[]; ungrouped: { schemes: number; pieces: number } }
 interface ItemsRes { header: Grouping | null; schemes: { scheme: SchemeView; grouping: string }[]; pieces: { piece: PieceView; grouping: string }[]; years: number[] }
-interface Rank extends Grouping { rank: number; likes: number; topHype: number; items: number; comments: number; shares: number; score: number; audience: number; capacity: number; audienceFraction: number; fireworks: number; spotlights: number; topScheme?: { id: string; title: string } | null }
+/** Hype v2 de uma era/coleção: maior e médio dos itens com Hype visível; `level` = faixa da média; nulos = "—". */
+interface GroupHype { top: number | null; avg: number | null; level: HypeLevel | null; items: number }
+interface Rank extends Grouping { rank: number; likes: number; hype?: GroupHype; items: number; comments: number; shares: number; score: number; audience: number; capacity: number; audienceFraction: number; fireworks: number; spotlights: number; topScheme?: { id: string; title: string } | null }
 interface InsightsRes { ranking: Rank[]; mostLiked?: string | null; mostHype?: string | null; method: string }
 interface StageRes { celebrity: UserCard; photoUrl?: string | null; look: Look3d | null; mannequin?: Mannequin3d; eras: { id: string; label: string; accentColor: string }[]; looks: { id: string; title: string }[] }
 
@@ -49,24 +55,23 @@ export function ErasTab({ slug, admin }: { slug: string; admin: boolean }) {
   );
 }
 
-export function CollectionsTab({ slug, admin }: { slug: string; admin: boolean }) {
+/** `brand`: identidade do perfil da marca — a fachada das mini lojas usa a parede, o logo e a cor dela (plano 9.4). */
+export function CollectionsTab({ slug, admin, brand }: { slug: string; admin: boolean; brand?: FittingBrand | null }) {
   const { t } = useI18n();
   const [sub, setSub] = useState<"busca" | "insights">("busca");
   return (
     <div>
       <SubTabs value={sub} onChange={setSub} tabs={[{ id: "busca", label: t("common.colecoes") }, { id: "insights", label: t("showcase.showcaseTabs.collections_insights") }]} />
       {sub === "busca" && <GroupingSearch slug={slug} kind="collections" admin={admin} />}
-      {sub === "insights" && <CollectionsInsights slug={slug} />}
+      {sub === "insights" && <CollectionsInsights slug={slug} brand={brand} />}
     </div>
   );
 }
 
+/** Visões de uma mesma aba (uma de cada vez): o SegmentPicker padrão, no lugar do tablist feito à mão. */
 function SubTabs<T extends string>({ value, onChange, tabs }: { value: T; onChange: (v: T) => void; tabs: { id: T; label: string }[] }) {
-  return (
-    <div role="tablist" aria-label="sub-abas" className="mb-4 flex flex-wrap gap-1.5 border-b border-line-soft pb-2">
-      {tabs.map((t) => <button key={t.id} type="button" role="tab" aria-selected={value === t.id} className={`chip ${value === t.id ? "is-active" : ""}`} onClick={() => onChange(t.id)}>{t.label}</button>)}
-    </div>
-  );
+  const { t } = useI18n();
+  return <SegmentPicker label={t("showcase.showcaseTabs.visoes")} value={value} onChange={onChange} options={tabs} className="mb-4" />;
 }
 
 // ------------------------------------------------------------------ busca por era/coleção
@@ -99,7 +104,7 @@ function GroupingSearch({ slug, kind, admin }: { slug: string; kind: Kind; admin
       <div className="mb-4 grid gap-2 sm:grid-cols-4">
         <Input aria-label={t("common.buscar")} placeholder={t("showcase.showcaseTabs.buscar_esquemas_e_pecas_da", { one: w.one })} value={f.q} onChange={(e) => setF({ ...f, q: e.target.value })} />
         <Select aria-label={t("showcase.showcaseTabs.tipo")} value={f.type} onChange={(e) => setF({ ...f, type: e.target.value })}><option value="TODOS">{t("showcase.showcaseTabs.esquemas_e_pecas")}</option><option value="ESQUEMAS">{t("showcase.showcaseTabs.so_esquemas")}</option><option value="PECAS">{t("showcase.showcaseTabs.so_pecas")}</option></Select>
-        <Select aria-label={t("common.ordenar")} value={f.sort} onChange={(e) => setF({ ...f, sort: e.target.value })}><option value="HYPE">{t("showcase.showcaseTabs.maior_hype_score")}</option><option value="CURTIDAS">{t("showcase.showcaseTabs.mais_curtidas")}</option><option value="RECENTES">{t("common.mais_recentes")}</option></Select>
+        <Select aria-label={t("common.ordenar")} value={f.sort} onChange={(e) => setF({ ...f, sort: e.target.value })}><option value="HYPE">{t("showcase.showcaseTabs.maior_hype_score")}</option><option value="GROWTH">{t("showcase.showcaseTabs.em_crescimento")}</option><option value="CURTIDAS">{t("showcase.showcaseTabs.mais_curtidas")}</option><option value="RECENTES">{t("common.mais_recentes")}</option></Select>
         <Select aria-label={t("showcase.showcaseTabs.ano")} value={f.year} onChange={(e) => setF({ ...f, year: e.target.value })}><option value="">{t("showcase.showcaseTabs.qualquer_ano")}</option>{(items.data?.years ?? []).map((y) => <option key={y} value={y}>{y}</option>)}</Select>
       </div>
       {admin && (
@@ -208,9 +213,9 @@ function ErasInsights({ slug }: { slug: string }) {
   return (
     <div>
       <div className="mb-4 grid gap-3 sm:grid-cols-3">
-        <Card><p className="label">{t("showcase.showcaseTabs.mais_popular")}</p><p className="type-h2">{data.ranking[0].label}</p><p className="type-caption text-muted tabular">{t("showcase.showcaseTabs.pontuacao", { score: data.ranking[0].score })}</p></Card>
+        <Card><p className="label">{t("showcase.showcaseTabs.mais_popular")}</p><p className="type-h2">{data.ranking[0].label}</p><p className="type-caption text-muted tabular">{t("showcase.showcaseTabs.popularidade_pontuacao", { score: data.ranking[0].score })}</p></Card>
         <Card><p className="label">{t("showcase.showcaseTabs.mais_curtidas_totais")}</p><p className="type-h2">{data.mostLiked ?? "—"}</p></Card>
-        <Card><p className="label">{t("showcase.showcaseTabs.maior_hype_score")}</p><p className="type-h2">{data.mostHype ?? "—"}</p></Card>
+        <Card><p className="label">{t("showcase.showcaseTabs.maior_hype_medio")}</p><p className="type-h2">{data.mostHype ?? "—"}</p></Card>
       </div>
       <ol className="fai-list lg:grid-cols-2" aria-label={t("showcase.showcaseTabs.ranking_de_eras")}>
         {data.ranking.map((r) => (
@@ -222,7 +227,7 @@ function ErasInsights({ slug }: { slug: string }) {
                 <MiniStage2D r={r} />
                 <dl className="mt-2 grid grid-cols-4 gap-1 type-caption tabular">
                   <div><dt className="text-muted">{t("common.curtidas")}</dt><dd className="type-body font-semibold">{r.likes}</dd></div>
-                  <div><dt className="text-muted">{t("showcase.showcaseTabs.maior_hype")}</dt><dd className="type-body font-semibold">{r.topHype}</dd></div>
+                  <div><dt className="text-muted">{t("showcase.showcaseTabs.hype_medio")}</dt><dd className="type-body font-semibold"><GroupHypeValue h={r.hype} /></dd></div>
                   <div><dt className="text-muted">{t("showcase.showcaseTabs.itens")}</dt><dd className="type-body font-semibold">{r.items}</dd></div>
                   <div><dt className="text-muted">{t("showcase.showcaseTabs.plateia")}</dt><dd className="type-body font-semibold">{r.audience}/{r.capacity}</dd></div>
                 </dl>
@@ -233,6 +238,20 @@ function ErasInsights({ slug }: { slug: string }) {
       </ol>
       <p className="mt-3 type-caption text-faint">{data.method}</p>
     </div>
+  );
+}
+
+/**
+ * HypeScore v2 de uma era/coleção: média arredondada + faixa em texto (e o maior no title). Sem item com Hype visível,
+ * "—" com o motivo para leitor de tela — nunca 0.
+ */
+export function GroupHypeValue({ h }: { h?: GroupHype | null }) {
+  const { t } = useI18n();
+  if (h?.avg == null || !h.level) return <span title={t("showcase.showcaseTabs.sem_hype_publico")}><span aria-hidden>—</span><span className="sr-only">{t("showcase.showcaseTabs.sem_hype_publico")}</span></span>;
+  return (
+    <span title={h.top != null ? t("showcase.showcaseTabs.hype_maior", { top: Math.round(h.top) }) : undefined}>
+      <span className="tabular">{Math.round(h.avg)}</span> <span className="type-caption font-normal text-muted">{t(`hype.level.${h.level}`)}</span>
+    </span>
   );
 }
 
@@ -309,7 +328,7 @@ function StageFallback({ data }: { data: StageRes }) {
 
 // ------------------------------------------------------------------ Collections insights: mini lojas 3D
 
-function CollectionsInsights({ slug }: { slug: string }) {
+function CollectionsInsights({ slug, brand }: { slug: string; brand?: FittingBrand | null }) {
   const { t } = useI18n();
   const { user } = useAuth(); const webgl = useWebGL(); const [sel, setSel] = useState<string | null>(null);
   const { data, loading, error, reload } = useApi<InsightsRes>((signal) => api.get(`/api/institutional/${encodeURIComponent(slug)}/showcase/collections/insights`, { signal, anonymous: !user }), [slug, !!user]);
@@ -321,13 +340,13 @@ function CollectionsInsights({ slug }: { slug: string }) {
   return (
     <div>
       <div className="showcase-3d mb-4 h-[480px]">
-        {webgl === false ? <div className="grid h-full place-items-center p-4 text-center type-body text-muted">{t("showcase.showcaseTabs.sem_webgl_veja_o_ranking")}</div> : <StoreStreetScene stores={stores} onPick={setSel} selectedId={picked.id} />}
+        {webgl === false ? <div className="grid h-full place-items-center p-4 text-center type-body text-muted">{t("showcase.showcaseTabs.sem_webgl_veja_o_ranking")}</div> : <StoreStreetScene stores={stores} onPick={setSel} selectedId={picked.id} brand={brand} />}
       </div>
       <div className="surface mb-4 p-4" style={{ borderColor: picked.accentColor }}>
         <div className="flex flex-wrap items-center gap-3">
           <span className="era-rank-n tabular" style={{ ["--accent" as string]: picked.accentColor }}>#{picked.rank}</span>
           <div className="min-w-0 flex-1"><p className="type-h3">{picked.label}{picked.period && <span className="type-caption text-muted"> · {picked.period}</span>}</p><p className="type-caption text-muted">{t("showcase.showcaseTabs.publico_fogos", { audience: picked.audience, capacity: picked.capacity, value: picked.fireworks > 0 ? "✦".repeat(picked.fireworks) : "—" })}</p></div>
-          <dl className="grid grid-cols-3 gap-3 type-caption tabular"><div><dt className="text-muted">{t("common.curtidas")}</dt><dd className="type-body font-semibold">{picked.likes}</dd></div><div><dt className="text-muted">{t("showcase.showcaseTabs.maior_hype")}</dt><dd className="type-body font-semibold">{picked.topHype}</dd></div><div><dt className="text-muted">{t("showcase.showcaseTabs.pontuacao_2")}</dt><dd className="type-body font-semibold">{picked.score}</dd></div></dl>
+          <dl className="grid grid-cols-3 gap-3 type-caption tabular"><div><dt className="text-muted">{t("common.curtidas")}</dt><dd className="type-body font-semibold">{picked.likes}</dd></div><div><dt className="text-muted">{t("showcase.showcaseTabs.hype_medio")}</dt><dd className="type-body font-semibold"><GroupHypeValue h={picked.hype} /></dd></div><div><dt className="text-muted">{t("showcase.showcaseTabs.popularidade")}</dt><dd className="type-body font-semibold">{picked.score}</dd></div></dl>
         </div>
       </div>
       <ol className="fai-list surface" aria-label={t("showcase.showcaseTabs.ranking_de_colecoes")}>
@@ -336,7 +355,7 @@ function CollectionsInsights({ slug }: { slug: string }) {
             <span className="w-8 type-h3 tabular">#{r.rank}</span>
             <span className="h-10 w-14 shrink-0 overflow-hidden rounded" style={{ background: r.accentColor }}>{r.coverUrl && <img src={mediaUrl(r.coverUrl)} alt="" className="h-full w-full object-cover" />}</span>
             <span className="min-w-0 flex-1"><span className="block truncate type-body font-semibold">{r.label}</span><span className="hype-bar mt-1 block"><i style={{ width: `${r.audienceFraction * 100}%`, background: r.accentColor }} /></span></span>
-            <span className="type-caption tabular text-muted">{t("showcase.showcaseTabs.hype_itens", { likes: r.likes, topHype: r.topHype, items: r.items })}</span>
+            <span className="type-caption tabular text-muted">{t("showcase.showcaseTabs.curtidas_itens", { likes: r.likes, items: r.items })} · <GroupHypeValue h={r.hype} /></span>
           </button></li>
         ))}
       </ol>

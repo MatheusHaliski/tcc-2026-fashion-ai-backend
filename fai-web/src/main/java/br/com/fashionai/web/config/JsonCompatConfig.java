@@ -60,10 +60,7 @@ public class JsonCompatConfig {
         }
     }
 
-    /**
-     * O criador de selos (RF25) oferecia o nível "PERFIL", que não existe ({@link SealTier} é PECA ou LOOK): salvar dava
-     * "JSON inválido". O selo de perfil vale para looks; "PIECE" é apelido de PECA.
-     */
+    /** Nível PERFIL governa a vitrine institucional; PECA e LOOK concedem selos aos itens. */
     static final class SealTierDeserializer extends StdDeserializer<SealTier> {
         SealTierDeserializer() {
             super(SealTier.class);
@@ -77,8 +74,9 @@ public class JsonCompatConfig {
             }
             return switch (raw.trim().toUpperCase(Locale.ROOT)) {
                 case "PECA", "PEÇA", "PIECE" -> SealTier.PECA;
-                case "LOOK", "PERFIL", "PROFILE", "ESQUEMA", "SCHEME" -> SealTier.LOOK;
-                default -> (SealTier) ctx.handleWeirdStringValue(SealTier.class, raw, "valores aceitos: PECA, LOOK");
+                case "PERFIL", "PROFILE" -> SealTier.PERFIL;
+                case "LOOK", "ESQUEMA", "SCHEME" -> SealTier.LOOK;
+                default -> (SealTier) ctx.handleWeirdStringValue(SealTier.class, raw, "valores aceitos: PERFIL, PECA, LOOK");
             };
         }
     }

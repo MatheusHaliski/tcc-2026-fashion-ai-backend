@@ -1,5 +1,7 @@
 package br.com.fashionai.application.imaging;
 
+import br.com.fashionai.application.taxonomy.Taxonomy;
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -59,15 +61,19 @@ public final class SubtypeReferences {
     }
 
     public List<Match> rank(String category, Silhouette.Descriptor shape) {
-        List<Match> out = new ArrayList<>();
+        // a referência de um código LEGACY (bermuda_shorts, ankle_boots…) conta para a subcategoria que o substitui
+        // (shorts, boots); fica a melhor nota de cada subcategoria
+        Map<String, Double> best = new LinkedHashMap<>();
         for (Map.Entry<String, List<Reference>> e : byCategory.entrySet()) {
             if (category != null && !category.equals(e.getKey())) {
                 continue;
             }
             for (Reference r : e.getValue()) {
-                out.add(new Match(r.subcategory(), Silhouette.similarity(shape, r.shape())));
+                best.merge(Taxonomy.activeSubcategory(r.subcategory()), Silhouette.similarity(shape, r.shape()), Math::max);
             }
         }
+        List<Match> out = new ArrayList<>();
+        best.forEach((sub, score) -> out.add(new Match(sub, score)));
         out.sort(Comparator.comparingDouble(Match::score).reversed());
         return out;
     }

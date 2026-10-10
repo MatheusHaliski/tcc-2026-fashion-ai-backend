@@ -1,0 +1,53 @@
+@startuml RF52_MaquinaDeEstados_Video
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  StartColor #20A77A
+  EndColor #4B5563
+}
+title RF52 — ArtVideo: estados do elemento de vídeo\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\ncomponents/card-art.tsx · operações em v (src, play, pause, removeAttribute) e onStuck(true|false)
+
+state "SemFonte" as M_SemFonte
+M_SemFonte : sem src: só o pôster
+state "Com arquivo (v.src)" as M_Com {
+  state "Carregado" as M_Carregado
+  M_Carregado : v.src definido
+  state "Tocando" as M_Tocando
+  M_Tocando : v.play() aceito
+  state "Pausado" as M_Pausado
+  M_Pausado : v.pause(), arquivo mantido
+  state "Travado" as M_Travado
+  M_Travado : onStuck(true): play() recusado
+}
+[*] --> M_SemFonte : montagem
+M_SemFonte --> M_Carregado : [typeof IntersectionObserver ===\n'undefined']
+M_Carregado --> M_Tocando : tryPlay()\n(pageshow, canplay, nearIO, seenIO,\nonVisible)\npromessa resolvida
+M_Pausado --> M_Tocando : tryPlay()\n(pageshow, canplay, nearIO, seenIO,\nonVisible)\npromessa resolvida
+M_Travado --> M_Tocando : play() aceito depois de um gesto\nonStuck(false)
+M_Carregado --> M_Travado : play() recusado\n(NotAllowedError)
+M_Pausado --> M_Travado : play() recusado\n(NotAllowedError)
+M_SemFonte --> M_Carregado : nearIO()\n[near && v.getAttribute('src') !==\nsrc]
+M_Com --> M_SemFonte : nearIO()\n[!near && v.getAttribute('src')]
+M_Tocando --> M_Pausado : seenIO()\n[!v.paused]
+M_Com --> M_SemFonte : desmontagem\nou troca de arquivo
+note right of M_Travado
+  Fica armada uma nova tentativa no primeiro
+  pointerdown ou keydown da pessoa.
+  onStuck(true) troca o vídeo pelo plano B do card.
+end note
+M_SemFonte --> [*] : desmontagem
+@enduml

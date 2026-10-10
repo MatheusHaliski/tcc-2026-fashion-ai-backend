@@ -1,0 +1,20 @@
+{
+  "_comment": "Uma entrada por aparelho × perfil × build. Só valores MEDIDOS; deixe null o que não foi medido. Sem dados pessoais.",
+  "build": { "version": null, "commit": null, "engine": "UE 5.8", "configuration": "Shipping" },
+  "device": { "family": null, "model": null, "os": null, "gpu": null, "ramGb": null },
+  "qualityProfile": null,
+  "scene": "provador-4-slots-60s",
+  "metrics": {
+    "fpsAvg": null, "fpsP1": null, "frameCpuMs": null, "frameGpuMs": null,
+    "memoryPeakMb": null,
+    "coldStartToInteractiveMs": null,
+    "tryOnOpenToDressedMs": { "cached": null, "downloading": null },
+    "thermalStateAfter10Min": null,
+    "batteryPctPer10Min": null,
+    "storeDownloadMb": null, "initialContentDownloadMb": null, "garmentDownloadBytes": null
+  },
+  "identity": { "sfaceDistanceToReference": null, "skinDeltaE": null, "hairSilhouetteIoU": null, "hairColorDeltaE": null },
+  "input": { "touch": null, "keyboardMouse": null, "gamepad": null, "focusVisibleAllScreens": null },
+  "accessibility": { "screenReader": null, "textScaling": null, "contrastAA": null },
+  "evidence": { "recording": null, "screenshots": [] }
+}

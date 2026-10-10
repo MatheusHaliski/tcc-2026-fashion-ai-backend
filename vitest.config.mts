@@ -14,7 +14,6 @@ export default defineConfig({
     setupFiles: ["./test-utils/setup.ts"],
     coverage: {
       provider: "v8",
-      // o frontend inteiro entra na conta, inclusive arquivos que nenhum teste carrega (contam como 0%)
       include: ["app/**/*.{ts,tsx}", "components/**/*.{ts,tsx}", "lib/**/*.{ts,tsx}", "middleware.ts"],
       exclude: ["**/*.test.{ts,tsx}", "**/*.d.ts", "lib/i18n/messages/**"],
       reporter: ["text-summary", "html", "json-summary"],
