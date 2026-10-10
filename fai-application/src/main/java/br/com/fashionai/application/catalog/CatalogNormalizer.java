@@ -221,23 +221,48 @@ public final class CatalogNormalizer {
         return "title:" + brandSlug + ":" + subcategory + ":" + normalizedTitle(title).replace(' ', '-') + ":" + key(c).replace(' ', '-');
     }
 
-    /** URL canônica: sem esquema, "www.", query, fragmento e barra final; domínio minúsculo. */
+    /** Parâmetros da query que identificam o produto (gap.com/browse/product.do?pid=…); iguais a IDENTITY_PARAMS do Python. */
+    static final Set<String> IDENTITY_PARAMS = Set.of("pid", "productid", "product_id", "prodid", "itemid", "item_id", "styleid", "style_id", "skuid");
+
+    /**
+     * URL canônica: sem esquema, "www.", fragmento e barra final; domínio minúsculo. Da query só ficam os parâmetros que
+     * identificam o produto (IDENTITY_PARAMS), ordenados — sem eles, as 248 peças da Gap viravam uma só.
+     */
     public static String canonicalUrl(String url) {
         if (url == null) {
             return null;
         }
         String u = url.trim().replaceFirst("(?i)^https?://", "").replaceFirst("(?i)^www\\.", "");
-        int q = u.indexOf('?');
-        if (q >= 0) {
-            u = u.substring(0, q);
-        }
         int f = u.indexOf('#');
         if (f >= 0) {
             u = u.substring(0, f);
         }
+        String query = "";
+        int q = u.indexOf('?');
+        if (q >= 0) {
+            query = u.substring(q + 1);
+            u = u.substring(0, q);
+        }
         u = u.replaceAll("/+$", "");
         int slash = u.indexOf('/');
-        return slash < 0 ? u.toLowerCase(Locale.ROOT) : u.substring(0, slash).toLowerCase(Locale.ROOT) + u.substring(slash);
+        String base = slash < 0 ? u.toLowerCase(Locale.ROOT) : u.substring(0, slash).toLowerCase(Locale.ROOT) + u.substring(slash);
+        List<String[]> ids = new ArrayList<>();
+        for (String part : query.split("&")) {
+            int eq = part.indexOf('=');
+            String k = (eq < 0 ? part : part.substring(0, eq)).toLowerCase(Locale.ROOT), v = eq < 0 ? "" : part.substring(eq + 1);
+            if (IDENTITY_PARAMS.contains(k) && !v.isEmpty()) {
+                ids.add(new String[]{k, v});
+            }
+        }
+        if (ids.isEmpty()) {
+            return base;
+        }
+        ids.sort((a, b) -> a[0].equals(b[0]) ? a[1].compareTo(b[1]) : a[0].compareTo(b[0]));
+        StringBuilder out = new StringBuilder(base).append('?');
+        for (int i = 0; i < ids.size(); i++) {
+            out.append(i == 0 ? "" : "&").append(ids.get(i)[0]).append('=').append(ids.get(i)[1]);
+        }
+        return out.toString();
     }
 
     /** Domínio registrável de uma URL ("https://www.nike.com.br/p/x" → "nike.com.br"). */
