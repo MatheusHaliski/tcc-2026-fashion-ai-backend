@@ -173,10 +173,48 @@ class FallbackAndStorageTest(unittest.TestCase):
             self.assertEqual(recorded["persistenceDecision"], decision)
             self.assertEqual(recorded["originalUrl"], "https://brand.example/a.jpg")
             self.assertEqual(recorded["previousStoredUrl"], "https://old/a.jpg")
-            self.assertEqual(json.loads(recorded["previousAssets"])["card"], "https://old/a.jpg")
+            self.assertEqual(recorded["previousAssets"]["card"], "https://old/a.jpg")
             self.assertEqual(recorded["render"]["upscaleFactor"], 1.5)
             self.assertEqual(recorded["editorFrame"]["decision"], FORCED_DECISION)
             self.assertEqual(assets["render_info"]["sourceCropWidth"], 600)
+
+
+class PreviousAssetsTest(unittest.TestCase):
+    def test_metadado_anterior_vem_do_banco_como_objeto_ou_de_snapshot_como_texto(self):
+        from scripts.catalog.category_frame_storage import previous_assets
+        self.assertEqual(previous_assets({"assets_json": {"card": "https://old/a.jpg"}}), {"card": "https://old/a.jpg"})
+        self.assertEqual(previous_assets({"assets_json": '{"card": "https://old/a.jpg"}'}), {"card": "https://old/a.jpg"})
+        self.assertEqual(previous_assets({"assets_json": None, "assets": {"master": "m"}}), {"master": "m"})
+        self.assertIsNone(previous_assets({"assets_json": "não é json"}))
+        self.assertIsNone(previous_assets({}))
+
+
+class ReducedFrameStandardizedTest(unittest.TestCase):
+    """Quadro reduzido para caber (foto muito larga) é resultado concluído: a reexecução preserva em vez de reenviar."""
+
+    def record(self, width_percent, observations):
+        return {"image_url": "https://brand.example/a.jpg", "processing_status": "APPROVED", "pipeline_version": "CATALOG_FRAME_34_50_V1",
+                "review_status": "NONE", "stored_url": "https://media.example.com/f.jpg",
+                "assets_json": {"card": "https://media.example.com/f.jpg", "framingVersion": "CATALOG_FRAME_34_50_V1", "sha256": "b" * 64},
+                "crop_json": {"aspect": "3:4", "crop": {"x": 0, "y": 0, "w": .1875, "h": 1}, "ruleCompliant": True,
+                              "editorFrame": {"version": "CATALOG_FRAME_34_50_V1", "widthPercent": width_percent, "requiresReview": False, "observations": observations}}}
+
+    def test_quadro_reduzido_registrado_e_padronizado(self):
+        from scripts.catalog.catalog_image_inventory import is_standardized
+        self.assertTrue(is_standardized(self.record(18.75, ["FRAME_REDUCED_TO_FIT_IMAGE", "FRAME_CLAMPED_TO_IMAGE_BOUNDS"])))
+        self.assertTrue(is_standardized(self.record(50, [])))
+        # largura menor sem o registro da redução não é a geometria documentada
+        self.assertFalse(is_standardized(self.record(18.75, [])))
+        self.assertFalse(is_standardized(self.record(60, ["FRAME_REDUCED_TO_FIT_IMAGE"])))
+
+    def test_reexecucao_preserva_o_quadro_reduzido(self):
+        analyzer = Mock(spec=["analyze", "rank", "ready", "category_frame", "force_frame", "frame_storage"])
+        analyzer.ready = {"pipelineVersion": "CATALOG_IMAGE_PIPELINE_V4"}; analyzer.category_frame = True; analyzer.force_frame = True; analyzer.frame_storage = Mock()
+        downloader = Mock()
+        record = {**self.record(18.75, ["FRAME_REDUCED_TO_FIT_IMAGE"]), "category": "upper_piece", "source_url": "https://brand.example/a.jpg", "image_id": "a", "product_id": "p"}
+        result = audit_record(record, downloader, analyzer, Mock(), apply=True)
+        self.assertIn("preservado", result["status_note"])
+        downloader.get.assert_not_called()
 
 
 class ForcedAuditRecordTest(unittest.TestCase):

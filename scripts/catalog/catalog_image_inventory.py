@@ -70,6 +70,17 @@ def _valid_crop(crop: Mapping) -> bool:
     return x >= 0 and y >= 0 and w > 0 and h > 0 and x + w <= 1.0001 and y + h <= 1.0001
 
 
+def _frame_width_ok(frame: Mapping) -> bool:
+    """50% do quadro do editor; ou menos, só quando o próprio quadro registra que foi reduzido para caber na foto
+    (foto mais larga que alta demais, modo forçado) — senão a mesma foto seria reenquadrada e reenviada a cada execução."""
+    width = frame.get("widthPercent")
+    if isinstance(width, bool) or not isinstance(width, (int, float)) or not math.isfinite(width):
+        return False
+    if width == 50:
+        return True
+    return 0 < width < 50 and "FRAME_REDUCED_TO_FIT_IMAGE" in (frame.get("observations") or [])
+
+
 def is_standardized(record: Mapping, current_version: str = CURRENT_VERSION) -> bool:
     """Verifica metadados comprovados, sem inferir aprovação a partir da URL.
 
@@ -93,7 +104,7 @@ def is_standardized(record: Mapping, current_version: str = CURRENT_VERSION) -> 
                 and len(str((_metadata(record, "assets") or {}).get("sha256") or "")) == 64
                 and _valid_crop(crop) and crop.get("aspect") == "3:4"
                 and frame.get("version") == "CATALOG_FRAME_34_50_V1"
-                and frame.get("widthPercent") == 50 and frame.get("requiresReview") is False
+                and _frame_width_ok(frame) and frame.get("requiresReview") is False
                 and crop.get("ruleCompliant") is True)
     if _value(record, "pipeline_version", "pipelineVersion") != current_version:
         return False

@@ -35,6 +35,22 @@ def render_frame(path, crop, width=900):
     return render_frame_info(path, crop, width)[0]
 
 
+def previous_assets(record):
+    """assets_json anterior como objeto: o inventário do banco já o entrega decodificado (dict); um snapshot pode trazer
+    o texto JSON. Qualquer outra coisa (vazio, inválido) não é metadado recuperável e fica None."""
+    value = record.get('assets_json')
+    if value is None:
+        value = record.get('assets')
+    if isinstance(value, (bytes, bytearray)):
+        value = value.decode('utf-8', 'replace')
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except ValueError:
+            return None
+    return dict(value) if isinstance(value, dict) else None
+
+
 class FrameStorage:
     def __init__(self, client=None):
         self._pending = {}
@@ -85,7 +101,7 @@ class FrameStorage:
         url = self.base + '/' + quote(key, safe='/')
         assets = {'card':url, 'master':url, 'framingVersion':'CATALOG_FRAME_34_50_V1', 'sha256':digest,
                   'width':900, 'height':1200, 'previousStoredUrl':record.get('stored_url'),
-                  'previousAssets':record.get('assets_json') if isinstance(record.get('assets_json'), str) else None,
+                  'previousAssets':previous_assets(record),
                   'originalUrl':record['source_url'], 'render':info, 'editorFrame':crop.get('editorFrame')}
         if decision is not None:
             assets['persistenceDecision'] = decision
