@@ -13,10 +13,10 @@ from decimal import Decimal
 
 try:
     from .db import now, run_transaction
-    from .source_persistence import allows_persistence
+    from .source_persistence import allows_persistence, source_decision
 except ImportError:  # direct script execution, like the other catalog commands
     from db import now, run_transaction
-    from source_persistence import allows_persistence
+    from source_persistence import allows_persistence, source_decision
 
 
 METADATA_COLUMNS = (
@@ -121,13 +121,19 @@ def _candidate(row):
             "phash": row.get("phash")}
 
 
-def apply_product(conn, records, analyses_by_image_id, ranker):
+def apply_product(conn, records, analyses_by_image_id, ranker, *, persistence_override=None):
     """Persist already-computed analyses and Java roles, atomically per product.
 
     ``records`` contains every image of one product, including manual decisions.
     ``ranker`` is the bridge's ``rank(category, candidates)`` callable (or object).
     The result includes changed_ids/skipped_ids and before/after snapshots for
     the caller's audit JSONL. No source URL or image bytes are replaced/deleted.
+
+    ``persistence_override`` is the project owner's explicit batch decision (e.g.
+    ``FORCED_CATEGORY_FRAME``): framed assets are written without the source
+    authorization checks, and every asset must carry that same decision in its
+    ``assets_json.persistenceDecision``. The fresh source decision at commit time
+    is still recorded in the change for the audit trail. Default: unchanged.
     """
     snapshots = [_snapshot(record) for record in records]
     if not snapshots:
@@ -162,8 +168,15 @@ def apply_product(conn, records, analyses_by_image_id, ranker):
                      processed_at=instant)
         assets = analysis.get("framed_assets")
         if assets:
-            if not by_id[image_id].get("allows_image_persistence") or patch["pipeline_version"] != "CATALOG_FRAME_34_50_V1":
+            if patch["pipeline_version"] != "CATALOG_FRAME_34_50_V1":
                 raise ValueError("frame persistence is not authorized")
+            if persistence_override is None:
+                if not by_id[image_id].get("allows_image_persistence"):
+                    raise ValueError("frame persistence is not authorized")
+            else:
+                recorded = (_json_value(assets.get("assets_json")) or {}).get("persistenceDecision") or {}
+                if recorded.get("mode") != persistence_override:
+                    raise ValueError("persistence override requires the decision recorded in assets_json")
             patch.update(stored_url=assets["stored_url"], assets_json=assets["assets_json"], usage_status="PERSISTED")
         patches[image_id] = patch
         prospective[image_id].update(patch)
@@ -238,11 +251,18 @@ def apply_product(conn, records, analyses_by_image_id, ranker):
             if changed:
                 skipped = {**skips, **{image_id: "PRODUCT_CHANGED" for image_id in patches}}
                 return {"changed_ids": [], "skipped_ids": list(skipped), "skip_reasons": skipped, "changes": []}
+            decisions = {}
             for image_id, patch in patches.items():
                 if patch.get("assets_json"):
                     cursor.execute("SELECT s.domain, s.active, s.allows_image_persistence FROM catalog_sources s JOIN catalog_products p ON p.brand_id=s.brand_id WHERE p.id=%s FOR UPDATE", (product_id,))
-                    if not allows_persistence(cursor.fetchall(), current[image_id].get("image_url"), current[image_id].get("source_domain")):
-                        raise ValueError("source persistence permission changed")
+                    sources = cursor.fetchall()
+                    if persistence_override is None:
+                        if not allows_persistence(sources, current[image_id].get("image_url"), current[image_id].get("source_domain")):
+                            raise ValueError("source persistence permission changed")
+                    else:
+                        # Owner's decision: the source state is evidence for the audit, not a gate.
+                        decisions[image_id] = {**source_decision(sources, current[image_id].get("image_url"), current[image_id].get("source_domain")),
+                                               "override": persistence_override}
             changes = []
             for image_id, patch in patches.items():
                 row = current[image_id]
@@ -254,7 +274,10 @@ def apply_product(conn, records, analyses_by_image_id, ranker):
                 if cursor.rowcount != 1:
                     raise RuntimeError("image update lost its optimistic guard; product transaction rolled back")
                 after = {**row, **patch, "version": int(row["version"]) + 1}
-                changes.append({"image_id": image_id, "before": dict(row), "after": after})
+                change = {"image_id": image_id, "before": dict(row), "after": after}
+                if image_id in decisions:
+                    change["persistence_decision_at_commit"] = decisions[image_id]
+                changes.append(change)
             committed_result = {"changed_ids": list(patches), "skipped_ids": list(skips), "skip_reasons": dict(skips), "changes": changes}
             return committed_result
 

@@ -142,3 +142,16 @@ revisão humana, imagens pequenas ou focos estimados de zíper/cadarço.
 As mudanças serão publicadas em PR após autorização do usuário. Atualize o código
 após terminar a execução já em andamento, para não trocar módulos no meio do lote.
 Nenhuma gravação no banco ou no S3 de produção foi realizada nesta auditoria.
+
+## Decisão de 10/10/2026: enquadramento forçado do acervo
+
+O responsável pelo projeto decidiu que, para o processamento do acervo atual
+(6.591 peças, 14.118 imagens bloqueadas por `SOURCE_RIGHTS_UNCONFIRMED` 8.788,
+`SOURCE_HOST_NOT_REGISTERED` 5.329 e `INVALID_IMAGE_AUTHORITY` 1), a autorização
+da fonte, o cadastro do domínio e a identificação visual confirmada não bloqueiam
+o lote. Isso é uma opção explícita do script (`--force-category-frame`), não uma
+alteração de `catalog_sources`: o padrão continua exigindo as permissões, e cada
+imagem gravada nesse modo carrega a decisão (`assets_json.persistenceDecision`) e
+o estado da fonte no instante do COMMIT (`.changes.audit.jsonl`). As proteções
+técnicas de download, os checksums e a limpeza segura não mudam. Detalhes em
+`PROCESSAR_ACERVO_IMAGENS.md`.
