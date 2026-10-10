@@ -1,5 +1,5 @@
 "use client";
-import type { CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import type { CardArt } from "@/lib/card-art";
 
 /** Pseudoaleatório determinístico (mesmo resultado no servidor e no cliente). */
@@ -12,20 +12,84 @@ const vars = (o: Record<string, string | number>) => o as unknown as CSSProperti
  * borda do card e o container, nunca sobre a foto ou os textos.
  */
 export function CardArtLayer({ art }: { art: CardArt }) {
+  // o navegador recusou o vídeo (autoplay bloqueado): o pôster ganha a animação CSS do preset em vez de ficar parado
+  const [stuck, setStuck] = useState(false);
   if (art.kind === "none") return null;
-  const anim = [art.animation ? `anim-${art.animation.toLowerCase()}` : "", art.motion === "shimmer" ? "anim-shimmer" : ""].filter(Boolean).join(" ");
+  const fallback = stuck && art.video ? art.still ?? "drift" : null;
+  const anim = [art.animation ? `anim-${art.animation.toLowerCase()}` : "", fallback ? `anim-${fallback.toLowerCase()}` : "", art.motion === "shimmer" ? "anim-shimmer" : ""].filter(Boolean).join(" ");
   const splash = art.presetId === "aura_splash";
   return (
     <div className={`card-art ${anim} art-${art.kind}${splash ? " art-aura-splash" : ""}`} style={{ background: art.base, position: "absolute", inset: 0, overflow: "hidden" }} aria-hidden data-art={art.label} data-motion={art.motion ?? undefined}>
       {art.image && art.frame && <div className="card-art-frame" style={{ borderImageSource: `url("${art.image}")` }} />}
       {art.image && !art.frame && <img src={art.image} alt="" className="card-art-img" />}
-      {art.video && <video className="card-art-img" src={art.video.src} poster={art.video.poster ?? undefined} autoPlay muted loop playsInline preload="metadata" />}
+      {art.video && <ArtVideo src={art.video.src} poster={art.video.poster} onStuck={setStuck} />}
       {splash && <SplashSpread />}
       {art.material && <img src={art.material} alt="" className={`card-art-img card-art-material ${art.image || art.video ? "is-overlay" : "is-solo"}`} />}
       {art.season && <SeasonDecor season={art.season} />}
       {art.motion && art.motion !== "shimmer" && <MotionFall kind={art.motion} />}
     </div>
   );
+}
+
+/**
+ * Vídeo da arte (Aura em vídeo, mosaico) que não trava. O autoplay é um pedido, não uma garantia: o navegador recusa no
+ * iPhone em Modo de Pouca Energia, com economia de bateria, ou com vídeos demais na página — e sem isto o vídeo ficava
+ * no pôster até recarregar. Aqui o arquivo só entra perto da tela e sai quando ela se afasta (o feed acumula páginas e
+ * cada vídeo montado ocupa um decodificador), toca quando aparece e pausa quando sai, e tenta de novo quando a aba
+ * volta, quando a página volta do histórico e no primeiro toque ou tecla da pessoa. Recusado, avisa {@code onStuck}.
+ */
+export function ArtVideo({ src, poster, onStuck }: { src: string; poster?: string | null; onStuck?: (stuck: boolean) => void }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const stuckRef = useRef(onStuck); stuckRef.current = onStuck;
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    // muted como atributo, não só como propriedade: o Safari decide o autoplay olhando o atributo
+    v.muted = true; v.defaultMuted = true; v.setAttribute("muted", ""); v.setAttribute("playsinline", "");
+    if (typeof IntersectionObserver === "undefined") { v.autoplay = true; v.src = src; return; }   // sem observador: o autoplay do navegador decide
+    let seen = false;
+    let retry: (() => void) | null = null;
+    const mark = (stuck: boolean) => stuckRef.current?.(stuck);
+    const dropRetry = () => { if (retry) { document.removeEventListener("pointerdown", retry, true); document.removeEventListener("keydown", retry, true); retry = null; } };
+    const tryPlay = () => {
+      if (!seen || document.visibilityState === "hidden" || !v.getAttribute("src")) return;
+      let p: Promise<void> | undefined;
+      try { p = v.play(); } catch { return; }
+      p?.then(() => { dropRetry(); mark(false); }, (e: DOMException) => {
+        if (e?.name !== "NotAllowedError") return;                 // AbortError: pausou ou trocou de arquivo no meio, não é bloqueio
+        mark(true);
+        if (!retry) {                                              // depois de um gesto da pessoa o navegador libera o play
+          retry = () => { dropRetry(); tryPlay(); };
+          document.addEventListener("pointerdown", retry, true); document.addEventListener("keydown", retry, true);
+        }
+      });
+    };
+    // perto da tela (300 px): o arquivo entra; longe: sai, liberando rede e decodificador (o feed acumula páginas)
+    const nearIO = new IntersectionObserver(([e]) => {
+      const near = e.isIntersecting;
+      // compara com o arquivo pedido: trocar de Aura com o card perto da tela tem de trocar o vídeo, não só o pôster
+      if (near && v.getAttribute("src") !== src) { v.src = src; tryPlay(); }
+      else if (!near && v.getAttribute("src")) { v.pause(); v.removeAttribute("src"); v.load(); }
+    }, { rootMargin: "300px 0px" });
+    // visível: toca; fora da tela: pausa (fica pronto para voltar sem baixar de novo)
+    const seenIO = new IntersectionObserver(([e]) => { seen = e.isIntersecting; if (seen) tryPlay(); else if (!v.paused) v.pause(); });
+    nearIO.observe(v); seenIO.observe(v);
+    const onVisible = () => { if (document.visibilityState === "visible") tryPlay(); };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", tryPlay);
+    v.addEventListener("canplay", tryPlay);
+    return () => {
+      nearIO.disconnect(); seenIO.disconnect(); dropRetry();
+      // trocou o arquivo (ou desmontou): solta o anterior e o aviso de bloqueio dele
+      if (v.getAttribute("src")) { v.pause(); v.removeAttribute("src"); v.load(); }
+      stuckRef.current?.(false);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", tryPlay);
+      v.removeEventListener("canplay", tryPlay);
+    };
+  }, [src]);
+  // sem autoPlay: quem toca é o play() quando o vídeo está visível (o atributo fazia tocar fora da tela)
+  return <video ref={ref} className="card-art-img" poster={poster ?? undefined} muted loop playsInline preload="metadata" />;
 }
 
 function SplashSpread() {

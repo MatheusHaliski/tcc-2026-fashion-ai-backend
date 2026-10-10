@@ -41,10 +41,8 @@ const withData = (url: URL) => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); document.cookie = "fai_rt_h=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/"; });
 
 describe("telas do app abrem sem quebrar", () => {
-  // a raiz só redireciona e o [...missing] é o "não encontrado": ficam de fora da fumaça de conteúdo
-  // a raiz só redireciona, o [...missing] é o "não encontrado" e o /lookbook leva ao perfil: ficam fora da fumaça de
-  // conteúdo (o /lookbook tem teste próprio abaixo)
-  const entries = Object.entries(pages).filter(([p]) => p !== "./(site)/page.tsx" && !p.includes("[...missing]") && !p.includes("/lookbook/page.tsx"));
+  // Rotas de redirecionamento não têm conteúdo: /lookbook é testado abaixo; /dashboard em celebrity-profile.test.tsx.
+  const entries = Object.entries(pages).filter(([p]) => p !== "./(site)/page.tsx" && !p.includes("[...missing]") && !p.includes("/lookbook/page.tsx") && p !== "./(site)/(app)/dashboard/page.tsx");
 
   it("há telas para testar", () => { expect(entries.length).toBeGreaterThan(20); });
 
@@ -71,11 +69,11 @@ describe("telas do app abrem sem quebrar", () => {
       const params = resolved(nav.params); const searchParams = resolved({});
       const { container } = renderApp(<Suspense fallback={<p>carregando</p>}><Page params={params} searchParams={searchParams} /></Suspense>);
       await waitFor(() => expect(container.textContent).not.toBe("carregando"), { timeout: 3000 });
-      await new Promise((r) => setTimeout(r, 50));
+      // tela que quebra é desmontada pelo React e o contêiner fica vazio: exige conteúdo na tela. Espera o conteúdo (até
+      // 3 s) em vez de uma pausa fixa: com a suíte inteira em paralelo, telas com import dinâmico demoram mais a pintar
+      await waitFor(() => expect(container.textContent?.trim().length ?? 0).toBeGreaterThan(0), { timeout: 3000 });
       spy.mockRestore();
       expect(errors).toEqual([]);
-      // tela que quebra é desmontada pelo React e o contêiner fica vazio: exige conteúdo na tela
-      expect(container.textContent?.trim().length ?? 0).toBeGreaterThan(0);
     });
   }
 

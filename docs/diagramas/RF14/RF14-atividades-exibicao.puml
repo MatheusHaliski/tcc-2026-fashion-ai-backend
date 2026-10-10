@@ -1,0 +1,89 @@
+@startuml RF14_Atividades_Exibicao
+title RF14 — Aba "Marcas": feed e perfil das marcas cadastradas\nDiagrama de atividades — política de exibição dos looks e peças promovidos por selo (vale também para o RF22)
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 18
+skinparam ArrowColor #52606D
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+  BarColor #4B4B4B
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+|Pessoa|
+start
+:No perfil /brands/[slug], abre "Esquemas em destaque",\n"Peças em destaque" ou "Looks consagrados";
+:Pode trocar a ordem no seletor\nRecentes · Hype · Em crescimento;
+|Frontend (brands/[slug]/page.tsx)|
+:GET /api/institutional/{slug}/tabs/{TAB}\n(+ ?filter=RECENTES|HYPE|GROWTH só se diferente do padrão:\ndestaques = HYPE, consagrados = RECENTES);
+note right: a dona em "Looks consagrados" pede\nMEUS_ESQUEMAS (os próprios looks)
+|API (InstitutionalService)|
+if (Aba só da dona (MEUS_SELOS, MEUS_ESQUEMAS, MINHAS_PECAS,\nESQUEMAS_SALVOS, PECAS_SALVAS, CADASTRAR_SELO) e não é a dona?) then (sim)
+  #FFE3E3:403 "esta aba é do administrador" (auditado);
+  stop
+elseif (Aba desconhecida?) then (sim)
+  #FFE3E3:400 ABA_INVALIDA;
+  stop
+else (ok)
+endif
+|Banco (MySQL)|
+:seal_bonds com target_owner = perfil e status APPROVED\n(nunca SUGGESTED, ACCEPTED, EDITED, PENDING_REVIEW,\nREFUSED, REJECTED ou REVOKED);
+|API (InstitutionalService)|
+:promoted(): agrupa os vínculos por look;
+repeat :Para cada look com vínculo aprovado;
+  if (displayable(look)? publicado, autor ativo (não SUSPENDED,\nDELETION_SCHEDULED, DELETED) e visível para quem vê\n(visibilidade × privacidade do perfil × bloqueio)) then (não)
+    :Fica de fora;
+  else (sim)
+    :Vínculos vigentes = sem expiresAt ou expiresAt no futuro;
+    if (Aba de destaque e (todos expirados ou\nrevalidação pendente — RF9.CA05)?) then (sim)
+      :Fica de fora dos destaques;
+    else (não)
+      :Promoted {look, selos mostrados, issuedAt, expiresAt,\nexpired, revalidationPending};
+    endif
+  endif
+repeat while (Mais looks?) is (sim)
+->não;
+if (Qual aba?) then (destaques)
+  :Ordem padrão: HypeScore v2 do look (só AVAILABLE e\npublicEligible para terceiros; sem Hype no fim) e,\nno empate, emissão mais recente;
+else (consagrados)
+  :Ordem padrão: emissão mais recente\n(inclui expirados e em revalidação, marcados);
+endif
+:filterLooks: groupingId (era/coleção) e filter —\nRECENTES · HYPE · GROWTH (dimensão TREND, desempate pelo Δ) ·\nDISPONIVEL · INDISPONIVEL · MAIS_USADAS · DESTAQUES (12 com Hype);
+note right
+  As ordenações não tiram ninguém da lista:
+  quem entra é decidido só pela política acima
+end note
+if (Peças em destaque?) then (sim)
+  repeat :Para cada peça dos looks promovidos;
+    if (displayable(peça)? não arquivada, moderação APPROVED,\nautor ativo e visível para quem vê) then (sim)
+      if (covers(vínculo, peça)? selo LOOK cobre todas;\nselo PECA só as linkedPieceIds (lista vazia = todas)) then (sim)
+        :Entra com os selos que a cobrem\n(peça repetida junta os selos; até 60);
+      else (não)
+      endif
+    else (não)
+    endif
+  repeat while (Mais peças?) is (sim)
+  ->não;
+else (não)
+endif
+|Frontend (brands/[slug]/page.tsx)|
+if (Lista vazia?) then (sim)
+  :Estado vazio ("nenhum look conquistou um selo");
+else (não)
+  :SchemeCard/PieceCard com SealBadges e nota do vínculo:\n"vigente até…", "expirado em…" ou "em revalidação";
+endif
+stop
+@enduml

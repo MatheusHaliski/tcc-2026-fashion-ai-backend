@@ -7,6 +7,7 @@ import { NoticeProvider, ToastProvider } from "@/components/ui";
 import { DetailModalProvider } from "@/components/detail-modal";
 import { useDevRefsFromUrl } from "@/lib/dev-refs";
 import { ChunkRecovery } from "@/components/chunk-recovery";
+import { GuideProvider } from "@/components/guide/guide";
 
 export function Providers({ children, initialLocale }: { children: ReactNode; initialLocale?: Locale }) {
   useDevRefsFromUrl();
@@ -15,7 +16,7 @@ export function Providers({ children, initialLocale }: { children: ReactNode; in
       <ThemeProvider>
         <ToastProvider>
           <ChunkRecovery />
-          <NoticeProvider><AuthProvider><DetailModalProvider>{children}</DetailModalProvider></AuthProvider></NoticeProvider>
+          <NoticeProvider><AuthProvider><GuideProvider><DetailModalProvider>{children}</DetailModalProvider></GuideProvider></AuthProvider></NoticeProvider>
         </ToastProvider>
       </ThemeProvider>
     </I18nProvider>

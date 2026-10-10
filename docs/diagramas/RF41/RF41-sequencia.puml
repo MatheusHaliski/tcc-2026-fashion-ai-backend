@@ -1,62 +1,79 @@
 @startuml RF41_Sequencia
-title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Usuário" as U
-participant "Frontend\nflair / schemes / pieces" as FE
-participant "FlairController" as FC
-participant "FlairService" as FS
-participant "SchemeController → SchemeService /\nWardrobeController → WardrobeService" as CS
-participant "WardrobeEventListeners" as WL
-participant "FaiPointsService" as FP
-participant "RoomService\n(RoomLayoutAccess)" as RS
-participant "NotificationService" as NS
-participant "HighlightsController" as HC
-participant "Frontend\npoints" as FEP
-database "MySQL" as DB
-== Jogos ==
-U -> FE: Duelar contra @usuário ou a Casa
-FE -> FC: POST /api/flair/duels {schemeId, opponent}
-FC -> FS: duel(user, schemeId, opponent)
-FS -> DB: INSERT partida + FLAIR Coins
-FS -> FP: game(userId, "FLAIR_DUEL", matchId, outcome)
-FP -> FP: award(GAME_PLAYED, ref FLAIR_DUEL:matchId)
-opt outcome = WIN
-  FP -> FP: award(GAME_WON, mesma ref)
+autonumber "<b>0."
+title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /flair" as P
+control "FlairController" as FlairController
+participant "FlairService" as FlairService
+participant "Guard" as Guard
+participant "SchemeService" as SchemeService
+database "MySQL" as DB_MySQL
+participant "HypeScoreConfig" as HypeScoreConfig
+== FLAIR — duelo de estilo 1×1 (5 rodadas) contra @usuário ou contra a C… ==
+U -> P : FLAIR — duelo de estilo 1×1 (5 rodadas) contra @u…
+P -> FlairController : POST /api/flair/duels
+FlairController -> FlairService : duel()
+activate FlairService
+FlairService -> Guard : requireCanCreate()
+FlairService -> SchemeService : owned()
+SchemeService -> DB_MySQL : SELECT schemes
+SchemeService --> FlairService
+alt deck arquivado
+FlairService --> FlairController : 400 DECK_ARQUIVADO
+FlairController --> P : 400 + mensagem
 end
-FP --> FS: pontos lançados agora (0 se repetido ou no teto)
-FS --> FE: 200 {outcome, coins, faiPoints}
-FE -> U: selo "+N FAI Pts"
-note over FC, FS: o mesmo game() é chamado por POST /api/flair/arena,\nPOST /api/flair/teams/battles, /api/flair/modes/* (FlairModesService)\ne POST /api/challenges/{id}/entries (ChallengeService.submitEntry)
-== Criações ==
-U -> FE: Salvar novo esquema / cadastrar peça
-FE -> CS: POST /api/schemes · POST /api/pieces
-CS ->> WL: SchemeSaved / PieceCreated (AFTER_COMMIT)
-WL -> FP: award(SCHEME_CREATED | PIECE_CATALOGED, ...)
-== award() ==
-FP -> DB: SELECT fai_points_rules WHERE action_code
-FP -> DB: existsByIdempotencyKey(usuário:ação:ref)
-FP -> DB: countByUserIdAndActionCodeAndCreatedAtAfter (teto)
-alt sem regra / já pontuado / teto atingido
-  FP --> WL: Award(granted=false)
-else paga
-  FP -> DB: INSERT fai_points_ledger
-  opt subiu de nível
-    FP -> RS: setLevel(userId, level)
-    RS -> DB: UPDATE room_layouts.level
-    FP -> NS: notify(ROOM_LEVEL_UP)
-  end
+FlairService -> DB_MySQL : SELECT scheme_items
+FlairService -> HypeScoreConfig : algorithmVersion()
+FlairService -> DB_MySQL : SELECT hype_scores
+alt deck vazio
+FlairService --> FlairController : 400 DECK_VAZIO
+FlairController --> P : 400 + mensagem
 end
-== Consulta ==
-U -> FEP: Abre Pontos
-FEP -> HC: GET /api/me/points
-HC -> FP: account(user)
-FP -> DB: balance / lifetime / extrato / regras
-FP --> FEP: 200 {balance, lifetime, level, nextLevel, levels, ledger, rules}
+FlairService -> DB_MySQL : SELECT wardrobe_items
+FlairService -> HypeScoreConfig : algorithmVersion()
+FlairService -> DB_MySQL : SELECT hype_scores
+FlairService -> DB_MySQL : SELECT users
+alt duelo consigo
+FlairService --> FlairController : 400 DUELO_CONSIGO
+FlairController --> P : 400 + mensagem
+end
+FlairService -> DB_MySQL : SELECT schemes
+FlairService -> SchemeService : canView()
+FlairService -> DB_MySQL : SELECT scheme_items
+FlairService -> FlairService : new FlairMatch()
+FlairService -> FlairService : status = FINISHED
+FlairService -> DB_MySQL : SELECT users
+FlairService -> DB_MySQL : INSERT/UPDATE flair_matches
+FlairService -> DB_MySQL : SELECT users
+FlairService -> FlairService : new FlairMatchEntry()
+FlairService -> DB_MySQL : INSERT/UPDATE flair_match_entries
+FlairService -> FlairService : new FlairMatchEntry()
+FlairService -> DB_MySQL : INSERT/UPDATE flair_match_entries
+note over FlairService : … e mais 25 passos no código
+deactivate FlairService
+FlairService --> FlairController : resultado
+FlairController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

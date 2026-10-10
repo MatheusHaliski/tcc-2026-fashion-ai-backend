@@ -1,9 +1,16 @@
 @startuml RF28_Atividades
-title RF28 — Montar looks no Smart Mirror e pedir sugestões ao "Vista-me" (só com peças do próprio guarda-roupa)\nDiagrama de atividades
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,47 +19,58 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Usuário|
+title RF28 — Montar looks no Smart Mirror e pedir sugestões ao 'Vista-me' (só com peças do próprio guarda-roupa)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre o Smart Mirror (ou o espelho do quarto);
-|Sistema (MirrorService)|
-:Carrega o estado do espelho\n(slots, peças vestidas, restrições de desafio);
-|Usuário|
-if (Montar sozinho ou pedir ao Vista-me?) then (sozinho)
-  :Veste/tira peças por slot;
-  |Sistema (MirrorService)|
-  :Sugestões para o slot\n(só peças disponíveis do próprio acervo);
-else (Vista-me)
-  |Usuário|
-  :Pedido em linguagem natural\n("jantar sexta, frio, algo leve");
-  |Sistema (MirrorService)|
-  :Motor de IA (RF24) interpreta ocasião,\nclima e DNA de Estilo;
-  if (IA indisponível?) then (sim)
-    :Fallback determinístico\n(regras de ocasião + cores);
-  endif
-  :Monta look completo com peças\ndisponíveis do guarda-roupa;
+:Abre /mirror, /room;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/mirror\nGET /api/me/mirror/suggestions\nGET /api/me/mirror/wardrobe\nGET /api/me/mirror/grwm;
+|Pessoa usuária|
+:Vestir uma peça no espelho;
+|Tela (Next.js)|
+:POST /api/me/mirror/pieces;
+|API (Spring Boot)|
+:MirrorController.place\n→ MirrorService.place;
+if (peça obrigatória?) then (sim)
+  :400 PECA_OBRIGATORIA\n«Escolha uma peça do guarda-roupa\npara levar ao espelho.»\n→ a tela mostra o aviso;
+  stop
 endif
-|Usuário|
-repeat
-  :Outro look / trocar só uma peça /\n"Tira uma coisa";
-repeat while (Satisfeito?) is (não)
-split
-  :Usar hoje → Look do Dia + diário de uso;
-split again
-  :Salvar como esquema (RF5);
-split again
-  :Storyboard GRWM;
-end split
+|Dados e serviços|
+:Lê: mirror_states\nwardrobe_items\nstyle_dna;
+:Usa: WardrobeService.owned\nRoomService.locateAll;
+:Grava: mirror_states;
+:Evento: MirrorAction;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Vista-me: look completo a partir…)
+    :POST /api/me/mirror/vista-me\n→ MirrorService.vistaMe\nvalida: ACERVO_SEM_SUPERIOR, SEM_COMBINACAO_NOVA\nlê: mirror_states, wardrobe_items, style_dna\nusa: RoomService.outOfSeason,\nWardrobeService.eligible,\nRoomService.locateAll\nia: COPILOT, SCHEME_COMPOSER;
+  case (Tirar uma peça)
+    :DELETE /api/me/mirror/pieces/{pieceId}\n→ MirrorService.remove\nlê: mirror_states, wardrobe_items, style_dna\nusa: RoomService.locateAll\ngrava: mirror_states;
+  case (Trocar só uma peça do look)
+    :POST /api/me/mirror/slots/{slot}/swap\n→ MirrorService.swap\nvalida: SEM_CANDIDATAS, SLOT_INVALIDO\nlê: mirror_states, wardrobe_items\nusa: RoomService.outOfSeason,\nWardrobeService.eligible,\nRoomService.locateAll\nia: SCHEME_COMPOSER;
+  case (Levar o look do espelho para o ed…)
+    :POST /api/me/mirror/draft\n→ MirrorService.draft\nlê: mirror_states\ngrava: mirror_states;
+  case (Outro look com o mesmo pedido)
+    :POST /api/me/mirror/another\n→ MirrorService.another\nvalida: ACERVO_SEM_SUPERIOR, SEM_COMBINACAO_NOVA\nlê: mirror_states, wardrobe_items, style_dna\nusa: RoomService.outOfSeason,\nWardrobeService.eligible,\nRoomService.locateAll\nia: COPILOT, SCHEME_COMPOSER;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Limpar o espelho, Usar o look de hoje (Look do…,
+  'Tira uma coisa': simplificar…, Salvar o look do
+  espelho como…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

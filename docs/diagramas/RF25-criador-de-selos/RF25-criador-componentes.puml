@@ -1,0 +1,95 @@
+@startuml RF25_Criador_Componentes
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+  FontColor #4A4852
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
+left to right direction
+title RF25 — Criador de selo: componentes (frontend, backend, catálogo de modelos e armazenamento)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+package "app/(site)" {
+  component "page.tsx" as m_app__site__page_tsx
+}
+package "lib/seals" {
+  component "templates.ts" as m_lib_seals_templates_ts
+}
+package "components/ui" {
+  component "index.tsx" as m_components_ui_index_tsx
+  component "icons.tsx" as m_components_ui_icons_tsx <<apoio>>
+}
+package "components" {
+  component "seal-wizard.tsx" as m_components_seal_wizard_tsx
+  component "seal-policy-editor.tsx" as m_components_seal_policy_editor_tsx
+  component "seal-core-editor.tsx" as m_components_seal_core_editor_tsx
+  component "seal-creator.tsx" as m_components_seal_creator_tsx <<apoio>>
+  component "seal-medallion.tsx" as m_components_seal_medallion_tsx <<apoio>>
+}
+package "lib" {
+  component "dev-refs.ts" as m_lib_dev_refs_ts <<apoio>>
+}
+package "lib/api" {
+  component "taxonomy.ts" as m_lib_api_taxonomy_ts <<apoio>>
+}
+package "lib/hype" {
+  component "model.ts" as m_lib_hype_model_ts <<apoio>>
+}
+package "Backend (Spring Boot)" {
+  component "SealController" as SealController
+  component "WardrobeController" as WardrobeController
+  component "SealDesigns" as SealDesigns <<apoio>>
+  component "SealDrafts" as SealDrafts <<apoio>>
+  component "OwnMedia" as OwnMedia
+  component "SealDesignService" as SealDesignService
+  component "SealPolicies" as SealPolicies <<apoio>>
+  component "SealService" as SealService
+}
+database "MySQL" as DB_MySQL
+SealController --> SealDesignService
+SealController --> SealService
+SealDesignService --> DB_MySQL : users
+SealService --> DB_MySQL : brand_profiles, celebrity_profiles,\npromotion_redemptions, promotions,\nscheme_items, schemes
+SealService --> OwnMedia
+m_components_seal_core_editor_tsx --> m_components_seal_medallion_tsx
+m_components_seal_core_editor_tsx --> m_components_ui_index_tsx
+m_components_seal_core_editor_tsx --> m_lib_seals_templates_ts
+m_components_seal_creator_tsx --> m_components_seal_core_editor_tsx
+m_components_seal_creator_tsx --> m_components_seal_medallion_tsx
+m_components_seal_creator_tsx --> m_components_ui_index_tsx
+m_components_seal_medallion_tsx --> m_lib_seals_templates_ts
+m_components_seal_policy_editor_tsx --> m_components_ui_index_tsx
+m_components_seal_policy_editor_tsx --> m_lib_api_taxonomy_ts
+m_components_seal_policy_editor_tsx --> m_lib_hype_model_ts
+m_components_seal_wizard_tsx --> m_components_seal_core_editor_tsx
+m_components_seal_wizard_tsx --> m_components_seal_creator_tsx
+m_components_seal_wizard_tsx --> m_components_seal_medallion_tsx
+m_components_seal_wizard_tsx --> m_components_seal_policy_editor_tsx
+m_components_seal_wizard_tsx --> m_components_ui_index_tsx
+m_components_seal_wizard_tsx --> m_lib_seals_templates_ts
+m_components_ui_index_tsx --> m_components_ui_icons_tsx
+m_components_ui_index_tsx --> m_lib_dev_refs_ts
+m_lib_api_taxonomy_ts --> WardrobeController : HTTPS
+@enduml

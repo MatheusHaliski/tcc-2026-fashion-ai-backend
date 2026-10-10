@@ -1,70 +1,104 @@
 @startuml RF45_Componentes
-title RF45 — Processar e padronizar imagens canônicas de peças, calçados e acessórios (pipeline de validação e padronização)\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF45 — Processar e padronizar imagens canônicas de peças, calçados e acessórios (pipeline de validação e padronização)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "(app)/pieces/new/page.tsx\n(não usa mais a foto)" as FE0
-  component "lib/capture/capture-guides.ts\n+ components/capture/garment-glyphs.tsx\n(CATEGORY_CARDS, ilustrações)" as FE1
-  component "CaptureRequestCard · CameraCapture\nIdentificationSummary <<planejado>>" as FE2 #FAFAFA
+  component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE0
+  component "lib/api/client.ts" as APIC
 }
-package "fai-web · controllers" {
-  [WardrobeController\nPOST /api/pieces/analysis · POST /api/pieces] as WC
-  [CaptureController /api/capture/**\n<<planejado>>] as CC #FAFAFA
-  [AdminController ai-review / vision\n<<planejado>>] as AC #FAFAFA
+package "fai-web (REST)" {
+  component "AdminController\n/api/admin/approvals/{…}\n/api/admin/moderation" as AdminController
+  component "WardrobeController\n/api/me/pieces/studio\n/api/pieces\n/api/pieces/analysis/batch\n/api/pieces/analysis/multi\n(+14 rotas)" as WardrobeController
 }
-package "fai-application · services" {
-  [WardrobeService\nanalyzeForCapture · create] as WS
-  [CaptureSessionService\n<<planejado>>] as CSS #FAFAFA
-  package "vision" {
-    [AdaptiveCaptureEngine\n+ CaptureProfiles] as ACE
-    [PhotographyQualityGate] as PQG
-    [LandmarkDetector] as LD
-    [BrandEnsembleResolver\n+ IdentificationHierarchy] as BER
-    [ProductKnowledgeBase] as KB
-    [CanonicalPhotographer\n+ PhotographySpecs] as CPH
-  }
-  [AiEngine (RF24)\nFLAT_LAY_STANDARDIZER · PIECE_ANALYZER\nCONTENT_MODERATOR · BRAND_LOGO_FINDER] as AIE
+package "fai-application (casos de uso)" {
+  component "IssuerReviewService" as IssuerReviewService
+  component "AdminService" as AdminService
+  component "WardrobeService" as WardrobeService
+  component "MultiPieceService" as MultiPieceService
+  component "SideEffectRunner" as SideEffectRunner <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
+  component "IssuerVerificationPolicy" as IssuerVerificationPolicy <<apoio>>
+  component "SealService" as SealService <<apoio>>
+  component "MediaService" as MediaService <<apoio>>
+  component "IdentityService" as IdentityService <<apoio>>
+  component "AssetCatalogService" as AssetCatalogService <<apoio>>
+  component "ChallengeService" as ChallengeService <<apoio>>
+  component "EmailSenderPort\n«LoggingEmailSender / ResendEmailSender»" as EmailSenderPort <<port>>
+  component "MediaStoragePort\n«LocalFileMediaStorage / S3MediaStorageAdapter»" as MediaStoragePort <<port>>
+  component "AnalyticsQueryPort\n«MysqlAnalyticsAdapter»" as AnalyticsQueryPort <<port>>
+  component "JobQueuePort\n«InMemoryJobQueue»" as JobQueuePort <<port>>
 }
-package "fai-infrastructure · adapters" {
-  [Repositórios JPA\nCaptureSessionRepository · CaptureRequestRepository\nPieceImageRepository · BrandPredictionRepository\nGarmentLandmarkRepository · GarmentEmbeddingRepository\nModelRegistryEntryRepository · ModelInferenceRepository\nAiReviewItemRepository · TrainingCandidateRepository\nDatasetSourceRepository · Kb*Repository] as REPOS
-  [S3MediaStorageAdapter\nLocalFileMediaStorage] as ST
-  [OnnxTextReader\n(OCR PP-OCRv4 local)] as OCR
+package "fai-domain (repositórios)" {
+  component "UserRepository\nBrandProfileRepository\nCelebrityProfileRepository\nModerationQueueRepository\nWardrobeItemRepository\nCommentRepository\nAuditLogRepository\nAiInferenceLogRepository\nBackupRecordRepository\nBrandRepository\n(+8)" as REPO_MySQL
 }
-database "MySQL\n• capture_sessions\n• capture_requests\n• piece_images\n• garment_landmarks\n• brand_predictions\n• model_registry\n• model_inferences\n• ai_review_items\n• training_candidates\n• dataset_sources\n• kb_brand_signatures\n• kb_product_lines / kb_product_models\n• garment_embeddings\n• wardrobe_items" as DB
-cloud "Segmentação / visão externas\nrembg · remove.bg · Gemini/Claude visão\n(Roboflow, Cloudinary, Adobe Photoshop: <<planejado>>)" as EXT
-
-FE0 --> WC : chama (HTTPS/JSON)
-FE1 --> FE0 : ilustrações por categoria
-FE2 ..> CC : chama
-WC --> WS : chama
-CC ..> CSS : chama
-AC ..> REPOS : lê/grava
-CSS ..> WS : analyzeForCapture
-CSS ..> ACE : decide
-CSS ..> PQG : evaluate
-CSS ..> LD : detect
-CSS ..> BER : resolve
-CSS ..> CPH : render / detail
-BER --> KB : lê evidências
-KB --> REPOS : lê
-WS --> AIE : chama
-WS --> OCR : lê etiqueta
-AIE --> EXT : chama (com fallback)
-CSS ..> ST : grava original e derivados
-WS --> REPOS : grava
-REPOS --> DB : JPA/Flyway (V29)
+database "MySQL\n• ai_inference_log\n• audit_log\n• backup_records\n• brand_profiles\n• brands\n• celebrity_profiles\n• comments\n• moderation_queue\n• photos\n• pipeline_jobs\n• processing_jobs_log\n• quality_scores\n(+6)" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+cloud "Resend" as CL_Resend
+cloud "S3" as CL_S3
+APIC --> AdminController : HTTPS/JSON
+APIC --> WardrobeController : HTTPS/JSON
+AdminController --> AdminService
+AdminController --> IssuerReviewService
+AdminService --> AI
+AdminService --> AnalyticsQueryPort
+AdminService --> REPO_MySQL
+AdminService ..> AssetCatalogService
+AdminService ..> ChallengeService
+AdminService ..> IdentityService
+AdminService ..> NotificationService
+EmailSenderPort --> CL_Resend
+FE0 --> APIC
+IssuerReviewService --> EmailSenderPort
+IssuerReviewService --> MediaStoragePort
+IssuerReviewService --> REPO_MySQL
+IssuerReviewService ..> IssuerVerificationPolicy
+IssuerReviewService ..> MediaService
+IssuerReviewService ..> NotificationService
+IssuerReviewService ..> SealService
+IssuerReviewService ..> SideEffectRunner
+MediaStoragePort --> CL_S3
+MultiPieceService --> AI
+MultiPieceService --> REPO_MySQL
+MultiPieceService ..> MediaService
+MultiPieceService ..> WardrobeService
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+WardrobeController --> MultiPieceService
+WardrobeController --> WardrobeService
+WardrobeService --> AI
+WardrobeService --> EV
+WardrobeService --> JobQueuePort
+WardrobeService --> REPO_MySQL
+WardrobeService ..> AssetCatalogService
+WardrobeService ..> MediaService
+WardrobeService ..> NotificationService
 @enduml

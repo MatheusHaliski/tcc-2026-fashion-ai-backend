@@ -1,0 +1,86 @@
+@startuml RF10_Sequencia_Pergunta
+title RF10 — Gerar recomendações de esquemas e peças na aba Copilot\nDiagrama de sequência — perguntar ao Copilot: intenção, modo, seis números (LookScorer), intenção de Hype e aceite do look
+skinparam backgroundColor #FFFFFF
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+}
+autonumber
+actor "Pessoa" as U
+participant "copilot/page.tsx\nLookScores" as FE
+participant "AutopilotController" as AC
+participant "CopilotService" as CS
+participant "AutopilotService" as AP
+participant "LookScorer\nRecommendationScoring" as LSC
+participant "HypeQueryService\nStyleCompatibility" as HQ
+participant "AiEngine (RF24)\nCOPILOT" as AI
+participant "DailyLookService" as DL
+database "MySQL" as DB
+
+U -> FE: escolhe o modo (SAFE padrão · DISCOVERY · EXPERIMENTAL)\ne escreve o pedido
+FE -> AC: POST /api/copilot/messages {message, view: copilot, mode}
+AC -> CS: ask(user, AskRequest)
+alt mensagem em branco
+  CS --> FE: 400 MENSAGEM_VAZIA
+else
+  CS -> CS: intent(message) — regex, sem IA
+  alt Intent.LOOKS
+    alt menos de 3 peças elegíveis
+      CS --> FE: 422 ACERVO_INSUFICIENTE {href: /pieces/new}
+    else
+      CS -> CS: lookPrompt (CopilotLexicon: ocasião, estilo, humor,\nestação, faixa de clima, peças citadas)
+      CS -> AP: daily(user, DailyRequest(ocasiões, humor, cidade,\nexcludeKeys = já mostradas), peças exigidas, faixa de clima)
+      AP -> AP: candidatas (LocalSchemeComposer) + pontuação\n(ocasião .35 · clima .25 · preferências .25 · diversidade .15)
+      AP -> AI: text(COPILOT): escolher 3 entre c1..c10 e justificar
+      AI --> AP: picks (falha ou JSON inválido = 3 primeiras, motivo local)
+      AP --> CS: suggestions (pieceIds, key, rationale)
+      CS -> DB: room_inventory (endereço de cada peça) → chips
+      CS -> LSC: scoreCards(user, looks, Mode.parse(mode))
+      LSC -> HQ: currentOf(PIECE, peças dos looks)
+      HQ --> LSC: Hype v2 das peças (média = dimensão Hype)
+      LSC -> HQ: StyleCompatibility.score(DNA, perfil do look)
+      LSC -> LSC: novelty (pares nunca combinados) · reuse (60+ dias parada)\n· usage (8+ usos = 100) · sustainability
+      opt modo informado
+        LSC -> LSC: ordena por rankValue(mode, scores)\n(dimensão nula = 50 neutro)
+      end
+      CS --> FE: 200 {text, looks[{title, pieces, why, scores}], mode, intent}
+    end
+  else Intent.HYPE (pergunta de relevância, não pedido para montar)
+    CS -> HQ: currentOf(PIECE ou SCHEME, itens do próprio dono)
+    CS -> CS: raras (raridade ≥ 50) · voltando (60+ dias parada e\nsemelhantes crescendo ≥ 15% ou trend ≥ 60) · crescendo\n· maior Hype · looks por potencial (0,6 trend + 0,4 velocidade)
+    CS -> HQ: StyleCompatibility.score(DNA, peça) — ao lado, nunca somado
+    CS --> FE: 200 {text + aviso copilot.hype.aviso, chips{hype, compatibility,\ndaysUnused}, actions COMPOSE_WITH · OPEN_HYPE (/history?tab=hype)}
+  else Intent.GENERAL
+    CS -> AI: text(COPILOT, resumo compacto + peças p1..pn + pergunta)
+    AI --> CS: texto citando pN (sem IA = resposta local)
+    CS -> CS: valida refs: peça fora da lista é descartada
+    CS --> FE: 200 {text, chips, intent: GENERAL}
+  else WHERE_IS · FORGOTTEN · DIFFERENT · DIAGNOSIS · IMPROVE_INVENTORY
+    CS -> DB: wardrobe_items · room_inventory · diário de uso · Inventory Score
+    CS --> FE: 200 {text, chips, actions, purchaseSuggestions?}
+  end
+end
+
+U -> FE: "Salvar como look" ou "Criar look com elas"
+FE -> AC: POST /api/copilot/looks {pieceIds, title, occasion, style, mood,\nseason, description, background}
+AC -> CS: accept(user, pieceIds, …)
+CS -> AP: createScheme(user, pieceIds, título, ocasião, SchemeOrigin.COPILOT, …)
+alt menos de 2 peças
+  AP --> FE: 400 SEM_PECAS
+else peça de outra pessoa
+  AP --> FE: 403 (Guard.requireOwner, auditado)
+else
+  AP -> DB: INSERT schemes (origin COPILOT, AI_ASSISTED), scheme_items\n(SchemeService.create)
+  CS -> DL: register(user, scheme, DailyLookSource.COPILOT, hoje)
+  alt peça indisponível
+    DL --> FE: 409 PECA_INDISPONIVEL (nada é gravado)
+  else
+    DL -> DB: INSERT/UPDATE daily_looks
+    DL ->> DL: DailyLookRegistered (AFTER_COMMIT → uso,\nLOOK_WORN e PIECE_USED — ver RF42)
+    CS --> FE: 201 {schemeId, origin: COPILOT, dailyLook}
+    FE -> FE: toast "salvo"; não redireciona: a tela procura\nscheme.id ou id, e a API devolve schemeId (divergência)
+  end
+end
+@enduml

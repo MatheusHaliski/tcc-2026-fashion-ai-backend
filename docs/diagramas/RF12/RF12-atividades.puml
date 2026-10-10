@@ -1,0 +1,70 @@
+@startuml RF12_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF12 — Visualizar & Editar a página 'Minhas Fotos' & Adicionar mais de uma peça por vez dentro do sistema\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
+start
+:Abre /photos, /pieces/[id], /pieces/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/photos/{id}/file\nGET /api/me/photos/insights\nGET /api/me/photos/timeline;
+|Pessoa usuária|
+:Minhas fotos com filtros (origem,\nocasião, estilo, cor, mês…;
+|Tela (Next.js)|
+:GET /api/me/photos;
+|API (Spring Boot)|
+:PhotoController.list\n→ PhotoService.gallery;
+|Dados e serviços|
+:Lê: photos\nwardrobe_items\nschemes;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Excluir várias fotos)
+    :POST /api/photos/bulk-deletion\n→ PhotoService.bulkDelete\nlê: photos, wardrobe_items\nestado: deletedAt → set;
+  case (Excluir foto [pede confirmação qu…)
+    :DELETE /api/photos/{id}\n→ PhotoService.delete\nvalida: CONFIRMACAO_NECESSARIA\nlê: photos, wardrobe_items\nusa: Guard.requireOwner\nestado: deletedAt → set;
+  case (Curadoria: duplicatas, baixa qual…)
+    :POST /api/me/photos/curation\n→ PhotoService.curate\nlê: photos\nusa: MediaService.readImage\nia: PHOTO_CURATOR;
+  case (Substituir a foto da peça [reproc…)
+    :PUT /api/pieces/{id}/image\n→ WardrobeService.replaceImage\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.put …\nia: STUDIO_ENHANCER;
+  case (RF12.CA02 / RF15.CA02 — Salvar a…)
+    :POST /api/photos/{id}/edits\n→ PhotoService.saveEdit\nlê: photos, wardrobe_items\nusa: Guard.requireOwner, Guard.requireCanCreate,\nWardrobeService.replaceImage …;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Marcar/desmarcar momento-chave, Editar a peça,
+  Excluir a peça, Cadastrar a peça a partir do…,
+  Analisar várias fotos de uma…, Várias peças numa
+  foto: a IA…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
+stop
+@enduml

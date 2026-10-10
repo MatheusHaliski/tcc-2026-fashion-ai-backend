@@ -1,0 +1,192 @@
+[
+  {
+    "width": 375,
+    "photoCount": 1,
+    "fixture": true,
+    "externalVisionMocked": true,
+    "sourcePhoto": "synthetic five-shirt fixture, not user photo",
+    "steps": 4,
+    "automaticallyOpensMore": true,
+    "modalCount": 0,
+    "slotsPerPhoto": 5,
+    "namePreserved": true,
+    "brandAvailable": true,
+    "brandPreserved": true,
+    "cropPreserved": true,
+    "photosPreserveEdits": true,
+    "moreGeometry": {
+      "viewport": 375,
+      "scrollWidth": 375,
+      "overflow": false
+    },
+    "previewGeometry": {
+      "x": 42,
+      "y": 2600.5625,
+      "width": 291,
+      "height": 575.09375
+    },
+    "formGeometry": {
+      "x": 42,
+      "y": 964.578125,
+      "width": 291,
+      "height": 1615.984375
+    },
+    "mainEditorWiderAtDesktop": false,
+    "originalPhotoCollapsed": true,
+    "brandSelectionPersists": true,
+    "artGeometry": {
+      "viewport": 375,
+      "scrollWidth": 375,
+      "overflow": false
+    },
+    "reviewGeometry": {
+      "viewport": 375,
+      "scrollWidth": 375,
+      "overflow": false
+    },
+    "independentPiecesSaved": 5,
+    "uploadedCrops": [
+      {
+        "path": "/api/pieces/analysis/multi/five-shirts-1/pieces",
+        "index": "0",
+        "width": 239,
+        "height": 281
+      },
+      {
+        "path": "/api/pieces/analysis/multi/five-shirts-1/pieces",
+        "index": "1",
+        "width": 250,
+        "height": 281
+      },
+      {
+        "path": "/api/pieces/analysis/multi/five-shirts-1/pieces",
+        "index": "2",
+        "width": 250,
+        "height": 281
+      },
+      {
+        "path": "/api/pieces/analysis/multi/five-shirts-1/pieces",
+        "index": "3",
+        "width": 250,
+        "height": 281
+      },
+      {
+        "path": "/api/pieces/analysis/multi/five-shirts-1/pieces",
+        "index": "4",
+        "width": 250,
+        "height": 281
+      }
+    ],
+    "pageErrors": []
+  },
+  {
+    "width": 1280,
+    "photoCount": 2,
+    "fixture": true,
+    "externalVisionMocked": true,
+    "sourcePhoto": "synthetic five-shirt fixture, not user photo",
+    "steps": 4,
+    "automaticallyOpensMore": true,
+    "modalCount": 0,
+    "slotsPerPhoto": 5,
+    "namePreserved": true,
+    "brandAvailable": true,
+    "brandPreserved": true,
+    "cropPreserved": true,
+    "photosPreserveEdits": true,
+    "moreGeometry": {
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "overflow": false
+    },
+    "previewGeometry": {
+      "x": 934,
+      "y": 550.09375,
+      "width": 280,
+      "height": 559.796875
+    },
+    "formGeometry": {
+      "x": 326,
+      "y": 728.78125,
+      "width": 588,
+      "height": 791.734375
+    },
+    "mainEditorWiderAtDesktop": true,
+    "originalPhotoCollapsed": true,
+    "brandSelectionPersists": true,
+    "artGeometry": {
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "overflow": false
+    },
+    "reviewGeometry": {
+      "viewport": 1280,
+      "scrollWidth": 1280,
+      "overflow": false
+    },
+    "independentPiecesSaved": 10,
+    "uploadedCrops": [
+      {
+        "path": "/api/pieces/analysis/multi/five-shirts-1/pieces",
+        "index": "0",
+        "width": 239,
+        "height": 281
+      },
+      {
+        "path": "/api/pieces/analysis/multi/five-shirts-1/pieces",
+        "index": "1",
+        "width": 250,
+        "height": 281
+      },
+      {
+        "path": "/api/pieces/analysis/multi/five-shirts-1/pieces",
+        "index": "2",
+        "width": 250,
+        "height": 281
+      },
+      {
+        "path": "/api/pieces/analysis/multi/five-shirts-1/pieces",
+        "index": "3",
+        "width": 250,
+        "height": 281
+      },
+      {
+        "path": "/api/pieces/analysis/multi/five-shirts-1/pieces",
+        "index": "4",
+        "width": 250,
+        "height": 281
+      },
+      {
+        "path": "/api/pieces/analysis/multi/five-shirts-2/pieces",
+        "index": "0",
+        "width": 250,
+        "height": 281
+      },
+      {
+        "path": "/api/pieces/analysis/multi/five-shirts-2/pieces",
+        "index": "1",
+        "width": 250,
+        "height": 281
+      },
+      {
+        "path": "/api/pieces/analysis/multi/five-shirts-2/pieces",
+        "index": "2",
+        "width": 250,
+        "height": 281
+      },
+      {
+        "path": "/api/pieces/analysis/multi/five-shirts-2/pieces",
+        "index": "3",
+        "width": 250,
+        "height": 281
+      },
+      {
+        "path": "/api/pieces/analysis/multi/five-shirts-2/pieces",
+        "index": "4",
+        "width": 250,
+        "height": 281
+      }
+    ],
+    "pageErrors": []
+  }
+]

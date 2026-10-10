@@ -47,4 +47,15 @@ public interface CatalogProductRepository extends JpaRepository<CatalogProduct, 
             + "ORDER BY p.owners_count DESC LIMIT 200", nativeQuery = true)
     List<CatalogProduct> candidates(@Param("brandId") String brandId, @Param("category") String category,
                                     @Param("subcategory") String subcategory, @Param("terms") String terms);
+
+    /** Candidatos que têm a cor pedida no produto ou numa variante ("camiseta azul": a que existe em azul). */
+    @Query(value = "SELECT p.* FROM catalog_products p WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') "
+            + "AND (:brandId IS NULL OR p.brand_id = :brandId) AND (:category IS NULL OR p.category = :category) "
+            + "AND (:subcategory IS NULL OR p.subcategory = :subcategory) "
+            + "AND (p.color = :color OR EXISTS (SELECT 1 FROM catalog_variants v WHERE v.product_id = p.id AND v.color = :color)) "
+            + "AND (:terms IS NULL OR MATCH(p.search_text) AGAINST (:terms IN BOOLEAN MODE)) "
+            + "ORDER BY p.owners_count DESC LIMIT 200", nativeQuery = true)
+    List<CatalogProduct> candidatesWithColor(@Param("brandId") String brandId, @Param("category") String category,
+                                             @Param("subcategory") String subcategory, @Param("color") String color,
+                                             @Param("terms") String terms);
 }

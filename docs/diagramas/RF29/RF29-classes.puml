@@ -1,116 +1,209 @@
 @startuml RF29_Classes
-title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings do guarda-roupa\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF29 — FAI Inventory Score, destaques, evolução, conquistas e rankings do guarda-roupa\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +email: String
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String
-  +birthDate: String
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  .. +20 campos ..
+package "fai-domain (entidades JPA)" {
+  class Brand <<brands>> {
+    +id: UUID
+    +name: String
+    +slug: String
+    +logoUrl: String
+    +website: String
+    +source: BrandSource
+    +catalogOrigin: CatalogOrigin
+    +fixtureKey: String
+    +sourceConfidence: BigDecimal
+    +verifiedAt: Instant
+    .. +2 campos ..
+  }
+  class BrandProfile <<brand_profiles>> {
+    +id: UUID
+    +owner: User
+    +brandName: String
+    +slug: String
+    +logoUrl: String
+    +coverUrl: String
+    +bio: String
+    +storeUrl: String
+    +cnpj: String
+    +razaoSocial: String
+    .. +21 campos ..
+  }
+  class InventoryScoreSnapshot <<inventory_score_snapshots>> {
+    +id: UUID
+    +userId: UUID
+    +periodType: String
+    +periodDate: LocalDate
+    +score: Integer
+    +dimensionsJson: String
+    +metricsJson: String
+    +eligible: boolean
+    +computedAt: Instant
+  }
+  class PieceUsageDiaryEntry <<piece_usage_diary>> {
+    +id: UUID
+    +wardrobeItemId: UUID
+    +userId: UUID
+    +usedOn: LocalDate
+    +occasion: String
+    +note: String
+    +source: String
+    +schemeId: UUID
+  }
+  class RankingOptIn <<ranking_opt_ins>> {
+    +userId: UUID
+    +optedIn: boolean
+    +shareCity: boolean
+    +city: String
+  }
+  class RankingPosition <<ranking_positions>> {
+    +id: UUID
+    +segment: String
+    +userId: UUID
+    +position: int
+    +total: int
+    +topPercent: BigDecimal
+    +value: BigDecimal
+    +computedAt: Instant
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class UserAchievement <<user_achievements>> {
+    +id: UUID
+    +userId: UUID
+    +achievementCode: String
+    +secret: boolean
+    +grantedAt: Instant
+  }
+  class WardrobeAvailabilityChange <<wardrobe_availability_log>> {
+    +id: UUID
+    +wardrobeItemId: UUID
+    +userId: UUID
+    +available: boolean
+    +changedAt: Instant
+  }
+  class WardrobeItem <<wardrobe_items>> {
+    +id: UUID
+    +user: User
+    +brandProfile: BrandProfile
+    +brand: Brand
+    +name: String
+    +category: String
+    +subcategory: String
+    +sex: String
+    +brandName: String
+    +brandLogoUrl: String
+    .. +70 campos ..
+  }
 }
-class InventoryScoreSnapshot {
-  +id: UUID
-  +userId: UUID
-  +periodType: String
-  +periodDate: LocalDate
-  +score: Integer
-  +dimensionsJson: String
-  +metricsJson: String
-  +eligible: boolean
-  +computedAt: Instant
+package "fai-domain (enums)" {
+  enum ApprovalStatus {
+    PENDENTE
+    AJUSTES
+    APROVADO
+    RECUSADO
+    SUSPENSO
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
+  enum PhotoProcessingStatus {
+    NEW
+    MODERATING
+    PROCESSING
+    COMPLETED
+    NEEDS_REUPLOAD
+    FAILED
+  }
+  enum Model3dStatus {
+    QUEUED
+    PROCESSING
+    COMPLETED
+    FAILED
+  }
 }
-class RankingOptIn {
-  +userId: UUID
-  +optedIn: boolean
-  +shareCity: boolean
-  +city: String
-  +updatedAt: Instant
+package "fai-application" {
+  class InventoryScoreService <<service>> {
+    +highlightsTab()
+    +explain()
+    +improvementHints()
+    +describe()
+    +album()
+    +retrospective()
+    +optIn()
+    +rankings()
+  }
 }
-class RankingPosition {
-  +id: UUID
-  +segment: String
-  +userId: UUID
-  +position: int
-  +total: int
-  +topPercent: BigDecimal
-  +value: BigDecimal
-  +computedAt: Instant
-}
-class UserAchievement {
-  +id: UUID
-  +userId: UUID
-  +achievementCode: String
-  +secret: boolean
-  +grantedAt: Instant
-}
-class WardrobeItem {
-  +user: User
-  +brandProfile: BrandProfile
-  +brand: Brand
-  +name: String
-  +category: String
-  +subcategory: String
-  +sex: String
-  +brandName: String
-  +color: String
-  +material: String
-  +sizeLabel: String
-  +market: String
-  +styleTags: String
-  +occasionTags: String
-  .. +54 campos ..
-}
-class PieceUsageDiaryEntry {
-  +id: UUID
-  +wardrobeItemId: UUID
-  +userId: UUID
-  +usedOn: LocalDate
-  +occasion: String
-  +note: String
-  +source: String
-  +schemeId: UUID
-  +createdAt: Instant
-}
-class WardrobeAvailabilityChange {
-  +id: UUID
-  +wardrobeItemId: UUID
-  +userId: UUID
-  +available: boolean
-  +changedAt: Instant
-}
-}
+InventoryScoreService ..> InventoryScoreSnapshot : usa
+InventoryScoreService ..> PieceUsageDiaryEntry : usa
+InventoryScoreService ..> RankingOptIn : usa
+InventoryScoreService ..> RankingPosition : usa
+InventoryScoreService ..> User : usa
+InventoryScoreService ..> WardrobeAvailabilityChange : usa
+Brand "*" --> "1" BrandProfile : brandProfile
+BrandProfile "1" --> "1" User : owner
+BrandProfile --> ApprovalStatus
 InventoryScoreSnapshot ..> User : userId
 PieceUsageDiaryEntry ..> User : userId
 PieceUsageDiaryEntry ..> WardrobeItem : wardrobeItemId
 RankingOptIn ..> User : userId
 RankingPosition ..> User : userId
+User --> AccountStatus
 UserAchievement ..> User : userId
 WardrobeAvailabilityChange ..> User : userId
 WardrobeAvailabilityChange ..> WardrobeItem : wardrobeItemId
+WardrobeItem "*" --> "1" Brand : brand
+WardrobeItem "*" --> "1" BrandProfile : brandProfile
 WardrobeItem "*" --> "1" User : user
-note top of User : tabela users
-note top of InventoryScoreSnapshot : tabela inventory_score_snapshots
-note top of RankingOptIn : tabela ranking_opt_ins
-note top of RankingPosition : tabela ranking_positions
-note top of UserAchievement : tabela user_achievements
-note top of WardrobeItem : tabela wardrobe_items
-note top of PieceUsageDiaryEntry : tabela piece_usage_diary
-note top of WardrobeAvailabilityChange : tabela wardrobe_availability_log
+WardrobeItem --> AvailabilityStatus
+WardrobeItem --> Model3dStatus
+WardrobeItem --> ModerationStatus
+WardrobeItem --> PhotoProcessingStatus
 @enduml

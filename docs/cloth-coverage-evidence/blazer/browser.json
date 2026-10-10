@@ -1,0 +1,23 @@
+{
+  "fixture": true,
+  "errors": [],
+  "audit": [
+    {
+      "shown": true,
+      "dressed": true,
+      "garments": [
+        "peca-w:jeans",
+        "cabedal-w:shoes",
+        "sola-w:shoes",
+        "cadarco-w:shoes",
+        "peca-fai-padrao-camiseta",
+        "punho-fai-padrao-camiseta",
+        "punho-fai-padrao-camiseta",
+        "gola-fai-padrao-camiseta",
+        "peca-w:shirt",
+        "punho-w:shirt",
+        "punho-w:shirt"
+      ]
+    }
+  ]
+}

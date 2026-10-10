@@ -38,6 +38,10 @@ import java.util.UUID;
 @Entity
 @Table(name = "schemes")
 public class Scheme extends VersionedAuditableEntity {
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tipo_look_id")
+    private TipoLook tipoLook;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -181,15 +185,6 @@ public class Scheme extends VersionedAuditableEntity {
 
     @Column(name = "rendering_metadata_json", columnDefinition = "json")
     private String renderingMetadataJson;
-
-    @Column(name = "hype_score", precision = 6, scale = 2)
-    private BigDecimal hypeScore;
-
-    @Column(name = "hype_score_global", precision = 6, scale = 2)
-    private BigDecimal hypeScoreGlobal;
-
-    @Column(name = "hype_group_id", length = 36)
-    private UUID hypeGroupId;
 
     @Column(name = "grouping_id", length = 36)
     private UUID groupingId;

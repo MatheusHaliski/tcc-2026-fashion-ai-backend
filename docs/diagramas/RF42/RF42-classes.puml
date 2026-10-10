@@ -1,87 +1,164 @@
 @startuml RF42_Classes
-title RF42 — Marcar um look como "Look do dia"\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF42 — Marcar um look como 'Look do dia'\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class User <<@Table users>> {
-  +username: String
-  +lookDoDiaPanelVersion: HypeScorePanelVersion
+package "fai-domain (entidades JPA)" {
+  class DailyLook <<daily_looks>> {
+    +id: UUID
+    +user: User
+    +scheme: Scheme
+    +materializedFrom: DailyLook
+    +lookDate: LocalDate
+    +source: DailyLookSource
+    +feedback: DailyLookFeedback
+    +feedbackAt: Instant
+    +weekPlanDayId: UUID
+  }
+  class HypeSignalDaily <<hype_signal_daily>> {
+    +id: UUID
+    +entityType: HypeEntityType
+    +entityId: UUID
+    +signalType: HypeSignalType
+    +signalDate: LocalDate
+    +eventCount: int
+    +weightedCount: BigDecimal
+  }
+  class Scheme <<schemes>> {
+    +id: UUID
+    +user: User
+    +originalScheme: Scheme
+    +title: String
+    +description: String
+    +creationMode: CreationMode
+    +origin: SchemeOrigin
+    +style: String
+    +occasion: String
+    +season: Season
+    .. +46 campos ..
+  }
+  class SchemeItem <<scheme_items>> {
+    +id: UUID
+    +scheme: Scheme
+    +wardrobeItem: WardrobeItem
+    +slot: SchemeSlot
+    +tryOnLayer: TryOnLayer
+    +sortOrder: int
+    +zIndex: int
+    +positionX: BigDecimal
+    +positionY: BigDecimal
+    +scale: BigDecimal
+    .. +4 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class WardrobeItem <<wardrobe_items>> {
+    +id: UUID
+    +user: User
+    +brandProfile: BrandProfile
+    +brand: Brand
+    +name: String
+    +category: String
+    +subcategory: String
+    +sex: String
+    +brandName: String
+    +brandLogoUrl: String
+    .. +70 campos ..
+  }
 }
-class DailyLook <<@Table daily_looks>> {
-  +user: User
-  +scheme: Scheme
-  +materializedFrom: DailyLook
-  +lookDate: LocalDate
-  +source: DailyLookSource = MANUAL
-  +feedback: DailyLookFeedback
-  +feedbackAt: Instant
-  +weekPlanDayId: UUID
+package "fai-domain (enums)" {
+  enum SchemeStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+  }
+  enum RenderStatus {
+    PENDING
+    RENDERING
+    ENHANCING
+    COMPOSITING
+    CACHED
+    COMPLETED
+    FAILED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
+  enum PhotoProcessingStatus {
+    NEW
+    MODERATING
+    PROCESSING
+    COMPLETED
+    NEEDS_REUPLOAD
+    FAILED
+  }
 }
-class Scheme <<@Table schemes>> {
-  +user: User
-  +title: String
-  +status: SchemeStatus
-  +lookDoDia: boolean
-  +lookDoDiaCount: int
-  +hypeScore: BigDecimal
+package "fai-application" {
+  class LookbookService <<service>> {
+    +dailyLookTab()
+    +markDailyLook()
+  }
 }
-class SchemeItem <<@Table scheme_items>> {
-  +scheme: Scheme
-  +wardrobeItem: WardrobeItem
-}
-class WardrobeItem <<@Table wardrobe_items>> {
-  +availabilityStatus: AvailabilityStatus
-  +wearCount: int
-  +lastWornDate: LocalDate
-  +lookDoDiaCount: int
-}
-}
-package "fai-domain · enums" {
-enum DailyLookSource {
-  MANUAL
-  AUTOPILOTO
-  COPILOT
-  VISTA_ME
-  SMART_MIRROR
-}
-enum DailyLookFeedback {
-  ADOREI
-  NAO_USEI
-  NAO_GOSTEI
-}
-}
-package "fai-application · service" {
-class DailyLookService {
-  +register(user, scheme, source, date): DailyLook
-  +today(userId): Optional<DailyLook>
-  +feedback(user, date, feedback): Map
-  +history(user): List
-  +pendingFeedback(user): Map
-  +view(dl): Map
-}
-class LookbookService {
-  +markDailyLook(user, schemeId): Map
-  +dailyLookTab(user, withAi): Map
-}
-}
-DailyLook "*" --> "1" User
-DailyLook "*" --> "1" Scheme
-DailyLook "*" --> "0..1" DailyLook : materializedFrom
-SchemeItem "*" --> "1" Scheme
-SchemeItem "*" --> "1" WardrobeItem
-Scheme "*" --> "1" User
-DailyLook --> DailyLookSource
-DailyLook --> DailyLookFeedback
-LookbookService --> DailyLookService
-DailyLookService --> DailyLook : grava
-note bottom of DailyLook : uq_daily_looks_user_date (user_id, look_date):\num Look do Dia por pessoa por dia
+LookbookService ..> Scheme : usa
+LookbookService ..> SchemeItem : usa
+LookbookService ..> User : usa
+LookbookService ..> WardrobeItem : usa
+DailyLook "*" --> "1" Scheme : scheme
+DailyLook "*" --> "1" User : user
+Scheme "*" --> "1" User : user
+Scheme --> RenderStatus
+Scheme --> SchemeStatus
+SchemeItem "*" --> "1" Scheme : scheme
+SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
+User --> AccountStatus
+WardrobeItem "*" --> "1" User : user
+WardrobeItem --> AvailabilityStatus
+WardrobeItem --> ModerationStatus
+WardrobeItem --> PhotoProcessingStatus
 @enduml

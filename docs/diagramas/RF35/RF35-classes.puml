@@ -1,116 +1,172 @@
 @startuml RF35_Classes
-title RF35 — Explorar as "Coleções" de uma marca: busca por coleção, Collections Insights e mini lojas 3D\nDiagrama de classes — entidades JPA reais (fai-domain) e enums
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF35 — Explorar as 'Coleções' de uma marca: busca por coleção, Collections Insights e mini lojas 3D\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class User {
-  +username: String
-  +displayName: String
-  +email: String
-  +emailHash: String
-  +emailVerified: boolean
-  +phone: String
-  +birthDate: String
-  +passwordHash: String
-  +profileType: ProfileType
-  +role: String
-  .. +20 campos ..
+package "fai-domain (entidades JPA)" {
+  class Brand <<brands>> {
+    +id: UUID
+    +name: String
+    +slug: String
+    +logoUrl: String
+    +website: String
+    +source: BrandSource
+    +catalogOrigin: CatalogOrigin
+    +fixtureKey: String
+    +sourceConfidence: BigDecimal
+    +verifiedAt: Instant
+    .. +2 campos ..
+  }
+  class BrandProfile <<brand_profiles>> {
+    +id: UUID
+    +owner: User
+    +brandName: String
+    +slug: String
+    +logoUrl: String
+    +coverUrl: String
+    +bio: String
+    +storeUrl: String
+    +cnpj: String
+    +razaoSocial: String
+    .. +21 campos ..
+  }
+  class Scheme <<schemes>> {
+    +id: UUID
+    +user: User
+    +originalScheme: Scheme
+    +title: String
+    +description: String
+    +creationMode: CreationMode
+    +origin: SchemeOrigin
+    +style: String
+    +occasion: String
+    +season: Season
+    .. +46 campos ..
+  }
+  class SchemeGrouping <<scheme_groupings>> {
+    +id: UUID
+    +owner: User
+    +type: GroupingType
+    +label: String
+    +description: String
+    +coverUrl: String
+    +atmospherePrompt: String
+    +periodFrom: Integer
+    +periodTo: Integer
+    +accentColor: String
+    .. +1 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +24 campos ..
+  }
+  class WardrobeItem <<wardrobe_items>> {
+    +id: UUID
+    +user: User
+    +brandProfile: BrandProfile
+    +brand: Brand
+    +name: String
+    +category: String
+    +subcategory: String
+    +sex: String
+    +brandName: String
+    +brandLogoUrl: String
+    .. +70 campos ..
+  }
 }
-class BrandProfile {
-  +owner: User
-  +brandName: String
-  +slug: String
-  +logoUrl: String
-  +coverUrl: String
-  +bio: String
-  +storeUrl: String
-  +cnpj: String
-  +razaoSocial: String
-  +nomeFantasia: String
-  +fashionCategory: String
-  +commercialContact: String
-  +officialHashtag: String
-  +activityProofUrl: String
-  .. +11 campos ..
+package "fai-domain (enums)" {
+  enum ApprovalStatus {
+    PENDENTE
+    AJUSTES
+    APROVADO
+    RECUSADO
+    SUSPENSO
+  }
+  enum SchemeStatus {
+    DRAFT
+    PUBLISHED
+    ARCHIVED
+  }
+  enum RenderStatus {
+    PENDING
+    RENDERING
+    ENHANCING
+    COMPOSITING
+    CACHED
+    COMPLETED
+    FAILED
+  }
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum AvailabilityStatus {
+    AVAILABLE
+    UNAVAILABLE
+    ARCHIVED
+  }
+  enum ModerationStatus {
+    PENDING
+    APPROVED
+    REJECTED_POLICY
+    REJECTED_NOT_CLOTHING
+  }
 }
-class SchemeGrouping {
-  +owner: User
-  +type: GroupingType
-  +label: String
-  +description: String
-  +coverUrl: String
-  +atmospherePrompt: String
-  +periodFrom: Integer
-  +periodTo: Integer
-  +accentColor: String
-  +sortOrder: int
+package "fai-application" {
+  class LookbookService <<service>> {
+    +createGrouping()
+    +updateGrouping()
+    +deleteGrouping()
+    +groupingsOf()
+  }
 }
-class Scheme {
-  +user: User
-  +originalScheme: Scheme
-  +title: String
-  +description: String
-  +creationMode: CreationMode
-  +origin: SchemeOrigin
-  +style: String
-  +occasion: String
-  +season: Season
-  +mood: Mood
-  +visibility: Visibility
-  +status: SchemeStatus
-  +displayMode: DisplayMode
-  +disponivel: boolean
-  .. +41 campos ..
-}
-class WardrobeItem {
-  +user: User
-  +brandProfile: BrandProfile
-  +brand: Brand
-  +name: String
-  +category: String
-  +subcategory: String
-  +sex: String
-  +brandName: String
-  +color: String
-  +material: String
-  +sizeLabel: String
-  +market: String
-  +styleTags: String
-  +occasionTags: String
-  .. +54 campos ..
-}
-}
-package "fai-domain · enums" {
-enum GroupingType {
-  COLLECTION
-  PROMOTION
-  SIGNATURE_SERIES
-  EVOLUTION
-  STYLE_LINE
-  ERA
-  PHASE
-  SEASON
-  TOUR
-}
-}
+LookbookService ..> Scheme : usa
+LookbookService ..> SchemeGrouping : usa
+LookbookService ..> User : usa
+LookbookService ..> WardrobeItem : usa
+Brand "*" --> "1" BrandProfile : brandProfile
 BrandProfile "1" --> "1" User : owner
+BrandProfile --> ApprovalStatus
 Scheme "*" --> "1" User : user
+Scheme --> RenderStatus
+Scheme --> SchemeStatus
 SchemeGrouping "*" --> "1" User : owner
-SchemeGrouping --> GroupingType
+User --> AccountStatus
+WardrobeItem "*" --> "1" Brand : brand
 WardrobeItem "*" --> "1" BrandProfile : brandProfile
 WardrobeItem "*" --> "1" User : user
-note top of User : tabela users
-note top of BrandProfile : tabela brand_profiles
-note top of SchemeGrouping : tabela scheme_groupings
-note top of Scheme : tabela schemes
-note top of WardrobeItem : tabela wardrobe_items
+WardrobeItem --> AvailabilityStatus
+WardrobeItem --> ModerationStatus
 @enduml

@@ -1,28 +1,37 @@
 @startuml RF42_MaquinaDeEstados_LookDoDia
 !pragma layout smetana
-title RF42 — DailyLook: Look do Dia de uma data (marcação, troca, avaliação e continuidade)
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-state "Sem Look do Dia na data" as Vazio
-state "Marcado\n(feedback = null)" as Marcado
-state "Avaliado" as Avaliado {
-  state "ADOREI" as Adorei
-  state "NAO_USEI" as NaoUsei
-  state "NAO_GOSTEI" as NaoGostei
+title RF42 — ciclo de vida de DailyLook.feedback\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum DailyLookFeedback · tabela daily_looks
+
+state "DailyLook.feedback" as Ciclo_DailyLook {
+  state Ciclo_DailyLook_ADOREI as "ADOREI"
+  state Ciclo_DailyLook_NAO_USEI as "NAO_USEI"
+  state Ciclo_DailyLook_NAO_GOSTEI as "NAO_GOSTEI"
 }
-[*] --> Vazio
-Vazio --> Marcado : POST /api/me/daily-look\n(ou Autopiloto, Copilot, Vista-me, Smart Mirror)
-Vazio --> Vazio : 409 PECA_INDISPONIVEL
-Vazio --> Marcado : today() materializa cópia do\nlook anterior (materializedFrom)
-Marcado --> Marcado : novo register na mesma data\n(troca o esquema e a origem)
-Marcado --> Avaliado : PUT /api/me/daily-looks/{date}/feedback
-Avaliado --> Avaliado : nova avaliação substitui
-Avaliado --> [*] : vira histórico (GET /api/me/daily-looks)
-Marcado --> [*] : passa o dia sem avaliação\n(lembrete após 18h — pending-feedback)
-note right of Marcado : schemes.look_do_dia = true;\naparece na Passarela 3D (RF33)\nenquanto for a data de hoje
+Ciclo_DailyLook --> Ciclo_DailyLook_ADOREI : feedback()\nPUT /api/me/daily-looks/{date}/feedback
+Ciclo_DailyLook --> Ciclo_DailyLook_NAO_USEI : feedback()\nPUT /api/me/daily-looks/{date}/feedback
+Ciclo_DailyLook --> Ciclo_DailyLook_NAO_GOSTEI : feedback()\nPUT /api/me/daily-looks/{date}/feedback
+note right of Ciclo_DailyLook
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
+end note
 @enduml

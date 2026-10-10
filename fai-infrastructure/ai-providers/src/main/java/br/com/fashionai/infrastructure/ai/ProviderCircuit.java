@@ -33,16 +33,24 @@ public final class ProviderCircuit {
     }
 
     public static <T> T run(String provider, Callable<T> call) throws Exception {
+        return run(provider, call, true);
+    }
+
+    public static <T> T run(String provider, Callable<T> call, boolean retry) throws Exception {
         if (!closed(provider)) {
             throw new IllegalStateException("Circuito aberto para " + provider);
         }
         Exception last = null;
-        for (int attempt = 1; attempt <= 2; attempt++) {
+        for (int attempt = 1; attempt <= (retry ? 2 : 1); attempt++) {
             try {
                 T result = call.call();
                 STATES.remove(provider);
                 return result;
             } catch (Exception e) {
+                if (Thread.currentThread().isInterrupted() || e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                    throw e;
+                }
                 last = e;
                 State s = STATES.compute(provider, (k, old) -> {
                     int failures = (old == null ? 0 : old.failures) + 1;
@@ -50,7 +58,7 @@ public final class ProviderCircuit {
                 });
                 log.warn("{}: tentativa {} falhou ({}){}", provider, attempt, e.getMessage(),
                         s.openUntil != null ? " — circuito aberto por 60 s" : "");
-                if (attempt == 1 && s.openUntil == null && retryable(e)) {
+                if (retry && attempt == 1 && s.openUntil == null && retryable(e)) {
                     Thread.sleep(500);
                     continue;
                 }

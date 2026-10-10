@@ -1,79 +1,87 @@
 @startuml RF9_Sequencia
-title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Autor" as U
-participant "Frontend\nschemes/[id]/edit · SchemeBuilder" as FE
-participant "SchemeController" as SC
-participant "SchemeService" as SS
-participant "Guard" as G
-participant "AiEngine (RF24)\nEDIT_ASSISTANT" as AI
-participant "SealService" as SEAL
-participant "WardrobeController" as WC
-participant "WardrobeService" as WS
-database "MySQL" as DB
-U -> FE: abre edição do esquema
-FE -> SC: GET /api/schemes/{id}
-SC -> SS: get(viewer, id)
-SS -> DB: SELECT schemes, scheme_items
-SS --> FE: 200 {scheme, canEdit}
-alt canEdit = false (CA04)
-  FE -> FE: botão Editar oculto
-else autor
-  FE -> FE: SchemeBuilder(initial) — título, descrição,\nocasião, visibilidade, arte, peças (CA01)
+autonumber "<b>0."
+title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /schemes/[id]/edit" as P
+control "SchemeController" as SchemeController
+participant "SchemeService" as SchemeService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+participant "BackgroundStudioService" as BackgroundStudioService
+participant "MediaService" as MediaService
+== Editar esquema ==
+U -> P : Editar esquema
+P -> SchemeController : PUT /api/schemes/{id}
+SchemeController -> SchemeService : update()
+activate SchemeService
+SchemeService -> Guard : requireCanCreate()
+SchemeService -> DB_MySQL : SELECT schemes
+SchemeService -> Guard : requireOwner()
+SchemeService -> DB_MySQL : SELECT scheme_items
+alt formulario inválido
+SchemeService --> SchemeController : 400 FORMULARIO_INVALIDO
+SchemeController --> P : 400 + mensagem
 end
-opt "melhorar com IA" (RF30.CA10)
-  U -> FE: instrução em linguagem natural
-  FE -> SC: POST /api/schemes/{id}/improvements {instruction}
-  SC -> SS: improve(user, id, instruction)
-  SS -> G: requireOwner(user, ownerId, "scheme:{id}")
-  SS -> AI: text(TextCall EDIT_ASSISTANT, campos atuais + instrução)
-  AI --> SS: changes[{field, current, proposed, reason}] (ou LocalAdvisors.proposeEdit)
-  SS --> FE: 200 {changes, explanation, inferenceId}
-  U -> FE: aceita/recusa item a item
-  FE -> SC: POST /api/schemes/{id}/improvements/apply {field: valor}
-  SC -> SS: applyDiff(user, id, accepted)
-  SS -> SS: validChange(field, valor) → 400 DIFF_INVALIDO se inválido
-  SS -> DB: UPDATE schemes; INSERT audit_log (EDICAO_ESQUEMA aiDiffFields)
-  SS --> FE: 200 {scheme}
+SchemeService -> DB_MySQL : SELECT scheme_items
+alt formulario inválido
+SchemeService --> SchemeController : 400 FORMULARIO_INVALIDO
+SchemeController --> P : 400 + mensagem
 end
-U -> FE: salva as alterações
-FE -> SC: PUT /api/schemes/{id} (SchemeForm)
-SC -> SS: update(user, id, form)
-SS -> G: requireOwner(user, ownerId, "scheme:{id}")
-alt não é o autor
-  G -> DB: INSERT audit_log (ACESSO_NEGADO_403)
-  G --> FE: 403
-else autor
-  SS -> DB: SELECT scheme_items (before)
-  SS -> SS: applyForm; replaceItems(form.items) — CA02: só scheme_items
-  alt items vazio
-    SS --> FE: 400 SEM_PECAS
-  end
-  opt peças mudaram e status = PUBLISHED (CA05)
-    SS -> SEAL: flagRevalidation(scheme)
-    SEAL -> DB: SELECT seal_bonds WHERE status = APPROVED
-    SEAL -> DB: INSERT notifications (SEAL_BOND_REVIEW → marca)
-    SEAL --> SS: revalidationPending = true
-  end
-  opt visibilidade virou PRIVATE
-    SS -> SEAL: revokeForScheme(id) — RF20.CA14
-  end
-  SS -> DB: UPDATE schemes, scheme_items; INSERT audit_log (EDICAO_ESQUEMA)
-  SS --> FE: 200 {scheme, revalidationPending}
+SchemeService -> DB_MySQL : SELECT wardrobe_items
+alt peça de outro usuário
+SchemeService --> SchemeController : 400 PECA_DE_OUTRO_USUARIO
+SchemeController --> P : 400 + mensagem
 end
-opt editar uma peça do esquema (CA07)
-  U -> FE: edita a peça (PieceForm)
-  FE -> WC: PUT /api/pieces/{id}
-  WC -> WS: update(user, id, form)
-  WS -> G: requireOwner(user, ownerId, "piece:{id}")
-  WS -> DB: UPDATE wardrobe_items; INSERT audit_log (EDICAO_PECA)
-  WS --> FE: 200 PieceView
+alt peça indisponível
+SchemeService --> SchemeController : 400 PECA_INDISPONIVEL
+SchemeController --> P : 400 + mensagem
 end
+SchemeService -> DB_MySQL : SELECT scheme_items
+SchemeService -> SchemeService : new SchemeItem()
+SchemeService -> DB_MySQL : INSERT/UPDATE scheme_items
+SchemeService -> DB_MySQL : DELETE scheme_items
+SchemeService -> SchemeService : coverImageUrl = set
+alt sem peças
+SchemeService --> SchemeController : 400 SEM_PECAS
+SchemeController --> P : 400 + mensagem
+end
+SchemeService -> BackgroundStudioService : applyToScheme()
+BackgroundStudioService -> DB_MySQL : SELECT wardrobe_items
+BackgroundStudioService --> SchemeService
+SchemeService -> SchemeService : coverImageUrl = set
+alt foto inválida
+SchemeService --> SchemeController : 400 FOTO_INVALIDA
+SchemeController --> P : 400 + mensagem
+end
+SchemeService -> SchemeService : coverImageUrl = set
+SchemeService -> MediaService : linkSource()
+MediaService -> DB_MySQL : SELECT photos
+MediaService --> SchemeService
+note over SchemeService : … e mais 18 passos no código
+deactivate SchemeService
+SchemeService --> SchemeController : resultado
+SchemeController --> P : 200 JSON
+P --> U : atualiza a tela
 @enduml

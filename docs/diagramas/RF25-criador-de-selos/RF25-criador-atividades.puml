@@ -1,0 +1,49 @@
+@startuml RF25_Criador_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF25 — Criador de selo em 4 passos: modo (com/sem IA) → dados → arte (Circular · Folha · Padrão FashionAI) → revisar e salvar\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
+start
+|Backend (Java)|
+partition "SealDesigns.normalize()" {
+  if (selo design inválido?) then (sim)
+    :400 SELO_DESIGN_INVALIDO\n«Revise o desenho do selo.»;
+    stop
+  endif
+}
+|Backend (Java)|
+partition "SealDrafts.suggest()" {
+  :executa;
+}
+|API (Spring Boot)|
+partition "OwnMedia.accepts()" {
+  :MediaStoragePort.keyOf();
+}
+|Pessoa usuária|
+:Vê o resultado;
+stop
+@enduml

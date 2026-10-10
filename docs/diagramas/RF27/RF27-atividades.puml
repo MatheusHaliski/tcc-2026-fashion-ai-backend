@@ -1,9 +1,16 @@
 @startuml RF27_Atividades
-title RF27 — Visualizar e organizar o guarda-roupa num quarto 3D interativo ("Meu Quarto")\nDiagrama de atividades
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,52 +19,64 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Usuário|
+title RF27 — Visualizar e organizar o guarda-roupa num quarto 3D interativo ('Meu Quarto')\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Meu Guarda-Roupa → "Meu Quarto";
-|Sistema (RoomService)|
-:Carrega o layout do nível (Estreia…Maison)\ne endereça cada peça (Porta 2, Gaveta 4 · Jeans);
-:Calcula estados: esquecida (poeira),\nindisponível (cesto), favorita (cabide especial),\nPeça Ícone (vitrine), esquemas (caixas no maleiro);
-if (WebGL disponível?) then (sim)
-  |Usuário|
-  :Quarto 3D: câmera 3/4 limitada,\nabre portas e gavetas;
-else (não)
-  :Visão 2.5D / Lista (fallback);
+:Abre /room;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/room\nGET /api/me/room/modules/{moduleId}\nGET /api/pieces/{pieceId}/room-location\nGET /api/me/room/list;
+|Pessoa usuária|
+:Mover peça para um endereço\n(door:1/hanger:3, drawer:2, sho…;
+|Tela (Next.js)|
+:PUT /api/pieces/{pieceId}/room-address;
+|API (Spring Boot)|
+:RoomController.move\n→ RoomService.move;
+if (gaveta cheia?) then (sim)
+  :409 GAVETA_CHEIA\n«A gaveta … já tem … peças.»\n→ a tela mostra o aviso;
+  stop
 endif
-|Usuário|
-split
-  :Toca numa peça → ficha / etiqueta costurada;
-split again
-  :Renomeia gaveta / monograma / luz guiada;
-  |Sistema (RoomService)|
-  :Salva em room_layouts;
-split again
-  |Usuário|
-  :"Organizar" → prévia (com ou sem IA);
-  |Sistema (RoomService)|
-  :Gera movimentos e rótulos;
-  |Usuário|
-  if (Aplicar?) then (sim)
-    |Sistema (RoomService)|
-    :Aplica e guarda o mapa anterior\n(permite desfazer);
-  else (não)
-  endif
-split again
-  |Usuário|
-  :Caixa de entrega (item comprado);
-  |Sistema (RoomService)|
-  :Monta sozinho no módulo compatível\n(guarda-roupa inteiro → todos os blocos);
-end split
+if (posicao inválida?) then (sim)
+  :400 POSICAO_INVALIDA\n«A posição vai de 1 a ….»\n→ a tela mostra o aviso;
+  stop
+endif
+if (posicao ocupada?) then (sim)
+  :409 POSICAO_OCUPADA\n«Já existe uma peça nesta posição.»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: wardrobe_items\nroom_layouts\nusers\nfai_points_ledger\nroom_storage_map;
+:Usa: Guard.requireOwner;
+:Grava: room_layouts\nroom_storage_map;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Monograma do quarto)
+    :PUT /api/me/room/monogram\n→ RoomService.setMonogram\nvalida: NIVEL_INSUFICIENTE\nlê: room_layouts, users, fai_points_ledger\ngrava: room_layouts;
+  case (Renomear gaveta)
+    :PUT /api/me/room/drawers/{drawer}\n→ RoomService.renameDrawer\nlê: room_layouts, users, fai_points_ledger\ngrava: room_layouts\nevento: RoomOrganized;
+  case (Aplicar organização [rótulos e mo…)
+    :POST /api/me/room/organization\n→ RoomService.applyOrganization\nlê: room_layouts, users, fai_points_ledger …\ngrava: room_layouts, room_storage_map\nevento: RoomOrganized;
+  case (Registrar uso da peça no diário)
+    :POST /api/pieces/{pieceId}/diary\n→ RoomService.diaryEntry\nvalida: DATA_FUTURA, OCASIAO_INVALIDA\nlê: wardrobe_items, piece_usage_diary,\nroom_layouts …\nusa: Guard.requireOwner\ngrava: piece_usage_diary, wardrobe_items,\nroom_layouts …;
+  case (Dar a chave do meu quarto a um se…)
+    :POST /api/me/room/keys\n→ RoomService.giveKey\nvalida: CHAVE_INVALIDA\nlê: users, room_layouts, fai_points_ledger\ngrava: room_layouts;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Desfazer a última organização, Ilha central:
+  esquemas em des…, Guardar/retirar peças do baú…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

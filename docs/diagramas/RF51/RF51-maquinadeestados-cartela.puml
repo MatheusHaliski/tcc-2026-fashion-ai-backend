@@ -1,0 +1,61 @@
+@startuml RF51_MaquinaDeEstados_Cartela
+!pragma layout smetana
+title RF51 — Layout Cartela sazonal e rascunho do modal\nMáquina de estados — o card só muda ao Aplicar
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+state "Outro layout" as Outro
+Outro : LISTA_VERTICAL, outras anatomias,
+Outro : narrativas do DNA ou família da peça
+state "Modal aberto · entrando" as Entrando {
+  state "Rascunho" as R1
+  R1 : {seasonalPresetId, seasonalAuto, animation}
+  R1 --> R1 : escolhe cartela · automática · animação
+}
+Entrando : guarda enter() + patch (limpa a arte própria)
+state "Cartela sazonal ativa" as Ativa {
+  state "Com estação" as ComEstacao
+  ComEstacao : SeasonCard / faixa B11 com gradiente,
+  ComEstacao : decoração e animação escolhida
+  state "Sem estação" as SemEstacao
+  SemEstacao : sem cartela e sem estação no look:
+  SemEstacao : o card aparece como Lista vertical
+  [*] --> ComEstacao : cartelaSeason ≠ nulo
+  [*] --> SemEstacao : cartelaSeason = nulo
+  SemEstacao --> ComEstacao : escolhe cartela ou\npreenche a estação
+}
+state "Modal aberto · editando" as Editando {
+  state "Rascunho" as R2
+  R2 --> R2 : escolhe cartela · automática · animação
+}
+[*] --> Outro
+Outro --> Entrando : clica Cartela sazonal
+Entrando --> Outro : Cancelar · X · Esc · fundo\n(nada muda)
+Entrando --> Ativa : Aplicar\nenter() + onChange(patch + rascunho)
+Ativa --> Editando : clica Cartela sazonal de novo ou\n"Escolher cartela e animação"
+Editando --> Ativa : Aplicar (fundo + rascunho)
+Editando --> Ativa : Cancelar (nada muda)
+Ativa --> Outro : escolhe outro layout\n→ CLEAR_CARTELA
+Ativa --> Outro : DNA: sai da B11 por qualquer caminho\n(useLeaveCartela → CLEAR_CARTELA)
+note bottom of Ativa
+  CLEAR_CARTELA = {seasonalPresetId: null, seasonalAuto: false,
+  animation: "NONE"} — "NONE" (e não null) também desliga a
+  animação gravada em APIs antigas; no servidor, null → NONE
+end note
+' v5: diagrama do time mantido (sem alvo no código)
+legend bottom right
+  <b>Diagrama escrito pelo time e mantido como está.</b>
+  O código atual não tem um campo, enum ou método de estado equivalente
+  que scripts/diagramas/v5 consiga ler — não foi gerado nem verificado
+  contra o código em 2026-10-06.
+endlegend
+@enduml

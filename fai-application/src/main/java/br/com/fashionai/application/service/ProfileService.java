@@ -3,20 +3,26 @@ package br.com.fashionai.application.service;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.Follow;
+import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.FollowStatus;
+import br.com.fashionai.domain.model.enums.HypeEntityType;
 import br.com.fashionai.domain.model.enums.NotificationType;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.model.enums.Visibility;
+import br.com.fashionai.domain.repository.BrandProfileRepository;
+import br.com.fashionai.domain.repository.CelebrityProfileRepository;
 import br.com.fashionai.domain.repository.FollowRepository;
+import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.UserRepository;
@@ -36,10 +42,15 @@ import java.util.UUID;
  * conforme a visibilidade (CA02: "somente seguidores" mostra só o cabeçalho com convite), seguir/deixar de seguir com
  * contadores consistentes (CA03/CA04), pedidos de seguir para contas privadas e layout institucional para Marca e
  * Celebridade (CA06).
+ * <p>
+ * Lookbook › Looks com ordenação pelo HypeScore v2 (P3-02, {@link #publishedLooks}): o dono ordena pelo Hype pessoal;
+ * quem visita, só pelo Hype público elegível (look privado ou só para seguidores fica "sem Hype", por último).
  */
 @Service
 public class ProfileService {
     private final UserRepository users;
+    private final BrandProfileRepository brands;
+    private final CelebrityProfileRepository celebrities;
     private final FollowRepository follows;
     private final SchemeRepository schemes;
     private final SchemeItemRepository schemeItems;
@@ -47,9 +58,18 @@ public class ProfileService {
     private final SchemeService schemeService;
     private final NotificationService notifications;
     private final Guard guard;
+    /** HypeScore v2 (estado gravado pelo job; aqui só leitura — GET nunca recalcula). */
+    private final HypeScoreCurrentRepository hypeV2;
+    private final HypeScoreConfig hypeV2Config;
 
     public ProfileService(UserRepository users, FollowRepository follows, SchemeRepository schemes, SchemeItemRepository schemeItems,
-                          WardrobeItemRepository pieces, SchemeService schemeService, NotificationService notifications, Guard guard) {
+                          WardrobeItemRepository pieces, SchemeService schemeService, NotificationService notifications, Guard guard,
+                          HypeScoreCurrentRepository hypeV2, HypeScoreConfig hypeV2Config,
+                          BrandProfileRepository brands, CelebrityProfileRepository celebrities) {
+        this.brands = brands;
+        this.celebrities = celebrities;
+        this.hypeV2 = hypeV2;
+        this.hypeV2Config = hypeV2Config;
         this.users = users;
         this.follows = follows;
         this.schemes = schemes;
@@ -77,6 +97,15 @@ public class ProfileService {
 
     @Transactional(readOnly = true)
     public Map<String, Object> profile(CurrentUser viewer, String idOrUsername) {
+        return profile(viewer, idOrUsername, null);
+    }
+
+    /**
+     * Perfil com a grade de looks publicados ordenada ({@code sort}: recent (padrão) · hype_desc · hype_asc · growth —
+     * {@link LookbookService#lookSort}). Sem {@code sort}, a resposta é a mesma de sempre (mais recentes primeiro).
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> profile(CurrentUser viewer, String idOrUsername, String sort) {
         User u = resolve(idOrUsername);
         boolean self = viewer != null && viewer.id().equals(u.getId());
         if (!self && viewer != null && relation(u.getId(), viewer.id()) == FollowStatus.BLOQUEADO) {
@@ -93,6 +122,11 @@ public class ProfileService {
         out.put("links", Json.list(u.getLinksJson()));
         out.put("coverUrl", u.getCoverUrl());
         out.put("layout", u.getProfileType() == ProfileType.PESSOAL ? "PESSOAL" : "INSTITUCIONAL");
+        if (u.getProfileType() == ProfileType.MARCA) {
+            out.put("institutionalSlug", brands.findByOwnerId(u.getId()).map(b -> b.getSlug()).orElse(u.getId().toString()));
+        } else if (u.getProfileType() == ProfileType.CELEBRIDADE) {
+            out.put("institutionalSlug", celebrities.findByOwnerId(u.getId()).map(c -> c.getSlug()).orElse(u.getId().toString()));
+        }
         out.put("self", self);
         out.put("relation", rel == null ? "NENHUMA" : rel.name());
         out.put("counters", counters(u.getId(), published.size()));
@@ -105,12 +139,31 @@ public class ProfileService {
             out.put("pieces", List.of());
             return out;
         }
-        out.put("schemes", published.stream().filter(s -> self || guard.canView(viewer, u.getId(), SchemeService.moreRestrictive(s.getVisibility(), u.getProfileVisibility())))
-                .limit(60).map(s -> schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId()))).toList());
+        String order = LookbookService.lookSort(sort);
+        out.put("schemes", publishedLooks(viewer, u, self, published, order).stream()
+                .map(s -> schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId()))).toList());
+        out.put("sort", order);
         out.put("pieces", pieces.findByUserIdOrderByCreatedAtDesc(u.getId()).stream().filter(w -> w.getAvailabilityStatus() != AvailabilityStatus.ARCHIVED)
                 .filter(w -> self || guard.canView(viewer, u.getId(), SchemeService.moreRestrictive(w.getVisibility(), u.getProfileVisibility())))
                 .limit(60).map(w -> Views.piece(w, null, null)).toList());
         return out;
+    }
+
+    /**
+     * Looks publicados que quem vê pode ver (até 60), na ordem pedida. Pelo Hype: o dono usa o próprio Hype pessoal;
+     * terceiros, só o público elegível. Sem Hype = por último (nunca 0); empate segue a ordem recente.
+     */
+    List<Scheme> publishedLooks(CurrentUser viewer, User owner, boolean self, List<Scheme> published, String order) {
+        List<Scheme> visible = published.stream()
+                .filter(s -> self || guard.canView(viewer, owner.getId(), SchemeService.moreRestrictive(s.getVisibility(), owner.getProfileVisibility())))
+                .toList();
+        if ("recent".equals(order)) {
+            return visible.stream().limit(60).toList();
+        }
+        Map<UUID, HypeScoreCurrent> h = LookbookService.rankable(LookbookService.hypeV2Of(hypeV2, hypeV2Config, HypeEntityType.SCHEME,
+                visible.stream().map(Scheme::getId).toList()), viewer == null ? null : viewer.id());
+        // a lista chega da mais recente para a mais antiga: o sort estável mantém essa ordem nos empates
+        return visible.stream().sorted(LookbookService.<Scheme>hypeOrder(order, s -> h.get(s.getId()))).limit(60).toList();
     }
 
     /** Header do perfil (estilo Instagram, RF14/RF22): seguidores, seguindo, peças e esquemas criados. */

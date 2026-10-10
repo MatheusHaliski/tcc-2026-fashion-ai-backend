@@ -1,54 +1,79 @@
 @startuml SEG_Sequencia_Sessao_BFF
-title Fashion AI — Sequência: sessão pelo BFF (login, chamada com gate vencido, refresh e logout offline)
-!include _estilo.iuml
-autonumber
-actor Pessoa
-participant "App (navegador)\nlib/api/client.ts" as App
-participant "middleware.ts" as MW
-participant "BFF\n/bff/auth/[action]" as BFF
-participant "/gate/renew" as Renew
-participant "API Spring Boot\nDevGateFilter · AuthRateLimitFilter" as API
-database "MySQL\n(fai_app, TLS)" as DB
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam sequence {
+  ArrowColor #4A4852
+  LifeLineBorderColor #CBC6BE
+  ParticipantBackgroundColor #F4F2EF
+  ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
+}
+autonumber "<b>0."
+title Fashion AI — Sequência: sessão pelo BFF (login, chamada com gate vencido, refresh e logout offline)\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-== Login ==
-Pessoa -> App : e-mail + senha
-App -> MW : POST /bff/auth/login (cookies fai_gate, fai_gate_a)
-MW -> MW : verifyGate("gp")
-MW -> BFF : segue
-BFF -> BFF : mesma origem? corpo ≤ 64 KB?
-BFF -> API : POST /api/auth/login\nX-Dev-Gate: ga · X-Fai-Client-Ip/Ts/Sig (HMAC)
-API -> DB : usuário · Argon2id · tentativas
-API --> BFF : 200 {accessToken, refreshToken}
-BFF --> App : 200 {accessToken} + Set-Cookie fai_rt (HttpOnly, Path=/bff/auth, SameSite=Strict) e fai_rt_h
-App -> App : access token só em memória
-
-== Chamada com o token de API do gate vencido ==
-App -> API : GET /api/... (Bearer, X-Dev-Gate expirado)
-API --> App : 403 X-Dev-Gate-Required
-App -> Renew : POST /gate/renew (cookie fai_gate)
-Renew --> App : Set-Cookie fai_gate_a novo (1 h)
-App -> API : repete UMA vez
-API --> App : 200
-
-== Access token vencido (várias abas) ==
-App -> App : Web Lock "fai-auth-refresh" (só uma aba renova)
-App -> BFF : POST /bff/auth/refresh (cookie fai_rt)
-BFF -> API : POST /api/auth/refresh {refreshToken do cookie}
-API -> DB : rotaciona a família do refresh token
-API --> BFF : 200 {access, refresh novo}
-BFF --> App : {accessToken} + fai_rt novo
-App -> App : BroadcastChannel "fai-auth" avisa as outras abas
-
-== Logout com a API fora do ar ==
-App -> BFF : POST /bff/auth/logout
-BFF -> API : POST /api/auth/logout
-API --> BFF : falha de rede
-BFF --> App : 502 offline + apaga fai_rt e fai_rt_h
-note right of BFF
-  Os cookies saem SEMPRE: num aparelho
-  compartilhado, recarregar a página não
-  pode restaurar a sessão "encerrada".
-  401 da API: refresh com o cookie e
-  repete o logout; 401 de novo = 204.
-end note
+actor "Pessoa usuária" as U
+participant "lib/api/client.ts" as lib_api_client_ts
+participant "middleware.ts" as middleware_ts
+participant "lib/gate/token.ts" as lib_gate_token_ts
+participant "AuthRateLimitFilter" as AuthRateLimitFilter
+participant "ClientIpResolver" as ClientIpResolver
+participant "RateLimitPort" as RateLimitPort
+== lib/api/client.ts · restoreSession() ==
+U -> lib_api_client_ts : restoreSession()
+activate lib_api_client_ts
+opt accessToken
+lib_api_client_ts --> U : encerra
+end
+opt !tokenStore.restorable
+lib_api_client_ts --> U : encerra
+end
+opt refreshing
+lib_api_client_ts --> U : encerra
+end
+opt sharedAt > startedAt && accessToken
+lib_api_client_ts --> U : encerra
+end
+opt !res.ok
+lib_api_client_ts --> U : encerra
+end
+opt typeof s.accessToken !== 'string'
+lib_api_client_ts --> U : encerra
+end
+deactivate lib_api_client_ts
+lib_api_client_ts --> U : resultado
+== middleware.ts · middleware() ==
+U -> middleware_ts : middleware()
+activate middleware_ts
+middleware_ts -> lib_gate_token_ts : gateConfig()
+opt cfg.mode === 'cloudflare'
+middleware_ts --> U : encerra
+end
+middleware_ts -> lib_gate_token_ts : verifyGate()
+opt path.startsWith('/bff/'
+middleware_ts --> U : encerra
+end
+middleware_ts -> lib_gate_token_ts : tokenExp()
+middleware_ts -> lib_gate_token_ts : apiTokenMatches()
+middleware_ts -> lib_gate_token_ts : signApiToken()
+deactivate middleware_ts
+middleware_ts --> U : resultado
+== AuthRateLimitFilter · doFilterInternal() ==
+U -> AuthRateLimitFilter : doFilterInternal()
+activate AuthRateLimitFilter
+AuthRateLimitFilter -> ClientIpResolver : resolve()
+AuthRateLimitFilter -> RateLimitPort : tryAcquire()
+deactivate AuthRateLimitFilter
+AuthRateLimitFilter --> U : resultado
 @enduml

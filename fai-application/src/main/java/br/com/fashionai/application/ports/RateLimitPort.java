@@ -14,6 +14,14 @@ public interface RateLimitPort {
     default void reset(UUID userId, String bucket) {
     }
 
+    /**
+     * Devolve uma unidade tomada por {@link #tryAcquire} (nunca abaixo de zero). Padrão "reserva antes, devolve se deu
+     * certo": a tentativa de senha é contada ANTES da conferência — atômico, palpites em paralelo não passam do limite —
+     * e devolvida quando a senha confere.
+     */
+    default void release(UUID userId, String bucket) {
+    }
+
     record QuotaStatus(int limit, long used, Instant resetAt) {
         public boolean exhausted() {
             return used >= limit;

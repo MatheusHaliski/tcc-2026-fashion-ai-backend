@@ -9,6 +9,7 @@ import br.com.fashionai.application.ai.local.LocalDnaSynthesizer;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
@@ -17,6 +18,7 @@ import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.DnaScheme;
 import br.com.fashionai.domain.model.DnaSchemeItem;
+import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.SchemeItem;
 import br.com.fashionai.domain.model.StyleDna;
@@ -27,6 +29,8 @@ import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.CreationMode;
 import br.com.fashionai.domain.model.enums.DailyLookFeedback;
 import br.com.fashionai.domain.model.enums.DnaCell;
+import br.com.fashionai.domain.model.enums.HypeEntityType;
+import br.com.fashionai.domain.model.enums.HypeStatus;
 import br.com.fashionai.domain.model.enums.NarrativeType;
 import br.com.fashionai.domain.model.enums.NotificationType;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
@@ -36,6 +40,7 @@ import br.com.fashionai.domain.model.enums.Visibility;
 import br.com.fashionai.domain.repository.DailyLookRepository;
 import br.com.fashionai.domain.repository.DnaSchemeItemRepository;
 import br.com.fashionai.domain.repository.DnaSchemeRepository;
+import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
 import br.com.fashionai.domain.repository.StyleDnaRepository;
@@ -80,6 +85,10 @@ import java.util.stream.Collectors;
  * Frase de Identidade sintetizada pela IA, versões, recálculo a cada 10 interações, card PNG com marca d'água só com
  * campos visíveis (link expira em 30 dias) — e os Esquemas de DNA (anatomias A1–A4 e 12 narrativas do DNA v4), criados
  * com o mesmo construtor do RF5 (modo manual/IA → esquemas → dados → Background Studio → revisar e salvar).
+ * <p>
+ * Hype ≠ DNA: o HypeScore nunca entra na síntese do DNA (arquétipo, paleta, silhueta, ousadia, frase). Ele só aparece
+ * como dado de cada célula e na narrativa HYPE_FOCUS (B10), sempre em v2 (P2-12): o dono vê o Hype pessoal dos próprios
+ * looks; quem visita um DNA publicado vê só o Hype público elegível. "Sem dados" chega como status, nunca como 0.
  */
 @Service
 public class DnaService {
@@ -113,11 +122,17 @@ public class DnaService {
     private final AiEngine ai;
     private final Guard guard;
     private final SchemeService schemeService;
+    /** HypeScore v2 (estado gravado pelo job; aqui só leitura) — narrativa HYPE_FOCUS e contexto da IA. */
+    private final HypeScoreCurrentRepository hypeV2;
+    private final HypeScoreConfig hypeV2Config;
 
     public DnaService(StyleDnaRepository dnas, StyleDnaVersionRepository versions, DnaSchemeRepository dnaSchemes, DnaSchemeItemRepository dnaItems,
                       WardrobeItemRepository pieces, SchemeRepository schemes, SchemeItemRepository schemeItems, DailyLookRepository dailyLooks,
                       UserRepository users, MediaService media,
-                      NotificationService notifications, AiEngine ai, Guard guard, SchemeService schemeService) {
+                      NotificationService notifications, AiEngine ai, Guard guard, SchemeService schemeService,
+                      HypeScoreCurrentRepository hypeV2, HypeScoreConfig hypeV2Config) {
+        this.hypeV2 = hypeV2;
+        this.hypeV2Config = hypeV2Config;
         this.dnas = dnas;
         this.versions = versions;
         this.dnaSchemes = dnaSchemes;
@@ -338,7 +353,7 @@ public class DnaService {
 
     static String silhouette(List<WardrobeItem> wardrobe) {
         Set<String> oversized = Set.of("hoodie", "sweatshirt", "parka", "coat", "cargo_pants", "sweatpants", "jogger_pants", "kimono");
-        Set<String> fitted = Set.of("bodysuit", "crop_top", "leggings", "tank_top", "tailored_pants", "skirt");
+        Set<String> fitted = Set.of("bodysuit", "crop_top", "top", "leggings", "tank_top", "tailored_pants", "skirt");
         Set<String> layering = Set.of("blazer", "cardigan", "jacket", "vest", "windbreaker", "coat");
         long o = wardrobe.stream().filter(w -> oversized.contains(w.getSubcategory())).count();
         long f = wardrobe.stream().filter(w -> fitted.contains(w.getSubcategory())).count();
@@ -744,6 +759,9 @@ public class DnaService {
 
     Map<String, Object> dnaSchemeView(CurrentUser viewer, DnaScheme d, List<CellRef> items) {
         Map<UUID, List<SchemeItem>> itemsBy = groupItems(items.stream().map(CellRef::scheme).toList());
+        // Hype v2 de cada célula: o dono vê o Hype pessoal; quem visita, só o público elegível (privacidade, §9)
+        boolean personal = viewer != null && d.getUser() != null && viewer.id().equals(d.getUser().getId());
+        Map<UUID, Map<String, Object>> hypeByScheme = cellHype(hypeV2Of(items.stream().map(i -> i.scheme().getId()).toList()), personal);
         List<Map<String, Object>> cells = new ArrayList<>();
         for (CellRef it : items) {
             Scheme s = it.scheme();
@@ -765,7 +783,7 @@ public class DnaService {
             c.put("dominantBrand", ranking.isEmpty() ? null : ranking.get(0).get("brand"));
             c.put("dominantBrandLogoUrl", ranking.isEmpty() ? null : ranking.get(0).get("logoUrl"));
             c.put("dominantColor", dominantColor(sItems));
-            c.put("hypeScoreGlobal", hypeOf(s));
+            c.put("hype", hypeByScheme.getOrDefault(s.getId(), HypeScoreService.v2Summary(null, hypeV2Config, null)));
             c.put("pieces", sItems.stream().map(si -> pieceBrief(si.getWardrobeItem())).toList());
             cells.add(c);
         }
@@ -796,7 +814,7 @@ public class DnaService {
         List<Map<String, Object>> logos = logoRanking(allItems);
         out.put("logos", logos);
         out.put("logoCut", logoCut(d));
-        out.put("narrative", narrativeData(d, items, itemsBy));
+        out.put("narrative", narrativeData(d, items, itemsBy, hypeByScheme));
         out.put("counters", Map.of("likes", d.getLikeCount(), "comments", d.getCommentCount(), "shares", d.getShareCount(), "remixes", d.getRemixCount()));
         out.put("canEdit", viewer != null && viewer.id().equals(d.getUser().getId()));
         out.put("createdAt", d.getCreatedAt());
@@ -814,9 +832,40 @@ public class DnaService {
                 .collect(Collectors.groupingBy(si -> si.getScheme().getId(), LinkedHashMap::new, Collectors.toList()));
     }
 
-    static double hypeOf(Scheme s) {
-        java.math.BigDecimal h = s.getHypeScoreGlobal() != null ? s.getHypeScoreGlobal() : s.getHypeScore();
-        return h == null ? 0 : h.doubleValue();
+    /** Estado v2 atual dos looks (uma consulta). Sem linha = ainda não calculado. Só lê o que o job gravou. */
+    Map<UUID, HypeScoreCurrent> hypeV2Of(Collection<UUID> schemeIds) {
+        if (hypeV2 == null || hypeV2Config == null || schemeIds == null || schemeIds.isEmpty()) {
+            return Map.of();
+        }
+        return hypeV2.findByEntityTypeAndEntityIdInAndAlgorithmVersion(HypeEntityType.SCHEME, new HashSet<>(schemeIds), hypeV2Config.algorithmVersion())
+                .stream().collect(Collectors.toMap(HypeScoreCurrent::getEntityId, h -> h, (a, b) -> a));
+    }
+
+    /**
+     * Resumo v2 por look para o card DNA. {@code personal} = quem vê é o dono (Hype pessoal, inclusive de look privado);
+     * para terceiros, linha não elegível ao público fica como "ainda não calculado" (igual a /api/hype/summaries).
+     */
+    Map<UUID, Map<String, Object>> cellHype(Map<UUID, HypeScoreCurrent> rows, boolean personal) {
+        Map<UUID, Map<String, Object>> out = new HashMap<>();
+        java.time.Instant now = java.time.Instant.now();
+        rows.forEach((id, c) -> out.put(id, HypeScoreService.v2Summary(personal || c.isPublicEligible() ? c : null, hypeV2Config, now)));
+        return out;
+    }
+
+    /** Score v2 que pode ordenar (AVAILABLE); nulo = sem Hype (dados insuficientes ou não calculado) — sempre por último. */
+    static Double hypeScoreOf(Map<String, Object> v2) {
+        return v2 != null && v2.get("score") instanceof Number n ? n.doubleValue() : null;
+    }
+
+    /** Score v2 pessoal do dono (só para ordenar as próprias propostas e para o contexto da IA). */
+    static Map<UUID, Double> ownerScores(Map<UUID, HypeScoreCurrent> rows) {
+        Map<UUID, Double> out = new HashMap<>();
+        rows.forEach((id, c) -> {
+            if (c.getStatus() == HypeStatus.AVAILABLE && c.getScore() != null) {
+                out.put(id, c.getScore().doubleValue());
+            }
+        });
+        return out;
     }
 
     static Map<String, Object> pieceBrief(WardrobeItem w) {
@@ -911,6 +960,9 @@ public class DnaService {
                     Map.of("action", "/schemes/new"));
         }
         Map<UUID, List<SchemeItem>> itemsBy = groupItems(own);
+        // contexto da IA com o HypeScore v2 PESSOAL do dono (os looks são dele); sem dados = null, nunca 0
+        Map<UUID, HypeScoreCurrent> v2Rows = hypeV2Of(own.stream().map(Scheme::getId).toList());
+        Map<UUID, Double> v2 = ownerScores(v2Rows);
         Map<String, Scheme> byRef = new LinkedHashMap<>();
         List<Map<String, Object>> catalog = new ArrayList<>();
         for (Scheme s : own) {
@@ -923,7 +975,8 @@ public class DnaService {
             m.put("occasion", Json.csv(s.getOccasion()));
             m.put("style", Json.csv(s.getStyle()));
             m.put("season", s.getSeason() == null ? null : s.getSeason().name());
-            m.put("hype", hypeOf(s));
+            m.put("hype", v2.containsKey(s.getId()) ? Math.round(v2.get(s.getId()) * 10) / 10.0 : null);
+            m.put("hypeLevel", v2.containsKey(s.getId()) && v2Rows.get(s.getId()).getLevel() != null ? v2Rows.get(s.getId()).getLevel().name() : null);
             m.put("likes", s.getLikeCount());
             m.put("pieces", itemsBy.getOrDefault(s.getId(), List.of()).stream().map(si -> {
                 WardrobeItem w = si.getWardrobeItem();
@@ -953,8 +1006,8 @@ public class DnaService {
         List<String> inputs = List.of(Msg.t("dna.esquemas_de_vestimenta_seus_pecas", (own.size())),
                 Msg.t("dna.dna_sintetizado_arquetipo_paleta_estilos"), Msg.t("dna.ocasiao_estilo_narrativa_estacao_pedidos"), Msg.t("common.orientacoes_livres"));
         AiOutcome<List<DnaProposal>> outcome = ai.text(new AiEngine.TextCall<>(user.id(), AiCapability.DNA_SYNTHESIZER, system, prompt, List.of(), 1400,
-                inputs, text -> parseProposals(text, byRef), () -> localProposals(own, itemsBy, r), null));
-        List<DnaProposal> list = outcome.value() == null || outcome.value().isEmpty() ? localProposals(own, itemsBy, r) : outcome.value();
+                inputs, text -> parseProposals(text, byRef), () -> localProposals(own, itemsBy, r, v2), null));
+        List<DnaProposal> list = outcome.value() == null || outcome.value().isEmpty() ? localProposals(own, itemsBy, r, v2) : outcome.value();
         Map<UUID, Scheme> byId = own.stream().collect(Collectors.toMap(Scheme::getId, s -> s));
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("compositions", list.stream().map(pr -> {
@@ -1037,8 +1090,16 @@ public class DnaService {
         return s.getCreatedAt() == null ? null : ERA.format(s.getCreatedAt()).replace(".", "");
     }
 
-    /** Motor local: escolhe a narrativa pelas orientações/pedido e seleciona os esquemas que melhor a contam. */
+    /** Motor local sem Hype (todas as células "sem dados"): a narrativa HYPE_FOCUS cai na ordem de criação. */
     static List<DnaProposal> localProposals(List<Scheme> own, Map<UUID, List<SchemeItem>> itemsBy, DnaComposeRequest r) {
+        return localProposals(own, itemsBy, r, Map.of());
+    }
+
+    /**
+     * Motor local: escolhe a narrativa pelas orientações/pedido e seleciona os esquemas que melhor a contam.
+     * {@code hypeV2} = score v2 pessoal por look (ausente = sem dados), usado só pela narrativa HYPE_FOCUS.
+     */
+    static List<DnaProposal> localProposals(List<Scheme> own, Map<UUID, List<SchemeItem>> itemsBy, DnaComposeRequest r, Map<UUID, Double> hypeV2) {
         String q = (r.prompt() == null ? "" : r.prompt()).toLowerCase(Locale.ROOT);
         // filtro pelas orientações: cores, materiais, marcas, estampas, ocasiões e estilos citados
         List<Scheme> pool = own.stream().filter(s -> matches(s, itemsBy.getOrDefault(s.getId(), List.of()), q, r)).toList();
@@ -1078,7 +1139,7 @@ public class DnaService {
         List<DnaProposal> out = new ArrayList<>();
         Set<String> used = new HashSet<>();
         for (NarrativeType nt : order) {
-            List<Scheme> pick = pickFor(nt, pool, itemsBy, season);
+            List<Scheme> pick = pickFor(nt, pool, itemsBy, season, hypeV2);
             if (pick.size() < 2 || !used.add(pick.stream().map(s -> s.getId().toString()).sorted().collect(Collectors.joining(",")) + nt)) {
                 continue;
             }
@@ -1106,7 +1167,7 @@ public class DnaService {
             NarrativeType.CAPSULA_VERSATILIDADE, Msg.k("dna.capsula_que_rende"), NarrativeType.POR_OCASIAO, Msg.k("dna.eu_em_cada_ocasiao"),
             NarrativeType.MOOD_BOARD, Msg.k("dna.mood_board_do_meu_estilo"), NarrativeType.PALETA_DOMINANTE, Msg.k("dna.minha_paleta"),
             NarrativeType.HARMONIA_CROMATICA, Msg.k("dna.cores_que_conversam"), NarrativeType.MARCAS_FAVORITAS, Msg.k("dna.marcas_que_me_vestem"),
-            NarrativeType.HYPE_FOCUS, Msg.k("dna.em_alta_agora")));
+            NarrativeType.HYPE_FOCUS, Msg.k("hypeDna.title")));
     static final Map<NarrativeType, String> RATIONALE = new EnumMap<>(Map.of(NarrativeType.TIMELINE, Msg.k("dna.looks_em_ordem_cronologica_espacados"),
             NarrativeType.MOMENTOS_MARCANTES, Msg.k("dna.o_look_mais_curtido_vira"),
             NarrativeType.PRIMEIRA_VEZ, Msg.k("dna.um_look_por_estreia_primeira"),
@@ -1116,7 +1177,7 @@ public class DnaService {
             NarrativeType.PALETA_DOMINANTE, Msg.k("dna.looks_cuja_cor_dominante_reforca"),
             NarrativeType.HARMONIA_CROMATICA, Msg.k("dna.looks_cujas_cores_formam_uma"),
             NarrativeType.MARCAS_FAVORITAS, Msg.k("dna.looks_que_mostram_as_marcas"),
-            NarrativeType.HYPE_FOCUS, Msg.k("dna.looks_com_o_maior_hype")));
+            NarrativeType.HYPE_FOCUS, Msg.k("hypeDna.rationale")));
 
     static boolean matches(Scheme s, List<SchemeItem> items, String q, DnaComposeRequest r) {
         if (r.occasion() != null && !r.occasion().isEmpty() && Json.csv(s.getOccasion()).stream().noneMatch(r.occasion()::contains)) {
@@ -1144,11 +1205,17 @@ public class DnaService {
     }
 
     static List<Scheme> pickFor(NarrativeType nt, List<Scheme> pool, Map<UUID, List<SchemeItem>> itemsBy, Season season) {
+        return pickFor(nt, pool, itemsBy, season, Map.of());
+    }
+
+    static List<Scheme> pickFor(NarrativeType nt, List<Scheme> pool, Map<UUID, List<SchemeItem>> itemsBy, Season season, Map<UUID, Double> hypeV2) {
         List<Scheme> chrono = pool.stream().sorted(Comparator.comparing(Scheme::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder()))).toList();
         return switch (nt) {
             case TIMELINE, PRIMEIRA_VEZ, LEGO, MOOD_BOARD, MARCAS_FAVORITAS -> spread(chrono, 5);
             case MOMENTOS_MARCANTES -> pool.stream().sorted(Comparator.comparingLong(Scheme::getLikeCount).reversed()).limit(4).toList();
-            case HYPE_FOCUS -> pool.stream().sorted(Comparator.comparingDouble(DnaService::hypeOf).reversed()).limit(4).toList();
+            // HYPE_FOCUS: maior HypeScore v2 pessoal primeiro; sem Hype (dados insuficientes/não calculado) por último, nunca como 0
+            case HYPE_FOCUS -> pool.stream().sorted(Comparator.comparing((Scheme s) -> hypeV2.get(s.getId()), Comparator.nullsLast(Comparator.reverseOrder())))
+                    .limit(4).toList();
             case POR_OCASIAO -> {
                 Map<String, List<Scheme>> byOcc = new LinkedHashMap<>();
                 pool.forEach(s -> byOcc.computeIfAbsent(Json.csv(s.getOccasion()).stream().findFirst().orElse("livre"), k -> new ArrayList<>()).add(s));
@@ -1280,8 +1347,11 @@ public class DnaService {
         return weight.entrySet().stream().max(Map.Entry.comparingByValue()).map(e -> Taxonomy.hex(e.getKey())).orElse(null);
     }
 
-    /** Dados específicos de cada narrativa (Seção B): ordenação, agrupamento e elementos gráficos. */
-    Map<String, Object> narrativeData(DnaScheme d, List<CellRef> items, Map<UUID, List<SchemeItem>> itemsBy) {
+    /**
+     * Dados específicos de cada narrativa (Seção B): ordenação, agrupamento e elementos gráficos. {@code hypeByScheme} =
+     * resumo v2 de cada célula já filtrado pela privacidade de quem vê (só a HYPE_FOCUS usa).
+     */
+    Map<String, Object> narrativeData(DnaScheme d, List<CellRef> items, Map<UUID, List<SchemeItem>> itemsBy, Map<UUID, Map<String, Object>> hypeByScheme) {
         if (!"DNA_COMPLETO".equals(d.getTargetElement()) || d.getNarrativeType() == null) {
             return Map.of();
         }
@@ -1347,7 +1417,23 @@ public class DnaService {
             }
             case HARMONIA_CROMATICA -> n.put("harmony", harmony(itemsBy.values().stream().flatMap(List::stream).map(si -> si.getWardrobeItem().getColor()).toList()));
             case MARCAS_FAVORITAS -> n.put("ranking", logoRanking(itemsBy.values().stream().flatMap(List::stream).toList()));
-            case HYPE_FOCUS -> n.put("meters", items.stream().map(i -> Map.of("schemeId", i.scheme().getId(), "hype", hypeOf(i.scheme()))).toList());
+            case HYPE_FOCUS -> {
+                // P2-12: medidores em HypeScore v2 (score + faixa; "sem dados" = status, nunca 0), maior Hype primeiro e
+                // sem Hype por último. "hype" (v1) segue só por compatibilidade (deprecado).
+                List<Map<String, Object>> meters = new ArrayList<>();
+                for (CellRef i : items) {
+                    Map<String, Object> v2 = hypeByScheme.getOrDefault(i.scheme().getId(), HypeScoreService.v2Summary(null, null, null));
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("schemeId", i.scheme().getId());
+                    m.put("status", v2.get("status"));
+                    m.put("score", v2.get("score"));
+                    m.put("level", v2.get("level"));
+                    meters.add(m);
+                }
+                meters.sort(Comparator.comparing((Map<String, Object> m) -> hypeScoreOf(m), Comparator.nullsLast(Comparator.reverseOrder())));
+                n.put("meters", meters);
+                n.put("basis", "HYPE_V2");
+            }
             case CARTELA_SAZONAL -> n.put("season", Map.of("theme", String.valueOf(d.getSeasonalTheme()), "preset", switch (d.getSeasonalTheme() == null ? Season.AUTUMN : d.getSeasonalTheme()) {
                 case WINTER -> "frost";
                 case SUMMER -> "solstice";

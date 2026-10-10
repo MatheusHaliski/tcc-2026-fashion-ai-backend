@@ -1,0 +1,46 @@
+@startuml RF11_MaquinaDeEstados_Video
+!pragma layout smetana
+title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de máquina de estados — um vídeo de Aura no card (ArtVideo)
+skinparam backgroundColor #FFFFFF
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  ArrowColor #52606D
+}
+state "Sem fonte" as SemFonte
+SemFonte : pôster visível; <video> sem src
+state "Na área de carga (até 300 px)" as Area {
+  state "Carregado" as Carregado
+  Carregado : src definido; esperando ficar visível
+  state "Tocando" as Tocando
+  state "Pausado" as Pausado
+  Pausado : fora da vista; arquivo mantido
+  state "Travado (plano B)" as Travado
+  Travado : onStuck(true): pôster com anim-<still | drift>
+  Travado : nova tentativa armada (1º toque ou tecla)
+  [*] --> Carregado
+  Carregado --> Tocando : visível e aba visível → play() ok
+  Carregado --> Travado : play() → NotAllowedError
+  Carregado --> Carregado : AbortError ou outro erro (ignorado)
+  Tocando --> Pausado : saiu da vista → pause()
+  Pausado --> Tocando : voltou à vista → play() ok
+  Pausado --> Travado : voltou à vista → NotAllowedError
+  Travado --> Tocando : toque · tecla · aba visível · pageshow ·\ncanplay · volta à vista → play() ok\n(dropRetry, onStuck(false))
+  Travado --> Travado : recusado de novo
+}
+state "Liberado" as Liberado
+Liberado : observadores e ouvintes removidos; onStuck(false)
+state "Autoplay do navegador" as Nativo
+Nativo : sem IntersectionObserver: autoplay = true, src direto
+
+[*] --> SemFonte : monta (navegador com IntersectionObserver)
+[*] --> Nativo : monta (navegador sem IntersectionObserver)
+SemFonte --> Area : card a até 300 px → src = arquivo
+Area --> SemFonte : card além de 300 px →\npause(); removeAttribute("src"); load()
+Area --> Liberado : Aura trocada ou card desmontado
+SemFonte --> Liberado : Aura trocada ou card desmontado
+Liberado --> SemFonte : nova Aura (outro src)
+Liberado --> [*]
+Nativo --> [*] : card desmontado
+@enduml

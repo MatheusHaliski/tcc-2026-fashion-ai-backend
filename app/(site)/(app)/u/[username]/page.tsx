@@ -12,11 +12,13 @@ import { LookbookTabs, type TabId } from "@/components/lookbook-tabs";
 import { FaiIcon } from "@/components/fai-icon";
 import { ProfileHeader } from "@/components/profile-header";
 import { EditProfileButton } from "@/components/edit-profile";
+import { HypeGroupBadge } from "@/components/hype/hype-group-badge";
+import { InsightStrip } from "@/components/insights/insight-strip";
 
-interface Profile { user: UserCard; bio?: string | null; pronouns?: string | null; links?: { title: string; url: string }[]; coverUrl?: string | null; layout: "PESSOAL" | "INSTITUCIONAL"; self: boolean; relation: string; counters: { followers: number; following: number; published: number; pieces?: number; schemes?: number }; visibility: string; contentVisible: boolean; invite?: { message: string; action?: string }; }
+interface Profile { user: UserCard; bio?: string | null; pronouns?: string | null; links?: { title: string; url: string }[]; coverUrl?: string | null; layout: "PESSOAL" | "INSTITUCIONAL"; institutionalSlug?: string; self: boolean; relation: string; counters: { followers: number; following: number; published: number; pieces?: number; schemes?: number }; visibility: string; contentVisible: boolean; invite?: { message: string; action?: string }; }
 
 export default function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
-  const username = encodeURIComponent(use(params).username);   /* vai direto para caminhos da API */ const { t } = useI18n(); const initialTab = useSearchParams().get("tab"); const { user } = useAuth(); const toast = useToast();
+  const username = use(params).username;   /* vai direto para caminhos da API */ const { t } = useI18n(); const initialTab = useSearchParams().get("tab"); const { user } = useAuth(); const toast = useToast();
   const { data, loading, error, reload } = useApi<Profile>((signal) => api.get(`/api/profiles/${encodeURIComponent(username)}`, { signal, anonymous: !user }), [username, !!user]);
   const [conn, setConn] = useState(false); const [confirmBlock, setConfirmBlock] = useState(false);
   const connections = useApi<{ followers: UserCard[]; following: UserCard[] }>((signal) => api.get(`/api/users/${data?.user.id}/connections`, { signal, anonymous: !user }), [data?.user.id], { enabled: conn && !!data });
@@ -25,7 +27,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-64" />;
   // Marca e celebridade têm página oficial própria: vai direto para ela, sem tela intermediária.
-  if (data.layout === "INSTITUCIONAL") return <InstitutionalRedirect slug={data.user.username} />;
+  if (data.layout === "INSTITUCIONAL") return <InstitutionalRedirect slug={data.institutionalSlug ?? data.user.id} tab={initialTab} />;
   const following = data.relation === "ACEITO";
   return (
     <>
@@ -34,6 +36,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         link={data.links?.[0] ? { href: data.links[0].url, label: data.links[0].title || data.links[0].url.replace(/^https?:\/\//, "") } : null}
         counts={{ pieces: data.counters.pieces, schemes: data.counters.schemes, followers: data.counters.followers, following: data.counters.following }}
         onCounts={() => setConn(true)}
+        hype={data.contentVisible ? <HypeGroupBadge type="CREATOR" groupKey={data.user.id} variant="header" /> : null}
         actions={<>
           {!data.self && user && <>
             <Button size="sm" variant={following || data.relation === "PENDENTE" ? "default" : "primary"} onClick={follow} aria-pressed={following}>{following ? t("lookbook.unfollow") : data.relation === "PENDENTE" ? t("lookbook.requested") : t("lookbook.follow")}</Button>
@@ -44,9 +47,12 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
           </>}
           {data.self && <><EditProfileButton /><Link href="/settings" className="btn btn-sm">{t("nav.settings")}</Link><Link href="/explorer?tab=passarela" className="btn btn-sm">{t("common.passarela_3d")}</Link></>}
         </>} />
+      {/* RF53 · Lote A5 (P3-15): leitura pública do criador (só itens públicos; perfil fechado ou bloqueado = nada) */}
+      {data.contentVisible && data.visibility === "PUBLIC" && <InsightStrip context="CREATOR_PROFILE" params={{ key: data.user.username }} collapsible className="mb-3" />}
       {!data.contentVisible
         ? <EmptyState title={t("profile.privateTitle")} hint={data.invite?.message ?? t("u.username.este_perfil_e_privado")} action={user && !data.self && data.relation !== "PENDENTE" ? <Button variant="primary" onClick={follow}>{t("profile.requestFollow")}</Button> : !user ? <Link href="/login" className="btn btn-primary">{t("nav.login")}</Link> : undefined} />
-        : <LookbookTabs ownerId={data.user.id} initialTab={profileTab(initialTab, data.self)} />}
+        : <LookbookTabs ownerId={data.user.id} initialTab={profileTab(initialTab, data.self)} initialSaved={initialTab === "saved_pieces" ? "pieces" : "looks"} />}
+      {data && data.self && (initialTab === "cupons" || initialTab === "coupons") && <CouponsRedirect />}
       <Dialog open={confirmBlock} onClose={() => setConfirmBlock(false)} title={t("profile.blockTitle", { username: data.user.username })}
         footer={<><Button onClick={() => setConfirmBlock(false)}>{t("common.cancel")}</Button><Button variant="danger" onClick={() => { setConfirmBlock(false); block(); }}>{t("lookbook.block")}</Button></>}>
         <p className="type-body">{t("profile.blockBody")}</p>
@@ -58,16 +64,26 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
   );
 }
 
-function InstitutionalRedirect({ slug }: { slug: string }) {
+function InstitutionalRedirect({ slug, tab }: { slug: string; tab: string | null }) {
   const router = useRouter(); const { t } = useI18n();
-  useEffect(() => { router.replace(`/brands/${slug}`); }, [router, slug]);
+  useEffect(() => { router.replace(`/brands/${encodeURIComponent(slug)}${tab ? `?tab=${encodeURIComponent(tab)}` : ""}`); }, [router, slug, tab]);
   return <p className="type-body text-muted" role="status">{t("common.loading")}</p>;
 }
 
-/** Aba pedida na URL (?tab=): as públicas para todos; as do dono só para o dono ("cupons" é o nome antigo de coupons). */
+/**
+ * Aba pedida na URL (?tab=): as públicas para todos; as do dono só para o dono. Ids antigos continuam valendo:
+ * saved_looks/saved_pieces → Salvos; cupons/coupons → /coupons (a aba duplicava a página de cupons e saiu do Lookbook).
+ * Publicações e Favoritos aceitam também o nome em português (publicacoes, favoritos).
+ */
+const TAB_ALIASES: Record<string, TabId> = { saved_looks: "saved", saved_pieces: "saved", publicacoes: "publications", favoritos: "favorites", cartas: "flair", "cartas-flair": "flair" };
 function profileTab(tab: string | null, self: boolean): TabId {
-  const t = tab === "cupons" ? "coupons" : tab;
-  if (t === "closet" || t === "looks" || t === "groups") return t;
-  if (self && (t === "dna" || t === "saved_looks" || t === "saved_pieces" || t === "daily" || t === "capsule" || t === "coupons")) return t;
+  const t = (tab && TAB_ALIASES[tab]) || tab;
+  if (t === "closet" || t === "flair" || t === "looks" || t === "publications" || t === "favorites" || t === "groups" || t === "moments") return t;
+  if (self && (t === "dna" || t === "saved" || t === "daily" || t === "capsule" || t === "insights")) return t;
   return "closet";
+}
+function CouponsRedirect() {
+  const router = useRouter();
+  useEffect(() => { router.replace("/coupons"); }, [router]);
+  return null;
 }

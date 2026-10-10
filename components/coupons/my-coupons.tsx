@@ -49,7 +49,7 @@ export function MyCoupons({ openRight }: { openRight?: string | null }) {
           <div className="flex gap-1.5">{(["TODOS", "EMITIDO", "USADO", "EXPIRADO"] as const).map((f) => <Chip key={f} active={filter === f} onClick={() => setFilter(f)}>{f === "TODOS" ? t("common.all") : f === "EMITIDO" ? t("coupons.myCoupons.validos") : f === "USADO" ? t("coupons.myCoupons.usados") : t("coupons.myCoupons.expirados")}</Chip>)}</div>
         </div>
         <p className="type-caption text-muted mb-3">{t("coupons.myCoupons.tocar_num_cupom_valido_abre", { note: data.note })}</p>
-        {coupons.length === 0 ? <EmptyState title={t("coupons.myCoupons.nenhum_cupom_por_aqui")} hint={t("coupons.myCoupons.ganhe_selos_de_marcas_e")} action={<Link className="btn btn-sm" href="/flair?tab=lojas">{t("coupons.myCoupons.ver_jogos_flair")}</Link>} /> :
+        {coupons.length === 0 ? <EmptyState title={t("coupons.myCoupons.nenhum_cupom_por_aqui")} hint={t("coupons.myCoupons.ganhe_selos_de_marcas_e")} action={<Link className="btn btn-sm" href="/flair/lojas">{t("coupons.myCoupons.ver_jogos_flair")}</Link>} /> :
           <div className="grid gap-4 lg:grid-cols-2">{coupons.map((c) => <FaiCoupon key={`${c.source}-${c.id}`} coupon={c} />)}</div>}
       </section>
 

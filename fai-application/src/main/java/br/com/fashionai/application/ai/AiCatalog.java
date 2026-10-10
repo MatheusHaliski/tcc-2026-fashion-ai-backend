@@ -244,6 +244,13 @@ public final class AiCatalog {
                 local(Msg.k("aiCatalog.catalog_discovery_local"), 0),
                 Msg.k("aiCatalog.catalog_discovery_fallback"),
                 20, Msg.k("aiCatalog.catalog_discovery_status"));   // busca na web restrita aos domínios oficiais da marca
+        put(AiCapability.CATALOG_TEXT_INTERPRETER,
+                Msg.k("aiCatalog.catalog_text_interpreter_funcao"),
+                claude(CLAUDE_LIGHT_MODEL, Kind.TEXT, "0.0010", Msg.k("aiCatalog.catalog_text_interpreter_custo"), 2500),
+                null,
+                local(Msg.k("aiCatalog.catalog_text_interpreter_local"), 0),
+                Msg.k("aiCatalog.catalog_text_interpreter_fallback"),
+                80, Msg.k("aiCatalog.catalog_text_interpreter_status"));   // só descrições longas; resultado em cache por texto
     }
 
     private AiCatalog() {

@@ -1,0 +1,58 @@
+@startuml RF40_Roupa_Estados
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  StartColor #20A77A
+  EndColor #4B5563
+}
+title RF40 — dress(): etapas de uma peça\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\ncomponents/three/human-outfit.tsx · 24 funções chamadas em ordem · etapas = chamadas que recebem "gg"
+
+state "Mapeada\nkindOf() em outfitOf()" as E0_kindOf
+E0_kindOf : <size:9>garments.ts</size>
+state "preparação" as E1_prepara__o
+E1_prepara__o : armOutFor(), setArmOut(), applyIdle(),\nbodyParam(), smoothBody(), underLayer()
+state "Casca\ngarmentGeometry()" as E2_garmentGeometry
+E2_garmentGeometry : <size:9>garments.ts</size>
+state "Relaxada\nrelaxGarment()" as E3_relaxGarment
+E3_relaxGarment : <size:9>garment-relax.ts</size>
+state "Dobrada\nfoldGarment()" as E4_foldGarment
+E4_foldGarment : <size:9>garment-relax.ts</size>
+state "posedPositions()" as E5_posedPositions
+E5_posedPositions : <size:9>garments.ts</size>
+state "texturedGeometry()" as E6_texturedGeometry
+E6_texturedGeometry : photoInfo(), fabricColor(), garmentTexture(),\nshoeColors(), shoeStyleOf(), shoeParts(),\ngarmentMaterial(), trimColors(), ribColor()
+E6_texturedGeometry : <size:9>garments.ts</size>
+state "garmentTrims()" as E7_garmentTrims
+E7_garmentTrims : collarBand(), zonesCovered()
+E7_garmentTrims : <size:9>garment-trims.ts</size>
+[*] --> E0_kindOf
+E0_kindOf --> E1_prepara__o
+E1_prepara__o --> E2_garmentGeometry
+E2_garmentGeometry --> E3_relaxGarment
+E3_relaxGarment --> E4_foldGarment
+E4_foldGarment --> E5_posedPositions
+E5_posedPositions --> E6_texturedGeometry
+E6_texturedGeometry --> E7_garmentTrims
+E7_garmentTrims --> [*]
+note right of E0_kindOf
+  Ordem das chamadas em dress() (human-outfit.tsx).
+  Cada etapa é uma chamada que recebe "gg"
+  (a geometria da peça); as outras funções
+  aparecem dentro da etapa em que são chamadas.
+  Nomes em destaque: os que o time deu às etapas.
+end note
+@enduml

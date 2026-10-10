@@ -8,6 +8,7 @@ import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import { Badge, Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input, PageHeader, Skeleton, Tabs, Textarea, useToast } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
+import { GuideAuto, HowItWorks } from "@/components/guide/guide";
 
 interface Template { code: string; name: string; rule: string; durationDays: number; modes: string[]; improves: string[]; effort?: string; effortDots?: number; reward?: string; rewardPoints?: number; participants?: { min: number; max: number }; playingNow?: number; origin?: string; author?: string; roomDecoration?: string; todayRule?: string; weeklyTheme?: string; highlight?: string; eligible?: boolean; reason?: string; }
 interface Catalog { challenges: Template[]; activeCount: number; maxActive: number; note?: string; presetNotes?: string[]; reactions?: string[]; }
@@ -31,7 +32,8 @@ function ChallengesInner() {
   )); };
   return (
     <>
-      <PageHeader title={t("nav.challenges")} kicker="RF32" lead={cat.data?.note} actions={cat.data ? <Badge>{t("challenges.ativos", { activeCount: cat.data.activeCount, maxActive: cat.data.maxActive })}</Badge> : undefined} />
+      <PageHeader title={t("nav.challenges")} kicker="RF32" lead={cat.data?.note} actions={<><HowItWorks id="challenges.progress" />{cat.data && <Badge>{t("challenges.ativos", { activeCount: cat.data.activeCount, maxActive: cat.data.maxActive })}</Badge>}</>} />
+      <GuideAuto id="challenges.progress" />
       <Tabs tabs={[{ id: "catalog", label: t("challenges.catalogo") }, { id: "mine", label: t("challenges.meus_desafios"), count: (mine.data?.active?.length ?? 0) + (mine.data?.invites?.length ?? 0) }, { id: "votes", label: t("challenges.votacao"), count: votes.data?.length }, { id: "propose", label: t("challenges.propor") }]} value={tab} onChange={setTab} />
       {tab === "catalog" && (cat.error ? <ErrorState error={cat.error} onRetry={cat.reload} /> : cat.loading ? <Skeleton className="h-64" /> : <div className="grid-looks">{(cat.data?.challenges ?? []).map((c) => (
         <Card key={c.code} className={startCode === c.code ? "ring-2 ring-mark" : ""}>{c.highlight && <Badge tone="mark" className="mb-1">{c.highlight}</Badge>}<p className="type-h3">{c.name}</p><p className="type-body-sm text-muted">{c.todayRule ?? c.weeklyTheme ?? c.rule}</p>

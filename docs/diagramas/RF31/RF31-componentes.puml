@@ -1,59 +1,73 @@
 @startuml RF31_Componentes
-title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de componentes — gerado do código (controllers → serviços → repositórios/ports)
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
+skinparam cloud {
+  BackgroundColor #F0FBF6
+  BorderColor #4A4852
+}
 left to right direction
+title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
 
-package "Frontend (Next.js · React Three Fiber)" {
-  component "closet — filtros de estado" as FE0
-  component "pieces/[id] — flags" as FE1
-  component "room — cesto e cabide especial" as FE2
+package "Frontend (Next.js)" {
+  component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  [WardrobeController] as WardrobeController
+  component "WardrobeController\n/api/me/closet\n/api/pieces/{…}\n/api/pieces/{…}/deletion-impact\n/api/pieces/{…}/flags\n(+2 rotas)" as WardrobeController
 }
 package "fai-application (casos de uso)" {
-  [WardrobeService] as WardrobeService
-  [FlatLayPipeline] as FlatLayPipeline #FAFAFA
-  [AssetCatalogService] as AssetCatalogService #FAFAFA
-  [ProjectionService] as ProjectionService #FAFAFA
-  [JobQueuePort] as JobQueuePort #FAFAFA
-  [Model3dService] as Model3dService #FAFAFA
+  component "WardrobeService" as WardrobeService
+  component "FlatLayPipeline" as FlatLayPipeline <<apoio>>
+  component "MediaService" as MediaService <<apoio>>
+  component "AssetCatalogService" as AssetCatalogService <<apoio>>
+  component "ProjectionService" as ProjectionService <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
+  component "Model3dService" as Model3dService <<apoio>>
+  component "BrandLogoService" as BrandLogoService <<apoio>>
+  component "PieceReferenceCatalog" as PieceReferenceCatalog <<apoio>>
+  component "JobQueuePort\n«InMemoryJobQueue»" as JobQueuePort <<port>>
 }
-package "fai-domain (repositórios JPA)" {
-  [BrandRepository\nModerationQueueRepository\nPhotoRepository\nPipelineJobRepository\nProcessingJobLogRepository\nQualityScoreRepository\nReactionRepository\nSavedItemRepository\nSchemeItemRepository\nSchemeRepository\nUserRepository\nWardrobeItemRepository] as REPOS
+package "fai-domain (repositórios)" {
+  component "WardrobeItemRepository\nUserRepository\nBrandRepository\nPipelineJobRepository\nProcessingJobLogRepository\nQualityScoreRepository\nModerationQueueRepository\nSchemeItemRepository\nSchemeRepository\nReactionRepository\n(+2)" as REPO_MySQL
 }
-database "MySQL · fashionai_app\n• ModerationQueue\n• brands\n• photos\n• pipeline_jobs\n• processing_jobs_log\n• quality_scores\n• reactions\n• saved_items\n• scheme_items\n• schemes\n• users\n• wardrobe_items" as DB
-cloud "Motor de IA transversal (RF24)\nprovedores externos + fallback local" as P_ai
-[Eventos de domínio\n(@TransactionalEventListener AFTER_COMMIT)] as P_events
-database "Storage de mídia\n(local / S3, MediaStoragePort)" as P_media
-[NotificationService\n(RNF10)] as P_notif
-
-FE0 --> WardrobeController : HTTPS/JSON
-FE1 --> WardrobeController : HTTPS/JSON
-FE2 --> WardrobeController : HTTPS/JSON
+database "MySQL\n• brands\n• moderation_queue\n• photos\n• pipeline_jobs\n• processing_jobs_log\n• quality_scores\n• reactions\n• saved_items\n• scheme_items\n• schemes\n• users\n• wardrobe_items" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+APIC --> WardrobeController : HTTPS/JSON
+REPO_MySQL --> DB_MySQL : JPA/Flyway
 WardrobeController --> WardrobeService
-WardrobeService ..> FlatLayPipeline
+WardrobeService --> AI
+WardrobeService --> EV
+WardrobeService --> JobQueuePort
+WardrobeService --> REPO_MySQL
 WardrobeService ..> AssetCatalogService
-WardrobeService ..> ProjectionService
-WardrobeService ..> JobQueuePort
+WardrobeService ..> BrandLogoService
+WardrobeService ..> FlatLayPipeline
+WardrobeService ..> MediaService
 WardrobeService ..> Model3dService
-WardrobeService --> REPOS
-WardrobeService --> P_ai
-WardrobeService --> P_media
-WardrobeService --> P_notif
-WardrobeService --> P_events
-REPOS --> DB : JPA/Flyway
+WardrobeService ..> NotificationService
+WardrobeService ..> PieceReferenceCatalog
+WardrobeService ..> ProjectionService
 @enduml

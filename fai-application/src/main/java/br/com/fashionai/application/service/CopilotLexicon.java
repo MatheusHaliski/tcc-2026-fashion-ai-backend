@@ -201,24 +201,30 @@ final class CopilotLexicon {
         color("indigo", "navy", "denim"); color("sage", "sage"); color("salvia", "sage");
 
         // ---------------------------------------------------------------- tipos de peça (prefixos)
-        type("regata", "tank_top"); type("cropped", "crop_top"); type("polo", "polo_shirt"); type("body", "bodysuit");
+        type("regata", "tank_top"); type("cropped", "top"); type("polo", "polo_shirt"); type("body", "bodysuit");
         type("sueter", "sweater"); type("cardig", "cardigan"); type("colete", "vest"); type("parka", "parka");
         type("corta vento", "windbreaker"); type("quimono", "kimono"); type("kimono", "kimono"); type("chino", "chino_pants");
         type("calca cargo", "cargo_pants"); type("jogger", "jogger_pants"); type("legging", "leggings"); type("pantacourt", "culottes");
         type("culote", "culottes"); type("saia short", "skort"); type("mocassim", "moccasins"); type("oxford", "oxford_shoes");
-        type("derby", "derby_shoes"); type("coturno", "combat_boots"); type("sapatilha", "flats"); type("rasteir", "flats");
+        type("derby", "derby_shoes"); type("coturno", "boots"); type("sapatilha", "flats"); type("rasteir", "flats");
         type("chinelo", "flip_flops"); type("alpargata", "espadrilles"); type("espadrille", "espadrilles"); type("scarpin", "heels");
-        type("transversal", "crossbody_bag"); type("sacola", "tote_bag"); type("clutch", "clutch"); type("gorro", "beanie");
+        type("transversal", "handbag"); type("sacola", "tote_bag"); type("clutch", "clutch"); type("gorro", "beanie");
         type("touca", "beanie"); type("cachecol", "scarf"); type("lenco", "scarf"); type("gravata", "tie", "bow_tie");
         type("pulseira", "bracelet"); type("brinco", "earrings"); type("anel", "ring"); type("luva", "gloves");
         type("meias", "socks"); type("tiara", "hair_accessory"); type("presilha", "hair_accessory"); type("macaquinho", "romper");
         type("jardineira", "overalls"); type("sobretudo", "coat");
-        type("trench", "coat"); type("bomber", "jacket"); type("jaquetinha", "jacket"); type("bota cano longo", "long_boots");
+        type("trench", "coat"); type("bomber", "jacket"); type("jaquetinha", "jacket"); type("bota cano longo", "boots");
 
         // ---------------------------------------------------------------- materiais da peça
-        pieceMaterial("WOOL", "cashmere", "caxemira", "merino", "la merino", "angora");
-        pieceMaterial("SYNTHETIC", "viscose", "elastano", "spandex", "lycra", "poliamida", "acrilico", "microfibra", "couro ecologico", "couro sintetico", "neoprene");
-        pieceMaterial("COTTON", "algodao organico", "moletinho");
+        pieceMaterial("WOOL", "merino", "la merino", "angora");
+        pieceMaterial("CASHMERE", "cashmere", "caxemira");
+        pieceMaterial("VISCOSE", "viscose", "modal");
+        pieceMaterial("NYLON", "poliamida", "microfibra");
+        pieceMaterial("ACRYLIC", "acrilico");
+        pieceMaterial("FAUX_LEATHER", "couro ecologico", "couro sintetico");
+        pieceMaterial("SYNTHETIC", "elastano", "spandex", "lycra", "neoprene");      // genérico de legado: aceito, fora da lista
+        pieceMaterial("COTTON", "algodao organico");
+        pieceMaterial("FLEECE", "moletinho");
         pieceMaterial("SILK", "seda pura", "mousseline");
         pieceMaterial("BLEND", "misto", "mescla");
     }

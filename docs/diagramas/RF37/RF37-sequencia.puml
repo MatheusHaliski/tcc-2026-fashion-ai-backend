@@ -1,39 +1,82 @@
 @startuml RF37_Sequencia
-title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor Jogador as J
-actor Loja as L
-participant "Frontend\nflair" as FE
-participant "FlairModesController" as MC
-participant "FlairController" as C
-participant "FlairModesService" as MS
-participant "FlairService" as S
-participant "CouponService" as CS
-database "MySQL" as DB
-J -> FE: FLAIR Runway (tema do dia)
-FE -> MC: GET /api/flair/modes/runway
-MC -> MS: runwayState(user)
-MS -> DB: SELECT flair_mode_states, schemes
-J -> FE: inscreve look
-FE -> MC: POST /api/flair/modes/runway
-MC -> MS: enterRunway(user, schemeId)
-MS -> MS: FlairLooks.score (40% IA, 30% tema,\n20% votos, 10% originalidade)
-MS -> DB: INSERT flair_matches + entries\nUPSERT flair_mode_states
-MS -> DB: INSERT flair_coin_entries (MODE_RUNWAY,\nsó as 3 primeiras partidas do dia)
-MS -> DB: INSERT flair_trophies (se vencer)
-MS ->> CS: CouponRightsCheck (AFTER_COMMIT)
-L -> FE: nova combinação (requisitos + cupom)
-FE -> C: POST /api/flair/brand/combinations
-C -> S: saveCombination
-S -> DB: INSERT flair_combinations
-J -> FE: trocar deck pelo cupom
-FE -> C: POST /api/flair/combinations/{id}/redeem
-S -> DB: INSERT flair_redemptions (código único)
+autonumber "<b>0."
+title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /flair" as P
+control "FlairModesController" as FlairModesController
+participant "FlairModesService" as FlairModesService
+participant "Guard" as Guard
+participant "SchemeService" as SchemeService
+database "MySQL" as DB_MySQL
+participant "FlairService" as FlairService
+participant "NotificationService" as NotificationService
+== FLAIR Runway — desfila um look: qualificação → semifinal → final ==
+U -> P : FLAIR Runway — desfila um look: qualificação → se…
+P -> FlairModesController : POST /api/flair/modes/runway
+FlairModesController -> FlairModesService : enterRunway()
+activate FlairModesService
+FlairModesService -> Guard : requireCanCreate()
+alt já na runway
+FlairModesService --> FlairModesController : 409 JA_NA_RUNWAY
+FlairModesController --> P : 409 + mensagem
+end
+FlairModesService -> SchemeService : owned()
+SchemeService -> DB_MySQL : SELECT schemes
+SchemeService --> FlairModesService
+alt look arquivado
+FlairModesService --> FlairModesController : 400 LOOK_ARQUIVADO
+FlairModesController --> P : 400 + mensagem
+end
+FlairModesService -> FlairService : publicLookHype()
+FlairService -> DB_MySQL : SELECT hype_scores
+FlairService --> FlairModesService
+FlairModesService -> DB_MySQL : SELECT scheme_items
+FlairModesService -> FlairService : cardsOf()
+FlairService -> DB_MySQL : SELECT hype_scores
+FlairService --> FlairModesService
+FlairModesService -> DB_MySQL : SELECT schemes
+FlairModesService -> SchemeService : canView()
+FlairModesService -> Guard : blocked()
+Guard -> DB_MySQL : SELECT follows (×2)
+Guard --> FlairModesService
+FlairModesService -> FlairService : publicLookHype()
+FlairModesService -> DB_MySQL : SELECT scheme_items
+FlairModesService -> FlairService : cardsOf()
+FlairModesService -> DB_MySQL : SELECT flair_trophies
+FlairModesService -> FlairModesService : new FlairTrophy()
+FlairModesService -> DB_MySQL : SELECT users
+FlairModesService -> FlairModesService : seasonKey = set
+FlairModesService -> DB_MySQL : INSERT/UPDATE flair_trophies
+FlairModesService -> NotificationService : notify()
+NotificationService -> DB_MySQL : SELECT users (×2)
+NotificationService -> DB_MySQL : SELECT user_preferences
+NotificationService -> DB_MySQL : INSERT/UPDATE notifications
+NotificationService --> FlairModesService
+note over FlairModesService : … e mais 24 passos no código
+deactivate FlairModesService
+FlairModesService --> FlairModesController : resultado
+FlairModesController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

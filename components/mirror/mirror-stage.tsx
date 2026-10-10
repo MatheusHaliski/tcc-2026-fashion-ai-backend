@@ -1,4 +1,5 @@
 "use client";
+import { useMemo } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
@@ -12,6 +13,7 @@ import type { Look3dPiece } from "@/components/three/common";
 import { Skeleton } from "@/components/ui";
 
 const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full w-full" /> });
+const AvatarStill = dynamic(() => retryImport(() => import("@/components/three/avatar-still")), { ssr: false, loading: () => <Skeleton className="h-full w-full" /> });
 
 /**
  * RF28 — Vista-me: o espelho mostra o REFLEXO do Avatar 3D da pessoa (o mesmo do perfil e do provador), vestindo as peças
@@ -31,33 +33,59 @@ export function mirrorPieces(slots: Record<string, MirrorPiece | MirrorPiece[] |
   } as Look3dPiece)));
 }
 
+/**
+ * O Avatar 3D salvo da pessoa, no formato das cenas: o mesmo do perfil, do espelho, do quarto e da Prévia 2D.
+ * Sem avatar, `avatar` é null e as cenas mostram o manequim de referência (com o sexo do cadastro).
+ */
+export function useMirrorAvatar() {
+  const { me } = useAuth();
+  const saved = useApi<SavedAvatar>((signal) => api.get("/api/me/avatar3d", { signal }), []);
+  const sex: "FEMININO" | "MASCULINO" = me?.sex === "MASCULINO" ? "MASCULINO" : "FEMININO";
+  const model = saved.data?.exists ? saved.data.model ?? null : null;
+  const adjust = saved.data?.adjust ?? null; const textureUrl = saved.data?.textureUrl ?? null;
+  const avatar = useMemo(() => (model ? { model, adjust, textureUrl } : null), [model, adjust, textureUrl]);
+  const body = useMemo(() => (avatar ? validateBody(avatar.model?.body)?.params ?? null : null), [avatar]);
+  return { loading: saved.loading, error: saved.error, reload: saved.reload, avatar, sex, body };
+}
+
+export type MirrorMode = "3d" | "2d";
+
 /** Tom da luz do espelho (temperatura de cor do quarto). */
-function glassTint(kelvin?: number): string {
+export function glassTint(kelvin?: number): string {
   if (!kelvin) return "#EEEAE2";
   if (kelvin < 3500) return "#F4E7D2";
   if (kelvin > 5000) return "#E4ECF3";
   return "#EEEAE2";
 }
 
-export function MirrorStage({ slots, kelvin, children }: { slots: Record<string, MirrorPiece | MirrorPiece[] | null>; kelvin?: number; children?: React.ReactNode }) {
-  const { t } = useI18n(); const { me } = useAuth();
-  const saved = useApi<SavedAvatar>((signal) => api.get("/api/me/avatar3d", { signal }), []);
-  const sex: "FEMININO" | "MASCULINO" = me?.sex === "MASCULINO" ? "MASCULINO" : "FEMININO";
-  const avatar = saved.data?.exists && saved.data.model ? { model: saved.data.model, adjust: saved.data.adjust ?? null, textureUrl: saved.data.textureUrl ?? null } : null;
-  const body = avatar ? validateBody(avatar.model?.body)?.params ?? null : null;
+/**
+ * O espelho em dois modos com o MESMO avatar e as mesmas peças:
+ *  - "3d" (Reflexo 3D): a cena viva, com a pose natural do movimento parado;
+ *  - "2d" (Prévia 2D): a foto de frente e parada dessa mesma cena (components/three/avatar-still.tsx).
+ */
+export function MirrorStage({ slots, kelvin, mode = "3d", children }: { slots: Record<string, MirrorPiece | MirrorPiece[] | null>; kelvin?: number; mode?: MirrorMode; children?: React.ReactNode }) {
+  const { t } = useI18n();
+  const { loading, error, reload, avatar, sex, body } = useMirrorAvatar();
   const tint = glassTint(kelvin);
+  const pieces = useMemo(() => mirrorPieces(slots), [slots]);
   return (
-    <div className="mirror-frame" aria-label={t("mirror.reflexo_aria")}>
+    <div className="mirror-frame" aria-label={t("mirror.reflexo_aria")} data-mirror-mode={mode}>
       <div className="mirror-glass" style={{ background: `radial-gradient(120% 90% at 50% 15%, #ffffff 0%, ${tint} 55%, #d9d4ca 100%)` }}>
-        {saved.loading ? <Skeleton className="h-full w-full" /> : (
-          <AvatarViewer avatar={avatar} sex={sex} body={body} pieces={mirrorPieces(slots)} framing="full" controls={false} view="front" background={tint} />
+        {loading ? <Skeleton className="h-full w-full" /> : error ? (
+          <button type="button" onClick={reload} className="btn">{t("common.retry")}</button>
+        ) : !avatar ? (
+          <div className="grid h-full content-center justify-items-center gap-3 p-6 text-center" role="status">
+            <p>{t("tryOn.avatar_required")}</p><Link href="/avatar" className="btn btn-sm">{t("mirror.criar_avatar")}</Link>
+          </div>
+        ) : mode === "2d" ? (
+          <AvatarStill avatar={avatar} sex={sex} body={body} pieces={pieces} background={tint} className="mirror-still" alt={t("mirror.previa_2d_alt", { n: pieces.length })} />
+        ) : (
+          <AvatarViewer avatar={avatar} sex={sex} body={body} pieces={pieces} framing="full" controls={false} view="front" background={tint} />
         )}
         <span className="mirror-sheen" aria-hidden />
         {children}
       </div>
-      {!saved.loading && !avatar && (
-        <p className="mirror-note">{t("mirror.sem_avatar")} <Link href="/avatar" className="underline">{t("mirror.criar_avatar")}</Link></p>
-      )}
+      {!loading && avatar && pieces.length > 0 && <p className="mirror-note">{t("tryOn.previa_3d_nota")}</p>}
     </div>
   );
 }

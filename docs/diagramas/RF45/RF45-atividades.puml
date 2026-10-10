@@ -1,9 +1,16 @@
 @startuml RF45_Atividades
-title RF45 — Processar e padronizar imagens canônicas de peças, calçados e acessórios (pipeline de validação e padronização)\nDiagrama de atividades — fluxo da pessoa e do sistema
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,88 +19,67 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF45 — Processar e padronizar imagens canônicas de peças, calçados e acessórios (pipeline de validação e padronização)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Em "Adicionar peça" (RF4) escolhe o tipo\ne envia UMA foto principal (JPG/PNG/WebP);
-note right
-  RN45.02 — uma foto basta para começar.
-  Atenção: o criador
-  de peça (pieces/new) NÃO usa mais a foto
-  (seção Foto e guia "Como fotografar" retirados);
-  o pipeline abaixo permanece só no backend.
-end note
-|Frontend|
-:pieces/new/page.tsx monta o multipart\n(file + category);
-|Backend|
-:WardrobeService.analyzeForCapture(user, bytes,\ncategory, lenient=true)\n(hoje via POST /api/pieces/analysis);
-if (Formato/tamanho aceitos?\nImageOps.requireAcceptedImage) then (não)
-  #FFE3E3:400 formato ou tamanho inválido;
+:Abre /pieces/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/studio/backdrops\nGET /api/taxonomy\nGET /api/pieces/{id};
+|Pessoa usuária|
+:RF4 · Estúdio — gera/refaz a foto de\nestúdio de uma peça ca…;
+|Tela (Next.js)|
+:POST /api/pieces/{id}/studio;
+|API (Spring Boot)|
+:WardrobeController.studioPiece\n→ WardrobeService.studioPiece;
+if (sem recorte?) then (sim)
+  :422 SEM_RECORTE\n«A peça precisa de uma foto própria\ncom o fundo removido para ir ao\nestúdio.»\n→ a tela mostra o aviso;
   stop
 endif
-|Bancos-serviços|
-:Guarda o ORIGINAL imutável\n(piece_images ORIGINAL, storage_key única);
-note right: RN45.01 — o original nunca é sobrescrito
-|Backend|
-:Flat Lay (AiCapability.FLAT_LAY_STANDARDIZER):\nsegmentação rembg → remove.bg → local;
-:PIECE_ANALYZER + silhueta: categoria e subcategoria;
-if (Conteúdo fora da política?\nCONTENT_MODERATOR) then (sim)
-  #FFE3E3:422 FOTO_RECUSADA;
+if (Foto da peça não encontrado[a]?) then (sim)
+  :404 NAO_ENCONTRADO\n«Foto da peça não encontrado(a)»\n→ a tela mostra o aviso;
   stop
 endif
-:LandmarkDetector.detect(cutout, family);
-:Logo, OCR (BrandReader) e KB de marca\n→ BrandEnsembleResolver.resolve(evidências);
-:IdentificationHierarchy.reconcile()\ncategoria → subcategoria → marca → linha → modelo;
-:PhotographyQualityGate.evaluate(profile, view, signals)\n= PhotographyQualityScore 0–100;
-note right
-  ACCEPT >= 75 · ACCEPT_WITH_GUIDANCE >= 50
-  RETAKE_SUGGESTED < 50 ou blur/luz severos
-  RN45.05 — < 0,60 aparece como "possível"
-end note
-:AdaptiveCaptureEngine.decide(Context)\n(ganho esperado por vista);
-if (Decision.done?) then (não)
-  |Pessoa|
-  :Vê "Só mais um detalhe"\n(ex.: BACK_VIEW, TONGUE_LABEL, WATCH_BACK);
-  if (Pula?) then (sim)
-    :CaptureRequest SKIPPED\n(atributo fica incerto e editável);
-  else (não)
-    :Envia a foto complementar;
-    note right: <<planejado>> POST /api/capture/sessions/{id}/images\nnão implementado — conforme Trello
-  endif
-  |Backend|
-  :Reavalia (máx. 3 complementares,\n2 pulos seguidos encerram);
-else (sim)
+if (estudio indisponível?) then (sim)
+  :503 ESTUDIO_INDISPONIVEL\n«Não deu para gerar o estúdio\nagora. Tente de novo em instantes.»\n→ a tela mostra o aviso;
+  stop
 endif
-:PhotographySpecs.get(CaptureProfiles.specFor(profile, view))\nex.: PANTS_FRONT_V1, SNEAKER_SIDE_V1;
-:CanonicalPhotographer.render(cutout, spec, landmarks, clipped)\nrotação limitada, crop, escala uniforme, padding;
-note right
-  RN45.04 — sem inpainting, geração,
-  super-resolução generativa ou espelhamento.
-  RN45.07 — toda imagem final segue
-  uma PhotographySpec versionada.
-end note
-:CanonicalPhotographer.detail(...) → LOGO/TEXTURE/PANTS_DETAIL;
-|Bancos-serviços|
-:Grava derivados (piece_images CANONICAL/DETAIL…),\nbrand_predictions, garment_landmarks e model_inferences;
-note right: RN45.06 — modelo e versão registrados\n(model_registry / ModelRef)
-|Pessoa|
-:Revisa identificação, confianças e o canônico;
-if (Confirma?) then (sim)
-  |Backend|
-  :POST /api/pieces (PieceForm.captureSessionId)\nwardrobe_items.canonical_image_url;
-  :Correções viram ai_review_items\n(e training_candidates só com consentimento);
-else (pede correção)
-  :Edita campos ou refaz a foto;
+|Dados e serviços|
+:Lê: wardrobe_items\nreactions;
+:Usa: Guard.requireCanCreate\nGuard.requireOwner\nMediaService.read\nMediaService.put\nMediaService.deleteUrl;
+:IA: STUDIO_ENHANCER;
+:Estado: studioImageUrl → set\nstudioDetailUrl → set;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Cadastrar a peça a partir do rasc…)
+    :POST /api/pieces\n→ WardrobeService.create\nvalida: CONTEUDO_BLOQUEADO, ERRO,\nFORMULARIO_INVALIDO, FOTO_OBRIGATORIA\nlê: users, pipeline_jobs, wardrobe_items …\nusa: Guard.requireCanCreate, OwnMedia.accepts,\nMediaService.read …\nia: STUDIO_ENHANCER;
+  case (Substituir a foto da peça [reproc…)
+    :PUT /api/pieces/{id}/image\n→ WardrobeService.replaceImage\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.put …\nia: STUDIO_ENHANCER;
+  case (RF4 · Estúdio — leva ao estúdio a…)
+    :POST /api/me/pieces/studio\n→ WardrobeService.studioAll\nlê: wardrobe_items\nusa: Guard.requireCanCreate,\nAssetCatalogService.publicFile,\nAssetCatalogService.defaultPieceLogo …\nia: STUDIO_ENHANCER;
+  case (RF4 · Estúdio — refaz a foto de e…)
+    :POST /api/pieces/analysis/{draftId}/studio\n→ WardrobeService.studioDraft\nvalida: ERRO, ESTUDIO_INDISPONIVEL, SEM_RECORTE\nlê: pipeline_jobs\nusa: MediaService.read, MediaService.put\nia: STUDIO_ENHANCER;
+  case (RF4 · Estúdio — aprova a foto de…)
+    :POST /api/pieces/{id}/studio/approve\n→ WardrobeService.approveStudio\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner\nestado: studioImageUrl → set, studioDetailUrl → set;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Nova tentativa de ler a marca…, Cadastrar várias
+  peças de uma…, Reprocessar remoção de fundo, RF4 ·
+  Estúdio — descarta a ve…, Editar a peça, Excluir a
+  peça
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
+|Pessoa usuária|
 stop
 @enduml

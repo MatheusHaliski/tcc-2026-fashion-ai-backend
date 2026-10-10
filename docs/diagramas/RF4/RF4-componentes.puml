@@ -1,0 +1,125 @@
+@startuml RF4_Componentes
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de componentes — criador catalog-first, buscador web de marcas e pipeline de imagem
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F4F2EF
+  BorderColor #4A4852
+  ArrowColor #4A4852
+}
+skinparam package {
+  BorderColor #CBC6BE
+}
+skinparam database {
+  BackgroundColor #EEF6FF
+  BorderColor #4A4852
+}
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #4A4852
+}
+left to right direction
+
+package "Frontend (Next.js)" {
+  component "(app)/pieces/new/page.tsx\nPieceCreator (4 etapas)\n+ lib/pieces/prefill.ts" as FE_NEW
+  component "catalog-search.tsx\n+ brand-autocomplete.tsx" as FE_CAT
+  component "piece-form.tsx (PieceFields)\n+ brand-search-input.tsx" as FE_FORM
+  component "piece-art-editor.tsx (RF11)" as FE_ART
+  component "expanded-card.tsx (ExpandedPiece)\n+ edit-image.tsx (EditImageDialog)\n+ photo-editor.tsx (RF15)" as FE_IMG
+  component "lens/* — “Eu tenho” (RF45/RF54)" as FE_LENS
+  component "<<planejado>>\npasso “Adicionar minha foto\n(opcional)” no criador" as FE_FOTO #FFF5F8
+}
+
+package "fai-web · controllers" {
+  [CatalogController\n/api/catalog/search · suggestions · brands\n/discover · /api/pieces/from-catalog] as C_CAT
+  [WardrobeController\n/api/pieces · /{id}/image · /background-removal\n/{id}/studio · /studio/approve · /studio/pending\n/api/me/pieces/studio · /api/taxonomy] as C_WR
+  [BrandLogoController\n/api/brand-search · /api/brand-logos] as C_BL
+  [SealController\n/api/seal-suggestions/preview-piece] as C_SEAL
+  [LensController\n/detections/{did}/own] as C_LENS
+}
+
+package "fai-application · serviços" {
+  [CatalogService\n+ CatalogMatchScorer\n+ OfficialCatalogDiscovery\n+ CatalogIngestService] as S_CAT
+  [WardrobeService\n(create · createFromCatalog · replaceImage\nremoveBackground · estúdio com aprovação)] as S_WR
+  [BrandWebSearchService\n+ LogoFilter · SvgPathRenderer] as S_BWS
+  [BrandLogoService] as S_BL
+  [AssetCatalogService\n(ilustração por subcategoria)] as S_ASSET
+  [MediaService] as S_MEDIA
+  [AiEngine (RF24)\nFLAT_LAY_STANDARDIZER · STUDIO_ENHANCER\nBRAND_LOGO_FINDER] as S_AI
+  [FlatLayPipeline · StudioPipeline\nQualityMetrics · ImageOps] as S_IMG
+  [ProjectionService · NotificationService\nGuard · Audit] as S_X
+  [WardrobeEventListeners · HypeLiveRecalc\nInventoryScoreService (PieceCreated, AFTER_COMMIT)] as S_EV
+  [LensService] as S_LENS
+  [vision: CanonicalPhotographer · PhotographySpecs\nLandmarkDetector · AdaptiveCaptureEngine\n(sem endpoint; só testes)] as S_VIS #FAFAFA
+}
+
+package "portas (fai-application · ports)" {
+  interface MediaStoragePort as P_MEDIA
+  interface WebFetchPort as P_WEB
+  interface JobQueuePort as P_JOB
+  interface SearchIndexPort as P_SEARCH
+  interface "ImageProviderPorts\nBackgroundRemovalPort · StudioShotPort" as P_IMG
+}
+
+package "fai-infrastructure" {
+  [S3MediaStorageAdapter /\nLocalFileMediaStorage] as I_S3
+  [JdkWebFetchAdapter\n(https, anti-SSRF)] as I_WEB
+  [InMemoryJobQueue /\nRedis (jobs:flatlay-reprocess)] as I_JOB
+  [OpenSearchIndexAdapter] as I_OS
+  [RembgAdapter · RemoveBgAdapter\nPhotoroomStudioAdapter] as I_IMG
+  [Repositórios JPA\nWardrobeItemRepository · CatalogProductRepository\nCatalogImageRepository · BrandRepository\nBrandLogoRepository · PipelineJobRepository\nPhotoRepository · PieceImageRepository] as I_JPA
+}
+database "MySQL\n• wardrobe_items\n• catalog_products · variants · images · sources\n• brands · brand_logos\n• photos · pipeline_jobs\n• piece_images · capture_sessions (V29)" as DB
+cloud "Internet\nWikidata · Simple Icons (GitHub)\nlojas oficiais das marcas" as X_WEB
+cloud "rembg · remove.bg\nPhotoroom" as X_IMG
+
+FE_NEW --> FE_CAT
+FE_NEW --> FE_FORM
+FE_NEW --> FE_ART
+FE_FOTO ..> FE_IMG : <<planejado>> abre o editor guiado
+FE_CAT --> C_CAT
+FE_NEW --> C_CAT : POST /api/pieces/from-catalog
+FE_NEW --> C_WR : POST /api/pieces
+FE_FORM --> C_BL : GET /api/brand-search
+FE_FORM --> C_SEAL
+FE_IMG --> C_WR
+FE_LENS --> C_LENS
+C_LENS --> S_LENS
+S_LENS ..> FE_NEW : href /pieces/new?from=lens
+C_CAT --> S_CAT
+C_WR --> S_WR
+C_BL --> S_BWS
+C_BL --> S_BL
+S_CAT --> S_WR : createFromCatalog
+S_CAT --> P_WEB : discover (fontes oficiais)
+S_WR --> S_ASSET
+S_WR --> S_BL : acceptWebLogo
+S_WR --> S_MEDIA
+S_WR --> S_AI
+S_AI --> S_IMG : passo remoto + plano B local
+S_IMG --> P_IMG
+S_WR --> S_X
+S_WR ..> S_EV : publica PieceCreated
+S_WR --> P_JOB : PIECE_REPROCESS (sem consumidor)
+S_BWS --> P_WEB
+S_BWS --> S_AI
+S_BWS --> S_MEDIA
+S_MEDIA --> P_MEDIA
+S_X --> P_SEARCH
+I_S3 ..|> P_MEDIA
+I_WEB ..|> P_WEB
+I_JOB ..|> P_JOB
+I_OS ..|> P_SEARCH
+I_IMG ..|> P_IMG
+S_CAT --> I_JPA
+S_WR --> I_JPA
+S_BL --> I_JPA
+I_JPA --> DB : JPA / Flyway V1–V42
+I_WEB --> X_WEB
+I_IMG --> X_IMG
+note bottom of S_VIS
+  Base do asset canônico e da captura
+  adaptativa (V29); as rotas /api/capture/**
+  do plano RF04 não existem.
+end note
+@enduml

@@ -1,0 +1,100 @@
+@startuml RF51_Atividades
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF51 — Escolher a Cartela sazonal e a animação num modal do Background Studio (look, DNA e peça)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
+start
+|Lógica no navegador (lib)|
+partition "lib/card-art.ts · cartelaSeason()" {
+  if (!bg?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+}
+|Tela (React)|
+partition "c/card-art.tsx · ArtVideo()" {
+  if (!v?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  if (!seen || document.visibilityState === 'hidden' ||…?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  if (e?.name !== 'NotAllowedError'?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+}
+|API (Spring Boot)|
+partition "BackgroundStudioService.saveScheme()" {
+  :Guard.requireCanCreate();
+  :lê schemes;
+  :Guard.requireOwner();
+  if (cor inválida?) then (sim)
+    :400 COR_INVALIDA\n«Use cor hexadecimal (#RRGGBB).»;
+    stop
+  endif
+  if (preset inválido?) then (sim)
+    :400 PRESET_INVALIDO\n«Gradiente desconhecido: …»;
+    stop
+  endif
+  if (preset inválido?) then (sim)
+    :400 PRESET_INVALIDO\n«Preset sazonal desconhecido: …»;
+    stop
+  endif
+  if (preset inválido?) then (sim)
+    :400 PRESET_INVALIDO\n«Preset AURA desconhecido: …»;
+    stop
+  endif
+  :backgroundVideoUrl → null;
+  :AssetCatalogService.resolveCombination();
+  :backgroundVideoUrl → set;
+  :MediaService.requireOwnedMedia();
+  :backgroundArtUrl → set;
+  :AssetCatalogService.gradient();
+  :lê wardrobe_items;
+  :containerOrigin → AUTO;
+  :containerMandatory → true;
+  :AssetCatalogService.nativeContainer();
+  :containerOrigin → MANUAL;
+  :containerOrigin → INDEFINIDA;
+  :AssetCatalogService.resolveCombination();
+  :AssetCatalogService.auraVariant();
+  :AssetCatalogService.material();
+  :lê wardrobe_items;
+  :Guard.requireOwner();
+  :… e mais 26 passos no código;
+  note right
+  e mais 12 condições que encerram cedo:
+  PRESET_INVALIDO, MATERIAL_INDISPONIVEL, FORMATO_INVALIDO, ESTACAO_OBRIGATORIA, SILHUETA_I…
+  end note
+}
+|Pessoa usuária|
+:Vê o resultado;
+stop
+@enduml

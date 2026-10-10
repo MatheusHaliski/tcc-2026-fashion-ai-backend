@@ -7,11 +7,13 @@ import br.com.fashionai.application.taxonomy.WorldRegions;
 import br.com.fashionai.domain.model.enums.FollowStatus;
 import br.com.fashionai.domain.repository.FollowRepository;
 import br.com.fashionai.application.common.ApiException;
+import br.com.fashionai.application.hype.HypeScoreConfig;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.application.taxonomy.Taxonomy;
 import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.DailyLook;
+import br.com.fashionai.domain.model.HypeScoreCurrent;
 import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.SchemeGrouping;
 import br.com.fashionai.domain.model.SchemeItem;
@@ -20,12 +22,14 @@ import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.AccountStatus;
 import br.com.fashionai.domain.model.enums.AvailabilityStatus;
 import br.com.fashionai.domain.model.enums.GroupingType;
+import br.com.fashionai.domain.model.enums.HypeEntityType;
 import br.com.fashionai.domain.model.enums.MannequinSex;
 import br.com.fashionai.domain.model.enums.Model3dStatus;
 import br.com.fashionai.domain.model.enums.ProfileType;
 import br.com.fashionai.domain.model.enums.SchemeStatus;
 import br.com.fashionai.domain.repository.CelebrityProfileRepository;
 import br.com.fashionai.domain.repository.DailyLookRepository;
+import br.com.fashionai.domain.repository.HypeScoreCurrentRepository;
 import br.com.fashionai.domain.repository.SchemeGroupingRepository;
 import br.com.fashionai.domain.repository.SchemeItemRepository;
 import br.com.fashionai.domain.repository.SchemeRepository;
@@ -35,10 +39,11 @@ import br.com.fashionai.domain.repository.WardrobeItemRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -50,6 +55,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * Vitrines 3D (cards Trello "Passarela 3D", "Eras da celebridade" e "Coleções da marca", e o botão "Gerar 3D" das
@@ -59,14 +65,22 @@ import java.util.UUID;
  * Tudo aqui é leitura de dados que já existem (esquemas, peças, agrupamentos, Look do Dia): a renderização 3D roda
  * no navegador (Three.js). Peças com modelo do RF16 pronto entram como GLB; as demais entram como a foto recortada
  * aplicada no manequim.
+ * <p>
+ * HypeScore v2 (RF53 · Lote 1 da auditoria de abas): rankings da Passarela, ordenação e insights de Eras/Coleções e o
+ * look do My Stage leem o estado do job ({@code hype_scores}). Para terceiros só vale o Hype {@code publicEligible} e
+ * disponível (sem Hype público = "—" e por último); o dono do perfil/look vê o Hype pessoal. "Em alta" é crescimento
+ * (TREND/momento), nunca curtidas: popularidade aparece à parte. O {@code hypeScore} v1 das respostas fica DEPRECADO.
  */
 @Service
 public class ShowcaseService {
     /** Aba Eras (celebridade): eras, fases e turnês. Aba Coleções (marca): coleções. */
     static final Set<GroupingType> ERA_TYPES = EnumSet.of(GroupingType.ERA, GroupingType.PHASE, GroupingType.TOUR);
     static final Set<GroupingType> COLLECTION_TYPES = EnumSet.of(GroupingType.COLLECTION);
-    /** Pesos do ranking de insights: curtidas, hype e volume de itens (normalizados pelo maior valor do perfil). */
-    static final double W_LIKES = 0.5, W_HYPE = 0.35, W_ITEMS = 0.15;
+    /**
+     * Pesos da pontuação de POPULARIDADE dos insights (curtidas e volume de itens, normalizados pelo maior valor do
+     * perfil). O HypeScore não entra: popularidade ≠ Hype, e o Hype v2 (maior e médio, com faixa) aparece à parte.
+     */
+    static final double W_LIKES = 0.75, W_ITEMS = 0.25;
     static final int RUNWAY_MAX = 24;
 
     private final SchemeRepository schemes;
@@ -85,12 +99,15 @@ public class ShowcaseService {
     private final UserRepository users;
     private final MediaService media;
     private final FollowRepository follows;
+    /** HypeScore v2: estado atual lido direto do repositório (GET nunca recalcula nem emite sinal). */
+    private final HypeScoreCurrentRepository hypeScores;
+    private final HypeScoreConfig hypeConfig;
 
     public ShowcaseService(FollowRepository follows, UserRepository users, MediaService media, SchemeRepository schemes, SchemeItemRepository schemeItems, WardrobeItemRepository pieces,
                            SchemeGroupingRepository groupings, DailyLookRepository dailyLooks, DailyLookService dailyLookService,
                            UserPreferencesRepository preferences, CelebrityProfileRepository celebrities,
                            SchemeService schemeService, InstitutionalService institutional, Model3dService model3d, Guard guard,
-                           Avatar3dService avatars3d) {
+                           Avatar3dService avatars3d, HypeScoreCurrentRepository hypeScores, HypeScoreConfig hypeConfig) {
         this.avatars3d = avatars3d;
         this.schemes = schemes;
         this.schemeItems = schemeItems;
@@ -107,6 +124,17 @@ public class ShowcaseService {
         this.users = users;
         this.media = media;
         this.follows = follows;
+        this.hypeScores = hypeScores;
+        this.hypeConfig = hypeConfig;
+    }
+
+    /** Estado v2 de uma lista numa consulta (sem repositório = vazio: tudo neutro, nada vira 0). */
+    Map<UUID, HypeScoreCurrent> hypeOf(HypeEntityType type, Collection<UUID> ids) {
+        return SearchService.hypeRows(hypeScores, hypeConfig, type, ids);
+    }
+
+    private static boolean self(CurrentUser viewer, User owner) {
+        return viewer != null && owner != null && viewer.id().equals(owner.getId());
     }
 
     // ================================================================== look no manequim ("Gerar 3D")
@@ -139,6 +167,11 @@ public class ShowcaseService {
     }
 
     Map<String, Object> look(Scheme s, CurrentUser viewer) {
+        return look(s, viewer, hypeOf(HypeEntityType.SCHEME, List.of(s.getId())).get(s.getId()));
+    }
+
+    /** Look no manequim com o Hype v2 já carregado ({@code hype}: resumo dos cards; público, ou pessoal para o dono). */
+    Map<String, Object> look(Scheme s, CurrentUser viewer, HypeScoreCurrent hype) {
         List<WardrobeItem> ws = schemeItems.findBySchemeIdOrderBySortOrder(s.getId()).stream().map(SchemeItem::getWardrobeItem)
                 .filter(Objects::nonNull).toList();
         boolean own = viewer != null && viewer.id().equals(s.getUser().getId());
@@ -146,8 +179,8 @@ public class ShowcaseService {
         out.put("schemeId", s.getId());
         out.put("title", s.getTitle());
         out.put("owner", Views.user(s.getUser()));
-        out.put("hypeScore", s.getHypeScore());
-        out.put("likes", s.getLikeCount());
+        out.put("hype", SearchService.hypeSummary(hype, own, hypeConfig));
+        out.put("likes", s.getLikeCount());       // popularidade, à parte do Hype
         out.put("mannequin", mannequin(s.getUser(), ws, viewer));
         out.put("pieces", ws.stream().map(ShowcaseService::piece).toList());
         long ready = ws.stream().filter(w -> w.getModel3dStatus() == Model3dStatus.COMPLETED && w.getModel3dUrl() != null).count();
@@ -390,9 +423,10 @@ public class ShowcaseService {
 
     /**
      * O desfile do dia: o Look do Dia de hoje de cada perfil visível. Quem registrou look na última semana e não trocou
-     * hoje continua desfilando com o último (mesma virada de dia do RF6). Rankings: Top 100 Global (Hype Score), Top 100
-     * Regional (região do mundo), Top 100 do país, Seguindo, Em alta (curtidas) e Recentes; filtros por região, cores,
-     * ocasiões, estilos e manequim. Como seria inviável desfilar todo mundo, a passarela 3D mostra um lote de até 24
+     * hoje continua desfilando com o último (mesma virada de dia do RF6). Rankings: Top 100 Global (HypeScore v2 público;
+     * sem Hype público = no fim), Top 100 Regional (região do mundo), Top 100 do país, Seguindo, Em alta (crescimento:
+     * momento RISING/EMERGING e dimensão TREND do v2 — não curtidas) e Recentes; filtros por região, cores, ocasiões,
+     * estilos e manequim. Cada linha da tabela e cada look trazem {@code hype} (resumo v2). Como seria inviável desfilar todo mundo, a passarela 3D mostra um lote de até 24
      * looks por vez ({@code limit}/{@code offset}) e a tabela lateral vai até o Top 100.
      */
     @Transactional
@@ -450,13 +484,9 @@ public class ShowcaseService {
         List<String> colors = f.colors() == null ? List.of() : f.colors(), occ = f.occasions() == null ? List.of() : f.occasions(),
                 styles = f.styles() == null ? List.of() : f.styles();
         String sex = f.sex() == null || f.sex().isBlank() ? null : f.sex().toUpperCase(Locale.ROOT);
-        Comparator<RunwayEntry> order = switch (ranking) {
-            case "EM_ALTA" -> Comparator.comparingLong((RunwayEntry e) -> e.dl().getScheme().getLikeCount() + 2 * e.dl().getScheme().getSaveCount()).reversed()
-                    .thenComparing(e -> -hype(e.dl().getScheme().getHypeScore()));
-            case "RECENTES" -> Comparator.comparing((RunwayEntry e) -> e.dl().getCreatedAt() == null ? java.time.Instant.EPOCH : e.dl().getCreatedAt()).reversed();
-            default -> Comparator.comparing((RunwayEntry e) -> hype(e.dl().getScheme().getHypeScore())).reversed()
-                    .thenComparing(e -> -e.dl().getScheme().getLikeCount());
-        };
+        // HypeScore v2 do pool inteiro numa consulta; a ORDEM usa só o Hype público (é um ranking compartilhado)
+        Map<UUID, HypeScoreCurrent> hype = hypeOf(HypeEntityType.SCHEME, pool.stream().map(e -> e.dl().getScheme().getId()).toList());
+        Comparator<RunwayEntry> order = runwayOrder(ranking, e -> hype.get(e.dl().getScheme().getId()));
         List<RunwayEntry> ranked = scoped.stream()
                 .filter(e -> colors.isEmpty() || colors.stream().anyMatch(e.colors()::contains))
                 .filter(e -> occ.isEmpty() || occ.stream().anyMatch(e.occasions()::contains))
@@ -477,8 +507,8 @@ public class ShowcaseService {
             row.put("schemeId", e.dl().getScheme().getId());
             row.put("title", e.dl().getScheme().getTitle());
             row.put("owner", Views.user(e.dl().getUser()));
-            row.put("hypeScore", e.dl().getScheme().getHypeScore());
-            row.put("likes", e.dl().getScheme().getLikeCount());
+            row.put("hype", SearchService.hypeSummary(hype.get(e.dl().getScheme().getId()), you, hypeConfig));
+            row.put("likes", e.dl().getScheme().getLikeCount());       // popularidade, exibida à parte
             row.put("country", e.country());
             row.put("region", WorldRegions.label(e.region()));
             row.put("you", you);
@@ -494,7 +524,7 @@ public class ShowcaseService {
             m.put("carriedOver", e.dl().getMaterializedFrom() != null);
             m.put("country", e.country());
             m.put("region", WorldRegions.label(e.region()));
-            m.put("look", look(e.dl().getScheme(), viewer));
+            m.put("look", look(e.dl().getScheme(), viewer, hype.get(e.dl().getScheme().getId())));
             looks.add(m);
         }
         Map<String, Object> out = new LinkedHashMap<>();
@@ -504,6 +534,7 @@ public class ShowcaseService {
         out.put("total", ranked.size());
         out.put("ranking", ranking);
         out.put("rankings", RUNWAY_RANKINGS);
+        out.put("algorithmVersion", hypeConfig == null ? null : hypeConfig.algorithmVersion());
         out.put("applied", Map.of("region", region == null ? "" : region, "country", country == null ? "" : country, "colors", colors, "occasions", occ, "styles", styles,
                 "sex", sex == null ? "" : sex));
         out.put("batch", Map.of("offset", offset, "limit", max, "from", ranked.isEmpty() ? 0 : offset + 1, "to", Math.min(ranked.size(), offset + max),
@@ -523,15 +554,30 @@ public class ShowcaseService {
         return out;
     }
 
+    /**
+     * Ordem de cada ranking da Passarela. Top 100: HypeScore v2 PÚBLICO (sem Hype público = por último, nunca 0).
+     * Em alta: crescimento — momento RISING/EMERGING primeiro, depois a dimensão TREND e o score (curtidas e salvos são
+     * popularidade e não entram). Recentes: hora do Look do Dia. Desempate estável: mais recente, depois o id.
+     */
+    static Comparator<RunwayEntry> runwayOrder(String ranking, Function<RunwayEntry, HypeScoreCurrent> hype) {
+        Comparator<RunwayEntry> recent = Comparator.comparing((RunwayEntry e) -> e.dl().getCreatedAt() == null ? Instant.EPOCH : e.dl().getCreatedAt())
+                .reversed().thenComparing(e -> e.dl().getScheme().getId());
+        Comparator<Double> desc = Comparator.nullsLast(Comparator.reverseOrder());
+        return switch (ranking) {
+            case "EM_ALTA" -> Comparator.comparing((RunwayEntry e) -> SearchService.risingFor(hype.apply(e), false) ? 0 : 1)
+                    .thenComparing(e -> SearchService.trendFor(hype.apply(e), false), desc)
+                    .thenComparing(e -> SearchService.publicScore(hype.apply(e)), desc)
+                    .thenComparing(recent);
+            case "RECENTES" -> recent;
+            default -> Comparator.comparing((RunwayEntry e) -> SearchService.publicScore(hype.apply(e)), desc).thenComparing(recent);
+        };
+    }
+
     static List<Map<String, Object>> count(List<String> values) {
         Map<String, Long> c = new java.util.TreeMap<>();
         values.forEach(v -> c.merge(v, 1L, Long::sum));
         return c.entrySet().stream().sorted(Map.Entry.<String, Long>comparingByValue().reversed())
                 .map(e -> Map.<String, Object>of("value", e.getKey(), "count", e.getValue())).toList();
-    }
-
-    private static double hype(BigDecimal b) {
-        return b == null ? 0 : b.doubleValue();
     }
 
     // ================================================================== Eras (celebridade) e Coleções (marca) — RF22
@@ -586,9 +632,10 @@ public class ShowcaseService {
         User u = owner(slug, kind);
         List<Scheme> ss = visibleSchemes(viewer, u);
         List<WardrobeItem> ps = visiblePieces(viewer, u);
+        Map<UUID, HypeScoreCurrent> hype = hypeOf(HypeEntityType.SCHEME, ss.stream().map(Scheme::getId).toList());
         List<Map<String, Object>> out = new ArrayList<>();
         for (SchemeGrouping g : groupingsOf(u, kind)) {
-            out.add(groupingCard(g, ss, ps));
+            out.add(groupingCard(g, ss, ps, hype, self(viewer, u)));
         }
         Map<String, Object> res = new LinkedHashMap<>();
         res.put("kind", kind.name());
@@ -599,7 +646,8 @@ public class ShowcaseService {
         return res;
     }
 
-    private Map<String, Object> groupingCard(SchemeGrouping g, List<Scheme> ss, List<WardrobeItem> ps) {
+    /** Card da era/coleção. Sem capa enviada, usa a capa do look de maior HypeScore v2 (público, ou pessoal para o dono). */
+    private Map<String, Object> groupingCard(SchemeGrouping g, List<Scheme> ss, List<WardrobeItem> ps, Map<UUID, HypeScoreCurrent> hype, boolean self) {
         List<Scheme> gs = ss.stream().filter(s -> g.getId().equals(s.getGroupingId())).toList();
         List<WardrobeItem> gp = ps.stream().filter(w -> g.getId().equals(w.getGroupingId())).toList();
         Map<String, Object> m = new LinkedHashMap<>();
@@ -614,7 +662,8 @@ public class ShowcaseService {
         String cover = g.getCoverUrl();
         String coverSource = "upload";
         if (cover == null) {
-            cover = gs.stream().filter(s -> s.getCoverImageUrl() != null).max(Comparator.comparing((Scheme s) -> hype(s.getHypeScore())))
+            cover = gs.stream().filter(s -> s.getCoverImageUrl() != null)
+                    .max(Comparator.comparing((Scheme s) -> SearchService.scoreFor(hype.get(s.getId()), self), Comparator.nullsFirst(Comparator.naturalOrder())))
                     .map(Scheme::getCoverImageUrl).orElse(gp.stream().map(w -> w.getStudioImageUrl() != null ? w.getStudioImageUrl() : w.getImageUrl())
                             .filter(Objects::nonNull).findFirst().orElse(null));
             coverSource = cover == null ? "nenhuma" : "esquema";
@@ -660,17 +709,23 @@ public class ShowcaseService {
         }
         String needle = q == null ? "" : q.trim().toLowerCase(Locale.ROOT);
         String t = type == null ? "TODOS" : type.toUpperCase(Locale.ROOT);
-        List<Scheme> ss = visibleSchemes(viewer, u).stream().filter(s -> s.getGroupingId() != null && ids.contains(s.getGroupingId()))
+        boolean self = self(viewer, u);
+        List<Scheme> allSchemes = visibleSchemes(viewer, u);
+        List<WardrobeItem> allPieces = visiblePieces(viewer, u);
+        // P1-05: HypeScore v2 dos looks e peças do perfil (duas consultas), lido antes de ordenar
+        Map<UUID, HypeScoreCurrent> schemeHype = hypeOf(HypeEntityType.SCHEME, allSchemes.stream().map(Scheme::getId).toList());
+        Map<UUID, HypeScoreCurrent> pieceHype = hypeOf(HypeEntityType.PIECE, allPieces.stream().map(WardrobeItem::getId).toList());
+        List<Scheme> ss = allSchemes.stream().filter(s -> s.getGroupingId() != null && ids.contains(s.getGroupingId()))
                 .filter(s -> needle.isEmpty() || contains(s.getTitle(), needle) || contains(s.getTags(), needle) || contains(s.getStyle(), needle))
-                .sorted(order(sort, Scheme::getHypeScore, Scheme::getLikeCount, Scheme::getCreatedAt)).toList();
-        List<WardrobeItem> ps = visiblePieces(viewer, u).stream().filter(w -> w.getGroupingId() != null && ids.contains(w.getGroupingId()))
+                .sorted(order(sort, s -> schemeHype.get(s.getId()), self, Scheme::getLikeCount, Scheme::getCreatedAt)).toList();
+        List<WardrobeItem> ps = allPieces.stream().filter(w -> w.getGroupingId() != null && ids.contains(w.getGroupingId()))
                 .filter(w -> needle.isEmpty() || contains(w.getName(), needle) || contains(w.getBrandName(), needle) || contains(w.getTags(), needle))
-                .sorted(order(sort, WardrobeItem::getHypeScore, WardrobeItem::getLikesCount, WardrobeItem::getCreatedAt)).toList();
+                .sorted(order(sort, w -> pieceHype.get(w.getId()), self, WardrobeItem::getLikesCount, WardrobeItem::getCreatedAt)).toList();
         Map<UUID, SchemeGrouping> byId = new HashMap<>();
         gs.forEach(g -> byId.put(g.getId(), g));
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("kind", kind.name());
-        out.put("header", selected == null ? null : groupingCard(selected, visibleSchemes(viewer, u), visiblePieces(viewer, u)));
+        out.put("header", selected == null ? null : groupingCard(selected, allSchemes, allPieces, schemeHype, self));
         out.put("schemes", t.equals("PECAS") ? List.of() : ss.stream().limit(60).map(s -> {
             Map<String, Object> m = new LinkedHashMap<>();
             m.put("scheme", schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId())));
@@ -685,6 +740,7 @@ public class ShowcaseService {
         }).toList());
         out.put("years", gs.stream().filter(g -> g.getPeriodFrom() != null).flatMap(g -> java.util.stream.IntStream
                 .rangeClosed(g.getPeriodFrom(), g.getPeriodTo() == null ? g.getPeriodFrom() : g.getPeriodTo()).boxed()).distinct().sorted().toList());
+        out.put("sorts", SHOWCASE_SORTS);
         return out;
     }
 
@@ -692,50 +748,82 @@ public class ShowcaseService {
         return hay != null && hay.toLowerCase(Locale.ROOT).contains(needle);
     }
 
-    private static <T> Comparator<T> order(String sort, java.util.function.Function<T, BigDecimal> hype,
-                                           java.util.function.ToLongFunction<T> likes, java.util.function.Function<T, java.time.Instant> created) {
+    /** Ordenações da busca de Eras/Coleções (ordenação, nunca aba): HYPE (v2), GROWTH (em crescimento), CURTIDAS, RECENTES. */
+    public static final List<String> SHOWCASE_SORTS = List.of("HYPE", "GROWTH", "CURTIDAS", "RECENTES");
+
+    /**
+     * P1-05 — ordem dos looks/peças de uma era ou coleção. HYPE = HypeScore v2 (público para quem visita; o dono do perfil
+     * usa o pessoal), sem Hype = por último; GROWTH = variação de 7 dias em pontos e, no empate, a dimensão TREND
+     * (crescimento ≠ popularidade); CURTIDAS = popularidade; RECENTES = cadastro. Desempate: mais recente.
+     */
+    static <T> Comparator<T> order(String sort, Function<T, HypeScoreCurrent> hype, boolean self,
+                                   java.util.function.ToLongFunction<T> likes, Function<T, Instant> created) {
         String s = sort == null ? "HYPE" : sort.toUpperCase(Locale.ROOT);
+        Comparator<T> recent = Comparator.comparing(created, Comparator.nullsLast(Comparator.reverseOrder()));
+        Comparator<Double> desc = Comparator.nullsLast(Comparator.reverseOrder());
         return switch (s) {
-            case "CURTIDAS", "LIKES" -> Comparator.comparingLong(likes).reversed();
-            case "RECENTES", "RECENT" -> Comparator.comparing(created, Comparator.nullsLast(Comparator.reverseOrder()));
-            default -> Comparator.comparing((T x) -> hype(hype.apply(x))).reversed();
+            case "CURTIDAS", "LIKES" -> Comparator.comparingLong(likes).reversed().thenComparing(recent);
+            case "RECENTES", "RECENT" -> recent;
+            case "GROWTH", "CRESCIMENTO", "EM_CRESCIMENTO" -> Comparator.comparing((T x) -> SearchService.growthFor(hype.apply(x), self), desc)
+                    .thenComparing(x -> SearchService.trendFor(hype.apply(x), self), desc)
+                    .thenComparing(recent);
+            default -> Comparator.comparing((T x) -> SearchService.scoreFor(hype.apply(x), self), desc).thenComparing(recent);
         };
     }
 
     /**
-     * Insights de eras/coleções: curtidas totais (esquemas + peças), maior Hype Score e volume. A pontuação é
-     * 0,5·curtidas + 0,35·hype + 0,15·itens, cada termo dividido pelo maior valor do próprio perfil. A plateia do palco
-     * (ou o público em volta da mini loja) é proporcional à pontuação: o 1º lugar lota.
+     * Hype v2 de uma era/coleção: {@code {top, avg, level, items}} sobre os looks e peças com Hype disponível (público
+     * para quem visita; pessoal para o dono). {@code level} é a faixa da média. Sem item com Hype = tudo nulo ("—").
+     */
+    static Map<String, Object> groupHype(List<HypeScoreCurrent> rows, boolean self, HypeScoreConfig cfg) {
+        List<Double> scores = rows.stream().map(c -> SearchService.scoreFor(c, self)).filter(Objects::nonNull).toList();
+        Map<String, Object> h = new LinkedHashMap<>();
+        Double avg = scores.isEmpty() ? null : SearchService.round1(scores.stream().mapToDouble(Double::doubleValue).average().orElse(0));
+        h.put("top", scores.isEmpty() ? null : SearchService.round1(scores.stream().mapToDouble(Double::doubleValue).max().orElse(0)));
+        h.put("avg", avg);
+        h.put("level", avg == null ? null : (cfg == null ? HypeScoreConfig.defaults() : cfg).level(avg).name());
+        h.put("items", scores.size());
+        return h;
+    }
+
+    /**
+     * Insights de eras/coleções. A pontuação (ranking, plateia, fogos) é de POPULARIDADE: 0,75·curtidas + 0,25·itens,
+     * cada termo dividido pelo maior valor do próprio perfil — o HypeScore não entra (popularidade ≠ Hype). O Hype v2 vem
+     * à parte em {@code hype} (maior e médio, com faixa); {@code mostHype} é a era/coleção de maior Hype médio.
+     * A plateia do palco (ou o público em volta da mini loja) é proporcional à pontuação: o 1º lugar lota.
      */
     @Transactional(readOnly = true)
     public Map<String, Object> insights(CurrentUser viewer, String slug, Kind kind) {
         User u = owner(slug, kind);
         List<Scheme> ss = visibleSchemes(viewer, u);
         List<WardrobeItem> ps = visiblePieces(viewer, u);
+        boolean self = self(viewer, u);
+        Map<UUID, HypeScoreCurrent> schemeHype = hypeOf(HypeEntityType.SCHEME, ss.stream().map(Scheme::getId).toList());
+        Map<UUID, HypeScoreCurrent> pieceHype = hypeOf(HypeEntityType.PIECE, ps.stream().map(WardrobeItem::getId).toList());
         List<Map<String, Object>> rows = new ArrayList<>();
-        double maxLikes = 0, maxHype = 0, maxItems = 0;
+        double maxLikes = 0, maxItems = 0;
         for (SchemeGrouping g : groupingsOf(u, kind)) {
             List<Scheme> gs = ss.stream().filter(s -> g.getId().equals(s.getGroupingId())).toList();
             List<WardrobeItem> gp = ps.stream().filter(w -> g.getId().equals(w.getGroupingId())).toList();
             long likes = gs.stream().mapToLong(Scheme::getLikeCount).sum() + gp.stream().mapToLong(WardrobeItem::getLikesCount).sum();
-            double topHype = java.util.stream.Stream.concat(gs.stream().map(Scheme::getHypeScore), gp.stream().map(WardrobeItem::getHypeScore))
-                    .mapToDouble(ShowcaseService::hype).max().orElse(0);
-            Map<String, Object> r = groupingCard(g, ss, ps);
+            List<HypeScoreCurrent> groupRows = new ArrayList<>();
+            gs.forEach(s -> groupRows.add(schemeHype.get(s.getId())));
+            gp.forEach(w -> groupRows.add(pieceHype.get(w.getId())));
+            Map<String, Object> r = groupingCard(g, ss, ps, schemeHype, self);
             r.put("likes", likes);
-            r.put("topHype", Math.round(topHype * 10) / 10.0);
+            r.put("hype", groupHype(groupRows, self, hypeConfig));
             r.put("items", gs.size() + gp.size());
             r.put("comments", gs.stream().mapToLong(Scheme::getCommentCount).sum());
             r.put("shares", gs.stream().mapToLong(Scheme::getShareCount).sum());
-            r.put("topScheme", gs.stream().max(Comparator.comparing((Scheme s) -> hype(s.getHypeScore())))
+            r.put("topScheme", gs.stream().filter(s -> SearchService.scoreFor(schemeHype.get(s.getId()), self) != null)
+                    .max(Comparator.comparing((Scheme s) -> SearchService.scoreFor(schemeHype.get(s.getId()), self)))
                     .map(s -> Map.of("id", s.getId(), "title", s.getTitle())).orElse(null));
             maxLikes = Math.max(maxLikes, likes);
-            maxHype = Math.max(maxHype, topHype);
             maxItems = Math.max(maxItems, gs.size() + gp.size());
             rows.add(r);
         }
         for (Map<String, Object> r : rows) {
             double score = W_LIKES * norm(((Number) r.get("likes")).doubleValue(), maxLikes)
-                    + W_HYPE * norm(((Number) r.get("topHype")).doubleValue(), maxHype)
                     + W_ITEMS * norm(((Number) r.get("items")).doubleValue(), maxItems);
             r.put("score", Math.round(score * 1000) / 10.0);
         }
@@ -758,9 +846,17 @@ public class ShowcaseService {
         out.put("owner", Views.user(u));
         out.put("ranking", rows);
         out.put("mostLiked", rows.stream().max(Comparator.comparingLong(r -> ((Number) r.get("likes")).longValue())).map(r -> r.get("label")).orElse(null));
-        out.put("mostHype", rows.stream().max(Comparator.comparingDouble(r -> ((Number) r.get("topHype")).doubleValue())).map(r -> r.get("label")).orElse(null));
-        out.put("method", Msg.t("showcase.pontuacao_0_5_curtidas_0", (kind == Kind.ERAS ? "eras" : Msg.t("showcase.colecoes")), capacity));
+        // maior Hype MÉDIO v2 (sem Hype em nenhuma = nulo, "—"); popularidade fica no mostLiked e na pontuação
+        out.put("mostHype", rows.stream().filter(r -> avgHype(r) != null)
+                .max(Comparator.comparing((Map<String, Object> r) -> avgHype(r)).thenComparing(r -> String.valueOf(r.get("label")), Comparator.reverseOrder()))
+                .map(r -> r.get("label")).orElse(null));
+        out.put("algorithmVersion", hypeConfig == null ? null : hypeConfig.algorithmVersion());
+        out.put("method", Msg.t("showcase.pontuacao_popularidade", (kind == Kind.ERAS ? "eras" : Msg.t("showcase.colecoes")), capacity));
         return out;
+    }
+
+    private static Double avgHype(Map<String, Object> row) {
+        return row.get("hype") instanceof Map<?, ?> h && h.get("avg") instanceof Number n ? n.doubleValue() : null;
     }
 
     private static double norm(double v, double max) {
@@ -768,20 +864,25 @@ public class ShowcaseService {
     }
 
     /**
-     * My Stage 3D (aba Eras): a foto oficial da celebridade na cabeça do manequim, vestindo o look de maior Hype Score,
-     * no palco com as cores das eras.
+     * My Stage 3D (aba Eras): a foto oficial da celebridade na cabeça do manequim, vestindo o look de maior HypeScore v2
+     * (público para quem visita; sem Hype = o mais recente), no palco com as cores das eras.
      */
     @Transactional(readOnly = true)
     public Map<String, Object> stage(CurrentUser viewer, String slug, UUID schemeId) {
         User u = owner(slug, Kind.ERAS);
         List<Scheme> ss = visibleSchemes(viewer, u);
-        Scheme chosen = schemeId == null ? ss.stream().max(Comparator.comparing((Scheme s) -> hype(s.getHypeScore()))).orElse(null)
+        boolean self = self(viewer, u);
+        Map<UUID, HypeScoreCurrent> hype = hypeOf(HypeEntityType.SCHEME, ss.stream().map(Scheme::getId).toList());
+        // visibleSchemes já vem do mais recente para o mais antigo: a ordem estável deixa o recente na frente do empate
+        List<Scheme> ranked = ss.stream().sorted(Comparator.comparing((Scheme s) -> SearchService.scoreFor(hype.get(s.getId()), self),
+                Comparator.nullsLast(Comparator.reverseOrder()))).toList();
+        Scheme chosen = schemeId == null ? ranked.stream().findFirst().orElse(null)
                 : ss.stream().filter(s -> s.getId().equals(schemeId)).findFirst().orElseThrow(() -> ApiException.notFound("Esquema"));
         String photo = celebrities.findByOwnerId(u.getId()).map(c -> c.getAvatarUrl()).filter(Objects::nonNull).orElse(u.getAvatarUrl());
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("celebrity", Views.user(u));
         out.put("photoUrl", photo);
-        out.put("look", chosen == null ? null : look(chosen, viewer));
+        out.put("look", chosen == null ? null : look(chosen, viewer, hype.get(chosen.getId())));
         if (chosen == null) {
             Map<String, Object> m = mannequin(u, List.of());
             m.put("photoUrl", photo);
@@ -791,8 +892,7 @@ public class ShowcaseService {
         }
         out.put("eras", groupingsOf(u, Kind.ERAS).stream().map(g -> Map.of("id", g.getId(), "label", g.getLabel(),
                 "accentColor", g.getAccentColor() == null ? "#2D55C9" : g.getAccentColor())).toList());
-        out.put("looks", ss.stream().sorted(Comparator.comparing((Scheme s) -> hype(s.getHypeScore())).reversed()).limit(12)
-                .map(s -> Map.of("id", s.getId(), "title", s.getTitle())).toList());
+        out.put("looks", ranked.stream().limit(12).map(s -> Map.of("id", s.getId(), "title", s.getTitle())).toList());
         return out;
     }
 }

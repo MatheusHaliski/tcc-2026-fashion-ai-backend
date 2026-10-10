@@ -1,9 +1,16 @@
 @startuml RF24_Atividades
-title RF24 — Usar a IA do sistema (motor transversal de inteligência artificial do Fashion AI)\nDiagrama de atividades — funil de governança do AiEngine.execute
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,72 +19,56 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF24 — Usar a IA do sistema (motor transversal de inteligência artificial do Fashion AI)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Usa um recurso de um RF hospedeiro\n(RF4 detectar peça, RF5 criar look, RF10 Copilot,\nRF13 DNA, RF11 arte de fundo, RF18 provador…);
-|Serviço hospedeiro (fai-application)|
-:Monta AiEngine.TextCall (capability, prompt,\nimagens, parser, fallback local);
-|AiEngine (RF24)|
-:AiCatalog.spec(capability): primário, alternativo,\nlocal, cota diária, timeout;
-if (Prompt viola nomes protegidos?\n(CelebrityPromptValidator)) then (sim)
-  :Registra PROMPT_REJECTED;
-  #FFE3E3:422 PROMPT_REJEITADO;
-  stop
-endif
-if (Capacidade fora de escopo?\n(RF16 atrás de feature flag)) then (sim)
-  :Resultado local (FALLBACK_LOCAL);
-  stop
-endif
-|Bancos-serviços|
-:Lê user_consents (finalidade da capacidade);
-|AiEngine (RF24)|
-if (Algum provedor remoto disponível?) then (não)
-  :Resultado local (FALLBACK_LOCAL);
-  stop
-endif
-if (Consentimento NEGADO?) then (sim)
-  :Resultado local (CONSENT_DENIED);
-  note right : RF24.CA15 — sem consentimento a capacidade\ndegrada para o processamento local, nunca viola.\nConsentimento vem do RF23 (PUT /api/me/consents/{purpose}).
-  stop
-endif
-if (AiBudget.check: teto diário em US$\n(global 5,00 · usuário 0,50)) then (estourado)
-  :Resultado local (RATE_LIMITED ou FALLBACK_LOCAL);
-  stop
-endif
-if (Cota diária da capacidade por usuário\n(RateLimitPort, bucket ai:CAPABILITY)) then (esgotada)
-  :Resultado local (RATE_LIMITED) com Quota {limit, used, resetAt};
-  stop
-endif
-repeat
-  |Provedor externo|
-  :Chama provedor (gemini / claude) com AiRequest;
-  |AiEngine (RF24)|
-  if (Respondeu dentro do contrato JSON?) then (sim)
-    |Bancos-serviços|
-    :INSERT ai_inference_log (SUCCESS, provider, model,\nlatência, custo estimado, consentState, correlationId);
-    |AiEngine (RF24)|
-    :AiOutcome com Explanation "por quê?"\n(capability, hostRf, provider, inputsUsed);
+|API (Spring Boot)|
+partition "AiBudget.check()" {
+  :lê ai_inference_log;
+  :lê ai_inference_log;
+}
+|Backend (Java)|
+partition "AiCatalog.spec()" {
+  :executa;
+}
+|API (Spring Boot)|
+partition "AiEngine.text()" {
+  if (prompt rejeitado?) then (sim)
+    :422 PROMPT_REJEITADO\n«A arte trabalha a atmosfera da\nera, nunca rosto, corpo, silhueta\nou nome de pessoa real.»;
     stop
-  else (falhou)
-    |Bancos-serviços|
-    :INSERT ai_inference_log (TIMEOUT / CIRCUIT_OPEN /\nRATE_LIMITED / ERROR, fallbackUsed=true);
   endif
-  |AiEngine (RF24)|
-repeat while (Há provedor alternativo?) is (sim) not (não)
-:Resultado local (FALLBACK_LOCAL) com a razão da falha;
-note right : RNF8 — degradação controlada:\no RF hospedeiro continua funcionando\ncom LocalAdvisors / LocalSchemeComposer / LocalDnaSynthesizer.
-|Pessoa|
-:Vê o resultado e, se quiser, a explicação "por quê?";
+  :cria AiInferenceLog;
+  :result → ?result;
+  :fallbackUsed → ?fallback;
+  :grava ai_inference_log;
+  :AuditService.record();
+  :lê user_consents;
+  :cria AiInferenceLog;
+  :result → ?result;
+  :fallbackUsed → ?fallback;
+  :grava ai_inference_log;
+  :AuditService.record();
+  :cria AiInferenceLog;
+  :result → ?result;
+  :fallbackUsed → ?fallback;
+  :grava ai_inference_log;
+  :AuditService.record();
+  :AiBudget.check();
+  :cria AiInferenceLog;
+  :result → ?result;
+  :fallbackUsed → ?fallback;
+  :grava ai_inference_log;
+  :AuditService.record();
+  :cria AiInferenceLog;
+  :… e mais 35 passos no código;
+}
+|Pessoa usuária|
+:Vê o resultado;
 stop
 @enduml

@@ -13,6 +13,10 @@
     <artifactId>fai-bootstrap</artifactId>
     <name>fai-bootstrap</name>
 
+    <properties>
+        <spring-boot.run.skip>false</spring-boot.run.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>br.com.fashionai</groupId>
@@ -70,6 +74,10 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <skip>false</skip>
+                    <mainClass>br.com.fashionai.bootstrap.FashionAiApplication</mainClass>
+                </configuration>
                 <executions>
                     <execution>
                         <goals>

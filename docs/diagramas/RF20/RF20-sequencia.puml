@@ -1,84 +1,74 @@
 @startuml RF20_Sequencia
-title RF20 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma marca de roupa\nDiagrama de sequência — endpoints reais
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Usuário" as U
-actor "Marca" as M
-participant "Frontend\n/schemes/new · brands/[slug]" as FE
-participant "SchemeController" as SCH
-participant "SealController" as C
-participant "SealService" as S
-participant "AiEngine (RF24)\nSEALBOND_MATCHER" as AI
-participant "NotificationService" as N
-participant "Audit" as A
-database "MySQL" as DB
-U -> FE: escolhe peças, estilo e ocasião (RF5)
-FE -> C: POST /api/seal-suggestions/preview {pieceIds, occasion, style}
-C -> S: preview(user, pieceIds, occasion, style)
-S -> DB: SELECT brand_profiles (approval_status = APROVADO)
-S -> AI: local(SEALBOND_MATCHER, candidates())
-AI --> S: até 3 Candidate {confidence, justification, tier, basis BRAND_MATCH}
-S --> FE: 200 {suggestions, unregisteredBrands, message}
-U -> FE: marca as sugestões e salva o look
-FE -> SCH: POST /api/schemes (SchemeForm)
-SCH -> DB: INSERT schemes, scheme_items
-SCH --> FE: 201 {scheme}
-loop cada marca marcada
-  FE -> C: POST /api/schemes/{schemeId}/seal-bonds {targetOwnerId}
-  C -> S: linkManually(user, schemeId, targetOwnerId, null)
-  alt marca não APROVADA
-    S --> FE: 400 MARCA_NAO_VALIDADA (CA06)
-  else par já PENDING_REVIEW/APPROVED
-    S --> FE: 409 VINCULO_EXISTENTE (CA09)
-  else ok
-    S -> DB: INSERT seal_bonds (origin MANUAL, status EDITED)
-    S -> S: route(): Seal ACTIVE do tier, janela e usageLimit
-    alt BrandProfile.requiresSealReview
-      S -> DB: UPDATE seal_bonds SET status = PENDING_REVIEW
-      S -> N: notify(marca, SEAL_BOND_REVIEW)
-      S -> A: log(MUDANCA_ESTADO_VINCULO_SELO, "PENDENTE")
-      S --> FE: 201 bondView (PENDING_REVIEW)
-    else auto-aprovação
-      S -> S: issue(): APPROVED, sealCode BRD-…, expiresAt
-      S -> DB: UPDATE seal_bonds · seals.usage_count+1 · schemes.seal_ids_json
-      S -> N: notify(autor, SEAL_GRANTED)
-      S -> A: log(…, "EMITIDO")
-      S ->> S: publishEvent(CouponRightsCheck) — ver RF38
-      S --> FE: 201 bondView (APPROVED)
-    end
-  end
+autonumber "<b>0."
+title RF20 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma marca de roupa\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+
+actor "Pessoa usuária" as U
+boundary "Tela /brands/[slug]" as P
+control "SealController" as SealController
+participant "SealService" as SealService
+participant "Guard" as Guard
+database "MySQL" as DB_MySQL
+participant "Audit" as Audit
+participant "NotificationService" as NotificationService
+queue "Eventos de domínio" as EV
+== Emissor aprova ou rejeita o vínculo ==
+U -> P : Emissor aprova ou rejeita o vínculo
+P -> SealController : POST /api/seal-bonds/{bondId}/review
+SealController -> SealService : review()
+activate SealService
+SealService -> Guard : requireApprovedInstitutional()
+SealService -> DB_MySQL : SELECT seal_bonds
+SealService -> Guard : requireOwner()
+alt estado inválido
+SealService --> SealController : 409 ESTADO_INVALIDO
+SealController --> P : 409 + mensagem
 end
-M -> FE: abre a fila de revisão
-FE -> C: GET /api/seal-bonds/review-queue
-C -> S: reviewQueue(user)
-S --> FE: 200 [bonds PENDING_REVIEW + APPROVED recentes]
-M -> FE: aprova ou rejeita
-FE -> C: POST /api/seal-bonds/{bondId}/review {approve, reason}
-C -> S: review(user, bondId, approve, reason)
-alt approve
-  S -> S: issue(b, marcaId)
-  S -> N: notify(autor, SEAL_GRANTED)
-else rejeita (motivo obrigatório)
-  S -> DB: UPDATE seal_bonds SET status = REJECTED, review_note
-  S -> N: notify(autor, SEAL_BOND_REVIEW "não aprovado")
+SealService -> SealService : revalidationPending = false
+SealService -> Audit : log()
+SealService -> SealService : status = APPROVED
+SealService -> SealService : reviewedAt = set
+SealService -> SealService : issuedAt = set
+SealService -> SealService : expiresAt = set
+SealService -> DB_MySQL : SELECT seal_bonds
+SealService -> NotificationService : notify()
+NotificationService -> DB_MySQL : SELECT users (×2)
+NotificationService -> DB_MySQL : SELECT user_preferences
+NotificationService -> DB_MySQL : INSERT/UPDATE notifications
+NotificationService --> SealService
+SealService -> Audit : log()
+SealService ->> EV : CouponRightsCheck
+alt motivo obrigatório
+SealService --> SealController : 400 MOTIVO_OBRIGATORIO
+SealController --> P : 400 + mensagem
 end
-S -> A: log(MUDANCA_ESTADO_VINCULO_SELO)
-S --> FE: 200 bondView
-opt CA14 — revogação
-  M -> FE: revoga
-  FE -> C: POST /api/seal-bonds/{bondId}/revoke {reason}
-  C -> S: revoke(user, bondId, reason)
-  S -> DB: UPDATE seal_bonds SET status = REVOKED
-  S -> N: notify(autor, SEAL_BOND_REVIEW "selo revogado")
-end
-U -> FE: Meus Selos
-FE -> C: GET /api/me/seals
-C -> S: mySeals(user)
-S --> FE: 200 {ativos, pendentes, recusados, sugeridos, inativos, redemptions}
+SealService -> SealService : reviewedAt = set
+SealService -> SealService : revalidationPending = false
+SealService -> NotificationService : notify()
+SealService -> Audit : log()
+SealService -> DB_MySQL : SELECT brand_profiles
+deactivate SealService
+SealService --> SealController : resultado
+SealController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

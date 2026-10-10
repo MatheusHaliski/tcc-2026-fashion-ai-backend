@@ -7,6 +7,7 @@ import { PRINT_MIN_NZ, ellipsoid, fitPhoto, garmentMold, limbGeo, loftGeo, photo
 import { SKIN, VITRINE, useGlb, useTex, type Look3dPiece, type Mannequin3d } from "@/components/three/common";
 import { AvatarBust, useAvatarTexture } from "@/components/three/avatar-bust";
 import { HumanAvatar, type HumanParts } from "@/components/three/human-avatar";
+import type { HairLod } from "@/lib/avatar3d/human/hair-lod";
 import { withDefaultOutfit } from "@/lib/avatar3d/human/default-outfit";
 import { useReducedMotion } from "@/components/three/common";
 import { clampAdjust, skinWithLight, validateModel } from "@/lib/avatar3d/model";
@@ -196,7 +197,7 @@ export function CapsuleMannequin({ mannequin, pieces, sway = true, onClick, body
  * não cobre (tronco, pernas, pés) veste peças padrão dos assets do FashionAI: nenhuma tela 3D mostra o corpo sem roupa.
  * Sem Avatar 3D, é o manequim de vitrine (marfim ou o tom escolhido), sem rosto de ninguém.
  */
-export function Mannequin({ mannequin, pieces, onClick, body, still = false, onHuman }: { mannequin: Mannequin3d; pieces: Look3dPiece[]; sway?: boolean; onClick?: () => void; body?: BodyParams | null; still?: boolean; onHuman?: (p: HumanParts) => void }) {
+export function Mannequin({ mannequin, pieces, onClick, body, still = false, externalPose = false, onHuman, hairLod }: { mannequin: Mannequin3d; pieces: Look3dPiece[]; sway?: boolean; onClick?: () => void; body?: BodyParams | null; still?: boolean; externalPose?: boolean; onHuman?: (p: HumanParts) => void; hairLod?: HairLod }) {
   const reduced = useReducedMotion();
   const sex: Sex = mannequinSex(mannequin);
   const saved = validateBody(mannequin.avatar?.model?.body);
@@ -215,7 +216,7 @@ export function Mannequin({ mannequin, pieces, onClick, body, still = false, onH
   return (
     <group onClick={onClick ? (e) => { e.stopPropagation(); onClick(); } : undefined}>
       <HumanAvatar body={input} stature={params.stature} skin={skin} face={avatar?.model ?? null} atlas={avatar ? atlas : null} hair={avatar?.model.hair ?? null}
-        pieces={dressed} adjust={avatar ? adj : null} motion={!reduced && !still} onReady={onHuman}
+        pieces={dressed} adjust={avatar ? adj : null} motion={!reduced && !still} externalPose={externalPose} onReady={onHuman} hairLod={hairLod}
         fallback={<CapsuleMannequin mannequin={mannequin} pieces={dressed} sway={false} body={body} />} />
     </group>
   );

@@ -1,30 +1,48 @@
 @startuml RF36_MaquinaDeEstados_FotoManequim
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam state {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
   FontColor #2D2438
-  ArrowColor #52606D
+  StartColor #20A77A
+  EndColor #4B5563
 }
-title RF36 — Foto com meu manequim: mannequin_image_url da peça (RF4) ou do esquema (RF5)
-[*] --> SemFoto : peça/esquema criado
-state "Sem foto\n(mannequinImageUrl = null)" as SemFoto
-state "Manequim montado no cliente\n(GET /api/pieces/{id}/look3d · GET /api/schemes/{id}/look3d)" as Montado {
-  state "rosto da foto de perfil\n(face = avatar)" as ComRosto
-  state "manequim padrão\n(MASCULINO | FEMININO pelo sexo do RF1)" as Padrao
-  Padrao --> ComRosto : usuário cadastra foto de perfil (RF1/RF23)
-  ComRosto --> ComRosto : PUT /api/me/preferences (ajuste do rosto)
+title RF36 — ciclo de vida de Scheme.mannequinImageUrl, WardrobeItem.mannequinImageUrl, Scheme.coverImageUrl\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\ncampo de artefato (vazio/preenchido) · tabela schemes, wardrobe_items
+
+state "Scheme.mannequinImageUrl" as B_Scheme_mannequinImageUrl {
+  state "mannequinImageUrl preenchido" as B_Scheme_mannequinImageUrl_T
+  state "mannequinImageUrl vazio (null)" as B_Scheme_mannequinImageUrl_F
+  [*] --> B_Scheme_mannequinImageUrl_F : criação
+  B_Scheme_mannequinImageUrl_T --> B_Scheme_mannequinImageUrl_F : deleteMannequinPhoto()\nDELETE /api/{kind:pieces|schemes}/{id}/mannequ…
+  B_Scheme_mannequinImageUrl_F --> B_Scheme_mannequinImageUrl_T : schemeMannequinPhoto()\nPOST /api/schemes/{id}/mannequin-photo
+  B_Scheme_mannequinImageUrl_T --> B_Scheme_mannequinImageUrl_T : substitui: schemeMannequinPhoto()\nPOST /api/schemes/{id}/mannequin-photo
 }
-state "Foto gerada e guardada\n(storage próprio, mannequinImageFace)" as Gerada
-state "Capa do post do esquema\n(schemes.cover_image_url = foto)" as Capa
-SemFoto --> Montado : botão "Foto com meu manequim"\nno detalhe da peça/esquema
-Montado --> Gerada : POST /api/pieces/{id}/mannequin-photo\nPOST /api/schemes/{id}/mannequin-photo (PNG do cliente)
-Montado --> Capa : POST /api/schemes/{id}/mannequin-photo?asCover=true
-Gerada --> Capa : nova geração com asCover=true (só esquema)
-Gerada --> Montado : gerar de novo (substitui o arquivo)
-Gerada --> SemFoto : DELETE /api/{pieces|schemes}/{id}/mannequin-photo
-Capa --> SemFoto : DELETE /api/schemes/{id}/mannequin-photo\n(cover_image_url volta a null)
-note right of Montado : peça: só superior ou corpo inteiro; o ghost mannequin\n(RF4) não é usado aqui; sem biometria — foto só como textura
-note bottom of Gerada : face registrada na geração (avatar | padrão) para\nreexibir a mesma foto mesmo se a pessoa trocar o perfil
+state "WardrobeItem.mannequinImageUrl" as B_WardrobeItem_mannequinImageUrl {
+  state "mannequinImageUrl preenchido" as B_WardrobeItem_mannequinImageUrl_T
+  state "mannequinImageUrl vazio (null)" as B_WardrobeItem_mannequinImageUrl_F
+  [*] --> B_WardrobeItem_mannequinImageUrl_F : criação
+  B_WardrobeItem_mannequinImageUrl_T --> B_WardrobeItem_mannequinImageUrl_F : deleteMannequinPhoto()\nDELETE /api/{kind:pieces|schemes}/{id}/mannequ…
+  B_WardrobeItem_mannequinImageUrl_F --> B_WardrobeItem_mannequinImageUrl_T : pieceMannequinPhoto()\nPOST /api/pieces/{id}/mannequin-photo
+  B_WardrobeItem_mannequinImageUrl_T --> B_WardrobeItem_mannequinImageUrl_T : substitui: pieceMannequinPhoto()\nPOST /api/pieces/{id}/mannequin-photo
+}
+state "Scheme.coverImageUrl" as B_Scheme_coverImageUrl {
+  state "coverImageUrl preenchido" as B_Scheme_coverImageUrl_T
+  state "coverImageUrl vazio (null)" as B_Scheme_coverImageUrl_F
+  [*] --> B_Scheme_coverImageUrl_F : criação
+  B_Scheme_coverImageUrl_T --> B_Scheme_coverImageUrl_F : deleteMannequinPhoto()\nDELETE /api/{kind:pieces|schemes}/{id}/mannequ…
+  B_Scheme_coverImageUrl_F --> B_Scheme_coverImageUrl_T : applyLookPhoto(), create(),\nreplaceItems(), update(),\nschemeMannequinPhoto()
+  B_Scheme_coverImageUrl_T --> B_Scheme_coverImageUrl_T : substitui: applyLookPhoto(), create(),\nreplaceItems(), update(),\nschemeMannequinPhoto()
+}
 @enduml

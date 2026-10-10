@@ -5,21 +5,26 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { api, mediaUrl, type ApiError } from "@/lib/api/client";
 import type { PieceView, SchemeView } from "@/lib/api/types";
+import type { CatalogCardImage } from "@/lib/api/catalog";
+import { CatalogPhoto, pieceCatalogCrop, photoAspect } from "@/components/catalog/catalog-photo";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
-import { label, CATEGORY_LABEL, useTaxonomy } from "@/lib/api/taxonomy";
+import { label, CATEGORY_LABEL, useTaxonomy, subcategoryLabel } from "@/lib/api/taxonomy";
 import { ActionMenu, Button, Dialog, ErrorState, Field, Input, Skeleton, useToast, type MenuItem } from "@/components/ui";
 import { UiIcon } from "@/components/ui/icons";
 import { FaiIcon } from "@/components/fai-icon";
 import { SchemeCard } from "@/components/scheme-card";
 import { CardActions, InteractionBar } from "@/components/interactions";
+import { HypeInline } from "@/components/hype/hype-inline";
+import { HypeBadge } from "@/components/hype/hype-badge";
+import { hypeViewState } from "@/lib/hype/model";
+import { useHypeSummary } from "@/lib/hype/use-hype";
 import { DnaCard, type DnaView } from "@/components/dna-card";
 import { BrandLogo } from "@/components/brand-logo";
 import { PieceSnapshot, sizeLabel } from "@/components/piece-snapshot";
 import { MANNEQUIN_PHOTO_CATEGORIES, MannequinPhotoButton, MannequinPhotoDialog } from "@/components/mannequin-photo";
 import { Model3dAction, Model3dTechnical, useModel3d } from "@/components/model3d-panel";
-import { PhotoEditor } from "@/components/photo-editor";
 import { EditImageDialog, hasRealLogo, studioMeta, studioNeedsReview, studioVersion } from "@/components/edit-image";
 import { Generate3DDialog } from "@/components/generate-3d";
 import { emitPieceUpdate } from "@/lib/pieces/piece-events";
@@ -30,6 +35,7 @@ import { readPieceArt } from "@/lib/piece-art";
 import { CardHeader } from "@/components/card-header";
 import { PieceArtDialog } from "@/components/piece-art-editor";
 import { skinStyle } from "@/lib/skins";
+import { FlairPieceBlock } from "@/components/flair/flair-collection";
 
 const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("pieces.id.carregando_o_modelo_3d")}</div> });
 
@@ -100,7 +106,7 @@ function ChangeList({ value }: { value: unknown }) {
 
 interface PieceDetail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; location?: { label?: string; address?: string }; canEdit?: boolean }
 
-type Slide = { key: string; src: string; alt: string; caption: string; fit: "contain" | "cover"; backdrop?: { center: string; edge: string } };
+type Slide = { key: string; src: string; alt: string; caption: string; fit: "contain" | "cover"; backdrop?: { center: string; edge: string }; crop?: CatalogCardImage | null };
 
 /**
  * Fotos da peça: a foto de produto aprovada primeiro (inteira, sem corte); depois, se houver, a foto no manequim. A
@@ -124,8 +130,8 @@ function PieceGallery({ slides, onOpen }: { slides: Slide[]; onOpen: (i: number)
   if (!s) return <div className="pd-slide" />;
   return (
     <div className="pd-gallery" role="group" aria-roledescription={t("pieceDetail.carrossel")} aria-label={t("pieceDetail.fotos")}>
-      <button ref={slideRef} type="button" className="pd-slide" style={s.backdrop ? { background: bg ?? s.backdrop.edge } : undefined} onClick={() => onOpen(k)} aria-label={t("pieceDetail.ampliar", { name: s.alt })}>
-        <img ref={imgRef} src={s.src} alt="" className={s.fit === "contain" ? "is-contain" : "is-cover"} onLoad={measure} />
+      <button ref={slideRef} type="button" className={s.crop ? "pd-slide is-catalog-crop" : "pd-slide"} style={{ ...(s.backdrop ? { background: bg ?? s.backdrop.edge } : {}), ...(s.crop ? { aspectRatio: photoAspect(s.crop.aspect) } : {}) }} onClick={() => onOpen(k)} aria-label={t("pieceDetail.ampliar", { name: s.alt })}>
+        {s.crop ? <CatalogPhoto image={s.crop} alt="" /> : <img ref={imgRef} src={s.src} alt="" className={s.fit === "contain" ? "is-contain" : "is-cover"} onLoad={measure} />}
       </button>
       {n > 1 && (
         <>
@@ -146,10 +152,19 @@ function PieceGallery({ slides, onOpen }: { slides: Slide[]; onOpen: (i: number)
  * opções"). As ferramentas de imagem (enquadramento, recorte, original × processado, logo) ficam em "Editar imagem",
  * dentro de "Mais opções", só para o dono; motor, provedor e diagnósticos ficam nos detalhes técnicos.
  */
+/**
+ * RF53 · P3-05 — Hype v2 de cada look em "Looks com esta peça". Lote via useHypeSummary (uma requisição para a lista);
+ * o endpoint respeita a visibilidade: o dono vê o Hype pessoal, terceiros só o que podem ver ("—" no resto, nunca 0).
+ */
+function LookHype({ id }: { id: string }) {
+  const { summary, loading, error } = useHypeSummary("SCHEME", id);
+  return <HypeBadge state={hypeViewState(summary, { loading, error })} summary={summary} className="shrink-0" />;
+}
+
 export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }: { id: string; from?: string | null; headerExtra?: ReactNode; onScheme?: (schemeId: string) => void; startEditing?: boolean }) {
   const { t, fmtMoney, fmtDate } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
   const { data, loading, error, reload, setData } = useApi<PieceDetail>((signal) => api.get(`/api/pieces/${id}${from ? `?fromScheme=${from}` : ""}`, { signal, anonymous: !user }), [id, from, !!user]);
-  const [editingPhoto, setEditingPhoto] = useState(false); const [editImage, setEditImage] = useState(false); const [editArt, setEditArt] = useState(false);
+  const [editImage, setEditImage] = useState(false); const [editArt, setEditArt] = useState(false);
   const [studioBusy, setStudioBusy] = useState(false); const [view3d, setView3d] = useState(false); const [mannequin3d, setMannequin3d] = useState(false); const [mannequinPhoto, setMannequinPhoto] = useState(false);
   const [fullscreen, setFullscreen] = useState<number | null>(null); const backdrops = useStudioBackdrops();
   const [editing, setEditing] = useState(false); const [form, setForm] = useState<PieceFormValue>(EMPTY_PIECE); const [saving, setSaving] = useState(false); const [saveError, setSaveError] = useState<ApiError | null>(null); const savingRef = useRef(false); const [editErrors, setEditErrors] = useState<Record<string, string>>({}); const tax = useTaxonomy();
@@ -160,7 +175,8 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const [artRef, inView] = useInView<HTMLElement>();
   useEffect(() => { if (startEditing && p && mine && !editing) startEdit(); }, [startEditing, p?.id, mine]); // eslint-disable-line react-hooks/exhaustive-deps
   const setPiece = (np: PieceView) => { setData((d) => (d ? { ...d, piece: np } : d)); emitPieceUpdate(np); };
-  async function flag(field: "favorite" | "disponivel") { if (!p) return; try { setPiece(await api.patch<PieceView>(`/api/pieces/${p.id}/flags`, { [field]: !p[field] })); } catch (e) { toast.fromError(e); } }
+  // "à venda" e "para doar" são exclusivos: marcar um limpa o outro no backend, que devolve a peça já atualizada
+  async function flag(field: "favorite" | "disponivel" | "forSale" | "forDonation") { if (!p) return; try { setPiece(await api.patch<PieceView>(`/api/pieces/${p.id}/flags`, { [field]: !p[field] })); } catch (e) { toast.fromError(e); } }
   async function studioShot(backdrop: string) {
     setStudioBusy(true);
     try {
@@ -205,7 +221,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   // a foto de produto aprovada, inteira (a variante enquadrada é só para o feed); sem estúdio, o recorte contido
   const product: Slide = p.studioImageUrl
     ? { key: "product", src: mediaUrl(p.studioImageUrl)!, alt: t("pieces.id.estudio", { name: p.name }), caption: t("pieceDetail.slide_produto"), fit: "contain", backdrop: { center: backdropCenter(backdrops, p.studioBackdrop), edge } }
-    : { key: "product", src: (mediaUrl(p.imageUrl) ?? mediaUrl(p.thumbnailUrl))!, alt: p.name, caption: t("pieceDetail.slide_produto"), fit: "contain" };
+    : { key: "product", src: (mediaUrl(p.imageUrl) ?? mediaUrl(p.thumbnailUrl))!, alt: p.name, caption: t("pieceDetail.slide_produto"), fit: "contain", crop: pieceCatalogCrop(p) };
   const slides: Slide[] = [product, ...(p.mannequinImageUrl ? [{ key: "mannequin", src: mediaUrl(p.mannequinImageUrl)!, alt: t("pieces.id.no_manequim", { name: p.name, value: "" }), caption: t("pieceDetail.slide_manequim"), fit: "contain" as const }] : [])];
   // tela cheia: as fotos do carrossel e, só quando há logo de marca de verdade, o detalhe do logo
   const gallery = [
@@ -214,7 +230,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   ];
   const vis = mine && p.visibility !== "PUBLIC" ? (p.visibility === "FOLLOWERS" ? t("common.followers") : t("common.private")) : null;
   const rows: [string, ReactNode][] = ([
-    [t("common.category"), [CATEGORY_LABEL[p.category] ?? label(p.category), label(p.subcategory)].filter(Boolean).join(" · ")],
+    [t("common.category"), [CATEGORY_LABEL[p.category] ?? label(p.category), subcategoryLabel(p.subcategory)].filter(Boolean).join(" · ")],
     [t("common.color"), <span key="c" className="inline-flex items-center gap-2"><span aria-hidden className="piece-swatch" style={{ background: p.colorHex ?? "#ccc" }} />{label(p.color)}</span>],
     [t("common.size"), sizeLabel(p.size)],
     [t("common.material"), label((p.material ?? "").toLowerCase()) || null],
@@ -222,7 +238,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
     [t("common.style"), (p.style ?? []).map(label).join(", ") || null],
     [t("common.price"), p.price != null && !p.forSale ? fmtMoney(p.price, "BRL") : null],
     [t("pieceDetail.usos"), mine ? t("pieceDetail.usos_valor", { count: p.wearCount, last: p.lastWornDate ? fmtDate(p.lastWornDate) : "" }) : null],
-    [t("pieceDetail.situacao"), !p.disponivel ? t("common.unavailable") : null],
+    [t("pieceDetail.situacao"), [!p.disponivel && t("common.unavailable"), p.forDonation && t("common.forDonation")].filter(Boolean).join(" · ") || null],
     [t("pieceDetail.onde_esta"), mine ? data?.location?.label ?? null : null],
   ] as [string, ReactNode][]).filter(([, v]) => v !== null && v !== undefined && v !== "");
   // UMA ação principal, conforme o contexto, e a alternativa em posição secundária (texto-link logo abaixo):
@@ -233,15 +249,17 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
     : <><Button variant="primary" className="pd-cta" onClick={() => setMannequin3d(true)}>{t("pieceDetail.experimentar")}</Button>
         <button type="button" className="pd-alt" onClick={copyToWardrobe}>{t("pieceDetail.ou_guarde_copia")}</button></>;
   const more: MenuItem[] = [
-    { label: t("pieceDetail.editar_dados"), onSelect: startEdit, hidden: !mine },
-    { label: t("pieceDetail.editar_imagem"), onSelect: () => setEditImage(true), hidden: !mine || p.defaultImage && !p.imageUrl },
-    { label: t("pieceDetail.editar_arte"), onSelect: () => setEditArt(true), hidden: !mine },
-    { label: t("closet.replaceImage"), onSelect: () => replaceRef.current?.click(), hidden: !mine },
-    { label: p.disponivel ? t("pieceCard.markUnavailable") : t("pieceCard.markAvailable"), onSelect: () => flag("disponivel"), hidden: !mine },
-    { label: p.favorite ? t("pieceCard.unfavorite") : t("pieceCard.favorite"), onSelect: () => flag("favorite"), hidden: !mine },
-    { label: p.mannequinImageUrl ? t("mannequinPhoto.refazer_foto_com_meu_manequim") : t("mannequinPhoto.foto_com_meu_manequim"), onSelect: () => setMannequinPhoto(true), hidden: !mine || !MANNEQUIN_PHOTO_CATEGORIES.has(p.category) },
-    { label: t("pieces.id.mostrar_no_quarto"), href: `/room?piece=${p.id}`, hidden: !mine },
-    { label: t("common.delete"), onSelect: askDelete, hidden: !mine, danger: true },
+    { label: t("pieceDetail.editar_dados"), icon: <FaiIcon id="SOC-11" size={20} decorative />, onSelect: startEdit, hidden: !mine },
+    { label: t("pieceDetail.editar_imagem"), icon: <FaiIcon id="NAV-10" size={20} decorative />, onSelect: () => setEditImage(true), hidden: !mine || p.defaultImage && !p.imageUrl },
+    { label: t("pieceDetail.editar_arte"), icon: <FaiIcon id="ACT-14" size={20} decorative />, onSelect: () => setEditArt(true), hidden: !mine },
+    { label: t("closet.replaceImage"), icon: <FaiIcon id="ACT-07" size={20} decorative />, onSelect: () => replaceRef.current?.click(), hidden: !mine },
+    { label: p.disponivel ? t("pieceCard.markUnavailable") : t("pieceCard.markAvailable"), icon: <FaiIcon id={p.disponivel ? "SOC-15" : "SOC-14"} size={20} decorative />, onSelect: () => flag("disponivel"), hidden: !mine },
+    { label: p.favorite ? t("pieceCard.unfavorite") : t("pieceCard.favorite"), icon: <FaiIcon id="SOC-06" size={20} decorative />, onSelect: () => flag("favorite"), hidden: !mine },
+    { label: p.forSale ? t("pieceCard.unmarkForSale") : t("pieceCard.markForSale"), icon: <FaiIcon id="ACT-41" size={20} decorative />, onSelect: () => flag("forSale"), hidden: !mine },
+    { label: p.forDonation ? t("pieceCard.unmarkForDonation") : t("pieceCard.markForDonation"), icon: <FaiIcon id="SOC-03" size={20} decorative />, onSelect: () => flag("forDonation"), hidden: !mine },
+    { label: p.mannequinImageUrl ? t("mannequinPhoto.refazer_foto_com_meu_manequim") : t("mannequinPhoto.foto_com_meu_manequim"), icon: <FaiIcon id="ACT-23" size={20} decorative />, onSelect: () => setMannequinPhoto(true), hidden: !mine || !MANNEQUIN_PHOTO_CATEGORIES.has(p.category) },
+    { label: t("pieces.id.mostrar_no_quarto"), href: `/room?piece=${p.id}`, icon: <FaiIcon id="ACT-31" size={20} decorative />, hidden: !mine },
+    { label: t("common.delete"), icon: <FaiIcon id="ACT-18" size={20} decorative />, onSelect: askDelete, hidden: !mine, danger: true },
   ];
   const studioInfo = (p.flatLayMetadata as { studio?: Partial<StudioInfo> } | undefined)?.studio;
   // RF11: o detalhe usa as mesmas camadas do card, na densidade ampliada (faixas de 20–32 px e movimento opcional)
@@ -267,6 +285,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
               {primary}
             </section>
             <CardActions type="PIECE" id={p.id} counters={p.counters} viewer={p.viewer} ownerId={p.owner.id} title={p.name} reactions />
+            <HypeInline type="PIECE" id={p.id} name={p.name} />
             <section className="pd-section" aria-labelledby={`pd-facts-${p.id}`}>
               <h3 id={`pd-facts-${p.id}`} className="pd-h">{t("pieceDetail.detalhes")}</h3>
               <dl className="c-facts">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
@@ -277,9 +296,10 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
                 <div className="grid gap-1.5">{usedIn.map((s) => (
                   <button key={s.schemeId} type="button" className="list-row is-action flex items-center gap-2 text-left" onClick={() => (onScheme ? onScheme(s.schemeId) : router.push(`/schemes/${s.schemeId}`))}>
                     <span className="h-9 w-9 shrink-0 overflow-hidden rounded bg-surface-2">{s.coverImageUrl && s.coverImageUrl !== "null" && <img src={mediaUrl(s.coverImageUrl)} alt="" className="h-full w-full object-cover" />}</span>
-                    <span className="min-w-0 flex-1 truncate type-body-sm">{s.title}</span></button>))}</div>
+                    <span className="min-w-0 flex-1 truncate type-body-sm">{s.title}</span><LookHype id={s.schemeId} /></button>))}</div>
               </section>
             )}
+            {mine && <FlairPieceBlock pieceId={p.id} />}
             <section className="pd-section pd-options" aria-label={t("pieceDetail.opcoes")}>
               {mine && studioNeedsReview(p) && (
                 <p className="pd-warn" role="status">{t("pieceDetail.estudio_para_aprovar")} <button type="button" className="underline" onClick={() => setEditImage(true)}>{t("pieceDetail.revisar_foto")}</button></p>
@@ -311,7 +331,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
         <p className="mt-2 type-caption text-muted">{t("expanded.fotos_excluidas_junto")}</p>
       </Dialog>
       {mine && <PieceArtDialog piece={p} open={editArt} onClose={() => setEditArt(false)} onSaved={setPiece} />}
-      {mine && <EditImageDialog piece={p} open={editImage} onClose={() => setEditImage(false)} onStudio={studioShot} studioBusy={studioBusy} onApprove={() => decideStudio(true)} onDiscard={() => decideStudio(false)} approvalBusy={approvalBusy} onReplace={replaceImage} onManual={() => { setEditImage(false); setEditingPhoto(true); }} />}
+      {mine && <EditImageDialog piece={p} open={editImage} onClose={() => setEditImage(false)} onStudio={studioShot} studioBusy={studioBusy} onApprove={() => decideStudio(true)} onDiscard={() => decideStudio(false)} approvalBusy={approvalBusy} onReplace={replaceImage} onSaved={setPiece} onManual={() => { setEditImage(false); window.location.href = `/pieces/${p.id}/photo`; }} />}
       <Dialog open={view3d} onClose={() => setView3d(false)} title={t("pieceDetail.viewer3d_title", { name: p.name })} size="lg">
         {view3d && (p.model3dUrl || model.st?.modelUrl) && <div className="h-[420px] overflow-hidden rounded-lg border border-line-soft"><PieceModelViewer url={mediaUrl(p.model3dUrl ?? model.st?.modelUrl) ?? ""} name={p.name} /></div>}
         <p className="mt-2 type-caption text-muted">{t("model3d.viewer_aviso")}</p>
@@ -319,7 +339,6 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
       {mannequin3d && <Generate3DDialog targets={[{ kind: "piece", id: p.id, title: p.name }]} onClose={() => setMannequin3d(false)} />}
       {mannequinPhoto && <MannequinPhotoDialog kind="piece" id={p.id} title={p.name} current={p.mannequinImageUrl} onClose={(saved) => { setMannequinPhoto(false); if (saved) reload(); }} />}
       {fullscreen !== null && gallery.length > 0 && <StudioLightbox images={gallery} edge={edge} center={backdropCenter(backdrops, p.studioBackdrop)} start={Math.min(fullscreen, gallery.length - 1)} onClose={() => setFullscreen(null)} />}
-      {editingPhoto && <PhotoEditor pieceId={p.id} imageUrl={p.originalImageUrl ?? p.imageUrl ?? p.thumbnailUrl} title={p.name} onClose={() => setEditingPhoto(false)} onSaved={(msg) => { setEditingPhoto(false); toast.success(msg); reload(); }} />}
     </>
   );
 }
