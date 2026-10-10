@@ -5,11 +5,19 @@ Escopo: ambiente da loja selecionada, manequim, assets de vestimenta, materiais,
 continua como limitação. Evidências em `docs/provador/img/2026-10-10/`, métricas em `docs/provador/metricas/` e a
 matriz completa em [`matriz-vestir-2026-10-10.md`](matriz-vestir-2026-10-10.md).
 
+> **Integração com trabalho paralelo.** Enquanto esta auditoria corria, a `main` recebeu uma reforma do mesmo
+> ambiente (#213, estúdio conceitual) e outra sessão publicou a máscara da foto opaca e um contrato de dados
+> (`lib/avatar3d/garment-contract.ts`). O merge ficou assim: o **ambiente é o da `main`** (o plano de loja desta
+> auditoria, que resolvia o mesmo problema, foi retirado); **vestimenta, caimento, estados, bota, saia e métricas são
+> desta auditoria**; a foto recortada vem antes da processada (outra sessão), com a processada como reserva quando a
+> recortada não carrega no 3D. Os dois contratos convivem — o de estado na tela (`lib/tryon/garment-asset.ts`) e o de
+> procedência dos dados (`lib/avatar3d/garment-contract.ts`); unificá-los é pendência registrada na seção 9.
+
 ## 1. Que tecnologia executa o provador hoje
 
 | Etapa | O que roda de verdade | Arquivo |
 |---|---|---|
-| Loja → ambiente | `resolveEnvironment` (cor/nome da marca) + **plano de loja** novo (`planStore`) | `lib/scene3d/store-plan.ts`, `components/three/fitting-room-scene.tsx` |
+| Loja → ambiente | `resolveEnvironment` (marca) → **estúdio conceitual** `resolveFittingStudio` (paleta, objetos com função, até 2 fotos de referência da mesma marca) | `lib/scene3d/fitting-studio.ts`, `components/three/fitting-room-scene.tsx` |
 | Render | three.js + React Three Fiber no navegador (WebGL) | `components/three/*` |
 | Manequim | corpo MakeHuman CC0 `fai-body-v1` (malha + esqueleto Mixamo), formas pelo corpo medido | `lib/avatar3d/human/{asset,compose,three-human}.ts` |
 | Peça → asset | **molde estimado**: malha própria nascida da pele afastada pela folga ("casca do corpo"), com pesos de pele copiados do corpo; saia/vestido como tubo da cintura; tênis/sapato como fôrma modelada | `lib/avatar3d/human/{garments,garment-relax,dress,shoes}.ts` |
@@ -30,41 +38,38 @@ geometria real da peça (gola, bolsos, volume das costas) é insuficiente — is
 
 | # | Relato | Causa encontrada | Caso reproduzível | Critério de aceite | Estado |
 |---|---|---|---|---|---|
-| A1 | Loja com nome/cor da marca, mas objetos incoerentes | O ambiente era montado por funções soltas (`NeonSign`, `Rail`, `Bench`, `ZoneFixtures`) sem plano: arara com blocos coloridos, letreiro neon, painel de **outra marca** ("Atelier Lumi") na loja Norte Sport | `/lab/scenes?s=fitting-brand` → `img/2026-10-10/antes/fitting-brand-front.png` | todo objeto tem função (exposição, organização, circulação, prova, comunicação, iluminação); nenhuma marca alheia numa loja de marca | corrigido → `depois/fitting-brand-front.png` |
-| A2 | Imagens do catálogo aleatórias em pedestais | `ProductImage` desenhava a foto num plano flutuante (e espelhada no verso) sobre pedestais sem função | `antes/fitting-sneakers-*.png`, `antes/fitting-bags-*.png` | foto de catálogo só em suporte deliberado (quadro com moldura, prateleira, mesa, nicho); produto 3D só com asset 3D | corrigido: `PhotoPrint` (só frente, com moldura e passe-partout), prateleira de calçados 3×2, mesa de fotos, nicho de acessórios, quadro em cavalete |
+| A1 | Loja com nome/cor da marca, mas objetos incoerentes | O ambiente era montado por funções soltas (`NeonSign`, `Rail`, `Bench`, `ZoneFixtures`) sem plano: arara com blocos coloridos, letreiro neon, painel de **outra marca** ("Atelier Lumi") na loja Norte Sport | `/lab/scenes?s=fitting-brand` → `img/2026-10-10/antes/fitting-brand-front.webp` | todo objeto tem função; nenhuma marca alheia numa loja de marca | corrigido (estúdio da `main`, #213) → `depois/fitting-brand-front.webp` |
+| A2 | Imagens do catálogo aleatórias em pedestais | `ProductImage` desenhava a foto num plano flutuante (e espelhada no verso) sobre pedestais sem função | `antes/fitting-sneakers-*.png`, `antes/fitting-bags-*.png` | foto de catálogo só em suporte deliberado; produto 3D só com asset 3D | corrigido: até 2 fotos de referência emolduradas na parede (`ReferenceGallery`), só da marca da loja |
 | A3 | A roupa "tinge" a frente do manequim em vez de vestir | Três causas: (1) imagem externa sem CORS → a textura falhava e só a casca lisa `colorHex` aparecia; (2) o fallback `CapsuleMannequin` desenhava moldes de cor chapada; (3) `pointLight` na cor de destaque perto do avatar | provador com peça do catálogo externo; `antes/*` | a peça envolve o corpo em 360°; falha de foto vira estado ERRO, nunca casca pintada | corrigido (seção 4) |
 | A4 | Jeans "colado" / camiseta acompanhando a cintura | Um molde só por subcategoria, sem classe de caimento; perna seguindo a panturrilha | matriz, `antes-*.png` | jeans reto do joelho para baixo; camiseta regular cai do busto | corrigido (seção 6) |
 | A5 | Peças classificadas no molde errado | `kindOf`: `crossbody_bag` caía em regata (`is("body")`), saia-short, bermuda, macaquinho, colete e polo sem molde certo | `lib/tryon/garment-asset.test.ts` | cada subcategoria do acervo no molde da família certa | corrigido |
 | A6 | Bota com os dedos marcados e ~5 % de interseção | A bota usava o molde do pé: a casca copiava cada dedo e, afastada pela folga, entrava no vão entre os dedos vizinhos (5,0–5,6 % em todas as poses, sempre no pé). Tênis e sapato já usavam a fôrma modelada | matriz (`03_calcados_11/12/14`) | bota com fôrma modelada como o tênis | corrigido: a bota ganha a mesma fôrma (bico, contraforte, sola) e o molde fica só no cano → 0 % em todos os corpos e poses |
+| A8 | Camiseta/regata/camisa atravessadas pela barriga e pelas coxas no agachamento (após o merge) | A barra curta em tubo da `main` seguia só o osso do quadril | matriz, agachamento | ≤ 6 % | corrigido: herda quadril, coluna e coxa da pele mais próxima, coxas divididas de forma contínua pelo lado → camiseta 7,5 → 4,4 %, regata 9,4 → 4,0 % |
+| A9 | Macacão e macaquinho sem pernas abaixo do quadril | A barra curta da `main` também pegava peças com perna (`hem` negativo) | matriz (`05_corpo_inteiro_02/03`) | pernas do molde preservadas | corrigido: barra curta só sem perna → 9,6 → 2,2 % / 1,6 % |
 | A7 | Saia e vestido atravessados pelas coxas no agachamento | O tubo da saia seguia só o quadril na frente: as coxas sobem a 70° e saem pela frente do tubo | matriz (`02_parte_inferior_12/14`, `05_corpo_inteiro_01`) | ≤ 6 % no agachamento | corrigido: o tubo divide o peso entre as duas coxas (frente e laterais mais que as costas) a partir da altura do quadril → saia 11,7 → 5,4 %, vestido 6,6 → 0,9 %, casaco 5,7 → 4,0 % (F-ref, agachamento) |
 
 ## 3. Ambiente da loja
 
-`lib/scene3d/store-plan.ts` define o **perfil** da loja (`storeProfileFor`): nome, materiais (piso, parede,
-expositores), iluminação e **fidelidade**:
+O ambiente é o **estúdio conceitual** da `main` (`lib/scene3d/fitting-studio.ts`, #213): paredes neutras, uma placa de
+identidade da marca, espelho de corpo inteiro, banco e cabideiro em escala real e no máximo **duas fotos de
+referência emolduradas**, sempre da própria marca (`resolveFittingStudio` filtra produtos de outras marcas; a loja
+neutra aceita qualquer uma). A cor da marca entra só nas superfícies (parede, móveis); **toda a luz é neutra**
+(branca), então a paleta da loja não muda a cor da roupa (medido na seção 7). Como nenhuma marca tem referência de
+loja física cadastrada, a interpretação é sempre `CONCEPTUAL` e a tela diz "estúdio conceitual".
 
-- `documentada` — só quando existirem referências da marca (fotos, guia de loja). Hoje `REFERENCES = {}`: nenhuma marca
-  tem referência cadastrada, então **toda loja é conceitual** e a página do provador diz isso ("ambiente conceitual").
-- `conceitual` — loja neutra FashionAI com a cor e o nome da marca só na comunicação (parede da marca, faixa de luz).
-
-`planStore(env, others, scene)` gera os expositores com **função** e **escala real** (`SCALE_RANGES`, verificadas em
-teste): porta dos provadores 2,0–2,2 m, banco 0,42–0,50 m, mesa 0,72–0,92 m, espelho 1,7–2,2 m. Trocar de loja troca
-todos os ids (nenhum objeto da loja anterior sobra). Painéis multimarca só aparecem quando a loja **não** é de uma
-marca. O inventário publicado pela cena (`inventoryOf`) está em `img/2026-10-10/depois/inventario.json`:
-
-| função | objetos |
+| objeto (`STUDIO_OBJECTS`) | função |
 |---|---|
-| circulação | piso |
-| organização | paredes, prateleiras de calçados |
-| iluminação | teto, trilho de luz, luz de parede (wash na parede do fundo) |
-| comunicação | parede da marca, faixa de luz, placa e quadros da zona, foto em destaque |
-| prova | palco de prova, cabine com cortina, espelho, banco, porta dos provadores |
-| exposição | mesa de fotos, nicho de acessórios, quadros (só fotos em suporte) |
+| shell (paredes e piso) | circulação |
+| identity (placa da marca) | comunicação |
+| mirror (espelho de corpo inteiro) | prova |
+| bench (banco) | prova |
+| rail (cabideiro, sem peças falsas) | organização |
+| gallery (até 2 fotos emolduradas) | comunicação |
 
-Luz: a luz na cor de destaque perto do avatar foi removida; a cor da marca fica nas superfícies de comunicação, não
-na roupa (comprovado na seção 7). Testes: `lib/scene3d/store-plan.test.ts` (5).
-
-Capturas antes × depois das 6 cenas (frente e costas): `img/2026-10-10/antes/` e `img/2026-10-10/depois/`.
+Trocar de marca recria o estúdio (`key={env.key}`) e a galeria é resolvida de novo — nada da loja anterior fica.
+Testes: `lib/scene3d/fitting-studio.test.ts`. O laboratório publica esse perfil como inventário
+(`window.__sceneInventory`). Capturas: `img/2026-10-10/antes/` (o ambiente original, com painel de marca alheia e
+fotos soltas) e `img/2026-10-10/depois/` (estúdio).
 
 ## 4. Arquitetura modular da vestimenta
 
@@ -104,8 +109,9 @@ Estados mostrados na página (`GarmentState` em `app/(site)/(app)/try-on/page.ts
 O status sai do Canvas por um store de módulo (`lib/tryon/garment-status.ts`, `useSyncExternalStore`), porque o
 Canvas do R3F não herda o contexto React da página. Só ids e estados trafegam — nenhuma imagem ou medida.
 
-Correções que fecham o relato A3: catálogo usa a **imagem processada** do próprio FashionAI (`processedImageOf`, mesma
-origem, sem CORS); peça com foto que falhou é trocada pela peça padrão da zona (`usable` em `human-outfit.tsx`); o
+Correções que fecham o relato A3: a peça tenta primeiro a foto recortada e, se ela não carregar no 3D (imagem externa
+sem CORS), usa a **imagem processada** do próprio FashionAI (`processedImageOf`, mesma origem); a foto opaca tem o
+fundo separado por cor (máscara da outra sessão); peça com foto que falhou é trocada pela peça padrão da zona (`usable` em `human-outfit.tsx`); o
 `CapsuleMannequin` não é mais usado no provador (`fallback={null}`; o corpo mostra "carregando"/"erro" na página).
 
 ## 5. A roupa envolve o manequim (prova 3D)
@@ -155,7 +161,7 @@ Resultado medido (F-ref e M-ref, `vestir-antes` × `vestir-depois`):
 | F-ref | jeans (`02_parte_inferior_01_jeans`) | barra/joelho | 0,84 | **0,93** (reta) | 0,55 |
 | F-ref | jeans | folga coxa / joelho / panturrilha | 0,49 / 0,62 / 1,07 cm | **1,26 / 1,79 / 2,25 cm** | — |
 | M-ref | jeans | barra/joelho | 0,88 | **0,92** | 0,59 |
-| F-ref | calça cargo (oversized) | barra/joelho · folga joelho | 0,84 · 0,62 cm | **1,03 · 2,89 cm** | 0,55 |
+| F-ref | calça cargo (construção cargo da `main` + classe oversized) | barra/joelho · folga joelho | 0,84 · 0,62 cm | **1,03 · 5,03 cm** | 0,55 |
 | F-ref | camiseta de referência (regular) | cintura/busto | 0,98 | **0,99** (cai do busto) | 0,94 |
 | F-ref | moletom (oversized) | cintura/busto · folga cintura | 0,97 · 1,84 cm | **1,05 · 3,62 cm** | 0,93 |
 | M-ref | moletom com capuz | cintura/busto · folga peito | 1,02 · 1,56 cm | **1,11 · 2,76 cm** | 1,01 |
@@ -194,18 +200,17 @@ braços 1,5 % (a pose abre a axila: o que sobra é defeito real), caminhada 3,5 
 (LBS colapsa joelho e virilha a 105°; sem simulação de tecido). Teste de aceite (`fit-matrix.test.ts`) roda um subconjunto
 em todo `vitest`.
 
-Resultado: das 736 linhas, **10 ficam acima da tolerância** (eram 62 na primeira medição do "depois", antes das correções de bota,
-saia e axila):
+Resultado (código mesclado): das 736 linhas, **6 ficam acima da tolerância**:
 
 | peças | corpo | pose | penetração | causa | decisão |
 |---|---|---|---|---|---|
-| 5 sobreposições (cardigã, blazer, jaqueta, corta-vento, quimono) | F-plus | exibição | 3,2 % | axila: no corpo plus o braço encosta no tronco mesmo a 22°; a manga fica entre os dois | limitação de LBS sem colisão; cai para ≤ 1,0 % com os braços erguidos |
-| corta-vento | F-ref | exibição | 3,1 % | idem, folga oversized ×2 | idem |
 | saia, saia-short | M-ref, M-slim | agachamento | 6,6 % | coxas longas sobem além do comprimento do tubo | 0,6 pt acima; sem simulação de tecido |
-| bermuda | M-ref | agachamento | 6,2 % | virilha a 105° (colapso de LBS) | idem |
+| calça (uma) | F-plus | agachamento | 6,4 % | virilha a 105° com coxa volumosa (colapso de LBS) | idem |
+| bermuda | M-ref | agachamento | 6,2 % | virilha a 105° | idem |
 
-Antes das correções desta auditoria: bota 5,0–5,6 % em **todas** as poses (pé), saia 11,7–12,9 % e vestido 6,6–7,7 % no
-agachamento, jaqueta 3,1–4,0 % e casaco 3,9 % na caminhada.
+Histórico do que foi corrigido nesta auditoria: bota 5,0–5,6 % em **todas** as poses (pé) → 0 %; saia 11,7–12,9 % e
+vestido 6,6–7,7 % no agachamento → ≤ 6,6 % / ≤ 1 %; jaqueta 3,1–4,0 % e casaco 3,9 % na exibição/caminhada → ≤ 3 %;
+depois do merge, blusas e macacões no agachamento (até 10,4 %) → ≤ 6 %.
 
 Estabilidade: troca de peça reconstrói só a peça trocada; trocar de loja recria o plano (ids novos, nenhum objeto
 herdado). Desempenho medido no harness (CPU, node): montar o look completo (corpo + peça + look padrão nas outras zonas) leva 63–127 ms; camiseta 1 943 vértices / 3 730 triângulos, jeans 1 517 / 2 941, vestido 3 693 / 7 120, casaco 5 347 / 10 417, bota (cano) 270 / 442.
@@ -219,7 +224,8 @@ herdado). Desempenho medido no harness (CPU, node): montar o look completo (corp
   short por baixo.
 - **Sem simulação de tecido**: o caimento é estático e o movimento é LBS (colapso de volume no agachamento).
 - **Sem recomendação de tamanho**.
-- As 10 linhas acima da tolerância da seção 8 (axila em corpo plus com sobreposição; saia e bermuda no agachamento em corpos masculinos).
+- As 6 linhas acima da tolerância da seção 8 (saia, bermuda e uma calça no agachamento).
+- Dois contratos de vestimenta convivem (estado na tela × procedência dos dados): unificar num só.
 
 Migração para Unreal (avaliação, não presunção): o caminho é exportar o corpo como **Skeletal Mesh** (já sai em GLB com
 esqueleto, `export-glb.ts`), cada peça como Skeletal Mesh com **skin weights** próprios no mesmo esqueleto, **Physics
@@ -229,9 +235,9 @@ listar. O contrato da seção 4 é o mesmo lá: só muda quem preenche `asset`.
 
 ## 10. Arquivos
 
-- Ambiente: `lib/scene3d/store-plan.ts` (+ teste), `components/three/store-fixtures.tsx`, `components/three/fitting-room-scene.tsx`.
+- Ambiente (da `main`): `lib/scene3d/fitting-studio.ts` (+ teste), `components/three/store-fixtures.tsx`, `components/three/fitting-room-scene.tsx` (com os ganchos de depuração desta auditoria).
 - Vestimenta: `lib/tryon/garment-asset.ts` (+ teste), `lib/tryon/garment-status.ts`, `lib/tryon/acervo.ts`,
   `lib/avatar3d/human/{garment-fit,dress,garments,garment-relax,shoes}.ts`, `components/three/{human-outfit,human-avatar,mannequin}.tsx`.
 - Métricas e evidências: `lib/avatar3d/human/{fit-metrics,fit-matrix}.ts` (+ testes), `lib/avatar3d/human/pose.ts`
   (`applyTestPose`), `components/three/scene-debug.tsx`, `components/lab/scenes-lab.tsx`, `scripts/tryon/*`.
-- Página: `app/(site)/(app)/try-on/page.tsx` (estados, aviso de ambiente conceitual), i18n `tryOn.*`, `scene3d.provadores`.
+- Página: `components/try-on/*` (estrutura da `main`); estado da peça em `components/try-on/garment-state.tsx` dentro de `fitting-items.tsx`; imagem processada, variação e atributos em `lib/tryon/fitting-room-model.ts`; i18n `tryOn.*`.
