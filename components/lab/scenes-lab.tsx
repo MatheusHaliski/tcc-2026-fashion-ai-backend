@@ -34,6 +34,7 @@ export const LAB_LOOK: Look3dPiece[] = [
 function labLook(ids: string): Look3dPiece[] | null {
   const list = ids.split(",").filter(Boolean).map((id): Look3dPiece | null => {
     if (id.startsWith("cor-")) return { id: `lab-${id}`, name: id, slot: "upper_piece", category: "upper_piece", subcategory: "t_shirt", imageUrl: `/lab/cores/camiseta-${id.slice(4)}.webp` };
+    if (id.startsWith("camisa-")) return { id: `lab-${id}`, name: `Camisa ${id.slice(7)}`, slot: "upper_piece", category: "upper_piece", subcategory: "shirt", imageUrl: `/lab/cores/${id}.webp` };
     const p = ACERVO.find((x) => x.id.includes(id)); return p ? acervoLook(p) : null;
   }).filter((p): p is Look3dPiece => !!p);
   return list.length ? list : null;
@@ -89,13 +90,16 @@ function publishProfile(p: FittingStudioProfile) {
 export default function ScenesLab() {
   const [s, setS] = useState("fitting-brand");
   const [view, setView] = useState<AvatarView>("front");
-  // auditoria do vestir: ?pieces=<ids do acervo | cor-*>&body=F-ref|M-ref|F-plus|M-slim&debug=wire|sem-corpo|pesos&pose=bracos|caminhada|caminhada-animada|agachamento&yaw=<graus>&close=1&fit=antes&light=daylight|store|night
+  // auditoria do vestir: ?pieces=<ids do acervo | cor-*>&body=F-ref|M-ref|F-plus|M-slim&debug=wire|sem-corpo|pesos&pose=bracos|caminhada|caminhada-animada|agachamento&yaw=<graus>&close=1&fit=antes&light=daylight|store|night&variation=SLIM&neckline=V_NECK
   const [lab, setLab] = useState<{ pieces: Look3dPiece[] | null; sex: "FEMININO" | "MASCULINO"; body: BodyParams | null; debug: SceneDebugOptions | null; yaw?: number; close: boolean; light: LightMode; ready: boolean }>({ pieces: null, sex: "FEMININO", body: null, debug: null, close: false, light: "store", ready: false });
   useEffect(() => {
     const q = new URLSearchParams(location.search); if (q.get("s")) setS(q.get("s")!);
     const v = q.get("view"); if (v && ["front", "left34", "right34", "profile", "back"].includes(v)) setView(v as AvatarView);
     setFitMode(q.get("fit") === "antes" ? "antes" : "depois");
-    const pieces = labLook(q.get("pieces") ?? "");
+    // variation=SLIM|REGULAR|OVERSIZED… força a classe de caimento em todas as peças (auditoria: regata "justa" do catálogo)
+    // neckline=V_NECK|SCOOP|… força a dimensão NECKLINE (auditoria do decote: "Decote V" do catálogo)
+    const variation = q.get("variation"), neckline = q.get("neckline");
+    const pieces = labLook(q.get("pieces") ?? "")?.map((p) => ({ ...p, ...(variation ? { variation } : {}), ...(neckline ? { attributes: { ...(p.attributes ?? {}), NECKLINE: [neckline] } } : {}) })) ?? null;
     const lq = q.get("light"); const light: LightMode = lq === "daylight" || lq === "night" ? lq : "store";
     const b = q.get("body") ?? "F-ref"; const sex = b.startsWith("M") ? "MASCULINO" : "FEMININO";
     const body = b === "F-plus" ? { ...DEFAULT_BODY.FEMININO, stature: 1.66, build: 1.4 } : b === "M-slim" ? { ...DEFAULT_BODY.MASCULINO, stature: 1.82, build: -0.8 } : null;
@@ -109,11 +113,24 @@ export default function ScenesLab() {
       set: ({ look, ...patch }: { yaw?: number; debug?: SceneDebugOptions | null; close?: boolean; light?: LightMode; look?: string }) =>
         setLab((l) => ({ ...l, ...patch, ...(look !== undefined ? { pieces: labLook(look) } : {}) })),
       canvas: () => (document.querySelector("#scene-viewer canvas") as HTMLCanvasElement | null)?.toDataURL("image/png"),
+      // diagnóstico: a textura montada para a peça (foto na esquerda, painel do tecido na direita) e as cores medidas
+      texture: async (url: string, part: "upper" | "lower" | "full" | "feet" = "upper") => {
+        const [{ loadTexture }, g, gp] = await Promise.all([import("@/components/three/common"), import("@/lib/avatar3d/human/garments"), import("@/lib/avatar3d/human/garment-photo")]);
+        const t = await loadTexture(url); const raw = t?.image as HTMLImageElement | undefined; if (!raw) return null;
+        // o MESMO caminho do HumanOutfit: foto preparada (recorte, pessoa, buracos) e só então textura/cores
+        const img = (await gp.prepareOutfitPhoto(raw, part)) ?? raw;
+        const info = g.photoInfo(img); const fabric = g.fabricColor(img, null, info);
+        const tex = g.garmentTexture(img, fabric, null, info);
+        const cv = document.createElement("canvas"); cv.width = img.width; cv.height = img.height; cv.getContext("2d")!.drawImage(img, 0, 0);
+        const tile = gp.fabricTile(cv.getContext("2d")!.getImageData(0, 0, cv.width, cv.height));
+        return { prepared: img !== raw, size: [img.width, img.height], tile, fabric, rib: g.ribColor(img, fabric, info), trims: g.trimColors(img, fabric, info), collarRow: info?.collarRow ?? null, neckDrop: info?.neckDrop ?? null, png: (tex.image as HTMLCanvasElement).toDataURL("image/png") };
+      },
       // diagnóstico: por que a foto de uma peça não vira textura (recorte, segmentação, pessoa, parte mantida)
       probe: async (url: string, part: "upper" | "lower" | "full" | "feet") => {
         const [{ loadTexture }, gp, { stripPerson }] = await Promise.all([import("@/components/three/common"), import("@/lib/avatar3d/human/garment-photo"), import("@/lib/pieces/person-filter")]);
         const t = await loadTexture(url); const img = t?.image as HTMLImageElement | undefined; if (!img) return { loaded: false };
-        const cut = gp.prepareGarmentPhoto(img); if (!cut) return { loaded: true, cutout: false };
+        // sem recorte pelos cantos (fundo de estúdio com molduras) a foto inteira vai ao filtro de pessoa, como no HumanOutfit
+        const cut = gp.prepareGarmentPhoto(img) ?? (() => { const c = document.createElement("canvas"); c.width = img.width; c.height = img.height; c.getContext("2d")!.drawImage(img, 0, 0); return c; })();
         const blob = await new Promise<Blob | null>((r) => cut.toBlob(r, "image/png"));
         const res = await stripPerson(new File([blob!], "p.png", { type: "image/png" }), { keep: part });
         const { detectBody } = await import("@/lib/avatar3d/body-detect"); const { loadOriented } = await import("@/lib/avatar3d/pipeline");
@@ -122,7 +139,7 @@ export default function ScenesLab() {
         // o que vira textura de fato (o mesmo caminho do HumanOutfit) e o recorte da pessoa, para ver no laboratório
         const final = await gp.prepareOutfitPhoto(img, part);
         const stripped = res.personFound ? await new Promise<string>((r) => { const fr = new FileReader(); fr.onload = () => r(String(fr.result)); fr.readAsDataURL(res.file); }) : null;
-        return { loaded: true, cutout: true, usable: gp.canUseOutfitPhoto(res, part), segmentation: res.segmentationAvailable, people: res.people, personFound: res.personFound, garments: res.garments ?? null, classes: hist, final: final?.toDataURL("image/png") ?? null, stripped };
+        return { loaded: true, cutout: !!gp.prepareGarmentPhoto(img), usable: gp.canUseOutfitPhoto(res, part), segmentation: res.segmentationAvailable, people: res.people, personFound: res.personFound, garments: res.garments ?? null, classes: hist, final: final?.toDataURL("image/png") ?? null, stripped };
       },
     };
   }, []);

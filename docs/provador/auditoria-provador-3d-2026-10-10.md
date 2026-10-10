@@ -257,3 +257,36 @@ listar. O contrato da seção 4 é o mesmo lá: só muda quem preenche `asset`.
 - Métricas e evidências: `lib/avatar3d/human/{fit-metrics,fit-matrix}.ts` (+ testes), `lib/avatar3d/human/pose.ts`
   (`applyTestPose`), `components/three/scene-debug.tsx`, `components/lab/scenes-lab.tsx`, `scripts/tryon/*`.
 - Página: `components/try-on/*` (estrutura da `main`); estado da peça em `components/try-on/garment-state.tsx` dentro de `fitting-items.tsx`; imagem processada, variação e atributos em `lib/tryon/fitting-room-model.ts`; i18n `tryOn.*`.
+
+## 10. Peças do catálogo no provador (10/10, CATALOGO-3D)
+
+Casos relatados com captura (busca → Provar): **T-Shirt Cropped listrada** (3D cinza liso, sem estampa), **T-Shirt
+Decote V turquesa** (a calça branca da modelo entrou na camiseta; sem decote V), **Regata canelada com decote** ("entra
+no corpo" na lateral, manchas brancas), **camisa xadrez de manga longa** (faixas lavadas em vez do xadrez, gola e botões
+sem detalhe). As fotos reais (marca e modelo) ficaram só na área de rascunho; as evidências abaixo usam o acervo do
+laboratório (marca fictícia, manequim padrão).
+
+| sintoma | causa encontrada (`__lab.probe` / `__lab.texture`) | correção |
+|---|---|---|
+| listrada → cinza liso | a foto da modelo tem fundo de estúdio com molduras: o recorte pelos cantos falhava e a foto era recusada ANTES do filtro de pessoa; a zona caía na **peça padrão** (política "nunca casca pintada") sem o usuário perceber | `prepareOutfitPhoto`: sem recorte possível a foto inteira vai ao filtro de pessoa (a segmentação separa pessoa e cenário); sem pessoa, nada vira textura. Timeout de 45 s com uma repetição (a 1ª foto da sessão paga o carregamento do segmentador — na F-plus do laboratório a regata também caía na peça padrão por isso) |
+| calça branca dentro da camiseta | a imagem processada no servidor traz o **look inteiro** (blusa + calça) já sem a pessoa; sem esqueleto o filtro não separava as peças; com esqueleto, o cinto/cós sobrava na faixa do quadril | `splitByHem`: barra pela mudança de cor (tudo acima × tudo abaixo do corte, não faixa local — estampa no peito não é barra), pelo vão/cobertura (restos finos da outra peça com a mesma estampa) e com o lado que fica uniforme perto do corte (gola/pala contrastante de camisa única NÃO decapita a camisa); cós/cinto que sobra sobe com o corte |
+| sem decote V | o catálogo não traz atributos; o molde só tinha decote redondo raso | `necklineOf`: dimensão NECKLINE ou o nome ("Decote V", "V-neck", "gola alta", "canoa", "quadrado", "ombro a ombro", "decote"…) → `neckShape` (redondo/V/quadrado/canoa) + profundidade; `photoInfo.neckDrop` lê a profundidade na própria foto (topo no centro × topo nos ombros) e só aprofunda |
+| regata "entra no corpo", manchas brancas | NÃO é caimento (F-plus justa e regular: ok de lado e em 3/4); são os vazios de oclusão da foto — onde o braço/mão da modelo cobria a peça a foto fica transparente e o molde vira buraco (corpo à mostra) ou cor lisa (mancha) | `fillInteriorHoles`: vazios internos recebem o tecido vizinho (ondas a partir da borda do buraco); a silhueta externa continua recortando; buracos > 45% da peça ficam |
+| camisa: faixas lavadas, sem xadrez | para `shirt` a frente **nunca recebia a foto** (só o painel do tecido: repetição ou degradê por linhas); o degradê era tingido pela gola e pelos punhos (linhas inteiras) e as cores vinham de **medianas canal a canal** (azul + laranja ⇒ verde inexistente) | frente da camisa recebe a foto; `fabricRows` só do miolo das linhas e entre gola e barra; `medoid` (pixel real mais perto das medianas) em `fabricColor`, `trimColors`, `ribColor`, `fabricRows`; largura de referência da projeção perto da barra para manga longa (os punhos da foto não vão mais para o quadril) |
+| gola, costura, botões sem detalhe | carcela lisa, 7 pontos escuros, gola só a faixa | `shirtPlacket`: carcela + **pesponto** nas duas bordas (cor da linha: escura em tecido claro, clara em tecido escuro), **botões** claros de 5 mm com aro escuro, **pontas da gola** deitadas no peito na cor da gola da foto (`ribColor` lê a gola inteira, sem a abertura escura) |
+
+Evidências (laboratório, `img/2026-10-10/catalogo/`): `camisa-xadrez-e-lisa.webp` (fixture `public/lab/cores/camisa-xadrez.webp`,
+a camisa do acervo com o corpo em xadrez — `scripts/tryon/make-plaid-fixture.py`; frente e 3/4; e a mesma lisa),
+`decotes-camiseta.webp` (base · V · U · quadrado, `?neckline=`), `regata-f-plus-justa-e-regular.webp`,
+`camisa-acervo-azul.webp`. Nas fotos reais (rascunho): a listrada passa a "pessoa encontrada, parte de cima mantida
+(0,56 × 0,10)" e o recorte final é só a blusa; a turquesa fica sem cinto e sem calça.
+
+Testes: `garment-photo.test.ts` (vazios internos, barra por cor/vão/restos, estampa no peito, gola contrastante, peça
+única), `garment-photo-person.test.ts` (sem esqueleto segue com barra pela cor, fundo de estúdio vai ao filtro,
+timeout com repetição), `garment-fit.test.ts` (decote pelo nome/atributo), `garments.test.ts` (formas do decote),
+`photo-mask.test.ts` (profundidade do decote na foto), `shirt-placket.test.ts` (carcela, pesponto, botões com aro,
+pontas da gola, foto na frente da camisa).
+
+Limites: a repetição do xadrez nas mangas/costas depende de `fabricTile` achar o período — no fixture não achou (fica o
+degradê de linhas do tecido); a peça padrão continua entrando quando a foto não serve (política), agora com menos casos;
+`SCOOP` com a faixa da gola fica largo (vale como "decote U").

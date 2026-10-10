@@ -8,6 +8,7 @@ import { applyIdle, setArmOut } from "@/lib/avatar3d/human/pose";
 import {
   armOutFor, bodyParam, collarBand, fabricColor, ribColor, shoeColors, trimColors, garmentMaterial, garmentTexture, kindOf, photoInfo, posedPositions, texturedGeometry,
   type GarmentKind, type GarmentSpec,
+  HAS_COLLAR_BAND, type PhotoInfo,
 } from "@/lib/avatar3d/human/garments";
 import { DEFAULT_PIECES, ZONES, withDefaultOutfit, zonesCovered, type Zone } from "@/lib/avatar3d/human/default-outfit";
 import { specFor } from "@/lib/avatar3d/human/garment-fit";
@@ -61,6 +62,17 @@ function zoneOf(spec: GarmentSpec): Zone | null {
  * recebe a peça padrão do FashionAI (a peça de cima por fora, como colete e jaqueta, simplesmente sai) e o estado vai
  * para a página como ERRO, com a foto 2D na lista.
  */
+/**
+ * Decote pela foto: a profundidade (fração da altura da peça) vira h pela altura do molde (gola − barra); só aprofunda —
+ * um decote declarado mais fundo que o da foto fica. Forma (V/redondo) continua a do nome/atributo.
+ */
+export function withPhotoNeckline(sp: GarmentSpec, info: PhotoInfo | null): GarmentSpec {
+  if (!info || info.neckDrop === null || Number.isNaN(sp.hem) || sp.leg > 0 || !HAS_COLLAR_BAND.has(sp.kind)) return sp;
+  const depth = info.neckDrop * (sp.neck - sp.hem);
+  if (!(depth > sp.vneck + 0.03)) return sp;
+  return { ...sp, vneck: Math.min(0.4, depth) };
+}
+
 function usable(items: OutfitItem[], images: Record<string, Img | null>, settled: boolean): OutfitItem[] {
   if (!settled) return items;
   const out: OutfitItem[] = []; const missing = new Set<Zone>();
@@ -98,6 +110,13 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
   // must leave the modesty layer visible, including when a fallback is needed.
   const prepared = new Map<OutfitItem, NonNullable<ReturnType<typeof prepare>>>();
   const plannedBelow: GarmentSpec[] = [];
+  // caixa da peça na foto, lida uma vez por peça: projeção, cor do tecido, textura, acabamentos e o DECOTE — a
+  // profundidade medida na foto (topo no centro × topo nos ombros) aprofunda o decote do molde quando passa do declarado
+  const infos = new Map<OutfitItem, PhotoInfo | null>();
+  items = items.map((it) => {
+    const img = images[it.key] ?? null; const info = img ? photoInfo(img) : null;
+    const next = { ...it, spec: withPhotoNeckline(it.spec, info) }; infos.set(next, info); return next;
+  });
   for (const it of items) {
     const plan = prepare(it, plannedBelow);
     if (plan) { prepared.set(it, plan); plannedBelow.push(it.spec); }
@@ -115,7 +134,7 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
     const sleeveVert = (v: number) => gg.source[v] >= 0 && P.group[gg.source[v]] === 2;
     // caixa da peça na foto (alfa do recorte ou fundo separado da foto opaca): uma só leitura para a projeção, a cor do
     // tecido, a textura e os acabamentos — cores sempre de dentro da peça, nunca do fundo da foto
-    const info = img ? photoInfo(img) : null;
+    const info = infos.get(it) ?? (img ? photoInfo(img) : null);
     const geo = texturedGeometry(gg, posed, info, it.spec.sleeve > 0 ? sleeveVert : undefined, visibleAlpha);
     const shoe = it.spec.kind === "shoes" || it.spec.kind === "boots";
     const fabric = fabricColor(img, it.piece.colorHex, info);
@@ -149,7 +168,7 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
     } else { geo.dispose(); tex.dispose(); }
     // barra e manga com acabamento 3D (faixa com espessura dando a volta), na cor do acabamento da foto
     if (!shoe) {
-      const tc = trimColors(img, fabric, info); const rib = ribColor(img, fabric, info);
+      const tc = trimColors(img, fabric, info); const rib = ribColor(img, fabric, info, { wide: it.spec.kind === "shirt" });
       for (const tb of garmentTrims(asset, cc, P, gg)) {
         if (tb.part === "barra" ? !finishes.hem : tb.part === "punho" ? !finishes.cuff : above.length > 0) continue;
         const tg = new THREE.BufferGeometry();
@@ -158,8 +177,13 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
         tg.setAttribute("skinWeight", new THREE.Float32BufferAttribute(tb.skinWeight, 4));
         tg.setIndex(Array.from(tb.index)); tg.computeVertexNormals();
         const ribbed = it.spec.kind === "hoodie" || it.spec.kind === "sweater";
-        const color = tb.part === "botoes" ? "#514b42" : (tb.part === "barra" ? tc.hem : tb.part === "punho" ? tc.cuff : null) ?? (ribbed ? rib : `#${new THREE.Color(fabric).multiplyScalar(0.92).getHexString()}`);
-        const tm = new THREE.MeshPhysicalMaterial({ color, roughness: 0.9, sheen: 0.45, sheenRoughness: 0.8, side: THREE.DoubleSide,
+        // botão claro com aro escuro (nítido sobre qualquer tecido); linha do pesponto escura em tecido claro e clara em
+        // tecido escuro; pontas da gola na cor da gola da foto
+        const fl = new THREE.Color(fabric); const light = 0.2126 * fl.r + 0.7152 * fl.g + 0.0722 * fl.b > 0.35;
+        const thread = `#${(light ? fl.clone().multiplyScalar(0.62) : fl.clone().lerp(new THREE.Color("#ffffff"), 0.4)).getHexString()}`;
+        const color = tb.part === "botoes" ? "#efe8da" : tb.part === "botoes-borda" ? "#3a332b" : tb.part === "costura" ? thread : tb.part === "gola-ponta" ? rib
+          : (tb.part === "barra" ? tc.hem : tb.part === "punho" ? tc.cuff : null) ?? (ribbed ? rib : `#${fl.clone().multiplyScalar(0.92).getHexString()}`);
+        const tm = new THREE.MeshPhysicalMaterial({ color, roughness: tb.part === "botoes" ? 0.45 : 0.9, sheen: tb.part === "botoes" ? 0.1 : 0.45, sheenRoughness: 0.8, side: THREE.DoubleSide,
           polygonOffset: true, polygonOffsetFactor: -it.spec.layer - 1, polygonOffsetUnits: -it.spec.layer - 1 });
         tm.name = `acabamento-${tb.part}`;
         const tmesh = new THREE.SkinnedMesh(tg, tm); tmesh.name = `${tb.part}-${it.piece.id}`; tmesh.castShadow = true; tmesh.frustumCulled = false;
@@ -174,7 +198,7 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
       bg.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(cb.skinIndex, 4));
       bg.setAttribute("skinWeight", new THREE.Float32BufferAttribute(cb.skinWeight, 4));
       bg.setIndex(Array.from(cb.index)); bg.computeVertexNormals();
-      const bm = new THREE.MeshPhysicalMaterial({ color: ribColor(img, fabric, info), roughness: 0.9, sheen: 0.4, sheenRoughness: 0.8, side: THREE.DoubleSide,
+      const bm = new THREE.MeshPhysicalMaterial({ color: ribColor(img, fabric, info, { wide: it.spec.kind === "shirt" }), roughness: 0.9, sheen: 0.4, sheenRoughness: 0.8, side: THREE.DoubleSide,
         polygonOffset: true, polygonOffsetFactor: -it.spec.layer - 1, polygonOffsetUnits: -it.spec.layer - 1 });
       bm.name = `gola-${it.spec.kind}`;
       const band = new THREE.SkinnedMesh(bg, bm); band.name = `gola-${it.piece.id}`; band.castShadow = true; band.frustumCulled = false;

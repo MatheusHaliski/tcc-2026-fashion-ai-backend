@@ -52,6 +52,31 @@ const SKIRT_LEN: Record<string, number> = { MICRO: 0.24, MINI: 0.32, MID_THIGH: 
 const LEG_LEN: Record<string, number> = { MICRO: 0.18, MINI: 0.24, MID_THIGH: 0.32, KNEE: 0.5, CAPRI: 0.72, PEDAL_PUSHER: 0.66, ANKLE_LENGTH: 0.93, FULL_LENGTH: 0.985 };
 /** Manga (0 ombro → 1 punho) pela dimensão SLEEVE_LENGTH. */
 const SLEEVE_LEN: Record<string, number> = { SLEEVELESS: 0, SHORT_SLEEVE: 0.33, ELBOW_SLEEVE: 0.5, THREE_QUARTER_SLEEVE: 0.72, LONG_SLEEVE: 0.96 };
+/**
+ * Decote pela dimensão NECKLINE ou pelo nome da peça (o catálogo não traz atributos: "T-Shirt De Malha Decote V").
+ * Profundidade em h (quadril → pescoço = 1): V ≈ 10 cm abaixo da base do pescoço; careca ≈ 4 cm.
+ */
+const NECKLINE: Record<string, Partial<Pick<GarmentSpec, "neck" | "vneck" | "neckShape">>> = {
+  CREW: { neckShape: "round", vneck: 0.08 }, V_NECK: { neckShape: "v", vneck: 0.22 }, SCOOP: { neckShape: "round", vneck: 0.17 },
+  BOAT: { neckShape: "boat", vneck: 0.05 }, SQUARE_NECK: { neckShape: "square", vneck: 0.16 }, SWEETHEART: { neckShape: "v", vneck: 0.24 },
+  PLUNGE: { neckShape: "v", vneck: 0.34 }, OFF_SHOULDER: { neckShape: "boat", neck: 0.84, vneck: 0.03 }, STRAPLESS: { neckShape: "boat", neck: 0.8, vneck: 0.02 },
+  HALTER: { neckShape: "v", vneck: 0.2 }, COWL: { neckShape: "round", vneck: 0.2 }, KEYHOLE: { neckShape: "round", vneck: 0.1 },
+  TURTLENECK: { neckShape: "round", neck: 1.1, vneck: 0.02 }, MOCK_NECK: { neckShape: "round", neck: 1.05, vneck: 0.03 },
+  HENLEY: { neckShape: "round", vneck: 0.12 }, POLO_COLLAR: { neckShape: "v", vneck: 0.12 },
+};
+const NECK_WORDS: [RegExp, string][] = [
+  [/gola\s*alta|turtle\s*neck|cacharrel/, "TURTLENECK"], [/gola\s*m[eé]dia|mock\s*neck/, "MOCK_NECK"],
+  [/decote\s*v\b|v[\s-]?neck|gola\s*v\b/, "V_NECK"], [/decote\s*u\b|scoop/, "SCOOP"], [/canoa|boat\s*neck/, "BOAT"],
+  [/quadrad|square\s*neck/, "SQUARE_NECK"], [/cora[çc][aã]o|sweetheart/, "SWEETHEART"], [/profund|plunge/, "PLUNGE"],
+  [/ombro\s*a\s*ombro|off[\s-]?shoulder|ciganinha/, "OFF_SHOULDER"], [/tomara\s*que\s*caia|strapless/, "STRAPLESS"],
+  [/frente\s*[úu]nica|halter/, "HALTER"], [/\bpolo\b/, "POLO_COLLAR"], [/\bdecote\b|decotad/, "SCOOP"],
+];
+export function necklineOf(p: FitPiece): string | null {
+  const attr = first(p, "NECKLINE"); if (attr && NECKLINE[attr]) return attr;
+  const name = `${p.name ?? ""} ${p.subcategory ?? ""}`.toLowerCase();
+  for (const [re, code] of NECK_WORDS) if (re.test(name)) return code;
+  return null;
+}
 /** Início do cano da bota (0 quadril → 1 tornozelo) pela dimensão SHAFT_HEIGHT ou pela subcategoria. */
 const SHAFT: Record<string, number> = { ANKLE: 0.86, MID_TOP: 0.86, HIGH_TOP: 0.82, QUARTER: 0.88, CREW: 0.8, MID_CALF: 0.72, KNEE_HIGH: 0.55, OVER_THE_KNEE: 0.42, THIGH_HIGH: 0.25 };
 const SHAFT_SUB: Record<string, number> = { ankle_boots: 0.86, combat_boots: 0.8, boots: 0.72, long_boots: 0.56 };
@@ -99,6 +124,9 @@ export function specFor(p: FitPiece): GarmentSpec | null {
   if (len === "LONGLINE" && !Number.isNaN(base.hem)) sp.hem = Math.min(base.hem, -0.16);
   if (sleeve && SLEEVE_LEN[sleeve] !== undefined && !Number.isNaN(base.hem)) sp.sleeve = SLEEVE_LEN[sleeve];
   if (k === "boots") sp.shaft = (shaft ? SHAFT[shaft] : undefined) ?? SHAFT_SUB[sub] ?? base.shaft;
+  // decote (peças de cima e vestidos): dimensão NECKLINE ou o nome da peça
+  const neckline = !Number.isNaN(base.hem) && base.leg === 0 ? necklineOf(p) : null;
+  if (neckline) Object.assign(sp, NECKLINE[neckline]);
   sp.ease = clamp(sp.ease, 0.0015, 0.05);
   return sp;
 }

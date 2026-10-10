@@ -97,6 +97,14 @@ describe("caixa da peça na foto", () => {
     const w = info.widthAt(0.62)!; close(w.x0, 30); close(w.x1, 70);
   });
 
+  it("decote lido na foto: topo da peça no centro abaixo do topo nos ombros (fração da caixa); gola reta dá zero", () => {
+    const v = cutout();                                                               // V de 12 px no centro do topo
+    for (let y = 30; y < 42; y++) { const half = 12 - (y - 30); rect(v, 50 - half, y, 50 + half, y + 1, [0, 0, 0, 0]); }
+    const info = photoInfo(v as unknown as HTMLImageElement)!;
+    close(info.neckDrop! * (info.box.y1 - info.box.y0), 12, 2.5);
+    expect(photoInfo(cutout() as unknown as HTMLImageElement)!.neckDrop).toBe(0);
+  });
+
   it("foto preenchida pela peça (sem fundo separável) continua valendo o quadro inteiro", () => {
     const full = rgba(100, 100, RED);
     const info = photoInfo(full as unknown as HTMLImageElement)!;

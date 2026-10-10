@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cutoutGarment, fabricTile, fabricRows, fullBodyUpperPhoto, type GarmentRaster } from "./garment-photo";
+import { cutoutGarment, fabricTile, fabricRows, fillInteriorHoles, fullBodyUpperPhoto, splitByHem, type GarmentRaster } from "./garment-photo";
 
 function jeans(): GarmentRaster {
   const width = 80, height = 100;
@@ -77,4 +77,58 @@ it("full-length catalog silhouettes require person filtering before upper-garmen
   expect(fullBodyUpperPhoto(cutoutGarment(jeans())!)).toBe(true);
   const square = { width: 20, height: 20, data: new Uint8ClampedArray(20 * 20 * 4).fill(255) };
   expect(fullBodyUpperPhoto(square)).toBe(false);
+});
+
+describe("foto recortada com vazios e com mais de uma peça (catálogo com modelo, estúdio do servidor)", () => {
+  // camiseta azul (linhas 10–59) sobre calça branca (linhas 60–95), já sem a pessoa, com um buraco onde estava a mão
+  function look(): GarmentRaster {
+    const width = 60, height = 100, data = new Uint8ClampedArray(width * height * 4);
+    for (let y = 10; y < 96; y++) for (let x = 14; x < 46; x++) data.set(y < 60 ? [40, 90, 200, 255] : [235, 232, 225, 255], (y * width + x) * 4);
+    for (let y = 30; y < 38; y++) for (let x = 22; x < 30; x++) data[(y * width + x) * 4 + 3] = 0;   // mão sobre a camiseta
+    return { width, height, data };
+  }
+  it("fillInteriorHoles: o vazio interno recebe o tecido vizinho; a silhueta externa continua transparente", () => {
+    const r = look(); const { filled, holes } = fillInteriorHoles(r);
+    expect(holes).toBe(64); expect(filled).toBe(64);
+    const at = (x: number, y: number) => Array.from(r.data.slice((y * r.width + x) * 4, (y * r.width + x) * 4 + 4));
+    expect(at(25, 33)).toEqual([40, 90, 200, 255]);           // preenchido com a cor da camiseta
+    expect(at(2, 2)[3]).toBe(0); expect(at(50, 50)[3]).toBe(0); // fora da peça: transparente como antes
+  });
+  it("fillInteriorHoles: um vazio enorme não é uma oclusão — fica como está", () => {
+    const width = 40, height = 40, data = new Uint8ClampedArray(width * height * 4);
+    for (let y = 2; y < 38; y++) for (let x = 2; x < 38; x++) data.set([100, 100, 100, 255], (y * width + x) * 4);
+    for (let y = 6; y < 34; y++) for (let x = 6; x < 34; x++) data[(y * width + x) * 4 + 3] = 0;
+    expect(fillInteriorHoles({ width, height, data }).filled).toBe(0);
+  });
+  it("splitByHem: fica só a camiseta (upper) ou só a calça (lower), cortando na mudança de cor", () => {
+    const up = look(); const a = splitByHem(up, "upper");
+    expect(a.hemRow).toBeGreaterThanOrEqual(58); expect(a.hemRow).toBeLessThanOrEqual(62);
+    expect(up.data[(70 * up.width + 30) * 4 + 3]).toBe(0); expect(up.data[(40 * up.width + 30) * 4 + 3]).toBe(255);
+    const low = look(); splitByHem(low, "lower");
+    expect(low.data[(40 * low.width + 30) * 4 + 3]).toBe(0); expect(low.data[(70 * low.width + 30) * 4 + 3]).toBe(255);
+  });
+  it("splitByHem: estampa no peito não é barra; restos finos da outra peça abaixo são", () => {
+    const width = 60, height = 100, data = new Uint8ClampedArray(width * height * 4);
+    for (let y = 10; y < 96; y++) for (let x = 14; x < 46; x++) data.set([235, 235, 235, 255], (y * width + x) * 4);
+    for (let y = 36; y < 48; y++) for (let x = 22; x < 38; x++) data.set([20, 20, 20, 255], (y * width + x) * 4);   // logo escuro no peito
+    const tee = { width, height, data }; expect(splitByHem(tee, "upper").hemRow).toBeNull();
+    // mesma estampa: a saia virou listras finas (cobertura baixa) abaixo da linha 60
+    const w2 = 60, h2 = 100, d2 = new Uint8ClampedArray(w2 * h2 * 4);
+    for (let y = 10; y < 60; y++) for (let x = 14; x < 46; x++) d2.set([200, 180, 120, 255], (y * w2 + x) * 4);
+    for (let y = 60; y < 96; y++) for (let x = 14; x < 46; x += 6) d2.set([200, 180, 120, 255], (y * w2 + x) * 4);
+    const r = splitByHem({ width: w2, height: h2, data: d2 }, "upper");
+    expect(r.hemRow).toBeGreaterThanOrEqual(58); expect(r.hemRow).toBeLessThanOrEqual(63);
+  });
+  it("splitByHem: camisa única com gola e pala de cor contrastante não é decapitada", () => {
+    const width = 60, height = 100, data = new Uint8ClampedArray(width * height * 4);
+    for (let y = 10; y < 96; y++) for (let x = 14; x < 46; x++) data.set(y < 28 ? [240, 120, 30, 255] : [222, 206, 168, 255], (y * width + x) * 4);
+    const r = { width, height, data }; expect(splitByHem(r, "upper").hemRow).toBeNull();
+    expect(data[(90 * width + 30) * 4 + 3]).toBe(255);
+  });
+  it("splitByHem: peça única (vestido liso) não é cortada por palpite", () => {
+    const width = 60, height = 100, data = new Uint8ClampedArray(width * height * 4);
+    for (let y = 10; y < 96; y++) for (let x = 14; x < 46; x++) data.set([40, 90, 200, 255], (y * width + x) * 4);
+    const r = { width, height, data }; expect(splitByHem(r, "upper").hemRow).toBeNull();
+    expect(data[(90 * width + 30) * 4 + 3]).toBe(255);
+  });
 });

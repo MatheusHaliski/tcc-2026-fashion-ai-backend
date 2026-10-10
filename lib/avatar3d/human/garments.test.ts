@@ -216,6 +216,17 @@ describe("gola 3D (ribana) em volta do decote inteiro", () => {
       expect(h).toBeLessThanOrEqual(prev + 1e-9); expect(prev - h).toBeLessThan(0.02); prev = h;          // antes: degrau de vneck inteiro num ponto
     }
   });
+  it("formas do decote: V aponta no centro e some antes do ombro; quadrado é reto entre as alças; canoa é raso de ombro a ombro", () => {
+    const round = { ...SPECS.tee, vneck: 0.22 }, v = { ...round, neckShape: "v" as const }, square = { ...round, neckShape: "square" as const }, boat = { ...SPECS.tee, vneck: 0.05, neckShape: "boat" as const };
+    const at = (sp: typeof round, deg: number) => necklineH(sp, Math.sin((deg * Math.PI) / 180), Math.cos((deg * Math.PI) / 180)); // 0° frente
+    expect(at(v, 0)).toBeCloseTo(v.neck - v.vneck, 5);                         // ponta do V: profundidade cheia
+    expect(at(v, 20)).toBeGreaterThan(at(round, 20));                           // sobe mais depressa que o redondo
+    expect(at(v, 60)).toBeCloseTo(v.neck, 3);                                   // já no ombro: altura da gola
+    expect(at(square, 0)).toBeCloseTo(at(square, 15), 3);                       // reto entre as alças
+    expect(at(square, 50)).toBeGreaterThan(at(square, 15) + 0.1);               // sobe de vez perto do ombro
+    expect(at(boat, 0) - at(boat, 60)).toBeLessThan(0.02);                      // canoa: quase a mesma altura de ombro a ombro
+    expect(at(boat, 180)).toBeCloseTo(boat.neck, 5);
+  });
   it("a faixa fecha a volta (frente, lados e nuca), na altura do decote, perto do pescoço", () => {
     const b = collarBand(asset, c, P, SPECS.tee)!;
     expect(b).not.toBeNull();
