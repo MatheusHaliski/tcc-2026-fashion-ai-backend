@@ -8981,5 +8981,17 @@
   "guide.demo.earn.moment": "Look sent to a Moment",
   "guide.demo.earn.cbc": "Card Building Challenge delivered",
   "guide.demo.earn.cap": "max. 1/day",
-  "guide.demo.earn.note": "Buying pieces never earns points"
+  "guide.demo.earn.note": "Buying pieces never earns points",
+  "guide.highlights.score.title": "Highlights: the Inventory Score",
+  "guide.highlights.score.body": "Highlights measures how you use the wardrobe you already own: the Inventory Score goes from 0 to 1000 and comes from seven dimensions, such as use, variety and rescuing idle pieces. Buying more never raises the score.",
+  "guide.highlights.score.demo": "Example: the score with its band, three dimensions and an unlocked achievement.",
+  "guide.highlights.score.step1": "The score and band sit on the left; each dimension has a Why that shows the rule and the pieces pulling it down.",
+  "guide.highlights.score.step2": "Records, achievements and the month's highlights are yours alone; the suggested challenges lead to what raises the score most.",
+  "guide.highlights.score.step3": "Rankings are anonymous and optional: only groups with enough people are shown, and you can leave whenever you want.",
+  "guide.demo.highlights.band": "High band",
+  "guide.demo.highlights.use": "Use",
+  "guide.demo.highlights.variety": "Variety",
+  "guide.demo.highlights.rescue": "Rescue",
+  "guide.demo.highlights.achievement": "30 days without repeating",
+  "guide.demo.highlights.why": "Why: the rule and the pieces pulling the score"
 }

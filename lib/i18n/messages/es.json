@@ -8981,5 +8981,17 @@
   "guide.demo.earn.moment": "Look enviado a un Momento",
   "guide.demo.earn.cbc": "Desafío de Montaje entregado",
   "guide.demo.earn.cap": "máx. 1/día",
-  "guide.demo.earn.note": "Comprar prendas nunca da puntos"
+  "guide.demo.earn.note": "Comprar prendas nunca da puntos",
+  "guide.highlights.score.title": "Destacados: el Inventory Score",
+  "guide.highlights.score.body": "Destacados mide cómo usas el armario que ya tienes: el Inventory Score va de 0 a 1000 y nace de siete dimensiones, como uso, variedad y rescate de prendas paradas. Comprar más nunca sube la nota.",
+  "guide.highlights.score.demo": "Ejemplo: la nota con la franja, tres dimensiones y un logro desbloqueado.",
+  "guide.highlights.score.step1": "La nota y la franja quedan a la izquierda; cada dimensión tiene un Por qué que muestra la regla y las prendas que la bajan.",
+  "guide.highlights.score.step2": "Récords, logros y los destacados del mes son solo tuyos; los desafíos sugeridos llevan a lo que más sube la nota.",
+  "guide.highlights.score.step3": "Los rankings son anónimos y opcionales: solo entran grupos con gente suficiente, y puedes salir cuando quieras.",
+  "guide.demo.highlights.band": "franja Alta",
+  "guide.demo.highlights.use": "Uso",
+  "guide.demo.highlights.variety": "Variedad",
+  "guide.demo.highlights.rescue": "Rescate",
+  "guide.demo.highlights.achievement": "30 días sin repetir",
+  "guide.demo.highlights.why": "Por qué: la regla y las prendas que bajan la nota"
 }

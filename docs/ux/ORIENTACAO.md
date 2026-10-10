@@ -85,6 +85,7 @@ custo diferente). Ajuste de texto ou visual não sobe a versão.
 | `points.balance` | /points/saldo | extrato e saldo | montado |
 | `points.earn` | /points/ganhar | ações com pontos e limite diário | montado |
 | `points.statement` | /notifications?cat=POINTS | extrato e saldo | montado |
+| `highlights.score` | /highlights (Destaques) | nota com faixa, dimensões e conquista | montado |
 | `shop.room` | /points/loja (loja do quarto) | item → confirmação → inventário | montado |
 
 Os textos descrevem o comportamento atual do código (verificado em cada tela). Um tutorial só é montado quando o

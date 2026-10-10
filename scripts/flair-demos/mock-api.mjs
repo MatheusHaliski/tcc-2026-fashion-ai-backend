@@ -266,6 +266,15 @@ createServer(async (req, res) => {
     log(201); return json(res, 201, { ...out, points: { lines, total: out.points.total }, submission, group: c.groupCode ? GROUP() : null, locked: true });
   }
 
+  // Destaques (Inventory Score) e Hype do guarda-roupa
+  if (path === "/api/me/highlights") return json(res, 200, { eligible: true, pieces: 9, manifesto: "Pontos por usar o que você tem — nunca por comprar mais.", score: 712, band: "Alta", bands: [{ min: 0, max: 299, label: "Inicial" }, { min: 300, max: 499, label: "Em construção" }, { min: 500, max: 799, label: "Alta" }, { min: 800, max: 1000, label: "Excelente" }], k: 20,
+    dimensions: [{ code: "USE", name: "Uso", value: 82, weight: 2 }, { code: "VARIETY", name: "Variedade", value: 64, weight: 1.5 }, { code: "RESCUE", name: "Resgate", value: 45, weight: 1 }, { code: "BALANCE", name: "Equilíbrio", value: 70, weight: 1 }, { code: "SEASON", name: "Estação", value: 58, weight: 1 }, { code: "CARE", name: "Cuidado", value: 77, weight: 1 }, { code: "SOCIAL", name: "Social", value: 61, weight: 0.5 }],
+    delta: { previous: 688 }, highlights: [{ emoji: "👖", title: "Peça mais usada", name: "Jeans reto", value: "9 looks", pieceId: "p-jeans" }, { emoji: "🧥", title: "Resgate do mês", name: "Cardigã tricô", value: "sem uso há 74 dias", pieceId: "p-cardigan" }],
+    evolution: { title: "Evolução", history: Array.from({ length: 24 }, (_, i) => ({ date: iso(days(-i)), score: 700 - i * 3 + (i % 4) * 5 })) }, records: { noRepeatStreak: 12, currentStreak: 5, rescuedInAWeek: 2, uniqueLooks: 31, note: "Recordes só seus: ninguém mais vê." },
+    achievements: [{ code: "NO_REPEAT_30", name: "30 dias sem repetir", emoji: "🏅", unlocked: true, unlockedAt: iso(days(-20)) }, { code: "RESCUER", name: "Resgatadora", emoji: "♻️", unlocked: true, unlockedAt: iso(days(-6)) }, { code: "FOUR_SEASONS", name: "Quatro estações", emoji: "🍂", unlocked: false }], suggestedChallenges: [{ code: "PECA_ESQUECIDA", name: "Peça esquecida" }], rankingsOptIn: false, computedAt: iso(days(0)) });
+  if (path === "/api/me/hype/wardrobe") return json(res, 200, { deltaWindowDays: 7, highlights: { biggestGrowth: null } });
+  if (path.startsWith("/api/me/inventory-score/dimensions/")) return json(res, 200, { code: "USE", name: "Uso", value: 82, rule: "Peças usadas em looks confirmados nos últimos 30 dias, sobre o total.", pullingDown: [{ name: "Boné cinza", id: "p-bone" }] });
+
   // FAI Points
   if (path === "/api/me/points") return json(res, 200, points);
   if (path === "/api/points/shop" && method === "GET") return json(res, 200, SHOP.map((i) => ({ ...i, inventory: inventory.filter((x) => x.sku === i.sku) })));

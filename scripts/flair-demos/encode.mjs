@@ -21,7 +21,7 @@ const MAX = Number(process.env.DEMO_MAX ?? "19.5");    // duração máxima: aci
 const args = process.argv.slice(2);
 const POSTERS_ONLY = args.includes("--posters");   // só regenera as capas (quadro já com a interface carregada)
 const ids = args.filter((a) => !a.startsWith("--")).length ? args.filter((a) => !a.startsWith("--")) : readdirSync(OUT).filter((f) => f.endsWith(".raw.webm")).map((f) => f.replace(".raw.webm", ""));
-const POSTER_AT = Number(process.env.DEMO_POSTER_AT ?? "2.5");
+const POSTER_AT = Number(process.env.DEMO_POSTER_AT ?? "5");
 const ff = (args) => execFileSync("ffmpeg", ["-hide_banner", "-loglevel", "error", "-y", ...args], { stdio: "inherit" });
 const probe = (f) => Number(execFileSync("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", f]).toString().trim());
 

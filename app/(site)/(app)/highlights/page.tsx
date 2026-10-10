@@ -11,6 +11,7 @@ import { chronological } from "@/components/history/history-style";
 import { InsightStrip } from "@/components/insights/insight-strip";
 import { HypeItemRow } from "@/components/hype/hype-item-row";
 import type { HypeWardrobe } from "@/lib/hype/types";
+import { GuideAuto, HowItWorks } from "@/components/guide/guide";
 
 interface Highlights { eligible: boolean; pieces: number; progress?: { missing: number; target: number; message: string; steps: { label: string; done: boolean }[] }; manifesto: string; score?: number; band?: string; bands?: { min: number; max: number; label: string }[]; k?: number; kNote?: string; dimensions?: { code: string; name: string; value?: number; weight: number; rule?: string; pullingDown?: { name?: string; id?: string }[] }[]; dims?: Record<string, number>; delta?: { score?: number; previous?: number }; highlights?: { emoji?: string; title?: string; name?: string; value?: string; pieceId?: string; text?: string }[]; evolution?: { history?: { date: string; score: number }[]; title?: string }; records?: { noRepeatStreak?: number; currentStreak?: number; rescuedInAWeek?: number; uniqueLooks?: number; note?: string }; achievements?: { code: string; name?: string; emoji?: string; unlocked?: boolean; unlockedAt?: string; secret?: boolean }[]; suggestedChallenges?: { code: string; name: string }[]; rankingsOptIn?: boolean; computedAt?: string; }
 const bandColor = (s?: number) => (s ?? 0) >= 800 ? "var(--status-good)" : (s ?? 0) >= 500 ? "var(--thread)" : (s ?? 0) >= 300 ? "var(--status-warning)" : "var(--status-serious)";
@@ -48,7 +49,8 @@ function Highlights() {
   if (loading || !data) return <Skeleton className="h-80" />;
   return (
     <>
-      <PageHeader title={t("nav.highlights")} kicker="RF29" lead={data.manifesto} actions={data.eligible ? <><Button onClick={async () => { try { setRank(await api.get("/api/me/rankings")); } catch (e) { toast.fromError(e); } }}><FaiIcon id="ACT-39" size={24} decorative />{t("highlights.rankings")}</Button><Link href="/challenges" className="btn"><FaiIcon id="ACT-43" size={24} decorative />{t("nav.challenges")}</Link></> : undefined} />
+      <PageHeader title={t("nav.highlights")} kicker="RF29" lead={data.manifesto} actions={<><HowItWorks id="highlights.score" />{data.eligible && <><Button onClick={async () => { try { setRank(await api.get("/api/me/rankings")); } catch (e) { toast.fromError(e); } }}><FaiIcon id="ACT-39" size={24} decorative />{t("highlights.rankings")}</Button><Link href="/challenges" className="btn"><FaiIcon id="ACT-43" size={24} decorative />{t("nav.challenges")}</Link></>}</>} />
+      <GuideAuto id="highlights.score" />
       {/* insights do guarda-roupa (RF53): o Inventory Score vem com a leitura do contexto, não só o número */}
       {data.eligible && <InsightStrip context="CLOSET" className="mb-4" />}
       {!data.eligible && data.progress && <Card><p className="type-body mb-2">{data.progress.message}</p><ul className="fai-list mb-3">{data.progress.steps.map((s) => <li key={s.label} className="type-body">{s.done ? "✅" : "⬜"} {s.label}</li>)}</ul><Link href="/pieces/new" className="btn btn-primary">{t("closet.addPiece")}</Link></Card>}

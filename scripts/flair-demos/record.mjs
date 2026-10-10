@@ -42,8 +42,12 @@ async function sessionState(browser) {
   const page = await ctx.newPage();
   await page.goto(`${APP}/login`, { waitUntil: "networkidle" });
   await page.evaluate(async () => { await fetch("/bff/auth/login", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ identifier: "ana@example.com", password: "SenhaForte#2026", rememberMe: true }) }); });
+  // aquece as rotas (em desenvolvimento o Next compila na primeira visita): a gravação não começa num esqueleto de carregamento
+  for (const path of WARMUP) { try { await page.goto(`${APP}${path}`, { waitUntil: "networkidle", timeout: 60000 }); } catch { /* segue: a rota aquece na própria gravação */ } }
   const state = await ctx.storageState(); await ctx.close(); return state;
 }
+const WARMUP = ["/pieces/p-jaqueta", "/flair", "/flair/partidas", "/flair/desafios", "/flair/desafios/verao-em-ipanema", "/moments", "/moments/primavera-2026", "/challenges", "/challenges/ch-1",
+  "/flair/cartas", "/flair/decks", "/flair/lojas", "/flair/carteira", "/flair/missoes", "/points", "/points/saldo", "/points/ganhar", "/points/loja", "/notifications?cat=POINTS"];
 /** O indicador de desenvolvimento do Next (canto inferior) não faz parte do produto: fica fora da gravação. */
 const HIDE_DEV = `(() => { const css = document.createElement("style"); css.textContent = "nextjs-portal{display:none!important}"; document.addEventListener("DOMContentLoaded", () => document.head.appendChild(css)); })();`;
 
@@ -120,7 +124,7 @@ const SCRIPTS = {
     await click(page, buy, { after: 1800 });
     await click(page, page.getByRole("dialog").getByRole("button", { name: /^Montar$/ }), { after: 2400 });
   },
-  async statement(page) { await go(page, "/notifications?cat=POINTS"); await sleep(1200); await click(page, page.getByRole("button", { name: /lançamentos de FAI Points/ }).first(), { after: 1600 }); await page.mouse.wheel(0, 200); await sleep(1600); },
+  async statement(page) { await go(page, "/notifications?cat=POINTS"); await sleep(1400); await moveTo(page, page.locator("summary.notif-summary").first()); await sleep(900); await click(page, page.locator("summary.notif-summary").first(), { after: 2000 }); await click(page, page.locator("summary.notif-summary").nth(1), { after: 2000 }); await page.mouse.wheel(0, 200); await sleep(1800); },
   async wallet(page) { await go(page, "/flair/carteira"); await sleep(1000); await click(page, page.locator(".flair-voucher").first(), { after: 2400 }); await click(page, page.getByRole("dialog").getByRole("button", { name: /fechar/i }).first(), { after: 800 }); await page.mouse.wheel(0, 200); await sleep(1500); },
   async quests(page) { await go(page, "/flair/missoes"); await sleep(1200); await moveTo(page, page.locator(".hype-bar").first()); await sleep(1200); await click(page, page.getByRole("button", { name: "Resgatar" }).first(), { after: 2600 }); },
 };
