@@ -35,7 +35,7 @@
         "skirt": {"focus": {"name": "waistband", "rect": [0.0, 0.0, 1.0, 0.45]}, "critical": [{"name": "waistband", "rect": [0.05, 0.0, 0.90, 0.12]}]},
         "leggings": {"focus": {"name": "waistband", "rect": [0.0, 0.0, 1.0, 0.30]}, "critical": [{"name": "waistband", "rect": [0.05, 0.0, 0.90, 0.10]}]}
       },
-      "rule": {"fit": "cover", "align": "top", "view": "ANY", "focusTopHalf": true}
+      "rule": {"fit": "cover", "align": "top", "view": "BACK", "focusTopHalf": true}
     },
     "SHOES_PIECE": {
       "focus": {"name": "laces_tongue_upper", "rect": [0.25, 0.0, 0.50, 0.55]},
