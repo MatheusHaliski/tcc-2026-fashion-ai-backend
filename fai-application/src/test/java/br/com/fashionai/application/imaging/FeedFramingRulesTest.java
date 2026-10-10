@@ -54,7 +54,7 @@ class FeedFramingRulesTest {
         assertThat(b[0]).isLessThanOrEqualTo(0.001);
         assertThat(b[2]).isGreaterThanOrEqualTo(0.999);
         assertThat(b[3]).as("as pernas passam da base: cós e bolsos ficam na metade de cima").isGreaterThan(1.0);
-        assertThat(((Map<?, ?>) f.landmarks().get("rule")).get("view")).isEqualTo("BACK");
+        assertThat(((Map<?, ?>) f.landmarks().get("rule")).get("view")).isEqualTo("ANY");
     }
 
     @Test
