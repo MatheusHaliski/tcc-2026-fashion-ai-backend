@@ -119,7 +119,10 @@ export default function ScenesLab() {
         const { detectBody } = await import("@/lib/avatar3d/body-detect"); const { loadOriented } = await import("@/lib/avatar3d/pipeline");
         const det = await detectBody(await loadOriented(new File([blob!], "p.png", { type: "image/png" }), 1600));
         const hist: Record<number, number> = {}; for (const k of det.mask?.data ?? []) hist[k] = (hist[k] ?? 0) + 1;
-        return { loaded: true, cutout: true, usable: gp.canUseOutfitPhoto(res, part), segmentation: res.segmentationAvailable, people: res.people, personFound: res.personFound, garments: res.garments ?? null, classes: hist };
+        // o que vira textura de fato (o mesmo caminho do HumanOutfit) e o recorte da pessoa, para ver no laboratório
+        const final = await gp.prepareOutfitPhoto(img, part);
+        const stripped = res.personFound ? await new Promise<string>((r) => { const fr = new FileReader(); fr.onload = () => r(String(fr.result)); fr.readAsDataURL(res.file); }) : null;
+        return { loaded: true, cutout: true, usable: gp.canUseOutfitPhoto(res, part), segmentation: res.segmentationAvailable, people: res.people, personFound: res.personFound, garments: res.garments ?? null, classes: hist, final: final?.toDataURL("image/png") ?? null, stripped };
       },
     };
   }, []);
