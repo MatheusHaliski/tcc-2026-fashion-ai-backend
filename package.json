@@ -18,7 +18,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@mediapipe/tasks-vision": "0.10.17",
+    "@mediapipe/tasks-vision": "1.0.1",
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.0",
     "@vladmandic/face-api": "1.7.15",
