@@ -6,7 +6,9 @@ import json
 import logging
 from dataclasses import dataclass, field
 
-from db import new_id, now, transaction
+import time
+
+from db import is_connection_lost, new_id, now, transaction
 from deduplicate import find_existing, find_same_model
 from image_metadata import image_type, url_hash, usage_status
 from normalize_product import Normalizer, Product, ValidationError, key, normalize_product, slug
@@ -49,8 +51,12 @@ class Report:
 
 
 class Ingestor:
-    def __init__(self, conn, dry_run=False, create_brands=True, overwrite=False):
+    def __init__(self, conn, dry_run=False, create_brands=True, overwrite=False, reconnect=None, retries=4):
         self.conn = conn
+        # queda de conexão no meio do lote: reconecta e repete o item (a transação por produto garante que nada ficou
+        # pela metade); sem isso, todo item depois da queda virava ERROR e o lote "terminava" sem inserir o resto
+        self.reconnect = reconnect
+        self.retries = retries
         self.dry_run = dry_run
         self.create_brands = create_brands
         # merge seguro: produto existente só ganha campos que estavam vazios; --overwrite = curadoria explícita
@@ -150,14 +156,32 @@ class Ingestor:
             p = normalize_product(raw, self.n)
         except ValidationError as e:
             return self._error(f"{label} {e}")
-        try:
-            with transaction(self.conn, self.dry_run):
-                with self.conn.cursor() as cur:
-                    outcome = self._upsert(cur, p)
-        except ValidationError as e:
-            return self._error(f"{label} {e}")
-        except Exception as e:  # erro de banco: registra e segue o lote
-            return self._error(f"{label} {type(e).__name__}: {e}")
+        attempt = 0
+        while True:
+            try:
+                with transaction(self.conn, self.dry_run):
+                    with self.conn.cursor() as cur:
+                        outcome = self._upsert(cur, p)
+                break
+            except ValidationError as e:
+                return self._error(f"{label} {e}")
+            except Exception as e:  # erro de banco: registra e segue o lote
+                if self.reconnect is not None and is_connection_lost(e) and attempt < self.retries:
+                    attempt += 1
+                    wait = min(60, 5 * 2 ** (attempt - 1))
+                    log.warning("[REDE] conexão perdida em %s (%s); reconectando em %ss (tentativa %s de %s)",
+                                label, type(e).__name__, wait, attempt, self.retries)
+                    time.sleep(wait)
+                    try:
+                        self.conn.close()
+                    except Exception:
+                        pass
+                    try:
+                        self.conn = self.reconnect()
+                    except Exception as e2:
+                        log.warning("[REDE] reconexão falhou: %s", type(e2).__name__)
+                    continue
+                return self._error(f"{label} {type(e).__name__}: {e}")
         for w in p.warnings:
             log.warning("[WARN] %s %s: %s", p.brand, p.product_name, w)
         return outcome

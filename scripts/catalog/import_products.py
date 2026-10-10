@@ -3,6 +3,7 @@
 
     python scripts/catalog/import_products.py ./data/catalog/products/nike.json [--dry-run] [--verbose]
     python scripts/catalog/import_products.py ./lote.csv --batch-size 200 [--no-create-brands]
+    python scripts/catalog/import_products.py ./lote.json --start-at 1201   # retoma depois de uma queda
 
 CSV: brand,category,subcategory,product_name,model_name,product_code,sku,gtin,ean,upc,color,color_name,collection,
 material,gender,official_product_url,primary_image_url,source_domain,source_type[,aliases separados por |].
@@ -47,13 +48,16 @@ def main(argv=None) -> int:
     ap.add_argument("files", nargs="+", help="arquivos .json, .jsonl, .jsonl.gz ou .csv")
     ap.add_argument("--batch-size", type=int, default=100, help="itens entre linhas de progresso")
     ap.add_argument("--no-create-brands", action="store_true", help="recusa itens de marcas que ainda não existem")
+    ap.add_argument("--start-at", type=int, default=1, metavar="N",
+                    help="retoma do item N de cada arquivo (os anteriores já entraram; rodar tudo de novo também é seguro, só demora mais)")
     ap.add_argument("--overwrite", action="store_true", help="curadoria: sobrescreve campos já preenchidos (padrão: só preenche vazios)")
     args = ap.parse_args(argv)
     setup_logging(args.verbose)
     banner("Importação de produtos", args.dry_run)
     started = now()
     conn = connect()
-    ing = Ingestor(conn, dry_run=args.dry_run, create_brands=not args.no_create_brands, overwrite=args.overwrite)
+    ing = Ingestor(conn, dry_run=args.dry_run, create_brands=not args.no_create_brands, overwrite=args.overwrite,
+                   reconnect=connect)
     for f in args.files:
         path = Path(f)
         if not path.exists():
@@ -61,12 +65,14 @@ def main(argv=None) -> int:
             ing.report.errors += 1
             continue
         for n, (label, raw) in enumerate(read_items(path), 1):
+            if n < args.start_at:
+                continue
             ing.ingest(raw, label=label)
             if n % args.batch_size == 0:
                 print(f"… {n} itens de {path.name} processados")
     ing.record_run("INCREMENTAL", ",".join(args.files), started)
     ing.report.print()
-    conn.close()
+    ing.conn.close()
     return 1 if ing.report.errors else 0
 
 
