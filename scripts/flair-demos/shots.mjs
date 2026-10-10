@@ -15,7 +15,7 @@ const HIDE_DEV = `(() => { const css = document.createElement("style"); css.text
 const SHOTS = [
   ["central", "/flair?mode=matches"], ["central-cbc", "/flair?mode=cbc"], ["central-momentos", "/flair?mode=moments"],
   ["cbc-lista", "/flair/desafios"], ["cbc-montagem", "/flair/desafios/verao-em-ipanema"], ["partidas", "/flair/partidas"], ["cartas", "/flair/cartas"],
-  ["pontos-central", "/points?mode=balance"], ["pontos-central-loja", "/points?mode=store"], ["pontos-saldo", "/points/saldo"], ["pontos-ganhar", "/points/ganhar"], ["pontos-loja", "/points/loja"],
+  ["destaques-modal", "/highlights"], ["pontos-central", "/points?mode=balance"], ["pontos-central-loja", "/points?mode=store"], ["pontos-saldo", "/points/saldo"], ["pontos-ganhar", "/points/ganhar"], ["pontos-loja", "/points/loja"],
 ];
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || undefined });
 const auth = await browser.newContext({ locale: "pt-BR" }); const p0 = await auth.newPage();

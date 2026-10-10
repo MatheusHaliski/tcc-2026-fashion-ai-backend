@@ -90,9 +90,10 @@ mídia falhar, fica a capa com o aviso. Assistir não chama a API.
 | challenges | Catálogo → Começar "7 dias sem repetir look" → modo → desafio aberto com progresso → Meus desafios | `challenges.*` |
 | cards / decks / shops / wallet / quests | a tela da coleção em uso | `cards.*` … `quests.*` |
 
-Durações finais (`encode.mjs` corta o carregamento inicial e, acima de 19,5 s, acelera de leve, até 1,6×, para o
-clipe caber em 10–20 s): matches 19,5 s (1,36×) · cbc 19,5 s (1,49×) · challenges 19,5 s · moments 16,4 s ·
-cards 10,5 s · decks 12,6 s · shops ≈10 s · wallet 11,8 s · quests 10,5 s. MP4 de 0,2 a 1,2 MB; capa JPG de 30 KB.
+Durações finais (`record.mjs` grava o instante em que a interface ficou pronta e `encode.mjs` corta tudo antes
+dele; acima de 19,5 s o clipe é levemente acelerado, até 1,6×): matches 19,4 s · cbc 19,5 s (1,23×) ·
+challenges 15,3 s · moments 13,4 s · cards 12,0 s · decks 12,5 s · shops 10,9 s · wallet 12,7 s · quests 12,2 s;
+FAI Points: balance 12,3 s · earn 13,2 s · store 10,9 s · statement 11,7 s. MP4 de 0,2 a 1,2 MB; capa JPG de 60 a 100 KB.
 
 ## 5.1 Central de FAI Points (`/points`), no mesmo formato
 

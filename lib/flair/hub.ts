@@ -25,15 +25,15 @@ export interface HubMode {
 const demo = (id: HubModeId, seconds: number): HubDemo => ({ mp4: `/flair/demos/${id}.mp4`, webm: `/flair/demos/${id}.webm`, poster: `/flair/demos/${id}.jpg`, seconds, recorded: true });
 
 export const HUB_MODES: HubMode[] = [
-  { id: "matches", group: "play", href: "/flair/partidas", guide: "flair.matches", demo: demo("matches", 20) },
+  { id: "matches", group: "play", href: "/flair/partidas", guide: "flair.matches", demo: demo("matches", 19) },
   { id: "cbc", group: "play", href: "/flair/desafios", guide: "flair.cbc", demo: demo("cbc", 20) },
-  { id: "moments", group: "calendar", href: "/moments", guide: "moments.calendar", demo: demo("moments", 16) },
-  { id: "challenges", group: "challenges", href: "/challenges", guide: "challenges.progress", demo: demo("challenges", 20) },
-  { id: "cards", group: "collection", href: "/flair/cartas", guide: "flair.cards", demo: demo("cards", 11) },
+  { id: "moments", group: "calendar", href: "/moments", guide: "moments.calendar", demo: demo("moments", 13) },
+  { id: "challenges", group: "challenges", href: "/challenges", guide: "challenges.progress", demo: demo("challenges", 15) },
+  { id: "cards", group: "collection", href: "/flair/cartas", guide: "flair.cards", demo: demo("cards", 12) },
   { id: "decks", group: "collection", href: "/flair/decks", guide: "flair.decks", demo: demo("decks", 13) },
-  { id: "shops", group: "collection", href: "/flair/lojas", guide: "flair.shops", demo: demo("shops", 10) },
-  { id: "wallet", group: "collection", href: "/flair/carteira", guide: "flair.wallet", demo: demo("wallet", 12) },
-  { id: "quests", group: "collection", href: "/flair/missoes", guide: "flair.quests", demo: demo("quests", 11) },
+  { id: "shops", group: "collection", href: "/flair/lojas", guide: "flair.shops", demo: demo("shops", 11) },
+  { id: "wallet", group: "collection", href: "/flair/carteira", guide: "flair.wallet", demo: demo("wallet", 13) },
+  { id: "quests", group: "collection", href: "/flair/missoes", guide: "flair.quests", demo: demo("quests", 12) },
 ];
 
 export const HUB_GROUPS: HubGroup[] = ["play", "calendar", "challenges", "collection"];
