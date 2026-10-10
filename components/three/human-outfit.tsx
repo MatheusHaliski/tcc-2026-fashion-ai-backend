@@ -16,6 +16,7 @@ import type { PhotoState } from "@/lib/tryon/garment-asset";
 import { buildGarment, softBodyOf } from "@/lib/avatar3d/human/dress";
 import { SOLE_LIFT, shoeParts, shoeStyleOf } from "@/lib/avatar3d/human/shoes";
 import { garmentTrims } from "@/lib/avatar3d/human/garment-trims";
+import { garmentContractOf } from "@/lib/avatar3d/garment-contract";
 import { occludeInnerGarment, visibleGarmentFinishes } from "@/lib/avatar3d/human/garment-layers";
 import { prepareGarmentPhoto, prepareOutfitPhoto, type OutfitPhotoPart } from "@/lib/avatar3d/human/garment-photo";
 
@@ -64,7 +65,7 @@ function usable(items: OutfitItem[], images: Record<string, Img | null>, settled
   if (!settled) return items;
   const out: OutfitItem[] = []; const missing = new Set<Zone>();
   for (const it of items) {
-    const url = it.piece.studioUrl ?? it.piece.imageUrl;
+    const url = it.piece.imageUrl ?? it.piece.studioUrl;
     if (!it.piece.defaultImage && url && !images[it.key]) { const z = zoneOf(it.spec); if (z) missing.add(z); continue; }
     out.push(it);
   }
@@ -112,12 +113,15 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
     const img = images[it.key] ?? null;
     const posed = posedPositions(human.skeleton, human.body.bindMatrix, gg.position, gg.skinIndex, gg.skinWeight);
     const sleeveVert = (v: number) => gg.source[v] >= 0 && P.group[gg.source[v]] === 2;
-    const geo = texturedGeometry(gg, posed, img ? photoInfo(img) : null, it.spec.sleeve > 0 ? sleeveVert : undefined, visibleAlpha);
+    // caixa da peça na foto (alfa do recorte ou fundo separado da foto opaca): uma só leitura para a projeção, a cor do
+    // tecido, a textura e os acabamentos — cores sempre de dentro da peça, nunca do fundo da foto
+    const info = img ? photoInfo(img) : null;
+    const geo = texturedGeometry(gg, posed, info, it.spec.sleeve > 0 ? sleeveVert : undefined, visibleAlpha);
     const shoe = it.spec.kind === "shoes" || it.spec.kind === "boots";
-    const fabric = fabricColor(img, it.piece.colorHex);
-    const tex = garmentTexture(shoe ? null : img, shoe ? "#ffffff" : fabric, geo.userData.fabricMapping);
+    const fabric = fabricColor(img, it.piece.colorHex, info);
+    const tex = garmentTexture(shoe ? null : img, shoe ? "#ffffff" : fabric, geo.userData.fabricMapping, info);
     if (shoe) {                                                    // cabedal e sola nas cores da foto (cor por vértice)
-      const sc = shoeColors(img, it.piece.colorHex); const up = new THREE.Color(sc.upper), so = new THREE.Color(sc.sole);
+      const sc = shoeColors(img, it.piece.colorHex, info); const up = new THREE.Color(sc.upper), so = new THREE.Color(sc.sole);
       const pos = geo.getAttribute("position"), col = geo.getAttribute("color");
       for (let i = 0; i < pos.count; i++) { const k = pos.getY(i) < floorY + 0.006 ? so : up; col.setXYZ(i, k.r, k.g, k.b); }
       // sola com espessura, cadarço e colarinho acolchoado (shoes.ts): tênis, não meia
@@ -145,7 +149,7 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
     } else { geo.dispose(); tex.dispose(); }
     // barra e manga com acabamento 3D (faixa com espessura dando a volta), na cor do acabamento da foto
     if (!shoe) {
-      const tc = trimColors(img, fabric); const rib = ribColor(img, fabric);
+      const tc = trimColors(img, fabric, info); const rib = ribColor(img, fabric, info);
       for (const tb of garmentTrims(asset, cc, P, gg)) {
         if (tb.part === "barra" ? !finishes.hem : tb.part === "punho" ? !finishes.cuff : above.length > 0) continue;
         const tg = new THREE.BufferGeometry();
@@ -170,7 +174,7 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
       bg.setAttribute("skinIndex", new THREE.Uint16BufferAttribute(cb.skinIndex, 4));
       bg.setAttribute("skinWeight", new THREE.Float32BufferAttribute(cb.skinWeight, 4));
       bg.setIndex(Array.from(cb.index)); bg.computeVertexNormals();
-      const bm = new THREE.MeshPhysicalMaterial({ color: ribColor(img, fabric), roughness: 0.9, sheen: 0.4, sheenRoughness: 0.8, side: THREE.DoubleSide,
+      const bm = new THREE.MeshPhysicalMaterial({ color: ribColor(img, fabric, info), roughness: 0.9, sheen: 0.4, sheenRoughness: 0.8, side: THREE.DoubleSide,
         polygonOffset: true, polygonOffsetFactor: -it.spec.layer - 1, polygonOffsetUnits: -it.spec.layer - 1 });
       bm.name = `gola-${it.spec.kind}`;
       const band = new THREE.SkinnedMesh(bg, bm); band.name = `gola-${it.piece.id}`; band.castShadow = true; band.frustumCulled = false;
@@ -194,7 +198,10 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
   // fotos das peças com a chave do look a que pertencem: a Prévia 2D só fotografa quando as fotos do look atual chegaram
   const [loaded, setLoaded] = useState<{ key: string; images: Record<string, Img | null> }>({ key: "", images: {} });
   const all = outfitOf(pieces);
-  const urlKey = all.map((i) => `${i.key}:${i.piece.studioUrl ?? i.piece.imageUrl ?? ""}`).join("|");
+  // a foto recortada (imageUrl: PNG com alfa) vem antes da de estúdio/processada (studioUrl): o molde projeta a peça pela
+  // caixa do alfa. Se a recortada não carrega no 3D (imagem externa sem CORS), entra a processada, servida por nós.
+  const photoUrls = (p: Look3dPiece) => [p.imageUrl, p.studioUrl].filter((u, k, a): u is string => !!u && a.indexOf(u) === k);
+  const urlKey = all.map((i) => `${i.key}:${photoUrls(i.piece).join(",")}`).join("|");
   const settled = loaded.key === urlKey;
   const images = settled ? loaded.images : {};              // nunca as fotos de outro look
   const items = usable(all, images, settled);
@@ -203,16 +210,15 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
     const photos: Record<string, PhotoState> = {};
     for (const i of all) {
       if (i.piece.defaultImage && i.key.startsWith("fai-padrao-")) continue;
-      const url = i.piece.studioUrl ?? i.piece.imageUrl;
-      photos[i.key] = !url ? "sem-foto" : !settled ? "carregando" : images[i.key] ? "ok" : "falhou";
+      photos[i.key] = !photoUrls(i.piece).length ? "sem-foto" : !settled ? "carregando" : images[i.key] ? "ok" : "falhou";
     }
     publishPhotoStates(photos);
   }, [urlKey, settled, images]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     let alive = true;
     Promise.all(all.map(async (i) => {
-      const u = mediaUrl(i.piece.studioUrl ?? i.piece.imageUrl ?? null);
-      const t = u ? await loadTexture(u) : null;
+      let t: THREE.Texture | null = null;
+      for (const url of photoUrls(i.piece)) { const u = mediaUrl(url); t = u ? await loadTexture(u) : null; if (t) break; }
       const img = t?.image as Img | undefined;
       // These exact bundled reference assets contain only the product. Avoid
       // three unnecessary person/pose analyses while the catalogue piece loads.
@@ -228,6 +234,8 @@ export function HumanOutfit({ parts, pieces }: { parts: HumanParts; pieces: Look
     root.userData.dressed = dressed; root.visible = dressed;
     root.userData.outfitReady = loaded.key === urlKey;
     root.userData.garments = meshes.map((m) => m.name);
+    // contrato de cada peça (origem de cada dado, caminho de construção, aproximação): diagnóstico e auditoria
+    root.userData.garmentContracts = items.map((i) => garmentContractOf(i.piece, { origin: i.piece.id.startsWith("fai-padrao-") ? "DEFAULT" : "UNKNOWN" }));
     if (!dressed) console.error("[FashionAI] avatar sem as três zonas cobertas: corpo escondido");
     return () => {
       root.userData.dressed = false; root.visible = false; root.userData.garments = []; root.userData.outfitReady = false;

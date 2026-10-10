@@ -1719,7 +1719,7 @@
   "editImage.nova_para_revisar": "Nueva versión lista para revisar: la foto aprobada sigue en el feed.",
   "editImage.nova_versao": "Nueva versión {v} lista. La foto aprobada sigue en el feed hasta que decidas.",
   "editImage.recorte": "Recorte",
-  "editImage.regiao": "{id, select, collar {el cuello} sleeves {las mangas enteras} chest {la zona del pecho} waist {la cintura} knees {la altura de las rodillas} hem {el bajo} fabric_region {una región continua de la prenda para llenar el cuadro} occluded {la parte que estaba tapada (mano, brazo u objeto delante)} other {la prenda entera}}",
+  "editImage.regiao": "{id, select, collar {el cuello} sleeves {las mangas enteras} chest {la zona del pecho} waist {la cintura} knees {la altura de las rodillas} hem {el bajo} fabric_region {una región continua de la prenda para llenar el cuadro} occluded {la parte que estaba tapada (mano, brazo u objeto delante)} side_view {el calzado de lado (la regla pide la vista lateral, con el largo a lo ancho)} other {la prenda entera}}",
   "editImage.sem_template": "Foto anterior a las plantillas: elige un fondo abajo para rehacer el estudio y generar la foto del feed.",
   "editImage.template": "Plantilla de encuadre",
   "editImage.template_desc": "{template, select, TOP {Detalle del tejido del pecho llenando el cuadro, sin fondo.} OUTERWEAR {Tejido, solapas y botones llenando el cuadro, sin fondo.} PANTS {Tejido y detalles del pantalón llenando el cuadro, sin fondo.} SHORTS {Detalle del tejido del pantalón corto, sin fondo.} SKIRT {Detalle del tejido de la falda, sin fondo.} FULL_BODY {Detalle del tejido de la prenda única, sin fondo.} SHOES {Calzado entero con la suela en la línea de suelo.} BAG {Bolso entero, centrado.} other {Accesorio entero, centrado.}}",

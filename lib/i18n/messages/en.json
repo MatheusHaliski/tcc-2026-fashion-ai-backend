@@ -1719,7 +1719,7 @@
   "editImage.nova_para_revisar": "New version ready for review: the approved photo stays in the feed.",
   "editImage.nova_versao": "New version {v} is ready. The approved photo stays in the feed until you decide.",
   "editImage.recorte": "Cutout",
-  "editImage.regiao": "{id, select, collar {the collar} sleeves {the whole sleeves} chest {the chest area} waist {the waistband} knees {the knee area} hem {the hem} fabric_region {a continuous garment region to fill the frame} occluded {the part that was covered (hand, arm or an object in front)} other {the whole piece}}",
+  "editImage.regiao": "{id, select, collar {the collar} sleeves {the whole sleeves} chest {the chest area} waist {the waistband} knees {the knee area} hem {the hem} fabric_region {a continuous garment region to fill the frame} occluded {the part that was covered (hand, arm or an object in front)} side_view {the shoe from the side (the rule asks for the side view, length across the width)} other {the whole piece}}",
   "editImage.sem_template": "Photo made before the templates: pick a backdrop below to redo the studio and create the feed photo.",
   "editImage.template": "Framing template",
   "editImage.template_desc": "{template, select, TOP {Chest fabric close-up filling the frame, without background.} OUTERWEAR {Fabric, lapels and buttons filling the frame, without background.} PANTS {Trouser fabric and details filling the frame, without background.} SHORTS {Shorts fabric close-up, without background.} SKIRT {Skirt fabric close-up, without background.} FULL_BODY {One-piece fabric close-up, without background.} SHOES {Whole shoe with its sole on the ground line.} BAG {Whole bag, centered.} other {Whole accessory, centered.}}",

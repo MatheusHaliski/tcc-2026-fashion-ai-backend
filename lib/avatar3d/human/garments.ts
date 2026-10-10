@@ -74,10 +74,15 @@ export const SPECS: Record<GarmentKind, GarmentSpec> = {
   boots: S("boots", { ease: 0.009, layer: 2 }),
 };
 
+const BAG_WORDS: ReadonlySet<string> = new Set(["bag", "bolsa", "backpack", "mochila", "clutch", "pochete", "purse", "tote", "wallet", "carteira", "necessaire"]);
+
 /** Tipo de molde pela subcategoria da peça (taxonomia do app); null = acessório (não é roupa de vestir). */
 export function kindOf(p: { category?: string | null; subcategory?: string | null; slot?: string | null }): GarmentKind | null {
-  const sub = (p.subcategory ?? "").toLowerCase(); const cat = (p.category ?? p.slot ?? "").toUpperCase();
+  const sub = (p.subcategory ?? "").toLowerCase();
   const is = (...k: string[]) => k.some((x) => sub.includes(x));
+  // bolsas e mochilas são acessórios: "crossbody_bag" contém "body" e viraria regata; "baggy" não é bolsa
+  const words = sub.split(/[^a-zà-ú]+/);
+  if (words.some((w) => BAG_WORDS.has(w) || w.endsWith("bag"))) return null;
   if (is("legging")) return "leggings";
   if (is("skort", "short_saia", "short-saia")) return "skirt";                    // saia-short: a frente é de saia
   if (is("skirt", "saia") && !is("short")) return "skirt";
@@ -102,15 +107,20 @@ export function kindOf(p: { category?: string | null; subcategory?: string | nul
   if (is("shirt", "camisa", "blouse", "blusa")) return is("t_shirt", "tshirt", "t-shirt", "camiseta") ? "tee" : "shirt";
   if (is("long_sleeve", "manga_longa", "longsleeve")) return "longsleeve";
   if (is("tee", "camiseta", "polo", "top")) return "tee";
-  // subcategoria desconhecida: pela categoria gravada ("upper_piece"…) ou pelo lugar no look ("upper", "outer_layer"…)
-  const cats = [cat, (p.slot ?? "").toUpperCase()].map((c) => c.replace(/_PIECE$/, ""));
-  const any = (...k: string[]) => cats.some((c) => k.includes(c));
-  if (any("OUTER_LAYER", "OUTERWEAR")) return "jacket";
-  if (any("FULL_BODY", "CORPO_INTEIRO", "DRESS")) return "dress";
-  if (any("UPPER", "TOP", "PARTE_SUPERIOR")) return "tee";
-  if (any("LOWER", "BOTTOM", "PARTE_INFERIOR")) return "pants";
-  if (any("SHOES", "FOOTWEAR", "CALCADOS")) return "shoes";
-  return null;
+  // subcategoria desconhecida: a categoria gravada ("upper_piece"…) decide antes do lugar no look ("upper", "lower"…);
+  // só a camada externa do look vem antes (jaqueta sobre a peça de cima é informação de camada, não contradiz a categoria)
+  const slot = (p.slot ?? "").toUpperCase();
+  if (["OUTER_LAYER", "OUTERWEAR"].includes(slot)) return "jacket";
+  const pick = (c: string): GarmentKind | null => {
+    const k = c.replace(/_PIECE$/, "");
+    if (["OUTER_LAYER", "OUTERWEAR"].includes(k)) return "jacket";
+    if (["FULL_BODY", "CORPO_INTEIRO", "DRESS", "FULL"].includes(k)) return "dress";
+    if (["UPPER", "TOP", "PARTE_SUPERIOR"].includes(k)) return "tee";
+    if (["LOWER", "BOTTOM", "PARTE_INFERIOR"].includes(k)) return "pants";
+    if (["SHOES", "FOOTWEAR", "CALCADOS"].includes(k)) return "shoes";
+    return null;
+  };
+  return pick((p.category ?? "").toUpperCase()) ?? pick(slot) ?? null;
 }
 
 /** Construction is independent of the broad category: cargo is not a tight generic trouser. */
@@ -433,20 +443,65 @@ export interface PhotoInfo {
   width: number; height: number; box: { x0: number; y0: number; x1: number; y1: number }; widthAt: (fy: number) => { x0: number; x1: number } | null;
   /** fim da gola da frente no centro da foto (fração da altura da caixa), quando a gola difere do tecido; senão null */
   collarRow: number | null;
+  /** PNG recortado (alfa) ou foto opaca com o fundo medido na borda; sem fundo separável, backdrop é null */
+  cutout: boolean; backdrop: [number, number, number] | null;
 }
 
-/** Caixa da parte opaca da foto e a largura dela em cada altura (fração da caixa). */
-export function photoInfo(img: CanvasImageSource & { width: number; height: number }): PhotoInfo | null {
-  const W = 256, H = Math.max(1, Math.round((256 * img.height) / img.width));
+/** Diferença RGB até a qual um pixel ainda é o fundo da foto opaca (fundo de estúdio e do card são quase uniformes). */
+export const BACKDROP_TOLERANCE = 32;
+export const isBackdrop = (d: Uint8ClampedArray, o: number, backdrop: [number, number, number] | null): boolean =>
+  !!backdrop && Math.hypot(d[o] - backdrop[0], d[o + 1] - backdrop[1], d[o + 2] - backdrop[2]) <= BACKDROP_TOLERANCE;
+
+/** Bytes sRGB de uma cor CSS (THREE.Color guarda valores lineares: r*255 de "#dc1e1e" daria 183, não 220). */
+export function srgbBytes(color: string): [number, number, number] {
+  const h = new THREE.Color(color).getHex();
+  return [(h >> 16) & 255, (h >> 8) & 255, h & 255];
+}
+
+export interface PhotoMask { W: number; H: number; data: Uint8ClampedArray; mask: Uint8Array; cutout: boolean; backdrop: [number, number, number] | null }
+
+/**
+ * Máscara da peça na foto, em W px de largura. PNG recortado: o alfa. Foto opaca (JPEG do estúdio com fundo colorido,
+ * card do catálogo, foto cuja remoção de fundo falhou): tudo que difere do fundo medido na borda — sem isso a caixa da
+ * peça era o quadro inteiro, a camiseta encolhia para um "carimbo" no peito e o fundo da foto virava a cor do tecido.
+ * Sem fundo separável (foto preenchida pela peça, ou peça da cor do fundo), vale o quadro inteiro, como antes.
+ */
+export function photoMask(img: CanvasImageSource & { width: number; height: number }, W = 256): PhotoMask | null {
+  if (typeof document === "undefined") return null;
+  const H = Math.max(1, Math.round((W * img.height) / img.width));
   const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const g = cv.getContext("2d", { willReadFrequently: true }); if (!g) return null;
   g.drawImage(img, 0, 0, W, H); const d = g.getImageData(0, 0, W, H).data;
+  const n = W * H; const mask = new Uint8Array(n); let transparent = 0;
+  for (let i = 0; i < n; i++) if (d[i * 4 + 3] <= 128) transparent++;
+  if (transparent >= n * 0.02) {
+    for (let i = 0; i < n; i++) mask[i] = d[i * 4 + 3] > 128 ? 1 : 0;
+    return { W, H, data: d, mask, cutout: true, backdrop: null };
+  }
+  const ring: number[][] = [[], [], []];
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (x < 2 || y < 2 || x >= W - 2 || y >= H - 2) { const o = (y * W + x) * 4; ring[0].push(d[o]); ring[1].push(d[o + 1]); ring[2].push(d[o + 2]); }
+  const med = (arr: number[]) => { const v = [...arr].sort((a, b) => a - b); return v[v.length >> 1]; };
+  const backdrop: [number, number, number] = [med(ring[0]), med(ring[1]), med(ring[2])];
+  let on = 0;
+  for (let i = 0; i < n; i++) { const far = d[i * 4 + 3] > 128 && !isBackdrop(d, i * 4, backdrop); mask[i] = far ? 1 : 0; on += far ? 1 : 0; }
+  if (on > n * 0.96 || on < n * 0.005) { for (let i = 0; i < n; i++) mask[i] = d[i * 4 + 3] > 128 ? 1 : 0; return { W, H, data: d, mask, cutout: false, backdrop: null }; }
+  return { W, H, data: d, mask, cutout: false, backdrop };
+}
+
+/** Caixa da peça na foto (alfa ou fundo separado) e a largura dela em cada altura (fração da caixa). */
+export function photoInfo(img: CanvasImageSource & { width: number; height: number }): PhotoInfo | null {
+  const pm = photoMask(img); if (!pm) return null;
+  const { W, H, data: d, mask } = pm;
+  // caixa pelas linhas e colunas com ao menos 2 px da peça: um pixel perdido no fundo não estica a caixa
+  const rows = new Uint16Array(H), cols = new Uint16Array(W);
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (mask[y * W + x]) { rows[y]++; cols[x]++; }
   let x0 = W, y0 = H, x1 = -1, y1 = -1;
-  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 128) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
-  if (x1 < 0) return null;
+  for (let x = 0; x < W; x++) if (cols[x] >= 2) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); }
+  for (let y = 0; y < H; y++) if (rows[y] >= 2) { y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  if (x1 < 0 || y1 < 0) return null;
   const k = img.width / W;
   // gola: nas colunas do centro, de cima para baixo nos primeiros 22% da peça, as linhas que diferem do tecido do
   // meio da peça (ribana, forro da nuca à mostra) — a última linha seguida delas é o fim da gola da frente
-  const px = (x: number, y: number) => { const o = (y * W + x) * 4; return d[o + 3] > 128 ? [d[o], d[o + 1], d[o + 2]] : null; };
+  const px = (x: number, y: number) => { const o = (y * W + x) * 4; return mask[y * W + x] ? [d[o], d[o + 1], d[o + 2]] : null; };
   const cx0 = Math.round(x0 + (x1 - x0) * 0.45), cx1 = Math.round(x0 + (x1 - x0) * 0.55);
   const body: number[][] = []; for (let y = Math.round(y0 + (y1 - y0) * 0.35); y < y0 + (y1 - y0) * 0.6; y++) for (let x = cx0; x <= cx1; x++) { const p = px(x, y); if (p) body.push(p); }
   let collarRow: number | null = null;
@@ -461,11 +516,11 @@ export function photoInfo(img: CanvasImageSource & { width: number; height: numb
     if (last > y0) collarRow = (last + 1 - y0) / Math.max(1, y1 - y0);
   }
   return {
-    collarRow,
+    collarRow, cutout: pm.cutout, backdrop: pm.backdrop,
     width: img.width, height: img.height, box: { x0: x0 * k, y0: y0 * k, x1: (x1 + 1) * k, y1: (y1 + 1) * k },
     widthAt: (fy) => {
-      const y = Math.round(y0 + (y1 - y0) * fy); let a = -1, b = -1;
-      for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 128) { if (a < 0) a = x; b = x; }
+      const y = Math.min(H - 1, Math.round(y0 + (y1 - y0) * fy)); let a = -1, b = -1;
+      for (let x = 0; x < W; x++) if (mask[y * W + x]) { if (a < 0) a = x; b = x; }
       return a < 0 ? null : { x0: a * k, x1: (b + 1) * k };
     },
   };
@@ -565,9 +620,14 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
   return g;
 }
 
-/** Textura: fundo na cor do tecido (costas, laterais, onde a foto é transparente) e a foto por cima. */
+/**
+ * Textura em dois painéis: à esquerda a foto da frente sobre o tecido; à direita o painel do tecido (costas, laterais
+ * e mangas): a trama repetida da foto (fabricTile) ou o degradê de lavagem por altura (fabricRows), senão a cor lisa.
+ * Na foto opaca com fundo medido (info.backdrop), o fundo vira transparente antes de tudo: não entra na frente, na
+ * trama nem no degradê — o fundo de estúdio nunca aparece em volta da peça nem tinge o painel do tecido.
+ */
 export function garmentTexture(img: (CanvasImageSource & { width: number; height: number }) | null, fabric: string,
-  mapping?: { width: number; height: number; photoScaleX: number; photoScaleY: number }): THREE.CanvasTexture {
+  mapping?: { width: number; height: number; photoScaleX: number; photoScaleY: number } | null, info?: PhotoInfo | null): THREE.CanvasTexture {
   const W = img ? Math.min(1024, img.width) : 16, H = img ? Math.round((W * img.height) / img.width) : 16;
   const cv = document.createElement("canvas"); cv.width = W * 2; cv.height = H; const g = cv.getContext("2d")!;
   g.fillStyle = fabric; g.fillRect(0, 0, W * 2, H);
@@ -575,6 +635,11 @@ export function garmentTexture(img: (CanvasImageSource & { width: number; height
     const source = document.createElement("canvas"); source.width = img.width; source.height = img.height;
     const sg = source.getContext("2d", { willReadFrequently: true })!; sg.drawImage(img, 0, 0);
     const raster = sg.getImageData(0, 0, source.width, source.height);
+    if (info?.backdrop) {
+      const d = raster.data;
+      for (let o = 0; o < d.length; o += 4) if (isBackdrop(d, o, info.backdrop)) d[o + 3] = 0;
+      sg.putImageData(raster, 0, 0);
+    }
     const tile = fabricTile(raster);
     if (!tile) {
       const rows = fabricRows(raster);
@@ -603,7 +668,7 @@ export function garmentTexture(img: (CanvasImageSource & { width: number; height
           mapping ? H / (mapping.height * mapping.photoScaleY) : H / img.height);
       }
     }
-    g.drawImage(img, 0, 0, W, H);
+    g.drawImage(info?.backdrop ? source : img, 0, 0, W, H);
   }
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
@@ -612,21 +677,22 @@ export function garmentTexture(img: (CanvasImageSource & { width: number; height
  * Calçado: cor do cabedal (a cor dominante da faixa do meio da foto, por matiz — a mediana por canal misturava cabedal,
  * cadarço e detalhes num cinza) e da sola (a dominante da faixa de baixo).
  */
-export function shoeColors(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fallback?: string | null): { upper: string; sole: string; accent?: string | null } {
+export function shoeColors(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fallback?: string | null, info?: PhotoInfo | null): { upper: string; sole: string; accent?: string | null } {
   const base = fallback && /^#[0-9a-f]{6}$/i.test(fallback) ? fallback : "#5a5a5a";
   if (!img || typeof document === "undefined") return { upper: base, sole: "#e8e4dc" };
   const W = 96, H = Math.max(8, Math.round((96 * img.height) / img.width));
   const c = document.createElement("canvas"); c.width = W; c.height = H; const g = c.getContext("2d", { willReadFrequently: true }); if (!g) return { upper: base, sole: "#e8e4dc" };
   g.drawImage(img, 0, 0, W, H); const d = g.getImageData(0, 0, W, H).data;
-  let y0 = H, y1 = -1; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 128) { y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  const backdrop = info?.backdrop ?? null;
+  let y0 = H, y1 = -1; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const o = (y * W + x) * 4; if (d[o + 3] > 128 && !isBackdrop(d, o, backdrop)) { y0 = Math.min(y0, y); y1 = Math.max(y1, y); } }
   if (y1 < 0) return { upper: base, sole: "#e8e4dc" };
   const hgt = y1 - y0;
   // cabedal: a faixa lateral (abaixo do cadarço, acima da sola); detalhe: a segunda cor dessa faixa ou da de cima
-  const up = dominants(d, W, [y0 + Math.round(hgt * 0.35), y0 + Math.round(hgt * 0.75)], false);
-  const top = dominants(d, W, [y0, y0 + Math.round(hgt * 0.35)], false);
+  const up = dominants(d, W, [y0 + Math.round(hgt * 0.35), y0 + Math.round(hgt * 0.75)], false, backdrop);
+  const top = dominants(d, W, [y0, y0 + Math.round(hgt * 0.35)], false, backdrop);
   const upper = up[0] ?? base;
   const accent = [...up.slice(1), ...top].find((c2) => colorDist(c2, upper) > 90) ?? null;
-  return { upper, sole: dominants(d, W, [y1 - Math.max(1, Math.round(hgt * 0.14)), y1], true)[0] ?? "#e8e4dc", accent };
+  return { upper, sole: dominants(d, W, [y1 - Math.max(1, Math.round(hgt * 0.14)), y1], true, backdrop)[0] ?? "#e8e4dc", accent };
 }
 
 function colorDist(a: string, b: string): number {
@@ -635,10 +701,10 @@ function colorDist(a: string, b: string): number {
 }
 
 /** Cores dominantes numa faixa de linhas (da mais frequente para a menos): caixas de matiz/luminância por contagem. */
-function dominants(d: Uint8ClampedArray, W: number, ys: [number, number], allowNeutral: boolean): string[] {
+function dominants(d: Uint8ClampedArray, W: number, ys: [number, number], allowNeutral: boolean, backdrop: [number, number, number] | null = null): string[] {
   const bins = new Map<number, { w: number; r: number; g: number; b: number }>();
   for (let y = ys[0]; y <= ys[1]; y++) for (let x = 0; x < W; x++) {
-    const o = (y * W + x) * 4; if (d[o + 3] < 200) continue;
+    const o = (y * W + x) * 4; if (d[o + 3] < 200 || isBackdrop(d, o, backdrop)) continue;
     const r = d[o], gg = d[o + 1], b = d[o + 2]; const mx = Math.max(r, gg, b), mn = Math.min(r, gg, b); const sat = mx ? (mx - mn) / mx : 0; const l = (mx + mn) / 510;
     if (!allowNeutral && (l > 0.9 || l < 0.08)) continue;              // fundo branco, sombra e contorno
     let hue = 0; if (mx !== mn) { hue = mx === r ? ((gg - b) / (mx - mn)) % 6 : mx === gg ? (b - r) / (mx - mn) + 2 : (r - gg) / (mx - mn) + 4; }
@@ -654,20 +720,21 @@ function dominants(d: Uint8ClampedArray, W: number, ys: [number, number], allowN
  * Cores dos acabamentos na foto: barra (faixa de baixo, no centro) e manga (pontas laterais do alto da peça, onde a
  * manga termina na foto plana). Quando o acabamento é do mesmo tecido, null (a faixa sai no tecido um pouco mais escuro).
  */
-export function trimColors(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fabric: string): { hem: string | null; cuff: string | null } {
+export function trimColors(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fabric: string, info?: PhotoInfo | null): { hem: string | null; cuff: string | null } {
   if (!img || typeof document === "undefined") return { hem: null, cuff: null };
   try {
     const W = 128, H = Math.max(8, Math.round((128 * img.height) / img.width));
     const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const g = cv.getContext("2d", { willReadFrequently: true }); if (!g) return { hem: null, cuff: null };
     g.drawImage(img, 0, 0, W, H); const d = g.getImageData(0, 0, W, H).data;
+    const backdrop = info?.backdrop ?? null;
     let x0 = W, y0 = H, x1 = -1, y1 = -1;
-    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (d[(y * W + x) * 4 + 3] > 128) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const o = (y * W + x) * 4; if (d[o + 3] > 128 && !isBackdrop(d, o, backdrop)) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); } }
     if (x1 < 0) return { hem: null, cuff: null };
-    const f = new THREE.Color(fabric); const fr = [f.r * 255, f.g * 255, f.b * 255];
+    const fr = srgbBytes(fabric);
     const med = (xs: [number, number], ys: [number, number]) => {
       const px: number[][] = [];
       for (let y = Math.max(0, Math.floor(ys[0])); y <= Math.min(H - 1, Math.ceil(ys[1])); y++) for (let x = Math.max(0, Math.floor(xs[0])); x <= Math.min(W - 1, Math.ceil(xs[1])); x++) {
-        const o = (y * W + x) * 4; if (d[o + 3] > 200) px.push([d[o], d[o + 1], d[o + 2]]);
+        const o = (y * W + x) * 4; if (d[o + 3] > 200 && !isBackdrop(d, o, backdrop)) px.push([d[o], d[o + 1], d[o + 2]]);
       }
       if (px.length < 4) return null;
       const m = [0, 1, 2].map((i) => px.map((p) => p[i]).sort((a, b) => a - b)[px.length >> 1]);
@@ -681,14 +748,19 @@ export function trimColors(img: (CanvasImageSource & { width: number; height: nu
   } catch { return { hem: null, cuff: null }; }
 }
 
-/** Cor do tecido: mediana dos pixels opacos do miolo da foto (sem bordas, sombras e recorte). */
-export function fabricColor(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fallback?: string | null): string {
+/**
+ * Cor do tecido: mediana dos pixels da peça no miolo da foto (sem bordas, sombras e recorte). Com a caixa da peça
+ * (info), o miolo é o da peça, não o do quadro: numa foto opaca a cor vinha do fundo de estúdio.
+ */
+export function fabricColor(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fallback?: string | null, info?: PhotoInfo | null): string {
   const base = fallback && /^#[0-9a-f]{6}$/i.test(fallback) ? fallback : "#8a8a8a";
   if (!img || typeof document === "undefined") return base;
   try {
     const c = document.createElement("canvas"); c.width = 48; c.height = 48; const g = c.getContext("2d", { willReadFrequently: true }); if (!g) return base;
-    g.drawImage(img, 0, 0, 48, 48); const d = g.getImageData(8, 8, 32, 32).data; const ch: number[][] = [[], [], []];
-    for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 200) { ch[0].push(d[i]); ch[1].push(d[i + 1]); ch[2].push(d[i + 2]); }
+    if (info && info.box.x1 - info.box.x0 >= 4 && info.box.y1 - info.box.y0 >= 4) g.drawImage(img, info.box.x0, info.box.y0, info.box.x1 - info.box.x0, info.box.y1 - info.box.y0, 0, 0, 48, 48);
+    else g.drawImage(img, 0, 0, 48, 48);
+    const d = g.getImageData(8, 8, 32, 32).data; const ch: number[][] = [[], [], []];
+    for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 200 && !isBackdrop(d, i, info?.backdrop ?? null)) { ch[0].push(d[i]); ch[1].push(d[i + 1]); ch[2].push(d[i + 2]); }
     if (ch[0].length < 20) return base;
     const med = (arr: number[]) => { const v = [...arr].sort((x, y) => x - y); return v[Math.floor(v.length / 2)]; };
     return "#" + ch.map((arr) => med(arr).toString(16).padStart(2, "0")).join("");
@@ -837,11 +909,11 @@ export function collarBand(a: BodyAsset, c: Composed, P: BodyParam, sp: GarmentS
  * frente (na camiseta padrão, a laranja). Sem gola distinta na foto, o próprio tecido um pouco mais escuro (a ribana
  * é mais densa).
  */
-export function ribColor(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fabric: string): string {
+export function ribColor(img: (CanvasImageSource & { width: number; height: number }) | null | undefined, fabric: string, given?: PhotoInfo | null): string {
   const darker = () => { const f = new THREE.Color(fabric); f.multiplyScalar(0.86); return `#${f.getHexString()}`; };
   if (!img || typeof document === "undefined") return darker();
   try {
-    const info = photoInfo(img); if (!info || info.collarRow === null) return darker();
+    const info = given ?? photoInfo(img); if (!info || info.collarRow === null) return darker();
     const W = 256, H = Math.max(8, Math.round((256 * img.height) / img.width));
     const cv = document.createElement("canvas"); cv.width = W; cv.height = H; const g = cv.getContext("2d", { willReadFrequently: true }); if (!g) return darker();
     g.drawImage(img, 0, 0, W, H); const d = g.getImageData(0, 0, W, H).data;
@@ -849,12 +921,12 @@ export function ribColor(img: (CanvasImageSource & { width: number; height: numb
     const yEnd = by0 + bh * info.collarRow, yStart = Math.max(by0, yEnd - bh * 0.03);
     const px: number[][] = [];
     for (let y = Math.floor(yStart); y < yEnd; y++) for (let x = Math.floor(bx0 + (bx1 - bx0) * 0.4); x < bx0 + (bx1 - bx0) * 0.6; x++) {
-      const o = (y * W + x) * 4; if (d[o + 3] > 200) px.push([d[o], d[o + 1], d[o + 2]]);
+      const o = (y * W + x) * 4; if (d[o + 3] > 200 && !isBackdrop(d, o, info.backdrop)) px.push([d[o], d[o + 1], d[o + 2]]);
     }
     if (px.length < 6) return darker();
     const med = [0, 1, 2].map((i) => px.map((p) => p[i]).sort((a, b) => a - b)[px.length >> 1]);
-    const f = new THREE.Color(fabric);
-    if (Math.hypot(med[0] - f.r * 255, med[1] - f.g * 255, med[2] - f.b * 255) < 40) return darker();
+    const f = srgbBytes(fabric);
+    if (Math.hypot(med[0] - f[0], med[1] - f[1], med[2] - f[2]) < 40) return darker();
     return "#" + med.map((v) => v.toString(16).padStart(2, "0")).join("");
   } catch { return darker(); }
 }
