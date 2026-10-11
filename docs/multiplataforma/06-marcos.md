@@ -27,7 +27,7 @@ Estado em 10/10/2026. "Feito" só quando há código, teste ou artefato verific�
 - `docs/multiplataforma/*` (novo)
 - `fai-domain/.../model/TryOnSession.java`, `GarmentAsset3d.java`, `enums/TryOnSlot.java`, `enums/GarmentAssetStatus.java` (novos)
 - `fai-domain/.../repository/TryOnSessionRepository.java`, `GarmentAsset3dRepository.java` (novos)
-- `fai-infrastructure/persistence-mysql/.../V55__provador_multiplataforma.sql` (novo)
+- `fai-infrastructure/persistence-mysql/.../V59__provador_multiplataforma.sql` (novo)
 - `fai-application/.../multiplatform/*` (novo: `ClientPlatform`, `QualityProfile`, `ClientConfigService`,
   `AvatarCanonicalManifest`, `AvatarCanonicalService`, `GarmentFitGate`, `GarmentAssetService`, `TryOnSessionService`) e testes
 - `fai-web/.../controller/MultiplatformController.java` (novo)
