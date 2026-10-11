@@ -98,18 +98,18 @@ o relatório diz por quê. Para sites com URLs de produto fora do padrão, `bran
 O coletor precisa de acesso direto aos sites das marcas. No ambiente de desenvolvimento em nuvem do projeto, o proxy
 bloqueia esses domínios: o relatório mostra `PAROU: … sem conexão`. Rode-o numa máquina com internet aberta.
 
-## Quadro do editor por categoria (3:4, regra do produto — V3)
+## Quadro do editor por categoria (3:4 preenchido — V4)
 
-Após compilar o JAR atual (`mvn -q -DskipTests package` — obrigatório: o script
-recusa um JAR sem a capacidade `productFrameVersion`) e instalar
-`requirements-images.txt`, execute na raiz:
+Compile o JAR atual (`mvn -q -DskipTests package`, Java 21) e instale
+`python3 -m pip install -r scripts/catalog/requirements-images.txt`.
+O script exige `fabricFrameVersion` no JAR e rejeita checkpoints de outra versão.
+Execute primeiro uma amostra:
 
 ```bash
 python3 scripts/catalog/process_catalog_images.py --database --apply --category-frame \
-  --output data/catalog/frame-34-v3.xlsx --workers 4 --java-threads 2
+  --limit 20 --workers 4 --java-threads 2 --output data/catalog/frame-34-v4.xlsx
 ```
 
-Use primeiro `--limit 20` e um arquivo de saída diferente para conferir uma amostra.
 O modo gera um JPEG 900×1200 e substitui a foto ativa por um arquivo no S3,
 verificando o conteúdo por SHA-256 antes de atualizar `stored_url`/`assets_json`.
 O card usa `PROCESSED`, sem aplicar o recorte novamente. A URL de origem e o
@@ -126,64 +126,37 @@ de ler o banco ou iniciar o Java, o modo confere `MYSQL_HOST`, `MYSQL_DATABASE`,
 `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` e a URL pública do bucket, e para com a
 lista das variáveis que faltam — só os nomes, nunca os valores (código de saída 2).
 
-O quadro 3:4 segue a **Regra de Enquadramento do Produto do card**
-(`catalog/semantic-regions.json`, política `PRODUCT_RULE`), calculada pelo mesmo
-motor do card (`SemanticCropper.registryRuleCrop`); o Java (`ProductRuleFrame`)
-devolve o quadro e o script confere e grava:
+A política `PIECE_FILLED_100` usa `FabricFrame`: o quadro é 3:4 e cada pixel
+pertence à peça. A máscara exclui fundo, pele e outras peças e é erodida antes
+do recorte. Sem região válida, nenhuma imagem nova é gerada, inclusive com
+`--force-category-frame` (`FRAME_UNAVAILABLE:<motivo>`).
 
-| Categoria / subcategoria | Regra | Quadro |
-|---|---|---|
-| parte de cima, peça inteira | COVER / TOP | a peça preenche o quadro, gola/decote no topo, mangas cortadas pelas laterais; com modelo, a partir do decote, sem rosto/pescoço nem pele |
-| parte de baixo | COVER / TOP | cós no topo, a peça na largura toda, cós/bolsos/braguilha na metade de cima, pernas além da base; com modelo, sem a camisa/jaqueta de cima |
-| saia, saia-short | COVER / TOP | cós no topo, o quadro todo é peça |
-| calçado | WIDTH / CENTER | o calçado inteiro na largura (folga de 2%), centrado, fundo em cima e embaixo |
-| bolsa, mochila, joias, gorro, cachecol, boné | CONTAIN / CENTER | o objeto inteiro, centrado, com margem |
-| relógio | COVER / FOCUS | o mostrador no centro |
-| cinto | CONTAIN / FOCUS | o cinto inteiro, centrado (fivela não detectada) |
-| óculos | WIDTH / CENTER | as duas lentes na largura |
+| Categoria | Foco |
+|---|---|
+| Parte superior | Gola |
+| Parte inferior | Zíper/braguilha; peças sem zíper usam o painel abaixo do cós |
+| Acessório | Centro |
+| Calçado | Logo |
+| Peça única | Corpete |
 
-O que passar da foto num objeto inteiro é completado com a cor do fundo de estúdio
-(como o smartPadding do card); quadros de cobertura arredondam para dentro até o
-3:4 exato, objetos inteiros para fora. Quadro de cobertura (parte de cima, peça
-inteira, parte de baixo) com menos de 55% da largura da peça na faixa do topo do
-quadro — o tronco nas linhas do quadro a partir do decote, o quadril na faixa do cós
-ao gancho — é um zoom de tecido e é recusado (`COVER_FRAME_TOO_NARROW`; a medida fica
-em `editorFrame.frameWidthShare`); packshots têm a largura do tronco/quadril e não
-são afetados. Sem quadro pela regra (calçado no pé, cós coberto pela peça de cima,
-nenhum quadro de cobertura na gola/no cós, quadro pequeno ou estreito demais, fundo
-sem cor de estúdio) nenhum quadro novo é gravado (`FRAME_UNAVAILABLE:<motivo>`);
-regras, motivos e a avaliação nas fotos reais em
-`docs/catalogo/PROCESSAR_ACERVO_IMAGENS.md`. Dúvida de conformidade (foco fora da
-metade de cima, calçado que não está de lado) fica em `NEEDS_REPROCESSING` para
-revisão no modo padrão e vira observação no modo forçado. Revisões humanas e
-processamento ativo são preservados. A fonte da regra (piece_type ou subcategoria,
-versão do registro), `fit`, `align` e a cobertura ficam em `assets_json.editorFrame`.
+Focos sem landmark são registrados como estimados, sem afirmar identificação
+visual confirmada. A peça ocupa o quadro sem padding ou margens de fundo.
+A versão é `CATALOG_FRAME_34_FILLED_V4`; V1/V2/V3 são reavaliadas. Se uma
+foto com quadro antigo não admitir a nova regra, a referência pode voltar ao
+original preservado, com a decisão auditada `REVERTED_TO_ORIGINAL`. Não apaga
+os objetos anteriores do S3. Revisões humanas e processamento ativo são
+preservados pela gravação do lote.
 
-O modo é explícito e não muda o pipeline automático da API. A versão dos metadados
-é `CATALOG_FRAME_34_PRODUCT_RULE_V3`; as anteriores — `CATALOG_FRAME_34_50_V1`
-(quadro de 50% da largura) e `CATALOG_FRAME_34_FABRIC_V2` (close só de tecido) —
-contam como pendentes e **são refeitas** na próxima execução. Se a V3 recusar a foto
-e ela ainda mostrar o JPEG antigo (`/catalog/framed/`), o quadro antigo é **desfeito**:
-`stored_url`/`assets_json` voltam ao que a gravação antiga preservou
-(`previousStoredUrl`/`previousAssets`, seguindo V2 sobre V1 até antes do primeiro
-quadro; sem nada anterior, a foto original da marca), o recorte 3:4 antigo dá lugar
-à análise de nível A atual e `pipeline_version` V3 com o marcador
-`editorFrame.decision = REVERTED_TO_ORIGINAL` (e o motivo) impede que a próxima
-execução refaça a foto. A gravação usa o mesmo caminho guardado e auditado
-(concorrência, revisão humana, antes/depois, COMMIT incerto), nada é apagado do S3
-e o resumo/planilha contam `frame_reverted`. Checkpoints guardam a
-análise original; os gravados antes da regra do produto (sem `productFrame`, ou de
-outra versão dela) são analisados de novo, para reaplicar as regras sem baixar
-novamente. No Railway, execute em um job com o checkout,
-Python, Java, JAR compilado e as mesmas variáveis MySQL do backend; o container
-atual da API não deve ser presumido como contendo os scripts e suas dependências.
+O clique em **É esta** pede uma nova análise da foto original ao backend,
+sem reutilizar análise em cache, e aplica o recorte semântico ao card. O lote
+continua responsável pela geração do JPEG no S3. Se a verificação falhar,
+a seleção não é concluída silenciosamente. Fotos recusadas pela revisão
+não são reabilitadas por essa ação.
 
-Antes de baixar/analisar, o modo verifica categoria e permissão da fonte. O
-progresso distingue análises Java concluídas de resultados prontos para gravação
-e mostra os motivos de falha mais frequentes; `failure_reasons` no relatório
-resume os bloqueios. Erros do S3 incluem o código do serviço sem expor credenciais.
-Permissões negativas continuam negativas: não são alteradas automaticamente.
-
+O progresso distingue análises Java concluídas de resultados prontos para
+gravação, com motivos individuais e resumo `failure_reasons`. No Railway,
+o job precisa dos scripts, dependências Python e JAR compilado; o container
+da API não deve ser presumido como contendo essas ferramentas.
 
 ## Auditoria e direitos de persistência
 
@@ -202,20 +175,6 @@ Novos objetos usam chaves exclusivas; falhas conhecidas removem apenas objetos
 sem referências confirmadas. Em COMMIT incerto/DB indisponível, a limpeza fica
 pendente para auditoria. `audit_catalog_storage.py` lista candidatos e nunca exclui.
 
-
-### Enquadramento preenchido por categoria (V4)
-
-O lote `--category-frame` usa um quadro 3:4, inteiramente preenchido pela peça:
-parte superior perto da gola, parte inferior no zíper, acessório no centro e
-calçado no logo. Não completa com fundo e não aceita pessoas no recorte.
-Quando a máscara não oferece região válida, registra `FRAME_UNAVAILABLE` e
-não gera um novo JPEG. Focos sem landmark são auditados como estimados.
-V1, V2 e V3 são reavaliados na próxima execução, mesmo com checkpoint anterior.
-
-O clique em **É esta** solicita uma nova análise da foto original ao backend,
-sem reutilizar o resultado de análise em cache. Aplica o recorte semântico à
-imagem do card; o lote continua sendo responsável pela geração do JPEG no S3.
-Se a análise falhar, a seleção não é concluída silenciosamente.
 
 ### Coleta e importação contínua
 

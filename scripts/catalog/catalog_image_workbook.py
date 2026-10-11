@@ -258,7 +258,7 @@ def write_workbook(records: Iterable[Mapping[str, Any]], path: str | Path,
     ]
     if "frame_reverted" in summary:
         # V3 recusou a foto e a imagem enquadrada antiga (V1/V2) voltou ao estado anterior ao quadro (confirmado no COMMIT)
-        metadata.append(("Quadros antigos (V1/V2) desfeitos: V3 recusou a foto", summary["frame_reverted"]))
+        metadata.append(("Quadros antigos (V1/V2/V3) desfeitos: V4 recusou a foto", summary["frame_reverted"]))
     metadata.extend((f"Origem: {scope}", n) for scope, n in sorted(scope_counts.items()))
     metadata.extend((f"Processamento: {status}", n) for status, n in sorted(processing_counts.items()))
     metadata.extend((f"Dados adicionais: {key}", value) for key, value in summary.items()

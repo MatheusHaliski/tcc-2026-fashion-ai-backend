@@ -368,7 +368,7 @@ class RevertCliTest(unittest.TestCase):
             self.assertIn("url_sha256", json.dumps(journal[0]["after"]["stored_url"]))
             book = load_workbook(output)
             overview = {r[0].value: r[1].value for r in book["Resumo"].iter_rows(min_row=2)}
-            self.assertEqual(overview["Quadros antigos (V1/V2) desfeitos: V3 recusou a foto"], 1)
+            self.assertEqual(overview["Quadros antigos (V1/V2/V3) desfeitos: V4 recusou a foto"], 1)
             notes = [r[8].value for r in book["Acervo"].iter_rows(min_row=2)]
             self.assertIn("voltou ao estado anterior ao quadro", notes[0])
             storage.store.assert_not_called()
