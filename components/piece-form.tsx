@@ -93,7 +93,11 @@ export function PieceMoreDetails({ value, onChange, error, idPrefix = "" }: { va
 }
 
 /** Dados da peça (RF4/RF7) dirigidos pela taxonomia oficial; até 2 ocasiões e 2 estilos; cor sempre com nome (acessível). */
-export function PieceFields({ value, onChange, error, fieldErrors }: { value: PieceFormValue; onChange: (v: PieceFormValue) => void; error?: ApiError | null; fieldErrors?: Record<string, string> }) {
+export function PieceFields({ value, onChange, error, fieldErrors, afterBrand }: {
+  value: PieceFormValue; onChange: (v: PieceFormValue) => void; error?: ApiError | null; fieldErrors?: Record<string, string>;
+  /** nota logo abaixo do campo Marca (ex.: marca lida com incerteza na foto, com "Usar {marca}") */
+  afterBrand?: React.ReactNode;
+}) {
   const { t } = useI18n(); const tax = useTaxonomy(); const err: Record<string, string> = { ...(error?.fields ?? {}), ...(fieldErrors ?? {}) };
   const set = <K extends keyof PieceFormValue>(k: K, v: PieceFormValue[K]) => onChange({ ...value, [k]: v });
   const allowedOccasions = (category: string) => (category ? tax?.allowedOccasionsByCategory?.[category] : undefined) ?? tax?.occasions;
@@ -123,6 +127,7 @@ export function PieceFields({ value, onChange, error, fieldErrors }: { value: Pi
           value={{ brandName: value.brandName, brandLogoUrl: value.brandLogoUrl ?? null, brandLogoWideUrl: value.brandLogoWideUrl ?? null, brandSource: value.brandSource ?? null, brandRef: value.brandRef ?? null, brandDomain: value.brandDomain ?? null, edgePx: value.brandEdgePx ?? null }}
           onChange={(b) => onChange({ ...value, brandId: null, brandName: b.brandName, brandLogoUrl: b.brandLogoUrl, brandLogoWideUrl: b.brandLogoWideUrl ?? null, brandSource: b.brandSource, brandRef: b.brandRef, brandDomain: b.brandDomain ?? null, brandEdgePx: b.edgePx ?? null })} />
       </Field>
+      {afterBrand}
       <Field label={t("pieceForm.usd", { txt: t("common.price") })} id="price" required error={err.price}><Input id="price" type="number" step="0.01" min="0" inputMode="decimal" value={value.price} onChange={(e) => set("price", e.target.value)} /></Field>
       <ChipMultiSelect className="sm:col-span-2" legend={t("common.occasion")} max={PIECE_MAX_TAGS} options={occasions.map((o) => ({ id: o, label: label(o) }))} value={value.occasion} onChange={(v) => set("occasion", v)}
         error={err.occasion} hint={t("pieceForm.dica_ocasioes")} limitMessage={t("pieceForm.limite_ocasioes")} problem={(v) => tagProblem("occasion", v, tax, value.category)} />

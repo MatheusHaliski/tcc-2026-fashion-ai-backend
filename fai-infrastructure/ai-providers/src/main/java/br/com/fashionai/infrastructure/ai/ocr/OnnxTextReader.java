@@ -81,6 +81,21 @@ public class OnnxTextReader implements TextReaderPort {
         }
     }
 
+    /** Só o CRNN num recorte de uma linha (sem o detector): ~30 ms, para as variações da leitura em tecido dobrado. */
+    @Override
+    public java.util.Optional<Line> recognize(BufferedImage lineCrop) {
+        if (!init() || lineCrop.getWidth() < 4 || lineCrop.getHeight() < 4) {
+            return java.util.Optional.empty();
+        }
+        try {
+            Line line = recognize(onWhite(lineCrop, REC_MAX_W), null);
+            return line == null || line.text().isBlank() ? java.util.Optional.empty() : java.util.Optional.of(line);
+        } catch (Exception ex) {
+            log.warn("OCR local (reconhecimento) falhou: {}", ex.getMessage());
+            return java.util.Optional.empty();
+        }
+    }
+
     // ------------------------------------------------------------------ detecção (DBNet)
     private List<int[]> detect(BufferedImage img) throws Exception {
         int w = img.getWidth(), h = img.getHeight();

@@ -25,6 +25,8 @@ import br.com.fashionai.domain.repository.CatalogProductAliasRepository;
 import br.com.fashionai.domain.repository.CatalogProductRepository;
 import br.com.fashionai.domain.repository.CatalogSourceRepository;
 import br.com.fashionai.domain.repository.CatalogVariantRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -220,6 +222,82 @@ public class CatalogService {
         out.put("enoughInput", true);
         out.put("canSearchOfficial", res.brand() != null && !sources.findByBrandIdAndActiveTrue(res.brand().getId()).isEmpty());
         out.put("message", ranked.isEmpty() ? Msg.t("catalog.nao_encontramos") : null);
+        return out;
+    }
+
+    // ───────────────────────────── acervo inteiro (RF47): "ver todas as peças", sem pool nem corte por pontuação
+
+    /** Página do acervo: marca (nome, apelido ou slug), categoria, subtipo e texto opcionais; {@code size} até {@value #BROWSE_MAX_SIZE}. */
+    public record BrowseRequest(String brand, String category, String subcategory, String query, Integer page, Integer size) {
+    }
+
+    public static final int BROWSE_DEFAULT_SIZE = 48, BROWSE_MAX_SIZE = 96;
+
+    /**
+     * Percorre o acervo inteiro, paginado em ordem estável (nome, id): é o que o criador de peças, o provador e a Busca
+     * mostram quando a pessoa escolhe uma marca ou uma categoria sem descrever a peça — todas as peças, não as 48 mais
+     * parecidas. {@code total} é a contagem real no banco; {@code hasMore} diz se há outra página.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> browse(BrowseRequest r) {
+        Brand brand = r.brand() == null || r.brand().isBlank() ? null : ingest.resolveBrand(r.brand(), false).orElse(null);
+        boolean brandUnknown = r.brand() != null && !r.brand().isBlank() && brand == null;
+        String sub = r.subcategory() == null || r.subcategory().isBlank() ? null : norm.subcategory(r.subcategory()).orElse(r.subcategory());
+        String cat = r.category() == null || r.category().isBlank() ? (sub == null ? null : norm.categoryOf(sub)) : norm.category(r.category()).orElse(r.category());
+        String q = r.query() == null || r.query().isBlank() ? null : "%" + CatalogNormalizer.key(r.query()) + "%";
+        int size = r.size() == null ? BROWSE_DEFAULT_SIZE : Math.max(1, Math.min(BROWSE_MAX_SIZE, r.size()));
+        int page = r.page() == null ? 0 : Math.max(0, r.page());
+        Map<String, Object> out = new LinkedHashMap<>();
+        if (brandUnknown) {
+            out.put("items", List.of());
+            out.put("page", page);
+            out.put("size", size);
+            out.put("total", 0L);
+            out.put("hasMore", false);
+            out.put("brandKnown", false);
+            return out;
+        }
+        Page<CatalogProduct> pg = products.browse(brand == null ? null : brand.getId().toString(), cat, sub, q, PageRequest.of(page, size));
+        out.put("items", cards(pg.getContent()));
+        out.put("page", page);
+        out.put("size", size);
+        out.put("total", pg.getTotalElements());
+        out.put("hasMore", pg.hasNext());
+        out.put("brandKnown", brand != null);
+        if (brand != null) {
+            out.put("brand", Map.of("id", brand.getId(), "name", brand.getName(), "slug", brand.getSlug(), "logoUrl", String.valueOf(brand.getLogoUrl())));
+        }
+        return out;
+    }
+
+    /** Tamanho do acervo visível (peças e marcas com peças) — o número que as telas mostram como "acervo completo". */
+    @Transactional(readOnly = true)
+    public Map<String, Object> summary() {
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("products", products.countVisible());
+        out.put("brands", catalogBrands().size());
+        return out;
+    }
+
+    /** Cards de uma lista do acervo (foto canônica ou principal, variantes, marca), na ordem recebida, sem pontuação. */
+    List<Map<String, Object>> cards(List<CatalogProduct> list) {
+        if (list.isEmpty()) {
+            return List.of();
+        }
+        List<UUID> ids = list.stream().map(CatalogProduct::getId).toList();
+        Map<UUID, CatalogImage> primary = images.findByProductIdInAndPrimaryTrue(ids).stream()
+                .collect(Collectors.toMap(CatalogImage::getProductId, Function.identity(), (a, b) -> a));
+        images.findByProductIdInAndCanonicalTrue(ids).forEach(c -> primary.put(c.getProductId(), c));
+        Map<UUID, List<CatalogVariant>> variantsBy = variants.findByProductIdIn(ids).stream()
+                .collect(Collectors.groupingBy(CatalogVariant::getProductId));
+        Map<UUID, Brand> brandById = new HashMap<>();
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (CatalogProduct p : list) {
+            Brand b = brandById.computeIfAbsent(p.getBrandId(), id -> brands.findById(id).orElse(null));
+            Map<String, Object> m = card(p, b, primary.get(p.getId()));
+            m.put("variants", variantsBy.getOrDefault(p.getId(), List.of()).stream().map(this::variantMap).toList());
+            out.add(m);
+        }
         return out;
     }
 
@@ -551,12 +629,26 @@ public class CatalogService {
 
     // ───────────────────────────── Explorador (RF26): marcas do catálogo sem perfil cadastrado
 
-    /** Marcas do catálogo com produtos visíveis — alimentam "Buscar marcas & lojas" ao lado dos perfis BRAND. */
+    /**
+     * Marcas do catálogo com produtos visíveis — alimentam a grade de marcas (criador de peça, Provador) e "Buscar marcas
+     * & lojas" ao lado dos perfis BRAND. Contagem e categorias saem de UMA consulta agrupada: antes eram duas consultas
+     * por marca, uma delas carregando todas as peças da marca só para listar as categorias (com o acervo inteiro, a
+     * grade demorava e podia estourar o tempo da requisição).
+     */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> catalogBrands() {
+        Map<String, Long> counts = new HashMap<>();
+        Map<String, java.util.TreeSet<String>> categories = new HashMap<>();
+        for (Object[] row : products.visibleCountsByBrandAndCategory()) {
+            String brandId = String.valueOf(row[0]);
+            counts.merge(brandId, ((Number) row[2]).longValue(), Long::sum);
+            if (row[1] != null) {
+                categories.computeIfAbsent(brandId, k -> new java.util.TreeSet<>()).add(String.valueOf(row[1]));
+            }
+        }
         List<Map<String, Object>> out = new ArrayList<>();
         for (Brand b : brands.findAllByOrderByName()) {
-            long count = products.countByBrandIdAndIngestionStatusIn(b.getId(), VISIBLE);
+            long count = counts.getOrDefault(b.getId().toString(), 0L);
             if (count == 0) {
                 continue;
             }
@@ -568,8 +660,7 @@ public class CatalogService {
             m.put("country", b.getCountry());
             m.put("storeUrl", b.getWebsite());
             m.put("catalogProducts", count);
-            m.put("categories", products.findByBrandIdAndIngestionStatusIn(b.getId(), VISIBLE).stream()
-                    .map(CatalogProduct::getCategory).distinct().sorted().toList());
+            m.put("categories", List.copyOf(categories.getOrDefault(b.getId().toString(), new java.util.TreeSet<>())));
             out.add(m);
         }
         return out;

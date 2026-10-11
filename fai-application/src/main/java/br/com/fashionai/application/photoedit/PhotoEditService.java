@@ -2,8 +2,11 @@ package br.com.fashionai.application.photoedit;
 
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.imaging.BrandReader;
+import br.com.fashionai.application.imaging.BrandRegions;
 import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.imaging.QualityMetrics;
+import br.com.fashionai.application.imaging.TextReaderPort;
 import br.com.fashionai.application.ports.MediaStoragePort;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.MediaService;
@@ -16,6 +19,7 @@ import br.com.fashionai.domain.model.enums.ImageOrigin;
 import br.com.fashionai.domain.model.enums.PieceImageStatus;
 import br.com.fashionai.domain.model.enums.PieceImageType;
 import br.com.fashionai.domain.repository.PieceImageRepository;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,7 +33,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.UnaryOperator;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * RF15 · Editor de fotografia da peça (docs/novos-rf/RF15_Editor_Fotografia_Pecas.md). A foto original da pessoa nunca
@@ -46,17 +51,46 @@ public class PhotoEditService {
     private final MediaService media;
     private final PieceImageRepository images;
     private final PhotoRecipeRenderer renderer;
+    /** Há texto ou logo na peça (detector local de logo + OCR quando disponível): espelhar inverteria a marca. */
+    private final Predicate<BufferedImage> textOrLogo;
 
     @Autowired
-    public PhotoEditService(WardrobeService wardrobe, MediaService media, PieceImageRepository images) {
-        this(wardrobe, media, images, img -> ImageOps.removeBackgroundLocal(img).image());
+    public PhotoEditService(WardrobeService wardrobe, MediaService media, PieceImageRepository images, ObjectProvider<BrandReader> ocr) {
+        this(wardrobe, media, images, ImageOps::removeBackgroundLocal, img -> hasTextOrLogo(img, ocr.getIfAvailable()));
     }
 
-    PhotoEditService(WardrobeService wardrobe, MediaService media, PieceImageRepository images, UnaryOperator<BufferedImage> cutter) {
+    PhotoEditService(WardrobeService wardrobe, MediaService media, PieceImageRepository images, Function<BufferedImage, ImageOps.Cutout> cutter,
+                     Predicate<BufferedImage> textOrLogo) {
         this.wardrobe = wardrobe;
         this.media = media;
         this.images = images;
         this.renderer = new PhotoRecipeRenderer(cutter);
+        this.textOrLogo = textOrLogo;
+    }
+
+    /**
+     * Texto ou logo na peça: mancha compacta e contrastante ({@link BrandRegions#detectLogo}) no recorte da peça, ou
+     * uma linha de texto firme lida pelo OCR local (3+ letras, confiança ≥ 0,6). Sem OCR disponível, só o detector.
+     */
+    static boolean hasTextOrLogo(BufferedImage src, BrandReader ocr) {
+        BufferedImage small = ImageOps.scaleToFit(src, 900, 900);
+        ImageOps.Cutout cut = ImageOps.removeBackgroundLocal(small);
+        BufferedImage piece = cut.confidence() >= PhotoRecipeRenderer.UNCERTAIN_CUT ? cut.image() : ImageOps.toArgb(small);
+        if (BrandRegions.detectLogo(piece) != null) {
+            return true;
+        }
+        if (ocr != null && ocr.available()) {
+            for (TextReaderPort.Line l : ocr.readAll(piece)) {
+                if (l.confidence() >= 0.6 && l.text().replaceAll("[^\\p{L}]", "").length() >= 3) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    static boolean flipped(PhotoRecipe recipe) {
+        return recipe.ops().stream().anyMatch(o -> o instanceof PhotoRecipe.Flip);
     }
 
     /** Foto própria da pessoa (a original); peça do catálogo ou com a ilustração padrão não tem o que editar. */
@@ -78,7 +112,12 @@ public class PhotoEditService {
     }
 
     void validate(PhotoRecipe recipe, BufferedImage src) {
-        List<String> v = RecipePolicy.violations(recipe, (double) src.getHeight() / src.getWidth());
+        validate(recipe, src, false);
+    }
+
+    /** @param marks texto/logo achado na peça (só interessa quando a receita espelha) */
+    void validate(PhotoRecipe recipe, BufferedImage src, boolean marks) {
+        List<String> v = RecipePolicy.violations(recipe, (double) src.getHeight() / src.getWidth(), marks);
         if (!v.isEmpty()) {
             throw ApiException.badRequest("RECEITA_FORA_DA_POLITICA", String.join(", ", v), Map.of("violations", v));
         }
@@ -89,6 +128,10 @@ public class PhotoEditService {
     }
 
     Measured renderMeasured(BufferedImage src, PhotoRecipe recipe, int maxSide) {
+        return renderMeasured(src, recipe, maxSide, false);
+    }
+
+    Measured renderMeasured(BufferedImage src, PhotoRecipe recipe, int maxSide, boolean marks) {
         PhotoRecipeRenderer.Rendered full = renderer.render(src, recipe.ops(), maxSide);
         List<PhotoRecipe.Op> geometry = recipe.ops().stream().filter(o -> !o.colorOp()).toList();
         double de = geometry.size() == recipe.ops().size() ? 0
@@ -101,7 +144,7 @@ public class PhotoEditService {
         q.put("aspect", round((double) full.image().getWidth() / full.image().getHeight()));
         if (full.backgroundRemoved()) {
             ImageOps.Box box = ImageOps.alphaBounds(renderer.render(src, geometry.stream()
-                    .map(o -> o instanceof PhotoRecipe.Background b ? new PhotoRecipe.Background(PhotoRecipe.BackgroundKind.TRANSPARENT, "NONE", b.strokes()) : o)
+                    .map(o -> o instanceof PhotoRecipe.Background b ? new PhotoRecipe.Background(PhotoRecipe.BackgroundKind.TRANSPARENT, "NONE", b.strokes(), b.feather()) : o)
                     .toList(), Math.min(maxSide, 600)).image());
             if (!box.empty()) {
                 BufferedImage ref = ImageOps.scaleToFit(full.image(), 600, 600);
@@ -123,6 +166,13 @@ public class PhotoEditService {
         if (full.syntheticShadow()) {
             warnings.add("SOMBRA_SINTETICA_ROTULADA");
         }
+        if (full.backgroundRemoved() && full.cutConfidence() < PhotoRecipeRenderer.UNCERTAIN_CUT) {
+            warnings.add("RECORTE_INCERTO");
+        }
+        if (marks) {
+            warnings.add("ESPELHO_COM_TEXTO_OU_LOGO");
+        }
+        q.put("cutConfidence", round(full.cutConfidence()));
         return new Measured(full.image(), de, q, warnings, full.syntheticShadow());
     }
 
@@ -132,8 +182,9 @@ public class PhotoEditService {
         WardrobeItem w = wardrobe.owned(user, pieceId);
         BufferedImage src = source(w);
         PhotoRecipe recipe = parse(json);
-        validate(recipe, src);
-        Measured m = renderMeasured(src, recipe, PREVIEW_SIDE);
+        boolean marks = flipped(recipe) && textOrLogo.test(src);
+        validate(recipe, src, marks);
+        Measured m = renderMeasured(src, recipe, PREVIEW_SIDE, marks);
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("png", Base64.getEncoder().encodeToString(ImageOps.png(m.image())));
         out.put("quality", m.quality());
@@ -152,9 +203,20 @@ public class PhotoEditService {
         out.put("height", src.getHeight());
         out.put("category", w.getCategory());
         out.put("currentRecipe", current(pieceId).map(v -> Json.map(v.getAnalysisJson()).get("recipe")).orElse(null));
-        out.put("limits", Map.of("straightenDeg", RecipePolicy.MAX_STRAIGHTEN_DEG, "exposureEv", RecipePolicy.MAX_EXPOSURE_EV,
-                "canonicalSaturation", RecipePolicy.MAX_CANONICAL_SATURATION, "canonicalContrast", RecipePolicy.MAX_CANONICAL_CONTRAST,
-                "canonicalSharpen", RecipePolicy.MAX_CANONICAL_SHARPEN, "healArea", RecipePolicy.MAX_HEAL_AREA, "warnDeltaE", ColorFidelity.WARN_DELTA_E));
+        Map<String, Object> limits = new LinkedHashMap<>();
+        limits.put("straightenDeg", RecipePolicy.MAX_STRAIGHTEN_DEG);
+        limits.put("exposureEv", RecipePolicy.MAX_EXPOSURE_EV);
+        limits.put("canonicalSaturation", RecipePolicy.MAX_CANONICAL_SATURATION);
+        limits.put("canonicalContrast", RecipePolicy.MAX_CANONICAL_CONTRAST);
+        limits.put("canonicalSharpen", RecipePolicy.MAX_CANONICAL_SHARPEN);
+        limits.put("healArea", RecipePolicy.MAX_HEAL_AREA);
+        limits.put("warnDeltaE", ColorFidelity.WARN_DELTA_E);
+        limits.put("canonicalBlack", RecipePolicy.MAX_CANONICAL_BLACK);
+        limits.put("canonicalWhite", RecipePolicy.MIN_CANONICAL_WHITE);
+        limits.put("canonicalGamma", List.of(RecipePolicy.MIN_CANONICAL_GAMMA, RecipePolicy.MAX_CANONICAL_GAMMA));
+        limits.put("feather", PhotoRecipe.MAX_FEATHER);
+        limits.put("uncertainCut", PhotoRecipeRenderer.UNCERTAIN_CUT);
+        out.put("limits", limits);
         return out;
     }
 
@@ -167,8 +229,9 @@ public class PhotoEditService {
         WardrobeItem w = wardrobe.owned(user, pieceId);
         BufferedImage src = source(w);
         PhotoRecipe recipe = parse(json);
-        validate(recipe, src);
-        Measured m = renderMeasured(src, recipe, PhotoRecipeRenderer.MAX_SIDE);
+        boolean marks = flipped(recipe) && textOrLogo.test(src);
+        validate(recipe, src, marks);
+        Measured m = renderMeasured(src, recipe, PhotoRecipeRenderer.MAX_SIDE, marks);
         byte[] png = ImageOps.png(m.image());
         boolean canonical = recipe.target() == PhotoRecipe.Target.CANONICAL;
         String key = "users/" + user.id() + "/pieces/" + pieceId + "/edits/" + System.currentTimeMillis() + "-"

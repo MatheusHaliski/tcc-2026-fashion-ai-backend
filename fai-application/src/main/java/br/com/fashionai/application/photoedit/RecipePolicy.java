@@ -18,8 +18,9 @@ public final class RecipePolicy {
     public static final double MAX_CANONICAL_SHARPEN = 0.3;
     public static final double MAX_HEAL_AREA = 0.01;
     public static final double ASPECT_4_5 = 0.8;
-    static final Set<String> CANONICAL_OPS = Set.of("rotate90", "straighten", "perspective", "crop", "background", "whiteBalance",
-            "tone", "heal", "sharpen");
+    public static final double MAX_CANONICAL_BLACK = 0.1, MIN_CANONICAL_WHITE = 0.9, MIN_CANONICAL_GAMMA = 0.8, MAX_CANONICAL_GAMMA = 1.25;
+    static final Set<String> CANONICAL_OPS = Set.of("rotate90", "straighten", "perspective", "flip", "crop", "background", "whiteBalance",
+            "tone", "levels", "heal", "sharpen");
 
     private RecipePolicy() {
     }
@@ -29,6 +30,14 @@ public final class RecipePolicy {
      * @return motivos de recusa (vazio = receita aceita)
      */
     public static List<String> violations(PhotoRecipe recipe, double heightOverWidth) {
+        return violations(recipe, heightOverWidth, false);
+    }
+
+    /**
+     * @param textOrLogo o servidor achou texto ou logo na peça: espelhar inverteria a marca — recusado na canônica (a
+     *                   apresentação aceita com aviso)
+     */
+    public static List<String> violations(PhotoRecipe recipe, double heightOverWidth, boolean textOrLogo) {
         List<String> v = new ArrayList<>();
         boolean canonical = recipe.target() == PhotoRecipe.Target.CANONICAL;
         boolean cropped = false;
@@ -46,6 +55,19 @@ public final class RecipePolicy {
                 case PhotoRecipe.Straighten s -> {
                     if (Math.abs(s.deg()) > MAX_STRAIGHTEN_DEG) {
                         v.add("ENDIREITAR_ALEM_DE_15_GRAUS");
+                    }
+                }
+                case PhotoRecipe.Flip f -> {
+                    if (canonical && textOrLogo) {
+                        v.add("ESPELHAR_INVERTE_TEXTO_OU_LOGO");
+                    }
+                }
+                case PhotoRecipe.Levels l -> {
+                    if (l.black() < 0 || l.white() > 1 || l.black() >= l.white() - 0.05 || l.gamma() < 0.3 || l.gamma() > 3) {
+                        v.add("NIVEIS_INVALIDOS");
+                    } else if (canonical && (l.black() > MAX_CANONICAL_BLACK || l.white() < MIN_CANONICAL_WHITE
+                            || l.gamma() < MIN_CANONICAL_GAMMA || l.gamma() > MAX_CANONICAL_GAMMA)) {
+                        v.add("NIVEIS_FORTE_DEMAIS");
                     }
                 }
                 case PhotoRecipe.Perspective p -> {
@@ -71,6 +93,9 @@ public final class RecipePolicy {
                     }
                 }
                 case PhotoRecipe.Background b -> {
+                    if (b.feather() < 0 || b.feather() > PhotoRecipe.MAX_FEATHER) {
+                        v.add("BORDA_INVALIDA");
+                    }
                     for (PhotoRecipe.Stroke s : b.strokes()) {
                         if (!"ADD".equals(s.mode()) && !"REMOVE".equals(s.mode()) || s.r() <= 0 || s.r() > 0.2) {
                             v.add("PINCELADA_INVALIDA");

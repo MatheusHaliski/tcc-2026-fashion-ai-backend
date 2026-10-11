@@ -73,6 +73,7 @@ export function ExpandedScheme({ id, headerExtra }: { id: string; headerExtra?: 
       {mine && s.status !== "PUBLISHED" && <Button size="sm" variant="primary" onClick={publish}><FaiIcon id="ACT-11" size={20} variant="glyph" decorative />{t("common.publish")}</Button>}
       {mine && !s.lookDoDia && <Button size="sm" onClick={dailyLook}><FaiIcon id="ACT-36" size={20} variant="glyph" decorative />{t("expanded.marcar_look_do_dia")}</Button>}
       {user && <Link href={`/try-on?scheme=${s.id}`} className="btn btn-sm"><FaiIcon id="NAV-07" size={20} variant="glyph" decorative />{t("scheme.tryOn")}</Link>}
+      {mine && <Link href={`/schemes/${s.id}/photo`} className="btn btn-sm"><FaiIcon id="NAV-10" size={20} variant="glyph" decorative />{t("pieceDetail.editar_imagem")}</Link>}
       {mine && <MannequinPhotoButton kind="scheme" id={s.id} title={s.title} current={s.mannequinImageUrl} onSaved={reload} />}
       {mine && <Button size="sm" onClick={suggestSeals}><FaiIcon id="ACT-26" size={20} variant="glyph" decorative />{t("schemes.id.suggestSeals")}</Button>}
       {mine && <Button size="sm" onClick={() => setImprove(true)}><FaiIcon id="ACT-09" size={20} variant="glyph" decorative />{t("scheme.improve")}</Button>}

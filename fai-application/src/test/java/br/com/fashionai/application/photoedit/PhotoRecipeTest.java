@@ -66,7 +66,7 @@ class PhotoRecipeTest {
 
     @Test
     void mesmaReceitaMesmosPixelsEReceitaVaziaDevolveAOriginal() {
-        PhotoRecipeRenderer r = new PhotoRecipeRenderer(img -> img);
+        PhotoRecipeRenderer r = PhotoRecipeRenderer.withMask(img -> img);
         PhotoRecipe rec = recipe("CANONICAL", Map.of("op", "straighten", "deg", 4), crop45(), Map.of("op", "tone", "exposureEv", 0.3, "contrast", 10));
         BufferedImage a = r.render(photo(), rec).image(), b = r.render(photo(), rec).image();
         assertThat(a.getRGB(0, 0, a.getWidth(), a.getHeight(), null, 0, a.getWidth()))
@@ -119,7 +119,7 @@ class PhotoRecipeTest {
     @Test
     void fundoBrancoComPinceladaDevolvePixelsAPeca() {
         // recorte "ruim": só metade esquerda da camiseta é peça; a pincelada ADD devolve a metade direita
-        PhotoRecipeRenderer r = new PhotoRecipeRenderer(img -> {
+        PhotoRecipeRenderer r = PhotoRecipeRenderer.withMask(img -> {
             BufferedImage m = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_ARGB);
             for (int y = 250; y < 750; y++) {
                 for (int x = 300; x < 500; x++) {
@@ -141,5 +141,56 @@ class PhotoRecipeTest {
     void ciede2000BateComOParDeReferenciaDeSharma() {
         assertThat(ColorFidelity.ciede2000(new double[]{50, 2.6772, -79.7751}, new double[]{50, 0, -82.7485})).isCloseTo(2.0425, offset(1e-4));
         assertThat(ColorFidelity.ciede2000(new double[]{50, -1.3802, -84.2814}, new double[]{50, 0, -82.7485})).isCloseTo(1.0, offset(1e-4));
+    }
+
+    @Test
+    void espelharInverteAFotoEExigePecaSemTextoNaCanonica() {
+        BufferedImage base = PhotoRecipeTest.photo();
+        base.setRGB(100, 100, 0xFFFF0000);                                  // marca assimétrica
+        BufferedImage h = PhotoRecipeRenderer.flip(PhotoRecipeRendererAccess.argb(base), false);
+        assertThat(h.getRGB(899, 100) & 0xFFFFFF).isEqualTo(0xFF0000);
+        assertThat(h.getRGB(100, 100) & 0xFFFFFF).isNotEqualTo(0xFF0000);
+        BufferedImage v = PhotoRecipeRenderer.flip(PhotoRecipeRendererAccess.argb(base), true);
+        assertThat(v.getRGB(100, 899) & 0xFFFFFF).isEqualTo(0xFF0000);
+        PhotoRecipe flip = recipe("CANONICAL", Map.of("op", "flip", "axis", "H"), crop45());
+        assertThat(RecipePolicy.violations(flip, 1, false)).isEmpty();
+        assertThat(RecipePolicy.violations(flip, 1, true)).containsExactly("ESPELHAR_INVERTE_TEXTO_OU_LOGO");
+        assertThat(RecipePolicy.violations(recipe("PRESENTATION", Map.of("op", "flip", "axis", "H")), 1, true)).as("apresentação aceita, com aviso na prévia").isEmpty();
+        assertThatThrownBy(() -> recipe("CANONICAL", Map.of("op", "flip", "axis", "D"))).hasMessageContaining("EIXO_INVALIDO");
+    }
+
+    @Test
+    void niveisSaoReaisPorTabelaEComLimiteNaCanonica() {
+        BufferedImage base = PhotoRecipeRendererAccess.argb(photo());
+        BufferedImage out = PhotoRecipeRenderer.levels(base, 0.2, 0.9, 1);
+        // cinza-amarelado do fundo (230,222,190): cada canal c → (c/255 − 0,2)/0,7
+        assertThat((out.getRGB(50, 50) >> 16) & 0xFF).isCloseTo((int) Math.round(((230 / 255.0) - 0.2) / 0.7 * 255), offset(2));
+        assertThat(out.getRGB(50, 50) >>> 24).isEqualTo(255);
+        BufferedImage dark = PhotoRecipeRenderer.levels(base, 0.5, 1, 1);
+        assertThat((dark.getRGB(500, 500) >> 16) & 0xFF).as("vermelho 40/255 abaixo do ponto preto 0,5 vai a zero").isEqualTo(0);
+        assertThat(dark.getRGB(500, 500) & 0xFF).as("azul 150/255 → (0,588 − 0,5)/0,5").isCloseTo(45, offset(2));
+        assertThat(RecipePolicy.violations(recipe("CANONICAL", crop45(), Map.of("op", "levels", "black", 0.05, "white", 0.95, "gamma", 1.1)), 1)).isEmpty();
+        assertThat(RecipePolicy.violations(recipe("CANONICAL", crop45(), Map.of("op", "levels", "black", 0.3, "white", 1, "gamma", 1)), 1)).contains("NIVEIS_FORTE_DEMAIS");
+        assertThat(RecipePolicy.violations(recipe("PRESENTATION", Map.of("op", "levels", "black", 0.3, "white", 0.8, "gamma", 2)), 1)).isEmpty();
+        assertThat(RecipePolicy.violations(recipe("PRESENTATION", Map.of("op", "levels", "black", 0.9, "white", 0.8, "gamma", 1)), 1)).contains("NIVEIS_INVALIDOS");
+    }
+
+    @Test
+    void bordaDaMascaraSuavizadaEComLimite() {
+        int w = 40, h = 10;
+        int[] alpha = new int[w * h];
+        for (int y = 0; y < h; y++) {
+            for (int x = 20; x < w; x++) {
+                alpha[y * w + x] = 255;                                     // borda dura em x = 20
+            }
+        }
+        int[] soft = PhotoRecipeRenderer.featherAlpha(alpha, w, h, 4);
+        assertThat(soft[5 * w + 18]).isGreaterThan(0).isLessThan(255);
+        assertThat(soft[5 * w + 22]).isGreaterThan(0).isLessThan(255);
+        assertThat(soft[5 * w + 2]).isEqualTo(0);
+        assertThat(soft[5 * w + 37]).isEqualTo(255);
+        assertThat(PhotoRecipe.parse(Map.of("target", "CANONICAL", "ops", List.of(Map.of("op", "background", "kind", "WHITE", "feather", 8))))
+                .ops().get(0)).isEqualTo(new PhotoRecipe.Background(PhotoRecipe.BackgroundKind.WHITE, "NONE", List.of(), 8));
+        assertThat(RecipePolicy.violations(recipe("CANONICAL", crop45(), Map.of("op", "background", "kind", "WHITE", "feather", 40)), 1)).contains("BORDA_INVALIDA");
     }
 }

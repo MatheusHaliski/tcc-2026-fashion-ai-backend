@@ -19,7 +19,7 @@ public record PhotoRecipe(int version, Target target, List<Op> ops) {
 
     public enum BackgroundKind { WHITE, NEUTRAL, TRANSPARENT }
 
-    public sealed interface Op permits Rotate90, Straighten, Perspective, Crop, Background, WhiteBalance, Tone, Heal, Sharpen, Filter {
+    public sealed interface Op permits Rotate90, Straighten, Perspective, Flip, Crop, Background, WhiteBalance, Tone, Levels, Heal, Sharpen, Filter {
         String name();
 
         /** Operações que mexem na cor ou no detalhe da peça (as demais são geometria e fundo). */
@@ -42,6 +42,16 @@ public record PhotoRecipe(int version, Target target, List<Op> ops) {
         }
     }
 
+    /**
+     * Espelhar: {@code axis} H (esquerda ↔ direita) ou V (cima ↔ baixo). Inverte textos e logos: na canônica só é aceito
+     * quando o servidor não acha texto nem logo na peça; na apresentação entra com aviso.
+     */
+    public record Flip(String axis) implements Op {
+        public String name() {
+            return "flip";
+        }
+    }
+
     /** Perspectiva de 4 pontos: os cantos da peça (sup. esq., sup. dir., inf. dir., inf. esq.) viram um retângulo. */
     public record Perspective(double[][] quad) implements Op {
         public String name() {
@@ -60,11 +70,19 @@ public record PhotoRecipe(int version, Target target, List<Op> ops) {
      * Fundo: recorte da peça (automático) refinado por pinceladas e recolocado sobre branco, cinza neutro ou transparente.
      * {@code shadow} SOFT = sombra de contato suave sintética (rotulada).
      */
-    public record Background(BackgroundKind kind, String shadow, List<Stroke> strokes) implements Op {
+    public record Background(BackgroundKind kind, String shadow, List<Stroke> strokes, double feather) implements Op {
+        public Background(BackgroundKind kind, String shadow, List<Stroke> strokes) {
+            this(kind, shadow, strokes, DEFAULT_FEATHER);
+        }
+
         public String name() {
             return "background";
         }
     }
+
+    /** Suavização da borda da máscara (px na imagem de trabalho): 0 = borda dura; o padrão é a transição de 2 px. */
+    public static final double DEFAULT_FEATHER = 2;
+    public static final double MAX_FEATHER = 24;
 
     /** Pincelada de refinamento da máscara: ADD devolve pixels à peça, REMOVE os manda para o fundo. */
     public record Stroke(String mode, double r, List<double[]> pts) {
@@ -85,6 +103,20 @@ public record PhotoRecipe(int version, Target target, List<Op> ops) {
     public record Tone(double exposureEv, double highlights, double shadows, double contrast, double saturation) implements Op {
         public String name() {
             return "tone";
+        }
+
+        public boolean colorOp() {
+            return true;
+        }
+    }
+
+    /**
+     * Níveis (real, por tabela): ponto preto e ponto branco em 0–1 (entrada que vira 0 e 255) e gama (1 = linear). Sem
+     * curvas livres: a canônica só aceita correções pequenas (ponto preto ≤ 0,1, branco ≥ 0,9, gama 0,8–1,25).
+     */
+    public record Levels(double black, double white, double gamma) implements Op {
+        public String name() {
+            return "levels";
         }
 
         public boolean colorOp() {
@@ -165,6 +197,14 @@ public record PhotoRecipe(int version, Target target, List<Op> ops) {
         return switch (name) {
             case "rotate90" -> new Rotate90((int) num(m, "turns", 1));
             case "straighten" -> new Straighten(num(m, "deg", 0));
+            case "flip" -> {
+                String axis = String.valueOf(m.getOrDefault("axis", "H")).toUpperCase(Locale.ROOT);
+                if (!"H".equals(axis) && !"V".equals(axis)) {
+                    throw new IllegalArgumentException("EIXO_INVALIDO");
+                }
+                yield new Flip(axis);
+            }
+            case "levels" -> new Levels(num(m, "black", 0), num(m, "white", 1), num(m, "gamma", 1));
             case "perspective" -> {
                 List<double[]> q = points(m.get("quad"));
                 if (q.size() != 4) {
@@ -194,7 +234,8 @@ public record PhotoRecipe(int version, Target target, List<Op> ops) {
                         }
                     }
                 }
-                yield new Background(kind, String.valueOf(m.getOrDefault("shadow", "NONE")).toUpperCase(Locale.ROOT), List.copyOf(strokes));
+                yield new Background(kind, String.valueOf(m.getOrDefault("shadow", "NONE")).toUpperCase(Locale.ROOT), List.copyOf(strokes),
+                        num(m, "feather", DEFAULT_FEATHER));
             }
             case "whiteBalance" -> {
                 List<double[]> p = points(List.of(m.getOrDefault("sample", List.of(0.5, 0.5))));

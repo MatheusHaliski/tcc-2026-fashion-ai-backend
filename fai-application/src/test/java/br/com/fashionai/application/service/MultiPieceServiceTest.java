@@ -139,4 +139,37 @@ class MultiPieceServiceTest {
         MultiPieceService.PieceDraft draft = multi.aiPieceDraft(ana, d.draftId(), ai.getId());
         assertThat(draft.aiGenerated()).isTrue();
     }
+
+    @Test
+    void marcaLidaComIncertezaViraSugestaoENaoPreencheOCampo() {
+        br.com.fashionai.application.imaging.BrandReader ocr = kit.dep(br.com.fashionai.application.imaging.BrandReader.class);
+        when(ocr.available()).thenReturn(true);
+        when(ocr.findRobust(any(), any())).thenReturn(Optional.of(new br.com.fashionai.application.imaging.BrandReader.Found(
+                "Under Armour", "centro_peito", "UNPE INOER", 0.6, false, new double[]{0.2, 0.2, 0.8, 0.5}, List.of("Umbro"))));
+        MultiPieceService.Detection d = multi.detect(ana, photo);
+        assertThat(d.pieces()).hasSize(2);
+        assertThat(d.pieces()).allSatisfy(p -> {
+            assertThat(p.brandName()).isNull();
+            assertThat(p.brandHint()).isNotNull();
+            assertThat(p.brandHint().brand()).isEqualTo("Under Armour");
+            assertThat(p.brandHint().alternatives()).containsExactly("Umbro");
+            assertThat(p.brandHint().evidence()).isEqualTo("UNPE INOER");
+        });
+        PipelineJob draft = kit.dep(PipelineJobRepository.class).findById(d.draftId()).orElseThrow();
+        List<?> saved = (List<?>) Json.map(draft.getResultJson()).get("pieces");
+        assertThat(((Map<?, ?>) ((Map<?, ?>) saved.get(0)).get("brandHint")).get("brand")).isEqualTo("Under Armour");
+    }
+
+    @Test
+    void marcaConfirmadaPeloOcrPreencheOCampo() {
+        br.com.fashionai.application.imaging.BrandReader ocr = kit.dep(br.com.fashionai.application.imaging.BrandReader.class);
+        when(ocr.available()).thenReturn(true);
+        when(ocr.findRobust(any(), any())).thenReturn(Optional.of(new br.com.fashionai.application.imaging.BrandReader.Found(
+                "Under Armour", "centro_peito", "UNDER ARMOUR", 0.8, true, new double[]{0.2, 0.2, 0.8, 0.5})));
+        MultiPieceService.Detection d = multi.detect(ana, photo);
+        assertThat(d.pieces()).allSatisfy(p -> {
+            assertThat(p.brandName()).isEqualTo("Under Armour");
+            assertThat(p.brandHint()).isNull();
+        });
+    }
 }
