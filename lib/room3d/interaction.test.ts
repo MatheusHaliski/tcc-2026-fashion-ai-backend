@@ -69,6 +69,18 @@ describe("wardrobe interaction lifecycle", () => {
   });
 });
 
+describe("vista da câmera do quarto (girar a cena)", () => {
+  it("gira de 90° em 90° nos dois sentidos, dá a volta e avisa quem acompanha", () => {
+    const engine = new RoomInteraction(); let calls = 0; engine.listeners.add(() => { calls++; });
+    expect(engine.view).toBe(0);
+    engine.turn(1); expect(engine.view).toBe(1);
+    engine.turn(-1); engine.turn(-1); expect(engine.view).toBe(3);
+    engine.turn(1); expect(engine.view).toBe(0);
+    for (let i = 0; i < 5; i++) engine.turn(1);
+    expect(engine.view).toBe(1); expect(calls).toBe(9);
+  });
+});
+
 describe("setas na página inteira durante a prova (QUARTO-ESPELHO)", () => {
   it("valem só na prova, só para setas, fora do canvas e fora de campos de texto", () => {
     const canvas = {} as EventTarget, input = {} as EventTarget, body = {} as EventTarget;

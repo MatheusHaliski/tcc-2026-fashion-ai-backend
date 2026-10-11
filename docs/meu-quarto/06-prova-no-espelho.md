@@ -14,7 +14,7 @@ Quarto ──(distância < 1,15 m, por 350 ms)──► Aproximação ──► 
 
 | Fase | O que a pessoa vê | Câmera | Personagem |
 |---|---|---|---|
-| `room` | quarto, painel com a ajuda de primeiro uso e **Abrir espelho** | visão geral (guarda-roupa, personagem, espelho) | anda com as setas |
+| `room` | quarto, painel com a ajuda de primeiro uso e **Abrir espelho** | uma das 4 vistas do quarto (Q/E ou ↺ ↻; a 0 é a visão geral: guarda-roupa, personagem, espelho), sempre dentro das paredes | anda com as setas ou com o direcional na tela, relativos à câmera |
 | `approach` | "Chegando ao espelho…" | começa a ir para a frente do espelho | vira de frente para o espelho |
 | `tryon` | lista **Roupas em mãos**, por lugar do corpo | de frente para o espelho, personagem e vidro no quadro | parado, reage a cada troca |
 | `exit` | "Saindo do espelho…" | volta à visão geral | anda |
@@ -173,7 +173,9 @@ uma correção vale nos dois lugares.
   espelho** (câmera no vidro olhando para o guarda-roupa, personagem oculto; `MIRROR_NORMAL` em `mirror-session.ts`) e
   guarda em `MirrorSession.snapshot`. O vidro mostra essa foto recortada ao miolo (`snapshotCrop`, sem esticar) e, por
   cima, o reflexo do avatar vestido (PNG/WebP com alfa — `AvatarStill` com fundo transparente). A foto some ao voltar
-  ao quarto (pelas setas ou por "Voltar ao quarto").
+  ao quarto (pelas setas ou por "Voltar ao quarto"). Com o quarto de quatro paredes, a foto mostra as paredes leste e
+  sul e o teto (antes era só névoa). Para a foto, as paredes que a câmera principal esconde aparecem inteiras por um
+  instante (`userData.reveal`). A câmera da prova não mudou, só fica presa dentro do quarto.
 - **Sair só com as setas.** Durante a prova as setas valem na **página inteira** (`arrowAnywhere` em
   `lib/room3d/interaction.ts`): o foco pode estar no painel ao lado e, mesmo assim, andar para fora da zona fecha a
   prova e devolve a lista de posições. Fora da prova, as setas só valem com a cena focada (evita roubar a rolagem).

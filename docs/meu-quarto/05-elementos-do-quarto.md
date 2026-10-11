@@ -8,9 +8,40 @@ A coluna **No código** diz onde o elemento está implementado. A cena é toda p
 modelos externos):
 
 - cena: `components/room3d/room-scene.tsx`;
+- medidas do quarto (paredes, área de caminhar, vistas da câmera): `lib/room3d/room-bounds.ts`;
 - objetos: `components/room3d/room-props.tsx`;
+- botões de girar a cena e de mover o avatar: `components/room3d/room-scene-controls.tsx`;
 - página e diálogos: `app/(app)/room/page.tsx`;
 - dados: `RoomService.render` (`GET /api/me/room`).
+
+## O quarto: quatro paredes
+
+O quarto é fechado: 7,8 × 5,5 m, com 3 m de pé-direito, piso e teto. Todas as medidas ficam em `ROOM`
+(`lib/room3d/room-bounds.ts`).
+
+| Parede | O que tem | No código |
+|---|---|---|
+| **Norte (fundo)** | guarda-roupa 1 (FAI Origem, 2,4 m), porta do quarto no canto esquerdo, gancho das chaves, interruptor, quadro de cortiça, janela 1 e calendário | `Wall` (`NORTH`); `RoomDoor` (fechada, 3 chamadas de desenho; tocar abre a Chave do Quarto) |
+| **Oeste (esquerda)** | guarda-roupa 2 | portas 5–6 e gavetas 25–36, os endereços da antiga extensão do Loft. Tem colisão própria (caixa girada 90°). Abaixo do Loft é um móvel fechado com a placa "Disponível no nível Loft", que leva à loja de pontos |
+| **Leste (direita)** | janela 2 | `RoomWindow light={false}`: sem holofote próprio |
+| **Sul (frente)** | nada | fica livre, porque é a parede da câmera na visão geral |
+
+Cada parede é um plano de um lado só, virado para dentro, que recebe sombra e nunca projeta. Com a câmera atrás de
+uma parede (modo foto ou órbita), o plano some aos poucos e os objetos presos nela somem. Escondidos, também deixam
+de receber cliques: o filtro de eventos do R3F (`shownHits`) descarta objetos com algum ancestral invisível. Fica uma
+faixa baixa de 0,3 m para mostrar o contorno do quarto. A foto do espelho (doc 06) mostra tudo inteiro por um instante
+(`userData.reveal`).
+
+**Câmera e controles.** No modo andar há 4 vistas, que giram de 90° em 90° em torno do centro do quarto. A vista 0
+é a visão geral de sempre.
+
+- **Trocar de vista:** Q/E com a cena focada ou os botões ↺ ↻ no canto da cena.
+- **Câmera dentro do quarto:** ela recua até as paredes e sobe um pouco para ver o mesmo chão. Desliza pela parede de
+  trás para ficar a pelo menos 3 m do personagem. O olhar acompanha o personagem pela metade (`roomView`).
+- **Setas relativas à câmera:** ↑ anda para o fundo da tela. A direção fica presa enquanto alguma seta está apertada.
+- **Direcional na tela:** 4 botões de segurar. Alimentam as mesmas teclas do motor, com ponteiro, toque, Enter ou
+  Espaço. Com eles dá para andar no celular.
+- **Modo foto ou órbita:** a volta é inteira. Os botões giram 45° e também aproximam e afastam.
 
 ## Móvel inicial: FAI Origem
 
@@ -40,14 +71,14 @@ modelos externos):
 | **Janela e iluminação** | ambiente | luz do horário real | manhã fria, tarde dourada, abajur à noite; decoração discreta em datas sazonais | RF27 | 1 (datas sazonais: fase 4) | `RoomWindow` (céu e luz por `ambient.period`), `Lamp` à noite, bandeirinhas (junho), luzinhas (dezembro) e "Vista o que você tem" (abril) |
 | **Luzes do closet** | todo o ambiente | comemorar marcos do Inventory Score | acendem, e aparece uma animação de conquista no espelho | RF29 | 2 | `ClosetLights`: uma luz por faixa (Organizado → Maison Closet); marco novo → `Sparkles` no espelho (`closetLights` no `GET /api/me/room`) |
 | **Caixa FAI** | chão do quarto | entrega de item comprado | unboxing, e o item se monta sozinho | RF30 | 3 | `FaiBox`: itens comprados e não aplicados (`unboxing`); ao tocar, a tampa abre e o item é aplicado ao primeiro módulo compatível |
-| **Gancho da Chave do Quarto** | perto da porta | convites | chave pendurada; quem a recebe pode visitar o quarto e entrar em desafios | RF27, RF32 | 4 | `KeyHook` (`keys`), diálogo para entregar a chave (`POST /api/me/room/keys`) |
+| **Gancho da Chave do Quarto** | perto da porta | convites | chave pendurada; quem a recebe pode visitar o quarto e entrar em desafios | RF27, RF32 | 4 | `KeyHook` (`keys`), diálogo para entregar a chave (`POST /api/me/room/keys`). A porta ao lado (`RoomDoor`) abre o mesmo diálogo |
 
 ## Módulos liberados por nível (RF30)
 
 | Elemento | Nível | Para que serve | No código |
 |---|---|---|---|
 | **Iluminação guiada** | Studio | luz personalizável | controle "Luz" (2700–6500 K) → `PUT /api/me/room/light`; fita de LED sob o maleiro e a luz interna das portas |
-| **+2 módulos** | Loft | mais espaço e mais categorias de gaveta | extensão de 1,8 m à direita: portas 5–6 e gavetas 25–36 |
+| **+2 módulos** | Loft | mais espaço e mais categorias de gaveta | guarda-roupa 2 (1,8 m) na parede oeste: portas 5–6 e gavetas 25–36, sem mudança no servidor. Os calçados além de 10 vão para a base dele |
 | **Sapateira, vitrine de bolsas, porta-joias** | Closet | um lugar próprio para cada categoria | base vira Sapateira; `BagDisplay` com o porta-joias em cima |
 | **Ilha central (bancada de looks)** | Atelier | comparar 2 ou 3 looks lado a lado | `Island` com até 3 outfit cards |
 | **Troca de estação no maleiro** | Penthouse | guardar peças fora de estação, que o Vista-me passa a ignorar | caixa "Fora de estação" no maleiro, com a contagem do módulo `season` |
@@ -71,5 +102,8 @@ Todos vêm de `decorations` (`ChallengeService.decorations`) e somem quando o de
 - **Reduzir movimento.** Portas e gavetas mudam de posição sem animação. Não há puff, balanço, pulsação das luzes do
   closet nem luz subindo no fecho do Vista-me. A luz do horário fica fixa, porque `ambient.period` = `fixed`.
 - **Sem WebGL.** O quarto abre em 2.5D e em lista, com as mesmas ações (RF32.CA08).
+- **Girar e andar sem teclado.** Os botões no canto da cena giram a vista, e no modo foto também aproximam e afastam.
+  O direcional faz o personagem andar. São botões de verdade, com nome acessível, foco visível e `aria-pressed`
+  enquanto seguram. A vista atual é anunciada ("Vista 2 de 4").
 - **Custo por uso.** A etiqueta costurada só mostra o custo por uso para o dono (ETI-04).
 - **Tom das mensagens.** Nenhum elemento cobra o usuário. A gaveta vazia convida, e a poeira some quando a peça volta.

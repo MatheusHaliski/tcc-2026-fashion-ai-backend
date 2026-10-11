@@ -3,13 +3,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { mediaUrl } from "@/lib/api/client";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 
 /*
  * Objetos e detalhes do Meu Quarto (docs/meu-quarto/05-elementos-do-quarto.md), todos procedurais — sem modelos
  * externos: busto de costura, interruptor, janela com a luz do horário, luzes do closet, Caixa FAI, gancho das chaves,
- * quadro de cortiça, calendário, sachê e meia sem par, croqui, poeira/teia, etiquetas e fita de alfaiate.
+ * quadro de cortiça, calendário, porta do quarto, sachê e meia sem par, croqui, poeira/teia, etiquetas e fita de alfaiate.
  */
 
 export const deg = (d: number) => (d * Math.PI) / 180;
@@ -179,8 +180,11 @@ export function LightSwitch({ position, rotation, on, onToggle }: { position: [n
 }
 
 const SKY: Record<string, [string, string]> = { morning: ["#bcd8f2", "#e8f1fa"], afternoon: ["#f6d7a0", "#fbe9c6"], golden: ["#f29b58", "#f7c98b"], night: ["#141a36", "#2a2f58"], fixed: ["#dfe6ea", "#f1f3f4"] };
-/** Janela com a luz do horário real (DET-D02) e a decoração discreta das datas sazonais (DET-G07). */
-export function RoomWindow({ position, period, seasonal }: { position: [number, number, number]; period: string; seasonal?: string | null }) {
+/**
+ * Janela com a luz do horário real (DET-D02) e a decoração discreta das datas sazonais (DET-G07). `light={false}`: a 2ª
+ * janela do quarto não acende outro holofote (uma luz por pixel a mais em toda a cena).
+ */
+export function RoomWindow({ position, period, seasonal, light = true }: { position: [number, number, number]; period: string; seasonal?: string | null; light?: boolean }) {
   const { t } = useI18n();
   const [a, b] = SKY[period] ?? SKY.fixed;
   const sky = useCanvasTex(`sky-${period}`, 128, 128, (g, w, h) => {
@@ -189,6 +193,8 @@ export function RoomWindow({ position, period, seasonal }: { position: [number, 
     else { g.fillStyle = "rgba(255,255,255,.75)"; [[0.25, 0.3], [0.62, 0.22]].forEach(([x, y]) => { g.beginPath(); g.ellipse(w * x, h * y, 18, 7, 0, 0, Math.PI * 2); g.fill(); }); }
   });
   const warm = period === "golden" || period === "afternoon";
+  // o alvo do holofote fica dentro da janela (na cena): fora dela a matriz dele nunca atualiza e a luz mira a origem
+  const target = useMemo(() => new THREE.Object3D(), []);
   return (
     <group position={position}>
       <mesh><planeGeometry args={[1.0, 1.1]} /><meshBasicMaterial map={sky} toneMapped={false} /></mesh>
@@ -198,10 +204,29 @@ export function RoomWindow({ position, period, seasonal }: { position: [number, 
       <mesh position={[0, -0.6, 0.06]}><boxGeometry args={[1.12, 0.03, 0.14]} /><meshStandardMaterial color="#f4f1ea" /></mesh>
       {/* cortinas */}
       {[-0.66, 0.66].map((x) => <mesh key={x} position={[x, 0.02, 0.05]}><boxGeometry args={[0.2, 1.3, 0.03]} /><meshStandardMaterial color={period === "night" ? "#4a4660" : "#d9cbb8"} roughness={1} /></mesh>)}
-      {period !== "night" && <spotLight position={[0, 0.2, 0.3]} target-position={[0.4, -2, 2.5]} angle={0.6} penumbra={0.8} intensity={warm ? 2.2 : 1.2} color={warm ? "#ffcf8a" : "#dfeaff"} distance={6} />}
+      {light && period !== "night" && <><primitive object={target} position={[0.4, -2, 2.5]} /><spotLight position={[0, 0.2, 0.3]} target={target} angle={0.6} penumbra={0.8} intensity={warm ? 2.2 : 1.2} color={warm ? "#ffcf8a" : "#dfeaff"} distance={6} /></>}
       {seasonal === "festa_junina" && <group position={[0, 0.62, 0.08]}>{Array.from({ length: 9 }, (_, i) => <mesh key={i} position={[-0.56 + i * 0.14, -0.04 - Math.sin((i / 8) * Math.PI) * 0.06, 0]} rotation={[0, 0, Math.PI]}><coneGeometry args={[0.04, 0.07, 3]} /><meshStandardMaterial color={["#e63946", "#f4a261", "#2a9d8f", "#e9c46a", "#457b9d"][i % 5]} /></mesh>)}</group>}
       {seasonal === "fim_de_ano" && <group position={[0, 0.6, 0.08]}>{Array.from({ length: 12 }, (_, i) => <mesh key={i} position={[-0.55 + i * 0.1, -0.03 - Math.sin((i / 11) * Math.PI) * 0.05, 0]}><sphereGeometry args={[0.014, 8, 8]} /><meshStandardMaterial color={["#ffd166", "#ef476f", "#06d6a0"][i % 3]} emissive={["#ffd166", "#ef476f", "#06d6a0"][i % 3]} emissiveIntensity={0.9} /></mesh>)}</group>}
       {seasonal === "fashion_revolution_week" && <Label3D text={t("room3d.roomProps.vista_o_que_voce_tem")} w={0.8} h={0.08} px={512} bg="#111" fg="#fff" position={[0, -0.72, 0.06]} />}
+    </group>
+  );
+}
+
+/**
+ * Porta do quarto, fechada: batente (montantes + travessa numa malha só), folha de madeira e maçaneta de latão — 3
+ * chamadas de desenho, sem luz e sem sombra projetada. Origem no chão, no meio do vão; +z para dentro do quarto. A
+ * dobradiça fica do lado esquerdo (do canto); o clique é opcional (a chave do quarto, como o gancho ao lado).
+ */
+export function RoomDoor({ position, rotation, onClick, night }: { position: [number, number, number]; rotation?: [number, number, number]; onClick?: () => void; night?: boolean }) {
+  const frame = useMemo(() => {
+    const part = (w: number, h: number, x: number, y: number) => new THREE.BoxGeometry(w, h, 0.1).translate(x, y, 0);
+    return mergeGeometries([part(0.06, 2.11, -0.43, 1.055), part(0.06, 2.11, 0.43, 1.055), part(0.92, 0.06, 0, 2.08)])!;
+  }, []);
+  return (
+    <group position={position} rotation={rotation} onClick={onClick ? (e) => { e.stopPropagation(); onClick(); } : undefined} {...(onClick ? hover : {})}>
+      <mesh geometry={frame} receiveShadow><meshStandardMaterial color={night ? "#c9c4b8" : "#f4f1ea"} roughness={0.6} /></mesh>
+      <mesh position={[0, 1.025, 0.02]} receiveShadow><boxGeometry args={[0.8, 2.05, 0.04]} /><meshStandardMaterial color={night ? "#6e5a45" : "#b98f63"} roughness={0.7} /></mesh>
+      <mesh position={[0.32, 1.0, 0.06]}><sphereGeometry args={[0.03, 16, 12]} /><meshStandardMaterial color="#C9A227" metalness={0.9} roughness={0.25} /></mesh>
     </group>
   );
 }
