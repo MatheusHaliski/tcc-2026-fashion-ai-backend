@@ -11,9 +11,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Quadro 3:4 só de tecido, para o lote de enquadramento por categoria (scripts/catalog/category_frame.py,
- * CATALOG_FRAME_34_FABRIC_V2): dentro do quadro não pode aparecer fundo, arte de fundo, cabide, pessoa (pele, rosto,
- * mãos) nem outro objeto — a peça ocupa 100% da área.
+ * Quadro 3:4 só de tecido (lote de enquadramento por categoria V2, CATALOG_FRAME_34_FABRIC_V2): dentro do quadro não
+ * pode aparecer fundo, arte de fundo, cabide, pessoa (pele, rosto, mãos) nem outro objeto — a peça ocupa 100% da área.
+ * O lote V3 (scripts/catalog/category_frame.py, CATALOG_FRAME_34_PRODUCT_RULE_V3) usa a regra do produto do card
+ * ({@link ProductRuleFrame}) sobre a mesma máscara ({@link #mask}); este quadro continua no resultado como depuração.
  *
  * <p>Máscara do tecido: com fundo de estúdio (borda uniforme, mesmo com degradê), tudo o que não é fundo, por
  * preenchimento a partir da borda — peça escura ou clara inteira, que o recorte local às vezes perde —, só o maior
@@ -87,18 +88,32 @@ public final class FabricFrame {
 
     private FabricFrame() { }
 
-    /** Máscara do tecido antes da erosão, com a caixa de tudo o que é primeiro plano (peça e quem a veste). */
-    record Mask(int w, int h, int[] px, boolean[] fabric, ImageOps.Box box, double skinShare, String reason) {
+    /**
+     * Máscara do tecido antes da erosão, com a caixa de tudo o que é primeiro plano (peça e quem a veste). Também guarda o
+     * primeiro plano inteiro ({@code fg}, maior componente), os buracos com a cor do fundo ({@code hole}), a pele estranha à
+     * peça ({@code skin}) e a cor do fundo de estúdio ({@code bg}, null sem fundo uniforme): a regra do produto
+     * ({@link ProductRuleFrame}) monta a própria máscara a partir deles, sem segmentar de novo.
+     */
+    record Mask(int w, int h, int[] px, boolean[] fabric, ImageOps.Box box, double skinShare, String reason,
+                boolean[] fg, boolean[] hole, boolean[] skin, int[] bg) {
+        Mask(int w, int h, int[] px, boolean[] fabric, ImageOps.Box box, double skinShare, String reason) {
+            this(w, h, px, fabric, box, skinShare, reason, null, null, null, null);
+        }
+
         boolean person() { return skinShare >= 0.01; }
     }
 
     public static Result find(ProductSegmenter.Segmentation seg, PieceType type, String subcategory, FramingStrategy.Focus focus) {
+        return find(mask(seg, type), type, subcategory, focus);
+    }
+
+    /** O mesmo, com a máscara já calculada (o pipeline calcula uma vez para o quadro de tecido e para a regra do produto). */
+    static Result find(Mask m, PieceType type, String subcategory, FramingStrategy.Focus focus) {
         String sub = subcategory == null ? "" : subcategory.trim().toLowerCase(Locale.ROOT);
         String target = target(type, sub);
         if (type == PieceType.ACCESSORY_PIECE && NON_TEXTILE.contains(sub)) {
             return Result.none("NOT_TEXTILE_ACCESSORY", target, 0);
         }
-        Mask m = mask(seg, type);
         if (m.reason() != null) return Result.none(m.reason(), target, m.skinShare());
         int w = m.w(), h = m.h();
         Plan plan = plan(type, sub, m.fabric(), m.px(), w, h, m.box(), focus, m.person());
@@ -172,7 +187,7 @@ public final class FabricFrame {
         ImageOps.Box box = new ImageOps.Box(x0, y0, x1 - x0 + 1, y1 - y0 + 1);
         // fragmento: só um detalhe sobrou do primeiro plano (peça da cor do fundo), não a peça
         if ((double) box.w() * box.h() < (double) w * h * MIN_BOX_AREA) return new Mask(w, h, px, null, box, 0, "SEGMENTATION_FRAGMENT");
-        return new Mask(w, h, px, fabric, box, (double) skin / product, null);
+        return new Mask(w, h, px, fabric, box, (double) skin / product, null, fg, hole, skinPx, bg);
     }
 
     /** Cor do fundo de estúdio: a borda da foto quase toda de uma cor (aceita degradê/vinheta); senão null. */
@@ -463,7 +478,7 @@ public final class FabricFrame {
         }
     }
 
-    private static BufferedImage alphaOf(boolean[] fabric, int w, int h) {
+    static BufferedImage alphaOf(boolean[] fabric, int w, int h) {
         BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         int[] row = new int[w];
         for (int y = 0; y < h; y++) {

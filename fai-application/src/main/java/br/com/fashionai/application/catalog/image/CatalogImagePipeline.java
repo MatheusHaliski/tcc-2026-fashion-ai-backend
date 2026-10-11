@@ -138,9 +138,16 @@ public final class CatalogImagePipeline {
         stages.add(stage("SEGMENTATION", t, "coverage=" + NRect.r4(seg.coverage()) + " conf=" + NRect.r4(seg.confidence())));
         double productPx = Math.min(seg.productBox().w() * w, seg.productBox().h() * h);
         if (seg.empty() || productPx < ImageQualityAnalyzer.MIN_PRODUCT_PX) {
-            // o recorte local perdeu a peça (escura/clara demais para ele): o quadro só de tecido tem máscara própria
-            FabricFrame.Result fabric = FabricFrame.find(seg, type, req.subcategory(), null);
-            return Analysis.rejected(seg.empty() ? "NO_PRODUCT" : "IMAGE_TOO_SMALL", mime, w, h, sha, stages, Map.of("fabricFrame", fabric.toMap()));
+            // o recorte local perdeu a peça (escura/clara demais para ele): o quadro só de tecido e o da regra do produto têm
+            // máscara própria (fundo de estúdio)
+            FabricFrame.Mask mask = FabricFrame.mask(seg, type);
+            FabricFrame.Result fabric = FabricFrame.find(mask, type, req.subcategory(), null);
+            ProductRuleFrame.Result productFrame = checkPerson(src,
+                    ProductRuleFrame.find(mask, seg, type, req.subcategory(), registry, ProductRuleFrame.ASPECT_W, ProductRuleFrame.ASPECT_H, null));
+            Map<String, Object> early = new LinkedHashMap<>();
+            early.put("fabricFrame", fabric.toMap());
+            early.put("productFrame", productFrame.toMap());
+            return Analysis.rejected(seg.empty() ? "NO_PRODUCT" : "IMAGE_TOO_SMALL", mime, w, h, sha, stages, early);
         }
         t = System.nanoTime();
         double human = humanEvidence(src, seg);
@@ -167,7 +174,8 @@ public final class CatalogImagePipeline {
         // QUADRO SÓ DE TECIDO (lote de enquadramento por categoria): maior 3:4 dentro da máscara do tecido, sem fundo,
         // cabide nem pessoa; o segmentador de pessoa, quando existe, confere o quadro escolhido
         t = System.nanoTime();
-        FabricFrame.Result fabric = FabricFrame.find(seg, type, req.subcategory(), focus);
+        FabricFrame.Mask mask = FabricFrame.mask(seg, type);
+        FabricFrame.Result fabric = FabricFrame.find(mask, type, req.subcategory(), focus);
         if (fabric.ok()) {
             NRect fc = fabric.crop();
             BufferedImage selected = ImageOps.crop(seg.cutout(), new ImageOps.Box((int) Math.round(fc.x() * seg.width()), (int) Math.round(fc.y() * seg.height()),
@@ -178,6 +186,13 @@ public final class CatalogImagePipeline {
             }
         }
         stages.add(stage("FABRIC_FRAME", t, fabric.ok() ? "ok " + fabric.target() : String.valueOf(fabric.reason())));
+
+        // REGRA DO PRODUTO no quadro do editor (lote de enquadramento do acervo, V3): a mesma regra do card, 3:4, sobre a
+        // mesma máscara; o segmentador de pessoa, quando existe, confere o quadro escolhido
+        t = System.nanoTime();
+        ProductRuleFrame.Result productFrame = checkPerson(src,
+                ProductRuleFrame.find(mask, seg, type, req.subcategory(), registry, ProductRuleFrame.ASPECT_W, ProductRuleFrame.ASPECT_H, focus));
+        stages.add(stage("PRODUCT_RULE_FRAME", t, productFrame.ok() ? "ok " + productFrame.target() : String.valueOf(productFrame.reason())));
 
         // SEMANTIC REFRAMING
         t = System.nanoTime();
@@ -257,6 +272,7 @@ public final class CatalogImagePipeline {
         debug.put("sourceHumanEvidence", NRect.r4(sourceHuman));
         debug.put("cropHumanEvidence", NRect.r4(human));
         debug.put("fabricFrame", fabric.toMap());
+        debug.put("productFrame", productFrame.toMap());
         if (crop.rule() != null) {
             debug.put("framingRule", crop.rule().toMap());
             debug.put("ruleCompliance", crop.compliance());
@@ -320,6 +336,24 @@ public final class CatalogImagePipeline {
         }
         // This crop promises fabric only: residual hands/skin require review even when they occupy a small region.
         return skin > 0.005 ? Math.max(0.06, skin) : 0;
+    }
+
+    /**
+     * Segunda opinião sobre o quadro da regra do produto: com o segmentador de pessoa, pele/rosto no quadro (parte da foto)
+     * recusa — numa parte de cima/baixo, o quadro mostraria a pessoa; num objeto, ele não está isolado.
+     */
+    private ProductRuleFrame.Result checkPerson(BufferedImage src, ProductRuleFrame.Result r) {
+        if (!r.ok() || persons == null || !persons.available()) return r;
+        NRect c = r.crop().clampTo(new NRect(0, 0, 1, 1));
+        int x = (int) Math.round(c.x() * src.getWidth()), y = (int) Math.round(c.y() * src.getHeight());
+        int cw = Math.min(src.getWidth() - x, (int) Math.round(c.w() * src.getWidth())), ch = Math.min(src.getHeight() - y, (int) Math.round(c.h() * src.getHeight()));
+        if (cw < 8 || ch < 8 || !fabricHumanEvidence(ImageOps.crop(src, new ImageOps.Box(x, y, cw, ch)))) return r;
+        boolean garment = r.rule() != null && r.rule().fit() == SemanticRegionRegistry.FramingRule.Fit.COVER
+                && r.rule().align() == SemanticRegionRegistry.FramingRule.Align.TOP;
+        return new ProductRuleFrame.Result(false, garment ? "HUMAN_IN_FRAME" : "PIECE_NOT_ISOLATED", r.crop(), r.aspectW(), r.aspectH(),
+                r.rule(), r.ruleOrigin(), r.registryVersion(), r.pieceType(), r.subcategory(), r.target(), r.focusName(), r.focus(),
+                r.product(), true, r.skinShare(), r.garmentCoverage(), r.coverageScope(), r.objectInside(), r.padding(), r.background(),
+                r.truncated(), r.sideView(), r.compliance(), r.cropWidthPx(), r.observations());
     }
 
     /**

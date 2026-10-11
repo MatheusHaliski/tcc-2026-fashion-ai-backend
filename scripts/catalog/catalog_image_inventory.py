@@ -74,12 +74,28 @@ def _valid_crop(crop: Mapping) -> bool:
     return x >= 0 and y >= 0 and w > 0 and h > 0 and x + w <= 1.0001 and y + h <= 1.0001
 
 
-def _fabric_frame_ok(frame: Mapping) -> bool:
-    """Quadro só de tecido (CATALOG_FRAME_34_FABRIC_V2): a política registrada e 100% da área coberta pela peça. O quadro
-    antigo de 50% da largura (V1) podia mostrar fundo e não conta como padronizado — é refeito na próxima execução."""
-    coverage = frame.get("fabricCoverage")
-    return (frame.get("version") == FRAME_VERSION and frame.get("policy") == FRAME_POLICY
-            and isinstance(coverage, (int, float)) and not isinstance(coverage, bool) and coverage == 1)
+def _product_frame_ok(crop: Mapping) -> bool:
+    """Quadro da regra do produto (CATALOG_FRAME_34_PRODUCT_RULE_V3): a política registrada, a regra aplicada e o recorte
+    válido para ela — parte de cima/baixo dentro da foto e 100% peça; objeto inteiro (WIDTH/CONTAIN) dentro do quadro, que
+    pode passar da foto (fundo de estúdio). Os quadros antigos (V1 de 50%, V2 só de tecido) não contam: são refeitos."""
+    frame = crop.get("editorFrame") or {}
+    rule = frame.get("rule") or {}
+    rect = crop.get("crop")
+    if frame.get("version") != FRAME_VERSION or frame.get("policy") != FRAME_POLICY or rule.get("fit") not in ("COVER", "WIDTH", "CONTAIN"):
+        return False
+    if not isinstance(rect, dict):
+        return False
+    values = [rect.get(k) for k in ("x", "y", "w", "h")]
+    if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in values):
+        return False
+    x, y, w, h = values
+    if w <= 0 or h <= 0:
+        return False
+    if frame.get("coverageScope") is not None:
+        return _valid_crop(crop) and frame.get("garmentCoverage") == 1
+    inside = frame.get("objectInside")
+    return (x >= -2 and y >= -2 and x + w <= 3 and y + h <= 3
+            and (rule.get("fit") == "COVER" or (isinstance(inside, (int, float)) and inside >= .999)))
 
 
 def is_standardized(record: Mapping, current_version: str = CURRENT_VERSION) -> bool:
@@ -105,8 +121,8 @@ def is_standardized(record: Mapping, current_version: str = CURRENT_VERSION) -> 
                 and (_metadata(record, "assets") or {}).get("card") == record.get("stored_url")
                 and (_metadata(record, "assets") or {}).get("framingVersion") == FRAME_VERSION
                 and len(str((_metadata(record, "assets") or {}).get("sha256") or "")) == 64
-                and _valid_crop(crop) and crop.get("aspect") == "3:4"
-                and _fabric_frame_ok(frame) and frame.get("requiresReview") is False
+                and crop.get("aspect") == "3:4"
+                and _product_frame_ok(crop) and frame.get("requiresReview") is False
                 and crop.get("ruleCompliant") is True)
     if _value(record, "pipeline_version", "pipelineVersion") != current_version:
         return False

@@ -98,13 +98,15 @@ o relatório diz por quê. Para sites com URLs de produto fora do padrão, `bran
 O coletor precisa de acesso direto aos sites das marcas. No ambiente de desenvolvimento em nuvem do projeto, o proxy
 bloqueia esses domínios: o relatório mostra `PAROU: … sem conexão`. Rode-o numa máquina com internet aberta.
 
-## Quadro do editor por categoria (3:4, 50%)
+## Quadro do editor por categoria (3:4, regra do produto — V3)
 
-Após compilar o JAR atual e instalar `requirements-images.txt`, execute na raiz:
+Após compilar o JAR atual (`mvn -q -DskipTests package` — obrigatório: o script
+recusa um JAR sem a capacidade `productFrameVersion`) e instalar
+`requirements-images.txt`, execute na raiz:
 
 ```bash
 python3 scripts/catalog/process_catalog_images.py --database --apply --category-frame \
-  --output data/catalog/frame-34-50.xlsx --workers 4 --java-threads 2
+  --output data/catalog/frame-34-v3.xlsx --workers 4 --java-threads 2
 ```
 
 Use primeiro `--limit 20` e um arquivo de saída diferente para conferir uma amostra.
@@ -113,25 +115,66 @@ verificando o conteúdo por SHA-256 antes de atualizar `stored_url`/`assets_json
 O card usa `PROCESSED`, sem aplicar o recorte novamente. A URL de origem e o
 objeto anterior ficam preservados para recuperação; não sobrescreve arquivos
 em servidores das marcas. Só fontes com `allows_image_persistence` habilitado
-e domínio correspondente podem persistir imagens. O domínio é normalizado
-(maiúsculas/`www.`) e também reconhece subdomínios da fonte na URL da foto,
-com a mesma regra de limite entre nomes usada pela API. As demais são reportadas
-sem atualização. Configure `S3_BUCKET`, `S3_ENDPOINT`, região e credenciais,
-mais `STORAGE_PUBLIC_BASE_URL` (HTTPS) ou `S3_SERVE_THROUGH_API=true` com
-`APP_BASE_URL` (HTTPS) para o bucket privado. O quadro 3:4 contém só tecido da
-peça (política `FABRIC_ONLY_100`): o Java (`FabricFrame`) devolve o maior
-retângulo 3:4 dentro da máscara de tecido, na região da categoria/subcategoria
-(peito, painel frontal de peça aberta, braguilha ou frente abaixo do cós, cabedal,
-corpo do acessório), e o script só aceita cobertura de tecido 1,0. Sem esse
-quadro (acessório sem tecido, peça da cor do fundo, região pequena demais…) a foto
-não é gravada (`FABRIC_FRAME_UNAVAILABLE:<motivo>`); regras e motivos em
-`docs/catalogo/PROCESSAR_ACERVO_IMAGENS.md`. Zíper/cadarço estimados (não
-detectados pelo pipeline) ficam em `NEEDS_REPROCESSING` para revisão.
-Revisões humanas e processamento ativo são preservados.
+e domínio correspondente podem persistir imagens (ou a decisão explícita
+`--force-category-frame`, ver `docs/catalogo/PROCESSAR_ACERVO_IMAGENS.md`). O domínio
+é normalizado (maiúsculas/`www.`) e também reconhece subdomínios da fonte na URL da
+foto, com a mesma regra de limite entre nomes usada pela API. Configure `S3_BUCKET`,
+`S3_ENDPOINT`, região e credenciais, mais `STORAGE_PUBLIC_BASE_URL` (HTTPS) ou
+`S3_SERVE_THROUGH_API=true` com `APP_BASE_URL` (HTTPS) para o bucket privado. Antes
+de ler o banco ou iniciar o Java, o modo confere `MYSQL_HOST`, `MYSQL_DATABASE`,
+`MYSQL_USER`, `MYSQL_PASSWORD` (aceitando os nomes do Railway), `S3_BUCKET`,
+`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` e a URL pública do bucket, e para com a
+lista das variáveis que faltam — só os nomes, nunca os valores (código de saída 2).
+
+O quadro 3:4 segue a **Regra de Enquadramento do Produto do card**
+(`catalog/semantic-regions.json`, política `PRODUCT_RULE`), calculada pelo mesmo
+motor do card (`SemanticCropper.registryRuleCrop`); o Java (`ProductRuleFrame`)
+devolve o quadro e o script confere e grava:
+
+| Categoria / subcategoria | Regra | Quadro |
+|---|---|---|
+| parte de cima, peça inteira | COVER / TOP | a peça preenche o quadro, gola/decote no topo, mangas cortadas pelas laterais; com modelo, a partir do decote, sem rosto/pescoço nem pele |
+| parte de baixo | COVER / TOP | cós no topo, a peça na largura toda, cós/bolsos/braguilha na metade de cima, pernas além da base; com modelo, sem a camisa/jaqueta de cima |
+| saia, saia-short | COVER / TOP | cós no topo, o quadro todo é peça |
+| calçado | WIDTH / CENTER | o calçado inteiro na largura (folga de 2%), centrado, fundo em cima e embaixo |
+| bolsa, mochila, joias, gorro, cachecol, boné | CONTAIN / CENTER | o objeto inteiro, centrado, com margem |
+| relógio | COVER / FOCUS | o mostrador no centro |
+| cinto | CONTAIN / FOCUS | o cinto inteiro, centrado (fivela não detectada) |
+| óculos | WIDTH / CENTER | as duas lentes na largura |
+
+O que passar da foto num objeto inteiro é completado com a cor do fundo de estúdio
+(como o smartPadding do card); quadros de cobertura arredondam para dentro até o
+3:4 exato, objetos inteiros para fora. Quadro de cobertura (parte de cima, peça
+inteira, parte de baixo) com menos de 55% da largura da peça na faixa do topo do
+quadro — o tronco nas linhas do quadro a partir do decote, o quadril na faixa do cós
+ao gancho — é um zoom de tecido e é recusado (`COVER_FRAME_TOO_NARROW`; a medida fica
+em `editorFrame.frameWidthShare`); packshots têm a largura do tronco/quadril e não
+são afetados. Sem quadro pela regra (calçado no pé, cós coberto pela peça de cima,
+nenhum quadro de cobertura na gola/no cós, quadro pequeno ou estreito demais, fundo
+sem cor de estúdio) nenhum quadro novo é gravado (`FRAME_UNAVAILABLE:<motivo>`);
+regras, motivos e a avaliação nas fotos reais em
+`docs/catalogo/PROCESSAR_ACERVO_IMAGENS.md`. Dúvida de conformidade (foco fora da
+metade de cima, calçado que não está de lado) fica em `NEEDS_REPROCESSING` para
+revisão no modo padrão e vira observação no modo forçado. Revisões humanas e
+processamento ativo são preservados. A fonte da regra (piece_type ou subcategoria,
+versão do registro), `fit`, `align` e a cobertura ficam em `assets_json.editorFrame`.
+
 O modo é explícito e não muda o pipeline automático da API. A versão dos metadados
-é `CATALOG_FRAME_34_FABRIC_V2` (a `CATALOG_FRAME_34_50_V1`, de quadro com 50% da
-largura, conta como pendente e é refeita); checkpoints guardam a análise original (os gravados antes do `FabricFrame` são analisados de novo), para reaplicar
-as regras sem baixar novamente. No Railway, execute em um job com o checkout,
+é `CATALOG_FRAME_34_PRODUCT_RULE_V3`; as anteriores — `CATALOG_FRAME_34_50_V1`
+(quadro de 50% da largura) e `CATALOG_FRAME_34_FABRIC_V2` (close só de tecido) —
+contam como pendentes e **são refeitas** na próxima execução. Se a V3 recusar a foto
+e ela ainda mostrar o JPEG antigo (`/catalog/framed/`), o quadro antigo é **desfeito**:
+`stored_url`/`assets_json` voltam ao que a gravação antiga preservou
+(`previousStoredUrl`/`previousAssets`, seguindo V2 sobre V1 até antes do primeiro
+quadro; sem nada anterior, a foto original da marca), o recorte 3:4 antigo dá lugar
+à análise de nível A atual e `pipeline_version` V3 com o marcador
+`editorFrame.decision = REVERTED_TO_ORIGINAL` (e o motivo) impede que a próxima
+execução refaça a foto. A gravação usa o mesmo caminho guardado e auditado
+(concorrência, revisão humana, antes/depois, COMMIT incerto), nada é apagado do S3
+e o resumo/planilha contam `frame_reverted`. Checkpoints guardam a
+análise original; os gravados antes da regra do produto (sem `productFrame`, ou de
+outra versão dela) são analisados de novo, para reaplicar as regras sem baixar
+novamente. No Railway, execute em um job com o checkout,
 Python, Java, JAR compilado e as mesmas variáveis MySQL do backend; o container
 atual da API não deve ser presumido como contendo os scripts e suas dependências.
 

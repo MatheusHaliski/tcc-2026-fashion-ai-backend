@@ -121,6 +121,22 @@ public final class SemanticRegionRegistry {
                 sub != null && sub.path("laceless").asBoolean(false), rule(pick(sub, base, "rule")));
     }
 
+    /**
+     * De onde vem a regra de enquadramento resolvida para piece_type + subcategoria: {@code "subcategory:<nome>"} quando a
+     * subcategoria (ou a que a substitui na taxonomia) tem regra própria no JSON, {@code "pieceType"} quando vale a regra
+     * da categoria. Registrado pelo lote do acervo junto do quadro (de onde saiu cada decisão).
+     */
+    public String ruleOrigin(PieceType type, String subcategory) {
+        JsonNode base = types.get(type);
+        if (subcategory == null) {
+            return "pieceType";
+        }
+        String name = TaxonomyRegistry.get().subcategory(subcategory).filter(TaxonomyRegistry.Subcategory::legacy)
+                .map(TaxonomyRegistry.Subcategory::replacedBy).orElse(subcategory);
+        JsonNode sub = base.path("subcategories").get(name);
+        return sub != null && sub.has("rule") ? "subcategory:" + name : "pieceType";
+    }
+
     private static FramingRule rule(JsonNode n) {
         if (n == null || n.isMissingNode() || n.isNull()) {
             return null;

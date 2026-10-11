@@ -138,6 +138,26 @@ def configure_railway_environment():
         os.environ.setdefault("MYSQL_SSL_MODE", "REQUIRED")
 
 
+# --apply --category-frame grava no MySQL e no S3: sem estas variáveis o lote nem começa (só os nomes são exibidos)
+FRAME_MYSQL_VARIABLES = ("MYSQL_HOST", "MYSQL_DATABASE", "MYSQL_USER", "MYSQL_PASSWORD")
+FRAME_S3_VARIABLES = ("S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY")
+
+
+def missing_frame_environment(environ=None):
+    """Nomes das variáveis exigidas por --apply --category-frame que faltam (depois dos nomes do Railway); nunca valores."""
+    environ = os.environ if environ is None else environ
+
+    def present(name):
+        return bool(str(environ.get(name) or "").strip())
+    missing = [name for name in FRAME_MYSQL_VARIABLES + FRAME_S3_VARIABLES if not present(name)]
+    if str(environ.get("S3_SERVE_THROUGH_API") or "").strip().lower() == "true":
+        if not present("APP_BASE_URL"):
+            missing.append("APP_BASE_URL")
+    elif not present("STORAGE_PUBLIC_BASE_URL"):
+        missing.append("STORAGE_PUBLIC_BASE_URL (ou APP_BASE_URL com S3_SERVE_THROUGH_API=true)")
+    return missing
+
+
 def public_image_url(url: str) -> str:
     """Reject credentials, non-HTTPS sources, and local/internal addresses."""
     try:
@@ -363,10 +383,18 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
         result["status_note"] = "Preservado: revisão humana ou processamento em andamento."
         return result
     category_frame = getattr(analyzer, "category_frame", False)
+    if category_frame:
+        from category_frame import reverted_marker
+        reverted = reverted_marker(result)
+        if reverted and reverted.get("productFrameVersion") == analyzer.ready.get("productFrameVersion"):
+            # a mesma regra já recusou esta foto e desfez o quadro antigo: não baixa nem analisa de novo
+            result["status_note"] = "Preservado: a regra V3 recusou esta foto e o quadro antigo já foi desfeito (mesma versão da regra)."
+            return result
     frame_storage = getattr(analyzer, "frame_storage", None)
     # Decisão explícita do responsável (--force-category-frame): dispensa só a autorização da fonte e a
     # identificação visual confirmada; as proteções técnicas de download continuam valendo.
     force = bool(category_frame) and getattr(analyzer, "force_frame", False) is True
+    response = None
     try:
         if category_frame and not force:
             if result.get("category") not in {"upper_piece", "lower_piece", "shoes_piece", "accessory_piece", "full_body_piece"}:
@@ -377,8 +405,9 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
         # só com as proteções técnicas (HTTPS, sem credenciais, host público, tamanho, tipo).
         allowed = None if force else (result["persistence_decision"]["domains"] if frame_storage else None)
         response = checkpoint.get(result, analyzer.ready["pipelineVersion"])
-        if response is not None and category_frame and "fabricFrame" not in response:
-            response = None                     # análise guardada antes do quadro só de tecido: refaz
+        if response is not None and category_frame and (not isinstance(response.get("productFrame"), dict)
+                                                         or response["productFrame"].get("version") != analyzer.ready.get("productFrameVersion")):
+            response = None                     # análise guardada antes da regra do produto (V1/V2) ou de outra versão dela: refaz
         if response is None:
             path = downloader.get(result["source_url"], allowed_domains=allowed) if frame_storage else downloader.get(result["source_url"])
             try:
@@ -389,9 +418,9 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
                 code = getattr(error, "code", None)
                 if not category_frame or not code or code in JAVA_TRANSPORT_ERRORS:
                     raise
-                # Java não analisou esta foto (ex.: IMAGE_TOO_SMALL): sem a máscara de tecido não há quadro — a foto não é
-                # reenquadrada (um quadro calculado só pela geometria mostraria fundo)
-                raise ValueError("FABRIC_FRAME_UNAVAILABLE:JAVA_" + str(code)) from error
+                # Java não analisou esta foto (ex.: IMAGE_TOO_SMALL): sem a máscara da peça não há como aplicar a regra — a foto
+                # não é reenquadrada
+                raise ValueError("FRAME_UNAVAILABLE:JAVA_" + str(code)) from error
         result["java_analysis_completed"] = True
         if category_frame:
             from category_frame import apply_frame, report_fields, FORCED_DECISION
@@ -438,6 +467,17 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
         else:
             result["error"] = type(error).__name__
         result["status_note"] = "Pipeline não aplicado: " + result["error"]
+        if category_frame and isinstance(error, ValueError) and result["error"].startswith("FRAME_UNAVAILABLE:"):
+            # a V3 recusou a foto; se ela ainda mostra um quadro antigo (V1/V2), volta ao estado anterior ao quadro pelo mesmo
+            # caminho guardado e auditado da gravação (catalog_image_updates.apply_product), com a análise Java atual quando houve
+            from category_frame_storage import revert_plan
+            plan = revert_plan(result, result["error"], product_frame_version=analyzer.ready.get("productFrameVersion"))
+            if plan:
+                columns = (response or {}).get("columns") if result.get("java_analysis_completed") else None
+                result["frame_revert"] = plan
+                result["analysis"] = {"frame_revert": plan, "columns": columns}
+                result["status_note"] = ("Quadro V3 recusado (" + result["error"].split(":", 1)[1] + "): a imagem enquadrada antiga ("
+                                         + str(plan["revertedFrom"]) + ") volta ao estado anterior ao quadro.")
     return result
 
 
@@ -462,12 +502,14 @@ def main(argv=None):
     source = ap.add_mutually_exclusive_group(required=True)
     source.add_argument("--snapshot", nargs="+", type=Path, help="JSONL/JSONL.GZ: estado local, não produção")
     source.add_argument("--database", action="store_true", help="Inventário atual do MySQL via MYSQL_*")
-    ap.add_argument("--category-frame", action="store_true", help="Quadro 3:4 100%% tecido (sem fundo, pessoa ou objeto), no lugar da categoria/subcategoria; "
-                    "sem tecido suficiente a foto não é reenquadrada; focos estimados de zíper/cadarço exigem revisão (requer --apply)")
+    ap.add_argument("--category-frame", action="store_true",
+                    help="Quadro 3:4 pela regra de enquadramento do produto do card (catalog/semantic-regions.json): parte de cima e de "
+                         "baixo preenchem 100%% do quadro a partir da gola/do cós, calçado inteiro na largura, acessório inteiro contido; "
+                         "sem quadro possível pela regra a foto não é reenquadrada; dúvida de conformidade exige revisão (requer --apply)")
     ap.add_argument("--force-category-frame", action="store_true",
                     help="Decisão do responsável: enquadra e persiste todas as fotos sem exigir autorização da fonte nem identificação "
-                         "visual confirmada; focos estimados viram observações no relatório. O quadro continua 100%% tecido: sem ele a foto "
-                         "não é gravada (requer --database --apply --category-frame)")
+                         "visual confirmada; dúvidas de conformidade viram observações no relatório. Sem quadro pela regra do produto a "
+                         "foto não é gravada (requer --database --apply --category-frame)")
     ap.add_argument("--apply", action="store_true", help="Aplicar pipeline; com --database persiste os metadados")
     ap.add_argument("--output", required=True, type=Path, help="Planilha .xlsx")
     ap.add_argument("--checkpoint", type=Path, help="SQLite de análises para retomada")
@@ -497,6 +539,13 @@ def main(argv=None):
     from catalog_image_workbook import write_workbook
     if args.database:
         configure_railway_environment()
+    if args.apply and args.category_frame:
+        missing = missing_frame_environment()
+        if missing:
+            progress("Configuração incompleta para --apply --category-frame: defina no ambiente " + ", ".join(missing)
+                     + ". O MySQL também aceita os nomes do Railway (MYSQL_PUBLIC_URL, MYSQLHOST, MYSQLDATABASE, MYSQLUSER, "
+                       "MYSQL_APP_PASSWORD). Nenhum valor é exibido; nada foi lido, baixado ou gravado.")
+            return 2
     args.output.parent.mkdir(parents=True, exist_ok=True)
     progress("Consultando o inventário atual do MySQL..." if args.database else "Lendo o inventário local...")
     records = list(load_database() if args.database else load_snapshot(args.snapshot))
@@ -516,6 +565,21 @@ def main(argv=None):
     if args.apply:
         from catalog_image_analyzer import CatalogImageAnalyzer, ensure_classpath
         from catalog_image_inventory import is_standardized
+        frame_storage = None
+        if args.category_frame:
+            # antes do Java: configuração do S3 inválida (URL pública sem HTTPS, boto3 ausente) para o lote no início, sem
+            # traceback e sem exibir valores
+            from category_frame_storage import FrameStorage
+            try:
+                frame_storage = FrameStorage()
+            except ImportError:
+                progress("boto3 não instalado: python3 -m pip install -r scripts/catalog/requirements-images.txt. Nada foi baixado ou gravado.")
+                return 2
+            except (KeyError, ValueError) as error:
+                detail = ("variável " + str(error.args[0]) + " ausente" if isinstance(error, KeyError)
+                          else str(error) if str(error).startswith("Configure ") else "confira S3_ENDPOINT, S3_REGION e as credenciais")
+                progress("Configuração do S3 inválida para --category-frame: " + detail + ". Nenhum valor é exibido; nada foi baixado ou gravado.")
+                return 2
         progress("Preparando e iniciando o pipeline Java...")
         classpath = ensure_classpath(Path(__file__).resolve().parents[2], classpath=args.java_classpath)
         checkpoint = AnalysisCheckpoint(args.checkpoint or args.output.with_suffix(".checkpoint.sqlite"))
@@ -532,15 +596,14 @@ def main(argv=None):
                                           stderr_path=args.output.with_suffix(".java.log")) as analyzer:
                     if analyzer.ready["pipelineVersion"] != PIPELINE_VERSION:
                         raise RuntimeError("JAR desatualizado: compile a versão atual do pipeline antes de aplicar")
-                    if args.category_frame and not analyzer.ready.get("fabricFrameVersion"):
-                        raise RuntimeError("JAR sem o quadro só de tecido: rode `mvn -q -DskipTests package` antes de aplicar")
+                    if args.category_frame and not analyzer.ready.get("productFrameVersion"):
+                        raise RuntimeError("JAR sem a regra de enquadramento do produto (V3): rode `mvn -q -DskipTests package` antes de aplicar")
                     analyzer.category_frame = args.category_frame
                     analyzer.force_frame = args.force_category_frame
                     if args.force_category_frame:
                         progress("Modo forçado: autorização da fonte e identificação visual não bloqueiam; proteções técnicas de download mantidas.")
                     if args.category_frame:
-                        from category_frame_storage import FrameStorage
-                        analyzer.frame_storage = FrameStorage()
+                        analyzer.frame_storage = frame_storage
                     progress("Pipeline Java pronto.")
                     records = analyze_records(records, downloader, analyzer, checkpoint, workers=args.workers)
                     summary["network_proxy_blocked"] = downloader.proxy_blocked
@@ -576,9 +639,15 @@ def main(argv=None):
                                         if row["image_id"] in committed:
                                             update_committed(row, committed[row["image_id"]])
                                             row["standardized_after"] = is_standardized(row)
-                                            row["status_note"] = ("Enquadramento salvo no S3 e referência ativa atualizada no banco." if (row.get("analysis") or {}).get("framed_assets")
-                                                                  else "Pipeline e enquadramento salvos no banco." if row.get("analysis")
-                                                                  else "Imagem canônica reclassificada no banco.")
+                                            if (row.get("analysis") or {}).get("frame_revert"):
+                                                row["frame_reverted"] = True
+                                                row["frame_observations"] = ["REVERTED_TO_ORIGINAL:" + row["frame_revert"]["reason"].split(":", 1)[1]]
+                                                row["status_note"] = ("Quadro V3 recusado: a imagem enquadrada antiga (" + str(row["frame_revert"]["revertedFrom"])
+                                                                      + ") voltou ao estado anterior ao quadro no banco; o JPEG antigo continua no S3.")
+                                            else:
+                                                row["status_note"] = ("Enquadramento salvo no S3 e referência ativa atualizada no banco." if (row.get("analysis") or {}).get("framed_assets")
+                                                                      else "Pipeline e enquadramento salvos no banco." if row.get("analysis")
+                                                                      else "Imagem canônica reclassificada no banco.")
                                             row["write_result"] = "COMMITTED"
                                         elif row["image_id"] in analyses:
                                             row["status_note"] = "Não alterado: registro mudou ou revisão humana preservada."
@@ -600,9 +669,12 @@ def main(argv=None):
     summary["failure_reasons"] = dict(Counter(r["error"].split(":", 1)[0] for r in records if r.get("error")))
     summary["frame_observations"] = dict(Counter(o.split(":", 1)[0] for r in records for o in (r.get("frame_observations") or [])))
     summary["frame_fallbacks"] = sum(bool(r.get("frame_fallback")) for r in records)
-    summary["fabric_frame_unavailable"] = dict(Counter(r["error"].split(":", 2)[1] for r in records
-                                                        if str(r.get("error", "")).startswith("FABRIC_FRAME_UNAVAILABLE:")))
+    summary["frame_unavailable"] = dict(Counter(r["error"].split(":", 2)[1] for r in records
+                                                 if str(r.get("error", "")).startswith("FRAME_UNAVAILABLE:")))
+    summary["fabric_frame_unavailable"] = summary["frame_unavailable"]        # nome antigo (V2), mantido nos relatórios
     summary["write_results"] = dict(Counter(str(r.get("write_result")).split(":", 1)[0] for r in records if r.get("write_result")))
+    # quadros antigos (V1/V2) desfeitos porque a V3 recusou a foto (só os confirmados no COMMIT)
+    summary["frame_reverted"] = sum(r.get("frame_reverted") is True for r in records)
     progress("Exportando a planilha e os relatórios de auditoria...")
     jsonl = args.output.with_suffix(".audit.jsonl")
     with jsonl.open("w", encoding="utf-8") as stream:

@@ -3,6 +3,10 @@
 The Java analyzer and ranker run before the short SQL transaction. A product is
 the atomic unit: an inventory changed by the API/worker is skipped, rather than
 applying a canonical ranking calculated from an obsolete inventory.
+
+An analysis may also carry ``frame_revert`` (the V3 rule refused a photo that is
+still showing a V1/V2 framed JPEG): the image goes back to the reference that
+was active before the first frame, through the same guarded transaction.
 """
 from __future__ import annotations
 
@@ -18,9 +22,9 @@ except ImportError:  # direct script execution, like the other catalog commands
     from db import now, run_transaction
     from source_persistence import allows_persistence, source_decision
 try:
-    from .category_frame import VERSION as FRAME_VERSION
+    from .category_frame import POLICY as FRAME_POLICY, REVERTED_DECISION, VERSION as FRAME_VERSION, framed_url, legacy_framed
 except ImportError:
-    from category_frame import VERSION as FRAME_VERSION
+    from category_frame import POLICY as FRAME_POLICY, REVERTED_DECISION, VERSION as FRAME_VERSION, framed_url, legacy_framed
 
 
 METADATA_COLUMNS = (
@@ -117,6 +121,57 @@ def _columns(analysis):
     return patch
 
 
+def _dumps(value):
+    return json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False, default=str)
+
+
+def _revert_patch(row, analysis, instant):
+    """Patch that restores a legacy framed image (V1/V2) refused by V3 to its pre-frame reference.
+
+    ``stored_url``/``assets_json`` come back from what the legacy write preserved
+    (``category_frame_storage.pre_frame_state``). The legacy 3:4 crop must not
+    survive: with no processed asset the card crops the original by
+    ``crop_json`` and would show the old frame again. So the photo's current
+    level-A analysis (the Java columns, when the analysis ran) replaces the
+    metadata, or the crop is cleared. ``pipeline_version`` records the V3 decision
+    (the API worker leaves ``CATALOG_FRAME_*`` alone and the next run does not
+    redo it) with the ``REVERTED_TO_ORIGINAL`` marker in ``crop_json``,
+    ``metrics_json.debug`` and the restored ``assets_json``. Returns None when the
+    row is not showing a legacy frame anymore.
+    """
+    revert = analysis["frame_revert"]
+    if not isinstance(revert, Mapping) or not str(revert.get("reason") or "").startswith("FRAME_UNAVAILABLE:"):
+        raise ValueError("frame revert requires the V3 refusal reason")
+    if not legacy_framed(row):
+        return None
+    stored, assets = revert.get("stored_url"), revert.get("assets")
+    if stored is not None and (not isinstance(stored, str) or framed_url(stored)):
+        raise ValueError("frame revert must not restore another framed asset")
+    if assets is not None and (not isinstance(assets, Mapping) or any(framed_url(v) for v in assets.values())):
+        raise ValueError("frame revert must not restore framed assets")
+    marker = {"version": FRAME_VERSION, "policy": FRAME_POLICY, "decision": REVERTED_DECISION,
+              "reason": str(revert["reason"])[:200], "productFrameVersion": revert.get("productFrameVersion"),
+              "revertedFrom": row.get("pipeline_version"), "restoredTo": revert.get("restoredTo"),
+              "chainComplete": revert.get("chainComplete"), "observations": [REVERTED_DECISION]}
+    columns = analysis.get("columns")
+    if isinstance(columns, Mapping) and columns.get("processing_status") in DONE:
+        patch = _columns({"columns": columns})
+        patch["review_status"] = "PENDING" if patch["processing_status"] == "NEEDS_REPROCESSING" else "NONE"
+        crop = _json_value(patch.get("crop_json")) if patch.get("crop_json") else None
+        metrics = _json_value(patch.get("metrics_json")) if patch.get("metrics_json") else {}
+    else:
+        # the Java analysis did not run (JAVA_<code>): keep the other metadata, drop the legacy crop
+        patch, crop, metrics = {}, None, {}
+    if crop is not None:
+        crop["editorFrame"] = marker
+    metrics = dict(metrics) if isinstance(metrics, Mapping) else {}
+    metrics["debug"] = {**(metrics.get("debug") if isinstance(metrics.get("debug"), Mapping) else {}), "editorFrame": marker}
+    patch.update(pipeline_version=FRAME_VERSION, crop_json=_dumps(crop) if crop is not None else None, metrics_json=_dumps(metrics),
+                 stored_url=stored, assets_json=_dumps({**assets, "editorFrame": marker}) if assets else None,
+                 usage_status="PERSISTED" if stored else "REFERENCE_ONLY", processed_at=instant)
+    return patch
+
+
 def _candidate(row):
     outcome = row.get("review_status") if row.get("review_status") in PROTECTED_REVIEWS else row.get("processing_status")
     metrics = _json_value(row.get("metrics_json")) or {}
@@ -157,11 +212,22 @@ def apply_product(conn, records, analyses_by_image_id, ranker, *, persistence_ov
     instant = now()
     patches = {}
     skips = {}
+    framed = set()
+    reverts = {}
     prospective = {image_id: dict(row) for image_id, row in by_id.items()}
     for image_id, analysis in analyses.items():
         reason = _protected(by_id[image_id])
         if reason:
             skips[image_id] = reason
+            continue
+        if isinstance(analysis, Mapping) and analysis.get("frame_revert") is not None:
+            patch = _revert_patch(by_id[image_id], analysis, instant)
+            if patch is None:
+                skips[image_id] = "NOT_LEGACY_FRAME"
+                continue
+            reverts[image_id] = analysis["frame_revert"]
+            patches[image_id] = patch
+            prospective[image_id].update(patch)
             continue
         patch = _columns(analysis)
         if patch is None:
@@ -182,6 +248,7 @@ def apply_product(conn, records, analyses_by_image_id, ranker, *, persistence_ov
                 if recorded.get("mode") != persistence_override:
                     raise ValueError("persistence override requires the decision recorded in assets_json")
             patch.update(stored_url=assets["stored_url"], assets_json=assets["assets_json"], usage_status="PERSISTED")
+            framed.add(image_id)
         patches[image_id] = patch
         prospective[image_id].update(patch)
     if not patches:
@@ -249,6 +316,9 @@ def apply_product(conn, records, analyses_by_image_id, ranker, *, persistence_ov
                 for image_id, row in by_id.items():
                     stored = current[image_id]
                     checked = ("version", "image_url_hash", "image_url", *GUARD_COLUMNS, "source_url")
+                    if image_id in reverts:
+                        # a revert restores exactly the legacy frame it read: the active reference must be unchanged
+                        checked += ("stored_url", "assets_json")
                     if any(column in row and not _equal(column, stored.get(column), row[column]) for column in checked):
                         changed = True
                         break
@@ -257,7 +327,8 @@ def apply_product(conn, records, analyses_by_image_id, ranker, *, persistence_ov
                 return {"changed_ids": [], "skipped_ids": list(skipped), "skip_reasons": skipped, "changes": []}
             decisions = {}
             for image_id, patch in patches.items():
-                if patch.get("assets_json"):
+                # only a new framed asset is a new persistence; a revert restores what was already referenced
+                if image_id in framed:
                     cursor.execute("SELECT s.domain, s.active, s.allows_image_persistence FROM catalog_sources s JOIN catalog_products p ON p.brand_id=s.brand_id WHERE p.id=%s FOR UPDATE", (product_id,))
                     sources = cursor.fetchall()
                     if persistence_override is None:
@@ -281,8 +352,12 @@ def apply_product(conn, records, analyses_by_image_id, ranker, *, persistence_ov
                 change = {"image_id": image_id, "before": dict(row), "after": after}
                 if image_id in decisions:
                     change["persistence_decision_at_commit"] = decisions[image_id]
+                if image_id in reverts:
+                    change["frame_revert"] = {key: reverts[image_id].get(key) for key in
+                                              ("reason", "revertedFrom", "restoredTo", "levels", "chainComplete", "framedUrl")}
                 changes.append(change)
-            committed_result = {"changed_ids": list(patches), "skipped_ids": list(skips), "skip_reasons": dict(skips), "changes": changes}
+            committed_result = {"changed_ids": list(patches), "skipped_ids": list(skips), "skip_reasons": dict(skips), "changes": changes,
+                                "reverted_ids": [image_id for image_id in patches if image_id in reverts]}
             return committed_result
 
     return run_transaction(conn, write, label=f"metadados de imagens do produto {product_id}")

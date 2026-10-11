@@ -88,6 +88,26 @@ public final class SemanticCropper {
     }
 
     /**
+     * Regra de Enquadramento do Produto do registro aplicada à caixa da peça, na proporção pedida: o mesmo cálculo para o
+     * card do feed ({@code FeedFraming}, 4:5) e para o lote de enquadramento do acervo ({@link ProductRuleFrame}, 3:4) —
+     * os dois nunca divergem na regra. O foco é a região do perfil levada para a caixa da peça; a folga é a mínima do perfil,
+     * nunca abaixo de {@code marginFloor} (o lote pede 2% em WIDTH/CONTAIN para o arredondamento nunca cortar o objeto).
+     * Perfil sem regra (registro 1.x): null.
+     */
+    public static NRect registryRuleCrop(int imgW, int imgH, double aspect, NRect product, SemanticRegionRegistry.Profile profile,
+                                         double marginFloor) {
+        if (profile.rule() == null) {
+            return null;
+        }
+        return ruleCrop(imgW, imgH, aspect, product, registryFocus(product, profile), profile.rule(), Math.max(profile.margin()[0], marginFloor));
+    }
+
+    /** Região de foco do perfil (relativa à caixa da peça) em coordenadas da foto, sem regiões críticas. */
+    public static FramingStrategy.Focus registryFocus(NRect product, SemanticRegionRegistry.Profile profile) {
+        return new FramingStrategy.Focus(profile.focus().name(), product.sub(profile.focus().rect()), List.of(), "REGISTRY");
+    }
+
+    /**
      * Recorte 4:5 pela regra: COVER usa o menor lado da peça (a peça preenche o quadro e o excedente fica de fora),
      * WIDTH a largura da peça, CONTAIN o necessário para a peça inteira caber a partir do ponto de alinhamento.
      * {@code margin} é a folga de cada lado (fração do quadro).
