@@ -43,8 +43,7 @@ export function CatalogResultsGrid({ products, resetKey, renderProduct, total, h
 
   // Nova busca, filtro ou distribuição de colunas começa na primeira página; páginas que chegam do servidor somam
   // à lista sem tirar a pessoa de onde está (o primeiro item continua o mesmo).
-  const firstId = products[0]?.id;
-  useLayoutEffect(() => { setPage(0); }, [resetKey, firstId, columns]);
+  useLayoutEffect(() => { setPage(0); }, [resetKey, columns]);
   // avançou além do que já chegou: busca a próxima página e fica nela quando chegar
   const waiting = page > lastPage && hasMoreRemote;
   const asked = useRef(-1);
