@@ -98,6 +98,31 @@ o relatório diz por quê. Para sites com URLs de produto fora do padrão, `bran
 O coletor precisa de acesso direto aos sites das marcas. No ambiente de desenvolvimento em nuvem do projeto, o proxy
 bloqueia esses domínios: o relatório mostra `PAROU: … sem conexão`. Rode-o numa máquina com internet aberta.
 
+## Reparo: produtos agrupados pela URL antiga (Gap `?pid=`)
+
+Até 10/10/2026 a URL canônica descartava a query inteira. A Gap identifica cada peça só por `?pid=`
+(`gap.com/browse/product.do?pid=…`), então as 248 linhas da Gap no acervo caíam no mesmo produto, que juntava as fotos
+de todas (839 fotos num produto só). A regra nova mantém os parâmetros de identidade (`IDENTITY_PARAMS`: pid,
+productid, product_id, prodid, itemid, item_id, styleid, style_id, skuid) em `normalize_product.py` e
+`CatalogNormalizer.java`, mas um banco que já importou o acervo continua com o produto agrupado. Para consertar:
+
+```bash
+python scripts/catalog/repair_merged_products.py                                    # só relata, nada é gravado
+python scripts/catalog/repair_merged_products.py --reimport data/catalog/acervo/acervo-oficial-2026-10-05.jsonl.gz --dry-run
+python scripts/catalog/repair_merged_products.py --apply --reimport data/catalog/acervo/acervo-oficial-2026-10-05.jsonl.gz
+```
+
+| Passo | O que faz |
+|---|---|
+| Detecta | produto visível com URL canônica sem identificador e fotos vindas de 2+ páginas que a regra nova separa (cada foto guarda a página de origem em `source_url`) |
+| Esconde (`--apply`) | `ingestion_status = REJECTED`; nada é apagado, e peças de guarda-roupa que apontam para ele continuam válidas (o relatório diz quantas) |
+| Reimporta (`--reimport`) | só as linhas das peças agrupadas, com `--skip-existing`: uma peça por página, cada uma com a própria foto |
+| Idempotente | rodar de novo não encontra mais nada |
+
+Simulação com as 248 linhas reais da Gap (teste em `tests/test_repair_merged.py` e banco SQLite descartável): antes,
+1 produto com 839 fotos; depois, 248 peças com 1 a 4 fotos cada, nenhuma sem foto. Gravar na produção exige rodar
+com as variáveis `MYSQL_*` do backend e `--apply`.
+
 ## Quadro do editor por categoria (3:4, 50%)
 
 Após compilar o JAR atual e instalar `requirements-images.txt`, execute na raiz:

@@ -126,6 +126,13 @@ conferido aqui; as telas mostram o número real de cada ambiente. No repositóri
 grade. Evidências (API simulada com os nomes, marcas e tipos desse arquivo; fotos trocadas pela imagem padrão FAI da
 categoria): [`docs/evidencias/catalogo-completo-2026-10-10/`](../evidencias/catalogo-completo-2026-10-10/).
 
+### 4.2 Peças agrupadas pela URL antiga (Gap, 11/10/2026)
+
+A URL canônica descartava a query, e as 248 peças da Gap (identificadas só por `?pid=`) viravam um produto com 839
+fotos. A regra nova mantém os parâmetros de identidade (commit 4ac39d6f; paridade Python × Java em `dedup-cases.json`).
+Bancos já importados se consertam com `scripts/catalog/repair_merged_products.py` (detecta, esconde o agrupado sem
+apagar e reimporta uma peça por página); passo a passo em `scripts/catalog/README.md`.
+
 ## 5. Ranqueamento ("% compatível")
 
 Candidatos pelo índice `FULLTEXT ... WITH PARSER ngram` de `catalog_products.search_text` (marca, nome, modelo, cor,
