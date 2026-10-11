@@ -2366,6 +2366,17 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 @media (min-width: 640px) { .catalog-results-matrix { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (min-width: 1024px) { .catalog-results-matrix { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .fitting-stage { position: relative; height: clamp(460px, 68vh, 760px); background: var(--surface-2); border-top: 3px solid var(--fitting-accent, var(--mark)); transition: border-color .4s; }
+/* botões de acessibilidade do palco 3D (girar 30°, aproximar/afastar, voltar à frente): linha no canto inferior direito; no celular, coluna à direita, longe da legenda e do avatar */
+.fitting-orbit { position: absolute; right: 12px; bottom: 12px; z-index: 2; display: flex; align-items: center; gap: 2px; padding: 4px; border: 1px solid var(--line-soft); border-radius: 999px; background: color-mix(in srgb, var(--surface) 90%, transparent); box-shadow: var(--shadow); backdrop-filter: blur(6px); }
+.fitting-orbit .btn { border-color: transparent; background: transparent; color: var(--ink); }
+.fitting-orbit .btn:hover { background: var(--surface-2); }
+.fitting-orbit .btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; border-radius: 999px; }
+.fitting-orbit .btn[aria-disabled="true"] { opacity: .4; cursor: not-allowed; }
+.fitting-orbit-sep { align-self: stretch; width: 1px; margin: 6px 3px; background: var(--line-soft); }
+@media (max-width: 640px) {
+  .fitting-orbit { top: 50%; right: 8px; bottom: auto; flex-direction: column; transform: translateY(-50%); }
+  .fitting-orbit-sep { width: auto; height: 1px; margin: 3px 6px; }
+}
 .fitting-slots { display: grid; gap: 8px; }
 .fitting-slot { display: grid; gap: 4px; padding: 8px 10px; border: 1px solid var(--line-soft); border-radius: 10px; background: var(--surface); }
 .fitting-slot.is-filled { border-color: color-mix(in oklab, var(--thread) 40%, var(--line-soft)); }
