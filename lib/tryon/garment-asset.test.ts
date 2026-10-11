@@ -8,7 +8,7 @@ const P = (subcategory: string, extra: Record<string, unknown> = {}) => ({ id: `
 
 describe("molde por subcategoria (códigos da taxonomia)", () => {
   it("corrige as famílias que viravam outra peça", () => {
-    expect(kindOf(P("polo_shirt"))).toBe("tee");            // antes: camisa de manga longa
+    expect(kindOf(P("polo_shirt"))).toBe("shirt");          // molde próprio: manga curta com pala de botões
     expect(kindOf(P("vest"))).toBe("vest");                 // antes: jaqueta com mangas
     expect(kindOf(P("culottes"))).toBe("culottes");         // antes: calça até o tornozelo
     expect(kindOf(P("bermuda_shorts"))).toBe("bermuda");    // antes: short curto
