@@ -20,7 +20,8 @@ import { MirrorPartSheet } from "@/components/mirror/mirror-part-sheet";
  *  - "Para quem é o look": chips (radiogroup) com os tipos do banco.
  *  - "Partes do look": a grade de células do Provador (Parte de cima, Peça única, Parte de baixo, Calçado, Acessório). A
  *    camada externa do servidor (jaqueta, blazer…) entra na Parte de cima — não existe "Camada externa" na tela.
- *    Tocar numa célula abre a folha da parte: vestindo agora, lista do espelho, guarda-roupa e sugestões.
+ *    Tocar numa célula abre a folha da parte: vestindo agora, roupas em mãos (a lista do espelho e a peça na mão),
+ *    guarda-roupa e sugestões. No quarto, as roupas em mãos só aparecem aqui (a célula conta quantas há).
  *  - Vista-me: células de ocasião + humor/clima opcionais; peças fixadas ("Manter") viram âncoras.
  *  - Ações: usar hoje, salvar (um toque), abrir no editor, provar no Provador, tira uma coisa, GRWM e limpar (desfazíveis).
  */
@@ -53,6 +54,16 @@ export const MIRROR_PARTS: MirrorPart[] = [
   { id: "accessory", slots: ["accessory"], label: "room.mirror.slot.accessory", glyph: "bag", suggest: "accessory", max: 4 },
 ];
 export const partOfSlot = (slot?: string | null) => MIRROR_PARTS.find((p) => p.slots.includes(slot ?? "")) ?? null;
+const PART_OF_CATEGORY: Record<string, string> = { upper_piece: "top", full_body_piece: "dress", lower_piece: "lower", shoes_piece: "shoes", accessory_piece: "accessory" };
+/** Parte do look de uma peça: pelo slot do espelho; sem slot (peça na mão, lista antiga), pela categoria. */
+const partOfPiece = (p: Pick<MirrorPieceRef, "slot" | "category">) => partOfSlot(p.slot) ?? MIRROR_PARTS.find((x) => x.id === PART_OF_CATEGORY[p.category ?? ""]) ?? null;
+/** Roupas em mãos de uma parte, ainda não vestidas: a lista do espelho (trazidas do quarto) e a peça segurada fora dela. */
+export function inHandOf(part: MirrorPart, data: MirrorData, held: MirrorPieceRef[] = []): (MirrorPieceRef & { listed: boolean })[] {
+  const worn = new Set(wornOf(data).map((w) => w.p.id)), rack = data.rack ?? [];
+  const listed = rack.filter((r) => !worn.has(r.id) && partOfPiece(r)?.id === part.id).map((r) => ({ ...r, listed: true }));
+  const loose = held.filter((h) => !worn.has(h.id) && !rack.some((r) => r.id === h.id) && partOfPiece(h)?.id === part.id).map((h) => ({ ...h, listed: false }));
+  return [...loose, ...listed];
+}
 
 /** Pedidos ao espelho: a resposta com `slots` substitui o estado; sem ela, recarrega. `busy` é a chave do pedido em andamento. */
 export function useMirrorActions<T extends MirrorData>(setData: (d: T) => void, reload: () => void) {
@@ -85,7 +96,7 @@ export interface MirrorHost {
 type Notice = { text: string; actions?: { label: string; href?: string; onClick?: () => void }[] };
 const ASSET_TONE = { PENDING: "mark", IMAGE_2D: "chalk", MOULD_3D: undefined, MODEL_3D: "thread" } as const;
 
-export function MirrorControls<T extends MirrorData>({ data, setData, reload, compact = false, children, host, preview2d }: {
+export function MirrorControls<T extends MirrorData>({ data, setData, reload, compact = false, children, host, preview2d, held, arrivedId }: {
   data: T; setData: (d: T) => void; reload: () => void;
   /** dentro do quarto (coluna estreita ao lado da cena) */
   compact?: boolean;
@@ -94,6 +105,10 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
   host?: MirrorHost;
   /** botão da prévia 2D (onde ela faz sentido) */
   preview2d?: { shown: boolean; onToggle: () => void };
+  /** peça segurada pelo personagem no quarto (ainda fora da lista do espelho): entra nas roupas em mãos da parte */
+  held?: MirrorPieceRef[];
+  /** peça que acabou de chegar ao espelho: a célula da parte fica em destaque */
+  arrivedId?: string | null;
 }) {
   const { t } = useI18n(); const toast = useToast();
   const { run, busy } = useMirrorActions<T>(setData, reload);
@@ -173,8 +188,10 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
             const asset = pieces[0] ? assetStateOf(pieces[0]) : null;
             const unavailable = pieces.some((x) => x.available === false);
             const pin = pieces.some((x) => pinned.has(x.id));
+            const hand = inHandOf(p, data, held);
+            const arrived = !!arrivedId && hand.some((x) => x.id === arrivedId);
             return (
-              <button key={p.id} type="button" className={cn("fitting-store mirror-part", open === p.id && "is-active", missing && "is-missing", !pieces.length && "is-empty")}
+              <button key={p.id} type="button" className={cn("fitting-store mirror-part", open === p.id && "is-active", missing && "is-missing", !pieces.length && "is-empty", arrived && "is-arrived")}
                 aria-haspopup="dialog" aria-label={t("mirror.parte.aria", { part: label, value: pieces.length ? pieces.map((x) => x.name).join(", ") : caption })} onClick={() => setOpen(p.id)}>
                 <span className="mirror-part-art" aria-hidden>
                   {pieces.length ? pieces.slice(0, 2).map((x) => <img key={x.id} src={mediaUrl(x.thumbnailUrl ?? x.imageUrl ?? undefined)} alt="" style={{ background: x.colorHex ?? undefined }} />)
@@ -182,9 +199,10 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
                 </span>
                 <span className="fitting-store-name">{label}</span>
                 <span className="mirror-part-caption">{caption}</span>
-                {(asset || unavailable || pin) && (
+                {(asset || unavailable || pin || hand.length > 0) && (
                   <span className="mirror-part-badges">
                     {asset && <Badge tone={ASSET_TONE[asset]}>{t(`room.mirror.asset_curto.${asset}`)}</Badge>}
+                    {hand.length > 0 && <Badge tone="thread">{t("mirror.parte.em_maos", { n: hand.length })}</Badge>}
                     {unavailable && <Badge tone="mark">⚠ {t("mirror.parte.indisponivel")}</Badge>}
                     {pin && <Badge>📌 {t("mirror.parte.fixada")}</Badge>}
                   </span>
@@ -244,7 +262,7 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
       </div>
 
       {part && (
-        <MirrorPartSheet part={part} data={data} pinned={pinned} busy={busy} onClose={() => setOpen(null)}
+        <MirrorPartSheet part={part} data={data} hand={inHandOf(part, data, held)} pinned={pinned} busy={busy} onClose={() => setOpen(null)}
           onTogglePin={(id) => setPinned((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; })}
           wear={async (p) => { if (host?.wear) await host.wear(p); else { const r = await run("place", () => api.post("/api/me/mirror/pieces", { pieceId: p.id })) as { notice?: string } | null; if (r?.notice) toast.info(r.notice); } }}
           takeOff={async (p) => { if (host?.takeOff) await host.takeOff(p); else await run("rm", () => api.delete(`/api/me/mirror/pieces/${encodeURIComponent(p.id)}`)); }}

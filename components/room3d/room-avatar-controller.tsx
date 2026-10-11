@@ -76,7 +76,9 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
   }, [camera, engine, gl]);
   useFrame(({ clock }, dt) => {
     if (!actor.current || !parts.current) return;
-    const p = parts.current, moving = !engine.grip && [...engine.keys].some(k => k.startsWith("Arrow"));
+    // andando: setas/direcional ou a caminhada até um ponto ("Ir ao espelho", "Voltar ao quarto") — as duas contam
+    // como movimento para a zona do espelho (afastar-se fecha a prova mesmo aberta à mão)
+    const p = parts.current, arrows = [...engine.keys].some(k => k.startsWith("Arrow")), moving = !engine.grip && (arrows || !!engine.goal);
     // zona do espelho: a distância do personagem decide a fase da prova (histerese e tempos em mirror-session.ts)
     const session = gameplay.session, now = Date.now();
     session?.update(mirrorDistance(engine.actor, engine.mirror), now, moving);
@@ -102,8 +104,9 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
     const cam = cameraFor(ph, engine.actor, engine.mirror, closetRight, engine.view, ROOM);
     if (!moving) walkYaw.current = ph === "room" ? viewYaw(engine.view) : inputYaw(cam.position, cam.target);
     if (!engine.grip) {
-      const heading = moveInRoom(engine.actor, engine.keys, dt, ROOM, engine.solids, walkYaw.current);
-      if (moving && !engine.aiming) yaw.current += Math.atan2(Math.sin(heading - yaw.current), Math.cos(heading - yaw.current)) * Math.min(1, dt * 9);
+      // as setas mandam; sem elas, um passo da caminhada até o ponto (para ao chegar), virando para onde anda
+      const heading = arrows ? moveInRoom(engine.actor, engine.keys, dt, ROOM, engine.solids, walkYaw.current) : engine.followGoal(dt, ROOM);
+      if (moving && heading !== null && !engine.aiming) yaw.current += Math.atan2(Math.sin(heading - yaw.current), Math.cos(heading - yaw.current)) * Math.min(1, dt * 9);
       else if (trying && !engine.aiming) {                                   // parado na prova: vira de frente para o espelho
         const want = facingYaw(engine.actor, engine.mirror);
         yaw.current += Math.atan2(Math.sin(want - yaw.current), Math.cos(want - yaw.current)) * Math.min(1, dt * 6);

@@ -1126,6 +1126,9 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 .room3d-control[aria-pressed="true"] { background: #1F7A76; }
 .room3d-control:focus-visible { outline: 3px solid #fff; outline-offset: 1px; box-shadow: 0 0 0 6px #1F7A76; }
 .room3d-stage:has(.room3d-controls) .room3d-hint { left: 10px; transform: none; max-width: calc(100% - 180px); border-radius: 12px; text-align: left; }
+/* caminhada até/para longe do espelho ("Indo ao espelho…"): aviso no alto do palco; vazio, não ocupa espaço */
+.room3d-walk-status { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 20px); padding: 5px 14px; border-radius: 999px; background: #1F7A76; color: #fff; font-size: 13px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,.2); pointer-events: none; }
+.room3d-walk-status:empty { padding: 0; box-shadow: none; background: transparent; }
 /* na prova o espelho ocupa a direita do quadro: botões menores */
 .room3d[data-mode="mirror"] .room3d-control { width: 36px; height: 36px; border-radius: 10px; }
 .room3d[data-mode="mirror"] .room3d-controls-row { grid-template-columns: repeat(2, 36px); }
@@ -1134,17 +1137,14 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 .room3d-positions ul { display: grid; gap: 2px; }
 .room3d-positions button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 8px; border-radius: 8px; font-size: 13px; text-align: left; }
 .room3d-positions button:hover, .room3d-positions button[aria-pressed="true"] { background: var(--surface-2); }
-/* Prova no espelho dentro do quarto (RF27 ↔ RF28): "roupas em mãos" por lugar do corpo, ajuda de primeiro uso, estados */
+/* Prova no espelho dentro do quarto (RF27 ↔ RF28): ajuda de primeiro uso, estados e Voltar ao quarto (as roupas em mãos
+   ficam nas células "Partes do look" do painel do Espelho e na folha de cada parte) */
 .mirror-hands { display: grid; gap: 8px; margin-top: 8px; }
 .mirror-hands.is-tryon { padding: 10px; border: 2px solid #1F7A76; border-radius: 12px; background: var(--surface-2); }
 .mirror-hands.is-transition { justify-self: start; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); font-size: 13px; }
 .mirror-hands-help { display: grid; gap: 4px; padding: 10px; border-radius: 12px; background: var(--chalk-soft, #f6efd9); }
-.mirror-hands-slot { display: grid; gap: 4px; padding-top: 6px; border-top: 1px solid var(--line-soft); }
-.mirror-hands-piece { display: flex; align-items: center; gap: 8px; padding: 4px; border-radius: 8px; background: var(--surface); }
-.mirror-hands-piece[data-worn="false"] { outline: 2px dashed #1F7A76; outline-offset: -2px; }
-/* QUARTO-ESPELHO: na lista do espelho (persistida) × só na mão; a que acabou de chegar fica destacada */
-.mirror-hands-piece[data-worn="false"][data-listed="true"] { outline: 1px solid var(--line-soft); }
-.mirror-hands-piece[data-arrived="true"] { outline: 2px solid var(--mark); outline-offset: 1px; }
+.mirror-hands-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.mirror-hands-bar > p { flex: 1 1 160px; min-width: 0; }
 .room3d-positions .mirror-hands button { display: inline-flex; width: auto; justify-content: center; }
 /* QUARTO-ESPELHO: na prova, as opções de vestimenta (o painel da aba Espelho) ficam ao lado da cena */
 .room3d-positions .mirror-controls button { display: inline-flex; width: auto; justify-content: center; }
@@ -2474,6 +2474,8 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 .mirror-part { position: relative; min-width: 0; align-content: start; }
 .mirror-part.is-empty { border-style: dashed; }
 .mirror-part.is-missing { border-color: var(--mark); border-style: solid; }
+/* QUARTO-ESPELHO: a parte da peça que acabou de chegar ao espelho fica destacada */
+.mirror-part.is-arrived { outline: 2px solid var(--mark); outline-offset: 1px; }
 .mirror-part-art { display: flex; height: 48px; align-items: center; justify-content: center; }
 .mirror-part-art > img { width: 44px; height: 48px; object-fit: contain; border-radius: 6px; background: var(--surface-2); }
 .mirror-part-art > img + img { margin-left: -14px; box-shadow: -2px 0 0 var(--surface); }
@@ -2513,6 +2515,11 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 .mirror-pick-art { display: block; aspect-ratio: 1; overflow: hidden; border-radius: 8px; background: var(--surface-2); }
 .mirror-pick-art img { width: 100%; height: 100%; object-fit: contain; }
 .mirror-pick-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--text-body-sm); font-weight: 600; }
+/* roupas em mãos na folha da parte: tocar veste; "Tirar da lista" logo abaixo (nunca tira do guarda-roupa) */
+.mirror-pick-hold { display: grid; min-width: 0; align-content: start; gap: 2px; }
+.mirror-pick-unlist { justify-self: center; padding: 2px 6px; border-radius: 6px; font-size: var(--text-caption); color: var(--muted); text-decoration: underline; }
+.mirror-pick-unlist:hover:not(:disabled) { color: var(--ink); background: var(--surface-2); }
+.mirror-pick-unlist:disabled { opacity: .5; }
 .mirror-pick-sub { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 3; font-size: var(--text-caption); color: var(--muted); }
 /* sem WebGL / aba 2.5D: a vista do espelho embutida no quarto (palco 2D + o mesmo painel) */
 .room-flat-mirror { display: grid; gap: 16px; }

@@ -6,6 +6,8 @@ export interface RoomTarget {
   available: () => boolean; progress?: (delta: number) => void;
 }
 export interface RoomPlayState { held: string | null; nearMirror: boolean; grip: string | null; ready: boolean }
+/** Como terminou uma caminhada até um ponto: chegou, travou no caminho (sem progresso) ou a pessoa assumiu as setas. */
+export type GoalOutcome = "arrived" | "stuck" | "cancelled";
 /** Local interactions never remove inventory records. One release latches a grip;
  * another deliberate press/release drops it. Walking and focus loss preserve clothing. */
 export class RoomInteraction {
@@ -18,12 +20,51 @@ export class RoomInteraction {
   listeners = new Set<() => void>(); ready = false;
   /** vista da câmera no quarto (0–3, room-bounds.ts): Q/E e os botões de girar a cena (+1 = câmera a leste) */
   view = 0;
+  /**
+   * Caminhada até um ponto ("Ir ao espelho", "Voltar ao quarto"): o ponto da vez e os seguintes (contorno de um
+   * obstáculo). Qualquer seta ou botão do direcional cancela; sem se aproximar por GOAL_STUCK_S (parado), desiste.
+   */
+  goal: THREE.Vector3 | null = null; route: THREE.Vector3[] = [];
+  private goalDone: ((outcome: GoalOutcome) => void) | null = null;
+  private goalBest = Infinity; private goalIdle = 0; private goalSide = 0;
   notify() { this.listeners.forEach(listener => listener()); }
   turn(step: number) { this.view = (((this.view + step) % 4) + 4) % 4; this.notify(); }
   keyDown(code: string) {
     if (this.keys.has(code)) return;
     this.keys.add(code);
+    if (code.startsWith("Arrow")) this.cancelGoal();                // a pessoa assumiu: as setas mandam
     if (code === "KeyA" || code === "KeyD") this.aiming = code === "KeyA" ? "Left" : "Right";
+  }
+  /** Anda até o ponto (ou pelos pontos, em ordem) no chão; `done` diz como terminou. Andar solta o puxador segurado. */
+  walkTo(points: THREE.Vector3 | THREE.Vector3[], done?: (outcome: GoalOutcome) => void) {
+    this.cancelGoal();
+    const list = (Array.isArray(points) ? points : [points]).map(p => new THREE.Vector3(p.x, this.actor.y, p.z));
+    const first = list.shift(); if (!first) return;
+    this.goal = first; this.route = list; this.goalDone = done ?? null; this.goalBest = Infinity; this.goalIdle = 0; this.goalSide = 0; this.grip = null;
+    this.notify();
+  }
+  cancelGoal() { this.endGoal("cancelled"); }
+  private endGoal(outcome: GoalOutcome) {
+    if (!this.goal) return;
+    const done = this.goalDone; this.goal = null; this.route = []; this.goalDone = null;
+    this.notify(); done?.(outcome);
+  }
+  /** Um quadro da caminhada até o ponto (sem setas): devolve o rumo do passo, ou null sem caminhada. */
+  followGoal(dt: number, bounds: number | RoomBounds, solids: Iterable<THREE.Object3D> = this.solids): number | null {
+    if (!this.goal) return null;
+    const step = stepToward(this.actor, this.goal, dt, bounds, solids, this.goalSide);
+    this.goalSide = step.side;
+    if (step.arrived) {
+      const next = this.route.shift();
+      if (next) { this.goal = next; this.goalBest = Infinity; this.goalIdle = 0; this.goalSide = 0; } else this.endGoal("arrived");
+      return step.heading;
+    }
+    // progresso = chegar mais perto do ponto do que já esteve; parado (bloqueado) desiste em GOAL_STUCK_S, contornando
+    // um obstáculo (andando sem se aproximar) tem o dobro do tempo
+    const left = Math.hypot(this.goal.x - this.actor.x, this.goal.z - this.actor.z);
+    if (left < this.goalBest - .01) { this.goalBest = left; this.goalIdle = 0; }
+    else if ((this.goalIdle += Math.min(dt, .1) * (step.moved > 1e-4 ? .5 : 1)) >= GOAL_STUCK_S) this.endGoal("stuck");
+    return step.heading;
   }
   nearest(hand: THREE.Vector3): RoomTarget | null {
     let best: RoomTarget | null = null, distance = .15;
@@ -82,6 +123,28 @@ export function penetration(solid: THREE.Object3D, position: THREE.Vector3): num
   const ox = Math.min(position.x - box.min.x, box.max.x - position.x), oz = Math.min(position.z - box.min.z, box.max.z - position.z);
   return ox > 0 && oz > 0 ? Math.min(ox, oz) : 0;
 }
+/** Velocidade de caminhada (m/s) e o maior passo por quadro (s): setas, direcional e caminhada até um ponto andam igual. */
+export const WALK_SPEED = 1.05, MAX_STEP_DT = .05;
+/** Caminhada até um ponto: distância que conta como chegada (m) e tempo sem se aproximar até desistir (s). */
+export const GOAL_REACHED = .03, GOAL_STUCK_S = 1;
+const UP = new THREE.Vector3(0, 1, 0);
+/**
+ * Passo dentro do quarto: as paredes limitam o centro do personagem (folga do tronco) e os obstáculos bloqueiam. Um
+ * passo bloqueado desliza ao longo do obstáculo (só x ou só z); já sobreposto (uma porta abriu sobre o personagem), só
+ * aceita passos que diminuem a sobreposição, então ele sai e nunca entra mais.
+ */
+function walker(position: THREE.Vector3, bounds: number | RoomBounds, solids: Iterable<THREE.Object3D>) {
+  const list = [...solids], area = walkArea(bounds);
+  const overlap = (p: THREE.Vector3) => list.reduce((sum, solid) => sum + penetration(solid, p), 0);
+  const start = overlap(position);
+  const attempt = (sx: number, sz: number) => {
+    // Keep the torso outside the wardrobe and the walls; moving fronts, the 2nd wardrobe and the mirror add their own colliders.
+    const next = new THREE.Vector3(THREE.MathUtils.clamp(position.x + sx, area.minX, area.maxX), position.y, THREE.MathUtils.clamp(position.z + sz, area.minZ, area.maxZ));
+    const after = overlap(next);
+    return after === 0 || after < start - 1e-6 ? next : null;
+  };
+  return { attempt, slide: (sx: number, sz: number) => attempt(sx, sz) ?? (sx ? attempt(sx, 0) : null) ?? (sz ? attempt(0, sz) : null) };
+}
 /**
  * Frame-independent movement, normalized diagonals, conservative wardrobe/room bounds. Obstacles (wardrobe fronts, the
  * mirror) block the step; a diagonal into an obstacle slides along it (x or z alone). Already overlapping (a door swung
@@ -93,19 +156,42 @@ export function moveInRoom(position: THREE.Vector3, keys: Set<string>, dt: numbe
   const dx = Number(keys.has("ArrowRight")) - Number(keys.has("ArrowLeft"));
   const dz = Number(keys.has("ArrowDown")) - Number(keys.has("ArrowUp"));
   if (!dx && !dz) return 0;
-  const list = [...solids], area = walkArea(bounds);
-  const overlap = (p: THREE.Vector3) => list.reduce((sum, solid) => sum + penetration(solid, p), 0);
-  const step = new THREE.Vector3(dx, 0, dz).normalize().applyAxisAngle(new THREE.Vector3(0, 1, 0), yaw).multiplyScalar(Math.min(dt, .05) * 1.05);
+  const step = new THREE.Vector3(dx, 0, dz).normalize().applyAxisAngle(UP, yaw).multiplyScalar(Math.min(dt, MAX_STEP_DT) * WALK_SPEED);
   if (Math.abs(step.x) < 1e-9) step.x = 0;
   if (Math.abs(step.z) < 1e-9) step.z = 0;
-  const start = overlap(position);
-  const attempt = (sx: number, sz: number) => {
-    // Keep the torso outside the wardrobe and the walls; moving fronts, the 2nd wardrobe and the mirror add their own colliders.
-    const next = new THREE.Vector3(THREE.MathUtils.clamp(position.x + sx, area.minX, area.maxX), position.y, THREE.MathUtils.clamp(position.z + sz, area.minZ, area.maxZ));
-    const after = overlap(next);
-    return after === 0 || after < start - 1e-6 ? next : null;
-  };
-  const next = attempt(step.x, step.z) ?? (step.x ? attempt(step.x, 0) : null) ?? (step.z ? attempt(0, step.z) : null);
+  const next = walker(position, bounds, solids).slide(step.x, step.z);
   if (next) position.copy(next);
   return Math.atan2(step.x, step.z);
+}
+export interface GoalStep { heading: number; moved: number; arrived: boolean; side: number }
+/**
+ * Um passo da caminhada até `goal` (no chão), com a mesma velocidade, paredes e colisões das setas: reto até o ponto
+ * (o último passo para em cima dele); bloqueado, desliza ao longo do obstáculo se isso ainda aproxima; senão contorna —
+ * desvia 45°, 90° ou 135° do rumo do ponto, sempre para o mesmo lado (`side`, devolvido para o próximo passo) até o
+ * caminho reto abrir: sem a memória do lado, ziguezagueia na frente do obstáculo. `heading` é o rumo do passo dado.
+ */
+export function stepToward(position: THREE.Vector3, goal: THREE.Vector3, dt: number, bounds: number | RoomBounds, solids: Iterable<THREE.Object3D> = [], side = 0): GoalStep {
+  const to = new THREE.Vector3(goal.x - position.x, 0, goal.z - position.z), dist = to.length();
+  const heading = Math.atan2(to.x, to.z);
+  if (dist <= GOAL_REACHED) return { heading, moved: 0, arrived: true, side: 0 };
+  const len = Math.min(dist, Math.min(dt, MAX_STEP_DT) * WALK_SPEED), { attempt, slide } = walker(position, bounds, solids);
+  const left = (p: THREE.Vector3) => Math.hypot(goal.x - p.x, goal.z - p.z);
+  const moves = (p: THREE.Vector3 | null): p is THREE.Vector3 => !!p && Math.hypot(p.x - position.x, p.z - position.z) > 1e-6;
+  const go = (next: THREE.Vector3, s: number): GoalStep => {
+    const moved = Math.hypot(next.x - position.x, next.z - position.z), along = Math.atan2(next.x - position.x, next.z - position.z);
+    position.copy(next);
+    return { heading: along, moved, arrived: left(position) <= GOAL_REACHED, side: s };
+  };
+  to.divideScalar(dist);
+  const direct = attempt(to.x * len, to.z * len);
+  if (moves(direct)) return go(direct, 0);
+  if (!side) { const glide = slide(to.x * len, to.z * len); if (moves(glide) && left(glide) < dist - len * .2) return go(glide, 0); }
+  const turned = (s: number, turn: number) => { const d = to.clone().applyAxisAngle(UP, s * turn).multiplyScalar(len); return slide(d.x, d.z); };
+  for (const turn of [Math.PI / 4, Math.PI / 2, (3 * Math.PI) / 4]) {
+    if (side) { const next = turned(side, turn); if (moves(next)) return go(next, side); continue; }
+    const options = [1, -1].map(s => ({ s, next: turned(s, turn) })).filter((o): o is { s: number; next: THREE.Vector3 } => moves(o.next));
+    if (options.length) { const pick = options.sort((a, b) => left(a.next) - left(b.next))[0]; return go(pick.next, pick.s); }
+  }
+  if (side) return stepToward(position, goal, dt, bounds, solids, 0);    // o lado lembrado fechou: escolhe de novo
+  return { heading, moved: 0, arrived: false, side: 0 };
 }
