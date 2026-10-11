@@ -1,4 +1,8 @@
-"""Render real framed assets; verify S3 bytes before permitting a DB reference."""
+"""Render real framed assets; verify S3 bytes before permitting a DB reference.
+
+Also reads back what each framed write preserved (``previousStoredUrl``/``previousAssets``/``originalUrl``) to restore a
+legacy framed image (V1/V2) that the V3 rule refuses to its pre-frame state — no S3 object is created or deleted for that.
+"""
 import hashlib
 import io
 import json
@@ -9,9 +13,9 @@ import threading
 from urllib.parse import quote, urlsplit
 
 try:
-    from .category_frame import VERSION as FRAME_VERSION
+    from .category_frame import VERSION as FRAME_VERSION, framed_url, legacy_framed
 except ImportError:
-    from category_frame import VERSION as FRAME_VERSION
+    from category_frame import VERSION as FRAME_VERSION, framed_url, legacy_framed
 
 
 def _hex_color(value):
@@ -148,6 +152,56 @@ def previous_assets(record):
         except ValueError:
             return None
     return dict(value) if isinstance(value, dict) else None
+
+
+def _assets_object(value):
+    """``previousAssets`` como o lote gravou: objeto (V2/V3), texto JSON (V1 sobre snapshot) ou None/ausente."""
+    if isinstance(value, (bytes, bytearray)):
+        value = value.decode('utf-8', 'replace')
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except ValueError:
+            return None
+    return dict(value) if isinstance(value, dict) else None
+
+
+def pre_frame_state(record, max_levels=8):
+    """Referência ativa da imagem antes do primeiro quadro do lote, pelo que cada gravação preservou em assets_json.
+
+    Todo quadro gravado guarda o que estava ativo antes dele (``previousStoredUrl``, ``previousAssets``) e a foto da marca
+    (``originalUrl``). Um quadro feito por cima de outro (V2 sobre V1) aponta para o anterior: a cadeia é seguida até uma
+    referência que não é do lote. Cadeia incompleta (quadro antigo sem ``previousStoredUrl``) volta à foto original da marca
+    (``stored_url`` NULL, sem assets: o card usa ``image_url``) — nunca a outro quadro. Assets anteriores que apontem para um
+    quadro do lote também não voltam.
+    """
+    url, assets = record.get('stored_url'), previous_assets(record)
+    original = (assets or {}).get('originalUrl')
+    levels, complete = 0, True
+    while framed_url(url):
+        if not isinstance(assets, dict) or 'previousStoredUrl' not in assets or levels >= max_levels:
+            url, assets, complete = None, None, False
+            break
+        url, assets = assets.get('previousStoredUrl'), _assets_object(assets.get('previousAssets'))
+        levels += 1
+    if url is not None and not isinstance(url, str):
+        url, assets, complete = None, None, False
+    if assets is not None and any(framed_url(v) for v in assets.values()):
+        assets = None
+    return {'stored_url': url or None, 'assets': assets or None,
+            'restoredTo': 'PREVIOUS_STORED_URL' if url else 'ORIGINAL_URL', 'levels': levels, 'chainComplete': complete,
+            'originalUrl': original}
+
+
+def revert_plan(record, reason, *, product_frame_version=None):
+    """Plano para desfazer o quadro antigo (V1/V2) de uma foto que a V3 recusou; None se a imagem não mostra um quadro antigo.
+
+    O plano só diz para onde a referência ativa volta; a gravação passa pelo mesmo caminho guardado e auditado do lote
+    (catalog_image_updates.apply_product). O JPEG antigo continua no S3 (nada é apagado)."""
+    if not legacy_framed(record):
+        return None
+    return {'reason': str(reason)[:200], 'revertedFrom': record.get('pipeline_version'), 'framedUrl': record.get('stored_url'),
+            'productFrameVersion': product_frame_version, **pre_frame_state(record)}
 
 
 class FrameStorage:

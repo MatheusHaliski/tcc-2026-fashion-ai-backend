@@ -80,6 +80,8 @@ A opção exige `--database --apply --category-frame`. Nesse modo:
   **reprocessadas** na próxima execução com a regra V3. Quem está rodando a V2
   agora pode deixar terminar: a próxima execução com o JAR novo refaz essas
   imagens (o checkpoint guardado pela V2 é descartado e a foto é analisada de novo).
+  Se a V3 **recusar** uma delas, o quadro antigo é **desfeito**: a imagem volta ao
+  estado anterior ao quadro (ver "Quadro antigo desfeito quando a V3 recusa a foto").
 
 ### Regra de enquadramento do produto (`PRODUCT_RULE`, V3)
 
@@ -88,8 +90,10 @@ O quadro do lote segue **a mesma Regra de Enquadramento do Produto do card**
 `PIPELINE_IMAGENS_CATALOGO.md`), calculada pelo mesmo motor
 (`SemanticCropper.registryRuleCrop`, usado também pelo `FeedFraming` do card de
 4:5) — card e lote não divergem: só a proporção muda. O Java (`ProductRuleFrame`,
-versão `PRODUCT_RULE_FRAME_V1`) devolve o quadro em `productFrame`; o Python
-(`category_frame.py`) confere e grava.
+versão `PRODUCT_RULE_FRAME_V2`) devolve o quadro em `productFrame`; o Python
+(`category_frame.py`) confere e grava. A `PRODUCT_RULE_FRAME_V2` acrescenta a
+largura mínima do quadro de cobertura (`COVER_FRAME_TOO_NARROW`, abaixo); análises
+guardadas no checkpoint pela `PRODUCT_RULE_FRAME_V1` são refeitas.
 
 **Proporção: 3:4 (900×1200), mantida.** O 3:4 é o quadro do editor pedido pelo
 responsável no #218 e já usado pelas imagens V1/V2; o card não força 4:5 nas
@@ -131,6 +135,14 @@ Como o quadro é calculado:
    centrado no eixo da peça, com o topo na faixa da gola/do cós e inteiramente
    dentro da máscara (erodida 0,3%); parte de baixo: inteiramente dentro do cós a
    80% do gancho. Com modelo, as laterais recolhem 2,5% (vão fino braço–tronco).
+   O quadro precisa ter **ao menos 55% da largura da peça na faixa do topo do
+   quadro**: parte de cima/peça inteira, a mediana, nas linhas do quadro (do decote
+   para baixo), da largura da peça na linha — da primeira à última coluna da peça,
+   o tronco com as mangas (uma listra da cor do fundo no meio não a encurta); parte
+   de baixo, a largura do quadril na faixa do cós a 80% do gancho (a mesma mediana
+   que dá a caixa da regra). Menos que isso é um zoom borrado de tecido, não a peça
+   (`COVER_FRAME_TOO_NARROW`). Packshots não são afetados: o quadro deles tem a
+   largura do tronco/quadril (63%–96% nas fotos de teste).
    **WIDTH/CONTAIN**: o quadro da regra inteiro; o que passar da foto é completado
    com a cor do fundo de estúdio de cada borda (como o smartPadding do card) e o
    recorte é arredondado **para fora** (o objeto nunca é cortado). COVER continua
@@ -139,8 +151,9 @@ Como o quadro é calculado:
    cima (parte de cima/baixo), calçado de lado (`SHOE_NOT_SIDE_VIEW`). Dúvida vira
    revisão no modo padrão e observação (`RULE_COMPLIANCE_DOUBT`) no modo forçado.
 
-Motivos de recusa (a foto fica como está, nada é gravado, a linha sai como falha
-`FRAME_UNAVAILABLE:<motivo>` e o lote segue):
+Motivos de recusa (nenhum quadro novo é gravado; a foto fica como está — ou, se
+ainda mostra um quadro V1/V2, volta ao estado anterior ao quadro, ver abaixo —; a
+linha sai como falha `FRAME_UNAVAILABLE:<motivo>` e o lote segue):
 
 | Motivo | Significado |
 |---|---|
@@ -150,6 +163,7 @@ Motivos de recusa (a foto fica como está, nada é gravado, a linha sai como fal
 | `WAISTBAND_NOT_FOUND` | foto com modelo em que a peça de cima cobre o cós (mesma cor, casaco por cima): o quadro não teria o cós no topo |
 | `NO_COVER_WINDOW_AT_TOP` | nenhum quadro de cobertura cabe com o topo na gola/no cós (peça clara em fundo claro, estampa da cor do fundo) |
 | `FRAME_TOO_SMALL` | o quadro que cabe tem menos de 90 px ou é estreito demais para a peça (< 22% da parte de cima, < 40% do quadril) |
+| `COVER_FRAME_TOO_NARROW` | quadro de cobertura (parte de cima, peça inteira, parte de baixo) com menos de 55% da largura da peça na faixa do topo do quadro — tronco na faixa do decote, quadril na faixa do cós: um zoom de tecido (polo de listras claras, jaqueta ou mãos estreitando o cós); `compliance.frameWidthShare` registra a medida |
 | `PADDING_NEEDS_STUDIO_BACKGROUND` | o objeto inteiro precisaria passar da foto, mas o fundo não é de estúdio (não há cor para completar) |
 | `NO_PRODUCT`, `BACKGROUND_NOT_UNIFORM`, `SEGMENTATION_FRAGMENT` | a máscara da peça não existe ou não é confiável (como na V2) |
 | `COVERAGE_BELOW_100`, `OBJECT_CUT`, `INVALID_CROP`, `ASPECT_NOT_3_4`, `INVALID_RULE` | conferências do Python: quadro de cobertura com algo que não é peça, objeto cortado, recorte fora dos limites |
@@ -161,17 +175,23 @@ PRODUCT_RULE`, `rule` (`fit`, `align`, `view`, `focusTopHalf`), `fit`, `align`,
 subcategoria e `origin`: `pieceType` ou `subcategory:<nome>` quando a subcategoria
 tem regra própria), `target`, `focus`/`focusSource`, `garmentCoverage` e
 `coverageScope` (FRAME ou WAIST_TO_CROTCH), `objectInside`, `padding`,
-`background`, `model`, `observations` e `decision`. O relatório ganha
-`frame_fit`, `frame_align`, `frame_rule_source` e `frame_padding`; o resumo traz
-`frame_unavailable` (e o nome antigo `fabric_frame_unavailable`, com os mesmos
-números).
+`background`, `model`, `frameWidthShare` (largura do quadro ÷ largura da peça na
+faixa do topo) e `garmentWidthPx`, `observations` e `decision`. O relatório ganha
+`frame_fit`, `frame_align`, `frame_rule_source`, `frame_padding` e
+`frame_width_share`; o resumo traz `frame_unavailable` (e o nome antigo
+`fabric_frame_unavailable`, com os mesmos números) e `frame_reverted`.
 
 Avaliação em 75 fotos reais do acervo (as mesmas da V2, packshot e modelo), pelo
-JAR e pelo `category_frame.py`: **60 receberam quadro** (V2: 37) — acessórios
-23/23, calçados 6/6, parte de cima 18/24, parte de baixo 13/22 — e as folhas de
-contato foram conferidas visualmente por categoria. Recusas: cós coberto pela
-peça de cima (4), nenhum quadro no topo (4), quadro pequeno (3), fragmento (2),
-fundo não uniforme (1), camiseta branca em fundo branco (1). Limites conhecidos:
+JAR e pelo `category_frame.py`: **56 receberam quadro** (V2: 37) — acessórios
+23/23, calçados 6/6, parte de cima 16/24, parte de baixo 11/22 — e as folhas de
+contato foram conferidas visualmente por categoria. A largura mínima do quadro de
+cobertura recusou 4 das 60 fotos que a primeira V3 aceitava, todas em modelo e
+todas um zoom de tecido: polo de listras claras (quadro de 37% da largura da peça),
+moletom de blocos de cor (45%), chino sob jaqueta aberta (47%) e jeans com a camisa
+caindo no cós (54%); nenhum packshot mudou. Recusas: cós coberto pela peça de cima
+(4), nenhum quadro no topo (4), quadro estreito demais para a peça (4), quadro
+pequeno (3), fragmento (2), fundo não uniforme (1), camiseta branca em fundo
+branco (1). Limites conhecidos:
 peça clara em fundo claro, cáqui/bege em modelo (cor de pele), listras da cor do
 fundo, preto sobre preto (a barra/o cós não aparecem pela cor), vão fino e claro
 entre braço e tronco, acessório no corpo de uma pessoa quando a pele não destoa
@@ -197,13 +217,66 @@ python3 scripts/catalog/process_catalog_images.py --database --apply --category-
   --workers 6 --java-threads 3 --output ~/catalogo/acervo-enquadrado.xlsx
 ```
 
+Antes de ler o banco ou iniciar o Java, `--apply --category-frame` confere as
+variáveis de ambiente e para com uma mensagem que só **nomeia** as que faltam
+(nunca mostra valores): `MYSQL_HOST`, `MYSQL_DATABASE`, `MYSQL_USER`,
+`MYSQL_PASSWORD` (depois de aplicar os nomes do Railway `MYSQL_PUBLIC_URL`,
+`MYSQLHOST`, `MYSQLDATABASE`, `MYSQLUSER`, `MYSQL_APP_PASSWORD`), `S3_BUCKET`,
+`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` e `STORAGE_PUBLIC_BASE_URL` (ou
+`APP_BASE_URL` com `S3_SERVE_THROUGH_API=true`) — em vez do antigo
+`KeyError: 'S3_BUCKET'` no meio do lote. A configuração do S3 (URL pública HTTPS,
+`boto3`) também é validada antes do Java.
+
 Sem o JAR novo o script para antes de começar ("JAR sem a regra de enquadramento
 do produto (V3)"): ele confere a capacidade `productFrameVersion` anunciada pelo
 Java. Código de saída 2 significa que houve falhas individuais; o resumo JSON no
 `stdout` e o `.summary.json` trazem `failure_reasons`, `frame_observations`,
-`frame_unavailable` e `write_results`. Rode de novo para repetir só as pendências.
-Uma recusa da V3 não apaga nada: a imagem continua com a referência que tinha
-(inclusive um quadro V1/V2 já gravado), e o produto continua na busca.
+`frame_unavailable`, `frame_reverted` e `write_results`. Rode de novo para repetir
+só as pendências. Uma recusa da V3 não grava quadro novo nem apaga nada do S3: a
+imagem continua com a referência que tinha — salvo quando essa referência é um
+quadro V1/V2, que é desfeito (abaixo) — e o produto continua na busca.
+
+### Quadro antigo desfeito quando a V3 recusa a foto (`REVERTED_TO_ORIGINAL`)
+
+Quando a V3 recusa uma foto (qualquer `FRAME_UNAVAILABLE:<motivo>`) e ela ainda
+mostra um quadro de uma versão anterior — `pipeline_version` em
+`CATALOG_FRAME_34_50_V1`/`CATALOG_FRAME_34_FABRIC_V2` e `stored_url` em
+`/catalog/framed/` —, o close antigo não fica no card: a imagem **volta ao estado
+anterior ao quadro**, pelo que a gravação antiga preservou em `assets_json`:
+
+- `stored_url` ← `previousStoredUrl` e `assets_json` ← `previousAssets` (com o
+  marcador da decisão). Um quadro gravado por cima de outro (V2 sobre V1) aponta
+  para o anterior: a cadeia é seguida até a referência de antes do primeiro quadro.
+  Sem asset anterior (a foto nunca teve master) ou com a cadeia incompleta (V1 antiga
+  sem `previousStoredUrl`), volta à **foto original da marca**: `stored_url` NULL,
+  `assets_json` NULL e o card usa `image_url` (= `originalUrl`). Nunca volta para
+  outro JPEG de `/catalog/framed/`.
+- O recorte 3:4 do close antigo sai do `crop_json` (sem asset processado o card
+  recortaria a foto original por ele): entram as colunas da análise de nível A atual
+  da foto (o Java já a analisou; `processing_status`, `crop_json`, `metrics_json`…)
+  ou, se o Java não analisou a foto (`JAVA_<código>`), o `crop_json` fica NULL.
+- `pipeline_version = CATALOG_FRAME_34_PRODUCT_RULE_V3` registra a decisão: o worker
+  da API não mexe em `CATALOG_FRAME_*` e a próxima execução não refaz a foto. O
+  marcador `editorFrame = {version, decision: "REVERTED_TO_ORIGINAL", reason:
+  "FRAME_UNAVAILABLE:<motivo>", productFrameVersion, revertedFrom, restoredTo:
+  PREVIOUS_STORED_URL | ORIGINAL_URL, chainComplete}` fica em `crop_json`,
+  `metrics_json.debug` e, quando há assets restaurados, `assets_json`. Com uma
+  versão nova da regra (`productFrameVersion` diferente) a foto é analisada de novo
+  e pode ganhar quadro.
+- A gravação é a mesma do lote: transação por produto, guardas de concorrência
+  (versão, URL, hash e, para a restauração, `stored_url`/`assets_json` iguais aos
+  lidos), revisão humana e processamento ativo preservados, `before`/`after` no
+  `.changes.audit.jsonl` (com `frame_revert`: motivo, versão desfeita, destino) e
+  COMMIT incerto reconhecido na reconexão. Nada é enviado ao S3 nem apagado: o
+  JPEG antigo continua lá, sem referência (`audit_catalog_storage.py` o lista).
+- Só com `--database --apply --category-frame`: sem `--apply` nada é analisado nem
+  gravado. Imagem que não mostra quadro antigo (nível A, master próprio, quadro V3)
+  fica como está.
+
+A linha da planilha diz "Quadro V3 recusado: a imagem enquadrada antiga (…) voltou
+ao estado anterior ao quadro no banco", **Enquadramento: observações** traz
+`REVERTED_TO_ORIGINAL:<motivo>` e a aba **Resumo** conta "Quadros antigos (V1/V2)
+desfeitos: V3 recusou a foto" (`frame_reverted` no `.summary.json`).
 
 ### Como conferir que as imagens foram substituídas
 
@@ -221,6 +294,10 @@ SELECT COUNT(*) FROM catalog_images
 -- ainda nas versões anteriores (serão refeitas na próxima execução)
 SELECT pipeline_version, COUNT(*) FROM catalog_images
  WHERE pipeline_version IN ('CATALOG_FRAME_34_50_V1', 'CATALOG_FRAME_34_FABRIC_V2') GROUP BY pipeline_version;
+-- quadro antigo desfeito porque a V3 recusou a foto
+SELECT JSON_UNQUOTE(JSON_EXTRACT(metrics_json, '$.debug.editorFrame.reason')) AS motivo, COUNT(*) FROM catalog_images
+ WHERE pipeline_version = 'CATALOG_FRAME_34_PRODUCT_RULE_V3'
+   AND JSON_UNQUOTE(JSON_EXTRACT(metrics_json, '$.debug.editorFrame.decision')) = 'REVERTED_TO_ORIGINAL' GROUP BY motivo;
 ```
 
 No catálogo: a busca (`GET /api/catalog/search`) e o produto devolvem

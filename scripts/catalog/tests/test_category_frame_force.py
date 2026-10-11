@@ -79,6 +79,11 @@ class ProductRuleTest(unittest.TestCase):
         self.assertEqual(result["columns"]["processing_status"], "APPROVED")
         fields = report_fields(result)
         self.assertEqual((fields["frame_policy"], fields["frame_fit"], fields["frame_align"]), (POLICY, "COVER", "TOP"))
+        # largura do quadro ÷ largura da peça na faixa do topo (o Java recusa abaixo de 55%) fica registrada
+        wide = response(frame={**frame_of(), "compliance": {"ok": True, "frameWidthShare": .8123, "garmentWidthPx": 420}})
+        editor = frame(apply_frame(wide, "upper_piece", force=True))["editorFrame"]
+        self.assertEqual((editor["frameWidthShare"], editor["garmentWidthPx"]), (.8123, 420))
+        self.assertEqual(report_fields(apply_frame(wide, "upper_piece", force=True))["frame_width_share"], .8123)
         self.assertEqual(fields["frame_fabric_coverage"], 1.0)
         self.assertEqual(fields["frame_rule_source"], "pieceType@2.1.0")
 
@@ -98,6 +103,7 @@ class ProductRuleTest(unittest.TestCase):
 
     def test_sem_quadro_pela_regra_nao_ha_enquadramento_nem_no_modo_forcado(self):
         for frame_value, reason in ((frame_of(ok=False, reason="PIECE_NOT_ISOLATED"), "PIECE_NOT_ISOLATED"),
+                                    (frame_of(ok=False, reason="COVER_FRAME_TOO_NARROW"), "COVER_FRAME_TOO_NARROW"),
                                     (frame_of(ok=False, reason="WAISTBAND_NOT_FOUND"), "WAISTBAND_NOT_FOUND"),
                                     (frame_of(ok=False, reason="HUMAN_IN_FRAME"), "HUMAN_IN_FRAME"),
                                     (frame_of(coverage=.97), "COVERAGE_BELOW_100"),

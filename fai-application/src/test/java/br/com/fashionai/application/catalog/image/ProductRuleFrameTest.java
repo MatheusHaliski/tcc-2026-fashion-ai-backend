@@ -16,7 +16,8 @@ import static org.assertj.core.api.Assertions.within;
  * Lote de enquadramento do acervo V3: o quadro 3:4 segue a Regra de Enquadramento do Produto do card
  * (catalog/semantic-regions.json) — parte de cima preenche o quadro com a gola no topo, parte de baixo com o cós no topo e
  * as pernas além da base, calçado inteiro na largura, bolsa inteira contida — e, em foto com modelo, sem rosto/pescoço acima
- * da gola e sem a camisa acima do cós. Sem quadro possível, o motivo (a foto não é reenquadrada).
+ * da gola e sem a camisa acima do cós. Quadro de cobertura com menos de 55% da largura da peça na faixa do topo (tronco no
+ * decote, quadril no cós) é um zoom de tecido: recusado. Sem quadro possível, o motivo (a foto não é reenquadrada).
  */
 class ProductRuleFrameTest {
     private final CatalogImagePipeline pipeline = new CatalogImagePipeline(SemanticRegionRegistry.get(), null);
@@ -71,6 +72,12 @@ class ProductRuleFrameTest {
         assertThat(r.compliance()).containsEntry("focusInTopHalf", true).containsEntry("ok", true);
         assertThat(r.ruleOrigin()).isEqualTo("pieceType");
         assertThat(r.target()).isEqualTo("neckline_top");
+        // packshot: o quadro tem a largura do tronco — bem acima do mínimo de 55% da largura da peça
+        assertThat(widthShare(r)).isGreaterThanOrEqualTo(ProductRuleFrame.MIN_COVER_WIDTH_SHARE);
+    }
+
+    private static double widthShare(ProductRuleFrame.Result r) {
+        return ((Number) r.compliance().get("frameWidthShare")).doubleValue();
     }
 
     @Test
@@ -165,6 +172,30 @@ class ProductRuleFrameTest {
         // o quadro começa no decote: nada do pescoço (x 465–535 até y=290) e logo abaixo dele
         assertThat(c.y() * 1200).isBetween(296.0, 330.0);
         assertThat(c.w() * 1000).isGreaterThan(0.9 * 340);
+        // quadro normal em foto com modelo: mantido, com a largura do tronco (≥ 55% da largura da peça nas linhas do quadro)
+        assertThat(widthShare(r)).isGreaterThanOrEqualTo(ProductRuleFrame.MIN_COVER_WIDTH_SHARE);
+        assertThat(r.compliance()).containsKey("garmentWidthPx");
+    }
+
+    @Test
+    void quadroEstreitoNaModeloEZoomDeTecidoERecusado() {
+        // polo de listras claras na modelo (como a polo_shirt 018 do acervo): a listra da cor do fundo sai da máscara e só
+        // sobra, para o quadro de cobertura, a faixa escura à direita — um quadro de ~180 px num tronco de 340 px com mangas
+        BufferedImage img = teeOnModel();
+        Graphics2D g = pen(img, new Color(240, 240, 240));
+        g.fillRect(380, 300, 90, 560);
+        g.dispose();
+        ProductRuleFrame.Result r = frame(img, "upper_piece", "polo_shirt");
+        assertThat(r.ok()).isFalse();
+        assertThat(r.reason()).isEqualTo("COVER_FRAME_TOO_NARROW");
+        assertThat(r.model()).isTrue();
+        // o quadro recusado fica registrado com a medida: menos de 55% da largura da peça na faixa do topo
+        assertThat(r.crop()).isNotNull();
+        assertThat(widthShare(r)).isLessThan(ProductRuleFrame.MIN_COVER_WIDTH_SHARE);
+        assertThat(r.cropWidthPx()).isGreaterThanOrEqualTo(ProductRuleFrame.MIN_WIDTH_PX);
+        // o lote recebe a recusa (a foto fica como está)
+        Map<String, Object> f = viaPipeline(img, "upper_piece", "polo_shirt");
+        assertThat(f).containsEntry("ok", false).containsEntry("reason", "COVER_FRAME_TOO_NARROW");
     }
 
     /** Modelo de camisa vermelha por fora da calça jeans: rosto, braços, camisa até y=640, calça até os pés. */
@@ -194,6 +225,25 @@ class ProductRuleFrameTest {
         assertThat(offColor(img, c, DENIM, 940)).as("camisa/pele/fundo entre o cós e o gancho").isZero();
         assertThat(c.w() * 1000).isGreaterThan(0.9 * 280);
         assertThat(c.y2() * 1600).as("pernas além da base").isGreaterThan(940).isLessThan(1500);
+        // quadro normal: a largura do quadril
+        assertThat(widthShare(r)).isGreaterThanOrEqualTo(ProductRuleFrame.MIN_COVER_WIDTH_SHARE);
+    }
+
+    @Test
+    void jaquetaAbertaEstreitandoOCosDeixaQuadroEstreitoERecusado() {
+        // jaqueta aberta caindo sobre o quadril dos dois lados (como a chino_pants 046 do acervo): do cós até a barra da
+        // jaqueta só o vão do meio (140 px) é calça; o quadril mede 280 px — o quadro que cabe é um zoom da braguilha
+        BufferedImage img = jeansOnModel();
+        Graphics2D g = pen(img, new Color(0x2E, 0x4A, 0x2E));
+        g.fillRect(355, 270, 75, 470);
+        g.fillRect(570, 270, 75, 470);
+        g.dispose();
+        ProductRuleFrame.Result r = frame(img, "lower_piece", "chino_pants");
+        assertThat(r.ok()).isFalse();
+        assertThat(r.reason()).isEqualTo("COVER_FRAME_TOO_NARROW");
+        assertThat(r.crop().w() * 1000).isLessThan(150);
+        assertThat(((Number) r.compliance().get("garmentWidthPx")).intValue()).isBetween(260, 290);
+        assertThat(widthShare(r)).isLessThan(ProductRuleFrame.MIN_COVER_WIDTH_SHARE);
     }
 
     @Test

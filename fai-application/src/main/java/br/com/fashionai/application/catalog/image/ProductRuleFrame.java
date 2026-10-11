@@ -28,11 +28,14 @@ import java.util.Set;
  *       incluídos), com folga mínima de 2% em WIDTH/CONTAIN para nada ser cortado; o que passar da foto é completado com a
  *       cor do fundo de estúdio (como o smartPadding do card). Objeto sobre pessoa não é isolado: sem quadro.</li>
  * </ul>
+ * Quadro de cobertura estreito demais para a peça (menos de 55% da largura da peça na faixa do topo do quadro — tronco na
+ * faixa do decote, quadril na faixa do cós) é um zoom de tecido, não a peça: recusado ({@code COVER_FRAME_TOO_NARROW}).
  * Sem quadro possível (peça não isolada, fundo sem cor de estúdio, nenhum quadro de cobertura no topo, quadro pequeno
- * demais) devolve {@code ok=false} com o motivo: a foto não é reenquadrada.
+ * ou estreito demais) devolve {@code ok=false} com o motivo: a foto não é reenquadrada.
  */
 public final class ProductRuleFrame {
-    public static final String VERSION = "PRODUCT_RULE_FRAME_V1";
+    /** V2: quadro de cobertura estreito demais para a peça é recusado (COVER_FRAME_TOO_NARROW); análises guardadas da V1 são refeitas */
+    public static final String VERSION = "PRODUCT_RULE_FRAME_V2";
     /** proporção do quadro do editor (o lote grava 900×1200) */
     public static final int ASPECT_W = 3, ASPECT_H = 4;
     /** largura mínima do quadro em pixels da foto analisada (a saída de 900 px amplia no máximo 10×; a ampliação fica no relatório) */
@@ -41,6 +44,14 @@ public final class ProductRuleFrame {
     static final double MIN_UPPER_FRACTION = 0.22;
     /** parte de baixo: largura mínima em relação ao quadril (mãos nos bolsos estreitam; menos que isso não é a peça) */
     static final double MIN_LOWER_FRACTION = 0.4;
+    /**
+     * quadro de cobertura (parte de cima, peça inteira, parte de baixo): largura mínima em relação à largura da peça na faixa
+     * do topo do quadro. Parte de cima/peça inteira: a mediana, nas linhas do quadro (do decote para baixo), da largura da
+     * peça na linha (da primeira à última coluna da peça: o tronco com as mangas; uma listra da cor do fundo não a encurta).
+     * Parte de baixo: a largura do quadril na faixa do cós ao gancho (a mesma mediana que dá a caixa da regra). Menos que
+     * isso o quadro é um zoom borrado de tecido (polo de listras claras, jaqueta/mãos estreitando o cós), não a peça
+     */
+    static final double MIN_COVER_WIDTH_SHARE = 0.55;
     /** folga mínima de cada lado em WIDTH/CONTAIN: o arredondamento para pixels nunca corta o objeto */
     static final double OBJECT_MARGIN_FLOOR = 0.02;
     /** componente separado com ao menos esta fração do maior faz parte do objeto (o outro pé do par, o brinco do par) */
@@ -227,7 +238,9 @@ public final class ProductRuleFrame {
         if (win == null) return c.refuse("NO_COVER_WINDOW_AT_TOP", m);
         if (person) win = inset(win, 0.025, c.aw(), c.ah());     // folga do vão braço–tronco (sombra fina que a máscara não separa)
         if (win.w() < MIN_WIDTH_PX || win.w() < pieceBox.w() * MIN_UPPER_FRACTION) return c.refuse("FRAME_TOO_SMALL", m);
-        return garmentResult(c, m, g, win, product, win.y() + win.h(), "FRAME", obs, null);
+        // largura da peça na faixa do topo do quadro: a mediana da largura da peça nas linhas do quadro
+        int garmentWidth = medianRowWidth(g, w, b, win.y(), win.y() + win.h());
+        return garmentResult(c, m, g, win, product, win.y() + win.h(), "FRAME", obs, null, garmentWidth);
     }
 
     // ------------------------------------------------------------------ COVER/TOP: parte de baixo
@@ -311,7 +324,8 @@ public final class ProductRuleFrame {
         // foco da parte de baixo como no pipeline do card: a metade de cima do caminho cós → gancho (cós, bolsos e braguilha)
         FramingStrategy.Focus focus = !rise ? null : new FramingStrategy.Focus(c.profile().focus().name(),
                 norm(new ImageOps.Box(hx0, waist, hx1 - hx0, Math.max(1, (crotch - waist) / 2)), w, h), List.of(), "WAIST_TO_CROTCH_MASK");
-        return garmentResult(c, m, g, win, product, bandEnd, bandEnd < hem ? "WAIST_TO_CROTCH" : "FRAME", obs, focus);
+        // largura da peça na faixa do cós: o quadril (mediana centrada do cós a 80% do gancho)
+        return garmentResult(c, m, g, win, product, bandEnd, bandEnd < hem ? "WAIST_TO_CROTCH" : "FRAME", obs, focus, 2 * hipHalf);
     }
 
     /** Meio do vão entre as pernas logo abaixo do gancho, a partir do centro da caixa; −1 sem vão. */
@@ -467,7 +481,7 @@ public final class ProductRuleFrame {
     }
 
     private static Result garmentResult(Context c, FabricFrame.Mask m, boolean[] g, Window win, NRect product, int bandEnd,
-                                        String scope, List<String> obs, FramingStrategy.Focus focusOverride) {
+                                        String scope, List<String> obs, FramingStrategy.Focus focusOverride, int garmentWidth) {
         int w = m.w(), h = m.h();
         NRect crop = new NRect(win.x() / (double) w, win.y() / (double) h, win.w() / (double) w, win.h() / (double) h);
         long on = 0, all = 0;
@@ -475,16 +489,21 @@ public final class ProductRuleFrame {
         for (int y = win.y(); y < end; y++) {
             for (int x = win.x(); x < win.x() + win.w(); x++) { all++; on += g[y * w + x] ? 1 : 0; }
         }
-        if (all == 0) return garmentResult(c, m, g, win, product, win.y() + win.h(), "FRAME", obs, focusOverride);
+        if (all == 0) return garmentResult(c, m, g, win, product, win.y() + win.h(), "FRAME", obs, focusOverride, garmentWidth);
         double coverage = (double) on / all;
         FramingStrategy.Focus focus = focusOverride != null ? focusOverride : SemanticCropper.registryFocus(product, c.profile());
         Map<String, Object> compliance = new LinkedHashMap<>();
         SemanticCropper.ruleScore(crop, w, h, product, focus, c.profile().rule(), 0, List.of(), compliance);
         compliance.put("garmentCoverage", NRect.r4(coverage));
         compliance.put("coverageScope", scope);
+        // quadro ÷ largura da peça na faixa do topo do quadro (tronco na faixa do decote, quadril na faixa do cós)
+        double widthShare = garmentWidth > 0 ? win.w() / (double) garmentWidth : 1;
+        compliance.put("garmentWidthPx", garmentWidth);
+        compliance.put("frameWidthShare", NRect.r4(widthShare));
         if (Boolean.FALSE.equals(compliance.get("focusInTopHalf")) && c.profile().rule().focusTopHalf()) obs.add("FOCUS_NOT_IN_TOP_HALF");
-        if (coverage < 1) {
-            return new Result(false, "COVERAGE_BELOW_100", crop, c.aw(), c.ah(), c.profile().rule(), c.origin(), c.registryVersion(),
+        String refusal = coverage < 1 ? "COVERAGE_BELOW_100" : widthShare < MIN_COVER_WIDTH_SHARE ? "COVER_FRAME_TOO_NARROW" : null;
+        if (refusal != null) {
+            return new Result(false, refusal, crop, c.aw(), c.ah(), c.profile().rule(), c.origin(), c.registryVersion(),
                     c.type(), c.sub(), c.target(), focus.name(), focus.rect(), product, m.person(), m.skinShare(), coverage, scope,
                     product.insideOf(crop), 0, hex(m), List.of(), null, compliance, win.w(), List.copyOf(obs));
         }
@@ -691,6 +710,25 @@ public final class ProductRuleFrame {
     }
 
     // ------------------------------------------------------------------ utilitários
+
+    /**
+     * Mediana, nas linhas [y0, y1), da largura da máscara na linha dentro de {@code b} (da primeira à última coluna da peça —
+     * buracos e listras da cor do fundo no meio não a encurtam); linha sem peça conta 0.
+     */
+    static int medianRowWidth(boolean[] g, int w, ImageOps.Box b, int y0, int y1) {
+        int from = Math.max(b.y(), y0), to = Math.min(b.y() + b.h(), y1);
+        if (to <= from) return 0;
+        int[] widths = new int[to - from];
+        for (int y = from; y < to; y++) {
+            int first = -1, last = -1;
+            for (int x = b.x(); x < b.x() + b.w(); x++) {
+                if (g[y * w + x]) { if (first < 0) first = x; last = x; }
+            }
+            widths[y - from] = first < 0 ? 0 : last - first + 1;
+        }
+        java.util.Arrays.sort(widths);
+        return widths[widths.length / 2];
+    }
 
     /** Caixa das colunas da máscara nas linhas [y0, y1), dentro de {@code b}; null sem pixel. */
     static ImageOps.Box rowsBox(boolean[] g, int w, ImageOps.Box b, int y0, int y1) {

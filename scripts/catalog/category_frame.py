@@ -16,10 +16,14 @@ subcategory and ``SemanticCropper.registryRuleCrop`` — in the 3:4 proportion o
                                    belt); watch COVER on the dial; sunglasses/eyeglasses WIDTH
 
 Where the 3:4 window of a whole-object rule goes past the photo, the renderer completes it with the studio background
-colour (the card's smartPadding). When the rule cannot be satisfied (piece not isolated — e.g. a shoe on a foot —, no
-waistband visible, no cover window at the neckline, frame too small, background not uniform) the photo is NOT reframed and
-nothing is stored: ``FRAME_UNAVAILABLE:<reason>``. ``--force-category-frame`` only waives source authorisation and
-confirmed visual identity (process script); here it keeps rule-compliance doubts as observations instead of review.
+colour (the card's smartPadding). A cover frame (upper/lower/full body) narrower than 55% of the garment width at the
+frame's top band (the torso across the frame rows from the neckline; the hips in the waistband → crotch band) is a blurred
+zoom of fabric and is refused (``COVER_FRAME_TOO_NARROW``). When the rule cannot be satisfied (piece not isolated — e.g. a
+shoe on a foot —, no waistband visible, no cover window at the neckline, frame too small or too narrow, background not
+uniform) the photo is NOT reframed and no new frame is stored: ``FRAME_UNAVAILABLE:<reason>``. If that photo is still showing
+a legacy frame (V1/V2 under /catalog/framed/), the process script restores it to its pre-frame state (``frame_revert``,
+decision ``REVERTED_TO_ORIGINAL``). ``--force-category-frame`` only waives source authorisation and confirmed visual identity
+(process script); here it keeps rule-compliance doubts as observations instead of review.
 """
 import copy
 import json
@@ -31,7 +35,10 @@ VERSION = 'CATALOG_FRAME_34_PRODUCT_RULE_V3'
 LEGACY_VERSIONS = ('CATALOG_FRAME_34_50_V1', 'CATALOG_FRAME_34_FABRIC_V2')
 POLICY = 'PRODUCT_RULE'
 FORCED_DECISION = 'FORCED_CATEGORY_FRAME'
+# V3 recusou a foto e a imagem enquadrada antiga (V1/V2) voltou ao estado anterior ao quadro
+REVERTED_DECISION = 'REVERTED_TO_ORIGINAL'
 UNAVAILABLE = 'FRAME_UNAVAILABLE:'
+FRAMED_PATH = '/catalog/framed/'                     # chave dos JPEGs do lote no S3 (category_frame_storage.FrameStorage)
 ASPECT = .75                                         # 3:4 in pixels
 KNOWN = {'upper_piece', 'lower_piece', 'accessory_piece', 'shoes_piece', 'full_body_piece'}
 FITS = {'COVER', 'WIDTH', 'CONTAIN'}
@@ -49,6 +56,44 @@ def _number(value):
 
 def _rect_ok(rect):
     return isinstance(rect, dict) and all(_number(rect.get(k)) is not None for k in ('x', 'y', 'w', 'h'))
+
+
+def framed_url(url):
+    """URL de um JPEG gravado pelo lote de enquadramento (``…/catalog/framed/<uuid>/<sha256>.jpg``)."""
+    if not isinstance(url, str) or not url.strip():
+        return False
+    from urllib.parse import unquote, urlsplit
+    try:
+        return FRAMED_PATH in unquote(urlsplit(url.strip()).path)
+    except ValueError:
+        return False
+
+
+def legacy_framed(record):
+    """A imagem mostra hoje um quadro de uma versão anterior (V1 50%, V2 só tecido): versão antiga e stored_url do lote."""
+    return record.get('pipeline_version') in LEGACY_VERSIONS and framed_url(record.get('stored_url'))
+
+
+def reverted_marker(record):
+    """Marcador ``REVERTED_TO_ORIGINAL`` gravado quando a V3 recusou a foto e o quadro antigo foi desfeito (ou None).
+
+    Fica em ``crop_json.editorFrame`` e ``metrics_json.debug.editorFrame`` (e em ``assets_json.editorFrame`` quando a
+    imagem voltou a ter assets)."""
+    if record.get('pipeline_version') != VERSION:
+        return None
+    sources = []
+    for name in ('crop', 'assets', 'metrics'):
+        value = record.get(name + '_json', record.get(name))
+        try:
+            value = _object(value)
+        except ValueError:
+            value = None
+        if isinstance(value, dict):
+            sources.append(value.get('editorFrame') if name != 'metrics' else (value.get('debug') or {}).get('editorFrame'))
+    for frame in sources:
+        if isinstance(frame, dict) and frame.get('decision') == REVERTED_DECISION:
+            return frame
+    return None
 
 
 def crop_inside_photo(rect):
@@ -141,6 +186,7 @@ def apply_frame(response, category, *, force=False, fallback=None, subcategory=N
         garmentCoverage=_number(frame.get('garmentCoverage')), coverageScope=frame.get('coverageScope'),
         objectInside=_number(frame.get('objectInside')), padding=padding, background=background,
         model=bool(frame.get('model')), skinExcluded=skin, cropWidthPx=frame.get('cropWidthPx'),
+        frameWidthShare=_number(compliance.get('frameWidthShare')), garmentWidthPx=compliance.get('garmentWidthPx'),
         compliance={k: compliance.get(k) for k in ('ok', 'focusInTopHalf', 'focusCenter', 'frameFilledByProduct',
                                                     'widthFilledByProduct', 'productInsideFrame', 'sideView') if k in compliance},
         requiresReview=review, clamped=False, observations=observations,
@@ -180,4 +226,4 @@ def report_fields(response):
             'frame_fabric_coverage': frame.get('garmentCoverage') if frame.get('garmentCoverage') is not None else frame.get('objectInside'),
             'frame_fit': frame.get('fit'), 'frame_align': frame.get('align'),
             'frame_rule_source': (source.get('origin') or '') + ('@' + str(source.get('registryVersion')) if source.get('registryVersion') else '') or None,
-            'frame_padding': frame.get('padding')}
+            'frame_padding': frame.get('padding'), 'frame_width_share': frame.get('frameWidthShare')}

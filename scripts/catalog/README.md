@@ -120,7 +120,11 @@ e domínio correspondente podem persistir imagens (ou a decisão explícita
 é normalizado (maiúsculas/`www.`) e também reconhece subdomínios da fonte na URL da
 foto, com a mesma regra de limite entre nomes usada pela API. Configure `S3_BUCKET`,
 `S3_ENDPOINT`, região e credenciais, mais `STORAGE_PUBLIC_BASE_URL` (HTTPS) ou
-`S3_SERVE_THROUGH_API=true` com `APP_BASE_URL` (HTTPS) para o bucket privado.
+`S3_SERVE_THROUGH_API=true` com `APP_BASE_URL` (HTTPS) para o bucket privado. Antes
+de ler o banco ou iniciar o Java, o modo confere `MYSQL_HOST`, `MYSQL_DATABASE`,
+`MYSQL_USER`, `MYSQL_PASSWORD` (aceitando os nomes do Railway), `S3_BUCKET`,
+`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` e a URL pública do bucket, e para com a
+lista das variáveis que faltam — só os nomes, nunca os valores (código de saída 2).
 
 O quadro 3:4 segue a **Regra de Enquadramento do Produto do card**
 (`catalog/semantic-regions.json`, política `PRODUCT_RULE`), calculada pelo mesmo
@@ -140,10 +144,15 @@ devolve o quadro e o script confere e grava:
 
 O que passar da foto num objeto inteiro é completado com a cor do fundo de estúdio
 (como o smartPadding do card); quadros de cobertura arredondam para dentro até o
-3:4 exato, objetos inteiros para fora. Sem quadro pela regra (calçado no pé, cós
-coberto pela peça de cima, nenhum quadro de cobertura na gola/no cós, quadro
-pequeno, fundo sem cor de estúdio) a foto não é gravada
-(`FRAME_UNAVAILABLE:<motivo>`); regras, motivos e a avaliação nas fotos reais em
+3:4 exato, objetos inteiros para fora. Quadro de cobertura (parte de cima, peça
+inteira, parte de baixo) com menos de 55% da largura da peça na faixa do topo do
+quadro — o tronco nas linhas do quadro a partir do decote, o quadril na faixa do cós
+ao gancho — é um zoom de tecido e é recusado (`COVER_FRAME_TOO_NARROW`; a medida fica
+em `editorFrame.frameWidthShare`); packshots têm a largura do tronco/quadril e não
+são afetados. Sem quadro pela regra (calçado no pé, cós coberto pela peça de cima,
+nenhum quadro de cobertura na gola/no cós, quadro pequeno ou estreito demais, fundo
+sem cor de estúdio) nenhum quadro novo é gravado (`FRAME_UNAVAILABLE:<motivo>`);
+regras, motivos e a avaliação nas fotos reais em
 `docs/catalogo/PROCESSAR_ACERVO_IMAGENS.md`. Dúvida de conformidade (foco fora da
 metade de cima, calçado que não está de lado) fica em `NEEDS_REPROCESSING` para
 revisão no modo padrão e vira observação no modo forçado. Revisões humanas e
@@ -153,7 +162,16 @@ versão do registro), `fit`, `align` e a cobertura ficam em `assets_json.editorF
 O modo é explícito e não muda o pipeline automático da API. A versão dos metadados
 é `CATALOG_FRAME_34_PRODUCT_RULE_V3`; as anteriores — `CATALOG_FRAME_34_50_V1`
 (quadro de 50% da largura) e `CATALOG_FRAME_34_FABRIC_V2` (close só de tecido) —
-contam como pendentes e **são refeitas** na próxima execução. Checkpoints guardam a
+contam como pendentes e **são refeitas** na próxima execução. Se a V3 recusar a foto
+e ela ainda mostrar o JPEG antigo (`/catalog/framed/`), o quadro antigo é **desfeito**:
+`stored_url`/`assets_json` voltam ao que a gravação antiga preservou
+(`previousStoredUrl`/`previousAssets`, seguindo V2 sobre V1 até antes do primeiro
+quadro; sem nada anterior, a foto original da marca), o recorte 3:4 antigo dá lugar
+à análise de nível A atual e `pipeline_version` V3 com o marcador
+`editorFrame.decision = REVERTED_TO_ORIGINAL` (e o motivo) impede que a próxima
+execução refaça a foto. A gravação usa o mesmo caminho guardado e auditado
+(concorrência, revisão humana, antes/depois, COMMIT incerto), nada é apagado do S3
+e o resumo/planilha contam `frame_reverted`. Checkpoints guardam a
 análise original; os gravados antes da regra do produto (sem `productFrame`, ou de
 outra versão dela) são analisados de novo, para reaplicar as regras sem baixar
 novamente. No Railway, execute em um job com o checkout,
