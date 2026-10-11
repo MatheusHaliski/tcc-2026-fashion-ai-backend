@@ -39,13 +39,13 @@ class PersistedEvidenceTest(unittest.TestCase):
     def test_framing_metadata_without_asset_is_not_standardized(self):
         from scripts.catalog.catalog_image_inventory import is_standardized
         crop={'aspect':'3:4','crop':{'x':.25,'y':.25,'w':.5,'h':.5},'ruleCompliant':True,
-              'editorFrame':{'version':'CATALOG_FRAME_34_PRODUCT_RULE_V3','policy':'PRODUCT_RULE','rule':{'fit':'COVER','align':'TOP'},
+              'editorFrame':{'version':'CATALOG_FRAME_34_FILLED_V4','policy':'PIECE_FILLED_100','fit':'COVER','align':'FOCUS','padding':0,
                              'garmentCoverage':1.0,'coverageScope':'FRAME','requiresReview':False}}
         row={'source_url':'https://brand.example/a.jpg','processing_status':'APPROVED',
-             'pipeline_version':'CATALOG_FRAME_34_PRODUCT_RULE_V3','crop_json':crop}
+             'pipeline_version':'CATALOG_FRAME_34_FILLED_V4','crop_json':crop}
         self.assertFalse(is_standardized(row))
         row.update(stored_url='https://media.example/a.jpg',assets_json={'card':'https://media.example/a.jpg',
-                   'framingVersion':'CATALOG_FRAME_34_PRODUCT_RULE_V3','sha256':'a'*64})
+                   'framingVersion':'CATALOG_FRAME_34_FILLED_V4','sha256':'a'*64})
         self.assertTrue(is_standardized(row))
 
 

@@ -90,7 +90,7 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
   it("guarda-roupa vazio não bloqueia: o provador abre nas lojas e salva provas", async () => {
     loggedAs(ME, {
       "GET /api/taxonomy": TAXONOMY, "GET /api/try-on": STATE, "GET /api/catalog/stores": STORES,
-      "GET /api/catalog/search": { intent: { brand: "Nike", brandKnown: true, keywords: [] }, results: [AF1], total: 1, enoughInput: true },
+      "GET /api/catalog/products": { items: [AF1], total: 1, page: 0, size: 48, hasMore: false },
     });
     renderApp(<TryOnPage />);
     fireEvent.click(await screen.findByRole("radio", { name: /Meu guarda-roupa/ }));
@@ -257,9 +257,9 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     const { calls } = loggedAs(ME, {
       ...baseRoutes(),
       "GET /api/try-on": { ...STATE, avatar: { id: "a1", model: {} } },
-      "GET /api/catalog/search": (url: URL) => ({
+      "GET /api/catalog/products": (url: URL) => ({
         intent: { brand: url.searchParams.get("brand"), brandKnown: true, keywords: [] },
-        results: SHIRTS, total: SHIRTS.length, enoughInput: true,
+        items: SHIRTS, total: SHIRTS.length, page: 0, size: 48, hasMore: false,
       }),
     });
     renderApp(<TryOnPage />);
@@ -296,15 +296,16 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     const revisited = within(screen.getByRole("list", { name: "Resultados do catálogo" })).getByRole("heading", { name: "Camiseta Nike 5" }).closest("article")!;
     expect(within(revisited).getByRole("button", { name: "Black" }).getAttribute("aria-pressed")).toBe("true");
     // Client-side page changes must not repeat the catalog request or alter the current outfit.
-    expect(calls.filter((call) => call.path.startsWith("/api/catalog/search"))).toHaveLength(1);
+    expect(calls.filter((call) => call.path.startsWith("/api/catalog/products") && call.path.includes("brand=Nike"))).toHaveLength(1);
   });
 
   it("volta à primeira página ao filtrar o catálogo, trocar categoria ou escolher outra marca", async () => {
     loggedAs(ME, {
       ...baseRoutes(),
-      "GET /api/catalog/search": (url: URL) => {
+      "GET /api/catalog/products": (url: URL) => {
         const brand = url.searchParams.get("brand") ?? "Nike";
-        return { intent: { brand, brandKnown: true, keywords: [] }, results: brand === "Levi's" ? [L501] : SHIRTS, total: brand === "Levi's" ? 1 : SHIRTS.length, enoughInput: true };
+        const items = (brand === "Levi's" ? [L501] : SHIRTS).filter(p => !url.searchParams.get("gender") || p.gender === url.searchParams.get("gender"));
+        return { items, total: items.length, page: 0, size: 48, hasMore: false };
       },
     });
     renderApp(<TryOnPage />);
@@ -313,7 +314,7 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Avançar →" }));
     expect(screen.getByText("Página 2 de 3 · 10 resultados")).toBeTruthy();
     fireEvent.click(within(screen.getByLabelText("Filtros rápidos")).getByRole("button", { name: "Feminino" }));
-    expect(screen.getByText("Página 1 de 2 · 5 resultados")).toBeTruthy();
+    expect(await screen.findByText("Página 1 de 2 · 5 resultados")).toBeTruthy();
     expect(within(screen.getByRole("list", { name: "Resultados do catálogo" })).getByText("Camiseta Nike 1")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Avançar →" }));
     expect(screen.getByText("Página 2 de 2 · 5 resultados")).toBeTruthy();

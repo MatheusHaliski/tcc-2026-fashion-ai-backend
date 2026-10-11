@@ -41,6 +41,11 @@ function mockCatalog(currentProducts = () => products) {
     "GET /api/taxonomy": taxonomy,
     "GET /api/catalog/brands": { brands: [{ id: "nike", name: "Nike", slug: "nike", products: 11 }] },
     "GET /api/catalog/suggestions": { suggestions: [] },
+    "GET /api/catalog/summary": { products: 11, brands: 1 },
+    "GET /api/catalog/products": (url: URL) => {
+      const rows = url.searchParams.get("q") === "vazio" ? [] : currentProducts().filter(p => !url.searchParams.get("gender") || p.gender === url.searchParams.get("gender"));
+      return { items: rows, total: rows.length, page: 0, size: 48, hasMore: false, brandKnown: true };
+    },
     "GET /api/catalog/search": (url: URL): SearchResponse => {
       const results = url.searchParams.get("q") === "vazio" ? [] : currentProducts();
       return {
@@ -48,6 +53,7 @@ function mockCatalog(currentProducts = () => products) {
         results, total: results.length, enoughInput: true, canSearchOfficial: false,
       };
     },
+    ...Object.fromEntries(products.map(product => [`POST /api/catalog/products/${product.id}/verify-image`, product])),
     "POST /api/pieces/from-catalog": { ...PIECE, id: "saved-catalog-piece" },
   });
 }
@@ -111,11 +117,11 @@ describe("busca catalogada em Adicionar peça", () => {
     expect(within(list).getByRole("heading", { name: "Tênis 11" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Feminino", exact: true }));
-    expect(screen.getByText("Peças nesta seleção: 6")).toBeTruthy();
+    expect(await screen.findByText("Peças nesta seleção: 6")).toBeTruthy();
     expect(within(pagination()).getByText("Página 1 de 2 · 6 resultados")).toBeTruthy();
-    expect(within(list).getAllByRole("listitem")).toHaveLength(4);
-    expect(within(list).getByRole("heading", { name: "Tênis 1" })).toBeTruthy();
-    expect(within(list).queryByRole("heading", { name: "Tênis 2" })).toBeNull();
+    expect(within(screen.getByRole("list", { name: "Resultados do catálogo" })).getAllByRole("listitem")).toHaveLength(4);
+    expect(within(screen.getByRole("list", { name: "Resultados do catálogo" })).getByRole("heading", { name: "Tênis 1" })).toBeTruthy();
+    expect(within(screen.getByRole("list", { name: "Resultados do catálogo" })).queryByRole("heading", { name: "Tênis 2" })).toBeNull();
 
     fireEvent.change(screen.getByLabelText(/Como ela se chama/), { target: { value: "vazio" } });
     await screen.findByText("Peças nesta seleção: 0");

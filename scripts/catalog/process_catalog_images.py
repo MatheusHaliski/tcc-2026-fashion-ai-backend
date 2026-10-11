@@ -386,7 +386,7 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
     if category_frame:
         from category_frame import reverted_marker
         reverted = reverted_marker(result)
-        if reverted and reverted.get("productFrameVersion") == analyzer.ready.get("productFrameVersion"):
+        if reverted and reverted.get("fabricFrameVersion") == analyzer.ready.get("fabricFrameVersion") and analyzer.ready.get("fabricFrameVersion"):
             # a mesma regra já recusou esta foto e desfez o quadro antigo: não baixa nem analisa de novo
             result["status_note"] = "Preservado: a regra V3 recusou esta foto e o quadro antigo já foi desfeito (mesma versão da regra)."
             return result
@@ -405,8 +405,8 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
         # só com as proteções técnicas (HTTPS, sem credenciais, host público, tamanho, tipo).
         allowed = None if force else (result["persistence_decision"]["domains"] if frame_storage else None)
         response = checkpoint.get(result, analyzer.ready["pipelineVersion"])
-        if response is not None and category_frame and (not isinstance(response.get("productFrame"), dict)
-                                                         or response["productFrame"].get("version") != analyzer.ready.get("productFrameVersion")):
+        if response is not None and category_frame and (not isinstance(response.get("fabricFrame"), dict)
+                                                         or response["fabricFrame"].get("version") != analyzer.ready.get("fabricFrameVersion")):
             response = None                     # análise guardada antes da regra do produto (V1/V2) ou de outra versão dela: refaz
         if response is None:
             path = downloader.get(result["source_url"], allowed_domains=allowed) if frame_storage else downloader.get(result["source_url"])
@@ -471,7 +471,7 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
             # a V3 recusou a foto; se ela ainda mostra um quadro antigo (V1/V2), volta ao estado anterior ao quadro pelo mesmo
             # caminho guardado e auditado da gravação (catalog_image_updates.apply_product), com a análise Java atual quando houve
             from category_frame_storage import revert_plan
-            plan = revert_plan(result, result["error"], product_frame_version=analyzer.ready.get("productFrameVersion"))
+            plan = revert_plan(result, result["error"], fabric_frame_version=analyzer.ready.get("fabricFrameVersion"))
             if plan:
                 columns = (response or {}).get("columns") if result.get("java_analysis_completed") else None
                 result["frame_revert"] = plan
@@ -596,8 +596,8 @@ def main(argv=None):
                                           stderr_path=args.output.with_suffix(".java.log")) as analyzer:
                     if analyzer.ready["pipelineVersion"] != PIPELINE_VERSION:
                         raise RuntimeError("JAR desatualizado: compile a versão atual do pipeline antes de aplicar")
-                    if args.category_frame and not analyzer.ready.get("productFrameVersion"):
-                        raise RuntimeError("JAR sem a regra de enquadramento do produto (V3): rode `mvn -q -DskipTests package` antes de aplicar")
+                    if args.category_frame and not analyzer.ready.get("fabricFrameVersion"):
+                        raise RuntimeError("JAR sem enquadramento preenchido por categoria (V4): rode `mvn -q -DskipTests package` antes de aplicar")
                     analyzer.category_frame = args.category_frame
                     analyzer.force_frame = args.force_category_frame
                     if args.force_category_frame:

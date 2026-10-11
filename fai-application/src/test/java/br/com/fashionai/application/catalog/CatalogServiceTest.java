@@ -180,8 +180,8 @@ class CatalogServiceTest {
         List<CatalogProduct> all = MemoryRepository.rows(products);
         // o repositório em memória não executa a consulta nativa: a página vem estubada como o banco devolveria
         java.util.List<String> lastWords = new java.util.ArrayList<>();
-        when(products.browse(any(), any(), any(), any(), any(), any(), any())).thenAnswer(inv -> {
-            org.springframework.data.domain.Pageable pg = inv.getArgument(6);
+        when(products.browse(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenAnswer(inv -> {
+            org.springframework.data.domain.Pageable pg = inv.getArgument(8);
             lastWords.clear();
             for (int i = 3; i <= 5; i++) {
                 if (inv.getArgument(i) != null) {

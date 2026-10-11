@@ -201,3 +201,37 @@ seu inventário completo, para não invalidar a transação por seleção parcia
 Novos objetos usam chaves exclusivas; falhas conhecidas removem apenas objetos
 sem referências confirmadas. Em COMMIT incerto/DB indisponível, a limpeza fica
 pendente para auditoria. `audit_catalog_storage.py` lista candidatos e nunca exclui.
+
+
+### Enquadramento preenchido por categoria (V4)
+
+O lote `--category-frame` usa um quadro 3:4, inteiramente preenchido pela peça:
+parte superior perto da gola, parte inferior no zíper, acessório no centro e
+calçado no logo. Não completa com fundo e não aceita pessoas no recorte.
+Quando a máscara não oferece região válida, registra `FRAME_UNAVAILABLE` e
+não gera um novo JPEG. Focos sem landmark são auditados como estimados.
+V1, V2 e V3 são reavaliados na próxima execução, mesmo com checkpoint anterior.
+
+O clique em **É esta** solicita uma nova análise da foto original ao backend,
+sem reutilizar o resultado de análise em cache. Aplica o recorte semântico à
+imagem do card; o lote continua sendo responsável pela geração do JPEG no S3.
+Se a análise falhar, a seleção não é concluída silenciosamente.
+
+### Coleta e importação contínua
+
+`collect_official.py` coleta JSONL em `data/catalog/collected/`; coletar não
+insere produtos no MySQL. O glob `data/catalog/acervo/*.jsonl.gz` tampouco lê
+os arquivos dessa pasta. Para importar os registros completos enquanto a
+coleta continua, abra outro terminal com o mesmo ambiente virtual e MYSQL_*:
+
+```bash
+python3 scripts/catalog/sync_collected.py --watch
+```
+
+O sincronizador usa o importador existente, ignora produtos já cadastrados,
+espera a quebra de linha antes de ler um registro e salva seu deslocamento
+somente após a transação. O processo é exclusivo por pasta/checkpoint e pode
+ser interrompido e retomado. Sem `--watch`, faz apenas uma passagem.
+As telas consultam novamente o acervo ao voltar à aba e periodicamente quando
+visíveis. Produtos recusados continuam fora do catálogo disponível; o resumo
+separa o total cadastrado do disponível, sem inventar contagens.

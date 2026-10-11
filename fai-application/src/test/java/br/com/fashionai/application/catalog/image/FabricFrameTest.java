@@ -54,7 +54,7 @@ class FabricFrameTest {
     void camisetaNoPacoteQuadroNoPeitoSoComTecido() {
         BufferedImage img = tee(200, 200, 1.0);
         Map<String, Object> f = frame(img, "upper_piece", "t_shirt");
-        assertThat(f).containsEntry("ok", true).containsEntry("target", "chest").containsEntry("fabricCoverage", 1.0);
+        assertThat(f).containsEntry("ok", true).containsEntry("target", "collar").containsEntry("fabricCoverage", 1.0);
         NRect c = crop(f);
         assertPortrait34(img, c);
         assertAllFabric(img, c, NAVY);
@@ -80,7 +80,7 @@ class FabricFrameTest {
         g.fillRect(490, 120, 60, 780);
         g.dispose();
         Map<String, Object> f = frame(img, "upper_piece", "jacket");
-        assertThat(f).containsEntry("ok", true).containsEntry("target", "front_panel");
+        assertThat(f).containsEntry("ok", true).containsEntry("target", "collar");
         NRect c = crop(f);
         assertThat((c.x() + c.w()) * 1000).as("quadro termina antes da abertura").isLessThan(490);
         assertAllFabric(img, c, NAVY);
@@ -104,7 +104,7 @@ class FabricFrameTest {
         BufferedImage img = sneakers();
         Map<String, Object> f = frame(img, "shoes_piece", "casual_sneakers");
         if (Boolean.TRUE.equals(f.get("ok"))) {
-            assertThat(f).containsEntry("target", "upper");
+            assertThat(f).containsEntry("target", "logo");
             assertAllFabric(img, crop(f), RED);
             assertThat((crop(f).y() + crop(f).h()) * 900).as("acima da sola (y=640)").isLessThanOrEqualTo(641);
         } else {
@@ -115,8 +115,13 @@ class FabricFrameTest {
     @Test
     void joiasERelogioNaoTemQuadroDeTecido() {
         Map<String, Object> f = frame(watch(), "accessory_piece", "watch");
-        assertThat(f).containsEntry("ok", false).containsEntry("reason", "NOT_TEXTILE_ACCESSORY");
-        assertThat(f.get("crop")).isNull();
+        assertThat(f).containsEntry("target", "center");
+        if (Boolean.TRUE.equals(f.get("ok"))) {
+            assertThat(f).containsEntry("fabricCoverage", 1.0);
+            assertPortrait34(watch(), crop(f));
+        } else {
+            assertThat(f.get("crop")).isNull();
+        }
     }
 
     @Test
@@ -133,7 +138,7 @@ class FabricFrameTest {
         assertThat(r.reason()).isEqualTo("FABRIC_REGION_TOO_SMALL");
         assertThat(r.fabricCoverage()).as("o que existe é só tecido, mas pequeno demais para o quadro").isEqualTo(1.0);
         // cinto: tira estreita com fivela de metal — sem quadro de tecido, pela subcategoria
-        assertThat(FabricFrame.find(seg, PieceType.ACCESSORY_PIECE, "belt", null).reason()).isEqualTo("NOT_TEXTILE_ACCESSORY");
+        assertThat(FabricFrame.find(seg, PieceType.ACCESSORY_PIECE, "belt", null).reason()).isEqualTo("FABRIC_REGION_TOO_SMALL");
         // a mesma faixa com 600 px de altura (bolsa) tem quadro, e só de tecido
         boolean[] tall = new boolean[w * h];
         for (int y = 150; y < 750; y++) for (int x = 100; x < 1100; x++) { tall[y * w + x] = true; cut.setRGB(x, y, 0xFF5A3A22); }
@@ -141,7 +146,7 @@ class FabricFrameTest {
                 0, 1000 * 600.0 / (w * h), 1, 0xF6F6F6, java.util.Set.of(), 1, false, 0, null);
         FabricFrame.Result ok = FabricFrame.find(bag, PieceType.ACCESSORY_PIECE, "handbag", null);
         assertThat(ok.ok()).isTrue();
-        assertThat(ok.target()).isEqualTo("body");
+        assertThat(ok.target()).isEqualTo("center");
         assertThat(ok.fabricCoverage()).isEqualTo(1.0);
     }
 
@@ -185,6 +190,27 @@ class FabricFrameTest {
         Map<String, Object> f = frame(img, "upper_piece", "t_shirt");
         assertThat(f).containsEntry("ok", false);
         assertThat(f.get("reason")).isIn("GARMENT_NOT_ISOLATED", "SEGMENTATION_FRAGMENT", "NO_FABRIC_REGION", "FABRIC_REGION_TOO_SMALL");
+    }
+
+    @Test
+    void calcadoUsaLogoDetectadoECadarcoNaoSubstituiLogo() {
+        int w = 1000, h = 1000;
+        boolean[] mask = new boolean[w * h];
+        java.util.Arrays.fill(mask, true);
+        int[] pixels = new int[w * h];
+        java.util.Arrays.fill(pixels, RED.getRGB());
+        var box = new br.com.fashionai.application.imaging.ImageOps.Box(100, 100, 800, 800);
+        var logo = new FramingStrategy.Focus("logo", new NRect(.65, .35, .1, .1), java.util.List.of(), "LANDMARKS");
+        var plan = FabricFrame.plan(PieceType.SHOES_PIECE, "casual_sneakers", mask, pixels, w, h, box, logo, false);
+        assertThat(plan.ax()).isCloseTo(700, within(0.000001));
+        assertThat(plan.ay()).isCloseTo(400, within(0.000001));
+        assertThat(plan.source()).isEqualTo("PIPELINE_LANDMARK");
+        var laces = new FramingStrategy.Focus("laces", new NRect(.65, .35, .1, .1), java.util.List.of(), "LANDMARKS");
+        var estimated = FabricFrame.plan(PieceType.SHOES_PIECE, "casual_sneakers", mask, pixels, w, h, box, laces, false);
+        assertThat(estimated.source()).isEqualTo("ESTIMATED_LOGO");
+        var registry = new FramingStrategy.Focus("logo", logo.rect(), java.util.List.of(), "REGISTRY");
+        assertThat(FabricFrame.plan(PieceType.SHOES_PIECE, "casual_sneakers", mask, pixels, w, h, box, registry, false).source())
+                .isEqualTo("ESTIMATED_LOGO");
     }
 
     @Test

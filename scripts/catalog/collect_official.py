@@ -223,6 +223,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv=None) -> int:
     args = build_parser().parse_args(argv)
+    print("[catalogo] Coleta gera arquivos, não grava no MySQL. Para publicar continuamente, rode em outro terminal: python3 scripts/catalog/sync_collected.py --watch", flush=True)
     total = run(args)
     return 0 if total.get("accepted", 0) or total.get("domains") else 1
 

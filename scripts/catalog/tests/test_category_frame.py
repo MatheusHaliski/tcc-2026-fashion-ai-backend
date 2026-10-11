@@ -17,46 +17,66 @@ def product_frame(fit="COVER", align="TOP", crop=None, ok=True, reason=None, sco
             "compliance": {"ok": compliance_ok, "focusInTopHalf": compliance_ok}, "cropWidthPx": 300, "observations": list(observations)}
 
 
+def filled_frame(crop=None, coverage=1.0, ok=True, reason=None, target="collar", source="ESTIMATED_COLLAR"):
+    return {"version": "FABRIC_FRAME_34_V2", "ok": ok, "reason": reason,
+            "crop": crop or {"x": .375, "y": .3, "w": .25, "h": .25},
+            "fabricCoverage": coverage, "target": target,
+            "anchor": {"x": .5, "y": .35, "source": source}}
+
+
 class CategoryFrameTest(unittest.TestCase):
-    """Modo padrão: o quadro da regra do produto do Java; dúvida de conformidade pede revisão; sem quadro, nada."""
+    def response(self, frame=None):
+        return {"columns": {"width": 1200, "height": 1600, "processing_status": "APPROVED",
+                            "crop_json": json.dumps({"rule": {"fit": "CONTAIN"}, "padding": .1})},
+                "fabricFrame": frame if frame is not None else filled_frame()}
 
-    def response(self, width=1200, height=1600, frame=None):
-        return {'columns': {'width': width, 'height': height, 'processing_status': 'APPROVED',
-                            'crop_json': json.dumps({'product': {'x': .1, 'y': .1, 'w': .8, 'h': .8}, 'rule': {'fit': 'COVER'}})},
-                'productFrame': frame if frame is not None else product_frame()}
-
-    def test_pixel_aspect_and_product_rule_policy(self):
+    def test_pixel_aspect_and_filled_policy_preserve_input(self):
         original = self.response()
-        result = apply_frame(original, 'upper_piece', subcategory='t_shirt')
-        crop = json.loads(result['columns']['crop_json'])
-        r = crop['crop']
-        self.assertAlmostEqual(r['w'] * 1200 / (r['h'] * 1600), .75)
-        editor = crop['editorFrame']
-        self.assertEqual((editor['version'], editor['policy'], editor['fit'], editor['align']), (VERSION, POLICY, 'COVER', 'TOP'))
-        self.assertEqual(editor['ruleSource']['registry'], 'catalog/semantic-regions.json')
-        self.assertNotIn('rule', crop, 'a regra 4:5 antiga do card não sobrevive no recorte 3:4')
-        self.assertEqual(result['columns']['processing_status'], 'APPROVED')
-        self.assertEqual(original['columns']['processing_status'], 'APPROVED')
+        result = apply_frame(original, "upper_piece", subcategory="t_shirt")
+        crop = json.loads(result["columns"]["crop_json"])
+        r = crop["crop"]
+        self.assertAlmostEqual(r["w"] * 1200 / (r["h"] * 1600), .75)
+        editor = crop["editorFrame"]
+        self.assertEqual((editor["version"], editor["policy"], editor["fit"], editor["align"]),
+                         (VERSION, POLICY, "COVER", "FOCUS"))
+        self.assertEqual(editor["padding"], 0)
+        self.assertNotIn("rule", crop)
+        self.assertNotIn("padding", crop)
+        self.assertIn("rule", json.loads(original["columns"]["crop_json"]))
 
-    def test_compliance_doubt_requires_review(self):
-        result = apply_frame(self.response(frame=product_frame(compliance_ok=False)), 'upper_piece')['columns']
-        self.assertEqual(result['processing_status'], 'NEEDS_REPROCESSING')
-        editor = json.loads(result['crop_json'])['editorFrame']
-        self.assertTrue(editor['requiresReview'])
-        self.assertIn('RULE_COMPLIANCE_DOUBT', editor['observations'])
+    def test_category_focus_is_recorded_and_estimations_are_explicit(self):
+        for category, target in (("upper_piece", "collar"), ("lower_piece", "fly"),
+                                 ("accessory_piece", "center"), ("shoes_piece", "logo")):
+            with self.subTest(category=category):
+                result = apply_frame(self.response(filled_frame(target=target, source="ESTIMATED_" + target.upper())), category)
+                editor = json.loads(result["columns"]["crop_json"])["editorFrame"]
+                self.assertEqual(editor["target"], target)
+                self.assertIn("FOCUS_ESTIMATED", editor["observations"])
+        result = apply_frame(self.response(filled_frame(source="PIPELINE_LANDMARK")), "upper_piece")
+        self.assertNotIn("FOCUS_ESTIMATED", json.loads(result["columns"]["crop_json"])["editorFrame"]["observations"])
 
-    def test_no_frame_and_unknown_category(self):
-        with self.assertRaisesRegex(ValueError, 'FRAME_UNAVAILABLE:WAISTBAND_NOT_FOUND'):
-            apply_frame(self.response(frame=product_frame(ok=False, reason='WAISTBAND_NOT_FOUND')), 'lower_piece')
-        with self.assertRaises(ValueError):
-            apply_frame(self.response(), 'unknown')
+    def test_force_never_permits_background_padding_or_invalid_crop(self):
+        for force in (False, True):
+            for value, reason in ((filled_frame(coverage=.99), "COVERAGE_BELOW_100"),
+                                  (filled_frame(coverage=True), "COVERAGE_BELOW_100"),
+                                  (filled_frame(ok=False, reason="NO_FABRIC_REGION"), "NO_FABRIC_REGION"),
+                                  (filled_frame(crop={"x": .9, "y": .3, "w": .25, "h": .25}), "INVALID_CROP"),
+                                  (filled_frame(crop={"x": .3, "y": -.1, "w": .25, "h": .25}), "INVALID_CROP"),
+                                  (filled_frame(crop={"x": .3, "y": .3, "w": .5, "h": .25}), "ASPECT_NOT_3_4")):
+                with self.subTest(force=force, reason=reason), self.assertRaisesRegex(ValueError, reason):
+                    apply_frame(self.response(value), "shoes_piece", force=force)
 
-    def test_csv_gate_reasons_are_preserved(self):
-        response = self.response(frame=product_frame(fit='WIDTH', align='CENTER', scope=None, compliance_ok=False, target='whole_shoe'))
-        response['columns']['gate_reasons'] = 'LOW_RESOLUTION,FOCUS_UNCERTAIN'
-        result = apply_frame(response, 'shoes_piece')['columns']
-        self.assertEqual(result['gate_reasons'], 'LOW_RESOLUTION,FOCUS_UNCERTAIN,CATEGORY_FRAME_RULE_REVIEW')
+    def test_missing_analysis_unknown_category_and_dimensions_are_rejected(self):
+        with self.assertRaisesRegex(ValueError, "NO_FILLED_FRAME"):
+            apply_frame({"columns": {}}, "upper_piece")
+        with self.assertRaisesRegex(ValueError, "UNSUPPORTED"):
+            apply_frame(self.response(), "unknown", force=True)
+        with self.assertRaisesRegex(ValueError, "INVALID_DIMENSIONS"):
+            response = self.response(); response["columns"]["width"] = 0
+            apply_frame(response, "upper_piece")
+        with self.assertRaisesRegex(ValueError, "JAVA_IMAGE_TOO_SMALL"):
+            apply_frame(self.response(), "upper_piece", fallback="IMAGE_TOO_SMALL", force=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

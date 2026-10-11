@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { loggedAs, renderApp, ME } from "@/test-utils/render";
 import { PIECE } from "@/test-utils/fixtures";
+import { CatalogSearch } from "./catalog-search";
+import { vi } from "vitest";
 import NewPiecePage from "@/app/(site)/(app)/pieces/new/page";
 
 const TAXONOMY = {
@@ -24,9 +26,11 @@ describe("adicionar peça pelo catálogo (RF47) — etapa única Peça", () => {
   it("tipo → subtipo → marca → nome → 'É esta' preenche o formulário e salva por referência ao catálogo", async () => {
     const { calls } = loggedAs(ME, {
       "GET /api/taxonomy": TAXONOMY,
+      "GET /api/catalog/products": { items: [PRODUCT], total: 1, page: 0, size: 48, hasMore: false, canSearchOfficial: true },
       "GET /api/catalog/brands": { brands: [{ id: "b1", name: "Nike", slug: "nike", products: 26 }] },
       "GET /api/catalog/search": { intent: { brand: "Nike", brandKnown: true, category: "shoes_piece", subcategory: "casual_sneakers", keywords: ["air", "force"], color: null }, results: [PRODUCT], total: 1, enoughInput: true, canSearchOfficial: true },
       "GET /api/catalog/suggestions": { suggestions: ["Air Force 1", "Air Force 1 Mid"] },
+      "POST /api/catalog/products/p1/verify-image": PRODUCT,
       "POST /api/pieces/from-catalog": { ...PIECE, id: "nova-af1", name: "Air Force 1 '07" },
     });
     renderApp(<NewPiecePage />);
@@ -37,7 +41,7 @@ describe("adicionar peça pelo catálogo (RF47) — etapa única Peça", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Tênis casual" }));
     fireEvent.change(screen.getByLabelText(/De qual marca/), { target: { value: "Nike" } });
     fireEvent.change(screen.getByLabelText(/Como ela se chama/), { target: { value: "air force" } });
-    await waitFor(() => expect(calls.some((c) => c.path.startsWith("/api/catalog/search"))).toBe(true), { timeout: 4000 });
+    await waitFor(() => expect(calls.some((c) => c.path.startsWith("/api/catalog/products"))).toBe(true), { timeout: 4000 });
     expect(await screen.findByText("96% compatível")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Black/Black" }));
     fireEvent.click(screen.getByRole("button", { name: "É esta" }));
@@ -60,6 +64,7 @@ describe("adicionar peça pelo catálogo (RF47) — etapa única Peça", () => {
     const { calls } = loggedAs(ME, {
       "GET /api/taxonomy": TAXONOMY,
       "GET /api/catalog/brands": { brands: [] },
+      "GET /api/catalog/products": { items: [], total: 0, page: 0, size: 48, hasMore: false, canSearchOfficial: true },
       "GET /api/catalog/search": { intent: { brand: "Lacoste", brandKnown: true, category: "accessory_piece", subcategory: "watch", keywords: [], color: null }, results: [], total: 0, enoughInput: true, canSearchOfficial: true, message: "Ainda não encontramos essa peça no catálogo." },
       "POST /api/catalog/discover": { results: [], status: "NOT_FOUND", message: "Não achamos essa peça nas lojas oficiais da marca." },
     });
@@ -67,7 +72,7 @@ describe("adicionar peça pelo catálogo (RF47) — etapa única Peça", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Acessórios" }));
     fireEvent.click(await screen.findByRole("button", { name: "Relógio" }));
     fireEvent.change(screen.getByLabelText(/De qual marca/), { target: { value: "Lacoste" } });
-    await waitFor(() => expect(calls.some((c) => c.path.startsWith("/api/catalog/search"))).toBe(true), { timeout: 4000 });
+    await waitFor(() => expect(calls.some((c) => c.path.startsWith("/api/catalog/products"))).toBe(true), { timeout: 4000 });
     fireEvent.click(await screen.findByRole("button", { name: "Pesquisar em lojas oficiais" }));
     await waitFor(() => expect(calls.some((c) => c.path === "/api/catalog/discover")).toBe(true), { timeout: 4000 });
     expect(await screen.findByText(/Não achamos essa peça nas lojas oficiais/)).toBeTruthy();
@@ -94,8 +99,7 @@ describe("adicionar peça pelo catálogo (RF47) — etapa única Peça", () => {
             [{ facet: "pattern", value: "SINGLE_LOGO", ok: false }, { facet: "baseColor", value: "blue", ok: false }], 52),
         ], total: 2, enoughInput: true, canSearchOfficial: false },
     });
-    renderApp(<NewPiecePage />);
-    fireEvent.click(await screen.findByRole("button", { name: "Parte superior" }));
+    renderApp(<CatalogSearch onPick={vi.fn()} category="upper_piece" />);
     fireEvent.change(screen.getByLabelText(/De qual marca/), { target: { value: "Calvin Klein" } });
     fireEvent.change(screen.getByLabelText(/Como ela se chama/), { target: { value: "camisa toda azul com um logo ck branco no centro" } });
     await waitFor(() => expect(calls.some((c) => c.path.startsWith("/api/catalog/search") && c.path.includes("logo"))).toBe(true), { timeout: 4000 });

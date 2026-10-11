@@ -6937,7 +6937,7 @@
   "mirror.vista.humor.elegant": "Elegante",
   "mirror.vista.clima.cold": "Frío",
   "mirror.vista.clima.hot": "Calor",
-  "catalog.acervo_resumo": "Acervo completo: {products, number} piezas de {brands, number} marcas",
+  "catalog.acervo_resumo": "Catálogo disponible: {products, number} prendas de {brands, number} marcas",
   "catalog.ver_todo_acervo": "Ver todo el acervo",
   "catalog.fechar_acervo": "Cerrar acervo",
   "catalog.todas_de": "{total, number} piezas de {marca}",
@@ -6969,5 +6969,13 @@
   "discovery.people": "Personas para conocer",
   "discovery.brands": "Marcas para explorar",
   "discovery.morePeople": "Ver más personas",
-  "discovery.moreBrands": "Ver más marcas"
+  "discovery.moreBrands": "Ver más marcas",
+  "catalog.acervo_indisponivel": "El servidor no ofrece el catálogo paginado. Actualiza el backend para consultar el total real.",
+  "catalog.resumo_indisponivel": "No se pudo consultar el total del catálogo.",
+  "catalog.selecao_total": "{total, number} prendas · {filters}",
+  "catalog.sem_marca_total": "{count, number} prendas disponibles sin marca; incluidas en el catálogo completo.",
+  "catalog.registrados_total": "{total, number} prendas registradas en la base; {pending, number} aún no disponibles en el catálogo.",
+  "catalog.grade_total": "Suma de las marcas de la cuadrícula: {count, number} prendas · {category}",
+  "catalog.verificando_foto": "Verificando y encuadrando foto…",
+  "catalog.verificacao_falhou": "No se pudo verificar la foto."
 }

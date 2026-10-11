@@ -193,7 +193,7 @@ def pre_frame_state(record, max_levels=8):
             'originalUrl': original}
 
 
-def revert_plan(record, reason, *, product_frame_version=None):
+def revert_plan(record, reason, *, product_frame_version=None, fabric_frame_version=None):
     """Plano para desfazer o quadro antigo (V1/V2) de uma foto que a V3 recusou; None se a imagem não mostra um quadro antigo.
 
     O plano só diz para onde a referência ativa volta; a gravação passa pelo mesmo caminho guardado e auditado do lote
@@ -201,7 +201,7 @@ def revert_plan(record, reason, *, product_frame_version=None):
     if not legacy_framed(record):
         return None
     return {'reason': str(reason)[:200], 'revertedFrom': record.get('pipeline_version'), 'framedUrl': record.get('stored_url'),
-            'productFrameVersion': product_frame_version, **pre_frame_state(record)}
+            'productFrameVersion': product_frame_version, 'fabricFrameVersion': fabric_frame_version, **pre_frame_state(record)}
 
 
 class FrameStorage:

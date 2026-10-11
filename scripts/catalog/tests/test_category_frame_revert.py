@@ -232,7 +232,7 @@ class RevertWriteTest(unittest.TestCase):
 class RevertAuditRecordTest(unittest.TestCase):
     def analyzer(self, frame=None):
         analyzer = Mock(spec=["analyze", "rank", "ready", "category_frame", "force_frame", "frame_storage"])
-        analyzer.ready = {"pipelineVersion": "CATALOG_IMAGE_PIPELINE_V4", "productFrameVersion": "PRODUCT_RULE_FRAME_V2"}
+        analyzer.ready = {"pipelineVersion": "CATALOG_IMAGE_PIPELINE_V4", "fabricFrameVersion": "FABRIC_FRAME_34_V2"}
         analyzer.category_frame = True
         analyzer.force_frame = True
         analyzer.frame_storage = Mock()
@@ -289,14 +289,14 @@ class RevertAuditRecordTest(unittest.TestCase):
         self.assertIn("framed_assets", result["analysis"])
 
     def test_imagem_ja_restaurada_pela_mesma_regra_nao_e_baixada_de_novo(self):
-        marker = {"version": VERSION, "decision": REVERTED_DECISION, "reason": REFUSAL, "productFrameVersion": "PRODUCT_RULE_FRAME_V2"}
+        marker = {"version": VERSION, "decision": REVERTED_DECISION, "reason": REFUSAL, "fabricFrameVersion": "FABRIC_FRAME_34_V2"}
         done = self.record(pipeline_version=VERSION, stored_url=MASTER, assets_json=json.dumps({"card": MASTER, "editorFrame": marker}),
                            crop_json=json.dumps({"aspect": "4:5", "crop": {"x": .1, "y": .1, "w": .8, "h": .8}, "editorFrame": marker}))
         result, downloader = self.run_record(done, self.analyzer())
         self.assertIn("já foi desfeito", result["status_note"])
         downloader.get.assert_not_called()
         # outra versão da regra: analisa de novo (pode ganhar quadro agora)
-        marker["productFrameVersion"] = "PRODUCT_RULE_FRAME_V1"
+        marker["fabricFrameVersion"] = "FABRIC_FRAME_34_V1"
         again = self.record(pipeline_version=VERSION, stored_url=MASTER, crop_json=json.dumps({"editorFrame": marker}))
         _, downloader = self.run_record(again, self.analyzer())
         downloader.get.assert_called()
@@ -313,7 +313,7 @@ class RevertCliTest(unittest.TestCase):
 
         class Analyzer:
             def __init__(self, *args, **kwargs):
-                self.ready = {"pipelineVersion": "CATALOG_IMAGE_PIPELINE_V4", "productFrameVersion": "PRODUCT_RULE_FRAME_V2"}
+                self.ready = {"pipelineVersion": "CATALOG_IMAGE_PIPELINE_V4", "fabricFrameVersion": "FABRIC_FRAME_34_V2"}
 
             def __enter__(self):
                 return self
