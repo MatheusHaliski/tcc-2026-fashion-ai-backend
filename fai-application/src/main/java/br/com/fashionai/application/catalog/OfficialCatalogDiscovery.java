@@ -86,7 +86,8 @@ public class OfficialCatalogDiscovery {
      */
     /** Servidores de imagem das plataformas de loja (igual a STORE_IMAGE_HOSTS em scripts/catalog/providers/official_sitemap.py). */
     static final List<String> STORE_IMAGE_HOSTS = List.of("vtexassets.com", "vteximg.com.br", "cdn.shopify.com", "dam.kering.com",
-            "thron.com", "bynder.com", "scene7.com", "demandware.static.net", "imgix.net", "cloudinary.com", "ctfassets.net", "akamaized.net");
+            "thron.com", "bynder.com", "scene7.com", "demandware.static.net", "imgix.net", "cloudinary.com", "ctfassets.net", "akamaized.net",
+            "amplience.net", "mitiendanube.com");
 
     /** Mesma regra do coletor Python (brand_cdn_ok): domínio oficial, host com o rótulo da marca, ou CDN da plataforma. */
     static boolean imageAllowed(String imageUrl, List<String> officialDomains) {

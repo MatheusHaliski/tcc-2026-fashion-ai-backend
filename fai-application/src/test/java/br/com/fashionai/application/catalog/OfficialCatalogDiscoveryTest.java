@@ -32,6 +32,8 @@ class OfficialCatalogDiscoveryTest {
         assertThat(OfficialCatalogDiscovery.imageAllowed("https://lojarenner.vtexassets.com/a.jpg", List.of("lojasrenner.com.br"))).isTrue();
         assertThat(OfficialCatalogDiscovery.imageAllowed("https://cdn.shopify.com/s/files/a.jpg", List.of("everlane.com"))).isTrue();
         assertThat(OfficialCatalogDiscovery.imageAllowed("https://valentino-cdn.thron.com/a.jpg", List.of("valentino.com"))).isTrue();
+        assertThat(OfficialCatalogDiscovery.imageAllowed("https://cdn.media.amplience.net/i/drmartens/NX_1.80", List.of("drmartens.com"))).isTrue();
+        assertThat(OfficialCatalogDiscovery.imageAllowed("https://dcdn-us.mitiendanube.com/stores/1/a.webp", List.of("amaro.com"))).isTrue();
         assertThat(OfficialCatalogDiscovery.imageAllowed("https://evilshopify.com/a.jpg", List.of("everlane.com"))).isFalse();
     }
 

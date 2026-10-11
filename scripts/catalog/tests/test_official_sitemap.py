@@ -4,6 +4,7 @@ import json
 import sys
 import tempfile
 import unittest
+import zlib
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -13,7 +14,7 @@ sys.path.insert(0, str(HERE.parents[1]))
 import collect_official  # noqa: E402
 from import_products import read_items  # noqa: E402
 from normalize_product import Normalizer, normalize_product  # noqa: E402
-from providers.official_sitemap import (Politeness, Site, brand_cdn_ok, collect, infer_subcategory,  # noqa: E402
+from providers.official_sitemap import (Politeness, Site, brand_cdn_ok, collect, infer_subcategory, looks_like_product,  # noqa: E402
                                         product_urls, structured_product, to_catalog_item)
 
 N = Normalizer()
@@ -87,6 +88,34 @@ class SitemapTest(unittest.TestCase):
         site.load_robots()
         self.assertEqual(site.sitemaps, ["https://nike.com.br/sitemap.xml"])
         self.assertEqual(list(product_urls(site)), ["https://nike.com.br/p/x"])
+
+    def test_urlset_que_lista_sitemaps_vira_indice(self):
+        # Diesel/Carhartt WIP: o sitemap_index.xml é um <urlset> cujas URLs são os sitemaps de cada país
+        site, web, _ = self.site({
+            "https://www.nike.com.br/sitemap_index.xml": (200, urlset("https://www.nike.com.br/fr-fr/sitemap.xml",
+                                                                      "https://www.nike.com.br/en-us/sitemap-products_en_US.xml"), XML),
+            "https://www.nike.com.br/en-us/sitemap-products_en_US.xml": (200, urlset("https://www.nike.com.br/en-us/air-max-90.html"), XML),
+            "https://www.nike.com.br/fr-fr/sitemap.xml": (200, urlset("https://www.nike.com.br/fr-fr/p/x"), XML),
+        })
+        site.load_robots()
+        self.assertEqual(list(product_urls(site)), ["https://www.nike.com.br/en-us/air-max-90.html", "https://www.nike.com.br/fr-fr/p/x"])
+        # o de produto dos EUA é lido antes do genérico da França; nenhuma URL .xml chega a ser tratada como página
+        self.assertLess(web.calls.index("https://www.nike.com.br/en-us/sitemap-products_en_US.xml"),
+                        web.calls.index("https://www.nike.com.br/fr-fr/sitemap.xml"))
+
+    def test_sitemap_proprio_em_http_vira_https(self):
+        web = FakeWeb({"https://aeropostale.com/robots.txt": (200, b"Sitemap: http://www.aeropostale.com/sitemap_index.xml\n"
+                                                                    b"Sitemap: http://outra.com/sitemap.xml", "text/plain")})
+        site = Site("aeropostale.com", web, polite()[0])
+        site.load_robots()
+        self.assertEqual(site.sitemaps, ["https://www.aeropostale.com/sitemap_index.xml", "http://outra.com/sitemap.xml"])
+
+    def test_padrao_de_produto_por_expressao_regular(self):
+        pat = ("re:/en-us/.+/[A-Z0-9]+-[A-Z0-9]+\\.html$",)
+        self.assertTrue(looks_like_product("https://www.guess.com/en-us/guess/women/bags/lua-bag-pink/RG920575-PIN.html", pat))
+        self.assertFalse(looks_like_product("https://www.guess.com/en-ca/guess/women/bags/lua-bag-pink/RG920575-PIN.html", pat))
+        self.assertFalse(looks_like_product("https://www.guess.com/en-us/guess/women/bags/", pat))
+        self.assertTrue(looks_like_product("https://www.nike.com.br/P/abc", ("/p/",)))         # trecho comum: sem caixa
 
     def test_nunca_sai_do_dominio_oficial(self):
         site, web, _ = self.site({"https://www.nike.com.br/sitemap_index.xml": (200, urlset("https://www.nike.com.br/p/a", "https://outra.com/p/b"), XML)})
@@ -303,6 +332,8 @@ class StructuredDataTest(unittest.TestCase):
         self.assertTrue(brand_cdn_ok("https://cdn.shopify.com/s/files/1/a.jpg", "dickies.com"))
         self.assertTrue(brand_cdn_ok("https://valentino-cdn.thron.com/a.jpg", "valentino.com"))
         self.assertTrue(brand_cdn_ok("https://amq-mcq.dam.kering.com/asset/a", "alexandermcqueen.com"))
+        self.assertTrue(brand_cdn_ok("https://cdn.media.amplience.net/i/drmartens/NX_32166001.80", "drmartens.com"))
+        self.assertTrue(brand_cdn_ok("https://dcdn-us.mitiendanube.com/stores/007/products/a-480-0.webp", "amaro.com"))
         self.assertFalse(brand_cdn_ok("https://i.pinimg.com/a.jpg", "levi.com.br"))
         self.assertFalse(brand_cdn_ok("https://http2.mlstatic.com/a.jpg", "levi.com.br"))
 
@@ -339,6 +370,16 @@ class CliTest(unittest.TestCase):
         self.assertEqual(collect_official.ascii_url("https://www.loja.com.br/camiseta-básica?cor=azul marinho"),
                          "https://www.loja.com.br/camiseta-b%C3%A1sica?cor=azul%20marinho")
         self.assertEqual(collect_official.ascii_url("https://www.loja.com/p/a%20b"), "https://www.loja.com/p/a%20b")
+
+    def test_corpo_gzip_mesmo_pedindo_identity(self):
+        page = b'<html><script type="application/ld+json">{"@type":"Product","name":"Bermuda"}</script></html>'
+        zipped = gzip.compress(page)
+        self.assertEqual(collect_official.decoded(zipped, "gzip"), page)
+        self.assertEqual(collect_official.decoded(zipped, None), page)            # sem cabeçalho: pela assinatura
+        self.assertEqual(collect_official.decoded(zlib.compress(page), "deflate"), page)
+        self.assertEqual(collect_official.decoded(page, None), page)
+        self.assertTrue(page.startswith(collect_official.decoded(zipped[:-12], "gzip")))   # truncado: o que deu para ler
+        self.assertEqual(collect_official.decoded(b"lixo", "gzip"), b"")
 
     def test_so_fontes_oficiais(self):
         srcs = collect_official.official_sources(self.BRANDS, None)

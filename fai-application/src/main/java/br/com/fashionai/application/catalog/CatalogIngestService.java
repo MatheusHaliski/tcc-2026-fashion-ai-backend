@@ -401,13 +401,16 @@ public class CatalogIngestService {
     }
 
     private static final java.util.regex.Pattern TAG = java.util.regex.Pattern.compile("<[^>]{0,200}>");
+    /** Tag de bloco separa palavras ("básica<br/>Algodão"); tag de texto não ("Supima<sup>®</sup>"). Igual a normalize_product.py. */
+    private static final java.util.regex.Pattern BLOCK_TAG = java.util.regex.Pattern.compile(
+            "</?(?:br|p|li|ul|ol|div|tr|td|th|h[1-6])\\b[^>]{0,200}>", java.util.regex.Pattern.CASE_INSENSITIVE);
 
     /** Texto puro: tira marcação HTML que algumas lojas deixam no título ("Supima<sup>®</sup>") e as entidades comuns. */
     static String plainText(String s) {
         if (s == null) {
             return null;
         }
-        String t = TAG.matcher(s).replaceAll("").replace("&amp;", "&").replace("&#39;", "'").replace("&quot;", "\"")
+        String t = TAG.matcher(BLOCK_TAG.matcher(s).replaceAll(" ")).replaceAll("").replace("&amp;", "&").replace("&#39;", "'").replace("&quot;", "\"")
                 .replace("&reg;", "®").replace("&trade;", "™").replace("&nbsp;", " ");
         return t.replaceAll("\\s+", " ").trim();
     }

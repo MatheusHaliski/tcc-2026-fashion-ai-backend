@@ -77,6 +77,9 @@ class PlainTextTest(unittest.TestCase):
         from normalize_product import plain_text
         self.assertEqual(plain_text("Supima<sup>®</sup> Cotton Pique Polo Shirt"), "Supima® Cotton Pique Polo Shirt")
         self.assertEqual(plain_text("Levi&#39;s 501 &amp; Co."), "Levi's 501 & Co.")
+        self.assertEqual(plain_text("Camiseta <b>básica</b><br /><li>Algodão</li>"), "Camiseta básica Algodão")
+        self.assertEqual(plain_text("Polo<BR>Piquet"), "Polo Piquet")
+        self.assertEqual(plain_text("<pre>x</pre><picture>y</picture>"), "xy")             # pre/picture não são <p>
 
 
 if __name__ == "__main__":

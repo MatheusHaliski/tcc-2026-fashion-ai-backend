@@ -340,7 +340,10 @@
         "source_type": "OFFICIAL_BRAND",
         "country": "US"
       }
-    ]
+    ],
+    "collector": {
+      "product_patterns": ["re:/en-us/.+/[A-Z0-9]+-[A-Z0-9]+\\.html$"]
+    }
   },
   {
     "name": "Abercrombie & Fitch",

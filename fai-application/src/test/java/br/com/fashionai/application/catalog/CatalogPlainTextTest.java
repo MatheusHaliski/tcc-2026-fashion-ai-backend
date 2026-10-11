@@ -12,5 +12,7 @@ class CatalogPlainTextTest {
         assertThat(CatalogIngestService.plainText("Levi&#39;s 501 &amp; Co.")).isEqualTo("Levi's 501 & Co.");
         assertThat(CatalogIngestService.plainText("  Camiseta   básica ")).isEqualTo("Camiseta básica");
         assertThat(CatalogIngestService.plainText(null)).isNull();
+        assertThat(CatalogIngestService.plainText("Camiseta <b>básica</b><br /><li>Algodão</li>")).isEqualTo("Camiseta básica Algodão");
+        assertThat(CatalogIngestService.plainText("Polo<BR>Piquet")).isEqualTo("Polo Piquet");
     }
 }

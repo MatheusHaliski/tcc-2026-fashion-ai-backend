@@ -93,10 +93,35 @@ Para chegar a ~20.000 nomes: são 11 marcas e 18 domínios oficiais hoje; `--max
 sitemaps tiverem produtos suficientes. Mais marcas = mais linhas em `brands.json` (com as fontes oficiais). Quanto se
 coleta depende do que cada site publica no sitemap e libera no robots.txt; sites que bloqueiam robôs ficam de fora, e
 o relatório diz por quê. Para sites com URLs de produto fora do padrão, `brands.json` aceita
-`"collector": {"product_patterns": ["/p/"], "sitemap_patterns": ["product"]}`.
+`"collector": {"product_patterns": ["/p/"], "sitemap_patterns": ["product"]}`. Padrão com o prefixo `re:` é expressão
+regular sobre a URL original, para lojas cuja página de produto só se reconhece pelo formato (Guess:
+`"re:/en-us/.+/[A-Z0-9]+-[A-Z0-9]+\\.html$"`, só a loja dos EUA, sem repetir cada peça em en-ca/fr-ca).
 
-O coletor precisa de acesso direto aos sites das marcas. No ambiente de desenvolvimento em nuvem do projeto, o proxy
-bloqueia esses domínios: o relatório mostra `PAROU: … sem conexão`. Rode-o numa máquina com internet aberta.
+O coletor precisa de acesso direto aos sites das marcas (no ambiente em nuvem, só com a rede liberada nas
+configurações do ambiente; sem isso o relatório mostra `PAROU: … sem conexão`).
+
+Detalhes que já derrubaram marcas inteiras e hoje são tratados (com teste em `tests/test_official_sitemap.py`):
+
+| Caso | Tratamento |
+|---|---|
+| Servidor responde gzip mesmo com `Accept-Encoding: identity` (Mizuno, Dudalina, Olympikus, Track & Field, John John, Hope, Le Lis, Sergio K) | o corpo é descomprimido (`decoded`); antes a página chegava comprimida e parecia não ter dado estruturado |
+| Sitemap que é um `<urlset>` de outros sitemaps (Diesel, Carhartt WIP) | URL terminada em `.xml`/`.xml.gz` vira sitemap a ler, nunca página de produto |
+| Sitemap do próprio site declarado em `http://` (Aéropostale) | lido em `https://` |
+| Fotos em servidor de imagem de plataforma (Amplience da Dr. Martens, Nuvemshop da Amaro) | `STORE_IMAGE_HOSTS` (igual no Java, `OfficialCatalogDiscovery`) |
+| robots.txt que redireciona para HTML, atributos HTML sem aspas, JSON-LD com entidades | ver histórico do arquivo |
+| 150 páginas seguidas sem dado estruturado | o domínio é largado (`GIVE_UP_AFTER`), sem gastar milhares de requisições |
+
+### Do coletado ao acervo
+
+```bash
+python scripts/catalog/recheck_collected.py                      # regras de tipo atuais nos JSONL (com o coletor parado)
+python scripts/catalog/build_acervo.py --out data/catalog/acervo/acervo-oficial-AAAA-MM-DD.jsonl.gz data/catalog/collected/*.jsonl
+```
+
+`build_acervo.py` passa cada linha pelas regras de tipo e pelo `normalize_product`, deixa a descrição em texto puro e
+tira as peças que já estão em outro arquivo de `data/catalog/acervo/` (mesma URL canônica): cada arquivo traz só peças
+novas. O gzip sai sem data no cabeçalho (mesmo conteúdo, mesmo arquivo). O `import_railway.sh` importa todos os
+arquivos da pasta com `--skip-existing`.
 
 ## Reparo: produtos agrupados pela URL antiga (Gap `?pid=`)
 

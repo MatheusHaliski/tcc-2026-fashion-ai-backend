@@ -26,6 +26,7 @@ import socket
 import sys
 import threading
 import time
+import zlib
 from concurrent.futures import ThreadPoolExecutor
 import urllib.error
 import urllib.parse
@@ -54,6 +55,23 @@ def ascii_url(url: str) -> str:
     return urllib.parse.urlunsplit((parts.scheme, netloc, quote(parts.path), quote(parts.query), ""))
 
 
+def decoded(body: bytes, encoding: str | None) -> bytes:
+    """Corpo sem compressão. Pedimos `identity`, mas há servidor que responde gzip mesmo assim (nginx da Mizuno, da
+    Dudalina…): sem isto a página chega como bytes comprimidos e parece não ter dado estruturado nenhum. gzip/deflate
+    (ou corpo que começa com a assinatura do gzip) são abertos até MAX_BODY; corpo truncado rende o que deu para ler."""
+    enc = (encoding or "").strip().lower()
+    if enc in ("gzip", "x-gzip") or (not enc and body[:2] == b"\x1f\x8b"):
+        wbits = zlib.MAX_WBITS | 16
+    elif enc == "deflate":
+        wbits = zlib.MAX_WBITS if body[:1] == b"\x78" else -zlib.MAX_WBITS
+    else:
+        return body
+    try:
+        return zlib.decompressobj(wbits).decompress(body, MAX_BODY)
+    except zlib.error:
+        return b""
+
+
 def make_fetch(user_agent: str, timeout: float = 20, retries: int = 2, sleep=time.sleep):
     """fetch(url) -> (status, corpo, content-type). Redirecionamento para fora do domínio pedido vira status 0."""
     def fetch(url: str) -> tuple[int, bytes, str]:
@@ -66,7 +84,8 @@ def make_fetch(user_agent: str, timeout: float = 20, retries: int = 2, sleep=tim
                     final = domain(r.geturl()) or ""
                     if final and not (same_site(final, asked) or same_site(asked, final) or same_site(final, asked.removeprefix("www."))):
                         return 0, b"", ""
-                    return r.status, r.read(MAX_BODY), r.headers.get("Content-Type", "")
+                    body = decoded(r.read(MAX_BODY), r.headers.get("Content-Encoding"))
+                    return r.status, body, r.headers.get("Content-Type", "")
             except urllib.error.HTTPError as e:
                 if e.code >= 500 and attempt < retries:
                     sleep(2 ** (attempt + 1))

@@ -101,7 +101,9 @@ class Site:
             raise StopDomain(f"{self.domain}: sem conexão com o site (rede/proxy bloqueou ou o domínio não respondeu)")
         text = body.decode("utf-8", "replace") if status == 200 else ""
         self.robots.parse(text.splitlines())                      # 404 = sem regras (permitido, como manda o padrão)
-        self.sitemaps = [m.group(1).strip() for m in re.finditer(r"(?im)^\s*sitemap:\s*(\S+)", text)]
+        # sitemap do próprio site declarado em http:// (Aéropostale) é lido em https: o coletor só fala https
+        self.sitemaps = [("https://" + u[len("http://"):]) if u.lower().startswith("http://") and same_site(domain(u), self.domain) else u
+                         for u in (m.group(1).strip() for m in re.finditer(r"(?im)^\s*sitemap:\s*(\S+)", text))]
         if not any(same_site(domain(u), self.domain) for u in self.sitemaps):
             # nenhum sitemap declarado no próprio domínio (robots aponta para um domínio antigo ou de outra loja, ex.:
             # lezalez.com → lezalez.com.br, richards.com.br → richards.br): tenta também o sitemap padrão do site
@@ -146,8 +148,16 @@ def _locs(root: ET.Element, tag: str) -> list[str]:
 
 
 def looks_like_product(url: str, patterns: Iterable[str] = PRODUCT_HINTS) -> bool:
+    """Trecho da URL (sem caixa) ou, com o prefixo "re:", expressão regular sobre a URL original — para lojas cuja
+    página de produto só se reconhece pelo formato (Guess: /en-us/…/<código>-<cor>.html)."""
     u = url.lower()
-    return any(p in u for p in patterns)
+    return any(re.search(p[3:], url) if p.startswith("re:") else p.lower() in u for p in patterns)
+
+
+def is_sitemap_file(url: str) -> bool:
+    """Arquivo de sitemap listado como <url> comum (Diesel e Carhartt WIP põem os sitemaps de cada país num urlset)."""
+    path = urllib.parse.urlsplit(url).path.lower()
+    return path.endswith((".xml", ".xml.gz"))
 
 
 PRODUCT_SITEMAP_HINTS = ("product", "produto", "pdp", "prod", "item", "sku", "catalog")
@@ -196,8 +206,12 @@ def product_urls(site: Site, product_patterns: Iterable[str] = PRODUCT_HINTS, si
         else:
             product_map = _sitemap_rank(sm, extra) <= -10
             for url in _locs(root, "url"):
-                if (product_map or looks_like_product(url, product_patterns)) and same_site(domain(url), site.domain) \
-                        and not blocked(url):
+                if not same_site(domain(url), site.domain) or blocked(url):
+                    continue
+                if is_sitemap_file(url):                          # sitemap dentro de urlset: lido como índice
+                    if url not in seen and _sitemap_rank(url, extra) < 20:
+                        queue.append(url)
+                elif product_map or looks_like_product(url, product_patterns):
                     yield url
 
 
@@ -379,9 +393,10 @@ def is_pack(name: Optional[str]) -> bool:
 
 
 # Servidores de imagem das plataformas de loja e DAMs das marcas: a página oficial declara a foto apontando para eles
-# (lojalevis.vtexassets.com, cdn.shopify.com, amq-mcq.dam.kering.com…). Entram só como referência (URL), nunca copiadas.
+# (lojalevis.vtexassets.com, cdn.shopify.com, amq-mcq.dam.kering.com, cdn.media.amplience.net/i/drmartens, Nuvemshop…). Entram só como referência (URL), nunca copiadas.
 STORE_IMAGE_HOSTS = ("vtexassets.com", "vteximg.com.br", "cdn.shopify.com", "dam.kering.com", "thron.com", "bynder.com",
-                     "scene7.com", "demandware.static.net", "imgix.net", "cloudinary.com", "ctfassets.net", "akamaized.net")
+                     "scene7.com", "demandware.static.net", "imgix.net", "cloudinary.com", "ctfassets.net", "akamaized.net",
+                     "amplience.net", "mitiendanube.com")
 
 
 def brand_cdn_ok(image_url: str, official: str) -> bool:
