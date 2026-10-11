@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { kindOf } from "@/lib/avatar3d/human/garments";
+import { clampCamera, roomView, rotateView, type RoomBounds } from "./room-bounds";
 
 /**
  * Prova de roupa no quarto (RF27 + RF28 num fluxo só): o personagem caminha até o espelho e a prova abre sozinha, sem
@@ -170,15 +171,21 @@ export function mirrorDistance(actor: THREE.Vector3, mirror: THREE.Vector3): num
 
 /**
  * Câmera da prova: de frente para o espelho e o personagem (os dois no quadro), vinda do ponto de vista do quarto por
- * interpolação suave. Na fase do quarto, a visão geral do guarda-roupa, personagem e espelho (RoomAvatarController).
+ * interpolação suave. Na fase do quarto, a visão geral do guarda-roupa, personagem e espelho (RoomAvatarController):
+ * `view` 0 é a visão de frente; 1–3 giram câmera e alvo de 90° em 90° em torno do centro do quarto (Q/E e os botões de
+ * girar a cena). Com `bounds` (as paredes do quarto), a câmera fica sempre dentro dele, a uma distância mínima do personagem,
+ * e o olhar o acompanha (roomView em room-bounds.ts).
  */
-export function cameraFor(phase: MirrorPhase, actor: THREE.Vector3, mirror: THREE.Vector3, closetRight: number): { position: THREE.Vector3; target: THREE.Vector3 } {
+export function cameraFor(phase: MirrorPhase, actor: THREE.Vector3, mirror: THREE.Vector3, closetRight: number, view = 0, bounds?: RoomBounds): { position: THREE.Vector3; target: THREE.Vector3 } {
   if (phase === "tryon" || phase === "approach") {
     const mid = new THREE.Vector3((actor.x + mirror.x) / 2, 1.05, (actor.z + mirror.z) / 2);
     const side = new THREE.Vector3(-MIRROR_NORMAL.z, 0, MIRROR_NORMAL.x); // paralelo ao vidro, para enquadrar os dois
-    return { position: mid.clone().add(MIRROR_NORMAL.clone().multiplyScalar(3.1)).add(side.multiplyScalar(-0.35)).setY(1.75), target: mid };
+    const position = mid.clone().add(MIRROR_NORMAL.clone().multiplyScalar(3.1)).add(side.multiplyScalar(-0.35)).setY(1.75);
+    return { position: bounds ? clampCamera(position, mid, bounds, 0.25) : position, target: mid };
   }
-  return { position: new THREE.Vector3(1 + closetRight * 0.25, 2.65, 5.8), target: new THREE.Vector3(closetRight * 0.25, 1.1, 0.85) };
+  const base = { position: new THREE.Vector3(1 + closetRight * 0.25, 2.65, 5.8), target: new THREE.Vector3(closetRight * 0.25, 1.1, 0.85) };
+  if (bounds) return roomView(base.position, base.target, actor, view, bounds);
+  return view ? rotateView(base.position, base.target, view) : base;
 }
 
 /** Reação à troca por lugar do corpo, em t ∈ [0,1): ângulos (rad) para o controlador aplicar — sem julgamento, só o gesto. */

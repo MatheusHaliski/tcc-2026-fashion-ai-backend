@@ -7,7 +7,8 @@ import type { HumanParts } from "@/components/three/human-avatar";
 import type { Avatar3dRef, Look3dPiece } from "@/components/three/common";
 import type { BodyParams } from "@/lib/avatar3d/body-spec";
 import { applyIdle } from "@/lib/avatar3d/human/pose";
-import { arrowAnywhere, moveInRoom, RoomInteraction, type Arm } from "@/lib/room3d/interaction";
+import { arrowAnywhere, moveInRoom, ROOM_TURN_EVENT, RoomInteraction, type Arm } from "@/lib/room3d/interaction";
+import { inputYaw, reachPlane, ROOM, viewYaw } from "@/lib/room3d/room-bounds";
 import { MIRROR_NORMAL, MirrorSession, REACTION_MS, cameraFor, facingYaw, mirrorDistance, reactionPose } from "@/lib/room3d/mirror-session";
 export interface RoomGameplay {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; body?: BodyParams | null; pieces: Look3dPiece[]; engine: RoomInteraction;
@@ -31,6 +32,8 @@ export function reachHand(parts: HumanParts, arm: Arm, desired: THREE.Vector3) {
   }
   human.root.updateWorldMatrix(true, true);
 }
+/** Abertura mínima da lente (graus) na vista do quarto. */
+const ROOM_FOV = 50;
 export default function RoomAvatarController({ gameplay, closetRight }: { gameplay: RoomGameplay; closetRight: number }) {
   const { camera, gl, scene } = useThree(), { engine } = gameplay;
   const sessionRef = useRef(gameplay.session); sessionRef.current = gameplay.session;
@@ -39,13 +42,19 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
   const phase = useRef(0), yaw = useRef(Math.PI), lastState = useRef("");
   const look = useRef(new THREE.Vector3(closetRight * .25, 1.1, .85));   // alvo da câmera, interpolado (sem salto ao abrir a prova)
   const lastPhase = useRef("room");
+  // giro das setas (rad): segue a vista escolhida, mas fica preso enquanto alguma seta está apertada — trocar a vista no
+  // meio da caminhada não inverte a direção
+  const walkYaw = useRef(0);
   useEffect(() => {
     const canvas = gl.domElement; canvas.tabIndex = 0; canvas.dataset.roomControls = "true";
     const editable = (target: EventTarget | null) => target instanceof HTMLElement && (!!target.closest("input,textarea,select,[contenteditable=true]"));
     const down = (event: KeyboardEvent) => {
       if (editable(event.target)) return;
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyA", "KeyD"].includes(event.code)) { event.preventDefault(); engine.keyDown(event.code); }
+      else if ((event.code === "KeyQ" || event.code === "KeyE") && !event.repeat) { event.preventDefault(); engine.turn(event.code === "KeyQ" ? 1 : -1); }   // girar a cena
     };
+    // botões de girar a cena (room-scene-controls.tsx)
+    const turn = (event: Event) => engine.turn(Math.sign(Number((event as CustomEvent).detail) || 0));
     const up = (event: KeyboardEvent) => {
       const arm = event.code === "KeyA" ? "Left" : "Right";
       engine.keyUp(event.code, parts.current?.human.bone(`${arm}Hand`).getWorldPosition(new THREE.Vector3()));
@@ -61,8 +70,9 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
     };
     const focus = () => canvas.focus(), blur = () => engine.blur();
     canvas.addEventListener("pointerdown", focus); canvas.addEventListener("pointermove", move);
-    canvas.addEventListener("keydown", down); window.addEventListener("keydown", downAnywhere); window.addEventListener("keyup", up); window.addEventListener("blur", blur); canvas.addEventListener("blur", blur);
-    return () => { canvas.removeEventListener("pointerdown", focus); canvas.removeEventListener("pointermove", move); canvas.removeEventListener("blur", blur); canvas.removeEventListener("keydown", down); window.removeEventListener("keydown", downAnywhere); window.removeEventListener("keyup", up); window.removeEventListener("blur", blur); engine.blur(); engine.ready = false; engine.notify(); };
+    canvas.addEventListener("keydown", down); window.addEventListener("keydown", downAnywhere); window.addEventListener("keyup", up); window.addEventListener("blur", blur); canvas.addEventListener("blur", blur); canvas.addEventListener(ROOM_TURN_EVENT, turn);
+    return () => { const lens = camera as THREE.PerspectiveCamera; if (lens.userData.baseFov) { lens.fov = lens.userData.baseFov; lens.updateProjectionMatrix(); }
+      canvas.removeEventListener("pointerdown", focus); canvas.removeEventListener("pointermove", move); canvas.removeEventListener("blur", blur); canvas.removeEventListener("keydown", down); canvas.removeEventListener(ROOM_TURN_EVENT, turn); window.removeEventListener("keydown", downAnywhere); window.removeEventListener("keyup", up); window.removeEventListener("blur", blur); engine.blur(); engine.ready = false; engine.notify(); };
   }, [camera, engine, gl]);
   useFrame(({ clock }, dt) => {
     if (!actor.current || !parts.current) return;
@@ -80,13 +90,19 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
       eye.position.copy(engine.mirror).add(MIRROR_NORMAL.clone().multiplyScalar(.06)).setY(1.15);
       eye.lookAt(engine.mirror.clone().add(MIRROR_NORMAL.clone().multiplyScalar(6)).setY(1.15));
       const visible = actor.current.visible; actor.current.visible = false;
+      // as paredes que a câmera principal esconde (estando atrás delas) aparecem inteiras na foto do espelho
+      const restore: (() => void)[] = []; scene.traverse((o) => { if (o.userData.wall && typeof o.userData.reveal === "function") restore.push(o.userData.reveal()); });
       try { gl.render(scene, eye); session.setSnapshot({ url: canvas.toDataURL("image/jpeg", .82), aspect: w / h, at: now }); }
       catch { /* sem foto, o vidro segue só com o reflexo */ }
+      restore.forEach((r) => r());
       actor.current.visible = visible;
     }
     lastPhase.current = ph;
+    // câmera desta fase: a vista do quarto escolhida (Q/E, botões) ou a da prova, sempre dentro das paredes
+    const cam = cameraFor(ph, engine.actor, engine.mirror, closetRight, engine.view, ROOM);
+    if (!moving) walkYaw.current = ph === "room" ? viewYaw(engine.view) : inputYaw(cam.position, cam.target);
     if (!engine.grip) {
-      const heading = moveInRoom(engine.actor, engine.keys, dt, closetRight, engine.solids);
+      const heading = moveInRoom(engine.actor, engine.keys, dt, ROOM, engine.solids, walkYaw.current);
       if (moving && !engine.aiming) yaw.current += Math.atan2(Math.sin(heading - yaw.current), Math.cos(heading - yaw.current)) * Math.min(1, dt * 9);
       else if (trying && !engine.aiming) {                                   // parado na prova: vira de frente para o espelho
         const want = facingYaw(engine.actor, engine.mirror);
@@ -117,8 +133,8 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
     actor.current.updateWorldMatrix(true, true);
     if (engine.aiming) {
       const ray = new THREE.Raycaster(); ray.setFromCamera(pointer.current, camera);
-      // Reach plane in front of the wardrobe, including low drawer handles.
-      ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -.34), desired.current);
+      // Reach plane in front of the nearest wardrobe (1 on the north wall, 2 on the west wall), including low drawer handles.
+      ray.ray.intersectPlane(reachPlane(engine.actor), desired.current);
       for (const target of engine.targets.values()) {
         if (!target.available()) continue;
         const point = target.object.getWorldPosition(new THREE.Vector3());
@@ -144,11 +160,13 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
       target?.object.position.copy(p.human.bone(`${engine.heldArm}Hand`).getWorldPosition(new THREE.Vector3()));
       if (target) { target.object.rotation.set(0, Math.atan2(camera.position.x - target.object.position.x, camera.position.z - target.object.position.z), Math.sin(clock.elapsedTime * 4) * (moving ? .045 : .008)); }
     }
-    // câmera: a visão geral (guarda-roupa, personagem e espelho) no quarto; na prova, de frente para o espelho com o
-    // personagem no quadro — sempre por interpolação (com movimento reduzido, direto, sem o percurso)
-    const cam = cameraFor(session?.phase ?? "room", engine.actor, engine.mirror, closetRight);
+    // câmera: a vista do quarto (guarda-roupa, personagem e espelho; Q/E giram de 90° em 90°); na prova, de frente para
+    // o espelho com o personagem no quadro — sempre por interpolação (com movimento reduzido, direto, sem o percurso)
     const k = gameplay.reduced ? 1 : Math.min(1, dt * 3);
     camera.position.lerp(cam.position, k); look.current.lerp(cam.target, k); camera.lookAt(look.current);
+    // no quarto a lente abre um pouco (dentro das paredes a câmera fica mais perto); na prova, a abertura de sempre
+    const lens = camera as THREE.PerspectiveCamera, base = lens.userData.baseFov ?? lens.fov, fov = base + (ph === "room" ? Math.max(0, ROOM_FOV - base) : 0);
+    if (Math.abs(lens.fov - fov) > .01) { lens.fov += (fov - lens.fov) * k; lens.updateProjectionMatrix(); }
     const state = JSON.stringify(engine.state); if (state !== lastState.current) { lastState.current = state; engine.notify(); }
   });
   return <group ref={actor} name="room-user-avatar" position={engine.actor.toArray()}>
