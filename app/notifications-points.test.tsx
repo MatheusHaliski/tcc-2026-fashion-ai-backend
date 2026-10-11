@@ -6,9 +6,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, loggedAs, renderApp, screen } from "@/test-utils/render";
 import NotificationsPage from "@/app/(site)/(app)/notifications/page";
+import { router } from "@/test-utils/setup";
 import PointsPage from "@/app/(site)/(app)/points/page";
 
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); window.history.replaceState(null, "", "/"); });
+afterEach(() => { cleanup(); router.push.mockClear(); vi.unstubAllGlobals(); window.history.replaceState(null, "", "/"); });
 
 const at = (h: number) => { const d = new Date(); d.setHours(h, 0, 0, 0); return d.toISOString(); };
 const points = (id: string, delta: number, title: string, body: string, h: number) =>
@@ -44,7 +45,8 @@ describe("extrato dos FAI Points nas notificações", () => {
   it("a página FAI Points leva ao extrato nas notificações", async () => {
     loggedAs(undefined, { "GET /api/me/points": { balance: 120, lifetime: 300, level: "ESTREIA", levels: [], rules: [] }, "GET /api/points/shop": [] });
     renderApp(<PointsPage />);
-    const link = await screen.findByRole("link", { name: "Ver extrato nas notificações" });
-    expect(link.getAttribute("href")).toBe("/notifications?cat=POINTS");
+    fireEvent.click(await screen.findByRole("tab", { name: /Extrato/ }));
+    fireEvent.click(await screen.findByRole("button", { name: /Abrir/ }));
+    expect(router.push).toHaveBeenCalledWith("/notifications?cat=POINTS");
   });
 });

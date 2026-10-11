@@ -2,7 +2,7 @@
 // Uso: node scripts/i18n/scan.js [--wide] [--json out.json] [--fail]
 //   padrão: texto JSX, atributos textuais, propriedades textuais (label:, hint:…), toast/confirm/alert
 //   --wide : além disso, QUALQUER literal em linguagem natural (acento, frase, palavra capitalizada) em qualquer posição
-const ts = require("typescript"); const fs = require("fs"); const path = require("path");
+const ts = require("typescript-ast"); const fs = require("fs"); const path = require("path");
 const R = require("./rules");
 const ROOT = path.resolve(__dirname, "..", "..");
 const DIRS = ["app", "components", "lib"].map((d) => path.join(ROOT, d));

@@ -11,7 +11,7 @@ import { useAuth } from "@/lib/auth/session";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { label, CATEGORY_LABEL, useTaxonomy, subcategoryLabel } from "@/lib/api/taxonomy";
-import { ActionMenu, Button, Dialog, ErrorState, Field, Input, Skeleton, useToast, type MenuItem } from "@/components/ui";
+import { ActionMenu, Button, Dialog, ErrorState, Field, Input, Skeleton, useToast, useFocusTrap, type MenuItem } from "@/components/ui";
 import { UiIcon } from "@/components/ui/icons";
 import { FaiIcon } from "@/components/fai-icon";
 import { SchemeCard } from "@/components/scheme-card";
@@ -362,16 +362,12 @@ export function CreationSuccess({ kind, id, edited, onDone: onDoneProp }: { kind
   const { t } = useI18n(); const { user } = useAuth(); const router = useRouter();
   // fechar leva ao meu perfil (RF5.CA/RF4): é lá que o look ou a peça recém-criados aparecem
   const onDone = onDoneProp ?? (() => router.push(user ? `/u/${user.username}` : "/lookbook"));
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onDone(); };
-    document.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow; document.body.style.overflow = "hidden";
-    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
-  }, [onDone]);
+  const dialog = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialog, true, onDone);
   const title = kind === "scheme" ? (edited ? t("expanded.sucesso_look_editado") : t("expanded.sucesso_look")) : kind === "dna" ? (edited ? t("expanded.sucesso_dna_editado") : t("expanded.sucesso_dna")) : (edited ? t("expanded.sucesso_peca_editada") : t("expanded.sucesso_peca"));
   return (
     <div className="dialog-backdrop">
-      <div role="dialog" aria-modal="true" aria-label={title} className="dialog dialog-card">
+      <div ref={dialog} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className="dialog dialog-card">
         <div className="success-head">
           <p className="type-h2">{title}</p>
           <Button variant="primary" onClick={onDone}>{t("expanded.ir_para_o_perfil")}</Button>

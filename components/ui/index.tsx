@@ -33,7 +33,7 @@ export function FileButton({ id, accept, onFiles, multiple, disabled, loading, v
     <span className={cn("file-button", className)}>
       <Button variant={variant} size={size} loading={loading} disabled={disabled} onClick={() => ref.current?.click()} aria-controls={id}>{children}</Button>
       {showName && name && <span className="file-button-name type-caption text-muted" title={name}>{name}</span>}
-      <input ref={ref} id={id} type="file" accept={accept} multiple={multiple} disabled={disabled} className="sr-only" tabIndex={-1}
+      <input ref={ref} id={id} type="file" accept={accept} multiple={multiple} disabled={disabled} className="sr-only" tabIndex={-1} aria-label={textOf(children) || tr("common.upload")}
         onChange={(e) => { const fs = Array.from(e.target.files ?? []); if (fs.length) { setName(fs.length > 1 ? tr("ui.file.n_arquivos", { n: fs.length }) : fs[0].name); onFiles(fs); } e.target.value = ""; }} />
     </span>
   );
@@ -346,7 +346,7 @@ export function Stepper({ steps, current, onStep, label, canGo }: { steps: strin
       <ol>
         {steps.map((s, i) => (
           <li key={s} className={i < current ? "is-done" : i === current ? "is-current" : undefined}>
-            <button type="button" disabled={!onStep || i === current || !(canGo ? canGo(i) : i < current)} aria-current={i === current ? "step" : undefined} onClick={() => onStep?.(i)}>
+            <button type="button" disabled={!onStep || i === current || !(canGo ? canGo(i) : i < current)} aria-label={s} aria-current={i === current ? "step" : undefined} onClick={() => onStep?.(i)}>
               <span className="stepper-dot" aria-hidden>{i < current ? <UiIcon name="check" size={14} /> : i + 1}</span>
               <span className="stepper-label">{s}</span>
             </button>
@@ -420,7 +420,7 @@ export function ErrorState({ error, onRetry, page, notFound }: { error: ApiError
 export function Avatar({ src, name, size = 32 }: { src?: string | null; name?: string; size?: number }) {
   const initials = (name ?? "?").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
   return src ? <img src={src} alt={name ?? ""} width={size} height={size} className="rounded-full object-cover" style={{ width: size, height: size }} />
-    : <span aria-hidden className="inline-flex items-center justify-center rounded-full bg-surface-3 text-muted font-semibold" style={{ width: size, height: size, fontSize: size * 0.38 }}>{initials}</span>;
+    : <span aria-hidden className="inline-flex items-center justify-center rounded-full bg-surface-3 text-muted font-semibold" style={{ width: size, height: size, fontSize: Math.max(12, size * 0.38) }}>{initials}</span>;
 }
 export function Pagination({ page, hasMore, onPage, total, size }: { page: number; hasMore: boolean; onPage: (p: number) => void; total?: number; size?: number }) {
   const { t, fmtNumber } = useI18n();
@@ -435,20 +435,25 @@ export function Pagination({ page, hasMore, onPage, total, size }: { page: numbe
 
 /* ---------- Sobreposições: foco preso, Escape, rolagem travada e foco devolvido ao gatilho ---------- */
 export const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const modalStack: HTMLElement[] = [];
+let modalScrollLocks = 0;
+let modalPreviousOverflow = "";
 export function useFocusTrap(ref: RefObject<HTMLElement | null>, active: boolean, onClose: () => void, opts?: { lockScroll?: boolean; initial?: "first" | "container" }) {
   const close = useRef(onClose); close.current = onClose;
   useEffect(() => {
     if (!active) return;
     const el = ref.current; if (!el) return;
     const previous = document.activeElement as HTMLElement | null;
+    modalStack.push(el);
     const items = () => Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE)).filter((x) => x.getClientRects().length > 0);
     const autofocus = el.querySelector<HTMLElement>("[data-autofocus]");
     (autofocus ?? (opts?.initial === "container" ? null : items()[0]) ?? el).focus({ preventScroll: true });
     const onKey = (e: KeyboardEvent) => {
+      if (modalStack.at(-1) !== el) return;
       if (e.key === "Escape") {
         const t = e.target as HTMLElement | null;             // Esc com uma lista ou menu aberto fecha só a lista/menu
         if (t?.closest?.('[role="menu"], [role="listbox"], [aria-expanded="true"][aria-haspopup]')) return;
-        e.stopPropagation(); close.current(); return;
+        e.preventDefault(); e.stopImmediatePropagation(); close.current(); return;
       }
       if (e.key !== "Tab") return;
       const list = items(); if (!list.length) { e.preventDefault(); return; }
@@ -457,9 +462,15 @@ export function useFocusTrap(ref: RefObject<HTMLElement | null>, active: boolean
       else if (!e.shiftKey && (document.activeElement === last || !el.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
     };
     document.addEventListener("keydown", onKey, true);
-    const html = document.documentElement; const prevOverflow = html.style.overflow;
-    if (opts?.lockScroll !== false) html.style.overflow = "hidden";
-    return () => { document.removeEventListener("keydown", onKey, true); html.style.overflow = prevOverflow; previous?.focus?.({ preventScroll: true }); };
+    const html = document.documentElement; const lockScroll = opts?.lockScroll !== false;
+    if (lockScroll) { if (modalScrollLocks++ === 0) modalPreviousOverflow = html.style.overflow; html.style.overflow = "hidden"; }
+    return () => {
+      const top = modalStack.at(-1) === el;
+      const index = modalStack.indexOf(el); if (index >= 0) modalStack.splice(index, 1);
+      document.removeEventListener("keydown", onKey, true);
+      if (lockScroll && --modalScrollLocks === 0) html.style.overflow = modalPreviousOverflow;
+      if (top && previous?.isConnected) previous.focus({ preventScroll: true });
+    };
   }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
 }
 /** Fecha um popover ao clicar fora ou apertar Escape; devolve o foco ao gatilho. */

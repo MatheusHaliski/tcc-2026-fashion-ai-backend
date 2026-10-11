@@ -18,7 +18,7 @@ export function BrandLogo({ name, src, size = 28, shape = "round", withName = fa
   const tip = title ?? (info?.source && info.source !== "MONOGRAMA" ? t("brandLogo.logo_via", { name, value: SOURCE[info.source] ?? info.source }) : name);
   return (
     <span className={`brand-logo ${shape === "square" ? "is-square" : ""} ${className}`} title={tip}>
-      <span className="brand-logo-mark" style={{ width: size, height: size, ...(show ? {} : { background: monogram.color, fontSize: Math.max(9, size * 0.4) }) }} aria-hidden={withName}>
+      <span className="brand-logo-mark" style={{ width: size, height: size, ...(show ? {} : { background: monogram.color, fontSize: Math.max(12, size * 0.4) }) }} aria-hidden={withName}>
         {show ? <img src={url} alt={withName ? "" : t("common.logo", { name })} loading="lazy" onError={() => (fromKnown ? onKnownError() : setBroken(true))} />
           : <b>{monogram.initials}</b>}
       </span>

@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   // Os assets de /public (chrome, auras, peças padrão, ícones) são servidos como estáticos; o backend serve /media.
-  images: { unoptimized: true },
+  images: { formats: ["image/avif", "image/webp"], deviceSizes: [390, 640, 820, 1024, 1440], imageSizes: [40, 80, 160, 256, 320] },
   poweredByHeader: false,
   // Next 16 gera AGENTS.md/CLAUDE.md na raiz a cada `next dev`; o projeto não versiona esses arquivos gerados
   agentRules: false,

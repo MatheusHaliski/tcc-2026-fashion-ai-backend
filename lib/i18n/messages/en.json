@@ -6955,5 +6955,19 @@
   "catalog.mais_parecidas": "These are the closest matches.",
   "catalog.ver_todas_com": "See every piece with “{q}”",
   "catalog.todas_com": "{total, number} pieces with “{q}”",
-  "catalog.marcas_erro": "Could not load the catalogue brands."
+  "catalog.marcas_erro": "Could not load the catalogue brands.",
+  "design.title": "Design system",
+  "design.lead": "Component, typography and color reference in every theme.",
+  "design.typography": "Typography",
+  "design.sample": "Organize your pieces and discover new combinations.",
+  "design.caption": "Readable captions with sufficient contrast.",
+  "design.label": "Label",
+  "design.controls": "Controls",
+  "design.colors": "Colors",
+  "design.dialog": "Accessible dialog",
+  "discovery.title": "Discover the community",
+  "discovery.people": "People to discover",
+  "discovery.brands": "Brands to explore",
+  "discovery.morePeople": "See more people",
+  "discovery.moreBrands": "See more brands"
 }

@@ -11,6 +11,7 @@ import { useI18n } from "@/lib/i18n/i18n";
 import { CATEGORY_CARDS, type CaptureCategory } from "@/lib/capture/capture-guides";
 import { Badge, Button, Chip, Field, Input, Skeleton, cn } from "@/components/ui";
 import { BrandLogo } from "@/components/brand-logo";
+import { CatalogBrandGrid } from "./catalog-brand-grid";
 import { CatalogPhoto, photoAspect } from "@/components/catalog/catalog-photo";
 import { CategoryCards } from "@/components/catalog/category-cards";
 import { BrandAutocomplete, type CatalogBrand } from "@/components/catalog/brand-autocomplete";
@@ -18,12 +19,7 @@ import { GarmentGlyph } from "@/components/capture/garment-glyphs";
 import { CatalogResultsGrid } from "@/components/catalog/catalog-results-grid";
 
 export interface CatalogSearchContext { category: string; subcategory: string; brand: string; query: string }
-/** Peças da marca no tipo escolhido (o bloco mostra esse número, não o total de todas as categorias). */
-export function storeCount(store: Store, category?: string): number {
-  if (!category) return store.catalogProducts;
-  if (store.categoryCounts) return store.categoryCounts[category] ?? 0;
-  return store.categories?.includes(category) ? store.catalogProducts : 0;
-}
+export { storeCount } from "./catalog-brand-grid";
 const ILLUSTRATION: Record<string, "tshirt" | "pants_back" | "sneaker_side" | "bag" | "dress"> = { upper_piece: "tshirt", lower_piece: "pants_back", shoes_piece: "sneaker_side", accessory_piece: "bag", full_body_piece: "dress" };
 
 /**
@@ -314,20 +310,14 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
           <Button size="sm" onClick={stores.reload}>{t("common.retry")}</Button>
         </p>
       )}
-      {storeList.length > 0 && (
-        <section className="catalog-brand-grid" aria-labelledby="cs-stores">
-          <p id="cs-stores" className="label">{t("catalog.marcas_do_catalogo", { n: storeList.length })}</p>
-          {storesShown.length ? (
-            <div className="fitting-stores" role="group" aria-labelledby="cs-stores">
-              {storesShown.map((s) => (
-                <button key={s.brandId} type="button" className={cn("fitting-store", brand === s.name && "is-active", !storeCount(s, category) && "is-empty")} aria-pressed={brand === s.name} onClick={() => pickStore(s)}>
-                  <BrandLogo name={s.name} src={s.logoUrl} size={32} shape="square" />
-                  <span className="fitting-store-name">{s.name}</span>
-                  <span className="type-caption text-muted">{t("tryOn.n_produtos", { n: storeCount(s, category) })}</span>
-                </button>
-              ))}
-            </div>
-          ) : <p className="type-caption text-muted">{t("catalog.nenhuma_marca_com", { q: brand.trim() })}</p>}
+      {brandGrid && (
+        <section className="catalog-brand-grid" aria-labelledby="cs-stores" aria-busy={stores.loading}>
+          <p id="cs-stores" className="label catalog-brand-heading">{t("catalog.marcas_do_catalogo", { n: storeList.length })}</p>
+          <div className="catalog-brand-stage">
+            {stores.loading ? <Skeleton className="h-full" /> : storesShown.length ? (
+              <CatalogBrandGrid stores={storesShown} selected={brand} category={category} labelledBy="cs-stores" onPick={pickStore} />
+            ) : <p className="type-caption text-muted">{brand.trim() ? t("catalog.nenhuma_marca_com", { q: brand.trim() }) : t("tryOn.sem_lojas")}</p>}
+          </div>
         </section>
       )}
       <div className="catalog-search-fields grid gap-3 sm:grid-cols-2">

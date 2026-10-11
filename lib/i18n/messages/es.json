@@ -6955,5 +6955,19 @@
   "catalog.mais_parecidas": "Estas son las más parecidas.",
   "catalog.ver_todas_com": "Ver todas las piezas con «{q}»",
   "catalog.todas_com": "{total, number} piezas con «{q}»",
-  "catalog.marcas_erro": "No se pudieron cargar las marcas del catálogo."
+  "catalog.marcas_erro": "No se pudieron cargar las marcas del catálogo.",
+  "design.title": "Sistema visual",
+  "design.lead": "Referencia de componentes, tipografía y colores en todos los temas.",
+  "design.typography": "Tipografía",
+  "design.sample": "Organiza tus prendas y descubre nuevas combinaciones.",
+  "design.caption": "Leyendas legibles con contraste suficiente.",
+  "design.label": "Etiqueta",
+  "design.controls": "Controles",
+  "design.colors": "Colores",
+  "design.dialog": "Diálogo accesible",
+  "discovery.title": "Descubre la comunidad",
+  "discovery.people": "Personas para conocer",
+  "discovery.brands": "Marcas para explorar",
+  "discovery.morePeople": "Ver más personas",
+  "discovery.moreBrands": "Ver más marcas"
 }
