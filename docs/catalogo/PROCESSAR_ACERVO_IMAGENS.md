@@ -71,88 +71,118 @@ A opção exige `--database --apply --category-frame`. Nesse modo:
   `assets_json.card` (que o card da busca usa, modo `PROCESSED`). A URL original
   continua em `image_url` e em `assets_json.originalUrl`; o asset anterior fica em
   `previousStoredUrl`/`previousAssets`. Nenhum objeto antigo é apagado.
-- Imagens já enquadradas na mesma versão (`CATALOG_FRAME_34_FABRIC_V2`, com
-  `stored_url`, `assets_json.card` iguais e quadro de tecido válido) são
+- Imagens já enquadradas na mesma versão (`CATALOG_FRAME_34_PRODUCT_RULE_V3`,
+  com `stored_url`, `assets_json.card` iguais e quadro da regra válido) são
   preservadas: repetir o comando só processa as pendências e as falhas.
+- Imagens gravadas pelas versões anteriores — `CATALOG_FRAME_34_50_V1` (quadro de
+  50% que podia mostrar fundo) e `CATALOG_FRAME_34_FABRIC_V2` (close só de tecido:
+  peito, braguilha, cabedal) — contam como **não padronizadas** e são
+  **reprocessadas** na próxima execução com a regra V3. Quem está rodando a V2
+  agora pode deixar terminar: a próxima execução com o JAR novo refaz essas
+  imagens (o checkpoint guardado pela V2 é descartado e a foto é analisada de novo).
 
-### Regras de enquadramento: 100% tecido da peça (`FABRIC_ONLY_100`)
+### Regra de enquadramento do produto (`PRODUCT_RULE`, V3)
 
-O quadro 3:4 da foto do acervo contém **somente tecido da roupa**: nenhum pixel
-de fundo, arte de fundo, pele/corpo de modelo, cabelo, outra peça ou objeto. Se
-não existe um quadro assim na foto, ela **não é reenquadrada nem gravada** — nem
-com `--force-category-frame`. Não há mais fallback geométrico nem quadro de
-largura fixa (50%).
+O quadro do lote segue **a mesma Regra de Enquadramento do Produto do card**
+(`fai-application/src/main/resources/catalog/semantic-regions.json`, §9.1 do
+`PIPELINE_IMAGENS_CATALOGO.md`), calculada pelo mesmo motor
+(`SemanticCropper.registryRuleCrop`, usado também pelo `FeedFraming` do card de
+4:5) — card e lote não divergem: só a proporção muda. O Java (`ProductRuleFrame`,
+versão `PRODUCT_RULE_FRAME_V1`) devolve o quadro em `productFrame`; o Python
+(`category_frame.py`) confere e grava.
 
-Como o quadro é calculado (Java, `FabricFrame`, versão `FABRIC_FRAME_34_V1`):
+**Proporção: 3:4 (900×1200), mantida.** O 3:4 é o quadro do editor pedido pelo
+responsável no #218 e já usado pelas imagens V1/V2; o card não força 4:5 nas
+imagens do lote: `.catalog-card-media` e o `PieceCard` usam
+`photoAspect(catalogImage.aspect)`, que lê o `crop_json.aspect = "3:4"` gravado
+(4:5 é só o padrão para imagem sem proporção). O registro e o `FeedFraming`
+continuam 4:5; a regra é a mesma, aplicada à proporção do quadro.
 
-1. **Máscara de tecido.** Fundo de estúdio detectado pela borda e removido por
-   preenchimento a partir das bordas (ou o recorte do segmentador quando o fundo
-   não é uniforme e a segmentação é confiável); fica só o maior componente.
-   Buracos com a cor do fundo dentro da peça (alça da bolsa, vão entre braço e
-   corpo, ≥ 0,12% da foto) e manchas de pele que não combinam com as cores
-   vizinhas da peça (≥ 0,04%) saem da máscara. Estampas pequenas e claras
-   continuam tecido.
-2. **Região pela categoria/subcategoria** (tabela abaixo), com âncora no
-   landmark do pipeline quando detectado (`PIPELINE_LANDMARK`) ou estimada pela
-   geometria da peça (`ESTIMATED_*`).
-3. **Margem de segurança.** A máscara é erodida (0,4% do menor lado, mínimo 2 px)
-   para a borda do quadro nunca encostar no contorno da peça.
-4. **Maior retângulo 3:4** inteiramente dentro do tecido erodido, dentro da
-   região e contendo a âncora (ou o ponto livre mais próximo dela). A cobertura
-   de tecido tem de ser exatamente 1,0; o Python confere de novo e recusa
-   qualquer quadro com cobertura menor ou fora da proporção 3:4 (±0,02).
-
-| Categoria | Subcategoria | O que o quadro mostra (`target`) | Região |
+| Categoria | Subcategoria | Regra (registro) | O que o quadro 3:4 mostra |
 |---|---|---|---|
-| `upper_piece` | camiseta, camisa, polo, moletom, suéter… | `chest` — peito | miolo da largura (sem mangas), do ombro (+3,5% da altura em modelo; +6% do tronco em packshot) para baixo; com modelo, termina na primeira troca forte de cor (calça, barriga) e no máximo 0,8× a altura da cabeça abaixo dos ombros |
-| `upper_piece` | `jacket`, `blazer`, `coat`, `cardigan`, `vest`, `parka`, `windbreaker`, `kimono` (ou abertura detectada pela cor) | `front_panel` — um painel frontal | mesma faixa, mas só um lado da abertura: o que aparece no meio (outra peça, fundo) fica fora |
-| `full_body_piece` | vestido, macacão… | `bodice` — corpo da peça | mesma regra do peito, limitada aos 60% de cima da faixa |
-| `lower_piece` | jeans, calça, short, bermuda… | `fly` — braguilha/fechamento | do cós (primeira troca forte de cor subindo a partir do gancho: acima é a camisa/jaqueta) até o gancho, só o miolo do quadril (54% da largura); âncora no zíper do pipeline quando detectado |
-| `lower_piece` | `skirt`, `skort`, `leggings`, `culottes` | `front_below_waistband` — frente logo abaixo do cós | de 8% a 75% da altura da peça (45% em leggings), 80% centrais da largura |
-| `shoes_piece` | tênis, bota, sapato… | `upper` — cabedal | entre 5% e 80% da altura do calçado (sem sola); âncora no cadarço do pipeline quando detectado |
-| `accessory_piece` | bolsa, mochila, lenço, chapéu… | `body` — corpo do objeto | caixa da peça com recuo de 4% |
-| `accessory_piece` | `sunglasses`, `eyeglasses`, `necklace`, `bracelet`, `earrings`, `ring`, `watch`, `hair_accessory`, `belt` | — | recusado: `NOT_TEXTILE_ACCESSORY` |
+| `upper_piece` | camiseta, polo, camisa, moletom, suéter, jaqueta… | COVER / TOP, vista FRONT, foco na metade de cima | a peça preenche o quadro (nada de fundo), **gola/decote na borda de cima**, peito visível, mangas cortadas pelas laterais; em foto com modelo o quadro começa no decote — sem rosto nem pescoço — e não pega pele de braço |
+| `full_body_piece` | vestido, macacão… | COVER / TOP | igual à parte de cima, a partir do decote |
+| `lower_piece` | jeans, calça, short, bermuda, legging… | COVER / TOP, foco cós/bolsos/braguilha | **cós na borda de cima**, a peça preenche a largura, cós + bolsos + braguilha na metade de cima (do cós a 80% do gancho tudo é peça) e **as pernas seguem além da base** (o vão entre elas aparece embaixo); em foto com modelo a camisa/jaqueta acima do cós fica de fora (e a aba de jaqueta que cai sobre o quadril sai da máscara pela cor) |
+| `lower_piece` | `skirt`, `skort` | COVER / TOP | cós no topo e o quadro todo é peça |
+| `shoes_piece` | tênis, sapato, bota… | WIDTH / CENTER, vista SIDE | **o calçado inteiro**, o comprimento na largura do quadro (folga de 2% de cada lado), centrado na vertical, fundo em cima e embaixo |
+| `accessory_piece` | bolsa, mochila, carteira, boné, chapéu | CONTAIN / CENTER (folga 2%) | **o objeto inteiro**, contido e centrado, com margem de fundo |
+| `accessory_piece` | `watch` | COVER / FOCUS (mostrador) | o mostrador no centro, preenchendo o quadro (pulseira cortada) |
+| `accessory_piece` | `belt` | CONTAIN / FOCUS (fivela) | o cinto inteiro; a fivela não é detectada, então o quadro centra o cinto (`FOCUS_NOT_DETECTED_CENTERED`) em vez de supor a fivela na ponta |
+| `accessory_piece` | `sunglasses`, `eyeglasses` | WIDTH / CENTER | as duas lentes inteiras na largura |
+| `accessory_piece` | colar, pulseira, brinco, anel, gorro, cachecol | CONTAIN / CENTER | o objeto inteiro com margem |
 
-Motivos de recusa (a foto fica como está, a linha sai como falha
-`FABRIC_FRAME_UNAVAILABLE:<motivo>` e o lote segue):
+Joias, relógio, óculos e cinto **não são mais recusados** (a V2 os recusava
+como `NOT_TEXTILE_ACCESSORY`): a regra os enquadra inteiros.
+
+Como o quadro é calculado:
+
+1. **Máscara da peça** (a mesma da V2): fundo de estúdio removido a partir das
+   bordas (ou a máscara do segmentador, se confiante), maior componente, buracos
+   com a cor do fundo fora; em foto com modelo, as manchas de pele de tamanho de
+   corpo (rosto, pescoço, braços, mãos ≥ 0,15% da foto) saem da máscara.
+2. **Caixa de referência** da categoria: parte de cima da gola à barra (com modelo,
+   dos ombros até a primeira troca de cor depois da cintura natural); parte de
+   baixo do cós (com modelo, a primeira troca **brusca** de cor subindo a partir do
+   gancho: a barra da camisa, a barriga, o cinto) até a barra, na largura mediana
+   do quadril; objeto: todos os pedaços relevantes (o outro pé do par, o outro
+   brinco) e o que o segmentador do pipeline considera a peça.
+3. **Regra do registro** sobre essa caixa (`registryRuleCrop`), em 3:4.
+4. **COVER/TOP** (parte de cima/baixo): o maior quadro 3:4 até o tamanho da regra,
+   centrado no eixo da peça, com o topo na faixa da gola/do cós e inteiramente
+   dentro da máscara (erodida 0,3%); parte de baixo: inteiramente dentro do cós a
+   80% do gancho. Com modelo, as laterais recolhem 2,5% (vão fino braço–tronco).
+   **WIDTH/CONTAIN**: o quadro da regra inteiro; o que passar da foto é completado
+   com a cor do fundo de estúdio de cada borda (como o smartPadding do card) e o
+   recorte é arredondado **para fora** (o objeto nunca é cortado). COVER continua
+   arredondando **para dentro** até o 3:4 exato.
+5. **Conformidade** pelo mesmo cálculo do card (`ruleScore`): foco na metade de
+   cima (parte de cima/baixo), calçado de lado (`SHOE_NOT_SIDE_VIEW`). Dúvida vira
+   revisão no modo padrão e observação (`RULE_COMPLIANCE_DOUBT`) no modo forçado.
+
+Motivos de recusa (a foto fica como está, nada é gravado, a linha sai como falha
+`FRAME_UNAVAILABLE:<motivo>` e o lote segue):
 
 | Motivo | Significado |
 |---|---|
-| `NOT_TEXTILE_ACCESSORY` | acessório sem tecido para preencher o quadro (óculos, joias, relógio, cinto) |
-| `NO_PRODUCT` | o pipeline não encontrou a peça |
-| `BACKGROUND_NOT_UNIFORM` | fundo sem cor de estúdio e segmentação com confiança < 0,6: não há como separar tecido de fundo com segurança |
-| `SEGMENTATION_FRAGMENT` | sobrou só um detalhe do primeiro plano (caixa < 6% da foto), em geral peça da cor do fundo |
-| `GARMENT_NOT_ISOLATED` | peça de cima sobre modelo sem região de tecido própria (ex.: camiseta da cor do fundo; o quadro cairia no short) |
-| `NO_FABRIC_REGION` | nenhum retângulo 3:4 cabe no tecido da região da categoria |
-| `FABRIC_REGION_TOO_SMALL` | o retângulo que cabe tem menos de 120 px ou menos de 14% da largura da peça |
-| `FABRIC_COVERAGE_BELOW_100` | o retângulo encontrado tem algum pixel que não é tecido |
+| `PIECE_NOT_ISOLATED` | calçado/acessório sobre pessoa (tênis no pé, bolsa no ombro): a caixa seria a pessoa |
+| `HUMAN_IN_FRAME` | o segmentador de pessoa (quando instalado) viu pele/rosto no quadro de uma parte de cima/baixo |
+| `GARMENT_NOT_ISOLATED` | parte de cima sobre modelo sem região própria (camiseta da cor do fundo; o quadro cairia na calça) |
+| `WAISTBAND_NOT_FOUND` | foto com modelo em que a peça de cima cobre o cós (mesma cor, casaco por cima): o quadro não teria o cós no topo |
+| `NO_COVER_WINDOW_AT_TOP` | nenhum quadro de cobertura cabe com o topo na gola/no cós (peça clara em fundo claro, estampa da cor do fundo) |
+| `FRAME_TOO_SMALL` | o quadro que cabe tem menos de 90 px ou é estreito demais para a peça (< 22% da parte de cima, < 40% do quadril) |
+| `PADDING_NEEDS_STUDIO_BACKGROUND` | o objeto inteiro precisaria passar da foto, mas o fundo não é de estúdio (não há cor para completar) |
+| `NO_PRODUCT`, `BACKGROUND_NOT_UNIFORM`, `SEGMENTATION_FRAGMENT` | a máscara da peça não existe ou não é confiável (como na V2) |
+| `COVERAGE_BELOW_100`, `OBJECT_CUT`, `INVALID_CROP`, `ASPECT_NOT_3_4`, `INVALID_RULE` | conferências do Python: quadro de cobertura com algo que não é peça, objeto cortado, recorte fora dos limites |
 | `JAVA_<código>` | o Java recusou a foto antes (`IMAGE_TOO_SMALL`, `UNREADABLE_IMAGE`…) |
 
-Fotos pequenas continuam ampliadas para 900×1200 (`render.upscaleFactor`,
-`qualityNote=UPSCALED_REDUCED_QUALITY`). Âncora estimada (zíper ou cadarço não
-detectado), pele excluída da máscara (`PERSON_SKIN_EXCLUDED_FROM_MASK`) e baixa
-confiança da segmentação viram observações em `assets_json.editorFrame`
-(`policy`, `fabricCoverage`, `target`, `focusSource`, `region`, `skinExcluded`,
-`cropWidthPx`), não bloqueios. Falhas do canal Java (JVM caiu, timeout,
-protocolo) continuam falha técnica.
+Em `assets_json.editorFrame` (e no `crop_json`) ficam `version`, `policy =
+PRODUCT_RULE`, `rule` (`fit`, `align`, `view`, `focusTopHalf`), `fit`, `align`,
+`ruleSource` (`catalog/semantic-regions.json`, versão do registro, piece_type,
+subcategoria e `origin`: `pieceType` ou `subcategory:<nome>` quando a subcategoria
+tem regra própria), `target`, `focus`/`focusSource`, `garmentCoverage` e
+`coverageScope` (FRAME ou WAIST_TO_CROTCH), `objectInside`, `padding`,
+`background`, `model`, `observations` e `decision`. O relatório ganha
+`frame_fit`, `frame_align`, `frame_rule_source` e `frame_padding`; o resumo traz
+`frame_unavailable` (e o nome antigo `fabric_frame_unavailable`, com os mesmos
+números).
 
-Imagens gravadas pela versão anterior (`CATALOG_FRAME_34_50_V1`, quadro de 50%
-que podia mostrar fundo) contam como **não padronizadas**: repetir o comando
-reprocessa todas elas com a política nova.
-
-Avaliação em 75 fotos reais do acervo (todas as categorias, packshot e modelo):
-37 receberam quadro, todos conferidos visualmente com 100% de tecido da peça
-certa; as demais foram recusadas pelos motivos acima e ficam como estão. Limites
-conhecidos: peça clara em fundo claro, moletom aberto sobre camiseta, calçado
-pequeno de perfil e produto cadastrado na categoria errada (o quadro segue a
-categoria do cadastro).
+Avaliação em 75 fotos reais do acervo (as mesmas da V2, packshot e modelo), pelo
+JAR e pelo `category_frame.py`: **60 receberam quadro** (V2: 37) — acessórios
+23/23, calçados 6/6, parte de cima 18/24, parte de baixo 13/22 — e as folhas de
+contato foram conferidas visualmente por categoria. Recusas: cós coberto pela
+peça de cima (4), nenhum quadro no topo (4), quadro pequeno (3), fragmento (2),
+fundo não uniforme (1), camiseta branca em fundo branco (1). Limites conhecidos:
+peça clara em fundo claro, cáqui/bege em modelo (cor de pele), listras da cor do
+fundo, preto sobre preto (a barra/o cós não aparecem pela cor), vão fino e claro
+entre braço e tronco, acessório no corpo de uma pessoa quando a pele não destoa
+da roupa, produto cadastrado na categoria errada (o quadro segue o cadastro).
 
 ### Execução no Mac
 
 ```bash
 cd tcc-2026-fashion-ai-backend
 python3 -m pip install -r scripts/catalog/requirements-images.txt
-mvn -q -DskipTests package                      # fat JAR do backend (Java 21) — obrigatório: o JAR antigo não tem o FabricFrame
+mvn -q -DskipTests package                      # fat JAR do backend (Java 21) — obrigatório: o JAR da V2 não tem a regra do produto (V3)
 
 # MYSQL_HOST/PORT/DATABASE/USER/PASSWORD (ou MYSQL_PUBLIC_URL + MYSQL_APP_PASSWORD do Railway)
 # S3_BUCKET, S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_REGION/S3_ENDPOINT e
@@ -167,15 +197,19 @@ python3 scripts/catalog/process_catalog_images.py --database --apply --category-
   --workers 6 --java-threads 3 --output ~/catalogo/acervo-enquadrado.xlsx
 ```
 
-Código de saída 2 significa que houve falhas individuais; o resumo JSON no
+Sem o JAR novo o script para antes de começar ("JAR sem a regra de enquadramento
+do produto (V3)"): ele confere a capacidade `productFrameVersion` anunciada pelo
+Java. Código de saída 2 significa que houve falhas individuais; o resumo JSON no
 `stdout` e o `.summary.json` trazem `failure_reasons`, `frame_observations`,
-`fabric_frame_unavailable` e `write_results`. Rode de novo para repetir só as pendências.
+`frame_unavailable` e `write_results`. Rode de novo para repetir só as pendências.
+Uma recusa da V3 não apaga nada: a imagem continua com a referência que tinha
+(inclusive um quadro V1/V2 já gravado), e o produto continua na busca.
 
 ### Como conferir que as imagens foram substituídas
 
 Na planilha (aba **Acervo**): **Pipeline após a execução = Sim**, **Imagem
 processada / recorte** com link `…/catalog/framed/…jpg`, **Versão do pipeline**
-`CATALOG_FRAME_34_FABRIC_V2`, **Motivo / observações** = "Enquadramento salvo no S3 e
+`CATALOG_FRAME_34_PRODUCT_RULE_V3`, **Motivo / observações** = "Enquadramento salvo no S3 e
 referência ativa atualizada no banco", **Enquadramento: foco** (categoria → alvo e
 origem do foco), **Enquadramento: observações** e **Dimensões (origem → saída)**.
 No `.changes.audit.jsonl`, cada linha confirmada traz `before`/`after` com
@@ -183,7 +217,10 @@ No `.changes.audit.jsonl`, cada linha confirmada traz `before`/`after` com
 
 ```sql
 SELECT COUNT(*) FROM catalog_images
- WHERE pipeline_version = 'CATALOG_FRAME_34_FABRIC_V2' AND stored_url LIKE '%/catalog/framed/%';
+ WHERE pipeline_version = 'CATALOG_FRAME_34_PRODUCT_RULE_V3' AND stored_url LIKE '%/catalog/framed/%';
+-- ainda nas versões anteriores (serão refeitas na próxima execução)
+SELECT pipeline_version, COUNT(*) FROM catalog_images
+ WHERE pipeline_version IN ('CATALOG_FRAME_34_50_V1', 'CATALOG_FRAME_34_FABRIC_V2') GROUP BY pipeline_version;
 ```
 
 No catálogo: a busca (`GET /api/catalog/search`) e o produto devolvem

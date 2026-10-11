@@ -377,8 +377,9 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
         # só com as proteções técnicas (HTTPS, sem credenciais, host público, tamanho, tipo).
         allowed = None if force else (result["persistence_decision"]["domains"] if frame_storage else None)
         response = checkpoint.get(result, analyzer.ready["pipelineVersion"])
-        if response is not None and category_frame and "fabricFrame" not in response:
-            response = None                     # análise guardada antes do quadro só de tecido: refaz
+        if response is not None and category_frame and (not isinstance(response.get("productFrame"), dict)
+                                                         or response["productFrame"].get("version") != analyzer.ready.get("productFrameVersion")):
+            response = None                     # análise guardada antes da regra do produto (V1/V2) ou de outra versão dela: refaz
         if response is None:
             path = downloader.get(result["source_url"], allowed_domains=allowed) if frame_storage else downloader.get(result["source_url"])
             try:
@@ -389,9 +390,9 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
                 code = getattr(error, "code", None)
                 if not category_frame or not code or code in JAVA_TRANSPORT_ERRORS:
                     raise
-                # Java não analisou esta foto (ex.: IMAGE_TOO_SMALL): sem a máscara de tecido não há quadro — a foto não é
-                # reenquadrada (um quadro calculado só pela geometria mostraria fundo)
-                raise ValueError("FABRIC_FRAME_UNAVAILABLE:JAVA_" + str(code)) from error
+                # Java não analisou esta foto (ex.: IMAGE_TOO_SMALL): sem a máscara da peça não há como aplicar a regra — a foto
+                # não é reenquadrada
+                raise ValueError("FRAME_UNAVAILABLE:JAVA_" + str(code)) from error
         result["java_analysis_completed"] = True
         if category_frame:
             from category_frame import apply_frame, report_fields, FORCED_DECISION
@@ -462,12 +463,14 @@ def main(argv=None):
     source = ap.add_mutually_exclusive_group(required=True)
     source.add_argument("--snapshot", nargs="+", type=Path, help="JSONL/JSONL.GZ: estado local, não produção")
     source.add_argument("--database", action="store_true", help="Inventário atual do MySQL via MYSQL_*")
-    ap.add_argument("--category-frame", action="store_true", help="Quadro 3:4 100%% tecido (sem fundo, pessoa ou objeto), no lugar da categoria/subcategoria; "
-                    "sem tecido suficiente a foto não é reenquadrada; focos estimados de zíper/cadarço exigem revisão (requer --apply)")
+    ap.add_argument("--category-frame", action="store_true",
+                    help="Quadro 3:4 pela regra de enquadramento do produto do card (catalog/semantic-regions.json): parte de cima e de "
+                         "baixo preenchem 100%% do quadro a partir da gola/do cós, calçado inteiro na largura, acessório inteiro contido; "
+                         "sem quadro possível pela regra a foto não é reenquadrada; dúvida de conformidade exige revisão (requer --apply)")
     ap.add_argument("--force-category-frame", action="store_true",
                     help="Decisão do responsável: enquadra e persiste todas as fotos sem exigir autorização da fonte nem identificação "
-                         "visual confirmada; focos estimados viram observações no relatório. O quadro continua 100%% tecido: sem ele a foto "
-                         "não é gravada (requer --database --apply --category-frame)")
+                         "visual confirmada; dúvidas de conformidade viram observações no relatório. Sem quadro pela regra do produto a "
+                         "foto não é gravada (requer --database --apply --category-frame)")
     ap.add_argument("--apply", action="store_true", help="Aplicar pipeline; com --database persiste os metadados")
     ap.add_argument("--output", required=True, type=Path, help="Planilha .xlsx")
     ap.add_argument("--checkpoint", type=Path, help="SQLite de análises para retomada")
@@ -532,8 +535,8 @@ def main(argv=None):
                                           stderr_path=args.output.with_suffix(".java.log")) as analyzer:
                     if analyzer.ready["pipelineVersion"] != PIPELINE_VERSION:
                         raise RuntimeError("JAR desatualizado: compile a versão atual do pipeline antes de aplicar")
-                    if args.category_frame and not analyzer.ready.get("fabricFrameVersion"):
-                        raise RuntimeError("JAR sem o quadro só de tecido: rode `mvn -q -DskipTests package` antes de aplicar")
+                    if args.category_frame and not analyzer.ready.get("productFrameVersion"):
+                        raise RuntimeError("JAR sem a regra de enquadramento do produto (V3): rode `mvn -q -DskipTests package` antes de aplicar")
                     analyzer.category_frame = args.category_frame
                     analyzer.force_frame = args.force_category_frame
                     if args.force_category_frame:
@@ -600,8 +603,9 @@ def main(argv=None):
     summary["failure_reasons"] = dict(Counter(r["error"].split(":", 1)[0] for r in records if r.get("error")))
     summary["frame_observations"] = dict(Counter(o.split(":", 1)[0] for r in records for o in (r.get("frame_observations") or [])))
     summary["frame_fallbacks"] = sum(bool(r.get("frame_fallback")) for r in records)
-    summary["fabric_frame_unavailable"] = dict(Counter(r["error"].split(":", 2)[1] for r in records
-                                                        if str(r.get("error", "")).startswith("FABRIC_FRAME_UNAVAILABLE:")))
+    summary["frame_unavailable"] = dict(Counter(r["error"].split(":", 2)[1] for r in records
+                                                 if str(r.get("error", "")).startswith("FRAME_UNAVAILABLE:")))
+    summary["fabric_frame_unavailable"] = summary["frame_unavailable"]        # nome antigo (V2), mantido nos relatórios
     summary["write_results"] = dict(Counter(str(r.get("write_result")).split(":", 1)[0] for r in records if r.get("write_result")))
     progress("Exportando a planilha e os relatórios de auditoria...")
     jsonl = args.output.with_suffix(".audit.jsonl")

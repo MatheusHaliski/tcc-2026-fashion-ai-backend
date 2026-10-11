@@ -268,10 +268,9 @@ public final class FeedFraming {
         br.com.fashionai.application.catalog.image.NRect product = new br.com.fashionai.application.catalog.image.NRect(
                 p.left() / (double) p.w(), p.top() / (double) p.h(), (p.right() - p.left() + 1) / (double) p.w(),
                 (p.bottom() - p.top() + 1) / (double) p.h());
-        br.com.fashionai.application.catalog.image.FramingStrategy.Focus focus = new br.com.fashionai.application.catalog.image.FramingStrategy.Focus(
-                profile.focus().name(), product.sub(profile.focus().rect()), List.of(), "REGISTRY");
-        br.com.fashionai.application.catalog.image.NRect c = br.com.fashionai.application.catalog.image.SemanticCropper.ruleCrop(
-                p.w(), p.h(), WIDTH / (double) HEIGHT, product, focus, profile.rule(), profile.margin()[0]);
+        // a mesma regra do lote de enquadramento do acervo (ProductRuleFrame, 3:4): só a proporção muda
+        br.com.fashionai.application.catalog.image.NRect c = br.com.fashionai.application.catalog.image.SemanticCropper.registryRuleCrop(
+                p.w(), p.h(), WIDTH / (double) HEIGHT, product, profile, 0);
         double s = WIDTH / (c.w() * p.w()), ox = -c.x() * p.w() * s, oy = -c.y() * p.h() * s;
         Set<String> cuts = cut == null ? Set.of() : cut;
         Map<String, Object> lm = new LinkedHashMap<>(base.landmarks());
@@ -293,18 +292,23 @@ public final class FeedFraming {
      * duas manchas com um vão vertical no meio (de lado os pés se sobrepõem e a silhueta é contínua e comprida).
      */
     static boolean looksSideView(Profile p) {
-        int bw = p.right() - p.left() + 1, bh = p.bottom() - p.top() + 1;
+        return looksSideView(p.mask(), p.w(), p.left(), p.top(), p.right(), p.bottom());
+    }
+
+    /** O mesmo teste sobre uma máscara qualquer (caixa inclusiva): usado também pelo lote de enquadramento do acervo. */
+    public static boolean looksSideView(boolean[] mask, int w, int left, int top, int right, int bottom) {
+        int bw = right - left + 1, bh = bottom - top + 1;
         if (bw <= 0 || bh <= 0) {
             return true;
         }
         if (bw / (double) bh < 0.9) {
             return false;
         }
-        int from = p.left() + (int) (bw * 0.3), to = p.left() + (int) (bw * 0.7);
+        int from = left + (int) (bw * 0.3), to = left + (int) (bw * 0.7);
         for (int x = from; x <= to; x++) {
             int filled = 0;
-            for (int y = p.top(); y <= p.bottom(); y++) {
-                filled += p.mask()[y * p.w() + x] ? 1 : 0;
+            for (int y = top; y <= bottom; y++) {
+                filled += mask[y * w + x] ? 1 : 0;
             }
             if (filled < bh * 0.03) {
                 return false;   // coluna vazia no miolo: dois pés separados (par de frente/de trás)

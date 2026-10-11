@@ -14,37 +14,119 @@ except ImportError:
     from category_frame import VERSION as FRAME_VERSION
 
 
+def _hex_color(value):
+    """'#rrggbb' → (r, g, b); qualquer outra coisa → None."""
+    if isinstance(value, str) and len(value) == 7 and value.startswith('#'):
+        try:
+            return tuple(int(value[i:i + 2], 16) for i in (1, 3, 5))
+        except ValueError:
+            return None
+    return None
+
+
+def _median_color(pixels):
+    if not pixels:
+        return None
+    return tuple(sorted(p[i] for p in pixels)[len(pixels) // 2] for i in range(3))
+
+
+def _edge_colors(image):
+    """Mediana de uma faixa de 2% em cada borda da foto (fundo de estúdio pode ter degradê: cada lado com a sua cor)."""
+    w, h = image.size
+    band = max(1, round(min(w, h) * 0.02))
+    small = image if w * h <= 640_000 else image.resize((max(1, w // 4), max(1, h // 4)))
+    sw, sh = small.size
+    sb = max(1, round(band * sw / w))
+    px = small.load()
+    strips = {'top': [(x, y) for y in range(sb) for x in range(sw)],
+              'bottom': [(x, y) for y in range(sh - sb, sh) for x in range(sw)],
+              'left': [(x, y) for x in range(sb) for y in range(sh)],
+              'right': [(x, y) for x in range(sw - sb, sw) for y in range(sh)]}
+    return {side: _median_color([px[x, y] for x, y in coords]) for side, coords in strips.items()}
+
+
 def render_frame_info(path, crop, width=900):
-    """JPEG 3:4 of the frame plus what happened to the pixels (source crop size, upscale factor)."""
+    """JPEG 3:4 do quadro e o que aconteceu com os pixels (tamanho do recorte na origem, ampliação, fundo completado).
+
+    Quadro de cobertura (COVER, parte de cima/baixo) e versões antigas: arredonda PARA DENTRO e encolhe o lado maior até o
+    3:4 exato — a peça preenche o quadro e nenhum pixel de fora entra pela borda. Objeto inteiro (WIDTH/CONTAIN: calçado,
+    bolsa, joias…) ou quadro da regra que passa da foto (relógio pelo mostrador): arredonda PARA FORA e completa até o 3:4
+    exato; o que passa da foto vira a cor do fundo de estúdio de cada lado (como o smartPadding do card) — o objeto nunca é
+    cortado.
+    """
     from PIL import Image, ImageOps
     rect = crop['crop']
+    frame = crop.get('editorFrame') if isinstance(crop.get('editorFrame'), dict) else {}
+    fit = (frame.get('rule') or {}).get('fit') if isinstance(frame.get('rule'), dict) else None
+    outside = rect['x'] < -1e-9 or rect['y'] < -1e-9 or rect['x'] + rect['w'] > 1 + 1e-9 or rect['y'] + rect['h'] > 1 + 1e-9
+    whole = fit in ('WIDTH', 'CONTAIN') or (fit is not None and outside)
     with Image.open(path) as original:
         if original.width * original.height > 40_000_000:
             raise ValueError('IMAGE_TOO_LARGE')
-        image = ImageOps.exif_transpose(original).convert('RGB')
-        # para dentro: a janela é só de tecido; arredondar para fora poderia trazer 1 px de fundo da borda
-        x0, y0 = math.ceil(rect['x']*image.width - 1e-6), math.ceil(rect['y']*image.height - 1e-6)
-        x1, y1 = math.floor((rect['x']+rect['w'])*image.width + 1e-6), math.floor((rect['y']+rect['h'])*image.height + 1e-6)
-        x0, y0, x1, y1 = max(0, x0), max(0, y0), min(image.width, x1), min(image.height, y1)
-        if x1 <= x0 or y1 <= y0:
-            raise ValueError('INVALID_FRAME')
-        # 3:4 exato encolhendo o lado maior (centrado), para a ampliação não esticar a peça
-        w, h = x1 - x0, y1 - y0
-        if w * 4 > h * 3:
-            nw = h * 3 // 4; x0 += (w - nw) // 2; x1 = x0 + nw
-        elif w * 4 < h * 3:
-            nh = w * 4 // 3; y0 += (h - nh) // 2; y1 = y0 + nh
-        box = (x0, y0, x1, y1)
-        if box[2] <= box[0] or box[3] <= box[1]:
-            raise ValueError('INVALID_FRAME')
-        source_w, source_h = box[2] - box[0], box[3] - box[1]
-        framed = image.crop(box).resize((width, width*4//3), Image.Resampling.LANCZOS)
+        image = ImageOps.exif_transpose(original)
+        background = _hex_color(frame.get('background')) or _hex_color(crop.get('background'))
+        if image.mode in ('RGBA', 'LA') or (image.mode == 'P' and 'transparency' in image.info):
+            # PNG recortado pela marca: o transparente vira o fundo (sem isso, o "nada" da foto sairia preto no JPEG)
+            rgba = image.convert('RGBA')
+            flat = Image.new('RGB', rgba.size, background or (255, 255, 255))
+            flat.paste(rgba, mask=rgba.split()[3])
+            image = flat
+        else:
+            image = image.convert('RGB')
+        W, H = image.size
+        padded, sides = 0, []
+        if whole:
+            x0, y0 = math.floor(rect['x'] * W + 1e-6), math.floor(rect['y'] * H + 1e-6)
+            x1, y1 = math.ceil((rect['x'] + rect['w']) * W - 1e-6), math.ceil((rect['y'] + rect['h']) * H - 1e-6)
+            if x1 <= x0 or y1 <= y0:
+                raise ValueError('INVALID_FRAME')
+            # 3:4 exato crescendo (centrado) até um múltiplo de 3 × 4: nada do objeto sai
+            unit = max(math.ceil((x1 - x0) / 3), math.ceil((y1 - y0) / 4))
+            x0 -= (unit * 3 - (x1 - x0)) // 2
+            y0 -= (unit * 4 - (y1 - y0)) // 2
+            x1, y1 = x0 + unit * 3, y0 + unit * 4
+            source_w, source_h = x1 - x0, y1 - y0
+            edges = _edge_colors(image)
+            fill = background or _median_color([c for c in edges.values() if c]) or (255, 255, 255)
+            canvas = Image.new('RGB', (source_w, source_h), fill)
+            # cada lado que passa da foto recebe a cor do fundo daquela borda
+            for side, box in (('top', (0, 0, source_w, max(0, -y0))), ('bottom', (0, max(0, H - y0), source_w, source_h)),
+                              ('left', (0, 0, max(0, -x0), source_h)), ('right', (max(0, W - x0), 0, source_w, source_h))):
+                if box[2] > box[0] and box[3] > box[1]:
+                    sides.append(side)
+                    canvas.paste(edges.get(side) or fill, box)
+            inner = (max(0, x0), max(0, y0), min(W, x1), min(H, y1))
+            if inner[2] <= inner[0] or inner[3] <= inner[1]:
+                raise ValueError('INVALID_FRAME')
+            canvas.paste(image.crop(inner), (inner[0] - x0, inner[1] - y0))
+            padded = source_w * source_h - (inner[2] - inner[0]) * (inner[3] - inner[1])
+            framed = canvas.resize((width, width * 4 // 3), Image.Resampling.LANCZOS)
+        else:
+            # para dentro: a janela é só da peça; arredondar para fora poderia trazer 1 px de fundo da borda
+            x0, y0 = math.ceil(rect['x']*W - 1e-6), math.ceil(rect['y']*H - 1e-6)
+            x1, y1 = math.floor((rect['x']+rect['w'])*W + 1e-6), math.floor((rect['y']+rect['h'])*H + 1e-6)
+            x0, y0, x1, y1 = max(0, x0), max(0, y0), min(W, x1), min(H, y1)
+            if x1 <= x0 or y1 <= y0:
+                raise ValueError('INVALID_FRAME')
+            # 3:4 exato encolhendo o lado maior (centrado), para a ampliação não esticar a peça
+            w, h = x1 - x0, y1 - y0
+            if w * 4 > h * 3:
+                nw = h * 3 // 4; x0 += (w - nw) // 2; x1 = x0 + nw
+            elif w * 4 < h * 3:
+                nh = w * 4 // 3; y0 += (h - nh) // 2; y1 = y0 + nh
+            box = (x0, y0, x1, y1)
+            if box[2] <= box[0] or box[3] <= box[1]:
+                raise ValueError('INVALID_FRAME')
+            source_w, source_h = box[2] - box[0], box[3] - box[1]
+            framed = image.crop(box).resize((width, width*4//3), Image.Resampling.LANCZOS)
         output = io.BytesIO()
         framed.save(output, format='JPEG', quality=95)
         upscale = round(width / source_w, 3)
-        info = {'sourceWidth': image.width, 'sourceHeight': image.height, 'sourceCropWidth': source_w,
+        info = {'sourceWidth': W, 'sourceHeight': H, 'sourceCropWidth': source_w,
                 'sourceCropHeight': source_h, 'outputWidth': width, 'outputHeight': width*4//3,
                 'upscaleFactor': upscale, 'qualityNote': 'UPSCALED_REDUCED_QUALITY' if upscale > 1 else None}
+        if whole:
+            info.update(rounding='OUTWARD', paddedSides=sides, paddingShare=round(padded / (source_w * source_h), 4))
         return output.getvalue(), info
 
 
