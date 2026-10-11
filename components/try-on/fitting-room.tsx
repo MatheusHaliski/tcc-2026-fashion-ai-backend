@@ -23,6 +23,7 @@ import { FittingItems } from "./fitting-items";
 import { MirrorStage, type MirrorPiece } from "@/components/mirror/mirror-stage";
 import type { FittingItem } from "@/lib/tryon/fitting-room";
 import { StoreBrowser } from "./store-browser";
+import { mirrorHref } from "@/lib/nav/mirror-href";
 import { WardrobeBrowser } from "./wardrobe-browser";
 import { SavedTries } from "./saved-tries";
 
@@ -107,7 +108,7 @@ export function FittingRoom() {
         title={t("tryOn.titulo_lojas")}
         kicker="RF18"
         lead={t("tryOn.lead_lojas")}
-        actions={<Link href="/mirror" className="btn btn-sm btn-ghost">{t("tryOn.ir_ao_espelho")}</Link>}
+        actions={<Link href={mirrorHref()} className="btn btn-sm btn-ghost">{t("tryOn.ir_ao_espelho")}</Link>}
       />
       <div className="fitting-workspace">
         <div className="fitting-preview">
@@ -164,7 +165,7 @@ export function FittingRoom() {
         </div>
       </div>
       <Dialog open={!!preview2d} onClose={() => setPreview2d(null)} title={t("tryOn.previa_2d_titulo")} size="lg"
-        footer={<Link href="/mirror?vista=2d" className="btn btn-sm">{t("tryOn.ir_ao_espelho")}<span aria-hidden="true">→</span></Link>}>
+        footer={<Link href={mirrorHref({ vista: "2d" })} className="btn btn-sm">{t("tryOn.espelho_do_quarto_2d")}<span aria-hidden="true">→</span></Link>}>
         {preview2d && (
           <div className="grid gap-3 md:grid-cols-[minmax(240px,360px)_1fr]">
             <MirrorStage slots={mirrorSlotsOf(session.items)} mode="2d" />

@@ -1,8 +1,8 @@
 # Prova no espelho dentro do quarto (RF27 ↔ RF28)
 
 As abas **Meu Quarto** e **Espelho** passam a ser um fluxo só: o personagem caminha até o espelho e a prova abre sozinha,
-sem sair do quarto e sem trocar de tela; afastar-se volta ao quarto. A tela `/mirror` continua existindo (Vista-me,
-tipo de look, GRWM), mas a prova rápida de "o que eu tenho na mão" acontece no próprio quarto.
+sem sair do quarto e sem trocar de tela; afastar-se volta ao quarto. Desde 11/10 o **Espelho não tem mais tela própria**:
+`/mirror` só redireciona para `/room?espelho=1` (ver "Espelho como navegação derivada" no fim).
 
 ## Estados e transições
 
@@ -35,8 +35,10 @@ Regras (em `lib/room3d/mirror-session.ts`, sem React):
 
 ## Menu lateral e obstáculo
 
-- Com a prova aberta (fases `approach`/`tryon`) o menu lateral acende **Espelho** em vez de **Meu Quarto**, sem
-  trocar de rota (`lib/nav/active-override.ts`); ao sair da zona, Voltar ao quarto ou sair da tela, volta a seguir a rota.
+- Com a prova à vista (fase `tryon` na aba 3D, ou a vista embutida na aba 2.5D) aparece **Espelho** recuado logo abaixo de
+  **Meu Quarto** no menu lateral, como sub-item (não é link; `setNavSub` em `lib/nav/active-override.ts`). "Meu Quarto"
+  continua visível como pai. Trocar de aba, Voltar ao quarto ou sair da tela tira o sub-item. Não há mais item
+  "Espelho" de primeiro nível no menu.
 - O espelho é obstáculo com caixa orientada (vidro girado 28°, meias-medidas 0,47 × 0,08 m + raio do tronco 0,18 m):
   o personagem para na frente do vidro e contorna pela lateral, nunca atravessa. Na diagonal contra um obstáculo ele
   desliza ao longo dele; já sobreposto (porta abriu sobre ele), só aceita passos que diminuem a sobreposição.
@@ -197,5 +199,31 @@ Do guarda-roupa, modo compacto) e `app/room-page.test.tsx` (abrir o espelho troc
 
 ## Limites
 
-- A cena exige WebGL; sem ele o quarto abre em 2.5D e a prova continua pela tela Espelho.
+- A cena exige WebGL; sem ele o quarto abre em 2.5D e o espelho abre **embutido** na própria aba (palco 2D + o mesmo
+  painel), pela célula tracejada "Monte o look de hoje" ou pelo link `/room?espelho=1`.
+- "Ir ao espelho" ainda abre a prova direto (`goToMirror` em `room/page.tsx`, com TODO): a caminhada automática do
+  personagem até a frente do espelho é o próximo passo.
+- A lista "Roupas em mãos" (`components/room3d/mirror-hands.tsx`) continua acima do painel e repete parte das "Partes do
+  look"; juntar as duas fica para quando a área do quarto 3D for liberada.
 - Os moldes 3D continuam aproximação (ver `docs/avatar3d/PIPELINE_VESTIMENTAS_3D.md`).
+
+## Espelho como navegação derivada do Meu Quarto (11/10)
+
+- **Rota.** `lib/nav/mirror-href.ts` → `/room?espelho=1[&vestir=<id>][&vista=2d]`. O quarto lê os parâmetros quando os
+  dados chegam: vai ao espelho (`goToMirror`), leva a peça à lista do espelho e veste (`bringToMirror` + `wearInMirror`),
+  abre a prévia 2D no painel; os parâmetros de uma vez só saem com `router.replace("/room?espelho=1")`. Entrar e sair do
+  espelho mantém a URL em sincronia (`history.replaceState`). `/mirror` (com `?piece=`/`?vista=2d`) virou redirecionamento;
+  todos os links do app e os `href` do backend (`LookbookService`, `PersonalInsights`) apontam direto para o quarto.
+- **Cabeçalho.** No modo espelho: trilha "Meu Quarto › Espelho" (prop `trail` do `PageHeader`; "Meu Quarto" volta ao
+  quarto), título Espelho. O botão do cabeçalho virou **Ir ao espelho**; "Espelho" no diálogo da porta virou **Levar ao
+  espelho** (sem sair do quarto).
+- **Painel sem formulário** (`components/mirror/mirror-controls.tsx`): "Partes do look" na grade de células do Provador
+  (Parte de cima — com a camada externa do servidor dentro —, Peça única, Parte de baixo, Calçado, Acessório n de 4);
+  tocar abre a folha da parte (`mirror-part-sheet.tsx`: Vestindo agora no card compacto com Tirar/Manter/⋯, Na lista do
+  espelho, Do guarda-roupa, Sugestões com o porquê). "Para quem é o look" em chips; Vista-me por células de ocasião +
+  humor/clima (`vista-me-cells.tsx`, também no diálogo Vista-me do quarto); peças fixadas viram `anchorIds`. Ações:
+  Usar hoje, Salvar look (um toque, título do servidor, aviso com Ver look/Renomear), Abrir no editor
+  (`/schemes/new?pieces=`), Provar o look no Provador, Tira uma coisa e Limpar (com desfazer), GRWM (roteiro com imagem
+  e legenda), silhueta (letra + regra) e o desafio também no modo compacto. Nunca chama `/slots/{slot}/swap`.
+- Evidências (API simulada, fora do repositório): `scratchpad/evidence/espelho-provador/` — `01` redirecionamento,
+  `02` painel, `03`/`04` folha da parte, `05` menu, `06` Vista-me, `10` sem WebGL (desktop e celular).
