@@ -33,12 +33,15 @@ export function MirrorPartSheet({ part, data, hand, pinned, busy, onClose, onTog
   const { t } = useI18n();
   const label = t(part.label);
   const worn = part.slots.flatMap((s) => asList(data.slots[s]));
+  // "já no espelho" vem do estado vivo (o inMirror do guarda-roupa é de quando a folha abriu e fica velho ao tirar a peça)
   const wornIds = new Set(Object.values(data.slots).flatMap((v) => asList(v)).map((p) => p.id));
   const [pick, setPick] = useState<Pick | null>(null);
   const [pickError, setPickError] = useState<unknown>(null);
   const [sug, setSug] = useState<{ alternatives: MirrorPieceRef[]; message?: string | null; explanation?: string | null; empty?: { message: string; href?: string | null } } | null>(null);
   const [sugBusy, setSugBusy] = useState(false);
   const miss = (data.missing ?? []).find((m) => m.slot === part.suggest);
+  // a falta é do lugar da própria parte: na Parte de cima, a jaqueta (camada externa) vestida não supre a peça por baixo
+  const ownEmpty = asList(data.slots[part.suggest]).length === 0;
   // o guarda-roupa desta parte (sem IA): a Parte de cima junta ?slot=upper e ?slot=outer_layer — o servidor põe cada peça no lugar certo
   useEffect(() => {
     let alive = true; setPick(null); setPickError(null); setSug(null);
@@ -95,7 +98,8 @@ export function MirrorPartSheet({ part, data, hand, pinned, busy, onClose, onTog
             </ul>
           </section>
         )}
-        {worn.length === 0 && <p className="type-body text-muted">{miss?.message ?? t("mirror.sheet.nada_vestido")}</p>}
+        {worn.length === 0 ? <p className="type-body text-muted">{miss?.message ?? t("mirror.sheet.nada_vestido")}</p>
+          : miss && ownEmpty ? <p className="type-body text-muted" role="note">{miss.message}</p> : null}
         {hand.length > 0 && (
           <section aria-labelledby="ms-rack">
             <h3 id="ms-rack" className="mirror-section-h">{t("room.mirror.hands")}</h3>
@@ -112,7 +116,7 @@ export function MirrorPartSheet({ part, data, hand, pinned, busy, onClose, onTog
           <h3 id="ms-wardrobe" className="mirror-section-h">{t("mirror.do_guarda_roupa")}</h3>
           {pickError ? <p className="type-body text-muted" role="status">{pickError instanceof Error ? pickError.message : t("common.errorTitle")}</p>
             : !pick ? <Skeleton className="h-24" />
-            : pick.pieces.length ? <div className="mirror-pick-grid" data-testid="mirror-wardrobe-picker">{pick.pieces.map((p) => tile(p, p.inMirror || wornIds.has(p.id) ? t("mirror.ja_no_espelho") : hand.some((r) => r.id === p.id) ? t("mirror.sheet.na_lista") : p.addressLabel, p.inMirror || wornIds.has(p.id)))}</div>
+            : pick.pieces.length ? <div className="mirror-pick-grid" data-testid="mirror-wardrobe-picker">{pick.pieces.map((p) => tile(p, wornIds.has(p.id) ? t("mirror.ja_no_espelho") : hand.some((r) => r.id === p.id) ? t("mirror.sheet.na_lista") : p.addressLabel, wornIds.has(p.id)))}</div>
             : <p className="type-body text-muted">{pick.message ?? t("mirror.sheet.guarda_roupa_vazio")} <Link href={pick.href ?? "/pieces/new"} className="underline">{t("mirror.adicionar_peca")}</Link></p>}
         </section>
         <section aria-labelledby="ms-sug">

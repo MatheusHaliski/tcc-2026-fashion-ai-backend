@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { api } from "@/lib/api/client";
+import { api, mediaUrl } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
@@ -55,12 +55,56 @@ export function glassTint(kelvin?: number): string {
   return "#EEEAE2";
 }
 
+interface MirrorStageProps { slots: Record<string, MirrorPiece | MirrorPiece[] | null>; kelvin?: number; mode?: MirrorMode; children?: React.ReactNode }
+
 /**
  * O espelho em dois modos com o MESMO avatar e as mesmas peças:
  *  - "3d" (Reflexo 3D): a cena viva, com a pose natural do movimento parado;
  *  - "2d" (Prévia 2D): a foto de frente e parada dessa mesma cena (components/three/avatar-still.tsx).
+ * As duas precisam de WebGL (a foto da Prévia 2D sai de um Canvas). Com `webgl={false}` (RF32.CA08, aparelho sem
+ * WebGL) nenhum Canvas é montado: o vidro mostra as peças vestidas em 2D (MirrorFlatStill) — nunca um palco em branco.
  */
-export function MirrorStage({ slots, kelvin, mode = "3d", children }: { slots: Record<string, MirrorPiece | MirrorPiece[] | null>; kelvin?: number; mode?: MirrorMode; children?: React.ReactNode }) {
+export function MirrorStage({ webgl = true, ...props }: MirrorStageProps & { webgl?: boolean }) {
+  return webgl ? <MirrorStage3D {...props} /> : <MirrorFlatStage {...props} />;
+}
+
+const FLAT_ORDER = ["outer_layer", "upper", "dress", "lower", "shoes"];
+const listOf = (v: MirrorPiece | MirrorPiece[] | null | undefined) => (Array.isArray(v) ? v : v ? [v] : []);
+
+/** Sem WebGL: as fotos das peças vestidas, de cima para baixo como no corpo (acessórios numa fileira), sobre o vidro. */
+export function MirrorFlatStill({ slots, alt }: { slots: Record<string, MirrorPiece | MirrorPiece[] | null>; alt: string }) {
+  const body = [...FLAT_ORDER, ...Object.keys(slots).filter((s) => s !== "accessory" && !FLAT_ORDER.includes(s))].flatMap((s) => listOf(slots[s]));
+  const acc = listOf(slots.accessory);
+  const src = (p: MirrorPiece) => mediaUrl(p.studioImageUrl ?? p.imageUrl ?? p.thumbnailUrl ?? undefined);
+  return (
+    <div className="mirror-flat" role="img" aria-label={alt} data-testid="mirror-flat-still">
+      {body.length + acc.length === 0 ? (
+        // vidro sem peças: a silhueta parada no lugar do avatar
+        <svg className="mirror-flat-silhouette" viewBox="0 0 60 160" aria-hidden><circle cx="30" cy="14" r="10" /><path d="M14 30h32l6 52h-8l-3-30v104h-9V96h-4v60h-9V52l-3 30H8z" /></svg>
+      ) : (<>
+        {body.map((p) => <img key={p.id} src={src(p)} alt="" draggable={false} />)}
+        {acc.length > 0 && <span className="mirror-flat-acc">{acc.map((p) => <img key={p.id} src={src(p)} alt="" draggable={false} />)}</span>}
+      </>)}
+    </div>
+  );
+}
+
+function MirrorFlatStage({ slots, kelvin, children }: MirrorStageProps) {
+  const { t } = useI18n();
+  const tint = glassTint(kelvin);
+  const n = useMemo(() => Object.values(slots).reduce((k, v) => k + listOf(v).length, 0), [slots]);
+  return (
+    <div className="mirror-frame" data-mirror-mode="flat">
+      <div className="mirror-glass" style={{ background: `radial-gradient(120% 90% at 50% 15%, #ffffff 0%, ${tint} 55%, #d9d4ca 100%)` }}>
+        <MirrorFlatStill slots={slots} alt={t("mirror.flat_alt", { n })} />
+        <span className="mirror-sheen" aria-hidden />
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function MirrorStage3D({ slots, kelvin, mode = "3d", children }: MirrorStageProps) {
   const { t } = useI18n();
   const { loading, error, reload, avatar, sex, body } = useMirrorAvatar();
   const tint = glassTint(kelvin);
