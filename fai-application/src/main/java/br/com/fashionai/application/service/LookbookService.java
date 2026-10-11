@@ -362,7 +362,7 @@ public class LookbookService {
         } else {
             out.put("empty", Map.of("message", Msg.t("lookbook.nenhum_look_do_dia_marcado"), "actions", List.of(
                     Map.of("label", Msg.t("lookbook.marcar_um_look_salvo"), "href", "/u/" + u.getUsername() + "?tab=looks"), Map.of("label", Msg.t("lookbook.usar_o_autopiloto"), "href", "/autopilot"),
-                    Map.of("label", Msg.t("lookbook.vista_me_no_espelho"), "href", "/mirror"))));
+                    Map.of("label", Msg.t("lookbook.vista_me_no_espelho"), "href", "/room?espelho=1"))));
         }
         out.put("history", dailyLooks.history(user));
         out.put("feedbackReminder", dailyLooks.pendingFeedback(user));

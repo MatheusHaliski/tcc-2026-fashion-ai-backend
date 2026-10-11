@@ -16,6 +16,7 @@ import { HypeBadge } from "@/components/hype/hype-badge";
 import { HypeAnalyticsDrawer } from "@/components/hype/hype-analytics-drawer";
 import { hypeViewState } from "@/lib/hype/model";
 import type { HypeSummary } from "@/lib/hype/types";
+import { mirrorHref } from "@/lib/nav/mirror-href";
 
 const RunwayScene = dynamic(() => retryImport(() => import("@/components/three/runway-scene")), { ssr: false, loading: () => <div className="showcase-3d-loading">{tr("showcase.runwayPanel.acendendo_a_passarela")}</div> });
 
@@ -69,7 +70,7 @@ export function RunwayPanel() {
         <p className="type-body flex-1">{t("showcase.runwayPanel.desfile_de_look_s_do", { date: fmtDate(data.date), totalToday: data.totalToday, RANKING_LABEL: RANKING_LABEL[data.ranking], total: data.total })}</p>
         {data.you && (data.you.optedOut ? <Link className="btn btn-sm" href="/settings">{t("showcase.runwayPanel.voce_saiu_da_passarela_voltar")}</Link>
           : data.you.hasLook ? <span className="badge badge-chalk">{t("showcase.runwayPanel.voce_desfila_hoje", { value: data.you.position ? t("showcase.runwayPanel.no", { position: data.you.position, RANKING_LABEL: RANKING_LABEL[data.ranking] }) : "" })}</span>
-          : <Link className="btn btn-sm btn-primary" href="/mirror">{t("showcase.runwayPanel.marcar_meu_look_do_dia")}</Link>)}
+          : <Link className="btn btn-sm btn-primary" href={mirrorHref()}>{t("showcase.runwayPanel.marcar_meu_look_do_dia")}</Link>)}
       </div>
       <FilterBar
         quick={{ key: "ranking", label: t("showcase.runwayPanel.filtros_da_passarela"), options: data.rankings.filter((r) => user || r !== "SEGUINDO").map((r) => ({ value: r, label: RANKING_LABEL[r] ?? r })) }}
