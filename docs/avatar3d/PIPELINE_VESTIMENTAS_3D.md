@@ -5,6 +5,11 @@ corrigido nesta rodada, o contrato de dados que passa a acompanhar cada peça ve
 trabalho futuro. Ele não descreve um sistema que não existe: onde o código é uma aproximação, está escrito
 "aproximação".
 
+> **Matriz de rastreabilidade (11/10/2026):** cada elemento da peça (manga, gola, botão, carcela, costura, cós, barra,
+> calçado…) por subcategoria, com arquivo, símbolo, parâmetros, teste e estado, gerada pela execução real dos
+> construtores — [`docs/avatar3d/matriz-3d/`](matriz-3d/README.md) (tabelas CSV, planilha, catálogo visual e lacunas
+> priorizadas).
+
 ## 1. Diagnóstico (antes)
 
 Rastreio da peça cadastrada até o manequim (código em `lib/avatar3d/human/*`, `components/three/*`):
