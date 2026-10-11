@@ -21,6 +21,7 @@ import { FittingStage } from "./fitting-stage";
 import { FittingControls } from "./fitting-controls";
 import { FittingItems } from "./fitting-items";
 import { MirrorStage, type MirrorPiece } from "@/components/mirror/mirror-stage";
+import { useWebGL } from "@/components/three/common";
 import type { FittingItem } from "@/lib/tryon/fitting-room";
 import { StoreBrowser } from "./store-browser";
 import { mirrorHref } from "@/lib/nav/mirror-href";
@@ -30,6 +31,8 @@ import { SavedTries } from "./saved-tries";
 /** RF18 coordinator: composes controlled views and delegates fitting/persistence use cases to hooks. */
 export function FittingRoom() {
   const { t } = useI18n();
+  // sem WebGL a prévia 2D do espelho mostra as fotos das peças no vidro, sem Canvas (o MirrorStage 3D ficaria em branco)
+  const gl = useWebGL();
   const toast = useToast();
   const searchParams = useSearchParams();
   const taxonomy = useTaxonomy();
@@ -168,7 +171,7 @@ export function FittingRoom() {
         footer={<Link href={mirrorHref({ vista: "2d" })} className="btn btn-sm">{t("tryOn.espelho_do_quarto_2d")}<span aria-hidden="true">→</span></Link>}>
         {preview2d && (
           <div className="grid gap-3 md:grid-cols-[minmax(240px,360px)_1fr]">
-            <MirrorStage slots={mirrorSlotsOf(session.items)} mode="2d" />
+            <MirrorStage slots={mirrorSlotsOf(session.items)} mode="2d" webgl={gl !== false} />
             <div className="grid content-start gap-2">
               <p className="type-body">{t("tryOn.previa_2d_de", { name: preview2d.name })}</p>
               <p className="type-body-sm text-muted">{t("mirror.previa_2d_nota")}</p>

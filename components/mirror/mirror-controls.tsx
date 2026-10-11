@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { api, ApiError, mediaUrl } from "@/lib/api/client";
 import type { TipoLook } from "@/lib/api/types";
@@ -81,6 +81,50 @@ export function useMirrorActions<T extends MirrorData>(setData: (d: T) => void, 
   return { run, busy };
 }
 
+/**
+ * "Tira uma coisa" (DET-M01): o servidor libera com o look completo e algo removível (acessório ou camada externa). A
+ * resposta do Vista-me / Outra sugestão traz a lista de ações dela no lugar da calculada — então a regra é refeita aqui.
+ */
+export function canTakeOneOff(data: MirrorData): boolean {
+  return !!data.actions?.includes("TIRA_UMA_COISA") || (data.complete && (asList(data.slots.accessory).length > 0 || asList(data.slots.outer_layer).length > 0));
+}
+
+/**
+ * Peças fixadas ("Manter") — âncoras do Vista-me. Vivem em quem usa o painel: o quarto as guarda para o Vista-me da
+ * barra da cena e para quando a prova fecha e reabre. Começam pelas âncoras do último pedido; a peça que sai do corpo
+ * deixa de ser âncora.
+ */
+export function useMirrorPins(data: MirrorData | null | undefined) {
+  const [pinned, setPinned] = useState<Set<string>>(() => new Set((data?.interpretation?.anchors ?? []).map(String)));
+  const seeded = useRef(!!data);
+  const wornIds = new Set(wornOf(data).map((w) => w.p.id));
+  useEffect(() => {
+    if (!data) return;
+    if (!seeded.current) { seeded.current = true; setPinned(new Set((data.interpretation?.anchors ?? []).map(String).filter((id) => wornIds.has(id)))); return; }
+    setPinned((s) => { const n = new Set([...s].filter((id) => wornIds.has(id))); return n.size === s.size ? s : n; });
+  }, [data?.slots]); // eslint-disable-line react-hooks/exhaustive-deps
+  const toggle = (id: string) => setPinned((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  /** âncoras para o pedido: só as fixadas que continuam vestidas */
+  const anchorIds = () => [...pinned].filter((id) => wornIds.has(id));
+  return { pinned, setPinned, toggle, anchorIds };
+}
+export type MirrorPins = ReturnType<typeof useMirrorPins>;
+
+/**
+ * Pedido do Vista-me ou de Outra sugestão com as fixadas de agora. /another repete as âncoras do pedido anterior (o
+ * servidor não recebe corpo); se a pessoa fixou ou soltou peças depois, vai o mesmo pedido ao /vista-me com as âncoras
+ * novas — as combinações já mostradas continuam de fora do mesmo jeito.
+ */
+export function vistaRequest(kind: "vista-me" | "another", data: MirrorData | null | undefined, anchorIds: string[], prompt?: string): { path: string; body?: { prompt: string; anchorIds: string[] } } {
+  if (kind === "another") {
+    const before = (data?.interpretation?.anchors ?? []).map(String);
+    const same = before.length === anchorIds.length && anchorIds.every((id) => before.includes(id));
+    if (same) return { path: "/api/me/mirror/another" };
+    return { path: "/api/me/mirror/vista-me", body: { prompt: data?.prompt ?? "", anchorIds } };
+  }
+  return { path: "/api/me/mirror/vista-me", body: { prompt: prompt ?? "", anchorIds } };
+}
+
 /** Ações que o quarto faz do jeito dele (reação do avatar, luz nas portas, fecho do look); fora do quarto, o padrão. */
 export interface MirrorHost {
   wear?: (p: MirrorPieceRef) => Promise<unknown> | void;
@@ -96,7 +140,7 @@ export interface MirrorHost {
 type Notice = { text: string; actions?: { label: string; href?: string; onClick?: () => void }[] };
 const ASSET_TONE = { PENDING: "mark", IMAGE_2D: "chalk", MOULD_3D: undefined, MODEL_3D: "thread" } as const;
 
-export function MirrorControls<T extends MirrorData>({ data, setData, reload, compact = false, children, host, preview2d, held, arrivedId }: {
+export function MirrorControls<T extends MirrorData>({ data, setData, reload, compact = false, children, host, preview2d, held, arrivedId, pins }: {
   data: T; setData: (d: T) => void; reload: () => void;
   /** dentro do quarto (coluna estreita ao lado da cena) */
   compact?: boolean;
@@ -109,26 +153,26 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
   held?: MirrorPieceRef[];
   /** peça que acabou de chegar ao espelho: a célula da parte fica em destaque */
   arrivedId?: string | null;
+  /** peças fixadas guardadas por quem usa o painel (o quarto); sem isto, o painel guarda as suas */
+  pins?: MirrorPins;
 }) {
   const { t } = useI18n(); const toast = useToast();
   const { run, busy } = useMirrorActions<T>(setData, reload);
   const tipos = useApi<TipoLook[]>((signal) => api.get("/api/tipos-look", { signal }), []);
   const [open, setOpen] = useState<string | null>(null);
-  const [pinned, setPinned] = useState<Set<string>>(() => new Set((data.interpretation?.anchors ?? []).map(String)));
+  const ownPins = useMirrorPins(data);
+  const { pinned, toggle: togglePin, anchorIds } = pins ?? ownPins;
   const [extras, setExtras] = useState<Pick<MirrorData, "sequence" | "fallbackMessage" | "challengeNotice" | "message"> | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [grwm, setGrwm] = useState<{ steps?: { imageUrl?: string | null; caption?: string; pieceId?: string; at?: number }[]; totalMs?: number } | null>(null);
   const worn = wornOf(data);
-  const wornIds = new Set(worn.map((w) => w.p.id));
-  // peça que saiu do corpo deixa de ser âncora
-  useEffect(() => { setPinned((s) => { const n = new Set([...s].filter((id) => wornIds.has(id))); return n.size === s.size ? s : n; }); }, [data.slots]); // eslint-disable-line react-hooks/exhaustive-deps
   const tiposMissing = tipos.error instanceof ApiError && (tipos.error.status === 404 || tipos.error.status === 405);
   const dressOn = asList(data.slots.dress).length > 0;
   const restore = async (ids: string[]) => { for (const id of ids) await run("restore", () => api.post("/api/me/mirror/pieces", { pieceId: id })); setNotice(null); };
 
   async function vista(path: "vista-me" | "another", prompt?: string) {
-    const anchorIds = [...pinned].filter((id) => wornIds.has(id));
-    const r = await run("vista", () => api.post(`/api/me/mirror/${path}`, path === "vista-me" ? { prompt: prompt ?? "", anchorIds } : undefined));
+    const req = vistaRequest(path, data, anchorIds(), prompt);
+    const r = await run("vista", () => api.post(req.path, req.body));
     if (r && (r as T).slots) { const x = r as T; setExtras({ sequence: x.sequence, fallbackMessage: x.fallbackMessage, challengeNotice: x.challengeNotice, message: x.message }); host?.onVista?.(x); }
   }
   async function use() {
@@ -180,10 +224,13 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
           {MIRROR_PARTS.map((p) => {
             const pieces = p.slots.flatMap((s) => asList(data.slots[s]));
             const label = t(p.label);
-            const missing = (data.missing ?? []).some((m) => m.slot === (p.id === "top" ? "upper" : p.suggest)) && pieces.length === 0;
+            // a falta vem do lugar da própria parte: na Parte de cima, só a jaqueta (camada externa) não supre a peça por baixo
+            const own = p.id === "top" ? asList(data.slots[p.suggest]) : pieces;
+            const missing = (data.missing ?? []).some((m) => m.slot === p.suggest) && own.length === 0;
             const covered = !pieces.length && dressOn && (p.id === "top" || p.id === "lower");
+            const under = pieces.length > 0 && missing ? t("mirror.parte.falta_por_baixo") : null;
             const caption = pieces.length
-              ? (p.max ? t("mirror.parte.n_de", { n: pieces.length, max: p.max }) : pieces.map((x) => x.name).join(" + "))
+              ? [p.max ? t("mirror.parte.n_de", { n: pieces.length, max: p.max }) : pieces.map((x) => x.name).join(" + "), under].filter(Boolean).join(" · ")
               : covered ? t("mirror.parte.coberto") : missing ? t("mirror.parte.falta") : t("mirror.parte.vazio");
             const asset = pieces[0] ? assetStateOf(pieces[0]) : null;
             const unavailable = pieces.some((x) => x.available === false);
@@ -192,7 +239,7 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
             const arrived = !!arrivedId && hand.some((x) => x.id === arrivedId);
             return (
               <button key={p.id} type="button" className={cn("fitting-store mirror-part", open === p.id && "is-active", missing && "is-missing", !pieces.length && "is-empty", arrived && "is-arrived")}
-                aria-haspopup="dialog" aria-label={t("mirror.parte.aria", { part: label, value: pieces.length ? pieces.map((x) => x.name).join(", ") : caption })} onClick={() => setOpen(p.id)}>
+                aria-haspopup="dialog" aria-label={t("mirror.parte.aria", { part: label, value: pieces.length ? [pieces.map((x) => x.name).join(", "), under].filter(Boolean).join(" · ") : caption })} onClick={() => setOpen(p.id)}>
                 <span className="mirror-part-art" aria-hidden>
                   {pieces.length ? pieces.slice(0, 2).map((x) => <img key={x.id} src={mediaUrl(x.thumbnailUrl ?? x.imageUrl ?? undefined)} alt="" style={{ background: x.colorHex ?? undefined }} />)
                     : <GarmentGlyph id={p.glyph} size={36} animated={false} numbered={false} />}
@@ -233,7 +280,7 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
           <h3 id="mirror-vista-h" className="mirror-section-h">{t("mirror.vista_me")}</h3>
           <Button size="sm" disabled={data.origin !== "vista_me" || busy === "vista"} onClick={() => void vista("another")}>{t("room.outra_sugestao")}</Button>
         </div>
-        <VistaMeCells busy={busy === "vista"} lastPrompt={data.prompt} pinnedCount={[...pinned].filter((id) => wornIds.has(id)).length} onRun={(prompt) => void vista("vista-me", prompt)} />
+        <VistaMeCells busy={busy === "vista"} lastPrompt={data.prompt} pinnedCount={anchorIds().length} onRun={(prompt) => void vista("vista-me", prompt)} />
         {extras && (extras.message || extras.fallbackMessage || extras.challengeNotice || extras.sequence?.length) ? (
           <div className="mirror-vista-result" role="status">
             {extras.message && <p className="type-body-sm">{extras.message}</p>}
@@ -257,13 +304,13 @@ export function MirrorControls<T extends MirrorData>({ data, setData, reload, co
         <Button variant="primary" disabled={worn.length < 2} onClick={() => void save()}><FaiIcon id="ACT-10" size={20} className="ico-text" decorative />{t("mirror.salvar_look")}</Button>
         {worn.length ? <Link href={`/schemes/new?pieces=${worn.map((w) => encodeURIComponent(w.p.id)).join(",")}`} className="btn">{t("mirror.abrir_no_editor")}</Link> : <Button disabled>{t("mirror.abrir_no_editor")}</Button>}
         {worn.length ? <Link href={`/try-on?provar=${provar}`} className="btn"><FaiIcon id="NAV-07" size={20} className="ico-text" decorative />{t("mirror.provar_look_no_provador")}</Link> : <Button disabled>{t("mirror.provar_look_no_provador")}</Button>}
-        <Button disabled={!data.actions?.includes("TIRA_UMA_COISA") || busy === "one"} onClick={() => void takeOneOff()}><FaiIcon id="ACT-33" size={20} className="ico-text" decorative />{t("mirror.tira_uma_coisa")}</Button>
+        <Button disabled={!canTakeOneOff(data) || busy === "one"} onClick={() => void takeOneOff()}><FaiIcon id="ACT-33" size={20} className="ico-text" decorative />{t("mirror.tira_uma_coisa")}</Button>
         <Button disabled={worn.length === 0 || busy === "grwm"} onClick={async () => { const r = await run("grwm", () => api.get("/api/me/mirror/grwm")); if (r) setGrwm(r as typeof grwm); }}>{t("mirror.grwm")}</Button>
       </div>
 
       {part && (
         <MirrorPartSheet part={part} data={data} hand={inHandOf(part, data, held)} pinned={pinned} busy={busy} onClose={() => setOpen(null)}
-          onTogglePin={(id) => setPinned((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; })}
+          onTogglePin={togglePin}
           wear={async (p) => { if (host?.wear) await host.wear(p); else { const r = await run("place", () => api.post("/api/me/mirror/pieces", { pieceId: p.id })) as { notice?: string } | null; if (r?.notice) toast.info(r.notice); } }}
           takeOff={async (p) => { if (host?.takeOff) await host.takeOff(p); else await run("rm", () => api.delete(`/api/me/mirror/pieces/${encodeURIComponent(p.id)}`)); }}
           unlist={async (p) => { if (host?.unlist) await host.unlist(p); else await run("unlist", () => api.delete(`/api/me/mirror/rack/${encodeURIComponent(p.id)}`)); }}
