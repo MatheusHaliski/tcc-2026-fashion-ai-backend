@@ -7,7 +7,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { render as renderDOM, waitFor } from "@testing-library/react";
+import * as THREE from "three";
+import { useThree } from "@react-three/fiber";
 import { I18nProvider } from "@/lib/i18n/i18n";
+import type { FittingCameraApi, OrbitLimitState } from "@/lib/scene3d/orbit-steps";
 
 const canvasCapture = vi.hoisted(() => ({ enabled: false, children: null as ReactNode }));
 
@@ -45,6 +48,17 @@ const M: Mannequin3d = { sex: "MASCULINO", head: "PADRAO", skinTone: "escura", b
 const look = (title: string, mannequin = F, pieces = PIECES.slice(0, 3)): Look3d => ({ title, mannequin, pieces, likes: 3 } as Look3d);
 
 afterEach(() => { vi.clearAllMocks(); vi.unstubAllGlobals(); });
+
+/** Provador: o DOM em volta só serve para capturar o conteúdo do Canvas, que então roda no renderizador de teste. */
+async function mountFitting(props: Partial<Parameters<typeof FittingRoomScene>[0]>, extra?: ReactNode) {
+  canvasCapture.enabled = true; canvasCapture.children = null;
+  const dom = renderDOM(<I18nProvider initial="pt-BR"><FittingRoomScene avatar={null} sex="FEMININO" skinTone="media" pieces={PIECES.slice(0, 3)} environment={resolveEnvironment([])} {...props} /></I18nProvider>);
+  let contents: ReactNode;
+  try { await waitFor(() => expect(canvasCapture.children).toBeTruthy()); contents = canvasCapture.children; } finally { dom.unmount(); canvasCapture.enabled = false; }
+  return mount3d(<>{contents}{extra}</>);
+}
+const probe = { camera: null as THREE.Camera | null };
+function CameraProbe() { probe.camera = useThree((s) => s.camera); return null; }
 
 describe("utilitários 3D", () => {
   it("pseudoaleatório determinístico, tons de pele, sexo e medidas do manequim", () => {
@@ -140,7 +154,56 @@ describe("cenas 3D", () => {
       expect(r.scene.children.length).toBeGreaterThan(0);
       await r.unmount();
     }
-  });
+  }, 20000);
+
+  it("provador: cabine fechada — a parede virada para a câmera sai de cena e a da frente vira a entrada da cabine", async () => {
+    await serveBodyAsset();
+    // costas: a câmera fica atrás da parede do fundo (que some) e vê a parede da frente decorada; frente: o contrário;
+    // perfil: as duas aparecem, a lateral do lado da câmera some e o espelho (que taparia o avatar) também
+    for (const [view, front, back] of [["back", true, false], ["front", false, true], ["profile", true, true]] as const) {
+      const r = await mountFitting({ view });
+      await frames(r, 2);
+      const byName = (n: string) => r.scene.instance.getObjectByName(n);
+      for (const n of ["studio-front-wall", "studio-back-wall", "studio-side-wall-left", "studio-side-wall-right", "studio-cabin-entrance", "studio-cabin-door", "studio-cabin-sign", "studio-cabin-art",
+        "studio-cabin-bench", "studio-corner-plant", "studio-pouf", "studio-rug", "studio-ceiling-spots", "studio-full-height-mirror", "studio-bench-and-hangers"]) expect(byName(n), n).toBeTruthy();
+      expect(byName("studio-front-wall")!.visible, `${view}: parede da frente`).toBe(front);
+      expect(byName("studio-back-wall")!.visible, `${view}: parede do fundo`).toBe(back);
+      expect(byName("studio-side-wall-left")!.visible).toBe(true);
+      expect(byName("studio-side-wall-right")!.visible).toBe(view !== "profile");
+      expect(byName("studio-full-height-mirror")!.visible).toBe(view !== "profile");
+      expect(byName("studio-rug")!.visible).toBe(true);
+      // enfeite não projeta sombra (só o avatar): a cabine não pesa no mapa de sombras
+      byName("conceptual-fitting-studio")!.traverse((o) => { if ((o as THREE.Mesh).isMesh) expect((o as THREE.Mesh).castShadow, o.name).toBe(false); });
+      await r.unmount();
+    }
+  }, 20000);
+
+  it("provador: os passos de câmera dos botões giram 30° em torno do avatar, aproximam até o limite e voltam à frente", async () => {
+    await serveBodyAsset();
+    let api: FittingCameraApi | null = null;
+    const r = await mountFitting({ view: "front", onCamera: (a) => { api = a; } }, <CameraProbe />);
+    await frames(r, 2);
+    expect(api).toBeTruthy();
+    const cam = probe.camera!, azimuth = () => Math.atan2(cam.position.x, cam.position.z) * 180 / Math.PI;
+    const distance = () => Math.hypot(cam.position.x, cam.position.z);
+    const states: OrbitLimitState[] = []; const stop = api!.subscribe((s) => states.push(s));
+    expect(azimuth()).toBeCloseTo(0, 1);
+    api!.step("left"); await frames(r, 90);
+    expect(azimuth()).toBeCloseTo(30, 0);
+    api!.step("right"); api!.step("right"); await frames(r, 90);
+    expect(azimuth()).toBeCloseTo(-30, 0);
+    const far = distance();
+    api!.step("in"); await frames(r, 90);
+    expect(distance()).toBeCloseTo(far / 1.2, 1);
+    for (let i = 0; i < 8; i++) api!.step("in");
+    await frames(r, 120);
+    expect(states.at(-1)).toEqual({ atMin: true, atMax: false });
+    api!.step("front"); await frames(r, 120);
+    expect(azimuth()).toBeCloseTo(0, 0);
+    expect(distance()).toBeCloseTo(far, 1);
+    stop(); await r.unmount();
+    expect(api).toBeNull();
+  }, 20000);
 
   it("visualizador do avatar: busto, meio corpo e corpo inteiro em cada ângulo", async () => {
     await serveBodyAsset();
