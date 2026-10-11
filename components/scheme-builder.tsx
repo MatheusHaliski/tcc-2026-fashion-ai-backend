@@ -11,7 +11,9 @@ import { AiCompositionCard } from "@/components/ai-compositions";
 import { useUndo } from "@/lib/hooks/use-undo";
 import { PieceCard } from "@/components/piece-card";
 import { SchemeCard } from "@/components/scheme-card";
-import { BackgroundStudio, type BgConfig } from "@/components/background-studio";
+import type { BgConfig } from "@/components/background-studio";
+import dynamic from "next/dynamic";
+const BackgroundStudio = dynamic(() => import("@/components/background-studio").then((m) => m.BackgroundStudio), { loading: () => <Skeleton className="h-40" /> });
 import { FaiIcon } from "@/components/fai-icon";
 import { BrandLogo } from "@/components/brand-logo";
 import { SealSuggestions, useLookSeals } from "@/components/look-seal-verification";
@@ -80,7 +82,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   useEffect(() => {
     if (initial || !seed || !b || selected.length) return;
     const picks = seed.split(",").map((id) => byId.get(id)).filter((p): p is PieceView => !!p);
-    if (picks.length) setSelected(picks.map((p) => ({ id: p.id, slot: slotOf(p) })));
+    if (picks.length) { setSelected(picks.map((p) => ({ id: p.id, slot: slotOf(p) }))); setStep(1); }
   }, [b, seed]); // eslint-disable-line react-hooks/exhaustive-deps
   const toggle = (p: PieceView) => {
     if (selected.some((x) => x.id === p.id)) { setSelected((s) => s.filter((x) => x.id !== p.id)); return; }
@@ -88,7 +90,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
     setSelected((s) => [...s.filter((x) => !out.some((o) => o.id === x.id)), { id: p.id, slot: slotOf(p) }]);
     if (out.length) toast.info(t("schemeBuilder.troca_mesmo_tipo", { old: out.map((o) => byId.get(o.id)?.name ?? "").join(", "), name: p.name }));
   };
-  const go = (i: number) => { setStep(i); if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const go = (i: number) => { if (i === 2 && !form.title.trim()) setForm((f) => ({ ...f, title: selected.map((s) => byId.get(s.id)?.name).filter(Boolean).slice(0, 3).join(" + ").slice(0, 120) })); setStep(i); if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); };
   // navegação livre (RF5): voltar sempre; avançar para qualquer etapa cujo pré-requisito já está cumprido
   const canGo = (i: number) => i < step || i <= 1 || (selected.length >= 2 && (i === 2 || !!form.title.trim()));
   const payload = () => ({ ...form, tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean), season: form.season || null, mood: form.mood || null, items: selected.map((s, i) => ({ wardrobeItemId: s.id, slot: s.slot, sortOrder: i })), seals: [], creationMode: mode === "ai" ? "AI_ASSISTED" : "MANUAL", background: { scheme: { ...bg, layoutAnatomy: anatomy, photo: { url: photo.url ?? null } }, pieces: { anatomy: pieceAnatomy } }, cardSkin: skin, layoutAnatomy: anatomy });
@@ -168,7 +170,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   if (b.status === "INSUFICIENTE" && !initial) return <EmptyState title={t("scheme.insufficient")} hint={b.message} action={<Link href={b.action?.href === "/add-piece" ? "/pieces/new" : b.action?.href ?? "/pieces/new"} className="btn btn-primary">{b.action?.label ?? t("closet.addPiece")}</Link>} />;
   // prévia ao vivo: leva também o layout das peças (seção C), senão o card não reage à escolha no Background Studio
   const draft: SchemeView = { id: "preview", owner: initial?.owner ?? { id: "", username: t("common.voce"), displayName: "", profileType: "PESSOAL", verified: false, privateAccount: false }, title: form.title || t("schemeBuilder.sem_titulo"), creationMode: mode === "ai" ? "AI_ASSISTED" : "MANUAL", origin: "MANUAL", style: form.style, occasion: form.occasion, visibility: form.visibility, status: "DRAFT", disponivel: true, lookDoDia: form.lookDoDia, items: selected.map((s) => ({ wardrobeItemId: s.id, slot: s.slot, piece: byId.get(s.id) ?? null })), seals: [], tags: [], revalidationPending: false, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), cardSkin: skin, layoutAnatomy: anatomy, coverImageUrl: photo.url ?? null, season: form.season || null, containerColor: bg.container?.color ?? undefined, background: { ...bg, photo, pieces: { anatomy: pieceAnatomy } } as Record<string, unknown> };
-  const steps = [t("builder.step.mode"), t("builder.step.pieces"), t("builder.step.details"), t("builder.step.appearance"), t("builder.step.review")];
+  const steps = [t("builder.step.mode"), t("builder.step.pieces"), t("builder.step.details"), `${t("builder.step.appearance")} · ${t("common.optional")}`, t("builder.step.review")];
   return (
     <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
       <div>
@@ -229,10 +231,10 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
               </div>
             </Field>
             <div className="sm:col-span-2"><Switch checked={form.lookDoDia} onChange={(v) => setForm({ ...form, lookDoDia: v })} label={t("scheme.dailyLook")} /></div>
-            <div className="sm:col-span-2 flex justify-between"><Button onClick={() => go(1)}>{t("common.back")}</Button><Button variant="primary" disabled={!form.title.trim() || !sealVerification.valid} onClick={() => go(3)}>{t("common.next")}</Button></div>
+            <div className="sm:col-span-2 flex flex-wrap justify-between gap-2"><Button onClick={() => go(1)}>{t("common.back")}</Button><Button disabled={!form.title.trim() || !sealVerification.valid} onClick={() => go(3)}>{t("builder.step.appearance")}</Button><Button variant="primary" disabled={!form.title.trim() || !sealVerification.valid} onClick={() => go(4)}>{t("builder.step.review")}</Button></div>
           </div>
         )}
-        {step === 3 && (<div>{artNote && <p className="mb-3 type-body-sm text-muted" aria-live="polite">{artNote}</p>}<BackgroundStudio value={bg} onChange={setBg} skin={skin} onSkin={setSkin} anatomy={anatomy} onAnatomy={setAnatomy} pieceAnatomy={pieceAnatomy} onPieceAnatomy={setPieceAnatomy} styles={form.style} occasions={form.occasion} season={form.season || null} /><div className="mt-3 flex flex-wrap justify-between gap-2"><Button onClick={() => go(2)}>{t("common.back")}</Button><Button variant="primary" onClick={() => go(4)}>{t("common.next")}</Button></div></div>)}
+        {step === 3 && (<div>{artNote && <p className="mb-3 type-body-sm text-muted" aria-live="polite">{artNote}</p>}<BackgroundStudio value={bg} onChange={setBg} skin={skin} onSkin={setSkin} anatomy={anatomy} onAnatomy={setAnatomy} pieceAnatomy={pieceAnatomy} onPieceAnatomy={setPieceAnatomy} styles={form.style} occasions={form.occasion} season={form.season || null} /><div className="mt-3 flex flex-wrap justify-between gap-2"><Button onClick={() => go(2)}>{t("common.back")}</Button><Button variant="primary" onClick={() => go(4)}>{t("builder.step.review")}</Button></div></div>)}
         {step === 4 && (
           <div className="surface p-4">
             <h3 className="type-h3 mb-2">{t("scheme.pieces")} ({selected.length})</h3>
@@ -240,6 +242,8 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
               <div key={s.id} className="list-row flex items-center gap-3"><img src={mediaUrl(p?.thumbnailUrl ?? p?.imageUrl)} alt="" className="h-10 w-10 rounded object-contain bg-surface-2" /><span className="min-w-0 flex-1"><span className="block truncate">{p?.name ?? s.id}</span><PieceHypeTag id={s.id} /></span><span className="badge shrink-0">{SLOT_LABEL[s.slot] ?? s.slot}</span><SlotBrand piece={p} />
                 <Button size="sm" variant="ghost" aria-label={t("common.remove")} disabled={selected.length <= 2} onClick={() => setSelected((arr) => arr.filter((x) => x.id !== s.id))}>✕</Button></div>); })}</div>
             <div className="flex flex-wrap gap-2">
+              <Button onClick={() => go(2)}>{t("common.back")}</Button>
+              <Button onClick={() => go(3)}>{t("builder.step.appearance")}</Button>
               <Button onClick={doPreview} loading={busy}>{t("schemeBuilder.png", { txt: t("scheme.preview") })}</Button>
               <Button variant="primary" onClick={() => save(false)} loading={busy}><FaiIcon id="ACT-10" size={24} decorative />{t("common.save")}</Button>
               <Button variant="accent" onClick={() => save(true)} loading={busy}><FaiIcon id="ACT-11" size={24} decorative />{t("common.publish")}</Button>

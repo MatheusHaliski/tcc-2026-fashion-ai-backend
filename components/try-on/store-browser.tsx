@@ -1,8 +1,8 @@
 "use client";
 
-import { BrandLogo } from "@/components/brand-logo";
-import { CatalogSearch, storeCount, type CatalogSearchContext } from "@/components/catalog/catalog-search";
-import { Card, Chip, Skeleton, cn } from "@/components/ui";
+import { CatalogBrandGrid } from "@/components/catalog/catalog-brand-grid";
+import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
+import { Card, Chip, Skeleton } from "@/components/ui";
 import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
 import { CATEGORY_LABEL, label } from "@/lib/api/taxonomy";
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
@@ -34,23 +34,8 @@ export function StoreBrowser({
       {loading ? (
         <Skeleton className="h-16" />
       ) : stores.length ? (
-        <div className="fitting-stores" role="group" aria-label={t("tryOn.lojas_em_destaque")}>
-          {stores.map((entry) => (
-            <button
-              key={entry.brandId}
-              type="button"
-              className={cn("fitting-store", store === entry.name && "is-active", !storeCount(entry, category) && "is-empty")}
-              aria-pressed={store === entry.name}
-              onClick={() => onStoreChange(store === entry.name ? "" : entry.name)}
-            >
-              <BrandLogo name={entry.name} src={entry.logoUrl} size={32} shape="square" />
-              <span className="fitting-store-name">{entry.name}</span>
-              <span className="type-caption text-muted">
-                {t("tryOn.n_produtos", { n: storeCount(entry, category) })}
-              </span>
-            </button>
-          ))}
-        </div>
+        <CatalogBrandGrid stores={stores} selected={store} category={category} label={t("tryOn.lojas_em_destaque")}
+          onPick={(entry) => onStoreChange(store === entry.name ? "" : entry.name)} />
       ) : (
         <p className="type-caption text-muted">{t("tryOn.sem_lojas")}</p>
       )}

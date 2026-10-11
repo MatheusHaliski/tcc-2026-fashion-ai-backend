@@ -266,7 +266,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                     <Button size="sm" variant="ghost" onClick={clearCatalog}>{t("catalog.remover_referencia")}</Button>
                   </div>
                 ) : (
-                  <CatalogSearch key={catalogSub} initial={catalogSub && value.subcategory === catalogSub ? { ...initial, subcategory: catalogSub } : initial} category={value.category} onPick={applyCatalog} resultsLayout="matrix"
+                  <CatalogSearch key={catalogSub} initial={catalogSub && value.subcategory === catalogSub ? { ...initial, subcategory: catalogSub } : initial} category={value.category} onPick={applyCatalog} resultsLayout="matrix" brandGrid
                     onContext={(ctx) => { if (ctx.subcategory !== undefined) setValue((v) => ({ ...v, subcategory: ctx.subcategory ?? "" })); }} />
                 )}
               </section>}
@@ -274,7 +274,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 <h2 id="piece-form-label" className="type-h3 mb-2">{t("pieces.new.etapa_dados")}</h2>
                 {mode === "catalog" && pick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("catalog.preenchido_do_catalogo")}</p>}
                 {mode === "photos" && photoPick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("pieces.new.preenchido_da_foto", { photo: photoPick.photo, piece: photoPick.piece })}</p>}
-                <PieceFields value={value} onChange={(v) => { setValue(v); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors}
+                <PieceFields compact value={value} onChange={(v) => { setValue(v); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors}
                   afterBrand={mode === "photos" && photoPick?.hint && !value.brandName ? <BrandHintNote hint={photoPick.hint} disabled={false}
                     onUse={(brandName) => setValue((v) => ({ ...v, brandName, brandId: null, brandLogoUrl: null, brandLogoWideUrl: null, brandDomain: null, brandEdgePx: null, brandSource: null, brandRef: null }))} /> : null} />
               </section>

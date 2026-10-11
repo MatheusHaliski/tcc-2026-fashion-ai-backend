@@ -1,5 +1,5 @@
 "use client";
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
@@ -19,10 +19,26 @@ interface Profile { user: UserCard; bio?: string | null; pronouns?: string | nul
 
 export default function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const username = use(params).username;   /* vai direto para caminhos da API */ const { t } = useI18n(); const initialTab = useSearchParams().get("tab"); const { user } = useAuth(); const toast = useToast();
-  const { data, loading, error, reload } = useApi<Profile>((signal) => api.get(`/api/profiles/${encodeURIComponent(username)}`, { signal, anonymous: !user }), [username, !!user]);
+  const { data, loading, error, reload, setData } = useApi<Profile>((signal) => api.get(`/api/profiles/${encodeURIComponent(username)}`, { signal, anonymous: !user }), [username, !!user]);
   const [conn, setConn] = useState(false); const [confirmBlock, setConfirmBlock] = useState(false);
   const connections = useApi<{ followers: UserCard[]; following: UserCard[] }>((signal) => api.get(`/api/users/${data?.user.id}/connections`, { signal, anonymous: !user }), [data?.user.id], { enabled: conn && !!data });
-  async function follow() { if (!data) return; try { if (data.relation === "ACEITO" || data.relation === "PENDENTE") await api.delete(`/api/users/${data.user.id}/followers/me`); else await api.post(`/api/users/${data.user.id}/followers`); reload(); } catch (e) { toast.fromError(e); } }
+  const followLock = useRef(false);
+  const [followingBusy, setFollowingBusy] = useState(false);
+  async function follow() {
+    if (!data || followLock.current || data.relation === "BLOQUEADO") return;
+    followLock.current = true; setFollowingBusy(true);
+    const previous = data;
+    const removing = data.relation === "ACEITO" || data.relation === "PENDENTE";
+    const relation = removing ? "NENHUMA" : data.visibility === "PUBLIC" ? "ACEITO" : "PENDENTE";
+    const delta = Number(relation === "ACEITO") - Number(data.relation === "ACEITO");
+    setData({ ...data, relation, counters: { ...data.counters, followers: Math.max(0, data.counters.followers + delta) } });
+    try {
+      if (removing) await api.delete(`/api/users/${data.user.id}/followers/me`);
+      else await api.post(`/api/users/${data.user.id}/followers`);
+      reload();
+    } catch (e) { setData(previous); toast.fromError(e); }
+    finally { followLock.current = false; setFollowingBusy(false); }
+  }
   async function block() { if (!data) return; try { await api.put(`/api/users/${data.user.id}/block`, { blocked: data.relation !== "BLOQUEADO" }); reload(); } catch (e) { toast.fromError(e); } }
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-64" />;
@@ -39,7 +55,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
         hype={data.contentVisible ? <HypeGroupBadge type="CREATOR" groupKey={data.user.id} variant="header" /> : null}
         actions={<>
           {!data.self && user && <>
-            <Button size="sm" variant={following || data.relation === "PENDENTE" ? "default" : "primary"} onClick={follow} aria-pressed={following}>{following ? t("lookbook.unfollow") : data.relation === "PENDENTE" ? t("lookbook.requested") : t("lookbook.follow")}</Button>
+            <Button size="sm" variant={following || data.relation === "PENDENTE" ? "default" : "primary"} onClick={follow} disabled={followingBusy || data.relation === "BLOQUEADO"} aria-busy={followingBusy || undefined} aria-pressed={following}>{following ? t("lookbook.unfollow") : data.relation === "PENDENTE" ? t("lookbook.requested") : t("lookbook.follow")}</Button>
             <ActionMenu label={t("common.moreOptions")} items={[
               { label: data.relation === "BLOQUEADO" ? t("u.username.desbloquear") : t("profile.blockUser", { username: data.user.username }), danger: data.relation !== "BLOQUEADO", onSelect: () => data.relation === "BLOQUEADO" ? block() : setConfirmBlock(true) },
               { label: t("profile.copyLink"), onSelect: () => { navigator.clipboard?.writeText(window.location.href).then(() => toast.success(t("common.copied"))).catch(() => undefined); } },
@@ -50,7 +66,7 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
       {/* RF53 · Lote A5 (P3-15): leitura pública do criador (só itens públicos; perfil fechado ou bloqueado = nada) */}
       {data.contentVisible && data.visibility === "PUBLIC" && <InsightStrip context="CREATOR_PROFILE" params={{ key: data.user.username }} collapsible className="mb-3" />}
       {!data.contentVisible
-        ? <EmptyState title={t("profile.privateTitle")} hint={data.invite?.message ?? t("u.username.este_perfil_e_privado")} action={user && !data.self && data.relation !== "PENDENTE" ? <Button variant="primary" onClick={follow}>{t("profile.requestFollow")}</Button> : !user ? <Link href="/login" className="btn btn-primary">{t("nav.login")}</Link> : undefined} />
+        ? <EmptyState title={t("profile.privateTitle")} hint={data.invite?.message ?? t("u.username.este_perfil_e_privado")} action={user && !data.self && data.relation !== "PENDENTE" ? <Button variant="primary" disabled={followingBusy || data.relation === "BLOQUEADO"} onClick={follow}>{t("profile.requestFollow")}</Button> : !user ? <Link href="/login" className="btn btn-primary">{t("nav.login")}</Link> : undefined} />
         : <LookbookTabs ownerId={data.user.id} initialTab={profileTab(initialTab, data.self)} initialSaved={initialTab === "saved_pieces" ? "pieces" : "looks"} />}
       {data && data.self && (initialTab === "cupons" || initialTab === "coupons") && <CouponsRedirect />}
       <Dialog open={confirmBlock} onClose={() => setConfirmBlock(false)} title={t("profile.blockTitle", { username: data.user.username })}

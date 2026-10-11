@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { EMPTY_EDIT, canonicalProblems, centeredCrop, clampToCanonical, fromRecipe, moveCrop, scaleCrop, toRecipe, type EditState } from "./recipe";
 
 const edited = (): EditState => ({ ...structuredClone(EMPTY_EDIT), turns: 1, straighten: 3.2, crop: { x: 0.1, y: 0, w: 0.6, h: 0.75 },
-  background: { on: true, kind: "NEUTRAL", shadow: true, strokes: [{ mode: "add", r: 0.02, pts: [[0.5, 0.5]] }] },
+  background: { ...EMPTY_EDIT.background, on: true, kind: "NEUTRAL", shadow: true, strokes: [{ mode: "add", r: 0.02, pts: [[0.5, 0.5]] }] },
   whiteBalance: [0.05, 0.04], tone: { exposureEv: 0.3, highlights: -10, shadows: 5, contrast: 4, saturation: 0 }, heal: [{ x: 0.5, y: 0.6, r: 0.005 }], sharpen: 0.2 });
 
 describe("receita do editor (RF15)", () => {

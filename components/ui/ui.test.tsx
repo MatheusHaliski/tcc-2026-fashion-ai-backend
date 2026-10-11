@@ -214,3 +214,23 @@ describe("componentes base da interface", () => {
     }
   });
 });
+
+
+describe("modais sobrepostos", () => {
+  it("Escape fecha somente o modal superior e mantém o bloqueio da página", () => {
+    function Harness() {
+      const [child, setChild] = useState(true);
+      const [parent, setParent] = useState(true);
+      return <><button>Origem</button><Dialog open={parent} onClose={() => setParent(false)} title="Pai">Conteúdo</Dialog><Dialog open={child} onClose={() => setChild(false)} title="Filho">Conteúdo filho</Dialog></>;
+    }
+    const previous = document.documentElement.style.overflow;
+    renderApp(<Harness />);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Filho" })).toBeNull();
+    expect(screen.getByRole("dialog", { name: "Pai" })).toBeTruthy();
+    expect(document.documentElement.style.overflow).toBe("hidden");
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("dialog", { name: "Pai" })).toBeNull();
+    expect(document.documentElement.style.overflow).toBe(previous);
+  });
+});

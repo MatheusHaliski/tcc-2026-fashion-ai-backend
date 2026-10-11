@@ -49,7 +49,7 @@ describe("RF5/RF13 seal verification", () => {
     renderApp(<SchemeBuilder initial={SCHEME} />);
     fireEvent.click(await screen.findByRole("button", { name: /Detalhes/ }));
     fireEvent.click(await screen.findByRole("checkbox", { name: /Marca teste/ }));
-    fireEvent.click(screen.getByRole("button", { name: /Revisar/ }));
+    fireEvent.click(screen.getAllByRole("button", { name: /Revisar/ }).find(b => b.classList.contains("btn-primary"))!);
     const save = screen.getAllByRole("button", { name: /Salvar/ }).find((b) => b.classList.contains("btn-primary"))!;
     fireEvent.click(save);
     await waitFor(() => expect(calls.some((c) => c.path === "/api/schemes/s1/seal-bonds")).toBe(true));

@@ -17,7 +17,7 @@ const plexMono = localFont({
     { path: "../../lib/design/fonts/plexmono-500.woff2", weight: "500", style: "normal" },
     { path: "../../lib/design/fonts/plexmono-600.woff2", weight: "600", style: "normal" },
   ],
-  variable: "--font-data", display: "swap",
+  variable: "--font-data", display: "swap", preload: false,
 });
 
 /** Idioma da requisição (RF23): cookie gravado pelo I18nProvider → Accept-Language do navegador → pt-BR. */

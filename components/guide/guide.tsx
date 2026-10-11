@@ -1,12 +1,12 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { api } from "@/lib/api/client";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
 import { GUIDES, shouldAutoOpen, type GuidePref } from "@/lib/guides/registry";
 import { Button, Dialog, UiIcon } from "@/components/ui";
-import { GuideDemo } from "@/components/guide/guide-demos";
+const GuideDemo = lazy(() => import("@/components/guide/guide-demos").then(m => ({ default: m.GuideDemo })));
 import { FlairHubIcon } from "@/components/flair/hub-icons";
 import type { HubIconId } from "@/components/flair/hub-icons";
 import { POINTS_MODES } from "@/lib/points/hub";
@@ -179,7 +179,7 @@ export function GuideDialog({ guideKey, initiallyHidden, onClose, gate }: { guid
   const base = `guide.${guideKey}`;
   const steps = Array.from({ length: Math.min(3, def.steps) }, (_, i) => t(`${base}.step${i + 1}`));
   return (
-    <Dialog open title={t(`${base}.title`)} onClose={() => onClose(hide, false)} size="lg"
+    <Suspense fallback={null}><Dialog open title={t(`${base}.title`)} onClose={() => onClose(hide, false)} size="lg"
       footer={<>
         <label className="guide-hide"><input type="checkbox" checked={hide} onChange={(e) => setHide(e.target.checked)} />{t("guide.dont_show_again")}</label>
         <Button variant="primary" onClick={() => onClose(hide, true)} data-autofocus>{gate ? t("guide.got_it_start") : t("guide.got_it")}</Button>
@@ -204,6 +204,6 @@ export function GuideDialog({ guideKey, initiallyHidden, onClose, gate }: { guid
         </figure>
         {steps.length > 0 && <ol className="guide-steps">{steps.map((s, i) => <li key={i}><span className="guide-step-n" aria-hidden>{i + 1}</span><span>{s}</span></li>)}</ol>}
       </div>
-    </Dialog>
+    </Dialog></Suspense>
   );
 }

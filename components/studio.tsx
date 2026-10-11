@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useFocusTrap } from "@/components/ui";
 import { api } from "@/lib/api/client";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 
@@ -124,12 +125,13 @@ export function sangria(framing?: StudioInfo["framing"] | null): string[] {
 export function StudioLightbox({ images, edge, center, start = 0, onClose }: { images: { src: string; alt: string; anchor?: string[]; cover?: boolean }[]; edge: string; center?: string; start?: number; onClose: () => void }) {
   const { t } = useI18n();
   const [i, setI] = useState(start);
+  const dialog = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialog, images.length > 0, onClose);
   const imgRef = useRef<HTMLImageElement>(null); const [rect, setRect] = useState<DOMRect | null>(null);
   const measure = useCallback(() => setRect(imgRef.current?.getBoundingClientRect() ?? null), []);
   useEffect(() => { window.addEventListener("resize", measure); return () => window.removeEventListener("resize", measure); }, [measure]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
       if (e.key === "ArrowRight") setI((v) => (v + 1) % images.length);
       if (e.key === "ArrowLeft") setI((v) => (v - 1 + images.length) % images.length);
     };
@@ -140,7 +142,7 @@ export function StudioLightbox({ images, edge, center, start = 0, onClose }: { i
   const img = images[i];
   if (!img) return null;
   return (
-    <div role="dialog" aria-modal="true" aria-label={img.alt} onClick={onClose}
+    <div ref={dialog} tabIndex={-1} role="dialog" aria-modal="true" aria-label={img.alt} onClick={onClose}
       className={`fixed inset-0 z-50 flex ${img.anchor?.includes("bottom") ? "items-end" : img.anchor?.includes("top") ? "items-start" : "items-center"} ${img.anchor?.includes("left") ? "justify-start" : img.anchor?.includes("right") ? "justify-end" : "justify-center"}`}
       style={{ background: continuedBackdrop(rect, center ?? edge, edge) }}>
       {/* detalhe do logo já é um recorte: preenche a tela inteira, centrado no logo */}

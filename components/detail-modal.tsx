@@ -1,8 +1,9 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { lazy, Suspense, createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { useI18n } from "@/lib/i18n/i18n";
 import { FOCUSABLE } from "@/components/ui";
-import { ExpandedPiece, ExpandedScheme } from "@/components/expanded-card";
+const ExpandedPiece = lazy(() => import("@/components/expanded-card").then(m => ({ default: m.ExpandedPiece })));
+const ExpandedScheme = lazy(() => import("@/components/expanded-card").then(m => ({ default: m.ExpandedScheme })));
 
 /**
  * Modal de detalhe (RF7.CA07): clicar num esquema ou numa peça em qualquer lista abre o card SEMPRE AMPLIADO num modal
@@ -80,9 +81,9 @@ export function DetailModalProvider({ children }: { children: ReactNode }) {
       {top && (
         <div className="dialog-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) close(); }}>
           <div ref={dialogRef} tabIndex={-1} onKeyDown={trap} role="dialog" aria-modal="true" aria-label={top.kind === "scheme" ? t("detailModal.detalhe_do_esquema") : t("detailModal.detalhe_da_peca")} className={`dialog dialog-card ${top.kind === "piece" ? "is-piece" : ""}`}>
-            {top.kind === "scheme"
+            <Suspense fallback={<div className="skeleton h-40" aria-busy="true" />} >{top.kind === "scheme"
               ? <ExpandedScheme key={top.id} id={top.id} headerExtra={controls} />
-              : <ExpandedPiece key={top.id} id={top.id} from={top.from} headerExtra={controls} onScheme={openScheme} />}
+              : <ExpandedPiece key={top.id} id={top.id} from={top.from} headerExtra={controls} onScheme={openScheme} />}</Suspense>
           </div>
         </div>
       )}

@@ -11,6 +11,7 @@ import { Chip, EmptyState, ErrorState, PageHeader, SkeletonGrid, Tabs } from "@/
 import { SchemeCard } from "@/components/scheme-card";
 import { PieceCard } from "@/components/piece-card";
 import { InfiniteSentinel, mergeById } from "@/components/infinite-sentinel";
+import { FeedDiscovery } from "@/components/feed-discovery";
 import { OnboardingChecklist } from "@/components/onboarding";
 import { InsightStrip } from "@/components/insights/insight-strip";
 import { MomentNowBanner } from "@/components/moments/moment-banner";
@@ -99,6 +100,7 @@ export default function FeedPage() {
       <div className="grid-looks">{pages.map((e) => e.scheme
         ? <SchemeCard key={e.id} scheme={e.scheme} extra={e.sharedBy ? <SharedNote entry={e} /> : undefined} />
         : e.piece ? <PieceCard key={e.id} piece={e.piece} extra={<SharedNote entry={e} />} /> : null)}</div>
+      {tab === "feed" && !loading && pages.length > 0 && <FeedDiscovery />}
       <InfiniteSentinel hasMore={!!data?.nextCursor} loading={loading} onMore={() => data?.nextCursor && setCursor(data.nextCursor)} label={t("common.more")} />
     </>
   );
