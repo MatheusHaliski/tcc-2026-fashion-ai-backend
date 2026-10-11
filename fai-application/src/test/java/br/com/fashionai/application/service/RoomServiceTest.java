@@ -90,7 +90,7 @@ class RoomServiceTest {
             byName.put(kit.dep(WardrobeItemRepository.class).findById(e.getWardrobeItemId()).orElseThrow().getSubcategory(), e.getAddress());
         }
         assertThat(byName.get("t_shirt")).startsWith("door:");
-        assertThat(byName.get("casual_sneakers")).startsWith("shoe:");
+        assertThat(byName.get("casual_sneakers")).startsWith("drawer:");
         assertThat(byName.get("handbag")).startsWith("bags:");
         assertThat(byName.get("jeans")).startsWith("drawer:");
         assertThat(byName.get("dress")).startsWith("door:4");
@@ -168,13 +168,13 @@ class RoomServiceTest {
         assertThatThrownBy(() -> room.move(ana, tee.getId(), "shoe:1")).isInstanceOf(ApiException.class);   // sem sapateira no Estreia
         assertThatThrownBy(() -> room.move(ana, tee.getId(), "door:1:99")).isInstanceOf(ApiException.class);
         String jeansAt = storage().stream().filter(e -> e.getWardrobeItemId().equals(jeans.getId())).findFirst().orElseThrow().getAddress();
-        Map<String, Object> moved = room.move(ana, tee.getId(), "drawer:10");
-        assertThat(moved).containsEntry("coherent", false);
+        assertThatThrownBy(() -> room.move(ana, tee.getId(), "drawer:10"))
+                .isInstanceOf(ApiException.class); // superiores ficam em cabides, nunca nas gavetas
         assertThat(room.move(ana, tee.getId(), "chair:1")).containsEntry("address", "chair:1");
         String doorOfShirt = storage().stream().filter(e -> e.getWardrobeItemId().equals(world.piece(world.me, "shirt").getId())).findFirst().orElseThrow().getAddress();
         assertThatThrownBy(() -> room.move(ana, tee.getId(), doorOfShirt)).isInstanceOf(ApiException.class);
         assertThat(jeansAt).startsWith("drawer:");
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 2; i++) {
             WardrobeItem extra = kit.dep(WardrobeItemRepository.class).save(Kit.piece(world.me, "short " + i, "lower_piece", "shorts", "blue"));
             room.autoAssign(world.me.getId(), extra.getId());
             room.move(ana, extra.getId(), "drawer:12");
@@ -185,11 +185,28 @@ class RoomServiceTest {
     }
 
     @Test
+    void oitoSuperioresDuasCabinesEDezInferioresCincoGavetas() {
+        List<WardrobeItem> selected = new ArrayList<>();
+        for (int i = 0; i < 8; i++) selected.add(kit.dep(WardrobeItemRepository.class)
+                .save(Kit.piece(world.me, "camiseta " + i, "upper_piece", "t_shirt", "blue")));
+        for (int i = 0; i < 10; i++) selected.add(kit.dep(WardrobeItemRepository.class)
+                .save(Kit.piece(world.me, "calça " + i, "lower_piece", "jeans", "blue")));
+        List<RoomStorageEntry> entries = room.entries(world.me.getId(), selected);
+        Map<String, Long> counts = entries.stream().collect(java.util.stream.Collectors.groupingBy(
+                e -> e.getAddress().startsWith("door:") ? e.getAddress().substring(0, e.getAddress().lastIndexOf(':')) : e.getAddress(),
+                java.util.stream.Collectors.counting()));
+        assertThat(counts.entrySet().stream().filter(e -> e.getKey().startsWith("door:")).map(Map.Entry::getValue).toList())
+                .containsExactlyInAnyOrder(4L, 4L);
+        assertThat(counts.entrySet().stream().filter(e -> e.getKey().startsWith("drawer:")).map(Map.Entry::getValue).toList())
+                .containsExactlyInAnyOrder(2L, 2L, 2L, 2L, 2L);
+    }
+
+    @Test
     void cadastroEExclusaoDePecaAtualizamOQuarto() {
         WardrobeItem nova = kit.dep(WardrobeItemRepository.class).save(Kit.piece(world.me, "bota nova", "shoes_piece", "boots", "black"));
         room.onPieceCreated(new DomainEvents.PieceCreated(world.me.getId(), nova.getId(), true));
         assertThat(room.locate(world.me.getId(), nova.getId())).isPresent();
-        assertThat(room.autoAssign(world.me.getId(), nova.getId()).zone()).isEqualTo("base");
+        assertThat(room.autoAssign(world.me.getId(), nova.getId()).zone()).isEqualTo("drawer");
         room.onPieceDeleted(new DomainEvents.PieceDeleted(world.me.getId(), nova.getId()));
         assertThat(room.locate(world.rival.getId(), nova.getId())).isEmpty();
         assertThatThrownBy(() -> room.autoAssign(world.me.getId(), UUID.randomUUID())).isInstanceOf(ApiException.class);

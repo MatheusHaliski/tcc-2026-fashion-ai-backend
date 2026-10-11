@@ -386,9 +386,9 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
     if category_frame:
         from category_frame import reverted_marker
         reverted = reverted_marker(result)
-        if reverted and reverted.get("productFrameVersion") == analyzer.ready.get("productFrameVersion"):
+        if reverted and reverted.get("fabricFrameVersion") == analyzer.ready.get("fabricFrameVersion") and analyzer.ready.get("fabricFrameVersion"):
             # a mesma regra já recusou esta foto e desfez o quadro antigo: não baixa nem analisa de novo
-            result["status_note"] = "Preservado: a regra V3 recusou esta foto e o quadro antigo já foi desfeito (mesma versão da regra)."
+            result["status_note"] = "Preservado: a regra V4 recusou esta foto e o quadro antigo já foi desfeito (mesma versão da regra)."
             return result
     frame_storage = getattr(analyzer, "frame_storage", None)
     # Decisão explícita do responsável (--force-category-frame): dispensa só a autorização da fonte e a
@@ -405,8 +405,8 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
         # só com as proteções técnicas (HTTPS, sem credenciais, host público, tamanho, tipo).
         allowed = None if force else (result["persistence_decision"]["domains"] if frame_storage else None)
         response = checkpoint.get(result, analyzer.ready["pipelineVersion"])
-        if response is not None and category_frame and (not isinstance(response.get("productFrame"), dict)
-                                                         or response["productFrame"].get("version") != analyzer.ready.get("productFrameVersion")):
+        if response is not None and category_frame and (not isinstance(response.get("fabricFrame"), dict)
+                                                         or response["fabricFrame"].get("version") != analyzer.ready.get("fabricFrameVersion")):
             response = None                     # análise guardada antes da regra do produto (V1/V2) ou de outra versão dela: refaz
         if response is None:
             path = downloader.get(result["source_url"], allowed_domains=allowed) if frame_storage else downloader.get(result["source_url"])
@@ -471,12 +471,12 @@ def audit_record(record, downloader, analyzer, checkpoint, *, apply):
             # a V3 recusou a foto; se ela ainda mostra um quadro antigo (V1/V2), volta ao estado anterior ao quadro pelo mesmo
             # caminho guardado e auditado da gravação (catalog_image_updates.apply_product), com a análise Java atual quando houve
             from category_frame_storage import revert_plan
-            plan = revert_plan(result, result["error"], product_frame_version=analyzer.ready.get("productFrameVersion"))
+            plan = revert_plan(result, result["error"], fabric_frame_version=analyzer.ready.get("fabricFrameVersion"))
             if plan:
                 columns = (response or {}).get("columns") if result.get("java_analysis_completed") else None
                 result["frame_revert"] = plan
                 result["analysis"] = {"frame_revert": plan, "columns": columns}
-                result["status_note"] = ("Quadro V3 recusado (" + result["error"].split(":", 1)[1] + "): a imagem enquadrada antiga ("
+                result["status_note"] = ("Quadro V4 recusado (" + result["error"].split(":", 1)[1] + "): a imagem enquadrada antiga ("
                                          + str(plan["revertedFrom"]) + ") volta ao estado anterior ao quadro.")
     return result
 
@@ -503,12 +503,11 @@ def main(argv=None):
     source.add_argument("--snapshot", nargs="+", type=Path, help="JSONL/JSONL.GZ: estado local, não produção")
     source.add_argument("--database", action="store_true", help="Inventário atual do MySQL via MYSQL_*")
     ap.add_argument("--category-frame", action="store_true",
-                    help="Quadro 3:4 pela regra de enquadramento do produto do card (catalog/semantic-regions.json): parte de cima e de "
-                         "baixo preenchem 100%% do quadro a partir da gola/do cós, calçado inteiro na largura, acessório inteiro contido; "
-                         "sem quadro possível pela regra a foto não é reenquadrada; dúvida de conformidade exige revisão (requer --apply)")
+                    help="Quadro 3:4 preenchido 100%% pela peça, sem fundo nem pessoas: gola, zíper, centro do acessório e logo do calçado; "
+                         "sem região válida a foto não é reenquadrada (requer --apply)")
     ap.add_argument("--force-category-frame", action="store_true",
                     help="Decisão do responsável: enquadra e persiste todas as fotos sem exigir autorização da fonte nem identificação "
-                         "visual confirmada; dúvidas de conformidade viram observações no relatório. Sem quadro pela regra do produto a "
+                         "visual confirmada; focos estimados ficam no relatório. Sem quadro preenchido pela peça a "
                          "foto não é gravada (requer --database --apply --category-frame)")
     ap.add_argument("--apply", action="store_true", help="Aplicar pipeline; com --database persiste os metadados")
     ap.add_argument("--output", required=True, type=Path, help="Planilha .xlsx")
@@ -596,8 +595,8 @@ def main(argv=None):
                                           stderr_path=args.output.with_suffix(".java.log")) as analyzer:
                     if analyzer.ready["pipelineVersion"] != PIPELINE_VERSION:
                         raise RuntimeError("JAR desatualizado: compile a versão atual do pipeline antes de aplicar")
-                    if args.category_frame and not analyzer.ready.get("productFrameVersion"):
-                        raise RuntimeError("JAR sem a regra de enquadramento do produto (V3): rode `mvn -q -DskipTests package` antes de aplicar")
+                    if args.category_frame and not analyzer.ready.get("fabricFrameVersion"):
+                        raise RuntimeError("JAR sem enquadramento preenchido por categoria (V4): rode `mvn -q -DskipTests package` antes de aplicar")
                     analyzer.category_frame = args.category_frame
                     analyzer.force_frame = args.force_category_frame
                     if args.force_category_frame:
@@ -642,7 +641,7 @@ def main(argv=None):
                                             if (row.get("analysis") or {}).get("frame_revert"):
                                                 row["frame_reverted"] = True
                                                 row["frame_observations"] = ["REVERTED_TO_ORIGINAL:" + row["frame_revert"]["reason"].split(":", 1)[1]]
-                                                row["status_note"] = ("Quadro V3 recusado: a imagem enquadrada antiga (" + str(row["frame_revert"]["revertedFrom"])
+                                                row["status_note"] = ("Quadro V4 recusado: a imagem enquadrada antiga (" + str(row["frame_revert"]["revertedFrom"])
                                                                       + ") voltou ao estado anterior ao quadro no banco; o JPEG antigo continua no S3.")
                                             else:
                                                 row["status_note"] = ("Enquadramento salvo no S3 e referência ativa atualizada no banco." if (row.get("analysis") or {}).get("framed_assets")

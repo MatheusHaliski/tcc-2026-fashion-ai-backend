@@ -117,6 +117,45 @@ class CatalogImagePipelineServiceTest {
     }
 
     @Test
+    void selecaoNaoReabilitaFotoRecusadaPelaRevisao() {
+        CatalogImage rejected = image("https://brand.com/rejected.png", CatalogImageType.PACKSHOT, CatalogPhotos.png(CatalogPhotos.tee(200, 200, 1.0)));
+        rejected.setReviewStatus("REJECTED");
+        assertThatThrownBy(() -> service.verifySelection(admin, product.getId())).isInstanceOf(ApiException.class);
+        assertThat(rejected.getCropJson()).isNull();
+        assertThat(rejected.isCanonical()).isFalse();
+        assertThat(stored).isEmpty();
+    }
+
+    @Test
+    void selecaoRefazARegraDoLoteNaFotoOriginalMesmoComAssetsAntigos() {
+        product.setCategory("upper_piece"); product.setSubcategory("t_shirt");
+        product.setIngestionStatus(br.com.fashionai.domain.model.enums.CatalogIngestionStatus.VALIDATED);
+        CatalogImage front = image("https://img.brand.com/front.jpg", CatalogImageType.FRONT, CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
+        front.setAssetsJson(Json.write(Map.of("card", "https://storage.example/old.jpg")));
+        front.setStoredUrl("https://storage.example/old.jpg");
+        service.verifySelection(admin, product.getId());
+        Map<String, Object> first = Json.map(front.getCropJson());
+        assertThat(first).containsEntry("aspect", "3:4").containsKey("selectionFrame");
+        assertThat(CatalogImagePipelineService.cardImage(front)).containsEntry("mode", "SEMANTIC_CROP")
+                .containsEntry("url", front.getImageUrl()).containsEntry("aspect", "3:4");
+        assertThat(front.getStoredUrl()).isEqualTo("https://storage.example/old.jpg");
+        String sha = front.getSourceSha256();
+        web.put(front.getImageUrl(), CatalogPhotos.jpeg(CatalogPhotos.tee(180, 200, 1.0)));
+        service.verifySelection(admin, product.getId());
+        assertThat(front.getSourceSha256()).isNotEqualTo(sha);
+        assertThat(stored).isEmpty();
+    }
+
+    @Test
+    void selecaoSemFotoOuDownloadNaoConfirmaEnquadramento() {
+        assertThatThrownBy(() -> service.verifySelection(admin, product.getId())).isInstanceOf(ApiException.class);
+        CatalogImage image = image("https://img.brand.com/missing.jpg", CatalogImageType.FRONT, null);
+        assertThatThrownBy(() -> service.verifySelection(admin, product.getId())).isInstanceOf(ApiException.class);
+        assertThat(image.getCropJson()).isNull();
+        assertThat(image.isCanonical()).isFalse();
+    }
+
+    @Test
     void nivelAGravaSoMetadadosEEscolheACanonica() {
         CatalogImage front = image("https://img.brand.com/front.jpg", CatalogImageType.FRONT, CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
         service.tick();

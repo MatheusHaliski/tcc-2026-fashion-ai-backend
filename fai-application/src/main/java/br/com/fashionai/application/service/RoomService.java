@@ -88,8 +88,8 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     public static final ZoneId ZONE = FaiPointsService.ZONE;
     /** Esquecida: sem uso há 60+ dias (FORGOTTEN_DAYS, MyWardrobeView.tsx:61). */
     public static final int FORGOTTEN_DAYS = 60;
-    public static final int HANGERS_PER_DOOR = 12;
-    public static final int DRAWER_CAPACITY = 6;
+    public static final int HANGERS_PER_DOOR = 4;
+    public static final int DRAWER_CAPACITY = 4;
     public static final int TOP_CAPACITY = 8;
     public static final int BASE_CAPACITY = 12;
     public static final int SHOE_RACK_CAPACITY = 24;
@@ -204,7 +204,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                 Map.of("color", "#6B4A2F", "texture", "madeira", "material", "MADEIRA", "roughness", 0.6, "metalness", 0.0)));
         if (level.atLeast(FaiPointsService.Level.LOFT)) {
             for (int d = 5; d <= 6; d++) {
-                mods.add(module("door:" + d, "DOOR", "PRT-AB90", 90, HANGERS_PER_DOOR + 6, "Porta " + d, null, white));
+                mods.add(module("door:" + d, "DOOR", "PRT-AB90", 90, HANGERS_PER_DOOR, "Porta " + d, null, white));
             }
             for (int n = 25; n <= 36; n++) {
                 mods.add(module("drawer:" + n, "DRAWER", "GAV-STD", 0, DRAWER_CAPACITY, "Gaveta " + n, null, white));
@@ -254,6 +254,11 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         List<Map<String, Object>> existing = Json.list(layout.getModulesJson());
         Set<String> ids = existing.stream().map(m -> String.valueOf(m.get("id"))).collect(Collectors.toSet());
         boolean changed = false;
+        for (Map<String, Object> m : existing) {
+            if (Set.of("DOOR", "DRAWER").contains(String.valueOf(m.get("slotType"))) && capacity(m) != 4) {
+                m.put("capacity", 4); changed = true;
+            }
+        }
         for (Map<String, Object> m : defaultModules(level)) {
             if (!ids.contains(String.valueOf(m.get("id")))) {
                 existing.add(m);
@@ -468,7 +473,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         return switch (a.zone()) {
             case "door" -> cat.equals("upper_piece") || cat.equals("full_body_piece");
             case "drawer" -> {
-                if (!(cat.equals("lower_piece") || cat.equals("accessory_piece"))) {
+                if (!(cat.equals("lower_piece") || cat.equals("accessory_piece") || cat.equals("shoes_piece"))) {
                     yield false;
                 }
                 String label = labels.get(String.valueOf(a.index()));
@@ -492,22 +497,33 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         };
     }
 
-    private record Occupancy(Set<String> taken, Map<String, Integer> drawerCount) {
-        static Occupancy of(Collection<RoomStorageEntry> entries) {
+    public static int drawerCapacity(String category) {
+        return "shoes_piece".equals(category) ? 1 : "lower_piece".equals(category) ? 2 : 4;
+    }
+
+    private record Occupancy(Set<String> taken, Map<String, Integer> drawerCount, Map<String, String> drawerCategory) {
+        static Occupancy of(Collection<RoomStorageEntry> entries, List<WardrobeItem> all) {
             Set<String> taken = new HashSet<>();
             Map<String, Integer> drawers = new HashMap<>();
+            Map<UUID, WardrobeItem> byId = all.stream().collect(Collectors.toMap(WardrobeItem::getId, w -> w));
+            Map<String, String> categories = new HashMap<>();
             for (RoomStorageEntry e : entries) {
                 taken.add(e.getAddress());
                 RoomAddress.parse(e.getAddress()).filter(a -> a.zone().equals("drawer"))
-                        .ifPresent(a -> drawers.merge(String.valueOf(a.index()), 1, Integer::sum));
+                        .ifPresent(a -> {
+                            drawers.merge(String.valueOf(a.index()), 1, Integer::sum);
+                            WardrobeItem w = byId.get(e.getWardrobeItemId());
+                            if (w != null) categories.put(String.valueOf(a.index()), w.getCategory());
+                        });
             }
-            return new Occupancy(taken, drawers);
+            return new Occupancy(taken, drawers, categories);
         }
 
-        void add(RoomAddress a) {
+        void add(RoomAddress a, String category) {
             taken.add(a.toString());
             if (a.zone().equals("drawer")) {
                 drawerCount.merge(String.valueOf(a.index()), 1, Integer::sum);
+                drawerCategory.put(String.valueOf(a.index()), category);
             }
         }
     }
@@ -537,7 +553,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     }
 
     private Optional<RoomAddress> freeDrawer(RoomLayout layout, Map<String, String> labels, Occupancy occ, String preferred,
-                                             boolean allowSpecial) {
+                                             boolean allowSpecial, String category) {
         List<Map<String, Object>> drawers = modules(layout).stream().filter(m -> "DRAWER".equals(m.get("slotType"))).toList();
         Set<String> special = DEFAULT_DRAWER_LABELS.stream().map(s -> s.toLowerCase(Locale.ROOT)).collect(Collectors.toSet());
         // 1) gaveta com a categoria preferida; 2) gaveta sem rótulo; 3) qualquer gaveta que não seja de categoria especial
@@ -550,7 +566,8 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                     case 1 -> label == null;
                     default -> allowSpecial || label == null || !special.contains(label.toLowerCase(Locale.ROOT));
                 };
-                if (ok && occ.drawerCount().getOrDefault(idx, 0) < capacity(m)) {
+                if (ok && (occ.drawerCategory().get(idx) == null || category.equals(occ.drawerCategory().get(idx)))
+                        && occ.drawerCount().getOrDefault(idx, 0) < Math.min(capacity(m), drawerCapacity(category))) {
                     return Optional.of(RoomAddress.of("drawer", Integer.parseInt(idx)));
                 }
             }
@@ -579,12 +596,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                     }
                 }
             }
-            case "shoes_piece" -> {
-                found = freeIn(layout, "shoe", "shoe", occ);
-                if (found.isEmpty()) {
-                    found = freeIn(layout, "base", "base", occ);
-                }
-            }
+            case "shoes_piece" -> found = freeDrawer(layout, labels, occ, null, true, cat);
             case "accessory_piece" -> {
                 if (BAGS.contains(sub)) {
                     found = freeIn(layout, "bags", "bags", occ);
@@ -592,13 +604,13 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                     found = freeIn(layout, "jewelry", "jewelry", occ);
                 }
                 if (found.isEmpty()) {
-                    found = freeDrawer(layout, labels, occ, preferredDrawerLabel(w), false);
+                    found = freeDrawer(layout, labels, occ, preferredDrawerLabel(w), false, cat);
                 }
             }
-            default -> found = freeDrawer(layout, labels, occ, preferredDrawerLabel(w), false);
+            default -> found = freeDrawer(layout, labels, occ, preferredDrawerLabel(w), false, cat);
         }
-        if (found.isEmpty()) {
-            found = freeDrawer(layout, labels, occ, null, true);
+        if (found.isEmpty() && Set.of("lower_piece", "accessory_piece", "shoes_piece").contains(cat)) {
+            found = freeDrawer(layout, labels, occ, null, true, cat);
         }
         RoomAddress a = found.orElseGet(() -> {
             int n = 1;
@@ -607,7 +619,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
             }
             return RoomAddress.of("chair", n);
         });
-        occ.add(a);
+        occ.add(a, w.getCategory());
         return a;
     }
 
@@ -625,8 +637,21 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
             }
             return false;
         });
-        Occupancy occ = Occupancy.of(entries);
         Map<String, String> labels = labels(layout);
+        Map<UUID, WardrobeItem> byId = all.stream().collect(Collectors.toMap(WardrobeItem::getId, w -> w));
+        Occupancy occ = new Occupancy(new HashSet<>(), new HashMap<>(), new HashMap<>());
+        for (RoomStorageEntry entry : entries) {
+            WardrobeItem w = byId.get(entry.getWardrobeItemId());
+            RoomAddress address = RoomAddress.parse(entry.getAddress()).orElse(null);
+            boolean valid = address != null && coherent(w, address, labels)
+                && (!address.zone().equals("door") || address.sub() <= HANGERS_PER_DOOR)
+                && (!address.zone().equals("drawer") || occ.drawerCount().getOrDefault(String.valueOf(address.index()), 0) < drawerCapacity(w.getCategory())
+                    && (occ.drawerCategory().get(String.valueOf(address.index())) == null || w.getCategory().equals(occ.drawerCategory().get(String.valueOf(address.index())))));
+            if (!valid) {
+                known.remove(entry.getWardrobeItemId()); storage.delete(entry);
+            } else occ.add(address, w.getCategory());
+        }
+        entries.removeIf(entry -> !known.contains(entry.getWardrobeItemId()));
         for (WardrobeItem w : all) {
             if (!known.contains(w.getId())) {
                 RoomStorageEntry e = new RoomStorageEntry();
@@ -648,7 +673,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         if (existing.isPresent()) {
             return RoomAddress.parse(existing.get().getAddress()).orElseThrow();
         }
-        Occupancy occ = Occupancy.of(storage.findByUserId(userId));
+        Occupancy occ = Occupancy.of(storage.findByUserId(userId), pieces.findByUserIdOrderByCreatedAtDesc(userId));
         RoomAddress a = place(w, layout, labels(layout), occ);
         RoomStorageEntry e = new RoomStorageEntry();
         e.setUserId(userId);
@@ -755,6 +780,8 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         m.put("address", a == null ? null : a.toString());
         m.put("addressLabel", a == null ? null : a.label(labels));
         m.put("moduleId", a == null ? null : a.moduleId());
+        m.put("storedInRoom", a != null && !a.zone().equals("chair"));
+        m.put("roomOverflow", a == null || a.zone().equals("chair"));
         m.put("states", states);
         m.put("wearCount", w.getWearCount());
         m.put("origin", w.getPieceOrigin());
@@ -1046,12 +1073,18 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         RoomAddress a = RoomAddress.parse(rawAddress).orElseThrow(() -> ApiException.badRequest("ENDERECO_INVALIDO",
                 Msg.t("room.endereco_invalido_use_door_n")));
         RoomLayout layout = layout(user.id());
+        if (!coherent(w, a, labels(layout))) throw ApiException.badRequest("CATEGORIA_INCOMPATIVEL", "Este endereço não guarda peças desta categoria.");
         if (!a.zone().equals("chair")) {
             Map<String, Object> module = module(layout, a.moduleId()).orElseThrow(() -> new ApiException(409, "MODULO_INDISPONIVEL",
                     Msg.t("room.este_modulo_nao_existe_no", layout.getLevel())));
-            int cap = capacity(module);
+            int cap = a.zone().equals("drawer") ? Math.min(capacity(module), drawerCapacity(w.getCategory())) : capacity(module);
             int pos = a.zone().equals("door") ? a.sub() : a.index();
             if (a.zone().equals("drawer")) {
+                boolean differentCategory = storage.findByUserId(user.id()).stream()
+                        .filter(e -> !e.getWardrobeItemId().equals(pieceId) && e.getAddress().equals(a.toString()))
+                        .map(e -> pieces.findById(e.getWardrobeItemId()).orElse(null))
+                        .anyMatch(other -> other != null && !w.getCategory().equals(other.getCategory()));
+                if (differentCategory) throw ApiException.badRequest("GAVETA_CATEGORIA_DIFERENTE", "Esta gaveta guarda peças de outra categoria.");
                 long count = storage.findByUserId(user.id()).stream().filter(e -> !e.getWardrobeItemId().equals(pieceId))
                         .filter(e -> e.getAddress().equals(a.toString())).count();
                 if (count >= cap) {
@@ -1119,7 +1152,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         RoomLayout layout = layout(user.id());
         Map<String, String> labels = labels(layout);
         List<RoomStorageEntry> entries = storage.findByUserId(user.id());
-        Occupancy occ = Occupancy.of(entries);
+        Occupancy occ = Occupancy.of(entries, pieces.findByUserIdOrderByCreatedAtDesc(user.id()));
         int moved = 0;
         for (UUID id : pieceIds) {
             WardrobeItem w = owned(user, id);
@@ -1135,7 +1168,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                     n++;
                 }
                 a = RoomAddress.of("season", n);
-                occ.add(a);
+                occ.add(a, w.getCategory());
             } else {
                 a = place(w, layout, labels, occ);
             }
@@ -1220,16 +1253,18 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
             }
         }
         // redistribuição: mantém quem já está coerente e cabe; reposiciona o resto
-        Occupancy occ = new Occupancy(new HashSet<>(), new HashMap<>());
+        Occupancy occ = new Occupancy(new HashSet<>(), new HashMap<>(), new HashMap<>());
         List<Map<String, Object>> moves = new ArrayList<>();
         List<RoomStorageEntry> pending = new ArrayList<>();
         for (RoomStorageEntry e : entries) {
             WardrobeItem w = byId.get(e.getWardrobeItemId());
             RoomAddress a = RoomAddress.parse(e.getAddress()).orElse(null);
             boolean keep = w != null && a != null && !a.zone().equals("chair") && coherent(w, a, proposed)
-                    && (!a.zone().equals("drawer") || occ.drawerCount().getOrDefault(String.valueOf(a.index()), 0) < DRAWER_CAPACITY);
+                    && (!a.zone().equals("door") || a.sub() <= HANGERS_PER_DOOR && !occ.taken().contains(a.toString()))
+                    && (!a.zone().equals("drawer") || occ.drawerCount().getOrDefault(String.valueOf(a.index()), 0) < drawerCapacity(w.getCategory())
+                        && (occ.drawerCategory().get(String.valueOf(a.index())) == null || w.getCategory().equals(occ.drawerCategory().get(String.valueOf(a.index())))));
             if (keep) {
-                occ.add(a);
+                occ.add(a, w.getCategory());
             } else {
                 pending.add(e);
             }

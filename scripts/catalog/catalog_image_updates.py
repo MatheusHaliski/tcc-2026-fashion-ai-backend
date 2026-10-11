@@ -150,7 +150,7 @@ def _revert_patch(row, analysis, instant):
     if assets is not None and (not isinstance(assets, Mapping) or any(framed_url(v) for v in assets.values())):
         raise ValueError("frame revert must not restore framed assets")
     marker = {"version": FRAME_VERSION, "policy": FRAME_POLICY, "decision": REVERTED_DECISION,
-              "reason": str(revert["reason"])[:200], "productFrameVersion": revert.get("productFrameVersion"),
+              "reason": str(revert["reason"])[:200], "productFrameVersion": revert.get("productFrameVersion"), "fabricFrameVersion": revert.get("fabricFrameVersion"),
               "revertedFrom": row.get("pipeline_version"), "restoredTo": revert.get("restoredTo"),
               "chainComplete": revert.get("chainComplete"), "observations": [REVERTED_DECISION]}
     columns = analysis.get("columns")

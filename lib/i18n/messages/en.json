@@ -6937,7 +6937,7 @@
   "mirror.vista.humor.elegant": "Elegant",
   "mirror.vista.clima.cold": "Cold",
   "mirror.vista.clima.hot": "Hot",
-  "catalog.acervo_resumo": "Full archive: {products, number} pieces from {brands, number} brands",
+  "catalog.acervo_resumo": "Available catalog: {products, number} products from {brands, number} brands",
   "catalog.ver_todo_acervo": "Browse the whole archive",
   "catalog.fechar_acervo": "Close archive",
   "catalog.todas_de": "{total, number} pieces by {marca}",
@@ -6969,5 +6969,13 @@
   "discovery.people": "People to discover",
   "discovery.brands": "Brands to explore",
   "discovery.morePeople": "See more people",
-  "discovery.moreBrands": "See more brands"
+  "discovery.moreBrands": "See more brands",
+  "catalog.acervo_indisponivel": "The server does not provide the paginated catalog. Update the backend to retrieve the actual total.",
+  "catalog.resumo_indisponivel": "Could not retrieve the catalog total.",
+  "catalog.selecao_total": "{total, number} products · {filters}",
+  "catalog.sem_marca_total": "{count, number} available products without a brand; included in the full catalog.",
+  "catalog.registrados_total": "{total, number} products registered in the database; {pending, number} are not yet available in the catalog.",
+  "catalog.grade_total": "Sum of brands in the grid: {count, number} products · {category}",
+  "catalog.verificando_foto": "Checking and framing photo…",
+  "catalog.verificacao_falhou": "Could not verify the photo."
 }

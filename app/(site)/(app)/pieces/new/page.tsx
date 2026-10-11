@@ -23,7 +23,7 @@ import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/c
 import { BrandHintNote, MultiPieceUpload, type PhotoPick } from "@/components/multi-piece-review";
 import { PieceCreationSteps, PIECE_CREATION_STEPS, type PieceCreationStep } from "@/components/piece-creation-steps";
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
-import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
+import { catalogApi, type CatalogProduct, type CatalogVariant } from "@/lib/api/catalog";
 import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePrefillParams } from "@/lib/pieces/prefill";
 
 /** Etapas do criador de peça (RF4/RF47): peça (busca catalogada + dados) → mais detalhes → arte de fundo → revisar e salvar. */
@@ -109,7 +109,9 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
     setValue((v) => ({ ...v, category, subcategory: "", occasion: keepAllowed(v.occasion, tax?.allowedOccasionsByCategory?.[category] ?? tax?.occasions) }));
   }
   /** "É esta" na busca: o produto preenche o formulário e a peça passa a referenciar o catálogo (a foto oficial vira a imagem). */
-  function applyCatalog(product: CatalogProduct, variant: CatalogVariant | null) {
+  async function applyCatalog(product: CatalogProduct, variant: CatalogVariant | null) {
+    try { product = await catalogApi.verifyImage(product.id); }
+    catch (error) { setSaveProblem(error instanceof Error ? error.message : t("catalog.verificacao_falhou")); return; }
     setPick({ product, variant });
     const color = variant?.color ?? product.color ?? "";
     const allowedOccasions = tax?.allowedOccasionsByCategory?.[product.category] ?? tax?.occasions;

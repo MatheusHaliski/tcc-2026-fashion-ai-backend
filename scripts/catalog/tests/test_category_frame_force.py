@@ -50,106 +50,17 @@ def response(width=1200, height=1600, product=PRODUCT, gate=None, status="APPROV
                        "crop_json": json.dumps(crop) if crop else None, "metrics_json": json.dumps({"segmentationConfidence": .9}),
                        "pipeline_version": "CATALOG_IMAGE_PIPELINE_V4", "source_sha256": "a" * 64}}
     out["productFrame"] = frame_of() if frame == "default" else frame
+    source = out["productFrame"]
+    if source:
+        out["fabricFrame"] = {"version": "FABRIC_FRAME_34_V2" if source["version"] == "PRODUCT_RULE_FRAME_V1" else source["version"],
+                              "ok": source["ok"], "reason": source["reason"], "crop": source["crop"],
+                              "fabricCoverage": source["garmentCoverage"], "target": "collar",
+                              "anchor": {"x": .5, "y": .4, "source": "ESTIMATED_COLLAR"}}
     return out
 
 
 def frame(result):
     return json.loads(result["columns"]["crop_json"])
-
-
-class ProductRuleTest(unittest.TestCase):
-    """O quadro é o do Java (3:4 em pixels, regra do card); a regra e a sua origem ficam registradas; sem quadro, nada."""
-
-    def test_quadro_da_regra_vira_o_recorte_com_a_politica_e_a_origem_da_regra(self):
-        result = apply_frame(response(), "upper_piece", force=True, subcategory="t_shirt")
-        crop = frame(result)
-        r = crop["crop"]
-        self.assertAlmostEqual(r["w"] * 1200 / (r["h"] * 1600), .75)
-        self.assertEqual(crop["aspect"], "3:4")
-        editor = crop["editorFrame"]
-        self.assertEqual((editor["version"], editor["policy"]), (VERSION, POLICY))
-        self.assertEqual((editor["fit"], editor["align"], editor["rule"]), ("COVER", "TOP", COVER_TOP))
-        self.assertEqual(editor["ruleSource"]["registry"], "catalog/semantic-regions.json")
-        self.assertEqual(editor["ruleSource"]["origin"], "pieceType")
-        self.assertEqual((editor["category"], editor["subcategory"], editor["target"]), ("upper_piece", "t_shirt", "neckline_top"))
-        self.assertEqual(editor["garmentCoverage"], 1.0)
-        self.assertEqual(editor["observations"], [])
-        self.assertEqual(editor["decision"], FORCED_DECISION)
-        self.assertEqual(result["columns"]["pipeline_version"], VERSION)
-        self.assertEqual(result["columns"]["processing_status"], "APPROVED")
-        fields = report_fields(result)
-        self.assertEqual((fields["frame_policy"], fields["frame_fit"], fields["frame_align"]), (POLICY, "COVER", "TOP"))
-        # largura do quadro ÷ largura da peça na faixa do topo (o Java recusa abaixo de 55%) fica registrada
-        wide = response(frame={**frame_of(), "compliance": {"ok": True, "frameWidthShare": .8123, "garmentWidthPx": 420}})
-        editor = frame(apply_frame(wide, "upper_piece", force=True))["editorFrame"]
-        self.assertEqual((editor["frameWidthShare"], editor["garmentWidthPx"]), (.8123, 420))
-        self.assertEqual(report_fields(apply_frame(wide, "upper_piece", force=True))["frame_width_share"], .8123)
-        self.assertEqual(fields["frame_fabric_coverage"], 1.0)
-        self.assertEqual(fields["frame_rule_source"], "pieceType@2.1.0")
-
-    def test_objeto_inteiro_pode_passar_da_foto_com_fundo_e_acessorio_sem_tecido_nao_e_mais_recusado(self):
-        shoe = frame_of(crop={"x": .05, "y": -.3, "w": .9, "h": 1.6}, rule=WIDTH_CENTER, target="whole_shoe", padding=.28)
-        crop = frame(apply_frame(response(width=1600, height=1200, frame=shoe), "shoes_piece", force=True))
-        self.assertEqual(crop["editorFrame"]["fit"], "WIDTH")
-        self.assertEqual(crop["editorFrame"]["padding"], .28)
-        self.assertEqual(crop["background"], "#f6f6f6")
-        # relógio, óculos, joias e cinto: enquadrados inteiros pela regra (antes NOT_TEXTILE_ACCESSORY)
-        watch = frame_of(rule={"fit": "COVER", "align": "FOCUS", "view": "ANY", "focusTopHalf": False}, target="dial", scope=None)
-        watch["coverageScope"] = None
-        self.assertEqual(frame(apply_frame(response(frame=watch), "accessory_piece", force=True, subcategory="watch"))["editorFrame"]["target"], "dial")
-        belt = frame_of(rule=CONTAIN_CENTER, target="buckle", observations=["FOCUS_NOT_DETECTED_CENTERED"])
-        editor = frame(apply_frame(response(frame=belt), "accessory_piece", force=True, subcategory="belt"))["editorFrame"]
-        self.assertIn("FOCUS_NOT_DETECTED_CENTERED", editor["observations"])
-
-    def test_sem_quadro_pela_regra_nao_ha_enquadramento_nem_no_modo_forcado(self):
-        for frame_value, reason in ((frame_of(ok=False, reason="PIECE_NOT_ISOLATED"), "PIECE_NOT_ISOLATED"),
-                                    (frame_of(ok=False, reason="COVER_FRAME_TOO_NARROW"), "COVER_FRAME_TOO_NARROW"),
-                                    (frame_of(ok=False, reason="WAISTBAND_NOT_FOUND"), "WAISTBAND_NOT_FOUND"),
-                                    (frame_of(ok=False, reason="HUMAN_IN_FRAME"), "HUMAN_IN_FRAME"),
-                                    (frame_of(coverage=.97), "COVERAGE_BELOW_100"),
-                                    (frame_of(rule=CONTAIN_CENTER, inside=.9), "OBJECT_CUT"),
-                                    (frame_of(crop={"x": .9, "y": .3, "w": .25, "h": .25}), "INVALID_CROP"),
-                                    (frame_of(rule={"fit": "STRETCH", "align": "TOP"}), "INVALID_RULE")):
-            for force in (True, False):
-                with self.subTest(reason=reason, force=force), self.assertRaisesRegex(ValueError, "FRAME_UNAVAILABLE:" + reason):
-                    apply_frame(response(frame=frame_value), "upper_piece", force=force)
-        # análise recusada antes do quadro (ex.: foto pequena): o motivo do Java vai para o erro
-        with self.assertRaisesRegex(ValueError, "FRAME_UNAVAILABLE:IMAGE_TOO_SMALL"):
-            apply_frame(response(frame=None, gate="IMAGE_TOO_SMALL", status="REJECTED"), "upper_piece", force=True)
-        with self.assertRaisesRegex(ValueError, "FRAME_UNAVAILABLE:JAVA_IMAGE_TOO_SMALL"):
-            apply_frame(response(), "upper_piece", force=True, fallback="IMAGE_TOO_SMALL")
-
-    def test_quadro_fora_de_3x4_e_recusado(self):
-        with self.assertRaisesRegex(ValueError, "ASPECT_NOT_3_4"):
-            apply_frame(response(frame=frame_of(crop={"x": .1, "y": .1, "w": .5, "h": .3})), "upper_piece", force=True)
-
-    def test_duvida_de_conformidade_pede_revisao_so_no_modo_padrao(self):
-        doubt = frame_of(rule=WIDTH_CENTER, target="whole_shoe", compliance_ok=False, observations=["SHOE_NOT_SIDE_VIEW"])
-        forced = apply_frame(response(frame=doubt), "shoes_piece", force=True)
-        self.assertEqual(forced["columns"]["processing_status"], "APPROVED")
-        self.assertIn("SHOE_NOT_SIDE_VIEW", frame(forced)["editorFrame"]["observations"])
-        self.assertFalse(frame(forced)["editorFrame"]["requiresReview"])
-        default = apply_frame(response(frame=doubt), "shoes_piece")["columns"]
-        self.assertEqual(default["processing_status"], "NEEDS_REPROCESSING")
-        self.assertTrue(frame({"columns": default})["editorFrame"]["requiresReview"])
-        self.assertIn("CATEGORY_FRAME_RULE_REVIEW", default["gate_reasons"])
-        plain = apply_frame(response(), "upper_piece")
-        self.assertFalse(frame(plain)["editorFrame"]["requiresReview"])
-
-    def test_modelo_pele_excluida_e_baixa_confianca_viram_observacao(self):
-        low = response(frame=frame_of(model=True, skin=.12, observations=["MODEL_PHOTO"]))
-        low["columns"]["metrics_json"] = json.dumps({"segmentationConfidence": .2})
-        editor = frame(apply_frame(low, "upper_piece", force=True))["editorFrame"]
-        self.assertIn("MODEL_PHOTO", editor["observations"])
-        self.assertIn("PERSON_SKIN_EXCLUDED_FROM_MASK", editor["observations"])
-        self.assertIn("LOW_SEGMENTATION_CONFIDENCE", editor["observations"])
-        self.assertTrue(editor["model"])
-
-    def test_categoria_desconhecida_so_no_modo_forcado(self):
-        editor = frame(apply_frame(response(frame=frame_of(rule=CONTAIN_CENTER, target="whole_object")), "bag_piece", force=True))["editorFrame"]
-        self.assertIn("CATEGORY_UNKNOWN:bag_piece", editor["observations"])
-        with self.assertRaisesRegex(ValueError, "CATEGORY_FRAME_UNSUPPORTED"):
-            apply_frame(response(), "bag_piece")
 
 
 class RenderTest(unittest.TestCase):
@@ -233,8 +144,8 @@ class RenderTest(unittest.TestCase):
             self.assertEqual(recorded["previousAssets"]["card"], "https://old/a.jpg")
             self.assertEqual(recorded["render"]["upscaleFactor"], 1.5)
             self.assertEqual(recorded["editorFrame"]["policy"], POLICY)
-            self.assertEqual((recorded["editorFrame"]["fit"], recorded["editorFrame"]["align"]), ("COVER", "TOP"))
-            self.assertEqual(recorded["editorFrame"]["ruleSource"]["registry"], "catalog/semantic-regions.json")
+            self.assertEqual((recorded["editorFrame"]["fit"], recorded["editorFrame"]["align"]), ("COVER", "FOCUS"))
+            self.assertEqual(recorded["editorFrame"]["target"], "collar")
             self.assertEqual(assets["render_info"]["sourceCropWidth"], 600)
 
 
@@ -257,7 +168,7 @@ class StandardizedTest(unittest.TestCase):
                 "review_status": "NONE", "stored_url": "https://media.example.com/f.jpg",
                 "assets_json": {"card": "https://media.example.com/f.jpg", "framingVersion": version, "sha256": "b" * 64},
                 "crop_json": {"aspect": "3:4", "crop": crop or {"x": .3, "y": .3, "w": .3, "h": .3}, "ruleCompliant": True,
-                              "editorFrame": {"version": version, "policy": policy, "rule": {"fit": fit, "align": "TOP" if garment else "CENTER"},
+                              "editorFrame": {"version": version, "policy": policy, "fit": fit, "align": "FOCUS", "padding": 0,
                                               "garmentCoverage": coverage if garment else 0.0, "coverageScope": "FRAME" if garment else None,
                                               "objectInside": inside, "requiresReview": False, "observations": []}}}
 
@@ -267,10 +178,10 @@ class StandardizedTest(unittest.TestCase):
         self.assertFalse(is_standardized(self.record(coverage=.98)))
         self.assertFalse(is_standardized(self.record(policy="FABRIC_ONLY_100")))
         # objeto inteiro com fundo completado: o recorte passa da foto e continua padronizado
-        self.assertTrue(is_standardized(self.record(fit="WIDTH", crop={"x": .05, "y": -.3, "w": .9, "h": 1.6})))
+        self.assertFalse(is_standardized(self.record(fit="WIDTH", crop={"x": .05, "y": -.3, "w": .9, "h": 1.6})))
         self.assertFalse(is_standardized(self.record(fit="CONTAIN", inside=.9)))
         # versões anteriores, gravadas e válidas na época, não contam
-        self.assertEqual(LEGACY_VERSIONS, ("CATALOG_FRAME_34_50_V1", "CATALOG_FRAME_34_FABRIC_V2"))
+        self.assertEqual(LEGACY_VERSIONS, ("CATALOG_FRAME_34_50_V1", "CATALOG_FRAME_34_FABRIC_V2", "CATALOG_FRAME_34_PRODUCT_RULE_V3"))
         for legacy in LEGACY_VERSIONS:
             old = self.record(version=legacy, policy="FABRIC_ONLY_100" if "FABRIC" in legacy else None)
             old["crop_json"]["editorFrame"].update(fabricCoverage=1.0, widthPercent=50)
@@ -278,7 +189,7 @@ class StandardizedTest(unittest.TestCase):
 
     def test_reexecucao_preserva_v3_e_refaz_v1_e_v2(self):
         analyzer = Mock(spec=["analyze", "rank", "ready", "category_frame", "force_frame", "frame_storage"])
-        analyzer.ready = {"pipelineVersion": "CATALOG_IMAGE_PIPELINE_V4", "productFrameVersion": "PRODUCT_RULE_FRAME_V1"}
+        analyzer.ready = {"pipelineVersion": "CATALOG_IMAGE_PIPELINE_V4", "fabricFrameVersion": "FABRIC_FRAME_34_V2"}
         analyzer.category_frame = True; analyzer.force_frame = True; analyzer.frame_storage = Mock()
         downloader = Mock()
         base = {"category": "upper_piece", "source_url": "https://brand.example/a.jpg", "image_id": "a", "product_id": "p"}
@@ -297,7 +208,7 @@ class StandardizedTest(unittest.TestCase):
 class ForcedAuditRecordTest(unittest.TestCase):
     def analyzer(self, force=True, storage=None):
         analyzer = Mock(spec=["analyze", "rank", "ready", "category_frame", "force_frame", "frame_storage"])
-        analyzer.ready = {"pipelineVersion": "CATALOG_IMAGE_PIPELINE_V4", "productFrameVersion": "PRODUCT_RULE_FRAME_V1"}
+        analyzer.ready = {"pipelineVersion": "CATALOG_IMAGE_PIPELINE_V4", "fabricFrameVersion": "FABRIC_FRAME_34_V2"}
         analyzer.category_frame = True
         analyzer.force_frame = force
         analyzer.frame_storage = storage
@@ -397,7 +308,7 @@ class ForcedAuditRecordTest(unittest.TestCase):
                              stored_url="https://media.example.com/f.jpg", image_url="https://brand.example/a.jpg",
                              assets_json=json.dumps({"card": "https://media.example.com/f.jpg", "framingVersion": VERSION, "sha256": "b" * 64}),
                              crop_json=json.dumps({"aspect": "3:4", "crop": {"x": .25, "y": .25, "w": .3, "h": .3}, "ruleCompliant": True,
-                                                   "editorFrame": {"version": VERSION, "policy": POLICY, "rule": COVER_TOP,
+                                                   "editorFrame": {"version": VERSION, "policy": POLICY, "fit": "COVER", "padding": 0,
                                                                    "garmentCoverage": 1.0, "coverageScope": "FRAME", "requiresReview": False}}))
         downloader = Mock()
         result = audit_record(record, downloader, self.analyzer(storage=Mock()), Mock(), apply=True)

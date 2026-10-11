@@ -6937,7 +6937,7 @@
   "mirror.vista.humor.elegant": "Elegante",
   "mirror.vista.clima.cold": "Frio",
   "mirror.vista.clima.hot": "Calor",
-  "catalog.acervo_resumo": "Acervo completo: {products, number} peças de {brands, number} marcas",
+  "catalog.acervo_resumo": "Acervo disponível: {products, number} peças de {brands, number} marcas",
   "catalog.ver_todo_acervo": "Ver todo o acervo",
   "catalog.fechar_acervo": "Fechar acervo",
   "catalog.todas_de": "{total, number} peças de {marca}",
@@ -6969,5 +6969,13 @@
   "discovery.people": "Pessoas para conhecer",
   "discovery.brands": "Marcas para explorar",
   "discovery.morePeople": "Ver mais pessoas",
-  "discovery.moreBrands": "Ver mais marcas"
+  "discovery.moreBrands": "Ver mais marcas",
+  "catalog.acervo_indisponivel": "O servidor não disponibilizou o acervo paginado. Atualize o backend para consultar o total real.",
+  "catalog.resumo_indisponivel": "Não foi possível consultar o total do acervo.",
+  "catalog.selecao_total": "{total, number} peças · {filters}",
+  "catalog.sem_marca_total": "{count, number} peças disponíveis sem marca; incluídas no acervo completo.",
+  "catalog.registrados_total": "{total, number} peças registradas no banco; {pending, number} ainda indisponíveis no catálogo.",
+  "catalog.grade_total": "Soma das marcas da grade: {count, number} peças · {category}",
+  "catalog.verificando_foto": "Verificando e enquadrando foto…",
+  "catalog.verificacao_falhou": "Não foi possível verificar a foto."
 }

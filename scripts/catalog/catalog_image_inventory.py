@@ -75,27 +75,13 @@ def _valid_crop(crop: Mapping) -> bool:
 
 
 def _product_frame_ok(crop: Mapping) -> bool:
-    """Quadro da regra do produto (CATALOG_FRAME_34_PRODUCT_RULE_V3): a política registrada, a regra aplicada e o recorte
-    válido para ela — parte de cima/baixo dentro da foto e 100% peça; objeto inteiro (WIDTH/CONTAIN) dentro do quadro, que
-    pode passar da foto (fundo de estúdio). Os quadros antigos (V1 de 50%, V2 só de tecido) não contam: são refeitos."""
+    """V4: quadro inteiramente dentro da foto e preenchido pela peça, sem padding."""
     frame = crop.get("editorFrame") or {}
-    rule = frame.get("rule") or {}
-    rect = crop.get("crop")
-    if frame.get("version") != FRAME_VERSION or frame.get("policy") != FRAME_POLICY or rule.get("fit") not in ("COVER", "WIDTH", "CONTAIN"):
-        return False
-    if not isinstance(rect, dict):
-        return False
-    values = [rect.get(k) for k in ("x", "y", "w", "h")]
-    if any(isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in values):
-        return False
-    x, y, w, h = values
-    if w <= 0 or h <= 0:
-        return False
-    if frame.get("coverageScope") is not None:
-        return _valid_crop(crop) and frame.get("garmentCoverage") == 1
-    inside = frame.get("objectInside")
-    return (x >= -2 and y >= -2 and x + w <= 3 and y + h <= 3
-            and (rule.get("fit") == "COVER" or (isinstance(inside, (int, float)) and inside >= .999)))
+    coverage = frame.get("garmentCoverage")
+    return (frame.get("version") == FRAME_VERSION and frame.get("policy") == FRAME_POLICY
+            and frame.get("fit") == "COVER" and frame.get("coverageScope") == "FRAME"
+            and not isinstance(coverage, bool) and coverage == 1
+            and frame.get("padding", 0) == 0 and _valid_crop(crop))
 
 
 def is_standardized(record: Mapping, current_version: str = CURRENT_VERSION) -> bool:

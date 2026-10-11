@@ -11,34 +11,14 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Quadro 3:4 só de tecido (lote de enquadramento por categoria V2, CATALOG_FRAME_34_FABRIC_V2): dentro do quadro não
- * pode aparecer fundo, arte de fundo, cabide, pessoa (pele, rosto, mãos) nem outro objeto — a peça ocupa 100% da área.
- * O lote V3 (scripts/catalog/category_frame.py, CATALOG_FRAME_34_PRODUCT_RULE_V3) usa a regra do produto do card
- * ({@link ProductRuleFrame}) sobre a mesma máscara ({@link #mask}); este quadro continua no resultado como depuração.
- *
- * <p>Máscara do tecido: com fundo de estúdio (borda uniforme, mesmo com degradê), tudo o que não é fundo, por
- * preenchimento a partir da borda — peça escura ou clara inteira, que o recorte local às vezes perde —, só o maior
- * componente (adereço separado fica de fora); com fundo cheio de coisas, a máscara do segmentador, e só se ele estiver
- * confiante. Dela sai a pele de cor diferente da peça (rosto, braços, mãos, pernas) e, em foto com modelo, tudo abaixo
- * da barra da peça de cima (a calça não é a camiseta); por fim é erodida alguns pixels para a borda (e a interpolação)
- * não entrarem no quadro. O quadro é o maior retângulo 3:4 inteiramente dentro dessa máscara que contém o ponto da
- * categoria/subcategoria (o que mostrar de cada peça):
- * <ul>
- *   <li>parte de cima: o peito, abaixo da gola, sem as mangas; peças abertas na frente (jaqueta, blazer, casaco,
- *       cardigã, colete, parka, corta-vento, quimono) no painel da frente, fora da abertura central;</li>
- *   <li>parte de baixo: o gancho com o zíper/braguilha (cintura → gancho, sem uma perna isolada vencer); saia, saia-short,
- *       legging e culote no painel da frente abaixo do cós;</li>
- *   <li>corpo inteiro: o corpete (vestido, macacão, jardineira, conjunto);</li>
- *   <li>calçado: o cabedal (cadarços quando o pipeline os achou), sem a sola;</li>
- *   <li>acessório têxtil (bolsas, mochila, carteira, boné, chapéu, gorro, cachecol, gravata, luvas, meias): o corpo do
- *       objeto; acessório sem tecido (joias, relógio, óculos, acessório de cabelo) e cinto (tira estreita com fivela) não
- *       têm quadro de tecido.</li>
- * </ul>
- * Sem tecido suficiente (quadro estreito demais para a foto ou para a peça), não há quadro: a foto não é reenquadrada,
- * em vez de mostrar fundo.
+ * Quadro 3:4 preenchido pela peça, sem fundo, cabide, pele ou outro objeto.
+ * Parte superior: gola; inferior: zíper; calçado: logo; acessório: centro.
+ * A máscara exclui fundo e pele e é erodida antes do recorte. Quando não há
+ * região suficiente, recusa o enquadramento. Focos sem landmark são estimados
+ * e ficam identificados como ESTIMATED_* nos metadados.
  */
 public final class FabricFrame {
-    public static final String VERSION = "FABRIC_FRAME_34_V1";
+    public static final String VERSION = "FABRIC_FRAME_34_V2";
     static final int ASPECT_W = 3, ASPECT_H = 4;
     /** largura mínima do tecido no quadro, em pixels da máscara (a saída de 900 px amplia no máximo ~6×) */
     static final int MIN_WIDTH_PX = 120;
@@ -52,13 +32,9 @@ public final class FabricFrame {
     static final double MIN_SKIN_AREA = 0.0004;
     static final Set<String> OPEN_FRONT = Set.of("jacket", "blazer", "coat", "cardigan", "vest", "parka", "windbreaker", "kimono");
     static final Set<String> NO_FLY = Set.of("skirt", "skort", "leggings", "culottes");
-    /** sem superfície de tecido para um quadro: joias, relógio, óculos, acessório de cabelo; cinto é uma tira estreita com a
-     *  fivela de metal no meio */
-    static final Set<String> NON_TEXTILE = Set.of("sunglasses", "eyeglasses", "necklace", "bracelet", "earrings", "ring", "watch", "hair_accessory", "belt");
-
     /**
      * @param crop          quadro normalizado na foto (null sem quadro)
-     * @param target        o que o quadro mostra (chest, front_panel, fly, front_below_waistband, bodice, upper, body)
+     * @param target        o que o quadro mostra (collar, fly, front_below_waistband, bodice, logo, center)
      * @param anchorSource  PIPELINE_LANDMARK quando veio de um landmark detectado; senão ESTIMATED_*
      * @param skinExcluded  fração do produto tirada da máscara por ser pele (evidência de pessoa)
      */
@@ -111,9 +87,6 @@ public final class FabricFrame {
     static Result find(Mask m, PieceType type, String subcategory, FramingStrategy.Focus focus) {
         String sub = subcategory == null ? "" : subcategory.trim().toLowerCase(Locale.ROOT);
         String target = target(type, sub);
-        if (type == PieceType.ACCESSORY_PIECE && NON_TEXTILE.contains(sub)) {
-            return Result.none("NOT_TEXTILE_ACCESSORY", target, 0);
-        }
         if (m.reason() != null) return Result.none(m.reason(), target, m.skinShare());
         int w = m.w(), h = m.h();
         Plan plan = plan(type, sub, m.fabric(), m.px(), w, h, m.box(), focus, m.person());
@@ -379,11 +352,11 @@ public final class FabricFrame {
 
     static String target(PieceType type, String sub) {
         return switch (type) {
-            case UPPER_PIECE -> OPEN_FRONT.contains(sub) ? "front_panel" : "chest";
+            case UPPER_PIECE -> "collar";
             case LOWER_PIECE -> NO_FLY.contains(sub) ? "front_below_waistband" : "fly";
             case FULL_BODY_PIECE -> "bodice";
-            case SHOES_PIECE -> "upper";
-            case ACCESSORY_PIECE -> "body";
+            case SHOES_PIECE -> "logo";
+            case ACCESSORY_PIECE -> "center";
         };
     }
 
@@ -423,8 +396,8 @@ public final class FabricFrame {
                 int left = (int) Math.round(cx) - half, width = open ? (int) Math.round(half - b.w() * 0.04) : half * 2;
                 ImageOps.Box region = clip(new ImageOps.Box(left, top, width, Math.max(1, bottom - top)), w, h);
                 double ax = open ? left + width * 0.5 : cx;   // painel da frente, fora da abertura central
-                double ay = top + (bottom - top) * 0.3;
-                return new Plan(region, ax, ay, open ? "ESTIMATED_FRONT_PANEL" : "ESTIMATED_CHEST");
+                double ay = top + (bottom - top) * (type == PieceType.UPPER_PIECE ? 0.12 : 0.3);
+                return new Plan(region, ax, ay, type == PieceType.UPPER_PIECE ? "ESTIMATED_COLLAR" : "ESTIMATED_BODICE");
             }
             case LOWER_PIECE -> {
                 if (NO_FLY.contains(sub)) {
@@ -454,7 +427,7 @@ public final class FabricFrame {
                 region = clip(new ImageOps.Box((int) Math.round(cx) - halfHip, region.y(), halfHip * 2, region.h()), w, h);
                 // braguilha: no miolo, na metade de baixo do caminho cós → gancho
                 double ay = region.y() + region.h() * (shorts ? 0.45 : 0.55);
-                if (focus != null && focus.name() != null && focus.name().toLowerCase(Locale.ROOT).matches(".*(zipper|fastening|fly).*")) {
+                if (focus != null && focus.name() != null && focus.name().toLowerCase(Locale.ROOT).matches(".*(zipper|fastening|fly).*") && "LANDMARKS".equals(focus.source())) {
                     NRect r = focus.rect();
                     return new Plan(region, r.cx() * w, r.cy() * h, "PIPELINE_LANDMARK");
                 }
@@ -464,11 +437,11 @@ public final class FabricFrame {
                 // cabedal: sem a sola (faixa de baixo) e sem a ponta do cano
                 int top = (int) Math.round(b.y() + b.h() * 0.05), bottom = (int) Math.round(b.y() + b.h() * 0.80);
                 ImageOps.Box region = clip(new ImageOps.Box(b.x(), top, b.w(), Math.max(1, bottom - top)), w, h);
-                if (focus != null && focus.name() != null && focus.name().toLowerCase(Locale.ROOT).contains("lace")) {
+                if (focus != null && focus.name() != null && focus.name().toLowerCase(Locale.ROOT).contains("logo") && "LANDMARKS".equals(focus.source())) {
                     NRect r = focus.rect();
                     return new Plan(region, r.cx() * w, r.cy() * h, "PIPELINE_LANDMARK");
                 }
-                return new Plan(region, cx, b.y() + b.h() * 0.42, "ESTIMATED_UPPER");
+                return new Plan(region, cx, b.y() + b.h() * 0.42, "ESTIMATED_LOGO");
             }
             default -> {
                 int inset = (int) Math.round(Math.min(b.w(), b.h()) * 0.04);

@@ -22,9 +22,11 @@ import java.util.UUID;
 @Tag(name = "RF47 — Acervo & Busca Catalogada")
 public class CatalogController {
     private final CatalogService catalog;
+    private final br.com.fashionai.application.catalog.image.CatalogImagePipelineService imagePipeline;
 
-    public CatalogController(CatalogService catalog) {
+    public CatalogController(CatalogService catalog, br.com.fashionai.application.catalog.image.CatalogImagePipelineService imagePipeline) {
         this.catalog = catalog;
+        this.imagePipeline = imagePipeline;
     }
 
     @GetMapping("/api/catalog/search")
@@ -60,8 +62,9 @@ public class CatalogController {
     public Map<String, Object> browse(@RequestParam(required = false) String brand, @RequestParam(required = false) String category,
                                       @RequestParam(required = false) String subcategory, @RequestParam(required = false) String q,
                                       @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size,
-                                      @RequestParam(required = false) String brandId) {
-        return catalog.browse(new CatalogService.BrowseRequest(brand, category, subcategory, q, page, size, brandId));
+                                      @RequestParam(required = false) String brandId, @RequestParam(required = false) String color,
+                                      @RequestParam(required = false) String gender) {
+        return catalog.browse(new CatalogService.BrowseRequest(brand, category, subcategory, q, page, size, brandId, color, gender));
     }
 
     @GetMapping("/api/catalog/summary")
@@ -73,6 +76,13 @@ public class CatalogController {
     @GetMapping("/api/catalog/products/{id}")
     @Operation(summary = "RF47 — Produto do catálogo com variantes, fotos oficiais e proveniência")
     public Map<String, Object> product(@PathVariable UUID id) {
+        return catalog.product(id);
+    }
+
+    @PostMapping("/api/catalog/products/{id}/verify-image")
+    @Operation(summary = "Verifica novamente a foto original e aplica a regra de enquadramento 3:4 antes da seleção")
+    public Map<String, Object> verifyImage(CurrentUser user, @PathVariable UUID id) {
+        imagePipeline.verifySelection(user, id);
         return catalog.product(id);
     }
 
