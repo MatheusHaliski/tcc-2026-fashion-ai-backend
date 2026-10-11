@@ -13,6 +13,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import dynamic from "next/dynamic";
 import { useDetailModal } from "@/components/detail-modal";
 import RoomControlsTutorial from "@/components/room3d/room-controls-tutorial";
+import RoomSceneControls from "@/components/room3d/room-scene-controls";
 import { RoomInteraction, type RoomPlayState } from "@/lib/room3d/interaction";
 import { HAND_TO_API, MirrorSession, handsOf, type HandPiece, type HandSlot } from "@/lib/room3d/mirror-session";
 import { MirrorHands } from "@/components/room3d/mirror-hands";
@@ -291,6 +292,7 @@ function RoomInner() {
               <AvatarStill hidden avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={mirrorLook} background="transparent" onStill={setReflection} />
             )}
             <p className="room3d-hint">{t("room.arraste_para_girar_enquadramento_3")}</p>
+            <RoomSceneControls engine={engine} canvas={canvas} walk={walking && !photo && !me3d.loading} />
           </div>
           <nav className="room3d-positions" aria-label={inMirror ? t("nav.mirror") : t("room.posicoes_do_quarto")}>
             <section className="mb-4 space-y-3 rounded-xl border p-3" aria-label={t("room.play.title")}>

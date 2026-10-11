@@ -1104,6 +1104,21 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 .room3d-light { display: inline-flex; align-items: center; gap: 8px; min-height: var(--control-md); padding: 0 12px; border-radius: 999px; background: var(--surface-2); }
 .room3d-light input { width: 110px; accent-color: var(--ink); }
 .room3d-hint { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 20px); padding: 3px 10px; border-radius: 999px; background: rgba(0,0,0,.5); color: #fff; font-size: 12px; text-align: center; pointer-events: none; }
+/* Acessibilidade 3D (room-scene-controls.tsx): girar a cena e o direcional do avatar num canto do palco, longe do avatar;
+   alvos de 44 px, foco visível e "apertado" enquanto segura. A dica vai para o outro canto. */
+.room3d-controls { position: absolute; right: 10px; bottom: 10px; display: grid; justify-items: end; gap: 6px; }
+.room3d-controls-row { display: grid; grid-template-columns: repeat(2, 44px); gap: 6px; }
+.room3d-dpad { display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); gap: 3px; }
+.room3d-dpad .is-up { grid-area: 1 / 2; } .room3d-dpad .is-left { grid-area: 2 / 1; } .room3d-dpad .is-right { grid-area: 2 / 3; } .room3d-dpad .is-down { grid-area: 3 / 2; }
+.room3d-control { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 12px; background: rgba(24,20,17,.62); color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
+.room3d-control:hover { background: rgba(24,20,17,.8); }
+.room3d-control[aria-pressed="true"] { background: #1F7A76; }
+.room3d-control:focus-visible { outline: 3px solid #fff; outline-offset: 1px; box-shadow: 0 0 0 6px #1F7A76; }
+.room3d-stage:has(.room3d-controls) .room3d-hint { left: 10px; transform: none; max-width: calc(100% - 180px); border-radius: 12px; text-align: left; }
+/* na prova o espelho ocupa a direita do quadro: botões menores */
+.room3d[data-mode="mirror"] .room3d-control { width: 36px; height: 36px; border-radius: 10px; }
+.room3d[data-mode="mirror"] .room3d-controls-row { grid-template-columns: repeat(2, 36px); }
+.room3d[data-mode="mirror"] .room3d-dpad { grid-template-columns: repeat(3, 36px); grid-template-rows: repeat(3, 36px); }
 .room3d-positions { max-height: min(72vh, 680px); overflow: auto; padding: 10px; border: 1px solid var(--line-soft); border-radius: 14px; background: var(--surface); }
 .room3d-positions ul { display: grid; gap: 2px; }
 .room3d-positions button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 8px; border-radius: 8px; font-size: 13px; text-align: left; }
