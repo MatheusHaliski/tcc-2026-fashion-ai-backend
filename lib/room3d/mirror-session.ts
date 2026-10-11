@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { kindOf } from "@/lib/avatar3d/human/garments";
-import { clampCamera, roomView, rotateView, type RoomBounds } from "./room-bounds";
+import { BODY_RADIUS } from "./interaction";
+import { clampCamera, ROOM, roomCenter, roomView, rotateView, walkArea, type RoomBounds } from "./room-bounds";
 
 /**
  * Prova de roupa no quarto (RF27 + RF28 num fluxo só): o personagem caminha até o espelho e a prova abre sozinha, sem
@@ -137,6 +138,13 @@ export class MirrorSession {
     this.manual = false; this.latched = distance <= MIRROR_ZONE.exit; this.error = null; this.snapshot = null;
     if (this.phase !== "room") { this.phase = "room"; this.notify(); }
   }
+  /**
+   * "Voltar ao quarto" andando (o personagem caminha para longe do espelho): só desfaz a abertura à mão, sem trava —
+   * quem fecha a prova é a zona, quando ele passa do raio de saída. A aba Espelho segue o movimento.
+   */
+  leave() { this.manual = false; this.latched = false; }
+  /** "Ir ao espelho" andando: a caminhada pede a prova, então a trava de um "Voltar ao quarto" anterior não vale mais. */
+  unlatch() { this.latched = false; }
   /** Pedido de troca num lugar do corpo: devolve o número do pedido (o mais recente prevalece). */
   request(slot: HandSlot): number { this.seq += 1; this.busy = slot; this.error = null; this.notify(); return this.seq; }
   /**
@@ -159,6 +167,70 @@ export function facingYaw(actor: THREE.Vector3, mirror: THREE.Vector3): number {
 
 /** Normal do vidro do espelho do quarto: ele fica girado 28° em Y (room-scene.tsx). */
 export const MIRROR_NORMAL = new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(28)), 0, Math.cos(THREE.MathUtils.degToRad(28)));
+
+/** Meias-medidas da colisão do espelho (caixa orientada; `userData.collider` em room-scene.tsx). */
+export const MIRROR_COLLIDER = { hx: 0.47, hz: 0.08 } as const;
+/** Ao longo do vidro: o x local do espelho girado (perpendicular a MIRROR_NORMAL, no chão). */
+const MIRROR_SIDE = new THREE.Vector3(MIRROR_NORMAL.z, 0, -MIRROR_NORMAL.x);
+const onFloor = (p: { x: number; z: number }) => new THREE.Vector3(p.x, 0, p.z);
+
+/**
+ * Ponto na frente do espelho para onde o personagem caminha ("Ir ao espelho", /room?espelho=1): `d` metros pela normal
+ * do vidro — dentro do raio de entrada da zona (a prova abre sozinha ao chegar) e fora da colisão do espelho.
+ */
+export function mirrorFront(mirror: { x: number; z: number }, d = 0.8): THREE.Vector3 {
+  return onFloor(mirror).addScaledVector(MIRROR_NORMAL, d);
+}
+
+/**
+ * Para onde o personagem anda ao sair do espelho ("Voltar ao quarto", trilha "Meu Quarto"): `d` metros do espelho na
+ * direção do centro do quarto — além do raio de saída da zona, na frente do vidro e dentro das paredes (não fica preso
+ * na parede do lado do espelho). Se o centro ficar atrás do vidro ou a parede encurtar demais a saída, tenta a normal e
+ * direções abertas a partir dela e fica com a que mais se afasta.
+ */
+export function awayPoint(mirror: { x: number; z: number }, bounds: RoomBounds = ROOM, d = 2.1): THREE.Vector3 {
+  const area = walkArea(bounds), c = roomCenter(bounds), base = onFloor(mirror), up = new THREE.Vector3(0, 1, 0);
+  const toCentre = new THREE.Vector3(c.x - mirror.x, 0, c.z - mirror.z);
+  const dirs = [toCentre.lengthSq() > 1e-6 ? toCentre.normalize() : MIRROR_NORMAL.clone(), ...[0, 30, -30, 60, -60, 80, -80].map((a) => MIRROR_NORMAL.clone().applyAxisAngle(up, THREE.MathUtils.degToRad(a)))];
+  const at = (dir: THREE.Vector3) => { const p = base.clone().addScaledVector(dir, d); return p.set(THREE.MathUtils.clamp(p.x, area.minX + 0.1, area.maxX - 0.1), 0, THREE.MathUtils.clamp(p.z, area.minZ + 0.1, area.maxZ - 0.1)); };
+  const reach = (p: THREE.Vector3) => { const r = mirrorDistance(p, base); return Number.isFinite(r) ? r : 0; };
+  const points = dirs.map(at), first = points.find((p) => reach(p) > MIRROR_ZONE.exit + 0.2);
+  return first ?? points.sort((a, b) => reach(b) - reach(a))[0];
+}
+
+/**
+ * Caminho até a frente do espelho: reto quando a reta não passa pela colisão do espelho (meias-medidas + tronco);
+ * senão, pela quina da frente do lado em que o personagem está — ou, vindo de trás do vidro, pela quina de trás e
+ * depois a da frente. Só quinas dentro da área de caminhar (atrás do espelho, do lado do guarda-roupa, não cabe).
+ */
+export function mirrorRoute(actor: { x: number; z: number }, mirror: { x: number; z: number }, bounds: RoomBounds = ROOM): THREE.Vector3[] {
+  const front = mirrorFront(mirror), base = onFloor(mirror), area = walkArea(bounds);
+  const hs = MIRROR_COLLIDER.hx + BODY_RADIUS, hn = MIRROR_COLLIDER.hz + BODY_RADIUS;
+  const local = (p: THREE.Vector3) => { const d = p.clone().sub(base); return { s: d.dot(MIRROR_SIDE), n: d.dot(MIRROR_NORMAL) }; };
+  const at = (s: number, n: number) => base.clone().addScaledVector(MIRROR_SIDE, s).addScaledVector(MIRROR_NORMAL, n);
+  // a reta a→b cruza a caixa do espelho (com o tronco)? teste de faixas no espaço do espelho
+  const crosses = (a: THREE.Vector3, b: THREE.Vector3) => {
+    const p = local(a), q = local(b); let t0 = 0, t1 = 1;
+    for (const [from, to, h] of [[p.s, q.s, hs], [p.n, q.n, hn]] as const) {
+      const v = to - from;
+      if (Math.abs(v) < 1e-9) { if (Math.abs(from) >= h) return false; continue; }
+      let ta = (-h - from) / v, tb = (h - from) / v; if (ta > tb) [ta, tb] = [tb, ta];
+      t0 = Math.max(t0, ta); t1 = Math.min(t1, tb); if (t0 >= t1) return false;
+    }
+    return true;
+  };
+  const start = onFloor(actor);
+  if (!crosses(start, front)) return [front];
+  const inside = (p: THREE.Vector3) => p.x >= area.minX && p.x <= area.maxX && p.z >= area.minZ && p.z <= area.maxZ;
+  const own = Math.sign(local(start).s) || 1, cs = hs + 0.25, cn = hn + 0.25;
+  for (const side of [own, -own]) {
+    const ahead = at(side * cs, cn), behind = at(side * cs, -cn);
+    if (!inside(ahead)) continue;
+    if (!crosses(start, ahead)) return [ahead, front];
+    if (inside(behind) && !crosses(start, behind)) return [behind, ahead, front];
+  }
+  return [front];                                                     // sem contorno: o passo desliza e, travado, desiste
+}
 
 /**
  * Distância do personagem ao espelho que conta para a zona da prova: só na frente do vidro. Atrás do espelho (o

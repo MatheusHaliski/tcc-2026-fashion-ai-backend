@@ -82,6 +82,32 @@ describe("MirrorControls — sem formulário", () => {
     expect(calls.some((c) => c.path.includes("/swap"))).toBe(false);
   });
 
+  it("roupas em mãos (vocabulário do quarto): a célula conta as trazidas e a segurada; na folha, tocar veste e 'Tirar da lista' tira só da lista — pelo quarto (host)", async () => {
+    loggedAs(undefined, { "GET /api/tipos-look": [], "GET /api/me/mirror/wardrobe?slot=upper": { pieces: [TEE] }, "GET /api/me/mirror/wardrobe?slot=outer_layer": { pieces: [] } });
+    const host = { wear: vi.fn(), takeOff: vi.fn(), unlist: vi.fn() };
+    const SHIRT = { id: "s", name: "Camisa listrada", category: "upper_piece" };              // lista antiga, sem slot: vai pela categoria
+    const HELD = { id: "h", name: "Blusa na mão", category: "upper_piece" };
+    renderApp(<MirrorControls data={state({ lower: JEANS }, { rack: [{ ...TEE, worn: false }, SHIRT, { ...JEANS, worn: true }] })} setData={() => undefined} reload={() => undefined} host={host} held={[HELD]} arrivedId="s" />);
+    const top = cell(/^Parte de cima:/);
+    expect(within(top).getByText("3 em mãos")).toBeTruthy(); expect(top.className).toContain("is-arrived");
+    expect(within(cell(/^Parte de baixo:/)).queryByText(/em mãos/)).toBeNull();                 // a calça já está vestida
+    fireEvent.click(top);
+    const sheet = within(await screen.findByRole("dialog", { name: "Parte de cima" }));
+    expect(sheet.getByRole("heading", { name: "Roupas em mãos" })).toBeTruthy();
+    expect(sheet.queryByText("Na lista do espelho")).toBeNull();
+    const hands = within(sheet.getByTestId("mirror-hands-picker"));
+    expect(hands.getAllByRole("button", { name: /^Vestir / }).map((b) => b.getAttribute("aria-label"))).toEqual(["Vestir Blusa na mão em Parte de cima", "Vestir Camiseta preta em Parte de cima", "Vestir Camisa listrada em Parte de cima"]);
+    expect(within(hands.getByRole("button", { name: /^Vestir Blusa/ })).getByText("Na mão")).toBeTruthy();
+    expect(hands.queryByRole("button", { name: "Tirar Blusa na mão da lista do espelho" })).toBeNull();   // não está na lista
+    fireEvent.click(hands.getByRole("button", { name: "Tirar Camisa listrada da lista do espelho" }));
+    expect(host.unlist).toHaveBeenCalledWith(expect.objectContaining({ id: "s" }));
+    fireEvent.click(hands.getByRole("button", { name: "Vestir Blusa na mão em Parte de cima" }));
+    expect(host.wear).toHaveBeenCalledWith(expect.objectContaining({ id: "h" }));
+    // no guarda-roupa, a peça já trazida diz que está em mãos
+    const picker = within(await sheet.findByTestId("mirror-wardrobe-picker"));
+    expect(within(picker.getByRole("button", { name: /Camiseta preta/ })).getByText("Já em mãos")).toBeTruthy();
+  });
+
   it("sugestões mostram o porquê; sem candidatas, o caminho para cadastrar", async () => {
     loggedAs(undefined, {
       "GET /api/tipos-look": [], "GET /api/me/mirror/wardrobe": { pieces: [] },

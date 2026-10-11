@@ -11,7 +11,7 @@ import {
   pointer, RoomDoor, RoomWindow, sketchDraw, Sparkles, TailorTape, useCanvasTex, WallCalendar,
 } from "@/components/room3d/room-props";
 import RoomAvatarController, { type RoomGameplay } from "./room-avatar-controller";
-import { snapshotCrop } from "@/lib/room3d/mirror-session";
+import { MIRROR_COLLIDER, snapshotCrop } from "@/lib/room3d/mirror-session";
 import { ROOM_TURN_EVENT, ROOM_ZOOM_EVENT, RoomInteraction } from "@/lib/room3d/interaction";
 import { ROOM, toWall, W2, w2ToWorld, walkArea, wallById, wallOpacity, wallSide, type WallSpec } from "@/lib/room3d/room-bounds";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -358,7 +358,7 @@ function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module, en
   const riser = useRef<THREE.Mesh>(null); const start = useRef(-1);
   // o espelho é um obstáculo: o personagem para na frente do vidro (e contorna pela lateral), nunca o atravessa
   const body = useRef<THREE.Group>(null);
-  useEffect(() => { const g = body.current; if (!engine || !g) return; g.userData.collider = { hx: 0.47, hz: 0.08 }; engine.solids.add(g); return () => { engine.solids.delete(g); }; }, [engine]);
+  useEffect(() => { const g = body.current; if (!engine || !g) return; g.userData.collider = { ...MIRROR_COLLIDER }; engine.solids.add(g); return () => { engine.solids.delete(g); }; }, [engine]);
   useEffect(() => { if (overlay?.closingKey) start.current = performance.now(); }, [overlay?.closingKey]);
   useFrame(() => {
     const m = riser.current; if (!m) return;

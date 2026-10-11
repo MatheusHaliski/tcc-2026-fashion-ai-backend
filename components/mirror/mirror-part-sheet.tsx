@@ -12,7 +12,8 @@ import type { MirrorData, MirrorPart, MirrorPieceRef } from "@/components/mirror
  * Folha de uma parte do look (Parte de cima, Peça única, Parte de baixo, Calçado, Acessório): tudo em botões e listas.
  *  - Vestindo agora: o card compacto de peça (o mesmo do Provador) com Tirar, Manter (âncora do Vista-me) e, no menu ⋯,
  *    Mostrar no quarto, Provar no provador e Tirar da lista do espelho.
- *  - Na lista do espelho: peças trazidas do quarto para esta parte, ainda não vestidas (tocar veste).
+ *  - Roupas em mãos (vocabulário do quarto): a lista do espelho — peças trazidas do quarto para esta parte, ainda não
+ *    vestidas (tocar veste; "Tirar da lista" devolve ao guarda-roupa) — e a peça segurada pelo personagem.
  *  - Do guarda-roupa: todas as peças que servem nesta parte (a Parte de cima junta camisetas e jaquetas/blazers).
  *  - Sugestões: até 3 com o porquê; sem candidatas, o caminho para cadastrar.
  * Nunca chama /slots/{slot}/swap (só devolve sugestões, não troca nada).
@@ -21,8 +22,11 @@ interface Pick { pieces: MirrorPieceRef[]; message?: string | null; href?: strin
 const asList = (v: MirrorPieceRef | MirrorPieceRef[] | null | undefined) => (Array.isArray(v) ? v : v ? [v] : []);
 const ASSET_TONE = { PENDING: "mark", IMAGE_2D: "chalk", MOULD_3D: undefined, MODEL_3D: "thread" } as const;
 
-export function MirrorPartSheet({ part, data, pinned, busy, onClose, onTogglePin, wear, takeOff, unlist, showInRoom }: {
-  part: MirrorPart; data: MirrorData; pinned: Set<string>; busy: string | null; onClose: () => void; onTogglePin: (id: string) => void;
+export function MirrorPartSheet({ part, data, hand, pinned, busy, onClose, onTogglePin, wear, takeOff, unlist, showInRoom }: {
+  part: MirrorPart; data: MirrorData;
+  /** roupas em mãos desta parte, ainda não vestidas (inHandOf): `listed` = na lista do espelho; senão, na mão */
+  hand: (MirrorPieceRef & { listed: boolean })[];
+  pinned: Set<string>; busy: string | null; onClose: () => void; onTogglePin: (id: string) => void;
   wear: (p: MirrorPieceRef) => Promise<void>; takeOff: (p: MirrorPieceRef) => Promise<void>; unlist: (p: MirrorPieceRef) => Promise<void>;
   showInRoom?: (p: MirrorPieceRef) => void;
 }) {
@@ -30,7 +34,6 @@ export function MirrorPartSheet({ part, data, pinned, busy, onClose, onTogglePin
   const label = t(part.label);
   const worn = part.slots.flatMap((s) => asList(data.slots[s]));
   const wornIds = new Set(Object.values(data.slots).flatMap((v) => asList(v)).map((p) => p.id));
-  const rack = (data.rack ?? []).filter((r) => part.slots.includes(r.slot ?? "") && !wornIds.has(r.id));
   const [pick, setPick] = useState<Pick | null>(null);
   const [pickError, setPickError] = useState<unknown>(null);
   const [sug, setSug] = useState<{ alternatives: MirrorPieceRef[]; message?: string | null; explanation?: string | null; empty?: { message: string; href?: string | null } } | null>(null);
@@ -93,17 +96,23 @@ export function MirrorPartSheet({ part, data, pinned, busy, onClose, onTogglePin
           </section>
         )}
         {worn.length === 0 && <p className="type-body text-muted">{miss?.message ?? t("mirror.sheet.nada_vestido")}</p>}
-        {rack.length > 0 && (
+        {hand.length > 0 && (
           <section aria-labelledby="ms-rack">
-            <h3 id="ms-rack" className="mirror-section-h">{t("mirror.sheet.na_lista")}</h3>
-            <div className="mirror-pick-grid">{rack.map((p) => tile(p, p.addressLabel))}</div>
+            <h3 id="ms-rack" className="mirror-section-h">{t("room.mirror.hands")}</h3>
+            <div className="mirror-pick-grid" data-testid="mirror-hands-picker">{hand.map((p) => (
+              <div key={p.id} className="mirror-pick-hold">
+                {tile(p, p.listed ? p.addressLabel : t("room.mirror.in_hand"))}
+                {p.listed && <button type="button" className="mirror-pick-unlist" disabled={busy !== null} onClick={() => void unlist(p)}
+                  aria-label={t("room.mirror.remover_da_lista", { name: p.name })}>{t("room.mirror.remover")}</button>}
+              </div>
+            ))}</div>
           </section>
         )}
         <section aria-labelledby="ms-wardrobe">
           <h3 id="ms-wardrobe" className="mirror-section-h">{t("mirror.do_guarda_roupa")}</h3>
           {pickError ? <p className="type-body text-muted" role="status">{pickError instanceof Error ? pickError.message : t("common.errorTitle")}</p>
             : !pick ? <Skeleton className="h-24" />
-            : pick.pieces.length ? <div className="mirror-pick-grid" data-testid="mirror-wardrobe-picker">{pick.pieces.map((p) => tile(p, p.inMirror || wornIds.has(p.id) ? t("mirror.ja_no_espelho") : rack.some((r) => r.id === p.id) ? t("mirror.sheet.na_lista") : p.addressLabel, p.inMirror || wornIds.has(p.id)))}</div>
+            : pick.pieces.length ? <div className="mirror-pick-grid" data-testid="mirror-wardrobe-picker">{pick.pieces.map((p) => tile(p, p.inMirror || wornIds.has(p.id) ? t("mirror.ja_no_espelho") : hand.some((r) => r.id === p.id) ? t("mirror.sheet.na_lista") : p.addressLabel, p.inMirror || wornIds.has(p.id)))}</div>
             : <p className="type-body text-muted">{pick.message ?? t("mirror.sheet.guarda_roupa_vazio")} <Link href={pick.href ?? "/pieces/new"} className="underline">{t("mirror.adicionar_peca")}</Link></p>}
         </section>
         <section aria-labelledby="ms-sug">

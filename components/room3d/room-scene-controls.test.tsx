@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 /** Acessibilidade 3D: o direcional segura as mesmas teclas do motor enquanto o botão fica apertado; girar manda o comando ao canvas. */
 import { afterEach, describe, expect, it, vi } from "vitest";
+import * as THREE from "three";
 import { act, cleanup, fireEvent, renderApp, screen } from "@/test-utils/render";
 import { ROOM_TURN_EVENT, ROOM_ZOOM_EVENT, RoomInteraction } from "@/lib/room3d/interaction";
 import RoomSceneControls from "./room-scene-controls";
@@ -40,6 +41,12 @@ describe("controles da cena 3D (botões de acessibilidade)", () => {
     fireEvent.keyUp(right, { key: "Enter" }); expect(engine.keys.has("ArrowRight")).toBe(false);
     fireEvent.keyDown(right, { key: " " }); expect(engine.keys.has("ArrowRight")).toBe(true);
     fireEvent.blur(right); expect(engine.keys.has("ArrowRight")).toBe(false); expect(right.getAttribute("aria-pressed")).toBe("false");
+  });
+  it("apertar o direcional durante uma caminhada até o espelho cancela a caminhada (a pessoa assume)", () => {
+    const { engine } = setup(); const done = vi.fn();
+    engine.walkTo(new THREE.Vector3(2, 0, 1.8), done); expect(engine.goal).not.toBeNull();
+    fireEvent.pointerDown(screen.getByRole("button", { name: "Andar para a direita" }), { pointerType: "touch" });
+    expect(engine.goal).toBeNull(); expect(done).toHaveBeenCalledWith("cancelled");
   });
   it("o motor soltando tudo (janela perdeu o foco) devolve o botão ao estado solto", () => {
     const { engine } = setup();
