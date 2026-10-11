@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { ApiError, api } from "@/lib/api/client";
+import { useVisibleRefresh } from "@/lib/hooks/use-visible-refresh";
 import { useApi } from "@/lib/hooks/use-api";
 import type { Store } from "@/lib/tryon/fitting-room-model";
 import { catalogApi, enoughToSearch, type CatalogProduct, type CatalogSummary, type CatalogVariant, type DesignTraits, type DiscoverResponse, type MatchReason, type SearchResponse } from "@/lib/api/catalog";
@@ -66,7 +67,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   const [brandRef, setBrandRef] = useState<CatalogBrand | null>(null);
   // as marcas do catálogo em grade (a mesma vitrine do provador): escolher é um toque, sem digitar; o campo de texto
   // filtra a grade e continua aceitando uma marca que não está nela
-  const stores = useApi<{ stores: Store[] }>((signal) => (brandGrid ? api.get("/api/catalog/stores", { signal }) : Promise.resolve({ stores: [] })), [brandGrid]);
+  const stores = useApi<{ stores: Store[] }>((signal) => (brandGrid ? api.get("/api/catalog/stores", { signal }) : Promise.resolve({ stores: [] })), [brandGrid], { refreshInterval: brandGrid ? 30_000 : undefined });
   const storeList = brandGrid ? stores.data?.stores ?? [] : [];
   const typed = brand.trim().toLowerCase();
   const storesShown = typed && !storeList.some((s) => s.name === brand) ? storeList.filter((s) => s.name.toLowerCase().includes(typed)) : storeList;
@@ -86,7 +87,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   const [showAll, setShowAll] = useState(false);
   // "Ver todas" depois de uma busca com texto: o acervo inteiro com aquelas palavras, não só as mais parecidas
   const [allForText, setAllForText] = useState(false);
-  const summary = useApi<CatalogSummary>((signal) => catalogApi.summary(signal).catch(() => ({ products: 0, brands: 0 })), []);
+  const summary = useApi<CatalogSummary>((signal) => catalogApi.summary(signal).catch(() => ({ products: 0, brands: 0 })), [], { refreshInterval: 30_000 });
   const [ranWith, setRanWith] = useState<{ category?: string; subcategory?: string; brand?: string; q?: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -147,6 +148,31 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
     if (a?.hasMore) loadRef.current(seq.current, a.page + 1);
   }, []);
 
+  // Re-fetch the loaded window atomically: imports can shift page boundaries.
+  // Keep filters, pagination and variant choices while also picking up reframed photos.
+  useVisibleRefresh(async (signal) => {
+    if (loading || acervoLoading || discover.busy || discover.result) return;
+    const n = seq.current;
+    if (browsing && acervo) {
+      const pages = [];
+      for (let page = 0; page <= acervo.page; page++) {
+        const r = await catalogApi.browse({ brand: params.brand,
+          brandId: brandRef && brandRef.name === params.brand ? brandRef.id : undefined,
+          category: params.category, subcategory: params.subcategory,
+          q: allForText ? params.q : undefined, page, size: 48 }, signal);
+        pages.push(r);
+        if (!r.hasMore) break;
+      }
+      if (signal.aborted || n !== seq.current) return;
+      const last = pages[pages.length - 1];
+      setAcervo({ items: pages.reduce<CatalogProduct[]>((items, page) => mergeById(items, page.items), []),
+        total: last.total, page: last.page, hasMore: last.hasMore, brandKnown: last.brandKnown });
+    } else if (enough && !browsing) {
+      const result = await catalogApi.search({ ...params, limit: 24 }, signal);
+      if (!signal.aborted && n === seq.current) setRes(result);
+    }
+  }, enough && !!(acervo || res));
+
   // sugestões de modelo enquanto digita (com marca ou tipo já escolhidos)
   useEffect(() => {
     if (query.trim().length < 2 || (!brand.trim() && !subcategory)) { setSuggestions([]); return; }
@@ -180,7 +206,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   const paginationKey = JSON.stringify([params.category, params.subcategory, params.brand, params.q, params.color, gender]);
   useEffect(() => {
     if (resultsLayout === "matrix") setSelectedVariants({});
-  }, [resultsLayout, paginationKey, res, discover.result]);
+  }, [resultsLayout, paginationKey, discover.result]);
   const colors = Array.from(new Set(shown.flatMap((p) => [p.color, ...(p.variants ?? []).map((v) => v.color)]).filter((c): c is string => !!c)));
   const genders = Array.from(new Set(shown.map((p) => p.gender).filter((g): g is string => !!g)));
   const canSearchOfficial = !!res?.canSearchOfficial && !discover.busy && !discover.result;

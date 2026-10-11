@@ -116,6 +116,16 @@ describe("matriz do catálogo do provador", () => {
     expect((next() as HTMLButtonElement).disabled).toBe(true);
   });
 
+  it("mantém a página quando uma importação muda o primeiro produto", () => {
+    viewport(400);
+    loggedAs();
+    const rendered = renderApp(<CatalogResultsGrid products={products} resetKey="Nike" renderProduct={renderProduct} />);
+    fireEvent.click(next());
+    rendered.rerender(<CatalogResultsGrid products={[{ ...products[0], id: "new", productName: "Novo" }, ...products]} resetKey="Nike" renderProduct={renderProduct} />);
+    expect(within(list()).getByText("Produto 4")).toBeTruthy();
+    expect(within(list()).queryByText("Novo")).toBeNull();
+  });
+
   it("reinicia a página ao mudar o contexto e limita o índice quando a lista diminui", () => {
     viewport(400);
     loggedAs();
