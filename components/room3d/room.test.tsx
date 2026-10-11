@@ -15,10 +15,11 @@ vi.mock("@react-three/drei", async (importOriginal) => ({ ...(await importOrigin
 
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { frames, meshes, mount3d } from "@/test-utils/three";
+import { frames, meshes, mount3d, ReactThreeTestRenderer } from "@/test-utils/three";
 import { cleanup } from "@/test-utils/render";
 import RoomScene, { LEVELS, kelvinColor, moduleAnchor, moduleFacing, shownHits, type RoomData3D, type RoomPiece3D } from "./room-scene";
 import { ROOM, W2 } from "@/lib/room3d/room-bounds";
+import { ROOM_ZOOM_EVENT } from "@/lib/room3d/interaction";
 import WardrobePreview from "./wardrobe-preview";
 import PieceModelViewer from "./piece-model-viewer";
 import {
@@ -124,6 +125,72 @@ describe("quarto 3D — cena", () => {
       expect(props(id).visible).toBe(true); restore(); expect(props(id).visible).toBe(false);
       await r.unmount();
     }
+  });
+
+  it("câmera atrás da parede norte: os objetos dela somem, mas o sol da janela continua iluminando o quarto", async () => {
+    const at = (p: [number, number, number]) => function Camera() { const { camera } = useThree(); useLayoutEffect(() => { camera.position.set(...p); camera.lookAt(0, 1.2, 0); camera.updateMatrixWorld(); }, [camera]); return null; };
+    const Camera = at([0.5, 1.6, -6]);
+    const r = await mount3d(<><RoomScene data={{ ...room("LOFT"), camera: undefined, ambient: { period: "afternoon" } }} open={new Set()} onToggle={vi.fn()} highlight={null} focusModule={null} onPick={vi.fn()} /><Camera /></>);
+    await frames(r, 4);
+    expect(r.scene.find((n) => n.instance.name === "wall-props-north").instance.visible).toBe(false);
+    const spots = r.scene.findAll((n) => n.type === "SpotLight").map((n) => n.instance);
+    expect(spots).toHaveLength(1);
+    const shownUp = (o: THREE.Object3D | null): boolean => { for (let x = o; x; x = x.parent) if (!x.visible) return false; return true; };
+    expect(shownUp(spots[0])).toBe(true);
+    await r.unmount();
+  });
+
+  it("órbita dentro da carcaça do 2º guarda-roupa: o móvel some (sem ser desenhado por dentro) e volta quando a câmera sai", async () => {
+    let cam!: THREE.Camera;
+    function Camera() { const { camera } = useThree(); cam = camera; useLayoutEffect(() => { camera.position.set(-2.94, 2.0, 3.44); camera.lookAt(0, 1.2, 0); camera.updateMatrixWorld(); }, [camera]); return null; }
+    const r = await mount3d(<><RoomScene data={{ ...room("LOFT"), camera: undefined }} open={new Set()} onToggle={vi.fn()} highlight={null} focusModule={null} onPick={vi.fn()} /><Camera /></>);
+    await frames(r, 1);
+    const w2 = r.scene.find((n) => n.instance.name === "guarda-roupa-2").instance;
+    expect(w2.visible).toBe(false);
+    cam.position.set(-1.5, 2.2, 4.2);
+    await frames(r, 2);
+    expect(w2.visible).toBe(true);
+    await r.unmount();
+  });
+
+  describe("enquadramento de um módulo (Mostrar no quarto, abrir porta) na órbita", () => {
+    type Orbit = { target: THREE.Vector3; minDistance: number; maxDistance: number; dispatchEvent: (e: { type: "start" }) => void };
+    const setup = async () => {
+      const three = {} as { camera: THREE.Camera; canvas: HTMLCanvasElement; controls: Orbit };
+      function Probe() { const s = useThree(); three.camera = s.camera; three.canvas = s.gl.domElement; three.controls = s.controls as unknown as Orbit; return null; }
+      const r = await mount3d(<><RoomScene data={{ ...room("LOFT"), camera: undefined }} open={new Set()} onToggle={vi.fn()} highlight={null} focusModule="door:1" onPick={vi.fn()} /><Probe /></>);
+      const run = (n: number) => ReactThreeTestRenderer.act(async () => { await r.advanceFrames(n, 0.05); });
+      return { r, three, run, dist: () => three.camera.position.distanceTo(three.controls.target) };
+    };
+    it("para no limite de aproximação da órbita (zoom [0,8; 1,6]) e o Afastar não é desfeito", async () => {
+      const { r, three, run, dist } = await setup();
+      await run(200);
+      const min = 5.3 / 1.6;
+      expect(three.controls.minDistance).toBeCloseTo(min);
+      expect(Math.abs(dist() - min)).toBeLessThan(0.011);                                    // 3,0 m ficaria abaixo do limite
+      three.canvas.dispatchEvent(new CustomEvent(ROOM_ZOOM_EVENT, { detail: -1 }));         // Afastar (botão da interface)
+      const zoomed = dist();
+      expect(zoomed).toBeGreaterThan(min * 1.17);
+      await run(60);
+      expect(dist()).toBeCloseTo(zoomed, 2);
+      await r.unmount();
+    });
+    it("mexer na câmera durante o enquadramento (arrastar, roda, pinça ou os botões) devolve o controle na hora", async () => {
+      const gestures: ((t: { canvas: HTMLCanvasElement; controls: Orbit }) => void)[] = [
+        (t) => t.controls.dispatchEvent({ type: "start" }),                                  // OrbitControls: começo do gesto
+        (t) => t.canvas.dispatchEvent(new CustomEvent(ROOM_ZOOM_EVENT, { detail: -1 })),     // botão Afastar
+      ];
+      for (const gesture of gestures) {
+        const { r, three, run, dist } = await setup();
+        await run(4);
+        gesture(three);
+        const before = dist(), target = three.controls.target.clone();
+        await run(60);
+        expect(dist()).toBeCloseTo(before, 2);
+        expect(three.controls.target.distanceTo(target)).toBeLessThan(1e-3);
+        await r.unmount();
+      }
+    });
   });
 
   it("objetos escondidos (parede atrás da câmera) não recebem clique: o filtro dos eventos só deixa os visíveis", () => {

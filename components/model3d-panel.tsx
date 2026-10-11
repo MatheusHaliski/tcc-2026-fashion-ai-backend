@@ -24,14 +24,21 @@ const running = (s?: string | null) => s === "QUEUED" || s === "PROCESSING";
 /**
  * RF16 — estado do modelo 3D da peça, vindo do servidor (sobrevive a recarregar a página) e consultado a cada 2,5 s
  * enquanto o job anda (CA01). Só o dono consulta: para quem visita, basta o {@code model3dUrl} da peça.
+ * O estado é da peça que o pediu: com outro `pieceId` (a mesma linha do provador com outra peça), o hook volta a "sem
+ * resposta" até a nova chegar, descarta a resposta atrasada da peça anterior e não avisa "pronto" pela anterior.
  */
 export function useModel3d(pieceId: string, { enabled, onCompleted }: { enabled: boolean; onCompleted?: (s: Model3dStatus) => void }) {
   const { t } = useI18n(); const toast = useToast();
-  const [st, setSt] = useState<Model3dStatus | null>(null); const [busy, setBusy] = useState(false);
-  const prev = useRef<string | null | undefined>(undefined);
+  const [got, setGot] = useState<{ id: string; st: Model3dStatus } | null>(null); const [busy, setBusy] = useState(false);
+  const st = got && got.id === pieceId ? got.st : null;
+  const current = useRef(pieceId);
+  useEffect(() => { current.current = pieceId; }, [pieceId]);
+  const prev = useRef<{ id: string; status?: string | null }>({ id: pieceId });
+  /** guarda a resposta só se ainda for da peça atual */
+  const accept = useCallback((id: string, r: Model3dStatus) => { if (id !== current.current) return false; setGot({ id, st: r }); return true; }, []);
   const load = useCallback(async () => {
-    try { setSt(await api.get<Model3dStatus>(`/api/pieces/${pieceId}/model3d`)); } catch { /* sem permissão ou fora do ar: o controle some */ }
-  }, [pieceId]);
+    try { accept(pieceId, await api.get<Model3dStatus>(`/api/pieces/${pieceId}/model3d`)); } catch { /* sem permissão ou fora do ar: o controle some */ }
+  }, [pieceId, accept]);
   useEffect(() => { if (enabled) load(); }, [enabled, load]);
   useEffect(() => {
     if (!enabled || !running(st?.status)) return;
@@ -39,19 +46,21 @@ export function useModel3d(pieceId: string, { enabled, onCompleted }: { enabled:
     return () => clearInterval(h);
   }, [enabled, st?.status, load]);
   useEffect(() => {
-    const s = st?.status;
-    if (s === "COMPLETED" && running(prev.current)) { toast.success(t("model3dPanel.modelo_3d_pronto")); onCompleted?.(st!); }
-    if (s !== undefined) prev.current = s;
-  }, [st, onCompleted, toast, t]);
+    const s = st?.status, before = prev.current.id === pieceId ? prev.current.status : undefined;
+    if (s === "COMPLETED" && running(before)) { toast.success(t("model3dPanel.modelo_3d_pronto")); onCompleted?.(st!); }
+    if (s !== undefined) prev.current = { id: pieceId, status: s };
+  }, [st, pieceId, onCompleted, toast, t]);
   async function request() {
+    const id = pieceId;
     setBusy(true);
-    try { const r = await api.post<Model3dStatus>(`/api/pieces/${pieceId}/model3d`); setSt(r); prev.current = r.status; if (r.freeRetry) toast.info(t("model3dPanel.reprocessamento_gratis_nao_conta_na")); }
+    try { const r = await api.post<Model3dStatus>(`/api/pieces/${id}/model3d`); if (accept(id, r)) prev.current = { id, status: r.status }; if (r.freeRetry) toast.info(t("model3dPanel.reprocessamento_gratis_nao_conta_na")); }
     catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
   /** Pede o 3D sem aviso (fila automática do provador): devolve o erro (sem foto, cota, recurso desligado) em vez de mostrar. */
   async function queue(): Promise<Error | null> {
+    const id = pieceId;
     setBusy(true);
-    try { const r = await api.post<Model3dStatus>(`/api/pieces/${pieceId}/model3d`); setSt(r); prev.current = r.status; return null; }
+    try { const r = await api.post<Model3dStatus>(`/api/pieces/${id}/model3d`); if (accept(id, r)) prev.current = { id, status: r.status }; return null; }
     catch (e) { return e instanceof Error ? e : new Error(String(e)); } finally { setBusy(false); }
   }
   return { st, busy, request, queue };

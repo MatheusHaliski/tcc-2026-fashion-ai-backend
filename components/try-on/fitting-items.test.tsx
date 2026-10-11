@@ -18,7 +18,14 @@ const catalog: FittingItem = { key: "c:p1", source: "catalog", slot: "upper_piec
 const wardrobe: FittingItem = { key: "w:w1", source: "wardrobe", slot: "lower_piece", wear: "BOTTOM", name: "Calça chevron", brand: null, category: "lower_piece", subcategory: "tailored_pants", imageUrl: "/media/c.png", pieceId: "w1", addedAt: 2 };
 const base = () => ({ items: [catalog, wardrobe], products: {}, owned: {}, busyOwn: null, status: "", slotNames: NAMES, onVariantChange: vi.fn(), onOwn: vi.fn(), onRemove: vi.fn() });
 const row = (slot: string) => within(screen.getByText(slot, { selector: ".piece-row-kicker" }).closest("li")!);
-const posts = (calls: { method: string; path: string }[], path: string) => calls.filter((c) => c.method === "POST" && c.path === path).length;
+const count = (method: string) => (calls: { method: string; path: string }[], path: string) => calls.filter((c) => c.method === method && c.path === path).length;
+const posts = count("POST"), gets = count("GET");
+/** dá tempo para o que viria depois de uma resposta (o efeito que pediria o 3D e o POST dele) */
+const flush = () => act(async () => { await new Promise((r) => setTimeout(r, 30)); });
+const refused = () => new Response(JSON.stringify({ status: 422, code: "SEM_FOTO", message: "A peça precisa de uma foto" }), { status: 422, headers: { "content-type": "application/json" } });
+/** outra peça do guarda-roupa e uma da loja para o mesmo lugar (parte de baixo) */
+const skirt: FittingItem = { ...wardrobe, key: "w:w2", name: "Saia midi", pieceId: "w2", addedAt: 3 };
+const storePants: FittingItem = { ...catalog, key: "c:p2", slot: "lower_piece", wear: "BOTTOM", name: "Calça wide leg", category: "lower_piece", subcategory: "wide_leg_pants", productId: "p2", addedAt: 4 };
 
 describe("FittingItems — card compacto de peça", () => {
   it("anatomia: miniatura 56, rótulo, uma linha de estado, nome como link, até 3 ações + menu ⋯ e sem legenda miúda", async () => {
@@ -51,13 +58,14 @@ describe("FittingItems — card compacto de peça", () => {
     expect(screen.queryByText(/Prévia 2D disponível|ainda não gerado/)).toBeNull();
   });
 
-  it("peça do guarda-roupa sem 3D entra na fila sozinha, uma vez só; a barra mostra a etapa, nunca a porcentagem de referência", async () => {
+  it("peça do guarda-roupa sem 3D entra na fila sozinha, uma vez só por visita; a barra mostra a etapa, nunca a porcentagem de referência", async () => {
+    // o GET segue "sem pedido" depois do POST: só a lista desta visita impede a linha remontada de pedir de novo
     let status: Record<string, unknown> = { status: null, featureEnabled: true };
     const { calls } = loggedAs(undefined, {
       "GET /api/pieces/w1/model3d": () => status,
-      "POST /api/pieces/w1/model3d": () => { status = { status: "QUEUED", progress: 5, progressReal: false }; return status; },
+      "POST /api/pieces/w1/model3d": { status: "QUEUED", progress: 5, progressReal: false },
     });
-    const { unmount } = renderApp(<FittingItems {...base()} items={[wardrobe]} />);
+    const first = renderApp(<FittingItems {...base()} items={[wardrobe]} />);
     const bottom = row("Parte de baixo");
     await waitFor(() => expect(bottom.getByText("Na fila do 3D · 1 de 4")).toBeTruthy());
     expect(posts(calls, "/api/pieces/w1/model3d")).toBe(1);
@@ -65,13 +73,82 @@ describe("FittingItems — card compacto de peça", () => {
     expect(bar.getAttribute("aria-valuenow")).toBe("1");
     expect(bar.getAttribute("aria-valuemax")).toBe("4");
     expect(screen.queryByText(/5%/)).toBeNull();
-    unmount();
-    // a linha volta (troca de aba, outra visita na mesma sessão): não pede de novo
+    first.unmount();
+    // a linha volta (troca de aba, outra visita na mesma sessão) com o servidor ainda sem pedido: não pede de novo
+    const second = renderApp(<FittingItems {...base()} items={[wardrobe]} />);
+    await waitFor(() => expect(gets(calls, "/api/pieces/w1/model3d")).toBe(2));
+    await flush();
+    expect(posts(calls, "/api/pieces/w1/model3d")).toBe(1);
+    expect(row("Parte de baixo").getByText("3D não iniciado · 0 de 4")).toBeTruthy();
+    second.unmount();
+    // o job andou: a barra mostra a etapa, sem a porcentagem de referência
     status = { status: "PROCESSING", progress: 15, progressReal: false, stages: [{ name: "FOTO", provider: "local" }] };
     renderApp(<FittingItems {...base()} items={[wardrobe]} />);
     await waitFor(() => expect(row("Parte de baixo").getByText("Gerando o 3D · 2 de 4")).toBeTruthy());
     expect(screen.queryByText(/15%/)).toBeNull();
     expect(posts(calls, "/api/pieces/w1/model3d")).toBe(1);
+  });
+
+  it("pedido recusado não fica guardado na visita: resolvida a causa (foto adicionada), a linha que volta tenta de novo", async () => {
+    let photo = false;
+    const { calls } = loggedAs(undefined, {
+      "GET /api/pieces/w1/model3d": { status: null, featureEnabled: true },
+      "POST /api/pieces/w1/model3d": () => (photo ? { status: "QUEUED" } : refused()),
+    });
+    const first = renderApp(<FittingItems {...base()} items={[wardrobe]} />);
+    await waitFor(() => expect(row("Parte de baixo").getByText("3D pausado")).toBeTruthy());
+    first.unmount();
+    photo = true;                                                                           // foi à peça, pôs a foto e voltou
+    renderApp(<FittingItems {...base()} items={[wardrobe]} />);
+    await waitFor(() => expect(row("Parte de baixo").getByText("Na fila do 3D · 1 de 4")).toBeTruthy());
+    expect(posts(calls, "/api/pieces/w1/model3d")).toBe(2);
+    expect(screen.queryByText("3D pausado")).toBeNull();
+  });
+
+  it("trocar a peça do lugar não pede o 3D da nova com o estado da anterior (nem gera de novo um 3D pronto)", async () => {
+    const { calls } = loggedAs(undefined, {
+      "GET /api/pieces/w1/model3d": { status: null, featureEnabled: true },
+      "POST /api/pieces/w1/model3d": refused,
+      "GET /api/pieces/w2/model3d": { status: "COMPLETED", modelUrl: "/media/w2.glb" },
+      "POST /api/pieces/w2/model3d": { status: "QUEUED" },
+    });
+    const props = base();
+    const { rerender } = renderApp(<FittingItems {...props} items={[wardrobe]} />);
+    await waitFor(() => expect(row("Parte de baixo").getByText("3D pausado")).toBeTruthy());
+    rerender(<FittingItems {...props} items={[skirt]} />);
+    await waitFor(() => expect(row("Parte de baixo").getByText("Modelo 3D pronto")).toBeTruthy());
+    await flush();
+    expect(posts(calls, "/api/pieces/w2/model3d")).toBe(0);
+    expect(row("Parte de baixo").getByText("Modelo 3D pronto")).toBeTruthy();
+  });
+
+  it("a pausa e o tentar de novo da peça anterior não passam para a peça nova do mesmo lugar", async () => {
+    loggedAs(undefined, { "GET /api/pieces/w1/model3d": { status: null, featureEnabled: true }, "POST /api/pieces/w1/model3d": refused });
+    const props = base();
+    const { rerender } = renderApp(<FittingItems {...props} items={[wardrobe]} />);
+    await waitFor(() => expect(row("Parte de baixo").getByText("3D pausado")).toBeTruthy());
+    rerender(<FittingItems {...props} items={[storePants]} />);
+    const bottom = row("Parte de baixo");
+    expect(bottom.getByText("3D não iniciado · 0 de 4")).toBeTruthy();
+    expect(bottom.queryByText("3D pausado")).toBeNull();
+    expect(bottom.getByRole("progressbar").getAttribute("aria-valuetext")).toBe("3D não iniciado · 0 de 4");
+    fireEvent.click(bottom.getByRole("button", { name: "Mais ações · Calça wide leg" }));
+    await screen.findByRole("menuitem", { name: "Detalhes da prévia" });
+    expect(screen.queryByRole("menuitem", { name: "Tentar gerar o 3D de novo" })).toBeNull();
+    fireEvent.click(screen.getByRole("menuitem", { name: "Detalhes da prévia" }));
+    expect(await screen.findByText("3D não iniciado · 0 de 4", { selector: "p" })).toBeTruthy();
+    expect(screen.queryByText(/A peça precisa de uma foto/)).toBeNull();
+  });
+
+  it("o aviso de 3D pronto é da peça que estava na fila, não da que entrou no lugar dela", async () => {
+    loggedAs(undefined, { "GET /api/pieces/w1/model3d": { status: "QUEUED" }, "GET /api/pieces/w2/model3d": { status: "COMPLETED", modelUrl: "/media/w2.glb" } });
+    const props = base();
+    const { rerender } = renderApp(<FittingItems {...props} items={[wardrobe]} />);
+    await waitFor(() => expect(row("Parte de baixo").getByText("Na fila do 3D · 1 de 4")).toBeTruthy());
+    rerender(<FittingItems {...props} items={[skirt]} />);
+    await waitFor(() => expect(row("Parte de baixo").getByText("Modelo 3D pronto")).toBeTruthy());
+    await flush();
+    expect(document.querySelector(".toast-success")).toBeNull();
   });
 
   it("peça da loja: 0 de 4 e, no menu ⋯, Guardar a peça e gerar o 3D (guarda e pede o 3D da peça guardada)", async () => {
@@ -90,6 +167,36 @@ describe("FittingItems — card compacto de peça", () => {
     expect(row("Parte de cima").getByRole("link", { name: /No seu guarda-roupa/ }).getAttribute("href")).toBe("/pieces/w9");
   });
 
+  it("Guardar e gerar 3D que não guardou não deixa pedido pendente: o Já tenho depois só guarda a peça", async () => {
+    const { calls } = loggedAs(undefined, { "GET /api/pieces/w9/model3d": { status: null, featureEnabled: true }, "POST /api/pieces/w9/model3d": { status: "QUEUED" } });
+    const onOwn = vi.fn().mockResolvedValueOnce(false).mockResolvedValue(true);
+    const props = { ...base(), items: [catalog], onOwn };
+    const { rerender } = renderApp(<FittingItems {...props} />);
+    fireEvent.click(row("Parte de cima").getByRole("button", { name: "Mais ações · Blazer de alfaiataria" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Guardar a peça e gerar o 3D" }));
+    await flush();                                                                          // não guardou (erro da API)
+    fireEvent.click(row("Parte de cima").getByRole("button", { name: "Já tenho esta peça" }));
+    expect(onOwn).toHaveBeenCalledTimes(2);
+    rerender(<FittingItems {...props} owned={{ "c:p1": "w9" }} />);
+    await waitFor(() => expect(gets(calls, "/api/pieces/w9/model3d")).toBe(1));
+    await flush();
+    expect(posts(calls, "/api/pieces/w9/model3d")).toBe(0);
+    expect(row("Parte de cima").getByText("3D não iniciado · 0 de 4")).toBeTruthy();
+  });
+
+  it("Guardar e gerar 3D recusado (outra peça sendo guardada) não pede o 3D quando a peça aparecer guardada depois", async () => {
+    const { calls } = loggedAs(undefined, { "GET /api/pieces/w9/model3d": { status: null, featureEnabled: true }, "POST /api/pieces/w9/model3d": { status: "QUEUED" } });
+    const props = { ...base(), items: [catalog], onOwn: vi.fn().mockResolvedValue(false) };
+    const { rerender } = renderApp(<FittingItems {...props} />);
+    fireEvent.click(row("Parte de cima").getByRole("button", { name: "Mais ações · Blazer de alfaiataria" }));
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Guardar a peça e gerar o 3D" }));
+    await flush();
+    rerender(<FittingItems {...props} owned={{ "c:p1": "w9" }} />);
+    await waitFor(() => expect(gets(calls, "/api/pieces/w9/model3d")).toBe(1));
+    await flush();
+    expect(posts(calls, "/api/pieces/w9/model3d")).toBe(0);
+  });
+
   it("falhou: o vocabulário do detalhe da peça e Tentar de novo (grátis)", async () => {
     const { calls } = loggedAs(undefined, { "GET /api/pieces/w1/model3d": { status: "FAILED", canRetryFree: true }, "POST /api/pieces/w1/model3d": { status: "QUEUED" } });
     renderApp(<FittingItems {...base()} items={[wardrobe]} />);
@@ -103,7 +210,7 @@ describe("FittingItems — card compacto de peça", () => {
   it("pedido recusado (peça sem foto): 3D pausado, motivo no nome acessível e nos detalhes; o menu oferece tentar de novo", async () => {
     loggedAs(undefined, {
       "GET /api/pieces/w1/model3d": { status: null, featureEnabled: true },
-      "POST /api/pieces/w1/model3d": () => new Response(JSON.stringify({ status: 422, code: "SEM_FOTO", message: "A peça precisa de uma foto" }), { status: 422, headers: { "content-type": "application/json" } }),
+      "POST /api/pieces/w1/model3d": refused,
     });
     renderApp(<FittingItems {...base()} items={[wardrobe]} />);
     const bottom = row("Parte de baixo");

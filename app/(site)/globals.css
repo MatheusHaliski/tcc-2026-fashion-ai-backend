@@ -1123,7 +1123,7 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 .room3d-dpad .is-up { grid-area: 1 / 2; } .room3d-dpad .is-left { grid-area: 2 / 1; } .room3d-dpad .is-right { grid-area: 2 / 3; } .room3d-dpad .is-down { grid-area: 3 / 2; }
 .room3d-control { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 12px; background: rgba(24,20,17,.62); color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
 .room3d-control:hover { background: rgba(24,20,17,.8); }
-.room3d-control[aria-pressed="true"] { background: #1F7A76; }
+.room3d-control[data-pressed="true"] { background: #1F7A76; }
 .room3d-control:focus-visible { outline: 3px solid #fff; outline-offset: 1px; box-shadow: 0 0 0 6px #1F7A76; }
 .room3d-stage:has(.room3d-controls) .room3d-hint { left: 10px; transform: none; max-width: calc(100% - 180px); border-radius: 12px; text-align: left; }
 /* na prova o espelho ocupa a direita do quadro: botões menores */

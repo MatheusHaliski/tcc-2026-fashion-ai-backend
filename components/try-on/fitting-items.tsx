@@ -23,7 +23,8 @@ export interface FittingItemsProps {
   status: string;
   slotNames: Record<FittingSlot, string>;
   onVariantChange: (item: FittingItem, variant: CatalogVariant) => void;
-  onOwn: (item: FittingItem) => void;
+  /** guarda a peça da loja no guarda-roupa; `false` quando não guardou (erro, ou outra peça sendo guardada) */
+  onOwn: (item: FittingItem) => void | Promise<boolean | void>;
   onRemove: (slot: FittingSlot) => void;
   /** abre a prévia 2D no espelho (o mesmo avatar, de frente e parado) com o look atual */
   onPreview2d?: (item: FittingItem) => void;
@@ -58,8 +59,9 @@ export function FittingItems({
                 </>} />
             );
           }
+          // uma linha por peça (não por lugar): trocar a peça do lugar começa do zero o estado do 3D, a pausa e o pedido
           return (
-            <FittingSlotRow key={slot} item={item} slotName={slotNames[slot]} product={item.productId ? products[item.productId] : undefined} colors={colors}
+            <FittingSlotRow key={`${slot}|${item.key}`} item={item} slotName={slotNames[slot]} product={item.productId ? products[item.productId] : undefined} colors={colors}
               ownedId={owned[item.key]} busyOwn={busyOwn === item.key} coveredBy={slot === "lower_piece" && fullBody ? fullBody.name : null}
               onVariantChange={onVariantChange} onOwn={onOwn} onRemove={() => onRemove(slot)} onPreview2d={onPreview2d} />
           );
@@ -70,8 +72,12 @@ export function FittingItems({
   );
 }
 
-/** Pedidos automáticos do 3D nesta visita (peça → motivo da pausa, ou null): um por peça, mesmo se a linha remontar. */
-const AUTO_QUEUED = new Map<string, string | null>();
+/**
+ * Pedidos automáticos do 3D nesta visita: um por peça, mesmo se a linha remontar. Só fica o pedido aceito (ou em
+ * andamento): o recusado (sem foto, cota, recurso desligado) não gastou nada e sai daqui, para a próxima visita tentar
+ * de novo depois de a causa ser resolvida; o motivo da pausa fica só na linha.
+ */
+const AUTO_QUEUED = new Set<string>();
 /** só para testes */
 export function resetAutoQueue() { AUTO_QUEUED.clear(); }
 
@@ -80,30 +86,42 @@ export function resetAutoQueue() { AUTO_QUEUED.clear(); }
  * fica em 0 de 4 até ser guardada ("Guardar a peça e gerar o 3D" no menu ⋯). Falha ao pedir (sem foto, cota, recurso
  * desligado) vira "3D pausado", com o motivo acessível — sem aviso solto na tela.
  */
-function useFittingModel3d(item: FittingItem, ownedId: string | undefined, onOwn: (item: FittingItem) => void) {
+function useFittingModel3d(item: FittingItem, ownedId: string | undefined, onOwn: FittingItemsProps["onOwn"]) {
   const pieceId = item.pieceId ?? ownedId ?? "";
   const model = useModel3d(pieceId, { enabled: !!pieceId });
-  const [paused, setPaused] = useState<string | null>(() => (pieceId ? AUTO_QUEUED.get(pieceId) ?? null : null));
-  const wantAfterOwn = useRef(false);
-  const queue = async () => { if (!pieceId) return; const e = await model.queue(); const reason = e ? e.message : null; AUTO_QUEUED.set(pieceId, reason); setPaused(reason); };
+  const [paused, setPaused] = useState<string | null>(null);
+  /** "Guardar a peça e gerar o 3D" desta peça, esperando a peça guardada; "Já tenho" sozinho ou falha ao guardar limpam */
+  const wantAfterOwn = useRef<string | null>(null);
+  const autoTried = useRef<string | null>(null);
+  const queue = async () => {
+    if (!pieceId) return;
+    const e = await model.queue();
+    if (e) AUTO_QUEUED.delete(pieceId);
+    setPaused(e ? e.message : null);
+  };
   useEffect(() => {
     const st = model.st;
     if (!pieceId || !st || st.status != null || st.featureEnabled === false) return;
-    const auto = item.source === "wardrobe" && !AUTO_QUEUED.has(pieceId);
-    if (!auto && !wantAfterOwn.current) return;
-    wantAfterOwn.current = false;
-    AUTO_QUEUED.set(pieceId, null);
+    const auto = item.source === "wardrobe" && !AUTO_QUEUED.has(pieceId) && autoTried.current !== pieceId;
+    if (!auto && wantAfterOwn.current !== item.key) return;
+    wantAfterOwn.current = null; autoTried.current = pieceId;
+    AUTO_QUEUED.add(pieceId);
     void queue();
   }, [pieceId, model.st]); // eslint-disable-line react-hooks/exhaustive-deps
   // antes da primeira resposta, o estado que veio com a peça (sem piscar "0 de 4" numa peça que já tem 3D)
   const progress = model3dProgress(model.st ?? { status: item.model3dStatus, modelUrl: item.model3dUrl });
-  const saveAndGenerate = () => { wantAfterOwn.current = true; onOwn(item); };
-  return { pieceId, model, progress, paused: progress.phase === "none" ? paused : null, queue, saveAndGenerate };
+  const saveAndGenerate = async () => {
+    wantAfterOwn.current = item.key;
+    const saved = await onOwn(item);
+    if (saved === false && wantAfterOwn.current === item.key) wantAfterOwn.current = null;
+  };
+  const ownOnly = () => { wantAfterOwn.current = null; void onOwn(item); };
+  return { pieceId, model, progress, paused: progress.phase === "none" ? paused : null, queue, saveAndGenerate, ownOnly };
 }
 
 function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, coveredBy, onVariantChange, onOwn, onRemove, onPreview2d }: {
   item: FittingItem; slotName: string; product?: CatalogProduct; colors?: Record<string, string>; ownedId?: string; busyOwn: boolean; coveredBy: string | null;
-  onVariantChange: (item: FittingItem, variant: CatalogVariant) => void; onOwn: (item: FittingItem) => void; onRemove: () => void; onPreview2d?: (item: FittingItem) => void;
+  onVariantChange: (item: FittingItem, variant: CatalogVariant) => void; onOwn: FittingItemsProps["onOwn"]; onRemove: () => void; onPreview2d?: (item: FittingItem) => void;
 }) {
   const { t } = useI18n();
   const garment = useGarmentStatus();   // estado das fotos no 3D (publicado pela cena)
@@ -121,7 +139,7 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
     </span>
   ) : null;
   const menu: MenuItem[] = [
-    { label: t("tryOn.guardar_e_gerar_3d"), onSelect: m3d.saveAndGenerate, hidden: !catalog || !!ownedId || busyOwn },
+    { label: t("tryOn.guardar_e_gerar_3d"), onSelect: () => void m3d.saveAndGenerate(), hidden: !catalog || !!ownedId || busyOwn },
     { label: t("tryOn.gerar_3d"), onSelect: () => void m3d.queue(), hidden: !m3d.pieceId || m3d.progress.phase !== "none" || !!m3d.paused || item.source === "wardrobe" },
     { label: t("tryOn.m3d.tentar_de_novo"), onSelect: () => void m3d.queue(), hidden: !m3d.paused },
     { label: t("tryOn.levar_ao_espelho"), href: mirrorHref({ piece: m3d.pieceId }), hidden: !m3d.pieceId },
@@ -149,7 +167,7 @@ function FittingSlotRow({ item, slotName, product, colors, ownedId, busyOwn, cov
           )}
           {ownedId
             ? <Link href={`/pieces/${ownedId}`} className="btn btn-sm"><FaiIcon id="NAV-02" size={20} className="ico-text" decorative />{t("tryOn.ja_no_guarda_roupa")}</Link>
-            : <Button size="sm" disabled={busyOwn} onClick={() => onOwn(item)}><FaiIcon id="ACT-06" size={20} className="ico-text" decorative />{t(busyOwn ? "tryOn.salvando" : "tryOn.ja_tenho")}</Button>}
+            : <Button size="sm" disabled={busyOwn} onClick={m3d.ownOnly}><FaiIcon id="ACT-06" size={20} className="ico-text" decorative />{t(busyOwn ? "tryOn.salvando" : "tryOn.ja_tenho")}</Button>}
         </> : null}
         menu={menu} menuLabel={t("tryOn.mais_acoes", { name: item.name })}
         onRemove={onRemove} removeAria={t("tryOn.remover_de", { name: item.name, slot: slotName })} />

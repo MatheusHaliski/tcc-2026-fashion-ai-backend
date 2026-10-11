@@ -16,21 +16,37 @@ const ICON: Record<string, string> = {
 };
 const Icon = ({ name }: { name: string }) => <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d={ICON[name]} /></svg>;
 
-/** Botão de segurar: aperta a tecla do motor ao pressionar (ponteiro, Enter ou Espaço) e solta ao largar, sair ou perder o foco. */
+/** Duração do passo curto de uma ativação sem ponteiro nem tecla (ms): o bastante para alguns quadros de caminhada. */
+export const TAP_STEP_MS = 300;
+
+/**
+ * Botão de segurar: aperta a tecla do motor ao pressionar (ponteiro, Enter ou Espaço) e solta ao largar, sair ou perder
+ * o foco. Leitor de tela (modo navegação, VO+Espaço, toque duplo) e controle por voz ("clicar em Andar para frente")
+ * ativam o botão com um clique sintetizado, sem pointerdown nem keydown: esse clique (detail 0) vira um passo curto.
+ * Sem aria-pressed: não é um botão de liga/desliga; o "apertado" é só visual (data-pressed).
+ */
 function HoldButton({ engine, code, label }: { engine: RoomInteraction; code: string; label: string }) {
-  const held = useRef(false), [pressed, setPressed] = useState(false);
-  const press = () => { if (held.current) return; held.current = true; engine.keyDown(code); setPressed(true); };
-  const release = () => { if (!held.current) return; held.current = false; engine.keyUp(code); setPressed(false); };
+  const held = useRef(false), step = useRef<ReturnType<typeof setTimeout> | null>(null), keyUpAt = useRef(-Infinity), [pressed, setPressed] = useState(false);
+  const stopStep = () => { if (step.current) { clearTimeout(step.current); step.current = null; } };
+  const press = () => { stopStep(); if (held.current) return; held.current = true; engine.keyDown(code); setPressed(true); };
+  const release = () => { stopStep(); if (!held.current) return; held.current = false; engine.keyUp(code); setPressed(false); };
+  const tap = () => {
+    if (held.current && !step.current) return;                       // já segurado pelo ponteiro ou pelo teclado
+    press();
+    step.current = setTimeout(() => { step.current = null; release(); }, TAP_STEP_MS);
+  };
   // o motor solta tudo quando a janela perde o foco (engine.blur): o botão volta junto
   useEffect(() => { const sync = () => { if (held.current && !engine.keys.has(code)) { held.current = false; setPressed(false); } }; engine.listeners.add(sync); return () => { engine.listeners.delete(sync); release(); }; }, [engine, code]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
-    <button type="button" className={`room3d-control is-${code.slice(5).toLowerCase()}`} aria-label={label} aria-pressed={pressed}
+    <button type="button" className={`room3d-control is-${code.slice(5).toLowerCase()}`} aria-label={label} data-pressed={pressed}
       onPointerDown={(e) => { if (e.pointerType === "mouse" && e.button !== 0) return; press(); }}
       onPointerUp={release} onPointerLeave={release} onPointerCancel={release}
       // o foco fica onde estava (o canvas solta as teclas quando perde o foco)
       onMouseDown={(e) => e.preventDefault()} onContextMenu={(e) => e.preventDefault()}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); press(); } }}
-      onKeyUp={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); release(); } }}
+      onKeyUp={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); keyUpAt.current = performance.now(); release(); } }}
+      // clique do mouse/toque (detail ≥ 1) já passou pelo ponteiro; o que vem logo depois de soltar Espaço é o do teclado
+      onClick={(e) => { if (e.detail === 0 && performance.now() - keyUpAt.current > 150) tap(); }}
       onBlur={release}><Icon name={code} /></button>
   );
 }
