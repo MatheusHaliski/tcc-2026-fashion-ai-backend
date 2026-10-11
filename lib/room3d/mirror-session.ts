@@ -248,7 +248,7 @@ export function mirrorDistance(actor: THREE.Vector3, mirror: THREE.Vector3): num
  * girar a cena). Com `bounds` (as paredes do quarto), a câmera fica sempre dentro dele, a uma distância mínima do personagem,
  * e o olhar o acompanha (roomView em room-bounds.ts).
  */
-export function cameraFor(phase: MirrorPhase, actor: THREE.Vector3, mirror: THREE.Vector3, closetRight: number, view = 0, bounds?: RoomBounds): { position: THREE.Vector3; target: THREE.Vector3 } {
+export function cameraFor(phase: MirrorPhase, actor: THREE.Vector3, mirror: THREE.Vector3, closetRight: number, view = 0, bounds?: RoomBounds, prev?: { x: number; z: number }): { position: THREE.Vector3; target: THREE.Vector3 } {
   if (phase === "tryon" || phase === "approach") {
     const mid = new THREE.Vector3((actor.x + mirror.x) / 2, 1.05, (actor.z + mirror.z) / 2);
     const side = new THREE.Vector3(-MIRROR_NORMAL.z, 0, MIRROR_NORMAL.x); // paralelo ao vidro, para enquadrar os dois
@@ -256,7 +256,7 @@ export function cameraFor(phase: MirrorPhase, actor: THREE.Vector3, mirror: THRE
     return { position: bounds ? clampCamera(position, mid, bounds, 0.25) : position, target: mid };
   }
   const base = { position: new THREE.Vector3(1 + closetRight * 0.25, 2.65, 5.8), target: new THREE.Vector3(closetRight * 0.25, 1.1, 0.85) };
-  if (bounds) return roomView(base.position, base.target, actor, view, bounds);
+  if (bounds) return roomView(base.position, base.target, actor, view, bounds, prev);
   return view ? rotateView(base.position, base.target, view) : base;
 }
 

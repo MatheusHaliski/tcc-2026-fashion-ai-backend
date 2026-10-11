@@ -119,8 +119,9 @@ export function useFittingSession({ data, colors, searchParams, onStatus, onOwne
     commit(items.map((current) => current.key === item.key ? { ...next, addedAt: item.addedAt } : current));
   }
 
-  async function ownIt(item: FittingItem) {
-    if (!item.productId || busyOwn) return;
+  /** Guarda a peça da loja no guarda-roupa; devolve se guardou (a linha do provador só pede o 3D da peça guardada). */
+  async function ownIt(item: FittingItem): Promise<boolean> {
+    if (!item.productId || busyOwn) return false;
     setBusyOwn(item.key);
     try {
       const piece = await api.post<PieceView>("/api/pieces/from-catalog", {
@@ -129,8 +130,10 @@ export function useFittingSession({ data, colors, searchParams, onStatus, onOwne
       setOwned((current) => ({ ...current, [item.key]: piece.id }));
       toast.success(t("tryOn.adicionada_ao_guarda_roupa", { name: item.name }));
       onOwned();
+      return true;
     } catch (error) {
       toast.fromError(error);
+      return false;
     } finally {
       setBusyOwn(null);
     }

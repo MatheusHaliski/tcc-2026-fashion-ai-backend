@@ -8,12 +8,12 @@ import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { mediaUrl } from "@/lib/api/client";
 import {
   ClosetLights, Cobweb, CorkBoard, deg, DressForm, DustPuff, EmptyDrawerCharm, FaiBox, GoldDot, HangTag, KeyHook, Label3D, Lamp, LightSwitch,
-  pointer, RoomDoor, RoomWindow, sketchDraw, Sparkles, TailorTape, useCanvasTex, WallCalendar,
+  pointer, RoomDoor, RoomWindow, sketchDraw, Sparkles, TailorTape, useCanvasTex, WallCalendar, WindowLight,
 } from "@/components/room3d/room-props";
 import RoomAvatarController, { type RoomGameplay } from "./room-avatar-controller";
 import { MIRROR_COLLIDER, snapshotCrop } from "@/lib/room3d/mirror-session";
 import { ROOM_TURN_EVENT, ROOM_ZOOM_EVENT, RoomInteraction } from "@/lib/room3d/interaction";
-import { ROOM, toWall, W2, w2ToWorld, walkArea, wallById, wallOpacity, wallSide, type WallSpec } from "@/lib/room3d/room-bounds";
+import { dropPoint, insideW2, ROOM, toWall, W2, w2ToWorld, walkArea, wallById, wallOpacity, wallSide, type WallSpec } from "@/lib/room3d/room-bounds";
 import { useI18n } from "@/lib/i18n/i18n";
 
 /* RF27/RF32 — Meu Quarto 3D (React Three Fiber). Quarto de quatro paredes (lib/room3d/room-bounds.ts): móvel FAI Origem
@@ -212,7 +212,7 @@ function LoosePiece({ engine, p, ctx, drop }: { engine: RoomInteraction; p: Room
     const dropped = engine.dropped.get(p.id); if (!object.current || !dropped) { velocity.current = 0; return; }
     velocity.current += Math.min(dt, .05) * 9.8;
     dropped.y = Math.max(.035, dropped.y - velocity.current * Math.min(dt, .05));
-    dropped.x = THREE.MathUtils.clamp(dropped.x, drop.minX, drop.maxX); dropped.z = THREE.MathUtils.clamp(dropped.z, Math.max(.8, drop.minZ), drop.maxZ);   // cai dentro do quarto
+    dropPoint(dropped, drop);   // cai dentro do quarto, fora dos dois guarda-roupas
     object.current.position.copy(dropped); object.current.rotation.set(-Math.PI / 2, 0, 0);
   });
   return <group ref={object} name={`room-carried-${p.id}`} position={engine.dropped.get(p.id)?.toArray() ?? [0, 1, 1]}>
@@ -476,13 +476,24 @@ function IslandCard({ b, x }: { b: { title: string; coverImageUrl?: string | nul
  * 2º guarda-roupa, a oeste): a câmera também gira até ficar de frente para ele (`facing`, a normal da frente no chão).
  */
 function CameraRig({ focus, facing, home, homeDist, controls }: { focus: [number, number, number] | null; facing?: [number, number] | null; home: [number, number, number]; homeDist: number; controls: React.RefObject<unknown> }) {
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const key = focus ? focus.join(",") : `home-${home.join(",")}`;
   const animating = useRef(true), turning = useRef<boolean | null>(null);
   useEffect(() => { animating.current = true; turning.current = null; }, [key]);
+  // a pessoa mexeu na câmera (arrastar, roda, pinça, Q/E ou os botões de girar e aproximar/afastar): o enquadramento para ali
+  useEffect(() => {
+    type Starts = { addEventListener: (type: "start", fn: () => void) => void; removeEventListener: (type: "start", fn: () => void) => void };
+    const el = gl.domElement, c = controls.current as Starts | null;
+    const stop = () => { animating.current = false; };
+    const onKey = (e: KeyboardEvent) => { if (e.code === "KeyQ" || e.code === "KeyE") stop(); };
+    el.addEventListener(ROOM_TURN_EVENT, stop); el.addEventListener(ROOM_ZOOM_EVENT, stop); el.addEventListener("keydown", onKey); c?.addEventListener("start", stop);
+    return () => { el.removeEventListener(ROOM_TURN_EVENT, stop); el.removeEventListener(ROOM_ZOOM_EVENT, stop); el.removeEventListener("keydown", onKey); c?.removeEventListener("start", stop); };
+  }, [gl, controls]);
   useFrame((_, dt) => {
-    const c = controls.current as { target: THREE.Vector3; update: () => void } | null; if (!c || !animating.current) return;
-    const want = focus ? new THREE.Vector3(...focus) : new THREE.Vector3(...home); const dist = focus ? 3.0 : homeDist;
+    const c = controls.current as { target: THREE.Vector3; minDistance: number; maxDistance: number; update: () => void } | null; if (!c || !animating.current) return;
+    // a distância do enquadramento respeita o limite de zoom da órbita: fora dele o update() a puxaria de volta a cada
+    // quadro e o enquadramento nunca terminaria (desfazendo o Afastar)
+    const want = focus ? new THREE.Vector3(...focus) : new THREE.Vector3(...home); const dist = THREE.MathUtils.clamp(focus ? 3.0 : homeDist, c.minDistance, c.maxDistance);
     c.target.lerp(want, 1 - Math.exp(-3 * dt));
     const dir = camera.position.clone().sub(c.target);
     if (focus && facing) {
@@ -587,6 +598,8 @@ function Carcass({ w, dividers, carcass }: { w: number; dividers: number[]; carc
 function Wardrobe2Body({ position, engine, children }: { position: [number, number, number]; engine?: RoomInteraction; children?: React.ReactNode }) {
   const body = useRef<THREE.Group>(null);
   useEffect(() => { const g = body.current; if (!engine || !g) return; g.userData.collider = { ...W2.collider }; engine.solids.add(g); return () => { engine.solids.delete(g); }; }, [engine]);
+  // câmera da órbita dentro da carcaça (a órbita gira inteira): o móvel some em vez de aparecer por dentro (a colisão fica)
+  useFrame(({ camera }) => { const g = body.current; if (g) g.visible = !insideW2(camera.position, Y.top1); });
   return <group ref={body} name="guarda-roupa-2" position={position}>{children}</group>;
 }
 
@@ -769,10 +782,13 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
         <RoomDoor position={L.door} night={night} onClick={onKeys ? () => onKeys() : undefined} />
         <LightSwitch position={L.switch} on={!dark} onToggle={() => onToggleTheme?.()} />
         <KeyHook position={L.keys} keys={data.keys ?? []} onClick={() => onKeys?.()} />
-        <RoomWindow position={L.window} period={period} seasonal={data.ambient?.seasonal && data.ambient.seasonal !== "null" ? data.ambient.seasonal : null} />
+        <RoomWindow position={L.window} period={period} light={false} seasonal={data.ambient?.seasonal && data.ambient.seasonal !== "null" ? data.ambient.seasonal : null} />
         {deco("calendario_parede") && <WallCalendar position={L.calendar} days={deco("calendario_parede")!.days ?? 0} />}
         {deco("quadro_cortica") && <CorkBoard position={L.cork} days={deco("quadro_cortica")!.days ?? 10} polaroids={deco("quadro_cortica")!.polaroids ?? []} />}
       </group></Wall>
+
+      {/* o sol da janela norte fica fora da parede: com a câmera atrás dela, a luz do quarto continua acesa */}
+      <WindowLight position={L.window} period={period} />
 
       {/* parede oeste: o 2º guarda-roupa (a extensão do Loft: portas 5–6 e gavetas 25–36, mesmos endereços) */}
       <Wall spec={WEST} color={wallColor("#e2dacb", "#2e3140")} strip={strip}>

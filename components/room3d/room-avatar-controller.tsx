@@ -101,7 +101,7 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
     }
     lastPhase.current = ph;
     // câmera desta fase: a vista do quarto escolhida (Q/E, botões) ou a da prova, sempre dentro das paredes
-    const cam = cameraFor(ph, engine.actor, engine.mirror, closetRight, engine.view, ROOM);
+    const cam = cameraFor(ph, engine.actor, engine.mirror, closetRight, engine.view, ROOM, camera.position);
     if (!moving) walkYaw.current = ph === "room" ? viewYaw(engine.view) : inputYaw(cam.position, cam.target);
     if (!engine.grip) {
       // as setas mandam; sem elas, um passo da caminhada até o ponto (para ao chegar), virando para onde anda
