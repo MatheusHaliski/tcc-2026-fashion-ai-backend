@@ -21,8 +21,8 @@ export function GarmentState({ item, photo }: { item: FittingItem; photo?: Photo
   const st = c.validation.state;
   return (
     <div className="grid gap-1">
-      <p className="fitting-slot-state"><FaiIcon id={STATE_ICON[st]} size={24} decorative /><Badge tone={STATE_TONE[st]}>{t(`tryOn.estado.${st}`)}</Badge><span>{t(`tryOn.motivo.${c.validation.reason}`)}</span></p>
-      {c.compatibility.restrictions.map((r) => <p key={r} className="fitting-slot-state text-muted"><FaiIcon id="NAV-07" size={24} decorative /><span>{t(`tryOn.limite.${r}`)}</span></p>)}
+      <p className="fitting-slot-state"><FaiIcon id={STATE_ICON[st]} size={20} className="ico-text" decorative /><Badge tone={STATE_TONE[st]}>{t(`tryOn.estado.${st}`)}</Badge><span>{t(`tryOn.motivo.${c.validation.reason}`)}</span></p>
+      {c.compatibility.restrictions.map((r) => <p key={r} className="fitting-slot-state text-muted"><FaiIcon id="NAV-07" size={20} className="ico-text" decorative /><span>{t(`tryOn.limite.${r}`)}</span></p>)}
     </div>
   );
 }
