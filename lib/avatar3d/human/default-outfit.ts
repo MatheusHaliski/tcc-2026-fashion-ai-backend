@@ -21,7 +21,7 @@ export const DEFAULT_PIECES: Record<Zone, Look3dPiece> = {
     imageUrl: "/_derived/pecas_thumb/02_parte_inferior_01_jeans-640.webp", colorHex: "#255f9f", defaultImage: true,
   },
   feet: {
-    id: "fai-padrao-tenis", name: "fai-padrao-tenis", slot: "shoes", category: "SHOES", subcategory: "sneakers",
+    id: "fai-padrao-tenis", name: "fai-padrao-tenis", slot: "shoes", category: "SHOES", subcategory: "casual_sneakers",
     imageUrl: "/_derived/pecas_thumb/03_calcados_01_tenis_casual-640.webp", colorHex: "#6f5f3a", defaultImage: true,
   },
 };

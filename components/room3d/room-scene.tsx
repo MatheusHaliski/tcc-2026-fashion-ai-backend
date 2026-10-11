@@ -22,8 +22,10 @@ import { useI18n } from "@/lib/i18n/i18n";
  * parede que fica na frente da câmera some). Todos os elementos de docs/meu-quarto/05-elementos-do-quarto.md: móvel,
  * objetos do quarto, módulos por nível (RF30) e elementos dos desafios ativos. Unidades em metros. */
 
+import { ApprovedAsset } from "./approved-asset";
+
 export interface RoomPiece3D { id: string; name: string; category: string; subcategory: string; colorHex?: string | null; imageUrl?: string | null; thumbnailUrl?: string | null; model3dUrl?: string | null; address?: string | null; addressLabel?: string | null; moduleId?: string | null; states?: string[]; wearCount?: number; salePrice?: number | null; origin?: string | null; }
-export interface RoomModule3D { id: string; slotType: string; label: string; mold?: string | null; capacity?: number; category?: string | null; empty?: boolean; finish?: { color?: string; roughness?: number; metalness?: number; texture?: string; material?: string; kelvin?: number; guided?: boolean; artUrl?: string | null; logoUrl?: string | null; labelText?: string | null; creator?: string | null } | null; pieces?: RoomPiece3D[]; lookBoxes?: { id: string; title: string; coverImageUrl?: string | null; lookDoDia?: boolean }[]; accessibleLabel?: string; }
+export interface RoomModule3D { id: string; slotType: string; label: string; mold?: string | null; capacity?: number; category?: string | null; empty?: boolean; finish?: { model3dUrl?: string | null; color?: string; roughness?: number; metalness?: number; texture?: string; material?: string; kelvin?: number; guided?: boolean; artUrl?: string | null; logoUrl?: string | null; labelText?: string | null; creator?: string | null } | null; pieces?: RoomPiece3D[]; lookBoxes?: { id: string; title: string; coverImageUrl?: string | null; lookDoDia?: boolean }[]; accessibleLabel?: string; }
 export interface RoomDecoration { type: string; name?: string; days?: number; polaroids?: { schemeId: string; coverImageUrl?: string | null }[]; tapedPieceIds?: string[]; taggedPieceIds?: string[]; theme?: string; }
 export interface RoomData3D {
   modules: RoomModule3D[]; pieces: Record<string, RoomPiece3D>; basket?: RoomPiece3D[]; chair?: RoomPiece3D[]; saleRack?: { name: string; pieces: RoomPiece3D[] } | null;
@@ -106,7 +108,7 @@ function useReflection(url?: string | null) {
   return t;
 }
 
-interface Ctx { highlight: string | null; onPick: (id: string) => void; reduced: boolean; tagged: Set<string>; hanger?: THREE.MeshStandardMaterialParameters; engine?: RoomInteraction; }
+interface Ctx { highlight: string | null; onPick: (id: string) => void; reduced: boolean; tagged: Set<string>; hanger?: THREE.MeshStandardMaterialParameters; hangerModel?: string | null; engine?: RoomInteraction; }
 
 /** Register actual world anchors, not screen-space click areas. */
 function InteractionAnchor({ ctx, id, kind, available = true, position = [0, 0, 0], children, progress }: {
@@ -173,15 +175,15 @@ function PieceMesh({ p, w, h, ctx, lying = false, onPuff }: { p: RoomPiece3D; w:
   );
 }
 
-function Hanger({ gold, finish }: { gold?: boolean; finish?: THREE.MeshStandardMaterialParameters }) {
+function Hanger({ gold, finish, modelUrl }: { gold?: boolean; finish?: THREE.MeshStandardMaterialParameters; modelUrl?: string | null }) {
   const mat = gold ? <meshStandardMaterial color="#C9A227" metalness={0.9} roughness={0.25} /> : <meshStandardMaterial color={finish?.color ?? "#6b5a4a"} metalness={finish?.metalness ?? 0.2} roughness={finish?.roughness ?? 0.6} />;
   return (
-    <group>
+    <ApprovedAsset url={modelUrl} size={[.4, .17, .04]} centered><group>
       <mesh position={[0, 0.03, 0]}><torusGeometry args={[0.022, 0.004, 8, 16, Math.PI * 1.4]} />{mat}</mesh>
       <mesh position={[0, -0.03, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.005, 0.005, 0.4, 8]} />{mat}</mesh>
       {/* cabide especial da favorita: ombreiras de veludo */}
       {gold && [-0.16, 0.16].map((x) => <mesh key={x} position={[x, -0.03, 0]}><sphereGeometry args={[0.018, 10, 8]} /><meshStandardMaterial color="#7a1f3d" roughness={1} /></mesh>)}
-    </group>
+    </group></ApprovedAsset>
   );
 }
 
@@ -192,7 +194,7 @@ function HangingPiece({ p, x, z, pw, ph, ctx }: { p: RoomPiece3D; x: number; z: 
   return (
     <group ref={g} position={[x, 0, z]} visible={!ctx.engine?.hidden.has(p.id)}>
       <InteractionAnchor ctx={ctx} id={p.id} kind="piece" available={!!p.moduleId && !!ctx.engine?.progress.get(p.moduleId) && ctx.engine.progress.get(p.moduleId)! > .6} />
-      <Hanger gold={p.states?.includes("FAVORITA")} finish={ctx.hanger} />
+      <Hanger gold={p.states?.includes("FAVORITA")} finish={ctx.hanger} modelUrl={ctx.hangerModel} />
       <group position={[0, -ph / 2 - 0.05, 0.01]}><PieceMesh p={p} w={pw} h={ph} ctx={ctx} onPuff={() => { if (!ctx.reduced) swing.current = performance.now(); }} /></group>
     </group>
   );
@@ -216,7 +218,7 @@ function LoosePiece({ engine, p, ctx, drop }: { engine: RoomInteraction; p: Room
     object.current.position.copy(dropped); object.current.rotation.set(-Math.PI / 2, 0, 0);
   });
   return <group ref={object} name={`room-carried-${p.id}`} position={engine.dropped.get(p.id)?.toArray() ?? [0, 1, 1]}>
-    <Hanger finish={ctx.hanger} /><group position={[0, -.32, 0]}><PieceMesh p={p} w={.38} h={.52} ctx={{ ...ctx, engine: undefined }} /></group>
+    <Hanger finish={ctx.hanger} modelUrl={ctx.hangerModel} /><group position={[0, -.32, 0]}><PieceMesh p={p} w={.38} h={.52} ctx={{ ...ctx, engine: undefined }} /></group>
   </group>;
 }
 function LoosePieces({ engine, pieces, ctx, drop }: { engine: RoomInteraction; pieces: Record<string, RoomPiece3D>; ctx: Ctx; drop: ReturnType<typeof walkArea> }) {
@@ -434,19 +436,19 @@ function Chair({ position, pieces, ctx }: { position: [number, number, number]; 
 }
 
 /** Nível Closet: vitrine de bolsas (nichos de vidro) com o porta-joias em cima. */
-function BagDisplay({ position, bags, jewelry, ctx }: { position: [number, number, number]; bags: RoomPiece3D[]; jewelry: RoomPiece3D[]; ctx: Ctx }) {
+function BagDisplay({ position, bags, jewelry, ctx, bagModel, jewelryModel }: { bagModel?: string | null; jewelryModel?: string | null; position: [number, number, number]; bags: RoomPiece3D[]; jewelry: RoomPiece3D[]; ctx: Ctx }) {
   const { t } = useI18n();
   return (
     <group position={position}>
-      <mesh position={[0, 0.8, 0]} castShadow><boxGeometry args={[0.62, 1.6, 0.4]} /><meshStandardMaterial color="#efe9df" roughness={0.6} transparent opacity={0.25} /></mesh>
+      <ApprovedAsset url={bagModel} size={[.64, 1.6, .42]}><group><mesh position={[0, 0.8, 0]} castShadow><boxGeometry args={[0.62, 1.6, 0.4]} /><meshStandardMaterial color="#efe9df" roughness={0.6} transparent opacity={0.25} /></mesh>
       {[0.02, 0.55, 1.08, 1.6].map((y) => <mesh key={y} position={[0, y, 0]}><boxGeometry args={[0.64, 0.02, 0.42]} /><meshStandardMaterial color="#d9cbb5" /></mesh>)}
-      {[-0.31, 0.31].map((x) => <mesh key={x} position={[x, 0.8, 0]}><boxGeometry args={[0.02, 1.6, 0.42]} /><meshStandardMaterial color="#d9cbb5" /></mesh>)}
+      {[-0.31, 0.31].map((x) => <mesh key={x} position={[x, 0.8, 0]}><boxGeometry args={[0.02, 1.6, 0.42]} /><meshStandardMaterial color="#d9cbb5" /></mesh>)}</group></ApprovedAsset>
       {bags.slice(0, 6).map((p, i) => <group key={p.id} position={[i % 2 ? 0.14 : -0.14, 0.28 + Math.floor(i / 2) * 0.53, 0.05]}><PieceMesh p={p} w={0.24} h={0.24} ctx={ctx} /></group>)}
       <mesh position={[0, 1.36, 0.21]}><planeGeometry args={[0.6, 0.5]} /><meshPhysicalMaterial color="#ffffff" transmission={0.9} roughness={0.05} transparent opacity={0.2} /></mesh>
       <Label3D text={t("room3d.roomScene.vitrine_de_bolsas")} w={0.5} h={0.05} fg="#6b5a4a" position={[0, 0.1, 0.215]} />
       {/* porta-joias */}
       <group position={[0, 1.61, 0]}>
-        <RoundedBox args={[0.3, 0.1, 0.2]} radius={0.015} position={[0, 0.05, 0]}><meshStandardMaterial color="#7a1f3d" roughness={0.8} /></RoundedBox>
+        <ApprovedAsset url={jewelryModel} size={[.3, .1, .2]}><RoundedBox args={[0.3, 0.1, 0.2]} radius={0.015} position={[0, 0.05, 0]}><meshStandardMaterial color="#7a1f3d" roughness={0.8} /></RoundedBox></ApprovedAsset>
         <mesh position={[0, 0.16, 0]}><cylinderGeometry args={[0.006, 0.006, 0.12, 6]} /><meshStandardMaterial color="#C9A227" metalness={0.9} roughness={0.2} /></mesh>
         {jewelry.slice(0, 4).map((p, i) => <group key={p.id} position={[-0.09 + i * 0.06, 0.2, 0.02]}><PieceMesh p={p} w={0.07} h={0.07} ctx={ctx} /></group>)}
       </group>
@@ -455,12 +457,12 @@ function BagDisplay({ position, bags, jewelry, ctx }: { position: [number, numbe
 }
 
 /** Nível Atelier: ilha central (bancada) para comparar 2–3 looks lado a lado. */
-function Island({ position, boxes }: { position: [number, number, number]; boxes: { id: string; title: string; coverImageUrl?: string | null }[] }) {
+function Island({ position, boxes, modelUrl }: { position: [number, number, number]; modelUrl?: string | null; boxes: { id: string; title: string; coverImageUrl?: string | null }[] }) {
   const { t } = useI18n();
   return (
     <group position={position}>
-      <RoundedBox args={[1.1, 0.42, 0.42]} radius={0.02} position={[0, 0.21, 0]} castShadow><meshStandardMaterial color="#e9e3d7" roughness={0.7} /></RoundedBox>
-      <mesh position={[0, 0.425, 0]}><boxGeometry args={[1.14, 0.02, 0.46]} /><meshStandardMaterial color="#8a6a4a" roughness={0.5} /></mesh>
+      <ApprovedAsset url={modelUrl} size={[1.14, .44, .46]}><group><RoundedBox args={[1.1, 0.42, 0.42]} radius={0.02} position={[0, 0.21, 0]} castShadow><meshStandardMaterial color="#e9e3d7" roughness={0.7} /></RoundedBox>
+      <mesh position={[0, 0.425, 0]}><boxGeometry args={[1.14, 0.02, 0.46]} /><meshStandardMaterial color="#8a6a4a" roughness={0.5} /></mesh></group></ApprovedAsset>
       {boxes.slice(0, 3).map((b, i) => <IslandCard key={b.id} b={b} x={-0.35 + i * 0.35} />)}
       <Label3D text={t("room3d.roomScene.ilha_compare_looks")} w={0.5} h={0.05} fg="#6b5a4a" position={[0, 0.2, 0.215]} />
     </group>
@@ -706,7 +708,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
   const tagged = useMemo(() => new Set(deco("etiqueta_2a_chance")?.taggedPieceIds ?? []), [decos]); // eslint-disable-line react-hooks/exhaustive-deps
   const tapedIds = useMemo(() => new Set(deco("fita_alfaiate")?.tapedPieceIds ?? []), [decos]); // eslint-disable-line react-hooks/exhaustive-deps
   const taped = (m?: RoomModule3D) => !!m && tapedIds.size > 0 && (m.pieces ?? []).some((p) => tapedIds.has(p.id));
-  const ctx: Ctx = { highlight, onPick, reduced, tagged, hanger: hangerFinish, engine: gameplay?.engine };
+  const ctx: Ctx = { highlight, onPick, reduced, tagged, hanger: hangerFinish, hangerModel: byId["hangers"]?.finish?.model3dUrl, engine: gameplay?.engine };
   const boxes: NonNullable<RoomModule3D["lookBoxes"]> = [];
   const penthouse = atLeast(level, "PENTHOUSE") && !!byId["season"];
   const pointAt = copilotPoint ? moduleAnchor(copilotPoint, level) : null;
@@ -728,7 +730,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
           cima, na órbita, some; não projeta sombra, então o sol continua entrando) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(ROOM.minX + ROOM.maxX) / 2, 0, (ROOM.minZ + ROOM.maxZ) / 2]} receiveShadow><planeGeometry args={[ROOM.maxX - ROOM.minX, ROOM.maxZ - ROOM.minZ]} /><meshStandardMaterial color={night ? "#5a4636" : "#b8906a"} roughness={0.75} /></mesh>
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[(ROOM.minX + ROOM.maxX) / 2, ROOM.height, (ROOM.minZ + ROOM.maxZ) / 2]}><planeGeometry args={[ROOM.maxX - ROOM.minX, ROOM.maxZ - ROOM.minZ]} /><meshStandardMaterial color={night ? "#2a2c38" : "#f6f2ec"} emissive={night ? "#000000" : "#f6f2ec"} emissiveIntensity={night ? 0 : 0.3} roughness={1} /></mesh>
-      {byId["rug"] && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, 1.3]} receiveShadow><circleGeometry args={[1.1, 48]} /><meshStandardMaterial color={night ? "#6b4c5c" : "#d9b8a0"} roughness={1} /></mesh>}
+      {byId["rug"] && <group position={[0, .004, 1.3]}><ApprovedAsset url={byId["rug"]?.finish?.model3dUrl} size={[2.2, .06, 2.2]}><mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow><circleGeometry args={[1.1, 48]} /><meshStandardMaterial color={byId["rug"]?.finish?.color ?? (night ? "#6b4c5c" : "#d9b8a0")} roughness={1} /></mesh></ApprovedAsset></group>}
 
       {/* parede norte: guarda-roupa 1 (FAI Origem), porta, interruptor, gancho das chaves, janela, calendário e quadro de
           cortiça — em coordenadas da cena (o grupo desfaz o deslocamento da parede, que não gira) */}
@@ -806,8 +808,8 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
         <group position={[0, 1.1, 0]}><PieceMesh p={showcase[0]} w={0.26} h={0.26} ctx={ctx} /></group>
         <Label3D text={t("room3d.roomScene.peca_icone")} w={0.3} h={0.05} fg="#6b5a4a" position={[0, 0.8, 0.185]} />
       </group>}
-      {atLeast(level, "CLOSET") && (byId["bags"] || byId["jewelry"]) && <BagDisplay position={L.bags} bags={byId["bags"]?.pieces ?? []} jewelry={byId["jewelry"]?.pieces ?? []} ctx={ctx} />}
-      {atLeast(level, "ATELIER") && byId["island"] && <Island position={L.island} boxes={boxes.slice(0, 3)} />}
+      {atLeast(level, "CLOSET") && (byId["bags"] || byId["jewelry"]) && <BagDisplay position={L.bags} bagModel={byId["bags"]?.finish?.model3dUrl} jewelryModel={byId["jewelry"]?.finish?.model3dUrl} bags={byId["bags"]?.pieces ?? []} jewelry={byId["jewelry"]?.pieces ?? []} ctx={ctx} />}
+      {atLeast(level, "ATELIER") && byId["island"] && <Island position={L.island} boxes={boxes.slice(0, 3)} modelUrl={byId["island"]?.finish?.model3dUrl} />}
 
       <Mirror position={L.mirror} look={data.mirrorDailyLook} overlay={mirror} theme={deco("tema_espelho")?.theme ?? null} onVistaMe={onVistaMe} reduced={reduced} module={byId["mirror"]} engine={gameplay?.engine} />
       <DressForm position={L.bust} pointAt={pointAt} talking={!!copilotTalking} onClick={() => onCopilot?.()} reduced={reduced} />

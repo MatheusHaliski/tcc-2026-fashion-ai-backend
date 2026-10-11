@@ -6,8 +6,8 @@
 import type { Look3dPiece } from "@/components/three/common";
 
 /** Peça do acervo FashionAI (id = nome do asset em public/_derived/pecas_thumb, sem tamanho). */
-export interface AcervoPiece { id: string; category: string; subcategory: string; family: string }
-const A = (id: string, category: string, subcategory: string, family: string): AcervoPiece => ({ id, category, subcategory, family });
+export interface AcervoPiece { id: string; category: string; subcategory: string; family: string; assetId?: string }
+const A = (id: string, category: string, subcategory: string, family: string, assetId?: string): AcervoPiece => ({ id, category, subcategory, family, ...(assetId ? { assetId } : {}) });
 
 /** Todas as peças vestíveis do acervo (acessórios ficam de fora: sem molde 3D — ver ACERVO_SEM_3D). */
 export const ACERVO: AcervoPiece[] = [
@@ -15,6 +15,7 @@ export const ACERVO: AcervoPiece[] = [
   A("01_parte_superior_02_shirt_camisa", "upper_piece", "shirt", "superior"),
   A("01_parte_superior_03_blouse_blusa", "upper_piece", "blouse", "superior"),
   A("01_parte_superior_04_tank_top_regata", "upper_piece", "tank_top", "superior"),
+  A("fai-reference-top", "upper_piece", "top", "superior", "01_parte_superior_05_crop_top_cropped"),
   A("01_parte_superior_05_crop_top_cropped", "upper_piece", "crop_top", "superior"),
   A("01_parte_superior_06_polo_shirt_camisa_polo", "upper_piece", "polo_shirt", "superior"),
   A("01_parte_superior_07_bodysuit_body", "upper_piece", "bodysuit", "superior"),
@@ -50,6 +51,16 @@ export const ACERVO: AcervoPiece[] = [
   A("05_corpo_inteiro_05_jardineira", "full_body_piece", "overalls", "peca-inteira"),
   A("03_calcados_01_tenis_casual", "shoes_piece", "casual_sneakers", "calcado"),
   A("03_calcados_02_tenis_corrida", "shoes_piece", "running_shoes", "calcado"),
+  A("03_calcados_03_tenis_treino", "shoes_piece", "training_shoes", "calcado"),
+  A("03_calcados_04_tenis_skate", "shoes_piece", "skate_shoes", "calcado"),
+  A("03_calcados_06_tenis_cano_alto", "shoes_piece", "high_top_sneakers", "calcado"),
+  A("03_calcados_07_tenis_basquete", "shoes_piece", "basketball_shoes", "calcado"),
+  A("03_calcados_08_mocassim", "shoes_piece", "moccasins", "calcado"),
+  A("03_calcados_10_derby", "shoes_piece", "derby_shoes", "calcado"),
+  A("fai-reference-boots", "shoes_piece", "boots", "calcado", "03_calcados_11_bota_cano_curto"),
+  A("03_calcados_15_chinelo", "shoes_piece", "flip_flops", "calcado"),
+  A("03_calcados_17_sapatilha", "shoes_piece", "flats", "calcado"),
+  A("03_calcados_18_alpargata", "shoes_piece", "espadrilles", "calcado"),
   A("03_calcados_05_loafer", "shoes_piece", "loafers", "calcado"),
   A("03_calcados_09_oxford", "shoes_piece", "oxford_shoes", "calcado"),
   A("03_calcados_11_bota_cano_curto", "shoes_piece", "ankle_boots", "calcado"),
@@ -71,5 +82,5 @@ export const ACERVO_SEM_3D: AcervoPiece[] = [
 
 /** A peça do acervo como peça vestível no 3D (foto WebP de 640 px com fundo transparente). */
 export function acervoLook(p: AcervoPiece): Look3dPiece {
-  return { id: p.id, name: p.id, slot: p.category, category: p.category, subcategory: p.subcategory, imageUrl: `/_derived/pecas_thumb/${p.id}-640.webp` };
+  return { id: p.id, name: p.id, slot: p.category, category: p.category, subcategory: p.subcategory, imageUrl: `/_derived/pecas_thumb/${p.assetId ?? p.id}-640.webp` };
 }
