@@ -10,13 +10,14 @@
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, loggedAs, renderApp, screen, waitFor, within } from "@/test-utils/render";
-import { MirrorControls, wornOf, type MirrorData } from "./mirror-controls";
+import { MirrorControls, canTakeOneOff, wornOf, type MirrorData } from "./mirror-controls";
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 const TEE = { id: "a", name: "Camiseta preta", imageUrl: "/media/a.png", thumbnailUrl: "/media/a-thumb.png", addressLabel: "Porta 1", category: "upper_piece", subcategory: "t_shirt", slot: "upper", model3dUrl: "/media/a.glb" };
 const JACKET = { id: "j", name: "Jaqueta jeans", imageUrl: "/media/j.png", category: "upper_piece", subcategory: "jacket", slot: "outer_layer" };
 const JEANS = { id: "b", name: "Calça jeans", imageUrl: "/media/b.png", category: "lower_piece", subcategory: "jeans", slot: "lower" };
 const DRESS = { id: "d", name: "Vestido floral", imageUrl: "/media/d.png", category: "full_body_piece", subcategory: "dress", slot: "dress" };
+const SNEAKER = { id: "t", name: "Tênis branco", imageUrl: "/media/t.png", category: "shoes_piece", subcategory: "sneakers", slot: "shoes" };
 const RING = (i: number) => ({ id: `r${i}`, name: `Anel ${i}`, category: "accessory_piece", subcategory: "ring", slot: "accessory" });
 const EMPTY: MirrorData = { slots: { outer_layer: null, upper: null, dress: null, lower: null, shoes: null, accessory: [] }, complete: false, missing: [{ slot: "upper", action: "Sugerir peça superior", message: "Esse look ainda não possui uma peça superior (ou um vestido)." }], actions: [] };
 const state = (slots: Record<string, unknown>, extra: Partial<MirrorData> = {}): MirrorData => ({ ...EMPTY, missing: [], slots: { ...EMPTY.slots, ...slots } as MirrorData["slots"], ...extra });
@@ -140,7 +141,7 @@ describe("MirrorControls — sem formulário", () => {
   });
 
   it("Vista-me por ocasião + humor, com a peça fixada como âncora; mostra a sequência e libera Outra sugestão", async () => {
-    const LOOK = state({ upper: TEE, lower: JEANS }, { origin: "vista_me", prompt: "Trabalho, Confortável", sequence: [{ pieceId: "a", name: "Camiseta preta", legend: "Camiseta preta — Porta 1" }], fallbackMessage: "Montado sem IA desta vez.", message: "Look para o trabalho" });
+    const LOOK = state({ upper: TEE, lower: JEANS }, { origin: "vista_me", prompt: "Trabalho, Confortável", interpretation: { anchors: ["a"] }, sequence: [{ pieceId: "a", name: "Camiseta preta", legend: "Camiseta preta — Porta 1" }], fallbackMessage: "Montado sem IA desta vez.", message: "Look para o trabalho" });
     const { calls } = loggedAs(undefined, { "GET /api/tipos-look": [], "GET /api/me/mirror/wardrobe": { pieces: [] }, "POST /api/me/mirror/vista-me": LOOK, "POST /api/me/mirror/another": LOOK });
     renderApp(<Harness initial={state({ upper: TEE })} />);
     expect((screen.getByRole("button", { name: "Outra sugestão" }) as HTMLButtonElement).disabled).toBe(true);
@@ -204,6 +205,73 @@ describe("MirrorControls — sem formulário", () => {
     fireEvent.click(screen.getByRole("button", { name: "Limpar" }));
     expect(await screen.findByText(/Espelho limpo/)).toBeTruthy();
     expect(calls.some((c) => c.method === "DELETE" && c.path === "/api/me/mirror")).toBe(true);
+  });
+
+  it("Tira uma coisa depois do Vista-me: a resposta traz as ações do Vista-me no lugar das calculadas, e o look completo com acessório ou jaqueta libera mesmo assim", async () => {
+    const VISTA_ACTIONS = ["USAR_ESTE_LOOK", "TROCAR_UMA_PECA", "REMIXAR", "SALVAR", "OUTRA_SUGESTAO", "CRIAR_LOOK_COM_ESTAS_PECAS"];
+    const LOOK = state({ upper: TEE, lower: JEANS, shoes: SNEAKER, accessory: [RING(1)] }, { complete: true, origin: "vista_me", prompt: "Trabalho", actions: VISTA_ACTIONS });
+    loggedAs(undefined, { "GET /api/tipos-look": [], "POST /api/me/mirror/vista-me": LOOK });
+    renderApp(<Harness initial={state({ upper: TEE }, { actions: ["VISTA_ME"] })} />);
+    const takeOne = () => screen.getByRole("button", { name: /Tira uma coisa/ }) as HTMLButtonElement;
+    expect(takeOne().disabled).toBe(true);
+    fireEvent.click(within(screen.getByRole("group", { name: "Para onde é o look" })).getByRole("button", { name: /Trabalho/ }));
+    await waitFor(() => expect(takeOne().disabled).toBe(false));
+    // a regra do servidor: completo e com algo removível (acessório ou camada externa)
+    expect(canTakeOneOff(state({ upper: TEE, lower: JEANS, shoes: SNEAKER }, { complete: true, actions: VISTA_ACTIONS }))).toBe(false);
+    expect(canTakeOneOff(state({ upper: TEE, outer_layer: JACKET, lower: JEANS, shoes: SNEAKER }, { complete: true, actions: VISTA_ACTIONS }))).toBe(true);
+    expect(canTakeOneOff(state({ upper: TEE, accessory: [RING(1)] }, { complete: false, actions: [] }))).toBe(false);
+  });
+
+  it("só a jaqueta na Parte de cima: a célula continua mostrando a falta da peça por baixo e a folha diz o porquê", async () => {
+    loggedAs(undefined, { "GET /api/tipos-look": [], "GET /api/me/mirror/wardrobe": { pieces: [] } });
+    renderApp(<Harness initial={state({ outer_layer: JACKET, lower: JEANS, shoes: SNEAKER }, { missing: EMPTY.missing })} />);
+    const top = cell(/^Parte de cima: Jaqueta jeans · Falta a peça por baixo/);
+    expect(top.className).toContain("is-missing");
+    expect(within(top).getByText("Jaqueta jeans · Falta a peça por baixo")).toBeTruthy();
+    expect((screen.getByRole("button", { name: /Usar este look hoje/ }) as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(top);
+    const sheet = within(await screen.findByRole("dialog", { name: "Parte de cima" }));
+    expect(sheet.getByText("Vestindo agora")).toBeTruthy();
+    expect(sheet.getByRole("note").textContent).toBe("Esse look ainda não possui uma peça superior (ou um vestido).");
+  });
+
+  it("folha aberta: a peça tirada volta a poder ser vestida do guarda-roupa (o 'inMirror' da lista é de quando a folha abriu)", async () => {
+    loggedAs(undefined, {
+      "GET /api/tipos-look": [], "GET /api/me/mirror/wardrobe?slot=upper": { pieces: [{ ...TEE, inMirror: true }] }, "GET /api/me/mirror/wardrobe?slot=outer_layer": { pieces: [] },
+      "DELETE /api/me/mirror/pieces/a": state({}),
+    });
+    renderApp(<Harness initial={state({ upper: TEE })} />);
+    fireEvent.click(cell(/^Parte de cima:/));
+    const sheet = within(await screen.findByRole("dialog", { name: "Parte de cima" }));
+    const picker = within(await sheet.findByTestId("mirror-wardrobe-picker"));
+    const tile = () => picker.getByRole("button", { name: "Vestir Camiseta preta em Parte de cima" }) as HTMLButtonElement;
+    expect(tile().disabled).toBe(true); expect(within(tile()).getByText("Já no espelho")).toBeTruthy();
+    fireEvent.click(sheet.getByRole("button", { name: "Tirar Camiseta preta" }));
+    await waitFor(() => expect(tile().disabled).toBe(false));
+    expect(within(tile()).queryByText("Já no espelho")).toBeNull();
+  });
+
+  it("Outra sugestão depois de soltar a peça fixada: o mesmo pedido vai com as âncoras de agora (não as do pedido anterior)", async () => {
+    const LOOK = state({ upper: TEE, lower: JEANS }, { origin: "vista_me", prompt: "Trabalho", interpretation: { anchors: ["a"] } });
+    const { calls } = loggedAs(undefined, { "GET /api/tipos-look": [], "GET /api/me/mirror/wardrobe": { pieces: [] }, "POST /api/me/mirror/vista-me": LOOK, "POST /api/me/mirror/another": LOOK });
+    renderApp(<Harness initial={state({ upper: TEE })} />);
+    const togglePin = async (name: RegExp) => {
+      fireEvent.click(cell(/^Parte de cima:/));
+      const sheet = within(await screen.findByRole("dialog", { name: "Parte de cima" }));
+      fireEvent.click(sheet.getByRole("button", { name }));
+      fireEvent.click(sheet.getByRole("button", { name: "Fechar" }));
+    };
+    await togglePin(/^Manter$/);
+    fireEvent.click(within(screen.getByRole("group", { name: "Para onde é o look" })).getByRole("button", { name: /Trabalho/ }));
+    const vistas = () => calls.filter((c) => c.method === "POST" && c.path === "/api/me/mirror/vista-me");
+    await waitFor(() => expect(vistas()).toHaveLength(1));
+    expect(vistas()[0].body).toEqual({ prompt: "Trabalho", anchorIds: ["a"] });
+    await waitFor(() => expect((screen.getByRole("button", { name: "Outra sugestão" }) as HTMLButtonElement).disabled).toBe(false));
+    await togglePin(/Fixada/);
+    fireEvent.click(screen.getByRole("button", { name: "Outra sugestão" }));
+    await waitFor(() => expect(vistas()).toHaveLength(2));
+    expect(vistas()[1].body).toEqual({ prompt: "Trabalho", anchorIds: [] });
+    expect(calls.some((c) => c.path === "/api/me/mirror/another")).toBe(false);
   });
 
   it("silhueta mostra letra e regra (não um objeto) e o desafio aparece também no modo compacto", async () => {

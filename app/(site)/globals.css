@@ -2525,6 +2525,12 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 .room-flat-mirror { display: grid; gap: 16px; }
 @media (min-width: 1024px) { .room-flat-mirror { grid-template-columns: minmax(260px, 360px) minmax(0, 1fr); align-items: start; } }
 .room-flat-mirror-stage { min-width: 0; }
+/* espelho sem WebGL (MirrorFlatStill): as peças vestidas em 2D sobre o vidro, sem Canvas */
+.mirror-flat { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 56px 16% 44px; }
+.mirror-flat img { flex: 0 1 auto; min-height: 0; max-width: 100%; max-height: 32%; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0,0,0,.18)); }
+.mirror-flat-acc { display: flex; justify-content: center; gap: 6px; flex: 0 1 auto; min-height: 0; max-height: 14%; }
+.mirror-flat-acc img { max-height: 100%; max-width: 64px; }
+.mirror-flat-silhouette { height: 72%; fill: #3b3328; opacity: .16; }
 .fitting-stores { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
 /* RF47 · criador de peça: a mesma grade de marcas do provador, rolável como lá */
 .catalog-brand-grid .fitting-stores { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 3px; }
