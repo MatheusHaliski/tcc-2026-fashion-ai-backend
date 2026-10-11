@@ -121,6 +121,7 @@ function SearchInner() {
       {archive && (summary.data?.products || meta?.total !== undefined) && (
         <p className="mb-3 type-body-sm text-muted tabular" role="status">
           {summary.data?.products ? t("search.acervo_total", { products: summary.data.products, brands: summary.data.brands }) : null}
+          {summary.data?.withImage != null ? <> · {t("catalog.com_foto", { n: summary.data.withImage })}</> : null}
           {meta?.total !== undefined && (term.trim() || active.length || !summary.data?.products) ? <> · {term.trim() ? t("search.acervo_resultado_termo", { total: meta.total, q: term.trim() }) : t("search.acervo_resultado", { total: meta.total })}</> : null}
         </p>
       )}

@@ -36,7 +36,7 @@ export interface SearchParams { category?: string; subcategory?: string; brand?:
 export interface BrowseParams { category?: string; subcategory?: string; brand?: string; brandId?: string; q?: string; page?: number; size?: number }
 export interface BrowseResponse { items: CatalogProduct[]; page: number; size: number; total: number; hasMore: boolean; brandKnown?: boolean; brand?: CatalogBrandRef | null }
 /** Tamanho do acervo visível: o número mostrado como "acervo completo". */
-export interface CatalogSummary { products: number; brands: number }
+export interface CatalogSummary { products: number; brands: number; /** peças com pelo menos uma foto utilizável */ withImage?: number }
 
 const qs = (p: object) => {
   const u = new URLSearchParams();

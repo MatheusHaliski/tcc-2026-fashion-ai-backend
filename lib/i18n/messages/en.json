@@ -6955,5 +6955,6 @@
   "catalog.mais_parecidas": "These are the closest matches.",
   "catalog.ver_todas_com": "See every piece with “{q}”",
   "catalog.todas_com": "{total, number} pieces with “{q}”",
-  "catalog.marcas_erro": "Could not load the catalogue brands."
+  "catalog.marcas_erro": "Could not load the catalogue brands.",
+  "catalog.com_foto": "{n, number} with a photo"
 }

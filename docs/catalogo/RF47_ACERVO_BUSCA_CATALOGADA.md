@@ -133,6 +133,15 @@ fotos. A regra nova mantém os parâmetros de identidade (commit 4ac39d6f; parid
 Bancos já importados se consertam com `scripts/catalog/repair_merged_products.py` (detecta, esconde o agrupado sem
 apagar e reimporta uma peça por página); passo a passo em `scripts/catalog/README.md`.
 
+### 4.3 Uma foto por peça (11/10/2026)
+
+Cada peça com foto aparece com uma foto no card. A foto do card é escolhida assim: canônica do pipeline (Quality
+Gate) › principal da ingestão › qualquer outra foto utilizável da peça (a mais antiga); foto recusada (`REJECTED`)
+nunca aparece. Antes, peça sem foto marcada como principal ficava com a ilustração mesmo tendo fotos. Na tela, se a
+foto não carrega (arquivo processado ausente, servidor da marca fora do ar), o card tenta a seguinte (a original da
+marca) e só então mostra a ilustração da categoria. `/api/catalog/summary` devolve `withImage` (peças visíveis com
+pelo menos uma foto utilizável), mostrado ao lado do total ("N peças · N com foto"): os dois números devem ser iguais.
+
 ## 5. Ranqueamento ("% compatível")
 
 Candidatos pelo índice `FULLTEXT ... WITH PARSER ngram` de `catalog_products.search_text` (marca, nome, modelo, cor,

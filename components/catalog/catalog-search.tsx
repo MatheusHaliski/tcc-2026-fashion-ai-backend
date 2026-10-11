@@ -304,6 +304,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
       {!!summary.data?.products && (
         <p className="flex flex-wrap items-center gap-2 type-body-sm text-muted" role="status">
           <span>{t("catalog.acervo_resumo", { products: summary.data.products, brands: summary.data.brands })}</span>
+          {summary.data.withImage != null && <span>· {t("catalog.com_foto", { n: summary.data.withImage })}</span>}
           {!browsing && !params.q && <Button size="sm" variant="ghost" onClick={() => setShowAll(true)}>{t("catalog.ver_todo_acervo")}</Button>}
           {showAll && !params.brand && !params.category && !params.subcategory && <Button size="sm" variant="ghost" onClick={() => setShowAll(false)}>{t("catalog.fechar_acervo")}</Button>}
         </p>
@@ -417,7 +418,9 @@ export function CatalogResultCard({ product: p, onPick, pickLabel, selectedVaria
   return (
     <article className="catalog-card surface">
       <div className="catalog-card-media" style={{ aspectRatio: photoAspect(p.catalogImage?.aspect) }} aria-hidden={!img}>
-        {img ? <CatalogPhoto image={p.catalogImage} fallbackUrl={p.imageUrl} alt={`${p.brand?.name ?? ""} ${p.productName}`} /> : <GarmentGlyph id={ILLUSTRATION[p.category] ?? "generic"} size={120} animated={false} numbered={false} className="text-muted" />}
+        {img ? <CatalogPhoto image={p.catalogImage} fallbackUrl={p.imageUrl} alternatives={[p.imageSource?.imageUrl]} alt={`${p.brand?.name ?? ""} ${p.productName}`}
+          placeholder={<GarmentGlyph id={ILLUSTRATION[p.category] ?? "generic"} size={120} animated={false} numbered={false} className="text-muted" />} />
+          : <GarmentGlyph id={ILLUSTRATION[p.category] ?? "generic"} size={120} animated={false} numbered={false} className="text-muted" />}
         {typeof p.matchPercent === "number" && <Badge tone="thread" className="catalog-card-match">{t("catalog.compativel", { pct: p.matchPercent })}</Badge>}
         {p.ingestionStatus === "DISCOVERED" && <Badge tone="chalk" className="catalog-card-new">{t("catalog.loja_oficial")}</Badge>}
       </div>

@@ -9,16 +9,19 @@ import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.Brand;
 import br.com.fashionai.domain.model.BrandAlias;
 import br.com.fashionai.domain.model.CatalogProduct;
+import br.com.fashionai.domain.model.CatalogImage;
 import br.com.fashionai.domain.model.CatalogSource;
 import br.com.fashionai.domain.model.CatalogVariant;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.BrandSource;
 import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
+import br.com.fashionai.domain.model.enums.CatalogImageUsage;
 import br.com.fashionai.domain.model.enums.CatalogSourceType;
 import br.com.fashionai.domain.repository.BrandAliasRepository;
 import br.com.fashionai.domain.repository.BrandRepository;
 import br.com.fashionai.domain.repository.CatalogProductRepository;
+import br.com.fashionai.domain.repository.CatalogImageRepository;
 import br.com.fashionai.domain.repository.CatalogSourceRepository;
 import br.com.fashionai.domain.repository.CatalogVariantRepository;
 import br.com.fashionai.domain.repository.UserRepository;
@@ -130,6 +133,32 @@ class CatalogServiceTest {
     }
 
     @Test
+    void todaPecaComFotoMostraUmaFotoNoCardMesmoSemFotoPrincipal() {
+        CatalogImageRepository repo = kit.dep(CatalogImageRepository.class);
+        List<CatalogProduct> all = MemoryRepository.rows(kit.dep(CatalogProductRepository.class));
+        List<CatalogImage> imgs = MemoryRepository.rows(repo);
+        // peça 0: nenhuma foto marcada como principal (importação antiga) → o card usa a foto que ela tem
+        CatalogProduct semPrincipal = all.get(0);
+        imgs.stream().filter(i -> i.getProductId().equals(semPrincipal.getId())).forEach(i -> i.setPrimary(false));
+        // peça 1: a principal foi recusada, mas há outra foto utilizável → o card usa a outra, nunca a recusada
+        CatalogProduct recusada = all.get(1);
+        CatalogImage principal = imgs.stream().filter(i -> i.getProductId().equals(recusada.getId())).findFirst().orElseThrow();
+        principal.setUsageStatus(CatalogImageUsage.REJECTED);
+        CatalogImage outra = new CatalogImage();
+        outra.setProductId(recusada.getId());
+        outra.setImageUrl("https://nike.com.br/img/outra.jpg");
+        outra.setImageUrlHash("outra");
+        outra.setImageType(principal.getImageType());
+        outra.setSourceType(principal.getSourceType());
+        outra.setUsageStatus(CatalogImageUsage.REFERENCE_ONLY);
+        repo.save(outra);
+        List<Map<String, Object>> cards = catalog.cards(List.of(semPrincipal, recusada, all.get(2)));
+        assertThat(cards.get(0).get("imageUrl")).isEqualTo(imgs.stream().filter(i -> i.getProductId().equals(semPrincipal.getId())).findFirst().orElseThrow().getImageUrl());
+        assertThat(cards.get(1).get("imageUrl")).isEqualTo("https://nike.com.br/img/outra.jpg");
+        assertThat(cards).allSatisfy(c -> assertThat(c.get("imageUrl")).as("cada peça com foto mostra uma foto").isNotNull());
+    }
+
+    @Test
     void fichaDoProdutoComImagensEVariantes() {
         CatalogProduct p = MemoryRepository.<CatalogProduct>rows(kit.dep(CatalogProductRepository.class)).get(0);
         Map<String, Object> m = catalog.product(p.getId());
@@ -194,6 +223,7 @@ class CatalogServiceTest {
             return new org.springframework.data.domain.PageImpl<>(rows.subList(from, to), pg, rows.size());
         });
         when(products.countVisible()).thenReturn((long) all.size());
+        when(products.countVisibleWithImage()).thenReturn((long) all.size());
         Map<String, Object> page = catalog.browse(new CatalogService.BrowseRequest("Nike", null, null, null, 0, 1));
         assertThat(page).containsEntry("total", (long) all.size()).containsEntry("page", 0).containsEntry("size", 1).containsEntry("brandKnown", true);
         assertThat((List<?>) page.get("items")).hasSize(1);
@@ -213,6 +243,6 @@ class CatalogServiceTest {
         catalog.browse(new CatalogService.BrowseRequest(null, null, null, "Calça  jeans azul escura", 0, 48));
         assertThat(lastWords).containsExactly("%calca%", "%jeans%", "%azul%");
         Map<String, Object> summary = catalog.summary();
-        assertThat(summary).containsEntry("products", (long) all.size()).containsEntry("brands", 1);
+        assertThat(summary).containsEntry("products", (long) all.size()).containsEntry("brands", 1).containsEntry("withImage", (long) all.size());
     }
 }

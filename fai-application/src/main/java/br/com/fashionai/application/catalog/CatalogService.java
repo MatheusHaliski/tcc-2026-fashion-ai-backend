@@ -43,7 +43,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -297,6 +296,8 @@ public class CatalogService {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("products", products.countVisible());
         out.put("brands", catalogBrands().size());
+        // peças com foto: deve ser igual a products; a diferença é o que ainda falta fotografar/importar
+        out.put("withImage", products.countVisibleWithImage());
         return out;
     }
 
@@ -306,9 +307,7 @@ public class CatalogService {
             return List.of();
         }
         List<UUID> ids = list.stream().map(CatalogProduct::getId).toList();
-        Map<UUID, CatalogImage> primary = images.findByProductIdInAndPrimaryTrue(ids).stream()
-                .collect(Collectors.toMap(CatalogImage::getProductId, Function.identity(), (a, b) -> a));
-        images.findByProductIdInAndCanonicalTrue(ids).forEach(c -> primary.put(c.getProductId(), c));
+        Map<UUID, CatalogImage> primary = mainImages(ids);
         Map<UUID, List<CatalogVariant>> variantsBy = variants.findByProductIdIn(ids).stream()
                 .collect(Collectors.groupingBy(CatalogVariant::getProductId));
         Map<UUID, Brand> brandById = new HashMap<>();
@@ -320,6 +319,35 @@ public class CatalogService {
             out.add(m);
         }
         return out;
+    }
+
+    /**
+     * Uma foto por peça, para o card: a canônica do pipeline (aprovada pelo Quality Gate) › a principal da ingestão ›
+     * qualquer outra foto utilizável da peça (a mais antiga). Foto recusada ({@code REJECTED}) nunca aparece. Antes, peça
+     * sem foto marcada como principal ficava sem imagem mesmo tendo fotos.
+     */
+    Map<UUID, CatalogImage> mainImages(List<UUID> ids) {
+        Map<UUID, CatalogImage> main = new HashMap<>();
+        for (CatalogImage i : images.findByProductIdInAndPrimaryTrue(ids)) {
+            if (usable(i)) {
+                main.putIfAbsent(i.getProductId(), i);
+            }
+        }
+        // a foto canônica do pipeline de imagens passa na frente da principal da ingestão
+        images.findByProductIdInAndCanonicalTrue(ids).stream().filter(CatalogService::usable).forEach(c -> main.put(c.getProductId(), c));
+        List<UUID> missing = ids.stream().filter(id -> !main.containsKey(id)).toList();
+        if (!missing.isEmpty()) {
+            images.findByProductIdIn(missing).stream().filter(CatalogService::usable)
+                    .sorted(Comparator.comparing((CatalogImage i) -> i.getCreatedAt() == null ? java.time.Instant.MAX : i.getCreatedAt())
+                            .thenComparing(i -> String.valueOf(i.getImageUrl())))
+                    .forEach(i -> main.putIfAbsent(i.getProductId(), i));
+        }
+        return main;
+    }
+
+    private static boolean usable(CatalogImage i) {
+        return i.getUsageStatus() != br.com.fashionai.domain.model.enums.CatalogImageUsage.REJECTED
+                && i.getImageUrl() != null && !i.getImageUrl().isBlank();
     }
 
     static final double NO_PHOTO_PENALTY = 0.10;
@@ -351,10 +379,7 @@ public class CatalogService {
         List<UUID> ids = pool.stream().map(CatalogProduct::getId).toList();
         Map<UUID, List<String>> aliases = productAliases.findByProductIdIn(ids).stream()
                 .collect(Collectors.groupingBy(CatalogProductAlias::getProductId, Collectors.mapping(CatalogProductAlias::getAlias, Collectors.toList())));
-        Map<UUID, CatalogImage> primary = images.findByProductIdInAndPrimaryTrue(ids).stream()
-                .collect(Collectors.toMap(CatalogImage::getProductId, Function.identity(), (a, b) -> a));
-        // a foto canônica do pipeline de imagens (aprovada pelo Quality Gate) passa na frente da principal da ingestão
-        images.findByProductIdInAndCanonicalTrue(ids).forEach(c -> primary.put(c.getProductId(), c));
+        Map<UUID, CatalogImage> primary = mainImages(ids);
         Map<UUID, List<CatalogVariant>> variantsBy = variants.findByProductIdIn(ids).stream()
                 .collect(Collectors.groupingBy(CatalogVariant::getProductId));
         Map<UUID, Brand> brandById = new HashMap<>();

@@ -6955,5 +6955,6 @@
   "catalog.mais_parecidas": "Estas son las más parecidas.",
   "catalog.ver_todas_com": "Ver todas las piezas con «{q}»",
   "catalog.todas_com": "{total, number} piezas con «{q}»",
-  "catalog.marcas_erro": "No se pudieron cargar las marcas del catálogo."
+  "catalog.marcas_erro": "No se pudieron cargar las marcas del catálogo.",
+  "catalog.com_foto": "{n, number} con foto"
 }

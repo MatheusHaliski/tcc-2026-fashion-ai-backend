@@ -70,6 +70,11 @@ public interface CatalogProductRepository extends JpaRepository<CatalogProduct, 
             + "WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') GROUP BY p.brand_id, p.category", nativeQuery = true)
     List<Object[]> visibleCountsByBrandAndCategory();
 
+    /** Peças visíveis com pelo menos uma foto utilizável (não recusada): deve bater com o total de peças. */
+    @Query(value = "SELECT COUNT(DISTINCT i.product_id) FROM catalog_images i JOIN catalog_products p ON p.id = i.product_id "
+            + "WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') AND i.usage_status <> 'REJECTED'", nativeQuery = true)
+    long countVisibleWithImage();
+
     /** Quantas peças visíveis há no acervo (o total mostrado nas telas). */
     @Query(value = "SELECT COUNT(*) FROM catalog_products p WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY')", nativeQuery = true)
     long countVisible();
