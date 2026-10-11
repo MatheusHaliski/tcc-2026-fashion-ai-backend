@@ -503,7 +503,8 @@ def main(argv=None):
     source.add_argument("--snapshot", nargs="+", type=Path, help="JSONL/JSONL.GZ: estado local, não produção")
     source.add_argument("--database", action="store_true", help="Inventário atual do MySQL via MYSQL_*")
     ap.add_argument("--category-frame", action="store_true",
-                    help="Quadro 3:4 preenchido 100%% pela peça, sem fundo nem pessoas: gola, zíper, centro do acessório e logo do calçado; "
+                    help="catalog/semantic-regions.json: regra de enquadramento do produto do card; quadro 3:4 preenchido "
+                         "100%% pela peça, sem fundo nem pessoas: gola, zíper, centro do acessório e logo do calçado; "
                          "sem região válida a foto não é reenquadrada (requer --apply)")
     ap.add_argument("--force-category-frame", action="store_true",
                     help="Decisão do responsável: enquadra e persiste todas as fotos sem exigir autorização da fonte nem identificação "
