@@ -137,6 +137,8 @@ class MirrorServiceTest {
     void vistaMeMontaUmLookNovoDoPedido() {
         Map<String, Object> v = mirror.vistaMe(ana, "um look casual para o fim de semana com tênis", List.of(), null, false);
         assertThat(v).isNotEmpty();
+        // as ações do Vista-me somam às do estado (não substituem): VISTA_ME do estado e OUTRA_SUGESTAO da resposta
+        assertThat(String.valueOf(v.get("actions"))).contains("VISTA_ME").contains("OUTRA_SUGESTAO");
         assertThat(mirror.another(ana)).isNotEmpty();
         assertThat(mirror.swap(ana, "shoes")).isNotEmpty();
         Map<String, Object> focus = mirror.vistaMe(ana, "noite elegante", List.of(piece("blazer")), piece("oxford_shoes"), true);
