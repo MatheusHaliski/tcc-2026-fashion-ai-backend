@@ -8,7 +8,7 @@ import { Label3D } from "@/components/room3d/room-props";
 import { useI18n } from "@/lib/i18n/i18n";
 
 /** Acabamento de um bloco do móvel (cor, material e, nos itens de marca/celebridade, logo, arte e nome gravado). */
-export interface BlockFinish { color?: string; roughness?: number; metalness?: number; artUrl?: string | null; logoUrl?: string | null; labelText?: string | null; kelvin?: number; material?: string; }
+export interface BlockFinish { model3dUrl?: string | null; referenceUrl?: string | null; assetJobId?: string; color?: string; roughness?: number; metalness?: number; artUrl?: string | null; logoUrl?: string | null; labelText?: string | null; kelvin?: number; material?: string; }
 export type Finishes = Partial<Record<string, BlockFinish>>;
 
 const W = 2.4, D = 0.6, DOOR_W = 0.6;

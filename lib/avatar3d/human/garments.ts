@@ -30,6 +30,9 @@ export type GarmentKind =
 export interface GarmentSpec {
   kind: GarmentKind;
   construction?: "cargo";
+  /** A blouse has no shirt buttons; a polo has a short button placket. */
+  placket?: boolean;
+  placketLength?: number;
   ease: number;          // folga base (m)
   hem: number;           // barra do tronco em h (0 = articulação do quadril, 1 = base do pescoço); NaN = não cobre o tronco
   neck: number;          // gola: até onde sobe no tronco (h), na frente um pouco mais baixo
@@ -59,7 +62,7 @@ export const SPECS: Record<GarmentKind, GarmentSpec> = {
   shorts: S("shorts", { ease: 0.007, waist: 0.18, leg: 0.36, flare: 0.012, layer: 2 }),
   bermuda: S("bermuda", { ease: 0.009, waist: 0.18, leg: 0.5, flare: 0.015, layer: 2, legColumn: 1 }),
   skirt: S("skirt", { ease: 0.008, waist: 0.2, skirt: 0.42, flare: 0.1, layer: 2 }),
-  tank: S("tank", { ease: 0.005, hem: -0.03, neck: 0.9, vneck: 0.14, drape: 0.35, layer: 3 }),
+  tank: S("tank", { ease: 0.005, hem: -0.03, neck: 1.03, vneck: 0.24, drape: 0.35, layer: 3 }),
   crop: S("crop", { ease: 0.005, hem: 0.45, neck: 0.95, vneck: 0.09, sleeve: 0.28, drape: 0.2, layer: 3 }),
   tee: S("tee", { ease: 0.007, hem: -0.06, neck: 0.98, vneck: 0.09, sleeve: 0.33, drape: 0.6, flare: 0.02, layer: 3 }),
   longsleeve: S("longsleeve", { ease: 0.007, hem: -0.06, neck: 0.98, vneck: 0.09, sleeve: 0.96, drape: 0.6, layer: 3 }),
@@ -69,7 +72,7 @@ export const SPECS: Record<GarmentKind, GarmentSpec> = {
   jacket: S("jacket", { ease: 0.018, hem: -0.08, neck: 1.03, vneck: 0.12, sleeve: 0.98, drape: 0.85, layer: 5 }),
   vest: S("vest", { ease: 0.014, hem: -0.06, neck: 1.0, vneck: 0.18, drape: 0.85, layer: 5 }),
   coat: S("coat", { ease: 0.022, hem: -0.08, neck: 1.03, vneck: 0.14, sleeve: 0.99, drape: 0.9, skirt: 0.5, flare: 0.08, layer: 6 }),
-  dress: S("dress", { ease: 0.006, hem: 0.36, neck: 0.9, vneck: 0.1, skirt: 0.5, flare: 0.14, drape: 0.2, layer: 3 }),
+  dress: S("dress", { ease: 0.006, hem: 0.36, neck: 1.03, vneck: 0.23, skirt: 0.5, flare: 0.14, drape: 0.2, layer: 3 }),
   jumpsuit: S("jumpsuit", { ease: 0.008, hem: -0.2, neck: 0.95, vneck: 0.1, waist: 1, leg: 0.97, flare: 0.01, drape: 0.3, layer: 3, legColumn: 1 }),
   romper: S("romper", { ease: 0.008, hem: -0.2, neck: 0.95, vneck: 0.1, waist: 1, leg: 0.34, flare: 0.012, drape: 0.3, layer: 3 }),
   shoes: S("shoes", { ease: 0.008, layer: 2 }),
@@ -81,6 +84,9 @@ const BAG_WORDS: ReadonlySet<string> = new Set(["bag", "bolsa", "backpack", "moc
 /** Tipo de molde pela subcategoria da peça (taxonomia do app); null = acessório (não é roupa de vestir). */
 export function kindOf(p: { category?: string | null; subcategory?: string | null; slot?: string | null }): GarmentKind | null {
   const sub = (p.subcategory ?? "").toLowerCase();
+  // Official codes take precedence over substring guesses (flip_flops,
+  // moccasins and top previously fell through when no broad category was sent).
+  if (SUBCATEGORY_KINDS[sub]) return SUBCATEGORY_KINDS[sub];
   const is = (...k: string[]) => k.some((x) => sub.includes(x));
   // bolsas e mochilas são acessórios: "crossbody_bag" contém "body" e viraria regata; "baggy" não é bolsa
   const words = sub.split(/[^a-zà-ú]+/);
@@ -125,16 +131,36 @@ export function kindOf(p: { category?: string | null; subcategory?: string | nul
   return pick((p.category ?? "").toUpperCase()) ?? pick(slot) ?? null;
 }
 
+export const SUBCATEGORY_KINDS: Readonly<Record<string, GarmentKind>> = {
+  t_shirt: "tee", shirt: "shirt", blouse: "shirt", tank_top: "tank", top: "tank", crop_top: "crop",
+  polo_shirt: "shirt", bodysuit: "tank", sweater: "sweater", sweatshirt: "sweater", hoodie: "hoodie",
+  cardigan: "jacket", vest: "vest", blazer: "jacket", jacket: "jacket", coat: "coat", parka: "coat",
+  windbreaker: "jacket", kimono: "jacket", jeans: "pants", tailored_pants: "pants", casual_pants: "pants",
+  chino_pants: "pants", cargo_pants: "pants", jogger_pants: "pants", sweatpants: "pants", leggings: "leggings",
+  culottes: "culottes", shorts: "shorts", bermuda_shorts: "bermuda", denim_shorts: "shorts", skirt: "skirt", skort: "skirt",
+  dress: "dress", jumpsuit: "jumpsuit", romper: "romper", matching_set: "jumpsuit", overalls: "jumpsuit",
+  casual_sneakers: "shoes", running_shoes: "shoes", training_shoes: "shoes", basketball_shoes: "shoes",
+  skate_shoes: "shoes", high_top_sneakers: "shoes", loafers: "shoes", moccasins: "shoes", oxford_shoes: "shoes",
+  derby_shoes: "shoes", boots: "boots", ankle_boots: "boots", long_boots: "boots", combat_boots: "boots",
+  sandals: "shoes", flip_flops: "shoes", heels: "shoes", flats: "shoes", espadrilles: "shoes",
+};
+
 /** Construction is independent of the broad category: cargo is not a tight generic trouser. */
 export function specOf(p: { name?: string; category?: string | null; subcategory?: string | null; slot?: string | null }): GarmentSpec | null {
   const kind = kindOf(p);
   if (!kind) return null;
+  const sub = (p.subcategory ?? "").toLowerCase();
+  if (sub === "blouse") return { ...SPECS.shirt, placket: false };
+  if (sub === "polo_shirt") return { ...SPECS.shirt, sleeve: .33, hem: -.06, placketLength: .16 };
+  if (sub === "top") return { ...SPECS.tank, hem: .45 };
+  if (sub === "overalls") return { ...SPECS.jumpsuit, neck: 1.03, vneck: .3 };
   const description = `${p.subcategory ?? ""} ${p.name ?? ""}`.toLowerCase();
   if (kind === "pants" && /cargo/.test(description)) {
     const loose = /loose|relaxed|wide|larga|ampla/.test(description);
     return { ...SPECS.pants, construction: "cargo", ease: loose ? .026 : .019, waist: .29, flare: loose ? .045 : .032 };
   }
-  return kind === "jacket" && /blazer/.test(description) ? { ...SPECS[kind], ease: .010, drape: .5 } : SPECS[kind];
+  const base = kind === "jacket" && /blazer/.test(description) ? { ...SPECS[kind], ease: .010, drape: .5 } : SPECS[kind];
+  return !Number.isNaN(base.hem) && /long[ _-]?sleeve|manga[ _-]?longa/.test(description) ? { ...base, sleeve: .96 } : base;
 }
 
 /**

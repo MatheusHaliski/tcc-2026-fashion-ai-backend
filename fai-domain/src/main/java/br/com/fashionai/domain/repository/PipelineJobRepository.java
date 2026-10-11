@@ -19,6 +19,10 @@ import java.util.UUID;
 
 /** Repositório Spring Data de PipelineJob (MySQL — fonte da verdade). */
 public interface PipelineJobRepository extends JpaRepository<PipelineJob, UUID> {
+    List<PipelineJob> findTop100ByTypeOrderByQueuedAtDesc(PipelineJobType type);
+
+    List<PipelineJob> findTop20ByTypeAndStatusInOrderByQueuedAtAsc(PipelineJobType type, Collection<PipelineJobStatus> statuses);
+
     List<PipelineJob> findTop50ByUserIdOrderByCreatedAtDesc(UUID userId);
 
     List<PipelineJob> findByStatusOrderByQueuedAtAsc(PipelineJobStatus status);
