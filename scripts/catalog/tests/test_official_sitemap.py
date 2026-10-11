@@ -124,6 +124,40 @@ class SitemapTest(unittest.TestCase):
         site.load_robots()
         self.assertEqual(site.sitemaps, ["https://www.vans.com/sm.xml"])
 
+    def test_robots_que_redireciona_para_a_pagina_inicial_tenta_www(self):
+        # hering.com.br/robots.txt redireciona para www.hering.com.br/ (HTML): isso não é robots.txt
+        home = (200, b"<!DOCTYPE html><html><body>Hering</body></html>", "text/html; charset=utf-8")
+        web = FakeWeb({"https://hering.com.br/robots.txt": home,
+                       "https://www.hering.com.br/robots.txt": (200, b"User-agent: *\nSitemap: https://www.hering.com.br/sitemap.xml", "text/plain")})
+        site = Site("hering.com.br", web, polite()[0])
+        site.load_robots()
+        self.assertEqual(site.base, "https://www.hering.com.br")
+        self.assertEqual(site.sitemaps, ["https://www.hering.com.br/sitemap.xml"])
+
+    def test_dominio_com_palavra_de_descarte_nao_some(self):
+        # "lojasrenner.com.br" contém "lojas" (sitemap de lojas físicas é pulado), mas é o domínio, não o sitemap
+        sm = urlset("https://www.lojasrenner.com.br/p/camiseta-basica/1")
+        web = FakeWeb({"https://lojasrenner.com.br/robots.txt": (200, b"Sitemap: https://www.lojasrenner.com.br/sitemap.xml", "text/plain"),
+                       "https://www.lojasrenner.com.br/sitemap.xml": (200, sm, "application/xml")})
+        site = Site("lojasrenner.com.br", web, polite()[0])
+        site.load_robots()
+        self.assertEqual(list(product_urls(site)), ["https://www.lojasrenner.com.br/p/camiseta-basica/1"])
+
+    def test_desiste_do_site_que_nao_publica_dados_estruturados(self):
+        urls = [f"https://www.semdados.com/produto/p{i}" for i in range(10)]
+        pages = {u: (200, b"<html><body>sem json-ld</body></html>", "text/html") for u in urls}
+        web = FakeWeb({"https://semdados.com/robots.txt": (200, b"Sitemap: https://semdados.com/sm.xml", "text/plain"),
+                       "https://semdados.com/sm.xml": (200, urlset(*urls), "application/xml"), **pages})
+        rep = collect(Site("semdados.com", web, polite()[0]), "X", "OFFICIAL_BRAND", N, 100, give_up_after=3)
+        self.assertEqual(rep["pages"], 3)
+        self.assertIn("3 páginas seguidas", rep["stopped"])
+
+    def test_sitemap_declarado_em_outro_dominio_tenta_o_do_proprio_site(self):
+        web = FakeWeb({"https://lezalez.com/robots.txt": (200, b"Sitemap: https://www.lezalez.com.br/sitemap.xml", "text/plain")})
+        site = Site("lezalez.com", web, polite()[0])
+        site.load_robots()
+        self.assertEqual(site.sitemaps, ["https://www.lezalez.com.br/sitemap.xml", "https://lezalez.com/sitemap.xml"])
+
     def test_robots_403_nao_coleta(self):
         web = FakeWeb({"https://nike.com.br/robots.txt": (403, b"", "text/plain")})
         rep = collect(Site("nike.com.br", web, polite()[0]), "Nike", "OFFICIAL_STORE", N, 10)
@@ -148,6 +182,28 @@ class SitemapTest(unittest.TestCase):
 
 
 class StructuredDataTest(unittest.TestCase):
+    def test_json_ld_com_entidade_html_dentro_de_texto_continua_valido(self):
+        # VTEX (Hering): avaliação vazia publicada como "&quot;&quot;" — converter antes de ler quebrava o JSON
+        block = ('{"@context":"https://schema.org","@type":"Product","name":"Gorro Unissex em Tricô","brand":{"@type":"Brand","name":"Hering"},'
+                 '"image":"https://hering.vtexassets.com/arquivos/ids/1/g.jpg","review":[{"reviewBody":"&quot;&quot;","name":"&quot;&quot;"}]}')
+        page = f'<html><head><script type="application/ld+json" id="x">{block}</script></head></html>'.encode()
+        found = structured_product(page)
+        self.assertEqual(found["kind"], "jsonld")
+        self.assertEqual(found["node"]["name"], "Gorro Unissex em Tricô")
+
+    def test_atributos_sem_aspas_html_minificado(self):
+        block = '{"@context":"https://schema.org","@type":"Product","name":"Baby Look Fit Garden","brand":{"@type":"Brand","name":"Baw"}}'
+        page = (f'<html><head><meta property=og:type content=website /><meta property=og:image content=https://cdn.baw.com.br/a.jpg>'
+                f'<script type=application/ld+json>{block}</script></head></html>').encode()
+        found = structured_product(page)
+        self.assertEqual(found["kind"], "jsonld")
+        self.assertEqual(found["node"]["name"], "Baby Look Fit Garden")
+        self.assertEqual(found["og_image"], "https://cdn.baw.com.br/a.jpg")
+
+    def test_og_type_com_prefixo_og_tambem_e_produto(self):
+        page = b'<html><head><meta property="og:type" content="og:product"><meta property="og:title" content="Bermuda"></head></html>'
+        self.assertEqual(structured_product(page)["kind"], "og")
+
     def test_product_jsonld_vira_item_importavel(self):
         warnings = []
         item = to_catalog_item(structured_product(ld(TEE)), "https://www.nike.com.br/p/nk-1", "Nike", "nike.com.br", "OFFICIAL_STORE", N, warnings)

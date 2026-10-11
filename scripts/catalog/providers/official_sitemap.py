@@ -20,6 +20,7 @@ import html
 import json
 import re
 import time
+import urllib.parse
 import urllib.robotparser
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
@@ -55,6 +56,14 @@ class Politeness:
         self.last[host] = self.clock()
 
 
+def looks_like_html(body: bytes, content_type: str) -> bool:
+    """Página HTML no lugar de um arquivo (robots.txt/sitemap que redirecionou para a página inicial)."""
+    if "html" in (content_type or "").lower():
+        return True
+    head = body[:512].lstrip().lower()
+    return head.startswith((b"<!doctype html", b"<html"))
+
+
 class Site:
     """Um domínio oficial: robots.txt, sitemaps e o fetch educado."""
 
@@ -69,15 +78,21 @@ class Site:
 
     def load_robots(self):
         try:
-            status, body, _ = self._get(urljoin(self.base + "/", "robots.txt"), check_robots=False)
+            status, body, ctype = self._get(urljoin(self.base + "/", "robots.txt"), check_robots=False)
         except StopDomain:
-            status, body = 403, b""
+            status, body, ctype = 403, b"", ""
+        if status == 200 and looks_like_html(body, ctype):
+            # o domínio sem www. redirecionou o robots.txt para a página inicial (ex.: hering.com.br → www.hering.com.br/):
+            # HTML não é robots.txt — sem isso o coletor ficava sem sitemaps e não achava nenhum produto
+            status, body = 404, b""
         if status in (0, 403, 404) and not self.domain.startswith("www."):
             alt = f"https://www.{self.domain}"                    # muitos sites só respondem (ou só liberam) no www.
             try:
                 s2, b2, _ = self._get(urljoin(alt + "/", "robots.txt"), check_robots=False)
             except StopDomain:
                 s2, b2 = 403, b""
+            if s2 == 200 and looks_like_html(b2, ""):
+                s2 = 404
             if s2 not in (0, 404):
                 self.base, status, body = alt, s2, b2
         if status in (401, 403):
@@ -87,8 +102,10 @@ class Site:
         text = body.decode("utf-8", "replace") if status == 200 else ""
         self.robots.parse(text.splitlines())                      # 404 = sem regras (permitido, como manda o padrão)
         self.sitemaps = [m.group(1).strip() for m in re.finditer(r"(?im)^\s*sitemap:\s*(\S+)", text)]
-        if not self.sitemaps:
-            self.sitemaps = [urljoin(self.base + "/", "sitemap.xml")]
+        if not any(same_site(domain(u), self.domain) for u in self.sitemaps):
+            # nenhum sitemap declarado no próprio domínio (robots aponta para um domínio antigo ou de outra loja, ex.:
+            # lezalez.com → lezalez.com.br, richards.com.br → richards.br): tenta também o sitemap padrão do site
+            self.sitemaps.append(urljoin(self.base + "/", "sitemap.xml"))
         self.robots_loaded = True
 
     def allowed(self, url: str) -> bool:
@@ -141,7 +158,10 @@ LOCALE_HINTS = ("pt-br", "pt_br", "/br/", "-br.", "_br.", "en-us", "en_us", "/us
 
 def _sitemap_rank(url: str, extra: tuple) -> int:
     """Ordem de leitura: sitemap de produto do Brasil/EUA primeiro; ajuda, blog, lojas físicas etc. por último."""
-    u = url.lower().replace("sitemap", "")                       # "s-item-ap" não é sitemap de item
+    # só o caminho conta: o domínio da marca não diz nada sobre o sitemap ("lojasrenner.com.br" tem "lojas" e era
+    # descartado inteiro como sitemap de lojas físicas)
+    parts = urllib.parse.urlsplit(url)
+    u = (parts.path + ("?" + parts.query if parts.query else "")).lower().replace("sitemap", "")  # "s-item-ap" não é sitemap de item
     rank = 0
     if any(p in u for p in (*extra, *PRODUCT_SITEMAP_HINTS)):
         rank -= 10
@@ -183,9 +203,24 @@ def product_urls(site: Site, product_patterns: Iterable[str] = PRODUCT_HINTS, si
 
 # ───────────────────────── dados estruturados da página
 
-_LD = re.compile(r'<script[^>]+type=["\']application/ld\+json["\'][^>]*>(.*?)</script>', re.S | re.I)
-_META = re.compile(r'<meta\s+[^>]*(?:property|name)=["\']([^"\']+)["\'][^>]*content=["\']([^"\']*)["\'][^>]*>', re.I)
-_META_REV = re.compile(r'<meta\s+[^>]*content=["\']([^"\']*)["\'][^>]*(?:property|name)=["\']([^"\']+)["\'][^>]*>', re.I)
+# atributos com ou sem aspas: lojas com HTML minificado escrevem <script type=application/ld+json> e
+# <meta property=og:type content=product> (ex.: Baw Clothing), que antes passavam como "sem dados estruturados"
+_LD = re.compile(r'<script[^>]+type=["\']?application/ld\+json["\']?[^>]*>(.*?)</script>', re.S | re.I)
+_META_TAG = re.compile(r"<meta\b[^>]*>", re.I)
+_ATTR = re.compile(r"""([a-zA-Z_:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))""")
+
+
+def _metas(text: str) -> dict:
+    """property/name → content de cada <meta>, com ou sem aspas (o último vence, como antes)."""
+    out = {}
+    for tag in _META_TAG.findall(text):
+        attrs = {}
+        for m in _ATTR.finditer(tag):
+            attrs[m.group(1).lower()] = next(g for g in (m.group(2), m.group(3), m.group(4)) if g is not None)
+        key = (attrs.get("property") or attrs.get("name") or "").lower()
+        if key and "content" in attrs:
+            out[key] = attrs["content"]
+    return out
 
 
 def _walk(node) -> Iterator[dict]:
@@ -230,17 +265,28 @@ def _images(v) -> list[str]:
     return out
 
 
+def _ld_json(block: str):
+    """JSON-LD como a página publicou; só se não for JSON válido, tenta com as entidades HTML convertidas. Converter
+    antes quebrava o JSON: um "&quot;" dentro de uma avaliação (VTEX: Hering, Renner…) virava aspas soltas e o produto
+    inteiro era descartado como "sem dados estruturados"."""
+    raw = block.strip()
+    for candidate in (raw, html.unescape(raw)):
+        try:
+            return json.loads(candidate)
+        except ValueError:
+            continue
+    return None
+
+
 def structured_product(page: bytes) -> Optional[dict]:
     """Product/ProductGroup do JSON-LD da página; sem JSON-LD de produto, o OpenGraph (og:type=product).
     O og:image vem junto: é a imagem que a própria página declara, usada quando o JSON-LD não traz foto."""
     text = page.decode("utf-8", "replace")
-    meta = {k.lower(): v for k, v in _META.findall(text)}
-    meta.update({k.lower(): v for v, k in _META_REV.findall(text)})
+    meta = _metas(text)
     og_image = html.unescape(meta.get("og:image") or "") or None
     for block in _LD.findall(text):
-        try:
-            data = json.loads(html.unescape(block.strip()))
-        except ValueError:
+        data = _ld_json(block)
+        if data is None:
             continue
         nodes = list(_walk(data))
         group = next((n for n in nodes if "ProductGroup" in _types(n)), None)
@@ -248,7 +294,8 @@ def structured_product(page: bytes) -> Optional[dict]:
         if prod:
             variants = [n for n in (prod.get("hasVariant") or []) if isinstance(n, dict)] if group else []
             return {"kind": "jsonld", "node": prod, "variants": variants, "og_image": og_image}
-    if meta.get("og:type", "").lower().startswith("product") or meta.get("product:retailer_item_id"):
+    og_type = meta.get("og:type", "").lower().removeprefix("og:")
+    if og_type.startswith("product") or meta.get("product:retailer_item_id"):
         return {"kind": "og", "node": {"name": meta.get("og:title"), "description": meta.get("og:description"),
                                          "image": meta.get("og:image"), "sku": meta.get("product:retailer_item_id"),
                                          "color": meta.get("product:color")}, "variants": [], "og_image": og_image}
@@ -456,11 +503,17 @@ def _gtin(node: dict) -> Optional[str]:
     return None
 
 
+GIVE_UP_AFTER = 150
+
+
 def collect(site: Site, brand: str, source_type: str, n: Normalizer, max_products: int, product_patterns=PRODUCT_HINTS,
             sitemap_patterns=(), visited: Optional[set] = None, warnings: Optional[list] = None,
-            on_item: Optional[Callable[[dict], None]] = None) -> dict:
-    """Percorre o domínio oficial e devolve um relatório; cada produto aceito vai para on_item (JSONL no CLI)."""
+            on_item: Optional[Callable[[dict], None]] = None, give_up_after: int = GIVE_UP_AFTER) -> dict:
+    """Percorre o domínio oficial e devolve um relatório; cada produto aceito vai para on_item (JSONL no CLI).
+    Após `give_up_after` páginas seguidas sem dados estruturados de produto, larga o domínio: o site não publica
+    JSON-LD/OpenGraph e insistir só gasta requisições dele."""
     visited = visited if visited is not None else set()
+    misses = 0
     warnings = warnings if warnings is not None else []
     report = {"domain": site.domain, "pages": 0, "accepted": 0, "skipped": 0, "blocked_by_robots": 0, "stopped": None}
     try:
@@ -481,10 +534,14 @@ def collect(site: Site, brand: str, source_type: str, n: Normalizer, max_product
                 continue
             found = structured_product(body)
             item = to_catalog_item(found, url, brand, site.domain, source_type, n, warnings) if found else None
+            misses = 0 if found else misses + 1
             if not item:
                 if not found:
                     warnings.append(f"{url}: sem dados estruturados de produto (JSON-LD/OpenGraph)")
                 report["skipped"] += 1
+                if give_up_after and misses >= give_up_after:
+                    report["stopped"] = f"{site.domain}: {misses} páginas seguidas sem dados estruturados de produto"
+                    break
                 continue
             report["accepted"] += 1
             if on_item:

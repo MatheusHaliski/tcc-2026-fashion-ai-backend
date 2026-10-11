@@ -187,6 +187,11 @@
         "domain": "bananarepublic.com",
         "source_type": "OFFICIAL_BRAND",
         "country": "US"
+      },
+      {
+        "domain": "bananarepublic.gap.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
       }
     ]
   },
@@ -1166,10 +1171,10 @@
   {
     "name": "Hope",
     "country": "BR",
-    "website": "https://www.hope.com.br",
+    "website": "https://www.hopeoficial.com.br",
     "sources": [
       {
-        "domain": "hope.com.br",
+        "domain": "hopeoficial.com.br",
         "source_type": "OFFICIAL_BRAND",
         "country": "BR"
       }
