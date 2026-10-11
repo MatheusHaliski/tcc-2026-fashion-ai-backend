@@ -228,7 +228,10 @@ public class CatalogService {
     // ───────────────────────────── acervo inteiro (RF47): "ver todas as peças", sem pool nem corte por pontuação
 
     /** Página do acervo: marca (nome, apelido ou slug), categoria, subtipo e texto opcionais; {@code size} até {@value #BROWSE_MAX_SIZE}. */
-    public record BrowseRequest(String brand, String category, String subcategory, String query, Integer page, Integer size) {
+    public record BrowseRequest(String brand, String category, String subcategory, String query, Integer page, Integer size, String brandId) {
+        public BrowseRequest(String brand, String category, String subcategory, String query, Integer page, Integer size) {
+            this(brand, category, subcategory, query, page, size, null);
+        }
     }
 
     public static final int BROWSE_DEFAULT_SIZE = 48, BROWSE_MAX_SIZE = 96;
@@ -240,11 +243,17 @@ public class CatalogService {
      */
     @Transactional(readOnly = true)
     public Map<String, Object> browse(BrowseRequest r) {
-        Brand brand = r.brand() == null || r.brand().isBlank() ? null : ingest.resolveBrand(r.brand(), false).orElse(null);
-        boolean brandUnknown = r.brand() != null && !r.brand().isBlank() && brand == null;
+        // a grade de marcas manda o id (sem ambiguidade de nome ou apelido); o texto digitado vai pelo nome
+        UUID brandId = parseUuid(r.brandId());
+        boolean askedBrand = brandId != null || (r.brand() != null && !r.brand().isBlank());
+        Brand brand = brandId != null ? brands.findById(brandId).orElse(null)
+                : askedBrand ? ingest.resolveBrand(r.brand(), false).orElse(null) : null;
+        boolean brandUnknown = askedBrand && brand == null;
         String sub = r.subcategory() == null || r.subcategory().isBlank() ? null : norm.subcategory(r.subcategory()).orElse(r.subcategory());
         String cat = r.category() == null || r.category().isBlank() ? (sub == null ? null : norm.categoryOf(sub)) : norm.category(r.category()).orElse(r.category());
-        String q = r.query() == null || r.query().isBlank() ? null : "%" + CatalogNormalizer.key(r.query()) + "%";
+        // até três palavras do texto, todas presentes (nome, modelo ou texto de busca normalizado)
+        List<String> words = r.query() == null ? List.of() : java.util.Arrays.stream(CatalogNormalizer.key(r.query()).split(" "))
+                .filter(w -> w.length() >= 2).distinct().limit(3).map(w -> "%" + w + "%").toList();
         int size = r.size() == null ? BROWSE_DEFAULT_SIZE : Math.max(1, Math.min(BROWSE_MAX_SIZE, r.size()));
         int page = r.page() == null ? 0 : Math.max(0, r.page());
         Map<String, Object> out = new LinkedHashMap<>();
@@ -257,7 +266,8 @@ public class CatalogService {
             out.put("brandKnown", false);
             return out;
         }
-        Page<CatalogProduct> pg = products.browse(brand == null ? null : brand.getId().toString(), cat, sub, q, PageRequest.of(page, size));
+        Page<CatalogProduct> pg = products.browse(brand == null ? null : brand.getId().toString(), cat, sub,
+                words.size() > 0 ? words.get(0) : null, words.size() > 1 ? words.get(1) : null, words.size() > 2 ? words.get(2) : null, PageRequest.of(page, size));
         out.put("items", cards(pg.getContent()));
         out.put("page", page);
         out.put("size", size);
@@ -268,6 +278,17 @@ public class CatalogService {
             out.put("brand", Map.of("id", brand.getId(), "name", brand.getName(), "slug", brand.getSlug(), "logoUrl", String.valueOf(brand.getLogoUrl())));
         }
         return out;
+    }
+
+    private static UUID parseUuid(String s) {
+        if (s == null || s.isBlank()) {
+            return null;
+        }
+        try {
+            return UUID.fromString(s.trim());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
     /** Tamanho do acervo visível (peças e marcas com peças) — o número que as telas mostram como "acervo completo". */
@@ -638,12 +659,13 @@ public class CatalogService {
     @Transactional(readOnly = true)
     public List<Map<String, Object>> catalogBrands() {
         Map<String, Long> counts = new HashMap<>();
-        Map<String, java.util.TreeSet<String>> categories = new HashMap<>();
+        Map<String, java.util.TreeMap<String, Long>> byCategory = new HashMap<>();
         for (Object[] row : products.visibleCountsByBrandAndCategory()) {
             String brandId = String.valueOf(row[0]);
-            counts.merge(brandId, ((Number) row[2]).longValue(), Long::sum);
+            long n = ((Number) row[2]).longValue();
+            counts.merge(brandId, n, Long::sum);
             if (row[1] != null) {
-                categories.computeIfAbsent(brandId, k -> new java.util.TreeSet<>()).add(String.valueOf(row[1]));
+                byCategory.computeIfAbsent(brandId, k -> new java.util.TreeMap<>()).merge(String.valueOf(row[1]), n, Long::sum);
             }
         }
         List<Map<String, Object>> out = new ArrayList<>();
@@ -660,7 +682,10 @@ public class CatalogService {
             m.put("country", b.getCountry());
             m.put("storeUrl", b.getWebsite());
             m.put("catalogProducts", count);
-            m.put("categories", List.copyOf(categories.getOrDefault(b.getId().toString(), new java.util.TreeSet<>())));
+            java.util.TreeMap<String, Long> perCategory = byCategory.getOrDefault(b.getId().toString(), new java.util.TreeMap<>());
+            m.put("categories", List.copyOf(perCategory.keySet()));
+            // quantas peças em cada categoria: o criador mostra o número do tipo escolhido, não o total da marca
+            m.put("categoryCounts", perCategory);
             out.add(m);
         }
         return out;

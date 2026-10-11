@@ -4,7 +4,8 @@
  * cada módulo, decorações, espelho, luzes do closet e os objetos interativos, do nível inicial ao mais alto.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ReactNode } from "react";
+import { useLayoutEffect, type ReactNode } from "react";
+import { useThree } from "@react-three/fiber";
 
 vi.mock("@react-three/fiber", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@react-three/fiber")>();
@@ -16,11 +17,12 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { frames, meshes, mount3d } from "@/test-utils/three";
 import { cleanup } from "@/test-utils/render";
-import RoomScene, { LEVELS, kelvinColor, moduleAnchor, type RoomData3D, type RoomPiece3D } from "./room-scene";
+import RoomScene, { LEVELS, kelvinColor, moduleAnchor, moduleFacing, shownHits, type RoomData3D, type RoomPiece3D } from "./room-scene";
+import { ROOM, W2 } from "@/lib/room3d/room-bounds";
 import WardrobePreview from "./wardrobe-preview";
 import PieceModelViewer from "./piece-model-viewer";
 import {
-  ClosetLights, Cobweb, DressForm, DustPuff, EmptyDrawerCharm, FaiBox, GoldDot, HangTag, KeyHook, Label3D, Lamp, LightSwitch, RoomWindow,
+  ClosetLights, Cobweb, DressForm, DustPuff, EmptyDrawerCharm, FaiBox, GoldDot, HangTag, KeyHook, Label3D, Lamp, LightSwitch, RoomDoor, RoomWindow,
   deg, sketchDraw, textTex,
 } from "./room-props";
 
@@ -79,6 +81,11 @@ describe("quarto 3D — utilitários", () => {
       const a = moduleAnchor(id, "MAISON");
       expect(a.every((v) => Number.isFinite(v))).toBe(true);
     }
+    // 2º guarda-roupa (portas 5–6, gavetas 25–36) na parede oeste, de frente para leste; o resto, na parede norte
+    for (const id of ["door:5", "door:6", "drawer:25", "drawer:36"]) {
+      const [x, , z] = moduleAnchor(id, "LOFT"); expect(x).toBeLessThan(ROOM.minX + 1.2); expect(Math.abs(z - W2.z)).toBeLessThan(1); expect(moduleFacing(id)).toEqual([1, 0]);
+    }
+    expect(moduleAnchor("door:1")[2]).toBeCloseTo(0.2); expect(moduleFacing("door:1")).toEqual([0, 1]); expect(moduleFacing("drawer:24")).toEqual([0, 1]);
     expect(LEVELS[0]).toBe("ESTREIA");
     expect(deg(180)).toBeCloseTo(Math.PI, 6);
     expect(typeof sketchDraw("upper_piece")).toBe("function");
@@ -101,6 +108,31 @@ describe("quarto 3D — cena", () => {
     });
   }
 
+  it("quatro paredes: com a câmera atrás da parede da frente (sul) ou da oeste, os objetos delas somem; a foto do espelho mostra tudo", async () => {
+    const at = (p: [number, number, number]) => function Camera() { const { camera } = useThree(); useLayoutEffect(() => { camera.position.set(...p); camera.lookAt(0, 1.2, 0); camera.updateMatrixWorld(); }, [camera]); return null; };
+    for (const [id, Camera] of [["south", at([1, 1.6, 12])], ["west", at([-9, 1.6, 2.4])]] as const) {
+      const r = await mount3d(<><RoomScene data={{ ...room("LOFT"), camera: undefined }} open={new Set()} onToggle={vi.fn()} highlight={null} focusModule={null} onPick={vi.fn()} onKeys={vi.fn()} /><Camera /></>);
+      await frames(r, 4);
+      const walls = r.scene.findAll((n) => !!n.instance.userData?.wall);
+      expect(walls.map((n) => n.instance.userData.wall).sort()).toEqual(["east", "north", "south", "west"]);
+      const props = (wall: string) => r.scene.find((n) => n.instance.name === `wall-props-${wall}`).instance;
+      expect(props(id).visible).toBe(false);
+      for (const other of ["north", "east"]) expect(props(other).visible).toBe(true);
+      if (id === "west") expect(r.scene.find((n) => n.instance.name === "guarda-roupa-2").instance.parent?.visible).toBe(false);
+      // a foto do espelho força a parede inteira e devolve como estava
+      const wall = walls.find((n) => n.instance.userData.wall === id)!.instance, restore = wall.userData.reveal() as () => void;
+      expect(props(id).visible).toBe(true); restore(); expect(props(id).visible).toBe(false);
+      await r.unmount();
+    }
+  });
+
+  it("objetos escondidos (parede atrás da câmera) não recebem clique: o filtro dos eventos só deixa os visíveis", () => {
+    const wall = new THREE.Group(), door = new THREE.Mesh(), mirror = new THREE.Mesh(); wall.add(door);
+    expect(shownHits([{ object: door }, { object: mirror }]).map((h) => h.object)).toEqual([door, mirror]);
+    wall.visible = false;
+    expect(shownHits([{ object: door }, { object: mirror }]).map((h) => h.object)).toEqual([mirror]);
+  });
+
   it("quarto vazio, sem decorações nem espelho", async () => {
     const r = await mount3d(<RoomScene data={{ modules: [], pieces: {} }} open={new Set()} onToggle={vi.fn()} highlight={null} focusModule={null} onPick={vi.fn()} />);
     await frames(r, 2);
@@ -118,7 +150,8 @@ describe("quarto 3D — objetos e prévias", () => {
         <HangTag text="R$ 50" position={[0, 1, 0]} /><GoldDot position={[0, 0, 0]} /><EmptyDrawerCharm width={0.3} onAdd={onClick} />
         <DressForm position={[1, 0, 0]} pointAt={[0, 1, 0]} talking onClick={onClick} reduced={false} />
         <LightSwitch position={[0, 1, 0]} on onToggle={onClick} /><LightSwitch position={[0, 1, 0]} on={false} onToggle={onClick} />
-        <RoomWindow position={[0, 1.5, -1]} period="day" seasonal="christmas" /><RoomWindow position={[0, 1.5, -1]} period="night" />
+        <RoomWindow position={[0, 1.5, -1]} period="day" seasonal="christmas" /><RoomWindow position={[0, 1.5, -1]} period="night" /><RoomWindow position={[2, 1.5, -1]} period="afternoon" light={false} />
+        <RoomDoor position={[-2, 0, -1]} onClick={onClick} /><RoomDoor position={[-3, 0, -1]} night />
         <Lamp position={[0, 0, 0]} on /><ClosetLights y={2} width={2.4} milestones={[{ at: 10, label: "10", lit: true }]} celebrate reduced={false} />
         <FaiBox position={[0, 0, 0]} count={2} opening onOpen={onClick} /><KeyHook position={[0, 1, 0]} keys={[{ username: "bia" }]} onClick={onClick} />
       </>,

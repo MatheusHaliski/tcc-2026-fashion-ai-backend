@@ -3,18 +3,21 @@ import { useEffect, useState } from "react";
 import { Button, Dialog } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
-const COMMANDS = ["walk", "right", "left", "open", "pick", "carry", "try", "drop"] as const;
+const COMMANDS = ["walk", "rotate", "right", "left", "open", "pick", "carry", "try", "drop"] as const;
 /** Animated diagrams rather than videos: small, offline, with reduced-motion support. */
 function CommandAnimation({ command, paused }: { command: typeof COMMANDS[number]; paused: boolean }) {
   const move = command === "walk" || command === "carry", arm = ["right", "left", "pick", "open"].includes(command);
   return <svg viewBox="0 0 420 220" role="img" className="w-full rounded-xl bg-stone-100" aria-hidden="true">
-    <style>{`@keyframes roomDemoWalk{50%{transform:translateX(100px)}} @keyframes roomDemoArm{50%{transform:rotate(-50deg)}} @keyframes roomDemoDoor{50%{transform:scaleX(.25)}} @keyframes roomDemoDrop{70%,100%{transform:translateY(100px) rotate(60deg)}} @media(prefers-reduced-motion:reduce){.room-demo{animation:none!important}}`}</style>
+    <style>{`@keyframes roomDemoWalk{50%{transform:translateX(100px)}} @keyframes roomDemoArm{50%{transform:rotate(-50deg)}} @keyframes roomDemoDoor{50%{transform:scaleX(.25)}} @keyframes roomDemoDrop{70%,100%{transform:translateY(100px) rotate(60deg)}} @keyframes roomDemoTurn{50%{transform:scaleX(-1)}} @media(prefers-reduced-motion:reduce){.room-demo{animation:none!important}}`}</style>
     <path d="M20 195H400" stroke="#78716c" strokeWidth="3" />
+    {/* girar a cena (Q/E ou ↺ ↻): o móvel e o espelho trocam de lado como se a câmera desse a volta no quarto */}
+    <g className="room-demo" style={{ transformOrigin: "302px 110px", animation: command === "rotate" && !paused ? "roomDemoTurn 3s ease-in-out infinite" : undefined }}>
     <rect x="265" y="25" width="125" height="170" rx="5" fill="#d6c7b1" stroke="#57534e" strokeWidth="3" />
     <g style={{ transformOrigin: "265px 100px", animation: command === "open" && !paused ? "roomDemoDoor 3s ease-in-out infinite" : undefined }} className="room-demo">
       <rect x="266" y="26" width="123" height="168" fill="#e7ddce" stroke="#78716c" /><path d="M280 90V120" stroke="#44403c" strokeWidth="5" />
     </g>
     <rect x="215" y="45" width="35" height="130" rx="10" fill="#b8d9dc" stroke="#0f766e" strokeWidth="4" />
+    </g>
     <g transform={command === "left" ? "translate(240 0) scale(-1 1)" : undefined}><g className="room-demo" style={{ animation: move && !paused ? "roomDemoWalk 3s ease-in-out infinite" : undefined }}>
       <circle cx="120" cy="63" r="18" fill="#c98c67" /><path d="M120 85V138" stroke="#2563eb" strokeWidth="28" strokeLinecap="round" />
       <path d="M112 137L98 190M128 137L144 190" stroke="#334155" strokeWidth="12" strokeLinecap="round" />
@@ -27,6 +30,7 @@ function CommandAnimation({ command, paused }: { command: typeof COMMANDS[number
       </g>}
     </g></g>
     {command === "walk" && <path d="M38 25H91M80 15L91 25L80 35" fill="none" stroke="#0f766e" strokeWidth="5" />}
+    {command === "rotate" && <g fill="none" stroke="#0f766e" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round"><path d="M30 22v16h16M31 40a26 26 0 1 1 6 22" /><path d="M210 22v16h-16M209 40a26 26 0 1 0-6 22" /></g>}
     {command === "try" && <path d="M211 105L220 114L238 91" fill="none" stroke="#15803d" strokeWidth="6" />}
   </svg>;
 }

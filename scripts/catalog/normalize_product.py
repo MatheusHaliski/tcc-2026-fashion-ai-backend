@@ -30,13 +30,21 @@ def slug(s: Optional[str]) -> str:
     return re.sub(r"(^-+|-+$)", "", re.sub(r"[^a-z0-9]+", "-", s))
 
 
+# parâmetros que identificam o produto na URL (gap.com/browse/product.do?pid=…): ficam na URL canônica, ordenados;
+# o resto da query (variante de cor, rastreio, utm) continua fora. Igual a CatalogNormalizer.IDENTITY_PARAMS.
+IDENTITY_PARAMS = ("pid", "productid", "product_id", "prodid", "itemid", "item_id", "styleid", "style_id", "skuid")
+
+
 def canonical_url(url: Optional[str]) -> Optional[str]:
     if not url:
         return None
     u = re.sub(r"(?i)^https?://", "", url.strip())
-    u = re.sub(r"(?i)^www\.", "", u).split("?")[0].split("#")[0].rstrip("/")
+    u, _, query = re.sub(r"(?i)^www\.", "", u).split("#")[0].partition("?")
+    u = u.rstrip("/")
     head, sep, tail = u.partition("/")
-    return head.lower() + (sep + tail if sep else "")
+    ids = sorted((k.lower(), v) for k, v in (part.partition("=")[::2] for part in query.split("&") if part)
+                 if k.lower() in IDENTITY_PARAMS and v)
+    return head.lower() + (sep + tail if sep else "") + ("?" + "&".join(f"{k}={v}" for k, v in ids) if ids else "")
 
 
 def domain(url: Optional[str]) -> Optional[str]:

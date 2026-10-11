@@ -1,8 +1,8 @@
 # Prova no espelho dentro do quarto (RF27 ↔ RF28)
 
 As abas **Meu Quarto** e **Espelho** passam a ser um fluxo só: o personagem caminha até o espelho e a prova abre sozinha,
-sem sair do quarto e sem trocar de tela; afastar-se volta ao quarto. A tela `/mirror` continua existindo (Vista-me,
-tipo de look, GRWM), mas a prova rápida de "o que eu tenho na mão" acontece no próprio quarto.
+sem sair do quarto e sem trocar de tela; afastar-se volta ao quarto. Desde 11/10 o **Espelho não tem mais tela própria**:
+`/mirror` só redireciona para `/room?espelho=1` (ver "Espelho como navegação derivada" no fim).
 
 ## Estados e transições
 
@@ -14,29 +14,32 @@ Quarto ──(distância < 1,15 m, por 350 ms)──► Aproximação ──► 
 
 | Fase | O que a pessoa vê | Câmera | Personagem |
 |---|---|---|---|
-| `room` | quarto, painel com a ajuda de primeiro uso e **Abrir espelho** | visão geral (guarda-roupa, personagem, espelho) | anda com as setas |
+| `room` | quarto, painel com a ajuda de primeiro uso; **Ir ao espelho** (cabeçalho) faz o personagem andar até o espelho | uma das 4 vistas do quarto (Q/E ou ↺ ↻; a 0 é a visão geral: guarda-roupa, personagem, espelho), sempre dentro das paredes | anda com as setas ou com o direcional na tela, relativos à câmera |
 | `approach` | "Chegando ao espelho…" | começa a ir para a frente do espelho | vira de frente para o espelho |
-| `tryon` | lista **Roupas em mãos**, por lugar do corpo | de frente para o espelho, personagem e vidro no quadro | parado, reage a cada troca |
-| `exit` | "Saindo do espelho…" | volta à visão geral | anda |
+| `tryon` | o painel do Espelho ao lado da cena (as roupas em mãos ficam nas células "Partes do look") e **Voltar ao quarto** | de frente para o espelho, personagem e vidro no quadro | parado, reage a cada troca |
+| `exit` | "Saindo do espelho…" | volta à visão geral | anda (com as setas ou sozinho, depois de Voltar ao quarto) |
 
 Regras (em `lib/room3d/mirror-session.ts`, sem React):
 
 - **Zona com histerese**: entra a menos de 1,15 m, só sai a mais de 1,70 m, com 350 ms na entrada e 250 ms na saída.
   Parar exatamente na divisa não faz a prova piscar; voltar durante a saída retoma a prova sem reabrir do zero.
-- **Abrir à mão** (`Abrir espelho`) mantém a prova aberta a qualquer distância até **Voltar ao quarto**. Fechar à mão
-  dentro da zona não reabre sozinho: a pessoa precisa sair da zona e voltar.
+- **Ir ao espelho é andar até ele** (ver "Ir ao espelho andando"). Só sem caminhada possível (modo órbita/foto, cena
+  sem avatar a tempo) a prova abre à mão (`MirrorSession.open`): fica aberta a qualquer distância até **Voltar ao
+  quarto**. Fechar à mão dentro da zona não reabre sozinho: a pessoa precisa sair da zona e voltar.
 - **A seleção mais recente prevalece**: cada troca recebe um número; a resposta de um pedido antigo que chega depois é
   ignorada. Uma falha mantém a roupa anterior (o espelho só muda com a resposta do servidor) e avisa sem opinar:
   "Não deu para trocar (…); a peça anterior continua."
-- O estado é um só para a cena 3D (`RoomAvatarController`), o painel (`MirrorHands`) e a página (`/room`): a cena
+- O estado é um só para a cena 3D (`RoomAvatarController`), o painel (`MirrorHands` + `MirrorControls`) e a página (`/room`): a cena
   atualiza a fase pela distância a cada quadro; a página faz os pedidos à API do espelho (`POST/DELETE
   /api/me/mirror/pieces`, `GET /api/me/mirror/wardrobe?slot=`) e o reflexo (Prévia 2D no vidro) e a roupa do personagem
   seguem o mesmo estado do espelho.
 
 ## Menu lateral e obstáculo
 
-- Com a prova aberta (fases `approach`/`tryon`) o menu lateral acende **Espelho** em vez de **Meu Quarto**, sem
-  trocar de rota (`lib/nav/active-override.ts`); ao sair da zona, Voltar ao quarto ou sair da tela, volta a seguir a rota.
+- Com a prova à vista (fase `tryon` na aba 3D, ou a vista embutida na aba 2.5D) aparece **Espelho** recuado logo abaixo de
+  **Meu Quarto** no menu lateral, como sub-item (não é link; `setNavSub` em `lib/nav/active-override.ts`). "Meu Quarto"
+  continua visível como pai. Trocar de aba, Voltar ao quarto ou sair da tela tira o sub-item. Não há mais item
+  "Espelho" de primeiro nível no menu.
 - O espelho é obstáculo com caixa orientada (vidro girado 28°, meias-medidas 0,47 × 0,08 m + raio do tronco 0,18 m):
   o personagem para na frente do vidro e contorna pela lateral, nunca atravessa. Na diagonal contra um obstáculo ele
   desliza ao longo dele; já sobreposto (porta abriu sobre ele), só aceita passos que diminuem a sobreposição.
@@ -44,9 +47,11 @@ Regras (em `lib/room3d/mirror-session.ts`, sem React):
 
 ## Roupas em mãos
 
-Quatro lugares: **Parte de cima · Parte de baixo · Calçado · Acessório** (camada externa e vestido contam como parte de
-cima). Cada peça mostra miniatura, nome, categoria, se está **no espelho** ou **na mão** (pegou no guarda-roupa e ainda
-não vestiu) e o estado do asset:
+Desde 11/10 as roupas em mãos **não têm mais lista própria** ao lado do painel (ela repetia as "Partes do look"): ficam
+nas células do painel do Espelho (Parte de cima · Peça única · Parte de baixo · Calçado · Acessório) — a célula mostra
+o que está vestido e conta quantas há em mãos ("2 em mãos"; a que acabou de chegar fica destacada) — e na folha de cada
+parte, na seção **Roupas em mãos** (antes "Na lista do espelho"): a lista do espelho e a peça segurada ("Na mão"). Cada
+peça mostra o estado do asset (selo curto na célula, por extenso na folha):
 
 | Estado | Significado |
 |---|---|
@@ -55,9 +60,10 @@ não vestiu) e o estado do asset:
 | Só na prévia 2D | sem molde (acessórios): aparece só na Prévia 2D/reflexo |
 | Foto em processamento | foto ainda sem a versão final |
 
-Ações: **Vestir** (peça na mão ou na lista), **Tirar** (vestida: sai do corpo, fica na lista), **Remover** (sai da
-lista do espelho e do corpo, nunca do guarda-roupa), **Trocar** (escolha manual do guarda-roupa para o lugar, a mesma
-lista da tela Espelho) e **Voltar ao quarto**.
+Ações, todas na folha da parte: **Vestir** (tocar na peça em mãos), **Tirar** (Vestindo agora: sai do corpo, fica na
+lista), **Tirar da lista** (embaixo da peça em mãos, ou no menu ⋯ da vestida: sai da lista e do corpo, nunca do
+guarda-roupa) e trocar pelo **Do guarda-roupa** (a escolha manual que era o "Trocar"). Dentro do quarto elas passam
+pelo quarto (`MirrorHost`): reação do personagem, pedido mais recente vence, "Pronto: … no espelho." no painel ao lado.
 
 ## Lista do espelho (QUARTO-ESPELHO)
 
@@ -67,10 +73,10 @@ que ainda não entrou nela — cada peça uma vez só (`handsOf` em `lib/room3d/
 
 | Estado da peça | Onde está | Como mostra | Ações |
 |---|---|---|---|
-| **segurada** | na mão do personagem (`RoomInteraction.held`), fora da lista | "na mão", contorno tracejado | Vestir |
-| **na lista** (selecionada para prova) | `rack` do estado do espelho, `worn: false` | "para provar", contorno fino | Vestir, Remover |
-| **vestida** | `rack` com `worn: true` **e** um slot do espelho | "no espelho" | Tirar, Remover |
-| acabou de chegar | a última levada ao espelho | contorno de destaque | — |
+| **segurada** | na mão do personagem (`RoomInteraction.held`), fora da lista | "Na mão" nas roupas em mãos da parte | Vestir |
+| **na lista** (selecionada para prova) | `rack` do estado do espelho, `worn: false` | nas roupas em mãos da parte; "Já em mãos" no guarda-roupa | Vestir, Tirar da lista |
+| **vestida** | `rack` com `worn: true` **e** um slot do espelho | "Vestindo agora" (card compacto) | Tirar, Tirar da lista (⋯) |
+| acabou de chegar | a última levada ao espelho | célula da parte com contorno de destaque | — |
 
 Transições:
 
@@ -144,11 +150,12 @@ passo "Provar a roupa" descrevendo o fluxo novo.
 - `lib/room3d/mirror-session.test.ts`: histerese e tempos nas bordas, abrir/fechar à mão com trava, pedido mais recente
   prevalece, falha mantém a roupa anterior, mapeamento dos slots e estado do asset, câmera/orientação, reação (menor
   com movimento reduzido).
-- `components/room3d/mirror-hands.test.tsx`: ajuda com "Não mostrar novamente" persistida, abrir à mão, quatro lugares,
-  Vestir/Tirar/Trocar/Voltar, troca em andamento, falha e sucesso.
+- `components/room3d/mirror-hands.test.tsx`: ajuda com "Não mostrar novamente" persistida, chegando/saindo, na prova só
+  Voltar ao quarto e o estado da troca (sem a lista por lugar do corpo), falha e sucesso.
 - `MirrorServiceTest` (Java): lista do espelho sem duplicar, separada do vestido, persistida e sem apagar do
   guarda-roupa; `lib/mirror/mirror-list.test.ts`: a peça vai para o 3D no formato do provador.
-- `lib/room3d/interaction.test.ts`: andar, pegar, carregar e soltar continuam iguais.
+- `lib/room3d/interaction.test.ts`: andar, pegar, carregar e soltar continuam iguais; caminhar até a frente do espelho
+  (reto, pela quina, de trás do vidro) sem atravessar a colisão, seta cancela, travado desiste.
 
 ## Evidências
 
@@ -173,7 +180,9 @@ uma correção vale nos dois lugares.
   espelho** (câmera no vidro olhando para o guarda-roupa, personagem oculto; `MIRROR_NORMAL` em `mirror-session.ts`) e
   guarda em `MirrorSession.snapshot`. O vidro mostra essa foto recortada ao miolo (`snapshotCrop`, sem esticar) e, por
   cima, o reflexo do avatar vestido (PNG/WebP com alfa — `AvatarStill` com fundo transparente). A foto some ao voltar
-  ao quarto (pelas setas ou por "Voltar ao quarto").
+  ao quarto (pelas setas ou por "Voltar ao quarto"). Com o quarto de quatro paredes, a foto mostra as paredes leste e
+  sul e o teto (antes era só névoa). Para a foto, as paredes que a câmera principal esconde aparecem inteiras por um
+  instante (`userData.reveal`). A câmera da prova não mudou, só fica presa dentro do quarto.
 - **Sair só com as setas.** Durante a prova as setas valem na **página inteira** (`arrowAnywhere` em
   `lib/room3d/interaction.ts`): o foco pode estar no painel ao lado e, mesmo assim, andar para fora da zona fecha a
   prova e devolve a lista de posições. Fora da prova, as setas só valem com a cena focada (evita roubar a rolagem).
@@ -195,5 +204,61 @@ Do guarda-roupa, modo compacto) e `app/room-page.test.tsx` (abrir o espelho troc
 
 ## Limites
 
-- A cena exige WebGL; sem ele o quarto abre em 2.5D e a prova continua pela tela Espelho.
+- A cena exige WebGL; sem ele o quarto abre em 2.5D e o espelho abre **embutido** na própria aba (palco 2D + o mesmo
+  painel), pela célula tracejada "Monte o look de hoje" ou pelo link `/room?espelho=1`.
+- A caminhada até um ponto contorna obstáculos por desvio local (sem mapa do quarto): o espelho tem rota pelas quinas;
+  uma porta aberta no caminho é contornada deslizando e, se travar, a prova abre direto (ou fecha direto, saindo).
 - Os moldes 3D continuam aproximação (ver `docs/avatar3d/PIPELINE_VESTIMENTAS_3D.md`).
+
+## Espelho como navegação derivada do Meu Quarto (11/10)
+
+- **Rota.** `lib/nav/mirror-href.ts` → `/room?espelho=1[&vestir=<id>][&vista=2d]`. O quarto lê os parâmetros quando os
+  dados chegam: vai ao espelho (`goToMirror`), leva a peça à lista do espelho e veste (`bringToMirror` + `wearInMirror`),
+  abre a prévia 2D no painel; os parâmetros de uma vez só saem com `router.replace("/room?espelho=1")`. Entrar e sair do
+  espelho mantém a URL em sincronia (`history.replaceState`). `/mirror` (com `?piece=`/`?vista=2d`) virou redirecionamento;
+  todos os links do app e os `href` do backend (`LookbookService`, `PersonalInsights`) apontam direto para o quarto.
+- **Cabeçalho.** No modo espelho: trilha "Meu Quarto › Espelho" (prop `trail` do `PageHeader`; "Meu Quarto" volta ao
+  quarto), título Espelho. O botão do cabeçalho virou **Ir ao espelho**; "Espelho" no diálogo da porta virou **Levar ao
+  espelho** (sem sair do quarto).
+- **Painel sem formulário** (`components/mirror/mirror-controls.tsx`): "Partes do look" na grade de células do Provador
+  (Parte de cima — com a camada externa do servidor dentro —, Peça única, Parte de baixo, Calçado, Acessório n de 4);
+  tocar abre a folha da parte (`mirror-part-sheet.tsx`: Vestindo agora no card compacto com Tirar/Manter/⋯, Na lista do
+  espelho, Do guarda-roupa, Sugestões com o porquê). "Para quem é o look" em chips; Vista-me por células de ocasião +
+  humor/clima (`vista-me-cells.tsx`, também no diálogo Vista-me do quarto); peças fixadas viram `anchorIds`. Ações:
+  Usar hoje, Salvar look (um toque, título do servidor, aviso com Ver look/Renomear), Abrir no editor
+  (`/schemes/new?pieces=`), Provar o look no Provador, Tira uma coisa e Limpar (com desfazer), GRWM (roteiro com imagem
+  e legenda), silhueta (letra + regra) e o desafio também no modo compacto. Nunca chama `/slots/{slot}/swap`.
+- Evidências (API simulada, fora do repositório): `scratchpad/evidence/espelho-provador/` — `01` redirecionamento,
+  `02` painel, `03`/`04` folha da parte, `05` menu, `06` Vista-me, `10` sem WebGL (desktop e celular).
+
+## Ir ao espelho andando (11/10)
+
+"Faça com que a aba Espelho seja integrada dentro da aba Meu Quarto, sendo uma navegação derivada dentro da
+movimentação": chegar ao Espelho é **andar até ele**.
+
+- **Motor** (`lib/room3d/interaction.ts`): `goal`/`route`, `walkTo(pontos, done)`, `cancelGoal()` e `followGoal(dt)`. O
+  passo é `stepToward` — puro, com a velocidade (1,05 m/s), as paredes e as colisões das setas: reto até o ponto; bloqueado,
+  desliza ao longo do obstáculo; senão contorna (desvia 45°/90°/135°, sempre para o mesmo lado até o caminho reto abrir).
+  Qualquer seta ou botão do direcional cancela (a pessoa assume); sem se aproximar por 1 s parado (2 s contornando),
+  desiste. `done` recebe `arrived`, `stuck` ou `cancelled`. Andar solta o puxador segurado.
+- **Pontos** (`lib/room3d/mirror-session.ts`): `mirrorFront` (0,8 m pela normal do vidro: dentro do raio de entrada de
+  1,15 m, fora da colisão), `mirrorRoute` (reto; ou pela quina da frente; ou, vindo de trás do vidro, pelas quinas de trás e
+  da frente — só quinas dentro da área de caminhar) e `awayPoint` (2,1 m para o centro do quarto, além do raio de saída de
+  1,7 m, dentro das paredes). `leave()` desfaz a abertura à mão sem trava; `unlatch()` tira a trava de um Voltar anterior.
+- **Controlador**: andando = setas **ou** caminhada; sem setas, um passo de `followGoal` por quadro, virando para onde
+  anda; a câmera segue como sempre; ao chegar, vira de frente para o espelho e a zona abre a prova (350 ms).
+- **Página** (`goToMirror`/`leaveMirror`): com a aba 3D no modo andar e o avatar carregado, **Ir ao espelho**,
+  `/room?espelho=1` (e o `/mirror` que redireciona para ele) e **Levar ao espelho** fazem o personagem andar até o
+  espelho; com "reduzir movimento", ele aparece direto na frente do vidro. Cena montando ou avatar carregando: espera
+  até 12 s e então anda. Sem caminhada (órbita/foto, sem cena 3D, tempo esgotado, travou no caminho): abre direto
+  (`session.open()` + enquadrar o espelho). **Voltar ao quarto** e a trilha **Meu Quarto** fazem `leave()` e o personagem
+  andar para longe — a zona fecha a prova; sem caminhada, `session.back`. Um aviso curto na cena, lido pelo leitor de
+  tela (`aria-live`), diz "Indo ao espelho…" / "Saindo do espelho…".
+- **Sem lista duplicada**: `MirrorHands` ficou com a ajuda de primeiro uso, chegando/saindo e, na prova, Voltar ao
+  quarto e o estado da troca. O "Abrir espelho" saiu (o caminho é Ir ao espelho, que anda); o diálogo "Trocar" da página
+  saiu (a folha da parte tem o guarda-roupa).
+- Testes: `interaction.test.ts`, `mirror-session.test.ts` (frente/saída dentro/fora da zona, rota, `leave`/`unlatch`),
+  `room-scene-controls.test.tsx` (direcional cancela), `mirror-controls.test.tsx` (roupas em mãos na célula e na folha),
+  `app/room-page.test.tsx` (no jsdom não há cena 3D: Ir ao espelho e `?espelho=1` abrem direto; folha com Tirar da lista e
+  Vestir pelo quarto; trilha e Voltar ao quarto).
+- Evidências (API simulada, fora do repositório): `scratchpad/evidence/walk/`.

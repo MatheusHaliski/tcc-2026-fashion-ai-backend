@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
@@ -11,6 +11,7 @@ import type { Avatar3dRef } from "@/components/three/common";
 import { validateBody } from "@/lib/avatar3d/body-spec";
 import { retryImport } from "@/lib/chunk-recovery";
 import { useI18n } from "@/lib/i18n/i18n";
+import type { FittingCameraApi } from "@/lib/scene3d/orbit-steps";
 import type { StoreScene } from "@/lib/scene3d/scene";
 import type {
   FittingItem,
@@ -18,6 +19,7 @@ import type {
   ResolvedEnvironment,
 } from "@/lib/tryon/fitting-room";
 import { toLook3d, type Sex, type State } from "@/lib/tryon/fitting-room-model";
+import { FittingOrbitButtons } from "./fitting-orbit-buttons";
 
 const FittingRoomScene = dynamic(
   () => retryImport(() => import("@/components/three/fitting-room-scene")),
@@ -54,6 +56,9 @@ export function FittingStage({
   children,
 }: FittingStageProps) {
   const { t } = useI18n();
+  // passos de câmera da cena (botões de girar/aproximar); só existem com a cena 3D montada
+  const [camera, setCamera] = useState<FittingCameraApi | null>(null);
+  const look = useMemo(() => pieces.map(toLook3d), [pieces]);
   const body = avatar ? validateBody(avatar.model?.body)?.params ?? null : null;
   const sceneSex = sex === "UNISEX"
     ? mannequin.sex === "FEMININO" ? "FEMININO" : "MASCULINO"
@@ -105,12 +110,13 @@ export function FittingStage({
             build={mannequin.build}
             skinTone={null}
             body={body}
-            pieces={pieces.map(toLook3d)}
+            pieces={look}
             environment={environment}
             scene={scene}
             light={light}
             view={view}
             onCanvas={onCanvas}
+            onCamera={setCamera}
           />
         ) : (
           <div
@@ -123,6 +129,7 @@ export function FittingStage({
             </Link>
           </div>
         )}
+        {avatar && camera && <FittingOrbitButtons api={camera} />}
       </div>
 
       <div className="grid gap-2 p-3">{children}</div>

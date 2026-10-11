@@ -59,12 +59,34 @@ loja física cadastrada, a interpretação é sempre `CONCEPTUAL` e a tela diz "
 
 | objeto (`STUDIO_OBJECTS`) | função |
 |---|---|
-| shell (paredes e piso) | circulação |
+| shell (quatro paredes e piso; a parede virada para a câmera sai de cena) | circulação |
 | identity (placa da marca) | comunicação |
-| mirror (espelho de corpo inteiro) | prova |
+| mirror (espelho de corpo inteiro, moldura de madeira e pés) | prova |
 | bench (banco) | prova |
 | rail (cabideiro, sem peças falsas) | organização |
 | gallery (até 2 fotos emolduradas) | comunicação |
+| door (porta fechada da cabine na parede da frente, gancho com cabide vazio) | circulação |
+| wainscot (pintura em dois tons, meia-cana, rodapé e molduras em todas as paredes) | ambiência |
+| hooks (cabideiro de três ganchos com cabides vazios) | organização |
+| stool (banco estofado e pufe) | prova |
+| art (quadro abstrato nas cores da marca, sem repetir foto do catálogo) | ambiência |
+| rug (tapete sob o avatar, recebe a sombra) | prova |
+| plant (planta no canto; fica fora em celular fraco) | ambiência |
+| fixtures (placa luminosa "Provador" e spots do teto, só superfícies emissivas) | comunicação |
+
+**Cabine fechada (2026-10-11).** A sala ganhou a quarta parede em z = +2,4 m (a entrada da cabine) e as laterais e o
+teto foram aparados a [−1,9; 2,4]. Como a câmera fica fora da sala nas vistas de frente e de costas, a parede virada
+para ela sai de cena por quadro (`useCutaway` em `components/three/fitting-cabin.tsx`, por ref, sem estado React): a da
+frente só aparece com a câmera em z < 1,9 e a do fundo com a câmera em z > −1,2; móveis soltos (espelho, bancos,
+planta, pufe) somem quando a linha câmera → avatar passa a menos de 0,35 m da sua esfera. A cor de destaque da marca
+ficou só nos detalhes (debrum do banco, filete da placa); móveis grandes usam as chaves neutras novas da paleta
+(`wood`, `hardware`, `trim`, `wainscot`, `fabric`). **Nenhuma luz foi acrescentada**: o calor dos spots é disco
+emissivo no teto e véu de brilho na parede, e a parede da frente (que só recebe a luz de preenchimento) tem a cor por
+vértice compensada — a medida de cor da seção 7 continua valendo. Os enfeites não projetam sombra, os materiais são
+compartilhados, as geometrias são fundidas por material e tudo é descartado ao desmontar. O palco do `/try-on` ganhou
+botões de girar 30°, aproximar/afastar e voltar à frente (`components/try-on/fitting-orbit-buttons.tsx`), suaves ou
+instantâneos com "reduzir movimento". Laboratório: `/lab/scenes?s=fitting-bruma&view=back` (parede lilás clara com
+destaque verde, o caso relatado).
 
 Trocar de marca recria o estúdio (`key={env.key}`) e a galeria é resolvida de novo — nada da loja anterior fica.
 Testes: `lib/scene3d/fitting-studio.test.ts`. O laboratório publica esse perfil como inventário

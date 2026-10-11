@@ -170,7 +170,7 @@ final class PersonalInsights {
                     .ifPresent(e -> out.add(insight("CAPSULE_BASE_RISING", POSITIVE, 0.8, "insights.capsule_base_rising.text",
                             args(name(e.getKey()), e.getValue(), fmt0(InsightMath.trend(p.scored(e.getKey().getId())))),
                             metric("insights.metric.trend", round(InsightMath.trend(p.scored(e.getKey().getId()))), "pts"),
-                            action("insights.action.experimentar", "/mirror?piece=" + e.getKey().getId()), CAPSULE, HYPE_V2, WARDROBE_USAGE)));
+                            action("insights.action.experimentar", "/room?espelho=1&vestir=" + e.getKey().getId()), CAPSULE, HYPE_V2, WARDROBE_USAGE)));
             // sustentabilidade: mais um uso da peça-base pouco usada é o que mais dilui o custo por uso (preço ÷ usos)
             cards.stream().map(Map.Entry::getKey)
                     .filter(w -> w.getPrice() != null && w.getPrice().compareTo(BigDecimal.ZERO) > 0 && w.getWearCount() >= 1)
@@ -337,7 +337,7 @@ final class PersonalInsights {
                     double score = p.scored(w.getId()).getScore().doubleValue();
                     Integer compat = p.compat(w);
                     Insight.Metric metric = metric("insights.metric.hype", round(score), "pts");
-                    Insight.Action action = action("insights.action.experimentar", "/mirror?piece=" + w.getId());
+                    Insight.Action action = action("insights.action.experimentar", "/room?espelho=1&vestir=" + w.getId());
                     return compat == null
                             ? insight("PIECE_HYPE_AND_STYLE", NEUTRAL, rel, "insights.piece_hype_and_style.text_no_dna", args(name(w), fmt0(score), w.getWearCount()),
                             metric, action, HYPE_V2, WARDROBE_USAGE)
@@ -379,7 +379,7 @@ final class PersonalInsights {
             return Optional.empty();
         }
         Insight.Metric metric = metric("insights.metric.variacao", round1(delta), "pts");
-        Insight.Action action = action("insights.action.experimentar", "/mirror?piece=" + w.getId());
+        Insight.Action action = action("insights.action.experimentar", "/room?espelho=1&vestir=" + w.getId());
         if (!up) {
             return Optional.of(insight("PIECE_COOLING", NEUTRAL, rel, "insights.piece_cooling.text",
                     args(name(w), fmt1(Math.abs(delta)), config.deltaWindowDays(), w.getWearCount()), metric, action, HYPE_V2, WARDROBE_USAGE));
@@ -401,7 +401,7 @@ final class PersonalInsights {
                 .map(w -> {
                     double r = InsightMath.dims(p.hype().get(w.getId())).getRarity().doubleValue();
                     return insight("RARE_PIECE", NEUTRAL, rel, "insights.rare_piece.text", args(name(w), fmt0(r), w.getWearCount()),
-                            metric("insights.metric.raridade", round(r), "pts"), action("insights.action.experimentar", "/mirror?piece=" + w.getId()),
+                            metric("insights.metric.raridade", round(r), "pts"), action("insights.action.experimentar", "/room?espelho=1&vestir=" + w.getId()),
                             HYPE_V2, WARDROBE_USAGE);
                 });
     }
@@ -438,7 +438,7 @@ final class PersonalInsights {
             basis.add(HYPE_V2);
             basis.add(WARDROBE_USAGE);
             return Optional.of(insight(code, POSITIVE, rel, key, a, metric("insights.metric.dias_sem_uso", idle, "dias"),
-                    action("insights.action.experimentar", "/mirror?piece=" + w.getId()), basis.toArray(String[]::new)));
+                    action("insights.action.experimentar", "/room?espelho=1&vestir=" + w.getId()), basis.toArray(String[]::new)));
         }
         return Optional.empty();
     }

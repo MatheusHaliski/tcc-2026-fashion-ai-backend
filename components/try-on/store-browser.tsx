@@ -1,7 +1,7 @@
 "use client";
 
 import { BrandLogo } from "@/components/brand-logo";
-import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/catalog-search";
+import { CatalogSearch, storeCount, type CatalogSearchContext } from "@/components/catalog/catalog-search";
 import { Card, Chip, Skeleton, cn } from "@/components/ui";
 import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
 import { CATEGORY_LABEL, label } from "@/lib/api/taxonomy";
@@ -39,14 +39,14 @@ export function StoreBrowser({
             <button
               key={entry.brandId}
               type="button"
-              className={cn("fitting-store", store === entry.name && "is-active")}
+              className={cn("fitting-store", store === entry.name && "is-active", !storeCount(entry, category) && "is-empty")}
               aria-pressed={store === entry.name}
               onClick={() => onStoreChange(store === entry.name ? "" : entry.name)}
             >
               <BrandLogo name={entry.name} src={entry.logoUrl} size={32} shape="square" />
               <span className="fitting-store-name">{entry.name}</span>
               <span className="type-caption text-muted">
-                {t("tryOn.n_produtos", { n: entry.catalogProducts })}
+                {t("tryOn.n_produtos", { n: storeCount(entry, category) })}
               </span>
             </button>
           ))}

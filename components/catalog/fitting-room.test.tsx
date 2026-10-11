@@ -56,9 +56,10 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
   it("prova peças de duas marcas: o ambiente segue a última marca e a outra vira painel lateral", async () => {
     const { calls } = loggedAs(ME, {
       "GET /api/taxonomy": TAXONOMY, "GET /api/try-on": STATE, "GET /api/catalog/stores": STORES,
-      "GET /api/catalog/search": (url: URL) => {
+      // a loja escolhida lista o acervo inteiro da marca (paginado), não a busca ranqueada
+      "GET /api/catalog/products": (url: URL) => {
         const brand = url.searchParams.get("brand");
-        return { intent: { brand, brandKnown: true, keywords: [] }, results: brand === "Levi's" ? [L501] : [AF1], total: 1, enoughInput: true, canSearchOfficial: false };
+        return { items: brand === "Levi's" ? [L501] : [AF1], page: 0, size: 48, total: 1, hasMore: false, brandKnown: true };
       },
       "POST /api/pieces/from-catalog": { id: "nova", name: "Air Force 1 '07" },
     });
@@ -66,7 +67,8 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     expect(await screen.findByRole("heading", { name: "Provador virtual" })).toBeTruthy();
     // a vitrine da loja abre só com a marca escolhida
     fireEvent.click(await screen.findByRole("button", { name: /Levi's/ }));
-    await waitFor(() => expect(calls.some((c) => c.path.startsWith("/api/catalog/search") && c.path.includes("Levi"))).toBe(true), { timeout: 4000 });
+    await waitFor(() => expect(calls.some((c) => c.path.startsWith("/api/catalog/products") && c.path.includes("brand=Levi"))).toBe(true), { timeout: 4000 });
+    expect(calls.some((c) => c.path.startsWith("/api/catalog/search"))).toBe(false);
     fireEvent.click(await screen.findByRole("button", { name: "Provar" }));
     expect(await screen.findByText("Provador Levi's")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Nike/ }));
@@ -79,7 +81,7 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     // trocar a cor da peça vestida e "Já tenho esta peça" (entra no guarda-roupa por referência)
     const worn = within(screen.getByRole("heading", { name: "Provando agora" }).closest("section")!);
     fireEvent.click(worn.getAllByRole("button", { name: "Black" })[0]);
-    expect(await screen.findByText(/Air Force 1 '07 · Black|501 Original · Black/)).toBeTruthy();
+    expect(await screen.findByText(/Air Force 1 '07 — Black|501 Original — Black/)).toBeTruthy();
     fireEvent.click(screen.getAllByRole("button", { name: "Já tenho esta peça" })[0]);
     await waitFor(() => expect(calls.some((c) => c.method === "POST" && c.path === "/api/pieces/from-catalog")).toBe(true), { timeout: 4000 });
     expect(screen.getAllByRole("link", { name: /Ver em/ }).length).toBeGreaterThan(0);
@@ -111,13 +113,13 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     renderApp(<TryOnPage />);
     expect(await screen.findByText("Vestido floral")).toBeTruthy();
     expect(screen.queryByText("Categoria antiga")).toBeNull();
-    expect(screen.getByText("Guardada: Vestido floral é uma peça inteira e cobre a parte de baixo.")).toBeTruthy();
+    expect(screen.getByText("Coberta por Vestido floral")).toBeTruthy();
     expect(sceneItems()).toEqual([{ id: "w:dress", slot: "dress" }]);
 
     fireEvent.click(screen.getByRole("button", { name: "Remover Vestido floral de Parte de cima" }));
     await waitFor(() => expect(sceneItems()).toEqual([{ id: "w:jeans", slot: "lower" }]));
     expect(persistedItems()).toEqual([expect.objectContaining({ key: "w:jeans", slot: "lower_piece", wear: "BOTTOM" })]);
-    expect(screen.queryByText(/Guardada: Vestido floral/)).toBeNull();
+    expect(screen.queryByText(/Coberta por Vestido floral/)).toBeNull();
   });
 
   it("prioriza o link compartilhado sobre a sessão, restaura a variante e ignora referências indisponíveis", async () => {
@@ -130,8 +132,8 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
       "GET /api/catalog/products/gone": new Response(JSON.stringify({ code: "NAO_ENCONTRADO", message: "Produto removido" }), { status: 404 }),
     });
     renderApp(<TryOnPage />);
-    expect(await screen.findByText("Air Force 1 '07 · Black")).toBeTruthy();
-    expect(screen.getByText("Minha camisa · Branco")).toBeTruthy();
+    expect(await screen.findByText("Air Force 1 '07 — Black")).toBeTruthy();
+    expect(screen.getByText("Minha camisa — Branco")).toBeTruthy();
     expect(screen.queryByText("Sessão anterior")).toBeNull();
     expect(persistedItems().map(({ key, variantId }) => ({ key, variantId }))).toEqual([
       { key: "c:p1", variantId: "p1-k" }, { key: "w:w1", variantId: undefined },
@@ -154,8 +156,8 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
       "GET /api/schemes/s1": { scheme: { items: [{ wardrobeItemId: "coat" }, { wardrobeItemId: "deleted" }, { wardrobeItemId: "jeans" }] } },
     });
     renderApp(<TryOnPage />);
-    expect(await screen.findByText("Casaco do esquema · Branco")).toBeTruthy();
-    expect(screen.getByText("Jeans do esquema · Branco")).toBeTruthy();
+    expect(await screen.findByText("Casaco do esquema — Branco")).toBeTruthy();
+    expect(screen.getByText("Jeans do esquema — Branco")).toBeTruthy();
     expect(screen.queryByText("Sessão anterior")).toBeNull();
     expect(persistedItems().map(({ key, wear }) => ({ key, wear }))).toEqual([
       { key: "w:coat", wear: "OUTERWEAR" }, { key: "w:jeans", wear: "BOTTOM" },
@@ -280,7 +282,7 @@ describe("provador virtual de lojas (RF18 + RF47)", () => {
     const fifth = within(secondPage).getByRole("heading", { name: "Camiseta Nike 5" }).closest("article")!;
     fireEvent.click(within(fifth).getByRole("button", { name: "Black" }));
     fireEvent.click(within(fifth).getByRole("button", { name: "Provar" }));
-    expect(screen.getByText("Camiseta Nike 5 · Black")).toBeTruthy();
+    expect(screen.getByText("Camiseta Nike 5 — Black")).toBeTruthy();
     expect(sceneItems()).toEqual([{ id: "c:shirt-5", slot: "upper" }]);
     expect(screen.getByText("Página 2 de 3 · 10 resultados")).toBeTruthy();
     expect(persistedItems()[0].variantId).toBe("shirt-5-k");

@@ -178,7 +178,7 @@ export function LookCompositionEditor({ schemeId }: { schemeId: string }) {
   const leave = () => router.push(`/schemes/${schemeId}`);
   const cancel = () => { if (dirty) setDiscard(true); else leave(); };
 
-  if (loadError) return <EmptyState title={t("lookEdit.sem_look")} hint={loadError} action={<Link href="/schemes" className="btn">{t("nav.schemes")}</Link>} />;
+  if (loadError) return <EmptyState title={t("lookEdit.sem_look")} hint={loadError} action={<Link href="/looks" className="btn">{t("nav.myLooks")}</Link>} />;
   if (!scheme) return <Skeleton className="h-96" />;
   const sel = s.layers.find((l) => l.wardrobeItemId === selected) ?? null;
   const ordered = [...s.layers].sort((a, b) => a.z - b.z);

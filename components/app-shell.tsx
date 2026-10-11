@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useNavActiveOverride } from "@/lib/nav/active-override";
+import { useNavSub } from "@/lib/nav/active-override";
 import { useEffect, useId, useRef, useState, type ReactNode, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -30,7 +30,6 @@ const GROUPS: { key: string; items: NavItem[] }[] = [
     { href: "/room", key: "nav.room", icon: "NAV-16", auth: true },
     { href: "/photos", key: "nav.photos", icon: "NAV-10", auth: true },
     { href: "/try-on", key: "nav.tryon", icon: "NAV-07", auth: true },
-    { href: "/mirror", key: "nav.mirror", icon: "ACT-32", auth: true },
     { href: "/avatar", key: "nav.avatar3d", icon: "ACT-20", auth: true },
   ] },
   { key: "nav.group.create", items: [
@@ -61,10 +60,10 @@ const THEMES: { mode: ThemeMode; key: string }[] = [
 ];
 
 function useIsActive() {
-  const pathname = usePathname(); const { user } = useAuth(); const override = useNavActiveOverride();
+  const pathname = usePathname(); const { user } = useAuth();
   return (href: string) => {
-    // a tela pediu outra aba acesa sem trocar de rota (prova no espelho dentro do Meu Quarto): só ela fica acesa
-    if (override) return href === override;
+    // /mirror só redireciona para o espelho dentro do Meu Quarto: o quadro do redirecionamento já acende o quarto
+    if (href === "/room" && pathname === "/mirror") return true;
     if (href === "/lookbook") return pathname === "/lookbook" || (!!user && pathname === `/u/${user.username}`);
     if (href === "/schemes/new" || href === "/feed") return pathname === href;
     return pathname === href || pathname.startsWith(href + "/");
@@ -72,7 +71,7 @@ function useIsActive() {
 }
 
 function NavGroups({ onNavigate }: { onNavigate?: () => void }) {
-  const { t } = useI18n(); const { user, isAdmin } = useAuth(); const isActive = useIsActive(); const pathname = usePathname();
+  const { t } = useI18n(); const { user, isAdmin } = useAuth(); const isActive = useIsActive(); const pathname = usePathname(); const sub = useNavSub();
   const manage: NavItem[] = [
     // painel do emissor (marca/celebridade) fica no próprio perfil; o menu lateral só mostra o Dashboard da administração
     ...(isAdmin ? [{ href: "/admin/dashboard", key: "nav.admin", icon: "NAV-14" }] : []),
@@ -89,11 +88,18 @@ function NavGroups({ onNavigate }: { onNavigate?: () => void }) {
             <ul>
               {items.map((n) => {
                 const on = n.href.startsWith("/admin") ? pathname.startsWith("/admin") : isActive(n.href);
+                // navegação derivada (Espelho dentro do Meu Quarto): o pai continua visível e o sub-item recuado é a página atual
+                const child = on && sub?.parent === n.href ? sub : null;
                 return (
                   <li key={n.href}>
-                    <Link href={n.href} aria-current={on ? "page" : undefined} className="nav-link" onClick={onNavigate}>
+                    <Link href={n.href} aria-current={on && !child ? "page" : undefined} data-ancestor={child ? "true" : undefined} className="nav-link" onClick={onNavigate}>
                       <FaiIcon id={n.icon} size={24} variant="glyph" decorative /><span>{t(n.key)}</span>
                     </Link>
+                    {child && (
+                      <span className="nav-link nav-link-sub" aria-current="page">
+                        <FaiIcon id={child.icon} size={20} variant="glyph" decorative /><span>{t(child.key)}</span>
+                      </span>
+                    )}
                   </li>
                 );
               })}

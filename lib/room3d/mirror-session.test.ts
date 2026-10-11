@@ -5,7 +5,9 @@
  */
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { MIRROR_NORMAL, MIRROR_ZONE, MirrorSession, assetStateOf, cameraFor, facingYaw, handSlotOf, handsOf, mirrorDistance, reactionPose, snapshotCrop } from "./mirror-session";
+import { MIRROR_COLLIDER, MIRROR_NORMAL, MIRROR_ZONE, MirrorSession, assetStateOf, awayPoint, cameraFor, facingYaw, handSlotOf, handsOf, mirrorDistance, mirrorFront, mirrorRoute, reactionPose, snapshotCrop } from "./mirror-session";
+import { BODY_RADIUS, penetration } from "./interaction";
+import { ROOM, walkArea } from "./room-bounds";
 
 describe("zona do espelho", () => {
   it("entra perto, só sai mais longe e espera o tempo mínimo em cada borda (sem piscar na divisa)", () => {
@@ -151,5 +153,57 @@ describe("foto do quarto no vidro (QUARTO-ESPELHO)", () => {
     expect(tall.repeat[0]).toBe(1); expect(tall.repeat[1]).toBeCloseTo(0.3 / (0.82 / 1.7), 6); expect(tall.offset[1]).toBeCloseTo((1 - tall.repeat[1]) / 2, 6);
     expect(snapshotCrop(0.5, 0.5)).toEqual({ repeat: [1, 1], offset: [0, 0] });
     expect(snapshotCrop(0, 1)).toEqual({ repeat: [1, 1], offset: [0, 0] });                     // proporção inválida: sem recorte
+  });
+});
+
+describe("Espelho pelo movimento: caminhar até o espelho e para longe dele", () => {
+  // o espelho do quarto (layout de room-scene.tsx) com a mesma caixa orientada da colisão
+  const MIRROR = new THREE.Vector3(1.95, 0, 1.1);
+  const solid = (at = MIRROR) => { const g = new THREE.Group(); g.position.copy(at); g.rotation.y = THREE.MathUtils.degToRad(28); g.userData.collider = { ...MIRROR_COLLIDER }; g.updateMatrixWorld(); return g; };
+  const inArea = (p: THREE.Vector3) => { const a = walkArea(ROOM); return p.x >= a.minX && p.x <= a.maxX && p.z >= a.minZ && p.z <= a.maxZ; };
+  it("a frente do espelho fica dentro do raio de entrada da zona e fora da colisão do vidro", () => {
+    const front = mirrorFront(MIRROR);
+    expect(front.y).toBe(0);
+    expect(mirrorDistance(front, MIRROR)).toBeCloseTo(.8); expect(mirrorDistance(front, MIRROR)).toBeLessThan(MIRROR_ZONE.enter);
+    expect(mirrorDistance(front, MIRROR)).toBeGreaterThan(MIRROR_COLLIDER.hz + BODY_RADIUS);
+    expect(penetration(solid(), front)).toBe(0); expect(inArea(front)).toBe(true);
+    expect(facingYaw(front, MIRROR)).toBeCloseTo(Math.atan2(-MIRROR_NORMAL.x, -MIRROR_NORMAL.z));   // chegando, fica de frente
+  });
+  it("o ponto de saída fica além do raio de saída, na frente do vidro, para o centro do quarto e dentro das paredes", () => {
+    for (const m of [MIRROR, new THREE.Vector3(3.6, 0, 1.0), new THREE.Vector3(-2.6, 0, 4.4)]) {
+      const away = awayPoint(m);
+      expect(mirrorDistance(away, m)).toBeGreaterThan(MIRROR_ZONE.exit);
+      expect(inArea(away)).toBe(true); expect(penetration(solid(m), away)).toBe(0);
+    }
+    const away = awayPoint(MIRROR);
+    expect(away.distanceTo(new THREE.Vector3((ROOM.minX + ROOM.maxX) / 2, 0, (ROOM.minZ + ROOM.maxZ) / 2))).toBeLessThan(MIRROR.distanceTo(new THREE.Vector3((ROOM.minX + ROOM.maxX) / 2, 0, (ROOM.minZ + ROOM.maxZ) / 2)));
+  });
+  it("o caminho vai reto quando dá; pela quina do vidro quando a reta cruzaria o espelho; vindo de trás, pelas duas quinas", () => {
+    expect(mirrorRoute(new THREE.Vector3(0, 0, 1.65), MIRROR)).toHaveLength(1);                     // do meio do quarto: reto
+    expect(mirrorRoute(new THREE.Vector3(1.5, 0, 3.5), MIRROR)).toHaveLength(1);
+    const side = mirrorRoute(new THREE.Vector3(1.0, 0, 0.9), MIRROR);                                 // ao lado, atrás do plano do vidro
+    const behind = mirrorRoute(new THREE.Vector3(2.2, 0, .62), MIRROR);                               // entre o espelho e o guarda-roupa
+    expect(behind).toHaveLength(3);
+    for (const route of [side, behind]) {
+      expect(route[route.length - 1].distanceTo(mirrorFront(MIRROR))).toBeLessThan(1e-9);
+      for (const p of route) { expect(inArea(p)).toBe(true); expect(penetration(solid(), p)).toBe(0); }
+    }
+  });
+  it("Voltar ao quarto andando: leave() não fecha na hora nem trava — a zona fecha quando ele se afasta", () => {
+    const s = new MirrorSession();
+    s.update(.8, 0); s.update(.8, MIRROR_ZONE.dwellMs); expect(s.phase).toBe("tryon");
+    s.leave(); expect(s.phase).toBe("tryon");                                                         // ainda na frente do vidro
+    s.update(1.5, 1000, true); expect(s.phase).toBe("tryon");
+    s.update(1.9, 1100, true); expect(s.phase).toBe("exit");
+    s.update(2.1, 1100 + MIRROR_ZONE.exitMs, false); expect(s.phase).toBe("room");
+    s.update(.9, 2000); expect(s.phase).toBe("approach");                                             // sem trava: voltar reabre
+    // aberta à mão (sem caminhada) e longe: leave() deixa a zona fechar
+    const m = new MirrorSession(); m.open(); m.update(3, 0); expect(m.phase).toBe("tryon");
+    m.leave(); expect(m.manual).toBe(false); m.update(3, 100); expect(m.phase).toBe("exit"); m.update(3, 100 + MIRROR_ZONE.exitMs); expect(m.phase).toBe("room");
+  });
+  it("Ir ao espelho depois de um Voltar ao quarto na zona: unlatch() deixa a zona abrir de novo", () => {
+    const s = new MirrorSession(); s.open(); s.back(.8);
+    s.update(.8, 0); s.update(.8, 1000); expect(s.phase).toBe("room");                              // trava do Voltar ao quarto
+    s.unlatch(); s.update(.8, 2000); s.update(.8, 2000 + MIRROR_ZONE.dwellMs); expect(s.phase).toBe("tryon");
   });
 });

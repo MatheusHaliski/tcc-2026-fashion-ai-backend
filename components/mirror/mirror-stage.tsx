@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { api, mediaUrl } from "@/lib/api/client";
+import { api } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useAuth } from "@/lib/auth/session";
@@ -84,23 +84,5 @@ export function MirrorStage({ slots, kelvin, mode = "3d", children }: { slots: R
       </div>
       {!loading && avatar && pieces.length > 0 && <p className="mirror-note">{t("tryOn.previa_3d_nota")}</p>}
     </div>
-  );
-}
-
-/** Peças vestidas no espelho, como etiquetas: tocar tira a peça. */
-export function MirrorWornStrip({ worn, onRemove }: { worn: { slot: string; p: MirrorPiece }[]; onRemove: (p: MirrorPiece) => void }) {
-  const { t } = useI18n();
-  if (!worn.length) return null;
-  return (
-    <ul className="flex flex-wrap gap-2" aria-label={t("mirror.no_espelho")}>
-      {worn.map((w) => (
-        <li key={w.p.id}>
-          <button type="button" className="chip gap-2 pr-2" onClick={() => onRemove(w.p)} title={t("mirror.clique_para_tirar", { name: w.p.name })}>
-            <img src={mediaUrl(w.p.thumbnailUrl ?? w.p.imageUrl)} alt="" className="h-7 w-7 rounded object-contain" />
-            <span className="max-w-[9rem] truncate">{w.p.name}</span><span aria-hidden>×</span>
-          </button>
-        </li>
-      ))}
-    </ul>
   );
 }

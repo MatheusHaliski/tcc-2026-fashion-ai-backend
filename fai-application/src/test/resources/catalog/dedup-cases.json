@@ -5,5 +5,8 @@
  {"brand": "nike", "subcategory": "casual_sneakers", "url": "https://www.nike.com/t/af1/CW2288-111?x=1#y", "expected": "url:nike.com/t/af1/CW2288-111"},
  {"brand": "nike", "subcategory": "casual_sneakers", "model": "Air Force 1 '07", "variant": "White/White", "title": "x", "color": "white", "expected": "model:nike:casual_sneakers:air-force-1-07:white-white"},
  {"brand": "nike", "subcategory": "hoodie", "model": "Club Fleece", "variant": "Black", "title": "x", "color": "black", "expected": "model:nike:hoodie:club-fleece:black"},
- {"brand": "levis", "subcategory": "jeans", "title": "Calça Jeans 501 Original Preta", "color": "black", "expected": "title:levis:jeans:calca-jeans-501-preta:black"}
+ {"brand": "levis", "subcategory": "jeans", "title": "Calça Jeans 501 Original Preta", "color": "black", "expected": "title:levis:jeans:calca-jeans-501-preta:black"},
+ {"brand": "gap", "subcategory": "t_shirt", "url": "https://www.gap.com/browse/product.do?pid=874512002&cid=1&vid=1#pdp", "expected": "url:gap.com/browse/product.do?pid=874512002"},
+ {"brand": "gap", "subcategory": "t_shirt", "url": "https://WWW.GAP.COM/browse/product.do?vid=1&PID=874512012", "expected": "url:gap.com/browse/product.do?pid=874512012"},
+ {"brand": "dickies", "subcategory": "casual_pants", "url": "https://www.dickies.com/products/874-work-pant?variant=4123", "expected": "url:dickies.com/products/874-work-pant"}
 ]

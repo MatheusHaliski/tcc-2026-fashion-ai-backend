@@ -36,6 +36,7 @@ import { CardHeader } from "@/components/card-header";
 import { PieceArtDialog } from "@/components/piece-art-editor";
 import { skinStyle } from "@/lib/skins";
 import { FlairPieceBlock } from "@/components/flair/flair-collection";
+import { mirrorHref } from "@/lib/nav/mirror-href";
 
 const PieceModelViewer = dynamic(() => import("@/components/room3d/piece-model-viewer"), { ssr: false, loading: () => <div className="grid h-full place-items-center type-caption text-muted">{tr("pieces.id.carregando_o_modelo_3d")}</div> });
 
@@ -245,7 +246,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   // UMA ação principal, conforme o contexto, e a alternativa em posição secundária (texto-link logo abaixo):
   // o dono monta um look com a peça (ou experimenta no manequim 3D); quem visita experimenta (ou guarda uma cópia)
   const primary = mine
-    ? <><Link href={`/mirror?piece=${p.id}`} className="btn btn-primary pd-cta">{t("pieceDetail.add_to_look")}</Link>
+    ? <><Link href={mirrorHref({ piece: p.id })} className="btn btn-primary pd-cta">{t("pieceDetail.add_to_look")}</Link>
         <button type="button" className="pd-alt" onClick={() => setMannequin3d(true)}>{t("pieceDetail.ou_experimente")}</button></>
     : <><Button variant="primary" className="pd-cta" onClick={() => setMannequin3d(true)}>{t("pieceDetail.experimentar")}</Button>
         <button type="button" className="pd-alt" onClick={copyToWardrobe}>{t("pieceDetail.ou_guarde_copia")}</button></>;

@@ -79,6 +79,8 @@ const FITTING: Record<string, SceneContext> = {
   "fitting-denim": { category: "lower_piece", subcategory: "jeans", product: BOTTOMS[0], results: BOTTOMS },
   "fitting-bags": { brand: { name: "Atelier Lumi" }, category: "accessory_piece", subcategory: "crossbody_bag", product: BAGS[0], results: BAGS },
   "fitting-tops": { brand: { name: "Costa Linho" }, category: "upper_piece", results: TOPS },
+  // marca fictícia de parede lilás clara e destaque verde (o mesmo par que uma marca real sem tema escolhido recebe pelo nome)
+  "fitting-bruma": { brand: { name: "Bruma" }, category: "upper_piece", product: { ...TOPS[1], brand: { name: "Bruma" } }, results: TOPS.slice(0, 3).map((p) => ({ ...p, brand: { name: "Bruma" } })) },
 };
 
 /** Inventário dos objetos da cena (função de cada um) para o script de capturas: o mesmo plano que a cena desenha. */

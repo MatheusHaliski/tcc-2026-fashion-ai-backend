@@ -38,3 +38,20 @@ não há nenhum `.type-caption` dentro das linhas dos slots (contado no script).
 nenhuma legenda miúda; barra de progresso + Gerar novamente → `POST /api/pieces/{id}/model3d`; peça da loja guarda e
 gera; lugar vazio com as duas ações), `components/catalog/fitting-room.test.tsx` (fluxos existentes continuam),
 `components/mirror/mirror-controls.test.tsx` (estado do asset e link para o provador).
+
+## Atualização 11/10 — card compacto de peça (docs/anatomias) e Espelho dentro do Meu Quarto
+
+- As linhas de "Provando agora" agora são o **card compacto de peça** compartilhado
+  (`components/pieces/piece-row-compact.tsx`): miniatura de 56 px (sem foto ou lugar vazio: glifo da categoria, borda
+  tracejada no vazio) · rótulo do lugar (mono 11 px) · marca (logo 18) + origem · nome numa linha (é o link: `/pieces/{id}`
+  ou a página do produto) · **uma** linha de estado · até 3 ações visíveis + menu ⋯ (Remover discreto); em linha estreita
+  as ações descem para baixo do texto. `GarmentState` e as limitações foram para "Detalhes da prévia" (menu ⋯).
+- Linha de estado: botão **Ver prévia 2D no espelho** + barra do 3D (140×6) com **etapas reais** — `lib/tryon/model3d-steps.ts`:
+  0 de 4 sem pedido, 1 na fila, 2 foto preparada, 3 modelo montado, 4 arquivo salvo; porcentagem só com `progressReal`.
+  Peça do guarda-roupa sem pedido entra na fila sozinha uma vez por visita (`useModel3d().queue`, sem aviso); recusa
+  (sem foto, cota, recurso desligado) vira "3D pausado" com o motivo no nome acessível e nos detalhes. Peça da loja:
+  0 de 4 e **Guardar a peça e gerar o 3D** no menu ⋯. Falhou: "Não deu para gerar o 3D." + "Tentar de novo (grátis)".
+  `model3d-row.tsx` saiu.
+- O rodapé da prévia 2D leva ao espelho do Meu Quarto (`/room?espelho=1&vista=2d`, "Espelho do Meu Quarto · prévia 2D").
+- A aba Espelho deixou de ser tela: ver `docs/meu-quarto/06-prova-no-espelho.md` ("Espelho como navegação derivada").
+- Evidências fora do repositório: `scratchpad/evidence/espelho-provador/07`–`09` (desktop e celular).

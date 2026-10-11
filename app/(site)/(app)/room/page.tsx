@@ -1,7 +1,7 @@
 "use client";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
@@ -13,17 +13,20 @@ import { FaiIcon } from "@/components/fai-icon";
 import dynamic from "next/dynamic";
 import { useDetailModal } from "@/components/detail-modal";
 import RoomControlsTutorial from "@/components/room3d/room-controls-tutorial";
-import { RoomInteraction, type RoomPlayState } from "@/lib/room3d/interaction";
-import { HAND_TO_API, MirrorSession, handsOf, type HandPiece, type HandSlot } from "@/lib/room3d/mirror-session";
+import RoomSceneControls from "@/components/room3d/room-scene-controls";
+import { RoomInteraction, type GoalOutcome, type RoomPlayState } from "@/lib/room3d/interaction";
+import { MIRROR_ZONE, MirrorSession, awayPoint, handSlotOf, mirrorDistance, mirrorFront, mirrorRoute, type HandPiece, type HandSlot } from "@/lib/room3d/mirror-session";
 import { MirrorHands } from "@/components/room3d/mirror-hands";
-import { setNavActiveOverride } from "@/lib/nav/active-override";
-import { MirrorControls } from "@/components/mirror/mirror-controls";
+import { setNavSub } from "@/lib/nav/active-override";
+import { MIRROR_ROOM_PATH } from "@/lib/nav/mirror-href";
+import { MirrorControls, wornOf, type MirrorData, type MirrorHost, type MirrorPieceRef } from "@/components/mirror/mirror-controls";
+import { VistaMeCells } from "@/components/mirror/vista-me-cells";
 import type { MirrorOverlay, RoomData3D } from "@/components/room3d/room-scene";
 import { feel, fabricOf } from "@/lib/sensory";
 import { newCanvas, saveCanvas } from "@/lib/export/canvas";
-import { mirrorPieces as lookOf, useMirrorAvatar, type MirrorPiece } from "@/components/mirror/mirror-stage";
+import { MirrorStage, mirrorPieces as lookOf, useMirrorAvatar, type MirrorPiece } from "@/components/mirror/mirror-stage";
 import { mirrorLook3d, type MirrorRackPiece } from "@/lib/mirror/mirror-list";
-import { loadTexture } from "@/components/three/common";
+import { loadTexture, useReducedMotion } from "@/components/three/common";
 
 // three.js só no navegador (RF32 · cena 3D); o SSR recebe um marcador leve
 const RoomScene = dynamic(() => import("@/components/room3d/room-scene"), { ssr: false, loading: () => <div className="room3d-loading">{tr("room.montando_o_quarto_em_3d")}</div> });
@@ -34,17 +37,17 @@ function webglOk(): boolean {
   if (typeof window === "undefined") return false;
   try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch { return false; }
 }
+/** Ir ao espelho com a cena 3D ainda montando ou o avatar carregando: espera até isto (ms) para caminhar; depois, abre direto. */
+const WALK_WAIT_MS = 12000;
 
 interface RoomPiece { id: string; name: string; category: string; subcategory: string; color: string; colorHex?: string; imageUrl?: string; thumbnailUrl?: string; address?: string | null; addressLabel?: string | null; moduleId?: string | null; states?: string[]; wearCount?: number; costPerUse?: number | null; }
 interface Module { id: string; slotType: string; mold?: string; widthCm?: number; capacity?: number; label: string; sku?: string; finish?: { color?: string; texture?: string; roughness?: number; material?: string }; hangers?: { k: number; address: string; pieceId?: string | null }[]; slots?: { address: string; pieceId?: string | null }[]; pieceIds?: string[]; drawerLabel?: string; }
 interface Room { owner: boolean; level: string; levelInfo: { unlocks: string; aesthetic: string }; modules: Module[]; drawerLabels: Record<string, string>; pieces: Record<string, RoomPiece>; basket?: RoomPiece[]; saleRack?: { name: string; pieces: RoomPiece[] }; showcase?: unknown; chair?: RoomPiece[]; capacity?: { pieces: number; positions: number; overflow?: number }; forgottenCount?: number; mirrorDailyLook?: { schemeId: string; title: string } | null; celebrations?: { code: string; secret?: boolean }[]; decorations?: { name?: string; moduleId?: string; sku?: string }[]; ambient?: { period: string; seasonal?: string; sound?: boolean; haptics?: boolean; reduceMotion?: boolean }; monogram?: string; }
-interface MirrorPieceView { id: string; name: string; imageUrl?: string | null; thumbnailUrl?: string | null; moduleId?: string | null; addressLabel?: string | null; }
-interface MirrorState { slots: Record<string, MirrorPieceView | MirrorPieceView[] | null>; rack?: MirrorRackPiece[]; light?: { kelvin?: number } | null; complete: boolean; postIt?: string | null; sequence?: { pieceId: string; name: string; moduleId: string; legend: string }[]; message?: string | null; }
+interface MirrorState extends MirrorData { rack?: MirrorRackPiece[] }
 interface PieceTag { id: string; name: string; composition?: string | null; care?: string | null; origin?: string | null; garimpo: boolean; wearCount: number; thirtyWears: boolean; costPerUse?: number | null; location?: { address: string; label: string } | null; diary: { date: string; occasion: string }[]; }
 interface Unbox { inventoryId: string; sku: string; name: string; slotType: string; }
 const CARE: Record<string, string> = { get COTTON() { return tr("room.n30_medio_secar_a_sombra"); }, get WOOL() { return tr("room.lavar_a_mao_secadora_baixo"); }, get SILK() { return tr("room.a_mao_torcer_baixo"); }, get LEATHER() { return tr("room.agua_pano_umido_hidratar"); }, get POLYESTER() { return tr("room.n40_baixo"); }, get SYNTHETIC() { return tr("room.n30_baixo"); }, get BLEND() { return tr("room.n30_medio"); } };
 const ORIGIN: Record<string, string> = { COMPRADA: "comprada", GARIMPADA: "garimpada", HERDADA: "herdada", PRESENTE: "presente", get FEITA_A_MAO() { return tr("room.feita_a_mao"); }, TROCADA: "trocada" };
-interface SwapPiece { id: string; name: string; imageUrl?: string; thumbnailUrl?: string; category?: string; subcategory?: string; inMirror?: boolean; }
 const mirrorPieces = (m?: MirrorState | null) => Object.values(m?.slots ?? {}).flatMap((v) => (Array.isArray(v) ? v : v ? [v] : []));
 interface ListRow { moduleId: string; label: string; count: number; pieces: RoomPiece[]; actions: string[]; }
 
@@ -58,7 +61,7 @@ const PHOTO_FILTERS: PhotoFilter[] = ["none", "editorial", "filme", "pb"];
 const FILTER_CSS: Record<PhotoFilter, string> = { none: "none", editorial: "contrast(1.1) saturate(0.88) brightness(1.02)", filme: "sepia(0.22) contrast(1.05) brightness(1.04) saturate(1.05)", pb: "grayscale(1) contrast(1.15)" };
 
 function RoomInner() {
-  const { t } = useI18n(); const toast = useToast(); const sp = useSearchParams();
+  const { t } = useI18n(); const toast = useToast(); const sp = useSearchParams(); const router = useRouter();
   const { data, loading, error, reload } = useApi<Room>((signal) => api.get("/api/me/room", { signal }), []);
   const list = useApi<ListRow[]>((signal) => api.get("/api/me/room/list", { signal }), []);
   const [tab, setTab] = useState<"3d" | "room" | "list">("room"); const [gl, setGl] = useState<boolean | null>(null);
@@ -67,7 +70,7 @@ function RoomInner() {
   const theme = useTheme(); const dark = theme.resolved !== "light";
   const mirror = useApi<MirrorState>((signal) => api.get("/api/me/mirror", { signal }), []);
   const [lit, setLit] = useState<Set<string>>(new Set()); const [closingKey, setClosingKey] = useState(0); const [celebrate, setCelebrate] = useState(false);
-  const [vista, setVista] = useState<{ open: boolean; prompt: string; busy: boolean; result: MirrorState | null }>({ open: false, prompt: "", busy: false, result: null });
+  const [vista, setVista] = useState<{ open: boolean; busy: boolean; result: MirrorState | null }>({ open: false, busy: false, result: null });
   const [copilot, setCopilot] = useState<{ open: boolean; q: string; busy: boolean; text: string | null; point: string | null }>({ open: false, q: "", busy: false, text: null, point: null });
   const [tag, setTag] = useState<PieceTag | null>(null); const [keysOpen, setKeysOpen] = useState(false); const [guest, setGuest] = useState("");
   const [photo, setPhoto] = useState<{ framing: Framing; filter: PhotoFilter; dof: boolean } | null>(null); const [shooting, setShooting] = useState(false);
@@ -81,25 +84,117 @@ function RoomInner() {
   const [, mirrorTick] = useState(0);
   useEffect(() => { const update = () => mirrorTick((n) => n + 1); session.listeners.add(update); return () => { session.listeners.delete(update); }; }, [session]);
   const inMirror = session.phase === "tryon";                     // aba Espelho aberta dentro do quarto
-  // prova aberta (a aba Espelho embutida no quarto): o menu lateral passa para "Espelho"; saindo, volta a "Meu Quarto"
-  useEffect(() => { setNavActiveOverride(inMirror ? "/mirror" : null); }, [inMirror]);
-  useEffect(() => () => setNavActiveOverride(null), []);
+  // sem WebGL (ou na aba 2.5D): a vista do espelho embutida — palco 2D + o mesmo painel
+  const [flatMirror, setFlatMirror] = useState(false);
+  // prévia 2D (foto parada do mesmo avatar) no painel do espelho; ?vista=2d abre com ela
+  const [show2d, setShow2d] = useState(false);
+  // o Espelho só "está aberto" quando a prova está à vista: aba 3D na prova, ou a vista embutida na aba 2.5D
+  const mirrorOpen = (tab === "3d" && inMirror) || (tab === "room" && flatMirror);
+  // navegação derivada: "Espelho" recuado sob "Meu Quarto" no menu lateral enquanto a prova está à vista
+  useEffect(() => { setNavSub(mirrorOpen ? { parent: "/room", key: "nav.mirror", icon: "ACT-32" } : null); }, [mirrorOpen]);
+  useEffect(() => () => setNavSub(null), []);
+  // a URL acompanha a prova (recarregar ou compartilhar reabre o espelho); só nas trocas, depois do link de entrada
+  const deepLinked = useRef(false); const wasOpen = useRef(false);
+  useEffect(() => {
+    if (!deepLinked.current || wasOpen.current === mirrorOpen) { wasOpen.current = mirrorOpen; return; }
+    wasOpen.current = mirrorOpen;
+    const want = mirrorOpen ? MIRROR_ROOM_PATH : "/room";
+    if (window.location.pathname + window.location.search !== want) window.history.replaceState(window.history.state, "", want);
+  }, [mirrorOpen]);
+  const me3d = useMirrorAvatar(); const [reflection, setReflection] = useState<string | null>(null);
   const [changed, setChanged] = useState<{ slot: HandSlot; name: string } | null>(null);
-  const [swap, setSwap] = useState<{ slot: HandSlot; pieces: SwapPiece[]; message?: string; href?: string } | null>(null);
   // QUARTO-ESPELHO: a peça que acabou de chegar à lista do espelho (destaque) e o pedido de levar em andamento
   const [arrived, setArrived] = useState<string | null>(null);
   const bringing = useRef<string | null>(null);
+  /**
+   * Caminhada até/para longe do espelho em andamento (aviso curto na cena): o Espelho é uma navegação derivada do
+   * movimento — "Ir ao espelho" faz o personagem andar até a frente do vidro e a zona abre a prova; "Voltar ao quarto"
+   * o faz andar para longe e a zona fecha. A ref acompanha o estado para os retornos assíncronos da caminhada.
+   */
+  const [walkStatus, setWalkStatusState] = useState<"mirror" | "away" | null>(null);
+  const walkRef = useRef<"mirror" | "away" | null>(null);
+  const setWalk = (w: "mirror" | "away" | null) => { walkRef.current = w; setWalkStatusState(w); };
+  // pedido de ir ao espelho enquanto a cena 3D monta ou o avatar carrega (momento do pedido, ms): caminha quando ficar pronto
+  const [pendingWalk, setPendingWalk] = useState<number | null>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const reducedMotion = useReducedMotion();
+  /** O personagem pode andar agora: aba 3D, modo andar (não órbita/foto) e o avatar carregado na cena. */
+  const gameplayReady = () => tab === "3d" && walking && !photo && !me3d.loading && engine.ready;
+  const calm = () => reducedMotion || !!data?.ambient?.reduceMotion;
+  /** Sem caminhada possível: a prova abre direto e (fora do modo andar) a câmera enquadra o espelho. */
+  function openMirrorDirect() {
+    if (session.phase !== "tryon") session.open();
+    if (!walking) frame("mirror");
+  }
+  /** Caminha até a frente do espelho (contornando o vidro se preciso); com movimento reduzido, aparece lá direto. */
+  function walkToMirror() {
+    session.unlatch();
+    if (calm()) { engine.cancelGoal(); engine.actor.copy(mirrorFront(engine.mirror)).setY(0); engine.notify(); setWalk(null); return; }
+    setWalk("mirror");
+    engine.walkTo(mirrorRoute(engine.actor, engine.mirror), (outcome: GoalOutcome) => {
+      if (walkRef.current === "mirror") setWalk(null);
+      if (outcome === "stuck") openMirrorDirect();                  // travou no caminho: a prova abre mesmo assim
+    });
+  }
+  /**
+   * Ir ao espelho (o Espelho é uma navegação derivada do Meu Quarto). Com a cena 3D no modo andar, o personagem caminha
+   * até a frente do espelho e a zona abre a prova sozinha — o movimento é a navegação. Cena montando ou avatar
+   * carregando: espera (até WALK_WAIT_MS) e então caminha. Sem caminhada (modo órbita/foto, sem cena): abre direto.
+   * Sem WebGL: a vista embutida do espelho na aba 2.5D.
+   */
+  function goToMirror() {
+    if (!gl) { setTab("room"); setFlatMirror(true); return; }
+    setTab("3d");
+    if (session.phase === "tryon" && walkRef.current !== "away") return;   // já na prova (e não saindo dela)
+    if (gameplayReady()) { setPendingWalk(null); walkToMirror(); return; }
+    if (walking && !photo) { setWalk("mirror"); setPendingWalk(Date.now()); return; }
+    openMirrorDirect();
+  }
+  // espera da caminhada: avatar pronto → caminha; sem cena 3D (nem montando) ou passou do tempo → abre direto
+  useEffect(() => {
+    if (pendingWalk === null || tab !== "3d") return;
+    const giveUp = () => { setPendingWalk(null); if (walkRef.current === "mirror") setWalk(null); openMirrorDirect(); };
+    if (!walking || photo) { giveUp(); return; }
+    if (play.ready && !me3d.loading && engine.ready) { setPendingWalk(null); walkToMirror(); return; }
+    if (!me3d.loading && !stageRef.current?.querySelector("canvas, .room3d-loading")) { giveUp(); return; }
+    const timer = window.setTimeout(giveUp, Math.max(0, pendingWalk + WALK_WAIT_MS - Date.now()));
+    return () => window.clearTimeout(timer);
+  }, [pendingWalk, tab, walking, photo, play.ready, me3d.loading]); // eslint-disable-line react-hooks/exhaustive-deps
+  /**
+   * Sair do espelho (trilha "Meu Quarto", Voltar ao quarto, Mostrar no quarto). Com o personagem andando no quarto e
+   * ainda na zona do espelho, ele caminha para longe e a zona fecha a prova; sem caminhada, a prova fecha direto.
+   */
+  function leaveMirror() {
+    setPendingWalk(null);
+    const near = mirrorDistance(engine.actor, engine.mirror) <= MIRROR_ZONE.exit;
+    if (session.phase !== "room" && gameplayReady() && near) {
+      session.leave();
+      const away = awayPoint(engine.mirror);
+      if (calm()) { engine.cancelGoal(); engine.actor.copy(away); engine.notify(); setWalk(null); }
+      else {
+        setWalk("away");
+        engine.walkTo(away, (outcome: GoalOutcome) => {
+          if (walkRef.current === "away") setWalk(null);
+          if (outcome === "stuck" && session.phase !== "room") session.back(engine.actor.distanceTo(engine.mirror));
+        });
+      }
+    } else {
+      if (walkRef.current) { engine.cancelGoal(); setWalk(null); }
+      if (session.phase !== "room") { if (gameplayReady()) session.leave(); else session.back(engine.actor.distanceTo(engine.mirror)); }
+    }
+    setFlatMirror(false); setChanged(null); setArrived(null);
+  }
   /** Leva a peça ao espelho: entra na lista (sem vestir, sem duplicar — o servidor ignora a repetida) e a prova abre. */
-  async function bringToMirror(pieceId: string) {
-    if (bringing.current === pieceId) return;                    // clique repetido / borda da área: um pedido só
+  async function bringToMirror(pieceId: string): Promise<MirrorState | null> {
+    if (bringing.current === pieceId) return null;               // clique repetido / borda da área: um pedido só
     bringing.current = pieceId;
     try {
       const r = await api.post<MirrorState>("/api/me/mirror/rack", { pieceId });
       mirror.setData(r); setArrived(pieceId);
       if (engine.held === pieceId) engine.consume(pieceId);        // saiu da mão: está na lista do espelho
-      if (session.phase !== "tryon") session.open();
-      if (!walking) frame("mirror");                               // câmera vai ao espelho (no modo andar, a câmera segue o avatar)
-    } catch (e) { toast.fromError(e); } finally { bringing.current = null; }
+      goToMirror();
+      return r;
+    } catch (e) { toast.fromError(e); return null; } finally { bringing.current = null; }
   }
   useEffect(() => { const update = () => setPlay(engine.state); engine.listeners.add(update); return () => { engine.listeners.delete(update); }; }, [engine]);
   // chegar ao espelho segurando uma peça: quando a prova abre (zona com histerese da sessão), ela entra na lista UMA vez
@@ -110,7 +205,6 @@ function RoomInner() {
     if (trying && !wasTrying.current && play.held) void bringToMirror(play.held);
     wasTrying.current = trying;
   }, [session.phase, play.held]); // eslint-disable-line react-hooks/exhaustive-deps
-  const me3d = useMirrorAvatar(); const [reflection, setReflection] = useState<string | null>(null);
   const slotsOf = (m?: MirrorState | null) => (m?.slots ?? {}) as unknown as Record<string, MirrorPiece | MirrorPiece[] | null>;
   const mirrorLook = useMemo(() => lookOf(slotsOf(mirror.data)), [mirror.data?.slots]); // eslint-disable-line react-hooks/exhaustive-deps
   const vistaLook = useMemo(() => (vista.result ? lookOf(slotsOf(vista.result)) : []), [vista.result]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -132,7 +226,7 @@ function RoomInner() {
       if (n !== session.seq) return;                                // outra escolha chegou durante o carregamento: ela vence
       const r = await api.post<MirrorState>("/api/me/mirror/pieces", { pieceId });
       if (!session.settle(n, true, slot, Date.now())) return;
-      mirror.setData(r); engine.consume(pieceId); setChanged({ slot, name }); setSwap(null);
+      mirror.setData(r); engine.consume(pieceId); setChanged({ slot, name });
     } catch (e) { session.settle(n, false, slot, Date.now(), e instanceof Error ? e.message : t("common.erro")); }
   }
   async function removeFromMirror(p: HandPiece) {
@@ -153,22 +247,21 @@ function RoomInner() {
       mirror.setData(r); if (arrived === p.id) setArrived(null);
     } catch (e) { session.settle(n, false, p.slot, Date.now(), e instanceof Error ? e.message : t("common.erro")); }
   }
-  /** Trocar: as peças do guarda-roupa que podem ir para o lugar (escolha manual, sem IA — a mesma lista da tela Espelho). */
-  async function openSwap(slot: HandSlot) {
-    try { const r = await api.get<{ pieces?: SwapPiece[]; message?: string; href?: string }>(`/api/me/mirror/wardrobe?slot=${HAND_TO_API[slot]}`); setSwap({ slot, pieces: r.pieces ?? [], message: r.message, href: r.href }); }
-    catch (e) { toast.fromError(e); }
-  }
   async function toggleTheme() {
     const next = dark ? "LIGHT" : "DARK";
     theme.update({ theme: next as typeof theme.prefs.theme, highContrast: false });
     try { await api.put("/api/me/preferences", { theme: next, clientUpdatedAt: new Date().toISOString() }); } catch (e) { toast.fromError(e); }
   }
-  async function runVistaMe(path = "/api/me/mirror/vista-me") {
+  /** A sequência do Vista-me acende as portas e gavetas de onde as peças saem. */
+  function lightSequence(r: MirrorData) {
+    const mods = new Set((r.sequence ?? []).map((x) => x.moduleId).filter((m): m is string => !!m));
+    setLit(mods); setOpenSet(new Set([...mods].filter((m) => m.startsWith("door:") || m.startsWith("drawer:"))));
+  }
+  async function runVistaMe(path = "/api/me/mirror/vista-me", prompt = "") {
     setVista((v) => ({ ...v, busy: true }));
     try {
-      const r = await api.post<MirrorState>(path, path.endsWith("vista-me") ? { prompt: vista.prompt || t("room.look_para_hoje") } : {});
-      const mods = new Set((r.sequence ?? []).map((x) => x.moduleId).filter(Boolean));
-      setLit(mods); setOpenSet(new Set([...mods].filter((m) => m.startsWith("door:") || m.startsWith("drawer:"))));
+      const r = await api.post<MirrorState>(path, path.endsWith("vista-me") ? { prompt } : {});
+      lightSequence(r);
       setVista((v) => ({ ...v, busy: false, result: r })); mirror.setData(r);
     } catch (e) { toast.fromError(e); setVista((v) => ({ ...v, busy: false })); }
   }
@@ -176,7 +269,7 @@ function RoomInner() {
     try {
       const r = await api.post<{ message?: string }>("/api/me/mirror/use");
       // fecho do Vista-me (DET-D07): portas fecham, a luz do espelho sobe e aparece a foto do look
-      setOpenSet(new Set()); setLit(new Set()); setClosingKey((k) => k + 1); setVista({ open: false, prompt: "", busy: false, result: null }); setFocusModule("mirror");
+      setOpenSet(new Set()); setLit(new Set()); setClosingKey((k) => k + 1); setVista({ open: false, busy: false, result: null }); setFocusModule("mirror");
       toast.success(r.message ?? t("common.look_do_dia_registrado")); reload(); mirror.reload();
     } catch (e) { toast.fromError(e); }
   }
@@ -241,17 +334,52 @@ function RoomInner() {
     const pid = sp.get("piece"); if (!pid || !data || gl === null) return; const p = data.pieces[pid]; setHighlight(pid);
     if (p?.moduleId) { if (gl) { setFocusModule(p.moduleId); setOpenSet(new Set([p.moduleId])); } else { const m = data.modules.find((x) => x.id === p.moduleId); if (m) setOpen(m); } }
   }, [sp, data, gl]);
+  // Espelho por link (/room?espelho=1[&vestir=<id>][&vista=2d], lib/nav/mirror-href.ts): vai ao espelho, leva a peça à
+  // lista do espelho e veste, abre a prévia 2D; os parâmetros de uma vez só saem da URL (recarregar não veste de novo)
+  useEffect(() => {
+    if (deepLinked.current || !data || gl === null || mirror.loading) return;
+    deepLinked.current = true;
+    if (sp.get("espelho") !== "1") return;
+    const vestir = sp.get("vestir"); const vista2d = sp.get("vista") === "2d";
+    wasOpen.current = true;                                        // a URL já é a do espelho
+    if (vista2d) setShow2d(true);
+    if (vestir) {
+      void bringToMirror(vestir).then((r) => {
+        if (!r) return;
+        const src = r.rack?.find((x) => x.id === vestir) ?? (data.pieces[vestir] as MirrorRackPiece | undefined);
+        void wearInMirror(vestir, handSlotOf(src ?? {}, src?.slot), src?.name ?? "");
+      });
+    } else goToMirror();
+    if (vestir || vista2d) router.replace(MIRROR_ROOM_PATH, { scroll: false });
+  }, [data, gl, mirror.loading]); // eslint-disable-line react-hooks/exhaustive-deps
   const act = async (fn: () => Promise<unknown>, ok?: string) => { try { await fn(); if (ok) toast.success(ok); reload(); list.reload(); } catch (e) { toast.fromError(e); } };
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-96" />;
   const modulePieces = (m: Module) => (m.hangers ?? m.slots ?? []).map((h) => ({ ...h, piece: h.pieceId ? data.pieces[h.pieceId] : null }));
   const gridPieces = (m: Module) => { const fromSlots = modulePieces(m).filter((x) => x.piece); if (fromSlots.length) return fromSlots.map((x) => x.piece!); return Object.values(data.pieces).filter((p) => p.moduleId === m.id); };
+  // a peça segurada no quarto entra nas roupas em mãos da parte (painel do Espelho) até ir para a lista do espelho
   const heldPiece = play.held ? data.pieces[play.held] ?? null : null;
-  const hands = handsOf(slotsOf(mirror.data), heldPiece, (id) => data.pieces[id] ?? null, mirror.data?.rack ?? []);
+  const held: MirrorPieceRef[] = heldPiece ? [heldPiece] : [];
+  // o painel do Espelho faz as trocas do jeito do quarto: reação do personagem, pedido mais recente vence, luz nas portas
+  const asHand = (p: MirrorPieceRef): HandPiece => ({ id: p.id, name: p.name, slot: handSlotOf(p, p.slot), apiSlot: p.slot ?? null, asset: "IMAGE_2D", worn: true });
+  const roomHost: MirrorHost = {
+    wear: (p) => wearInMirror(p.id, handSlotOf(p, p.slot), p.name),
+    takeOff: (p) => removeFromMirror(asHand(p)),
+    unlist: (p) => unlist(asHand(p)),
+    showInRoom: (p) => {
+      leaveMirror(); setHighlight(p.id);
+      if (p.moduleId) { setFocusModule(p.moduleId); if (p.moduleId.startsWith("door:") || p.moduleId.startsWith("drawer:")) setOpenSet(new Set([p.moduleId])); }
+    },
+    onVista: lightSequence,
+    use: acceptLook,
+  };
+  const mirrorEmpty = wornOf(mirror.data).length === 0;
   return (
     <>
-      <PageHeader title={t("nav.room")} kicker="RF27" lead={t("room.nivel_pecas_em_posicoes", { level: data.level, aesthetic: data.levelInfo.aesthetic, value: data.capacity?.pieces ?? 0, value2: data.capacity?.positions ?? 0, value3: data.forgottenCount ? ` · ${data.forgottenCount} esquecidas` : "" })}
-        actions={<><Button onClick={() => act(async () => setPreview(await api.get("/api/me/room/organization/preview?useAi=false")))}><FaiIcon id="ACT-30" size={24} decorative />{t("room.organizar")}</Button><Link href="/mirror" className="btn"><FaiIcon id="ACT-32" size={24} decorative />{t("nav.mirror")}</Link><Link href="/points" className="btn"><FaiIcon id="ACT-41" size={24} decorative />{t("room.loja")}</Link></>} />
+      <PageHeader title={mirrorOpen ? t("nav.mirror") : t("nav.room")} kicker="RF27"
+        trail={mirrorOpen ? [{ label: t("nav.room"), onClick: leaveMirror }, { label: t("nav.mirror") }] : undefined}
+        lead={mirrorOpen ? (mirror.data?.restriction ? t("mirror.desafio_ativo_so_as_pecas", { challenge: mirror.data.restriction.challenge }) : t("room.espelho_lead")) : t("room.nivel_pecas_em_posicoes", { level: data.level, aesthetic: data.levelInfo.aesthetic, value: data.capacity?.pieces ?? 0, value2: data.capacity?.positions ?? 0, value3: data.forgottenCount ? ` · ${data.forgottenCount} esquecidas` : "" })}
+        actions={<><Button onClick={() => act(async () => setPreview(await api.get("/api/me/room/organization/preview?useAi=false")))}><FaiIcon id="ACT-30" size={24} decorative />{t("room.organizar")}</Button>{!mirrorOpen && <Button onClick={goToMirror}><FaiIcon id="ACT-32" size={24} decorative />{t("room.ir_ao_espelho")}</Button>}<Link href="/points" className="btn"><FaiIcon id="ACT-41" size={24} decorative />{t("room.loja")}</Link></>} />
       {data.celebrations?.length ? <p className="mb-3 rounded-md bg-chalk-soft p-2 type-body-sm">{t("room.conquista")}{" "}{data.celebrations.map((c) => c.code).join(", ")}</p> : null}
       <Tabs tabs={[...(gl ? [{ id: "3d" as const, label: t("room.quarto_3d") }] : []), { id: "room" as const, label: gl ? "2.5D" : t("room.quarto_2_5d") }, { id: "list" as const, label: t("room.lista") }]} value={tab} onChange={setTab} />
       {gl === false && <p className="mb-2 rounded-md bg-surface-2 p-2 type-caption text-muted">{t("room.este_aparelho_nao_tem_webgl")}</p>}
@@ -278,7 +406,7 @@ function RoomInner() {
             ]} />
           </div>)}
         <div className="room3d" data-mode={inMirror ? "mirror" : undefined}>
-          <div className={`room3d-stage${photo ? " is-photo" : ""}`} data-filter={photo?.filter ?? undefined}>
+          <div ref={stageRef} className={`room3d-stage${photo ? " is-photo" : ""}`} data-filter={photo?.filter ?? undefined}>
             <RoomScene gameplay={walking && !photo && !me3d.loading ? { avatar: me3d.avatar, sex: me3d.sex, body: me3d.body, pieces: mirrorLook, engine, session, reduced: !!data.ambient?.reduceMotion } : undefined} data={data as unknown as RoomData3D} open={openSet} highlight={highlight} focusModule={focusModule} onReady={setCanvas}
               onToggle={(id) => { if (!openSet.has(id)) touch(id); setOpenSet((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); setFocusModule(id); }}
               onPick={openTag} lit={lit} dark={dark} onToggleTheme={toggleTheme}
@@ -291,6 +419,9 @@ function RoomInner() {
               <AvatarStill hidden avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={mirrorLook} background="transparent" onStill={setReflection} />
             )}
             <p className="room3d-hint">{t("room.arraste_para_girar_enquadramento_3")}</p>
+            <RoomSceneControls engine={engine} canvas={canvas} walk={walking && !photo && !me3d.loading} />
+            {/* caminhada até/para longe do espelho: aviso curto, lido pelo leitor de tela (a prova aberta já é a chegada) */}
+            <p className="room3d-walk-status" role="status" aria-live="polite">{walkStatus === "away" ? t("room.mirror.exit") : walkStatus === "mirror" && !inMirror ? t("room.mirror.going") : ""}</p>
           </div>
           <nav className="room3d-positions" aria-label={inMirror ? t("nav.mirror") : t("room.posicoes_do_quarto")}>
             <section className="mb-4 space-y-3 rounded-xl border p-3" aria-label={t("room.play.title")}>
@@ -302,13 +433,22 @@ function RoomInner() {
                 <p className="font-semibold" role="status">{t(!play.ready ? "room.play.loading" : play.grip ? "room.play.handle" : play.held ? "room.play.carrying" : "room.play.ready")}</p>
                 {play.held && <p>{data.pieces[play.held]?.name}</p>}
               </>}
-              <MirrorHands phase={session.phase} hands={hands} busy={session.busy} error={session.error} changed={changed} reduced={!!data.ambient?.reduceMotion} arrivedId={arrived}
-                onWear={(p) => wearInMirror(p.id, p.slot, p.name)} onRemove={removeFromMirror} onUnlist={unlist} onSwap={openSwap}
-                onBack={() => { session.back(engine.actor.distanceTo(engine.mirror)); setChanged(null); setArrived(null); }} onOpen={() => session.open()} />
+              <MirrorHands phase={session.phase} busy={session.busy} error={session.error} changed={changed} reduced={!!data.ambient?.reduceMotion} walking={walkStatus} onBack={leaveMirror} />
             </section>
             {/* QUARTO-ESPELHO: na prova, a aba Espelho abre aqui mesmo (as opções de vestimenta ao lado da cena); sair do
                 espelho com as setas devolve a lista de posições */}
-            {inMirror && mirror.data && <MirrorControls<MirrorState> compact data={mirror.data} setData={mirror.setData} reload={mirror.reload} />}
+            {inMirror && mirror.data && (
+              <MirrorControls<MirrorState> compact data={mirror.data} setData={mirror.setData} reload={mirror.reload} host={roomHost} held={held} arrivedId={arrived}
+                preview2d={{ shown: show2d, onToggle: () => setShow2d((v) => !v) }}>
+                {show2d && !me3d.loading && (
+                  <figure className="mirror-panel-still" aria-label={t("mirror.previa_2d")} data-testid="mirror-preview-2d">
+                    <AvatarStill avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={mirrorLook} background="#EEEAE2" alt={t("mirror.previa_2d_alt", { n: mirrorLook.length })} />
+                    <figcaption>{t("mirror.previa_2d_nota_curta")}</figcaption>
+                  </figure>
+                )}
+                {mirrorEmpty && <p className="mirror-empty-hint">{t("mirror.vazio_dica")}</p>}
+              </MirrorControls>
+            )}
             {!inMirror && <><p className="label mb-1">{t("room.posicoes")}</p>
             <ul className="fai-list">{data.modules.filter((m) => ["DOOR", "DRAWER", "TOP", "BASE"].includes(m.slotType) && (m.slotType !== "DRAWER" || gridPieces(m).length > 0 || (m as { category?: string }).category)).map((m) => { const n = gridPieces(m).length; return (
               <li key={m.id}><button type="button" aria-label={(m as { accessibleLabel?: string }).accessibleLabel ?? `${m.label}, ${n}`} aria-pressed={focusModule === m.id}
@@ -321,7 +461,20 @@ function RoomInner() {
           </nav>
         </div>
       </>)}
-      {tab === "room" && (
+      {tab === "room" && flatMirror && mirror.data && (
+        <div className="room-flat-mirror" role="region" aria-label={t("nav.mirror")}>
+          <div className="room-flat-mirror-stage">
+            <MirrorStage slots={slotsOf(mirror.data)} kelvin={mirror.data.light?.kelvin} mode="2d">
+              {mirrorEmpty && <div className="mirror-empty"><p className="type-h3">{t("mirror.emptyTitle")}</p><p className="type-body-sm mt-1 text-muted">{t("mirror.vazio_dica")}</p></div>}
+              {mirror.data.postIt && <p className="absolute right-3 top-3 max-w-[150px] rotate-2 bg-chalk-soft p-2 text-xs shadow" role="note">📌 {mirror.data.postIt}</p>}
+            </MirrorStage>
+            <Button className="mt-2" onClick={leaveMirror}>{t("room.mirror.back")}</Button>
+          </div>
+          <MirrorControls<MirrorState> data={mirror.data} setData={mirror.setData} reload={mirror.reload}
+            host={{ ...roomHost, showInRoom: (p) => { leaveMirror(); setHighlight(p.id); const m = data.modules.find((x) => x.id === p.moduleId); if (m) setOpen(m); } }} />
+        </div>
+      )}
+      {tab === "room" && !flatMirror && (
         <div className="rounded-xl p-3" style={{ background: data.ambient?.period === "night" ? "linear-gradient(180deg,#1b1d2a,#2a2c3a)" : "linear-gradient(180deg,#f3efe6,#e6e0d2)", perspective: "900px" }} aria-label={t("nav.room")}>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6" style={{ transform: "rotateX(4deg)" }}>
             {data.modules.map((m) => { const ps = gridPieces(m); const full = m.capacity ? ps.length / m.capacity : 0; return (
@@ -332,7 +485,7 @@ function RoomInner() {
                 <span className="type-caption tabular text-black/50">{ps.length}{m.capacity ? `/${m.capacity}` : ""}</span>
               </button>); })}
             <div className="col-span-2 flex items-center justify-between rounded-md border-2 border-dashed border-black/15 p-3 sm:col-span-4 lg:col-span-6">
-              <div><p className="type-label text-black/60">{t("nav.mirror")}</p>{data.mirrorDailyLook ? <Link className="underline" href={`/schemes/${data.mirrorDailyLook.schemeId}`}>{data.mirrorDailyLook.title}</Link> : <Link href="/mirror" className="underline">{t("room.monte_o_look_de_hoje")}</Link>}</div>
+              <div><p className="type-label text-black/60">{t("nav.mirror")}</p>{data.mirrorDailyLook ? <Link className="underline" href={`/schemes/${data.mirrorDailyLook.schemeId}`}>{data.mirrorDailyLook.title}</Link> : <button type="button" className="underline" onClick={goToMirror}>{t("room.monte_o_look_de_hoje")}</button>}</div>
               {data.saleRack && <div><p className="type-label text-black/60">{data.saleRack.name}</p><p className="type-caption">{t("room.pecas_2", { piecesCount: data.saleRack.pieces.length })}</p></div>}
               {data.chair?.length ? <div><p className="type-label text-black/60">{t("room.cadeira_excedente_2")}</p><p className="type-caption">{data.chair.length}</p></div> : null}
               {data.monogram && <span className="hero-number text-3xl text-black/30">{data.monogram}</span>}
@@ -345,7 +498,7 @@ function RoomInner() {
         {open && (<>
           <p className="type-caption text-muted mb-2">{t("room.capacidade_acabamento", { value: open.mold ?? open.sku, value2: open.widthCm ? t("room.cm", { widthCm: open.widthCm }) : "", value3: open.capacity ?? "—", value4: open.finish?.texture ?? "—" })}</p>
           {open.slotType === "DRAWER" && <div className="mb-3 flex gap-2"><Input aria-label={t("room.rotulo_da_gaveta")} defaultValue={data.drawerLabels[open.id.split(":")[1]] ?? ""} id="drawer-label" placeholder={t("room.rotulo_ex_jeans")} /><Button size="sm" onClick={() => act(() => api.put(`/api/me/room/drawers/${open.id.split(":")[1]}`, { label: (document.getElementById("drawer-label") as HTMLInputElement).value }), t("common.saved"))}>{t("room.renomear")}</Button></div>}
-          <ul className="fai-list">{gridPieces(open).map((p) => <li key={p.id} className="flex items-center gap-3 py-2"><img src={mediaUrl(p.thumbnailUrl ?? p.imageUrl)} alt="" className="h-12 w-12 rounded bg-surface-2 object-contain" /><div className="min-w-0 flex-1"><Link href={`/pieces/${p.id}`} className="type-body underline">{p.name}</Link><p className="type-caption text-muted">{t("room.usos", { value: p.addressLabel ?? p.address, value2: p.wearCount ?? 0, value3: p.states?.length ? ` · ${p.states.join(", ")}` : "" })}</p></div><Button size="sm" onClick={() => { setMovePiece(p); setAddress(p.address ?? ""); }}>{t("room.mover_2")}</Button><Link href={`/mirror?piece=${p.id}`} className="btn btn-sm">{t("nav.mirror")}</Link></li>)}{gridPieces(open).length === 0 && <li className="py-3 type-body text-muted">{t("room.vazio")}</li>}</ul>
+          <ul className="fai-list">{gridPieces(open).map((p) => <li key={p.id} className="flex items-center gap-3 py-2"><img src={mediaUrl(p.thumbnailUrl ?? p.imageUrl)} alt="" className="h-12 w-12 rounded bg-surface-2 object-contain" /><div className="min-w-0 flex-1"><Link href={`/pieces/${p.id}`} className="type-body underline">{p.name}</Link><p className="type-caption text-muted">{t("room.usos", { value: p.addressLabel ?? p.address, value2: p.wearCount ?? 0, value3: p.states?.length ? ` · ${p.states.join(", ")}` : "" })}</p></div><Button size="sm" onClick={() => { setMovePiece(p); setAddress(p.address ?? ""); }}>{t("room.mover_2")}</Button><Button size="sm" onClick={() => { setOpen(null); void bringToMirror(p.id); }}>{t("room.levar_ao_espelho")}</Button></li>)}{gridPieces(open).length === 0 && <li className="py-3 type-body text-muted">{t("room.vazio")}</li>}</ul>
           {open.slotType === "SEASON" && <p className="mt-2 type-caption text-muted">{t("room.bau_de_estacao_pecas_fora")}</p>}
         </>)}
       </Dialog>
@@ -360,10 +513,9 @@ function RoomInner() {
         <Button className="mt-3" size="sm" variant="ghost" onClick={() => act(() => api.delete("/api/me/room/organization"), t("room.ultima_organizacao_desfeita"))}>{t("room.desfazer_ultima_organizacao")}</Button>
       </Dialog>
       <Dialog open={vista.open} onClose={() => setVista((v) => ({ ...v, open: false }))} size="lg" title={t("common.vista_me")}
-        footer={vista.result ? <><Button onClick={() => runVistaMe("/api/me/mirror/another")} loading={vista.busy}>{t("room.outra_sugestao")}</Button><Button variant="primary" onClick={acceptLook} disabled={!vista.result.complete}>{t("room.usar_este_look")}</Button></>
-          : <Button variant="primary" loading={vista.busy} onClick={() => runVistaMe()}>{t("room.montar_look")}</Button>}>
-        <Field label={t("room.o_que_voce_vai_fazer")} id="vm-prompt"><Input id="vm-prompt" value={vista.prompt} placeholder={t("room.reuniao_as_10h_e_jantar")} onChange={(e) => setVista((v) => ({ ...v, prompt: e.target.value }))} /></Field>
-        <p className="type-caption text-muted">{t("room.o_vista_me_usa_so")}</p>
+        footer={vista.result ? <><Button onClick={() => runVistaMe("/api/me/mirror/another")} loading={vista.busy}>{t("room.outra_sugestao")}</Button><Button variant="primary" onClick={acceptLook} disabled={!vista.result.complete}>{t("room.usar_este_look")}</Button></> : undefined}>
+        <p className="type-body-sm mb-2 text-muted">{t("room.o_vista_me_usa_so")}</p>
+        <VistaMeCells busy={vista.busy} lastPrompt={mirror.data?.prompt} onRun={(prompt) => void runVistaMe("/api/me/mirror/vista-me", prompt)} />
         {vista.result && <div className="mt-2 flex flex-wrap items-start gap-4">
           {!me3d.loading && <figure className="vista-still shrink-0" aria-label={t("room.previa_do_look")}>
             <AvatarStill avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={vistaLook} background="#EEEAE2" alt={t("mirror.previa_2d_alt", { n: vistaLook.length })} />
@@ -399,11 +551,6 @@ function RoomInner() {
         <p className="type-body-sm mb-2">{t("room.quem_tem_a_chave_pode")}</p>
         <ul className="mb-3 flex flex-wrap gap-1">{((data as unknown as RoomData3D).keys ?? []).map((k) => <li key={k.id} className="chip">🔑 @{k.username}</li>)}{((data as unknown as RoomData3D).keys ?? []).length === 0 && <li className="type-caption text-muted">{t("room.nenhuma_chave_entregue_ainda")}</li>}</ul>
         <Field label={t("room.entregar_a_chave_para_usuario")} id="key-guest"><Input id="key-guest" value={guest} onChange={(e) => setGuest(e.target.value)} placeholder="@paris_lea" /></Field>
-      </Dialog>
-      <Dialog open={!!swap} onClose={() => setSwap(null)} title={t("room.mirror.pick_title", { slot: swap ? t(`room.mirror.slot.${swap.slot}`) : "" })}>
-        <p className="type-body-sm text-muted mb-2">{swap?.message ?? t("room.mirror.pick_hint")}{swap?.href && <> <Link href={swap.href} className="underline">{t("mirror.adicionar_peca")}</Link></>}</p>
-        {swap && swap.pieces.length === 0 && <p className="type-body">{t("room.mirror.pick_empty")}</p>}
-        <div className="grid grid-cols-3 gap-2" data-testid="room-mirror-picker">{(swap?.pieces ?? []).map((p) => <button key={p.id} type="button" className="surface p-2 text-left hover:bg-surface-2 disabled:opacity-60" disabled={p.inMirror || session.busy !== null} aria-pressed={p.inMirror} onClick={() => swap && wearInMirror(p.id, swap.slot, p.name)}><img src={mediaUrl(p.thumbnailUrl ?? p.imageUrl)} alt="" className="aspect-square w-full rounded bg-surface object-contain" /><span className="type-caption block truncate">{p.name}</span></button>)}</div>
       </Dialog>
       <Dialog open={!!addTo} onClose={() => setAddTo(null)} title={t("room.adicionar_peca_a_esta_gaveta", { value: addTo ? ` (${addTo.replace("drawer:", t("room.gaveta_2"))})` : "" })}
         footer={<><Link className="btn" href="/pieces/new">{t("room.cadastrar_peca_nova")}</Link><Button variant="primary" disabled={!addPiece} onClick={() => act(() => api.put(`/api/pieces/${addPiece}/room-address`, { address: addTo }), t("room.peca_guardada_na_gaveta")).then(() => setAddTo(null))}>{t("room.guardar_aqui")}</Button></>}>

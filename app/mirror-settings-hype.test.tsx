@@ -1,14 +1,23 @@
 // @vitest-environment jsdom
 /**
- * RF53 · Lote Final (docs/hype/HYPE_AUDITORIA_ABAS.md): o Espelho mostra os seis números do look montado (P3-07, o mesmo
+ * RF53 · Lote Final (docs/hype/HYPE_AUDITORIA_ABAS.md): o Espelho — dentro do Meu Quarto — mostra os seis números do look montado (P3-07, o mesmo
  * `LookScores` do Copilot e do Autopiloto — Hype ao lado da compatibilidade, "—" sem base, nunca 0) e Configurações ›
  * Privacidade ganha a opção de não aparecer em "Criadores em alta" (P3-12), salva em PUT /api/me/preferences.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor, within } from "@/test-utils/render";
+import { act, cleanup, fireEvent, loggedAs, renderApp, screen, settle, waitFor, within } from "@/test-utils/render";
+import { nav } from "@/test-utils/setup";
 import { __resetHypeStore } from "@/lib/hype/use-hype";
-import MirrorPage from "@/app/(site)/(app)/mirror/page";
+import RoomPage from "@/app/(site)/(app)/room/page";
 import SettingsPage from "@/app/(site)/(app)/settings/page";
+
+// o Espelho abre dentro do quarto pelo link de entrada (/room?espelho=1); a cena 3D não roda no jsdom
+vi.mock("@/components/room3d/room-scene", () => ({ default: () => <div data-testid="room-scene" /> }));
+vi.mock("@/components/three/avatar-still", () => ({ default: () => null }));
+const ROOM = { owner: true, level: "ESTREIA", levelInfo: { unlocks: "", aesthetic: "Estreia" }, modules: [], drawerLabels: {}, pieces: {}, capacity: { pieces: 0, positions: 0 } };
+const roomRoutes = { "GET /api/me/room": ROOM, "GET /api/me/room/list": [], "GET /api/tipos-look": [] };
+const withWebgl = () => { const real = HTMLCanvasElement.prototype.getContext; vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockImplementation(function (this: HTMLCanvasElement, kind: string, ...rest: unknown[]) { return kind === "webgl" || kind === "webgl2" ? ({} as unknown as RenderingContext) : (real as (this: HTMLCanvasElement, k: string, ...r: unknown[]) => RenderingContext | null).call(this, kind, ...rest); }); };
+const openMirror = async () => { const r = renderApp(<RoomPage />); await act(async () => { await new Promise((res) => setTimeout(res, 60)); }); await screen.findByTestId("mirror-controls"); return r; };
 
 const score = (scope: HTMLElement, label: string) => within(scope).getByText(label).nextElementSibling?.textContent;
 
@@ -24,13 +33,14 @@ function mirrorState(slots: Record<string, unknown>, scores: Record<string, numb
 const PREFS = { theme: "AUTO", language: "PT_BR", density: "COMFORTABLE", fontScale: 100, highContrast: false, reduceMotion: false, soundEnabled: false, hapticsEnabled: true, hypeCreatorOptOut: false };
 
 beforeEach(() => { __resetHypeStore(); try { localStorage.clear(); } catch { /* sem storage */ } });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); document.cookie = "fai_rt_h=; max-age=0; path=/"; });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); nav.search = new URLSearchParams(); document.cookie = "fai_rt_h=; max-age=0; path=/"; });
 
 describe("Espelho › leitura do look (P3-07)", () => {
+  beforeEach(() => { withWebgl(); nav.search = new URLSearchParams("espelho=1"); });
   it("o look montado mostra os seis números, com Hype ao lado da compatibilidade e \"—\" para dimensão sem base", async () => {
-    loggedAs(undefined, { "GET /api/me/avatar3d": { exists: false },
+    loggedAs(undefined, { ...roomRoutes, "GET /api/me/avatar3d": { exists: false },
       "GET /api/me/mirror": mirrorState({ upper: TOP, lower: BOTTOM, shoes: SHOES }, { compatibility: 82, hype: null, novelty: 100, reuse: 35, usage: 0, sustainability: 71 }) });
-    const { container } = renderApp(<MirrorPage />);
+    const { container } = await openMirror();
     await settle();
     expect(await screen.findByText("Leitura do look")).toBeTruthy();
     const grid = container.querySelector(".copilot-scores") as HTMLElement;
@@ -46,20 +56,21 @@ describe("Espelho › leitura do look (P3-07)", () => {
   });
 
   it("espelho vazio não tem números; o Vista-me traz o look com os números novos", async () => {
-    const { calls } = loggedAs(undefined, { "GET /api/me/avatar3d": { exists: false },
+    const { calls } = loggedAs(undefined, { ...roomRoutes, "GET /api/me/avatar3d": { exists: false },
       "GET /api/me/mirror": mirrorState({}, null),
       "POST /api/me/mirror/vista-me": mirrorState({ upper: TOP, lower: BOTTOM, shoes: SHOES }, { compatibility: 64, hype: 58, novelty: 67, reuse: 10, usage: 40, sustainability: 55 }) });
-    const { container } = renderApp(<MirrorPage />);
+    const { container } = await openMirror();
     await settle();
-    expect(await screen.findByText("O espelho está vazio")).toBeTruthy();
+    expect(await screen.findByText(/Toque numa ocasião do Vista-me/)).toBeTruthy();
     expect(container.querySelector(".copilot-scores")).toBeNull();
-    fireEvent.change(screen.getByLabelText("pedido"), { target: { value: "algo confortável" } });
-    fireEvent.submit(screen.getByLabelText("pedido").closest("form") as HTMLFormElement);
+    // sem campo de texto: um toque numa ocasião (com o humor) monta o look
+    fireEvent.click(screen.getByRole("button", { name: "Confortável" }));
+    fireEvent.click(within(screen.getByRole("group", { name: "Para onde é o look" })).getByRole("button", { name: /Trabalho/ }));
     await waitFor(() => expect(container.querySelector(".copilot-scores")).toBeTruthy());
     const grid = container.querySelector(".copilot-scores") as HTMLElement;
     expect(score(grid, "Hype")).toBe("58");
     expect(score(grid, "Compatibilidade")).toBe("64");
-    expect(calls.some((c) => c.method === "POST" && c.path === "/api/me/mirror/vista-me")).toBe(true);
+    expect(calls.find((c) => c.method === "POST" && c.path === "/api/me/mirror/vista-me")?.body).toEqual({ prompt: "Trabalho, Confortável", anchorIds: [] });
   });
 });
 

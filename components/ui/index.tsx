@@ -248,7 +248,11 @@ export function Badge({ tone, children, className }: { tone?: "mark" | "thread" 
 export function Card({ children, className, pad = true }: { children: ReactNode; className?: string; pad?: boolean }) {
   return <section className={cn("surface", pad && "card-pad p-4", className)}>{children}</section>;
 }
-export function PageHeader({ title, lead, actions, kicker }: { title: string; lead?: string; actions?: ReactNode; kicker?: string }) {
+/** Trilha (breadcrumb) acima do título: o último item é a página atual; os outros voltam (botão ou link). */
+export interface TrailItem { label: string; onClick?: () => void; href?: string }
+export function PageHeader({ title, lead, actions, kicker, trail }: { title: string; lead?: string; actions?: ReactNode; kicker?: string;
+  /** navegação derivada (ex.: Meu Quarto › Espelho) */ trail?: TrailItem[] }) {
+  const { t } = useI18n();
   // Rótulos que são só código de requisito ("RF7 · RF31") aparecem apenas no modo apresentação.
   const devRefs = useDevRefs();
   const isCode = !!kicker && REQUIREMENT_CODE.test(kicker);
@@ -257,6 +261,16 @@ export function PageHeader({ title, lead, actions, kicker }: { title: string; le
   return (
     <header className="page-header" data-rf={isCode ? kicker : undefined}>
       <div className="min-w-0">
+        {trail?.length ? (
+          <nav aria-label={t("ui.trilha")} className="page-trail">
+            <ol>{trail.map((c, i) => (
+              <li key={`${i}-${c.label}`}>
+                {i === trail.length - 1 ? <span aria-current="page">{c.label}</span>
+                  : c.href ? <a href={c.href}>{c.label}</a> : <button type="button" onClick={c.onClick}>{c.label}</button>}
+              </li>
+            ))}</ol>
+          </nav>
+        ) : null}
         {kicker && !isCode && <p className="type-label text-muted mb-1">{kicker}</p>}
         {kicker && isCode && devRefs && <p className="type-label mb-1 text-thread">{kicker}</p>}
         <h1 className="type-h1 text-ink">{title}</h1>

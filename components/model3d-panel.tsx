@@ -48,7 +48,13 @@ export function useModel3d(pieceId: string, { enabled, onCompleted }: { enabled:
     try { const r = await api.post<Model3dStatus>(`/api/pieces/${pieceId}/model3d`); setSt(r); prev.current = r.status; if (r.freeRetry) toast.info(t("model3dPanel.reprocessamento_gratis_nao_conta_na")); }
     catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
-  return { st, busy, request };
+  /** Pede o 3D sem aviso (fila automática do provador): devolve o erro (sem foto, cota, recurso desligado) em vez de mostrar. */
+  async function queue(): Promise<Error | null> {
+    setBusy(true);
+    try { const r = await api.post<Model3dStatus>(`/api/pieces/${pieceId}/model3d`); setSt(r); prev.current = r.status; return null; }
+    catch (e) { return e instanceof Error ? e : new Error(String(e)); } finally { setBusy(false); }
+  }
+  return { st, busy, request, queue };
 }
 
 /** "Relevo a partir da foto" nunca é apresentado como reconstrução fiel da peça. */
