@@ -1,4 +1,5 @@
 "use client";
+import { WebVitals } from "@/components/performance/web-vitals";
 import type { ReactNode } from "react";
 import { I18nProvider, type Locale } from "@/lib/i18n/i18n";
 import { ThemeProvider } from "@/lib/theme/theme";
@@ -16,7 +17,7 @@ export function Providers({ children, initialLocale }: { children: ReactNode; in
       <ThemeProvider>
         <ToastProvider>
           <ChunkRecovery />
-          <NoticeProvider><AuthProvider><GuideProvider><DetailModalProvider>{children}</DetailModalProvider></GuideProvider></AuthProvider></NoticeProvider>
+          <NoticeProvider><AuthProvider><GuideProvider><DetailModalProvider><WebVitals />{children}</DetailModalProvider></GuideProvider></AuthProvider></NoticeProvider>
         </ToastProvider>
       </ThemeProvider>
     </I18nProvider>

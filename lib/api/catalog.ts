@@ -33,10 +33,10 @@ export interface SearchResponse { intent: SearchIntent; results: CatalogProduct[
 export interface DiscoverResponse { results: CatalogProduct[]; status: "FOUND" | "NOT_FOUND" | "BRAND_UNKNOWN" | "NO_OFFICIAL_SOURCE"; message?: string; rejected?: number }
 export interface SearchParams { category?: string; subcategory?: string; brand?: string; q?: string; color?: string; limit?: number }
 /** Página do acervo inteiro (GET /api/catalog/products): filtros opcionais; `page` começa em 0; `size` até 96. */
-export interface BrowseParams { category?: string; subcategory?: string; brand?: string; brandId?: string; q?: string; page?: number; size?: number }
-export interface BrowseResponse { items: CatalogProduct[]; page: number; size: number; total: number; hasMore: boolean; brandKnown?: boolean; brand?: CatalogBrandRef | null }
+export interface BrowseParams { color?: string; gender?: string; category?: string; subcategory?: string; brand?: string; brandId?: string; q?: string; page?: number; size?: number }
+export interface BrowseResponse { canSearchOfficial?: boolean; items: CatalogProduct[]; page: number; size: number; total: number; hasMore: boolean; brandKnown?: boolean; brand?: CatalogBrandRef | null }
 /** Tamanho do acervo visível: o número mostrado como "acervo completo". */
-export interface CatalogSummary { products: number; brands: number; /** peças com pelo menos uma foto utilizável */ withImage?: number }
+export interface CatalogSummary { products: number; brands: number; /** peças com pelo menos uma foto utilizável */ withImage?: number; registeredProducts?: number; unbrandedProducts?: number }
 
 const qs = (p: object) => {
   const u = new URLSearchParams();
@@ -50,6 +50,7 @@ export const catalogApi = {
   browse: (p: BrowseParams, signal?: AbortSignal) => api.get<BrowseResponse>(`/api/catalog/products${qs(p)}`, { signal }),
   summary: (signal?: AbortSignal) => api.get<CatalogSummary>("/api/catalog/summary", { signal }),
   suggestions: (p: SearchParams, signal?: AbortSignal) => api.get<{ suggestions: string[] }>(`/api/catalog/suggestions${qs(p)}`, { signal }),
+  verifyImage: (id: string) => api.post<CatalogProduct>(`/api/catalog/products/${id}/verify-image`, {}),
   product: (id: string) => api.get<CatalogProduct>(`/api/catalog/products/${id}`),
   discover: (p: { brand?: string; subcategory?: string; category?: string; query?: string; color?: string }) => api.post<DiscoverResponse>("/api/catalog/discover", p),
   addToWardrobe: (body: Record<string, unknown>) => api.post<PieceView>("/api/pieces/from-catalog", body),

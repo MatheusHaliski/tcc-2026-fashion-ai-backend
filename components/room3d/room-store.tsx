@@ -1,12 +1,15 @@
 "use client";
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { Badge, Button, Chip, Dialog, EmptyState, ErrorState, SkeletonGrid, useToast } from "@/components/ui";
 import { FilterBar } from "@/components/filter-bar";
 import { AVAILABILITY, SLOT_LABELS, StoreSwatch, type StoreItem } from "@/components/room3d/wardrobe-creator";
+
+const ModelViewer = dynamic(() => import("./piece-model-viewer"), { ssr: false });
 
 type ShopItem = StoreItem & { inventory?: { inventoryId: string; appliedModule?: string | null; serial?: number | null }[] };
 
@@ -26,6 +29,7 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
   const { fmtDate, t } = useI18n(); const toast = useToast();
   const shop = useApi<ShopItem[]>((signal) => api.get("/api/points/shop", { signal }), []);
   const [shown, setShown] = useState(PAGE);
+  const [modelPreview, setModelPreview] = useState<ShopItem | null>(null);
   const [kind, setKind] = useState(""); const [slot, setSlot] = useState(""); const [material, setMaterial] = useState(""); const [origin, setOrigin] = useState("");
   const [creator, setCreator] = useState(creatorSlug ?? ""); const [q, setQ] = useState(""); const [onlyBuyable, setOnlyBuyable] = useState(false); const [sort, setSort] = useState("price");
   const [apply, setApply] = useState<{ item: ShopItem; inventoryId: string } | null>(null); const [target, setTarget] = useState(""); const [busy, setBusy] = useState<string | null>(null);
@@ -97,12 +101,14 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
               {i.blocker && <p className="type-caption" style={{ color: "var(--mark)" }}>{i.blocker}</p>}
               <div className="mt-auto flex flex-wrap gap-1 pt-2">
                 {loose && <Button size="sm" variant="accent" onClick={() => openApply(i, loose.inventoryId)}>{t("room3d.roomStore.montar_no_quarto")}</Button>}
+                {i.finish?.model3dUrl && <Button size="sm" onClick={() => setModelPreview(i)}>{t("roomAssets.preview")}</Button>}
                 <Button size="sm" onClick={() => tryOn(i)}>{t("scheme.tryOn")}</Button>
                 <Button size="sm" variant="primary" loading={busy === i.sku} disabled={!!i.blocker || i.levelOk === false || i.affordable === false} onClick={() => buy(i)} title={i.levelOk === false ? t("room3d.roomStore.disponivel_a_partir_do_nivel", { requiredLevel: i.requiredLevel }) : i.affordable === false ? t("room3d.roomStore.saldo_insuficiente") : i.blocker ?? undefined}>{units.length ? t("room3d.roomStore.comprar_outro") : t("room3d.roomStore.comprar")}</Button>
               </div>
             </div>);
         })}</div>
         {!compact && list.length > shown && <div className="mt-4 flex justify-center"><Button onClick={() => setShown((n) => n + PAGE)}>{t("room3d.roomStore.showMore", { count: Math.min(PAGE, list.length - shown), shown, total: list.length })}</Button></div>}</>)}
+      <Dialog open={!!modelPreview} title={modelPreview?.name ?? t("roomAssets.preview")} onClose={() => setModelPreview(null)}><div className="h-96">{modelPreview?.finish?.model3dUrl && <ModelViewer url={mediaUrl(modelPreview.finish.model3dUrl) ?? modelPreview.finish.model3dUrl} name={modelPreview.name} />}</div></Dialog>
       <Dialog open={!!apply} onClose={() => setApply(null)} title={t("room3d.roomStore.montar", { value: apply?.item.name ?? "" })} footer={<><Button onClick={() => setApply(null)}>{t("room3d.roomStore.deixar_na_caixa")}</Button><Button variant="primary" disabled={!target} onClick={doApply}>{t("room3d.roomStore.montar_2")}</Button></>}>
         {apply && ((apply.item.compatibleModules ?? []).length === 0 ? <p className="type-body">{t("room3d.roomStore.nenhum_modulo_compativel_no_seu")}</p> : <>
           <p className="type-body-sm text-muted mb-2">{apply.item.kind === "WARDROBE" ? t("room3d.roomStore.o_guarda_roupa_inteiro_troca") : t("room3d.roomStore.escolha_o_modulo_onde_este")}</p>

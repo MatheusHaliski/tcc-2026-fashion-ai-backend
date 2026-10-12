@@ -50,7 +50,7 @@ class CatalogImagePipelineTest {
         assertThat(a.rendered()).as("nível A não gera master").isNull();
         assertThat(a.cropJson()).containsKeys("crop", "focus", "product", "background");
         assertThat(a.stages()).extracting(CatalogImagePipeline.Stage::name)
-                .containsExactly("VALIDATION", "SEGMENTATION", "DISTRACTOR_REMOVAL", "ROI", "FABRIC_FRAME", "REFRAMING", "VALIDATING");
+                .containsExactly("VALIDATION", "SEGMENTATION", "DISTRACTOR_REMOVAL", "ROI", "FABRIC_FRAME", "PRODUCT_RULE_FRAME", "REFRAMING", "VALIDATING");
     }
 
     @Test

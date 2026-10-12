@@ -48,7 +48,7 @@ export function PhotoPicker({ kind, value, onChange, label, hint, round = false,
           {error && <p className="error-text mt-1" role="alert">{error}</p>}
         </div>
       </div>
-      <input ref={input} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" className="sr-only" tabIndex={-1}
+      <input ref={input} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" className="sr-only" tabIndex={-1} aria-label={label || t("photoPicker.escolher_foto")}
         onChange={(e) => { pick(e.target.files?.[0]); e.target.value = ""; }} />
     </div>
   );

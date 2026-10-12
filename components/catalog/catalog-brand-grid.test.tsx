@@ -28,6 +28,25 @@ const page = (n: number, brand: string) => {
 };
 
 describe("grade de marcas na busca catalogada", () => {
+  it("na matriz informa 313 peças da marca sem filtros e não reduz ao lote de 24", async () => {
+    const levi = { brandId: "levi", slug: "levis", name: "Levi's", catalogProducts: 313, categories: ["upper_piece", "lower_piece"] };
+    const { calls } = mockApi({
+      "GET /api/taxonomy": TAXONOMY, "GET /api/catalog/stores": { stores: [levi] },
+      "GET /api/catalog/brands": { brands: [] }, "GET /api/catalog/summary": { products: 9501, brands: 43 },
+      "GET /api/catalog/products": (url: URL) => ({ items: Array.from({ length: 48 }, (_, i) => product(i, "Levi's")),
+        total: url.searchParams.get("brand") ? 313 : 9501, page: Number(url.searchParams.get("page") ?? 0), size: 48, hasMore: true }),
+      "GET /api/catalog/search": { intent: { brand: "G-Star RAW", brandKnown: true, keywords: [] }, results: [], total: 24 },
+    });
+    renderApp(<CatalogSearch onPick={vi.fn()} category="" resultsLayout="matrix" />);
+    await screen.findByText("Peças nesta seleção: 9501");
+    fireEvent.click(await screen.findByRole("button", { name: /Levi's/ }));
+    await screen.findByText("Peças nesta seleção: 313");
+    const request = calls.filter(c => c.path.startsWith("/api/catalog/products")).at(-1)!;
+    expect(new URL(request.path, "http://x").searchParams.get("category")).toBeNull();
+    expect(calls.some(c => c.path.startsWith("/api/catalog/search"))).toBe(false);
+    expect(screen.queryByText(/24.*G-Star RAW/)).toBeNull();
+  });
+
   it("lista todas as marcas do catálogo; tocar escolhe (sem digitar) e preenche o campo; tocar de novo desfaz", async () => {
     const { calls } = mockApi({ "GET /api/taxonomy": TAXONOMY, "GET /api/catalog/stores": STORES, "GET /api/catalog/brands": { brands: [] }, "GET /api/catalog/search": { intent: { brand: "Nike", brandKnown: true, keywords: [] }, results: [], total: 0 },
       "GET /api/catalog/summary": SUMMARY, "GET /api/catalog/products": (url: URL) => page(Number(url.searchParams.get("page") ?? 0), url.searchParams.get("brand") ?? "") });
@@ -37,7 +56,7 @@ describe("grade de marcas na busca catalogada", () => {
     fireEvent.click(screen.getByRole("button", { name: /Nike/ }));
     expect(screen.getByRole("button", { name: /Nike/ }).getAttribute("aria-pressed")).toBe("true");
     expect((screen.getByLabelText(/De qual marca/) as HTMLInputElement).value).toBe("Nike");
-    expect((screen.getByRole("button", { name: /Buscar peças/ }) as HTMLButtonElement).disabled).toBe(false);
+    await waitFor(() => expect((screen.getByRole("button", { name: /Buscar peças/ }) as HTMLButtonElement).disabled).toBe(false));
     expect(calls.some((c) => c.path.startsWith("/api/catalog/stores"))).toBe(true);
     fireEvent.click(screen.getByRole("button", { name: /Nike/ }));
     expect((screen.getByLabelText(/De qual marca/) as HTMLInputElement).value).toBe("");
@@ -48,7 +67,7 @@ describe("grade de marcas na busca catalogada", () => {
       "GET /api/catalog/summary": SUMMARY, "GET /api/catalog/products": (url: URL) => page(Number(url.searchParams.get("page") ?? 0), url.searchParams.get("brand") ?? "") });
     renderApp(<CatalogSearch onPick={vi.fn()} category="upper_piece" />);
     // o resumo do acervo (total do banco) aparece antes de qualquer escolha, com o atalho para o acervo inteiro
-    expect(await screen.findByText(/Acervo completo: 14\.?000 peças de 120 marcas/)).toBeTruthy();
+    expect(await screen.findByText(/Acervo disponível: 14\.?000 peças de 120 marcas/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Nike/ }));
     expect(await screen.findByRole("heading", { name: /^130 peças de Nike$/ })).toBeTruthy();
     const call = calls.find((c) => c.path.startsWith("/api/catalog/products"));

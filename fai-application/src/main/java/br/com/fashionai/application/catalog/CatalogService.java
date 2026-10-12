@@ -227,9 +227,12 @@ public class CatalogService {
     // ───────────────────────────── acervo inteiro (RF47): "ver todas as peças", sem pool nem corte por pontuação
 
     /** Página do acervo: marca (nome, apelido ou slug), categoria, subtipo e texto opcionais; {@code size} até {@value #BROWSE_MAX_SIZE}. */
-    public record BrowseRequest(String brand, String category, String subcategory, String query, Integer page, Integer size, String brandId) {
+    public record BrowseRequest(String brand, String category, String subcategory, String query, Integer page, Integer size, String brandId, String color, String gender) {
         public BrowseRequest(String brand, String category, String subcategory, String query, Integer page, Integer size) {
-            this(brand, category, subcategory, query, page, size, null);
+            this(brand, category, subcategory, query, page, size, null, null, null);
+        }
+        public BrowseRequest(String brand, String category, String subcategory, String query, Integer page, Integer size, String brandId) {
+            this(brand, category, subcategory, query, page, size, brandId, null, null);
         }
     }
 
@@ -266,12 +269,15 @@ public class CatalogService {
             return out;
         }
         Page<CatalogProduct> pg = products.browse(brand == null ? null : brand.getId().toString(), cat, sub,
-                words.size() > 0 ? words.get(0) : null, words.size() > 1 ? words.get(1) : null, words.size() > 2 ? words.get(2) : null, PageRequest.of(page, size));
+                words.size() > 0 ? words.get(0) : null, words.size() > 1 ? words.get(1) : null, words.size() > 2 ? words.get(2) : null,
+                r.color() == null || r.color().isBlank() ? null : r.color().trim(),
+                r.gender() == null || r.gender().isBlank() ? null : r.gender().trim(), PageRequest.of(page, size));
         out.put("items", cards(pg.getContent()));
         out.put("page", page);
         out.put("size", size);
         out.put("total", pg.getTotalElements());
         out.put("hasMore", pg.hasNext());
+        out.put("canSearchOfficial", brand != null && !sources.findByBrandIdAndActiveTrue(brand.getId()).isEmpty());
         out.put("brandKnown", brand != null);
         if (brand != null) {
             out.put("brand", Map.of("id", brand.getId(), "name", brand.getName(), "slug", brand.getSlug(), "logoUrl", String.valueOf(brand.getLogoUrl())));
@@ -294,10 +300,13 @@ public class CatalogService {
     @Transactional(readOnly = true)
     public Map<String, Object> summary() {
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("products", products.countVisible());
-        out.put("brands", catalogBrands().size());
-        // peças com foto: deve ser igual a products; a diferença é o que ainda falta fotografar/importar
-        out.put("withImage", products.countVisibleWithImage());
+        long visible = products.countVisible();
+        List<Map<String, Object>> stores = catalogBrands();
+        long branded = stores.stream().mapToLong(store -> ((Number) store.get("catalogProducts")).longValue()).sum();
+        out.put("products", visible);
+        out.put("brands", stores.size());
+        out.put("registeredProducts", products.count());
+        out.put("unbrandedProducts", Math.max(0, visible - branded));
         return out;
     }
 

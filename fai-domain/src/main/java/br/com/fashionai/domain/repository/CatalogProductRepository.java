@@ -48,6 +48,8 @@ public interface CatalogProductRepository extends JpaRepository<CatalogProduct, 
     @Query(value = "SELECT p.* FROM catalog_products p WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') "
             + "AND (:brandId IS NULL OR p.brand_id = :brandId) AND (:category IS NULL OR p.category = :category) "
             + "AND (:subcategory IS NULL OR p.subcategory = :subcategory) "
+            + "AND (:gender IS NULL OR p.gender = :gender) "
+            + "AND (:color IS NULL OR p.color = :color OR EXISTS (SELECT 1 FROM catalog_variants v WHERE v.product_id = p.id AND v.color = :color)) "
             + "AND (:q1 IS NULL OR LOWER(p.product_name) LIKE :q1 OR LOWER(p.model_name) LIKE :q1 OR LOWER(p.search_text) LIKE :q1) "
             + "AND (:q2 IS NULL OR LOWER(p.product_name) LIKE :q2 OR LOWER(p.model_name) LIKE :q2 OR LOWER(p.search_text) LIKE :q2) "
             + "AND (:q3 IS NULL OR LOWER(p.product_name) LIKE :q3 OR LOWER(p.model_name) LIKE :q3 OR LOWER(p.search_text) LIKE :q3) "
@@ -55,12 +57,14 @@ public interface CatalogProductRepository extends JpaRepository<CatalogProduct, 
             countQuery = "SELECT COUNT(*) FROM catalog_products p WHERE p.ingestion_status IN ('VALIDATED','PERSISTABLE','REFERENCE_ONLY') "
                     + "AND (:brandId IS NULL OR p.brand_id = :brandId) AND (:category IS NULL OR p.category = :category) "
                     + "AND (:subcategory IS NULL OR p.subcategory = :subcategory) "
+            + "AND (:gender IS NULL OR p.gender = :gender) "
+            + "AND (:color IS NULL OR p.color = :color OR EXISTS (SELECT 1 FROM catalog_variants v WHERE v.product_id = p.id AND v.color = :color)) "
                     + "AND (:q1 IS NULL OR LOWER(p.product_name) LIKE :q1 OR LOWER(p.model_name) LIKE :q1 OR LOWER(p.search_text) LIKE :q1) "
                     + "AND (:q2 IS NULL OR LOWER(p.product_name) LIKE :q2 OR LOWER(p.model_name) LIKE :q2 OR LOWER(p.search_text) LIKE :q2) "
                     + "AND (:q3 IS NULL OR LOWER(p.product_name) LIKE :q3 OR LOWER(p.model_name) LIKE :q3 OR LOWER(p.search_text) LIKE :q3)",
             nativeQuery = true)
     Page<CatalogProduct> browse(@Param("brandId") String brandId, @Param("category") String category, @Param("subcategory") String subcategory,
-                                @Param("q1") String q1, @Param("q2") String q2, @Param("q3") String q3, Pageable pageable);
+                                @Param("q1") String q1, @Param("q2") String q2, @Param("q3") String q3, @Param("color") String color, @Param("gender") String gender, Pageable pageable);
 
     /**
      * Peças visíveis por marca e categoria numa consulta só ({@code [brand_id, category, total]}): a grade de marcas do

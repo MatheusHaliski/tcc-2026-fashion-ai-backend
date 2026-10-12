@@ -36,18 +36,24 @@ function viewport(width: number) {
   } as MediaQueryList));
 }
 
-function mockCatalog() {
+function mockCatalog(currentProducts = () => products) {
   return loggedAs(ME, {
     "GET /api/taxonomy": taxonomy,
     "GET /api/catalog/brands": { brands: [{ id: "nike", name: "Nike", slug: "nike", products: 11 }] },
     "GET /api/catalog/suggestions": { suggestions: [] },
+    "GET /api/catalog/summary": { products: 11, brands: 1 },
+    "GET /api/catalog/products": (url: URL) => {
+      const rows = url.searchParams.get("q") === "vazio" ? [] : currentProducts().filter(p => !url.searchParams.get("gender") || p.gender === url.searchParams.get("gender"));
+      return { items: rows, total: rows.length, page: 0, size: 48, hasMore: false, brandKnown: true };
+    },
     "GET /api/catalog/search": (url: URL): SearchResponse => {
-      const results = url.searchParams.get("q") === "vazio" ? [] : products;
+      const results = url.searchParams.get("q") === "vazio" ? [] : currentProducts();
       return {
         intent: { brand: "Nike", brandKnown: true, category: "shoes_piece", keywords: [], color: null },
         results, total: results.length, enoughInput: true, canSearchOfficial: false,
       };
     },
+    ...Object.fromEntries(products.map(product => [`POST /api/catalog/products/${product.id}/verify-image`, product])),
     "POST /api/pieces/from-catalog": { ...PIECE, id: "saved-catalog-piece" },
   });
 }
@@ -65,6 +71,19 @@ const pagination = () => screen.getByRole("navigation", { name: "paginação" })
 const advance = () => within(pagination()).getByRole("button", { name: "Avançar →" });
 
 describe("busca catalogada em Adicionar peça", () => {
+  it("incorpora uma peça importada ao voltar à aba sem apagar a busca", async () => {
+    viewport(1280);
+    vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
+    let current = products;
+    mockCatalog(() => current);
+    await searchCatalog();
+    current = [...products, { ...products[0], id: "newly-imported", productName: "Tênis recém-importado" }];
+    fireEvent(window, new Event("focus"));
+    await screen.findByText("Peças nesta seleção: 12");
+    expect((screen.getByLabelText(/Como ela se chama/) as HTMLInputElement).value).toBe("tenis");
+    expect((screen.getByLabelText(/De qual marca/) as HTMLInputElement).value).toBe("Nike");
+  });
+
   it.each([
     { screenName: "celular", width: 375, pageSize: 4, pages: 3 },
     { screenName: "tablet", width: 768, pageSize: 6, pages: 2 },
@@ -98,11 +117,11 @@ describe("busca catalogada em Adicionar peça", () => {
     expect(within(list).getByRole("heading", { name: "Tênis 11" })).toBeTruthy();
 
     fireEvent.click(screen.getByRole("button", { name: "Feminino", exact: true }));
-    expect(screen.getByText("Peças nesta seleção: 6")).toBeTruthy();
+    expect(await screen.findByText("Peças nesta seleção: 6")).toBeTruthy();
     expect(within(pagination()).getByText("Página 1 de 2 · 6 resultados")).toBeTruthy();
-    expect(within(list).getAllByRole("listitem")).toHaveLength(4);
-    expect(within(list).getByRole("heading", { name: "Tênis 1" })).toBeTruthy();
-    expect(within(list).queryByRole("heading", { name: "Tênis 2" })).toBeNull();
+    expect(within(screen.getByRole("list", { name: "Resultados do catálogo" })).getAllByRole("listitem")).toHaveLength(4);
+    expect(within(screen.getByRole("list", { name: "Resultados do catálogo" })).getByRole("heading", { name: "Tênis 1" })).toBeTruthy();
+    expect(within(screen.getByRole("list", { name: "Resultados do catálogo" })).queryByRole("heading", { name: "Tênis 2" })).toBeNull();
 
     fireEvent.change(screen.getByLabelText(/Como ela se chama/), { target: { value: "vazio" } });
     await screen.findByText("Peças nesta seleção: 0");

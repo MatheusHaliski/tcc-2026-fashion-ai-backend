@@ -35,7 +35,7 @@ function labLook(ids: string): Look3dPiece[] | null {
   const list = ids.split(",").filter(Boolean).map((id): Look3dPiece | null => {
     if (id.startsWith("cor-")) return { id: `lab-${id}`, name: id, slot: "upper_piece", category: "upper_piece", subcategory: "t_shirt", imageUrl: `/lab/cores/camiseta-${id.slice(4)}.webp` };
     if (id.startsWith("camisa-")) return { id: `lab-${id}`, name: `Camisa ${id.slice(7)}`, slot: "upper_piece", category: "upper_piece", subcategory: "shirt", imageUrl: `/lab/cores/${id}.webp` };
-    const p = ACERVO.find((x) => x.id.includes(id)); return p ? acervoLook(p) : null;
+    const p = id.startsWith("molde-") ? ACERVO.find((x) => x.subcategory === id.slice(6)) : ACERVO.find((x) => x.id.includes(id)); return p ? acervoLook(p) : null;
   }).filter((p): p is Look3dPiece => !!p);
   return list.length ? list : null;
 }

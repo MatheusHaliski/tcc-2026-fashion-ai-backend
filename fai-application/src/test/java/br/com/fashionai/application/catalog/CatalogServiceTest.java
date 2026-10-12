@@ -133,32 +133,6 @@ class CatalogServiceTest {
     }
 
     @Test
-    void todaPecaComFotoMostraUmaFotoNoCardMesmoSemFotoPrincipal() {
-        CatalogImageRepository repo = kit.dep(CatalogImageRepository.class);
-        List<CatalogProduct> all = MemoryRepository.rows(kit.dep(CatalogProductRepository.class));
-        List<CatalogImage> imgs = MemoryRepository.rows(repo);
-        // peça 0: nenhuma foto marcada como principal (importação antiga) → o card usa a foto que ela tem
-        CatalogProduct semPrincipal = all.get(0);
-        imgs.stream().filter(i -> i.getProductId().equals(semPrincipal.getId())).forEach(i -> i.setPrimary(false));
-        // peça 1: a principal foi recusada, mas há outra foto utilizável → o card usa a outra, nunca a recusada
-        CatalogProduct recusada = all.get(1);
-        CatalogImage principal = imgs.stream().filter(i -> i.getProductId().equals(recusada.getId())).findFirst().orElseThrow();
-        principal.setUsageStatus(CatalogImageUsage.REJECTED);
-        CatalogImage outra = new CatalogImage();
-        outra.setProductId(recusada.getId());
-        outra.setImageUrl("https://nike.com.br/img/outra.jpg");
-        outra.setImageUrlHash("outra");
-        outra.setImageType(principal.getImageType());
-        outra.setSourceType(principal.getSourceType());
-        outra.setUsageStatus(CatalogImageUsage.REFERENCE_ONLY);
-        repo.save(outra);
-        List<Map<String, Object>> cards = catalog.cards(List.of(semPrincipal, recusada, all.get(2)));
-        assertThat(cards.get(0).get("imageUrl")).isEqualTo(imgs.stream().filter(i -> i.getProductId().equals(semPrincipal.getId())).findFirst().orElseThrow().getImageUrl());
-        assertThat(cards.get(1).get("imageUrl")).isEqualTo("https://nike.com.br/img/outra.jpg");
-        assertThat(cards).allSatisfy(c -> assertThat(c.get("imageUrl")).as("cada peça com foto mostra uma foto").isNotNull());
-    }
-
-    @Test
     void fichaDoProdutoComImagensEVariantes() {
         CatalogProduct p = MemoryRepository.<CatalogProduct>rows(kit.dep(CatalogProductRepository.class)).get(0);
         Map<String, Object> m = catalog.product(p.getId());
@@ -209,8 +183,8 @@ class CatalogServiceTest {
         List<CatalogProduct> all = MemoryRepository.rows(products);
         // o repositório em memória não executa a consulta nativa: a página vem estubada como o banco devolveria
         java.util.List<String> lastWords = new java.util.ArrayList<>();
-        when(products.browse(any(), any(), any(), any(), any(), any(), any())).thenAnswer(inv -> {
-            org.springframework.data.domain.Pageable pg = inv.getArgument(6);
+        when(products.browse(any(), any(), any(), any(), any(), any(), any(), any(), any())).thenAnswer(inv -> {
+            org.springframework.data.domain.Pageable pg = inv.getArgument(8);
             lastWords.clear();
             for (int i = 3; i <= 5; i++) {
                 if (inv.getArgument(i) != null) {

@@ -17,6 +17,10 @@ import java.util.UUID;
 
 /** Repositório Spring Data de User (MySQL — fonte da verdade). */
 public interface UserRepository extends JpaRepository<User, UUID> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select u from User u where u.id = :id")
+    Optional<User> lockById(@Param("id") UUID id);
+
     boolean existsByEmailHash(String emailHash);
 
     Optional<User> findByEmailHash(String emailHash);

@@ -60,8 +60,42 @@ jobs:
       - name: Build de produção (inclui as checagens de i18n)
         run: npm run build
         env:
-          NEXT_PUBLIC_API_BASE_URL: https://api.example.invalid
+          NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+          DEV_GATE_ENABLED: "false"
           NEXT_TELEMETRY_DISABLED: "1"
+      - name: Auditoria de telas (Chromium · WCAG · overflow · CLS)
+        env:
+          DEV_GATE_ENABLED: "false"
+          NEXT_PUBLIC_API_BASE_URL: http://localhost:8080
+          UI_AUDIT_OUTPUT: /tmp/fashionai-ux-audit
+          NODE_PATH: /tmp/fashionai-ux-tools/node_modules
+        run: |
+          npm install --prefix /tmp/fashionai-ux-tools --no-audit --no-fund playwright@1.55.1 @axe-core/playwright@4.10.2
+          /tmp/fashionai-ux-tools/node_modules/.bin/playwright install --with-deps chromium
+          npm start > /tmp/fashionai-ui-server.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/login > /dev/null; then break; fi
+            sleep 1
+          done
+          node scripts/ux/browser-audit.cjs
+      - name: Lighthouse CI (login · emulação móvel)
+        run: |
+          npm install --prefix /tmp/fashionai-lighthouse-tools --no-audit --no-fund @lhci/cli@0.15.1
+          /tmp/fashionai-lighthouse-tools/node_modules/.bin/lhci autorun
+      - name: Relatório Lighthouse
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fashionai-lighthouse
+          path: /tmp/fashionai-lighthouse
+          if-no-files-found: ignore
+      - name: Capturas e relatório da auditoria
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fashionai-ux-audit
+          path: /tmp/fashionai-ux-audit
+          if-no-files-found: ignore
       - name: Dependências de produção sem vulnerabilidade alta ou crítica
         run: npm audit --omit=dev --audit-level=high
 

@@ -90,7 +90,7 @@ export function buildMatrix(tax: Taxonomy, legacy: Legacy, observe: Observe, fit
         aplicabilidade: comp.aplica(ctx) ? "Aplicável" : "Não aplicável", asset: produced ? comp.asset ?? "" : "",
         arquivo: comp.refs.map((r) => r.file).filter((f, i, a) => a.indexOf(f) === i).join("; "), simbolo: comp.refs.map((r) => `${base(r.file)}#${r.symbol}`).join("; "),
         parametros: produced && comp.params ? safe(() => comp.params!(o)) : "", dependencias: comp.deps.join(", "),
-        teste: validTests.map((t) => `${t.file} › ${t.title || "(arquivo)"}`).join("; "), estado, observacao: obs,
+        teste: validTests.map((t) => `${t.file} › ${t.testName || "(arquivo)"}`).join("; "), estado, observacao: obs,
       });
       estados.push(estado);
       if (estado !== "Não aplicável") {
@@ -139,7 +139,7 @@ export function buildMatrix(tax: Taxonomy, legacy: Legacy, observe: Observe, fit
   const biblioteca: LinhaBiblioteca[] = COMPONENTES.map((c) => ({
     componente: c.id, grupo: c.grupo, nome: c.nome, familias: c.familias.join(", "), arquivo: c.refs.map((r) => r.file).filter((f, i, a) => a.indexOf(f) === i).join("; ") || "—",
     simbolo: c.refs.map((r) => r.symbol).join("; ") || "—", contrato: c.contrato ?? "", dependencias: c.deps.join(", "),
-    testes: c.testes.map((t) => `${t.file} › ${t.title || "(arquivo)"}`).join("; ") || "—",
+    testes: c.testes.map((t) => `${t.file} › ${t.testName || "(arquivo)"}`).join("; ") || "—",
     moldes_validados: c.validados === "todos" ? "todos (caminho único)" : c.validados.join(", ") || "—",
     uso: usage.get(c.id)?.uso ?? 0, ausente_em: usage.get(c.id)?.ausente ?? 0, lacuna: c.lacuna ?? "", impacto: c.impacto ? String(c.impacto) : "",
   }));

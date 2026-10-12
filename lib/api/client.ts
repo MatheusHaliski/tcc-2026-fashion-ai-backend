@@ -170,7 +170,7 @@ async function request<T>(method: string, path: string, body?: unknown, opts: Re
   try {
     res = await fetch(bff ? path : `${API_BASE}${path}`, {
       method, headers, body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body), signal: opts.signal,
-      cache: bff ? "no-store" : undefined, credentials: bff ? "same-origin" : API_CREDENTIALS,
+      cache: bff || path.startsWith("/api/catalog/") ? "no-store" : undefined, credentials: bff ? "same-origin" : API_CREDENTIALS,
     });
   } catch (e) {
     if ((e as Error).name === "AbortError") throw e;

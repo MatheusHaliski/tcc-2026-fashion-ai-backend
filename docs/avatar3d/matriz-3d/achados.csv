@@ -1,10 +1,10 @@
 tipo,onde,detalhe,impacto
-aplicado onde não se aplica,blouse,Pontas da gola de camisa (gola.pontas) sai do molde shirt,2
-aplicado onde não se aplica,blouse,"Botões da vista (posição, quantidade, espaçamento) (botoes.disco) sai do molde shirt",2
-aplicado onde não se aplica,blouse,Aro do botão (botoes.aro) sai do molde shirt,2
-aplicado onde não se aplica,blouse,Fixação do botão no tecido (botoes.fixacao) sai do molde shirt,2
-aplicado onde não se aplica,blouse,Vista/carcela frontal (fechamento.vista) sai do molde shirt,2
-aplicado onde não se aplica,blouse,Pesponto visual (linha decorativa) (costura.pesponto) sai do molde shirt,2
+aplicado onde não se aplica,top,Cava sem manga (manga.cava) sai do molde tank,2
+aplicado onde não se aplica,top,Alças (detalhe.alcas) sai do molde tank,2
+aplicado onde não se aplica,polo_shirt,Pontas da gola de camisa (gola.pontas) sai do molde shirt,2
+aplicado onde não se aplica,polo_shirt,Aro do botão (botoes.aro) sai do molde shirt,2
+aplicado onde não se aplica,polo_shirt,Fixação do botão no tecido (botoes.fixacao) sai do molde shirt,2
+aplicado onde não se aplica,polo_shirt,Pesponto visual (linha decorativa) (costura.pesponto) sai do molde shirt,2
 aplicado onde não se aplica,matching_set,Cava sem manga (manga.cava) sai do molde jumpsuit,2
 aplicado onde não se aplica,matching_set,Perna em coluna (cai reta do joelho) (cintura.perna-coluna) sai do molde jumpsuit,2
 aplicado onde não se aplica,matching_set,Alças (detalhe.alcas) sai do molde jumpsuit,2
@@ -14,13 +14,13 @@ aplicado onde não se aplica,sandals,Colarinho (abertura do tornozelo) (calcado.
 aplicado onde não se aplica,flip_flops,Colarinho (abertura do tornozelo) (calcado.colarinho) sai do molde shoes,2
 aplicado onde não se aplica,heels,Colarinho (abertura do tornozelo) (calcado.colarinho) sai do molde shoes,2
 aplicado onde não se aplica,espadrilles,Colarinho (abertura do tornozelo) (calcado.colarinho) sai do molde shoes,2
-código legado muda o molde,crop_top → top,"o código antigo vira crop, o novo vira tee: a mesma peça muda de molde ao migrar",2
+código legado muda o molde,crop_top → top,"o código antigo vira crop, o novo vira tank: a mesma peça muda de molde ao migrar",2
 código legado muda o molde,bermuda_shorts → shorts,"o código antigo vira bermuda, o novo vira shorts: a mesma peça muda de molde ao migrar",2
 eficiência,dress.ts › buildGarment (kind shoes),o molde do pé é construído e relaxado (16 iterações) e descartado em human-outfit.tsx: 15 subcategorias de tênis/sapato pagam a construção sem usar,1
-parâmetro inconsistente,default-outfit.ts › fai-padrao-tenis,"subcategoria ""sneakers"" não existe na taxonomia",1
 acervo com código legado,acervo.ts › 01_parte_superior_05_crop_top_cropped,"usa ""crop_top"" (LEGACY)",1
 acervo com código legado,acervo.ts › 02_parte_inferior_10_bermuda,"usa ""bermuda_shorts"" (LEGACY)",1
 acervo com código legado,acervo.ts › 02_parte_inferior_11_shorts_jeans,"usa ""denim_shorts"" (LEGACY)",1
+acervo com código legado,acervo.ts › 03_calcados_06_tenis_cano_alto,"usa ""high_top_sneakers"" (LEGACY)",1
 acervo com código legado,acervo.ts › 03_calcados_11_bota_cano_curto,"usa ""ankle_boots"" (LEGACY)",1
 acervo com código legado,acervo.ts › 03_calcados_12_bota_cano_longo,"usa ""long_boots"" (LEGACY)",1
 acervo com código legado,acervo.ts › 03_calcados_14_coturno,"usa ""combat_boots"" (LEGACY)",1
@@ -30,7 +30,6 @@ componente sem teste,decote.foto,"Profundidade do decote medida na foto — comp
 componente sem teste,fechamento.amarracao,Amarração (cadarço) — lib/avatar3d/human/shoes.ts#cadarco,1
 componente sem teste,costura.barra-perna,Barra da perna — lib/avatar3d/human/garments.ts#sp.leg - dl,2
 componente sem teste,costura.barra-saia,Barra da saia/vestido (fim do tubo) — lib/avatar3d/human/garments.ts#skirtTube,1
-componente sem teste,detalhe.alcas,Alças — lib/avatar3d/human/garments.ts#necklineH,3
 componente sem teste,detalhe.dobras,Dobras do tecido — lib/avatar3d/human/garment-relax.ts#foldGarment,1
 componente sem teste,aparencia.transparencia,Transparência — lib/avatar3d/human/garments.ts#alpha,1
 componente sem teste,calcado.colarinho,"Colarinho (abertura do tornozelo) — lib/avatar3d/human/shoes.ts#colarinho; lib/avatar3d/human/shoes.ts#upperOf",1

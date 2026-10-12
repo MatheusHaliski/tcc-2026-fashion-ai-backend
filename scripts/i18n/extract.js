@@ -16,7 +16,7 @@
  * --wide: também atributos/propriedades fora das listas e literais soltos dentro de componentes quando o texto é
  *         claramente linguagem natural (acento, frase, palavra capitalizada).
  */
-const ts = require("typescript"); const fs = require("fs"); const path = require("path");
+const ts = require("typescript-ast"); const fs = require("fs"); const path = require("path");
 const R = require("./rules");
 const ROOT = path.resolve(__dirname, "..", "..");
 const CATALOG = path.join(ROOT, "lib/i18n/messages/pt-BR.json");

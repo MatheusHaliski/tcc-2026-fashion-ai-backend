@@ -1,7 +1,7 @@
 <!-- gerado por lib/avatar3d/matriz3d/matriz3d.test.ts (MATRIZ3D_WRITE=1) — não editar à mão -->
 # MATRIZ-3D — relatório gerado
 
-Versões: taxonomia 1.0.0 · molde `fai-mould-skinwrap-v1` · contrato 1.0.0 · corpo `fai-body-v1`.
+Versões: taxonomia 1.0.0 · molde `fai-mould-skinwrap-v2` · contrato 1.0.0 · corpo `fai-body-v1`.
 
 Legenda: ✔ implementado e validado · ◐ implementado, sem validação · ◑ parcial · ✖ ausente · — não aplicável.
 
@@ -9,10 +9,10 @@ Legenda: ✔ implementado e validado · ◐ implementado, sem validação · ◑
 
 | Estado | Células |
 |---|---:|
-| ✔ Implementado e validado | 694 |
-| ◐ Implementado, sem validação | 379 |
-| ◑ Parcial | 158 |
-| ✖ Ausente | 345 |
+| ✔ Implementado e validado | 683 |
+| ◐ Implementado, sem validação | 392 |
+| ◑ Parcial | 162 |
+| ✖ Ausente | 339 |
 | — Não aplicável | 723 |
 
 ## Subcategoria × grupo (pior estado entre os componentes que se aplicam)
@@ -22,11 +22,11 @@ Legenda: ✔ implementado e validado · ◐ implementado, sem validação · ◑
 | `t_shirt` | tee | ✔ 4/4 | ✖ 2/5 | ◐ 3/4 | — | — | ✖ 0/2 | ✖ 4/6 | — | ◐ | ✖ 2/7 | ✖ 5/6 | — | — |
 | `shirt` | shirt | ◐ 2/3 | ✖ 2/5 | ✖ 3/6 | ◑ 2/3 | ✖ 1/2 | ✖ 1/3 | ✖ 4/6 | — | ✖ 0/2 | ✖ 2/7 | ✖ 2/6 | — | — |
 | `blouse` | shirt | ◐ 2/3 | ✖ 2/5 | ◐ 3/4 | — | ✖ | ✖ 0/2 | ✖ 4/6 | — | ◐ | ✖ 2/7 | ✖ 2/6 | — | — |
-| `tank_top` | tank | ◐ 2/3 | ◐ | ◐ 2/4 | — | — | ✖ 0/2 | ✖ 2/6 | — | ✖ 0/2 | ✖ 1/7 | ✖ 2/6 | — | — |
-| `top` | tee | ✔ 3/3 | ✖ 2/5 | ◐ 3/4 | — | ✖ | ✖ 0/2 | ✖ 4/6 | — | ◐ | ✖ 2/7 | ✖ 5/6 | — | — |
+| `tank_top` | tank | ◐ 2/3 | ◐ | ◐ 2/4 | — | — | ✖ 0/2 | ✖ 2/6 | — | ◑ 0/2 | ✖ 1/7 | ✖ 2/6 | — | — |
+| `top` | tank | ◐ 2/3 | ✖ 1/5 | ◐ 2/4 | — | ✖ | ✖ 0/2 | ✖ 2/6 | — | ◐ | ✖ 1/7 | ✖ 2/6 | — | — |
 | `crop_top` (legado) | crop | ◐ 2/3 | ✖ 1/5 | ◐ 2/4 | — | — | ✖ 0/2 | ✖ 2/5 | — | ◐ | ✖ 1/7 | ✖ 2/6 | — | — |
-| `polo_shirt` | tee | ✔ 3/3 | ✖ 2/5 | ✖ 3/6 | ✖ | ✖ 0/2 | ✖ 0/2 | ✖ 4/6 | — | ◐ | ✖ 2/7 | ✖ 5/6 | — | — |
-| `bodysuit` | tank | ◐ 2/3 | ✖ 1/6 | ◐ 2/4 | — | ✖ | ✖ 0/2 | ✖ 2/6 | — | ✖ 0/2 | ✖ 1/7 | ✖ 2/6 | — | — |
+| `polo_shirt` | shirt | ◐ 2/3 | ✖ 2/5 | ✖ 3/6 | ✔ | ✖ 1/2 | ✖ 0/2 | ✖ 4/6 | — | ◐ | ✖ 2/7 | ✖ 2/6 | — | — |
+| `bodysuit` | tank | ◐ 2/3 | ✖ 1/6 | ◐ 2/4 | — | ✖ | ✖ 0/2 | ✖ 2/6 | — | ◑ 0/2 | ✖ 1/7 | ✖ 2/6 | — | — |
 | `sweater` | sweater | ✔ 3/3 | ✖ 2/5 | ◐ 2/4 | — | — | ✖ 0/2 | ✖ 4/6 | — | ◐ | ✖ 2/7 | ✖ 3/6 | — | — |
 | `sweatshirt` | sweater | ✔ 3/3 | ✖ 2/5 | ◐ 2/4 | — | — | ✖ 0/2 | ✖ 4/6 | — | ◐ | ✖ 2/7 | ✖ 3/6 | — | — |
 | `hoodie` | hoodie | ◐ 2/3 | ✖ 1/5 | ◐ 2/4 | — | — | ✖ 0/2 | ✖ 3/6 | — | ✖ 0/3 | ✖ 1/7 | ✖ 2/6 | — | — |
@@ -107,11 +107,11 @@ Legenda: ✔ implementado e validado · ◐ implementado, sem validação · ◑
 | `t_shirt` | molde estimado (ESTIMADA) · ✔20 ◐7 ◑2 ✖6 | Tipo de inserção (raglan, ombro caído, dolman, bufante): SLEEVE_STYLE não é lido: toda manga nasce da pele do braço, sem costura de inserção nem volume |
 | `shirt` | molde estimado (ESTIMADA) · ✔19 ◐11 ◑4 ✖9 | Tipo de inserção (raglan, ombro caído, dolman, bufante): SLEEVE_STYLE não é lido: toda manga nasce da pele do braço, sem costura de inserção nem volume |
 | `blouse` | molde estimado (ESTIMADA) · ✔15 ◐11 ◑2 ✖7 | Tipo de inserção (raglan, ombro caído, dolman, bufante): SLEEVE_STYLE não é lido: toda manga nasce da pele do braço, sem costura de inserção nem volume |
-| `tank_top` | molde estimado (ESTIMADA) · ✔9 ◐14 ◑2 ✖6 | Alças: existe na biblioteca (garments.ts#necklineH), mas o molde tank não o recebe |
-| `top` | molde estimado (ESTIMADA) · ✔19 ◐7 ◑2 ✖7 | Tipo de inserção (raglan, ombro caído, dolman, bufante): SLEEVE_STYLE não é lido: toda manga nasce da pele do braço, sem costura de inserção nem volume |
+| `tank_top` | molde estimado (ESTIMADA) · ✔9 ◐14 ◑3 ✖5 | Alças: a alça é o que sobra entre decote e cava: largura não é parâmetro |
+| `top` | molde estimado (ESTIMADA) · ✔10 ◐16 ◑2 ✖7 | Tipo de inserção (raglan, ombro caído, dolman, bufante): SLEEVE_STYLE não é lido: toda manga nasce da pele do braço, sem costura de inserção nem volume |
 | `crop_top` | molde estimado (ESTIMADA) · ✔10 ◐16 ◑2 ✖5 | Tipo de inserção (raglan, ombro caído, dolman, bufante): SLEEVE_STYLE não é lido: toda manga nasce da pele do braço, sem costura de inserção nem volume |
-| `polo_shirt` | molde estimado (ESTIMADA) · ✔19 ◐7 ◑2 ✖11 | Gola polo (com vista de 2–3 botões): polo usa o molde de camiseta: sai com gola redonda de ribana, sem gola dobrada nem vista |
-| `bodysuit` | molde estimado (ESTIMADA) · ✔10 ◐17 ◑2 ✖8 | Alças: existe na biblioteca (garments.ts#necklineH), mas o molde tank não o recebe |
+| `polo_shirt` | molde estimado (ESTIMADA) · ✔17 ◐11 ◑3 ✖8 | Tipo de inserção (raglan, ombro caído, dolman, bufante): SLEEVE_STYLE não é lido: toda manga nasce da pele do braço, sem costura de inserção nem volume |
+| `bodysuit` | molde estimado (ESTIMADA) · ✔10 ◐17 ◑3 ✖7 | Alças: a alça é o que sobra entre decote e cava: largura não é parâmetro |
 | `sweater` | molde estimado (ESTIMADA) · ✔16 ◐10 ◑2 ✖6 | Tipo de inserção (raglan, ombro caído, dolman, bufante): SLEEVE_STYLE não é lido: toda manga nasce da pele do braço, sem costura de inserção nem volume |
 | `sweatshirt` | molde estimado (ESTIMADA) · ✔16 ◐10 ◑2 ✖6 | Tipo de inserção (raglan, ombro caído, dolman, bufante): SLEEVE_STYLE não é lido: toda manga nasce da pele do braço, sem costura de inserção nem volume |
 | `hoodie` | molde estimado (ESTIMADA) · ✔11 ◐15 ◑2 ✖8 | Capuz: moletom com capuz sai sem capuz |
@@ -137,7 +137,7 @@ Legenda: ✔ implementado e validado · ◐ implementado, sem validação · ◑
 | `denim_shorts` | molde estimado (ESTIMADA) · ✔7 ◐9 ◑5 ✖7 | Braguilha e botão do cós: jeans e calças sem braguilha nem botão do cós |
 | `skirt` | molde estimado (ESTIMADA) · ✔12 ◐5 ◑4 ✖7 | Costura que une painéis (ombro, lateral, manga, entrepernas): a peça é uma malha contínua sem painéis: nenhuma costura estrutural nem simulação de costura |
 | `skort` | molde estimado (ESTIMADA) · ✔12 ◐5 ◑4 ✖5 | Costura que une painéis (ombro, lateral, manga, entrepernas): a peça é uma malha contínua sem painéis: nenhuma costura estrutural nem simulação de costura |
-| `dress` | molde estimado (ESTIMADA) · ✔17 ◐10 ◑3 ✖9 | Alças: existe na biblioteca (garments.ts#necklineH), mas o molde dress não o recebe |
+| `dress` | molde estimado (ESTIMADA) · ✔17 ◐10 ◑4 ✖8 | Alças: a alça é o que sobra entre decote e cava: largura não é parâmetro |
 | `jumpsuit` | molde estimado (ESTIMADA) · ✔10 ◐17 ◑6 ✖6 | Alças: a alça é o que sobra entre decote e cava: largura não é parâmetro |
 | `romper` | molde estimado (ESTIMADA) · ✔10 ◐16 ◑6 ✖6 | Alças: a alça é o que sobra entre decote e cava: largura não é parâmetro |
 | `matching_set` | molde estimado (ESTIMADA) · ✔10 ◐15 ◑5 ✖5 | Tipo de inserção (raglan, ombro caído, dolman, bufante): SLEEVE_STYLE não é lido: toda manga nasce da pele do braço, sem costura de inserção nem volume |
@@ -206,12 +206,12 @@ Legenda: ✔ implementado e validado · ◐ implementado, sem validação · ◑
 | `gola.faixa` Gola em faixa 3D (ribana) em volta do decote | Gola e decote | `lib/avatar3d/human/garments.ts` | tee, shirt | 15 | 0 |  |
 | `gola.pontas` Pontas da gola de camisa | Gola e decote | `lib/avatar3d/human/garment-trims.ts` | shirt | 1 | 0 | gola de camisa com pé e volume |
 | `gola.pe` Pé de gola | Gola e decote | — | — | 0 | 2 | camisa e polo sem pé de gola (a gola é faixa de ribana ou ponta plana) |
-| `gola.polo` Gola polo (com vista de 2–3 botões) | Gola e decote | — | — | 0 | 1 | polo usa o molde de camiseta: sai com gola redonda de ribana, sem gola dobrada nem vista |
+| `gola.polo` Gola polo (com vista de 2–3 botões) | Gola e decote | `lib/avatar3d/human/garments.ts`<br>`lib/avatar3d/human/garment-trims.ts` | shirt | 1 | 0 | a polo precisa de refinamento do volume da gola |
 | `gola.lapela` Lapela | Gola e decote | — | — | 0 | 2 | blazer e casaco sem lapela (a frente é a casca fechada) |
-| `botoes.disco` Botões da vista (posição, quantidade, espaçamento) | Botões | `lib/avatar3d/human/garment-trims.ts` | shirt | 1 | 4 | polo, cardigã, blazer e casaco não têm botões |
+| `botoes.disco` Botões da vista (posição, quantidade, espaçamento) | Botões | `lib/avatar3d/human/garment-trims.ts` | shirt | 2 | 3 | cardigã, blazer e casaco não têm botões |
 | `botoes.aro` Aro do botão | Botões | `lib/avatar3d/human/garment-trims.ts` | shirt | 1 | 0 |  |
 | `botoes.fixacao` Fixação do botão no tecido | Botões | `lib/avatar3d/human/garment-trims.ts` | shirt | 1 | 0 | linha de fixação (cruz/paralela) visível |
-| `fechamento.vista` Vista/carcela frontal | Casas e fechamento | `lib/avatar3d/human/garment-trims.ts` | shirt | 1 | 4 | polo (vista curta), cardigã, blazer e casaco sem vista |
+| `fechamento.vista` Vista/carcela frontal | Casas e fechamento | `lib/avatar3d/human/garment-trims.ts` | shirt | 2 | 3 | cardigã, blazer e casaco sem vista |
 | `fechamento.casas` Casas de botão | Casas e fechamento | — | — | 0 | 5 | nenhuma casa de botão modelada (nem textura) |
 | `fechamento.abertura` Abertura frontal (peça aberta na frente) | Casas e fechamento | `lib/avatar3d/garment-contract.ts` | jacket | 8 | 0 | frente aberta com bordas e sobreposição |
 | `fechamento.ziper` Zíper frontal | Casas e fechamento | — | — | 0 | 3 | zíper (fita + cursor) ausente |
@@ -220,7 +220,7 @@ Legenda: ✔ implementado e validado · ◐ implementado, sem validação · ◑
 | `fechamento.outros` Colchetes, velcro, fivelas e amarrações de roupa | Casas e fechamento | — | — | 0 | 11 | variações transpassadas (WRAP), amarradas (TIE_FRONT) e corset sem fechamento modelado |
 | `costura.uniao` Costura que une painéis (ombro, lateral, manga, entrepernas) | Costuras | — | — | 0 | 38 | a peça é uma malha contínua sem painéis: nenhuma costura estrutural nem simulação de costura |
 | `costura.pesponto` Pesponto visual (linha decorativa) | Costuras | `lib/avatar3d/human/garment-trims.ts` | shirt | 1 | 0 |  |
-| `costura.barra-tronco` Barra do tronco (faixa 3D) | Costuras | `lib/avatar3d/human/garment-trims.ts` | longsleeve | 1 | 18 | jaqueta, casaco, colete e blazer sem barra 3D (TORSO_HEM não os inclui) |
+| `costura.barra-tronco` Barra do tronco (faixa 3D) | Costuras | `lib/avatar3d/human/garment-trims.ts` | longsleeve | 2 | 17 | jaqueta, casaco, colete e blazer sem barra 3D (TORSO_HEM não os inclui) |
 | `costura.barra-perna` Barra da perna | Costuras | `lib/avatar3d/human/garments.ts` | — | 16 | 0 | barra 3D da calça/shorts (como a do tronco) |
 | `costura.barra-saia` Barra da saia/vestido (fim do tubo) | Costuras | `lib/avatar3d/human/garments.ts` | — | 3 | 0 | bainha da saia |
 | `corpo.folga` Largura/folga do corpo e sobreposição | Corpo da peça | `lib/avatar3d/human/garments.ts` | tee, pants, shoes, dress, jacket, coat, sweater, skirt, boots | 38 | 0 |  |
@@ -228,7 +228,7 @@ Legenda: ✔ implementado e validado · ◐ implementado, sem validação · ◑
 | `corpo.comprimento` Comprimento (barra) pela dimensão LENGTH | Corpo da peça | `lib/avatar3d/human/garment-fit.ts` | todos (caminho único) | 38 | 0 |  |
 | `corpo.silhueta` Silhueta por classe de caimento (justa/regular/oversized/estruturada/fluida) | Corpo da peça | `lib/avatar3d/human/garment-fit.ts` | todos (caminho único) | 38 | 0 |  |
 | `corpo.tubo` Tubo da saia/vestido/casaco longo | Corpo da peça | `lib/avatar3d/human/garments.ts` | skirt, dress, coat | 5 | 0 |  |
-| `corpo.envelope-barra` Envelope contínuo abaixo do quadril (barra longa de camisa/jaqueta) | Corpo da peça | `lib/avatar3d/human/garments.ts` | shirt, jacket | 16 | 0 |  |
+| `corpo.envelope-barra` Envelope contínuo abaixo do quadril (barra longa de camisa/jaqueta) | Corpo da peça | `lib/avatar3d/human/garments.ts` | shirt, jacket | 15 | 1 |  |
 | `corpo.recortes` Painéis frente/costas e recortes | Corpo da peça | — | — | 0 | 38 | frente e costas são regiões da mesma casca (a foto vai na frente, as costas na cor do tecido); sem recortes/painéis |
 | `cintura.cos` Altura do cós | Cintura e acabamento | `lib/avatar3d/human/garments.ts` | pants | 18 | 0 | cós como faixa 3D |
 | `cintura.elastico` Cós elástico/franzido | Cintura e acabamento | — | — | 0 | 3 | jogger, moletom e legging sem cós elástico |
@@ -239,7 +239,7 @@ Legenda: ✔ implementado e validado · ◐ implementado, sem validação · ◑
 | `cintura.punho-perna` Punho na barra da perna | Cintura e acabamento | — | — | 0 | 2 | jogger e calça de moletom sem punho de ribana no tornozelo |
 | `detalhe.bolsos` Bolsos | Detalhes | — | — | 0 | 18 | nenhum bolso modelado (cargo muda folga e cós, não bolsos) |
 | `detalhe.capuz` Capuz | Detalhes | — | — | 0 | 2 | moletom com capuz sai sem capuz |
-| `detalhe.alcas` Alças | Detalhes | `lib/avatar3d/human/garments.ts` | — | 3 | 3 | sem alça: a casca termina abaixo dos ombros (gola h=0,9) e a peça sai tomara-que-caia — regata, body, vestido, macacão e jardineira |
+| `detalhe.alcas` Alças | Detalhes | `lib/avatar3d/human/garments.ts` | tank, dress, jumpsuit | 6 | 0 | sem alça: a casca termina abaixo dos ombros (gola h=0,9) e a peça sai tomara-que-caia — regata, body, vestido, macacão e jardineira |
 | `detalhe.pregas` Pregas, pences, franzidos e babados | Detalhes | — | — | 0 | 4 | volume só pelo flare do tubo; sem pregas/franzidos |
 | `detalhe.fenda` Fendas | Detalhes | — | — | 0 | 2 | HEM=SLIT não é lido |
 | `detalhe.dobras` Dobras do tecido | Detalhes | `lib/avatar3d/human/garment-relax.ts` | — | 38 | 0 | sem teste próprio das dobras |
@@ -276,13 +276,12 @@ Legenda: ✔ implementado e validado · ◐ implementado, sem validação · ◑
 
 | Tipo | Onde | Detalhe | Impacto |
 |---|---|---|:-:|
-| componente sem teste | `detalhe.alcas` | Alças — lib/avatar3d/human/garments.ts#necklineH | 3 |
-| aplicado onde não se aplica | `blouse` | Pontas da gola de camisa (gola.pontas) sai do molde shirt | 2 |
-| aplicado onde não se aplica | `blouse` | Botões da vista (posição, quantidade, espaçamento) (botoes.disco) sai do molde shirt | 2 |
-| aplicado onde não se aplica | `blouse` | Aro do botão (botoes.aro) sai do molde shirt | 2 |
-| aplicado onde não se aplica | `blouse` | Fixação do botão no tecido (botoes.fixacao) sai do molde shirt | 2 |
-| aplicado onde não se aplica | `blouse` | Vista/carcela frontal (fechamento.vista) sai do molde shirt | 2 |
-| aplicado onde não se aplica | `blouse` | Pesponto visual (linha decorativa) (costura.pesponto) sai do molde shirt | 2 |
+| aplicado onde não se aplica | `top` | Cava sem manga (manga.cava) sai do molde tank | 2 |
+| aplicado onde não se aplica | `top` | Alças (detalhe.alcas) sai do molde tank | 2 |
+| aplicado onde não se aplica | `polo_shirt` | Pontas da gola de camisa (gola.pontas) sai do molde shirt | 2 |
+| aplicado onde não se aplica | `polo_shirt` | Aro do botão (botoes.aro) sai do molde shirt | 2 |
+| aplicado onde não se aplica | `polo_shirt` | Fixação do botão no tecido (botoes.fixacao) sai do molde shirt | 2 |
+| aplicado onde não se aplica | `polo_shirt` | Pesponto visual (linha decorativa) (costura.pesponto) sai do molde shirt | 2 |
 | aplicado onde não se aplica | `matching_set` | Cava sem manga (manga.cava) sai do molde jumpsuit | 2 |
 | aplicado onde não se aplica | `matching_set` | Perna em coluna (cai reta do joelho) (cintura.perna-coluna) sai do molde jumpsuit | 2 |
 | aplicado onde não se aplica | `matching_set` | Alças (detalhe.alcas) sai do molde jumpsuit | 2 |
@@ -292,14 +291,14 @@ Legenda: ✔ implementado e validado · ◐ implementado, sem validação · ◑
 | aplicado onde não se aplica | `flip_flops` | Colarinho (abertura do tornozelo) (calcado.colarinho) sai do molde shoes | 2 |
 | aplicado onde não se aplica | `heels` | Colarinho (abertura do tornozelo) (calcado.colarinho) sai do molde shoes | 2 |
 | aplicado onde não se aplica | `espadrilles` | Colarinho (abertura do tornozelo) (calcado.colarinho) sai do molde shoes | 2 |
-| código legado muda o molde | `crop_top → top` | o código antigo vira crop, o novo vira tee: a mesma peça muda de molde ao migrar | 2 |
+| código legado muda o molde | `crop_top → top` | o código antigo vira crop, o novo vira tank: a mesma peça muda de molde ao migrar | 2 |
 | código legado muda o molde | `bermuda_shorts → shorts` | o código antigo vira bermuda, o novo vira shorts: a mesma peça muda de molde ao migrar | 2 |
 | componente sem teste | `costura.barra-perna` | Barra da perna — lib/avatar3d/human/garments.ts#sp.leg - dl | 2 |
 | eficiência | `dress.ts › buildGarment (kind shoes)` | o molde do pé é construído e relaxado (16 iterações) e descartado em human-outfit.tsx: 15 subcategorias de tênis/sapato pagam a construção sem usar | 1 |
-| parâmetro inconsistente | `default-outfit.ts › fai-padrao-tenis` | subcategoria "sneakers" não existe na taxonomia | 1 |
 | acervo com código legado | `acervo.ts › 01_parte_superior_05_crop_top_cropped` | usa "crop_top" (LEGACY) | 1 |
 | acervo com código legado | `acervo.ts › 02_parte_inferior_10_bermuda` | usa "bermuda_shorts" (LEGACY) | 1 |
 | acervo com código legado | `acervo.ts › 02_parte_inferior_11_shorts_jeans` | usa "denim_shorts" (LEGACY) | 1 |
+| acervo com código legado | `acervo.ts › 03_calcados_06_tenis_cano_alto` | usa "high_top_sneakers" (LEGACY) | 1 |
 | acervo com código legado | `acervo.ts › 03_calcados_11_bota_cano_curto` | usa "ankle_boots" (LEGACY) | 1 |
 | acervo com código legado | `acervo.ts › 03_calcados_12_bota_cano_longo` | usa "long_boots" (LEGACY) | 1 |
 | acervo com código legado | `acervo.ts › 03_calcados_14_coturno` | usa "combat_boots" (LEGACY) | 1 |
@@ -362,47 +361,49 @@ Prova no avatar (corpo de referência F e M, pose de repouso): `{"FEMININO":{"ve
 
 Registro: `polo_shirt` · cor black · [página oficial](https://www.allsaints.com/us/menswear/sonny-long-sleeve-polo/USM014KC-5.html) · fonte `data/catalog/acervo/acervo-oficial-2026-10-05.jsonl.gz`.
 
-Atributos → molde: `{"molde":"tee","classe_caimento":"regular","decote":"POLO_COLLAR","folga_mm":7,"manga":0.33,"barra_h":-0.06,"cos_h":null,"perna":0,"perna_coluna":0}`
+Atributos → molde: `{"molde":"shirt","classe_caimento":"regular","decote":"POLO_COLLAR","folga_mm":8,"manga":0.33,"barra_h":-0.06,"cos_h":null,"perna":0,"perna_coluna":0}`
 
 **Divergências entre o registro e o molde:**
 
 - o nome diz manga longa, o molde sai com manga 0.33 (SLEEVE_LENGTH não é lido do nome)
-- polo vira camiseta: sem gola dobrada nem vista de botões (gola.polo ausente)
 
 | Componente | Estado | Implementação | Parâmetros |
 |---|---|---|---|
-| `asset.molde` | ✔ Implementado e validado | garments.ts#SPECS; garments.ts#garmentGeometry; dress.ts#buildGarment | molde tee · folga 7 mm · barra h=-0.06 · cós h=— · manga 0.33 · perna 0 · saia 0 m · camada 3 · 2281 vért. |
+| `asset.molde` | ◐ Implementado, sem validação | garments.ts#SPECS; garments.ts#garmentGeometry; dress.ts#buildGarment | molde shirt · folga 8 mm · barra h=-0.06 · cós h=— · manga 0.33 · perna 0 · saia 0 m · camada 3 · 2332 vért. |
 | `asset.corpo` | ✔ Implementado e validado | garment-contract.ts#BODY_RIG; asset.ts#parseBodyAsset; fai-body-v1.json#bones | MakeHuman CC0 + esqueleto Mixamo; 2 formas (F/M) por fitBody |
 | `asset.contrato` | ✔ Implementado e validado | garment-contract.ts#garmentContractOf; garment-contract.ts#MOULD_VERSION; garment-asset.ts#garmentContract; garment-asset.ts#KNOWN_LIMITS | origem de cada atributo (CONFIRMED/ESTIMATED/MISSING) + estado APROVADA/ESTIMADA/PROCESSANDO/SEM_3D/ERRO |
 | `manga.molde` | ✔ Implementado e validado | garments.ts#coverage; garments.ts#sleeve: | manga 0.33 (0 ombro → 1 punho) · 460 vért. |
 | `manga.comprimento-atributo` | ✔ Implementado e validado | garment-fit.ts#SLEEVE_LEN; garment-fit.ts#specFor | LONG_SLEEVE → 0.96 |
-| `manga.boca` | ◐ Implementado, sem validação | garments.ts#sp.flare * smooth(sp.sleeve * 0.3, sp.sleeve, P.arm[v]) | flare 0.02 m/unid. (manga curta abre mais: ×1; longa ×0,3) |
+| `manga.boca` | ◐ Implementado, sem validação | garments.ts#sp.flare * smooth(sp.sleeve * 0.3, sp.sleeve, P.arm[v]) | flare 0 m/unid. (manga curta abre mais: ×1; longa ×0,3) |
 | `manga.punho` | ◐ Implementado, sem validação | garment-trims.ts#garmentTrims; garment-trims.ts#trimWidth | barra dobrada 14 mm · 576 vért. (2 lados) |
-| `decote.forma` | ✔ Implementado e validado | garments.ts#necklineH | round · gola h=0.98 · profundidade 0.09 |
+| `decote.forma` | ✔ Implementado e validado | garments.ts#necklineH | round · gola h=1.02 · profundidade 0.11 |
 | `decote.atributo` | ✔ Implementado e validado | garment-fit.ts#necklineOf; garment-fit.ts#NECK_WORDS | NECKLINE=V_NECK → v 0.22 |
 | `decote.foto` | ◐ Implementado, sem validação | human-outfit.tsx#withPhotoNeckline; garments.ts#neckDrop | neckDrop × (gola − barra); só aprofunda |
 | `gola.faixa` | ✔ Implementado e validado | garments.ts#collarBand; garments.ts#HAS_COLLAR_BAND; garments.ts#ribColor | 288 vért. · cor ribColor() |
-| `corpo.folga` | ✔ Implementado e validado | garments.ts#underLayer; garments.ts#ease: | folga 7 mm + camadas de baixo · camada 3 |
+| `gola.polo` | ◑ Parcial | garments.ts#placketLength: .16; garment-trims.ts#shirtPlacket |  |
+| `botoes.disco` | ✔ Implementado e validado | garment-trims.ts#shirtPlacket; garment-trims.ts#const count = gg.spec.placketLength ? 3 : 7 | 3 discos de 5 mm · espaçamento uniforme do decote−4 cm à barra+4 cm · face +z |
+| `fechamento.vista` | ✔ Implementado e validado | garment-trims.ts#carcela | tira de 18 mm do decote à barra, centrada em x=0 |
+| `corpo.folga` | ◐ Implementado, sem validação | garments.ts#underLayer; garments.ts#ease: | folga 8 mm + camadas de baixo · camada 3 |
 | `corpo.caimento` | ✔ Implementado e validado | garments.ts#hullRing; garments.ts#bustFall | drape 0.85 · queda até 0.985× o anel do busto |
 | `corpo.comprimento` | ✔ Implementado e validado | garment-fit.ts#SKIRT_LEN; garment-fit.ts#LEG_LEN | barra h=-0.06 · perna 0 · saia 0 m |
 | `corpo.silhueta` | ✔ Implementado e validado | garment-fit.ts#fitClassOf; garment-fit.ts#VARIATION_FIT | classe regular |
-| `corpo.envelope-barra` | ◐ Implementado, sem validação | garments.ts#shortHem | barra h=-0.06 < 0 → tubo até h=0,07 |
+| `corpo.envelope-barra` | ✔ Implementado e validado | garments.ts#shortHem | barra h=-0.06 < 0 → tubo até h=0,07 |
 | `detalhe.dobras` | ◐ Implementado, sem validação | garment-relax.ts#foldGarment | dobras procedurais após o relaxamento |
-| `aparencia.uv-frente` | ✔ Implementado e validado | garments.ts#texturedGeometry; garments.ts#photoInfo | projeção frontal na pose de exibição: gola↔topo, barra↔pé, largura do tronco↔largura da foto |
-| `aparencia.uv-tecido` | ◐ Implementado, sem validação | garments.ts#fabricMapping; garment-photo.ts#fabricTile | amostra de tecido da própria foto repetida nas costas e mangas |
+| `aparencia.uv-frente` | ◐ Implementado, sem validação | garments.ts#texturedGeometry; garments.ts#photoInfo | projeção frontal na pose de exibição: gola↔topo, barra↔pé, largura do tronco↔largura da foto |
+| `aparencia.uv-tecido` | ✔ Implementado e validado | garments.ts#fabricMapping; garment-photo.ts#fabricTile | amostra de tecido da própria foto repetida nas costas e mangas |
 | `aparencia.material` | ◐ Implementado, sem validação | garments.ts#garmentMaterial | MeshPhysicalMaterial por tipo (cargo fosco) |
 | `aparencia.cor` | ✔ Implementado e validado | garments.ts#fabricColor; garments.ts#trimColors; garments.ts#shoeColors | mediana da foto dentro da peça (nunca do fundo); sem foto, a cor do cadastro |
 | `aparencia.estampa` | ◑ Parcial | garments.ts#garmentTexture | só pela foto da frente |
 | `aparencia.transparencia` | ◑ Parcial | garments.ts#alpha | alfa só nas bordas (barra, gola, punho) |
 | `vest.rig` | ✔ Implementado e validado | garments.ts#skinWeight[v * 4 + k] | 4 ossos por vértice, soma 1; tubo: quadril + coxas |
-| `vest.relaxamento` | ✔ Implementado e validado | garment-relax.ts#relaxGarment; garment-relax.ts#RELAX | 7 iterações |
-| `vest.camadas` | ✔ Implementado e validado | garment-layers.ts#occludeInnerGarment; garment-layers.ts#visibleGarmentFinishes | camada 3 |
-| `vest.colisao` | ✔ Implementado e validado | garment-contract.ts#COLLISION_MARGIN_MM; fit-metrics.ts#fitReport | margem 2 mm; tolerância por pose (exibição 3%, agachamento 6%) |
+| `vest.relaxamento` | ◐ Implementado, sem validação | garment-relax.ts#relaxGarment; garment-relax.ts#RELAX | 8 iterações |
+| `vest.camadas` | ◐ Implementado, sem validação | garment-layers.ts#occludeInnerGarment; garment-layers.ts#visibleGarmentFinishes | camada 3 |
+| `vest.colisao` | ◐ Implementado, sem validação | garment-contract.ts#COLLISION_MARGIN_MM; fit-metrics.ts#fitReport | margem 2 mm; tolerância por pose (exibição 3%, agachamento 6%) |
 | `vest.pose` | ✔ Implementado e validado | garments.ts#armOutFor | 10° a 22° conforme espessura na axila; saia rodada 15° |
 
-Asset final no provador: `peca-<peça>`, `punho-<peça>`, `gola-<peça>`.
+Asset final no provador: `peca-<peça>`, `punho-<peça>`, `gola-<peça>`, `botoes-<peça>`, `carcela-<peça>`.
 
-Prova no avatar (corpo de referência F e M, pose de repouso): `{"FEMININO":{"vertices":2312,"triangulos":4352,"penetracao_repouso":"0%","acabamentos":{"punho":576},"gola_vertices":288},"MASCULINO":{"vertices":2459,"triangulos":4643,"penetracao_repouso":"0%","acabamentos":{"punho":576},"gola_vertices":288}}`
+Prova no avatar (corpo de referência F e M, pose de repouso): `{"FEMININO":{"vertices":2394,"triangulos":4510,"penetracao_repouso":"0%","acabamentos":{"punho":576,"carcela":82,"costura":164,"botoes":39,"botoes-borda":72,"gola-ponta":8},"gola_vertices":288},"MASCULINO":{"vertices":2527,"triangulos":4787,"penetracao_repouso":"0%","acabamentos":{"punho":576,"carcela":82,"costura":164,"botoes":39,"botoes-borda":72,"gola-ponta":8},"gola_vertices":288}}`
 
 ![polo](catalogo/rastreio/polo.png)
 
@@ -430,7 +431,7 @@ Atributos → molde: `{"molde":"shirt","classe_caimento":"regular","decote":null
 | `decote.foto` | ◐ Implementado, sem validação | human-outfit.tsx#withPhotoNeckline; garments.ts#neckDrop | neckDrop × (gola − barra); só aprofunda |
 | `gola.faixa` | ✔ Implementado e validado | garments.ts#collarBand; garments.ts#HAS_COLLAR_BAND; garments.ts#ribColor | 288 vért. · cor ribColor() |
 | `gola.pontas` | ◑ Parcial | garment-trims.ts#shirtPlacket; garment-trims.ts#gola-ponta | 2 quadriláteros ~5 × 3 cm deitados no peito |
-| `botoes.disco` | ✔ Implementado e validado | garment-trims.ts#shirtPlacket; garment-trims.ts#for (let row = 0; row < 7; row++) | 7 discos de 5 mm · espaçamento uniforme do decote−4 cm à barra+4 cm · face +z |
+| `botoes.disco` | ✔ Implementado e validado | garment-trims.ts#shirtPlacket; garment-trims.ts#const count = gg.spec.placketLength ? 3 : 7 | 7 discos de 5 mm · espaçamento uniforme do decote−4 cm à barra+4 cm · face +z |
 | `botoes.aro` | ✔ Implementado e validado | garment-trims.ts#botoes-borda | anel 4,8–6,3 mm, escuro |
 | `botoes.fixacao` | ◑ Parcial | garment-trims.ts#weightsNear | pesos do vértice de tronco mais próximo (4 ossos, soma 1) |
 | `fechamento.vista` | ✔ Implementado e validado | garment-trims.ts#carcela | tira de 18 mm do decote à barra, centrada em x=0 |
@@ -500,4 +501,3 @@ Asset final no provador: `peca-<peça>`.
 Prova no avatar (corpo de referência F e M, pose de repouso): `{"FEMININO":{"vertices":1517,"triangulos":2941,"penetracao_repouso":"0%","acabamentos":{},"gola_vertices":0},"MASCULINO":{"vertices":1539,"triangulos":2987,"penetracao_repouso":"0%","acabamentos":{},"gola_vertices":0}}`
 
 ![calça jeans](catalogo/rastreio/calca-jeans.png)
-

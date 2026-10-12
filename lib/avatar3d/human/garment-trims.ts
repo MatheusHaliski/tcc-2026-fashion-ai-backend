@@ -100,13 +100,13 @@ function basis(d: number[]) {
  *  - gola: duas pontas (quadriláteros) deitadas no peito a partir do decote, na cor da gola da foto.
  */
 export function shirtPlacket(a: BodyAsset, c: Composed, P: BodyParam, gg: GarmentGeometry): TrimBand[] {
-  if (gg.spec.kind !== "shirt") return [];
+  if (gg.spec.kind !== "shirt" || gg.spec.placket === false) return [];
   const candidates = Array.from(P.group.keys()).filter(v => P.group[v] === 1);
   const front = Array.from(gg.source.keys()).filter(v => gg.alpha[v] > .5 && gg.position[v * 3 + 2] > P.torsoZ && gg.source[v] >= 0 && P.group[gg.source[v]] === 1);
   const vertices = front.filter(v => Math.abs(gg.position[v * 3]) < .065);
   if (!vertices.length || !candidates.length) return [];
-  const low = P.hipY + gg.spec.hem * (P.neckY - P.hipY) + .012;
   const high = P.hipY + (gg.spec.neck - gg.spec.vneck) * (P.neckY - P.hipY) - .035;
+  const low = gg.spec.placketLength ? high - gg.spec.placketLength : P.hipY + gg.spec.hem * (P.neckY - P.hipY) + .012;
   const at = (y: number) => {
     const near = [...vertices].sort((u, v) => Math.abs(gg.position[u * 3 + 1] - y) - Math.abs(gg.position[v * 3 + 1] - y)).slice(0, 12);
     return Math.max(...near.map(v => gg.position[v * 3 + 2])) + .002;
@@ -131,8 +131,9 @@ export function shirtPlacket(a: BodyAsset, c: Composed, P: BodyParam, gg: Garmen
   };
   ribbon(strip, -.009, .009, 0);
   ribbon(seams, -.0081, -.0069, .0012); ribbon(seams, .0069, .0081, .0012);          // pesponto nas duas bordas
-  for (let row = 0; row < 7; row++) {
-    const y = low + .04 + (high - low - .08) * row / 6, z = at(y) + .0026;
+  const count = gg.spec.placketLength ? 3 : 7;
+  for (let row = 0; row < count; row++) {
+    const y = low + .04 + (high - low - .08) * row / (count - 1), z = at(y) + .0026;
     const start = buttons.position.length / 3;
     push(buttons, 0, y, z + .0012);
     for (let j = 0; j < 12; j++) { const angle = j * Math.PI / 6; push(buttons, Math.cos(angle) * .005, y + Math.sin(angle) * .005, z + .0008); }

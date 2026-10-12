@@ -23,7 +23,7 @@ import { CatalogSearch, type CatalogSearchContext } from "@/components/catalog/c
 import { BrandHintNote, MultiPieceUpload, type PhotoPick } from "@/components/multi-piece-review";
 import { PieceCreationSteps, PIECE_CREATION_STEPS, type PieceCreationStep } from "@/components/piece-creation-steps";
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
-import type { CatalogProduct, CatalogVariant } from "@/lib/api/catalog";
+import { catalogApi, type CatalogProduct, type CatalogVariant } from "@/lib/api/catalog";
 import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePrefillParams } from "@/lib/pieces/prefill";
 
 /** Etapas do criador de peça (RF4/RF47): peça (busca catalogada + dados) → mais detalhes → arte de fundo → revisar e salvar. */
@@ -109,7 +109,9 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
     setValue((v) => ({ ...v, category, subcategory: "", occasion: keepAllowed(v.occasion, tax?.allowedOccasionsByCategory?.[category] ?? tax?.occasions) }));
   }
   /** "É esta" na busca: o produto preenche o formulário e a peça passa a referenciar o catálogo (a foto oficial vira a imagem). */
-  function applyCatalog(product: CatalogProduct, variant: CatalogVariant | null) {
+  async function applyCatalog(product: CatalogProduct, variant: CatalogVariant | null) {
+    try { product = await catalogApi.verifyImage(product.id); }
+    catch (error) { setSaveProblem(error instanceof Error ? error.message : t("catalog.verificacao_falhou")); return; }
     setPick({ product, variant });
     const color = variant?.color ?? product.color ?? "";
     const allowedOccasions = tax?.allowedOccasionsByCategory?.[product.category] ?? tax?.occasions;
@@ -266,7 +268,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                     <Button size="sm" variant="ghost" onClick={clearCatalog}>{t("catalog.remover_referencia")}</Button>
                   </div>
                 ) : (
-                  <CatalogSearch key={catalogSub} initial={catalogSub && value.subcategory === catalogSub ? { ...initial, subcategory: catalogSub } : initial} category={value.category} onPick={applyCatalog} resultsLayout="matrix"
+                  <CatalogSearch key={catalogSub} initial={catalogSub && value.subcategory === catalogSub ? { ...initial, subcategory: catalogSub } : initial} category={value.category} onPick={applyCatalog} resultsLayout="matrix" brandGrid
                     onContext={(ctx) => { if (ctx.subcategory !== undefined) setValue((v) => ({ ...v, subcategory: ctx.subcategory ?? "" })); }} />
                 )}
               </section>}
@@ -274,7 +276,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 <h2 id="piece-form-label" className="type-h3 mb-2">{t("pieces.new.etapa_dados")}</h2>
                 {mode === "catalog" && pick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("catalog.preenchido_do_catalogo")}</p>}
                 {mode === "photos" && photoPick && <p className="mb-3 rounded-md bg-thread-soft p-3 type-body-sm" role="note">{t("pieces.new.preenchido_da_foto", { photo: photoPick.photo, piece: photoPick.piece })}</p>}
-                <PieceFields value={value} onChange={(v) => { setValue(v); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors}
+                <PieceFields compact value={value} onChange={(v) => { setValue(v); if (Object.keys(fieldErrors).length) setFieldErrors({}); }} fieldErrors={fieldErrors}
                   afterBrand={mode === "photos" && photoPick?.hint && !value.brandName ? <BrandHintNote hint={photoPick.hint} disabled={false}
                     onUse={(brandName) => setValue((v) => ({ ...v, brandName, brandId: null, brandLogoUrl: null, brandLogoWideUrl: null, brandDomain: null, brandEdgePx: null, brandSource: null, brandRef: null }))} /> : null} />
               </section>

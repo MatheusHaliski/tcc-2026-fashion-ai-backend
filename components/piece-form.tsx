@@ -93,16 +93,37 @@ export function PieceMoreDetails({ value, onChange, error, idPrefix = "" }: { va
 }
 
 /** Dados da peça (RF4/RF7) dirigidos pela taxonomia oficial; até 2 ocasiões e 2 estilos; cor sempre com nome (acessível). */
-export function PieceFields({ value, onChange, error, fieldErrors, afterBrand }: {
+export function PieceFields({ value, onChange, error, fieldErrors, afterBrand, compact = false }: {
   value: PieceFormValue; onChange: (v: PieceFormValue) => void; error?: ApiError | null; fieldErrors?: Record<string, string>;
   /** nota logo abaixo do campo Marca (ex.: marca lida com incerteza na foto, com "Usar {marca}") */
   afterBrand?: React.ReactNode;
+  /** Creator: show identity/color first; supplementary fields stay available in a disclosure. */
+  compact?: boolean;
 }) {
   const { t } = useI18n(); const tax = useTaxonomy(); const err: Record<string, string> = { ...(error?.fields ?? {}), ...(fieldErrors ?? {}) };
+  const [expanded, setExpanded] = useState(false);
+  const additionalError = ["material", "sex", "size", "brandName", "price", "occasion", "style"].some(k => !!err[k]);
+  useEffect(() => { if (additionalError) setExpanded(true); }, [additionalError]);
   const set = <K extends keyof PieceFormValue>(k: K, v: PieceFormValue[K]) => onChange({ ...value, [k]: v });
   const allowedOccasions = (category: string) => (category ? tax?.allowedOccasionsByCategory?.[category] : undefined) ?? tax?.occasions;
   const occasions = allowedOccasions(value.category) ?? [];
   const categories = Object.keys(tax?.subcategories ?? {}).filter((c) => PIECE_CATEGORIES.includes(c));
+  const additional = <>
+      <Field label={t("common.material")} id="material" required error={err.material}><Select id="material" value={value.material} onChange={(e) => set("material", e.target.value)}><option value="">—</option>{(tax?.materials ?? []).map((m) => <option key={m} value={m}>{label(m.toLowerCase())}</option>)}</Select></Field>
+      <Field label={t("pieceForm.sexo")} id="sex" required error={err.sex}><Select id="sex" value={value.sex} onChange={(e) => set("sex", e.target.value)}>{(tax?.sexes ?? ["MASCULINO", "FEMININO", "UNISSEX"]).map((s) => <option key={s} value={s}>{label(s.toLowerCase())}</option>)}</Select></Field>
+      <Field label={t("common.size")} id="size" required error={err.size}><Select id="size" value={value.size} onChange={(e) => set("size", e.target.value)}>{(tax?.sizes ?? ["m"]).map((s) => <option key={s} value={s}>{s.toUpperCase().replace("BR_", "BR ")}</option>)}</Select></Field>
+      <Field label={t("common.brand")} id="brand" error={err.brandName} className="sm:col-span-2">
+        <BrandSearchInput error={err.brandName}
+          value={{ brandName: value.brandName, brandLogoUrl: value.brandLogoUrl ?? null, brandLogoWideUrl: value.brandLogoWideUrl ?? null, brandSource: value.brandSource ?? null, brandRef: value.brandRef ?? null, brandDomain: value.brandDomain ?? null, edgePx: value.brandEdgePx ?? null }}
+          onChange={(b) => onChange({ ...value, brandId: null, brandName: b.brandName, brandLogoUrl: b.brandLogoUrl, brandLogoWideUrl: b.brandLogoWideUrl ?? null, brandSource: b.brandSource, brandRef: b.brandRef, brandDomain: b.brandDomain ?? null, brandEdgePx: b.edgePx ?? null })} />
+      </Field>
+      {afterBrand}
+      <Field label={t("pieceForm.usd", { txt: t("common.price") })} id="price" required error={err.price}><Input id="price" type="number" step="0.01" min="0" inputMode="decimal" value={value.price} onChange={(e) => set("price", e.target.value)} /></Field>
+      <ChipMultiSelect className="sm:col-span-2" legend={t("common.occasion")} max={PIECE_MAX_TAGS} options={occasions.map((o) => ({ id: o, label: label(o) }))} value={value.occasion} onChange={(v) => set("occasion", v)}
+        error={err.occasion} hint={t("pieceForm.dica_ocasioes")} limitMessage={t("pieceForm.limite_ocasioes")} problem={(v) => tagProblem("occasion", v, tax, value.category)} />
+      <ChipMultiSelect className="sm:col-span-2" legend={t("common.style")} max={PIECE_MAX_TAGS} options={(tax?.styles ?? []).map((o) => ({ id: o, label: label(o) }))} value={value.style} onChange={(v) => set("style", v)}
+        error={err.style} hint={t("pieceForm.dica_estilos")} limitMessage={t("pieceForm.limite_estilos")} problem={(v) => tagProblem("style", v, tax, value.category)} />
+  </>;
   // código fora da taxonomia (peça antiga): o ChipMultiSelect mostra o problema com "Remover" — nada some em silêncio
   return (
     <div className="grid gap-x-4 sm:grid-cols-2">
@@ -119,20 +140,10 @@ export function PieceFields({ value, onChange, error, fieldErrors, afterBrand }:
           <Select id="color" value={value.color} onChange={(e) => set("color", e.target.value)}><option value="">—</option>{Object.entries(tax?.colors ?? {}).map(([k]) => <option key={k} value={k}>{label(k)}</option>)}</Select>
         </div>
       </Field>
-      <Field label={t("common.material")} id="material" required error={err.material}><Select id="material" value={value.material} onChange={(e) => set("material", e.target.value)}><option value="">—</option>{(tax?.materials ?? []).map((m) => <option key={m} value={m}>{label(m.toLowerCase())}</option>)}</Select></Field>
-      <Field label={t("pieceForm.sexo")} id="sex" required error={err.sex}><Select id="sex" value={value.sex} onChange={(e) => set("sex", e.target.value)}>{(tax?.sexes ?? ["MASCULINO", "FEMININO", "UNISSEX"]).map((s) => <option key={s} value={s}>{label(s.toLowerCase())}</option>)}</Select></Field>
-      <Field label={t("common.size")} id="size" required error={err.size}><Select id="size" value={value.size} onChange={(e) => set("size", e.target.value)}>{(tax?.sizes ?? ["m"]).map((s) => <option key={s} value={s}>{s.toUpperCase().replace("BR_", "BR ")}</option>)}</Select></Field>
-      <Field label={t("common.brand")} id="brand" error={err.brandName} className="sm:col-span-2">
-        <BrandSearchInput error={err.brandName}
-          value={{ brandName: value.brandName, brandLogoUrl: value.brandLogoUrl ?? null, brandLogoWideUrl: value.brandLogoWideUrl ?? null, brandSource: value.brandSource ?? null, brandRef: value.brandRef ?? null, brandDomain: value.brandDomain ?? null, edgePx: value.brandEdgePx ?? null }}
-          onChange={(b) => onChange({ ...value, brandId: null, brandName: b.brandName, brandLogoUrl: b.brandLogoUrl, brandLogoWideUrl: b.brandLogoWideUrl ?? null, brandSource: b.brandSource, brandRef: b.brandRef, brandDomain: b.brandDomain ?? null, brandEdgePx: b.edgePx ?? null })} />
-      </Field>
-      {afterBrand}
-      <Field label={t("pieceForm.usd", { txt: t("common.price") })} id="price" required error={err.price}><Input id="price" type="number" step="0.01" min="0" inputMode="decimal" value={value.price} onChange={(e) => set("price", e.target.value)} /></Field>
-      <ChipMultiSelect className="sm:col-span-2" legend={t("common.occasion")} max={PIECE_MAX_TAGS} options={occasions.map((o) => ({ id: o, label: label(o) }))} value={value.occasion} onChange={(v) => set("occasion", v)}
-        error={err.occasion} hint={t("pieceForm.dica_ocasioes")} limitMessage={t("pieceForm.limite_ocasioes")} problem={(v) => tagProblem("occasion", v, tax, value.category)} />
-      <ChipMultiSelect className="sm:col-span-2" legend={t("common.style")} max={PIECE_MAX_TAGS} options={(tax?.styles ?? []).map((o) => ({ id: o, label: label(o) }))} value={value.style} onChange={(v) => set("style", v)}
-        error={err.style} hint={t("pieceForm.dica_estilos")} limitMessage={t("pieceForm.limite_estilos")} problem={(v) => tagProblem("style", v, tax, value.category)} />
+      {compact ? <details className="sm:col-span-2" open={expanded} onToggle={(e) => setExpanded(e.currentTarget.open)}>
+        <summary className="cursor-pointer py-3 font-semibold min-h-11">{t("pieceForm.moreDetails")}</summary>
+        <div className="grid gap-x-4 sm:grid-cols-2">{additional}</div>
+      </details> : additional}
     </div>
   );
 }

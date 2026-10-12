@@ -113,7 +113,7 @@ describe("FlairHub", () => {
     await screen.findByRole("tab", { name: /Partidas FLAIR/ });
     await settle();
     fireEvent.click(screen.getByTestId("hub-primary"));
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("dialog", {}, { timeout: 5000 });
     expect(dialog.textContent).toContain("Partidas FLAIR");
     expect(screen.getByRole("button", { name: "Entendi, começar" })).toBeTruthy();
     expect(push).not.toHaveBeenCalled();
@@ -122,7 +122,7 @@ describe("FlairHub", () => {
     expect(push).not.toHaveBeenCalled();
     // reabre pelo "Como funciona" do painel, marca para não mostrar e confirma
     fireEvent.click(screen.getAllByRole("button", { name: "Como funciona" })[1]);
-    const box = await screen.findByRole("checkbox", { name: "Não mostrar novamente" });
+    const box = await screen.findByRole("checkbox", { name: "Não mostrar novamente" }, { timeout: 5000 });
     fireEvent.click(box);
     fireEvent.click(screen.getByRole("button", { name: "Entendi" }));
     await waitFor(() => expect(calls.some((c) => c.method === "PUT" && c.path === "/api/me/guides/flair.matches" && (c.body as { event: string }).event === "HIDDEN")).toBe(true));

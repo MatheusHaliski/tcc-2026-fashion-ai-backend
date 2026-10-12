@@ -12,18 +12,18 @@
   "loading": "next/font/google (self-hosted junto com o app, sem <link> externo nem troca visível de fonte)",
   "numbers": "font-variant-numeric: tabular-nums em contadores, preços e placares",
   "removed": ["Share Tech Mono do body (pode ficar restrita ao logotipo e à tela de login)", "regra de peso 600 forçado em .sa-home-shell", "font-mono do sistema (passa a apontar para --font-data)"],
-  "base": {"px": 14, "minUppercaseLabelPx": 11, "minRunningTextPx": 12},
+  "base": {"px": 14, "minUppercaseLabelPx": 12, "minRunningTextPx": 12},
   "scale": [
     {"token": "display-xl", "px": 40, "rem": 2.5, "lineHeight": 1.1, "tracking": "-0.02em", "family": "editorial", "weight": 600, "use": "número do Inventory Score, número do Hype Score"},
     {"token": "display", "px": 32, "rem": 2, "lineHeight": 1.15, "tracking": "-0.015em", "family": "editorial", "weight": 600, "use": "título de página no desktop"},
-    {"token": "h1", "px": 24, "rem": 1.5, "lineHeight": 1.2, "tracking": "-0.01em", "family": "editorial", "weight": 600, "use": "título de página no celular, título do card ampliado"},
+    {"token": "h1", "px": 26, "rem": 1.625, "lineHeight": 1.2, "tracking": "-0.01em", "family": "editorial", "weight": 600, "use": "título de página no celular, título do card ampliado"},
     {"token": "h2", "px": 20, "rem": 1.25, "lineHeight": 1.25, "tracking": "-0.005em", "family": "editorial", "weight": 500, "use": "seção de página, título de modal"},
     {"token": "h3", "px": 17, "rem": 1.0625, "lineHeight": 1.3, "tracking": "0", "family": "ui", "weight": 600, "use": "subtítulo, título de painel"},
     {"token": "body-lg", "px": 16, "rem": 1, "lineHeight": 1.5, "tracking": "0", "family": "ui", "weight": 400, "use": "texto de destaque, onboarding"},
     {"token": "body", "px": 14, "rem": 0.875, "lineHeight": 1.5, "tracking": "0", "family": "ui", "weight": 400, "use": "texto padrão, descrições, comentários"},
     {"token": "body-sm", "px": 13, "rem": 0.8125, "lineHeight": 1.45, "tracking": "0", "family": "ui", "weight": 400, "use": "texto secundário, itens de lista"},
     {"token": "caption", "px": 12, "rem": 0.75, "lineHeight": 1.4, "tracking": "0.005em", "family": "ui", "weight": 500, "use": "legendas, autor e data, dicas de campo"},
-    {"token": "label", "px": 11, "rem": 0.6875, "lineHeight": 1.3, "tracking": "0.08em", "uppercase": true, "family": "data", "weight": 500, "use": "rótulos técnicos, cabeçalho de metadado, selos"}
+    {"token": "label", "px": 12, "rem": 0.75, "lineHeight": 1.3, "tracking": "0.08em", "uppercase": true, "family": "data", "weight": 500, "use": "rótulos técnicos, cabeçalho de metadado, selos"}
   ],
   "tracking": {"display": "-0.02em", "label": "0.08em"},
   "migration": {

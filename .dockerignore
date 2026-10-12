@@ -29,3 +29,6 @@ scripts/e2e/work
 keys/
 backups/
 data/
+
+# Source archives are preserved outside the web root and excluded from deployment.
+assets/source-archives/

@@ -37,7 +37,7 @@ export function FittingRoom() {
   const searchParams = useSearchParams();
   const taxonomy = useTaxonomy();
   const { data, error, reload } = useApi<State>((signal) => api.get("/api/try-on", { signal }), []);
-  const stores = useApi<{ stores: Store[] }>((signal) => api.get("/api/catalog/stores", { signal }), []);
+  const stores = useApi<{ stores: Store[] }>((signal) => api.get("/api/catalog/stores", { signal }), [], { refreshInterval: 30_000 });
 
   const [mode, setMode] = useState<EnvironmentMode>("auto");
   const [light, setLight] = useState<LightMode>("daylight");

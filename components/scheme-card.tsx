@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { MediaImage } from "@/components/media-image";
 import { useState, type ReactNode } from "react";
 import type { SchemeView } from "@/lib/api/types";
 import { api, mediaUrl, thumbSrcSet, thumbUrl } from "@/lib/api/client";
@@ -33,12 +34,12 @@ export interface SealBadge { label: string; premium?: boolean; iconUrl?: string 
 export function toSealBadges(list?: { tier: string; owner: string; premium: boolean; name?: string | null; iconUrl?: string | null; design?: SealDesign | null; linkedPieceIds?: string[] }[] | null): SealBadge[] {
   return (list ?? []).map((b) => ({ label: b.tier === "PECA" ? tr("schemeCard.peca") : "LOOK", premium: b.premium, owner: b.owner, tier: b.tier, name: b.name ?? null, iconUrl: b.iconUrl ?? null, design: b.design ?? null, linkedPieceIds: b.linkedPieceIds ?? [], kind: b.premium ? "CELEBRITY" : "BRAND" }));
 }
-/** Espaço reservado para o selo (RF20/RF21): sempre presente na anatomia; mostra os medalhões quando o look conquistou selos. */
+/** Selos conquistados; cards sem selo não exibem um placeholder vazio. */
 export function SealSlot({ seals, size, inline, px }: { seals?: SealBadge[]; size?: "sm"; inline?: boolean; px?: number }) {
   const { t } = useI18n();
   const list = (seals ?? []).slice(0, 3);
   const dim = px ?? (size === "sm" ? 36 : 44);
-  if (list.length === 0) return <span className={`seal-slot empty ${inline ? "inline" : ""} ${size === "sm" ? "seal-sm" : ""}`} style={px ? { width: px, height: px } : undefined} aria-hidden title={t("schemeCard.espaco_reservado_para_selo")} />;
+  if (list.length === 0) return null;
   return (
     <span className={`seal-slot ${inline ? "inline" : ""} ${list.length > 1 ? "many" : ""}`} role="img" aria-label={t("schemeCard.selos", { join: list.map((s) => s.name ?? s.label).join(", ") })}>
       {list.map((s, i) => {
@@ -53,10 +54,11 @@ export function SealSlot({ seals, size, inline, px }: { seals?: SealBadge[]; siz
 /** Blocos: selos como placas redondas 1×1 nas cores de sistema — verde marca, vermelho celebridade, amarelo look, laranja Hype. */
 export function SealStuds({ seals }: { seals: SealBadge[] }) {
   const { t } = useI18n();
+  if (!seals.length) return null;
   const color = (s: SealBadge) => (s.kind === "HYPE" ? "#F58220" : s.kind === "CELEBRITY" || s.premium ? "#C8102E" : s.tier === "LOOK" && !s.owner ? "#F2C200" : "#237841");
   return (
     <div className="seal-studs" aria-label={t("schemeCard.selos_2", { sealsCount: seals.length })}>
-      {seals.length === 0 ? <span className="seal-stud empty" aria-hidden title={t("schemeCard.espaco_reservado_para_selo")} /> : seals.slice(0, 4).map((s, i) => <span key={i} className="seal-stud" style={{ ["--stud" as string]: color(s) }} title={`${s.name ?? s.label}${s.owner ? ` · @${s.owner}` : ""}`}>{s.design ? <SealMedallion design={s.design} size={30} premium={s.premium} className={s.kind === "HYPE" ? "is-hype" : undefined} /> : null}</span>)}
+      {seals.slice(0, 4).map((s, i) => <span key={i} className="seal-stud" style={{ ["--stud" as string]: color(s) }} title={`${s.name ?? s.label}${s.owner ? ` · @${s.owner}` : ""}`}>{s.design ? <SealMedallion design={s.design} size={30} premium={s.premium} className={s.kind === "HYPE" ? "is-hype" : undefined} /> : null}</span>)}
       <span className="seal-stud-tile">{t("schemeCard.selo", { sealsCount: seals.length })}</span>
     </div>
   );
@@ -244,7 +246,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
       {scheme.description && <p className={`c-desc ${expanded ? "is-full" : ""}`}>{scheme.description}</p>}
     </div>
   );
-  const photo = (extraClass = "") => <div className={`c-photo is-look ${extraClass}`}>{cover && <img src={cover} srcSet={coverSet} sizes="(max-width: 639px) 92vw, 320px" alt="" loading="lazy" decoding="async" />}</div>;
+  const photo = (extraClass = "") => <div className={`c-photo is-look ${extraClass}`}>{cover && <MediaImage src={cover} srcSet={coverSet} sizes="(max-width: 639px) 92vw, 320px" alt="" loading="lazy" decoding="async" />}</div>;
   const chips = [...(scheme.occasion ?? []), ...(scheme.style ?? [])].map((x) => label(x)).concat(scheme.season ? [label(scheme.season.toLowerCase())] : []);
 
   const card = (

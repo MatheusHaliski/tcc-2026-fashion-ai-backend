@@ -52,3 +52,6 @@ __pycache__/
 
 # relatório de cobertura do frontend (npm run test:coverage)
 /coverage/
+
+# Local Lighthouse measurement artifacts
+.lighthouseci/

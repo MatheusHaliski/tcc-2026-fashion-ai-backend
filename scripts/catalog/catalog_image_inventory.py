@@ -74,12 +74,14 @@ def _valid_crop(crop: Mapping) -> bool:
     return x >= 0 and y >= 0 and w > 0 and h > 0 and x + w <= 1.0001 and y + h <= 1.0001
 
 
-def _fabric_frame_ok(frame: Mapping) -> bool:
-    """Quadro só de tecido (CATALOG_FRAME_34_FABRIC_V2): a política registrada e 100% da área coberta pela peça. O quadro
-    antigo de 50% da largura (V1) podia mostrar fundo e não conta como padronizado — é refeito na próxima execução."""
-    coverage = frame.get("fabricCoverage")
+def _product_frame_ok(crop: Mapping) -> bool:
+    """V4: quadro inteiramente dentro da foto e preenchido pela peça, sem padding."""
+    frame = crop.get("editorFrame") or {}
+    coverage = frame.get("garmentCoverage")
     return (frame.get("version") == FRAME_VERSION and frame.get("policy") == FRAME_POLICY
-            and isinstance(coverage, (int, float)) and not isinstance(coverage, bool) and coverage == 1)
+            and frame.get("fit") == "COVER" and frame.get("coverageScope") == "FRAME"
+            and not isinstance(coverage, bool) and coverage == 1
+            and frame.get("padding", 0) == 0 and _valid_crop(crop))
 
 
 def is_standardized(record: Mapping, current_version: str = CURRENT_VERSION) -> bool:
@@ -105,8 +107,8 @@ def is_standardized(record: Mapping, current_version: str = CURRENT_VERSION) -> 
                 and (_metadata(record, "assets") or {}).get("card") == record.get("stored_url")
                 and (_metadata(record, "assets") or {}).get("framingVersion") == FRAME_VERSION
                 and len(str((_metadata(record, "assets") or {}).get("sha256") or "")) == 64
-                and _valid_crop(crop) and crop.get("aspect") == "3:4"
-                and _fabric_frame_ok(frame) and frame.get("requiresReview") is False
+                and crop.get("aspect") == "3:4"
+                and _product_frame_ok(crop) and frame.get("requiresReview") is False
                 and crop.get("ruleCompliant") is True)
     if _value(record, "pipeline_version", "pipelineVersion") != current_version:
         return False

@@ -148,49 +148,65 @@ Simulação com as 248 linhas reais da Gap (teste em `tests/test_repair_merged.p
 1 produto com 839 fotos; depois, 248 peças com 1 a 4 fotos cada, nenhuma sem foto. Gravar na produção exige rodar
 com as variáveis `MYSQL_*` do backend e `--apply`.
 
-## Quadro do editor por categoria (3:4, 50%)
+## Quadro do editor por categoria (3:4 preenchido — V4)
 
-Após compilar o JAR atual e instalar `requirements-images.txt`, execute na raiz:
+Compile o JAR atual (`mvn -q -DskipTests package`, Java 21) e instale
+`python3 -m pip install -r scripts/catalog/requirements-images.txt`.
+O script exige `fabricFrameVersion` no JAR e rejeita checkpoints de outra versão.
+Execute primeiro uma amostra:
 
 ```bash
 python3 scripts/catalog/process_catalog_images.py --database --apply --category-frame \
-  --output data/catalog/frame-34-50.xlsx --workers 4 --java-threads 2
+  --limit 20 --workers 4 --java-threads 2 --output data/catalog/frame-34-v4.xlsx
 ```
 
-Use primeiro `--limit 20` e um arquivo de saída diferente para conferir uma amostra.
 O modo gera um JPEG 900×1200 e substitui a foto ativa por um arquivo no S3,
 verificando o conteúdo por SHA-256 antes de atualizar `stored_url`/`assets_json`.
 O card usa `PROCESSED`, sem aplicar o recorte novamente. A URL de origem e o
 objeto anterior ficam preservados para recuperação; não sobrescreve arquivos
 em servidores das marcas. Só fontes com `allows_image_persistence` habilitado
-e domínio correspondente podem persistir imagens. O domínio é normalizado
-(maiúsculas/`www.`) e também reconhece subdomínios da fonte na URL da foto,
-com a mesma regra de limite entre nomes usada pela API. As demais são reportadas
-sem atualização. Configure `S3_BUCKET`, `S3_ENDPOINT`, região e credenciais,
-mais `STORAGE_PUBLIC_BASE_URL` (HTTPS) ou `S3_SERVE_THROUGH_API=true` com
-`APP_BASE_URL` (HTTPS) para o bucket privado. O quadro 3:4 contém só tecido da
-peça (política `FABRIC_ONLY_100`): o Java (`FabricFrame`) devolve o maior
-retângulo 3:4 dentro da máscara de tecido, na região da categoria/subcategoria
-(peito, painel frontal de peça aberta, braguilha ou frente abaixo do cós, cabedal,
-corpo do acessório), e o script só aceita cobertura de tecido 1,0. Sem esse
-quadro (acessório sem tecido, peça da cor do fundo, região pequena demais…) a foto
-não é gravada (`FABRIC_FRAME_UNAVAILABLE:<motivo>`); regras e motivos em
-`docs/catalogo/PROCESSAR_ACERVO_IMAGENS.md`. Zíper/cadarço estimados (não
-detectados pelo pipeline) ficam em `NEEDS_REPROCESSING` para revisão.
-Revisões humanas e processamento ativo são preservados.
-O modo é explícito e não muda o pipeline automático da API. A versão dos metadados
-é `CATALOG_FRAME_34_FABRIC_V2` (a `CATALOG_FRAME_34_50_V1`, de quadro com 50% da
-largura, conta como pendente e é refeita); checkpoints guardam a análise original (os gravados antes do `FabricFrame` são analisados de novo), para reaplicar
-as regras sem baixar novamente. No Railway, execute em um job com o checkout,
-Python, Java, JAR compilado e as mesmas variáveis MySQL do backend; o container
-atual da API não deve ser presumido como contendo os scripts e suas dependências.
+e domínio correspondente podem persistir imagens (ou a decisão explícita
+`--force-category-frame`, ver `docs/catalogo/PROCESSAR_ACERVO_IMAGENS.md`). O domínio
+é normalizado (maiúsculas/`www.`) e também reconhece subdomínios da fonte na URL da
+foto, com a mesma regra de limite entre nomes usada pela API. Configure `S3_BUCKET`,
+`S3_ENDPOINT`, região e credenciais, mais `STORAGE_PUBLIC_BASE_URL` (HTTPS) ou
+`S3_SERVE_THROUGH_API=true` com `APP_BASE_URL` (HTTPS) para o bucket privado. Antes
+de ler o banco ou iniciar o Java, o modo confere `MYSQL_HOST`, `MYSQL_DATABASE`,
+`MYSQL_USER`, `MYSQL_PASSWORD` (aceitando os nomes do Railway), `S3_BUCKET`,
+`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` e a URL pública do bucket, e para com a
+lista das variáveis que faltam — só os nomes, nunca os valores (código de saída 2).
 
-Antes de baixar/analisar, o modo verifica categoria e permissão da fonte. O
-progresso distingue análises Java concluídas de resultados prontos para gravação
-e mostra os motivos de falha mais frequentes; `failure_reasons` no relatório
-resume os bloqueios. Erros do S3 incluem o código do serviço sem expor credenciais.
-Permissões negativas continuam negativas: não são alteradas automaticamente.
+A política `PIECE_FILLED_100` usa `FabricFrame`: o quadro é 3:4 e cada pixel
+pertence à peça. A máscara exclui fundo, pele e outras peças e é erodida antes
+do recorte. Sem região válida, nenhuma imagem nova é gerada, inclusive com
+`--force-category-frame` (`FRAME_UNAVAILABLE:<motivo>`).
 
+| Categoria | Foco |
+|---|---|
+| Parte superior | Gola |
+| Parte inferior | Zíper/braguilha; peças sem zíper usam o painel abaixo do cós |
+| Acessório | Centro |
+| Calçado | Logo |
+| Peça única | Corpete |
+
+Focos sem landmark são registrados como estimados, sem afirmar identificação
+visual confirmada. A peça ocupa o quadro sem padding ou margens de fundo.
+A versão é `CATALOG_FRAME_34_FILLED_V4`; V1/V2/V3 são reavaliadas. Se uma
+foto com quadro antigo não admitir a nova regra, a referência pode voltar ao
+original preservado, com a decisão auditada `REVERTED_TO_ORIGINAL`. Não apaga
+os objetos anteriores do S3. Revisões humanas e processamento ativo são
+preservados pela gravação do lote.
+
+O clique em **É esta** pede uma nova análise da foto original ao backend,
+sem reutilizar análise em cache, e aplica o recorte semântico ao card. O lote
+continua responsável pela geração do JPEG no S3. Se a verificação falhar,
+a seleção não é concluída silenciosamente. Fotos recusadas pela revisão
+não são reabilitadas por essa ação.
+
+O progresso distingue análises Java concluídas de resultados prontos para
+gravação, com motivos individuais e resumo `failure_reasons`. No Railway,
+o job precisa dos scripts, dependências Python e JAR compilado; o container
+da API não deve ser presumido como contendo essas ferramentas.
 
 ## Auditoria e direitos de persistência
 
@@ -208,3 +224,23 @@ seu inventário completo, para não invalidar a transação por seleção parcia
 Novos objetos usam chaves exclusivas; falhas conhecidas removem apenas objetos
 sem referências confirmadas. Em COMMIT incerto/DB indisponível, a limpeza fica
 pendente para auditoria. `audit_catalog_storage.py` lista candidatos e nunca exclui.
+
+
+### Coleta e importação contínua
+
+`collect_official.py` coleta JSONL em `data/catalog/collected/`; coletar não
+insere produtos no MySQL. O glob `data/catalog/acervo/*.jsonl.gz` tampouco lê
+os arquivos dessa pasta. Para importar os registros completos enquanto a
+coleta continua, abra outro terminal com o mesmo ambiente virtual e MYSQL_*:
+
+```bash
+python3 scripts/catalog/sync_collected.py --watch
+```
+
+O sincronizador usa o importador existente, ignora produtos já cadastrados,
+espera a quebra de linha antes de ler um registro e salva seu deslocamento
+somente após a transação. O processo é exclusivo por pasta/checkpoint e pode
+ser interrompido e retomado. Sem `--watch`, faz apenas uma passagem.
+As telas consultam novamente o acervo ao voltar à aba e periodicamente quando
+visíveis. Produtos recusados continuam fora do catálogo disponível; o resumo
+separa o total cadastrado do disponível, sem inventar contagens.

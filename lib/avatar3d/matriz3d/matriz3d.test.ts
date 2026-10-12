@@ -52,7 +52,7 @@ describe("MATRIZ-3D — rastreabilidade da vestimenta 3D", () => {
     const read = (f: string) => { if (!text.has(f)) text.set(f, existsSync(at(f)) ? readFileSync(at(f), "utf-8") : ""); return text.get(f)!; };
     for (const c of COMPONENTES) {
       for (const r of c.refs) { const t = read(r.file); if (!t) broken.push(`${c.id}: arquivo ${r.file}`); else if (!t.includes(r.symbol)) broken.push(`${c.id}: símbolo "${r.symbol}" em ${r.file}`); }
-      for (const tr of c.testes) { const t = read(tr.file); if (!t) broken.push(`${c.id}: teste ${tr.file}`); else if (tr.title && !t.includes(tr.title)) broken.push(`${c.id}: título "${tr.title}" em ${tr.file}`); }
+      for (const tr of c.testes) { const t = read(tr.file); if (!t) broken.push(`${c.id}: teste ${tr.file}`); else if (tr.testName && !t.includes(tr.testName)) broken.push(`${c.id}: título "${tr.testName}" em ${tr.file}`); }
       for (const d of c.deps) if (!COMPONENTES.some((x) => x.id === d)) broken.push(`${c.id}: dependência ${d}`);
     }
     expect(broken).toEqual([]);
@@ -89,7 +89,7 @@ describe("MATRIZ-3D — rastreabilidade da vestimenta 3D", () => {
     writeFileSync(at(`${OUT}biblioteca.csv`), toCsv(matriz.biblioteca as unknown as Record<string, unknown>[], Object.keys(matriz.biblioteca[0])));
     writeFileSync(at(`${OUT}achados.csv`), toCsv(matriz.achados as unknown as Record<string, unknown>[], ["tipo", "onde", "detalhe", "impacto"]));
     catalog();
-    writeFileSync(at(`${OUT}GERADO.md`), report(full));
+    writeFileSync(at(`${OUT}GERADO.md`), report(full).trimEnd() + "\n");
   });
 });
 

@@ -45,9 +45,9 @@ export function outfitOf(pieces: Look3dPiece[]): OutfitItem[] {
 
 /** Garment category remains explicit throughout person/other-outfit isolation. */
 export function photoPart(kind: GarmentKind): OutfitPhotoPart {
-  if (kind === "dress" || kind === "jumpsuit" || kind === "coat") return "full";
+  if (kind === "dress" || kind === "jumpsuit" || kind === "romper" || kind === "coat") return "full";
   if (kind === "shoes" || kind === "boots") return "feet";
-  if (["pants", "shorts", "leggings", "skirt"].includes(kind)) return "lower";
+  if (["pants", "shorts", "bermuda", "culottes", "leggings", "skirt"].includes(kind)) return "lower";
   return "upper";
 }
 

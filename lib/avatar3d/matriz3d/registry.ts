@@ -26,7 +26,7 @@ export const GRUPOS: Grupo[] = ["Assets padrão", "Mangas", "Gola e decote", "Bo
 /** Arquivo + símbolo responsável (o teste da matriz confere que o símbolo aparece no arquivo). */
 export interface Ref { file: string; symbol: string }
 /** Teste que valida o componente: arquivo + trecho do título (conferido no arquivo). */
-export interface TestRef { file: string; title: string }
+export interface TestRef { file: string; testName: string }
 
 /** O que a sonda observou ao construir a peça no corpo de referência (probe.ts). */
 export interface Observacao {
@@ -121,10 +121,10 @@ const T_GARMENTS = "lib/avatar3d/human/garments.test.ts", T_GARMENT = "lib/avata
   T_PHOTO = "lib/avatar3d/human/garment-photo.test.ts";
 
 const PENETRACAO: TestRef[] = [
-  { file: T_GARMENTS, title: "camiseta, calça, vestido e tênis não atravessam o corpo" },
-  { file: T_GARMENTS, title: "jaqueta sobre camiseta e casaco sobre suéter" },
-  { file: T_GARMENT, title: "nenhum vértice dentro do corpo depois das colisões" },
-  { file: T_MATRIX, title: "mede as peças e grava o relatório" },
+  { file: T_GARMENTS, testName: "camiseta, calça, vestido e tênis não atravessam o corpo" },
+  { file: T_GARMENTS, testName: "jaqueta sobre camiseta e casaco sobre suéter" },
+  { file: T_GARMENT, testName: "nenhum vértice dentro do corpo depois das colisões" },
+  { file: T_MATRIX, testName: "mede as peças e grava o relatório" },
 ];
 const VALIDADOS_PENETRACAO: GarmentKind[] = ["tee", "pants", "shoes", "dress", "jacket", "coat", "sweater", "skirt", "boots"];
 
@@ -152,7 +152,7 @@ export const COMPONENTES: Componente[] = [
     aplica: (c) => c.family === "calcado", produz: (o) => (o.calcado.cabedal ?? 0) > 0,
     params: (o) => `estilo ${o.shoeStyle} · ${Object.entries(o.calcado).map(([k, x]) => `${k} ${x}`).join(" · ")}`,
     asset: "cabedal-<id>, sola-<id>, cadarco-<id>, colarinho-<id>", deps: ["asset.corpo"],
-    testes: [{ file: T_GARMENTS, title: "camiseta, calça, vestido e tênis não atravessam o corpo" }, { file: T_MATRIX, title: "mede as peças e grava o relatório" }],
+    testes: [{ file: T_GARMENTS, testName: "camiseta, calça, vestido e tênis não atravessam o corpo" }, { file: T_MATRIX, testName: "mede as peças e grava o relatório" }],
     validados: ["shoes", "boots"],
     parcial: (c) => (TIRAS.has(c.sub) || SALTO.has(c.sub) ? "fôrma fechada de tênis/sapato baixo: sandália, chinelo e salto viram sapato fechado (KNOWN_LIMITS)" : null),
     contrato: "pesos do vértice do pé mais próximo; o corpo sobe SOLE_LIFT para a sola tocar o chão; cor por vértice (cabedal/sola da foto)",
@@ -162,20 +162,20 @@ export const COMPONENTES: Componente[] = [
     refs: [{ file: CONTRACT, symbol: "BODY_RIG" }, { file: "lib/avatar3d/human/asset.ts", symbol: "parseBodyAsset" }, { file: "public/avatar3d/body/fai-body-v1.json", symbol: "bones" }],
     aplica: (c) => !!c.kind, produz: (o) => !!o.molde || (o.calcado.cabedal ?? 0) > 0,
     params: () => "MakeHuman CC0 + esqueleto Mixamo; 2 formas (F/M) por fitBody", deps: [],
-    testes: [{ file: T_GARMENTS, title: "o molde herda os pesos do corpo (4 ossos, somando 1)" }], validados: "todos",
+    testes: [{ file: T_GARMENTS, testName: "o molde herda os pesos do corpo (4 ossos, somando 1)" }], validados: "todos",
   },
   {
     id: "asset.contrato", grupo: "Assets padrão", nome: "Contrato da vestimenta e estado no provador", familias: [...ROUPA, "calcado", "acessorio"],
     refs: [{ file: CONTRACT, symbol: "garmentContractOf" }, { file: CONTRACT, symbol: "MOULD_VERSION" }, { file: ASSETF, symbol: "garmentContract" }, { file: ASSETF, symbol: "KNOWN_LIMITS" }],
     aplica: () => true, produz: () => true, params: () => "origem de cada atributo (CONFIRMED/ESTIMATED/MISSING) + estado APROVADA/ESTIMADA/PROCESSANDO/SEM_3D/ERRO", deps: [],
-    testes: [{ file: T_CONTRACT, title: "inventário: toda subcategoria real do acervo tem família e caminho explícitos" }, { file: T_ASSET, title: "limitações conhecidas aparecem no contrato" }], validados: "todos",
+    testes: [{ file: T_CONTRACT, testName: "inventário: toda subcategoria real do acervo tem família e caminho explícitos" }, { file: T_ASSET, testName: "limitações conhecidas aparecem no contrato" }], validados: "todos",
   },
   {
     id: "asset.peca-padrao", grupo: "Assets padrão", nome: "Peça padrão da zona (avatar nunca sem roupa)", familias: [...ROUPA, "calcado"],
     refs: [{ file: DEFAULTF, symbol: "DEFAULT_PIECES" }, { file: DEFAULTF, symbol: "withDefaultOutfit" }],
     aplica: (c) => S("t_shirt", "jeans", "casual_sneakers").has(c.sub), produz: (o) => S("t_shirt", "jeans", "casual_sneakers").has(o.sub),
     params: (o) => `zona ${o.kind === "tee" ? "upper" : o.kind === "pants" ? "lower" : "feet"}`, deps: ["asset.molde"],
-    testes: [{ file: T_DEFAULT, title: "sem peças, veste camiseta, jeans e tênis dos assets do FashionAI" }], validados: ["tee", "pants", "shoes"],
+    testes: [{ file: T_DEFAULT, testName: "sem peças, veste camiseta, jeans e tênis dos assets do FashionAI" }], validados: ["tee", "pants", "shoes"],
     parcial: (c) => (c.sub === "casual_sneakers" ? "a peça padrão dos pés usa a subcategoria \"sneakers\", que não existe na taxonomia (o molde sai certo por kindOf)" : null),
   },
 
@@ -186,7 +186,7 @@ export const COMPONENTES: Componente[] = [
     aplica: (c) => (isCat(c, UP, FULL) || c.sub === "crop_top") && !SEM_MANGA.has(c.sub), produz: (o) => manga(o),
     sonda: { SLEEVE_LENGTH: ["SHORT_SLEEVE"] },
     params: (o) => `manga ${n(sp(o).sleeve, 2)} (0 ombro → 1 punho) · ${o.molde?.braco ?? 0} vért.`, asset: "peca-<id>", deps: ["asset.molde"],
-    testes: [{ file: T_GARMENTS, title: "shirt sleeves and back have fabric UV coverage" }, { file: T_MATRIX, title: "mede as peças e grava o relatório" }], validados: ["tee", "shirt", "jacket", "coat", "sweater"],
+    testes: [{ file: T_GARMENTS, testName: "shirt sleeves and back have fabric UV coverage" }, { file: T_MATRIX, testName: "mede as peças e grava o relatório" }], validados: ["tee", "shirt", "jacket", "coat", "sweater"],
     contrato: "vértices do braço da pele até arm = sleeve; transição de 3,5% do braço", lacuna: "manga em vestido/macacão só por atributo SLEEVE_LENGTH",
   },
   {
@@ -194,7 +194,7 @@ export const COMPONENTES: Componente[] = [
     refs: [{ file: FIT, symbol: "SLEEVE_LEN" }, { file: FIT, symbol: "specFor" }],
     aplica: (c) => (isCat(c, UP, FULL) || c.sub === "crop_top") && !SEM_MANGA.has(c.sub), produz: (o) => manga(o), sonda: { SLEEVE_LENGTH: ["LONG_SLEEVE"] },
     params: (o) => `LONG_SLEEVE → ${n(sp(o).sleeve, 2)}`, deps: ["manga.molde"],
-    testes: [{ file: T_ASSET, title: "comprimentos das dimensões LENGTH e SLEEVE_LENGTH" }], validados: "todos",
+    testes: [{ file: T_ASSET, testName: "comprimentos das dimensões LENGTH e SLEEVE_LENGTH" }], validados: "todos",
   },
   {
     id: "manga.boca", grupo: "Mangas", nome: "Abertura da boca da manga (flare)", familias: TOPO,
@@ -208,7 +208,7 @@ export const COMPONENTES: Componente[] = [
     refs: [{ file: TRIMS, symbol: "garmentTrims" }, { file: TRIMS, symbol: "trimWidth" }],
     aplica: (c) => (isCat(c, UP, FULL) || c.sub === "crop_top") && !SEM_MANGA.has(c.sub), produz: (o) => v(o, "punho") > 0, sonda: { SLEEVE_LENGTH: ["SHORT_SLEEVE"] },
     params: (o) => `${["sweater", "hoodie"].includes(o.kind ?? "") ? "ribana 45 mm" : "barra dobrada 14 mm"} · ${v(o, "punho")} vért. (2 lados)`,
-    asset: "punho-<id>", deps: ["manga.molde"], testes: [{ file: T_LAYERS, title: "hides long inner cuffs" }], validados: ["longsleeve"],
+    asset: "punho-<id>", deps: ["manga.molde"], testes: [{ file: T_LAYERS, testName: "hides long inner cuffs" }], validados: ["longsleeve"],
     contrato: "anel em volta do eixo ombro→punho em t = sleeve·L; raio = o da manga; pesos do braço mais próximo; cor trimColors().cuff",
   },
   {
@@ -229,13 +229,13 @@ export const COMPONENTES: Componente[] = [
     id: "decote.forma", grupo: "Gola e decote", nome: "Forma do decote (redondo, V, quadrado, canoa)", familias: TOPO,
     refs: [{ file: GARMENTS, symbol: "necklineH" }], aplica: (c) => isCat(c, UP, FULL) || c.sub === "crop_top",
     produz: (o) => !!o.molde && !Number.isNaN(sp(o).hem), params: (o) => `${sp(o).neckShape} · gola h=${n(sp(o).neck, 2)} · profundidade ${n(sp(o).vneck, 2)}`,
-    deps: ["asset.molde"], testes: [{ file: T_GARMENTS, title: "formas do decote" }, { file: T_GARMENTS, title: "decote: mais baixo na frente" }], validados: "todos",
+    deps: ["asset.molde"], testes: [{ file: T_GARMENTS, testName: "formas do decote" }, { file: T_GARMENTS, testName: "decote: mais baixo na frente" }], validados: "todos",
   },
   {
     id: "decote.atributo", grupo: "Gola e decote", nome: "Decote pela dimensão NECKLINE ou pelo nome", familias: TOPO,
     refs: [{ file: FIT, symbol: "necklineOf" }, { file: FIT, symbol: "NECK_WORDS" }], aplica: (c) => isCat(c, UP, FULL) || c.sub === "crop_top",
     produz: (o) => !!o.neckline, sonda: { NECKLINE: ["V_NECK"] }, params: (o) => `NECKLINE=V_NECK → ${sp(o).neckShape} ${n(sp(o).vneck, 2)}`, deps: ["decote.forma"],
-    testes: [{ file: T_FIT, title: "entra no molde" }], validados: "todos",
+    testes: [{ file: T_FIT, testName: "entra no molde" }], validados: "todos",
   },
   {
     id: "decote.foto", grupo: "Gola e decote", nome: "Profundidade do decote medida na foto", familias: TOPO,
@@ -247,14 +247,14 @@ export const COMPONENTES: Componente[] = [
     id: "gola.faixa", grupo: "Gola e decote", nome: "Gola em faixa 3D (ribana) em volta do decote", familias: TOPO,
     refs: [{ file: GARMENTS, symbol: "collarBand" }, { file: GARMENTS, symbol: "HAS_COLLAR_BAND" }, { file: GARMENTS, symbol: "ribColor" }],
     aplica: (c) => COM_GOLA_FAIXA.has(c.sub), produz: (o) => o.gola > 0, params: (o) => `${o.gola} vért. · cor ribColor()`, asset: "gola-<id>", deps: ["decote.forma"],
-    testes: [{ file: T_GARMENTS, title: "a faixa fecha a volta" }, { file: T_GARMENTS, title: "contorno suave e fechado" }], validados: ["tee", "shirt"],
+    testes: [{ file: T_GARMENTS, testName: "a faixa fecha a volta" }, { file: T_GARMENTS, testName: "contorno suave e fechado" }], validados: ["tee", "shirt"],
     contrato: "anel sobre a borda do decote (frente, lados e nuca); pesos do pescoço/tronco; desenhado por cima da peça",
   },
   {
     id: "gola.pontas", grupo: "Gola e decote", nome: "Pontas da gola de camisa", familias: TOPO,
     refs: [{ file: TRIMS, symbol: "shirtPlacket" }, { file: TRIMS, symbol: "gola-ponta" }], aplica: isSub(CAMISA_BOTOES), produz: (o) => v(o, "gola-ponta") > 0,
     params: () => "2 quadriláteros ~5 × 3 cm deitados no peito", asset: "gola-ponta-<id>", deps: ["gola.faixa"],
-    testes: [{ file: T_PLACKET, title: "places seven buttons" }], validados: ["shirt"],
+    testes: [{ file: T_PLACKET, testName: "places seven buttons" }], validados: ["shirt"],
     parcial: () => "ponta plana (quadrilátero), sem pé de gola nem espessura", lacuna: "gola de camisa com pé e volume", impacto: 2,
   },
   {
@@ -262,8 +262,11 @@ export const COMPONENTES: Componente[] = [
     lacuna: "camisa e polo sem pé de gola (a gola é faixa de ribana ou ponta plana)", impacto: 2,
   },
   {
-    id: "gola.polo", grupo: "Gola e decote", nome: "Gola polo (com vista de 2–3 botões)", familias: TOPO, refs: [], aplica: isSub(S("polo_shirt")), deps: ["gola.faixa"], testes: [], validados: [],
-    lacuna: "polo usa o molde de camiseta: sai com gola redonda de ribana, sem gola dobrada nem vista", impacto: 3,
+    id: "gola.polo", grupo: "Gola e decote", nome: "Gola polo (com vista de 2–3 botões)", familias: TOPO, refs: [{ file: GARMENTS, symbol: "placketLength: .16" }, { file: TRIMS, symbol: "shirtPlacket" }], aplica: isSub(S("polo_shirt")),
+    produz: (o) => (o.acabamentos.botoes ?? 0) === 39 && (o.acabamentos["gola-ponta"] ?? 0) > 0,
+    deps: ["gola.faixa"], testes: [{ file: "lib/avatar3d/human/mould-library.test.ts", testName: "polo has three buttons" }], validados: ["shirt"],
+    parcial: () => "gola em pontas trianguladas; pé de gola e tecido dobrado espesso ainda não modelados",
+    lacuna: "a polo precisa de refinamento do volume da gola", impacto: 2,
   },
   {
     id: "gola.lapela", grupo: "Gola e decote", nome: "Lapela", familias: ["sobreposicao"], refs: [], aplica: isSub(LAPELA), deps: [], testes: [], validados: [],
@@ -273,21 +276,21 @@ export const COMPONENTES: Componente[] = [
   // ============================================================== Botões
   {
     id: "botoes.disco", grupo: "Botões", nome: "Botões da vista (posição, quantidade, espaçamento)", familias: TOPO,
-    refs: [{ file: TRIMS, symbol: "shirtPlacket" }, { file: TRIMS, symbol: "for (let row = 0; row < 7; row++)" }], aplica: isSub(BOTOES_FRENTE),
+    refs: [{ file: TRIMS, symbol: "shirtPlacket" }, { file: TRIMS, symbol: "const count = gg.spec.placketLength ? 3 : 7" }], aplica: isSub(BOTOES_FRENTE),
     produz: (o) => v(o, "botoes") > 0, params: (o) => `${Math.round(v(o, "botoes") / 13)} discos de 5 mm · espaçamento uniforme do decote−4 cm à barra+4 cm · face +z`,
-    asset: "botoes-<id>", deps: ["fechamento.vista"], testes: [{ file: T_PLACKET, title: "places seven buttons" }], validados: ["shirt"],
+    asset: "botoes-<id>", deps: ["fechamento.vista"], testes: [{ file: T_PLACKET, testName: "places seven buttons" }], validados: ["shirt"],
     contrato: "centro em x=0 sobre a superfície da peça (+2,6 mm); orientação: disco no plano xy encarando +z",
-    lacuna: "polo, cardigã, blazer e casaco não têm botões", impacto: 2,
+    lacuna: "cardigã, blazer e casaco não têm botões", impacto: 2,
   },
   {
     id: "botoes.aro", grupo: "Botões", nome: "Aro do botão", familias: TOPO, refs: [{ file: TRIMS, symbol: "botoes-borda" }], aplica: isSub(CAMISA_BOTOES),
     produz: (o) => v(o, "botoes-borda") > 0, params: () => "anel 4,8–6,3 mm, escuro", asset: "botoes-borda-<id>", deps: ["botoes.disco"],
-    testes: [{ file: T_PLACKET, title: "places seven buttons" }], validados: ["shirt"],
+    testes: [{ file: T_PLACKET, testName: "places seven buttons" }], validados: ["shirt"],
   },
   {
     id: "botoes.fixacao", grupo: "Botões", nome: "Fixação do botão no tecido", familias: TOPO, refs: [{ file: TRIMS, symbol: "weightsNear" }],
     aplica: isSub(CAMISA_BOTOES), produz: (o) => v(o, "botoes") > 0, params: () => "pesos do vértice de tronco mais próximo (4 ossos, soma 1)", deps: ["botoes.disco", "vest.rig"],
-    testes: [{ file: T_PLACKET, title: "places seven buttons" }], validados: ["shirt"],
+    testes: [{ file: T_PLACKET, testName: "places seven buttons" }], validados: ["shirt"],
     parcial: () => "preso por pesos de pele, sem linha nem haste modeladas", lacuna: "linha de fixação (cruz/paralela) visível", impacto: 1,
   },
 
@@ -295,7 +298,7 @@ export const COMPONENTES: Componente[] = [
   {
     id: "fechamento.vista", grupo: "Casas e fechamento", nome: "Vista/carcela frontal", familias: TOPO, refs: [{ file: TRIMS, symbol: "carcela" }],
     aplica: isSub(BOTOES_FRENTE), produz: (o) => v(o, "carcela") > 0, params: () => "tira de 18 mm do decote à barra, centrada em x=0", asset: "carcela-<id>", deps: ["asset.molde"],
-    testes: [{ file: T_PLACKET, title: "places seven buttons" }], validados: ["shirt"], lacuna: "polo (vista curta), cardigã, blazer e casaco sem vista", impacto: 2,
+    testes: [{ file: T_PLACKET, testName: "places seven buttons" }], validados: ["shirt"], lacuna: "cardigã, blazer e casaco sem vista", impacto: 2,
   },
   {
     id: "fechamento.casas", grupo: "Casas e fechamento", nome: "Casas de botão", familias: TOPO, refs: [], aplica: isSub(BOTOES_FRENTE), deps: ["botoes.disco"], testes: [], validados: [],
@@ -304,7 +307,7 @@ export const COMPONENTES: Componente[] = [
   {
     id: "fechamento.abertura", grupo: "Casas e fechamento", nome: "Abertura frontal (peça aberta na frente)", familias: ["sobreposicao"],
     refs: [{ file: CONTRACT, symbol: "fechamento (aberto na frente, sem botões)" }], aplica: isSub(ABERTO_FRENTE), produz: (o) => !!o.molde && o.gola === 0,
-    params: () => "sem faixa de gola; malha da frente contínua", deps: ["asset.molde"], testes: [{ file: T_GARMENTS, title: "jaqueta e calçado não ganham faixa" }], validados: ["jacket"],
+    params: () => "sem faixa de gola; malha da frente contínua", deps: ["asset.molde"], testes: [{ file: T_GARMENTS, testName: "jaqueta e calçado não ganham faixa" }], validados: ["jacket"],
     parcial: () => "declarada aberta, mas a casca da frente é fechada (sem as duas bordas nem sobreposição)", lacuna: "frente aberta com bordas e sobreposição", impacto: 3,
   },
   {
@@ -335,14 +338,14 @@ export const COMPONENTES: Componente[] = [
   {
     id: "costura.pesponto", grupo: "Costuras", nome: "Pesponto visual (linha decorativa)", familias: TOPO, refs: [{ file: TRIMS, symbol: "costura" }],
     aplica: isSub(CAMISA_BOTOES), produz: (o) => v(o, "costura") > 0, params: () => "2 fios de 1,2 mm nas bordas da carcela; cor da linha contrastando com o tecido",
-    asset: "costura-<id>", deps: ["fechamento.vista"], testes: [{ file: T_PLACKET, title: "places seven buttons" }], validados: ["shirt"],
+    asset: "costura-<id>", deps: ["fechamento.vista"], testes: [{ file: T_PLACKET, testName: "places seven buttons" }], validados: ["shirt"],
     contrato: "fita 0,0012 m acima da carcela; só visual (não une malhas)",
   },
   {
     id: "costura.barra-tronco", grupo: "Costuras", nome: "Barra do tronco (faixa 3D)", familias: TOPO, refs: [{ file: TRIMS, symbol: "TORSO_HEM" }, { file: TRIMS, symbol: "garmentTrims" }],
     aplica: (c) => isCat(c, UP) || c.sub === "crop_top", produz: (o) => v(o, "barra") > 0,
     params: (o) => `${["sweater", "hoodie"].includes(o.kind ?? "") ? "ribana 50 mm" : "barra dobrada 16 mm"} na altura h=${n(sp(o).hem, 2)}`, asset: "barra-<id>", deps: ["asset.molde"],
-    testes: [{ file: T_LAYERS, title: "uses the actual length of a coat to cover the inner hem" }], validados: ["longsleeve"],
+    testes: [{ file: T_LAYERS, testName: "uses the actual length of a coat to cover the inner hem" }], validados: ["longsleeve"],
     lacuna: "jaqueta, casaco, colete e blazer sem barra 3D (TORSO_HEM não os inclui)", impacto: 1,
   },
   {
@@ -361,35 +364,35 @@ export const COMPONENTES: Componente[] = [
   {
     id: "corpo.folga", grupo: "Corpo da peça", nome: "Largura/folga do corpo e sobreposição", familias: ROUPA, refs: [{ file: GARMENTS, symbol: "underLayer" }, { file: GARMENTS, symbol: "ease:" }],
     aplica: (c) => !!c.kind, produz: (o) => !!o.molde, params: (o) => `folga ${mm(sp(o).ease)} + camadas de baixo · camada ${sp(o).layer}`, deps: ["asset.molde"],
-    testes: [{ file: T_GARMENTS, title: "outer layers clear the accumulated thickness" }, ...PENETRACAO.slice(0, 2)], validados: VALIDADOS_PENETRACAO,
+    testes: [{ file: T_GARMENTS, testName: "outer layers clear the accumulated thickness" }, ...PENETRACAO.slice(0, 2)], validados: VALIDADOS_PENETRACAO,
   },
   {
     id: "corpo.caimento", grupo: "Corpo da peça", nome: "Caimento do busto e peito (cai reto, não desenha o corpo)", familias: TOPO,
     refs: [{ file: GARMENTS, symbol: "hullRing" }, { file: GARMENTS, symbol: "bustFall" }], aplica: (c) => isCat(c, UP, FULL) || c.sub === "crop_top",
     produz: (o) => !!o.molde && sp(o).drape > 0, params: (o) => `drape ${n(sp(o).drape, 2)} · queda até ${n(sp(o).bustFall, 3)}× o anel do busto`, deps: ["asset.molde"],
-    testes: [{ file: T_ASSET, title: "justa acompanha o corpo, regular cai reta" }, { file: T_MATRIX, title: "mede as peças e grava o relatório" }], validados: ["tee", "shirt", "sweater", "hoodie", "jacket", "dress"],
+    testes: [{ file: T_ASSET, testName: "justa acompanha o corpo, regular cai reta" }, { file: T_MATRIX, testName: "mede as peças e grava o relatório" }], validados: ["tee", "shirt", "sweater", "hoodie", "jacket", "dress"],
   },
   {
     id: "corpo.comprimento", grupo: "Corpo da peça", nome: "Comprimento (barra) pela dimensão LENGTH", familias: ROUPA, refs: [{ file: FIT, symbol: "SKIRT_LEN" }, { file: FIT, symbol: "LEG_LEN" }],
     aplica: (c) => !!c.kind && c.family !== "calcado", produz: (o) => !!o.molde, params: (o) => `barra h=${n(sp(o).hem, 2)} · perna ${n(sp(o).leg, 2)} · saia ${n(sp(o).skirt, 2)} m`, deps: ["asset.molde"],
-    testes: [{ file: T_ASSET, title: "comprimentos das dimensões LENGTH e SLEEVE_LENGTH" }], validados: "todos",
+    testes: [{ file: T_ASSET, testName: "comprimentos das dimensões LENGTH e SLEEVE_LENGTH" }], validados: "todos",
   },
   {
     id: "corpo.silhueta", grupo: "Corpo da peça", nome: "Silhueta por classe de caimento (justa/regular/oversized/estruturada/fluida)", familias: ROUPA,
     refs: [{ file: FIT, symbol: "fitClassOf" }, { file: FIT, symbol: "VARIATION_FIT" }], aplica: (c) => !!c.kind && c.family !== "calcado", produz: (o) => !!o.fit,
-    params: (o) => `classe ${o.fit}`, deps: ["corpo.folga", "corpo.caimento"], testes: [{ file: T_ASSET, title: "vem da variação declarada" }], validados: "todos",
+    params: (o) => `classe ${o.fit}`, deps: ["corpo.folga", "corpo.caimento"], testes: [{ file: T_ASSET, testName: "vem da variação declarada" }], validados: "todos",
   },
   {
     id: "corpo.tubo", grupo: "Corpo da peça", nome: "Tubo da saia/vestido/casaco longo", familias: BAIXO.concat(["sobreposicao"]), refs: [{ file: GARMENTS, symbol: "skirtTube" }, { file: GARMENTS, symbol: "tubeRadius" }],
     aplica: (c) => SAIA_TUBO.has(c.sub) || c.sub === "coat" || c.sub === "parka", produz: (o) => (o.molde?.tubo ?? 0) > 0 && sp(o).skirt > 0, params: (o) => `${o.molde?.tubo ?? 0} vért. · 64 ângulos · flare ${n(sp(o).flare, 2)}`,
-    deps: ["asset.molde"], testes: [{ file: T_GARMENTS, title: "a blusa passa por fora da saia" }, { file: T_MATRIX, title: "mede as peças e grava o relatório" }], validados: ["skirt", "dress", "coat"],
+    deps: ["asset.molde"], testes: [{ file: T_GARMENTS, testName: "a blusa passa por fora da saia" }, { file: T_MATRIX, testName: "mede as peças e grava o relatório" }], validados: ["skirt", "dress", "coat"],
     contrato: "anéis em volta do eixo (0, torsoZ) da cintura para baixo; pesos quadril + coxas divididos pelo lado",
   },
   {
     id: "corpo.envelope-barra", grupo: "Corpo da peça", nome: "Envelope contínuo abaixo do quadril (barra longa de camisa/jaqueta)", familias: TOPO,
     refs: [{ file: GARMENTS, symbol: "shortHem" }], aplica: (c) => isCat(c, UP) && !S("crop_top", "coat", "parka").has(c.sub),
     produz: (o) => (o.molde?.tubo ?? 0) > 0 && sp(o).skirt === 0, params: (o) => `barra h=${n(sp(o).hem, 2)} < 0 → tubo até h=0,07`, deps: ["asset.molde"],
-    testes: [{ file: T_GARMENTS, title: "continuous hip-bound hem" }], validados: ["shirt", "jacket"],
+    testes: [{ file: T_GARMENTS, testName: "continuous hip-bound hem" }], validados: ["shirt", "jacket"],
   },
   {
     id: "corpo.recortes", grupo: "Corpo da peça", nome: "Painéis frente/costas e recortes", familias: ROUPA, refs: [],
@@ -402,7 +405,7 @@ export const COMPONENTES: Componente[] = [
     id: "cintura.cos", grupo: "Cintura e acabamento", nome: "Altura do cós", familias: BAIXO, refs: [{ file: GARMENTS, symbol: "waist:" }],
     aplica: (c) => isCat(c, LOW) || S("jumpsuit", "romper", "overalls", "matching_set").has(c.sub), produz: (o) => !!o.molde && !Number.isNaN(sp(o).waist),
     params: (o) => `cós em h=${n(sp(o).waist, 2)}${o.spec?.construction ? ` (${o.spec.construction})` : ""}`, deps: ["asset.molde"],
-    testes: [{ file: T_LAYERS, title: "does not move the waistband" }, { file: T_GARMENTS, title: "raises the waist" }], validados: ["pants"],
+    testes: [{ file: T_LAYERS, testName: "does not move the waistband" }, { file: T_GARMENTS, testName: "raises the waist" }], validados: ["pants"],
     parcial: () => "o cós é só onde a casca começa: sem faixa dobrada, espessura ou costura", lacuna: "cós como faixa 3D", impacto: 2,
   },
   {
@@ -416,14 +419,14 @@ export const COMPONENTES: Componente[] = [
   {
     id: "cintura.gancho", grupo: "Cintura e acabamento", nome: "Gancho e entrepernas", familias: BAIXO, refs: [{ file: GARMENTS, symbol: "if (g === 3 && sp.leg > 0)" }],
     aplica: (c) => (isCat(c, LOW) && !SAIA_TUBO.has(c.sub)) || S("jumpsuit", "romper", "overalls", "matching_set").has(c.sub), produz: (o) => (o.molde?.perna ?? 0) > 0,
-    params: () => "segue a pele do quadril e das coxas", deps: ["asset.molde"], testes: [{ file: T_MATRIX, title: "mede as peças e grava o relatório" }], validados: ["pants"],
+    params: () => "segue a pele do quadril e das coxas", deps: ["asset.molde"], testes: [{ file: T_MATRIX, testName: "mede as peças e grava o relatório" }], validados: ["pants"],
     parcial: () => "o gancho é a própria pele afastada: sem profundidade de gancho nem folga entre as pernas", lacuna: "gancho com profundidade (RISE)", impacto: 2,
   },
   {
     id: "cintura.perna-coluna", grupo: "Cintura e acabamento", nome: "Perna em coluna (cai reta do joelho)", familias: BAIXO, refs: [{ file: RELAXF, symbol: "columnLegs" }, { file: GARMENTS, symbol: "legColumn" }],
     // legging (justa) e shorts curtos acompanham a perna por definição
     aplica: (c) => (isCat(c, LOW) && !SAIA_TUBO.has(c.sub) && !S("leggings", "shorts", "denim_shorts").has(c.sub)) || S("jumpsuit", "overalls").has(c.sub), produz: (o) => !!o.molde && sp(o).legColumn > 0 && sp(o).leg > 0,
-    params: (o) => `legColumn ${n(sp(o).legColumn, 2)} (0 acompanha, 1 reta, >1 ampla)`, deps: ["asset.molde"], testes: [{ file: T_MATRIX, title: "mede as peças e grava o relatório" }], validados: ["pants"],
+    params: (o) => `legColumn ${n(sp(o).legColumn, 2)} (0 acompanha, 1 reta, >1 ampla)`, deps: ["asset.molde"], testes: [{ file: T_MATRIX, testName: "mede as peças e grava o relatório" }], validados: ["pants"],
   },
   {
     id: "cintura.forro", grupo: "Cintura e acabamento", nome: "Forro", familias: ["sobreposicao"], refs: [], aplica: isSub(FORRO), deps: [], testes: [], validados: [],
@@ -440,7 +443,7 @@ export const COMPONENTES: Componente[] = [
   {
     id: "detalhe.alcas", grupo: "Detalhes", nome: "Alças", familias: TOPO, refs: [{ file: GARMENTS, symbol: "necklineH" }], aplica: isSub(ALCAS),
     // colete: o ombro é o corpo da peça (cava de alfaiataria), não alça
-    produz: (o) => !!o.spec && o.spec.sleeve === 0 && o.kind !== "vest" && (o.molde?.ombro ?? 0) > 0, params: (o) => `${o.molde?.ombro ?? 0} vért. na linha do ombro`, deps: ["decote.forma", "manga.cava"], testes: [], validados: [],
+    produz: (o) => !!o.spec && o.spec.sleeve === 0 && o.kind !== "vest" && (o.molde?.ombro ?? 0) > 0, params: (o) => `${o.molde?.ombro ?? 0} vért. na linha do ombro`, deps: ["decote.forma", "manga.cava"], testes: [{ file: "lib/avatar3d/human/mould-library.test.ts", testName: "straps cross the shoulders" }], validados: ["tank", "dress", "jumpsuit"],
     parcial: () => "a alça é o que sobra entre decote e cava: largura não é parâmetro",
     lacuna: "sem alça: a casca termina abaixo dos ombros (gola h=0,9) e a peça sai tomara-que-caia — regata, body, vestido, macacão e jardineira", impacto: 3,
   },
@@ -456,27 +459,27 @@ export const COMPONENTES: Componente[] = [
   {
     id: "aparencia.uv-frente", grupo: "Aparência", nome: "UV da frente (foto projetada)", familias: ROUPA, refs: [{ file: GARMENTS, symbol: "texturedGeometry" }, { file: GARMENTS, symbol: "photoInfo" }],
     aplica: (c) => !!c.kind && c.family !== "calcado", produz: (o) => !!o.molde, params: () => "projeção frontal na pose de exibição: gola↔topo, barra↔pé, largura do tronco↔largura da foto",
-    deps: ["asset.molde"], testes: [{ file: T_GARMENT, title: "a foto só vai para as faces que encaram a câmera" }, { file: T_GARMENT, title: "estiramento da estampa limitado" }], validados: ["tee", "sweater", "dress", "pants", "skirt"],
+    deps: ["asset.molde"], testes: [{ file: T_GARMENT, testName: "a foto só vai para as faces que encaram a câmera" }, { file: T_GARMENT, testName: "estiramento da estampa limitado" }], validados: ["tee", "sweater", "dress", "pants", "skirt"],
     contrato: "UV = posição projetada (x, y) na caixa da peça na foto; triângulos de trás/lados com UV num canto de cor lisa",
   },
   {
     id: "aparencia.uv-tecido", grupo: "Aparência", nome: "UV de tecido (costas, laterais e mangas)", familias: ROUPA, refs: [{ file: GARMENTS, symbol: "fabricMapping" }, { file: PHOTO, symbol: "fabricTile" }],
     aplica: (c) => !!c.kind && c.family !== "calcado", produz: (o) => !!o.molde, params: () => "amostra de tecido da própria foto repetida nas costas e mangas", deps: ["aparencia.uv-frente"],
-    testes: [{ file: T_GARMENTS, title: "shirt sleeves and back have fabric UV coverage" }], validados: ["shirt"],
+    testes: [{ file: T_GARMENTS, testName: "shirt sleeves and back have fabric UV coverage" }], validados: ["shirt"],
   },
   {
     id: "aparencia.material", grupo: "Aparência", nome: "Material físico (rugosidade, brilho)", familias: ROUPA, refs: [{ file: GARMENTS, symbol: "garmentMaterial" }],
     aplica: (c) => !!c.kind && c.family !== "calcado", produz: (o) => !!o.molde, params: () => "MeshPhysicalMaterial por tipo (cargo fosco)", deps: [],
-    testes: [{ file: T_GARMENTS, title: "uses matte workwear material" }], validados: ["pants"], lacuna: "MATERIAL do cadastro (jeans, couro, seda) não muda o material", impacto: 2,
+    testes: [{ file: T_GARMENTS, testName: "uses matte workwear material" }], validados: ["pants"], lacuna: "MATERIAL do cadastro (jeans, couro, seda) não muda o material", impacto: 2,
   },
   {
     id: "aparencia.cor", grupo: "Aparência", nome: "Cor do tecido e dos acabamentos", familias: [...ROUPA, "calcado"], refs: [{ file: GARMENTS, symbol: "fabricColor" }, { file: GARMENTS, symbol: "trimColors" }, { file: GARMENTS, symbol: "shoeColors" }],
     aplica: (c) => !!c.kind, produz: () => true, params: () => "mediana da foto dentro da peça (nunca do fundo); sem foto, a cor do cadastro", deps: [],
-    testes: [{ file: T_PHOTO, title: "" }], validados: "todos",
+    testes: [{ file: T_PHOTO, testName: "" }], validados: "todos",
   },
   {
     id: "aparencia.estampa", grupo: "Aparência", nome: "Estampa e logo", familias: ROUPA, refs: [{ file: GARMENTS, symbol: "garmentTexture" }], aplica: (c) => !!c.kind && c.family !== "calcado",
-    produz: (o) => !!o.molde, params: () => "só pela foto da frente", deps: ["aparencia.uv-frente"], testes: [{ file: T_GARMENT, title: "a foto só vai para as faces que encaram a câmera" }], validados: ["tee", "sweater", "dress", "pants", "skirt"],
+    produz: (o) => !!o.molde, params: () => "só pela foto da frente", deps: ["aparencia.uv-frente"], testes: [{ file: T_GARMENT, testName: "a foto só vai para as faces que encaram a câmera" }], validados: ["tee", "sweater", "dress", "pants", "skirt"],
     parcial: () => "estampa só na frente (as costas nunca recebem estampa inventada)", lacuna: "foto das costas para estampa traseira", impacto: 1,
   },
   { id: "aparencia.relevo", grupo: "Aparência", nome: "Bordado, relevo e trama (mapa normal)", familias: ROUPA, refs: [], aplica: (c) => !!c.kind && c.family !== "calcado", deps: [], testes: [], validados: [], lacuna: "maps.normal = null no contrato", impacto: 1 },
@@ -489,16 +492,16 @@ export const COMPONENTES: Componente[] = [
   {
     id: "vest.rig", grupo: "Vestibilidade", nome: "Rig e pesos (cópia da pele)", familias: [...ROUPA, "calcado"], refs: [{ file: GARMENTS, symbol: "skinWeight[v * 4 + k]" }],
     aplica: (c) => !!c.kind, produz: (o) => !!o.molde || (o.calcado.cabedal ?? 0) > 0, params: () => "4 ossos por vértice, soma 1; tubo: quadril + coxas", deps: ["asset.corpo"],
-    testes: [{ file: T_GARMENTS, title: "o molde herda os pesos do corpo" }], validados: "todos",
+    testes: [{ file: T_GARMENTS, testName: "o molde herda os pesos do corpo" }], validados: "todos",
   },
   {
     id: "vest.relaxamento", grupo: "Vestibilidade", nome: "Relaxamento do tecido", familias: [...ROUPA, "calcado"], refs: [{ file: RELAXF, symbol: "relaxGarment" }, { file: RELAXF, symbol: "RELAX" }],
-    aplica: (c) => !!c.kind, produz: (o) => !!o.molde, params: (o) => `${o.relax ?? 0} iterações`, deps: ["asset.molde"], testes: [{ file: T_MATRIX, title: "mede as peças e grava o relatório" }], validados: ["tee", "pants", "dress"],
+    aplica: (c) => !!c.kind, produz: (o) => !!o.molde, params: (o) => `${o.relax ?? 0} iterações`, deps: ["asset.molde"], testes: [{ file: T_MATRIX, testName: "mede as peças e grava o relatório" }], validados: ["tee", "pants", "dress"],
   },
   {
     id: "vest.camadas", grupo: "Vestibilidade", nome: "Camadas e oclusão da peça de baixo", familias: [...ROUPA], refs: [{ file: LAYERS, symbol: "occludeInnerGarment" }, { file: LAYERS, symbol: "visibleGarmentFinishes" }],
     aplica: (c) => !!c.kind && c.family !== "calcado", produz: (o) => !!o.molde, params: (o) => `camada ${sp(o).layer}`, deps: ["corpo.folga"],
-    testes: [{ file: T_LAYERS, title: "keeps the neckline, longer tail and longer sleeves exposed" }, { file: T_GARMENTS, title: "a peça de cima passa por fora da de baixo na cintura" }], validados: ["tee", "longsleeve", "jacket", "coat", "pants"],
+    testes: [{ file: T_LAYERS, testName: "keeps the neckline, longer tail and longer sleeves exposed" }, { file: T_GARMENTS, testName: "a peça de cima passa por fora da de baixo na cintura" }], validados: ["tee", "longsleeve", "jacket", "coat", "pants"],
   },
   {
     id: "vest.colisao", grupo: "Vestibilidade", nome: "Colisão corpo–roupa (penetração)", familias: [...ROUPA, "calcado"], refs: [{ file: CONTRACT, symbol: "COLLISION_MARGIN_MM" }, { file: "lib/avatar3d/human/fit-metrics.ts", symbol: "fitReport" }],
@@ -506,20 +509,20 @@ export const COMPONENTES: Componente[] = [
   },
   {
     id: "vest.pose", grupo: "Vestibilidade", nome: "Braços abertos por camada/saia", familias: [...ROUPA], refs: [{ file: GARMENTS, symbol: "armOutFor" }], aplica: (c) => !!c.kind && c.family !== "calcado",
-    produz: () => true, params: () => "10° a 22° conforme espessura na axila; saia rodada 15°", deps: [], testes: [{ file: T_GARMENTS, title: "camadas grossas e saia rodada abrem os braços" }], validados: "todos",
+    produz: () => true, params: () => "10° a 22° conforme espessura na axila; saia rodada 15°", deps: [], testes: [{ file: T_GARMENTS, testName: "camadas grossas e saia rodada abrem os braços" }], validados: "todos",
   },
   { id: "vest.simulacao", grupo: "Vestibilidade", nome: "Simulação física do tecido", familias: [...ROUPA], refs: [], aplica: (c) => !!c.kind && c.family !== "calcado", deps: [], testes: [], validados: [], lacuna: "sem simulação: a roupa segue o esqueleto (skinning)", impacto: 2 },
 
   // ============================================================== Calçados
   {
     id: "calcado.cabedal", grupo: "Calçados", nome: "Cabedal com bico e contraforte", familias: ["calcado"], refs: [{ file: SHOESF, symbol: "upperOf" }], aplica: (c) => c.family === "calcado",
-    produz: (o) => (o.calcado.cabedal ?? 0) > 0, params: (o) => `estilo ${o.shoeStyle}`, asset: "cabedal-<id>", deps: ["asset.forma-calcado"], testes: [{ file: T_GARMENTS, title: "camiseta, calça, vestido e tênis não atravessam o corpo" }], validados: ["shoes"],
+    produz: (o) => (o.calcado.cabedal ?? 0) > 0, params: (o) => `estilo ${o.shoeStyle}`, asset: "cabedal-<id>", deps: ["asset.forma-calcado"], testes: [{ file: T_GARMENTS, testName: "camiseta, calça, vestido e tênis não atravessam o corpo" }], validados: ["shoes"],
     parcial: (c) => (c.variations.some((x) => /POINTED|SQUARE/.test(x)) ? "TOE_SHAPE não é lido: bico sempre arredondado" : null),
   },
   {
     id: "calcado.sola", grupo: "Calçados", nome: "Sola (entressola e solado)", familias: ["calcado"], refs: [{ file: SHOESF, symbol: "SOLE_HEEL" }, { file: SHOESF, symbol: "SOLE_FORE" }], aplica: (c) => c.family === "calcado",
     produz: (o) => (o.calcado.sola ?? 0) > 0, params: (o) => `${o.shoeStyle === "low" ? "fina (×0,55)" : "20 mm calcanhar / 14 mm frente"} · toe spring`, asset: "sola-<id>", deps: ["asset.forma-calcado"],
-    testes: [{ file: T_MATRIX, title: "mede as peças e grava o relatório" }], validados: ["boots"],
+    testes: [{ file: T_MATRIX, testName: "mede as peças e grava o relatório" }], validados: ["boots"],
   },
   {
     id: "calcado.colarinho", grupo: "Calçados", nome: "Colarinho (abertura do tornozelo)", familias: ["calcado"], refs: [{ file: SHOESF, symbol: "colarinho" }, { file: SHOESF, symbol: "upperOf" }],
@@ -530,7 +533,7 @@ export const COMPONENTES: Componente[] = [
   {
     id: "calcado.cano", grupo: "Calçados", nome: "Cano da bota", familias: ["calcado"], refs: [{ file: FIT, symbol: "SHAFT_SUB" }, { file: GARMENTS, symbol: "shaft" }], aplica: isSub(CANO),
     produz: (o) => o.kind === "boots" && (o.molde?.perna ?? 0) > 0, params: (o) => `cano a partir de ${n(sp(o).shaft, 2)} da perna`, deps: ["asset.molde", "calcado.cabedal"],
-    testes: [{ file: T_ASSET, title: "cano da bota pela subcategoria" }], validados: ["boots"],
+    testes: [{ file: T_ASSET, testName: "cano da bota pela subcategoria" }], validados: ["boots"],
   },
   { id: "calcado.lingueta", grupo: "Calçados", nome: "Lingueta e ilhoses", familias: ["calcado"], refs: [], aplica: isSub(CADARCO), deps: ["fechamento.amarracao"], testes: [], validados: [], lacuna: "cadarço passa por cima do cabedal liso", impacto: 1 },
   { id: "calcado.salto", grupo: "Calçados", nome: "Salto", familias: ["calcado"], refs: [], aplica: isSub(SALTO), deps: [], testes: [], validados: [], lacuna: "salto alto vira sapato baixo (KNOWN_LIMITS)", impacto: 3 },
@@ -541,7 +544,7 @@ export const COMPONENTES: Componente[] = [
   {
     id: "acc.previa", grupo: "Acessórios", nome: "Prévia 2D (o avatar não veste)", familias: ["acessorio"], refs: [{ file: CONTRACT, symbol: "IMAGE_2D" }, { file: ASSETF, symbol: "acessorio_sem_molde_3d" }],
     aplica: (c) => c.family === "acessorio", produz: (o) => !o.kind, params: () => "estado SEM_3D", deps: ["asset.contrato"],
-    testes: [{ file: T_ASSET, title: "acessório é SEM_3D" }], validados: "todos",
+    testes: [{ file: T_ASSET, testName: "acessório é SEM_3D" }], validados: "todos",
   },
   { id: "acc.fixacao", grupo: "Acessórios", nome: "Fixação no corpo (osso âncora)", familias: ["acessorio"], refs: [], aplica: (c) => c.family === "acessorio" && c.sub !== "socks", deps: [], testes: [], validados: [], lacuna: "estratégia \"fixo-no-osso\" declarada em STRATEGIES, sem implementação", impacto: 2 },
   { id: "acc.alcas", grupo: "Acessórios", nome: "Alças e tiras", familias: ["acessorio"], refs: [], aplica: isSub(ACC_ALCAS), deps: ["acc.fixacao"], testes: [], validados: [], lacuna: "alças ausentes", impacto: 1 },

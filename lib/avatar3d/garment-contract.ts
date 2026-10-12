@@ -16,7 +16,7 @@ import { SPECS, kindOf, type GarmentKind } from "@/lib/avatar3d/human/garments";
 
 export const GARMENT_CONTRACT_VERSION = "1.0.0";
 /** Molde e corpo: mudar qualquer um invalida os resultados aprovados que dependem dele (§7). */
-export const MOULD_VERSION = "fai-mould-skinwrap-v1";
+export const MOULD_VERSION = "fai-mould-skinwrap-v2";
 export const BODY_RIG = "fai-body-v1";
 /** Margem de colisão corpo–roupa usada no teste de penetração (lib/avatar3d/human/garments.test.ts): 2 mm para dentro da pele. */
 export const COLLISION_MARGIN_MM = 2;

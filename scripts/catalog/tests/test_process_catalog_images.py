@@ -248,7 +248,12 @@ class CliHelpTest(unittest.TestCase):
         result = subprocess.run([sys.executable, str(script), "--help"], capture_output=True, text=True)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("100%", result.stdout)
-        self.assertNotIn("50%%", result.stdout)
+        self.assertNotIn("%%", result.stdout)
+        # V3: o quadro segue a regra de enquadramento do produto do card, não mais "100% tecido"
+        text = " ".join(result.stdout.split())
+        self.assertIn("regra de enquadramento do produto", text)
+        self.assertIn("semantic-regions.json", text)
+        self.assertNotIn("tecido", text)
 
 
 if __name__ == "__main__":

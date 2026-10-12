@@ -2,13 +2,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "@/lib/api/client";
 import { useAuthReady } from "@/lib/auth/session";
+import { useVisibleRefresh } from "./use-visible-refresh";
 
 /**
  * Carregamento declarativo: {data, loading, error, reload, setData}. Ignora respostas de requisições canceladas.
  * Espera a sessão ser restaurada antes de buscar: sem isso a primeira busca saía anônima e um perfil privado
  * respondia 403 antes da busca autenticada.
  */
-export function useApi<T>(fetcher: (signal: AbortSignal) => Promise<T>, deps: unknown[] = [], options: { enabled?: boolean } = {}) {
+export function useApi<T>(fetcher: (signal: AbortSignal) => Promise<T>, deps: unknown[] = [], options: { enabled?: boolean; refreshInterval?: number } = {}) {
   const wanted = options.enabled ?? true;
   const ready = useAuthReady();
   const enabled = wanted && ready;
@@ -31,6 +32,11 @@ export function useApi<T>(fetcher: (signal: AbortSignal) => Promise<T>, deps: un
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, wanted, tick, ...deps]);
   const reload = useCallback(() => setTick((t) => t + 1), []);
+  useVisibleRefresh(async (signal) => {
+    if (loading) return;
+    const result = await ref.current(signal);
+    if (!signal.aborted) { setData(result); setError(null); }
+  }, enabled && !!options.refreshInterval, options.refreshInterval);
   return { data, loading, error, reload, setData };
 }
 
