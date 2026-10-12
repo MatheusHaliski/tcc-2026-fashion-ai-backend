@@ -197,6 +197,8 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         mods.add(module("handles", "HANDLE", "PUX-CAV", 0, 0, "Puxadores", null, Map.of("color", "#F4F2EF", "texture", "cava")));
         mods.add(module("light", "LIGHT", "LUZ-LED", 0, 0, Msg.t("room.iluminacao"), null, Map.of("kelvin", 4000, "guided", false)));
         mods.add(module("rug", "RUG", "TAP-RND", 0, 0, "Tapete", null, null));
+        mods.add(module("bed", "BED", "BED-DBL", 280, 0, Msg.t("room.double_bed"), null, Map.of()));
+        mods.add(module("saleRack", "SALE_RACK", "RACK-MOB", 160, 0, Msg.t("room.support_rack"), null, Map.of()));
         mods.add(module("hangers", "HANGER", "CAB-STD", 0, 0, "Cabides", null, Map.of("color", "#6B5A4A", "texture", "madeira")));
         mods.add(module("logo", "LOGO", "LOG-PLC", 0, 0, Msg.t("room.logo_das_portas"), null, null));
         // Smart Mirror (RF28) — módulo trocável na loja do quarto (retangular, arco, oval, camarim com luzes)
@@ -398,19 +400,29 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         return out;
     }
 
-    /** Iluminação guiada (nível Studio): temperatura de cor da luz do móvel, de 2700 K (quente) a 6500 K (fria). */
+    /** Existing clients may still set temperature; switching/dimming is available in every room. */
     @Transactional
     public Map<String, Object> setLight(CurrentUser user, int kelvin) {
-        if (!levelOf(user.id()).atLeast(FaiPointsService.Level.STUDIO)) {
+        return setLight(user, kelvin, null, null);
+    }
+    @Transactional
+    public Map<String, Object> setLight(CurrentUser user, Integer kelvin, Double intensity, Boolean on) {
+        if (kelvin != null && !levelOf(user.id()).atLeast(FaiPointsService.Level.STUDIO)) {
             throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("room.a_iluminacao_guiada_e_liberada"));
         }
-        int k = Math.max(2700, Math.min(6500, kelvin));
+        if (intensity != null && (!Double.isFinite(intensity) || intensity < 0 || intensity > 1)) {
+            throw new ApiException(400, "INVALID_LIGHT_INTENSITY", Msg.t("room.invalid_intensity"));
+        }
         RoomLayout l = layout(user.id());
         List<Map<String, Object>> mods = modules(l);
-        mods.stream().filter(m -> "light".equals(m.get("id"))).findFirst().ifPresent(m -> m.put("finish", Map.of("kelvin", k, "guided", true)));
-        l.setModulesJson(Json.write(mods));
-        layouts.save(l);
-        return Map.of("kelvin", k, "guided", true);
+        Map<String, Object> finish = new LinkedHashMap<>(module(l, "light").map(m -> Json.map(Json.write(m.get("finish")))).orElse(Map.of()));
+        finish.putIfAbsent("kelvin", 4000); finish.putIfAbsent("guided", false); finish.putIfAbsent("intensity", 0.75);
+        if (kelvin != null) { finish.put("kelvin", Math.max(2700, Math.min(6500, kelvin))); finish.put("guided", true); }
+        if (intensity != null) finish.put("intensity", intensity);
+        if (on != null) finish.put("on", on);
+        mods.stream().filter(m -> "light".equals(m.get("id"))).findFirst().ifPresent(m -> m.put("finish", finish));
+        l.setModulesJson(Json.write(mods)); layouts.save(l);
+        return finish;
     }
 
     /** DET-K03 — monograma nas portas a partir do Studio (até 3 iniciais em baixo-relevo). */

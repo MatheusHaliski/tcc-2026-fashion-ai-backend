@@ -35,7 +35,7 @@ public class RoomAssetService {
     private final WebFetchPort web;
     private final Model3dPort meshy;
     private final TransactionTemplate tx;
-    static final Set<String> SUPPORTED_SLOTS = Set.of("RUG", "HANGER", "ISLAND", "BAG_DISPLAY", "JEWELRY");
+    static final Set<String> SUPPORTED_SLOTS = Set.of("RUG", "HANGER", "ISLAND", "BAG_DISPLAY", "JEWELRY", "BED", "SALE_RACK");
     static final int MAX_GLB = 40 * 1024 * 1024;
     static final Duration LEASE = Duration.ofMinutes(3), TIMEOUT = Duration.ofMinutes(30);
 
@@ -54,7 +54,13 @@ public class RoomAssetService {
                 "blocks", WardrobeCreatorService.BLOCKS.stream().filter(b -> SUPPORTED_SLOTS.contains(b.slotType())).toList(), "levels", WardrobeCreatorService.LEVELS);
     }
 
-    public Map<String, Object> create(CurrentUser user, Command c, byte[] image) {
+    public Map<String, Object> create(CurrentUser user, Command c, byte[] image) { return queue(user, c, image, null); }
+    public Map<String, Object> importMeshy(CurrentUser user, Command c, byte[] image, String taskId) {
+        guard.requireAdmin(user); guard.requireCanCreate(user);
+        if (taskId == null || !taskId.matches("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) throw error(400, "ASSET_TASK_INVALID");
+        return queue(user, c, image, taskId);
+    }
+    private Map<String, Object> queue(CurrentUser user, Command c, byte[] image, String importedTask) {
         guard.requireAdmin(user); guard.requireCanCreate(user);
         if (c == null || c.requestId() == null || c.name() == null || c.name().isBlank() || c.name().length() > 120
                 || c.pricePoints() < 1 || c.pricePoints() > 1_000_000 || c.description() != null && c.description().length() > 400
@@ -72,7 +78,8 @@ public class RoomAssetService {
                     .stream().filter(j -> j.getUser().getId().equals(owner.getId())).findFirst();
             if (existing.isPresent()) {
                 var original = Json.map(existing.get().getInputJson());
-                if (!Json.map(Json.write(c)).equals(original.get("command"))
+                if (!java.util.Objects.equals(importedTask, original.get("importedTask"))
+                        || !Json.map(Json.write(c)).equals(original.get("command"))
                         || !br.com.fashionai.application.common.Hashing.sha256(png).equals(original.get("referenceSha256"))) throw error(409, "ASSET_REQUEST_CHANGED");
                 return view(existing.get()); // repeated HTTP request never consumes credits twice
             }
@@ -87,6 +94,7 @@ public class RoomAssetService {
             String url = storage.put(key, png, "image/png").url();
             var in = new LinkedHashMap<String, Object>();
             in.put("command", c); in.put("referenceSha256", br.com.fashionai.application.common.Hashing.sha256(png)); in.put("referenceKey", key); in.put("referenceUrl", url);
+            if (importedTask != null) { in.put("importedTask", importedTask); j.setExternalJobId(importedTask); j.setStatus(PipelineJobStatus.RUNNING); j.setStartedAt(Instant.now()); }
             j.setInputJson(Json.write(in)); j.setResultJson(Json.write(Map.of("review", "PENDING", "progress", 0)));
             return view(jobs.saveAndFlush(j));
         });

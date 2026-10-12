@@ -70,6 +70,19 @@ class RoomAssetServiceTest {
         assertThat(e.saved).hasSize(1); verify(e.meshy, never()).submit(any());
         e.service.tick(); e.service.tick(); verify(e.meshy, times(1)).submit(any());
     }
+    @Test void importsExistingMeshyTaskWithoutSubmittingAgainAndStillRequiresReview() {
+        Env e = new Env(); String task = "01a12de8-3441-760d-b984-f7268bf1f493";
+        var command = new RoomAssetService.Command(UUID.randomUUID(), "Cama FAI", "BED", "BED-DBL", 280, 650, "ESTREIA", null);
+        e.service.importMeshy(e.admin, command, png(), task); e.service.importMeshy(e.admin, command, png(), task);
+        byte[] glb = ReliefModelGenerator.generate(ImageOps.decode(png()), .5).glb();
+        when(e.meshy.poll(task)).thenReturn(Optional.of(new ImageProviderPorts.TaskStatus("SUCCEEDED", 100, "https://provider.example/bed.glb", null)));
+        when(e.web.get(anyString(), anyInt(), isNull())).thenReturn(Optional.of(new WebFetchPort.Fetched("https://provider.example/bed.glb", "model/gltf-binary", glb)));
+        e.service.tick(); PipelineJob j = e.saved.values().iterator().next();
+        assertThat(j.getStatus()).isEqualTo(PipelineJobStatus.COMPLETED); assertThat(e.saved).hasSize(1);
+        verify(e.meshy, never()).submit(any());
+        assertThatThrownBy(() -> e.service.publish(e.admin, j.getId())).isInstanceOf(ApiException.class).extracting("code").isEqualTo("ASSET_REVIEW_REQUIRED");
+        assertThatThrownBy(() -> e.service.create(e.admin, command, png())).isInstanceOf(ApiException.class).extracting("code").isEqualTo("ASSET_REQUEST_CHANGED");
+    }
     @Test void reusedRequestWithChangedParametersCannotConsumeAnotherGeneration() {
         Env e = new Env(); UUID request = UUID.randomUUID(); e.create(request);
         assertThatThrownBy(() -> e.service.create(e.admin,

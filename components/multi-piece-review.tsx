@@ -133,6 +133,7 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
   const reviews = useRef(new Map<string, MultiPieceReviewHandle>());
   const [reviewing, setReviewing] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
+  const [analysisProgress, setAnalysisProgress] = useState({ completed: 0, total: 0 });
   const analysisLock = useRef(false);
   const [limitHit, setLimitHit] = useState(false);
   const itemsRef = useRef(items); itemsRef.current = items;
@@ -159,7 +160,7 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
     if (analysisLock.current) return;
     const queue = itemsRef.current.filter((i) => i.status === "idle" || i.status === "error");
     if (!queue.length) return;
-    analysisLock.current = true; setAnalyzing(true);
+    analysisLock.current = true; setAnalyzing(true); setAnalysisProgress({ completed: 0, total: queue.length });
     let first: string | null = null;
     for (const it of queue) {
       patch(it.id, { status: "analyzing", error: undefined });
@@ -176,7 +177,7 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
       } catch (e) {
         const err = e instanceof ApiError ? e : new ApiError(0, "ERRO", String(e));
         patch(it.id, { status: "error", error: controller.signal.aborted ? t("multiPiece.tempo_esgotado") : err.status === 0 || err.status === 413 ? t("piece.err_upload") : err.status >= 500 ? t("piece.err_analise") : err.message });
-      } finally { clearTimeout(timeout); }
+      } finally { clearTimeout(timeout); setAnalysisProgress(p => ({ ...p, completed: p.completed + 1 })); }
     }
     analysisLock.current = false; setAnalyzing(false);
   }
@@ -234,6 +235,10 @@ export function MultiPieceUpload({ onSaved, category, subcategory, onCategory, c
         </ul>
       )}
       {limitHit && <p role="note" className="type-caption text-muted">{t("multiPiece.limite_fotos", { max: MAX_PHOTOS })}</p>}
+      {analysisProgress.total > 0 && <div className="surface p-3" aria-busy={analyzing}>
+        <p className="type-body-sm" role="status" aria-live="polite">{t("multiPiece.progress", { completed: analysisProgress.completed, total: analysisProgress.total })}</p>
+        <progress className="w-full" max={analysisProgress.total} value={analysisProgress.completed} aria-label={t("multiPiece.analisando")} />
+      </div>}
       {step === "piece" && <div className="flex flex-wrap gap-2">
         <Button size="sm" onClick={pickPhotos} disabled={analyzing || items.length >= MAX_PHOTOS}>{items.length ? t("multiPiece.adicionar_fotos") : t("multiPiece.escolher_foto")}</Button>
         {toAnalyze > 0 && <Button size="sm" variant="primary" onClick={analyzeAll} loading={analyzing}><FaiIcon id="ACT-07" size={20} decorative />{analyzing ? t("multiPiece.analisando") : t("multiPiece.analisar")}</Button>}

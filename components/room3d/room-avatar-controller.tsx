@@ -51,6 +51,7 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
     const down = (event: KeyboardEvent) => {
       if (editable(event.target)) return;
       if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "KeyA", "KeyD"].includes(event.code)) { event.preventDefault(); engine.keyDown(event.code); }
+      else if (event.code === "KeyX" && !event.repeat) { event.preventDefault(); engine.interact(); }
       else if ((event.code === "KeyQ" || event.code === "KeyE") && !event.repeat) { event.preventDefault(); engine.turn(event.code === "KeyQ" ? 1 : -1); }   // girar a cena
     };
     // botões de girar a cena (room-scene-controls.tsx)
@@ -78,7 +79,7 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
     if (!actor.current || !parts.current) return;
     // andando: setas/direcional ou a caminhada até um ponto ("Ir ao espelho", "Voltar ao quarto") — as duas contam
     // como movimento para a zona do espelho (afastar-se fecha a prova mesmo aberta à mão)
-    const p = parts.current, arrows = [...engine.keys].some(k => k.startsWith("Arrow")), moving = !engine.grip && (arrows || !!engine.goal);
+    const p = parts.current, arrows = engine.moveStick.lengthSq() > 0 || [...engine.keys].some(k => k.startsWith("Arrow")), moving = !engine.grip && (arrows || !!engine.goal);
     // zona do espelho: a distância do personagem decide a fase da prova (histerese e tempos em mirror-session.ts)
     const session = gameplay.session, now = Date.now();
     session?.update(mirrorDistance(engine.actor, engine.mirror), now, moving);
@@ -101,19 +102,33 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
     }
     lastPhase.current = ph;
     // câmera desta fase: a vista do quarto escolhida (Q/E, botões) ou a da prova, sempre dentro das paredes
+    engine.cameraYaw += engine.cameraStick.x * dt * 1.1;
+    engine.cameraPitch = THREE.MathUtils.clamp(engine.cameraPitch + engine.cameraStick.y * dt * .7, -.6, .7);
     const cam = cameraFor(ph, engine.actor, engine.mirror, closetRight, engine.view, ROOM, camera.position);
-    if (!moving) walkYaw.current = ph === "room" ? viewYaw(engine.view) : inputYaw(cam.position, cam.target);
+    const orbit = new THREE.Spherical().setFromVector3(cam.position.clone().sub(cam.target));
+    orbit.theta += engine.cameraYaw; orbit.phi = THREE.MathUtils.clamp(orbit.phi + engine.cameraPitch, .3, Math.PI / 2 - .05);
+    cam.position.copy(cam.target).add(new THREE.Vector3().setFromSpherical(orbit));
+    cam.position.x = THREE.MathUtils.clamp(cam.position.x, ROOM.minX + .15, ROOM.maxX - .15);
+    cam.position.z = THREE.MathUtils.clamp(cam.position.z, ROOM.minZ + .15, ROOM.maxZ - .15);
+    cam.position.y = THREE.MathUtils.clamp(cam.position.y, .4, ROOM.height - .15);
+    engine.updateNearby();
+    if (!moving) walkYaw.current = ph === "room" ? viewYaw(engine.view) + engine.cameraYaw : inputYaw(cam.position, cam.target);
     if (!engine.grip) {
       // as setas mandam; sem elas, um passo da caminhada até o ponto (para ao chegar), virando para onde anda
-      const heading = arrows ? moveInRoom(engine.actor, engine.keys, dt, ROOM, engine.solids, walkYaw.current) : engine.followGoal(dt, ROOM);
+      const heading = arrows ? moveInRoom(engine.actor, engine.keys, dt, ROOM, engine.solids, walkYaw.current, engine.moveStick) : engine.followGoal(dt, ROOM);
       if (moving && heading !== null && !engine.aiming) yaw.current += Math.atan2(Math.sin(heading - yaw.current), Math.cos(heading - yaw.current)) * Math.min(1, dt * 9);
       else if (trying && !engine.aiming) {                                   // parado na prova: vira de frente para o espelho
         const want = facingYaw(engine.actor, engine.mirror);
         yaw.current += Math.atan2(Math.sin(want - yaw.current), Math.cos(want - yaw.current)) * Math.min(1, dt * 6);
       }
     }
-    actor.current.position.copy(engine.actor); actor.current.rotation.y = yaw.current;
+    actor.current.position.copy(engine.seated ?? engine.actor); actor.current.rotation.y = engine.seated ? Math.PI + .61 : yaw.current;
     applyIdle(p.human, p.pose, clock.elapsedTime, moving ? 0 : .3);
+    if (engine.seated && !moving) {
+      actor.current.updateWorldMatrix(true, true);
+      const hips = p.human.bone("Hips"); hips.position.y -= hips.getWorldPosition(new THREE.Vector3()).y - (engine.seated.y + .45);
+      for (const side of ["Left", "Right"]) { p.human.bone(`${side}UpLeg`).rotateX(-Math.PI / 2); p.human.bone(`${side}Leg`).rotateX(Math.PI / 2); }
+    }
     phase.current += moving ? dt * 7 : 0;
     if (moving) for (const [side, offset] of [["Left", 0], ["Right", Math.PI]] as const) {
       const swing = Math.sin(phase.current + offset) * .32;

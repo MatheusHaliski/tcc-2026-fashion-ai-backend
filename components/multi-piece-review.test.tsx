@@ -382,9 +382,12 @@ describe("várias peças numa foto — revisão (RF4)", () => {
     fireEvent.click(screen.getByRole("button", { name: /Analisar peças/ }));
     await screen.findByRole("region", { name: /foto 1 de/ });
     await waitFor(() => expect(n).toBe(2));
+    expect(screen.getByRole("progressbar").getAttribute("max")).toBe("2");
+    expect(screen.getByRole("progressbar").getAttribute("value")).toBe("1");
     fireEvent.change(screen.getByDisplayValue("Saia azul"), { target: { value: "Nome conferido" } });
     resolveSecond(new Response(JSON.stringify(second), { headers: { "content-type": "application/json" } }));
     await waitFor(() => expect(screen.getAllByRole("button", { name: "Revisar" })).toHaveLength(2));
+    expect(screen.getByRole("progressbar").getAttribute("value")).toBe("2");
     fireEvent.click(screen.getAllByRole("button", { name: "Revisar" })[1]);
     expect(screen.getByRole("region", { name: /foto 2 de 2/ })).toBeTruthy();
     fireEvent.click(screen.getAllByRole("button", { name: "Revisar" })[0]);

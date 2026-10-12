@@ -8,7 +8,6 @@ import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
 import { Badge, Button, Card, Chip, Dialog, ErrorState, Field, Input, PageHeader, Select, Skeleton, Switch, Tabs, Textarea, useToast } from "@/components/ui";
 import { ActionMenu } from "@/components/ui";
-import { useTheme } from "@/lib/theme/theme";
 import { FaiIcon } from "@/components/fai-icon";
 import dynamic from "next/dynamic";
 import { useDetailModal } from "@/components/detail-modal";
@@ -70,7 +69,12 @@ function RoomInner() {
   const [tab, setTab] = useState<"3d" | "room" | "list">("room"); const [gl, setGl] = useState<boolean | null>(null);
   const [openSet, setOpenSet] = useState<Set<string>>(new Set()); const [focusModule, setFocusModule] = useState<string | null>(null); const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const modal = useDetailModal();
-  const theme = useTheme(); const dark = theme.resolved !== "light";
+  const [lightOn, setLightOn] = useState(false);
+  const [lightIntensity, setLightIntensity] = useState(.75);
+  const lightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lightPeriod = data?.ambient?.period;
+  useEffect(() => { if (data) { const light = (data as unknown as RoomData3D).light; setLightOn(lightPeriod === "night" || light?.on === true); setLightIntensity(light?.intensity ?? .75); } }, [lightPeriod, !!data]);
+  useEffect(() => () => { if (lightTimer.current) clearTimeout(lightTimer.current); }, []);
   const mirror = useApi<MirrorState>((signal) => api.get("/api/me/mirror", { signal }), []);
   // peças fixadas ("Manter") no painel do Espelho: valem também para o Vista-me da barra da cena e sobrevivem a fechar a prova
   const pins = useMirrorPins(mirror.data);
@@ -264,10 +268,14 @@ function RoomInner() {
       mirror.setData(r); if (arrived === p.id) setArrived(null);
     } catch (e) { failed(n, p.slot, e); }
   }
-  async function toggleTheme() {
-    const next = dark ? "LIGHT" : "DARK";
-    theme.update({ theme: next as typeof theme.prefs.theme, highContrast: false });
-    try { await api.put("/api/me/preferences", { theme: next, clientUpdatedAt: new Date().toISOString() }); } catch (e) { toast.fromError(e); }
+  async function toggleLight() {
+    const next = !lightOn; setLightOn(next);
+    try { await api.put("/api/me/room/light", { on: next }); } catch (e) { setLightOn(!next); toast.fromError(e); }
+  }
+  function dimLight(value: number) {
+    setLightIntensity(value);
+    if (lightTimer.current) clearTimeout(lightTimer.current);
+    lightTimer.current = setTimeout(() => { api.put("/api/me/room/light", { intensity: value }).catch(e => toast.fromError(e)); }, 350);
   }
   /** A sequência do Vista-me acende as portas e gavetas de onde as peças saem. */
   function lightSequence(r: MirrorData) {
@@ -425,9 +433,9 @@ function RoomInner() {
           <div className="room3d-toolbar" role="toolbar" aria-label={t("room.toolbarLabel")}>
             <Button variant="primary" onClick={() => setVista((v) => ({ ...v, open: true }))}><FaiIcon id="ACT-32" size={20} decorative />{t("room.vista_me_2")}</Button>
             <Button onClick={() => setCopilot((c) => ({ ...c, open: true }))}><FaiIcon id="ACT-13" size={20} decorative />{t("room.busto_copilot")}</Button>
-            <Button onClick={toggleTheme} aria-pressed={dark}>{dark ? t("room.acender") : t("room.apagar")}</Button>
-            {["STUDIO", "LOFT", "CLOSET", "ATELIER", "PENTHOUSE", "MAISON"].includes(data.level) && <label className="room3d-light type-body-sm">{t("room.luz")}<input type="range" min={2700} max={6500} step={100} defaultValue={(data as unknown as RoomData3D).light?.kelvin ?? 4000} aria-label={t("room.iluminacao_guiada_kelvin")}
-                  onChange={(e) => { const k = Number(e.target.value); clearTimeout((window as unknown as { __lt?: number }).__lt); (window as unknown as { __lt?: number }).__lt = window.setTimeout(() => act(() => api.put("/api/me/room/light", { kelvin: k })), 400); }} /></label>}
+            {((data as unknown as RoomData3D).unboxing?.length ?? 0) > 0 && <Button loading={unboxing} onClick={() => { void unbox(); }}>{t("room.receive_purchase", { count: (data as unknown as RoomData3D).unboxing!.length })}</Button>}
+            <Button onClick={toggleLight} aria-pressed={lightOn}>{lightOn ? t("room.apagar") : t("room.acender")}</Button>
+            <label className="room3d-light type-body-sm">{t("room.light_intensity")}<input type="range" min={0} max={100} step={1} value={Math.round(lightIntensity * 100)} aria-label={t("room.light_intensity")} onChange={e => dimLight(Number(e.target.value) / 100)} /><output className="type-caption">{Math.round(lightIntensity * 100)}%</output></label>
             <ActionMenu label={t("room.moreViews")} items={[
               { label: t("room.vista_3_4"), onSelect: () => { setFocusModule(null); setOpenSet(new Set()); setHighlight(null); } },
               { label: t("room.abrir_portas"), onSelect: () => setOpenSet(new Set(data.modules.filter((m) => m.slotType === "DOOR").map((m) => m.id))) },
@@ -438,7 +446,7 @@ function RoomInner() {
           <div ref={stageRef} className={`room3d-stage${photo ? " is-photo" : ""}`} data-filter={photo?.filter ?? undefined}>
             <RoomScene gameplay={walking && !photo && !me3d.loading ? { avatar: me3d.avatar, sex: me3d.sex, body: me3d.body, pieces: mirrorLook, engine, session, reduced: !!data.ambient?.reduceMotion } : undefined} data={data as unknown as RoomData3D} open={openSet} highlight={highlight} focusModule={focusModule} onReady={setCanvas}
               onToggle={(id) => { if (!openSet.has(id)) touch(id); setOpenSet((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); setFocusModule(id); }}
-              onPick={openTag} lit={lit} dark={dark} onToggleTheme={toggleTheme}
+              onPick={openTag} lit={lit} lightOn={lightOn} lightIntensity={lightIntensity} onToggleLight={toggleLight}
               mirror={{ pieces: mirrorPieces(mirror.data).map((p) => ({ id: p.id, imageUrl: p.imageUrl ?? p.thumbnailUrl })), postIt: mirror.data?.postIt, closingKey, celebrate, reflectionUrl: reflection, snapshot: session.snapshot,
                 onUse: acceptLook, onAnother: () => runVistaMe("another"), onTakeOneOff: () => act(async () => mirror.setData(await api.post<MirrorState>("/api/me/mirror/take-one-off"))) } satisfies MirrorOverlay}
               onVistaMe={() => setVista((v) => ({ ...v, open: true }))} onCopilot={() => setCopilot((c) => ({ ...c, open: true }))} copilotPoint={copilot.point} copilotTalking={copilot.busy || copilot.open}
@@ -448,7 +456,7 @@ function RoomInner() {
               <AvatarStill hidden avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={mirrorLook} background="transparent" onStill={setReflection} />
             )}
             <p className="room3d-hint">{t("room.arraste_para_girar_enquadramento_3")}</p>
-            <RoomSceneControls engine={engine} canvas={canvas} walk={walking && !photo && !me3d.loading} />
+            <RoomSceneControls engine={engine} canvas={canvas} walk={walking && !photo && !me3d.loading} onVistaMe={() => { void runVistaMe(); }} onPhoto={() => setPhoto(p => p ? null : { framing: "overview", filter: "none", dof: false })} />
             {/* caminhada até/para longe do espelho: aviso curto, lido pelo leitor de tela (a prova aberta já é a chegada) */}
             <p className="room3d-walk-status" role="status" aria-live="polite">{walkStatus === "away" ? t("room.mirror.exit") : walkStatus === "mirror" && !inMirror ? t("room.mirror.going") : ""}</p>
           </div>

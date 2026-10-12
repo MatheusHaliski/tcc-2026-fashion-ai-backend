@@ -70,6 +70,15 @@ class RoomServiceTest {
     }
 
     @Test
+    void dimmingAndSwitchingDoNotRequireStudioAndPreserveColorTemperature() {
+        assertThat(room.setLight(ana, null, .4, true)).containsEntry("intensity", .4).containsEntry("on", true).containsEntry("kelvin", 4000);
+        assertThat(room.setLight(ana, null, null, false)).containsEntry("intensity", .4).containsEntry("on", false);
+        assertThatThrownBy(() -> room.setLight(ana, null, Double.NaN, null)).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> room.setLight(ana, null, 1.1, null)).isInstanceOf(ApiException.class);
+        assertThat(room.layout(world.me.getId()).getModulesJson()).contains("BED-DBL", "RACK-MOB");
+    }
+
+    @Test
     void layoutInicialDoNivelEstreiaEModulosPorNivel() {
         RoomLayout l = room.layout(world.me.getId());
         assertThat(l.getLevel()).isEqualTo("ESTREIA");
