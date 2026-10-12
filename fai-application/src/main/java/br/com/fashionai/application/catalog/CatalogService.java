@@ -305,6 +305,7 @@ public class CatalogService {
         long branded = stores.stream().mapToLong(store -> ((Number) store.get("catalogProducts")).longValue()).sum();
         out.put("products", visible);
         out.put("brands", stores.size());
+        out.put("withImage", products.countVisibleWithImage());
         out.put("registeredProducts", products.count());
         out.put("unbrandedProducts", Math.max(0, visible - branded));
         return out;

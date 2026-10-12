@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, expect, it, vi } from "vitest";
-import { cleanup, renderHook, waitFor } from "@testing-library/react";
+import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { catalogApi, type CatalogProduct } from "@/lib/api/catalog";
+import { ApiError } from "@/lib/api/client";
 import { useCatalogPreview } from "./use-catalog-preview";
 
 afterEach(() => { cleanup(); vi.restoreAllMocks(); });
@@ -21,4 +22,22 @@ it("keeps the original when framing fails", async () => {
   const result = renderHook(() => useCatalogPreview(product));
   await waitFor(() => expect(result.result.current.pending).toBe(false));
   expect(result.result.current.product).toBe(product);
+});
+
+it("does not label a server failure as an unsafe photo and permits retry", async () => {
+  const product = { id: "service-failure", imageUrl: "https://brand.example/c.jpg" } as CatalogProduct;
+  const request = vi.spyOn(catalogApi, "previewImage").mockRejectedValueOnce(new ApiError(500, "ERRO_INTERNO", "error"))
+    .mockResolvedValue(product);
+  const result = renderHook(() => useCatalogPreview(product));
+  await waitFor(() => expect(result.result.current.failed).toBe("service"));
+  act(() => result.result.current.retry());
+  await waitFor(() => expect(result.result.current.pending).toBe(false));
+  expect(result.result.current.failed).toBeNull();
+  expect(request).toHaveBeenCalledTimes(2);
+});
+it("only classifies the explicit category-frame failure as unsupported", async () => {
+  const product = { id: "unsupported-frame", imageUrl: "https://brand.example/d.jpg" } as CatalogProduct;
+  vi.spyOn(catalogApi, "previewImage").mockRejectedValue(new ApiError(422, "CATEGORY_FRAME_UNAVAILABLE", "frame"));
+  const result = renderHook(() => useCatalogPreview(product));
+  await waitFor(() => expect(result.result.current.failed).toBe("unsupported"));
 });

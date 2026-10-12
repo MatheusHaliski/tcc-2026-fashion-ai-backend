@@ -700,7 +700,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
     private RoomStorageEntry automaticEntry(UUID userId, UUID pieceId, RoomAddress address) {
         storage.insertAutomaticIfAbsent(UUID.randomUUID().toString(), userId.toString(), pieceId.toString(), address.toString());
         // Locking read sees a concurrent winner even under MySQL REPEATABLE READ.
-        return storage.findByWardrobeItemId(pieceId).orElseThrow();
+        return storage.findFirstByWardrobeItemId(pieceId).orElseThrow();
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)

@@ -70,6 +70,21 @@ class RoomServiceTest {
     }
 
     @Test
+    void automaticAssignmentInsertsBeforeLockingTheWinner() {
+        var piece = world.piecesOf(world.me).getFirst();
+        var repository = kit.dep(RoomStorageEntryRepository.class);
+        var calls = new ArrayList<String>();
+        var delegate = org.mockito.Mockito.mockingDetails(repository).getMockCreationSettings().getDefaultAnswer();
+        org.mockito.Mockito.doAnswer(inv -> { calls.add("insert"); return delegate.answer(inv); }).when(repository)
+                .insertAutomaticIfAbsent(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
+        org.mockito.Mockito.doAnswer(inv -> { calls.add("lock"); return delegate.answer(inv); }).when(repository)
+                .findFirstByWardrobeItemId(piece.getId());
+        room.autoAssign(world.me.getId(), piece.getId());
+        assertThat(calls).containsExactly("insert", "lock");
+    }
+
+    @Test
     void repairsIncompatibleAddressesInPlaceAndDoesNotInsertDuplicatePieceRows() {
         var all = world.piecesOf(world.me);
         var entry = room.entries(world.me.getId(), all).getFirst();

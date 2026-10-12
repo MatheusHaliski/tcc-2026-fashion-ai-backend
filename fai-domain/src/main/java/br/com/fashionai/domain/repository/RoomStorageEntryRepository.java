@@ -15,8 +15,11 @@ import java.util.UUID;
 public interface RoomStorageEntryRepository extends JpaRepository<RoomStorageEntry, UUID> {
     List<RoomStorageEntry> findByUserId(UUID userId);
 
-    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     Optional<RoomStorageEntry> findByWardrobeItemId(UUID wardrobeItemId);
+
+    /** Used only after the atomic insert, never to lock an empty index range before inserting. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    Optional<RoomStorageEntry> findFirstByWardrobeItemId(UUID wardrobeItemId);
 
     /** Atomic first assignment; a concurrent request keeps the winning address instead of breaking its transaction. */
     @org.springframework.data.jpa.repository.Modifying(flushAutomatically = true)
