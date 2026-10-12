@@ -256,7 +256,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) return;
     api.get<{ auraHype?: boolean; theme?: string; density?: string; fontScale?: number; highContrast?: boolean; reduceMotion?: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null }>("/api/me/preferences")
-      .then((p) => update({ ...(p.theme ? { theme: p.theme as typeof prefs.theme } : {}), ...(p.density ? { density: p.density as typeof prefs.density } : {}), fontScale: p.fontScale ?? prefs.fontScale, auraHype: !!p.auraHype, highContrast: !!p.highContrast, reduceMotion: !!p.reduceMotion, chromeBackgroundId: p.chromeBackgroundId ?? null, contentContainerColor: p.contentContainerColor ?? null }))
+      .then((p) => update({ ...(p.theme ? { theme: p.theme as typeof prefs.theme } : {}), ...(p.density ? { density: p.density as typeof prefs.density } : {}), fontScale: p.fontScale ?? prefs.fontScale, ...(typeof p.auraHype === "boolean" ? { auraHype: p.auraHype } : {}), highContrast: !!p.highContrast, reduceMotion: !!p.reduceMotion, chromeBackgroundId: p.chromeBackgroundId ?? null, contentContainerColor: p.contentContainerColor ?? null }))
       .catch(() => undefined);
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 

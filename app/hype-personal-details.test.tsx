@@ -9,7 +9,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, loggedAs, ME, renderApp, screen, settle, waitFor } from "@/test-utils/render";
 import { PIECE, PIECE_2, page } from "@/test-utils/fixtures";
 import { __resetHypeStore } from "@/lib/hype/use-hype";
-import { API_BASE } from "@/lib/api/client";
 import type { Me } from "@/lib/api/types";
 import SettingsPage from "@/app/(site)/(app)/settings/page";
 import HighlightsPage from "@/app/(site)/(app)/highlights/page";
@@ -32,24 +31,29 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); document.cookie = "fai_rt_h=
 describe("P2-19 · Configurações › Privacidade explica o HypeScore", () => {
   const routes = { "GET /api/me/preferences": { theme: "AUTO", language: "PT_BR", density: "COMFORTABLE", fontScale: 100, highContrast: false, reduceMotion: false }, "GET /api/me/consents": [], "GET /api/me/exports": [] };
 
-  it("mostra o que entra no Hype público, o Hype pessoal, perfil privado fora dos rankings, patrocínio fora e o link do método", async () => {
+  it("explains Hype in focused dialogs and removes the technical method link", async () => {
     loggedAs({ ...ME, profileVisibility: "PRIVATE" } as Me & { profileVisibility: string }, routes);
     renderApp(<SettingsPage />);
     await settle();
     fireEvent.click(await screen.findByRole("tab", { name: "Privacidade" }));
     expect(await screen.findByRole("heading", { name: "HypeScore e privacidade" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Informações sobre Quem aparece nos rankings" }));
+    await screen.findByRole("dialog");
     expect(screen.getByText(/só peças e looks públicos e aprovados, de perfis não privados/)).toBeTruthy();
     expect(screen.getByText(/o item tem só Hype pessoal, que apenas você vê/)).toBeTruthy();
     expect(screen.getByText(/Perfil privado: nenhum item seu entra nos rankings/)).toBeTruthy();
-    expect(screen.getByText(/Patrocínio, promoções, cupons e FAI Points nunca entram no Hype/)).toBeTruthy();
+
     // o estado atual do perfil da pessoa
     expect(screen.getByText(/Seu perfil está privado: hoje nenhum item seu entra nos rankings/)).toBeTruthy();
+    fireEvent.click(screen.getAllByRole("button", { name: "Fechar" }).at(-1)!);
+    fireEvent.click(screen.getByRole("button", { name: "Informações sobre O que forma o Hype" }));
+    expect(await screen.findByText(/Patrocínio, promoções, cupons e FAI Points nunca entram no Hype/)).toBeTruthy();
+    fireEvent.click(screen.getAllByRole("button", { name: "Fechar" }).at(-1)!);
+    fireEvent.click(screen.getByRole("button", { name: "Informações sobre Avisos sobre o Hype" }));
     // marcos só de subida, com o caminho para desligar
     expect(screen.getByText(/nunca quando cai/)).toBeTruthy();
     expect(screen.getByRole("link", { name: "Notificações" }).getAttribute("href")).toBe("/notifications");
-    const method = screen.getByRole("link", { name: "Ver o método e os pesos (técnico)" });
-    expect(method.getAttribute("href")).toBe(`${API_BASE}/api/hype/method`);
-    expect(method.getAttribute("rel")).toContain("noopener");
+    expect(screen.queryByRole("link", { name: "Ver o método e os pesos (técnico)" })).toBeNull();
   });
 
   it("perfil aberto: diz que itens públicos podem entrar no Hype público; a aba Dados avisa que a exportação leva o Hype pessoal", async () => {
@@ -57,7 +61,9 @@ describe("P2-19 · Configurações › Privacidade explica o HypeScore", () => {
     renderApp(<SettingsPage />);
     await settle();
     fireEvent.click(await screen.findByRole("tab", { name: "Privacidade" }));
+    fireEvent.click(screen.getByRole("button", { name: "Informações sobre Quem aparece nos rankings" }));
     expect(await screen.findByText(/Seu perfil não é privado/)).toBeTruthy();
+    fireEvent.click(screen.getAllByRole("button", { name: "Fechar" }).at(-1)!);
     fireEvent.click(screen.getByRole("tab", { name: "Seus dados (LGPD)" }));
     expect(await screen.findByText("Inclui o seu Hype pessoal: estado atual, histórico diário e marcos.")).toBeTruthy();
   });
