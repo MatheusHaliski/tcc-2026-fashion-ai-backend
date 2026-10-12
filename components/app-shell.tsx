@@ -255,8 +255,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   // RF23.CA02 — ao entrar, aplica as preferências salvas no servidor (tema, fundo do chrome, cor dos containers…)
   useEffect(() => {
     if (!user) return;
-    api.get<{ theme?: string; density?: string; fontScale?: number; highContrast?: boolean; reduceMotion?: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null }>("/api/me/preferences")
-      .then((p) => update({ ...(p.theme ? { theme: p.theme as typeof prefs.theme } : {}), ...(p.density ? { density: p.density as typeof prefs.density } : {}), fontScale: p.fontScale ?? prefs.fontScale, highContrast: !!p.highContrast, reduceMotion: !!p.reduceMotion, chromeBackgroundId: p.chromeBackgroundId ?? null, contentContainerColor: p.contentContainerColor ?? null }))
+    api.get<{ auraHype?: boolean; theme?: string; density?: string; fontScale?: number; highContrast?: boolean; reduceMotion?: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null }>("/api/me/preferences")
+      .then((p) => update({ ...(p.theme ? { theme: p.theme as typeof prefs.theme } : {}), ...(p.density ? { density: p.density as typeof prefs.density } : {}), fontScale: p.fontScale ?? prefs.fontScale, auraHype: !!p.auraHype, highContrast: !!p.highContrast, reduceMotion: !!p.reduceMotion, chromeBackgroundId: p.chromeBackgroundId ?? null, contentContainerColor: p.contentContainerColor ?? null }))
       .catch(() => undefined);
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 

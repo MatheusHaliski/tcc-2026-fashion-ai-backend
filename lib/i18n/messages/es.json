@@ -7007,5 +7007,17 @@
   "roomAssets.mouldSubtitle": "Referencias por subcategoría, adaptadas al cuerpo del avatar.",
   "roomAssets.body": "Cuerpo de referencia",
   "roomAssets.openFitting": "Abrir en probador",
-  "roomAssets.accessoriesPending": "{n} accesorios de referencia todavía no tienen molde vestible. La matriz registra estas lagunas; una foto 2D no significa que la pieza se vistió."
+  "roomAssets.accessoriesPending": "{n} accesorios de referencia todavía no tienen molde vestible. La matriz registra estas lagunas; una foto 2D no significa que la pieza se vistió.",
+  "auraHype.title": "AURA Hype",
+  "auraHype.hint": "Puntuación real con efectos visuales de escáner. No miden el tejido.",
+  "auraHype.OFF": "Desactivado",
+  "auraHype.SCANNER": "Escáner de regiones",
+  "auraHype.XRAY": "Rayos X visuales",
+  "auraHype.DOTS": "Puntos tech",
+  "auraHype.STARS": "Estrellas ascendentes",
+  "auraHype.METRICS": "Micrométricas Hype",
+  "auraHype.unavailable": "Hype aún no disponible",
+  "catalog.preparingPhoto": "Preparando encuadre…",
+  "catalog.unavailableFrame": "Esta foto no permite un encuadre seguro.",
+  "auraHype.global": "Hype global de la prenda"
 }

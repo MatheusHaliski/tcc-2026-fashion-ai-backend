@@ -15,7 +15,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { EditProfileForm } from "@/components/edit-profile";
 
 type Tab = "account" | "appearance" | "privacy" | "data" | "sessions";
-interface Prefs { theme: string; language: string; density: string; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null; sizeSystem?: string; unitSystem?: string; defaultCardSkin?: string; lookDoDiaPanelVersion?: string; soundEnabled?: boolean; hapticsEnabled?: boolean; hypeCreatorOptOut?: boolean; [k: string]: unknown; }
+interface Prefs { auraHype?: boolean; theme: string; language: string; density: string; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null; sizeSystem?: string; unitSystem?: string; defaultCardSkin?: string; lookDoDiaPanelVersion?: string; soundEnabled?: boolean; hapticsEnabled?: boolean; hypeCreatorOptOut?: boolean; [k: string]: unknown; }
 interface Consent { purpose: string; granted: boolean; label?: string; description?: string; grantedAt?: string; }
 
 function Settings() {
@@ -30,7 +30,7 @@ function Settings() {
   const [del, setDel] = useState<{ open: boolean; password: string }>({ open: false, password: "" }); const [emailCode, setEmailCode] = useState("");
   useEffect(() => { if (me) { setProfile({ displayName: me.user.displayName ?? "", bio: me.bio ?? "", country: me.user.country ?? "" }); setUsername(me.user.username); setSensitive((s) => ({ ...s, email: me.email ?? "", phone: me.phone ?? "", birthDate: me.birthDate ?? "", twoFactorEnabled: me.twoFactorEnabled })); } }, [me]);
   // sincroniza tema/idioma locais com a preferência salva no servidor (RF23.CA02: last-write-wins)
-  useEffect(() => { const p = server.data; if (!p) return; updateTheme({ theme: (p.theme as typeof theme.theme) ?? "AUTO", density: (p.density as typeof theme.density) ?? "COMFORTABLE", fontScale: p.fontScale ?? 100, highContrast: !!p.highContrast, reduceMotion: !!p.reduceMotion, chromeBackgroundId: p.chromeBackgroundId ?? null, contentContainerColor: p.contentContainerColor ?? null }); const serverLocale = fromServerLanguage(p.language); if (serverLocale && serverLocale !== locale) setLocale(serverLocale, { persist: false }); }, [server.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const p = server.data; if (!p) return; updateTheme({ theme: (p.theme as typeof theme.theme) ?? "AUTO", density: (p.density as typeof theme.density) ?? "COMFORTABLE", fontScale: p.fontScale ?? 100, auraHype: !!p.auraHype, highContrast: !!p.highContrast, reduceMotion: !!p.reduceMotion, chromeBackgroundId: p.chromeBackgroundId ?? null, contentContainerColor: p.contentContainerColor ?? null }); const serverLocale = fromServerLanguage(p.language); if (serverLocale && serverLocale !== locale) setLocale(serverLocale, { persist: false }); }, [server.data]); // eslint-disable-line react-hooks/exhaustive-deps
   async function savePrefs(patch: Partial<Prefs>): Promise<boolean> {
     try { server.setData(await api.put<Prefs>("/api/me/preferences", { ...patch, clientUpdatedAt: new Date().toISOString() })); notice.success(t("settings.saved")); return true; } catch (e) { notice.fromError(e); return false; }
   }
@@ -112,6 +112,7 @@ function Settings() {
               fora dos rankings, patrocínio nunca entra; marcos só de subida; método técnico aberto (GET /api/hype/method) */}
           <Card className="lg:col-span-2">
             <h2 className="type-h3 mb-2">{t("hypePrivacy.title")}</h2>
+            <Switch checked={!!server.data?.auraHype} disabled={!server.data} label={t("auraHype.title")} hint={t("auraHype.hint")} onChange={async (v) => { if (await savePrefs({ auraHype: v })) updateTheme({ auraHype: v }); }} />
             <p className="type-body text-muted mb-2">{t("hypePrivacy.lead")}</p>
             <p className="type-body-sm mb-2 rounded bg-surface-2 p-2">{profileVisibility === "PRIVATE" ? t("hypePrivacy.status_private") : t("hypePrivacy.status_open")}</p>
             <ul className="fai-list type-body-sm">

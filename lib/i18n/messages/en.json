@@ -7007,5 +7007,17 @@
   "roomAssets.mouldSubtitle": "References by subtype, adapted to the avatar body.",
   "roomAssets.body": "Reference body",
   "roomAssets.openFitting": "Open in fitting room",
-  "roomAssets.accessoriesPending": "{n} reference accessories do not yet have wearable moulds. The matrix records these gaps; a 2D photo does not mean the piece was worn."
+  "roomAssets.accessoriesPending": "{n} reference accessories do not yet have wearable moulds. The matrix records these gaps; a 2D photo does not mean the piece was worn.",
+  "auraHype.title": "AURA Hype",
+  "auraHype.hint": "Real score with visual scanner effects. Effects do not measure fabric.",
+  "auraHype.OFF": "Off",
+  "auraHype.SCANNER": "Region scanner",
+  "auraHype.XRAY": "Visual x-ray",
+  "auraHype.DOTS": "Tech dots",
+  "auraHype.STARS": "Rising stars",
+  "auraHype.METRICS": "Hype micro metrics",
+  "auraHype.unavailable": "Hype not available yet",
+  "catalog.preparingPhoto": "Preparing photo framing…",
+  "catalog.unavailableFrame": "This photo cannot be framed safely.",
+  "auraHype.global": "Global piece Hype"
 }

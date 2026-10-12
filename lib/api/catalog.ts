@@ -50,6 +50,7 @@ export const catalogApi = {
   browse: (p: BrowseParams, signal?: AbortSignal) => api.get<BrowseResponse>(`/api/catalog/products${qs(p)}`, { signal }),
   summary: (signal?: AbortSignal) => api.get<CatalogSummary>("/api/catalog/summary", { signal }),
   suggestions: (p: SearchParams, signal?: AbortSignal) => api.get<{ suggestions: string[] }>(`/api/catalog/suggestions${qs(p)}`, { signal }),
+  previewImage: (id: string) => api.post<CatalogProduct>(`/api/catalog/products/${id}/preview-image`, {}),
   verifyImage: (id: string) => api.post<CatalogProduct>(`/api/catalog/products/${id}/verify-image`, {}),
   product: (id: string) => api.get<CatalogProduct>(`/api/catalog/products/${id}`),
   discover: (p: { brand?: string; subcategory?: string; category?: string; query?: string; color?: string }) => api.post<DiscoverResponse>("/api/catalog/discover", p),

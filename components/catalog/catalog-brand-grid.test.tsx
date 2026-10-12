@@ -41,7 +41,7 @@ describe("grade de marcas na busca catalogada", () => {
     await screen.findByText("Peças nesta seleção: 9501");
     fireEvent.click(await screen.findByRole("button", { name: /Levi's/ }));
     await screen.findByText("Peças nesta seleção: 313");
-    const request = calls.filter(c => c.path.startsWith("/api/catalog/products")).at(-1)!;
+    const request = calls.filter(c => c.method === "GET" && c.path.startsWith("/api/catalog/products")).at(-1)!;
     expect(new URL(request.path, "http://x").searchParams.get("category")).toBeNull();
     expect(calls.some(c => c.path.startsWith("/api/catalog/search"))).toBe(false);
     expect(screen.queryByText(/24.*G-Star RAW/)).toBeNull();
@@ -70,7 +70,7 @@ describe("grade de marcas na busca catalogada", () => {
     expect(await screen.findByText(/Acervo disponível: 14\.?000 peças de 120 marcas/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Nike/ }));
     expect(await screen.findByRole("heading", { name: /^130 peças de Nike$/ })).toBeTruthy();
-    const call = calls.find((c) => c.path.startsWith("/api/catalog/products"));
+    const call = calls.find((c) => c.method === "GET" && c.path.startsWith("/api/catalog/products"));
     expect(call?.path).toContain("brand=Nike");
     expect(call?.path).toContain("category=upper_piece");
     expect(call?.path).toContain("size=48");
@@ -79,7 +79,7 @@ describe("grade de marcas na busca catalogada", () => {
     // rolagem infinita: a próxima página soma, sem repetir
     fireEvent.click(screen.getByRole("button", { name: /Carregar mais/ }));
     await waitFor(() => expect(screen.getByText("Mostrando 96 de 130")).toBeTruthy());
-    expect(calls.filter((c) => c.path.startsWith("/api/catalog/products")).map((c) => new URL(c.path, "http://x").searchParams.get("page"))).toEqual(["0", "1"]);
+    expect(calls.filter((c) => c.method === "GET" && c.path.startsWith("/api/catalog/products")).map((c) => new URL(c.path, "http://x").searchParams.get("page"))).toEqual(["0", "1"]);
   });
 
   it("o bloco da marca mostra as peças do tipo escolhido, não o total da marca; o id da marca vai junto", async () => {
@@ -93,7 +93,7 @@ describe("grade de marcas na busca catalogada", () => {
     expect(adidas.textContent).toContain("0 produtos");
     expect(adidas.className).toContain("is-empty");
     fireEvent.click(nike);
-    await waitFor(() => expect(calls.some((c) => c.path.startsWith("/api/catalog/products") && c.path.includes("brandId=b1"))).toBe(true));
+    await waitFor(() => expect(calls.some((c) => c.method === "GET" && c.path.startsWith("/api/catalog/products") && c.path.includes("brandId=b1"))).toBe(true));
   });
 
   it("busca com texto mostra as mais parecidas e oferece ver todas as peças com aquelas palavras", async () => {
@@ -105,7 +105,7 @@ describe("grade de marcas na busca catalogada", () => {
     fireEvent.change(screen.getByLabelText(/Como ela se chama/), { target: { value: "camiseta dry" } });
     fireEvent.click(await screen.findByRole("button", { name: /Ver todas as peças com “camiseta dry”/ }, { timeout: 4000 }));
     expect(await screen.findByRole("heading", { name: /^61 peças com “camiseta dry”$/ })).toBeTruthy();
-    const browse = calls.filter((c) => c.path.startsWith("/api/catalog/products")).pop();
+    const browse = calls.filter((c) => c.method === "GET" && c.path.startsWith("/api/catalog/products")).pop();
     expect(browse?.path).toContain("q=camiseta+dry");
     expect(browse?.path).toContain("brand=Nike");
   });
@@ -127,7 +127,7 @@ describe("grade de marcas na busca catalogada", () => {
     renderApp(<CatalogSearch onPick={vi.fn()} category="" />);
     fireEvent.click(await screen.findByRole("button", { name: /Ver todo o acervo/ }));
     expect(await screen.findByRole("heading", { name: /^14\.?000 peças no acervo$/ })).toBeTruthy();
-    const call = calls.find((c) => c.path.startsWith("/api/catalog/products"));
+    const call = calls.find((c) => c.method === "GET" && c.path.startsWith("/api/catalog/products"));
     expect(call?.path).not.toContain("brand=");
     expect(call?.path).not.toContain("category=");
   });
