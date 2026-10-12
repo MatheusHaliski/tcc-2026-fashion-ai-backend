@@ -74,37 +74,15 @@ describe("Espelho › leitura do look (P3-07)", () => {
   });
 });
 
-describe("Configurações › Privacidade › Criadores em alta (P3-12)", () => {
-  it("o switch salva a preferência e alterna", async () => {
-    const saved: unknown[] = [];
-    loggedAs(undefined, { "GET /api/me/preferences": PREFS, "GET /api/me/consents": [],
-      "PUT /api/me/preferences": (_u: URL, init: RequestInit) => { const body = JSON.parse(String(init.body)); saved.push(body); return { ...PREFS, hypeCreatorOptOut: body.hypeCreatorOptOut }; } });
+describe("Configurações › Privacidade", () => {
+  it("uses profile visibility instead of a separate creator-ranking switch", async () => {
+    loggedAs(undefined, { "GET /api/me/preferences": PREFS, "GET /api/me/consents": [] });
     renderApp(<SettingsPage />);
-    await settle();
     fireEvent.click(await screen.findByRole("tab", { name: "Privacidade" }));
-    const sw = await screen.findByRole("switch", { name: "Não aparecer em Criadores em alta" });
-    expect(sw.getAttribute("aria-checked")).toBe("false");
-    expect(screen.getByText(/continuam com o próprio Hype/)).toBeTruthy();   // a explicação de uma linha
-    fireEvent.click(sw);
-    await waitFor(() => expect(saved).toHaveLength(1));
-    expect(saved[0]).toMatchObject({ hypeCreatorOptOut: true });
-    await waitFor(() => expect(screen.getByRole("switch", { name: "Não aparecer em Criadores em alta" }).getAttribute("aria-checked")).toBe("true"));
-    fireEvent.click(screen.getByRole("switch", { name: "Não aparecer em Criadores em alta" }));
-    await waitFor(() => expect(saved).toHaveLength(2));
-    expect(saved[1]).toMatchObject({ hypeCreatorOptOut: false });
-    await waitFor(() => expect(screen.getByRole("switch", { name: "Não aparecer em Criadores em alta" }).getAttribute("aria-checked")).toBe("false"));
-  });
-
-  it("se salvar falhar, o switch volta ao estado anterior (nunca mostra uma opção que não valeu)", async () => {
-    const { calls } = loggedAs(undefined, { "GET /api/me/preferences": PREFS, "GET /api/me/consents": [],
-      "PUT /api/me/preferences": () => new Response(JSON.stringify({ status: 500, code: "ERRO", message: "falhou" }), { status: 500, headers: { "content-type": "application/json" } }) });
-    renderApp(<SettingsPage />);
-    await settle();
-    fireEvent.click(await screen.findByRole("tab", { name: "Privacidade" }));
-    const sw = await screen.findByRole("switch", { name: "Não aparecer em Criadores em alta" });
-    fireEvent.click(sw);
-    expect(screen.getByRole("switch", { name: "Não aparecer em Criadores em alta" }).getAttribute("aria-checked")).toBe("true");   // otimista
-    await waitFor(() => expect(calls.some((c) => c.method === "PUT" && c.path === "/api/me/preferences")).toBe(true));
-    await waitFor(() => expect(screen.getByRole("switch", { name: "Não aparecer em Criadores em alta" }).getAttribute("aria-checked")).toBe("false"));
+    expect(screen.queryByRole("switch", { name: "Não aparecer em Criadores em alta" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "Ver o método e os pesos (técnico)" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Informações sobre Visibilidade" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(dialog.textContent).toContain("fora dos rankings públicos de Hype");
   });
 });
