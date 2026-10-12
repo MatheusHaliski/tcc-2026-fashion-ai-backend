@@ -70,6 +70,21 @@ class RoomServiceTest {
     }
 
     @Test
+    void repairsIncompatibleAddressesInPlaceAndDoesNotInsertDuplicatePieceRows() {
+        var all = world.piecesOf(world.me);
+        var entry = room.entries(world.me.getId(), all).getFirst();
+        UUID id = entry.getId(); UUID pieceId = entry.getWardrobeItemId();
+        entry.setAddress("invalid-legacy-address");
+        var repaired = room.entries(world.me.getId(), all).stream()
+                .filter(e -> e.getWardrobeItemId().equals(pieceId)).findFirst().orElseThrow();
+        assertThat(repaired.getId()).isEqualTo(id);
+        assertThat(RoomAddress.parse(repaired.getAddress())).isPresent();
+        assertThat(storage().stream().filter(e -> e.getWardrobeItemId().equals(pieceId))).hasSize(1);
+        assertThat(room.entries(world.me.getId(), all).stream().filter(e -> e.getWardrobeItemId().equals(pieceId)).findFirst().orElseThrow().getId())
+                .isEqualTo(id);
+    }
+
+    @Test
     void reducedMotionDoesNotDisableTimeOfDayLighting() {
         var prefs = new br.com.fashionai.domain.model.UserPreferences();
         prefs.setUser(world.me); prefs.setReduceMotion(true);
