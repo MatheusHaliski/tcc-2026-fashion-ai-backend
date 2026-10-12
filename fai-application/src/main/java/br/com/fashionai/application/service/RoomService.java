@@ -1013,7 +1013,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
             boolean sound = preferences.findByUserId(userId).map(p -> p.isSoundEnabled()).orElse(false);
             boolean haptics = preferences.findByUserId(userId).map(p -> p.isHapticsEnabled()).orElse(true);
             LocalDateTime now = LocalDateTime.now(ZONE);
-            out.put("ambient", Map.of("period", reduceMotion ? "fixed" : period(now), "seasonal", String.valueOf(seasonalDecoration(today)),
+            out.put("ambient", Map.of("period", period(now), "seasonal", String.valueOf(seasonalDecoration(today)),
                     "reduceMotion", reduceMotion, "sound", sound, "haptics", haptics));
             out.put("monogram", module(layout, "monogram").map(m -> String.valueOf(m.get("initials"))).orElse(null));
             out.put("closetLights", closetLights(userId));

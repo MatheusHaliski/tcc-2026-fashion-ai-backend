@@ -70,6 +70,17 @@ class RoomServiceTest {
     }
 
     @Test
+    void reducedMotionDoesNotDisableTimeOfDayLighting() {
+        var prefs = new br.com.fashionai.domain.model.UserPreferences();
+        prefs.setUser(world.me); prefs.setReduceMotion(true);
+        when(kit.dep(br.com.fashionai.domain.repository.UserPreferencesRepository.class).findByUserId(world.me.getId()))
+                .thenReturn(java.util.Optional.of(prefs));
+        Map<?, ?> ambient = (Map<?, ?>) room.room(ana).get("ambient");
+        assertThat(ambient.get("reduceMotion")).isEqualTo(true);
+        assertThat(ambient.get("period")).isNotEqualTo("fixed");
+    }
+
+    @Test
     void dimmingAndSwitchingDoNotRequireStudioAndPreserveColorTemperature() {
         assertThat(room.setLight(ana, null, .4, true)).containsEntry("intensity", .4).containsEntry("on", true).containsEntry("kelvin", 4000);
         assertThat(room.setLight(ana, null, null, false)).containsEntry("intensity", .4).containsEntry("on", false);
