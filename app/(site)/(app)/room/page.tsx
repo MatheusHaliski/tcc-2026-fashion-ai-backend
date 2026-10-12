@@ -456,7 +456,7 @@ function RoomInner() {
               <AvatarStill hidden avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={mirrorLook} background="transparent" onStill={setReflection} />
             )}
             <p className="room3d-hint">{t("room.arraste_para_girar_enquadramento_3")}</p>
-            <RoomSceneControls engine={engine} canvas={canvas} walk={walking && !photo && !me3d.loading} onVistaMe={() => { void runVistaMe(); }} onPhoto={() => setPhoto(p => p ? null : { framing: "overview", filter: "none", dof: false })} />
+            <RoomSceneControls engine={engine} canvas={canvas} walk={walking && !photo && !me3d.loading} onVistaMe={() => { void runVistaMe("vista-me"); }} onPhoto={() => setPhoto(p => p ? null : { framing: "overview", filter: "none", dof: false })} />
             {/* caminhada até/para longe do espelho: aviso curto, lido pelo leitor de tela (a prova aberta já é a chegada) */}
             <p className="room3d-walk-status" role="status" aria-live="polite">{walkStatus === "away" ? t("room.mirror.exit") : walkStatus === "mirror" && !inMirror ? t("room.mirror.going") : ""}</p>
           </div>

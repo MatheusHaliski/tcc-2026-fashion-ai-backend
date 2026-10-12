@@ -3,7 +3,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import * as THREE from "three";
 import { act, cleanup, fireEvent, renderApp, screen } from "@/test-utils/render";
 import { ROOM_CAMERA_EVENT, RoomInteraction } from "@/lib/room3d/interaction";
-import RoomSceneControls, { stickAxis } from "./room-scene-controls";
+import RoomSceneControls, { stickAxis, TAP_STEP_MS } from "./room-scene-controls";
 const frames = new Map<number, FrameRequestCallback>(); let seq = 0;
 beforeEach(() => {
   vi.stubGlobal("requestAnimationFrame", (f: FrameRequestCallback) => { frames.set(++seq, f); return seq; });
@@ -58,4 +58,20 @@ it("window blur and unmount stop both axes", () => {
 it("does not render controls until the canvas is ready", () => {
   renderApp(<RoomSceneControls engine={new RoomInteraction()} canvas={null} walk />);
   expect(document.querySelector(".room-gamepad")).toBeNull();
+});
+it("a screen-reader synthesized click makes one short movement and releases it", () => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  try {
+    const { engine } = setup();
+    fireEvent.click(screen.getByRole("button", { name: "Andar para frente" }), { detail: 0 }); frame();
+    expect(engine.moveStick.y).toBe(-1);
+    act(() => vi.advanceTimersByTime(TAP_STEP_MS)); frame(); expect(engine.moveStick.length()).toBe(0);
+  } finally { vi.useRealTimers(); }
+});
+it("L1 is operable by a synthesized click without pointer or key events", () => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  try {
+    const { engine } = setup(); fireEvent.click(screen.getByRole("button", { name: "Girar a cena para a esquerda" }), { detail: 0 }); frame();
+    expect(engine.cameraStick.x).toBe(-1); act(() => vi.advanceTimersByTime(TAP_STEP_MS)); frame(); expect(engine.cameraStick.length()).toBe(0);
+  } finally { vi.useRealTimers(); }
 });
