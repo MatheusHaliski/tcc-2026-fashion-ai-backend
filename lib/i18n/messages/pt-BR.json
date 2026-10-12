@@ -7038,5 +7038,7 @@
   "roomAssets.import": "Importar para revisão",
   "room.controls.zoom_group": "Aproximar ou afastar a câmera",
   "room.receive_purchase": "Receber compra ({count} pendentes)",
-  "room3d.roomScene.arraste_ou_use_para_girar_toque_numa_porta_o": "Analógico direito ou L1/R1: câmera · X: interagir ao se aproximar · toque numa peça para ver os detalhes"
+  "room3d.roomScene.arraste_ou_use_para_girar_toque_numa_porta_o": "Analógico direito ou L1/R1: câmera · X: interagir ao se aproximar · toque numa peça para ver os detalhes",
+  "catalog.previewServiceUnavailable": "Não foi possível verificar a foto agora.",
+  "catalog.unavailableSource": "A foto oficial está indisponível no momento."
 }

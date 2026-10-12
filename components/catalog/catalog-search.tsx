@@ -463,7 +463,7 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
   return (
     <article ref={preview.ref} className="catalog-card surface" aria-busy={preview.pending}>
       <div className="catalog-card-media" style={{ aspectRatio: photoAspect(p.catalogImage?.aspect) }} aria-hidden={!img}>
-        {preview.pending || preview.failed ? <span role="status" className="type-caption text-muted p-4">{t(preview.pending ? "catalog.preparingPhoto" : "catalog.unavailableFrame")}</span> : img ? <CatalogPhoto image={p.catalogImage} fallbackUrl={p.imageUrl} alternatives={[p.imageSource?.imageUrl]} alt={`${p.brand?.name ?? ""} ${p.productName}`}
+        {preview.pending || preview.failed ? <span role="status" className="type-caption text-muted p-4">{t(preview.pending ? "catalog.preparingPhoto" : preview.failed === "unsupported" ? "catalog.unavailableFrame" : preview.failed === "source" ? "catalog.unavailableSource" : "catalog.previewServiceUnavailable")} {!preview.pending && <button type="button" className="btn btn-sm mt-2" onClick={preview.retry}>{t("common.retry")}</button>}</span> : img ? <CatalogPhoto image={p.catalogImage} fallbackUrl={p.imageUrl} alternatives={[p.imageSource?.imageUrl]} alt={`${p.brand?.name ?? ""} ${p.productName}`}
           placeholder={<GarmentGlyph id={ILLUSTRATION[p.category] ?? "generic"} size={120} animated={false} numbered={false} className="text-muted" />} />
           : <GarmentGlyph id={ILLUSTRATION[p.category] ?? "generic"} size={120} animated={false} numbered={false} className="text-muted" />}
         {typeof p.matchPercent === "number" && <Badge tone="thread" className="catalog-card-match">{t("catalog.compativel", { pct: p.matchPercent })}</Badge>}

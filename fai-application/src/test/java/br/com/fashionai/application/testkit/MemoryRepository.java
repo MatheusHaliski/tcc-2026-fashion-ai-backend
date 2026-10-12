@@ -75,6 +75,16 @@ public final class MemoryRepository implements Answer<Object> {
             return EMPTY.answer(inv);
         }
         switch (name) {
+            case "insertAutomaticIfAbsent" -> {
+                UUID pieceId = UUID.fromString((String) args[2]);
+                boolean exists = rows.values().stream().filter(br.com.fashionai.domain.model.RoomStorageEntry.class::isInstance)
+                        .map(br.com.fashionai.domain.model.RoomStorageEntry.class::cast).anyMatch(e -> e.getWardrobeItemId().equals(pieceId));
+                if (exists) return 0;
+                var entry = new br.com.fashionai.domain.model.RoomStorageEntry();
+                entry.assignId(UUID.fromString((String) args[0])); entry.setUserId(UUID.fromString((String) args[1]));
+                entry.setWardrobeItemId(pieceId); entry.setAddress((String) args[3]); entry.setAssignedBy("AUTO");
+                store(entry); return 1;
+            }
             case "save", "saveAndFlush" -> {
                 return store(args[0]);
             }

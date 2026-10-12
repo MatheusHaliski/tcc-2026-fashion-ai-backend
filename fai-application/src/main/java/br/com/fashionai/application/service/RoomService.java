@@ -652,6 +652,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         Map<String, String> labels = labels(layout);
         Map<UUID, WardrobeItem> byId = all.stream().collect(Collectors.toMap(WardrobeItem::getId, w -> w));
         Occupancy occ = new Occupancy(new HashSet<>(), new HashMap<>(), new HashMap<>());
+        List<RoomStorageEntry> repair = new ArrayList<>();
         for (RoomStorageEntry entry : entries) {
             WardrobeItem w = byId.get(entry.getWardrobeItemId());
             RoomAddress address = RoomAddress.parse(entry.getAddress()).orElse(null);
@@ -660,18 +661,23 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                 && (!address.zone().equals("drawer") || occ.drawerCount().getOrDefault(String.valueOf(address.index()), 0) < drawerCapacity(w.getCategory())
                     && (occ.drawerCategory().get(String.valueOf(address.index())) == null || w.getCategory().equals(occ.drawerCategory().get(String.valueOf(address.index())))));
             if (!valid) {
-                known.remove(entry.getWardrobeItemId()); storage.delete(entry);
+                repair.add(entry);
             } else occ.add(address, w.getCategory());
         }
-        entries.removeIf(entry -> !known.contains(entry.getWardrobeItemId()));
+        // Hibernate inserts before deletes: replacing an existing row with the same unique piece ID fails at flush.
+        // Repair its address in place, preserving the row ID, timestamps and one-row-per-piece invariant.
+        for (RoomStorageEntry entry : repair) {
+            WardrobeItem w = byId.get(entry.getWardrobeItemId());
+            entry.setAddress(place(w, layout, labels, occ).toString());
+            entry.setAssignedBy("AUTO");
+            storage.save(entry);
+        }
         for (WardrobeItem w : all) {
             if (!known.contains(w.getId())) {
-                RoomStorageEntry e = new RoomStorageEntry();
-                e.setUserId(userId);
-                e.setWardrobeItemId(w.getId());
-                e.setAddress(place(w, layout, labels, occ).toString());
-                e.setAssignedBy("AUTO");
-                entries.add(storage.save(e));
+                RoomAddress proposed = place(w, layout, labels, occ);
+                RoomStorageEntry e = automaticEntry(userId, w.getId(), proposed);
+                entries.add(e);
+                known.add(w.getId());
             }
         }
         return entries;
@@ -687,13 +693,14 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         }
         Occupancy occ = Occupancy.of(storage.findByUserId(userId), pieces.findByUserIdOrderByCreatedAtDesc(userId));
         RoomAddress a = place(w, layout, labels(layout), occ);
-        RoomStorageEntry e = new RoomStorageEntry();
-        e.setUserId(userId);
-        e.setWardrobeItemId(pieceId);
-        e.setAddress(a.toString());
-        e.setAssignedBy("AUTO");
-        storage.save(e);
-        return a;
+        RoomStorageEntry entry = automaticEntry(userId, pieceId, a);
+        return RoomAddress.parse(entry.getAddress()).orElseThrow();
+    }
+
+    private RoomStorageEntry automaticEntry(UUID userId, UUID pieceId, RoomAddress address) {
+        storage.insertAutomaticIfAbsent(UUID.randomUUID().toString(), userId.toString(), pieceId.toString(), address.toString());
+        // Locking read sees a concurrent winner even under MySQL REPEATABLE READ.
+        return storage.findFirstByWardrobeItemId(pieceId).orElseThrow();
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
@@ -1112,12 +1119,8 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                 }
             }
         }
-        RoomStorageEntry e = storage.findByWardrobeItemId(pieceId).orElseGet(() -> {
-            RoomStorageEntry n = new RoomStorageEntry();
-            n.setUserId(user.id());
-            n.setWardrobeItemId(pieceId);
-            return n;
-        });
+        RoomStorageEntry e = storage.findByWardrobeItemId(pieceId)
+                .orElseGet(() -> automaticEntry(user.id(), pieceId, a));
         e.setAddress(a.toString());
         e.setAssignedBy("USER");
         storage.save(e);

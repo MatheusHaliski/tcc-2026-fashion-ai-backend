@@ -117,8 +117,10 @@ describe("FlairHub", () => {
     expect(dialog.textContent).toContain("Partidas FLAIR");
     expect(screen.getByRole("button", { name: "Entendi, começar" })).toBeTruthy();
     expect(push).not.toHaveBeenCalled();
+    // Wait for the focus trap/keyboard listener, not only the portal DOM, before pressing Escape.
+    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true), { timeout: 5000 });
     fireEvent.keyDown(dialog, { key: "Escape" });
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 5000 });
     expect(push).not.toHaveBeenCalled();
     // reabre pelo "Como funciona" do painel, marca para não mostrar e confirma
     fireEvent.click(screen.getAllByRole("button", { name: "Como funciona" })[1]);
@@ -126,9 +128,10 @@ describe("FlairHub", () => {
     fireEvent.click(box);
     fireEvent.click(screen.getByRole("button", { name: "Entendi" }));
     await waitFor(() => expect(calls.some((c) => c.method === "PUT" && c.path === "/api/me/guides/flair.matches" && (c.body as { event: string }).event === "HIDDEN")).toBe(true));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 5000 });
     fireEvent.click(screen.getByTestId("hub-primary"));
     await waitFor(() => expect(push).toHaveBeenCalledWith("/flair/partidas"));
-    expect(screen.queryByRole("dialog")).toBeNull();
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull(), { timeout: 5000 });
   });
 
   it("só a demonstração do modo escolhido está montada e trocar de modo troca o vídeo", async () => {

@@ -7038,5 +7038,7 @@
   "roomAssets.import": "Import for review",
   "room.controls.zoom_group": "Move camera closer or farther",
   "room.receive_purchase": "Receive purchase ({count} pending)",
-  "room3d.roomScene.arraste_ou_use_para_girar_toque_numa_porta_o": "Right stick or L1/R1: camera · X: nearby interactions · tap a piece for details"
+  "room3d.roomScene.arraste_ou_use_para_girar_toque_numa_porta_o": "Right stick or L1/R1: camera · X: nearby interactions · tap a piece for details",
+  "catalog.previewServiceUnavailable": "The photo could not be checked right now.",
+  "catalog.unavailableSource": "The official photo is currently unavailable."
 }

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { ApiError } from "@/lib/api/client";
 import { catalogApi, type CatalogProduct } from "@/lib/api/catalog";
 
 // Only mounted, visible cards are queued. Two requests at a time; bounded session cache.
@@ -12,13 +13,22 @@ function drain() {
     void queue.shift()!().finally(() => { active--; drain(); });
   }
 }
+async function requestPreview(id: string) {
+  for (let attempt = 0; ; attempt++) {
+    try { return await catalogApi.previewImage(id); }
+    catch (error) {
+      if (!(error instanceof ApiError) || ![429, 502, 503, 504].includes(error.status) || attempt >= 3) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * 2 ** attempt));
+    }
+  }
+}
 function preview(id: string) {
   const existing = cache.get(id);
   if (existing) return existing;
   if (queue.length >= 32) return Promise.reject(new Error("Preview queue is full"));
   const result = new Promise<CatalogProduct>((resolve, reject) => {
     queue.push(async () => {
-      try { resolve(await catalogApi.previewImage(id)); }
+      try { resolve(await requestPreview(id)); }
       catch (error) { cache.delete(id); reject(error); }
     });
   });
@@ -32,11 +42,12 @@ export function useCatalogPreview(product: CatalogProduct) {
   const ref = useRef<HTMLElement>(null);
   const [framed, setFramed] = useState<CatalogProduct | null>(null);
   const [pending, setPending] = useState(true);
-  const [failed, setFailed] = useState(false);
+  const [failed, setFailed] = useState<"unsupported" | "source" | "service" | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
   useEffect(() => {
     let alive = true, started = false;
     setFramed(null);
-    setFailed(false);
+    setFailed(null);
     setPending(true);
     if (!product.imageUrl && !product.catalogImage?.url) { setPending(false); return; }
     const start = () => {
@@ -44,7 +55,7 @@ export function useCatalogPreview(product: CatalogProduct) {
       started = true;
       setPending(true);
       void preview(product.id).then((p) => { if (alive) setFramed(p); })
-        .catch(() => { if (alive) setFailed(true); })
+        .catch((error) => { if (alive) setFailed(error instanceof ApiError && error.code === "CATEGORY_FRAME_UNAVAILABLE" ? "unsupported" : error instanceof ApiError && error.code === "CATALOG_IMAGE_FETCH_FAILED" ? "source" : "service"); })
         .finally(() => { if (alive) setPending(false); });
     };
     if (typeof IntersectionObserver === "undefined") start();
@@ -53,6 +64,6 @@ export function useCatalogPreview(product: CatalogProduct) {
     });
     if (ref.current) observer?.observe(ref.current);
     return () => { alive = false; observer?.disconnect(); };
-  }, [product.id, product.imageUrl]);
-  return { ref, product: framed ?? product, pending, failed };
+  }, [product.id, product.imageUrl, retryCount]);
+  return { ref, product: framed ?? product, pending, failed, retry: () => { cache.delete(product.id); setRetryCount(n => n + 1); } };
 }
