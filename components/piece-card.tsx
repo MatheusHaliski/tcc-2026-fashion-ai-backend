@@ -17,6 +17,8 @@ import { ArtStage, artSurfaceProps } from "@/components/piece-art";
 import { readPieceArt } from "@/lib/piece-art";
 import { CardHeader } from "@/components/card-header";
 import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "@/components/fashion-card";
+import { AuraHype } from "@/components/hype/aura-hype";
+import { useTheme } from "@/lib/theme/theme";
 import { HypeBadge } from "@/components/hype/hype-badge";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
@@ -56,7 +58,10 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const { t, fmtMoney } = useI18n(); const { user } = useAuth();
   const preview = href === "#";
   const flippable = flip && !preview && !selectable;
-  const hype = useHypeSummary("PIECE", piece.id, !preview && !selectable);
+  const { prefs } = useTheme();
+  const auraMode = piece.background?.auraHype as string | undefined;
+  const auraEnabled = auraMode === "OFF" ? false : !!auraMode || !!prefs.auraHype;
+  const hype = useHypeSummary("PIECE", piece.id, !preview && (!selectable || auraEnabled));
   const hypeState = hypeViewState(hype.summary, hype);
   // RF53: selos de marca/celebridade + Selos de Hype (do resumo já carregado, sem pedido extra), no máx. 2 de Hype
   const seals = withHypeSeals(brandSeals, hypeSealCodes(hype.summary));
@@ -81,6 +86,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const media = (
     <>
       {crop ? <CatalogPhoto image={crop} alt="" /> : img.src ? <MediaImage src={img.src} srcSet={img.srcSet} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
+      {auraEnabled && <AuraHype state={hypeState} mode={auraMode} />}
       {(zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
       {(!piece.disponivel || piece.forDonation || (mine && piece.favorite) || piece.aiGeneratedImage) && (
         <span className="pc-flags">

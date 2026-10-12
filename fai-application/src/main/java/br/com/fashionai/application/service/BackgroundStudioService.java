@@ -384,6 +384,10 @@ public class BackgroundStudioService {
         if (scheme.get("seasonalPresetId") instanceof String sid && assets.gradient(sid).isEmpty()) {
             throw ApiException.badRequest("PRESET_INVALIDO", Msg.t("backgroundStudio.preset_sazonal_desconhecido", sid));
         }
+        Object auraHype = scheme.get("auraHype");
+        if (auraHype != null && !List.of("OFF", "SCANNER", "XRAY", "DOTS", "STARS", "METRICS").contains(auraHype)) {
+            throw ApiException.badRequest("AURA_HYPE_INVALID", "AURA Hype inválida.");
+        }
         Map<String, Object> aura = scheme.get("aura") instanceof Map<?, ?> a ? (Map<String, Object>) a : null;
         String auraVariant = aura == null ? null : (String) aura.get("variantId");
         if (auraVariant != null && assets.auraVariant(auraVariant).isEmpty()) {

@@ -79,6 +79,13 @@ public class CatalogController {
         return catalog.product(id);
     }
 
+    @PostMapping("/api/catalog/products/{id}/preview-image")
+    @Operation(summary = "Enquadramento automático em cache para exibir o card do catálogo")
+    public Map<String, Object> previewImage(CurrentUser user, @PathVariable UUID id) {
+        imagePipeline.ensurePreview(user, id);
+        return catalog.product(id);
+    }
+
     @PostMapping("/api/catalog/products/{id}/verify-image")
     @Operation(summary = "Verifica novamente a foto original e aplica a regra de enquadramento 3:4 antes da seleção")
     public Map<String, Object> verifyImage(CurrentUser user, @PathVariable UUID id) {

@@ -2386,7 +2386,7 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .fitting-actions .btn { max-width: 100%; white-space: normal; }
 .fitting-hints { display: grid; gap: 4px; }
 @media (min-width: 640px) { .fitting-selectors { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-.fitting-browser .fitting-stores { max-height: 230px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 3px; }
+.fitting-browser .fitting-stores { padding: 3px; }
 .fitting-browser .fitting-store { min-width: 0; padding: 8px 5px; }
 .fitting-browser .fitting-store-name { overflow-wrap: anywhere; }
 .fitting-browser .fitting-category-filters, .fitting-browser .fitting-category-controls { min-width: 0; padding-top: 10px; border-top: 1px solid var(--line-soft); }
@@ -2533,10 +2533,10 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 .mirror-flat-acc img { max-height: 100%; max-width: 64px; }
 .mirror-flat-silhouette { height: 72%; fill: #3b3328; opacity: .16; }
 .fitting-stores { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
-/* RF47 · criador de peça: a mesma grade de marcas do provador, rolável como lá */
+/* RF47 · criador de peça: a mesma grade paginada de marcas do provador */
 .catalog-brand-heading { min-height: 34px; }
-.catalog-brand-stage { height: 320px; overflow-y: auto; overscroll-behavior: contain; }
-.catalog-brand-grid .fitting-stores { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 3px; }
+.catalog-brand-stage { min-height: 160px; }
+.catalog-brand-grid .fitting-stores { padding: 3px; }
 .fitting-store { display: grid; justify-items: center; gap: 4px; padding: 10px 6px; border: 1.5px solid var(--line-soft); border-radius: 12px; background: var(--surface); text-align: center; transition: border-color .15s, background .15s; }
 /* marca sem peças do tipo escolhido: continua na grade (todas as marcas), apagada */
 .fitting-store.is-empty:not(.is-active) { opacity: .55; }
@@ -3620,3 +3620,20 @@ button.cbc-slot-btn:hover { border-color: var(--line); background: var(--surface
 .gd-dims li em { font-style: normal; text-align: right; }
 .gd-dims .gd-dims-foot { grid-template-columns: auto 1fr; margin-top: 4px; }
 @media (max-width: 520px) { .gd-highlights { grid-template-columns: minmax(0, 1fr); } }
+
+/* AURA Hype: decorative loops, no invented fabric metrics or flashing. */
+.aura-hype { position:absolute; inset:0; pointer-events:none; overflow:hidden; border:1px solid #65f5df80; }
+.aura-hype-field { position:absolute; inset:0; background:repeating-linear-gradient(0deg,transparent 0 24px,#52e0dc16 25px 26px),repeating-linear-gradient(90deg,transparent 0 24px,#52e0dc16 25px 26px); }
+.aura-hype-field::after { content:""; position:absolute; inset:0; height:18%; background:linear-gradient(transparent,#54efdc65,transparent); animation:aura-scan 8s ease-in-out infinite alternate; }
+.aura-hype-score { position:absolute; top:12px; right:12px; max-width:calc(100% - 24px); box-shadow:0 0 8px #42ffd970,inset 0 0 12px #42ffd926; padding:7px 10px; border:1px solid #6effe3; border-radius:8px; color:#bdfff1; background:#061a24e8; font:600 11px/1.4 monospace; letter-spacing:.12em; }
+.aura-hype[data-effect="XRAY"] .aura-hype-field { background:linear-gradient(120deg,#255b8338,#8bfff126,#21175a40); mix-blend-mode:screen; }
+.aura-hype[data-effect="DOTS"] .aura-hype-field { background:radial-gradient(#70ffe68a 1.5px,transparent 2px) 0 0/24px 24px; }
+.aura-hype[data-effect="STARS"] i { position:absolute; left:20%; top:65%; width:6px; height:6px; background:#bbfff0; clip-path:polygon(50% 0,62% 37%,100% 50%,62% 62%,50% 100%,37% 62%,0 50%,37% 37%); animation:aura-stars 9s linear infinite; }
+.aura-hype[data-effect="STARS"] i:nth-child(2) { left:40%; animation-delay:-2s; }
+.aura-hype[data-effect="STARS"] i:nth-child(3) { left:60%; animation-delay:-4s; }
+.aura-hype[data-effect="STARS"] i:nth-child(4) { left:80%; animation-delay:-6s; }
+.aura-hype[data-effect="METRICS"] .aura-hype-field { border:16px solid transparent; outline:1px dashed #67f5d9; outline-offset:-24px; }
+@keyframes aura-scan { to { transform:translateY(450%); } }
+@keyframes aura-stars { to { transform:translateY(-160px) rotate(180deg); opacity:0; } }
+@media (prefers-reduced-motion:reduce) { .aura-hype-field::after,.aura-hype i { animation:none!important; } }
+[data-reduce-motion="true"] .aura-hype-field::after,[data-reduce-motion="true"] .aura-hype i { animation:none!important; }

@@ -117,6 +117,19 @@ class CatalogImagePipelineServiceTest {
     }
 
     @Test
+    void previewAutomaticoReutilizaRecorteSemNovoDownload() {
+        product.setCategory("upper_piece"); product.setSubcategory("t_shirt");
+        CatalogImage front = image("https://img.brand.com/preview.jpg", CatalogImageType.FRONT,
+                CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
+        service.ensurePreview(admin, product.getId());
+        String crop = front.getCropJson();
+        web.remove(front.getImageUrl());
+        service.ensurePreview(admin, product.getId());
+        assertThat(front.getCropJson()).isEqualTo(crop);
+        assertThat(stored).isEmpty();
+    }
+
+    @Test
     void selecaoNaoReabilitaFotoRecusadaPelaRevisao() {
         CatalogImage rejected = image("https://brand.com/rejected.png", CatalogImageType.PACKSHOT, CatalogPhotos.png(CatalogPhotos.tee(200, 200, 1.0)));
         rejected.setReviewStatus("REJECTED");

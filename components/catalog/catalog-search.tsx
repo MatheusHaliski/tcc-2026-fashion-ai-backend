@@ -13,6 +13,7 @@ import { CATEGORY_CARDS, type CaptureCategory } from "@/lib/capture/capture-guid
 import { Badge, Button, Chip, Field, Input, Skeleton, cn } from "@/components/ui";
 import { BrandLogo } from "@/components/brand-logo";
 import { CatalogBrandGrid } from "./catalog-brand-grid";
+import { useCatalogPreview } from "./use-catalog-preview";
 import { CatalogPhoto, photoAspect } from "@/components/catalog/catalog-photo";
 import { CategoryCards } from "@/components/catalog/category-cards";
 import { BrandAutocomplete, type CatalogBrand } from "@/components/catalog/brand-autocomplete";
@@ -440,7 +441,7 @@ function placeholderFor(category: string, t: (k: string) => string) {
 }
 
 /** Card de resultado: foto oficial dominante (ou a ilustração da categoria), marca, nome, modelo, cor, tipo e fonte. */
-export function CatalogResultCard({ product: p, onPick, pickLabel, selectedVariant: controlledVariant, onVariantChange, busy, disabled }: {
+export function CatalogResultCard({ product: original, onPick, pickLabel, selectedVariant: controlledVariant, onVariantChange, busy, disabled }: {
   product: CatalogProduct;
   onPick: (variant: CatalogVariant | null) => void; busy?: boolean; disabled?: boolean;
   pickLabel?: string;
@@ -448,6 +449,8 @@ export function CatalogResultCard({ product: p, onPick, pickLabel, selectedVaria
   onVariantChange?: (variant: CatalogVariant) => void;
 }) {
   const { t } = useI18n();
+  const preview = useCatalogPreview(original);
+  const p = preview.product;
   const tax = useTaxonomy();
   const [localVariant, setLocalVariant] = useState<CatalogVariant | null>(p.selectedVariant ?? null);
   const variant = controlledVariant === undefined ? localVariant : controlledVariant;
@@ -458,9 +461,9 @@ export function CatalogResultCard({ product: p, onPick, pickLabel, selectedVaria
   const img = p.catalogImage?.url ?? p.imageUrl;
   const source = p.source?.domain && p.source.domain !== "null" ? p.source.domain : t("catalog.fonte_fashionai");
   return (
-    <article className="catalog-card surface">
+    <article ref={preview.ref} className="catalog-card surface" aria-busy={preview.pending}>
       <div className="catalog-card-media" style={{ aspectRatio: photoAspect(p.catalogImage?.aspect) }} aria-hidden={!img}>
-        {img ? <CatalogPhoto image={p.catalogImage} fallbackUrl={p.imageUrl} alternatives={[p.imageSource?.imageUrl]} alt={`${p.brand?.name ?? ""} ${p.productName}`}
+        {preview.pending || preview.failed ? <span role="status" className="type-caption text-muted p-4">{t(preview.pending ? "catalog.preparingPhoto" : "catalog.unavailableFrame")}</span> : img ? <CatalogPhoto image={p.catalogImage} fallbackUrl={p.imageUrl} alternatives={[p.imageSource?.imageUrl]} alt={`${p.brand?.name ?? ""} ${p.productName}`}
           placeholder={<GarmentGlyph id={ILLUSTRATION[p.category] ?? "generic"} size={120} animated={false} numbered={false} className="text-muted" />} />
           : <GarmentGlyph id={ILLUSTRATION[p.category] ?? "generic"} size={120} animated={false} numbered={false} className="text-muted" />}
         {typeof p.matchPercent === "number" && <Badge tone="thread" className="catalog-card-match">{t("catalog.compativel", { pct: p.matchPercent })}</Badge>}
