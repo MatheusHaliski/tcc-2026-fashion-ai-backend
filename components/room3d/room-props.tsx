@@ -246,13 +246,13 @@ export function RoomDoor({ position, rotation, onClick, night }: { position: [nu
 }
 
 /** Abajur da noite. */
-export function Lamp({ position, on }: { position: [number, number, number]; on: boolean }) {
+export function Lamp({ position, on, intensity = 1 }: { position: [number, number, number]; on: boolean; intensity?: number }) {
   return (
     <group position={position}>
       <mesh position={[0, 0.3, 0]}><cylinderGeometry args={[0.012, 0.012, 0.6, 8]} /><meshStandardMaterial color="#6b5a4a" /></mesh>
       <mesh position={[0, 0.01, 0]}><cylinderGeometry args={[0.1, 0.12, 0.02, 20]} /><meshStandardMaterial color="#6b5a4a" /></mesh>
       <mesh position={[0, 0.66, 0]}><cylinderGeometry args={[0.1, 0.16, 0.18, 24, 1, true]} /><meshStandardMaterial color="#f3e2c1" emissive={on ? "#ffcf8a" : "#000"} emissiveIntensity={on ? 0.9 : 0} side={THREE.DoubleSide} /></mesh>
-      {on && <pointLight position={[0, 0.6, 0]} intensity={2.2} distance={3.5} color="#ffcf8a" />}
+      {on && <pointLight position={[0, 0.6, 0]} intensity={2.2 * intensity} distance={3.5} color="#ffcf8a" />}
     </group>
   );
 }

@@ -1027,9 +1027,12 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 .nav-groups section:first-child .nav-group-title { padding-top: 4px; }
 .nav-groups ul { display: flex; flex-direction: column; gap: 2px; }
 .nav-link { display: flex; align-items: center; gap: 12px; min-height: var(--control-md); padding: 6px 10px; border-radius: 10px; font-size: var(--text-body); color: var(--ink); }
+.nav-icon-medallion { display: grid; place-items: center; width: 30px; height: 30px; flex: 0 0 30px; border: 1px solid #493820; border-radius: 50%; background: conic-gradient(#e1b554, #f58220, #165d8f, #9eaf37, #e1b554, #f58220, #e1b554); box-shadow: inset 0 0 0 1px #f1ce7e, 0 1px 2px rgb(40 30 20 / 20%); }
+.nav-icon-medallion img { border-radius: 50%; }
+.nav-link[aria-current="page"] .nav-icon-medallion { outline: 1px solid #fff3d4; outline-offset: 1px; }
 .nav-link:hover { background: var(--surface-2); }
 .nav-link[aria-current="page"] { background: var(--ink); color: #fff; font-weight: 600; }
-.nav-link[aria-current="page"] img { box-shadow: 0 0 0 2px rgba(255,255,255,.9); border-radius: 50%; }
+.nav-link[aria-current="page"] img { border-radius: 50%; }
 /* navegação derivada: o pai fica marcado (sem ser a página atual) e o sub-item recuado logo abaixo é a página */
 .nav-link[data-ancestor="true"] { background: var(--surface-2); font-weight: 600; }
 .nav-link-sub { position: relative; margin: 2px 0 0 22px; min-height: 36px; padding-left: 12px; font-size: var(--text-body-sm); cursor: default; }
@@ -1119,6 +1122,20 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 /* Acessibilidade 3D (room-scene-controls.tsx): girar a cena e o direcional do avatar num canto do palco, longe do avatar;
    alvos de 44 px, foco visível e "apertado" enquanto segura. A dica vai para o outro canto. */
 .room3d-controls { position: absolute; right: 10px; bottom: 10px; display: grid; justify-items: end; gap: 6px; }
+.room-gamepad { width: min(310px, calc(100% - 20px)); padding: 12px; border-radius: 28px; background: color-mix(in srgb, var(--surface) 92%, transparent); border: 1px solid var(--line-soft); box-shadow: 0 8px 24px rgb(0 0 0 / 20%); }
+.room-pad-shoulders { display: flex; justify-content: space-between; width: 100%; }
+.room-pad-body { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.room-pad-stick { width: 80px; height: 80px; flex: 0 0 80px; border-radius: 50%; border: 2px solid var(--line-soft); background: var(--surface-2); display: grid; place-items: center; touch-action: none; }
+.room-pad-thumb { width: 34px; height: 34px; border-radius: 50%; background: var(--ink); opacity: 0.7; pointer-events: none; }
+.room-pad-accessible button { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; }
+.room-pad-accessible button:focus { position: static; width: auto; height: auto; clip-path: none; padding: 8px; background: var(--surface); }
+.room-pad-actions { display: grid; grid-template-columns: repeat(2, 36px); gap: 4px; }
+.room-pad-actions button { width: 36px; height: 36px; border: 1px solid var(--line-soft); border-radius: 50%; background: var(--surface); color: var(--ink); }
+.room-context-prompt { position: absolute; bottom: calc(100% + 12px); right: 0; display: flex; align-items: center; gap: 12px; width: max-content; max-width: min(360px, 90vw); padding: 12px 16px; border: 1px solid #c9a227; border-radius: 6px; background: rgb(20 28 32 / 88%); color: #fff3ce; text-align: left; }
+.room-key { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border: 1px solid currentcolor; border-radius: 50%; }
+.feed-compact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); align-items: start; gap: 16px; }
+.feed-compact-grid .fai-card { width: 100%; max-width: 310px; justify-self: center; }
+.feed-compact-grid .pc-art { max-height: 260px; }
 .room3d-controls-row { display: grid; grid-template-columns: repeat(2, 44px); gap: 6px; }
 .room3d-dpad { display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); gap: 3px; }
 .room3d-dpad .is-up { grid-area: 1 / 2; } .room3d-dpad .is-left { grid-area: 2 / 1; } .room3d-dpad .is-right { grid-area: 2 / 3; } .room3d-dpad .is-down { grid-area: 3 / 2; }
@@ -2386,7 +2403,7 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .fitting-actions .btn { max-width: 100%; white-space: normal; }
 .fitting-hints { display: grid; gap: 4px; }
 @media (min-width: 640px) { .fitting-selectors { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-.fitting-browser .fitting-stores { max-height: 230px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 3px; }
+.fitting-browser .fitting-stores { padding: 3px; }
 .fitting-browser .fitting-store { min-width: 0; padding: 8px 5px; }
 .fitting-browser .fitting-store-name { overflow-wrap: anywhere; }
 .fitting-browser .fitting-category-filters, .fitting-browser .fitting-category-controls { min-width: 0; padding-top: 10px; border-top: 1px solid var(--line-soft); }
@@ -2533,10 +2550,10 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 .mirror-flat-acc img { max-height: 100%; max-width: 64px; }
 .mirror-flat-silhouette { height: 72%; fill: #3b3328; opacity: .16; }
 .fitting-stores { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
-/* RF47 · criador de peça: a mesma grade de marcas do provador, rolável como lá */
+/* RF47 · criador de peça: a mesma grade paginada de marcas do provador */
 .catalog-brand-heading { min-height: 34px; }
-.catalog-brand-stage { height: 320px; overflow-y: auto; overscroll-behavior: contain; }
-.catalog-brand-grid .fitting-stores { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 3px; }
+.catalog-brand-stage { min-height: 160px; }
+.catalog-brand-grid .fitting-stores { padding: 3px; }
 .fitting-store { display: grid; justify-items: center; gap: 4px; padding: 10px 6px; border: 1.5px solid var(--line-soft); border-radius: 12px; background: var(--surface); text-align: center; transition: border-color .15s, background .15s; }
 /* marca sem peças do tipo escolhido: continua na grade (todas as marcas), apagada */
 .fitting-store.is-empty:not(.is-active) { opacity: .55; }
@@ -3620,3 +3637,20 @@ button.cbc-slot-btn:hover { border-color: var(--line); background: var(--surface
 .gd-dims li em { font-style: normal; text-align: right; }
 .gd-dims .gd-dims-foot { grid-template-columns: auto 1fr; margin-top: 4px; }
 @media (max-width: 520px) { .gd-highlights { grid-template-columns: minmax(0, 1fr); } }
+
+/* AURA Hype: decorative loops, no invented fabric metrics or flashing. */
+.aura-hype { position:absolute; inset:0; pointer-events:none; overflow:hidden; border:1px solid #65f5df80; }
+.aura-hype-field { position:absolute; inset:0; background:repeating-linear-gradient(0deg,transparent 0 24px,#52e0dc16 25px 26px),repeating-linear-gradient(90deg,transparent 0 24px,#52e0dc16 25px 26px); }
+.aura-hype-field::after { content:""; position:absolute; inset:0; height:18%; background:linear-gradient(transparent,#54efdc65,transparent); animation:aura-scan 8s ease-in-out infinite alternate; }
+.aura-hype-score { position:absolute; top:12px; right:12px; max-width:calc(100% - 24px); box-shadow:0 0 8px #42ffd970,inset 0 0 12px #42ffd926; padding:7px 10px; border:1px solid #6effe3; border-radius:8px; color:#bdfff1; background:#061a24e8; font:600 11px/1.4 monospace; letter-spacing:.12em; }
+.aura-hype[data-effect="XRAY"] .aura-hype-field { background:linear-gradient(120deg,#255b8338,#8bfff126,#21175a40); mix-blend-mode:screen; }
+.aura-hype[data-effect="DOTS"] .aura-hype-field { background:radial-gradient(#70ffe68a 1.5px,transparent 2px) 0 0/24px 24px; }
+.aura-hype[data-effect="STARS"] i { position:absolute; left:20%; top:65%; width:6px; height:6px; background:#bbfff0; clip-path:polygon(50% 0,62% 37%,100% 50%,62% 62%,50% 100%,37% 62%,0 50%,37% 37%); animation:aura-stars 9s linear infinite; }
+.aura-hype[data-effect="STARS"] i:nth-child(2) { left:40%; animation-delay:-2s; }
+.aura-hype[data-effect="STARS"] i:nth-child(3) { left:60%; animation-delay:-4s; }
+.aura-hype[data-effect="STARS"] i:nth-child(4) { left:80%; animation-delay:-6s; }
+.aura-hype[data-effect="METRICS"] .aura-hype-field { border:16px solid transparent; outline:1px dashed #67f5d9; outline-offset:-24px; }
+@keyframes aura-scan { to { transform:translateY(450%); } }
+@keyframes aura-stars { to { transform:translateY(-160px) rotate(180deg); opacity:0; } }
+@media (prefers-reduced-motion:reduce) { .aura-hype-field::after,.aura-hype i { animation:none!important; } }
+[data-reduce-motion="true"] .aura-hype-field::after,[data-reduce-motion="true"] .aura-hype i { animation:none!important; }

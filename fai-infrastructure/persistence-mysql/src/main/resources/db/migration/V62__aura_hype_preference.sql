@@ -1,0 +1,1 @@
+ALTER TABLE user_preferences ADD COLUMN aura_hype BOOLEAN NOT NULL DEFAULT FALSE;

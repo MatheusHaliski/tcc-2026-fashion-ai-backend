@@ -133,4 +133,7 @@ public class UserPreferences extends VersionedAuditableEntity {
      */
     @Column(name = "hype_creator_opt_out", nullable = false)
     private boolean hypeCreatorOptOut;
+
+    @Column(name = "aura_hype", nullable = false)
+    private boolean auraHype;
 }

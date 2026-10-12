@@ -18,6 +18,7 @@ function RoomAssets() {
   const query = useApi<Assets>((signal) => api.get("/api/admin/room-assets", { signal }), [], { refreshInterval: 5000 });
   const [name, setName] = useState(""); const [block, setBlock] = useState(""); const [price, setPrice] = useState("100");
   const [level, setLevel] = useState("ESTREIA"); const [image, setImage] = useState<File | null>(null);
+  const [taskId, setTaskId] = useState("");
   const [busy, setBusy] = useState(false); const [preview, setPreview] = useState<Job | null>(null);
   // Keep the key after a failed HTTP response: retrying the same request must not queue another paid generation.
   const requestId = useRef<string | null>(null);
@@ -31,8 +32,9 @@ function RoomAssets() {
       const form = new FormData(); form.append("image", image);
       form.append("command", JSON.stringify({ requestId: requestId.current, name: name.trim(),
         slotType: chosen.slotType, moldId: chosen.moldId, widthCm: chosen.widthCm, pricePoints: Number(price), requiredLevel: level }));
-      await api.upload("/api/admin/room-assets", form); toast.success(t("roomAssets.queued"));
-      requestId.current = null; setName(""); setImage(null); query.reload();
+      if (taskId.trim()) form.append("taskId", taskId.trim());
+      await api.upload(taskId.trim() ? "/api/admin/room-assets/import-meshy" : "/api/admin/room-assets", form); toast.success(t("roomAssets.queued"));
+      requestId.current = null; setName(""); setImage(null); setTaskId(""); query.reload();
     } catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
   async function act(job: Job, action: "approve" | "reject" | "publish") {
@@ -51,7 +53,8 @@ function RoomAssets() {
       <Field label={t("roomAssets.price")}><Input type="number" value={price} min={1} max={1000000} required disabled={busy} onChange={(e) => { setPrice(e.target.value); changed(); }} /></Field>
       <Field label={t("roomAssets.level")}><Select value={level} disabled={busy} onChange={(e) => { setLevel(e.target.value); changed(); }}>{(query.data?.levels ?? []).map(l => <option key={l}>{l}</option>)}</Select></Field>
       <Field label={t("roomAssets.reference")}><Input type="file" accept="image/png,image/jpeg,image/webp" required disabled={busy} onChange={(e) => { setImage(e.target.files?.[0] ?? null); changed(); }} /></Field>
-      <div className="flex items-end"><Button type="submit" variant="primary" disabled={busy || !query.data?.available || !image || !name.trim()}>{t("roomAssets.generate")}</Button></div>
+      <Field label={t("roomAssets.importTask")} hint={t("roomAssets.importHint")}><Input value={taskId} disabled={busy} onChange={e => { setTaskId(e.target.value); changed(); }} /></Field>
+      <div className="flex items-end"><Button type="submit" variant="primary" disabled={busy || !query.data?.available || !image || !name.trim()}>{t(taskId.trim() ? "roomAssets.import" : "roomAssets.generate")}</Button></div>
     </form>
     {query.loading && !query.data ? <Skeleton className="h-40" /> : !query.data?.items.length ? <EmptyState title={t("roomAssets.empty")} /> : <ul className="grid gap-3 sm:grid-cols-2">{query.data.items.map(job => <li key={job.id} className="surface grid gap-2 p-4">
       <div className="flex gap-3"><img src={mediaUrl(job.input.referenceUrl) ?? undefined} alt="" className="h-20 w-20 rounded object-contain" /><div><h2 className="type-body font-semibold">{job.input.command.name}</h2><Badge>{t(`roomAssets.status.${job.status}`)} · {job.result.progress}%</Badge><p className="type-caption text-muted">{job.result.sku ?? job.errorCode ?? t(`roomAssets.review.${job.result.review}`)}</p></div></div>

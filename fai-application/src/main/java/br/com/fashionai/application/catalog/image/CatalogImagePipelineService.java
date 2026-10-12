@@ -153,6 +153,30 @@ public class CatalogImagePipelineService {
                 cached.isPresent(), (System.nanoTime() - t0) / 1_000_000, CatalogImagePipeline.VERSION);
     }
 
+    /** Cached automatic display framing. Striped locks bound memory and serialize duplicate requests. */
+    private final Object[] previewLocks = java.util.stream.IntStream.range(0, 32).mapToObj(i -> new Object()).toArray();
+    private final java.util.concurrent.Semaphore previewCapacity = new java.util.concurrent.Semaphore(2);
+
+    public void ensurePreview(CurrentUser user, UUID productId) {
+        guard.requireCanCreate(user);
+        CatalogProduct product = products.findById(productId).orElseThrow(() -> ApiException.notFound("catalog product"));
+        if (product.getIngestionStatus() == br.com.fashionai.domain.model.enums.CatalogIngestionStatus.REJECTED)
+            throw ApiException.badRequest("PRODUTO_RECUSADO", "Este produto foi recusado.");
+        synchronized (previewLocks[Math.floorMod(productId.hashCode(), previewLocks.length)]) {
+            boolean ready = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId).stream()
+                    .filter(i -> i.isCanonical() && i.getUsageStatus() != CatalogImageUsage.REJECTED && !"REJECTED".equals(i.getReviewStatus()))
+                    .anyMatch(i -> {
+                        Map<String, Object> crop = Json.map(i.getCropJson());
+                        return Boolean.TRUE.equals(crop.get("ruleCompliant")) && crop.get("crop") instanceof Map<?, ?>
+                                && crop.get("selectionFrame") instanceof Map<?, ?> frame
+                                && "CATALOG_FRAME_34_FILLED_V4".equals(frame.get("version"));
+                    });
+            if (ready) return;
+            if (!previewCapacity.tryAcquire()) throw new ApiException(429, "CATALOG_PREVIEW_BUSY", "Enquadramento em andamento. Tente novamente.");
+            try { verifySelection(user, productId); } finally { previewCapacity.release(); }
+        }
+    }
+
     /** Re-run the batch's filled FabricFrame on the original bytes for an explicit catalog pick. */
     public void verifySelection(CurrentUser user, UUID productId) {
         guard.requireCanCreate(user);

@@ -197,6 +197,8 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         mods.add(module("handles", "HANDLE", "PUX-CAV", 0, 0, "Puxadores", null, Map.of("color", "#F4F2EF", "texture", "cava")));
         mods.add(module("light", "LIGHT", "LUZ-LED", 0, 0, Msg.t("room.iluminacao"), null, Map.of("kelvin", 4000, "guided", false)));
         mods.add(module("rug", "RUG", "TAP-RND", 0, 0, "Tapete", null, null));
+        mods.add(module("bed", "BED", "BED-DBL", 280, 0, Msg.t("room.double_bed"), null, Map.of()));
+        mods.add(module("saleRack", "SALE_RACK", "RACK-MOB", 160, 0, Msg.t("room.support_rack"), null, Map.of()));
         mods.add(module("hangers", "HANGER", "CAB-STD", 0, 0, "Cabides", null, Map.of("color", "#6B5A4A", "texture", "madeira")));
         mods.add(module("logo", "LOGO", "LOG-PLC", 0, 0, Msg.t("room.logo_das_portas"), null, null));
         // Smart Mirror (RF28) — módulo trocável na loja do quarto (retangular, arco, oval, camarim com luzes)
@@ -398,19 +400,29 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         return out;
     }
 
-    /** Iluminação guiada (nível Studio): temperatura de cor da luz do móvel, de 2700 K (quente) a 6500 K (fria). */
+    /** Existing clients may still set temperature; switching/dimming is available in every room. */
     @Transactional
     public Map<String, Object> setLight(CurrentUser user, int kelvin) {
-        if (!levelOf(user.id()).atLeast(FaiPointsService.Level.STUDIO)) {
+        return setLight(user, kelvin, null, null);
+    }
+    @Transactional
+    public Map<String, Object> setLight(CurrentUser user, Integer kelvin, Double intensity, Boolean on) {
+        if (kelvin != null && !levelOf(user.id()).atLeast(FaiPointsService.Level.STUDIO)) {
             throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("room.a_iluminacao_guiada_e_liberada"));
         }
-        int k = Math.max(2700, Math.min(6500, kelvin));
+        if (intensity != null && (!Double.isFinite(intensity) || intensity < 0 || intensity > 1)) {
+            throw new ApiException(400, "INVALID_LIGHT_INTENSITY", Msg.t("room.invalid_intensity"));
+        }
         RoomLayout l = layout(user.id());
         List<Map<String, Object>> mods = modules(l);
-        mods.stream().filter(m -> "light".equals(m.get("id"))).findFirst().ifPresent(m -> m.put("finish", Map.of("kelvin", k, "guided", true)));
-        l.setModulesJson(Json.write(mods));
-        layouts.save(l);
-        return Map.of("kelvin", k, "guided", true);
+        Map<String, Object> finish = new LinkedHashMap<>(module(l, "light").map(m -> Json.map(Json.write(m.get("finish")))).orElse(Map.of()));
+        finish.putIfAbsent("kelvin", 4000); finish.putIfAbsent("guided", false); finish.putIfAbsent("intensity", 0.75);
+        if (kelvin != null) { finish.put("kelvin", Math.max(2700, Math.min(6500, kelvin))); finish.put("guided", true); }
+        if (intensity != null) finish.put("intensity", intensity);
+        if (on != null) finish.put("on", on);
+        mods.stream().filter(m -> "light".equals(m.get("id"))).findFirst().ifPresent(m -> m.put("finish", finish));
+        l.setModulesJson(Json.write(mods)); layouts.save(l);
+        return finish;
     }
 
     /** DET-K03 — monograma nas portas a partir do Studio (até 3 iniciais em baixo-relevo). */
@@ -640,6 +652,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         Map<String, String> labels = labels(layout);
         Map<UUID, WardrobeItem> byId = all.stream().collect(Collectors.toMap(WardrobeItem::getId, w -> w));
         Occupancy occ = new Occupancy(new HashSet<>(), new HashMap<>(), new HashMap<>());
+        List<RoomStorageEntry> repair = new ArrayList<>();
         for (RoomStorageEntry entry : entries) {
             WardrobeItem w = byId.get(entry.getWardrobeItemId());
             RoomAddress address = RoomAddress.parse(entry.getAddress()).orElse(null);
@@ -648,18 +661,23 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                 && (!address.zone().equals("drawer") || occ.drawerCount().getOrDefault(String.valueOf(address.index()), 0) < drawerCapacity(w.getCategory())
                     && (occ.drawerCategory().get(String.valueOf(address.index())) == null || w.getCategory().equals(occ.drawerCategory().get(String.valueOf(address.index())))));
             if (!valid) {
-                known.remove(entry.getWardrobeItemId()); storage.delete(entry);
+                repair.add(entry);
             } else occ.add(address, w.getCategory());
         }
-        entries.removeIf(entry -> !known.contains(entry.getWardrobeItemId()));
+        // Hibernate inserts before deletes: replacing an existing row with the same unique piece ID fails at flush.
+        // Repair its address in place, preserving the row ID, timestamps and one-row-per-piece invariant.
+        for (RoomStorageEntry entry : repair) {
+            WardrobeItem w = byId.get(entry.getWardrobeItemId());
+            entry.setAddress(place(w, layout, labels, occ).toString());
+            entry.setAssignedBy("AUTO");
+            storage.save(entry);
+        }
         for (WardrobeItem w : all) {
             if (!known.contains(w.getId())) {
-                RoomStorageEntry e = new RoomStorageEntry();
-                e.setUserId(userId);
-                e.setWardrobeItemId(w.getId());
-                e.setAddress(place(w, layout, labels, occ).toString());
-                e.setAssignedBy("AUTO");
-                entries.add(storage.save(e));
+                RoomAddress proposed = place(w, layout, labels, occ);
+                RoomStorageEntry e = automaticEntry(userId, w.getId(), proposed);
+                entries.add(e);
+                known.add(w.getId());
             }
         }
         return entries;
@@ -675,13 +693,14 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         }
         Occupancy occ = Occupancy.of(storage.findByUserId(userId), pieces.findByUserIdOrderByCreatedAtDesc(userId));
         RoomAddress a = place(w, layout, labels(layout), occ);
-        RoomStorageEntry e = new RoomStorageEntry();
-        e.setUserId(userId);
-        e.setWardrobeItemId(pieceId);
-        e.setAddress(a.toString());
-        e.setAssignedBy("AUTO");
-        storage.save(e);
-        return a;
+        RoomStorageEntry entry = automaticEntry(userId, pieceId, a);
+        return RoomAddress.parse(entry.getAddress()).orElseThrow();
+    }
+
+    private RoomStorageEntry automaticEntry(UUID userId, UUID pieceId, RoomAddress address) {
+        storage.insertAutomaticIfAbsent(UUID.randomUUID().toString(), userId.toString(), pieceId.toString(), address.toString());
+        // Locking read sees a concurrent winner even under MySQL REPEATABLE READ.
+        return storage.findFirstByWardrobeItemId(pieceId).orElseThrow();
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
@@ -1001,7 +1020,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
             boolean sound = preferences.findByUserId(userId).map(p -> p.isSoundEnabled()).orElse(false);
             boolean haptics = preferences.findByUserId(userId).map(p -> p.isHapticsEnabled()).orElse(true);
             LocalDateTime now = LocalDateTime.now(ZONE);
-            out.put("ambient", Map.of("period", reduceMotion ? "fixed" : period(now), "seasonal", String.valueOf(seasonalDecoration(today)),
+            out.put("ambient", Map.of("period", period(now), "seasonal", String.valueOf(seasonalDecoration(today)),
                     "reduceMotion", reduceMotion, "sound", sound, "haptics", haptics));
             out.put("monogram", module(layout, "monogram").map(m -> String.valueOf(m.get("initials"))).orElse(null));
             out.put("closetLights", closetLights(userId));
@@ -1100,12 +1119,8 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                 }
             }
         }
-        RoomStorageEntry e = storage.findByWardrobeItemId(pieceId).orElseGet(() -> {
-            RoomStorageEntry n = new RoomStorageEntry();
-            n.setUserId(user.id());
-            n.setWardrobeItemId(pieceId);
-            return n;
-        });
+        RoomStorageEntry e = storage.findByWardrobeItemId(pieceId)
+                .orElseGet(() -> automaticEntry(user.id(), pieceId, a));
         e.setAddress(a.toString());
         e.setAssignedBy("USER");
         storage.save(e);

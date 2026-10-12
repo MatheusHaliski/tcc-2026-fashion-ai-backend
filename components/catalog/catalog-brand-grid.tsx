@@ -1,6 +1,7 @@
 "use client";
+import { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/brand-logo";
-import { cn } from "@/components/ui";
+import { cn, Pagination } from "@/components/ui";
 import { useI18n } from "@/lib/i18n/i18n";
 import type { Store } from "@/lib/tryon/fitting-room-model";
 
@@ -15,13 +16,21 @@ export function CatalogBrandGrid({ stores, selected, category, label, labelledBy
   stores: Store[]; selected: string; category?: string; label?: string; labelledBy?: string; onPick: (store: Store) => void;
 }) {
   const { t } = useI18n();
-  return <div className="fitting-stores" role="group" aria-label={label} aria-labelledby={labelledBy}>
-    {stores.map(entry => <button key={entry.brandId} type="button"
+  const size = 8;
+  const [page, setPage] = useState(0);
+  const key = stores.map(store => store.brandId).join("|") + (category ?? "");
+  useEffect(() => { setPage(0); }, [key]);
+  const last = Math.max(0, Math.ceil(stores.length / size) - 1);
+  const current = Math.min(page, last);
+  return <><div className="fitting-stores" role="group" aria-label={label} aria-labelledby={labelledBy}>
+    {stores.slice(current * size, (current + 1) * size).map(entry => <button key={entry.brandId} type="button"
       className={cn("fitting-store", selected === entry.name && "is-active", !storeCount(entry, category) && "is-empty")}
       aria-pressed={selected === entry.name} onClick={() => onPick(entry)}>
       <BrandLogo name={entry.name} src={entry.logoUrl} size={32} shape="square" />
       <span className="fitting-store-name">{entry.name}</span>
       <span className="type-caption text-muted">{t("tryOn.n_produtos", { n: storeCount(entry, category) })}</span>
     </button>)}
-  </div>;
+  </div>
+    {stores.length > size && <Pagination page={current} size={size} total={stores.length} hasMore={current < last} onPage={next => setPage(Math.max(0, Math.min(next, last)))} />}
+  </>;
 }
