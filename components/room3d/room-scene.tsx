@@ -850,11 +850,11 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       })}
       <Mirror position={L.mirror} look={data.mirrorDailyLook} overlay={mirror} theme={deco("tema_espelho")?.theme ?? null} onVistaMe={onVistaMe} reduced={reduced} module={byId["mirror"]} engine={gameplay?.engine} />
       <DressForm position={L.bust} pointAt={pointAt} talking={!!copilotTalking} onClick={() => onCopilot?.()} reduced={reduced} />
-      <SaleRack position={L.sale} rack={{ name: data.saleRack?.name ?? t("room.support_rack"), pieces: [...new Map([...(data.saleRack?.pieces ?? []), ...(data.chair ?? []), ...(data.basket ?? [])].map(p => [p.id, p])).values()] }} ctx={ctx} modelUrl={byId["saleRack"]?.finish?.model3dUrl} />
+      <SaleRack position={L.sale} rack={{ name: data.saleRack?.name ?? t("room.support_rack"), pieces: [...new Map([...(data.saleRack?.pieces ?? []), ...(data.chair ?? []), ...(data.basket ?? [])].map(p => [p.id, p])).values()] }} ctx={ctx} modelUrl={byId["saleRack"]?.finish?.model3dUrl ?? "/models/fai-room/rack-fai.glb"} />
       <RoomFixture engine={gameplay?.engine} id="chair" position={L.chair} collider={[.32, .32]} kind="sit" run={() => { if (gameplay) { gameplay.engine.seated = gameplay.engine.seated ? null : new THREE.Vector3(...L.chair); gameplay.engine.notify(); } }}>
         <Chair position={[0, 0, 0]} pieces={[]} ctx={ctx} />
       </RoomFixture>
-      <DoubleBed engine={gameplay?.engine} modelUrl={byId["bed"]?.finish?.model3dUrl} lit={ceilingOn} intensity={brightness} />
+      <DoubleBed engine={gameplay?.engine} modelUrl={byId["bed"]?.finish?.model3dUrl ?? "/models/fai-room/bed-fai.glb"} lit={ceilingOn} intensity={brightness} />
 
 
       {/* Compras aguardam abrir o inventário; roupas e looks nunca viram caixas no cenário. */}
