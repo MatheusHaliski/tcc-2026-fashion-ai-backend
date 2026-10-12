@@ -15,7 +15,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { EditProfileForm } from "@/components/edit-profile";
 
 type Tab = "account" | "appearance" | "privacy" | "data" | "sessions";
-interface Prefs { theme: string; language: string; density: string; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null; sizeSystem?: string; unitSystem?: string; defaultCardSkin?: string; lookDoDiaPanelVersion?: string; soundEnabled?: boolean; hapticsEnabled?: boolean; hypeCreatorOptOut?: boolean; [k: string]: unknown; }
+interface Prefs { theme: string; language: string; density: string; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null; sizeSystem?: string; unitSystem?: string; defaultCardSkin?: string; lookDoDiaPanelVersion?: string; soundEnabled?: boolean; hapticsEnabled?: boolean; hypeCreatorOptOut?: boolean; auraHypeEnabled?: boolean; [k: string]: unknown; }
 interface Consent { purpose: string; granted: boolean; label?: string; description?: string; grantedAt?: string; }
 
 function Settings() {
@@ -125,6 +125,9 @@ function Settings() {
             {/* RF53 · P3-12 — sair do agregado público "Criadores em alta"; as peças e looks continuam com o próprio Hype */}
             <div className="mt-2">
               <Switch checked={!!server.data?.hypeCreatorOptOut} disabled={!server.data} onChange={async (v) => { const prev = server.data!; server.setData({ ...prev, hypeCreatorOptOut: v }); if (!(await savePrefs({ hypeCreatorOptOut: v }))) server.setData(prev); }} label={t("hypePrivacy.creatorOptOut")} hint={t("hypePrivacy.creatorOptOutHint")} />
+            </div>
+            <div className="mt-2">
+              <Switch checked={!!server.data?.auraHypeEnabled} disabled={!server.data} onChange={async (v) => { const prev = server.data!; server.setData({ ...prev, auraHypeEnabled: v }); if (!(await savePrefs({ auraHypeEnabled: v }))) server.setData(prev); }} label="Ativar AURA Hype nas fotos das minhas peças" hint="Mostra o HypeScore disponível com leitura visual de scanner, métricas e tendência." />
             </div>
             <a className="mt-2 inline-block type-body-sm underline" href={`${API_BASE}/api/hype/method`} target="_blank" rel="noopener noreferrer">{t("hypePrivacy.method")}</a>
           </Card>

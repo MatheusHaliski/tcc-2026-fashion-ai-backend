@@ -133,4 +133,8 @@ public class UserPreferences extends VersionedAuditableEntity {
      */
     @Column(name = "hype_creator_opt_out", nullable = false)
     private boolean hypeCreatorOptOut;
+
+    /** AURA Hype: ativa a leitura visual do HypeScore nas fotos das peças da própria pessoa. */
+    @Column(name = "aura_hype_enabled", nullable = false)
+    private boolean auraHypeEnabled;
 }

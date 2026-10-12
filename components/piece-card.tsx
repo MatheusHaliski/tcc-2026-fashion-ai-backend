@@ -19,6 +19,7 @@ import { CardHeader } from "@/components/card-header";
 import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "@/components/fashion-card";
 import { HypeBadge } from "@/components/hype/hype-badge";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
+import { AuraHype } from "@/components/hype/aura-hype";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { hypeViewState } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
@@ -53,7 +54,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   flip?: boolean;
 }) {
   const detail = useDetailModal();
-  const { t, fmtMoney } = useI18n(); const { user } = useAuth();
+  const { t, fmtMoney } = useI18n(); const { user, me } = useAuth();
   const preview = href === "#";
   const flippable = flip && !preview && !selectable;
   const hype = useHypeSummary("PIECE", piece.id, !preview && !selectable);
@@ -68,6 +69,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   // sem foto de estúdio, a peça do catálogo mostra a foto oficial com o mesmo recorte do card da busca
   const crop = piece.studioFeedUrl || piece.studioThumbUrl || piece.studioImageUrl ? null : pieceCatalogCrop(piece);
   const art = readPieceArt(piece.background);
+  const auraHype = !!me?.auraHypeEnabled || String((piece.background?.aura as { variantId?: string } | undefined)?.variantId ?? "").startsWith("aura_hype");
   const surface = artSurfaceProps(piece.background, art, "compact");
   const skin = (piece.background?.skin as string | undefined) ?? null;
   const mine = !!user && piece.owner?.id === user.id;
@@ -81,6 +83,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const media = (
     <>
       {crop ? <CatalogPhoto image={crop} alt="" /> : img.src ? <MediaImage src={img.src} srcSet={img.srcSet} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
+      {auraHype && <AuraHype state={hypeState} />}
       {(zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
       {(!piece.disponivel || piece.forDonation || (mine && piece.favorite) || piece.aiGeneratedImage) && (
         <span className="pc-flags">

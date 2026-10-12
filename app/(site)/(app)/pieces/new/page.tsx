@@ -110,8 +110,6 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   }
   /** "É esta" na busca: o produto preenche o formulário e a peça passa a referenciar o catálogo (a foto oficial vira a imagem). */
   async function applyCatalog(product: CatalogProduct, variant: CatalogVariant | null) {
-    try { product = await catalogApi.verifyImage(product.id); }
-    catch (error) { setSaveProblem(error instanceof Error ? error.message : t("catalog.verificacao_falhou")); return; }
     setPick({ product, variant });
     const color = variant?.color ?? product.color ?? "";
     const allowedOccasions = tax?.allowedOccasionsByCategory?.[product.category] ?? tax?.occasions;

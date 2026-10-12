@@ -114,6 +114,7 @@ public class PreferencesService {
         out.put("defaultCardSkin", p.getDefaultCardSkin());
         out.put("lookDoDiaPanelVersion", u.getLookDoDiaPanelVersion());
         out.put("hypeCreatorOptOut", p.isHypeCreatorOptOut());
+        out.put("auraHypeEnabled", p.isAuraHypeEnabled());
         out.put("clientUpdatedAt", p.getClientUpdatedAt());
         out.put("profile", Map.of("displayName", u.getDisplayName(), "username", u.getUsername(),
                 "bio", u.getBio() == null ? "" : u.getBio(), "avatarUrl", String.valueOf(u.getAvatarUrl()),
@@ -140,7 +141,18 @@ public class PreferencesService {
                          MannequinSex mannequinSex, String mannequinSkinTone, BodyBuild mannequinBuild,
                          String defaultCardSkin, HypeScorePanelVersion lookDoDiaPanelVersion, Instant clientUpdatedAt,
                          String contentContainerColor, Boolean soundEnabled, Boolean hapticsEnabled, String coreAesthetic,
-                         Boolean hypeCreatorOptOut) {
+                         Boolean hypeCreatorOptOut, Boolean auraHypeEnabled) {
+        /** Mantém compatibilidade para chamadores Java que ainda constroem a atualização anterior. */
+        public Update(ThemeMode theme, UiLanguage language, UiDensity density, Integer fontScale, Boolean highContrast,
+                      Boolean reduceMotion, String chromeBackgroundId, SizeSystem sizeSystem, UnitSystem unitSystem,
+                      MannequinSex mannequinSex, String mannequinSkinTone, BodyBuild mannequinBuild,
+                      String defaultCardSkin, HypeScorePanelVersion lookDoDiaPanelVersion, Instant clientUpdatedAt,
+                      String contentContainerColor, Boolean soundEnabled, Boolean hapticsEnabled, String coreAesthetic,
+                      Boolean hypeCreatorOptOut) {
+            this(theme, language, density, fontScale, highContrast, reduceMotion, chromeBackgroundId, sizeSystem, unitSystem,
+                    mannequinSex, mannequinSkinTone, mannequinBuild, defaultCardSkin, lookDoDiaPanelVersion, clientUpdatedAt,
+                    contentContainerColor, soundEnabled, hapticsEnabled, coreAesthetic, hypeCreatorOptOut, null);
+        }
     }
 
     /** DET-C06 — microestéticas "-core" do quiz "Qual é o seu core?" (vocabulário do arquétipo do DNA). */
@@ -235,6 +247,9 @@ public class PreferencesService {
             // com o próprio Hype. O cache do ranking troca de geração depois do commit (nunca serve o valor antigo).
             p.setHypeCreatorOptOut(u.hypeCreatorOptOut());
             invalidateHypeCacheAfterCommit();
+        }
+        if (u.auraHypeEnabled() != null) {
+            p.setAuraHypeEnabled(u.auraHypeEnabled());
         }
         p.setClientUpdatedAt(u.clientUpdatedAt() == null ? Instant.now() : u.clientUpdatedAt());
         audit.log(user, AuditActions.ALTERACAO_PREFERENCIAS, "preferences:" + user.id(), Map.of());

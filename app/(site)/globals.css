@@ -2533,10 +2533,10 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 .mirror-flat-acc img { max-height: 100%; max-width: 64px; }
 .mirror-flat-silhouette { height: 72%; fill: #3b3328; opacity: .16; }
 .fitting-stores { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
-/* RF47 · criador de peça: a mesma grade de marcas do provador, rolável como lá */
+/* RF47 · criador de peça: marcas em páginas; o bloco não vira uma lista com rolagem vertical. */
 .catalog-brand-heading { min-height: 34px; }
-.catalog-brand-stage { height: 320px; overflow-y: auto; overscroll-behavior: contain; }
-.catalog-brand-grid .fitting-stores { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 3px; }
+.catalog-brand-stage { min-height: 160px; }
+.catalog-brand-grid .fitting-stores { padding: 3px; }
 .fitting-store { display: grid; justify-items: center; gap: 4px; padding: 10px 6px; border: 1.5px solid var(--line-soft); border-radius: 12px; background: var(--surface); text-align: center; transition: border-color .15s, background .15s; }
 /* marca sem peças do tipo escolhido: continua na grade (todas as marcas), apagada */
 .fitting-store.is-empty:not(.is-active) { opacity: .55; }
@@ -2544,6 +2544,17 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 .fitting-store.is-active { border-color: var(--thread); background: var(--thread-soft); }
 .fitting-store:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .fitting-store-name { font-weight: 600; font-size: 13px; line-height: 1.2; }
+.aura-hype { position: absolute; inset: 0; z-index: 3; overflow: hidden; pointer-events: none; color: #c7f8ff; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; text-shadow: 0 1px 8px #00162f; background: linear-gradient(135deg, rgba(0, 17, 43, .08), rgba(0, 215, 255, .08), rgba(156, 69, 255, .12)); }
+.aura-hype-grid { position: absolute; inset: 0; opacity: .45; background-image: linear-gradient(rgba(86, 240, 255, .22) 1px, transparent 1px), linear-gradient(90deg, rgba(86, 240, 255, .22) 1px, transparent 1px); background-size: 18px 18px; mask-image: linear-gradient(to bottom, transparent, #000 28%, #000 80%, transparent); }
+.aura-hype-scan { position: absolute; left: 0; right: 0; height: 20%; border-top: 1px solid #b9faff; border-bottom: 1px solid rgba(130, 249, 255, .45); background: linear-gradient(transparent, rgba(20, 226, 255, .26), transparent); animation: aura-hype-scan 3.2s ease-in-out infinite; }
+.aura-hype-node { position: absolute; width: 7px; height: 7px; border-radius: 50%; border: 1px solid #d8fcff; background: #18dffc; box-shadow: 0 0 12px #18dffc; animation: aura-hype-pulse 1.8s ease-in-out infinite; }
+.aura-hype-node.is-one { left: 28%; top: 31%; }.aura-hype-node.is-two { left: 68%; top: 47%; animation-delay: .5s; }.aura-hype-node.is-three { left: 42%; top: 72%; animation-delay: 1s; }
+.aura-hype-readout { position: absolute; top: 10px; left: 10px; display: grid; line-height: 1; }.aura-hype-readout small, .aura-hype-readout em, .aura-hype-metrics { font-size: 8px; letter-spacing: .12em; font-style: normal; }.aura-hype-readout strong { font-size: 30px; letter-spacing: -.08em; }.aura-hype-readout em { color: #85ffcb; margin-top: 3px; }
+.aura-hype-metrics { position: absolute; right: 9px; bottom: 9px; text-align: right; line-height: 1.55; }
+.aura-hype.is-viral, .aura-hype.is-trending { color: #fff0a5; }.aura-hype.is-viral .aura-hype-node, .aura-hype.is-trending .aura-hype-node { background: #ffd54d; box-shadow: 0 0 12px #ffd54d; }
+@keyframes aura-hype-scan { 0%, 100% { transform: translateY(-15%); opacity: .2; } 48% { transform: translateY(410%); opacity: 1; } }
+@keyframes aura-hype-pulse { 0%, 100% { transform: scale(.7); opacity: .5; } 50% { transform: scale(1.35); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .aura-hype-scan, .aura-hype-node { animation: none; } }
 .fitting-saved { display: flex; align-items: center; gap: 10px; padding: 8px; border: 1px solid var(--line-soft); border-radius: 10px; }
 @media (max-width: 640px) { .fitting-stage { height: 62vh; } .fitting-saved { flex-wrap: wrap; } }
 
