@@ -93,11 +93,11 @@ function NavGroups({ onNavigate }: { onNavigate?: () => void }) {
                 return (
                   <li key={n.href}>
                     <Link href={n.href} aria-current={on && !child ? "page" : undefined} data-ancestor={child ? "true" : undefined} className="nav-link" onClick={onNavigate}>
-                      <FaiIcon id={n.icon} size={24} variant="glyph" decorative /><span>{t(n.key)}</span>
+                      <span className="nav-icon-medallion"><FaiIcon id={n.icon} size={24} variant="glyph" decorative /></span><span>{t(n.key)}</span>
                     </Link>
                     {child && (
                       <span className="nav-link nav-link-sub" aria-current="page">
-                        <FaiIcon id={child.icon} size={20} variant="glyph" decorative /><span>{t(child.key)}</span>
+                        <span className="nav-icon-medallion"><FaiIcon id={child.icon} size={24} variant="glyph" decorative /></span><span>{t(child.key)}</span>
                       </span>
                     )}
                   </li>

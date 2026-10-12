@@ -53,13 +53,16 @@ const HOT = "HOT";
 
 export default function FeedPage() {
   const { t } = useI18n(); const { user } = useAuth();
-  const [tab, setTab] = useState<"feed" | "runway">("feed");
+  const [tab, setTab] = useState<"feed" | "runway" | "pieces" | "people" | "celebrities" | "brands">("feed");
   const [filters, setFilters] = useState<Record<string, string>>({});
   const [cursor, setCursor] = useState<string | null>(null);
   const [pages, setPages] = useState<FeedEntry[]>([]);
   const { data, loading, error, reload } = useApi<Feed>(async (signal) => {
     let r: Feed;
-    if (tab === "runway") {
+    if (tab === "pieces") {
+      const raw = await api.get<{ items: PieceView[]; nextCursor: string | null }>(`/api/public-pieces${qs({ cursor, size: 24, ...filters })}`, { signal, anonymous: !user });
+      r = { items: [], entries: raw.items.map(piece => ({ kind: "PIECE", id: piece.id, piece })), nextCursor: raw.nextCursor };
+    } else if (tab === "runway") {
       // a Passarela (quem eu sigo) vem como { reason, scheme | piece, by, caption }: vira o mesmo post do feed
       const raw = await api.get<RunwayFeed>(`/api/runway${qs({ cursor, size: 12 })}`, { signal, anonymous: !user });
       const entries = (raw.items ?? []).map(fromRunway).filter((e): e is FeedEntry => !!e);
@@ -70,7 +73,7 @@ export default function FeedPage() {
     const entries = fromFeed(r);
     setPages((p) => (cursor ? mergeById(p, entries) : entries));
     return r;
-  }, [tab, cursor, JSON.stringify(filters), !!user], { enabled: tab === "feed" || !!user });
+  }, [tab, cursor, JSON.stringify(filters), !!user], { enabled: tab === "feed" || tab === "pieces" || (tab === "runway" && !!user) });
   const toggle = (k: string, v: string) => { setCursor(null); setFilters((f) => (f[k] === v ? Object.fromEntries(Object.entries(f).filter(([x]) => x !== k)) : { ...f, [k]: v })); };
   const hot = filters.hypeLevel === HOT;
   // o "Em alta" tem chip próprio; os demais chips são os filtros aplicados que o backend devolve (clicar remove)
@@ -82,7 +85,7 @@ export default function FeedPage() {
       <OnboardingChecklist />
       {/* Momentos §43 — só aparece quando há um Momento ativo relevante */}
       <MomentNowBanner />
-      <Tabs tabs={[{ id: "feed", label: t("feed.title") }, { id: "runway", label: t("feed.runway") }]} value={tab} onChange={(v) => { setTab(v); setCursor(null); }} />
+      <Tabs tabs={[{ id: "feed", label: t("feed.title") }, { id: "pieces", label: t("common.pecas") }, { id: "people", label: t("discovery.people") }, { id: "celebrities", label: t("discovery.celebrities") }, { id: "brands", label: t("discovery.brands") }, { id: "runway", label: t("feed.runway") }]} value={tab} onChange={(v) => { setTab(v); setCursor(null); setPages([]); }} />
       {tab === "runway" && !user && <EmptyState title={t("common.loginRequired")} action={<Link href="/login" className="btn btn-primary">{t("nav.login")}</Link>} />}
       {/* RF53 · Lote A5 (P3-15): leitura do feed da comunidade — só looks públicos; crescimento ≠ popularidade */}
       {tab === "feed" && <InsightStrip context="FEED" params={{ window: 7 }} collapsible className="mb-3" />}
@@ -92,16 +95,17 @@ export default function FeedPage() {
           {chips.map((c) => <Chip key={c.key + c.value} active={filters[c.key] === c.value} onClick={() => toggle(c.key, c.value)}>{c.label ?? label(c.value)}</Chip>)}
         </div>
       )}
+      {(["people", "celebrities", "brands"] as string[]).includes(tab) ? <FeedDiscovery key={tab} kind={tab === "people" ? "PESSOAS" : tab === "celebrities" ? "CELEBRIDADES" : "MARCAS"} /> : <>
       {error && <ErrorState error={error} onRetry={reload} />}
       {loading && pages.length === 0 && <SkeletonGrid n={6} h="h-72" />}
       {!loading && !error && pages.length === 0 && (tab === "feed" || user) && (tab === "feed" && hot
         ? <EmptyState title={t("feed.hot_empty")} hint={t("feed.hot_empty_hint")} action={<button type="button" className="btn" onClick={() => toggle("hypeLevel", HOT)}>{t("feed.hot_clear")}</button>} />
         : <EmptyState title={t("feed.empty")} action={user ? <Link href="/schemes/new" className="btn btn-primary">{t("scheme.create")}</Link> : <Link href="/register" className="btn btn-primary">{t("nav.register")}</Link>} />)}
-      <div className="grid-looks">{pages.map((e) => e.scheme
+      <div className="feed-compact-grid">{pages.map((e) => e.scheme
         ? <SchemeCard key={e.id} scheme={e.scheme} extra={e.sharedBy ? <SharedNote entry={e} /> : undefined} />
         : e.piece ? <PieceCard key={e.id} piece={e.piece} extra={<SharedNote entry={e} />} /> : null)}</div>
-      {tab === "feed" && !loading && pages.length > 0 && <FeedDiscovery />}
       <InfiniteSentinel hasMore={!!data?.nextCursor} loading={loading} onMore={() => data?.nextCursor && setCursor(data.nextCursor)} label={t("common.more")} />
+      </>}
     </>
   );
 }

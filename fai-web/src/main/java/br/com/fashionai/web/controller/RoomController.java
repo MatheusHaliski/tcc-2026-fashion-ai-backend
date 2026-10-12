@@ -137,13 +137,13 @@ public class RoomController {
     public record MonogramRequest(@NotBlank String initials) {
     }
 
-    public record LightRequest(int kelvin) {
+    public record LightRequest(Integer kelvin, Double intensity, Boolean on) {
     }
 
     @PutMapping("/api/me/room/light")
     @Operation(summary = "RF30 — Iluminação guiada (nível Studio): temperatura da luz do móvel")
     public Map<String, Object> light(CurrentUser user, @RequestBody LightRequest body) {
-        return room.setLight(user, body.kelvin());
+        return room.setLight(user, body.kelvin(), body.intensity(), body.on());
     }
 
     @PutMapping("/api/me/room/monogram")

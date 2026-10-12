@@ -1,4 +1,5 @@
 "use client";
+import { RoomFixture, DoubleBed, CeilingFixture } from "./room-furniture";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Canvas, events as pointerEvents, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
@@ -12,7 +13,7 @@ import {
 } from "@/components/room3d/room-props";
 import RoomAvatarController, { type RoomGameplay } from "./room-avatar-controller";
 import { MIRROR_COLLIDER, snapshotCrop } from "@/lib/room3d/mirror-session";
-import { ROOM_TURN_EVENT, ROOM_ZOOM_EVENT, RoomInteraction } from "@/lib/room3d/interaction";
+import { ROOM_CAMERA_EVENT, ROOM_TURN_EVENT, ROOM_ZOOM_EVENT, RoomInteraction } from "@/lib/room3d/interaction";
 import { dropPoint, insideW2, ROOM, toWall, W2, w2ToWorld, walkArea, wallById, wallOpacity, wallSide, type WallSpec } from "@/lib/room3d/room-bounds";
 import { useI18n } from "@/lib/i18n/i18n";
 import { ApprovedAsset } from "./approved-asset";
@@ -24,14 +25,14 @@ import { ApprovedAsset } from "./approved-asset";
  * objetos do quarto, módulos por nível (RF30) e elementos dos desafios ativos. Unidades em metros. */
 
 export interface RoomPiece3D { id: string; name: string; category: string; subcategory: string; colorHex?: string | null; imageUrl?: string | null; thumbnailUrl?: string | null; model3dUrl?: string | null; address?: string | null; addressLabel?: string | null; moduleId?: string | null; states?: string[]; wearCount?: number; salePrice?: number | null; origin?: string | null; }
-export interface RoomModule3D { id: string; slotType: string; label: string; mold?: string | null; capacity?: number; category?: string | null; empty?: boolean; finish?: { model3dUrl?: string | null; color?: string; roughness?: number; metalness?: number; texture?: string; material?: string; kelvin?: number; guided?: boolean; artUrl?: string | null; logoUrl?: string | null; labelText?: string | null; creator?: string | null } | null; pieces?: RoomPiece3D[]; lookBoxes?: { id: string; title: string; coverImageUrl?: string | null; lookDoDia?: boolean }[]; accessibleLabel?: string; }
+export interface RoomModule3D { id: string; slotType: string; label: string; mold?: string | null; capacity?: number; category?: string | null; empty?: boolean; finish?: { model3dUrl?: string | null; color?: string; roughness?: number; metalness?: number; texture?: string; material?: string; kelvin?: number; guided?: boolean; intensity?: number; on?: boolean; artUrl?: string | null; logoUrl?: string | null; labelText?: string | null; creator?: string | null } | null; pieces?: RoomPiece3D[]; lookBoxes?: { id: string; title: string; coverImageUrl?: string | null; lookDoDia?: boolean }[]; accessibleLabel?: string; }
 export interface RoomDecoration { type: string; name?: string; days?: number; polaroids?: { schemeId: string; coverImageUrl?: string | null }[]; tapedPieceIds?: string[]; taggedPieceIds?: string[]; theme?: string; }
 export interface RoomData3D {
   modules: RoomModule3D[]; pieces: Record<string, RoomPiece3D>; basket?: RoomPiece3D[]; chair?: RoomPiece3D[]; saleRack?: { name: string; pieces: RoomPiece3D[] } | null;
   showcase?: RoomPiece3D[] | unknown; mirrorDailyLook?: { schemeId: string; title: string; coverImageUrl?: string | null } | null; monogram?: string | null;
   ambient?: { period?: string; reduceMotion?: boolean; seasonal?: string | null }; camera?: { zoom?: [number, number]; azimuth?: [number, number]; polar?: [number, number] }; level?: string;
   decorations?: RoomDecoration[]; closetLights?: { score?: number | null; band?: string | null; milestones: { at: number; label: string; lit: boolean }[]; lit: number } | null;
-  unboxing?: { inventoryId: string; sku: string; name: string; slotType: string }[]; keys?: { id: string; username: string }[]; light?: { kelvin?: number; guided?: boolean } | null;
+  unboxing?: { inventoryId: string; sku: string; name: string; slotType: string }[]; keys?: { id: string; username: string }[]; light?: { kelvin?: number; guided?: boolean; intensity?: number; on?: boolean } | null;
 }
 /** Estado do espelho e do Vista-me vindo da página (RF28). */
 export interface MirrorOverlay { pieces: { id: string; imageUrl?: string | null }[]; postIt?: string | null; closingKey?: number; celebrate?: boolean;
@@ -45,7 +46,7 @@ export interface RoomSceneProps {
   gameplay?: RoomGameplay;
   data: RoomData3D; open: Set<string>; onToggle: (moduleId: string) => void; highlight: string | null; focusModule: string | null;
   onPick: (pieceId: string) => void; onReady?: (canvas: HTMLCanvasElement) => void;
-  lit?: Set<string>; mirror?: MirrorOverlay; dark?: boolean; onToggleTheme?: () => void; onVistaMe?: () => void; onCopilot?: () => void;
+  lit?: Set<string>; mirror?: MirrorOverlay; dark?: boolean; onToggleTheme?: () => void; lightOn?: boolean; lightIntensity?: number; onToggleLight?: () => void; onVistaMe?: () => void; onCopilot?: () => void;
   copilotPoint?: string | null; copilotTalking?: boolean; onKeys?: () => void; onUnbox?: () => void; unboxing?: boolean; onAddToDrawer?: (moduleId: string) => void;
 }
 
@@ -405,21 +406,25 @@ function Basket({ position, pieces, ctx }: { position: [number, number, number];
 }
 
 /** Arara do Desapego: etiqueta de preço e selo Garimpo nas peças de brechó. */
-function SaleRack({ position, rack, ctx }: { position: [number, number, number]; rack: { name: string; pieces: RoomPiece3D[] }; ctx: Ctx }) {
-  const { t } = useI18n();
-  return (
-    <group position={position} rotation={[0, -deg(25), 0]}>
-      {[-0.4, 0.4].map((x) => <mesh key={x} position={[x, 0.7, 0]}><cylinderGeometry args={[0.012, 0.012, 1.4, 8]} /><meshStandardMaterial color="#9a9a9a" metalness={0.8} roughness={0.3} /></mesh>)}
-      <mesh position={[0, 1.38, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.012, 0.012, 0.84, 8]} /><meshStandardMaterial color="#9a9a9a" metalness={0.8} roughness={0.3} /></mesh>
-      <Label3D text={rack.name} w={0.6} h={0.1} px={384} fg="#fff" bg="#C6275E" position={[0, 1.5, 0]} />
-      {rack.pieces.slice(0, 4).map((p, i) => (
-        <group key={p.id} position={[-0.3 + i * 0.2, 1.3, 0.02 * i]}>
-          <Hanger /><group position={[0, -0.34, 0.01]}><PieceMesh p={p} w={0.36} h={0.55} ctx={ctx} /></group>
-          {p.salePrice != null && <HangTag text={`R$ ${Math.round(Number(p.salePrice))}`} position={[0.12, -0.12, 0.04]} />}
-          {p.states?.includes("GARIMPO") && <HangTag text={t("common.garimpo")} color="#1F7A76" fg="#fff" position={[-0.1, -0.24, 0.04]} w={0.11} />}
-        </group>))}
+function SaleRack({ position, rack, ctx, modelUrl }: { modelUrl?: string | null; position: [number, number, number]; rack: { name: string; pieces: RoomPiece3D[] }; ctx: Ctx }) {
+  const { t } = useI18n(); const logo = useTex("/brand/fai-logo.png");
+  return <RoomFixture engine={ctx.engine} id="support-rack" position={position} collider={[.85, .42]}>
+    <group rotation={[0, -deg(25), 0]}>
+      <ApprovedAsset url={modelUrl} size={[1.6, 1.55, .8]}><group>
+        {[-.73, .73].map(x => <group key={x}><mesh position={[x, .72, 0]}><boxGeometry args={[.045, 1.42, .045]} /><meshStandardMaterial color="#1245a8" metalness={.4} /></mesh>{[-.24, .24].map(z => <mesh key={z} position={[x, .06, z]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.06, .06, .045, 16]} /><meshStandardMaterial color="#423a30" /></mesh>)}</group>)}
+        <mesh position={[0, 1.23, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.018, .018, 1.46, 12]} /><meshStandardMaterial color="#c9a227" metalness={.8} roughness={.3} /></mesh>
+        <mesh position={[0, 1.43, 0]}><boxGeometry args={[1.53, .12, .055]} /><meshStandardMaterial color="#1245a8" /></mesh>
+        <mesh position={[0, .14, 0]}><boxGeometry args={[1.56, .04, .52]} /><meshStandardMaterial color="#f58220" /></mesh>
+        <mesh position={[0, 1.46, .04]}><circleGeometry args={[.12, 32]} /><meshStandardMaterial map={logo ?? undefined} color={logo ? "#ffffff" : "#f58220"} transparent /></mesh>
+      </group></ApprovedAsset>
+      <Label3D text={rack.name} w={1.1} h={.1} px={512} position={[0, 1.65, 0]} />
+      {rack.pieces.map((p, i) => <group key={p.id} position={[-.63 + i * 1.26 / Math.max(1, rack.pieces.length - 1), 1.15, 0]} rotation={[0, Math.PI / 2, 0]}>
+        <Hanger finish={ctx.hanger} modelUrl={ctx.hangerModel} /><group position={[0, -.34, .01]}><PieceMesh p={p} w={.36} h={.55} ctx={ctx} /></group>
+        {p.salePrice != null && <HangTag text={`R$ ${Math.round(Number(p.salePrice))}`} position={[.12, -.12, .04]} />}
+        {p.states?.includes("GARIMPO") && <HangTag text={t("common.garimpo")} color="#1F7A76" fg="#fff" position={[-.1, -.24, .04]} w={.11} />}
+      </group>)}
     </group>
-  );
+  </RoomFixture>;
 }
 
 function Chair({ position, pieces, ctx }: { position: [number, number, number]; pieces: RoomPiece3D[]; ctx: Ctx }) {
@@ -487,8 +492,10 @@ function CameraRig({ focus, facing, home, homeDist, controls }: { focus: [number
     const el = gl.domElement, c = controls.current as Starts | null;
     const stop = () => { animating.current = false; };
     const onKey = (e: KeyboardEvent) => { if (e.code === "KeyQ" || e.code === "KeyE") stop(); };
+    const onAnalog = (e: Event) => { const a = (e as CustomEvent).detail; if (a?.x || a?.y || a?.zoom) stop(); };
+    el.addEventListener(ROOM_CAMERA_EVENT, onAnalog);
     el.addEventListener(ROOM_TURN_EVENT, stop); el.addEventListener(ROOM_ZOOM_EVENT, stop); el.addEventListener("keydown", onKey); c?.addEventListener("start", stop);
-    return () => { el.removeEventListener(ROOM_TURN_EVENT, stop); el.removeEventListener(ROOM_ZOOM_EVENT, stop); el.removeEventListener("keydown", onKey); c?.removeEventListener("start", stop); };
+    return () => { el.removeEventListener(ROOM_CAMERA_EVENT, onAnalog); el.removeEventListener(ROOM_TURN_EVENT, stop); el.removeEventListener(ROOM_ZOOM_EVENT, stop); el.removeEventListener("keydown", onKey); c?.removeEventListener("start", stop); };
   }, [gl, controls]);
   useFrame((_, dt) => {
     const c = controls.current as { target: THREE.Vector3; minDistance: number; maxDistance: number; update: () => void } | null; if (!c || !animating.current) return;
@@ -516,7 +523,7 @@ function CameraRig({ focus, facing, home, homeDist, controls }: { focus: [number
  */
 function OrbitTurn({ controls, reduced }: { controls: React.RefObject<unknown>; reduced: boolean }) {
   const { gl, camera } = useThree();
-  const pending = useRef(0);
+  const pending = useRef(0); const axes = useRef({ x: 0, y: 0, zoom: 0 });
   useEffect(() => {
     const el = gl.domElement; el.tabIndex = 0;
     const orbit = () => controls.current as { target: THREE.Vector3; minDistance: number; maxDistance: number; update: () => void } | null;
@@ -527,11 +534,20 @@ function OrbitTurn({ controls, reduced }: { controls: React.RefObject<unknown>; 
       off.setLength(THREE.MathUtils.clamp(off.length() * (closer ? 0.85 : 1.18), c.minDistance, c.maxDistance)); camera.position.copy(c.target).add(off); c.update();
     };
     const key = (e: KeyboardEvent) => { if (e.code !== "KeyQ" && e.code !== "KeyE") return; e.preventDefault(); pending.current += (e.code === "KeyQ" ? 1 : -1) * deg(45); };
+    const analog = (e: Event) => { axes.current = (e as CustomEvent).detail; };
+    el.addEventListener(ROOM_CAMERA_EVENT, analog);
     el.addEventListener(ROOM_TURN_EVENT, turn); el.addEventListener(ROOM_ZOOM_EVENT, zoom); el.addEventListener("keydown", key);
-    return () => { el.removeEventListener(ROOM_TURN_EVENT, turn); el.removeEventListener(ROOM_ZOOM_EVENT, zoom); el.removeEventListener("keydown", key); };
+    return () => { el.removeEventListener(ROOM_CAMERA_EVENT, analog); el.removeEventListener(ROOM_TURN_EVENT, turn); el.removeEventListener(ROOM_ZOOM_EVENT, zoom); el.removeEventListener("keydown", key); };
   }, [gl, camera, controls]);
   useFrame((_, dt) => {
-    const c = controls.current as { target: THREE.Vector3; update: () => void } | null; if (!c || Math.abs(pending.current) < 1e-4) return;
+    const c = controls.current as { target: THREE.Vector3; update: () => void } | null; if (!c) return;
+    if (axes.current.x || axes.current.y || axes.current.zoom) {
+      const sphere = new THREE.Spherical().setFromVector3(camera.position.clone().sub(c.target));
+      sphere.radius = THREE.MathUtils.clamp(sphere.radius * Math.exp((axes.current.zoom ?? 0) * dt), (c as { minDistance?: number }).minDistance ?? .7, (c as { maxDistance?: number }).maxDistance ?? 12);
+      sphere.theta += axes.current.x * dt * 1.1; sphere.phi = THREE.MathUtils.clamp(sphere.phi + axes.current.y * dt * .7, .2, Math.PI / 2 - .05);
+      camera.position.copy(c.target).add(new THREE.Vector3().setFromSpherical(sphere)); c.update();
+    }
+    if (Math.abs(pending.current) < 1e-4) return;
     const step = reduced || Math.abs(pending.current) < 0.002 ? pending.current : pending.current * (1 - Math.exp(-8 * dt));
     pending.current -= step;
     camera.position.sub(c.target).applyAxisAngle(UP, step).add(c.target); c.update();
@@ -632,7 +648,7 @@ function layoutFor(level?: string) {
     xr, loft: atLeast(level, "LOFT"),
     showcase: [xr + 0.35, 0, -0.08] as [number, number, number],
     bags: [xr + 1.0, 0, -0.08] as [number, number, number],
-    sale: [xr + (closet ? 1.85 : 1.2), 0, 0.05] as [number, number, number],
+    sale: [-1.8, 0, 3.95] as [number, number, number],
     basket: [xr + 0.5, 0, 0.55] as [number, number, number],
     window: [xr + (closet ? 1.5 : 1.3), 2.05, -D / 2 - 0.005] as [number, number, number],
     window2: [ROOM.maxX - 0.015, 2.05, 2.45] as [number, number, number],
@@ -681,7 +697,7 @@ export function moduleFacing(id: string): [number, number] { return inW2(id) ? [
 
 const NORTH = wallById("north"), EAST = wallById("east"), SOUTH = wallById("south"), WEST = wallById("west");
 
-export default function RoomScene({ data, open, onToggle, highlight, focusModule, onPick, onReady, lit = new Set(), mirror, dark, onToggleTheme, onVistaMe, onCopilot,
+export default function RoomScene({ data, open, onToggle, highlight, focusModule, onPick, onReady, lit = new Set(), mirror, dark, lightOn, lightIntensity, onToggleLight, onVistaMe, onCopilot,
   copilotPoint, copilotTalking, onKeys, onUnbox, unboxing, onAddToDrawer, gameplay }: RoomSceneProps) {
   const { t } = useI18n();
   const router = useRouter();
@@ -689,8 +705,10 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
   const [, refreshInteractions] = useState(0);
   useEffect(() => { if (!gameplay) return; const refresh = () => refreshInteractions(n => n + 1); gameplay.engine.listeners.add(refresh); return () => { gameplay.engine.listeners.delete(refresh); }; }, [gameplay?.engine]);
   const reduced = !!data.ambient?.reduceMotion;
-  const period = dark ? "night" : data.ambient?.period === "fixed" ? "afternoon" : data.ambient?.period ?? "afternoon";
+  const period = data.ambient?.period === "fixed" ? "afternoon" : data.ambient?.period ?? "afternoon";
   const night = period === "night";
+  const ceilingOn = lightOn ?? data.light?.on ?? night;
+  const brightness = Math.max(0, Math.min(1, lightIntensity ?? data.light?.intensity ?? .75));
   const level = data.level ?? "ESTREIA";
   const L = useMemo(() => layoutFor(level), [level]);
   useEffect(() => { gameplay?.engine.mirror.set(...L.mirror); }, [gameplay?.engine, L]);
@@ -734,6 +752,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       onCreated={({ gl }) => { gl.toneMapping = THREE.ACESFilmicToneMapping; onReady?.(gl.domElement); }} aria-label={t("room3d.roomScene.meu_quarto_em_3d")}>
       <color attach="background" args={[night ? "#1d1f2a" : "#efe9df"]} />
       <fog attach="fog" args={[night ? "#1d1f2a" : "#efe9df", 8, 16]} />
+      <CeilingFixture on={ceilingOn} intensity={brightness} color={lightColor} />
       <hemisphereLight args={[night ? "#9aa0c8" : period === "morning" ? "#eef4ff" : "#fff6e8", night ? "#2a2433" : "#d9cbb5", night ? 0.55 : 0.9]} />
       <directionalLight position={[3, 5, 4]} intensity={night ? 0.35 : period === "golden" ? 1.3 : 1.6} color={period === "golden" ? "#ffd2a0" : period === "morning" ? "#f1f6ff" : "#ffffff"} castShadow shadow-mapSize={gameplay ? [1024, 1024] : [2048, 2048]} shadow-camera-left={-6.5} shadow-camera-right={6} shadow-camera-top={4} shadow-camera-bottom={-5} />
       {/* luz de preenchimento do outro lado (sem sombra): as paredes de costas para o sol (leste e sul) não ficam cinzentas */}
@@ -781,7 +800,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
 
         {/* parede: porta do quarto (a chave fica no gancho ao lado), interruptor (tema), janela, calendário e quadro de cortiça */}
         <RoomDoor position={L.door} night={night} onClick={onKeys ? () => onKeys() : undefined} />
-        <LightSwitch position={L.switch} on={!dark} onToggle={() => onToggleTheme?.()} />
+        <RoomFixture engine={gameplay?.engine} id="switch" position={L.switch} kind="light" run={onToggleLight}><LightSwitch position={[0, 0, 0]} on={ceilingOn} onToggle={() => onToggleLight?.()} /></RoomFixture>
         <KeyHook position={L.keys} keys={data.keys ?? []} onClick={() => onKeys?.()} />
         <RoomWindow position={L.window} period={period} light={false} seasonal={data.ambient?.seasonal && data.ambient.seasonal !== "null" ? data.ambient.seasonal : null} />
         {deco("calendario_parede") && <WallCalendar position={L.calendar} days={deco("calendario_parede")!.days ?? 0} />}
@@ -826,15 +845,20 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       {atLeast(level, "CLOSET") && (byId["bags"] || byId["jewelry"]) && <BagDisplay position={L.bags} bagModel={byId["bags"]?.finish?.model3dUrl} jewelryModel={byId["jewelry"]?.finish?.model3dUrl} bags={byId["bags"]?.pieces ?? []} jewelry={byId["jewelry"]?.pieces ?? []} ctx={ctx} />}
       {atLeast(level, "ATELIER") && byId["island"] && <Island position={L.island} boxes={boxes.slice(0, 3)} modelUrl={byId["island"]?.finish?.model3dUrl} />}
 
+      {data.modules.filter(m => m.slotType === "DOOR" || m.slotType === "DRAWER").map(m => {
+        const anchor = moduleAnchor(m.id, level); return anchor ? <RoomFixture key={m.id} engine={gameplay?.engine} id={`action:${m.id}`} position={anchor} kind="open" run={() => onToggle(m.id)} /> : null;
+      })}
       <Mirror position={L.mirror} look={data.mirrorDailyLook} overlay={mirror} theme={deco("tema_espelho")?.theme ?? null} onVistaMe={onVistaMe} reduced={reduced} module={byId["mirror"]} engine={gameplay?.engine} />
       <DressForm position={L.bust} pointAt={pointAt} talking={!!copilotTalking} onClick={() => onCopilot?.()} reduced={reduced} />
-      {(data.basket ?? []).length > 0 && <Basket position={L.basket} pieces={data.basket ?? []} ctx={ctx} />}
-      {data.saleRack && data.saleRack.pieces.length > 0 && <SaleRack position={L.sale} rack={data.saleRack} ctx={ctx} />}
-      <Chair position={L.chair} pieces={data.chair ?? []} ctx={ctx} />
-      <Lamp position={L.lamp} on={night} />
+      <SaleRack position={L.sale} rack={{ name: data.saleRack?.name ?? t("room.support_rack"), pieces: [...new Map([...(data.saleRack?.pieces ?? []), ...(data.chair ?? []), ...(data.basket ?? [])].map(p => [p.id, p])).values()] }} ctx={ctx} modelUrl={byId["saleRack"]?.finish?.model3dUrl ?? "/models/fai-room/rack-fai.glb"} />
+      <RoomFixture engine={gameplay?.engine} id="chair" position={L.chair} collider={[.32, .32]} kind="sit" run={() => { if (gameplay) { gameplay.engine.seated = gameplay.engine.seated ? null : new THREE.Vector3(...L.chair); gameplay.engine.notify(); } }}>
+        <Chair position={[0, 0, 0]} pieces={[]} ctx={ctx} />
+      </RoomFixture>
+      <DoubleBed engine={gameplay?.engine} modelUrl={byId["bed"]?.finish?.model3dUrl ?? "/models/fai-room/bed-fai.glb"} lit={ceilingOn} intensity={brightness} />
 
-      {/* Caixa FAI: item comprado esperando o unboxing */}
-      {(data.unboxing?.length ?? 0) > 0 && <FaiBox position={L.box} count={data.unboxing!.length} opening={!!unboxing} onOpen={() => onUnbox?.()} />}
+
+      {/* Compras aguardam abrir o inventário; roupas e looks nunca viram caixas no cenário. */}
+
 
       <ContactShadows position={[0, 0.005, 0.4]} opacity={0.35} scale={10} blur={2.4} far={3} />
       {gameplay && <RoomAvatarController gameplay={gameplay} closetRight={W / 2} />}

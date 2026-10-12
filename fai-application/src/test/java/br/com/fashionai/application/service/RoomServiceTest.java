@@ -70,6 +70,26 @@ class RoomServiceTest {
     }
 
     @Test
+    void reducedMotionDoesNotDisableTimeOfDayLighting() {
+        var prefs = new br.com.fashionai.domain.model.UserPreferences();
+        prefs.setUser(world.me); prefs.setReduceMotion(true);
+        when(kit.dep(br.com.fashionai.domain.repository.UserPreferencesRepository.class).findByUserId(world.me.getId()))
+                .thenReturn(java.util.Optional.of(prefs));
+        Map<?, ?> ambient = (Map<?, ?>) room.room(ana).get("ambient");
+        assertThat(ambient.get("reduceMotion")).isEqualTo(true);
+        assertThat(ambient.get("period")).isNotEqualTo("fixed");
+    }
+
+    @Test
+    void dimmingAndSwitchingDoNotRequireStudioAndPreserveColorTemperature() {
+        assertThat(room.setLight(ana, null, .4, true)).containsEntry("intensity", .4).containsEntry("on", true).containsEntry("kelvin", 4000);
+        assertThat(room.setLight(ana, null, null, false)).containsEntry("intensity", .4).containsEntry("on", false);
+        assertThatThrownBy(() -> room.setLight(ana, null, Double.NaN, null)).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> room.setLight(ana, null, 1.1, null)).isInstanceOf(ApiException.class);
+        assertThat(room.layout(world.me.getId()).getModulesJson()).contains("BED-DBL", "RACK-MOB");
+    }
+
+    @Test
     void layoutInicialDoNivelEstreiaEModulosPorNivel() {
         RoomLayout l = room.layout(world.me.getId());
         assertThat(l.getLevel()).isEqualTo("ESTREIA");

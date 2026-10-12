@@ -1,78 +1,68 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import * as THREE from "three";
 import { useI18n } from "@/lib/i18n/i18n";
-import { ROOM_TURN_EVENT, ROOM_ZOOM_EVENT, type RoomInteraction } from "@/lib/room3d/interaction";
-
-/**
- * Acessibilidade do quarto 3D: girar a cena e mover o avatar por botões de verdade (toque, mouse ou teclado), além das
- * teclas. O direcional alimenta as mesmas teclas do motor (`engine.keys`) enquanto o botão fica apertado — no celular,
- * enfim dá para caminhar. Girar manda o comando para o canvas: no modo andar troca a vista (de 90° em 90°); no modo
- * foto/órbita gira 45° e também aproxima/afasta. Sobreposição compacta num canto do palco, longe do avatar.
- */
-const MOVES = [["ArrowUp", "forward"], ["ArrowLeft", "left"], ["ArrowRight", "right"], ["ArrowDown", "back"]] as const;
-const ICON: Record<string, string> = {
-  ArrowUp: "M12 19V5M5 12l7-7 7 7", ArrowDown: "M12 5v14M19 12l-7 7-7-7", ArrowLeft: "M19 12H5M12 19l-7-7 7-7", ArrowRight: "M5 12h14M12 5l7 7-7 7",
-  left: "M3 4v6h6M3.5 15a8.5 8.5 0 1 0 2-8.8L3 10", right: "M21 4v6h-6M20.5 15a8.5 8.5 0 1 1-2-8.8L21 10", in: "M12 5v14M5 12h14", out: "M5 12h14",
-};
-const Icon = ({ name }: { name: string }) => <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d={ICON[name]} /></svg>;
-
-/** Duração do passo curto de uma ativação sem ponteiro nem tecla (ms): o bastante para alguns quadros de caminhada. */
+import { ROOM_CAMERA_EVENT, type RoomInteraction } from "@/lib/room3d/interaction";
 export const TAP_STEP_MS = 300;
+const MOVES = [[0, -1, "forward"], [-1, 0, "left"], [1, 0, "right"], [0, 1, "back"]] as const;
 
-/**
- * Botão de segurar: aperta a tecla do motor ao pressionar (ponteiro, Enter ou Espaço) e solta ao largar, sair ou perder
- * o foco. Leitor de tela (modo navegação, VO+Espaço, toque duplo) e controle por voz ("clicar em Andar para frente")
- * ativam o botão com um clique sintetizado, sem pointerdown nem keydown: esse clique (detail 0) vira um passo curto.
- * Sem aria-pressed: não é um botão de liga/desliga; o "apertado" é só visual (data-pressed).
- */
-function HoldButton({ engine, code, label }: { engine: RoomInteraction; code: string; label: string }) {
-  const held = useRef(false), step = useRef<ReturnType<typeof setTimeout> | null>(null), keyUpAt = useRef(-Infinity), [pressed, setPressed] = useState(false);
-  const stopStep = () => { if (step.current) { clearTimeout(step.current); step.current = null; } };
-  const press = () => { stopStep(); if (held.current) return; held.current = true; engine.keyDown(code); setPressed(true); };
-  const release = () => { stopStep(); if (!held.current) return; held.current = false; engine.keyUp(code); setPressed(false); };
-  const tap = () => {
-    if (held.current && !step.current) return;                       // já segurado pelo ponteiro ou pelo teclado
-    press();
-    step.current = setTimeout(() => { step.current = null; release(); }, TAP_STEP_MS);
-  };
-  // o motor solta tudo quando a janela perde o foco (engine.blur): o botão volta junto
-  useEffect(() => { const sync = () => { if (held.current && !engine.keys.has(code)) { held.current = false; setPressed(false); } }; engine.listeners.add(sync); return () => { engine.listeners.delete(sync); release(); }; }, [engine, code]); // eslint-disable-line react-hooks/exhaustive-deps
-  return (
-    <button type="button" className={`room3d-control is-${code.slice(5).toLowerCase()}`} aria-label={label} data-pressed={pressed}
-      onPointerDown={(e) => { if (e.pointerType === "mouse" && e.button !== 0) return; press(); }}
-      onPointerUp={release} onPointerLeave={release} onPointerCancel={release}
-      // o foco fica onde estava (o canvas solta as teclas quando perde o foco)
-      onMouseDown={(e) => e.preventDefault()} onContextMenu={(e) => e.preventDefault()}
-      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); press(); } }}
-      onKeyUp={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); keyUpAt.current = performance.now(); release(); } }}
-      // clique do mouse/toque (detail ≥ 1) já passou pelo ponteiro; o que vem logo depois de soltar Espaço é o do teclado
-      onClick={(e) => { if (e.detail === 0 && performance.now() - keyUpAt.current > 150) tap(); }}
-      onBlur={release}><Icon name={code} /></button>
-  );
+export function stickAxis(dx: number, dy: number, radius: number) {
+  const length = Math.hypot(dx, dy), magnitude = Math.min(1, length / Math.max(1, radius));
+  return length && magnitude > .08 ? new THREE.Vector2(dx / length, dy / length).multiplyScalar((magnitude - .08) / .92) : new THREE.Vector2();
 }
-
-export default function RoomSceneControls({ engine, canvas, walk }: { engine: RoomInteraction; canvas: HTMLCanvasElement | null; walk: boolean }) {
-  const { t } = useI18n();
-  const [view, setView] = useState(engine.view);
-  useEffect(() => { const update = () => setView(engine.view); engine.listeners.add(update); return () => { engine.listeners.delete(update); }; }, [engine]);
+function Analog({ label, onChange }: { label: string; onChange: (v: THREE.Vector2) => void }) {
+  const active = useRef<number | null>(null), [axis, setAxis] = useState(new THREE.Vector2());
+  const change = (v: THREE.Vector2) => { setAxis(v); onChange(v); };
+  const release = () => { active.current = null; change(new THREE.Vector2()); };
+  useEffect(() => { const blur = () => release(); window.addEventListener("blur", blur); return () => { window.removeEventListener("blur", blur); onChange(new THREE.Vector2()); }; }, [onChange]);
+  return <button type="button" className="room-pad-stick" aria-label={label}
+    onPointerDown={e => { if (active.current !== null) return; active.current = e.pointerId; e.currentTarget.setPointerCapture(e.pointerId); const b = e.currentTarget.getBoundingClientRect(); change(stickAxis(e.clientX - b.left - b.width / 2, e.clientY - b.top - b.height / 2, b.width / 2)); }}
+    onPointerMove={e => { if (active.current !== e.pointerId) return; const b = e.currentTarget.getBoundingClientRect(); change(stickAxis(e.clientX - b.left - b.width / 2, e.clientY - b.top - b.height / 2, b.width / 2)); }}
+    onPointerUp={release} onPointerCancel={release} onLostPointerCapture={release} onBlur={release}
+    onKeyDown={e => { const keys: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }; if (keys[e.key]) { e.preventDefault(); change(new THREE.Vector2(...keys[e.key])); } }}
+    onKeyUp={release}><span className="room-pad-thumb" style={{ transform: `translate(${axis.x * 22}px, ${axis.y * 22}px)` }} /></button>;
+}
+export default function RoomSceneControls({ engine, canvas, walk, onVistaMe, onPhoto }: { engine: RoomInteraction; canvas: HTMLCanvasElement | null; walk: boolean; onVistaMe?: () => void; onPhoto?: () => void }) {
+  const { t } = useI18n(); const [, refresh] = useState(0);
+  const move = useRef(new THREE.Vector2()), orbit = useRef(new THREE.Vector2()), shoulder = useRef(0);
+  const tapTimer = useRef<ReturnType<typeof setTimeout> | null>(null), keyUpAt = useRef(-Infinity);
+  const tap = (x: number, y: number, rotate = false) => {
+    if (tapTimer.current) clearTimeout(tapTimer.current);
+    move.current.set(0, 0); shoulder.current = 0;
+    if (rotate) shoulder.current = x;
+    else { move.current.set(x, y); engine.seated = null; engine.cancelGoal(); }
+    tapTimer.current = setTimeout(() => { move.current.set(0, 0); shoulder.current = 0; tapTimer.current = null; }, TAP_STEP_MS);
+  };
+  const actions = useRef({ onVistaMe, onPhoto }); actions.current = { onVistaMe, onPhoto };
+  const setMove = useRef((v: THREE.Vector2) => { move.current.copy(v); engine.seated = null; if (v.lengthSq()) engine.cancelGoal(); }).current;
+  const setOrbit = useRef((v: THREE.Vector2) => orbit.current.copy(v)).current;
+  useEffect(() => { const update = () => refresh(n => n + 1); engine.listeners.add(update); return () => { engine.listeners.delete(update); }; }, [engine]);
+  useEffect(() => {
+    if (!canvas) return;
+    let frame = 0; const previous = new Set<number>();
+    const action = (index: number) => { if (index === 0) engine.interact(); if (index === 1) { engine.seated = null; engine.cancelGoal(); engine.notify(); } if (index === 2) actions.current.onPhoto?.(); if (index === 3) actions.current.onVistaMe?.(); };
+    const tick = () => {
+      let m = move.current, c = orbit.current.clone(); c.x += shoulder.current;
+      const focused = document.activeElement === canvas || !!document.activeElement?.closest(".room3d-controls");
+      const pad = focused ? Array.from(navigator.getGamepads?.() ?? []).find(p => p?.mapping === "standard") : null;
+      if (pad) { m = stickAxis(pad.axes[0] ?? 0, pad.axes[1] ?? 0, 1); c = stickAxis(pad.axes[2] ?? 0, pad.axes[3] ?? 0, 1); c.x += Number(pad.buttons[5]?.pressed) - Number(pad.buttons[4]?.pressed); for (let i = 0; i < 4; i++) { if (pad.buttons[i]?.pressed) { if (!previous.has(i)) action(i); previous.add(i); } else previous.delete(i); } } else previous.clear();
+      if (walk) { engine.moveStick.copy(m); engine.cameraStick.copy(c); if (m.lengthSq() > 0) { engine.seated = null; engine.cancelGoal(); } }
+      else canvas.dispatchEvent(new CustomEvent(ROOM_CAMERA_EVENT, { detail: { x: c.x, y: c.y, zoom: m.y } }));
+      frame = requestAnimationFrame(tick);
+    };
+    const reset = () => { if (tapTimer.current) clearTimeout(tapTimer.current); move.current.set(0, 0); orbit.current.set(0, 0); shoulder.current = 0; engine.blur(); };
+    frame = requestAnimationFrame(tick); window.addEventListener("blur", reset);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener("blur", reset); reset(); canvas.dispatchEvent(new CustomEvent(ROOM_CAMERA_EVENT, { detail: { x: 0, y: 0, zoom: 0 } })); };
+  }, [engine, canvas, walk]);
   if (!canvas) return null;
-  const send = (type: string, detail: number) => canvas.dispatchEvent(new CustomEvent(type, { detail }));
-  return (
-    <div className="room3d-controls" role="group" aria-label={t("room.controls.label")}>
-      <div className="room3d-controls-row" role="group" aria-label={t("room.controls.rotate_group")}>
-        <button type="button" className="room3d-control" aria-label={t("room.controls.turn_left")} onClick={() => send(ROOM_TURN_EVENT, 1)}><Icon name="left" /></button>
-        <button type="button" className="room3d-control" aria-label={t("room.controls.turn_right")} onClick={() => send(ROOM_TURN_EVENT, -1)}><Icon name="right" /></button>
-        {!walk && <>
-          <button type="button" className="room3d-control" aria-label={t("room.controls.zoom_in")} onClick={() => send(ROOM_ZOOM_EVENT, 1)}><Icon name="in" /></button>
-          <button type="button" className="room3d-control" aria-label={t("room.controls.zoom_out")} onClick={() => send(ROOM_ZOOM_EVENT, -1)}><Icon name="out" /></button>
-        </>}
-      </div>
-      {walk && <>
-        <div className="room3d-dpad" role="group" aria-label={t("room.controls.move_group")}>
-          {MOVES.map(([code, name]) => <HoldButton key={code} engine={engine} code={code} label={t(`room.controls.${name}`)} />)}
-        </div>
-        <p className="sr-only" role="status" aria-live="polite">{t("room.controls.view", { n: view + 1 })}</p>
-      </>}
+  const hold = (direction: number) => ({ onPointerDown: (e: React.PointerEvent<HTMLButtonElement>) => { e.currentTarget.setPointerCapture(e.pointerId); shoulder.current = direction; }, onPointerUp: () => { shoulder.current = 0; }, onPointerCancel: () => { shoulder.current = 0; }, onLostPointerCapture: () => { shoulder.current = 0; }, onBlur: () => { shoulder.current = 0; }, onKeyDown: (e: React.KeyboardEvent) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); shoulder.current = direction; } }, onKeyUp: () => { shoulder.current = 0; keyUpAt.current = performance.now(); }, onClick: (e: React.MouseEvent) => { if (e.detail === 0 && performance.now() - keyUpAt.current > 80) tap(direction, 0, true); } });
+  return <div className="room3d-controls room-gamepad" role="group" aria-label={t("room.controls.label")}>
+    {walk && <div className="room-pad-accessible">{MOVES.map(([x, y, name]) => <button key={name} type="button" onClick={() => tap(x, y)}>{t(`room.controls.${name}`)}</button>)}</div>}
+    {engine.nearAction && walk && <button type="button" className="room-context-prompt" onClick={() => engine.interact()}><span className="room-key">×</span>{t(`room.action.${engine.nearAction.kind}`)}</button>}
+    <div className="room-pad-shoulders"><button type="button" className="btn" aria-label={t("room.controls.turn_left")} {...hold(-1)}>L1</button><button type="button" className="btn" aria-label={t("room.controls.turn_right")} {...hold(1)}>R1</button></div>
+    <div className="room-pad-body"><Analog label={t(walk ? "room.controls.move_group" : "room.controls.zoom_group")} onChange={setMove} />
+      <div className="room-pad-actions"><button type="button" aria-label={t("room.action.vista")} onClick={onVistaMe}>△</button><button type="button" aria-label={t("room.action.photo")} onClick={onPhoto}>□</button><button type="button" aria-label={t("room.action.stand")} onClick={() => { engine.seated = null; engine.cancelGoal(); engine.notify(); }}>○</button><button type="button" aria-label={t("room.action.interact")} onClick={() => engine.interact()} disabled={!engine.nearAction}>×</button></div>
+      <Analog label={t("room.controls.rotate_group")} onChange={setOrbit} />
     </div>
-  );
+  </div>;
 }
