@@ -19,6 +19,9 @@ public interface CatalogImageRepository extends JpaRepository<CatalogImage, UUID
 
     List<CatalogImage> findByProductIdInAndPrimaryTrue(Collection<UUID> productIds);
 
+    /** Todas as fotos dos produtos: a foto do card sai daqui quando nenhuma está marcada como principal/canônica. */
+    List<CatalogImage> findByProductIdIn(Collection<UUID> productIds);
+
     Optional<CatalogImage> findByProductIdAndImageUrlHash(UUID productId, String hash);
 
     /**

@@ -3,7 +3,8 @@ import * as THREE from "three";
 import { BODY_RADIUS, moveInRoom, penetration } from "./interaction";
 import { cameraFor } from "./mirror-session";
 import {
-  NORTH_CLEAR, ROOM, ROOM_CAMERA, W2, WALL_BEHIND, WALL_MARGIN, WALLS, clampCamera, inputYaw, reachPlane, rotateView, toWall, viewYaw, walkArea, wallById, wallOpacity, wallSide, w2ToWorld,
+  NORTH_CLEAR, ROOM, ROOM_CAMERA, W2, WALL_BEHIND, WALL_MARGIN, WALLS, clampCamera, dropPoint, insideW2, inputYaw, reachPlane, roomView, rotateView, toWall, viewYaw, walkArea, wallById,
+  wallOpacity, wallSide, w2ToWorld,
 } from "./room-bounds";
 
 /** Segura as setas por `frames` quadros de 50 ms (o passo por quadro é limitado). */
@@ -90,6 +91,45 @@ describe("quarto de quatro paredes (room-bounds)", () => {
     const tryon = cameraFor("tryon", actor, mirror, 1.2, 2, ROOM);
     expect(tryon.position.z).toBeGreaterThan(mirror.z + 2); expect(tryon.position.z).toBeLessThanOrEqual(ROOM.maxZ - 0.3);
     expect(inputYaw(tryon.position, tryon.target)).toBeCloseTo(0);
+  });
+  it("modo andar: a câmera não troca de lado quando o personagem cruza a linha dela (o lado vem da posição atual da câmera)", () => {
+    const mirror = new THREE.Vector3(2.05, 0, 1.1), far = new THREE.Vector3(0.3, 0, 0.9);
+    for (let view = 0; view < 4; view++) {
+      // a câmera da vista sem deslizar (personagem longe) e as direções da vista no chão
+      const p = cameraFor("room", far, mirror, 1.2, view, ROOM).position, yaw = viewYaw(view);
+      const front = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+      const at = (lateral: number) => p.clone().setY(0).addScaledVector(front, 2).addScaledVector(right, lateral);
+      // o controlador com movimento reduzido: a câmera vai direto para a pose pedida, que é a "atual" do quadro seguinte
+      let cam = cameraFor("room", at(-0.5), mirror, 1.2, view, ROOM).position;
+      const side = Math.sign(cam.clone().sub(p).dot(right));
+      for (let lateral = -0.5; lateral <= 0.5 + 1e-9; lateral += 0.002) {                // 2 mm por passo, cruzando a linha
+        const next = cameraFor("room", at(lateral), mirror, 1.2, view, ROOM, cam).position;
+        expect(Math.hypot(next.x - cam.x, next.z - cam.z)).toBeLessThan(0.05);
+        cam = next;
+      }
+      expect(Math.sign(cam.clone().sub(p).dot(right))).toBe(side);                          // ficou do mesmo lado
+      expect(Math.hypot(cam.x - at(0.5).x, cam.z - at(0.5).z)).toBeGreaterThanOrEqual(ROOM_CAMERA.minDistance - 1e-3);
+    }
+    // sem a posição atual, o lado continua o mais perto da câmera da vista (quem não passa `prev` não muda)
+    const base = { position: new THREE.Vector3(1.3, 2.65, 5.8), target: new THREE.Vector3(0.3, 1.1, 0.85) }, actor = { x: 1.117, z: 3.0 };
+    expect(roomView(base.position, base.target, actor, 0, ROOM).position).toEqual(cameraFor("room", new THREE.Vector3(actor.x, 0, actor.z), mirror, 1.2, 0, ROOM).position);
+  });
+  it("a peça solta pousa dentro do quarto e fora dos dois guarda-roupas", () => {
+    const area = walkArea(ROOM);
+    // a mão do personagem parado na frente do 2º guarda-roupa fica dentro da carcaça: a peça vai para a frente dele
+    const atW2 = dropPoint(new THREE.Vector3(-2.89, 0.035, 3.1), area);
+    expect(atW2.x).toBeCloseTo(W2.x + W2.collider.hz + 0.22); expect(atW2.z).toBe(3.1); expect(atW2.y).toBe(0.035);
+    expect(atW2.x - 0.19).toBeGreaterThan(W2.x + W2.collider.hz);                            // a peça deitada (0,38 m) fica toda fora
+    expect(dropPoint({ x: -2.9, z: W2.z - W2.collider.hx - 0.3 }, area).x).toBeCloseTo(W2.x + W2.collider.hz + 0.22);   // a peça avança para o sul
+    expect(dropPoint({ x: 0.4, z: 2 }, area)).toEqual({ x: 0.4, z: 2 });                     // no meio do quarto: não mexe
+    expect(dropPoint({ x: -2.9, z: 1.2 }, area)).toEqual({ x: -2.9, z: 1.2 });               // ao norte do 2º, até a parede
+    expect(dropPoint({ x: 9, z: 0.3 }, area)).toEqual({ x: area.maxX, z: 0.8 });             // fora do quarto e na frente do 1
+  });
+  it("câmera dentro da carcaça do 2º guarda-roupa (a órbita gira inteira)", () => {
+    expect(insideW2(new THREE.Vector3(-2.94, 2.0, 3.44), 2.5)).toBe(true);
+    expect(insideW2(new THREE.Vector3(-2.94, 2.7, 3.44), 2.5)).toBe(false);                  // acima do móvel
+    expect(insideW2(new THREE.Vector3(-2.6, 2.0, 3.44), 2.5)).toBe(false);                   // na frente dele
+    expect(insideW2(new THREE.Vector3(-2.94, 2.0, 1.5), 2.5)).toBe(false);                   // ao lado (mais ao norte)
   });
   it("câmera fora do quarto volta para dentro pela reta até o alvo e sobe para ver o mesmo chão", () => {
     const target = new THREE.Vector3(0.3, 1.1, 0.85), out = clampCamera(new THREE.Vector3(1.3, 2.65, 5.8), target);

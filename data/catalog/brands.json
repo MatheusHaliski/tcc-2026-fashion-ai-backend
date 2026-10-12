@@ -187,6 +187,11 @@
         "domain": "bananarepublic.com",
         "source_type": "OFFICIAL_BRAND",
         "country": "US"
+      },
+      {
+        "domain": "bananarepublic.gap.com",
+        "source_type": "OFFICIAL_BRAND",
+        "country": "US"
       }
     ]
   },
@@ -335,7 +340,10 @@
         "source_type": "OFFICIAL_BRAND",
         "country": "US"
       }
-    ]
+    ],
+    "collector": {
+      "product_patterns": ["re:/en-us/.+/[A-Z0-9]+-[A-Z0-9]+\\.html$"]
+    }
   },
   {
     "name": "Abercrombie & Fitch",
@@ -1166,10 +1174,10 @@
   {
     "name": "Hope",
     "country": "BR",
-    "website": "https://www.hope.com.br",
+    "website": "https://www.hopeoficial.com.br",
     "sources": [
       {
-        "domain": "hope.com.br",
+        "domain": "hopeoficial.com.br",
         "source_type": "OFFICIAL_BRAND",
         "country": "BR"
       }

@@ -187,6 +187,123 @@ describe("Meu Quarto (RF27)", () => {
     expect(screen.queryAllByRole("link").some((a) => (a.getAttribute("href") ?? "").startsWith("/mirror"))).toBe(false);
   });
 
+  it("links do espelho seguidos com o quarto aberto (só a busca muda): 'Adicionar ao look' leva ao espelho e veste; o eco da própria URL não conta; 'Meu Quarto' no menu volta ao quarto", async () => {
+    withWebgl();
+    const worn = { ...MIRROR, slots: { upper: { id: "a", name: "Peça a", imageUrl: "/media/a.png", category: "upper_piece", slot: "upper" }, lower: null } };
+    const { calls } = loggedAs(ME, { "GET /api/me/room": ROOM, "GET /api/me/room/list": LIST, "GET /api/me/mirror": { ...MIRROR, slots: { upper: null, lower: null } }, "GET /api/me/avatar3d": { exists: false }, "GET /api/tipos-look": [],
+      "POST /api/me/mirror/rack": { ...MIRROR, slots: { upper: null, lower: null }, rack: [{ id: "a", name: "Peça a", category: "upper_piece", slot: "upper", worn: false }] },
+      "POST /api/me/mirror/pieces": worn });
+    const ui = () => <><RoomPage /><NavSubProbe /></>;
+    const { rerender } = renderApp(ui());
+    await act(async () => { await new Promise((r) => setTimeout(r, 80)); });
+    expect(screen.queryByTestId("mirror-controls")).toBeNull();
+    /** navegação do Next na mesma rota: a página continua montada e só a busca muda */
+    const navigate = async (search: string) => { nav.search = new URLSearchParams(search); window.history.replaceState(null, "", search ? `/room?${search}` : "/room"); rerender(ui()); await act(async () => { await new Promise((r) => setTimeout(r, 40)); }); };
+    // detalhe da peça → "Adicionar ao look" (mirrorHref({ piece })) com o quarto aberto
+    await navigate("espelho=1&vestir=a");
+    await waitFor(() => expect(calls.find((c) => c.method === "POST" && c.path === "/api/me/mirror/pieces")?.body).toEqual({ pieceId: "a" }));
+    expect(calls.find((c) => c.method === "POST" && c.path === "/api/me/mirror/rack")?.body).toEqual({ pieceId: "a" });
+    expect(screen.getByTestId("mirror-controls")).toBeTruthy();
+    expect(router.replace).toHaveBeenCalledWith("/room?espelho=1", { scroll: false });   // o "vestir" sai da URL
+    // o eco do replace (a busca nova "espelho=1") não leva a peça de novo
+    await navigate("espelho=1");
+    expect(screen.getByTestId("mirror-controls")).toBeTruthy();
+    expect(calls.filter((c) => c.method === "POST" && c.path === "/api/me/mirror/rack")).toHaveLength(1);
+    // "Meu Quarto" no menu lateral (/room) com a prova à vista: volta ao quarto
+    await navigate("");
+    expect(screen.queryByTestId("mirror-controls")).toBeNull();
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Meu Quarto");
+    expect(screen.getByTestId("nav-sub").textContent).toBe("");
+  }, 20000);
+
+  it("Ir ao espelho escreve a URL pelo roteador do Next (o eco não fecha a prova) e 'Meu Quarto' no menu lateral volta ao quarto", async () => {
+    withWebgl();
+    window.history.replaceState({ __NA: true }, "", "/room");                      // a entrada do histórico é do roteador do Next
+    loggedAs(ME, { "GET /api/me/room": ROOM, "GET /api/me/room/list": LIST, "GET /api/me/mirror": MIRROR, "GET /api/me/avatar3d": { exists: false }, "GET /api/tipos-look": [] });
+    const writes = vi.spyOn(window.history, "replaceState");
+    const ui = () => <><RoomPage /><NavSubProbe /></>;
+    const { rerender } = renderApp(ui());
+    await act(async () => { await new Promise((r) => setTimeout(r, 80)); });
+    const navigate = async (search: string) => { nav.search = new URLSearchParams(search); window.history.replaceState(null, "", search ? `/room?${search}` : "/room"); rerender(ui()); await act(async () => { await new Promise((r) => setTimeout(r, 40)); }); };
+    const goMirror = async () => { fireEvent.click(screen.getByRole("button", { name: "Ir ao espelho" })); await act(async () => { await new Promise((r) => setTimeout(r, 30)); }); };
+    await goMirror();
+    expect(screen.getByTestId("mirror-controls")).toBeTruthy();
+    // sem o estado interno (__NA) o Next aplica a URL nova e useSearchParams acompanha (com ele, a troca era ignorada)
+    const write = writes.mock.calls.find((c) => c[2] === "/room?espelho=1");
+    expect(write).toBeTruthy(); expect((write![0] as { __NA?: boolean } | null)?.__NA).toBeUndefined();
+    // abrir e logo voltar pela trilha: os ecos das duas escritas chegam depois e nenhum reabre nem fecha a prova
+    fireEvent.click(within(screen.getByRole("navigation", { name: "Você está em" })).getByRole("button", { name: "Meu Quarto" }));
+    await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
+    expect(screen.queryByTestId("mirror-controls")).toBeNull();
+    await navigate("espelho=1");
+    expect(screen.queryByTestId("mirror-controls")).toBeNull();
+    await navigate("");
+    expect(screen.queryByTestId("mirror-controls")).toBeNull();
+    await goMirror();
+    await navigate("espelho=1");                                                     // o eco da escrita
+    expect(screen.getByTestId("mirror-controls")).toBeTruthy();
+    await navigate("");                                                              // "Meu Quarto" no menu lateral
+    expect(screen.queryByTestId("mirror-controls")).toBeNull();
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Meu Quarto");
+    // e um link do espelho depois disso abre de novo
+    await navigate("espelho=1");
+    await waitFor(() => expect(screen.getByTestId("mirror-controls")).toBeTruthy());
+  }, 20000);
+
+  it("Manter no painel do Espelho vale para o Vista-me da barra da cena (a peça fixada vai como âncora)", async () => {
+    withWebgl();
+    const VISTA = { ...MIRROR, origin: "vista_me", prompt: "Trabalho", interpretation: { anchors: ["a"] } };
+    const { calls } = loggedAs(ME, { "GET /api/me/room": ROOM, "GET /api/me/room/list": LIST, "GET /api/me/mirror": MIRROR, "GET /api/me/avatar3d": { exists: false }, "GET /api/tipos-look": [],
+      "GET /api/me/mirror/wardrobe": { pieces: [] }, "POST /api/me/mirror/vista-me": VISTA });
+    renderApp(<RoomPage />);
+    await act(async () => { await new Promise((r) => setTimeout(r, 80)); });
+    fireEvent.click(screen.getByRole("button", { name: "Ir ao espelho" }));
+    fireEvent.click(within(await screen.findByRole("group", { name: "Partes do look" })).getByRole("button", { name: /^Parte de cima:/ }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Parte de cima" }));
+    fireEvent.click(sheet.getByRole("button", { name: "Manter" }));
+    fireEvent.click(sheet.getByRole("button", { name: "Fechar" }));
+    await act(async () => { await new Promise((r) => setTimeout(r, 20)); });
+    fireEvent.click(within(screen.getByRole("toolbar")).getByRole("button", { name: /Vista-me/ }));
+    const dialog = within(await screen.findByRole("dialog", { name: /Vista-me/ }));
+    fireEvent.click(within(dialog.getByRole("group", { name: "Para onde é o look" })).getByRole("button", { name: /Trabalho/ }));
+    await waitFor(() => expect(calls.find((c) => c.method === "POST" && c.path === "/api/me/mirror/vista-me")?.body).toEqual({ prompt: "Trabalho", anchorIds: ["a"] }));
+  }, 20000);
+
+  it("sem WebGL e com avatar salvo: a vista embutida não monta Canvas — as peças vestidas aparecem em 2D no vidro", async () => {
+    loggedAs(ME, { "GET /api/me/room": ROOM, "GET /api/me/room/list": LIST, "GET /api/me/mirror": MIRROR, "GET /api/me/avatar3d": { exists: true, model: { body: {} } }, "GET /api/tipos-look": [] });
+    renderApp(<RoomPage />);
+    await act(async () => { await new Promise((r) => setTimeout(r, 80)); });
+    fireEvent.click(screen.getByRole("button", { name: /Monte o look de hoje/ }));
+    const region = await screen.findByRole("region", { name: "Espelho" });
+    const still = within(region).getByTestId("mirror-flat-still");
+    expect(region.querySelector("[data-mirror-mode]")?.getAttribute("data-mirror-mode")).toBe("flat");
+    expect(still.getAttribute("aria-label")).toContain("1 peça do espelho");
+    expect([...still.querySelectorAll("img")].map((i) => i.getAttribute("src"))).toEqual([expect.stringContaining("/media/a.png")]);
+    expect(region.querySelector("canvas")).toBeNull();
+  });
+
+  it("sem WebGL: o espelho que não carregou mostra o erro com tentar de novo na vista embutida; uma troca que falha avisa", async () => {
+    const rack = [{ id: "b", name: "Peça b", imageUrl: "/media/b.png", category: "upper_piece", slot: "upper", worn: false }];
+    let mirrorUp = false;
+    loggedAs(ME, { "GET /api/me/room": ROOM, "GET /api/me/room/list": LIST, "GET /api/me/avatar3d": { exists: false }, "GET /api/tipos-look": [],
+      "GET /api/me/mirror": () => (mirrorUp ? { ...MIRROR, rack } : new Response(JSON.stringify({ status: 503, code: "FORA", message: "Espelho fora do ar" }), { status: 503, headers: { "content-type": "application/json" } })),
+      "GET /api/me/mirror/wardrobe": { pieces: [] },
+      "POST /api/me/mirror/pieces": () => new Response(JSON.stringify({ status: 422, code: "INDISPONIVEL", message: "Peça indisponível agora" }), { status: 422, headers: { "content-type": "application/json" } }) });
+    renderApp(<RoomPage />);
+    await act(async () => { await new Promise((r) => setTimeout(r, 80)); });
+    fireEvent.click(screen.getByRole("button", { name: /Monte o look de hoje/ }));
+    const region = within(await screen.findByRole("region", { name: "Espelho" }));
+    expect(region.getByRole("alert").textContent).toContain("Espelho fora do ar");
+    mirrorUp = true;
+    fireEvent.click(region.getByRole("button", { name: "Tentar de novo" }));
+    await waitFor(() => expect(region.getByTestId("mirror-controls")).toBeTruthy());
+    // vestir pela folha da parte: o pedido falha e a vista embutida avisa (a prova 3D, que mostraria a mensagem, não existe aqui)
+    fireEvent.click(within(region.getByRole("group", { name: "Partes do look" })).getByRole("button", { name: /^Parte de cima:/ }));
+    const sheet = within(await screen.findByRole("dialog", { name: "Parte de cima" }));
+    fireEvent.click(sheet.getByRole("button", { name: "Vestir Peça b em Parte de cima" }));
+    expect(await screen.findByText(/Peça indisponível agora/)).toBeTruthy();
+  });
+
   it("quarto que não carrega mostra o erro com tentar de novo", async () => {
     loggedAs(ME, {});
     renderApp(<RoomPage />);

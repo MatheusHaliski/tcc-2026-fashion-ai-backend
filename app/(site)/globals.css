@@ -1124,7 +1124,7 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 .room3d-dpad .is-up { grid-area: 1 / 2; } .room3d-dpad .is-left { grid-area: 2 / 1; } .room3d-dpad .is-right { grid-area: 2 / 3; } .room3d-dpad .is-down { grid-area: 3 / 2; }
 .room3d-control { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 12px; background: rgba(24,20,17,.62); color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; -webkit-tap-highlight-color: transparent; }
 .room3d-control:hover { background: rgba(24,20,17,.8); }
-.room3d-control[aria-pressed="true"] { background: #1F7A76; }
+.room3d-control[data-pressed="true"] { background: #1F7A76; }
 .room3d-control:focus-visible { outline: 3px solid #fff; outline-offset: 1px; box-shadow: 0 0 0 6px #1F7A76; }
 .room3d-stage:has(.room3d-controls) .room3d-hint { left: 10px; transform: none; max-width: calc(100% - 180px); border-radius: 12px; text-align: left; }
 /* caminhada até/para longe do espelho ("Indo ao espelho…"): aviso no alto do palco; vazio, não ocupa espaço */
@@ -2526,6 +2526,12 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 .room-flat-mirror { display: grid; gap: 16px; }
 @media (min-width: 1024px) { .room-flat-mirror { grid-template-columns: minmax(260px, 360px) minmax(0, 1fr); align-items: start; } }
 .room-flat-mirror-stage { min-width: 0; }
+/* espelho sem WebGL (MirrorFlatStill): as peças vestidas em 2D sobre o vidro, sem Canvas */
+.mirror-flat { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 56px 16% 44px; }
+.mirror-flat img { flex: 0 1 auto; min-height: 0; max-width: 100%; max-height: 32%; object-fit: contain; filter: drop-shadow(0 6px 10px rgba(0,0,0,.18)); }
+.mirror-flat-acc { display: flex; justify-content: center; gap: 6px; flex: 0 1 auto; min-height: 0; max-height: 14%; }
+.mirror-flat-acc img { max-height: 100%; max-width: 64px; }
+.mirror-flat-silhouette { height: 72%; fill: #3b3328; opacity: .16; }
 .fitting-stores { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
 /* RF47 · criador de peça: a mesma grade de marcas do provador, rolável como lá */
 .catalog-brand-heading { min-height: 34px; }

@@ -184,6 +184,8 @@ FIELDS = ["brand", "category", "subcategory", "product_name", "model_name", "pro
 
 
 _TAG = re.compile(r"<[^>]{0,200}>")
+# tag de bloco separa palavras ("básica<br /><li>Algodão" → "básica Algodão"); tag de texto não ("Supima<sup>®</sup>")
+_BLOCK_TAG = re.compile(r"</?(?:br|p|li|ul|ol|div|tr|td|th|h[1-6])\b[^>]{0,200}>", re.IGNORECASE)
 
 
 # título que diz "bolsa" em pt/es/ca/en (bossa = bolsa em catalão; "bolso" fica de fora: em português é o bolso da roupa)
@@ -193,7 +195,7 @@ _BAG_SUBS = {"handbag", "tote_bag", "crossbody_bag", "backpack", "clutch", "shou
 
 def plain_text(v: str) -> str:
     """Texto puro: tira marcação HTML que algumas lojas deixam no título ("Supima<sup>®</sup>") e desfaz entidades."""
-    return re.sub(r"\s+", " ", html.unescape(_TAG.sub("", v))).strip()
+    return re.sub(r"\s+", " ", html.unescape(_TAG.sub("", _BLOCK_TAG.sub(" ", v)))).strip()
 
 
 def normalize_product(raw: dict, n: Normalizer) -> Product:

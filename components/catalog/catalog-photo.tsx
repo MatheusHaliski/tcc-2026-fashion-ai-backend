@@ -1,5 +1,5 @@
 "use client";
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import type { CatalogCardImage, NormRect } from "@/lib/api/catalog";
 import type { PieceView } from "@/lib/api/types";
 import { cn } from "@/components/ui";
@@ -42,20 +42,35 @@ export function pieceCatalogCrop(p: PieceView): CatalogCardImage | null {
   return ci?.mode === "SEMANTIC_CROP" && ci.crop && ci.url && ci.url === p.imageUrl ? ci : null;
 }
 
-/** Foto do card da Busca Catalogada: canônica do pipeline (recorte de tecido ou master processado) ou a foto inteira. */
-export function CatalogPhoto({ image, fallbackUrl, alt, className }: { image?: CatalogCardImage | null; fallbackUrl?: string | null; alt: string; className?: string }) {
-  if (image?.mode === "SEMANTIC_CROP" && image.crop) {
+/**
+ * Foto do card da Busca Catalogada: canônica do pipeline (recorte de tecido ou master processado) ou a foto inteira.
+ * Toda peça com foto mostra uma foto: se a canônica não carregar (arquivo processado ausente, servidor da marca fora do ar),
+ * tenta a seguinte da lista — `fallbackUrl`, depois `alternatives` (ex.: a foto original da marca) — e só então o
+ * `placeholder` (a ilustração da categoria).
+ */
+export function CatalogPhoto({ image, fallbackUrl, alternatives, placeholder, alt, className }: {
+  image?: CatalogCardImage | null; fallbackUrl?: string | null; alternatives?: (string | null | undefined)[]; placeholder?: ReactNode; alt: string; className?: string;
+}) {
+  const crop = image?.mode === "SEMANTIC_CROP" && image.crop ? image : null;
+  const chain = Array.from(new Set([crop ? null : image?.url, fallbackUrl, ...(alternatives ?? [])]
+    .filter((u): u is string => !!u && u !== crop?.url)));
+  const key = [image?.url, fallbackUrl, ...(alternatives ?? [])].join("|");
+  const [failed, setFailed] = useState(0);
+  useEffect(() => { setFailed(0); }, [key]);
+  const fail = () => setFailed((n) => n + 1);
+  if (crop && failed === 0) {
     return (
-      <span className={cn("catalog-photo is-cropped", className)} style={{ background: image.background ?? undefined }} data-mode="semantic-crop">
-        <img src={image.url} alt={alt} loading="lazy" style={semanticCropStyle(image.crop)} />
+      <span className={cn("catalog-photo is-cropped", className)} style={{ background: crop.background ?? undefined }} data-mode="semantic-crop">
+        <img src={crop.url} alt={alt} loading="lazy" style={semanticCropStyle(crop.crop!)} onError={fail} />
       </span>
     );
   }
-  const src = image?.url ?? fallbackUrl;
-  if (!src) return null;
+  const src = chain[crop ? failed - 1 : failed];
+  if (!src) return placeholder ? <>{placeholder}</> : null;
+  const processed = src === image?.url && image?.mode === "PROCESSED";
   return (
-    <span className={cn("catalog-photo", image?.mode === "PROCESSED" ? "is-processed" : "is-contained", className)} data-mode={image?.mode === "PROCESSED" ? "processed" : "original"}>
-      <img src={src} alt={alt} loading="lazy" />
+    <span className={cn("catalog-photo", processed ? "is-processed" : "is-contained", className)} data-mode={processed ? "processed" : "original"}>
+      <img key={src} src={src} alt={alt} loading="lazy" onError={fail} />
     </span>
   );
 }

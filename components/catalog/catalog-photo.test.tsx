@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
-import { render } from "@testing-library/react";
+import { fireEvent, render } from "@testing-library/react";
 import { CatalogPhoto, pieceCatalogCrop, semanticCropStyle, photoAspect, piecePhotoAspect } from "./catalog-photo";
 import type { PieceView } from "@/lib/api/types";
 
@@ -35,6 +35,28 @@ describe("CatalogPhoto", () => {
     expect(b.container.querySelector("[data-mode='processed']")).not.toBeNull();
     const c = render(<CatalogPhoto alt="" />);
     expect(c.container.innerHTML).toBe("");
+  });
+});
+
+describe("CatalogPhoto sem foto quebrada", () => {
+  it("se a foto processada não carrega, mostra a seguinte (a original da marca); se nenhuma carrega, a ilustração", () => {
+    const { container } = render(<CatalogPhoto alt="Camiseta" image={{ url: "/media/catalog/card.webp", mode: "PROCESSED" }}
+      fallbackUrl="/media/catalog/card.webp" alternatives={["https://img.brand.com/original.jpg", null]} placeholder={<span data-testid="glyph" />} />);
+    const img = () => container.querySelector("img");
+    expect(img()?.getAttribute("src")).toBe("/media/catalog/card.webp");
+    fireEvent.error(img()!);
+    expect(img()?.getAttribute("src")).toBe("https://img.brand.com/original.jpg");
+    fireEvent.error(img()!);
+    expect(img()).toBeNull();
+    expect(container.querySelector("[data-testid=glyph]")).toBeTruthy();
+  });
+
+  it("recorte semântico que não carrega cai na foto original inteira, sem repetir a URL que falhou", () => {
+    const { container } = render(<CatalogPhoto alt="Calça" image={{ url: "https://img.brand.com/a.jpg", mode: "SEMANTIC_CROP", crop: { x: 0.2, y: 0.1, w: 0.6, h: 0.75 } }}
+      fallbackUrl="https://img.brand.com/a.jpg" alternatives={["https://img.brand.com/b.jpg"]} />);
+    fireEvent.error(container.querySelector("img")!);
+    expect(container.querySelector("img")?.getAttribute("src")).toBe("https://img.brand.com/b.jpg");
+    expect(container.querySelector("[data-mode=semantic-crop]")).toBeNull();
   });
 });
 

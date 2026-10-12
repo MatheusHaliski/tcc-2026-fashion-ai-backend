@@ -192,9 +192,6 @@ export function RoomWindow({ position, period, seasonal, light = true }: { posit
     if (period === "night") { g.fillStyle = "#fffbe6"; g.beginPath(); g.arc(w * 0.72, h * 0.28, 12, 0, Math.PI * 2); g.fill(); g.fillStyle = a; g.beginPath(); g.arc(w * 0.76, h * 0.25, 11, 0, Math.PI * 2); g.fill(); for (let i = 0; i < 14; i++) { g.fillStyle = "rgba(255,255,255,.8)"; g.fillRect((i * 37) % w, (i * 53) % (h * 0.6), 2, 2); } }
     else { g.fillStyle = "rgba(255,255,255,.75)"; [[0.25, 0.3], [0.62, 0.22]].forEach(([x, y]) => { g.beginPath(); g.ellipse(w * x, h * y, 18, 7, 0, 0, Math.PI * 2); g.fill(); }); }
   });
-  const warm = period === "golden" || period === "afternoon";
-  // o alvo do holofote fica dentro da janela (na cena): fora dela a matriz dele nunca atualiza e a luz mira a origem
-  const target = useMemo(() => new THREE.Object3D(), []);
   return (
     <group position={position}>
       <mesh><planeGeometry args={[1.0, 1.1]} /><meshBasicMaterial map={sky} toneMapped={false} /></mesh>
@@ -204,10 +201,27 @@ export function RoomWindow({ position, period, seasonal, light = true }: { posit
       <mesh position={[0, -0.6, 0.06]}><boxGeometry args={[1.12, 0.03, 0.14]} /><meshStandardMaterial color="#f4f1ea" /></mesh>
       {/* cortinas */}
       {[-0.66, 0.66].map((x) => <mesh key={x} position={[x, 0.02, 0.05]}><boxGeometry args={[0.2, 1.3, 0.03]} /><meshStandardMaterial color={period === "night" ? "#4a4660" : "#d9cbb8"} roughness={1} /></mesh>)}
-      {light && period !== "night" && <><primitive object={target} position={[0.4, -2, 2.5]} /><spotLight position={[0, 0.2, 0.3]} target={target} angle={0.6} penumbra={0.8} intensity={warm ? 2.2 : 1.2} color={warm ? "#ffcf8a" : "#dfeaff"} distance={6} /></>}
+      {light && <WindowLight position={[0, 0, 0]} period={period} />}
       {seasonal === "festa_junina" && <group position={[0, 0.62, 0.08]}>{Array.from({ length: 9 }, (_, i) => <mesh key={i} position={[-0.56 + i * 0.14, -0.04 - Math.sin((i / 8) * Math.PI) * 0.06, 0]} rotation={[0, 0, Math.PI]}><coneGeometry args={[0.04, 0.07, 3]} /><meshStandardMaterial color={["#e63946", "#f4a261", "#2a9d8f", "#e9c46a", "#457b9d"][i % 5]} /></mesh>)}</group>}
       {seasonal === "fim_de_ano" && <group position={[0, 0.6, 0.08]}>{Array.from({ length: 12 }, (_, i) => <mesh key={i} position={[-0.55 + i * 0.1, -0.03 - Math.sin((i / 11) * Math.PI) * 0.05, 0]}><sphereGeometry args={[0.014, 8, 8]} /><meshStandardMaterial color={["#ffd166", "#ef476f", "#06d6a0"][i % 3]} emissive={["#ffd166", "#ef476f", "#06d6a0"][i % 3]} emissiveIntensity={0.9} /></mesh>)}</group>}
       {seasonal === "fashion_revolution_week" && <Label3D text={t("room3d.roomProps.vista_o_que_voce_tem")} w={0.8} h={0.08} px={512} bg="#111" fg="#fff" position={[0, -0.72, 0.06]} />}
+    </group>
+  );
+}
+
+/**
+ * Holofote da janela (o sol entrando; some à noite), com origem no meio da janela. No quarto de quatro paredes ele fica
+ * fora da parede: escondida a parede atrás da câmera, a luz do quarto não apaga nem troca os shaders de todos os materiais.
+ */
+export function WindowLight({ position, period }: { position: [number, number, number]; period: string }) {
+  const warm = period === "golden" || period === "afternoon";
+  // o alvo do holofote fica dentro do grupo (na cena): fora dela a matriz dele nunca atualiza e a luz mira a origem
+  const target = useMemo(() => new THREE.Object3D(), []);
+  if (period === "night") return null;
+  return (
+    <group position={position} name="window-light">
+      <primitive object={target} position={[0.4, -2, 2.5]} />
+      <spotLight position={[0, 0.2, 0.3]} target={target} angle={0.6} penumbra={0.8} intensity={warm ? 2.2 : 1.2} color={warm ? "#ffcf8a" : "#dfeaff"} distance={6} />
     </group>
   );
 }

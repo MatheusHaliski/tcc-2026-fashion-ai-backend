@@ -19,7 +19,7 @@ import { MIRROR_ZONE, MirrorSession, awayPoint, handSlotOf, mirrorDistance, mirr
 import { MirrorHands } from "@/components/room3d/mirror-hands";
 import { setNavSub } from "@/lib/nav/active-override";
 import { MIRROR_ROOM_PATH } from "@/lib/nav/mirror-href";
-import { MirrorControls, wornOf, type MirrorData, type MirrorHost, type MirrorPieceRef } from "@/components/mirror/mirror-controls";
+import { MirrorControls, useMirrorPins, vistaRequest, wornOf, type MirrorData, type MirrorHost, type MirrorPieceRef } from "@/components/mirror/mirror-controls";
 import { VistaMeCells } from "@/components/mirror/vista-me-cells";
 import type { MirrorOverlay, RoomData3D } from "@/components/room3d/room-scene";
 import { feel, fabricOf } from "@/lib/sensory";
@@ -37,6 +37,9 @@ function webglOk(): boolean {
   if (typeof window === "undefined") return false;
   try { const c = document.createElement("canvas"); return !!(c.getContext("webgl2") || c.getContext("webgl")); } catch { return false; }
 }
+/** Os parâmetros do espelho numa URL (espelho|vestir|vista): o que separa um link novo do eco da URL que a página escreveu. */
+const linkKey = (q: { get: (k: string) => string | null }) => ["espelho", "vestir", "vista"].map((k) => q.get(k) ?? "").join("|");
+const keyOfPath = (path: string) => linkKey(new URLSearchParams(path.split("?")[1] ?? ""));
 /** Ir ao espelho com a cena 3D ainda montando ou o avatar carregando: espera até isto (ms) para caminhar; depois, abre direto. */
 const WALK_WAIT_MS = 12000;
 
@@ -69,6 +72,8 @@ function RoomInner() {
   const modal = useDetailModal();
   const theme = useTheme(); const dark = theme.resolved !== "light";
   const mirror = useApi<MirrorState>((signal) => api.get("/api/me/mirror", { signal }), []);
+  // peças fixadas ("Manter") no painel do Espelho: valem também para o Vista-me da barra da cena e sobrevivem a fechar a prova
+  const pins = useMirrorPins(mirror.data);
   const [lit, setLit] = useState<Set<string>>(new Set()); const [closingKey, setClosingKey] = useState(0); const [celebrate, setCelebrate] = useState(false);
   const [vista, setVista] = useState<{ open: boolean; busy: boolean; result: MirrorState | null }>({ open: false, busy: false, result: null });
   const [copilot, setCopilot] = useState<{ open: boolean; q: string; busy: boolean; text: string | null; point: string | null }>({ open: false, q: "", busy: false, text: null, point: null });
@@ -93,13 +98,18 @@ function RoomInner() {
   // navegação derivada: "Espelho" recuado sob "Meu Quarto" no menu lateral enquanto a prova está à vista
   useEffect(() => { setNavSub(mirrorOpen ? { parent: "/room", key: "nav.mirror", icon: "ACT-32" } : null); }, [mirrorOpen]);
   useEffect(() => () => setNavSub(null), []);
-  // a URL acompanha a prova (recarregar ou compartilhar reabre o espelho); só nas trocas, depois do link de entrada
+  // a URL acompanha a prova (recarregar ou compartilhar reabre o espelho); só nas trocas, depois do link de entrada.
+  // A escrita passa pelo roteador do Next (estado null: ele copia o interno e atualiza useSearchParams) — com o estado
+  // interno (__NA) o Next ignorava a troca, a busca ficava velha e "Meu Quarto" (/room) parecia a mesma URL.
+  // linkSeen: os parâmetros do espelho já tratados; linkWrote: os das URLs escritas aqui que ainda não voltaram como
+  // busca nova (o eco não é um link a seguir).
   const deepLinked = useRef(false); const wasOpen = useRef(false);
+  const linkSeen = useRef<string | null>(null); const linkWrote = useRef<string[]>([]);
   useEffect(() => {
     if (!deepLinked.current || wasOpen.current === mirrorOpen) { wasOpen.current = mirrorOpen; return; }
     wasOpen.current = mirrorOpen;
     const want = mirrorOpen ? MIRROR_ROOM_PATH : "/room";
-    if (window.location.pathname + window.location.search !== want) window.history.replaceState(window.history.state, "", want);
+    if (window.location.pathname + window.location.search !== want) { linkWrote.current.push(keyOfPath(want)); window.history.replaceState(null, "", want); }
   }, [mirrorOpen]);
   const me3d = useMirrorAvatar(); const [reflection, setReflection] = useState<string | null>(null);
   const [changed, setChanged] = useState<{ slot: HandSlot; name: string } | null>(null);
@@ -216,6 +226,13 @@ function RoomInner() {
     if (cl.lit > before) { setCelebrate(true); const m = cl.milestones.filter((x) => x.lit).pop(); if (before > 0 && m) toast.success(t("room.nova_luz_do_closet_acesa", { label: m.label })); setTimeout(() => setCelebrate(false), 6000); }
     try { localStorage.setItem("fai.room.lights", String(cl.lit)); } catch { /* sem storage */ }
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+  /**
+   * Falha de uma troca: a mensagem fica na sessão (a prova do quarto 3D a mostra). A vista embutida sem WebGL não tem esse
+   * aviso: lá vira um toast — senão o toque (ou o "vestir" de um link) pareceria não fazer nada.
+   */
+  function failed(n: number, slot: HandSlot, e: unknown) {
+    if (session.settle(n, false, slot, Date.now(), e instanceof Error ? e.message : t("common.erro")) && gl === false) toast.fromError(e);
+  }
   /** Veste uma peça no espelho: o pedido mais recente prevalece (resposta de pedido antigo é ignorada); falha mantém a roupa anterior. */
   async function wearInMirror(pieceId: string, slot: HandSlot, name: string) {
     const n = session.request(slot);
@@ -227,7 +244,7 @@ function RoomInner() {
       const r = await api.post<MirrorState>("/api/me/mirror/pieces", { pieceId });
       if (!session.settle(n, true, slot, Date.now())) return;
       mirror.setData(r); engine.consume(pieceId); setChanged({ slot, name });
-    } catch (e) { session.settle(n, false, slot, Date.now(), e instanceof Error ? e.message : t("common.erro")); }
+    } catch (e) { failed(n, slot, e); }
   }
   async function removeFromMirror(p: HandPiece) {
     const n = session.request(p.slot);
@@ -236,7 +253,7 @@ function RoomInner() {
       if (!session.settle(n, true, p.slot, Date.now())) return;
       if ((r as MirrorState)?.slots) mirror.setData(r as MirrorState); else await mirror.reload();
       setChanged(null);
-    } catch (e) { session.settle(n, false, p.slot, Date.now(), e instanceof Error ? e.message : t("common.erro")); }
+    } catch (e) { failed(n, p.slot, e); }
   }
   /** Tirar da lista do espelho: sai da lista (e do corpo, se vestida); nunca sai do guarda-roupa. */
   async function unlist(p: HandPiece) {
@@ -245,7 +262,7 @@ function RoomInner() {
       const r = await api.delete<MirrorState>(`/api/me/mirror/rack/${encodeURIComponent(p.id)}`);
       if (!session.settle(n, true, p.slot, Date.now())) return;
       mirror.setData(r); if (arrived === p.id) setArrived(null);
-    } catch (e) { session.settle(n, false, p.slot, Date.now(), e instanceof Error ? e.message : t("common.erro")); }
+    } catch (e) { failed(n, p.slot, e); }
   }
   async function toggleTheme() {
     const next = dark ? "LIGHT" : "DARK";
@@ -257,10 +274,12 @@ function RoomInner() {
     const mods = new Set((r.sequence ?? []).map((x) => x.moduleId).filter((m): m is string => !!m));
     setLit(mods); setOpenSet(new Set([...mods].filter((m) => m.startsWith("door:") || m.startsWith("drawer:"))));
   }
-  async function runVistaMe(path = "/api/me/mirror/vista-me", prompt = "") {
+  async function runVistaMe(kind: "vista-me" | "another", prompt = "") {
     setVista((v) => ({ ...v, busy: true }));
     try {
-      const r = await api.post<MirrorState>(path, path.endsWith("vista-me") ? { prompt } : {});
+      // as peças fixadas no painel do Espelho ("Manter") também são âncoras aqui
+      const req = vistaRequest(kind, mirror.data, pins.anchorIds(), prompt);
+      const r = await api.post<MirrorState>(req.path, req.body ?? {});
       lightSequence(r);
       setVista((v) => ({ ...v, busy: false, result: r })); mirror.setData(r);
     } catch (e) { toast.fromError(e); setVista((v) => ({ ...v, busy: false })); }
@@ -335,23 +354,33 @@ function RoomInner() {
     if (p?.moduleId) { if (gl) { setFocusModule(p.moduleId); setOpenSet(new Set([p.moduleId])); } else { const m = data.modules.find((x) => x.id === p.moduleId); if (m) setOpen(m); } }
   }, [sp, data, gl]);
   // Espelho por link (/room?espelho=1[&vestir=<id>][&vista=2d], lib/nav/mirror-href.ts): vai ao espelho, leva a peça à
-  // lista do espelho e veste, abre a prévia 2D; os parâmetros de uma vez só saem da URL (recarregar não veste de novo)
+  // lista do espelho e veste, abre a prévia 2D; os parâmetros de uma vez só saem da URL (recarregar não veste de novo).
+  // Vale na entrada e nos links seguidos com o quarto aberto (só a busca muda e a página continua montada): "Adicionar
+  // ao look" no detalhe da peça leva ao espelho; o espelho sumir da URL ("Meu Quarto" no menu lateral) volta ao quarto.
+  const espelhoQ = sp.get("espelho"), vestirQ = sp.get("vestir"), vistaQ = sp.get("vista");
   useEffect(() => {
-    if (deepLinked.current || !data || gl === null || mirror.loading) return;
-    deepLinked.current = true;
-    if (sp.get("espelho") !== "1") return;
-    const vestir = sp.get("vestir"); const vista2d = sp.get("vista") === "2d";
+    if (!data || gl === null || mirror.loading) return;
+    const key = linkKey(sp);
+    if (key === linkSeen.current) return;                          // a busca não mudou: o efeito rodou por outro motivo
+    linkSeen.current = key; deepLinked.current = true;
+    const echo = linkWrote.current.indexOf(key);
+    linkWrote.current = echo >= 0 ? linkWrote.current.slice(echo + 1) : [];
+    if (echo >= 0) return;                                         // a URL que a própria página escreveu
+    if (espelhoQ !== "1") {
+      if (mirrorOpen || walkRef.current === "mirror") leaveMirror();
+      return;
+    }
     wasOpen.current = true;                                        // a URL já é a do espelho
-    if (vista2d) setShow2d(true);
-    if (vestir) {
-      void bringToMirror(vestir).then((r) => {
+    if (vistaQ === "2d") setShow2d(true);
+    if (vestirQ) {
+      void bringToMirror(vestirQ).then((r) => {
         if (!r) return;
-        const src = r.rack?.find((x) => x.id === vestir) ?? (data.pieces[vestir] as MirrorRackPiece | undefined);
-        void wearInMirror(vestir, handSlotOf(src ?? {}, src?.slot), src?.name ?? "");
+        const src = r.rack?.find((x) => x.id === vestirQ) ?? (data.pieces[vestirQ] as MirrorRackPiece | undefined);
+        void wearInMirror(vestirQ, handSlotOf(src ?? {}, src?.slot), src?.name ?? "");
       });
     } else goToMirror();
-    if (vestir || vista2d) router.replace(MIRROR_ROOM_PATH, { scroll: false });
-  }, [data, gl, mirror.loading]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (vestirQ || vistaQ === "2d") { linkWrote.current.push(keyOfPath(MIRROR_ROOM_PATH)); router.replace(MIRROR_ROOM_PATH, { scroll: false }); }
+  }, [data, gl, mirror.loading, espelhoQ, vestirQ, vistaQ]); // eslint-disable-line react-hooks/exhaustive-deps
   const act = async (fn: () => Promise<unknown>, ok?: string) => { try { await fn(); if (ok) toast.success(ok); reload(); list.reload(); } catch (e) { toast.fromError(e); } };
   if (error) return <ErrorState error={error} onRetry={reload} />;
   if (loading || !data) return <Skeleton className="h-96" />;
@@ -411,7 +440,7 @@ function RoomInner() {
               onToggle={(id) => { if (!openSet.has(id)) touch(id); setOpenSet((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); setFocusModule(id); }}
               onPick={openTag} lit={lit} dark={dark} onToggleTheme={toggleTheme}
               mirror={{ pieces: mirrorPieces(mirror.data).map((p) => ({ id: p.id, imageUrl: p.imageUrl ?? p.thumbnailUrl })), postIt: mirror.data?.postIt, closingKey, celebrate, reflectionUrl: reflection, snapshot: session.snapshot,
-                onUse: acceptLook, onAnother: () => runVistaMe("/api/me/mirror/another"), onTakeOneOff: () => act(async () => mirror.setData(await api.post<MirrorState>("/api/me/mirror/take-one-off"))) } satisfies MirrorOverlay}
+                onUse: acceptLook, onAnother: () => runVistaMe("another"), onTakeOneOff: () => act(async () => mirror.setData(await api.post<MirrorState>("/api/me/mirror/take-one-off"))) } satisfies MirrorOverlay}
               onVistaMe={() => setVista((v) => ({ ...v, open: true }))} onCopilot={() => setCopilot((c) => ({ ...c, open: true }))} copilotPoint={copilot.point} copilotTalking={copilot.busy || copilot.open}
               onKeys={() => setKeysOpen(true)} onUnbox={unbox} unboxing={unboxing} onAddToDrawer={(m) => { setAddTo(m); setAddPiece(""); }} />
             {photo?.dof && <div className="room3d-dof" aria-hidden />}
@@ -438,7 +467,7 @@ function RoomInner() {
             {/* QUARTO-ESPELHO: na prova, a aba Espelho abre aqui mesmo (as opções de vestimenta ao lado da cena); sair do
                 espelho com as setas devolve a lista de posições */}
             {inMirror && mirror.data && (
-              <MirrorControls<MirrorState> compact data={mirror.data} setData={mirror.setData} reload={mirror.reload} host={roomHost} held={held} arrivedId={arrived}
+              <MirrorControls<MirrorState> compact data={mirror.data} setData={mirror.setData} reload={mirror.reload} host={roomHost} held={held} arrivedId={arrived} pins={pins}
                 preview2d={{ shown: show2d, onToggle: () => setShow2d((v) => !v) }}>
                 {show2d && !me3d.loading && (
                   <figure className="mirror-panel-still" aria-label={t("mirror.previa_2d")} data-testid="mirror-preview-2d">
@@ -461,17 +490,26 @@ function RoomInner() {
           </nav>
         </div>
       </>)}
-      {tab === "room" && flatMirror && mirror.data && (
+      {tab === "room" && flatMirror && (
         <div className="room-flat-mirror" role="region" aria-label={t("nav.mirror")}>
-          <div className="room-flat-mirror-stage">
-            <MirrorStage slots={slotsOf(mirror.data)} kelvin={mirror.data.light?.kelvin} mode="2d">
-              {mirrorEmpty && <div className="mirror-empty"><p className="type-h3">{t("mirror.emptyTitle")}</p><p className="type-body-sm mt-1 text-muted">{t("mirror.vazio_dica")}</p></div>}
-              {mirror.data.postIt && <p className="absolute right-3 top-3 max-w-[150px] rotate-2 bg-chalk-soft p-2 text-xs shadow" role="note">📌 {mirror.data.postIt}</p>}
-            </MirrorStage>
-            <Button className="mt-2" onClick={leaveMirror}>{t("room.mirror.back")}</Button>
-          </div>
-          <MirrorControls<MirrorState> data={mirror.data} setData={mirror.setData} reload={mirror.reload}
-            host={{ ...roomHost, showInRoom: (p) => { leaveMirror(); setHighlight(p.id); const m = data.modules.find((x) => x.id === p.moduleId); if (m) setOpen(m); } }} />
+          {!mirror.data ? (
+            // o estado do espelho não veio: o erro com tentar de novo (ou o carregamento) no lugar de uma vista vazia
+            <div className="room-flat-mirror-stage">
+              {mirror.error ? <ErrorState error={mirror.error} onRetry={mirror.reload} /> : <Skeleton className="h-96" />}
+              <Button className="mt-2" onClick={leaveMirror}>{t("room.mirror.back")}</Button>
+            </div>
+          ) : (<>
+            <div className="room-flat-mirror-stage">
+              {/* a vista embutida é a do aparelho sem WebGL: o palco não monta Canvas (as peças em 2D sobre o vidro) */}
+              <MirrorStage slots={slotsOf(mirror.data)} kelvin={mirror.data.light?.kelvin} mode="2d" webgl={!!gl}>
+                {mirrorEmpty && <div className="mirror-empty"><p className="type-h3">{t("mirror.emptyTitle")}</p><p className="type-body-sm mt-1 text-muted">{t("mirror.vazio_dica")}</p></div>}
+                {mirror.data.postIt && <p className="absolute right-3 top-3 max-w-[150px] rotate-2 bg-chalk-soft p-2 text-xs shadow" role="note">📌 {mirror.data.postIt}</p>}
+              </MirrorStage>
+              <Button className="mt-2" onClick={leaveMirror}>{t("room.mirror.back")}</Button>
+            </div>
+            <MirrorControls<MirrorState> data={mirror.data} setData={mirror.setData} reload={mirror.reload} pins={pins}
+              host={{ ...roomHost, showInRoom: (p) => { leaveMirror(); setHighlight(p.id); const m = data.modules.find((x) => x.id === p.moduleId); if (m) setOpen(m); } }} />
+          </>)}
         </div>
       )}
       {tab === "room" && !flatMirror && (
@@ -513,9 +551,9 @@ function RoomInner() {
         <Button className="mt-3" size="sm" variant="ghost" onClick={() => act(() => api.delete("/api/me/room/organization"), t("room.ultima_organizacao_desfeita"))}>{t("room.desfazer_ultima_organizacao")}</Button>
       </Dialog>
       <Dialog open={vista.open} onClose={() => setVista((v) => ({ ...v, open: false }))} size="lg" title={t("common.vista_me")}
-        footer={vista.result ? <><Button onClick={() => runVistaMe("/api/me/mirror/another")} loading={vista.busy}>{t("room.outra_sugestao")}</Button><Button variant="primary" onClick={acceptLook} disabled={!vista.result.complete}>{t("room.usar_este_look")}</Button></> : undefined}>
+        footer={vista.result ? <><Button onClick={() => runVistaMe("another")} loading={vista.busy}>{t("room.outra_sugestao")}</Button><Button variant="primary" onClick={acceptLook} disabled={!vista.result.complete}>{t("room.usar_este_look")}</Button></> : undefined}>
         <p className="type-body-sm mb-2 text-muted">{t("room.o_vista_me_usa_so")}</p>
-        <VistaMeCells busy={vista.busy} lastPrompt={mirror.data?.prompt} onRun={(prompt) => void runVistaMe("/api/me/mirror/vista-me", prompt)} />
+        <VistaMeCells busy={vista.busy} lastPrompt={mirror.data?.prompt} onRun={(prompt) => void runVistaMe("vista-me", prompt)} />
         {vista.result && <div className="mt-2 flex flex-wrap items-start gap-4">
           {!me3d.loading && <figure className="vista-still shrink-0" aria-label={t("room.previa_do_look")}>
             <AvatarStill avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={vistaLook} background="#EEEAE2" alt={t("mirror.previa_2d_alt", { n: vistaLook.length })} />

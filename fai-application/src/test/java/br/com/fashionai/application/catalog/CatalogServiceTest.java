@@ -9,16 +9,19 @@ import br.com.fashionai.application.view.Views;
 import br.com.fashionai.domain.model.Brand;
 import br.com.fashionai.domain.model.BrandAlias;
 import br.com.fashionai.domain.model.CatalogProduct;
+import br.com.fashionai.domain.model.CatalogImage;
 import br.com.fashionai.domain.model.CatalogSource;
 import br.com.fashionai.domain.model.CatalogVariant;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.model.enums.BrandSource;
 import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
+import br.com.fashionai.domain.model.enums.CatalogImageUsage;
 import br.com.fashionai.domain.model.enums.CatalogSourceType;
 import br.com.fashionai.domain.repository.BrandAliasRepository;
 import br.com.fashionai.domain.repository.BrandRepository;
 import br.com.fashionai.domain.repository.CatalogProductRepository;
+import br.com.fashionai.domain.repository.CatalogImageRepository;
 import br.com.fashionai.domain.repository.CatalogSourceRepository;
 import br.com.fashionai.domain.repository.CatalogVariantRepository;
 import br.com.fashionai.domain.repository.UserRepository;
@@ -194,6 +197,7 @@ class CatalogServiceTest {
             return new org.springframework.data.domain.PageImpl<>(rows.subList(from, to), pg, rows.size());
         });
         when(products.countVisible()).thenReturn((long) all.size());
+        when(products.countVisibleWithImage()).thenReturn((long) all.size());
         Map<String, Object> page = catalog.browse(new CatalogService.BrowseRequest("Nike", null, null, null, 0, 1));
         assertThat(page).containsEntry("total", (long) all.size()).containsEntry("page", 0).containsEntry("size", 1).containsEntry("brandKnown", true);
         assertThat((List<?>) page.get("items")).hasSize(1);
@@ -213,6 +217,6 @@ class CatalogServiceTest {
         catalog.browse(new CatalogService.BrowseRequest(null, null, null, "Calça  jeans azul escura", 0, 48));
         assertThat(lastWords).containsExactly("%calca%", "%jeans%", "%azul%");
         Map<String, Object> summary = catalog.summary();
-        assertThat(summary).containsEntry("products", (long) all.size()).containsEntry("brands", 1);
+        assertThat(summary).containsEntry("products", (long) all.size()).containsEntry("brands", 1).containsEntry("withImage", (long) all.size());
     }
 }

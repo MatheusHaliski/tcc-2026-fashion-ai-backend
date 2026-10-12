@@ -429,6 +429,13 @@ public class MirrorService {
         out.put("shownCount", Json.strings(s.getShownCombinationsJson()).size());
         out.put("scores", lookScores(user.id(), look));
         out.putAll(extra);
+        // as ações próprias de uma resposta (Vista-me: OUTRA_SUGESTAO…) somam às do estado do espelho — antes a lista fixa
+        // do Vista-me substituía a calculada e "Tira uma coisa" sumia de um look completo com acessório
+        if (extra.get("actions") instanceof List<?> own) {
+            Set<String> all = new LinkedHashSet<>(actions);
+            own.forEach(a -> all.add(String.valueOf(a)));
+            out.put("actions", new ArrayList<>(all));
+        }
         return out;
     }
 

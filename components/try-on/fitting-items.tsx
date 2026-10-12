@@ -23,7 +23,8 @@ export interface FittingItemsProps {
   status: string;
   slotNames: Record<FittingSlot, string>;
   onVariantChange: (item: FittingItem, variant: CatalogVariant) => void;
-  onOwn: (item: FittingItem) => void;
+  /** guarda a peça da loja no guarda-roupa; `false` quando não guardou (erro, ou outra peça sendo guardada) */
+  onOwn: (item: FittingItem) => void | Promise<boolean | void>;
   onRemove: (slot: FittingSlot) => void;
   /** abre a prévia 2D no espelho (o mesmo avatar, de frente e parado) com o look atual */
   onPreview2d?: (item: FittingItem) => void;

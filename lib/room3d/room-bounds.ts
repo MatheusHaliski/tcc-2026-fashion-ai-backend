@@ -51,6 +51,25 @@ export const W2 = { x: ROOM.minX + 0.32, z: 3.4, yaw: Math.PI / 2, collider: { h
 export const w2ToWorld = (lx: number, y: number, lz: number): [number, number, number] => [W2.x + lz, y, W2.z - lx];
 
 /**
+ * Onde a peça solta pousa: dentro da área de caminhar, na frente do guarda-roupa 1 (z ≥ 0,8) e fora da carcaça do 2º —
+ * ao lado dele, a 0,22 m da frente (a peça deitada tem 0,38 m de largura e avança 0,6 m para o sul a partir do cabide).
+ * Sem isso, a mão do personagem parado na frente do 2º soltaria a peça dentro do móvel, escondida e ainda pegável.
+ */
+export function dropPoint<P extends { x: number; z: number }>(p: P, area = walkArea(ROOM)): P {
+  p.x = THREE.MathUtils.clamp(p.x, area.minX, area.maxX);
+  p.z = THREE.MathUtils.clamp(p.z, Math.max(0.8, area.minZ), area.maxZ);
+  if (Math.abs(p.z - W2.z) < W2.collider.hx + 0.6) p.x = Math.max(p.x, W2.x + W2.collider.hz + 0.22);
+  return p;
+}
+/**
+ * Câmera dentro da carcaça do 2º guarda-roupa (caixa no quarto até a altura `height`, com folga `margin`): a órbita sem
+ * limite de giro chega ali, e o móvel seria desenhado visto por dentro.
+ */
+export function insideW2(p: { x: number; y: number; z: number }, height: number, margin = 0.05): boolean {
+  return Math.abs(p.x - W2.x) < W2.collider.hz + margin && Math.abs(p.z - W2.z) < W2.collider.hx + margin && p.y > -margin && p.y < height + margin;
+}
+
+/**
  * Plano de alcance da mão: a frente do guarda-roupa mais perto do personagem (a do 1 em z = 0,34; a do 2 em
  * x = −2,74). Sem isso, mirar no guarda-roupa da parede oeste projetaria a mão num plano paralelo à parede do fundo.
  */
@@ -94,10 +113,12 @@ export const ROOM_CAMERA = { minDistance: 3.0, track: 0.45 };
 /**
  * Vista do quarto dentro das paredes: gira a visão geral em torno do centro (rotateView), traz a câmera para dentro
  * (clampCamera) e, se o personagem chegou perto demais dela (andou para o lado da câmera, ou a vista é a do guarda-roupa
- * 1 para o sul), desliza a câmera ao longo da parede de trás até ficar a `minDistance` dele — para o lado que anda menos.
+ * 1 para o sul), desliza a câmera ao longo da parede de trás até ficar a `minDistance` dele — para o lado mais perto de
+ * onde a câmera está (`prev`, a posição atual dela; sem ela, a da vista). Com `prev`, o lado não vira quando o
+ * personagem cruza a linha da câmera: só muda se o lado de agora deixar de servir (a parede não deixa recuar).
  * O olhar acompanha o personagem pela metade: ele não sai do quadro e a parede da frente continua no enquadramento.
  */
-export function roomView(position: THREE.Vector3, target: THREE.Vector3, actor: { x: number; z: number }, view: number, b: RoomBounds = ROOM) {
+export function roomView(position: THREE.Vector3, target: THREE.Vector3, actor: { x: number; z: number }, view: number, b: RoomBounds = ROOM, prev?: { x: number; z: number }) {
   const v = rotateView(position, target, view, b), { lo, hi } = cameraBox(b), min = ROOM_CAMERA.minDistance;
   const yaw = viewYaw(view), front = new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)), right = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
   const gap = (q: THREE.Vector3) => Math.hypot(actor.x - q.x, actor.z - q.z);
@@ -106,7 +127,8 @@ export function roomView(position: THREE.Vector3, target: THREE.Vector3, actor: 
     const to = new THREE.Vector3(actor.x - p.x, 0, actor.z - p.z), depth = to.dot(front), lateral = to.dot(right);
     const need = Math.sqrt(Math.max(0, min * min - depth * depth));
     const options = [lateral + need, lateral - need].map((s) => { const q = p.clone().addScaledVector(right, s); q.x = THREE.MathUtils.clamp(q.x, lo.x, hi.x); q.z = THREE.MathUtils.clamp(q.z, lo.z, hi.z); return q; });
-    const far = options.filter((q) => gap(q) >= min - 1e-3).sort((a, c) => a.distanceTo(p) - c.distanceTo(p));
+    const from = prev ?? p, near = (q: THREE.Vector3) => Math.hypot(q.x - from.x, q.z - from.z);
+    const far = options.filter((q) => gap(q) >= min - 1e-3).sort((a, c) => near(a) - near(c));
     p = far[0] ?? (gap(options[0]) >= gap(options[1]) ? options[0] : options[1]);
   }
   return { position: p, target: v.target.clone().lerp(new THREE.Vector3(actor.x, 1.0, actor.z), ROOM_CAMERA.track) };
