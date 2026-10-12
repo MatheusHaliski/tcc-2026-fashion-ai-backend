@@ -2386,7 +2386,7 @@ a.trend-group:focus-visible { outline: 2px solid var(--mark); outline-offset: 2p
 .fitting-actions .btn { max-width: 100%; white-space: normal; }
 .fitting-hints { display: grid; gap: 4px; }
 @media (min-width: 640px) { .fitting-selectors { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-.fitting-browser .fitting-stores { max-height: 230px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 3px; }
+.fitting-browser .fitting-stores { padding: 3px; }
 .fitting-browser .fitting-store { min-width: 0; padding: 8px 5px; }
 .fitting-browser .fitting-store-name { overflow-wrap: anywhere; }
 .fitting-browser .fitting-category-filters, .fitting-browser .fitting-category-controls { min-width: 0; padding-top: 10px; border-top: 1px solid var(--line-soft); }
@@ -2533,10 +2533,10 @@ a.piece-row-link:hover { text-decoration-color: currentColor; }
 .mirror-flat-acc img { max-height: 100%; max-width: 64px; }
 .mirror-flat-silhouette { height: 72%; fill: #3b3328; opacity: .16; }
 .fitting-stores { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
-/* RF47 · criador de peça: a mesma grade de marcas do provador, rolável como lá */
+/* RF47 · criador de peça: a mesma grade paginada de marcas do provador */
 .catalog-brand-heading { min-height: 34px; }
-.catalog-brand-stage { height: 320px; overflow-y: auto; overscroll-behavior: contain; }
-.catalog-brand-grid .fitting-stores { max-height: 320px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; padding: 3px; }
+.catalog-brand-stage { min-height: 160px; }
+.catalog-brand-grid .fitting-stores { padding: 3px; }
 .fitting-store { display: grid; justify-items: center; gap: 4px; padding: 10px 6px; border: 1.5px solid var(--line-soft); border-radius: 12px; background: var(--surface); text-align: center; transition: border-color .15s, background .15s; }
 /* marca sem peças do tipo escolhido: continua na grade (todas as marcas), apagada */
 .fitting-store.is-empty:not(.is-active) { opacity: .55; }

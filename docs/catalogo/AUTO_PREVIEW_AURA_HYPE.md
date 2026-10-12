@@ -6,3 +6,5 @@ Ao entrar na tela, os cards visíveis solicitam `POST /api/catalog/products/{id}
 
 AURA Hype é ativado em Configurações do perfil e no Background Studio, com scanner, raio-x visual, pontos tech, estrelas e micro métricas. O score global vem do resumo Hype do backend e fica numa caixa LED no canto superior direito. Sem cálculo, informa indisponibilidade: não usa compatibilidade pessoal, nem inventa zero ou medições do tecido. Efeitos são CSS/SVG em tempo real, sem um GIF pesado por peça, e respeitam reduzir movimento. A preferência global é persistida pelo backend; a escolha por card é guardada no Background Studio.
 
+
+A grade compartilhada de marcas do criador e provador exibe oito marcas por página, com Anterior/Próxima e contagem de páginas. Não usa rolagem vertical interna nem carregamento infinito. Busca por texto e filtros permanecem disponíveis; mudanças nos resultados voltam à primeira página.
