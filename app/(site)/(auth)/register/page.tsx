@@ -50,6 +50,7 @@ export default function RegisterPage() {
     // validação local do que o servidor não devolve campo a campo (username vazio ou fora do padrão)
     const l: Record<string, string> = {};
     if (!/^[A-Za-z0-9._]{3,30}$/.test(f.username)) l.username = f.username ? t("register.usernameInvalid") : t("register.usernameRequired");
+    if (!f.acceptTerms) l.acceptTerms = t("register.termsRequired");
     setLocal(l);
     if (Object.keys(l).length) { notice.warning(t("register.revise_os_campos"), { details: Object.values(l) }); document.getElementById(Object.keys(l)[0])?.focus(); return; }
     const s = await run();
@@ -113,7 +114,8 @@ export default function RegisterPage() {
             <label className="flex items-start gap-2 type-body-sm"><input type="checkbox" checked={celeb.sealConsentGranted} onChange={(e) => setCeleb((c) => ({ ...c, sealConsentGranted: e.target.checked }))} />{" "}{t("register.autorizo_o_uso_do_meu")}</label>
           </fieldset>
         )}
-        <label className="mb-3 flex items-start gap-2 type-body-sm"><input type="checkbox" checked={f.acceptTerms} onChange={set("acceptTerms")} required /> {t("auth.acceptTerms")}</label>
+        <label className="mb-3 flex items-start gap-2 type-body-sm"><input id="acceptTerms" type="checkbox" aria-invalid={!!err.acceptTerms} aria-describedby={err.acceptTerms ? "terms-error" : undefined} checked={f.acceptTerms} onChange={set("acceptTerms")} required /> {t("auth.acceptTerms")}</label>
+        {err.acceptTerms && <p id="terms-error" role="alert" className="error-text mb-3">{err.acceptTerms}</p>}
         <Button type="submit" variant="primary" size="lg" className="w-full" loading={busy}>{t("nav.register")}</Button>
       </form>
     </AuthCard>

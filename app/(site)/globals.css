@@ -3640,6 +3640,7 @@ button.cbc-slot-btn:hover { border-color: var(--line); background: var(--surface
 
 /* AURA Hype: decorative loops, no invented fabric metrics or flashing. */
 .aura-hype { position:absolute; inset:0; pointer-events:none; overflow:hidden; border:1px solid #65f5df80; }
+.pd-media > .aura-hype { z-index: 2; }
 .aura-hype-field { position:absolute; inset:0; background:repeating-linear-gradient(0deg,transparent 0 24px,#52e0dc16 25px 26px),repeating-linear-gradient(90deg,transparent 0 24px,#52e0dc16 25px 26px); }
 .aura-hype-field::after { content:""; position:absolute; inset:0; height:18%; background:linear-gradient(transparent,#54efdc65,transparent); animation:aura-scan 8s ease-in-out infinite alternate; }
 .aura-hype-score { position:absolute; top:12px; right:12px; max-width:calc(100% - 24px); box-shadow:0 0 8px #42ffd970,inset 0 0 12px #42ffd926; padding:7px 10px; border:1px solid #6effe3; border-radius:8px; color:#bdfff1; background:#061a24e8; font:600 11px/1.4 monospace; letter-spacing:.12em; }

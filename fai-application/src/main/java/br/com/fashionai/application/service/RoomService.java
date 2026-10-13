@@ -420,7 +420,9 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         if (kelvin != null) { finish.put("kelvin", Math.max(2700, Math.min(6500, kelvin))); finish.put("guided", true); }
         if (intensity != null) finish.put("intensity", intensity);
         if (on != null) finish.put("on", on);
-        mods.stream().filter(m -> "light".equals(m.get("id"))).findFirst().ifPresent(m -> m.put("finish", finish));
+        Map<String, Object> lightModule = mods.stream().filter(m -> "light".equals(m.get("id"))).findFirst().orElse(null);
+        if (lightModule == null) { lightModule = new LinkedHashMap<>(); lightModule.put("id", "light"); mods.add(lightModule); }
+        lightModule.put("finish", finish);
         l.setModulesJson(Json.write(mods)); layouts.save(l);
         return finish;
     }

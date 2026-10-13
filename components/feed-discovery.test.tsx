@@ -9,7 +9,7 @@ it("shows available discovery results without suggesting the current or blocked 
     ? [{ slug: "marca-teste", name: "Marca de teste" }]
     : [{ ...OWNER, relation: "NENHUMA" }, { ...OWNER, id: "p2", username: "bia", displayName: "Bia", relation: "NENHUMA" }, { ...OWNER, id: "blocked", username: "blocked", displayName: "Bloqueada", relation: "BLOQUEADO" }] }) });
   renderApp(<FeedDiscovery />);
-  expect(await screen.findByRole("link", { name: /Bia/ })).toBeTruthy();
-  expect((await screen.findByRole("link", { name: "Marca de teste" })).getAttribute("href")).toBe("/brands/marca-teste");
-  expect(screen.queryByRole("link", { name: /Ana Souza|Bloqueada/ })).toBeNull();
+  expect(await screen.findAllByRole("link", { name: /Bia/ })).toHaveLength(2);
+  expect((await screen.findAllByRole("link", { name: /Marca de teste|@marca-teste/ }))[0].getAttribute("href")).toBe("/brands/marca-teste");
+  expect(screen.queryAllByRole("link", { name: /Ana Souza|Bloqueada/ })).toHaveLength(0);
 });
