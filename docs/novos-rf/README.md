@@ -32,6 +32,22 @@ Meu Guarda-Roupa foram implementados antes de o time reordenar o board. A tabela
 | RF53 | HypeScore v2: Hype analítico de peças e looks (verso dos cards com flip, Histórico › Hype, Em alta, ordenações do Guarda-roupa, Copilot com modos) + navegação por domínios | `application/hype/*`, `HypeController` (V31) | [RF53_HypeScore_v2.md](RF53_HypeScore_v2.md) · arquitetura: [HYPESCORE_ARCHITECTURE.md](../hype/HYPESCORE_ARCHITECTURE.md) | `docs/diagramas/RF53/` |
 | RF54 *(proposta; confirmar no Trello)* | FashionAI Lens: foto do mundo real → peças, estilo, guarda-roupa, DNA, Hype e Copilot (closet-first) | — (ainda não implementado) | [RF54_FashionAI_Lens.md](RF54_FashionAI_Lens.md) | diagramas no próprio documento (Mermaid) |
 
+## Propostas aguardando numeração oficial
+
+Consultar a lista Requisitos Funcionais do Trello e usar os próximos números livres antes da publicação dos cartões. Os identificadores abaixo são títulos provisórios, sem reserva de números.
+
+| Proposta | Especificação | Estado |
+|---|---|---|
+| FashionAI Vision: shows ao vivo imersivos | [Proposta](PROPOSTA_FASHIONAI_VISION.md) | Especificada; publicação no Trello pendente |
+| Minha Loja / My Store para marcas | [Proposta](PROPOSTA_MINHA_LOJA.md) | Especificada; publicação no Trello pendente |
+| FAI ATELIER: projetos, identidade e recompensas criativas | [Proposta](PROPOSTA_FAI_ATELIER.md) | Especificada; publicação no Trello pendente |
+
+| FLAIR METAMORFOSE | [Proposta](PROPOSTA_FLAIR_METAMORFOSE.md) | Aceita para esta edição; publicação no Trello pendente |
+
+### Complemento de RF existente
+
+RF32: [aba Trends e critérios de PASSA O LOOK](RF32_TRENDS_PASSA_O_LOOK.md). PASSA O LOOK é CA da aba Desafios e não recebe RF separado.
+
 ## Mudanças em RF antigos (2026-09-24)
 
 | RF | Mudança | Documento | Diagramas |
