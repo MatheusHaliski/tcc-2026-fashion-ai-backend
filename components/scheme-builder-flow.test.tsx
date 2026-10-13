@@ -30,7 +30,7 @@ describe("Aparência opcional", () => {
   });
   it("mantém a etapa de Aparência e aplica a escolha ao salvar", async () => {
     const api = setup(); renderApp(<SchemeBuilder initial={SCHEME} />); await details();
-    fireEvent.click(screen.getByRole("button", { name: "Aparência", exact: true }));
+    fireEvent.click(screen.getByRole("button", { name: /Aparência/ }));
     fireEvent.click(await screen.findByRole("button", { name: "Escolher aparência de teste" }));
     fireEvent.click(screen.getAllByRole("button", { name: "Revisar e salvar", exact: true }).find(b => b.classList.contains("btn-primary"))!);
     fireEvent.click(screen.getByRole("button", { name: "Salvar", exact: true }));

@@ -60,7 +60,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const flippable = flip && !preview && !selectable;
   const { prefs } = useTheme();
   const auraMode = piece.background?.auraHype as string | undefined;
-  const auraEnabled = auraMode === "OFF" ? false : !!auraMode || !!prefs.auraHype;
+  const auraEnabled = !!prefs.auraHype || !!auraMode && auraMode !== "OFF";
   const hype = useHypeSummary("PIECE", piece.id, !preview && (!selectable || auraEnabled));
   const hypeState = hypeViewState(hype.summary, hype);
   // RF53: selos de marca/celebridade + Selos de Hype (do resumo já carregado, sem pedido extra), no máx. 2 de Hype
@@ -86,7 +86,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const media = (
     <>
       {crop ? <CatalogPhoto image={crop} alt="" /> : img.src ? <MediaImage src={img.src} srcSet={img.srcSet} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
-      {auraEnabled && <AuraHype state={hypeState} mode={auraMode} />}
+      {auraEnabled && <AuraHype state={hypeState} mode={auraMode} preview={preview} />}
       {(zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
       {(!piece.disponivel || piece.forDonation || (mine && piece.favorite) || piece.aiGeneratedImage) && (
         <span className="pc-flags">

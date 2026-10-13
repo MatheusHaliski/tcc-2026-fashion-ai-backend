@@ -140,7 +140,7 @@ describe("busca catalogada em Adicionar peça", () => {
     fireEvent.click(advance());
     const revisitedCard = within(list).getByRole("heading", { name: "Tênis 6" }).closest("article")!;
     expect(within(revisitedCard).getByRole("button", { name: "Preto 6" }).getAttribute("aria-pressed")).toBe("true");
-    fireEvent.click(within(revisitedCard).getByRole("button", { name: "É esta" }));
+    fireEvent.click(within(revisitedCard).getByRole("button", { name: "Selecionar" }));
     expect(await screen.findByText("Peça do catálogo")).toBeTruthy();
     expect((screen.getByLabelText(/^Nome/) as HTMLInputElement).value).toBe("Tênis 6");
     for (let step = 0; step < 3; step++) {

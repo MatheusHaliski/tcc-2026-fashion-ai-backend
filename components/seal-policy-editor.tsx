@@ -22,7 +22,7 @@ export interface SealRule { quantifier: SealQuantifier; count?: number | null; c
   /** RF53 — a peça só passa no filtro com Hype atual ≥ esse nível */ hypeMin?: HypeLevel | null }
 /** RF53 — critério de Hype da entidade avaliada: nível e score juntos = os dois precisam valer; momento = qualquer um da lista. */
 export interface SealHypeCriteria { minLevel?: HypeLevel | null; minScore?: number | null; momentum?: HypeMomentum[] | null; dimensionMins?: Partial<Record<HypeDimension, number>> }
-export interface SealPolicy { match: "ALL" | "ANY"; rules: SealRule[]; occasions: string[]; styles: string[]; mode?: "HYPE"; hype?: SealHypeCriteria | null; referenceModel?: SealReferenceModel; aiInferenceId?: string }
+export interface SealPolicy { generationMode?: "MANUAL" | "COPILOT"; match: "ALL" | "ANY"; rules: SealRule[]; occasions: string[]; styles: string[]; mode?: "HYPE"; hype?: SealHypeCriteria | null; referenceModel?: SealReferenceModel; aiInferenceId?: string }
 export const EMPTY_POLICY: SealPolicy = { match: "ALL", rules: [], occasions: [], styles: [] };
 export const MAX_RULES = 6;
 export const MAX_SEAL_TAGS = 4;
@@ -63,7 +63,7 @@ export function cleanPolicy(p: SealPolicy | null | undefined): SealPolicy | null
   // A modalidade Hype tem critérios próprios: não reaproveita referências inferidas do Copilot.
   if (p.mode === "HYPE") return hype ? { mode: "HYPE", match: "ALL", rules: [], occasions: [], styles: [], hype } : null;
   if (!rules.length && !p.occasions.length && !p.styles.length && !hype && !p.referenceModel) return null;
-  return { match: p.match, rules, occasions: p.occasions, styles: p.styles, ...(hype ? { hype } : {}), ...(p.referenceModel ? { referenceModel: p.referenceModel } : {}), ...(p.aiInferenceId ? { aiInferenceId: p.aiInferenceId } : {}) };
+  return { ...(p.generationMode ? { generationMode: p.generationMode } : {}), match: p.match, rules, occasions: p.occasions, styles: p.styles, ...(hype ? { hype } : {}), ...(p.referenceModel ? { referenceModel: p.referenceModel } : {}), ...(p.aiInferenceId ? { aiInferenceId: p.aiInferenceId } : {}) };
 }
 
 function pieceWords(r: SealRule): string {

@@ -1,4 +1,5 @@
 "use client";
+import { CreatorWelcome } from "@/components/creator-welcome";
 import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -223,7 +224,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   const previewPiece: PieceView = { id: "preview", owner: { id: user?.id ?? "", username: user?.username ?? "", displayName: user?.displayName ?? "", profileType: "PESSOAL", verified: false, privateAccount: false }, name: value.name || t("common.peca"), category: value.category || "upper_piece", subcategory: value.subcategory, sex: value.sex, brandName: value.brandName && !isNoBrand(value.brandName) ? value.brandName : null, brandLogoUrl: value.brandLogoUrl ?? null, color: value.color, colorHex: tax?.colors?.[value.color] ?? null, material: value.material, size: value.size, style: value.style, occasion: value.occasion, seals: value.seals, price: value.price === "" ? null : Number(value.price), imageUrl: officialImg ?? asset, thumbnailUrl: officialImg ?? asset, ...(mode === "catalog" && pick?.product.catalogImage && officialImg ? { flatLayMetadata: { catalogImage: pick.product.catalogImage } } : {}), studioImageUrl: null, studioThumbUrl: null, studioFeedUrl: null, defaultImage: !officialImg, visibility: value.visibility, disponivel: true, availabilityStatus: "AVAILABLE", favorite: false, forSale: value.forSale, wearCount: 0, tags: [], background, counters: { likes: 0, comments: 0, shares: 0, remixes: 0, views: 0, saves: 0, reactions: {} }, viewer: { liked: false, reactions: [], saved: false, canEdit: true, following: false }, notAvailableAnymore: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
   return (
     <>
-      <PageHeader title={t("closet.addPiece")} kicker="RF47" lead={t("pieces.new.lead_unica")} />
+      <PageHeader title={t("closet.addPiece")} kicker="RF47" lead={t("pieces.new.lead_unica")} actions={<CreatorWelcome kind="piece" />} />
       {/* RF54 — veio do "É minha" do FashionAI Lens: o que a leitura viu já está no formulário, para conferir */}
       {pre.fromLens && (
         <p className="mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-md bg-thread-soft p-3 type-body-sm" role="note" data-prefill="lens">

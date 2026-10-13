@@ -52,3 +52,10 @@ describe("writePieceArt (gravação)", () => {
     expect(studioPart(out)).toEqual({ aura: null });
   });
 });
+
+it("preserva e relê o preset AURA Hype no mesmo config do Background Studio", () => {
+  const saved = writePieceArt({ auraHype: "SCANNER" }, defaultArt(), { auraHype: "STARS" });
+  expect(saved.auraHype).toBe("STARS");
+  expect(studioPart(saved).auraHype).toBe("STARS");
+  expect(studioPart({ auraHype: "OFF" }).auraHype).toBe("OFF");
+});

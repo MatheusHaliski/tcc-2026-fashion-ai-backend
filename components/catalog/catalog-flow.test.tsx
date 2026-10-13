@@ -44,7 +44,7 @@ describe("adicionar peça pelo catálogo (RF47) — etapa única Peça", () => {
     await waitFor(() => expect(calls.some((c) => c.path.startsWith("/api/catalog/products"))).toBe(true), { timeout: 4000 });
     expect(await screen.findByText("96% compatível")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Black/Black" }));
-    fireEvent.click(screen.getByRole("button", { name: "É esta" }));
+    fireEvent.click(screen.getByRole("button", { name: "Selecionar" }));
     // o produto vira referência e preenche o formulário (nome, marca)
     expect(await screen.findByText("Peça do catálogo")).toBeTruthy();
     expect((screen.getByLabelText(/^Nome/) as HTMLInputElement).value).toBe("Air Force 1 '07");

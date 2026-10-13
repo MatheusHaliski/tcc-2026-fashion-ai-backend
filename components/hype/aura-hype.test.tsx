@@ -10,6 +10,6 @@ it("shows the real score and chosen effect", () => {
 });
 it("never invents a zero score when unavailable", () => {
   renderApp(<AuraHype state={{ kind: "not_calculated" }} />);
-  expect(screen.getByText("Hype ainda indisponível")).toBeTruthy();
+  expect(screen.getByText("AURA ativa · aguardando cálculo do Hype")).toBeTruthy();
   expect(screen.queryByText(/0\/100/)).toBeNull();
 });

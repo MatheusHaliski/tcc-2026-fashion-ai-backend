@@ -157,7 +157,7 @@ public class SchemeService {
         // as indisponíveis/reprovadas ficam ocultas e o total informa quantas.
         out.put("source", "RF4");
         out.put("hiddenPieces", Math.max(0, total - eligible.size()));
-        if (eligible.size() < 2) {
+        if (eligible.size() < 2 && eligible.stream().noneMatch(w -> "full_body_piece".equals(w.getCategory()))) {
             out.put("status", "INSUFICIENTE");
             out.put("message", Msg.t("scheme.voce_precisa_de_ao_menos"));
             out.put("action", Map.of("label", Msg.t("common.adicionar_nova_peca"), "href", "/pieces/new"));

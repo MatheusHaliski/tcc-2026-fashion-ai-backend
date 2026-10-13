@@ -10,6 +10,8 @@ import { Badge, Button, Card, Chip, Dialog, EmptyState, ErrorState, Field, Input
 import { FaiIcon } from "@/components/fai-icon";
 import { GuideAuto, HowItWorks } from "@/components/guide/guide";
 
+import { CommunityTrends } from "@/components/challenges/community-trends";
+
 interface Template { code: string; name: string; rule: string; durationDays: number; modes: string[]; improves: string[]; effort?: string; effortDots?: number; reward?: string; rewardPoints?: number; participants?: { min: number; max: number }; playingNow?: number; origin?: string; author?: string; roomDecoration?: string; todayRule?: string; weeklyTheme?: string; highlight?: string; eligible?: boolean; reason?: string; }
 interface Catalog { challenges: Template[]; activeCount: number; maxActive: number; note?: string; presetNotes?: string[]; reactions?: string[]; }
 interface Mine { active?: Instance[]; invites?: Instance[]; finished?: Instance[]; drafts?: Instance[]; [k: string]: unknown; }
@@ -21,7 +23,7 @@ function ChallengesInner() {
   const cat = useApi<Catalog>((signal) => api.get("/api/challenges/catalog", { signal }), []);
   const mine = useApi<Mine>((signal) => api.get("/api/me/challenges", { signal }), []);
   const votes = useApi<{ id: string; name?: string; entries?: { entryId: string; title: string; coverImageUrl?: string; votes?: number; votedByMe?: boolean }[] }[]>((signal) => api.get("/api/challenges/votes", { signal }), []);
-  const [tab, setTab] = useState<"catalog" | "mine" | "votes" | "propose">("catalog");
+  const [tab, setTab] = useState<"catalog" | "mine" | "votes" | "propose" | "trends">(sp.get("tab") === "trends" ? "trends" : "catalog");
   const [start, setStart] = useState<{ tpl: Template; mode: string; invitees: string } | null>(null);
   const [proposal, setProposal] = useState({ name: "", rule: "", modes: ["SOLO"] as string[], durationDays: "7" });
   const startCode = sp.get("start");
@@ -34,7 +36,8 @@ function ChallengesInner() {
     <>
       <PageHeader title={t("nav.challenges")} kicker="RF32" lead={cat.data?.note} actions={<><HowItWorks id="challenges.progress" />{cat.data && <Badge>{t("challenges.ativos", { activeCount: cat.data.activeCount, maxActive: cat.data.maxActive })}</Badge>}</>} />
       <GuideAuto id="challenges.progress" />
-      <Tabs tabs={[{ id: "catalog", label: t("challenges.catalogo") }, { id: "mine", label: t("challenges.meus_desafios"), count: (mine.data?.active?.length ?? 0) + (mine.data?.invites?.length ?? 0) }, { id: "votes", label: t("challenges.votacao"), count: votes.data?.length }, { id: "propose", label: t("challenges.propor") }]} value={tab} onChange={setTab} />
+      <Tabs tabs={[{ id: "catalog", label: t("challenges.catalogo") }, { id: "mine", label: t("challenges.meus_desafios"), count: (mine.data?.active?.length ?? 0) + (mine.data?.invites?.length ?? 0) }, { id: "votes", label: t("challenges.votacao"), count: votes.data?.length }, { id: "propose", label: t("challenges.propor") }, { id: "trends", label: t("trends.title") }]} value={tab} onChange={setTab} />
+      {tab === "trends" && <CommunityTrends />}
       {tab === "catalog" && (cat.error ? <ErrorState error={cat.error} onRetry={cat.reload} /> : cat.loading ? <Skeleton className="h-64" /> : <div className="grid-looks">{(cat.data?.challenges ?? []).map((c) => (
         <Card key={c.code} className={startCode === c.code ? "ring-2 ring-mark" : ""}>{c.highlight && <Badge tone="mark" className="mb-1">{c.highlight}</Badge>}<p className="type-h3">{c.name}</p><p className="type-body-sm text-muted">{c.todayRule ?? c.weeklyTheme ?? c.rule}</p>
           <p className="mt-2 type-caption">{t("challenges.dias_esforco", { durationDays: c.durationDays ?? "—", repeat: "●".repeat(c.effortDots ?? 1), repeat2: "○".repeat(Math.max(0, 3 - (c.effortDots ?? 1))), reward: c.reward })}</p>
