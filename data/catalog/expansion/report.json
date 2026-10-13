@@ -1,0 +1,1694 @@
+{
+  "applied": true,
+  "generated_at": "2026-10-13T22:04:22.362307+00:00",
+  "before": {
+    "products": 13058,
+    "brands": 79,
+    "missing": 551
+  },
+  "after": {
+    "products": 13058,
+    "brands": 79,
+    "missing": 551
+  },
+  "products_added": 0,
+  "brands_added": 0,
+  "brands": {
+    "abercrombie-fitch": {
+      "name": "Abercrombie & Fitch",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "aeropostale": {
+      "name": "Aéropostale",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "amaro": {
+      "name": "Amaro",
+      "created": 100,
+      "unknown_gender": 100,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "allsaints": {
+      "name": "AllSaints",
+      "created": 100,
+      "unknown_gender": 99,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "alexander-mcqueen": {
+      "name": "Alexander McQueen",
+      "created": 100,
+      "unknown_gender": 100,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "adidas": {
+      "name": "Adidas",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "american-eagle": {
+      "name": "American Eagle",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": null,
+      "shortfall": 100
+    },
+    "animale": {
+      "name": "Animale",
+      "created": 100,
+      "unknown_gender": 95,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "aramis": {
+      "name": "Aramis",
+      "created": 100,
+      "unknown_gender": 86,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "arezzo": {
+      "name": "Arezzo",
+      "created": 100,
+      "unknown_gender": 97,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "armani": {
+      "name": "Armani",
+      "created": 100,
+      "unknown_gender": 99,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "asics": {
+      "name": "ASICS",
+      "created": 100,
+      "unknown_gender": 11,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "balenciaga": {
+      "name": "Balenciaga",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "banana-republic": {
+      "name": "Banana Republic",
+      "created": 100,
+      "unknown_gender": 100,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "baw-clothing": {
+      "name": "Baw Clothing",
+      "created": 100,
+      "unknown_gender": 100,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "benetton": {
+      "name": "Benetton",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "billabong": {
+      "name": "Billabong",
+      "created": 1,
+      "unknown_gender": 1,
+      "report": {
+        "total_read": 1,
+        "created": 1,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "birkenstock": {
+      "name": "Birkenstock",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "bottega-veneta": {
+      "name": "Bottega Veneta",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 442,
+        "created": 0,
+        "updated": 0,
+        "skipped": 442,
+        "duplicates_found": 442,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "brooks-brothers": {
+      "name": "Brooks Brothers",
+      "created": 100,
+      "unknown_gender": 100,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "burberry": {
+      "name": "Burberry",
+      "created": 88,
+      "unknown_gender": 80,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "c-a": {
+      "name": "C&A",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "calvin-klein": {
+      "name": "Calvin Klein",
+      "created": 100,
+      "unknown_gender": 19,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "cantao": {
+      "name": "Cantão",
+      "created": 100,
+      "unknown_gender": 100,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "carhartt-wip": {
+      "name": "Carhartt WIP",
+      "created": 100,
+      "unknown_gender": 82,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "cariuma": {
+      "name": "Cariuma",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "champion": {
+      "name": "Champion",
+      "created": 100,
+      "unknown_gender": 33,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "chanel": {
+      "name": "Chanel",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "coach": {
+      "name": "Coach",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "colcci": {
+      "name": "Colcci",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "converse": {
+      "name": "Converse",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "crocs": {
+      "name": "Crocs",
+      "created": 100,
+      "unknown_gender": 100,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "desigual": {
+      "name": "Desigual",
+      "created": 100,
+      "unknown_gender": 82,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "dickies": {
+      "name": "Dickies",
+      "created": 100,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "diesel": {
+      "name": "Diesel",
+      "created": 100,
+      "unknown_gender": 95,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "dior": {
+      "name": "Dior",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "dolce-gabbana": {
+      "name": "Dolce & Gabbana",
+      "created": 100,
+      "unknown_gender": 3,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "dr-martens": {
+      "name": "Dr. Martens",
+      "created": 100,
+      "unknown_gender": 87,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "dudalina": {
+      "name": "Dudalina",
+      "created": 100,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "ellesse": {
+      "name": "Ellesse",
+      "created": 100,
+      "unknown_gender": 1,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "ellus": {
+      "name": "Ellus",
+      "created": 100,
+      "unknown_gender": 99,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "everlane": {
+      "name": "Everlane",
+      "created": 100,
+      "unknown_gender": 1,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "farm-rio": {
+      "name": "Farm Rio",
+      "created": 100,
+      "unknown_gender": 100,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "fila": {
+      "name": "Fila",
+      "created": 100,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "fred-perry": {
+      "name": "Fred Perry",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "g-star-raw": {
+      "name": "G-Star RAW",
+      "created": 100,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "gap": {
+      "name": "Gap",
+      "created": 100,
+      "unknown_gender": 20,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "gucci": {
+      "name": "Gucci",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "guess": {
+      "name": "Guess",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "gymshark": {
+      "name": "Gymshark",
+      "created": 1,
+      "unknown_gender": 1,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "h-m": {
+      "name": "H&M",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "havaianas": {
+      "name": "Havaianas",
+      "created": 100,
+      "unknown_gender": 100,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "hering": {
+      "name": "Hering",
+      "created": 100,
+      "unknown_gender": 23,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "highstil": {
+      "name": "Highstil",
+      "created": 100,
+      "unknown_gender": 78,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "hoka": {
+      "name": "Hoka",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "hollister": {
+      "name": "Hollister",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "hope": {
+      "name": "Hope",
+      "created": 100,
+      "unknown_gender": 91,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "insider": {
+      "name": "Insider",
+      "created": 100,
+      "unknown_gender": 31,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "jcrew": {
+      "name": "J.Crew",
+      "created": 100,
+      "unknown_gender": 9,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "jack-jones": {
+      "name": "Jack & Jones",
+      "created": 100,
+      "unknown_gender": 92,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "john-john": {
+      "name": "John John",
+      "created": 100,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "kate-spade": {
+      "name": "Kate Spade",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "lacoste": {
+      "name": "Lacoste",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "le-lis": {
+      "name": "Le Lis",
+      "created": 100,
+      "unknown_gender": 2,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "le-lis-blanc": {
+      "name": "Le Lis Blanc",
+      "created": 100,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "levis": {
+      "name": "Levi's",
+      "created": 100,
+      "unknown_gender": 97,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "lez-a-lez": {
+      "name": "Lez a Lez",
+      "created": 100,
+      "unknown_gender": 98,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "louis-vuitton": {
+      "name": "Louis Vuitton",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "lupo": {
+      "name": "Lupo",
+      "created": 100,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "malwee": {
+      "name": "Malwee",
+      "created": 100,
+      "unknown_gender": 17,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "maria-filo": {
+      "name": "Maria Filó",
+      "created": 53,
+      "unknown_gender": 52,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "melissa": {
+      "name": "Melissa",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "michael-kors": {
+      "name": "Michael Kors",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "mizuno": {
+      "name": "Mizuno",
+      "created": 100,
+      "unknown_gender": 3,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "napapijri": {
+      "name": "Napapijri",
+      "created": 100,
+      "unknown_gender": 100,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "new-balance": {
+      "name": "New Balance",
+      "created": 100,
+      "unknown_gender": 3,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "nike": {
+      "name": "Nike",
+      "created": 100,
+      "unknown_gender": 25,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "olympikus": {
+      "name": "Olympikus",
+      "created": 100,
+      "unknown_gender": 5,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "osklen": {
+      "name": "Osklen",
+      "created": 100,
+      "unknown_gender": 47,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "patagonia": {
+      "name": "Patagonia",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "prada": {
+      "name": "Prada",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "puma": {
+      "name": "Puma",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "quiksilver": {
+      "name": "Quiksilver",
+      "created": 100,
+      "unknown_gender": 74,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "ralph-lauren": {
+      "name": "Ralph Lauren",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "reebok": {
+      "name": "Reebok",
+      "created": 100,
+      "unknown_gender": 27,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "reiss": {
+      "name": "Reiss",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "renner": {
+      "name": "Renner",
+      "created": 100,
+      "unknown_gender": 32,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "reserva": {
+      "name": "Reserva",
+      "created": 100,
+      "unknown_gender": 100,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "richards": {
+      "name": "Richards",
+      "created": 100,
+      "unknown_gender": 100,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "rip-curl": {
+      "name": "Rip Curl",
+      "created": 21,
+      "unknown_gender": 21,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "saint-laurent": {
+      "name": "Saint Laurent",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "salomon": {
+      "name": "Salomon",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "schutz": {
+      "name": "Schutz",
+      "created": 100,
+      "unknown_gender": 99,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "scotch-soda": {
+      "name": "Scotch & Soda",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "sergio-k": {
+      "name": "Sergio K",
+      "created": 100,
+      "unknown_gender": 95,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "shoulder": {
+      "name": "Shoulder",
+      "created": 100,
+      "unknown_gender": 98,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "skechers": {
+      "name": "Skechers",
+      "created": 100,
+      "unknown_gender": 35,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "stussy": {
+      "name": "Stüssy",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "superdry": {
+      "name": "Superdry",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "supreme": {
+      "name": "Supreme",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "ted-baker": {
+      "name": "Ted Baker",
+      "created": 3,
+      "unknown_gender": 3,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "tommy-hilfiger": {
+      "name": "Tommy Hilfiger",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "track-field": {
+      "name": "Track & Field",
+      "created": 100,
+      "unknown_gender": 43,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "under-armour": {
+      "name": "Under Armour",
+      "created": 100,
+      "unknown_gender": 4,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "uniqlo": {
+      "name": "Uniqlo",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "valentino": {
+      "name": "Valentino",
+      "created": 100,
+      "unknown_gender": 100,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "vans": {
+      "name": "Vans",
+      "created": 100,
+      "unknown_gender": 94,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "vero-moda": {
+      "name": "Vero Moda",
+      "created": 100,
+      "unknown_gender": 100,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 0
+    },
+    "youcom": {
+      "name": "Youcom",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "zara": {
+      "name": "Zara",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "cos": {
+      "name": "COS",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "arket": {
+      "name": "ARKET",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "weekday": {
+      "name": "Weekday",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "other-stories": {
+      "name": "& Other Stories",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "reserved": {
+      "name": "Reserved",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "mango": {
+      "name": "Mango",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "massimo-dutti": {
+      "name": "Massimo Dutti",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "on": {
+      "name": "On",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    },
+    "columbia": {
+      "name": "Columbia",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 2,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 2
+      },
+      "shortfall": 1
+    },
+    "lululemon": {
+      "name": "Lululemon",
+      "created": 0,
+      "unknown_gender": 0,
+      "report": {
+        "total_read": 0,
+        "created": 0,
+        "updated": 0,
+        "skipped": 0,
+        "duplicates_found": 0,
+        "errors": 0
+      },
+      "shortfall": 1
+    }
+  },
+  "image_repair": null,
+  "failures": [],
+  "note": "Metas dependem de produtos oficiais disponíveis e sites acessíveis. UNKNOWN não é UNISSEX."
+}
