@@ -7,6 +7,11 @@ import { catalogApi, type CatalogProduct } from "@/lib/api/catalog";
 const cache = new Map<string, Promise<CatalogProduct>>();
 const queue: (() => Promise<void>)[] = [];
 let active = 0;
+function hasCachedPreview(product: CatalogProduct) {
+  const image = product.catalogImage;
+  return image?.mode === "PROCESSED" || (image?.mode === "SEMANTIC_CROP" && !!image.crop);
+}
+
 function drain() {
   while (active < 2 && queue.length) {
     active++;
@@ -41,15 +46,17 @@ function preview(id: string) {
 export function useCatalogPreview(product: CatalogProduct) {
   const ref = useRef<HTMLElement>(null);
   const [framed, setFramed] = useState<CatalogProduct | null>(null);
-  const [pending, setPending] = useState(true);
+  const [pending, setPending] = useState(() => !hasCachedPreview(product) && !!(product.imageUrl || product.catalogImage?.url || product.imageSource?.imageUrl));
   const [failed, setFailed] = useState<"unsupported" | "source" | "service" | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   useEffect(() => {
     let alive = true, started = false;
-    setFramed(null);
+    const cachedPreview = hasCachedPreview(product);
+    setFramed(cachedPreview ? product : null);
     setFailed(null);
-    setPending(true);
-    if (!product.imageUrl && !product.catalogImage?.url && !product.imageSource?.imageUrl) { setPending(false); return; }
+    const hasSource = !!(product.imageUrl || product.catalogImage?.url || product.imageSource?.imageUrl);
+    setPending(!cachedPreview && hasSource);
+    if (cachedPreview || !hasSource) return;
     const start = () => {
       if (started) return;
       started = true;
@@ -64,6 +71,6 @@ export function useCatalogPreview(product: CatalogProduct) {
     });
     if (ref.current) observer?.observe(ref.current);
     return () => { alive = false; observer?.disconnect(); };
-  }, [product.id, product.imageUrl, product.imageSource?.imageUrl, retryCount]);
+  }, [product.id, product.imageUrl, product.catalogImage?.url, product.catalogImage?.mode, product.catalogImage?.crop, product.imageSource?.imageUrl, retryCount]);
   return { ref, product: framed ?? product, pending, failed, retry: () => { cache.delete(product.id); setRetryCount(n => n + 1); } };
 }
