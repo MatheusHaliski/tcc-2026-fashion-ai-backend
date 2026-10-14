@@ -61,3 +61,18 @@ A regra dinâmica da borda passou a pertencer ao Metamorfose: precisa de um modo
 Foram regeneradas as fontes dos cinco tipos de diagramas (360 reescritas entre 369 arquivos processados) e renderizados 363 PlantUML sem erros. Diagramas sem correspondência implementada continuam explicitamente marcados como históricos.
 
 Validação final: 55 testes de frontend (14 arquivos), 10 testes de BackgroundStudioService, dois testes Python da curadoria, TypeScript, estilos e verificação de i18n passaram. Sem teste de desempenho de produção.
+
+### Capturas retomadas
+
+Após restabelecer o servidor, as seis composições editoriais foram verificadas no navegador, sem erros JavaScript (`curated-browser-result.json`). O roteiro reproduzível FLAIR/bordas/Metamorfose foi executado novamente com a regra final: Hype e Metamorfose PRISMA ativos, score 84 → 89 → 82 e pulso que expira. As imagens das bordas e das quatro modalidades foram atualizadas. A API continua simulada; isto não prova resgate de selos.
+
+| Composição | Captura |
+|---|---|
+| Cetim editorial | [Foto](preset-satin-ivory.png) |
+| Cromo líquido | [Foto](preset-liquid-chrome.png) |
+| Electro ciano | [Foto](preset-cyan-thread.png) |
+| Electro rosé | [Foto](preset-rose-thread.png) |
+| Splash violeta | [Foto](preset-violet-ink.png) |
+| Splash coral | [Foto](preset-coral-ink.png) |
+
+**Ainda sem comprovação fotográfica neste PR:** criadores de selos e cupons, resgate promocional, destaques de perfil, resgate Hype e jogos CBC exclusivos.
