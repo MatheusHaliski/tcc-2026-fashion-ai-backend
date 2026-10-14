@@ -7,6 +7,11 @@ import { catalogApi, type CatalogProduct } from "@/lib/api/catalog";
 const cache = new Map<string, Promise<CatalogProduct>>();
 const queue: (() => Promise<void>)[] = [];
 let active = 0;
+function hasCachedPreview(product: CatalogProduct) {
+  const image = product.catalogImage;
+  return image?.mode === "PROCESSED" || (image?.mode === "SEMANTIC_CROP" && !!image.crop);
+}
+
 function drain() {
   while (active < 2 && queue.length) {
     active++;
@@ -41,15 +46,16 @@ function preview(id: string) {
 export function useCatalogPreview(product: CatalogProduct) {
   const ref = useRef<HTMLElement>(null);
   const [framed, setFramed] = useState<CatalogProduct | null>(null);
-  const [pending, setPending] = useState(true);
+  const [pending, setPending] = useState(() => !hasCachedPreview(product) && !!(product.imageUrl || product.catalogImage?.url));
   const [failed, setFailed] = useState<"unsupported" | "source" | "service" | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   useEffect(() => {
     let alive = true, started = false;
-    setFramed(null);
+    const cachedPreview = hasCachedPreview(product);
+    setFramed(cachedPreview ? product : null);
     setFailed(null);
-    setPending(true);
-    if (!product.imageUrl && !product.catalogImage?.url) { setPending(false); return; }
+    setPending(!cachedPreview && !!(product.imageUrl || product.catalogImage?.url));
+    if (cachedPreview || (!product.imageUrl && !product.catalogImage?.url)) return;
     const start = () => {
       if (started) return;
       started = true;
