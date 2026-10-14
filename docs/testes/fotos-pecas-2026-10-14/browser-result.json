@@ -1,0 +1,21 @@
+{
+  "mode": "API simulada; URLs de estúdio e miniatura retornam 404 intencionalmente; fotografia oficial real da Columbia usada como alternativa da mesma peça",
+  "detail": {
+    "src": "http://localhost:8080/media/fx/columbia.jpg",
+    "width": 3000,
+    "height": 3150
+  },
+  "card": {
+    "src": "http://localhost:8080/media/fx/columbia.jpg",
+    "width": 3000,
+    "height": 3150
+  },
+  "failures": [
+    "http://localhost:8080/media/fx/studio-ausente.jpg",
+    "http://localhost:8080/media/fx/feed-ausente.jpg",
+    "http://localhost:8080/media/fx/thumb-ausente.jpg",
+    "http://localhost:8080/media/fx/studio-ausente.jpg",
+    "http://localhost:8080/media/fx/thumbnail-ausente.jpg"
+  ],
+  "pageErrors": []
+}

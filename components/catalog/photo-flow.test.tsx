@@ -30,6 +30,7 @@ beforeEach(() => {
   HTMLCanvasElement.prototype.toBlob = function toBlob(cb: BlobCallback, type?: string) { cb(new Blob(["x"], { type: type ?? "image/png" })); };
   URL.createObjectURL = vi.fn(() => "blob:preview");
   URL.revokeObjectURL = vi.fn();
+  localStorage.setItem(`fai.creator.welcome.piece:${ME.user.id}`, "seen");
   localStorage.setItem("fai.captureTutorial", JSON.stringify({ hidden: ["*"] }));
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); router.push.mockClear(); });

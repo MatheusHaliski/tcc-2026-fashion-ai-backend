@@ -240,7 +240,7 @@ public class AccountService {
         out.put("profileVisibility", u.getProfileVisibility());
         out.put("sex", u.getSex());
         out.put("runwayOptOut", u.isRunwayOptOut());
-        out.put("auraHypeEnabled", preferences.findByUserId(u.getId()).map(p -> p.isAuraHypeEnabled()).orElse(false));
+        out.put("auraHypeEnabled", preferences.findByUserId(u.getId()).map(p -> p.isAuraHype()).orElse(false));
         out.put("pronouns", u.getPronouns());
         out.put("links", Json.list(u.getLinksJson()));
         if (u.getProfileType() == ProfileType.MARCA) {

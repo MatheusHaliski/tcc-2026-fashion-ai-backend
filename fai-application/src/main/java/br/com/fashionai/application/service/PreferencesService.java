@@ -248,9 +248,6 @@ public class PreferencesService {
             p.setHypeCreatorOptOut(u.hypeCreatorOptOut());
             invalidateHypeCacheAfterCommit();
         }
-        if (u.auraHypeEnabled() != null) {
-            p.setAuraHypeEnabled(u.auraHypeEnabled());
-        }
         p.setClientUpdatedAt(u.clientUpdatedAt() == null ? Instant.now() : u.clientUpdatedAt());
         audit.log(user, AuditActions.ALTERACAO_PREFERENCIAS, "preferences:" + user.id(), Map.of());
         return get(user);
