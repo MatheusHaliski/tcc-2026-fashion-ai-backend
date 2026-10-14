@@ -1531,7 +1531,7 @@
         "duplicates_found": 0,
         "errors": 0
       },
-      "shortfall": 1
+      "shortfall": 5
     },
     "cos": {
       "name": "COS",
@@ -1674,56 +1674,5 @@
       "shortfall": 1
     }
   },
-  "tasks": [
-    {
-      "brand": {
-        "name": "Adidas",
-        "country": "DE",
-        "website": "https://www.adidas.com",
-        "sources": [
-          {
-            "domain": "adidas.com",
-            "source_type": "OFFICIAL_BRAND"
-          },
-          {
-            "domain": "adidas.com.br",
-            "source_type": "OFFICIAL_STORE"
-          }
-        ]
-      },
-      "group": "existing"
-    },
-    {
-      "brand": {
-        "name": "Nike",
-        "country": "US",
-        "website": "https://www.nike.com",
-        "sources": [
-          {
-            "domain": "nike.com",
-            "source_type": "OFFICIAL_BRAND"
-          },
-          {
-            "domain": "nike.com.br",
-            "source_type": "OFFICIAL_STORE"
-          }
-        ]
-      },
-      "group": "existing"
-    },
-    {
-      "brand": {
-        "name": "Zara",
-        "country": "ES",
-        "website": "https://www.zara.com",
-        "sources": [
-          {
-            "domain": "zara.com",
-            "source_type": "OFFICIAL_BRAND"
-          }
-        ]
-      },
-      "group": "existing"
-    }
-  ]
+  "tasks": []
 }
