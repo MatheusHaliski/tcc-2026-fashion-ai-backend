@@ -1,5 +1,6 @@
 import { api, ApiError } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
+import type { FashionCard } from "@/lib/fashion-card";
 
 /** RF47 · Tipos e chamadas do catálogo global (produto ≠ peça pessoal). */
 export interface CatalogBrandRef { id: string; name: string; slug: string; logoUrl?: string | null }
@@ -27,6 +28,8 @@ export interface CatalogProduct {
   source: { type: string; domain: string; productUrl: string; status: string; lastVerifiedAt: string }; ingestionStatus: string; ownersCount: number;
   matchScore?: MatchScore; matchPercent?: number; variants?: CatalogVariant[]; selectedVariant?: CatalogVariant | null;
   images?: CatalogProductImage[]; aliases?: string[];
+  /** Fashion Card: raridade, aura (inclusive Impersonation) e atributos de poder. */
+  fashionCard?: FashionCard | null;
 }
 export interface SearchIntent { brand?: string | null; brandKnown: boolean; category?: string | null; subcategory?: string | null; keywords: string[]; color?: string | null; design?: DesignTraits | null }
 export interface SearchResponse { intent: SearchIntent; results: CatalogProduct[]; total: number; enoughInput: boolean; canSearchOfficial?: boolean; message?: string | null }
