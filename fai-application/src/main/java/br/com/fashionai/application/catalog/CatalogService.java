@@ -485,7 +485,8 @@ public class CatalogService {
         m.put("productCode", p.getProductCode());
         m.put("sku", p.getSku());
         Map<String, Object> catalogImage = CatalogImagePipelineService.cardImage(img);
-        m.put("imageUrl", catalogImage != null ? catalogImage.get("url") : img == null ? null : img.getImageUrl());
+        m.put("imageUrl", catalogImage == null ? null : catalogImage.get("url"));
+        m.put("imageProcessingStatus", catalogImage != null ? "READY" : img != null && List.of("PENDING", "DOWNLOADING").contains(img.getProcessingStatus()) ? "PENDING" : "ERROR");
         m.put("catalogImage", catalogImage);
         m.put("imageSource", img == null ? null : CatalogIngestService.provenance(img));
         m.put("source", Map.of("type", p.getSourceType().name(), "domain", String.valueOf(p.getSourceDomain()),

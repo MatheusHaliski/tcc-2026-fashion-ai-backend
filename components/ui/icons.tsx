@@ -3,6 +3,8 @@
  * busca, criar, idioma, confirmar, setas. Os ícones de função do produto continuam sendo os FAI (components/fai-icon).
  */
 const PATHS = {
+  box: "M3 7l9-4 9 4-9 4-9-4zM3 7v10l9 4 9-4V7M12 11v10",
+  sparkles: "M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3z",
   close: "M6 6l12 12M18 6L6 18",
   menu: "M4 7h16M4 12h16M4 17h16",
   more: "M5 12h.01M12 12h.01M19 12h.01",

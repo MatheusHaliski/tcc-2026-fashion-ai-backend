@@ -49,7 +49,7 @@ export function useCatalogPreview(product: CatalogProduct) {
     setFramed(null);
     setFailed(null);
     setPending(true);
-    if (!product.imageUrl && !product.catalogImage?.url) { setPending(false); return; }
+    if (!product.imageUrl && !product.catalogImage?.url && !product.imageSource?.imageUrl) { setPending(false); return; }
     const start = () => {
       if (started) return;
       started = true;
@@ -64,6 +64,6 @@ export function useCatalogPreview(product: CatalogProduct) {
     });
     if (ref.current) observer?.observe(ref.current);
     return () => { alive = false; observer?.disconnect(); };
-  }, [product.id, product.imageUrl, retryCount]);
+  }, [product.id, product.imageUrl, product.imageSource?.imageUrl, retryCount]);
   return { ref, product: framed ?? product, pending, failed, retry: () => { cache.delete(product.id); setRetryCount(n => n + 1); } };
 }

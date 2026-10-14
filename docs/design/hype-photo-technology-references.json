@@ -1,0 +1,13 @@
+{
+  "scope": "AURA Hype: photo treatment and global score, not decorative MP4 presets",
+  "directions": [
+    "segmentation-aware contour light",
+    "fabric-preserving relighting",
+    "scan line clipped to garment mask",
+    "holographic tint with preserved texture",
+    "live global-score overlay inside photo"
+  ],
+  "references": [],
+  "errors": [],
+  "license": "reference research only; incorporation rights not evaluated"
+}

@@ -95,7 +95,7 @@ const TAB_ALIASES: Record<string, TabId> = { saved_looks: "saved", saved_pieces:
 function profileTab(tab: string | null, self: boolean): TabId {
   const t = (tab && TAB_ALIASES[tab]) || tab;
   if (t === "closet" || t === "flair" || t === "looks" || t === "publications" || t === "favorites" || t === "groups" || t === "moments") return t;
-  if (self && (t === "dna" || t === "saved" || t === "daily" || t === "capsule" || t === "insights")) return t;
+  if (self && (t === "arts" || t === "dna" || t === "saved" || t === "daily" || t === "capsule" || t === "insights")) return t;
   return "closet";
 }
 function CouponsRedirect() {

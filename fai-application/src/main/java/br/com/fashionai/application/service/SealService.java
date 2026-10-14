@@ -1779,6 +1779,21 @@ public class SealService {
         return promotionView(p, null);
     }
 
+    /** Administration creates a coupon for its verified issuer; participant eligibility remains unchanged. */
+    @Transactional
+    public Map<String, Object> createAdminPromotion(CurrentUser admin, UUID issuerId, PromotionForm form) {
+        guard.requireAdmin(admin);
+        if (issuerId == null || form == null || form.type() == null
+                || !List.of(PromotionType.CUPOM_LOJA, PromotionType.DESCONTO_ECOMMERCE, PromotionType.FRETE_GRATIS).contains(form.type()))
+            throw ApiException.badRequest("CUPOM_INVALIDO", "Informe emissor e tipo de cupom.");
+        User owner = users.findById(issuerId).orElseThrow(() -> ApiException.notFound("Emissor"));
+        CurrentUser issuer = CurrentUser.of(owner, admin.ip(), admin.userAgent());
+        guard.requireApprovedInstitutional(issuer, "admin:coupon", "O cupom precisa de marca ou celebridade aprovada.");
+        Map<String, Object> created = createPromotion(issuer, form);
+        audit.log(admin, AuditActions.SELO_EDITADO, "promotion:" + created.get("id"), Map.of("op", "admin-create-coupon", "issuerId", issuerId));
+        return created;
+    }
+
     @Transactional
     public Map<String, Object> updatePromotion(CurrentUser user, UUID id, PromotionForm f) {
         requireIssuer(user);

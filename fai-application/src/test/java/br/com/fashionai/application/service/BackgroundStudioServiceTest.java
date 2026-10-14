@@ -215,6 +215,15 @@ class BackgroundStudioServiceTest {
     }
 
     @Test
+    void quarentaModelosHypeSaoValidadosSemAceitarIdsArbitrarios() {
+        for (String tech : List.of("SCAN", "CONTOUR", "MESH", "HOLO", "FIBER", "PRISM", "PARTICLES", "SPOTLIGHT"))
+            for (String palette : List.of("GRAPHITE", "CHROME", "ROSE", "VIOLET", "CHAMPAGNE"))
+                assertThat(BackgroundStudioService.validHypeMode(tech + "_" + palette)).isTrue();
+        assertThat(BackgroundStudioService.validHypeMode("SCAN_UNKNOWN")).isFalse();
+        assertThat(BackgroundStudioService.validHypeMode("<script>")).isFalse();
+    }
+
+    @Test
     void fundoDaPecaComRevisao() {
         WardrobeItem w = world.piecesOf(world.me).get(0);
         Map<String, Object> first = studio.savePiece(ana, w.getId(), cfg("color", "#ffffff"));

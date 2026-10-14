@@ -15,6 +15,9 @@ import type { FittingBrand } from "@/lib/tryon/fitting-room";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 import type { HypeLevel } from "@/lib/hype/types";
 
+import {EraEditorialView,EraEditorialEditor} from "./era-editorial";
+import {readEditorial,type EraEditorial} from "@/lib/eras/editorial";
+
 const StageScene = dynamic(() => retryImport(() => import("@/components/three/stage-scene")), { ssr: false, loading: () => <div className="showcase-3d-loading">{tr("showcase.showcaseTabs.montando_o_palco")}</div> });
 const StoreStreetScene = dynamic(() => retryImport(() => import("@/components/three/store-street-scene")), { ssr: false, loading: () => <div className="showcase-3d-loading">{tr("showcase.showcaseTabs.abrindo_as_lojas")}</div> });
 
@@ -28,7 +31,7 @@ const StoreStreetScene = dynamic(() => retryImport(() => import("@/components/th
  */
 
 type Kind = "eras" | "collections";
-interface Grouping { id: string; type: string; label: string; description?: string | null; periodFrom?: number | null; periodTo?: number | null; period?: string | null; accentColor: string; coverUrl?: string | null; coverSource?: string; schemes: number; pieces: number }
+interface Grouping { editorial?: Partial<EraEditorial> | null; id: string; type: string; label: string; description?: string | null; periodFrom?: number | null; periodTo?: number | null; period?: string | null; accentColor: string; coverUrl?: string | null; coverSource?: string; schemes: number; pieces: number }
 interface ListRes { kind: string; owner: UserCard; items: Grouping[]; ungrouped: { schemes: number; pieces: number } }
 interface ItemsRes { header: Grouping | null; schemes: { scheme: SchemeView; grouping: string }[]; pieces: { piece: PieceView; grouping: string }[]; years: number[] }
 /** Hype v2 de uma era/coleção: maior e médio dos itens com Hype visível; `level` = faixa da média; nulos = "—". */
@@ -132,7 +135,7 @@ function GroupingSearch({ slug, kind, admin }: { slug: string; kind: Kind; admin
 function GroupingHero({ g, kind }: { g: Grouping; kind: Kind }) {
   const { t } = useI18n();
   return (
-    <header className="showcase-hero mb-4" style={{ ["--accent" as string]: g.accentColor }}>
+    <><header className="showcase-hero mb-4" style={{ ["--accent" as string]: g.accentColor }}>
       {g.coverUrl ? <img src={mediaUrl(g.coverUrl)} alt={`${kind === "eras" ? t("showcase.showcaseTabs.foto_da_era") : t("showcase.showcaseTabs.arte_da_colecao")} ${g.label}`} /> : <div className="showcase-hero-fallback" aria-hidden />}
       <div className="showcase-hero-text">
         <span className="badge">{kind === "eras" ? (g.type === "TOUR" ? t("showcase.showcaseTabs.turne") : g.type === "PHASE" ? t("showcase.showcaseTabs.fase") : t("showcase.showcaseTabs.era")) : t("showcase.showcaseTabs.colecao")}{g.period ? ` · ${g.period}` : ""}</span>
@@ -140,7 +143,7 @@ function GroupingHero({ g, kind }: { g: Grouping; kind: Kind }) {
         {g.description && <p>{g.description}</p>}
         <p className="tabular">{t("showcase.showcaseTabs.esquemas_pecas", { schemes: g.schemes, pieces: g.pieces, value: g.coverSource === "esquema" ? t("showcase.showcaseTabs.capa_esquema_mais_hypado") : "" })}</p>
       </div>
-    </header>
+    </header><EraEditorialView value={g.editorial} label={g.label}/></>
   );
 }
 
@@ -148,21 +151,21 @@ function GroupingForm({ kind, value, onClose }: { kind: Kind; value: Grouping | 
   const { t } = useI18n();
   const toast = useToast(); const w = WORD[kind];
   const [f, setF] = useState({ type: value?.type ?? (kind === "eras" ? "ERA" : "COLLECTION"), label: value?.label ?? "", description: value?.description ?? "", coverUrl: value?.coverSource === "upload" ? value?.coverUrl ?? "" : "", periodFrom: value?.periodFrom?.toString() ?? "", periodTo: value?.periodTo?.toString() ?? "", accentColor: value?.accentColor ?? "#2D55C9" });
+  const [editorial, setEditorial] = useState(()=>readEditorial(value?.editorial));
   const [busy, setBusy] = useState(false);
   async function upload(file?: File) {
     if (!file) return; setBusy(true);
-    if (!value) { toast.info(t("showcase.showcaseTabs.salve_primeiro_depois_envie_a")); setBusy(false); return; }
-    try { const fd = new FormData(); fd.append("file", file); const r = await api.upload<{ coverUrl: string }>(`/api/groupings/${value.id}/cover`, fd); setF((x) => ({ ...x, coverUrl: r.coverUrl })); }
+    try { const fd = new FormData(); fd.append("file", file); const r = await api.upload<{ url: string }>("/api/era-studio/uploads", fd); setF((x) => ({ ...x, coverUrl: r.url })); }
     catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
   async function save() {
     setBusy(true);
-    const body = { ...f, periodFrom: f.periodFrom ? Number(f.periodFrom) : null, periodTo: f.periodTo ? Number(f.periodTo) : null, coverUrl: f.coverUrl || null };
+    const body = { ...f, editorial, periodFrom: f.periodFrom ? Number(f.periodFrom) : null, periodTo: f.periodTo ? Number(f.periodTo) : null, coverUrl: f.coverUrl || null };
     try { if (value) await api.put(`/api/groupings/${value.id}`, body); else await api.post("/api/groupings", body); toast.success(t("showcase.showcaseTabs.salva", { toUpperCase: w.one[0].toUpperCase(), slice: w.one.slice(1) })); onClose(true); }
     catch (e) { toast.fromError(e); } finally { setBusy(false); }
   }
   return (
-    <Dialog open onClose={() => onClose(false)} title={value ? t("showcase.showcaseTabs.editar", { one: w.one }) : t("showcase.showcaseTabs.nova", { one: w.one })} footer={<>{value && <Button variant="danger" onClick={async () => { try { await api.delete(`/api/groupings/${value.id}`); onClose(true); } catch (e) { toast.fromError(e); } }}>{t("common.delete")}</Button>}<Button variant="primary" loading={busy} disabled={f.label.trim().length < 2} onClick={save}>{t("common.save")}</Button></>}>
+    <Dialog open onClose={() => onClose(false)} title={value ? t("showcase.showcaseTabs.editar", { one: w.one }) : t("showcase.showcaseTabs.nova", { one: w.one })} footer={<>{value && <Button variant="danger" onClick={async () => { try { await api.delete(`/api/groupings/${value.id}`); onClose(true); } catch (e) { toast.fromError(e); } }}>{t("common.delete")}</Button>}<Button variant="primary" loading={busy} disabled={busy || f.label.trim().length < 2 || editorial.timeline.some(m => !m.date || !m.title.trim()) || editorial.photos.some(p => !p.url || !p.alt.trim())} onClick={save}>{t("common.save")}</Button></>}>
       {kind === "eras" && <Field label={t("common.tipo")} id="gtype"><Select id="gtype" value={f.type} onChange={(e) => setF({ ...f, type: e.target.value })}><option value="ERA">{t("showcase.showcaseTabs.era_2")}</option><option value="PHASE">{t("showcase.showcaseTabs.fase_2")}</option><option value="TOUR">{t("showcase.showcaseTabs.turne_2")}</option></Select></Field>}
       <Field label={t("common.nome")} id="glabel" required><Input id="glabel" value={f.label} onChange={(e) => setF({ ...f, label: e.target.value })} maxLength={80} /></Field>
       <Field label={t("common.descricao")} id="gdesc"><Textarea id="gdesc" value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} maxLength={300} /></Field>
@@ -176,6 +179,7 @@ function GroupingForm({ kind, value, onClose }: { kind: Kind; value: Grouping | 
         <label className="btn btn-sm cursor-pointer">{kind === "eras" ? t("showcase.showcaseTabs.foto_da_era") : t("showcase.showcaseTabs.arte_da_colecao")}<input type="file" accept="image/*" className="sr-only" onChange={(e) => upload(e.target.files?.[0])} /></label>
         {f.coverUrl && <Button size="sm" variant="ghost" onClick={() => setF({ ...f, coverUrl: "" })}>{t("common.remove")}</Button>}
       </div>
+      <EraEditorialEditor value={editorial} onChange={setEditorial}/>
       <p className="type-caption text-muted">{kind === "eras" ? t("showcase.showcaseTabs.a_foto_aparece_no_header") : t("showcase.showcaseTabs.a_arte_vai_para_o")}</p>
     </Dialog>
   );

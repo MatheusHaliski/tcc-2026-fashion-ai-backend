@@ -603,6 +603,12 @@ public class BackgroundStudioService {
      * com 409 em vez de sobrescrever em silêncio. Sem {@code baseRev} (clientes antigos, criação da peça) grava como antes.
      */
     /** Structured border paint only: arbitrary CSS and unknown visual modes are not accepted. */
+    static boolean validHypeMode(Object value) {
+        if (!(value instanceof String mode)) return false;
+        if (List.of("OFF", "SCANNER", "XRAY", "DOTS", "STARS", "METRICS").contains(mode)) return true;
+        return mode.matches("(SCAN|CONTOUR|MESH|HOLO|FIBER|PRISM|PARTICLES|SPOTLIGHT)_(GRAPHITE|CHROME|ROSE|VIOLET|CHAMPAGNE)");
+    }
+
     static void validateArtwork(Map<?, ?> config) {
         if (config == null) return;
         Object composition = config.get("compositionPreset");
@@ -612,12 +618,13 @@ public class BackgroundStudioService {
                     || !(preset.get("name") instanceof String name) || name.length() > 160
                     || !List.of("COMMON", "ELECTRO", "SPLASH", "HYPE", "METAMORPHOSE").contains(preset.get("family"))
                     || !("/aura/fashion-curated/" + id + ".webp").equals(preset.get("image"))
+                    || preset.get("video") != null && !("/aura/fashion-curated/" + id + ".mp4").equals(preset.get("video"))
                     || !(preset.get("palette") instanceof List<?> palette) || palette.size() != 2
                     || palette.stream().anyMatch(c -> !(c instanceof String hex) || !hex.matches("#[0-9a-fA-F]{6}")))
                 throw ApiException.badRequest("AURA_COMPOSITION_INVALID", "Composição AURA inválida.");
         }
         Object hype = config.get("auraHype");
-        if (hype != null && !List.of("OFF", "SCANNER", "XRAY", "DOTS", "STARS", "METRICS").contains(hype))
+        if (hype != null && !validHypeMode(hype))
             throw ApiException.badRequest("AURA_HYPE_INVALID", "AURA Hype inválida.");
         Object metamorphose = config.get("auraMetamorphose");
         if (metamorphose != null && !List.of("OFF", "PRISMA", "CONSTELACAO", "FIO_VIVO", "HOLOGRAFIA").contains(metamorphose))

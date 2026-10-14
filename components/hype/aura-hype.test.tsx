@@ -5,7 +5,7 @@ import { AuraHype } from "./aura-hype";
 afterEach(cleanup);
 it("shows the real score and chosen effect", () => {
   const { container } = renderApp(<AuraHype mode="DOTS" state={{ kind: "available", score: 73, level: "HOT", direction: null, stale: false }} />);
-  expect(screen.getByText("HYPE 73/100")).toBeTruthy();
+  expect(screen.getByText("HYPE 73")).toBeTruthy();
   expect(container.querySelector('[data-effect="DOTS"]')).toBeTruthy();
 });
 it("never invents a zero score when unavailable", () => {
@@ -16,6 +16,7 @@ it("never invents a zero score when unavailable", () => {
 it("uses only the global score on the photo, without a game attribute table", () => {
   const { container } = renderApp(<AuraHype mode="SCANNER" state={{ kind: "available", score: 84, level: "HOT", direction: null, stale: false }} />);
   expect(container.querySelector('.aura-hype-total .led-number')?.textContent).toBe('84');
+  expect(container.textContent).not.toContain('/100');
   expect(container.querySelector('dl')).toBeNull();
   expect(container.querySelector('.fgc')).toBeNull();
 });
