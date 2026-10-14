@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { LegalMarkdown } from "@/lib/legal/markdown";
+import { LegalBackLink } from "@/components/legal-back-link";
 
 const documents = {
   terms: "TERMOS_DE_USO_v1.md",
@@ -26,7 +26,7 @@ export default async function LegalDocumentPage({ params }: { params: Promise<{ 
   return (
     <main className="mx-auto min-h-screen max-w-5xl px-4 py-8 sm:px-6">
       <div className="mb-4">
-        <Link className="font-semibold text-ink underline" href="/register">Voltar ao cadastro</Link>
+        <LegalBackLink />
       </div>
       <div className="rounded-xl border border-line-soft bg-surface p-5 sm:p-8">
         <LegalMarkdown markdown={markdown} />

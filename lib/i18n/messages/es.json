@@ -7119,6 +7119,7 @@
   "register.termsOptionalConsent": "La aceptación no autoriza el entrenamiento de IA ni otros usos opcionales. Cuando corresponda, requieren una elección separada y revocable.",
   "legal.terms": "Términos de Uso de FashionAI",
   "legal.privacy": "Política de Privacidad de FashionAI",
+  "legal.backToRegister": "Volver al registro",
   "auraHype.preview": "Vista previa del efecto",
   "auraHype.pending": "AURA activa · esperando el cálculo del Hype",
   "creatorWelcome.help": "Cómo funciona",
