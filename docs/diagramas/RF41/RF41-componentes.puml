@@ -29,15 +29,15 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
   component "/challenges/[id]\n(site)/(app)/challenges/[id]/page.tsx" as FE0
   component "/challenges\n(site)/(app)/challenges/page.tsx" as FE1
-  component "/flair\n(site)/(app)/flair/page.tsx" as FE2
-  component "/points\n(site)/(app)/points/page.tsx" as FE3
-  component "/schemes/[id]/edit\n(site)/(app)/schemes/[id]/edit/page.tsx" as FE4
-  component "/schemes/new\n(site)/(app)/schemes/new/page.tsx" as FE5
+  component "/dna-schemes/[id]/edit\n(site)/(app)/dna-schemes/[id]/edit/page.tsx" as FE2
+  component "/dna-schemes/new\n(site)/(app)/dna-schemes/new/page.tsx" as FE3
+  component "/dna\n(site)/(app)/dna/page.tsx" as FE4
+  component "/flair/cartas\n(site)/(app)/flair/cartas/page.tsx" as FE5
   component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {

@@ -24,7 +24,7 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF51 — Escolher a Cartela sazonal e a animação num modal do Background Studio (look, DNA e peça)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF51 — Escolher a Cartela sazonal e a animação num modal do Background Studio (look, DNA e peça)\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
@@ -55,20 +55,20 @@ partition "BackgroundStudioService.saveScheme()" {
   :Guard.requireCanCreate();
   :lê schemes;
   :Guard.requireOwner();
-  if (cor inválida?) then (sim)
-    :400 COR_INVALIDA\n«Use cor hexadecimal (#RRGGBB).»;
+  if (aura composition invalid?) then (sim)
+    :400 AURA_COMPOSITION_INVALID\n«Composição AURA inválida.»;
     stop
   endif
-  if (preset inválido?) then (sim)
-    :400 PRESET_INVALIDO\n«Gradiente desconhecido: …»;
+  if (aura hype invalid?) then (sim)
+    :400 AURA_HYPE_INVALID\n«AURA Hype inválida.»;
     stop
   endif
-  if (preset inválido?) then (sim)
-    :400 PRESET_INVALIDO\n«Preset sazonal desconhecido: …»;
+  if (aura metamorphose invalid?) then (sim)
+    :400 AURA_METAMORPHOSE_INVALID\n«AURA Metamorfose inválida.»;
     stop
   endif
-  if (preset inválido?) then (sim)
-    :400 PRESET_INVALIDO\n«Preset AURA desconhecido: …»;
+  if (card border invalid?) then (sim)
+    :400 CARD_BORDER_INVALID\n«Borda inválida.»;
     stop
   endif
   :backgroundVideoUrl → null;
@@ -88,10 +88,10 @@ partition "BackgroundStudioService.saveScheme()" {
   :AssetCatalogService.material();
   :lê wardrobe_items;
   :Guard.requireOwner();
-  :… e mais 26 passos no código;
+  :… e mais 43 passos no código;
   note right
-  e mais 12 condições que encerram cedo:
-  PRESET_INVALIDO, MATERIAL_INDISPONIVEL, FORMATO_INVALIDO, ESTACAO_OBRIGATORIA, SILHUETA_I…
+  e mais 20 condições que encerram cedo:
+  CARD_BORDER_INVALID, COR_INVALIDA, PRESET_INVALIDO, AURA_HYPE_INVALID, MATERIAL_INDISPONI…
   end note
 }
 |Pessoa usuária|

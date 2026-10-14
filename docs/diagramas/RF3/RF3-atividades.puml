@@ -24,7 +24,7 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
@@ -61,17 +61,17 @@ if (Faz outra ação?) then (sim)
     :POST /api/me/avatar\n→ PreferencesService.uploadProfileImage\nlê: users\nusa: MediaService.put, MediaService.register\nestado: coverUrl → set, avatarUrl → set;
   case (Encerrar uma sessão específica)
     :DELETE /api/auth/sessions/{sessionId}\n→ IdentityService.revokeSession\nvalida: NAO_ENCONTRADO\nlê: refresh_tokens\nestado: revokedAt → set;
+  case (Encerrar todas as sessões, inclui…)
+    :DELETE /api/auth/sessions\n→ IdentityService.revokeOtherSessions\nlê: refresh_tokens\nestado: revokedAt → set;
   case (Trocar senha [encerra as outras s…)
     :PUT /api/auth/password\n→ IdentityService.changePassword\nvalida: FORMULARIO_INVALIDO, SENHA_ATUAL_INCORRETA\nlê: users, verification_codes, refresh_tokens\nusa: PasswordHasherPort.hash\nestado: consumedAt → set, revokedAt → set;
-  case (Confirmar troca de e-mail com o c…)
-    :POST /api/me/email-change/confirm\n→ AccountService.confirmEmailChange\nvalida: CODIGO_INVALIDO, EMAIL_EM_USO, ERRO\nlê: users, verification_codes\nusa: IdentityService.requireCodeAttemptQuota\nestado: consumedAt → set, emailVerified → true;
   endswitch
   note right
   Outras ações deste RF:
-  Solicitar exportação dos meus…, Enviar imagem de
-  capa, Sair de todos os outros dispo…, Visibilidade
-  padrão do perfil…, Agendar exclusão da conta (ja…,
-  Girar a foto de perfil em 90°
+  Confirmar troca de e-mail com…, Solicitar
+  exportação dos meus…, Enviar imagem de capa,
+  Visibilidade padrão do perfil…, Agendar exclusão
+  da conta (ja…, Girar a foto de perfil em 90°
   end note
   |Tela (Next.js)|
   :Atualiza a tela;

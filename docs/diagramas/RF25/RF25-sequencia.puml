@@ -21,7 +21,7 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF25 — Criar & editar selo de marca/celebridade (formulário + arte) e política de promoção\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF25 — Criar & editar selo de marca/celebridade (formulário + arte) e política de promoção\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 boundary "Tela /brands/[slug]" as P
@@ -40,6 +40,27 @@ activate SealService
 SealService -> Guard : requireApprovedInstitutional()
 SealService -> DB_MySQL : SELECT users
 SealService -> SealService : new Seal()
+alt política inválida
+SealService --> SealController : 400 POLITICA_INVALIDA
+SealController --> P : 400 + mensagem
+end
+alt política ia obrigatória
+SealService --> SealController : 400 POLITICA_IA_OBRIGATORIA
+SealController --> P : 400 + mensagem
+end
+alt modelo selo inválido
+SealService --> SealController : 400 MODELO_SELO_INVALIDO
+SealController --> P : 400 + mensagem
+end
+alt modelo selo inválido
+SealService --> SealController : 400 MODELO_SELO_INVALIDO
+SealController --> P : 400 + mensagem
+end
+SealService -> DB_MySQL : SELECT seals
+alt modelo selo inválido
+SealService --> SealController : 400 MODELO_SELO_INVALIDO
+SealController --> P : 400 + mensagem
+end
 SealService -> OwnMedia : require()
 SealService -> OwnMedia : requireOrUnchanged() (×2)
 SealService -> SealService : iconUrl = set
@@ -55,21 +76,6 @@ SealService -> DB_MySQL : INSERT/UPDATE seals
 SealService -> Audit : log()
 SealService -> DB_MySQL : SELECT seal_bonds
 SealService -> HypeCache : get()
-deactivate SealService
-SealService --> SealController : resultado
-SealController --> P : 201 JSON
-P --> U : atualiza a tela
-== Criador de selo 'Com IA': sugere nome, nível, política e arte a parti… ==
-U -> P : Criador de selo 'Com IA': sugere nome, nível, pol…
-P -> SealController : POST /api/seals/draft
-SealController -> SealService : draft()
-activate SealService
-SealService -> Guard : requireApprovedInstitutional()
-SealService -> DB_MySQL : SELECT users
-SealService -> DB_MySQL : SELECT celebrity_profiles
-SealService -> DB_MySQL : SELECT brand_profiles
-SealService -> DB_MySQL : SELECT wardrobe_items
-SealService -> Audit : log()
 deactivate SealService
 SealService --> SealController : resultado
 SealController --> P : 201 JSON

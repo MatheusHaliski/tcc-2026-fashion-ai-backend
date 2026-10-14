@@ -19,7 +19,7 @@ skinparam state {
   StartColor #20A77A
   EndColor #4B5563
 }
-title RF19 — ciclo de vida de Comment.active\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\ncampo booleano · tabela comments
+title RF19 — ciclo de vida de Comment.active\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\ncampo booleano · tabela comments
 
 state "Comment.active" as B_Comment_active {
   state "active = true" as B_Comment_active_T

@@ -19,7 +19,7 @@ skinparam state {
   StartColor #20A77A
   EndColor #4B5563
 }
-title RF8 — ciclo de vida de Scheme.status e visibility\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum SchemeStatus · enum Visibility · tabela schemes
+title RF8 — ciclo de vida de Scheme.status e visibility\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nenum SchemeStatus · enum Visibility · tabela schemes
 
 state "Scheme.status" as Ciclo_Scheme {
   state Ciclo_Scheme_DRAFT as "DRAFT"

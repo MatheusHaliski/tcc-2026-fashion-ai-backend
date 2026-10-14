@@ -169,6 +169,49 @@ class CatalogImagePipelineServiceTest {
     }
 
     @Test
+    void selecaoRecuperaFotoCanonicaIndisponivelComOutraDoMesmoProduto() {
+        CatalogImage broken = image("https://img.brand.com/dead.jpg", CatalogImageType.FRONT, null);
+        broken.setCanonical(true);
+        CatalogImage alternative = image("https://img.brand.com/alternate.jpg", CatalogImageType.PACKSHOT,
+                CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
+        service.verifySelection(admin, product.getId());
+        assertThat(broken.getCropJson()).isNull();
+        assertThat(broken.isCanonical()).isFalse();
+        assertThat(alternative.isCanonical()).isTrue();
+        assertThat(Json.map(alternative.getCropJson())).containsEntry("ruleCompliant", true);
+        assertThat(CatalogImagePipelineService.cardImage(alternative)).containsEntry("url", alternative.getImageUrl());
+        assertThat(stored).isEmpty();
+    }
+
+    @Test
+    void selecaoIgnoraBytesInvalidosEAlternativaRecusada() {
+        CatalogImage unreadable = image("https://img.brand.com/bad.jpg", CatalogImageType.FRONT, new byte[]{1, 2, 3});
+        unreadable.setCanonical(true);
+        CatalogImage rejected = image("https://img.brand.com/rejected.jpg", CatalogImageType.FRONT,
+                CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
+        rejected.setReviewStatus("REJECTED");
+        CatalogImage valid = image("https://img.brand.com/valid.jpg", CatalogImageType.FRONT,
+                CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
+        service.verifySelection(admin, product.getId());
+        assertThat(valid.isCanonical()).isTrue();
+        assertThat(rejected.getCropJson()).isNull();
+        assertThat(unreadable.getCropJson()).isNull();
+    }
+
+    @Test
+    void selecaoDeCalcadoUsaRegraDoProdutoSemExigirQuadroSoDeTecido() {
+        product.setCategory("shoes_piece");
+        product.setSubcategory("casual_sneakers");
+        CatalogImage shoe = image("https://img.brand.com/sneakers.jpg", CatalogImageType.PACKSHOT,
+                CatalogPhotos.jpeg(CatalogPhotos.sneakers()));
+        service.verifySelection(admin, product.getId());
+        Map<String, Object> crop = Json.map(shoe.getCropJson());
+        assertThat(crop).containsEntry("ruleCompliant", true);
+        assertThat(((Map<?, ?>) crop.get("selectionFrame")).get("version")).isEqualTo(ProductRuleFrame.VERSION);
+        assertThat(shoe.isCanonical()).isTrue();
+    }
+
+    @Test
     void nivelAGravaSoMetadadosEEscolheACanonica() {
         CatalogImage front = image("https://img.brand.com/front.jpg", CatalogImageType.FRONT, CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
         service.tick();
@@ -233,7 +276,7 @@ class CatalogImagePipelineServiceTest {
         assertThat(front.getStoredUrl()).endsWith("master.png");
         assertThat(stored.keySet()).anyMatch(k -> k.endsWith("card.jpg")).anyMatch(k -> k.endsWith("thumb.jpg"))
                 .anyMatch(k -> k.endsWith("white.jpg")).anyMatch(k -> k.endsWith("neutral.jpg"));
-        assertThat(CatalogImagePipelineService.cardImage(front)).containsEntry("mode", "PROCESSED").containsEntry("aspect", "4:5");
+        assertThat(CatalogImagePipelineService.cardImage(front)).containsEntry("mode", "PROCESSED").containsEntry("aspect", "4:5").containsEntry("sourceUrl", front.getImageUrl());
     }
 
     @Test

@@ -24,13 +24,13 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF4 — Pipeline de filtro do logo da marca\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF4 — Pipeline de filtro do logo da marca\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /pieces/new;
+:Abre /pieces/new, /admin/system,\n/dna-schemes/[id]/edit;
 |Tela (Next.js)|
-:Carrega os dados da tela\nGET /api/brand-search\nGET /api/studio/backdrops\nGET /api/taxonomy\nGET /api/brand-logos;
+:Carrega os dados da tela\nGET /api/brand-search\nGET /api/studio/backdrops\nGET /api/taxonomy\nGET /api/catalog/products;
 |Pessoa usuária|
 :Cadastrar a peça a partir do\nrascunho analisado;
 |Tela (Next.js)|
@@ -54,11 +54,11 @@ if (conteúdo bloqueado?) then (sim)
   stop
 endif
 |Dados e serviços|
-:Lê: users\npipeline_jobs\nwardrobe_items\nreactions\nbrands;
-:Usa: Guard.requireCanCreate\nOwnMedia.accepts\nMediaService.read\nBrandLogoService.acceptWebLogo\nAssetCatalogService.defaultPieceImage\nAssetCatalogService.publicFile (+6);
+:Lê: users\npipeline_jobs\nwardrobe_items\nreactions;
+:Usa: Guard.requireCanCreate\nAssetCatalogService.defaultPieceImage\nAssetCatalogService.publicFile\nAssetCatalogService.defaultPieceLogo\nMediaService.put\nMediaService.read (+4);
 :IA: STUDIO_ENHANCER;
 :Grava: wardrobe_items\nquality_scores\nprocessing_jobs_log\nmoderation_queue\npipeline_jobs;
-:Estado: brandLogoUrl → null\nbrandLogoUrl → set\nimageUrl → set\nthumbnailUrl → set\noriginalImageUrl → null\nmoderationStatus → APPROVED (+12);
+:Estado: imageUrl → set\nthumbnailUrl → set\noriginalImageUrl → null\nmoderationStatus → APPROVED\nphotoProcessingStatus → COMPLETED\ndefaultImage → true (+10);
 :Evento: PieceCreated\nPieceCapturedFromSession;
 |Tela (Next.js)|
 :Atualiza a tela com a resposta;
@@ -67,21 +67,21 @@ if (Faz outra ação?) then (sim)
   switch (Qual?)
   case (Reprocessar remoção de fundo)
     :POST /api/pieces/{id}/background-removal\n→ WardrobeService.removeBackground\nlê: wardrobe_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.read …\nia: FLAT_LAY_STANDARDIZER, STUDIO_ENHANCER;
+  case (Várias peças numa foto: a IA acha…)
+    :POST /api/pieces/analysis/multi\n→ MultiPieceService.detect\nlê: users\nusa: Guard.requireCanCreate,\nBrandReader.available,\nBrandReader.findRobust …\nia: MULTI_PIECE_DETECTOR;
   case (RF4 · Estúdio — refaz a foto de e…)
     :POST /api/pieces/analysis/{draftId}/studio\n→ WardrobeService.studioDraft\nvalida: ERRO, ESTUDIO_INDISPONIVEL, SEM_RECORTE\nlê: pipeline_jobs\nusa: MediaService.read, MediaService.put\nia: STUDIO_ENHANCER;
-  case (Várias peças numa foto: a IA acha…)
-    :POST /api/pieces/analysis/multi\n→ MultiPieceService.detect\nlê: users\nusa: Guard.requireCanCreate, MediaService.put\nia: MULTI_PIECE_DETECTOR;
   case (Nova tentativa de ler a marca: gr…)
     :POST /api/pieces/analysis/{draftId}/brand\n→ WardrobeService.retryBrand\nvalida: ERRO\nlê: pipeline_jobs\nusa: MediaService.read, MediaService.put\nia: PIECE_ANALYZER;
-  case (RF4 · Estúdio — gera/refaz a foto…)
-    :POST /api/pieces/{id}/studio\n→ WardrobeService.studioPiece\nvalida: ESTUDIO_INDISPONIVEL, NAO_ENCONTRADO,\nSEM_RECORTE\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.read …\nia: STUDIO_ENHANCER;
+  case (Selos possíveis para uma peça ain…)
+    :POST /api/seal-suggestions/preview-piece\n→ SealService.previewPiece\nia: SEALBOND_MATCHER;
   endswitch
   note right
   Outras ações deste RF:
-  Substituir a foto da peça (re…, Cópia da peça por
-  IA: recria…, Rascunho de uma peça da foto…, RF4 ·
-  Estúdio — leva ao estúd…, Rascunho da peça com a
-  cópia…, RF4 · Estúdio — aprova a foto…
+  RF4 · Estúdio — gera/refaz a…, Substituir a foto
+  da peça (re…, Cópia da peça por IA: recria…,
+  Rascunho de uma peça da foto…, RF4 · Estúdio —
+  leva ao estúd…, Rascunho da peça com a cópia…
   end note
   |Tela (Next.js)|
   :Atualiza a tela;

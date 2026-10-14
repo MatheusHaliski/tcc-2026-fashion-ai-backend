@@ -21,7 +21,7 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF11 — Compor a arte de fundo (Background Studio) do card de um esquema ou de uma peça\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF11 — Compor a arte de fundo (Background Studio) do card de um esquema ou de uma peça\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 boundary "Tela (Next.js)" as P
@@ -29,8 +29,6 @@ control "BackgroundController" as BackgroundController
 participant "BackgroundStudioService" as BackgroundStudioService
 participant "Guard" as Guard
 database "MySQL" as DB_MySQL
-participant "AssetCatalogService" as AssetCatalogService
-participant "MediaService" as MediaService
 == Aplicar configuração de fundo ao esquema ==
 U -> P : Aplicar configuração de fundo ao esquema
 P -> BackgroundController : PUT /api/schemes/{id}/background
@@ -39,6 +37,34 @@ activate BackgroundStudioService
 BackgroundStudioService -> Guard : requireCanCreate()
 BackgroundStudioService -> DB_MySQL : SELECT schemes
 BackgroundStudioService -> Guard : requireOwner()
+alt aura composition invalid
+BackgroundStudioService --> BackgroundController : 400 AURA_COMPOSITION_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt aura hype invalid
+BackgroundStudioService --> BackgroundController : 400 AURA_HYPE_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt aura metamorphose invalid
+BackgroundStudioService --> BackgroundController : 400 AURA_METAMORPHOSE_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt card border invalid
+BackgroundStudioService --> BackgroundController : 400 CARD_BORDER_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt card border invalid
+BackgroundStudioService --> BackgroundController : 400 CARD_BORDER_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt card border invalid
+BackgroundStudioService --> BackgroundController : 400 CARD_BORDER_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt card border invalid
+BackgroundStudioService --> BackgroundController : 400 CARD_BORDER_INVALID
+BackgroundController --> P : 400 + mensagem
+end
 alt cor inválida
 BackgroundStudioService --> BackgroundController : 400 COR_INVALIDA
 BackgroundController --> P : 400 + mensagem
@@ -51,41 +77,19 @@ alt preset inválido
 BackgroundStudioService --> BackgroundController : 400 PRESET_INVALIDO
 BackgroundController --> P : 400 + mensagem
 end
-alt preset inválido
-BackgroundStudioService --> BackgroundController : 400 PRESET_INVALIDO
+alt aura hype invalid
+BackgroundStudioService --> BackgroundController : 400 AURA_HYPE_INVALID
 BackgroundController --> P : 400 + mensagem
 end
 alt preset inválido
 BackgroundStudioService --> BackgroundController : 400 PRESET_INVALIDO
 BackgroundController --> P : 400 + mensagem
 end
-alt material indisponível
-BackgroundStudioService --> BackgroundController : 400 MATERIAL_INDISPONIVEL
+alt preset inválido
+BackgroundStudioService --> BackgroundController : 400 PRESET_INVALIDO
 BackgroundController --> P : 400 + mensagem
 end
-alt formato inválido
-BackgroundStudioService --> BackgroundController : 400 FORMATO_INVALIDO
-BackgroundController --> P : 400 + mensagem
-end
-alt formato inválido
-BackgroundStudioService --> BackgroundController : 400 FORMATO_INVALIDO
-BackgroundController --> P : 400 + mensagem
-end
-BackgroundStudioService -> BackgroundStudioService : backgroundVideoUrl = null
-BackgroundStudioService -> AssetCatalogService : resolveCombination()
-BackgroundStudioService -> BackgroundStudioService : backgroundVideoUrl = set
-BackgroundStudioService -> MediaService : requireOwnedMedia()
-BackgroundStudioService -> BackgroundStudioService : backgroundArtUrl = set
-alt estacao obrigatória
-BackgroundStudioService --> BackgroundController : 400 ESTACAO_OBRIGATORIA
-BackgroundController --> P : 400 + mensagem
-end
-BackgroundStudioService -> AssetCatalogService : gradient()
-alt silhueta inválida
-BackgroundStudioService --> BackgroundController : 400 SILHUETA_INVALIDA
-BackgroundController --> P : 400 + mensagem
-end
-note over BackgroundStudioService : … e mais 27 passos no código
+note over BackgroundStudioService : … e mais 49 passos no código
 deactivate BackgroundStudioService
 BackgroundStudioService --> BackgroundController : resultado
 BackgroundController --> P : 200 JSON

@@ -1,127 +1,198 @@
 @startuml RF37_Classes_Motor
-title RF37 — FLAIR: jogo de cartas de moda com 15 modos e combinações de lojas que rendem cupons\nDiagrama de classes — motor puro (fai-application · flair): carta, deck, look, tema e Hype v2
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
-package "FlairEngine — cartas, decks e duelo" {
-class FlairEngine <<final>> {
-  +{static} STATS = EDGE, RANGE, CLOUT, GLOW, ART, SYNC
-  +{static} DUEL_ROUNDS = EDGE, RANGE, CLOUT, GLOW, ART
-  +{static} RARITIES = STANDARD, PREMIUM, LIMITED, RARE
-  +{static} RARE_RARITY_MIN = 75
-  +{static} LIMITED_RARITY_MIN = 60
-  +{static} card(PieceInput, season): Card
-  +{static} rarity(Hype, seals, model3d, studio): String
-  +{static} deck(schemeId, title, cards, schemeSeason, season): Deck
-  +{static} duel(Deck, Deck): DuelResult
-  +{static} occasionScore(Deck, occasion): double
-  +{static} rank(points): Map
-  +{static} season(LocalDate): String
+package "components/flair/classic-modes.tsx" {
+  class DuelResult as "DuelResult" <<interface>> {
+    +matchId: string
+    +mode: string
+    +me: FlairDeck
+    +opponent: { label: string; deck: FlairDeck }
+    +rounds: FlairRound[]
+    +score: { me: number; opponent: number }
+    +outcome: 'WIN' | 'LOSS' | 'DRAW'
+    +coins: number
+    +rewardCapReached: boolean
+    +faiPoints: number
+  }
+  class FlairMe as "FlairMe" <<interface>> {
+    +coins: number
+    +rank: Rank
+    +wins: number
+    +losses: number
+    +draws: number
+    +skins: string[]
+    +activeSkin: string | null
+    +skinShop: Record<string, number>
+    +season: string
+    +team: Team | null
+    .. +3 ..
+  }
+  class Team as "Team" <<interface>> {
+    +id: string
+    +name: string
+    +code: string
+    +color: string
+    +points: number
+    +owner: UserCard
+    +members: { user: UserCard; role: string }[]
+    +mine: boolean
+  }
+  class TeamBattle as "TeamBattle" <<interface>> {
+    +teamA: Team
+    +teamB: Team
+    +duels: { slot: number; a: TeamSide | null; b:…
+    +score: { a: number; b: number }
+    +winner: string
+    +faiPoints: number
+  }
+  class League as "League" <<interface>> {
+    +teams: Team[]
+    +mine: Team | null
+    +players: { user: UserCard; rank: Rank; wins: num…
+    +rule: string
+    +battles: { id: string; theme: string; winner: st…
+  }
+  class Rank as "Rank" <<interface>> {
+    +code: string
+    +label: string
+    +points: number
+    +next: { label: string; at: number } | null
+  }
+  class mod_classic_modes_tsx as "classic-modes.tsx" <<módulo>> {
+    +Rounds()
+    +DuelPanel()
+    +ArenaPanel()
+    +TeamPanel()
+  }
 }
-class "FlairEngine.Hype" as Hype <<record>> {
-  +score: Double
-  +level: String
-  +rarity: Double
-  +{static} NONE
-  +{static} of(publicEligible, status, score, level, rarity): Hype
-  +atLeast(HypeLevel): boolean
+package "components/flair/hub.tsx" {
+  class Combo as "Combo" <<interface>> {
+    +active: boolean
+    +available: boolean
+    +complete: boolean
+    +redemption: unknown
+  }
+  class Me as "Me" <<interface>> {
+    +coins: number
+    +rank: { label: string; points: number }
+    +wins: number
+    +losses: number
+    +draws: number
+  }
+  class Quest as "Quest" <<interface>> {
+    +done: boolean
+  }
+  class mod_hub_tsx as "hub.tsx" <<módulo>> {
+    +FlairHub()
+  }
 }
-class "FlairEngine.PieceInput" as PieceInput <<record>> {
-  +id, name, category, subcategory
-  +brandName, registeredBrand, brandOwner
-  +styles, occasions, material, qualityOverall
-  +studio, logoDetail, model3d, mannequinPhoto
-  +defaultImage, seals: int
-  +hype: Hype
+package "components/flair/modes-shared.tsx" {
+  class Round as "Round" <<interface>> {
+    +label: string
+    +a: string
+    +b: string
+    +scoreA: number
+    +scoreB: number
+    +winner: 'A' | 'B' | 'DRAW'
+    +notes: string[]
+    +breakdown: { stat: string; label: string; weight:…
+  }
+  class Theme as "Theme" <<interface>> {
+    +code: string
+    +label: string
+    +emoji: string
+    +occasions: string[]
+    +styles: string[]
+    +weights: Record<string, number>
+    +hint: string
+  }
+  class Synergy as "Synergy" <<interface>> {
+    +code: string
+    +label: string
+    +emoji: string
+    +stat: string
+    +bonus: number
+  }
+  class mod_modes_shared_tsx as "modes-shared.tsx" <<módulo>> {
+    +LookTile()
+    +LookPicker()
+    +OpponentField()
+    +ThemeBadge()
+    +ResultView()
+    +PlayButton()
+  }
 }
-class "FlairEngine.Card" as Card <<record>> {
-  +stats: Map<String, Integer>
-  +rarity: String
-  +multiplier: double
-  +power: int
-  +ability: Ability
-  +hype: Hype
+package "Backend (Java)" {
+  class FlairEngine  {
+    +season()
+    +pieceSeason()
+    +sync()
+    +card()
+    +rarity()
+    +ability()
+    +deck()
+    +count()
+  }
+  class FlairLooks  {
+    +w()
+    +theme()
+    +drawTheme()
+    +family()
+    +dark()
+    +light()
+    +luminance()
+  }
+  class FlairModesService <<service>> {
+    -guard: Guard
+    +board()
+    +territory()
+    +catalog()
+    +today()
+    +seasonKey()
+    +weekKey()
+    +cardsOf()
+    +look()
+  }
+  class FlairService <<service>> {
+    -guard: Guard
+    -events: org.springframework.context.Applica…
+    -hypeConfig: HypeScoreConfig
+    +today()
+    +season()
+    +hypeStates()
+    +gameHype()
+    +publicLookHype()
+    +cardsOf()
+    +input()
+  }
 }
-class "FlairEngine.Deck" as Deck <<record>> {
-  +schemeId, title
-  +cards: List<Card>
-  +combos: List<Combo>
-  +brandMultiplier: double
-  +seasonBonus: int
-  +power: int
-  +avg: Map<String, Integer>
-}
-class "FlairEngine.DuelResult" as DuelResult <<record>> {
-  +rounds: List<Round>
-  +winsA / winsB: int
-  +winner: String
-}
-}
-package "FlairLooks — looks, temas e sinergias" {
-class FlairLooks <<final>> {
-  +{static} STATS = HYPE, STYLE, COLOR, OCCASION, ORIGINALITY,\n  BRAND, RARITY, TREND, COMMUNITY, AI
-  +{static} NEUTRAL_HYPE = 50
-  +{static} THEMES: Map<String, Theme> (18)
-  +{static} BOSSES: Map<String, Boss>
-  +{static} look(LookInput): Look
-  +{static} synergies(cards, Theme): List<Synergy>
-  +{static} weight(Theme, stat): double
-  +{static} score(Look, Theme): Score
-  +{static} battle(Look, Look, Theme): Clash
-  +{static} squad(…) · leagueMatch(…) · runwayScore(…)
-}
-class "FlairLooks.LookInput" as LookInput <<record>> {
-  +schemeId, title, owner, coverUrl
-  +hype: Double  «Hype v2 público ou nulo»
-  +likes, saves, comments, shares, remixes
-  +styles, occasions, season
-  +cards: List<Card>
-}
-class "FlairLooks.Look" as Look <<record>> {
-  +stats: Map<String, Integer>
-  +synergies: List<Synergy>
-  +rating: int
-  +families, brands
-  +cards: List<Card>
-}
-class "FlairLooks.Synergy" as Synergy <<record>> {
-  +code: STREETWEAR_COMBO | CLASSIC_FORMAL |\n  MONOCHROME | BRAND_LOYALTY |\n  MIX_MATCH | VINTAGE_REVIVAL
-  +stat: String
-  +bonus: int
-}
-class "FlairLooks.Theme" as Theme <<record>> {
-  +code, label
-  +occasions, styles
-  +weights: Map<String, Double>
-  +bonusSubcategories, boostStyle, boostStat
-}
-}
-class "FlairModesService.Mode" as Mode <<record>> {
-  +code: BATTLE | SQUAD | LEAGUE | TOUR | CONQUEST | DECK |\n  WARDROBE | RUNWAY | DRAFT | TAG_TEAM | BOSS |\n  COMBO | MONOPOLY | CHESS | ULTIMATE
-  +group: NUCLEO | ESPECIAL
-}
-FlairEngine ..> PieceInput
-FlairEngine ..> Card : cria
-FlairEngine ..> Deck : cria
-FlairEngine ..> DuelResult
-PieceInput --> Hype
-Card --> Hype
-Deck "1" o-- "*" Card
-FlairLooks ..> LookInput
-FlairLooks ..> Look : cria
-LookInput "1" o-- "*" Card
-Look "1" o-- "*" Synergy
-Look "1" o-- "*" Card
-FlairLooks ..> Theme
-Mode ..> FlairLooks : todos os modos usam
-note right of Hype : vem de hype_scores; só PUBLICO e AVAILABLE\nviram score/nível — o adversário nunca vê\nHype pessoal. Sem dado = NONE (não rebaixa)
-note bottom of LookInput : FlairService.publicLookHype(schemeId)\npreenche o hype; nunca o v1 (removido)
+FlairModesService --> FlairService
+FlairMe --> Rank : rank
+FlairMe --> Team : team
+League --> Rank : players
+League --> Team : mine
+League --> Team : teams
+TeamBattle --> Team : teamA
+TeamBattle --> Team : teamB
 @enduml

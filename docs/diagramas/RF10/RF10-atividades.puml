@@ -24,7 +24,7 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF10 — Possibilitar que o usuário gere recomendações de esquemas de vestimenta & de peças de roupa através da aba 'Copilot'\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF10 — Possibilitar que o usuário gere recomendações de esquemas de vestimenta & de peças de roupa através da aba 'Copilot'\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
@@ -37,6 +37,10 @@ start
 :POST /api/copilot/messages;
 |API (Spring Boot)|
 :AutopilotController.ask\n→ CopilotService.ask;
+if (ia indisponível?) then (sim)
+  :503 IA_INDISPONIVEL\n«O Copilot de selos está\nindisponível. A última política\nválida foi preservada; tente\nnovamente mais tarde.»\n→ a tela mostra o aviso;
+  stop
+endif
 if (mensagem vazia?) then (sim)
   :400 MENSAGEM_VAZIA\n«Escreva o que você precisa.»\n→ a tela mostra o aviso;
   stop
@@ -51,7 +55,7 @@ if (acervo insuficiente?) then (sim)
 endif
 |Dados e serviços|
 :Lê: style_dna\nschemes\nscheme_items\nwardrobe_items\nuser_preferences;
-:Usa: RoomService.locateAll\nRoomService.locate\nHypeQueryService.currentOf\nHypeQueryService.config\nRoomService.lastDiaryDates\nInventoryScoreService.improvementHints (+8);
+:Usa: SealService.draft\nRoomService.locateAll\nRoomService.locate\nHypeQueryService.currentOf\nHypeQueryService.config\nRoomService.lastDiaryDates (+9);
 :IA: COPILOT;
 :Estado: category → ?cat\ndisponivel → true\navailabilityStatus → AVAILABLE;
 |Tela (Next.js)|

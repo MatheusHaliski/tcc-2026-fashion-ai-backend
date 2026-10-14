@@ -29,13 +29,15 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "/photos\n(site)/(app)/photos/page.tsx" as FE0
-  component "/pieces/[id]\n(site)/(app)/pieces/[id]/page.tsx" as FE1
-  component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE2
-  component "/schemes/[id]\n(site)/(app)/schemes/[id]/page.tsx" as FE3
+  component "/dna-schemes/[id]/edit\n(site)/(app)/dna-schemes/[id]/edit/page.tsx" as FE0
+  component "/dna-schemes/new\n(site)/(app)/dna-schemes/new/page.tsx" as FE1
+  component "/dna\n(site)/(app)/dna/page.tsx" as FE2
+  component "/photos\n(site)/(app)/photos/page.tsx" as FE3
+  component "/pieces/[id]\n(site)/(app)/pieces/[id]/page.tsx" as FE4
+  component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE5
   component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
@@ -71,6 +73,8 @@ FE0 --> APIC
 FE1 --> APIC
 FE2 --> APIC
 FE3 --> APIC
+FE4 --> APIC
+FE5 --> APIC
 PhotoController --> PhotoService
 PhotoService --> AI
 PhotoService --> REPO_MySQL

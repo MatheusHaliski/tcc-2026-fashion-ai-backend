@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title Anatomia do esquema (look): dados, peças posicionadas, arte do card e selos\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title Anatomia do esquema (look): dados, peças posicionadas, arte do card e selos\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "fai-domain (entidades JPA)" {
   class DailyLook <<daily_looks>> {
@@ -45,10 +45,11 @@ package "fai-domain (entidades JPA)" {
     +colorPaletteJson: String
     +narrativeType: NarrativeType
     +seasonalTheme: Season
-    .. +25 campos ..
+    .. +24 campos ..
   }
   class Scheme <<schemes>> {
     +id: UUID
+    +tipoLook: TipoLook
     +user: User
     +originalScheme: Scheme
     +title: String
@@ -57,8 +58,7 @@ package "fai-domain (entidades JPA)" {
     +origin: SchemeOrigin
     +style: String
     +occasion: String
-    +season: Season
-    .. +46 campos ..
+    .. +44 campos ..
   }
   class SchemeGrouping <<scheme_groupings>> {
     +id: UUID
@@ -102,6 +102,7 @@ package "fai-domain (entidades JPA)" {
   class SealBond <<seal_bonds>> {
     +id: UUID
     +scheme: Scheme
+    +piece: WardrobeItem
     +targetOwner: User
     +requestedBy: User
     +tier: SealTier
@@ -109,8 +110,7 @@ package "fai-domain (entidades JPA)" {
     +confidence: BigDecimal
     +justification: String
     +basis: SealBondBasis
-    +status: SealBondStatus
-    .. +13 campos ..
+    .. +14 campos ..
   }
   class WardrobeItem <<wardrobe_items>> {
     +id: UUID
@@ -120,10 +120,10 @@ package "fai-domain (entidades JPA)" {
     +name: String
     +category: String
     +subcategory: String
-    +sex: String
-    +brandName: String
-    +brandLogoUrl: String
-    .. +70 campos ..
+    +variationCode: String
+    +variationStatus: String
+    +variationConfidence: BigDecimal
+    .. +73 campos ..
   }
   class WeekPlanDay <<week_plan_days>> {
     +id: UUID
@@ -199,6 +199,7 @@ SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
 Seal --> SealStatus
 SealBond "*" --> "1" Scheme : scheme
 SealBond "*" --> "1" Seal : seal
+SealBond "*" --> "1" WardrobeItem : piece
 SealBond --> SealBondStatus
 WardrobeItem --> AvailabilityStatus
 WardrobeItem --> ModerationStatus

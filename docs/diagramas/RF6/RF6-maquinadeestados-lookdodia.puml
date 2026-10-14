@@ -19,7 +19,7 @@ skinparam state {
   StartColor #20A77A
   EndColor #4B5563
 }
-title RF6 — ciclo de vida de DailyLook.feedback e source\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum DailyLookFeedback · enum DailyLookSource · tabela daily_looks
+title RF6 — ciclo de vida de DailyLook.feedback e source\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nenum DailyLookFeedback · enum DailyLookSource · tabela daily_looks
 
 state "DailyLook.feedback" as Ciclo_DailyLook {
   state Ciclo_DailyLook_ADOREI as "ADOREI"

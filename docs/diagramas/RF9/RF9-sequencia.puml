@@ -21,7 +21,7 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF9 — Editar os dados de um esquema de vestimenta e das peças que o compõem\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 boundary "Tela /schemes/[id]/edit" as P

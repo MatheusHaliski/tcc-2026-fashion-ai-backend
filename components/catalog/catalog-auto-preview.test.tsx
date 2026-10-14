@@ -16,12 +16,35 @@ it("frames on display without selection and deduplicates concurrent cards", asyn
   expect(b.result.current.product.catalogImage).toEqual(framed.catalogImage);
   expect(request).toHaveBeenCalledTimes(1);
 });
+it.each([
+  ["processed", { url: "https://media.example/card.jpg", mode: "PROCESSED" as const }],
+  ["semantic crop", { url: "https://brand.example/cached.jpg", mode: "SEMANTIC_CROP" as const, crop: { x: .1, y: .1, w: .8, h: .8 } }],
+])("uses the database-cached %s preview without requesting another render", async (_label, catalogImage) => {
+  const product = { id: `cached-${_label}`, imageUrl: catalogImage.url, catalogImage } as CatalogProduct;
+  const request = vi.spyOn(catalogApi, "previewImage");
+  const result = renderHook(() => useCatalogPreview(product));
+
+  await waitFor(() => expect(result.result.current.pending).toBe(false));
+  expect(result.result.current.product).toBe(product);
+  expect(request).not.toHaveBeenCalled();
+});
 it("keeps the original when framing fails", async () => {
   const product = { id: "failed-preview", imageUrl: "https://brand.example/b.jpg" } as CatalogProduct;
   vi.spyOn(catalogApi, "previewImage").mockRejectedValue(new Error("unavailable"));
   const result = renderHook(() => useCatalogPreview(product));
   await waitFor(() => expect(result.result.current.pending).toBe(false));
   expect(result.result.current.product).toBe(product);
+});
+it("requests a render when semantic crop metadata is missing", async () => {
+  const product = {
+    id: "uncached-preview",
+    imageUrl: "https://brand.example/uncached.jpg",
+    catalogImage: { url: "https://brand.example/uncached.jpg", mode: "SEMANTIC_CROP" as const },
+  } as CatalogProduct;
+  const request = vi.spyOn(catalogApi, "previewImage").mockResolvedValue(product);
+  renderHook(() => useCatalogPreview(product));
+
+  await waitFor(() => expect(request).toHaveBeenCalledWith(product.id));
 });
 
 it("does not label a server failure as an unsafe photo and permits retry", async () => {

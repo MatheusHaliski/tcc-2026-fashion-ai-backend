@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF14 — Visualizar a aba 'Marcas' — Feed de Perfil de Marcas de roupa cadastradas dentro do sistema do FashionAI\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF14 — Visualizar a aba 'Marcas' — Feed de Perfil de Marcas de roupa cadastradas dentro do sistema do FashionAI\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "fai-domain (entidades JPA)" {
   class Follow <<follows>> {
@@ -41,7 +41,7 @@ package "fai-domain (entidades JPA)" {
     +fixtureKey: String
     +sourceConfidence: BigDecimal
     +verifiedAt: Instant
-    .. +2 campos ..
+    .. +3 campos ..
   }
   class BrandLogo <<brand_logos>> {
     +id: UUID
@@ -106,7 +106,7 @@ package "fai-domain (entidades JPA)" {
     +birthDate: String
     +passwordHash: String
     +profileType: ProfileType
-    .. +24 campos ..
+    .. +25 campos ..
   }
 }
 package "fai-domain (enums)" {

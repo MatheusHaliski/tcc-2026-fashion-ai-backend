@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title Fashion AI — Integridade por domínio: OWNERSHIP → CASCADE · GLOBAL → RESTRICT (V34, aplicada: 131 FKs)\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title Fashion AI — Integridade por domínio: OWNERSHIP → CASCADE · GLOBAL → RESTRICT (V34, aplicada: 131 FKs)\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "fai-domain (entidades JPA)" {
   class Follow <<follows>> {
@@ -41,7 +41,7 @@ package "fai-domain (entidades JPA)" {
     +fixtureKey: String
     +sourceConfidence: BigDecimal
     +verifiedAt: Instant
-    .. +2 campos ..
+    .. +3 campos ..
   }
   class BrandProfile <<brand_profiles>> {
     +id: UUID

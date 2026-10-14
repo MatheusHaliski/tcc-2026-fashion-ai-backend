@@ -13,3 +13,9 @@ it("never invents a zero score when unavailable", () => {
   expect(screen.getByText("AURA ativa · aguardando cálculo do Hype")).toBeTruthy();
   expect(screen.queryByText(/0\/100/)).toBeNull();
 });
+it("uses only the global score on the photo, without a game attribute table", () => {
+  const { container } = renderApp(<AuraHype mode="SCANNER" state={{ kind: "available", score: 84, level: "HOT", direction: null, stale: false }} />);
+  expect(container.querySelector('.aura-hype-total .led-number')?.textContent).toBe('84');
+  expect(container.querySelector('dl')).toBeNull();
+  expect(container.querySelector('.fgc')).toBeNull();
+});

@@ -1,39 +1,38 @@
 @startuml RF3_MaquinaDeEstados_Consentimento
 !pragma layout smetana
-title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de máquina de estados — consentimento por finalidade (UserConsent · ConsentPurpose)
 skinparam backgroundColor #FFFFFF
-skinparam state {
-  BackgroundColor #F8F4FF
-  BorderColor #B695F5
-  FontColor #2D2438
-  ArrowColor #52606D
-}
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
 skinparam note {
   BackgroundColor #FFFDEB
   BorderColor #D8CE78
   FontColor #554F24
 }
-state "Nunca decidido\n(sem linha em user_consents:\ngranted = false)" as Nunca
-state "Concedido\n(granted = true, grantedAt,\nrevokedAt = null)" as Conc
-state "Revogado\n(granted = false, revokedAt)" as Rev
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  StartColor #20A77A
+  EndColor #4B5563
+}
+title RF3 — ciclo de vida de UserConsent.purpose\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nenum ConsentPurpose · tabela user_consents
 
-[*] --> Nunca : cadastro (Privacy by Default)
-Nunca --> Conc : PUT /api/me/consents/{purpose} {granted: true}
-Nunca --> Rev : PUT … {granted: false}
-Conc --> Rev : PUT … {granted: false}\n(o mesmo gesto da concessão — art. 8º §5º)
-Rev --> Conc : PUT … {granted: true}
-Conc --> [*] : conta anonimizada (RF3_MaquinaDeEstados_Exclusao)
-
-note right of Conc
-  Cada mudança grava legalBasis e policyVersion (2026-09)
-  e audita CONSENTIMENTO_CONCEDIDO ou CONSENTIMENTO_REVOGADO.
-  BODY_MEASUREMENTS e FACIAL_RECOGNITION são dado sensível
-  (art. 11, I). Os outros RF consultam a finalidade antes de
-  usar a IA ou enviar dados (ver RF24).
-end note
-note left of Nunca
-  FACIAL_RECOGNITION: granted = true
-  responde 400 FINALIDADE_NAO_UTILIZADA
-  (o Fashion AI não usa essa finalidade).
+state "UserConsent.purpose" as Ciclo_UserConsent {
+  state Ciclo_UserConsent_AI_RECOMMENDATION as "AI_RECOMMENDATION"
+  state Ciclo_UserConsent_AI_EXTERNAL_PHOTO_PROCESSING as "AI_EXTERNAL_PHOTO_PROCESSING"
+  state Ciclo_UserConsent_HISTORY_FOR_RECOMMENDATION as "HISTORY_FOR_RECOMMENDATION"
+  state Ciclo_UserConsent_PERSONALIZED_ADS as "PERSONALIZED_ADS"
+  state Ciclo_UserConsent_PARTNER_SHARING as "PARTNER_SHARING"
+  state Ciclo_UserConsent_BODY_MEASUREMENTS as "BODY_MEASUREMENTS"
+  state Ciclo_UserConsent_FACIAL_RECOGNITION as "FACIAL_RECOGNITION"
+  state Ciclo_UserConsent_LOCATION_HISTORY as "LOCATION_HISTORY"
+  state Ciclo_UserConsent_AI_MODEL_TRAINING as "AI_MODEL_TRAINING"
+}
+note bottom of Ciclo_UserConsent
+  Recebe o valor escolhido em: setConsent(purpose)
 end note
 @enduml

@@ -1,9 +1,16 @@
 @startuml RF3_Atividades_Dados
-title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de atividades — Seus dados: exportação em JSON e exclusão da conta com carência de 30 dias
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,53 +19,60 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
+title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre /settings, aba Seus dados;
-  if (Exportar ou excluir?) then (exportar)
-    :<b>Frontend</b> · POST /api/me/exports;
-    :<b>API</b> · data_export_requests PROCESSING; monta o JSON no idioma preferido\n(perfil, preferências com hypeCreatorOptOut, consentimentos, peças, looks,\ncomentários, salvos, seguindo, fotos, notificações, DNA, inferências de IA, Hype);
-    :<b>API</b> · Grava em restricted/users/{id}/exports/{exportId}.json;\nREADY, expiresAt = +7 dias; notificação DATA_EXPORT_READY;\naudita EXPORTACAO_CONTA → 202 {id, status, readyAt, expiresAt, bytes};
-    :<b>Frontend</b> · GET /api/me/exports (status EXPIRED quando expiresAt passou);
-    :<b>Frontend</b> · Baixar → GET /api/me/exports/{exportId}/file;
-    if (Exportação de outra pessoa?) then (sim)
-      #FFE3E3:<b>API</b> · 403;
-      stop
-    elseif (Vencida ou sem arquivo?) then (sim)
-      #FFE3E3:<b>API</b> · 410 EXPORTACAO_EXPIRADA;
-      stop
-    else (não)
-      :<b>API</b> · 200 application/octet-stream\n(arquivo "fashionai-dados-{id}.zip" com conteúdo JSON);
-    endif
-  else (excluir a conta)
-    :<b>Frontend</b> · Diálogo pede a senha → POST /api/me/deletion {password}\n(10 pedidos/h por IP);
-    if (Senha confere (mesmo bloqueio do login)?) then (não)
-      #FFE3E3:<b>API</b> · 401 REAUTENTICACAO_FALHOU · 429 MUITAS_TENTATIVAS;
-      stop
-    endif
-    :<b>API</b> · status DELETION_SCHEDULED; deletionScheduledFor = +30 dias;\ne-mail de aviso; audita EXCLUSAO_CONTA → 200 {status, deletionScheduledFor};
-    if (Desiste dentro dos 30 dias?) then (sim)
-      :<b>Frontend</b> · DELETE /api/me/deletion;
-      :<b>API</b> · Volta para PENDING_EMAIL_VERIFICATION, PENDING_VALIDATION\nou ACTIVE; audita EXCLUSAO_CANCELADA;
-    else (não)
-      #EEEEEE:<b>API</b> · purgeScheduledDeletions anonimiza a conta\n<<planejado>>: sem @Scheduled nem chamada no código;
-    endif
-  endif
-:<b>Frontend</b> · Atualiza a seção e mostra o aviso;
+:Abre /settings, /login, /reset-password;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me\nGET /api/me/exports\nGET /api/me/exports/{exportId}/file\nGET /api/me/consents;
+|Pessoa usuária|
+:Alterar senha, e-mail, telefone,\nnascimento ou 2FA (pede re…;
+|Tela (Next.js)|
+:PATCH /api/me/sensitive;
+|API (Spring Boot)|
+:MeController.updateSensitive\n→ AccountService.updateSensitive;
+if (e-mail inválido?) then (sim)
+  :400 EMAIL_INVALIDO\n«Formato de e-mail inválido.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (e-mail em uso?) then (sim)
+  :409 EMAIL_EM_USO\n«Este e-mail já está em uso.»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: users\nuser_preferences;
+:Usa: IdentityService.reauthenticate\nIdentityService.invalidateCodes\nEmailSenderPort.send;
+:Grava: verification_codes;
+:Estado: purpose → EMAIL_CHANGE\nexpiresAt → set\nlastSentAt → set;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Solicitar exportação dos meus dad…)
+    :POST /api/me/exports\n→ AccountService.requestExport\nlê: users, user_preferences, user_consents …\nusa: HypeScoreConfig.algorithmVersion,\nMediaStoragePort.put,\nNotificationService.notify\ngrava: data_export_requests;
+  case (Agendar exclusão da conta [janela…)
+    :POST /api/me/deletion\n→ AccountService.requestDeletion\nlê: users, user_preferences\nusa: IdentityService.reauthenticate,\nEmailSenderPort.send\nestado: deletionRequestedAt → set, status →\nDELETION_SCHEDULED;
+  case (Cancelar a exclusão agendada)
+    :DELETE /api/me/deletion\n→ AccountService.cancelDeletion\nlê: users, brand_profiles, celebrity_profiles\nestado: deletionRequestedAt → null;
+  case (Confirmar troca de e-mail com o c…)
+    :POST /api/me/email-change/confirm\n→ AccountService.confirmEmailChange\nvalida: CODIGO_INVALIDO, EMAIL_EM_USO, ERRO\nlê: users, verification_codes\nusa: IdentityService.requireCodeAttemptQuota\nestado: consumedAt → set, emailVerified → true;
+  case (Visibilidade padrão do perfil e c…)
+    :PUT /api/me/privacy\n→ AccountService.updatePrivacy\nvalida: VISIBILIDADE_INVALIDA\nlê: users\nestado: profileVisibility → ?visibility;
+  endswitch
+  note right
+  Outras ações deste RF:
+  Conceder ou retirar um consen…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
-legend right
-Em negrito, quem executa cada passo:
-Pessoa · Frontend (settings/page.tsx)
-· API (MeController · AccountService)
-endlegend
 @enduml

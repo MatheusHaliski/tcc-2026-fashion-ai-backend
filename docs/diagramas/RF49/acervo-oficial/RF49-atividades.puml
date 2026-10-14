@@ -24,29 +24,46 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF49 — Acervo oficial em escala\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF49 — Acervo oficial em escala\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
 |Tela (React)|
 partition "c/catalog/catalog-search.tsx · CatalogSearch()" {
   :useI18n()\n<size:10>lib/i18n/i18n.tsx</size>;
-  :useTaxonomy()\n<size:10>lib/api/taxonomy.ts</size>;
-  :enoughToSearch()\n<size:10>lib/api/catalog.ts</size>;
-  :estado da tela: Res = null;
-  :catch(), then(), suggestions()\n<size:10>lib/api/catalog.ts</size>;
-  :estado da tela: Loading = true;
-  :estado da tela: Error = null;
-  :search()\n<size:10>lib/api/catalog.ts</size>;
-  if (e as Error].name === 'AbortError'?) then (sim)
+  if (pickingRef.current?) then (sim)
     :encerra este passo;
     stop
   endif
-  :estado da tela: Loading = false;
-  :discover()\n<size:10>lib/api/catalog.ts</size>;
-  :label(), label(), label(), label()\n<size:10>lib/api/taxonomy.ts</size>;
-  :cn()\n<size:10>c/ui/index.tsx</size>;
-  :label()\n<size:10>lib/api/taxonomy.ts</size>;
+  :estado da tela: Picking = null;
+  :useTaxonomy()\n<size:10>lib/api/taxonomy.ts</size>;
+  :useApi()\n<size:10>lib/hooks/use-api.ts</size>;
+  :GET /api/catalog/stores\n→ CatalogController.stores;
+  :useApi()\n<size:10>lib/hooks/use-api.ts</size>;
+  :summary()\n<size:10>lib/api/catalog.ts</size>;
+  :estado da tela: AllForText = false;
+  :enoughToSearch()\n<size:10>lib/api/catalog.ts</size>;
+  :estado da tela: Res = null;
+  :estado da tela: Res = null;
+  :estado da tela: Acervo = null;
+  :estado da tela: Acervo = null;
+  :estado da tela: Res = null;
+  :estado da tela: RanWith = null;
+  :estado da tela: AcervoLoading = true;
+  :estado da tela: AcervoLoading = true;
+  :estado da tela: Error = null;
+  :estado da tela: Res = null;
+  :browse()\n<size:10>lib/api/catalog.ts</size>;
+  if (signal?.aborted || n !== seq.current?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  :mergeById()\n<size:10>c/infinite-sentinel.tsx</size>;
+  if (e as Error].name === 'AbortError' || n !== seq.cu…?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  :… e mais 33 passos no código;
 }
 |Backend (Java)|
 partition "CatalogMatchScorer.score()" {
@@ -56,20 +73,21 @@ partition "CatalogMatchScorer.score()" {
   :CatalogNormalizer.color();
 }
 |API (Spring Boot)|
-partition "CatalogService.addToWardrobe()" {
-  :lê catalog_products;
-  if (produto recusado?) then (sim)
-    :400 PRODUTO_RECUSADO\n«Este produto foi retirado do\ncatálogo.»;
-    stop
-  endif
+partition "CatalogService.browse()" {
   :lê brands;
-  :lê catalog_variants;
-  :ingestionStatus → REFERENCE_ONLY;
-  :lastVerifiedAt → set;
-  :grava catalog_products;
+  :CatalogIngestService.resolveBrand();
+  :CatalogNormalizer.subcategory();
+  :CatalogNormalizer.categoryOf();
+  :CatalogNormalizer.category();
+  :CatalogNormalizer.color();
+  :lê catalog_products;
+  :lê catalog_products;
   :lê catalog_images;
-  :WardrobeService.createFromCatalog();
-  :WardrobeService.toggles();
+  :lê catalog_images;
+  :lê catalog_images;
+  :lê catalog_variants;
+  :lê brands;
+  :lê catalog_sources;
 }
 |Pessoa usuária|
 :Vê o resultado;

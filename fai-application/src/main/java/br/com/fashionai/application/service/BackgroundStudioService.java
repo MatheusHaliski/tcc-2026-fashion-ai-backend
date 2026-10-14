@@ -367,6 +367,7 @@ public class BackgroundStudioService {
             return;
         }
         Map<String, Object> scheme = config.get("scheme") instanceof Map<?, ?> m ? (Map<String, Object>) m : config;
+        validateArtwork(scheme);
         String color = (String) scheme.get("color");
         if (color != null) {
             requireHex(color);
@@ -601,8 +602,43 @@ public class BackgroundStudioService {
      * leu ({@code baseRev}) e ela não é mais a atual (outra aba ou outro aparelho aplicou antes), a gravação é recusada
      * com 409 em vez de sobrescrever em silêncio. Sem {@code baseRev} (clientes antigos, criação da peça) grava como antes.
      */
+    /** Structured border paint only: arbitrary CSS and unknown visual modes are not accepted. */
+    static void validateArtwork(Map<?, ?> config) {
+        if (config == null) return;
+        Object composition = config.get("compositionPreset");
+        if (composition != null) {
+            if (!(composition instanceof Map<?, ?> preset)
+                    || !(preset.get("id") instanceof String id) || !id.matches("[a-z0-9-]{1,80}")
+                    || !(preset.get("name") instanceof String name) || name.length() > 160
+                    || !List.of("COMMON", "ELECTRO", "SPLASH", "HYPE", "METAMORPHOSE").contains(preset.get("family"))
+                    || !("/aura/fashion-curated/" + id + ".webp").equals(preset.get("image"))
+                    || !(preset.get("palette") instanceof List<?> palette) || palette.size() != 2
+                    || palette.stream().anyMatch(c -> !(c instanceof String hex) || !hex.matches("#[0-9a-fA-F]{6}")))
+                throw ApiException.badRequest("AURA_COMPOSITION_INVALID", "Composição AURA inválida.");
+        }
+        Object hype = config.get("auraHype");
+        if (hype != null && !List.of("OFF", "SCANNER", "XRAY", "DOTS", "STARS", "METRICS").contains(hype))
+            throw ApiException.badRequest("AURA_HYPE_INVALID", "AURA Hype inválida.");
+        Object metamorphose = config.get("auraMetamorphose");
+        if (metamorphose != null && !List.of("OFF", "PRISMA", "CONSTELACAO", "FIO_VIVO", "HOLOGRAFIA").contains(metamorphose))
+            throw ApiException.badRequest("AURA_METAMORPHOSE_INVALID", "AURA Metamorfose inválida.");
+        Object value = config.get("border");
+        if (value == null) return;
+        if (!(value instanceof Map<?, ?> border)) throw ApiException.badRequest("CARD_BORDER_INVALID", "Borda inválida.");
+        if (border.get("mode") != null && !List.of("AUTO", "COLOR", "GRADIENT").contains(border.get("mode")))
+            throw ApiException.badRequest("CARD_BORDER_INVALID", "Modo de borda inválido.");
+        if (border.get("effect") != null && !List.of("AUTO", "NONE", "GLOW", "SHIMMER", "HOLO").contains(border.get("effect")))
+            throw ApiException.badRequest("CARD_BORDER_INVALID", "Efeito de borda inválido.");
+        for (String key : List.of("color", "from", "to")) {
+            Object color = border.get(key);
+            if (color != null && (!(color instanceof String hex) || !hex.matches("#[0-9a-fA-F]{6}")))
+                throw ApiException.badRequest("CARD_BORDER_INVALID", "Cor da borda inválida.");
+        }
+    }
+
     static Object withRevision(String currentJson, Object cfg) {
         if (!(cfg instanceof Map<?, ?> in)) return cfg;
+        validateArtwork(in);
         Map<String, Object> current = currentJson == null || currentJson.isBlank() ? Map.of() : Json.map(currentJson);
         int rev = current.get("rev") instanceof Number n ? n.intValue() : 0;
         Map<String, Object> out = new java.util.LinkedHashMap<>();

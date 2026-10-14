@@ -1,27 +1,27 @@
 # Termos de Uso do FashionAI
 
-**Versão 1.0 — vigente a partir de [DATA]**
+**Versão 1.1 — minuta para publicação em [DATA DE PUBLICAÇÃO]**
 
-> Nota técnica (remover na publicação): o backend grava a versão aceita em `users.terms_version`. A constante atual é `IdentityService.TERMS_VERSION = "2026-09"`. Ao publicar este texto, sugerimos trocar para `"2026-10"` e pedir novo aceite a quem aceitou a versão anterior.
+> **Minuta não publicada.** Antes de disponibilizar estes Termos, preencha os dados de identificação e contato da FashionAI, valide os pontos de revisão comercial e confirme a versão efetivamente registrada no cadastro. Este texto não substitui revisão jurídica.
 
-Estes Termos são o contrato entre você e **[RAZÃO SOCIAL]**, inscrita no CNPJ sob o nº **[CNPJ]**, com sede em **[ENDEREÇO]** ("FashionAI", "nós"). Eles valem para o site, o aplicativo e todos os recursos do FashionAI. A forma como tratamos seus dados está na **Política de Privacidade**, que faz parte destes Termos.
+Estes Termos são o contrato entre você e **[RAZÃO SOCIAL]**, inscrita no CNPJ sob o nº **[CNPJ]**, com sede em **[ENDEREÇO]** ("FashionAI", "nós"). Eles valem para o site, o aplicativo e os recursos disponibilizados pelo FashionAI. A **Política de Privacidade** explica o tratamento de dados pessoais e deve ser lida junto com estes Termos. Em caso de divergência sobre dados pessoais, prevalece a Política de Privacidade e a legislação aplicável.
 
 ---
 
 ## Resumo em 1 minuto
 
-- **Idade mínima: 13 anos.** Entre 13 e 17 anos, você usa o FashionAI com o conhecimento e a supervisão de um responsável. Abaixo de 16, a conta precisa estar vinculada a um responsável legal (seção 3).
+- **Idade mínima informada no cadastro: 13 anos.** As regras aplicáveis a crianças e adolescentes e os recursos de supervisão precisam ser confirmados antes da publicação (seção 3).
 - **Suas fotos e looks continuam seus.** Você só nos dá a permissão necessária para guardar, mostrar e processar esse conteúdo dentro do serviço.
 - **Imagens de produtos do catálogo vêm das marcas.** Elas são referências a fontes oficiais e não pertencem ao FashionAI.
 - **A IA ajuda, mas pode errar.** Recomendações, análises e o Estilo DNA são sugestões de moda, não conselho profissional.
 - **O provador e o avatar 3D são ilustrativos.** Eles não garantem caimento nem tamanho.
-- **FAI Points não são dinheiro.** Você ganha pontos usando o app e gasta na loja do Meu Quarto. Eles não são vendidos, não têm valor em dinheiro e não podem ser transferidos.
-- **Fraude tira pontos.** Contas múltiplas, robôs e "farm" de pontos levam ao estorno dos pontos e podem levar à suspensão da conta.
+- **FAI Points não são dinheiro.** Você ganha pontos usando o app e pode resgatá-los por itens digitais. Eles não são vendidos, não têm valor em dinheiro e não podem ser transferidos.
+- **Fraude pode levar a medidas proporcionais.** Pontos obtidos indevidamente podem ser corrigidos após análise; contas também podem ser suspensas conforme estes Termos.
 - **Respeite as pessoas.** Nada de conteúdo ofensivo, sexual explícito, de ódio ou que viole direitos de terceiros. Comentários passam por filtro e podemos moderar.
 - **Rankings públicos são opcionais.** Você pode sair da Passarela 3D e dos rankings públicos nas Configurações.
-- **Você decide sobre seus dados.** O uso de IA de terceiros, medidas do corpo, localização e outras finalidades dependem do seu consentimento, que você pode revogar a qualquer momento.
+- **Você decide sobre usos opcionais dos seus dados.** O aceite dos Termos não substitui consentimentos específicos, solicitados separadamente quando aplicável.
 - **Você pode sair quando quiser.** A exclusão da conta tem 30 dias de carência. Depois desse prazo, os dados são apagados.
-- **Hoje o FashionAI é gratuito.** Se um dia houver compras ou assinaturas, elas terão termos próprios, mostrados antes da compra, e direito de arrependimento de 7 dias.
+- **Compras pagas futuras exigem condições próprias.** Preço, renovação, cancelamento e direitos aplicáveis devem ser informados antes da contratação.
 
 ---
 
@@ -40,17 +40,13 @@ Os recursos podem mudar, ganhar novas versões ou ser desativados com o tempo (s
 
 ## 2. Aceite destes Termos
 
-Ao marcar a caixa "Li e aceito os Termos de Uso e a Política de Privacidade" e criar sua conta, você declara que leu e concorda com estes Termos. Registramos a versão aceita e a data do aceite. Se você não concorda, não crie a conta.
+Ao marcar a caixa de aceite e criar sua conta, você declara que leu e aceita estes Termos e confirma que teve acesso à Política de Privacidade. Registramos a versão e a data do aceite. Esse aceite não substitui nem concede consentimento para finalidades opcionais de tratamento de dados, que devem ser solicitadas separadamente quando aplicável. Se você não concorda, não crie a conta.
 
 ## 3. Quem pode usar
 
 **3.1. Idade mínima.** O FashionAI é destinado a pessoas com **13 anos ou mais**. O cadastro recusa datas de nascimento abaixo dessa idade. Se descobrirmos uma conta de alguém com menos de 13 anos, vamos encerrá-la e apagar os dados.
 
-**3.2. Adolescentes (13 a 17 anos).** Seguimos o Estatuto da Criança e do Adolescente, o art. 14 da LGPD (Lei 13.709/2018), que exige que os dados sejam tratados no melhor interesse do adolescente, e o **ECA Digital (Lei 15.211/2025)**, em vigor desde 17 de março de 2026. Na prática:
-
-- **De 13 a 15 anos:** a conta deve estar **vinculada à conta de um responsável legal**, que pode ver e ajustar as configurações de privacidade e restringir transações. [validar com jurídico]
-- **De 13 a 17 anos:** a conta já começa com as opções mais protetivas de privacidade. Não fazemos publicidade direcionada com base em perfil comportamental, não compartilhamos dados com parceiros e não oferecemos caixas de recompensa ("loot boxes"). Recursos que envolvam dinheiro ou transferência de pontos ficam bloqueados.
-- O responsável pode falar conosco a qualquer momento pelo **[E-MAIL DE CONTATO]** para pedir informações, revogar consentimentos ou excluir a conta.
+**3.2. Crianças e adolescentes.** O serviço não é destinado a menores de 13 anos. O tratamento de dados de crianças e adolescentes deve observar a legislação e o melhor interesse da pessoa menor de idade. Antes de publicar estes Termos, a FashionAI deve confirmar com assessoria jurídica e com a equipe do produto a faixa etária efetivamente admitida, os mecanismos de verificação de idade e, quando aplicáveis, autorização e supervisão por responsável, configurações protetivas e restrições a recursos. Não considere a simples criação de conta ou o aceite destes Termos como comprovação de autorização parental.
 
 **3.3. Capacidade.** Se você usa o FashionAI em nome de uma empresa (perfil Marca), declara que tem poderes para aceitar estes Termos em nome dela.
 
@@ -74,7 +70,7 @@ Contas de Marca e Celebridade só recebem selos de verificação depois da anál
 
 **5.1. O que é seu continua seu.** Fotos, looks, esquemas, comentários, textos e outras criações que você envia ("seu conteúdo") continuam sendo seus.
 
-**5.2. A licença que você nos dá.** Para o serviço funcionar, você nos concede uma licença **limitada, não exclusiva, gratuita, sem direito a sublicenciar (exceto aos fornecedores que operam o serviço por nós) e válida no mundo todo** para hospedar, armazenar, copiar, redimensionar, recortar, remover fundo, converter, exibir e processar seu conteúdo. Essa licença serve **apenas para operar, manter e melhorar o FashionAI**, e só pelo tempo necessário para isso. Não vendemos seu conteúdo e não o usamos em publicidade fora do app sem pedir sua permissão.
+**5.2. A licença que você nos dá.** Para prestar as funções que você solicitar, você nos concede uma licença **limitada, não exclusiva, gratuita, válida no mundo todo e sem direito de sublicenciar**, exceto aos fornecedores que atuam em nosso nome e apenas na medida necessária. Ela permite hospedar, armazenar, copiar, redimensionar, recortar, remover fundo, converter, exibir e processar seu conteúdo **para operar e manter o FashionAI e entregar a função solicitada**. Não vendemos seu conteúdo nem o usamos em publicidade fora do serviço. Treinamento ou avaliação de modelos de IA com seu conteúdo exige escolha separada, quando essa opção estiver disponível, e não decorre deste aceite.
 
 **5.3. Quando a licença acaba.** A licença termina quando você apaga o conteúdo ou exclui a conta. Ficam de fora:
 
@@ -82,7 +78,7 @@ Contas de Marca e Celebridade só recebem selos de verificação depois da anál
 - cópias de segurança temporárias, que são apagadas no ciclo normal de backups;
 - o que a lei nos obriga a guardar (veja a Política de Privacidade).
 
-**5.4. Treino de modelos de IA.** Só usamos suas fotos e correções para treinar ou avaliar modelos de visão computacional se você ativar o consentimento **"Treinamento de modelos de IA"**. Você pode desligar a qualquer momento.
+**5.4. Treinamento de modelos de IA.** O aceite destes Termos não autoriza treinamento de modelos com seu conteúdo. Esse uso exige consentimento específico, informado e revogável, solicitado separadamente antes do tratamento, quando a funcionalidade estiver disponível.
 
 **5.5. Você garante que pode publicar.** Ao enviar conteúdo, você declara que tem os direitos necessários, incluindo a autorização das pessoas que aparecem nas fotos, e que o conteúdo não viola direitos autorais (Lei 9.610/1998), de marca, de imagem ou de privacidade de ninguém.
 
@@ -108,7 +104,7 @@ Contas de Marca e Celebridade só recebem selos de verificação depois da anál
 
 **8.2. Meu Avatar 3D.** As fotos do rosto são processadas **no seu navegador**. O modelo e a textura do rosto só são salvos na sua conta com o seu **consentimento expresso**. A textura fica privada e você pode apagar o avatar quando quiser. O avatar só aparece na Passarela se você permitir.
 
-**8.3. Meu Quarto 3D.** O quarto e os itens comprados com FAI Points são licenças de uso dentro do app. Eles não são bens que você possa vender ou levar para fora do FashionAI.
+**8.3. Meu Quarto 3D.** O quarto e os itens resgatados com FAI Points são licenciados para uso dentro do app. Não podem ser vendidos, transferidos ou levados para fora do FashionAI, salvo se uma condição específica disser expressamente o contrário. As condições de disponibilidade, remoção e eventual restauração de itens devem ser consultadas na política comercial vigente.
 
 ## 9. Jogos, desafios e rankings
 
@@ -126,25 +122,25 @@ Contas de Marca e Celebridade só recebem selos de verificação depois da anál
 
 **10.3. Limites diários.** Cada ação tem um teto diário de pontos. Ao atingir o teto, a ação continua funcionando, mas não gera mais pontos naquele dia.
 
-**10.4. Mudança de regras.** Podemos ajustar a quantidade de pontos por ação, os tetos, os níveis e os preços da loja para manter o equilíbrio do programa. Mudanças relevantes serão avisadas no app. Itens que você já comprou continuam seus.
+**10.4. Mudança de regras.** Podemos ajustar a quantidade de pontos por ação, os tetos, os níveis e os custos em pontos dos itens, informando mudanças relevantes no app. Um resgate concluído não equivale a compra em dinheiro. Condições sobre continuidade, substituição ou remoção de itens resgatados devem ser informadas na política comercial aplicável; esta cláusula não elimina direitos garantidos por lei.
 
-**10.5. Estorno por fraude.** Pontos obtidos por fraude, erro técnico, abuso de falhas ou violação destes Termos podem ser **estornados**, junto com os itens comprados com eles.
+**10.5. Ajuste por fraude ou erro.** Pontos obtidos indevidamente por fraude, erro técnico ou exploração de falhas podem ser corrigidos após análise proporcional e comunicação do motivo, quando possível. Eventual remoção de item resgatado deve se limitar ao benefício irregular e permitir contestação, sem afastar direitos previstos em lei.
 
-**10.6. Fim da conta.** Ao excluir a conta, o saldo de pontos e os itens são perdidos e não geram reembolso de qualquer tipo.
+**10.6. Fim da conta.** Ao excluir a conta, o saldo de pontos não é convertido em dinheiro. A exclusão pode encerrar o acesso a itens digitais licenciados para uso na conta. Isso não afasta direitos legais relacionados a eventual compra paga, reembolso ou obrigação de retenção de dados.
 
-**10.7. Recursos futuros.** Se o FashionAI vier a permitir **conversão de pontos em valor monetário** ou **transferência de pontos entre usuários**, isso só acontecerá sob um aditivo próprio, os **"Termos do Programa FAI Points"**, com aceite separado. Esses recursos serão restritos a **maiores de 18 anos com identidade verificada**. Até lá, nada nestes Termos dá direito a conversão ou transferência. [validar com jurídico]
+**10.7. Recursos futuros.** Conversão de pontos em dinheiro, transferência de pontos entre usuários ou venda de pontos não estão autorizadas por estes Termos. Se algum desses recursos for lançado, dependerá de condições próprias, análise jurídica e aceite separado, quando exigido.
 
 ## 11. Cupons, marcas e itens únicos
 
-**11.1. Cupons.** Marcas podem oferecer cupons (por exemplo, como prêmio de desafios ou combinações do FLAIR). As regras de cada cupom, como validade, desconto e lojas aceitas, são definidas pela **marca emissora**, que é responsável por honrá-lo. O FashionAI apenas exibe e entrega o cupom.
+**11.1. Cupons.** Marcas podem oferecer cupons, inclusive como prêmio. Cada oferta deve informar emissor, validade, benefício, restrições, lojas participantes e canal de atendimento. A responsabilidade de cada parte depende de sua atuação concreta na oferta e não é afastada por estes Termos ou pela indicação de que o cupom foi emitido por terceiro.
 
 **11.2. Itens únicos de marcas e celebridades.** Marcas e celebridades podem oferecer itens únicos para o Meu Quarto e o estúdio, trocados por FAI Points. Quem oferece o item garante que tem os direitos sobre ele.
 
 **11.3. Compras em lojas externas.** Links para lojas levam a sites de terceiros. A compra é feita diretamente com a loja, sob as regras dela. O FashionAI não é parte dessa compra.
 
-## 12. Compras e assinaturas futuras
+## 12. Compras pagas e assinaturas
 
-Hoje o FashionAI é gratuito. Se no futuro oferecermos planos pagos, assinaturas ou compras dentro do app, eles seguirão **termos comerciais específicos**, mostrados antes da compra, com preço, renovação e forma de cancelamento. Compras feitas pela internet têm **direito de arrependimento de 7 dias** a partir da contratação ou do recebimento, com devolução dos valores pagos (art. 49 do Código de Defesa do Consumidor, Lei 8.078/1990). Para adolescentes, compras dependerão da autorização do responsável.
+Os FAI Points e os itens atualmente resgatados com eles não são compras pagas. Antes de habilitar qualquer compra em dinheiro, assinatura ou outra operação paga, a FashionAI deverá publicar condições comerciais específicas e apresentar, antes da confirmação, ao menos o fornecedor responsável, descrição e disponibilidade do produto ou serviço, preço total e cobranças recorrentes, forma de pagamento, prazo, regras de renovação e cancelamento, atendimento, reembolso e compatibilidade entre plataformas. Aplicam-se os direitos do consumidor, inclusive o direito de arrependimento quando previsto em lei; não se deve interpretar esta cláusula como limitação ou renúncia a direitos legais. Operações em lojas de terceiros também ficam sujeitas às regras obrigatórias da loja e à legislação aplicável.
 
 ## 13. Regras de convivência
 
@@ -174,14 +170,9 @@ Trabalhamos para manter o FashionAI no ar, mas ele pode ficar indisponível por 
 
 **15.1.** O FashionAI é oferecido como está, com os recursos descritos aqui. Respondemos pelos danos que causarmos, nos termos do Código de Defesa do Consumidor e demais leis aplicáveis.
 
-**15.2.** Na medida permitida pela lei, não respondemos por:
+**15.2.** A responsabilidade de cada parte será determinada conforme sua atuação e a legislação aplicável. Nada nesta seção exclui ou limita responsabilidade que não possa ser afastada por lei. Conteúdo de terceiros, indisponibilidade técnica e resultados de IA podem envolver limitações, mas isso não elimina deveres legais da FashionAI.
 
-- decisões de compra ou de estilo tomadas com base em sugestões de IA ou na prévia do provador;
-- conteúdo publicado por outros usuários, marcas ou celebridades, ressalvadas as obrigações de remoção previstas no Marco Civil da Internet (Lei 12.965/2014) e no ECA Digital;
-- cupons, produtos e serviços de lojas e marcas parceiras;
-- falhas causadas por uso indevido da conta, senha compartilhada ou violação destes Termos.
-
-**15.3.** Nada nestes Termos exclui direitos que o Código de Defesa do Consumidor garante a você. [validar com jurídico]
+**15.3.** Nada nestes Termos exclui direitos que o Código de Defesa do Consumidor ou outra norma aplicável garante a você.
 
 ## 16. Encerramento da conta
 
@@ -191,7 +182,7 @@ Trabalhamos para manter o FashionAI no ar, mas ele pode ficar indisponível por 
 
 ## 17. Mudanças nestes Termos
 
-Podemos atualizar estes Termos. Cada versão tem número e data. Se a mudança for relevante, avisaremos no app ou por e-mail e pediremos **novo aceite** antes que você continue usando o serviço. Versões anteriores ficam disponíveis mediante pedido.
+Podemos atualizar estes Termos. Cada versão terá número e data e ficará acessível para consulta. Mudanças relevantes serão comunicadas com antecedência razoável; quando necessário, solicitaremos novo aceite antes de oferecer as funcionalidades afetadas. A implantação desse novo aceite depende de suporte técnico no produto. Versões anteriores poderão ser solicitadas pelo canal de contato.
 
 ## 18. Lei aplicável e foro
 

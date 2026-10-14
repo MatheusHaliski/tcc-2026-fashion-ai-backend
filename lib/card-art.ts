@@ -1,3 +1,4 @@
+import { fashionPreset, type FashionPreset } from "@/lib/aura-fashion";
 import index from "@/lib/assets/card-art-index.json";
 import { CARD_SKINS } from "@/lib/skins";
 import { tr } from "@/lib/i18n/i18n";
@@ -25,6 +26,10 @@ const MOTIONS = { SNOW: "snow", PETALS: "petals", LEAVES: "leaves", SHIMMER: "sh
 /** Animação do segmento Cor gravada na arte ("SNOW", "PETALS"…); "NONE" ou desconhecida = sem animação. */
 export const motionOf = (a: unknown): CardArt["motion"] => (typeof a === "string" && a in MOTIONS ? MOTIONS[a as keyof typeof MOTIONS] : null);
 interface Studio {
+  compositionPreset?: FashionPreset | null;
+  border?: import("@/lib/card-border").CardBorderConfig | null;
+  auraMetamorphose?: string | null;
+  auraHype?: string | null;
   color?: string | null; gradient?: unknown; gradientPresetId?: string | null; seasonalPresetId?: string | null; seasonalAuto?: boolean;
   aura?: { variantId?: string; format?: string } | null; materialId?: string | null; aiArt?: { url?: string } | null; uploadUrl?: string | null;
   container?: { color?: string | null; ink?: string | null } | null; photo?: { url?: string | null } | null; skin?: string;
@@ -74,8 +79,8 @@ export function bundledAuraPresets(): AuraPresetOption[] {
       return { id: vid, code: v.code, theme: v.theme, static: { previewUrl: media(v.preview ?? v.card) } };
     }),
   }));
-  return [{ id: "aura_hype", name: "AURA Hype", archetype: "HypeScore visual", palette: ["#07152c", "#00d8ff", "#af57ff"], recommendedMaterials: [],
-    variants: [{ id: "aura_hype__scanner", code: "HYPE", theme: "Scanner", description: "Raio-X, pontos tech e mapa de regiões" }] }, ...indexed];
+  return [{ id: "aura_hype", name: tr("lib.cardArt.aura_hype"), archetype: "HypeScore visual", palette: ["#07152c", "#00d8ff", "#af57ff"], recommendedMaterials: [],
+    variants: [{ id: "aura_hype__scanner", code: "HYPE", theme: "Scanner", description: tr("lib.cardArt.aura_hype_descricao") }] }, ...indexed];
 }
 /** Animação da variante gravada como vídeo (MP4/WebM, ex.: Chrome Iridescent e Terracotta Dune com warp fluido). */
 const isVideo = (u?: string | null) => !!u && /\.(mp4|webm)(\?|$)/i.test(u);
@@ -152,9 +157,11 @@ function resolveLayers(bg?: Record<string, unknown> | null, opts?: { season?: st
   // camadas de imagem (a de cima vence): arte com IA / upload → AURA + material → AURA → material
   const ai = s.aiArt?.url; const upload = s.uploadUrl;
   if (ai || upload) return { ...art, kind: ai ? "ai" : "upload", image: media(ai ?? upload), label: ai ? tr("lib.cardArt.arte_com_ia") : tr("lib.cardArt.imagem_enviada") };
+  const curated = fashionPreset(s.compositionPreset);
+  if (curated) return { ...art, kind:"aura", image:curated.image, label:curated.name, presetId:curated.id };
   const variantId = auraVariantId(s.aura?.variantId);
   if (s.aura?.variantId?.startsWith("aura_hype")) {
-    return { ...art, kind: "aura", base: "linear-gradient(135deg, #07152c, #0d2e58 52%, #321450)", presetId: "aura_hype", animation: "shimmer", label: "AURA Hype · Scanner" };
+    return { ...art, kind: "aura", base: "linear-gradient(135deg, #07152c, #0d2e58 52%, #321450)", presetId: "aura_hype", animation: "shimmer", label: tr("lib.cardArt.aura_hype_scanner") };
   }
   const v = variantId ? ART_INDEX.variants[variantId] : undefined;
   const m = s.materialId ? ART_INDEX.materials[s.materialId] : undefined;

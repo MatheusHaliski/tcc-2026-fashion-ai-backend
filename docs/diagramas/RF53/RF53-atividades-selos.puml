@@ -24,13 +24,13 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF53 — Selos × HypeScore\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF53 — Selos × HypeScore\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
 :Abre /brands, /history, /brands/[slug];
 |Tela (Next.js)|
-:Carrega os dados da tela\nGET /api/pieces/seals\nGET /api/hype/method\nGET /api/me/daily-look-tab;
+:Carrega os dados da tela\nGET /api/pieces/seals\nGET /api/me/daily-look-tab\nGET /api/me/saved-looks;
 |Pessoa usuária|
 :Análise completa do Hype de um look;
 |Tela (Next.js)|
@@ -45,8 +45,8 @@ start
 |Pessoa usuária|
 if (Faz outra ação?) then (sim)
   switch (Qual?)
-  case (Recalibrar percentis do Hype Score)
-    :POST /api/admin/hype/recalibration\n→ AdminService.runJob\nusa: Guard.requireAdmin,\nHypeScoreService.recalibrate,\nInventoryScoreService.recomputeRankings …;
+  case (Recalcular o HypeScore v2 [atalho…)
+    :POST /api/admin/hype/recalibration\n→ AdminService.runJob\nusa: Guard.requireAdmin,\nInventoryScoreService.recomputeRankings,\nChallengeService.tick …;
   case (Prévia do look no editor: os seis…)
     :POST /api/schemes/scores\n→ LookPreviewService.scores\nvalida: NAO_AUTENTICADO, NAO_ENCONTRADO,\nPECAS_DEMAIS, PECA_DE_OUTRO_USUARIO …\nlê: wardrobe_items, style_dna, schemes …\nusa: LookScorer.context, LookScorer.hypeOf;
   case (Sugerir agrupamentos por similari…)

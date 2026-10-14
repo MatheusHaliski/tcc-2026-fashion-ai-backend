@@ -144,7 +144,7 @@ export function writePieceArt(prev: Record<string, unknown> | null | undefined, 
 }
 
 /** Campos do fundo artístico (Background Studio) dentro do config. */
-export const STUDIO_KEYS = ["auraHype", "color", "gradient", "gradientPresetId", "seasonalPresetId", "aura", "materialId", "aiArt", "uploadUrl", "animation", "posterUrl", "skin"] as const;
+export const STUDIO_KEYS = ["compositionPreset", "border", "auraMetamorphose", "auraHype", "color", "gradient", "gradientPresetId", "seasonalPresetId", "aura", "materialId", "aiArt", "uploadUrl", "animation", "posterUrl", "skin"] as const;
 export function studioPart(bg?: Record<string, unknown> | null): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const k of STUDIO_KEYS) if (bg && bg[k] !== undefined) out[k] = bg[k];

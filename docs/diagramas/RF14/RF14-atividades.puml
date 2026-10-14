@@ -24,11 +24,11 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF14 — Visualizar a aba 'Marcas' — Feed de Perfil de Marcas de roupa cadastradas dentro do sistema do FashionAI\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF14 — Visualizar a aba 'Marcas' — Feed de Perfil de Marcas de roupa cadastradas dentro do sistema do FashionAI\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /brands, /brands/[slug], /flair;
+:Abre /brands, /brands/[slug],\n/flair/cartas;
 |Tela (Next.js)|
 :Carrega os dados da tela\nGET /api/institutional/{slugOrId}\nGET /api/celebrities\nGET /api/institutional/{slugOrId}/tabs/{tab};
 |Pessoa usuária|
@@ -38,7 +38,7 @@ start
 |API (Spring Boot)|
 :ProfileController.brands\n→ InstitutionalService.brandFeed;
 |Dados e serviços|
-:Lê: brand_profiles\nstyle_dna\nseal_bonds\nfollows\nwardrobe_items;
+:Lê: brand_profiles\nstyle_dna\nfollows\nwardrobe_items\nschemes\nseals (+1);
 :Usa: HypeQueryService.groups;
 :IA: AFFINITY;
 |Tela (Next.js)|
@@ -47,7 +47,7 @@ start
 if (Faz outra ação?) then (sim)
   switch (Qual?)
   case (Marca edita seus dados institucio…)
-    :PATCH /api/me/brand-profile\n→ InstitutionalService.updateBrand\nvalida: URL_INVALIDA\nlê: brand_profiles, seal_bonds, follows\nusa: Guard.deny\ngrava: brand_profiles;
+    :PATCH /api/me/brand-profile\n→ InstitutionalService.updateBrand\nvalida: URL_INVALIDA\nlê: brand_profiles, follows, wardrobe_items …\nusa: Guard.deny\ngrava: brand_profiles;
   endswitch
   |Tela (Next.js)|
   :Atualiza a tela;

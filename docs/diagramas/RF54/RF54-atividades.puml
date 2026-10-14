@@ -24,7 +24,7 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF54 — FashionAI Lens (MVP)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF54 — FashionAI Lens (MVP)\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
@@ -72,7 +72,9 @@ if (Faz outra ação?) then (sim)
   note right
   Outras ações deste RF:
   Recriar o look com as suas pe…, 'Eu tenho': liga a
-  uma peça s…, 'Quero' (lista de desejos das…
+  uma peça s…, 'Quero' (lista de desejos das…,
+  Rascunho de uma peça da foto…, Cópia da peça por
+  IA: recria…, Várias peças numa foto: a IA…
   end note
   |Tela (Next.js)|
   :Atualiza a tela;

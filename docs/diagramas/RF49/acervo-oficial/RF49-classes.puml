@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF49 — Acervo oficial em escala\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF49 — Acervo oficial em escala\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "lib/api/catalog.ts" {
   class CatalogProduct as "CatalogProduct" <<interface>> {
@@ -34,7 +34,7 @@ package "lib/api/catalog.ts" {
     +colorName: string | null
     +colorHex: string | null
     +material: string | null
-    .. +17 ..
+    .. +18 ..
   }
   class MatchScore as "MatchScore" <<interface>> {
     +total: number
@@ -55,6 +55,43 @@ package "lib/api/catalog.ts" {
     +code: string | null
     +sku: string | null
   }
+  class CatalogProductImage as "CatalogProductImage" <<interface>> {
+    +id: string
+    +url: string
+    +type: string
+    +primary: boolean
+    +provenance: ImageProvenance
+    +sourceUrl: string
+    +processedUrl: string | null
+    +viewType: string
+    +canonical: boolean
+    +viewRole: string | null
+    .. +2 ..
+  }
+  class CatalogCardImage as "CatalogCardImage" <<interface>> {
+    +url: string
+    +sourceUrl: string | null
+    +mode: 'SEMANTIC_CROP' | 'PROCESSED'
+    +crop: NormRect | null
+    +background: string | null
+    +aspect: string | null
+    +thumbnailUrl: string | null
+    +imageId: string
+    +qualityScore: number | null
+    +pipelineVersion: string | null
+  }
+  class BrowseParams as "BrowseParams" <<interface>> {
+    +code: string
+    +color: string
+    +gender: string
+    +category: string
+    +subcategory: string
+    +brand: string
+    +brandId: string
+    +q: string
+    +page: number
+    +size: number
+  }
   class DesignTraits as "DesignTraits" <<interface>> {
     +pattern: string | null
     +logoPlacement: string | null
@@ -65,6 +102,16 @@ package "lib/api/catalog.ts" {
     +anyColors: string[]
     +source: 'LOCAL' | 'AI' | 'CATALOG'
   }
+  class BrowseResponse as "BrowseResponse" <<interface>> {
+    +canSearchOfficial: boolean
+    +items: CatalogProduct[]
+    +page: number
+    +size: number
+    +total: number
+    +hasMore: boolean
+    +brandKnown: boolean
+    +brand: CatalogBrandRef | null
+  }
   class ImageProvenance as "ImageProvenance" <<interface>> {
     +sourceType: string
     +sourceDomain: string
@@ -73,37 +120,6 @@ package "lib/api/catalog.ts" {
     +retrievedAt: string
     +lastVerifiedAt: string
     +usage: string
-  }
-  class SearchIntent as "SearchIntent" <<interface>> {
-    +brand: string | null
-    +brandKnown: boolean
-    +category: string | null
-    +subcategory: string | null
-    +keywords: string[]
-    +color: string | null
-    +design: DesignTraits | null
-  }
-  class SearchResponse as "SearchResponse" <<interface>> {
-    +intent: SearchIntent
-    +results: CatalogProduct[]
-    +total: number
-    +enoughInput: boolean
-    +canSearchOfficial: boolean
-    +message: string | null
-  }
-  class SearchParams as "SearchParams" <<interface>> {
-    +category: string
-    +subcategory: string
-    +brand: string
-    +q: string
-    +color: string
-    +limit: number
-  }
-  class CatalogBrandRef as "CatalogBrandRef" <<interface>> {
-    +id: string
-    +name: string
-    +slug: string
-    +logoUrl: string | null
   }
   class mod_catalog_ts as "catalog.ts" <<módulo>> {
     +enoughToSearch()
@@ -133,10 +149,12 @@ package "app/(site)/(app)/search/page.tsx" {
     +nextCursor: string | null
     +empty: { message?: string; alternatives?: stri…
     +engine: string
+    +total: number
   }
   enum Tab as "Tab" {
     LOOKS
     PECAS
+    ACERVO
     PESSOAS
     MARCAS
     CELEBRIDADES
@@ -165,29 +183,29 @@ package "Backend (Java)" {
     +setTextInterpreter()
     +resolve()
     +search()
-    +orderScore()
-    +patternTerms()
-    +rank()
+    +browse()
+    +parseUuid()
+    +summary()
   }
   class CatalogController <<controller>> {
     +search()
     +suggestions()
     +brands()
     +stores()
+    +browse()
+    +summary()
     +product()
-    +discover()
-    +fromCatalog()
+    +previewImage()
   }
 }
 CatalogController --> CatalogService
-CatalogProduct --> CatalogBrandRef : brand
+BrowseResponse --> CatalogProduct : items
+CatalogProduct --> CatalogCardImage : catalogImage
+CatalogProduct --> CatalogProductImage : images
 CatalogProduct --> CatalogVariant : selectedVariant
 CatalogProduct --> CatalogVariant : variants
 CatalogProduct --> DesignTraits : design
 CatalogProduct --> ImageProvenance : imageSource
-CatalogProduct --> ImageProvenance : images
 CatalogProduct --> MatchScore : matchScore
-SearchIntent --> DesignTraits : design
-SearchResponse --> CatalogProduct : results
-SearchResponse --> SearchIntent : intent
+CatalogProductImage --> ImageProvenance : provenance
 @enduml
