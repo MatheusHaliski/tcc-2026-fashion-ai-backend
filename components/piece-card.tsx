@@ -17,7 +17,6 @@ import { ArtStage, artSurfaceProps } from "@/components/piece-art";
 import { readPieceArt } from "@/lib/piece-art";
 import { CardHeader } from "@/components/card-header";
 import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "@/components/fashion-card";
-import { AuraHype } from "@/components/hype/aura-hype";
 import { useTheme } from "@/lib/theme/theme";
 import { HypeBadge } from "@/components/hype/hype-badge";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
@@ -25,16 +24,16 @@ import { AuraHype } from "@/components/hype/aura-hype";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { hypeViewState } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
-import { CatalogPhoto, pieceCatalogCrop, piecePhotoAspect } from "@/components/catalog/catalog-photo";
+import { CatalogPhoto, pieceCatalogCrop, pieceCatalogSource, piecePhotoAspect } from "@/components/catalog/catalog-photo";
 
 /**
  * Imagem da peça para o card: a foto do feed (na proporção da categoria) quando existe; senão a
  * miniatura/foto de estúdio (preenchendo o quadro); sem estúdio, o recorte inteiro, contido com respiro.
  */
 export function pieceCardImage(piece: PieceView): { src?: string; srcSet?: string; cover: boolean } {
-  const studio = mediaUrl(piece.studioFeedUrl ?? piece.studioThumbUrl ?? piece.studioImageUrl);
+  const studio = [piece.studioFeedUrl, piece.studioThumbUrl, piece.studioImageUrl].map(url => mediaUrl(url?.trim())).find(Boolean);
   if (studio) return { src: studio, cover: true };
-  const raw = piece.thumbnailUrl ?? piece.imageUrl;
+  const raw = piece.thumbnailUrl?.trim() || piece.imageUrl?.trim();
   return { src: thumbUrl(raw, 640), srcSet: thumbSrcSet(raw), cover: false };
 }
 
@@ -56,7 +55,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   flip?: boolean;
 }) {
   const detail = useDetailModal();
-  const { t, fmtMoney } = useI18n(); const { user, me } = useAuth();
+  const { t, fmtMoney } = useI18n(); const { user } = useAuth();
   const preview = href === "#";
   const flippable = flip && !preview && !selectable;
   const { prefs } = useTheme();
@@ -74,7 +73,6 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   // sem foto de estúdio, a peça do catálogo mostra a foto oficial com o mesmo recorte do card da busca
   const crop = piece.studioFeedUrl || piece.studioThumbUrl || piece.studioImageUrl ? null : pieceCatalogCrop(piece);
   const art = readPieceArt(piece.background);
-  const auraHype = !!me?.auraHypeEnabled || String((piece.background?.aura as { variantId?: string } | undefined)?.variantId ?? "").startsWith("aura_hype");
   const surface = artSurfaceProps(piece.background, art, "compact");
   const skin = (piece.background?.skin as string | undefined) ?? null;
   const mine = !!user && piece.owner?.id === user.id;
@@ -87,7 +85,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
     : <span>{subcategoryLabel(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>;
   const media = (
     <>
-      {crop ? <CatalogPhoto image={crop} alt="" /> : img.src ? <MediaImage src={img.src} srcSet={img.srcSet} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
+      {crop ? <CatalogPhoto image={crop} alternatives={[piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} alt="" /> : img.src ? <MediaImage src={img.src} srcSet={img.srcSet} fallbackSources={[piece.studioFeedUrl, piece.studioThumbUrl, piece.studioImageUrl, piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
       {auraEnabled && <AuraHype state={hypeState} mode={auraMode} preview={preview} />}
       {(zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
       {(!piece.disponivel || piece.forDonation || (mine && piece.favorite) || piece.aiGeneratedImage) && (
