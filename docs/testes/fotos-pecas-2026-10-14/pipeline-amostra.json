@@ -1,0 +1,59 @@
+[
+  {
+    "brand": "Vans",
+    "category": "shoes_piece",
+    "subcategory": "casual_sneakers",
+    "outcome": "REJECTED",
+    "reasons": [
+      "IMAGE_TOO_SMALL"
+    ],
+    "frameOk": true,
+    "frameReason": null,
+    "target": "whole_shoe",
+    "crop": {
+      "x": 0.0364,
+      "y": 0.0424,
+      "w": 0.9372,
+      "h": 0.9972
+    }
+  },
+  {
+    "brand": "Columbia",
+    "category": "upper_piece",
+    "subcategory": "shirt",
+    "outcome": "NEEDS_REPROCESSING",
+    "reasons": [
+      "HUMAN_PRESENT",
+      "LOW_SEGMENTATION",
+      "PRODUCT_TRUNCATED_IN_SOURCE",
+      "FRAMING_RULE_NOT_MET"
+    ],
+    "frameOk": true,
+    "frameReason": null,
+    "target": "neckline_top",
+    "crop": {
+      "x": 0.3576,
+      "y": 0.3406,
+      "w": 0.2953,
+      "h": 0.375
+    }
+  },
+  {
+    "brand": "Arezzo",
+    "category": "shoes_piece",
+    "subcategory": "boots",
+    "outcome": "REJECTED",
+    "reasons": [
+      "IMAGE_TOO_SMALL"
+    ],
+    "frameOk": true,
+    "frameReason": null,
+    "target": "whole_shoe",
+    "crop": {
+      "x": 0.1062,
+      "y": 0.2256,
+      "w": 0.8015,
+      "h": 0.7916
+    }
+  }
+]

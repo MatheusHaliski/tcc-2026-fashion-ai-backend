@@ -17,23 +17,23 @@ import { ArtStage, artSurfaceProps } from "@/components/piece-art";
 import { readPieceArt } from "@/lib/piece-art";
 import { CardHeader } from "@/components/card-header";
 import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "@/components/fashion-card";
-import { AuraHype } from "@/components/hype/aura-hype";
 import { useTheme } from "@/lib/theme/theme";
 import { HypeBadge } from "@/components/hype/hype-badge";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
+import { AuraHype } from "@/components/hype/aura-hype";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { hypeViewState } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
-import { CatalogPhoto, pieceCatalogCrop, piecePhotoAspect } from "@/components/catalog/catalog-photo";
+import { CatalogPhoto, pieceCatalogCrop, pieceCatalogSource, piecePhotoAspect } from "@/components/catalog/catalog-photo";
 
 /**
  * Imagem da peça para o card: a foto do feed (na proporção da categoria) quando existe; senão a
  * miniatura/foto de estúdio (preenchendo o quadro); sem estúdio, o recorte inteiro, contido com respiro.
  */
 export function pieceCardImage(piece: PieceView): { src?: string; srcSet?: string; cover: boolean } {
-  const studio = mediaUrl(piece.studioFeedUrl ?? piece.studioThumbUrl ?? piece.studioImageUrl);
+  const studio = [piece.studioFeedUrl, piece.studioThumbUrl, piece.studioImageUrl].map(url => mediaUrl(url?.trim())).find(Boolean);
   if (studio) return { src: studio, cover: true };
-  const raw = piece.thumbnailUrl ?? piece.imageUrl;
+  const raw = piece.thumbnailUrl?.trim() || piece.imageUrl?.trim();
   return { src: thumbUrl(raw, 640), srcSet: thumbSrcSet(raw), cover: false };
 }
 
@@ -85,7 +85,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
     : <span>{subcategoryLabel(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>;
   const media = (
     <>
-      {crop ? <CatalogPhoto image={crop} alt="" /> : img.src ? <MediaImage src={img.src} srcSet={img.srcSet} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
+      {crop ? <CatalogPhoto image={crop} alternatives={[piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} alt="" /> : img.src ? <MediaImage src={img.src} srcSet={img.srcSet} fallbackSources={[piece.studioFeedUrl, piece.studioThumbUrl, piece.studioImageUrl, piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
       {auraEnabled && <AuraHype state={hypeState} mode={auraMode} preview={preview} />}
       {(zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
       {(!piece.disponivel || piece.forDonation || (mine && piece.favorite) || piece.aiGeneratedImage) && (

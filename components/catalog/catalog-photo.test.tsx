@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
 import { fireEvent, render } from "@testing-library/react";
-import { CatalogPhoto, pieceCatalogCrop, semanticCropStyle, photoAspect, piecePhotoAspect } from "./catalog-photo";
+import { CatalogPhoto, pieceCatalogCrop, pieceCatalogSource, semanticCropStyle, photoAspect, piecePhotoAspect } from "./catalog-photo";
+import { mediaUrl } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 
 describe("semanticCropStyle", () => {
@@ -43,7 +44,7 @@ describe("CatalogPhoto sem foto quebrada", () => {
     const { container } = render(<CatalogPhoto alt="Camiseta" image={{ url: "/media/catalog/card.webp", mode: "PROCESSED" }}
       fallbackUrl="/media/catalog/card.webp" alternatives={["https://img.brand.com/original.jpg", null]} placeholder={<span data-testid="glyph" />} />);
     const img = () => container.querySelector("img");
-    expect(img()?.getAttribute("src")).toBe("/media/catalog/card.webp");
+    expect(img()?.getAttribute("src")).toBe(mediaUrl("/media/catalog/card.webp"));
     fireEvent.error(img()!);
     expect(img()?.getAttribute("src")).toBe("https://img.brand.com/original.jpg");
     fireEvent.error(img()!);
@@ -88,5 +89,34 @@ describe("proporção do recorte de tecido", () => {
     expect(piecePhotoAspect(piece)).toBe("2 / 1");
     expect(piecePhotoAspect({ ...piece, imageUrl: "my-photo.jpg" })).toBe("4 / 5");
     expect(piecePhotoAspect({ ...piece, studioFeedUrl: "studio.feed.jpg" })).toBe("4 / 5");
+  });
+});
+
+
+describe("CatalogPhoto transporte de mídia", () => {
+  it("resolve a imagem processada e alternativas /media no backend", () => {
+    const { container } = render(<CatalogPhoto alt="Peça" image={{ url: "/media/catalog/card.webp", mode: "PROCESSED" }} alternatives={["/media/catalog/original.jpg"]} />);
+    expect(container.querySelector("img")?.getAttribute("src")).toBe(mediaUrl("/media/catalog/card.webp"));
+    fireEvent.error(container.querySelector("img")!);
+    expect(container.querySelector("img")?.getAttribute("src")).toBe(mediaUrl("/media/catalog/original.jpg"));
+  });
+  it("resolve também o recorte semântico sem alterar o enquadramento", () => {
+    const { container } = render(<CatalogPhoto alt="Peça" image={{ url: "/media/catalog/original.jpg", mode: "SEMANTIC_CROP", crop: { x: 0, y: 0, w: 1, h: 1 } }} />);
+    expect(container.querySelector("img")?.getAttribute("src")).toBe(mediaUrl("/media/catalog/original.jpg"));
+    expect(container.querySelector("[data-mode=semantic-crop]")).not.toBeNull();
+  });
+});
+
+
+describe("foto oficial preservada", () => {
+  it("recupera um master indisponível pela origem oficial sem precisar de alternativas extras", () => {
+    const { container } = render(<CatalogPhoto alt="Peça" image={{ url: "/media/missing.webp", sourceUrl: "https://brand.example/original.jpg", mode: "PROCESSED" }} />);
+    fireEvent.error(container.querySelector("img")!);
+    expect(container.querySelector("img")?.getAttribute("src")).toBe("https://brand.example/original.jpg");
+  });
+  it("não reutiliza a origem oficial depois que o usuário troca a foto", () => {
+    const piece = { imageUrl: "master.webp", flatLayMetadata: { catalogImage: { url: "master.webp", sourceUrl: "official.jpg" } } } as unknown as PieceView;
+    expect(pieceCatalogSource(piece)).toBe("official.jpg");
+    expect(pieceCatalogSource({ ...piece, imageUrl: "user.jpg" })).toBeUndefined();
   });
 });

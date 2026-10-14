@@ -14,6 +14,7 @@ export interface Me {
   deletionScheduledFor?: string | null; lookDoDiaPanelVersion?: string;
   /** RF1 — sexo do manequim (Passarela 3D / provador) e saída da Passarela 3D. */
   sex?: "FEMININO" | "MASCULINO" | null; runwayOptOut?: boolean; pronouns?: string | null; links?: { title: string; url: string }[]; [k: string]: unknown;
+  auraHypeEnabled?: boolean;
 }
 export interface Counters { likes: number; comments: number; shares: number; remixes: number; views: number; saves: number; reactions: Record<string, number>; }
 export interface ViewerState { liked: boolean; reactions: string[]; saved: boolean; canEdit: boolean; following: boolean; }

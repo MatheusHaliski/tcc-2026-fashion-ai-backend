@@ -67,13 +67,15 @@ export interface AuraPresetOption {
   variants: { id: string; code?: string; theme?: string; description?: string; static?: { previewUrl?: string } }[];
 }
 export function bundledAuraPresets(): AuraPresetOption[] {
-  return Object.entries(ART_INDEX.presets).map(([id, p]) => ({
+  const indexed = Object.entries(ART_INDEX.presets).map(([id, p]) => ({
     id, name: p.name, archetype: p.archetype ?? undefined, palette: p.palette, recommendedMaterials: p.recommendedMaterials,
     variants: p.variants.filter((vid) => ART_INDEX.variants[vid]).map((vid) => {
       const v = ART_INDEX.variants[vid];
       return { id: vid, code: v.code, theme: v.theme, static: { previewUrl: media(v.preview ?? v.card) } };
     }),
   }));
+  return [{ id: "aura_hype", name: "AURA Hype", archetype: "HypeScore visual", palette: ["#07152c", "#00d8ff", "#af57ff"], recommendedMaterials: [],
+    variants: [{ id: "aura_hype__scanner", code: "HYPE", theme: "Scanner", description: "Raio-X, pontos tech e mapa de regiões" }] }, ...indexed];
 }
 /** Animação da variante gravada como vídeo (MP4/WebM, ex.: Chrome Iridescent e Terracotta Dune com warp fluido). */
 const isVideo = (u?: string | null) => !!u && /\.(mp4|webm)(\?|$)/i.test(u);
@@ -151,6 +153,9 @@ function resolveLayers(bg?: Record<string, unknown> | null, opts?: { season?: st
   const ai = s.aiArt?.url; const upload = s.uploadUrl;
   if (ai || upload) return { ...art, kind: ai ? "ai" : "upload", image: media(ai ?? upload), label: ai ? tr("lib.cardArt.arte_com_ia") : tr("lib.cardArt.imagem_enviada") };
   const variantId = auraVariantId(s.aura?.variantId);
+  if (s.aura?.variantId?.startsWith("aura_hype")) {
+    return { ...art, kind: "aura", base: "linear-gradient(135deg, #07152c, #0d2e58 52%, #321450)", presetId: "aura_hype", animation: "shimmer", label: "AURA Hype · Scanner" };
+  }
   const v = variantId ? ART_INDEX.variants[variantId] : undefined;
   const m = s.materialId ? ART_INDEX.materials[s.materialId] : undefined;
   if (v) {

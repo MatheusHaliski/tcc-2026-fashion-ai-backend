@@ -1,0 +1,132 @@
+[
+  {
+    "brand": "Vans",
+    "url": "https://secure-static.vans.com.br/medias/sys_master/vans/vans/h88/h1d/h00/h00/12847064481822/Thumbnail-Vans-V1002000690002-01.jpg",
+    "status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 14094,
+    "result": "DECODABLE",
+    "format": "JPEG",
+    "size": [
+      399,
+      500
+    ]
+  },
+  {
+    "brand": "Banana Republic",
+    "url": "https://bananarepublic.gap.com/webcontent/0057/197/835/cn57197835.jpg",
+    "status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 48973,
+    "result": "DECODABLE",
+    "format": "JPEG",
+    "size": [
+      520,
+      693
+    ]
+  },
+  {
+    "brand": "Calvin Klein",
+    "url": "https://calvinklein.vtexassets.com/arquivos/ids/1025547/CKJF05_0987_2-CAMISETA-CKJ-FEM-M-C-ESSENTIALS-GOLA-V.jpg?v=639039321920800000",
+    "status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 60930,
+    "result": "DECODABLE",
+    "format": "JPEG",
+    "size": [
+      758,
+      1000
+    ]
+  },
+  {
+    "brand": "Gap",
+    "url": "https://www.gap.com/webcontent/0062/707/559/cn62707559.jpg",
+    "status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 34955,
+    "result": "DECODABLE",
+    "format": "JPEG",
+    "size": [
+      520,
+      693
+    ]
+  },
+  {
+    "brand": "Diesel",
+    "url": "https://diesel.com/on/demandware.static/-/Sites-diesel-master-catalog/default/dwa574f137/images/large/A25987_007FZ_01_C.jpg",
+    "status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 326428,
+    "result": "DECODABLE",
+    "format": "JPEG",
+    "size": [
+      2000,
+      3000
+    ]
+  },
+  {
+    "brand": "Armani",
+    "url": "https://assets-cf.armani.com/image/upload/v1776366725/8NZT74_ZJA5Z_1100_F_FW2026.jpg",
+    "status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 1346618,
+    "result": "DECODABLE",
+    "format": "JPEG",
+    "size": [
+      3840,
+      4800
+    ]
+  },
+  {
+    "brand": "J.Crew",
+    "url": "https://www.jcrew.com/s7-img-facade/CG208_EB1286",
+    "status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 345683,
+    "result": "DECODABLE",
+    "format": "JPEG",
+    "size": [
+      2000,
+      2000
+    ]
+  },
+  {
+    "brand": "Animale",
+    "url": "https://lojaanimale.vtexassets.com/arquivos/ids/1366023/25030339_24357_1-BERMUDA-DE-SARJA-ESTAMPADA-ONCA-BRUSH.jpg?v=637777793662870000",
+    "status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 328033,
+    "result": "DECODABLE",
+    "format": "JPEG",
+    "size": [
+      1900,
+      2850
+    ]
+  },
+  {
+    "brand": "Columbia",
+    "url": "https://media.columbia.com/i/columbia/1011621_009_f_om",
+    "status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 431231,
+    "result": "DECODABLE",
+    "format": "JPEG",
+    "size": [
+      3000,
+      3150
+    ]
+  },
+  {
+    "brand": "Arezzo",
+    "url": "https://secure-static.arezzo.com.br/medias/sys_master/arezzo/arezzo/h8b/hdf/h00/h00/10642310234142/HEADLESS-0303465800012U-01-BASEIMAGE-Thumbnail-Headless.jpg",
+    "status": 200,
+    "content_type": "image/jpeg",
+    "bytes": 10583,
+    "result": "DECODABLE",
+    "format": "JPEG",
+    "size": [
+      360,
+      486
+    ]
+  }
+]

@@ -1,6 +1,6 @@
 {
   "applied": true,
-  "generated_at": "2026-10-13T22:04:22.362307+00:00",
+  "generated_at": "2026-10-13T23:22:33.486579+00:00",
   "before": {
     "products": 13058,
     "brands": 79,
@@ -1545,7 +1545,7 @@
         "duplicates_found": 0,
         "errors": 0
       },
-      "shortfall": 1
+      "shortfall": 5
     },
     "cos": {
       "name": "COS",

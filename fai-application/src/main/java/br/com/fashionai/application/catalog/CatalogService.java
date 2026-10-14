@@ -368,6 +368,7 @@ public class CatalogService {
 
     private static boolean usable(CatalogImage i) {
         return i.getUsageStatus() != br.com.fashionai.domain.model.enums.CatalogImageUsage.REJECTED
+                && !"REJECTED".equals(i.getReviewStatus())
                 && i.getImageUrl() != null && !i.getImageUrl().isBlank();
     }
 
