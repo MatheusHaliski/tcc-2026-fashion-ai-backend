@@ -100,7 +100,8 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   // o acervo inteiro, paginado: sem texto digitado, marca/categoria/tipo escolhidos (ou "ver todo o acervo") percorrem
   // TODAS as peças, em páginas de 48, com o total real do banco — não as 24 mais parecidas da busca ranqueada
   const [acervo, setAcervo] = useState<{ items: CatalogProduct[]; total: number; page: number; hasMore: boolean; brandKnown?: boolean; canSearchOfficial?: boolean } | null>(null);
-  const [acervoLoading, setAcervoLoading] = useState(false);
+  // na matriz o acervo carrega ao abrir: o esqueleto já entra no primeiro desenho, sem empurrar o que vem abaixo (CLS)
+  const [acervoLoading, setAcervoLoading] = useState(resultsLayout === "matrix");
   const [showAll, setShowAll] = useState(false);
   // "Ver todas" depois de uma busca com texto: o acervo inteiro com aquelas palavras, não só as mais parecidas
   const [allForText, setAllForText] = useState(false);
@@ -372,11 +373,11 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
       {brandGrid && (
         <section className="catalog-brand-grid" aria-labelledby="cs-stores" aria-busy={stores.loading}>
           <p id="cs-stores" className="label catalog-brand-heading">{t("catalog.marcas_do_catalogo", { n: storeList.length })}</p>
-          {!stores.loading && stores.data && <p className="type-caption text-muted" role="status">{t("catalog.grade_total", { count: brandGridTotal, category: category ? CATEGORY_LABEL[category] ?? label(category) : t("tryOn.tudo") })}</p>}
+          <p className="type-caption text-muted" role="status">{!stores.loading && stores.data ? t("catalog.grade_total", { count: brandGridTotal, category: category ? CATEGORY_LABEL[category] ?? label(category) : t("tryOn.tudo") }) : "\u00a0"}</p>
           <div className="catalog-brand-stage">
             {stores.loading ? <Skeleton className="h-full" /> : storesShown.length ? (
               <>
-                <CatalogBrandGrid stores={visibleStores} selected={brand} category={category} labelledBy="cs-stores" onPick={pickStore} />
+                <CatalogBrandGrid stores={visibleStores} selected={brand} category={category} labelledBy="cs-stores" onPick={pickStore} pageSize={BRAND_PAGE_SIZE} />
                 {brandPageCount > 1 && <Pagination page={brandPage} hasMore={brandPage < brandPageCount - 1} onPage={setBrandPage} total={storesShown.length} size={BRAND_PAGE_SIZE} />}
               </>
             ) : <p className="type-caption text-muted">{brand.trim() ? t("catalog.nenhuma_marca_com", { q: brand.trim() }) : t("tryOn.sem_lojas")}</p>}

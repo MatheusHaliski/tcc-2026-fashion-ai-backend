@@ -79,8 +79,8 @@ export function bundledAuraPresets(): AuraPresetOption[] {
       return { id: vid, code: v.code, theme: v.theme, static: { previewUrl: media(v.preview ?? v.card) } };
     }),
   }));
-  return [{ id: "aura_hype", name: "AURA Hype", archetype: "HypeScore visual", palette: ["#07152c", "#00d8ff", "#af57ff"], recommendedMaterials: [],
-    variants: [{ id: "aura_hype__scanner", code: "HYPE", theme: "Scanner", description: "Raio-X, pontos tech e mapa de regiões" }] }, ...indexed];
+  return [{ id: "aura_hype", name: tr("lib.cardArt.aura_hype"), archetype: "HypeScore visual", palette: ["#07152c", "#00d8ff", "#af57ff"], recommendedMaterials: [],
+    variants: [{ id: "aura_hype__scanner", code: "HYPE", theme: "Scanner", description: tr("lib.cardArt.aura_hype_descricao") }] }, ...indexed];
 }
 /** Animação da variante gravada como vídeo (MP4/WebM, ex.: Chrome Iridescent e Terracotta Dune com warp fluido). */
 const isVideo = (u?: string | null) => !!u && /\.(mp4|webm)(\?|$)/i.test(u);
@@ -161,7 +161,7 @@ function resolveLayers(bg?: Record<string, unknown> | null, opts?: { season?: st
   if (curated) return { ...art, kind:"aura", image:curated.image, label:curated.name, presetId:curated.id };
   const variantId = auraVariantId(s.aura?.variantId);
   if (s.aura?.variantId?.startsWith("aura_hype")) {
-    return { ...art, kind: "aura", base: "linear-gradient(135deg, #07152c, #0d2e58 52%, #321450)", presetId: "aura_hype", animation: "shimmer", label: "AURA Hype · Scanner" };
+    return { ...art, kind: "aura", base: "linear-gradient(135deg, #07152c, #0d2e58 52%, #321450)", presetId: "aura_hype", animation: "shimmer", label: tr("lib.cardArt.aura_hype_scanner") };
   }
   const v = variantId ? ART_INDEX.variants[variantId] : undefined;
   const m = s.materialId ? ART_INDEX.materials[s.materialId] : undefined;

@@ -12,11 +12,13 @@ export function storeCount(store: Store, category?: string): number {
   return store.categories?.includes(category) ? store.catalogProducts : 0;
 }
 /** Shared clickable brand matrix for the fitting room and catalog piece creator. */
-export function CatalogBrandGrid({ stores, selected, category, label, labelledBy, onPick }: {
+export function CatalogBrandGrid({ stores, selected, category, label, labelledBy, onPick, pageSize = 8 }: {
   stores: Store[]; selected: string; category?: string; label?: string; labelledBy?: string; onPick: (store: Store) => void;
+  /** marcas por página; a busca do catálogo já pagina por fora e passa o tamanho da página dela */
+  pageSize?: number;
 }) {
   const { t } = useI18n();
-  const size = 8;
+  const size = pageSize;
   const [page, setPage] = useState(0);
   const key = stores.map(store => store.brandId).join("|") + (category ?? "");
   useEffect(() => { setPage(0); }, [key]);
