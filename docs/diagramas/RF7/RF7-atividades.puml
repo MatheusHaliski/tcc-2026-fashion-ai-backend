@@ -24,11 +24,11 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /schemes/[id]/edit, /schemes/new;
+:Abre /dna-schemes/[id]/edit,\n/dna-schemes/new, /dna;
 |Tela (Next.js)|
 :Carrega os dados da tela\nGET /api/schemes/{id}\nGET /api/me/closet\nGET /api/users/{ownerId}/closet;
 |Pessoa usuária|
@@ -52,7 +52,7 @@ endif
 if (Faz outra ação?) then (sim)
   switch (Qual?)
   case (Editar a peça)
-    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
+    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.piece\nevento: PieceUpdated;
   case (Excluir a peça)
     :DELETE /api/pieces/{id}\n→ WardrobeService.delete\nlê: wardrobe_items, scheme_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.removePiece …\nestado: availabilityStatus → ARCHIVED, disponivel →\nfalse, visibility → PRIVATE;
   case (Excluir o look [menu ⋯ do dono];…)
@@ -66,7 +66,8 @@ if (Faz outra ação?) then (sim)
   Outras ações deste RF:
   Favoritar, marcar disponível/…, Editar esquema,
   Salvar esquema (manual, IA, a…, Cadastrar a peça a
-  partir do…, Favoritar / marcar disponibil…
+  partir do…, Explorar — Adicionar uma peça…,
+  Favoritar / marcar disponibil…
   end note
   |Tela (Next.js)|
   :Atualiza a tela;

@@ -24,50 +24,36 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title Pipeline atual de roupas 3D (provador, espelho, vitrines, passarela) — 2026-10-05\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title Pipeline atual de roupas 3D (provador, espelho, vitrines, passarela) — 2026-10-05\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
 |Lógica no navegador (lib)|
-partition "lib/avatar3d/human/asset.ts · loadBodyAsset()" {
-  if (!r.ok?) then (sim)
-    :lança erro;
-    stop
-  endif
-  if (!r.ok?) then (sim)
-    :lança erro;
-    stop
-  endif
-  if (meta.format !== BODY_FORMAT?) then (sim)
-    :lança erro;
-    stop
-  endif
-  if (!s || s.type !== type?) then (sim)
-    :lança erro;
-    stop
-  endif
+partition "lib/tryon/garment-asset.ts · garmentContract()" {
+  :kindOf()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :specFor(), fitClassOf()\n<size:10>lib/avatar3d/human/garment-fit.ts</size>;
 }
 |Lógica no navegador (lib)|
 partition "lib/avatar3d/human/garments.ts · kindOf()" {
+  if (SUBCATEGORY_KINDS[sub]?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  if (words.some[[w] => BAG_WORDS.has[w] || w.endsWith[…?) then (sim)
+    :encerra este passo;
+    stop
+  endif
   if (is['legging'?) then (sim)
     :encerra este passo;
     stop
   endif
-  if (is['skirt', 'saia'] && !is['short'?) then (sim)
-    :encerra este passo;
-    stop
-  endif
-  if (is['short', 'bermuda'?) then (sim)
-    :encerra este passo;
-    stop
-  endif
-  if (is['pant', 'jean', 'trouser', 'calca', 'calça', '…?) then (sim)
+  if (is['skort', 'short_saia', 'short-saia'?) then (sim)
     :encerra este passo;
     stop
   endif
   note right
-  e mais 18 condições que encerram cedo:
-  is('dress', 'vestido', is('jumpsuit', 'macac', 'overall', 'romper', 'playsuit', is('boot'…
+  e mais 27 condições que encerram cedo:
+  is('skirt', 'saia') && !is('short', is('bermuda', is('short', is('culotte', 'pantacourt',…
   end note
 }
 |Tela (React)|

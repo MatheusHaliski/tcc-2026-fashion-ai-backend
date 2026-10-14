@@ -24,11 +24,11 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /photos, /pieces/[id], /pieces/new;
+:Abre /photos, /dna-schemes/[id]/edit,\n/dna-schemes/new;
 |Tela (Next.js)|
 :Carrega os dados da tela\nGET /api/pieces/{id}\nGET /api/photos/{id}/file\nGET /api/me/photos/insights\nGET /api/me/photos;
 |Pessoa usuária|
@@ -47,18 +47,18 @@ if (Faz outra ação?) then (sim)
   switch (Qual?)
   case (Remoção de fundo sob demanda para…)
     :POST /api/photos/background-removal\n→ PhotoService.removeBackground\nusa: Guard.requireCanCreate,\nWardrobeService.governedFlatLay;
-  case (Adicionar uma peça pública ao meu…)
-    :POST /api/pieces/{id}/copy\n→ WardrobeService.addToWardrobe\nvalida: JA_E_SUA, NAO_ENCONTRADO\nlê: wardrobe_items, users, reactions\nusa: Guard.requireCanCreate, Guard.requireView,\nProjectionService.piece\ngrava: wardrobe_items;
-  case (Editar a peça)
-    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
   case (Excluir foto [pede confirmação qu…)
     :DELETE /api/photos/{id}\n→ PhotoService.delete\nvalida: CONFIRMACAO_NECESSARIA\nlê: photos, wardrobe_items\nusa: Guard.requireOwner\nestado: deletedAt → set;
+  case (Editar a peça)
+    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.piece\nevento: PieceUpdated;
   case (Excluir a peça)
     :DELETE /api/pieces/{id}\n→ WardrobeService.delete\nlê: wardrobe_items, scheme_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.removePiece …\nestado: availabilityStatus → ARCHIVED, disponivel →\nfalse, visibility → PRIVATE;
+  case (Cadastrar a peça a partir do rasc…)
+    :POST /api/pieces\n→ WardrobeService.create\nvalida: CONTEUDO_BLOQUEADO, ERRO,\nFORMULARIO_INVALIDO, FOTO_OBRIGATORIA\nlê: users, pipeline_jobs, wardrobe_items …\nusa: Guard.requireCanCreate,\nAssetCatalogService.defaultPieceImage,\nAssetCatalogService.publicFile …\nia: STUDIO_ENHANCER;
   endswitch
   note right
   Outras ações deste RF:
-  Cadastrar a peça a partir do…, Excluir várias
+  Explorar — Adicionar uma peça…, Excluir várias
   fotos, Curadoria: duplicatas, baixa…,
   Marcar/desmarcar momento-chave
   end note

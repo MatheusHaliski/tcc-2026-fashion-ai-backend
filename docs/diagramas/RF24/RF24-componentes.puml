@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF24 — Usar a IA do sistema (motor transversal de inteligência artificial do Fashion AI)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF24 — Usar a IA do sistema (motor transversal de inteligência artificial do Fashion AI)\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "app/(site)/(app)/settings" {
   component "page.tsx" as m_app__site___app__settings_page_tsx
@@ -51,9 +51,6 @@ package "components/ui" {
 package "lib/auth" {
   component "session.tsx" as m_lib_auth_session_tsx <<apoio>>
 }
-package "lib" {
-  component "dev-refs.ts" as m_lib_dev_refs_ts <<apoio>>
-}
 package "lib/hooks" {
   component "use-api.ts" as m_lib_hooks_use_api_ts <<apoio>>
 }
@@ -62,6 +59,9 @@ package "lib/i18n" {
 }
 package "lib/theme" {
   component "theme.tsx" as m_lib_theme_theme_tsx <<apoio>>
+}
+package "components/hype" {
+  component "hype-dashboards.tsx" as m_components_hype_hype_dashboards_tsx <<apoio>>
 }
 package "Backend (Spring Boot)" {
   component "AdminController" as AdminController
@@ -96,6 +96,7 @@ m_app__site___app__admin_system_page_tsx --> AdminController : HTTPS
 m_app__site___app__admin_system_page_tsx --> BrandLogoController : HTTPS
 m_app__site___app__admin_system_page_tsx --> m_components_app_shell_tsx
 m_app__site___app__admin_system_page_tsx --> m_components_brand_logo_tsx
+m_app__site___app__admin_system_page_tsx --> m_components_hype_hype_dashboards_tsx
 m_app__site___app__admin_system_page_tsx --> m_components_ui_index_tsx
 m_app__site___app__admin_system_page_tsx --> m_lib_hooks_use_api_ts
 m_app__site___app__settings_page_tsx --> AuthController : HTTPS
@@ -105,7 +106,6 @@ m_app__site___app__settings_page_tsx --> m_components_app_shell_tsx
 m_app__site___app__settings_page_tsx --> m_components_edit_profile_tsx
 m_app__site___app__settings_page_tsx --> m_components_ui_index_tsx
 m_app__site___app__settings_page_tsx --> m_lib_auth_session_tsx
-m_app__site___app__settings_page_tsx --> m_lib_dev_refs_ts
 m_app__site___app__settings_page_tsx --> m_lib_hooks_use_api_ts
 m_app__site___app__settings_page_tsx --> m_lib_i18n_state_ts
 m_app__site___app__settings_page_tsx --> m_lib_theme_theme_tsx
@@ -117,6 +117,6 @@ m_components_app_shell_tsx --> m_lib_theme_theme_tsx
 m_components_edit_profile_tsx --> PreferencesController : HTTPS
 m_components_edit_profile_tsx --> m_components_ui_index_tsx
 m_components_edit_profile_tsx --> m_lib_auth_session_tsx
-m_components_ui_index_tsx --> m_lib_dev_refs_ts
+m_components_hype_hype_dashboards_tsx --> m_components_ui_index_tsx
 m_lib_hooks_use_api_ts --> m_lib_auth_session_tsx
 @enduml

@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "lib/tryon/fitting-room.ts" {
   class FittingItem as "FittingItem" <<interface>> {
@@ -33,8 +33,8 @@ package "lib/tryon/fitting-room.ts" {
     +category: string
     +subcategory: string | null
     +imageUrl: string | null
-    +colorHex: string | null
-    .. +7 ..
+    +model3dUrl: string | null
+    .. +12 ..
   }
   class BrandEnvironment as "BrandEnvironment" <<interface>> {
     +key: string
@@ -68,12 +68,12 @@ package "lib/tryon/fitting-room.ts" {
   class mod_fitting_room_ts as "fitting-room.ts" <<módulo>> {
     +wearOf()
     +slotOf()
+    +restoreFittingItems()
     +wearItem()
     +removeSlot()
     +visibleItems()
     +brandKey()
     +environmentFor()
-    +resolveEnvironment()
   }
 }
 package "components/ui/index.tsx" {
@@ -125,7 +125,7 @@ package "lib/api/catalog.ts" {
     +colorName: string | null
     +colorHex: string | null
     +material: string | null
-    .. +17 ..
+    .. +18 ..
   }
   class CatalogVariant as "CatalogVariant" <<interface>> {
     +id: string
@@ -135,16 +135,18 @@ package "lib/api/catalog.ts" {
     +code: string | null
     +sku: string | null
   }
-  class MatchScore as "MatchScore" <<interface>> {
-    +total: number
-    +brandMatch: number
-    +categoryMatch: number
-    +subcategoryMatch: number
-    +textSimilarity: number
-    +colorMatch: number
-    +visualSimilarity: number | null
-    +designMatch: number | null
-    +reasons: MatchReason[]
+  class CatalogProductImage as "CatalogProductImage" <<interface>> {
+    +id: string
+    +url: string
+    +type: string
+    +primary: boolean
+    +provenance: ImageProvenance
+    +sourceUrl: string
+    +processedUrl: string | null
+    +viewType: string
+    +canonical: boolean
+    +viewRole: string | null
+    .. +2 ..
   }
   class mod_catalog_ts as "catalog.ts" <<módulo>> {
     +enoughToSearch()
@@ -173,9 +175,9 @@ package "app/(site)/(app)/search/page.tsx" {
     +SearchPage()
   }
 }
+CatalogProduct --> CatalogProductImage : images
 CatalogProduct --> CatalogVariant : selectedVariant
 CatalogProduct --> CatalogVariant : variants
-CatalogProduct --> MatchScore : matchScore
 FittingItem --> FittingBrand : brand
 FittingItem --> FittingSlot : slot
 ResolvedEnvironment --> BrandEnvironment : brands

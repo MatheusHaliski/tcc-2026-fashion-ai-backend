@@ -29,15 +29,14 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF28 — Montar looks no Smart Mirror e pedir sugestões ao 'Vista-me' (só com peças do próprio guarda-roupa)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF28 — Montar looks no Smart Mirror e pedir sugestões ao 'Vista-me' (só com peças do próprio guarda-roupa)\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "/mirror\n(site)/(app)/mirror/page.tsx" as FE0
-  component "/room\n(site)/(app)/room/page.tsx" as FE1
+  component "/room\n(site)/(app)/room/page.tsx" as FE0
   component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  component "MirrorController\n/api/me/mirror\n/api/me/mirror/another\n/api/me/mirror/draft\n/api/me/mirror/grwm\n(+9 rotas)" as MirrorController
+  component "MirrorController\n/api/me/mirror\n/api/me/mirror/another\n/api/me/mirror/draft\n/api/me/mirror/grwm\n(+12 rotas)" as MirrorController
 }
 package "fai-application (casos de uso)" {
   component "MirrorService" as MirrorService
@@ -45,21 +44,22 @@ package "fai-application (casos de uso)" {
   component "RoomService" as RoomService <<apoio>>
   component "SchemeService" as SchemeService <<apoio>>
   component "DailyLookService" as DailyLookService <<apoio>>
+  component "HypeQueryService" as HypeQueryService <<apoio>>
 }
 package "fai-domain (repositórios)" {
-  component "MirrorStateRepository\nWardrobeItemRepository\nSchemeRepository\nSchemeItemRepository\nStyleDnaRepository" as REPO_MySQL
+  component "MirrorStateRepository\nWardrobeItemRepository\nSchemeRepository\nSchemeItemRepository\nStyleDnaRepository\nTipoLookRepository" as REPO_MySQL
 }
-database "MySQL\n• mirror_states\n• scheme_items\n• schemes\n• style_dna\n• wardrobe_items" as DB_MySQL
+database "MySQL\n• `TipoLook`\n• mirror_states\n• scheme_items\n• schemes\n• style_dna\n• wardrobe_items" as DB_MySQL
 cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
 component "Eventos de domínio\n(@TransactionalEventListener)" as EV
 APIC --> MirrorController : HTTPS/JSON
 FE0 --> APIC
-FE1 --> APIC
 MirrorController --> MirrorService
 MirrorService --> AI
 MirrorService --> EV
 MirrorService --> REPO_MySQL
 MirrorService ..> DailyLookService
+MirrorService ..> HypeQueryService
 MirrorService ..> RoomService
 MirrorService ..> SchemeService
 MirrorService ..> WardrobeService

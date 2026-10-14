@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF15 — Editar uma fotografia de uma peça de roupa (adição de peça ou novo esquema) através de um Editor Canvas Interativo 2D\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "fai-domain (entidades JPA)" {
   class Photo <<photos>> {
@@ -60,7 +60,7 @@ package "fai-domain (entidades JPA)" {
     +birthDate: String
     +passwordHash: String
     +profileType: ProfileType
-    .. +24 campos ..
+    .. +25 campos ..
   }
   class WardrobeItem <<wardrobe_items>> {
     +id: UUID
@@ -70,10 +70,10 @@ package "fai-domain (entidades JPA)" {
     +name: String
     +category: String
     +subcategory: String
-    +sex: String
-    +brandName: String
-    +brandLogoUrl: String
-    .. +70 campos ..
+    +variationCode: String
+    +variationStatus: String
+    +variationConfidence: BigDecimal
+    .. +73 campos ..
   }
 }
 package "fai-domain (enums)" {

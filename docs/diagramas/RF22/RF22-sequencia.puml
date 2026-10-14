@@ -21,7 +21,7 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF22 — Visualizar a aba 'Celebridades' — Feed de Perfil de Celebridades cadastradas dentro do sistema do FashionAI\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF22 — Visualizar a aba 'Celebridades' — Feed de Perfil de Celebridades cadastradas dentro do sistema do FashionAI\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 boundary "Tela (Next.js)" as P
@@ -43,8 +43,11 @@ HypeQueryService -> DB_MySQL : SELECT hype_score_snapshots
 HypeQueryService -> DB_MySQL : SELECT wardrobe_items
 HypeQueryService -> DB_MySQL : SELECT schemes
 HypeQueryService --> InstitutionalService
+InstitutionalService -> DB_MySQL : SELECT follows (×2)
+InstitutionalService -> DB_MySQL : SELECT wardrobe_items
+InstitutionalService -> DB_MySQL : SELECT schemes
+InstitutionalService -> DB_MySQL : SELECT seals
 InstitutionalService -> DB_MySQL : SELECT seal_bonds
-InstitutionalService -> DB_MySQL : SELECT follows
 InstitutionalService -> DB_MySQL : SELECT wardrobe_items
 deactivate InstitutionalService
 InstitutionalService --> ProfileController : resultado
@@ -59,8 +62,11 @@ InstitutionalService -> DB_MySQL : SELECT celebrity_profiles
 InstitutionalService -> Guard : deny()
 InstitutionalService -> InstitutionalService : coverUrl = set
 InstitutionalService -> DB_MySQL : INSERT/UPDATE celebrity_profiles
+InstitutionalService -> DB_MySQL : SELECT follows (×2)
+InstitutionalService -> DB_MySQL : SELECT wardrobe_items
+InstitutionalService -> DB_MySQL : SELECT schemes
+InstitutionalService -> DB_MySQL : SELECT seals
 InstitutionalService -> DB_MySQL : SELECT seal_bonds
-InstitutionalService -> DB_MySQL : SELECT follows
 deactivate InstitutionalService
 InstitutionalService --> ProfileController : resultado
 ProfileController --> P : 200 JSON

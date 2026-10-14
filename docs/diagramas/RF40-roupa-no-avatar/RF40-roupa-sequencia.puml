@@ -21,7 +21,7 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF40 — Avatar 3D: do look às malhas vestidas\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF40 — Avatar 3D: do look às malhas vestidas\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 participant "lib/avatar3d/human/garments.ts" as lib_avatar3d_human_garments_ts
@@ -29,13 +29,28 @@ participant "lib/avatar3d/human/garment-relax.ts" as lib_avatar3d_human_garment_
 == lib/avatar3d/human/garments.ts · kindOf() ==
 U -> lib_avatar3d_human_garments_ts : kindOf()
 activate lib_avatar3d_human_garments_ts
+opt SUBCATEGORY_KINDS[sub]
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt words.some((w) => BAG_WORDS.has(w) || w.endsWith(…
+lib_avatar3d_human_garments_ts --> U : encerra
+end
 opt is('legging'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('skort', 'short_saia', 'short-saia'
 lib_avatar3d_human_garments_ts --> U : encerra
 end
 opt is('skirt', 'saia') && !is('short'
 lib_avatar3d_human_garments_ts --> U : encerra
 end
-opt is('short', 'bermuda'
+opt is('bermuda'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('short'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('culotte', 'pantacourt', 'pantalona_curta'
 lib_avatar3d_human_garments_ts --> U : encerra
 end
 opt is('pant', 'jean', 'trouser', 'calca', 'calça', '…
@@ -44,7 +59,10 @@ end
 opt is('dress', 'vestido'
 lib_avatar3d_human_garments_ts --> U : encerra
 end
-opt is('jumpsuit', 'macac', 'overall', 'romper', 'pla…
+opt is('romper', 'playsuit', 'macaquinho'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('jumpsuit', 'macac', 'overall', 'jardineira',…
 lib_avatar3d_human_garments_ts --> U : encerra
 end
 opt is('boot', 'bota', 'coturno'
@@ -56,6 +74,9 @@ end
 opt is('coat', 'casaco', 'parka', 'trench', 'overcoat'
 lib_avatar3d_human_garments_ts --> U : encerra
 end
+opt is('vest', 'colete') && !is('vestido'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
 opt is('jacket', 'jaqueta', 'blazer', 'windbreaker',…
 lib_avatar3d_human_garments_ts --> U : encerra
 end
@@ -65,10 +86,13 @@ end
 opt is('sweater', 'sueter', 'suéter', 'sweatshirt', '…
 lib_avatar3d_human_garments_ts --> U : encerra
 end
-opt is('tank', 'regata', 'camisole', 'bodysuit', 'bod…
+opt is('tank', 'regata', 'camisole', 'bodysuit') || s…
 lib_avatar3d_human_garments_ts --> U : encerra
 end
 opt is('crop'
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt is('polo'
 lib_avatar3d_human_garments_ts --> U : encerra
 end
 opt is('shirt', 'camisa', 'blouse', 'blusa'
@@ -80,19 +104,22 @@ end
 opt is('tee', 'camiseta', 'polo', 'top'
 lib_avatar3d_human_garments_ts --> U : encerra
 end
-opt any('OUTER_LAYER', 'OUTERWEAR'
+opt ['OUTER_LAYER', 'OUTERWEAR'].includes(slot
 lib_avatar3d_human_garments_ts --> U : encerra
 end
-opt any('FULL_BODY', 'CORPO_INTEIRO', 'DRESS'
+opt ['OUTER_LAYER', 'OUTERWEAR'].includes(k
 lib_avatar3d_human_garments_ts --> U : encerra
 end
-opt any('UPPER', 'TOP', 'PARTE_SUPERIOR'
+opt ['FULL_BODY', 'CORPO_INTEIRO', 'DRESS', 'FULL'].i…
 lib_avatar3d_human_garments_ts --> U : encerra
 end
-opt any('LOWER', 'BOTTOM', 'PARTE_INFERIOR'
+opt ['UPPER', 'TOP', 'PARTE_SUPERIOR'].includes(k
 lib_avatar3d_human_garments_ts --> U : encerra
 end
-opt any('SHOES', 'FOOTWEAR', 'CALCADOS'
+opt ['LOWER', 'BOTTOM', 'PARTE_INFERIOR'].includes(k
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt ['SHOES', 'FOOTWEAR', 'CALCADOS'].includes(k
 lib_avatar3d_human_garments_ts --> U : encerra
 end
 deactivate lib_avatar3d_human_garments_ts
@@ -110,6 +137,12 @@ opt f < 0 || f > tb.r.length - 1 + 1.5
 lib_avatar3d_human_garments_ts --> U : encerra
 end
 opt f < 0 || f > tb.r.length - 1 + 1.5
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt !tot
+lib_avatar3d_human_garments_ts --> U : encerra
+end
+opt !wt[k]
 lib_avatar3d_human_garments_ts --> U : encerra
 end
 opt index.length < 30

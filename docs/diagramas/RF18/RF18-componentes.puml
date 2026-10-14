@@ -29,15 +29,19 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE0
-  component "/try-on\n(site)/(app)/try-on/page.tsx" as FE1
+  component "/dna-schemes/[id]/edit\n(site)/(app)/dna-schemes/[id]/edit/page.tsx" as FE0
+  component "/dna-schemes/new\n(site)/(app)/dna-schemes/new/page.tsx" as FE1
+  component "/dna\n(site)/(app)/dna/page.tsx" as FE2
+  component "/pieces/[id]\n(site)/(app)/pieces/[id]/page.tsx" as FE3
+  component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE4
+  component "/schemes/[id]/edit\n(site)/(app)/schemes/[id]/edit/page.tsx" as FE5
   component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  component "CatalogController\n/api/catalog/brands\n/api/catalog/products/{…}\n/api/catalog/search\n/api/catalog/stores\n(+1 rotas)" as CatalogController
+  component "CatalogController\n/api/catalog/brands\n/api/catalog/products\n/api/catalog/products/{…}\n/api/catalog/search\n(+2 rotas)" as CatalogController
   component "TryOnController\n/api/try-on\n/api/try-on/preferences\n/api/try-on/renders\n/api/try-on/schemes" as TryOnController
   component "WardrobeController\n/api/pieces\n/api/pieces/{…}" as WardrobeController
 }
@@ -71,6 +75,10 @@ CatalogService ..> OfficialCatalogDiscovery
 CatalogService ..> WardrobeService
 FE0 --> APIC
 FE1 --> APIC
+FE2 --> APIC
+FE3 --> APIC
+FE4 --> APIC
+FE5 --> APIC
 REPO_MySQL --> DB_MySQL : JPA/Flyway
 TryOnController --> TryOnService
 TryOnService --> AI

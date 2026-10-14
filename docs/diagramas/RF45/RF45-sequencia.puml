@@ -21,18 +21,16 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF45 — Processar e padronizar imagens canônicas de peças, calçados e acessórios (pipeline de validação e padronização)\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF45 — Processar e padronizar imagens canônicas de peças, calçados e acessórios (pipeline de validação e padronização)\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
-boundary "Tela /pieces/new" as P
+boundary "Tela /dna-schemes/[id]/edit" as P
 control "WardrobeController" as WardrobeController
 participant "WardrobeService" as WardrobeService
 participant "Guard" as Guard
 database "MySQL" as DB_MySQL
 participant "MediaService" as MediaService
 participant "AiEngine\n(provedor de IA + reserva local)" as AI
-participant "OwnMedia" as OwnMedia
-participant "BrandLogoService" as BrandLogoService
 participant "AssetCatalogService" as AssetCatalogService
 == RF4 · Estúdio — gera/refaz a foto de estúdio de uma peça cadastrada ==
 U -> P : RF4 · Estúdio — gera/refaz a foto de estúdio de u…
@@ -87,17 +85,6 @@ end
 WardrobeService -> DB_MySQL : SELECT wardrobe_items
 WardrobeService -> DB_MySQL : SELECT reactions
 WardrobeService -> WardrobeService : new WardrobeItem()
-WardrobeService -> DB_MySQL : SELECT brands
-WardrobeService -> WardrobeService : brandLogoUrl = null
-WardrobeService -> OwnMedia : accepts()
-WardrobeService -> MediaService : read()
-WardrobeService -> WardrobeService : brandLogoUrl = set
-WardrobeService -> BrandLogoService : acceptWebLogo()
-BrandLogoService -> DB_MySQL : SELECT brand_logos (×2)
-BrandLogoService -> DB_MySQL : SELECT brands
-BrandLogoService -> DB_MySQL : INSERT/UPDATE brands
-BrandLogoService --> WardrobeService
-WardrobeService -> WardrobeService : brandLogoUrl = null (×2)
 alt foto obrigatória
 WardrobeService --> WardrobeController : 400 FOTO_OBRIGATORIA
 WardrobeController --> P : 400 + mensagem
@@ -106,7 +93,19 @@ WardrobeService -> AssetCatalogService : defaultPieceImage()
 WardrobeService -> WardrobeService : imageUrl = set
 WardrobeService -> WardrobeService : thumbnailUrl = set
 WardrobeService -> WardrobeService : originalImageUrl = null
-note over WardrobeService : … e mais 62 passos no código
+WardrobeService -> WardrobeService : moderationStatus = APPROVED
+WardrobeService -> WardrobeService : photoProcessingStatus = COMPLETED
+WardrobeService -> DB_MySQL : INSERT/UPDATE wardrobe_items
+WardrobeService -> AssetCatalogService : defaultPieceImage()
+WardrobeService -> WardrobeService : imageUrl = set
+WardrobeService -> WardrobeService : thumbnailUrl = set
+WardrobeService -> WardrobeService : originalImageUrl = null
+WardrobeService -> WardrobeService : defaultImage = true
+WardrobeService -> WardrobeService : moderationStatus = APPROVED
+WardrobeService -> WardrobeService : photoProcessingStatus = COMPLETED
+WardrobeService -> DB_MySQL : INSERT/UPDATE wardrobe_items
+WardrobeService -> DB_MySQL : SELECT wardrobe_items
+note over WardrobeService : … e mais 49 passos no código
 deactivate WardrobeService
 WardrobeService --> WardrobeController : resultado
 WardrobeController --> P : 201 JSON

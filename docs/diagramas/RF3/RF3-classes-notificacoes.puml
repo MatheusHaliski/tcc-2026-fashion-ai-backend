@@ -1,119 +1,108 @@
 @startuml RF3_Classes_Notificacoes
-title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de classes — central de notificações e preferências por tipo
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam class {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
   ArrowColor #4A4852
-  HeaderBackgroundColor #E4DEF0
+  StereotypeFontColor #6B6470
 }
-skinparam packageStyle rectangle
-hide empty methods
+hide empty members
+left to right direction
+title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
-package "fai-domain · model" {
-class Notification <<table notifications>> {
-  +recipient: User
-  +actor: User
-  +type: NotificationType
-  +category: NotificationCategory
-  +resourceType: String
-  +resourceId: UUID
-  +title: String
-  +body: String
-  +payloadJson: String
-  +read: boolean
-  +readAt: Instant
-  +delivered: boolean = true
+package "fai-domain (entidades JPA)" {
+  class Notification <<notifications>> {
+    +id: UUID
+    +recipient: User
+    +actor: User
+    +type: NotificationType
+    +category: NotificationCategory
+    +resourceType: String
+    +resourceId: UUID
+    +title: String
+    +body: String
+    +payloadJson: String
+    .. +3 campos ..
+  }
+  class User <<users>> {
+    +id: UUID
+    +username: String
+    +displayName: String
+    +email: String
+    +emailHash: String
+    +emailVerified: boolean
+    +phone: String
+    +birthDate: String
+    +passwordHash: String
+    +profileType: ProfileType
+    .. +25 campos ..
+  }
+  class UserPreferences <<user_preferences>> {
+    +id: UUID
+    +user: User
+    +theme: ThemeMode
+    +language: UiLanguage
+    +density: UiDensity
+    +fontScale: int
+    +highContrast: boolean
+    +reduceMotion: boolean
+    +chromeBackgroundId: String
+    +sizeSystem: SizeSystem
+    .. +18 campos ..
+  }
 }
-class UserPreferences <<table user_preferences>> {
-  +user: User
-  +notificationPushMaster: boolean = true
-  +notificationPrefsJson: String
-  .. tema, idioma etc.: RF23 ..
-}
-class User <<table users>>
-}
-package "fai-domain · enums" {
-enum NotificationCategory {
-  SECURITY
-  SOCIAL
-  ACHIEVEMENT
-  SYSTEM
-  POINTS
-}
-enum "NotificationType (30 valores)" as NotificationType {
-  PASSWORD_RESET · TWO_FACTOR_CODE · NEW_LOGIN_DEVICE
-  EMAIL_CONFIRMATION · DATA_EXPORT_READY «SECURITY, obrigatórios»
-  WELCOME · ACCOUNT_APPROVAL · ISSUER_REVIEW_REQUEST
-  CONTENT_REVIEW «SYSTEM, obrigatórios»
-  FOLLOW_REQUEST · NEW_COMMENT · NEW_REACTION … «SOCIAL»
-  SEAL_GRANTED · HYPE_MILESTONE · COUPON_AVAILABLE … «ACHIEVEMENT»
-  FAI_POINTS «POINTS»
-  --
-  +category(): NotificationCategory
-  +optOutAllowed(): boolean
-}
+package "fai-domain (enums)" {
+  enum AccountStatus {
+    PENDING_EMAIL_VERIFICATION
+    ACTIVE
+    PENDING_VALIDATION
+    SUSPENDED
+    DELETION_SCHEDULED
+    DELETED
+  }
+  enum NotificationType {
+    PASSWORD_RESET
+    TWO_FACTOR_CODE
+    NEW_LOGIN_DEVICE
+    EMAIL_CONFIRMATION
+    DATA_EXPORT_READY
+    FOLLOW_REQUEST
+    FOLLOW_ACCEPTED
+    NEW_FOLLOWER
+    NEW_COMMENT
+    NEW_LIKE
+    ..
+  }
+  enum NotificationCategory {
+    SECURITY
+    SOCIAL
+    ACHIEVEMENT
+    SYSTEM
+    POINTS
+  }
 }
 package "fai-application" {
-class NotificationService {
-  +{static} RETENTION = 90 dias
-  +notify(recipientId, actorId, type, resourceType, resourceId, title, body, payload): Notification
-  +enabled(userId, type): boolean
-  +inbox(user): Map
-  +unread(user): long
-  +markRead(user, ids)
-  +markAllRead(user): int
-  +preferences(user): List<Map>
-  +updatePreferences(user, changes, master): List<Map>
-  +purgeExpired(): int «sem chamada no código»
+  class AdminService <<service>> {
+    +runJob()
+  }
 }
-interface NotificationProjectionPort <<port>> {
-  +appendNotification(recipientUserId, notificationId)
-  +purgeUser(userId)
-}
-interface AnalyticsQueryPort <<port>> {
-  +purgeNotifications(days): int
-}
-class AdminService {
-  +runJob(admin, "notifications"): Map
-}
-}
-package "fai-web" {
-class NotificationController {
-  GET /api/notifications
-  GET /api/notifications/unread-count
-  POST /api/notifications/read
-  POST /api/notifications/read-all
-  GET · PUT /api/notifications/preferences
-}
-}
-package "fai-infrastructure" {
-class CassandraProjectionAdapter
-class NoopProjections
-class MysqlAnalyticsAdapter {
-  +purgeNotifications(days) «CALL sp_purge_notifications»
-}
-}
-
+AdminService ..> User : usa
+Notification "*" --> "1" User : actor
 Notification "*" --> "1" User : recipient
-Notification "*" --> "0..1" User : actor
-UserPreferences "1" --> "1" User
-Notification --> NotificationType
 Notification --> NotificationCategory
-NotificationType --> NotificationCategory
-NotificationController --> NotificationService
-NotificationService ..> Notification : grava · lê
-NotificationService ..> UserPreferences : prefs por tipo + master
-NotificationService --> NotificationProjectionPort : entregue
-CassandraProjectionAdapter ..|> NotificationProjectionPort
-NoopProjections ..> NotificationProjectionPort : desligado
-AdminService --> AnalyticsQueryPort : POST /api/admin/jobs/notifications
-MysqlAnalyticsAdapter ..|> AnalyticsQueryPort
-note bottom of NotificationService
-  delivered = enabled(tipo): tipos obrigatórios sempre;
-  senão notificationPushMaster e o valor do tipo no JSON.
-  Social do próprio ator não notifica. A caixa traz até 100
-  itens fora de POINTS + até 100 de POINTS.
-end note
+Notification --> NotificationType
+User --> AccountStatus
+UserPreferences "1" --> "1" User : user
 @enduml

@@ -24,13 +24,13 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF19 — Interagir socialmente com esquemas e peças: reagir, comentar, salvar, compartilhar, remixar e retornar\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF19 — Interagir socialmente com esquemas e peças: reagir, comentar, salvar, compartilhar, remixar e retornar\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /schemes/[id], /pieces/[id],\n/schemes/[id]/edit;
+:Abre /schemes/[id], /pieces/[id],\n/dna-schemes/[id]/edit;
 |Tela (Next.js)|
-:Carrega os dados da tela\nGET /api/schemes/{id}\nGET /api/pieces/{id}\nGET /api/pieces/{id}/model3d\nGET /api/studio/backdrops;
+:Carrega os dados da tela\nGET /api/schemes/{id}\nGET /api/pieces/{id}\nGET /api/pieces/{id}/deletion-impact\nGET /api/pieces/{id}/model3d;
 |Pessoa usuária|
 :Remixar conteúdo público para o meu\nacervo;
 |Tela (Next.js)|
@@ -47,7 +47,7 @@ if (indisponível?) then (sim)
 endif
 |Dados e serviços|
 :Lê: schemes\nwardrobe_items\ndna_schemes;
-:Usa: Guard.requireCanCreate\nSchemeService.requireView\nGuard.requireView\nSchemeService.remix\nCounterStorePort.increment\nNotificationService.notify;
+:Usa: Guard.requireCanCreate\nSchemeService.requireView\nGuard.requireView\nSchemeService.remix\nWardrobeService.eligible\nWardrobeService.addToWardrobe (+2);
 :Evento: HypeSignal;
 |Tela (Next.js)|
 :Atualiza a tela com a resposta;
@@ -56,20 +56,21 @@ if (Faz outra ação?) then (sim)
   switch (Qual?)
   case (Remixar um esquema público para o…)
     :POST /api/schemes/{id}/remix\n→ SchemeService.remix\nvalida: INDISPONIVEL, NAO_ENCONTRADO\nlê: schemes, scheme_items\nusa: Guard.requireCanCreate, Guard.requireView,\nWardrobeService.eligible;
+  case (Compartilhar: publicar no feed do…)
+    :POST /api/interactions/{type}/{id}/shares\n→ SocialService.share;
   case (Excluir a peça)
     :DELETE /api/pieces/{id}\n→ WardrobeService.delete\nlê: wardrobe_items, scheme_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.removePiece …\nestado: availabilityStatus → ARCHIVED, disponivel →\nfalse, visibility → PRIVATE;
   case (Salvar esquema [manual, IA, autop…)
     :POST /api/schemes\n→ SchemeService.create\nvalida: FORMULARIO_INVALIDO, FOTO_INVALIDA,\nINDISPONIVEL, NAO_ENCONTRADO …\nlê: users, schemes, wardrobe_items …\nusa: Guard.requireCanCreate, Guard.requireView,\nBackgroundStudioService.applyToScheme …\ngrava: schemes, scheme_items;
   case (Editar esquema)
     :PUT /api/schemes/{id}\n→ SchemeService.update\nvalida: FORMULARIO_INVALIDO, FOTO_INVALIDA,\nPECA_DE_OUTRO_USUARIO, PECA_INDISPONIVEL …\nlê: schemes, scheme_items, wardrobe_items …\nusa: Guard.requireCanCreate, Guard.requireOwner,\nBackgroundStudioService.applyToScheme …\ngrava: scheme_items;
-  case (Editar a peça)
-    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
   endswitch
   note right
   Outras ações deste RF:
-  Cadastrar a peça a partir do…, Excluir o look
-  (menu ⋯ do don…, Apagar comentário (autor ou d…,
-  Solicitar modelo 3D da peça
+  Cadastrar a peça a partir do…, Editar a peça,
+  Excluir o look (menu ⋯ do don…, Apagar comentário
+  (autor ou d…, Explorar — Adicionar uma peça…,
+  Publicar com a visibilidade e…
   end note
   |Tela (Next.js)|
   :Atualiza a tela;

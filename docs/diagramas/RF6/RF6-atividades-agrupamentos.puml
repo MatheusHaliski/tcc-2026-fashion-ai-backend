@@ -1,9 +1,16 @@
 @startuml RF6_Atividades_Agrupamentos
-title RF6 — Acessar e gerenciar o Perfil Lookbook\nDiagrama de atividades — aba Agrupamentos (sugestões por similaridade e agrupamentos editoriais)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,76 +19,53 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF6 — Acessar e gerenciar o Perfil Lookbook\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre a aba Agrupamentos (próprio perfil ou de outra pessoa);
-|Frontend|
-:GroupsTab: GET /api/users/{ownerId}/groupings;
-|API e serviços|
-if (Quem vê pode ver o perfil?) then (não)
-  :Lista vazia (nem os nomes aparecem);
-else (sim)
-  :scheme_groupings do dono + quantos looks\nvisíveis há em cada um;
-endif
-|Pessoa|
-if (Ação?) then (abrir agrupamento)
-  |Frontend|
-  :GET /api/groupings/{id}/schemes\n(só looks que quem vê pode ver);
-elseif () then (sugerir por similaridade — dono)
-  |Frontend|
-  :Botão visível com ≥ 20 peças (groupingSuggestionsAvailable)\nPOST /api/me/similarity-groups/suggestions?type=SCHEME;
-  |API e serviços|
-  if (type = PIECE com menos de 20 peças?) then (sim)
-    #FFE3E3:422 ACERVO_PEQUENO {pieces, missing};
-    stop
-  endif
-  |Banco/IA|
-  :AiEngine.local(ACERVO_GROUPING) → HypeScoreService.cluster:\nsimilaridade ≥ 0,70 (estilo, ocasião, cor, marca, tipo),\ngrupos com 3 ou mais membros;
-  :Apaga e regrava acervo_groups (kind SIMILARITY);
-  |Frontend|
-  :Lista GET /api/me/similarity-groups?type=SCHEME\ncom o Hype médio v2 dos membros ao lado\n(avgScore nulo = "Hype médio: —");
+:Abre /coupons, /closet, /history;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/similarity-groups\nGET /api/me/daily-look-tab\nGET /api/users/{ownerId}/favorites;
+|Pessoa usuária|
+:Visão geral do lookbook (closet\ndigital, looks, agrupamento…;
+|Tela (Next.js)|
+:GET /api/users/{ownerId}/lookbook;
+|API (Spring Boot)|
+:LookbookController.overview\n→ LookbookService.overview;
+|Dados e serviços|
+:Lê: users\nwardrobe_items\nschemes\nsaved_items\nscheme_items;
+:Usa: Guard.canView\nDailyLookService.today;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Criar agrupamento [coleção, tempo…)
+    :POST /api/groupings\n→ LookbookService.createGrouping\nvalida: COR_INVALIDA, PERIODO_INVALIDO,\nTIPO_INVALIDO\nlê: users\nusa: OwnMedia.require\ngrava: scheme_groupings;
+  case (Sugerir agrupamentos por similari…)
+    :POST /api/me/similarity-groups/suggestions\n→ LookbookService.suggestGroups\nvalida: ACERVO_PEQUENO\nlê: wardrobe_items, schemes, scheme_items …\nia: ACERVO_GROUPING\ngrava: acervo_groups;
+  case (Descartar agrupamento sugerido; /…)
+    :DELETE /api/me/similarity-groups/{groupId}\n→ LookbookService.discardGroup\nlê: acervo_groups\nusa: Guard.requireOwner\ngrava: acervo_groups;
+  case (Editar agrupamento)
+    :PUT /api/groupings/{id}\n→ LookbookService.updateGrouping\nvalida: COR_INVALIDA, PERIODO_INVALIDO\nlê: scheme_groupings\nusa: Guard.requireOwner,\nOwnMedia.requireOrUnchanged\ngrava: scheme_groupings;
+  case (Excluir agrupamento)
+    :DELETE /api/groupings/{id}\n→ LookbookService.deleteGrouping\nlê: scheme_groupings, schemes, wardrobe_items\nusa: Guard.requireOwner\ngrava: scheme_groupings;
+  endswitch
   note right
-    O agrupamento é por similaridade, não por Hype.
-    /api/me/hype-groups* ficaram só como apelidos
-    deprecados das rotas novas
+  Outras ações deste RF:
+  Adicionar esquemas/peças ao a…, Favoritar look
+  salvo, Marcar esquema como Look do D…, Marcar item
+  salvo como favori…, Salvar/remover dos salvos,
+  Remover dos salvos
   end note
-elseif () then (descartar sugestão)
-  |Frontend|
-  :DELETE /api/me/similarity-groups/{groupId}\n(só o dono; outro = 403 auditado);
-else (criar agrupamento editorial — dono)
-  |Frontend|
-  :POST /api/groupings {type, label, description,\ncoverUrl, atmospherePrompt, periodFrom, periodTo, accentColor};
-  |API e serviços|
-  if (Tipo permitido para o perfil?) then (não)
-    #FFE3E3:400 TIPO_INVALIDO;
-    note right
-      PESSOAL: COLLECTION, EVOLUTION, STYLE_LINE, SEASON.
-      A tela envia COLECAO, TEMPORADA, EDITORIAL, CAPSULA
-      e VIAGEM, que não existem em GroupingType
-      (divergência front × back)
-    end note
-    stop
-  elseif (Período fora de 1900–2100 ou fim < início?) then (sim)
-    #FFE3E3:400 PERIODO_INVALIDO;
-    stop
-  elseif (accentColor fora de #RRGGBB?) then (sim)
-    #FFE3E3:400 COR_INVALIDA;
-    stop
-  else (ok)
-    :Grava scheme_groupings (capa só do próprio dono,\natmospherePrompt limpo até 300 caracteres);
-    :POST /api/groupings/{id}/items {schemeIds, pieceIds}\npreenche grouping_id dos itens do dono;
-  endif
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
+|Pessoa usuária|
 stop
 @enduml

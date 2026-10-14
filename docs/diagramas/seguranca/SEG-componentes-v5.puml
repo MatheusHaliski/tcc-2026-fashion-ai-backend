@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title Fashion AI — Componentes v5: camadas de segurança, da borda aos bancos (Railway + Vercel)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title Fashion AI — Componentes v5: camadas de segurança, da borda aos bancos (Railway + Vercel)\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "raiz" {
   component "middleware.ts" as m_middleware_ts

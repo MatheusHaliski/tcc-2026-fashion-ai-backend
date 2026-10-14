@@ -21,7 +21,7 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba 'Meu Avatar 3D', e usá-lo no manequim da Passarela 3D, do Meu Quarto e d…\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba 'Meu Avatar 3D', e usá-lo no manequim da Passarela 3D, do Meu Quarto e d…\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 boundary "c/avatar3d/my-avatar.tsx" as c_avatar3d_my_avatar_tsx

@@ -20,15 +20,11 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF28 — Vista-me: classes\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF28 — Vista-me: classes\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "app/(site)/(app)/room/page.tsx" {
   class MirrorState as "MirrorState" <<interface>> {
-    +slots: Record<string, MirrorPieceView | Mirror…
-    +complete: boolean
-    +postIt: string | null
-    +sequence: { pieceId: string; name: string; module…
-    +message: string | null
+    +rack: MirrorRackPiece[]
   }
   class Room as "Room" <<interface>> {
     +owner: boolean
@@ -90,11 +86,14 @@ package "components/mirror/mirror-stage.tsx" {
   class MirrorPiece as "MirrorPiece" <<interface>> {
     +id: string
     +name: string
-    +imageUrl: string
-    +thumbnailUrl: string
-    +category: string
-    +subcategory: string
-    +colorHex: string
+    +imageUrl: string | null
+    +thumbnailUrl: string | null
+    +studioImageUrl: string | null
+    +category: string | null
+    +subcategory: string | null
+    +colorHex: string | null
+    +variation: string | null
+    +attributes: Record<string, string[]> | null
   }
   class SavedAvatar as "SavedAvatar" <<interface>> {
     +exists: boolean
@@ -102,32 +101,21 @@ package "components/mirror/mirror-stage.tsx" {
     +adjust: Partial<AvatarAdjust>
     +textureUrl: string
   }
-  enum MirrorMode as "MirrorMode" {
-    3d
-    2d
+  class MirrorStageProps as "MirrorStageProps" <<interface>> {
+    +slots: Record<string, MirrorPiece | MirrorPiec…
+    +kelvin: number
+    +mode: MirrorMode
+    +children: React.ReactNode
   }
   class mod_mirror_stage_tsx as "mirror-stage.tsx" <<módulo>> {
     +mirrorPieces()
     +useMirrorAvatar()
     +glassTint()
     +MirrorStage()
-    +MirrorWornStrip()
+    +MirrorFlatStill()
   }
 }
 package "components/three/common.tsx" {
-  class Look3d as "Look3d" <<interface>> {
-    +schemeId: string
-    +pieceId: string
-    +title: string
-    +owner: { id: string; username: string; display…
-    +hypeScore: number | null
-    +hype: HypeSummary | null
-    +likes: number
-    +mannequin: Mannequin3d
-    +pieces: Look3dPiece[]
-    +ready3d: number
-    .. +2 ..
-  }
   class Look3dPiece as "Look3dPiece" <<interface>> {
     +id: string
     +name: string
@@ -139,6 +127,19 @@ package "components/three/common.tsx" {
     +colorHex: string | null
     +model3dUrl: string | null
     +model3dStatus: string | null
+    .. +3 ..
+  }
+  class Look3d as "Look3d" <<interface>> {
+    +schemeId: string
+    +pieceId: string
+    +title: string
+    +owner: { id: string; username: string; display…
+    +hype: HypeSummary | null
+    +likes: number
+    +mannequin: Mannequin3d
+    +pieces: Look3dPiece[]
+    +ready3d: number
+    +missing3d: number
     .. +1 ..
   }
   class Mannequin3d as "Mannequin3d" <<interface>> {
@@ -180,18 +181,20 @@ package "Backend (Java)" {
     -ai: AiEngine
     -audit: Audit
     -events: ApplicationEventPublisher
+    -scorer: LookScorer
     +slotOf()
     +schemeSlot()
     +stateEntity()
     +slots()
     +accessories()
     +single()
-    +allIds()
-    +load()
+    +rack()
+    +putRack()
   }
 }
 Look3d --> Look3dPiece : pieces
 Look3d --> Mannequin3d : mannequin
+MirrorStageProps --> MirrorPiece : slots
 Room --> Module : modules
 Room --> RoomPiece : basket
 Room --> RoomPiece : chair

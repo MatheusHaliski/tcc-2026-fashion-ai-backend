@@ -2,6 +2,7 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { resolveCardArt, BRICKS, brickColor, ART_INDEX, studioOf } from "@/lib/card-art";
 import { CardArtLayer, Blossom, Leaf, Palm, Snowflake, Sun } from "@/components/card-art";
+import { fashionPreset } from "@/lib/aura-fashion";
 import type { ArtEffects, ArtFamily, ArtVariant, PieceArt, Season } from "@/lib/piece-art";
 
 /**
@@ -40,6 +41,8 @@ const SEASON_ACCENT: Record<Season, string> = { SPRING: "#F4A7C0", SUMMER: "#FFC
 
 export function accentOf(bg: Record<string, unknown> | null | undefined, art: PieceArt): string {
   const s = studioOf(bg);
+  const selected = fashionPreset(s.compositionPreset);
+  if (selected) return selected.palette[0];
   const variant = s.aura?.variantId ? ART_INDEX.variants[s.aura.variantId] : undefined;
   const palette = variant ? ART_INDEX.presets[variant.presetId]?.palette : undefined;
   if (palette?.length) return palette[Math.min(1, palette.length - 1)];

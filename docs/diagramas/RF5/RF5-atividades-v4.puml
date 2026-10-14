@@ -24,13 +24,13 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF5 — Criar Look (v4)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF5 — Criar Look (v4)\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /pieces/new, /schemes/[id]/edit,\n/schemes/new;
+:Abre /pieces/new,\n/dna-schemes/[id]/edit,\n/dna-schemes/new;
 |Tela (Next.js)|
-:Carrega os dados da tela\nGET /api/schemes/builder\nGET /api/schemes/{id}\nGET /api/backgrounds/catalog\nGET /api/schemes/{id}/card.png;
+:Carrega os dados da tela\nGET /api/schemes/builder\nGET /api/schemes/{id}\nGET /api/schemes/{schemeId}/seal-suggestions\nGET /api/pieces/{id};
 |Pessoa usuária|
 :Salvar esquema (manual, IA,\nautopiloto, remix);
 |Tela (Next.js)|
@@ -74,7 +74,7 @@ end note
 if (Faz outra ação?) then (sim)
   switch (Qual?)
   case (Selos possíveis para um look aind…)
-    :POST /api/seal-suggestions/preview\n→ SealService.preview\nlê: wardrobe_items\nia: SEALBOND_MATCHER;
+    :POST /api/seal-suggestions/preview\n→ SealService.preview;
   case (Foto do look [como um post]: pipe…)
     :POST /api/schemes/photos\n→ SchemeService.uploadLookPhoto\nvalida: IMAGEM_PEQUENA, PROPORCAO_INVALIDA\nlê: users\nusa: Guard.requireCanCreate, MediaService.put,\nMediaService.register;
   case (Pré-visualizar o card antes de sa…)
@@ -86,10 +86,10 @@ if (Faz outra ação?) then (sim)
   endswitch
   note right
   Outras ações deste RF:
-  Editar esquema, Remixar um esquema público pa…,
-  Fundo do card da peça, Cadastrar a peça a partir
-  do…, Enviar imagem própria de fund…, Selos
-  possíveis para uma peça…
+  Editar esquema, Vincular manualmente o esquem…,
+  Fundo do card da peça, Editar a peça, Remixar um
+  esquema público pa…, Explorar — Adicionar uma
+  peça…
   end note
   |Tela (Next.js)|
   :Atualiza a tela;

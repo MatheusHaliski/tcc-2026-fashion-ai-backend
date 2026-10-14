@@ -19,7 +19,7 @@ skinparam state {
   StartColor #20A77A
   EndColor #4B5563
 }
-title RF53 — ciclo de vida de HypeScoreCurrent.status e level\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum HypeStatus · enum HypeLevel · tabela hype_scores
+title RF53 — ciclo de vida de HypeScoreCurrent.status e level\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nenum HypeStatus · enum HypeLevel · tabela hype_scores
 
 state "HypeScoreCurrent.status" as Ciclo_HypeScoreCurrent {
   state Ciclo_HypeScoreCurrent_AVAILABLE as "AVAILABLE"

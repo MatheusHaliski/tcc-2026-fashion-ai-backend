@@ -29,19 +29,22 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF5 — Criar um esquema de vestimenta na aba 'Criar Look'\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF5 — Criar um esquema de vestimenta na aba 'Criar Look'\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
   component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE0
-  component "/schemes/[id]/edit\n(site)/(app)/schemes/[id]/edit/page.tsx" as FE1
-  component "/schemes/new\n(site)/(app)/schemes/new/page.tsx" as FE2
+  component "/dna-schemes/[id]/edit\n(site)/(app)/dna-schemes/[id]/edit/page.tsx" as FE1
+  component "/dna-schemes/new\n(site)/(app)/dna-schemes/new/page.tsx" as FE2
+  component "/dna\n(site)/(app)/dna/page.tsx" as FE3
+  component "/schemes/[id]/edit\n(site)/(app)/schemes/[id]/edit/page.tsx" as FE4
+  component "/schemes/new\n(site)/(app)/schemes/new/page.tsx" as FE5
   component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
   component "BackgroundController\n/api/backgrounds/art\n/api/backgrounds/catalog\n/api/backgrounds/recommendations\n/api/pieces/{…}/background" as BackgroundController
-  component "SchemeController\n/api/schemes\n/api/schemes/builder\n/api/schemes/compositions\n/api/schemes/photos\n(+4 rotas)" as SchemeController
-  component "SealController\n/api/seal-suggestions/preview\n/api/seal-suggestions/preview-piece" as SealController
-  component "WardrobeController\n/api/pieces\n/api/pieces/{…}/model3d\n/api/studio/backdrops" as WardrobeController
+  component "SchemeController\n/api/schemes\n/api/schemes/builder\n/api/schemes/compositions\n/api/schemes/photos\n(+6 rotas)" as SchemeController
+  component "SealController\n/api/schemes/{…}/seal-bonds\n/api/schemes/{…}/seal-suggestions\n/api/seal-bonds/{…}/accept\n/api/seal-suggestions/preview\n(+1 rotas)" as SealController
+  component "WardrobeController\n/api/pieces\n/api/pieces/{…}\n/api/pieces/{…}/copy\n/api/pieces/{…}/deletion-impact\n(+5 rotas)" as WardrobeController
 }
 package "fai-application (casos de uso)" {
   component "BackgroundStudioService" as BackgroundStudioService
@@ -86,6 +89,9 @@ CopilotService ..> WardrobeService
 FE0 --> APIC
 FE1 --> APIC
 FE2 --> APIC
+FE3 --> APIC
+FE4 --> APIC
+FE5 --> APIC
 LookPreviewService --> REPO_MySQL
 REPO_MySQL --> DB_MySQL : JPA/Flyway
 SchemeController --> CopilotService

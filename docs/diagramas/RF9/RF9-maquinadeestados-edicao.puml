@@ -19,17 +19,33 @@ skinparam state {
   StartColor #20A77A
   EndColor #4B5563
 }
-title RF9 — ciclo de vida de Scheme.status\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum SchemeStatus · tabela schemes
+title RF9 — ciclo de vida de SealBond.status\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nenum SealBondStatus · tabela seal_bonds
 
-state "Scheme.status" as Ciclo_Scheme {
-  state Ciclo_Scheme_DRAFT as "DRAFT"
-  state Ciclo_Scheme_PUBLISHED as "PUBLISHED"
-  state Ciclo_Scheme_ARCHIVED as "ARCHIVED"
+state "SealBond.status" as Ciclo_SealBond {
+  state Ciclo_SealBond_SUGGESTED as "SUGGESTED"
+  state Ciclo_SealBond_ACCEPTED as "ACCEPTED"
+  state Ciclo_SealBond_EDITED as "EDITED"
+  state Ciclo_SealBond_REFUSED as "REFUSED"
+  state Ciclo_SealBond_PENDING_REVIEW as "PENDING_REVIEW"
+  state Ciclo_SealBond_APPROVED as "APPROVED"
+  state Ciclo_SealBond_REJECTED as "REJECTED"
+  state Ciclo_SealBond_REVOKED as "REVOKED"
 }
-[*] --> Ciclo_Scheme_DRAFT : criação
-Ciclo_Scheme --> Ciclo_Scheme_ARCHIVED : purgeScheduledDeletions(), archive()
-Ciclo_Scheme --> Ciclo_Scheme_PUBLISHED : create(), publish(),\npublishInternal(), update()
-note right of Ciclo_Scheme
+[*] --> Ciclo_SealBond_SUGGESTED : criação
+Ciclo_SealBond --> Ciclo_SealBond_APPROVED : accept(), issue(), linkManually(),\nrequestHype(), review() +1
+Ciclo_SealBond --> Ciclo_SealBond_EDITED : linkManually(), requestHype()
+Ciclo_SealBond --> Ciclo_SealBond_PENDING_REVIEW : accept(), linkManually(),\nrequestHype(), route()
+Ciclo_SealBond --> Ciclo_SealBond_REFUSED : refuseAll()\nPOST /api/schemes/{schemeId}/seal-bonds/refu…
+Ciclo_SealBond --> Ciclo_SealBond_REVOKED : onPieceDeleted(), revoke(),\nrevokeForScheme(), revokeInternal()
+Ciclo_SealBond --> Ciclo_SealBond_SUGGESTED : suggest()\nGET /api/schemes/{schemeId}/seal-suggestions
+Ciclo_SealBond_REFUSED --> Ciclo_SealBond_ACCEPTED : accept()\nPOST /api/seal-bonds/{bondId}/accept
+Ciclo_SealBond_SUGGESTED --> Ciclo_SealBond_ACCEPTED : accept()\nPOST /api/seal-bonds/{bondId}/accept
+Ciclo_SealBond_SUGGESTED --> Ciclo_SealBond_REFUSED : refuse()\nPOST /api/seal-bonds/{bondId}/refuse
+note bottom of Ciclo_SealBond
+  Sem mudança explícita no código para: REJECTED
+  (valor vindo de importação, regra calculada ou dado legado)
+end note
+note right of Ciclo_SealBond
   Setas que saem da borda: a mudança vale
   a partir de qualquer estado (o código não
   testa o estado anterior).

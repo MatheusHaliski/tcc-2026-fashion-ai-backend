@@ -1,74 +1,72 @@
 @startuml RF28_Sequencia_Usar_Salvar
-title RF28 — Smart Mirror e "Vista-me" (só peças do próprio guarda-roupa)\nDiagrama de sequência — usar o look hoje, salvar como esquema e levar ao editor
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as U
-participant "mirror/page.tsx\n(ou room/page.tsx)" as FE
-participant "MirrorController" as C
-participant "MirrorService" as S
-participant "SchemeService" as SS
-participant "DailyLookService" as DL
-participant "WardrobeEventListeners" as WL
-participant "FaiPointsService" as FP
-participant "ChallengeService /\nAchievementService" as EXT
-database "MySQL" as DB
+autonumber "<b>0."
+title RF28 — Montar looks no Smart Mirror e pedir sugestões ao 'Vista-me' (só com peças do próprio guarda-roupa)\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
-== Usar este look hoje ==
-U -> FE: Usar este look hoje
-FE -> C: POST /api/me/mirror/use
-C -> S: useLook(user)
-alt look incompleto
-  S --> FE: 409 LOOK_INCOMPLETO
+actor "Pessoa usuária" as U
+boundary "Tela /room" as P
+control "MirrorController" as MirrorController
+participant "MirrorService" as MirrorService
+participant "WardrobeService" as WardrobeService
+database "MySQL" as DB_MySQL
+participant "RoomService" as RoomService
+queue "Eventos de domínio" as EV
+participant "LookScorer" as LookScorer
+== Vestir uma peça no espelho ==
+U -> P : Vestir uma peça no espelho
+P -> MirrorController : POST /api/me/mirror/pieces
+MirrorController -> MirrorService : place()
+activate MirrorService
+alt peça obrigatória
+MirrorService --> MirrorController : 400 PECA_OBRIGATORIA
+MirrorController --> P : 400 + mensagem
 end
-S -> DB: SELECT schemes + scheme_items (mesma combinação?)
-alt já existe esquema com as mesmas peças
-  S -> S: reaproveita o esquema
-else não existe
-  S -> SS: create(user, SchemeForm(origin SMART_MIRROR | VISTA_ME,\ncreationMode MANUAL | AI_ASSISTED, publish = false))
-  SS -> DB: INSERT schemes, scheme_items
-  SS ->> WL: SchemeSaved(created = true) (AFTER_COMMIT)
-end
-S -> DL: register(user, scheme, source, hoje)
-alt alguma peça indisponível
-  DL --> FE: 409 PECA_INDISPONIVEL
-else ok
-  DL -> DB: INSERT/UPDATE daily_looks (source = SMART_MIRROR | VISTA_ME)
-  DL ->> WL: DailyLookRegistered (AFTER_COMMIT)
-  DL ->> EXT: DailyLookRegistered → progresso dos desafios\ne conquista secreta SEXTA_CASUAL
-  S --> FE: 200 {schemeId, dailyLook, source, closing, message}
-end
-WL -> DB: INSERT piece_usage_diary (source DAILY_LOOK) e wearCount + 1
-opt source = VISTA_ME
-  WL -> FP: award(VISTA_ME_DAILY_LOOK) (+15, 1 por dia)
-  FP -> DB: INSERT fai_points_ledger
-end
-opt esquema novo
-  WL -> FP: award(SCHEME_CREATED) (+40, 5 por dia)
-end
-note over FE: no quarto: portas fecham, a luz do espelho sobe\ne aparece a foto do look (respeita reduzir movimento)
-
-== Salvar como look ==
-U -> FE: Salvar como look {título}
-FE -> C: POST /api/me/mirror/save {title, publish: false}
-C -> S: save(user, title, publish)
-alt menos de 2 peças
-  S --> FE: 400 SEM_PECAS
-else
-  S -> SS: create(...) (ou reaproveita o existente)
-  S --> FE: 200 {schemeId, title, origin}
-  FE -> U: vai para /schemes/{schemeId}
-end
-
-== Abrir no editor ==
-U -> FE: Abrir no editor
-FE -> C: POST /api/me/mirror/draft {origin: "MIRROR"}
-C -> S: draft(user, origin)
-S --> FE: 200 RoomLookDraft {origin, slots, accessories,\noccasion, prompt, sessionStorageKey "sai_room_look_draft"}
-note right of FE: a tela procura schemeId na resposta e não navega;\nnenhuma tela grava ou lê "sai_room_look_draft"\n(divergência com o RF28: o RF5 não abre com os slots)
+MirrorService -> WardrobeService : owned()
+WardrobeService -> DB_MySQL : SELECT wardrobe_items
+WardrobeService --> MirrorService
+MirrorService -> DB_MySQL : SELECT mirror_states
+MirrorService -> MirrorService : new MirrorState()
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService -> RoomService : locateAll()
+RoomService -> DB_MySQL : SELECT room_layouts
+RoomService -> DB_MySQL : SELECT users
+RoomService -> DB_MySQL : SELECT fai_points_ledger
+RoomService -> DB_MySQL : INSERT/UPDATE room_layouts
+RoomService --> MirrorService
+MirrorService -> DB_MySQL : SELECT wardrobe_items (×4)
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService ->> EV : MirrorAction
+MirrorService -> DB_MySQL : SELECT wardrobe_items
+MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
+MirrorService -> RoomService : locateAll()
+MirrorService -> DB_MySQL : SELECT style_dna
+MirrorService -> LookScorer : scoreLooks()
+LookScorer -> DB_MySQL : SELECT style_dna
+LookScorer -> DB_MySQL : SELECT schemes
+LookScorer -> DB_MySQL : SELECT scheme_items
+LookScorer --> MirrorService
+deactivate MirrorService
+MirrorService --> MirrorController : resultado
+MirrorController --> P : 201 JSON
+P --> U : atualiza a tela
 @enduml

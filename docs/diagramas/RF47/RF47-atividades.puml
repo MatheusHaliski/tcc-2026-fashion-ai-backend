@@ -24,13 +24,13 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF47 — Acervo & Busca Catalogada\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF47 — Acervo & Busca Catalogada\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /pieces/new, /try-on;
+:Abre /dna-schemes/[id]/edit,\n/dna-schemes/new, /dna;
 |Tela (Next.js)|
-:Carrega os dados da tela\nGET /api/catalog/brands\nGET /api/catalog/stores\nGET /api/catalog/products/{id};
+:Carrega os dados da tela\nGET /api/catalog/brands\nGET /api/catalog/products\nGET /api/catalog/stores;
 |Pessoa usuária|
 :Busca no catálogo interno\n(categoria, subcategoria, marca,…;
 |Tela (Next.js)|
@@ -48,13 +48,18 @@ if (Faz outra ação?) then (sim)
     :POST /api/catalog/discover\n→ CatalogService.discover\nlê: catalog_sources, catalog_product_aliases,\ncatalog_images …\nusa: OfficialCatalogDiscovery.discover,\nCatalogNormalizer.subcategory,\nCatalogIngestService.upsert …;
   case (Adiciona ao guarda-roupa a peça e…)
     :POST /api/pieces/from-catalog\n→ CatalogService.addToWardrobe\nvalida: PRODUTO_RECUSADO\nlê: catalog_products, brands, catalog_variants …\nusa: WardrobeService.createFromCatalog,\nWardrobeService.toggles\ngrava: catalog_products;
-  case (Editar a peça)
-    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
   case (Excluir a peça)
     :DELETE /api/pieces/{id}\n→ WardrobeService.delete\nlê: wardrobe_items, scheme_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.removePiece …\nestado: availabilityStatus → ARCHIVED, disponivel →\nfalse, visibility → PRIVATE;
   case (Cadastrar a peça a partir do rasc…)
-    :POST /api/pieces\n→ WardrobeService.create\nvalida: CONTEUDO_BLOQUEADO, ERRO,\nFORMULARIO_INVALIDO, FOTO_OBRIGATORIA\nlê: users, pipeline_jobs, wardrobe_items …\nusa: Guard.requireCanCreate, OwnMedia.accepts,\nMediaService.read …\nia: STUDIO_ENHANCER;
+    :POST /api/pieces\n→ WardrobeService.create\nvalida: CONTEUDO_BLOQUEADO, ERRO,\nFORMULARIO_INVALIDO, FOTO_OBRIGATORIA\nlê: users, pipeline_jobs, wardrobe_items …\nusa: Guard.requireCanCreate,\nAssetCatalogService.defaultPieceImage,\nAssetCatalogService.publicFile …\nia: STUDIO_ENHANCER;
+  case (Editar a peça)
+    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.piece\nevento: PieceUpdated;
   endswitch
+  note right
+  Outras ações deste RF:
+  Enquadramento automático em c…, Verifica novamente
+  a foto ori…
+  end note
   |Tela (Next.js)|
   :Atualiza a tela;
 endif

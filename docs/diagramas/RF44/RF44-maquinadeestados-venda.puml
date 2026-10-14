@@ -19,7 +19,7 @@ skinparam state {
   StartColor #20A77A
   EndColor #4B5563
 }
-title RF44 — ciclo de vida de SealBond.status\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum SealBondStatus · tabela seal_bonds
+title RF44 — ciclo de vida de SealBond.status\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nenum SealBondStatus · tabela seal_bonds
 
 state "SealBond.status" as Ciclo_SealBond {
   state Ciclo_SealBond_SUGGESTED as "SUGGESTED"
@@ -32,11 +32,11 @@ state "SealBond.status" as Ciclo_SealBond {
   state Ciclo_SealBond_REVOKED as "REVOKED"
 }
 [*] --> Ciclo_SealBond_SUGGESTED : criação
-Ciclo_SealBond --> Ciclo_SealBond_APPROVED : accept(), issue(), linkManually(),\nreview(), route()
-Ciclo_SealBond --> Ciclo_SealBond_EDITED : linkManually()\nPOST /api/schemes/{schemeId}/seal-bonds
-Ciclo_SealBond --> Ciclo_SealBond_PENDING_REVIEW : accept(), linkManually(), route()
+Ciclo_SealBond --> Ciclo_SealBond_APPROVED : accept(), issue(), linkManually(),\nrequestHype(), review() +1
+Ciclo_SealBond --> Ciclo_SealBond_EDITED : linkManually(), requestHype()
+Ciclo_SealBond --> Ciclo_SealBond_PENDING_REVIEW : accept(), linkManually(),\nrequestHype(), route()
 Ciclo_SealBond --> Ciclo_SealBond_REFUSED : refuseAll()\nPOST /api/schemes/{schemeId}/seal-bonds/refu…
-Ciclo_SealBond --> Ciclo_SealBond_REVOKED : revoke(), revokeForScheme(),\nrevokeInternal()
+Ciclo_SealBond --> Ciclo_SealBond_REVOKED : onPieceDeleted(), revoke(),\nrevokeForScheme(), revokeInternal()
 Ciclo_SealBond --> Ciclo_SealBond_SUGGESTED : suggest()\nGET /api/schemes/{schemeId}/seal-suggestions
 Ciclo_SealBond_REFUSED --> Ciclo_SealBond_ACCEPTED : accept()\nPOST /api/seal-bonds/{bondId}/accept
 Ciclo_SealBond_SUGGESTED --> Ciclo_SealBond_ACCEPTED : accept()\nPOST /api/seal-bonds/{bondId}/accept

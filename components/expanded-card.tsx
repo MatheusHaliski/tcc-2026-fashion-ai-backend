@@ -164,6 +164,8 @@ function LookHype({ id }: { id: string }) {
   return <HypeBadge state={hypeViewState(summary, { loading, error })} summary={summary} className="shrink-0" />;
 }
 
+import { CardBorder } from "@/components/card-border";
+import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
 import { AuraHype } from "@/components/hype/aura-hype";
 import { useTheme } from "@/lib/theme/theme";
 
@@ -179,7 +181,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const { prefs } = useTheme();
   const auraMode = data?.piece?.background?.auraHype as string | undefined;
   const auraEnabled = !!prefs.auraHype || !!auraMode && auraMode !== "OFF";
-  const hype = useHypeSummary("PIECE", id, auraEnabled);
+  const hype = useHypeSummary("PIECE", id, auraEnabled, auraEnabled);
   const p = data?.piece; const mine = !!user && p?.owner?.id === user.id;
   const model = useModel3d(id, { enabled: !!p && mine && !p.defaultImage, onCompleted: () => reload() });
   const [artRef, inView] = useInView<HTMLElement>();
@@ -279,11 +281,12 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   return (
     <>
       <article {...surface} ref={artRef} data-inview={inView} className={`fai-card is-expanded piece-detail ${surface.className}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={p.name}>
+        <CardBorder entityId={`PIECE:${p.id}`} background={p.background} auraHype={auraEnabled} hype={hypeViewState(hype.summary,hype)}/>
         <ArtStage bg={p.background} art={art} density="expanded" pieceHex={p.colorHex} />
         <div className="pc-frame"><div className="pc-content">
         <CardHeader owner={p.owner} sub={vis} trailing={headerExtra} />
         <div className="pd-layout">
-          <div className="pd-media relative">{auraEnabled && <AuraHype state={hypeViewState(hype.summary, hype)} mode={auraMode} />}
+          <div className="pd-media relative"><AuraMetamorphose mode={p.background?.auraMetamorphose as string | undefined}/>{auraEnabled && <AuraHype state={hypeViewState(hype.summary, hype)} mode={auraMode} />}
             <PieceGallery key={p.id + (p.studioImageUrl ?? "") + (p.mannequinImageUrl ?? "")} slides={slides} onOpen={setFullscreen} />
             {studioBusy && <div className="pd-busy" aria-live="polite">{t("common.montando_o_estudio")}</div>}
           </div>

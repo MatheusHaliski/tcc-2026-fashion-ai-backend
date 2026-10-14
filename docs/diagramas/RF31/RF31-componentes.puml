@@ -29,13 +29,19 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
+  component "/dna-schemes/[id]/edit\n(site)/(app)/dna-schemes/[id]/edit/page.tsx" as FE0
+  component "/dna-schemes/new\n(site)/(app)/dna-schemes/new/page.tsx" as FE1
+  component "/dna\n(site)/(app)/dna/page.tsx" as FE2
+  component "/pieces/[id]\n(site)/(app)/pieces/[id]/page.tsx" as FE3
+  component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE4
+  component "/schemes/[id]/edit\n(site)/(app)/schemes/[id]/edit/page.tsx" as FE5
   component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  component "WardrobeController\n/api/me/closet\n/api/pieces/{…}\n/api/pieces/{…}/deletion-impact\n/api/pieces/{…}/flags\n(+2 rotas)" as WardrobeController
+  component "WardrobeController\n/api/me/closet\n/api/pieces/{…}\n/api/pieces/{…}/copy\n/api/pieces/{…}/deletion-impact\n(+3 rotas)" as WardrobeController
 }
 package "fai-application (casos de uso)" {
   component "WardrobeService" as WardrobeService
@@ -56,6 +62,12 @@ database "MySQL\n• brands\n• moderation_queue\n• photos\n• pipeline_jobs
 cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
 component "Eventos de domínio\n(@TransactionalEventListener)" as EV
 APIC --> WardrobeController : HTTPS/JSON
+FE0 --> APIC
+FE1 --> APIC
+FE2 --> APIC
+FE3 --> APIC
+FE4 --> APIC
+FE5 --> APIC
 REPO_MySQL --> DB_MySQL : JPA/Flyway
 WardrobeController --> WardrobeService
 WardrobeService --> AI

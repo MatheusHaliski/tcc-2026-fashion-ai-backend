@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF3 — Gerenciar a conta: dados pessoais, sessão, segurança, privacidade (LGPD) e notificações\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
   component "/notifications\n(site)/(app)/notifications/page.tsx" as FE0

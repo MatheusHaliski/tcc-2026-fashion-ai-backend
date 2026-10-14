@@ -24,13 +24,13 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF21 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma celebridade\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF21 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma celebridade\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /schemes/new, /brands/[slug];
+:Abre /schemes/new, /brands/[slug],\n/dna-schemes/[id]/edit;
 |Tela (Next.js)|
-:Carrega os dados da tela\nGET /api/schemes/{schemeId}/seal-suggestions\nGET /api/me/seals\nGET /api/seal-bonds/review-queue;
+:Carrega os dados da tela\nGET /api/schemes/{schemeId}/seal-suggestions\nGET /api/me/seals\nGET /api/seal-bonds/review-queue\nGET /api/schemes/{schemeId}/seal-preview;
 |Pessoa usuária|
 :Vincular manualmente o esquema a uma\nmarca/celebridade;
 |Tela (Next.js)|
@@ -58,11 +58,13 @@ if (vinculo existente?) then (sim)
   stop
 endif
 note right
-  e mais 2 validações:
-  CONSENTIMENTO_IMAGEM, SealUnavailable
+  e mais 8 validações:
+  ACESSO_NEGADO, CONSENTIMENTO_IMAGEM,
+  HYPE_INDISPONIVEL, POLITICA_NAO_ATENDIDA,
+  SealUnavailable
 end note
 |Dados e serviços|
-:Lê: schemes\nusers\nscheme_items\nseal_bonds\nseals\nbrand_profiles;
+:Lê: schemes\nusers\nscheme_items\nseal_bonds\nbrand_profiles;
 :Usa: Guard.requireCanCreate\nGuard.requireOwner\nNotificationService.notify;
 :Grava: seal_bonds;
 :Estado: origin → MANUAL\nstatus → EDITED\nimageRightsConsent → ?imageRightsConsent\nrespondedAt → set\nrequiresReview → ?requiresReview\nstatus → PENDING_REVIEW (+4);
@@ -73,15 +75,15 @@ end note
 if (Faz outra ação?) then (sim)
   switch (Qual?)
   case (Selos possíveis para um look aind…)
-    :POST /api/seal-suggestions/preview\n→ SealService.preview\nlê: wardrobe_items\nia: SEALBOND_MATCHER;
+    :POST /api/seal-suggestions/preview\n→ SealService.preview;
   case (Aceitar sugestão de vínculo [com…)
-    :POST /api/seal-bonds/{bondId}/accept\n→ SealService.accept\nvalida: CONSENTIMENTO_IMAGEM, ESTADO_INVALIDO,\nSealUnavailable, VINCULO_EXISTENTE\nlê: seal_bonds, seals, scheme_items …\nusa: Guard.requireCanCreate, Guard.requireOwner,\nNotificationService.notify\nestado: status → ACCEPTED, imageRightsConsent →\n?imageRightsConsent, respondedAt → set …;
+    :POST /api/seal-bonds/{bondId}/accept\n→ SealService.accept\nvalida: ACESSO_NEGADO, CONSENTIMENTO_IMAGEM,\nESTADO_INVALIDO, HYPE_INDISPONIVEL …\nlê: seal_bonds, scheme_items, brand_profiles\nusa: Guard.requireCanCreate, Guard.requireOwner,\nNotificationService.notify\nestado: status → ACCEPTED, imageRightsConsent →\n?imageRightsConsent, respondedAt → set …;
   case (Recusar todas as sugestões do esq…)
     :POST /api/schemes/{schemeId}/seal-bonds/refuse-all\n→ SealService.refuseAll\nlê: seal_bonds\nestado: status → REFUSED, respondedAt → set;
   case (Recusar sugestão de vínculo)
     :POST /api/seal-bonds/{bondId}/refuse\n→ SealService.refuse\nvalida: ESTADO_INVALIDO\nlê: seal_bonds, brand_profiles\nusa: Guard.requireOwner\nestado: status → REFUSED, respondedAt → set;
   case (Emissor aprova ou rejeita o víncu…)
-    :POST /api/seal-bonds/{bondId}/review\n→ SealService.review\nvalida: ESTADO_INVALIDO, MOTIVO_OBRIGATORIO\nlê: seal_bonds, brand_profiles\nusa: Guard.requireApprovedInstitutional,\nGuard.requireOwner,\nNotificationService.notify\nestado: revalidationPending → false, status →\nAPPROVED, reviewedAt → set …;
+    :POST /api/seal-bonds/{bondId}/review\n→ SealService.review\nvalida: ACESSO_NEGADO, ESTADO_INVALIDO,\nHYPE_INDISPONIVEL, MOTIVO_OBRIGATORIO …\nlê: seal_bonds, seals, scheme_items …\nusa: Guard.requireApprovedInstitutional,\nGuard.requireOwner,\nNotificationService.notify\nestado: revalidationPending → false, status →\nAPPROVED, reviewedAt → set …;
   endswitch
   note right
   Outras ações deste RF:

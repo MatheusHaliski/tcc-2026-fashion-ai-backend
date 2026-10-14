@@ -1,4 +1,5 @@
 "use client";
+import { PieceCreationGuide } from "@/components/piece-creation-guide";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -8,5 +9,6 @@ export function CreatorWelcome({ kind }: { kind: "piece" | "seal" | "studio" }) 
   const key = `fai.creator.welcome.${kind}:${user?.id ?? "anon"}`;
   useEffect(() => { if (!user) return; try { setOpen(localStorage.getItem(key) !== "seen"); } catch { setOpen(true); } }, [key, !!user]);
   const close = () => { try { localStorage.setItem(key, "seen"); } catch {} setOpen(false); };
+  if(kind === "piece") return <><Button size="sm" onClick={()=>setOpen(true)}>{t("creatorWelcome.help")}</Button><PieceCreationGuide open={open} onClose={close}/></>;
   return <><Button size="sm" onClick={() => setOpen(true)}>{t("creatorWelcome.help")}</Button><Dialog open={open} onClose={close} title={t(`creatorWelcome.${kind}.title`)} footer={<Button onClick={close}>{t("common.close")}</Button>}><p className="type-body">{t(`creatorWelcome.${kind}.text`)}</p></Dialog></>;
 }

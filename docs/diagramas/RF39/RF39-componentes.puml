@@ -29,11 +29,11 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF39 — 'Criar guarda-roupa 3D': componentes ou guarda-roupa inteiro de marca/celebridade vendidos na loja do quarto\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF39 — 'Criar guarda-roupa 3D': componentes ou guarda-roupa inteiro de marca/celebridade vendidos na loja do quarto\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE0
-  component "/points\n(site)/(app)/points/page.tsx" as FE1
+  component "/admin/room-assets\n(site)/(app)/admin/room-assets/page.tsx" as FE0
+  component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE1
   component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {

@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF40 — Avatar 3D: tipos da montagem da roupa\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF40 — Avatar 3D: tipos da montagem da roupa\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "components/ui/index.tsx" {
   class FieldProps as "FieldProps" <<interface>> {
@@ -47,14 +47,14 @@ package "components/ui/index.tsx" {
     +action: { label: string; href?: string; onSelec…
     +onClose: () => void
   }
+  class TrailItem as "TrailItem" <<interface>> {
+    +label: string
+    +onClick: () => void
+    +href: string
+  }
   class NoticeItem as "NoticeItem" <<interface>> {
     +id: number
     +kind: NoticeKind
-    +text: string
-  }
-  class Toast as "Toast" <<interface>> {
-    +id: number
-    +kind: 'info' | 'success' | 'error'
     +text: string
   }
   class mod_index_tsx as "index.tsx" <<módulo>> {
@@ -71,16 +71,16 @@ package "components/ui/index.tsx" {
 package "lib/avatar3d/human/garments.ts" {
   class GarmentSpec as "GarmentSpec" <<interface>> {
     +kind: GarmentKind
+    +construction: 'cargo'
+    +placket: boolean
+    +placketLength: number
     +ease: number
     +hem: number
     +neck: number
     +vneck: number
+    +neckShape: 'round' | 'v' | 'square' | 'boat'
     +waist: number
-    +sleeve: number
-    +leg: number
-    +skirt: number
-    +drape: number
-    .. +2 ..
+    .. +9 ..
   }
   class BodyParam as "BodyParam" <<interface>> {
     +group: Uint8Array
@@ -93,31 +93,33 @@ package "lib/avatar3d/human/garments.ts" {
     +ankleY: number
     +torsoZ: number
     +neckZ: number
-    .. +2 ..
+    .. +3 ..
   }
-  class GarmentGeometry as "GarmentGeometry" <<interface>> {
-    +spec: GarmentSpec
-    +position: Float32Array
-    +alpha: Float32Array
-    +skinIndex: Uint16Array
-    +skinWeight: Float32Array
-    +index: Uint32Array
-    +source: Int32Array
+  class PhotoInfo as "PhotoInfo" <<interface>> {
+    +landmarks: GarmentLandmarks | null
+    +width: number
+    +height: number
+    +box: { x0: number; y0: number; x1: number; y…
+    +widthAt: (fy: number) => { x0: number; x1: numbe…
+    +collarRow: number | null
+    +neckDrop: number | null
+    +cutout: boolean
+    +backdrop: [number, number, number] | null
   }
   class mod_garments_ts as "garments.ts" <<módulo>> {
     +kindOf()
+    +specOf()
     +armOutFor()
     +bodyParam()
     +necklineH()
     +coverageOf()
     +tubeRadius()
     +underLayer()
-    +garmentGeometry()
   }
 }
 package "lib/avatar3d/human/garment-trims.ts" {
   class TrimBand as "TrimBand" <<interface>> {
-    +part: 'barra' | 'punho'
+    +part: 'barra' | 'punho' | 'carcela' | 'costur…
     +position: Float32Array
     +skinIndex: Uint16Array
     +skinWeight: Float32Array
@@ -125,6 +127,7 @@ package "lib/avatar3d/human/garment-trims.ts" {
   }
   class mod_garment_trims_ts as "garment-trims.ts" <<módulo>> {
     +trimWidth()
+    +shirtPlacket()
     +garmentTrims()
   }
 }
@@ -153,5 +156,4 @@ package "lib/avatar3d/human/shoes.ts" {
     +shoeParts()
   }
 }
-GarmentGeometry --> GarmentSpec : spec
 @enduml

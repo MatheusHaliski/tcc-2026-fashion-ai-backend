@@ -24,7 +24,7 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF40 — Avatar 3D: montagem da roupa (caimento de tecido, acabamentos e tênis) sobre o corpo com esqueleto\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF40 — Avatar 3D: montagem da roupa (caimento de tecido, acabamentos e tênis) sobre o corpo com esqueleto\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
@@ -38,30 +38,47 @@ partition "c/ui/index.tsx · ChipMultiSelect()" {
 }
 |Tela (React)|
 partition "c/three/human-outfit.tsx · HumanOutfit()" {
-  :withDefaultOutfit()\n<size:10>lib/avatar3d/human/default-outfit.ts</size>;
   :kindOf()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :withDefaultOutfit()\n<size:10>lib/avatar3d/human/default-outfit.ts</size>;
+  :specFor()\n<size:10>lib/avatar3d/human/garment-fit.ts</size>;
+  :kindOf()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :withDefaultOutfit()\n<size:10>lib/avatar3d/human/default-outfit.ts</size>;
+  :specFor()\n<size:10>lib/avatar3d/human/garment-fit.ts</size>;
+  if (!settled?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  :zonesCovered(), zonesCovered()\n<size:10>lib/avatar3d/human/default-outfit.ts</size>;
+  :specFor()\n<size:10>lib/avatar3d/human/garment-fit.ts</size>;
+  :publishPhotoStates()\n<size:10>lib/tryon/garment-status.ts</size>;
   :mediaUrl()\n<size:10>lib/api/client.ts</size>;
   :loadTexture()\n<size:10>c/three/common.tsx</size>;
+  :prepareGarmentPhoto(), prepareOutfitPhoto()\n<size:10>lib/avatar3d/human/garment-photo.ts</size>;
+  if (kind === 'dress' || kind === 'jumpsuit' || kind =…?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  if (kind === 'shoes' || kind === 'boots'?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  if (['pants', 'shorts', 'bermuda', 'culottes', 'leggi…?) then (sim)
+    :encerra este passo;
+    stop
+  endif
   :setArmOut()\n<size:10>lib/avatar3d/human/pose.ts</size>;
   :armOutFor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
   :applyIdle()\n<size:10>lib/avatar3d/human/pose.ts</size>;
   :bodyParam()\n<size:10>lib/avatar3d/human/garments.ts</size>;
-  :smoothBody()\n<size:10>lib/avatar3d/human/garment-relax.ts</size>;
-  :underLayer(), garmentGeometry()\n<size:10>lib/avatar3d/human/garments.ts</size>;
-  if (!gg?) then (sim)
-    :encerra este passo;
-    stop
-  endif
-  :relaxGarment(), foldGarment()\n<size:10>lib/avatar3d/human/garment-relax.ts</size>;
-  :posedPositions(), texturedGeometry(), photoInfo(), fabricColor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
-  :garmentTexture(), shoeColors()\n<size:10>lib/avatar3d/human/garments.ts</size>;
-  :shoeParts(), shoeStyleOf()\n<size:10>lib/avatar3d/human/shoes.ts</size>;
-  :garmentMaterial(), trimColors(), ribColor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
-  :garmentTrims()\n<size:10>lib/avatar3d/human/garment-trims.ts</size>;
-  :collarBand(), ribColor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
-  :zonesCovered()\n<size:10>lib/avatar3d/human/default-outfit.ts</size>;
-  :kindOf()\n<size:10>lib/avatar3d/human/garments.ts</size>;
-  :zonesCovered(), every()\n<size:10>lib/avatar3d/human/default-outfit.ts</size>;
+  :softBodyOf(), buildGarment()\n<size:10>lib/avatar3d/human/dress.ts</size>;
+  :photoInfo()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :occludeInnerGarment(), visibleGarmentFinishes()\n<size:10>lib/avatar3d/human/garment-layers.ts</size>;
+  :posedPositions()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :… e mais 26 passos no código;
+  note right
+  e mais 4 condições que encerram cedo:
+  !gg, !info || info.neckDrop === null || Number.isNaN(sp.hem) || sp.leg > 0 || !HAS_COLLAR…
+  end note
 }
 |Tela (React)|
 partition "c/three/human-outfit.tsx · dress()" {
@@ -69,21 +86,33 @@ partition "c/three/human-outfit.tsx · dress()" {
   :armOutFor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
   :applyIdle()\n<size:10>lib/avatar3d/human/pose.ts</size>;
   :bodyParam()\n<size:10>lib/avatar3d/human/garments.ts</size>;
-  :smoothBody()\n<size:10>lib/avatar3d/human/garment-relax.ts</size>;
-  :underLayer(), garmentGeometry()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :softBodyOf(), buildGarment()\n<size:10>lib/avatar3d/human/dress.ts</size>;
   if (!gg?) then (sim)
     :encerra este passo;
     stop
   endif
-  :relaxGarment(), foldGarment()\n<size:10>lib/avatar3d/human/garment-relax.ts</size>;
-  :posedPositions(), texturedGeometry(), photoInfo(), fabricColor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :photoInfo()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  if (!info || info.neckDrop === null || Number.isNaN[s…?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  if (![depth > sp.vneck + 0.03?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  if (!plan?) then (sim)
+    :encerra este passo;
+    stop
+  endif
+  :occludeInnerGarment(), visibleGarmentFinishes()\n<size:10>lib/avatar3d/human/garment-layers.ts</size>;
+  :posedPositions(), photoInfo(), texturedGeometry(), fabricColor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
   :garmentTexture(), shoeColors()\n<size:10>lib/avatar3d/human/garments.ts</size>;
   :shoeParts(), shoeStyleOf()\n<size:10>lib/avatar3d/human/shoes.ts</size>;
   :garmentMaterial(), trimColors(), ribColor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
   :garmentTrims()\n<size:10>lib/avatar3d/human/garment-trims.ts</size>;
   :collarBand(), ribColor()\n<size:10>lib/avatar3d/human/garments.ts</size>;
   :zonesCovered()\n<size:10>lib/avatar3d/human/default-outfit.ts</size>;
-  :kindOf()\n<size:10>lib/avatar3d/human/garments.ts</size>;
+  :specFor()\n<size:10>lib/avatar3d/human/garment-fit.ts</size>;
   :zonesCovered(), every()\n<size:10>lib/avatar3d/human/default-outfit.ts</size>;
 }
 |Pessoa usuária|

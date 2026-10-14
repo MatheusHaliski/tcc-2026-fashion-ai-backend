@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF28 — Montar looks no Smart Mirror e pedir sugestões ao 'Vista-me' (só com peças do próprio guarda-roupa)\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF28 — Montar looks no Smart Mirror e pedir sugestões ao 'Vista-me' (só com peças do próprio guarda-roupa)\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "fai-domain (entidades JPA)" {
   class Brand <<brands>> {
@@ -34,7 +34,7 @@ package "fai-domain (entidades JPA)" {
     +fixtureKey: String
     +sourceConfidence: BigDecimal
     +verifiedAt: Instant
-    .. +2 campos ..
+    .. +3 campos ..
   }
   class BrandProfile <<brand_profiles>> {
     +id: UUID
@@ -62,6 +62,7 @@ package "fai-domain (entidades JPA)" {
   }
   class MirrorState <<mirror_states>> {
     +id: UUID
+    +tipoLook: TipoLook
     +userId: UUID
     +slotsJson: String
     +shownCombinationsJson: String
@@ -79,6 +80,7 @@ package "fai-domain (entidades JPA)" {
   }
   class Scheme <<schemes>> {
     +id: UUID
+    +tipoLook: TipoLook
     +user: User
     +originalScheme: Scheme
     +title: String
@@ -87,8 +89,7 @@ package "fai-domain (entidades JPA)" {
     +origin: SchemeOrigin
     +style: String
     +occasion: String
-    +season: Season
-    .. +46 campos ..
+    .. +44 campos ..
   }
   class SchemeItem <<scheme_items>> {
     +id: UUID
@@ -127,7 +128,7 @@ package "fai-domain (entidades JPA)" {
     +birthDate: String
     +passwordHash: String
     +profileType: ProfileType
-    .. +24 campos ..
+    .. +25 campos ..
   }
   class WardrobeItem <<wardrobe_items>> {
     +id: UUID
@@ -137,10 +138,10 @@ package "fai-domain (entidades JPA)" {
     +name: String
     +category: String
     +subcategory: String
-    +sex: String
-    +brandName: String
-    +brandLogoUrl: String
-    .. +70 campos ..
+    +variationCode: String
+    +variationStatus: String
+    +variationConfidence: BigDecimal
+    .. +73 campos ..
   }
 }
 package "fai-domain (enums)" {
@@ -188,15 +189,15 @@ package "fai-domain (enums)" {
 package "fai-application" {
   class MirrorService <<service>> {
     +state()
+    +updateTipoLook()
     +place()
+    +bring()
+    +unbring()
     +remove()
     +clear()
     +suggest()
     +wardrobe()
     +vistaMe()
-    +another()
-    +swap()
-    +takeOneOff()
   }
 }
 MirrorService ..> MirrorState : usa

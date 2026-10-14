@@ -1,0 +1,33 @@
+{
+  "mode": "API simulada com scores explícitos de teste, foto oficial real; não comprova concessão ou dados de produção",
+  "tiers": [
+    {
+      "tier": "BRONZE",
+      "ovr": 62
+    },
+    {
+      "tier": "PRATA",
+      "ovr": 74
+    },
+    {
+      "tier": "OURO",
+      "ovr": 88
+    }
+  ],
+  "globalHype": 84,
+  "normalMotion": "fgc-metal-reflection",
+  "reducedMotion": "none",
+  "borderSequence": [
+    84,
+    89,
+    82
+  ],
+  "pulseExpires": true,
+  "metamorphoseModes": [
+    "PRISMA",
+    "CONSTELACAO",
+    "FIO_VIVO",
+    "HOLOGRAFIA"
+  ],
+  "pageErrors": []
+}

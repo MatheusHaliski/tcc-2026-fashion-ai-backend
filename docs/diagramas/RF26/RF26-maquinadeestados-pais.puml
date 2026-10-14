@@ -19,7 +19,7 @@ skinparam state {
   StartColor #20A77A
   EndColor #4B5563
 }
-title RF26 — ExplorerService.globalPanel(): sufficient por limiar\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nsufficient = total ≥ MIN_DATA (3) · recalculado a cada chamada
+title RF26 — ExplorerService.globalPanel(): sufficient por limiar\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nsufficient = total ≥ MIN_DATA (3) · recalculado a cada chamada
 
 state "ExplorerService.globalPanel() — sufficient" as T_sufficient {
   state "sufficient = false\ntotal < 3" as T_sufficient_F

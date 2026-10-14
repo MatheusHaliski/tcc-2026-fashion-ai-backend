@@ -1,44 +1,46 @@
 @startuml RF3_MaquinaDeEstados_Exclusao
 !pragma layout smetana
-title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de máquina de estados — exclusão da conta com carência de 30 dias (AccountStatus)
 skinparam backgroundColor #FFFFFF
-skinparam state {
-  BackgroundColor #F8F4FF
-  BorderColor #B695F5
-  FontColor #2D2438
-  ArrowColor #52606D
-}
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
 skinparam note {
   BackgroundColor #FFFDEB
   BorderColor #D8CE78
   FontColor #554F24
 }
-state "Estado anterior\n(PENDING_EMAIL_VERIFICATION,\nPENDING_VALIDATION ou ACTIVE)" as Antes
-state "DELETION_SCHEDULED\n(deletionScheduledFor = +30 dias)" as Agendada
-state "DELETED\n(anonimizada)" as Excluida
+skinparam state {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  StartColor #20A77A
+  EndColor #4B5563
+}
+title RF3 — ciclo de vida de User.status\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nenum AccountStatus · tabela users
 
-[*] --> Antes
-Antes --> Agendada : POST /api/me/deletion {password}\n(reautenticação; 401 / 429)\ne-mail de aviso · audit EXCLUSAO_CONTA
-Agendada --> Antes : DELETE /api/me/deletion\n(volta pelo e-mail confirmado e pela aprovação)\naudit EXCLUSAO_CANCELADA
-Agendada --> Excluida : AccountService.purgeScheduledDeletions()\nquando deletionScheduledFor ≤ agora
-Excluida --> [*]
-
-note right of Agendada
-  Login continua possível, com o aviso
-  "sua conta será excluída em …".
-  Criar/editar → 403 EXCLUSAO_AGENDADA
-  (Guard.requireCanCreate).
+state "User.status" as Ciclo_User {
+  state Ciclo_User_PENDING_EMAIL_VERIFICATION as "PENDING_EMAIL_VERIFICATION"
+  state Ciclo_User_ACTIVE as "ACTIVE"
+  state Ciclo_User_PENDING_VALIDATION as "PENDING_VALIDATION"
+  state Ciclo_User_SUSPENDED as "SUSPENDED"
+  state Ciclo_User_DELETION_SCHEDULED as "DELETION_SCHEDULED"
+  state Ciclo_User_DELETED as "DELETED"
+}
+[*] --> Ciclo_User_PENDING_EMAIL_VERIFICATION : criação
+Ciclo_User --> Ciclo_User_ACTIVE : ensureAdmin(), decide()
+Ciclo_User --> Ciclo_User_DELETED : purgeScheduledDeletions()
+Ciclo_User --> Ciclo_User_DELETION_SCHEDULED : requestDeletion()\nPOST /api/me/deletion
+Ciclo_User --> Ciclo_User_PENDING_EMAIL_VERIFICATION : register()\nPOST /api/auth/register
+note bottom of Ciclo_User
+  Sem mudança explícita no código para: PENDING_VALIDATION, SUSPENDED
+  (valor vindo de importação, regra calculada ou dado legado)
 end note
-note right of Excluida
-  username deleted_xxxxxxxx, e-mail deleted+…@fashionai.invalid,
-  nome, telefone, nascimento, bio, avatar e capa apagados;
-  senha aleatória; peças e looks ARCHIVED e PRIVATE;
-  comentários "removido"; fotos, avatar 3D, scans do Lens e
-  marcos de Hype apagados; todas as sessões revogadas.
-  A linha de users fica (sem DELETE).
-end note
-note bottom of Excluida
-  <<planejado>> gatilho: o método existe e tem teste, mas não
-  há @Scheduled nem chamada (nem pelo POST /api/admin/jobs/{job}).
+note right of Ciclo_User
+  Setas que saem da borda: a mudança vale
+  a partir de qualquer estado (o código não
+  testa o estado anterior).
 end note
 @enduml

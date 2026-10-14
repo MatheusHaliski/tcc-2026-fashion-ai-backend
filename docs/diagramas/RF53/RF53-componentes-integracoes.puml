@@ -29,15 +29,15 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF53 — HypeScore v2 nas outras funcionalidades\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF53 — HypeScore v2 nas outras funcionalidades\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
   component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE0
   component "/explorer\n(site)/(app)/explorer/page.tsx" as FE1
   component "/feed\n(site)/(app)/feed/page.tsx" as FE2
-  component "/flair\n(site)/(app)/flair/page.tsx" as FE3
-  component "/looks\n(site)/(app)/looks/page.tsx" as FE4
-  component "/schemes/[id]/edit\n(site)/(app)/schemes/[id]/edit/page.tsx" as FE5
+  component "/flair/cartas\n(site)/(app)/flair/cartas/page.tsx" as FE3
+  component "/flair/carteira\n(site)/(app)/flair/carteira/page.tsx" as FE4
+  component "/flair/decks\n(site)/(app)/flair/decks/page.tsx" as FE5
   component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
@@ -59,10 +59,10 @@ package "fai-application (casos de uso)" {
   component "NotificationService" as NotificationService <<apoio>>
   component "AssetCatalogService" as AssetCatalogService <<apoio>>
   component "ChallengeService" as ChallengeService <<apoio>>
-  component "HypeScoreService" as HypeScoreService <<apoio>>
   component "InventoryScoreService" as InventoryScoreService <<apoio>>
   component "UploadQuarantine" as UploadQuarantine <<apoio>>
   component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
+  component "WardrobeService" as WardrobeService <<apoio>>
   component "AnalyticsQueryPort\n«MysqlAnalyticsAdapter»" as AnalyticsQueryPort <<port>>
 }
 package "fai-domain (repositórios)" {
@@ -83,7 +83,6 @@ AdminService --> REPO_MySQL
 AdminService ..> AssetCatalogService
 AdminService ..> ChallengeService
 AdminService ..> HypeScoreConfig
-AdminService ..> HypeScoreService
 AdminService ..> IdentityService
 AdminService ..> InventoryScoreService
 AdminService ..> NotificationService
@@ -93,6 +92,7 @@ CopilotService --> AI
 CopilotService --> REPO_MySQL
 CopilotService ..> ChallengeService
 CopilotService ..> InventoryScoreService
+CopilotService ..> WardrobeService
 DashboardController --> DashboardService
 DashboardService --> AI
 DashboardService --> AnalyticsQueryPort

@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF17 — Permitir que o Usuário visualize a página de perfil de outros Usuários cadastrados dentro da rede social do FashionAI\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF17 — Permitir que o Usuário visualize a página de perfil de outros Usuários cadastrados dentro da rede social do FashionAI\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
   component "/closet\n(site)/(app)/closet/page.tsx" as FE0
@@ -41,7 +41,7 @@ package "Frontend (Next.js)" {
 package "fai-web (REST)" {
   component "NotificationController\n/api/notifications\n/api/notifications/preferences\n/api/notifications/read\n/api/notifications/read-all\n(+1 rotas)" as NotificationController
   component "ProfileController\n/api/follow-requests/{…}\n/api/me/follow-requests\n/api/profiles/{…}\n/api/users/{…}/block\n(+3 rotas)" as ProfileController
-  component "WardrobeController\n/api/me/closet\n/api/me/pieces/studio\n/api/users/{…}/closet" as WardrobeController
+  component "WardrobeController\n/api/me/closet\n/api/users/{…}/closet" as WardrobeController
 }
 package "fai-application (casos de uso)" {
   component "NotificationService" as NotificationService
@@ -59,9 +59,9 @@ package "fai-application (casos de uso)" {
   component "JobQueuePort\n«InMemoryJobQueue»" as JobQueuePort <<port>>
 }
 package "fai-domain (repositórios)" {
-  component "NotificationRepository\nUserRepository\nUserPreferencesRepository\nFollowRepository\nSchemeRepository\nSchemeItemRepository\nWardrobeItemRepository\nHypeScoreCurrentRepository\nBrandRepository\nPipelineJobRepository\n(+6)" as REPO_MySQL
+  component "NotificationRepository\nUserRepository\nUserPreferencesRepository\nFollowRepository\nSchemeRepository\nSchemeItemRepository\nWardrobeItemRepository\nHypeScoreCurrentRepository\nBrandProfileRepository\nCelebrityProfileRepository\n(+8)" as REPO_MySQL
 }
-database "MySQL\n• brands\n• follows\n• hype_scores\n• moderation_queue\n• notifications\n• photos\n• pipeline_jobs\n• processing_jobs_log\n• quality_scores\n• reactions\n• saved_items\n• scheme_items\n(+4)" as DB_MySQL
+database "MySQL\n• brand_profiles\n• brands\n• celebrity_profiles\n• follows\n• hype_scores\n• moderation_queue\n• notifications\n• photos\n• pipeline_jobs\n• processing_jobs_log\n• quality_scores\n• reactions\n(+6)" as DB_MySQL
 cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
 component "Eventos de domínio\n(@TransactionalEventListener)" as EV
 cloud "Cassandra" as CL_Cassandra

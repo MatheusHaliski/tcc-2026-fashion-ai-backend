@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF38 — Cupons Fashion AI: 'Meus cupons promocionais' (marca/celebridade) e 'Meus cupons resgatados' (lookbook)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF38 — Cupons Fashion AI: 'Meus cupons promocionais' (marca/celebridade) e 'Meus cupons resgatados' (lookbook)\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
   component "/coupons\n(site)/(app)/coupons/page.tsx" as FE0
