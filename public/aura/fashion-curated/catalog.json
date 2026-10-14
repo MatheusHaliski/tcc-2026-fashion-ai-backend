@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "presets": [
+    {
+      "id": "satin-ivory",
+      "name": "Cetim editorial",
+      "family": "COMMON",
+      "palette": [
+        "#dcc7a5",
+        "#faf1e1"
+      ],
+      "image": "/aura/fashion-curated/satin-ivory.webp",
+      "source": "Composição original gerada para FashionAI",
+      "license": "ORIGINAL"
+    },
+    {
+      "id": "liquid-chrome",
+      "name": "Cromo líquido",
+      "family": "COMMON",
+      "palette": [
+        "#b9a3d5",
+        "#c4dfef"
+      ],
+      "image": "/aura/fashion-curated/liquid-chrome.webp",
+      "source": "Composição original gerada para FashionAI",
+      "license": "ORIGINAL"
+    },
+    {
+      "id": "cyan-thread",
+      "name": "Fios de luz ciano",
+      "family": "ELECTRO",
+      "palette": [
+        "#7edbe8",
+        "#566b8b"
+      ],
+      "image": "/aura/fashion-curated/cyan-thread.webp",
+      "source": "Composição original gerada para FashionAI",
+      "license": "ORIGINAL"
+    },
+    {
+      "id": "rose-thread",
+      "name": "Fios de luz rosé",
+      "family": "ELECTRO",
+      "palette": [
+        "#d49abd",
+        "#e1b591"
+      ],
+      "image": "/aura/fashion-curated/rose-thread.webp",
+      "source": "Composição original gerada para FashionAI",
+      "license": "ORIGINAL"
+    },
+    {
+      "id": "violet-ink",
+      "name": "Tinta violeta",
+      "family": "SPLASH",
+      "palette": [
+        "#a48bcf",
+        "#ede3d6"
+      ],
+      "image": "/aura/fashion-curated/violet-ink.webp",
+      "source": "Composição original gerada para FashionAI",
+      "license": "ORIGINAL"
+    },
+    {
+      "id": "coral-ink",
+      "name": "Tinta coral",
+      "family": "SPLASH",
+      "palette": [
+        "#d77858",
+        "#f2d2ba"
+      ],
+      "image": "/aura/fashion-curated/coral-ink.webp",
+      "source": "Composição original gerada para FashionAI",
+      "license": "ORIGINAL"
+    }
+  ]
+}

@@ -21,21 +21,26 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF10 — Possibilitar que o usuário gere recomendações de esquemas de vestimenta & de peças de roupa através da aba 'Copilot'\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF10 — Possibilitar que o usuário gere recomendações de esquemas de vestimenta & de peças de roupa através da aba 'Copilot'\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 boundary "Tela /copilot" as P
 control "AutopilotController" as AutopilotController
 participant "CopilotService" as CopilotService
+participant "SealService" as SealService
 participant "RoomService" as RoomService
 database "MySQL" as DB_MySQL
 participant "HypeQueryService" as HypeQueryService
-participant "InventoryScoreService" as InventoryScoreService
 == Perguntar ao Copilot (roteamento de intenção, chips de peças, sugestõ… ==
 U -> P : Perguntar ao Copilot (roteamento de intenção, chi…
 P -> AutopilotController : POST /api/copilot/messages
 AutopilotController -> CopilotService : ask()
 activate CopilotService
+alt ia indisponível
+CopilotService --> AutopilotController : 503 IA_INDISPONIVEL
+AutopilotController --> P : 503 + mensagem
+end
+CopilotService -> SealService : draft()
 alt mensagem vazia
 CopilotService --> AutopilotController : 400 MENSAGEM_VAZIA
 AutopilotController --> P : 400 + mensagem
@@ -67,13 +72,7 @@ RoomService -> DB_MySQL : SELECT piece_usage_diary
 RoomService --> CopilotService
 CopilotService -> DB_MySQL : SELECT wardrobe_items
 CopilotService -> RoomService : locateAll()
-CopilotService -> InventoryScoreService : improvementHints()
-InventoryScoreService -> DB_MySQL : SELECT wardrobe_items
-InventoryScoreService -> DB_MySQL : SELECT schemes
-InventoryScoreService -> DB_MySQL : SELECT scheme_items
-InventoryScoreService -> DB_MySQL : SELECT piece_usage_diary
-InventoryScoreService --> CopilotService
-note over CopilotService : … e mais 35 passos no código
+note over CopilotService : … e mais 38 passos no código
 deactivate CopilotService
 CopilotService --> AutopilotController : resultado
 AutopilotController --> P : 201 JSON

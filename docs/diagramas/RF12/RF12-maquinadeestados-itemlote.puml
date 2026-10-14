@@ -19,7 +19,7 @@ skinparam state {
   StartColor #20A77A
   EndColor #4B5563
 }
-title RF12 — ciclo de vida de PipelineJob.status\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum PipelineJobStatus · tabela pipeline_jobs
+title RF12 — ciclo de vida de PipelineJob.status\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nenum PipelineJobStatus · tabela pipeline_jobs
 
 state "PipelineJob.status" as Ciclo_PipelineJob {
   state Ciclo_PipelineJob_PENDING as "PENDING"
@@ -32,12 +32,13 @@ state "PipelineJob.status" as Ciclo_PipelineJob {
   state Ciclo_PipelineJob_CANCELLED as "CANCELLED"
 }
 [*] --> Ciclo_PipelineJob_PENDING : criação
-Ciclo_PipelineJob --> Ciclo_PipelineJob_COMPLETED : complete(), follow(), start(),\naiPieceDraft(), detect() +6
-Ciclo_PipelineJob --> Ciclo_PipelineJob_FAILED : complete(), fail(), follow(),\nsafely(), start() +2
+Ciclo_PipelineJob --> Ciclo_PipelineJob_COMPLETED : complete(), follow(), start(),\naiPieceDraft(), detect() +7
+Ciclo_PipelineJob --> Ciclo_PipelineJob_FAILED : complete(), fail(), follow(),\nsafely(), start() +5
 Ciclo_PipelineJob --> Ciclo_PipelineJob_PENDING : request(), create(), createBatch(),\ncreateFromCatalog(),\ncreateInternal()
-Ciclo_PipelineJob --> Ciclo_PipelineJob_RUNNING : start(), reprocessPending()
+Ciclo_PipelineJob --> Ciclo_PipelineJob_RENDERING : claim(), tick()
+Ciclo_PipelineJob --> Ciclo_PipelineJob_RUNNING : start(), create(), importMeshy(),\nqueue(), tick() +1
 note bottom of Ciclo_PipelineJob
-  Sem mudança explícita no código para: RENDERING, ENHANCING, COMPOSITING, CANCELLED
+  Sem mudança explícita no código para: ENHANCING, COMPOSITING, CANCELLED
   (valor vindo de importação, regra calculada ou dado legado)
 end note
 note right of Ciclo_PipelineJob

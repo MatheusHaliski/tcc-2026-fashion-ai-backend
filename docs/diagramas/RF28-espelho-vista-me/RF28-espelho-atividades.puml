@@ -24,7 +24,7 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF28 — Vista-me: o espelho mostra o reflexo do Avatar 3D da pessoa vestindo as peças, em pose natural\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF28 — Vista-me: o espelho mostra o reflexo do Avatar 3D da pessoa vestindo as peças, em pose natural\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
@@ -37,30 +37,19 @@ partition "c/ui/index.tsx · ChipMultiSelect()" {
   :tr()\n<size:10>lib/i18n/i18n.tsx</size>;
 }
 |Tela (React)|
-partition "c/mirror/mirror-stage.tsx · MirrorStage()" {
-  :useI18n()\n<size:10>lib/i18n/i18n.tsx</size>;
-  :useAuth()\n<size:10>lib/auth/session.tsx</size>;
-  :useApi()\n<size:10>lib/hooks/use-api.ts</size>;
-  :GET /api/me/avatar3d\n→ Avatar3dController.get;
-  :validateBody()\n<size:10>lib/avatar3d/body-spec.ts</size>;
-  if (!kelvin?) then (sim)
-    :encerra este passo;
-    stop
-  endif
-  if (kelvin < 3500?) then (sim)
-    :encerra este passo;
-    stop
-  endif
-  if (kelvin > 5000?) then (sim)
-    :encerra este passo;
-    stop
-  endif
+partition "c/mirror/mirror-stage.tsx · mirrorPieces()" {
+  :mirrorLook3d()\n<size:10>lib/mirror/mirror-list.ts</size>;
 }
 |Tela (React)|
 partition "c/three/avatar-viewer.tsx · AvatarViewer()" {
   :useI18n()\n<size:10>lib/i18n/i18n.tsx</size>;
+  :useBodyAsset()\n<size:10>c/three/human-avatar.tsx</size>;
   :bodyParamsOf()\n<size:10>c/three/mannequin.tsx</size>;
   :buildSpec()\n<size:10>lib/avatar3d/body-spec.ts</size>;
+  if (!asset || asset === 'error'?) then (sim)
+    :encerra este passo;
+    stop
+  endif
 }
 |Pessoa usuária|
 :Vê o resultado;

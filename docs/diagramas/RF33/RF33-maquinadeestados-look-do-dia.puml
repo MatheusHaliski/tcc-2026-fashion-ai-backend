@@ -19,7 +19,7 @@ skinparam state {
   StartColor #20A77A
   EndColor #4B5563
 }
-title RF33 — ciclo de vida de DailyLook.source e feedback\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum DailyLookSource · enum DailyLookFeedback · tabela daily_looks
+title RF33 — ciclo de vida de DailyLook.source e feedback\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nenum DailyLookSource · enum DailyLookFeedback · tabela daily_looks
 
 state "DailyLook.source" as Ciclo_DailyLook {
   state Ciclo_DailyLook_MANUAL as "MANUAL"

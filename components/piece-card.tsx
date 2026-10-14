@@ -20,6 +20,8 @@ import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "
 import { useTheme } from "@/lib/theme/theme";
 import { HypeBadge } from "@/components/hype/hype-badge";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
+import { CardBorder } from "@/components/card-border";
+import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
 import { AuraHype } from "@/components/hype/aura-hype";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { hypeViewState } from "@/lib/hype/model";
@@ -61,7 +63,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const { prefs } = useTheme();
   const auraMode = piece.background?.auraHype as string | undefined;
   const auraEnabled = !!prefs.auraHype || !!auraMode && auraMode !== "OFF";
-  const hype = useHypeSummary("PIECE", piece.id, !preview && (!selectable || auraEnabled));
+  const hype = useHypeSummary("PIECE", piece.id, !preview && (!selectable || auraEnabled), auraEnabled);
   const hypeState = hypeViewState(hype.summary, hype);
   // RF53: selos de marca/celebridade + Selos de Hype (do resumo já carregado, sem pedido extra), no máx. 2 de Hype
   const seals = withHypeSeals(brandSeals, hypeSealCodes(hype.summary));
@@ -86,7 +88,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const media = (
     <>
       {crop ? <CatalogPhoto image={crop} alternatives={[piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} alt="" /> : img.src ? <MediaImage src={img.src} srcSet={img.srcSet} fallbackSources={[piece.studioFeedUrl, piece.studioThumbUrl, piece.studioImageUrl, piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
-      {auraEnabled && <AuraHype state={hypeState} mode={auraMode} preview={preview} />}
+      <AuraMetamorphose mode={piece.background?.auraMetamorphose as string | undefined} preview/>{auraEnabled && <AuraHype state={hypeState} mode={auraMode} preview={preview} />}
       {(zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
       {(!piece.disponivel || piece.forDonation || (mine && piece.favorite) || piece.aiGeneratedImage) && (
         <span className="pc-flags">
@@ -103,6 +105,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const name = <span className="pc-name">{piece.name}</span>;
   const card = (
     <article {...surface} className={`fai-card piece-card ${surface.className} ${selected ? "ring-2 ring-mark" : ""}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={piece.name}>
+      <CardBorder entityId={`PIECE:${piece.id}`} background={piece.background} auraHype={auraEnabled} hype={hypeState}/>
       <ArtStage bg={piece.background} art={art} density="compact" pieceHex={piece.colorHex} />
       <div className="pc-frame">
         <div className="pc-content">

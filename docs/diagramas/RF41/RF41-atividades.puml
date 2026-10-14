@@ -24,11 +24,11 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF41 — Ganhar FAI Points em todos os jogos (FLAIR e Desafios) e ao criar esquemas e peças\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /challenges/[id], /challenges,\n/flair;
+:Abre /challenges/[id], /challenges,\n/dna-schemes/[id]/edit;
 |Tela (Next.js)|
 :Carrega os dados da tela\nGET /api/flair/me\nGET /api/me/points\nGET /api/me/room\nGET /api/pieces/{id};
 |Pessoa usuária|
@@ -64,15 +64,14 @@ if (Faz outra ação?) then (sim)
     :POST /api/flair/duels\n→ FlairService.duel\nvalida: DECK_ARQUIVADO, DECK_VAZIO, DUELO_CONSIGO\nlê: scheme_items, hype_scores, wardrobe_items …\nusa: Guard.requireCanCreate, SchemeService.owned,\nHypeScoreConfig.algorithmVersion …\ngrava: flair_matches, flair_match_entries,\nflair_profiles …;
   case (Iniciar desafio [solo, duelo, gru…)
     :POST /api/challenges\n→ ChallengeService.start\nvalida: ERRO, LIMITE_DESAFIOS, MODO_INDISPONIVEL,\nPARTICIPANTES_DEMAIS …\nlê: challenge_templates, challenge_instances,\nchallenge_participants …\nusa: Guard.requireCanCreate,\nRoomService.lastDiaryDates,\nNotificationService.notify\ngrava: challenge_instances, challenge_participants;
-  case (Editar a peça)
-    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
+  case (FLAIR — duelo de equipes 3×3 cont…)
+    :POST /api/flair/teams/battles\n→ FlairService.teamBattle\nvalida: JA_DUELARAM_HOJE, MESMA_EQUIPE, SEM_DECKS\nlê: flair_team_members, flair_teams,\nflair_matches …\nusa: Guard.requireCanCreate,\nSchemeService.canView, FaiPointsService.game\n…\ngrava: flair_matches, flair_match_entries,\nflair_coin_entries …;
   endswitch
   note right
   Outras ações deste RF:
-  FLAIR — duelo de equipes 3×3…, FLAIR — cria uma
-  equipe (até…, Excluir a peça, Cadastrar a peça a
-  partir do…, Enviar look como entrada, Recado no
-  mural do desafio
+  FLAIR — cria uma equipe (até…, Excluir a peça,
+  Cadastrar a peça a partir do…, Enviar look como
+  entrada, Editar a peça, Recado no mural do desafio
   end note
   |Tela (Next.js)|
   :Atualiza a tela;

@@ -21,18 +21,15 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF7 — Acessar o detalhe de uma peça ou esquema clicando em um item da lista do Closet\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
-boundary "Tela /schemes/[id]/edit" as P
+boundary "Tela /dna-schemes/[id]/edit" as P
 control "WardrobeController" as WardrobeController
 participant "WardrobeService" as WardrobeService
 database "MySQL" as DB_MySQL
 participant "Guard" as Guard
 queue "Eventos de domínio" as EV
-participant "OwnMedia" as OwnMedia
-participant "MediaService" as MediaService
-participant "BrandLogoService" as BrandLogoService
 participant "ProjectionService" as ProjectionService
 participant "Audit" as Audit
 == Detalhe da peça (com contexto do esquema de origem, se houver) ==
@@ -71,17 +68,6 @@ alt formulario inválido
 WardrobeService --> WardrobeController : 400 FORMULARIO_INVALIDO
 WardrobeController --> P : 400 + mensagem
 end
-WardrobeService -> DB_MySQL : SELECT brands
-WardrobeService -> WardrobeService : brandLogoUrl = null
-WardrobeService -> OwnMedia : accepts()
-WardrobeService -> MediaService : read()
-WardrobeService -> WardrobeService : brandLogoUrl = set
-WardrobeService -> BrandLogoService : acceptWebLogo()
-BrandLogoService -> DB_MySQL : SELECT brand_logos (×2)
-BrandLogoService -> DB_MySQL : SELECT brands
-BrandLogoService -> DB_MySQL : INSERT/UPDATE brands
-BrandLogoService --> WardrobeService
-WardrobeService -> WardrobeService : brandLogoUrl = null (×2)
 WardrobeService -> ProjectionService : piece()
 ProjectionService -> DB_MySQL : SELECT item_embeddings
 ProjectionService -> DB_MySQL : INSERT/UPDATE item_embeddings

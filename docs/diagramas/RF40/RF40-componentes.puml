@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba 'Meu Avatar 3D', e usá-lo no manequim da Passarela 3D, do Meu Quarto e d…\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF40 — Criar o próprio avatar 3D a partir de fotos, através da aba 'Meu Avatar 3D', e usá-lo no manequim da Passarela 3D, do Meu Quarto e d…\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "app/(site)/lab/avatar" {
   component "page.tsx" as m_app__site__lab_avatar_page_tsx

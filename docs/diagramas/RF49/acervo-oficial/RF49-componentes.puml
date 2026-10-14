@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF49 — Acervo oficial em escala\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF49 — Acervo oficial em escala\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "app/(site)" {
   component "page.tsx" as m_app__site__page_tsx
@@ -37,46 +37,45 @@ package "app/(site)" {
 package "components/catalog" {
   component "catalog-search.tsx" as m_components_catalog_catalog_search_tsx
   component "brand-autocomplete.tsx" as m_components_catalog_brand_autocomplete_tsx <<apoio>>
+  component "catalog-brand-grid.tsx" as m_components_catalog_catalog_brand_grid_tsx <<apoio>>
+  component "catalog-photo.tsx" as m_components_catalog_catalog_photo_tsx <<apoio>>
+  component "catalog-results-grid.tsx" as m_components_catalog_catalog_results_grid_tsx <<apoio>>
   component "category-cards.tsx" as m_components_catalog_category_cards_tsx <<apoio>>
+  component "use-catalog-preview.ts" as m_components_catalog_use_catalog_preview_ts <<apoio>>
 }
 package "lib/api" {
   component "catalog.ts" as m_lib_api_catalog_ts
-  component "taxonomy.ts" as m_lib_api_taxonomy_ts <<apoio>>
 }
 package "components" {
   component "brand-logo.tsx" as m_components_brand_logo_tsx <<apoio>>
+  component "infinite-sentinel.tsx" as m_components_infinite_sentinel_tsx <<apoio>>
 }
 package "components/capture" {
   component "garment-glyphs.tsx" as m_components_capture_garment_glyphs_tsx <<apoio>>
 }
-package "components/ui" {
-  component "index.tsx" as m_components_ui_index_tsx <<apoio>>
-}
-package "lib/capture" {
-  component "capture-guides.ts" as m_lib_capture_capture_guides_ts <<apoio>>
-}
 package "Backend (Spring Boot)" {
   component "CatalogController" as CatalogController
-  component "WardrobeController" as WardrobeController
   component "CatalogMatchScorer" as CatalogMatchScorer <<apoio>>
   component "CatalogService" as CatalogService
 }
 database "MySQL" as DB_MySQL
 CatalogController --> CatalogService
 CatalogService --> DB_MySQL : brand_aliases, brands, catalog_images,\ncatalog_product_aliases,\ncatalog_products, catalog_sources
-m_components_capture_garment_glyphs_tsx --> m_lib_capture_capture_guides_ts
 m_components_catalog_brand_autocomplete_tsx --> m_components_brand_logo_tsx
-m_components_catalog_brand_autocomplete_tsx --> m_components_ui_index_tsx
+m_components_catalog_catalog_brand_grid_tsx --> m_components_brand_logo_tsx
+m_components_catalog_catalog_photo_tsx --> m_lib_api_catalog_ts
+m_components_catalog_catalog_results_grid_tsx --> m_lib_api_catalog_ts
+m_components_catalog_catalog_search_tsx --> CatalogController : HTTPS
 m_components_catalog_catalog_search_tsx --> m_components_brand_logo_tsx
 m_components_catalog_catalog_search_tsx --> m_components_capture_garment_glyphs_tsx
 m_components_catalog_catalog_search_tsx --> m_components_catalog_brand_autocomplete_tsx
+m_components_catalog_catalog_search_tsx --> m_components_catalog_catalog_brand_grid_tsx
+m_components_catalog_catalog_search_tsx --> m_components_catalog_catalog_photo_tsx
+m_components_catalog_catalog_search_tsx --> m_components_catalog_catalog_results_grid_tsx
 m_components_catalog_catalog_search_tsx --> m_components_catalog_category_cards_tsx
-m_components_catalog_catalog_search_tsx --> m_components_ui_index_tsx
+m_components_catalog_catalog_search_tsx --> m_components_catalog_use_catalog_preview_ts
+m_components_catalog_catalog_search_tsx --> m_components_infinite_sentinel_tsx
 m_components_catalog_catalog_search_tsx --> m_lib_api_catalog_ts
-m_components_catalog_catalog_search_tsx --> m_lib_api_taxonomy_ts
-m_components_catalog_catalog_search_tsx --> m_lib_capture_capture_guides_ts
 m_components_catalog_category_cards_tsx --> m_components_capture_garment_glyphs_tsx
-m_components_catalog_category_cards_tsx --> m_components_ui_index_tsx
-m_components_catalog_category_cards_tsx --> m_lib_capture_capture_guides_ts
-m_lib_api_taxonomy_ts --> WardrobeController : HTTPS
+m_components_catalog_use_catalog_preview_ts --> m_lib_api_catalog_ts
 @enduml

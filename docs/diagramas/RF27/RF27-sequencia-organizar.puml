@@ -1,70 +1,76 @@
 @startuml RF27_Sequencia_Organizar
-title RF27 — Meu Quarto (guarda-roupa num quarto 3D interativo)\nDiagrama de sequência — organizar com IA, desfazer e endereço automático da peça nova
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam sequence {
   ArrowColor #4A4852
   LifeLineBorderColor #CBC6BE
   ParticipantBackgroundColor #F4F2EF
   ParticipantBorderColor #4A4852
+  ActorBorderColor #4A4852
+  GroupBorderColor #CBC6BE
+  GroupBackgroundColor #FAF8F5
 }
-autonumber
-actor "Pessoa" as U
-participant "room/page.tsx" as FE
-participant "RoomController" as C
-participant "RoomService" as S
-participant "AiEngine\n(motor de IA, RF24)" as AI
-participant "AiProviderPort\n(Claude / Gemini)" as P
-participant "WardrobeEventListeners" as WL
-participant "FaiPointsService" as FP
-participant "InventoryScoreService" as ISS
-database "MySQL" as DB
+autonumber "<b>0."
+title RF27 — Meu Quarto (guarda-roupa num quarto 3D interativo)\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
-== Prévia da organização ==
-U -> FE: Organizar (com IA)
-FE -> C: GET /api/me/room/organization/preview?useAi=true
-C -> S: organizePreview(user, true)
-S -> DB: SELECT room_layouts, room_storage_map, wardrobe_items
-S -> S: suggestLabel(): rótulo local pela categoria dominante
-S -> AI: text(TextCall(COPILOT, gavetas e subcategorias))
-AI -> AI: cota (RateLimitPort), consentimento, teto de gasto
-alt provedor disponível
-  AI -> P: gera {"labels": {...}}
-  P --> AI: texto
-  AI --> S: AiOutcome(rótulos validados, ≤ 24 caracteres)
-else sem provedor, cota ou resposta inválida
-  AI --> S: AiOutcome(fallback local, fallbackUsed = true)
+actor "Pessoa usuária" as U
+boundary "Tela /room" as P
+control "RoomController" as RoomController
+participant "RoomService" as RoomService
+database "MySQL" as DB_MySQL
+participant "Guard" as Guard
+== Mover peça para um endereço (door:1/hanger:3, drawer:2, shoe:4…) ==
+U -> P : Mover peça para um endereço (door:1/hanger:3, dra…
+P -> RoomController : PUT /api/pieces/{pieceId}/room-address
+RoomController -> RoomService : move()
+activate RoomService
+RoomService -> DB_MySQL : SELECT wardrobe_items
+RoomService -> Guard : requireOwner()
+RoomService -> DB_MySQL : SELECT room_layouts
+RoomService -> RoomService : new RoomLayout()
+RoomService -> DB_MySQL : SELECT users
+RoomService -> DB_MySQL : SELECT fai_points_ledger
+RoomService -> DB_MySQL : INSERT/UPDATE room_layouts
+alt categoria incompativel
+RoomService --> RoomController : 400 CATEGORIA_INCOMPATIVEL
+RoomController --> P : 400 + mensagem
 end
-S -> S: mantém peças coerentes; place() para as demais
-S --> FE: 200 {labels, changedLabels, moves, summary,\nfallbackUsed, explanation, canUndo}
-note right of FE: a prévia não grava nada
-
-== Aplicar ==
-U -> FE: Aplicar
-FE -> C: POST /api/me/room/organization {labels, moves}
-C -> S: applyOrganization(user, labels, moves)
-S -> DB: UPDATE room_layouts (previous_map_json,\ndrawer_labels_json com source = AI)
-S -> DB: UPDATE room_storage_map (assigned_by = AI)
-S -> ISS: RoomOrganized → invalidate (limpa o cache da nota)
-S --> FE: 200 {applied, labels, canUndo}
-S ->> WL: RoomOrganized (AFTER_COMMIT, SideEffectRunner)
-WL -> FP: award(userId, "ROOM_ORGANIZED", "ROOM", null)
-FP -> DB: INSERT fai_points_ledger (+20; teto semanal 1)
-
-== Desfazer ==
-U -> FE: Desfazer
-FE -> C: DELETE /api/me/room/organization
-C -> S: undoOrganization(user)
-alt previous_map_json vazio
-  S --> FE: 409 NADA_A_DESFAZER
-else há mapa anterior
-  S -> DB: UPDATE room_layouts (rótulos anteriores, previous_map_json = null)
-  S -> DB: UPDATE room_storage_map (endereços anteriores, assigned_by = USER)
-  S --> FE: 200 {restored, labels}
+RoomService -> DB_MySQL : SELECT room_storage_map
+RoomService -> DB_MySQL : SELECT wardrobe_items
+alt gaveta categoria diferente
+RoomService --> RoomController : 400 GAVETA_CATEGORIA_DIFERENTE
+RoomController --> P : 400 + mensagem
 end
-
-== Peça nova ganha endereço sozinha ==
-note over S, DB: WardrobeService.create publica PieceCreated (RF4)
-S -> S: onPieceCreated (AFTER_COMMIT) → SideEffectRunner\n"quarto:PieceCreated" → autoAssign(userId, pieceId)
-S -> DB: INSERT room_storage_map (assigned_by = AUTO)
-note right of S: falha aqui não desfaz o cadastro da peça;\nPieceDeleted → deleteByWardrobeItemId
+RoomService -> DB_MySQL : SELECT room_storage_map
+alt gaveta cheia
+RoomService --> RoomController : 409 GAVETA_CHEIA
+RoomController --> P : 409 + mensagem
+end
+alt posicao inválida
+RoomService --> RoomController : 400 POSICAO_INVALIDA
+RoomController --> P : 400 + mensagem
+end
+RoomService -> DB_MySQL : SELECT room_storage_map
+alt posicao ocupada
+RoomService --> RoomController : 409 POSICAO_OCUPADA
+RoomController --> P : 409 + mensagem
+end
+RoomService -> DB_MySQL : SELECT room_storage_map
+RoomService -> DB_MySQL : INSERT/UPDATE room_storage_map
+RoomService -> DB_MySQL : SELECT room_storage_map
+RoomService -> DB_MySQL : INSERT/UPDATE room_storage_map
+deactivate RoomService
+RoomService --> RoomController : resultado
+RoomController --> P : 200 JSON
+P --> U : atualiza a tela
 @enduml

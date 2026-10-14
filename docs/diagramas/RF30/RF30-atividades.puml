@@ -24,11 +24,11 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF30 — Ganhar e usar FAI Points, evoluir o nível do 'Meu Quarto' e comprar na loja do quarto\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF30 — Ganhar e usar FAI Points, evoluir o nível do 'Meu Quarto' e comprar na loja do quarto\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /brands/[slug], /points, /room;
+:Abre /brands/[slug], /points/ganhar,\n/points/loja;
 |Tela (Next.js)|
 :Carrega os dados da tela\nGET /api/me/points\nGET /api/points/shop;
 |Pessoa usuária|
@@ -66,7 +66,7 @@ if (Faz outra ação?) then (sim)
   case (Experimentar item no módulo antes…)
     :POST /api/points/shop/{sku}/try-on\n→ FaiPointsService.tryOn\nvalida: ENCAIXE_INCOMPATIVEL\nlê: room_catalog, fai_points_ledger\nusa: RoomLayoutAccess.compatibleModules;
   case (Iluminação guiada [nível Studio]:…)
-    :PUT /api/me/room/light\n→ RoomService.setLight\nvalida: NIVEL_INSUFICIENTE\nlê: room_layouts, users, fai_points_ledger\ngrava: room_layouts;
+    :PUT /api/me/room/light\n→ RoomService.setLight;
   case (Aplicar item comprado a um módulo…)
     :POST /api/me/room-inventory/{inventoryId}/apply\n→ FaiPointsService.apply\nvalida: ACESSO_NEGADO, ENCAIXE_INCOMPATIVEL\nlê: room_inventory, room_catalog\nusa: RoomLayoutAccess.compatibleModules,\nRoomLayoutAccess.applyFinish;
   endswitch

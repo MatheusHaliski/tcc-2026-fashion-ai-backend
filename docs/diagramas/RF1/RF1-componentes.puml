@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF1 — Cadastrar conta na plataforma (perfil Pessoal, Marca ou Celebridade)\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF1 — Cadastrar conta na plataforma (perfil Pessoal, Marca ou Celebridade)\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
   component "/admin/users\n(site)/(app)/admin/users/page.tsx" as FE0

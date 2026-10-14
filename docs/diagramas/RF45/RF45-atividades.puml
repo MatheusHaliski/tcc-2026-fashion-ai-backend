@@ -24,11 +24,11 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF45 — Processar e padronizar imagens canônicas de peças, calçados e acessórios (pipeline de validação e padronização)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF45 — Processar e padronizar imagens canônicas de peças, calçados e acessórios (pipeline de validação e padronização)\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /pieces/new;
+:Abre /dna-schemes/[id]/edit,\n/dna-schemes/new, /dna;
 |Tela (Next.js)|
 :Carrega os dados da tela\nGET /api/studio/backdrops\nGET /api/taxonomy\nGET /api/pieces/{id};
 |Pessoa usuária|
@@ -60,7 +60,7 @@ endif
 if (Faz outra ação?) then (sim)
   switch (Qual?)
   case (Cadastrar a peça a partir do rasc…)
-    :POST /api/pieces\n→ WardrobeService.create\nvalida: CONTEUDO_BLOQUEADO, ERRO,\nFORMULARIO_INVALIDO, FOTO_OBRIGATORIA\nlê: users, pipeline_jobs, wardrobe_items …\nusa: Guard.requireCanCreate, OwnMedia.accepts,\nMediaService.read …\nia: STUDIO_ENHANCER;
+    :POST /api/pieces\n→ WardrobeService.create\nvalida: CONTEUDO_BLOQUEADO, ERRO,\nFORMULARIO_INVALIDO, FOTO_OBRIGATORIA\nlê: users, pipeline_jobs, wardrobe_items …\nusa: Guard.requireCanCreate,\nAssetCatalogService.defaultPieceImage,\nAssetCatalogService.publicFile …\nia: STUDIO_ENHANCER;
   case (Substituir a foto da peça [reproc…)
     :PUT /api/pieces/{id}/image\n→ WardrobeService.replaceImage\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.put …\nia: STUDIO_ENHANCER;
   case (RF4 · Estúdio — leva ao estúdio a…)
@@ -74,7 +74,7 @@ if (Faz outra ação?) then (sim)
   Outras ações deste RF:
   Nova tentativa de ler a marca…, Cadastrar várias
   peças de uma…, Reprocessar remoção de fundo, RF4 ·
-  Estúdio — descarta a ve…, Editar a peça, Excluir a
+  Estúdio — descarta a ve…, Excluir a peça, Editar a
   peça
   end note
   |Tela (Next.js)|

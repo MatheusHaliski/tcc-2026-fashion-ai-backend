@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
-import { useState, type ImgHTMLAttributes, type Ref } from "react";
+import { useEffect, useState, type ImgHTMLAttributes, type Ref } from "react";
+import { warmMediaImage } from "@/lib/media-memory-cache";
 import { mediaUrl } from "@/lib/api/client";
 
 /** Static assets can use Next's responsive derivatives. Authenticated/signed images keep their original transport. */
@@ -8,6 +9,7 @@ function MediaImageAttempt({ src, fallbackSources = [], srcSet, width = 640, hei
   const sources = [...new Set([src, ...fallbackSources].map(mediaUrl).filter((url): url is string => !!url))];
   const [attempt, setAttempt] = useState(0);
   const current = sources[attempt];
+  useEffect(()=>{ if(current) warmMediaImage(current); },[current]);
   if (!current) return null;
   const onError: ImgHTMLAttributes<HTMLImageElement>["onError"] = (event) => { props.onError?.(event); setAttempt((value) => value + 1); };
   const effectiveSrcSet = attempt === 0 ? srcSet : undefined;

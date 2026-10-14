@@ -19,7 +19,7 @@ skinparam state {
   StartColor #20A77A
   EndColor #4B5563
 }
-title RF53 — ciclo de vida de HypeMilestone.level\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum HypeLevel · tabela hype_milestones
+title RF53 — ciclo de vida de HypeMilestone.level\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nenum HypeLevel · tabela hype_milestones
 
 state "HypeMilestone.level" as Ciclo_HypeMilestone {
   state Ciclo_HypeMilestone_LOW_SIGNAL as "LOW_SIGNAL"

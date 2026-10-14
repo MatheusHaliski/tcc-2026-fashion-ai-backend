@@ -1,9 +1,16 @@
 @startuml RF11_Atividades_Cartela
-title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de atividades — Cartela sazonal e animação no modal (look, DNA B11 e peça)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,95 +19,84 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:No segmento "Layout & Estilo", clica em Cartela sazonal\n(look: anatomia CARTELA_SAZONAL · DNA: narrativa B11 ·\npeça: família "seasonal", variação A ou B);
-|Frontend (background-studio · SeasonalDialog)|
-if (A cartela já é o layout atual?) then (sim)
-  :Abre o modal em modo edição\n(nada muda ao entrar);
-else (não)
-  :Guarda enter() (entrar no layout) e, no look,\no patch que limpa aura, material, arte com IA e upload;\nabre o modal — o layout ainda não muda;
-endif
-:SeasonalDraft copia o valor atual para um rascunho\n{seasonalPresetId, seasonalAuto, animation};
-note right
-  Cartelas do catálogo (GET /api/backgrounds/catalog):
-  Frost (inverno, neve) · Solstice (verão, brilho) ·
-  Ember (outono, folhas) · Bloom (primavera, pétalas)
-end note
-|Pessoa|
-repeat
-  :Escolhe uma cartela\n(clicar de novo na escolhida desmarca);
-  if (Look/DNA com estação nos dados?) then (sim)
-    :Pode ligar a "cartela automática"\n(segue a estação do look);
-  else (não)
-    :Aviso: escolha uma cartela ou preencha a estação;\nna peça não existe a opção automática;
-  endif
-  :Escolhe a animação: Sem animação (NONE) ·\nNeve · Pétalas · Folhas · Brilho;
-repeat while (Continua ajustando?) is (sim)
-->não;
-if (Como fecha o modal?) then (Cancelar, X, Esc ou fundo)
-  |Frontend (background-studio · SeasonalDialog)|
-  :Descarta o rascunho: layout, narrativa,\nfamília e arte ficam como estavam;
+:Abre /dna-schemes/[id]/edit,\n/dna-schemes/new, /dna;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/backgrounds/catalog\nGET /api/schemes/{id}/card.png\nGET /api/assets/skins\nGET /api/backgrounds/recommendations;
+|Pessoa usuária|
+:Aplicar configuração de fundo ao\nesquema;
+|Tela (Next.js)|
+:PUT /api/schemes/{id}/background;
+|API (Spring Boot)|
+:BackgroundController.saveScheme\n→ BackgroundStudioService.saveScheme;
+if (aura composition invalid?) then (sim)
+  :400 AURA_COMPOSITION_INVALID\n«Composição AURA inválida.»\n→ a tela mostra o aviso;
   stop
-else (Aplicar cartela)
-  |Frontend (background-studio · SeasonalDialog)|
-  :enter(): look → layout CARTELA_SAZONAL ·\nDNA → narrativa B11 · peça → família seasonal\n(a estação da paisagem = a da cartela escolhida);
-  :onChange({...valor, ...patch, ...rascunho});
-  :Resumo "Cartela sazonal: <cartela> · <animação>"\ne botão "Escolher cartela e animação";
 endif
-:Prévia: cartelaSeason(bg, estação) =\nestação dos dados (automática) › estação da cartela › estação do look;
-if (Há estação?) then (sim)
-  :SeasonCard (look) ou faixa B11 (DNA):\ngradiente, decoração e animação (MotionFall ou brilho);
+if (aura hype invalid?) then (sim)
+  :400 AURA_HYPE_INVALID\n«AURA Hype inválida.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (aura metamorphose invalid?) then (sim)
+  :400 AURA_METAMORPHOSE_INVALID\n«AURA Metamorfose inválida.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (card border invalid?) then (sim)
+  :400 CARD_BORDER_INVALID\n«Borda inválida.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (card border invalid?) then (sim)
+  :400 CARD_BORDER_INVALID\n«Modo de borda inválido.»\n→ a tela mostra o aviso;
+  stop
+endif
+note right
+  e mais 27 validações:
+  ANATOMIA_INVALIDA, ARTE_ALTERADA,
+  AURA_COMPOSITION_INVALID, AURA_HYPE_INVALID,
+  AURA_METAMORPHOSE_INVALID, CARD_BORDER_INVALID,
+  CONTAINER_TRAVADO, COR_INVALIDA, DIRECAO_INVALIDA,
+  ESTACAO_OBRIGATORIA, FORMATO_INVALIDO,
+  MATERIAL_INDISPONIVEL, PRESET_INVALIDO,
+  SILHUETA_INVALIDA, SKIN_INVALIDA
+end note
+|Dados e serviços|
+:Lê: schemes\nwardrobe_items;
+:Usa: Guard.requireCanCreate\nGuard.requireOwner\nAssetCatalogService.resolveCombination\nMediaService.requireOwnedMedia\nAssetCatalogService.gradient\nAssetCatalogService.nativeContainer (+2);
+:Estado: backgroundVideoUrl → null\nbackgroundVideoUrl → set\nbackgroundArtUrl → set\ncontainerOrigin → AUTO\ncontainerMandatory → true\ncontainerOrigin → MANUAL (+1);
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Fundo do card da peça)
+    :PUT /api/pieces/{id}/background\n→ BackgroundStudioService.savePiece\nvalida: ARTE_ALTERADA, AURA_COMPOSITION_INVALID,\nAURA_HYPE_INVALID, AURA_METAMORPHOSE_INVALID\n…\nlê: wardrobe_items\nusa: Guard.requireCanCreate, Guard.requireOwner;
+  case (Enviar imagem própria de fundo [c…)
+    :POST /api/backgrounds/uploads\n→ BackgroundStudioService.upload\nvalida: IMAGEM_PEQUENA, PROPORCAO_INVALIDA\nlê: users\nusa: Guard.requireCanCreate, MediaService.put,\nMediaService.register;
+  case (Pré-visualizar o card antes de sa…)
+    :POST /api/schemes/preview\n→ SchemeService.preview\nlê: users, wardrobe_items\nusa: BackgroundStudioService.applyToScheme,\nGuard.requireOwner,\nSchemeCardRenderer.render;
+  case ([admin] Gerar thumbnail de uma sk…)
+    :POST /api/admin/skins/{skinId}/thumbnail\n→ BackgroundStudioService.generateSkinThumbnail\nlê: asset_presets\nusa: Guard.requireAdmin,\nAssetCatalogService.skin, MediaService.put\nia: BACKGROUND_GENERATOR;
+  case (Voltar ao fundo padrão do esquema)
+    :DELETE /api/schemes/{id}/background\n→ BackgroundStudioService.resetScheme\nlê: schemes\nusa: Guard.requireOwner\nestado: backgroundArtUrl → null,\nbackgroundAnimationType → NONE,\ncontainerOrigin → INDEFINIDA;
+  endswitch
   note right
-    Com "reduzir movimento" (sistema ou
-    preferência do app) o CSS para as animações
+  Outras ações deste RF:
+  Gerar arte de fundo por promp…, Excluir o look
+  (menu ⋯ do don…, Salvar esquema (manual, IA, a…,
+  Editar esquema, HU20 — Criar esquema de DNA (…,
+  HU20 — Editar esquema de DNA
   end note
-else (não)
-  :O card do look cai para Lista vertical\naté haver estação;
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-|Pessoa|
-if (Troca para outro layout, narrativa ou família?) then (sim)
-  |Frontend (background-studio · SeasonalDialog)|
-  :Aplica CLEAR_CARTELA\n{seasonalPresetId: null, seasonalAuto: false, animation: "NONE"};
-  note right
-    No DNA, useLeaveCartela limpa em qualquer saída
-    da B11: outra narrativa, anatomia base, alvo que
-    não é o DNA completo ou proposta da IA
-  end note
-else (não)
-endif
-|Pessoa|
-:Salva o look, o DNA ou a peça;
-|API (SchemeController · DnaController · BackgroundController)|
-switch (O que salvou?)
-case (look)
-  :POST/PUT /api/schemes → applyToScheme;
-  if (Cartela desconhecida?) then (sim)
-    #FFE3E3:400 PRESET_INVALIDO;
-    stop
-  elseif (Cartela automática sem estação no look?) then (sim)
-    #FFE3E3:400 ESTACAO_OBRIGATORIA;
-    stop
-  else (ok)
-    :animation presente → enum (null → NONE);\nautomática: grava o gradiente frost/solstice/ember/bloom\nda estação e a animação dele;
-  endif
-case (DNA)
-  :POST/PUT /api/dna-schemes com seasonalTheme =\ncartelaSeason(...) ?? AUTUMN; o fundo vai\npara studio_config_json sem validação de preset;
-case (peça)
-  :PUT /api/pieces/{id}/background com baseRev\n(ou POST /api/pieces no cadastro);
-endswitch
-|Banco (MySQL)|
-:Grava schemes · dna_schemes · wardrobe_items;
+|Pessoa usuária|
 stop
 @enduml

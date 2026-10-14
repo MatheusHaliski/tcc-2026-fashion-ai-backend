@@ -40,4 +40,11 @@ note left of Livre
   (login: 30 em 10 min) e conta inexistente responde 401
   depois de um hash falso.
 end note
+' v5: diagrama do time mantido (sem alvo no código)
+legend bottom right
+  <b>Diagrama escrito pelo time e mantido como está.</b>
+  O código atual não tem um campo, enum ou método de estado equivalente
+  que scripts/diagramas/v5 consiga ler — não foi gerado nem verificado
+  contra o código em 2026-10-14.
+endlegend
 @enduml

@@ -1,3 +1,4 @@
+import { fashionPreset, type FashionPreset } from "@/lib/aura-fashion";
 import index from "@/lib/assets/card-art-index.json";
 import { CARD_SKINS } from "@/lib/skins";
 import { tr } from "@/lib/i18n/i18n";
@@ -25,6 +26,10 @@ const MOTIONS = { SNOW: "snow", PETALS: "petals", LEAVES: "leaves", SHIMMER: "sh
 /** Animação do segmento Cor gravada na arte ("SNOW", "PETALS"…); "NONE" ou desconhecida = sem animação. */
 export const motionOf = (a: unknown): CardArt["motion"] => (typeof a === "string" && a in MOTIONS ? MOTIONS[a as keyof typeof MOTIONS] : null);
 interface Studio {
+  compositionPreset?: FashionPreset | null;
+  border?: import("@/lib/card-border").CardBorderConfig | null;
+  auraMetamorphose?: string | null;
+  auraHype?: string | null;
   color?: string | null; gradient?: unknown; gradientPresetId?: string | null; seasonalPresetId?: string | null; seasonalAuto?: boolean;
   aura?: { variantId?: string; format?: string } | null; materialId?: string | null; aiArt?: { url?: string } | null; uploadUrl?: string | null;
   container?: { color?: string | null; ink?: string | null } | null; photo?: { url?: string | null } | null; skin?: string;
@@ -152,6 +157,8 @@ function resolveLayers(bg?: Record<string, unknown> | null, opts?: { season?: st
   // camadas de imagem (a de cima vence): arte com IA / upload → AURA + material → AURA → material
   const ai = s.aiArt?.url; const upload = s.uploadUrl;
   if (ai || upload) return { ...art, kind: ai ? "ai" : "upload", image: media(ai ?? upload), label: ai ? tr("lib.cardArt.arte_com_ia") : tr("lib.cardArt.imagem_enviada") };
+  const curated = fashionPreset(s.compositionPreset);
+  if (curated) return { ...art, kind:"aura", image:curated.image, label:curated.name, presetId:curated.id };
   const variantId = auraVariantId(s.aura?.variantId);
   if (s.aura?.variantId?.startsWith("aura_hype")) {
     return { ...art, kind: "aura", base: "linear-gradient(135deg, #07152c, #0d2e58 52%, #321450)", presetId: "aura_hype", animation: "shimmer", label: tr("lib.cardArt.aura_hype_scanner") };

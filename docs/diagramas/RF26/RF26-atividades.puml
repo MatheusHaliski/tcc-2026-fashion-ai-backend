@@ -24,7 +24,7 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF26 — Realizar busca global de esquemas de vestimenta & peças por estação, região, clima e gênero, através da aba 'Explorador Global'\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF26 — Realizar busca global de esquemas de vestimenta & peças por estação, região, clima e gênero, através da aba 'Explorador Global'\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
@@ -32,7 +32,7 @@ start
 |Tela (Next.js)|
 :Carrega os dados da tela\nGET /api/explorer/brands\nGET /api/explorer/insights\nGET /api/hype/trending;
 |Pessoa usuária|
-:Painel global por país (cores, hype,\nmarcas);
+:Painel global por país (volume de\nlooks e peças públicos, c…;
 |Tela (Next.js)|
 :GET /api/explorer/global;
 |API (Spring Boot)|

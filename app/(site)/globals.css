@@ -3666,3 +3666,67 @@ button.cbc-slot-btn:hover { border-color: var(--line); background: var(--surface
 @keyframes aura-stars { to { transform:translateY(-160px) rotate(180deg); opacity:0; } }
 @media (prefers-reduced-motion:reduce) { .aura-hype-field::after,.aura-hype i { animation:none!important; } }
 [data-reduce-motion="true"] .aura-hype-field::after,[data-reduce-motion="true"] .aura-hype i { animation:none!important; }
+
+/* FLAIR is a playable metal card; AURA Hype is an effect on the photograph. */
+.led-number { display: inline-block; width: 1.65em; height: 1.3em; vertical-align: middle; line-height: 1; }
+.led-number svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.led-number polygon { fill: currentcolor; opacity: .09; }
+.led-number polygon.is-lit { opacity: 1; filter: drop-shadow(0 0 2px currentcolor); }
+.fgc { --fgc-led: #c3b7ff; --fgc-glow: #b58cff40; border: 1px solid var(--fgc-led); box-shadow: 0 12px 26px #0005, 0 0 14px var(--fgc-glow), inset 0 0 0 1px #fff8; }
+.fgc.tier-bronze { --fgc-metal: linear-gradient(125deg,#402016,#e7a46b 22%,#8b4c2a 43%,#ffd5ac 52%,#794029 70%,#d79867); --fgc-plate: linear-gradient(160deg,#39251e,#171114 65%,#2e1d19); --fgc-plate-solid: #241713; --fgc-ink: #ffe4cb; --fgc-line: #e9b18850; --fgc-led: #ffc185; --fgc-glow: #eb93494d; }
+.fgc.tier-prata { --fgc-metal: linear-gradient(125deg,#4f6371,#ecf6ff 22%,#758d9e 43%,#fff 52%,#526d80 70%,#c5e7fc); --fgc-plate: linear-gradient(160deg,#263c49,#101820 65%,#23313c); --fgc-plate-solid: #14202a; --fgc-ink: #e6f6ff; --fgc-line: #bfe6ff50; --fgc-led: #c9f3ff; --fgc-glow: #79d2fc4d; }
+.fgc.tier-ouro { --fgc-metal: linear-gradient(125deg,#74500a,#ffe9a3 22%,#ba8b19 43%,#fff7c9 52%,#a16a0a 70%,#f8ce62); --fgc-plate: linear-gradient(160deg,#3f3218,#18140d 65%,#342713); --fgc-plate-solid: #241e0e; --fgc-ink: #fff0ba; --fgc-line: #ffe49b50; --fgc-led: #ffe684; --fgc-glow: #f8c4404d; }
+.fgc-metal-light { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; background: linear-gradient(115deg,transparent 30%,#ffffff14 45%,#fff5 49%,#ffffff14 53%,transparent 65%); background-size: 300% 100%; animation: fgc-metal-reflection 7s ease-in-out infinite; opacity: .65; z-index: 2; }
+.fgc-top { z-index: 3; }
+.fgc-ovr { gap: 4px; border-radius: 9px; padding: 7px; color: var(--fgc-led); background: #08090dbf; border: 1px solid var(--fgc-line); box-shadow: 0 0 16px var(--fgc-glow),inset 0 0 12px #0005; }
+.fgc-ovr b { font-size: calc(var(--fgc-w) * .13); }
+.fgc-ovr small { color: var(--fgc-ink); text-align: center; }
+.fgc-photo-halo { position: absolute; inset: 18% 0 0 24%; border-radius: 50%; background: radial-gradient(ellipse,var(--fgc-glow),transparent 70%); }
+.fgc-hype { position: relative; padding: 7px 6px 5px; background: #07090d66; border: 1px solid var(--fgc-line); border-radius: 7px; }
+.fgc-hype dd { color: var(--fgc-led); text-shadow: 0 0 8px var(--fgc-glow); }
+.fgc-foot { position: relative; }
+.fgc-flip { z-index: 4; background: #090c12d9; color: var(--fgc-ink); border-color: var(--fgc-line); }
+@keyframes fgc-metal-reflection { 0%,20% { background-position: 135% 0; } 80%,100% { background-position: -135% 0; } }
+/* Hype has one global score, luminous photo treatment and no game tier or attribute table. */
+.aura-hype { border: 0; border-radius: inherit; background: radial-gradient(ellipse at 10% 20%,#3ce7ea0d,transparent 60%); box-shadow: inset 0 0 28px #61fff01a; }
+.aura-hype-score { top: auto; right: 12px; bottom: 12px; border: 1px solid #b8fff55c; border-radius: 12px; padding: 9px 12px; max-width: min(75%,220px); background: linear-gradient(145deg,#092432df,#0e1425ed); box-shadow: 0 3px 16px #001b3d52,0 0 18px #44e3df26; backdrop-filter: blur(9px); }
+.aura-hype-global { display: grid; gap: 4px; }
+.aura-hype-global small { font-size: var(--text-caption); letter-spacing: .22em; line-height: 1; }
+.aura-hype-total { display: flex; align-items: end; gap: 8px; color: #d6fff5; }
+.aura-hype-total .led-number { font-size: 29px; }
+.aura-hype-total > span:last-child { font-size: var(--text-caption); padding-bottom: 2px; color: #b4dddc; letter-spacing: .04em; }
+.aura-hype[data-effect="XRAY"] { box-shadow: inset 0 0 40px #bfa1ff33; }
+.aura-hype[data-effect="STARS"] { box-shadow: inset 0 0 32px #f9dc9a24; }
+@media (prefers-reduced-motion: reduce) { .fgc-metal-light,.fgc.is-rare .fgc-face::after { animation: none; background-position: 50% 0; } }
+html[data-reduce-motion="true"] .fgc-metal-light, html[data-reduce-motion="true"] .fgc.is-rare .fgc-face::after { animation: none; background-position: 50% 0; }
+html[data-theme="contrast"] .fgc { --fgc-ink: #fff; --fgc-led: #fff; --fgc-line: #fff; --fgc-plate: #000; }
+html[data-theme="contrast"] .aura-hype-score { background: #000; color: #fff; border-color: #fff; }
+
+.aura-metamorphose { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border: 2px solid #b999eb; z-index: 2; }
+.aura-metamorphose-field { position: absolute; inset: 0; box-shadow: inset 0 0 30px #9470d580; }
+.aura-metamorphose-field::before { content: ""; position: absolute; inset: 0; border: 7px solid transparent; border-image: conic-gradient(from 0deg,#ef8ba2,#ae7ee1,#66d9df,#faad70,#ef8ba2) 1; animation: aura-metamorphose-glow 6s ease-in-out infinite alternate; }
+.aura-metamorphose-caption { position: absolute; left: 10px; bottom: 10px; padding: 5px 9px; border-radius: 6px; color: #fff; background: #3b225ded; font: 600 11px/1.4 var(--font-ui); }
+.aura-metamorphose[data-effect="CONSTELACAO"] .aura-metamorphose-field::before { border: 1px solid #c6c2ff; border-image: none; background: radial-gradient(circle at 5% 12%,#dcd2ff 2px,transparent 3px),radial-gradient(circle at 92% 25%,#dcd2ff 2px,transparent 3px),radial-gradient(circle at 8% 76%,#dcd2ff 3px,transparent 4px); }
+.aura-metamorphose[data-effect="CONSTELACAO"] i { position: absolute; top: 18%; right: 6%; width: 30px; height: 30px; border-right: 1px solid #cfb9ff; border-bottom: 1px solid #cfb9ff; transform: rotate(30deg); }
+.aura-metamorphose[data-effect="FIO_VIVO"] .aura-metamorphose-field::before { border: 8px solid transparent; border-image: repeating-linear-gradient(35deg,#dd91ad 0 3px,#9b88dd 3px 6px,#f7e9d5 6px 9px) 8; }
+.aura-metamorphose[data-effect="HOLOGRAFIA"] .aura-metamorphose-field::before { border: 8px solid transparent; border-image: linear-gradient(135deg,#7ce6ed,#bd8aeb,#f4acd8,#9fe3c9) 8; }
+.aura-metamorphose[data-effect="HOLOGRAFIA"] .aura-metamorphose-field { box-shadow: inset 0 0 22px #ab86e559,inset 0 0 4px #fff; }
+@keyframes aura-metamorphose-glow { from { opacity: .65; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .aura-metamorphose-field::before { animation: none; } }
+html[data-reduce-motion="true"] .aura-metamorphose-field::before { animation: none; }
+html[data-theme="contrast"] .aura-metamorphose { border-color: currentcolor; }
+
+/* Shared card perimeter: geometry stays constant, only paint and finish vary. */
+.card-border { position: absolute; inset: 0; z-index: 5; pointer-events: none; padding: 2px; border-radius: inherit; background: var(--card-border-paint); mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude; }
+.card-border[data-effect="GLOW"] { filter: drop-shadow(0 0 5px var(--card-border-glow)); }
+.card-border[data-effect="SHIMMER"],.card-border[data-effect="HOLO"] { background-size: 250% 250%; animation: card-border-shift 8s ease-in-out infinite alternate; }
+.card-border[data-effect="HOLO"] { background-image: linear-gradient(135deg,#83e7dd,#b7a9f2,#efb2d9,#f2dfa9,#83e7dd); }
+.card-border[data-pulse="up"] { background: #27d779; filter: drop-shadow(0 0 7px #27d779); animation: none; }
+.card-border[data-pulse="down"] { background: #f46a76; filter: drop-shadow(0 0 7px #f46a76); animation: none; }
+@keyframes card-border-shift { from { background-position: 0 0; } to { background-position: 100% 100%; } }
+@media (prefers-reduced-motion: reduce) { .card-border { animation: none !important; } }
+html[data-reduce-motion="true"] .card-border { animation: none; }
+html[data-theme="contrast"] .card-border:not([data-pulse]) { background: currentcolor; }
+.fgc-attributes { column-gap: 6px; padding-inline: 4px; }
+.fgc-attributes > div { gap: 4px; min-width: 0; }
+.fgc-attributes dt { letter-spacing: .015em; }

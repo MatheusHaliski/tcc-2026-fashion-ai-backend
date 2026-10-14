@@ -192,6 +192,29 @@ class BackgroundStudioServiceTest {
     }
 
     @Test
+    void bordaEMetamorfoseSaoPreservadasNaArteComRevisao() {
+        WardrobeItem item = world.piecesOf(world.me).get(0);
+        Map<String, Object> border = cfg("mode", "GRADIENT", "from", "#123456", "to", "#abcdef", "effect", "SHIMMER");
+        Map<String, Object> saved = studio.savePiece(ana, item.getId(), cfg("border", border, "auraMetamorphose", "PRISMA"));
+        assertThat(map(saved.get("background"))).containsEntry("border", border).containsEntry("auraMetamorphose", "PRISMA");
+        assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("border", cfg("color", "url(secret)")))).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("border", cfg("effect", "UNKNOWN")))).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("auraMetamorphose", "UNKNOWN"))).isInstanceOf(ApiException.class);
+    }
+
+    @Test
+    void composicaoPublicadaPersisteERejeitaUrlExterna() {
+        WardrobeItem item = world.piecesOf(world.me).get(0);
+        Map<String, Object> preset = cfg("id", "satin-ivory", "name", "Cetim", "family", "COMMON",
+                "image", "/aura/fashion-curated/satin-ivory.webp", "palette", List.of("#dcc7a5", "#faf1e1"));
+        assertThat(map(studio.savePiece(ana, item.getId(), cfg("compositionPreset", preset)).get("background")))
+                .containsEntry("compositionPreset", preset);
+        preset.put("image", "https://example.com/asset.svg");
+        assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("compositionPreset", preset)))
+                .isInstanceOf(ApiException.class);
+    }
+
+    @Test
     void fundoDaPecaComRevisao() {
         WardrobeItem w = world.piecesOf(world.me).get(0);
         Map<String, Object> first = studio.savePiece(ana, w.getId(), cfg("color", "#ffffff"));

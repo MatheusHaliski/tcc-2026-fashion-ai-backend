@@ -29,12 +29,15 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF30 — Ganhar e usar FAI Points, evoluir o nível do 'Meu Quarto' e comprar na loja do quarto\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF30 — Ganhar e usar FAI Points, evoluir o nível do 'Meu Quarto' e comprar na loja do quarto\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
   component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE0
-  component "/points\n(site)/(app)/points/page.tsx" as FE1
-  component "/room\n(site)/(app)/room/page.tsx" as FE2
+  component "/points/ganhar\n(site)/(app)/points/ganhar/page.tsx" as FE1
+  component "/points/loja\n(site)/(app)/points/loja/page.tsx" as FE2
+  component "/points\n(site)/(app)/points/page.tsx" as FE3
+  component "/points/saldo\n(site)/(app)/points/saldo/page.tsx" as FE4
+  component "/room\n(site)/(app)/room/page.tsx" as FE5
   component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
@@ -66,6 +69,9 @@ AchievementService ..> SideEffectRunner
 FE0 --> APIC
 FE1 --> APIC
 FE2 --> APIC
+FE3 --> APIC
+FE4 --> APIC
+FE5 --> APIC
 FaiPointsService --> REPO_MySQL
 FaiPointsService ..> NotificationService
 FaiPointsService ..> RoomLayoutAccess

@@ -21,10 +21,10 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF48 — FAI Points: resgate em dinheiro e doações\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF48 — FAI Points: resgate em dinheiro e doações\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
-boundary "Tela /points" as P
+boundary "Tela /points/ganhar" as P
 control "HighlightsController" as HighlightsController
 participant "FaiPointsService" as FaiPointsService
 database "MySQL" as DB_MySQL

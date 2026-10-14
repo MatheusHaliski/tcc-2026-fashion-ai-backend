@@ -19,7 +19,7 @@ skinparam state {
   StartColor #20A77A
   EndColor #4B5563
 }
-title RF24 — ciclo de vida de AiInferenceLog.result\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum AiCallResult · tabela ai_inference_log
+title RF24 — ciclo de vida de AiInferenceLog.result\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nenum AiCallResult · tabela ai_inference_log
 
 state "AiInferenceLog.result" as Ciclo_AiInferenceLog {
   state Ciclo_AiInferenceLog_SUCCESS as "SUCCESS"

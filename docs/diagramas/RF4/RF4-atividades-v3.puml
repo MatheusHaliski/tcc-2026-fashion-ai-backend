@@ -24,11 +24,11 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF4 — Criar Peça (v3)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF4 — Criar Peça (v3)\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /pieces/new;
+:Abre /pieces/new, /admin/system,\n/dna-schemes/[id]/edit;
 |Tela (Next.js)|
 :Carrega os dados da tela\nGET /api/brand-search\nGET /api/studio/backdrops\nGET /api/taxonomy\nGET /api/brand-logos/batch;
 |Pessoa usuária|
@@ -54,11 +54,11 @@ if (conteúdo bloqueado?) then (sim)
   stop
 endif
 |Dados e serviços|
-:Lê: users\npipeline_jobs\nwardrobe_items\nreactions\nbrands;
-:Usa: Guard.requireCanCreate\nOwnMedia.accepts\nMediaService.read\nBrandLogoService.acceptWebLogo\nAssetCatalogService.defaultPieceImage\nAssetCatalogService.publicFile (+6);
+:Lê: users\npipeline_jobs\nwardrobe_items\nreactions;
+:Usa: Guard.requireCanCreate\nAssetCatalogService.defaultPieceImage\nAssetCatalogService.publicFile\nAssetCatalogService.defaultPieceLogo\nMediaService.put\nMediaService.read (+4);
 :IA: STUDIO_ENHANCER;
 :Grava: wardrobe_items\nquality_scores\nprocessing_jobs_log\nmoderation_queue\npipeline_jobs;
-:Estado: brandLogoUrl → null\nbrandLogoUrl → set\nimageUrl → set\nthumbnailUrl → set\noriginalImageUrl → null\nmoderationStatus → APPROVED (+12);
+:Estado: imageUrl → set\nthumbnailUrl → set\noriginalImageUrl → null\nmoderationStatus → APPROVED\nphotoProcessingStatus → COMPLETED\ndefaultImage → true (+10);
 :Evento: PieceCreated\nPieceCapturedFromSession;
 |Tela (Next.js)|
 :Atualiza a tela com a resposta;
@@ -72,7 +72,7 @@ if (Faz outra ação?) then (sim)
   case (Rascunho de uma peça da foto com…)
     :POST /api/pieces/analysis/multi/{draftId}/pieces\n→ MultiPieceService.pieceDraft\nvalida: CONTEUDO_BLOQUEADO, ERRO\nlê: users, pipeline_jobs\nusa: Guard.requireCanCreate,\nWardrobeService.flatLayStep,\nFlatLayPipeline.run …\nia: FLAT_LAY_STANDARDIZER, CONTENT_MODERATOR;
   case (Várias peças numa foto: a IA acha…)
-    :POST /api/pieces/analysis/multi\n→ MultiPieceService.detect\nlê: users\nusa: Guard.requireCanCreate, MediaService.put\nia: MULTI_PIECE_DETECTOR;
+    :POST /api/pieces/analysis/multi\n→ MultiPieceService.detect\nlê: users\nusa: Guard.requireCanCreate,\nBrandReader.available,\nBrandReader.findRobust …\nia: MULTI_PIECE_DETECTOR;
   case (RF4 · Estúdio — gera/refaz a foto…)
     :POST /api/pieces/{id}/studio\n→ WardrobeService.studioPiece\nvalida: ESTUDIO_INDISPONIVEL, NAO_ENCONTRADO,\nSEM_RECORTE\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.read …\nia: STUDIO_ENHANCER;
   endswitch
@@ -81,7 +81,7 @@ if (Faz outra ação?) then (sim)
   Rascunho da peça com a cópia…, Cópia da peça por
   IA: recria…, Nova tentativa de ler a marca…, RF4 ·
   Estúdio — leva ao estúd…, RF4 · Estúdio — aprova a
-  foto…, RF4 · Estúdio — refaz a foto…
+  foto…, Selos possíveis para uma peça…
   end note
   |Tela (Next.js)|
   :Atualiza a tela;
