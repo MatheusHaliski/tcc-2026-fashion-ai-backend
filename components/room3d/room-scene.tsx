@@ -761,7 +761,11 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
           cima, na órbita, some; não projeta sombra, então o sol continua entrando) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(ROOM.minX + ROOM.maxX) / 2, 0, (ROOM.minZ + ROOM.maxZ) / 2]} receiveShadow><planeGeometry args={[ROOM.maxX - ROOM.minX, ROOM.maxZ - ROOM.minZ]} /><meshStandardMaterial color={night ? "#5a4636" : "#b8906a"} roughness={0.75} /></mesh>
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[(ROOM.minX + ROOM.maxX) / 2, ROOM.height, (ROOM.minZ + ROOM.maxZ) / 2]}><planeGeometry args={[ROOM.maxX - ROOM.minX, ROOM.maxZ - ROOM.minZ]} /><meshStandardMaterial color={night ? "#2a2c38" : "#f6f2ec"} emissive={night ? "#000000" : "#f6f2ec"} emissiveIntensity={night ? 0 : 0.3} roughness={1} /></mesh>
-      {byId["rug"] && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, 1.3]} receiveShadow><circleGeometry args={[1.1, 48]} /><meshStandardMaterial color={night ? "#6b4c5c" : "#d9b8a0"} roughness={1} /></mesh>}
+      {byId["rug"] && <>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, 1.3]} receiveShadow><circleGeometry args={[1.1, 48]} /><meshStandardMaterial color="#1245a8" roughness={1} /></mesh>
+        {[0.94, 0.84].map((radius, i) => <mesh key={radius} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.008 + i * 0.001, 1.3]}><torusGeometry args={[radius, 0.018, 8, 64]} /><meshStandardMaterial color={i ? "#f58220" : "#C9A227"} roughness={0.65} metalness={i ? 0.08 : 0.35} /></mesh>)}
+        <Label3D text="FAI" w={0.3} h={0.12} px={256} fg="#f7f3eb" font="700 72px Georgia, serif" position={[0, 0.012, 1.3]} rotation={[-Math.PI / 2, 0, 0]} />
+      </>}
 
       {/* parede norte: guarda-roupa 1 (FAI Origem), porta, interruptor, gancho das chaves, janela, calendário e quadro de
           cortiça — em coordenadas da cena (o grupo desfaz o deslocamento da parede, que não gira) */}
