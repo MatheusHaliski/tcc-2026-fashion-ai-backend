@@ -70,6 +70,56 @@ class RoomServiceTest {
     }
 
     @Test
+    void automaticAssignmentInsertsBeforeLockingTheWinner() {
+        var piece = world.piecesOf(world.me).getFirst();
+        var repository = kit.dep(RoomStorageEntryRepository.class);
+        var calls = new ArrayList<String>();
+        var delegate = org.mockito.Mockito.mockingDetails(repository).getMockCreationSettings().getDefaultAnswer();
+        org.mockito.Mockito.doAnswer(inv -> { calls.add("insert"); return delegate.answer(inv); }).when(repository)
+                .insertAutomaticIfAbsent(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
+        org.mockito.Mockito.doAnswer(inv -> { calls.add("lock"); return delegate.answer(inv); }).when(repository)
+                .findFirstByWardrobeItemId(piece.getId());
+        room.autoAssign(world.me.getId(), piece.getId());
+        assertThat(calls).containsExactly("insert", "lock");
+    }
+
+    @Test
+    void repairsIncompatibleAddressesInPlaceAndDoesNotInsertDuplicatePieceRows() {
+        var all = world.piecesOf(world.me);
+        var entry = room.entries(world.me.getId(), all).getFirst();
+        UUID id = entry.getId(); UUID pieceId = entry.getWardrobeItemId();
+        entry.setAddress("invalid-legacy-address");
+        var repaired = room.entries(world.me.getId(), all).stream()
+                .filter(e -> e.getWardrobeItemId().equals(pieceId)).findFirst().orElseThrow();
+        assertThat(repaired.getId()).isEqualTo(id);
+        assertThat(RoomAddress.parse(repaired.getAddress())).isPresent();
+        assertThat(storage().stream().filter(e -> e.getWardrobeItemId().equals(pieceId))).hasSize(1);
+        assertThat(room.entries(world.me.getId(), all).stream().filter(e -> e.getWardrobeItemId().equals(pieceId)).findFirst().orElseThrow().getId())
+                .isEqualTo(id);
+    }
+
+    @Test
+    void reducedMotionDoesNotDisableTimeOfDayLighting() {
+        var prefs = new br.com.fashionai.domain.model.UserPreferences();
+        prefs.setUser(world.me); prefs.setReduceMotion(true);
+        when(kit.dep(br.com.fashionai.domain.repository.UserPreferencesRepository.class).findByUserId(world.me.getId()))
+                .thenReturn(java.util.Optional.of(prefs));
+        Map<?, ?> ambient = (Map<?, ?>) room.room(ana).get("ambient");
+        assertThat(ambient.get("reduceMotion")).isEqualTo(true);
+        assertThat(ambient.get("period")).isNotEqualTo("fixed");
+    }
+
+    @Test
+    void dimmingAndSwitchingDoNotRequireStudioAndPreserveColorTemperature() {
+        assertThat(room.setLight(ana, null, .4, true)).containsEntry("intensity", .4).containsEntry("on", true).containsEntry("kelvin", 4000);
+        assertThat(room.setLight(ana, null, null, false)).containsEntry("intensity", .4).containsEntry("on", false);
+        assertThatThrownBy(() -> room.setLight(ana, null, Double.NaN, null)).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> room.setLight(ana, null, 1.1, null)).isInstanceOf(ApiException.class);
+        assertThat(room.layout(world.me.getId()).getModulesJson()).contains("BED-DBL", "RACK-MOB");
+    }
+
+    @Test
     void layoutInicialDoNivelEstreiaEModulosPorNivel() {
         RoomLayout l = room.layout(world.me.getId());
         assertThat(l.getLevel()).isEqualTo("ESTREIA");

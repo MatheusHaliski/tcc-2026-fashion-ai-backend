@@ -1,3 +1,4 @@
+import { silhouetteLandmarks, landmarkProjection, type GarmentLandmarks } from "./photo-landmarks";
 /*
  * Avatar 3D (RF40) / Provador — roupa que veste. Cada peça vira uma malha presa ao MESMO esqueleto do corpo:
  *
@@ -510,6 +511,7 @@ export function posedPositions(skeleton: THREE.Skeleton, bindMatrix: THREE.Matri
 }
 
 export interface PhotoInfo {
+  landmarks?: GarmentLandmarks | null;
   width: number; height: number; box: { x0: number; y0: number; x1: number; y1: number }; widthAt: (fy: number) => { x0: number; x1: number } | null;
   /** fim da gola da frente no centro da foto (fração da altura da caixa), quando a gola difere do tecido; senão null */
   collarRow: number | null;
@@ -602,6 +604,8 @@ export function photoInfo(img: CanvasImageSource & { width: number; height: numb
     if (mid !== null && l !== null && rr !== null) neckDrop = Math.max(0, (mid - Math.min(l, rr)) / Math.max(1, y1 - y0));
   }
   return {
+    landmarks: (() => { const points = silhouetteLandmarks(mask, W, H, { x0, y0, x1, y1 }); if (!points) return null;
+      return Object.fromEntries(Object.entries(points).map(([name, p]) => [name, { x: p.x * k, y: p.y * k }])) as unknown as GarmentLandmarks; })(),
     collarRow, neckDrop, cutout: pm.cutout, backdrop: pm.backdrop,
     width: img.width, height: img.height, box: { x0: x0 * k, y0: y0 * k, x1: (x1 + 1) * k, y1: (y1 + 1) * k },
     widthAt: (fy) => {
@@ -661,6 +665,21 @@ export function texturedGeometry(gg: GarmentGeometry, posed: Float32Array, photo
         const sy = bh / Math.max(0.05, yTop - yBot);
         photoScaleY = sy;
         map = (x, y) => [(cxP + (x - cxG) * sx) / photo.width, 1 - (box.y0 + (yTop - y) * sy) / photo.height];
+      }
+      if (photo.landmarks && ["tee", "shirt", "tank", "dress", "jacket", "coat", "sweater"].includes(sp.kind)) {
+        const lm = photo.landmarks;
+        const shouldersY = yTop - .02;
+        const modelRow = (y: number) => {
+          const row = front.filter(v => Math.abs(posed[v * 3 + 1] - y) < .025);
+          if (row.length < 2) return { left: xl, right: xr };
+          return { left: Math.min(...row.map(v => posed[v * 3])), right: Math.max(...row.map(v => posed[v * 3])) };
+        };
+        const top = modelRow(shouldersY), hem = modelRow(yBot + .02), ph = photo.widthAt(.98) ?? pw;
+        map = landmarkProjection([
+          { modelY: shouldersY, modelLeft: top.left, modelRight: top.right, photoY: (lm.leftShoulder.y + lm.rightShoulder.y) / 2, photoLeft: lm.leftShoulder.x, photoRight: lm.rightShoulder.x },
+          { modelY: yRef, modelLeft: xl, modelRight: xr, photoY: box.y0 + bh * fy, photoLeft: pw.x0, photoRight: pw.x1 },
+          { modelY: yBot, modelLeft: hem.left, modelRight: hem.right, photoY: box.y1, photoLeft: ph.x0, photoRight: ph.x1 },
+        ], photo.width, photo.height);
       }
     }
   }

@@ -1,23 +1,14 @@
 "use client";
-
 import type { HypeViewState } from "@/lib/hype/model";
-import { displayScore, levelTone } from "@/lib/hype/model";
+import { displayScore } from "@/lib/hype/model";
+import { useI18n } from "@/lib/i18n/i18n";
 
-/**
- * Camada informativa sobre a foto: não simula um GIF nem calcula Hype no cliente; só anima o
- * score já publicado pelo serviço de HypeScore. A foto continua legível quando não há score.
- */
-export function AuraHype({ state }: { state: HypeViewState }) {
-  if (state.kind !== "available") return null;
-  return (
-    <div className={`aura-hype ${levelTone(state.level)}`} aria-label={`AURA Hype, score ${displayScore(state.score)}, ${state.level}`}>
-      <span className="aura-hype-grid" aria-hidden />
-      <span className="aura-hype-scan" aria-hidden />
-      <span className="aura-hype-node is-one" aria-hidden />
-      <span className="aura-hype-node is-two" aria-hidden />
-      <span className="aura-hype-node is-three" aria-hidden />
-      <span className="aura-hype-readout"><small>AURA HYPE</small><strong>{displayScore(state.score)}</strong><em>{state.direction === "UP" ? "RISING" : state.direction === "DOWN" ? "COOLING" : "STABLE"}</em></span>
-      <span className="aura-hype-metrics" aria-hidden>TX · 98%<br />MAP · LIVE</span>
-    </div>
-  );
+/** Decorative animation; never substitutes synthetic fabric measurements for Hype data. */
+export function AuraHype({ state, mode, preview = false }: { state: HypeViewState; mode?: string; preview?: boolean }) {
+  const { t } = useI18n();
+  const effect = ["SCANNER", "XRAY", "DOTS", "STARS", "METRICS"].includes(mode ?? "") ? mode : "SCANNER";
+  return <span className="aura-hype" data-effect={effect}>
+    <span className="aura-hype-field" aria-hidden="true"><i /><i /><i /><i /><i /></span>
+    <span className="aura-hype-score" title={t("auraHype.global")}>{state.kind === "available" ? `HYPE ${displayScore(state.score)}/100${state.stale ? " · ↻" : ""}` : t(preview ? "auraHype.preview" : "auraHype.pending")}</span>
+  </span>;
 }

@@ -20,7 +20,18 @@ import { cleanup } from "@/test-utils/render";
 import RoomScene, { LEVELS, kelvinColor, moduleAnchor, moduleFacing, shownHits, type RoomData3D, type RoomPiece3D } from "./room-scene";
 import { ROOM, W2 } from "@/lib/room3d/room-bounds";
 import { ROOM_ZOOM_EVENT } from "@/lib/room3d/interaction";
+import { I18nProvider } from "@/lib/i18n/i18n";
 import WardrobePreview from "./wardrobe-preview";
+it("night automatically lights the ceiling and a dimmer changes actual light intensity without theme switching", async () => {
+  const base = { ...room("ESTREIA"), ambient: { period: "night" } };
+  const render = (on?: boolean, intensity?: number) => <RoomScene data={base} open={new Set()} onToggle={vi.fn()} highlight={null} focusModule={null} onPick={vi.fn()} lightOn={on} lightIntensity={intensity} />;
+  const r = await mount3d(render());
+  const ceiling = () => r.scene.findAll(n => n.type === "PointLight").find(n => (n.instance as THREE.PointLight).distance === 12)!.instance as THREE.PointLight;
+  expect(ceiling().intensity).toBe(13.5);
+  await r.update(<I18nProvider initial="pt-BR">{render(true, .2)}</I18nProvider>); expect(ceiling().intensity).toBe(3.6);
+  await r.update(<I18nProvider initial="pt-BR">{render(false, .2)}</I18nProvider>); expect(ceiling().intensity).toBe(0);
+  await r.unmount();
+});
 import PieceModelViewer from "./piece-model-viewer";
 import {
   ClosetLights, Cobweb, DressForm, DustPuff, EmptyDrawerCharm, FaiBox, GoldDot, HangTag, KeyHook, Label3D, Lamp, LightSwitch, RoomDoor, RoomWindow,

@@ -1,106 +1,77 @@
 // @vitest-environment jsdom
-/** Acessibilidade 3D: o direcional segura as mesmas teclas do motor enquanto o botão fica apertado; girar manda o comando ao canvas. */
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import * as THREE from "three";
 import { act, cleanup, fireEvent, renderApp, screen } from "@/test-utils/render";
-import { ROOM_TURN_EVENT, ROOM_ZOOM_EVENT, RoomInteraction } from "@/lib/room3d/interaction";
-import RoomSceneControls, { TAP_STEP_MS } from "./room-scene-controls";
-
-afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.useRealTimers(); });
+import { ROOM_CAMERA_EVENT, RoomInteraction } from "@/lib/room3d/interaction";
+import RoomSceneControls, { stickAxis, TAP_STEP_MS } from "./room-scene-controls";
+const frames = new Map<number, FrameRequestCallback>(); let seq = 0;
+beforeEach(() => {
+  vi.stubGlobal("requestAnimationFrame", (f: FrameRequestCallback) => { frames.set(++seq, f); return seq; });
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
+});
+afterEach(() => { cleanup(); frames.clear(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+const frame = () => act(() => { for (const [id, fn] of [...frames]) { frames.delete(id); fn(16); } });
 const setup = (walk = true) => {
-  const engine = new RoomInteraction(), canvas = document.createElement("canvas");
-  const turns: number[] = [], zooms: number[] = [];
-  canvas.addEventListener(ROOM_TURN_EVENT, (e) => turns.push((e as CustomEvent).detail));
-  canvas.addEventListener(ROOM_ZOOM_EVENT, (e) => zooms.push((e as CustomEvent).detail));
-  renderApp(<RoomSceneControls engine={engine} canvas={canvas} walk={walk} />);
-  return { engine, canvas, turns, zooms };
+  const engine = new RoomInteraction(), canvas = document.createElement("canvas"), onVistaMe = vi.fn(), onPhoto = vi.fn();
+  renderApp(<RoomSceneControls engine={engine} canvas={canvas} walk={walk} onVistaMe={onVistaMe} onPhoto={onPhoto} />);
+  const sticks = [...document.querySelectorAll<HTMLButtonElement>(".room-pad-stick")];
+  return { engine, canvas, sticks, onVistaMe, onPhoto };
 };
-
-describe("controles da cena 3D (botões de acessibilidade)", () => {
-  it("segurar um botão do direcional aperta a tecla do motor; soltar, sair ou cancelar solta", () => {
+it("keeps the dead zone stable and clamps diagonals without losing analog magnitude", () => {
+  expect(stickAxis(2, 2, 40).length()).toBe(0);
+  expect(stickAxis(100, 100, 40).length()).toBeCloseTo(1);
+  expect(stickAxis(20, 0, 40).x).toBeGreaterThan(0); expect(stickAxis(20, 0, 40).x).toBeLessThan(1);
+});
+it("left stick moves continuously; release stops and manual movement cancels automatic walking", () => {
+  const { engine, sticks } = setup(); const done = vi.fn(); engine.walkTo(new THREE.Vector3(2, 0, 2), done);
+  fireEvent.keyDown(sticks[0], { key: "ArrowRight" }); frame();
+  expect(engine.moveStick.x).toBe(1); expect(engine.goal).toBeNull(); expect(done).toHaveBeenCalledWith("cancelled");
+  fireEvent.keyUp(sticks[0], { key: "ArrowRight" }); frame(); expect(engine.moveStick.length()).toBe(0);
+});
+it("right stick and shoulder buttons control continuous camera axes instead of quarter turns", () => {
+  const { engine, sticks } = setup();
+  fireEvent.keyDown(sticks[1], { key: "ArrowUp" }); frame(); expect(engine.cameraStick.y).toBe(-1);
+  fireEvent.keyUp(sticks[1], { key: "ArrowUp" });
+  const shoulder = screen.getByRole("button", { name: "Girar a cena para a direita" });
+  fireEvent.keyDown(shoulder, { key: " " }); frame(); expect(engine.cameraStick.x).toBe(1); expect(engine.view).toBe(0);
+  fireEvent.keyUp(shoulder, { key: " " }); frame(); expect(engine.cameraStick.length()).toBe(0);
+});
+it("photo orbit sends the analog event without moving the avatar", () => {
+  const { engine, canvas, sticks } = setup(false); const events: unknown[] = [];
+  canvas.addEventListener(ROOM_CAMERA_EVENT, e => events.push((e as CustomEvent).detail));
+  fireEvent.keyDown(sticks[1], { key: "ArrowRight" }); frame(); expect(events).toContainEqual({ x: 1, y: 0, zoom: 0 });
+  expect(engine.moveStick.length()).toBe(0);
+});
+it("interacts only within reach and keeps photo/dress actions separate", () => {
+  const { engine, onPhoto, onVistaMe } = setup(); const run = vi.fn(); const object = new THREE.Object3D(); object.position.copy(engine.actor);
+  act(() => { engine.actions.set("chair", { id: "chair", object, kind: "sit", radius: .85, run }); engine.updateNearby(); });
+  fireEvent.click(screen.getByRole("button", { name: "X: interagir com o objeto próximo" })); expect(run).toHaveBeenCalledTimes(1);
+  engine.actor.set(10, 0, 10); fireEvent.click(screen.getByRole("button", { name: "X: interagir com o objeto próximo" })); expect(run).toHaveBeenCalledTimes(1);
+  fireEvent.click(screen.getByRole("button", { name: "Quadrado: modo fotografia" })); expect(onPhoto).toHaveBeenCalledOnce();
+  fireEvent.click(screen.getByRole("button", { name: "Triângulo: Vista-me" })); expect(onVistaMe).toHaveBeenCalledOnce();
+});
+it("window blur and unmount stop both axes", () => {
+  const { engine, sticks } = setup(); fireEvent.keyDown(sticks[0], { key: "ArrowUp" }); fireEvent.keyDown(sticks[1], { key: "ArrowLeft" }); frame();
+  fireEvent(window, new Event("blur")); frame(); expect(engine.moveStick.length()).toBe(0); expect(engine.cameraStick.length()).toBe(0);
+  cleanup(); expect(frames.size).toBe(0);
+});
+it("does not render controls until the canvas is ready", () => {
+  renderApp(<RoomSceneControls engine={new RoomInteraction()} canvas={null} walk />);
+  expect(document.querySelector(".room-gamepad")).toBeNull();
+});
+it("a screen-reader synthesized click makes one short movement and releases it", () => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  try {
     const { engine } = setup();
-    const up = screen.getByRole("button", { name: "Andar para frente" });
-    expect(up.getAttribute("data-pressed")).toBe("false");
-    fireEvent.pointerDown(up, { pointerType: "touch" });
-    expect(engine.keys.has("ArrowUp")).toBe(true); expect(up.getAttribute("data-pressed")).toBe("true");
-    fireEvent.pointerUp(up, { pointerType: "touch" });
-    expect(engine.keys.has("ArrowUp")).toBe(false); expect(up.getAttribute("data-pressed")).toBe("false");
-    const left = screen.getByRole("button", { name: "Andar para a esquerda" });
-    fireEvent.pointerDown(left, { pointerType: "mouse", button: 0 }); expect(engine.keys.has("ArrowLeft")).toBe(true);
-    fireEvent.pointerLeave(left); expect(engine.keys.has("ArrowLeft")).toBe(false);
-    const back = screen.getByRole("button", { name: "Andar para trás" });
-    fireEvent.pointerDown(back, { pointerType: "pen" }); fireEvent.pointerCancel(back); expect(engine.keys.has("ArrowDown")).toBe(false);
-    fireEvent.pointerDown(back, { pointerType: "mouse", button: 2 }); expect(engine.keys.has("ArrowDown")).toBe(false);   // botão direito não anda
-  });
-  it("pelo teclado: Enter ou Espaço no botão focado seguram enquanto pressionados; perder o foco solta", () => {
-    const { engine } = setup();
-    const right = screen.getByRole("button", { name: "Andar para a direita" });
-    right.focus();
-    fireEvent.keyDown(right, { key: "Enter" }); fireEvent.keyDown(right, { key: "Enter", repeat: true });
-    expect(engine.keys.has("ArrowRight")).toBe(true); expect(right.getAttribute("data-pressed")).toBe("true");
-    fireEvent.keyUp(right, { key: "Enter" }); expect(engine.keys.has("ArrowRight")).toBe(false);
-    fireEvent.keyDown(right, { key: " " }); expect(engine.keys.has("ArrowRight")).toBe(true);
-    fireEvent.blur(right); expect(engine.keys.has("ArrowRight")).toBe(false); expect(right.getAttribute("data-pressed")).toBe("false");
-  });
-  it("leitor de tela ou controle por voz (clique sintetizado, sem ponteiro nem tecla): cada ativação dá um passo curto", () => {
-    vi.useFakeTimers();
-    const { engine } = setup();
-    const up = screen.getByRole("button", { name: "Andar para frente" });
-    expect(up.hasAttribute("aria-pressed")).toBe(false);                                    // não é um botão de liga/desliga
-    fireEvent.click(up);                                                                     // detail 0
-    expect(engine.keys.has("ArrowUp")).toBe(true); expect(up.getAttribute("data-pressed")).toBe("true");
-    act(() => { vi.advanceTimersByTime(TAP_STEP_MS - 1); }); expect(engine.keys.has("ArrowUp")).toBe(true);
-    act(() => { vi.advanceTimersByTime(1); }); expect(engine.keys.has("ArrowUp")).toBe(false); expect(up.getAttribute("data-pressed")).toBe("false");
-    // ativar de novo durante o passo estica o passo
-    fireEvent.click(up); act(() => { vi.advanceTimersByTime(TAP_STEP_MS - 50); }); fireEvent.click(up);
-    act(() => { vi.advanceTimersByTime(TAP_STEP_MS - 50); }); expect(engine.keys.has("ArrowUp")).toBe(true);
-    act(() => { vi.advanceTimersByTime(50); }); expect(engine.keys.has("ArrowUp")).toBe(false);
-    // ponteiro apertado e solto no mesmo instante (alguns leitores mandam o par) + o clique sintetizado: também anda
-    fireEvent.pointerDown(up, { pointerType: "mouse", button: 0 }); fireEvent.pointerUp(up, { pointerType: "mouse" }); fireEvent.click(up);
-    expect(engine.keys.has("ArrowUp")).toBe(true); act(() => { vi.advanceTimersByTime(TAP_STEP_MS); }); expect(engine.keys.has("ArrowUp")).toBe(false);
-    // clique de mouse/toque de verdade (detail 1): o segurar já cuidou; o clique não soma um passo
-    fireEvent.pointerDown(up, { pointerType: "mouse", button: 0 }); fireEvent.pointerUp(up, { pointerType: "mouse" }); fireEvent.click(up, { detail: 1 });
-    expect(engine.keys.has("ArrowUp")).toBe(false);
-    // Espaço seguido do clique que o navegador manda ao soltar: o teclado já andou, sem passo extra
-    fireEvent.keyDown(up, { key: " " }); fireEvent.keyUp(up, { key: " " }); fireEvent.click(up);
-    expect(engine.keys.has("ArrowUp")).toBe(false);
-    // segurando pelo ponteiro, o clique sintetizado não solta antes da hora
-    fireEvent.pointerDown(up, { pointerType: "touch" }); fireEvent.click(up); act(() => { vi.advanceTimersByTime(TAP_STEP_MS * 2); });
-    expect(engine.keys.has("ArrowUp")).toBe(true);
-    fireEvent.pointerUp(up, { pointerType: "touch" }); expect(engine.keys.has("ArrowUp")).toBe(false);
-  });
-  it("apertar o direcional durante uma caminhada até o espelho cancela a caminhada (a pessoa assume)", () => {
-    const { engine } = setup(); const done = vi.fn();
-    engine.walkTo(new THREE.Vector3(2, 0, 1.8), done); expect(engine.goal).not.toBeNull();
-    fireEvent.pointerDown(screen.getByRole("button", { name: "Andar para a direita" }), { pointerType: "touch" });
-    expect(engine.goal).toBeNull(); expect(done).toHaveBeenCalledWith("cancelled");
-  });
-  it("o motor soltando tudo (janela perdeu o foco) devolve o botão ao estado solto", () => {
-    const { engine } = setup();
-    const up = screen.getByRole("button", { name: "Andar para frente" });
-    fireEvent.pointerDown(up, { pointerType: "touch" }); expect(up.getAttribute("data-pressed")).toBe("true");
-    act(() => engine.blur()); expect(up.getAttribute("data-pressed")).toBe("false");
-  });
-  it("girar a cena manda o comando ao canvas e anuncia a vista; no modo andar não há aproximar/afastar", () => {
-    const { engine, turns } = setup();
-    fireEvent.click(screen.getByRole("button", { name: "Girar a cena para a esquerda" }));
-    fireEvent.click(screen.getByRole("button", { name: "Girar a cena para a direita" }));
-    expect(turns).toEqual([1, -1]);
-    expect(screen.queryByRole("button", { name: "Aproximar" })).toBeNull();
-    expect(screen.getByRole("status").textContent).toBe("Vista 1 de 4");
-    act(() => engine.turn(1)); expect(screen.getByRole("status").textContent).toBe("Vista 2 de 4");
-    act(() => engine.turn(-2)); expect(engine.view).toBe(3); expect(screen.getByRole("status").textContent).toBe("Vista 4 de 4");
-  });
-  it("no modo câmera (foto/órbita): girar e aproximar/afastar, sem o direcional", () => {
-    const { turns, zooms } = setup(false);
-    expect(screen.queryByRole("button", { name: "Andar para frente" })).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Girar a cena para a direita" }));
-    fireEvent.click(screen.getByRole("button", { name: "Aproximar" })); fireEvent.click(screen.getByRole("button", { name: "Afastar" }));
-    expect(turns).toEqual([-1]); expect(zooms).toEqual([1, -1]);
-    expect(screen.getByRole("group", { name: "Controles da cena 3D" })).toBeTruthy();
-  });
-  it("sem o canvas (cena ainda carregando) não mostra nada", () => {
-    renderApp(<RoomSceneControls engine={new RoomInteraction()} canvas={null} walk />);
-    expect(screen.queryByRole("group", { name: "Controles da cena 3D" })).toBeNull();
-  });
+    fireEvent.click(screen.getByRole("button", { name: "Andar para frente" }), { detail: 0 }); frame();
+    expect(engine.moveStick.y).toBe(-1);
+    act(() => vi.advanceTimersByTime(TAP_STEP_MS)); frame(); expect(engine.moveStick.length()).toBe(0);
+  } finally { vi.useRealTimers(); }
+});
+it("L1 is operable by a synthesized click without pointer or key events", () => {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  try {
+    const { engine } = setup(); fireEvent.click(screen.getByRole("button", { name: "Girar a cena para a esquerda" }), { detail: 0 }); frame();
+    expect(engine.cameraStick.x).toBe(-1); act(() => vi.advanceTimersByTime(TAP_STEP_MS)); frame(); expect(engine.cameraStick.length()).toBe(0);
+  } finally { vi.useRealTimers(); }
 });

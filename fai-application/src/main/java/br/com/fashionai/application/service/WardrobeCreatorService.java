@@ -69,6 +69,8 @@ public class WardrobeCreatorService {
             new Block("HANGER", "CAB-STD", 0, "Cabides", 40, "ESTREIA", List.of("MADEIRA", "VELUDO", "METAL", "ACRILICO", "OURO", "PRATA")),
             new Block("LOGO", "LOG-PLC", 0, Msg.k("wardrobeCreator.placa_de_logo_monograma"), 70, "STUDIO", List.of("METAL", "ACRILICO", "MADEIRA", "OURO", "PRATA", "BRONZE", "COBRE", "VIDRO")),
             new Block("LIGHT", "LUZ-LED", 0, Msg.k("wardrobeCreator.iluminacao_led"), 110, "STUDIO", List.of("LED")),
+            new Block("BED", "BED-DBL", 280, Msg.k("room.double_bed"), 650, "ESTREIA", List.of("MADEIRA", "LACA")),
+            new Block("SALE_RACK", "RACK-MOB", 160, Msg.k("room.support_rack"), 220, "ESTREIA", List.of("METAL", "ACO")),
             new Block("RUG", "TAP-RND", 0, Msg.k("wardrobeCreator.tapete_redondo"), 60, "ESTREIA", List.of("LA", "LINHO", "RATTAN")),
             new Block("SHOE_RACK", "SAP-MOD90", 90, "Sapateira", 240, "CLOSET", List.of("FOSCO", "MADEIRA", "METAL", "ACO", "RATTAN")),
             new Block("BAG_DISPLAY", "VIT-BOL", 60, Msg.k("common.vitrine_de_bolsas"), 300, "CLOSET", List.of("VIDRO", "ESPELHO", "MADEIRA", "OURO")),

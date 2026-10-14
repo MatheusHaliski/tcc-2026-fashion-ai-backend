@@ -6,11 +6,25 @@ export interface RoomTarget {
   available: () => boolean; progress?: (delta: number) => void;
 }
 export interface RoomPlayState { held: string | null; nearMirror: boolean; grip: string | null; ready: boolean }
+export interface RoomAction { id: string; object: THREE.Object3D; kind: "sit" | "open" | "light"; radius: number; run: () => void }
 /** Como terminou uma caminhada até um ponto: chegou, travou no caminho (sem progresso) ou a pessoa assumiu as setas. */
 export type GoalOutcome = "arrived" | "stuck" | "cancelled";
 /** Local interactions never remove inventory records. One release latches a grip;
  * another deliberate press/release drops it. Walking and focus loss preserve clothing. */
 export class RoomInteraction {
+  actions = new Map<string, RoomAction>();
+  nearAction: RoomAction | null = null; seated: THREE.Vector3 | null = null;
+  moveStick = new THREE.Vector2(); cameraStick = new THREE.Vector2(); cameraYaw = 0; cameraPitch = 0;
+  updateNearby() {
+    let near: RoomAction | null = null, best = Infinity;
+    for (const action of this.actions.values()) {
+      const p = action.object.getWorldPosition(new THREE.Vector3());
+      const d = Math.hypot(p.x - this.actor.x, p.z - this.actor.z, action.kind === "open" ? p.y - 1.55 : 0);
+      if (d <= action.radius && d < best) { near = action; best = d; }
+    }
+    if (near?.id !== this.nearAction?.id) { this.nearAction = near; this.notify(); }
+  }
+  interact() { this.updateNearby(); this.nearAction?.run(); this.notify(); }
   targets = new Map<string, RoomTarget>(); solids = new Set<THREE.Object3D>(); keys = new Set<string>();
   held: string | null = null; heldArm: Arm = "Right";
   grip: RoomTarget | null = null; gripArm: Arm = "Right";
@@ -32,7 +46,7 @@ export class RoomInteraction {
   keyDown(code: string) {
     if (this.keys.has(code)) return;
     this.keys.add(code);
-    if (code.startsWith("Arrow")) this.cancelGoal();                // a pessoa assumiu: as setas mandam
+    if (code.startsWith("Arrow")) { this.cancelGoal(); this.seated = null; }
     if (code === "KeyA" || code === "KeyD") this.aiming = code === "KeyA" ? "Left" : "Right";
   }
   /** Anda até o ponto (ou pelos pontos, em ordem) no chão; `done` diz como terminou. Andar solta o puxador segurado. */
@@ -92,7 +106,7 @@ export class RoomInteraction {
     this.notify();
   }
   consume(id: string) { if (this.held === id) { this.held = null; this.notify(); } }
-  blur() { this.keys.clear(); this.aiming = null; this.grip = null; this.notify(); }
+  blur() { this.keys.clear(); this.moveStick.set(0, 0); this.cameraStick.set(0, 0); this.aiming = null; this.grip = null; this.notify(); }
   get state(): RoomPlayState { return { held: this.held, grip: this.grip?.id ?? null, nearMirror: !!this.held && this.actor.distanceTo(this.mirror) < 1, ready: this.ready }; }
 }
 /**
@@ -104,6 +118,7 @@ export function arrowAnywhere(event: { code: string; target: EventTarget | null 
 }
 /** Comandos dos botões da interface para a cena 3D (disparados no canvas): girar a cena (±1) e aproximar/afastar (±1). */
 export const ROOM_TURN_EVENT = "fai:room-turn", ROOM_ZOOM_EVENT = "fai:room-zoom";
+export const ROOM_CAMERA_EVENT = "fai:room-camera-axis";
 /** Raio do tronco do personagem nos obstáculos (m). */
 export const BODY_RADIUS = .18;
 /**
@@ -152,11 +167,11 @@ function walker(position: THREE.Vector3, bounds: number | RoomBounds, solids: It
  * `bounds`: as paredes do quarto (room-bounds.ts) ou, no formato antigo, a borda direita do guarda-roupa. `yaw`: giro da
  * câmera (rad) — as setas seguem a tela (↑ anda para o fundo da vista); 0 = ↑ para −z, como na visão geral.
  */
-export function moveInRoom(position: THREE.Vector3, keys: Set<string>, dt: number, bounds: number | RoomBounds, solids: Iterable<THREE.Object3D> = [], yaw = 0): number {
-  const dx = Number(keys.has("ArrowRight")) - Number(keys.has("ArrowLeft"));
-  const dz = Number(keys.has("ArrowDown")) - Number(keys.has("ArrowUp"));
+export function moveInRoom(position: THREE.Vector3, keys: Set<string>, dt: number, bounds: number | RoomBounds, solids: Iterable<THREE.Object3D> = [], yaw = 0, stick?: THREE.Vector2): number {
+  const dx = Number(keys.has("ArrowRight")) - Number(keys.has("ArrowLeft")) + (stick?.x ?? 0);
+  const dz = Number(keys.has("ArrowDown")) - Number(keys.has("ArrowUp")) + (stick?.y ?? 0);
   if (!dx && !dz) return 0;
-  const step = new THREE.Vector3(dx, 0, dz).normalize().applyAxisAngle(UP, yaw).multiplyScalar(Math.min(dt, MAX_STEP_DT) * WALK_SPEED);
+  const step = new THREE.Vector3(dx, 0, dz).normalize().applyAxisAngle(UP, yaw).multiplyScalar(Math.min(dt, MAX_STEP_DT) * WALK_SPEED * Math.min(1, Math.hypot(dx, dz)));
   if (Math.abs(step.x) < 1e-9) step.x = 0;
   if (Math.abs(step.z) < 1e-9) step.z = 0;
   const next = walker(position, bounds, solids).slide(step.x, step.z);

@@ -1,15 +1,15 @@
 {
   "applied": true,
-  "generated_at": "2026-10-14T03:41:36.534470+00:00",
+  "generated_at": "2026-10-13T23:22:33.486579+00:00",
   "before": {
     "products": 13058,
     "brands": 79,
-    "missing": 547
+    "missing": 551
   },
   "after": {
     "products": 13058,
     "brands": 79,
-    "missing": 547
+    "missing": 551
   },
   "products_added": 0,
   "brands_added": 0,
@@ -1688,12 +1688,7 @@
       "shortfall": 1
     }
   },
-  "image_repair": {
-    "checked": 0,
-    "repaired": 0,
-    "would_repair": 0,
-    "unresolved": 366
-  },
+  "image_repair": null,
   "failures": [],
-  "note": "Metas dependem de produtos oficiais disponíveis e sites acessíveis."
+  "note": "Metas dependem de produtos oficiais disponíveis e sites acessíveis. UNKNOWN não é UNISSEX."
 }

@@ -13,6 +13,7 @@ import { CATEGORY_CARDS, type CaptureCategory } from "@/lib/capture/capture-guid
 import { Badge, Button, Chip, Field, Input, Pagination, Skeleton, cn } from "@/components/ui";
 import { BrandLogo } from "@/components/brand-logo";
 import { CatalogBrandGrid } from "./catalog-brand-grid";
+import { useCatalogPreview } from "./use-catalog-preview";
 import { CatalogPhoto, photoAspect } from "@/components/catalog/catalog-photo";
 import { CategoryCards } from "@/components/catalog/category-cards";
 import { BrandAutocomplete, type CatalogBrand } from "@/components/catalog/brand-autocomplete";
@@ -114,10 +115,10 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   const [selectedVariants, setSelectedVariants] = useState<Record<string, CatalogVariant>>({});
   const seq = useRef(0);
   const params = useMemo(() => ({ category: category || undefined, subcategory: subcategory || undefined, brand: brand.trim() || undefined,
-    q: [query, code].filter((s) => s.trim()).join(" ").trim() || undefined, color: color || undefined, gender: gender || undefined }), [category, subcategory, brand, query, code, color, gender]);
-  useEffect(() => { setAllForText(false); }, [params.q, params.color]);
+    q: query.trim() || undefined, code: code.trim() || undefined, color: color || undefined, gender: gender || undefined }), [category, subcategory, brand, query, code, color, gender]);
+  useEffect(() => { setAllForText(false); }, [params.q, params.code, params.color]);
   const browsing = resultsLayout === "matrix" || !params.color && (params.q ? allForText : (!!params.brand || !!params.subcategory || !!params.category || showAll));
-  const enough = browsing || (browse ? !!(brand.trim() || subcategory || category || (params.q ?? "").length >= 2) : enoughToSearch({ brand, subcategory, q: params.q }));
+  const enough = !!params.code || browsing || (browse ? !!(brand.trim() || subcategory || category || (params.q ?? "").length >= 2) : enoughToSearch({ brand, subcategory, q: params.q }));
 
   // busca automática com debounce assim que houver contexto suficiente; o botão "Buscar peças" força
   useEffect(() => {
@@ -127,7 +128,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
     const ctl = new AbortController();
     const h = setTimeout(() => run(n, ctl.signal), 350);
     return () => { clearTimeout(h); ctl.abort(); };
-  }, [params.category, params.subcategory, params.brand, params.q, params.color, browsing]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [params.category, params.subcategory, params.brand, params.q, params.code, params.color, browsing]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // acervo inteiro (paginado) sempre que a pessoa escolhe sem descrever
   useEffect(() => {
@@ -138,14 +139,14 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
     const ctl = new AbortController();
     const h = setTimeout(() => loadAcervo(n, 0, ctl.signal), 250);
     return () => { clearTimeout(h); ctl.abort(); };
-  }, [browsing, params.brand, params.category, params.subcategory, params.q, params.color, params.gender, allForText]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [browsing, params.brand, params.category, params.subcategory, params.q, params.code, params.color, params.gender, allForText]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function loadAcervo(n: number, page: number, signal?: AbortSignal) {
     setAcervoLoading(true); setError(null);
     if (page === 0) setRes(null);
     try {
       const brandId = brandRef && brandRef.name === params.brand ? brandRef.id : undefined;
-      const r = await catalogApi.browse({ brand: params.brand, brandId, category: params.category, subcategory: params.subcategory, q: resultsLayout === "matrix" || allForText ? params.q : undefined, color: params.color, gender: params.gender, page, size: 48 }, signal);
+      const r = await catalogApi.browse({ brand: params.brand, brandId, category: params.category, subcategory: params.subcategory, q: resultsLayout === "matrix" || allForText ? params.q : undefined, color: params.color, gender: params.gender, code: params.code, page, size: 48 }, signal);
       if (signal?.aborted || n !== seq.current) return;
       setAcervo((old) => ({ items: page === 0 || !old ? r.items : mergeById(old.items, r.items), total: r.total, page: r.page, hasMore: r.hasMore, brandKnown: r.brandKnown, canSearchOfficial: r.canSearchOfficial }));
       setRanWith(params);
@@ -183,7 +184,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
         const r = await catalogApi.browse({ brand: params.brand,
           brandId: brandRef && brandRef.name === params.brand ? brandRef.id : undefined,
           category: params.category, subcategory: params.subcategory,
-          q: resultsLayout === "matrix" || allForText ? params.q : undefined, color: params.color, gender: params.gender, page, size: 48 }, signal);
+          q: resultsLayout === "matrix" || allForText ? params.q : undefined, color: params.color, gender: params.gender, code: params.code, page, size: 48 }, signal);
         pages.push(r);
         if (!r.hasMore) break;
       }
@@ -227,7 +228,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   const subs = category ? tax?.subcategories?.[category] ?? [] : [];
   const shown = discover.result?.results.length ? discover.result.results : browsing && acervo ? acervo.items : res?.results ?? [];
   const filtered = useMemo(() => browsing ? shown : shown.filter((p) => (!gender || p.gender === gender)), [shown, gender, browsing]);
-  const paginationKey = JSON.stringify([params.category, params.subcategory, params.brand, params.q, params.color, gender]);
+  const paginationKey = JSON.stringify([params.category, params.subcategory, params.brand, params.q, params.code, params.color, gender]);
   useEffect(() => {
     if (resultsLayout === "matrix") setSelectedVariants({});
   }, [resultsLayout, paginationKey, discover.result]);
@@ -449,7 +450,7 @@ function placeholderFor(category: string, t: (k: string) => string) {
 }
 
 /** Card de resultado: foto oficial dominante (ou a ilustração da categoria), marca, nome, modelo, cor, tipo e fonte. */
-export function CatalogResultCard({ product: p, onPick, pickLabel, selectedVariant: controlledVariant, onVariantChange, busy, disabled }: {
+export function CatalogResultCard({ product: original, onPick, pickLabel, selectedVariant: controlledVariant, onVariantChange, busy, disabled }: {
   product: CatalogProduct;
   onPick: (variant: CatalogVariant | null) => void; busy?: boolean; disabled?: boolean;
   pickLabel?: string;
@@ -457,6 +458,8 @@ export function CatalogResultCard({ product: p, onPick, pickLabel, selectedVaria
   onVariantChange?: (variant: CatalogVariant) => void;
 }) {
   const { t } = useI18n();
+  const preview = useCatalogPreview(original);
+  const p = preview.product;
   const tax = useTaxonomy();
   const [localVariant, setLocalVariant] = useState<CatalogVariant | null>(p.selectedVariant ?? null);
   const variant = controlledVariant === undefined ? localVariant : controlledVariant;
@@ -467,9 +470,9 @@ export function CatalogResultCard({ product: p, onPick, pickLabel, selectedVaria
   const img = p.catalogImage?.url ?? p.imageUrl;
   const source = p.source?.domain && p.source.domain !== "null" ? p.source.domain : t("catalog.fonte_fashionai");
   return (
-    <article className="catalog-card surface">
+    <article ref={preview.ref} className="catalog-card surface" aria-busy={preview.pending}>
       <div className="catalog-card-media" style={{ aspectRatio: photoAspect(p.catalogImage?.aspect) }} aria-hidden={!img}>
-        {img ? <CatalogPhoto image={p.catalogImage} fallbackUrl={p.imageUrl} alternatives={[p.imageSource?.imageUrl]} alt={`${p.brand?.name ?? ""} ${p.productName}`}
+        {preview.pending || preview.failed ? <span role="status" className="type-caption text-muted p-4">{t(preview.pending ? "catalog.preparingPhoto" : preview.failed === "unsupported" ? "catalog.unavailableFrame" : preview.failed === "source" ? "catalog.unavailableSource" : "catalog.previewServiceUnavailable")} {!preview.pending && <button type="button" className="btn btn-sm mt-2" onClick={preview.retry}>{t("common.retry")}</button>}</span> : img ? <CatalogPhoto image={p.catalogImage} fallbackUrl={p.imageUrl} alternatives={[p.imageSource?.imageUrl]} alt={`${p.brand?.name ?? ""} ${p.productName}`}
           placeholder={<GarmentGlyph id={ILLUSTRATION[p.category] ?? "generic"} size={120} animated={false} numbered={false} className="text-muted" />} />
           : <GarmentGlyph id={ILLUSTRATION[p.category] ?? "generic"} size={120} animated={false} numbered={false} className="text-muted" />}
         {typeof p.matchPercent === "number" && <Badge tone="thread" className="catalog-card-match">{t("catalog.compativel", { pct: p.matchPercent })}</Badge>}

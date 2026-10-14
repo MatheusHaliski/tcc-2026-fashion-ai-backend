@@ -1,4 +1,5 @@
 "use client";
+import { CreatorWelcome } from "@/components/creator-welcome";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { api } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -10,7 +11,9 @@ import { CARD_SKINS } from "@/lib/skins";
 import { ART_INDEX, auraVariantId, bundledAuraPresets } from "@/lib/card-art";
 import { PIECE_ANATOMIES, PIECE_SEAL_PLACEMENT, SCHEME_ANATOMIES, SEAL_PLACEMENT, SILHOUETTES, SealZoneDiagram, hasOwnArt, pieceSealPlacement, sealPlacement, silhouetteLabel } from "@/components/scheme-anatomies";
 
-export interface BgConfig { color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: "IMAGEM_UNICA" | "MOSAICO" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; silhouette?: string | null; posterUrl?: string; container?: { color?: string | null; ink?: string | null } | null; photo?: { url?: string | null } | null; }
+import { AuraHype } from "@/components/hype/aura-hype";
+
+export interface BgConfig { auraHype?: "OFF" | "SCANNER" | "XRAY" | "DOTS" | "STARS" | "METRICS" | null; color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: "IMAGEM_UNICA" | "MOSAICO" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; silhouette?: string | null; posterUrl?: string; container?: { color?: string | null; ink?: string | null } | null; photo?: { url?: string | null } | null; }
 interface Variant { id: string; theme?: string; description?: string; code?: string; static?: { previewUrl?: string; url?: string; cardUrl?: string }; }
 export interface BgCatalog { colors: string[]; gradients: { id: string; name: string; stops: string[]; type?: string; angle?: number }[]; seasonal: { id: string; name: string; season: string; stops: string[] }[]; auraPresets: { id: string; name: string; archetype?: string; palette?: string[]; recommendedMaterials?: string[]; variants?: Variant[] }[]; materials: { id: string; name: string; finish?: string; static?: { previewUrl?: string } }[]; skins: { id: string; displayName?: string }[]; directions: Record<string, { label: string; skin?: string; aura?: string; material?: string }>; anatomies: string[]; pieceAnatomies?: string[]; animations: string[]; imageGenerationAvailable: boolean; }
 
@@ -151,6 +154,9 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
   return (
     <div className="grid gap-3">
       {rec?.direction && <p className="type-caption text-muted">{rich("backgroundStudio.direcao_recomendada_para", { value: (styles ?? []).join(", ") || t("backgroundStudio.o_look"), value2: direction?.label ?? rec.direction }, { 0: ($c) => <b>{$c}</b> })}{direction?.aura && <Button size="sm" className="ml-2" onClick={() => { onChange({ aura: { variantId: direction.aura!, format: value.aura?.format }, materialId: direction.material ?? null, aiArt: null, uploadUrl: null }); if (direction.skin && onSkin) onSkin(direction.skin); }}>{t("backgroundStudio.aplicar_recomendada")}</Button>}</p>}
+      <OptionStrip title={t("auraHype.title")} hint={<p className="type-caption text-muted">{t("auraHype.hint")}</p>}>
+        {(["OFF", "SCANNER", "XRAY", "DOTS", "STARS", "METRICS"] as const).map((mode) => <button key={mode} type="button" className="opt-tile" aria-pressed={(value.auraHype ?? "OFF") === mode} onClick={() => onChange({ auraHype: mode })}><span className="opt-thumb relative overflow-hidden bg-surface-3">{mode !== "OFF" && <AuraHype mode={mode} preview state={{ kind: "not_calculated" }} />}</span><span className="opt-name">{t(`auraHype.${mode}`)}</span></button>)}
+      </OptionStrip>
       <OptionStrip title={t("backgroundStudio.preset_aura")}>
         {(cat?.auraPresets ?? []).map((a) => <button key={a.id} type="button" aria-pressed={auraPreset?.id === a.id} className="opt-tile" title={a.archetype} onClick={() => onChange({ aura: { variantId: a.variants?.[0]?.id ?? a.id, format: value.aura?.format }, aiArt: null, uploadUrl: null })}>
           {a.variants?.[0]?.static?.previewUrl ? <img src={a.variants[0].static.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" style={{ background: `linear-gradient(135deg, ${(a.palette ?? ["#999", "#ccc"]).join(",")})` }} />}
@@ -263,7 +269,7 @@ export function BackgroundStudio({ value, onChange, skin, onSkin, anatomy, onAna
   const disabledNote = special ? <p className="rounded-md bg-chalk-soft p-2 type-body-sm">{ownArtLabel ? <>{rich("backgroundStudio.narrativa", { ownArtLabel }, { 0: ($c) => <b>{$c}</b> })}</> : <>{t("scheme.anatomy")}{" "}<b>{SCHEME_ANATOMIES.find((a) => a.id === anatomy)?.label}</b></>}{" "}{t("backgroundStudio.traz_arte_propria_presets_aura")}</p> : undefined;
   return (
     <div className="art-editor surface p-3">
-      <ArtSegments value={seg} onChange={setSeg} />
+      <CreatorWelcome kind="studio" /><ArtSegments value={seg} onChange={setSeg} />
       {seg === "cor" && <ColorPanel value={value} onChange={set} season={season ?? null} hideSeasonal keepCartela={anatomy === "CARTELA_SAZONAL"} />}
       {seg === "aura" && <AuraMaterialPanel value={value} onChange={set} onSkin={onSkin} styles={styles} occasions={occasions} disabledNote={disabledNote} />}
       {seg === "layout" && (

@@ -75,6 +75,14 @@ class PreferencesServiceTest {
     }
 
     @Test
+    void auraHypePersisteSemAlterarTemaOuOptOut() throws Exception {
+        var update = br.com.fashionai.application.common.Json.MAPPER.readValue("{\"auraHype\":true}", PreferencesService.Update.class);
+        assertThat(prefs.update(ana, update)).containsEntry("auraHype", true).containsEntry("hypeCreatorOptOut", false);
+        var empty = br.com.fashionai.application.common.Json.MAPPER.readValue("{}", PreferencesService.Update.class);
+        assertThat(prefs.update(ana, empty)).containsEntry("auraHype", true);
+    }
+
+    @Test
     void preferenciasCriadasNaPrimeiraLeituraEAtualizadas() {
         Map<String, Object> first = prefs.get(ana);
         assertThat(first).containsKeys("theme", "language", "profile");

@@ -163,6 +163,9 @@ function LookHype({ id }: { id: string }) {
   return <HypeBadge state={hypeViewState(summary, { loading, error })} summary={summary} className="shrink-0" />;
 }
 
+import { AuraHype } from "@/components/hype/aura-hype";
+import { useTheme } from "@/lib/theme/theme";
+
 export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }: { id: string; from?: string | null; headerExtra?: ReactNode; onScheme?: (schemeId: string) => void; startEditing?: boolean }) {
   const { t, fmtMoney, fmtDate } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
   const { data, loading, error, reload, setData } = useApi<PieceDetail>((signal) => api.get(`/api/pieces/${id}${from ? `?fromScheme=${from}` : ""}`, { signal, anonymous: !user }), [id, from, !!user]);
@@ -172,6 +175,10 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const [editing, setEditing] = useState(false); const [form, setForm] = useState<PieceFormValue>(EMPTY_PIECE); const [saving, setSaving] = useState(false); const [saveError, setSaveError] = useState<ApiError | null>(null); const savingRef = useRef(false); const [editErrors, setEditErrors] = useState<Record<string, string>>({}); const tax = useTaxonomy();
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; impact?: { schemes?: SchemeView[]; count?: number; message?: string } }>({ open: false });
   const replaceRef = useRef<HTMLInputElement>(null);
+  const { prefs } = useTheme();
+  const auraMode = data?.piece?.background?.auraHype as string | undefined;
+  const auraEnabled = !!prefs.auraHype || !!auraMode && auraMode !== "OFF";
+  const hype = useHypeSummary("PIECE", id, auraEnabled);
   const p = data?.piece; const mine = !!user && p?.owner?.id === user.id;
   const model = useModel3d(id, { enabled: !!p && mine && !p.defaultImage, onCompleted: () => reload() });
   const [artRef, inView] = useInView<HTMLElement>();
@@ -249,7 +256,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
     ? <><Link href={mirrorHref({ piece: p.id })} className="btn btn-primary pd-cta">{t("pieceDetail.add_to_look")}</Link>
         <button type="button" className="pd-alt" onClick={() => setMannequin3d(true)}>{t("pieceDetail.ou_experimente")}</button></>
     : <><Button variant="primary" className="pd-cta" onClick={() => setMannequin3d(true)}>{t("pieceDetail.experimentar")}</Button>
-        <button type="button" className="pd-alt" onClick={copyToWardrobe}>{t("pieceDetail.ou_guarde_copia")}</button></>;
+        </>;
   const more: MenuItem[] = [
     { label: t("pieceDetail.editar_dados"), icon: <FaiIcon id="SOC-11" size={20} decorative />, onSelect: startEdit, hidden: !mine },
     { label: t("pieceDetail.editar_imagem"), icon: <FaiIcon id="NAV-10" size={20} decorative />, onSelect: () => setEditImage(true), hidden: !mine || p.defaultImage && !p.imageUrl },
@@ -275,7 +282,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
         <div className="pc-frame"><div className="pc-content">
         <CardHeader owner={p.owner} sub={vis} trailing={headerExtra} />
         <div className="pd-layout">
-          <div className="pd-media">
+          <div className="pd-media relative">{auraEnabled && <AuraHype state={hypeViewState(hype.summary, hype)} mode={auraMode} />}
             <PieceGallery key={p.id + (p.studioImageUrl ?? "") + (p.mannequinImageUrl ?? "")} slides={slides} onOpen={setFullscreen} />
             {studioBusy && <div className="pd-busy" aria-live="polite">{t("common.montando_o_estudio")}</div>}
           </div>
