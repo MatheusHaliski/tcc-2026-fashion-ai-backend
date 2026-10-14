@@ -20,6 +20,7 @@ import { CardFlipButton, FashionCard, FashionCardBack, FashionCardFront } from "
 import { useTheme } from "@/lib/theme/theme";
 import { HypeBadge } from "@/components/hype/hype-badge";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
+import { AuraHype } from "@/components/hype/aura-hype";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { hypeViewState } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
