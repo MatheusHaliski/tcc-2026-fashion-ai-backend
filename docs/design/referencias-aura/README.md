@@ -1,3 +1,5 @@
+**Seleção principal atualizada:** [composições em imagens e GIFs, incluindo cards com score](../composicoes-aura/README.md). As referências de moda abaixo são complementares.
+
 # Referências visuais — seis famílias AURA e ATELIER
 
 Referências de arte de moda contemporânea; sugestões de aplicação são interpretações de design do FashionAI. Não são funcionalidades implementadas.
