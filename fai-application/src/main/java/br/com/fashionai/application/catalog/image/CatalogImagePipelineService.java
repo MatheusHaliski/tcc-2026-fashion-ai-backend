@@ -245,7 +245,7 @@ public class CatalogImagePipelineService {
         img.setHeight(dimension(a.height()));
         img.setSourceSha256(a.sha256());
         img.setPhash(a.phash());
-        img.setCropJson(cropJson(a));
+        img.setCropJson(automaticFrame(a, persist));
         img.setMetricsJson(metricsJson(a));
         if (persist && a.rendered() != null && a.outcome() != CatalogImageValidator.Outcome.REJECTED) {
             Map<String, Object> assets = store(img, a.rendered());
@@ -254,6 +254,38 @@ public class CatalogImagePipelineService {
             img.setUsageStatus(CatalogImageUsage.PERSISTED);
         }
         finish(img, a.outcome().name(), a.reasons(), a.qualityScore());
+    }
+
+    /**
+     * O worker aplica a regra editorial assim que a foto chega ao catálogo. A UI somente lê o
+     * resultado; ela não deve precisar de uma ação da pessoa para enquadrar uma foto já analisada.
+     */
+    @SuppressWarnings("unchecked")
+    String automaticFrame(CatalogImagePipeline.Analysis analysis, boolean persist) {
+        Map<String, Object> crop = new LinkedHashMap<>(analysis.cropJson());
+        // No nível B, o card persistido já é a saída enquadrada do pipeline e mantém sua proporção de renderização.
+        if (persist) {
+            return crop.isEmpty() ? null : Json.write(crop);
+        }
+        Object value = analysis.debug().get("productFrame");
+        if (!(value instanceof Map<?, ?> frame) || !Boolean.TRUE.equals(frame.get("ok"))
+                || !(frame.get("crop") instanceof Map<?, ?>)) {
+            return crop.isEmpty() ? null : Json.write(crop);
+        }
+        crop.put("crop", frame.get("crop"));
+        crop.put("aspect", frame.get("aspect") == null ? "3:4" : frame.get("aspect"));
+        crop.put("ruleCompliant", true);
+        crop.remove("detail");
+        crop.remove("padding");
+        Map<String, Object> framing = new LinkedHashMap<>();
+        framing.put("version", frame.get("version"));
+        framing.put("target", frame.get("target"));
+        framing.put("focus", frame.get("focus"));
+        framing.put("automatic", true);
+        framing.put("processedAt", Instant.now().toString());
+        framing.put("sourceSha256", analysis.sha256());
+        crop.put("selectionFrame", framing);
+        return Json.write(crop);
     }
 
     private void finish(CatalogImage img, String status, List<String> reasons, Double quality) {
@@ -541,15 +573,17 @@ public class CatalogImagePipelineService {
         }
         Map<String, Object> m = new LinkedHashMap<>();
         Map<String, Object> selectionCrop = canonical.getCropJson() == null ? Map.of() : Json.map(canonical.getCropJson());
-        if (selectionCrop.containsKey("selectionFrame")) {
-            m.put("url", canonical.getImageUrl()); m.put("mode", "SEMANTIC_CROP");
-            m.put("crop", selectionCrop.get("crop")); m.put("aspect", "3:4");
-            m.put("framing", selectionCrop.get("selectionFrame"));
-        } else if (canonical.getAssetsJson() != null) {
+        boolean automaticFrame = selectionCrop.get("selectionFrame") instanceof Map<?, ?> frame
+                && Boolean.TRUE.equals(frame.get("automatic"));
+        if (canonical.getAssetsJson() != null && (!selectionCrop.containsKey("selectionFrame") || automaticFrame)) {
             Map<String, Object> assets = Json.map(canonical.getAssetsJson());
             m.put("url", assets.getOrDefault("card", canonical.getStoredUrl()));
             m.put("thumbnailUrl", assets.get("thumbnail"));
             m.put("mode", "PROCESSED");
+        } else if (selectionCrop.containsKey("selectionFrame")) {
+            m.put("url", canonical.getImageUrl()); m.put("mode", "SEMANTIC_CROP");
+            m.put("crop", selectionCrop.get("crop")); m.put("aspect", "3:4");
+            m.put("framing", selectionCrop.get("selectionFrame"));
         } else {
             m.put("url", canonical.getImageUrl());
             m.put("mode", "SEMANTIC_CROP");
@@ -560,7 +594,9 @@ public class CatalogImagePipelineService {
                 m.put("aspect", crop.get("aspect"));
             }
         }
-        if (canonical.getCropJson() != null) m.put("aspect", Json.map(canonical.getCropJson()).get("aspect"));
+        if (!automaticFrame && canonical.getCropJson() != null) {
+            m.put("aspect", Json.map(canonical.getCropJson()).get("aspect"));
+        }
         m.put("imageId", canonical.getId());
         m.put("qualityScore", canonical.getQualityScore());
         m.put("pipelineVersion", canonical.getPipelineVersion());

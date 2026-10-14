@@ -10,7 +10,7 @@ import { InfiniteSentinel, mergeById } from "@/components/infinite-sentinel";
 import { label, useTaxonomy, subcategoryLabel, CATEGORY_LABEL } from "@/lib/api/taxonomy";
 import { useI18n } from "@/lib/i18n/i18n";
 import { CATEGORY_CARDS, type CaptureCategory } from "@/lib/capture/capture-guides";
-import { Badge, Button, Chip, Field, Input, Skeleton, cn } from "@/components/ui";
+import { Badge, Button, Chip, Field, Input, Pagination, Skeleton, cn } from "@/components/ui";
 import { BrandLogo } from "@/components/brand-logo";
 import { CatalogBrandGrid } from "./catalog-brand-grid";
 import { useCatalogPreview } from "./use-catalog-preview";
@@ -24,6 +24,7 @@ export interface CatalogSearchContext { category: string; subcategory: string; b
 import { storeCount } from "./catalog-brand-grid";
 export { storeCount } from "./catalog-brand-grid";
 const ILLUSTRATION: Record<string, "tshirt" | "pants_back" | "sneaker_side" | "bag" | "dress"> = { upper_piece: "tshirt", lower_piece: "pants_back", shoes_piece: "sneaker_side", accessory_piece: "bag", full_body_piece: "dress" };
+const BRAND_PAGE_SIZE = 12;
 
 /**
  * RF47 · Busca catalogada: categoria → subcategoria → marca → nome/modelo. Duas ou três informações já disparam a busca
@@ -82,10 +83,15 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   const storeList = brandGrid ? stores.data?.stores ?? [] : [];
   const typed = brand.trim().toLowerCase();
   const storesShown = typed && !storeList.some((s) => s.name === brand) ? storeList.filter((s) => s.name.toLowerCase().includes(typed)) : storeList;
+  const [brandPage, setBrandPage] = useState(0);
+  const brandPageCount = Math.max(1, Math.ceil(storesShown.length / BRAND_PAGE_SIZE));
+  const visibleStores = storesShown.slice(brandPage * BRAND_PAGE_SIZE, (brandPage + 1) * BRAND_PAGE_SIZE);
+  useEffect(() => { setBrandPage(0); }, [typed, storeList.length]);
   const pickStore = (s: Store) => {
     const next = brand === s.name ? "" : s.name;
     setBrand(next);
     setBrandRef(next ? { id: s.brandId, name: s.name, slug: s.slug, logoUrl: s.logoUrl, products: s.catalogProducts } : null);
+    setBrandPage(0);
   };
   const [query, setQuery] = useState(initial?.query ?? "");
   const [color, setColor] = useState("");
@@ -369,7 +375,10 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
           {!stores.loading && stores.data && <p className="type-caption text-muted" role="status">{t("catalog.grade_total", { count: brandGridTotal, category: category ? CATEGORY_LABEL[category] ?? label(category) : t("tryOn.tudo") })}</p>}
           <div className="catalog-brand-stage">
             {stores.loading ? <Skeleton className="h-full" /> : storesShown.length ? (
-              <CatalogBrandGrid stores={storesShown} selected={brand} category={category} labelledBy="cs-stores" onPick={pickStore} />
+              <>
+                <CatalogBrandGrid stores={visibleStores} selected={brand} category={category} labelledBy="cs-stores" onPick={pickStore} />
+                {brandPageCount > 1 && <Pagination page={brandPage} hasMore={brandPage < brandPageCount - 1} onPage={setBrandPage} total={storesShown.length} size={BRAND_PAGE_SIZE} />}
+              </>
             ) : <p className="type-caption text-muted">{brand.trim() ? t("catalog.nenhuma_marca_com", { q: brand.trim() }) : t("tryOn.sem_lojas")}</p>}
           </div>
         </section>

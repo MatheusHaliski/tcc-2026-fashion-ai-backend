@@ -21,6 +21,7 @@ import { AuraHype } from "@/components/hype/aura-hype";
 import { useTheme } from "@/lib/theme/theme";
 import { HypeBadge } from "@/components/hype/hype-badge";
 import { HypeCardBack } from "@/components/hype/hype-card-back";
+import { AuraHype } from "@/components/hype/aura-hype";
 import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { hypeViewState } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
@@ -55,7 +56,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   flip?: boolean;
 }) {
   const detail = useDetailModal();
-  const { t, fmtMoney } = useI18n(); const { user } = useAuth();
+  const { t, fmtMoney } = useI18n(); const { user, me } = useAuth();
   const preview = href === "#";
   const flippable = flip && !preview && !selectable;
   const { prefs } = useTheme();
@@ -73,6 +74,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   // sem foto de estúdio, a peça do catálogo mostra a foto oficial com o mesmo recorte do card da busca
   const crop = piece.studioFeedUrl || piece.studioThumbUrl || piece.studioImageUrl ? null : pieceCatalogCrop(piece);
   const art = readPieceArt(piece.background);
+  const auraHype = !!me?.auraHypeEnabled || String((piece.background?.aura as { variantId?: string } | undefined)?.variantId ?? "").startsWith("aura_hype");
   const surface = artSurfaceProps(piece.background, art, "compact");
   const skin = (piece.background?.skin as string | undefined) ?? null;
   const mine = !!user && piece.owner?.id === user.id;
