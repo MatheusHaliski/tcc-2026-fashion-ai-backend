@@ -28,7 +28,7 @@ it.each([
   expect(result.result.current.product).toBe(product);
   expect(request).not.toHaveBeenCalled();
 });
-it("keeps the original when framing fails", async () => {
+it("keeps source metadata for retry when framing fails; display stays gated by the caller", async () => {
   const product = { id: "failed-preview", imageUrl: "https://brand.example/b.jpg" } as CatalogProduct;
   vi.spyOn(catalogApi, "previewImage").mockRejectedValue(new Error("unavailable"));
   const result = renderHook(() => useCatalogPreview(product));
@@ -63,4 +63,13 @@ it("only classifies the explicit category-frame failure as unsupported", async (
   vi.spyOn(catalogApi, "previewImage").mockRejectedValue(new ApiError(422, "CATEGORY_FRAME_UNAVAILABLE", "frame"));
   const result = renderHook(() => useCatalogPreview(product));
   await waitFor(() => expect(result.result.current.failed).toBe("unsupported"));
+});
+
+it("queues source-only products while the unframed display URL is withheld", async () => {
+  const product = { id: "source-only-required-frame", imageUrl: null, imageSource: { imageUrl: "https://brand.example/source.jpg" } } as unknown as CatalogProduct;
+  const framed = { ...product, catalogImage: { url: "https://media.example/processed.jpg", mode: "PROCESSED" as const } };
+  const request = vi.spyOn(catalogApi, "previewImage").mockResolvedValue(framed);
+  const result = renderHook(() => useCatalogPreview(product));
+  await waitFor(() => expect(result.result.current.product.catalogImage?.mode).toBe("PROCESSED"));
+  expect(request).toHaveBeenCalledWith(product.id);
 });
