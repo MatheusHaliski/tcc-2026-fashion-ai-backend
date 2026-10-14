@@ -1,0 +1,12 @@
+{
+  "mode": "real interface, fixture API; no production data",
+  "presets": [
+    "satin-ivory",
+    "liquid-chrome",
+    "cyan-thread",
+    "rose-thread",
+    "violet-ink",
+    "coral-ink"
+  ],
+  "pageErrors": []
+}
