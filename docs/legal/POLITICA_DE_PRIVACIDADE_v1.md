@@ -2,7 +2,7 @@
 
 **Versão 1.1 — minuta para publicação em [DATA DE PUBLICAÇÃO]**
 
-> **Minuta não publicada.** Antes de disponibilizar esta Política, preencha os dados do controlador e do encarregado, confirme os fornecedores e operações efetivamente ativos e valide os pontos pendentes descritos em `docs/legal/REVISAO_DE_AMBIGUIDADES_COMERCIAIS.md`. Este texto não substitui revisão jurídica.
+> **Minuta não publicada.** Antes de disponibilizar esta Política, preencha os dados do controlador e do encarregado, confirme os fornecedores e operações efetivamente ativos e valide as pendências de privacidade e produto. Este texto não substitui revisão jurídica.
 
 Esta Política explica quais dados pessoais o FashionAI coleta, para quê, com quem compartilha e como você controla tudo isso. Ela segue a **Lei Geral de Proteção de Dados (LGPD, Lei 13.709/2018)**, o **Marco Civil da Internet (Lei 12.965/2014)** e o **ECA Digital (Lei 15.211/2025)**.
 

@@ -65,7 +65,7 @@ import java.util.regex.Pattern;
 @Service
 public class IdentityService {
     public static final Pattern EMAIL = Pattern.compile("^[\\w.%+-]+@[\\w.-]+\\.[A-Za-z]{2,}$");
-    public static final String TERMS_VERSION = "2026-09";
+    public static final String TERMS_VERSION = "2026-10";
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(IdentityService.class);
     private static final int MAX_LOGIN_FAILURES = 5;
     private static final Duration LOCK_WINDOW = Duration.ofMinutes(15);

@@ -2,7 +2,7 @@
 
 **Versão 1.1 — minuta para publicação em [DATA DE PUBLICAÇÃO]**
 
-> **Minuta não publicada.** Antes de disponibilizar estes Termos, preencha os dados de identificação e contato da FashionAI, valide os pontos de revisão indicados no documento de auditoria comercial e confirme a versão efetivamente registrada no cadastro. Este texto não substitui revisão jurídica.
+> **Minuta não publicada.** Antes de disponibilizar estes Termos, preencha os dados de identificação e contato da FashionAI, valide os pontos de revisão comercial e confirme a versão efetivamente registrada no cadastro. Este texto não substitui revisão jurídica.
 
 Estes Termos são o contrato entre você e **[RAZÃO SOCIAL]**, inscrita no CNPJ sob o nº **[CNPJ]**, com sede em **[ENDEREÇO]** ("FashionAI", "nós"). Eles valem para o site, o aplicativo e os recursos disponibilizados pelo FashionAI. A **Política de Privacidade** explica o tratamento de dados pessoais e deve ser lida junto com estes Termos. Em caso de divergência sobre dados pessoais, prevalece a Política de Privacidade e a legislação aplicável.
 
@@ -10,18 +10,18 @@ Estes Termos são o contrato entre você e **[RAZÃO SOCIAL]**, inscrita no CNPJ
 
 ## Resumo em 1 minuto
 
-- **Idade mínima informada no cadastro: 13 anos.** As regras aplicáveis a crianças e adolescentes e os recursos de supervisão precisam ser confirmados antes da publicação (seção 3 e documento de auditoria).
+- **Idade mínima informada no cadastro: 13 anos.** As regras aplicáveis a crianças e adolescentes e os recursos de supervisão precisam ser confirmados antes da publicação (seção 3).
 - **Suas fotos e looks continuam seus.** Você só nos dá a permissão necessária para guardar, mostrar e processar esse conteúdo dentro do serviço.
 - **Imagens de produtos do catálogo vêm das marcas.** Elas são referências a fontes oficiais e não pertencem ao FashionAI.
 - **A IA ajuda, mas pode errar.** Recomendações, análises e o Estilo DNA são sugestões de moda, não conselho profissional.
 - **O provador e o avatar 3D são ilustrativos.** Eles não garantem caimento nem tamanho.
-- **FAI Points não são dinheiro.** Você ganha pontos usando o app e gasta na loja do Meu Quarto. Eles não são vendidos, não têm valor em dinheiro e não podem ser transferidos.
-- **Fraude tira pontos.** Contas múltiplas, robôs e "farm" de pontos levam ao estorno dos pontos e podem levar à suspensão da conta.
+- **FAI Points não são dinheiro.** Você ganha pontos usando o app e pode resgatá-los por itens digitais. Eles não são vendidos, não têm valor em dinheiro e não podem ser transferidos.
+- **Fraude pode levar a medidas proporcionais.** Pontos obtidos indevidamente podem ser corrigidos após análise; contas também podem ser suspensas conforme estes Termos.
 - **Respeite as pessoas.** Nada de conteúdo ofensivo, sexual explícito, de ódio ou que viole direitos de terceiros. Comentários passam por filtro e podemos moderar.
 - **Rankings públicos são opcionais.** Você pode sair da Passarela 3D e dos rankings públicos nas Configurações.
-- **Você decide sobre seus dados.** O uso de IA de terceiros, medidas do corpo, localização e outras finalidades dependem do seu consentimento, que você pode revogar a qualquer momento.
+- **Você decide sobre usos opcionais dos seus dados.** O aceite dos Termos não substitui consentimentos específicos, solicitados separadamente quando aplicável.
 - **Você pode sair quando quiser.** A exclusão da conta tem 30 dias de carência. Depois desse prazo, os dados são apagados.
-- **FAI Points não são dinheiro.** A loja de itens digitais usa pontos de engajamento; isso não equivale a uma compra em dinheiro. Qualquer compra paga ou assinatura dependerá de condições comerciais próprias, apresentadas antes da contratação.
+- **Compras pagas futuras exigem condições próprias.** Preço, renovação, cancelamento e direitos aplicáveis devem ser informados antes da contratação.
 
 ---
 
