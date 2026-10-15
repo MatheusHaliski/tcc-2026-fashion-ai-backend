@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface RoomInventoryItemRepository extends JpaRepository<RoomInventoryItem, UUID> {
+public interface RoomInventoryItemRepository extends JpaRepository<RoomInventoryItem, UUID>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<RoomInventoryItem> {
     List<RoomInventoryItem> findByUserId(UUID userId);
 
     boolean existsByUserIdAndSku(UUID userId, String sku);

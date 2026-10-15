@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /** Repositório Spring Data de CouponRight. */
-public interface CouponRightRepository extends JpaRepository<CouponRight, UUID> {
+public interface CouponRightRepository extends JpaRepository<CouponRight, UUID>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<CouponRight> {
     Optional<CouponRight> findByUserIdAndSourceTypeAndSourceId(UUID userId, String sourceType, UUID sourceId);
 
     List<CouponRight> findByUserIdAndStatusOrderByCreatedAtDesc(UUID userId, String status);
