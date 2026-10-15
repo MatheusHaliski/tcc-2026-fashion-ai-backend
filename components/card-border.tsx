@@ -5,8 +5,7 @@ import type { HypeViewState } from '@/lib/hype/model';
 export const HYPE_BORDER_PULSE_MS = 2400;
 /** Baseline on mount; signal only a new score received while AURA Hype is active. */
 export function CardBorder({ entityId, background, auraHype = false, hype }: { entityId: string; background?: Record<string,unknown> | null; auraHype?: boolean; hype?: HypeViewState }) {
-  const metamorphose = !!background?.auraMetamorphose && background.auraMetamorphose !== 'OFF';
-  const active = auraHype && metamorphose;
+  const active = auraHype;
   const score = hype?.kind === 'available' ? hype.score : null;
   const previous = useRef<{id:string;score:number|null;active:boolean}>({id:entityId,score:null,active:false});
   const [pulse,setPulse] = useState<{id:string;direction:'up'|'down'}|null>(null);
@@ -20,6 +19,6 @@ export function CardBorder({ entityId, background, auraHype = false, hype }: { e
     return ()=>clearTimeout(timer);
   },[entityId,score,active]);
   const configured=(background?.border as CardBorderConfig | undefined)?.effect;
-  const effect=configured && configured!=='AUTO' ? configured : (metamorphose?'SHIMMER':'NONE');
+  const effect=configured && configured!=='AUTO' ? configured : (active?'SHIMMER':'NONE');
   return <span className="card-border" aria-hidden="true" data-effect={effect} data-pulse={active && pulse?.id===entityId ? pulse.direction : undefined} style={borderStyle(background,auraHype)} />;
 }
