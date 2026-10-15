@@ -10,6 +10,7 @@ import { Button, Chip, Dialog, Input, SegmentPicker, Switch, useToast } from "@/
 import { FaiIcon } from "@/components/fai-icon";
 import { CARD_SKINS } from "@/lib/skins";
 import { ART_INDEX, auraVariantId, bundledAuraPresets } from "@/lib/card-art";
+import { ArtVideo } from "@/components/card-art";
 import { PIECE_ANATOMIES, PIECE_SEAL_PLACEMENT, SCHEME_ANATOMIES, SEAL_PLACEMENT, SILHOUETTES, SealZoneDiagram, hasOwnArt, pieceSealPlacement, sealPlacement, silhouetteLabel } from "@/components/scheme-anatomies";
 
 import type { CardBorderConfig } from "@/lib/card-border";
@@ -171,7 +172,9 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
       </OptionStrip>
       {auraPreset && (auraPreset.variants ?? []).length > 1 && <OptionStrip title={t("backgroundStudio.variacao", { name: auraPreset.name })}>
         {(auraPreset.variants ?? []).map((v) => <button key={v.id} type="button" aria-pressed={currentVariant === v.id} className="opt-tile" title={v.description} onClick={() => onChange({ compositionPreset:null, aura: { variantId: v.id, format: value.aura?.format } })}>
-          {v.static?.previewUrl ? <img src={v.static.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" />}<span className="opt-name">{[v.code, v.theme].filter(Boolean).join(" ")}</span></button>)}
+          {v.animatedUrl ? <span className="opt-thumb relative overflow-hidden"><ArtVideo src={v.animatedUrl} poster={v.static?.previewUrl} /></span>
+            : v.static?.previewUrl ? <img src={v.static.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" />}
+          <span className="opt-name">{[v.code, v.theme].filter(Boolean).join(" ")}</span></button>)}
       </OptionStrip>}
       <OptionStrip title={t("backgroundStudio.material_camada")}>
         <button type="button" aria-pressed={!value.materialId} className="opt-tile" onClick={() => onChange({ materialId: null })}>
