@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface RoomCatalogItemRepository extends JpaRepository<RoomCatalogItem, String> {
+public interface RoomCatalogItemRepository extends JpaRepository<RoomCatalogItem, String>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<RoomCatalogItem> {
     List<RoomCatalogItem> findByActiveTrueOrderByPricePoints();
 
     List<RoomCatalogItem> findByCreatorUserIdOrderByCreatedAtDesc(java.util.UUID creatorUserId);
