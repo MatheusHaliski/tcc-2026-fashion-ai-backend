@@ -90,3 +90,18 @@ describe("Background Studio — Cartela sazonal", () => {
     expect(clear).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("Background Studio — prévia das variações Aura em vídeo", () => {
+  it.each([
+    ["Aura Geometry", "aura_geometry__geometry_01", "/aura/geometry/geometry_01/animacao.mp4", "/aura/geometry/geometry_01/imagem.png"],
+    ["Aura Splash", "aura_splash__splash_01", "/aura/splash/splash_01/animacao.mp4", "/aura/splash/splash_01/imagem.png"],
+  ])("carrega os vídeos de %s nos cards de variação", async (_name, variantId, src, poster) => {
+    mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
+    const { container } = renderApp(<Studio onBg={() => undefined} initialBg={{ aura: { variantId } }} />);
+    fireEvent.click(await screen.findByRole("radio", { name: "Aura & Material" }));
+    const variations = await screen.findByRole("group", { name: /Variação/ });
+    await waitFor(() => expect(variations.querySelectorAll("video")).toHaveLength(6));
+    await waitFor(() => expect(variations.querySelector(`video[poster="${poster}"]`)?.getAttribute("src")).toBe(src));
+    expect(container.querySelectorAll("video")).toHaveLength(6);
+  });
+});
