@@ -1393,6 +1393,7 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .fm-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--line); }
 .fm-card:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .fm-card-on { border-color: var(--thread); background: var(--thread-soft); }
+.fm-card-locked { border-style: dashed; }
 .fm-card-emoji { grid-row: span 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: var(--surface-2); font-size: 22px; }
 .fm-card .type-h3, .fm-card .type-body-sm, .fm-card .type-caption { min-width: 0; }
 .fm-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; }

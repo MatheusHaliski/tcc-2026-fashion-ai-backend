@@ -3,9 +3,10 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
-import { levelNameKey, hasReachedLevel, type PointsAccount } from "@/lib/points/hub";
+import { hasReachedLevel, type PointsAccount } from "@/lib/points/hub";
 import type { UserCard } from "@/lib/api/types";
 import { Avatar, Badge, Button, Card, cn, ErrorState, Field, Input, Select, Skeleton, useToast } from "@/components/ui";
+import { FaiXpProgress } from "@/components/points/fai-xp-progress";
 import { FlairCardView, type FlairCard } from "@/components/flair/flair-card";
 import { LookPicker, LookTile, OpponentField, PlayButton, ResultView, STAT_LABEL, ThemeBadge, type ModeLook, type ModeResult, type Theme } from "@/components/flair/modes-shared";
 import { tr, trRich, useI18n } from "@/lib/i18n/i18n";
@@ -55,10 +56,6 @@ export function FlairModes({ initial, onPlayed, skin }: { initial?: string | nul
   const c = catalog.data; const my = looks.data?.looks ?? [];
   const classic = classicModes();
   const account = points.data;
-  const currentThreshold = account?.levels?.find((level) => level.level === account.level)?.threshold ?? 0;
-  const xpPercent = account?.nextLevel
-    ? Math.max(0, Math.min(100, Math.floor(100 * (account.lifetime - currentThreshold) / Math.max(1, account.nextLevel.threshold - currentThreshold))))
-    : 100;
   const loftUnlocked = hasReachedLevel(account?.level, "LOFT");
   const current = c.modes.find((m) => m.code === mode) ?? classic.find((m) => m.code === mode);
   const isClassic = !!current && !!CLASSIC_ICON[current.code];
@@ -66,11 +63,7 @@ export function FlairModes({ initial, onPlayed, skin }: { initial?: string | nul
   const props = { looks: my, catalog: c, onDone: played };
   return (
     <div className="grid gap-4">
-      {account && <section className="surface p-3" aria-label={t("flair.xp.title")}>
-        <div className="flex flex-wrap items-baseline justify-between gap-2"><strong>{t("flair.xp.title")} · {t(levelNameKey(account.level))}</strong><span className="type-caption tabular">{t("flair.xp.lifetime", { points: account.lifetime })}</span></div>
-        <div className="profile-level-track mt-2" role="progressbar" aria-label={account.nextLevel ? t("flair.xp.progress", { level: t(levelNameKey(account.nextLevel.level)) }) : t("levelProgress.maximum")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={xpPercent}><i style={{ width: `${xpPercent}%` }} /></div>
-        <p className="type-caption mt-1">{account.nextLevel ? t("flair.xp.missing", { points: account.nextLevel.missing, level: t(levelNameKey(account.nextLevel.level)) }) : t("levelProgress.maximum")}</p>
-      </section>}
+      {account && <FaiXpProgress account={account} />}
       {(trophies.data?.length ?? 0) > 0 && <div className="flex flex-wrap gap-1.5" aria-label={t("flair.modes.trofeus_flair")}>{trophies.data!.slice(0, 8).map((x) => <span key={x.id} className="mode-trophy">🏆 {x.title}</span>)}</div>}
       {!current && <>
         <section><h2 className="type-h3 mb-2">{t("flair.modes.category.flair")}</h2><div className="mode-grid">{classic.map((m) => <ModeCard key={m.code} m={m} icon={<FaiIcon id={CLASSIC_ICON[m.code]} size={24} decorative />} onOpen={() => setMode(m.code)} />)}{c.modes.map((m) => <ModeCard key={m.code} m={m} onOpen={() => setMode(m.code)} />)}</div></section>
