@@ -91,6 +91,10 @@ describe("arte do card — animação do segmento Cor", () => {
       expect(p.variants.length).toBeGreaterThanOrEqual(6);
       for (const v of p.variants) expect(v.static?.previewUrl).toMatch(/^\/aura\/(geometry|splash|electro)\/[\w-]+\/imagem\.png$/);
     }
+    for (const id of ["aura_geometry", "aura_splash"]) {
+      const p = presets.find((a) => a.id === id)!;
+      for (const v of p.variants) expect(v.animatedUrl).toMatch(/^\/aura\/(geometry|splash)\/[\w-]+\/animacao\.mp4$/);
+    }
     expect(presets.flatMap((a) => a.variants).some((v) => v.id.includes("gradientes_"))).toBe(false);
   });
   test("moldura do Aura Electro: border-width sem porcentagem (inválida → 3 px) e 3× a faixa padrão", () => {

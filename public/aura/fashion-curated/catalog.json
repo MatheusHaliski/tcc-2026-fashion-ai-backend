@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "presets": [
     {
       "id": "satin-ivory",
@@ -1846,6 +1846,566 @@
         "#d6e8dd"
       ],
       "source": "Composição original + motivo procedural FashionAI",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-scanner-ciano",
+      "name": "Scanner · Ciano",
+      "family": "HYPE",
+      "palette": [
+        "#65eddf",
+        "#1b4b66"
+      ],
+      "image": "/aura/fashion-curated/hype-scanner-ciano.webp",
+      "video": "/aura/fashion-curated/hype-scanner-ciano.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-scanner-violeta",
+      "name": "Scanner · Violeta",
+      "family": "HYPE",
+      "palette": [
+        "#b69bff",
+        "#2a1b5c"
+      ],
+      "image": "/aura/fashion-curated/hype-scanner-violeta.webp",
+      "video": "/aura/fashion-curated/hype-scanner-violeta.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-scanner-ouro",
+      "name": "Scanner · Ouro",
+      "family": "HYPE",
+      "palette": [
+        "#f5d38b",
+        "#5a3b12"
+      ],
+      "image": "/aura/fashion-curated/hype-scanner-ouro.webp",
+      "video": "/aura/fashion-curated/hype-scanner-ouro.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-scanner-verde",
+      "name": "Scanner · Verde",
+      "family": "HYPE",
+      "palette": [
+        "#91e6b8",
+        "#0f4a33"
+      ],
+      "image": "/aura/fashion-curated/hype-scanner-verde.webp",
+      "video": "/aura/fashion-curated/hype-scanner-verde.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-xray-ciano",
+      "name": "Raio-X · Ciano",
+      "family": "HYPE",
+      "palette": [
+        "#65eddf",
+        "#1b4b66"
+      ],
+      "image": "/aura/fashion-curated/hype-xray-ciano.webp",
+      "video": "/aura/fashion-curated/hype-xray-ciano.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-xray-violeta",
+      "name": "Raio-X · Violeta",
+      "family": "HYPE",
+      "palette": [
+        "#b69bff",
+        "#2a1b5c"
+      ],
+      "image": "/aura/fashion-curated/hype-xray-violeta.webp",
+      "video": "/aura/fashion-curated/hype-xray-violeta.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-xray-ouro",
+      "name": "Raio-X · Ouro",
+      "family": "HYPE",
+      "palette": [
+        "#f5d38b",
+        "#5a3b12"
+      ],
+      "image": "/aura/fashion-curated/hype-xray-ouro.webp",
+      "video": "/aura/fashion-curated/hype-xray-ouro.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-xray-verde",
+      "name": "Raio-X · Verde",
+      "family": "HYPE",
+      "palette": [
+        "#91e6b8",
+        "#0f4a33"
+      ],
+      "image": "/aura/fashion-curated/hype-xray-verde.webp",
+      "video": "/aura/fashion-curated/hype-xray-verde.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-dots-ciano",
+      "name": "Pontos · Ciano",
+      "family": "HYPE",
+      "palette": [
+        "#65eddf",
+        "#1b4b66"
+      ],
+      "image": "/aura/fashion-curated/hype-dots-ciano.webp",
+      "video": "/aura/fashion-curated/hype-dots-ciano.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-dots-violeta",
+      "name": "Pontos · Violeta",
+      "family": "HYPE",
+      "palette": [
+        "#b69bff",
+        "#2a1b5c"
+      ],
+      "image": "/aura/fashion-curated/hype-dots-violeta.webp",
+      "video": "/aura/fashion-curated/hype-dots-violeta.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-dots-ouro",
+      "name": "Pontos · Ouro",
+      "family": "HYPE",
+      "palette": [
+        "#f5d38b",
+        "#5a3b12"
+      ],
+      "image": "/aura/fashion-curated/hype-dots-ouro.webp",
+      "video": "/aura/fashion-curated/hype-dots-ouro.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-dots-verde",
+      "name": "Pontos · Verde",
+      "family": "HYPE",
+      "palette": [
+        "#91e6b8",
+        "#0f4a33"
+      ],
+      "image": "/aura/fashion-curated/hype-dots-verde.webp",
+      "video": "/aura/fashion-curated/hype-dots-verde.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-stars-ciano",
+      "name": "Estrelas · Ciano",
+      "family": "HYPE",
+      "palette": [
+        "#65eddf",
+        "#1b4b66"
+      ],
+      "image": "/aura/fashion-curated/hype-stars-ciano.webp",
+      "video": "/aura/fashion-curated/hype-stars-ciano.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-stars-violeta",
+      "name": "Estrelas · Violeta",
+      "family": "HYPE",
+      "palette": [
+        "#b69bff",
+        "#2a1b5c"
+      ],
+      "image": "/aura/fashion-curated/hype-stars-violeta.webp",
+      "video": "/aura/fashion-curated/hype-stars-violeta.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-stars-ouro",
+      "name": "Estrelas · Ouro",
+      "family": "HYPE",
+      "palette": [
+        "#f5d38b",
+        "#5a3b12"
+      ],
+      "image": "/aura/fashion-curated/hype-stars-ouro.webp",
+      "video": "/aura/fashion-curated/hype-stars-ouro.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-stars-verde",
+      "name": "Estrelas · Verde",
+      "family": "HYPE",
+      "palette": [
+        "#91e6b8",
+        "#0f4a33"
+      ],
+      "image": "/aura/fashion-curated/hype-stars-verde.webp",
+      "video": "/aura/fashion-curated/hype-stars-verde.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-metrics-ciano",
+      "name": "Métricas · Ciano",
+      "family": "HYPE",
+      "palette": [
+        "#65eddf",
+        "#1b4b66"
+      ],
+      "image": "/aura/fashion-curated/hype-metrics-ciano.webp",
+      "video": "/aura/fashion-curated/hype-metrics-ciano.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-metrics-violeta",
+      "name": "Métricas · Violeta",
+      "family": "HYPE",
+      "palette": [
+        "#b69bff",
+        "#2a1b5c"
+      ],
+      "image": "/aura/fashion-curated/hype-metrics-violeta.webp",
+      "video": "/aura/fashion-curated/hype-metrics-violeta.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-metrics-ouro",
+      "name": "Métricas · Ouro",
+      "family": "HYPE",
+      "palette": [
+        "#f5d38b",
+        "#5a3b12"
+      ],
+      "image": "/aura/fashion-curated/hype-metrics-ouro.webp",
+      "video": "/aura/fashion-curated/hype-metrics-ouro.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "hype-metrics-verde",
+      "name": "Métricas · Verde",
+      "family": "HYPE",
+      "palette": [
+        "#91e6b8",
+        "#0f4a33"
+      ],
+      "image": "/aura/fashion-curated/hype-metrics-verde.webp",
+      "video": "/aura/fashion-curated/hype-metrics-verde.mp4",
+      "source": "Composição procedural FashionAI por categoria de Hype",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-nike-preto",
+      "name": "Nike · Preto",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#0b0b0b",
+        "#f5f5f5"
+      ],
+      "image": "/aura/fashion-curated/brand-nike-preto.webp",
+      "video": "/aura/fashion-curated/brand-nike-preto.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-nike-laranja",
+      "name": "Nike · Laranja",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#f4511e",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-nike-laranja.webp",
+      "video": "/aura/fashion-curated/brand-nike-laranja.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-nike-branco",
+      "name": "Nike · Branco",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#f2f2f2",
+        "#111111"
+      ],
+      "image": "/aura/fashion-curated/brand-nike-branco.webp",
+      "video": "/aura/fashion-curated/brand-nike-branco.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-nike-volt",
+      "name": "Nike · Volt",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#d7ff1f",
+        "#111111"
+      ],
+      "image": "/aura/fashion-curated/brand-nike-volt.webp",
+      "video": "/aura/fashion-curated/brand-nike-volt.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-adidas-preto",
+      "name": "Adidas · Preto",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#0d0d0d",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-adidas-preto.webp",
+      "video": "/aura/fashion-curated/brand-adidas-preto.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-adidas-branco",
+      "name": "Adidas · Branco",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#f4f4f4",
+        "#111111"
+      ],
+      "image": "/aura/fashion-curated/brand-adidas-branco.webp",
+      "video": "/aura/fashion-curated/brand-adidas-branco.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-adidas-azul",
+      "name": "Adidas · Azul",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#1e4fd8",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-adidas-azul.webp",
+      "video": "/aura/fashion-curated/brand-adidas-azul.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-adidas-vermelho",
+      "name": "Adidas · Vermelho",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#d62828",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-adidas-vermelho.webp",
+      "video": "/aura/fashion-curated/brand-adidas-vermelho.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-asics-azul",
+      "name": "Asics · Azul",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#14327a",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-asics-azul.webp",
+      "video": "/aura/fashion-curated/brand-asics-azul.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-asics-preto",
+      "name": "Asics · Preto",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#0e0e0e",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-asics-preto.webp",
+      "video": "/aura/fashion-curated/brand-asics-preto.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-asics-verde",
+      "name": "Asics · Verde",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#0f7a4a",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-asics-verde.webp",
+      "video": "/aura/fashion-curated/brand-asics-verde.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-puma-preto",
+      "name": "Puma · Preto",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#0b0b0b",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-puma-preto.webp",
+      "video": "/aura/fashion-curated/brand-puma-preto.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-puma-vermelho",
+      "name": "Puma · Vermelho",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#e4002b",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-puma-vermelho.webp",
+      "video": "/aura/fashion-curated/brand-puma-vermelho.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-puma-branco",
+      "name": "Puma · Branco",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#f3f3f3",
+        "#111111"
+      ],
+      "image": "/aura/fashion-curated/brand-puma-branco.webp",
+      "video": "/aura/fashion-curated/brand-puma-branco.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-zara-preto",
+      "name": "Zara · Preto",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#101010",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-zara-preto.webp",
+      "video": "/aura/fashion-curated/brand-zara-preto.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-zara-branco",
+      "name": "Zara · Branco",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#f6f3ee",
+        "#101010"
+      ],
+      "image": "/aura/fashion-curated/brand-zara-branco.webp",
+      "video": "/aura/fashion-curated/brand-zara-branco.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-zara-bege",
+      "name": "Zara · Bege",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#d8c3a5",
+        "#101010"
+      ],
+      "image": "/aura/fashion-curated/brand-zara-bege.webp",
+      "video": "/aura/fashion-curated/brand-zara-bege.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-new-balance-cinza",
+      "name": "New Balance · Cinza",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#7c7f86",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-new-balance-cinza.webp",
+      "video": "/aura/fashion-curated/brand-new-balance-cinza.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-new-balance-azul",
+      "name": "New Balance · Azul",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#1d2f6f",
+        "#ffffff"
+      ],
+      "image": "/aura/fashion-curated/brand-new-balance-azul.webp",
+      "video": "/aura/fashion-curated/brand-new-balance-azul.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
+      "license": "ORIGINAL",
+      "durationSeconds": 6
+    },
+    {
+      "id": "brand-new-balance-branco",
+      "name": "New Balance · Branco",
+      "family": "METAMORPHOSE",
+      "palette": [
+        "#f4f4f4",
+        "#1d2f6f"
+      ],
+      "image": "/aura/fashion-curated/brand-new-balance-branco.webp",
+      "video": "/aura/fashion-curated/brand-new-balance-branco.mp4",
+      "source": "Logotipo tipográfico flutuante FashionAI (sem arte de marca registrada)",
       "license": "ORIGINAL",
       "durationSeconds": 6
     }

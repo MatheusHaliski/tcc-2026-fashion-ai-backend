@@ -7176,6 +7176,7 @@
   "fashionAura.HYPE": "AURA Hype",
   "fashionAura.METAMORPHOSE": "AURA Metamorfose",
   "fashionAura.variations": "Explorar variaciones",
+  "fashionAura.suggested": "Sugerencia AURA Metamorfosis para tu marca y color: {name}",
   "fashionAura.remove": "Quitar composición",
   "fashionAura.hint": "El catálogo se actualiza al abrir. La composición ocupa el marco y conserva la fotografía.",
   "fashionAura.loading": "Buscando modelos disponibles…",
