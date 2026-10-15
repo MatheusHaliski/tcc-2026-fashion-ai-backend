@@ -176,8 +176,6 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
           <span className="type-caption">{t("auraMetamorphose.brandPresetGarment",{brand:preset.brand,color:t(`auraMetamorphose.garmentColor.${preset.garmentColor}`)})}</span>
         </button>)}
       </OptionStrip>
-      <AuraFashionPicker value={value.compositionPreset} onChange={preset=>onChange({compositionPreset:preset,aiArt:null,uploadUrl:null,...(preset?.family==="HYPE"?{auraHype:"SCANNER" as const}:preset?.family==="METAMORPHOSE"?{auraMetamorphose:"PRISMA" as const}:{})})}/>
-      <CardBorderEditor value={value.border} onChange={border=>onChange({border})}/>
       <AuraFashionPicker brandName={brandName} colorHex={colorHex} colorName={colorName} value={value.compositionPreset} onChange={preset=>onChange({compositionPreset:preset,aiArt:null,uploadUrl:null,...(preset?.family==="HYPE"?{auraHype:"SCANNER" as const}:preset?.family==="METAMORPHOSE"?{auraMetamorphose:"PRISMA" as const}:{})})}/>
       <OptionStrip title={t("backgroundStudio.preset_aura")}>
         {(cat?.auraPresets ?? []).map((a) => <button key={a.id} type="button" aria-pressed={auraPreset?.id === a.id} className="opt-tile" title={a.archetype} onClick={() => onChange({ compositionPreset:null, aura: { variantId: a.variants?.[0]?.id ?? a.id, format: value.aura?.format }, aiArt: null, uploadUrl: null })}>

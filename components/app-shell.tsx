@@ -28,7 +28,7 @@ const GROUPS: { key: string; items: NavItem[] }[] = [
     { href: "/closet", key: "nav.closet", icon: "NAV-02", auth: true },
     { href: "/pieces/new", key: "nav.addPiece", icon: "ACT-06", auth: true },
     { href: "/room", key: "nav.room", icon: "NAV-16", auth: true },
-    { href: "/atelier", key: "nav.photos", icon: "NAV-10", auth: true },
+    { href: "/atelier", key: "nav.atelier", icon: "NAV-10", auth: true },
     { href: "/try-on", key: "nav.tryon", icon: "NAV-07", auth: true },
     { href: "/avatar", key: "nav.avatar3d", icon: "ACT-20", auth: true },
   ] },

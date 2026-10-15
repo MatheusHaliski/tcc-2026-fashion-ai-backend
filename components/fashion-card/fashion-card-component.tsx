@@ -1,4 +1,5 @@
 'use client';
+import {mediaUrl} from '@/lib/api/client';
 import {useEffect,useState,type ReactNode} from 'react';
 import type {FashionCard} from '@/lib/fashion-card/types';
 import {safeMediaUrl,validStat} from '@/lib/fashion-card/types';
@@ -25,9 +26,9 @@ export function FashionCardComponent({item,access,footer,onGenerate}:{item:Fashi
   <div className="hero-fashion-front"><header className="fashion-hype-header"><span className="fashion-hype-rarity">{t(`fashionHype.level.${card.rarity}`)}</span><span className="fashion-hype-header-score"><small>HYPE</small>{validStat(card.stats.hypeIndex)&&card.stats.hypeIndex!==null?<LedNumber value={Math.round(card.stats.hypeIndex)}/>:<span>—</span>}</span></header>
    <FashionMotionButton available={depth.sensorAvailable&&!locked} on={depth.sensorOn} error={depth.sensorError} onToggle={()=>void depth.toggleSensor()}/>
    <figure className="hero-fashion-media" aria-label={t('impersonation.media',{name:item.name})}>
-    {posterSafe&&(!animate||mock)&&<img className="hero-fashion-poster" src={poster!} alt={t('impersonation.media',{name:item.name})} loading="lazy"/>}
-    {animate&&mock&&<span className="hero-fashion-demo-video" aria-hidden><ArtVideo src={media!} poster={poster??undefined} onStuck={setMediaError}/></span>}
-    {animate&&!mock&&(data?.renderedMediaType==='image/gif'?<img className="hero-fashion-motion" src={media!} alt={t('impersonation.media',{name:item.name})} onError={()=>setMediaError(true)}/>:<ArtVideo src={media!} poster={poster??undefined} onStuck={setMediaError}/>)}
+    {posterSafe&&(!animate||mock)&&<img className="hero-fashion-poster" src={mediaUrl(poster)} alt={t('impersonation.media',{name:item.name})} loading="lazy"/>}
+    {animate&&mock&&<span className="hero-fashion-demo-video" aria-hidden><ArtVideo src={mediaUrl(media)!} poster={mediaUrl(poster)} onStuck={setMediaError}/></span>}
+    {animate&&!mock&&(data?.renderedMediaType==='image/gif'?<img className="hero-fashion-motion" src={mediaUrl(media)!} alt={t('impersonation.media',{name:item.name})} onError={()=>setMediaError(true)}/>:<ArtVideo src={mediaUrl(media)!} poster={mediaUrl(poster)} onStuck={setMediaError}/>)}
     {!posterSafe&&!animate&&<span role="status">{t('impersonation.mediaPending')}</span>}
     {!locked&&<span className="hero-fashion-vfx" data-particle={card.contextVfx?.particleType} data-shader={card.contextVfx?.shaderOverlay} aria-hidden/>}
    </figure>
