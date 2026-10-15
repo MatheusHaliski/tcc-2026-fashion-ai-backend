@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface PhysicalStoreOrderRepository extends JpaRepository<PhysicalStoreOrder, UUID> {
     List<PhysicalStoreOrder> findByBuyerUserIdOrderByCreatedAtDesc(UUID buyerUserId);
     List<PhysicalStoreOrder> findAllByOrderByCreatedAtDesc();
+    boolean existsByListingId(UUID listingId);
 }
