@@ -23,7 +23,7 @@ export function RoomFixture({ engine, id, position, collider, kind, run, childre
   return <group ref={ref} position={position}>{children}</group>;
 }
 
-export const BED_POSITION: [number, number, number] = [1.7, 0, 3.9];
+export const BED_POSITION: [number, number, number] = [1.65, 0, 3.85];
 export function CeilingFixture({ on, intensity, color }: { on: boolean; intensity: number; color: string }) {
   const ref = useRef<THREE.Mesh>(null);
   useFrame(({ camera }) => { if (ref.current) ref.current.visible = ref.current.getWorldPosition(new THREE.Vector3()).distanceTo(camera.position) > .8; });
@@ -34,19 +34,21 @@ export function CeilingFixture({ on, intensity, color }: { on: boolean; intensit
 }
 export function DoubleBed({ engine, modelUrl, lit, intensity }: { engine?: RoomInteraction; modelUrl?: string | null; lit: boolean; intensity: number }) {
   const logo = useTex("/brand/fai-logo.png");
-  return <RoomFixture engine={engine} id="bed" position={BED_POSITION} collider={[1.43, 1.06]}>
-    <ApprovedAsset url={modelUrl} size={[2.86, 1.45, 2.12]}>
-      <group>
-        <mesh position={[0, .23, 0]} castShadow><boxGeometry args={[1.65, .32, 2]} /><meshStandardMaterial color="#1245a8" roughness={.8} /></mesh>
-        <mesh position={[0, .47, 0]} castShadow><boxGeometry args={[1.64, .22, 1.97]} /><meshStandardMaterial color="#eee6da" roughness={1} /></mesh>
-        <mesh position={[0, .69, .92]} castShadow><boxGeometry args={[1.74, .65, .09]} /><meshStandardMaterial color="#1245a8" roughness={.85} /></mesh>
-        <mesh position={[0, .91, .86]}><circleGeometry args={[.24, 48]} /><meshStandardMaterial map={logo ?? undefined} transparent color={logo ? "#ffffff" : "#f89921"} /></mesh>
-        <mesh position={[0, .59, -1.01]}><boxGeometry args={[1.68, .045, .045]} /><meshStandardMaterial color="#f58220" /></mesh>
-        {[-.43, .43].map(x => <mesh key={x} position={[x, .62, .61]} rotation={[-.14, 0, 0]} castShadow><boxGeometry args={[.66, .12, .4]} /><meshStandardMaterial color="#f7f3eb" roughness={1} /></mesh>)}
-        <mesh position={[0, .59, -.35]}><boxGeometry args={[1.65, .025, 1.22]} /><meshStandardMaterial color="#1245a8" roughness={1} /></mesh>
-        {[-1.15, 1.15].map(x => <mesh key={x} position={[x, .32, .69]} castShadow><boxGeometry args={[.5, .64, .55]} /><meshStandardMaterial color="#1245a8" roughness={.8} /></mesh>)}
-      </group>
-    </ApprovedAsset>
-    <group position={[1.15, .65, .69]} scale={.55}><Lamp position={[0, 0, 0]} on={lit} intensity={intensity} /></group>
+  return <RoomFixture engine={engine} id="bed" position={BED_POSITION} collider={[1.62, 1.12]}>
+    <group scale={[1, 1.2, 1]}>
+      <ApprovedAsset url={modelUrl} size={[3.2, 1.8, 2.4]} rotationY={Math.PI}>
+        <group>
+          <mesh position={[0, .23, 0]} castShadow><boxGeometry args={[1.65, .32, 2]} /><meshStandardMaterial color="#1245a8" roughness={.8} /></mesh>
+          <mesh position={[0, .47, 0]} castShadow><boxGeometry args={[1.64, .22, 1.97]} /><meshStandardMaterial color="#eee6da" roughness={1} /></mesh>
+          <mesh position={[0, .69, .92]} castShadow><boxGeometry args={[1.74, .65, .09]} /><meshStandardMaterial color="#1245a8" roughness={.85} /></mesh>
+          <mesh position={[0, .91, .86]}><circleGeometry args={[.24, 48]} /><meshStandardMaterial map={logo ?? undefined} transparent color={logo ? "#ffffff" : "#f89921"} /></mesh>
+          <mesh position={[0, .59, -1.01]}><boxGeometry args={[1.68, .045, .045]} /><meshStandardMaterial color="#f58220" /></mesh>
+          {[-.43, .43].map(x => <mesh key={x} position={[x, .62, .61]} rotation={[-.14, 0, 0]} castShadow><boxGeometry args={[.66, .12, .4]} /><meshStandardMaterial color="#f7f3eb" roughness={1} /></mesh>)}
+          <mesh position={[0, .59, -.35]}><boxGeometry args={[1.65, .025, 1.22]} /><meshStandardMaterial color="#1245a8" roughness={1} /></mesh>
+          {[-1.15, 1.15].map(x => <mesh key={x} position={[x, .32, .69]} castShadow><boxGeometry args={[.5, .64, .55]} /><meshStandardMaterial color="#1245a8" roughness={.8} /></mesh>)}
+        </group>
+      </ApprovedAsset>
+    </group>
+    {[-1.15, 1.15].map(x => <group key={x} position={[x, .65, .69]} scale={.55}><Lamp position={[0, 0, 0]} on={lit} intensity={intensity} /></group>)}
   </RoomFixture>;
 }
