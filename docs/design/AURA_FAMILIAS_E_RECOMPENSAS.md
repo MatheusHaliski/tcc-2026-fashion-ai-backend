@@ -14,6 +14,8 @@ São variações de composição, cor, motivos procedurais e movimento periódic
 
 `metamorfose-initial-20.json` contém 20 designs: Prisma, Constelação, Fio Vivo e Holografia, em cinco paletas. São **rascunhos**, não recompensas já concedidas.
 
+O Background Studio também oferece três direções visuais sugeridas por marca e cor da peça: Nike/laranja (Prisma âmbar), Adidas/azul (Fio Vivo azul) e ASICS/branca (Holografia perolada com acento azul-gelo). Elas não verificam marca/cor, não usam logotipos, não alteram a fotografia nem concedem direitos. A execução do script em 15/10/2026 retornou `URLError` nas três buscas e verificações (zero candidatos encontrados); as paletas são, portanto, propostas iniciais e não referências externas validadas. Os resultados e fontes tentadas ficam em `aura-metamorfose-marcas-research/`.
+
 Marcas e celebridades poderão comprar uma licença de preset com FAI Points; ela deverá aparecer em Minhas Artes como licença do emissor. A licença permite configurar uma recompensa na promoção de selo/cupom, sem liberar a arte globalmente.
 
 O participante deverá receber um direito vinculado ao card elegível após cumprir a política. Remover a arte não apaga o direito. Reaplicar exige o mesmo card elegível. Recompensas condicionadas ao nível Hype devem ser retiradas de Minhas Artes e desaplicadas quando o nível cair; manter histórico não conserva a elegibilidade.

@@ -12,6 +12,9 @@ QUERIES = [
  ('Metamorfose','Prisma e matéria digital','Iris van Herpen sculptural fashion collection official', ['irisvanherpen.com'], 'Volumes orgânicos, transparência e luz nas bordas; preservar a foto da roupa.'),
  ('Metamorfose','Transformação pela luz','ANREALAGE photochromic UV fashion collection', ['anrealage.com','lvmh.com','vogue.com','dezeen.com'], 'Cor que surge gradualmente, como uma reação à luz.'),
  ('Metamorfose','Superfície programável','Adobe Project Primrose interactive dress', ['adobe.com','research.adobe.com'], 'Padrões em movimento por zonas, com versão estática para redução de movimento.'),
+ ('Metamorfose','Nike · peça laranja','Nike orange performance apparel design official', ['nike.com','about.nike.com'], 'Preservar a peça laranja; usar prisma laranja e âmbar com linhas de performance originais, sem reproduzir logotipos.'),
+ ('Metamorfose','Adidas · peça azul','adidas blue performance apparel design official', ['adidas.com','news.adidas.com'], 'Preservar a peça azul; usar fios azuis e ritmo linear técnico original, sem reproduzir logotipos.'),
+ ('Metamorfose','ASICS · peça branca','ASICS white performance apparel design official', ['asics.com'], 'Preservar a peça branca; usar contornos perolados e acentos azul-gelo com contraste, sem reproduzir logotipos.'),
  ('Metamorfose','Moda digital','The Fabricant digital couture iridescent fashion', ['thefabricant.com'], 'Reflexos iridescentes e materiais digitais com acabamento editorial.'),
  ('Metamorfose','Biomimética','Auroboros biomimicry digital couture fashion', ['auroboros.co.uk','dezeen.com','vogue.com'], 'Estruturas que crescem como nervuras, cristais ou fibras.'),
  ('Metamorfose','Costura escultórica','Gaurav Gupta couture sculptural metallic official', ['gauravguptastudio.com'], 'Linhas de costura como contornos escultóricos e transições de metal.'),
@@ -91,9 +94,10 @@ def export(results,out):
  out.mkdir(parents=True,exist_ok=True)
  payload={'generated_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),'purpose':'Referências de arte de moda contemporânea; sugestões de aplicação são interpretações de design do FashionAI. Não são funcionalidades implementadas.','results':results}
  (out/'references.json').write_text(json.dumps(payload,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
- lines=['# Referências visuais — seis famílias AURA e ATELIER','',payload['purpose'],'','Pesquisa executada por Python com Bing RSS e fontes selecionadas após busca web e revisão de relevância. Links descobertos e páginas acessadas têm estados separados. Miniaturas são referências remotas das fontes, não assets incorporados ao app.','']
+ themes=list(dict.fromkeys(r['theme'] for r in results))
+ lines=[f'# Referências visuais — {", ".join(themes)}','',payload['purpose'],'','A busca, a verificação de páginas e a lista de fontes selecionadas têm estados separados. Falhas não validam as referências; miniaturas, quando disponíveis, são remotas e não são assets do app.','']
  sections=[]
- for theme in ['Metamorfose','ATELIER','Hype','Electro','AURA comum','Splash']:
+ for theme in themes:
   lines+=['## '+theme,''];cards=[]
   for result in [r for r in results if r['theme']==theme]:
    chosen=result.get('selected');lines+=['### '+result['direction'],'',result['design_application'],'']
@@ -105,7 +109,7 @@ def export(results,out):
    else:lines+=['Nenhuma fonte encontrada nesta execução.','']
   sections.append(f'<section><h2>{theme}</h2><div class="grid">'+''.join(cards)+'</div></section>')
  (out/'README.md').write_text('\n'.join(lines),encoding='utf-8')
- markup='''<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>FashionAI · referências de arte</title><style>body{margin:0;background:#f4f1eb;color:#201e25;font:16px/1.55 system-ui}main{max-width:1250px;margin:auto;padding:36px}h1{font-size:clamp(30px,5vw,58px);line-height:1.1}h2{margin-top:48px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px}article{padding:20px;border:1px solid #d7d1c8;border-radius:18px;background:#fff}img{width:100%;height:240px;object-fit:cover;border-radius:10px;background:#ebe7ef}a{color:#543286}small,.state{font-size:12px;text-transform:uppercase;letter-spacing:.08em}.state{color:#665e70}p{max-width:78ch}</style><main><p>FASHIONAI / DIREÇÃO DE ARTE</p><h1>Moda, transformação<br>e identidade jogável.</h1><p>Referências pesquisadas na internet para Metamorfose, ATELIER, Hype, Electro, AURA comum e Splash. Cada cartão liga à fonte. As aplicações propostas são interpretações para o FashionAI; as imagens não foram incorporadas ao produto.</p>'''+''.join(sections)+'</main></html>'
+ markup='''<!doctype html><html lang="pt-BR"><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>FashionAI · referências de arte</title><style>body{margin:0;background:#f4f1eb;color:#201e25;font:16px/1.55 system-ui}main{max-width:1250px;margin:auto;padding:36px}h1{font-size:clamp(30px,5vw,58px);line-height:1.1}h2{margin-top:48px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:22px}article{padding:20px;border:1px solid #d7d1c8;border-radius:18px;background:#fff}img{width:100%;height:240px;object-fit:cover;border-radius:10px;background:#ebe7ef}a{color:#543286}small,.state{font-size:12px;text-transform:uppercase;letter-spacing:.08em}.state{color:#665e70}p{max-width:78ch}</style><main><p>FASHIONAI / DIREÇÃO DE ARTE</p><h1>Moda, transformação<br>e identidade jogável.</h1><p>Referências pesquisadas para '''+html.escape(', '.join(themes))+'''. Cada cartão liga à fonte. As aplicações propostas são interpretações para o FashionAI; as imagens não foram incorporadas ao produto.</p>'''+''.join(sections)+'</main></html>'
  (out/'moodboard.html').write_text(markup,encoding='utf-8')
  print(json.dumps({'queries':len(results),'candidates':sum(len(r['candidates']) for r in results),'selected':sum('selected' in r for r in results),'fetched':sum(r.get('verification')=='FETCHED' for r in results),'previews':sum('preview_url' in r for r in results),'output':str(out)},ensure_ascii=False))
 
@@ -115,7 +119,7 @@ def main():
  specs=[(r['theme'],r['direction'],r['title']+' fashion design',[urllib.parse.urlsplit(r['url']).hostname],r['application']) for r in curated] if curated else QUERIES
  with concurrent.futures.ThreadPoolExecutor(max_workers=3) as pool:results=list(pool.map(search,specs))
  for result,source in zip(results,curated):
-  result['curated_source']={'title':source['title'],'url':source['url'],'domain':urllib.parse.urlsplit(source['url']).hostname,'preferred_source':True,'discovered_via':'web search and manual relevance review'}
+  result['curated_source']={'title':source['title'],'url':source['url'],'domain':urllib.parse.urlsplit(source['url']).hostname,'preferred_source':True,'discovered_via':'curated source list'}
  # One bounded request chain per reference; sequential verification avoids overloading repeated sites.
  for index,result in enumerate(results,1):
   verify(result);print(f'[{index}/{len(results)}] {result["theme"]}: {result["direction"]} — {result.get("verification")}',flush=True)

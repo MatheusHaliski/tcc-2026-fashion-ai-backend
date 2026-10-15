@@ -29,5 +29,6 @@ describe('borda e atualização real de Hype',()=>{
   expect(borderStyle({border:{mode:'GRADIENT',from:'#123456',to:'#abcdef'}})).toMatchObject({'--card-border-paint':'linear-gradient(135deg,#123456,#abcdef)'});
   expect(borderStyle({auraHype:'XRAY'},true)).toMatchObject({'--card-border-paint':'linear-gradient(135deg,#b69bff,#81d5f3)'});
   expect(borderStyle({auraMetamorphose:'CONSTELACAO'})).toMatchObject({'--card-border-paint':'linear-gradient(135deg,#b5a6ff,#f1d5ff)'});
+  expect(borderStyle({auraMetamorphose:'PRISMA',auraMetamorphosePreset:'NIKE_ORANGE'})).toMatchObject({'--card-border-paint':'linear-gradient(135deg,#f97316,#ffd08a)'});
  });
 });

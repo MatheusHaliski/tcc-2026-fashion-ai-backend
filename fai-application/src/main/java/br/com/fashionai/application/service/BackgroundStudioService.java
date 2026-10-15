@@ -647,6 +647,17 @@ public class BackgroundStudioService {
         Object metamorphose = config.get("auraMetamorphose");
         if (metamorphose != null && !List.of("OFF", "PRISMA", "CONSTELACAO", "FIO_VIVO", "HOLOGRAFIA").contains(metamorphose))
             throw ApiException.badRequest("AURA_METAMORPHOSE_INVALID", "AURA Metamorfose inválida.");
+        Object metamorphosePreset = config.get("auraMetamorphosePreset");
+        if (metamorphosePreset != null) {
+            String requiredMode = switch (metamorphosePreset instanceof String id ? id : "") {
+                case "NIKE_ORANGE" -> "PRISMA";
+                case "ADIDAS_BLUE" -> "FIO_VIVO";
+                case "ASICS_WHITE" -> "HOLOGRAFIA";
+                default -> null;
+            };
+            if (requiredMode == null || !requiredMode.equals(metamorphose))
+                throw ApiException.badRequest("AURA_METAMORPHOSE_INVALID", "AURA Metamorfose inválida.");
+        }
         Object value = config.get("border");
         if (value == null) return;
         if (!(value instanceof Map<?, ?> border)) throw ApiException.badRequest("CARD_BORDER_INVALID", "Borda inválida.");

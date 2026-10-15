@@ -296,7 +296,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
           <div className="pd-media relative">
             {auraEnabled&&<FashionMotionButton available={depth.sensorAvailable} on={depth.sensorOn} error={depth.sensorError} onToggle={()=>void depth.toggleSensor()}/>}
             {auraEnabled&&<FashionCardHeader summary={hype.summary} state={hypeViewState(hype.summary,hype)}/>}
-            <PieceGallery key={p.id + (p.studioImageUrl ?? "") + (p.mannequinImageUrl ?? "")} slides={slides} onOpen={setFullscreen} overlay={<><AuraMetamorphose mode={p.background?.auraMetamorphose as string | undefined}/>{auraEnabled && <AuraHype state={hypeViewState(hype.summary,hype)} summary={hype.summary} mode={auraMode} showScore={false}/>}</>} />
+            <PieceGallery key={p.id + (p.studioImageUrl ?? "") + (p.mannequinImageUrl ?? "")} slides={slides} onOpen={setFullscreen} overlay={<><AuraMetamorphose mode={p.background?.auraMetamorphose as string | undefined} presetId={p.background?.auraMetamorphosePreset as string | undefined}/>{auraEnabled && <AuraHype state={hypeViewState(hype.summary,hype)} summary={hype.summary} mode={auraMode} showScore={false}/>}</>} />
             {auraEnabled&&<FashionCardStats name={p.name} summary={hype.summary} styles={(p.style??[]).map(label)}/>}
             {studioBusy && <div className="pd-busy" aria-live="polite">{t("common.montando_o_estudio")}</div>}
           </div>
