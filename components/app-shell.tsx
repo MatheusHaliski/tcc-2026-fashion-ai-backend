@@ -28,7 +28,7 @@ const GROUPS: { key: string; items: NavItem[] }[] = [
     { href: "/closet", key: "nav.closet", icon: "NAV-02", auth: true },
     { href: "/pieces/new", key: "nav.addPiece", icon: "ACT-06", auth: true },
     { href: "/room", key: "nav.room", icon: "NAV-16", auth: true },
-    { href: "/photos", key: "nav.photos", icon: "NAV-10", auth: true },
+    { href: "/atelier", key: "nav.photos", icon: "NAV-10", auth: true },
     { href: "/try-on", key: "nav.tryon", icon: "NAV-07", auth: true },
     { href: "/avatar", key: "nav.avatar3d", icon: "ACT-20", auth: true },
   ] },
@@ -201,7 +201,7 @@ const CREATE = [
   { href: "/pieces/new", key: "nav.createPiece", hint: "nav.createPieceHint", icon: "ACT-06" },
   { href: "/schemes/new", key: "nav.createLook", hint: "nav.createLookHint", icon: "NAV-03" },
   { href: "/dna-schemes/new", key: "nav.createDna", hint: "nav.createDnaHint", icon: "ACT-19" },
-  { href: "/photos", key: "nav.uploadPhotos", hint: "nav.uploadPhotosHint", icon: "ACT-07" },
+  { href: "/atelier/galeria", key: "nav.uploadPhotos", hint: "nav.uploadPhotosHint", icon: "ACT-07" },
 ];
 
 const SIDEBAR_KEY = "fai.sidebar";

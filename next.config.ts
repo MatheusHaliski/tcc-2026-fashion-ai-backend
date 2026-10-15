@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   // Next 16 gera AGENTS.md/CLAUDE.md na raiz a cada `next dev`; o projeto não versiona esses arquivos gerados
   agentRules: false,
   // OWASP A05 — cabeçalhos em todas as respostas (a CSP com nonce vem do middleware.ts, por requisição)
+  async redirects() {
+    return [{ source: "/photos", destination: "/atelier", permanent: false }];
+  },
   async headers() {
     const gate = (process.env.DEV_GATE_ENABLED ?? "true").toLowerCase() !== "false";
     return [{

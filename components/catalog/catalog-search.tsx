@@ -32,7 +32,9 @@ const BRAND_PAGE_SIZE = 12;
  * certeza de que a peça física é aquela — quem confirma é a pessoa). Sem resultado: refinar, procurar nas lojas oficiais
  * da marca ou cair para a própria foto.
  */
-export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext, pickLabel, noResultHint, browse, onResults, resultsMount, resultsLayout, brandGrid = true }: {
+export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlledCategory, onContext, pickLabel, noResultHint, browse, onResults, resultsMount, resultsLayout, brandGrid = true, onClearCategory }: {
+  /** Modo embutido: limpa também a categoria controlada pelo formulário. */
+  onClearCategory?: () => void;
   initial?: Partial<CatalogSearchContext>; onPick: (p: CatalogProduct, v: CatalogVariant | null) => void | Promise<void>;
   /** Sem ele, a busca não oferece "usar minha foto" (modo embutido no criador de peça, onde a foto fica logo abaixo). */
   onUsePhoto?: (ctx: CatalogSearchContext) => void;
@@ -243,6 +245,12 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
     reportRef.current?.({ category: p?.category ?? "", subcategory: p?.subcategory ?? "", brand: p?.brand ?? "", query: p?.q ?? "" }, p ? filtered : []);
   }, [res, acervo, ranWith, discover.result, gender, enough, browsing]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const hasFilters = !!(category || subcategory || brand || query || color || gender || showAll || allForText);
+  const clearFilters = () => {
+    setOwnCategory(""); setSubcategoryState(""); onContext?.({ subcategory: "" }); onClearCategory?.();
+    setBrand(""); setBrandRef(null); setBrandPage(0); setQuery(""); setColor(""); setGender("");
+    setShowAll(false); setAllForText(false); setRes(null); setError(null);
+  };
   const brandLabel = brandRef?.name ?? res?.intent.brand ?? brand.trim();
   const selectionLabels = [ranWith?.brand, ranWith?.category ? CATEGORY_LABEL[ranWith.category] ?? label(ranWith.category) : "",
     ranWith?.subcategory ? subcategoryLabel(ranWith.subcategory) : "", params.color ? label(params.color) : "",
@@ -339,6 +347,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
 
   return (
     <div className="grid gap-4">
+      {hasFilters && <div><Button size="sm" onClick={clearFilters} data-testid="catalog-clear-filters">{t("catalog.limparFiltros")}</Button></div>}
       {!embedded && <section aria-labelledby="cs-cat" className={resultsLayout === "matrix" ? "fitting-category-controls" : undefined}>
         <p id="cs-cat" className="label">{t("catalog.q_categoria")}</p>
         <CategoryCards compact columns={3} options={CATEGORY_CARDS} value={(category as CaptureCategory) || null} label={t("catalog.q_categoria")}

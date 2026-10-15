@@ -267,7 +267,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                     <Button size="sm" variant="ghost" onClick={clearCatalog}>{t("catalog.remover_referencia")}</Button>
                   </div>
                 ) : (
-                  <CatalogSearch key={catalogSub} initial={catalogSub && value.subcategory === catalogSub ? { ...initial, subcategory: catalogSub } : initial} category={value.category} onPick={applyCatalog} resultsLayout="matrix" brandGrid
+                  <CatalogSearch key={catalogSub} initial={catalogSub && value.subcategory === catalogSub ? { ...initial, subcategory: catalogSub } : initial} category={value.category} onClearCategory={() => setValue((v) => ({ ...v, category: "", subcategory: "" }))} onPick={applyCatalog} resultsLayout="matrix" brandGrid
                     onContext={(ctx) => { if (ctx.subcategory !== undefined) setValue((v) => ({ ...v, subcategory: ctx.subcategory ?? "" })); }} />
                 )}
               </section>}
