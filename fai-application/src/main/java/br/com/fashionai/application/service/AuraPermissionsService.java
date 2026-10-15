@@ -6,8 +6,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 @Service
 public class AuraPermissionsService {
- public enum AuraType {AURA_BASIC,AURA_DYNAMIC,AURA_IMPERSONATION}
- public static final Map<AuraType,FaiPointsService.Level> AuraGatingConfig=Map.of(AuraType.AURA_BASIC,FaiPointsService.Level.ESTREIA,AuraType.AURA_DYNAMIC,FaiPointsService.Level.STUDIO,AuraType.AURA_IMPERSONATION,FaiPointsService.Level.LOFT);
+ public enum AuraType {AURA_BASIC,AURA_DYNAMIC,AURA_METAMORPHOSE,AURA_IMPERSONATION}
+ public static final Map<AuraType,FaiPointsService.Level> AuraGatingConfig=Map.of(AuraType.AURA_BASIC,FaiPointsService.Level.ESTREIA,AuraType.AURA_DYNAMIC,FaiPointsService.Level.STUDIO,AuraType.AURA_METAMORPHOSE,FaiPointsService.Level.LOFT,AuraType.AURA_IMPERSONATION,FaiPointsService.Level.LOFT);
  private final FaiPointsLedgerEntryRepository ledger;
  public AuraPermissionsService(FaiPointsLedgerEntryRepository ledger){this.ledger=ledger;}
  @Transactional(readOnly=true) public boolean canUserEquipAura(UUID userId,AuraType type){return userId!=null&&type!=null&&FaiPointsService.Level.of(ledger.lifetime(userId)).atLeast(AuraGatingConfig.get(type));}

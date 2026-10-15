@@ -31,6 +31,18 @@ export interface PointsAccount {
   rules?: { action: string; points: number; description?: string; dailyCap?: number | string | null }[];
 }
 
+export const FAI_LEVELS = ["ESTREIA", "STUDIO", "LOFT", "CLOSET", "ATELIER", "PENTHOUSE", "MAISON"] as const;
+export type FaiLevel = (typeof FAI_LEVELS)[number];
+
+export function hasReachedLevel(current: unknown, required: FaiLevel): boolean {
+  const currentIndex = FAI_LEVELS.indexOf(current as FaiLevel);
+  return currentIndex >= FAI_LEVELS.indexOf(required);
+}
+
+export function levelNameKey(level: string): string {
+  return FAI_LEVELS.includes(level as FaiLevel) ? `levelProgress.name.${level}` : level;
+}
+
 export interface PointsSummary { account?: PointsAccount | null; shop?: { items: number; affordable: number } | null; statement?: number | null }
 
 export function pointsAvailability(id: PointsModeId, s: PointsSummary): HubAvailability {

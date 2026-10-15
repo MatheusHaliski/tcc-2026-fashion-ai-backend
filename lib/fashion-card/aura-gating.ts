@@ -1,8 +1,8 @@
 import {tr} from '@/lib/i18n/core';
 export const ROOM_TIERS=['ESTREIA','STUDIO','LOFT','CLOSET','ATELIER','PENTHOUSE','MAISON'] as const;
 export type RoomTier=typeof ROOM_TIERS[number];
-export type GatedAuraType='AURA_BASIC'|'AURA_DYNAMIC'|'AURA_IMPERSONATION';
-export const AuraGatingConfig:Record<GatedAuraType,{requiredTier:RoomTier}>={AURA_BASIC:{requiredTier:'ESTREIA'},AURA_DYNAMIC:{requiredTier:'STUDIO'},AURA_IMPERSONATION:{requiredTier:'LOFT'}};
+export type GatedAuraType='AURA_BASIC'|'AURA_DYNAMIC'|'AURA_METAMORPHOSE'|'AURA_IMPERSONATION';
+export const AuraGatingConfig:Record<GatedAuraType,{requiredTier:RoomTier}>={AURA_BASIC:{requiredTier:'ESTREIA'},AURA_DYNAMIC:{requiredTier:'STUDIO'},AURA_METAMORPHOSE:{requiredTier:'LOFT'},AURA_IMPERSONATION:{requiredTier:'LOFT'}};
 export interface AuraPermissionPort {canUserEquipAura(userId:string,auraType:GatedAuraType):Promise<boolean>}
 export class AuraPermissionsService implements AuraPermissionPort {
  constructor(private lookupTier:(userId:string)=>Promise<RoomTier|null>){}

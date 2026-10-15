@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PointsHub } from "@/components/points/hub";
 import { PointsSection } from "@/components/points/sections";
+import { FaiXpProgress } from "@/components/points/fai-xp-progress";
 import { POINTS_MODES, pointsAvailability } from "@/lib/points/hub";
 import { GUIDES } from "@/lib/guides/registry";
 import { ME, cleanup, fireEvent, loggedAs, renderApp, screen, waitFor } from "@/test-utils/render";
@@ -70,5 +71,12 @@ describe("seções", () => {
     expect(screen.getByText("(máx. 1/dia)")).toBeTruthy();
     const links = screen.getAllByRole("link", { name: "Ir" });
     expect(links.map((l) => l.getAttribute("href"))).toEqual(["/autopilot", "/flair/desafios"]);
+  });
+
+  it("mostra a progressão FAI XP com o nível localizado e percentual entre limiares", () => {
+    loggedAs(ME, {});
+    renderApp(<FaiXpProgress account={{ ...ACCOUNT, lifetime: 600, level: "STUDIO", nextLevel: { level: "LOFT", threshold: 900, missing: 300 }, levels: [{ level: "STUDIO", threshold: 300, reached: true }] }} />);
+    expect(screen.getByText("FAI XP · Studio")).toBeTruthy();
+    expect(screen.getByRole("progressbar", { name: "Progresso até Loft" }).getAttribute("aria-valuenow")).toBe("50");
   });
 });
