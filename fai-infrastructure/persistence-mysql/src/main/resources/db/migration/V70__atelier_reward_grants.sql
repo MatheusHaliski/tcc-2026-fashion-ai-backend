@@ -15,7 +15,7 @@ CREATE TABLE atelier_reward_grants (
  created_by VARCHAR(80),
  last_modified_by VARCHAR(80),
  version BIGINT NOT NULL DEFAULT 0,
- CONSTRAINT fk_atelier_reward_owner FOREIGN KEY(owner_id) REFERENCES users(id),
+ CONSTRAINT fk_atelier_reward_owner FOREIGN KEY(owner_id) REFERENCES users(id) ON DELETE CASCADE,
  CONSTRAINT uq_atelier_reward_source UNIQUE(owner_id,category,reward_code,source_type,source_reference),
  KEY idx_atelier_rewards_owner(owner_id,created_at)
 );

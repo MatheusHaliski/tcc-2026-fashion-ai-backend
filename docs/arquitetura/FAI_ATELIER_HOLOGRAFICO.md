@@ -12,7 +12,7 @@ Incremento sobre a `main` de 15/10/2026, incluindo a versão inicial do Atelier 
 
 ## 2. Dados e concessões
 
-`AtelierRewardGrant` e a migração **V70** persistem direitos por proprietário. Cada concessão contém categoria, código, título/descrição, origem, referência da origem, referência ao recurso, validade e revogação. O histórico auditável vem da entidade base.
+`AtelierRewardGrant` e a migração **V70** persistem direitos por proprietário. Cada concessão contém categoria, código, título/descrição, origem, referência da origem, referência ao recurso, validade e revogação. O histórico auditável vem da entidade base. A exclusão definitiva da conta remove os registros por chave estrangeira com cascade.
 
 | Categoria | Conteúdo representado | Referência esperada da integração |
 | --- | --- | --- |
