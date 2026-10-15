@@ -27,6 +27,11 @@ class BodyEvidence(BaseModel):
     provenance:str=Field(pattern=r'^(ANNOTATED_2D|DENSEPOSE_PROJECTED|SMPLX_PROJECTED)$')
 
 
+class PersonInput(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    person_image:str=Field(max_length=8_000_000)
+
+
 class CatalogInput(BaseModel):
     model_config=ConfigDict(extra='forbid')
     garment_image:str=Field(max_length=8_000_000)
@@ -71,10 +76,11 @@ class RequestSizeLimit:
         await self.app(scope,limited_receive,send)
 
 
-def create_app(store=None,annotator=None,token=None):
+def create_app(store=None,annotator=None,token=None,pose_probe=None):
     app=FastAPI(title='FashionAI Anatomical VTON',docs_url=None,redoc_url=None)
     expected=token if token is not None else os.getenv('VTON_WORKER_TOKEN','')
     capacity=threading.BoundedSemaphore(2)
+    pose_capacity=threading.BoundedSemaphore(1);pose_state={'probe':pose_probe}
     # Lazy initialization: importing app does not create a database or contact S3.
     resources={};lock=threading.Lock()
     def resources_for_request():
@@ -102,6 +108,19 @@ def create_app(store=None,annotator=None,token=None):
         return {'state':row['state'],'jobKey':row['job_key'],'attempts':row['attempts'],'errorCode':row['error_code'],'modelVersion':row['model_version']}
     @app.get('/v1/monitor',dependencies=[Depends(authenticate)])
     def monitor():return {'queue':resources_for_request()['store'].stats()}
+    @app.post('/v1/body/pose',dependencies=[Depends(authenticate)])
+    def body_pose(body:PersonInput):
+        if not pose_capacity.acquire(blocking=False):raise HTTPException(429,'POSE_PROBE_BUSY')
+        try:
+            if pose_state['probe'] is None:
+                path=os.getenv('VTON_POSE_MODEL_PATH')
+                if not path:raise HTTPException(503,'POSE_MODEL_NOT_CONFIGURED')
+                from .body_pose import MediaPipeBodyPoseProbe
+                try:pose_state['probe']=MediaPipeBodyPoseProbe(path)
+                except (ImportError,OSError,RuntimeError,AlignmentError):raise HTTPException(503,'POSE_RUNTIME_NOT_AVAILABLE')
+            return JSONResponse(pose_state['probe'].detect(b64_image(body.person_image,'RGB')),
+                                headers={'Cache-Control':'no-store'})
+        finally:pose_capacity.release()
     @app.post('/try-on',dependencies=[Depends(authenticate)])
     def try_on(body:TryOnInput):
         if not capacity.acquire(blocking=False):raise HTTPException(429,'WORKER_BUSY')
