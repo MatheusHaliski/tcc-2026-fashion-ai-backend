@@ -12,3 +12,12 @@ it.each(['OFF','invalid'])('não aplica %s',mode=>{
  const {container}=renderApp(<AuraMetamorphose mode={mode}/>);
  expect(container.querySelector('.aura-metamorphose')).toBeNull();
 });
+it.each([
+ ['PRISMA','NIKE_ORANGE'],
+ ['FIO_VIVO','ADIDAS_BLUE'],
+ ['HOLOGRAFIA','ASICS_WHITE'],
+])('aplica o preset visual %s sem alterar a fotografia', (mode,presetId)=>{
+ const {container}=renderApp(<div><img src="photo.jpg" alt="Peça"/><AuraMetamorphose mode={mode} presetId={presetId}/></div>);
+ expect(container.querySelector(`.aura-metamorphose[data-brand-preset="${presetId}"]`)).toBeTruthy();
+ expect(container.querySelector('img')?.getAttribute('src')).toBe('photo.jpg');
+});

@@ -8,7 +8,7 @@ import {LedNumber} from '@/components/led-number';
 
 export function FashionCardHeader({summary,state,previewTier}:{summary?:HypeSummary|null;state:HypeViewState;previewTier?:AuraHypeCardLevel}){
  const {t}=useI18n();const tier=previewTier??fashionCardLevel(summary);
- return <span className="fashion-hype-header"><span className="fashion-hype-rarity" title={t('fashionHype.digitalLevel')}>{t(tier?`fashionHype.level.${tier}`:'fashionHype.pending')}</span><span className="fashion-hype-header-score"><small>HYPE</small>{state.kind==='available'?<><span className="sr-only">{displayScore(state.score)}</span><span aria-hidden><LedNumber value={displayScore(state.score)}/></span>{state.stale&&<span title={t('auraHype.stale')}>↻</span>}</>:<span>—</span>}</span></span>;
+ return <span className="fashion-hype-header"><span className="fashion-hype-rarity" title={t('fashionHype.digitalLevel')}>{t(tier?`fashionHype.level.${tier}`:'fashionHype.pending')}</span><span className="fashion-hype-header-score"><small>{t('fashionHype.scoreLabel')}</small>{state.kind==='available'?<><span className="sr-only">{displayScore(state.score)}</span><span aria-hidden><LedNumber value={displayScore(state.score)}/></span>{state.stale&&<span title={t('auraHype.stale')}>↻</span>}</>:<span>—</span>}</span></span>;
 }
 export function FashionCardStats({summary,styles=[],name}:{summary?:HypeSummary|null;styles?:string[];name?:string}){
  const {t}=useI18n();const edition=confirmedEdition(summary);const legacy=summary?.status==='AVAILABLE'?fashionMetric(summary.dimensions?.LONGEVITY):null;

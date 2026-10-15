@@ -3702,8 +3702,8 @@ html[data-reduce-motion="true"] .fgc-metal-light, html[data-reduce-motion="true"
 html[data-theme="contrast"] .fgc { --fgc-ink: #fff; --fgc-led: #fff; --fgc-line: #fff; --fgc-plate: #000; }
 html[data-theme="contrast"] .aura-hype-score { background: #000; color: #fff; border-color: #fff; }
 
-.aura-metamorphose { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border: 2px solid #b999eb; z-index: 2; }
-.aura-metamorphose-field { position: absolute; inset: 0; box-shadow: inset 0 0 30px #9470d580; }
+.aura-metamorphose { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border: 2px solid var(--meta-outline, #b999eb); z-index: 2; }
+.aura-metamorphose-field { position: absolute; inset: 0; box-shadow: inset 0 0 30px var(--meta-accent, #9470d580); }
 .aura-metamorphose-field::before { content: ""; position: absolute; inset: 0; border: 7px solid transparent; border-image: conic-gradient(from 0deg,#ef8ba2,#ae7ee1,#66d9df,#faad70,#ef8ba2) 1; animation: aura-metamorphose-glow 6s ease-in-out infinite alternate; }
 .aura-metamorphose-caption { position: absolute; left: 10px; bottom: 10px; padding: 5px 9px; border-radius: 6px; color: #fff; background: #3b225ded; font: 600 11px/1.4 var(--font-ui); }
 .aura-metamorphose[data-effect="CONSTELACAO"] .aura-metamorphose-field::before { border: 1px solid #c6c2ff; border-image: none; background: radial-gradient(circle at 5% 12%,#dcd2ff 2px,transparent 3px),radial-gradient(circle at 92% 25%,#dcd2ff 2px,transparent 3px),radial-gradient(circle at 8% 76%,#dcd2ff 3px,transparent 4px); }
@@ -3711,6 +3711,9 @@ html[data-theme="contrast"] .aura-hype-score { background: #000; color: #fff; bo
 .aura-metamorphose[data-effect="FIO_VIVO"] .aura-metamorphose-field::before { border: 8px solid transparent; border-image: repeating-linear-gradient(35deg,#dd91ad 0 3px,#9b88dd 3px 6px,#f7e9d5 6px 9px) 8; }
 .aura-metamorphose[data-effect="HOLOGRAFIA"] .aura-metamorphose-field::before { border: 8px solid transparent; border-image: linear-gradient(135deg,#7ce6ed,#bd8aeb,#f4acd8,#9fe3c9) 8; }
 .aura-metamorphose[data-effect="HOLOGRAFIA"] .aura-metamorphose-field { box-shadow: inset 0 0 22px #ab86e559,inset 0 0 4px #fff; }
+.aura-metamorphose[data-brand-preset] .aura-metamorphose-field { box-shadow: inset 0 0 24px color-mix(in srgb, var(--meta-accent) 28%, transparent), inset 0 0 4px #fff7; }
+.aura-metamorphose[data-brand-preset] .aura-metamorphose-field::before { border-image: linear-gradient(135deg, var(--meta-accent), var(--meta-highlight), var(--meta-outline)) 1; }
+.aura-metamorphose[data-brand-preset="ADIDAS_BLUE"] .aura-metamorphose-field::before { border-image: repeating-linear-gradient(135deg, var(--meta-accent) 0 3px, transparent 3px 8px, var(--meta-highlight) 8px 11px) 1; }
 @keyframes aura-metamorphose-glow { from { opacity: .65; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .aura-metamorphose-field::before { animation: none; } }
 html[data-reduce-motion="true"] .aura-metamorphose-field::before { animation: none; }
@@ -3792,7 +3795,7 @@ html[data-reduce-motion="true"] .era-beams { animation: none !important; }
 .fashion-hype-header { position: relative; z-index: 4; display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .65rem .8rem; background: var(--fashion-panel, #242421); color: #f6f3e9; border-block-end: 1px solid var(--fashion-metal, #a7a6a1); }
 .fashion-hype-rarity { font: 700 12px/1.2 ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
 .fashion-hype-header-score { display: inline-flex; gap: .45rem; align-items: center; }
-.fashion-hype-header-score small { font-size: 12px; letter-spacing: .1em; }
+.fashion-hype-header-score small { font-size: 12px; letter-spacing: .1em; white-space: nowrap; }
 .fashion-hype-header-score .led-number { --led-size: 23px; }
 .fashion-hype-metadata { display: grid; gap: .55rem; padding: .7rem .1rem; width: 100%; }
 .pd-media > .fashion-hype-metadata { padding: .85rem; }
@@ -3814,16 +3817,13 @@ html[data-reduce-motion="true"] .era-beams { animation: none !important; }
 .aura-hype[data-fashion-level="PENDING"] .aura-hype-field, .aura-hype[data-fashion-level="COMMON"] .aura-hype-field { display: none; }
 .aura-hype[data-fashion-level="RARE"] { box-shadow: inset 0 0 0 2px #b0d9e8aa, inset 0 0 18px #86d1da33; }
 .aura-hype[data-fashion-level="RARE"] .aura-hype-field { opacity: .3; background: linear-gradient(125deg, transparent 28%, var(--hype-ink) 48%, transparent 65%); mask-image: linear-gradient(90deg, #000, transparent 30%, transparent 70%, #000); }
-.aura-hype[data-fashion-level="RARE"] .aura-hype-field::after { height: 100%; background: linear-gradient(115deg, transparent 35%, #e2e8ff88 48%, transparent 60%); animation: fashion-hype-sheen 9s ease-in-out infinite; }
+.aura-hype[data-fashion-level="RARE"] .aura-hype-field::after { content: none; }
 .aura-hype[data-fashion-level="LEGENDARY"] { box-shadow: inset 0 0 0 3px #ddbd73cc, inset 0 0 0 5px #75603d, inset 0 0 35px #eac97040; }
 .aura-hype[data-fashion-level="LEGENDARY"] .aura-hype-field { opacity: .55; background: radial-gradient(circle at 15% 25%, #ffeb9c 0 1px, transparent 3px), radial-gradient(circle at 85% 75%, #b9c5ff 0 1px, transparent 3px), conic-gradient(from 25deg, #fae6af44, #b6cbf833, #d7b1d944, #fae6af44); background-size: 35px 51px, 47px 63px, 100% 100%; mask-image: radial-gradient(ellipse, transparent 30%, #000 95%); }
-.aura-hype[data-fashion-level="LEGENDARY"] .aura-hype-field::after { height: 100%; background: linear-gradient(120deg, transparent 25%, #fff6c666 47%, #c5cfff44 52%, transparent 70%); animation: fashion-hype-sheen 12s ease-in-out infinite; }
+.aura-hype[data-fashion-level="LEGENDARY"] .aura-hype-field::after { content: none; }
 .aura-hype[data-fashion-level="COLLAB_DROP"] { box-shadow: inset 0 0 0 3px #e7e4f399, inset 0 0 0 6px #fff3; }
 .aura-hype[data-fashion-level="COLLAB_DROP"] .aura-hype-field { opacity: .4; background: repeating-linear-gradient(45deg, transparent 0 23px, #cbc6e033 24px 25px), repeating-linear-gradient(-45deg, transparent 0 23px, #c3dce733 24px 25px); mask-image: linear-gradient(90deg, #000, transparent 26%, transparent 74%, #000); }
-.aura-hype[data-fashion-level="COLLAB_DROP"] .aura-hype-field::after { height: 100%; background: linear-gradient(120deg, transparent 20%, #f1edff99 45%, #b0c8e655 55%, transparent 80%); animation: fashion-hype-sheen 10s ease-in-out infinite; }
-@keyframes fashion-hype-sheen { 0%, 100% { transform: translateX(-65%); opacity: .1; } 50% { transform: translateX(65%); opacity: .65; } }
-@media (prefers-reduced-motion: reduce) { .aura-hype[data-fashion-level] .aura-hype-field::after { animation: none; transform: none; opacity: .2; } }
-html[data-reduce-motion="true"] .aura-hype[data-fashion-level] .aura-hype-field::after { animation: none; transform: none; opacity: .2; }
+.aura-hype[data-fashion-level="COLLAB_DROP"] .aura-hype-field::after { content: none; }
 html[data-theme="contrast"] .fashion-hype-header { background: #000; color: #fff; }
 .fashion-hype-level-previews { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: .75rem; margin-block: 1rem; }
 .fashion-hype-level-preview { overflow: hidden; border: 2px solid var(--line-soft); border-radius: 12px; }

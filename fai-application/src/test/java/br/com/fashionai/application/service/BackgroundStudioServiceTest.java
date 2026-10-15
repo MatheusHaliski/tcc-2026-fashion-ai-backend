@@ -195,11 +195,13 @@ class BackgroundStudioServiceTest {
     void bordaEMetamorfoseSaoPreservadasNaArteComRevisao() {
         WardrobeItem item = world.piecesOf(world.me).get(0);
         Map<String, Object> border = cfg("mode", "GRADIENT", "from", "#123456", "to", "#abcdef", "effect", "SHIMMER");
-        Map<String, Object> saved = studio.savePiece(ana, item.getId(), cfg("border", border, "auraMetamorphose", "PRISMA"));
-        assertThat(map(saved.get("background"))).containsEntry("border", border).containsEntry("auraMetamorphose", "PRISMA");
+        Map<String, Object> saved = studio.savePiece(ana, item.getId(), cfg("border", border, "auraMetamorphose", "PRISMA", "auraMetamorphosePreset", "NIKE_ORANGE"));
+        assertThat(map(saved.get("background"))).containsEntry("border", border).containsEntry("auraMetamorphose", "PRISMA").containsEntry("auraMetamorphosePreset", "NIKE_ORANGE");
         assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("border", cfg("color", "url(secret)")))).isInstanceOf(ApiException.class);
         assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("border", cfg("effect", "UNKNOWN")))).isInstanceOf(ApiException.class);
         assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("auraMetamorphose", "UNKNOWN"))).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("auraMetamorphose", "PRISMA", "auraMetamorphosePreset", "UNKNOWN"))).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("auraMetamorphose", "PRISMA", "auraMetamorphosePreset", "ASICS_WHITE"))).isInstanceOf(ApiException.class);
     }
 
     @Test

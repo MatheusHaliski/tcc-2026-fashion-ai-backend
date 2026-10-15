@@ -5,7 +5,7 @@ import {FashionCardHeader,FashionCardStats} from './fashion-card-panel';
 afterEach(cleanup);
 it('renders server rarity and actual global score in the header',()=>{
  const {container}=renderApp(<FashionCardHeader state={{kind:'available',score:84,level:'HOT',direction:null,stale:false}} summary={{status:'AVAILABLE',fashionCard:{status:'CLASSIFIED',tier:'RARE',ruleVersion:1,source:'HYPE_SIGNALS'}}}/>);
- expect(screen.getByText('Rara')).toBeTruthy();expect(container.querySelector('.led-number')?.textContent).toBe('84');expect(container.textContent).not.toContain('/99');expect(container.textContent).not.toContain('/100');
+ expect(screen.getByText('Rara')).toBeTruthy();expect(screen.getByText('HYPE SCORE')).toBeTruthy();expect(container.querySelector('.led-number')?.textContent).toBe('84');expect(container.textContent).not.toContain('/99');expect(container.textContent).not.toContain('/100');
 });
 it('does not invent versatility, serial numbers or legacy',()=>{
  const {container}=renderApp(<FashionCardStats styles={['Streetwear','Y2K']}/>);

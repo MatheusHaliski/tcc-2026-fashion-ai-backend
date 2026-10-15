@@ -261,7 +261,7 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
       <CardHeader owner={scheme.owner} linked={!preview} sub={<>{relative(scheme.publishedAt ?? scheme.createdAt)} · {vis}</>}
         trailing={<>{scheme.lookDoDia && <span className="badge badge-chalk">{t("lookbook.daily")}</span>}{!preview && <PostMenu scheme={scheme} remixInRow={expanded} />}{headerExtra}</>} />
       <CardBorder entityId={`SCHEME:${scheme.id}`} background={{...scheme.background,...studio}} auraHype={auraEnabled} hype={hypeState}/>
-      <div className="scheme-stage"><AuraMetamorphose mode={studio.auraMetamorphose} preview={!expanded}/>{auraEnabled&&<AuraHype state={hypeState} summary={hype.summary} mode={auraMode} preview={preview}/>}
+      <div className="scheme-stage"><AuraMetamorphose mode={studio.auraMetamorphose} presetId={studio.auraMetamorphosePreset} preview={!expanded}/>{auraEnabled&&<AuraHype state={hypeState} summary={hype.summary} mode={auraMode} preview={preview}/>}
         {hasArt && art && <CardArtLayer art={art} />}
         {compact ? (
           <div className="scheme-container is-compact" data-anatomy={anatomy} data-piece-anatomy={pieceAnatomy} style={boxTone}>

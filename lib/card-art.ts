@@ -29,6 +29,7 @@ interface Studio {
   compositionPreset?: FashionPreset | null;
   border?: import("@/lib/card-border").CardBorderConfig | null;
   auraMetamorphose?: string | null;
+  auraMetamorphosePreset?: string | null;
   auraHype?: string | null;
   color?: string | null; gradient?: unknown; gradientPresetId?: string | null; seasonalPresetId?: string | null; seasonalAuto?: boolean;
   aura?: { variantId?: string; format?: string } | null; materialId?: string | null; aiArt?: { url?: string } | null; uploadUrl?: string | null;
