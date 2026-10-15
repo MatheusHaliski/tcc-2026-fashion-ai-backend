@@ -15,6 +15,9 @@ import java.util.UUID;
 
 /** Repositório Spring Data de CatalogImage (RF47 · catálogo global). */
 public interface CatalogImageRepository extends JpaRepository<CatalogImage, UUID> {
+    @Query(value="SELECT * FROM catalog_images WHERE is_canonical = true AND processing_status = 'APPROVED' AND usage_status = 'PERSISTED' AND stored_url IS NOT NULL AND (updated_at > :after OR (updated_at = :after AND id > :afterId)) ORDER BY updated_at,id LIMIT :lim",nativeQuery=true)
+    List<CatalogImage> findVtonFeed(@Param("after")Instant after,@Param("afterId")String afterId,@Param("lim")int limit);
+
     List<CatalogImage> findByProductIdOrderByPrimaryDescCreatedAtAsc(UUID productId);
 
     List<CatalogImage> findByProductIdInAndPrimaryTrue(Collection<UUID> productIds);

@@ -8,7 +8,7 @@ comprova ajuste físico, precisão milimétrica ou geometria escondida pela foto
 ## Fluxo
 
 `backend autorizado → fila de anotação → modelo de roupa → validação geométrica →
-evidência corporal → warping → oclusão → PNG privado`
+evidência corporal → warping → oclusão → PNG destinado ao dono da solicitação`
 
 - `auto_catalog.py`: atributos tipados, máscaras, curvas e rejeição de evidência insuficiente.
 - `store.py` / `monitor.py`: cache por conteúdo e versão, leases, retries limitados e ingestão incremental.
@@ -43,3 +43,14 @@ Veja [configuração e estado do projeto](deploy/google-cloud/README.md) e
 Os testes usam imagens geométricas e doubles explicitamente identificados.
 Eles validam restrições e contratos; não comprovam detecção automática em fotos
 reais, geração FLAME/SMPL-X, execução CUDA ou desempenho de um modelo treinado.
+
+## Diagnóstico corporal com modelo real
+
+A rota privada `/v1/body/pose` usa MediaPipe quando `VTON_POSE_MODEL_PATH` está
+configurado e as dependências de `requirements-pose.txt` estão instaladas.
+Ela retorna `POSE_ONLY`, sem preencher automaticamente o contrato anatômico
+completo. A ponte Java publica `/api/try-on/body-pose` com propriedade da foto e
+consentimento por solicitação; as rotas do catálogo são administrativas.
+
+[Evidência real e configuração do backend](../../docs/provador/vton-backend-2026-10-15/README.md).
+[Modelos pesquisados e adaptações ainda necessárias](MODEL_CANDIDATES.md).
