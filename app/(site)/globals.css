@@ -991,7 +991,7 @@ button.bento-cell:focus-visible { outline: none; box-shadow: inset 0 0 0 3px var
 .brand-link { display: inline-flex; align-items: center; gap: 8px; min-height: var(--control-md); flex: none; }
 .brand-link img { width: 32px; height: 32px; }
 .brand-name { font-family: var(--font-editorial); font-weight: 600; font-size: 1.125rem; letter-spacing: -0.01em; }
-@media (max-width: 359px) { .brand-name { display: none; } }
+@media (max-width: 639px) { .brand-name { display: none; } }
 .header-search { position: relative; display: none; flex: 1; max-width: 460px; margin-left: 12px; }
 .header-search .input { padding-left: 38px; border-radius: 999px; background: var(--surface-2); border-color: transparent; }
 .header-search .input:focus { background: var(--surface); border-color: var(--ink); }

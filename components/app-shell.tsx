@@ -59,6 +59,15 @@ const THEMES: { mode: ThemeMode; key: string }[] = [
   { mode: "DARK", key: "settings.dark" }, { mode: "HIGH_CONTRAST", key: "settings.contrast" },
 ];
 
+function FaiXpIcon() {
+  return (
+    <svg width={24} height={24} viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+      <path d="M12 2.75 20.25 7.5v9L12 21.25 3.75 16.5v-9L12 2.75Z" stroke="currentColor" strokeWidth={1.5} />
+      <text x="12" y="14.8" textAnchor="middle" fill="currentColor" fontSize="7.5" fontWeight="800" letterSpacing="-.35">XP</text>
+    </svg>
+  );
+}
+
 function useIsActive() {
   const pathname = usePathname(); const { user } = useAuth();
   return (href: string) => {
@@ -284,9 +293,15 @@ export function AppShell({ children }: { children: ReactNode }) {
           </form>
           <div className="header-actions">
             {!ready ? (
-              <><Skeleton className="h-10 w-10 rounded-full" /><Skeleton className="h-10 w-10 rounded-full" /></>
+              <>{Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="h-10 w-10 rounded-full" />)}</>
             ) : user ? (
               <>
+                <Link href="/lookbook" className="btn btn-ghost btn-icon" aria-label={t("nav.xp")} title={t("nav.xp")}>
+                  <FaiXpIcon />
+                </Link>
+                <Link href="/points" className="btn btn-ghost btn-icon" aria-label={t("nav.points")} title={t("nav.points")}>
+                  <FaiIcon id="ACT-40" size={24} variant="glyph" decorative />
+                </Link>
                 <Link href="/notifications" className="btn btn-ghost btn-icon relative" aria-label={unread ? `${t("nav.notifications")} (${unread})` : t("nav.notifications")}>
                   <FaiIcon id="ACT-03" size={24} variant="glyph" decorative />
                   {unread > 0 && <span className="notif-badge tabular" aria-hidden>{unread > 99 ? "99+" : unread}</span>}

@@ -31,6 +31,8 @@ describe("casca do app", () => {
       renderApp(<AppShell><p>conteúdo</p></AppShell>);
       await waitFor(() => expect(screen.getByText("conteúdo")).toBeTruthy());
       await act(async () => { await new Promise((r) => setTimeout(r, 30)); });
+      expect(document.querySelector('header a[href="/lookbook"]')?.getAttribute("aria-label")).toBe("Meu FAI XP");
+      expect(document.querySelector('header a[href="/points"]')?.getAttribute("aria-label")).toBe("FAI Points");
       // abre e fecha o que houver: menu lateral, criar, tema, recolher
       for (const b of screen.getAllByRole("button").slice(0, 12)) { fireEvent.click(b); fireEvent.keyDown(document, { key: "Escape" }); }
       expect(screen.getAllByRole("link").length).toBeGreaterThan(3);
