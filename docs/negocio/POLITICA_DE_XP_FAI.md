@@ -1,6 +1,6 @@
 # Política de concessão de FAI XP
 
-**Status:** proposta de padronização  
+**Status:** proposta de padronização
 **Escopo:** ações verificáveis no Fashion AI, incluindo criações, jogos FLAIR e cenários de marcas ou celebridades.
 
 Esta política define uma escala única para recompensar ações de valor crescente. Os valores são referências para configurar
