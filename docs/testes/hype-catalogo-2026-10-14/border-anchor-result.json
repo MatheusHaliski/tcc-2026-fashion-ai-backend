@@ -1,0 +1,27 @@
+{
+  "directExpanded": {
+    "position": "relative",
+    "offsetParentIsCard": true
+  },
+  "variants": [
+    {
+      "kind": "preview",
+      "position": "relative",
+      "offsetParentIsCard": true,
+      "inside": true
+    },
+    {
+      "kind": "selectable",
+      "position": "relative",
+      "offsetParentIsCard": true,
+      "inside": true
+    },
+    {
+      "kind": "flip-false",
+      "position": "relative",
+      "offsetParentIsCard": true,
+      "inside": true
+    }
+  ],
+  "scope": "real ExpandedPiece markup; clone variants exercise shared CSS without a flippable wrapper"
+}

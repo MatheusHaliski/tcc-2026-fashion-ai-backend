@@ -120,3 +120,11 @@ describe("foto oficial preservada", () => {
     expect(pieceCatalogSource({ ...piece, imageUrl: "user.jpg" })).toBeUndefined();
   });
 });
+
+// Required catalog framing never falls back to an unprocessed source.
+it("enquadramento obrigatório oculta a original ao falhar",()=>{
+ const {container}=render(<CatalogPhoto requiredFrame alt="Peça" image={{url:"/media/framed.jpg",mode:"PROCESSED",sourceUrl:"https://brand.example/raw.jpg"}} fallbackUrl="https://brand.example/raw.jpg"/>);
+ fireEvent.error(container.querySelector('img')!);
+ expect(container.querySelector('img')).toBeNull();
+ expect(container.querySelector('[role="alert"]')).toBeTruthy();
+});

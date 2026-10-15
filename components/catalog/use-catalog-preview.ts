@@ -46,7 +46,7 @@ function preview(id: string) {
 export function useCatalogPreview(product: CatalogProduct) {
   const ref = useRef<HTMLElement>(null);
   const [framed, setFramed] = useState<CatalogProduct | null>(null);
-  const [pending, setPending] = useState(() => !hasCachedPreview(product) && !!(product.imageUrl || product.catalogImage?.url));
+  const [pending, setPending] = useState(() => !hasCachedPreview(product) && !!(product.imageUrl || product.catalogImage?.url || product.imageSource?.imageUrl));
   const [failed, setFailed] = useState<"unsupported" | "source" | "service" | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   useEffect(() => {
@@ -54,8 +54,9 @@ export function useCatalogPreview(product: CatalogProduct) {
     const cachedPreview = hasCachedPreview(product);
     setFramed(cachedPreview ? product : null);
     setFailed(null);
-    setPending(!cachedPreview && !!(product.imageUrl || product.catalogImage?.url));
-    if (cachedPreview || (!product.imageUrl && !product.catalogImage?.url)) return;
+    const hasSource = !!(product.imageUrl || product.catalogImage?.url || product.imageSource?.imageUrl);
+    setPending(!cachedPreview && hasSource);
+    if (cachedPreview || !hasSource) return;
     const start = () => {
       if (started) return;
       started = true;
@@ -70,6 +71,6 @@ export function useCatalogPreview(product: CatalogProduct) {
     });
     if (ref.current) observer?.observe(ref.current);
     return () => { alive = false; observer?.disconnect(); };
-  }, [product.id, product.imageUrl, retryCount]);
+  }, [product.id, product.imageUrl, product.catalogImage?.url, product.catalogImage?.mode, product.catalogImage?.crop, product.imageSource?.imageUrl, retryCount]);
   return { ref, product: framed ?? product, pending, failed, retry: () => { cache.delete(product.id); setRetryCount(n => n + 1); } };
 }

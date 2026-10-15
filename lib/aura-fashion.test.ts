@@ -16,3 +16,9 @@ describe('curated fashion assets',()=>{
  });
  it('keeps a manually uploaded artwork above the preset',()=>expect(resolveCardArt({compositionPreset:preset,uploadUrl:'/my-photo.png'}).kind).toBe('upload'));
 });
+
+it('aceita MP4 local com pôster e recusa vídeo externo',()=>{
+ const animated={...preset,video:'/aura/fashion-curated/satin-ivory.mp4'};
+ expect(resolveCardArt({compositionPreset:animated}).video).toMatchObject({src:animated.video,poster:preset.image});
+ expect(fashionPreset({...animated,video:'https://example.com/a.mp4'})).toBeNull();
+});

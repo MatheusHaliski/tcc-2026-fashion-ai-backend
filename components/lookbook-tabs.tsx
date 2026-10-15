@@ -27,6 +27,7 @@ import { FaiIcon } from "@/components/fai-icon";
 import { LookExports } from "@/components/look-exports";
 import { SavedLooks } from "@/components/looks/saved-looks";
 import { FlairCollectionTab } from "@/components/flair/flair-collection";
+import { MyArts } from "@/components/my-arts";
 import { MomentsTimelineSection } from "@/components/moments/moment-timeline";
 
 interface Overview { owner: UserCard; self: boolean; visible: boolean; institutional: boolean; tabs: { id: string; label: string; count: number }[]; emptyCloset?: { message: string; action: { label: string; href: string } } | null; panelVersion?: string; groupingSuggestionsAvailable?: boolean; }
@@ -40,7 +41,7 @@ interface Overview { owner: UserCard; self: boolean; visible: boolean; instituti
  * - Salvos: looks e peças salvos (SegmentPicker; ids antigos saved_looks/saved_pieces viram alias).
  * "Meus cupons resgatados" saiu (era o mesmo componente de /coupons).
  */
-export type TabId = "closet" | "flair" | "looks" | "publications" | "favorites" | "dna" | "saved" | "daily" | "capsule" | "groups" | "insights" | "moments";
+export type TabId = "arts" | "closet" | "flair" | "looks" | "publications" | "favorites" | "dna" | "saved" | "daily" | "capsule" | "groups" | "insights" | "moments";
 export type SavedView = "looks" | "pieces";
 /** categorias das peças (RF4): só as quatro — peça única não existe mais no formulário */
 const CATEGORIES = ["upper_piece", "lower_piece", "shoes_piece", "accessory_piece"];
@@ -64,7 +65,7 @@ export function LookbookTabs({ ownerId, initialTab = "closet", initialSaved = "l
   // "Minhas cartas FLAIR" (FLAIR-UT §5) logo depois do closet: a carta é a cópia FLAIR da peça
   const tabs = [{ id: "closet" as TabId, label: t("lookbook.closet"), count: count("closet") }, { id: "flair" as TabId, label: t(ov.self ? "lookbook.flair" : "lookbook.flairVisitor") }, { id: "looks" as TabId, label: t("lookbook.looks"), count: ov.self ? undefined : count("looks") },
     { id: "publications" as TabId, label: t("lookbook.publications"), count: count("publications") }, { id: "favorites" as TabId, label: t("lookbook.favorites"), count: count("favorites") },
-    ...(ov.self ? [{ id: "saved" as TabId, label: t("lookbook.saved"), count: saved }, { id: "dna" as TabId, label: t("lookbook.dna") },
+    ...(ov.self ? [{ id: "arts" as TabId, label: t("myArts.title") }, { id: "saved" as TabId, label: t("lookbook.saved"), count: saved }, { id: "dna" as TabId, label: t("lookbook.dna") },
       { id: "daily" as TabId, label: t("lookbook.daily") }, { id: "capsule" as TabId, label: t("lookbook.capsule"), count: count("capsule") }] : []), { id: "groups" as TabId, label: t("lookbook.groups") }, { id: "moments" as TabId, label: t("nav.moments") },
     ...(ov.self ? [{ id: "insights" as TabId, label: t("lookbook.insights") }] : [])];
   return (
@@ -75,6 +76,7 @@ export function LookbookTabs({ ownerId, initialTab = "closet", initialSaved = "l
       {tab === "looks" && <LooksTab ownerId={ownerId} self={ov.self} />}
       {tab === "publications" && <PublicationsTab ownerId={ownerId} />}
       {tab === "favorites" && <FavoritesTab ownerId={ownerId} />}
+      {tab === "arts" && ov.self && <MyArts/>}
       {tab === "dna" && ov.self && <DnaLooksTab />}
       {tab === "saved" && ov.self && <SavedTab initial={initialSaved} looks={count("saved_looks")} pieces={count("saved_pieces")} />}
       {tab === "daily" && ov.self && <DailyTab />}

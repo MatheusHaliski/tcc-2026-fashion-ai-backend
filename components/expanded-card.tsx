@@ -115,7 +115,7 @@ type Slide = { alternatives?: (string | null | undefined)[]; key: string; src: s
  * Fotos da peça: a foto de produto aprovada primeiro (inteira, sem corte); depois, se houver, a foto no manequim. A
  * foto de estúdio fica contida no quadro 4:5 e o degradê do estúdio continua além dela, sem emenda nem tarja.
  */
-function PieceGallery({ slides, onOpen }: { slides: Slide[]; onOpen: (i: number) => void }) {
+function PieceGallery({ slides, onOpen, overlay }: { slides: Slide[]; onOpen: (i: number) => void; overlay?: ReactNode }) {
   const { t } = useI18n();
   const [i, setI] = useState(0); const [bg, setBg] = useState<string | undefined>(undefined);
   const slideRef = useRef<HTMLButtonElement>(null); const imgRef = useRef<HTMLImageElement>(null);
@@ -134,7 +134,8 @@ function PieceGallery({ slides, onOpen }: { slides: Slide[]; onOpen: (i: number)
   return (
     <div className="pd-gallery" role="group" aria-roledescription={t("pieceDetail.carrossel")} aria-label={t("pieceDetail.fotos")}>
       <button ref={slideRef} type="button" className={s.crop ? "pd-slide is-catalog-crop" : "pd-slide"} style={{ ...(s.backdrop ? { background: bg ?? s.backdrop.edge } : {}), ...(s.crop ? { aspectRatio: photoAspect(s.crop.aspect) } : {}) }} onClick={() => onOpen(k)} aria-label={t("pieceDetail.ampliar", { name: s.alt })}>
-        {s.crop ? <CatalogPhoto image={s.crop} alternatives={s.alternatives} alt="" /> : <MediaImage ref={imgRef} src={s.src} fallbackSources={s.alternatives} alt="" className={s.fit === "contain" ? "is-contain" : "is-cover"} onLoad={measure} />}
+        {s.crop ? <CatalogPhoto requiredFrame image={s.crop} alternatives={s.alternatives} alt="" /> : <MediaImage ref={imgRef} src={s.src} fallbackSources={s.alternatives} alt="" className={s.fit === "contain" ? "is-contain" : "is-cover"} onLoad={measure} />}
+        {overlay}
       </button>
       {n > 1 && (
         <>
@@ -286,8 +287,8 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
         <div className="pc-frame"><div className="pc-content">
         <CardHeader owner={p.owner} sub={vis} trailing={headerExtra} />
         <div className="pd-layout">
-          <div className="pd-media relative"><AuraMetamorphose mode={p.background?.auraMetamorphose as string | undefined}/>{auraEnabled && <AuraHype state={hypeViewState(hype.summary, hype)} mode={auraMode} />}
-            <PieceGallery key={p.id + (p.studioImageUrl ?? "") + (p.mannequinImageUrl ?? "")} slides={slides} onOpen={setFullscreen} />
+          <div className="pd-media relative">
+            <PieceGallery key={p.id + (p.studioImageUrl ?? "") + (p.mannequinImageUrl ?? "")} slides={slides} onOpen={setFullscreen} overlay={<><AuraMetamorphose mode={p.background?.auraMetamorphose as string | undefined}/>{auraEnabled && <AuraHype state={hypeViewState(hype.summary,hype)} mode={auraMode}/>}</>} />
             {studioBusy && <div className="pd-busy" aria-live="polite">{t("common.montando_o_estudio")}</div>}
           </div>
           <div className="pd-info">

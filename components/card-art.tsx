@@ -47,11 +47,14 @@ export function ArtVideo({ src, poster, onStuck }: { src: string; poster?: strin
     // muted como atributo, não só como propriedade: o Safari decide o autoplay olhando o atributo
     v.muted = true; v.defaultMuted = true; v.setAttribute("muted", ""); v.setAttribute("playsinline", "");
     if (typeof IntersectionObserver === "undefined") { v.autoplay = true; v.src = src; return; }   // sem observador: o autoplay do navegador decide
+    const motion = window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    const reduced = () => !!motion?.matches || document.documentElement.dataset.reduceMotion === "true";
     let seen = false;
     let retry: (() => void) | null = null;
     const mark = (stuck: boolean) => stuckRef.current?.(stuck);
     const dropRetry = () => { if (retry) { document.removeEventListener("pointerdown", retry, true); document.removeEventListener("keydown", retry, true); retry = null; } };
     const tryPlay = () => {
+      if (reduced()) { if (!v.paused) v.pause(); return; }
       if (!seen || document.visibilityState === "hidden" || !v.getAttribute("src")) return;
       let p: Promise<void> | undefined;
       try { p = v.play(); } catch { return; }
@@ -74,12 +77,17 @@ export function ArtVideo({ src, poster, onStuck }: { src: string; poster?: strin
     // visível: toca; fora da tela: pausa (fica pronto para voltar sem baixar de novo)
     const seenIO = new IntersectionObserver(([e]) => { seen = e.isIntersecting; if (seen) tryPlay(); else if (!v.paused) v.pause(); });
     nearIO.observe(v); seenIO.observe(v);
+    const motionChanged = () => { if(reduced()) v.pause(); else tryPlay(); };
+    motion?.addEventListener("change",motionChanged);
+    const prefsObserver = new MutationObserver(motionChanged);
+    prefsObserver.observe(document.documentElement,{attributes:true,attributeFilter:["data-reduce-motion"]});
     const onVisible = () => { if (document.visibilityState === "visible") tryPlay(); };
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("pageshow", tryPlay);
     v.addEventListener("canplay", tryPlay);
     return () => {
       nearIO.disconnect(); seenIO.disconnect(); dropRetry();
+      motion?.removeEventListener("change",motionChanged);prefsObserver.disconnect();
       // trocou o arquivo (ou desmontou): solta o anterior e o aviso de bloqueio dele
       if (v.getAttribute("src")) { v.pause(); v.removeAttribute("src"); v.load(); }
       stuckRef.current?.(false);

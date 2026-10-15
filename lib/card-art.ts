@@ -158,7 +158,7 @@ function resolveLayers(bg?: Record<string, unknown> | null, opts?: { season?: st
   const ai = s.aiArt?.url; const upload = s.uploadUrl;
   if (ai || upload) return { ...art, kind: ai ? "ai" : "upload", image: media(ai ?? upload), label: ai ? tr("lib.cardArt.arte_com_ia") : tr("lib.cardArt.imagem_enviada") };
   const curated = fashionPreset(s.compositionPreset);
-  if (curated) return { ...art, kind:"aura", image:curated.image, label:curated.name, presetId:curated.id };
+  if (curated) return { ...art, kind:"aura", image:curated.video ? undefined : curated.image, video:curated.video ? {src:curated.video,poster:curated.image} : undefined, label:curated.name, presetId:curated.id };
   const variantId = auraVariantId(s.aura?.variantId);
   if (s.aura?.variantId?.startsWith("aura_hype")) {
     return { ...art, kind: "aura", base: "linear-gradient(135deg, #07152c, #0d2e58 52%, #321450)", presetId: "aura_hype", animation: "shimmer", label: tr("lib.cardArt.aura_hype_scanner") };

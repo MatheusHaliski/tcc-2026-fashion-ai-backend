@@ -102,4 +102,33 @@ class FaiPointsShopTest {
                 .extracting("code").isEqualTo("CONDICAO_DE_COMPRA");
         verify(ledger, never()).save(any());
     }
+    @Test
+    void vendaCreditaCriadorSemGerarPontosVitalicios() {
+        UUID seller = UUID.randomUUID();
+        User creatorUser = new User(); creatorUser.assignId(seller);
+        when(catalog.sellerOf("BRD-X-1")).thenReturn(Optional.of(seller));
+        when(ledger.lockOwner(seller)).thenReturn(Optional.of(creatorUser));
+        item.setCreatorUserId(seller);
+        when(ledger.balance(buyer)).thenReturn(150L);
+        service.buy(me, "BRD-X-1");
+        var entries = org.mockito.ArgumentCaptor.forClass(FaiPointsLedgerEntry.class);
+        verify(ledger, org.mockito.Mockito.times(2)).save(entries.capture());
+        assertThat(entries.getAllValues()).extracting(FaiPointsLedgerEntry::getDelta).containsExactly(-100, 100);
+        assertThat(entries.getAllValues()).allMatch(e -> !e.isCountsLifetime());
+        assertThat(entries.getAllValues().get(1).getUserId()).isEqualTo(seller);
+        var ordered = inOrder(ledger, catalog);
+        UUID first = buyer.compareTo(seller) < 0 ? buyer : seller;
+        UUID second = first.equals(buyer) ? seller : buyer;
+        ordered.verify(ledger).lockOwner(first); ordered.verify(ledger).lockOwner(second);
+        ordered.verify(catalog).lockBySku("BRD-X-1");
+    }
+
+    @Test
+    void compraPropriaNaoGeraDebitoCreditoOuEntrega() {
+        when(catalog.sellerOf("BRD-X-1")).thenReturn(Optional.of(buyer));
+        assertThatThrownBy(() -> service.buy(me, "BRD-X-1")).isInstanceOf(ApiException.class)
+            .extracting("code").isEqualTo("COMPRA_PROPRIA");
+        verify(ledger, never()).save(any()); verify(inventory, never()).save(any());
+    }
+
 }

@@ -72,7 +72,7 @@ const CONTAIN = { position: "absolute", inset: 0, overflow: "hidden", borderRadi
 export function ArtStage({ bg, art, density, pieceHex }: { bg?: Record<string, unknown> | null; art: PieceArt; density: "compact" | "expanded"; pieceHex?: string | null }) {
   const resolved = resolveCardArt(bg);
   // feed leve: no card compacto a arte é estática (sem animação de preset e, no lugar do vídeo, o pôster dele)
-  const user = density === "expanded" || resolved.kind === "none" ? resolved
+  const user = density === "expanded" || resolved.kind === "none" || !!fashionPreset(studioOf(bg).compositionPreset)?.video ? resolved
     : { ...resolved, animation: null, video: undefined, image: resolved.image ?? resolved.video?.poster ?? undefined };
   const { family, variant, season } = art.template;
   const fx = art.effects;

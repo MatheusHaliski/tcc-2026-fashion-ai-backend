@@ -299,7 +299,7 @@ h1, h2, h3, h4 { margin: 0; }
 /* ---------- Card do look (anatomias v18, docs/anatomias/anatomias_card_v18.html): cabeçalho do post → container do
    esquema → ações do post. O título é o link do card e cobre o container (área de clique estendida); botões internos
    ficam por cima. O container é uma superfície de 1 px; o tracejado aparece só no editor (pré-visualização). ---------- */
-.fai-card { background: var(--card-bg, var(--surface)); color: var(--card-ink, var(--ink)); border: 1.6px solid var(--card-border, var(--line)); border-radius: var(--card-radius, 6px); display: flex; flex-direction: column; overflow: hidden; }
+.fai-card { position: relative; background: var(--card-bg, var(--surface)); color: var(--card-ink, var(--ink)); border: 1.6px solid var(--card-border, var(--line)); border-radius: var(--card-radius, 6px); display: flex; flex-direction: column; overflow: hidden; }
 .fai-card .c-header { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 4px 4px 4px 12px; background: color-mix(in srgb, var(--card-bg, var(--surface)) 85%, var(--ink) 4%); }
 .fai-card .c-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--surface-3); flex: none; overflow: hidden; }
 .fai-card .c-who { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
@@ -3694,7 +3694,7 @@ button.cbc-slot-btn:hover { border-color: var(--line); background: var(--surface
 .aura-hype-global small { font-size: var(--text-caption); letter-spacing: .22em; line-height: 1; }
 .aura-hype-total { display: flex; align-items: end; gap: 8px; color: #d6fff5; }
 .aura-hype-total .led-number { font-size: 29px; }
-.aura-hype-total > span:last-child { font-size: var(--text-caption); padding-bottom: 2px; color: #b4dddc; letter-spacing: .04em; }
+.aura-hype-total > .aura-hype-stale { font-size: var(--text-caption); padding-bottom: 2px; color: #b4dddc; letter-spacing: .04em; }
 .aura-hype[data-effect="XRAY"] { box-shadow: inset 0 0 40px #bfa1ff33; }
 .aura-hype[data-effect="STARS"] { box-shadow: inset 0 0 32px #f9dc9a24; }
 @media (prefers-reduced-motion: reduce) { .fgc-metal-light,.fgc.is-rare .fgc-face::after { animation: none; background-position: 50% 0; } }
@@ -3730,3 +3730,43 @@ html[data-theme="contrast"] .card-border:not([data-pulse]) { background: current
 .fgc-attributes { column-gap: 6px; padding-inline: 4px; }
 .fgc-attributes > div { gap: 4px; min-width: 0; }
 .fgc-attributes dt { letter-spacing: .015em; }
+
+/* Score Hype stays inside its photographic stage at all sizes. */
+.aura-hype { overflow: hidden; border-radius: inherit; }
+.aura-hype-score { right: clamp(4px,2%,12px); bottom: clamp(4px,2%,12px); max-width: calc(100% - 8px); padding: 6px 8px; }
+.aura-hype-total .led-number { font-size: clamp(18px,3vw,29px); }
+
+/* 40 photo treatments: eight technology patterns, five fashion palettes. */
+.aura-hype[data-preset] { --hype-ink: #77e6df; --hype-secondary: #75a7d8; }
+.aura-hype[data-preset] .aura-hype-field { color: var(--hype-ink); opacity: .25; }
+.aura-hype[data-preset] .aura-hype-score { border-color: var(--hype-ink); }
+.aura-hype[data-preset] .aura-hype-total { color: var(--hype-ink); }
+.aura-hype[data-preset] .aura-hype-field::after { animation-duration: var(--hype-period); }
+.aura-hype[data-tech="CONTOUR"] .aura-hype-field { border: 2px solid var(--hype-ink); border-radius: inherit; box-shadow: inset 0 0 16px var(--hype-secondary); }
+.aura-hype[data-tech="MESH"] .aura-hype-field { background-image: linear-gradient(var(--hype-angle),transparent 96%,var(--hype-ink) 98%),linear-gradient(90deg,transparent 96%,var(--hype-secondary) 98%); background-size: var(--hype-spacing) var(--hype-spacing); }
+.aura-hype[data-tech="HOLO"] .aura-hype-field { background: linear-gradient(var(--hype-angle),transparent 20%,var(--hype-ink) 48%,transparent 55%,var(--hype-secondary) 75%,transparent); mix-blend-mode: soft-light; }
+.aura-hype[data-tech="FIBER"] .aura-hype-field { background: repeating-linear-gradient(var(--hype-angle),transparent 0,transparent 30px,var(--hype-ink) 31px,transparent 32px); mask-image: linear-gradient(90deg,#000,transparent 25%,transparent 75%,#000); }
+.aura-hype[data-tech="PRISM"] .aura-hype-field { background: conic-gradient(from var(--hype-angle),transparent,var(--hype-ink),transparent,var(--hype-secondary),transparent); mix-blend-mode: soft-light; }
+.aura-hype[data-tech="PARTICLES"] .aura-hype-field { background-image: radial-gradient(circle,var(--hype-ink) 1px,transparent 2px); background-size: var(--hype-spacing) var(--hype-spacing); mask-image: radial-gradient(ellipse,transparent 35%,#000 95%); }
+.aura-hype[data-tech="SPOTLIGHT"] .aura-hype-field { background: radial-gradient(ellipse at 25% 20%,var(--hype-ink),transparent 50%); mix-blend-mode: soft-light; }
+
+/* Artist studio: original CSS stage lighting, with explicit motion controls. */
+.era-editorial { margin-block: 1rem; overflow: hidden; border: 1px solid var(--line-soft); border-radius: 1rem; background: var(--surface); }
+.era-editorial-stage { position: relative; min-height: 16rem; display: grid; place-items: center; overflow: hidden; color: white; background: radial-gradient(ellipse at top, var(--era-accent), var(--era-dark) 75%); }
+.era-editorial-title { position: relative; z-index: 1; padding: 2rem; text-align: center; max-width: 42rem; }
+.era-editorial-title h3 { font-size: clamp(1.5rem, 4vw, 3rem); line-height: 1.15; text-wrap: balance; }
+.era-symbols { display: flex; flex-wrap: wrap; justify-content: center; gap: 1rem; margin-top: 1rem; font-size: 1.8rem; }
+.era-beams { position: absolute; inset: -50%; opacity: .22; background: conic-gradient(from 30deg at 50% 0%, transparent 0 25deg, var(--era-light) 30deg 36deg, transparent 42deg 65deg, var(--era-light) 70deg 78deg, transparent 85deg 360deg); }
+.era-editorial[data-motion="on"] .era-beams { animation: era-stage-sweep 12s ease-in-out infinite alternate; }
+@keyframes era-stage-sweep { from { transform: rotate(-12deg); } to { transform: rotate(12deg); } }
+.era-preset-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: .75rem; }
+.era-preset { min-height: 6rem; padding: 1rem; color: white; border: 2px solid transparent; border-radius: .75rem; display: grid; gap: .5rem; text-shadow: 0 1px 3px #000; }
+.era-preset[aria-pressed="true"] { border-color: var(--text); outline: 2px solid var(--surface); outline-offset: -4px; }
+.era-timeline { display: grid; gap: 1rem; padding: 1rem 0 1rem 1.5rem; border-inline-start: 2px solid var(--era-accent); }
+.era-timeline li { list-style: none; position: relative; }
+.era-timeline li::before { content: ""; position: absolute; left: -1.85rem; top: .4rem; width: .6rem; height: .6rem; border-radius: 50%; background: var(--era-accent); }
+.era-timeline time { font-variant-numeric: tabular-nums; color: var(--text-muted); }
+.era-mural { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1rem; }
+.era-mural img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: .5rem; }
+@media (prefers-reduced-motion: reduce) { .era-beams { animation: none !important; } }
+html[data-reduce-motion="true"] .era-beams { animation: none !important; }

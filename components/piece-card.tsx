@@ -87,7 +87,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
     : <span>{subcategoryLabel(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>;
   const media = (
     <>
-      {crop ? <CatalogPhoto image={crop} alternatives={[piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} alt="" /> : img.src ? <MediaImage src={img.src} srcSet={img.srcSet} fallbackSources={[piece.studioFeedUrl, piece.studioThumbUrl, piece.studioImageUrl, piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
+      {crop ? <CatalogPhoto requiredFrame image={crop} alternatives={[piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} alt="" /> : img.src ? <MediaImage src={img.src} srcSet={img.srcSet} fallbackSources={[piece.studioFeedUrl, piece.studioThumbUrl, piece.studioImageUrl, piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
       <AuraMetamorphose mode={piece.background?.auraMetamorphose as string | undefined} preview/>{auraEnabled && <AuraHype state={hypeState} mode={auraMode} preview={preview} />}
       {(zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
       {(!piece.disponivel || piece.forDonation || (mine && piece.favorite) || piece.aiGeneratedImage) && (

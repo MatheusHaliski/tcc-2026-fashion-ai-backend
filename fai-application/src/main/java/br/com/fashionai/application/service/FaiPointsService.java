@@ -260,14 +260,21 @@ public class FaiPointsService {
     }
 
     /**
-     * Compra na loja do quarto. Saldo e estoque são conferidos sob trava: primeiro a linha do comprador (débitos do mesmo
+     * Compra na loja do quarto. Saldo e estoque são conferidos sob trava: primeiro as carteiras em ordem de UUID (débitos do mesmo
      * usuário em fila — nada de duas compras gastando o mesmo saldo), depois a do item (edição limitada não passa do
-     * estoque); a ordem fixa usuário → item evita deadlock entre compras.
+     * estoque); a ordem fixa carteiras ordenadas → item evita deadlock entre compras cruzadas.
      */
-    @Transactional
+    @Transactional(isolation = org.springframework.transaction.annotation.Isolation.READ_COMMITTED)
     public Map<String, Object> buy(CurrentUser user, String sku) {
-        ledger.lockOwner(user.id()).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario")));
+        // Read creator identity without loading a managed SKU, then lock all wallets in UUID order.
+        UUID seller = catalog.sellerOf(sku).orElse(null);
+        if (user.id().equals(seller)) throw new ApiException(409, "COMPRA_PROPRIA", "Você não pode comprar seu próprio item.");
+        java.util.stream.Stream.of(user.id(), seller).filter(java.util.Objects::nonNull).distinct().sorted()
+                .forEach(id -> ledger.lockOwner(id).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario"))));
         RoomCatalogItem c = catalog.lockBySku(sku).orElseThrow(() -> ApiException.notFound(Msg.t("faiPoints.item_da_loja")));
+        if (!java.util.Objects.equals(seller, c.getCreatorUserId()))
+            throw new ApiException(409, "OFERTA_ALTERADA", "O vendedor mudou. Atualize a oferta antes de confirmar novamente.");
+        String purchaseRef = UUID.randomUUID().toString();
         Level lvl = level(user.id());
         if (!lvl.atLeast(Level.valueOf(c.getRequiredLevel()))) {
             throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("faiPoints.disponivel_a_partir_do_nivel", c.getRequiredLevel()));
@@ -290,7 +297,7 @@ public class FaiPointsService {
             e.setActionCode("SHOP_PURCHASE");
             e.setRefType("SKU");
             e.setRefId(sku);
-            e.setIdempotencyKey(user.id() + ":SHOP_PURCHASE:" + sku + ":" + UUID.randomUUID());
+            e.setIdempotencyKey(user.id() + ":SHOP_PURCHASE:" + purchaseRef);
             e.setCountsLifetime(false);
             ledger.save(e);
             statement(e, c.getName());
@@ -303,6 +310,18 @@ public class FaiPointsService {
         item.setSource("PURCHASE");
         item.setAcquiredAt(Instant.now());
         inventory.save(item);
+        if (seller != null && c.getPricePoints() > 0) {
+            FaiPointsLedgerEntry credit = new FaiPointsLedgerEntry();
+            credit.setUserId(seller);
+            credit.setDelta(c.getPricePoints()); // zero platform fee; no cash conversion
+            credit.setActionCode("SHOP_SALE");
+            credit.setRefType("SHOP_PURCHASE");
+            credit.setRefId(purchaseRef);
+            credit.setIdempotencyKey(seller + ":SHOP_SALE:" + purchaseRef);
+            credit.setCountsLifetime(false); // sales never farm progression levels
+            ledger.save(credit);
+            statement(credit, c.getName());
+        }
         return Map.of("inventoryId", item.getId(), "sku", sku, "balance", balance(user.id()), "lifetime", lifetime(user.id()),
                 "level", level(user.id()).name(), "serial", String.valueOf(item.getSerial()));
     }

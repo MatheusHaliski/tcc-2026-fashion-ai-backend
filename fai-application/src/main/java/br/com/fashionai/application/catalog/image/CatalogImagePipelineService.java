@@ -79,7 +79,7 @@ public class CatalogImagePipelineService {
         this.tx = tx;
         this.pipeline = new CatalogImagePipeline(SemanticRegionRegistry.get(), persons.getIfAvailable());
         this.enabled = enabled;
-        this.batch = Math.max(1, batch);
+        this.batch = Math.min(32, Math.max(1, batch));
         this.maxAttempts = Math.max(1, maxAttempts);
     }
 
@@ -574,14 +574,16 @@ public class CatalogImagePipelineService {
 
     /**
      * Imagem que o card deve mostrar e como: master processado (nível B) ou URL original com o recorte semântico (nível A).
-     * null = sem canônica aprovada (o card segue com a foto principal, inteira).
+     * null = sem enquadramento aprovado; a interface deve mostrar estado de processamento/erro, nunca foto crua.
      */
     public static Map<String, Object> cardImage(CatalogImage canonical) {
-        if (canonical == null || !canonical.isCanonical()) {
+        if (canonical == null || !canonical.isCanonical() || !"APPROVED".equals(canonical.getProcessingStatus())
+                || canonical.getUsageStatus() == CatalogImageUsage.REJECTED || "REJECTED".equals(canonical.getReviewStatus())) {
             return null;
         }
         Map<String, Object> m = new LinkedHashMap<>();
         Map<String, Object> selectionCrop = canonical.getCropJson() == null ? Map.of() : Json.map(canonical.getCropJson());
+        if (!Boolean.TRUE.equals(selectionCrop.get("ruleCompliant")) || !(selectionCrop.get("crop") instanceof Map<?, ?>)) return null;
         boolean automaticFrame = selectionCrop.get("selectionFrame") instanceof Map<?, ?> frame
                 && Boolean.TRUE.equals(frame.get("automatic"));
         if (canonical.getAssetsJson() != null && (!selectionCrop.containsKey("selectionFrame") || automaticFrame)) {
