@@ -167,6 +167,10 @@ function LookHype({ id }: { id: string }) {
 
 import { CardBorder } from "@/components/card-border";
 import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
+import {useFashionDepth} from "@/lib/hype/use-fashion-depth";
+import {FashionMotionButton} from "@/components/hype/fashion-motion-button";
+import {FashionCardHeader,FashionCardStats} from "@/components/hype/fashion-card-panel";
+import {fashionCardLevel} from "@/lib/hype/fashion-card";
 import { AuraHype } from "@/components/hype/aura-hype";
 import { useTheme } from "@/lib/theme/theme";
 
@@ -182,6 +186,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const { prefs } = useTheme();
   const auraMode = data?.piece?.background?.auraHype as string | undefined;
   const auraEnabled = !!prefs.auraHype || !!auraMode && auraMode !== "OFF";
+  const depth = useFashionDepth(auraEnabled);
   const hype = useHypeSummary("PIECE", id, auraEnabled, auraEnabled);
   const p = data?.piece; const mine = !!user && p?.owner?.id === user.id;
   const model = useModel3d(id, { enabled: !!p && mine && !p.defaultImage, onCompleted: () => reload() });
@@ -281,14 +286,18 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const skin = (p.background?.skin as string | undefined) ?? null;
   return (
     <>
-      <article {...surface} ref={artRef} data-inview={inView} className={`fai-card is-expanded piece-detail ${surface.className}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={p.name}>
+      <article {...surface} ref={node=>{artRef(node);depth.ref.current=node;}} {...depth.events} data-inview={inView} data-fashion-level={auraEnabled?(fashionCardLevel(hype.summary)??"PENDING"):undefined} className={`fai-card is-expanded piece-detail ${auraEnabled?"is-fashion-hype":""} ${surface.className}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={p.name}>
         <CardBorder entityId={`PIECE:${p.id}`} background={p.background} auraHype={auraEnabled} hype={hypeViewState(hype.summary,hype)}/>
+        {auraEnabled&&<span className="fashion-depth-glare" aria-hidden/>}
         <ArtStage bg={p.background} art={art} density="expanded" pieceHex={p.colorHex} />
         <div className="pc-frame"><div className="pc-content">
         <CardHeader owner={p.owner} sub={vis} trailing={headerExtra} />
         <div className="pd-layout">
           <div className="pd-media relative">
-            <PieceGallery key={p.id + (p.studioImageUrl ?? "") + (p.mannequinImageUrl ?? "")} slides={slides} onOpen={setFullscreen} overlay={<><AuraMetamorphose mode={p.background?.auraMetamorphose as string | undefined}/>{auraEnabled && <AuraHype state={hypeViewState(hype.summary,hype)} mode={auraMode}/>}</>} />
+            {auraEnabled&&<FashionMotionButton available={depth.sensorAvailable} on={depth.sensorOn} error={depth.sensorError} onToggle={()=>void depth.toggleSensor()}/>}
+            {auraEnabled&&<FashionCardHeader summary={hype.summary} state={hypeViewState(hype.summary,hype)}/>}
+            <PieceGallery key={p.id + (p.studioImageUrl ?? "") + (p.mannequinImageUrl ?? "")} slides={slides} onOpen={setFullscreen} overlay={<><AuraMetamorphose mode={p.background?.auraMetamorphose as string | undefined}/>{auraEnabled && <AuraHype state={hypeViewState(hype.summary,hype)} summary={hype.summary} mode={auraMode} showScore={false}/>}</>} />
+            {auraEnabled&&<FashionCardStats name={p.name} summary={hype.summary} styles={(p.style??[]).map(label)}/>}
             {studioBusy && <div className="pd-busy" aria-live="polite">{t("common.montando_o_estudio")}</div>}
           </div>
           <div className="pd-info">

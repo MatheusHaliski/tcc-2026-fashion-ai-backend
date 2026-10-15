@@ -71,6 +71,10 @@ import java.util.stream.Collectors;
  */
 @Service
 public class InstitutionalService {
+    private LevelProgressService levelProgress;
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setLevelProgress(LevelProgressService progress) { this.levelProgress = progress; }
+
     private final UserRepository users;
     private final BrandProfileRepository brands;
     private final CelebrityProfileRepository celebrities;
@@ -299,6 +303,7 @@ public class InstitutionalService {
         }
         header.put("viewerFollows", viewer != null && follows.findByFollowerIdAndFollowingId(viewer.id(), u.getId()).map(f -> f.getStatus() == FollowStatus.ACEITO).orElse(false));
         header.put("metrics", metrics(u.getId()));
+        if (levelProgress != null) header.put("levelProgress", levelProgress.progress(u.getId()));
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("header", header);
         out.put("mode", admin ? "ADMINISTRADOR" : "VISITANTE");
