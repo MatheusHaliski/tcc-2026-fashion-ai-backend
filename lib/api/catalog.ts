@@ -1,3 +1,4 @@
+import type {FashionCard,AuraContextMetadata} from "@/lib/fashion-card/types";
 import { api, ApiError } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 
@@ -19,7 +20,9 @@ export interface NormRect { x: number; y: number; w: number; h: number }
 export interface CatalogCardImage { url: string; sourceUrl?: string | null; mode: "SEMANTIC_CROP" | "PROCESSED"; crop?: NormRect | null; background?: string | null; aspect?: string | null; thumbnailUrl?: string | null; imageId?: string; qualityScore?: number | null; pipelineVersion?: string | null }
 export interface CatalogProductImage { id: string; url: string; type: string; primary: boolean; provenance: ImageProvenance; sourceUrl?: string; processedUrl?: string | null; viewType?: string; canonical?: boolean; viewRole?: string | null; qualityScore?: number | null; processingStatus?: string }
 
-export interface CatalogProduct { imageProcessingStatus?: "READY" | "PENDING" | "ERROR";
+export interface CatalogProduct {
+  /** Optional viewer-owned projection; never a canonical public user portrait. */
+  fashionCard?: FashionCard | null; auraPresetId?: string | null; auraContext?: AuraContextMetadata | null; imageProcessingStatus?: "READY" | "PENDING" | "ERROR";
   id: string; brand: CatalogBrandRef | null; productName: string; modelName?: string | null; category: string; subcategory: string;
   color?: string | null; colorName?: string | null; colorHex?: string | null; material?: string | null; collection?: string | null; gender?: string | null;
   description?: string | null; design?: DesignTraits | null;

@@ -3770,3 +3770,119 @@ html[data-theme="contrast"] .card-border:not([data-pulse]) { background: current
 .era-mural img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: .5rem; }
 @media (prefers-reduced-motion: reduce) { .era-beams { animation: none !important; } }
 html[data-reduce-motion="true"] .era-beams { animation: none !important; }
+
+/* Four AURA Hype card levels: rarity is server data, separate from Hype score bands. */
+.is-fashion-hype { --fashion-metal: #a7a6a1; --fashion-panel: #242421; border-radius: 18px; border: 1px solid var(--fashion-metal); box-shadow: 0 8px 22px #0002; }
+.is-fashion-hype .pc-content { gap: 0; }
+.fashion-hype-header { position: relative; z-index: 4; display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .65rem .8rem; background: var(--fashion-panel, #242421); color: #f6f3e9; border-block-end: 1px solid var(--fashion-metal, #a7a6a1); }
+.fashion-hype-rarity { font: 700 12px/1.2 ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
+.fashion-hype-header-score { display: inline-flex; gap: .45rem; align-items: center; }
+.fashion-hype-header-score small { font-size: 12px; letter-spacing: .1em; }
+.fashion-hype-header-score .led-number { --led-size: 23px; }
+.fashion-hype-metadata { display: grid; gap: .55rem; padding: .7rem .1rem; width: 100%; }
+.pd-media > .fashion-hype-metadata { padding: .85rem; }
+.fashion-hype-tags { display: flex; flex-wrap: wrap; gap: .3rem; }
+.fashion-hype-tags > span { border: 1px solid var(--fashion-metal, #a7a6a1); border-radius: .3rem; padding: .2rem .4rem; font-size: 12px; line-height: 1.3; }
+.fashion-hype-edition { font: 600 12px/1.4 ui-monospace, monospace; }
+.fashion-hype-stat { display: grid; grid-template-columns: minmax(0, 1fr) minmax(35px, 1fr) 4ch; align-items: center; gap: .5rem; font-size: 12px; }
+.fashion-hype-stat > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fashion-hype-meter { display: block; height: 8px; overflow: hidden; background: #8883; border: 1px solid #8885; border-radius: 2px; }
+.fashion-hype-meter i { display: block; height: 100%; background: linear-gradient(90deg, #aaa, var(--fashion-metal, #aaa)); }
+.is-fashion-hype .pc-media { background: #ebe7dd; }
+.is-fashion-hype .pc-id { padding-block: .75rem; }
+.is-fashion-hype .pc-name { font-size: 1.1rem; font-weight: 800; }
+.is-fashion-hype[data-fashion-level="RARE"] { --fashion-metal: #a8d8e8; --fashion-panel: #1c293b; box-shadow: 0 8px 24px #0002, 0 0 14px #83d9df35; }
+.is-fashion-hype[data-fashion-level="LEGENDARY"] { --fashion-metal: #d8b965; --fashion-panel: #2b211a; border-width: 2px; box-shadow: 0 10px 28px #30200e33, inset 0 0 0 2px #efdda366; }
+.is-fashion-hype[data-fashion-level="COLLAB_DROP"] { --fashion-metal: #d1cadf; --fashion-panel: #242233; box-shadow: 0 8px 24px #30234933, inset 0 0 0 3px #d4cce94d; }
+.aura-hype[data-fashion-level] .aura-hype-field i { display: none; }
+.aura-hype[data-fashion-level="PENDING"], .aura-hype[data-fashion-level="COMMON"] { background: none; box-shadow: inset 0 0 0 1px #aaa8; }
+.aura-hype[data-fashion-level="PENDING"] .aura-hype-field, .aura-hype[data-fashion-level="COMMON"] .aura-hype-field { display: none; }
+.aura-hype[data-fashion-level="RARE"] { box-shadow: inset 0 0 0 2px #b0d9e8aa, inset 0 0 18px #86d1da33; }
+.aura-hype[data-fashion-level="RARE"] .aura-hype-field { opacity: .3; background: linear-gradient(125deg, transparent 28%, var(--hype-ink) 48%, transparent 65%); mask-image: linear-gradient(90deg, #000, transparent 30%, transparent 70%, #000); }
+.aura-hype[data-fashion-level="RARE"] .aura-hype-field::after { height: 100%; background: linear-gradient(115deg, transparent 35%, #e2e8ff88 48%, transparent 60%); animation: fashion-hype-sheen 9s ease-in-out infinite; }
+.aura-hype[data-fashion-level="LEGENDARY"] { box-shadow: inset 0 0 0 3px #ddbd73cc, inset 0 0 0 5px #75603d, inset 0 0 35px #eac97040; }
+.aura-hype[data-fashion-level="LEGENDARY"] .aura-hype-field { opacity: .55; background: radial-gradient(circle at 15% 25%, #ffeb9c 0 1px, transparent 3px), radial-gradient(circle at 85% 75%, #b9c5ff 0 1px, transparent 3px), conic-gradient(from 25deg, #fae6af44, #b6cbf833, #d7b1d944, #fae6af44); background-size: 35px 51px, 47px 63px, 100% 100%; mask-image: radial-gradient(ellipse, transparent 30%, #000 95%); }
+.aura-hype[data-fashion-level="LEGENDARY"] .aura-hype-field::after { height: 100%; background: linear-gradient(120deg, transparent 25%, #fff6c666 47%, #c5cfff44 52%, transparent 70%); animation: fashion-hype-sheen 12s ease-in-out infinite; }
+.aura-hype[data-fashion-level="COLLAB_DROP"] { box-shadow: inset 0 0 0 3px #e7e4f399, inset 0 0 0 6px #fff3; }
+.aura-hype[data-fashion-level="COLLAB_DROP"] .aura-hype-field { opacity: .4; background: repeating-linear-gradient(45deg, transparent 0 23px, #cbc6e033 24px 25px), repeating-linear-gradient(-45deg, transparent 0 23px, #c3dce733 24px 25px); mask-image: linear-gradient(90deg, #000, transparent 26%, transparent 74%, #000); }
+.aura-hype[data-fashion-level="COLLAB_DROP"] .aura-hype-field::after { height: 100%; background: linear-gradient(120deg, transparent 20%, #f1edff99 45%, #b0c8e655 55%, transparent 80%); animation: fashion-hype-sheen 10s ease-in-out infinite; }
+@keyframes fashion-hype-sheen { 0%, 100% { transform: translateX(-65%); opacity: .1; } 50% { transform: translateX(65%); opacity: .65; } }
+@media (prefers-reduced-motion: reduce) { .aura-hype[data-fashion-level] .aura-hype-field::after { animation: none; transform: none; opacity: .2; } }
+html[data-reduce-motion="true"] .aura-hype[data-fashion-level] .aura-hype-field::after { animation: none; transform: none; opacity: .2; }
+html[data-theme="contrast"] .fashion-hype-header { background: #000; color: #fff; }
+.fashion-hype-level-previews { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: .75rem; margin-block: 1rem; }
+.fashion-hype-level-preview { overflow: hidden; border: 2px solid var(--line-soft); border-radius: 12px; }
+.fashion-hype-level-preview[aria-pressed="true"] { outline: 2px solid var(--text); outline-offset: 2px; }
+.fashion-hype-level-art { display: block; position: relative; height: 145px; background: radial-gradient(ellipse at 50% 40%, #ebe7dc, #56535a); }
+.fashion-hype-piece-name { font-size: clamp(1.15rem, 2vw, 1.6rem); line-height: 1.15; }
+/* 2.5D presentation: background, photograph and front glass; no asset reprocessing. */
+.is-fashion-hype { transform: perspective(1100px) rotateX(var(--fashion-tilt-x, 0deg)) rotateY(var(--fashion-tilt-y, 0deg)); transform-style: preserve-3d; transition: transform 180ms ease-out; }
+.is-fashion-hype > .art-stage { transform: translateZ(0); }
+.is-fashion-hype .pc-media, .is-fashion-hype .pd-slide { position: relative; transform: translateZ(8px); }
+.is-fashion-hype .fashion-hype-header, .is-fashion-hype .fashion-hype-metadata { transform: translateZ(16px); }
+.fashion-depth-glare { position: absolute; z-index: 10; inset: 0; pointer-events: none; border-radius: inherit; opacity: .18; background: radial-gradient(circle at var(--fashion-glare-x, 50%) var(--fashion-glare-y, 50%), #fff9, transparent 55%); mix-blend-mode: soft-light; }
+.fashion-motion-control { display: none; }
+@media (pointer: coarse) { .fashion-motion-control { display: block; position: relative; z-index: 12; padding: .4rem; } .fashion-motion-control button { min-height: 44px; padding: .4rem .7rem; border: 1px solid currentcolor; border-radius: .5rem; } }
+@media (prefers-reduced-motion: reduce) { .is-fashion-hype { transform: none; transition: none; } .fashion-motion-control { display: none; } .fashion-depth-glare { display: none; } }
+html[data-reduce-motion="true"] .is-fashion-hype { transform: none; transition: none; }
+html[data-reduce-motion="true"] .fashion-motion-control, html[data-reduce-motion="true"] .fashion-depth-glare { display: none; }
+.profile-level-progress { max-width: 420px; margin-block: .75rem; padding: .85rem; color: #ecfaff; border: 1px solid #5fdce277; border-radius: 12px; background: linear-gradient(135deg,#15242b,#1c1b31); }
+.profile-level-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+.profile-level-percent { display: flex; align-items: center; gap: .3rem; color: #85f5eb; }
+.profile-level-percent .led-number { --led-size: 24px; }
+.profile-level-track { height: 14px; overflow: hidden; margin-block: .65rem; background: #09151d; border: 1px solid #91e5fa66; border-radius: 3px; }
+.profile-level-track i { display: block; height: 100%; background: linear-gradient(90deg,#52e9df,#86a8fa,#bba0f4); mask-image: repeating-linear-gradient(90deg,#000 0 10px,transparent 10px 13px); transition: width 300ms ease; }
+.profile-level-progress summary { cursor: pointer; font-size: 12px; padding-block: .5rem; }
+.profile-level-progress ul { display: grid; gap: .4rem; }
+.profile-level-progress li { display: flex; justify-content: space-between; gap: .5rem; font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { .profile-level-track i { transition: none; } }
+html[data-reduce-motion="true"] .profile-level-track i { transition: none; }
+.hero-fashion-card { position: relative; isolation: isolate; overflow: visible; max-width: 450px; padding: 12px; background: #242529; color: #f3f3ee; }
+.hero-fashion-background { position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: radial-gradient(ellipse at 50% 20%,#295974,#191b29 70%); }
+.hero-fashion-card[data-power="COSMIC_GOLD"] .hero-fashion-background { background: radial-gradient(ellipse at 50% 30%,#927148,#211d2e 70%); }
+.hero-fashion-card[data-power="ELEMENTAL_WIND"] .hero-fashion-background { background: radial-gradient(ellipse at 50% 20%,#42777b,#172e30 70%); }
+.hero-fashion-card[data-power="ELEMENTAL_FIRE"] .hero-fashion-background { background: radial-gradient(ellipse at 50% 20%,#a85c35,#2e1e24 70%); }
+.hero-fashion-card[data-power="Y2K_HOLOGRAM"] .hero-fashion-background { background: radial-gradient(ellipse at 50% 20%,#855e95,#25213f 70%); }
+.hero-fashion-front { position: relative; z-index: 1; }
+.hero-fashion-media { position: relative; aspect-ratio: 4 / 5; margin: 10px; transform: translateZ(8px); border: 1px solid var(--fashion-metal); border-radius: 8px; background: #171923; }
+.hero-fashion-poster, .hero-fashion-motion, .hero-fashion-media > .card-art-img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; }
+.hero-fashion-media > .card-art-img { position: absolute; inset: 0; }
+.hero-fashion-demo-video { position: absolute; inset: 0; opacity: .28; mix-blend-mode: screen; pointer-events: none; }
+.hero-fashion-demo-video .card-art-img { width: 100%; height: 100%; object-fit: cover; }
+.hero-fashion-vfx { position: absolute; inset: -9px; pointer-events: none; border: 1px solid #a3dbea55; border-radius: 10px; box-shadow: 0 0 18px #78d4e34d; background: radial-gradient(circle at 10% 10%,#b1e9fa88 1px,transparent 3px),radial-gradient(circle at 90% 80%,#d4b0fa88 1px,transparent 3px); mask-image: radial-gradient(ellipse,transparent 30%,#000 95%); }
+.hero-fashion-vfx[data-particle="GOLD_DUST"] { box-shadow: 0 0 22px #e7ca7a66; border-color: #e7ca7a88; }
+.hero-fashion-vfx[data-particle="WEATHER_MIST"] { box-shadow: 0 0 28px #8acdc677; }
+.hero-fashion-vfx[data-particle="NEON_GLITCH"] { border-color: #bf9be8; box-shadow: 3px 0 14px #84e8eb44,-3px 0 14px #ce96db44; }
+.hero-fashion-vfx[data-shader="CEL_SHADING"] { border-width: 2px; }
+.hero-fashion-vfx[data-shader="VHS_Y2K"] { background-image: repeating-linear-gradient(0deg,transparent 0 6px,#bc9bd722 7px 8px); }
+.hero-fashion-vfx[data-shader="INFRARED_SCAN"] { background-image: repeating-linear-gradient(90deg,transparent 0 28px,#97e1c433 29px 30px); }
+.hero-fashion-identity { position: relative; padding: .7rem; transform: translateZ(16px); }
+.hero-fashion-identity h3 { font-size: 1.25rem; font-weight: 800; }
+.hero-fashion-aura-badge { display: inline-block; padding: .25rem .5rem; margin-block: .5rem; border: 1px solid #d9d9ee66; border-radius: 5px; font-size: 12px; }
+.hero-fashion-power { color: #e3d19d; font-weight: 700; }
+.hero-fashion-demo-note { padding: .5rem; margin-block: .5rem; background: #fff; color: #25242a; font-size: 12px; border-radius: 5px; }
+.hero-fashion-lock { position: absolute; z-index: 20; inset: 0; display: grid; align-content: center; justify-items: center; gap: .7rem; padding: 1.5rem; text-align: center; border-radius: inherit; background: linear-gradient(135deg,#161b2eeb,#333449e8); backdrop-filter: blur(5px); }
+.hero-fashion-lock > span { font-size: 2rem; }
+.hero-fashion-card[data-locked="true"] .hero-fashion-vfx, .hero-fashion-card[data-locked="true"] .fashion-depth-glare { display: none; }
+
+/* FLAIR adventure: world above, actionable look deck below. */
+.afterparty-game { display: grid; gap: 12px; }
+.afterparty-world { position: relative; height: clamp(300px, 50vh, 620px); overflow: hidden; border: 1px solid #7d94ad; border-radius: 16px; background: #111c2d; }
+.afterparty-world:focus-visible { outline: 3px solid #63dddb; outline-offset: 3px; }
+.afterparty-objective { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; flex-wrap: wrap; gap: 8px 20px; justify-content: space-between; pointer-events: none; color: white; background: #101a2de6; border: 1px solid #839fb0; border-radius: 10px; padding: 10px 14px; font-size: 14px; }
+.afterparty-status { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 14px; }
+.afterparty-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.afterparty-dpad { display: flex; gap: 4px; }
+.afterparty-dpad button { touch-action: none; min-width: 44px; min-height: 44px; border: 1px solid currentcolor; border-radius: 8px; font-size: 18px; }
+.afterparty-hud { min-width: 0; background: #111c2d; color: #e4f3ff; border: 1px solid #7d94ad; border-radius: 14px; padding: 16px; }
+.afterparty-cards { display: flex; gap: 12px; overflow-x: auto; padding: 12px 2px; }
+.afterparty-card { display: flex; flex: 0 0 160px; flex-direction: column; gap: 6px; text-align: left; border: 2px solid #8393a6; background: #213043; color: #e4f3ff; border-radius: 12px; padding: 10px; font-size: 14px; }
+.afterparty-card img { width: 100%; height: 90px; object-fit: contain; border-radius: 6px; background: #ebe8df; }
+.afterparty-card[data-tier="RARE"] { border-color: #82e3ed; }
+.afterparty-card[data-tier="LEGENDARY"] { border-color: #e6c56f; }
+.afterparty-card[data-tier="COLLAB_DROP"] { border-color: #cd9cef; }
+.afterparty-card[aria-pressed="true"] { box-shadow: 0 0 0 3px #65ddac; }
+.afterparty-card:disabled { opacity: .6; }
+.afterparty-card small { font-size: 12px; }
+.afterparty-deck-selection { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 16px 0; }
+.afterparty-map { width: 100%; height: 100%; touch-action: none; }

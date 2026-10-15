@@ -20,3 +20,11 @@ it("uses only the global score on the photo, without a game attribute table", ()
   expect(container.querySelector('dl')).toBeNull();
   expect(container.querySelector('.fgc')).toBeNull();
 });
+it('does not allow a preview tier to overwrite a real card classification',()=>{
+ const {container}=renderApp(<AuraHype previewTier="LEGENDARY" state={{kind:'available',score:90,level:'VIRAL',direction:null,stale:false}} summary={{status:'AVAILABLE',fashionCard:{status:'CLASSIFIED',tier:'COMMON',ruleVersion:1,source:'HYPE_SIGNALS'}}}/>);
+ expect(container.querySelector('.aura-hype')?.getAttribute('data-fashion-level')).toBe('COMMON');
+});
+it('supports all four finishes in explicit studio previews',()=>{
+ const {container}=renderApp(<AuraHype preview previewTier="COLLAB_DROP" state={{kind:'not_calculated'}}/>);
+ expect(container.querySelector('.aura-hype')?.getAttribute('data-fashion-level')).toBe('COLLAB_DROP');
+});
