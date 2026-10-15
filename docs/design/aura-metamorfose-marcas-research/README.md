@@ -1,8 +1,8 @@
-# Referências visuais — seis famílias AURA e ATELIER
+# Referências visuais — Metamorfose
 
 Referências de arte de moda contemporânea; sugestões de aplicação são interpretações de design do FashionAI. Não são funcionalidades implementadas.
 
-Pesquisa executada por Python com Bing RSS e fontes selecionadas após busca web e revisão de relevância. Links descobertos e páginas acessadas têm estados separados. Miniaturas são referências remotas das fontes, não assets incorporados ao app.
+A busca, a verificação de páginas e a lista de fontes selecionadas têm estados separados. Falhas não validam as referências; miniaturas, quando disponíveis, são remotas e não são assets do app.
 
 ## Metamorfose
 
@@ -26,13 +26,3 @@ Preservar a peça branca; usar contornos perolados e acentos azul-gelo com contr
 
 - [ASICS white performance apparel design official](https://www.asics.com/)
 - Verificação: `URLError`.
-
-## ATELIER
-
-## Hype
-
-## Electro
-
-## AURA comum
-
-## Splash

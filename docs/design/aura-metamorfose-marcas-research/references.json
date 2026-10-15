@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-15T14:35:23.812339+00:00",
+  "generated_at": "2026-10-15T14:39:10.372076+00:00",
   "purpose": "Referências de arte de moda contemporânea; sugestões de aplicação são interpretações de design do FashionAI. Não são funcionalidades implementadas.",
   "results": [
     {
@@ -17,14 +17,14 @@
         "url": "https://www.nike.com/",
         "domain": "www.nike.com",
         "preferred_source": true,
-        "discovered_via": "web search and manual relevance review"
+        "discovered_via": "curated source list"
       },
       "selected": {
         "title": "Nike orange performance apparel design official",
         "url": "https://www.nike.com/",
         "domain": "www.nike.com",
         "preferred_source": true,
-        "discovered_via": "web search and manual relevance review"
+        "discovered_via": "curated source list"
       },
       "verification": "URLError"
     },
@@ -43,14 +43,14 @@
         "url": "https://www.adidas.com/",
         "domain": "www.adidas.com",
         "preferred_source": true,
-        "discovered_via": "web search and manual relevance review"
+        "discovered_via": "curated source list"
       },
       "selected": {
         "title": "adidas blue performance apparel design official",
         "url": "https://www.adidas.com/",
         "domain": "www.adidas.com",
         "preferred_source": true,
-        "discovered_via": "web search and manual relevance review"
+        "discovered_via": "curated source list"
       },
       "verification": "URLError"
     },
@@ -69,14 +69,14 @@
         "url": "https://www.asics.com/",
         "domain": "www.asics.com",
         "preferred_source": true,
-        "discovered_via": "web search and manual relevance review"
+        "discovered_via": "curated source list"
       },
       "selected": {
         "title": "ASICS white performance apparel design official",
         "url": "https://www.asics.com/",
         "domain": "www.asics.com",
         "preferred_source": true,
-        "discovered_via": "web search and manual relevance review"
+        "discovered_via": "curated source list"
       },
       "verification": "URLError"
     }

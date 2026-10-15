@@ -3795,7 +3795,7 @@ html[data-reduce-motion="true"] .era-beams { animation: none !important; }
 .fashion-hype-header { position: relative; z-index: 4; display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .65rem .8rem; background: var(--fashion-panel, #242421); color: #f6f3e9; border-block-end: 1px solid var(--fashion-metal, #a7a6a1); }
 .fashion-hype-rarity { font: 700 12px/1.2 ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
 .fashion-hype-header-score { display: inline-flex; gap: .45rem; align-items: center; }
-.fashion-hype-header-score small { font-size: 10px; letter-spacing: .06em; white-space: nowrap; }
+.fashion-hype-header-score small { font-size: 12px; letter-spacing: .1em; white-space: nowrap; }
 .fashion-hype-header-score .led-number { --led-size: 23px; }
 .fashion-hype-metadata { display: grid; gap: .55rem; padding: .7rem .1rem; width: 100%; }
 .pd-media > .fashion-hype-metadata { padding: .85rem; }
