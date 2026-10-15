@@ -52,6 +52,9 @@ public class SchemeGrouping extends VersionedAuditableEntity {
     @Column(name = "accent_color", length = 20)
     private String accentColor;
 
+    @Column(name = "editorial_json", columnDefinition = "json")
+    private String editorialJson;
+
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
 }

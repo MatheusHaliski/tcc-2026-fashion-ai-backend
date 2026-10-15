@@ -17,7 +17,7 @@ function load(url: string) {
   return result;
 }
 /** Fit uniformly, keeping depth and proportions; keep the existing functional object while loading or on failure. */
-export function ApprovedAsset({ url, size, children, centered = false }: { url?: string | null; size: [number, number, number]; children: ReactNode; centered?: boolean }) {
+export function ApprovedAsset({ url, size, children, centered = false, rotationY = 0 }: { url?: string | null; size: [number, number, number]; children: ReactNode; centered?: boolean; rotationY?: number }) {
   const [model, setModel] = useState<{ url: string; object: THREE.Object3D } | null>(null);
   const source = mediaUrl(url); const [w, h, d] = size;
   useEffect(() => {
@@ -30,10 +30,11 @@ export function ApprovedAsset({ url, size, children, centered = false }: { url?:
       const scale = Math.min(w / Math.max(extent.x, .001), h / Math.max(extent.y, .001), d / Math.max(extent.z, .001));
       object.scale.multiplyScalar(scale);
       object.position.sub(new THREE.Vector3(center.x, centered ? center.y : bounds.min.y, center.z).multiplyScalar(scale));
+      object.rotation.y = rotationY;
       object.traverse(o => { if ((o as THREE.Mesh).isMesh) { (o as THREE.Mesh).castShadow = true; (o as THREE.Mesh).receiveShadow = true; } });
       setModel({ url: source, object });
     }).catch(() => { if (alive) setModel(null); });
     return () => { alive = false; };
-  }, [source, w, h, d, centered]);
+  }, [source, w, h, d, centered, rotationY]);
   return model && model.url === source ? <primitive object={model.object} /> : <>{children}</>;
 }

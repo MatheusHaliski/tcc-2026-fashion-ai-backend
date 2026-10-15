@@ -4,7 +4,7 @@ import { tr } from "@/lib/i18n/i18n";
 
 export type ThemeMode = "AUTO" | "LIGHT" | "DARK" | "HIGH_CONTRAST";
 export type Density = "COMFORTABLE" | "COMPACT";
-export interface ThemePrefs { auraHype?: boolean; theme: ThemeMode; density: Density; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId: string | null; contentContainerColor: string | null; }
+export interface ThemePrefs { auraImpersonation?: boolean; auraHype?: boolean; theme: ThemeMode; density: Density; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId: string | null; contentContainerColor: string | null; }
 const DEFAULTS: ThemePrefs = { theme: "AUTO", density: "COMFORTABLE", fontScale: 100, highContrast: false, reduceMotion: false, chromeBackgroundId: null, contentContainerColor: null };
 const STORAGE = "fai.theme";
 

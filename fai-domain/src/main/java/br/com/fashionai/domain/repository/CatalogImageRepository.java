@@ -30,9 +30,12 @@ public interface CatalogImageRepository extends JpaRepository<CatalogImage, UUID
      * categoria ({@code pipeline_version} {@code CATALOG_FRAME_*}, docs/catalogo/PROCESSAR_ACERVO_IMAGENS.md) são uma
      * decisão editorial final: uma versão nova do pipeline não as refaz nem substitui a referência ativa.
      */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("select i from CatalogImage i where i.usageStatus <> br.com.fashionai.domain.model.enums.CatalogImageUsage.REJECTED "
+            + "and (i.reviewStatus is null or i.reviewStatus <> 'REJECTED') "
             + "and i.attempts < :maxAttempts and (i.processingStatus in ('PENDING', 'FAILED') "
             + "or (i.processingStatus = 'DOWNLOADING' and i.updatedAt < :stale) "
+            + "or (i.pipelineVersion is null and i.processingStatus <> 'DOWNLOADING' ) "
             + "or (i.pipelineVersion is not null and i.pipelineVersion <> :version and i.processingStatus <> 'DOWNLOADING' "
             + "and i.pipelineVersion not like 'CATALOG_FRAME_%')) "
             + "order by i.attempts asc, i.createdAt asc")

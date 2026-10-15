@@ -14,12 +14,16 @@ import { FaiIcon } from "@/components/fai-icon";
 import { EditProfileForm } from "@/components/edit-profile";
 
 type Tab = "account" | "appearance" | "privacy" | "data" | "sessions";
-interface Prefs { auraHype?: boolean; theme: string; language: string; density: string; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null; sizeSystem?: string; unitSystem?: string; defaultCardSkin?: string; lookDoDiaPanelVersion?: string; soundEnabled?: boolean; hapticsEnabled?: boolean; hypeCreatorOptOut?: boolean; [k: string]: unknown; }
+interface Prefs { auraImpersonation?: boolean; auraHype?: boolean; theme: string; language: string; density: string; fontScale: number; highContrast: boolean; reduceMotion: boolean; chromeBackgroundId?: string | null; contentContainerColor?: string | null; sizeSystem?: string; unitSystem?: string; defaultCardSkin?: string; lookDoDiaPanelVersion?: string; soundEnabled?: boolean; hapticsEnabled?: boolean; hypeCreatorOptOut?: boolean; [k: string]: unknown; }
 interface Consent { purpose: string; granted: boolean; label?: string; description?: string; grantedAt?: string; }
 
 function Settings() {
   const { t, locale, setLocale, locales, rich } = useI18n(); const { me, refreshMe, signOut } = useAuth(); const { prefs: theme, update: updateTheme } = useTheme(); const notice = useNotice();
   const [info, setInfo] = useState<{ title: string; paragraphs: ReactNode[] } | null>(null);
+  const [impersonationBusy, setImpersonationBusy] = useState(false);
+  const auraPermissions = useApi<{ currentTier: string; auras: Record<string, { allowed: boolean; requiredTier: string }> }>((signal) => api.get("/api/me/aura-permissions", { signal }), [me?.user.id]);
+  const impersonationAccess = auraPermissions.data?.auras.AURA_IMPERSONATION;
+  const impersonationAllowed = impersonationAccess?.allowed === true;
   const [auraBusy, setAuraBusy] = useState(false);
   const [auraLocal, setAuraLocal] = useState(false);
   const [logoutBusy, setLogoutBusy] = useState(false);
@@ -33,7 +37,7 @@ function Settings() {
   const [del, setDel] = useState<{ open: boolean; password: string }>({ open: false, password: "" }); const [emailCode, setEmailCode] = useState("");
   useEffect(() => { if (me) { setProfile({ displayName: me.user.displayName ?? "", bio: me.bio ?? "", country: me.user.country ?? "" }); setUsername(me.user.username); setSensitive((s) => ({ ...s, email: me.email ?? "", phone: me.phone ?? "", birthDate: me.birthDate ?? "", twoFactorEnabled: me.twoFactorEnabled })); } }, [me]);
   // sincroniza tema/idioma locais com a preferência salva no servidor (RF23.CA02: last-write-wins)
-  useEffect(() => { const p = server.data; if (!p) return; updateTheme({ theme: (p.theme as typeof theme.theme) ?? "AUTO", density: (p.density as typeof theme.density) ?? "COMFORTABLE", fontScale: p.fontScale ?? 100, ...(typeof p.auraHype === "boolean" ? { auraHype: p.auraHype } : {}), highContrast: !!p.highContrast, reduceMotion: !!p.reduceMotion, chromeBackgroundId: p.chromeBackgroundId ?? null, contentContainerColor: p.contentContainerColor ?? null }); const serverLocale = fromServerLanguage(p.language); if (serverLocale && serverLocale !== locale) setLocale(serverLocale, { persist: false }); }, [server.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { const p = server.data; if (!p) return; updateTheme({ theme: (p.theme as typeof theme.theme) ?? "AUTO", density: (p.density as typeof theme.density) ?? "COMFORTABLE", fontScale: p.fontScale ?? 100, ...(typeof p.auraImpersonation === "boolean" ? { auraImpersonation: p.auraImpersonation } : {}), ...(typeof p.auraHype === "boolean" ? { auraHype: p.auraHype } : {}), highContrast: !!p.highContrast, reduceMotion: !!p.reduceMotion, chromeBackgroundId: p.chromeBackgroundId ?? null, contentContainerColor: p.contentContainerColor ?? null }); const serverLocale = fromServerLanguage(p.language); if (serverLocale && serverLocale !== locale) setLocale(serverLocale, { persist: false }); }, [server.data]); // eslint-disable-line react-hooks/exhaustive-deps
   async function savePrefs(patch: Partial<Prefs>): Promise<boolean> {
     try { server.setData(await api.put<Prefs>("/api/me/preferences", { ...patch, clientUpdatedAt: new Date().toISOString() })); notice.success(t("settings.saved")); return true; } catch (e) { notice.fromError(e); return false; }
   }
@@ -50,6 +54,22 @@ function Settings() {
     } catch { setAuraLocal(true); }
     finally { setAuraBusy(false); }
   }
+  async function setAuraImpersonation(enabled: boolean) {
+    if (impersonationBusy || (enabled && !impersonationAllowed)) return;
+    setImpersonationBusy(true);
+    try {
+      const saved = await api.put<Prefs>("/api/me/preferences", { auraImpersonation: enabled, clientUpdatedAt: new Date().toISOString() });
+      server.setData(saved);
+      if (typeof saved.auraImpersonation === "boolean") updateTheme({ auraImpersonation: saved.auraImpersonation });
+      else throw new Error(t("settingsHelp.impersonationUnavailable"));
+      notice.success(t("settings.saved"));
+    } catch (error) { notice.fromError(error); }
+    finally { setImpersonationBusy(false); }
+  }
+  const impersonationStatus = auraPermissions.loading ? t("auraGate.checking")
+    : !impersonationAccess ? t("settingsHelp.impersonationUnavailable")
+    : impersonationAllowed ? t("settingsHelp.impersonationUnlocked", { level: auraPermissions.data!.currentTier })
+    : t("settingsHelp.impersonationLocked", { current: auraPermissions.data!.currentTier, required: impersonationAccess.requiredTier });
   async function logoutAll() {
     if (logoutBusy) return;
     setLogoutBusy(true);
@@ -93,6 +113,12 @@ function Settings() {
           <Card className="lg:col-span-2">
             {heading(t("settingsHelp.effectsTitle"), "aura")}
             <Switch checked={!!theme.auraHype} disabled={auraBusy} label={t("auraHype.title")} hint={t("settingsHelp.auraShort")} onChange={setAuraHype} />
+            <div className="mt-4 flex items-start gap-3">
+              <div className="min-w-0 flex-1">
+                <Switch checked={!!server.data?.auraImpersonation} disabled={impersonationBusy || (!impersonationAllowed && !server.data?.auraImpersonation)} label={t("settingsHelp.impersonationTitle")} hint={impersonationStatus} onChange={setAuraImpersonation} />
+              </div>
+              {infoButton(t("settingsHelp.impersonationTitle"), [t("settingsHelp.impersonationDescription"), <strong key="access" role="status">{impersonationStatus}</strong>])}
+            </div>
             {auraLocal && <p role="status" className="type-body-sm text-muted mt-2">{t("settingsHelp.auraLocal")}</p>}
             {auraBusy && <p role="status" className="type-body-sm text-muted">{t("settingsHelp.saving")}</p>}
           </Card>

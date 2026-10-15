@@ -1,3 +1,4 @@
+import type {FashionCard,AuraContextMetadata} from "@/lib/fashion-card/types";
 import { api, ApiError } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
 
@@ -20,6 +21,8 @@ export interface CatalogCardImage { url: string; sourceUrl?: string | null; mode
 export interface CatalogProductImage { id: string; url: string; type: string; primary: boolean; provenance: ImageProvenance; sourceUrl?: string; processedUrl?: string | null; viewType?: string; canonical?: boolean; viewRole?: string | null; qualityScore?: number | null; processingStatus?: string }
 
 export interface CatalogProduct {
+  /** Optional viewer-owned projection; never a canonical public user portrait. */
+  fashionCard?: FashionCard | null; auraPresetId?: string | null; auraContext?: AuraContextMetadata | null; imageProcessingStatus?: "READY" | "PENDING" | "ERROR";
   id: string; brand: CatalogBrandRef | null; productName: string; modelName?: string | null; category: string; subcategory: string;
   color?: string | null; colorName?: string | null; colorHex?: string | null; material?: string | null; collection?: string | null; gender?: string | null;
   description?: string | null; design?: DesignTraits | null;

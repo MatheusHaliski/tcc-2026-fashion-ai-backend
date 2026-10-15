@@ -117,6 +117,21 @@ class CatalogImagePipelineServiceTest {
     }
 
     @Test
+    void somenteEnquadramentoAprovadoPodeSerExibidoSemFotoCruaEmFalha() {
+        CatalogImage photo = image("https://img.brand.com/framed.jpg", CatalogImageType.FRONT,
+                CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
+        photo.setCanonical(true);
+        assertThat(CatalogImagePipelineService.cardImage(photo)).isNull();
+        service.process(photo.getId());
+        photo.setCanonical(true);
+        assertThat(CatalogImagePipelineService.cardImage(photo)).isNotNull();
+        photo.setProcessingStatus("FAILED");
+        assertThat(CatalogImagePipelineService.cardImage(photo)).isNull();
+        photo.setProcessingStatus("APPROVED");photo.setCropJson(null);
+        assertThat(CatalogImagePipelineService.cardImage(photo)).isNull();
+    }
+
+    @Test
     void previewAutomaticoReutilizaRecorteSemNovoDownload() {
         product.setCategory("upper_piece"); product.setSubcategory("t_shirt");
         CatalogImage front = image("https://img.brand.com/preview.jpg", CatalogImageType.FRONT,

@@ -1,0 +1,546 @@
+{
+  "version": 1,
+  "presets": [
+    {
+      "code": "META_PRISMA_IVORY",
+      "name": "Prisma · Marfim",
+      "mode": "PRISMA",
+      "palette": [
+        "#d8c4ab",
+        "#eee5d9"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#d8c4ab",
+        "to": "#eee5d9",
+        "effect": "SHIMMER"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_PRISMA_CHROME",
+      "name": "Prisma · Cromo",
+      "mode": "PRISMA",
+      "palette": [
+        "#bacddd",
+        "#c8bde0"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#bacddd",
+        "to": "#c8bde0",
+        "effect": "SHIMMER"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_PRISMA_ROSE",
+      "name": "Prisma · Rosé",
+      "mode": "PRISMA",
+      "palette": [
+        "#deafbc",
+        "#c0acd8"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#deafbc",
+        "to": "#c0acd8",
+        "effect": "SHIMMER"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_PRISMA_VIOLET",
+      "name": "Prisma · Violeta",
+      "mode": "PRISMA",
+      "palette": [
+        "#b09ae4",
+        "#82d0da"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#b09ae4",
+        "to": "#82d0da",
+        "effect": "SHIMMER"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_PRISMA_MINT",
+      "name": "Prisma · Mint",
+      "mode": "PRISMA",
+      "palette": [
+        "#85d4c8",
+        "#c6dfe1"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#85d4c8",
+        "to": "#c6dfe1",
+        "effect": "SHIMMER"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_CONSTELACAO_IVORY",
+      "name": "Constelação · Marfim",
+      "mode": "CONSTELACAO",
+      "palette": [
+        "#d8c4ab",
+        "#eee5d9"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#d8c4ab",
+        "to": "#eee5d9",
+        "effect": "SHIMMER"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_CONSTELACAO_CHROME",
+      "name": "Constelação · Cromo",
+      "mode": "CONSTELACAO",
+      "palette": [
+        "#bacddd",
+        "#c8bde0"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#bacddd",
+        "to": "#c8bde0",
+        "effect": "SHIMMER"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_CONSTELACAO_ROSE",
+      "name": "Constelação · Rosé",
+      "mode": "CONSTELACAO",
+      "palette": [
+        "#deafbc",
+        "#c0acd8"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#deafbc",
+        "to": "#c0acd8",
+        "effect": "SHIMMER"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_CONSTELACAO_VIOLET",
+      "name": "Constelação · Violeta",
+      "mode": "CONSTELACAO",
+      "palette": [
+        "#b09ae4",
+        "#82d0da"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#b09ae4",
+        "to": "#82d0da",
+        "effect": "SHIMMER"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_CONSTELACAO_MINT",
+      "name": "Constelação · Mint",
+      "mode": "CONSTELACAO",
+      "palette": [
+        "#85d4c8",
+        "#c6dfe1"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#85d4c8",
+        "to": "#c6dfe1",
+        "effect": "SHIMMER"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_FIO_VIVO_IVORY",
+      "name": "Fio Vivo · Marfim",
+      "mode": "FIO_VIVO",
+      "palette": [
+        "#d8c4ab",
+        "#eee5d9"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#d8c4ab",
+        "to": "#eee5d9",
+        "effect": "SHIMMER"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_FIO_VIVO_CHROME",
+      "name": "Fio Vivo · Cromo",
+      "mode": "FIO_VIVO",
+      "palette": [
+        "#bacddd",
+        "#c8bde0"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#bacddd",
+        "to": "#c8bde0",
+        "effect": "SHIMMER"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_FIO_VIVO_ROSE",
+      "name": "Fio Vivo · Rosé",
+      "mode": "FIO_VIVO",
+      "palette": [
+        "#deafbc",
+        "#c0acd8"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#deafbc",
+        "to": "#c0acd8",
+        "effect": "SHIMMER"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_FIO_VIVO_VIOLET",
+      "name": "Fio Vivo · Violeta",
+      "mode": "FIO_VIVO",
+      "palette": [
+        "#b09ae4",
+        "#82d0da"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#b09ae4",
+        "to": "#82d0da",
+        "effect": "SHIMMER"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_FIO_VIVO_MINT",
+      "name": "Fio Vivo · Mint",
+      "mode": "FIO_VIVO",
+      "palette": [
+        "#85d4c8",
+        "#c6dfe1"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#85d4c8",
+        "to": "#c6dfe1",
+        "effect": "SHIMMER"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_HOLOGRAFIA_IVORY",
+      "name": "Holografia · Marfim",
+      "mode": "HOLOGRAFIA",
+      "palette": [
+        "#d8c4ab",
+        "#eee5d9"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#d8c4ab",
+        "to": "#eee5d9",
+        "effect": "HOLO"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_HOLOGRAFIA_CHROME",
+      "name": "Holografia · Cromo",
+      "mode": "HOLOGRAFIA",
+      "palette": [
+        "#bacddd",
+        "#c8bde0"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#bacddd",
+        "to": "#c8bde0",
+        "effect": "HOLO"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_HOLOGRAFIA_ROSE",
+      "name": "Holografia · Rosé",
+      "mode": "HOLOGRAFIA",
+      "palette": [
+        "#deafbc",
+        "#c0acd8"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#deafbc",
+        "to": "#c0acd8",
+        "effect": "HOLO"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_HOLOGRAFIA_VIOLET",
+      "name": "Holografia · Violeta",
+      "mode": "HOLOGRAFIA",
+      "palette": [
+        "#b09ae4",
+        "#82d0da"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#b09ae4",
+        "to": "#82d0da",
+        "effect": "HOLO"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    },
+    {
+      "code": "META_HOLOGRAFIA_MINT",
+      "name": "Holografia · Mint",
+      "mode": "HOLOGRAFIA",
+      "palette": [
+        "#85d4c8",
+        "#c6dfe1"
+      ],
+      "border": {
+        "mode": "GRADIENT",
+        "from": "#85d4c8",
+        "to": "#c6dfe1",
+        "effect": "HOLO"
+      },
+      "status": "DRAFT",
+      "exclusive": true,
+      "channels": [
+        "SEAL",
+        "COUPON",
+        "FLAIR",
+        "STORE",
+        "FAI_POINTS"
+      ],
+      "issuerLicenseRequired": true,
+      "cardBound": true,
+      "hypeRevocation": "only if reward requires an active Hype level"
+    }
+  ],
+  "status": "initial designs; not granted or published to users"
+}
