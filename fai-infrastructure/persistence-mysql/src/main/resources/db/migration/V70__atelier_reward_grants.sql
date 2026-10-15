@@ -1,0 +1,21 @@
+CREATE TABLE atelier_reward_grants (
+ id CHAR(36) NOT NULL PRIMARY KEY,
+ owner_id CHAR(36) NOT NULL,
+ category VARCHAR(30) NOT NULL,
+ reward_code VARCHAR(80) NOT NULL,
+ title VARCHAR(140) NOT NULL,
+ description VARCHAR(1200) NOT NULL,
+ source_type VARCHAR(30) NOT NULL,
+ source_reference VARCHAR(160) NOT NULL,
+ reference_id VARCHAR(160),
+ expires_at TIMESTAMP(6) NULL,
+ revoked BOOLEAN NOT NULL DEFAULT FALSE,
+ created_at TIMESTAMP(6) NOT NULL,
+ updated_at TIMESTAMP(6) NOT NULL,
+ created_by VARCHAR(80),
+ last_modified_by VARCHAR(80),
+ version BIGINT NOT NULL DEFAULT 0,
+ CONSTRAINT fk_atelier_reward_owner FOREIGN KEY(owner_id) REFERENCES users(id),
+ CONSTRAINT uq_atelier_reward_source UNIQUE(owner_id,category,reward_code,source_type,source_reference),
+ KEY idx_atelier_rewards_owner(owner_id,created_at)
+);
