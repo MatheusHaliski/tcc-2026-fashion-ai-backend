@@ -16,7 +16,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /** Repositório Spring Data de WardrobeItem (MySQL — fonte da verdade). */
-public interface WardrobeItemRepository extends JpaRepository<WardrobeItem, UUID> {
+public interface WardrobeItemRepository extends JpaRepository<WardrobeItem, UUID>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<WardrobeItem> {
     /** Serializa pedidos de selo concorrentes para a mesma peça. */
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("select w from WardrobeItem w where w.id = :id")
