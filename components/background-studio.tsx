@@ -12,9 +12,7 @@ import { CARD_SKINS } from "@/lib/skins";
 import { ART_INDEX, auraVariantId, bundledAuraPresets } from "@/lib/card-art";
 import { PIECE_ANATOMIES, PIECE_SEAL_PLACEMENT, SCHEME_ANATOMIES, SEAL_PLACEMENT, SILHOUETTES, SealZoneDiagram, hasOwnArt, pieceSealPlacement, sealPlacement, silhouetteLabel } from "@/components/scheme-anatomies";
 
-import { CardBorderEditor } from "@/components/card-border-editor";
 import type { CardBorderConfig } from "@/lib/card-border";
-import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
 import { AuraHypePicker } from "@/components/hype/aura-hype-picker";
 import { AuraHype } from "@/components/hype/aura-hype";
 
@@ -148,7 +146,8 @@ export function ColorPanel({ value, onChange, season, hideSeasonal, keepCartela 
 }
 
 /** Segmento "Aura & Material": presets AURA e variações, material, formato e arte própria (IA ou imagem enviada). */
-export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, disabledNote }: {
+export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, disabledNote, brandName, colorHex, colorName }: {
+  brandName?: string | null; colorHex?: string | null; colorName?: string | null;
   value: BgConfig; onChange: (p: Partial<BgConfig>) => void; onSkin?: (s: string) => void; styles?: string[]; occasions?: string[];
   /** layout com arte própria: o segmento fica desativado com esta explicação */
   disabledNote?: ReactNode;
@@ -164,11 +163,7 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
       {rec?.direction && <p className="type-caption text-muted">{rich("backgroundStudio.direcao_recomendada_para", { value: (styles ?? []).join(", ") || t("backgroundStudio.o_look"), value2: direction?.label ?? rec.direction }, { 0: ($c) => <b>{$c}</b> })}{direction?.aura && <Button size="sm" className="ml-2" onClick={() => { onChange({ compositionPreset:null, aura: { variantId: direction.aura!, format: value.aura?.format }, materialId: direction.material ?? null, aiArt: null, uploadUrl: null }); if (direction.skin && onSkin) onSkin(direction.skin); }}>{t("backgroundStudio.aplicar_recomendada")}</Button>}</p>}
       <AuraGuide/>
       <AuraHypePicker value={value.auraHype} onChange={mode=>onChange({auraHype:mode})}/>
-      <OptionStrip title={t("auraMetamorphose.title")} hint={<p className="type-caption text-muted">{t("auraMetamorphose.hint")}</p>}>
-        {(["OFF","PRISMA","CONSTELACAO","FIO_VIVO","HOLOGRAFIA"] as const).map(mode=><button key={mode} type="button" className="opt-tile" aria-pressed={(value.auraMetamorphose??"OFF")===mode} onClick={()=>onChange({auraMetamorphose:mode})}><span className="opt-thumb relative overflow-hidden bg-surface-3">{mode!=="OFF"&&<AuraMetamorphose mode={mode} preview/>}</span><span className="opt-name">{t(`auraMetamorphose.${mode}`)}</span></button>)}
-      </OptionStrip>
-      <AuraFashionPicker value={value.compositionPreset} onChange={preset=>onChange({compositionPreset:preset,aiArt:null,uploadUrl:null,...(preset?.family==="HYPE"?{auraHype:"SCANNER" as const}:preset?.family==="METAMORPHOSE"?{auraMetamorphose:"PRISMA" as const}:{})})}/>
-      <CardBorderEditor value={value.border} onChange={border=>onChange({border})}/>
+      <AuraFashionPicker brandName={brandName} colorHex={colorHex} colorName={colorName} value={value.compositionPreset} onChange={preset=>onChange({compositionPreset:preset,aiArt:null,uploadUrl:null,...(preset?.family==="HYPE"?{auraHype:"SCANNER" as const}:preset?.family==="METAMORPHOSE"?{auraMetamorphose:"PRISMA" as const}:{})})}/>
       <OptionStrip title={t("backgroundStudio.preset_aura")}>
         {(cat?.auraPresets ?? []).map((a) => <button key={a.id} type="button" aria-pressed={auraPreset?.id === a.id} className="opt-tile" title={a.archetype} onClick={() => onChange({ compositionPreset:null, aura: { variantId: a.variants?.[0]?.id ?? a.id, format: value.aura?.format }, aiArt: null, uploadUrl: null })}>
           {a.variants?.[0]?.static?.previewUrl ? <img src={a.variants[0].static.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" style={{ background: `linear-gradient(135deg, ${(a.palette ?? ["#999", "#ccc"]).join(",")})` }} />}
