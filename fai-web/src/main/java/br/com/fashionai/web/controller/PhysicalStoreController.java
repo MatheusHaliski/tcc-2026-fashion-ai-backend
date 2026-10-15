@@ -39,6 +39,11 @@ public class PhysicalStoreController {
         return store.mine(user);
     }
 
+    @GetMapping("/api/physical-store/products")
+    public List<Map<String, Object>> sellerProducts(CurrentUser user, @RequestParam String category) {
+        return store.sellerProducts(user, category);
+    }
+
     @PostMapping("/api/physical-store/listings")
     @ResponseStatus(HttpStatus.CREATED)
     public Map<String, Object> create(CurrentUser user, @RequestBody PhysicalStoreService.ListingForm body) {

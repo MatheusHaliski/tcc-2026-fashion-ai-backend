@@ -13,11 +13,13 @@ import br.com.fashionai.domain.model.PhysicalStoreOrder;
 import br.com.fashionai.domain.model.User;
 import br.com.fashionai.domain.model.enums.CatalogIngestionStatus;
 import br.com.fashionai.domain.repository.CatalogProductRepository;
+import br.com.fashionai.domain.repository.BrandRepository;
 import br.com.fashionai.domain.repository.FaiPointsLedgerEntryRepository;
 import br.com.fashionai.domain.repository.PhysicalStoreListingRepository;
 import br.com.fashionai.domain.repository.PhysicalStoreOrderRepository;
 import br.com.fashionai.domain.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +51,7 @@ public class PhysicalStoreService {
     private final PhysicalStoreListingRepository listings;
     private final PhysicalStoreOrderRepository orders;
     private final CatalogProductRepository products;
+    private final BrandRepository brands;
     private final FaiPointsLedgerEntryRepository ledger;
     private final UserRepository users;
     private final Guard guard;
@@ -56,11 +59,12 @@ public class PhysicalStoreService {
     private final WardrobeCreatorService creator;
 
     public PhysicalStoreService(PhysicalStoreListingRepository listings, PhysicalStoreOrderRepository orders,
-                                CatalogProductRepository products, FaiPointsLedgerEntryRepository ledger, UserRepository users,
+                                CatalogProductRepository products, BrandRepository brands, FaiPointsLedgerEntryRepository ledger, UserRepository users,
                                 Guard guard, CatalogService catalog, WardrobeCreatorService creator) {
         this.listings = listings;
         this.orders = orders;
         this.products = products;
+        this.brands = brands;
         this.ledger = ledger;
         this.users = users;
         this.guard = guard;
@@ -91,6 +95,21 @@ public class PhysicalStoreService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> sellerProducts(CurrentUser user, String category) {
+        requireSeller(user);
+        String normalized = category == null ? "" : category.trim().toUpperCase(Locale.ROOT);
+        if (!Set.of("CLOTHING", "SHOES", "ACCESSORIES").contains(normalized)) throw ApiException.badRequest("CATEGORIA_INVALIDA", "Choose clothing, shoes, or accessories.");
+        String brandId = brands.findByBrandProfile_Owner_Id(user.id()).map(b -> b.getId().toString()).orElse(null);
+        Set<String> categories = switch (normalized) {
+            case "CLOTHING" -> CLOTHING;
+            case "SHOES" -> Set.of("shoes_piece");
+            default -> Set.of("accessory_piece");
+        };
+        return categories.stream().flatMap(value -> products.browse(brandId, value, null, null, null, null, null, null, PageRequest.of(0, 96))
+                .getContent().stream()).map(p -> catalog.product(p.getId())).toList();
+    }
+
     @Transactional
     public Map<String, Object> save(CurrentUser user, UUID listingId, ListingForm form) {
         requireSeller(user);
@@ -105,6 +124,11 @@ public class PhysicalStoreService {
                 .contains(product.getIngestionStatus()) || !CATEGORIES.contains(product.getCategory())) {
             throw ApiException.badRequest("PRODUTO_NAO_DISPONIVEL", "This catalog product cannot be listed in the physical store.");
         }
+        brands.findByBrandProfile_Owner_Id(user.id()).ifPresent(brand -> {
+            if (!brand.getId().equals(product.getBrandId())) {
+                throw ApiException.badRequest("PRODUTO_FORA_DA_MARCA", "Brands can only list products from their own catalog.");
+            }
+        });
         PhysicalStoreListing listing;
         if (listingId == null) {
             listing = new PhysicalStoreListing();
