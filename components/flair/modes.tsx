@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { api, mediaUrl } from "@/lib/api/client";
 import { useApi } from "@/lib/hooks/use-api";
+import { levelNameKey, hasReachedLevel, type PointsAccount } from "@/lib/points/hub";
 import type { UserCard } from "@/lib/api/types";
 import { Avatar, Badge, Button, Card, cn, ErrorState, Field, Input, Select, Skeleton, useToast } from "@/components/ui";
 import { FlairCardView, type FlairCard } from "@/components/flair/flair-card";
@@ -46,22 +48,40 @@ export function FlairModes({ initial, onPlayed, skin }: { initial?: string | nul
   const catalog = useApi<Catalog>((signal) => api.get("/api/flair/modes", { signal }), []);
   const looks = useApi<{ looks: ModeLook[] }>((signal) => api.get("/api/flair/modes/looks", { signal }), []);
   const trophies = useApi<{ id: string; title: string; mode: string }[]>((signal) => api.get("/api/flair/modes/trophies", { signal }), []);
+  const points = useApi<PointsAccount>((signal) => api.get("/api/me/points", { signal }), []);
   const [mode, setMode] = useState<string | null>(initial ?? null);
   if (catalog.error) return <ErrorState error={catalog.error} onRetry={catalog.reload} />;
   if (catalog.loading || !catalog.data) return <Skeleton className="h-64" />;
   const c = catalog.data; const my = looks.data?.looks ?? [];
   const classic = classicModes();
+  const account = points.data;
+  const currentThreshold = account?.levels?.find((level) => level.level === account.level)?.threshold ?? 0;
+  const xpPercent = account?.nextLevel
+    ? Math.max(0, Math.min(100, Math.floor(100 * (account.lifetime - currentThreshold) / Math.max(1, account.nextLevel.threshold - currentThreshold))))
+    : 100;
+  const loftUnlocked = hasReachedLevel(account?.level, "LOFT");
   const current = c.modes.find((m) => m.code === mode) ?? classic.find((m) => m.code === mode);
   const isClassic = !!current && !!CLASSIC_ICON[current.code];
   const played = () => { trophies.reload(); onPlayed?.(); };
   const props = { looks: my, catalog: c, onDone: played };
   return (
     <div className="grid gap-4">
+      {account && <section className="surface p-3" aria-label={t("flair.xp.title")}>
+        <div className="flex flex-wrap items-baseline justify-between gap-2"><strong>{t("flair.xp.title")} · {t(levelNameKey(account.level))}</strong><span className="type-caption tabular">{t("flair.xp.lifetime", { points: account.lifetime })}</span></div>
+        <div className="profile-level-track mt-2" role="progressbar" aria-label={account.nextLevel ? t("flair.xp.progress", { level: t(levelNameKey(account.nextLevel.level)) }) : t("levelProgress.maximum")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={xpPercent}><i style={{ width: `${xpPercent}%` }} /></div>
+        <p className="type-caption mt-1">{account.nextLevel ? t("flair.xp.missing", { points: account.nextLevel.missing, level: t(levelNameKey(account.nextLevel.level)) }) : t("levelProgress.maximum")}</p>
+      </section>}
       {(trophies.data?.length ?? 0) > 0 && <div className="flex flex-wrap gap-1.5" aria-label={t("flair.modes.trofeus_flair")}>{trophies.data!.slice(0, 8).map((x) => <span key={x.id} className="mode-trophy">🏆 {x.title}</span>)}</div>}
       {!current && <>
-        <section><h2 className="type-h3 mb-2">{t("flair.duelos_e_equipes")}</h2><div className="mode-grid">{classic.map((m) => <ModeCard key={m.code} m={m} icon={<FaiIcon id={CLASSIC_ICON[m.code]} size={24} decorative />} onOpen={() => setMode(m.code)} />)}</div></section>
-        <section><h2 className="type-h3 mb-2">{t("flair.modes.nucleo_do_flair")}</h2><div className="mode-grid">{c.modes.filter((m) => m.group === "NUCLEO").map((m) => <ModeCard key={m.code} m={m} onOpen={() => setMode(m.code)} />)}</div></section>
-        <section><h2 className="type-h3 mb-2">{t("flair.modes.eventos_e_modos_especiais")}</h2><div className="mode-grid">{c.modes.filter((m) => m.group === "ESPECIAL").map((m) => <ModeCard key={m.code} m={m} onOpen={() => setMode(m.code)} />)}</div></section>
+        <section><h2 className="type-h3 mb-2">{t("flair.modes.category.flair")}</h2><div className="mode-grid">{classic.map((m) => <ModeCard key={m.code} m={m} icon={<FaiIcon id={CLASSIC_ICON[m.code]} size={24} decorative />} onOpen={() => setMode(m.code)} />)}{c.modes.map((m) => <ModeCard key={m.code} m={m} onOpen={() => setMode(m.code)} />)}</div></section>
+        <section><h2 className="type-h3 mb-2">{t("flair.modes.category.metamorphose")}</h2>
+          <div className="mode-grid">
+            <Link href={loftUnlocked ? "/flair/aventura" : "/points"} className={cn("fm-card", !loftUnlocked && "fm-card-locked")} aria-label={loftUnlocked ? t("flair.modes.afterparty.open") : t("flair.modes.afterparty.locked", { level: t("levelProgress.name.LOFT") })}>
+              <span className="fm-card-emoji" aria-hidden>{loftUnlocked ? "✨" : "🔒"}</span><p className="type-h3">{t("afterparty.title")}</p><p className="type-body-sm text-muted">{t("afterparty.lead")}</p>
+              <p className="type-caption">{loftUnlocked ? t("flair.modes.afterparty.open") : t("flair.modes.afterparty.locked", { level: t("levelProgress.name.LOFT") })}</p>
+            </Link>
+          </div>
+        </section>
         <p className="type-caption text-muted">{t("hypeFlair.modes_nota", { ethics: c.ethics })}</p>
       </>}
       {current && (
@@ -408,4 +428,3 @@ function UltimatePanel({ looks, onDone }: PanelProps) {
     </div>
   );
 }
-

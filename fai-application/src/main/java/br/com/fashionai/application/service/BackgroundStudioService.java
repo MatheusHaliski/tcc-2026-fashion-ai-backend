@@ -146,10 +146,15 @@ public class BackgroundStudioService {
         Map<?,?> m = outer.get("scheme") instanceof Map<?,?> nested ? nested : outer;
         Object type = m.get("auraType");
         if ("IMPERSONATION".equals(type)) auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_IMPERSONATION);
-        else if (m.get("compositionPreset") instanceof Map<?,?> p && p.get("video") != null
-                || m.get("auraHype") instanceof String mode && !"OFF".equals(mode)
-                || m.get("auraMetamorphose") instanceof String meta && !"OFF".equals(meta))
-            auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_DYNAMIC);
+        else {
+            if (m.get("auraMetamorphose") instanceof String meta && !"OFF".equals(meta)) {
+                auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_METAMORPHOSE);
+            }
+            if (m.get("compositionPreset") instanceof Map<?,?> p && p.get("video") != null
+                    || m.get("auraHype") instanceof String mode && !"OFF".equals(mode)) {
+                auraPermissions.require(user.id(), AuraPermissionsService.AuraType.AURA_DYNAMIC);
+            }
+        }
     }
 
     public BackgroundStudioService(AssetCatalogService assets, AssetPresetRepository presets, SchemeRepository schemes,
