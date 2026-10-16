@@ -257,3 +257,17 @@ Referências primárias:
 - [Código oficial FASHN VTON 1.5](https://github.com/fashn-AI/fashn-vton-1.5)
 - [Pesos oficiais](https://huggingface.co/fashn-ai/fashn-vton-1.5)
 - [Endpoint dedicado e timeout](https://docs.cloud.google.com/vertex-ai/docs/predictions/create-public-endpoint)
+
+### Construir a imagem corrigida sem implantar GPU
+
+No Cloud Shell autenticado, este comando publica uma imagem nova do commit atual no Artifact Registry em São Paulo. Não precisa de fotos e não registra modelo nem cria endpoint/réplica T4:
+
+```bash
+cd ~/fashionai-gpu && git pull --ff-only && python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --build-only
+```
+
+O build usa o Dockerfile corrigido: pesos em `/opt/fashionai/weights/fashn`, permissões de leitura e verificação SHA-256 dos seis arquivos após `USER 10001`. Uma falha nesse preflight impede a publicação. O ID é salvo em `work/fashn-gpu-proof/images/<commit>/build.json`; repetir o mesmo comando retoma a espera, sem outro build. O resultado só declara `IMAGE_BUILD_SUCCEEDED` depois de Cloud Build retornar sucesso. Isso não comprova inferência CUDA.
+
+A execução completa com `--new-release` no mesmo commit/diretório de saída reaproveita esse build, preservando o estado da tentativa antiga. Não use o ID `6f7f214f-c009-4f5c-8426-618ab51bde64`: ele contém a imagem anterior à correção.
+
+Esta sessão do Codex não tem identidade Google Cloud; a publicação deve ser executada no Cloud Shell autenticado. O modo de planejamento local (`--build-only` sem `--apply`) não acessa o GCP.

@@ -356,3 +356,43 @@ def test_new_release_blocks_pending_deployment_and_active_endpoint(tmp_path):
         with pytest.raises(RuntimeError,match='NO_DEPLOYED_MODEL'):
             start_new_release(cloud,state,tmp_path/'state.json','NEW',{'name':'ENDPOINT','deployedModels':[{'id':'KEEP'}]})
     assert not list(tmp_path.glob('deployment.previous-*'))
+
+
+def test_image_only_plan_never_touches_cloud(tmp_path,capsys):
+    from scripts.cloud import deploy_fashn_vertex as installer
+    with patch.object(installer,'command',side_effect=AssertionError('plan must be local')):
+        result=installer.build_only_release('fashionai-test','southamerica-east1','repo/image:abc123',tmp_path)
+    assert result['executed'] is False and result['gpuReplicas']==0
+    assert not list(tmp_path.iterdir())
+
+
+def test_image_only_build_checkpoints_and_never_deploys(tmp_path):
+    from scripts.cloud import deploy_fashn_vertex as installer
+    calls=[]
+    def fake_command(*args,**kwargs):
+        calls.append(args)
+        if args[:3]==('artifacts','repositories','list'):
+            return json.dumps([{'name':'projects/test/locations/southamerica-east1/repositories/fashionai-vton'}])
+        return 'fashionai-test'
+    def fake_build(project,region,image,state,state_file):
+        assert state_file.name=='build.json'
+        assert json.loads(state_file.read_text())['image']==image
+        state['buildId']='TEST_ONLY_BUILD'
+        installer.save_json(state_file,state)
+    with patch.object(installer,'command',side_effect=fake_command),patch.object(installer,'build_image',side_effect=fake_build),patch.object(installer.Cloud,'request',side_effect=AssertionError('no Vertex request')):
+        result=installer.build_only_release('fashionai-test','southamerica-east1','repo/image:abc123',tmp_path,True)
+    assert result['status']=='IMAGE_BUILD_SUCCEEDED' and result['gpuReplicas']==0
+    assert result['gpuInferenceValidated'] is False
+    assert not (tmp_path/'deployment.json').exists()
+    assert not any('aiplatform.googleapis.com' in c for c in calls)
+    assert json.loads((tmp_path/'images/abc123/result.json').read_text())==result
+
+
+def test_build_only_cli_requires_no_photos_and_no_auth(monkeypatch,capsys):
+    from scripts.cloud import deploy_fashn_vertex as installer
+    monkeypatch.setattr('sys.argv',['deploy_fashn_vertex.py','--build-only'])
+    with patch.object(installer,'command',side_effect=AssertionError('no cloud call')):
+        installer.main()
+    plan=json.loads(capsys.readouterr().out)
+    assert plan['executed'] is False and plan['gpuReplicas']==0
+    assert plan['image'].startswith('southamerica-east1-docker.pkg.dev/')
