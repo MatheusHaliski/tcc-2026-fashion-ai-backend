@@ -35,6 +35,17 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self,*args,**kwargs):return None
 
 
+class CloudOperationFailed(RuntimeError):
+    def __init__(self,operation):
+        self.operation=operation
+        error=operation.get('error',{})
+        # Management operations carry resource diagnostics, not prediction inputs.
+        message=str(error.get('message','No error message returned'))[:4000]
+        message=re.sub(r'(?i)bearer\s+[^\s]+','Bearer [REDACTED]',message)
+        super().__init__(f"CLOUD_OPERATION_FAILED: {error.get('code')}; "
+                         f"operation={operation.get('name')}; message={message}")
+
+
 class Cloud:
     def __init__(self,project,region):
         self.project=project;self.region=region
@@ -59,13 +70,15 @@ class Cloud:
             raise RuntimeError(f'GOOGLE_CLOUD_HTTP_{error.code}: {method} {path.split(":")[0]}') from None
 
     def wait(self,operation,seconds=2400):
-        deadline=time.monotonic()+seconds
+        started=time.monotonic();deadline=started+seconds
+        print('Operação: '+str(operation.get('name','UNKNOWN')),flush=True)
         while not operation.get('done'):
             if time.monotonic()>deadline:raise RuntimeError('CLOUD_OPERATION_TIMEOUT_CHECK_CONSOLE')
-            print('Aguardando operação do Google Cloud...',flush=True)
+            kind=operation.get('metadata',{}).get('@type','operação').rsplit('.',1)[-1]
+            print(f'Aguardando Google Cloud: {kind} ({round(time.monotonic()-started)}s)...',flush=True)
             time.sleep(20)
             operation=self.request('GET',operation['name'])
-        if operation.get('error'):raise RuntimeError('CLOUD_OPERATION_FAILED: '+str(operation['error'].get('code')))
+        if operation.get('error'):raise CloudOperationFailed(operation)
         return operation.get('response',{})
 
     def endpoints(self):
@@ -223,6 +236,37 @@ def build_image(project,region,image,state,state_file):
     return wait_build(project,region,build_id,image)
 
 
+def resume_deployment(cloud,state,state_file,retry_failed=False):
+    previous=cloud.request('GET',state['deployOperation'])
+    if previous.get('done') and previous.get('error') and retry_failed:
+        history=state.setdefault('failedDeployOperations',[])
+        history.append({'name':previous.get('name',state['deployOperation']),
+                        'error':previous['error']})
+        state.pop('deployOperation',None);state.pop('deployedModelId',None)
+        save_json(state_file,state)
+        print('Nova tentativa de deploy solicitada explicitamente; falha anterior preservada no estado.',flush=True)
+    else:
+        # Even a completed operation MUST have its error checked. Never silently
+        # submit another billed attempt when retrying this script after failure.
+        cloud.wait(previous)
+
+
+def diagnose_deployment(project,region,output):
+    path=Path(output)/'deployment.json'
+    if not path.is_file():raise RuntimeError('NO_SAVED_DEPLOYMENT_STATE')
+    state=json.loads(path.read_text())
+    if state.get('project')!=project:raise RuntimeError('STATE_BELONGS_TO_ANOTHER_PROJECT')
+    cloud=Cloud(project,region)
+    print(json.dumps({key:state.get(key) for key in ('project','image','buildId','model','endpoint','deployOperation')},indent=2),flush=True)
+    if state.get('deployOperation'):
+        operation=cloud.request('GET',state['deployOperation'])
+        print(json.dumps({key:operation.get(key) for key in ('name','done','error')},indent=2,ensure_ascii=False),flush=True)
+    if state.get('endpoint'):
+        endpoint=cloud.request('GET',state['endpoint'])
+        print(json.dumps({'endpoint':endpoint.get('name'),'deployedModels':[
+            {key:model.get(key) for key in ('id','model','displayName')} for model in endpoint.get('deployedModels',[])]},indent=2),flush=True)
+
+
 def image_payload(path):
     data=Path(path).read_bytes()
     if not data or len(data)>3_000_000:raise ValueError('SMOKE_IMAGE_MUST_BE_1_BYTE_TO_3_MB')
@@ -243,17 +287,22 @@ def save_json(path,value):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--project',default=PROJECT);parser.add_argument('--region',default=REGION)
-    parser.add_argument('--person',required=True,help='Local image of one consenting adult, full body recommended')
-    parser.add_argument('--garment',required=True,help='Local catalog garment photo')
-    parser.add_argument('--category',choices=['tops','bottoms','one-pieces'],required=True)
+    parser.add_argument('--person',help='Local image of one consenting adult, full body recommended')
+    parser.add_argument('--garment',help='Local catalog garment photo')
+    parser.add_argument('--category',choices=['tops','bottoms','one-pieces'])
     parser.add_argument('--garment-photo-type',choices=['model','flat-lay'],default='model')
     parser.add_argument('--output',default='work/fashn-gpu-proof')
     parser.add_argument('--apply',action='store_true')
     parser.add_argument('--keep-deployed',action='store_true')
+    parser.add_argument('--diagnose',action='store_true',help='Read saved deployment/operation diagnostics; no cloud mutations')
+    parser.add_argument('--retry-failed-deploy',action='store_true',help='Retry a confirmed failed deployment after its cause was corrected')
     parser.add_argument('--resume-build',help='Resume this existing build without submitting another one')
     parser.add_argument('--restart-cancelled-build',action='store_true',help='Start a replacement only if the selected build is confirmed CANCELLED')
     args=parser.parse_args()
     if not re.fullmatch(r'[a-z][a-z0-9-]{4,61}[a-z0-9]',args.project) or not re.fullmatch(r'[a-z]+-[a-z]+[0-9]',args.region):parser.error('Invalid project/region')
+    if args.diagnose:
+        diagnose_deployment(args.project,args.region,args.output);return
+    if not args.person or not args.garment or not args.category:parser.error('--person, --garment and --category are required for inference')
     person,person_hash=image_payload(args.person);garment,garment_hash=image_payload(args.garment)
     source=subprocess.run(['git','rev-parse','HEAD'],cwd=ROOT,check=True,capture_output=True,text=True).stdout.strip()
     tag=source[:12];image=f'{args.region}-docker.pkg.dev/{args.project}/fashionai-vton/fashn:{tag}'
@@ -294,8 +343,7 @@ def main():
     state.update(project=args.project,image=image,endpoint=endpoint_name);save_json(state_file,state)
     if state.get('deployOperation'):
         # Resume a previous submission instead of creating another deployment.
-        previous=cloud.request('GET',state['deployOperation'])
-        if not previous.get('done'):cloud.wait(previous)
+        resume_deployment(cloud,state,state_file,args.retry_failed_deploy)
         endpoint=cloud.request('GET',endpoint_name)
     deployed=endpoint.get('deployedModels',[])
     if len(deployed)>1:raise RuntimeError('MORE_THAN_ONE_REPLICA_MODEL_NOT_ALLOWED')
