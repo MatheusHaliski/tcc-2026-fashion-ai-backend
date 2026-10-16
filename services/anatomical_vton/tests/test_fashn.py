@@ -52,6 +52,7 @@ def test_assets_are_atomic_cached_and_checksum_checked(tmp_path):
     with patch('urllib.request.urlopen',side_effect=AssertionError('cached artifact must not download')):
         assert download_file(tmp_path,entry)['status']=='CACHED'
     assert verify_file(target,entry)
+    target.chmod(0o600)  # Simulate deliberate owner tampering with immutable weights.
     target.write_bytes(b'x'*len(data));assert not verify_file(target,entry)
     with pytest.raises(AlignmentError,match='OUTSIDE_ROOT'):artifact_path(tmp_path,'../outside')
 
@@ -305,3 +306,53 @@ def test_diagnose_mode_only_reads_saved_operation_and_endpoint(tmp_path,capsys):
         assert call.call_count==2
         command.assert_not_called()
     assert 'TEST_ONLY' in capsys.readouterr().out
+
+
+def test_downloaded_public_weights_are_readable_by_other_runtime_uid(tmp_path):
+    import io
+    data=b'TEST_PUBLIC_MODEL_WEIGHTS';entry={'path':'a.bin','repo':'TEST_ONLY','revision':'TEST_ONLY','filename':'TEST_ONLY',
+        'size':len(data),'sha256':hashlib.sha256(data).hexdigest()}
+    with patch('services.anatomical_vton.fashn_download.urllib.request.urlopen',return_value=io.BytesIO(data)):
+        assert download_file(tmp_path,entry)['status']=='VERIFIED'
+    assert (tmp_path/'a.bin').stat().st_mode & 0o777==0o444
+    assert verify_file(tmp_path/'a.bin',entry)
+    (tmp_path/'a.bin').chmod(0o600)
+    assert download_file(tmp_path,entry)['status']=='CACHED'
+    assert (tmp_path/'a.bin').stat().st_mode & 0o777==0o444
+
+
+def test_missing_and_invalid_weights_identify_the_file_without_skipping_checks(tmp_path):
+    from services.anatomical_vton.fashn_download import verify_assets
+    data=b'TEST_PUBLIC_MODEL';entry={'path':'model.bin','size':len(data),'sha256':hashlib.sha256(data).hexdigest()}
+    with patch('services.anatomical_vton.fashn_download.assets',return_value={'files':[entry]}):
+        with pytest.raises(AlignmentError,match='FASHN_WEIGHT_MISSING:model.bin'):verify_assets(tmp_path)
+        (tmp_path/'model.bin').write_bytes(b'bad')
+        with pytest.raises(AlignmentError,match='FASHN_WEIGHT_SIZE_MISMATCH:model.bin'):verify_assets(tmp_path)
+        (tmp_path/'model.bin').write_bytes(b'x'*len(data))
+        with pytest.raises(AlignmentError,match='FASHN_WEIGHT_SHA256_MISMATCH:model.bin'):verify_assets(tmp_path)
+        with patch('services.anatomical_vton.fashn_download.verify_file',side_effect=PermissionError()):
+            with pytest.raises(AlignmentError,match='FASHN_WEIGHT_UNREADABLE:model.bin'):verify_assets(tmp_path)
+
+
+def test_new_release_archives_terminal_old_model_without_deleting_cloud_resources(tmp_path):
+    from scripts.cloud.deploy_fashn_vertex import start_new_release,Cloud
+    state={'image':'OLD_IMAGE','endpoint':'KEEP_ENDPOINT','model':'KEEP_MODEL','deployOperation':'FAILED_DEPLOY'}
+    cloud=Cloud('fashionai-test','southamerica-east1')
+    with patch.object(cloud,'request',return_value={'done':True,'error':{'code':9}}) as request:
+        assert start_new_release(cloud,state,tmp_path/'deployment.json','NEW_IMAGE',{'name':'KEEP_ENDPOINT'})=={}
+        request.assert_called_once_with('GET','FAILED_DEPLOY')
+    archives=list(tmp_path.glob('deployment.previous-*.json'))
+    assert len(archives)==1 and json.loads(archives[0].read_text())==state
+    assert start_new_release(cloud,state,tmp_path/'deployment.json','OLD_IMAGE',{'name':'KEEP_ENDPOINT'})==state
+
+
+def test_new_release_blocks_pending_deployment_and_active_endpoint(tmp_path):
+    from scripts.cloud.deploy_fashn_vertex import start_new_release,Cloud
+    state={'image':'OLD','endpoint':'ENDPOINT','deployOperation':'PENDING_DEPLOY'}
+    cloud=Cloud('fashionai-test','southamerica-east1')
+    with patch.object(cloud,'request',return_value={'done':False}):
+        with pytest.raises(RuntimeError,match='STILL_RUNNING'):
+            start_new_release(cloud,state,tmp_path/'state.json','NEW',{'name':'ENDPOINT'})
+        with pytest.raises(RuntimeError,match='NO_DEPLOYED_MODEL'):
+            start_new_release(cloud,state,tmp_path/'state.json','NEW',{'name':'ENDPOINT','deployedModels':[{'id':'KEEP'}]})
+    assert not list(tmp_path.glob('deployment.previous-*'))

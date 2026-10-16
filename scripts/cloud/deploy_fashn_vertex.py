@@ -267,6 +267,26 @@ def diagnose_deployment(project,region,output):
             {key:model.get(key) for key in ('id','model','displayName')} for model in endpoint.get('deployedModels',[])]},indent=2),flush=True)
 
 
+def start_new_release(cloud,state,state_file,image,endpoint):
+    if not state or state.get('image')==image:return state
+    if endpoint.get('deployedModels'):raise RuntimeError('NEW_RELEASE_REQUIRES_NO_DEPLOYED_MODEL')
+    if state.get('endpoint') not in (None,endpoint.get('name')):
+        raise RuntimeError('STATE_ENDPOINT_MISMATCH')
+    if state.get('deployOperation'):
+        operation=cloud.request('GET',state['deployOperation'])
+        if not operation.get('done'):raise RuntimeError('PREVIOUS_DEPLOYMENT_STILL_RUNNING')
+    elif state.get('buildId'):
+        build=describe_build(cloud.project,cloud.region,state['buildId'])
+        if build.get('status') in ('PENDING','QUEUED','WORKING'):
+            raise RuntimeError('PREVIOUS_BUILD_STILL_RUNNING')
+    archive=Path(state_file).with_name('deployment.previous-'+str(time.time_ns())+'.json')
+    save_json(archive,state)
+    print('Estado da versão anterior preservado em '+str(archive),flush=True)
+    # Preserve all registered cloud resources. The new image gets a new model;
+    # never silently change the image of an existing registered model.
+    return {}
+
+
 def image_payload(path):
     data=Path(path).read_bytes()
     if not data or len(data)>3_000_000:raise ValueError('SMOKE_IMAGE_MUST_BE_1_BYTE_TO_3_MB')
@@ -294,6 +314,7 @@ def main():
     parser.add_argument('--output',default='work/fashn-gpu-proof')
     parser.add_argument('--apply',action='store_true')
     parser.add_argument('--keep-deployed',action='store_true')
+    parser.add_argument('--new-release',action='store_true',help='Archive terminal previous release state and build/register the current code; preserves old cloud resources')
     parser.add_argument('--diagnose',action='store_true',help='Read saved deployment/operation diagnostics; no cloud mutations')
     parser.add_argument('--retry-failed-deploy',action='store_true',help='Retry a confirmed failed deployment after its cause was corrected')
     parser.add_argument('--resume-build',help='Resume this existing build without submitting another one')
@@ -302,13 +323,14 @@ def main():
     if not re.fullmatch(r'[a-z][a-z0-9-]{4,61}[a-z0-9]',args.project) or not re.fullmatch(r'[a-z]+-[a-z]+[0-9]',args.region):parser.error('Invalid project/region')
     if args.diagnose:
         diagnose_deployment(args.project,args.region,args.output);return
+    if args.new_release and (args.resume_build or args.retry_failed_deploy):parser.error('--new-release cannot reuse the old build or retry its old model')
     if not args.person or not args.garment or not args.category:parser.error('--person, --garment and --category are required for inference')
     person,person_hash=image_payload(args.person);garment,garment_hash=image_payload(args.garment)
     source=subprocess.run(['git','rev-parse','HEAD'],cwd=ROOT,check=True,capture_output=True,text=True).stdout.strip()
     tag=source[:12];image=f'{args.region}-docker.pkg.dev/{args.project}/fashionai-vton/fashn:{tag}'
     plan={'executed':False,'engine':'FASHN_VTON_1_5','project':args.project,'region':args.region,
           'image':None if args.resume_build else image,'resumeBuildId':args.resume_build,'replicas':{'min':1,'max':1},'accelerator':'NVIDIA_TESLA_T4',
-          'keepDeployed':args.keep_deployed,'physicalFitCertified':False}
+          'keepDeployed':args.keep_deployed,'newRelease':args.new_release,'physicalFitCertified':False}
     if not args.apply:print(json.dumps(plan,indent=2));return
     # Authentication and project access are checked before any mutation.
     cloud=Cloud(args.project,args.region);endpoints=cloud.endpoints()
@@ -325,6 +347,10 @@ def main():
         command('artifacts','repositories','create','fashionai-vton','--repository-format=docker','--location='+args.region,'--project='+args.project,'--quiet')
     state_file=output/'deployment.json'
     state=json.loads(state_file.read_text()) if state_file.exists() else {}
+    if state and state.get('project')!=args.project:raise RuntimeError('STATE_BELONGS_TO_ANOTHER_PROJECT')
+    if args.new_release:
+        if not matches and state.get('endpoint'):raise RuntimeError('PREVIOUS_ENDPOINT_NOT_FOUND')
+        state=start_new_release(cloud,state,state_file,image,matches[0] if matches else {})
     resume_id=args.resume_build or state.get('buildId')
     if resume_id:
         build=describe_build(args.project,args.region,resume_id)

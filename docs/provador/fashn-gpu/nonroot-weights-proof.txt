@@ -1,0 +1,11 @@
+Local filesystem test, not GPU inference or Vertex deployment.
+Image: mysql:8.4 (existing local image); network disabled; read-only bind.
+Original permission 0400: CONFIRMED_OLD_MODE_NOT_READABLE for UID 10001.
+Corrected permission 0444: actual six pinned model assets hashed by UID 10001.
+uid=10001 gid=10001 groups=10001
+model.safetensors: OK
+dwpose/yolox_l.onnx: OK
+dwpose/dw-ll_ucoco_384.onnx: OK
+parser/model.safetensors: OK
+parser/config.json: OK
+parser/preprocessor_config.json: OK

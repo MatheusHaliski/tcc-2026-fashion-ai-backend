@@ -10,6 +10,7 @@ import urllib.request
 from .models import AlignmentError
 
 MANIFEST=Path(__file__).with_name('fashn_assets.json')
+DEFAULT_WEIGHTS_DIR='/opt/fashionai/weights/fashn'
 
 
 def assets():return json.loads(MANIFEST.read_text())
@@ -31,12 +32,22 @@ def verify_file(path,entry):
 
 def verify_assets(root):
     for entry in assets()['files']:
-        if not verify_file(artifact_path(root,entry['path']),entry):raise AlignmentError('FASHN_WEIGHT_MISSING_OR_CORRUPTED')
+        path=artifact_path(root,entry['path'])
+        # These are public model assets, never personal photographs or tokens.
+        name=entry['path']
+        try:
+            if not path.is_file():raise AlignmentError('FASHN_WEIGHT_MISSING:'+name)
+            if path.stat().st_size!=entry['size']:raise AlignmentError('FASHN_WEIGHT_SIZE_MISMATCH:'+name)
+            if not verify_file(path,entry):raise AlignmentError('FASHN_WEIGHT_SHA256_MISMATCH:'+name)
+        except OSError as error:
+            raise AlignmentError('FASHN_WEIGHT_UNREADABLE:'+name) from error
 
 
 def download_file(root,entry):
     path=artifact_path(root,entry['path']);path.parent.mkdir(parents=True,exist_ok=True)
-    if verify_file(path,entry):return {'file':entry['path'],'status':'CACHED'}
+    if verify_file(path,entry):
+        path.chmod(0o444)
+        return {'file':entry['path'],'status':'CACHED'}
     url=f"https://huggingface.co/{entry['repo']}/resolve/{entry['revision']}/{entry['filename']}"
     temporary=None
     try:
@@ -49,6 +60,9 @@ def download_file(root,entry):
                     if total>entry['size']:raise AlignmentError('FASHN_ASSET_SIZE_MISMATCH')
                     out.write(chunk)
         if not verify_file(temporary,entry):raise AlignmentError('FASHN_ASSET_CHECKSUM_MISMATCH')
+        # NamedTemporaryFile starts with mode 0600. The builder and inference
+        # UIDs differ: publish verified public weights as read-only for both.
+        temporary.chmod(0o444)
         os.replace(temporary,path)
         return {'file':entry['path'],'status':'VERIFIED','bytes':entry['size']}
     finally:
