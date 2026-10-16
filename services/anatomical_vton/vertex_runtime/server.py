@@ -57,7 +57,8 @@ def create_app(runtime=None,loader=None):
             if loader:factory=loader
             elif os.getenv('VTON_MODEL_ENGINE')=='fashn':
                 from ..fashn_runtime import NativeFashnRuntime
-                factory=lambda:NativeFashnRuntime(os.getenv('VTON_FASHN_WEIGHTS','/models/fashn'))
+                from ..fashn_download import DEFAULT_WEIGHTS_DIR
+                factory=lambda:NativeFashnRuntime(os.getenv('VTON_FASHN_WEIGHTS',DEFAULT_WEIGHTS_DIR))
             else:factory=lambda:SharedGpuBundle(os.getenv('VTON_MODEL_BUNDLE','/models'))
             # Missing/untrusted weights or unavailable CUDA fail startup. Never serve a mock.
             state['runtime']=await run_in_threadpool(factory)

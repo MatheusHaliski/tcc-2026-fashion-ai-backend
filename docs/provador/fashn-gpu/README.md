@@ -109,6 +109,48 @@ para benchmark independente de acurácia. Para avaliação real, use imagens
 consentidas, fotografias de produtos e referências de vestimenta por categoria.
 Não publique fotografias pessoais em evidências de PR sem autorização.
 
+## Corrigir o pacote de pesos e criar uma nova versão
+
+O servidor no Vertex abortou com `FASHN_WEIGHT_MISSING_OR_CORRUPTED`, antes de
+carregar os modelos em CUDA. Esse erro genérico não distingue ausência, tamanho,
+hash ou acesso; não prova que o download foi corrompido. A verificação de build
+anterior rodava como root. Os downloads temporários tinham permissão 0600 e o
+`chmod a-w` final os deixava 0400, incompatível com outro UID de inferência.
+
+A correção publica os pesos públicos como 0444 e usa o diretório próprio
+`/opt/fashionai/weights/fashn`, fora de `/models`. O diretório e o código precisam
+ser atravessáveis pelo usuário 10001. O build agora verifica **todos os pesos
+depois de USER 10001**, e importa FASHN/parser/ONNX sem GPU antes de publicar a
+imagem. HOME aponta para a pasta gravável do usuário. Nenhuma verificação de
+SHA-256 foi removida. A inicialização registra caminho/UID e erros específicos
+para arquivo ausente, ilegível, tamanho incorreto ou hash divergente.
+
+[Teste real de leitura dos seis pesos por UID 10001](nonroot-weights-proof.txt).
+Foi executado em contêiner local sem rede, com montagem somente leitura. O modo
+antigo negou leitura; o modo corrigido permitiu verificar SHA-256 dos seis
+arquivos reais, totalizando 2.550.962.243 bytes. Isso valida acesso/integridade,
+**não executa FASHN em GPU nem reproduz montagens internas do Vertex**. Não foi
+confirmado se o Vertex sobrepôs o antigo diretório; a nova localização evita
+compartilhar esse caminho e os novos diagnósticos identificam futuras falhas.
+
+Como a imagem registrada contém o pacote anterior, repetir o deploy do mesmo
+modelo ou usar `--resume-build` com o build antigo não aplica a correção.
+Depois de atualizar o código, utilize:
+
+```bash
+python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --new-release \
+  --person docs/provador/fashn-gpu/inputs/person-demo.png \
+  --garment docs/provador/fashn-gpu/inputs/garment-demo.webp \
+  --category tops --garment-photo-type flat-lay
+```
+
+`--new-release` preserva o estado anterior em `deployment.previous-*.json` e
+registra uma nova imagem/modelo. Não apaga modelos, imagens ou endpoints antigos;
+não substitui um modelo implantado nem avança enquanto uma operação anterior
+estiver pendente. O endpoint vazio pode ser reutilizado. Reexecutar com o mesmo
+commit retoma a nova versão em curso, sem criar outro build. Não combine essa
+opção com `--resume-build` ou `--retry-failed-deploy` do modelo anterior.
+
 ## Diagnosticar falha de deploy do Vertex
 
 `CLOUD_OPERATION_FAILED: 9` corresponde a uma pré-condição, mas o número sozinho
@@ -200,7 +242,7 @@ continuar separadamente; este modo não declara suas anotações como concluída
 
 ## Situação de validação
 
-Validação local: 67 testes Python (59 VTON e 8 de geometria digital twin) e
+Validação local: 71 testes Python (63 VTON e 8 de geometria digital twin) e
 26 testes Java direcionados. A suíte de CI usa pytest para incluir também os
 novos testes funcionais de contrato. Não foi executada a suíte inteira do
 monorepositório. As dependências GPU foram resolvidas, mas o build do contêiner
