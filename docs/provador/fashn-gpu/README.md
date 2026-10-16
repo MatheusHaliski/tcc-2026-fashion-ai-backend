@@ -109,6 +109,35 @@ para benchmark independente de acurácia. Para avaliação real, use imagens
 consentidas, fotografias de produtos e referências de vestimenta por categoria.
 Não publique fotografias pessoais em evidências de PR sem autorização.
 
+## Retomar um Cloud Build após interrupção do terminal
+
+O instalador envia o build com `--async`, grava seu ID em `deployment.json` e
+consulta o status separadamente a cada 20 segundos. Uma interrupção durante essa
+espera não envia cancelamento pelo `gcloud builds submit`. Reexecutar com a
+mesma pasta reutiliza o ID gravado; não submete outro build. Existe uma pequena
+janela entre a submissão e a gravação do ID: se a sessão cair exatamente nela,
+consulte o console e use `--resume-build ID_REAL`.
+
+Para builds criados pela versão anterior, depois de atualizar a cópia com
+`git pull --ff-only`, use os mesmos argumentos de imagens e acrescente:
+
+```text
+--resume-build ID_REAL_DO_BUILD
+```
+
+O instalador verifica projeto/imagem, aguarda se ainda estiver em execução e
+prossegue com registro/deploy se já estiver em `SUCCESS`. Se um build cancelado
+já tiver uma tentativa nova criada no console, procura e reutiliza essa tentativa
+para a mesma imagem. Mais de uma tentativa ativa impede nova submissão.
+
+Um build confirmado como `CANCELLED` só é substituído automaticamente quando
+`--restart-cancelled-build` também é informado e não há tentativa ativa ou
+concluída para reutilizar. `FAILURE`, `TIMEOUT` e outros erros não iniciam um
+novo build automaticamente: precisam de análise do log. O instalador preserva
+qualquer modelo registrado/operação de deploy. O diagnóstico de inferência
+registra separadamente o commit do instalador e a imagem/prefixo de commit do
+contêiner efetivamente utilizado.
+
 ## Retomar após erro de conta de serviço IAM
 
 `Service account ... does not exist` pode ocorrer enquanto a identidade criada
@@ -143,7 +172,7 @@ continuar separadamente; este modo não declara suas anotações como concluída
 
 ## Situação de validação
 
-Validação local: 59 testes Python (51 VTON e 8 de geometria digital twin) e
+Validação local: 64 testes Python (56 VTON e 8 de geometria digital twin) e
 26 testes Java direcionados. A suíte de CI usa pytest para incluir também os
 novos testes funcionais de contrato. Não foi executada a suíte inteira do
 monorepositório. As dependências GPU foram resolvidas, mas o build do contêiner
