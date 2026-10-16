@@ -1,0 +1,19 @@
+# syntax=docker/dockerfile:1
+FROM pytorch/pytorch:2.7.1-cuda12.6-cudnn9-runtime
+WORKDIR /app
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \
+    VTON_MODEL_ENGINE=fashn VTON_FASHN_WEIGHTS=/models/fashn \
+    VTON_VERTEX_MAX_PAYLOAD=9000000 HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+RUN apt-get update && apt-get install -y --no-install-recommends git libgl1 libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+COPY services/anatomical_vton/requirements-fashn.lock /app/requirements-fashn.lock
+RUN --mount=type=secret,id=proxy_ca \
+    if [ -f /run/secrets/proxy_ca ]; then export PIP_CERT=/run/secrets/proxy_ca; fi; \
+    python -m pip install --no-cache-dir -r /app/requirements-fashn.lock
+COPY services/anatomical_vton /app/services/anatomical_vton
+RUN python -m services.anatomical_vton.fashn_download --output /models/fashn \
+    && useradd --uid 10001 --create-home --home-dir /tmp/vton vton \
+    && chmod -R a-w /models
+USER 10001:10001
+EXPOSE 8080
+CMD ["python", "-m", "uvicorn", "services.anatomical_vton.vertex_runtime.server:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "1", "--no-access-log"]

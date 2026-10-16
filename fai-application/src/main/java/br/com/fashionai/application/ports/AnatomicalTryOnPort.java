@@ -4,5 +4,5 @@ import java.util.Map;
 public interface AnatomicalTryOnPort {
  boolean available();
  Map<String,Object> probePerson(byte[] person);
- Map<String,Object> render(String garmentId,byte[] garment,byte[] person,Map<String,Object> bodyEvidence,boolean mirror);
+ Map<String,Object> render(String garmentId,byte[] garment,byte[] person,String category,Map<String,Object> bodyEvidence,boolean mirror);
 }

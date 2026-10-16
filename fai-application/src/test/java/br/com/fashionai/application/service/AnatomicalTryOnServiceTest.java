@@ -40,6 +40,7 @@ class AnatomicalTryOnServiceTest {
         image = png(32, 40);
         when(user.id()).thenReturn(userId);
         when(piece.getId()).thenReturn(pieceId);
+        when(piece.getCategory()).thenReturn("upper_piece");
         when(wardrobe.owned(user, pieceId)).thenReturn(piece);
         when(media.requireOwnedMedia(userId, photo, Set.of(MediaService.MediaScope.OWNER), "personMediaUrl"))
                 .thenReturn(new MediaService.OwnedMedia("users/"+userId+"/photo.png", photo));
@@ -59,7 +60,7 @@ class AnatomicalTryOnServiceTest {
     }
 
     private void output(byte[] png) {
-        when(worker.render(anyString(), any(), any(), any(), anyBoolean())).thenReturn(
+        when(worker.render(anyString(), any(), any(), anyString(), any(), anyBoolean())).thenReturn(
                 Map.of("status", "READY", "image_png", Base64.getEncoder().encodeToString(png)));
     }
 
@@ -90,7 +91,7 @@ class AnatomicalTryOnServiceTest {
     }
 
     @Test void pendingAnnotationDoesNotSaveAnImage() {
-        when(worker.render(anyString(), any(), any(), any(), anyBoolean())).thenReturn(Map.of("status", "PENDING"));
+        when(worker.render(anyString(), any(), any(), anyString(), any(), anyBoolean())).thenReturn(Map.of("status", "PENDING"));
         assertThat(service.render(user, request(true))).containsEntry("status", "PENDING");
         verify(media, never()).put(anyString(), any(), anyString());
     }
@@ -102,6 +103,7 @@ class AnatomicalTryOnServiceTest {
         assertThat(service.render(user, request(true))).containsEntry("url", "/media/new-result.png")
                 .containsEntry("physicalFitCertified", false);
         verify(media).put(startsWith("users/"+userId+"/tryon/anatomical-"), eq(image), eq("image/png"));
+        verify(worker).render(eq("piece:"+pieceId), eq(image), eq(image), eq("upper_piece"), isNull(), eq(false));
         verify(wardrobe).owned(user, pieceId);
         verifyNoMoreInteractions(wardrobe);
     }
