@@ -13,7 +13,9 @@ do warping TPS por evidências anatômicas. Não substitui uma simulação de te
   Não há fallback CPU ou resultado simulado no servidor de inferência.
 - Uma requisição por vez e uma réplica T4. O dtype segue a implementação nativa:
   T4 usa float32; não se força bfloat16 em hardware incompatível.
-- DWPose rejeita ausência/multiplicidade de pessoas e pose insuficiente antes
+- O detector YOLOX é consultado antes do DWPose, evitando que o fallback de
+  estimativa no quadro inteiro seja contado como uma pessoa detectada.
+  DWPose rejeita ausência/multiplicidade de pessoas e pose insuficiente antes
   da geração. Após geração, pelo menos seis landmarks compartilhados precisam
   ter confiança >= 0,5 e RMSE normalizado <= 0,08. É um filtro inicial de
   consistência de pose; não mede fidelidade da roupa, identidade ou acurácia
@@ -125,7 +127,7 @@ continuar separadamente; este modo não declara suas anotações como concluída
 
 ## Situação de validação
 
-Validação local: 55 testes Python (47 VTON e 8 de geometria digital twin) e
+Validação local: 56 testes Python (48 VTON e 8 de geometria digital twin) e
 26 testes Java direcionados. A suíte de CI usa pytest para incluir também os
 novos testes funcionais de contrato. Não foi executada a suíte inteira do
 monorepositório. As dependências GPU foram resolvidas, mas o build do contêiner

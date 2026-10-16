@@ -68,6 +68,16 @@ def inferred_photo_type(garment_pose):
     return 'model' if points.shape[0]==1 and np.count_nonzero(scores[0,:18]>=.5)>=3 else 'flat-lay'
 
 
+def detected_pose(rgb,estimator,detector):
+    # Upstream DWPose deliberately estimates a whole-image pose when detection
+    # finds nobody. Never treat that fallback as evidence of a person.
+    bgr=np.ascontiguousarray(rgb[:,:,::-1])
+    boxes=np.asarray(detector(estimator.session_det,bgr))
+    if boxes.size==0:return np.empty((0,134,2)),np.empty((0,134))
+    if boxes.ndim!=2 or boxes.shape[1]!=4 or not np.isfinite(boxes).all():raise AlignmentError('INVALID_PERSON_DETECTION')
+    return estimator(bgr)
+
+
 class NativeFashnRuntime:
     tasks=('virtual_try_on',)
 
@@ -78,6 +88,8 @@ class NativeFashnRuntime:
         if not torch.cuda.is_available():raise AlignmentError('REAL_CUDA_DEVICE_REQUIRED')
         if hasattr(ort,'preload_dlls'):ort.preload_dlls()
         from fashn_vton import TryOnPipeline
+        from fashn_vton.dwpose.onnxdet import inference_detector
+        self.detector=inference_detector
         from fashn_human_parser import FashnHumanParser
         class OfflinePipeline(TryOnPipeline):
             def _setup_hp_model(self):
@@ -95,13 +107,13 @@ class NativeFashnRuntime:
         person=decoded_image(request.person_image);garment=decoded_image(request.garment_image)
         torch=self.torch;torch.cuda.synchronize();torch.cuda.reset_peak_memory_stats();started=time.monotonic()
         try:
-            original_pose=self.pipeline.pose_model.pose_estimation(np.ascontiguousarray(person[:,:,::-1]))
+            original_pose=detected_pose(person,self.pipeline.pose_model.pose_estimation,self.detector)
             # Reject absent/ambiguous/low-confidence poses before diffusion.
             size=(person.shape[1],person.shape[0])
             pose_screen(original_pose,original_pose,size,size)
             photo_type=request.garment_photo_type
             if photo_type=='auto':
-                photo_type=inferred_photo_type(self.pipeline.pose_model.pose_estimation(np.ascontiguousarray(garment[:,:,::-1])))
+                photo_type=inferred_photo_type(detected_pose(garment,self.pipeline.pose_model.pose_estimation,self.detector))
             result=self.pipeline(person_image=Image.fromarray(person),garment_image=Image.fromarray(garment),
                 category=request.category,garment_photo_type=photo_type,
                 num_samples=1,num_timesteps=request.num_timesteps,seed=request.seed,segmentation_free=True)
@@ -109,7 +121,7 @@ class NativeFashnRuntime:
             output=np.asarray(result.images[0].convert('RGB'))
             if output.ndim!=3 or min(output.shape[:2])<16 or max(output.shape[:2])>1536 or output.std()<2:
                 raise AlignmentError('DEGENERATE_GENERATED_IMAGE')
-            generated_pose=self.pipeline.pose_model.pose_estimation(np.ascontiguousarray(output[:,:,::-1]))
+            generated_pose=detected_pose(output,self.pipeline.pose_model.pose_estimation,self.detector)
             quality=pose_screen(original_pose,generated_pose,(person.shape[1],person.shape[0]),(output.shape[1],output.shape[0]))
             torch.cuda.synchronize()
             return {'status':'READY','image_png':base64.b64encode(png_bytes(output)).decode(),

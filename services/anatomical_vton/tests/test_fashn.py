@@ -145,3 +145,14 @@ def test_auto_photo_type_distinguishes_flatlay_and_model_and_rejects_groups():
     assert inferred_photo_type(low)=='flat-lay'
     with pytest.raises(AlignmentError,match='MULTIPLE_GARMENT_MODELS'):
         inferred_photo_type((np.zeros((2,134,2)),np.ones((2,134))))
+
+
+def test_no_detector_person_never_invokes_dwpose_whole_image_fallback():
+    from services.anatomical_vton.fashn_runtime import detected_pose
+    class Estimator:
+        session_det=object()
+        def __call__(self,bgr):raise AssertionError('must not invoke whole-image fallback')
+    points,scores=detected_pose(np.zeros((32,32,3),dtype=np.uint8),Estimator(),lambda session,bgr:np.array([]))
+    assert points.shape==(0,134,2) and scores.shape==(0,134)
+    with pytest.raises(AlignmentError,match='EXACTLY_ONE_PERSON'):
+        pose_screen((points,scores),(points,scores),(32,32),(32,32))
