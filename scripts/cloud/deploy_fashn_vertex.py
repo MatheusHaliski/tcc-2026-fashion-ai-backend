@@ -293,6 +293,36 @@ def image_payload(path):
     return base64.b64encode(data).decode(),hashlib.sha256(data).hexdigest()
 
 
+def build_only_release(project,region,image,output,apply=False):
+    """Publish a container, without creating endpoints, models or GPU replicas."""
+    plan={'executed':False,'image':image,'project':project,'region':region,'gpuReplicas':0}
+    if not apply:
+        print(json.dumps(plan,indent=2));return plan
+    # Read-only authentication/project check before enabling services or uploading.
+    command('projects','describe',project,'--format=value(projectId)',capture=True)
+    command('services','enable','artifactregistry.googleapis.com','cloudbuild.googleapis.com',
+            'iam.googleapis.com','--project='+project)
+    repositories=json.loads(command('artifacts','repositories','list','--location='+region,
+                                    '--project='+project,'--format=json',capture=True))
+    if not any(r['name'].endswith('/fashionai-vton') for r in repositories):
+        command('artifacts','repositories','create','fashionai-vton','--repository-format=docker',
+                '--location='+region,'--project='+project,'--quiet')
+    directory=Path(output)/'images'/image.rsplit(':',1)[-1]
+    directory.mkdir(parents=True,exist_ok=True)
+    state_file=directory/'build.json'
+    state=json.loads(state_file.read_text()) if state_file.exists() else {}
+    if state and (state.get('project')!=project or state.get('image')!=image):
+        raise RuntimeError('IMAGE_BUILD_STATE_MISMATCH')
+    state.update(project=project,image=image)
+    save_json(state_file,state)
+    build_image(project,region,image,state,state_file)
+    result={'executed':True,'status':'IMAGE_BUILD_SUCCEEDED','image':image,
+            'buildId':state['buildId'],'gpuReplicas':0,'gpuInferenceValidated':False}
+    save_json(directory/'result.json',result)
+    print(json.dumps(result,indent=2),flush=True)
+    return result
+
+
 def save_json(path,value):
     path=Path(path);temporary=None
     try:
@@ -313,6 +343,7 @@ def main():
     parser.add_argument('--garment-photo-type',choices=['model','flat-lay'],default='model')
     parser.add_argument('--output',default='work/fashn-gpu-proof')
     parser.add_argument('--apply',action='store_true')
+    parser.add_argument('--build-only',action='store_true',help='Build/publish the corrected image only; no input photos, Vertex model or GPU deployment')
     parser.add_argument('--keep-deployed',action='store_true')
     parser.add_argument('--new-release',action='store_true',help='Archive terminal previous release state and build/register the current code; preserves old cloud resources')
     parser.add_argument('--diagnose',action='store_true',help='Read saved deployment/operation diagnostics; no cloud mutations')
@@ -321,6 +352,12 @@ def main():
     parser.add_argument('--restart-cancelled-build',action='store_true',help='Start a replacement only if the selected build is confirmed CANCELLED')
     args=parser.parse_args()
     if not re.fullmatch(r'[a-z][a-z0-9-]{4,61}[a-z0-9]',args.project) or not re.fullmatch(r'[a-z]+-[a-z]+[0-9]',args.region):parser.error('Invalid project/region')
+    if args.build_only:
+        if args.diagnose or args.new_release or args.resume_build or args.retry_failed_deploy or args.restart_cancelled_build or args.keep_deployed:
+            parser.error('--build-only cannot be combined with deployment/resume options; repeat it to resume its saved build')
+        source=subprocess.run(['git','rev-parse','HEAD'],cwd=ROOT,check=True,capture_output=True,text=True).stdout.strip()
+        image=f'{args.region}-docker.pkg.dev/{args.project}/fashionai-vton/fashn:{source[:12]}'
+        build_only_release(args.project,args.region,image,args.output,args.apply);return
     if args.diagnose:
         diagnose_deployment(args.project,args.region,args.output);return
     if args.new_release and (args.resume_build or args.retry_failed_deploy):parser.error('--new-release cannot reuse the old build or retry its old model')
@@ -351,6 +388,13 @@ def main():
     if args.new_release:
         if not matches and state.get('endpoint'):raise RuntimeError('PREVIOUS_ENDPOINT_NOT_FOUND')
         state=start_new_release(cloud,state,state_file,image,matches[0] if matches else {})
+    # Reuse an image built separately rather than charging for a duplicate build.
+    prepared=output/'images'/tag/'build.json'
+    if not args.resume_build and not state.get('buildId') and not state.get('model') and prepared.is_file():
+        built=json.loads(prepared.read_text())
+        if built.get('project')!=args.project or built.get('image')!=image:
+            raise RuntimeError('IMAGE_BUILD_STATE_MISMATCH')
+        if built.get('buildId'):state['buildId']=built['buildId']
     resume_id=args.resume_build or state.get('buildId')
     if resume_id:
         build=describe_build(args.project,args.region,resume_id)
