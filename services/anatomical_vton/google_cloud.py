@@ -13,14 +13,20 @@ from .models import AlignmentError
 
 
 class VertexPredictionClient:
-    def __init__(self, project, location, endpoint_id, *, credentials=None, transport=None):
+    def __init__(self, project, location, endpoint_id, *, credentials=None, transport=None, dedicated_host=None):
         if not re.fullmatch(r'[a-z][a-z0-9-]{4,61}[a-z0-9]|[0-9]{6,20}', project or ''):
             raise AlignmentError('INVALID_GOOGLE_CLOUD_PROJECT')
         if not re.fullmatch(r'[a-z]+-[a-z]+[0-9]', location or ''):
             raise AlignmentError('INVALID_GOOGLE_CLOUD_LOCATION')
         if not re.fullmatch(r'[0-9]{1,30}', endpoint_id or ''):
             raise AlignmentError('INVALID_VERTEX_ENDPOINT_ID')
-        self.url = (f'https://{location}-aiplatform.googleapis.com/v1/projects/'
+        if dedicated_host and not re.fullmatch(r'[a-z0-9][a-z0-9.-]*\.prediction\.vertexai\.goog',dedicated_host):
+            raise AlignmentError('INVALID_VERTEX_DEDICATED_HOST')
+        self.payload_limit=9_000_000 if dedicated_host else 1_400_000
+        self.timeout=600 if dedicated_host else 120
+        self.endpoint_id=endpoint_id
+        host=dedicated_host or f'{location}-aiplatform.googleapis.com'
+        self.url = (f'https://{host}/v1/projects/'
                     f'{project}/locations/{location}/endpoints/{endpoint_id}:predict')
         self.credentials = credentials
         self.transport = transport
@@ -41,13 +47,13 @@ class VertexPredictionClient:
         # Shared Vertex endpoints accept at most 1.5 MB; preserve coordinates by
         # rejecting oversized images rather than silently resizing them.
         payload=json.dumps({'instances':[instance]},separators=(',',':'),ensure_ascii=False).encode()
-        if len(payload)>1_400_000:raise AlignmentError('VERTEX_REQUEST_LIMIT_REDUCE_IMAGE_SIZE')
-        max_response_bytes=min(max_response_bytes,1_400_000)
+        if len(payload)>self.payload_limit:raise AlignmentError('VERTEX_REQUEST_LIMIT_REDUCE_IMAGE_SIZE')
+        max_response_bytes=min(max_response_bytes,self.payload_limit)
         try:
             headers = self._headers()
-            with httpx.Client(timeout=httpx.Timeout(120, connect=10), follow_redirects=False,
+            with httpx.Client(timeout=httpx.Timeout(self.timeout, connect=10), follow_redirects=False,
                               transport=self.transport) as client:
-                with client.stream('POST', self.url, headers={**headers,'Content-Type':'application/json'}, content=payload) as response:
+                with client.stream('POST', self.url, headers={**headers,'Content-Type':'application/json','X-Vertex-AI-Endpoint-Id':self.endpoint_id}, content=payload) as response:
                     if response.status_code != 200:
                         # Model errors can contain private images/prompts: do not log the body.
                         raise AlignmentError(f'VERTEX_PREDICTION_HTTP_{response.status_code}')
@@ -85,3 +91,12 @@ def predict_body(person_image, attributes, schema):
     return configured_vertex_client('VTON_VERTEX_BODY_ENDPOINT_ID').predict({
         'task': 'body_evidence', 'person_image': person_image,
         'attributes': attributes, 'response_schema': schema})
+
+
+def predict_fashn(person_image,garment_image,category,garment_photo_type='auto'):
+    endpoint=os.getenv('VTON_VERTEX_TRYON_ENDPOINT_ID')
+    host=os.getenv('VTON_VERTEX_TRYON_DEDICATED_HOST')
+    if not host:raise AlignmentError('FASHN_DEDICATED_ENDPOINT_REQUIRED')
+    client=VertexPredictionClient(os.getenv('GOOGLE_CLOUD_PROJECT'),os.getenv('GOOGLE_CLOUD_LOCATION'),endpoint,dedicated_host=host)
+    return client.predict({'task':'virtual_try_on','person_image':person_image,'garment_image':garment_image,
+                           'category':category,'garment_photo_type':garment_photo_type})

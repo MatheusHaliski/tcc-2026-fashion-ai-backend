@@ -31,7 +31,7 @@ public class AnatomicalTryOnService {
   byte[] garment=legacy.imageBytes(piece);byte[] person=media.read(owned.url()).orElseThrow(()->ApiException.notFound("Foto"));
   if(garment==null||garment.length==0||garment.length>6_000_000||person.length>6_000_000)throw ApiException.badRequest("VTON_IMAGE_LIMIT","Use imagens de até 6 MB e 1536 px.");
   if(request.bodyEvidence()!=null&&Json.write(request.bodyEvidence()).length()>25_000_000)throw ApiException.badRequest("VTON_EVIDENCE_LIMIT","Máscaras anatômicas excederam o limite.");
-  var result=worker.render("piece:"+piece.getId(),garment,person,request.bodyEvidence(),request.mirror());
+  var result=worker.render("piece:"+piece.getId(),garment,person,piece.getCategory(),request.bodyEvidence(),request.mirror());
   if(!"READY".equals(result.get("status")))return result;
   Object encoded=result.get("image_png");if(!(encoded instanceof String value)||value.length()>8_000_000)throw new ApiException(502,"VTON_INVALID_IMAGE","Imagem inválida retornada pelo worker.");
   byte[] png;try{png=Base64.getDecoder().decode((String)encoded);}catch(Exception e){throw new ApiException(502,"VTON_INVALID_IMAGE","Imagem inválida retornada pelo worker.");}

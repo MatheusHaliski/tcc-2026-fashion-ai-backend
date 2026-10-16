@@ -44,6 +44,7 @@ class TryOnInput(BaseModel):
     person_image:str=Field(max_length=8_000_000)
     body_evidence:BodyEvidence|None=None
     mirror:bool=False
+    garment_category:str|None=Field(default=None,max_length=64)
     @model_validator(mode='after')
     def garment_input(self):
         if (self.garment_id is None)==(self.garment_image is None):raise ValueError('Provide exactly one garment_id or garment_image')
@@ -133,6 +134,21 @@ def create_app(store=None,annotator=None,token=None,pose_probe=None):
             else:garment_id=body.garment_id
             row=catalog.get(garment_id)
             if row is None:raise HTTPException(404,'GARMENT_NOT_INGESTED')
+            if os.getenv('VTON_RENDER_PROVIDER')=='vertex_fashn':
+                from .fashn_runtime import fashion_category
+                from .google_cloud import predict_fashn
+                category=fashion_category(body.garment_category)
+                garment=decode_image(catalog.artifacts.get(row['image_key']))
+                result=predict_fashn(body.person_image,base64.b64encode(png_bytes(garment)).decode(),category)
+                if result.get('status')!='READY':raise AlignmentError('GPU_RENDER_NOT_READY')
+                output=b64_image(result.get('image_png',''),'RGB')
+                if body.mirror:output,_=mirror_result(output)
+                diagnostics=result.get('diagnostics',{})
+                if diagnostics.get('device')!='cuda:0' or diagnostics.get('engine')!='FASHN_VTON_1_5':
+                    raise AlignmentError('REAL_GPU_RENDER_EVIDENCE_REQUIRED')
+                return {'status':'READY','image_png':base64.b64encode(png_bytes(output)).decode(),
+                        'diagnostics':{**diagnostics,'mirror':body.mirror,'garmentId':garment_id,
+                                       'physicalFitCertified':False,'millimetricAccuracyCertified':False}}
             if row['state']!='READY':return JSONResponse(status_code=202,content={'status':row['state'],'garmentId':garment_id,'jobKey':row['job_key'],'code':'GARMENT_ANNOTATION_NOT_READY'})
             annotation=catalog.annotation(row);garment=decode_image(catalog.artifacts.get(row['image_key']))
             person=b64_image(body.person_image,'RGB');evidence=body.body_evidence
