@@ -265,3 +265,43 @@ def test_console_retry_is_reused_and_multiple_active_builds_block_new_submission
     with patch('scripts.cloud.deploy_fashn_vertex.command',return_value=json.dumps([retry,{**retry,'id':'ANOTHER_RETRY'}])):
         with pytest.raises(RuntimeError,match='MULTIPLE_ACTIVE_BUILDS'):
             replacement_build('fashionai-test','southamerica-east1','OLD',image)
+
+
+def test_management_operation_failure_includes_actual_message_and_name():
+    from scripts.cloud.deploy_fashn_vertex import Cloud,CloudOperationFailed
+    operation={'name':'projects/TEST/locations/TEST/endpoints/TEST/operations/FAILED',
+               'done':True,'error':{'code':9,'message':'TEST_ONLY: service precondition was not met'}}
+    with pytest.raises(CloudOperationFailed,match='service precondition was not met') as caught:
+        Cloud('fashionai-test','southamerica-east1').wait(operation)
+    assert operation['name'] in str(caught.value)
+    assert caught.value.operation['error']['code']==9
+
+
+def test_completed_failed_deploy_does_not_silently_retry_or_change_state(tmp_path):
+    from scripts.cloud.deploy_fashn_vertex import resume_deployment,Cloud,CloudOperationFailed
+    cloud=Cloud('fashionai-test','southamerica-east1')
+    operation={'name':'OLD_OPERATION','done':True,'error':{'code':9,'message':'TEST_ONLY'}}
+    cloud.request=lambda method,path:operation
+    state={'deployOperation':'OLD_OPERATION','model':'KEEP_MODEL'}
+    original=state.copy()
+    with pytest.raises(CloudOperationFailed):resume_deployment(cloud,state,tmp_path/'state.json')
+    assert state==original
+    assert not (tmp_path/'state.json').exists()
+    resume_deployment(cloud,state,tmp_path/'state.json',retry_failed=True)
+    assert state['model']=='KEEP_MODEL' and 'deployOperation' not in state
+    assert state['failedDeployOperations'][0]['error']['code']==9
+    assert json.loads((tmp_path/'state.json').read_text())['model']=='KEEP_MODEL'
+
+
+def test_diagnose_mode_only_reads_saved_operation_and_endpoint(tmp_path,capsys):
+    from scripts.cloud.deploy_fashn_vertex import diagnose_deployment
+    state={'project':'fashionai-test','deployOperation':'FAILED_OPERATION','endpoint':'EXISTING_ENDPOINT'}
+    (tmp_path/'deployment.json').write_text(json.dumps(state))
+    def request(method,path,*args,**kwargs):
+        assert method=='GET'
+        return {'name':path,'done':True,'error':{'code':9,'message':'TEST_ONLY'}}
+    with patch('scripts.cloud.deploy_fashn_vertex.Cloud.request',side_effect=request) as call,patch('scripts.cloud.deploy_fashn_vertex.command') as command:
+        diagnose_deployment('fashionai-test','southamerica-east1',tmp_path)
+        assert call.call_count==2
+        command.assert_not_called()
+    assert 'TEST_ONLY' in capsys.readouterr().out

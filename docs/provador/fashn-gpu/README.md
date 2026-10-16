@@ -109,6 +109,34 @@ para benchmark independente de acurácia. Para avaliação real, use imagens
 consentidas, fotografias de produtos e referências de vestimenta por categoria.
 Não publique fotografias pessoais em evidências de PR sem autorização.
 
+## Diagnosticar falha de deploy do Vertex
+
+`CLOUD_OPERATION_FAILED: 9` corresponde a uma pré-condição, mas o número sozinho
+não identifica a causa. Consulte a mensagem real da operação e os logs do
+servidor. A conta desta sessão não tem identidade Google Cloud; execute no
+Cloud Shell autenticado, depois de atualizar o instalador:
+
+```bash
+python3 -u scripts/cloud/deploy_fashn_vertex.py --diagnose
+```
+
+Esse modo apenas lê o estado, a operação e o endpoint; não habilita APIs, cria
+recursos, inicia build ou repete deploy. Não precisa das imagens de teste. A
+mensagem original da falha de operação agora aparece também na exceção, junto
+ao nome da operação; o progresso mostra o tipo da operação e o tempo decorrido.
+
+O deploy observado retornou `Model server exited unexpectedly`. Isso significa
+que o servidor do modelo encerrou na inicialização, não comprova falta de cota
+ou necessidade de usar o web app. Os logs do endpoint precisam identificar a
+exceção antes de alterar bibliotecas, hardware ou publicar outro contêiner.
+
+Uma operação já concluída com erro agora interrompe a retomada, sem iniciar outra
+tentativa silenciosamente. Somente após corrigir a causa, acrescente
+`--retry-failed-deploy` aos argumentos completos do teste para autorizar uma nova
+tentativa com o mesmo modelo. O estado preserva a falha anterior. Se o conserto
+exigir uma nova imagem de contêiner, é necessário registrar essa nova versão;
+a flag de retry do mesmo modelo não atualiza seu contêiner.
+
 ## Retomar um Cloud Build após interrupção do terminal
 
 O instalador envia o build com `--async`, grava seu ID em `deployment.json` e
@@ -172,7 +200,7 @@ continuar separadamente; este modo não declara suas anotações como concluída
 
 ## Situação de validação
 
-Validação local: 64 testes Python (56 VTON e 8 de geometria digital twin) e
+Validação local: 67 testes Python (59 VTON e 8 de geometria digital twin) e
 26 testes Java direcionados. A suíte de CI usa pytest para incluir também os
 novos testes funcionais de contrato. Não foi executada a suíte inteira do
 monorepositório. As dependências GPU foram resolvidas, mas o build do contêiner
