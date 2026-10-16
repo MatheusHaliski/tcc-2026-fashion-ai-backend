@@ -197,3 +197,71 @@ def test_new_installer_resumes_only_state_without_registered_or_deploying_model(
             resumed_state({**previous,**protected},'fashionai-test','new')
     with pytest.raises(RuntimeError,match='ANOTHER_PROJECT'):
         resumed_state(previous,'other-project','new')
+
+
+def test_cloud_build_resume_never_submits_again_or_recreates_identity(tmp_path):
+    from scripts.cloud.deploy_fashn_vertex import build_image
+    state={'buildId':'1a0bdffd-21d2-4790-bfd5-55fd8d5c7cdf'}
+    with patch('scripts.cloud.deploy_fashn_vertex.prepare_build_identity') as identity,patch('scripts.cloud.deploy_fashn_vertex.command') as command,patch('scripts.cloud.deploy_fashn_vertex.wait_build',return_value={'status':'SUCCESS'}) as wait:
+        assert build_image('fashionai-test','southamerica-east1','IMAGE',state,tmp_path/'state.json')['status']=='SUCCESS'
+        identity.assert_not_called();command.assert_not_called()
+        wait.assert_called_once_with('fashionai-test','southamerica-east1',state['buildId'],'IMAGE')
+
+
+def test_cloud_build_waits_for_same_image_and_rejects_cancelled_without_resubmit():
+    from scripts.cloud.deploy_fashn_vertex import wait_build
+    image='southamerica-east1-docker.pkg.dev/fashionai-test/fashionai-vton/fashn:123456789abc'
+    working={'projectId':'fashionai-test','images':[image],'status':'WORKING'}
+    with patch('scripts.cloud.deploy_fashn_vertex.describe_build',side_effect=[working,{**working,'status':'SUCCESS'}]),patch('scripts.cloud.deploy_fashn_vertex.time.sleep') as sleep:
+        assert wait_build('fashionai-test','southamerica-east1','BUILD_ID',image)['status']=='SUCCESS'
+        sleep.assert_called_once_with(20)
+    with patch('scripts.cloud.deploy_fashn_vertex.describe_build',return_value={**working,'status':'CANCELLED'}),patch('scripts.cloud.deploy_fashn_vertex.time.sleep') as sleep:
+        with pytest.raises(RuntimeError,match='CLOUD_BUILD_CANCELLED'):
+            wait_build('fashionai-test','southamerica-east1','BUILD_ID',image)
+        sleep.assert_not_called()
+    with patch('scripts.cloud.deploy_fashn_vertex.describe_build',return_value=working):
+        with pytest.raises(RuntimeError,match='IMAGE_MISMATCH'):
+            wait_build('fashionai-test','southamerica-east1','BUILD_ID','OTHER_IMAGE')
+
+
+def test_async_cloud_build_is_checkpointed_before_polling(tmp_path):
+    from scripts.cloud.deploy_fashn_vertex import build_image
+    build_id='1a0bdffd-21d2-4790-bfd5-55fd8d5c7cdf'
+    state={};state_file=tmp_path/'deployment.json'
+    def wait(*args):
+        assert json.loads(state_file.read_text())['buildId']==build_id
+        raise KeyboardInterrupt()
+    with patch('scripts.cloud.deploy_fashn_vertex.prepare_build_identity',return_value=('SERVICE_ACCOUNT','STAGING_BUCKET')),patch('scripts.cloud.deploy_fashn_vertex.command',return_value=build_id) as command,patch('scripts.cloud.deploy_fashn_vertex.wait_build',side_effect=wait):
+        with pytest.raises(KeyboardInterrupt):
+            build_image('fashionai-test','southamerica-east1','IMAGE',state,state_file)
+        assert command.call_count==1
+        assert '--async' in command.call_args.args
+        assert state['buildId']==build_id
+
+
+def test_restart_flag_replaces_only_confirmed_cancelled_build_and_preserves_registered_models():
+    from scripts.cloud.deploy_fashn_vertex import adopted_build
+    old='southamerica-east1-docker.pkg.dev/fashionai-test/fashionai-vton/fashn:123456789abc'
+    new='southamerica-east1-docker.pkg.dev/fashionai-test/fashionai-vton/fashn:abcdef123456'
+    previous={'image':old,'endpoint':'KEEP_ENDPOINT','buildId':'OLD_BUILD'}
+    for status in ('WORKING','SUCCESS','FAILURE'):
+        state,image=adopted_build(previous,{'images':[old],'status':status},'OLD_BUILD','fashionai-test','southamerica-east1',new,True)
+        assert state['buildId']=='OLD_BUILD' and image==old
+    state,image=adopted_build(previous,{'images':[old],'status':'CANCELLED'},'OLD_BUILD','fashionai-test','southamerica-east1',new,True)
+    assert 'buildId' not in state and state['endpoint']=='KEEP_ENDPOINT' and image==new
+    for protected in ({'model':'KEEP_MODEL'},{'deployOperation':'KEEP_OPERATION'}):
+        with pytest.raises(RuntimeError,match='CANNOT_RESTART'):
+            adopted_build({**previous,**protected},{'images':[old],'status':'CANCELLED'},'OLD_BUILD','fashionai-test','southamerica-east1',new,True)
+
+
+def test_console_retry_is_reused_and_multiple_active_builds_block_new_submission():
+    from scripts.cloud.deploy_fashn_vertex import replacement_build
+    image='southamerica-east1-docker.pkg.dev/fashionai-test/fashionai-vton/fashn:123456789abc'
+    original={'id':'OLD','images':[image],'status':'CANCELLED'}
+    retry={'id':'CONSOLE_RETRY','images':[image],'status':'WORKING'}
+    unrelated={'id':'OTHER','images':['OTHER_IMAGE'],'status':'WORKING'}
+    with patch('scripts.cloud.deploy_fashn_vertex.command',return_value=json.dumps([unrelated,retry,original])):
+        assert replacement_build('fashionai-test','southamerica-east1','OLD',image)['id']=='CONSOLE_RETRY'
+    with patch('scripts.cloud.deploy_fashn_vertex.command',return_value=json.dumps([retry,{**retry,'id':'ANOTHER_RETRY'}])):
+        with pytest.raises(RuntimeError,match='MULTIPLE_ACTIVE_BUILDS'):
+            replacement_build('fashionai-test','southamerica-east1','OLD',image)

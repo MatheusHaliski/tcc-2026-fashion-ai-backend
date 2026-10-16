@@ -147,17 +147,80 @@ def prepare_build_identity(project,region):
     return 'projects/'+project+'/serviceAccounts/'+email,'gs://'+bucket+'/sources'
 
 
-def build_image(project,region,image):
-    service_account,staging=prepare_build_identity(project,region)
-    with tempfile.TemporaryDirectory(prefix='fashionai-cloud-build-') as directory:
-        stage_context(directory)
-        config={'steps':[{'name':'gcr.io/cloud-builders/docker','env':['DOCKER_BUILDKIT=1'],
-                          'args':['build','-t',image,'.']}],
-                'images':[image],'timeout':'2400s','serviceAccount':service_account,
-                'options':{'machineType':'E2_HIGHCPU_8','diskSizeGb':100,'logging':'CLOUD_LOGGING_ONLY'}}
-        path=Path(directory)/'cloudbuild.json';path.write_text(json.dumps(config))
-        command('builds','submit',directory,'--config='+str(path),'--project='+project,
-                '--region='+region,'--gcs-source-staging-dir='+staging,'--quiet')
+def describe_build(project,region,build_id):
+    if not re.fullmatch(r'[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}',build_id):
+        raise ValueError('INVALID_CLOUD_BUILD_ID')
+    return json.loads(command('builds','describe',build_id,'--project='+project,
+                              '--region='+region,'--format=json',capture=True))
+
+
+def build_image_reference(build,project,region):
+    images=build.get('images',[])
+    prefix=f'{region}-docker.pkg.dev/{project}/fashionai-vton/fashn:'
+    if build.get('projectId',project)!=project or len(images)!=1 or not images[0].startswith(prefix):
+        raise RuntimeError('BUILD_DOES_NOT_MATCH_FASHIONAI_PROJECT_AND_IMAGE')
+    if not re.fullmatch(r'[0-9a-f]{12}',images[0][len(prefix):]):
+        raise RuntimeError('INVALID_BUILD_RELEASE_TAG')
+    return images[0]
+
+
+def replacement_build(project,region,original_id,image):
+    builds=json.loads(command('builds','list','--project='+project,'--region='+region,
+        '--filter=images:"'+image+'"','--sort-by=~createTime','--limit=20','--format=json',capture=True))
+    candidates=[build for build in builds if build.get('id')!=original_id and build.get('images')==[image]
+                and build.get('status') in ('PENDING','QUEUED','WORKING','SUCCESS')]
+    active=[build for build in candidates if build.get('status')!='SUCCESS']
+    if len(active)>1:raise RuntimeError('MULTIPLE_ACTIVE_BUILDS_DO_NOT_SUBMIT_ANOTHER')
+    return active[0] if active else next(iter(candidates),None)
+
+
+def adopted_build(state,build,build_id,project,region,current_image,restart_cancelled=False):
+    image=build_image_reference(build,project,region)
+    if state.get('image') not in (None,image):raise RuntimeError('STATE_AND_RESUMED_BUILD_IMAGE_MISMATCH')
+    if restart_cancelled and build.get('status')=='CANCELLED':
+        if state.get('model') or state.get('deployOperation'):
+            raise RuntimeError('CANNOT_RESTART_BUILD_WITH_REGISTERED_OR_DEPLOYING_MODEL')
+        print(f'Build {build_id} confirmado CANCELLED; preparando nova compilação.',flush=True)
+        result={**state};result.pop('buildId',None)
+        return result,current_image
+    return {**state,'buildId':build_id},image
+
+
+def wait_build(project,region,build_id,image):
+    deadline=time.monotonic()+3000
+    while True:
+        build=describe_build(project,region,build_id)
+        if build_image_reference(build,project,region)!=image:raise RuntimeError('CLOUD_BUILD_IMAGE_MISMATCH')
+        status=build.get('status')
+        print(f'Cloud Build {build_id}: {status}',flush=True)
+        if status=='SUCCESS':return build
+        if status not in ('PENDING','QUEUED','WORKING'):
+            raise RuntimeError(f'CLOUD_BUILD_{status}: {build_id}; consulte o log antes de iniciar outro build')
+        if time.monotonic()>deadline:raise RuntimeError('CLOUD_BUILD_WAIT_TIMEOUT_RESUME_SAME_BUILD')
+        time.sleep(20)
+
+
+def build_image(project,region,image,state,state_file):
+    build_id=state.get('buildId')
+    if not build_id:
+        service_account,staging=prepare_build_identity(project,region)
+        with tempfile.TemporaryDirectory(prefix='fashionai-cloud-build-') as directory:
+            stage_context(directory)
+            config={'steps':[{'name':'gcr.io/cloud-builders/docker','env':['DOCKER_BUILDKIT=1'],
+                              'args':['build','-t',image,'.']}],
+                    'images':[image],'timeout':'2400s','serviceAccount':service_account,
+                    'options':{'machineType':'E2_HIGHCPU_8','diskSizeGb':100,'logging':'CLOUD_LOGGING_ONLY'}}
+            path=Path(directory)/'cloudbuild.json';path.write_text(json.dumps(config))
+            # Submit once, checkpoint the server ID, then poll separately. Ctrl+C
+            # during polling cannot invoke gcloud submit's cancellation handler.
+            build_id=command('builds','submit',directory,'--config='+str(path),'--project='+project,
+                    '--region='+region,'--gcs-source-staging-dir='+staging,'--quiet',
+                    '--async','--format=value(id)',capture=True)
+            if not re.fullmatch(r'[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}',build_id):
+                raise RuntimeError('CLOUD_BUILD_ID_NOT_RETURNED_CHECK_CONSOLE_BEFORE_RESUBMIT')
+            state['buildId']=build_id;save_json(state_file,state)
+    print(f'Logs: https://console.cloud.google.com/cloud-build/builds;region={region}/{build_id}?project={project}',flush=True)
+    return wait_build(project,region,build_id,image)
 
 
 def image_payload(path):
@@ -167,7 +230,14 @@ def image_payload(path):
 
 
 def save_json(path,value):
-    Path(path).write_text(json.dumps(value,indent=2)+'\n')
+    path=Path(path);temporary=None
+    try:
+        with tempfile.NamedTemporaryFile(mode='w',encoding='utf-8',dir=path.parent,
+                prefix='.'+path.name+'-',delete=False) as file:
+            temporary=Path(file.name);file.write(json.dumps(value,indent=2)+'\n')
+        temporary.replace(path)
+    finally:
+        if temporary is not None:temporary.unlink(missing_ok=True)
 
 
 def main():
@@ -180,13 +250,15 @@ def main():
     parser.add_argument('--output',default='work/fashn-gpu-proof')
     parser.add_argument('--apply',action='store_true')
     parser.add_argument('--keep-deployed',action='store_true')
+    parser.add_argument('--resume-build',help='Resume this existing build without submitting another one')
+    parser.add_argument('--restart-cancelled-build',action='store_true',help='Start a replacement only if the selected build is confirmed CANCELLED')
     args=parser.parse_args()
     if not re.fullmatch(r'[a-z][a-z0-9-]{4,61}[a-z0-9]',args.project) or not re.fullmatch(r'[a-z]+-[a-z]+[0-9]',args.region):parser.error('Invalid project/region')
     person,person_hash=image_payload(args.person);garment,garment_hash=image_payload(args.garment)
     source=subprocess.run(['git','rev-parse','HEAD'],cwd=ROOT,check=True,capture_output=True,text=True).stdout.strip()
     tag=source[:12];image=f'{args.region}-docker.pkg.dev/{args.project}/fashionai-vton/fashn:{tag}'
     plan={'executed':False,'engine':'FASHN_VTON_1_5','project':args.project,'region':args.region,
-          'image':image,'replicas':{'min':1,'max':1},'accelerator':'NVIDIA_TESLA_T4',
+          'image':None if args.resume_build else image,'resumeBuildId':args.resume_build,'replicas':{'min':1,'max':1},'accelerator':'NVIDIA_TESLA_T4',
           'keepDeployed':args.keep_deployed,'physicalFitCertified':False}
     if not args.apply:print(json.dumps(plan,indent=2));return
     # Authentication and project access are checked before any mutation.
@@ -204,6 +276,17 @@ def main():
         command('artifacts','repositories','create','fashionai-vton','--repository-format=docker','--location='+args.region,'--project='+args.project,'--quiet')
     state_file=output/'deployment.json'
     state=json.loads(state_file.read_text()) if state_file.exists() else {}
+    resume_id=args.resume_build or state.get('buildId')
+    if resume_id:
+        build=describe_build(args.project,args.region,resume_id)
+        if build.get('status')=='CANCELLED':
+            prior_image=build_image_reference(build,args.project,args.region)
+            replacement=replacement_build(args.project,args.region,resume_id,prior_image)
+            if replacement:
+                resume_id=replacement['id'];build=replacement
+                print(f'Tentativa já existente encontrada: {resume_id}; nenhum build duplicado será iniciado.',flush=True)
+        state,image=adopted_build(state,build,resume_id,args.project,args.region,image,args.restart_cancelled_build)
+        tag=image.rsplit(':',1)[-1]
     state=resumed_state(state,args.project,image)
     endpoint=matches[0] if matches else cloud.wait(cloud.request('POST',cloud.parent+'/endpoints',{
         'displayName':NAME,'dedicatedEndpointEnabled':True,'clientConnectionConfig':{'inferenceTimeout':'600s'}}))
@@ -218,7 +301,7 @@ def main():
     if len(deployed)>1:raise RuntimeError('MORE_THAN_ONE_REPLICA_MODEL_NOT_ALLOWED')
     if deployed and deployed[0].get('model')!=state.get('model'):raise RuntimeError('ENDPOINT_CONTAINS_DIFFERENT_MODEL_NO_REPLACEMENT_PERFORMED')
     if not state.get('model'):
-        build_image(args.project,args.region,image)
+        build_image(args.project,args.region,image,state,state_file)
         result=cloud.wait(cloud.request('POST',cloud.parent+'/models:upload',{'model':{
             'displayName':'fashionai-fashn-'+tag,'containerSpec':{'imageUri':image,'ports':[{'containerPort':8080}],
             'healthRoute':'/health','predictRoute':'/predict','sharedMemorySizeMb':'1024',
@@ -250,7 +333,8 @@ def main():
         png=base64.b64decode(prediction.get('image_png',''),validate=True)
         if not png.startswith(b'\x89PNG\r\n\x1a\n'):raise RuntimeError('INVALID_GPU_OUTPUT_PNG')
         (output/'try-on-gpu.png').write_bytes(png)
-        save_json(output/'evidence.json',{'status':'GPU_SMOKE_PASSED','sourceCommit':source,
+        save_json(output/'evidence.json',{'status':'GPU_SMOKE_PASSED','installerCommit':source,
+            'containerSourceCommitPrefix':tag,'containerImage':image,
             'personSha256':person_hash,'garmentSha256':garment_hash,'outputSha256':hashlib.sha256(png).hexdigest(),
             'diagnostics':diagnostics,'model':state['model'],'endpoint':endpoint_name})
         configuration={'VTON_RENDER_PROVIDER':'vertex_fashn','GOOGLE_CLOUD_PROJECT':args.project,
@@ -270,4 +354,8 @@ def main():
         else:
             print('ATENÇÃO: uma réplica T4 permanece ativa e faturável.',flush=True)
 
-if __name__=='__main__':main()
+if __name__=='__main__':
+    try:main()
+    except KeyboardInterrupt:
+        print('\nEspera local interrompida. Confira deployment.json e retome o mesmo build; nenhum novo build foi iniciado por esta interrupção.',file=sys.stderr)
+        sys.exit(130)
