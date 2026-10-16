@@ -13,6 +13,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 import urllib.error
@@ -82,26 +83,67 @@ def stage_context(destination):
     shutil.copyfile(ROOT/'services/anatomical_vton/deploy/google-cloud/Dockerfile.fashn',Path(destination)/'Dockerfile')
 
 
+def iam_command(*args,attempts=8):
+    """Retry only identity propagation/concurrent-policy failures; never hide 403."""
+    for attempt in range(attempts):
+        result=subprocess.run(['gcloud',*args],text=True,capture_output=True)
+        if result.returncode==0:return result.stdout.strip()
+        message=(result.stderr or '').lower()
+        transient=any(code in message for code in (
+            'does not exist','not_found','not found','concurrent policy changes'))
+        if not transient or attempt==attempts-1:
+            print(result.stderr or 'Google Cloud IAM command failed.',file=sys.stderr)
+            raise subprocess.CalledProcessError(result.returncode,['gcloud',*args])
+        delay=min(5*2**attempt,20)
+        print(f'Aguardando propagação da identidade IAM ({attempt+1}/{attempts}, {delay}s)...',flush=True)
+        time.sleep(delay)
+
+
+def ensure_build_account(project,email):
+    args=['iam','service-accounts','describe',email,'--project='+project,'--format=json']
+    result=subprocess.run(['gcloud',*args],text=True,capture_output=True)
+    if result.returncode:
+        if not any(code in (result.stderr or '').lower() for code in ('not_found','not found','does not exist')):
+            print(result.stderr,file=sys.stderr)
+            raise subprocess.CalledProcessError(result.returncode,['gcloud',*args])
+        created=subprocess.run(['gcloud','iam','service-accounts','create','fashionai-vton-build',
+            '--display-name=FashionAI VTON build','--project='+project,'--quiet'],text=True,capture_output=True)
+        if created.returncode and not any(code in (created.stderr or '').lower() for code in ('already_exists','already exists')):
+            print(created.stderr,file=sys.stderr)
+            raise subprocess.CalledProcessError(created.returncode,created.args)
+    # A successful create/list is not evidence that all IAM replicas see it.
+    account=json.loads(iam_command(*args))
+    if account.get('email')!=email or account.get('disabled'):
+        raise RuntimeError('BUILD_SERVICE_ACCOUNT_DISABLED_OR_MISMATCHED')
+
+
+def resumed_state(state,project,image):
+    if state and state.get('project')!=project:raise RuntimeError('STATE_BELONGS_TO_ANOTHER_PROJECT')
+    if state.get('image') not in (None,image) and (state.get('model') or state.get('deployOperation')):
+        raise RuntimeError('STATE_BELONGS_TO_ANOTHER_RELEASE_USE_NEW_OUTPUT_DIRECTORY')
+    # Before model registration a newer installer may safely resume the same
+    # empty endpoint; never delete prior state, models or deployment operations.
+    return {**state,'project':project,'image':image}
+
+
 def prepare_build_identity(project,region):
     email='fashionai-vton-build@'+project+'.iam.gserviceaccount.com'
     member='serviceAccount:'+email
-    accounts=json.loads(command('iam','service-accounts','list','--project='+project,'--format=json',capture=True))
-    if not any(a.get('email')==email for a in accounts):
-        command('iam','service-accounts','create','fashionai-vton-build','--display-name=FashionAI VTON build','--project='+project,'--quiet')
+    ensure_build_account(project,email)
     # No Owner/Editor grant. Build can read only its staged sources, push only
     # into this repository and write build logs in the selected project.
-    command('projects','add-iam-policy-binding',project,'--member='+member,
-            '--role=roles/logging.logWriter','--condition=None','--quiet',capture=True)
-    command('artifacts','repositories','add-iam-policy-binding','fashionai-vton',
+    iam_command('projects','add-iam-policy-binding',project,'--member='+member,
+            '--role=roles/logging.logWriter','--condition=None','--quiet')
+    iam_command('artifacts','repositories','add-iam-policy-binding','fashionai-vton',
             '--location='+region,'--project='+project,'--member='+member,
-            '--role=roles/artifactregistry.writer','--quiet',capture=True)
+            '--role=roles/artifactregistry.writer','--quiet')
     bucket=project+'-vton-build'
     buckets=json.loads(command('storage','buckets','list','--project='+project,'--format=json',capture=True))
     if not any(b.get('name','').removeprefix('gs://').rstrip('/')==bucket for b in buckets):
         command('storage','buckets','create','gs://'+bucket,'--location='+region,
                 '--project='+project,'--uniform-bucket-level-access','--quiet')
-    command('storage','buckets','add-iam-policy-binding','gs://'+bucket,
-            '--member='+member,'--role=roles/storage.objectViewer','--quiet',capture=True)
+    iam_command('storage','buckets','add-iam-policy-binding','gs://'+bucket,
+            '--member='+member,'--role=roles/storage.objectViewer','--quiet')
     return 'projects/'+project+'/serviceAccounts/'+email,'gs://'+bucket+'/sources'
 
 
@@ -162,7 +204,7 @@ def main():
         command('artifacts','repositories','create','fashionai-vton','--repository-format=docker','--location='+args.region,'--project='+args.project,'--quiet')
     state_file=output/'deployment.json'
     state=json.loads(state_file.read_text()) if state_file.exists() else {}
-    if state and (state.get('image')!=image or state.get('project')!=args.project):raise RuntimeError('STATE_BELONGS_TO_ANOTHER_RELEASE_USE_NEW_OUTPUT_DIRECTORY')
+    state=resumed_state(state,args.project,image)
     endpoint=matches[0] if matches else cloud.wait(cloud.request('POST',cloud.parent+'/endpoints',{
         'displayName':NAME,'dedicatedEndpointEnabled':True,'clientConnectionConfig':{'inferenceTimeout':'600s'}}))
     endpoint_name=endpoint['name']

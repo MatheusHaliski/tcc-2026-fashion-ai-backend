@@ -109,6 +109,22 @@ para benchmark independente de acurácia. Para avaliação real, use imagens
 consentidas, fotografias de produtos e referências de vestimenta por categoria.
 Não publique fotografias pessoais em evidências de PR sem autorização.
 
+## Retomar após erro de conta de serviço IAM
+
+`Service account ... does not exist` pode ocorrer enquanto a identidade criada
+se propaga no IAM. A mensagem genérica de lint de condições não é motivo para
+alterar a política de condições. O instalador agora descreve a conta, aguarda
+sua disponibilidade e repete somente erros transitórios de identidade/política
+(até oito tentativas, com esperas de 5 a 20 segundos). Erros de permissão não
+são repetidos nem contornados; uma conta desabilitada também é rejeitada.
+
+Na cópia existente do Cloud Shell, execute `git pull --ff-only` e repita o
+comando Python acima. Não clone novamente nem apague `deployment.json`. Se o
+modelo ainda não foi registrado, a mesma pasta de estado e o endpoint vazio
+podem ser retomados com a versão corrigida. Se já houver um modelo ou operação
+de deploy de outra versão, o instalador preserva os recursos e interrompe a
+atualização para não substituir uma implantação ativa.
+
 ## Conectar o worker ao aplicativo
 
 Instale `requirements-google-cloud.txt` no worker CPU privado, configure as
@@ -127,7 +143,7 @@ continuar separadamente; este modo não declara suas anotações como concluída
 
 ## Situação de validação
 
-Validação local: 56 testes Python (48 VTON e 8 de geometria digital twin) e
+Validação local: 59 testes Python (51 VTON e 8 de geometria digital twin) e
 26 testes Java direcionados. A suíte de CI usa pytest para incluir também os
 novos testes funcionais de contrato. Não foi executada a suíte inteira do
 monorepositório. As dependências GPU foram resolvidas, mas o build do contêiner

@@ -156,3 +156,44 @@ def test_no_detector_person_never_invokes_dwpose_whole_image_fallback():
     assert points.shape==(0,134,2) and scores.shape==(0,134)
     with pytest.raises(AlignmentError,match='EXACTLY_ONE_PERSON'):
         pose_screen((points,scores),(points,scores),(32,32),(32,32))
+
+
+def test_iam_binding_retries_identity_propagation_without_exposing_policy():
+    import subprocess
+    from scripts.cloud.deploy_fashn_vertex import iam_command
+    missing=subprocess.CompletedProcess([],1,stdout='',stderr='INVALID_ARGUMENT: Service account does not exist.')
+    ready=subprocess.CompletedProcess([],0,stdout='TEST_POLICY',stderr='')
+    with patch('scripts.cloud.deploy_fashn_vertex.subprocess.run',side_effect=[missing,ready]) as run,patch('scripts.cloud.deploy_fashn_vertex.time.sleep') as sleep:
+        assert iam_command('projects','add-iam-policy-binding','TEST_ONLY')=='TEST_POLICY'
+        assert run.call_count==2
+        sleep.assert_called_once_with(5)
+    denied=subprocess.CompletedProcess([],1,stdout='',stderr='PERMISSION_DENIED')
+    with patch('scripts.cloud.deploy_fashn_vertex.subprocess.run',return_value=denied) as run,patch('scripts.cloud.deploy_fashn_vertex.time.sleep') as sleep:
+        with pytest.raises(subprocess.CalledProcessError):iam_command('TEST_ONLY')
+        assert run.call_count==1
+        sleep.assert_not_called()
+
+
+def test_build_account_waits_for_describe_after_create():
+    import subprocess
+    from scripts.cloud.deploy_fashn_vertex import ensure_build_account
+    email='fashionai-vton-build@fashionai-test.iam.gserviceaccount.com'
+    missing=subprocess.CompletedProcess([],1,stdout='',stderr='NOT_FOUND')
+    created=subprocess.CompletedProcess([],0,stdout='',stderr='Created')
+    ready=subprocess.CompletedProcess([],0,stdout=json.dumps({'email':email}),stderr='')
+    with patch('scripts.cloud.deploy_fashn_vertex.subprocess.run',side_effect=[missing,created,missing,ready]) as run,patch('scripts.cloud.deploy_fashn_vertex.time.sleep') as sleep:
+        ensure_build_account('fashionai-test',email)
+        assert run.call_count==4
+        sleep.assert_called_once_with(5)
+
+
+def test_new_installer_resumes_only_state_without_registered_or_deploying_model():
+    from scripts.cloud.deploy_fashn_vertex import resumed_state
+    previous={'project':'fashionai-test','image':'old','endpoint':'KEEP_ENDPOINT'}
+    assert resumed_state(previous,'fashionai-test','new')['endpoint']=='KEEP_ENDPOINT'
+    assert resumed_state(previous,'fashionai-test','new')['image']=='new'
+    for protected in ({'model':'KEEP_MODEL'},{'deployOperation':'KEEP_OPERATION'}):
+        with pytest.raises(RuntimeError,match='ANOTHER_RELEASE'):
+            resumed_state({**previous,**protected},'fashionai-test','new')
+    with pytest.raises(RuntimeError,match='ANOTHER_PROJECT'):
+        resumed_state(previous,'other-project','new')
