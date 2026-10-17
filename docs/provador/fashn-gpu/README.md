@@ -331,3 +331,44 @@ Foto da pessoa que passa na triagem de pose: uma pessoa só, de frente, em pé, 
 ou da cintura para cima com ombros, cotovelos, punhos e quadril visíveis, fundo simples, sem anotações desenhadas.
 `person-demo.png` (pose de ioga de lado, com o esqueleto do diagnóstico desenhado por cima) serve para o smoke de
 execução, mas é candidata natural a `GENERATED_POSE_DRIFT_REJECTED`.
+
+## Cota de GPU esgotada: subir em outra região (17/10/2026)
+
+A cota `CustomModelServingT4GPUsPerProjectPerRegion` é **por região**. Quando o `deployModel` falha com
+`The following quotas are exceeded` mesmo sem réplicas ativas, suba a mesma imagem em outra região, sem novo
+Cloud Build:
+
+1. Ver o limite de cada região (T4 e L4):
+
+```bash
+for Q in CustomModelServingT4GPUsPerProjectPerRegion CustomModelServingL4GPUsPerProjectPerRegion; do
+  echo "== $Q"
+  gcloud beta quotas info describe "$Q" --service=aiplatform.googleapis.com \
+    --project=project-14023673-32d6-4bf2-8b7 --format=json 2>/dev/null | python3 -c '
+import json,sys
+info=json.load(sys.stdin)
+for d in info.get("dimensionsInfos",[]):
+    region=d.get("dimensions",{}).get("region","demais regiões")
+    print("  "+region+":",d.get("details",{}).get("value","?"))'
+done
+```
+
+2. Subir a réplica na região escolhida, reaproveitando a imagem já construída (`deployment.json` da região antiga).
+   Use um `--output` novo por região; `--accelerator NVIDIA_L4` usa `g2-standard-8`:
+
+```bash
+IMAGE=$(python3 -c "import json;print(json.load(open('work/fashn-gpu-proof/deployment.json'))['image'])")
+python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --deploy-only --region us-central1 \
+  --source-image "$IMAGE" --accelerator NVIDIA_TESLA_T4 --output work/fashn-gpu-us-central1
+```
+
+   O script registra o modelo na nova região, cria o endpoint dedicado, sobe 1 réplica, grava
+   `backend-config.json` (com `GOOGLE_CLOUD_LOCATION` da nova região) e imprime `GPU_DEPLOYED`. A réplica fica
+   ativa e faturável até o `--undeploy`:
+
+```bash
+python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --undeploy --region us-central1 --output work/fashn-gpu-us-central1
+```
+
+Se o Vertex não conseguir baixar a imagem de outra região, construa uma cópia na região nova com
+`--build-only --region <região> --output <pasta>` e passe a imagem dela em `--source-image`.
