@@ -553,3 +553,51 @@ def test_undeploy_removes_only_the_saved_model_replica(tmp_path):
     assert posts==[('POST','projects/p/locations/l/endpoints/e:undeployModel',{'deployedModelId':'1','trafficSplit':{}})]
     state.write_text(json.dumps({'project':'outro-projeto','endpoint':'e','model':'m'}))
     with pytest.raises(RuntimeError,match='ANOTHER_PROJECT'):undeploy_ours(FakeCloud(),state)
+
+
+def test_deploy_only_moves_region_with_the_built_image_and_keeps_the_gpu(tmp_path,monkeypatch,capsys):
+    from scripts.cloud import deploy_fashn_vertex as installer
+    project='fashionai-test';image=f'southamerica-east1-docker.pkg.dev/{project}/fashionai-vton/fashn:00d264820803'
+    monkeypatch.setattr('sys.argv',['deploy','--deploy-only','--project',project,'--region','us-central1',
+        '--source-image',image,'--accelerator','NVIDIA_L4','--output',str(tmp_path)])
+    with patch.object(installer,'command',side_effect=AssertionError('plan must not call cloud')):installer.main()
+    plan=json.loads(capsys.readouterr().out)        # sem --apply: só o plano, sem fotos
+    assert plan['executed'] is False and plan['deployOnly'] and plan['accelerator']=='NVIDIA_L4' and plan['machineType']=='g2-standard-8' and plan['image']==image
+    monkeypatch.setattr('sys.argv',['deploy','--apply','--deploy-only','--project',project,'--region','us-central1',
+        '--source-image',image,'--accelerator','NVIDIA_L4','--output',str(tmp_path)])
+    commands=[];calls=[];endpoint={'name':'projects/p/locations/us-central1/endpoints/9','displayName':installer.NAME,
+        'dedicatedEndpointEnabled':True,'dedicatedEndpointDns':'9.us-central1-1.prediction.vertexai.goog','deployedModels':[]}
+    def fake_command(*args,**kwargs):
+        commands.append(args)
+        if args[:3]==('artifacts','repositories','list'):return json.dumps([{'name':'projects/test/repositories/fashionai-vton'}])
+    def fake_request(self,method,path,body=None,host=None):
+        calls.append((method,path,body))
+        if path.endswith('/models:upload'):return {'name':'UPLOAD','done':True,'response':{'model':'MODEL_US'}}
+        if path.endswith(':deployModel'):return {'name':'DEPLOY_OP','done':True,'response':{'deployedModel':{'id':'777'}}}
+        if method=='GET' and path==endpoint['name']:return endpoint
+        raise AssertionError((method,path))
+    with patch.object(installer.Cloud,'endpoints',return_value=[]),patch.object(installer.Cloud,'request',fake_request),\
+         patch.object(installer.Cloud,'wait',lambda self,op,seconds=0:op.get('response',{})),patch.object(installer,'command',side_effect=fake_command),\
+         patch('scripts.cloud.deploy_fashn_vertex.subprocess.run',return_value=type('R',(),{'stdout':'0'*40})()):
+        endpoint_create=[]
+        orig=fake_request
+        def request(self,method,path,body=None,host=None):
+            if path.endswith('/endpoints') and method=='POST':endpoint_create.append(body);return {'name':'CREATE','done':True,'response':endpoint}
+            return orig(self,method,path,body,host)
+        with patch.object(installer.Cloud,'request',request):installer.main()
+    out=capsys.readouterr().out
+    assert '"status": "GPU_DEPLOYED"' in out and 'permanece ativa' in out
+    upload=[b for m,p,b in calls if p.endswith('/models:upload')][0]['model']['containerSpec']
+    assert upload['imageUri']==image and upload['startupProbe']['failureThreshold']==60   # mesma imagem, sondas do cold start
+    deploy=[b for m,p,b in calls if p.endswith(':deployModel')][0]['deployedModel']['dedicatedResources']['machineSpec']
+    assert deploy=={'machineType':'g2-standard-8','acceleratorType':'NVIDIA_L4','acceleratorCount':1}
+    assert not any(p.endswith(':predict') or p.endswith(':undeployModel') for _,p,_ in calls)      # sem teste e sem desligar
+    assert not any(c[:2]==('builds','submit') for c in commands)                                    # sem novo Cloud Build
+    config=json.loads((tmp_path/'backend-config.json').read_text())
+    assert config['GOOGLE_CLOUD_LOCATION']=='us-central1' and config['VTON_VERTEX_TRYON_ENDPOINT_ID']=='9'
+
+
+def test_source_image_must_belong_to_the_project(monkeypatch):
+    from scripts.cloud import deploy_fashn_vertex as installer
+    monkeypatch.setattr('sys.argv',['deploy','--deploy-only','--project','fashionai-test','--source-image','docker.io/someone/else:latest'])
+    with pytest.raises(SystemExit):installer.main()

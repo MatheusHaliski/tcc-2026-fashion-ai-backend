@@ -50,6 +50,8 @@ SERVER_HINTS={
     'DWPOSE_CUDA_PROVIDER_REQUIRED':'o ONNX Runtime não carregou o provedor CUDA',
     'VTON_MODEL_NOT_ON_GPU':'o modelo não foi carregado na GPU',
 }
+# Máquina padrão por GPU de serving no Vertex (1 GPU por réplica).
+MACHINE_FOR={'NVIDIA_TESLA_T4':'n1-standard-8','NVIDIA_L4':'g2-standard-8'}
 MAX_SIDE=1536  # decode_image (auto_catalog.py) recusa lados maiores: IMAGE_DIMENSION_LIMIT -> 422 INVALID_VTON_IMAGE
 
 
@@ -485,6 +487,10 @@ def main():
     parser.add_argument('--apply',action='store_true')
     parser.add_argument('--build-only',action='store_true',help='Build/publish the corrected image only; no input photos, Vertex model or GPU deployment')
     parser.add_argument('--keep-deployed',action='store_true',help='Keep the billed T4 replica after the smoke, also when it fails, to retry other photos without a new cold start')
+    parser.add_argument('--deploy-only',action='store_true',help='Bring the GPU replica up and keep it (no photos, no smoke test); pairs with --region/--source-image/--accelerator to move regions')
+    parser.add_argument('--source-image',help='Reuse an already built image (e.g. from another region\'s deployment.json) instead of building again')
+    parser.add_argument('--accelerator',choices=sorted(MACHINE_FOR),default='NVIDIA_TESLA_T4',help='Serving GPU: NVIDIA_TESLA_T4 (default) or NVIDIA_L4')
+    parser.add_argument('--machine-type',help='Override the machine type (default: n1-standard-8 for T4, g2-standard-8 for L4)')
     parser.add_argument('--undeploy',action='store_true',help='Only remove this installer\'s replica from the endpoint (reads deployment.json); no build, model or photo needed')
     parser.add_argument('--new-release',action='store_true',help='Archive terminal previous release state and build/register the current code; preserves old cloud resources')
     parser.add_argument('--reregister-model',action='store_true',help='Register the saved image again with corrected immutable startup probes; no rebuild or deletion of the old model')
@@ -508,10 +514,21 @@ def main():
     if args.reregister_model and (args.new_release or args.resume_build or args.retry_failed_deploy or args.restart_cancelled_build):
         parser.error('--reregister-model reuses the saved image; cannot combine with build/release/retry flags')
     if args.new_release and (args.resume_build or args.retry_failed_deploy):parser.error('--new-release cannot reuse the old build or retry its old model')
-    if not args.person or not args.garment or not args.category:parser.error('--person, --garment and --category are required for inference')
-    person,person_hash=image_payload(args.person);garment,garment_hash=image_payload(args.garment)
+    if args.source_image and (args.new_release or args.resume_build or args.reregister_model or args.restart_cancelled_build):
+        parser.error('--source-image reuses a built image; cannot combine with build/release/reregister flags')
+    if args.source_image and not re.fullmatch(r'[a-z0-9-]+-docker\.pkg\.dev/'+re.escape(args.project)+r'/fashionai-vton/fashn:[0-9a-f]{12}',args.source_image):
+        parser.error('--source-image must be an image of this project: REGION-docker.pkg.dev/PROJECT/fashionai-vton/fashn:<12 hex>')
+    machine=args.machine_type or MACHINE_FOR[args.accelerator]
+    if args.deploy_only:
+        person=garment=person_hash=garment_hash=None
+    else:
+        if not args.person or not args.garment or not args.category:parser.error('--person, --garment and --category are required for inference (or use --deploy-only)')
+        person,person_hash=image_payload(args.person);garment,garment_hash=image_payload(args.garment)
     source=subprocess.run(['git','rev-parse','HEAD'],cwd=ROOT,check=True,capture_output=True,text=True).stdout.strip()
     tag=source[:12];image=f'{args.region}-docker.pkg.dev/{args.project}/fashionai-vton/fashn:{tag}'
+    if args.source_image:
+        # Same image, any region: Vertex pulls it from the project's Artifact Registry; no new Cloud Build.
+        image=args.source_image;tag=image.rsplit(':',1)[-1]
     if args.reregister_model:
         saved_file=Path(args.output)/'deployment.json'
         if not saved_file.is_file():parser.error('--reregister-model requires saved deployment.json')
@@ -519,7 +536,8 @@ def main():
         image=build_image_reference({'projectId':saved.get('project'),'images':[saved.get('image','')]},args.project,args.region)
         tag=image.rsplit(':',1)[-1]
     plan={'executed':False,'engine':'FASHN_VTON_1_5','project':args.project,'region':args.region,
-          'image':None if args.resume_build else image,'resumeBuildId':args.resume_build,'replicas':{'min':1,'max':1},'accelerator':'NVIDIA_TESLA_T4',
+          'image':None if args.resume_build else image,'resumeBuildId':args.resume_build,'replicas':{'min':1,'max':1},'accelerator':args.accelerator,
+          'machineType':machine,'deployOnly':args.deploy_only,'sourceImage':bool(args.source_image),
           'keepDeployed':args.keep_deployed,'newRelease':args.new_release,
           'reregisterModel':args.reregister_model,'physicalFitCertified':False}
     if not args.apply:print(json.dumps(plan,indent=2));return
@@ -577,7 +595,7 @@ def main():
     if len(deployed)>1:raise RuntimeError('MORE_THAN_ONE_REPLICA_MODEL_NOT_ALLOWED')
     if deployed and deployed[0].get('model')!=state.get('model'):raise RuntimeError('ENDPOINT_CONTAINS_DIFFERENT_MODEL_NO_REPLACEMENT_PERFORMED')
     if not state.get('model'):
-        build_image(args.project,args.region,image,state,state_file)
+        if not args.source_image:build_image(args.project,args.region,image,state,state_file)
         result=cloud.wait(cloud.request('POST',cloud.parent+'/models:upload',{'model':{
             'displayName':'fashionai-fashn-'+tag,'containerSpec':fashn_container_spec(image)}}))
         state['model']=result['model'];save_json(state_file,state)
@@ -587,7 +605,7 @@ def main():
         if not gpu_id:
             operation=cloud.request('POST',endpoint_name+':deployModel',{
                 'deployedModel':{'displayName':'fashionai-fashn-'+tag,'model':state['model'],
-                    'dedicatedResources':{'machineSpec':{'machineType':'n1-standard-8','acceleratorType':'NVIDIA_TESLA_T4','acceleratorCount':1},
+                    'dedicatedResources':{'machineSpec':{'machineType':machine,'acceleratorType':args.accelerator,'acceleratorCount':1},
                                           'minReplicaCount':1,'maxReplicaCount':1},'disableContainerLogging':False},
                 'trafficSplit':{'0':100}})
             # Persist operation BEFORE waiting, so an interrupted shell can be inspected.
@@ -596,6 +614,14 @@ def main():
             state['deployedModelId']=gpu_id;save_json(state_file,state)
         endpoint=cloud.request('GET',endpoint_name);host=endpoint.get('dedicatedEndpointDns','')
         if not re.fullmatch(r'[a-z0-9][a-z0-9.-]*\.prediction\.vertexai\.goog',host):raise RuntimeError('DEDICATED_DNS_NOT_AVAILABLE')
+        if args.deploy_only:
+            configuration={'VTON_RENDER_PROVIDER':'vertex_fashn','GOOGLE_CLOUD_PROJECT':args.project,
+                'GOOGLE_CLOUD_LOCATION':args.region,'VTON_VERTEX_TRYON_ENDPOINT_ID':endpoint_name.rsplit('/',1)[-1],
+                'VTON_VERTEX_TRYON_DEDICATED_HOST':host,'VTON_WORKER_TIMEOUT_SECONDS':'650'}
+            save_json(output/'backend-config.json',configuration)
+            print(json.dumps({'status':'GPU_DEPLOYED','region':args.region,'accelerator':args.accelerator,'machineType':machine,
+                'endpoint':endpoint_name,'deployedModelId':gpu_id,'dedicatedHost':host},indent=2),flush=True)
+            return
         payload={'instances':[{'task':'virtual_try_on','person_image':person,'garment_image':garment,
                               'category':args.category,'garment_photo_type':args.garment_photo_type,'num_timesteps':30,'seed':42}]}
         result=cloud.request('POST',endpoint_name+':predict',payload,host=host)
@@ -618,14 +644,14 @@ def main():
         smoke_passed=True
         print('GPU_SMOKE_PASSED: '+str(output/'try-on-gpu.png'),flush=True)
     finally:
-        if not args.keep_deployed:
+        if not args.keep_deployed and not args.deploy_only:
             # Undeploy even if smoke failed. Never delete another model.
             remove_replica(cloud,endpoint_name,state['model'])
         else:
             # Kept on purpose (also after a failed smoke): the next run with --keep-deployed reuses this replica and
             # sends only the new photos, without another 15–20 min GPU cold start.
-            print('ATENÇÃO: uma réplica T4 permanece ativa e faturável. Para testar outras fotos, rode de novo com '
-                  '--keep-deployed; para remover: python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --undeploy',flush=True)
+            print(f'ATENÇÃO: a réplica {args.accelerator} permanece ativa e faturável. Para remover: '
+                  f'python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --undeploy --region {args.region} --output {args.output}',flush=True)
 
 if __name__=='__main__':
     try:main()
