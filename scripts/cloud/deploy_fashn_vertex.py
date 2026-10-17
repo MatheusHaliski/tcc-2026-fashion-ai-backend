@@ -123,6 +123,21 @@ class CloudOperationFailed(RuntimeError):
                          f"operation={operation.get('name')}; message={message}")
 
 
+class CloudHTTPError(RuntimeError):
+    def __init__(self,status,message):
+        self.status=status;super().__init__(message)
+
+
+def google_error(raw):
+    """Status, motivo e mensagem do erro JSON da API de gerenciamento (nunca usado para :predict)."""
+    try:error=json.loads(raw).get('error',{})
+    except (ValueError,AttributeError):return ''
+    if not isinstance(error,dict):return ''
+    reasons=[d.get('reason') for d in error.get('details',[]) if isinstance(d,dict) and d.get('reason')]
+    message=re.sub(r'(?i)bearer\s+[^\s]+','Bearer [REDACTED]',str(error.get('message','')))[:500]
+    return '; '.join(str(part) for part in (error.get('status'),*reasons[:2],message) if part)
+
+
 class Cloud:
     def __init__(self,project,region):
         self.project=project;self.region=region
@@ -154,11 +169,26 @@ class Cloud:
         started=time.monotonic();deadline=started+seconds
         print('Operação: '+str(operation.get('name','UNKNOWN')),flush=True)
         while not operation.get('done'):
-            if time.monotonic()>deadline:raise RuntimeError('CLOUD_OPERATION_TIMEOUT_CHECK_CONSOLE')
-            kind=operation.get('metadata',{}).get('@type','operação').rsplit('.',1)[-1]
+            metadata=operation.get('metadata',{})
+            # DeployModel reports where it is: ADDING_NODES_TO_CLUSTER = waiting for a GPU machine,
+            # GETTING_CONTAINER_IMAGE = pulling the image, STARTING_MODEL_SERVER = container/startup probe.
+            stage=metadata.get('deploymentStage','')
+            stage='' if stage in ('','DEPLOYMENT_STAGE_UNSPECIFIED') else stage
+            if time.monotonic()>deadline:
+                raise RuntimeError(f"CLOUD_OPERATION_STILL_RUNNING: {operation.get('name')}"+(f' (etapa {stage})' if stage else '')+
+                    '; a operação continua no Google Cloud. Rode o mesmo comando para continuar acompanhando, sem novo deploy.')
+            kind=metadata.get('@type','operação').rsplit('.',1)[-1]+(f' [{stage}]' if stage else '')
             print(f'Aguardando Google Cloud: {kind} ({round(time.monotonic()-started)}s)...',flush=True)
             time.sleep(20)
-            operation=self.request('GET',operation['name'])
+            name=operation['name']
+            for attempt in range(4):
+                # Polling is read-only and the operation keeps running in Google Cloud: ride out a transient
+                # 403/429/5xx (e.g. Cloud Shell refreshing credentials) instead of aborting a 20-minute wait.
+                try:operation=self.request('GET',name);break
+                except CloudHTTPError as error:
+                    if attempt==3 or not (error.status in (403,429) or error.status>=500):raise
+                    print(f'Consulta da operação falhou ({error}); nova tentativa em 30 s...',flush=True)
+                    time.sleep(30)
         if operation.get('error'):raise CloudOperationFailed(operation)
         return operation.get('response',{})
 
@@ -344,7 +374,8 @@ def diagnose_deployment(project,region,output):
     print(json.dumps({key:state.get(key) for key in ('project','image','buildId','model','endpoint','deployOperation')},indent=2),flush=True)
     if state.get('deployOperation'):
         operation=cloud.request('GET',state['deployOperation'])
-        print(json.dumps({key:operation.get(key) for key in ('name','done','error')},indent=2,ensure_ascii=False),flush=True)
+        print(json.dumps({**{key:operation.get(key) for key in ('name','done','error')},
+            'deploymentStage':operation.get('metadata',{}).get('deploymentStage')},indent=2,ensure_ascii=False),flush=True)
     if state.get('endpoint'):
         endpoint=cloud.request('GET',state['endpoint'])
         print(json.dumps({'endpoint':endpoint.get('name'),'deployedModels':[
@@ -508,10 +539,21 @@ def main():
     if args.reregister_model and (args.new_release or args.resume_build or args.retry_failed_deploy or args.restart_cancelled_build):
         parser.error('--reregister-model reuses the saved image; cannot combine with build/release/retry flags')
     if args.new_release and (args.resume_build or args.retry_failed_deploy):parser.error('--new-release cannot reuse the old build or retry its old model')
-    if not args.person or not args.garment or not args.category:parser.error('--person, --garment and --category are required for inference')
-    person,person_hash=image_payload(args.person);garment,garment_hash=image_payload(args.garment)
+    if args.source_image and (args.new_release or args.resume_build or args.reregister_model or args.restart_cancelled_build):
+        parser.error('--source-image reuses a built image; cannot combine with build/release/reregister flags')
+    if args.source_image and not re.fullmatch(r'[a-z0-9-]+-docker\.pkg\.dev/'+re.escape(args.project)+r'/fashionai-vton/fashn:[0-9a-f]{12}',args.source_image):
+        parser.error('--source-image must be an image of this project: REGION-docker.pkg.dev/PROJECT/fashionai-vton/fashn:<12 hex>')
+    machine=args.machine_type or MACHINE_FOR[args.accelerator]
+    if args.deploy_only:
+        person=garment=person_hash=garment_hash=None
+    else:
+        if not args.person or not args.garment or not args.category:parser.error('--person, --garment and --category are required for inference (or use --deploy-only)')
+        person,person_hash=image_payload(args.person);garment,garment_hash=image_payload(args.garment)
     source=subprocess.run(['git','rev-parse','HEAD'],cwd=ROOT,check=True,capture_output=True,text=True).stdout.strip()
     tag=source[:12];image=f'{args.region}-docker.pkg.dev/{args.project}/fashionai-vton/fashn:{tag}'
+    if args.source_image:
+        # Same image, any region: Vertex pulls it from the project's Artifact Registry; no new Cloud Build.
+        image=args.source_image;tag=image.rsplit(':',1)[-1]
     if args.reregister_model:
         saved_file=Path(args.output)/'deployment.json'
         if not saved_file.is_file():parser.error('--reregister-model requires saved deployment.json')
@@ -519,7 +561,8 @@ def main():
         image=build_image_reference({'projectId':saved.get('project'),'images':[saved.get('image','')]},args.project,args.region)
         tag=image.rsplit(':',1)[-1]
     plan={'executed':False,'engine':'FASHN_VTON_1_5','project':args.project,'region':args.region,
-          'image':None if args.resume_build else image,'resumeBuildId':args.resume_build,'replicas':{'min':1,'max':1},'accelerator':'NVIDIA_TESLA_T4',
+          'image':None if args.resume_build else image,'resumeBuildId':args.resume_build,'replicas':{'min':1,'max':1},'accelerator':args.accelerator,
+          'machineType':machine,'deployOnly':args.deploy_only,'sourceImage':bool(args.source_image),
           'keepDeployed':args.keep_deployed,'newRelease':args.new_release,
           'reregisterModel':args.reregister_model,'physicalFitCertified':False}
     if not args.apply:print(json.dumps(plan,indent=2));return
@@ -577,7 +620,7 @@ def main():
     if len(deployed)>1:raise RuntimeError('MORE_THAN_ONE_REPLICA_MODEL_NOT_ALLOWED')
     if deployed and deployed[0].get('model')!=state.get('model'):raise RuntimeError('ENDPOINT_CONTAINS_DIFFERENT_MODEL_NO_REPLACEMENT_PERFORMED')
     if not state.get('model'):
-        build_image(args.project,args.region,image,state,state_file)
+        if not args.source_image:build_image(args.project,args.region,image,state,state_file)
         result=cloud.wait(cloud.request('POST',cloud.parent+'/models:upload',{'model':{
             'displayName':'fashionai-fashn-'+tag,'containerSpec':fashn_container_spec(image)}}))
         state['model']=result['model'];save_json(state_file,state)
@@ -587,7 +630,7 @@ def main():
         if not gpu_id:
             operation=cloud.request('POST',endpoint_name+':deployModel',{
                 'deployedModel':{'displayName':'fashionai-fashn-'+tag,'model':state['model'],
-                    'dedicatedResources':{'machineSpec':{'machineType':'n1-standard-8','acceleratorType':'NVIDIA_TESLA_T4','acceleratorCount':1},
+                    'dedicatedResources':{'machineSpec':{'machineType':machine,'acceleratorType':args.accelerator,'acceleratorCount':1},
                                           'minReplicaCount':1,'maxReplicaCount':1},'disableContainerLogging':False},
                 'trafficSplit':{'0':100}})
             # Persist operation BEFORE waiting, so an interrupted shell can be inspected.
@@ -596,6 +639,14 @@ def main():
             state['deployedModelId']=gpu_id;save_json(state_file,state)
         endpoint=cloud.request('GET',endpoint_name);host=endpoint.get('dedicatedEndpointDns','')
         if not re.fullmatch(r'[a-z0-9][a-z0-9.-]*\.prediction\.vertexai\.goog',host):raise RuntimeError('DEDICATED_DNS_NOT_AVAILABLE')
+        if args.deploy_only:
+            configuration={'VTON_RENDER_PROVIDER':'vertex_fashn','GOOGLE_CLOUD_PROJECT':args.project,
+                'GOOGLE_CLOUD_LOCATION':args.region,'VTON_VERTEX_TRYON_ENDPOINT_ID':endpoint_name.rsplit('/',1)[-1],
+                'VTON_VERTEX_TRYON_DEDICATED_HOST':host,'VTON_WORKER_TIMEOUT_SECONDS':'650'}
+            save_json(output/'backend-config.json',configuration)
+            print(json.dumps({'status':'GPU_DEPLOYED','region':args.region,'accelerator':args.accelerator,'machineType':machine,
+                'endpoint':endpoint_name,'deployedModelId':gpu_id,'dedicatedHost':host},indent=2),flush=True)
+            return
         payload={'instances':[{'task':'virtual_try_on','person_image':person,'garment_image':garment,
                               'category':args.category,'garment_photo_type':args.garment_photo_type,'num_timesteps':30,'seed':42}]}
         result=cloud.request('POST',endpoint_name+':predict',payload,host=host)
