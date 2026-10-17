@@ -409,3 +409,85 @@ def test_prebuilt_image_adoption_initializes_project_before_resume():
         assert result=={'project':project,'image':image,'buildId':'EXISTING_BUILD'}
     with pytest.raises(RuntimeError,match='STATE_BELONGS_TO_ANOTHER_PROJECT'):
         adopted_build({'project':'another-project'},build,'EXISTING_BUILD',project,region,image)
+
+
+def test_vertex_startup_probe_allows_real_cold_start_and_still_requires_health():
+    from scripts.cloud.deploy_fashn_vertex import fashn_container_spec
+    spec=fashn_container_spec('EXISTING_IMAGE')
+    probe=spec['startupProbe']
+    assert spec['imageUri']=='EXISTING_IMAGE'
+    assert probe['failureThreshold']*probe['periodSeconds']>=600
+    assert probe['timeoutSeconds']>=probe['periodSeconds']
+    assert probe['initialDelaySeconds']>=30
+    assert 'http://localhost:8080/health' in probe['exec']['command'][-1]
+    assert 'timeout=5' in probe['exec']['command'][-1]
+    assert spec['healthProbe']['failureThreshold']==3
+    assert spec['deploymentTimeout']=='1800s'
+
+
+def test_reregister_archives_old_model_and_keeps_image_build_and_endpoint(tmp_path):
+    from scripts.cloud.deploy_fashn_vertex import reregister_model,Cloud
+    cloud=Cloud('fashionai-test','southamerica-east1')
+    state={'project':cloud.project,'image':'EXISTING_IMAGE','buildId':'EXISTING_BUILD',
+           'endpoint':'KEEP_ENDPOINT','model':'OLD_MODEL','deployOperation':'FAILED_OPERATION'}
+    with patch.object(cloud,'request',return_value={'done':True,'error':{'code':9}}):
+        new=reregister_model(cloud,state,tmp_path/'deployment.json',{'name':'KEEP_ENDPOINT'})
+    assert new=={k:state[k] for k in ('project','image','buildId','endpoint')}
+    archives=list(tmp_path.glob('deployment.registration.previous-*.json'))
+    assert len(archives)==1 and json.loads(archives[0].read_text())==state
+    assert state['model']=='OLD_MODEL'
+    with patch.object(cloud,'request',return_value={'done':False}):
+        with pytest.raises(RuntimeError,match='STILL_RUNNING'):
+            reregister_model(cloud,state,tmp_path/'deployment.json',{'name':'KEEP_ENDPOINT'})
+    with pytest.raises(RuntimeError,match='NO_DEPLOYED_MODEL'):
+        reregister_model(cloud,state,tmp_path/'deployment.json',{'name':'KEEP_ENDPOINT','deployedModels':[{'id':'KEEP'}]})
+    with pytest.raises(RuntimeError,match='ANOTHER_PROJECT'):
+        reregister_model(cloud,{**state,'project':'OTHER'},tmp_path/'deployment.json',{'name':'KEEP_ENDPOINT'})
+
+
+def test_reregister_cli_uses_saved_image_without_submitting_another_build(tmp_path,monkeypatch):
+    from scripts.cloud import deploy_fashn_vertex as installer
+    project='fashionai-test';region='southamerica-east1'
+    image=f'{region}-docker.pkg.dev/{project}/fashionai-vton/fashn:00d264820803'
+    endpoint={'name':'KEEP_ENDPOINT','displayName':installer.NAME,'dedicatedEndpointEnabled':True}
+    old={'project':project,'image':image,'buildId':'EXISTING_BUILD','endpoint':endpoint['name'],
+         'model':'OLD_MODEL','deployOperation':'FAILED_OPERATION'}
+    installer.save_json(tmp_path/'deployment.json',old)
+    photo=tmp_path/'test.png';photo.write_bytes(b'TEST_ONLY')
+    monkeypatch.setattr('sys.argv',['deploy','--apply','--reregister-model','--project',project,
+        '--region',region,'--output',str(tmp_path),'--person',str(photo),'--garment',str(photo),'--category','tops'])
+    commands=[];uploads=[]
+    def fake_command(*args,**kwargs):
+        commands.append(args)
+        if args[:3]==('artifacts','repositories','list'):
+            return json.dumps([{'name':'projects/test/repositories/fashionai-vton'}])
+    def fake_request(self,method,path,body=None,host=None):
+        if method=='GET' and path=='FAILED_OPERATION':return {'done':True,'error':{'code':9}}
+        if method=='GET' and path==endpoint['name']:return endpoint
+        if path.endswith('/models:upload'):
+            uploads.append(body)
+            return {'name':'UPLOAD','done':True,'response':{'model':'NEW_MODEL'}}
+        if path.endswith(':deployModel'):
+            saved=json.loads((tmp_path/'deployment.json').read_text())
+            assert saved['model']=='NEW_MODEL' and saved['image']==image
+            raise RuntimeError('TEST_ONLY_STOP_BEFORE_GPU')
+        raise AssertionError((method,path))
+    build={'projectId':project,'images':[image],'status':'SUCCESS'}
+    with patch.object(installer.Cloud,'endpoints',return_value=[endpoint]),patch.object(installer.Cloud,'request',fake_request),patch.object(installer,'command',side_effect=fake_command),patch.object(installer,'describe_build',return_value=build):
+        with pytest.raises(RuntimeError,match='TEST_ONLY_STOP_BEFORE_GPU'):installer.main()
+    assert len(uploads)==1
+    spec=uploads[0]['model']['containerSpec']
+    assert spec['imageUri']==image and spec['startupProbe']['failureThreshold']==60
+    assert not any(c[:2]==('builds','submit') for c in commands)
+
+
+def test_reregister_plan_displays_saved_image_instead_of_current_git_head(tmp_path,monkeypatch,capsys):
+    from scripts.cloud import deploy_fashn_vertex as installer
+    image='southamerica-east1-docker.pkg.dev/fashionai-test/fashionai-vton/fashn:00d264820803'
+    installer.save_json(tmp_path/'deployment.json',{'project':'fashionai-test','image':image,'model':'EXISTING_MODEL','buildId':'EXISTING_BUILD'})
+    photo=tmp_path/'test.png';photo.write_bytes(b'TEST_ONLY')
+    monkeypatch.setattr('sys.argv',['deploy','--reregister-model','--project','fashionai-test',
+        '--output',str(tmp_path),'--person',str(photo),'--garment',str(photo),'--category','tops'])
+    with patch.object(installer,'command',side_effect=AssertionError('plan must not call cloud')):installer.main()
+    plan=json.loads(capsys.readouterr().out)
+    assert plan['executed'] is False and plan['image']==image and plan['reregisterModel'] is True

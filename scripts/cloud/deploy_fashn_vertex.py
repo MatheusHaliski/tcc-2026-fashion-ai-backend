@@ -296,6 +296,35 @@ def image_payload(path):
     return base64.b64encode(data).decode(),hashlib.sha256(data).hexdigest()
 
 
+def fashn_container_spec(image):
+    # Vertex defaults to only three startup failures. Python/CUDA imports, hashing
+    # 2.55 GB and loading the model happen before Uvicorn can answer /health.
+    check={'exec':{'command':['python','-c',
+        'import urllib.request; urllib.request.urlopen("http://localhost:8080/health", timeout=5)']},
+        'periodSeconds':10,'timeoutSeconds':15}
+    return {'imageUri':image,'ports':[{'containerPort':8080}],
+        'healthRoute':'/health','predictRoute':'/predict','sharedMemorySizeMb':'1024',
+        'deploymentTimeout':'1800s',
+        'startupProbe':{**check,'initialDelaySeconds':30,'failureThreshold':60,'successThreshold':1},
+        'healthProbe':{**check,'failureThreshold':3,'successThreshold':1}}
+
+
+def reregister_model(cloud,state,state_file,endpoint):
+    """Keep the built image/endpoint; archive immutable model registration data."""
+    if not state.get('model') or not state.get('image') or not state.get('buildId'):
+        raise RuntimeError('REGISTERED_MODEL_AND_EXISTING_BUILD_REQUIRED')
+    if state.get('project')!=cloud.project:raise RuntimeError('STATE_BELONGS_TO_ANOTHER_PROJECT')
+    if state.get('endpoint')!=endpoint.get('name'):raise RuntimeError('STATE_ENDPOINT_MISMATCH')
+    if endpoint.get('deployedModels'):raise RuntimeError('REREGISTER_REQUIRES_NO_DEPLOYED_MODEL')
+    if state.get('deployOperation'):
+        operation=cloud.request('GET',state['deployOperation'])
+        if not operation.get('done'):raise RuntimeError('PREVIOUS_DEPLOYMENT_STILL_RUNNING')
+    archive=Path(state_file).with_name('deployment.registration.previous-'+str(time.time_ns())+'.json')
+    save_json(archive,state)
+    print('Registro anterior preservado em '+str(archive)+'; reutilizando imagem '+state['image'],flush=True)
+    return {key:state[key] for key in ('project','image','buildId','endpoint')}
+
+
 def build_only_release(project,region,image,output,apply=False):
     """Publish a container, without creating endpoints, models or GPU replicas."""
     plan={'executed':False,'image':image,'project':project,'region':region,'gpuReplicas':0}
@@ -349,6 +378,7 @@ def main():
     parser.add_argument('--build-only',action='store_true',help='Build/publish the corrected image only; no input photos, Vertex model or GPU deployment')
     parser.add_argument('--keep-deployed',action='store_true')
     parser.add_argument('--new-release',action='store_true',help='Archive terminal previous release state and build/register the current code; preserves old cloud resources')
+    parser.add_argument('--reregister-model',action='store_true',help='Register the saved image again with corrected immutable startup probes; no rebuild or deletion of the old model')
     parser.add_argument('--diagnose',action='store_true',help='Read saved deployment/operation diagnostics; no cloud mutations')
     parser.add_argument('--retry-failed-deploy',action='store_true',help='Retry a confirmed failed deployment after its cause was corrected')
     parser.add_argument('--resume-build',help='Resume this existing build without submitting another one')
@@ -356,21 +386,30 @@ def main():
     args=parser.parse_args()
     if not re.fullmatch(r'[a-z][a-z0-9-]{4,61}[a-z0-9]',args.project) or not re.fullmatch(r'[a-z]+-[a-z]+[0-9]',args.region):parser.error('Invalid project/region')
     if args.build_only:
-        if args.diagnose or args.new_release or args.resume_build or args.retry_failed_deploy or args.restart_cancelled_build or args.keep_deployed:
+        if args.diagnose or args.new_release or args.reregister_model or args.resume_build or args.retry_failed_deploy or args.restart_cancelled_build or args.keep_deployed:
             parser.error('--build-only cannot be combined with deployment/resume options; repeat it to resume its saved build')
         source=subprocess.run(['git','rev-parse','HEAD'],cwd=ROOT,check=True,capture_output=True,text=True).stdout.strip()
         image=f'{args.region}-docker.pkg.dev/{args.project}/fashionai-vton/fashn:{source[:12]}'
         build_only_release(args.project,args.region,image,args.output,args.apply);return
     if args.diagnose:
         diagnose_deployment(args.project,args.region,args.output);return
+    if args.reregister_model and (args.new_release or args.resume_build or args.retry_failed_deploy or args.restart_cancelled_build):
+        parser.error('--reregister-model reuses the saved image; cannot combine with build/release/retry flags')
     if args.new_release and (args.resume_build or args.retry_failed_deploy):parser.error('--new-release cannot reuse the old build or retry its old model')
     if not args.person or not args.garment or not args.category:parser.error('--person, --garment and --category are required for inference')
     person,person_hash=image_payload(args.person);garment,garment_hash=image_payload(args.garment)
     source=subprocess.run(['git','rev-parse','HEAD'],cwd=ROOT,check=True,capture_output=True,text=True).stdout.strip()
     tag=source[:12];image=f'{args.region}-docker.pkg.dev/{args.project}/fashionai-vton/fashn:{tag}'
+    if args.reregister_model:
+        saved_file=Path(args.output)/'deployment.json'
+        if not saved_file.is_file():parser.error('--reregister-model requires saved deployment.json')
+        saved=json.loads(saved_file.read_text())
+        image=build_image_reference({'projectId':saved.get('project'),'images':[saved.get('image','')]},args.project,args.region)
+        tag=image.rsplit(':',1)[-1]
     plan={'executed':False,'engine':'FASHN_VTON_1_5','project':args.project,'region':args.region,
           'image':None if args.resume_build else image,'resumeBuildId':args.resume_build,'replicas':{'min':1,'max':1},'accelerator':'NVIDIA_TESLA_T4',
-          'keepDeployed':args.keep_deployed,'newRelease':args.new_release,'physicalFitCertified':False}
+          'keepDeployed':args.keep_deployed,'newRelease':args.new_release,
+          'reregisterModel':args.reregister_model,'physicalFitCertified':False}
     if not args.apply:print(json.dumps(plan,indent=2));return
     # Authentication and project access are checked before any mutation.
     cloud=Cloud(args.project,args.region);endpoints=cloud.endpoints()
@@ -388,6 +427,10 @@ def main():
     state_file=output/'deployment.json'
     state=json.loads(state_file.read_text()) if state_file.exists() else {}
     if state and state.get('project')!=args.project:raise RuntimeError('STATE_BELONGS_TO_ANOTHER_PROJECT')
+    if args.reregister_model:
+        if not matches:raise RuntimeError('PREVIOUS_ENDPOINT_NOT_FOUND')
+        state=reregister_model(cloud,state,state_file,matches[0])
+        image=state['image'];tag=image.rsplit(':',1)[-1]
     if args.new_release:
         if not matches and state.get('endpoint'):raise RuntimeError('PREVIOUS_ENDPOINT_NOT_FOUND')
         state=start_new_release(cloud,state,state_file,image,matches[0] if matches else {})
@@ -424,9 +467,7 @@ def main():
     if not state.get('model'):
         build_image(args.project,args.region,image,state,state_file)
         result=cloud.wait(cloud.request('POST',cloud.parent+'/models:upload',{'model':{
-            'displayName':'fashionai-fashn-'+tag,'containerSpec':{'imageUri':image,'ports':[{'containerPort':8080}],
-            'healthRoute':'/health','predictRoute':'/predict','sharedMemorySizeMb':'1024',
-            'startupProbe':{'exec':{'command':['python','-c','import urllib.request; urllib.request.urlopen("http://localhost:8080/health")']},'periodSeconds':30,'timeoutSeconds':10}}}}))
+            'displayName':'fashionai-fashn-'+tag,'containerSpec':fashn_container_spec(image)}}))
         state['model']=result['model'];save_json(state_file,state)
     gpu_id=deployed[0]['id'] if deployed else None
     smoke_passed=False
