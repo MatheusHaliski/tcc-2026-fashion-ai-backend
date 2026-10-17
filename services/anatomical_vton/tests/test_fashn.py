@@ -549,6 +549,18 @@ def test_management_error_shows_google_reason_and_poll_rides_out_a_transient_403
     assert request.call_count==1
 
 
+def test_deploy_wait_shows_the_stage_and_a_local_timeout_says_the_operation_keeps_running(capsys):
+    from scripts.cloud.deploy_fashn_vertex import Cloud
+    cloud=Cloud('project-14023673-32d6-4bf2-8b7','us-central1')
+    running={'name':'op/9','done':False,'metadata':{'@type':'type.googleapis.com/google.cloud.aiplatform.v1.DeployModelOperationMetadata',
+        'deploymentStage':'ADDING_NODES_TO_CLUSTER'}}
+    with patch.object(cloud,'request',return_value={'name':'op/9','done':True,'response':{'deployedModel':{'id':'7'}}}),patch('scripts.cloud.deploy_fashn_vertex.time.sleep'):
+        assert cloud.wait(running)=={'deployedModel':{'id':'7'}}
+    assert 'DeployModelOperationMetadata [ADDING_NODES_TO_CLUSTER]' in capsys.readouterr().out
+    with pytest.raises(RuntimeError) as raised:cloud.wait(running,seconds=-1)
+    assert 'CLOUD_OPERATION_STILL_RUNNING: op/9 (etapa ADDING_NODES_TO_CLUSTER)' in str(raised.value)
+
+
 def test_smoke_photos_are_checked_and_fitted_before_any_deploy(tmp_path):
     import io
     from PIL import Image

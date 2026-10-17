@@ -174,8 +174,15 @@ class Cloud:
         started=time.monotonic();deadline=started+seconds
         print('Operação: '+str(operation.get('name','UNKNOWN')),flush=True)
         while not operation.get('done'):
-            if time.monotonic()>deadline:raise RuntimeError('CLOUD_OPERATION_TIMEOUT_CHECK_CONSOLE')
-            kind=operation.get('metadata',{}).get('@type','operação').rsplit('.',1)[-1]
+            metadata=operation.get('metadata',{})
+            # DeployModel reports where it is: ADDING_NODES_TO_CLUSTER = waiting for a GPU machine,
+            # GETTING_CONTAINER_IMAGE = pulling the image, STARTING_MODEL_SERVER = container/startup probe.
+            stage=metadata.get('deploymentStage','')
+            stage='' if stage in ('','DEPLOYMENT_STAGE_UNSPECIFIED') else stage
+            if time.monotonic()>deadline:
+                raise RuntimeError(f"CLOUD_OPERATION_STILL_RUNNING: {operation.get('name')}"+(f' (etapa {stage})' if stage else '')+
+                    '; a operação continua no Google Cloud. Rode o mesmo comando para continuar acompanhando, sem novo deploy.')
+            kind=metadata.get('@type','operação').rsplit('.',1)[-1]+(f' [{stage}]' if stage else '')
             print(f'Aguardando Google Cloud: {kind} ({round(time.monotonic()-started)}s)...',flush=True)
             time.sleep(20)
             name=operation['name']
@@ -372,7 +379,8 @@ def diagnose_deployment(project,region,output):
     print(json.dumps({key:state.get(key) for key in ('project','image','buildId','model','endpoint','deployOperation')},indent=2),flush=True)
     if state.get('deployOperation'):
         operation=cloud.request('GET',state['deployOperation'])
-        print(json.dumps({key:operation.get(key) for key in ('name','done','error')},indent=2,ensure_ascii=False),flush=True)
+        print(json.dumps({**{key:operation.get(key) for key in ('name','done','error')},
+            'deploymentStage':operation.get('metadata',{}).get('deploymentStage')},indent=2,ensure_ascii=False),flush=True)
     if state.get('endpoint'):
         endpoint=cloud.request('GET',state['endpoint'])
         print(json.dumps({'endpoint':endpoint.get('name'),'deployedModels':[
@@ -673,6 +681,10 @@ def main():
         if not args.keep_deployed and not args.deploy_only:
             # Undeploy even if smoke failed. Never delete another model.
             remove_replica(cloud,endpoint_name,state['model'])
+        elif not gpu_id:
+            # The local wait stopped but Google keeps deploying; billing starts once the GPU node exists.
+            print(f'ATENÇÃO: o deploy da réplica {args.accelerator} continua no Google Cloud. Para acompanhar: rode o mesmo comando; '
+                  f'para ver a etapa: python3 scripts/cloud/deploy_fashn_vertex.py --diagnose --region {args.region} --output {args.output}',flush=True)
         else:
             # Kept on purpose (also after a failed smoke): the next run with --keep-deployed reuses this replica and
             # sends only the new photos, without another 15–20 min GPU cold start.
