@@ -128,7 +128,7 @@ export function AiTryOnDialog({ open, onClose, items, onPickFromWardrobe }: {
           ) : (
             <label className="grid gap-1">
               <span className="label">{t("tryOn.ia_peca")}</span>
-              <Select value={piece?.pieceId ?? ""} onChange={(e) => { setPieceId(e.target.value); setResult(null); }} disabled={busy !== null}>
+              <Select aria-label={t("tryOn.ia_peca")} value={piece?.pieceId ?? ""} onChange={(e) => { setPieceId(e.target.value); setResult(null); }} disabled={busy !== null}>
                 {candidates.map((c) => <option key={c.key} value={c.pieceId}>{c.name}</option>)}
               </Select>
             </label>
