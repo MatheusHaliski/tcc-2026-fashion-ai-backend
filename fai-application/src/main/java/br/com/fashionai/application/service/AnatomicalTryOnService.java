@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.ports.AnatomicalTryOnPort;
 import br.com.fashionai.application.security.*;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,19 @@ public class AnatomicalTryOnService {
   byte[] person=media.read(owned.url()).orElseThrow(()->ApiException.notFound("Foto"));
   if(person.length==0||person.length>6_000_000)throw ApiException.badRequest("VTON_IMAGE_LIMIT","Use uma fotografia de até 6 MB.");
   return worker.probePerson(person);
+ }
+ /**
+  * Foto da pessoa para a prova com IA: grava só na pasta do próprio usuário ({@code users/{id}/tryon/}), já reduzida ao
+  * limite da GPU (1536 px no maior lado) e regravada em JPEG sem metadados. Não entra na biblioteca de fotos.
+  */
+ public Map<String,Object> uploadPerson(CurrentUser user,byte[] bytes){
+  guard.requireCanCreate(user);
+  ImageOps.requireAcceptedImage(bytes);
+  java.awt.image.BufferedImage img=ImageOps.decode(bytes);
+  if(Math.min(img.getWidth(),img.getHeight())<256)throw ApiException.badRequest("VTON_IMAGE_SMALL","Use uma foto com pelo menos 256 px no menor lado.");
+  java.awt.image.BufferedImage fitted=ImageOps.scaleToFit(img,1536,1536);
+  var saved=media.put("users/"+user.id()+"/tryon/person-"+UUID.randomUUID()+".jpg",ImageOps.jpeg(fitted,0.9f),"image/jpeg");
+  return Map.of("url",saved.url(),"width",fitted.getWidth(),"height",fitted.getHeight());
  }
  public record Request(UUID pieceId,String personMediaUrl,Map<String,Object> bodyEvidence,boolean mirror,boolean processingConsent){}
  public Map<String,Object> render(CurrentUser user,Request request){
