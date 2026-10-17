@@ -8,5 +8,5 @@ if [ -n "${GOOGLE_APPLICATION_CREDENTIALS_JSON:-}" ]; then
   export GOOGLE_APPLICATION_CREDENTIALS=/tmp/google-service-account.json
   unset GOOGLE_APPLICATION_CREDENTIALS_JSON
 fi
-# "::" atende IPv4 e IPv6: a rede privada do Railway (*.railway.internal) usa IPv6. VTON_BIND_HOST troca em máquinas sem IPv6.
-exec python -m uvicorn services.anatomical_vton.api:app --host "${VTON_BIND_HOST:-::}" --port "${PORT:-8080}" --workers 1 --no-access-log
+# Um socket IPv4 + IPv6 (healthcheck do Railway por IPv4, rede privada *.railway.internal por IPv6): ver serve.py.
+exec python -m services.anatomical_vton.deploy.railway.serve
