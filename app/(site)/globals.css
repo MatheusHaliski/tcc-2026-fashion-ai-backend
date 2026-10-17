@@ -1,5 +1,10 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 @import "../../lib/design/typography.css";
+
+/* Gere utilitários só a partir do frontend, sem varrer catálogo, modelos e relatórios. */
+@source "../";
+@source "../../components";
+@source "../../lib";
 
 /* ---------- Temas (RNF7): claro, escuro e alto contraste. Tokens de superfície e tinta em CSS variables. ---------- */
 :root {

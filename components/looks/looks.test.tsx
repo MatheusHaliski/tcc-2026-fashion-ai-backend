@@ -116,7 +116,7 @@ describe("Lookbook — vitrine social", () => {
     // a gestão saiu do Lookbook: nenhum filtro e nenhuma chamada a /api/me/schemes
     expect(screen.queryByRole("button", { name: /Estado:/ })).toBeNull();
     expect(schemeCalls(api.calls)).toEqual([]);
-    expect(screen.getAllByRole("tab").map((t) => t.firstChild?.textContent)).toEqual(["Peças", "Minhas cartas FLAIR", "Looks", "Publicações", "Favoritos", "Salvos", "DNA de estilo", "Look do Dia", "Cápsula", "Agrupamentos", "Momentos", "Insights"]);
+    expect(screen.getAllByRole("tab").map((t) => t.firstChild?.textContent)).toEqual(["Peças", "Minhas cartas FLAIR", "Looks", "Publicações", "Favoritos", "Minhas Artes", "Salvos", "DNA de estilo", "Look do Dia", "Cápsula", "Agrupamentos", "Momentos", "Insights"]);
   });
 
   it("quem visita vê os mesmos looks publicados, sem o atalho de gestão", async () => {

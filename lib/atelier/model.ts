@@ -1,3 +1,4 @@
+import { tr } from "../i18n/core";
 /** FAI Atelier: recompensas de transformação e identidade (substitui "Minhas Fotos"). */
 export type AuraEffect = "CONSTELLATION" | "CIRCUIT" | "HOLOGRAM" | "ENTRANCE_ANIMATION";
 export type TrophyKind = "SHOWCASE" | "LAMP" | "MIRROR" | "TABLE";
@@ -26,17 +27,17 @@ export const EMPTY_ATELIER_REWARDS: AtelierRewardModel = {
 };
 
 export const REWARD_CATEGORIES = [
-  { key: "auraSignature", title: "Assinatura de Aura", how: "Descobrir combinações em partidas", effect: "Efeitos para suas peças: constelações, circuitos, holografia e animações de entrada." },
-  { key: "garmentMemory", title: "Memória da peça", how: "Reutilizar uma roupa em desafios diferentes", effect: "A carta ganha capítulos visuais: onde participou, combinações e colaborações." },
-  { key: "habitableTrofeus", title: "Troféu habitável", how: "Completar uma temporada", effect: "Objeto funcional para o quarto: vitrine, luminária, espelho ou mesa." },
-  { key: "directorPower", title: "Poder de direção", how: "Cumprir missões criativas", effect: "Escolher condições de uma rodada, personalizar um cenário ou organizar um desafio." },
-  { key: "collectiveWork", title: "Obra coletiva", how: "Concluir desafios em equipe", effect: "Partes de uma instalação que se completa ao colaborar." },
-  { key: "seasonPasses", title: "Convite de temporada", how: "Participar de uma jornada de marca ou celebridade", effect: "Cenários, histórias e desafios exclusivos daquele perfil." },
+  { key: "auraSignature", get title() { return tr("atelier.category.auraSignature"); }, get how() { return tr("atelier.reward.auraSignature.how"); }, get effect() { return tr("atelier.reward.auraSignature.effect"); } },
+  { key: "garmentMemory", get title() { return tr("atelier.category.garmentMemory"); }, get how() { return tr("atelier.reward.garmentMemory.how"); }, get effect() { return tr("atelier.reward.garmentMemory.effect"); } },
+  { key: "habitableTrofeus", get title() { return tr("atelier.category.habitableTrofeus"); }, get how() { return tr("atelier.reward.habitableTrofeus.how"); }, get effect() { return tr("atelier.reward.habitableTrofeus.effect"); } },
+  { key: "directorPower", get title() { return tr("atelier.category.directorPower"); }, get how() { return tr("atelier.reward.directorPower.how"); }, get effect() { return tr("atelier.reward.directorPower.effect"); } },
+  { key: "collectiveWork", get title() { return tr("atelier.category.collectiveWork"); }, get how() { return tr("atelier.reward.collectiveWork.how"); }, get effect() { return tr("atelier.reward.collectiveWork.effect"); } },
+  { key: "seasonPasses", get title() { return tr("atelier.category.seasonPasses"); }, get how() { return tr("atelier.reward.seasonPasses.how"); }, get effect() { return tr("atelier.reward.seasonPasses.effect"); } },
 ] as const;
 
 export const SAMPLE_PROJECT: AtelierProject = {
-  id: "espelho-constelacao", name: "Espelho Constelação FAI", reward: "O espelho aparece no seu quarto e reproduz as apresentações dos looks que você criou.",
-  goals: [{ label: "Descubra três combinações cromáticas", done: false }, { label: "Reutilize uma peça em dois cenários", done: false }, { label: "Conclua um dueto", done: false }],
+  id: "espelho-constelacao", get name() { return tr("atelier.sampleProject.name"); }, get reward() { return tr("atelier.sampleProject.reward"); },
+  goals: [{ get label() { return tr("atelier.sampleProject.goal1"); }, done: false }, { get label() { return tr("atelier.sampleProject.goal2"); }, done: false }, { get label() { return tr("atelier.sampleProject.goal3"); }, done: false }],
 };
 
 export function rewardCount(m: AtelierRewardModel) {

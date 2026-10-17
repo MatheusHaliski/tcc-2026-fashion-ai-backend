@@ -29,7 +29,7 @@ beforeEach(() => {
   clearImageCache();
   vi.stubGlobal("Image", FakeImage);
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
 const state = (c: HTMLElement) => c.querySelector(".piece-image")!.getAttribute("data-state");
 
@@ -59,12 +59,18 @@ describe("PieceImage / preload", () => {
   });
 
   it("usa fallback: thumbnail, original e depois placeholder", async () => {
+    // Dois fallbacks esgotam 900 ms de backoff: avance o relógio em vez de
+    // disputar o timeout real de 1 s do waitFor com os demais testes do CI.
+    vi.useFakeTimers();
     failing.add("/thumb.jpg");
     const { container, rerender } = render(<PieceImage sources={["/thumb.jpg", "/orig.jpg"]} />);
-    await waitFor(() => expect(container.querySelector("img")?.getAttribute("src")).toBe("/orig.jpg"));
+    await act(async () => { await vi.runAllTimersAsync(); });
+    expect(container.querySelector("img")?.getAttribute("src")).toBe("/orig.jpg");
     failing.add("/orig2.jpg");
     rerender(<PieceImage sources={["/thumb.jpg", "/orig2.jpg"]} />);
-    await waitFor(() => expect(state(container)).toBe("fallback"));
+    await act(async () => { await vi.runAllTimersAsync(); });
+    expect(state(container)).toBe("fallback");
+    expect(requests.filter((url) => url === "/orig2.jpg")).toHaveLength(3);
     expect(container.querySelector("img")).toBeNull();
   });
 

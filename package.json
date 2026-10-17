@@ -7,7 +7,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "npm run typecheck && npm run lint:styles && node scripts/ux/check-design.cjs && npm run i18n:check && npm run i18n:scan",
     "typecheck": "tsc --noEmit",
     "i18n:check": "node scripts/i18n/check.js --fail",
     "i18n:scan": "node scripts/i18n/scan.js --fail",

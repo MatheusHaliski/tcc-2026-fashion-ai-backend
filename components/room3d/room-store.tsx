@@ -92,7 +92,7 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
             <div key={i.sku} className="surface flex flex-col p-3">
               <StoreSwatch item={i} />
               <span className="type-caption text-muted"><UiIcon name="box" size={18} /> {i.kind === "WARDROBE" ? t("room3d.roomStore.guarda_roupas_inteiros") : i.blockLabel}</span>
-              <div className="mt-2 flex items-start justify-between gap-2"><p className="type-body"><b>{i.name}</b></p><span className="type-data whitespace-nowrap"><FaiIcon id="ACT-40" size={20} decorative /> {i.pricePoints} FAI Points</span></div>
+              <div className="mt-2 flex items-start justify-between gap-2"><p className="type-body"><b>{i.name}</b></p><span className="type-data whitespace-nowrap"><FaiIcon id="ACT-40" size={20} decorative /> {i.pricePoints} {t("nav.points")}</span></div>
               <p className="type-caption text-muted">{i.kind === "WARDROBE" ? t("common.guarda_roupa_inteiro_blocos", { value: i.bundle?.length ?? 0 }) : `${i.blockLabel} · ${i.materialLabel ?? ""} · ${i.colorName ?? ""}`}</p>
               {i.kind === "WARDROBE" && <p className="type-caption text-faint">{(i.bundle ?? []).map((b) => `${SLOT_LABELS[b.slotType] ?? b.slotType}: ${b.colorName}`).join(" · ")}</p>}
               {i.creator ? <Link href={i.creator.slug ? `/brands/${i.creator.slug}` : "#"} className="mt-1 flex items-center gap-1 type-caption underline-offset-2 hover:underline">{i.creator.logoUrl && <img src={mediaUrl(i.creator.logoUrl)} alt="" className="h-4 w-4 rounded-full object-contain" />}{i.creator.kind === "CELEBRIDADE" ? t("auth.profileCelebrity") : t("common.brand")} · {i.creator.name}</Link> : <p className="mt-1 type-caption text-faint">{t("room3d.roomStore.fabrica_fai")}</p>}
@@ -117,7 +117,7 @@ export function RoomStore({ creatorSlug, onChanged, compact }: { creatorSlug?: s
         })}</div>
         {!compact && list.length > shown && <div className="mt-4 flex justify-center"><Button onClick={() => setShown((n) => n + PAGE)}>{t("room3d.roomStore.showMore", { count: Math.min(PAGE, list.length - shown), shown, total: list.length })}</Button></div>}</>)}
       <Dialog open={!!confirmPurchase} onClose={() => { if (!busy) setConfirmPurchase(null); }} title={t("store.confirmTitle")} footer={<><Button disabled={!!busy} onClick={() => setConfirmPurchase(null)}>{t("common.cancel")}</Button><Button variant="primary" loading={!!busy} disabled={!!busy} onClick={() => { if (confirmPurchase) void buy(confirmPurchase); }}>{t("myArts.confirm")}</Button></>}>
-        <p>{confirmPurchase?.name} · <FaiIcon id="ACT-40" size={20} decorative /> {confirmPurchase?.pricePoints} FAI Points</p><p>{t("store.confirmHint")}</p>
+        <p>{confirmPurchase?.name} · <FaiIcon id="ACT-40" size={20} decorative /> {confirmPurchase?.pricePoints} {t("nav.points")}</p><p>{t("store.confirmHint")}</p>
       </Dialog>
       <Dialog open={!!purchaseError} onClose={() => setPurchaseError(null)} title={t("store.purchaseRejected")}><p role="alert">{purchaseError}</p></Dialog>
       <Dialog open={!!info} onClose={() => setInfo(null)} title={info?.name ?? t("store.moreInfo")}>
