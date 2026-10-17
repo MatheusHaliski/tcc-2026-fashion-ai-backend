@@ -396,3 +396,16 @@ def test_build_only_cli_requires_no_photos_and_no_auth(monkeypatch,capsys):
     plan=json.loads(capsys.readouterr().out)
     assert plan['executed'] is False and plan['gpuReplicas']==0
     assert plan['image'].startswith('southamerica-east1-docker.pkg.dev/')
+
+
+def test_prebuilt_image_adoption_initializes_project_before_resume():
+    from scripts.cloud.deploy_fashn_vertex import adopted_build,resumed_state
+    project='fashionai-test';region='southamerica-east1'
+    image=f'{region}-docker.pkg.dev/{project}/fashionai-vton/fashn:00d264820803'
+    build={'projectId':project,'images':[image],'status':'SUCCESS'}
+    for fresh in ({},{'buildId':'EXISTING_BUILD'}):
+        state,chosen=adopted_build(fresh,build,'EXISTING_BUILD',project,region,image)
+        result=resumed_state(state,project,chosen)
+        assert result=={'project':project,'image':image,'buildId':'EXISTING_BUILD'}
+    with pytest.raises(RuntimeError,match='STATE_BELONGS_TO_ANOTHER_PROJECT'):
+        adopted_build({'project':'another-project'},build,'EXISTING_BUILD',project,region,image)
