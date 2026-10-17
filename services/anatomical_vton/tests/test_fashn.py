@@ -21,6 +21,12 @@ from scripts.cloud.deploy_fashn_vertex import stage_context,image_payload
 def pose():return np.full((1,134,2),50.,float),np.ones((1,134),float)
 
 
+def tiny_png(path):
+    """PNG real e mínimo: o instalador confere formato e dimensões da foto antes de qualquer chamada à nuvem."""
+    from PIL import Image
+    Image.new('RGB',(32,32),(120,90,60)).save(path,'PNG');return path
+
+
 def test_only_actual_supported_catalog_categories_are_mapped():
     assert fashion_category('upper_piece')=='tops'
     assert fashion_category('lower_piece')=='bottoms'
@@ -97,9 +103,9 @@ def test_cloud_build_context_contains_code_not_user_media_or_downloaded_weights(
     assert (tmp_path/'services/anatomical_vton/fashn_assets.json').is_file()
     assert not list(tmp_path.rglob('*.safetensors'))
     assert not list(tmp_path.rglob('work'))
-    image=tmp_path/'test.png';image.write_bytes(b'TEST_ONLY')
+    image=tiny_png(tmp_path/'test.png')
     encoded,digest=image_payload(image)
-    assert base64.b64decode(encoded)==b'TEST_ONLY'
+    assert base64.b64decode(encoded)==image.read_bytes()
 
 
 def test_private_worker_can_render_pending_catalog_via_native_gpu_contract(tmp_path):
@@ -453,7 +459,7 @@ def test_reregister_cli_uses_saved_image_without_submitting_another_build(tmp_pa
     old={'project':project,'image':image,'buildId':'EXISTING_BUILD','endpoint':endpoint['name'],
          'model':'OLD_MODEL','deployOperation':'FAILED_OPERATION'}
     installer.save_json(tmp_path/'deployment.json',old)
-    photo=tmp_path/'test.png';photo.write_bytes(b'TEST_ONLY')
+    photo=tiny_png(tmp_path/'test.png')
     monkeypatch.setattr('sys.argv',['deploy','--apply','--reregister-model','--project',project,
         '--region',region,'--output',str(tmp_path),'--person',str(photo),'--garment',str(photo),'--category','tops'])
     commands=[];uploads=[]
@@ -485,9 +491,65 @@ def test_reregister_plan_displays_saved_image_instead_of_current_git_head(tmp_pa
     from scripts.cloud import deploy_fashn_vertex as installer
     image='southamerica-east1-docker.pkg.dev/fashionai-test/fashionai-vton/fashn:00d264820803'
     installer.save_json(tmp_path/'deployment.json',{'project':'fashionai-test','image':image,'model':'EXISTING_MODEL','buildId':'EXISTING_BUILD'})
-    photo=tmp_path/'test.png';photo.write_bytes(b'TEST_ONLY')
+    photo=tiny_png(tmp_path/'test.png')
     monkeypatch.setattr('sys.argv',['deploy','--reregister-model','--project','fashionai-test',
         '--output',str(tmp_path),'--person',str(photo),'--garment',str(photo),'--category','tops'])
     with patch.object(installer,'command',side_effect=AssertionError('plan must not call cloud')):installer.main()
     plan=json.loads(capsys.readouterr().out)
     assert plan['executed'] is False and plan['image']==image and plan['reregisterModel'] is True
+
+
+def test_predict_error_shows_only_known_server_code_never_the_echoed_input():
+    import io,urllib.error
+    from scripts.cloud.deploy_fashn_vertex import Cloud,server_code
+    assert server_code(b'{"detail":"INVALID_VTON_IMAGE"}')=='INVALID_VTON_IMAGE'
+    wrapped=json.dumps({'error':{'code':422,'message':json.dumps({'detail':'GENERATED_POSE_DRIFT_REJECTED'}),'status':'FAILED_PRECONDITION'}})
+    assert server_code(wrapped.encode())=='GENERATED_POSE_DRIFT_REJECTED'
+    assert server_code(b'{"echo":"AAAABBBBCCCCDDDDEEEE"}') is None          # base64 ecoado nunca vira "código"
+    echoed=json.dumps({'error':{'message':'bad instance person_image=QUJDREVGR0hJSktM '+'X'*40+' {"detail":"EXACTLY_ONE_PERSON_WITH_POSE_REQUIRED"}'}}).encode()
+    error=urllib.error.HTTPError('https://x.prediction.vertexai.goog/v1/p:predict',422,'Unprocessable',{},io.BytesIO(echoed))
+    opener=type('O',(),{'open':lambda self,*a,**k:(_ for _ in ()).throw(error)})()
+    cloud=Cloud('project-14023673-32d6-4bf2-8b7','southamerica-east1')
+    with patch('scripts.cloud.deploy_fashn_vertex.command',return_value='TOKEN'),patch('scripts.cloud.deploy_fashn_vertex.urllib.request.build_opener',return_value=opener):
+        with pytest.raises(RuntimeError) as raised:cloud.request('POST','projects/p/locations/l/endpoints/e:predict',{'instances':[{}]},host='x.prediction.vertexai.goog')
+    message=str(raised.value)
+    assert 'GOOGLE_CLOUD_HTTP_422' in message and 'EXACTLY_ONE_PERSON_WITH_POSE_REQUIRED' in message and 'exatamente uma pessoa' in message
+    assert 'QUJDREVGR0hJSktM' not in message and 'TOKEN' not in message
+
+
+def test_smoke_photos_are_checked_and_fitted_before_any_deploy(tmp_path):
+    import io
+    from PIL import Image
+    from scripts.cloud.deploy_fashn_vertex import image_size,image_payload,MAX_SIDE
+    def save(name,size,fmt,mode='RGB'):
+        path=tmp_path/name;Image.new(mode,size,(200,40,40) if mode=='RGB' else (200,40,40,255)).save(path,fmt);return path
+    assert image_size(save('a.png',(572,380),'PNG').read_bytes())==(572,380)
+    assert image_size(save('b.jpg',(640,480),'JPEG').read_bytes())==(640,480)
+    assert image_size(save('c.webp',(640,540),'WEBP','RGBA').read_bytes())==(640,540)
+    encoded,digest=image_payload(save('phone.jpg',(3024,4032),'JPEG'))   # foto de celular: o servidor recusaria (1536 px)
+    with Image.open(io.BytesIO(base64.b64decode(encoded))) as fitted:
+        assert max(fitted.size)==MAX_SIDE and abs(fitted.width/fitted.height-3024/4032)<0.01
+    assert digest==hashlib.sha256(base64.b64decode(encoded)).hexdigest()
+    heic=tmp_path/'photo.heic';heic.write_bytes(b'\x00\x00\x00\x18ftypheic'+b'\x00'*64)
+    with pytest.raises(ValueError,match='FORMAT_UNSUPPORTED'):image_payload(heic)
+    small,_=image_payload(save('ok.png',(572,380),'PNG'))
+    assert base64.b64decode(small)==(tmp_path/'ok.png').read_bytes()       # dentro do limite: bytes intactos
+
+
+def test_undeploy_removes_only_the_saved_model_replica(tmp_path):
+    from scripts.cloud.deploy_fashn_vertex import undeploy_ours
+    state=tmp_path/'deployment.json'
+    state.write_text(json.dumps({'project':'project-14023673-32d6-4bf2-8b7','endpoint':'projects/p/locations/l/endpoints/e','model':'models/ours'}))
+    calls=[]
+    class FakeCloud:
+        project='project-14023673-32d6-4bf2-8b7'
+        def request(self,method,path,body=None,host=None):
+            calls.append((method,path,body))
+            if method=='GET':return {'deployedModels':[{'id':'1','model':'models/ours'},{'id':'2','model':'models/someone-else'}]}
+            return {'name':'operations/x','done':True}
+        def wait(self,operation,seconds=0):return {}
+    assert undeploy_ours(FakeCloud(),state)==['1']
+    posts=[c for c in calls if c[0]=='POST']
+    assert posts==[('POST','projects/p/locations/l/endpoints/e:undeployModel',{'deployedModelId':'1','trafficSplit':{}})]
+    state.write_text(json.dumps({'project':'outro-projeto','endpoint':'e','model':'m'}))
+    with pytest.raises(RuntimeError,match='ANOTHER_PROJECT'):undeploy_ours(FakeCloud(),state)
