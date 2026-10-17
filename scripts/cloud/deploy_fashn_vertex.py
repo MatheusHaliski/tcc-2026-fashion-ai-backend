@@ -50,8 +50,6 @@ SERVER_HINTS={
     'DWPOSE_CUDA_PROVIDER_REQUIRED':'o ONNX Runtime não carregou o provedor CUDA',
     'VTON_MODEL_NOT_ON_GPU':'o modelo não foi carregado na GPU',
 }
-# Máquina padrão por GPU de serving no Vertex (1 GPU por réplica).
-MACHINE_FOR={'NVIDIA_TESLA_T4':'n1-standard-8','NVIDIA_L4':'g2-standard-8'}
 MAX_SIDE=1536  # decode_image (auto_catalog.py) recusa lados maiores: IMAGE_DIMENSION_LIMIT -> 422 INVALID_VTON_IMAGE
 
 
@@ -160,15 +158,12 @@ class Cloud:
                 if len(raw)>10_000_000:raise RuntimeError('CLOUD_RESPONSE_TOO_LARGE')
                 return json.loads(raw)
         except urllib.error.HTTPError as error:
-            # :predict errors may echo the photos: their raw body is never printed, only a known short server code
-            # and its hint. Management calls (no dedicated host) carry resource diagnostics, shown like operation errors.
+            # API errors may echo inputs: the raw body is never printed, only a known short server code and its hint.
             try:raw=error.read(65_536)
             except Exception:raw=b''
             code=server_code(raw)
             detail=f'; servidor: {code} — {SERVER_HINTS[code]}' if code else ''
-            if not code and host is None and not path.endswith(':predict'):
-                reason=google_error(raw);detail=f'; Google: {reason}' if reason else ''
-            raise CloudHTTPError(error.code,f'GOOGLE_CLOUD_HTTP_{error.code}: {method} {path.split(":")[0]}{detail}') from None
+            raise RuntimeError(f'GOOGLE_CLOUD_HTTP_{error.code}: {method} {path.split(":")[0]}{detail}') from None
 
     def wait(self,operation,seconds=2400):
         started=time.monotonic();deadline=started+seconds
@@ -521,10 +516,6 @@ def main():
     parser.add_argument('--apply',action='store_true')
     parser.add_argument('--build-only',action='store_true',help='Build/publish the corrected image only; no input photos, Vertex model or GPU deployment')
     parser.add_argument('--keep-deployed',action='store_true',help='Keep the billed T4 replica after the smoke, also when it fails, to retry other photos without a new cold start')
-    parser.add_argument('--deploy-only',action='store_true',help='Bring the GPU replica up and keep it (no photos, no smoke test); pairs with --region/--source-image/--accelerator to move regions')
-    parser.add_argument('--source-image',help='Reuse an already built image (e.g. from another region\'s deployment.json) instead of building again')
-    parser.add_argument('--accelerator',choices=sorted(MACHINE_FOR),default='NVIDIA_TESLA_T4',help='Serving GPU: NVIDIA_TESLA_T4 (default) or NVIDIA_L4')
-    parser.add_argument('--machine-type',help='Override the machine type (default: n1-standard-8 for T4, g2-standard-8 for L4)')
     parser.add_argument('--undeploy',action='store_true',help='Only remove this installer\'s replica from the endpoint (reads deployment.json); no build, model or photo needed')
     parser.add_argument('--new-release',action='store_true',help='Archive terminal previous release state and build/register the current code; preserves old cloud resources')
     parser.add_argument('--reregister-model',action='store_true',help='Register the saved image again with corrected immutable startup probes; no rebuild or deletion of the old model')
@@ -678,18 +669,14 @@ def main():
         smoke_passed=True
         print('GPU_SMOKE_PASSED: '+str(output/'try-on-gpu.png'),flush=True)
     finally:
-        if not args.keep_deployed and not args.deploy_only:
+        if not args.keep_deployed:
             # Undeploy even if smoke failed. Never delete another model.
             remove_replica(cloud,endpoint_name,state['model'])
-        elif not gpu_id:
-            # The local wait stopped but Google keeps deploying; billing starts once the GPU node exists.
-            print(f'ATENÇÃO: o deploy da réplica {args.accelerator} continua no Google Cloud. Para acompanhar: rode o mesmo comando; '
-                  f'para ver a etapa: python3 scripts/cloud/deploy_fashn_vertex.py --diagnose --region {args.region} --output {args.output}',flush=True)
         else:
             # Kept on purpose (also after a failed smoke): the next run with --keep-deployed reuses this replica and
             # sends only the new photos, without another 15–20 min GPU cold start.
-            print(f'ATENÇÃO: a réplica {args.accelerator} permanece ativa e faturável. Para remover: '
-                  f'python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --undeploy --region {args.region} --output {args.output}',flush=True)
+            print('ATENÇÃO: uma réplica T4 permanece ativa e faturável. Para testar outras fotos, rode de novo com '
+                  '--keep-deployed; para remover: python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --undeploy',flush=True)
 
 if __name__=='__main__':
     try:main()
