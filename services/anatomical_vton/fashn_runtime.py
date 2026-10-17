@@ -1,5 +1,7 @@
 """Native pretrained FASHN pipeline. Generated try-on is not metrological fitting."""
 import base64
+import json
+import os
 import time
 from pathlib import Path
 import numpy as np
@@ -82,7 +84,11 @@ class NativeFashnRuntime:
     tasks=('virtual_try_on',)
 
     def __init__(self,weights_dir):
-        root=Path(weights_dir).resolve();verify_assets(root)
+        root=Path(weights_dir).resolve()
+        print(json.dumps({'event':'fashn_weights_preflight','directory':str(root),
+            'uid':os.geteuid(),'directoryExists':root.is_dir(),
+            'directoryReadable':os.access(root,os.R_OK|os.X_OK)}),flush=True)
+        verify_assets(root)
         import torch
         import onnxruntime as ort
         if not torch.cuda.is_available():raise AlignmentError('REAL_CUDA_DEVICE_REQUIRED')

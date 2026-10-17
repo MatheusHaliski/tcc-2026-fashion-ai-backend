@@ -109,6 +109,121 @@ para benchmark independente de acurácia. Para avaliação real, use imagens
 consentidas, fotografias de produtos e referências de vestimenta por categoria.
 Não publique fotografias pessoais em evidências de PR sem autorização.
 
+## Corrigir o pacote de pesos e criar uma nova versão
+
+O servidor no Vertex abortou com `FASHN_WEIGHT_MISSING_OR_CORRUPTED`, antes de
+carregar os modelos em CUDA. Esse erro genérico não distingue ausência, tamanho,
+hash ou acesso; não prova que o download foi corrompido. A verificação de build
+anterior rodava como root. Os downloads temporários tinham permissão 0600 e o
+`chmod a-w` final os deixava 0400, incompatível com outro UID de inferência.
+
+A correção publica os pesos públicos como 0444 e usa o diretório próprio
+`/opt/fashionai/weights/fashn`, fora de `/models`. O diretório e o código precisam
+ser atravessáveis pelo usuário 10001. O build agora verifica **todos os pesos
+depois de USER 10001**, e importa FASHN/parser/ONNX sem GPU antes de publicar a
+imagem. HOME aponta para a pasta gravável do usuário. Nenhuma verificação de
+SHA-256 foi removida. A inicialização registra caminho/UID e erros específicos
+para arquivo ausente, ilegível, tamanho incorreto ou hash divergente.
+
+[Teste real de leitura dos seis pesos por UID 10001](nonroot-weights-proof.txt).
+Foi executado em contêiner local sem rede, com montagem somente leitura. O modo
+antigo negou leitura; o modo corrigido permitiu verificar SHA-256 dos seis
+arquivos reais, totalizando 2.550.962.243 bytes. Isso valida acesso/integridade,
+**não executa FASHN em GPU nem reproduz montagens internas do Vertex**. Não foi
+confirmado se o Vertex sobrepôs o antigo diretório; a nova localização evita
+compartilhar esse caminho e os novos diagnósticos identificam futuras falhas.
+
+Como a imagem registrada contém o pacote anterior, repetir o deploy do mesmo
+modelo ou usar `--resume-build` com o build antigo não aplica a correção.
+Depois de atualizar o código, utilize:
+
+```bash
+python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --new-release \
+  --person docs/provador/fashn-gpu/inputs/person-demo.png \
+  --garment docs/provador/fashn-gpu/inputs/garment-demo.webp \
+  --category tops --garment-photo-type flat-lay
+```
+
+`--new-release` preserva o estado anterior em `deployment.previous-*.json` e
+registra uma nova imagem/modelo. Não apaga modelos, imagens ou endpoints antigos;
+não substitui um modelo implantado nem avança enquanto uma operação anterior
+estiver pendente. O endpoint vazio pode ser reutilizado. Reexecutar com o mesmo
+commit retoma a nova versão em curso, sem criar outro build. Não combine essa
+opção com `--resume-build` ou `--retry-failed-deploy` do modelo anterior.
+
+## Diagnosticar falha de deploy do Vertex
+
+`CLOUD_OPERATION_FAILED: 9` corresponde a uma pré-condição, mas o número sozinho
+não identifica a causa. Consulte a mensagem real da operação e os logs do
+servidor. A conta desta sessão não tem identidade Google Cloud; execute no
+Cloud Shell autenticado, depois de atualizar o instalador:
+
+```bash
+python3 -u scripts/cloud/deploy_fashn_vertex.py --diagnose
+```
+
+Esse modo apenas lê o estado, a operação e o endpoint; não habilita APIs, cria
+recursos, inicia build ou repete deploy. Não precisa das imagens de teste. A
+mensagem original da falha de operação agora aparece também na exceção, junto
+ao nome da operação; o progresso mostra o tipo da operação e o tempo decorrido.
+
+O deploy observado retornou `Model server exited unexpectedly`. Isso significa
+que o servidor do modelo encerrou na inicialização, não comprova falta de cota
+ou necessidade de usar o web app. Os logs do endpoint precisam identificar a
+exceção antes de alterar bibliotecas, hardware ou publicar outro contêiner.
+
+Uma operação já concluída com erro agora interrompe a retomada, sem iniciar outra
+tentativa silenciosamente. Somente após corrigir a causa, acrescente
+`--retry-failed-deploy` aos argumentos completos do teste para autorizar uma nova
+tentativa com o mesmo modelo. O estado preserva a falha anterior. Se o conserto
+exigir uma nova imagem de contêiner, é necessário registrar essa nova versão;
+a flag de retry do mesmo modelo não atualiza seu contêiner.
+
+## Retomar um Cloud Build após interrupção do terminal
+
+O instalador envia o build com `--async`, grava seu ID em `deployment.json` e
+consulta o status separadamente a cada 20 segundos. Uma interrupção durante essa
+espera não envia cancelamento pelo `gcloud builds submit`. Reexecutar com a
+mesma pasta reutiliza o ID gravado; não submete outro build. Existe uma pequena
+janela entre a submissão e a gravação do ID: se a sessão cair exatamente nela,
+consulte o console e use `--resume-build ID_REAL`.
+
+Para builds criados pela versão anterior, depois de atualizar a cópia com
+`git pull --ff-only`, use os mesmos argumentos de imagens e acrescente:
+
+```text
+--resume-build ID_REAL_DO_BUILD
+```
+
+O instalador verifica projeto/imagem, aguarda se ainda estiver em execução e
+prossegue com registro/deploy se já estiver em `SUCCESS`. Se um build cancelado
+já tiver uma tentativa nova criada no console, procura e reutiliza essa tentativa
+para a mesma imagem. Mais de uma tentativa ativa impede nova submissão.
+
+Um build confirmado como `CANCELLED` só é substituído automaticamente quando
+`--restart-cancelled-build` também é informado e não há tentativa ativa ou
+concluída para reutilizar. `FAILURE`, `TIMEOUT` e outros erros não iniciam um
+novo build automaticamente: precisam de análise do log. O instalador preserva
+qualquer modelo registrado/operação de deploy. O diagnóstico de inferência
+registra separadamente o commit do instalador e a imagem/prefixo de commit do
+contêiner efetivamente utilizado.
+
+## Retomar após erro de conta de serviço IAM
+
+`Service account ... does not exist` pode ocorrer enquanto a identidade criada
+se propaga no IAM. A mensagem genérica de lint de condições não é motivo para
+alterar a política de condições. O instalador agora descreve a conta, aguarda
+sua disponibilidade e repete somente erros transitórios de identidade/política
+(até oito tentativas, com esperas de 5 a 20 segundos). Erros de permissão não
+são repetidos nem contornados; uma conta desabilitada também é rejeitada.
+
+Na cópia existente do Cloud Shell, execute `git pull --ff-only` e repita o
+comando Python acima. Não clone novamente nem apague `deployment.json`. Se o
+modelo ainda não foi registrado, a mesma pasta de estado e o endpoint vazio
+podem ser retomados com a versão corrigida. Se já houver um modelo ou operação
+de deploy de outra versão, o instalador preserva os recursos e interrompe a
+atualização para não substituir uma implantação ativa.
+
 ## Conectar o worker ao aplicativo
 
 Instale `requirements-google-cloud.txt` no worker CPU privado, configure as
@@ -127,7 +242,7 @@ continuar separadamente; este modo não declara suas anotações como concluída
 
 ## Situação de validação
 
-Validação local: 56 testes Python (48 VTON e 8 de geometria digital twin) e
+Validação local: 71 testes Python (63 VTON e 8 de geometria digital twin) e
 26 testes Java direcionados. A suíte de CI usa pytest para incluir também os
 novos testes funcionais de contrato. Não foi executada a suíte inteira do
 monorepositório. As dependências GPU foram resolvidas, mas o build do contêiner
@@ -142,3 +257,17 @@ Referências primárias:
 - [Código oficial FASHN VTON 1.5](https://github.com/fashn-AI/fashn-vton-1.5)
 - [Pesos oficiais](https://huggingface.co/fashn-ai/fashn-vton-1.5)
 - [Endpoint dedicado e timeout](https://docs.cloud.google.com/vertex-ai/docs/predictions/create-public-endpoint)
+
+### Construir a imagem corrigida sem implantar GPU
+
+No Cloud Shell autenticado, este comando publica uma imagem nova do commit atual no Artifact Registry em São Paulo. Não precisa de fotos e não registra modelo nem cria endpoint/réplica T4:
+
+```bash
+cd ~/fashionai-gpu && git pull --ff-only && python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --build-only
+```
+
+O build usa o Dockerfile corrigido: pesos em `/opt/fashionai/weights/fashn`, permissões de leitura e verificação SHA-256 dos seis arquivos após `USER 10001`. Uma falha nesse preflight impede a publicação. O ID é salvo em `work/fashn-gpu-proof/images/<commit>/build.json`; repetir o mesmo comando retoma a espera, sem outro build. O resultado só declara `IMAGE_BUILD_SUCCEEDED` depois de Cloud Build retornar sucesso. Isso não comprova inferência CUDA.
+
+A execução completa com `--new-release` no mesmo commit/diretório de saída reaproveita esse build, preservando o estado da tentativa antiga. Não use o ID `6f7f214f-c009-4f5c-8426-618ab51bde64`: ele contém a imagem anterior à correção.
+
+Esta sessão do Codex não tem identidade Google Cloud; a publicação deve ser executada no Cloud Shell autenticado. O modo de planejamento local (`--build-only` sem `--apply`) não acessa o GCP.
