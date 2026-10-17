@@ -271,3 +271,31 @@ O build usa o Dockerfile corrigido: pesos em `/opt/fashionai/weights/fashn`, per
 A execução completa com `--new-release` no mesmo commit/diretório de saída reaproveita esse build, preservando o estado da tentativa antiga. Não use o ID `6f7f214f-c009-4f5c-8426-618ab51bde64`: ele contém a imagem anterior à correção.
 
 Esta sessão do Codex não tem identidade Google Cloud; a publicação deve ser executada no Cloud Shell autenticado. O modo de planejamento local (`--build-only` sem `--apply`) não acessa o GCP.
+
+### Servidor inicia e recebe shutdown durante o deploy
+
+Nos logs fornecidos pelo usuário em 17/10, os pesos passaram no preflight como UID 10001, FASHN carregou em `cuda:0` e o Uvicorn anunciou startup completo, seguido de shutdown controlado em uma das tentativas. O trecho não mostra traceback, OOM ou uma inferência concluída. Isso comprova carregamento/inicialização na GPU, não sucesso do teste de vestimenta.
+
+A configuração anterior omitia `failureThreshold` e `initialDelaySeconds` na startup probe. A API Vertex usa três falhas por padrão. Importar CUDA, verificar 2,55 GB e carregar os modelos antes de Uvicorn escutar pode exceder essa janela. O shutdown próximo ao startup é compatível com esse problema; a causa única ainda não foi confirmada por um evento de probe do GCP.
+
+A nova configuração registra startup probe com atraso de 30 s, 60 falhas permitidas e período de 10 s. A leitura de `/health` tem timeout interno de 5 s; a probe tem timeout de 15 s. A readiness continua exigindo `/health` saudável e o deploy tem prazo de 1.800 s. O erro de importação/pesos não é ignorado e não há fallback simulado.
+
+Como `ModelContainerSpec.startupProbe` é imutável, repetir deploy do modelo antigo não aplica a correção. Use `--reregister-model` **uma vez** para arquivar o registro anterior e registrar a mesma imagem com as sondas corrigidas. Não reconstrói a imagem nem apaga o modelo antigo; bloqueia se houver modelo implantado ou operação pendente.
+
+Para o clone antigo do Cloud Shell, atualize apenas o instalador:
+
+```bash
+cd ~/fashionai-gpu && git fetch origin codex/vertex-startup-probes-2026-10-17 && git restore --source=FETCH_HEAD -- scripts/cloud/deploy_fashn_vertex.py
+```
+
+Depois execute:
+
+```bash
+python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --reregister-model --person docs/provador/fashn-gpu/inputs/person-demo.png --garment docs/provador/fashn-gpu/inputs/garment-demo.webp --category tops --garment-photo-type flat-lay
+```
+
+Se interromper a espera depois que o novo registro/operação for salvo, retome o mesmo comando **sem** `--reregister-model`. O modo de planejamento sem `--apply` lê a imagem salva em deployment.json; não usa a imagem do HEAD novo.
+
+Validação local: testes de contrato das probes, preservação de estado, bloqueio de operação pendente e percurso do CLI até a submissão de deploy (simulada), comprovando que não envia outro Cloud Build. A nova implantação real e o teste CUDA seguem pendentes do Cloud Shell autenticado.
+
+Referência consultada: [ModelContainerSpec](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/ModelContainerSpec) e [Probe](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/Probe), também conferidos no discovery REST v1 em 17/10/2026.
