@@ -4,12 +4,15 @@ import type { CatalogProduct } from "@/lib/api/catalog";
 import { clampStats, VFX_COLORS } from "@/lib/fashion-card";
 import { RARITY_INFO, type Rarity } from "@/lib/fashion-style";
 
+import { useI18n } from "@/lib/i18n/i18n";
+
 const MAX_TILT = 12;
 const RARITY_KEY: Record<string, Rarity> = { COMMON: "COMMON", RARE: "RARE", LEGENDARY: "LEGENDARY", COLLAB_DROP: "LEGENDARY" };
 const isVideo = (u: string) => /\.(mp4|webm)(\?|$)/i.test(u);
 
 /** Fashion Card com 3D tilt (ponteiro e giroscópio) e Aura Impersonation: loop do usuário vestindo a peça. */
 export function FashionCardComponent({ product }: { product: CatalogProduct }) {
+  const { t } = useI18n();
   const ref = useRef<HTMLDivElement>(null);
   const card = product.fashionCard;
   const imp = card?.auraType === "IMPERSONATION" ? card.impersonationData : null;
@@ -53,15 +56,15 @@ export function FashionCardComponent({ product }: { product: CatalogProduct }) {
               : <img src={media} alt={product.productName} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
           ) : photo ? <img src={photo} alt={product.productName} style={{ width: "100%", height: "100%", objectFit: "contain" }} /> : null}
         </div>
-        {imp && <span className="fashion-card-badge" style={{ position: "absolute", top: 8, left: 8, padding: "2px 8px", borderRadius: 999, fontSize: 10, fontWeight: 700, color: "#000", background: "var(--accent)" }}>Aura Impersonation{vfx ? ` · ${vfx.label}` : ""}</span>}
+        {imp && <span className="fashion-card-badge" style={{ position: "absolute", top: 8, left: 8, padding: "2px 8px", borderRadius: 999, fontSize: 10, fontWeight: 700, color: "#000", background: "var(--accent)" }}>{t("impersonation.title")}{vfx ? ` · ${vfx.label}` : ""}</span>}
         <div className="fashion-card-info" style={{ padding: 8, color: "#fff" }}>
           <strong style={{ fontSize: 13 }}>{product.productName}</strong>
-          <div style={{ fontSize: 10, color: rarity.border }}>{"★".repeat(rarity.stars)} {card?.rarity === "COLLAB_DROP" ? "Collab Drop" : rarity.label}</div>
+          <div style={{ fontSize: 10, color: rarity.border }}>{"★".repeat(rarity.stars)} {card?.rarity === "COLLAB_DROP" ? t("fashion.rarity.COLLAB_DROP") : rarity.label}</div>
           {stats && (
             <dl className="fashion-card-stats" style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "2px 8px", fontSize: 10, margin: "6px 0 0" }}>
-              <dt>Versatilidade</dt><dd style={{ margin: 0 }}>{stats.versatility}</dd>
-              <dt>Hype</dt><dd style={{ margin: 0 }}>{stats.hypeIndex}</dd>
-              <dt>Legado</dt><dd style={{ margin: 0 }}>{stats.legacyScore}</dd>
+              <dt>{t("impersonation.stat.versatility")}</dt><dd style={{ margin: 0 }}>{stats.versatility}</dd>
+              <dt>{t("impersonation.stat.hypeIndex")}</dt><dd style={{ margin: 0 }}>{stats.hypeIndex}</dd>
+              <dt>{t("impersonation.stat.legacyScore")}</dt><dd style={{ margin: 0 }}>{stats.legacyScore}</dd>
             </dl>
           )}
         </div>

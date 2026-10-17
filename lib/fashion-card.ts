@@ -1,3 +1,4 @@
+import { tr } from "./i18n/core";
 export const CARD_RARITIES = ["COMMON", "RARE", "LEGENDARY", "COLLAB_DROP"] as const;
 export type CardRarity = typeof CARD_RARITIES[number];
 export const AURA_TYPES = ["STATIC", "DYNAMIC", "IMPERSONATION"] as const;
@@ -24,11 +25,11 @@ export interface FashionCard {
 }
 
 export const VFX_COLORS: Record<PowerVfx, { glow: string; accent: string; label: string }> = {
-  CYBERPUNK_ELECTRIC: { glow: "#00f0ff", accent: "#b6ff3c", label: "Cyberpunk Electric" },
-  COSMIC_GOLD: { glow: "#f5b301", accent: "#b69cff", label: "Cosmic Gold" },
-  ELEMENTAL_WIND: { glow: "#80d8c2", accent: "#dafff3", label: "Elemental Wind" },
-  Y2K_HOLOGRAM: { glow: "#cf9aff", accent: "#7ee7ff", label: "Y2K Hologram" },
-  ELEMENTAL_FIRE: { glow: "#ff5a1f", accent: "#ffd166", label: "Elemental Fire" },
+  CYBERPUNK_ELECTRIC: { glow: "#00f0ff", accent: "#b6ff3c", get label() { return tr("impersonation.power.CYBERPUNK_ELECTRIC"); } },
+  COSMIC_GOLD: { glow: "#f5b301", accent: "#b69cff", get label() { return tr("impersonation.power.COSMIC_GOLD"); } },
+  ELEMENTAL_WIND: { glow: "#80d8c2", accent: "#dafff3", get label() { return tr("impersonation.power.ELEMENTAL_WIND"); } },
+  Y2K_HOLOGRAM: { glow: "#cf9aff", accent: "#7ee7ff", get label() { return tr("impersonation.power.Y2K_HOLOGRAM"); } },
+  ELEMENTAL_FIRE: { glow: "#ff5a1f", accent: "#ffd166", get label() { return tr("impersonation.power.ELEMENTAL_FIRE"); } },
 };
 
 export const clampStat = (n: number | null) => Number.isFinite(n) ? Math.min(100, Math.max(0, Math.round(n ?? 0))) : 0;

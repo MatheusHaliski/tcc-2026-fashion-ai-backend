@@ -3,10 +3,13 @@ import { useRef, useEffect, type CSSProperties, type PointerEvent } from "react"
 import type { FashionCardData } from "@/lib/catalog/fashion-card";
 import { clampStat } from "@/lib/catalog/fashion-card";
 
+import { useI18n } from "@/lib/i18n/i18n";
+
 const MAX_TILT = 12;
 
 /** Card do catálogo; com auraType 'IMPERSONATION' mostra o loop do usuário vestindo a peça, com aura Out of Bounds e tilt 3D. */
 export function FashionCardComponent({ card }: { card: FashionCardData }) {
+  const { t } = useI18n();
   const ref = useRef<HTMLDivElement>(null);
   const impersonation = card.auraType === "IMPERSONATION" && !!card.impersonationData?.renderedCardMediaUrl;
   const media = impersonation ? card.impersonationData!.renderedCardMediaUrl : card.imageUrl;
@@ -36,7 +39,7 @@ export function FashionCardComponent({ card }: { card: FashionCardData }) {
   }, []);
 
   const stats: [string, number][] = [
-    ["Versatility", card.stats.versatility], ["Hype", card.stats.hypeIndex], ["Legacy", card.stats.legacyScore],
+    [t("impersonation.stat.versatility"), card.stats.versatility], [t("impersonation.stat.hypeIndex"), card.stats.hypeIndex], [t("impersonation.stat.legacyScore"), card.stats.legacyScore],
   ];
   return (
     <div ref={ref} className={`fcard-aura fcard-rarity-${card.rarity.toLowerCase()}${impersonation ? " is-impersonation" : ""}`}
@@ -47,7 +50,7 @@ export function FashionCardComponent({ card }: { card: FashionCardData }) {
         {isVideo
           ? <video src={media} autoPlay loop muted playsInline aria-label={card.name} />
           : <img src={media} alt={card.name} />}
-        {impersonation && <span className="fcard-aura-badge">Aura Impersonation</span>}
+        {impersonation && <span className="fcard-aura-badge">{t("impersonation.title")}</span>}
         <div className="fcard-aura-overlay">
           <strong>{card.name}</strong>
           {stats.map(([k, v]) => (

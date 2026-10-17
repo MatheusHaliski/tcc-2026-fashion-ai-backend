@@ -63,7 +63,7 @@ function FaiXpIcon() {
   return (
     <svg width={24} height={24} viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
       <path d="M12 2.75 20.25 7.5v9L12 21.25 3.75 16.5v-9L12 2.75Z" stroke="currentColor" strokeWidth={1.5} />
-      <text x="12" y="14.8" textAnchor="middle" fill="currentColor" fontSize="7.5" fontWeight="800" letterSpacing="-.35">XP</text>
+      <text x="12" y="16" textAnchor="middle" fill="currentColor" fontSize="12" fontWeight="800" letterSpacing="-.35">XP</text>
     </svg>
   );
 }
