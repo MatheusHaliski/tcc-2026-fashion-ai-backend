@@ -23,6 +23,83 @@ ROOT=Path(__file__).resolve().parents[2]
 PROJECT='project-14023673-32d6-4bf2-8b7'
 REGION='southamerica-east1'
 NAME='fashionai-fashn-gpu'
+# Códigos curtos que o servidor da GPU devolve (vertex_runtime/server.py e fashn_runtime.py). Só eles são mostrados:
+# o corpo bruto de um erro pode ecoar a entrada (imagens em base64) e nunca é impresso.
+SERVER_HINTS={
+    'INVALID_PREDICTION_INPUT':'o corpo da requisição não segue o contrato do /predict',
+    'TASK_NOT_SUPPORTED_BY_MODEL':'a imagem implantada não atende virtual_try_on; confira VTON_MODEL_ENGINE=fashn',
+    'INVALID_VTON_IMAGE':'a foto não pôde ser lida: use JPG, PNG ou WebP com até 1536 px no maior lado e até 6 MB',
+    'EXACTLY_ONE_PERSON_WITH_POSE_REQUIRED':'a foto da pessoa precisa ter exatamente uma pessoa detectada (sem reflexo, pôster ou gente ao fundo)',
+    'INSUFFICIENT_SHARED_BODY_LANDMARKS':'corpo pouco visível: use foto de frente, em pé, com ombros, cotovelos, punhos e quadril aparecendo',
+    'VISIBLE_LANDMARK_OUTSIDE_IMAGE':'parte do corpo detectada fora da imagem: deixe uma margem em volta da pessoa',
+    'NONFINITE_DWPOSE':'a detecção de pose falhou nesta foto; tente outra foto',
+    'INVALID_PERSON_DETECTION':'a detecção de pessoa falhou nesta foto; tente outra foto',
+    'GENERATED_POSE_DRIFT_REJECTED':'a GPU gerou a imagem, mas a pose mudou além do limite (RMSE 0,08); tente outra foto de pessoa (de frente, braços ao lado do corpo) ou outro --seed',
+    'DEGENERATE_GENERATED_IMAGE':'a imagem gerada saiu vazia ou uniforme; tente outra foto ou outro --seed',
+    'ONE_GENERATED_IMAGE_REQUIRED':'o modelo não devolveu exatamente uma imagem',
+    'INVALID_GARMENT_POSE':'a foto da peça não pôde ser analisada; use --garment-photo-type flat-lay ou model',
+    'MULTIPLE_GARMENT_MODELS_REJECTED':'a foto da peça tem mais de um modelo vestindo; use foto de uma pessoa só ou flat-lay',
+    'FASHN_CATEGORY_NOT_SUPPORTED':'categoria não suportada: tops, bottoms ou one-pieces',
+    'GPU_MEMORY_EXHAUSTED_REDUCE_WORKLOAD':'a T4 ficou sem memória: reduza o tamanho das fotos',
+    'GPU_BUSY_RETRY_LATER':'a GPU está ocupada com outra inferência; tente de novo em instantes',
+    'GPU_PREDICTION_FAILED':'falha interna na GPU; rode --diagnose e veja os logs do endpoint',
+    'MODEL_NOT_READY':'o modelo ainda não terminou de carregar; aguarde e tente de novo',
+    'VERTEX_PAYLOAD_LIMIT':'requisição grande demais para o endpoint',
+    'VERTEX_RESPONSE_LIMIT':'resposta grande demais para o endpoint',
+    'REAL_CUDA_DEVICE_REQUIRED':'o contêiner não encontrou CUDA',
+    'DWPOSE_CUDA_PROVIDER_REQUIRED':'o ONNX Runtime não carregou o provedor CUDA',
+    'VTON_MODEL_NOT_ON_GPU':'o modelo não foi carregado na GPU',
+}
+MAX_SIDE=1536  # decode_image (auto_catalog.py) recusa lados maiores: IMAGE_DIMENSION_LIMIT -> 422 INVALID_VTON_IMAGE
+
+
+def server_code(raw):
+    """Primeiro código conhecido no corpo de erro (JSON do Vertex ou do FastAPI); nunca devolve texto livre."""
+    text=raw.decode('utf-8','replace') if isinstance(raw,bytes) else str(raw or '')
+    for token in re.findall(r'[A-Z][A-Z0-9_]{3,80}',text):
+        if token in SERVER_HINTS:return token
+    return None
+
+
+def image_size(data):
+    """(largura, altura) de PNG, JPEG ou WebP lendo só o cabeçalho; None se o formato não for reconhecido."""
+    if data[:8]==b'\x89PNG\r\n\x1a\n' and data[12:16]==b'IHDR':
+        return int.from_bytes(data[16:20],'big'),int.from_bytes(data[20:24],'big')
+    if data[:4]==b'RIFF' and data[8:12]==b'WEBP':
+        chunk=data[12:16]
+        if chunk==b'VP8X':return 1+int.from_bytes(data[24:27],'little'),1+int.from_bytes(data[27:30],'little')
+        if chunk==b'VP8L':
+            bits=int.from_bytes(data[21:25],'little');return (bits&0x3FFF)+1,((bits>>14)&0x3FFF)+1
+        if chunk==b'VP8 ':return int.from_bytes(data[26:28],'little')&0x3FFF,int.from_bytes(data[28:30],'little')&0x3FFF
+        return None
+    if data[:2]==b'\xff\xd8':
+        i=2
+        while i+9<len(data):
+            if data[i]!=0xFF:i+=1;continue
+            marker=data[i+1]
+            if marker in (0xD8,0x01) or 0xD0<=marker<=0xD7:i+=2;continue
+            length=int.from_bytes(data[i+2:i+4],'big')
+            if marker in (0xC0,0xC1,0xC2,0xC3,0xC5,0xC6,0xC7,0xC9,0xCA,0xCB,0xCD,0xCE,0xCF):
+                return int.from_bytes(data[i+7:i+9],'big'),int.from_bytes(data[i+5:i+7],'big')
+            i+=2+length
+    return None
+
+
+def fitted_image(data,max_side=MAX_SIDE):
+    """Reduz a foto para caber em max_side (proporção mantida), como o servidor exige; precisa do Pillow."""
+    try:
+        from PIL import Image
+    except ImportError:
+        raise ValueError(f'SMOKE_IMAGE_OVER_{max_side}_PX: instale o Pillow (python3 -m pip install --user pillow) '
+                         f'para o script reduzir a foto, ou reduza-a para no máximo {max_side} px no maior lado') from None
+    import io
+    with Image.open(io.BytesIO(data)) as image:
+        image.load();scale=max_side/max(image.size)
+        resized=image.resize((max(16,round(image.width*scale)),max(16,round(image.height*scale))),Image.LANCZOS)
+        out=io.BytesIO()
+        if resized.mode in ('RGBA','LA','P'):resized.save(out,'PNG',optimize=True)
+        else:resized.convert('RGB').save(out,'JPEG',quality=92)
+        return out.getvalue()
 
 
 def command(*args,capture=False):
@@ -66,8 +143,12 @@ class Cloud:
                 if len(raw)>10_000_000:raise RuntimeError('CLOUD_RESPONSE_TOO_LARGE')
                 return json.loads(raw)
         except urllib.error.HTTPError as error:
-            # API errors may echo inputs. Do not print raw response.
-            raise RuntimeError(f'GOOGLE_CLOUD_HTTP_{error.code}: {method} {path.split(":")[0]}') from None
+            # API errors may echo inputs: the raw body is never printed, only a known short server code and its hint.
+            try:raw=error.read(65_536)
+            except Exception:raw=b''
+            code=server_code(raw)
+            detail=f'; servidor: {code} — {SERVER_HINTS[code]}' if code else ''
+            raise RuntimeError(f'GOOGLE_CLOUD_HTTP_{error.code}: {method} {path.split(":")[0]}{detail}') from None
 
     def wait(self,operation,seconds=2400):
         started=time.monotonic();deadline=started+seconds
@@ -291,8 +372,16 @@ def start_new_release(cloud,state,state_file,image,endpoint):
 
 
 def image_payload(path):
+    """Confere a foto ANTES de qualquer deploy: o servidor recusa (422) lados acima de 1536 px e formatos ilegíveis."""
     data=Path(path).read_bytes()
-    if not data or len(data)>3_000_000:raise ValueError('SMOKE_IMAGE_MUST_BE_1_BYTE_TO_3_MB')
+    if not data:raise ValueError('SMOKE_IMAGE_EMPTY')
+    size=image_size(data)
+    if size is None:raise ValueError('SMOKE_IMAGE_FORMAT_UNSUPPORTED: use JPG, PNG ou WebP (HEIC e outros formatos não são lidos pelo servidor)')
+    if min(size)<16:raise ValueError('SMOKE_IMAGE_TOO_SMALL')
+    if max(size)>MAX_SIDE:
+        data=fitted_image(data)
+        print(f'Foto {Path(path).name} reduzida de {size[0]}x{size[1]} para caber em {MAX_SIDE} px (exigência do servidor).',flush=True)
+    if len(data)>3_000_000:raise ValueError('SMOKE_IMAGE_MUST_BE_1_BYTE_TO_3_MB')
     return base64.b64encode(data).decode(),hashlib.sha256(data).hexdigest()
 
 
@@ -355,6 +444,25 @@ def build_only_release(project,region,image,output,apply=False):
     return result
 
 
+def remove_replica(cloud,endpoint_name,model):
+    current=cloud.request('GET',endpoint_name)
+    ours=[m['id'] for m in current.get('deployedModels',[]) if m.get('model')==model]
+    for model_id in ours:
+        cloud.wait(cloud.request('POST',endpoint_name+':undeployModel',{'deployedModelId':model_id,'trafficSplit':{}}))
+    print('Replica GPU removida. Imagem e modelo registrados foram preservados.' if ours else
+          'Nenhuma réplica deste instalador estava implantada.',flush=True)
+    return ours
+
+
+def undeploy_ours(cloud,state_file):
+    """--undeploy: remove only the replica of the model saved in deployment.json; never another model."""
+    if not Path(state_file).is_file():raise RuntimeError('DEPLOYMENT_STATE_NOT_FOUND: rode com o mesmo --output do deploy')
+    state=json.loads(Path(state_file).read_text())
+    if state.get('project')!=cloud.project:raise RuntimeError('STATE_BELONGS_TO_ANOTHER_PROJECT')
+    if not state.get('endpoint') or not state.get('model'):raise RuntimeError('NO_SAVED_ENDPOINT_OR_MODEL')
+    return remove_replica(cloud,state['endpoint'],state['model'])
+
+
 def save_json(path,value):
     path=Path(path);temporary=None
     try:
@@ -376,7 +484,8 @@ def main():
     parser.add_argument('--output',default='work/fashn-gpu-proof')
     parser.add_argument('--apply',action='store_true')
     parser.add_argument('--build-only',action='store_true',help='Build/publish the corrected image only; no input photos, Vertex model or GPU deployment')
-    parser.add_argument('--keep-deployed',action='store_true')
+    parser.add_argument('--keep-deployed',action='store_true',help='Keep the billed T4 replica after the smoke, also when it fails, to retry other photos without a new cold start')
+    parser.add_argument('--undeploy',action='store_true',help='Only remove this installer\'s replica from the endpoint (reads deployment.json); no build, model or photo needed')
     parser.add_argument('--new-release',action='store_true',help='Archive terminal previous release state and build/register the current code; preserves old cloud resources')
     parser.add_argument('--reregister-model',action='store_true',help='Register the saved image again with corrected immutable startup probes; no rebuild or deletion of the old model')
     parser.add_argument('--diagnose',action='store_true',help='Read saved deployment/operation diagnostics; no cloud mutations')
@@ -393,6 +502,9 @@ def main():
         build_only_release(args.project,args.region,image,args.output,args.apply);return
     if args.diagnose:
         diagnose_deployment(args.project,args.region,args.output);return
+    if args.undeploy:
+        if not args.apply:print(json.dumps({'executed':False,'undeploy':str(Path(args.output)/'deployment.json')},indent=2));return
+        undeploy_ours(Cloud(args.project,args.region),Path(args.output)/'deployment.json');return
     if args.reregister_model and (args.new_release or args.resume_build or args.retry_failed_deploy or args.restart_cancelled_build):
         parser.error('--reregister-model reuses the saved image; cannot combine with build/release/retry flags')
     if args.new_release and (args.resume_build or args.retry_failed_deploy):parser.error('--new-release cannot reuse the old build or retry its old model')
@@ -506,15 +618,14 @@ def main():
         smoke_passed=True
         print('GPU_SMOKE_PASSED: '+str(output/'try-on-gpu.png'),flush=True)
     finally:
-        if not args.keep_deployed or not smoke_passed:
+        if not args.keep_deployed:
             # Undeploy even if smoke failed. Never delete another model.
-            current=cloud.request('GET',endpoint_name)
-            ours=[m['id'] for m in current.get('deployedModels',[]) if m.get('model')==state['model']]
-            for model_id in ours:
-                cloud.wait(cloud.request('POST',endpoint_name+':undeployModel',{'deployedModelId':model_id,'trafficSplit':{}}))
-            print('Replica GPU removida. Imagem e modelo registrados foram preservados.',flush=True)
+            remove_replica(cloud,endpoint_name,state['model'])
         else:
-            print('ATENÇÃO: uma réplica T4 permanece ativa e faturável.',flush=True)
+            # Kept on purpose (also after a failed smoke): the next run with --keep-deployed reuses this replica and
+            # sends only the new photos, without another 15–20 min GPU cold start.
+            print('ATENÇÃO: uma réplica T4 permanece ativa e faturável. Para testar outras fotos, rode de novo com '
+                  '--keep-deployed; para remover: python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --undeploy',flush=True)
 
 if __name__=='__main__':
     try:main()

@@ -299,3 +299,35 @@ Se interromper a espera depois que o novo registro/operação for salvo, retome 
 Validação local: testes de contrato das probes, preservação de estado, bloqueio de operação pendente e percurso do CLI até a submissão de deploy (simulada), comprovando que não envia outro Cloud Build. A nova implantação real e o teste CUDA seguem pendentes do Cloud Shell autenticado.
 
 Referência consultada: [ModelContainerSpec](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/ModelContainerSpec) e [Probe](https://cloud.google.com/vertex-ai/docs/reference/rest/v1/Probe), também conferidos no discovery REST v1 em 17/10/2026.
+
+## `GOOGLE_CLOUD_HTTP_422` no `:predict` (17/10/2026)
+
+O deploy terminou e a réplica T4 respondeu: o 422 vem do **servidor da GPU**, que recusou a entrada ou o resultado
+(`vertex_runtime/server.py` devolve 422 para `INVALID_PREDICTION_INPUT`, foto ilegível ou acima de 1536 px —
+`INVALID_VTON_IMAGE` —, pose da pessoa insuficiente e `GENERATED_POSE_DRIFT_REJECTED`). Até aqui o instalador
+descartava o corpo do erro, então o motivo não aparecia, e removia a réplica a cada falha (novo cold start de 15–20 min).
+
+Agora o instalador:
+
+- mostra o **código curto do servidor** e o que fazer (`servidor: EXACTLY_ONE_PERSON_WITH_POSE_REQUIRED — …`). Só
+  códigos conhecidos são impressos; o corpo bruto (que pode ecoar as imagens) continua oculto;
+- confere as fotos **antes** de qualquer deploy: JPG, PNG ou WebP, e reduz para 1536 px no maior lado (com Pillow) em
+  vez de mandar uma foto que o servidor recusaria;
+- com `--keep-deployed`, **mantém a réplica mesmo quando o smoke falha**, para testar outra foto sem esperar o cold
+  start; `--apply --undeploy` remove só a réplica do modelo salvo em `deployment.json`.
+
+Para o clone do Cloud Shell, atualize só o instalador e rode de novo mantendo a réplica:
+
+```bash
+cd ~/fashionai-gpu && git fetch origin claude/vertex-predict-diagnostics \
+  && git restore --source=FETCH_HEAD -- scripts/cloud/deploy_fashn_vertex.py
+python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --keep-deployed \
+  --person FOTO_DA_PESSOA.jpg --garment FOTO_DA_PECA.jpg --category tops --garment-photo-type flat-lay
+# terminou os testes:
+python3 -u scripts/cloud/deploy_fashn_vertex.py --apply --undeploy
+```
+
+Foto da pessoa que passa na triagem de pose: uma pessoa só, de frente, em pé, braços ao lado do corpo, corpo inteiro
+ou da cintura para cima com ombros, cotovelos, punhos e quadril visíveis, fundo simples, sem anotações desenhadas.
+`person-demo.png` (pose de ioga de lado, com o esqueleto do diagnóstico desenhado por cima) serve para o smoke de
+execução, mas é candidata natural a `GENERATED_POSE_DRIFT_REJECTED`.
