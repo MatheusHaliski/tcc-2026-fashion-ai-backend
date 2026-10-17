@@ -29,21 +29,21 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF53 — HypeScore v2: núcleo do Hype de peças e looks\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF53 — HypeScore v2: núcleo do Hype de peças e looks\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
   component "/history\n(site)/(app)/history/page.tsx" as FE0
   component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE1
   component "/closet\n(site)/(app)/closet/page.tsx" as FE2
-  component "/explorer\n(site)/(app)/explorer/page.tsx" as FE3
-  component "/looks\n(site)/(app)/looks/page.tsx" as FE4
-  component "/u/[username]\n(site)/(app)/u/[username]/page.tsx" as FE5
+  component "/dna-schemes/[id]/edit\n(site)/(app)/dna-schemes/[id]/edit/page.tsx" as FE3
+  component "/dna-schemes/new\n(site)/(app)/dna-schemes/new/page.tsx" as FE4
+  component "/dna\n(site)/(app)/dna/page.tsx" as FE5
   component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
   component "AdminController\n/api/admin/hype/recalibration" as AdminController
   component "HypeController\n/api/admin/hype/snapshots\n/api/hype/globe\n/api/hype/ranking\n/api/hype/summaries\n(+3 rotas)" as HypeController
-  component "LookbookController\n/api/groupings\n/api/groupings/{…}\n/api/groupings/{…}/items\n/api/groupings/{…}/schemes\n(+19 rotas)" as LookbookController
+  component "LookbookController\n/api/groupings\n/api/groupings/{…}\n/api/groupings/{…}/items\n/api/groupings/{…}/schemes\n(+18 rotas)" as LookbookController
   component "SchemeController\n/api/me/schemes\n/api/schemes/{…}/flags" as SchemeController
   component "SocialController\n/api/interactions/{…}/{…}/saves\n/api/interactions/{…}/{…}/saves/favorite" as SocialController
   component "WardrobeController\n/api/me/closet\n/api/pieces/{…}\n/api/taxonomy\n/api/users/{…}/closet" as WardrobeController
@@ -59,10 +59,10 @@ package "fai-application (casos de uso)" {
   component "NotificationService" as NotificationService <<apoio>>
   component "AssetCatalogService" as AssetCatalogService <<apoio>>
   component "ChallengeService" as ChallengeService <<apoio>>
-  component "HypeScoreService" as HypeScoreService <<apoio>>
   component "InventoryScoreService" as InventoryScoreService <<apoio>>
   component "UploadQuarantine" as UploadQuarantine <<apoio>>
   component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
+  component "WardrobeService" as WardrobeService <<apoio>>
   component "AnalyticsQueryPort\n«MysqlAnalyticsAdapter»" as AnalyticsQueryPort <<port>>
 }
 package "fai-domain (repositórios)" {
@@ -85,7 +85,6 @@ AdminService ..> AssetCatalogService
 AdminService ..> ChallengeService
 AdminService ..> Guard
 AdminService ..> HypeScoreConfig
-AdminService ..> HypeScoreService
 AdminService ..> IdentityService
 AdminService ..> InventoryScoreService
 AdminService ..> NotificationService
@@ -106,6 +105,7 @@ HypeController --> HypeSnapshotService
 HypeQueryService --> REPO_MySQL
 HypeQueryService ..> Guard
 HypeQueryService ..> HypeScoreConfig
+HypeQueryService ..> WardrobeService
 HypeSnapshotService --> EV
 HypeSnapshotService --> REPO_MySQL
 HypeSnapshotService ..> HypeScoreConfig
@@ -115,6 +115,6 @@ LookbookService --> AI
 LookbookService --> REPO_MySQL
 LookbookService ..> DailyLookService
 LookbookService ..> Guard
-LookbookService ..> HypeScoreService
+LookbookService ..> WardrobeService
 REPO_MySQL --> DB_MySQL : JPA/Flyway
 @enduml

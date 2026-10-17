@@ -21,10 +21,10 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF21 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma celebridade\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF21 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma celebridade\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
-boundary "Tela /schemes/[id]/edit" as P
+boundary "Tela /dna-schemes/[id]/edit" as P
 control "SealController" as SealController
 participant "SealService" as SealService
 participant "Guard" as Guard
@@ -57,24 +57,22 @@ SealService -> SealService : origin = MANUAL
 SealService -> SealService : status = EDITED
 SealService -> SealService : imageRightsConsent = ?imageRightsConsent
 SealService -> SealService : respondedAt = set
-SealService -> DB_MySQL : SELECT seal_bonds
+SealService -> DB_MySQL : SELECT seal_bonds (×2)
 alt vinculo existente
 SealService --> SealController : 409 VINCULO_EXISTENTE
 SealController --> P : 409 + mensagem
 end
 SealService -> DB_MySQL : INSERT/UPDATE seal_bonds
-SealService -> DB_MySQL : SELECT seal_bonds
+SealService -> DB_MySQL : SELECT seal_bonds (×2)
 alt vinculo existente
 SealService --> SealController : 409 VINCULO_EXISTENTE
 SealController --> P : 409 + mensagem
 end
-alt consentimento imagem
-SealService --> SealController : 400 CONSENTIMENTO_IMAGEM
-SealController --> P : 400 + mensagem
+alt O emissor ou a campanha deste selo não…
+SealService --> SealController : 403 ACESSO_NEGADO
+SealController --> P : 403 + mensagem
 end
-SealService -> DB_MySQL : SELECT seals
-SealService -> DB_MySQL : SELECT scheme_items
-note over SealService : … e mais 16 passos no código
+note over SealService : … e mais 23 passos no código
 deactivate SealService
 SealService --> SealController : resultado
 SealController --> P : 201 JSON

@@ -24,7 +24,7 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF2 — Autenticar usuário na plataforma com credenciais de acesso\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start

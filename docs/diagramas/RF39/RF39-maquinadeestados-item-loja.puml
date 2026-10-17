@@ -19,7 +19,7 @@ skinparam state {
   StartColor #20A77A
   EndColor #4B5563
 }
-title RF39 — WardrobeCreatorService.availability(): estado calculado\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nrótulo único: vale a primeira regra verdadeira · 5 regras no código
+title RF39 — WardrobeCreatorService.availability(): estado calculado\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nrótulo único: vale a primeira regra verdadeira · 5 regras no código
 
 state "WardrobeCreatorService.availability()" as C_availability {
   state C_availability_avaliar <<choice>>

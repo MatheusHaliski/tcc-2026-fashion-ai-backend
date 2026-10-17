@@ -1,0 +1,609 @@
+{
+  "generated": 120,
+  "perFamily": 40,
+  "durationSeconds": 6,
+  "resolution": "432x648",
+  "fps": 24,
+  "videos": [
+    {
+      "id": "common-01-ivory",
+      "family": "COMMON",
+      "sha256": "c13478b020a9753fab02b263239b35a4f66d612227bd96e75a5703f231e195b7"
+    },
+    {
+      "id": "common-01-chrome",
+      "family": "COMMON",
+      "sha256": "b28792150f528571296b8a77a8e981f54bab59208fa06582411dfe945cb2b460"
+    },
+    {
+      "id": "common-01-rose",
+      "family": "COMMON",
+      "sha256": "9b51bb627fedcbc779985c313a5683d150d645b9697cf36d636c92f3aca0ca5f"
+    },
+    {
+      "id": "common-01-violet",
+      "family": "COMMON",
+      "sha256": "a5bd31d9d14c70c54975e80de6d342903179f29046018e0e0e1402a5e09f8ab8"
+    },
+    {
+      "id": "common-01-mint",
+      "family": "COMMON",
+      "sha256": "9d5e6c5517f3d08d6eb64d7899c251f6becd8f08060071f282502af3b0f3a6c5"
+    },
+    {
+      "id": "common-02-ivory",
+      "family": "COMMON",
+      "sha256": "0c365c2d4602bf4cbcc82420a6253c201680ab9dc2b3772ac4da5cd0d171d73a"
+    },
+    {
+      "id": "common-02-chrome",
+      "family": "COMMON",
+      "sha256": "0418bb2e09dbc5702f9c4f0ada26e9545e6cd8c8aab260e72f700f884c665f40"
+    },
+    {
+      "id": "common-02-rose",
+      "family": "COMMON",
+      "sha256": "19b7b2b901a816870236f4b373026aa78c27fa3581d0c55e47ccebad42bc63bb"
+    },
+    {
+      "id": "common-02-violet",
+      "family": "COMMON",
+      "sha256": "1337b82cf1c989d1507c79865a468af5681998a679899a46453919ab0f01715e"
+    },
+    {
+      "id": "common-02-mint",
+      "family": "COMMON",
+      "sha256": "46d498bc554776d62410b1c517afc2f29c73e576216239ca7e473d6370df50d5"
+    },
+    {
+      "id": "common-03-ivory",
+      "family": "COMMON",
+      "sha256": "478636541b7b73b5d7c40b14dd564c1538d6efff1071ab31548ccfc1be11425b"
+    },
+    {
+      "id": "common-03-chrome",
+      "family": "COMMON",
+      "sha256": "eb7d5748fd498b05769f32a3484d7e674c75a9261ccaad2b19049ea487d86f09"
+    },
+    {
+      "id": "common-03-rose",
+      "family": "COMMON",
+      "sha256": "cb3dc30eb062ee4518385570921836803422da8c785f8240b74bee09b596ab55"
+    },
+    {
+      "id": "common-03-violet",
+      "family": "COMMON",
+      "sha256": "b55f00a003c2a57bbbb305a8b91f168b37c32e46fbb5f5a82918a69979f8a65e"
+    },
+    {
+      "id": "common-03-mint",
+      "family": "COMMON",
+      "sha256": "dec46f752d432cc889fe804b7d6a61088841503b5112b27217f87ddd8e66a7ac"
+    },
+    {
+      "id": "common-04-ivory",
+      "family": "COMMON",
+      "sha256": "479274542b12d0d776ea2bde087095e675b4ad1ba79b2580fa7ed4613ef9929f"
+    },
+    {
+      "id": "common-04-chrome",
+      "family": "COMMON",
+      "sha256": "9d2ee6fdda6b6d7160f5a2456215358f19668e1e27fca4854c19ea80d59d143d"
+    },
+    {
+      "id": "common-04-rose",
+      "family": "COMMON",
+      "sha256": "d78991f4cf27f55c6da57684fb6ba202618e9a9a8d139e8221d857e9d35f33c5"
+    },
+    {
+      "id": "common-04-violet",
+      "family": "COMMON",
+      "sha256": "f12b7e3fc134dd0f52a037757d77a1c9a605cb96449aaa756413f236a9b61c60"
+    },
+    {
+      "id": "common-04-mint",
+      "family": "COMMON",
+      "sha256": "9f71c29d368238da7434ffbb0a1bd6258b841109f4f3b4eac3b1a2df110b2ade"
+    },
+    {
+      "id": "common-05-ivory",
+      "family": "COMMON",
+      "sha256": "b76a6e6827943dd05663638f35c7c22ec936c799e995168859403a91a40eecb4"
+    },
+    {
+      "id": "common-05-chrome",
+      "family": "COMMON",
+      "sha256": "cca7fb1bdf1c50f22b08be8689ccf11ffb5d393becae611ed54baa1a1a108a0b"
+    },
+    {
+      "id": "common-05-rose",
+      "family": "COMMON",
+      "sha256": "e5c69f2fab5d5f1c36b5aff5472b91e36efab8e05d1839e7c7ae7244e926c90f"
+    },
+    {
+      "id": "common-05-violet",
+      "family": "COMMON",
+      "sha256": "179cbb1f20036839c4dd1f4b7cffc5d0d27741cf9e002b5f3417708d38ce9ef2"
+    },
+    {
+      "id": "common-05-mint",
+      "family": "COMMON",
+      "sha256": "2e58feabce7befe6c49bd1888b37b886c4ffc11c62525f881e2b53ac71b41984"
+    },
+    {
+      "id": "common-06-ivory",
+      "family": "COMMON",
+      "sha256": "3116d7f7bc33f618a7873f3093eeb722572b893daff68c518c07df136829b43e"
+    },
+    {
+      "id": "common-06-chrome",
+      "family": "COMMON",
+      "sha256": "e46f7c13960ccf769921442e53b4eeb677a74faae81c0dee39f4e63b972539a7"
+    },
+    {
+      "id": "common-06-rose",
+      "family": "COMMON",
+      "sha256": "43381ba8050a456b3eeb911a915b0626c377eaf8eb0803d9d15a21643276fe62"
+    },
+    {
+      "id": "common-06-violet",
+      "family": "COMMON",
+      "sha256": "664880e749cb588905ed762b9d26d85a213967d42355fb322cea081636a91c2a"
+    },
+    {
+      "id": "common-06-mint",
+      "family": "COMMON",
+      "sha256": "564d71be775206eeebd44ccb45f730a4686869345924b41adae52f95d72f7fbc"
+    },
+    {
+      "id": "common-07-ivory",
+      "family": "COMMON",
+      "sha256": "8e77ac677b11f81b9e38120f7b7e31cba4a0cd7be4ba5e3edb80ba6ffab77201"
+    },
+    {
+      "id": "common-07-chrome",
+      "family": "COMMON",
+      "sha256": "c827323b0c66abcae4162698e6fe6407d4a30ae9259b8b9e6016b6d2b075ee02"
+    },
+    {
+      "id": "common-07-rose",
+      "family": "COMMON",
+      "sha256": "2dd9afa2f1fdd41bc7628a9ecc43d08789055029934a3f6d38fa7eee195a5269"
+    },
+    {
+      "id": "common-07-violet",
+      "family": "COMMON",
+      "sha256": "15fcb6c3cf24c54b0ce10f7aa3500d935be6455497c9e025d1b62c13d42de588"
+    },
+    {
+      "id": "common-07-mint",
+      "family": "COMMON",
+      "sha256": "edfcbe0f9065a97ab447cd7334202a2da5831e5fab8025ac7fbef44685127fda"
+    },
+    {
+      "id": "common-08-ivory",
+      "family": "COMMON",
+      "sha256": "e562b9ac84abea242d518c6dd1670ee05518674b334aa203fe6c2b17d4592713"
+    },
+    {
+      "id": "common-08-chrome",
+      "family": "COMMON",
+      "sha256": "daf9c780782cbf30108edc7898084c63787dff9ee3a27aa7146802e0aa94e38a"
+    },
+    {
+      "id": "common-08-rose",
+      "family": "COMMON",
+      "sha256": "e00f5c4db0664760af3b0479a1513a1869bf32419529656d83f732668914c05a"
+    },
+    {
+      "id": "common-08-violet",
+      "family": "COMMON",
+      "sha256": "7189aa2eae75af829c480e274e6607f2f9b2c64f0fc46fe0c2b3dbfe861b9008"
+    },
+    {
+      "id": "common-08-mint",
+      "family": "COMMON",
+      "sha256": "8a78fafd28874e3459f2020cfb3947fc31fba5cf5ee48371240f1e6032df304b"
+    },
+    {
+      "id": "electro-01-ivory",
+      "family": "ELECTRO",
+      "sha256": "6ee778aa106c291714191f021113dd5c8a782868dbab853bb8fdd9dc09f4404c"
+    },
+    {
+      "id": "electro-01-chrome",
+      "family": "ELECTRO",
+      "sha256": "3f3ad1baf9138b09eb18c7839c58023a0ba1f6a761d190f70ab353e1380e32d8"
+    },
+    {
+      "id": "electro-01-rose",
+      "family": "ELECTRO",
+      "sha256": "378211ee1b0d75adbaedb0d54ea4dcea289ce8d35097e1e347b2b92632fd3413"
+    },
+    {
+      "id": "electro-01-violet",
+      "family": "ELECTRO",
+      "sha256": "98e10270956abbfe2d8e44534d4e12582cd55532ed4e806f230e2779737a55c8"
+    },
+    {
+      "id": "electro-01-mint",
+      "family": "ELECTRO",
+      "sha256": "7597752f7ef305d40b3be8600e7a2fba32a28d9219826a64f89ae49865c4754e"
+    },
+    {
+      "id": "electro-02-ivory",
+      "family": "ELECTRO",
+      "sha256": "9b71a2b78d6a26b4d9878d5dcb51d883d2148e641e4b717b2081083aad83ea0a"
+    },
+    {
+      "id": "electro-02-chrome",
+      "family": "ELECTRO",
+      "sha256": "ec29f4d1797fe2c7a01b67cc124132df221ab3ef817b191b7ed9d4430b769788"
+    },
+    {
+      "id": "electro-02-rose",
+      "family": "ELECTRO",
+      "sha256": "120a15c2092472ed1ddb514de884e5412be1852e58063b035abbaa60b89c842b"
+    },
+    {
+      "id": "electro-02-violet",
+      "family": "ELECTRO",
+      "sha256": "dacac660291952fd31d931bd36281eca354302fc4a83a9d0249b2167ac985b76"
+    },
+    {
+      "id": "electro-02-mint",
+      "family": "ELECTRO",
+      "sha256": "c4da63705064e6d4ec79118bee9756def05201c353599091ff6db65a6adde05f"
+    },
+    {
+      "id": "electro-03-ivory",
+      "family": "ELECTRO",
+      "sha256": "45fe2c1da64880578cbeb195f1979dc84b8045ea946e3da26e5cdf18d7ee3f95"
+    },
+    {
+      "id": "electro-03-chrome",
+      "family": "ELECTRO",
+      "sha256": "04b0800f7bb1b4bb8363d1649dbcb58bbb8fdcfe8b2872e033a2d3d573891305"
+    },
+    {
+      "id": "electro-03-rose",
+      "family": "ELECTRO",
+      "sha256": "956f97b406a609ace74bf7b9e316ff4938fd1e87ca5eea9936ac7472739b2151"
+    },
+    {
+      "id": "electro-03-violet",
+      "family": "ELECTRO",
+      "sha256": "67df4674d54d7de1c4d3595bd6798b5eacce911d8b6b0290c4fc67904285d674"
+    },
+    {
+      "id": "electro-03-mint",
+      "family": "ELECTRO",
+      "sha256": "3f05a9b5f1a2968512c3cb189c9d08caf387797c407edd5f9def6890d923d398"
+    },
+    {
+      "id": "electro-04-ivory",
+      "family": "ELECTRO",
+      "sha256": "bac6268c8a95d881952ff1b4d907d320695907f6fec82a7fe96816b8a839824d"
+    },
+    {
+      "id": "electro-04-chrome",
+      "family": "ELECTRO",
+      "sha256": "134306a846163b04dcd1d03959c91bc439d69bb1d2e36504bd15dd20b3106777"
+    },
+    {
+      "id": "electro-04-rose",
+      "family": "ELECTRO",
+      "sha256": "a8c3862e47da110df3bc19f42fcfb3fdce101130883077de8b596316a8a7f25a"
+    },
+    {
+      "id": "electro-04-violet",
+      "family": "ELECTRO",
+      "sha256": "27ba253274bd4b90f15b30fcf3b80d9c2c28c0f5745427b20bc61fd109c6cfc6"
+    },
+    {
+      "id": "electro-04-mint",
+      "family": "ELECTRO",
+      "sha256": "9da16d6a26677e0fd4d29cf8de623d82df42b6827723c6e2e6fcb45cb1f7ec24"
+    },
+    {
+      "id": "electro-05-ivory",
+      "family": "ELECTRO",
+      "sha256": "f14385e06f673807aed58cbb13eacedb02c4a375281833e3f5a11d411f083538"
+    },
+    {
+      "id": "electro-05-chrome",
+      "family": "ELECTRO",
+      "sha256": "e593c5289960afcf35f0f6f24373677cf24248d08acbee0bed08b7d76bec4945"
+    },
+    {
+      "id": "electro-05-rose",
+      "family": "ELECTRO",
+      "sha256": "5aa2fb21dcfa1c5869703ec0802dc43c3f4af154e3e4343bbd6852fb2598756b"
+    },
+    {
+      "id": "electro-05-violet",
+      "family": "ELECTRO",
+      "sha256": "3629d38a2e351010d9e0283ee688d7c9b964441cf5a6dfc9d67e3c4d306b02a8"
+    },
+    {
+      "id": "electro-05-mint",
+      "family": "ELECTRO",
+      "sha256": "95c23ab0846c3250f95fce90b720c9f46889a353d0ce6706bc271395ef1022e7"
+    },
+    {
+      "id": "electro-06-ivory",
+      "family": "ELECTRO",
+      "sha256": "2aab51f0595827f0484295e9ba0dc24accc11cd1df73f6f7b01ba9781faabb11"
+    },
+    {
+      "id": "electro-06-chrome",
+      "family": "ELECTRO",
+      "sha256": "5f406c72dff17421f2089c591cf0874dbea621c2a9db27bab1d1919154c7e853"
+    },
+    {
+      "id": "electro-06-rose",
+      "family": "ELECTRO",
+      "sha256": "b1a4a5e0d60af595a01fa4dee1119822af529379badc0248fb26495c1cacb847"
+    },
+    {
+      "id": "electro-06-violet",
+      "family": "ELECTRO",
+      "sha256": "e8fadbe30aebefa2b9e10d990b5ff9b1cede2a25dd16d867e774cc3218324845"
+    },
+    {
+      "id": "electro-06-mint",
+      "family": "ELECTRO",
+      "sha256": "8c9b50b164d310a840544d4f1be238b34452df27bc124ad8921f4e35b88f12eb"
+    },
+    {
+      "id": "electro-07-ivory",
+      "family": "ELECTRO",
+      "sha256": "ff7d1018af568f2de16ea403bc0e55e8a5a27d350d2cc839952e0920b05c80b6"
+    },
+    {
+      "id": "electro-07-chrome",
+      "family": "ELECTRO",
+      "sha256": "68a3d8e3317f4090528ce2ffab8efd6a16728f85bb7406fb93eb21e67fcb15da"
+    },
+    {
+      "id": "electro-07-rose",
+      "family": "ELECTRO",
+      "sha256": "598f66a98f046e367036fe874a4624d4fd9ba5068e83ccdd9062e7267171b67a"
+    },
+    {
+      "id": "electro-07-violet",
+      "family": "ELECTRO",
+      "sha256": "432d792725434e2909482eb768d7363da6cde262df255a0ada3b1964bd7bcdb9"
+    },
+    {
+      "id": "electro-07-mint",
+      "family": "ELECTRO",
+      "sha256": "2587a7e8df1cccc563fcf6ac1e8bd86c61f9afacd0682cda1ec23b7bb0163a60"
+    },
+    {
+      "id": "electro-08-ivory",
+      "family": "ELECTRO",
+      "sha256": "ec3bbcd0779093fdf911dca7d83a1e627690e4269de87a31665a8c883c52bed2"
+    },
+    {
+      "id": "electro-08-chrome",
+      "family": "ELECTRO",
+      "sha256": "5e62ab61ffa5702f1b87f5946f0965f76cbdd88e880c9f26126c46b93f11cd99"
+    },
+    {
+      "id": "electro-08-rose",
+      "family": "ELECTRO",
+      "sha256": "1a71410aca952969853111d0170ac4f58748424e11a1c86c4d6f56277afd6078"
+    },
+    {
+      "id": "electro-08-violet",
+      "family": "ELECTRO",
+      "sha256": "8c72338022a10da8a019ffa6bc412b36b1153b900aef2e481cc96d619bf6ab70"
+    },
+    {
+      "id": "electro-08-mint",
+      "family": "ELECTRO",
+      "sha256": "9b130b6d08d9f7409416a2f40d51a7244b7ac045c5e2c317e9e7f7cdd7c90a44"
+    },
+    {
+      "id": "splash-01-ivory",
+      "family": "SPLASH",
+      "sha256": "6b19796ef07106f9582d3d3deaadeae5f4f621fc29717831514bc2b221957667"
+    },
+    {
+      "id": "splash-01-chrome",
+      "family": "SPLASH",
+      "sha256": "bd7a72eb20c9b106ad59a4f9da166f90e047f3414023ef291a4d6e7df9a3dbed"
+    },
+    {
+      "id": "splash-01-rose",
+      "family": "SPLASH",
+      "sha256": "e0233c15a8e99fe90afb7eb814b1a41628d27ca578e7a8633119b10bd7d66473"
+    },
+    {
+      "id": "splash-01-violet",
+      "family": "SPLASH",
+      "sha256": "a35b87127610f72adb49b381ad84ed03c38216efa4008640feb158e36dbcca31"
+    },
+    {
+      "id": "splash-01-mint",
+      "family": "SPLASH",
+      "sha256": "d199e0e52df5c217a1a00587ce24917364c79264399f7f91fea4c57b7aa744a1"
+    },
+    {
+      "id": "splash-02-ivory",
+      "family": "SPLASH",
+      "sha256": "cb4132aa60a315571f61e9dff8de593015605cc71a0a1233c7157a353f926e1a"
+    },
+    {
+      "id": "splash-02-chrome",
+      "family": "SPLASH",
+      "sha256": "5e42978ec60cba437a6e6e20c6671381c0bf568799e3e2bc13b431df57e69ebe"
+    },
+    {
+      "id": "splash-02-rose",
+      "family": "SPLASH",
+      "sha256": "eadfc80aa967ef9b58b174ee1589a14aabd0c8332998075de2b0e7f4339695a6"
+    },
+    {
+      "id": "splash-02-violet",
+      "family": "SPLASH",
+      "sha256": "40458e3f60dafb5fa845e2c2d278ac885870c7b218a01da2c0c1b10a1cec2b67"
+    },
+    {
+      "id": "splash-02-mint",
+      "family": "SPLASH",
+      "sha256": "a291aabf3536617dc60d16a2b7d1f9e4bfbdb484ed687161dffa34ec3e7abceb"
+    },
+    {
+      "id": "splash-03-ivory",
+      "family": "SPLASH",
+      "sha256": "6cc3d604f68cddb6eb5f0ef5f4861b39edf6221a38b89bbc37bf946788b8a1ec"
+    },
+    {
+      "id": "splash-03-chrome",
+      "family": "SPLASH",
+      "sha256": "f8949963e2e3aa0c2ea0e8c232ff6b1220316cbfd9cafa80398cdc5052f83946"
+    },
+    {
+      "id": "splash-03-rose",
+      "family": "SPLASH",
+      "sha256": "c02404f5e7c4a43f6766b6acfa1609d02081054b56875137e57dc6e8c0aac7be"
+    },
+    {
+      "id": "splash-03-violet",
+      "family": "SPLASH",
+      "sha256": "283eaedc32e41a31ca18a00f19a1df532a4d4517505cf5d6e5d3a087a14481d7"
+    },
+    {
+      "id": "splash-03-mint",
+      "family": "SPLASH",
+      "sha256": "4d5b6baee9a26db9f66b590f6a3a0dd6e9dfd02fd4ceb86023f20eb831e3fc6e"
+    },
+    {
+      "id": "splash-04-ivory",
+      "family": "SPLASH",
+      "sha256": "590eda44d5a119794e2c7ff6e2c02e3c578234316c3e3d8ae6414dc6e82411b6"
+    },
+    {
+      "id": "splash-04-chrome",
+      "family": "SPLASH",
+      "sha256": "9b44f7a53728c322d4371325b2bd9e443cd52aa5c0010c9a68b5d2e35a56e2dd"
+    },
+    {
+      "id": "splash-04-rose",
+      "family": "SPLASH",
+      "sha256": "73d81b734e4fec1daf211becf5410527b19b08489185fff86bda106f2c401ccd"
+    },
+    {
+      "id": "splash-04-violet",
+      "family": "SPLASH",
+      "sha256": "9e9debed2954e05dcf2c2b14d76d87a023f00f70b2d8619e01a7ceed0a3a1373"
+    },
+    {
+      "id": "splash-04-mint",
+      "family": "SPLASH",
+      "sha256": "89164528baa63ebfa437f1700c19847780854ae679eba34347138144750247d9"
+    },
+    {
+      "id": "splash-05-ivory",
+      "family": "SPLASH",
+      "sha256": "a1f7a6f20e9d7d4b71c16aec1fb89e6c2d1b50c1bfbf31889ac95ced0e7ba3d1"
+    },
+    {
+      "id": "splash-05-chrome",
+      "family": "SPLASH",
+      "sha256": "1a2fbfd368f66ddb41c5e660c449d3121365a790058b61109b52dadf9b87499e"
+    },
+    {
+      "id": "splash-05-rose",
+      "family": "SPLASH",
+      "sha256": "534e371258b74b26a215d8e7590b4661f08f82f06868f86abfb03f53608eb849"
+    },
+    {
+      "id": "splash-05-violet",
+      "family": "SPLASH",
+      "sha256": "9aa98486679737e23f003e6530b2bdf56df5fa6a5c7aa03bb860998c7a61ceec"
+    },
+    {
+      "id": "splash-05-mint",
+      "family": "SPLASH",
+      "sha256": "96b99fb5e39e8727fa70158e7e684edc10ffa3b6000c564e7124963076159cc6"
+    },
+    {
+      "id": "splash-06-ivory",
+      "family": "SPLASH",
+      "sha256": "7b4fea78cf6c97032eae57c7cd6ce50ac126ea1375e3fafb6aad99e4d766744b"
+    },
+    {
+      "id": "splash-06-chrome",
+      "family": "SPLASH",
+      "sha256": "e3bb00d8597d2405cc12260138a503ee04259ec37e7d0808e7fb2ff370d22899"
+    },
+    {
+      "id": "splash-06-rose",
+      "family": "SPLASH",
+      "sha256": "8064a9cfb2dfd7e4d2789329c10589fbdf15271f34f2520f5c8749271b574215"
+    },
+    {
+      "id": "splash-06-violet",
+      "family": "SPLASH",
+      "sha256": "2d2b79075955e8ec1e46101364ba9569f85394551af42d028ed11cae73757d78"
+    },
+    {
+      "id": "splash-06-mint",
+      "family": "SPLASH",
+      "sha256": "e4ac0a8a8ea787ed15b4cd6af3eeb09de5a8d86190a06a6891606f1f4197a24c"
+    },
+    {
+      "id": "splash-07-ivory",
+      "family": "SPLASH",
+      "sha256": "05d244da822f3f2a3837005d37db4d743080de3635161b9ef846341c28369ab7"
+    },
+    {
+      "id": "splash-07-chrome",
+      "family": "SPLASH",
+      "sha256": "de1cf4f1312282df88daff533ed9986f15f724183a2d90b7a6462a8470f5d43c"
+    },
+    {
+      "id": "splash-07-rose",
+      "family": "SPLASH",
+      "sha256": "a2c2fab8cdab34e10cf37991b3f7bc515ee83423a06ff1aaebb5e80d0e559ea1"
+    },
+    {
+      "id": "splash-07-violet",
+      "family": "SPLASH",
+      "sha256": "497cf428fbc7dd977f6d1266e9a0b11457c710e9cae359e9c2c911f01bafa387"
+    },
+    {
+      "id": "splash-07-mint",
+      "family": "SPLASH",
+      "sha256": "b01824f19633f8885d3682839a29f2b740d3cec1909408c0e27350de1841bd62"
+    },
+    {
+      "id": "splash-08-ivory",
+      "family": "SPLASH",
+      "sha256": "9a35d2acc2ebdbc1dd7974a02612958f140cb02356f8c897cac04db69b8ae023"
+    },
+    {
+      "id": "splash-08-chrome",
+      "family": "SPLASH",
+      "sha256": "aea23877cf519f8142b929d5f1c48bf61594a4589d7ece8b765523a67273afe2"
+    },
+    {
+      "id": "splash-08-rose",
+      "family": "SPLASH",
+      "sha256": "b3ac04d4effc63b49e7d96552290d06ef4e330951c8e9c88044b8a37af2cc6e7"
+    },
+    {
+      "id": "splash-08-violet",
+      "family": "SPLASH",
+      "sha256": "45cb93f27faeba90fa6522f8c8abd1ffbb56488c49b9ce71ef9693ee7c4209e6"
+    },
+    {
+      "id": "splash-08-mint",
+      "family": "SPLASH",
+      "sha256": "669107f6c858815a718a1e6a84fecf3fc2a213d2b5d0fabc6db26b0ddab2970f"
+    }
+  ]
+}

@@ -24,11 +24,11 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF27 — Visualizar e organizar o guarda-roupa num quarto 3D interativo ('Meu Quarto')\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF27 — Visualizar e organizar o guarda-roupa num quarto 3D interativo ('Meu Quarto')\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /room;
+:Abre /room, /dna-schemes/[id]/edit,\n/dna-schemes/new;
 |Tela (Next.js)|
 :Carrega os dados da tela\nGET /api/me/room\nGET /api/me/room/modules/{moduleId}\nGET /api/pieces/{pieceId}/room-location\nGET /api/me/room/list;
 |Pessoa usuária|
@@ -37,6 +37,14 @@ start
 :PUT /api/pieces/{pieceId}/room-address;
 |API (Spring Boot)|
 :RoomController.move\n→ RoomService.move;
+if (categoria incompativel?) then (sim)
+  :400 CATEGORIA_INCOMPATIVEL\n«Este endereço não guarda peças\ndesta categoria.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (gaveta categoria diferente?) then (sim)
+  :400 GAVETA_CATEGORIA_DIFERENTE\n«Esta gaveta guarda peças de outra\ncategoria.»\n→ a tela mostra o aviso;
+  stop
+endif
 if (gaveta cheia?) then (sim)
   :409 GAVETA_CHEIA\n«A gaveta … já tem … peças.»\n→ a tela mostra o aviso;
   stop
@@ -65,7 +73,7 @@ if (Faz outra ação?) then (sim)
   case (Aplicar organização [rótulos e mo…)
     :POST /api/me/room/organization\n→ RoomService.applyOrganization\nlê: room_layouts, users, fai_points_ledger …\ngrava: room_layouts, room_storage_map\nevento: RoomOrganized;
   case (Registrar uso da peça no diário)
-    :POST /api/pieces/{pieceId}/diary\n→ RoomService.diaryEntry\nvalida: DATA_FUTURA, OCASIAO_INVALIDA\nlê: wardrobe_items, piece_usage_diary,\nroom_layouts …\nusa: Guard.requireOwner\ngrava: piece_usage_diary, wardrobe_items,\nroom_layouts …;
+    :POST /api/pieces/{pieceId}/diary\n→ RoomService.diaryEntry\nvalida: DATA_FUTURA, OCASIAO_INVALIDA\nlê: wardrobe_items, piece_usage_diary,\nroom_layouts …\nusa: Guard.requireOwner\ngrava: piece_usage_diary, wardrobe_items,\nroom_layouts;
   case (Dar a chave do meu quarto a um se…)
     :POST /api/me/room/keys\n→ RoomService.giveKey\nvalida: CHAVE_INVALIDA\nlê: users, room_layouts, fai_points_ledger\ngrava: room_layouts;
   endswitch

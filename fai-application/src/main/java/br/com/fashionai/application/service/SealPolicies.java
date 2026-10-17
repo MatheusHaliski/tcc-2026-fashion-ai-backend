@@ -257,6 +257,7 @@ public final class SealPolicies {
             return null;
         }
         Map<String, Object> out = new LinkedHashMap<>();
+        if ("MANUAL".equals(raw.get("generationMode"))) out.put("generationMode", "MANUAL");
         out.put("match", "ANY".equals(upper(raw.get("match"), "ALL")) ? "ANY" : "ALL");
         out.put("rules", rules);
         out.put("occasions", occasions);

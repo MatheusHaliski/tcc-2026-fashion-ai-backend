@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF4 — Classes do buscador web de marcas e do filtro de logo (código real)\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF4 — Classes do buscador web de marcas e do filtro de logo (código real)\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "fai-domain (entidades JPA)" {
   class BrandLogo <<brand_logos>> {
@@ -44,10 +44,10 @@ package "fai-domain (entidades JPA)" {
     +name: String
     +category: String
     +subcategory: String
-    +sex: String
-    +brandName: String
-    +brandLogoUrl: String
-    .. +70 campos ..
+    +variationCode: String
+    +variationStatus: String
+    +variationConfidence: BigDecimal
+    .. +73 campos ..
   }
 }
 package "fai-domain (enums)" {

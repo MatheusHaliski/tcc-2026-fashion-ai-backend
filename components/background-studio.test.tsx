@@ -7,7 +7,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
 import { cleanup, fireEvent, mockApi, renderApp, renderHook, screen, waitFor, within } from "@/test-utils/render";
-import { BackgroundStudio, useLeaveCartela, type BgCatalog, type BgConfig } from "./background-studio";
+import { AuraMaterialPanel, BackgroundStudio, useLeaveCartela, type BgCatalog, type BgConfig } from "./background-studio";
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
@@ -29,6 +29,17 @@ describe("Background Studio — Cartela sazonal", () => {
     await screen.findByRole("group", { name: "Cor" });
     expect(screen.queryByRole("group", { name: "Cartela sazonal" })).toBeNull();
     expect(screen.queryByRole("group", { name: "Animação" })).toBeNull();
+  });
+
+  describe("Background Studio — presets de marca da Metamorfose", () => {
+    it("aplica as direções de marca/cor sem reprocessar a foto", async () => {
+      mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
+      const onChange = vi.fn();
+      renderApp(<AuraMaterialPanel value={{ photo: { url: "/piece.jpg" } }} onChange={onChange} />);
+      fireEvent.click(await screen.findByRole("button", { name: /Nike · Prisma laranja/ }));
+      expect(onChange).toHaveBeenLastCalledWith({ auraMetamorphose: "PRISMA", auraMetamorphosePreset: "NIKE_ORANGE" });
+      expect(onChange.mock.calls[0][0]).not.toHaveProperty("photo");
+    });
   });
 
   it("Cancelar na primeira escolha não troca o layout nem a arte", async () => {
@@ -88,5 +99,20 @@ describe("Background Studio — Cartela sazonal", () => {
     expect(clear).toHaveBeenCalledTimes(1);
     rerender({ active: false });
     expect(clear).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("Background Studio — prévia das variações Aura em vídeo", () => {
+  it.each([
+    ["Aura Geometry", "aura_geometry__geometry_01", "/aura/geometry/geometry_01/animacao.mp4", "/aura/geometry/geometry_01/imagem.png"],
+    ["Aura Splash", "aura_splash__splash_01", "/aura/splash/splash_01/animacao.mp4", "/aura/splash/splash_01/imagem.png"],
+  ])("carrega os vídeos de %s nos cards de variação", async (_name, variantId, src, poster) => {
+    mockApi({ "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {} });
+    const { container } = renderApp(<Studio onBg={() => undefined} initialBg={{ aura: { variantId } }} />);
+    fireEvent.click(await screen.findByRole("radio", { name: "Aura & Material" }));
+    const variations = await screen.findByRole("group", { name: /Variação/ });
+    await waitFor(() => expect(variations.querySelectorAll("video")).toHaveLength(6));
+    await waitFor(() => expect(variations.querySelector(`video[poster="${poster}"]`)?.getAttribute("src")).toBe(src));
+    expect(container.querySelectorAll("video")).toHaveLength(6);
   });
 });

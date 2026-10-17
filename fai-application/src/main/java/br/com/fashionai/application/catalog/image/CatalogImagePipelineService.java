@@ -79,7 +79,7 @@ public class CatalogImagePipelineService {
         this.tx = tx;
         this.pipeline = new CatalogImagePipeline(SemanticRegionRegistry.get(), persons.getIfAvailable());
         this.enabled = enabled;
-        this.batch = Math.max(1, batch);
+        this.batch = Math.min(32, Math.max(1, batch));
         this.maxAttempts = Math.max(1, maxAttempts);
     }
 
@@ -169,7 +169,7 @@ public class CatalogImagePipelineService {
                         Map<String, Object> crop = Json.map(i.getCropJson());
                         return Boolean.TRUE.equals(crop.get("ruleCompliant")) && crop.get("crop") instanceof Map<?, ?>
                                 && crop.get("selectionFrame") instanceof Map<?, ?> frame
-                                && "CATALOG_FRAME_34_FILLED_V4".equals(frame.get("version"));
+                                && ProductRuleFrame.VERSION.equals(frame.get("version"));
                     });
             if (ready) return;
             if (!previewCapacity.tryAcquire()) throw new ApiException(429, "CATALOG_PREVIEW_BUSY", "Enquadramento em andamento. Tente novamente.");
@@ -177,49 +177,58 @@ public class CatalogImagePipelineService {
         }
     }
 
-    /** Re-run the batch's filled FabricFrame on the original bytes for an explicit catalog pick. */
+    /** Apply the same product framing rule as the worker, using another photo of this product if needed. */
     public void verifySelection(CurrentUser user, UUID productId) {
         guard.requireCanCreate(user);
         CatalogProduct product = products.findById(productId).orElseThrow(() -> ApiException.notFound("catalog product"));
         if (product.getIngestionStatus() == br.com.fashionai.domain.model.enums.CatalogIngestionStatus.REJECTED) {
             throw ApiException.badRequest("PRODUTO_RECUSADO", "Este produto foi recusado.");
         }
-        CatalogImage image = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId).stream()
+        List<CatalogImage> candidates = images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId).stream()
                 .filter(i -> i.getUsageStatus() != CatalogImageUsage.REJECTED && !"REJECTED".equals(i.getReviewStatus()))
+                .filter(i -> i.getImageUrl() != null && !i.getImageUrl().isBlank())
                 .sorted(java.util.Comparator.comparing((CatalogImage i) -> !i.isCanonical()))
-                .findFirst().orElseThrow(() -> new ApiException(422, "CATALOG_IMAGE_MISSING", "Esta peça não tem foto disponível para verificar."));
-        Optional<WebFetchPort.Fetched> fetched = web.get(image.getImageUrl(), (int) ImageOps.MAX_UPLOAD_BYTES, "image/");
-        if (fetched.isEmpty()) throw new ApiException(422, "CATALOG_IMAGE_FETCH_FAILED", "Não foi possível verificar a foto. Tente novamente.");
-        CatalogImagePipeline.Analysis analysis = pipeline.run(new CatalogImagePipeline.Request(fetched.get().body(),
-                product.getCategory(), product.getSubcategory(), image.getImageType() == null ? null : image.getImageType().name(), false));
-        Object value = analysis.debug().get("fabricFrame");
-        if (!(value instanceof Map<?, ?> frame) || !Boolean.TRUE.equals(frame.get("ok")) || !(frame.get("fabricCoverage") instanceof Number coverage) || coverage.doubleValue() != 1 || !(frame.get("crop") instanceof Map<?, ?>)) {
-            throw new ApiException(422, "CATEGORY_FRAME_UNAVAILABLE", "A foto não permite o enquadramento desta categoria. Escolha outra foto ou use sua própria foto.");
-        }
-        Map<String, Object> crop = new LinkedHashMap<>(analysis.cropJson());
-        crop.put("crop", frame.get("crop"));
-        crop.put("aspect", "3:4");
-        crop.put("ruleCompliant", true);
-        for (String stale : List.of("rule", "detail", "padding")) crop.remove(stale);
-        crop.put("selectionFrame", Map.of("version", "CATALOG_FRAME_34_FILLED_V4", "target", frame.get("target"), "anchor", frame.get("anchor"),
-                "verifiedAt", Instant.now().toString(), "sourceSha256", analysis.sha256()));
-        // Keep earlier assets intact. This fresh frame is applied to the source photograph by the card renderer.
-        // It is also inherited by the wardrobe item when the user saves, without re-cropping an already cropped JPEG.
-        tx.executeWithoutResult(status -> {
-            image.setCropJson(Json.write(crop));
-            image.setWidth(analysis.width()); image.setHeight(analysis.height());
-            image.setSourceSha256(analysis.sha256());
-            image.setMetricsJson(metricsJson(analysis));
-            image.setPipelineVersion(CatalogImagePipeline.VERSION);
-            image.setProcessedAt(Instant.now());
-            image.setProcessingStatus("APPROVED");
-            image.setQualityScore(qualityScore(analysis.qualityScore()));
-            image.setCanonical(true);
-            for (CatalogImage other : images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId)) {
-                if (!other.getId().equals(image.getId()) && other.isCanonical()) { other.setCanonical(false); images.save(other); }
+                .limit(3).toList();
+        if (candidates.isEmpty()) throw new ApiException(422, "CATALOG_IMAGE_MISSING", "Esta peça não tem foto disponível para verificar.");
+        boolean downloaded = false;
+        for (CatalogImage image : candidates) {
+            Optional<WebFetchPort.Fetched> fetched = web.get(image.getImageUrl(), (int) ImageOps.MAX_UPLOAD_BYTES, "image/");
+            if (fetched.isEmpty()) continue;
+            downloaded = true;
+            CatalogImagePipeline.Analysis analysis = pipeline.run(new CatalogImagePipeline.Request(fetched.get().body(),
+                    product.getCategory(), product.getSubcategory(), image.getImageType() == null ? null : image.getImageType().name(), false));
+            Object value = analysis.debug().get("productFrame");
+            if (!(value instanceof Map<?, ?> frame) || !Boolean.TRUE.equals(frame.get("ok")) || !(frame.get("crop") instanceof Map<?, ?>)) {
+                continue;
             }
-            images.save(image);
-        });
+            Map<String, Object> crop = new LinkedHashMap<>(analysis.cropJson());
+            crop.put("crop", frame.get("crop"));
+            crop.put("aspect", "3:4");
+            crop.put("ruleCompliant", true);
+            for (String stale : List.of("rule", "detail", "padding")) crop.remove(stale);
+            crop.put("selectionFrame", Map.of("version", ProductRuleFrame.VERSION, "target", frame.get("target"),
+                    "verifiedAt", Instant.now().toString(), "sourceSha256", analysis.sha256()));
+            // Keep earlier assets intact. This fresh frame is applied to the source photograph by the card renderer.
+            // It is also inherited by the wardrobe item when the user saves, without re-cropping an already cropped JPEG.
+            tx.executeWithoutResult(status -> {
+                image.setCropJson(Json.write(crop));
+                image.setWidth(analysis.width()); image.setHeight(analysis.height());
+                image.setSourceSha256(analysis.sha256());
+                image.setMetricsJson(metricsJson(analysis));
+                image.setPipelineVersion(CatalogImagePipeline.VERSION);
+                image.setProcessedAt(Instant.now());
+                image.setProcessingStatus("APPROVED");
+                image.setQualityScore(qualityScore(analysis.qualityScore()));
+                image.setCanonical(true);
+                for (CatalogImage other : images.findByProductIdOrderByPrimaryDescCreatedAtAsc(productId)) {
+                    if (!other.getId().equals(image.getId()) && other.isCanonical()) { other.setCanonical(false); images.save(other); }
+                }
+                images.save(image);
+            });
+            return;
+        }
+        if (!downloaded) throw new ApiException(422, "CATALOG_IMAGE_FETCH_FAILED", "Não foi possível verificar as fotos desta peça. Tente novamente.");
+        throw new ApiException(422, "CATEGORY_FRAME_UNAVAILABLE", "As fotos disponíveis não permitem o enquadramento desta categoria. Escolha outra foto ou use sua própria foto.");
     }
 
     /**
@@ -245,7 +254,7 @@ public class CatalogImagePipelineService {
         img.setHeight(dimension(a.height()));
         img.setSourceSha256(a.sha256());
         img.setPhash(a.phash());
-        img.setCropJson(cropJson(a));
+        img.setCropJson(automaticFrame(a, persist));
         img.setMetricsJson(metricsJson(a));
         if (persist && a.rendered() != null && a.outcome() != CatalogImageValidator.Outcome.REJECTED) {
             Map<String, Object> assets = store(img, a.rendered());
@@ -254,6 +263,38 @@ public class CatalogImagePipelineService {
             img.setUsageStatus(CatalogImageUsage.PERSISTED);
         }
         finish(img, a.outcome().name(), a.reasons(), a.qualityScore());
+    }
+
+    /**
+     * O worker aplica a regra editorial assim que a foto chega ao catálogo. A UI somente lê o
+     * resultado; ela não deve precisar de uma ação da pessoa para enquadrar uma foto já analisada.
+     */
+    @SuppressWarnings("unchecked")
+    String automaticFrame(CatalogImagePipeline.Analysis analysis, boolean persist) {
+        Map<String, Object> crop = new LinkedHashMap<>(analysis.cropJson());
+        // No nível B, o card persistido já é a saída enquadrada do pipeline e mantém sua proporção de renderização.
+        if (persist) {
+            return crop.isEmpty() ? null : Json.write(crop);
+        }
+        Object value = analysis.debug().get("productFrame");
+        if (!(value instanceof Map<?, ?> frame) || !Boolean.TRUE.equals(frame.get("ok"))
+                || !(frame.get("crop") instanceof Map<?, ?>)) {
+            return crop.isEmpty() ? null : Json.write(crop);
+        }
+        crop.put("crop", frame.get("crop"));
+        crop.put("aspect", frame.get("aspect") == null ? "3:4" : frame.get("aspect"));
+        crop.put("ruleCompliant", true);
+        crop.remove("detail");
+        crop.remove("padding");
+        Map<String, Object> framing = new LinkedHashMap<>();
+        framing.put("version", frame.get("version"));
+        framing.put("target", frame.get("target"));
+        framing.put("focus", frame.get("focus"));
+        framing.put("automatic", true);
+        framing.put("processedAt", Instant.now().toString());
+        framing.put("sourceSha256", analysis.sha256());
+        crop.put("selectionFrame", framing);
+        return Json.write(crop);
     }
 
     private void finish(CatalogImage img, String status, List<String> reasons, Double quality) {
@@ -533,23 +574,27 @@ public class CatalogImagePipelineService {
 
     /**
      * Imagem que o card deve mostrar e como: master processado (nível B) ou URL original com o recorte semântico (nível A).
-     * null = sem canônica aprovada (o card segue com a foto principal, inteira).
+     * null = sem enquadramento aprovado; a interface deve mostrar estado de processamento/erro, nunca foto crua.
      */
     public static Map<String, Object> cardImage(CatalogImage canonical) {
-        if (canonical == null || !canonical.isCanonical()) {
+        if (canonical == null || !canonical.isCanonical() || !"APPROVED".equals(canonical.getProcessingStatus())
+                || canonical.getUsageStatus() == CatalogImageUsage.REJECTED || "REJECTED".equals(canonical.getReviewStatus())) {
             return null;
         }
         Map<String, Object> m = new LinkedHashMap<>();
         Map<String, Object> selectionCrop = canonical.getCropJson() == null ? Map.of() : Json.map(canonical.getCropJson());
-        if (selectionCrop.containsKey("selectionFrame")) {
-            m.put("url", canonical.getImageUrl()); m.put("mode", "SEMANTIC_CROP");
-            m.put("crop", selectionCrop.get("crop")); m.put("aspect", "3:4");
-            m.put("framing", selectionCrop.get("selectionFrame"));
-        } else if (canonical.getAssetsJson() != null) {
+        if (!Boolean.TRUE.equals(selectionCrop.get("ruleCompliant")) || !(selectionCrop.get("crop") instanceof Map<?, ?>)) return null;
+        boolean automaticFrame = selectionCrop.get("selectionFrame") instanceof Map<?, ?> frame
+                && Boolean.TRUE.equals(frame.get("automatic"));
+        if (canonical.getAssetsJson() != null && (!selectionCrop.containsKey("selectionFrame") || automaticFrame)) {
             Map<String, Object> assets = Json.map(canonical.getAssetsJson());
             m.put("url", assets.getOrDefault("card", canonical.getStoredUrl()));
             m.put("thumbnailUrl", assets.get("thumbnail"));
             m.put("mode", "PROCESSED");
+        } else if (selectionCrop.containsKey("selectionFrame")) {
+            m.put("url", canonical.getImageUrl()); m.put("mode", "SEMANTIC_CROP");
+            m.put("crop", selectionCrop.get("crop")); m.put("aspect", "3:4");
+            m.put("framing", selectionCrop.get("selectionFrame"));
         } else {
             m.put("url", canonical.getImageUrl());
             m.put("mode", "SEMANTIC_CROP");
@@ -560,7 +605,10 @@ public class CatalogImagePipelineService {
                 m.put("aspect", crop.get("aspect"));
             }
         }
-        if (canonical.getCropJson() != null) m.put("aspect", Json.map(canonical.getCropJson()).get("aspect"));
+        if (!automaticFrame && canonical.getCropJson() != null) {
+            m.put("aspect", Json.map(canonical.getCropJson()).get("aspect"));
+        }
+        m.put("sourceUrl", canonical.getImageUrl());
         m.put("imageId", canonical.getId());
         m.put("qualityScore", canonical.getQualityScore());
         m.put("pipelineVersion", canonical.getPipelineVersion());

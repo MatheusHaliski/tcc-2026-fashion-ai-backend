@@ -21,7 +21,7 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF35 — Explorar as 'Coleções' de uma marca: busca por coleção, Collections Insights e mini lojas 3D\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF35 — Explorar as 'Coleções' de uma marca: busca por coleção, Collections Insights e mini lojas 3D\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 boundary "Tela /brands/[slug]" as P
@@ -41,6 +41,7 @@ ShowcaseService -> InstitutionalService : institutionalUser()
 InstitutionalService -> DB_MySQL : SELECT users
 InstitutionalService -> DB_MySQL : SELECT brand_profiles
 InstitutionalService -> DB_MySQL : SELECT celebrity_profiles
+InstitutionalService -> DB_MySQL : SELECT users
 InstitutionalService --> ShowcaseService
 alt Eras (só perfis de celebridade) não enc…
 ShowcaseService --> ShowcaseController : 404 NAO_ENCONTRADO

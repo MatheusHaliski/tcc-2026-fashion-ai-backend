@@ -21,18 +21,17 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF28 — Montar looks no Smart Mirror e pedir sugestões ao 'Vista-me' (só com peças do próprio guarda-roupa)\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF28 — Montar looks no Smart Mirror e pedir sugestões ao 'Vista-me' (só com peças do próprio guarda-roupa)\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
-boundary "Tela /mirror" as P
+boundary "Tela /room" as P
 control "MirrorController" as MirrorController
 participant "MirrorService" as MirrorService
 participant "WardrobeService" as WardrobeService
 database "MySQL" as DB_MySQL
 participant "RoomService" as RoomService
 queue "Eventos de domínio" as EV
-participant "AiEngine\n(provedor de IA + reserva local)" as AI
-participant "Audit" as Audit
+participant "LookScorer" as LookScorer
 == Vestir uma peça no espelho ==
 U -> P : Vestir uma peça no espelho
 P -> MirrorController : POST /api/me/mirror/pieces
@@ -61,45 +60,11 @@ MirrorService -> DB_MySQL : SELECT wardrobe_items
 MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
 MirrorService -> RoomService : locateAll()
 MirrorService -> DB_MySQL : SELECT style_dna
-deactivate MirrorService
-MirrorService --> MirrorController : resultado
-MirrorController --> P : 201 JSON
-P --> U : atualiza a tela
-== Vista-me: look completo a partir de um pedido em linguagem natural ==
-U -> P : Vista-me: look completo a partir de um pedido em…
-P -> MirrorController : POST /api/me/mirror/vista-me
-MirrorController -> MirrorService : vistaMe()
-activate MirrorService
-MirrorService -> DB_MySQL : SELECT mirror_states
-MirrorService -> MirrorService : new MirrorState()
-MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
-MirrorService -> RoomService : outOfSeason()
-RoomService -> DB_MySQL : SELECT room_storage_map
-RoomService --> MirrorService
-MirrorService -> WardrobeService : eligible()
-WardrobeService -> DB_MySQL : SELECT wardrobe_items
-WardrobeService --> MirrorService
-alt acervo sem superior
-MirrorService --> MirrorController : 422 ACERVO_SEM_SUPERIOR
-MirrorController --> P : 422 + mensagem
-end
-MirrorService -> DB_MySQL : SELECT wardrobe_items
-MirrorService -> AI : COPILOT
-AI --> MirrorService : resposta (ou reserva local)
-MirrorService -> Audit : log() (×2)
-MirrorService -> AI : SCHEME_COMPOSER
-AI --> MirrorService : resposta (ou reserva local)
-alt sem combinação nova
-MirrorService --> MirrorController : 422 SEM_COMBINACAO_NOVA
-MirrorController --> P : 422 + mensagem
-end
-MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
-MirrorService ->> EV : MirrorAction
-MirrorService -> RoomService : locateAll()
-MirrorService -> DB_MySQL : SELECT wardrobe_items
-MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
-MirrorService -> RoomService : locateAll()
-MirrorService -> DB_MySQL : SELECT style_dna
+MirrorService -> LookScorer : scoreLooks()
+LookScorer -> DB_MySQL : SELECT style_dna
+LookScorer -> DB_MySQL : SELECT schemes
+LookScorer -> DB_MySQL : SELECT scheme_items
+LookScorer --> MirrorService
 deactivate MirrorService
 MirrorService --> MirrorController : resultado
 MirrorController --> P : 201 JSON

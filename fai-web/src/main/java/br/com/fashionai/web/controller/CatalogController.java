@@ -33,9 +33,9 @@ public class CatalogController {
     @Operation(summary = "RF47 — Busca no catálogo interno (categoria, subcategoria, marca, nome/modelo/descrição, cor) com matchScore e leitura das características únicas da peça")
     public Map<String, Object> search(CurrentUser user, @RequestParam(required = false) String category, @RequestParam(required = false) String subcategory,
                                       @RequestParam(required = false) String brand, @RequestParam(required = false) String q,
-                                      @RequestParam(required = false) String color, @RequestParam(required = false) Integer limit) {
+                                      @RequestParam(required = false) String color, @RequestParam(required = false) Integer limit, @RequestParam(required = false) String code) {
         // o texto do nome é lido também como DESCRIÇÃO da peça (estampa, logo, lados, cores) — com IA quando disponível (RF24)
-        return catalog.search(user == null ? null : user.id(), new CatalogService.SearchRequest(category, subcategory, brand, q, color, limit));
+        return catalog.search(user == null ? null : user.id(), new CatalogService.SearchRequest(category, subcategory, brand, q, color, limit, code));
     }
 
     @GetMapping("/api/catalog/suggestions")
@@ -63,8 +63,8 @@ public class CatalogController {
                                       @RequestParam(required = false) String subcategory, @RequestParam(required = false) String q,
                                       @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size,
                                       @RequestParam(required = false) String brandId, @RequestParam(required = false) String color,
-                                      @RequestParam(required = false) String gender) {
-        return catalog.browse(new CatalogService.BrowseRequest(brand, category, subcategory, q, page, size, brandId, color, gender));
+                                      @RequestParam(required = false) String gender, @RequestParam(required = false) String code) {
+        return catalog.browse(new CatalogService.BrowseRequest(brand, category, subcategory, q, page, size, brandId, color, gender, code));
     }
 
     @GetMapping("/api/catalog/summary")

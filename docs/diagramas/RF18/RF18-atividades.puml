@@ -24,13 +24,13 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF18 — Usar o Provador virtual de lojas: peças de várias marcas do catálogo no Avatar 3D, com ambiente por marca\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /try-on, /pieces/new;
+:Abre /try-on, /dna-schemes/[id]/edit,\n/dna-schemes/new;
 |Tela (Next.js)|
-:Carrega os dados da tela\nGET /api/catalog/stores\nGET /api/try-on\nGET /api/catalog/products/{id}\nGET /api/catalog/search;
+:Carrega os dados da tela\nGET /api/catalog/stores\nGET /api/try-on\nGET /api/catalog/products/{id}\nGET /api/catalog/products;
 |Pessoa usuária|
 :Renderizar look no manequim (FASHN →\ncompositor local em fa…;
 |Tela (Next.js)|
@@ -58,16 +58,16 @@ if (Faz outra ação?) then (sim)
     :POST /api/try-on/schemes\n→ TryOnService.saveAsScheme\nvalida: SEM_PECAS\nlê: schemes\nusa: OwnMedia.require, WardrobeService.owned,\nSchemeService.create\nestado: virtualTryOnUrl → set;
   case (Salvar manequim [sexo, tom de pel…)
     :PUT /api/try-on/preferences\n→ TryOnService.savePreferences\nvalida: TOM_INVALIDO\nlê: user_preferences\ngrava: user_preferences\nestado: mannequinSex → ?sex, mannequinBuild → ?build;
-  case (Editar a peça)
-    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
   case (Adiciona ao guarda-roupa a peça e…)
     :POST /api/pieces/from-catalog\n→ CatalogService.addToWardrobe\nvalida: PRODUTO_RECUSADO\nlê: catalog_products, brands, catalog_variants …\nusa: WardrobeService.createFromCatalog,\nWardrobeService.toggles\ngrava: catalog_products;
   case (Excluir a peça)
     :DELETE /api/pieces/{id}\n→ WardrobeService.delete\nlê: wardrobe_items, scheme_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.removePiece …\nestado: availabilityStatus → ARCHIVED, disponivel →\nfalse, visibility → PRIVATE;
+  case (Cadastrar a peça a partir do rasc…)
+    :POST /api/pieces\n→ WardrobeService.create\nvalida: CONTEUDO_BLOQUEADO, ERRO,\nFORMULARIO_INVALIDO, FOTO_OBRIGATORIA\nlê: users, pipeline_jobs, wardrobe_items …\nusa: Guard.requireCanCreate,\nAssetCatalogService.defaultPieceImage,\nAssetCatalogService.publicFile …\nia: STUDIO_ENHANCER;
   endswitch
   note right
   Outras ações deste RF:
-  Cadastrar a peça a partir do…
+  Editar a peça
   end note
   |Tela (Next.js)|
   :Atualiza a tela;

@@ -24,56 +24,60 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF37 — FLAIR: jogo de cartas de moda (peça → carta → look → time/deck → competição), 15 modos e combinações das lojas\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /brands/[slug], /flair;
+:Abre /coupons, /flair, /brands/[slug];
 |Tela (Next.js)|
 :Carrega os dados da tela\nGET /api/flair/combinations/{id}/check\nGET /api/flair/combinations\nGET /api/flair/modes/deck\nGET /api/flair/decks/{schemeId};
 |Pessoa usuária|
-:FLAIR — troca o deck que completa a\ncombinação pelo cupom d…;
+:FLAIR — duelo de estilo 1×1 (5\nrodadas) contra @usuário ou…;
 |Tela (Next.js)|
-:POST /api/flair/combinations/{id}/redeem;
+:POST /api/flair/duels;
 |API (Spring Boot)|
-:FlairController.redeem\n→ FlairService.redeem;
-if (combinação indisponível?) then (sim)
-  :409 COMBINACAO_INDISPONIVEL\n«Esta combinação não está mais\ndisponível.»\n→ a tela mostra o aviso;
-  stop
-endif
-if (cupom já emitido?) then (sim)
-  :409 CUPOM_JA_EMITIDO\n«Você já completou esta combinação.»\n→ a tela mostra o aviso;
-  stop
-endif
+:FlairController.duel\n→ FlairService.duel;
 if (deck arquivado?) then (sim)
   :400 DECK_ARQUIVADO\n«Esse esquema está arquivado.»\n→ a tela mostra o aviso;
   stop
 endif
-if (combinação incompleta?) then (sim)
-  :422 COMBINACAO_INCOMPLETA\n«O deck ainda não completa a\ncombinação.»\n→ a tela mostra o aviso;
+if (deck vazio?) then (sim)
+  :400 DECK_VAZIO\n«Esse esquema não tem peças.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (duelo consigo?) then (sim)
+  :400 DUELO_CONSIGO\n«Escolha outra pessoa ou a Casa.»\n→ a tela mostra o aviso;
   stop
 endif
 |Dados e serviços|
-:Lê: flair_combinations\nscheme_items\nhype_scores\nwardrobe_items\nbrand_profiles\nflair_match_entries (+4);
-:Usa: Guard.requireCanCreate\nSchemeService.owned\nHypeScoreConfig.algorithmVersion;
-:Grava: flair_redemptions\nflair_coin_entries\nflair_profiles;
-:Estado: status → EMITIDO\nexpiresAt → set;
+:Lê: scheme_items\nhype_scores\nwardrobe_items\nusers\nschemes\nflair_profiles (+3);
+:Usa: Guard.requireCanCreate\nSchemeService.owned\nHypeScoreConfig.algorithmVersion\nSchemeService.canView\nFaiPointsService.game;
+:Grava: flair_matches\nflair_match_entries\nflair_profiles\nflair_coin_entries;
+:Estado: status → FINISHED;
+:Evento: CouponRightsCheck;
 |Tela (Next.js)|
 :Atualiza a tela com a resposta;
 |Pessoa usuária|
 if (Faz outra ação?) then (sim)
   switch (Qual?)
+  case (FLAIR — troca o deck que completa…)
+    :POST /api/flair/combinations/{id}/redeem\n→ FlairService.redeem\nvalida: COMBINACAO_INCOMPLETA,\nCOMBINACAO_INDISPONIVEL, CUPOM_JA_EMITIDO,\nDECK_ARQUIVADO\nlê: flair_combinations, scheme_items,\nhype_scores …\nusa: Guard.requireCanCreate, SchemeService.owned,\nHypeScoreConfig.algorithmVersion\ngrava: flair_redemptions, flair_coin_entries,\nflair_profiles;
   case (FLAIR — a loja edita uma combinaç…)
     :PUT /api/flair/brand/combinations/{id}\n→ FlairService.saveCombination\nvalida: DESCONTO_OBRIGATORIO, ERRO, SEM_REQUISITOS,\nTIPO_INVALIDO\nlê: users, flair_combinations, brand_profiles …\nusa: Guard.requireApprovedInstitutional\ngrava: flair_combinations;
+  case (Battle of Looks — Look × Look com…)
+    :POST /api/flair/modes/battle\n→ FlairModesService.battle\nvalida: LOOK_ARQUIVADO, OPONENTE_INVALIDO,\nSEM_LOOK_PUBLICO\nlê: scheme_items, users, schemes …\nusa: Guard.requireCanCreate, SchemeService.owned,\nFlairService.publicLookHype …\ngrava: flair_matches, flair_match_entries;
   case (FLAIR — a loja cria uma combinaçã…)
     :POST /api/flair/brand/combinations\n→ FlairService.saveCombination\nvalida: DESCONTO_OBRIGATORIO, ERRO, SEM_REQUISITOS,\nTIPO_INVALIDO\nlê: users, flair_combinations, brand_profiles …\nusa: Guard.requireApprovedInstitutional\ngrava: flair_combinations;
   case (FLAIR Runway — desfila um look: q…)
     :POST /api/flair/modes/runway\n→ FlairModesService.enterRunway\nvalida: JA_NA_RUNWAY, LOOK_ARQUIVADO\nlê: scheme_items, schemes, flair_trophies …\nusa: Guard.requireCanCreate, SchemeService.owned,\nFlairService.publicLookHype …\ngrava: flair_trophies, flair_mode_states,\nflair_matches …;
-  case (FLAIR — no caixa, a loja confere…)
-    :POST /api/flair/brand/redemptions/validate\n→ FlairService.validateCode\nvalida: CUPOM_EXPIRADO, CUPOM_USADO, NAO_ENCONTRADO\nlê: users, flair_redemptions, brand_profiles\nusa: Guard.requireApprovedInstitutional\nestado: status → USADO, usedAt → set;
-  case (FLAIR — a loja remove a combinaçã…)
-    :DELETE /api/flair/brand/combinations/{id}\n→ FlairService.deleteCombination\nvalida: ERRO\nlê: users, flair_combinations\nusa: Guard.requireApprovedInstitutional\ngrava: flair_combinations;
   endswitch
+  note right
+  Outras ações deste RF:
+  FLAIR Squad — 5 looks × 5 loo…, FLAIR — no caixa,
+  a loja conf…, FLAIR — a loja remove a combi…, sim,
+  resgatar: emite o cupom…, dispensar o cupom
+  conquistado
+  end note
   |Tela (Next.js)|
   :Atualiza a tela;
 endif

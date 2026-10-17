@@ -1,0 +1,283 @@
+{
+  "status": "POSE_ONLY",
+  "provider": "MEDIAPIPE_POSE_LANDMARKER",
+  "device": "CPU",
+  "modelSha256": "4eaa5eb7a98365221087693fcc286334cf0858e2eb6e15b506aa4a7ecdcec4ad",
+  "width": 572,
+  "height": 380,
+  "landmarks": [
+    {
+      "name": "nose",
+      "x": 269.17540287971497,
+      "y": 164.15316236019135,
+      "visibility": 0.9999881982803345,
+      "presence": 0.9999953508377075,
+      "inFrame": true
+    },
+    {
+      "name": "left_eye_inner",
+      "x": 272.791150778532,
+      "y": 158.2970021367073,
+      "visibility": 0.9999240636825562,
+      "presence": 0.9999667406082153,
+      "inFrame": true
+    },
+    {
+      "name": "left_eye",
+      "x": 274.73867577314377,
+      "y": 157.8429850935936,
+      "visibility": 0.9999001026153564,
+      "presence": 0.9999649524688721,
+      "inFrame": true
+    },
+    {
+      "name": "left_eye_outer",
+      "x": 277.10878705978394,
+      "y": 157.2889275252819,
+      "visibility": 0.9998923540115356,
+      "presence": 0.9999568462371826,
+      "inFrame": true
+    },
+    {
+      "name": "right_eye_inner",
+      "x": 268.741483181715,
+      "y": 158.78031861782074,
+      "visibility": 0.9999414682388306,
+      "presence": 0.999975323677063,
+      "inFrame": true
+    },
+    {
+      "name": "right_eye",
+      "x": 267.7374387085438,
+      "y": 158.72199082374573,
+      "visibility": 0.9999163150787354,
+      "presence": 0.999977707862854,
+      "inFrame": true
+    },
+    {
+      "name": "right_eye_outer",
+      "x": 266.70327392220497,
+      "y": 158.61492475867271,
+      "visibility": 0.9999229907989502,
+      "presence": 0.999976396560669,
+      "inFrame": true
+    },
+    {
+      "name": "left_ear",
+      "x": 285.2817723751068,
+      "y": 157.7452148795128,
+      "visibility": 0.9998602867126465,
+      "presence": 0.9999561309814453,
+      "inFrame": true
+    },
+    {
+      "name": "right_ear",
+      "x": 270.1284640431404,
+      "y": 158.907738417387,
+      "visibility": 0.9999109506607056,
+      "presence": 0.9999864101409912,
+      "inFrame": true
+    },
+    {
+      "name": "mouth_left",
+      "x": 273.50881403684616,
+      "y": 168.60807752609253,
+      "visibility": 0.999886155128479,
+      "presence": 0.9999881982803345,
+      "inFrame": true
+    },
+    {
+      "name": "mouth_right",
+      "x": 268.5488833487034,
+      "y": 168.8554736673832,
+      "visibility": 0.9998809099197388,
+      "presence": 0.9999904632568359,
+      "inFrame": true
+    },
+    {
+      "name": "left_shoulder",
+      "x": 311.35054606199265,
+      "y": 183.1527522802353,
+      "visibility": 0.9997462630271912,
+      "presence": 0.9999279975891113,
+      "inFrame": true
+    },
+    {
+      "name": "right_shoulder",
+      "x": 257.04787570238113,
+      "y": 184.92065823078156,
+      "visibility": 0.9999539852142334,
+      "presence": 0.9999692440032959,
+      "inFrame": true
+    },
+    {
+      "name": "left_elbow",
+      "x": 356.1484027504921,
+      "y": 182.57069420814514,
+      "visibility": 0.9967229962348938,
+      "presence": 0.9996857643127441,
+      "inFrame": true
+    },
+    {
+      "name": "right_elbow",
+      "x": 212.26999711990356,
+      "y": 179.06385418772697,
+      "visibility": 0.9969844222068787,
+      "presence": 0.9999593496322632,
+      "inFrame": true
+    },
+    {
+      "name": "left_wrist",
+      "x": 399.4599496126175,
+      "y": 178.75433510541916,
+      "visibility": 0.9878749251365662,
+      "presence": 0.9914336204528809,
+      "inFrame": true
+    },
+    {
+      "name": "right_wrist",
+      "x": 169.82846784591675,
+      "y": 174.70871976017952,
+      "visibility": 0.9958034157752991,
+      "presence": 0.9994951486587524,
+      "inFrame": true
+    },
+    {
+      "name": "left_pinky",
+      "x": 410.16004621982574,
+      "y": 178.5817010998726,
+      "visibility": 0.9633803963661194,
+      "presence": 0.9771725535392761,
+      "inFrame": true
+    },
+    {
+      "name": "right_pinky",
+      "x": 159.27754336595535,
+      "y": 172.86051708459854,
+      "visibility": 0.9845849871635437,
+      "presence": 0.9977409839630127,
+      "inFrame": true
+    },
+    {
+      "name": "left_index",
+      "x": 411.49439311027527,
+      "y": 177.33185529708862,
+      "visibility": 0.9701526165008545,
+      "presence": 0.9755676984786987,
+      "inFrame": true
+    },
+    {
+      "name": "right_index",
+      "x": 158.9493510723114,
+      "y": 171.2966906428337,
+      "visibility": 0.9865109920501709,
+      "presence": 0.9978981018066406,
+      "inFrame": true
+    },
+    {
+      "name": "left_thumb",
+      "x": 406.5770562887192,
+      "y": 177.73068457841873,
+      "visibility": 0.9740340113639832,
+      "presence": 0.9816851019859314,
+      "inFrame": true
+    },
+    {
+      "name": "right_thumb",
+      "x": 162.49012151360512,
+      "y": 173.17881244421005,
+      "visibility": 0.9882714152336121,
+      "presence": 0.9985305070877075,
+      "inFrame": true
+    },
+    {
+      "name": "left_hip",
+      "x": 300.09729075431824,
+      "y": 271.45692110061646,
+      "visibility": 0.9952409267425537,
+      "presence": 0.99913090467453,
+      "inFrame": true
+    },
+    {
+      "name": "right_hip",
+      "x": 264.2566196024418,
+      "y": 267.78753358125687,
+      "visibility": 0.9990454316139221,
+      "presence": 0.9998502731323242,
+      "inFrame": true
+    },
+    {
+      "name": "left_knee",
+      "x": 351.9591266512871,
+      "y": 310.7534086704254,
+      "visibility": 0.9830636382102966,
+      "presence": 0.9984733462333679,
+      "inFrame": true
+    },
+    {
+      "name": "right_knee",
+      "x": 203.6612882912159,
+      "y": 276.96532839536667,
+      "visibility": 0.9952479004859924,
+      "presence": 0.9997522234916687,
+      "inFrame": true
+    },
+    {
+      "name": "left_ankle",
+      "x": 401.66642421483994,
+      "y": 350.1026668548584,
+      "visibility": 0.9876495003700256,
+      "presence": 0.9744739532470703,
+      "inFrame": true
+    },
+    {
+      "name": "right_ankle",
+      "x": 199.77922236919403,
+      "y": 346.367451608181,
+      "visibility": 0.990192174911499,
+      "presence": 0.998134434223175,
+      "inFrame": true
+    },
+    {
+      "name": "left_heel",
+      "x": 405.0735931992531,
+      "y": 355.99151504039764,
+      "visibility": 0.9459822177886963,
+      "presence": 0.9719465374946594,
+      "inFrame": true
+    },
+    {
+      "name": "right_heel",
+      "x": 206.6265395283699,
+      "y": 357.2910140156746,
+      "visibility": 0.9791512489318848,
+      "presence": 0.9965144991874695,
+      "inFrame": true
+    },
+    {
+      "name": "left_foot_index",
+      "x": 424.9259766936302,
+      "y": 360.63379299640656,
+      "visibility": 0.9565377831459045,
+      "presence": 0.9496952891349792,
+      "inFrame": true
+    },
+    {
+      "name": "right_foot_index",
+      "x": 171.24829176068306,
+      "y": 358.87932819128036,
+      "visibility": 0.9638909697532654,
+      "presence": 0.9847007989883423,
+      "inFrame": true
+    }
+  ],
+  "visibleLandmarks": 33,
+  "anatomicalAnchorsComplete": false,
+  "physicalFitCertified": false,
+  "missingEvidence": [
+    "garment_seam_correspondence",
+    "neckline_contour",
+    "limb_cross_sections",
+    "foreground_skin_occlusion"
+  ]
+}

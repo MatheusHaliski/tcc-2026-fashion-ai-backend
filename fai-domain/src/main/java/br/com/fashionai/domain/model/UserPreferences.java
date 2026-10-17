@@ -136,4 +136,7 @@ public class UserPreferences extends VersionedAuditableEntity {
 
     @Column(name = "aura_hype", nullable = false)
     private boolean auraHype;
+
+    @Column(name = "aura_impersonation", nullable = false)
+    private boolean auraImpersonation;
 }

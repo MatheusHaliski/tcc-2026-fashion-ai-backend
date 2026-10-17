@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF28 — Vista-me: componentes\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF28 — Vista-me: componentes\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "app/(site)" {
   component "page.tsx" as m_app__site__page_tsx
@@ -68,7 +68,7 @@ package "Backend (Spring Boot)" {
 }
 database "MySQL" as DB_MySQL
 MirrorController --> MirrorService
-MirrorService --> DB_MySQL : mirror_states, scheme_items, schemes, style_dna, wardrobe_items
+MirrorService --> DB_MySQL : `TipoLook`, mirror_states, scheme_items,\nschemes, style_dna, wardrobe_items
 MirrorService --> RoomService
 MirrorService --> WardrobeService
 RoomService --> DB_MySQL : daily_looks, fai_points_ledger,\npiece_usage_diary, room_catalog,\nroom_inventory, room_layouts

@@ -24,46 +24,69 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF20 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma marca de roupa\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF20 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma marca de roupa\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
 :Abre /schemes/new, /brands/[slug];
 |Tela (Next.js)|
-:Carrega os dados da tela\nGET /api/seal-bonds/review-queue\nGET /api/users/{ownerId}/seals\nGET /api/me/issuer-metrics;
+:Carrega os dados da tela\nGET /api/seal-bonds/review-queue\nGET /api/users/{ownerId}/seals\nGET /api/me/issuer-metrics\nGET /api/schemes/{schemeId}/seal-suggestions;
 |Pessoa usuária|
-:Emissor aprova ou rejeita o vínculo;
+:Aceitar sugestão de vínculo (com\nconsentimento de imagem);
 |Tela (Next.js)|
-:POST /api/seal-bonds/{bondId}/review;
+:POST /api/seal-bonds/{bondId}/accept;
 |API (Spring Boot)|
-:SealController.review\n→ SealService.review;
+:SealController.accept\n→ SealService.accept;
 if (estado inválido?) then (sim)
-  :409 ESTADO_INVALIDO\n«Este vínculo não está aguardando\nrevisão.»\n→ a tela mostra o aviso;
+  :409 ESTADO_INVALIDO\n«Este vínculo já foi respondido.»\n→ a tela mostra o aviso;
   stop
 endif
-if (motivo obrigatório?) then (sim)
-  :400 MOTIVO_OBRIGATORIO\n«Informe o motivo da rejeição.»\n→ a tela mostra o aviso;
+if (vinculo existente?) then (sim)
+  :409 VINCULO_EXISTENTE\n«Este esquema já tem vínculo com\neste perfil.»\n→ a tela mostra o aviso;
   stop
 endif
+if (O emissor ou a campanha deste selo não…?) then (sim)
+  :403 ACESSO_NEGADO\n«O emissor ou a campanha deste selo\nnão está disponível.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (consentimento imagem?) then (sim)
+  :400 CONSENTIMENTO_IMAGEM\n«Confirme que entende que o look\nserá associado publicamente à\nimagem da celebridade.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (política não atendida?) then (sim)
+  :400 POLITICA_NAO_ATENDIDA\n«A peça ou look não atende ao\nmodelo de referência deste selo.»\n→ a tela mostra o aviso;
+  stop
+endif
+note right
+  e mais 5 validações:
+  ACESSO_NEGADO, HYPE_INDISPONIVEL,
+  POLITICA_NAO_ATENDIDA, SealUnavailable
+end note
 |Dados e serviços|
-:Lê: seal_bonds\nbrand_profiles;
-:Usa: Guard.requireApprovedInstitutional\nGuard.requireOwner\nNotificationService.notify;
-:Estado: revalidationPending → false\nstatus → APPROVED\nreviewedAt → set\nissuedAt → set\nexpiresAt → set;
+:Lê: seal_bonds\nscheme_items\nbrand_profiles;
+:Usa: Guard.requireCanCreate\nGuard.requireOwner\nNotificationService.notify;
+:Estado: status → ACCEPTED\nimageRightsConsent → ?imageRightsConsent\nrespondedAt → set\nrequiresReview → ?requiresReview\nstatus → PENDING_REVIEW\nstatus → APPROVED (+3);
 :Evento: CouponRightsCheck;
 |Tela (Next.js)|
 :Atualiza a tela com a resposta;
 |Pessoa usuária|
 if (Faz outra ação?) then (sim)
   switch (Qual?)
+  case (Emissor aprova ou rejeita o víncu…)
+    :POST /api/seal-bonds/{bondId}/review\n→ SealService.review\nvalida: ACESSO_NEGADO, ESTADO_INVALIDO,\nHYPE_INDISPONIVEL, MOTIVO_OBRIGATORIO …\nlê: seal_bonds, seals, scheme_items …\nusa: Guard.requireApprovedInstitutional,\nGuard.requireOwner,\nNotificationService.notify\nestado: revalidationPending → false, status →\nAPPROVED, reviewedAt → set …;
   case (Marca/celebridade cria um selo)
-    :POST /api/seals\n→ SealService.createSeal\nvalida: LIMITE_INVALIDO, PERIODO_INVALIDO\nlê: users, seal_bonds\nusa: Guard.requireApprovedInstitutional,\nOwnMedia.require,\nOwnMedia.requireOrUnchanged …\ngrava: seals;
+    :POST /api/seals\n→ SealService.createSeal\nvalida: LIMITE_INVALIDO, MODELO_SELO_INVALIDO,\nPERIODO_INVALIDO, POLITICA_IA_OBRIGATORIA …\nlê: users, seals, seal_bonds\nusa: Guard.requireApprovedInstitutional,\nOwnMedia.require,\nOwnMedia.requireOrUnchanged …\ngrava: seals;
   case (Editar selo [política, ícone, fun…)
-    :PUT /api/seals/{sealId}\n→ SealService.updateSeal\nvalida: LIMITE_INVALIDO, PERIODO_INVALIDO\nlê: seals, seal_bonds\nusa: Guard.requireApprovedInstitutional,\nGuard.requireOwner, OwnMedia.require …\nestado: iconUrl → set;
+    :PUT /api/seals/{sealId}\n→ SealService.updateSeal\nvalida: LIMITE_INVALIDO, MODELO_SELO_INVALIDO,\nPERIODO_INVALIDO, POLITICA_IA_OBRIGATORIA …\nlê: seals, seal_bonds\nusa: Guard.requireApprovedInstitutional,\nGuard.requireOwner, OwnMedia.require …\nestado: iconUrl → set;
   case (Revogar selo concedido)
     :POST /api/seal-bonds/{bondId}/revoke\n→ SealService.revoke\nlê: seal_bonds, brand_profiles\nusa: Guard.requireOwner,\nNotificationService.notify\nestado: status → REVOKED, reviewedAt → set;
   case (Selos possíveis para um look aind…)
-    :POST /api/seal-suggestions/preview\n→ SealService.preview\nlê: wardrobe_items\nia: SEALBOND_MATCHER;
+    :POST /api/seal-suggestions/preview\n→ SealService.preview;
   endswitch
+  note right
+  Outras ações deste RF:
+  Vincular manualmente o esquem…
+  end note
   |Tela (Next.js)|
   :Atualiza a tela;
 endif

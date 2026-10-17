@@ -31,7 +31,14 @@ export interface HypeSealProgress {
   available?: boolean; publicEligible?: boolean; requirements?: HypeSealRequirements;
 }
 
+export type AuraHypeCardLevel = "COMMON" | "RARE" | "LEGENDARY" | "COLLAB_DROP";
+export interface FashionCardClassification {
+  status: "PENDING" | "CLASSIFIED"; tier?: AuraHypeCardLevel;
+  ruleVersion: number; source?: "HYPE_SIGNALS" | "VERIFIED_DROP";
+  edition?: { serial: number; total: number; confirmed: boolean };
+}
 export interface HypeSummary {
+  fashionCard?: FashionCardClassification;
   status: HypeStatus;
   stale?: boolean;
   score?: number | null;

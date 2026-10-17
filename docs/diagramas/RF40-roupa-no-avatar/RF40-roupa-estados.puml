@@ -19,37 +19,26 @@ skinparam state {
   StartColor #20A77A
   EndColor #4B5563
 }
-title RF40 — dress(): etapas de uma peça\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\ncomponents/three/human-outfit.tsx · 24 funções chamadas em ordem · etapas = chamadas que recebem "gg"
+title RF40 — buildGarment(): etapas de uma peça\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nlib/avatar3d/human/dress.ts · 5 funções chamadas em ordem · etapas = chamadas que recebem "gg"
 
-state "Mapeada\nkindOf() em outfitOf()" as E0_kindOf
-E0_kindOf : <size:9>garments.ts</size>
-state "preparação" as E1_prepara__o
-E1_prepara__o : armOutFor(), setArmOut(), applyIdle(),\nbodyParam(), smoothBody(), underLayer()
-state "Casca\ngarmentGeometry()" as E2_garmentGeometry
-E2_garmentGeometry : <size:9>garments.ts</size>
-state "Relaxada\nrelaxGarment()" as E3_relaxGarment
-E3_relaxGarment : <size:9>garment-relax.ts</size>
+state "preparação" as E0_prepara__o
+E0_prepara__o : underLayer()
+state "Casca\ngarmentGeometry()" as E1_garmentGeometry
+E1_garmentGeometry : <size:9>garments.ts</size>
+state "Relaxada\nrelaxGarment()" as E2_relaxGarment
+E2_relaxGarment : <size:9>garment-relax.ts</size>
+state "columnLegs()" as E3_columnLegs
+E3_columnLegs : <size:9>garment-relax.ts</size>
 state "Dobrada\nfoldGarment()" as E4_foldGarment
 E4_foldGarment : <size:9>garment-relax.ts</size>
-state "posedPositions()" as E5_posedPositions
-E5_posedPositions : <size:9>garments.ts</size>
-state "texturedGeometry()" as E6_texturedGeometry
-E6_texturedGeometry : photoInfo(), fabricColor(), garmentTexture(),\nshoeColors(), shoeStyleOf(), shoeParts(),\ngarmentMaterial(), trimColors(), ribColor()
-E6_texturedGeometry : <size:9>garments.ts</size>
-state "garmentTrims()" as E7_garmentTrims
-E7_garmentTrims : collarBand(), zonesCovered()
-E7_garmentTrims : <size:9>garment-trims.ts</size>
-[*] --> E0_kindOf
-E0_kindOf --> E1_prepara__o
-E1_prepara__o --> E2_garmentGeometry
-E2_garmentGeometry --> E3_relaxGarment
-E3_relaxGarment --> E4_foldGarment
-E4_foldGarment --> E5_posedPositions
-E5_posedPositions --> E6_texturedGeometry
-E6_texturedGeometry --> E7_garmentTrims
-E7_garmentTrims --> [*]
-note right of E0_kindOf
-  Ordem das chamadas em dress() (human-outfit.tsx).
+[*] --> E0_prepara__o
+E0_prepara__o --> E1_garmentGeometry
+E1_garmentGeometry --> E2_relaxGarment
+E2_relaxGarment --> E3_columnLegs
+E3_columnLegs --> E4_foldGarment
+E4_foldGarment --> [*]
+note right of E0_prepara__o
+  Ordem das chamadas em buildGarment() (dress.ts).
   Cada etapa é uma chamada que recebe "gg"
   (a geometria da peça); as outras funções
   aparecem dentro da etapa em que são chamadas.

@@ -11,6 +11,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 /** Repositório Spring Data de FlairMatch. */
-public interface FlairMatchRepository extends JpaRepository<FlairMatch, UUID> {
+public interface FlairMatchRepository extends JpaRepository<FlairMatch, UUID>, org.springframework.data.jpa.repository.JpaSpecificationExecutor<FlairMatch> {
     List<FlairMatch> findTop20ByTeamAIdOrTeamBIdOrderByCreatedAtDesc(UUID teamA, UUID teamB);
 }

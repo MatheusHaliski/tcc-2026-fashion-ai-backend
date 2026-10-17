@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF42 — Marcar um look como 'Look do dia'\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF42 — Marcar um look como 'Look do dia'\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
   component "/schemes/[id]/edit\n(site)/(app)/schemes/[id]/edit/page.tsx" as FE0

@@ -21,38 +21,21 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF28 — Vista-me: estado do espelho, avatar 3D e 'Vista-me' por prompt\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF28 — Vista-me: estado do espelho, avatar 3D e 'Vista-me' por prompt\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 boundary "c/mirror/mirror-stage.tsx" as c_mirror_mirror_stage_tsx
-participant "lib/i18n/i18n.tsx" as lib_i18n_i18n_tsx
-participant "lib/auth/session.tsx" as lib_auth_session_tsx
-participant "lib/hooks/use-api.ts" as lib_hooks_use_api_ts
-participant "API (Spring Boot)" as API
-participant "lib/avatar3d/body-spec.ts" as lib_avatar3d_body_spec_ts
+participant "lib/mirror/mirror-list.ts" as lib_mirror_mirror_list_ts
 participant "MirrorService" as MirrorService
 participant "WardrobeService" as WardrobeService
 database "MySQL" as DB_MySQL
 participant "RoomService" as RoomService
 queue "Eventos de domínio" as EV
-== c/mirror/mirror-stage.tsx · MirrorStage() ==
-U -> c_mirror_mirror_stage_tsx : MirrorStage()
+participant "LookScorer" as LookScorer
+== c/mirror/mirror-stage.tsx · mirrorPieces() ==
+U -> c_mirror_mirror_stage_tsx : mirrorPieces()
 activate c_mirror_mirror_stage_tsx
-c_mirror_mirror_stage_tsx -> lib_i18n_i18n_tsx : useI18n()
-c_mirror_mirror_stage_tsx -> lib_auth_session_tsx : useAuth()
-c_mirror_mirror_stage_tsx -> lib_hooks_use_api_ts : useApi()
-c_mirror_mirror_stage_tsx -> API : GET /api/me/avatar3d\nAvatar3dController.get
-API --> c_mirror_mirror_stage_tsx : JSON
-c_mirror_mirror_stage_tsx -> lib_avatar3d_body_spec_ts : validateBody()
-opt !kelvin
-c_mirror_mirror_stage_tsx --> U : encerra
-end
-opt kelvin < 3500
-c_mirror_mirror_stage_tsx --> U : encerra
-end
-opt kelvin > 5000
-c_mirror_mirror_stage_tsx --> U : encerra
-end
+c_mirror_mirror_stage_tsx -> lib_mirror_mirror_list_ts : mirrorLook3d()
 deactivate c_mirror_mirror_stage_tsx
 c_mirror_mirror_stage_tsx --> U : resultado
 == MirrorService · place() ==
@@ -72,6 +55,7 @@ MirrorService -> DB_MySQL : SELECT wardrobe_items
 MirrorService -> DB_MySQL : INSERT/UPDATE mirror_states
 MirrorService -> RoomService : locateAll()
 MirrorService -> DB_MySQL : SELECT style_dna
+MirrorService -> LookScorer : scoreLooks()
 deactivate MirrorService
 MirrorService --> U : resultado
 @enduml

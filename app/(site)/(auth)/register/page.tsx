@@ -50,6 +50,7 @@ export default function RegisterPage() {
     // validação local do que o servidor não devolve campo a campo (username vazio ou fora do padrão)
     const l: Record<string, string> = {};
     if (!/^[A-Za-z0-9._]{3,30}$/.test(f.username)) l.username = f.username ? t("register.usernameInvalid") : t("register.usernameRequired");
+    if (!f.acceptTerms) l.acceptTerms = t("register.termsRequired");
     setLocal(l);
     if (Object.keys(l).length) { notice.warning(t("register.revise_os_campos"), { details: Object.values(l) }); document.getElementById(Object.keys(l)[0])?.focus(); return; }
     const s = await run();
@@ -113,7 +114,22 @@ export default function RegisterPage() {
             <label className="flex items-start gap-2 type-body-sm"><input type="checkbox" checked={celeb.sealConsentGranted} onChange={(e) => setCeleb((c) => ({ ...c, sealConsentGranted: e.target.checked }))} />{" "}{t("register.autorizo_o_uso_do_meu")}</label>
           </fieldset>
         )}
-        <label className="mb-3 flex items-start gap-2 type-body-sm"><input type="checkbox" checked={f.acceptTerms} onChange={set("acceptTerms")} required /> {t("auth.acceptTerms")}</label>
+        <section className="mb-3 rounded-md border border-line-soft p-3" aria-labelledby="terms-summary-title">
+          <h2 id="terms-summary-title" className="mb-2 type-body-sm font-semibold">{t("register.termsSummaryTitle")}</h2>
+          <ul id="terms-description" className="mb-3 list-disc space-y-1 pl-5 type-body-sm text-muted">
+            <li>{t("register.termsContentLicense")}</li>
+            <li>{t("register.termsOptionalConsent")}</li>
+          </ul>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 type-body-sm">
+            <Link className="font-semibold text-ink underline" href="/legal/terms">{t("legal.terms")}</Link>
+            <Link className="font-semibold text-ink underline" href="/legal/privacy">{t("legal.privacy")}</Link>
+          </div>
+        </section>
+        <label className="mb-3 flex items-start gap-2 type-body-sm">
+          <input id="acceptTerms" type="checkbox" aria-invalid={!!err.acceptTerms} aria-describedby={err.acceptTerms ? "terms-description terms-error" : "terms-description"} checked={f.acceptTerms} onChange={set("acceptTerms")} required />
+          <span>{t("auth.acceptTerms")}</span>
+        </label>
+        {err.acceptTerms && <p id="terms-error" role="alert" className="error-text mb-3">{err.acceptTerms}</p>}
         <Button type="submit" variant="primary" size="lg" className="w-full" loading={busy}>{t("nav.register")}</Button>
       </form>
     </AuthCard>

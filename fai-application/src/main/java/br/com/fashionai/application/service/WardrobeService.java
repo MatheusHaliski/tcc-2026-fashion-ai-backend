@@ -1413,6 +1413,7 @@ public class WardrobeService {
     }
 
     private void validate(PieceForm f) {
+        BackgroundStudioService.validateArtwork(f.background());
         // uma resposta com TODOS os campos a corrigir (antes: primeiro a taxonomia, depois nome e preço, em duas rodadas)
         Map<String, Object> errors = new LinkedHashMap<>(Taxonomy.pieceErrors(f.category(), f.subcategory(), f.sex(), f.color(),
                 f.material(), f.size(), f.occasion(), f.style()));

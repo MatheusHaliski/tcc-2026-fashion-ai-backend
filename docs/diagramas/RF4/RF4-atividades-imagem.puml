@@ -1,10 +1,16 @@
 @startuml RF4_Atividades_Imagem
-title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de atividades — fotografia da peça: foto própria, remoção de fundo, estúdio com aprovação e "Eu tenho" do Lens
-
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -18,126 +24,68 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
-|Pessoa (dona da peça)|
-|Frontend (expanded-card · edit-image)|
-|Serviço (WardrobeService)|
-|Imagem/IA|
-|Pessoa (dona da peça)|
+|Pessoa usuária|
 start
-if (Por onde a foto chega?) then (peça já cadastrada)
-  :Abre a peça (/pieces/{id}) → "Editar imagem"\n(EditImageDialog, só o dono);
-  |Frontend (expanded-card · edit-image)|
-  :Seções: enquadramento (template do feed e\nregiões faltando), recorte, original × processado,\nlogo (só com logo real) + painel de aprovação;
-  repeat
-  |Pessoa (dona da peça)|
-  :Escolhe uma ação;
-  if (Substituir a foto?) then (sim)
-    |Frontend (expanded-card · edit-image)|
-    :PUT /api/pieces/{id}/image (multipart file);
-    |Serviço (WardrobeService)|
-    :replaceImage: requireCanCreate + owned\n(não-dono → 403 auditado);
-    if (ImageOps.requireAcceptedImage) then (falhou)
-      #FFE3E3:400 ARQUIVO_VAZIO · ARQUIVO_GRANDE (> 10 MB)\n· FORMATO_INVALIDO (só JPG, PNG, WebP);
-    else (ok)
-      |Imagem/IA|
-      :Grava edit-*.png + miniatura (MediaStoragePort);\nregistra Photo origem EDITOR (Minhas Fotos, RF12);
-      |Serviço (WardrobeService)|
-      :imageUrl = nova foto; defaultImage = false;\nfoto nova tira o selo de IA (aiGeneratedImage = false);\nphotoProcessingStatus = COMPLETED; audit EDICAO_PECA;
-      if (A imagem tem transparência (recorte)?) then (sim)
-        :refreshStudio → estúdio refeito com a nova\nimagem: entra no ar AGUARDANDO aprovação\n(a foto de origem mudou);
-      else (não)
-        :applyStudio(null): a foto de estúdio sai\n(foto opaca não vai ao estúdio);
-      endif
-    endif
-  endif
-  |Pessoa (dona da peça)|
-  if (Trocar o fundo do estúdio?) then (sim)
-    |Frontend (expanded-card · edit-image)|
-    :POST /api/pieces/{id}/studio?backdrop=<id|auto>;
-    |Serviço (WardrobeService)|
-    if (Imagem padrão ou\nprocessamento ≠ COMPLETED?) then (sim)
-      #FFE3E3:422 SEM_RECORTE;
-    else (não)
-      |Imagem/IA|
-      :studioShot: AiEngine.execute(STUDIO_ENHANCER)\nPhotoroom/Stability → plano B local\n(StudioPipeline: fundo, sombra, manequim\ninvisível, feed 4:5, detalhe do logo);
-      |Serviço (WardrobeService)|
-      if (Gerou?) then (não)
-        #FFE3E3:503 ESTUDIO_INDISPONIVEL;
-      else (sim)
-        :offerStudio: com uma APROVADA no ar, a nova fica\nem flatLayMetadata.studio.pending; sem aprovada,\nentra no ar com approved = false;
-      endif
-    endif
-  endif
-  |Pessoa (dona da peça)|
-  if (Há versão nova esperando decisão?\n(ApprovalPanel: aprovada × nova)) then (sim)
-    if (Decisão) then (aprovar)
-      |Frontend (expanded-card · edit-image)|
-      :POST /api/pieces/{id}/studio/approve;
-      |Serviço (WardrobeService)|
-      :approveStudio: a pendente vai ao ar e a anterior\nfica em "previous" (ou a atual é marcada\naprovada); nada a aprovar → 409 NADA_A_APROVAR;
-    else (descartar)
-      |Frontend (expanded-card · edit-image)|
-      :DELETE /api/pieces/{id}/studio/pending;
-      |Serviço (WardrobeService)|
-      :discardStudio: apaga os arquivos da pendente; a\naprovada continua; sem pendente → 409 NADA_A_DESCARTAR;
-    endif
-  endif
-  |Pessoa (dona da peça)|
-  if (Remover o fundo?) then (sim)
-    |Frontend (expanded-card · edit-image)|
-    :POST /api/pieces/{id}/background-removal;
-    |Serviço (WardrobeService)|
-    if (Há arquivo da foto?) then (não)
-      #FFE3E3:422 SEM_IMAGEM;
-    else (sim)
-      |Imagem/IA|
-      :governedFlatLay: AiEngine.execute(FLAT_LAY_STANDARDIZER)\n→ FlatLayPipeline (rembg → remove.bg → recorte local)\ncom cota diária e teto de gasto;
-      |Serviço (WardrobeService)|
-      if (Fundo removido?) then (não)
-        :200 {ok: false, mensagem, estágios}\n(as outras ferramentas seguem);
-      else (sim)
-        :Grava processed-*.png; COMPLETED;\nrefreshStudio (mesma origem → versão pendente);
-      endif
-    endif
-  endif
-  |Pessoa (dona da peça)|
-  if (Ajuste manual?) then (sim)
-    |Frontend (expanded-card · edit-image)|
-    :Abre o PhotoEditor (Editor Canvas 2D) —\ndetalhado no RF15;
-  endif
-  |Pessoa (dona da peça)|
-  repeat while (Outra ação na imagem?) is (sim) not (não)
-elseif (vários itens no Closet)
-  |Frontend (expanded-card · edit-image)|
-  :Closet → "Levar ao estúdio":\nPOST /api/me/pieces/studio;
-  |Serviço (WardrobeService)|
-  :studioAll: até 40 peças sem foto de estúdio\n(ilustração → defaultStudio aprovado;\nfoto → versão aguardando aprovação);
-elseif ("Eu tenho" no Lens)
-  |Frontend (expanded-card · edit-image)|
-  :POST /api/lens/scans/{id}/detections/{did}/own;
-  |Serviço (WardrobeService)|
-  :LensService.own: com itemId liga a detecção\na uma peça própria (404 se não for sua);\nsem itemId devolve /pieces/new?...&from=lens;
-  note right
-    O cadastro pré-preenchido segue o
-    RF4-atividades-v3. A foto do Lens nunca
-    vira a foto da peça.
-  end note
-else (no cadastro — planejado)
-  |Pessoa (dona da peça)|
-  #F2F2F2:<<planejado>> passo "Adicionar minha foto\n(opcional)" no criador: câmera ou galeria, upload\nseguro (tipo real, sem EXIF/GPS, moderação), editor\nguiado do RF15 e escolha da capa (minha foto ×\nfoto oficial — a oficial nunca é editada);
-  note right
-    Plano: docs/novos-rf/RF15_Editor_de_Fotografias.md
-    §8.1 (Fase 0). Hoje o criador salva só com a foto
-    oficial do catálogo ou a ilustração da subcategoria.
-  end note
+:Abre /pieces/new,\n/dna-schemes/[id]/edit,\n/dna-schemes/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/studio/backdrops\nGET /api/taxonomy\nGET /api/pieces/{id}\nGET /api/lens/scans/{id};
+|Pessoa usuária|
+:Cadastrar a peça a partir do\nrascunho analisado;
+|Tela (Next.js)|
+:POST /api/pieces;
+|API (Spring Boot)|
+:WardrobeController.create\n→ WardrobeService.create;
+if (formulario inválido?) then (sim)
+  :400 FORMULARIO_INVALIDO\n«Corrija os campos destacados.»\n→ a tela mostra o aviso;
+  stop
 endif
-|Pessoa (dona da peça)|
-:Vê a peça com a imagem atual\n(e a versão de estúdio em revisão, se houver);
+if (erro?) then (sim)
+  :500 ERRO\n→ a tela mostra o aviso;
+  stop
+endif
+if (foto obrigatória?) then (sim)
+  :400 FOTO_OBRIGATORIA\n«Envie uma foto ou escolha usar a\nimagem padrão da peça.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (conteúdo bloqueado?) then (sim)
+  :400 CONTEUDO_BLOQUEADO\n«A foto viola a política de\nconteúdo e não pode ser usada.»\n→ a tela mostra o aviso;
+  stop
+endif
+|Dados e serviços|
+:Lê: users\npipeline_jobs\nwardrobe_items\nreactions;
+:Usa: Guard.requireCanCreate\nAssetCatalogService.defaultPieceImage\nAssetCatalogService.publicFile\nAssetCatalogService.defaultPieceLogo\nMediaService.put\nMediaService.read (+4);
+:IA: STUDIO_ENHANCER;
+:Grava: wardrobe_items\nquality_scores\nprocessing_jobs_log\nmoderation_queue\npipeline_jobs;
+:Estado: imageUrl → set\nthumbnailUrl → set\noriginalImageUrl → null\nmoderationStatus → APPROVED\nphotoProcessingStatus → COMPLETED\ndefaultImage → true (+10);
+:Evento: PieceCreated\nPieceCapturedFromSession;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (RF4 · Estúdio — leva ao estúdio a…)
+    :POST /api/me/pieces/studio\n→ WardrobeService.studioAll\nlê: wardrobe_items\nusa: Guard.requireCanCreate,\nAssetCatalogService.publicFile,\nAssetCatalogService.defaultPieceLogo …\nia: STUDIO_ENHANCER;
+  case (Substituir a foto da peça [reproc…)
+    :PUT /api/pieces/{id}/image\n→ WardrobeService.replaceImage\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.put …\nia: STUDIO_ENHANCER;
+  case (Reprocessar remoção de fundo)
+    :POST /api/pieces/{id}/background-removal\n→ WardrobeService.removeBackground\nlê: wardrobe_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.read …\nia: FLAT_LAY_STANDARDIZER, STUDIO_ENHANCER;
+  case (RF4 · Estúdio — gera/refaz a foto…)
+    :POST /api/pieces/{id}/studio\n→ WardrobeService.studioPiece\nvalida: ESTUDIO_INDISPONIVEL, NAO_ENCONTRADO,\nSEM_RECORTE\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.read …\nia: STUDIO_ENHANCER;
+  case (RF4 · Estúdio — descarta a versão…)
+    :DELETE /api/pieces/{id}/studio/pending\n→ WardrobeService.discardStudio\nvalida: NADA_A_DESCARTAR\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nMediaService.deleteUrl;
+  endswitch
+  note right
+  Outras ações deste RF:
+  RF4 · Estúdio — aprova a foto…, Nova tentativa de
+  ler a marca…, RF4 · Estúdio — refaz a foto…,
+  Analisar várias fotos de uma…, Cadastrar várias
+  peças de uma…, Editar a peça
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
+endif
+|Pessoa usuária|
 stop
 @enduml

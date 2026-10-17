@@ -3,6 +3,8 @@ import type { ReactNode } from "react";
 import { mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 
+import {ProfileLevelProgress,type LevelProgress} from "./profile-level-progress";
+
 export interface ProfileCounts { pieces?: number; schemes?: number; followers?: number; following?: number }
 
 /**
@@ -13,10 +15,10 @@ export interface ProfileCounts { pieces?: number; schemes?: number; followers?: 
  * `hype` (RF53 · Lote A1): o Hype agregado do criador ou da marca (HypeGroupBadge "header"), logo abaixo da categoria;
  * quando o agregado não tem base, o próprio componente não desenha nada.
  */
-export function ProfileHeader({ photoUrl, photo, username, displayName, verified, kindLabel, category, bio, link, counts, actions, onCounts, cover, hype }: {
+export function ProfileHeader({ photoUrl, photo, username, displayName, verified, kindLabel, category, bio, link, counts, actions, onCounts, cover, hype, levelProgress }: {
   photoUrl?: string | null; photo?: ReactNode; username: string; displayName: string; verified?: boolean; kindLabel?: string; category?: string | null;
   bio?: string | null; link?: { href: string; label: string } | null; counts: ProfileCounts; actions?: ReactNode;
-  onCounts?: (which: "followers" | "following") => void; cover?: string | null; hype?: ReactNode;
+  onCounts?: (which: "followers" | "following") => void; cover?: string | null; hype?: ReactNode; levelProgress?: LevelProgress | null;
 }) {
   const { fmtNumber, t } = useI18n();
   const stat = (n: number | undefined, label: string, which?: "followers" | "following") => {
@@ -53,6 +55,7 @@ export function ProfileHeader({ photoUrl, photo, username, displayName, verified
         <div className="col-span-2 min-w-0 sm:col-span-1 sm:col-start-2">
           <p className="text-[14px] font-semibold text-ink">{displayName}</p>
           {category && <p className="text-[14px] text-muted">{category}</p>}
+          {levelProgress&&<ProfileLevelProgress progress={levelProgress}/>}
           {hype && <div className="profile-header-hype">{hype}</div>}
           {bio && <p className="whitespace-pre-line text-[14px] text-ink">{bio}</p>}
           {link && <a href={link.href} target="_blank" rel="noreferrer" className="text-[14px] font-semibold text-ink underline">{link.label}</a>}

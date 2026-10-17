@@ -249,9 +249,10 @@ export function RoomDoor({ position, rotation, onClick, night }: { position: [nu
 export function Lamp({ position, on, intensity = 1 }: { position: [number, number, number]; on: boolean; intensity?: number }) {
   return (
     <group position={position}>
-      <mesh position={[0, 0.3, 0]}><cylinderGeometry args={[0.012, 0.012, 0.6, 8]} /><meshStandardMaterial color="#6b5a4a" /></mesh>
-      <mesh position={[0, 0.01, 0]}><cylinderGeometry args={[0.1, 0.12, 0.02, 20]} /><meshStandardMaterial color="#6b5a4a" /></mesh>
+      <mesh position={[0, 0.3, 0]}><cylinderGeometry args={[0.012, 0.012, 0.6, 8]} /><meshStandardMaterial color="#C9A227" metalness={0.72} roughness={0.28} /></mesh>
+      <mesh position={[0, 0.01, 0]}><cylinderGeometry args={[0.1, 0.12, 0.02, 20]} /><meshStandardMaterial color="#1245a8" roughness={0.55} /></mesh>
       <mesh position={[0, 0.66, 0]}><cylinderGeometry args={[0.1, 0.16, 0.18, 24, 1, true]} /><meshStandardMaterial color="#f3e2c1" emissive={on ? "#ffcf8a" : "#000"} emissiveIntensity={on ? 0.9 : 0} side={THREE.DoubleSide} /></mesh>
+      <mesh position={[0, 0.57, 0]}><torusGeometry args={[0.13, 0.012, 8, 24]} /><meshStandardMaterial color="#f58220" roughness={0.4} /></mesh>
       {on && <pointLight position={[0, 0.6, 0]} intensity={2.2 * intensity} distance={3.5} color="#ffcf8a" />}
     </group>
   );

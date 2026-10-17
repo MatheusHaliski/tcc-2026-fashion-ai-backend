@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { api, mediaUrl, type ApiError } from "@/lib/api/client";
 import type { PieceView, SchemeView } from "@/lib/api/types";
 import type { CatalogCardImage } from "@/lib/api/catalog";
-import { CatalogPhoto, pieceCatalogCrop, photoAspect } from "@/components/catalog/catalog-photo";
+import { MediaImage } from "@/components/media-image";
+import { CatalogPhoto, pieceCatalogCrop, pieceCatalogSource, photoAspect } from "@/components/catalog/catalog-photo";
 import { useAuth } from "@/lib/auth/session";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
@@ -108,13 +109,13 @@ function ChangeList({ value }: { value: unknown }) {
 
 interface PieceDetail { piece?: PieceView; notAvailableAnymore?: boolean; snapshot?: Record<string, unknown>; fromSchemeId?: string | null; originSchemes?: { schemeId: string; title: string; coverImageUrl?: string }[]; location?: { label?: string; address?: string }; canEdit?: boolean }
 
-type Slide = { key: string; src: string; alt: string; caption: string; fit: "contain" | "cover"; backdrop?: { center: string; edge: string }; crop?: CatalogCardImage | null };
+type Slide = { alternatives?: (string | null | undefined)[]; key: string; src: string; alt: string; caption: string; fit: "contain" | "cover"; backdrop?: { center: string; edge: string }; crop?: CatalogCardImage | null };
 
 /**
  * Fotos da peça: a foto de produto aprovada primeiro (inteira, sem corte); depois, se houver, a foto no manequim. A
  * foto de estúdio fica contida no quadro 4:5 e o degradê do estúdio continua além dela, sem emenda nem tarja.
  */
-function PieceGallery({ slides, onOpen }: { slides: Slide[]; onOpen: (i: number) => void }) {
+function PieceGallery({ slides, onOpen, overlay }: { slides: Slide[]; onOpen: (i: number) => void; overlay?: ReactNode }) {
   const { t } = useI18n();
   const [i, setI] = useState(0); const [bg, setBg] = useState<string | undefined>(undefined);
   const slideRef = useRef<HTMLButtonElement>(null); const imgRef = useRef<HTMLImageElement>(null);
@@ -133,7 +134,8 @@ function PieceGallery({ slides, onOpen }: { slides: Slide[]; onOpen: (i: number)
   return (
     <div className="pd-gallery" role="group" aria-roledescription={t("pieceDetail.carrossel")} aria-label={t("pieceDetail.fotos")}>
       <button ref={slideRef} type="button" className={s.crop ? "pd-slide is-catalog-crop" : "pd-slide"} style={{ ...(s.backdrop ? { background: bg ?? s.backdrop.edge } : {}), ...(s.crop ? { aspectRatio: photoAspect(s.crop.aspect) } : {}) }} onClick={() => onOpen(k)} aria-label={t("pieceDetail.ampliar", { name: s.alt })}>
-        {s.crop ? <CatalogPhoto image={s.crop} alt="" /> : <img ref={imgRef} src={s.src} alt="" className={s.fit === "contain" ? "is-contain" : "is-cover"} onLoad={measure} />}
+        {s.crop ? <CatalogPhoto requiredFrame image={s.crop} alternatives={s.alternatives} alt="" /> : <MediaImage ref={imgRef} src={s.src} fallbackSources={s.alternatives} alt="" className={s.fit === "contain" ? "is-contain" : "is-cover"} onLoad={measure} />}
+        {overlay}
       </button>
       {n > 1 && (
         <>
@@ -163,6 +165,15 @@ function LookHype({ id }: { id: string }) {
   return <HypeBadge state={hypeViewState(summary, { loading, error })} summary={summary} className="shrink-0" />;
 }
 
+import { CardBorder } from "@/components/card-border";
+import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
+import {useFashionDepth} from "@/lib/hype/use-fashion-depth";
+import {FashionMotionButton} from "@/components/hype/fashion-motion-button";
+import {FashionCardHeader,FashionCardStats} from "@/components/hype/fashion-card-panel";
+import {fashionCardLevel} from "@/lib/hype/fashion-card";
+import { AuraHype } from "@/components/hype/aura-hype";
+import { useTheme } from "@/lib/theme/theme";
+
 export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }: { id: string; from?: string | null; headerExtra?: ReactNode; onScheme?: (schemeId: string) => void; startEditing?: boolean }) {
   const { t, fmtMoney, fmtDate } = useI18n(); const { user } = useAuth(); const toast = useToast(); const router = useRouter();
   const { data, loading, error, reload, setData } = useApi<PieceDetail>((signal) => api.get(`/api/pieces/${id}${from ? `?fromScheme=${from}` : ""}`, { signal, anonymous: !user }), [id, from, !!user]);
@@ -172,6 +183,11 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const [editing, setEditing] = useState(false); const [form, setForm] = useState<PieceFormValue>(EMPTY_PIECE); const [saving, setSaving] = useState(false); const [saveError, setSaveError] = useState<ApiError | null>(null); const savingRef = useRef(false); const [editErrors, setEditErrors] = useState<Record<string, string>>({}); const tax = useTaxonomy();
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; impact?: { schemes?: SchemeView[]; count?: number; message?: string } }>({ open: false });
   const replaceRef = useRef<HTMLInputElement>(null);
+  const { prefs } = useTheme();
+  const auraMode = data?.piece?.background?.auraHype as string | undefined;
+  const auraEnabled = !!prefs.auraHype || !!auraMode && auraMode !== "OFF";
+  const depth = useFashionDepth(auraEnabled);
+  const hype = useHypeSummary("PIECE", id, auraEnabled, auraEnabled);
   const p = data?.piece; const mine = !!user && p?.owner?.id === user.id;
   const model = useModel3d(id, { enabled: !!p && mine && !p.defaultImage, onCompleted: () => reload() });
   const [artRef, inView] = useInView<HTMLElement>();
@@ -222,8 +238,8 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const framing = ((p.flatLayMetadata as { studio?: { framing?: StudioInfo["framing"] } } | undefined)?.studio?.framing) ?? null;
   // a foto de produto aprovada, inteira (a variante enquadrada é só para o feed); sem estúdio, o recorte contido
   const product: Slide = p.studioImageUrl
-    ? { key: "product", src: mediaUrl(p.studioImageUrl)!, alt: t("pieces.id.estudio", { name: p.name }), caption: t("pieceDetail.slide_produto"), fit: "contain", backdrop: { center: backdropCenter(backdrops, p.studioBackdrop), edge } }
-    : { key: "product", src: (mediaUrl(p.imageUrl) ?? mediaUrl(p.thumbnailUrl))!, alt: p.name, caption: t("pieceDetail.slide_produto"), fit: "contain", crop: pieceCatalogCrop(p) };
+    ? { key: "product", src: mediaUrl(p.studioImageUrl)!, alt: t("pieces.id.estudio", { name: p.name }), caption: t("pieceDetail.slide_produto"), fit: "contain", alternatives: [p.imageUrl, p.thumbnailUrl, pieceCatalogSource(p)], backdrop: { center: backdropCenter(backdrops, p.studioBackdrop), edge } }
+    : { key: "product", src: (mediaUrl(p.imageUrl) ?? mediaUrl(p.thumbnailUrl))!, alt: p.name, caption: t("pieceDetail.slide_produto"), fit: "contain", alternatives: [p.thumbnailUrl, p.imageUrl, pieceCatalogSource(p)], crop: pieceCatalogCrop(p) };
   const slides: Slide[] = [product, ...(p.mannequinImageUrl ? [{ key: "mannequin", src: mediaUrl(p.mannequinImageUrl)!, alt: t("pieces.id.no_manequim", { name: p.name, value: "" }), caption: t("pieceDetail.slide_manequim"), fit: "contain" as const }] : [])];
   // tela cheia: as fotos do carrossel e, só quando há logo de marca de verdade, o detalhe do logo
   const gallery = [
@@ -249,7 +265,7 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
     ? <><Link href={mirrorHref({ piece: p.id })} className="btn btn-primary pd-cta">{t("pieceDetail.add_to_look")}</Link>
         <button type="button" className="pd-alt" onClick={() => setMannequin3d(true)}>{t("pieceDetail.ou_experimente")}</button></>
     : <><Button variant="primary" className="pd-cta" onClick={() => setMannequin3d(true)}>{t("pieceDetail.experimentar")}</Button>
-        <button type="button" className="pd-alt" onClick={copyToWardrobe}>{t("pieceDetail.ou_guarde_copia")}</button></>;
+        </>;
   const more: MenuItem[] = [
     { label: t("pieceDetail.editar_dados"), icon: <FaiIcon id="SOC-11" size={20} decorative />, onSelect: startEdit, hidden: !mine },
     { label: t("pieceDetail.editar_imagem"), icon: <FaiIcon id="NAV-10" size={20} decorative />, onSelect: () => setEditImage(true), hidden: !mine || p.defaultImage && !p.imageUrl },
@@ -270,13 +286,18 @@ export function ExpandedPiece({ id, from, headerExtra, onScheme, startEditing }:
   const skin = (p.background?.skin as string | undefined) ?? null;
   return (
     <>
-      <article {...surface} ref={artRef} data-inview={inView} className={`fai-card is-expanded piece-detail ${surface.className}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={p.name}>
+      <article {...surface} ref={node=>{artRef(node);depth.ref.current=node;}} {...depth.events} data-inview={inView} data-fashion-level={auraEnabled?(fashionCardLevel(hype.summary)??"PENDING"):undefined} className={`fai-card is-expanded piece-detail ${auraEnabled?"is-fashion-hype":""} ${surface.className}`} style={{ ...(skin ? skinStyle(skin) : {}), ...surface.style }} aria-label={p.name}>
+        <CardBorder entityId={`PIECE:${p.id}`} background={p.background} auraHype={auraEnabled} hype={hypeViewState(hype.summary,hype)}/>
+        {auraEnabled&&<span className="fashion-depth-glare" aria-hidden/>}
         <ArtStage bg={p.background} art={art} density="expanded" pieceHex={p.colorHex} />
         <div className="pc-frame"><div className="pc-content">
         <CardHeader owner={p.owner} sub={vis} trailing={headerExtra} />
         <div className="pd-layout">
-          <div className="pd-media">
-            <PieceGallery key={p.id + (p.studioImageUrl ?? "") + (p.mannequinImageUrl ?? "")} slides={slides} onOpen={setFullscreen} />
+          <div className="pd-media relative">
+            {auraEnabled&&<FashionMotionButton available={depth.sensorAvailable} on={depth.sensorOn} error={depth.sensorError} onToggle={()=>void depth.toggleSensor()}/>}
+            {auraEnabled&&<FashionCardHeader summary={hype.summary} state={hypeViewState(hype.summary,hype)}/>}
+            <PieceGallery key={p.id + (p.studioImageUrl ?? "") + (p.mannequinImageUrl ?? "")} slides={slides} onOpen={setFullscreen} overlay={<><AuraMetamorphose mode={p.background?.auraMetamorphose as string | undefined} presetId={p.background?.auraMetamorphosePreset as string | undefined}/>{auraEnabled && <AuraHype state={hypeViewState(hype.summary,hype)} summary={hype.summary} mode={auraMode} showScore={false}/>}</>} />
+            {auraEnabled&&<FashionCardStats name={p.name} summary={hype.summary} styles={(p.style??[]).map(label)}/>}
             {studioBusy && <div className="pd-busy" aria-live="polite">{t("common.montando_o_estudio")}</div>}
           </div>
           <div className="pd-info">

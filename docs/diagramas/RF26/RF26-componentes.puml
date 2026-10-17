@@ -29,33 +29,36 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF26 — Explorador Global: painel por país, marcas & lojas e insights\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF26 — Explorador Global: painel por país, marcas & lojas e insights\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
   component "/explorer\n(site)/(app)/explorer/page.tsx" as FE0
   component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {
-  component "DiscoveryController\n/api/explorer/brands\n/api/explorer/global\n/api/explorer/insights" as DiscoveryController
+  component "DiscoveryController\n/api/explorer/brands\n/api/explorer/global\n/api/explorer/insights\n/api/public-pieces" as DiscoveryController
   component "HypeController\n/api/hype/trending" as HypeController
 }
 package "fai-application (casos de uso)" {
+  component "SearchService" as SearchService
   component "ExplorerService" as ExplorerService
   component "HypeQueryService" as HypeQueryService
+  component "SchemeService" as SchemeService <<apoio>>
+  component "ChallengeService" as ChallengeService <<apoio>>
   component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
   component "WardrobeService" as WardrobeService <<apoio>>
-  component "SchemeService" as SchemeService <<apoio>>
   component "HypeCache" as HypeCache <<apoio>>
   component "AnalyticsQueryPort\n«MysqlAnalyticsAdapter»" as AnalyticsQueryPort <<port>>
 }
 package "fai-domain (repositórios)" {
-  component "BrandProfileRepository\nSealBondRepository\nHypeScoreCurrentRepository\nWardrobeItemRepository\nSchemeRepository\nHypeScoreSnapshotRepository\nSchemeItemRepository\nStyleDnaRepository" as REPO_MySQL
+  component "SchemeRepository\nSchemeItemRepository\nWardrobeItemRepository\nUserRepository\nBrandProfileRepository\nCelebrityProfileRepository\nFollowRepository\nShareRepository\nSealBondRepository\nStyleDnaRepository\n(+3)" as REPO_MySQL
 }
-database "MySQL\n• brand_profiles\n• hype_score_snapshots\n• hype_scores\n• scheme_items\n• schemes\n• seal_bonds\n• style_dna\n• wardrobe_items" as DB_MySQL
+database "MySQL\n• brand_profiles\n• brands\n• celebrity_profiles\n• follows\n• hype_score_snapshots\n• hype_scores\n• scheme_items\n• schemes\n• seal_bonds\n• shares\n• style_dna\n• users\n(+1)" as DB_MySQL
 cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
 APIC --> DiscoveryController : HTTPS/JSON
 APIC --> HypeController : HTTPS/JSON
 DiscoveryController --> ExplorerService
+DiscoveryController --> SearchService
 ExplorerService --> AI
 ExplorerService --> AnalyticsQueryPort
 ExplorerService --> REPO_MySQL
@@ -68,4 +71,8 @@ HypeQueryService ..> HypeScoreConfig
 HypeQueryService ..> SchemeService
 HypeQueryService ..> WardrobeService
 REPO_MySQL --> DB_MySQL : JPA/Flyway
+SearchService --> REPO_MySQL
+SearchService ..> ChallengeService
+SearchService ..> HypeScoreConfig
+SearchService ..> SchemeService
 @enduml

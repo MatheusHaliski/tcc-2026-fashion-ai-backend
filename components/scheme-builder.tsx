@@ -92,7 +92,8 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
   };
   const go = (i: number) => { if (i === 2 && !form.title.trim()) setForm((f) => ({ ...f, title: selected.map((s) => byId.get(s.id)?.name).filter(Boolean).slice(0, 3).join(" + ").slice(0, 120) })); setStep(i); if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" }); };
   // navegação livre (RF5): voltar sempre; avançar para qualquer etapa cujo pré-requisito já está cumprido
-  const canGo = (i: number) => i < step || i <= 1 || (selected.length >= 2 && (i === 2 || !!form.title.trim()));
+  const enoughPieces = selected.length >= 2 || selected.length === 1 && selected[0].slot === "FULL_BODY";
+  const canGo = (i: number) => i < step || i <= 1 || (enoughPieces && (i === 2 || !!form.title.trim()));
   const payload = () => ({ ...form, tags: form.tags.split(",").map((s) => s.trim()).filter(Boolean), season: form.season || null, mood: form.mood || null, items: selected.map((s, i) => ({ wardrobeItemId: s.id, slot: s.slot, sortOrder: i })), seals: [], creationMode: mode === "ai" ? "AI_ASSISTED" : "MANUAL", background: { scheme: { ...bg, layoutAnatomy: anatomy, photo: { url: photo.url ?? null } }, pieces: { anatomy: pieceAnatomy } }, cardSkin: skin, layoutAnatomy: anatomy });
   async function uploadPhoto(file: File) {
     const fd = new FormData(); fd.append("file", file);
@@ -210,7 +211,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
             {Object.entries(b.lists).map(([cat, list]) => list.length > 0 && (
               <section key={cat} className="mb-5"><h3 className="type-h3 mb-2">{label(cat)}</h3><div className="grid-cards">{list.map((p) => <PieceCard key={p.id} piece={p} selectable selected={selected.some((s) => s.id === p.id)} onSelect={toggle} />)}</div></section>
             ))}
-            <div className="flex justify-between"><Button onClick={() => go(0)}>{t("common.back")}</Button><Button variant="primary" disabled={selected.length < 2} onClick={() => go(2)}>{t("common.next")}</Button></div>
+            <div className="flex justify-between"><Button onClick={() => go(0)}>{t("common.back")}</Button><Button variant="primary" disabled={!enoughPieces} onClick={() => go(2)}>{t("common.next")}</Button></div>
           </div>
         )}
         {step === 2 && (
@@ -231,7 +232,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
               </div>
             </Field>
             <div className="sm:col-span-2"><Switch checked={form.lookDoDia} onChange={(v) => setForm({ ...form, lookDoDia: v })} label={t("scheme.dailyLook")} /></div>
-            <div className="sm:col-span-2 flex flex-wrap justify-between gap-2"><Button onClick={() => go(1)}>{t("common.back")}</Button><Button disabled={!form.title.trim() || !sealVerification.valid} onClick={() => go(3)}>{t("builder.step.appearance")}</Button><Button variant="primary" disabled={!form.title.trim() || !sealVerification.valid} onClick={() => go(4)}>{t("builder.step.review")}</Button></div>
+            <div className="sm:col-span-2 flex flex-wrap justify-between gap-2"><Button onClick={() => go(1)}>{t("common.back")}</Button><Button variant="primary" disabled={!form.title.trim() || !sealVerification.valid} onClick={() => go(4)}>{t("builder.step.review")}</Button></div>
           </div>
         )}
         {step === 3 && (<div>{artNote && <p className="mb-3 type-body-sm text-muted" aria-live="polite">{artNote}</p>}<BackgroundStudio value={bg} onChange={setBg} skin={skin} onSkin={setSkin} anatomy={anatomy} onAnatomy={setAnatomy} pieceAnatomy={pieceAnatomy} onPieceAnatomy={setPieceAnatomy} styles={form.style} occasions={form.occasion} season={form.season || null} /><div className="mt-3 flex flex-wrap justify-between gap-2"><Button onClick={() => go(2)}>{t("common.back")}</Button><Button variant="primary" onClick={() => go(4)}>{t("builder.step.review")}</Button></div></div>)}
@@ -240,7 +241,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
             <h3 className="type-h3 mb-2">{t("scheme.pieces")} ({selected.length})</h3>
             <div className="mb-4 grid gap-2">{selected.map((s) => { const p = byId.get(s.id); return (
               <div key={s.id} className="list-row flex items-center gap-3"><img src={mediaUrl(p?.thumbnailUrl ?? p?.imageUrl)} alt="" className="h-10 w-10 rounded object-contain bg-surface-2" /><span className="min-w-0 flex-1"><span className="block truncate">{p?.name ?? s.id}</span><PieceHypeTag id={s.id} /></span><span className="badge shrink-0">{SLOT_LABEL[s.slot] ?? s.slot}</span><SlotBrand piece={p} />
-                <Button size="sm" variant="ghost" aria-label={t("common.remove")} disabled={selected.length <= 2} onClick={() => setSelected((arr) => arr.filter((x) => x.id !== s.id))}>✕</Button></div>); })}</div>
+                <Button size="sm" variant="ghost" aria-label={t("common.remove")} disabled={selected.length <= 1} onClick={() => setSelected((arr) => arr.filter((x) => x.id !== s.id))}>✕</Button></div>); })}</div>
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => go(2)}>{t("common.back")}</Button>
               <Button onClick={() => go(3)}>{t("builder.step.appearance")}</Button>

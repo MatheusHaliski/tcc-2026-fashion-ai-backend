@@ -1,4 +1,8 @@
 "use client";
+import { CardBorder } from "@/components/card-border";
+import { AuraHype } from "@/components/hype/aura-hype";
+import { AuraMetamorphose } from "@/components/hype/aura-metamorphose";
+import { useTheme } from "@/lib/theme/theme";
 import Link from "next/link";
 import { MediaImage } from "@/components/media-image";
 import { useState, type ReactNode } from "react";
@@ -185,7 +189,11 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   const detail = useDetailModal();
   const preview = href === "#";
   const flippable = flip && !preview && !expanded;
-  const hype = useHypeSummary("SCHEME", scheme.id, !preview);
+  const { prefs } = useTheme();
+  const studio = studioOf(scheme.background);
+  const auraMode = studio.auraHype ?? undefined;
+  const auraEnabled = !!prefs.auraHype || !!auraMode && auraMode !== "OFF";
+  const hype = useHypeSummary("SCHEME", scheme.id, !preview, auraEnabled);
   const hypeState = hypeViewState(hype.summary, hype);
   const [analysis, setAnalysis] = useState(false);
   // Clique no título abre o modal com o esquema ampliado (RF7); a página continua acessível por nova aba.
@@ -213,7 +221,6 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
   // RF53: os Selos de Hype do look (do resumo de Hype já carregado) entram no mesmo espaço dos selos de marca, no máx. 2
   const lookSeals = withHypeSeals(badges, hypeSealCodes(hype.summary)) ?? badges;
   // Arte do Background Studio fica no palco do card, atrás do container (passe-partout) — nunca sobre a foto do conjunto.
-  const studio = studioOf(scheme.background);
   const art = ownArt ? null : resolveCardArt(scheme.background, { season: scheme.season });
   const hasArt = !!art && art.kind !== "none";
   const boxColor = containerColorOf(scheme.cardSkin, scheme.containerColor ?? studio.container?.color);
@@ -253,7 +260,8 @@ export function SchemeCard({ scheme, layout, href, compact, seals, expanded, onP
     <article className={`fai-card ${hasArt ? "has-art" : ""} ${compact ? "is-compact" : ""} ${expanded ? "is-expanded" : ""} ${preview ? "is-preview" : ""}`} style={{ ...skinStyle(scheme.cardSkin), ...stageVars }} aria-label={scheme.title} data-art={art?.label}>
       <CardHeader owner={scheme.owner} linked={!preview} sub={<>{relative(scheme.publishedAt ?? scheme.createdAt)} · {vis}</>}
         trailing={<>{scheme.lookDoDia && <span className="badge badge-chalk">{t("lookbook.daily")}</span>}{!preview && <PostMenu scheme={scheme} remixInRow={expanded} />}{headerExtra}</>} />
-      <div className="scheme-stage">
+      <CardBorder entityId={`SCHEME:${scheme.id}`} background={{...scheme.background,...studio}} auraHype={auraEnabled} hype={hypeState}/>
+      <div className="scheme-stage"><AuraMetamorphose mode={studio.auraMetamorphose} presetId={studio.auraMetamorphosePreset} preview={!expanded}/>{auraEnabled&&<AuraHype state={hypeState} summary={hype.summary} mode={auraMode} preview={preview}/>}
         {hasArt && art && <CardArtLayer art={art} />}
         {compact ? (
           <div className="scheme-container is-compact" data-anatomy={anatomy} data-piece-anatomy={pieceAnatomy} style={boxTone}>

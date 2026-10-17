@@ -24,11 +24,11 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF28 (no código: RF33) — Smart Mirror 'Vista-me'\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF28 (no código: RF33) — Smart Mirror 'Vista-me'\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /mirror, /room;
+:Abre /room;
 |Tela (Next.js)|
 :Carrega os dados da tela\nGET /api/me/mirror\nGET /api/me/mirror/wardrobe\nGET /api/me/mirror/suggestions\nGET /api/me/mirror/grwm;
 |Pessoa usuária|
@@ -43,7 +43,7 @@ if (peça obrigatória?) then (sim)
 endif
 |Dados e serviços|
 :Lê: mirror_states\nwardrobe_items\nstyle_dna;
-:Usa: WardrobeService.owned\nRoomService.locateAll;
+:Usa: WardrobeService.owned\nRoomService.locateAll\nLookScorer.scoreLooks;
 :Grava: mirror_states;
 :Evento: MirrorAction;
 |Tela (Next.js)|
@@ -52,13 +52,13 @@ endif
 if (Faz outra ação?) then (sim)
   switch (Qual?)
   case (Tirar uma peça)
-    :DELETE /api/me/mirror/pieces/{pieceId}\n→ MirrorService.remove\nlê: mirror_states, wardrobe_items, style_dna\nusa: RoomService.locateAll\ngrava: mirror_states;
+    :DELETE /api/me/mirror/pieces/{pieceId}\n→ MirrorService.remove\nlê: mirror_states, wardrobe_items, style_dna\nusa: RoomService.locateAll, LookScorer.scoreLooks\ngrava: mirror_states;
   case (Vista-me: look completo a partir…)
-    :POST /api/me/mirror/vista-me\n→ MirrorService.vistaMe\nvalida: ACERVO_SEM_SUPERIOR, SEM_COMBINACAO_NOVA\nlê: mirror_states, wardrobe_items, style_dna\nusa: RoomService.outOfSeason,\nWardrobeService.eligible,\nRoomService.locateAll\nia: COPILOT, SCHEME_COMPOSER;
+    :POST /api/me/mirror/vista-me\n→ MirrorService.vistaMe\nvalida: ACERVO_SEM_SUPERIOR, SEM_COMBINACAO_NOVA\nlê: mirror_states, wardrobe_items, style_dna\nusa: RoomService.outOfSeason,\nWardrobeService.eligible,\nRoomService.locateAll …\nia: COPILOT, SCHEME_COMPOSER;
+  case (Limpar o espelho)
+    :DELETE /api/me/mirror\n→ MirrorService.clear\nlê: mirror_states, wardrobe_items, style_dna\nusa: RoomService.locateAll, LookScorer.scoreLooks\ngrava: mirror_states;
   case (Trocar só uma peça do look)
     :POST /api/me/mirror/slots/{slot}/swap\n→ MirrorService.swap\nvalida: SEM_CANDIDATAS, SLOT_INVALIDO\nlê: mirror_states, wardrobe_items\nusa: RoomService.outOfSeason,\nWardrobeService.eligible,\nRoomService.locateAll\nia: SCHEME_COMPOSER;
-  case (Limpar o espelho)
-    :DELETE /api/me/mirror\n→ MirrorService.clear\nlê: mirror_states, wardrobe_items, style_dna\nusa: RoomService.locateAll\ngrava: mirror_states;
   case (Levar o look do espelho para o ed…)
     :POST /api/me/mirror/draft\n→ MirrorService.draft\nlê: mirror_states\ngrava: mirror_states;
   endswitch
@@ -66,7 +66,8 @@ if (Faz outra ação?) then (sim)
   Outras ações deste RF:
   Outro look com o mesmo pedido, Usar o look de hoje
   (Look do…, Salvar o look do espelho como…, 'Tira
-  uma coisa': simplificar…
+  uma coisa': simplificar…, QUARTO-ESPELHO — Levar a
+  peça…, QUARTO-ESPELHO — Tirar a peça…
   end note
   |Tela (Next.js)|
   :Atualiza a tela;

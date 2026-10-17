@@ -188,6 +188,14 @@ public class SealController {
         return seals.revoke(user, bondId, body == null ? null : body.reason());
     }
 
+    public record AdminCouponRequest(UUID issuerId, SealService.PromotionForm promotion) { }
+
+    @PostMapping("/api/admin/coupons")
+    @ResponseStatus(HttpStatus.CREATED)
+    public Map<String, Object> createAdminCoupon(CurrentUser user, @RequestBody AdminCouponRequest request) {
+        return seals.createAdminPromotion(user, request.issuerId(), request.promotion());
+    }
+
     @PostMapping("/api/promotions")
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "RF22 — Criar promoção/benefício ligado a selo")

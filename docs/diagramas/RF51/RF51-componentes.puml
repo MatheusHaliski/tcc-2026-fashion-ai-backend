@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF51 — Cartela sazonal e animação no modal do Background Studio\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF51 — Cartela sazonal e animação no modal do Background Studio\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "components" {
   component "scheme-builder.tsx" as m_components_scheme_builder_tsx
@@ -47,7 +47,7 @@ package "lib" {
   component "card-art.ts" as m_lib_card_art_ts
 }
 package "components/hype" {
-  component "hype-seals.tsx" as m_components_hype_hype_seals_tsx <<apoio>>
+  component "look-hype-preview.tsx" as m_components_hype_look_hype_preview_tsx <<apoio>>
 }
 package "Backend (Spring Boot)" {
   component "BackgroundController" as BackgroundController
@@ -79,6 +79,7 @@ m_components_background_studio_tsx --> m_components_scheme_anatomies_tsx
 m_components_background_studio_tsx --> m_lib_card_art_ts
 m_components_card_art_tsx --> m_lib_card_art_ts
 m_components_dna_builder_tsx --> DnaController : HTTPS
+m_components_dna_builder_tsx --> SealController : HTTPS
 m_components_dna_builder_tsx --> m_components_background_studio_tsx
 m_components_dna_builder_tsx --> m_components_brand_logo_tsx
 m_components_dna_builder_tsx --> m_components_dna_card_tsx
@@ -95,10 +96,12 @@ m_components_expanded_card_tsx --> WardrobeController : HTTPS
 m_components_expanded_card_tsx --> m_components_brand_logo_tsx
 m_components_expanded_card_tsx --> m_components_dna_card_tsx
 m_components_expanded_card_tsx --> m_components_piece_art_editor_tsx
+m_components_hype_look_hype_preview_tsx --> SchemeController : HTTPS
 m_components_piece_art_editor_tsx --> m_components_background_studio_tsx
 m_components_piece_art_editor_tsx --> m_lib_card_art_ts
 m_components_scheme_anatomies_tsx --> m_components_brand_logo_tsx
 m_components_scheme_anatomies_tsx --> m_components_card_art_tsx
+m_components_scheme_anatomies_tsx --> m_components_hype_look_hype_preview_tsx
 m_components_scheme_anatomies_tsx --> m_lib_card_art_ts
 m_components_scheme_builder_tsx --> SchemeController : HTTPS
 m_components_scheme_builder_tsx --> SealController : HTTPS
@@ -106,6 +109,6 @@ m_components_scheme_builder_tsx --> m_components_ai_compositions_tsx
 m_components_scheme_builder_tsx --> m_components_background_studio_tsx
 m_components_scheme_builder_tsx --> m_components_brand_logo_tsx
 m_components_scheme_builder_tsx --> m_components_expanded_card_tsx
-m_components_scheme_builder_tsx --> m_components_hype_hype_seals_tsx
+m_components_scheme_builder_tsx --> m_components_hype_look_hype_preview_tsx
 m_components_scheme_builder_tsx --> m_lib_card_art_ts
 @enduml

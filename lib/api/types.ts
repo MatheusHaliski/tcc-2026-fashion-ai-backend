@@ -1,3 +1,4 @@
+import type {FashionCard,AuraContextMetadata} from "@/lib/fashion-card/types";
 /** Tipos espelhando os records do backend (Views.java e serviços). Campos opcionais quando o backend pode omitir. */
 export interface UserCard {
   id: string; username: string; displayName: string; avatarUrl?: string | null; profileType: "PESSOAL" | "MARCA" | "CELEBRIDADE" | "ADMIN";
@@ -14,10 +15,12 @@ export interface Me {
   deletionScheduledFor?: string | null; lookDoDiaPanelVersion?: string;
   /** RF1 — sexo do manequim (Passarela 3D / provador) e saída da Passarela 3D. */
   sex?: "FEMININO" | "MASCULINO" | null; runwayOptOut?: boolean; pronouns?: string | null; links?: { title: string; url: string }[]; [k: string]: unknown;
+  auraHypeEnabled?: boolean;
 }
 export interface Counters { likes: number; comments: number; shares: number; remixes: number; views: number; saves: number; reactions: Record<string, number>; }
 export interface ViewerState { liked: boolean; reactions: string[]; saved: boolean; canEdit: boolean; following: boolean; }
 export interface PieceView {
+  fashionCard?: FashionCard | null; auraPresetId?: string | null; auraContext?: AuraContextMetadata | null;
   id: string; owner: UserCard; name: string; category: string; subcategory: string; sex: string; brandName?: string | null; brandId?: string | null;
   brandLogoUrl?: string | null; brandSource?: string | null; color: string; colorHex?: string | null; material?: string; size?: string; market?: string; style: string[]; occasion: string[];
   seals: string[]; price?: number | null; imageUrl?: string | null; originalImageUrl?: string | null; thumbnailUrl?: string | null; defaultImage: boolean;
@@ -42,6 +45,7 @@ export interface PieceView {
 export interface SchemeItemView { id?: string; wardrobeItemId: string; slot: string; sortOrder?: number; zIndex?: number; piece?: PieceView | null; name?: string; imageUrl?: string | null; [k: string]: unknown; }
 export interface TipoLook { id: string; codigo: string; nome: string; }
 export interface SchemeView {
+  fashionCard?: FashionCard | null; auraPresetId?: string | null; auraContext?: AuraContextMetadata | null;
   tipoLook?: TipoLook | null;
   id: string; owner: UserCard; title: string; description?: string | null; creationMode: string; origin: string; style: string[]; occasion: string[];
   season?: string | null; mood?: string | null; visibility: string; status: string; displayMode?: string; disponivel: boolean; lookDoDia: boolean;

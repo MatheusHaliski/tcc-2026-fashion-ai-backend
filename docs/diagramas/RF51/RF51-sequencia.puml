@@ -21,17 +21,19 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF51 — Cartela sazonal e animação no modal do Background Studio\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF51 — Cartela sazonal e animação no modal do Background Studio\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 participant "lib/card-art.ts" as lib_card_art_ts
 participant "lib/i18n/i18n.tsx" as lib_i18n_i18n_tsx
+participant "lib/aura-fashion.ts" as lib_aura_fashion_ts
 boundary "c/scheme-builder.tsx" as c_scheme_builder_tsx
 participant "c/ui/index.tsx" as c_ui_index_tsx
 participant "lib/api/taxonomy.ts" as lib_api_taxonomy_ts
 participant "lib/hooks/use-api.ts" as lib_hooks_use_api_ts
 participant "API (Spring Boot)" as API
 participant "lib/hooks/use-undo.ts" as lib_hooks_use_undo_ts
+participant "c/look-seal-verification.tsx" as c_look_seal_verification_tsx
 participant "lib/api/client.ts" as lib_api_client_ts
 participant "SchemeService" as SchemeService
 participant "Guard" as Guard
@@ -71,6 +73,10 @@ end
 opt ai || upload
 lib_card_art_ts --> U : encerra
 end
+lib_card_art_ts -> lib_aura_fashion_ts : fashionPreset()
+opt curated
+lib_card_art_ts --> U : encerra
+end
 opt !id
 lib_card_art_ts --> U : encerra
 end
@@ -78,6 +84,9 @@ opt ART_INDEX.variants[id]
 lib_card_art_ts --> U : encerra
 end
 opt !list.length
+lib_card_art_ts --> U : encerra
+end
+opt s.aura?.variantId?.startsWith('aura_hype'
 lib_card_art_ts --> U : encerra
 end
 opt s.aura?.format === 'MOSAICO' && combo?.mosaic
@@ -124,19 +133,8 @@ API --> c_scheme_builder_tsx : JSON
 c_scheme_builder_tsx -> lib_card_art_ts : studioOf()
 c_scheme_builder_tsx -> lib_hooks_use_undo_ts : useUndo()
 c_scheme_builder_tsx -> lib_card_art_ts : studioOf()
+c_scheme_builder_tsx -> c_look_seal_verification_tsx : useLookSeals()
 opt initial || !seed || !b || selected.length
-c_scheme_builder_tsx --> U : encerra
-end
-opt step !== 2 || selected.length < 1
-c_scheme_builder_tsx --> U : encerra
-end
-c_scheme_builder_tsx -> API : POST /api/seal-suggestions/preview\nSealController.preview
-API --> c_scheme_builder_tsx : JSON
-c_scheme_builder_tsx -> API : POST /api/seal-suggestions/preview\nSealController.preview
-API --> c_scheme_builder_tsx : JSON
-c_scheme_builder_tsx -> API : POST /api/seal-suggestions/preview\nSealController.preview
-API --> c_scheme_builder_tsx : JSON
-opt !alive
 c_scheme_builder_tsx --> U : encerra
 end
 c_scheme_builder_tsx -> c_scheme_builder_tsx : setArtNote("null")
@@ -163,8 +161,8 @@ end
 c_scheme_builder_tsx -> c_scheme_builder_tsx : setMode("manual")
 c_scheme_builder_tsx -> c_scheme_builder_tsx : setMode("ai")
 c_scheme_builder_tsx -> lib_api_client_ts : mediaUrl()
-c_scheme_builder_tsx -> lib_api_taxonomy_ts : label() (×2)
-note over c_scheme_builder_tsx : … e mais 3 passos
+c_scheme_builder_tsx -> lib_api_taxonomy_ts : label() (×3)
+c_scheme_builder_tsx -> lib_api_client_ts : mediaUrl() (×2)
 deactivate c_scheme_builder_tsx
 c_scheme_builder_tsx --> U : resultado
 == SchemeService · create() ==

@@ -1,9 +1,16 @@
 @startuml RF11_Atividades_Peca
-title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de atividades — arte do card da peça (cadastro e "Editar arte" com revisão baseRev)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,95 +19,84 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF11 — Compor a arte de fundo (Background Studio) do card\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-if (Onde edita a arte da peça?) then (cadastro)
-  :Em /pieces/new chega à etapa "Arte de fundo";
-else (detalhe da peça, só o dono)
-  :Clica em "Editar arte do card"\n(PieceArtDialog abre um rascunho);
+:Abre /pieces/new,\n/dna-schemes/[id]/edit,\n/dna-schemes/new;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/assets/skins\nGET /api/backgrounds/combination\nGET /api/backgrounds/recommendations\nGET /api/backgrounds/catalog;
+|Pessoa usuária|
+:Aplicar configuração de fundo ao\nesquema;
+|Tela (Next.js)|
+:PUT /api/schemes/{id}/background;
+|API (Spring Boot)|
+:BackgroundController.saveScheme\n→ BackgroundStudioService.saveScheme;
+if (aura composition invalid?) then (sim)
+  :400 AURA_COMPOSITION_INVALID\n«Composição AURA inválida.»\n→ a tela mostra o aviso;
+  stop
 endif
-|Frontend (piece-art-editor · background-studio)|
-:readPieceArt(config): lê o modelo v2\n(template, composition, surface, effects);\nconfig antigo sem "v" vira v2 com valores padrão;
+if (aura hype invalid?) then (sim)
+  :400 AURA_HYPE_INVALID\n«AURA Hype inválida.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (aura metamorphose invalid?) then (sim)
+  :400 AURA_METAMORPHOSE_INVALID\n«AURA Metamorfose inválida.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (card border invalid?) then (sim)
+  :400 CARD_BORDER_INVALID\n«Borda inválida.»\n→ a tela mostra o aviso;
+  stop
+endif
+if (card border invalid?) then (sim)
+  :400 CARD_BORDER_INVALID\n«Modo de borda inválido.»\n→ a tela mostra o aviso;
+  stop
+endif
 note right
-  O config é o JSON livre de
-  wardrobe_items.background_config_json:
-  campos do Studio (cor, gradiente, cartela,
-  aura, material, skin, animação) + v2.
+  e mais 27 validações:
+  ANATOMIA_INVALIDA, ARTE_ALTERADA,
+  AURA_COMPOSITION_INVALID, AURA_HYPE_INVALID,
+  AURA_METAMORPHOSE_INVALID, CARD_BORDER_INVALID,
+  CONTAINER_TRAVADO, COR_INVALIDA, DIRECAO_INVALIDA,
+  ESTACAO_OBRIGATORIA, FORMATO_INVALIDO,
+  MATERIAL_INDISPONIVEL, PRESET_INVALIDO,
+  SILHUETA_INVALIDA, SKIN_INVALIDA
 end note
-|Pessoa|
-repeat
-  switch (Segmento?)
-  case (Cor)
-    :Cor lisa ou gradiente AURA;
-  case (Aura & Material)
-    :Preset AURA, variação, material e formato;
-  case (Layout & Estilo)
-    :Família (classic, bento, blocks, seasonal, xray, runway)\ne variação A/B, composição, skin e efeitos;
-    if (Mais de 3 efeitos ou efeito que não combina com a família?) then (sim)
-      :constrainEffects corta o excesso;\naura limitada a 0,8; movimento só com\npartículas ou aura;
-    else (não)
-    endif
-    note right: família "seasonal" abre o modal da\nCartela sazonal (RF11_Atividades_Cartela)
-  case (Container)
-    :Cor do container, sólido ou vidro fosco\ne fundo da área da foto;
-  case (Restaurar padrão)
-    :restoredArt: template Clássico, sem arte\ne sem efeitos (só no rascunho);
+|Dados e serviços|
+:Lê: schemes\nwardrobe_items;
+:Usa: Guard.requireCanCreate\nGuard.requireOwner\nAssetCatalogService.resolveCombination\nMediaService.requireOwnedMedia\nAssetCatalogService.gradient\nAssetCatalogService.nativeContainer (+2);
+:Estado: backgroundVideoUrl → null\nbackgroundVideoUrl → set\nbackgroundArtUrl → set\ncontainerOrigin → AUTO\ncontainerMandatory → true\ncontainerOrigin → MANUAL (+1);
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Fundo do card da peça)
+    :PUT /api/pieces/{id}/background\n→ BackgroundStudioService.savePiece\nvalida: ARTE_ALTERADA, AURA_COMPOSITION_INVALID,\nAURA_HYPE_INVALID, AURA_METAMORPHOSE_INVALID\n…\nlê: wardrobe_items\nusa: Guard.requireCanCreate, Guard.requireOwner;
+  case (Voltar ao fundo padrão do esquema)
+    :DELETE /api/schemes/{id}/background\n→ BackgroundStudioService.resetScheme\nlê: schemes\nusa: Guard.requireOwner\nestado: backgroundArtUrl → null,\nbackgroundAnimationType → NONE,\ncontainerOrigin → INDEFINIDA;
+  case (Enviar imagem própria de fundo [c…)
+    :POST /api/backgrounds/uploads\n→ BackgroundStudioService.upload\nvalida: IMAGEM_PEQUENA, PROPORCAO_INVALIDA\nlê: users\nusa: Guard.requireCanCreate, MediaService.put,\nMediaService.register;
+  case ([admin] Gerar thumbnail de uma sk…)
+    :POST /api/admin/skins/{skinId}/thumbnail\n→ BackgroundStudioService.generateSkinThumbnail\nlê: asset_presets\nusa: Guard.requireAdmin,\nAssetCatalogService.skin, MediaService.put\nia: BACKGROUND_GENERATOR;
+  case (Gerar arte de fundo por prompt [B…)
+    :POST /api/backgrounds/art\n→ BackgroundStudioService.generateArt\nvalida: PROMPT_VAZIO\nlê: celebrity_profiles, users\nusa: Guard.requireCanCreate,\nAssetCatalogService.list, MediaService.put …\nia: BACKGROUND_GENERATOR;
   endswitch
-  |Frontend (piece-art-editor · background-studio)|
-  :Prévia no próprio PieceCard do feed\nou na moldura do card ampliado (ArtStage);
-  |Pessoa|
-repeat while (Continua ajustando?) is (sim)
-->não;
-if (Cadastro ou detalhe?) then (cadastro)
-  |Frontend (piece-art-editor · background-studio)|
-  :Salvar a peça: POST /api/pieces com background\n(WardrobeService grava o config, sem revisão);
-  stop
-else (detalhe)
+  note right
+  Outras ações deste RF:
+  Editar a peça, Cadastrar a peça a partir do…,
+  Excluir a peça, Solicitar modelo 3D da peça,
+  Explorar — Adicionar uma peça…, RF4 · Estúdio —
+  aprova a foto…
+  end note
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-|Pessoa|
-switch (Botão do modal?)
-case (Cancelar)
-  :Fecha sem gravar;
-  stop
-case (Aplicar (só com alteração))
-endswitch
-|Frontend (piece-art-editor · background-studio)|
-:PUT /api/pieces/{id}/background\n{...rascunho, baseRev = rev lido};
-|API (BackgroundController)|
-:BackgroundStudioService.savePiece;
-if (E-mail não confirmado ou conta bloqueada?) then (sim)
-  #FFE3E3:403 EMAIL_NAO_CONFIRMADO / CONTA_SUSPENSA;
-  stop
-elseif (Peça não existe?) then (sim)
-  #FFE3E3:404 Peça;
-  stop
-elseif (Não é o dono?) then (sim)
-  #FFE3E3:403 (acesso negado, auditado);
-  stop
-else (ok)
-endif
-:withRevision(configAtual, rascunho);
-if (baseRev diferente da rev gravada?) then (sim)
-  #FFE3E3:409 ARTE_ALTERADA\n(outra aba ou aparelho aplicou antes);
-  |Frontend (piece-art-editor · background-studio)|
-  :Mostra o aviso no modal e não sobrescreve;
-  stop
-else (igual ou ausente)
-endif
-|Banco (MySQL)|
-:Grava wardrobe_items.background_config_json\ncom rev + 1;
-|Frontend (piece-art-editor · background-studio)|
-:200 {pieceId, background} → card atualizado,\naviso "arte aplicada" e o modal fecha;
+|Pessoa usuária|
 stop
 @enduml

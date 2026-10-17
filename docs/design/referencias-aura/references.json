@@ -1,0 +1,1619 @@
+{
+  "generated_at": "2026-10-14T11:56:54.725438+00:00",
+  "purpose": "Referências de arte de moda contemporânea; sugestões de aplicação são interpretações de design do FashionAI. Não são funcionalidades implementadas.",
+  "results": [
+    {
+      "theme": "Metamorfose",
+      "direction": "Arquitetura orgânica",
+      "query": "Iris van Herpen — Architectonics fashion design",
+      "design_application": "Molduras com nervuras, transparência e volumes orgânicos. A foto da peça permanece legível.",
+      "preferred_domains": [
+        "www.irisvanherpen.com"
+      ],
+      "candidates": [
+        {
+          "title": "E-file information returns with IRIS - Internal Revenue Service",
+          "url": "https://www.irs.gov/filing/e-file-information-returns-with-iris",
+          "domain": "www.irs.gov",
+          "preferred_source": false
+        },
+        {
+          "title": "Download - Iris Shaders",
+          "url": "https://www.irisshaders.dev/download/",
+          "domain": "www.irisshaders.dev",
+          "preferred_source": false
+        },
+        {
+          "title": "Iris (plant) - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Iris_(plant)",
+          "domain": "en.wikipedia.org",
+          "preferred_source": false
+        },
+        {
+          "title": "Iris Flowers: Planting, Growing, and Caring for Irises",
+          "url": "https://www.almanac.com/plant/irises",
+          "domain": "www.almanac.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Iris Shaders - Minecraft Mod - Modrinth",
+          "url": "https://modrinth.com/mod/iris",
+          "domain": "modrinth.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Iowa Immunization Registry Information System .. [Portal Main Page]",
+          "url": "https://iris.iowa.gov/IRISPRDJ/logon.do",
+          "domain": "iris.iowa.gov",
+          "preferred_source": false
+        },
+        {
+          "title": "IRIS application for TCC - Internal Revenue Service",
+          "url": "https://www.irs.gov/tax-professionals/iris-application-for-tcc",
+          "domain": "www.irs.gov",
+          "preferred_source": false
+        },
+        {
+          "title": "Immunization Registry Information System (IRIS) - Health & Human Services",
+          "url": "https://hhs.iowa.gov/health-prevention/vaccines-immunizations/immunization-registry-information-system-iris",
+          "domain": "hhs.iowa.gov",
+          "preferred_source": false
+        },
+        {
+          "title": "Iris Flower Care: A Growing Guide for Stunning Spring Blooms ...",
+          "url": "https://www.gardeningknowhow.com/ornamental/bulbs/iris/iris-plant-care.htm",
+          "domain": "www.gardeningknowhow.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Iris (anatomy) - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Iris_(anatomy)",
+          "domain": "en.wikipedia.org",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "Iris van Herpen — Architectonics",
+        "url": "https://www.irisvanherpen.com/collections/architectonics/about-16",
+        "domain": "www.irisvanherpen.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "Iris van Herpen — Architectonics",
+        "url": "https://www.irisvanherpen.com/collections/architectonics/about-16",
+        "domain": "www.irisvanherpen.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "FETCHED",
+      "http_status": 200,
+      "final_url": "https://www.irisvanherpen.com/collections/architectonics/about-16",
+      "page_title": "About | Architectonics | Haute Couture | Iris van Herpen",
+      "preview_url": "https://www.irisvanherpen.com/_img/iris-van-herpen-logo.png"
+    },
+    {
+      "theme": "Metamorfose",
+      "direction": "Superfície que se transforma",
+      "query": "Adobe × Christian Cowan — Project Primrose fashion design",
+      "design_application": "Padrões que mudam por zonas; transição entre estados conquistados, com alternativa estática.",
+      "preferred_domains": [
+        "blog.adobe.com"
+      ],
+      "candidates": [
+        {
+          "title": "Adobe: Creative, marketing and document management solutions",
+          "url": "https://www.adobe.com/",
+          "domain": "www.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Adobe Account - Sign in",
+          "url": "https://account.adobe.com/",
+          "domain": "account.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Download Adobe Acrobat Reader: Free PDF viewer",
+          "url": "https://get.adobe.com/reader/",
+          "domain": "get.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Acrobat online sign in | Login to Acrobat | Adobe Acrobat",
+          "url": "https://acrobat.adobe.com/us/en/",
+          "domain": "acrobat.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Adobe Creative Cloud | Professional Creative Software",
+          "url": "https://www.adobe.com/creativecloud.html",
+          "domain": "www.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Adobe - Download Adobe Acrobat Reader",
+          "url": "https://get.adobe.com/reader/?OWASP_CSRFTOKEN=CDXT-G6R4-7LH7-A5JI-V6UQ-P7FV-IZPO-QI4S",
+          "domain": "get.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Adobe Photoshop",
+          "url": "https://photoshop.adobe.com/?promoid=DZTGZS8L&mv=other&mv2=unav&lang=en",
+          "domain": "photoshop.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Contact Adobe support",
+          "url": "https://helpx.adobe.com/contact.html",
+          "domain": "helpx.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Home | Adobe",
+          "url": "https://assets.adobe.com/",
+          "domain": "assets.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Adobe Help Center",
+          "url": "https://helpx.adobe.com/support.html",
+          "domain": "helpx.adobe.com",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "Adobe × Christian Cowan — Project Primrose",
+        "url": "https://blog.adobe.com/en/publish/2024/02/11/christian-cowan-adobe-primrose-new-york-fashion-week",
+        "domain": "blog.adobe.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "Adobe × Christian Cowan — Project Primrose",
+        "url": "https://blog.adobe.com/en/publish/2024/02/11/christian-cowan-adobe-primrose-new-york-fashion-week",
+        "domain": "blog.adobe.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "FETCHED",
+      "http_status": 200,
+      "final_url": "https://blog.adobe.com/en/publish/2024/02/11/christian-cowan-adobe-primrose-new-york-fashion-week",
+      "page_title": "Adobe x Christian Cowan: Unveiling the future of fashion with Project Primrose | Adobe Blog",
+      "preview_url": "https://blog.adobe.com/en/publish/2024/02/11/media_1bee10287679326a562747fab54019e15097368d2.jpg?width=1200&format=pjpg&optimize=medium"
+    },
+    {
+      "theme": "Metamorfose",
+      "direction": "Revelação cromática",
+      "query": "Anrealage — Fall 2023 fashion design",
+      "design_application": "Revelação gradual de cores e grafismos inspirada em resposta à luz, aplicada à arte do card.",
+      "preferred_domains": [
+        "www.vogue.com"
+      ],
+      "candidates": [
+        {
+          "title": "Microsoft 问答 | Microsoft Learn",
+          "url": "https://www.answers.microsoft.com/zh-hans/windowslive/forum/all/%E5%B7%B2%E8%A2%AB%E8%87%AA%E5%8A%A8%E5%88%A0/646d693d-4339-40bd-bf07-f67fc5813044",
+          "domain": "www.answers.microsoft.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Microsoft Community",
+          "url": "https://answers.microsoft.com/en-us/msteams/forum/all/how-do-i-create-a-custom-background-to-use-for/19614570-dd77-4e2e-b649-3cc49c205609",
+          "domain": "answers.microsoft.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Microsoft Community",
+          "url": "https://answers.microsoft.com/en-us/msoffice/forum/all/excel-table-lagging-with-a-table-header-cell-cell/376a52f3-2b93-4989-bfd9-737d5f2e2a7a",
+          "domain": "answers.microsoft.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Microsoft Community",
+          "url": "https://answers.microsoft.com/en-us/windows/forum/all/how-do-i-save-everything-on-laptop-including/0d267650-5911-4aa0-be4b-49a29c7ec228",
+          "domain": "answers.microsoft.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Microsoft Community",
+          "url": "https://answers.microsoft.com/en-us/outlook_com/forum/all/my-microsoft-account-got-hacked-and-my-primary/ccf18cba-8b17-4494-adf7-c0cb2f81e912",
+          "domain": "answers.microsoft.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Microsoft Community",
+          "url": "https://answers.microsoft.com/en-us/msoffice/forum/all/action-button-doesnt-always-work/674f53ef-b46f-477b-942c-ee0babbbf0b3",
+          "domain": "answers.microsoft.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Games With Gold for Xbox One not available from Xbox 360",
+          "url": "https://answers.microsoft.com/en-us/xbox/forum/all/games-with-gold-for-xbox-one-not-available-from/949eddca-f59c-42ef-8198-dd1c794e5cfc",
+          "domain": "answers.microsoft.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Microsoft Community",
+          "url": "https://www.answers.microsoft.com/ja-jp/windows/forum/all/ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¼ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â«ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¥ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â®ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡/9804990c-60c8-440c-b1ab-2a0a01c8a749",
+          "domain": "www.answers.microsoft.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Microsoft Community",
+          "url": "https://www.answers.microsoft.com/ja-jp/windows/forum/all/ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â®ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£/b45f8dde-aa4a-4598-ab6e-21a67f8b6ec2",
+          "domain": "www.answers.microsoft.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Microsoft Community",
+          "url": "https://www.answers.microsoft.com/ja-jp/msteams/forum/all/teamsÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¾ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¦ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã¢â‚¬Å“ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¾ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â°ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¹ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¯ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©/4850be98-e651-4d92-8a05-d1489edbf168",
+          "domain": "www.answers.microsoft.com",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "Anrealage — Fall 2023",
+        "url": "https://www.vogue.com/fashion-shows/fall-2023-ready-to-wear/anrealage",
+        "domain": "www.vogue.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "Anrealage — Fall 2023",
+        "url": "https://www.vogue.com/fashion-shows/fall-2023-ready-to-wear/anrealage",
+        "domain": "www.vogue.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "FETCHED",
+      "http_status": 200,
+      "final_url": "https://www.vogue.com/fashion-shows/fall-2023-ready-to-wear/anrealage",
+      "page_title": "Anrealage Fall 2023 Ready-to-Wear Collection",
+      "preview_url": "https://assets.vogue.com/photos/63fe50a9eabdc690ecf6c703/16:9/pass/00002-anrealage-fall-2023-ready-to-wear-credit-gorunway.jpg"
+    },
+    {
+      "theme": "ATELIER",
+      "direction": "Coleção como museu",
+      "query": "La Galerie Dior — Diorama / Mini-dresses fashion design",
+      "design_application": "Vitrines e nichos organizados por cor e história para expor as conquistas do quarto.",
+      "preferred_domains": [
+        "www.galeriedior.com"
+      ],
+      "candidates": [
+        {
+          "title": "Los Angeles - Wikipedia",
+          "url": "https://en.m.wikipedia.org/wiki/Los_Angeles",
+          "domain": "en.m.wikipedia.org",
+          "preferred_source": false
+        },
+        {
+          "title": "LA: EXPLAINED! Your source for Los Angeles history, culture, cuisine ...",
+          "url": "https://www.laexplained.com/",
+          "domain": "www.laexplained.com",
+          "preferred_source": false
+        },
+        {
+          "title": "News from California, across the nation and world - Los Angeles Times",
+          "url": "https://www.latimes.com/",
+          "domain": "www.latimes.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Los Angeles | History, Map, Population, Climate, & Facts | Britannica",
+          "url": "https://www.britannica.com/place/Los-Angeles-California",
+          "domain": "www.britannica.com",
+          "preferred_source": false
+        },
+        {
+          "title": "La - Wikipedia",
+          "url": "https://en.m.wikipedia.org/wiki/LA",
+          "domain": "en.m.wikipedia.org",
+          "preferred_source": false
+        },
+        {
+          "title": "Home | City of Los Angeles",
+          "url": "https://lacity.gov/",
+          "domain": "lacity.gov",
+          "preferred_source": false
+        },
+        {
+          "title": "Visit Los Angeles. Find Things to Do in LA. California Travel Guides ...",
+          "url": "https://www.discoverlosangeles.com/",
+          "domain": "www.discoverlosangeles.com",
+          "preferred_source": false
+        },
+        {
+          "title": "THE 15 BEST Things to Do in Los Angeles (2026) - Tripadvisor",
+          "url": "https://www.tripadvisor.com/Attractions-g32655-Activities-Los_Angeles_California.html",
+          "domain": "www.tripadvisor.com",
+          "preferred_source": false
+        },
+        {
+          "title": "KTLA | Los Angeles and Southern California News",
+          "url": "https://ktla.com/",
+          "domain": "ktla.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Los Angeles, CA: All You Must Know Before You Go (2026) - Tripadvisor",
+          "url": "https://www.tripadvisor.com/Tourism-g32655-Los_Angeles_California-Vacations.html",
+          "domain": "www.tripadvisor.com",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "La Galerie Dior — Diorama / Mini-dresses",
+        "url": "https://www.galeriedior.com/en/mini-stories/diorama-2",
+        "domain": "www.galeriedior.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "La Galerie Dior — Diorama / Mini-dresses",
+        "url": "https://www.galeriedior.com/en/mini-stories/diorama-2",
+        "domain": "www.galeriedior.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "FETCHED",
+      "http_status": 200,
+      "final_url": "https://www.galeriedior.com/en/mini-stories/diorama-2",
+      "page_title": "Diorama - Mini-dresses | La Galerie Dior",
+      "preview_url": "https://galeriedior.imgix.net/images/30M-OPENING_simplemention_5.jpg"
+    },
+    {
+      "theme": "ATELIER",
+      "direction": "Instalações habitáveis",
+      "query": "Gentle Monster — HAUS DOSAN fashion design",
+      "design_application": "Esculturas cinéticas e objetos funcionais como recompensa de projetos individuais e coletivos.",
+      "preferred_domains": [
+        "www.gentlemonster.com"
+      ],
+      "candidates": [
+        {
+          "title": "Kirsten Green - Pear VC",
+          "url": "https://pear.vc/team/kirsten-green/",
+          "domain": "pear.vc",
+          "preferred_source": false
+        },
+        {
+          "title": "Zero to $1M: Winning early GTM! - pear.vc",
+          "url": "https://pear.vc/zero-to-1m-winning-early-gtm/",
+          "domain": "pear.vc",
+          "preferred_source": false
+        },
+        {
+          "title": "The Retreat by FFC",
+          "url": "https://theretreat24.pear.vc/application",
+          "domain": "theretreat24.pear.vc",
+          "preferred_source": false
+        },
+        {
+          "title": "PearX alum Transcera announces seed round to further advance innovative ...",
+          "url": "https://pear.vc/pearx-alum-transcera-announces-seed-round-to-further-advance-innovative-delivery-platform-for-biologic-drugs/",
+          "domain": "pear.vc",
+          "preferred_source": false
+        },
+        {
+          "title": "Companies - Pear VC",
+          "url": "https://pear.vc/companies/?query_filter_id=3&filter_slug=Ben+Hylak%09raindrop.ai++twitter+++linkedin",
+          "domain": "pear.vc",
+          "preferred_source": false
+        },
+        {
+          "title": "Pear Competition: Harvard Winners - Pear VC",
+          "url": "https://pear.vc/pear-competition-harvard-winners/",
+          "domain": "pear.vc",
+          "preferred_source": false
+        },
+        {
+          "title": "Turning rage into rigor with Dimitri Dadiomov (Modern Treasury)",
+          "url": "https://pear.vc/turning-rage-into-rigor-with-dimitri-dadiomov-modern-treasury/",
+          "domain": "pear.vc",
+          "preferred_source": false
+        },
+        {
+          "title": "Our take on company building - Pear VC",
+          "url": "https://pear.vc/how-we-invest/seed/our-take-on-company-building/",
+          "domain": "pear.vc",
+          "preferred_source": false
+        },
+        {
+          "title": "Maximum: Investing in Randy Fernando, again - Pear VC",
+          "url": "https://pear.vc/maximum-seed/",
+          "domain": "pear.vc",
+          "preferred_source": false
+        },
+        {
+          "title": "Communities - Pear VC",
+          "url": "https://pear.vc/programs/",
+          "domain": "pear.vc",
+          "preferred_source": false
+        },
+        {
+          "title": "Farmraise - Pear VC",
+          "url": "https://pear.vc/companies/farmraise/",
+          "domain": "pear.vc",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "Gentle Monster — HAUS DOSAN",
+        "url": "https://www.gentlemonster.com/legacy/story/en/haus-dosan.html",
+        "domain": "www.gentlemonster.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "Gentle Monster — HAUS DOSAN",
+        "url": "https://www.gentlemonster.com/legacy/story/en/haus-dosan.html",
+        "domain": "www.gentlemonster.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "FETCHED",
+      "http_status": 200,
+      "final_url": "https://www.gentlemonster.com/legacy/story/en/haus-dosan.html",
+      "page_title": "GENTLE MONSTER | HAUS DOSAN",
+      "preview_url": "https://web-resource.gentlemonster.com/assets/stories/haus_dosan/img/GH_kakao_thumb.jpg"
+    },
+    {
+      "theme": "ATELIER",
+      "direction": "Ofício e construção",
+      "query": "Issey Miyake — A-POC ABLE / Dialogues fashion design",
+      "design_application": "Projetos apresentados como processos de criação, com etapas, materiais e memória de construção.",
+      "preferred_domains": [
+        "us.isseymiyake.com"
+      ],
+      "candidates": [
+        {
+          "title": "How to get help in Windows - Microsoft Support",
+          "url": "https://support.microsoft.com/en-us/windows/how-to-get-help-in-windows-711b6492-0435-0038-8706-7c6b0feb200a",
+          "domain": "support.microsoft.com",
+          "preferred_source": false
+        },
+        {
+          "title": "How to Get Help in Windows 11: 3 Quick & Easy Ways",
+          "url": "https://www.wikihow.com/Get-Help-in-Windows-11",
+          "domain": "www.wikihow.com",
+          "preferred_source": false
+        },
+        {
+          "title": "How to Get Help in Windows 11 (15 Ways) - techbaked.com",
+          "url": "https://techbaked.com/how-get-help-windows-11/",
+          "domain": "techbaked.com",
+          "preferred_source": false
+        },
+        {
+          "title": "How to Get Help in Windows 11 & 10: 18 Fast Methods",
+          "url": "https://geekzag.com/guides/computers/how-to-get-help-in-windows-11-10/",
+          "domain": "geekzag.com",
+          "preferred_source": false
+        },
+        {
+          "title": "How to Get Help in Windows 11 - Technobezz",
+          "url": "https://www.technobezz.com/how-to-get-help-in-windows-11",
+          "domain": "www.technobezz.com",
+          "preferred_source": false
+        },
+        {
+          "title": "How to Get Help in Windows 11: 10 Ways That Actually Work",
+          "url": "https://www.how2shout.com/how-to/how-to-get-help-in-windows-11.html",
+          "domain": "www.how2shout.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Windows help and supportWindows help and support",
+          "url": "https://www.microsoft.com/en-us/windows/help-and-support",
+          "domain": "www.microsoft.com",
+          "preferred_source": false
+        },
+        {
+          "title": "How to Get Help in Windows 11 (10 Methods) - TechViral",
+          "url": "https://techviral.net/how-to-get-help-in-windows-11/",
+          "domain": "techviral.net",
+          "preferred_source": false
+        },
+        {
+          "title": "How to Get Help in Windows 11: Complete Guide - TechCommuters",
+          "url": "https://www.techcommuters.com/how-to-get-help-in-windows-11/",
+          "domain": "www.techcommuters.com",
+          "preferred_source": false
+        },
+        {
+          "title": "How to Get Help in Windows",
+          "url": "https://helpdeskgeek.com/how-to-get-help-in-windows/",
+          "domain": "helpdeskgeek.com",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "Issey Miyake — A-POC ABLE / Dialogues",
+        "url": "https://us.isseymiyake.com/blogs/apocable-dialogues/dialogues_episode_0",
+        "domain": "us.isseymiyake.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "Issey Miyake — A-POC ABLE / Dialogues",
+        "url": "https://us.isseymiyake.com/blogs/apocable-dialogues/dialogues_episode_0",
+        "domain": "us.isseymiyake.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "FETCHED",
+      "http_status": 200,
+      "final_url": "https://us.isseymiyake.com/blogs/apocable-dialogues/dialogues_episode_0",
+      "page_title": "A-POC ABLE ISSEY MIYAKE DIALOGUES Episode 0"
+    },
+    {
+      "theme": "Hype",
+      "direction": "Identidade de moda em jogo",
+      "query": "Fortnite × Balenciaga — moda digital fashion design",
+      "design_application": "Artes de conquista reconhecíveis em interfaces de jogo; identidade visual com leitura imediata.",
+      "preferred_domains": [
+        "www.fortnite.com"
+      ],
+      "candidates": [
+        {
+          "title": "Fortnite | Free-to-Play Cross-Platform Game - Fortnite",
+          "url": "https://www.fortnite.com/",
+          "domain": "www.fortnite.com",
+          "preferred_source": true
+        },
+        {
+          "title": "Download and Install Fortnite Today",
+          "url": "https://www.fortnite.com/download",
+          "domain": "www.fortnite.com",
+          "preferred_source": true
+        },
+        {
+          "title": "Fortnite | Download and Play for Free - Epic Games Store",
+          "url": "https://store.epicgames.com/p/fortnite?lang=en-US",
+          "domain": "store.epicgames.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Play Fortnite | Xbox Cloud Gaming on Xbox.com",
+          "url": "https://www.xbox.com/en-us/play/games/bt5p2x999vh2",
+          "domain": "www.xbox.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Fortnite - Apps on Google Play",
+          "url": "https://play.google.com/store/apps/details?id=com.epicgames.fortnite&hl=en-US",
+          "domain": "play.google.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Home - Epic Games",
+          "url": "https://www.epicgames.com/site/home",
+          "domain": "www.epicgames.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Fortnite Interactive Map - Fortnite.GG",
+          "url": "https://fortnite.gg/",
+          "domain": "fortnite.gg",
+          "preferred_source": false
+        },
+        {
+          "title": "Find it in Fortnite: Fortnite Experiences | Epic Games Store",
+          "url": "https://store.epicgames.com/discover/fortnite?lang=en-US",
+          "domain": "store.epicgames.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Fortnite - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Fortnite",
+          "domain": "en.wikipedia.org",
+          "preferred_source": false
+        },
+        {
+          "title": "Fortnite News - Fortnite.GG",
+          "url": "https://fortnite.gg/news",
+          "domain": "fortnite.gg",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "Fortnite × Balenciaga — moda digital",
+        "url": "https://www.fortnite.com/news/high-digital-fashion-drops-into-fortnite-with-balenciaga?lang=pt-BR",
+        "domain": "www.fortnite.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "Fortnite × Balenciaga — moda digital",
+        "url": "https://www.fortnite.com/news/high-digital-fashion-drops-into-fortnite-with-balenciaga?lang=pt-BR",
+        "domain": "www.fortnite.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "FETCHED",
+      "http_status": 200,
+      "final_url": "https://www.fortnite.com/news/high-digital-fashion-drops-into-fortnite-with-balenciaga?lang=pt-BR",
+      "page_title": "Balenciaga Traz a Moda de Luxo Digital Para o Fortnite",
+      "preview_url": "https://cdn2.unrealengine.com/fortnite-balenciaga-fit-outfits-1920x1080-4b198ae5b89e.jpg"
+    },
+    {
+      "theme": "Hype",
+      "direction": "Materiais e luz",
+      "query": "Unreal Engine — Balenciaga blurs real with Unreal fashion design",
+      "design_application": "Reflexos e materiais consistentes entre prévia e aplicação. Usar Hype real, sem inventar métricas.",
+      "preferred_domains": [
+        "www.unrealengine.com"
+      ],
+      "candidates": [
+        {
+          "title": "The most powerful real-time 3D creation tool - Unreal Engine",
+          "url": "https://www.unrealengine.com/",
+          "domain": "www.unrealengine.com",
+          "preferred_source": true
+        },
+        {
+          "title": "Download Unreal Engine",
+          "url": "https://www.unrealengine.com/download",
+          "domain": "www.unrealengine.com",
+          "preferred_source": true
+        },
+        {
+          "title": "Unreal Engine - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Unreal_Engine",
+          "domain": "en.wikipedia.org",
+          "preferred_source": false
+        },
+        {
+          "title": "Chocolate Snacks – UNREAL",
+          "url": "https://unrealsnacks.com/",
+          "domain": "unrealsnacks.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Home - Epic Games",
+          "url": "https://www.epicgames.com/site/home",
+          "domain": "www.epicgames.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Unreal (video game series) - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Unreal_(video_game_series)",
+          "domain": "en.wikipedia.org",
+          "preferred_source": false
+        },
+        {
+          "title": "Install Unreal Engine | Unreal Engine 5.8 Documentation | Epic ...",
+          "url": "https://dev.epicgames.com/documentation/unreal-engine/install-unreal-engine?lang=en-US",
+          "domain": "dev.epicgames.com",
+          "preferred_source": false
+        },
+        {
+          "title": "shop – UNREAL",
+          "url": "https://unrealsnacks.com/collections/shop",
+          "domain": "unrealsnacks.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Unreal Tournament - It’s called unreal... because it is",
+          "url": "https://www.epicgames.com/unrealtournament/",
+          "domain": "www.epicgames.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Unreal Engine - Getting Started | Epic Developer Community",
+          "url": "https://dev.epicgames.com/community/unreal-engine/getting-started",
+          "domain": "dev.epicgames.com",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "Unreal Engine — Balenciaga blurs real with Unreal",
+        "url": "https://www.unrealengine.com/spotlights/balenciaga-blurs-real-with-unreal-in-fortnite",
+        "domain": "www.unrealengine.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "Unreal Engine — Balenciaga blurs real with Unreal",
+        "url": "https://www.unrealengine.com/spotlights/balenciaga-blurs-real-with-unreal-in-fortnite",
+        "domain": "www.unrealengine.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "FETCHED",
+      "http_status": 200,
+      "final_url": "https://www.unrealengine.com/spotlights/balenciaga-blurs-real-with-unreal-in-fortnite",
+      "page_title": "Balenciaga blurs real with Unreal in Fortnite",
+      "preview_url": "https://cdn2.unrealengine.com/share-img-fb-1200x630-v2-1200x630-7b83d6440dff.png"
+    },
+    {
+      "theme": "Hype",
+      "direction": "Comunidade e apresentação",
+      "query": "Moncler — MONDOGENIUS fashion design",
+      "design_application": "Entradas visuais e instalações de celebração ligadas a interações e conquistas verificadas.",
+      "preferred_domains": [
+        "www.moncler.com"
+      ],
+      "candidates": [
+        {
+          "title": "Moncler US Online Shop — Down jackets, coats and clothing",
+          "url": "https://www.moncler.com/en-us/",
+          "domain": "www.moncler.com",
+          "preferred_source": true
+        },
+        {
+          "title": "Moncler Online Shop",
+          "url": "https://www.moncler.com/",
+          "domain": "www.moncler.com",
+          "preferred_source": true
+        },
+        {
+          "title": "Moncler Collection",
+          "url": "https://www.moncler.com/en-us/moncler-collections",
+          "domain": "www.moncler.com",
+          "preferred_source": true
+        },
+        {
+          "title": "Moncler - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Moncler",
+          "domain": "en.wikipedia.org",
+          "preferred_source": false
+        },
+        {
+          "title": "Shop Moncler Online | Nordstrom",
+          "url": "https://www.nordstrom.com/brands/moncler--32560",
+          "domain": "www.nordstrom.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Moncler | Saks Fifth Avenue",
+          "url": "https://www.saksfifthavenue.com/brand/moncler",
+          "domain": "www.saksfifthavenue.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Moncler Coats, Jackets & Outerwear | Neiman Marcus",
+          "url": "https://www.neimanmarcus.com/c/designers-moncler-cat43460881",
+          "domain": "www.neimanmarcus.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Moncler Group | Moncler and Stone Island",
+          "url": "https://www.monclergroup.com/en",
+          "domain": "www.monclergroup.com",
+          "preferred_source": false
+        },
+        {
+          "title": "The Moncler Brand: Heritage & Business Model | Moncler Group",
+          "url": "https://www.monclergroup.com/en/moncler",
+          "domain": "www.monclergroup.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Moncler | Fall 2026 Collection - FWRD",
+          "url": "https://www.fwrd.com/brand-moncler/9a3ee4/",
+          "domain": "www.fwrd.com",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "Moncler — MONDOGENIUS",
+        "url": "https://www.moncler.com/en-us/stories/mondogenius",
+        "domain": "www.moncler.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "Moncler — MONDOGENIUS",
+        "url": "https://www.moncler.com/en-us/stories/mondogenius",
+        "domain": "www.moncler.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "FETCHED",
+      "http_status": 200,
+      "final_url": "https://www.moncler.com/en-us/stories/mondogenius",
+      "page_title": "Moncler Genius presents MONDOGENIUS l Moncler Now"
+    },
+    {
+      "theme": "Electro",
+      "direction": "Energia escultórica",
+      "query": "Iris van Herpen — Timeline / Voltage fashion design",
+      "design_application": "Linhas elétricas finas que seguem contornos, com metal e luminosidade controlada; referência histórica reinterpretada.",
+      "preferred_domains": [
+        "www.irisvanherpen.com"
+      ],
+      "candidates": [
+        {
+          "title": "E-file information returns with IRIS - Internal Revenue Service",
+          "url": "https://www.irs.gov/filing/e-file-information-returns-with-iris",
+          "domain": "www.irs.gov",
+          "preferred_source": false
+        },
+        {
+          "title": "Download - Iris Shaders",
+          "url": "https://www.irisshaders.dev/download/",
+          "domain": "www.irisshaders.dev",
+          "preferred_source": false
+        },
+        {
+          "title": "Iris (plant) - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Iris_(plant)",
+          "domain": "en.wikipedia.org",
+          "preferred_source": false
+        },
+        {
+          "title": "Iris Flowers: Planting, Growing, and Caring for Irises",
+          "url": "https://www.almanac.com/plant/irises",
+          "domain": "www.almanac.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Iris Shaders - Minecraft Mod - Modrinth",
+          "url": "https://modrinth.com/mod/iris",
+          "domain": "modrinth.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Iowa Immunization Registry Information System .. [Portal Main Page]",
+          "url": "https://iris.iowa.gov/IRISPRDJ/logon.do",
+          "domain": "iris.iowa.gov",
+          "preferred_source": false
+        },
+        {
+          "title": "IRIS application for TCC - Internal Revenue Service",
+          "url": "https://www.irs.gov/tax-professionals/iris-application-for-tcc",
+          "domain": "www.irs.gov",
+          "preferred_source": false
+        },
+        {
+          "title": "Immunization Registry Information System (IRIS) - Health & Human Services",
+          "url": "https://hhs.iowa.gov/health-prevention/vaccines-immunizations/immunization-registry-information-system-iris",
+          "domain": "hhs.iowa.gov",
+          "preferred_source": false
+        },
+        {
+          "title": "Iris Flower Care: A Growing Guide for Stunning Spring Blooms ...",
+          "url": "https://www.gardeningknowhow.com/ornamental/bulbs/iris/iris-plant-care.htm",
+          "domain": "www.gardeningknowhow.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Iris (anatomy) - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Iris_(anatomy)",
+          "domain": "en.wikipedia.org",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "Iris van Herpen — Timeline / Voltage",
+        "url": "https://www.irisvanherpen.com/about/about/timeline",
+        "domain": "www.irisvanherpen.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "Iris van Herpen — Timeline / Voltage",
+        "url": "https://www.irisvanherpen.com/about/about/timeline",
+        "domain": "www.irisvanherpen.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "FETCHED",
+      "http_status": 200,
+      "final_url": "https://www.irisvanherpen.com/about/about/timeline",
+      "page_title": "Timeline | About | About | Iris van Herpen",
+      "preview_url": "https://www.irisvanherpen.com/_img/iris-van-herpen-logo.png"
+    },
+    {
+      "theme": "Electro",
+      "direction": "Sequenciamento de luz",
+      "query": "Adobe — desenvolvimento do vestido Primrose fashion design",
+      "design_application": "Pulsos por segmentos e ritmos de luz coerentes, evitando flashes rápidos.",
+      "preferred_domains": [
+        "blog.adobe.com"
+      ],
+      "candidates": [
+        {
+          "title": "Adobe: Creative, marketing and document management solutions",
+          "url": "https://www.adobe.com/",
+          "domain": "www.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Adobe Account - Sign in",
+          "url": "https://account.adobe.com/",
+          "domain": "account.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Download Adobe Acrobat Reader: Free PDF viewer",
+          "url": "https://get.adobe.com/reader/",
+          "domain": "get.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Acrobat online sign in | Login to Acrobat | Adobe Acrobat",
+          "url": "https://acrobat.adobe.com/us/en/",
+          "domain": "acrobat.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Adobe Creative Cloud | Professional Creative Software",
+          "url": "https://www.adobe.com/creativecloud.html",
+          "domain": "www.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Adobe - Download Adobe Acrobat Reader",
+          "url": "https://get.adobe.com/reader/?OWASP_CSRFTOKEN=CDXT-G6R4-7LH7-A5JI-V6UQ-P7FV-IZPO-QI4S",
+          "domain": "get.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Adobe Photoshop",
+          "url": "https://photoshop.adobe.com/?promoid=DZTGZS8L&mv=other&mv2=unav&lang=en",
+          "domain": "photoshop.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Contact Adobe support",
+          "url": "https://helpx.adobe.com/contact.html",
+          "domain": "helpx.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Home | Adobe",
+          "url": "https://assets.adobe.com/",
+          "domain": "assets.adobe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Adobe Help Center",
+          "url": "https://helpx.adobe.com/support.html",
+          "domain": "helpx.adobe.com",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "Adobe — desenvolvimento do vestido Primrose",
+        "url": "https://blog.adobe.com/en/publish/2024/02/20/how-adobe-project-primrose-christian-cowan-collaborated",
+        "domain": "blog.adobe.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "Adobe — desenvolvimento do vestido Primrose",
+        "url": "https://blog.adobe.com/en/publish/2024/02/20/how-adobe-project-primrose-christian-cowan-collaborated",
+        "domain": "blog.adobe.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "FETCHED",
+      "http_status": 200,
+      "final_url": "https://blog.adobe.com/en/publish/2024/02/20/how-adobe-project-primrose-christian-cowan-collaborated",
+      "page_title": "How Adobe’s Project Primrose and Christian Cowan created a runway showstopper for NY Fashion Week | Adobe Blog",
+      "preview_url": "https://blog.adobe.com/en/publish/2024/02/20/media_1732e4073863420d84397d11a8a0f130df235aa16.png?width=1200&format=pjpg&optimize=medium"
+    },
+    {
+      "theme": "Electro",
+      "direction": "Luz como revelação",
+      "query": "Dezeen — Anrealage colour-changing clothes fashion design",
+      "design_application": "Faixas luminosas e transições cromáticas inspiradas em uma apresentação real de moda.",
+      "preferred_domains": [
+        "www.youtube.com"
+      ],
+      "candidates": [
+        {
+          "title": "Dezeen | architecture and design magazine",
+          "url": "https://www.dezeen.com/",
+          "domain": "www.dezeen.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Architecture news and projects | Dezeen",
+          "url": "https://www.dezeen.com/architecture/",
+          "domain": "www.dezeen.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Dezeen - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Dezeen",
+          "domain": "en.wikipedia.org",
+          "preferred_source": false
+        },
+        {
+          "title": "Dezeen - Architecture and Design Content Publishing Site",
+          "url": "https://dezeen.info/home/",
+          "domain": "dezeen.info",
+          "preferred_source": false
+        },
+        {
+          "title": "all | Dezeen",
+          "url": "https://www.dezeen.com/all/",
+          "domain": "www.dezeen.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Design | Dezeen",
+          "url": "https://www.dezeen.com/design/",
+          "domain": "www.dezeen.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Interior design | Dezeen",
+          "url": "https://www.dezeen.com/interiors/",
+          "domain": "www.dezeen.com",
+          "preferred_source": false
+        },
+        {
+          "title": "About Dezeen",
+          "url": "https://www.dezeen.com/about/",
+          "domain": "www.dezeen.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Dezeen Jobs | architecture, interiors and design recruitment",
+          "url": "https://www.dezeenjobs.com/",
+          "domain": "www.dezeenjobs.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Dezeen (@dezeen) • Instagram photos and videos",
+          "url": "https://www.instagram.com/dezeen/",
+          "domain": "www.instagram.com",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "Dezeen — Anrealage colour-changing clothes",
+        "url": "https://www.youtube.com/watch?v=o8Ze3AhzRAY",
+        "domain": "www.youtube.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "Dezeen — Anrealage colour-changing clothes",
+        "url": "https://www.youtube.com/watch?v=o8Ze3AhzRAY",
+        "domain": "www.youtube.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "URLError"
+    },
+    {
+      "theme": "AURA comum",
+      "direction": "Plissado e ritmo",
+      "query": "PLEATS PLEASE ISSEY MIYAKE — conceito fashion design",
+      "design_application": "Fundos discretos com ritmo de tecido, sombras suaves e movimento sutil.",
+      "preferred_domains": [
+        "eu.isseymiyake.com"
+      ],
+      "candidates": [
+        {
+          "title": "Pleat - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Pleat",
+          "domain": "en.wikipedia.org",
+          "preferred_source": false
+        },
+        {
+          "title": "7 Types of Pleats in Sewing (With Pictures & Examples)",
+          "url": "https://blog.treasurie.com/types-of-pleats/",
+          "domain": "blog.treasurie.com",
+          "preferred_source": false
+        },
+        {
+          "title": "PLEATS PLEASE ISSEY MIYAKE",
+          "url": "https://us.isseymiyake.com/collections/pleatsplease",
+          "domain": "us.isseymiyake.com",
+          "preferred_source": false
+        },
+        {
+          "title": "17 Different Types of Pleats for Skirts and Dresses (2026)",
+          "url": "https://queleparece.com/article/17-different-types-of-pleats-for-skirts-and-dresses",
+          "domain": "queleparece.com",
+          "preferred_source": false
+        },
+        {
+          "title": "How to Sew Pleats: 14 Steps (with Pictures) - wikiHow",
+          "url": "https://www.wikihow.com/Sew-Pleats",
+          "domain": "www.wikihow.com",
+          "preferred_source": false
+        },
+        {
+          "title": "How to Sew Pleats (Step by Step for Beginners) - TREASURIE",
+          "url": "https://blog.treasurie.com/how-to-sew-pleats/",
+          "domain": "blog.treasurie.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Types of PLEATS seen on clothes - SewGuide",
+          "url": "https://sewguide.com/types-of-pleats/",
+          "domain": "sewguide.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Pleats – Types of Pleats with Names and Pictures - Makyla Creates",
+          "url": "https://makylacreates.com/types-of-pleats/",
+          "domain": "makylacreates.com",
+          "preferred_source": false
+        },
+        {
+          "title": "How to make pleats guide - Simply Sewing",
+          "url": "https://simplysewingmag.com/guides/how-to-make-pleats",
+          "domain": "simplysewingmag.com",
+          "preferred_source": false
+        },
+        {
+          "title": "PLEAT Definition & Meaning - Merriam-Webster",
+          "url": "https://www.merriam-webster.com/dictionary/pleat",
+          "domain": "www.merriam-webster.com",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "PLEATS PLEASE ISSEY MIYAKE — conceito",
+        "url": "https://eu.isseymiyake.com/blogs/pleatsplease-concept",
+        "domain": "eu.isseymiyake.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "PLEATS PLEASE ISSEY MIYAKE — conceito",
+        "url": "https://eu.isseymiyake.com/blogs/pleatsplease-concept",
+        "domain": "eu.isseymiyake.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "FETCHED",
+      "http_status": 200,
+      "final_url": "https://eu.isseymiyake.com/blogs/pleatsplease-concept",
+      "page_title": "PLEATS PLEASE ISSEY MIYAKE CONCEPT"
+    },
+    {
+      "theme": "AURA comum",
+      "direction": "Respiro editorial",
+      "query": "LOEWE — Spring-Summer 2025 / LVMH fashion design",
+      "design_application": "Composição com espaço vazio, paleta contida e foco na silhueta da roupa.",
+      "preferred_domains": [
+        "www.lvmh.com"
+      ],
+      "candidates": [
+        {
+          "title": "Designer Bags, Clothing, Accessories for Women & Men - Loewe",
+          "url": "https://www.loewe.com/usa/en/home",
+          "domain": "www.loewe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Bags, Accessories & Luxury clothing for Women - LOEWE",
+          "url": "https://www.loewe.com/usa/en/women",
+          "domain": "www.loewe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Loewe (fashion brand) - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Loewe_(fashion_brand)",
+          "domain": "en.wikipedia.org",
+          "preferred_source": false
+        },
+        {
+          "title": "LOEWE | Saks Fifth Avenue",
+          "url": "https://www.saksfifthavenue.com/brand/loewe",
+          "domain": "www.saksfifthavenue.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Luxury bags for women - LOEWE USA Official Website",
+          "url": "https://www.loewe.com/usa/en/women/bags",
+          "domain": "www.loewe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Luxury bags for women - LOEWE International official website",
+          "url": "https://www.loewe.com/int/en/women/bags",
+          "domain": "www.loewe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "LOEWE - Premium Home Entertainment | TV & Home Cinema",
+          "url": "https://www.loewe.tv/int",
+          "domain": "www.loewe.tv",
+          "preferred_source": false
+        },
+        {
+          "title": "Shop Loewe Online | Nordstrom",
+          "url": "https://www.nordstrom.com/brands/loewe--10002496",
+          "domain": "www.nordstrom.com",
+          "preferred_source": false
+        },
+        {
+          "title": "LOEWE - Neiman Marcus",
+          "url": "https://www.neimanmarcus.com/c/designers-loewe-cat48090736/",
+          "domain": "www.neimanmarcus.com",
+          "preferred_source": false
+        },
+        {
+          "title": "LOEWE Perfumes | Spanish Luxury Perfumes & Scents",
+          "url": "https://www.perfumesloewe.com/int/en_US/",
+          "domain": "www.perfumesloewe.com",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "LOEWE — Spring-Summer 2025 / LVMH",
+        "url": "https://www.lvmh.com/news-lvmh/loewe-spring-summer-2025-mens-collection-a-radical-act-of-restraint",
+        "domain": "www.lvmh.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "LOEWE — Spring-Summer 2025 / LVMH",
+        "url": "https://www.lvmh.com/news-lvmh/loewe-spring-summer-2025-mens-collection-a-radical-act-of-restraint",
+        "domain": "www.lvmh.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "FETCHED",
+      "http_status": 200,
+      "final_url": "https://www.lvmh.com/news-lvmh/loewe-spring-summer-2025-mens-collection-a-radical-act-of-restraint",
+      "page_title": "LOEWE Spring-Summer 2025 Men’s collection: A Radic... - LVMH"
+    },
+    {
+      "theme": "AURA comum",
+      "direction": "Trama e identidade",
+      "query": "MoMA — A-POC Queen Textile fashion design",
+      "design_application": "Texturas têxteis e módulos contínuos para presets cotidianos de identidade visual.",
+      "preferred_domains": [
+        "www.moma.org"
+      ],
+      "candidates": [
+        {
+          "title": "The Museum of Modern Art, New York City | MoMA",
+          "url": "https://www.moma.org/",
+          "domain": "www.moma.org",
+          "preferred_source": true
+        },
+        {
+          "title": "Museum of Modern Art | MoMA",
+          "url": "https://www.moma.org/visit/index.html",
+          "domain": "www.moma.org",
+          "preferred_source": true
+        },
+        {
+          "title": "MoMA Design Store | Modern and Contemporary Home Décor, Art and Access",
+          "url": "https://store.moma.org/",
+          "domain": "store.moma.org",
+          "preferred_source": false
+        },
+        {
+          "title": "Tickets, discounts, and free admission | MoMA",
+          "url": "https://visit.moma.org/select",
+          "domain": "visit.moma.org",
+          "preferred_source": false
+        },
+        {
+          "title": "MoMA | The Museum of Modern Art, New York",
+          "url": "https://www.momanyc.com/",
+          "domain": "www.momanyc.com",
+          "preferred_source": false
+        },
+        {
+          "title": "MoMA: Inspiration Around Every Corner",
+          "url": "https://go.moma.org/ticketing",
+          "domain": "go.moma.org",
+          "preferred_source": false
+        },
+        {
+          "title": "MoMA",
+          "url": "https://go.moma.org/",
+          "domain": "go.moma.org",
+          "preferred_source": false
+        },
+        {
+          "title": "Tickets | MoMA",
+          "url": "https://momanyc.com/tickets/",
+          "domain": "momanyc.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Museum of Modern Art - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Museum_of_Modern_Art",
+          "domain": "en.wikipedia.org",
+          "preferred_source": false
+        },
+        {
+          "title": "MoMa Mobile App for Vending Management | Nayax",
+          "url": "https://www.nayax.com/solution/moma/",
+          "domain": "www.nayax.com",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "MoMA — A-POC Queen Textile",
+        "url": "https://www.moma.org/collection/works/100361?locale=en",
+        "domain": "www.moma.org",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "MoMA — A-POC Queen Textile",
+        "url": "https://www.moma.org/collection/works/100361?locale=en",
+        "domain": "www.moma.org",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "FETCHED",
+      "http_status": 200,
+      "final_url": "https://www.moma.org/collection/works/100361?locale=en",
+      "page_title": "Issey Miyake, Fujiwara Dai. A-POC Queen Textile. 1997 | MoMA",
+      "preview_url": "https://www.moma.org/media/W1siZiIsIjI1ODcxMiJdLFsicCIsImNvbnZlcnQiLCItcXVhbGl0eSA5MCAtcmVzaXplIDUxMng1MTJcdTAwM2UiXV0.jpg?sha=a934bb4c6117f01e"
+    },
+    {
+      "theme": "Splash",
+      "direction": "Gesto de tinta",
+      "query": "The Met — Alexander McQueen / Dress, No. 13 fashion design",
+      "design_application": "Marcas de tinta assimétricas e controladas na moldura; referência histórica de 1999 reinterpretada.",
+      "preferred_domains": [
+        "blog.metmuseum.org"
+      ],
+      "candidates": [
+        {
+          "title": "The Metropolitan Museum of Art",
+          "url": "https://www.metmuseum.org/",
+          "domain": "www.metmuseum.org",
+          "preferred_source": false
+        },
+        {
+          "title": "The Met Collection - The Metropolitan Museum of Art",
+          "url": "https://www.metmuseum.org/art/collection",
+          "domain": "www.metmuseum.org",
+          "preferred_source": false
+        },
+        {
+          "title": "Met Museum Of Art — Book Met Fifth Avenue & Met Cloisters Tickets Online",
+          "url": "https://metmuseumofart.us.com/",
+          "domain": "metmuseumofart.us.com",
+          "preferred_source": false
+        },
+        {
+          "title": "MET, Inc. | Motivation, Education, & Training",
+          "url": "https://www.metinc.org/",
+          "domain": "www.metinc.org",
+          "preferred_source": false
+        },
+        {
+          "title": "Home | Metropolitan Opera",
+          "url": "https://www.metopera.org/",
+          "domain": "www.metopera.org",
+          "preferred_source": false
+        },
+        {
+          "title": "MetLife, Inc. (MET) Stock Price, News, Quote & History - Yahoo Finance",
+          "url": "https://finance.yahoo.com/quote/MET/",
+          "domain": "finance.yahoo.com",
+          "preferred_source": false
+        },
+        {
+          "title": "MET Helmets | Road, MTB, City and Kids Helmets",
+          "url": "https://www.met-helmets.com/en/",
+          "domain": "www.met-helmets.com",
+          "preferred_source": false
+        },
+        {
+          "title": "MET Definition & Meaning - Merriam-Webster",
+          "url": "https://www.merriam-webster.com/dictionary/met",
+          "domain": "www.merriam-webster.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Met Opera on Demand",
+          "url": "https://ondemand.metopera.org/",
+          "domain": "ondemand.metopera.org",
+          "preferred_source": false
+        },
+        {
+          "title": "MET preparation - Michigan Language Assessment",
+          "url": "https://michiganassessment.org/which-test-is-right-for-me/met/met-preparation/",
+          "domain": "michiganassessment.org",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "The Met — Alexander McQueen / Dress, No. 13",
+        "url": "https://blog.metmuseum.org/alexandermcqueen/dress-no-13/",
+        "domain": "blog.metmuseum.org",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "The Met — Alexander McQueen / Dress, No. 13",
+        "url": "https://blog.metmuseum.org/alexandermcqueen/dress-no-13/",
+        "domain": "blog.metmuseum.org",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "HTTPError",
+      "http_status": 404
+    },
+    {
+      "theme": "Splash",
+      "direction": "Cor e movimento",
+      "query": "Len Lye Foundation — colaboração com Dries Van Noten fashion design",
+      "design_application": "Grafismos e cores em movimento inspirados na aproximação entre arte e moda, com identidade de paleta.",
+      "preferred_domains": [
+        "www.lenlyefoundation.com"
+      ],
+      "candidates": [
+        {
+          "title": "Len (band) - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Len_(band)",
+          "domain": "en.wikipedia.org",
+          "preferred_source": false
+        },
+        {
+          "title": "Lennar Corporation (LEN) - Yahoo Finance",
+          "url": "https://finance.yahoo.com/quote/LEN/",
+          "domain": "finance.yahoo.com",
+          "preferred_source": false
+        },
+        {
+          "title": "The Daily Telegram: Local News, Politics & Sports in Adrian, MI",
+          "url": "https://www.lenconnect.com/",
+          "domain": "www.lenconnect.com",
+          "preferred_source": false
+        },
+        {
+          "title": "LEN Lifestyle",
+          "url": "https://lenlifestyle.com/",
+          "domain": "lenlifestyle.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Python len () Function - W3Schools",
+          "url": "https://www.w3schools.com/python/ref_func_len.asp",
+          "domain": "www.w3schools.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Len - Steal My Sunshine - YouTube",
+          "url": "https://www.youtube.com/watch?v=E1fzJ_AYajA",
+          "domain": "www.youtube.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Steal My Sunshine - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Steal_My_Sunshine",
+          "domain": "en.wikipedia.org",
+          "preferred_source": false
+        },
+        {
+          "title": "LEN TV - YouTube",
+          "url": "https://www.youtube.com/channel/UCVPLv3bsZWizPbr7HvyGttw",
+          "domain": "www.youtube.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Search what you see with Lens",
+          "url": "https://www.search.google/ways-to-search/lens/",
+          "domain": "www.search.google",
+          "preferred_source": false
+        },
+        {
+          "title": "LEN Stock Price Quote | Morningstar",
+          "url": "https://www.morningstar.com/stocks/xnys/len/quote",
+          "domain": "www.morningstar.com",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "Len Lye Foundation — colaboração com Dries Van Noten",
+        "url": "https://www.lenlyefoundation.com/blog/",
+        "domain": "www.lenlyefoundation.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "Len Lye Foundation — colaboração com Dries Van Noten",
+        "url": "https://www.lenlyefoundation.com/blog/",
+        "domain": "www.lenlyefoundation.com",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "FETCHED",
+      "http_status": 200,
+      "final_url": "https://www.lenlyefoundation.com/blog/",
+      "page_title": "The Len Lye Foundation - Blog"
+    },
+    {
+      "theme": "Splash",
+      "direction": "Matéria fluida",
+      "query": "LOEWE — Spring-Summer 2024 / Lynda Benglis fashion design",
+      "design_application": "Acabamento fluido e escultural como inspiração para bordas de verniz e pigmento; interpretação para o FashionAI.",
+      "preferred_domains": [
+        "www.loewe.com.cn"
+      ],
+      "candidates": [
+        {
+          "title": "Designer Bags, Clothing, Accessories for Women & Men - Loewe",
+          "url": "https://www.loewe.com/usa/en/home",
+          "domain": "www.loewe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Bags, Accessories & Luxury clothing for Women - LOEWE",
+          "url": "https://www.loewe.com/usa/en/women",
+          "domain": "www.loewe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Loewe (fashion brand) - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Loewe_(fashion_brand)",
+          "domain": "en.wikipedia.org",
+          "preferred_source": false
+        },
+        {
+          "title": "LOEWE | Saks Fifth Avenue",
+          "url": "https://www.saksfifthavenue.com/brand/loewe",
+          "domain": "www.saksfifthavenue.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Luxury bags for women - LOEWE USA Official Website",
+          "url": "https://www.loewe.com/usa/en/women/bags",
+          "domain": "www.loewe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "Luxury bags for women - LOEWE International official website",
+          "url": "https://www.loewe.com/int/en/women/bags",
+          "domain": "www.loewe.com",
+          "preferred_source": false
+        },
+        {
+          "title": "LOEWE - Premium Home Entertainment | TV & Home Cinema",
+          "url": "https://www.loewe.tv/int",
+          "domain": "www.loewe.tv",
+          "preferred_source": false
+        },
+        {
+          "title": "Shop Loewe Online | Nordstrom",
+          "url": "https://www.nordstrom.com/brands/loewe--10002496",
+          "domain": "www.nordstrom.com",
+          "preferred_source": false
+        },
+        {
+          "title": "LOEWE - Neiman Marcus",
+          "url": "https://www.neimanmarcus.com/c/designers-loewe-cat48090736/",
+          "domain": "www.neimanmarcus.com",
+          "preferred_source": false
+        },
+        {
+          "title": "LOEWE Perfumes | Spanish Luxury Perfumes & Scents",
+          "url": "https://www.perfumesloewe.com/int/en_US/",
+          "domain": "www.perfumesloewe.com",
+          "preferred_source": false
+        }
+      ],
+      "curated_source": {
+        "title": "LOEWE — Spring-Summer 2024 / Lynda Benglis",
+        "url": "https://www.loewe.com.cn/stories-collection/ss24-women-runway",
+        "domain": "www.loewe.com.cn",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "selected": {
+        "title": "LOEWE — Spring-Summer 2024 / Lynda Benglis",
+        "url": "https://www.loewe.com.cn/stories-collection/ss24-women-runway",
+        "domain": "www.loewe.com.cn",
+        "preferred_source": true,
+        "discovered_via": "web search and manual relevance review"
+      },
+      "verification": "FETCHED",
+      "http_status": 200,
+      "final_url": "https://www.loewe.com.cn/stories-collection/ss24-women-runway",
+      "page_title": "2024春夏女装秀-loewe罗意威中国官网16-Cart"
+    }
+  ]
+}

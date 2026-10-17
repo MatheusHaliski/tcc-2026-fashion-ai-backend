@@ -612,7 +612,10 @@ public class LookbookService {
      * @param accentColor         cor do palco 2D / mini loja 3D e do header da busca por era/coleção
      */
     public record GroupingForm(GroupingType type, String label, String description, String coverUrl, String atmospherePrompt,
-                               Integer periodFrom, Integer periodTo, String accentColor, Integer sortOrder) {
+                               Integer periodFrom, Integer periodTo, String accentColor, Integer sortOrder, Map<String,Object> editorial) {
+        public GroupingForm(GroupingType type,String label,String description,String coverUrl,String atmospherePrompt,Integer periodFrom,Integer periodTo,String accentColor,Integer sortOrder) {
+            this(type,label,description,coverUrl,atmospherePrompt,periodFrom,periodTo,accentColor,sortOrder,null);
+        }
     }
 
     static final Set<GroupingType> PERSONAL = Set.of(GroupingType.COLLECTION, GroupingType.EVOLUTION, GroupingType.STYLE_LINE, GroupingType.SEASON);
@@ -633,6 +636,7 @@ public class LookbookService {
         g.setDescription(f.description() == null ? null : InputSanitizer.clean(f.description(), 300));
         g.setCoverUrl(ownMedia.require(owner.getId(), f.coverUrl(), "coverUrl", true));
         g.setAtmospherePrompt(f.atmospherePrompt() == null ? null : InputSanitizer.clean(f.atmospherePrompt(), 300));
+        if (f.editorial() != null) g.setEditorialJson(br.com.fashionai.application.common.Json.write(EraEditorial.normalize(f.editorial(), url -> ownMedia.require(user.id(), url, "editorial.photos", true))));
         applyPeriod(g, f);
         groupings.save(g);
         return groupingView(g);
@@ -683,6 +687,7 @@ public class LookbookService {
         if (f.atmospherePrompt() != null) {
             g.setAtmospherePrompt(InputSanitizer.clean(f.atmospherePrompt(), 300));
         }
+        if (f.editorial() != null) g.setEditorialJson(br.com.fashionai.application.common.Json.write(EraEditorial.normalize(f.editorial(), url -> ownMedia.require(user.id(), url, "editorial.photos", true))));
         applyPeriod(g, f);
         groupings.save(g);
         return groupingView(g);
@@ -759,6 +764,7 @@ public class LookbookService {
         m.put("periodTo", g.getPeriodTo());
         m.put("accentColor", g.getAccentColor());
         m.put("sortOrder", g.getSortOrder());
+        m.put("editorial", br.com.fashionai.application.common.Json.map(g.getEditorialJson()));
         return m;
     }
 
