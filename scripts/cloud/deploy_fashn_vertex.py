@@ -188,6 +188,7 @@ def replacement_build(project,region,original_id,image):
 
 
 def adopted_build(state,build,build_id,project,region,current_image,restart_cancelled=False):
+    if state.get('project') not in (None,project):raise RuntimeError('STATE_BELONGS_TO_ANOTHER_PROJECT')
     image=build_image_reference(build,project,region)
     if state.get('image') not in (None,image):raise RuntimeError('STATE_AND_RESUMED_BUILD_IMAGE_MISMATCH')
     if restart_cancelled and build.get('status')=='CANCELLED':
@@ -196,7 +197,9 @@ def adopted_build(state,build,build_id,project,region,current_image,restart_canc
         print(f'Build {build_id} confirmado CANCELLED; preparando nova compilação.',flush=True)
         result={**state};result.pop('buildId',None)
         return result,current_image
-    return {**state,'buildId':build_id},image
+    # A fresh release may contain only the ID loaded from image-build.json.
+    # Carry validated identity forward before resumed_state checks the project.
+    return {**state,'project':project,'image':image,'buildId':build_id},image
 
 
 def wait_build(project,region,build_id,image):
