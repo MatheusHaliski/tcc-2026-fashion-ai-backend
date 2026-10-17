@@ -1,0 +1,276 @@
+{
+  "scope": "Production frontend with synthetic read-only API fixtures; not production backend or physical-device validation.",
+  "browser": "Chromium 1248, Playwright 1.55.1, axe-core Playwright 4.10.2",
+  "results": [
+    {
+      "device": "mobile",
+      "path": "/login",
+      "h1": "Welcome back",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/register",
+      "h1": "Create account",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/pieces/new",
+      "h1": "Add piece",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.026186080698952785,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/schemes/new",
+      "h1": "Create look",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.003609942930993671,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/feed",
+      "h1": "Community feed",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.003609942930993671,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/closet",
+      "h1": "My pieces",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.02419888712845969,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/u/ana",
+      "h1": "ana",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.003609942930993671,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/points",
+      "h1": "FAI Points",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.0037734655001471504,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "mobile",
+      "path": "/design",
+      "h1": "Design system",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.003609942930993671,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/login",
+      "h1": "Welcome back",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 3.563158189754837e-05,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/register",
+      "h1": "Create account",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.00017717084381415487,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/pieces/new",
+      "h1": "Add piece",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.05106687358990619,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/schemes/new",
+      "h1": "Create look",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.0037895702104105214,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/feed",
+      "h1": "Community feed",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.003804670640182594,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/closet",
+      "h1": "My pieces",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.022984555476681774,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/u/ana",
+      "h1": "ana",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.0037895702104105214,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/points",
+      "h1": "FAI Points",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.006379543364983079,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "tablet",
+      "path": "/design",
+      "h1": "Design system",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.0037895702104105214,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/login",
+      "h1": "Welcome back",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 2.1799447016460908e-05,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/register",
+      "h1": "Create account",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.00010839334705075446,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/pieces/new",
+      "h1": "Add piece",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.005720523284786522,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/schemes/new",
+      "h1": null,
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/feed",
+      "h1": "Community feed",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.00023136292759773664,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/closet",
+      "h1": "My pieces",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.019437473877957818,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/u/ana",
+      "h1": "ana",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.00023136292759773664,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/points",
+      "h1": "FAI Points",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.0012112798159668637,
+      "errors": [],
+      "violations": []
+    },
+    {
+      "device": "desktop",
+      "path": "/design",
+      "h1": "Design system",
+      "overflow": 0,
+      "smallText": [],
+      "cls": 0.00023136292759773664,
+      "errors": [],
+      "violations": []
+    }
+  ]
+}
