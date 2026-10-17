@@ -1,4 +1,4 @@
-# Correções de build — 16/10/2026
+# Correções de build — 16–17/10/2026
 
 Base revisada: `main` em `78893f98`. Correções de GPU ficam no PR #312; este relatório cobre a compilação da aplicação.
 
@@ -25,8 +25,19 @@ Os erros de tipos dos PRs #303 e #305 (identificadores duplicados, VFX/contratos
 - Maven `verify` de todos os módulos: **BUILD SUCCESS**, 1.487 testes aprovados e 5 ignorados. Java 21; agente Mockito explícito para este ambiente. Relatório de cobertura não certificado nesta execução.
 - Catálogo Python: **211 testes aprovados**.
 - `npm audit --omit=dev --audit-level=high`: nenhuma vulnerabilidade reportada.
+- Vitest completo: **1.605 testes aprovados, 2 ignorados**, 199 arquivos aprovados e 1 arquivo ignorado; nenhuma exceção não tratada. Teste de fallback usa relógio simulado para verificar os retries sem depender de um timeout de parede.
 - Regressões de tradução dinâmica, cards e Lookbook: **20 testes aprovados**.
 
 O banco Railway não foi migrado nesta sessão. Antes de aplicar V72 em um banco existente, confira `flyway_schema_history`: esta alteração pressupõe que a migration da loja física não tenha sido aplicada anteriormente como V70. Não execute repair nem altere histórico de migrations automaticamente.
 
 O histórico completo da equipe Vercel retorna HTTP 403 para a integração. Foram revisados os logs fornecidos e os jobs GitHub dos PRs #303, #305, #307 e #308; não se afirma revisão de todos os deployments históricos. A conclusão local não substitui o próximo deployment Vercel/Railway.
+
+## Auditoria no navegador
+
+**27 verificações aprovadas**: 9 rotas em celular (390 px), tablet (820 px) e desktop (1440 px). Nos estados renderizados, nenhum erro JavaScript, overflow horizontal, texto abaixo de 12 px ou violação WCAG 2 A/AA e 2.1 AA detectada pelo axe; CLS medido abaixo de 0,1. [Resultado estruturado](browser-audit.json). Inclui guias de primeiro acesso; não é uma auditoria exaustiva de todas as interações por trás dos modais.
+
+Execução sobre o build de produção local, Chromium 1248, Playwright 1.55.1 e axe-core 4.10.2; APIs interceptadas com fixtures sintéticas, sem dados ou escrita em produção. Não comprova contas reais, dados do backend, GPU ou validação em dispositivo físico. Lighthouse não executado localmente; permanece etapa do CI.
+
+![Feed e guia de primeiro acesso, com API simulada](desktop-_feed.png)
+
+![Guarda-roupa móvel com API simulada](mobile-_closet.png)
