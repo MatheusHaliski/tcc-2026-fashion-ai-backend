@@ -125,6 +125,21 @@ class CloudOperationFailed(RuntimeError):
                          f"operation={operation.get('name')}; message={message}")
 
 
+class CloudHTTPError(RuntimeError):
+    def __init__(self,status,message):
+        self.status=status;super().__init__(message)
+
+
+def google_error(raw):
+    """Status, motivo e mensagem do erro JSON da API de gerenciamento (nunca usado para :predict)."""
+    try:error=json.loads(raw).get('error',{})
+    except (ValueError,AttributeError):return ''
+    if not isinstance(error,dict):return ''
+    reasons=[d.get('reason') for d in error.get('details',[]) if isinstance(d,dict) and d.get('reason')]
+    message=re.sub(r'(?i)bearer\s+[^\s]+','Bearer [REDACTED]',str(error.get('message','')))[:500]
+    return '; '.join(str(part) for part in (error.get('status'),*reasons[:2],message) if part)
+
+
 class Cloud:
     def __init__(self,project,region):
         self.project=project;self.region=region
@@ -145,12 +160,15 @@ class Cloud:
                 if len(raw)>10_000_000:raise RuntimeError('CLOUD_RESPONSE_TOO_LARGE')
                 return json.loads(raw)
         except urllib.error.HTTPError as error:
-            # API errors may echo inputs: the raw body is never printed, only a known short server code and its hint.
+            # :predict errors may echo the photos: their raw body is never printed, only a known short server code
+            # and its hint. Management calls (no dedicated host) carry resource diagnostics, shown like operation errors.
             try:raw=error.read(65_536)
             except Exception:raw=b''
             code=server_code(raw)
             detail=f'; servidor: {code} — {SERVER_HINTS[code]}' if code else ''
-            raise RuntimeError(f'GOOGLE_CLOUD_HTTP_{error.code}: {method} {path.split(":")[0]}{detail}') from None
+            if not code and host is None and not path.endswith(':predict'):
+                reason=google_error(raw);detail=f'; Google: {reason}' if reason else ''
+            raise CloudHTTPError(error.code,f'GOOGLE_CLOUD_HTTP_{error.code}: {method} {path.split(":")[0]}{detail}') from None
 
     def wait(self,operation,seconds=2400):
         started=time.monotonic();deadline=started+seconds
@@ -160,7 +178,15 @@ class Cloud:
             kind=operation.get('metadata',{}).get('@type','operação').rsplit('.',1)[-1]
             print(f'Aguardando Google Cloud: {kind} ({round(time.monotonic()-started)}s)...',flush=True)
             time.sleep(20)
-            operation=self.request('GET',operation['name'])
+            name=operation['name']
+            for attempt in range(4):
+                # Polling is read-only and the operation keeps running in Google Cloud: ride out a transient
+                # 403/429/5xx (e.g. Cloud Shell refreshing credentials) instead of aborting a 20-minute wait.
+                try:operation=self.request('GET',name);break
+                except CloudHTTPError as error:
+                    if attempt==3 or not (error.status in (403,429) or error.status>=500):raise
+                    print(f'Consulta da operação falhou ({error}); nova tentativa em 30 s...',flush=True)
+                    time.sleep(30)
         if operation.get('error'):raise CloudOperationFailed(operation)
         return operation.get('response',{})
 

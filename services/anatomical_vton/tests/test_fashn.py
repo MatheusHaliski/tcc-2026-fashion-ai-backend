@@ -517,6 +517,38 @@ def test_predict_error_shows_only_known_server_code_never_the_echoed_input():
     assert 'QUJDREVGR0hJSktM' not in message and 'TOKEN' not in message
 
 
+def test_management_error_shows_google_reason_and_poll_rides_out_a_transient_403():
+    import io,urllib.error
+    from scripts.cloud.deploy_fashn_vertex import Cloud,CloudHTTPError
+    body=json.dumps({'error':{'code':403,'status':'PERMISSION_DENIED','message':'Permission aiplatform.operations.get denied; Bearer abc.def',
+        'details':[{'@type':'type.googleapis.com/google.rpc.ErrorInfo','reason':'IAM_PERMISSION_DENIED'}]}}).encode()
+    def failing(code,payload):
+        error=urllib.error.HTTPError('https://us-central1-aiplatform.googleapis.com/v1/op',code,'x',{},io.BytesIO(payload))
+        return type('O',(),{'open':lambda self,*a,**k:(_ for _ in ()).throw(error)})()
+    cloud=Cloud('project-14023673-32d6-4bf2-8b7','us-central1')
+    with patch('scripts.cloud.deploy_fashn_vertex.command',return_value='TOKEN'),patch('scripts.cloud.deploy_fashn_vertex.urllib.request.build_opener',return_value=failing(403,body)):
+        with pytest.raises(CloudHTTPError) as raised:cloud.request('GET','projects/p/locations/l/endpoints/e/operations/1')
+    message=str(raised.value)
+    assert raised.value.status==403 and 'PERMISSION_DENIED' in message and 'IAM_PERMISSION_DENIED' in message and 'operations.get denied' in message
+    assert 'abc.def' not in message and 'TOKEN' not in message
+    # :predict keeps hiding the body even when it is a Google JSON error that could echo the photos.
+    with patch('scripts.cloud.deploy_fashn_vertex.command',return_value='TOKEN'),patch('scripts.cloud.deploy_fashn_vertex.urllib.request.build_opener',return_value=failing(403,body)):
+        with pytest.raises(CloudHTTPError) as raised:cloud.request('POST','projects/p/locations/l/endpoints/e:predict',{'instances':[{}]},host='x.prediction.vertexai.goog')
+    assert 'operations.get denied' not in str(raised.value)
+    # Poll: one transient 403 is retried and the wait still returns the finished operation.
+    done={'name':'op/1','done':True,'response':{'ok':1}}
+    with patch.object(cloud,'request',side_effect=[CloudHTTPError(403,'GOOGLE_CLOUD_HTTP_403'),done]) as request,patch('scripts.cloud.deploy_fashn_vertex.time.sleep'):
+        assert cloud.wait({'name':'op/1','done':False})=={'ok':1}
+    assert request.call_count==2
+    # A persistent error still stops after the retries; a 404 is not retried.
+    with patch.object(cloud,'request',side_effect=CloudHTTPError(403,'GOOGLE_CLOUD_HTTP_403')) as request,patch('scripts.cloud.deploy_fashn_vertex.time.sleep'):
+        with pytest.raises(CloudHTTPError):cloud.wait({'name':'op/1','done':False})
+    assert request.call_count==4
+    with patch.object(cloud,'request',side_effect=CloudHTTPError(404,'GOOGLE_CLOUD_HTTP_404')) as request,patch('scripts.cloud.deploy_fashn_vertex.time.sleep'):
+        with pytest.raises(CloudHTTPError):cloud.wait({'name':'op/1','done':False})
+    assert request.call_count==1
+
+
 def test_smoke_photos_are_checked_and_fitted_before_any_deploy(tmp_path):
     import io
     from PIL import Image
