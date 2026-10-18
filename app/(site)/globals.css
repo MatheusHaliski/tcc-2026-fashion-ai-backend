@@ -282,8 +282,11 @@ h1, h2, h3, h4 { margin: 0; }
 .hscroll { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(260px, 290px); gap: 12px; overflow-x: auto; padding-bottom: 6px; align-items: start; scroll-snap-type: x proximity; }
 .hscroll > * { scroll-snap-align: start; }
 .detail-card-expanded { width: 100%; max-width: 440px; }
-.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 352px), 1fr)); gap: .9rem; }
-@media (max-width: 639px) { .grid-cards { grid-template-columns: minmax(0, 1fr); gap: .6rem; } }
+.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 176px), 1fr)); gap: .9rem; }
+@media (max-width: 639px) { .grid-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; } }
+/* cards de peça (guarda-roupa, busca): o dobro da largura; uma coluna no celular */
+.grid-cards.is-pieces { grid-template-columns: repeat(auto-fill, minmax(min(100%, 352px), 1fr)); }
+@media (max-width: 639px) { .grid-cards.is-pieces { grid-template-columns: minmax(0, 1fr); } }
 .grid-looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 1rem; }
 /* Lookbook › Looks: atalho discreto do dono para a gestão dos looks (/looks), à direita, acima da vitrine */
 .lookbook-manage { display: flex; justify-content: flex-end; margin: -4px 0 12px; }

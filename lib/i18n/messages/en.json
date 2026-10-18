@@ -7869,5 +7869,6 @@
   "pieceCard.tab_hype": "Hype",
   "pieceCard.tabs": "{name} info and Hype",
   "fashionHype.sample": "Sample values",
-  "fashionHype.sampleHint": "Preview numbers are examples that show the layout and colors; the piece card shows only calculated attributes."
+  "fashionHype.sampleHint": "Preview numbers are examples that show the layout and colors; the piece card shows only calculated attributes.",
+  "levelProgress.abrirMaximo": "Level {level}, maximum level reached. Open progress"
 }

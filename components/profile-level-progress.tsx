@@ -14,7 +14,7 @@ export function ProfileLevelChip({progress}:{progress:LevelProgress}){
  const percent=Number.isFinite(progress.percent)?Math.max(0,Math.min(100,Math.floor(progress.percent))):0;
  const current=t(levelNameKey(progress.level));const next=progress.nextLevel?{...progress.nextLevel,displayName:t(levelNameKey(progress.nextLevel.level))}:null;
  return <>
-  <button type="button" className="level-chip" onClick={()=>setOpen(true)} aria-haspopup="dialog" aria-label={t('levelProgress.abrir',{level:current,percent})}>
+  <button type="button" className="level-chip" onClick={()=>setOpen(true)} aria-haspopup="dialog" aria-label={next?t('levelProgress.abrir',{level:current,percent}):t('levelProgress.abrirMaximo',{level:current})}>
    <span>{current}</span>{next&&<span className="level-chip-pct tabular">{percent}%</span>}
   </button>
   <Dialog open={open} onClose={()=>setOpen(false)} title={t('levelProgress.title')}>

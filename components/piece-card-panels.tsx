@@ -1,5 +1,5 @@
 "use client";
-import { useId, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import type { PieceView } from "@/lib/api/types";
 import type { HypeSummary } from "@/lib/hype/types";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -25,6 +25,9 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode }: 
   auraMode?: string | null }) {
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>(initial);
+  // a aba inicial acompanha a preferência (a AURA Hype salva no navegador chega depois do 1º render) até a pessoa escolher
+  const touched = useRef(false);
+  useEffect(() => { if (!touched.current) setTab(initial); }, [initial]);
   const id = useId();
   const list = (values?: string[] | null) => (values ?? []).filter(Boolean).map((v) => label(v)).join(" · ");
   const rows: [string, ReactNode][] = ([
@@ -42,6 +45,7 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode }: 
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     e.preventDefault();
     const next: Tab = tab === "info" ? "hype" : "info";
+    touched.current = true;
     setTab(next);
     (e.currentTarget.querySelector(`[data-tab="${next}"]`) as HTMLButtonElement | null)?.focus();
   };
@@ -51,7 +55,7 @@ export function PieceCardPanels({ piece, summary, initial = "info", auraMode }: 
       <div role="tablist" className="pc-seg" aria-label={t("pieceCard.tabs", { name: piece.name })} onKeyDown={onKey}>
         {tabs.map((x) => (
           <button key={x.key} type="button" role="tab" data-tab={x.key} id={`${id}-${x.key}`} aria-selected={tab === x.key} aria-controls={`${id}-panel`}
-            tabIndex={tab === x.key ? 0 : -1} className="pc-seg-btn" onClick={(e) => { e.stopPropagation(); setTab(x.key); }}>
+            tabIndex={tab === x.key ? 0 : -1} className="pc-seg-btn" onClick={(e) => { e.stopPropagation(); touched.current = true; setTab(x.key); }}>
             {x.icon}<span>{x.text}</span>
           </button>
         ))}

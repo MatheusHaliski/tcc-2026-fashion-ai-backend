@@ -136,8 +136,8 @@ function SearchInner() {
       )}
       {items.length > 0 && (
         tab === "LOOKS" ? <div className="grid-looks">{(items as SchemeView[]).map((s) => <SchemeCard key={s.id} scheme={s} />)}</div>
-        : tab === "PECAS" ? <div className="grid-cards">{(items as PieceView[]).map((p) => <PieceCard key={p.id} piece={p} />)}</div>
-        : tab === "ACERVO" ? <ul className="grid-cards" aria-label={t("search.acervo")}>
+        : tab === "PECAS" ? <div className="grid-cards is-pieces">{(items as PieceView[]).map((p) => <PieceCard key={p.id} piece={p} />)}</div>
+        : tab === "ACERVO" ? <ul className="grid-cards is-pieces" aria-label={t("search.acervo")}>
           {(items as CatalogProduct[]).map((p) => <li key={p.id}><CatalogResultCard product={p} pickLabel={t("search.usar_no_criador")} onPick={() => useInCreator(p)} /></li>)}</ul>
         : tab === "PESSOAS" ? <ul className="institutional-profile-feed" aria-label={t("publicProfile.results")}>
           {(items as PublicProfileSummary[]).map((profile) => <li key={profile.id}><PublicProfileCard profile={profile} /></li>)}</ul>

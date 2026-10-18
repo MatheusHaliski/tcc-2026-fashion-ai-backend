@@ -7869,5 +7869,6 @@
   "pieceCard.tab_hype": "Hype",
   "pieceCard.tabs": "Info e Hype de {name}",
   "fashionHype.sample": "Valores de exemplo",
-  "fashionHype.sampleHint": "Os números das prévias são exemplos para mostrar a forma e as cores; a carta da peça mostra só os atributos calculados."
+  "fashionHype.sampleHint": "Os números das prévias são exemplos para mostrar a forma e as cores; a carta da peça mostra só os atributos calculados.",
+  "levelProgress.abrirMaximo": "Nível {level}, nível máximo alcançado. Abrir progresso"
 }
