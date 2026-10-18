@@ -3,19 +3,20 @@ import { expect, it, vi } from "vitest";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { ApprovedAsset } from "./approved-asset";
-import { BED_POSITION, DoubleBed, RoomFixture } from "./room-furniture";
+import { BED, BED_POSITION, DoubleBed, RoomFixture } from "./room-furniture";
 import { RoomInteraction, moveInRoom, penetration } from "@/lib/room3d/interaction";
 import { ROOM } from "@/lib/room3d/room-bounds";
 import { frames, mount3d } from "@/test-utils/three";
 
-it("double bed is larger, higher, faces the room center, and has a lamp on each nightstand", async () => {
+it("double bed is human-sized, has its headboard on the east wall facing the room center, and a lamp on each nightstand", async () => {
   const engine = new RoomInteraction();
   const r = await mount3d(<DoubleBed engine={engine} modelUrl={null} lit={false} intensity={0.75} />);
   await frames(r, 2);
 
-  expect(BED_POSITION).toEqual([1.65, 0, 3.85]);
+  expect(BED.length).toBeGreaterThan(2);
+  expect(BED_POSITION[0] + BED.length / 2).toBeCloseTo(ROOM.maxX - 0.03, 6);
   const collider = [...engine.solids][0].userData.collider;
-  expect(collider).toEqual({ hx: 1.62, hz: 1.12 });
+  expect(collider).toEqual({ hx: BED.width / 2, hz: BED.length / 2 });
   const brandedLampBases = r.scene.findAll((node) =>
     node.type === "Mesh" && (node.instance as THREE.Mesh).geometry instanceof THREE.CylinderGeometry &&
     ((node.instance as THREE.Mesh).material as THREE.MeshStandardMaterial).color.getHexString() === "1245a8",

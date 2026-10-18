@@ -316,3 +316,16 @@ it("builds cargo on both body shapes with continuous fabric instead of a front p
     mesh.dispose(); h.dispose();
   }
 });
+
+it("a foto da peça vai para a frente do corpo mesmo com o personagem girado na cena (Meu Quarto começa de costas)", () => {
+  const { c, h } = dressed("FEMININO", ["tee"]);
+  const P = bodyParam(asset, c), normals = baseNormals(c.body, asset.body.index, asset.body.renderVertex);
+  const g = garmentGeometry(asset, c, normals, P, specOf({ subcategory: "t_shirt" })!)!;
+  const still = posedPositions(h.skeleton, h.body.bindMatrix, g.position, g.skinIndex, g.skinWeight, h.body);
+  const room = new THREE.Group(); room.add(h.root); room.position.set(0.6, 0, 2.2); room.rotation.y = Math.PI; room.updateMatrixWorld(true);
+  const turned = posedPositions(h.skeleton, h.body.bindMatrix, g.position, g.skinIndex, g.skinWeight, h.body);
+  for (let i = 0; i < still.length; i++) expect(turned[i]).toBeCloseTo(still[i], 4);              // mesmo resultado, girado ou não
+  const world = posedPositions(h.skeleton, h.body.bindMatrix, g.position, g.skinIndex, g.skinWeight);
+  expect(Math.abs(world[2] - still[2]) + Math.abs(world[0] - still[0])).toBeGreaterThan(0.1);      // sem o espaço do corpo, a pose vinha girada
+  room.remove(h.root); h.dispose();
+});
