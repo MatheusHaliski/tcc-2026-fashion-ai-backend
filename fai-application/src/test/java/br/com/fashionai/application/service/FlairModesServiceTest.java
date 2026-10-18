@@ -6,8 +6,11 @@ import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.testkit.Kit;
 import br.com.fashionai.application.testkit.MemoryRepository;
 import br.com.fashionai.application.testkit.World;
+import br.com.fashionai.domain.model.AtelierRewardGrant;
+import br.com.fashionai.domain.model.AtelierRewardGrant.Category;
 import br.com.fashionai.domain.model.FlairMatch;
 import br.com.fashionai.domain.model.FlairTrophy;
+import br.com.fashionai.domain.model.Scheme;
 import br.com.fashionai.domain.model.WardrobeItem;
 import br.com.fashionai.domain.repository.FlairMatchRepository;
 import br.com.fashionai.domain.repository.FlairTrophyRepository;
@@ -15,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +44,7 @@ class FlairModesServiceTest {
     void setUp() {
         kit = new Kit();
         world = new World(kit);
+        kit.atelier();
         kit.real(FlairService.class);
         modes = kit.build(FlairModesService.class);
         ana = Kit.as(world.me);
@@ -260,6 +265,31 @@ class FlairModesServiceTest {
         }
         List<FlairTrophy> trophies = MemoryRepository.rows(kit.dep(FlairTrophyRepository.class));
         assertThat(modes.trophiesOf(world.me.getId())).hasSize(trophies.size());
+        // Atelier: cada troféu de temporada vira um Troféu habitável, ligado ao troféu de origem
+        List<AtelierRewardGrant> habitable = kit.atelierGrants().stream().filter(g -> g.getCategory() == Category.habitableTrofeus).toList();
+        assertThat(habitable).extracting(AtelierRewardGrant::getSourceReference)
+                .containsExactlyInAnyOrderElementsOf(trophies.stream().map(t -> "trophy:" + t.getId()).toList());
+        assertThat(habitable).allSatisfy(g -> {
+            assertThat(g.getOwnerId()).isEqualTo(world.me.getId());
+            assertThat(g.getSourceType()).isEqualTo("SEASON");
+            assertThat(g.getRewardCode()).isEqualTo("TROPHY_BOSS");
+        });
+    }
+
+    @Test
+    void sinergiaDescobertaNaPartidaViraAssinaturaDeAuraUmaVezSo() {
+        Scheme best = world.looksOf(world.me).stream().max(Comparator.comparingInt(s -> modes.look(s).synergies().size())).orElseThrow();
+        List<String> expected = modes.look(best).synergies().stream().map(x -> "SYNERGY_" + x.code()).toList();
+        assertThat(expected).isNotEmpty();
+        assertFinished(modes.combo(ana, best.getId(), null), "COMBO");
+        assertFinished(modes.combo(ana, best.getId(), null), "COMBO");   // repetir a sinergia não concede de novo
+        List<AtelierRewardGrant> auras = kit.atelierGrants().stream().filter(g -> g.getCategory() == Category.auraSignature).toList();
+        assertThat(auras).extracting(AtelierRewardGrant::getRewardCode).containsExactlyInAnyOrderElementsOf(expected);
+        assertThat(auras).allSatisfy(g -> {
+            assertThat(g.getOwnerId()).isEqualTo(world.me.getId());
+            assertThat(g.getSourceType()).isEqualTo("FLAIR");
+            assertThat(g.getTitle()).startsWith("§i18n:atelier.premio.aura.titulo");
+        });
     }
 
     @Test
