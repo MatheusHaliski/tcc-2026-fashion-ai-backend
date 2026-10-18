@@ -8,7 +8,7 @@ import {useApi} from '@/lib/hooks/use-api';
 import {useI18n} from '@/lib/i18n/i18n';
 import {ATELIER_CATEGORIES,type AtelierRewardSystem,type AtelierTab} from '@/lib/atelier/types';
 import {Button,Dialog,ErrorState,Skeleton,Tabs} from '@/components/ui';
-import {ProfileLevelProgress} from '@/components/profile-level-progress';
+import {ProfileLevelChip} from '@/components/profile-level-progress';
 import {HolographicFxEngine,useHologramMotion} from './holographic-fx';
 const Metamorphoses=dynamic(()=>import('./metamorphoses-panel').then(m=>m.MetamorphosesPanel),{loading:()=> <Skeleton className="h-64"/>});
 const Timeline=dynamic(()=>import('./timeline-panel').then(m=>m.TimelinePanel),{loading:()=> <Skeleton className="h-64"/>});
@@ -20,7 +20,7 @@ export function AtelierHub(){
  const query=useApi<AtelierRewardSystem>(signal=>api.get('/api/me/atelier',{signal}),[]);const [paused,setPaused]=useState(false);const [help,setHelp]=useState(false);const motion=useHologramMotion(paused);
  function navigate(value:AtelierTab){const next=new URLSearchParams(params.toString());next.set('tab',value);router.replace(`/atelier?${next}`,{scroll:false});}
  return <div className="atelier-hub" data-motion={motion?'on':'off'}>
-  <header className="atelier-hero"><HolographicFxEngine paused={!motion}/><div className="atelier-hero-content"><p className="atelier-eyebrow">{t('atelier.identityEyebrow')}</p><h1>{t('atelier.brandTitle')}</h1><p>{t('atelier.lead')}</p><div className="atelier-hero-actions"><Button onClick={()=>setHelp(true)}>{t('atelier.help')}</Button><Button aria-pressed={paused} onClick={()=>setPaused(value=>!value)}>{t(paused?'atelier.resume':'atelier.pause')}</Button><Link href="/room" className="btn">{t('atelier.visitRoom')}</Link></div></div>{query.data&&<ProfileLevelProgress progress={query.data.levelProgress}/>}</header>
+  <header className="atelier-hero"><HolographicFxEngine paused={!motion}/><div className="atelier-hero-content"><p className="atelier-eyebrow">{t('atelier.identityEyebrow')}</p><h1>{t('atelier.brandTitle')}</h1><p>{t('atelier.lead')}</p><div className="atelier-hero-actions"><Button onClick={()=>setHelp(true)}>{t('atelier.help')}</Button><Button aria-pressed={paused} onClick={()=>setPaused(value=>!value)}>{t(paused?'atelier.resume':'atelier.pause')}</Button><Link href="/room" className="btn">{t('atelier.visitRoom')}</Link></div></div>{query.data&&<div className="atelier-level"><ProfileLevelChip progress={query.data.levelProgress}/></div>}</header>
   {query.error&&<ErrorState error={query.error} onRetry={query.reload}/>}
   {query.loading?<Skeleton className="h-24"/>:<dl className="atelier-reward-strip" aria-label={t('atelier.rewards')}>{ATELIER_CATEGORIES.map((category,i)=><div key={category}><dt><span aria-hidden="true">{['✧','◷','◇','⌘','⬡','✦'][i]}</span>{t(`atelier.category.${category}`)}</dt><dd>{query.data?query.data.categories[category]?.length??0:'—'}</dd></div>)}</dl>}
   <Tabs tabs={TABS.map(id=>({id,label:t(`atelier.tab.${id}`)}))} value={tab} onChange={navigate} label={t('atelier.tabs')}/>

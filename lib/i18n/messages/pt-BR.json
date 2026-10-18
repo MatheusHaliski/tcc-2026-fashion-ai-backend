@@ -7373,6 +7373,7 @@
   "impersonation.power.ELEMENTAL_WIND": "Vento elemental",
   "impersonation.power.Y2K_HOLOGRAM": "Distorção holográfica",
   "levelProgress.title": "Progresso de nível",
+  "levelProgress.abrir": "Nível {level}, {percent}% até o próximo. Abrir progresso",
   "levelProgress.name.ESTREIA": "Básico",
   "levelProgress.name.STUDIO": "Studio",
   "levelProgress.name.LOFT": "Loft",
