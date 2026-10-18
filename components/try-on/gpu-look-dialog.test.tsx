@@ -1,8 +1,7 @@
 // @vitest-environment jsdom
 /**
- * Foto realista na GPU (Avatar 3D, Provador e espelho do Meu Quarto): o look inteiro vai em sequência para
- * /api/try-on/look-renders (inteira → baixo → cima), calçados e acessórios ficam de fora com aviso, a recusa da GPU
- * vira o que a pessoa corrige na foto e, no Avatar 3D, o look é montado com peças do guarda-roupa.
+ * Prova com IA na GPU (Provador): o look inteiro vai em sequência para /api/try-on/look-renders (inteira → baixo →
+ * cima), calçados e acessórios ficam de fora com aviso e a recusa da GPU vira o que a pessoa corrige na foto.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, loggedAs, renderApp, screen, waitFor } from "@/test-utils/render";
@@ -14,7 +13,6 @@ const shoes: GpuPiece = { pieceId: "w3", name: "Tênis branco", category: "shoes
 const photo = () => new File(["x"], "eu.jpg", { type: "image/jpeg" });
 const refusal = (reason: string) => new Response(JSON.stringify({ status: 422, code: "VTON_WORKER_REJECTED", message: "do servidor", details: { reason } }),
   { status: 422, headers: { "content-type": "application/json" } });
-const page = (items: unknown[]) => ({ items, page: 0, size: 60, total: items.length, hasMore: false });
 
 beforeEach(() => { Object.assign(URL, { createObjectURL: vi.fn(() => "blob:previa"), revokeObjectURL: vi.fn() }); });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
@@ -62,22 +60,4 @@ describe("Foto realista na GPU", () => {
     expect(refusalKey("<script>")).toBeNull();
   });
 
-  it("no Avatar 3D o look é montado com peças do guarda-roupa, uma por tipo", async () => {
-    const { calls } = loggedAs(undefined, {
-      "GET /api/me/closet": (u: URL) => page(u.searchParams.get("category") === "upper_piece" ? [{ id: "w1", name: "Camisa de linho", category: "upper_piece" }]
-        : u.searchParams.get("category") === "lower_piece" ? [{ id: "w2", name: "Calça de alfaiataria", category: "lower_piece" }] : []),
-      "POST /api/try-on/person-photos": { url: "/media/p.jpg" },
-      "POST /api/try-on/look-renders": { status: "READY", url: "/media/r.png", steps: [], skipped: [] },
-    });
-    renderApp(<GpuLookDialog open onClose={vi.fn()} title="Foto realista do look (GPU)" />);
-    fireEvent.click(await screen.findByRole("button", { name: /^Parte de cima/ }));
-    fireEvent.click(screen.getByRole("option", { name: "Camisa de linho" }));
-    fireEvent.click(screen.getByRole("button", { name: /^Parte de baixo/ }));
-    fireEvent.click(screen.getByRole("option", { name: "Calça de alfaiataria" }));
-    await photoAndConsent();
-    fireEvent.click(screen.getByRole("button", { name: "Gerar prova" }));
-    await screen.findByAltText("Foto realista do look na sua foto");
-    expect(calls.filter((c) => c.path.startsWith("/api/me/closet")).map((c) => new URL(c.path, "http://x").searchParams.get("category"))).toEqual(["full_body_piece", "lower_piece", "upper_piece"]);
-    expect(calls.find((c) => c.path === "/api/try-on/look-renders")?.body).toMatchObject({ pieceIds: ["w2", "w1"] });
-  });
 });

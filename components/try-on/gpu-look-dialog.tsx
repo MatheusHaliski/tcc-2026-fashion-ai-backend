@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Dialog, FileButton, SegmentPicker, Select, Switch } from "@/components/ui";
 import { api, ApiError, mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
-import type { Page, PieceView } from "@/lib/api/types";
 
 /** O que o FASHN veste (services/anatomical_vton/fashn_runtime.py · CATEGORIES): parte de cima, de baixo e peça inteira. */
 export const GPU_CATEGORIES = ["full_body_piece", "lower_piece", "upper_piece"] as const;
@@ -65,29 +64,19 @@ export async function fitted(file: File): Promise<Blob> {
   }
 }
 
-type Zone = GpuCategory;
-const ZONE_LABEL: Record<Zone, string> = { full_body_piece: "tryOn.ia_zona.full", lower_piece: "tryOn.ia_zona.lower", upper_piece: "tryOn.ia_zona.upper" };
-
 /**
- * Foto realista na GPU (FASHN VTON na Vertex, via worker): as peças do guarda-roupa vestidas na foto da própria pessoa.
- * Um componente para o Avatar 3D, o Provador e o espelho do Meu Quarto:
- *  - `pieces` dado (Provador, espelho): o look que está sendo provado — "Look inteiro" (uma peça por tipo, vestidas em
- *    sequência: inteira → baixo → cima, POST /api/try-on/look-renders) ou "Uma peça" (POST /api/try-on/anatomical-renders);
- *  - sem `pieces` (Avatar 3D): a pessoa monta o look aqui, escolhendo do guarda-roupa uma peça por tipo.
- * A foto vai para /api/try-on/person-photos e só é processada com o consentimento. O resultado é uma imagem 2D gerada:
- * não certifica caimento nem tamanho. Calçados e acessórios o modelo não veste (ficam de fora, avisado).
+ * Prova com IA na GPU (FASHN VTON na Vertex, via worker): o look que está sendo provado — "Look inteiro" (uma peça por
+ * tipo, vestidas em sequência: inteira → baixo → cima, POST /api/try-on/look-renders) ou "Uma peça"
+ * (POST /api/try-on/anatomical-renders) — vestido na foto da própria pessoa. A foto vai para /api/try-on/person-photos e
+ * só é processada com o consentimento. O resultado é uma imagem 2D gerada: não certifica caimento nem tamanho. Calçados e
+ * acessórios o modelo não veste (ficam de fora, avisado).
  */
 export function GpuLookDialog({ open, onClose, pieces, onPickFromWardrobe, title, emptyText }: {
-  open: boolean; onClose: () => void; pieces?: GpuPiece[]; onPickFromWardrobe?: () => void; title?: string; emptyText?: string;
+  open: boolean; onClose: () => void; pieces: GpuPiece[]; onPickFromWardrobe?: () => void; title?: string; emptyText?: string;
 }) {
   const { t } = useI18n();
-  const fromWardrobe = pieces === undefined;
-  const [closet, setCloset] = useState<GpuPiece[] | null>(null);
-  const [zones, setZones] = useState<Partial<Record<Zone, string>>>({});
-  const candidates = useMemo(() => (pieces ?? closet ?? []).filter((p) => isGpuCategory(p.category)), [pieces, closet]);
-  const look = useMemo(() => fromWardrobe
-    ? GPU_CATEGORIES.flatMap((z) => candidates.find((p) => p.pieceId === zones[z]) ?? [])
-    : gpuLook(candidates), [fromWardrobe, candidates, zones]);
+  const candidates = useMemo(() => pieces.filter((p) => isGpuCategory(p.category)), [pieces]);
+  const look = useMemo(() => gpuLook(candidates), [candidates]);
   const [mode, setMode] = useState<"look" | "piece">("look");
   const [pieceId, setPieceId] = useState("");
   const [photo, setPhoto] = useState<Photo | null>(null);
@@ -97,20 +86,9 @@ export function GpuLookDialog({ open, onClose, pieces, onPickFromWardrobe, title
   const [error, setError] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
 
-  // Avatar 3D: o guarda-roupa da pessoa, só o que a GPU veste
-  useEffect(() => {
-    if (!open || !fromWardrobe || closet) return;
-    const controller = new AbortController();
-    // uma página por tipo (o closet devolve até 60 por página): calçados e acessórios não tiram lugar das peças que a GPU veste
-    Promise.all(GPU_CATEGORIES.map((category) => api.get<Page<PieceView>>(`/api/me/closet?category=${category}&size=60`, { signal: controller.signal })))
-      .then((pages) => setCloset(pages.flatMap((page) => page.items ?? []).map((p) => ({ pieceId: p.id, name: p.name, category: p.category }))))
-      .catch(() => { if (!controller.signal.aborted) setCloset([]); });
-    return () => controller.abort();
-  }, [open, fromWardrobe, closet]);
-
   // com uma peça só não há o que escolher entre look e peça: vai direto para a peça
-  const single = !fromWardrobe && look.length <= 1;
-  const effectiveMode = fromWardrobe ? "look" : single ? "piece" : mode;
+  const single = look.length <= 1;
+  const effectiveMode = single ? "piece" : mode;
   const piece = candidates.find((c) => c.pieceId === pieceId) ?? candidates[0] ?? null;
   const ready = !!photo && consent && (effectiveMode === "look" ? look.length > 0 : !!piece);
   useEffect(() => () => { abort.current?.abort(); if (photo) URL.revokeObjectURL(photo.preview); }, [photo]);
@@ -164,9 +142,9 @@ export function GpuLookDialog({ open, onClose, pieces, onPickFromWardrobe, title
   function close() { abort.current?.abort(); onClose(); }
 
   const seconds = result?.diagnostics?.latencyMs ? Math.max(1, Math.round(result.diagnostics.latencyMs / 1000)) : null;
-  const left = (pieces ?? []).filter((p) => !isGpuCategory(p.category));
+  const left = pieces.filter((p) => !isGpuCategory(p.category));
   const resultAlt = effectiveMode === "look" ? t("tryOn.ia_resultado_look_alt") : t("tryOn.ia_resultado_alt", { name: piece?.name ?? "" });
-  const empty = candidates.length === 0 && (!fromWardrobe || closet !== null);
+  const empty = candidates.length === 0;
   return (
     <Dialog open={open} onClose={close} title={title ?? t("tryOn.ia_titulo")} size="lg"
       footer={(
@@ -187,30 +165,11 @@ export function GpuLookDialog({ open, onClose, pieces, onPickFromWardrobe, title
         </div>
         <div className="grid content-start gap-3">
           <p className="type-body-sm text-muted">{t("tryOn.ia_lead")}</p>
-          {fromWardrobe && closet === null && <p className="type-body-sm text-muted" role="status">{t("tryOn.ia_carregando_pecas")}</p>}
           {empty ? (
             <div className="grid gap-2">
-              <p className="type-body">{emptyText ?? (fromWardrobe ? t("tryOn.ia_sem_peca_guarda_roupa") : t("tryOn.ia_sem_peca"))}</p>
+              <p className="type-body">{emptyText ?? t("tryOn.ia_sem_peca")}</p>
               {onPickFromWardrobe && <Button size="sm" onClick={() => { close(); onPickFromWardrobe(); }}>{t("tryOn.ia_ir_guarda_roupa")}</Button>}
             </div>
-          ) : fromWardrobe ? (
-            <fieldset className="grid gap-2" disabled={busy !== null}>
-              <legend className="label">{t("tryOn.ia_monte_look")}</legend>
-              {GPU_CATEGORIES.map((zone) => {
-                const options = candidates.filter((p) => p.category === zone);
-                if (!options.length) return null;
-                return (
-                  <label key={zone} className="grid gap-1">
-                    <span className="type-caption text-muted">{t(ZONE_LABEL[zone])}</span>
-                    <Select aria-label={t(ZONE_LABEL[zone])} value={zones[zone] ?? ""} disabled={busy !== null}
-                      onChange={(e) => { setZones((z) => ({ ...z, [zone]: e.target.value || undefined })); setResult(null); }}>
-                      <option value="">{t("tryOn.ia_zona_nenhuma")}</option>
-                      {options.map((p) => <option key={p.pieceId} value={p.pieceId}>{p.name}</option>)}
-                    </Select>
-                  </label>
-                );
-              })}
-            </fieldset>
           ) : (
             <>
               {!single && (

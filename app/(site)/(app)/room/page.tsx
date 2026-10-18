@@ -29,7 +29,6 @@ import { feel, fabricOf } from "@/lib/sensory";
 import { newCanvas, saveCanvas } from "@/lib/export/canvas";
 import { MirrorStage, mirrorPieces as lookOf, useMirrorAvatar, type MirrorPiece } from "@/components/mirror/mirror-stage";
 import { mirrorLook3d, type MirrorRackPiece } from "@/lib/mirror/mirror-list";
-import { GpuLookDialog } from "@/components/try-on/gpu-look-dialog";
 import { loadTexture, useReducedMotion } from "@/components/three/common";
 
 // three.js só no navegador (RF32 · cena 3D); o SSR recebe um marcador leve
@@ -82,8 +81,6 @@ function RoomInner() {
   const pins = useMirrorPins(mirror.data);
   const [lit, setLit] = useState<Set<string>>(new Set()); const [closingKey, setClosingKey] = useState(0); const [celebrate, setCelebrate] = useState(false);
   const [vista, setVista] = useState<{ open: boolean; busy: boolean; result: MirrorState | null }>({ open: false, busy: false, result: null });
-  // foto realista do look do espelho, gerada na GPU (o mesmo painel do Provador e do Avatar 3D)
-  const [gpuOpen, setGpuOpen] = useState(false);
   const [copilot, setCopilot] = useState<{ open: boolean; q: string; busy: boolean; text: string | null; point: string | null }>({ open: false, q: "", busy: false, text: null, point: null });
   const [tag, setTag] = useState<PieceTag | null>(null); const [keysOpen, setKeysOpen] = useState(false); const [guest, setGuest] = useState("");
   const [photo, setPhoto] = useState<{ framing: Framing; filter: PhotoFilter; dof: boolean } | null>(null); const [shooting, setShooting] = useState(false);
@@ -501,7 +498,7 @@ function RoomInner() {
       <PageHeader title={mirrorOpen ? t("nav.mirror") : t("nav.room")} kicker="RF27"
         trail={mirrorOpen ? [{ label: t("nav.room"), onClick: leaveMirror }, { label: t("nav.mirror") }] : undefined}
         lead={mirrorOpen ? (mirror.data?.restriction ? t("mirror.desafio_ativo_so_as_pecas", { challenge: mirror.data.restriction.challenge }) : t("room.espelho_lead")) : t("room.nivel_pecas_em_posicoes", { level: data.level, aesthetic: data.levelInfo.aesthetic, value: data.capacity?.pieces ?? 0, value2: data.capacity?.positions ?? 0, value3: data.forgottenCount ? ` · ${data.forgottenCount} esquecidas` : "" })}
-        actions={<><Button onClick={() => act(async () => setPreview(await api.get("/api/me/room/organization/preview?useAi=false")))}><FaiIcon id="ACT-30" size={24} decorative />{t("room.organizar")}</Button>{!mirrorOpen && <Button onClick={goToMirror}><FaiIcon id="ACT-32" size={24} decorative />{t("room.ir_ao_espelho")}</Button>}{mirrorOpen && <Button onClick={() => setGpuOpen(true)}>{t("tryOn.ia_botao_look")}</Button>}<Link href="/points" className="btn"><FaiIcon id="ACT-41" size={24} decorative />{t("room.loja")}</Link></>} />
+        actions={<><Button onClick={() => act(async () => setPreview(await api.get("/api/me/room/organization/preview?useAi=false")))}><FaiIcon id="ACT-30" size={24} decorative />{t("room.organizar")}</Button>{!mirrorOpen && <Button onClick={goToMirror}><FaiIcon id="ACT-32" size={24} decorative />{t("room.ir_ao_espelho")}</Button>}<Link href="/points" className="btn"><FaiIcon id="ACT-41" size={24} decorative />{t("room.loja")}</Link></>} />
       {data.celebrations?.length ? <p className="mb-3 rounded-md bg-chalk-soft p-2 type-body-sm">{t("room.conquista")}{" "}{data.celebrations.map((c) => c.code).join(", ")}</p> : null}
       {gl === false && <p className="mb-2 rounded-md bg-surface-2 p-2 type-caption text-muted">{t("room.este_aparelho_nao_tem_webgl")}</p>}
       {gl && (<>
@@ -611,9 +608,6 @@ function RoomInner() {
         <Field label={t("room.endereco")} id="addr" hint={t("room.door_1_hanger_3_drawer")}><Select id="addr" value={address} onChange={(e) => setAddress(e.target.value)}><option value="">—</option>{data.modules.flatMap((m) => (m.hangers ?? m.slots ?? []).length ? (m.hangers ?? m.slots ?? []).map((h) => <option key={h.address} value={h.address}>{m.label} · {h.address}{h.pieceId ? t("room.ocupado") : ""}</option>) : [<option key={m.id} value={m.id.includes(":") ? m.id : `${m.id}:1`}>{m.label}</option>])}</Select></Field>
         <Input aria-label={t("room.endereco_manual")} value={address} onChange={(e) => setAddress(e.target.value)} placeholder={t("room.ou_digite_o_endereco")} />
       </Dialog>
-      <GpuLookDialog open={gpuOpen} onClose={() => setGpuOpen(false)} title={t("tryOn.ia_titulo_look")}
-        pieces={mirrorPieces(mirror.data).map((p) => ({ pieceId: p.id, name: p.name, category: p.category ?? "" }))}
-        emptyText={t("tryOn.ia_sem_peca_espelho")} />
       <Dialog open={!!preview} onClose={() => setPreview(null)} title={t("room.organizacao_automatica_rf32_ca08")} footer={<><Button onClick={() => setPreview(null)}>{t("common.cancel")}</Button><Button onClick={() => act(async () => setPreview(await api.get("/api/me/room/organization/preview?useAi=true")))}>{t("scheme.ai")}</Button><Button variant="primary" onClick={() => act(() => api.post("/api/me/room/organization", { labels: preview?.labels ?? {}, moves: preview?.moves ?? [] }), t("room.quarto_organizado")).then(() => setPreview(null))}>{t("dashboard.apply")}</Button></>}>
         {preview?.message && <p className="type-body mb-2">{preview.message}</p>}
         <ul className="fai-list max-h-64 overflow-auto type-body-sm">{(preview?.moves ?? []).map((m, i) => <li key={i}>• {data.pieces[m.pieceId]?.name ?? m.pieceId}: {m.from ?? "?"} → <b>{m.to}</b>{m.why ? ` · ${m.why}` : ""}</li>)}{(preview?.moves ?? []).length === 0 && <li>{t("room.nada_a_mover")}</li>}</ul>
