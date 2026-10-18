@@ -18,7 +18,8 @@ export interface RoomSettingsPanelProps {
   gl: boolean;
   walking: boolean; onWalking: (walking: boolean) => void;
   light: { on: boolean; busy: boolean; intensity: number; onToggle: () => void; onDim: (value: number) => void };
-  outfit: { names: string[]; onChange: () => void; onVistaMe: () => void };
+  /** roupa de agora (espelho) e a roupa padrão do quarto (conjunto e/ou peças do guarda-roupa) */
+  outfit: { names: string[]; onChange: () => void; onVistaMe: () => void; defaultLabel?: string; onDefault?: () => void };
   onFurniture: () => void; onPhoto: () => void; onKeys: () => void;
   onSaveFavorite: (slot: number) => void; onRecallFavorite: (slot: number) => void; onClearFavorite: (slot: number) => void;
   /** botão da ajuda ilustrada dos controles (tutorial) */
@@ -53,8 +54,10 @@ export function RoomSettingsPanel({ settings: s, onChange, gl, walking, onWalkin
         <article className="room-settings-card" aria-labelledby="rs-outfit">
           <h3 id="rs-outfit" className="type-label">{t("room.settings.outfit.title")}</h3>
           <p className="type-body-sm">{outfit.names.length ? outfit.names.join(" · ") : t("room.settings.outfit.default")}</p>
+          {outfit.defaultLabel && <p className="type-caption text-muted">{outfit.defaultLabel}</p>}
           <div className="room-settings-actions">
             <Button size="sm" variant="primary" onClick={outfit.onChange}>{t("room.settings.outfit.change")}</Button>
+            {outfit.onDefault && <Button size="sm" onClick={outfit.onDefault}>{t("room.settings.outfit.choose")}</Button>}
             <Button size="sm" onClick={outfit.onVistaMe}>{t("room.vista_me_2")}</Button>
           </div>
         </article>
@@ -122,11 +125,11 @@ export function RoomSettingsPanel({ settings: s, onChange, gl, walking, onWalkin
       {gl && <details className="room-settings-section">
         <summary>{t("room.settings.ambient.title")}</summary>
         <label className="room-settings-field"><span>{t("room.settings.ambient.period")}</span>
-          <Select value={s.period} onChange={(e) => onChange({ period: e.target.value as RoomSettings["period"] })}>
+          <Select aria-label={t("room.settings.ambient.period")} value={s.period} onChange={(e) => onChange({ period: e.target.value as RoomSettings["period"] })}>
             {(["auto", "morning", "afternoon", "golden", "night"] as const).map((p) => <option key={p} value={p}>{t(`room.settings.ambient.period_${p}`)}</option>)}
           </Select></label>
         <label className="room-settings-field"><span>{t("room.settings.ambient.kelvin")}</span>
-          <Select value={s.kelvin ?? ""} onChange={(e) => onChange({ kelvin: e.target.value ? Number(e.target.value) : null })}>
+          <Select aria-label={t("room.settings.ambient.kelvin")} value={s.kelvin ?? ""} onChange={(e) => onChange({ kelvin: e.target.value ? Number(e.target.value) : null })}>
             <option value="">{t("room.settings.ambient.kelvin_room")}</option>
             {KELVINS.map((k) => <option key={k} value={k}>{t(`room.settings.ambient.kelvin_${k}`)}</option>)}
           </Select></label>
@@ -136,11 +139,11 @@ export function RoomSettingsPanel({ settings: s, onChange, gl, walking, onWalkin
       {gl && <details className="room-settings-section">
         <summary>{t("room.settings.graphics.title")}</summary>
         <label className="room-settings-field"><span>{t("room.settings.graphics.quality")}</span>
-          <Select value={s.quality} onChange={(e) => onChange({ quality: e.target.value as RoomSettings["quality"] })}>
+          <Select aria-label={t("room.settings.graphics.quality")} value={s.quality} onChange={(e) => onChange({ quality: e.target.value as RoomSettings["quality"] })}>
             {(["auto", "alta", "leve"] as const).map((q) => <option key={q} value={q}>{t(`room.settings.graphics.quality_${q}`)}</option>)}
           </Select></label>
         <label className="room-settings-field"><span>{t("room.settings.graphics.mirror")}</span>
-          <Select value={s.mirror} onChange={(e) => onChange({ mirror: e.target.value as RoomSettings["mirror"] })}>
+          <Select aria-label={t("room.settings.graphics.mirror")} value={s.mirror} onChange={(e) => onChange({ mirror: e.target.value as RoomSettings["mirror"] })}>
             {(["auto", "alto", "medio", "desligado"] as const).map((q) => <option key={q} value={q}>{t(`room.settings.graphics.mirror_${q}`)}</option>)}
           </Select></label>
         <Switch checked={s.dynamicRes} onChange={(v) => onChange({ dynamicRes: v })} label={t("room.settings.graphics.dynamic")} hint={t("room.settings.graphics.dynamic_hint")} />

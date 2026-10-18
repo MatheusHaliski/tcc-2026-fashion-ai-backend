@@ -1183,6 +1183,14 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 /* o que o avatar segura (antes na seção "Controlar meu avatar") e o nome da vista ao trocar: avisos no alto da cena */
 .room3d-play-status { position: absolute; top: 10px; left: 10px; max-width: calc(100% - 20px); padding: 5px 12px; border-radius: 999px; background: rgb(20 28 32 / 80%); color: #fff3ce; font-size: 13px; pointer-events: none; }
 .room3d-view-flash { position: absolute; top: 44%; left: 50%; transform: translate(-50%, -50%); padding: 8px 18px; border-radius: 999px; background: rgb(0 0 0 / 62%); color: #fff; font-size: 15px; font-weight: 600; pointer-events: none; }
+/* roupa padrão do quarto (room-outfit-dialog.tsx): formulário ao lado da prévia do avatar; no celular, um embaixo do outro */
+.room-outfit { display: grid; gap: 16px; }
+@media (min-width: 720px) { .room-outfit { grid-template-columns: minmax(0, 1fr) 220px; } }
+.room-outfit-form { display: grid; align-content: start; gap: 12px; }
+.room-outfit-presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.room-outfit-swatches { display: inline-flex; gap: 2px; margin-right: 6px; }
+.room-outfit-swatches i { width: 10px; height: 10px; border-radius: 50%; border: 1px solid var(--line-soft); }
+.room-outfit-preview { aspect-ratio: 3 / 5; overflow: hidden; border-radius: 12px; background: #EEEAE2; }
 .room-gamepad.is-minimal { width: auto; padding: 0; border: 0; background: transparent; box-shadow: none; }
 .room3d-positions ul { display: grid; gap: 2px; }
 .room3d-positions button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 8px; border-radius: 8px; font-size: 13px; text-align: left; }

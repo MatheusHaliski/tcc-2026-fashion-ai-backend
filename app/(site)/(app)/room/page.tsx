@@ -1,8 +1,8 @@
 "use client";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { api, mediaUrl } from "@/lib/api/client";
+import { ApiError, api, mediaUrl } from "@/lib/api/client";
 import { useI18n, tr } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
 import { RequireAuth } from "@/components/app-shell";
@@ -23,6 +23,8 @@ import { VistaMeCells } from "@/components/mirror/vista-me-cells";
 import type { MirrorOverlay, RoomData3D, SceneView } from "@/components/room3d/room-scene";
 import { RoomSettingsPanel } from "@/components/room3d/room-settings-panel";
 import { RoomStore } from "@/components/room3d/room-store";
+import { RoomOutfitDialog } from "@/components/room3d/room-outfit-dialog";
+import { DEFAULT_ROOM_OUTFIT, loadLocalOutfit, sanitizeOutfit, saveLocalOutfit, withRoomOutfit, type RoomOutfit } from "@/lib/room3d/room-outfit";
 import { cameraOptionsOf, DEFAULT_ROOM_SETTINGS, loadRoomSettings, mirrorTextureOf, reducedMotionOf, saveRoomSettings, type RoomSettings } from "@/lib/room3d/room-settings";
 import { availableViews, nextCorner, nextView, type SavedView } from "@/lib/room3d/camera-views";
 import { feel, fabricOf } from "@/lib/sensory";
@@ -48,7 +50,7 @@ const WALK_WAIT_MS = 12000;
 
 interface RoomPiece { id: string; name: string; category: string; subcategory: string; color: string; colorHex?: string; imageUrl?: string; thumbnailUrl?: string; address?: string | null; addressLabel?: string | null; moduleId?: string | null; states?: string[]; wearCount?: number; costPerUse?: number | null; }
 interface Module { id: string; slotType: string; mold?: string; widthCm?: number; capacity?: number; label: string; sku?: string; finish?: { color?: string; texture?: string; roughness?: number; material?: string }; hangers?: { k: number; address: string; pieceId?: string | null }[]; slots?: { address: string; pieceId?: string | null }[]; pieceIds?: string[]; drawerLabel?: string; }
-interface Room { owner: boolean; level: string; levelInfo: { unlocks: string; aesthetic: string }; modules: Module[]; drawerLabels: Record<string, string>; pieces: Record<string, RoomPiece>; basket?: RoomPiece[]; saleRack?: { name: string; pieces: RoomPiece[] }; showcase?: unknown; chair?: RoomPiece[]; capacity?: { pieces: number; positions: number; overflow?: number }; forgottenCount?: number; mirrorDailyLook?: { schemeId: string; title: string } | null; celebrations?: { code: string; secret?: boolean }[]; decorations?: { name?: string; moduleId?: string; sku?: string }[]; ambient?: { period: string; seasonal?: string; sound?: boolean; haptics?: boolean; reduceMotion?: boolean }; monogram?: string; }
+interface Room { owner: boolean; level: string; levelInfo: { unlocks: string; aesthetic: string }; modules: Module[]; drawerLabels: Record<string, string>; pieces: Record<string, RoomPiece>; basket?: RoomPiece[]; saleRack?: { name: string; pieces: RoomPiece[] }; showcase?: unknown; chair?: RoomPiece[]; capacity?: { pieces: number; positions: number; overflow?: number }; forgottenCount?: number; mirrorDailyLook?: { schemeId: string; title: string } | null; celebrations?: { code: string; secret?: boolean }[]; decorations?: { name?: string; moduleId?: string; sku?: string }[]; ambient?: { period: string; seasonal?: string; sound?: boolean; haptics?: boolean; reduceMotion?: boolean }; monogram?: string; outfit?: unknown; }
 interface MirrorState extends MirrorData { rack?: MirrorRackPiece[] }
 interface PieceTag { id: string; name: string; composition?: string | null; care?: string | null; origin?: string | null; garimpo: boolean; wearCount: number; thirtyWears: boolean; costPerUse?: number | null; location?: { address: string; label: string } | null; diary: { date: string; occasion: string }[]; }
 interface Unbox { inventoryId: string; sku: string; name: string; slotType: string; }
@@ -241,6 +243,30 @@ function RoomInner() {
   }, [session.phase, play.held]); // eslint-disable-line react-hooks/exhaustive-deps
   const slotsOf = (m?: MirrorState | null) => (m?.slots ?? {}) as unknown as Record<string, MirrorPiece | MirrorPiece[] | null>;
   const mirrorLook = useMemo(() => lookOf(slotsOf(mirror.data)), [mirror.data?.slots]); // eslint-disable-line react-hooks/exhaustive-deps
+  /**
+   * Roupa padrão do quarto (Configurações > Roupa do avatar): o que o avatar veste nas zonas que o espelho deixa sem
+   * peça — um conjunto do FashionAI e/ou peças do guarda-roupa. Vem do quarto; servidor sem a rota ainda: deste aparelho.
+   */
+  const [outfit, setOutfit] = useState<RoomOutfit>(DEFAULT_ROOM_OUTFIT);
+  const [outfitOpen, setOutfitOpen] = useState(false);
+  const roomOutfit = data?.outfit;
+  useEffect(() => { if (data) setOutfit(roomOutfit ? sanitizeOutfit(roomOutfit) : loadLocalOutfit() ?? DEFAULT_ROOM_OUTFIT); }, [!!data, roomOutfit]); // eslint-disable-line react-hooks/exhaustive-deps
+  const owned = useCallback((id: string) => {
+    const p = data?.pieces[id]; if (!p) return null;
+    const slot = p.category === "full_body_piece" ? "dress" : p.category === "lower_piece" ? "lower" : p.category === "shoes_piece" ? "shoes" : "upper";
+    return mirrorLook3d(p as unknown as MirrorRackPiece, slot);
+  }, [data?.pieces]);
+  const roomLook = useMemo(() => withRoomOutfit(mirrorLook, outfit, owned), [mirrorLook, outfit, owned]);
+  async function saveOutfit(o: RoomOutfit) {
+    try {
+      const saved = sanitizeOutfit(await api.put<unknown>("/api/me/room/outfit", { preset: o.preset, pieces: o.choice }));
+      setOutfit(saved); saveLocalOutfit(saved); toast.success(t("room.settings.outfit.saved"));
+    } catch (e) {
+      // servidor ainda sem a rota (deploy anterior): vale neste aparelho até a rota chegar
+      if (e instanceof ApiError && (e.status === 404 || e.status === 405)) { setOutfit(o); saveLocalOutfit(o); toast.info(t("room.settings.outfit.saved_local")); return; }
+      toast.fromError(e); throw e;
+    }
+  }
   const vistaLook = useMemo(() => (vista.result ? lookOf(slotsOf(vista.result)) : []), [vista.result]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { setReflection(null); }, [mirrorLook, me3d.avatar]);
   // Luzes do closet: um marco novo do Inventory Score acende uma luz e faz a animação de conquista no espelho
@@ -488,7 +514,8 @@ function RoomInner() {
   const settingsPanel = (
     <RoomSettingsPanel settings={settings} onChange={changeSettings} gl={!!gl} walking={walking} onWalking={setWalking}
       light={{ on: lightOn, busy: lightBusy, intensity: lightIntensity, onToggle: () => { void toggleLight(); }, onDim: dimLight }}
-      outfit={{ names: wornOf(mirror.data).map((w) => w.p.name).filter(Boolean), onChange: goToMirror, onVistaMe: () => setVista((v) => ({ ...v, open: true })) }}
+      outfit={{ names: wornOf(mirror.data).map((w) => w.p.name).filter(Boolean), onChange: goToMirror, onVistaMe: () => setVista((v) => ({ ...v, open: true })),
+        defaultLabel: t("room.settings.outfit.default_label", { name: t(`room.settings.outfit.preset_${outfit.preset}`) + (Object.keys(outfit.choice).length ? t("room.settings.outfit.plus_mine") : "") }), onDefault: () => setOutfitOpen(true) }}
       onFurniture={() => setFurnitureOpen(true)} onPhoto={() => { setPhoto({ framing: "overview", filter: "none", dof: false }); frame("overview"); }} onKeys={() => setKeysOpen(true)}
       onSaveFavorite={saveFavorite} onRecallFavorite={recallFavorite} onClearFavorite={clearFavorite}
       help={gl ? <RoomControlsTutorial enabled={walking} /> : undefined} />
@@ -523,7 +550,7 @@ function RoomInner() {
           </div>)}
         <div className="room3d" data-mode={inMirror ? "mirror" : undefined}>
           <div ref={stageRef} className={`room3d-stage${photo ? " is-photo" : ""}`} data-filter={photo?.filter ?? undefined}>
-            <RoomScene gameplay={walking && !photo && !me3d.loading ? { avatar: me3d.avatar, sex: me3d.sex, body: me3d.body, pieces: mirrorLook, engine, session, reduced } : undefined} data={data as unknown as RoomData3D} open={openSet} highlight={highlight} focusModule={focusModule} onReady={setCanvas}
+            <RoomScene gameplay={walking && !photo && !me3d.loading ? { avatar: me3d.avatar, sex: me3d.sex, body: me3d.body, pieces: roomLook, engine, session, reduced } : undefined} data={data as unknown as RoomData3D} open={openSet} highlight={highlight} focusModule={focusModule} onReady={setCanvas}
               onToggle={(id) => { if (!openSet.has(id)) touch(id); setOpenSet((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; }); if (settings.view === "livre" && !settings.favorite) setFocusModule(id); }}
               onPick={openTag} lit={lit} lightOn={lightOn} lightIntensity={lightIntensity} onToggleLight={toggleLight}
               mirror={{ pieces: mirrorPieces(mirror.data).map((p) => ({ id: p.id, imageUrl: p.imageUrl ?? p.thumbnailUrl })), postIt: mirror.data?.postIt, closingKey, celebrate, reflectionUrl: reflection, active: inMirror,
@@ -533,7 +560,7 @@ function RoomInner() {
               view={sceneView} onViewStep={stepCorner} poseRef={poseRef} />
             {photo?.dof && <div className="room3d-dof" aria-hidden />}
             {!me3d.loading && mirror.data && (me3d.avatar || mirrorLook.length > 0) && (
-              <AvatarStill hidden avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={mirrorLook} background="transparent" onStill={setReflection} />
+              <AvatarStill hidden avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={roomLook} background="transparent" onStill={setReflection} />
             )}
             {settings.hud === "completo" && <p className="room3d-hint">{t("room.arraste_para_girar_enquadramento_3")}</p>}
             {/* o que o avatar tem nas mãos (antes na seção "Controlar meu avatar"): aviso no alto da cena */}
@@ -554,7 +581,7 @@ function RoomInner() {
                   preview2d={{ shown: show2d, onToggle: () => setShow2d((v) => !v) }}>
                   {show2d && !me3d.loading && (
                     <figure className="mirror-panel-still" aria-label={t("mirror.previa_2d")} data-testid="mirror-preview-2d">
-                      <AvatarStill avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={mirrorLook} background="#EEEAE2" alt={t("mirror.previa_2d_alt", { n: mirrorLook.length })} />
+                      <AvatarStill avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={roomLook} background="#EEEAE2" alt={t("mirror.previa_2d_alt", { n: mirrorLook.length })} />
                       <figcaption>{t("mirror.previa_2d_nota_curta")}</figcaption>
                     </figure>
                   )}
@@ -593,6 +620,9 @@ function RoomInner() {
         </div>
       )}
       {gl === false && !flatMirror && <div className="room3d-side room3d-side-flat">{settingsPanel}</div>}
+      <RoomOutfitDialog open={outfitOpen} onClose={() => setOutfitOpen(false)} outfit={outfit} owned={owned} onSave={saveOutfit}
+        pieces={Object.values(data.pieces).map((p) => ({ id: p.id, name: p.name, category: p.category }))}
+        renderPreview={me3d.loading ? undefined : (look) => <AvatarStill avatar={me3d.avatar} sex={me3d.sex} body={me3d.body} pieces={look} background="#EEEAE2" alt={t("room.settings.outfit.preview")} />} />
       <Dialog open={furnitureOpen} onClose={() => setFurnitureOpen(false)} size="xl" title={t("room.settings.furniture.title")}>
         <RoomStore compact onChanged={() => reload()} />
       </Dialog>

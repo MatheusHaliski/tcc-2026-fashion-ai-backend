@@ -430,6 +430,54 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         return finish;
     }
 
+    /** Conjuntos de roupa padrão do FashionAI no Meu Quarto (o avatar veste quando o espelho não tem peça na zona). */
+    public static final List<String> OUTFIT_PRESETS = List.of("classico", "off_white", "grafite", "areia", "oliva");
+    /** Zonas do corpo da roupa padrão e as categorias de peça que cabem em cada uma. */
+    private static final Map<String, Set<String>> OUTFIT_ZONES = Map.of(
+            "upper", Set.of("upper_piece", "full_body_piece"),
+            "lower", Set.of("lower_piece"),
+            "shoes", Set.of("shoes_piece"));
+
+    /**
+     * Roupa padrão do avatar no Meu Quarto (aba Configurações): um conjunto do FashionAI e, por zona do corpo, uma peça
+     * do próprio guarda-roupa no lugar da peça do conjunto. Só peças da pessoa e da categoria certa para a zona.
+     */
+    @Transactional
+    public Map<String, Object> setOutfit(CurrentUser user, String preset, Map<String, UUID> chosen) {
+        String p = preset == null || preset.isBlank() ? "classico" : preset.trim().toLowerCase(Locale.ROOT);
+        if (!OUTFIT_PRESETS.contains(p)) throw new ApiException(400, "INVALID_OUTFIT_PRESET", Msg.t("room.outfit_invalid_preset"));
+        Map<String, Object> choice = new LinkedHashMap<>();
+        if (chosen != null) {
+            for (Map.Entry<String, UUID> e : chosen.entrySet()) {
+                Set<String> categories = OUTFIT_ZONES.get(e.getKey());
+                if (categories == null) throw new ApiException(400, "INVALID_OUTFIT_ZONE", Msg.t("room.outfit_invalid_zone"));
+                if (e.getValue() == null) continue;
+                WardrobeItem w = pieces.findById(e.getValue()).filter(x -> x.getUser().getId().equals(user.id()))
+                        .orElseThrow(() -> ApiException.notFound(Msg.t("common.peca")));
+                if (!categories.contains(nz(w.getCategory()))) throw new ApiException(422, "OUTFIT_ZONE_MISMATCH", Msg.t("room.outfit_zone_mismatch"));
+                choice.put(e.getKey(), w.getId().toString());
+            }
+        }
+        RoomLayout l = layout(user.id());
+        List<Map<String, Object>> mods = modules(l).stream().filter(m -> !"outfit".equals(m.get("id"))).collect(Collectors.toCollection(ArrayList::new));
+        Map<String, Object> m = module("outfit", "OUTFIT", null, 0, 0, Msg.t("room.outfit_label"), null, null);
+        m.put("preset", p);
+        m.put("choice", choice);
+        mods.add(m);
+        l.setModulesJson(Json.write(mods));
+        layouts.save(l);
+        return outfitOf(l);
+    }
+
+    /** A roupa padrão salva (sem nada salvo: o conjunto clássico, sem peças do guarda-roupa). */
+    Map<String, Object> outfitOf(RoomLayout l) {
+        Optional<Map<String, Object>> m = module(l, "outfit");
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("preset", m.map(x -> String.valueOf(x.get("preset"))).filter(OUTFIT_PRESETS::contains).orElse("classico"));
+        out.put("choice", m.map(x -> x.get("choice")).filter(Map.class::isInstance).map(x -> Json.map(Json.write(x))).orElse(Map.of()));
+        return out;
+    }
+
     /** DET-K03 — monograma nas portas a partir do Studio (até 3 iniciais em baixo-relevo). */
     @Transactional
     public Map<String, Object> setMonogram(CurrentUser user, String initials) {
@@ -1036,10 +1084,11 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
             List<UUID> keyIds = keyUserIds(layout);
             out.put("keys", users.findAllById(keyIds).stream().map(Views::user).toList());
             out.put("light", module(layout, "light").map(m -> m.get("finish")).orElse(Map.of("kelvin", 4000, "guided", false)));
+            out.put("outfit", outfitOf(layout));
         }
         out.put("camera", Map.of("preset", "editorial_3_4", "azimuth", List.of(-35, 35), "polar", List.of(55, 80), "zoom", List.of(0.8, 1.6),
                 "free", false));
-        out.put("render", Map.of("preferred", "3d", "fallback", "2.5d", "note", Msg.t("room.sem_webgl_ou_abaixo_do")));
+        out.put("render", Map.of("preferred", "3d", "fallback", "settings", "note", Msg.t("room.sem_webgl_ou_abaixo_do")));
         out.put("photoMode", Map.of("framings", List.of("frontal", "tres_quartos", "detalhe_espelho", "gaveta_aberta"),
                 "filters", List.of("editorial", "quente", "pb"), "depthOfField", true, "exportWithoutUi", true));
         return out;

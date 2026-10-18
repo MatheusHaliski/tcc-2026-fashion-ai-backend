@@ -146,6 +146,16 @@ public class RoomController {
         return room.setLight(user, body.kelvin(), body.intensity(), body.on());
     }
 
+    /** Roupa padrão do quarto: conjunto do FashionAI (classico, off_white, grafite, areia, oliva) e peças por zona (upper, lower, shoes). */
+    public record OutfitRequest(String preset, Map<String, UUID> pieces) {
+    }
+
+    @PutMapping("/api/me/room/outfit")
+    @Operation(summary = "RF27 — Roupa padrão do avatar no Meu Quarto (conjunto do FashionAI e/ou peças do guarda-roupa)")
+    public Map<String, Object> outfit(CurrentUser user, @RequestBody OutfitRequest body) {
+        return room.setOutfit(user, body.preset(), body.pieces());
+    }
+
     @PutMapping("/api/me/room/monogram")
     @Operation(summary = "RF32 — Monograma do quarto")
     public Map<String, Object> monogram(CurrentUser user, @RequestBody MonogramRequest body) {

@@ -120,6 +120,25 @@ class RoomServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void roupaPadraoDoQuartoComConjuntoDoFashionAIEPecasDoProprioGuardaRoupa() {
+        assertThat(room.room(ana).get("outfit")).isEqualTo(Map.of("preset", "classico", "choice", Map.of()));
+        WardrobeItem top = world.piece(world.me, "shirt"), shoes = world.piece(world.me, "oxford_shoes");
+        Map<String, Object> saved = room.setOutfit(ana, "Grafite", Map.of("upper", top.getId(), "shoes", shoes.getId()));
+        assertThat(saved).containsEntry("preset", "grafite");
+        assertThat((Map<String, Object>) saved.get("choice")).containsOnly(Map.entry("upper", top.getId().toString()), Map.entry("shoes", shoes.getId().toString()));
+        assertThat(room.room(ana).get("outfit")).isEqualTo(saved);
+        // conjunto desconhecido, zona inexistente, peça que não serve na zona e peça de outra pessoa: nada muda
+        assertThatThrownBy(() -> room.setOutfit(ana, "neon", null)).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> room.setOutfit(ana, null, Map.of("hat", top.getId()))).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> room.setOutfit(ana, null, Map.of("lower", top.getId()))).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> room.setOutfit(ana, null, Map.of("upper", world.piece(world.rival, "shirt").getId()))).isInstanceOf(ApiException.class);
+        assertThat(room.room(ana).get("outfit")).isEqualTo(saved);
+        // sem conjunto: o clássico; sem peças: só o conjunto
+        assertThat(room.setOutfit(ana, null, null)).isEqualTo(Map.of("preset", "classico", "choice", Map.of()));
+    }
+
+    @Test
     void layoutInicialDoNivelEstreiaEModulosPorNivel() {
         RoomLayout l = room.layout(world.me.getId());
         assertThat(l.getLevel()).isEqualTo("ESTREIA");

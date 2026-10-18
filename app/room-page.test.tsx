@@ -62,6 +62,37 @@ describe("Meu Quarto (RF27)", () => {
     await waitFor(() => expect(calls.some((c) => c.path === "/api/points/shop")).toBe(true));
   });
 
+  it("roupa padrão do quarto: escolhe o conjunto e uma peça sua por zona, salva no quarto; servidor sem a rota guarda no aparelho", async () => {
+    withWebgl();
+    localStorage.removeItem("fai.room.outfit.v1");
+    const shoes = { ...P("s", "shoe"), category: "shoes_piece", subcategory: "boots", name: "Bota marrom" };
+    let routeMissing = false;
+    const { calls } = loggedAs(ME, { "GET /api/me/room": { ...ROOM, pieces: { ...ROOM.pieces, s: shoes }, outfit: { preset: "classico", choice: {} } }, "GET /api/me/mirror": MIRROR, "GET /api/me/avatar3d": { exists: false }, "GET /api/tipos-look": [],
+      "PUT /api/me/room/outfit": () => (routeMissing ? new Response(JSON.stringify({ status: 404, code: "NOT_FOUND", message: "não existe" }), { status: 404, headers: { "content-type": "application/json" } }) : { preset: "grafite", choice: { shoes: "s" } }) });
+    renderApp(<RoomPage />);
+    await act(async () => { await new Promise((r) => setTimeout(r, 80)); });
+    const panel = within(screen.getByTestId("room-settings"));
+    expect(panel.getByText("Roupa padrão: Clássico")).toBeTruthy();
+    fireEvent.click(panel.getByRole("button", { name: "Escolher roupa padrão" }));
+    const dialog = within(await screen.findByRole("dialog", { name: "Roupa padrão do quarto" }));
+    fireEvent.click(dialog.getByRole("radio", { name: /Grafite/ }));
+    fireEvent.click(dialog.getByRole("button", { name: /^Calçado/ }));
+    expect(screen.getAllByRole("option").map((o) => o.textContent)).toEqual(["Do conjunto", "Bota marrom"]);   // só calçados
+    fireEvent.click(screen.getByRole("option", { name: "Bota marrom" }));
+    fireEvent.click(dialog.getByRole("button", { name: "Salvar roupa padrão" }));
+    await waitFor(() => expect(calls.find((c) => c.method === "PUT" && c.path === "/api/me/room/outfit")?.body).toEqual({ preset: "grafite", pieces: { shoes: "s" } }));
+    expect(await screen.findByText("Roupa padrão: Grafite + peças suas")).toBeTruthy();
+    // api antiga (sem a rota): a escolha fica neste aparelho
+    routeMissing = true;
+    fireEvent.click(panel.getByRole("button", { name: "Escolher roupa padrão" }));
+    const again = within(await screen.findByRole("dialog", { name: "Roupa padrão do quarto" }));
+    fireEvent.click(again.getByRole("radio", { name: /Oliva/ }));
+    fireEvent.click(again.getByRole("button", { name: "Salvar roupa padrão" }));
+    expect(await screen.findByText(/salva neste aparelho/)).toBeTruthy();
+    expect(JSON.parse(localStorage.getItem("fai.room.outfit.v1")!)).toMatchObject({ preset: "oliva" });
+    localStorage.removeItem("fai.room.outfit.v1");
+  });
+
   it("com WebGL: Configurações ao lado da cena — pontos de vista (cantos do teto, planta…), atalho V, vistas favoritas e preferências guardadas no aparelho", async () => {
     withWebgl();
     localStorage.removeItem("fai.room.settings.v1");
