@@ -61,14 +61,14 @@ describe("Minhas peças — categoria é aba, estado é filtro", () => {
 describe("PieceCard — \"Para doar\" e tags essenciais", () => {
   const donated: PieceView = { ...PIECE, forDonation: true, forSale: false, style: ["basic", "casual", "streetwear"] };
 
-  it("mostra o selo \"Para doar\" para quem visita (estado público) e no máximo duas tags de estilo", () => {
+  it("mostra o selo \"Para doar\" para quem visita (estado público) e os estilos na aba Info do card", () => {
     mockApi(HYPE);
     const { container } = renderApp(<PieceCard piece={donated} />);
     expect(container.querySelector(".pc-flags")?.textContent).toContain("Para doar");
-    const tags = container.querySelector(".pc-tags") as HTMLElement;
-    expect(tags.title).toBe(`${label("basic")} · ${label("casual")}`);
-    expect(tags.textContent).not.toContain(label("streetwear"));
-    expect(tags.title.split(" · ")).toHaveLength(2);
+    // atributos da peça ficam na aba Info (separados dos dados do Hype), sem corte
+    const info = container.querySelector(".pc-info") as HTMLElement;
+    expect(info.textContent).toContain(`${label("basic")} · ${label("casual")} · ${label("streetwear")}`);
+    expect(container.querySelector(".pc-tags")).toBeNull();
   });
 
   it("sem estilo não há linha de tags; peça comum não mostra \"Para doar\"; na seleção (montar look) as tags somem", () => {

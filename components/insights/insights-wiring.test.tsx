@@ -37,7 +37,7 @@ describe("Explorador: uma faixa por aba, com o contexto certo", () => {
 });
 
 describe("Perfil › Cápsula", () => {
-  it("faixa CAPSULE acima dos números, seguindo o filtro de categoria", async () => {
+  it("faixa CAPSULE recolhível abaixo dos números, seguindo o filtro de categoria", async () => {
     const { calls } = loggedAs(undefined, {
       "GET /api/users/u1/lookbook": { owner: USER, self: true, visible: true, institutional: false, tabs: [{ id: "capsule", label: "Cápsula", count: 3 }] },
       "GET /api/me/capsule": { basePieces: 3, looks: 5, factor: 1.7, filters: ["Tudo", "upper_piece"], cards: [] },
@@ -45,10 +45,12 @@ describe("Perfil › Cápsula", () => {
       "GET /api/taxonomy": TAXONOMY,
     });
     const { container } = renderApp(<LookbookTabs ownerId="u1" initialTab="capsule" />);
+    // a cápsula aprovada mostra números e fotos primeiro; os insights ficam embaixo, recolhidos até a pessoa abrir
+    fireEvent.click(await screen.findByRole("button", { name: "Ver insights" }));
     expect(await screen.findByText("Redescubra a jaqueta")).toBeTruthy();
     const strip = container.querySelector('[data-context="CAPSULE"]')!;
     const stats = container.querySelector(".capsule-stats")!;
-    expect(strip.compareDocumentPosition(stats) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(stats.compareDocumentPosition(strip) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     fireEvent.click(screen.getByText("Parte superior"));
     await waitFor(() => expect(calls.some((c) => c.path === "/api/insights?context=CAPSULE&category=upper_piece")).toBe(true));
   });
