@@ -9,7 +9,7 @@ import type { BodyParams } from "@/lib/avatar3d/body-spec";
 import { applyIdle } from "@/lib/avatar3d/human/pose";
 import { arrowAnywhere, moveInRoom, ROOM_TURN_EVENT, RoomInteraction, type Arm } from "@/lib/room3d/interaction";
 import { inputYaw, reachPlane, ROOM, viewYaw } from "@/lib/room3d/room-bounds";
-import { MIRROR_NORMAL, MirrorSession, REACTION_MS, cameraFor, facingYaw, mirrorDistance, reactionPose } from "@/lib/room3d/mirror-session";
+import { MirrorSession, REACTION_MS, cameraFor, facingYaw, mirrorDistance, reactionPose } from "@/lib/room3d/mirror-session";
 export interface RoomGameplay {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; body?: BodyParams | null; pieces: Look3dPiece[]; engine: RoomInteraction;
   /** prova no espelho dentro do quarto (lib/room3d/mirror-session.ts): fase pela distância, trocas e reação */
@@ -35,13 +35,12 @@ export function reachHand(parts: HumanParts, arm: Arm, desired: THREE.Vector3) {
 /** Abertura mínima da lente (graus) na vista do quarto. */
 const ROOM_FOV = 50;
 export default function RoomAvatarController({ gameplay, closetRight }: { gameplay: RoomGameplay; closetRight: number }) {
-  const { camera, gl, scene } = useThree(), { engine } = gameplay;
+  const { camera, gl } = useThree(), { engine } = gameplay;
   const sessionRef = useRef(gameplay.session); sessionRef.current = gameplay.session;
   const actor = useRef<THREE.Group>(null), parts = useRef<HumanParts | null>(null);
   const pointer = useRef(new THREE.Vector2(0, 0)), desired = useRef(new THREE.Vector3(0, 1.5, .3));
   const phase = useRef(0), yaw = useRef(Math.PI), lastState = useRef("");
   const look = useRef(new THREE.Vector3(closetRight * .25, 1.1, .85));   // alvo da câmera, interpolado (sem salto ao abrir a prova)
-  const lastPhase = useRef("room");
   // giro das setas (rad): segue a vista escolhida, mas fica preso enquanto alguma seta está apertada — trocar a vista no
   // meio da caminhada não inverte a direção
   const walkYaw = useRef(0);
@@ -84,23 +83,8 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
     const session = gameplay.session, now = Date.now();
     session?.update(mirrorDistance(engine.actor, engine.mirror), now, moving);
     const trying = !!session?.active;
-    // ao entrar na prova, o vidro guarda a vista do quarto daquela ocasião: uma foto tirada do espelho para o guarda-roupa,
-    // sem o personagem (o reflexo dele é desenhado por cima, em room-scene.tsx)
+    // o vidro do espelho reflete o personagem de verdade (Reflector em room-scene.tsx): nada a fotografar ao entrar na prova
     const ph = session?.phase ?? "room";
-    if (session && ph === "tryon" && lastPhase.current !== "tryon") {
-      const canvas = gl.domElement, w = canvas.width || 1, h = canvas.height || 1;
-      const eye = new THREE.PerspectiveCamera(58, w / h, .05, 30);
-      eye.position.copy(engine.mirror).add(MIRROR_NORMAL.clone().multiplyScalar(.06)).setY(1.15);
-      eye.lookAt(engine.mirror.clone().add(MIRROR_NORMAL.clone().multiplyScalar(6)).setY(1.15));
-      const visible = actor.current.visible; actor.current.visible = false;
-      // as paredes que a câmera principal esconde (estando atrás delas) aparecem inteiras na foto do espelho
-      const restore: (() => void)[] = []; scene.traverse((o) => { if (o.userData.wall && typeof o.userData.reveal === "function") restore.push(o.userData.reveal()); });
-      try { gl.render(scene, eye); session.setSnapshot({ url: canvas.toDataURL("image/jpeg", .82), aspect: w / h, at: now }); }
-      catch { /* sem foto, o vidro segue só com o reflexo */ }
-      restore.forEach((r) => r());
-      actor.current.visible = visible;
-    }
-    lastPhase.current = ph;
     // câmera desta fase: a vista do quarto escolhida (Q/E, botões) ou a da prova, sempre dentro das paredes
     engine.cameraYaw += engine.cameraStick.x * dt * 1.1;
     engine.cameraPitch = THREE.MathUtils.clamp(engine.cameraPitch + engine.cameraStick.y * dt * .7, -.6, .7);

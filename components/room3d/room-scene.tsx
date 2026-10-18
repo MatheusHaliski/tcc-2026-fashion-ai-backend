@@ -1,18 +1,19 @@
 "use client";
-import { RoomFixture, DoubleBed, CeilingFixture } from "./room-furniture";
+import { RoomFixture, DoubleBed, CeilingFixture, BED_POSITION } from "./room-furniture";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Canvas, events as pointerEvents, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { ContactShadows, OrbitControls, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { Reflector } from "three/examples/jsm/objects/Reflector.js";
 import { mediaUrl } from "@/lib/api/client";
 import {
-  ClosetLights, Cobweb, CorkBoard, deg, DressForm, DustPuff, EmptyDrawerCharm, FaiBox, GoldDot, HangTag, KeyHook, Label3D, Lamp, LightSwitch,
+  ClosetLights, Cobweb, CorkBoard, deg, DressForm, DustPuff, EmptyDrawerCharm, FaiBox, FaiMedallion, FaiNeonSign, FaiRug, GoldDot, HangTag, KeyHook, Label3D, Lamp, LightSwitch,
   pointer, RoomDoor, RoomWindow, sketchDraw, Sparkles, TailorTape, useCanvasTex, WallCalendar, WindowLight,
 } from "@/components/room3d/room-props";
 import RoomAvatarController, { type RoomGameplay } from "./room-avatar-controller";
-import { MIRROR_COLLIDER, snapshotCrop } from "@/lib/room3d/mirror-session";
+import { MIRROR_COLLIDER } from "@/lib/room3d/mirror-session";
 import { ROOM_CAMERA_EVENT, ROOM_TURN_EVENT, ROOM_ZOOM_EVENT, RoomInteraction } from "@/lib/room3d/interaction";
 import { dropPoint, insideW2, ROOM, toWall, W2, w2ToWorld, walkArea, wallById, wallOpacity, wallSide, type WallSpec } from "@/lib/room3d/room-bounds";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -36,10 +37,11 @@ export interface RoomData3D {
 }
 /** Estado do espelho e do Vista-me vindo da página (RF28). */
 export interface MirrorOverlay { pieces: { id: string; imageUrl?: string | null }[]; postIt?: string | null; closingKey?: number; celebrate?: boolean;
-  /** PROV-2D — reflexo no vidro: a Prévia 2D do Avatar 3D vestindo as peças do espelho (só em memória) */
+  /** PROV-2D — a Prévia 2D do Avatar 3D vestindo as peças do espelho (só em memória): o reflexo quando não há personagem
+   * andando no quarto (modo foto/órbita); andando, o vidro reflete o próprio personagem */
   reflectionUrl?: string | null;
-  /** vista do guarda-roupa tirada do espelho ao abrir a prova (QUARTO-ESPELHO): fundo do reflexo */
-  snapshot?: { url: string; aspect: number } | null;
+  /** prova aberta (o personagem está no espelho): o vidro fica só com o reflexo, sem o painel do Look do Dia */
+  active?: boolean;
   /** RF28 — botões 3D dentro do vidro: usar o look pendurado, pedir outra sugestão, tirar uma peça */
   onUse?: () => void; onAnother?: () => void; onTakeOneOff?: () => void; }
 export interface RoomSceneProps {
@@ -345,18 +347,27 @@ function GlassButton({ text, position, w, onClick, primary }: { text: string; po
 }
 
 /**
- * Smart Mirror (RF28): Look do Dia, peças penduradas com post-it do que falta, tema da Batalha na Passarela escrito no
- * vidro, fecho do Vista-me com a luz subindo, brilho de conquista das luzes do closet e os botões 3D dentro do vidro
- * (Vista-me, Usar este look, Outra sugestão, Tira uma coisa). O formato e a moldura vêm do módulo "mirror" do quarto,
- * trocável na loja como qualquer outro componente (retangular, arco, oval, camarim com luzes).
+ * Vidro com reflexo de verdade (Reflector do three): a cena desenhada de novo pela câmera espelhada em cada quadro em que
+ * o vidro aparece — o personagem com a roupa vestida, o movimento e o quarto atrás, invertidos como num espelho (fora da
+ * tela, nada é desenhado). Textura de 512 × 1024 para o vidro de ~1:2 e cor quase neutra (~92% de reflexo).
  */
-function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module, engine }: { engine?: RoomInteraction; position: [number, number, number]; look?: RoomData3D["mirrorDailyLook"]; overlay?: MirrorOverlay; theme?: string | null; onVistaMe?: () => void; reduced: boolean; module?: RoomModule3D }) {
-  const { t } = useI18n();
+function MirrorGlass({ geometry }: { geometry: THREE.BufferGeometry }) {
+  const glass = useMemo(() => new Reflector(geometry, { textureWidth: 512, textureHeight: 1024, clipBias: 0.003, multisample: 2,
+    color: new THREE.Color().setRGB(0.46, 0.47, 0.48, THREE.LinearSRGBColorSpace) }), [geometry]);
+  useEffect(() => () => glass.dispose(), [glass]);
+  return <primitive object={glass} position={[0, 0.95, 0.021]} />;
+}
+
+/**
+ * Smart Mirror (RF28): o vidro reflete o personagem de verdade; o Look do Dia e as peças penduradas com post-it do que
+ * falta ficam em cartões nos cantos (o meio é do reflexo) e somem na prova; fecho do Vista-me com a luz subindo e brilho
+ * de conquista das luzes do closet. Sem personagem andando (modo foto/órbita), a Prévia 2D do avatar faz o papel do
+ * reflexo. O formato e a moldura vêm do módulo "mirror" do quarto, trocável na loja como qualquer outro componente
+ * (retangular, arco, oval, camarim com luzes).
+ */
+function Mirror({ position, look, overlay, reduced, module, engine, live }: { engine?: RoomInteraction; position: [number, number, number]; look?: RoomData3D["mirrorDailyLook"]; overlay?: MirrorOverlay; theme?: string | null; onVistaMe?: () => void; reduced: boolean; module?: RoomModule3D; live?: boolean }) {
   const tex = useTex(look?.coverImageUrl);
-  const reflection = useReflection(overlay?.reflectionUrl);
-  const snapshot = useReflection(overlay?.snapshot?.url);
-  // o vidro é alto e estreito; a foto tem a proporção do canvas: fica o miolo, sem esticar
-  useEffect(() => { if (!snapshot || !overlay?.snapshot) return; const c = snapshotCrop(0.82 / 1.7, overlay.snapshot.aspect); snapshot.repeat.set(...c.repeat); snapshot.offset.set(...c.offset); snapshot.needsUpdate = true; }, [snapshot, overlay?.snapshot]);
+  const reflection = useReflection(live ? null : overlay?.reflectionUrl);
   const riser = useRef<THREE.Mesh>(null); const start = useRef(-1);
   // o espelho é um obstáculo: o personagem para na frente do vidro (e contorna pela lateral), nunca o atravessa
   const body = useRef<THREE.Group>(null);
@@ -373,17 +384,16 @@ function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module, en
   const glassGeo = useMemo(() => new THREE.ShapeGeometry(mirrorShape(mold, .82, 1.7), 48), [mold]);
   const hanging = overlay?.pieces ?? [];
   const vanity = mold === "ESP-CAM";
+  const hud = !overlay?.active;
   return (
     <group ref={body} name="espelho" position={position} rotation={[0, deg(28), 0]}>
       <mesh geometry={frameGeo} position={[0, 0.95, -0.02]} castShadow><meshStandardMaterial color={f.color ?? "#2b2622"} metalness={f.metalness ?? 0.4} roughness={f.roughness ?? 0.35} /></mesh>
-      <mesh geometry={glassGeo} position={[0, 0.95, 0.021]}><meshStandardMaterial color="#b7c3cb" metalness={0.55} roughness={0.12} /></mesh>
+      <MirrorGlass geometry={glassGeo} />
       {vanity && [-1, 1].flatMap((side) => [0, 1, 2, 3, 4].map((i) => <mesh key={`${side}-${i}`} position={[side * 0.28, 0.3 + i * 0.32, 0.04]}><sphereGeometry args={[0.024, 16, 12]} /><meshStandardMaterial color="#fff4d6" emissive="#ffd9a0" emissiveIntensity={1.2} toneMapped={false} /></mesh>))}
-      {/* reflexo: o avatar da pessoa vestindo o look do espelho; sem ele, a capa do Look do Dia ou as peças penduradas */}
-      {/* fundo do reflexo: a vista do guarda-roupa tirada do espelho ao abrir a prova; o avatar (PNG com alfa) por cima */}
-      {snapshot && <mesh position={[0, 0.95, 0.0225]}><planeGeometry args={[0.8, 1.66]} /><meshBasicMaterial map={snapshot} color="#dfe5e9" toneMapped={false} /></mesh>}
       {reflection && <mesh position={[0, 1.2, 0.024]}><planeGeometry args={[0.5, 1.0]} /><meshBasicMaterial map={reflection} color="#ececec" transparent alphaTest={0.02} /></mesh>}
-      {!reflection && tex && hanging.length === 0 && <mesh position={[0, 1.08, 0.024]}><planeGeometry args={[0.4, 0.8]} /><meshStandardMaterial map={tex} transparent alphaTest={0.05} /></mesh>}
-      {!reflection && hanging.slice(0, 4).map((p, i) => <MirrorPiece key={p.id} url={p.imageUrl} position={[i % 2 ? 0.12 : -0.12, 1.38 - Math.floor(i / 2) * 0.38, 0.026]} />)}
+      {/* cartões do espelho inteligente, por dentro do contorno de qualquer molde (oval e arco inclusive) */}
+      {hud && tex && <group position={[-0.25, 1.32, 0.025]}><mesh><planeGeometry args={[0.17, 0.23]} /><meshBasicMaterial color="#f6f1e7" /></mesh><mesh position={[0, 0.008, 0.001]}><planeGeometry args={[0.15, 0.19]} /><meshStandardMaterial map={tex} /></mesh></group>}
+      {hud && hanging.slice(0, 4).map((p, i) => <MirrorPiece key={p.id} url={p.imageUrl} position={[0.27, 1.32 - i * 0.2, 0.026]} />)}
       <mesh ref={riser} position={[0, 0.1, 0.03]} visible={false}><planeGeometry args={[0.54, 1.7]} /><meshBasicMaterial color="#fff4cf" transparent opacity={0.5} depthWrite={false} /></mesh>
       {overlay?.celebrate && <group position={[0, 0.4, 0.03]}><Sparkles reduced={reduced} /></group>}
     </group>
@@ -391,7 +401,7 @@ function Mirror({ position, look, overlay, theme, onVistaMe, reduced, module, en
 }
 function MirrorPiece({ url, position }: { url?: string | null; position: [number, number, number] }) {
   const tex = useTex(url);
-  return <mesh position={position}><planeGeometry args={[0.22, 0.34]} /><meshStandardMaterial map={tex ?? undefined} color={tex ? "#fff" : "#d8d2c6"} transparent alphaTest={0.05} /></mesh>;
+  return <mesh position={position}><planeGeometry args={[0.13, 0.18]} /><meshStandardMaterial map={tex ?? undefined} color={tex ? "#fff" : "#d8d2c6"} transparent alphaTest={0.05} /></mesh>;
 }
 
 function Basket({ position, pieces, ctx }: { position: [number, number, number]; pieces: RoomPiece3D[]; ctx: Ctx }) {
@@ -405,25 +415,32 @@ function Basket({ position, pieces, ctx }: { position: [number, number, number];
   );
 }
 
-/** Arara do Desapego: etiqueta de preço e selo Garimpo nas peças de brechó. */
+/**
+ * Arara do Desapego: encostada na parede sul, de frente para o centro do quarto e longe das portas do 2º guarda-roupa
+ * (a porta 5 abre até x = −1,90). Placa FashionAI no alto (logo + nome), peças de frente para quem olha, etiqueta de
+ * preço e selo Garimpo nas peças de brechó; acima de 6 peças, as demais viram "+N" na placa.
+ */
 function SaleRack({ position, rack, ctx, modelUrl }: { modelUrl?: string | null; position: [number, number, number]; rack: { name: string; pieces: RoomPiece3D[] }; ctx: Ctx }) {
   const { t } = useI18n(); const logo = useTex("/brand/fai-logo.png");
-  return <RoomFixture engine={ctx.engine} id="support-rack" position={position} collider={[.85, .42]}>
-    <group rotation={[0, -deg(25), 0]}>
-      <ApprovedAsset url={modelUrl} size={[1.6, 1.55, .8]}><group>
-        {[-.73, .73].map(x => <group key={x}><mesh position={[x, .72, 0]}><boxGeometry args={[.045, 1.42, .045]} /><meshStandardMaterial color="#1245a8" metalness={.4} /></mesh>{[-.24, .24].map(z => <mesh key={z} position={[x, .06, z]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.06, .06, .045, 16]} /><meshStandardMaterial color="#423a30" /></mesh>)}</group>)}
-        <mesh position={[0, 1.23, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.018, .018, 1.46, 12]} /><meshStandardMaterial color="#c9a227" metalness={.8} roughness={.3} /></mesh>
-        <mesh position={[0, 1.43, 0]}><boxGeometry args={[1.53, .12, .055]} /><meshStandardMaterial color="#1245a8" /></mesh>
-        <mesh position={[0, .14, 0]}><boxGeometry args={[1.56, .04, .52]} /><meshStandardMaterial color="#f58220" /></mesh>
-        <mesh position={[0, 1.46, .04]}><circleGeometry args={[.12, 32]} /><meshStandardMaterial map={logo ?? undefined} color={logo ? "#ffffff" : "#f58220"} transparent /></mesh>
-      </group></ApprovedAsset>
-      <Label3D text={rack.name} w={1.1} h={.1} px={512} position={[0, 1.65, 0]} />
-      {rack.pieces.map((p, i) => <group key={p.id} position={[-.63 + i * 1.26 / Math.max(1, rack.pieces.length - 1), 1.15, 0]} rotation={[0, Math.PI / 2, 0]}>
-        <Hanger finish={ctx.hanger} modelUrl={ctx.hangerModel} /><group position={[0, -.34, .01]}><PieceMesh p={p} w={.36} h={.55} ctx={ctx} /></group>
-        {p.salePrice != null && <HangTag text={`R$ ${Math.round(Number(p.salePrice))}`} position={[.12, -.12, .04]} />}
-        {p.states?.includes("GARIMPO") && <HangTag text={t("common.garimpo")} color="#1F7A76" fg="#fff" position={[-.1, -.24, .04]} w={.11} />}
-      </group>)}
+  const shown = rack.pieces.slice(0, 6), more = rack.pieces.length - shown.length;
+  const x = (i: number) => (shown.length === 1 ? 0 : -.6 + i * 1.2 / (shown.length - 1));
+  return <RoomFixture engine={ctx.engine} id="support-rack" position={position} yaw={Math.PI} collider={[.82, .4]}>
+    <ApprovedAsset url={modelUrl} size={[1.6, 1.55, .8]}><group>
+      {[-.73, .73].map(x => <group key={x}><mesh position={[x, .72, 0]}><boxGeometry args={[.045, 1.42, .045]} /><meshStandardMaterial color="#1245a8" metalness={.4} /></mesh>{[-.24, .24].map(z => <mesh key={z} position={[x, .06, z]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.06, .06, .045, 16]} /><meshStandardMaterial color="#423a30" /></mesh>)}</group>)}
+      <mesh position={[0, 1.23, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.018, .018, 1.46, 12]} /><meshStandardMaterial color="#c9a227" metalness={.8} roughness={.3} /></mesh>
+      <mesh position={[0, 1.43, 0]}><boxGeometry args={[1.53, .12, .055]} /><meshStandardMaterial color="#1245a8" /></mesh>
+      <mesh position={[0, .14, 0]}><boxGeometry args={[1.56, .04, .52]} /><meshStandardMaterial color="#f58220" /></mesh>
+    </group></ApprovedAsset>
+    <group position={[0, 1.67, .03]}>
+      <RoundedBox args={[1.24, .2, .03]} radius={.03} smoothness={4}><meshStandardMaterial color="#14213d" roughness={.5} /></RoundedBox>
+      <mesh position={[-.51, 0, .017]}><circleGeometry args={[.085, 40]} /><meshBasicMaterial map={logo ?? undefined} color={logo ? "#ffffff" : "#f58220"} transparent toneMapped={false} /></mesh>
+      <Label3D text={more > 0 ? `${rack.name} · +${more}` : rack.name} w={.9} h={.11} px={512} fg="#fff3e6" position={[.07, 0, .017]} />
     </group>
+    {shown.map((p, i) => <group key={p.id} position={[x(i), 1.15, .02 + (i % 2) * .03]}>
+      <Hanger finish={ctx.hanger} modelUrl={ctx.hangerModel} /><group position={[0, -.34, .01]}><PieceMesh p={p} w={.36} h={.55} ctx={ctx} /></group>
+      {p.salePrice != null && <HangTag text={`R$ ${Math.round(Number(p.salePrice))}`} position={[.12, -.12, .04]} />}
+      {p.states?.includes("GARIMPO") && <HangTag text={t("common.garimpo")} color="#1F7A76" fg="#fff" position={[-.1, -.24, .04]} w={.11} />}
+    </group>)}
   </RoomFixture>;
 }
 
@@ -648,7 +665,7 @@ function layoutFor(level?: string) {
     xr, loft: atLeast(level, "LOFT"),
     showcase: [xr + 0.35, 0, -0.08] as [number, number, number],
     bags: [xr + 1.0, 0, -0.08] as [number, number, number],
-    sale: [-1.8, 0, 3.95] as [number, number, number],
+    sale: [-0.95, 0, ROOM.maxZ - 0.42] as [number, number, number],   // arara na parede sul, de frente para o quarto
     basket: [xr + 0.5, 0, 0.55] as [number, number, number],
     window: [xr + (closet ? 1.5 : 1.3), 2.05, -D / 2 - 0.005] as [number, number, number],
     window2: [ROOM.maxX - 0.015, 2.05, 2.45] as [number, number, number],
@@ -692,8 +709,8 @@ export function moduleAnchor(id: string, level?: string): [number, number, numbe
   if (id === "mirror") return [L.mirror[0], 1.1, L.mirror[2]];
   return [0, 1.2, 0];
 }
-/** Para onde a frente do módulo olha, no chão (x, z): o 2º guarda-roupa olha para leste (+x); o resto, para a câmera. */
-export function moduleFacing(id: string): [number, number] { return inW2(id) ? [1, 0] : [0, 1]; }
+/** Para onde a frente do módulo olha, no chão (x, z): o 2º guarda-roupa olha para leste (+x), a arara (parede sul) para o norte; o resto, para a câmera. */
+export function moduleFacing(id: string): [number, number] { return inW2(id) ? [1, 0] : id === "sale" ? [0, -1] : [0, 1]; }
 
 const NORTH = wallById("north"), EAST = wallById("east"), SOUTH = wallById("south"), WEST = wallById("west");
 
@@ -761,7 +778,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
           cima, na órbita, some; não projeta sombra, então o sol continua entrando) */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[(ROOM.minX + ROOM.maxX) / 2, 0, (ROOM.minZ + ROOM.maxZ) / 2]} receiveShadow><planeGeometry args={[ROOM.maxX - ROOM.minX, ROOM.maxZ - ROOM.minZ]} /><meshStandardMaterial color={night ? "#5a4636" : "#b8906a"} roughness={0.75} /></mesh>
       <mesh rotation={[Math.PI / 2, 0, 0]} position={[(ROOM.minX + ROOM.maxX) / 2, ROOM.height, (ROOM.minZ + ROOM.maxZ) / 2]}><planeGeometry args={[ROOM.maxX - ROOM.minX, ROOM.maxZ - ROOM.minZ]} /><meshStandardMaterial color={night ? "#2a2c38" : "#f6f2ec"} emissive={night ? "#000000" : "#f6f2ec"} emissiveIntensity={night ? 0 : 0.3} roughness={1} /></mesh>
-      {byId["rug"] && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, 1.3]} receiveShadow><circleGeometry args={[1.1, 48]} /><meshStandardMaterial color={night ? "#6b4c5c" : "#d9b8a0"} roughness={1} /></mesh>}
+      {byId["rug"] && <FaiRug position={[0, 0.004, 1.3]} radius={1.1} night={night} />}
 
       {/* parede norte: guarda-roupa 1 (FAI Origem), porta, interruptor, gancho das chaves, janela, calendário e quadro de
           cortiça — em coordenadas da cena (o grupo desfaz o deslocamento da parede, que não gira) */}
@@ -800,6 +817,8 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
 
         {/* parede: porta do quarto (a chave fica no gancho ao lado), interruptor (tema), janela, calendário e quadro de cortiça */}
         <RoomDoor position={L.door} night={night} onClick={onKeys ? () => onKeys() : undefined} />
+        {/* identidade FashionAI: letreiro de neon acima da porta (o batente termina em 2,11 m) */}
+        <FaiNeonSign position={[L.door[0] - 0.03, 2.47, -D / 2 - 0.004]} w={1.12} />
         <RoomFixture engine={gameplay?.engine} id="switch" position={L.switch} kind="light" run={onToggleLight}><LightSwitch position={[0, 0, 0]} on={ceilingOn} onToggle={() => onToggleLight?.()} /></RoomFixture>
         <KeyHook position={L.keys} keys={data.keys ?? []} onClick={() => onKeys?.()} />
         <RoomWindow position={L.window} period={period} light={false} seasonal={data.ambient?.seasonal && data.ambient.seasonal !== "null" ? data.ambient.seasonal : null} />
@@ -828,9 +847,11 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
         </Wardrobe2Body>
       </Wall>
 
-      {/* parede leste: a 2ª janela (sem holofote próprio: a luz do sol já vem da 1ª) */}
+      {/* parede leste: a 2ª janela (sem holofote próprio: a luz do sol já vem da 1ª), a cabeceira da cama e o medalhão FashionAI */}
       <Wall spec={EAST} color={wallColor("#e4dccd", "#30333f")} strip={strip}>
         <RoomWindow position={toWall(EAST, L.window2)} period={period} light={false} seasonal={data.ambient?.seasonal && data.ambient.seasonal !== "null" ? data.ambient.seasonal : null} />
+        {/* identidade FashionAI: o medalhão do logo acima da cabeceira da cama (a cama encosta nesta parede) */}
+        <FaiMedallion position={toWall(EAST, [ROOM.maxX - 0.015, 2.12, BED_POSITION[2]])} />
       </Wall>
       {/* parede sul: livre (é a parede da câmera na visão geral) */}
       <Wall spec={SOUTH} color={wallColor("#e6dfd2", "#32353f")} strip={strip} />
@@ -848,7 +869,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       {data.modules.filter(m => m.slotType === "DOOR" || m.slotType === "DRAWER").map(m => {
         const anchor = moduleAnchor(m.id, level); return anchor ? <RoomFixture key={m.id} engine={gameplay?.engine} id={`action:${m.id}`} position={anchor} kind="open" run={() => onToggle(m.id)} /> : null;
       })}
-      <Mirror position={L.mirror} look={data.mirrorDailyLook} overlay={mirror} theme={deco("tema_espelho")?.theme ?? null} onVistaMe={onVistaMe} reduced={reduced} module={byId["mirror"]} engine={gameplay?.engine} />
+      <Mirror position={L.mirror} look={data.mirrorDailyLook} overlay={mirror} theme={deco("tema_espelho")?.theme ?? null} onVistaMe={onVistaMe} reduced={reduced} module={byId["mirror"]} engine={gameplay?.engine} live={!!gameplay} />
       <DressForm position={L.bust} pointAt={pointAt} talking={!!copilotTalking} onClick={() => onCopilot?.()} reduced={reduced} />
       <SaleRack position={L.sale} rack={{ name: data.saleRack?.name ?? t("room.support_rack"), pieces: [...new Map([...(data.saleRack?.pieces ?? []), ...(data.chair ?? []), ...(data.basket ?? [])].map(p => [p.id, p])).values()] }} ctx={ctx} modelUrl={byId["saleRack"]?.finish?.model3dUrl ?? "/models/fai-room/rack-fai.glb"} />
       <RoomFixture engine={gameplay?.engine} id="chair" position={L.chair} collider={[.32, .32]} kind="sit" run={() => { if (gameplay) { gameplay.engine.seated = gameplay.engine.seated ? null : new THREE.Vector3(...L.chair); gameplay.engine.notify(); } }}>

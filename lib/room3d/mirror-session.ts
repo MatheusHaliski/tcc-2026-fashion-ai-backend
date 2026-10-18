@@ -79,19 +79,6 @@ export function handsOf(slots: MirrorSlots, held: SourcePiece | null, lookup: (i
 }
 
 export interface Reaction { slot: HandSlot; at: number }
-/** Foto da vista do guarda-roupa tirada do ponto de vista do espelho ao abrir a prova (fundo do reflexo). */
-export interface MirrorSnapshot { url: string; aspect: number; at: number }
-
-/**
- * Recorte da foto do quarto para o vidro do espelho: a foto tem a proporção do canvas; o vidro é alto e estreito. Fica
- * o miolo da foto (repeat/offset de textura), sem esticar.
- */
-export function snapshotCrop(glassAspect: number, imageAspect: number): { repeat: [number, number]; offset: [number, number] } {
-  if (!(glassAspect > 0) || !(imageAspect > 0)) return { repeat: [1, 1], offset: [0, 0] };
-  if (imageAspect >= glassAspect) { const rx = glassAspect / imageAspect; return { repeat: [rx, 1], offset: [(1 - rx) / 2, 0] }; }
-  const ry = imageAspect / glassAspect; return { repeat: [1, ry], offset: [0, (1 - ry) / 2] };
-}
-
 export class MirrorSession {
   phase: MirrorPhase = "room";
   /** aberta à mão (botão): parada, fica aberta a qualquer distância; andar para fora da zona fecha como na prova automática */
@@ -101,11 +88,8 @@ export class MirrorSession {
   private since = 0;
   /** número do último pedido de troca e do último aplicado; `busy` é o lugar em troca */
   seq = 0; applied = 0; busy: HandSlot | null = null; error: string | null = null; reaction: Reaction | null = null;
-  /** a vista do guarda-roupa no espelho (tirada ao entrar na prova; some ao voltar ao quarto) */
-  snapshot: MirrorSnapshot | null = null;
   listeners = new Set<() => void>();
   notify() { this.listeners.forEach((l) => l()); }
-  setSnapshot(s: MirrorSnapshot | null) { this.snapshot = s; this.notify(); }
 
   /**
    * Avança a fase pela distância do personagem ao espelho (m) no instante `now` (ms). Devolve true se a fase mudou.
@@ -125,7 +109,7 @@ export class MirrorSession {
       case "tryon": if (!this.manual && distance > MIRROR_ZONE.exit) { this.phase = "exit"; this.since = now; } break;
       case "exit":
         if (distance < MIRROR_ZONE.enter) this.phase = "tryon";
-        else if (now - this.since >= MIRROR_ZONE.exitMs) { this.phase = "room"; this.error = null; this.snapshot = null; }
+        else if (now - this.since >= MIRROR_ZONE.exitMs) { this.phase = "room"; this.error = null; }
         break;
     }
     if (before !== this.phase) { this.notify(); return true; }
@@ -135,7 +119,7 @@ export class MirrorSession {
   open() { this.manual = true; this.latched = false; if (this.phase !== "tryon") { this.phase = "tryon"; this.notify(); } }
   /** "Voltar ao quarto": fecha e, se o personagem ainda estiver na zona, não reabre sozinha até ele sair dela. */
   back(distance: number) {
-    this.manual = false; this.latched = distance <= MIRROR_ZONE.exit; this.error = null; this.snapshot = null;
+    this.manual = false; this.latched = distance <= MIRROR_ZONE.exit; this.error = null;
     if (this.phase !== "room") { this.phase = "room"; this.notify(); }
   }
   /**

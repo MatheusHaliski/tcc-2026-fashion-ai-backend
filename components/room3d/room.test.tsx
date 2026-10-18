@@ -19,6 +19,9 @@ import { frames, meshes, mount3d, ReactThreeTestRenderer } from "@/test-utils/th
 import { cleanup } from "@/test-utils/render";
 import RoomScene, { LEVELS, kelvinColor, moduleAnchor, moduleFacing, shownHits, type RoomData3D, type RoomPiece3D } from "./room-scene";
 import { ROOM, W2 } from "@/lib/room3d/room-bounds";
+import { BED, BED_POSITION, DoubleBed } from "./room-furniture";
+import { DEFAULT_BODY } from "@/lib/avatar3d/body-spec";
+import { RoomInteraction, penetration } from "@/lib/room3d/interaction";
 import { ROOM_ZOOM_EVENT } from "@/lib/room3d/interaction";
 import { I18nProvider } from "@/lib/i18n/i18n";
 import WardrobePreview from "./wardrobe-preview";
@@ -249,6 +252,51 @@ describe("quarto 3D — objetos e prévias", () => {
     );
     await frames(r, 2);
     expect(meshes(r).length).toBeGreaterThan(3);
+    await r.unmount();
+  });
+});
+
+describe("quarto 3D — móveis no lugar, identidade FashionAI e espelho de verdade", () => {
+  const front = (o: THREE.Object3D) => new THREE.Vector3(0, 0, 1).applyQuaternion(o.getWorldQuaternion(new THREE.Quaternion()));
+  const fixture = (r: Awaited<ReturnType<typeof mount3d>>, id: string) => r.scene.find((n) => n.instance.name === `fixture-${id}`).instance;
+
+  it("cama na medida de gente: cabeceira na parede leste, pés para o centro, criados-mudos e colisão pela caixa girada", async () => {
+    expect(BED.length).toBeGreaterThan(DEFAULT_BODY.MASCULINO.stature + 0.3);          // cabe o personagem deitado
+    expect(BED_POSITION[0] + BED.length / 2).toBeCloseTo(ROOM.maxX - 0.03, 6);          // cabeceira a 3 cm da parede leste
+    const engine = new RoomInteraction();
+    const r = await mount3d(<DoubleBed engine={engine} lit={false} intensity={1} />);
+    const bed = fixture(r, "bed"); bed.updateWorldMatrix(true, true);
+    const f = front(bed); expect(f.x).toBeCloseTo(-1, 6); expect(f.z).toBeCloseTo(0, 6);  // os pés olham para o oeste (centro do quarto)
+    expect(engine.solids.has(bed)).toBe(true);
+    const at = (x: number, z: number) => penetration(bed, new THREE.Vector3(x, 0, z));
+    expect(at(BED_POSITION[0], BED_POSITION[2])).toBeGreaterThan(0);                     // em cima da cama: bloqueado
+    expect(at(BED_POSITION[0], BED_POSITION[2] - BED.width / 2 + 0.1)).toBeGreaterThan(0); // criado-mudo do norte
+    expect(at(BED_POSITION[0] - BED.length / 2 - 0.25, BED_POSITION[2])).toBe(0);        // aos pés da cama: livre
+    await r.unmount();
+  });
+
+  it("arara encostada na parede sul, de frente para o quarto e fora do giro das portas do 2º guarda-roupa; medalhão, neon e tapete FashionAI", async () => {
+    const r = await mount3d(<RoomScene data={{ ...room("LOFT"), modules: [...room("LOFT").modules, { id: "rug", slotType: "RUG", label: "Tapete" }] }} open={new Set()} onToggle={vi.fn()} highlight={null} focusModule={null} onPick={vi.fn()} />);
+    await frames(r, 2);
+    const rack = fixture(r, "support-rack"); rack.updateWorldMatrix(true, true);
+    const p = rack.getWorldPosition(new THREE.Vector3());
+    expect(p.z).toBeCloseTo(ROOM.maxZ - 0.42, 6);
+    const f = front(rack); expect(f.z).toBeCloseTo(-1, 6);                                // de frente para o norte (o quarto)
+    expect(p.x - 0.82).toBeGreaterThan(W2.x + W2.collider.hz + 0.9);                      // a porta do 2º guarda-roupa (0,9 m) abre livre
+    expect(moduleFacing("sale")).toEqual([0, -1]);
+    for (const name of ["fai-medalhao", "fai-neon", "fai-tapete"]) expect(r.scene.findAll((n) => n.instance.name === name)).toHaveLength(1);
+    await r.unmount();
+  });
+
+  it("o vidro é um espelho de verdade (Reflector) e os cartões do Look do Dia somem na prova", async () => {
+    const pieces = [{ id: "a", imageUrl: "/media/a.png" }, { id: "b", imageUrl: "/media/b.png" }];
+    const scene = (active: boolean) => <RoomScene data={room("ESTREIA")} open={new Set()} onToggle={vi.fn()} highlight={null} focusModule={null} onPick={vi.fn()} mirror={{ pieces, active }} />;
+    const glassMeshes = (r: Awaited<ReturnType<typeof mount3d>>) => r.scene.find((n) => n.instance.name === "espelho").findAll((n) => n.type === "Mesh").length;
+    const r = await mount3d(scene(false));
+    expect(r.scene.findAll((n) => (n.instance as { isReflector?: boolean }).isReflector === true)).toHaveLength(1);
+    const browsing = glassMeshes(r);
+    await r.update(<I18nProvider initial="pt-BR">{scene(true)}</I18nProvider>);
+    expect(glassMeshes(r)).toBe(browsing - pieces.length);                                  // na prova, só o reflexo
     await r.unmount();
   });
 });

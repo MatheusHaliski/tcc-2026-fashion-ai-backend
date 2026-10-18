@@ -130,7 +130,8 @@ function dress(parts: HumanParts, items: OutfitItem[], images: Record<string, Im
     occludeInnerGarment({ ...gg, alpha: visibleAlpha }, cc, P, above);
     const finishes = visibleGarmentFinishes(it.spec, above, P);
     const img = images[it.key] ?? null;
-    const posed = posedPositions(human.skeleton, human.body.bindMatrix, gg.position, gg.skinIndex, gg.skinWeight);
+    // no espaço do corpo: a foto vai para a frente da peça mesmo com o personagem girado na cena (Meu Quarto)
+    const posed = posedPositions(human.skeleton, human.body.bindMatrix, gg.position, gg.skinIndex, gg.skinWeight, human.body);
     const sleeveVert = (v: number) => gg.source[v] >= 0 && P.group[gg.source[v]] === 2;
     // caixa da peça na foto (alfa do recorte ou fundo separado da foto opaca): uma só leitura para a projeção, a cor do
     // tecido, a textura e os acabamentos — cores sempre de dentro da peça, nunca do fundo da foto
