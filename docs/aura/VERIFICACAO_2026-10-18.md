@@ -2,12 +2,13 @@
 
 ## Resultados locais
 
-- 156 testes de frontend aprovados: suíte focada de 153 testes em 26 arquivos, mais 3 testes do player privado. Cobrem cartelas, 40 tratamentos Hype, consentimento/bloqueio, upload e requisição de job, catálogo contextual e carregamento autenticado de vídeo.
+- 156 testes de frontend aprovados: suíte focada de 156 testes em 27 arquivos, incluindo 3 testes do player privado. Cobrem cartelas, 40 tratamentos Hype, consentimento/bloqueio, upload e requisição de job, catálogo contextual e carregamento autenticado de vídeo.
 - 61 testes Java aprovados: AuraMotionService (17), upload pessoal (3), escopo privado (1), provador anatômico (11), Background Studio (11), ofertas de selos Hype (18). Compilação dos módulos application, ai-providers e web aprovada com Java 21.
 - 4 testes Python aprovados para pesquisa e QA técnico de vídeo.
 - `npm run lint` aprovado, incluindo TypeScript, estilos, design e verificações i18n. Há avisos preexistentes de nomes próprios iguais entre idiomas.
 - `npm run build` aprovado: compilação Next.js, TypeScript e geração das 75 páginas.
-- `git diff --check` aprovado.
+- `git diff origin/main --check` aprovado.
+- Build e 156 testes repetidos após integrar a main `e909079f`, preservando as atualizações de Quarto/Provador e resolvendo os catálogos de tradução.
 
 Os testes Java usam repositórios/worker simulados. Não equivalem a aplicar a migração V73 nem a executar um teste de concorrência contra MySQL. O mock nunca comprova geração de vídeo pessoal.
 
