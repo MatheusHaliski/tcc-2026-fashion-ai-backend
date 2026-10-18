@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Dialog, FileButton, SegmentPicker, Select, Switch } from "@/components/ui";
 import { api, ApiError, mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
+import { accessoryKind } from "@/lib/tryon/accessory-2d";
+import { AccessoryLayer, useAccessoryPlacements, type Accessory2d, type Readable } from "./accessory-overlay";
 
 /** O que o FASHN veste (services/anatomical_vton/fashn_runtime.py · CATEGORIES): parte de cima, de baixo e peça inteira. */
 export const GPU_CATEGORIES = ["full_body_piece", "lower_piece", "upper_piece"] as const;
@@ -11,11 +13,23 @@ export type GpuCategory = (typeof GPU_CATEGORIES)[number];
 /** Limite do servidor da GPU: lados maiores voltam INVALID_VTON_IMAGE (o backend também reduz; aqui só poupa o envio). */
 const MAX_SIDE = 1536;
 
-/** Peça que a prova na GPU pode vestir: do próprio guarda-roupa (id da peça) ou de uma loja do catálogo (id do produto). */
-export interface GpuPiece { id: string; source: "wardrobe" | "catalog"; name: string; category: string }
+/**
+ * Peça do look: do próprio guarda-roupa (id da peça) ou de uma loja do catálogo (id do produto). Roupa vai para a GPU;
+ * acessório com foto (`image`, `cutout` = fundo removido) entra na prévia 2D por cima da foto.
+ */
+export interface GpuPiece {
+  id: string; source: "wardrobe" | "catalog"; name: string; category: string;
+  subcategory?: string | null; image?: string | null; cutout?: boolean;
+}
 const keyOf = (p: GpuPiece) => `${p.source}:${p.id}`;
 
 export const isGpuCategory = (category?: string | null): category is GpuCategory => (GPU_CATEGORIES as readonly string[]).includes(category ?? "");
+
+/** Acessórios do look que a prévia 2D sabe posicionar (óculos, chapéus, brincos, colar, relógio, bolsas…) e têm foto. */
+export function accessories2d(pieces: GpuPiece[]): Accessory2d[] {
+  return pieces.filter((p) => p.category === "accessory_piece" && p.image && accessoryKind(p.subcategory))
+    .map((p) => ({ key: keyOf(p), name: p.name, subcategory: p.subcategory, image: p.image!, cutout: !!p.cutout }));
+}
 
 /** O look que vai para a GPU: uma peça por tipo (a primeira de cada), como o servidor faz; o resto não entra. */
 export function gpuLook(pieces: GpuPiece[]): GpuPiece[] {
@@ -70,7 +84,8 @@ export async function fitted(file: File): Promise<Blob> {
  * tipo, vestidas em sequência: inteira → baixo → cima) ou "Uma peça" — vestido na foto da própria pessoa, sempre por
  * POST /api/try-on/look-renders (peças do guarda-roupa em pieceIds, das lojas em productIds). A foto vai para
  * /api/try-on/person-photos e só é processada com o consentimento. O resultado é uma imagem 2D gerada: não certifica caimento nem tamanho. Calçados e
- * acessórios o modelo não veste (ficam de fora, avisado).
+ * acessórios o modelo não veste: os acessórios que a prévia 2D sabe posicionar podem ir por cima da foto (enviada ou gerada),
+ * pelos pontos do rosto e do corpo detectados no navegador; o resto fica de fora, avisado.
  */
 export function GpuLookDialog({ open, onClose, pieces, onPickFromWardrobe, title, emptyText }: {
   open: boolean; onClose: () => void; pieces: GpuPiece[]; onPickFromWardrobe?: () => void; title?: string; emptyText?: string;
@@ -86,6 +101,14 @@ export function GpuLookDialog({ open, onClose, pieces, onPickFromWardrobe, title
   const [result, setResult] = useState<Render | null>(null);
   const [error, setError] = useState<string | null>(null);
   const abort = useRef<AbortController | null>(null);
+  const extras = useMemo(() => accessories2d(pieces), [pieces]);
+  const [compose, setCompose] = useState(false);
+  const shown = result?.url ?? photo?.preview ?? null;
+  // a foto gerada vem do servidor: o canvas só lê a cópia baixada com a sessão (object URL); a enviada já é local
+  const readable = async (): Promise<Readable> => result?.url?.startsWith("/media/")
+    ? { url: await api.blobUrl(result.url), revoke: true }
+    : { url: mediaUrl(shown) ?? "" };
+  const placed = useAccessoryPlacements(compose, shown, readable, extras);
 
   // com uma peça só não há o que escolher entre look e peça: vai direto para a peça
   const single = look.length <= 1;
@@ -145,7 +168,8 @@ export function GpuLookDialog({ open, onClose, pieces, onPickFromWardrobe, title
   function close() { abort.current?.abort(); onClose(); }
 
   const seconds = result?.diagnostics?.latencyMs ? Math.max(1, Math.round(result.diagnostics.latencyMs / 1000)) : null;
-  const left = pieces.filter((p) => !isGpuCategory(p.category));
+  const composable = new Set(extras.map((a) => a.key));
+  const left = pieces.filter((p) => !isGpuCategory(p.category) && !(compose && composable.has(keyOf(p))));
   const resultAlt = effectiveMode === "look" ? t("tryOn.ia_resultado_look_alt") : t("tryOn.ia_resultado_alt", { name: piece?.name ?? "" });
   const empty = candidates.length === 0;
   return (
@@ -160,11 +184,14 @@ export function GpuLookDialog({ open, onClose, pieces, onPickFromWardrobe, title
       )}>
       <div className="grid gap-4 md:grid-cols-[minmax(220px,320px)_1fr]">
         <div className="ai-tryon-preview surface grid place-items-center overflow-hidden rounded-lg" aria-live="polite">
-          {result?.url
-            ? <img src={mediaUrl(result.url)} alt={resultAlt} className="w-full" />
-            : photo
-              ? <img src={photo.preview} alt={t("tryOn.ia_foto")} className="w-full opacity-80" />
-              : <p className="type-body-sm text-muted p-6 text-center">{t("tryOn.ia_foto_dica")}</p>}
+          {shown ? (
+            <div className="relative w-full overflow-hidden">
+              {result?.url
+                ? <img src={mediaUrl(result.url)} alt={resultAlt} className="w-full" />
+                : <img src={shown} alt={t("tryOn.ia_foto")} className={compose ? "w-full" : "w-full opacity-80"} />}
+              {compose && placed.status === "ready" && <AccessoryLayer accessories={extras} placements={placed.placements} />}
+            </div>
+          ) : <p className="type-body-sm text-muted p-6 text-center">{t("tryOn.ia_foto_dica")}</p>}
         </div>
         <div className="grid content-start gap-3">
           <p className="type-body-sm text-muted">{t("tryOn.ia_lead")}</p>
@@ -200,6 +227,15 @@ export function GpuLookDialog({ open, onClose, pieces, onPickFromWardrobe, title
             <p className="type-caption text-muted">{t("tryOn.ia_foto_dica")}</p>
           </div>
           <Switch checked={consent} onChange={setConsent} label={t("tryOn.ia_consentimento")} disabled={busy !== null} />
+          {extras.length > 0 && (
+            <div className="grid gap-1">
+              <Switch checked={compose} onChange={setCompose} label={t("tryOn.ia_acessorios_compor")} disabled={!shown || busy === "upload"} />
+              {compose && <p className="type-caption text-muted">{t("tryOn.ia_acessorios_aviso", { names: extras.map((a) => a.name).join(", ") })}</p>}
+              {compose && placed.status === "detecting" && <p className="type-caption" role="status">{t("tryOn.ia_acessorios_detectando")}</p>}
+              {compose && placed.status === "ready" && placed.missing.length > 0 && <p className="type-caption text-muted">{t("tryOn.ia_acessorios_nao_achou", { names: placed.missing.join(", ") })}</p>}
+              {compose && placed.status === "error" && <p className="type-caption text-danger">{t("tryOn.ia_acessorios_erro")}</p>}
+            </div>
+          )}
           {busy === "render" && <p className="type-body-sm" role="status">{t(effectiveMode === "look" && look.length > 1 ? "tryOn.ia_gerando_look" : "tryOn.ia_gerando")}</p>}
           {error && <p className="type-body-sm text-danger" role="alert">{error}</p>}
           {result && seconds && <p className="type-caption text-muted">{t("tryOn.ia_diagnostico", { seconds, gpu: result.diagnostics?.gpuName ?? "—" })}</p>}

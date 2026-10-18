@@ -5,7 +5,18 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, loggedAs, renderApp, screen, waitFor } from "@/test-utils/render";
-import { GpuLookDialog, gpuLook, refusalKey, type GpuPiece } from "@/components/try-on/gpu-look-dialog";
+import { accessories2d, GpuLookDialog, gpuLook, refusalKey, type GpuPiece } from "@/components/try-on/gpu-look-dialog";
+
+// a detecção roda no navegador com o MediaPipe; aqui, um rosto de frente no centro da foto
+const detect = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/tryon/accessory-detect", () => ({ detectForAccessories: detect }));
+const frontFace = () => {
+  const lm = Array.from({ length: 478 }, () => ({ x: 0.5, y: 0.3, z: 0 }));
+  Object.assign(lm, { 33: { x: 0.45, y: 0.3, z: 0 }, 263: { x: 0.55, y: 0.3, z: 0 }, 234: { x: 0.4, y: 0.32, z: 0 }, 454: { x: 0.6, y: 0.32, z: 0 } });
+  return lm;
+};
+/** No jsdom imagens não carregam: esta dispara o onload com um tamanho conhecido. */
+class LoadedImage { onload?: () => void; onerror?: () => void; naturalWidth = 400; naturalHeight = 160; set src(_: string) { queueMicrotask(() => this.onload?.()); } }
 
 const shirt: GpuPiece = { id: "w1", source: "wardrobe", name: "Camisa de linho", category: "upper_piece" };
 const pants: GpuPiece = { id: "w2", source: "wardrobe", name: "Calça de alfaiataria", category: "lower_piece" };
@@ -58,6 +69,24 @@ describe("Foto realista na GPU", () => {
     expect((await screen.findByRole("alert")).textContent).toBe("A foto precisa mostrar exatamente uma pessoa, com o corpo visível.");
     expect(refusalKey("GPU_BUSY_RETRY_LATER")).toBe("tryOn.ia_motivo.gpu");
     expect(refusalKey("<script>")).toBeNull();
+  });
+
+  it("acessório com foto entra por cima da foto, posicionado pelos pontos do rosto (prévia 2D)", async () => {
+    vi.stubGlobal("Image", LoadedImage);
+    detect.mockResolvedValue({ face: frontFace(), pose: null, width: 1000, height: 1000 });
+    const glasses: GpuPiece = { id: "c7", source: "catalog", name: "Óculos aviador", category: "accessory_piece", subcategory: "sunglasses", image: "/media/catalog/oculos.png", cutout: true };
+    const ring: GpuPiece = { id: "c8", source: "catalog", name: "Anel", category: "accessory_piece", subcategory: "ring", image: "/media/catalog/anel.png" };
+    expect(accessories2d([shirt, glasses, ring, { ...glasses, id: "c9", image: null }]).map((a) => a.name)).toEqual(["Óculos aviador"]);
+    loggedAs(undefined, { "POST /api/try-on/person-photos": { url: "/media/p.jpg" } });
+    renderApp(<GpuLookDialog open onClose={vi.fn()} pieces={[shirt, pants, glasses]} />);
+    expect(screen.getByText(/Ficam fora da foto .*Óculos aviador/)).toBeTruthy();
+    await photoAndConsent();
+    fireEvent.click(screen.getByRole("switch", { name: "Compor acessórios na foto (prévia 2D)" }));
+    const overlay = await screen.findByAltText("Óculos aviador sobre a foto");
+    expect(detect).toHaveBeenCalledWith("blob:previa", { face: true, pose: false });
+    expect((overlay as HTMLImageElement).style.width).toBe("15.5%");
+    expect(screen.queryByText(/Ficam fora da foto/)).toBeNull();
+    expect(screen.getByText(/Prévia 2D aproximada.*Óculos aviador/)).toBeTruthy();
   });
 
 });
