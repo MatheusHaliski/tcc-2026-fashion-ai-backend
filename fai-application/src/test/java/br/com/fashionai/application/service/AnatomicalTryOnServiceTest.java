@@ -43,7 +43,7 @@ class AnatomicalTryOnServiceTest {
         when(piece.getId()).thenReturn(pieceId);
         when(piece.getCategory()).thenReturn("upper_piece");
         when(wardrobe.owned(user, pieceId)).thenReturn(piece);
-        when(media.requireOwnedMedia(userId, photo, Set.of(MediaService.MediaScope.OWNER), "personMediaUrl"))
+        when(media.requireOwnedMedia(userId, photo, Set.of(MediaService.MediaScope.OWNER, MediaService.MediaScope.PRIVATE_TRY_ON), "personMediaUrl"))
                 .thenReturn(new MediaService.OwnedMedia("users/"+userId+"/photo.png", photo));
         when(worker.available()).thenReturn(true);
         when(legacy.imageBytes(piece)).thenReturn(image);

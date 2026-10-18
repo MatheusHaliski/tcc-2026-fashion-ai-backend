@@ -4,10 +4,10 @@ import type { HypeDimension, HypeEntity, HypeLevel, HypeMomentum } from "@/lib/h
 
 /** Ofertas de emissores avaliadas no servidor; não são os selos automáticos FashionAI. */
 export interface HypeSealOffer {
-  seal: { id: string; name: string; tier: "LOOK" | "PECA"; owner: UserCard; design?: SealDesign | null; premium: boolean; policyText?: string | null };
+  seal: { id: string; name: string; tier: "LOOK" | "PECA"; owner: UserCard; design?: SealDesign | null; premium: boolean; policyText?: string | null; availableUntil?: string | null };
   eligible: boolean; reason?: string | null; canRequest: boolean; requiresReview: boolean; requiredImageRightsConsent: boolean;
   issuerProfileUrl?: string | null;
-  bond?: { id: string; status: string } | null;
+  bond?: { id: string; status: string; expiresAt?: string | null } | null;
 }
 export interface HypeSealOffers {
   type: HypeEntity; id: string;

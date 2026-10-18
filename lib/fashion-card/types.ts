@@ -1,8 +1,8 @@
 export type FashionCardRarity='COMMON'|'RARE'|'LEGENDARY'|'COLLAB_DROP';
 export type AuraType='COMMON'|'ELECTRO'|'SPLASH'|'HYPE'|'METAMORPHOSE'|'IMPERSONATION';
 export type PowerVfx='CYBERPUNK_ELECTRIC'|'COSMIC_GOLD'|'ELEMENTAL_FIRE'|'ELEMENTAL_WIND'|'Y2K_HOLOGRAM';
-export interface AuraContextMetadata {brand:string;collaboration?:string;originCountry?:string;styleCategory?:string;occasion?:string;pattern?:string;sku?:string;modelCode?:string;brandId?:string}
-export interface AuraVfxConfig {particleType:'ELECTRIC_ARCS'|'GOLD_DUST'|'WEATHER_MIST'|'NEON_GLITCH'|'SOFT_SPARKS';shaderOverlay:'CEL_SHADING'|'VHS_Y2K'|'CINEMATIC_LIGHTS'|'INFRARED_SCAN'|'SATIN_LIGHT';backgroundEnvironment:'MANGA_SPEEDLINES'|'TOKYO_CYBERPUNK'|'ALPINE_WEATHER'|'GALA_STAGE'|'RETRO_STREET'|'FASHION_STUDIO';powerVfx:PowerVfx;ruleVersion:number}
+export interface AuraContextMetadata {brand:string;collaboration?:string;originCountry?:string;styleCategory?:string;occasion?:string;pattern?:string;sku?:string;modelCode?:string;brandId?:string;colorHex?:string;colorName?:string}
+export interface AuraVfxConfig {particleType:'ELECTRIC_ARCS'|'GOLD_DUST'|'WEATHER_MIST'|'NEON_GLITCH'|'SOFT_SPARKS';shaderOverlay:'CEL_SHADING'|'VHS_Y2K'|'CINEMATIC_LIGHTS'|'INFRARED_SCAN'|'SATIN_LIGHT';backgroundEnvironment:'MANGA_SPEEDLINES'|'TOKYO_CYBERPUNK'|'ALPINE_WEATHER'|'GALA_STAGE'|'RETRO_STREET'|'FASHION_STUDIO';powerVfx:PowerVfx;ruleVersion:number;palette?:[string,string]}
 export interface FashionCardStats {versatility:number|null;hypeIndex:number|null;legacyScore:number|null}
 export interface ImpersonationData {userMediaUrl:string;motionTemplateId:string;powerVfx:PowerVfx;renderedCardMediaUrl:string;renderedMediaType:'video/mp4'|'video/webm'|'image/gif';posterUrl:string;status:'MOCK_PREVIEW'|'READY';jobId:string}
 export interface FashionCard {rarity:FashionCardRarity;auraType:AuraType;stats:FashionCardStats;serialNumber?:string;motionTemplateId?:string;cardMediaUrl?:string;impersonationData?:ImpersonationData;contextVfx?:AuraVfxConfig;contextBadges?:string[]}

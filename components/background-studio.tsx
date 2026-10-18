@@ -20,9 +20,9 @@ import { AuraHypePicker } from "@/components/hype/aura-hype-picker";
 import { AuraHype } from "@/components/hype/aura-hype";
 
 import { AuraFashionPicker } from "@/components/aura-fashion-picker";
-import type { FashionPreset } from "@/lib/aura-fashion";
+import type { AuraFamily, FashionPreset } from "@/lib/aura-fashion";
 
-export interface BgConfig { compositionPreset?: FashionPreset | null; border?: CardBorderConfig | null; auraMetamorphose?: "OFF" | "PRISMA" | "CONSTELACAO" | "FIO_VIVO" | "HOLOGRAFIA" | null; auraMetamorphosePreset?: string | null; auraHype?: string | null; color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: "IMAGEM_UNICA" | "MOSAICO" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; silhouette?: string | null; posterUrl?: string; container?: { color?: string | null; ink?: string | null } | null; photo?: { url?: string | null } | null; }
+export interface BgConfig { auraImpersonation?: boolean | null; impersonationData?: Record<string,unknown> | null; compositionPreset?: FashionPreset | null; border?: CardBorderConfig | null; auraMetamorphose?: "OFF" | "PRISMA" | "CONSTELACAO" | "FIO_VIVO" | "HOLOGRAFIA" | null; auraMetamorphosePreset?: string | null; auraHype?: string | null; color?: string | null; gradient?: string | null; gradientPresetId?: string | null; seasonalPresetId?: string | null; aura?: { variantId: string; format?: "IMAGEM_UNICA" | "MOSAICO" } | null; materialId?: string | null; aiArt?: { url: string } | null; uploadUrl?: string | null; animation?: string | null; seasonalAuto?: boolean; silhouette?: string | null; posterUrl?: string; container?: { color?: string | null; ink?: string | null } | null; photo?: { url?: string | null } | null; }
 interface Variant { id: string; theme?: string; description?: string; code?: string; static?: { previewUrl?: string; url?: string; cardUrl?: string }; }
 export interface BgCatalog { colors: string[]; gradients: { id: string; name: string; stops: string[]; type?: string; angle?: number }[]; seasonal: { id: string; name: string; season: string; stops: string[] }[]; auraPresets: { id: string; name: string; archetype?: string; palette?: string[]; recommendedMaterials?: string[]; variants?: Variant[] }[]; materials: { id: string; name: string; finish?: string; static?: { previewUrl?: string } }[]; skins: { id: string; displayName?: string }[]; directions: Record<string, { label: string; skin?: string; aura?: string; material?: string }>; anatomies: string[]; pieceAnatomies?: string[]; animations: string[]; imageGenerationAvailable: boolean; }
 
@@ -148,9 +148,14 @@ export function ColorPanel({ value, onChange, season, hideSeasonal, keepCartela 
   );
 }
 
+/** Keep indexed/legacy art inside its own family, never as an unrelated top-level picker. */
+export function legacyAuraFamily(id: string): AuraFamily {
+  return /hype/i.test(id) ? "HYPE" : /electro/i.test(id) ? "ELECTRO" : /splash/i.test(id) ? "SPLASH" : "COMMON";
+}
+
 /** Segmento "Aura & Material": presets AURA e variações, material, formato e arte própria (IA ou imagem enviada). */
-export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, disabledNote, brandName, colorHex, colorName }: {
-  brandName?: string | null; colorHex?: string | null; colorName?: string | null;
+export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, disabledNote, brandName, colorHex, colorName, pieceId }: {
+  brandName?: string | null; colorHex?: string | null; colorName?: string | null; pieceId?:string;
   value: BgConfig; onChange: (p: Partial<BgConfig>) => void; onSkin?: (s: string) => void; styles?: string[]; occasions?: string[];
   /** layout com arte própria: o segmento fica desativado com esta explicação */
   disabledNote?: ReactNode;
@@ -161,11 +166,31 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
   const currentVariant = auraVariantId(value.aura?.variantId);
   const auraPreset = cat?.auraPresets?.find((a) => (a.variants ?? []).some((v) => v.id === currentVariant) || a.id === value.aura?.variantId);
   const direction = rec?.direction ? cat?.directions?.[rec.direction] : undefined;
+  const legacyOptions = (family: AuraFamily) => (<div className="grid gap-3">
+      <OptionStrip title={t("backgroundStudio.preset_aura")}>
+        {(cat?.auraPresets ?? []).filter(a => legacyAuraFamily(a.id) === family).map((a) => <button key={a.id} type="button" aria-pressed={auraPreset?.id === a.id} className="opt-tile" title={a.archetype} onClick={() => onChange({ compositionPreset:null, aura: { variantId: a.variants?.[0]?.id ?? a.id, format: value.aura?.format }, aiArt: null, uploadUrl: null })}>
+          {a.variants?.[0]?.static?.previewUrl ? <img src={a.variants[0].static.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" style={{ background: `linear-gradient(135deg, ${(a.palette ?? ["#999", "#ccc"]).join(",")})` }} />}
+          <span className="opt-name">{a.name}</span></button>)}
+      </OptionStrip>
+      {auraPreset && legacyAuraFamily(auraPreset.id) === family && (auraPreset.variants ?? []).length > 1 && <OptionStrip title={t("backgroundStudio.variacao", { name: auraPreset.name })}>
+        {(auraPreset.variants ?? []).map((v) => <button key={v.id} type="button" aria-pressed={currentVariant === v.id} className="opt-tile" title={v.description} onClick={() => onChange({ compositionPreset:null, aura: { variantId: v.id, format: value.aura?.format } })}>
+          {v.animatedUrl ? <span className="opt-thumb relative overflow-hidden"><ArtVideo src={v.animatedUrl} poster={v.static?.previewUrl} /></span>
+            : v.static?.previewUrl ? <img src={v.static.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" />}
+          <span className="opt-name">{[v.code, v.theme].filter(Boolean).join(" ")}</span></button>)}
+      </OptionStrip>}
+          </div>);
   return (
     <div className="grid gap-3">
       {rec?.direction && <p className="type-caption text-muted">{rich("backgroundStudio.direcao_recomendada_para", { value: (styles ?? []).join(", ") || t("backgroundStudio.o_look"), value2: direction?.label ?? rec.direction }, { 0: ($c) => <b>{$c}</b> })}{direction?.aura && <Button size="sm" className="ml-2" onClick={() => { onChange({ compositionPreset:null, aura: { variantId: direction.aura!, format: value.aura?.format }, materialId: direction.material ?? null, aiArt: null, uploadUrl: null }); if (direction.skin && onSkin) onSkin(direction.skin); }}>{t("backgroundStudio.aplicar_recomendada")}</Button>}</p>}
       <AuraGuide/>
-      <AuraHypePicker value={value.auraHype} onChange={mode=>onChange({auraHype:mode})}/>
+      <AuraFashionPicker pieceId={pieceId} brandName={brandName} colorHex={colorHex} colorName={colorName}
+        value={value.compositionPreset}
+        activeFamilies={[...(auraPreset ? [legacyAuraFamily(auraPreset.id)] : []), ...(value.auraHype && value.auraHype !== "OFF" ? ["HYPE" as const] : []), ...(value.auraMetamorphose && value.auraMetamorphose !== "OFF" ? ["METAMORPHOSE" as const] : [])]}
+        exclusiveFamilies={["HYPE"]}
+        onChange={preset=>onChange({compositionPreset:preset,aura:null,aiArt:null,uploadUrl:null})}
+        familyContent={{
+          HYPE:<AuraHypePicker inline value={value.auraHype ?? (auraPreset?.id === "aura_hype" ? "SCANNER" : null)} onChange={mode=>onChange({auraHype:mode,...(auraPreset?.id === "aura_hype" ? {aura:null} : {}),...(value.compositionPreset?.family === "HYPE" ? {compositionPreset:null} : {})})}/>,
+          METAMORPHOSE:<div className="grid gap-3">
       <OptionStrip title={t("auraMetamorphose.title")} hint={<p className="type-caption text-muted">{t("auraMetamorphose.hint")}</p>}>
         {(["OFF","PRISMA","CONSTELACAO","FIO_VIVO","HOLOGRAFIA"] as const).map(mode=><button key={mode} type="button" className="opt-tile" aria-pressed={(value.auraMetamorphose??"OFF")===mode&&!value.auraMetamorphosePreset} onClick={()=>onChange({auraMetamorphose:mode,auraMetamorphosePreset:null})}><span className="opt-thumb relative overflow-hidden bg-surface-3">{mode!=="OFF"&&<AuraMetamorphose mode={mode} preview/>}</span><span className="opt-name">{t(`auraMetamorphose.${mode}`)}</span></button>)}
       </OptionStrip>
@@ -176,19 +201,13 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
           <span className="type-caption">{t("auraMetamorphose.brandPresetGarment",{brand:preset.brand,color:t(`auraMetamorphose.garmentColor.${preset.garmentColor}`)})}</span>
         </button>)}
       </OptionStrip>
-      <AuraFashionPicker brandName={brandName} colorHex={colorHex} colorName={colorName} value={value.compositionPreset} onChange={preset=>onChange({compositionPreset:preset,aiArt:null,uploadUrl:null,...(preset?.family==="HYPE"?{auraHype:"SCANNER" as const}:preset?.family==="METAMORPHOSE"?{auraMetamorphose:"PRISMA" as const}:{})})}/>
-      <OptionStrip title={t("backgroundStudio.preset_aura")}>
-        {(cat?.auraPresets ?? []).map((a) => <button key={a.id} type="button" aria-pressed={auraPreset?.id === a.id} className="opt-tile" title={a.archetype} onClick={() => onChange({ compositionPreset:null, aura: { variantId: a.variants?.[0]?.id ?? a.id, format: value.aura?.format }, aiArt: null, uploadUrl: null })}>
-          {a.variants?.[0]?.static?.previewUrl ? <img src={a.variants[0].static.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" style={{ background: `linear-gradient(135deg, ${(a.palette ?? ["#999", "#ccc"]).join(",")})` }} />}
-          <span className="opt-name">{a.name}</span></button>)}
-      </OptionStrip>
-      {auraPreset && (auraPreset.variants ?? []).length > 1 && <OptionStrip title={t("backgroundStudio.variacao", { name: auraPreset.name })}>
-        {(auraPreset.variants ?? []).map((v) => <button key={v.id} type="button" aria-pressed={currentVariant === v.id} className="opt-tile" title={v.description} onClick={() => onChange({ compositionPreset:null, aura: { variantId: v.id, format: value.aura?.format } })}>
-          {v.animatedUrl ? <span className="opt-thumb relative overflow-hidden"><ArtVideo src={v.animatedUrl} poster={v.static?.previewUrl} /></span>
-            : v.static?.previewUrl ? <img src={v.static.previewUrl} alt="" className="opt-thumb" loading="lazy" /> : <span className="opt-thumb" />}
-          <span className="opt-name">{[v.code, v.theme].filter(Boolean).join(" ")}</span></button>)}
-      </OptionStrip>}
-      <OptionStrip title={t("backgroundStudio.material_camada")}>
+          </div>,
+          COMMON:legacyOptions("COMMON"),
+          ELECTRO:legacyOptions("ELECTRO"),
+          SPLASH:legacyOptions("SPLASH"),
+        }}
+      />
+      <OptionStrip title={t("backgroundStudio.material_camada")} hint={<p className="type-body-sm text-muted">{t("backgroundStudio.materialHelp")}</p>}>
         <button type="button" aria-pressed={!value.materialId} className="opt-tile" onClick={() => onChange({ materialId: null })}>
           <span className="opt-thumb" />
           <span className="opt-name">{t("backgroundStudio.imagem_sem_material")}</span>

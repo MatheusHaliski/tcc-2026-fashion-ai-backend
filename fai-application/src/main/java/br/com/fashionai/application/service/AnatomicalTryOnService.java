@@ -16,7 +16,7 @@ public class AnatomicalTryOnService {
  public Map<String,Object> probe(CurrentUser user,PersonRequest request){
   guard.requireCanCreate(user);
   if(request==null||!request.processingConsent())throw ApiException.badRequest("VTON_CONSENT_REQUIRED","Confirme o processamento da sua fotografia.");
-  var owned=media.requireOwnedMedia(user.id(),request.personMediaUrl(),Set.of(MediaService.MediaScope.OWNER),"personMediaUrl");
+  var owned=media.requireOwnedMedia(user.id(),request.personMediaUrl(),Set.of(MediaService.MediaScope.OWNER,MediaService.MediaScope.PRIVATE_TRY_ON),"personMediaUrl");
   if(!worker.available())throw new ApiException(503,"VTON_NOT_CONFIGURED","Worker anatômico não configurado.");
   byte[] person=media.read(owned.url()).orElseThrow(()->ApiException.notFound("Foto"));
   if(person.length==0||person.length>6_000_000)throw ApiException.badRequest("VTON_IMAGE_LIMIT","Use uma fotografia de até 6 MB.");
@@ -40,7 +40,7 @@ public class AnatomicalTryOnService {
   guard.requireCanCreate(user);
   if(request==null||request.pieceId()==null||!request.processingConsent())throw ApiException.badRequest("VTON_CONSENT_REQUIRED","Escolha sua peça e confirme o processamento da sua fotografia.");
   var piece=wardrobe.owned(user,request.pieceId());
-  var owned=media.requireOwnedMedia(user.id(),request.personMediaUrl(),Set.of(MediaService.MediaScope.OWNER),"personMediaUrl");
+  var owned=media.requireOwnedMedia(user.id(),request.personMediaUrl(),Set.of(MediaService.MediaScope.OWNER,MediaService.MediaScope.PRIVATE_TRY_ON),"personMediaUrl");
   if(!worker.available())throw new ApiException(503,"VTON_NOT_CONFIGURED","Worker anatômico não configurado. A prova 3D convencional continua disponível.");
   byte[] garment=legacy.imageBytes(piece);byte[] person=media.read(owned.url()).orElseThrow(()->ApiException.notFound("Foto"));
   if(garment==null||garment.length==0||garment.length>6_000_000||person.length>6_000_000)throw ApiException.badRequest("VTON_IMAGE_LIMIT","Use imagens de até 6 MB e 1536 px.");
