@@ -3,7 +3,7 @@ import { RoomFixture, DoubleBed, CeilingFixture, BED_POSITION } from "./room-fur
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Canvas, events as pointerEvents, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { ContactShadows, OrbitControls, RoundedBox } from "@react-three/drei";
+import { ContactShadows, OrbitControls, PerformanceMonitor, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { Reflector } from "three/examples/jsm/objects/Reflector.js";
@@ -13,9 +13,11 @@ import {
   pointer, RoomDoor, RoomWindow, sketchDraw, Sparkles, TailorTape, useCanvasTex, WallCalendar, WindowLight,
 } from "@/components/room3d/room-props";
 import RoomAvatarController, { type RoomGameplay } from "./room-avatar-controller";
-import { MIRROR_COLLIDER } from "@/lib/room3d/mirror-session";
+import { MIRROR_COLLIDER, MIRROR_NORMAL } from "@/lib/room3d/mirror-session";
+import { CORNERS, cameraViewMeta, viewPose, wallsFor, type SavedView, type WallMode } from "@/lib/room3d/camera-views";
+import { DEFAULT_CAMERA_OPTIONS, graphicsOf, type CameraOptions, type GraphicsQuality } from "@/lib/room3d/room-settings";
 import { CHAIR, ROOM_CAMERA_EVENT, ROOM_TURN_EVENT, ROOM_ZOOM_EVENT, RoomInteraction, seatOf } from "@/lib/room3d/interaction";
-import { dropPoint, insideW2, ROOM, toWall, W2, w2ToWorld, walkArea, wallById, wallOpacity, wallSide, type WallSpec } from "@/lib/room3d/room-bounds";
+import { dropPoint, insideW2, ROOM, roomCenter, toWall, W2, w2ToWorld, walkArea, wallById, wallOpacity, wallSide, type WallSpec } from "@/lib/room3d/room-bounds";
 import { useI18n } from "@/lib/i18n/i18n";
 import { ApprovedAsset } from "./approved-asset";
 import { hangJitter, hungKindOf, HungGarment, ShelfPiece } from "./hung-garment";
@@ -52,6 +54,24 @@ export interface RoomSceneProps {
   onPick: (pieceId: string) => void; onReady?: (canvas: HTMLCanvasElement) => void;
   lit?: Set<string>; mirror?: MirrorOverlay; dark?: boolean; onToggleTheme?: () => void; lightOn?: boolean; lightIntensity?: number; onToggleLight?: () => void; onVistaMe?: () => void; onCopilot?: () => void;
   copilotPoint?: string | null; copilotTalking?: boolean; onKeys?: () => void; onUnbox?: () => void; unboxing?: boolean; onAddToDrawer?: (moduleId: string) => void;
+  /** aba Configurações do quarto: câmera e ponto de vista, paredes, ambiente e gráficos (lib/room3d/room-settings.ts) */
+  view?: SceneView;
+  /** num canto do teto, girar (Q/E, botões) passa ao canto vizinho: a página guarda a escolha */
+  onViewStep?: (step: number) => void;
+  /** a câmera de agora (para salvar como vista favorita, Shift+1–5) */
+  poseRef?: React.MutableRefObject<SavedView | null>;
+}
+
+/** O que a aba Configurações muda na cena. */
+export interface SceneView {
+  camera: CameraOptions; walls: WallMode;
+  /** hora do dia (null/auto = a do perfil) e temperatura da lâmpada do teto (null = a do quarto) */
+  period?: string | null; kelvin?: number | null;
+  quality: GraphicsQuality; dynamicRes: boolean;
+  /** textura do reflexo do espelho; null = sem reflexo ao vivo (a prévia 2D do avatar faz o papel) */
+  mirror: { width: number; height: number } | null;
+  /** movimento reduzido já resolvido (Configurações > sistema/perfil) */
+  reduced: boolean;
 }
 
 export const LEVELS = ["ESTREIA", "STUDIO", "LOFT", "CLOSET", "ATELIER", "PENTHOUSE", "MAISON"];
@@ -352,10 +372,13 @@ function GlassButton({ text, position, w, onClick, primary }: { text: string; po
  * o vidro aparece — o personagem com a roupa vestida, o movimento e o quarto atrás, invertidos como num espelho (fora da
  * tela, nada é desenhado). Textura de 512 × 1024 para o vidro de ~1:2 e cor quase neutra (~92% de reflexo).
  */
-function MirrorGlass({ geometry }: { geometry: THREE.BufferGeometry }) {
-  const glass = useMemo(() => new Reflector(geometry, { textureWidth: 512, textureHeight: 1024, clipBias: 0.003, multisample: 2,
-    color: new THREE.Color().setRGB(0.46, 0.47, 0.48, THREE.LinearSRGBColorSpace) }), [geometry]);
-  useEffect(() => () => glass.dispose(), [glass]);
+function MirrorGlass({ geometry, size = { width: 512, height: 1024 } }: { geometry: THREE.BufferGeometry; size?: { width: number; height: number } | null }) {
+  const w = size?.width ?? 0, h = size?.height ?? 0;
+  const glass = useMemo(() => (w ? new Reflector(geometry, { textureWidth: w, textureHeight: h, clipBias: 0.003, multisample: w >= 512 ? 2 : 0,
+    color: new THREE.Color().setRGB(0.46, 0.47, 0.48, THREE.LinearSRGBColorSpace) }) : null), [geometry, w, h]);
+  useEffect(() => () => glass?.dispose(), [glass]);
+  // reflexo desligado nas Configurações (aparelho fraco): vidro liso, sem desenhar a cena de novo
+  if (!glass) return <mesh geometry={geometry} position={[0, 0.95, 0.021]}><meshStandardMaterial color="#aab3b8" metalness={0.85} roughness={0.12} /></mesh>;
   return <primitive object={glass} position={[0, 0.95, 0.021]} />;
 }
 
@@ -366,9 +389,9 @@ function MirrorGlass({ geometry }: { geometry: THREE.BufferGeometry }) {
  * reflexo. O formato e a moldura vêm do módulo "mirror" do quarto, trocável na loja como qualquer outro componente
  * (retangular, arco, oval, camarim com luzes).
  */
-function Mirror({ position, look, overlay, reduced, module, engine, live }: { engine?: RoomInteraction; position: [number, number, number]; look?: RoomData3D["mirrorDailyLook"]; overlay?: MirrorOverlay; theme?: string | null; onVistaMe?: () => void; reduced: boolean; module?: RoomModule3D; live?: boolean }) {
+function Mirror({ position, look, overlay, reduced, module, engine, live, glass = { width: 512, height: 1024 } }: { engine?: RoomInteraction; position: [number, number, number]; look?: RoomData3D["mirrorDailyLook"]; overlay?: MirrorOverlay; theme?: string | null; onVistaMe?: () => void; reduced: boolean; module?: RoomModule3D; live?: boolean; glass?: { width: number; height: number } | null }) {
   const tex = useTex(look?.coverImageUrl);
-  const reflection = useReflection(live ? null : overlay?.reflectionUrl);
+  const reflection = useReflection(live && glass ? null : overlay?.reflectionUrl);
   const riser = useRef<THREE.Mesh>(null); const start = useRef(-1);
   // o espelho é um obstáculo: o personagem para na frente do vidro (e contorna pela lateral), nunca o atravessa
   const body = useRef<THREE.Group>(null);
@@ -389,7 +412,7 @@ function Mirror({ position, look, overlay, reduced, module, engine, live }: { en
   return (
     <group ref={body} name="espelho" position={position} rotation={[0, deg(28), 0]}>
       <mesh geometry={frameGeo} position={[0, 0.95, -0.02]} castShadow><meshStandardMaterial color={f.color ?? "#2b2622"} metalness={f.metalness ?? 0.4} roughness={f.roughness ?? 0.35} /></mesh>
-      <MirrorGlass geometry={glassGeo} />
+      <MirrorGlass geometry={glassGeo} size={glass} />
       {vanity && [-1, 1].flatMap((side) => [0, 1, 2, 3, 4].map((i) => <mesh key={`${side}-${i}`} position={[side * 0.28, 0.3 + i * 0.32, 0.04]}><sphereGeometry args={[0.024, 16, 12]} /><meshStandardMaterial color="#fff4d6" emissive="#ffd9a0" emissiveIntensity={1.2} toneMapped={false} /></mesh>))}
       {reflection && <mesh position={[0, 1.2, 0.024]}><planeGeometry args={[0.5, 1.0]} /><meshBasicMaterial map={reflection} color="#ececec" transparent alphaTest={0.02} /></mesh>}
       {/* cartões do espelho inteligente, por dentro do contorno de qualquer molde (oval e arco inclusive) */}
@@ -535,7 +558,7 @@ function CameraRig({ focus, facing, home, homeDist, controls }: { focus: [number
  * Modo foto/órbita: os botões da interface (room-scene-controls.tsx) giram a cena de 45° em 45° em torno do alvo (volta
  * inteira, agora que as paredes somem por trás) e aproximam/afastam; Q/E também giram com o canvas focado.
  */
-function OrbitTurn({ controls, reduced }: { controls: React.RefObject<unknown>; reduced: boolean }) {
+function OrbitTurn({ controls, reduced, speed = 1, invertX = false, invertY = false }: { controls: React.RefObject<unknown>; reduced: boolean; speed?: number; invertX?: boolean; invertY?: boolean }) {
   const { gl, camera } = useThree();
   const pending = useRef(0); const axes = useRef({ x: 0, y: 0, zoom: 0 });
   useEffect(() => {
@@ -558,7 +581,8 @@ function OrbitTurn({ controls, reduced }: { controls: React.RefObject<unknown>; 
     if (axes.current.x || axes.current.y || axes.current.zoom) {
       const sphere = new THREE.Spherical().setFromVector3(camera.position.clone().sub(c.target));
       sphere.radius = THREE.MathUtils.clamp(sphere.radius * Math.exp((axes.current.zoom ?? 0) * dt), (c as { minDistance?: number }).minDistance ?? .7, (c as { maxDistance?: number }).maxDistance ?? 12);
-      sphere.theta += axes.current.x * dt * 1.1; sphere.phi = THREE.MathUtils.clamp(sphere.phi + axes.current.y * dt * .7, .2, Math.PI / 2 - .05);
+      // sensibilidade e eixos invertidos da aba Configurações
+      sphere.theta += axes.current.x * dt * 1.1 * speed * (invertX ? -1 : 1); sphere.phi = THREE.MathUtils.clamp(sphere.phi + axes.current.y * dt * .7 * speed * (invertY ? -1 : 1), .2, Math.PI / 2 - .05);
       camera.position.copy(c.target).add(new THREE.Vector3().setFromSpherical(sphere)); c.update();
     }
     if (Math.abs(pending.current) < 1e-4) return;
@@ -569,10 +593,67 @@ function OrbitTurn({ controls, reduced }: { controls: React.RefObject<unknown>; 
   return null;
 }
 
-function ResponsiveFov() {
+function ResponsiveFov({ fov }: { fov?: number | null }) {
   const { camera, size } = useThree();
-  // a abertura de base fica em userData.baseFov: o controle do avatar abre um pouco mais dentro do quarto (room-avatar-controller.tsx)
-  useEffect(() => { const cam = camera as THREE.PerspectiveCamera; const aspect = size.width / Math.max(1, size.height); cam.fov = cam.userData.baseFov = aspect < 0.8 ? 62 : aspect < 1.1 ? 48 : 38; cam.updateProjectionMatrix(); }, [camera, size.width, size.height]);
+  // a abertura de base fica em userData.baseFov: o controle do avatar abre um pouco mais dentro do quarto (room-avatar-controller.tsx);
+  // a lente escolhida nas Configurações vale no lugar da automática (pela proporção da tela)
+  useEffect(() => { const cam = camera as THREE.PerspectiveCamera; const aspect = size.width / Math.max(1, size.height); cam.fov = cam.userData.baseFov = fov ?? (aspect < 0.8 ? 62 : aspect < 1.1 ? 48 : 38); cam.updateProjectionMatrix(); }, [camera, size.width, size.height, fov]);
+  return null;
+}
+
+/**
+ * Ponto de vista da aba Configurações com a câmera livre desligada (fora do modo andar): canto do teto, planta, casa de
+ * bonecas, guarda-roupa, entrada, o que o espelho vê, cinematográfica ou uma vista salva. A câmera vai até a pose
+ * (corte seco com movimento reduzido) e a órbita fica parada; num canto, girar (Q/E, botões) passa ao canto vizinho.
+ */
+function PresetCamera({ options, mirror, door, onViewStep }: { options: CameraOptions; mirror: [number, number, number]; door: [number, number, number]; onViewStep?: (step: number) => void }) {
+  const { camera, size, gl } = useThree();
+  const look = useRef<THREE.Vector3 | null>(null);
+  const stepRef = useRef(onViewStep); stepRef.current = onViewStep;
+  const corner = !options.saved && CORNERS.includes(options.view);
+  useEffect(() => {
+    if (!corner) return;
+    const el = gl.domElement;
+    const turn = (e: Event) => { const d = Math.sign(Number((e as CustomEvent).detail) || 0); if (d) stepRef.current?.(-d); };
+    const key = (e: KeyboardEvent) => { if ((e.code === "KeyQ" || e.code === "KeyE") && !e.repeat) { e.preventDefault(); stepRef.current?.(e.code === "KeyQ" ? -1 : 1); } };
+    el.addEventListener(ROOM_TURN_EVENT, turn); el.addEventListener("keydown", key);
+    return () => { el.removeEventListener(ROOM_TURN_EVENT, turn); el.removeEventListener("keydown", key); };
+  }, [gl, corner]);
+  // ao voltar à câmera livre, a lente volta à de base (a órbita retoma dali)
+  useEffect(() => () => { const lens = camera as THREE.PerspectiveCamera; if (lens.userData.baseFov) { lens.fov = lens.userData.baseFov; lens.updateProjectionMatrix(); } }, [camera]);
+  useFrame(({ clock }, dt) => {
+    const pose = options.saved
+      ? { position: new THREE.Vector3(...options.saved.position), target: new THREE.Vector3(...options.saved.target), fov: undefined }
+      : viewPose(options.view, { mirror: { x: mirror[0], z: mirror[2] }, mirrorNormal: MIRROR_NORMAL, door: { x: door[0], z: door[2] }, time: clock.elapsedTime, aspect: size.width / Math.max(1, size.height), still: options.still });
+    if (!pose) return;
+    if (!look.current) look.current = camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3).add(camera.position);
+    const k = options.cut ? 1 : 1 - Math.exp(-3.2 * dt);
+    camera.position.lerp(pose.position, k); look.current.lerp(pose.target, k); camera.lookAt(look.current);
+    const lens = camera as THREE.PerspectiveCamera, want = options.fov ?? pose.fov ?? lens.userData.baseFov ?? lens.fov;
+    if (Math.abs(lens.fov - want) > 0.01) { lens.fov += (want - lens.fov) * k; lens.updateProjectionMatrix(); }
+  });
+  return null;
+}
+
+/** A névoa acompanha a distância da câmera: de longe (planta, casa de bonecas) o quarto não some no nevoeiro. */
+function FogFollow() {
+  const center = useMemo(() => roomCenter().setY(1), []);
+  useFrame(({ camera, scene }) => {
+    const fog = scene.fog as THREE.Fog | null; if (!fog) return;
+    const near = Math.max(8, camera.position.distanceTo(center) * 0.9);
+    fog.near = near; fog.far = near + 8;
+  });
+  return null;
+}
+
+/** Guarda a câmera de agora (posição e para onde olha) para salvar como vista favorita. */
+function CameraProbe({ poseRef }: { poseRef: React.MutableRefObject<SavedView | null> }) {
+  const dir = useMemo(() => new THREE.Vector3(), []);
+  useFrame(({ camera }) => {
+    camera.getWorldDirection(dir);
+    const p = camera.position, round = (n: number) => Math.round(n * 1000) / 1000;
+    poseRef.current = { position: [round(p.x), round(p.y), round(p.z)], target: [round(p.x + dir.x * 3), round(p.y + dir.y * 3), round(p.z + dir.z * 3)] };
+  });
   return null;
 }
 
@@ -589,21 +670,23 @@ const visibleHits: NonNullable<React.ComponentProps<typeof Canvas>["events"]> = 
  * interruptor, quadro, guarda-roupas…) somem e deixam de receber cliques, e fica uma faixa baixa de 0,3 m para ler o
  * contorno do quarto. `userData.reveal()` mostra tudo por um instante (foto do espelho) e devolve como estava.
  */
-function Wall({ spec, color, strip, children }: { spec: WallSpec; color: string; strip: string; children?: React.ReactNode }) {
+function Wall({ spec, color, strip, mode = "recortadas", children }: { spec: WallSpec; color: string; strip: string; mode?: WallMode; children?: React.ReactNode }) {
   const group = useRef<THREE.Group>(null), plane = useRef<THREE.Mesh>(null), band = useRef<THREE.Mesh>(null), props = useRef<THREE.Group>(null);
-  const current = useRef(1);
-  const apply = (o: number) => {
-    current.current = o;
+  const current = useRef({ o: 1, low: false });
+  // paredes baixas (Configurações, planta, casa de bonecas): some o plano, ficam a faixa do rodapé e os móveis presos nela
+  const apply = (o: number, low = false) => {
+    current.current = { o, low };
     const mat = plane.current?.material as THREE.MeshStandardMaterial | undefined;
-    if (mat && plane.current) { const transparent = o < 0.999; if (mat.transparent !== transparent) { mat.transparent = transparent; mat.needsUpdate = true; } mat.opacity = o; mat.depthWrite = o > 0.5; plane.current.visible = o > 0.001; }
-    if (props.current) props.current.visible = o > 0.02;
-    if (band.current) band.current.visible = o < 0.98;
+    if (mat && plane.current) { const transparent = o < 0.999; if (mat.transparent !== transparent) { mat.transparent = transparent; mat.needsUpdate = true; } mat.opacity = o; mat.depthWrite = o > 0.5; plane.current.visible = !low && o > 0.001; }
+    if (props.current) props.current.visible = low || o > 0.02;
+    if (band.current) band.current.visible = low || o < 0.98;
   };
   useLayoutEffect(() => {
     const g = group.current; if (!g) return;
-    g.userData.wall = spec.id; g.userData.reveal = () => { const before = current.current; apply(1); return () => apply(before); };
+    g.userData.wall = spec.id; g.userData.reveal = () => { const before = current.current; apply(1); return () => apply(before.o, before.low); };
   }); // eslint-disable-line react-hooks/exhaustive-deps
-  useFrame(({ camera }) => apply(wallOpacity(wallSide(camera.position, spec))));
+  // inteiras: nunca somem (de fora, o plano de um lado só já não aparece); recortadas: somem as que tapam a vista
+  useFrame(({ camera }) => (mode === "baixas" ? apply(1, true) : apply(mode === "inteiras" ? 1 : wallOpacity(wallSide(camera.position, spec)))));
   return (
     <group ref={group} position={spec.center} rotation={[0, spec.yaw, 0]}>
       <mesh ref={plane} position={[0, spec.height / 2, 0]} receiveShadow><planeGeometry args={[spec.width, spec.height]} /><meshStandardMaterial color={color} roughness={1} /></mesh>
@@ -712,14 +795,16 @@ export function moduleFacing(id: string): [number, number] { return inW2(id) ? [
 const NORTH = wallById("north"), EAST = wallById("east"), SOUTH = wallById("south"), WEST = wallById("west");
 
 export default function RoomScene({ data, open, onToggle, highlight, focusModule, onPick, onReady, lit = new Set(), mirror, dark, lightOn, lightIntensity, onToggleLight, onVistaMe, onCopilot,
-  copilotPoint, copilotTalking, onKeys, onUnbox, unboxing, onAddToDrawer, gameplay }: RoomSceneProps) {
+  copilotPoint, copilotTalking, onKeys, onUnbox, unboxing, onAddToDrawer, gameplay, view, onViewStep, poseRef }: RoomSceneProps) {
   const { t } = useI18n();
   const router = useRouter();
   const controls = useRef<unknown>(null);
+  const [dprCap, setDprCap] = useState<number | null>(null);
   const [, refreshInteractions] = useState(0);
   useEffect(() => { if (!gameplay) return; const refresh = () => refreshInteractions(n => n + 1); gameplay.engine.listeners.add(refresh); return () => { gameplay.engine.listeners.delete(refresh); }; }, [gameplay?.engine]);
-  const reduced = !!data.ambient?.reduceMotion;
-  const period = data.ambient?.period === "fixed" ? "afternoon" : data.ambient?.period ?? "afternoon";
+  const reduced = view?.reduced ?? !!data.ambient?.reduceMotion;
+  // hora do dia: a escolhida nas Configurações; "auto", a do perfil (fixa = tarde)
+  const period = view?.period && view.period !== "auto" ? view.period : data.ambient?.period === "fixed" ? "afternoon" : data.ambient?.period ?? "afternoon";
   const night = period === "night";
   const ceilingOn = lightOn ?? data.light?.on ?? night;
   const brightness = Math.max(0, Math.min(1, lightIntensity ?? data.light?.intensity ?? .75));
@@ -739,6 +824,8 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
   const hangerFinish = byId["hangers"]?.finish ? finishOf(byId["hangers"]) : undefined;
   const kelvin = data.light?.guided ? data.light.kelvin ?? 4000 : 4000;
   const lightColor = kelvinColor(kelvin);
+  // temperatura da lâmpada do teto escolhida nas Configurações (para avaliar a cor das roupas); a fita de LED segue a guiada
+  const bulbColor = view?.kelvin ? kelvinColor(view.kelvin) : lightColor;
   const mark = atLeast(level, "STUDIO") && data.monogram ? data.monogram : "FAI";
   const cam = data.camera ?? {}; const po = cam.polar ?? [55, 80], zoom = cam.zoom ?? [0.8, 1.6];
   const focus = focusModule ? moduleAnchor(focusModule, level) : null;
@@ -761,14 +848,25 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
   const w2 = L.loft && (!!byId["door:5"] || !!byId["door:6"] || Array.from({ length: 12 }, (_, i) => byId[`drawer:${i + 25}`]).some(Boolean));
   const wallColor = (day: string, dusk: string) => (night ? dusk : day), strip = night ? "#4a4038" : "#d9cbb5";
   const drop = walkArea(ROOM);
+  // Configurações: qualidade (densidade de pixels, sombras), resolução dinâmica, paredes e ponto de vista
+  const camOpts = view?.camera ?? DEFAULT_CAMERA_OPTIONS;
+  const g = graphicsOf(view?.quality ?? "auto", !!gameplay);
+  const dpr: [number, number] = dprCap ? [1, Math.min(g.dpr[1], dprCap)] : g.dpr;
+  const walls = wallsFor(camOpts.saved ? "livre" : camOpts.view, view?.walls ?? "recortadas");
+  // fora do modo andar, um ponto de vista (ou uma vista salva) assume a câmera; mostrar um módulo volta à órbita
+  const preset = !gameplay && !focus && (camOpts.saved || (camOpts.view !== "livre" && !cameraViewMeta(camOpts.view).walkOnly)) ? camOpts : null;
   return (
-    <Canvas shadows dpr={gameplay ? [1, 1.5] : [1, 2]} gl={{ preserveDrawingBuffer: true, antialias: true }} camera={{ fov: 38, position: [1.75, 2.35, 4.8], near: 0.05, far: 40 }} events={visibleHits}
+    <Canvas shadows={g.shadows} dpr={dpr} gl={{ preserveDrawingBuffer: true, antialias: true }} camera={{ fov: 38, position: [1.75, 2.35, 4.8], near: 0.05, far: 40 }} events={visibleHits}
       onCreated={({ gl }) => { gl.toneMapping = THREE.ACESFilmicToneMapping; onReady?.(gl.domElement); }} aria-label={t("room3d.roomScene.meu_quarto_em_3d")}>
+      {/* resolução dinâmica: a densidade de pixels cai quando o quadro fica lento e volta quando sobra fôlego */}
+      {view?.dynamicRes !== false && <PerformanceMonitor onDecline={() => setDprCap(1)} onIncline={() => setDprCap(null)} />}
+      <FogFollow />
+      {poseRef && <CameraProbe poseRef={poseRef} />}
       <color attach="background" args={[night ? "#1d1f2a" : "#efe9df"]} />
       <fog attach="fog" args={[night ? "#1d1f2a" : "#efe9df", 8, 16]} />
-      <CeilingFixture on={ceilingOn} intensity={brightness} color={lightColor} />
+      <CeilingFixture on={ceilingOn} intensity={brightness} color={bulbColor} />
       <hemisphereLight args={[night ? "#9aa0c8" : period === "morning" ? "#eef4ff" : "#fff6e8", night ? "#2a2433" : "#d9cbb5", night ? 0.55 : 0.9]} />
-      <directionalLight position={[3, 5, 4]} intensity={night ? 0.35 : period === "golden" ? 1.3 : 1.6} color={period === "golden" ? "#ffd2a0" : period === "morning" ? "#f1f6ff" : "#ffffff"} castShadow shadow-mapSize={gameplay ? [1024, 1024] : [2048, 2048]} shadow-camera-left={-6.5} shadow-camera-right={6} shadow-camera-top={4} shadow-camera-bottom={-5} />
+      <directionalLight position={[3, 5, 4]} intensity={night ? 0.35 : period === "golden" ? 1.3 : 1.6} color={period === "golden" ? "#ffd2a0" : period === "morning" ? "#f1f6ff" : "#ffffff"} castShadow={g.shadows} shadow-mapSize={[g.shadowMap, g.shadowMap]} shadow-camera-left={-6.5} shadow-camera-right={6} shadow-camera-top={4} shadow-camera-bottom={-5} />
       {/* luz de preenchimento do outro lado (sem sombra): as paredes de costas para o sol (leste e sul) não ficam cinzentas */}
       <directionalLight position={[-3, 4, -2]} intensity={night ? 0.12 : 0.45} color={night ? "#9aa0c8" : "#fff4e6"} />
       {/* quarto de quatro paredes (room-bounds.ts): piso do tamanho do quarto e teto de um lado só (virado para baixo: de
@@ -779,7 +877,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
 
       {/* parede norte: guarda-roupa 1 (FAI Origem), porta, interruptor, gancho das chaves, janela, calendário e quadro de
           cortiça — em coordenadas da cena (o grupo desfaz o deslocamento da parede, que não gira) */}
-      <Wall spec={NORTH} color={wallColor("#e8e1d4", "#343747")} strip={strip}><group position={toWall(NORTH, [0, 0, 0])}>
+      <Wall spec={NORTH} color={wallColor("#e8e1d4", "#343747")} strip={strip} mode={walls}><group position={toWall(NORTH, [0, 0, 0])}>
         <group>
           <Carcass w={W} dividers={[1, 2, 3].map((i) => -W / 2 + i * DOOR_W)} carcass={carcass} />
           {/* closet de assinatura (Maison): filetes dourados e placa */}
@@ -827,7 +925,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       <WindowLight position={L.window} period={period} />
 
       {/* parede oeste: o 2º guarda-roupa (a extensão do Loft: portas 5–6 e gavetas 25–36, mesmos endereços) */}
-      <Wall spec={WEST} color={wallColor("#e2dacb", "#2e3140")} strip={strip}>
+      <Wall spec={WEST} color={wallColor("#e2dacb", "#2e3140")} strip={strip} mode={walls}>
         <Wardrobe2Body position={toWall(WEST, [W2.x, 0, W2.z])} engine={gameplay?.engine}>
           {w2 ? <>
             <Carcass w={EXT_W + 0.02} dividers={[0]} carcass={carcass} />
@@ -845,13 +943,13 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       </Wall>
 
       {/* parede leste: a 2ª janela (sem holofote próprio: a luz do sol já vem da 1ª), a cabeceira da cama e o medalhão FashionAI */}
-      <Wall spec={EAST} color={wallColor("#e4dccd", "#30333f")} strip={strip}>
+      <Wall spec={EAST} color={wallColor("#e4dccd", "#30333f")} strip={strip} mode={walls}>
         <RoomWindow position={toWall(EAST, L.window2)} period={period} light={false} seasonal={data.ambient?.seasonal && data.ambient.seasonal !== "null" ? data.ambient.seasonal : null} />
         {/* identidade FashionAI: o medalhão do logo acima da cabeceira da cama (a cama encosta nesta parede) */}
         <FaiMedallion position={toWall(EAST, [ROOM.maxX - 0.015, 2.12, BED_POSITION[2]])} />
       </Wall>
       {/* parede sul: livre (é a parede da câmera na visão geral) */}
-      <Wall spec={SOUTH} color={wallColor("#e6dfd2", "#32353f")} strip={strip} />
+      <Wall spec={SOUTH} color={wallColor("#e6dfd2", "#32353f")} strip={strip} mode={walls} />
 
       {/* vitrine da peça ícone */}
       {showcase.length > 0 && <group position={L.showcase}>
@@ -866,7 +964,7 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       {data.modules.filter(m => m.slotType === "DOOR" || m.slotType === "DRAWER").map(m => {
         const anchor = moduleAnchor(m.id, level); return anchor ? <RoomFixture key={m.id} engine={gameplay?.engine} id={`action:${m.id}`} position={anchor} kind="open" run={() => onToggle(m.id)} /> : null;
       })}
-      <Mirror position={L.mirror} look={data.mirrorDailyLook} overlay={mirror} theme={deco("tema_espelho")?.theme ?? null} onVistaMe={onVistaMe} reduced={reduced} module={byId["mirror"]} engine={gameplay?.engine} live={!!gameplay} />
+      <Mirror position={L.mirror} look={data.mirrorDailyLook} overlay={mirror} theme={deco("tema_espelho")?.theme ?? null} onVistaMe={onVistaMe} reduced={reduced} module={byId["mirror"]} engine={gameplay?.engine} live={!!gameplay} glass={view ? view.mirror : undefined} />
       <DressForm position={L.bust} pointAt={pointAt} talking={!!copilotTalking} onClick={() => onCopilot?.()} reduced={reduced} />
       <SaleRack position={L.sale} rack={{ name: data.saleRack?.name ?? t("room.support_rack"), pieces: [...new Map([...(data.saleRack?.pieces ?? []), ...(data.chair ?? []), ...(data.basket ?? [])].map(p => [p.id, p])).values()] }} ctx={ctx} modelUrl={byId["saleRack"]?.finish?.model3dUrl ?? "/models/fai-room/rack-fai.glb"} />
       <RoomFixture engine={gameplay?.engine} id="chair" position={L.chair} collider={[.32, .32]} kind="sit" run={() => { if (gameplay) { const e = gameplay.engine; e.seated = e.seated ? null : seatOf(L.chair); e.seatYaw = CHAIR.yaw; e.notify(); } }}>
@@ -881,11 +979,12 @@ export default function RoomScene({ data, open, onToggle, highlight, focusModule
       <ContactShadows position={[0, 0.005, 0.4]} opacity={0.35} scale={10} blur={2.4} far={3} />
       {gameplay && <RoomAvatarController gameplay={gameplay} closetRight={W / 2} />}
       {gameplay && <LoosePieces engine={gameplay.engine} pieces={data.pieces} ctx={ctx} drop={drop} />}
-      {!gameplay && <OrbitControls ref={controls as never} makeDefault enablePan={false} target={[0, 1.2, 0]}
+      {!gameplay && <OrbitControls ref={controls as never} makeDefault enabled={!preset} enablePan={false} target={[0, 1.2, 0]}
         minPolarAngle={deg(po[0])} maxPolarAngle={deg(po[1])} minDistance={homeDist / zoom[1]} maxDistance={homeDist / zoom[0]} enableDamping dampingFactor={0.08} />}
-      {!gameplay && <CameraRig focus={focus} facing={facing} home={[0, 1.2, 0]} homeDist={homeDist} controls={controls} />}
-      {!gameplay && <OrbitTurn controls={controls} reduced={reduced} />}
-      <ResponsiveFov />
+      {!gameplay && !preset && <CameraRig focus={focus} facing={facing} home={[0, 1.2, 0]} homeDist={homeDist} controls={controls} />}
+      {!gameplay && !preset && <OrbitTurn controls={controls} reduced={reduced} speed={camOpts.speed} invertX={camOpts.invertX} invertY={camOpts.invertY} />}
+      {preset && <PresetCamera options={preset} mirror={L.mirror} door={L.door} onViewStep={onViewStep} />}
+      <ResponsiveFov fov={camOpts.fov} />
     </Canvas>
   );
 }

@@ -9,7 +9,8 @@ import type { BodyParams } from "@/lib/avatar3d/body-spec";
 import { applyIdle } from "@/lib/avatar3d/human/pose";
 import { arrowAnywhere, CHAIR, moveInRoom, ROOM_TURN_EVENT, RoomInteraction, thighDrop, type Arm } from "@/lib/room3d/interaction";
 import { inputYaw, reachPlane, ROOM, viewYaw } from "@/lib/room3d/room-bounds";
-import { MirrorSession, REACTION_MS, cameraFor, facingYaw, mirrorDistance, reactionChoreo, reactionKindOf, type ReactionChoreo } from "@/lib/room3d/mirror-session";
+import { MIRROR_NORMAL, MirrorSession, REACTION_MS, cameraFor, facingYaw, mirrorDistance, reactionChoreo, reactionKindOf, type ReactionChoreo } from "@/lib/room3d/mirror-session";
+import { poseYaw, viewPose, type ViewPose } from "@/lib/room3d/camera-views";
 import { stepSwing, SWING_REST, type Swing } from "@/lib/room3d/cloth-motion";
 export interface RoomGameplay {
   avatar: Avatar3dRef | null; sex: "FEMININO" | "MASCULINO"; body?: BodyParams | null; pieces: Look3dPiece[]; engine: RoomInteraction;
@@ -36,7 +37,7 @@ export function reachHand(parts: HumanParts, arm: Arm, desired: THREE.Vector3) {
 /** Abertura mínima da lente (graus) na vista do quarto. */
 const ROOM_FOV = 50;
 export default function RoomAvatarController({ gameplay, closetRight }: { gameplay: RoomGameplay; closetRight: number }) {
-  const { camera, gl } = useThree(), { engine } = gameplay;
+  const { camera, gl, size } = useThree(), { engine } = gameplay;
   const sessionRef = useRef(gameplay.session); sessionRef.current = gameplay.session;
   const actor = useRef<THREE.Group>(null), parts = useRef<HumanParts | null>(null);
   const pointer = useRef(new THREE.Vector2(0, 0)), desired = useRef(new THREE.Vector3(0, 1.5, .3));
@@ -90,18 +91,31 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
     const trying = !!session?.active;
     // o vidro do espelho reflete o personagem de verdade (Reflector em room-scene.tsx): nada a fotografar ao entrar na prova
     const ph = session?.phase ?? "room";
-    // câmera desta fase: a vista do quarto escolhida (Q/E, botões) ou a da prova, sempre dentro das paredes
-    engine.cameraYaw += engine.cameraStick.x * dt * 1.1;
-    engine.cameraPitch = THREE.MathUtils.clamp(engine.cameraPitch + engine.cameraStick.y * dt * .7, -.6, .7);
-    const cam = cameraFor(ph, engine.actor, engine.mirror, closetRight, engine.view, ROOM, camera.position);
-    const orbit = new THREE.Spherical().setFromVector3(cam.position.clone().sub(cam.target));
-    orbit.theta += engine.cameraYaw; orbit.phi = THREE.MathUtils.clamp(orbit.phi + engine.cameraPitch, .3, Math.PI / 2 - .05);
-    cam.position.copy(cam.target).add(new THREE.Vector3().setFromSpherical(orbit));
-    cam.position.x = THREE.MathUtils.clamp(cam.position.x, ROOM.minX + .15, ROOM.maxX - .15);
-    cam.position.z = THREE.MathUtils.clamp(cam.position.z, ROOM.minZ + .15, ROOM.maxZ - .15);
-    cam.position.y = THREE.MathUtils.clamp(cam.position.y, .4, ROOM.height - .15);
+    // câmera desta fase: a vista do quarto escolhida (Q/E, botões) ou a da prova, sempre dentro das paredes. Opções da aba
+    // Configurações: sensibilidade e eixos do analógico, seguir o personagem e o ponto de vista (cantos do teto, planta…)
+    const opts = engine.camera, sx = (opts.invertX ? -1 : 1) * opts.speed, sy = (opts.invertY ? -1 : 1) * opts.speed;
+    const first = ph === "room" && !opts.saved && opts.view === "primeira-pessoa";
+    // em primeira pessoa o analógico direito vira o próprio corpo (não há câmera para orbitar)
+    if (first) { if (!engine.seated) yaw.current -= engine.cameraStick.x * dt * 1.6 * sx; }
+    else engine.cameraYaw += engine.cameraStick.x * dt * 1.1 * sx;
+    engine.cameraPitch = THREE.MathUtils.clamp(engine.cameraPitch + engine.cameraStick.y * dt * .7 * sy, -.6, .7);
+    const cam = cameraFor(ph, engine.actor, engine.mirror, closetRight, engine.view, ROOM, camera.position, opts.follow ? undefined : 0);
+    const pose: ViewPose | null = ph !== "room" ? null : opts.saved
+      ? { position: new THREE.Vector3(...opts.saved.position), target: new THREE.Vector3(...opts.saved.target) }
+      : viewPose(opts.view, { actor: engine.actor, facing: engine.seated ? engine.seatYaw : yaw.current, pitch: engine.cameraPitch, mirror: engine.mirror, mirrorNormal: MIRROR_NORMAL,
+        head: first ? p.human.bone("Head").getWorldPosition(new THREE.Vector3()) : null, time: clock.elapsedTime, aspect: size.width / Math.max(1, size.height), still: opts.still });
+    if (pose) { cam.position.copy(pose.position); cam.target.copy(pose.target); }
+    else {
+      const orbit = new THREE.Spherical().setFromVector3(cam.position.clone().sub(cam.target));
+      orbit.theta += engine.cameraYaw; orbit.phi = THREE.MathUtils.clamp(orbit.phi + engine.cameraPitch, .3, Math.PI / 2 - .05);
+      cam.position.copy(cam.target).add(new THREE.Vector3().setFromSpherical(orbit));
+      cam.position.x = THREE.MathUtils.clamp(cam.position.x, ROOM.minX + .15, ROOM.maxX - .15);
+      cam.position.z = THREE.MathUtils.clamp(cam.position.z, ROOM.minZ + .15, ROOM.maxZ - .15);
+      cam.position.y = THREE.MathUtils.clamp(cam.position.y, .4, ROOM.height - .15);
+    }
     engine.updateNearby();
-    if (!moving) walkYaw.current = ph === "room" ? viewYaw(engine.view) + engine.cameraYaw : inputYaw(cam.position, cam.target);
+    // "para cima" anda para onde a câmera olha: na primeira pessoa, para a frente do corpo; nas vistas fixas, pelo olhar
+    if (!moving) walkYaw.current = first ? yaw.current + Math.PI : pose ? poseYaw(pose) : ph === "room" ? viewYaw(engine.view) + engine.cameraYaw : inputYaw(cam.position, cam.target);
     if (!engine.grip) {
       // as setas mandam; sem elas, um passo da caminhada até o ponto (para ao chegar), virando para onde anda
       const heading = arrows ? moveInRoom(engine.actor, engine.keys, dt, ROOM, engine.solids, walkYaw.current, engine.moveStick) : engine.followGoal(dt, ROOM);
@@ -210,10 +224,13 @@ export default function RoomAvatarController({ gameplay, closetRight }: { gamepl
     } else carried.current = null;
     // câmera: a vista do quarto (guarda-roupa, personagem e espelho; Q/E giram de 90° em 90°); na prova, de frente para
     // o espelho com o personagem no quadro — sempre por interpolação (com movimento reduzido, direto, sem o percurso)
-    const k = gameplay.reduced ? 1 : Math.min(1, dt * 3);
+    // corte seco (Configurações ou movimento reduzido) e a primeira pessoa (a lente presa aos olhos) vão direto
+    const k = gameplay.reduced || opts.cut || first ? 1 : Math.min(1, dt * 3);
     camera.position.lerp(cam.position, k); look.current.lerp(cam.target, k); camera.lookAt(look.current);
-    // no quarto a lente abre um pouco (dentro das paredes a câmera fica mais perto); na prova, a abertura de sempre
-    const lens = camera as THREE.PerspectiveCamera, base = lens.userData.baseFov ?? lens.fov, fov = base + (ph === "room" ? Math.max(0, ROOM_FOV - base) : 0);
+    // no quarto a lente abre um pouco (dentro das paredes a câmera fica mais perto); na prova, a abertura de sempre. A
+    // lente escolhida nas Configurações vale em tudo; sem ela, cada ponto de vista tem a sua
+    const lens = camera as THREE.PerspectiveCamera, base = opts.fov ?? lens.userData.baseFov ?? lens.fov;
+    const fov = opts.fov ?? pose?.fov ?? base + (ph === "room" ? Math.max(0, ROOM_FOV - base) : 0);
     if (Math.abs(lens.fov - fov) > .01) { lens.fov += (fov - lens.fov) * k; lens.updateProjectionMatrix(); }
     const state = JSON.stringify(engine.state); if (state !== lastState.current) { lastState.current = state; engine.notify(); }
   });

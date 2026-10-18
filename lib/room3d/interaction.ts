@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import { walkArea, type RoomBounds } from "./room-bounds";
+import { CORNERS } from "./camera-views";
+import { DEFAULT_CAMERA_OPTIONS, type CameraOptions } from "./room-settings";
 export type Arm = "Left" | "Right";
 export interface RoomTarget {
   /** puxador (porta/gaveta), peça (pegar) ou varão (pendurar de volta a peça que está na mão) */
@@ -39,6 +41,10 @@ export class RoomInteraction {
   listeners = new Set<() => void>(); ready = false;
   /** vista da câmera no quarto (0–3, room-bounds.ts): Q/E e os botões de girar a cena (+1 = câmera a leste) */
   view = 0;
+  /** opções da câmera vindas da aba Configurações (vista escolhida, lente, sensibilidade, eixos, corte seco) */
+  camera: CameraOptions = DEFAULT_CAMERA_OPTIONS;
+  /** num canto do teto, girar (Q/E, L1/R1, botões) passa para o canto vizinho: quem guarda a escolha decide */
+  onViewStep: ((step: number) => void) | null = null;
   /**
    * Caminhada até um ponto ("Ir ao espelho", "Voltar ao quarto"): o ponto da vez e os seguintes (contorno de um
    * obstáculo). Qualquer seta ou botão do direcional cancela; sem se aproximar por GOAL_STUCK_S (parado), desiste.
@@ -47,7 +53,10 @@ export class RoomInteraction {
   private goalDone: ((outcome: GoalOutcome) => void) | null = null;
   private goalBest = Infinity; private goalIdle = 0; private goalSide = 0;
   notify() { this.listeners.forEach(listener => listener()); }
-  turn(step: number) { this.view = (((this.view + step) % 4) + 4) % 4; this.notify(); }
+  turn(step: number) {
+    if (CORNERS.includes(this.camera.view) && this.onViewStep) { this.onViewStep(step); return; }
+    this.view = (((this.view + step) % 4) + 4) % 4; this.notify();
+  }
   keyDown(code: string) {
     if (this.keys.has(code)) return;
     this.keys.add(code);
