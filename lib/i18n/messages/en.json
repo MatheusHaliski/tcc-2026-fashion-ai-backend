@@ -7364,6 +7364,7 @@
   "impersonation.power.ELEMENTAL_WIND": "Elemental wind",
   "impersonation.power.Y2K_HOLOGRAM": "Holographic distortion",
   "levelProgress.title": "Level progress",
+  "levelProgress.abrir": "Level {level}, {percent}% to the next. Open progress",
   "levelProgress.name.ESTREIA": "Basic",
   "levelProgress.name.STUDIO": "Studio",
   "levelProgress.name.LOFT": "Loft",

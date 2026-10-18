@@ -3906,6 +3906,19 @@ html[data-reduce-motion="true"] .fashion-motion-control, html[data-reduce-motion
 .profile-level-progress ul { display: grid; gap: .4rem; }
 .profile-level-progress li { display: flex; justify-content: space-between; gap: .5rem; font-size: 12px; }
 @media (prefers-reduced-motion: reduce) { .profile-level-track i { transition: none; } }
+/* Perfil: nível discreto ao lado do nome (selo como os demais do cabeçalho) e o progresso em modal, sem placar de LED */
+.level-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border: 1px solid var(--line-soft); border-radius: 999px; background: var(--surface-2); color: var(--ink); font-size: 12px; line-height: 1.5; cursor: pointer; }
+.level-chip:hover { background: var(--surface-3); }
+.level-chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.level-chip-pct { color: var(--muted); }
+.level-details { display: grid; gap: 8px; }
+.level-details-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; font-size: 16px; }
+.level-details-head .tabular { font-size: 20px; font-weight: 600; }
+.level-details-track { height: 8px; overflow: hidden; border-radius: 999px; background: var(--surface-3); }
+.level-details-track i { display: block; height: 100%; border-radius: inherit; background: var(--thread); transition: width 300ms ease; }
+.level-details-list { display: grid; gap: 6px; }
+.level-details-list li { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { .level-details-track i { transition: none; } }
 html[data-reduce-motion="true"] .profile-level-track i { transition: none; }
 .hero-fashion-card { position: relative; isolation: isolate; overflow: visible; max-width: 450px; padding: 12px; background: #242529; color: #f3f3ee; }
 .hero-fashion-background { position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: radial-gradient(ellipse at 50% 20%,#295974,#191b29 70%); }

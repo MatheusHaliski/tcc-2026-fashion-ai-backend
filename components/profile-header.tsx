@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { mediaUrl } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 
-import {ProfileLevelProgress,type LevelProgress} from "./profile-level-progress";
+import {ProfileLevelChip,type LevelProgress} from "./profile-level-progress";
 
 export interface ProfileCounts { pieces?: number; schemes?: number; followers?: number; following?: number }
 
@@ -43,6 +43,7 @@ export function ProfileHeader({ photoUrl, photo, username, displayName, verified
             <h1 className="type-h1 break-words text-ink">{username}</h1>
             {verified && <span title={t("profileHeader.verificado")} aria-label={t("profileHeader.verificado")} className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#0067ac] text-xs font-bold text-white">✓</span>}
             {kindLabel && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[12px] text-ink">{kindLabel}</span>}
+            {levelProgress && <ProfileLevelChip progress={levelProgress} />}
             <div className="hidden flex-wrap gap-2 sm:flex">{actions}</div>
           </div>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 sm:gap-x-8" role="list" aria-label={t("profileHeader.contadores_do_perfil")}>
@@ -55,7 +56,6 @@ export function ProfileHeader({ photoUrl, photo, username, displayName, verified
         <div className="col-span-2 min-w-0 sm:col-span-1 sm:col-start-2">
           <p className="text-[14px] font-semibold text-ink">{displayName}</p>
           {category && <p className="text-[14px] text-muted">{category}</p>}
-          {levelProgress&&<ProfileLevelProgress progress={levelProgress}/>}
           {hype && <div className="profile-header-hype">{hype}</div>}
           {bio && <p className="whitespace-pre-line text-[14px] text-ink">{bio}</p>}
           {link && <a href={link.href} target="_blank" rel="noreferrer" className="text-[14px] font-semibold text-ink underline">{link.label}</a>}
