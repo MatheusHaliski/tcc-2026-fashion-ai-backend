@@ -4,6 +4,7 @@ import br.com.fashionai.application.catalog.CatalogService;
 import br.com.fashionai.application.common.ApiException;
 import br.com.fashionai.application.common.InputSanitizer;
 import br.com.fashionai.application.common.Json;
+import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.security.Guard;
 import br.com.fashionai.domain.model.CatalogProduct;
@@ -163,25 +164,45 @@ public class PhysicalStoreService {
         }
     }
 
-    @Transactional(isolation = Isolation.READ_COMMITTED)
     public Map<String, Object> buy(CurrentUser buyer, UUID listingId, OrderForm form) {
+        return buy(buyer, listingId, form, null);
+    }
+
+    /**
+     * {@code requestKey} (cabeçalho Idempotency-Key, gerado uma vez por compra): o mesmo pedido repetido devolve o pedido
+     * já criado, sem cobrar nem tirar do estoque de novo. Conferido depois da trava da carteira.
+     */
+    @Transactional(isolation = Isolation.READ_COMMITTED)
+    public Map<String, Object> buy(CurrentUser buyer, UUID listingId, OrderForm form, String requestKey) {
         ShippingAddress address = validateAddress(form == null ? null : form.shippingAddress());
-        PhysicalStoreListing preview = listings.findById(listingId).orElseThrow(() -> ApiException.notFound("Store listing"));
+        PhysicalStoreListing preview = listings.findById(listingId).orElseThrow(() -> ApiException.notFound(Msg.t("physicalStore.oferta")));
         UUID sellerId = preview.getSellerUserId();
-        if (buyer.id().equals(sellerId)) throw ApiException.conflict("COMPRA_PROPRIA", "You cannot redeem your own listing.");
+        if (buyer.id().equals(sellerId)) throw ApiException.conflict("COMPRA_PROPRIA", Msg.t("physicalStore.compra_propria"));
         Stream.of(buyer.id(), sellerId).distinct().sorted()
-                .forEach(id -> ledger.lockOwner(id).orElseThrow(() -> ApiException.notFound("User")));
-        PhysicalStoreListing listing = listings.lockById(listingId).orElseThrow(() -> ApiException.notFound("Store listing"));
-        if (!listing.isActive() || !sellerActive(listing.getSellerUserId())) {
-            throw ApiException.conflict("OFERTA_INDISPONIVEL", "This offer is no longer available.");
+                .forEach(id -> ledger.lockOwner(id).orElseThrow(() -> ApiException.notFound(Msg.t("common.usuario"))));
+        String requestRef = FaiPointsService.requestRef(requestKey);
+        if (requestRef != null) {
+            var done = ledger.findByIdempotencyKey(buyer.id() + ":PHYSICAL_STORE_PURCHASE:" + requestRef);
+            if (done.isPresent()) {
+                PhysicalStoreOrder previous = orders.findById(UUID.fromString(done.get().getRefId()))
+                        .orElseThrow(() -> ApiException.notFound(Msg.t("physicalStore.oferta")));
+                Map<String, Object> view = new LinkedHashMap<>(orderView(previous, false));
+                view.put("repeated", true);
+                return view;
+            }
         }
-        if (listing.getStockQuantity() < 1) throw ApiException.conflict("ESGOTADO", "This item is out of stock.");
+        PhysicalStoreListing listing = listings.lockById(listingId).orElseThrow(() -> ApiException.notFound(Msg.t("physicalStore.oferta")));
+        if (!listing.isActive() || !sellerActive(listing.getSellerUserId())) {
+            throw ApiException.conflict("OFERTA_INDISPONIVEL", Msg.t("physicalStore.oferta_indisponivel"));
+        }
+        if (listing.getStockQuantity() < 1) throw ApiException.conflict("ESGOTADO", Msg.t("physicalStore.esgotado"));
         FaiPointsService.Level currentLevel = FaiPointsService.Level.of(ledger.lifetime(buyer.id()));
         if (!currentLevel.atLeast(FaiPointsService.Level.valueOf(listing.getRequiredLevel()))) {
-            throw ApiException.conflict("NIVEL_INSUFICIENTE", "This item unlocks at level " + listing.getRequiredLevel() + ".");
+            throw ApiException.conflict("NIVEL_INSUFICIENTE", Msg.t("physicalStore.nivel_insuficiente", listing.getRequiredLevel()));
         }
-        if (ledger.balance(buyer.id()) < listing.getPricePoints()) {
-            throw ApiException.conflict("SALDO_INSUFICIENTE", "You do not have enough FAI Points.");
+        long balance = ledger.balance(buyer.id());
+        if (balance < listing.getPricePoints()) {
+            throw ApiException.conflict("SALDO_INSUFICIENTE", Msg.t("physicalStore.saldo_insuficiente", balance, listing.getPricePoints()));
         }
 
         listing.setStockQuantity(listing.getStockQuantity() - 1);
@@ -192,7 +213,9 @@ public class PhysicalStoreService {
         order.setShippingAddress(Json.write(address));
         order.setStatus("PROCESSING");
         orders.save(order);
-        ledger.save(pointsEntry(buyer.id(), -listing.getPricePoints(), "PHYSICAL_STORE_PURCHASE", "PHYSICAL_ORDER", order.getId().toString()));
+        FaiPointsLedgerEntry debit = pointsEntry(buyer.id(), -listing.getPricePoints(), "PHYSICAL_STORE_PURCHASE", "PHYSICAL_ORDER", order.getId().toString());
+        if (requestRef != null) debit.setIdempotencyKey(buyer.id() + ":PHYSICAL_STORE_PURCHASE:" + requestRef);
+        ledger.save(debit);
         ledger.save(pointsEntry(sellerId, listing.getPricePoints(), "PHYSICAL_STORE_SALE", "PHYSICAL_ORDER", order.getId().toString()));
         return orderView(order, false);
     }
@@ -316,7 +339,7 @@ public class PhysicalStoreService {
     }
 
     private ShippingAddress validateAddress(ShippingAddress address) {
-        if (address == null) throw ApiException.badRequest("ENDERECO_OBRIGATORIO", "A delivery address is required.");
+        if (address == null) throw ApiException.badRequest("ENDERECO_OBRIGATORIO", Msg.t("physicalStore.endereco_obrigatorio"));
         return new ShippingAddress(
                 required(address.fullName(), 120, "fullName"),
                 required(address.phone(), 40, "phone"),
@@ -331,7 +354,7 @@ public class PhysicalStoreService {
 
     private String required(String value, int max, String field) {
         if (value == null || value.isBlank() || value.trim().length() > max) {
-            throw ApiException.badRequest("ENDERECO_INVALIDO", "Invalid delivery address field: " + field + ".");
+            throw ApiException.badRequest("ENDERECO_INVALIDO", Msg.t("physicalStore.endereco_invalido"), Map.of("field", field));
         }
         return InputSanitizer.clean(value, max);
     }

@@ -15,6 +15,9 @@ import java.util.UUID;
 public interface FaiPointsLedgerEntryRepository extends JpaRepository<FaiPointsLedgerEntry, UUID> {
     boolean existsByIdempotencyKey(String key);
 
+    /** Lançamento de uma compra já feita (repetição do mesmo pedido): devolve o resultado em vez de cobrar de novo. */
+    Optional<FaiPointsLedgerEntry> findByIdempotencyKey(String key);
+
     List<FaiPointsLedgerEntry> findTop100ByUserIdOrderByCreatedAtDesc(UUID userId);
 
     long countByUserIdAndActionCodeAndCreatedAtAfter(UUID userId, String actionCode, Instant since);

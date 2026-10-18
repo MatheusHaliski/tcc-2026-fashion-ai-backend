@@ -49,6 +49,17 @@ class CorsPreflightTest {
     }
 
     @Test
+    void preflightDaCompraAceitaAChaveDeCompra() throws Exception {
+        // sem isto o navegador bloqueia a compra: o diálogo envia Idempotency-Key para não cobrar duas vezes
+        mockMvc.perform(options("/api/points/shop/SKU-1/purchase")
+                        .header("Origin", "https://fai-network.com")
+                        .header("Access-Control-Request-Method", "POST")
+                        .header("Access-Control-Request-Headers", "content-type,idempotency-key"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Headers", org.hamcrest.Matchers.containsStringIgnoringCase("idempotency-key")));
+    }
+
+    @Test
     void preflightDaOrigemVercelContinuaPermitido() throws Exception {
         mockMvc.perform(options("/api/auth/password-reset/request")
                         .header("Origin", "https://fashion-ai-tcc-2026.vercel.app")
