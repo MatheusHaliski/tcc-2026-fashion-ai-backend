@@ -15,6 +15,8 @@ import { BrandLogo } from "@/components/brand-logo";
 import { CatalogBrandGrid } from "./catalog-brand-grid";
 import { useCatalogPreview } from "./use-catalog-preview";
 import { CatalogPhoto, photoAspect } from "@/components/catalog/catalog-photo";
+import { PhotoFramingToggle } from "@/components/photo-framing-toggle";
+import { usePhotoFraming } from "@/lib/photo-framing";
 import { CategoryCards } from "@/components/catalog/category-cards";
 import { BrandAutocomplete, type CatalogBrand } from "@/components/catalog/brand-autocomplete";
 import { GarmentGlyph } from "@/components/capture/garment-glyphs";
@@ -262,6 +264,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
   const brandGridTotal = storeList.reduce((total, store) => total + storeCount(store, category), 0);
 
 
+  const [photoFraming, setPhotoFraming] = usePhotoFraming();
   const results = (
     <>
       {error && <p role="alert" className="error-text">{error}</p>}
@@ -275,6 +278,7 @@ export function CatalogSearch({ initial, onPick, onUsePhoto, category: controlle
                 : filtered.length ? t("catalog.encontramos", { count: filtered.length, tipo: subcategory ? subcategoryLabel(subcategory).toLowerCase() : t("common.pieces").toLowerCase(), marca: res?.intent.brand ?? "" }) : res?.message ?? t("catalog.nao_encontramos")}
             </h2>
             {brandRef && <BrandLogo name={brandRef.name} src={brandRef.logoUrl} size={22} />}
+            <PhotoFramingToggle compact value={photoFraming} onChange={setPhotoFraming} className="ml-auto" />
           </div>
           {!browsing && !!res && !!params.q && !params.color && !discover.result?.results.length && (
             <p className="mb-2 flex flex-wrap items-center gap-2 type-body-sm text-muted">
@@ -478,11 +482,12 @@ export function CatalogResultCard({ product: original, onPick, pickLabel, select
     onVariantChange?.(next);
   };
   const img = p.catalogImage?.url ?? p.imageUrl;
+  const [framing] = usePhotoFraming();
   const source = p.source?.domain && p.source.domain !== "null" ? p.source.domain : t("catalog.fonte_fashionai");
   return (
     <article ref={preview.ref} className="catalog-card surface" aria-busy={preview.pending}>
-      <div className="catalog-card-media" style={{ aspectRatio: photoAspect(p.catalogImage?.aspect) }}>
-        {preview.pending || preview.failed ? <span role="status" className="type-caption text-muted p-4">{t(preview.pending ? "catalog.preparingPhoto" : preview.failed === "unsupported" ? "catalog.unavailableFrame" : preview.failed === "source" ? "catalog.unavailableSource" : "catalog.previewServiceUnavailable")} {!preview.pending && <button type="button" className="btn btn-sm mt-2" onClick={preview.retry}>{t("common.retry")}</button>}</span> : img ? <CatalogPhoto requiredFrame image={p.catalogImage} fallbackUrl={p.imageUrl} alternatives={[p.imageSource?.imageUrl]} alt={`${p.brand?.name ?? ""} ${p.productName}`}
+      <div className="catalog-card-media" style={{ aspectRatio: framing === "WHOLE" ? "3 / 4" : photoAspect(p.catalogImage?.aspect) }}>
+        {preview.pending || preview.failed ? <span role="status" className="type-caption text-muted p-4">{t(preview.pending ? "catalog.preparingPhoto" : preview.failed === "unsupported" ? "catalog.unavailableFrame" : preview.failed === "source" ? "catalog.unavailableSource" : "catalog.previewServiceUnavailable")} {!preview.pending && <button type="button" className="btn btn-sm mt-2" onClick={preview.retry}>{t("common.retry")}</button>}</span> : img ? <CatalogPhoto requiredFrame framing={framing} image={p.catalogImage} fallbackUrl={p.imageUrl} alternatives={[p.imageSource?.imageUrl]} alt={`${p.brand?.name ?? ""} ${p.productName}`}
           placeholder={<GarmentGlyph id={ILLUSTRATION[p.category] ?? "generic"} size={120} animated={false} numbered={false} className="text-muted" />} />
           : <span role="alert" className="type-caption text-muted p-4">{t(p.imageProcessingStatus === "PENDING" ? "catalog.preparingPhoto" : "catalog.framingRequiredError")}<button type="button" className="btn btn-sm mt-2" onClick={preview.retry}>{t("common.retry")}</button></span>}
         {typeof p.matchPercent === "number" && <Badge tone="thread" className="catalog-card-match">{t("catalog.compativel", { pct: p.matchPercent })}</Badge>}

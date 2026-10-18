@@ -27,6 +27,20 @@ import { hypeSealCodes, withHypeSeals } from "@/components/hype/hype-seals";
 import { hypeViewState } from "@/lib/hype/model";
 import { useHypeSummary } from "@/lib/hype/use-hype";
 import { CatalogPhoto, pieceCatalogCrop, pieceCatalogSource, piecePhotoAspect } from "@/components/catalog/catalog-photo";
+import { resolveFraming, usePhotoFraming, type PhotoFraming } from "@/lib/photo-framing";
+import type { CatalogCardImage } from "@/lib/api/catalog";
+
+/**
+ * Total frame (a peça inteira no quadro): a foto do catálogo com a caixa da peça, enquanto for a foto da peça; senão a
+ * foto inteira da peça (recorte sem fundo ou estúdio), contida com respiro — nunca o recorte de tecido do feed.
+ */
+export function pieceWholeSources(piece: PieceView): { image: CatalogCardImage | null; sources: string[] } {
+  const ci = (piece.flatLayMetadata as { catalogImage?: CatalogCardImage } | undefined)?.catalogImage;
+  const image = ci?.url && ci.url === piece.imageUrl ? ci : null;
+  const sources = [thumbUrl(piece.imageUrl?.trim(), 640), piece.imageUrl, piece.studioImageUrl, piece.thumbnailUrl, pieceCatalogSource(piece)]
+    .map((url) => url?.trim()).filter((url): url is string => !!url);
+  return { image, sources: Array.from(new Set(sources)) };
+}
 
 /**
  * Imagem da peça para o card: a foto do feed (na proporção da categoria) quando existe; senão a
@@ -55,12 +69,14 @@ import {FashionMotionButton} from "@/components/hype/fashion-motion-button";
 import {FashionCardHeader,FashionCardStats} from "@/components/hype/fashion-card-panel";
 import {fashionCardLevel} from "@/lib/hype/fashion-card";
 
-export function PieceCard({ piece, href, selectable, selected, onSelect, seals: brandSeals, anatomy, extra, flip = true }: {
+export function PieceCard({ piece, href, selectable, selected, onSelect, seals: brandSeals, anatomy, extra, flip = true, framing: forcedFraming }: {
   piece: PieceView; href?: string; selectable?: boolean; selected?: boolean; onSelect?: (p: PieceView) => void; seals?: SealBadge[]; anatomy?: string | null;
   /** legendas e ações extras da lista — renderizadas DENTRO do card (nunca soltas abaixo dele) */
   extra?: ReactNode;
   /** verso com o Hype (↻); desligado na seleção (montar look) e na prévia */
   flip?: boolean;
+  /** enquadramento forçado (prévia do criador); sem ele vale o da peça e depois o padrão de quem vê */
+  framing?: PhotoFraming;
 }) {
   const detail = useDetailModal();
   const { t, fmtMoney } = useI18n(); const { user } = useAuth();
@@ -78,7 +94,10 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   // Seção C: a posição do selo segue a anatomia da peça (padrão: "Categoria · marca · sexo · selos").
   const zone = pieceSealPlacement(anatomy ?? (piece as { background?: { anatomy?: string } }).background?.anatomy).zone;
   const img = pieceCardImage(piece);
-  const mediaStyle = { aspectRatio: piecePhotoAspect(piece) };
+  const [defaultFraming] = usePhotoFraming();
+  const framing = forcedFraming ?? resolveFraming(piece.background?.photoFraming, defaultFraming);
+  const whole = framing === "WHOLE" ? pieceWholeSources(piece) : null;
+  const mediaStyle = { aspectRatio: whole ? "3 / 4" : piecePhotoAspect(piece) };
   // sem foto de estúdio, a peça do catálogo mostra a foto oficial com o mesmo recorte do card da busca
   const crop = piece.studioFeedUrl || piece.studioThumbUrl || piece.studioImageUrl ? null : pieceCatalogCrop(piece);
   const art = readPieceArt(piece.background);
@@ -94,7 +113,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
     : <span>{subcategoryLabel(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>;
   const media = (
     <>
-      {impersonationMedia(piece.background,piece.owner.id) ? <ImpersonationMedia background={piece.background} ownerId={piece.owner.id}/> : crop ? <CatalogPhoto requiredFrame image={crop} alternatives={[piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} alt="" /> : img.src ? <MediaImage src={img.src} srcSet={img.srcSet} fallbackSources={[piece.studioFeedUrl, piece.studioThumbUrl, piece.studioImageUrl, piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
+      {impersonationMedia(piece.background,piece.owner.id) ? <ImpersonationMedia background={piece.background} ownerId={piece.owner.id}/> : whole && (whole.image || whole.sources.length) ? <CatalogPhoto framing="WHOLE" image={whole.image} fallbackUrl={whole.sources[0]} alternatives={whole.sources.slice(1)} alt="" /> : crop ? <CatalogPhoto requiredFrame image={crop} alternatives={[piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} alt="" /> : img.src ? <MediaImage src={img.src} srcSet={img.srcSet} fallbackSources={[piece.studioFeedUrl, piece.studioThumbUrl, piece.studioImageUrl, piece.thumbnailUrl, piece.imageUrl, pieceCatalogSource(piece)]} sizes="(max-width: 639px) 50vw, 280px" alt="" loading="lazy" decoding="async" className={img.cover ? "is-cover" : "is-contain"} /> : null}
       <AuraMetamorphose mode={piece.background?.auraMetamorphose as string | undefined} presetId={piece.background?.auraMetamorphosePreset as string | undefined} preview/>{auraEnabled && <AuraHype state={hypeState} summary={hype.summary} mode={auraMode} preview={preview} showScore={false} />}
       {(zone === "COVER_CORNER" || zone === "HEADER") && <span className="pc-seal"><SealSlot size="sm" seals={seals} /></span>}
       {(!piece.disponivel || piece.forDonation || (mine && piece.favorite) || piece.aiGeneratedImage) && (

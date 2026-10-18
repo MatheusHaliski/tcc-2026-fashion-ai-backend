@@ -65,6 +65,8 @@ public class BackgroundStudioService {
      */
     /** Famílias de silhueta que a pessoa pode declarar no look (anatomias v18, prancha 07). */
     public static final Set<String> SILHOUETTES = Set.of("AMPULHETA", "RETA", "TRAPEZIO", "TRIANGULO_INVERTIDO", "OVERSIZED");
+    /** Enquadramento da foto da peça no card: recorte de tecido (padrão) ou Total frame (a peça inteira no quadro). */
+    public static final Set<String> PHOTO_FRAMINGS = Set.of("FABRIC", "WHOLE");
     public static final Map<String, Map<String, Object>> SEAL_PLACEMENT = new LinkedHashMap<>();
     public static final Map<String, Map<String, Object>> PIECE_SEAL_PLACEMENT = new LinkedHashMap<>();
 
@@ -663,6 +665,10 @@ public class BackgroundStudioService {
             if (requiredMode == null || !requiredMode.equals(metamorphose))
                 throw ApiException.badRequest("AURA_METAMORPHOSE_INVALID", "AURA Metamorfose inválida.");
         }
+        // enquadramento da foto no card: FABRIC (recorte de tecido, o de sempre) ou WHOLE (Total frame: a peça inteira)
+        Object framing = config.get("photoFraming");
+        if (framing != null && !PHOTO_FRAMINGS.contains(framing))
+            throw ApiException.badRequest("PHOTO_FRAMING_INVALID", Msg.t("backgroundStudio.enquadramento_invalido"));
         Object value = config.get("border");
         if (value == null) return;
         if (!(value instanceof Map<?, ?> border)) throw ApiException.badRequest("CARD_BORDER_INVALID", "Borda inválida.");

@@ -2117,6 +2117,20 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .catalog-photo img { display: block; }
 .catalog-photo.is-contained img, .catalog-photo.is-processed img { width: 100%; height: 100%; object-fit: contain; }
 .catalog-photo.is-contained { padding: 9%; }
+/* Total frame: a peça inteira no quadro 3:4 sobre fundo liso, com sombra de apoio sob a base da peça (posição em
+   --tf-floor/--tf-span, calculada em lib/photo-framing.ts); foto de fundo branco se funde ao fundo (multiply) */
+.catalog-photo.is-whole { isolation: isolate; }
+.catalog-photo.is-whole img { position: absolute; z-index: 1; max-width: none; max-height: none; transition: opacity .2s ease; }
+.catalog-photo.is-whole.is-blend img, .catalog-photo.is-whole-fallback img { mix-blend-mode: multiply; }
+.catalog-photo.is-whole.has-alpha img { filter: drop-shadow(0 10px 14px rgb(20 24 31 / 0.14)); }
+.catalog-photo.is-whole.has-floor::after {
+  content: ""; position: absolute; z-index: 0; pointer-events: none; border-radius: 50%;
+  left: calc(50% - var(--tf-span) * 0.44); width: calc(var(--tf-span) * 0.88); top: calc(var(--tf-floor) - 1.4%); height: 2.8%;
+  background: radial-gradient(closest-side, rgb(20 24 31 / 0.2), transparent); filter: blur(2px);
+}
+.catalog-photo.is-whole-fallback { background: #F4F5F7; padding: 11%; }
+@media (prefers-reduced-motion: reduce) { .catalog-photo.is-whole img { transition: none; } }
+.photo-framing-toggle { display: inline-flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
 .catalog-card-match { position: absolute; left: .5rem; top: .5rem; z-index: 1; }
 .catalog-card-new { position: absolute; right: .5rem; top: .5rem; z-index: 1; }
 /* Admin · pipeline de imagens: antes/depois e depuração visual sobre a foto original */
@@ -2149,6 +2163,7 @@ input[type="range"]:not(.before-after-range):disabled { opacity: .45; cursor: no
 /* miniatura da peça escolhida: quadro 4:5 posicionado para o recorte do pipeline (.catalog-photo é absoluto) */
 .catalog-pick-art { position: relative; width: 56px; aspect-ratio: 4 / 5; flex-shrink: 0; border-radius: 8px; overflow: hidden; background: var(--surface); display: grid; place-items: center; }
 .catalog-pick-art > img { width: 100%; height: 100%; object-fit: contain; }
+.catalog-pick-art:has(> .is-whole) { aspect-ratio: 3 / 4; }   /* Total frame: o encaixe da peça é calculado para 3:4 */
 @media (max-width: 480px) { .catalog-pick { grid-template-columns: 56px minmax(0, 1fr); } .catalog-pick > button { grid-column: 2; justify-self: start; } }
 
 /* RF1 — Painel do examinador: status da análise do perfil de marca/celebridade */
