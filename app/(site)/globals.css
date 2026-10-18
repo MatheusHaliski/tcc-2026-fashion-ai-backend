@@ -3990,6 +3990,15 @@ html[data-reduce-motion="true"] .profile-level-track i { transition: none; }
 .atelier-workbench { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .8fr); gap: clamp(18px, 3vw, 40px); }
 .atelier-workbench-controls { display: flex; flex-direction: column; align-items: stretch; gap: 18px; padding: 22px; border: 1px solid #466078; background: #142438; border-radius: 16px; }
 .atelier-demo-notice { border-inline-start: 3px solid #dcb779; padding: 10px 14px; background: #342f2a; color: #ffdfac; font-size: 14px; line-height: 1.6; }
+/* Metamorfoses: a peça do guarda-roupa escolhida numa grade de fotos (no lugar da lista) */
+.atelier-piece-picker { display: grid; gap: 8px; min-width: 0; border: 0; padding: 0; margin: 0; }
+.atelier-piece-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; max-height: 320px; overflow-y: auto; padding: 2px; }
+.atelier-piece-grid button { display: grid; gap: 4px; min-width: 0; padding: 6px; border: 1px solid #5c7d93; border-radius: 10px; background: #102033; color: #dbe8f2; text-align: left; cursor: pointer; }
+.atelier-piece-grid button img { width: 100%; aspect-ratio: 1; object-fit: contain; border-radius: 6px; background: #f4f3ef; }
+.atelier-piece-grid button span { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.atelier-piece-grid button[aria-pressed="true"] { border-color: #a3edcf; box-shadow: 0 0 0 2px #a3edcf55; }
+.atelier-piece-grid button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.atelier-piece-grid button:disabled { opacity: .6; cursor: default; }
 .atelier-processing-steps { display: grid; gap: 14px; }
 .atelier-processing-steps li { display: flex; gap: 12px; align-items: center; color: #b8cadb; font-size: 14px; }
 .atelier-processing-steps li > span { border: 1px solid #5c7d93; border-radius: 8px; padding: 7px; font-family: ui-monospace, monospace; }
