@@ -109,6 +109,38 @@ class ProfileServiceTest {
     }
 
     @Test
+    void visitanteContaSoOQueAbreEPerfilFechadoNaoMostraContagens() {
+        var pieces = world.piecesOf(world.me);
+        pieces.get(0).setVisibility(Visibility.PRIVATE);           // peça privada: some da grade e da contagem
+        Map<String, Object> visitor = profiles.profile(bia, "ana");
+        int shown = ((List<?>) visitor.get("pieces")).size();
+        assertThat(map(visitor.get("counters"))).containsEntry("pieces", (long) shown);
+        assertThat(shown).isLessThan(pieces.size());
+        assertThat(visitor).doesNotContainKey("pendingFollowRequests");
+        Map<String, Object> owner = profiles.profile(ana, "ana");
+        assertThat(map(owner.get("counters")).get("pieces")).isEqualTo((long) pieces.size());
+        assertThat(owner).containsEntry("pendingFollowRequests", 0L);
+        world.me.setProfileVisibility(Visibility.PRIVATE);
+        Map<String, Object> closed = profiles.profile(bia, "ana");
+        assertThat(map(closed.get("counters"))).doesNotContainKeys("pieces", "schemes").containsEntry("published", 0L);
+    }
+
+    @Test
+    void donoVeQuantosPedidosEsperamResposta() {
+        world.rival.setPrivateAccount(true);
+        world.rival.setProfileVisibility(Visibility.FOLLOWERS);
+        profiles.follow(ana, world.rival.getId());
+        assertThat(profiles.profile(bia, "bia")).containsEntry("pendingFollowRequests", 1L);
+    }
+
+    @Test
+    void conexoesSemLoginNaoDerrubamARota() {
+        assertThat(profiles.connections(null, world.me.getId())).containsKeys("followers", "following");
+        world.friend.setProfileVisibility(Visibility.PRIVATE);
+        assertThatThrownBy(() -> profiles.connections(null, world.friend.getId())).isInstanceOf(ApiException.class);
+    }
+
+    @Test
     void contaPublicaSeguidaNaHoraEConexoes() {
         assertThat(profiles.follow(bia, world.me.getId())).containsEntry("relation", "ACEITO");
         Map<String, Object> c = profiles.connections(bia, world.me.getId());

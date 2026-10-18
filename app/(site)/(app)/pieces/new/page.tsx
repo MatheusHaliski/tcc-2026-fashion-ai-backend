@@ -27,6 +27,7 @@ import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import { catalogApi, type CatalogProduct, type CatalogVariant } from "@/lib/api/catalog";
 import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePrefillParams } from "@/lib/pieces/prefill";
 import { PhotoFramingToggle } from "@/components/photo-framing-toggle";
+import { ProfileVisibilityNotice } from "@/components/follow-requests";
 import { resolveFraming, usePhotoFraming } from "@/lib/photo-framing";
 
 /** Etapas do criador de peça (RF4/RF47): peça (busca catalogada + dados) → mais detalhes → arte de fundo → revisar e salvar. */
@@ -306,6 +307,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 <h3 id="after-save-title" className="type-h3">{t("pieces.new.depois_de_salvar")}</h3>
                 <Switch checked={shareToFeed} onChange={setShareToFeed} label={t("pieces.new.opt_share")} hint={t(shareToFeed ? "pieces.new.opt_share_on" : "pieces.new.opt_share_off")} />
                 {shareToFeed && value.visibility === "PRIVATE" && <p role="note" className="after-save-detail type-caption">{t("pieces.new.opt_share_private")}</p>}
+                {shareToFeed && <ProfileVisibilityNotice />}
                 <Switch checked={toFlair} onChange={setToFlair} label={t("pieces.new.opt_flair")} hint={t("pieces.new.opt_flair_hint")} />
                 {toFlair && (
                   <div className="after-save-detail after-save-flair">
