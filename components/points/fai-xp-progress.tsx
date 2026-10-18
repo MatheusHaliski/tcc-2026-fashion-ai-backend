@@ -18,7 +18,7 @@ export function FaiXpProgress({ account }: { account: PointsAccount }) {
         <strong>{t("flair.xp.title")} · {current}</strong>
         <span className="type-caption tabular">{t("flair.xp.lifetime", { points: fmtNumber(account.lifetime) })}</span>
       </div>
-      <div className="profile-level-track mt-2" role="progressbar" aria-label={next ? t("flair.xp.progress", { level: next }) : t("levelProgress.maximum")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
+      <div className="level-details-track mt-2" role="progressbar" aria-label={next ? t("flair.xp.progress", { level: next }) : t("levelProgress.maximum")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={percent}>
         <i style={{ width: `${percent}%` }} />
       </div>
       <p className="type-caption mt-1">{account.nextLevel ? t("flair.xp.missing", { points: fmtNumber(account.nextLevel.missing), level: next }) : t("levelProgress.maximum")}</p>

@@ -3896,19 +3896,10 @@ html[data-theme="contrast"] .fashion-hype-header { background: #000; color: #fff
 @media (prefers-reduced-motion: reduce) { .is-fashion-hype { transform: none; transition: none; } .fashion-motion-control { display: none; } .fashion-depth-glare { display: none; } }
 html[data-reduce-motion="true"] .is-fashion-hype { transform: none; transition: none; }
 html[data-reduce-motion="true"] .fashion-motion-control, html[data-reduce-motion="true"] .fashion-depth-glare { display: none; }
-.profile-level-progress { max-width: 420px; margin-block: .75rem; padding: .85rem; color: #ecfaff; border: 1px solid #5fdce277; border-radius: 12px; background: linear-gradient(135deg,#15242b,#1c1b31); }
-.profile-level-heading { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-.profile-level-percent { display: flex; align-items: center; gap: .3rem; color: #85f5eb; }
-.profile-level-percent .led-number { --led-size: 24px; }
-.profile-level-track { height: 14px; overflow: hidden; margin-block: .65rem; background: #09151d; border: 1px solid #91e5fa66; border-radius: 3px; }
-.profile-level-track i { display: block; height: 100%; background: linear-gradient(90deg,#52e9df,#86a8fa,#bba0f4); mask-image: repeating-linear-gradient(90deg,#000 0 10px,transparent 10px 13px); transition: width 300ms ease; }
-.profile-level-progress summary { cursor: pointer; font-size: 12px; padding-block: .5rem; }
-.profile-level-progress ul { display: grid; gap: .4rem; }
-.profile-level-progress li { display: flex; justify-content: space-between; gap: .5rem; font-size: 12px; }
-@media (prefers-reduced-motion: reduce) { .profile-level-track i { transition: none; } }
-/* Perfil: nível discreto ao lado do nome (selo como os demais do cabeçalho) e o progresso em modal, sem placar de LED */
+/* Perfil e FAI Atelier: nível discreto (selo como os demais do cabeçalho) (selo como os demais do cabeçalho) e o progresso em modal, sem placar de LED */
 .level-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border: 1px solid var(--line-soft); border-radius: 999px; background: var(--surface-2); color: var(--ink); font-size: 12px; line-height: 1.5; cursor: pointer; }
 .level-chip:hover { background: var(--surface-3); }
+.atelier-level { margin-top: 12px; }
 .level-chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .level-chip-pct { color: var(--muted); }
 .level-details { display: grid; gap: 8px; }
@@ -3919,7 +3910,6 @@ html[data-reduce-motion="true"] .fashion-motion-control, html[data-reduce-motion
 .level-details-list { display: grid; gap: 6px; }
 .level-details-list li { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
 @media (prefers-reduced-motion: reduce) { .level-details-track i { transition: none; } }
-html[data-reduce-motion="true"] .profile-level-track i { transition: none; }
 .hero-fashion-card { position: relative; isolation: isolate; overflow: visible; max-width: 450px; padding: 12px; background: #242529; color: #f3f3ee; }
 .hero-fashion-background { position: absolute; inset: 0; z-index: -1; border-radius: inherit; background: radial-gradient(ellipse at 50% 20%,#295974,#191b29 70%); }
 .hero-fashion-card[data-power="COSMIC_GOLD"] .hero-fashion-background { background: radial-gradient(ellipse at 50% 30%,#927148,#211d2e 70%); }
@@ -3981,8 +3971,6 @@ html[data-reduce-motion="true"] .profile-level-track i { transition: none; }
 .atelier-hub .btn { color: #dff8fa; border-color: #59798e; background: #172b3f; }
 .atelier-hub .btn-primary { color: #08252e; background: #93e6db; border-color: #b5fff0; }
 .atelier-hub .btn:focus-visible, .atelier-hub select:focus-visible { outline: 3px solid #8be6de; outline-offset: 3px; }
-.atelier-hero > .profile-level-progress { align-self: end; z-index: 1; color: #e3f2fb; background: #14283ce6; border: 1px solid #46697e; border-radius: 14px; padding: 18px; }
-.atelier-hero .profile-level-progress .type-caption { color: #c3d7e5; }
 .atelier-fx { position: absolute; z-index: -1; inset: 0; overflow: hidden; pointer-events: none; border-radius: inherit; }
 .atelier-circle-stream { position: absolute; inset: 0; width: 100%; height: 100%; }
 .atelier-data-tunnels { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
