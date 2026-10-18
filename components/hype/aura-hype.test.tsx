@@ -9,8 +9,9 @@ it("shows the real score and chosen effect", () => {
   expect(container.querySelector('[data-effect="DOTS"]')).toBeTruthy();
 });
 it("never invents a zero score when unavailable", () => {
-  renderApp(<AuraHype state={{ kind: "not_calculated" }} />);
-  expect(screen.getByText("AURA ativa · aguardando cálculo do Hype")).toBeTruthy();
+  const { container } = renderApp(<AuraHype state={{ kind: "not_calculated" }} />);
+  expect(container.querySelector(".aura-hype-score")).toBeNull();
+  expect(screen.queryByText(/aguardando cálculo/)).toBeNull();
   expect(screen.queryByText(/0\/100/)).toBeNull();
 });
 it("uses only the global score on the photo, without a game attribute table", () => {

@@ -67,6 +67,7 @@ import {ImpersonationMedia,impersonationMedia} from "@/components/impersonation-
 import {useFashionDepth} from "@/lib/hype/use-fashion-depth";
 import {FashionMotionButton} from "@/components/hype/fashion-motion-button";
 import {FashionCardHeader,FashionCardStats} from "@/components/hype/fashion-card-panel";
+import {PieceCardPanels} from "@/components/piece-card-panels";
 import {fashionCardLevel} from "@/lib/hype/fashion-card";
 
 export function PieceCard({ piece, href, selectable, selected, onSelect, seals: brandSeals, anatomy, extra, flip = true, framing: forcedFraming }: {
@@ -106,8 +107,6 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const mine = !!user && piece.owner?.id === user.id;
   const visibility = mine && piece.visibility && piece.visibility !== "PUBLIC" ? (piece.visibility === "FOLLOWERS" ? t("common.followers") : t("common.private")) : null;
   const link = href ?? `/pieces/${piece.id}`;
-  // tags essenciais: no máximo dois estilos, numa linha discreta (a foto continua protagonista)
-  const tags = (piece.style ?? []).filter(Boolean).slice(0, 2).map((s) => label(s)).join(" · ");
   const secondary = piece.brandName
     ? <BrandLogo name={piece.brandName} src={piece.brandLogoUrl} size={18} withName />
     : <span>{subcategoryLabel(piece.subcategory) || CATEGORY_LABEL[piece.category]}</span>;
@@ -156,9 +155,9 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
                   {preview ? <span className="pc-name-link">{name}</span> : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
                   {zone === "TITLE_ROW" && <SealSlot inline size="sm" seals={seals} />}
                 </span>
-                <span className="pc-sub">{secondary}{zone === "META_BLOCK" && <SealSlot inline size="sm" seals={seals} />}</span>
-                {auraEnabled&&<FashionCardStats summary={hype.summary} styles={(piece.style??[]).map(label)}/>}
-                {!auraEnabled && tags && <span className="pc-tags" title={tags}><span className="sr-only">{t("common.style")}: </span>{tags}</span>}
+                {zone === "META_BLOCK" && <span className="pc-sub"><SealSlot inline size="sm" seals={seals} /></span>}
+                {/* atributos da peça (Info) e dados do Hype em abas separadas: uma de cada vez, sem misturar */}
+                <PieceCardPanels piece={piece} summary={hype.summary} initial={auraEnabled ? "hype" : "info"} auraMode={auraMode} />
                 {piece.forSale && piece.price != null && <span className="pc-price"><span className="pc-sale">{t("common.forSale")}</span><b className="tabular">{fmtMoney(piece.price, "BRL")}</b></span>}
                 {/* no feed, o espaço do selo só aparece quando há selo (o lugar reservado vazio fica na prévia) */}
                 {zone === "STUDS" && (preview || (seals?.length ?? 0) > 0) && <SealStuds seals={seals ?? []} />}

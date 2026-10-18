@@ -282,8 +282,8 @@ h1, h2, h3, h4 { margin: 0; }
 .hscroll { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(260px, 290px); gap: 12px; overflow-x: auto; padding-bottom: 6px; align-items: start; scroll-snap-type: x proximity; }
 .hscroll > * { scroll-snap-align: start; }
 .detail-card-expanded { width: 100%; max-width: 440px; }
-.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 176px), 1fr)); gap: .9rem; }
-@media (max-width: 639px) { .grid-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .6rem; } }
+.grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 352px), 1fr)); gap: .9rem; }
+@media (max-width: 639px) { .grid-cards { grid-template-columns: minmax(0, 1fr); gap: .6rem; } }
 .grid-looks { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 1rem; }
 /* Lookbook › Looks: atalho discreto do dono para a gestão dos looks (/looks), à direita, acima da vitrine */
 .lookbook-manage { display: flex; justify-content: flex-end; margin: -4px 0 12px; }
@@ -1138,9 +1138,9 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 .room-pad-actions button { width: 36px; height: 36px; border: 1px solid var(--line-soft); border-radius: 50%; background: var(--surface); color: var(--ink); }
 .room-context-prompt { position: absolute; bottom: calc(100% + 12px); right: 0; display: flex; align-items: center; gap: 12px; width: max-content; max-width: min(360px, 90vw); padding: 12px 16px; border: 1px solid #c9a227; border-radius: 6px; background: rgb(20 28 32 / 88%); color: #fff3ce; text-align: left; }
 .room-key { display: grid; place-items: center; width: 32px; height: 32px; flex-shrink: 0; border: 1px solid currentcolor; border-radius: 50%; }
-.feed-compact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); align-items: start; gap: 16px; }
-.feed-compact-grid .fai-card { width: 100%; max-width: 310px; justify-self: center; }
-.feed-compact-grid .pc-art { max-height: 260px; }
+.feed-compact-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 440px), 1fr)); align-items: start; gap: 16px; }
+.feed-compact-grid .fai-card { width: 100%; max-width: 620px; justify-self: center; }
+.feed-compact-grid .pc-art { max-height: 520px; }
 .room3d-controls-row { display: grid; grid-template-columns: repeat(2, 44px); gap: 6px; }
 .room3d-dpad { display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); gap: 3px; }
 .room3d-dpad .is-up { grid-area: 1 / 2; } .room3d-dpad .is-left { grid-area: 2 / 1; } .room3d-dpad .is-right { grid-area: 2 / 3; } .room3d-dpad .is-down { grid-area: 3 / 2; }
@@ -1992,6 +1992,7 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .opt-tile[aria-pressed="true"] { border-color: var(--mark); box-shadow: 0 0 0 2px color-mix(in srgb, var(--mark) 30%, transparent); }
 .opt-tile:focus-visible, .opt-dot:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .opt-thumb { display: block; width: 100%; aspect-ratio: 4 / 3; border-radius: 6px; background: var(--surface-2); background-size: cover; background-position: center; object-fit: cover; }
+.aura-impersonation-thumb { background: radial-gradient(circle at 30% 30%, #74dfc0, transparent 55%), radial-gradient(circle at 75% 70%, #b99aeb, transparent 55%), #1f2433; }
 .opt-name { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .opt-hint { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: var(--text-caption); color: var(--muted); }
 .opt-dot { width: 34px; height: 34px; padding: 0; border-radius: 999px; border: 2px solid var(--line-soft); cursor: pointer; }
@@ -3850,10 +3851,42 @@ html[data-reduce-motion="true"] .era-beams { animation: none !important; }
 .fashion-hype-tags { display: flex; flex-wrap: wrap; gap: .3rem; }
 .fashion-hype-tags > span { border: 1px solid var(--fashion-metal, #a7a6a1); border-radius: .3rem; padding: .2rem .4rem; font-size: 12px; line-height: 1.3; }
 .fashion-hype-edition { font: 600 12px/1.4 ui-monospace, monospace; }
-.fashion-hype-stat { display: grid; grid-template-columns: minmax(0, 1fr) minmax(35px, 1fr) 4ch; align-items: center; gap: .5rem; font-size: 12px; }
-.fashion-hype-stat > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.fashion-hype-meter { display: block; height: 8px; overflow: hidden; background: #8883; border: 1px solid #8885; border-radius: 2px; }
-.fashion-hype-meter i { display: block; height: 100%; background: linear-gradient(90deg, #aaa, var(--fashion-metal, #aaa)); }
+.pc-panels { display: grid; gap: 6px; min-width: 0; }
+.pc-seg { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px; border: 1px solid var(--line-soft); border-radius: 999px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); }
+.pc-seg-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 30px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent; color: inherit; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; cursor: pointer; opacity: .75; }
+.pc-seg-btn[aria-selected="true"] { background: var(--surface); color: var(--ink); opacity: 1; box-shadow: 0 1px 3px #0002; }
+.pc-seg-btn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.pc-seg-btn svg { width: 16px; height: 16px; flex: none; }
+@media (pointer: coarse) { .pc-seg-btn { min-height: var(--touch); } }
+.pc-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; margin: 0; }
+.pc-info > div { min-width: 0; }
+.pc-info dt { font-size: 12px; opacity: .7; }
+.pc-info dd { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
+.pc-info-color { display: inline-flex; align-items: center; gap: 5px; }
+.pc-info-color i { width: 12px; height: 12px; border-radius: 999px; border: 1px solid #0003; }
+.fashion-hype-matrix { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 0; }
+.fashion-hype-cell { display: grid; justify-items: center; gap: 1px; min-width: 0; padding: 5px 2px 4px; border: 1px solid color-mix(in srgb, var(--fashion-metal, #8888) 55%, transparent); border-radius: 6px; background: #0000001a; }
+.fashion-hype-cell dt { order: 2; font-size: 12px; line-height: 1; letter-spacing: .06em; opacity: .78; }
+.fashion-hype-cell dt abbr { text-decoration: none; }
+.hero-fashion-card .fashion-hype-matrix { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.fashion-hype-cell dd { order: 1; margin: 0; font: 800 18px/1.05 ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; opacity: .55; }
+.fashion-hype-cell[data-tone] dd { opacity: 1; }
+.fashion-hype-cell[data-tone="high"] { border-color: var(--fashion-metal, #d8b965); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fashion-metal, #d8b965) 40%, transparent); }
+.fashion-hype-cell[data-tone="high"] dd { color: var(--fashion-metal, #d8b965); }
+.fashion-hype-cell[data-tone="low"] dd { opacity: .8; }
+.pc-panels .fashion-hype-cell[data-tone="high"] { border-color: var(--hype-ink, var(--fashion-metal, #d8b965)); }
+.pc-panels .fashion-hype-cell[data-tone="high"] dd { color: var(--hype-ink, var(--fashion-metal, #d8b965)); }
+.fashion-hype-matrix[data-layout="list"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.fashion-hype-matrix[data-layout="list"] .fashion-hype-cell { grid-template-columns: auto 1fr; justify-items: start; align-items: baseline; gap: 6px; padding: 3px 8px; border-width: 0 0 1px; border-radius: 0; background: none; }
+.fashion-hype-matrix[data-layout="list"] .fashion-hype-cell dt { order: 1; }
+.fashion-hype-matrix[data-layout="list"] .fashion-hype-cell dd { order: 2; justify-self: end; font-size: 15px; }
+.fashion-hype-matrix[data-layout="strip"] { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(42px, 1fr); overflow-x: auto; gap: 0; border: 1px solid color-mix(in srgb, var(--hype-ink, var(--fashion-metal, #8888)) 60%, transparent); border-radius: 8px; }
+.fashion-hype-matrix[data-layout="strip"] .fashion-hype-cell { border-width: 0 1px 0 0; border-radius: 0; background: none; }
+.fashion-hype-matrix[data-layout="strip"] .fashion-hype-cell:last-child { border-right: 0; }
+.fashion-hype-matrix[data-layout="stack"] { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.fashion-hype-matrix[data-layout="stack"] .fashion-hype-cell { grid-template-columns: 1fr auto; justify-items: start; align-items: center; padding: 6px 10px; border-radius: 999px; }
+.fashion-hype-matrix[data-layout="stack"] .fashion-hype-cell dt { order: 1; }
+.fashion-hype-matrix[data-layout="stack"] .fashion-hype-cell dd { order: 2; font-size: 16px; }
 .is-fashion-hype .pc-media { background: #ebe7dd; }
 .is-fashion-hype .pc-id { padding-block: .75rem; }
 .is-fashion-hype .pc-name { font-size: 1.1rem; font-weight: 800; }
@@ -3873,17 +3906,27 @@ html[data-reduce-motion="true"] .era-beams { animation: none !important; }
 .aura-hype[data-fashion-level="COLLAB_DROP"] .aura-hype-field { opacity: .4; background: repeating-linear-gradient(45deg, transparent 0 23px, #cbc6e033 24px 25px), repeating-linear-gradient(-45deg, transparent 0 23px, #c3dce733 24px 25px); mask-image: linear-gradient(90deg, #000, transparent 26%, transparent 74%, #000); }
 .aura-hype[data-fashion-level="COLLAB_DROP"] .aura-hype-field::after { content: none; }
 html[data-theme="contrast"] .fashion-hype-header { background: #000; color: #fff; }
-.fashion-hype-level-previews { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: .75rem; margin-block: 1rem; }
+.fashion-hype-level-previews { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: .75rem; margin-block: 1rem; }
 .fashion-hype-level-preview { overflow: hidden; border: 2px solid var(--line-soft); border-radius: 12px; }
 .fashion-hype-level-preview[aria-pressed="true"] { outline: 2px solid var(--text); outline-offset: 2px; }
-.fashion-hype-level-art { display: block; position: relative; height: 145px; background: radial-gradient(ellipse at 50% 40%, #ebe7dc, #56535a); }
-.aura-hype-preset-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: .75rem; }
+.fashion-hype-level-art { display: block; position: relative; aspect-ratio: 3 / 4; background: radial-gradient(ellipse at 50% 42%, #f4f1ea 0 30%, color-mix(in srgb, var(--fashion-metal, #8a8580) 55%, #3b3940) 85%); }
+.fashion-hype-level-preview { position: relative; display: grid; padding: 0; background: var(--fashion-panel, #242421); border-color: var(--fashion-metal, var(--line-soft)); cursor: pointer; }
+.fashion-hype-level-preview:disabled { cursor: not-allowed; }
+.fashion-hype-level-preview[data-locked] .fashion-hype-level-art { filter: grayscale(.85) brightness(.55); }
+.fashion-hype-level-lock { position: absolute; inset: 0; z-index: 4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px; border-radius: inherit; background: #0008; color: #fff; font-size: 13px; font-weight: 700; text-align: center; }
+.fashion-hype-level-lock > span { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 999px; background: #000c; border: 2px solid var(--fashion-metal, #fff); font-size: 26px; line-height: 1; }
+.aura-hype-preset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: .75rem; }
 .aura-hype-preset { display: grid; align-content: start; overflow: hidden; width: 100%; padding: 0; border: 1px solid var(--hype-ink); border-radius: 12px; background: var(--surface); color: inherit; text-align: left; }
 .aura-hype-preset[aria-pressed="true"] { outline: 2px solid var(--hype-ink); outline-offset: 2px; }
-.aura-hype-preset .fashion-hype-header { --fashion-metal: var(--hype-ink); --fashion-panel: #242421; width: 100%; }
-.aura-hype-preset-art { display: block; height: 88px; border-block-end: 1px solid var(--hype-ink); background: radial-gradient(ellipse at 50% 40%, var(--hype-secondary), #56535a 82%); }
-.aura-hype-preset .fashion-hype-metadata { padding: .65rem; }
-.aura-hype-preset .opt-name { padding: 0 .65rem .65rem; }
+.aura-hype-preset-card { display: grid; overflow: hidden; border-radius: 12px 12px 0 0; background: var(--fashion-panel, #242421); color: #f2efe8; }
+.aura-hype-preset-card .fashion-hype-header { width: 100%; }
+.aura-hype-preset-card .fashion-hype-metadata { padding: .6rem; }
+.aura-hype-preset-art { display: block; position: relative; overflow: hidden; aspect-ratio: 3 / 4; border-block: 1px solid var(--hype-ink); background: radial-gradient(ellipse at 50% 42%, #f4f1ea 0 30%, #c9c4ba 75%); }
+.aura-hype-preset-art > img, .fashion-hype-level-art > img { position: absolute; inset: 8%; width: 84%; height: 84%; object-fit: contain; }
+.aura-hype-preset-card .fashion-hype-cell[data-tone="high"] { border-color: var(--hype-ink); }
+.aura-hype-preset-card .fashion-hype-cell[data-tone="high"] dd, .aura-hype-preset-card .fashion-hype-cell[data-tone="mid"] dd { color: var(--hype-ink); }
+.aura-hype-preset-card .fashion-hype-cell[data-tone="mid"] { border-color: color-mix(in srgb, var(--hype-secondary) 60%, transparent); }
+.aura-hype-preset .opt-name { padding: .55rem .65rem .65rem; }
 .fashion-hype-piece-name { font-size: clamp(1.15rem, 2vw, 1.6rem); line-height: 1.15; }
 /* 2.5D presentation: background, photograph and front glass; no asset reprocessing. */
 .is-fashion-hype { transform: perspective(1100px) rotateX(var(--fashion-tilt-x, 0deg)) rotateY(var(--fashion-tilt-y, 0deg)); transform-style: preserve-3d; transition: transform 180ms ease-out; }
