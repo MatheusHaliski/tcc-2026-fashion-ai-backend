@@ -1,5 +1,5 @@
 "use client";
-import { useId, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useId, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import type { PieceView } from "@/lib/api/types";
 import type { HypeSummary } from "@/lib/hype/types";
 import { useI18n } from "@/lib/i18n/i18n";
@@ -7,6 +7,7 @@ import { label, CATEGORY_LABEL, subcategoryLabel } from "@/lib/api/taxonomy";
 import { FashionCardStats } from "@/components/hype/fashion-card-panel";
 import { HypeGuideIcon } from "@/components/hype/hype-guide";
 import { BrandLogo } from "@/components/brand-logo";
+import { hypePreset } from "@/lib/hype/aura-hype-presets";
 
 type Tab = "info" | "hype";
 
@@ -19,7 +20,9 @@ function InfoIcon() {
  * atributos derivados do Hype, os mesmos do verso). Separa o que a peça É do que a comunidade faz com ela; uma aba por vez
  * mantém o card curto. Teclado de tablist: setas trocam de aba.
  */
-export function PieceCardPanels({ piece, summary, initial = "info" }: { piece: PieceView; summary?: HypeSummary | null; initial?: Tab }) {
+export function PieceCardPanels({ piece, summary, initial = "info", auraMode }: { piece: PieceView; summary?: HypeSummary | null; initial?: Tab;
+  /** modelo AURA Hype escolhido na peça: dá a cor e a forma da lista de atributos */
+  auraMode?: string | null }) {
   const { t } = useI18n();
   const [tab, setTab] = useState<Tab>(initial);
   const id = useId();
@@ -42,8 +45,9 @@ export function PieceCardPanels({ piece, summary, initial = "info" }: { piece: P
     setTab(next);
     (e.currentTarget.querySelector(`[data-tab="${next}"]`) as HTMLButtonElement | null)?.focus();
   };
+  const preset = auraMode && auraMode !== "OFF" ? hypePreset(auraMode) : null;
   return (
-    <div className="pc-panels">
+    <div className="pc-panels" style={preset ? { "--hype-ink": preset.color, "--hype-secondary": preset.secondary } as CSSProperties : undefined}>
       <div role="tablist" className="pc-seg" aria-label={t("pieceCard.tabs", { name: piece.name })} onKeyDown={onKey}>
         {tabs.map((x) => (
           <button key={x.key} type="button" role="tab" data-tab={x.key} id={`${id}-${x.key}`} aria-selected={tab === x.key} aria-controls={`${id}-panel`}
@@ -55,7 +59,7 @@ export function PieceCardPanels({ piece, summary, initial = "info" }: { piece: P
       <div role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-${tab}`} className="pc-panel">
         {tab === "info"
           ? <dl className="pc-info">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}</dl>
-          : <FashionCardStats summary={summary} />}
+          : <FashionCardStats summary={summary} layout={preset?.layout} />}
       </div>
     </div>
   );

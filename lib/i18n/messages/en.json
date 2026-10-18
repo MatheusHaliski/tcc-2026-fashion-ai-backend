@@ -7856,5 +7856,7 @@
   "fashionHype.short.legacyScore": "LEG",
   "pieceCard.tab_info": "Info",
   "pieceCard.tab_hype": "Hype",
-  "pieceCard.tabs": "{name} info and Hype"
+  "pieceCard.tabs": "{name} info and Hype",
+  "fashionHype.sample": "Sample values",
+  "fashionHype.sampleHint": "Preview numbers are examples that show the layout and colors; the piece card shows only calculated attributes."
 }

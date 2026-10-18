@@ -7856,5 +7856,7 @@
   "fashionHype.short.legacyScore": "LEG",
   "pieceCard.tab_info": "Info",
   "pieceCard.tab_hype": "Hype",
-  "pieceCard.tabs": "Info y Hype de {name}"
+  "pieceCard.tabs": "Info y Hype de {name}",
+  "fashionHype.sample": "Valores de ejemplo",
+  "fashionHype.sampleHint": "Los números de las vistas previas son ejemplos para mostrar la forma y los colores; la carta de la prenda muestra solo los atributos calculados."
 }

@@ -6,9 +6,13 @@ export const HYPE_PALETTES=[
  {id:'VIOLET',color:'#bd9ef0',secondary:'#92d1ed'},
  {id:'CHAMPAGNE',color:'#ebd1a3',secondary:'#d8b9cb'},
 ] as const;
+/** Forma da lista de atributos Hype na carta: cada técnica tem a sua (a paleta muda a cor, a técnica muda o efeito e a forma). */
+export type HypeLayout='grid'|'list'|'strip'|'stack';
+const HYPE_LAYOUT:Record<typeof HYPE_TECHS[number],HypeLayout>={SCAN:'grid',CONTOUR:'list',MESH:'grid',HOLO:'strip',FIBER:'list',PRISM:'strip',PARTICLES:'stack',SPOTLIGHT:'stack'};
 export const HYPE_PRESETS=HYPE_TECHS.flatMap((tech,i)=>HYPE_PALETTES.map((palette,j)=>({
  id:`${tech}_${palette.id}`,tech,palette:palette.id,color:palette.color,secondary:palette.secondary,
  duration:7+j*2,spacing:16+i*2+j,angle:30+i*17+j*9,
+ layout:HYPE_LAYOUT[tech],
  effect:({SCAN:'SCANNER',CONTOUR:'XRAY',MESH:'METRICS',HOLO:'XRAY',FIBER:'DOTS',PRISM:'XRAY',PARTICLES:'STARS',SPOTLIGHT:'SCANNER'} as const)[tech],
 })));
 const LEGACY:Record<string,string>={SCANNER:'SCAN_GRAPHITE',XRAY:'CONTOUR_CHROME',DOTS:'PARTICLES_GRAPHITE',STARS:'PARTICLES_CHAMPAGNE',METRICS:'MESH_GRAPHITE'};

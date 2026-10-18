@@ -11,3 +11,6 @@ export class AuraPermissionsService implements AuraPermissionPort {
 }
 export function getLockedAuraMessage(auraType:GatedAuraType){return tr(`auraGate.locked.${auraType}`);}
 export class AuraLockedError extends Error {readonly code='AURA_LEVEL_REQUIRED';readonly requiredTier:RoomTier;constructor(auraType:GatedAuraType){super(getLockedAuraMessage(auraType));this.requiredTier=AuraGatingConfig[auraType].requiredTier;}}
+/** Nível de FAI XP (Básico → Studio → Loft) para cada nível de carta AURA Hype: Comum é livre; Rara abre no Studio; Lendária e Collab/Drop no Loft. */
+export const CARD_LEVEL_TIER:Record<'COMMON'|'RARE'|'LEGENDARY'|'COLLAB_DROP',RoomTier>={COMMON:'ESTREIA',RARE:'STUDIO',LEGENDARY:'LOFT',COLLAB_DROP:'LOFT'};
+export function cardLevelUnlocked(level:keyof typeof CARD_LEVEL_TIER,current:RoomTier|null|undefined){return level==='COMMON'||(!!current&&ROOM_TIERS.indexOf(current)>=ROOM_TIERS.indexOf(CARD_LEVEL_TIER[level]));}
