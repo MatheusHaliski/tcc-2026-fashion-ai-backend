@@ -121,7 +121,7 @@ class AnatomicalTryOnServiceTest {
         when(media.put(anyString(), any(), eq("image/png"))).thenReturn(
                 new MediaStoragePort.StoredObject("users/" + userId + "/tryon/step-1.png", step1, image.length, "image/png"),
                 new MediaStoragePort.StoredObject("users/" + userId + "/tryon/step-2.png", step2, image.length, "image/png"));
-        when(media.requireOwnedMedia(userId, step1, Set.of(MediaService.MediaScope.OWNER), "personMediaUrl"))
+        when(media.requireOwnedMedia(userId, step1, Set.of(MediaService.MediaScope.OWNER, MediaService.MediaScope.PRIVATE_TRY_ON), "personMediaUrl"))
                 .thenReturn(new MediaService.OwnedMedia("users/" + userId + "/tryon/step-1.png", step1));
         when(media.read(step1)).thenReturn(Optional.of(image));
 
@@ -131,7 +131,7 @@ class AnatomicalTryOnServiceTest {
         var order = inOrder(worker);
         order.verify(worker).render(eq("piece:" + bottomId), eq(image), eq(image), eq("lower_piece"), isNull(), eq(false));
         order.verify(worker).render(eq("piece:" + pieceId), eq(image), eq(image), eq("upper_piece"), isNull(), eq(false));
-        verify(media).requireOwnedMedia(userId, step1, Set.of(MediaService.MediaScope.OWNER), "personMediaUrl");   // a 2ª etapa parte do resultado da 1ª
+        verify(media).requireOwnedMedia(userId, step1, Set.of(MediaService.MediaScope.OWNER, MediaService.MediaScope.PRIVATE_TRY_ON), "personMediaUrl");   // a 2ª etapa parte do resultado da 1ª
         verify(media, never()).put(eq("users/" + userId + "/photo.png"), any(), any());                       // a foto original fica
     }
 

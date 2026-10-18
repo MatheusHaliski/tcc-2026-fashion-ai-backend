@@ -25,6 +25,7 @@ import type { Sex } from "@/lib/avatar3d/body-spec";
 import type { Issue } from "@/lib/avatar3d/quality";
 import { validateBody, type BodyModel } from "@/lib/avatar3d/body-spec";
 import { BodyEditor } from "@/components/avatar3d/body-editor";
+import { GpuLookDialog } from "@/components/try-on/gpu-look-dialog";
 import type { FaceFidelity } from "@/lib/avatar3d/identity/metrics";
 
 const AvatarViewer = dynamic(() => retryImport(() => import("@/components/three/avatar-viewer")), { ssr: false, loading: () => <Skeleton className="h-full" /> });
@@ -385,6 +386,7 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
   const [pub, setPub] = useState(!!saved.publicOnRunway);
   const [busy, setBusy] = useState<"" | "patch" | "delete" | "body" | "glb">("");
   const [confirm, setConfirm] = useState(false);
+  const [gpuLook, setGpuLook] = useState(false);       // frente 3: o look em foto realista, gerado na GPU
   const [textureEyes, setTextureEyes] = useState<AvatarEyes | null>(null);
   const body = validateBody(saved.model?.body);
   const dirty = JSON.stringify(clampAdjust(saved.adjust)) !== JSON.stringify(adjust);
@@ -432,6 +434,11 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
           <AdjustSliders value={adjust} onChange={setAdjust} hair={saved.model?.hair} eyes={textureEyes ?? saved.model?.eyes} brows={saved.model?.brows} />
           <Button className="mt-3" variant="primary" size="sm" loading={busy === "patch"} disabled={!dirty || !!busy} onClick={() => patch({ adjust })}>{t("avatar3d.page.salvar_ajustes")}</Button>
         </Card>
+        <Card>
+          <p className="label">{t("avatar3d.gpu.titulo")}</p>
+          <p className="type-body-sm text-muted">{t("avatar3d.gpu.lead")}</p>
+          <Button className="mt-3" size="sm" variant="primary" onClick={() => setGpuLook(true)}>{t("avatar3d.gpu.botao")}</Button>
+        </Card>
       </div>
       <Card>
         <div className="aspect-[4/5] w-full overflow-hidden rounded-md bg-surface-2 sm:aspect-[5/4]">
@@ -448,6 +455,7 @@ function Saved({ saved, sex, onRedo, onChanged }: { saved: Saved; sex: "FEMININO
       <div className="lg:col-span-2">
         {saved.model && <BodyEditor sex={bodySex} initial={body} avatar={{ model: saved.model, adjust, textureUrl: saved.textureUrl }} saving={busy === "body"} onSave={saveBody} />}
       </div>
+      <GpuLookDialog open={gpuLook} onClose={() => setGpuLook(false)} title={t("avatar3d.gpu.titulo")} />
       <Dialog open={confirm} onClose={() => setConfirm(false)} title={t("avatar3d.page.excluir_titulo")}
         footer={<><Button variant="ghost" onClick={() => setConfirm(false)}>{t("common.cancel")}</Button><Button variant="danger" loading={busy === "delete"} onClick={remove}>{t("avatar3d.page.excluir")}</Button></>}>
         <p className="type-body">{t("avatar3d.page.excluir_texto")}</p>
