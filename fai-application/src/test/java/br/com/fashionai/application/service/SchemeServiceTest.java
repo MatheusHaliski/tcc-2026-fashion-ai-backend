@@ -162,6 +162,20 @@ class SchemeServiceTest {
     }
 
     @Test
+    void rascunhoSoAbreParaODonoMesmoMarcadoComoPublico() {
+        UUID id = ((Views.SchemeView) schemes.create(ana, form("Rascunho público", mine.subList(0, 3), false)).get("scheme")).id();
+        var draft = kit.dep(SchemeRepository.class).findById(id).orElseThrow();
+        draft.setVisibility(Visibility.PUBLIC);
+        assertThat(draft.getStatus()).isEqualTo(SchemeStatus.DRAFT);
+        assertThat(schemes.get(ana, id)).containsEntry("canEdit", true);
+        assertThatThrownBy(() -> schemes.get(Kit.as(world.rival), id)).isInstanceOf(ApiException.class);
+        assertThatThrownBy(() -> schemes.get(null, id)).isInstanceOf(ApiException.class);
+        assertThat(schemes.canView(Kit.as(world.rival), draft)).isFalse();
+        schemes.publish(ana, id, Visibility.PUBLIC);
+        assertThat(schemes.canView(Kit.as(world.rival), draft)).isTrue();
+    }
+
+    @Test
     void melhorarComIaEAplicarSoOQueFoiAceito() {
         UUID id = world.lookIds(world.me).get(0);
         Map<String, Object> diff = schemes.improve(ana, id, "deixe mais elegante para a noite");
