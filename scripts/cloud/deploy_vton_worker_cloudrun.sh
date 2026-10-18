@@ -67,7 +67,16 @@ mkdir -p "$CTX/services"
 cp -R "$ROOT/services/anatomical_vton" "$CTX/services/"
 rm -rf "$CTX/services/anatomical_vton/tests" "$CTX/services/anatomical_vton/__pycache__"
 cp "$ROOT/services/anatomical_vton/deploy/railway/Dockerfile" "$CTX/Dockerfile"
-run gcloud builds submit "$CTX" --project="$PROJECT" --region="$REGION" --tag="$IMAGE"
+# Em projetos novos o Cloud Build roda como a conta padrão do Compute Engine, que não ganha papéis sozinha (política
+# iam.automaticIamGrantsForDefaultServiceAccounts): sem este papel o build falha com 403 ao ler o código enviado.
+PROJECT_NUMBER="$(gcloud projects describe "$PROJECT" --format='value(projectNumber)' 2>/dev/null || echo PROJECT_NUMBER)"
+run gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:$PROJECT_NUMBER-compute@developer.gserviceaccount.com" \
+  --role="roles/cloudbuild.builds.builder" --condition=None --quiet >/dev/null
+for attempt in 1 2 3; do
+  run gcloud builds submit "$CTX" --project="$PROJECT" --region="$REGION" --tag="$IMAGE" && break
+  [ "$attempt" = 3 ] && exit 1
+  echo "build falhou (um papel recém-concedido leva ~1 min para valer); nova tentativa em 60 s"; sleep 60
+done
 
 # serviço: conta anexada (sem chave), 1 instância no máximo (o catálogo do worker é local, como no Railway), e acesso
 # público sem conceder allUsers (--no-invoker-iam-check: funciona mesmo com restrição de domínio); o Bearer protege.
