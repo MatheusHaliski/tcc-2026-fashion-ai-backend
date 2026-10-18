@@ -25,7 +25,7 @@ title RF18 — Prova com IA: ciclo de vida de um pedido de prova (do diálogo ao
 state "Sem peça vestível" as SemPeca : nenhuma candidata isGpuCategory()\ntryOn.ia_sem_peca
 state "Montando o look" as Montando : look = gpuLook(candidatas)\nmode = look | piece
 state "Enviando a foto" as Enviando : busy = upload\nPOST /api/try-on/person-photos
-state "Foto pronta" as Foto : photo.url em users/{id}/tryon/\nconsent = false
+state "Foto pronta" as Foto : photo.url em restricted/users/{id}/tryon/person/\nconsent = false
 state "Pronta para gerar" as Pronta : ready = foto && consent && peças
 state "Vestindo na GPU" as Render {
   state "Etapa do look" as Etapa {

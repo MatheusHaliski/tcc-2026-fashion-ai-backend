@@ -43,13 +43,15 @@ package "Frontend (Next.js · Vercel)" {
   component "lib/i18n/messages/*.json\n(tryOn.ia_* · tryOn.ia_motivo.*)" as I18N
 }
 package "API (Spring Boot · Java 21 · Railway)" {
-  component "AnatomicalTryOnController\nPOST /api/try-on/person-photos\nPOST /api/try-on/look-renders\nPOST /api/try-on/anatomical-renders" as CTRL
-  component "AnatomicalTryOnService\n(uploadPerson · renderLook · render)" as SVC
+  component "TryOnPersonPhotoController\nPOST /api/try-on/person-photos" as PCTRL
+  component "TryOnPersonPhotoService\n(até 6 MB · 1536 px · escopo PRIVATE_TRY_ON)" as PSVC
+  component "AnatomicalTryOnController\nPOST /api/try-on/look-renders\nPOST /api/try-on/anatomical-renders" as CTRL
+  component "AnatomicalTryOnService\n(renderLook · render)" as SVC
   component "WardrobeService.owned()\nTryOnService.imageBytes()" as WS
   component "MediaService\n(escopos OWNER · PRIVATE_TRY_ON)" as MS
   component "AnatomicalTryOnAdapter\n(implementa AnatomicalTryOnPort ·\nBearer · timeout 650 s · reasonOf)" as AD
 }
-database "Mídia (S3)\nusers/{id}/tryon/" as S3
+database "Mídia (S3)\nrestricted/users/{id}/tryon/person/ (foto)\nusers/{id}/tryon/ (resultados)" as S3
 node "Google Cloud Run · us-central1\nfashionai-vton-worker (0–1 instância · 1 vCPU · 1 GiB)" as RUN {
   component "api.py (FastAPI)\nPOST /v1/catalog/{id} · POST /try-on · GET /health" as W
   component "google_cloud.py\nVertexPredictionClient · server_code() · SERVER_CODES" as GC
@@ -69,6 +71,9 @@ FR --> AID : abre
 AID --> GLD : peças do guarda-roupa
 GLD --> APIC
 GLD ..> I18N : refusalKey → chave
+APIC --> PCTRL : foto (multipart)
+PCTRL --> PSVC
+PSVC --> MS
 APIC --> CTRL : HTTPS/JSON
 CTRL --> SVC
 SVC --> WS : peça do dono

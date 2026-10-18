@@ -26,6 +26,8 @@ title RF18 — Prova com IA: o look vestido em etapas na GPU (a saída de cada e
 
 actor "Pessoa usuária" as U
 boundary "GpuLookDialog\n(components/try-on)" as P
+control "TryOnPersonPhotoController\n/api/try-on" as PC
+participant "TryOnPersonPhotoService" as PS
 control "AnatomicalTryOnController\n/api/try-on" as C
 participant "AnatomicalTryOnService" as S
 participant "MediaService\n(S3)" as M
@@ -37,11 +39,11 @@ participant "NativeFashnRuntime\nfashn_runtime.py · T4" as R
 == Foto da pessoa ==
 U -> P : escolhe a foto
 P -> P : fitted(): até 1536 px, JPEG 0,9
-P -> C : POST /api/try-on/person-photos (multipart "file")
-C -> S : uploadPerson(user, bytes)
-S -> S : requireAcceptedImage · menor lado ≥ 256 px\nscaleToFit(1536) · JPEG sem metadados
-S -> M : put("users/{id}/tryon/person-{uuid}.jpg")
-C --> P : 201 {url, width, height}
+P -> PC : POST /api/try-on/person-photos (multipart "file")
+PC -> PS : upload(user, bytes)
+PS -> PS : até 6 MB · requireAcceptedImage · menor lado ≥ 256 px\nscaleToFit(1536) · JPEG
+PS -> M : put("restricted/users/{id}/tryon/person/{uuid}/person.jpg")\n(escopo PRIVATE_TRY_ON; o original fica ao lado)
+PC --> P : 200 {url, width, height}
 U -> P : marca o consentimento e toca "Gerar prova"
 
 == Look inteiro (modo "Look inteiro · n peças") ==

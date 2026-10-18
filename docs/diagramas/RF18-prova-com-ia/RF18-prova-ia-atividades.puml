@@ -48,13 +48,13 @@ endif
 |Provador (React)|
 :fitted(): reduz no navegador para até 1536 px (JPEG 0,9)\ne envia POST /api/try-on/person-photos;
 |API (Spring Boot · Railway)|
-:AnatomicalTryOnService.uploadPerson():\nimagem aceita e menor lado ≥ 256 px?;
+:TryOnPersonPhotoService.upload():\nimagem aceita, até 6 MB e menor lado ≥ 256 px?;
 if (foto válida?) then (não)
   :400 VTON_IMAGE_SMALL\n(tela: tryOn.ia_erro_foto_pequena);
   stop
 else (sim)
 endif
-:Reduz para 1536 px, regrava em JPEG sem metadados\nem users/{id}/tryon/ → 201 {url, width, height};
+:Guarda o original e a versão de até 1536 px em JPEG\nem restricted/users/{id}/tryon/person/ (escopo PRIVATE_TRY_ON)\n→ 200 {url, width, height};
 |Pessoa usuária|
 :Marca o consentimento ("Autorizo o processamento\ndesta foto") e toca "Gerar prova";
 |Provador (React)|

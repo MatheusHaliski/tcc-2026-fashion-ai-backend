@@ -57,14 +57,19 @@ package "Frontend · components/try-on" {
   }
 }
 package "API · fai-web / fai-application / fai-infrastructure" {
+  class TryOnPersonPhotoController <<RestController>> {
+    upload() POST /person-photos
+  }
+  class TryOnPersonPhotoService <<Service>> {
+    upload(user, bytes): Map
+    grava em restricted/users/{id}/tryon/person/
+  }
   class AnatomicalTryOnController <<RestController>> {
-    personPhoto() POST /person-photos
     look() POST /look-renders
     render() POST /anatomical-renders
   }
   class AnatomicalTryOnService <<Service>> {
     LOOK_ORDER = [full_body_piece, lower_piece, upper_piece]
-    uploadPerson(user, bytes): Map
     renderLook(user, LookRequest): Map
     render(user, Request): Map
     validateOutput(png)
@@ -135,7 +140,10 @@ AiTryOnDialog --> GpuLookDialog : peças do guarda-roupa
 GpuLookDialog ..> GLDMod
 GpuLookDialog --> "0..*" GpuPiece
 GpuLookDialog --> "0..1" Render
+GpuLookDialog ..> TryOnPersonPhotoController : foto (multipart)
 GpuLookDialog ..> AnatomicalTryOnController : HTTPS/JSON
+TryOnPersonPhotoController --> TryOnPersonPhotoService
+TryOnPersonPhotoService ..> MediaScope : PRIVATE_TRY_ON
 AnatomicalTryOnController --> AnatomicalTryOnService
 AnatomicalTryOnService ..> LookRequest
 AnatomicalTryOnService ..> MediaScope
