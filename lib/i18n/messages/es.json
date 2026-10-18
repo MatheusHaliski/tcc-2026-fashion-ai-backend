@@ -7696,7 +7696,7 @@
   "room.settings.a11y.motion_normal": "Normal",
   "room.settings.a11y.comfort": "Confort contra el mareo",
   "room.settings.a11y.comfort_hint": "Campo de visión más amplio, cambios por corte seco y ninguna cámara girando sola.",
-  "room.settings.reset": "Restaurar valores predeterminados"
+  "room.settings.reset": "Restaurar valores predeterminados",
   "tryOn.ia_botao": "Prueba con IA",
   "tryOn.ia_titulo": "Prueba con IA (GPU)",
   "tryOn.ia_lead": "La IA viste la prenda de tu armario en tu foto. Es una imagen 2D generada: no certifica el calce ni la talla.",

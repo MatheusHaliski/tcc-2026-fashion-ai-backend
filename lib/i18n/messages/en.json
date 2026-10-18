@@ -7696,7 +7696,7 @@
   "room.settings.a11y.motion_normal": "Normal",
   "room.settings.a11y.comfort": "Motion-sickness comfort",
   "room.settings.a11y.comfort_hint": "Wider field of view, hard-cut transitions and no camera moving on its own.",
-  "room.settings.reset": "Restore defaults"
+  "room.settings.reset": "Restore defaults",
   "tryOn.ia_botao": "AI try-on",
   "tryOn.ia_titulo": "AI try-on (GPU)",
   "tryOn.ia_lead": "The AI dresses your wardrobe piece on your photo. It is a generated 2D image: it does not certify fit or size.",
