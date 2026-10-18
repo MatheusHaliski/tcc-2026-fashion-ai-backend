@@ -124,7 +124,7 @@ class WardrobeCreatorServiceTest {
                 new WardrobeCreatorService.BundlePart("LOGO", null, null, null, null)));
         Map<String, Object> full = creator.save(m, null, wardrobe);
         assertThat((List<?>) full.get("bundle")).hasSize(4);
-        assertThat(full.get("requiredLevel")).isEqualTo("PENTHOUSE");
+        assertThat(full.get("requiredLevel")).isEqualTo("LOFT");
         Map<String, Object> mine = creator.mine(m);
         assertThat((List<?>) mine.get("items")).hasSize(2);
         assertThat(creator.save(m, sku, component("HANDLE", "PUX-CRO", null, null, null, null, false, null))).containsEntry("material", "COURO");
@@ -222,7 +222,7 @@ class WardrobeCreatorServiceTest {
         assertThat(String.valueOf(creator.uploadArt(Kit.as(marca), out.toByteArray(), "logo").get("url"))).endsWith(".png");
         assertThat(String.valueOf(creator.uploadArt(Kit.as(marca), out.toByteArray(), "art").get("url"))).endsWith(".jpg");
         assertThat(WardrobeCreatorService.slug("Água & Cia")).isEqualTo("AGUACIA");
-        assertThat(WardrobeCreatorService.level("maison")).isEqualTo("MAISON");
+        assertThat(WardrobeCreatorService.level("maison")).isEqualTo("LOFT");
         assertThat(WardrobeCreatorService.level("x")).isEqualTo("ESTREIA");
         assertThat(WardrobeCreatorService.finish("LED", "Quente 2700 K", "#FFD9A0", null, null, null, null, null)).containsEntry("kelvin", 2700);
     }

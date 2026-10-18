@@ -186,7 +186,8 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
       <AuraFashionPicker pieceId={pieceId} brandName={brandName} colorHex={colorHex} colorName={colorName}
         value={value.compositionPreset}
         activeFamilies={[...(auraPreset ? [legacyAuraFamily(auraPreset.id)] : []), ...(value.auraHype && value.auraHype !== "OFF" ? ["HYPE" as const] : []), ...(value.auraMetamorphose && value.auraMetamorphose !== "OFF" ? ["METAMORPHOSE" as const] : [])]}
-        exclusiveFamilies={["HYPE"]}
+        // Comum, Electro e Splash mostram só as opções de cima (presets e variações de antes), sem a grade de 40 do catálogo
+        exclusiveFamilies={["HYPE", "COMMON", "ELECTRO", "SPLASH"]}
         onChange={preset=>onChange({compositionPreset:preset,aura:null,aiArt:null,uploadUrl:null})}
         familyContent={{
           HYPE:<AuraHypePicker inline value={value.auraHype ?? (auraPreset?.id === "aura_hype" ? "SCANNER" : null)} onChange={mode=>onChange({auraHype:mode,...(auraPreset?.id === "aura_hype" ? {aura:null} : {}),...(value.compositionPreset?.family === "HYPE" ? {compositionPreset:null} : {})})}/>,

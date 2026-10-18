@@ -38,15 +38,17 @@ import java.util.UUID;
 public class FaiPointsService {
     public static final ZoneId ZONE = ZoneId.of("America/Sao_Paulo");
 
-    /** §5.3 — nível, limiar de pontos vitalícios (calibração inicial: ~1 semana até Studio, ~2 meses até Closet). */
+    /**
+     * §5.3 — os três níveis do app (Básico → Studio → Loft) e o limiar de pontos vitalícios. O que cada um libera:
+     * Básico: quarto base em branco de fábrica, Smart Mirror/Vista-me, AURA estática e carta Hype Comum;
+     * Studio: iluminação guiada, primeiros acabamentos, sapateira/vitrine de bolsas/porta-joias, couro, veludo e metais,
+     * AURA animada e carta Rara; Loft: quarto maior, ilha central, troca de estação, closet de assinatura, ouro e
+     * holográfico, AURA Metamorfose/Impersonation, jogo FLAIR Metamorfose e cartas Lendária e Collab/Drop.
+     */
     public enum Level {
         ESTREIA(0, Msg.k("faiPoints.fai_origem_smart_mirror_vista"), Msg.k("faiPoints.branco_de_fabrica")),
         STUDIO(300, Msg.k("faiPoints.iluminacao_guiada_personalizavel_e"), Msg.k("faiPoints.primeiros_acabamentos_e_materiais")),
-        LOFT(900, Msg.k("faiPoints.n2_modulos_e_mais_categorias"), "quarto maior"),
-        CLOSET(2000, Msg.k("faiPoints.sapateira_vitrine_de_bolsas_e"), Msg.k("faiPoints.modulos_especializados")),
-        ATELIER(4000, Msg.k("faiPoints.ilha_central_bancada_de_looks"), "ilha central"),
-        PENTHOUSE(7500, Msg.k("faiPoints.troca_de_estacao_pecas_fora"), "ambiente premium"),
-        MAISON(12000, Msg.k("faiPoints.closet_de_assinatura_itens_exclusivos"), Msg.k("faiPoints.closet_de_assinatura"));
+        LOFT(900, Msg.k("faiPoints.n2_modulos_e_mais_categorias"), "quarto maior");
 
         public final int threshold;
         public final String unlocks;
@@ -66,6 +68,20 @@ public class FaiPointsService {
                 }
             }
             return result;
+        }
+
+        /** Lê um nível gravado; os nomes antigos (Closet, Atelier, Penthouse, Maison) viraram Loft. */
+        public static Level parse(String name) {
+            if (name == null || name.isBlank()) {
+                return ESTREIA;
+            }
+            String n = name.trim().toUpperCase(java.util.Locale.ROOT);
+            for (Level l : values()) {
+                if (l.name().equals(n)) {
+                    return l;
+                }
+            }
+            return java.util.Set.of("CLOSET", "ATELIER", "PENTHOUSE", "MAISON").contains(n) ? LOFT : ESTREIA;
         }
 
         public boolean atLeast(Level other) {
@@ -239,7 +255,7 @@ public class FaiPointsService {
                 .filter(c -> mine.containsKey(c.getSku()) || creator.sellerActive(c))   // criador pendente/suspenso sai da vitrine
                 .map(c -> {
                     Map<String, Object> m = creator.view(c, user.id());
-                    m.put("levelOk", lvl.atLeast(Level.valueOf(c.getRequiredLevel())));
+                    m.put("levelOk", lvl.atLeast(Level.parse(c.getRequiredLevel())));
                     m.put("affordable", bal >= c.getPricePoints());
                     m.put("owned", mine.containsKey(c.getSku()));
                     m.put("inventory", mine.getOrDefault(c.getSku(), List.of()));   // unidades compradas e onde estão aplicadas
@@ -290,7 +306,7 @@ public class FaiPointsService {
             throw new ApiException(409, "OFERTA_ALTERADA", Msg.t("faiPoints.oferta_alterada"));
         String purchaseRef = requestRef != null ? requestRef : UUID.randomUUID().toString();
         Level lvl = level(user.id());
-        if (!lvl.atLeast(Level.valueOf(c.getRequiredLevel()))) {
+        if (!lvl.atLeast(Level.parse(c.getRequiredLevel()))) {
             throw new ApiException(409, "NIVEL_INSUFICIENTE", Msg.t("faiPoints.disponivel_a_partir_do_nivel", c.getRequiredLevel()));
         }
         if (c.getStockLimit() != null && c.getSoldCount() >= c.getStockLimit()) {

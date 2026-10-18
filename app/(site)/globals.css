@@ -1941,7 +1941,7 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 
 /* ---------- Editor da arte do card da peça (RF11): controles à esquerda, o card do feed de verdade à direita ---------- */
 .pae { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 900px) { .pae { grid-template-columns: minmax(0, 1fr) 260px; align-items: start; } .pae-preview { position: sticky; top: 0; } }
+@media (min-width: 900px) { .pae { grid-template-columns: minmax(0, 1fr) min(520px, 45%); align-items: start; } .pae-preview { position: sticky; top: 0; } }
 .pae-steps { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
 .pae-steps .chip[aria-current="step"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .pae-h { margin: 0; font-family: var(--font-data); font-size: var(--text-caption); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
@@ -1962,7 +1962,7 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .pae-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--line-soft); }
 .pae-preview { display: grid; gap: 8px; }
 /* a prévia tem a largura de uma coluna da grade: o que se vê aqui é o que aparece no feed */
-.pae-preview-card { width: min(100%, var(--pae-preview-w, 240px)); }
+.pae-preview-card { width: min(100%, var(--pae-preview-w, 480px)); }
 .switch-track:disabled { opacity: .45; cursor: not-allowed; }
 .chip:disabled { opacity: .45; cursor: not-allowed; }
 /* alternativa à ação principal (posição secundária): texto-link, alvo de toque próprio */
@@ -2023,6 +2023,7 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 /* a prévia do card nunca passa da coluna dela: a arte fica presa na faixa entre a borda externa e o container */
 .pae-preview { min-width: 0; }
 .pae-preview .fai-card, .pae-expanded .fai-card { max-width: 100%; }
+.pae-preview .is-fashion-hype { transform: none; transform-style: flat; }
 
 /* ---------- Listas de escolha no visual FashionAI ----------
    Dropdown (components/ui): a lista aberta usa os tokens (superfície, linha, tinta, marca) em qualquer navegador. */
@@ -3883,7 +3884,7 @@ html[data-reduce-motion="true"] .era-beams { animation: none !important; }
 .pc-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; margin: 0; }
 .pc-info > div { min-width: 0; }
 .pc-info dt { font-size: 12px; opacity: .7; }
-.pc-info dd { margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 600; }
+.pc-info dd { margin: 0; overflow-wrap: anywhere; font-size: 13px; font-weight: 600; }
 .pc-info-color { display: inline-flex; align-items: center; gap: 5px; }
 .pc-info-color i { width: 12px; height: 12px; border-radius: 999px; border: 1px solid #0003; }
 .fashion-hype-matrix { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 0; }
@@ -3902,7 +3903,7 @@ html[data-reduce-motion="true"] .era-beams { animation: none !important; }
 .fashion-hype-matrix[data-layout="list"] .fashion-hype-cell { grid-template-columns: auto 1fr; justify-items: start; align-items: baseline; gap: 6px; padding: 3px 8px; border-width: 0 0 1px; border-radius: 0; background: none; }
 .fashion-hype-matrix[data-layout="list"] .fashion-hype-cell dt { order: 1; }
 .fashion-hype-matrix[data-layout="list"] .fashion-hype-cell dd { order: 2; justify-self: end; font-size: 15px; }
-.fashion-hype-matrix[data-layout="strip"] { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(42px, 1fr); overflow-x: auto; gap: 0; border: 1px solid color-mix(in srgb, var(--hype-ink, var(--fashion-metal, #8888)) 60%, transparent); border-radius: 8px; }
+.fashion-hype-matrix[data-layout="strip"] { grid-template-columns: repeat(auto-fit, minmax(48px, 1fr)); gap: 0; border: 1px solid color-mix(in srgb, var(--hype-ink, var(--fashion-metal, #8888)) 60%, transparent); border-radius: 8px; }
 .fashion-hype-matrix[data-layout="strip"] .fashion-hype-cell { border-width: 0 1px 0 0; border-radius: 0; background: none; }
 .fashion-hype-matrix[data-layout="strip"] .fashion-hype-cell:last-child { border-right: 0; }
 .fashion-hype-matrix[data-layout="stack"] { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
@@ -3940,6 +3941,10 @@ html[data-theme="contrast"] .fashion-hype-header { background: #000; color: #fff
 .aura-hype-preset-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: .75rem; }
 .aura-hype-preset { display: grid; align-content: start; overflow: hidden; width: 100%; padding: 0; border: 1px solid var(--hype-ink); border-radius: 12px; background: var(--surface); color: inherit; text-align: left; }
 .aura-hype-preset[aria-pressed="true"] { outline: 2px solid var(--hype-ink); outline-offset: 2px; }
+/* carta AURA Hype: nenhum texto ou número é cortado (sem reticências nem corte de linhas) */
+.is-fashion-hype .pc-name { display: block; -webkit-line-clamp: unset; overflow: visible; }
+.aura-hype-preset .opt-name { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; }
+.fashion-hype-cell dt, .fashion-hype-cell dd { overflow: visible; white-space: nowrap; }
 .aura-hype-preset-card { display: grid; overflow: hidden; border-radius: 12px 12px 0 0; background: var(--fashion-panel, #242421); color: #f2efe8; }
 .aura-hype-preset-card .fashion-hype-header { width: 100%; }
 .aura-hype-preset-card .fashion-hype-metadata { padding: .6rem; }
