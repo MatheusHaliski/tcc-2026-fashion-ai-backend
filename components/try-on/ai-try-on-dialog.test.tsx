@@ -7,7 +7,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, loggedAs, renderApp, screen, waitFor } from "@/test-utils/render";
-import { AiTryOnDialog, aiCandidates } from "@/components/try-on/ai-try-on-dialog";
+import { AiTryOnDialog, aiCandidates, toGpuPiece } from "@/components/try-on/ai-try-on-dialog";
 import type { FittingItem } from "@/lib/tryon/fitting-room";
 
 const top: FittingItem = { key: "w:w1", source: "wardrobe", slot: "upper_piece", wear: "TOP", name: "Camisa de linho", brand: null, category: "upper_piece", imageUrl: "/media/w1.png", pieceId: "w1", addedAt: 1 };
@@ -35,6 +35,16 @@ describe("Prova com IA", () => {
     const noId: FittingItem = { ...top, key: "w:sem-id", pieceId: undefined };
     const storeNoId: FittingItem = { ...store, key: "c:sem-id", productId: undefined };
     expect(aiCandidates([top, shoes, store, dress, noId, storeNoId]).map((i) => i.key)).toEqual(["w:w1", "c:p1", "w:w3"]);
+  });
+
+  it("acessório só conta como recorte com a foto processada do catálogo (no guarda-roupa é a foto original)", () => {
+    const glasses: FittingItem = { key: "w:g", source: "wardrobe", slot: "accessory_piece", wear: "ACCESSORY", name: "Óculos", brand: null,
+      category: "accessory_piece", subcategory: "sunglasses", imageUrl: "/media/g.jpg", processedUrl: "/media/g.jpg", pieceId: "g", addedAt: 4 };
+    expect(toGpuPiece(glasses)).toMatchObject({ image: "/media/g.jpg", cutout: false });
+    expect(toGpuPiece({ ...glasses, key: "c:g", source: "catalog", productId: "g", processedUrl: "/media/catalog/g.png" }))
+      .toMatchObject({ id: "g", image: "/media/catalog/g.png", cutout: true });
+    expect(toGpuPiece({ ...glasses, key: "c:h", source: "catalog", productId: "h", processedUrl: null, imageUrl: "https://marca/h.jpg" }))
+      .toMatchObject({ image: "https://marca/h.jpg", cutout: false });
   });
 
   it("sem peça elegível: explica, leva ao guarda-roupa e não deixa gerar", () => {

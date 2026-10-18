@@ -11,6 +11,13 @@ export function aiCandidates(items: FittingItem[]): FittingItem[] {
   return items.filter((i) => gpuReady(i) && isGpuCategory(i.category));
 }
 
+/** Peça do provador → peça da prova. Recorte (fundo removido) só na foto processada do catálogo: no guarda-roupa o
+ * processedUrl é a própria foto original (mesma origem), então o acessório vai pela multiplicação do fundo branco. */
+export function toGpuPiece(i: FittingItem): GpuPiece {
+  return { id: i.source === "catalog" ? i.productId! : i.pieceId!, source: i.source, name: i.name, category: i.category,
+    subcategory: i.subcategory, image: i.processedUrl ?? i.imageUrl, cutout: i.source === "catalog" && !!i.processedUrl };
+}
+
 /**
  * Prova com IA no Provador: o look que está no provador (ou uma peça dele) vestido na foto da própria pessoa, na GPU.
  * Entram peças das lojas e do guarda-roupa; da loja, só com foto de produto liberada para a GPU (o servidor confere).
@@ -19,8 +26,6 @@ export function aiCandidates(items: FittingItem[]): FittingItem[] {
 export function AiTryOnDialog({ open, onClose, items, onPickFromWardrobe }: {
   open: boolean; onClose: () => void; items: FittingItem[]; onPickFromWardrobe: () => void;
 }) {
-  const pieces = useMemo<GpuPiece[]>(() => items.filter(gpuReady)
-    .map((i) => ({ id: i.source === "catalog" ? i.productId! : i.pieceId!, source: i.source, name: i.name, category: i.category,
-      subcategory: i.subcategory, image: i.processedUrl ?? i.imageUrl, cutout: !!i.processedUrl })), [items]);
+  const pieces = useMemo(() => items.filter(gpuReady).map(toGpuPiece), [items]);
   return <GpuLookDialog open={open} onClose={onClose} pieces={pieces} onPickFromWardrobe={onPickFromWardrobe} />;
 }
