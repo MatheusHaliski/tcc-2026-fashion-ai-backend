@@ -189,7 +189,7 @@ export function GpuLookDialog({ open, onClose, pieces, onPickFromWardrobe, title
               {result?.url
                 ? <img src={mediaUrl(result.url)} alt={resultAlt} className="w-full" />
                 : <img src={shown} alt={t("tryOn.ia_foto")} className={compose ? "w-full" : "w-full opacity-80"} />}
-              {compose && placed.status === "ready" && <AccessoryLayer accessories={extras} placements={placed.placements} />}
+              {compose && placed.status === "ready" && <AccessoryLayer accessories={extras} placements={placed.placements} transparent={placed.transparent} />}
             </div>
           ) : <p className="type-body-sm text-muted p-6 text-center">{t("tryOn.ia_foto_dica")}</p>}
         </div>
