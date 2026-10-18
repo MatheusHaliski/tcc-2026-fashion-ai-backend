@@ -59,6 +59,43 @@ def body_measurement_response(result):
                           |{'photoStored':False,'meshReturned':False,'metrologyCertified':False}}
 
 
+class PortraitRequest(BaseModel):
+    model_config=ConfigDict(extra='forbid')
+    person_image:str=Field(max_length=8_000_000)
+    seed:int=Field(default=42,ge=0,le=2**31-1)
+
+
+PORTRAIT_ENGINE='SDXL_INSTANTID_STYLIZED_PORTRAIT'
+PORTRAIT_MAX_BYTES=3_000_000
+
+
+def portrait_response(result):
+    """Só o retrato (JPEG que decodifica no tamanho anunciado), a semelhança e diagnósticos conhecidos saem do worker."""
+    diagnostics=result.get('diagnostics')
+    if result.get('status')!='READY' or not isinstance(diagnostics,dict) or diagnostics.get('engine')!=PORTRAIT_ENGINE \
+            or diagnostics.get('device')!='cuda:0':
+        raise AlignmentError('REAL_GPU_PORTRAIT_EVIDENCE_REQUIRED')
+    width,height,similarity=result.get('width'),result.get('height'),result.get('identitySimilarity')
+    if not all(isinstance(v,int) and not isinstance(v,bool) and 256<=v<=1536 for v in (width,height)) \
+            or not isinstance(similarity,(int,float)) or isinstance(similarity,bool) or not math.isfinite(similarity) or not -1<=similarity<=1:
+        raise AlignmentError('INVALID_PORTRAIT_CONTRACT')
+    encoded=result.get('image_jpeg')
+    try:
+        data=base64.b64decode(encoded,validate=True)
+        if len(data)>PORTRAIT_MAX_BYTES or not data.startswith(b'\xff\xd8'):raise ValueError
+        from PIL import Image
+        import io
+        with Image.open(io.BytesIO(data)) as image:
+            if image.format!='JPEG' or image.size!=(width,height):raise ValueError
+    except Exception as error:
+        raise AlignmentError('INVALID_PORTRAIT_CONTRACT') from error
+    seed=diagnostics.get('seed')
+    return {'status':'READY','image_jpeg':encoded,'width':width,'height':height,'identitySimilarity':float(similarity),
+            'identityMetric':'ARCFACE_GLINTR100_COSINE',
+            'diagnostics':{key:diagnostics.get(key) for key in ('engine','style','device','gpuName','latencyMs') if isinstance(diagnostics.get(key),(str,int,float))}
+                          |({'seed':seed} if isinstance(seed,int) else {})|{'photoStored':False,'identityCertified':False}}
+
+
 class CatalogInput(BaseModel):
     model_config=ConfigDict(extra='forbid')
     garment_image:str=Field(max_length=8_000_000)
@@ -159,6 +196,18 @@ def create_app(store=None,annotator=None,token=None,pose_probe=None):
             b64_image(body.person_image,'RGB')
             from .google_cloud import predict_body_measurement
             return JSONResponse(body_measurement_response(predict_body_measurement(body.person_image)),
+                                headers={'Cache-Control':'no-store'})
+        finally:capacity.release()
+    @app.post('/v1/avatar/portrait',dependencies=[Depends(authenticate)])
+    def avatar_portrait(body:PortraitRequest):
+        # Foto do rosto com consentimento explícito (o backend Java confere): vai à GPU em memória e não é gravada aqui
+        # nem no Vertex. Volta só o retrato estilizado e a semelhança medida.
+        if os.getenv('VTON_RENDER_PROVIDER')!='vertex_fashn':raise HTTPException(503,'PORTRAIT_NOT_CONFIGURED')
+        if not capacity.acquire(blocking=False):raise HTTPException(429,'WORKER_BUSY')
+        try:
+            b64_image(body.person_image,'RGB')
+            from .google_cloud import predict_stylized_portrait
+            return JSONResponse(portrait_response(predict_stylized_portrait(body.person_image,body.seed)),
                                 headers={'Cache-Control':'no-store'})
         finally:capacity.release()
     @app.post('/try-on',dependencies=[Depends(authenticate)])

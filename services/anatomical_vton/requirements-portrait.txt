@@ -1,0 +1,7 @@
+# Retrato estilizado do Avatar (SDXL + InstantID) no mesmo contêiner da FASHN, junto com o SAM 3D Body. O diffusers fica
+# na 0.32.2: o pipeline do InstantID (commit fixado em portrait_assets.json) usa a API de ControlNet SDXL dessa linha.
+# O pacote insightface não entra (pede compilação): os ONNX do antelopev2 rodam direto no onnxruntime (portrait_face.py).
+# Lock: uv pip compile --python-version 3.11 services/anatomical_vton/requirements-portrait.txt -c services/anatomical_vton/requirements-sam3d.lock -o services/anatomical_vton/requirements-portrait.lock
+-r requirements-sam3d.txt
+diffusers==0.32.2
+accelerate>=1.2

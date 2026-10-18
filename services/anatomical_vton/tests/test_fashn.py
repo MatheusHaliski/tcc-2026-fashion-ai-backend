@@ -380,8 +380,8 @@ def test_image_only_build_checkpoints_and_never_deploys(tmp_path):
         if args[:3]==('artifacts','repositories','list'):
             return json.dumps([{'name':'projects/test/locations/southamerica-east1/repositories/fashionai-vton'}])
         return 'fashionai-test'
-    def fake_build(project,region,image,state,state_file,hf_secret=None):
-        assert state_file.name=='build.json' and hf_secret is None
+    def fake_build(project,region,image,state,state_file,hf_secret=None,engine=None):
+        assert state_file.name=='build.json' and hf_secret is None and engine=="fashn"
         assert json.loads(state_file.read_text())['image']==image
         state['buildId']='TEST_ONLY_BUILD'
         installer.save_json(state_file,state)

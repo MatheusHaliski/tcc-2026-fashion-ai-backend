@@ -6,17 +6,15 @@ memória durante a inferência: nada é gravado, e a resposta não leva imagem, 
 from contextlib import contextmanager
 import gc
 import json
-import os
 from pathlib import Path
 import sys
-import threading
 import time
 from typing import Literal
 import numpy as np
 from pydantic import BaseModel,ConfigDict
 from .body_measure import measure_body
 from .models import AlignmentError
-from .sam3d_download import DEFAULT_CODE_DIR,DEFAULT_WEIGHTS_DIR,verify_assets
+from .shared_runtime import SharedT4Runtime
 
 ENGINE='SAM_3D_BODY_DINOV3'
 # Pontos do DWPose (ordem OpenPose) que precisam estar nítidos para medir: nariz, pescoço, ombros, quadris, joelhos e
@@ -145,42 +143,15 @@ class Sam3dBodyRuntime:
         print(json.dumps({'event':'sam3d_body_unloaded','cudaBytes':self.torch.cuda.memory_allocated(0)}),flush=True)
 
 
-class FashnWithBodyRuntime:
-    """Uma T4 para as duas tarefas. A FASHN fica sempre carregada; o SAM 3D Body sobe no primeiro pedido de medida e
-    sai da GPU se a prova de roupa estourar a memória com ele carregado (a prova tem prioridade e é repetida uma vez)."""
-    tasks=('virtual_try_on','body_measurement')
+class FashnWithBodyRuntime(SharedT4Runtime):
+    """A FASHN com o SAM 3D Body sob demanda (shared_runtime.SharedT4Runtime só com a medida do corpo)."""
 
-    def __init__(self,fashn,body_factory):
-        self.fashn=fashn;self.body_factory=body_factory;self.body=None;self.lock=threading.Lock()
+    def __init__(self,fashn,body_factory):super().__init__(fashn,{'body_measurement':body_factory})
 
     @property
-    def ready(self):return bool(getattr(self.fashn,'ready',False))
-
-    def _body(self):
-        with self.lock:
-            if self.body is None:self.body=self.body_factory()
-            return self.body
-
-    def release_body(self):
-        with self.lock:body,self.body=self.body,None
-        if body is not None:body.unload()
-
-    def predict(self,instance):
-        if instance.get('task')=='body_measurement':return self._body().predict(instance)
-        try:return self.fashn.predict(instance)
-        except AlignmentError as error:
-            if str(error)!='GPU_MEMORY_EXHAUSTED_REDUCE_WORKLOAD' or self.body is None:raise
-        print(json.dumps({'event':'fashn_oom_released_sam3d_retrying'}),flush=True)
-        self.release_body()
-        return self.fashn.predict(instance)
+    def body(self):return self.loaded.get('body_measurement')
 
 
 def shared_t4_runtime():
-    from .fashn_download import DEFAULT_WEIGHTS_DIR as FASHN_WEIGHTS_DIR
-    from .fashn_runtime import NativeFashnRuntime
-    weights=os.getenv('VTON_SAM3D_WEIGHTS',DEFAULT_WEIGHTS_DIR);code=os.getenv('VTON_SAM3D_CODE',DEFAULT_CODE_DIR)
-    # Pesos ausentes ou alterados derrubam a subida, antes de ocupar a GPU; o modelo só carrega no primeiro pedido.
-    manifest=verify_assets(weights)
-    if not all((Path(code)/name).is_dir() for name in ('sam-3d-body','dinov3')):raise AlignmentError('SAM3D_CODE_MISSING')
-    fashn=NativeFashnRuntime(os.getenv('VTON_FASHN_WEIGHTS',FASHN_WEIGHTS_DIR))
-    return FashnWithBodyRuntime(fashn,lambda:Sam3dBodyRuntime(weights,code,fashn.person_evidence,manifest))
+    from .shared_runtime import shared_t4_runtime as build
+    return build('fashn+sam3d_body')
