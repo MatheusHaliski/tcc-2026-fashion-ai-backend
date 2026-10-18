@@ -85,7 +85,8 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
   const { prefs } = useTheme();
   const auraMode = piece.background?.auraHype as string | undefined;
   const auraEnabled = !!prefs.auraHype || !!auraMode && auraMode !== "OFF";
-  const depth = useFashionDepth(auraEnabled);
+  // dentro do card que vira, a inclinação 3D tira o ↻ de baixo do cursor (e a face de trás passa a cobrir a da frente)
+  const depth = useFashionDepth(auraEnabled && !flippable);
   const hype = useHypeSummary("PIECE", piece.id, !preview && (!selectable || auraEnabled), auraEnabled);
   const hypeState = hypeViewState(hype.summary, hype);
   // RF53: selos de marca/celebridade + Selos de Hype (do resumo já carregado, sem pedido extra), no máx. 2 de Hype
@@ -137,7 +138,7 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
       <div className="pc-frame">
         <div className="pc-content">
           {!selectable && <CardHeader owner={piece.owner} sub={visibility} linked={!preview} className="pc-header" />}
-          {auraEnabled&&<FashionMotionButton available={depth.sensorAvailable} on={depth.sensorOn} error={depth.sensorError} onToggle={()=>void depth.toggleSensor()}/>}
+          {auraEnabled&&!flippable&&<FashionMotionButton available={depth.sensorAvailable} on={depth.sensorOn} error={depth.sensorError} onToggle={()=>void depth.toggleSensor()}/>}
           {auraEnabled && <FashionCardHeader summary={hype.summary} state={hypeState}/>}
           {selectable ? (
             <button type="button" className="pc-select text-left" aria-pressed={selected} onClick={() => onSelect?.(piece)}>
