@@ -125,6 +125,14 @@ class UploadSafetyInterceptorTest {
     }
 
     @Test
+    void fotoDeCorpoInteiroParaMedirNaGpuPassaPelaModeracaoMesmoSobOPrefixoIsento() {
+        login();
+        ApiException ex = assertThrows(ApiException.class, () -> interceptor(fixed(ImageSafety.Decision.BLOCK))
+                .preHandle(upload("/api/me/avatar3d/body-scan"), new MockHttpServletResponse(), null));
+        assertEquals("IMAGEM_RECUSADA", ex.code());
+    }
+
+    @Test
     void arquivosDemaisNaRequisicaoSaoRecusadosAntesDeDecodificar() {
         MockMultipartHttpServletRequest r = upload("/api/auth/uploads");
         for (int i = 0; i < UploadSafetyInterceptor.MAX_FILE_PARTS; i++) {

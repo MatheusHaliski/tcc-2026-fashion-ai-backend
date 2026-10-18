@@ -5,6 +5,7 @@ import br.com.fashionai.application.common.Json;
 import br.com.fashionai.application.common.Msg;
 import br.com.fashionai.application.security.CurrentUser;
 import br.com.fashionai.application.service.Avatar3dService;
+import br.com.fashionai.application.service.AvatarBodyScanService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.CacheControl;
@@ -24,9 +25,11 @@ import java.util.concurrent.TimeUnit;
 @Tag(name = "RF40 — Meu Avatar 3D")
 public class Avatar3dController {
     private final Avatar3dService avatars;
+    private final AvatarBodyScanService bodyScan;
 
-    public Avatar3dController(Avatar3dService avatars) {
+    public Avatar3dController(Avatar3dService avatars, AvatarBodyScanService bodyScan) {
         this.avatars = avatars;
+        this.bodyScan = bodyScan;
     }
 
     @GetMapping("/api/me/avatar3d")
@@ -64,6 +67,19 @@ public class Avatar3dController {
     @Operation(summary = "RF40 — Excluir o avatar 3D e a textura do rosto")
     public void delete(CurrentUser user) {
         avatars.delete(user);
+    }
+
+    @PostMapping(value = "/api/me/avatar3d/body-scan", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "RF40 — Medir o corpo na GPU (SAM 3D Body): parte 'photo' (corpo inteiro) + consent=true; volta só as proporções, a foto não é guardada")
+    public ResponseEntity<Map<String, Object>> bodyScan(CurrentUser user, @RequestPart("photo") MultipartFile photo,
+                                                        @RequestParam(name = "consent", defaultValue = "false") boolean consent) {
+        byte[] bytes;
+        try {
+            bytes = photo == null ? null : photo.getBytes();
+        } catch (IOException e) {
+            throw ApiException.badRequest("IMAGEM_ILEGIVEL", Msg.t("imageOps.nao_conseguimos_ler_a_imagem"));
+        }
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(bodyScan.measure(user, bytes, consent));
     }
 
     @GetMapping("/api/me/avatar3d/versions")
