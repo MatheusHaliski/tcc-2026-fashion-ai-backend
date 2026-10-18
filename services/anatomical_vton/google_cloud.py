@@ -12,6 +12,30 @@ import httpx
 from .models import AlignmentError
 
 
+# Códigos curtos que o servidor da GPU devolve no "detail" (vertex_runtime/server.py, fashn_runtime.py): o motivo de
+# recusar a foto ou a peça. Só estes voltam ao app; qualquer outro corpo é descartado (pode ecoar imagens em base64).
+SERVER_CODES=frozenset({
+    'INVALID_PREDICTION_INPUT','TASK_NOT_SUPPORTED_BY_MODEL','INVALID_VTON_IMAGE','EXACTLY_ONE_PERSON_WITH_POSE_REQUIRED',
+    'INSUFFICIENT_SHARED_BODY_LANDMARKS','VISIBLE_LANDMARK_OUTSIDE_IMAGE','NONFINITE_DWPOSE','INVALID_PERSON_DETECTION',
+    'GENERATED_POSE_DRIFT_REJECTED','DEGENERATE_GENERATED_IMAGE','ONE_GENERATED_IMAGE_REQUIRED','INVALID_GARMENT_POSE',
+    'MULTIPLE_GARMENT_MODELS_REJECTED','FASHN_CATEGORY_NOT_SUPPORTED','GPU_MEMORY_EXHAUSTED_REDUCE_WORKLOAD',
+    'GPU_BUSY_RETRY_LATER','GPU_PREDICTION_FAILED','MODEL_NOT_READY',
+})
+
+
+def server_code(response, limit=2048):
+    """O código da allowlist no corpo de erro da GPU ({"detail": "CODIGO"}), lendo no máximo `limit` bytes; senão None."""
+    data=bytearray()
+    try:
+        for chunk in response.iter_bytes():
+            data.extend(chunk)
+            if len(data)>limit:return None
+        detail=json.loads(data).get('detail')
+    except Exception:
+        return None
+    return detail if isinstance(detail,str) and detail in SERVER_CODES else None
+
+
 class VertexPredictionClient:
     def __init__(self, project, location, endpoint_id, *, credentials=None, transport=None, dedicated_host=None):
         if not re.fullmatch(r'[a-z][a-z0-9-]{4,61}[a-z0-9]|[0-9]{6,20}', project or ''):
@@ -55,8 +79,9 @@ class VertexPredictionClient:
                               transport=self.transport) as client:
                 with client.stream('POST', self.url, headers={**headers,'Content-Type':'application/json','X-Vertex-AI-Endpoint-Id':self.endpoint_id}, content=payload) as response:
                     if response.status_code != 200:
-                        # Model errors can contain private images/prompts: do not log the body.
-                        raise AlignmentError(f'VERTEX_PREDICTION_HTTP_{response.status_code}')
+                        # Model errors can contain private images/prompts: never log or echo the body. Only a short
+                        # code from the GPU server's own allowlist (why the photo was refused) goes back to the app.
+                        raise AlignmentError(server_code(response) or f'VERTEX_PREDICTION_HTTP_{response.status_code}')
                     data = bytearray()
                     for chunk in response.iter_bytes():
                         data.extend(chunk)

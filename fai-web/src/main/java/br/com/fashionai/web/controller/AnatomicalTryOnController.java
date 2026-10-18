@@ -40,6 +40,12 @@ public class AnatomicalTryOnController {
         return service.uploadPerson(user, file.getBytes());
     }
 
+    @PostMapping("/look-renders")
+    @Operation(summary = "Look inteiro na GPU (Meu Quarto e Provador): peça inteira, parte de baixo e de cima em sequência")
+    public ResponseEntity<Map<String, Object>> look(CurrentUser user, @RequestBody AnatomicalTryOnService.LookRequest request) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(service.renderLook(user, request));
+    }
+
     @PostMapping("/body-pose")
     @Operation(summary = "Diagnóstico de pose corporal; não certifica encaixe anatômico")
     public ResponseEntity<Map<String,Object>> pose(CurrentUser user,
