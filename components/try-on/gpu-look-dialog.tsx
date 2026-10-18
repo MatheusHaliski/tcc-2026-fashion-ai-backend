@@ -11,8 +11,9 @@ export type GpuCategory = (typeof GPU_CATEGORIES)[number];
 /** Limite do servidor da GPU: lados maiores voltam INVALID_VTON_IMAGE (o backend também reduz; aqui só poupa o envio). */
 const MAX_SIDE = 1536;
 
-/** Peça do próprio guarda-roupa que a prova na GPU pode vestir (a rota exige o id da peça da pessoa). */
-export interface GpuPiece { pieceId: string; name: string; category: string }
+/** Peça que a prova na GPU pode vestir: do próprio guarda-roupa (id da peça) ou de uma loja do catálogo (id do produto). */
+export interface GpuPiece { id: string; source: "wardrobe" | "catalog"; name: string; category: string }
+const keyOf = (p: GpuPiece) => `${p.source}:${p.id}`;
 
 export const isGpuCategory = (category?: string | null): category is GpuCategory => (GPU_CATEGORIES as readonly string[]).includes(category ?? "");
 
@@ -44,7 +45,7 @@ export function refusalKey(reason?: unknown): string | null {
 interface Photo { url: string; preview: string }
 interface Render {
   status?: string; url?: string; diagnostics?: { gpuName?: string; latencyMs?: number };
-  steps?: { pieceId: string; category: string; url: string }[]; skipped?: string[];
+  steps?: { pieceId: string; source?: string; category: string; url: string }[]; skipped?: string[];
 }
 
 /** Reduz a foto no navegador para no máximo 1536 px; sem canvas (ou se falhar), envia o arquivo original. */
@@ -66,9 +67,9 @@ export async function fitted(file: File): Promise<Blob> {
 
 /**
  * Prova com IA na GPU (FASHN VTON na Vertex, via worker): o look que está sendo provado — "Look inteiro" (uma peça por
- * tipo, vestidas em sequência: inteira → baixo → cima, POST /api/try-on/look-renders) ou "Uma peça"
- * (POST /api/try-on/anatomical-renders) — vestido na foto da própria pessoa. A foto vai para /api/try-on/person-photos e
- * só é processada com o consentimento. O resultado é uma imagem 2D gerada: não certifica caimento nem tamanho. Calçados e
+ * tipo, vestidas em sequência: inteira → baixo → cima) ou "Uma peça" — vestido na foto da própria pessoa, sempre por
+ * POST /api/try-on/look-renders (peças do guarda-roupa em pieceIds, das lojas em productIds). A foto vai para
+ * /api/try-on/person-photos e só é processada com o consentimento. O resultado é uma imagem 2D gerada: não certifica caimento nem tamanho. Calçados e
  * acessórios o modelo não veste (ficam de fora, avisado).
  */
 export function GpuLookDialog({ open, onClose, pieces, onPickFromWardrobe, title, emptyText }: {
@@ -78,7 +79,7 @@ export function GpuLookDialog({ open, onClose, pieces, onPickFromWardrobe, title
   const candidates = useMemo(() => pieces.filter((p) => isGpuCategory(p.category)), [pieces]);
   const look = useMemo(() => gpuLook(candidates), [candidates]);
   const [mode, setMode] = useState<"look" | "piece">("look");
-  const [pieceId, setPieceId] = useState("");
+  const [pieceKey, setPieceKey] = useState("");
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState<"upload" | "render" | null>(null);
@@ -89,7 +90,7 @@ export function GpuLookDialog({ open, onClose, pieces, onPickFromWardrobe, title
   // com uma peça só não há o que escolher entre look e peça: vai direto para a peça
   const single = look.length <= 1;
   const effectiveMode = single ? "piece" : mode;
-  const piece = candidates.find((c) => c.pieceId === pieceId) ?? candidates[0] ?? null;
+  const piece = candidates.find((c) => keyOf(c) === pieceKey) ?? candidates[0] ?? null;
   const ready = !!photo && consent && (effectiveMode === "look" ? look.length > 0 : !!piece);
   useEffect(() => () => { abort.current?.abort(); if (photo) URL.revokeObjectURL(photo.preview); }, [photo]);
 
@@ -100,6 +101,7 @@ export function GpuLookDialog({ open, onClose, pieces, onPickFromWardrobe, title
     if (e.code === "VTON_NOT_CONFIGURED") return t("tryOn.ia_erro_gpu_desligada");
     if (e.code === "VTON_IMAGE_SMALL") return t("tryOn.ia_erro_foto_pequena");
     if (e.code === "VTON_LOOK_WITHOUT_GARMENT") return t("tryOn.ia_motivo.categoria");
+    if (e.code === "VTON_CATALOG_IMAGE_UNAVAILABLE") return t("tryOn.ia_erro_peca_loja");
     if (e.status === 404) return t("tryOn.ia_erro_indisponivel");
     if (e.status === 422) return t("tryOn.ia_erro_recusada");
     return e.message || t("tryOn.ia_erro_indisponivel");
@@ -125,11 +127,12 @@ export function GpuLookDialog({ open, onClose, pieces, onPickFromWardrobe, title
     const controller = new AbortController(); abort.current = controller;
     setBusy("render"); setError(null); setResult(null);
     try {
-      const r = effectiveMode === "look"
-        ? await api.post<Render>("/api/try-on/look-renders",
-          { pieceIds: look.map((p) => p.pieceId), personMediaUrl: photo.url, processingConsent: true }, { signal: controller.signal })
-        : await api.post<Render>("/api/try-on/anatomical-renders",
-          { pieceId: piece!.pieceId, personMediaUrl: photo.url, processingConsent: true, mirror: false }, { signal: controller.signal });
+      const chosen = effectiveMode === "look" ? look : [piece!];
+      const r = await api.post<Render>("/api/try-on/look-renders", {
+        pieceIds: chosen.filter((p) => p.source === "wardrobe").map((p) => p.id),
+        productIds: chosen.filter((p) => p.source === "catalog").map((p) => p.id),
+        personMediaUrl: photo.url, processingConsent: true,
+      }, { signal: controller.signal });
       if (r.status === "READY" && r.url) setResult(r);
       else setError(t("tryOn.ia_erro_recusada"));
     } catch (e) {
@@ -181,8 +184,8 @@ export function GpuLookDialog({ open, onClose, pieces, onPickFromWardrobe, title
                 : (
                   <label className="grid gap-1">
                     <span className="label">{t("tryOn.ia_peca")}</span>
-                    <Select aria-label={t("tryOn.ia_peca")} value={piece?.pieceId ?? ""} onChange={(e) => { setPieceId(e.target.value); setResult(null); }} disabled={busy !== null}>
-                      {candidates.map((c) => <option key={c.pieceId} value={c.pieceId}>{c.name}</option>)}
+                    <Select aria-label={t("tryOn.ia_peca")} value={piece ? keyOf(piece) : ""} onChange={(e) => { setPieceKey(e.target.value); setResult(null); }} disabled={busy !== null}>
+                      {candidates.map((c) => <option key={keyOf(c)} value={keyOf(c)}>{c.name}</option>)}
                     </Select>
                   </label>
                 )}
