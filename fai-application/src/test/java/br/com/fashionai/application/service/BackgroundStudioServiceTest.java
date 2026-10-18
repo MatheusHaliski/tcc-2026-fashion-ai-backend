@@ -205,6 +205,14 @@ class BackgroundStudioServiceTest {
     }
 
     @Test
+    void enquadramentoTotalFrameFicaNaArteDaPecaESoAceitaTecidoOuPecaInteira() {
+        WardrobeItem item = world.piecesOf(world.me).get(0);
+        Map<String, Object> saved = studio.savePiece(ana, item.getId(), cfg("photoFraming", "WHOLE"));
+        assertThat(map(saved.get("background"))).containsEntry("photoFraming", "WHOLE");
+        assertThatThrownBy(() -> studio.savePiece(ana, item.getId(), cfg("photoFraming", "ZOOM"))).isInstanceOf(ApiException.class);
+    }
+
+    @Test
     void composicaoPublicadaPersisteERejeitaUrlExterna() {
         WardrobeItem item = world.piecesOf(world.me).get(0);
         Map<String, Object> preset = cfg("id", "satin-ivory", "name", "Cetim", "family", "COMMON",

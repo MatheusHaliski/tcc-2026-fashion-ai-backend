@@ -26,6 +26,8 @@ import { PieceCreationSteps, PIECE_CREATION_STEPS, type PieceCreationStep } from
 import { CATEGORY_CARDS } from "@/lib/capture/capture-guides";
 import { catalogApi, type CatalogProduct, type CatalogVariant } from "@/lib/api/catalog";
 import { readPiecePrefill, validPieceCategory, validPiecePrefill, type PiecePrefillParams } from "@/lib/pieces/prefill";
+import { PhotoFramingToggle } from "@/components/photo-framing-toggle";
+import { resolveFraming, usePhotoFraming } from "@/lib/photo-framing";
 
 /** Etapas do criador de peça (RF4/RF47): peça (busca catalogada + dados) → mais detalhes → arte de fundo → revisar e salvar. */
 type Step = PieceCreationStep;
@@ -87,6 +89,9 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
   }, [tax]); // eslint-disable-line react-hooks/exhaustive-deps
   // arte do card (RF11 v2 + campos do Background Studio): um só config, o mesmo que o detalhe grava depois
   const [background, setBackground] = useState<Record<string, unknown>>({ skin: "atelier" });
+  // Total frame: o enquadramento escolhido aqui vai com a arte da peça (background.photoFraming) e vale em todo card dela
+  const [defaultFraming] = usePhotoFraming();
+  const photoFraming = resolveFraming(background.photoFraming, defaultFraming);
   const [done, setDone] = useState<string | null>(null);
   // Salvar: UMA tentativa por ação. A trava é síncrona (ref), então um segundo clique antes de a tela re-renderizar não
   // envia outro pedido.
@@ -258,7 +263,7 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
                 <div className="mb-2 flex flex-wrap items-center gap-2"><h2 id="piece-catalog-label" className="type-h3">{t("catalog.buscar_no_catalogo")}</h2><Badge tone="thread">{t("catalog.recomendado")}</Badge><span className="type-caption text-muted">{t("catalog.lead_busca")}</span></div>
                 {pick ? (
                   <div className="catalog-pick" role="status">
-                    <span className="catalog-pick-art" aria-hidden>{pick.product.catalogImage ? <CatalogPhoto image={pick.product.catalogImage} fallbackUrl={officialImg} alt="" /> : <img src={officialImg ?? asset} alt="" />}</span>
+                    <span className="catalog-pick-art" aria-hidden>{pick.product.catalogImage ? <CatalogPhoto framing={photoFraming} image={pick.product.catalogImage} fallbackUrl={officialImg} alt="" /> : <img src={officialImg ?? asset} alt="" />}</span>
                     <div className="min-w-0">
                       <p className="type-caption text-muted">{t("catalog.peca_do_catalogo")}</p>
                       <p className="type-body font-medium truncate">{pick.product.brand?.name} · {pick.product.productName}{pick.variant?.colorName ? ` — ${pick.variant.colorName}` : ""}</p>
@@ -319,7 +324,9 @@ function PieceCreator({ initial, prefill = {}, initialMode = "catalog" }: { init
             </Card>
           )}
         </div>
-        {step !== "art" && <aside aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start"><p className="label">{step === "review" && shareToFeed ? t("interactions.post_preview") : t("scheme.card")}</p><PieceCard piece={previewPiece} href="#"
+        {step !== "art" && <aside aria-label={t("common.pre_visualizacao")} className="card-preview lg:sticky lg:top-16 lg:self-start"><p className="label">{step === "review" && shareToFeed ? t("interactions.post_preview") : t("scheme.card")}</p>
+          <PhotoFramingToggle className="mb-3" value={photoFraming} onChange={(next) => setBackground((current) => ({ ...current, photoFraming: next }))} />
+          <PieceCard piece={previewPiece} href="#"
           extra={step === "review" && shareToFeed && user ? <span className="caption">{t("feed.shared_by", { username: user.username })}</span> : undefined} /></aside>}
       </div>
       <p className="mt-4 type-caption text-faint"><Link className="underline" href="/closet">← {t("closet.title")}</Link></p>

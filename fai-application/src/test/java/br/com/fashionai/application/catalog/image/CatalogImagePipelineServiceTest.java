@@ -132,6 +132,30 @@ class CatalogImagePipelineServiceTest {
     }
 
     @Test
+    void totalFrameEntregaACaixaDaPecaSoParaFotoDeProdutoSemPessoa() {
+        CatalogImage packshot = new CatalogImage();
+        packshot.setImageUrl("https://img.brand.com/shorts.jpg");
+        packshot.setWidth(864); packshot.setHeight(1152);
+        packshot.setCropJson(Json.write(Map.of("product", Map.of("x", 0.12, "y", 0.19, "w", 0.75, "h", 0.6), "background", "#f4f5f7")));
+        packshot.setMetricsJson(Json.write(Map.of("debug", Map.of("productFrame", Map.of("model", false), "sourceHumanEvidence", 0.0, "truncated", List.of()))));
+        Map<String, Object> whole = CatalogImagePipelineService.wholeFrame(packshot);
+        assertThat(whole).containsEntry("url", "https://img.brand.com/shorts.jpg").containsEntry("background", "#f4f5f7")
+                .containsEntry("version", CatalogImagePipelineService.WHOLE_FRAME_VERSION).containsEntry("width", 864);
+        assertThat(whole.get("box")).isEqualTo(Map.of("x", 0.12, "y", 0.19, "w", 0.75, "h", 0.6));
+
+        // foto com modelo, com pele de pessoa ou sem fundo de estúdio: o card continua no recorte de sempre
+        packshot.setMetricsJson(Json.write(Map.of("debug", Map.of("productFrame", Map.of("model", true)))));
+        assertThat(CatalogImagePipelineService.wholeFrame(packshot)).isNull();
+        packshot.setMetricsJson(Json.write(Map.of("debug", Map.of("sourceHumanEvidence", 0.02))));
+        assertThat(CatalogImagePipelineService.wholeFrame(packshot)).isNull();
+        packshot.setMetricsJson(null);
+        packshot.setCropJson(Json.write(Map.of("product", Map.of("x", 0.12, "y", 0.19, "w", 0.75, "h", 0.6))));
+        assertThat(CatalogImagePipelineService.wholeFrame(packshot)).isNull();
+        packshot.setCropJson(Json.write(Map.of("product", Map.of("x", 0.5, "y", 0.5, "w", 0.9, "h", 0.9), "background", "#ffffff")));
+        assertThat(CatalogImagePipelineService.wholeFrame(packshot)).isNull();
+    }
+
+    @Test
     void previewAutomaticoReutilizaRecorteSemNovoDownload() {
         product.setCategory("upper_piece"); product.setSubcategory("t_shirt");
         CatalogImage front = image("https://img.brand.com/preview.jpg", CatalogImageType.FRONT,

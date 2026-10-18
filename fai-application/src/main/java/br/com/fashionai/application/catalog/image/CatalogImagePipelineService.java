@@ -612,6 +612,45 @@ public class CatalogImagePipelineService {
         m.put("imageId", canonical.getId());
         m.put("qualityScore", canonical.getQualityScore());
         m.put("pipelineVersion", canonical.getPipelineVersion());
+        Map<String, Object> whole = wholeFrame(canonical);
+        if (whole != null) m.put("whole", whole);
         return m;
+    }
+
+    /** Versão do Total frame: a interface encaixa a caixa da peça num quadro 3:4 com margem uniforme. */
+    public static final String WHOLE_FRAME_VERSION = "WHOLE_FRAME_V1";
+
+    /**
+     * Total frame (nível A, nada é copiado): a foto original da marca e a caixa da peça nela ({@code crop_json.product},
+     * normalizada), para a interface mostrar a peça INTEIRA no quadro em vez do recorte de tecido. Só vale para foto de
+     * produto em fundo de estúdio: com modelo/pessoa (rosto, braços) ou sem fundo uniforme devolve null e o card continua
+     * no recorte de sempre — o Total frame nunca enquadra uma pessoa.
+     */
+    static Map<String, Object> wholeFrame(CatalogImage canonical) {
+        if (canonical == null || canonical.getCropJson() == null || canonical.getImageUrl() == null) return null;
+        Map<String, Object> crop = Json.map(canonical.getCropJson());
+        Map<String, Object> metrics = canonical.getMetricsJson() == null ? Map.of() : Json.map(canonical.getMetricsJson());
+        Map<?, ?> debug = metrics.get("debug") instanceof Map<?, ?> d ? d : Map.of();
+        Map<?, ?> productFrame = debug.get("productFrame") instanceof Map<?, ?> p ? p : Map.of();
+        if (Boolean.TRUE.equals(productFrame.get("model"))) return null;
+        if (debug.get("sourceHumanEvidence") instanceof Number human && human.doubleValue() >= ProductRuleFrame.MIN_PERSON_SKIN) return null;
+        if (!(crop.get("background") instanceof String background) || background.isBlank()) return null;
+        if (!(crop.get("product") instanceof Map<?, ?> product)) return null;
+        double x = number(product.get("x")), y = number(product.get("y")), w = number(product.get("w")), h = number(product.get("h"));
+        if (!(w > 0.02 && h > 0.02 && w <= 1.001 && h <= 1.001 && x >= -0.001 && y >= -0.001 && x + w <= 1.001 && y + h <= 1.001)) return null;
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("url", canonical.getImageUrl());
+        m.put("box", Map.of("x", x, "y", y, "w", w, "h", h));
+        m.put("background", background);
+        m.put("width", canonical.getWidth());
+        m.put("height", canonical.getHeight());
+        m.put("truncated", debug.get("truncated") instanceof List<?> sides ? sides : List.of());
+        m.put("alpha", false);
+        m.put("version", WHOLE_FRAME_VERSION);
+        return m;
+    }
+
+    private static double number(Object value) {
+        return value instanceof Number n ? n.doubleValue() : Double.NaN;
     }
 }
