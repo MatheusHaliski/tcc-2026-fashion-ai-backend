@@ -152,7 +152,6 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
                 ? <div className="pc-media" style={mediaStyle}>{media}</div>
                 // a foto repete o link do nome: fora da ordem de tabulação e do leitor de tela (um destino, um link)
                 : <Link href={link} onClick={openModal} className="pc-media" style={mediaStyle} aria-hidden tabIndex={-1}>{media}</Link>}
-              {!auraEnabled && <CardActions type="PIECE" id={piece.id} counters={piece.counters} viewer={piece.viewer} title={piece.name} compact preview={preview} />}
               <div className="pc-id">
                 <span className="seal-row">
                   {preview ? <span className="pc-name-link">{name}</span> : <Link href={link} onClick={openModal} className="pc-name-link">{name}</Link>}
@@ -168,8 +167,9 @@ export function PieceCard({ piece, href, selectable, selected, onSelect, seals: 
               </div>
             </>
           )}
-          {auraEnabled && !selectable && <CardActions type="PIECE" id={piece.id} counters={piece.counters} viewer={piece.viewer} title={piece.name} compact preview={preview} />}
           {extra && <div className="c-extra">{extra}</div>}
+          {/* interações sempre por último: a borda de baixo dos botões é a borda de baixo do card */}
+          {!selectable && <CardActions type="PIECE" id={piece.id} counters={piece.counters} viewer={piece.viewer} title={piece.name} compact preview={preview} />}
         </div>
       </div>
     </article>

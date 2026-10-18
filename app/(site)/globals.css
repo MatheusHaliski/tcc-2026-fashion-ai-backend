@@ -1775,6 +1775,7 @@ a:hover .fai-coupon, button:hover .fai-coupon { transform: translateY(-2px); box
 .pc.em-top { --pc-top-k: 1.9; --pc-bottom-k: 1; }
 .pc.em-bottom { --pc-top-k: 1; --pc-bottom-k: 1.9; }
 .pc > .pc-frame { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; min-width: 0; padding: var(--pc-top) var(--pc-x) var(--pc-bottom); }
+.pc .pc-content > .c-post:last-child { margin-top: auto; }
 .pc .pc-content { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--container-bg, var(--card-bg, var(--surface))); color: var(--card-ink, var(--ink));
   border-radius: var(--pc-r-in); overflow: clip; box-shadow: var(--pc-sh-relief, 0 0 #0000), var(--pc-sh-rim, 0 0 #0000), var(--pc-sh-base); }
 .pc .pc-media { background: var(--pc-media-bg); }
