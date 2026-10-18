@@ -87,6 +87,23 @@ describe("Foto realista na GPU", () => {
     expect((overlay as HTMLImageElement).style.width).toBe("15.5%");
     expect(screen.queryByText(/Ficam fora da foto/)).toBeNull();
     expect(screen.getByText(/Prévia 2D aproximada.*Óculos aviador/)).toBeTruthy();
+    expect((overlay as HTMLImageElement).style.mixBlendMode).toBe("");
+  });
+
+  it.each([[0, ""], [255, "multiply"]])("foto do guarda-roupa: cantos com alfa %i → mistura '%s' (recorte vai como está)", async (alpha, blend) => {
+    vi.stubGlobal("Image", LoadedImage);
+    detect.mockResolvedValue({ face: frontFace(), pose: null, width: 1000, height: 1000 });
+    const pixels = new Uint8ClampedArray(16 * 16 * 4).fill(alpha);
+    const context = vi.spyOn(HTMLCanvasElement.prototype, "getContext")
+      .mockReturnValue({ drawImage: vi.fn(), getImageData: () => ({ data: pixels }) } as unknown as CanvasRenderingContext2D);
+    const glasses: GpuPiece = { id: "w7", source: "wardrobe", name: "Óculos do armário", category: "accessory_piece", subcategory: "eyeglasses", image: "/media/w7.png", cutout: false };
+    loggedAs(undefined, { "POST /api/try-on/person-photos": { url: "/media/p.jpg" } });
+    renderApp(<GpuLookDialog open onClose={vi.fn()} pieces={[shirt, glasses]} />);
+    await photoAndConsent();
+    fireEvent.click(screen.getByRole("switch", { name: "Compor acessórios na foto (prévia 2D)" }));
+    const overlay = await screen.findByAltText("Óculos do armário sobre a foto");
+    expect((overlay as HTMLImageElement).style.mixBlendMode).toBe(blend);
+    context.mockRestore();
   });
 
 });

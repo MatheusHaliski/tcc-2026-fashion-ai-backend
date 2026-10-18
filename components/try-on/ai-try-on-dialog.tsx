@@ -11,8 +11,9 @@ export function aiCandidates(items: FittingItem[]): FittingItem[] {
   return items.filter((i) => gpuReady(i) && isGpuCategory(i.category));
 }
 
-/** Peça do provador → peça da prova. Recorte (fundo removido) só na foto processada do catálogo: no guarda-roupa o
- * processedUrl é a própria foto original (mesma origem), então o acessório vai pela multiplicação do fundo branco. */
+/** Peça do provador → peça da prova. Recorte certo (fundo removido) só na foto processada do catálogo: no guarda-roupa o
+ * processedUrl é a própria foto da peça (mesma origem), que pode ser o PNG recortado ou o JPEG de fundo branco; aí a
+ * prévia 2D olha a imagem (cantos transparentes) antes de decidir. */
 export function toGpuPiece(i: FittingItem): GpuPiece {
   return { id: i.source === "catalog" ? i.productId! : i.pieceId!, source: i.source, name: i.name, category: i.category,
     subcategory: i.subcategory, image: i.processedUrl ?? i.imageUrl, cutout: i.source === "catalog" && !!i.processedUrl };
