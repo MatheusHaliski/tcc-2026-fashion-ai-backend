@@ -168,7 +168,8 @@ const WALK_KEYS: Record<string, [number, number]> = {
 /**
  * Andar pela cabine: setas/WASD (com a cena em foco), analógico esquerdo ou direcional do controle, ou os botões "Ir ao
  * espelho"/"Voltar ao centro". A câmera acompanha o avatar (o alvo da órbita anda junto) e, ao chegar na frente do
- * espelho, vai para trás do ombro dele: o avatar se vê no vidro. No controle: analógico direito e L1/R1 giram a câmera,
+ * espelho, passa para a primeira pessoa (na altura dos olhos, olhando o vidro): a pessoa vê a roupa vestida no reflexo,
+ * como no espelho do Meu Quarto. Andar de novo devolve a câmera para trás do avatar. No controle: analógico direito e L1/R1 giram a câmera,
  * × vai ao espelho (ou volta ao centro se já estiver nele) e ○ volta ao centro.
  */
 function Walker({ actor, parts, controls, height, reduced, onPlace, onWalk }: {
@@ -181,7 +182,8 @@ function Walker({ actor, parts, controls, height, reduced, onPlace, onWalk }: {
   const goal = useRef<Floor | null>(null), place = useRef<FittingPlace>("center"), framed = useRef(false);
   const listeners = useRef(new Set<(p: FittingPlace) => void>());
   const sph = useMemo(() => new THREE.Spherical(), []);
-  const go = (to: "mirror" | "center") => { goal.current = to === "mirror" ? mirrorSpot() : { x: 0, z: 0 }; framed.current = false; };
+  // a câmera em primeira pessoa volta para trás do avatar sozinha quando ele começa a andar (ver useFrame)
+  const go = (to: "mirror" | "center") => { goal.current = to === "mirror" ? mirrorSpot() : { x: 0, z: 0 }; };
   useEffect(() => {
     const canvas = gl.domElement; canvas.tabIndex = 0;
     const down = (e: KeyboardEvent) => { if (WALK_KEYS[e.code]) { e.preventDefault(); keys.current.add(e.code); goal.current = null; } };
@@ -219,23 +221,31 @@ function Walker({ actor, parts, controls, height, reduced, onPlace, onWalk }: {
         parts.human.bone(`${side}Arm`).rotateX(-swing * .6);
       }
     }
+    const n = mirrorNormal(), k = reduced ? 1 : Math.min(1, dt * 6);
+    // no espelho e parado: primeira pessoa — olhos do avatar, um palmo à frente do rosto, olhando o centro do vidro
+    if (mirror && !moving) {
+      if (!framed.current) { framed.current = true; c.enabled = false; }
+      const eye = new THREE.Vector3(at.current.x - n.x * .16, height * .93, at.current.z - n.z * .16);
+      camera.position.lerp(eye, reduced ? 1 : Math.min(1, dt * 4));
+      camera.lookAt(FITTING_MIRROR.x, height * .55, FITTING_MIRROR.z);
+      const now = placeOf(at.current);
+      if (now !== place.current) { place.current = now; onPlace(now); listeners.current.forEach((l) => l(now)); }
+      return;
+    }
+    if (framed.current) {
+      // saiu do espelho: a câmera volta para trás do avatar, de frente para onde ele está
+      framed.current = false; c.enabled = true;
+      c.target.set(at.current.x, height * .6, at.current.z);
+      camera.position.set(at.current.x + n.x * 2.4, height * .8, at.current.z + n.z * 2.4);
+    }
     // a órbita segue o avatar: alvo e câmera andam juntos (o ângulo escolhido pela pessoa fica)
-    const k = reduced ? 1 : Math.min(1, dt * 6);
     const delta = new THREE.Vector3(at.current.x - c.target.x, height * .6 - c.target.y, at.current.z - c.target.z).multiplyScalar(k);
     c.target.add(delta); camera.position.add(delta);
-    // no espelho: uma vez, a câmera vai para trás do ombro (o vidro mostra o avatar de frente com a roupa)
-    if (mirror && !moving && !framed.current) {
-      const n = mirrorNormal(), side = { x: n.z, z: -n.x };
-      const want = new THREE.Vector3(at.current.x + n.x * 1.5 + side.x * .45, height * .78, at.current.z + n.z * 1.5 + side.z * .45);
-      camera.position.lerp(want, reduced ? 1 : Math.min(1, dt * 3));
-      if (camera.position.distanceTo(want) < .03) framed.current = true;
-    }
-    if (!mirror) framed.current = false;
     // analógico direito / L1-R1: gira a câmera em volta do avatar (e sobe/desce um pouco)
     if (pad.current.look.x || pad.current.look.y) {
       sph.setFromVector3(camera.position.clone().sub(c.target));
       sph.theta -= pad.current.look.x * dt * 1.6; sph.phi = THREE.MathUtils.clamp(sph.phi + pad.current.look.y * dt * .9, .35, Math.PI * .52);
-      camera.position.setFromSpherical(sph).add(c.target); framed.current = true;
+      camera.position.setFromSpherical(sph).add(c.target);
     }
     c.update();
     const now = placeOf(at.current);

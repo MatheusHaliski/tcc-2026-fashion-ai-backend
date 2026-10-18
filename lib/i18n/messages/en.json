@@ -6912,6 +6912,9 @@
   "tryOn.m3d.pausado": "3D paused",
   "tryOn.m3d.pausado_motivo": "This item's 3D did not start: {reason}",
   "tryOn.m3d.tentar_de_novo": "Try generating the 3D again",
+  "tryOn.m3d.desligado": "3D is turned off right now",
+  "tryOn.m3d.guarde_para_gerar": "3D starts when you keep the piece",
+  "tryOn.nao_deu_para_guardar": "Couldn't keep {name}: {reason}",
   "tryOn.levar_ao_espelho": "Take to the My Room mirror",
   "tryOn.detalhes_previa": "Preview details",
   "tryOn.detalhes_previa_titulo": "Preview of {name}",
@@ -7873,5 +7876,8 @@
   "pieceCard.tabs": "{name} info and Hype",
   "fashionHype.sample": "Sample values",
   "fashionHype.sampleHint": "Preview numbers are examples that show the layout and colors; the piece card shows only calculated attributes.",
-  "levelProgress.abrirMaximo": "Level {level}, maximum level reached. Open progress"
+  "levelProgress.abrirMaximo": "Level {level}, maximum level reached. Open progress",
+  "tryOn.no_espelho": "At the mirror",
+  "tryOn.espelho_vazio": "Pick pieces from stores or your wardrobe to try on.",
+  "tryOn.espelho_provar_ia": "See a realistic photo (AI)"
 }

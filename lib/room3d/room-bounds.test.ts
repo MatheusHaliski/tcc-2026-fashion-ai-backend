@@ -87,8 +87,8 @@ describe("quarto de quatro paredes (room-bounds)", () => {
       const yaw = viewYaw(view), look = cam.target.clone().sub(cam.position).setY(0).normalize();
       expect(look.dot(new THREE.Vector3(-Math.sin(yaw), 0, -Math.cos(yaw)))).toBeGreaterThan(0.5);
     }
-    // a prova continua de frente para o espelho e dentro do quarto
-    const tryon = cameraFor("tryon", actor, mirror, 1.2, 2, ROOM);
+    // chegando ao espelho: de frente para ele e dentro do quarto (na prova, a câmera vai para a primeira pessoa)
+    const tryon = cameraFor("approach", actor, mirror, 1.2, 2, ROOM);
     expect(tryon.position.z).toBeGreaterThan(mirror.z + 2); expect(tryon.position.z).toBeLessThanOrEqual(ROOM.maxZ - 0.3);
     expect(inputYaw(tryon.position, tryon.target)).toBeCloseTo(0);
   });

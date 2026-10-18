@@ -6912,6 +6912,9 @@
   "tryOn.m3d.pausado": "3D pausado",
   "tryOn.m3d.pausado_motivo": "O 3D desta peça não começou: {reason}",
   "tryOn.m3d.tentar_de_novo": "Tentar gerar o 3D de novo",
+  "tryOn.m3d.desligado": "o 3D está desligado no momento",
+  "tryOn.m3d.guarde_para_gerar": "3D começa ao guardar a peça",
+  "tryOn.nao_deu_para_guardar": "Não deu para guardar {name}: {reason}",
   "tryOn.levar_ao_espelho": "Levar ao espelho do Meu Quarto",
   "tryOn.detalhes_previa": "Detalhes da prévia",
   "tryOn.detalhes_previa_titulo": "Prévia de {name}",
@@ -7873,5 +7876,8 @@
   "pieceCard.tabs": "Info e Hype de {name}",
   "fashionHype.sample": "Valores de exemplo",
   "fashionHype.sampleHint": "Os números das prévias são exemplos para mostrar a forma e as cores; a carta da peça mostra só os atributos calculados.",
-  "levelProgress.abrirMaximo": "Nível {level}, nível máximo alcançado. Abrir progresso"
+  "levelProgress.abrirMaximo": "Nível {level}, nível máximo alcançado. Abrir progresso",
+  "tryOn.no_espelho": "No espelho",
+  "tryOn.espelho_vazio": "Escolha peças nas lojas ou no guarda-roupa para vestir.",
+  "tryOn.espelho_provar_ia": "Ver com foto realista (IA)"
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
@@ -12,7 +12,7 @@ import { validateBody } from "@/lib/avatar3d/body-spec";
 import { retryImport } from "@/lib/chunk-recovery";
 import { useI18n } from "@/lib/i18n/i18n";
 import type { FittingCameraApi } from "@/lib/scene3d/orbit-steps";
-import type { FittingWalkApi } from "@/lib/scene3d/fitting-walk";
+import type { FittingPlace, FittingWalkApi } from "@/lib/scene3d/fitting-walk";
 import type { StoreScene } from "@/lib/scene3d/scene";
 import type {
   FittingItem,
@@ -41,6 +41,8 @@ export interface FittingStageProps {
   sex: Sex;
   onCanvas: (canvas: HTMLCanvasElement) => void;
   children: ReactNode;
+  /** painel lateral do espelho: aparece quando o avatar chega na frente do vidro (como no espelho do Meu Quarto) */
+  mirrorPanel?: (actions: { back: () => void }) => ReactNode;
 }
 
 /** Presents the 3D preview; the enclosing fitting room owns its state and actions. */
@@ -55,12 +57,15 @@ export function FittingStage({
   sex,
   onCanvas,
   children,
+  mirrorPanel,
 }: FittingStageProps) {
   const { t } = useI18n();
   // passos de câmera da cena (botões de girar/aproximar); só existem com a cena 3D montada
   const [camera, setCamera] = useState<FittingCameraApi | null>(null);
   // andar até o espelho / voltar ao centro (só com a cena 3D montada)
   const [walk, setWalk] = useState<FittingWalkApi | null>(null);
+  const [place, setPlace] = useState<FittingPlace>("center");
+  useEffect(() => walk?.subscribe(setPlace), [walk]);
   const look = useMemo(() => pieces.map(toLook3d), [pieces]);
   const body = avatar ? validateBody(avatar.model?.body)?.params ?? null : null;
   const sceneSex = sex === "UNISEX"
@@ -134,6 +139,11 @@ export function FittingStage({
           </div>
         )}
         {avatar && camera && <FittingOrbitButtons api={camera} walk={walk} />}
+        {avatar && walk && place === "mirror" && mirrorPanel && (
+          <aside className="fitting-mirror-panel surface" aria-label={t("tryOn.no_espelho")}>
+            {mirrorPanel({ back: () => walk.to("center") })}
+          </aside>
+        )}
       </div>
       {avatar && <p className="px-3 pt-2 type-caption text-muted">{t("tryOn.andar_dica")}</p>}
 
