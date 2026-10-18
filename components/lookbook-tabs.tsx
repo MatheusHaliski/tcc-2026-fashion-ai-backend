@@ -319,8 +319,6 @@ function CapsuleTab() {
   const catOf = (p: PieceView) => label(p.category);
   return (<>
     <div className="capsule-chips">{(data.filters ?? []).map((f) => <Chip key={f} active={(f === "Tudo" ? "" : f) === category} onClick={() => setCategory(f === "Tudo" ? "" : f)}>{f === "Tudo" ? t("common.all") : label(f)}</Chip>)}</div>
-    {/* insights da cápsula (RF53): redescoberta antes de compra, peças-base paradas, versatilidade — acima dos números */}
-    <InsightStrip context="CAPSULE" params={{ category }} className="mb-4" />
     <div className="capsule-stats">
       <div className="capsule-stat"><span className="num tabular">{data.basePieces}</span><span className="lbl">{t("lookbookTabs.pecas_base")}</span></div>
       <div className="capsule-stat"><span className="num tabular">{data.looks}</span><span className="lbl">{t("lookbookTabs.looks_no_guarda_roupa")}</span></div>
@@ -334,6 +332,8 @@ function CapsuleTab() {
         <span className="capsule-body"><span className="capsule-name">{p.name}</span><span className="capsule-brand">{(p.brandName ?? "").toUpperCase()}</span></span>
       </Link>); })}</div>
     {data.note && <p className="mt-3 type-caption text-faint">{data.note}</p>}
+    {/* insights da cápsula (RF53): recolhidos abaixo da grade — a aba abre com os números e as fotos (modelo aprovado) */}
+    <InsightStrip context="CAPSULE" params={{ category }} collapsible className="mt-6" />
   </>);
 }
 
