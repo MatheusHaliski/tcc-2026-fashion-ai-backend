@@ -210,7 +210,6 @@ export function PhotoLibrary() {
           <div className="surface p-3">
             <p className="label mb-2">{t("photos.insights_ia")}</p>
             {insights.data.sentences.length === 0 ? <p className="type-body-sm text-muted">{t("photos.sem_dados_insights")}</p> : <div className="fai-list">{insights.data.sentences.map((s, i) => <p key={i} className="list-row type-body-sm">{s}</p>)}</div>}
-            <p className="mt-2 type-caption text-faint">{t("photos.base_dos_insights", { total: insights.data.total, withSubject: insights.data.withSubject, keyMoments: insights.data.keyMoments })}</p>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{bars(t("common.color"), insights.data.color, true)}{bars(t("common.occasion"), insights.data.occasion)}{bars(t("common.style"), insights.data.style)}{bars(t("photos.fotos_por_mes"), insights.data.month)}</div>
         </div>
