@@ -106,6 +106,19 @@ public class CatalogImage extends VersionedAuditableEntity {
     @Column(name = "assets_json", columnDefinition = "json")
     private String assetsJson;
 
+    /** Peça inteira processada (V75): a peça sem pessoa, centralizada em 900×1200 pelo lote process_whole_frames. */
+    @Column(name = "whole_url", length = 1024)
+    private String wholeUrl;
+
+    @Column(name = "whole_json", columnDefinition = "json")
+    private String wholeJson;
+
+    @Column(name = "whole_status", length = 24)
+    private String wholeStatus;
+
+    @Column(name = "whole_pipeline_version", length = 40)
+    private String wholePipelineVersion;
+
     @Column(name = "attempts", nullable = false)
     private int attempts;
 

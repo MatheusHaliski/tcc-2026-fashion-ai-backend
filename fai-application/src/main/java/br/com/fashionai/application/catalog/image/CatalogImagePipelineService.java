@@ -627,6 +627,8 @@ public class CatalogImagePipelineService {
      * no recorte de sempre — o Total frame nunca enquadra uma pessoa.
      */
     static Map<String, Object> wholeFrame(CatalogImage canonical) {
+        Map<String, Object> processed = processedWhole(canonical);
+        if (processed != null) return processed;
         if (canonical == null || canonical.getCropJson() == null || canonical.getImageUrl() == null) return null;
         Map<String, Object> crop = Json.map(canonical.getCropJson());
         Map<String, Object> metrics = canonical.getMetricsJson() == null ? Map.of() : Json.map(canonical.getMetricsJson());
@@ -647,6 +649,33 @@ public class CatalogImagePipelineService {
         m.put("truncated", debug.get("truncated") instanceof List<?> sides ? sides : List.of());
         m.put("alpha", false);
         m.put("version", WHOLE_FRAME_VERSION);
+        return m;
+    }
+
+    /** Versão da Peça inteira processada (lote process_whole_frames): a peça recortada sem pessoa, 900×1200. */
+    public static final String WHOLE_PROCESSED_VERSION = "WHOLE_FRAME_V2";
+
+    /**
+     * Peça inteira processada: o JPEG 900×1200 com a peça recortada (sem pessoa, sem fundo da marca) e a caixa dela no
+     * quadro. Vale também para foto com modelo — é a peça isolada, não a foto original. null sem o processamento.
+     */
+    static Map<String, Object> processedWhole(CatalogImage canonical) {
+        if (canonical == null || canonical.getWholeUrl() == null || canonical.getWholeUrl().isBlank()
+                || !"DONE".equals(canonical.getWholeStatus()) || canonical.getWholeJson() == null) return null;
+        Map<String, Object> info = Json.map(canonical.getWholeJson());
+        if (!(info.get("box") instanceof Map<?, ?> box)) return null;
+        double x = number(box.get("x")), y = number(box.get("y")), w = number(box.get("w")), h = number(box.get("h"));
+        if (!(w > 0.02 && h > 0.02 && w <= 1.001 && h <= 1.001 && x >= -0.001 && y >= -0.001 && x + w <= 1.001 && y + h <= 1.001)) return null;
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("url", canonical.getWholeUrl());
+        m.put("box", Map.of("x", x, "y", y, "w", w, "h", h));
+        m.put("background", info.getOrDefault("background", "#F4F5F7"));
+        m.put("width", info.getOrDefault("width", 900));
+        m.put("height", info.getOrDefault("height", 1200));
+        m.put("truncated", info.get("truncated") instanceof List<?> sides ? sides : List.of());
+        m.put("alpha", false);
+        m.put("processed", true);
+        m.put("version", WHOLE_PROCESSED_VERSION);
         return m;
     }
 
