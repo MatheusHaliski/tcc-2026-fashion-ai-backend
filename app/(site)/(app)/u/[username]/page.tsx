@@ -16,7 +16,7 @@ import { HypeGroupBadge } from "@/components/hype/hype-group-badge";
 import { InsightStrip } from "@/components/insights/insight-strip";
 
 import type {LevelProgress} from "@/components/profile-level-progress";
-interface Profile { levelProgress?:LevelProgress; user: UserCard; bio?: string | null; pronouns?: string | null; links?: { title: string; url: string }[]; coverUrl?: string | null; layout: "PESSOAL" | "INSTITUCIONAL"; institutionalSlug?: string; self: boolean; relation: string; counters: { followers: number; following: number; published: number; pieces?: number; schemes?: number }; visibility: string; contentVisible: boolean; invite?: { message: string; action?: string }; }
+interface Profile { levelProgress?:LevelProgress; user: UserCard; bio?: string | null; pronouns?: string | null; links?: { title: string; url: string }[]; coverUrl?: string | null; layout: "PESSOAL" | "INSTITUCIONAL"; institutionalSlug?: string; self: boolean; relation: string; counters: { followers: number; following: number; published: number; pieces?: number; schemes?: number }; visibility: string; contentVisible: boolean; invite?: { message: string; action?: string }; pendingFollowRequests?: number; }
 
 export default function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const username = use(params).username;   /* vai direto para caminhos da API */ const { t } = useI18n(); const initialTab = useSearchParams().get("tab"); const { user } = useAuth(); const toast = useToast();
@@ -62,12 +62,12 @@ export default function ProfilePage({ params }: { params: Promise<{ username: st
               { label: t("profile.copyLink"), onSelect: () => { navigator.clipboard?.writeText(window.location.href).then(() => toast.success(t("common.copied"))).catch(() => undefined); } },
             ]} />
           </>}
-          {data.self && <><EditProfileButton /><Link href="/settings" className="btn btn-sm">{t("nav.settings")}</Link><Link href="/explorer?tab=passarela" className="btn btn-sm">{t("common.passarela_3d")}</Link></>}
+          {data.self && <>{(data.pendingFollowRequests ?? 0) > 0 && <Link href="/notifications#follow-requests" className="btn btn-sm btn-primary">{t("followRequests.atalho", { count: data.pendingFollowRequests ?? 0 })}</Link>}<EditProfileButton /><Link href="/settings" className="btn btn-sm">{t("nav.settings")}</Link><Link href="/explorer?tab=passarela" className="btn btn-sm">{t("common.passarela_3d")}</Link></>}
         </>} />
       {/* RF53 · Lote A5 (P3-15): leitura pública do criador (só itens públicos; perfil fechado ou bloqueado = nada) */}
       {data.contentVisible && data.visibility === "PUBLIC" && <InsightStrip context="CREATOR_PROFILE" params={{ key: data.user.username }} collapsible className="mb-3" />}
       {!data.contentVisible
-        ? <EmptyState title={t("profile.privateTitle")} hint={data.invite?.message ?? t("u.username.este_perfil_e_privado")} action={user && !data.self && data.relation !== "PENDENTE" ? <Button variant="primary" disabled={followingBusy || data.relation === "BLOQUEADO"} onClick={follow}>{t("profile.requestFollow")}</Button> : !user ? <Link href="/login" className="btn btn-primary">{t("nav.login")}</Link> : undefined} />
+        ? <EmptyState icon={<FaiIcon id="ACT-04" size={48} decorative />} title={t("profile.privateTitle")} hint={data.invite?.message ?? t("u.username.este_perfil_e_privado")} action={user && !data.self && data.relation !== "PENDENTE" ? <Button variant="primary" disabled={followingBusy || data.relation === "BLOQUEADO"} onClick={follow}>{t("profile.requestFollow")}</Button> : !user ? <Link href="/login" className="btn btn-primary">{t("nav.login")}</Link> : undefined} />
         : <LookbookTabs ownerId={data.user.id} initialTab={profileTab(initialTab, data.self)} initialSaved={initialTab === "saved_pieces" ? "pieces" : "looks"} />}
       {data && data.self && (initialTab === "cupons" || initialTab === "coupons") && <CouponsRedirect />}
       <Dialog open={confirmBlock} onClose={() => setConfirmBlock(false)} title={t("profile.blockTitle", { username: data.user.username })}

@@ -22,6 +22,7 @@ import { InsightStrip } from "@/components/insights/insight-strip";
 import type { LookScoreValues } from "@/components/hype/look-scores";
 import { studioOf } from "@/lib/card-art";
 import { CreationSuccess } from "@/components/expanded-card";
+import { ProfileVisibilityNotice } from "@/components/follow-requests";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -249,6 +250,7 @@ export function SchemeBuilder({ initial }: { initial?: SchemeView }) {
               <Button variant="primary" onClick={() => save(false)} loading={busy}><FaiIcon id="ACT-10" size={24} decorative />{t("common.save")}</Button>
               <Button variant="accent" onClick={() => save(true)} loading={busy}><FaiIcon id="ACT-11" size={24} decorative />{t("common.publish")}</Button>
             </div>
+            <ProfileVisibilityNotice />
             {preview && <img src={preview} alt={t("schemeBuilder.pre_visualizacao_do_card")} className="mt-4 max-w-sm rounded border border-line-soft" />}
           </div>
         )}
