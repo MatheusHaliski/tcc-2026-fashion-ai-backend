@@ -10,7 +10,7 @@ import httpx
 import numpy as np
 import pytest
 from fastapi.testclient import TestClient
-from services.anatomical_vton.fashn_runtime import fashion_category,pose_screen
+from services.anatomical_vton.fashn_runtime import fashion_category,pose_screen,serving_dtype
 from services.anatomical_vton.fashn_download import artifact_path,verify_file,download_file
 from services.anatomical_vton.google_cloud import VertexPredictionClient
 from services.anatomical_vton.models import AlignmentError
@@ -645,3 +645,14 @@ def test_source_image_must_belong_to_the_project(monkeypatch):
     from scripts.cloud import deploy_fashn_vertex as installer
     monkeypatch.setattr('sys.argv',['deploy','--deploy-only','--project','fashionai-test','--source-image','docker.io/someone/else:latest'])
     with pytest.raises(SystemExit):installer.main()
+
+
+def test_t4_serves_float32_because_emulated_bf16_exhausts_its_memory():
+    class Cuda:
+        def __init__(self,native):self.native=native
+        def is_bf16_supported(self,including_emulation=True):return self.native or including_emulation
+    class Torch:
+        bfloat16='bf16';float32='fp32'
+        def __init__(self,native):self.cuda=Cuda(native)
+    assert serving_dtype(Torch(native=False))=='fp32'   # Turing/T4: torch says "supported" only by emulation
+    assert serving_dtype(Torch(native=True))=='bf16'    # Ampere+/L4: native bf16, as FASHN ships its weights
