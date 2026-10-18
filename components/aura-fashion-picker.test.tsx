@@ -13,3 +13,13 @@ it('abre variações, busca catálogo sem cache, filtra URLs e aplica a opção'
  expect(screen.queryByRole('button',{name:'unsafe'})).toBeNull();
  fireEvent.click(screen.getByRole('button',{name:'Cetim editorial'}));expect(onChange).toHaveBeenCalledWith(preset);
 });
+
+it('permite nova tentativa após erro e não mantém opções da família anterior',async()=>{
+ const preset={id:'electro-test',name:'Electro test',family:'ELECTRO',image:'/aura/fashion-curated/electro-test.webp',palette:['#000000','#ffffff']};
+ const fetch=vi.fn().mockRejectedValueOnce(new Error('network')).mockResolvedValue({ok:true,json:async()=>({presets:[preset]})});vi.stubGlobal('fetch',fetch);
+ renderApp(<AuraFashionPicker onChange={vi.fn()}/>);
+ fireEvent.click(screen.getByRole('button',{name:/AURA Electro/}));
+ await screen.findByRole('alert');
+ fireEvent.click(screen.getByRole('button',{name:'Tentar novamente'}));
+ expect(await screen.findByRole('button',{name:'Electro test'})).toBeTruthy();
+});

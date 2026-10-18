@@ -3,13 +3,14 @@ import { useEffect, useState } from 'react';
 import { Button, Dialog } from '@/components/ui';
 import { useAuth } from '@/lib/auth/session';
 import { useI18n } from '@/lib/i18n/i18n';
-const GUIDE_FAMILIES = ['common', 'electro', 'splash', 'hype', 'metamorphose'] as const;
+const GUIDE_FAMILIES = ['common', 'electro', 'splash', 'hype', 'metamorphose', 'impersonation'] as const;
 const AURA_COLORS: Record<typeof GUIDE_FAMILIES[number], string> = {
   common: '#c8a16b',
   electro: '#55dce8',
   splash: '#e66eab',
   hype: '#77d9ed',
   metamorphose: '#b99aeb',
+  impersonation: '#74dfc0',
 };
 export function AuraGuide() {
   const { user } = useAuth(); const { t } = useI18n();
@@ -20,7 +21,7 @@ export function AuraGuide() {
   return <><Button size="sm" onClick={() => setOpen(true)}>{t('auraGuide.help')}</Button><Dialog open={open} onClose={close} title={t('auraGuide.title')} footer={<Button onClick={close}>{t('common.close')}</Button>}>
     <div className="grid gap-3 sm:grid-cols-2">
       {GUIDE_FAMILIES.map(family => <section key={family} className="rounded-lg border border-line-soft p-3">
-        <AuraDiagram family={family} color={AURA_COLORS[family]} label={t(`auraGuide.${family}.text`)} artLabel={t('auraGuide.diagram.art')} photoLabel={t('auraGuide.diagram.photo')} />
+        <AuraDiagram family={family} color={AURA_COLORS[family]} label={t(`auraGuide.${family}.text`)} artLabel={t('auraGuide.diagram.art')} photoLabel={t(family === 'impersonation' ? 'auraGuide.impersonation.diagram' : 'auraGuide.diagram.photo')} />
         <h3 className="type-heading mt-2">{t(`auraGuide.${family}.title`)}</h3>
         <p className="type-body-sm">{t(`auraGuide.${family}.text`)}</p>
       </section>)}

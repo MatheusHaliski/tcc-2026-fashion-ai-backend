@@ -79,7 +79,7 @@ export function PieceArtEditor({ value, onChange, piece, styles, occasions, medi
         <ArtSegments value={seg} onChange={setSeg} />
         {/* cartela sazonal e animação moram no modal da família Cartela sazonal (Layout & Estilo), como no look e no DNA */}
         {seg === "cor" && <ColorPanel value={studio} onChange={setStudio} hideSeasonal keepCartela={family === "seasonal"} />}
-        {seg === "aura" && <AuraMaterialPanel value={studio} onChange={setStudio} onSkin={(s) => emit(art, { skin: s })} styles={styles} occasions={occasions} brandName={piece.brandName} colorHex={piece.colorHex} colorName={piece.color} />}
+        {seg === "aura" && <AuraMaterialPanel pieceId={piece.id} value={studio} onChange={setStudio} onSkin={(s) => emit(art, { skin: s })} styles={styles} occasions={occasions} brandName={piece.brandName} colorHex={piece.colorHex} colorName={piece.color} />}
 
         {seg === "layout" && (
           <div className="grid gap-3">

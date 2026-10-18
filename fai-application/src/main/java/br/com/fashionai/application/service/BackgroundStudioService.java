@@ -677,7 +677,16 @@ public class BackgroundStudioService {
         }
     }
 
+    /** Clients may retain/remove server-issued motion, never forge or replace it. */
+    static void validateMotionWrite(String currentJson, Object cfg) {
+        if (!(cfg instanceof Map<?,?> incoming) || incoming.get("impersonationData") == null) return;
+        Object existing = Json.map(currentJson).get("impersonationData");
+        if (existing == null || !existing.equals(incoming.get("impersonationData")))
+            throw ApiException.badRequest("AURA_MOTION_SERVER_ONLY", Msg.t("auraMotion.notReady"));
+    }
+
     static Object withRevision(String currentJson, Object cfg) {
+        validateMotionWrite(currentJson, cfg);
         if (!(cfg instanceof Map<?, ?> in)) return cfg;
         validateArtwork(in);
         Map<String, Object> current = currentJson == null || currentJson.isBlank() ? Map.of() : Json.map(currentJson);

@@ -1,4 +1,5 @@
 "use client";
+import { HypeSealHelp } from "./hype-seal-help";
 import { useId } from "react";
 import { tr, useI18n } from "@/lib/i18n/i18n";
 import { SealMedallion, type SealDesign } from "@/components/seal-medallion";
@@ -94,7 +95,7 @@ export function HypeSealProgressList({ progress }: { progress?: HypeSealProgress
   );
   return (
     <section aria-labelledby={hid} className="hype-seal-progress">
-      <h3 id={hid} className="type-h3 mb-1">{t("sealHype.drawer.titulo")}</h3>
+      <h3 id={hid} className="type-h3 mb-1">{t("sealHype.drawer.titulo")}</h3><HypeSealHelp />
       <p className="type-body text-muted mb-3">{t("sealHype.drawer.dica")}</p>
       {earned.length > 0 && <><h4 className="label mb-1">{t("sealHype.drawer.conquistados", { n: earned.length })}</h4><ul className="hype-seal-list">{earned.map(item)}</ul></>}
       {goals.length > 0 && <><h4 className="label mb-1 mt-2">{t("sealHype.drawer.proximas")}</h4><ul className="hype-seal-list">{goals.map(item)}</ul></>}

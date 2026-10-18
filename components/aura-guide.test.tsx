@@ -9,6 +9,7 @@ it('illustrates each AURA family and points out the unchanged garment photo', as
   fireEvent.click(screen.getByRole('button', { name: 'Entenda as AURAs' }));
   expect(await screen.findByText('AURA Electro · fios de luz')).toBeTruthy();
   expect(screen.getByText('AURA Splash · tinta fluida')).toBeTruthy();
-  expect(document.querySelectorAll('svg[role="img"]')).toHaveLength(5);
+  expect(document.querySelectorAll('svg[role="img"]')).toHaveLength(6);
+  expect(screen.getByText(/ainda não gera o seu vídeo personalizado/)).toBeTruthy();
   expect(screen.getAllByText('foto intacta')).toHaveLength(5);
 });
