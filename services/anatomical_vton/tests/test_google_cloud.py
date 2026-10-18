@@ -41,6 +41,16 @@ class GoogleCloudTests(unittest.TestCase):
         client=self.client(lambda _:httpx.Response(403,text='PRIVATE_IMAGE_OR_TOKEN'))
         with self.assertRaisesRegex(AlignmentError,'^VERTEX_PREDICTION_HTTP_403$'):client.predict({})
 
+    def test_gpu_refusal_reason_comes_back_only_from_the_allowlist(self):
+        refused=self.client(lambda _:httpx.Response(422,json={'detail':'EXACTLY_ONE_PERSON_WITH_POSE_REQUIRED'}))
+        with self.assertRaisesRegex(AlignmentError,'^EXACTLY_ONE_PERSON_WITH_POSE_REQUIRED$'):refused.predict({})
+        busy=self.client(lambda _:httpx.Response(503,json={'detail':'GPU_BUSY_RETRY_LATER'}))
+        with self.assertRaisesRegex(AlignmentError,'^GPU_BUSY_RETRY_LATER$'):busy.predict({})
+        # um "detail" fora da lista (pode ecoar a entrada) ou um corpo enorme nunca volta: só o status
+        for body in ({'detail':'data:image/png;base64,UFJJVkFURQ=='},{'detail':'x'*5000},{'detail':['EXACTLY_ONE_PERSON_WITH_POSE_REQUIRED']}):
+            leaky=self.client(lambda _,b=body:httpx.Response(422,json=b))
+            with self.assertRaisesRegex(AlignmentError,'^VERTEX_PREDICTION_HTTP_422$'):leaky.predict({})
+
     def test_redirect_is_not_followed(self):
         calls=[]
         def handler(request):

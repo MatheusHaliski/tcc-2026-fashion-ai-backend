@@ -15,9 +15,18 @@ public class AnatomicalTryOnAdapter implements AnatomicalTryOnPort {
   return client.post().uri(path).header("Authorization","Bearer "+token).body(body).exchange((request,response)->{
    byte[] bytes=response.getBody().readNBytes(24_000_001);
    if(bytes.length>24_000_000)throw new ApiException(502,"VTON_RESPONSE_TOO_LARGE","Resposta do worker excedeu o limite.");
-   if(response.getStatusCode().isError())throw new ApiException(response.getStatusCode().value()==422?422:503,"VTON_WORKER_REJECTED","O worker não conseguiu validar o encaixe anatômico. Nenhuma imagem foi substituída.");
+   if(response.getStatusCode().isError()){
+    // o worker devolve só um código curto do motivo (ex.: a foto precisa ter exatamente uma pessoa): vai para o app em
+    // details.reason, para a tela explicar o que corrigir; nada além do código (nunca o corpo inteiro)
+    String reason=reasonOf(bytes);
+    throw new ApiException(response.getStatusCode().value()==422?422:503,"VTON_WORKER_REJECTED","O worker não conseguiu validar o encaixe anatômico. Nenhuma imagem foi substituída.",reason==null?Map.of():Map.of("reason",reason));
+   }
    return Json.MAPPER.readValue(bytes,Map.class);
   });
+ }
+ static String reasonOf(byte[] body){
+  if(body==null||body.length==0||body.length>4096)return null;
+  try{Object code=Json.MAPPER.readValue(body,Map.class).get("code");return code instanceof String c&&c.matches("[A-Z][A-Z0-9_]{2,63}")?c:null;}catch(Exception e){return null;}
  }
  public Map<String,Object> probePerson(byte[] person){
   if(!available())throw new ApiException(503,"VTON_NOT_CONFIGURED","Worker anatômico não configurado.");

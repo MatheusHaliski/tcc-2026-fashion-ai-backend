@@ -1,5 +1,6 @@
 package br.com.fashionai.application.service;
 import br.com.fashionai.application.common.*;
+import br.com.fashionai.application.imaging.ImageOps;
 import br.com.fashionai.application.ports.AnatomicalTryOnPort;
 import br.com.fashionai.application.security.*;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,19 @@ public class AnatomicalTryOnService {
   if(person.length==0||person.length>6_000_000)throw ApiException.badRequest("VTON_IMAGE_LIMIT","Use uma fotografia de até 6 MB.");
   return worker.probePerson(person);
  }
+ /**
+  * Foto da pessoa para a prova com IA: grava só na pasta do próprio usuário ({@code users/{id}/tryon/}), já reduzida ao
+  * limite da GPU (1536 px no maior lado) e regravada em JPEG sem metadados. Não entra na biblioteca de fotos.
+  */
+ public Map<String,Object> uploadPerson(CurrentUser user,byte[] bytes){
+  guard.requireCanCreate(user);
+  ImageOps.requireAcceptedImage(bytes);
+  java.awt.image.BufferedImage img=ImageOps.decode(bytes);
+  if(Math.min(img.getWidth(),img.getHeight())<256)throw ApiException.badRequest("VTON_IMAGE_SMALL","Use uma foto com pelo menos 256 px no menor lado.");
+  java.awt.image.BufferedImage fitted=ImageOps.scaleToFit(img,1536,1536);
+  var saved=media.put("users/"+user.id()+"/tryon/person-"+UUID.randomUUID()+".jpg",ImageOps.jpeg(fitted,0.9f),"image/jpeg");
+  return Map.of("url",saved.url(),"width",fitted.getWidth(),"height",fitted.getHeight());
+ }
  public record Request(UUID pieceId,String personMediaUrl,Map<String,Object> bodyEvidence,boolean mirror,boolean processingConsent){}
  public Map<String,Object> render(CurrentUser user,Request request){
   guard.requireCanCreate(user);
@@ -38,6 +52,35 @@ public class AnatomicalTryOnService {
   validateOutput(png);
   var saved=media.put("users/"+user.id()+"/tryon/anatomical-"+UUID.randomUUID()+".png",png,"image/png");
   return Map.of("status","READY","url",saved.url(),"diagnostics",result.getOrDefault("diagnostics",Map.of()),"physicalFitCertified",false);
+ }
+ /** Look inteiro na GPU (Meu Quarto e Provador): peça inteira, parte de baixo e parte de cima, nesta ordem. */
+ public record LookRequest(List<UUID> pieceIds,String personMediaUrl,boolean processingConsent){}
+ private static final List<String> LOOK_ORDER=List.of("full_body_piece","lower_piece","upper_piece");
+ /**
+  * Veste o look na foto da pessoa, uma peça por vez: cada etapa usa a imagem da etapa anterior como pessoa (a parte de
+  * cima por último cai sobre a cintura). Calçados e acessórios o modelo não veste: voltam em {@code skipped}. Uma
+  * peça por tipo (a primeira da lista); a foto original nunca é trocada.
+  */
+ public Map<String,Object> renderLook(CurrentUser user,LookRequest request){
+  guard.requireCanCreate(user);
+  if(request==null||request.pieceIds()==null||request.pieceIds().isEmpty()||!request.processingConsent())throw ApiException.badRequest("VTON_CONSENT_REQUIRED","Escolha as peças e confirme o processamento da sua fotografia.");
+  if(request.pieceIds().size()>8)throw ApiException.badRequest("VTON_LOOK_LIMIT","Um look tem no máximo 8 peças.");
+  Map<String,UUID> byCategory=new LinkedHashMap<>();List<String> skipped=new ArrayList<>();
+  for(UUID id:new LinkedHashSet<>(request.pieceIds())){
+   if(id==null)continue;
+   var piece=wardrobe.owned(user,id);String category=piece.getCategory()==null?"":piece.getCategory();
+   if(LOOK_ORDER.contains(category))byCategory.putIfAbsent(category,id);else skipped.add(id.toString());
+  }
+  if(byCategory.isEmpty())throw new ApiException(422,"VTON_LOOK_WITHOUT_GARMENT","A prova com IA veste parte de cima, de baixo ou peça inteira; calçados e acessórios ficam de fora.");
+  String person=request.personMediaUrl();Map<String,Object> last=Map.of();List<Map<String,Object>> steps=new ArrayList<>();
+  for(String category:LOOK_ORDER){
+   UUID id=byCategory.get(category);if(id==null)continue;
+   last=render(user,new Request(id,person,null,false,true));
+   if(!"READY".equals(last.get("status")))return Map.of("status",String.valueOf(last.get("status")),"steps",steps,"skipped",skipped,"failedPieceId",id.toString());
+   person=String.valueOf(last.get("url"));
+   steps.add(Map.of("pieceId",id.toString(),"category",category,"url",person));
+  }
+  return Map.of("status","READY","url",person,"steps",steps,"skipped",skipped,"physicalFitCertified",false);
  }
  private static void validateOutput(byte[] bytes) {
   byte[] signature={(byte)137,80,78,71,13,10,26,10};

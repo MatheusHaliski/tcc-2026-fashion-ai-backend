@@ -13,6 +13,7 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -108,6 +109,42 @@ class AnatomicalTryOnServiceTest {
         verifyNoMoreInteractions(wardrobe);
     }
 
+    @Test void lookIsDressedOnePieceAtATimeBottomThenTopOverThePreviousResult() throws Exception {
+        UUID bottomId = UUID.randomUUID(), shoesId = UUID.randomUUID();
+        WardrobeItem bottom = mock(WardrobeItem.class), shoes = mock(WardrobeItem.class);
+        when(bottom.getId()).thenReturn(bottomId); when(bottom.getCategory()).thenReturn("lower_piece");
+        when(shoes.getId()).thenReturn(shoesId); when(shoes.getCategory()).thenReturn("shoes_piece");
+        when(wardrobe.owned(user, bottomId)).thenReturn(bottom); when(wardrobe.owned(user, shoesId)).thenReturn(shoes);
+        when(legacy.imageBytes(bottom)).thenReturn(image);
+        output(image);
+        String step1 = "/media/users/" + userId + "/tryon/step-1.png", step2 = "/media/users/" + userId + "/tryon/step-2.png";
+        when(media.put(anyString(), any(), eq("image/png"))).thenReturn(
+                new MediaStoragePort.StoredObject("users/" + userId + "/tryon/step-1.png", step1, image.length, "image/png"),
+                new MediaStoragePort.StoredObject("users/" + userId + "/tryon/step-2.png", step2, image.length, "image/png"));
+        when(media.requireOwnedMedia(userId, step1, Set.of(MediaService.MediaScope.OWNER, MediaService.MediaScope.PRIVATE_TRY_ON), "personMediaUrl"))
+                .thenReturn(new MediaService.OwnedMedia("users/" + userId + "/tryon/step-1.png", step1));
+        when(media.read(step1)).thenReturn(Optional.of(image));
+
+        var result = service.renderLook(user, new AnatomicalTryOnService.LookRequest(List.of(pieceId, shoesId, bottomId), photo, true));
+
+        assertThat(result).containsEntry("status", "READY").containsEntry("url", step2).containsEntry("skipped", List.of(shoesId.toString()));
+        var order = inOrder(worker);
+        order.verify(worker).render(eq("piece:" + bottomId), eq(image), eq(image), eq("lower_piece"), isNull(), eq(false));
+        order.verify(worker).render(eq("piece:" + pieceId), eq(image), eq(image), eq("upper_piece"), isNull(), eq(false));
+        verify(media).requireOwnedMedia(userId, step1, Set.of(MediaService.MediaScope.OWNER, MediaService.MediaScope.PRIVATE_TRY_ON), "personMediaUrl");   // a 2ª etapa parte do resultado da 1ª
+        verify(media, never()).put(eq("users/" + userId + "/photo.png"), any(), any());                       // a foto original fica
+    }
+
+    @Test void lookWithoutGarmentsTheModelCanWearIsRejectedBeforeAnyWorkerCall() {
+        UUID shoesId = UUID.randomUUID(); WardrobeItem shoes = mock(WardrobeItem.class);
+        when(shoes.getCategory()).thenReturn("shoes_piece"); when(wardrobe.owned(user, shoesId)).thenReturn(shoes);
+        assertThatThrownBy(() -> service.renderLook(user, new AnatomicalTryOnService.LookRequest(List.of(shoesId), photo, true)))
+                .isInstanceOf(ApiException.class).hasFieldOrPropertyWithValue("status", 422);
+        assertThatThrownBy(() -> service.renderLook(user, new AnatomicalTryOnService.LookRequest(List.of(pieceId), photo, false)))
+                .isInstanceOf(ApiException.class);
+        verifyNoInteractions(worker);
+    }
+
     @Test void pngSignatureAloneIsNotAcceptedAsAnImage() {
         output(new byte[]{(byte)137,80,78,71,13,10,26,10});
         assertThatThrownBy(() -> service.render(user, request(true)))
@@ -141,4 +178,23 @@ class AnatomicalTryOnServiceTest {
         verify(media, never()).put(anyString(), any(), anyString());
     }
 
+    @Test void personPhotoIsSavedInTheOwnersFolderFittedToTheGpuLimitWithoutTouchingTheWorker() throws Exception {
+        var key = org.mockito.ArgumentCaptor.forClass(String.class);
+        var bytes = org.mockito.ArgumentCaptor.forClass(byte[].class);
+        when(media.put(key.capture(), bytes.capture(), eq("image/jpeg"))).thenAnswer(call ->
+                new MediaStoragePort.StoredObject(call.getArgument(0), "/media/" + call.getArgument(0), 1, "image/jpeg"));
+        Map<String, Object> saved = service.uploadPerson(user, png(3000, 2000));
+        assertThat(key.getValue()).startsWith("users/" + userId + "/tryon/person-").endsWith(".jpg");
+        assertThat(saved).containsEntry("url", "/media/" + key.getValue()).containsEntry("width", 1536).containsEntry("height", 1024);
+        var stored = ImageIO.read(new java.io.ByteArrayInputStream(bytes.getValue()));
+        assertThat(Math.max(stored.getWidth(), stored.getHeight())).isLessThanOrEqualTo(1536);
+        verify(guard).requireCanCreate(user);
+        verifyNoInteractions(worker, wardrobe, legacy);
+    }
+
+    @Test void tinyPersonPhotoIsRefusedBeforeSaving() {
+        assertThatThrownBy(() -> service.uploadPerson(user, png(200, 300)))
+                .isInstanceOfSatisfying(ApiException.class, error -> assertThat(error.code()).isEqualTo("VTON_IMAGE_SMALL"));
+        verify(media, never()).put(anyString(), any(), anyString());
+    }
 }
