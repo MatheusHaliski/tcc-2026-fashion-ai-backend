@@ -10,6 +10,7 @@ import modelo as M
 
 DIAG = os.path.join(M.ROOT, 'docs', 'diagramas')
 KEPT_MARK = "' v5: diagrama do time mantido"
+MANUAL_MARK = "' v5: escrito à mão"
 KINDS = [('atividades', 'Atividades'), ('sequencia', 'Sequência'), ('componentes', 'Componentes'),
          ('estados', 'Máquina de estados'), ('classes', 'Classes')]
 
@@ -99,10 +100,11 @@ def build():
                 title = re.sub(r'\s*[—–-]\s*.*$', '', t) if t.startswith('RF') else key
             label = os.path.basename(png).replace('.png', '').replace('_', ' ')
             label = re.sub(r'^RF\d+\s*', '', label)
-            kept = KEPT_MARK in open(f, encoding='utf-8').read()
+            src = open(f, encoding='utf-8').read()
+            mark = ' †' if KEPT_MARK in src else ' ‡' if MANUAL_MARK in src else ''
             for kname, _ in KINDS:
                 if kname == k:
-                    cells[k].append(f'[{label.strip() or "png"}]({rel(png)})' + (' †' if kept else ''))
+                    cells[k].append(f'[{label.strip() or "png"}]({rel(png)})' + mark)
         head = re.sub(r'^RF\d+\s*[—–-]\s*', '', TITLES.get(key, '')).strip() or title or key
         L.append(f'| **{key}** — {esc_md(head, 90)} | ' + ' | '.join(' · '.join(cells[k]) or '—' for k, _ in KINDS) + ' |')
     kept = sorted(rel(f) for _, files in folders() for f in files if KEPT_MARK in open(f, encoding='utf-8').read())
@@ -111,11 +113,17 @@ def build():
           'bloqueio por tentativas do RF49 vive num limitador de taxa genérico; o gate de acesso é do middleware do Next).',
           'Cada um leva uma legenda na própria imagem dizendo que não foi gerado nem verificado contra o código:', '']
     L += [f'- `{k}`' for k in kept]
+    manual = sorted(rel(f) for _, files in folders() for f in files if MANUAL_MARK in open(f, encoding='utf-8').read())
+    if manual:
+        L += ['', f'‡ **{len(manual)} diagramas escritos à mão e conferidos contra o código.** Cobrem o caminho que passa pelo',
+              'worker e pela GPU em Python (`services/anatomical_vton`, `scripts/cloud`), que o gerador não lê; levam a marca',
+              f'`{MANUAL_MARK}` no `.puml` e `gerar.py` não os reescreve (a data da conferência está no título de cada um):', '']
+        L += [f'- `{k}`' for k in manual]
     L += ['', '## Diagramas globais e fora de `docs/diagramas/`', '',
           '| Diagrama | Conteúdo | Arquivo |', '|---|---|---|']
     extras = [
         ('fashionai-classes-v5.puml', 'Classes de todas as entidades JPA, por área de negócio (mesmas áreas da taxonomia)'),
-        ('fashionai-componentes-v5.puml', 'Componentes da arquitetura inteira: páginas → BFF/API → controllers por área → serviços → repositórios → bancos e serviços externos'),
+        ('fashionai-componentes-v5.puml', 'Componentes da arquitetura inteira: páginas → BFF/API → controllers por área → serviços → repositórios → bancos e serviços externos (inclui o worker VTON no Cloud Run e a GPU da Vertex AI)'),
     ]
     for f, desc in extras:
         p = os.path.join(DIAG, f)

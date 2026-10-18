@@ -1,0 +1,109 @@
+@startuml RF18_ProvaIA_Atividades
+' v5: escrito à mão — o caminho passa pelo worker e pela GPU em Python (services/anatomical_vton), que scripts/diagramas/v5 não lê
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
+skinparam activity {
+  BackgroundColor #F8F4FF
+  BorderColor #B695F5
+  FontColor #2D2438
+  DiamondBackgroundColor #FFF5F8
+  DiamondBorderColor #F08DB1
+  StartColor #20A77A
+  EndColor #4B5563
+}
+skinparam swimlane {
+  BorderColor #CBC6BE
+  TitleFontColor #2D2438
+}
+title RF18 — Prova com IA no Provador: o look (ou uma peça) vestido na foto da própria pessoa, na GPU\nDiagrama de atividades — escrito à mão e conferido com o código em 2026-10-18
+
+|Pessoa usuária|
+start
+:Abre o Provador (/try-on), veste peças\ne toca "Provar com IA";
+|Provador (React)|
+:AiTryOnDialog: só peças do guarda-roupa com pieceId\n(peças da loja ainda não entram);
+:GpuLookDialog: candidatas = isGpuCategory()\nfull_body_piece · lower_piece · upper_piece;
+if (alguma candidata?) then (não)
+  :tryOn.ia_sem_peca + "Escolher no guarda-roupa";
+  stop
+else (sim)
+endif
+:gpuLook(): uma peça por tipo (a primeira de cada),\nna ordem peça inteira → parte de baixo → parte de cima;
+if (calçados ou acessórios no look?) then (sim)
+  :Aviso tryOn.ia_fora_da_foto\n(o modelo não veste calçados nem acessórios);
+endif
+|Pessoa usuária|
+:Escolhe "Look inteiro · n peças" ou "Uma peça"\n(com uma peça só, vai direto para "Uma peça");
+:Escolhe a própria foto (JPG, PNG ou WebP);
+|Provador (React)|
+:fitted(): reduz no navegador para até 1536 px (JPEG 0,9)\ne envia POST /api/try-on/person-photos;
+|API (Spring Boot · Railway)|
+:AnatomicalTryOnService.uploadPerson():\nimagem aceita e menor lado ≥ 256 px?;
+if (foto válida?) then (não)
+  :400 VTON_IMAGE_SMALL\n(tela: tryOn.ia_erro_foto_pequena);
+  stop
+else (sim)
+endif
+:Reduz para 1536 px, regrava em JPEG sem metadados\nem users/{id}/tryon/ → 201 {url, width, height};
+|Pessoa usuária|
+:Marca o consentimento ("Autorizo o processamento\ndesta foto") e toca "Gerar prova";
+|Provador (React)|
+if (modo?) then (look inteiro)
+  :POST /api/try-on/look-renders\n{pieceIds, personMediaUrl, processingConsent: true};
+else (uma peça)
+  :POST /api/try-on/anatomical-renders\n{pieceId, personMediaUrl, processingConsent: true, mirror: false};
+endif
+|API (Spring Boot · Railway)|
+:renderLook(): consentimento, até 8 peças do próprio\nguarda-roupa, uma por categoria; o resto vai para skipped[];
+repeat :Próxima etapa de LOOK_ORDER\n(full_body_piece → lower_piece → upper_piece);
+  :render(): foto do dono (escopos OWNER · PRIVATE_TRY_ON),\nimagens ≤ 6 MB, worker configurado;
+  :AnatomicalTryOnAdapter: POST /v1/catalog/piece:{id} e POST /try-on\n(Bearer VTON_WORKER_TOKEN, timeout 650 s);
+  |Worker VTON (Cloud Run)|
+  :Confere o Bearer; fashion_category():\nupper → tops · lower → bottoms · full_body → one-pieces;
+  :predict_fashn(): POST :predict no endpoint dedicado\nda Vertex AI (ADC da conta de serviço, timeout 600 s);
+  |GPU (Vertex AI · T4)|
+  :server.py /predict: modelo pronto, contrato válido,\numa inferência por vez;
+  :DWPose detecta a pessoa → pose_screen()\nantes da difusão;
+  :FASHN VTON 1.5 · 30 passos (serving_dtype():\nbf16 só com suporte nativo, float32 no T4);
+  :pose_screen() na imagem gerada (RMSE ≤ 0,08)\n→ PNG + diagnostics;
+  |Worker VTON (Cloud Run)|
+  if (recusa da GPU ou do worker?) then (sim)
+    :422 {"code": CÓDIGO} — só códigos de SERVER_CODES;
+    |API (Spring Boot · Railway)|
+    :422 VTON_WORKER_REJECTED com details.reason = CÓDIGO\n(a etapa que falha encerra o look);
+    |Provador (React)|
+    :refusalKey(details.reason) → tryOn.ia_motivo.*\n(pessoa · corpo · fora · foto · resultado · peca · categoria · gpu);
+    |Pessoa usuária|
+    :Lê o que corrigir: outra foto, outra peça\nou tentar de novo em alguns minutos;
+    stop
+  else (não)
+    |Worker VTON (Cloud Run)|
+    :Exige READY, device cuda:0 e engine FASHN_VTON_1_5;
+  endif
+  |API (Spring Boot · Railway)|
+  :validateOutput(): PNG ≤ 1536 px;\ngrava users/{id}/tryon/anatomical-*.png;
+  :A imagem desta etapa vira a foto de entrada da próxima\n(steps[] += {pieceId, category, url});
+repeat while (falta peça do look?) is (sim) not (não)
+:200 {status: READY, url, steps[], skipped[],\nphysicalFitCertified: false};
+|Provador (React)|
+:Mostra a foto gerada, "Gerada em {s} s na GPU {gpu}"\ne "Vestido em {n} etapas na GPU";
+|Pessoa usuária|
+:Vê o look na própria foto;
+note right
+  Imagem 2D gerada: não certifica
+  caimento nem tamanho. A foto original
+  nunca é trocada; fechar o diálogo
+  cancela a espera (AbortController).
+end note
+stop
+@enduml
