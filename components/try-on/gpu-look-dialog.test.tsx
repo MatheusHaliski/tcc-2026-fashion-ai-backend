@@ -7,9 +7,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, loggedAs, renderApp, screen, waitFor } from "@/test-utils/render";
 import { GpuLookDialog, gpuLook, refusalKey, type GpuPiece } from "@/components/try-on/gpu-look-dialog";
 
-const shirt: GpuPiece = { pieceId: "w1", name: "Camisa de linho", category: "upper_piece" };
-const pants: GpuPiece = { pieceId: "w2", name: "Calça de alfaiataria", category: "lower_piece" };
-const shoes: GpuPiece = { pieceId: "w3", name: "Tênis branco", category: "shoes_piece" };
+const shirt: GpuPiece = { id: "w1", source: "wardrobe", name: "Camisa de linho", category: "upper_piece" };
+const pants: GpuPiece = { id: "w2", source: "wardrobe", name: "Calça de alfaiataria", category: "lower_piece" };
+const shoes: GpuPiece = { id: "w3", source: "wardrobe", name: "Tênis branco", category: "shoes_piece" };
 const photo = () => new File(["x"], "eu.jpg", { type: "image/jpeg" });
 const refusal = (reason: string) => new Response(JSON.stringify({ status: 422, code: "VTON_WORKER_REJECTED", message: "do servidor", details: { reason } }),
   { status: 422, headers: { "content-type": "application/json" } });
@@ -25,8 +25,8 @@ async function photoAndConsent() {
 
 describe("Foto realista na GPU", () => {
   it("uma peça por tipo, na ordem em que a GPU veste (inteira → baixo → cima)", () => {
-    const dress: GpuPiece = { pieceId: "d", name: "Vestido", category: "full_body_piece" };
-    expect(gpuLook([shirt, shoes, pants, { ...shirt, pieceId: "w9" }, dress]).map((p) => p.pieceId)).toEqual(["d", "w2", "w1"]);
+    const dress: GpuPiece = { id: "d", source: "catalog", name: "Vestido", category: "full_body_piece" };
+    expect(gpuLook([shirt, shoes, pants, { ...shirt, id: "w9" }, dress]).map((p) => p.id)).toEqual(["d", "w2", "w1"]);
   });
 
   it("veste o look inteiro em sequência e avisa o que ficou fora da foto", async () => {
@@ -43,7 +43,7 @@ describe("Foto realista na GPU", () => {
     const result = await screen.findByAltText("Foto realista do look na sua foto");
     expect(result.getAttribute("src")).toContain("/media/users/u1/tryon/render-2.png");
     expect(calls.find((c) => c.path === "/api/try-on/look-renders")?.body)
-      .toEqual({ pieceIds: ["w2", "w1"], personMediaUrl: "/media/users/u1/tryon/person-1.jpg", processingConsent: true });
+      .toEqual({ pieceIds: ["w2", "w1"], productIds: [], personMediaUrl: "/media/users/u1/tryon/person-1.jpg", processingConsent: true });
     expect(screen.getByText("Vestido em 2 etapas na GPU.")).toBeTruthy();
   });
 

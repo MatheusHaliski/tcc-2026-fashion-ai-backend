@@ -653,4 +653,21 @@ public class CatalogImagePipelineService {
     private static double number(Object value) {
         return value instanceof Number n ? n.doubleValue() : Double.NaN;
     }
+
+    /**
+     * Foto do catálogo que pode ir à GPU na Prova com IA: a canônica aprovada e gravada com autorização da fonte (nunca a
+     * cópia forçada pelo responsável) e comprovadamente sem pessoa — sem modelo vestindo e com a evidência de pele medida
+     * abaixo do limite. Sem essa medição, fica de fora: foto de marca com gente não vai à GPU.
+     */
+    public static boolean vtonGarment(CatalogImage image) {
+        if (image == null || !image.isCanonical() || !"APPROVED".equals(image.getProcessingStatus())
+                || image.getUsageStatus() != CatalogImageUsage.PERSISTED || image.getStoredUrl() == null) return false;
+        Map<String, Object> assets = image.getAssetsJson() == null ? Map.of() : Json.map(image.getAssetsJson());
+        if (assets.get("persistenceDecision") instanceof Map<?, ?> decision && "FORCED_CATEGORY_FRAME".equals(decision.get("mode"))) return false;
+        Map<String, Object> metrics = image.getMetricsJson() == null ? Map.of() : Json.map(image.getMetricsJson());
+        Map<?, ?> debug = metrics.get("debug") instanceof Map<?, ?> d ? d : Map.of();
+        Map<?, ?> productFrame = debug.get("productFrame") instanceof Map<?, ?> f ? f : Map.of();
+        if (Boolean.TRUE.equals(productFrame.get("model"))) return false;
+        return debug.get("sourceHumanEvidence") instanceof Number human && human.doubleValue() < ProductRuleFrame.MIN_PERSON_SKIN;
+    }
 }
