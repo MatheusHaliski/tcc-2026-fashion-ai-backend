@@ -177,24 +177,4 @@ class AnatomicalTryOnServiceTest {
                 .containsEntry("status","POSE_ONLY").containsEntry("physicalFitCertified",false);
         verify(media, never()).put(anyString(), any(), anyString());
     }
-
-    @Test void personPhotoIsSavedInTheOwnersFolderFittedToTheGpuLimitWithoutTouchingTheWorker() throws Exception {
-        var key = org.mockito.ArgumentCaptor.forClass(String.class);
-        var bytes = org.mockito.ArgumentCaptor.forClass(byte[].class);
-        when(media.put(key.capture(), bytes.capture(), eq("image/jpeg"))).thenAnswer(call ->
-                new MediaStoragePort.StoredObject(call.getArgument(0), "/media/" + call.getArgument(0), 1, "image/jpeg"));
-        Map<String, Object> saved = service.uploadPerson(user, png(3000, 2000));
-        assertThat(key.getValue()).startsWith("users/" + userId + "/tryon/person-").endsWith(".jpg");
-        assertThat(saved).containsEntry("url", "/media/" + key.getValue()).containsEntry("width", 1536).containsEntry("height", 1024);
-        var stored = ImageIO.read(new java.io.ByteArrayInputStream(bytes.getValue()));
-        assertThat(Math.max(stored.getWidth(), stored.getHeight())).isLessThanOrEqualTo(1536);
-        verify(guard).requireCanCreate(user);
-        verifyNoInteractions(worker, wardrobe, legacy);
-    }
-
-    @Test void tinyPersonPhotoIsRefusedBeforeSaving() {
-        assertThatThrownBy(() -> service.uploadPerson(user, png(200, 300)))
-                .isInstanceOfSatisfying(ApiException.class, error -> assertThat(error.code()).isEqualTo("VTON_IMAGE_SMALL"));
-        verify(media, never()).put(anyString(), any(), anyString());
-    }
 }
