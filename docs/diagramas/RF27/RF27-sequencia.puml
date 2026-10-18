@@ -21,7 +21,7 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF27 — Visualizar e organizar o guarda-roupa num quarto 3D interativo ('Meu Quarto')\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF27 — Visualizar e organizar o guarda-roupa num quarto 3D interativo ('Meu Quarto')\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 boundary "Tela /room" as P
@@ -29,7 +29,6 @@ control "RoomController" as RoomController
 participant "RoomService" as RoomService
 database "MySQL" as DB_MySQL
 participant "Guard" as Guard
-queue "Eventos de domínio" as EV
 == Mover peça para um endereço (door:1/hanger:3, drawer:2, shoe:4…) ==
 U -> P : Mover peça para um endereço (door:1/hanger:3, dra…
 P -> RoomController : PUT /api/pieces/{pieceId}/room-address
@@ -42,6 +41,16 @@ RoomService -> RoomService : new RoomLayout()
 RoomService -> DB_MySQL : SELECT users
 RoomService -> DB_MySQL : SELECT fai_points_ledger
 RoomService -> DB_MySQL : INSERT/UPDATE room_layouts
+alt categoria incompativel
+RoomService --> RoomController : 400 CATEGORIA_INCOMPATIVEL
+RoomController --> P : 400 + mensagem
+end
+RoomService -> DB_MySQL : SELECT room_storage_map
+RoomService -> DB_MySQL : SELECT wardrobe_items
+alt gaveta categoria diferente
+RoomService --> RoomController : 400 GAVETA_CATEGORIA_DIFERENTE
+RoomController --> P : 400 + mensagem
+end
 RoomService -> DB_MySQL : SELECT room_storage_map
 alt gaveta cheia
 RoomService --> RoomController : 409 GAVETA_CHEIA
@@ -57,28 +66,11 @@ RoomService --> RoomController : 409 POSICAO_OCUPADA
 RoomController --> P : 409 + mensagem
 end
 RoomService -> DB_MySQL : SELECT room_storage_map
-RoomService -> RoomService : new RoomStorageEntry()
+RoomService -> DB_MySQL : INSERT/UPDATE room_storage_map
+RoomService -> DB_MySQL : SELECT room_storage_map
 RoomService -> DB_MySQL : INSERT/UPDATE room_storage_map
 deactivate RoomService
 RoomService --> RoomController : resultado
 RoomController --> P : 200 JSON
-P --> U : atualiza a tela
-== Aplicar organização (rótulos e movimentos) ==
-U -> P : Aplicar organização (rótulos e movimentos)
-P -> RoomController : POST /api/me/room/organization
-RoomController -> RoomService : applyOrganization()
-activate RoomService
-RoomService -> DB_MySQL : SELECT room_layouts
-RoomService -> RoomService : new RoomLayout()
-RoomService -> DB_MySQL : SELECT users
-RoomService -> DB_MySQL : SELECT fai_points_ledger
-RoomService -> DB_MySQL : INSERT/UPDATE room_layouts
-RoomService -> DB_MySQL : SELECT room_storage_map
-RoomService -> DB_MySQL : INSERT/UPDATE room_layouts
-RoomService -> DB_MySQL : INSERT/UPDATE room_storage_map
-RoomService ->> EV : RoomOrganized
-deactivate RoomService
-RoomService --> RoomController : resultado
-RoomController --> P : 201 JSON
 P --> U : atualiza a tela
 @enduml

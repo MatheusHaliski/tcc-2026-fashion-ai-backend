@@ -1,0 +1,9 @@
+{
+  "scope": "Real UI and WebGL scene, simulated API. Not a real-account gameplay or worker test.",
+  "blockedToggle": true,
+  "infoShowsCurrentAndRequiredTier": true,
+  "deckActivationRequest": true,
+  "worldAboveDeck": true,
+  "mobileNoPageOverflow": true,
+  "pageErrors": []
+}

@@ -20,167 +20,158 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba 'Buscar'\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba 'Buscar'\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
-package "fai-domain (entidades JPA)" {
-  class Follow <<follows>> {
-    +id: UUID
-    +follower: User
-    +following: User
-    +status: FollowStatus
-    +respondedAt: Instant
+package "lib/room3d/mirror-session.ts" {
+  class Reaction as "Reaction" <<interface>> {
+    +slot: HandSlot
+    +at: number
   }
-  class Comment <<comments>> {
-    +id: UUID
-    +author: User
-    +targetType: TargetType
-    +targetId: UUID
-    +parentCommentId: UUID
-    +content: String
-    +active: boolean
+  class HandPiece as "HandPiece" <<interface>> {
+    +id: string
+    +name: string
+    +slot: HandSlot
+    +apiSlot: string | null
+    +category: string | null
+    +subcategory: string | null
+    +imageUrl: string | null
+    +thumbnailUrl: string | null
+    +asset: AssetState
+    +worn: boolean
+    .. +1 ..
   }
-  class Reaction <<reactions>> {
-    +id: UUID
-    +actor: User
-    +targetType: TargetType
-    +targetId: UUID
-    +reactionType: ReactionType
+  class MirrorSession as "MirrorSession"  {
+    +phase: MirrorPhase
+    +manual:
+    +latched:
+    +since:
+    +seq:
+    +applied:
+    +busy: HandSlot | null
+    +error: string | null
+    +reaction: Reaction | null
+    +snapshot: MirrorSnapshot | null
+    .. +1 ..
   }
-  class Scheme <<schemes>> {
-    +id: UUID
-    +user: User
-    +originalScheme: Scheme
-    +title: String
-    +description: String
-    +creationMode: CreationMode
-    +origin: SchemeOrigin
-    +style: String
-    +occasion: String
-    +season: Season
-    .. +46 campos ..
+  class SourcePiece as "SourcePiece" <<type>> {
+    +id: string
+    +name: string
+    +category: string | null
+    +subcategory: string | null
+    +imageUrl: string | null
+    +thumbnailUrl: string | null
+    +model3dUrl: string | null
+    +photoProcessingStatus: string | null
   }
-  class SchemeItem <<scheme_items>> {
-    +id: UUID
-    +scheme: Scheme
-    +wardrobeItem: WardrobeItem
-    +slot: SchemeSlot
-    +tryOnLayer: TryOnLayer
-    +sortOrder: int
-    +zIndex: int
-    +positionX: BigDecimal
-    +positionY: BigDecimal
-    +scale: BigDecimal
-    .. +4 campos ..
+  class MirrorSnapshot as "MirrorSnapshot" <<interface>> {
+    +url: string
+    +aspect: number
+    +at: number
   }
-  class StyleDna <<style_dna>> {
-    +id: UUID
-    +user: User
-    +archetype: StyleArchetype
-    +boldnessIndex: int
-    +identityPhrase: String
-    +colorPalette: String
-    +styleKeywords: String
-    +occasionKeywords: String
-    +iconPieceName: String
-    +latestDnaSchemeId: UUID
-    .. +9 campos ..
+  enum MirrorPhase as "MirrorPhase" {
+    room
+    approach
+    tryon
+    exit
   }
-  class User <<users>> {
-    +id: UUID
-    +username: String
-    +displayName: String
-    +email: String
-    +emailHash: String
-    +emailVerified: boolean
-    +phone: String
-    +birthDate: String
-    +passwordHash: String
-    +profileType: ProfileType
-    .. +24 campos ..
-  }
-  class WardrobeItem <<wardrobe_items>> {
-    +id: UUID
-    +user: User
-    +brandProfile: BrandProfile
-    +brand: Brand
-    +name: String
-    +category: String
-    +subcategory: String
-    +sex: String
-    +brandName: String
-    +brandLogoUrl: String
-    .. +70 campos ..
+  class mod_mirror_session_ts as "mirror-session.ts" <<módulo>> {
+    +handSlotOf()
+    +assetStateOf()
+    +handsOf()
+    +snapshotCrop()
+    +MirrorSession.notify()
+    +MirrorSession.setSnapshot()
+    +MirrorSession.update()
+    +MirrorSession.open()
   }
 }
-package "fai-domain (enums)" {
-  enum FollowStatus {
-    PENDENTE
-    ACEITO
-    BLOQUEADO
+package "components/interactions.tsx" {
+  class Comment as "Comment" <<interface>> {
+    +id: string
+    +author: UserCard
+    +user: UserCard
+    +content: string
+    +createdAt: string
+    +parentId: string | null
+    +parentCommentId: string | null
+    +replies: Comment[]
+    +canDelete: boolean
   }
-  enum SchemeStatus {
-    DRAFT
-    PUBLISHED
-    ARCHIVED
+  enum TargetType as "TargetType" {
+    SCHEME
+    PIECE
+    COMMENT
+    DNA_SCHEME
   }
-  enum RenderStatus {
-    PENDING
-    RENDERING
-    ENHANCING
-    COMPOSITING
-    CACHED
-    COMPLETED
-    FAILED
-  }
-  enum AccountStatus {
-    PENDING_EMAIL_VERIFICATION
-    ACTIVE
-    PENDING_VALIDATION
-    SUSPENDED
-    DELETION_SCHEDULED
-    DELETED
-  }
-  enum AvailabilityStatus {
-    AVAILABLE
-    UNAVAILABLE
-    ARCHIVED
-  }
-  enum ModerationStatus {
-    PENDING
-    APPROVED
-    REJECTED_POLICY
-    REJECTED_NOT_CLOTHING
+  class mod_interactions_tsx as "interactions.tsx" <<módulo>> {
+    +InteractionBar()
+    +interactionType()
+    +ShareDialog()
+    +SocialIcon()
+    +useRemix()
+    +CardActions()
+    +CommentsDialog()
+    +CommentButton()
   }
 }
-package "fai-application" {
+package "app/(site)/(app)/photos/page.tsx" {
+  class Filters as "Filters" <<interface>> {
+    +origin: string
+    +occasion: string
+    +style: string
+    +color: string
+    +month: string
+    +days: string
+  }
+  enum Mode as "Mode" {
+    gallery
+    timeline
+    insights
+    compare
+  }
+  class Photo as "Photo" <<interface>> {
+    +id: string
+    +origin: string
+    +sourceEntityId: string | null
+    +url: string | null
+    +thumbnailUrl: string | null
+    +mimeType: string | null
+    +width: number | null
+    +height: number | null
+    +bytes: number | null
+    +keyMoment: boolean
+    .. +4 ..
+  }
+  class mod_page_tsx as "page.tsx" <<módulo>> {
+    +PhotosPage()
+  }
+}
+package "Backend (Java)" {
+  class SearchService <<service>> {
+    -searchIndex: ObjectProvider<SearchIndexPort>
+    -timeline: ObjectProvider<TimelineProjectionPo…
+    -guard: Guard
+    -hypeConfig: HypeScoreConfig
+    +blockedFor()
+    +showcaseAllows()
+    +visible()
+    +matches()
+    +relevance()
+  }
   class SocialService <<service>> {
-    +deleteComment()
+    -guard: Guard
+    -events: ApplicationEventPublisher
+    +target()
+    +bump()
+    +hypeSignal()
     +react()
+    +label()
     +comments()
     +comment()
-    +toggleSave()
-    +share()
-    +counters()
+    +deleteComment()
   }
 }
-SocialService ..> Comment : usa
-SocialService ..> Reaction : usa
-SocialService ..> Scheme : usa
-SocialService ..> User : usa
-SocialService ..> WardrobeItem : usa
-Comment "*" --> "1" User : author
-Follow "*" --> "1" User : follower
-Follow "*" --> "1" User : following
-Follow --> FollowStatus
-Reaction "*" --> "1" User : actor
-Scheme "*" --> "1" User : user
-Scheme --> RenderStatus
-Scheme --> SchemeStatus
-SchemeItem "*" --> "1" Scheme : scheme
-SchemeItem "*" --> "1" WardrobeItem : wardrobeItem
-StyleDna "1" --> "1" User : user
-User --> AccountStatus
-WardrobeItem "*" --> "1" User : user
-WardrobeItem --> AvailabilityStatus
-WardrobeItem --> ModerationStatus
+MirrorSession --> MirrorPhase : phase
+MirrorSession --> MirrorSnapshot : snapshot
+MirrorSession --> Reaction : reaction
 @enduml

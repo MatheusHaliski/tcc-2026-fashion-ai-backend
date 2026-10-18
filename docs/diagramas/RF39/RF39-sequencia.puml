@@ -21,10 +21,10 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF39 — 'Criar guarda-roupa 3D': componentes ou guarda-roupa inteiro de marca/celebridade vendidos na loja do quarto\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF39 — 'Criar guarda-roupa 3D': componentes ou guarda-roupa inteiro de marca/celebridade vendidos na loja do quarto\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
-boundary "Tela /brands/[slug]" as P
+boundary "Tela /admin/room-assets" as P
 control "RoomCreatorController" as RoomCreatorController
 participant "WardrobeCreatorService" as WardrobeCreatorService
 participant "Guard" as Guard

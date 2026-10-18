@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF44 — Permitir que marcas & celebridades vendam itens únicos e personalizáveis do Meu Quarto e do Background Studio na loja do app\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF44 — Permitir que marcas & celebridades vendam itens únicos e personalizáveis do Meu Quarto e do Background Studio na loja do app\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
   component "/brands/[slug]\n(site)/(app)/brands/[slug]/page.tsx" as FE0
@@ -37,7 +37,7 @@ package "Frontend (Next.js)" {
   component "/dna-schemes/new\n(site)/(app)/dna-schemes/new/page.tsx" as FE2
   component "/dna\n(site)/(app)/dna/page.tsx" as FE3
   component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE4
-  component "/points\n(site)/(app)/points/page.tsx" as FE5
+  component "/points/ganhar\n(site)/(app)/points/ganhar/page.tsx" as FE5
   component "lib/api/client.ts" as APIC
 }
 package "fai-web (REST)" {

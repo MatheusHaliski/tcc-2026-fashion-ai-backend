@@ -21,7 +21,7 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF20 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma marca de roupa\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF20 — Permitir que o usuário crie & publique um esquema de vestimenta como vinculado a uma marca de roupa\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 boundary "Tela /brands/[slug]" as P
@@ -30,8 +30,6 @@ participant "SealService" as SealService
 participant "Guard" as Guard
 database "MySQL" as DB_MySQL
 participant "Audit" as Audit
-participant "NotificationService" as NotificationService
-queue "Eventos de domínio" as EV
 == Emissor aprova ou rejeita o vínculo ==
 U -> P : Emissor aprova ou rejeita o vínculo
 P -> SealController : POST /api/seal-bonds/{bondId}/review
@@ -44,6 +42,36 @@ alt estado inválido
 SealService --> SealController : 409 ESTADO_INVALIDO
 SealController --> P : 409 + mensagem
 end
+alt O emissor ou a campanha deste selo não…
+SealService --> SealController : 403 ACESSO_NEGADO
+SealController --> P : 403 + mensagem
+end
+SealService -> DB_MySQL : SELECT seals
+alt política não atendida
+SealService --> SealController : 400 POLITICA_NAO_ATENDIDA
+SealController --> P : 400 + mensagem
+end
+alt O emissor ou a campanha deste selo não…
+SealService --> SealController : 403 ACESSO_NEGADO
+SealController --> P : 403 + mensagem
+end
+SealService -> DB_MySQL : SELECT scheme_items
+alt hype indisponível
+SealService --> SealController : 409 HYPE_INDISPONIVEL
+SealController --> P : 409 + mensagem
+end
+alt política não atendida
+SealService --> SealController : 409 POLITICA_NAO_ATENDIDA
+SealController --> P : 409 + mensagem
+end
+alt política não atendida
+SealService --> SealController : 409 POLITICA_NAO_ATENDIDA
+SealController --> P : 409 + mensagem
+end
+alt sealunavailable
+SealService --> SealController : 500 SealUnavailable
+SealController --> P : 500 + mensagem
+end
 SealService -> SealService : revalidationPending = false
 SealService -> Audit : log()
 SealService -> SealService : status = APPROVED
@@ -51,22 +79,7 @@ SealService -> SealService : reviewedAt = set
 SealService -> SealService : issuedAt = set
 SealService -> SealService : expiresAt = set
 SealService -> DB_MySQL : SELECT seal_bonds
-SealService -> NotificationService : notify()
-NotificationService -> DB_MySQL : SELECT users (×2)
-NotificationService -> DB_MySQL : SELECT user_preferences
-NotificationService -> DB_MySQL : INSERT/UPDATE notifications
-NotificationService --> SealService
-SealService -> Audit : log()
-SealService ->> EV : CouponRightsCheck
-alt motivo obrigatório
-SealService --> SealController : 400 MOTIVO_OBRIGATORIO
-SealController --> P : 400 + mensagem
-end
-SealService -> SealService : reviewedAt = set
-SealService -> SealService : revalidationPending = false
-SealService -> NotificationService : notify()
-SealService -> Audit : log()
-SealService -> DB_MySQL : SELECT brand_profiles
+note over SealService : … e mais 10 passos no código
 deactivate SealService
 SealService --> SealController : resultado
 SealController --> P : 201 JSON

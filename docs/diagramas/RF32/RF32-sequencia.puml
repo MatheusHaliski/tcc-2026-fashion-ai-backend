@@ -21,7 +21,7 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade ('Desafios')\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF32 — Participar de desafios de moda solo, em equipe, em duelo ou da comunidade ('Desafios')\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 boundary "Tela /challenges" as P

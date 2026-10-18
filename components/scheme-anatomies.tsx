@@ -1,5 +1,6 @@
 "use client";
 import type { SchemeView } from "@/lib/api/types";
+import { PieceImage } from "@/components/piece-image";
 import { mediaUrl, thumbUrl } from "@/lib/api/client";
 import { CATEGORY_LABEL, label } from "@/lib/api/taxonomy";
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
@@ -180,7 +181,7 @@ export const CLASSIC_USES = 30;
 const GOAL = 20;
 
 function Thumb({ p, size = 40 }: { p: AnatomyPiece; size?: number }) {
-  return <span className="anat-thumb" style={{ width: size, height: size }}>{p.img ? <img src={p.img} alt="" loading="lazy" decoding="async" /> : null}</span>;
+  return <span className="anat-thumb" style={{ width: size, height: size }}>{p.img ? <PieceImage sources={[p.img]} className="h-full w-full" /> : null}</span>;
 }
 function How({ summary, children }: { summary: string; children: ReactNode }) {
   return <details className="anat-how"><summary>{summary}</summary><p>{children}</p></details>;

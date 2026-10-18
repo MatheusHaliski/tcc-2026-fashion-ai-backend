@@ -1,125 +1,132 @@
 @startuml RF4_Componentes
-title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de componentes — criador catalog-first, buscador web de marcas e pipeline de imagem
 !pragma layout smetana
 skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
+skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam component {
   BackgroundColor #F4F2EF
   BorderColor #4A4852
-  ArrowColor #4A4852
 }
 skinparam package {
   BorderColor #CBC6BE
+  FontColor #4A4852
 }
 skinparam database {
   BackgroundColor #EEF6FF
   BorderColor #4A4852
 }
-skinparam interface {
-  BackgroundColor #FFFFFF
+skinparam cloud {
+  BackgroundColor #F0FBF6
   BorderColor #4A4852
 }
 left to right direction
+title RF4 — Adicionar uma nova peça por busca catalogada, formulário & fotografia\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
-  component "(app)/pieces/new/page.tsx\nPieceCreator (4 etapas)\n+ lib/pieces/prefill.ts" as FE_NEW
-  component "catalog-search.tsx\n+ brand-autocomplete.tsx" as FE_CAT
-  component "piece-form.tsx (PieceFields)\n+ brand-search-input.tsx" as FE_FORM
-  component "piece-art-editor.tsx (RF11)" as FE_ART
-  component "expanded-card.tsx (ExpandedPiece)\n+ edit-image.tsx (EditImageDialog)\n+ photo-editor.tsx (RF15)" as FE_IMG
-  component "lens/* — “Eu tenho” (RF45/RF54)" as FE_LENS
-  component "<<planejado>>\npasso “Adicionar minha foto\n(opcional)” no criador" as FE_FOTO #FFF5F8
+  component "/pieces/new\n(site)/(app)/pieces/new/page.tsx" as FE0
+  component "/dna-schemes/[id]/edit\n(site)/(app)/dna-schemes/[id]/edit/page.tsx" as FE1
+  component "/dna-schemes/new\n(site)/(app)/dna-schemes/new/page.tsx" as FE2
+  component "/dna\n(site)/(app)/dna/page.tsx" as FE3
+  component "/pieces/[id]\n(site)/(app)/pieces/[id]/page.tsx" as FE4
+  component "/schemes/[id]/edit\n(site)/(app)/schemes/[id]/edit/page.tsx" as FE5
+  component "lib/api/client.ts" as APIC
 }
-
-package "fai-web · controllers" {
-  [CatalogController\n/api/catalog/search · suggestions · brands\n/discover · /api/pieces/from-catalog] as C_CAT
-  [WardrobeController\n/api/pieces · /{id}/image · /background-removal\n/{id}/studio · /studio/approve · /studio/pending\n/api/me/pieces/studio · /api/taxonomy] as C_WR
-  [BrandLogoController\n/api/brand-search · /api/brand-logos] as C_BL
-  [SealController\n/api/seal-suggestions/preview-piece] as C_SEAL
-  [LensController\n/detections/{did}/own] as C_LENS
+package "fai-web (REST)" {
+  component "BrandLogoController\n/api/brand-logos\n/api/brand-search" as BrandLogoController
+  component "CatalogController\n/api/catalog/brands\n/api/catalog/discover\n/api/catalog/search\n/api/catalog/stores\n(+2 rotas)" as CatalogController
+  component "LensController\n/api/lens/scans\n/api/lens/scans/{…}/detections/{…}/own\n/api/lens/scans/{…}/image" as LensController
+  component "SealController\n/api/schemes/{…}/seal-bonds\n/api/schemes/{…}/seal-suggestions\n/api/seal-bonds/{…}/accept\n/api/seal-suggestions/preview\n(+1 rotas)" as SealController
+  component "WardrobeController\n/api/me/pieces/studio\n/api/pieces\n/api/pieces/analysis/batch\n/api/pieces/analysis/multi\n(+18 rotas)" as WardrobeController
 }
-
-package "fai-application · serviços" {
-  [CatalogService\n+ CatalogMatchScorer\n+ OfficialCatalogDiscovery\n+ CatalogIngestService] as S_CAT
-  [WardrobeService\n(create · createFromCatalog · replaceImage\nremoveBackground · estúdio com aprovação)] as S_WR
-  [BrandWebSearchService\n+ LogoFilter · SvgPathRenderer] as S_BWS
-  [BrandLogoService] as S_BL
-  [AssetCatalogService\n(ilustração por subcategoria)] as S_ASSET
-  [MediaService] as S_MEDIA
-  [AiEngine (RF24)\nFLAT_LAY_STANDARDIZER · STUDIO_ENHANCER\nBRAND_LOGO_FINDER] as S_AI
-  [FlatLayPipeline · StudioPipeline\nQualityMetrics · ImageOps] as S_IMG
-  [ProjectionService · NotificationService\nGuard · Audit] as S_X
-  [WardrobeEventListeners · HypeLiveRecalc\nInventoryScoreService (PieceCreated, AFTER_COMMIT)] as S_EV
-  [LensService] as S_LENS
-  [vision: CanonicalPhotographer · PhotographySpecs\nLandmarkDetector · AdaptiveCaptureEngine\n(sem endpoint; só testes)] as S_VIS #FAFAFA
+package "fai-application (casos de uso)" {
+  component "BrandLogoService" as BrandLogoService
+  component "CatalogService" as CatalogService
+  component "LensService" as LensService
+  component "SealService" as SealService
+  component "WardrobeService" as WardrobeService
+  component "MultiPieceService" as MultiPieceService
+  component "MediaService" as MediaService <<apoio>>
+  component "CatalogIngestService" as CatalogIngestService <<apoio>>
+  component "OfficialCatalogDiscovery" as OfficialCatalogDiscovery <<apoio>>
+  component "HypeScoreConfig" as HypeScoreConfig <<apoio>>
+  component "LensConfig" as LensConfig <<apoio>>
+  component "NotificationService" as NotificationService <<apoio>>
+  component "OwnMedia" as OwnMedia <<apoio>>
+  component "FlatLayPipeline" as FlatLayPipeline <<apoio>>
+  component "WebFetchPort\n«JdkWebFetchAdapter»" as WebFetchPort <<port>>
+  component "MediaStoragePort\n«LocalFileMediaStorage / S3MediaStorageAdapter»" as MediaStoragePort <<port>>
+  component "RateLimitPort\n«InMemoryRateLimit»" as RateLimitPort <<port>>
+  component "JobQueuePort\n«InMemoryJobQueue»" as JobQueuePort <<port>>
 }
-
-package "portas (fai-application · ports)" {
-  interface MediaStoragePort as P_MEDIA
-  interface WebFetchPort as P_WEB
-  interface JobQueuePort as P_JOB
-  interface SearchIndexPort as P_SEARCH
-  interface "ImageProviderPorts\nBackgroundRemovalPort · StudioShotPort" as P_IMG
+package "fai-domain (repositórios)" {
+  component "BrandLogoRepository\nBrandRepository\nWardrobeItemRepository\nCatalogProductRepository\nCatalogVariantRepository\nCatalogImageRepository\nCatalogProductAliasRepository\nCatalogSourceRepository\nBrandAliasRepository\nLensScanRepository\n(+23)" as REPO_MySQL
 }
-
-package "fai-infrastructure" {
-  [S3MediaStorageAdapter /\nLocalFileMediaStorage] as I_S3
-  [JdkWebFetchAdapter\n(https, anti-SSRF)] as I_WEB
-  [InMemoryJobQueue /\nRedis (jobs:flatlay-reprocess)] as I_JOB
-  [OpenSearchIndexAdapter] as I_OS
-  [RembgAdapter · RemoveBgAdapter\nPhotoroomStudioAdapter] as I_IMG
-  [Repositórios JPA\nWardrobeItemRepository · CatalogProductRepository\nCatalogImageRepository · BrandRepository\nBrandLogoRepository · PipelineJobRepository\nPhotoRepository · PieceImageRepository] as I_JPA
-}
-database "MySQL\n• wardrobe_items\n• catalog_products · variants · images · sources\n• brands · brand_logos\n• photos · pipeline_jobs\n• piece_images · capture_sessions (V29)" as DB
-cloud "Internet\nWikidata · Simple Icons (GitHub)\nlojas oficiais das marcas" as X_WEB
-cloud "rembg · remove.bg\nPhotoroom" as X_IMG
-
-FE_NEW --> FE_CAT
-FE_NEW --> FE_FORM
-FE_NEW --> FE_ART
-FE_FOTO ..> FE_IMG : <<planejado>> abre o editor guiado
-FE_CAT --> C_CAT
-FE_NEW --> C_CAT : POST /api/pieces/from-catalog
-FE_NEW --> C_WR : POST /api/pieces
-FE_FORM --> C_BL : GET /api/brand-search
-FE_FORM --> C_SEAL
-FE_IMG --> C_WR
-FE_LENS --> C_LENS
-C_LENS --> S_LENS
-S_LENS ..> FE_NEW : href /pieces/new?from=lens
-C_CAT --> S_CAT
-C_WR --> S_WR
-C_BL --> S_BWS
-C_BL --> S_BL
-S_CAT --> S_WR : createFromCatalog
-S_CAT --> P_WEB : discover (fontes oficiais)
-S_WR --> S_ASSET
-S_WR --> S_BL : acceptWebLogo
-S_WR --> S_MEDIA
-S_WR --> S_AI
-S_AI --> S_IMG : passo remoto + plano B local
-S_IMG --> P_IMG
-S_WR --> S_X
-S_WR ..> S_EV : publica PieceCreated
-S_WR --> P_JOB : PIECE_REPROCESS (sem consumidor)
-S_BWS --> P_WEB
-S_BWS --> S_AI
-S_BWS --> S_MEDIA
-S_MEDIA --> P_MEDIA
-S_X --> P_SEARCH
-I_S3 ..|> P_MEDIA
-I_WEB ..|> P_WEB
-I_JOB ..|> P_JOB
-I_OS ..|> P_SEARCH
-I_IMG ..|> P_IMG
-S_CAT --> I_JPA
-S_WR --> I_JPA
-S_BL --> I_JPA
-I_JPA --> DB : JPA / Flyway V1–V42
-I_WEB --> X_WEB
-I_IMG --> X_IMG
-note bottom of S_VIS
-  Base do asset canônico e da captura
-  adaptativa (V29); as rotas /api/capture/**
-  do plano RF04 não existem.
-end note
+database "MySQL\n• brand_aliases\n• brand_logos\n• brand_profiles\n• brands\n• catalog_images\n• catalog_product_aliases\n• catalog_products\n• catalog_sources\n• catalog_variants\n• celebrity_profiles\n• garment_embeddings\n• hype_scores\n(+21)" as DB_MySQL
+cloud "Motor de IA (RF24)\nprovedores externos + reserva local" as AI
+component "Eventos de domínio\n(@TransactionalEventListener)" as EV
+cloud "S3" as CL_S3
+APIC --> BrandLogoController : HTTPS/JSON
+APIC --> CatalogController : HTTPS/JSON
+APIC --> LensController : HTTPS/JSON
+APIC --> SealController : HTTPS/JSON
+APIC --> WardrobeController : HTTPS/JSON
+BrandLogoController --> BrandLogoService
+BrandLogoService --> AI
+BrandLogoService --> MediaStoragePort
+BrandLogoService --> REPO_MySQL
+BrandLogoService --> WebFetchPort
+BrandLogoService ..> MediaService
+CatalogController --> CatalogService
+CatalogService --> REPO_MySQL
+CatalogService ..> CatalogIngestService
+CatalogService ..> OfficialCatalogDiscovery
+CatalogService ..> WardrobeService
+FE0 --> APIC
+FE1 --> APIC
+FE2 --> APIC
+FE3 --> APIC
+FE4 --> APIC
+FE5 --> APIC
+LensController --> LensService
+LensService --> MediaStoragePort
+LensService --> REPO_MySQL
+LensService --> RateLimitPort
+LensService ..> HypeScoreConfig
+LensService ..> LensConfig
+LensService ..> MediaService
+LensService ..> MultiPieceService
+LensService ..> WardrobeService
+MediaStoragePort --> CL_S3
+MultiPieceService --> AI
+MultiPieceService --> REPO_MySQL
+MultiPieceService ..> FlatLayPipeline
+MultiPieceService ..> MediaService
+MultiPieceService ..> WardrobeService
+REPO_MySQL --> DB_MySQL : JPA/Flyway
+SealController --> SealService
+SealService --> AI
+SealService --> EV
+SealService --> REPO_MySQL
+SealService ..> NotificationService
+SealService ..> OwnMedia
+WardrobeController --> MultiPieceService
+WardrobeController --> WardrobeService
+WardrobeService --> AI
+WardrobeService --> EV
+WardrobeService --> JobQueuePort
+WardrobeService --> REPO_MySQL
+WardrobeService ..> BrandLogoService
+WardrobeService ..> FlatLayPipeline
+WardrobeService ..> MediaService
+WardrobeService ..> NotificationService
+WardrobeService ..> OwnMedia
 @enduml

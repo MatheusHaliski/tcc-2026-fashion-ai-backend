@@ -21,7 +21,7 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF53 — Selos × HypeScore\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF53 — Selos × HypeScore\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 boundary "Tela (Next.js)" as P
@@ -43,7 +43,7 @@ Guard -> DB_MySQL : SELECT follows (×3)
 Guard --> SealService
 SealService -> Guard : canView()
 SealService -> DB_MySQL : SELECT scheme_items
-SealService -> DB_MySQL : SELECT seal_bonds
+SealService -> DB_MySQL : SELECT seal_bonds (×2)
 deactivate SealService
 SealService --> SealController : resultado
 SealController --> P : 200 JSON
@@ -56,6 +56,27 @@ activate SealService
 SealService -> Guard : requireApprovedInstitutional()
 SealService -> DB_MySQL : SELECT users
 SealService -> SealService : new Seal()
+alt política inválida
+SealService --> SealController : 400 POLITICA_INVALIDA
+SealController --> P : 400 + mensagem
+end
+alt política ia obrigatória
+SealService --> SealController : 400 POLITICA_IA_OBRIGATORIA
+SealController --> P : 400 + mensagem
+end
+alt modelo selo inválido
+SealService --> SealController : 400 MODELO_SELO_INVALIDO
+SealController --> P : 400 + mensagem
+end
+alt modelo selo inválido
+SealService --> SealController : 400 MODELO_SELO_INVALIDO
+SealController --> P : 400 + mensagem
+end
+SealService -> DB_MySQL : SELECT seals
+alt modelo selo inválido
+SealService --> SealController : 400 MODELO_SELO_INVALIDO
+SealController --> P : 400 + mensagem
+end
 SealService -> OwnMedia : require()
 SealService -> OwnMedia : requireOrUnchanged() (×2)
 SealService -> SealService : iconUrl = set

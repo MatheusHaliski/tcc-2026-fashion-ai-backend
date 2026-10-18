@@ -20,21 +20,21 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF51 — Cartela sazonal e animação no modal do Background Studio\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF51 — Cartela sazonal e animação no modal do Background Studio\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "components/background-studio.tsx" {
   class BgConfig as "BgConfig" <<interface>> {
+    +compositionPreset: FashionPreset | null
+    +border: CardBorderConfig | null
+    +auraMetamorphose: 'OFF' | 'PRISMA' | 'CONSTELACAO' | 'FIO…
+    +auraHype: 'OFF' | 'SCANNER' | 'XRAY' | 'DOTS' | '…
     +color: string | null
     +gradient: string | null
     +gradientPresetId: string | null
     +seasonalPresetId: string | null
     +aura: { variantId: string; format?: 'IMAGEM_U…
     +materialId: string | null
-    +aiArt: { url: string } | null
-    +uploadUrl: string | null
-    +animation: string | null
-    +seasonalAuto: boolean
-    .. +4 ..
+    .. +8 ..
   }
   class BgCatalog as "BgCatalog" <<interface>> {
     +colors: string[]
@@ -75,17 +75,17 @@ package "components/background-studio.tsx" {
 }
 package "lib/card-art.ts" {
   class Studio as "Studio" <<interface>> {
+    +compositionPreset: FashionPreset | null
+    +border: import('@/lib/card-border').CardBorderC…
+    +auraMetamorphose: string | null
+    +auraHype: string | null
     +color: string | null
     +gradient: unknown
     +gradientPresetId: string | null
     +seasonalPresetId: string | null
     +seasonalAuto: boolean
     +aura: { variantId?: string; format?: string }…
-    +materialId: string | null
-    +aiArt: { url?: string } | null
-    +uploadUrl: string | null
-    +container: { color?: string | null; ink?: string |…
-    .. +4 ..
+    .. +8 ..
   }
   class CardArt as "CardArt" <<interface>> {
     +kind: ArtKind
@@ -134,15 +134,14 @@ package "components/scheme-builder.tsx" {
     +steps: string[]
     .. +1 ..
   }
-  class SealOption as "SealOption" <<interface>> {
-    +targetOwnerId: string
-    +kind: 'BRAND' | 'CELEBRITY'
-    +name: string
-    +logoUrl: string | null
-    +confidence: number
-    +justification: string
-    +eraLabel: string | null
-    +hype: { score: number | null; level: HypeLeve…
+  class Composition as "Composition" <<interface>> {
+    +title: string
+    +items: { wardrobeItemId: string; slot: string…
+    +occasions: string[]
+    +styles: string[]
+    +why: string
+    +reason: string
+    +scores: LookScoreValues | null
   }
   class mod_scheme_builder_tsx as "scheme-builder.tsx" <<módulo>> {
     +onePerType()

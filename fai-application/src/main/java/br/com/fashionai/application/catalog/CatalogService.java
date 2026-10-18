@@ -95,7 +95,8 @@ public class CatalogService {
     }
 
     /** Campos do formulário de busca (qualquer combinação de 2–3 já basta). */
-    public record SearchRequest(String category, String subcategory, String brand, String query, String color, Integer limit) {
+    public record SearchRequest(String category, String subcategory, String brand, String query, String color, Integer limit, String code) {
+        public SearchRequest(String category, String subcategory, String brand, String query, String color, Integer limit) { this(category, subcategory, brand, query, color, limit, null); }
     }
 
     /** Intenção normalizada + marca resolvida (null = marca desconhecida no catálogo). */
@@ -182,6 +183,11 @@ public class CatalogService {
         Resolved res = resolve(userId, r);
         CatalogMatchScorer.Intent q = res.intent();
         int limit = r.limit() == null ? 24 : Math.max(1, Math.min(48, r.limit()));
+        if (r.code() != null && !r.code().isBlank()) {
+            Map<String,Object> result = browse(new BrowseRequest(r.brand(), r.category(), r.subcategory(), null, 0, limit, null, r.color(), null, r.code()));
+            return Map.of("intent", intentMap(res), "results", result.get("items"), "total", result.get("total"), "enoughInput", true,
+                "canSearchOfficial", result.getOrDefault("canSearchOfficial", false));
+        }
         if (q.brandSlug() == null && q.subcategory() == null && q.category() == null && q.keywords().isEmpty() && q.design().isEmpty()) {
             return Map.of("intent", intentMap(res), "results", List.of(), "total", 0, "enoughInput", false);
         }
@@ -227,7 +233,8 @@ public class CatalogService {
     // ───────────────────────────── acervo inteiro (RF47): "ver todas as peças", sem pool nem corte por pontuação
 
     /** Página do acervo: marca (nome, apelido ou slug), categoria, subtipo e texto opcionais; {@code size} até {@value #BROWSE_MAX_SIZE}. */
-    public record BrowseRequest(String brand, String category, String subcategory, String query, Integer page, Integer size, String brandId, String color, String gender) {
+    public record BrowseRequest(String brand, String category, String subcategory, String query, Integer page, Integer size, String brandId, String color, String gender, String code) {
+        public BrowseRequest(String brand, String category, String subcategory, String query, Integer page, Integer size, String brandId, String color, String gender) { this(brand, category, subcategory, query, page, size, brandId, color, gender, null); }
         public BrowseRequest(String brand, String category, String subcategory, String query, Integer page, Integer size) {
             this(brand, category, subcategory, query, page, size, null, null, null);
         }
@@ -268,10 +275,14 @@ public class CatalogService {
             out.put("brandKnown", false);
             return out;
         }
-        Page<CatalogProduct> pg = products.browse(brand == null ? null : brand.getId().toString(), cat, sub,
+        String color = r.color() == null || r.color().isBlank() ? null : norm.color(r.color()).orElse(r.color().trim());
+        String gender = r.gender() == null || r.gender().isBlank() ? null : r.gender().trim();
+        String identifier = r.code() == null || r.code().isBlank() ? null : r.code().trim().toLowerCase(java.util.Locale.ROOT);
+        Page<CatalogProduct> pg = identifier != null
+            ? products.browseByIdentifier(brand == null ? null : brand.getId().toString(), cat, sub, identifier, color, gender, PageRequest.of(page, size))
+            : products.browse(brand == null ? null : brand.getId().toString(), cat, sub,
                 words.size() > 0 ? words.get(0) : null, words.size() > 1 ? words.get(1) : null, words.size() > 2 ? words.get(2) : null,
-                r.color() == null || r.color().isBlank() ? null : r.color().trim(),
-                r.gender() == null || r.gender().isBlank() ? null : r.gender().trim(), PageRequest.of(page, size));
+                color, gender, PageRequest.of(page, size));
         out.put("items", cards(pg.getContent()));
         out.put("page", page);
         out.put("size", size);
@@ -357,6 +368,7 @@ public class CatalogService {
 
     private static boolean usable(CatalogImage i) {
         return i.getUsageStatus() != br.com.fashionai.domain.model.enums.CatalogImageUsage.REJECTED
+                && !"REJECTED".equals(i.getReviewStatus())
                 && i.getImageUrl() != null && !i.getImageUrl().isBlank();
     }
 
@@ -473,7 +485,8 @@ public class CatalogService {
         m.put("productCode", p.getProductCode());
         m.put("sku", p.getSku());
         Map<String, Object> catalogImage = CatalogImagePipelineService.cardImage(img);
-        m.put("imageUrl", catalogImage != null ? catalogImage.get("url") : img == null ? null : img.getImageUrl());
+        m.put("imageUrl", catalogImage == null ? null : catalogImage.get("url"));
+        m.put("imageProcessingStatus", catalogImage != null ? "READY" : img != null && List.of("PENDING", "DOWNLOADING").contains(img.getProcessingStatus()) ? "PENDING" : "ERROR");
         m.put("catalogImage", catalogImage);
         m.put("imageSource", img == null ? null : CatalogIngestService.provenance(img));
         m.put("source", Map.of("type", p.getSourceType().name(), "domain", String.valueOf(p.getSourceDomain()),

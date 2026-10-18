@@ -62,6 +62,6 @@ export function DoubleBed({ engine, modelUrl, lit, intensity }: { engine?: RoomI
         {[-1, 1].map(s => <mesh key={s} position={[s * NIGHTSTAND[0], NIGHTSTAND[1] / 2, NIGHTSTAND[2]]} castShadow><boxGeometry args={[.36, NIGHTSTAND[1], .62]} />{navy}</mesh>)}
       </group>
     </ApprovedAsset>
-    <group position={NIGHTSTAND} scale={.55}><Lamp position={[0, 0, 0]} on={lit} intensity={intensity} /></group>
+    {[-1, 1].map((s) => <group key={s} position={[s * NIGHTSTAND[0], NIGHTSTAND[1], NIGHTSTAND[2]]} scale={.55}><Lamp position={[0, 0, 0]} on={lit} intensity={intensity} /></group>)}
   </RoomFixture>;
 }

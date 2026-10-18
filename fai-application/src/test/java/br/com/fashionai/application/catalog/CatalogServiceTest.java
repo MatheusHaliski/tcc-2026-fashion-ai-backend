@@ -109,6 +109,23 @@ class CatalogServiceTest {
     }
 
     @Test
+    void fotoRecusadaPelaRevisaoNaoApareceMesmoSePrincipalOuCanonica() {
+        UUID productId = UUID.randomUUID();
+        CatalogImage rejected = new CatalogImage();
+        rejected.setProductId(productId);
+        rejected.setImageUrl("https://nike.com.br/rejected.jpg");
+        rejected.setReviewStatus("REJECTED");
+        CatalogImage valid = new CatalogImage();
+        valid.setProductId(productId);
+        valid.setImageUrl("https://nike.com.br/valid.jpg");
+        CatalogImageRepository images = kit.dep(CatalogImageRepository.class);
+        when(images.findByProductIdInAndPrimaryTrue(anyList())).thenReturn(List.of(rejected));
+        when(images.findByProductIdInAndCanonicalTrue(anyList())).thenReturn(List.of(rejected));
+        when(images.findByProductIdIn(anyList())).thenReturn(List.of(rejected, valid));
+        assertThat(catalog.mainImages(List.of(productId))).containsEntry(productId, valid);
+    }
+
+    @Test
     void sugestoesDeNomeEMarcaComAlias() {
         assertThat((List<?>) catalog.suggestions(new CatalogService.SearchRequest(null, null, "Nike", "air", null, null)).get("suggestions")).isNotEmpty();
         assertThat((List<?>) catalog.brandSuggestions("nik").get("brands")).hasSize(1);

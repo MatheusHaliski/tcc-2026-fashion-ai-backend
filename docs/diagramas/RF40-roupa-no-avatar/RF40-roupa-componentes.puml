@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF40 — Avatar 3D: componentes da roupa no corpo\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF40 — Avatar 3D: componentes da roupa no corpo\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "components/ui" {
   component "index.tsx" as m_components_ui_index_tsx
@@ -39,6 +39,7 @@ package "components/three" {
   component "avatar-viewer.tsx" as m_components_three_avatar_viewer_tsx
   component "human-avatar.tsx" as m_components_three_human_avatar_tsx
   component "human-outfit.tsx" as m_components_three_human_outfit_tsx
+  component "avatar-lighting.tsx" as m_components_three_avatar_lighting_tsx <<apoio>>
   component "common.tsx" as m_components_three_common_tsx <<apoio>>
   component "mannequin.tsx" as m_components_three_mannequin_tsx <<apoio>>
 }
@@ -47,12 +48,13 @@ package "lib" {
 }
 package "lib/avatar3d" {
   component "body-spec.ts" as m_lib_avatar3d_body_spec_ts <<apoio>>
-  component "hair-cut.ts" as m_lib_avatar3d_hair_cut_ts <<apoio>>
-  component "hair-tone.ts" as m_lib_avatar3d_hair_tone_ts <<apoio>>
+  component "glasses.ts" as m_lib_avatar3d_glasses_ts <<apoio>>
 }
 package "lib/avatar3d/human" {
   component "hair-lod.ts" as m_lib_avatar3d_human_hair_lod_ts <<apoio>>
 }
+m_components_three_avatar_lighting_tsx --> m_components_three_common_tsx
+m_components_three_avatar_viewer_tsx --> m_components_three_avatar_lighting_tsx
 m_components_three_avatar_viewer_tsx --> m_components_three_common_tsx
 m_components_three_avatar_viewer_tsx --> m_components_three_human_avatar_tsx
 m_components_three_avatar_viewer_tsx --> m_components_three_mannequin_tsx
@@ -60,8 +62,7 @@ m_components_three_avatar_viewer_tsx --> m_lib_avatar3d_body_spec_ts
 m_components_three_avatar_viewer_tsx --> m_lib_avatar3d_human_hair_lod_ts
 m_components_three_human_avatar_tsx --> m_components_three_common_tsx
 m_components_three_human_avatar_tsx --> m_components_three_human_outfit_tsx
-m_components_three_human_avatar_tsx --> m_lib_avatar3d_hair_cut_ts
-m_components_three_human_avatar_tsx --> m_lib_avatar3d_hair_tone_ts
+m_components_three_human_avatar_tsx --> m_lib_avatar3d_glasses_ts
 m_components_three_human_avatar_tsx --> m_lib_avatar3d_human_hair_lod_ts
 m_components_three_human_outfit_tsx --> m_components_three_common_tsx
 m_components_three_human_outfit_tsx --> m_components_three_human_avatar_tsx

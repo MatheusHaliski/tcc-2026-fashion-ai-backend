@@ -19,7 +19,7 @@ skinparam state {
   StartColor #20A77A
   EndColor #4B5563
 }
-title RF13 — ciclo de vida de DnaScheme.status e visibility\nDiagrama de máquina de estados — gerado do código em 2026-10-06 (scripts/diagramas/v5)\nenum SchemeStatus · enum Visibility · tabela dna_schemes
+title RF13 — ciclo de vida de DnaScheme.status e visibility\nDiagrama de máquina de estados — gerado do código em 2026-10-14 (scripts/diagramas/v5)\nenum SchemeStatus · enum Visibility · tabela dna_schemes
 
 state "DnaScheme.status" as Ciclo_DnaScheme {
   state Ciclo_DnaScheme_DRAFT as "DRAFT"

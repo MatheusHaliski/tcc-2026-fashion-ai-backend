@@ -127,6 +127,10 @@ public class HypeQueryService {
         return ids == null || ids.isEmpty() ? Set.of() : new HashSet<>(ids);
     }
 
+    private AuraHypeDropService fashionDrops;
+    @Autowired(required = false)
+    public void setFashionDrops(AuraHypeDropService fashionDrops) { this.fashionDrops = fashionDrops; }
+
     // ================================================================== visibilidade
     boolean canView(CurrentUser viewer, WardrobeItem w) {
         boolean owner = viewer != null && viewer.id().equals(w.getUser().getId());
@@ -158,10 +162,13 @@ public class HypeQueryService {
             Set<UUID> ok = visible(viewer, type, wanted);
             Map<UUID, HypeScoreCurrent> rows = current.findByEntityTypeAndEntityIdInAndAlgorithmVersion(type, ok, config.algorithmVersion()).stream()
                     .collect(Collectors.toMap(HypeScoreCurrent::getEntityId, Function.identity(), (a, b) -> a));
+            Map<UUID, Map<String,Object>> drops = fashionDrops == null ? Map.of() : fashionDrops.classifications(type, ok);
             Instant now = Instant.now();
             for (UUID id : wanted) {
                 if (ok.contains(id)) {
-                    items.put(id.toString(), summary(rows.get(id), now));
+                    Map<String,Object> card = summary(rows.get(id), now);
+                    if (drops.containsKey(id)) card.put("fashionCard", drops.get(id));
+                    items.put(id.toString(), card);
                 }
             }
         }
@@ -176,6 +183,7 @@ public class HypeQueryService {
     /** Resumo do card (frente: score + seta; verso: dimensões). Sem linha = NOT_CALCULATED; linha antiga = stale. */
     Map<String, Object> summary(HypeScoreCurrent c, Instant now) {
         Map<String, Object> m = new LinkedHashMap<>();
+        m.put("fashionCard", FashionCardLevels.of(c));
         if (c == null) {
             m.put("status", "NOT_CALCULATED");
             m.put("seals", List.of());   // RF53: selos de Hype (derivados) — sem Hype, nenhum
@@ -241,6 +249,10 @@ public class HypeQueryService {
         }
         Optional<HypeScoreCurrent> row = current.findByEntityTypeAndEntityIdAndAlgorithmVersion(type, id, config.algorithmVersion());
         Map<String, Object> out = new LinkedHashMap<>(summary(row.orElse(null), Instant.now()));
+        if (fashionDrops != null) {
+            Map<String,Object> drop = fashionDrops.classifications(type, List.of(id)).get(id);
+            if (drop != null) out.put("fashionCard", drop);
+        }
         out.put("entityType", type.name());
         out.put("entityId", id.toString());
         out.put("reasons", row.map(r -> Json.list(r.getReasonsJson())).orElse(List.of()));

@@ -20,17 +20,18 @@ const CARD = (over: Partial<FlairCollectionCard> = {}): FlairCollectionCard => (
 const shares = (calls: { method: string; path: string }[]) => calls.filter((c) => c.method === "POST" && c.path.includes("/shares"));
 
 describe("Carta FLAIR", () => {
-  it("frente com nota, posição, nível escrito e Hype em números; sem Hype público, '—' e nunca 0", () => {
+  it("frente com nota, posição, nível e atributos; no verso, sem Hype público, '—' e nunca 0", () => {
     loggedAs();
     renderApp(<FlairGameCard card={CARD({ rare: true })} />);
     const card = screen.getByRole("article", { name: /Carta FLAIR Prata rara, nota 68, Tênis Aero, Norte Sport/ });
     expect(card.textContent).toContain("68");
     expect(card.textContent).toContain("CAL");
     expect(card.textContent).toMatch(/Prata · rara/);
-    expect(card.querySelectorAll(".fgc-hype dd")).toHaveLength(8);
-    expect(Array.from(card.querySelectorAll(".fgc-hype dd")).every((d) => d.textContent === "—")).toBe(true);
+    expect(Array.from(card.querySelectorAll(".fgc-attributes dd")).map(d => d.textContent)).toEqual(["40", "60"]);
     fireEvent.click(screen.getByRole("button", { name: "Ver o verso da carta" }));
     expect(screen.getByText("EDGE")).toBeTruthy();
+    expect(card.querySelectorAll(".fgc-hype dd")).toHaveLength(8);
+    expect(Array.from(card.querySelectorAll(".fgc-hype dd")).every(d => d.textContent === "—")).toBe(true);
   });
 
   it("Minhas cartas FLAIR: separadas por nível, com a contagem", async () => {

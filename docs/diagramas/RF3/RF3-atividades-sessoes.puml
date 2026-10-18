@@ -1,9 +1,16 @@
 @startuml RF3_Atividades_Sessoes
-title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de atividades — sessões ativas e recuperação de senha
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,59 +19,46 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
+title RF3 — Gerenciar a conta (dados pessoais, sessão, segurança, LGPD e notificações)\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-if (Situação?) then (logada: aba Sessões)
-  :<b>Frontend</b> · GET /api/auth/sessions → uma linha por família\n{sessionId, device, ip, location, lastUsedAt, expiresAt, current};
-  if (Encerrar?) then (uma sessão)
-    :<b>Frontend</b> · DELETE /api/auth/sessions/{sessionId};
-    note right
-      Divergência: a aba Sessões lê s.id e s.deviceName,
-      mas a API devolve sessionId e device —
-      o botão chama /api/auth/sessions/undefined (400).
-    end note
-    :<b>API</b> · Família de outra pessoa → 404; senão revoga\ne audita SESSAO_REVOGADA → 204;
-  else (todas as outras)
-    :<b>Frontend</b> · DELETE /api/auth/sessions;
-    :<b>API</b> · Revoga todas menos a atual → 200 {revokedSessions};
-  endif
-  :<b>Frontend</b> · Recarrega a lista de sessões;
-  stop
-else (sem acesso: esqueci a senha)
-  :<b>Frontend</b> · /forgot-password → POST /api/auth/password-reset/request {email}\n(10 pedidos/h por IP);
-  if (Conta existe e < 5 pedidos na última hora?) then (sim)
-    :<b>API</b> · VerificationCode PASSWORD_RESET (token de 32 bytes, 30 min);\nnotificação PASSWORD_RESET; audita RECUPERACAO_SENHA;\ne-mail com o link depois do commit, em outra thread;
-  else (não)
-    :<b>API</b> · Nada é enviado (só log);
-  endif
-  :<b>API</b> · 202 mensagem igual nos dois casos (não revela o cadastro);
-  :<b>Pessoa</b> · Abre o link do e-mail (/reset-password?token=…);
-  :<b>Frontend</b> · POST /api/auth/password-reset/confirm {token, newPassword, confirmPassword};
-  if (Token existe, não usado e não vencido?) then (não)
-    #FFE3E3:<b>API</b> · 400 LINK_INVALIDO;
-    stop
-  endif
-  if (Nova senha válida?) then (não)
-    #FFE3E3:<b>API</b> · 400 FORMULARIO_INVALIDO;
-    stop
-  endif
-  :<b>API</b> · Novo hash; consome este e os outros links; zera o bloqueio de login;\nrevoga TODAS as sessões; audita TROCA_SENHA → 204;
-  :<b>Frontend</b> · Aviso de sucesso e vai para /login;
-  stop
+:Abre /forgot-password, /login,\n/reset-password;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/auth/sessions;
+|Pessoa usuária|
+:Encerrar todas as sessões, incluindo\na atual;
+|Tela (Next.js)|
+:DELETE /api/auth/sessions;
+|API (Spring Boot)|
+:AuthController.revokeAll\n→ IdentityService.revokeOtherSessions;
+|Dados e serviços|
+:Lê: refresh_tokens;
+:Estado: revokedAt → set;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Encerrar uma sessão específica)
+    :DELETE /api/auth/sessions/{sessionId}\n→ IdentityService.revokeSession\nvalida: NAO_ENCONTRADO\nlê: refresh_tokens\nestado: revokedAt → set;
+  case (Trocar senha [encerra as outras s…)
+    :PUT /api/auth/password\n→ IdentityService.changePassword\nvalida: FORMULARIO_INVALIDO, SENHA_ATUAL_INCORRETA\nlê: users, verification_codes, refresh_tokens\nusa: PasswordHasherPort.hash\nestado: consumedAt → set, revokedAt → set;
+  case (Pedir redefinição de senha [respo…)
+    :POST /api/auth/password-reset/request\n→ IdentityService.requestPasswordReset\nlê: users, user_preferences\nusa: RateLimitPort.tryAcquire,\nEmailSenderPort.send,\nNotificationService.notify\ngrava: verification_codes;
+  case (Definir nova senha com o token re…)
+    :POST /api/auth/password-reset/confirm\n→ IdentityService.confirmPasswordReset\nvalida: FORMULARIO_INVALIDO, LINK_INVALIDO\nlê: verification_codes, refresh_tokens\nusa: PasswordHasherPort.hash, RateLimitPort.reset\nestado: consumedAt → set, revokedAt → set;
+  case (Autenticar por e-mail/username e…)
+    :POST /api/auth/login\n→ IdentityService.login\nvalida: CONTA_INDISPONIVEL, DOIS_FATORES_NECESSARIO,\nERRO, NAO_AUTENTICADO\nlê: users, verification_codes, refresh_tokens\nusa: RateLimitPort.tryAcquire,\nPasswordHasherPort.matches,\nRateLimitPort.release …\ngrava: refresh_tokens;
+  endswitch
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-legend right
-Em negrito, quem executa cada passo:
-Pessoa · Frontend (settings, forgot-password, reset-password)
-· API (AuthController · IdentityService)
-endlegend
+|Pessoa usuária|
+stop
 @enduml

@@ -48,6 +48,10 @@ import java.util.UUID;
  */
 @Service
 public class ProfileService {
+    private LevelProgressService levelProgress;
+    @org.springframework.beans.factory.annotation.Autowired
+    public void setLevelProgress(LevelProgressService progress) { this.levelProgress = progress; }
+
     private final UserRepository users;
     private final BrandProfileRepository brands;
     private final CelebrityProfileRepository celebrities;
@@ -139,6 +143,7 @@ public class ProfileService {
             out.put("pieces", List.of());
             return out;
         }
+        if (levelProgress != null) out.put("levelProgress", levelProgress.progress(u.getId()));
         String order = LookbookService.lookSort(sort);
         out.put("schemes", publishedLooks(viewer, u, self, published, order).stream()
                 .map(s -> schemeService.view(viewer, s, schemeItems.findBySchemeIdOrderBySortOrder(s.getId()))).toList());

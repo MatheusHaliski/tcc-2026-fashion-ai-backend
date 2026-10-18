@@ -3,6 +3,8 @@ import { useRef, useState, type Dispatch, type ReactNode, type SetStateAction } 
 import { useI18n } from "@/lib/i18n/i18n";
 import { Button, Chip, Field, Input, SegmentPicker, Select, Stepper, cn } from "@/components/ui";
 import { ELEMENTS, MATERIALS, SealMedallion, sealKind, type SealDesign } from "@/components/seal-medallion";
+import { ManualSealPolicy } from "@/components/manual-seal-policy";
+import { CreatorWelcome } from "@/components/creator-welcome";
 import { SealCreator } from "@/components/seal-creator";
 import { EMPTY_POLICY, cleanHype, cleanPolicy, describePolicy, type SealPolicy, type SealTierId } from "@/components/seal-policy-editor";
 import { CIRCULAR_TEMPLATES, FAI_TEMPLATES, FIRST_TEMPLATE, FOLHA_TEMPLATES, FOLHA_TEXT_LIMITS, LABEL_MAX, SEAL_KINDS, folhaTemplate, type FolhaSlotKey, type SealKind } from "@/lib/seals/templates";
@@ -25,8 +27,9 @@ export function displayDesign(d: SealDesign, name: string): SealDesign {
 export function SealWizard({ form, setForm, premium, brandName, onSave }: { form: SealFormState; setForm: Dispatch<SetStateAction<SealFormState>>; premium?: boolean; brandName?: string | null; onSave: () => Promise<boolean> }) {
   const { t } = useI18n();
   const editing = !!form.id;
-  const [creationMode, setCreationMode] = useState<"COPILOT" | "HYPE">(form.policy.mode === "HYPE" ? "HYPE" : "COPILOT");
-  const policies = useRef<Record<"COPILOT" | "HYPE", { policy: SealPolicy; tier: SealTierId }>>({
+  const [creationMode, setCreationMode] = useState<"MANUAL" | "COPILOT" | "HYPE">(form.policy.mode === "HYPE" ? "HYPE" : form.policy.generationMode === "MANUAL" ? "MANUAL" : "COPILOT");
+  const policies = useRef<Record<"MANUAL" | "COPILOT" | "HYPE", { policy: SealPolicy; tier: SealTierId }>>({
+    MANUAL: { policy: { ...EMPTY_POLICY, generationMode: "MANUAL" }, tier: form.tier },
     COPILOT: { policy: form.policy.mode === "HYPE" ? EMPTY_POLICY : form.policy, tier: form.tier },
     HYPE: { policy: form.policy.mode === "HYPE" ? form.policy : { ...EMPTY_POLICY, mode: "HYPE", hype: { minScore: 60 } }, tier: form.tier === "PERFIL" ? "LOOK" : form.tier },
   });
@@ -37,7 +40,7 @@ export function SealWizard({ form, setForm, premium, brandName, onSave }: { form
   const [reasons, setReasons] = useState<string[]>([]);
   const steps = [t(creationMode === "HYPE" ? "sealHypeIssuer.criteria" : "sealCopilot.title"), t("sealWizard.passo_dados"), t("sealWizard.passo_arte"), t("sealWizard.passo_revisar")];
   const named = form.name.trim().length >= 2;
-  const policyReady = creationMode === "HYPE" ? !!cleanHype(form.policy.hype) && form.tier !== "PERFIL" : ready;
+  const policyReady = creationMode === "HYPE" ? !!cleanHype(form.policy.hype) && form.tier !== "PERFIL" : creationMode === "MANUAL" ? !!cleanPolicy(form.policy) && (form.tier !== "PERFIL" || !!form.policy.referenceModel) : ready;
   const canGo = (i: number) => !saving && (i === 0 || ((policyReady || editing && creationMode === "COPILOT") && (i < 3 || named)));
 
   function applyDraft(draft: SealPolicyDraft) {
@@ -46,7 +49,7 @@ export function SealWizard({ form, setForm, premium, brandName, onSave }: { form
     setForm((current) => ({ ...current, name: draft.name, tier: draft.tier, policy: { ...EMPTY_POLICY, ...draft.policy }, design: draft.design, policyText: "", usageLimit: draft.tier === "PERFIL" ? "" : current.usageLimit }));
     setReady(true); setStep(1);
   }
-  function chooseMode(next: "COPILOT" | "HYPE") {
+  function chooseMode(next: "MANUAL" | "COPILOT" | "HYPE") {
     if (next === creationMode || saving) return;
     policies.current[creationMode] = { policy: form.policy, tier: form.tier };
     const { policy, tier } = policies.current[next];
@@ -58,13 +61,13 @@ export function SealWizard({ form, setForm, premium, brandName, onSave }: { form
 
   return (
     <div>
-      <Stepper steps={steps} current={step} onStep={setStep} label={t("sealWizard.etapas")} canGo={canGo} />
+      <CreatorWelcome kind="seal" /><Stepper steps={steps} current={step} onStep={setStep} label={t("sealWizard.etapas")} canGo={canGo} />
       <div className="mt-4">
         <div hidden={step !== 0}>
           <div className="grid gap-3">
             <SegmentPicker label={t("sealHypeIssuer.creation_mode")} value={creationMode} onChange={chooseMode}
-              options={[{ id: "COPILOT", label: t("sealHypeIssuer.copilot_mode") }, { id: "HYPE", label: t("sealHypeIssuer.mode") }]} />
-            {creationMode === "HYPE" ? <SealHypeEditor value={form.policy.hype ?? {}} tier={form.tier}
+              options={[{ id: "MANUAL", label: t("scheme.manual") }, { id: "COPILOT", label: t("sealHypeIssuer.copilot_mode") }, { id: "HYPE", label: t("sealHypeIssuer.mode") }]} />
+            {creationMode === "MANUAL" ? <ManualSealPolicy value={form.policy} tier={form.tier} brandName={brandName} onTier={tier => setForm(current => ({ ...current, tier, policy: { ...EMPTY_POLICY, generationMode: "MANUAL" } }))} onChange={policy => setForm(current => ({ ...current, policy }))} /> : creationMode === "HYPE" ? <SealHypeEditor value={form.policy.hype ?? {}} tier={form.tier}
               onTier={(tier) => setForm((current) => ({ ...current, tier }))} onChange={(hype) => setForm((current) => ({ ...current, policy: { ...EMPTY_POLICY, mode: "HYPE", hype } }))} />
               : <SealPolicyChat tier={form.tier} onTier={(tier) => { setForm((current) => ({ ...current, tier })); setReady(false); }} previousPolicy={form.policy} brandName={brandName} onApply={applyDraft} />}
           </div>
@@ -81,7 +84,7 @@ export function SealWizard({ form, setForm, premium, brandName, onSave }: { form
             <div className="mb-3">
               <p className="label">{t("sealWizard.politica")}</p>
               {form.policy.referenceModel && <SealReferencePreview model={form.policy.referenceModel} />}
-              {creationMode === "HYPE" && <p className="type-body-sm">{describePolicy(form.policy, form.tier)}</p>}
+              {(creationMode === "HYPE" || creationMode === "MANUAL") && <p className="type-body-sm">{describePolicy(form.policy, form.tier)}</p>}
               {sources.length > 0 && <div className="mt-2"><p className="label">{t("sealCopilot.sources")}</p><ul className="help">{sources.map((source) => <li key={source}>{source}</li>)}</ul></div>}
               <Button type="button" className="mt-2" onClick={() => setStep(0)}>{t(creationMode === "HYPE" ? "sealHypeIssuer.adjust" : "sealCopilot.adjust")}</Button>
             </div>

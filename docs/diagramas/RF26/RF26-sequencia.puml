@@ -21,14 +21,14 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF26 — Realizar busca global de esquemas de vestimenta & peças por estação, região, clima e gênero, através da aba 'Explorador Global'\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF26 — Realizar busca global de esquemas de vestimenta & peças por estação, região, clima e gênero, através da aba 'Explorador Global'\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 boundary "Tela /explorer" as P
 control "DiscoveryController" as DiscoveryController
 participant "ExplorerService" as ExplorerService
-== Painel global por país (cores, hype, marcas) ==
-U -> P : Painel global por país (cores, hype, marcas)
+== Painel global por país (volume de looks e peças públicos, cores e est… ==
+U -> P : Painel global por país (volume de looks e peças p…
 P -> DiscoveryController : GET /api/explorer/global
 DiscoveryController -> ExplorerService : globalPanel()
 activate ExplorerService

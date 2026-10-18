@@ -24,7 +24,7 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba 'Buscar'\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF8 — Visualizar esquemas de vestimenta & peças de roupa criados por outros usuários na rede social, através da aba 'Buscar'\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
@@ -38,7 +38,7 @@ start
 |API (Spring Boot)|
 :DiscoveryController.feed\n→ SearchService.communityFeed;
 |Dados e serviços|
-:Lê: follows\nstyle_dna\nschemes\nscheme_items;
+:Lê: follows\nstyle_dna\nschemes\nshares\nwardrobe_items\nscheme_items;
 :Usa: SchemeService.canView\nSchemeService.view;
 |Tela (Next.js)|
 :Atualiza a tela com a resposta;
@@ -47,8 +47,8 @@ if (Faz outra ação?) then (sim)
   switch (Qual?)
   case (Reagir [curtir etc.] a esquema, p…)
     :POST /api/interactions/{type}/{id}/reactions\n→ SocialService.react\nvalida: NAO_ENCONTRADO\nlê: schemes, wardrobe_items, dna_schemes …\nusa: Guard.requireCanCreate,\nSchemeService.requireView, Guard.requireView\n…\ngrava: reactions;
-  case (Compartilhar [link, timeline, red…)
-    :POST /api/interactions/{type}/{id}/shares\n→ SocialService.share\nvalida: INDISPONIVEL, NAO_ENCONTRADO\nlê: schemes, wardrobe_items, dna_schemes …\nusa: Guard.requireCanCreate,\nSchemeService.requireView, Guard.requireView\n…\ngrava: shares;
+  case (Compartilhar: publicar no feed do…)
+    :POST /api/interactions/{type}/{id}/shares\n→ SocialService.share;
   case (Comentar [ou responder a um comen…)
     :POST /api/interactions/{type}/{id}/comments\n→ SocialService.comment\nvalida: COMENTARIO_LONGO, COMENTARIO_VAZIO,\nCONTEUDO_BLOQUEADO, NAO_ENCONTRADO\nlê: schemes, wardrobe_items, dna_schemes …\nusa: Guard.requireCanCreate,\nSchemeService.requireView, Guard.requireView\n…\ngrava: comments;
   case (Salvar/remover dos salvos)

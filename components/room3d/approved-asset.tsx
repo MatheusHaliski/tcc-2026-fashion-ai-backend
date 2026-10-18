@@ -18,9 +18,10 @@ function load(url: string) {
 }
 /**
  * Fit uniformly, keeping depth and proportions ("contain"); "fill" scales each axis to the box, for models generated from
- * one photo, whose depth comes flattened (axis-aligned roots only). Keep the existing functional object while loading or on failure.
+ * one photo, whose depth comes flattened (axis-aligned roots only). `rotationY` turns the fitted model (e.g. a model
+ * exported facing the other way). Keep the existing functional object while loading or on failure.
  */
-export function ApprovedAsset({ url, size, children, centered = false, fit = "contain" }: { url?: string | null; size: [number, number, number]; children: ReactNode; centered?: boolean; fit?: "contain" | "fill" }) {
+export function ApprovedAsset({ url, size, children, centered = false, fit = "contain", rotationY = 0 }: { url?: string | null; size: [number, number, number]; children: ReactNode; centered?: boolean; fit?: "contain" | "fill"; rotationY?: number }) {
   const [model, setModel] = useState<{ url: string; object: THREE.Object3D } | null>(null);
   const source = mediaUrl(url); const [w, h, d] = size;
   useEffect(() => {
@@ -34,10 +35,11 @@ export function ApprovedAsset({ url, size, children, centered = false, fit = "co
       const scale = fit === "fill" ? axes : new THREE.Vector3().setScalar(Math.min(axes.x, axes.y, axes.z));
       object.scale.multiply(scale);
       object.position.sub(new THREE.Vector3(center.x, centered ? center.y : bounds.min.y, center.z).multiply(scale));
+      object.rotation.y = rotationY;
       object.traverse(o => { if ((o as THREE.Mesh).isMesh) { (o as THREE.Mesh).castShadow = true; (o as THREE.Mesh).receiveShadow = true; } });
       setModel({ url: source, object });
     }).catch(() => { if (alive) setModel(null); });
     return () => { alive = false; };
-  }, [source, w, h, d, centered, fit]);
+  }, [source, w, h, d, centered, fit, rotationY]);
   return model && model.url === source ? <primitive object={model.object} /> : <>{children}</>;
 }

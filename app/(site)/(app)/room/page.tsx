@@ -70,10 +70,11 @@ function RoomInner() {
   const [openSet, setOpenSet] = useState<Set<string>>(new Set()); const [focusModule, setFocusModule] = useState<string | null>(null); const [canvas, setCanvas] = useState<HTMLCanvasElement | null>(null);
   const modal = useDetailModal();
   const [lightOn, setLightOn] = useState(false);
+  const [lightBusy, setLightBusy] = useState(false); const lightLock = useRef(false);
   const [lightIntensity, setLightIntensity] = useState(.75);
   const lightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lightPeriod = data?.ambient?.period;
-  useEffect(() => { if (data) { const light = (data as unknown as RoomData3D).light; setLightOn(lightPeriod === "night" || light?.on === true); setLightIntensity(light?.intensity ?? .75); } }, [lightPeriod, !!data]);
+  useEffect(() => { if (data) { const light = (data as unknown as RoomData3D).light; setLightOn(light?.on ?? lightPeriod === "night"); setLightIntensity(light?.intensity ?? .75); } }, [lightPeriod, !!data]);
   useEffect(() => () => { if (lightTimer.current) clearTimeout(lightTimer.current); }, []);
   const mirror = useApi<MirrorState>((signal) => api.get("/api/me/mirror", { signal }), []);
   // peças fixadas ("Manter") no painel do Espelho: valem também para o Vista-me da barra da cena e sobrevivem a fechar a prova
@@ -269,8 +270,12 @@ function RoomInner() {
     } catch (e) { failed(n, p.slot, e); }
   }
   async function toggleLight() {
-    const next = !lightOn; setLightOn(next);
-    try { await api.put("/api/me/room/light", { on: next }); } catch (e) { setLightOn(!next); toast.fromError(e); }
+    if (lightLock.current) return;
+    lightLock.current = true; setLightBusy(true);
+    const next = !lightOn;
+    try { const saved = await api.put<{ on?: boolean }>("/api/me/room/light", { on: next }); setLightOn(saved.on ?? next); }
+    catch (error) { toast.fromError(error); }
+    finally { lightLock.current = false; setLightBusy(false); }
   }
   function dimLight(value: number) {
     setLightIntensity(value);
@@ -434,7 +439,7 @@ function RoomInner() {
             <Button variant="primary" onClick={() => setVista((v) => ({ ...v, open: true }))}><FaiIcon id="ACT-32" size={20} decorative />{t("room.vista_me_2")}</Button>
             <Button onClick={() => setCopilot((c) => ({ ...c, open: true }))}><FaiIcon id="ACT-13" size={20} decorative />{t("room.busto_copilot")}</Button>
             {((data as unknown as RoomData3D).unboxing?.length ?? 0) > 0 && <Button loading={unboxing} onClick={() => { void unbox(); }}>{t("room.receive_purchase", { count: (data as unknown as RoomData3D).unboxing!.length })}</Button>}
-            <Button onClick={toggleLight} aria-pressed={lightOn}>{lightOn ? t("room.apagar") : t("room.acender")}</Button>
+            <Button onClick={toggleLight} loading={lightBusy} disabled={lightBusy} aria-pressed={lightOn}>{lightOn ? t("room.apagar") : t("room.acender")}</Button>
             <label className="room3d-light type-body-sm">{t("room.light_intensity")}<input type="range" min={0} max={100} step={1} value={Math.round(lightIntensity * 100)} aria-label={t("room.light_intensity")} onChange={e => dimLight(Number(e.target.value) / 100)} /><output className="type-caption">{Math.round(lightIntensity * 100)}%</output></label>
             <ActionMenu label={t("room.moreViews")} items={[
               { label: t("room.vista_3_4"), onSelect: () => { setFocusModule(null); setOpenSet(new Set()); setHighlight(null); } },

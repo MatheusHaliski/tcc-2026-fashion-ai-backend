@@ -33,7 +33,7 @@ python -m unittest discover -s scripts/catalog/tests      # testes sem banco (in
 
 A deduplicação reúne as buscas por identificadores do produto, variantes e chave normalizada em uma consulta
 `UNION ALL`, preservando a prioridade GTIN → EAN → UPC → SKU → código → URL → variantes → chave. A migração
-**V57** adiciona os índices de EAN/UPC e dos identificadores de variantes que faltavam. Atualize a API para executar
+**V61** adiciona os índices de EAN/UPC e dos identificadores de variantes que faltavam. Atualize a API para executar
 o Flyway antes de importar um acervo grande com essa versão; sem os índices, esses ramos podem varrer tabelas.
 `--skip-existing` mantém os caches de marca/fontes/apelidos e a leitura em lote dos filhos; fotos e variantes novas
 continuam sendo inseridas. `--batch-size` controla só o progresso no terminal, não a transação nem o paralelismo.
@@ -49,7 +49,7 @@ as milhares de linhas seguintes tentando usar o mesmo socket. A gravação final
 e usa o mesmo identificador em todas as tentativas, evitando dois registros se a resposta do COMMIT se perder.
 
 ```bash
-# Após atualizar o código e aplicar V57 pelo Flyway, execute novamente o mesmo comando:
+# Após atualizar o código e aplicar V61 pelo Flyway, execute novamente o mesmo comando:
 bash scripts/catalog/import_railway.sh HOST_DO_PROXY PORTA_DO_PROXY
 # Ou, com MYSQL_* já configuradas:
 python scripts/catalog/import_products.py data/catalog/acervo/*.jsonl.gz --skip-existing --batch-size 1000

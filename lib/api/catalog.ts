@@ -1,5 +1,7 @@
-import { api } from "@/lib/api/client";
+import type {FashionCard,AuraContextMetadata} from "@/lib/fashion-card/types";
+import { api, ApiError } from "@/lib/api/client";
 import type { PieceView } from "@/lib/api/types";
+import type { FashionCard as LegacyFashionCard } from "@/lib/fashion-card";
 
 /** RF47 · Tipos e chamadas do catálogo global (produto ≠ peça pessoal). */
 export interface CatalogBrandRef { id: string; name: string; slug: string; logoUrl?: string | null }
@@ -16,10 +18,12 @@ export interface NormRect { x: number; y: number; w: number; h: number }
  * Foto canônica escolhida pelo pipeline de imagens do catálogo. SEMANTIC_CROP: URL original da marca com o recorte 4:5
  * aplicado na exibição (nada é copiado — RN47.03). PROCESSED: master processado no storage (fonte com permissão).
  */
-export interface CatalogCardImage { url: string; mode: "SEMANTIC_CROP" | "PROCESSED"; crop?: NormRect | null; background?: string | null; aspect?: string | null; thumbnailUrl?: string | null; imageId?: string; qualityScore?: number | null; pipelineVersion?: string | null }
+export interface CatalogCardImage { url: string; sourceUrl?: string | null; mode: "SEMANTIC_CROP" | "PROCESSED"; crop?: NormRect | null; background?: string | null; aspect?: string | null; thumbnailUrl?: string | null; imageId?: string; qualityScore?: number | null; pipelineVersion?: string | null }
 export interface CatalogProductImage { id: string; url: string; type: string; primary: boolean; provenance: ImageProvenance; sourceUrl?: string; processedUrl?: string | null; viewType?: string; canonical?: boolean; viewRole?: string | null; qualityScore?: number | null; processingStatus?: string }
 
 export interface CatalogProduct {
+  /** Optional viewer-owned projection; never a canonical public user portrait. */
+  fashionCard?: FashionCard | LegacyFashionCard | null; auraPresetId?: string | null; auraContext?: AuraContextMetadata | null; imageProcessingStatus?: "READY" | "PENDING" | "ERROR";
   id: string; brand: CatalogBrandRef | null; productName: string; modelName?: string | null; category: string; subcategory: string;
   color?: string | null; colorName?: string | null; colorHex?: string | null; material?: string | null; collection?: string | null; gender?: string | null;
   description?: string | null; design?: DesignTraits | null;
@@ -31,9 +35,9 @@ export interface CatalogProduct {
 export interface SearchIntent { brand?: string | null; brandKnown: boolean; category?: string | null; subcategory?: string | null; keywords: string[]; color?: string | null; design?: DesignTraits | null }
 export interface SearchResponse { intent: SearchIntent; results: CatalogProduct[]; total: number; enoughInput: boolean; canSearchOfficial?: boolean; message?: string | null }
 export interface DiscoverResponse { results: CatalogProduct[]; status: "FOUND" | "NOT_FOUND" | "BRAND_UNKNOWN" | "NO_OFFICIAL_SOURCE"; message?: string; rejected?: number }
-export interface SearchParams { category?: string; subcategory?: string; brand?: string; q?: string; color?: string; limit?: number }
+export interface SearchParams { code?: string; category?: string; subcategory?: string; brand?: string; q?: string; color?: string; limit?: number }
 /** Página do acervo inteiro (GET /api/catalog/products): filtros opcionais; `page` começa em 0; `size` até 96. */
-export interface BrowseParams { color?: string; gender?: string; category?: string; subcategory?: string; brand?: string; brandId?: string; q?: string; page?: number; size?: number }
+export interface BrowseParams { code?: string; color?: string; gender?: string; category?: string; subcategory?: string; brand?: string; brandId?: string; q?: string; page?: number; size?: number }
 export interface BrowseResponse { canSearchOfficial?: boolean; items: CatalogProduct[]; page: number; size: number; total: number; hasMore: boolean; brandKnown?: boolean; brand?: CatalogBrandRef | null }
 /** Tamanho do acervo visível: o número mostrado como "acervo completo". */
 export interface CatalogSummary { products: number; brands: number; /** peças com pelo menos uma foto utilizável */ withImage?: number; registeredProducts?: number; unbrandedProducts?: number }
@@ -50,7 +54,14 @@ export const catalogApi = {
   browse: (p: BrowseParams, signal?: AbortSignal) => api.get<BrowseResponse>(`/api/catalog/products${qs(p)}`, { signal }),
   summary: (signal?: AbortSignal) => api.get<CatalogSummary>("/api/catalog/summary", { signal }),
   suggestions: (p: SearchParams, signal?: AbortSignal) => api.get<{ suggestions: string[] }>(`/api/catalog/suggestions${qs(p)}`, { signal }),
-  previewImage: (id: string) => api.post<CatalogProduct>(`/api/catalog/products/${id}/preview-image`, {}),
+  previewImage: async (id: string): Promise<CatalogProduct> => {
+    try { return await api.post<CatalogProduct>(`/api/catalog/products/${id}/preview-image`, {}); }
+    catch (error) {
+      if (!(error instanceof ApiError) || error.status !== 404) throw error;
+      // O endpoint de verificação aplica o mesmo pipeline em versões anteriores da API.
+      return await api.post<CatalogProduct>(`/api/catalog/products/${id}/verify-image`, {});
+    }
+  },
   verifyImage: (id: string) => api.post<CatalogProduct>(`/api/catalog/products/${id}/verify-image`, {}),
   product: (id: string) => api.get<CatalogProduct>(`/api/catalog/products/${id}`),
   discover: (p: { brand?: string; subcategory?: string; category?: string; query?: string; color?: string }) => api.post<DiscoverResponse>("/api/catalog/discover", p),

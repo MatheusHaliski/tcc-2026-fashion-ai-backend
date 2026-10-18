@@ -1,9 +1,16 @@
 @startuml RF6_Atividades_LookDoDia
-title RF6 — Acessar e gerenciar o Perfil Lookbook\nDiagrama de atividades — aba Look do dia (painel HypeScore v2 só leitura, dica tip e avaliação)
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 18
+skinparam defaultFontName "DejaVu Sans"
+skinparam defaultFontSize 12
+skinparam titleFontSize 15
+skinparam roundcorner 14
 skinparam ArrowColor #52606D
+skinparam note {
+  BackgroundColor #FFFDEB
+  BorderColor #D8CE78
+  FontColor #554F24
+}
 skinparam activity {
   BackgroundColor #F8F4FF
   BorderColor #B695F5
@@ -12,78 +19,52 @@ skinparam activity {
   DiamondBorderColor #F08DB1
   StartColor #20A77A
   EndColor #4B5563
-  BarColor #4B4B4B
 }
 skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-skinparam note {
-  BackgroundColor #FFFDEB
-  BorderColor #D8CE78
-  FontColor #554F24
-}
-|Pessoa|
+title RF6 — Acessar e gerenciar o Perfil Lookbook\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
+
+|Pessoa usuária|
 start
-:Abre a aba Look do dia do próprio Lookbook\n(u/[username]?tab=daily);
-|Frontend|
-:DailyTab (lookbook-tabs.tsx)\nGET /api/me/daily-look-tab?withAi=false;
-|API e serviços|
-:LookbookService.dailyLookTab → DailyLookService.today(userId);
-if (Há registro de hoje?) then (não)
-  if (Há look anterior com esquema não arquivado?) then (sim)
-    :Materializa cópia em daily_looks\n(materializedFrom = look anterior, mesma origem);
-  else (não)
-  endif
-endif
-if (Há Look do Dia?) then (não)
-  |Frontend|
-  :Estado vazio com 3 ações: marcar um look salvo (/looks),\nusar o Autopiloto (/autopilot), Vista-me no espelho (/mirror);
-  |Pessoa|
-  :Marca um look pelo detalhe do esquema (ver RF42);
-  stop
-else (sim)
-  |API e serviços|
-  :HypeScoreService.panel(dailyLook, withAi):\nlê hype_scores do look (HypeScore v2, SCHEME)\n— o GET nunca recalcula nem grava;
+:Abre /autopilot, /mirror, /looks;
+|Tela (Next.js)|
+:Carrega os dados da tela\nGET /api/me/daily-look-tab\nGET /api/me/daily-looks\nGET /api/users/{ownerId}/favorites;
+|Pessoa usuária|
+:Visão geral do lookbook (closet\ndigital, looks, agrupamento…;
+|Tela (Next.js)|
+:GET /api/users/{ownerId}/lookbook;
+|API (Spring Boot)|
+:LookbookController.overview\n→ LookbookService.overview;
+|Dados e serviços|
+:Lê: users\nwardrobe_items\nschemes\nsaved_items\nscheme_items;
+:Usa: Guard.canView\nDailyLookService.today;
+|Tela (Next.js)|
+:Atualiza a tela com a resposta;
+|Pessoa usuária|
+if (Faz outra ação?) then (sim)
+  switch (Qual?)
+  case (Marcar esquema como Look do Dia)
+    :POST /api/me/daily-look\n→ LookbookService.markDailyLook\nusa: SchemeService.owned,\nDailyLookService.register,\nDailyLookService.view;
+  case (Escolher versão do painel)
+    :PUT /api/me/hype-panel-version\n→ LookbookService.setPanelVersion\nlê: users\ngrava: users;
+  case (Favoritar look salvo)
+    :PUT /api/me/saved-looks/{schemeId}/favorite\n→ LookbookService.favorite\nlê: schemes\nusa: SchemeService.toggles,\nSocialService.favoriteSaved;
+  case (Sugerir agrupamentos por similari…)
+    :POST /api/me/similarity-groups/suggestions\n→ LookbookService.suggestGroups\nvalida: ACERVO_PEQUENO\nlê: wardrobe_items, schemes, scheme_items …\nia: ACERVO_GROUPING\ngrava: acervo_groups;
+  case (Descartar agrupamento sugerido; /…)
+    :DELETE /api/me/similarity-groups/{groupId}\n→ LookbookService.discardGroup\nlê: acervo_groups\nusa: Guard.requireOwner\ngrava: acervo_groups;
+  endswitch
   note right
-    O v1 (hype_score_metrics, faixas de juízo,
-    HypeGroups) saiu na limpeza P3-16. O painel
-    devolve v2 (status, score, faixa, dimensões),
-    magazineCover, tip e previousDailyLook
+  Outras ações deste RF:
+  Criar agrupamento (coleção, t…, Editar
+  agrupamento, Excluir agrupamento, Adicionar
+  esquemas/peças ao a…, Remover dos salvos
   end note
-  if (Status do Hype do look?) then (sem linha)
-    :v2.status = NOT_CALCULATED\n(score e faixa nulos, nunca 0);
-  elseif () then (poucos sinais)
-    :v2.status = INSUFFICIENT_DATA\n("Dados insuficientes");
-  else (AVAILABLE)
-    :Score, faixa em texto, seta de variação\ne stale quando passou de 24 h;
-  endif
-  :tip = dica local pela dimensão v2 mais fraca\n(engajamento/tendência; sem base = neutro 50);
-  if (withAi = true?) then (sim)
-    |Banco/IA|
-    :AiEngine.text (STYLE_ADVISOR): uma dica de até\n2 frases, sem juízo de qualidade e sem marcas;
-    if (IA respondeu?) then (não)
-      :Mantém a dica local;
-    endif
-    |API e serviços|
-  endif
-  :magazineCover.unlocked = faixa ≥ TRENDING;
+  |Tela (Next.js)|
+  :Atualiza a tela;
 endif
-:Histórico (até 60 dias, DailyLookService.history)\n+ feedbackReminder (pendente e depois das 18 h);
-|Frontend|
-:Painel na versão escolhida (6 versões visuais, mesmo número v2)\n+ HypeInline (análise completa) + LookExports (capa);
-:Cada linha do histórico pede o HypeBadge em lote\n(GET /api/hype/summaries?type=SCHEME&ids=);
-|Pessoa|
-if (Ação?) then (avaliar o look)
-  |Frontend|
-  :PUT /api/me/daily-looks/{date}/feedback\n{ADOREI | NAO_USEI | NAO_GOSTEI};
-  note right: alimenta o PreferenceModel do\nAutopiloto (RF43); sem look na data = 404 SEM_LOOK_DO_DIA
-elseif () then (trocar a versão do painel)
-  |Frontend|
-  :PUT /api/me/hype-panel-version {version}\n(users.look_do_dia_panel_version);
-else (pedir dica com IA)
-  |Frontend|
-  :Marca a caixa → novo GET ?withAi=true;
-endif
+|Pessoa usuária|
 stop
 @enduml

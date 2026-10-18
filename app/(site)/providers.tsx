@@ -10,6 +10,8 @@ import { useDevRefsFromUrl } from "@/lib/dev-refs";
 import { ChunkRecovery } from "@/components/chunk-recovery";
 import { GuideProvider } from "@/components/guide/guide";
 
+import { PreferencesSync } from "@/components/preferences-sync";
+
 export function Providers({ children, initialLocale }: { children: ReactNode; initialLocale?: Locale }) {
   useDevRefsFromUrl();
   return (
@@ -17,7 +19,7 @@ export function Providers({ children, initialLocale }: { children: ReactNode; in
       <ThemeProvider>
         <ToastProvider>
           <ChunkRecovery />
-          <NoticeProvider><AuthProvider><GuideProvider><DetailModalProvider><WebVitals />{children}</DetailModalProvider></GuideProvider></AuthProvider></NoticeProvider>
+          <NoticeProvider><AuthProvider><PreferencesSync /><GuideProvider><DetailModalProvider><WebVitals />{children}</DetailModalProvider></GuideProvider></AuthProvider></NoticeProvider>
         </ToastProvider>
       </ThemeProvider>
     </I18nProvider>

@@ -43,7 +43,7 @@ export function HistoryTimeline() {
           <ol className="history-list">{rows.map((r) => <Row key={r.id} r={r} />)}</ol>
         </Card>
       ))}
-      <p className="type-caption text-muted">{t("history.timeline.photos")} <Link href="/photos" className="underline">{t("history.timeline.photos_link")}</Link></p>
+      <p className="type-caption text-muted">{t("history.timeline.photos")} <Link href="/atelier?tab=timeline" className="underline">{t("history.timeline.photos_link")}</Link></p>
     </div>
   );
 }

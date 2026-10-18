@@ -117,6 +117,21 @@ class CatalogImagePipelineServiceTest {
     }
 
     @Test
+    void somenteEnquadramentoAprovadoPodeSerExibidoSemFotoCruaEmFalha() {
+        CatalogImage photo = image("https://img.brand.com/framed.jpg", CatalogImageType.FRONT,
+                CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
+        photo.setCanonical(true);
+        assertThat(CatalogImagePipelineService.cardImage(photo)).isNull();
+        service.process(photo.getId());
+        photo.setCanonical(true);
+        assertThat(CatalogImagePipelineService.cardImage(photo)).isNotNull();
+        photo.setProcessingStatus("FAILED");
+        assertThat(CatalogImagePipelineService.cardImage(photo)).isNull();
+        photo.setProcessingStatus("APPROVED");photo.setCropJson(null);
+        assertThat(CatalogImagePipelineService.cardImage(photo)).isNull();
+    }
+
+    @Test
     void previewAutomaticoReutilizaRecorteSemNovoDownload() {
         product.setCategory("upper_piece"); product.setSubcategory("t_shirt");
         CatalogImage front = image("https://img.brand.com/preview.jpg", CatalogImageType.FRONT,
@@ -166,6 +181,49 @@ class CatalogImagePipelineServiceTest {
         assertThatThrownBy(() -> service.verifySelection(admin, product.getId())).isInstanceOf(ApiException.class);
         assertThat(image.getCropJson()).isNull();
         assertThat(image.isCanonical()).isFalse();
+    }
+
+    @Test
+    void selecaoRecuperaFotoCanonicaIndisponivelComOutraDoMesmoProduto() {
+        CatalogImage broken = image("https://img.brand.com/dead.jpg", CatalogImageType.FRONT, null);
+        broken.setCanonical(true);
+        CatalogImage alternative = image("https://img.brand.com/alternate.jpg", CatalogImageType.PACKSHOT,
+                CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
+        service.verifySelection(admin, product.getId());
+        assertThat(broken.getCropJson()).isNull();
+        assertThat(broken.isCanonical()).isFalse();
+        assertThat(alternative.isCanonical()).isTrue();
+        assertThat(Json.map(alternative.getCropJson())).containsEntry("ruleCompliant", true);
+        assertThat(CatalogImagePipelineService.cardImage(alternative)).containsEntry("url", alternative.getImageUrl());
+        assertThat(stored).isEmpty();
+    }
+
+    @Test
+    void selecaoIgnoraBytesInvalidosEAlternativaRecusada() {
+        CatalogImage unreadable = image("https://img.brand.com/bad.jpg", CatalogImageType.FRONT, new byte[]{1, 2, 3});
+        unreadable.setCanonical(true);
+        CatalogImage rejected = image("https://img.brand.com/rejected.jpg", CatalogImageType.FRONT,
+                CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
+        rejected.setReviewStatus("REJECTED");
+        CatalogImage valid = image("https://img.brand.com/valid.jpg", CatalogImageType.FRONT,
+                CatalogPhotos.jpeg(CatalogPhotos.tee(200, 200, 1.0)));
+        service.verifySelection(admin, product.getId());
+        assertThat(valid.isCanonical()).isTrue();
+        assertThat(rejected.getCropJson()).isNull();
+        assertThat(unreadable.getCropJson()).isNull();
+    }
+
+    @Test
+    void selecaoDeCalcadoUsaRegraDoProdutoSemExigirQuadroSoDeTecido() {
+        product.setCategory("shoes_piece");
+        product.setSubcategory("casual_sneakers");
+        CatalogImage shoe = image("https://img.brand.com/sneakers.jpg", CatalogImageType.PACKSHOT,
+                CatalogPhotos.jpeg(CatalogPhotos.sneakers()));
+        service.verifySelection(admin, product.getId());
+        Map<String, Object> crop = Json.map(shoe.getCropJson());
+        assertThat(crop).containsEntry("ruleCompliant", true);
+        assertThat(((Map<?, ?>) crop.get("selectionFrame")).get("version")).isEqualTo(ProductRuleFrame.VERSION);
+        assertThat(shoe.isCanonical()).isTrue();
     }
 
     @Test
@@ -233,7 +291,7 @@ class CatalogImagePipelineServiceTest {
         assertThat(front.getStoredUrl()).endsWith("master.png");
         assertThat(stored.keySet()).anyMatch(k -> k.endsWith("card.jpg")).anyMatch(k -> k.endsWith("thumb.jpg"))
                 .anyMatch(k -> k.endsWith("white.jpg")).anyMatch(k -> k.endsWith("neutral.jpg"));
-        assertThat(CatalogImagePipelineService.cardImage(front)).containsEntry("mode", "PROCESSED").containsEntry("aspect", "4:5");
+        assertThat(CatalogImagePipelineService.cardImage(front)).containsEntry("mode", "PROCESSED").containsEntry("aspect", "4:5").containsEntry("sourceUrl", front.getImageUrl());
     }
 
     @Test

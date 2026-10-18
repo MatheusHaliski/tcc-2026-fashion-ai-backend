@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title FashionAI — entidades-chave por contexto delimitado (áreas da taxonomia)\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)\n109 entidades JPA do fai-domain em 14 áreas
+title FashionAI — entidades-chave por contexto delimitado (áreas da taxonomia)\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)\n121 entidades JPA do fai-domain em 14 áreas
 
 package "Identidade, conta e privacidade\n<size:10>RF1–RF3, RF23, RNF2/RNF6</size>" {
   class User <<users>> {
@@ -44,7 +44,7 @@ package "Perfis emissores (marca e celebridade)\n<size:10>RF1.CA06–CA10, RF14,
 }
 package "Guarda-roupa e peças\n<size:10>RF4, RF6, RF7, RF9, RF28, RF29, RF31, RF45</size>" {
   class WardrobeItem <<wardrobe_items>> {
-    availabilityStatus, moderationStatus, p…
+    variationStatus, availabilityStatus, mo…
   }
   class PieceImage <<piece_images>> {
     processingStatus
@@ -74,12 +74,12 @@ package "Marcas e catálogo global\n<size:10>RF4, RF47</size>" {
   }
   class CatalogSource <<catalog_sources>>
   class CatalogProduct <<catalog_products>> {
-    sourceStatus, ingestionStatus
+    variationStatus, sourceStatus, ingestio…
   }
   class CatalogProductAlias <<catalog_product_aliases>>
   class CatalogVariant <<catalog_variants>>
   class CatalogImage <<catalog_images>> {
-    usageStatus
+    usageStatus, processingStatus, reviewSt…
   }
   class CatalogIngestionRun <<catalog_ingestion_runs>>
   class KbBrandSignature <<kb_brand_signatures>>
@@ -99,13 +99,11 @@ package "Esquemas (looks), DNA e planejamento\n<size:10>RF5–RF7, RF11, RF13, R
   class StyleDna <<style_dna>>
   class StyleDnaVersion <<style_dna_versions>>
   class DailyLook <<daily_looks>>
-  class HypeScoreMetric <<hype_score_metrics>>
   class WeekPlan <<week_plans>> {
     status
   }
   class WeekPlanDay <<week_plan_days>>
   class AcervoGroup <<acervo_groups>>
-  class HypeGroup <<hype_groups>>
   class MirrorState <<mirror_states>>
 }
 package "Selos, promoções e cupons\n<size:10>RF20, RF21, RF25, RF38</size>" {
@@ -206,7 +204,6 @@ package "IA, visão computacional e pipelines\n<size:10>RF4, RF11, RF16, RF18, R
   class RenderJobLog <<render_jobs_log>> {
     status
   }
-  class MetricSnapshot <<metric_snapshots>>
   class AssetPreset <<asset_presets>> {
     status
   }
@@ -271,9 +268,6 @@ FlairTerritory "*" --> "1" User : owner
 FlairTrophy "*" --> "1" User : user
 Follow "*" --> "1" User : follower
 Follow "*" --> "1" User : following
-HypeScoreMetric "*" --> "1" DailyLook : dailyLook
-HypeScoreMetric "*" --> "1" Scheme : scheme
-HypeScoreMetric "*" --> "1" User : user
 Notification "*" --> "1" User : actor
 Notification "*" --> "1" User : recipient
 Photo "*" --> "1" User : user
@@ -296,6 +290,7 @@ SealBond "*" --> "1" Scheme : scheme
 SealBond "*" --> "1" Seal : seal
 SealBond "*" --> "1" User : requestedBy
 SealBond "*" --> "1" User : targetOwner
+SealBond "*" --> "1" WardrobeItem : piece
 Share "*" --> "1" User : user
 StyleDna "1" --> "1" User : user
 UserAvatar3d "1" --> "1" User : user

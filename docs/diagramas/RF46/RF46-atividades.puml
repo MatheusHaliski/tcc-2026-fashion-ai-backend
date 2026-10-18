@@ -24,11 +24,11 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF46 — Gerar assets criativos do FashionAI por meio do FAI Creative Engine e serviços Adobe\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF46 — Gerar assets criativos do FashionAI por meio do FAI Creative Engine e serviços Adobe\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre /brands/[slug], /pieces/new,\n/schemes/[id]/edit;
+:Abre /brands/[slug],\n/dna-schemes/[id]/edit,\n/dna-schemes/new;
 |Tela (Next.js)|
 :Carrega os dados da tela\nGET /api/seals/design-catalog;
 |Pessoa usuária|

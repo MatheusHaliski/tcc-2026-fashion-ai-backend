@@ -433,7 +433,7 @@ public class WardrobeCreatorService {
         out.put("identity", identity(u));
         out.put("items", items);
         out.put("stats", Map.of("items", items.size(), "sold", items.stream().mapToInt(i -> ((Number) i.get("sold")).intValue()).sum(),
-                "points", items.stream().mapToLong(i -> ((Number) i.get("sold")).longValue() * ((Number) i.get("pricePoints")).longValue()).sum()));
+                "points", catalog.creditedSales(u.getId())));
         return out;
     }
 

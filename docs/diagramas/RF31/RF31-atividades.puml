@@ -24,11 +24,11 @@ skinparam swimlane {
   BorderColor #CBC6BE
   TitleFontColor #2D2438
 }
-title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de atividades — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF31 — Filtrar e marcar o estado dos itens do acervo (favorita, disponível, indisponível, à venda)\nDiagrama de atividades — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 |Pessoa usuária|
 start
-:Abre a tela do RF;
+:Abre /dna-schemes/[id]/edit,\n/dna-schemes/new, /dna;
 |Tela (Next.js)|
 :Carrega os dados da tela\nGET /api/users/{ownerId}/closet\nGET /api/me/closet\nGET /api/pieces/{id}\nGET /api/pieces/{id}/deletion-impact;
 |Pessoa usuária|
@@ -44,12 +44,14 @@ start
 |Pessoa usuária|
 if (Faz outra ação?) then (sim)
   switch (Qual?)
-  case (Editar a peça)
-    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, brands, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nOwnMedia.accepts …\nestado: brandLogoUrl → null, brandLogoUrl → set;
   case (Registrar uso da peça hoje)
     :POST /api/pieces/{id}/worn\n→ WardrobeService.markWorn\nlê: wardrobe_items, reactions\nusa: Guard.requireOwner\nevento: PieceWorn;
+  case (Editar a peça)
+    :PUT /api/pieces/{id}\n→ WardrobeService.update\nvalida: FORMULARIO_INVALIDO\nlê: wardrobe_items, reactions\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.piece\nevento: PieceUpdated;
   case (Excluir a peça)
     :DELETE /api/pieces/{id}\n→ WardrobeService.delete\nlê: wardrobe_items, scheme_items\nusa: Guard.requireCanCreate, Guard.requireOwner,\nProjectionService.removePiece …\nestado: availabilityStatus → ARCHIVED, disponivel →\nfalse, visibility → PRIVATE;
+  case (Explorar — Adicionar uma peça púb…)
+    :POST /api/pieces/{id}/copy\n→ WardrobeService.addToWardrobe\nvalida: JA_E_SUA, NAO_ENCONTRADO\nlê: wardrobe_items, users, reactions\nusa: Guard.requireCanCreate, Guard.requireView,\nProjectionService.piece\ngrava: wardrobe_items;
   endswitch
   |Tela (Next.js)|
   :Atualiza a tela;

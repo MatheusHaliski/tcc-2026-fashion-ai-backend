@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF1 — Cadastrar conta na plataforma (perfil Pessoal, Marca ou Celebridade)\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF1 — Cadastrar conta na plataforma (perfil Pessoal, Marca ou Celebridade)\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "fai-domain (entidades JPA)" {
   class BrandProfile <<brand_profiles>> {
@@ -73,7 +73,7 @@ package "fai-domain (entidades JPA)" {
     +birthDate: String
     +passwordHash: String
     +profileType: ProfileType
-    .. +24 campos ..
+    .. +25 campos ..
   }
   class UserPreferences <<user_preferences>> {
     +id: UUID
@@ -86,7 +86,7 @@ package "fai-domain (entidades JPA)" {
     +reduceMotion: boolean
     +chromeBackgroundId: String
     +sizeSystem: SizeSystem
-    .. +16 campos ..
+    .. +18 campos ..
   }
   class VerificationCode <<verification_codes>> {
     +id: UUID

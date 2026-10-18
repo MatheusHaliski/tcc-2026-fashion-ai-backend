@@ -3,7 +3,7 @@ import Link from "next/link";
 import { api } from "@/lib/api/client";
 import { useI18n } from "@/lib/i18n/i18n";
 import { useApi } from "@/lib/hooks/use-api";
-import { POINTS_MODES, POINTS_SECTION_MODE, type PointsAccount } from "@/lib/points/hub";
+import { levelNameKey, POINTS_MODES, POINTS_SECTION_MODE, type PointsAccount } from "@/lib/points/hub";
 import { Card, ErrorState, PageHeader, Skeleton, UiIcon } from "@/components/ui";
 import { FaiIcon } from "@/components/fai-icon";
 import { FlairHubIcon } from "@/components/flair/hub-icons";
@@ -31,6 +31,11 @@ export function PointsSection({ section }: { section: PointsSectionId }) {
   const modeId = POINTS_SECTION_MODE[section]; const mode = POINTS_MODES.find((m) => m.id === modeId)!;
   const acc = useApi<PointsAccount>((signal) => api.get("/api/me/points", { signal }), []);
   const a = acc.data;
+  const level = a ? t(levelNameKey(a.level)) : "";
+  const currentThreshold = a?.levels?.find((entry) => entry.level === a.level)?.threshold ?? 0;
+  const progressPercent = a?.nextLevel
+    ? Math.max(0, Math.min(100, Math.floor(100 * (a.lifetime - currentThreshold) / Math.max(1, a.nextLevel.threshold - currentThreshold))))
+    : 100;
   return (
     <>
       <div className="flair-section-head">
@@ -45,8 +50,8 @@ export function PointsSection({ section }: { section: PointsSectionId }) {
               <Card className="text-center">
                 <p className="label">{t("points.saldo")}</p>
                 <p className="hero-number text-6xl"><FaiIcon id="ACT-40" size={48} decorative className="mr-2 inline-block align-middle" />{fmtNumber(a.balance)}</p>
-                <p className="type-caption text-muted">{rich("points.acumulado_nivel", { number: fmtNumber(a.lifetime), level: a.level }, { 0: ($c) => <b>{$c}</b> })}</p>
-                {a.nextLevel && <><div className="hype-bar mt-3"><i style={{ width: `${Math.min(100, (100 * a.lifetime) / Math.max(1, a.nextLevel.threshold))}%`, background: "var(--chalk)" }} /></div><p className="mt-1 type-caption">{t("points.faltam_para", { missing: a.nextLevel.missing, level: a.nextLevel.level, unlocks: a.nextLevel.unlocks })}</p></>}
+                <p className="type-caption text-muted">{rich("points.acumulado_nivel", { number: fmtNumber(a.lifetime), level }, { 0: ($c) => <b>{$c}</b> })}</p>
+                {a.nextLevel && <><div className="hype-bar mt-3"><i style={{ width: `${progressPercent}%`, background: "var(--chalk)" }} /></div><p className="mt-1 type-caption">{t("points.faltam_para", { missing: a.nextLevel.missing, level: t(levelNameKey(a.nextLevel.level)), unlocks: a.nextLevel.unlocks })}</p></>}
                 {a.note && <p className="mt-2 type-caption text-faint">{a.note}</p>}
                 <div className="mt-3 flex flex-wrap justify-center gap-2"><Link href="/notifications?cat=POINTS" className="btn btn-sm">{t("points.ver_extrato")}</Link><Link href="/points/loja" className="btn btn-sm btn-primary">{t("points.loja_do_quarto")}</Link></div>
               </Card>
@@ -55,7 +60,7 @@ export function PointsSection({ section }: { section: PointsSectionId }) {
                 <ol className="points-levels mt-2">{(a.levels ?? []).map((l) => (
                   <li key={l.level} className={l.reached ? "is-reached" : undefined}>
                     <span className="points-level-mark" aria-hidden>{l.reached ? "✓" : "○"}</span>
-                    <span className="min-w-0"><b>{l.level}</b> <span className="type-caption text-muted tabular">{fmtNumber(l.threshold)}</span>{l.unlocks && <span className="block type-body-sm text-muted">{l.unlocks}</span>}</span>
+                    <span className="min-w-0"><b>{t(levelNameKey(l.level))}</b> <span className="type-caption text-muted tabular">{fmtNumber(l.threshold)}</span>{l.unlocks && <span className="block type-body-sm text-muted">{l.unlocks}</span>}</span>
                   </li>))}</ol>
               </Card>
             </div>
@@ -74,7 +79,10 @@ export function PointsSection({ section }: { section: PointsSectionId }) {
               <p className="type-caption text-muted">{t("points.pontos_por_usar_o_que")}</p>
             </div>
           )}
-          {section === "loja" && <Card><div className="mb-3 flex items-center gap-2"><FlairHubIcon id="store" size={20} /><h2 className="type-h3">{t("points.loja_do_quarto")}</h2></div><RoomStore onChanged={acc.reload} /></Card>}
+          {section === "loja" && <div className="grid gap-4">
+            <Card><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><div className="flex items-center gap-2"><FlairHubIcon id="store" size={20} /><h2 className="type-h3">{t("physicalStore.title")}</h2></div><Link href="/points/physical-store" className="btn btn-sm btn-primary">{t("physicalStore.browse")}</Link></div><p className="type-body-sm text-muted">{t("physicalStore.lead")}</p></Card>
+            <Card><div className="mb-3 flex items-center gap-2"><FlairHubIcon id="store" size={20} /><h2 className="type-h3">{t("points.loja_do_quarto")}</h2></div><RoomStore onChanged={acc.reload} /></Card>
+          </div>}
         </>
       )}
     </>

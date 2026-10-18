@@ -21,7 +21,7 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF46 — Gerar assets criativos do FashionAI por meio do FAI Creative Engine e serviços Adobe\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF46 — Gerar assets criativos do FashionAI por meio do FAI Creative Engine e serviços Adobe\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 boundary "Tela /schemes/[id]/edit" as P
@@ -63,6 +63,34 @@ activate BackgroundStudioService
 BackgroundStudioService -> Guard : requireCanCreate()
 BackgroundStudioService -> DB_MySQL : SELECT wardrobe_items
 BackgroundStudioService -> Guard : requireOwner()
+alt aura composition invalid
+BackgroundStudioService --> BackgroundController : 400 AURA_COMPOSITION_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt aura hype invalid
+BackgroundStudioService --> BackgroundController : 400 AURA_HYPE_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt aura metamorphose invalid
+BackgroundStudioService --> BackgroundController : 400 AURA_METAMORPHOSE_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt card border invalid
+BackgroundStudioService --> BackgroundController : 400 CARD_BORDER_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt card border invalid
+BackgroundStudioService --> BackgroundController : 400 CARD_BORDER_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt card border invalid
+BackgroundStudioService --> BackgroundController : 400 CARD_BORDER_INVALID
+BackgroundController --> P : 400 + mensagem
+end
+alt card border invalid
+BackgroundStudioService --> BackgroundController : 400 CARD_BORDER_INVALID
+BackgroundController --> P : 400 + mensagem
+end
 alt arte alterada
 BackgroundStudioService --> BackgroundController : 409 ARTE_ALTERADA
 BackgroundController --> P : 409 + mensagem

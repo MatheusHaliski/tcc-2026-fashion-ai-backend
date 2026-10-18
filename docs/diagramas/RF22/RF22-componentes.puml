@@ -29,7 +29,7 @@ skinparam cloud {
   BorderColor #4A4852
 }
 left to right direction
-title RF22 — Visualizar a aba 'Celebridades' — Feed de Perfil de Celebridades cadastradas dentro do sistema do FashionAI\nDiagrama de componentes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF22 — Visualizar a aba 'Celebridades' — Feed de Perfil de Celebridades cadastradas dentro do sistema do FashionAI\nDiagrama de componentes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "Frontend (Next.js)" {
   component "/brands\n(site)/(app)/brands/page.tsx" as FE0
@@ -41,7 +41,7 @@ package "Frontend (Next.js)" {
 }
 package "fai-web (REST)" {
   component "AdminController\n/api/admin/approvals\n/api/admin/approvals/{…}" as AdminController
-  component "FlairController\n/api/flair/arena\n/api/flair/cards\n/api/flair/combinations\n/api/flair/combinations/{…}/redeem\n(+12 rotas)" as FlairController
+  component "FlairController\n/api/flair/combinations\n/api/flair/decks\n/api/flair/me\n/api/flair/quests\n(+2 rotas)" as FlairController
   component "ProfileController\n/api/brands\n/api/celebrities\n/api/institutional/{…}\n/api/institutional/{…}/store\n(+4 rotas)" as ProfileController
   component "SealController\n/api/me/issuer-metrics\n/api/promotions\n/api/promotions/{…}\n/api/promotions/{…}/redemptions\n(+3 rotas)" as SealController
   component "ShowcaseController\n/api/groupings/{…}/cover\n/api/institutional/{…}/showcase/{…}\n/api/institutional/{…}/showcase/{…}/insights\n/api/institutional/{…}/showcase/{…}/items\n(+1 rotas)" as ShowcaseController

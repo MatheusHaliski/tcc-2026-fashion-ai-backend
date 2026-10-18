@@ -52,6 +52,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -84,6 +86,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class RoomService implements FaiPointsService.RoomLayoutAccess {
+    private static final Logger log = LoggerFactory.getLogger(RoomService.class);
     private SideEffectRunner sideEffects;
     public static final ZoneId ZONE = FaiPointsService.ZONE;
     /** Esquecida: sem uso há 60+ dias (FORGOTTEN_DAYS, MyWardrobeView.tsx:61). */
@@ -420,7 +423,9 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         if (kelvin != null) { finish.put("kelvin", Math.max(2700, Math.min(6500, kelvin))); finish.put("guided", true); }
         if (intensity != null) finish.put("intensity", intensity);
         if (on != null) finish.put("on", on);
-        mods.stream().filter(m -> "light".equals(m.get("id"))).findFirst().ifPresent(m -> m.put("finish", finish));
+        Map<String, Object> lightModule = mods.stream().filter(m -> "light".equals(m.get("id"))).findFirst().orElse(null);
+        if (lightModule == null) { lightModule = new LinkedHashMap<>(); lightModule.put("id", "light"); mods.add(lightModule); }
+        lightModule.put("finish", finish);
         l.setModulesJson(Json.write(mods)); layouts.save(l);
         return finish;
     }
@@ -1028,7 +1033,7 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
                     .sorted(Comparator.comparing(RoomInventoryItem::getAcquiredAt, Comparator.nullsLast(Comparator.reverseOrder()))).limit(6)
                     .map(i -> Map.of("inventoryId", i.getId(), "sku", i.getSku(), "name", roomCatalog.findById(i.getSku()).map(RoomCatalogItem::getName).orElse(i.getSku()),
                             "slotType", roomCatalog.findById(i.getSku()).map(RoomCatalogItem::getSlotType).orElse(""))).toList());
-            List<UUID> keyIds = keys(layout).stream().map(UUID::fromString).toList();
+            List<UUID> keyIds = keyUserIds(layout);
             out.put("keys", users.findAllById(keyIds).stream().map(Views::user).toList());
             out.put("light", module(layout, "light").map(m -> m.get("finish")).orElse(Map.of("kelvin", 4000, "guided", false)));
         }
@@ -1038,6 +1043,19 @@ public class RoomService implements FaiPointsService.RoomLayoutAccess {
         out.put("photoMode", Map.of("framings", List.of("frontal", "tres_quartos", "detalhe_espelho", "gaveta_aberta"),
                 "filters", List.of("editorial", "quente", "pb"), "depthOfField", true, "exportWithoutUi", true));
         return out;
+    }
+
+    /** Um layout antigo não pode impedir o carregamento do quarto inteiro por uma chave já removida ou corrompida. */
+    private List<UUID> keyUserIds(RoomLayout layout) {
+        List<UUID> ids = new ArrayList<>();
+        for (String key : keys(layout)) {
+            try {
+                ids.add(UUID.fromString(key));
+            } catch (IllegalArgumentException e) {
+                log.warn("event=room_key_ignored reason=invalid_user_id key={}", key);
+            }
+        }
+        return ids;
     }
 
     int positions(RoomLayout layout) {

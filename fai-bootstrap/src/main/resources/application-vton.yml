@@ -1,0 +1,4 @@
+fashionai:
+  vton:
+    worker-url: ${VTON_WORKER_URL:}
+    worker-token: ${VTON_WORKER_TOKEN:}

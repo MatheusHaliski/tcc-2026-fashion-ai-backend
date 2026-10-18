@@ -1,0 +1,23 @@
+{
+  "candidates": 28,
+  "verified": 24,
+  "animated_gifs": 3,
+  "failed": [
+    {
+      "title": "Neon Wave GIFs - Find & Share on GIPHY",
+      "status": "TOO_LARGE"
+    },
+    {
+      "title": "Collected Loops #1 :: Behance",
+      "status": "TOO_LARGE"
+    },
+    {
+      "title": "FIFA Pack Opener (2025): Best Tools & Tips",
+      "status": "URLError"
+    },
+    {
+      "title": "FC 26 Silver Superstar Icons Boost – Unlock Rare Icons Fast",
+      "status": "EXCLUDED_BOOST_SERVICE"
+    }
+  ]
+}

@@ -21,13 +21,14 @@ skinparam sequence {
   GroupBackgroundColor #FAF8F5
 }
 autonumber "<b>0."
-title RF23 — Criar as telas de configuração do usuário (Conta, Privacidade, Aparência, Idioma, Seus dados) no padrão LGPD, com i18n\nDiagrama de sequência — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF23 — Criar as telas de configuração do usuário (Conta, Privacidade, Aparência, Idioma, Seus dados) no padrão LGPD, com i18n\nDiagrama de sequência — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 actor "Pessoa usuária" as U
 boundary "Tela /settings" as P
 control "PreferencesController" as PreferencesController
 participant "PreferencesService" as PreferencesService
 database "MySQL" as DB_MySQL
+participant "HypeCache" as HypeCache
 participant "Audit" as Audit
 == Salvar preferências (last-write-wins por clientUpdatedAt) ==
 U -> P : Salvar preferências (last-write-wins por clientUp…
@@ -66,6 +67,7 @@ alt skin inválida
 PreferencesService --> PreferencesController : 400 SKIN_INVALIDA
 PreferencesController --> P : 400 + mensagem
 end
+PreferencesService -> HypeCache : bump()
 PreferencesService -> PreferencesService : clientUpdatedAt = set
 PreferencesService -> Audit : log()
 PreferencesService -> DB_MySQL : SELECT user_preferences

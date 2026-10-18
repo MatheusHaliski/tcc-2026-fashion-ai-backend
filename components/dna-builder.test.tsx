@@ -5,7 +5,7 @@
  * Aplicar, e o resumo da cartela aparece abaixo das narrativas.
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, loggedAs, renderApp, screen, waitFor, within } from "@/test-utils/render";
+import { cleanup, fireEvent, loggedAs, ME, renderApp, screen, waitFor, within } from "@/test-utils/render";
 import { OWNER, SCHEME } from "@/test-utils/fixtures";
 import type { BgCatalog } from "./background-studio";
 import type { DnaCellView, DnaView } from "./dna-card";
@@ -30,6 +30,8 @@ describe("DNA de estilo — Cartela sazonal no padrão do Background Studio", ()
       "GET /api/dna-schemes/builder": { totalSchemes: 2, status: "OK", schemes: [SCHEME, { ...SCHEME, id: "s2", title: "Look de domingo" }], defaultVisibility: "PRIVATE" },
       "GET /api/backgrounds/catalog": CATALOG, "/api/backgrounds/recommendations": {},
     });
+    // quem já entrou no Background Studio não vê de novo o modal de boas-vindas; aqui só o modal da cartela importa
+    localStorage.setItem(`fai.creator.welcome.studio:${ME.user.id}`, "seen");
     renderApp(<DnaBuilder initial={DNA} />);
     fireEvent.click(await screen.findByRole("button", { name: /Aparência/ }));
     fireEvent.click(await screen.findByRole("radio", { name: "Layout & Estilo" }));

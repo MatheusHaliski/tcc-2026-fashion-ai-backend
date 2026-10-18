@@ -75,7 +75,7 @@ public class SchemeController {
     public Map<String, Object> create(CurrentUser user, @RequestBody SchemeService.SchemeForm form) {
         Map<String, Object> out = schemes.create(user, form);
         // RF20.CA01 — sugestão de vínculo depois do commit, em transação própria (não bloqueia nem desfaz o salvamento)
-        if (form.items() != null && form.items().size() >= 2 && out.get("scheme") instanceof Views.SchemeView v) {
+        if (form.items() != null && !form.items().isEmpty() && out.get("scheme") instanceof Views.SchemeView v) {
             out.put("sealSuggestions", schemes.suggestSealsAfterSave(user, v.id()));
         }
         return out;

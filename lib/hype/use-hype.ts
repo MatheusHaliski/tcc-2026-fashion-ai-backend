@@ -26,6 +26,11 @@ function emit(key: string) {
 }
 
 function put(key: string, entry: Entry) {
+  const current = entries.get(key)?.summary;
+  if(current?.status === "AVAILABLE" && entry.summary?.status === "AVAILABLE" && current.calculatedAt && entry.summary.calculatedAt
+      && Date.parse(entry.summary.calculatedAt) < Date.parse(current.calculatedAt)) {
+    entry = { ...entry, summary: current };
+  }
   entries.set(key, entry);
   if (entries.size > MAX_ENTRIES) {
     // descarta as mais antigas que ninguém está olhando (sem vazamento em listas longas/virtualizadas)
@@ -77,8 +82,32 @@ export function primeHype(type: HypeEntity, items: Record<string, HypeSummary | 
   Object.entries(items).forEach(([id, summary]) => { if (summary) put(keyOf(type, id), { summary, loading: false, error: false, at: now }); });
 }
 
+// One live timer for all mounted AURA cards; requests still use the existing batched reader.
+const live = new Map<string, { type: HypeEntity; id: string; count: number }>();
+let liveTimer: ReturnType<typeof setInterval> | null = null;
+function watchLive(type: HypeEntity, id: string) {
+  const key = keyOf(type,id), old = live.get(key);
+  live.set(key,{type,id,count:(old?.count ?? 0)+1});
+  if(!liveTimer) liveTimer=setInterval(()=>{
+    if(typeof document !== "undefined" && document.visibilityState === "hidden") return;
+    live.forEach(({type,id})=>{
+      const key=keyOf(type,id), old=entries.get(key);
+      if(old?.loading) return;
+      if(old) put(key,{...old,at:0});
+      requestHype(type,id);
+    });
+  },30_000);
+  return ()=>{
+    const current=live.get(key);
+    if(current && current.count>1) live.set(key,{...current,count:current.count-1}); else live.delete(key);
+    if(!live.size && liveTimer) { clearInterval(liveTimer); liveTimer=null; }
+  };
+}
+
 /** Só para testes: zera o cache e os lotes pendentes. */
 export function __resetHypeStore() {
+  if(liveTimer) clearInterval(liveTimer);
+  liveTimer=null; live.clear();
   entries.clear();
   pending.PIECE.clear();
   pending.SCHEME.clear();
@@ -86,7 +115,7 @@ export function __resetHypeStore() {
   timer = null;
 }
 
-export function useHypeSummary(type: HypeEntity, id: string | null | undefined, enabled = true) {
+export function useHypeSummary(type: HypeEntity, id: string | null | undefined, enabled = true, liveUpdates = false) {
   const key = id ? keyOf(type, id) : "";
   const subscribe = useCallback((cb: () => void) => {
     if (!key) return () => undefined;
@@ -97,5 +126,6 @@ export function useHypeSummary(type: HypeEntity, id: string | null | undefined, 
   }, [key]);
   const entry = useSyncExternalStore(subscribe, () => (key ? entries.get(key) : undefined), () => undefined);
   useEffect(() => { if (enabled && id) requestHype(type, id); }, [type, id, enabled]);
+  useEffect(()=>{ if(enabled && liveUpdates && id && !id.startsWith(DEMO_ID_PREFIX)) return watchLive(type,id); },[enabled,liveUpdates,type,id]);
   return { summary: entry?.summary, loading: entry ? entry.loading && !entry.summary : enabled && !!id, error: !!entry?.error && !entry?.summary };
 }

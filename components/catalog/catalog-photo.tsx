@@ -3,6 +3,8 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import type { CatalogCardImage, NormRect } from "@/lib/api/catalog";
 import type { PieceView } from "@/lib/api/types";
 import { cn } from "@/components/ui";
+import { tr } from "@/lib/i18n/i18n";
+import { mediaUrl } from "@/lib/api/client";
 
 /** Only ratios emitted by the image pipeline; malformed/legacy metadata keeps the portrait frame. */
 export function photoAspect(aspect?: string | null): string {
@@ -48,29 +50,36 @@ export function pieceCatalogCrop(p: PieceView): CatalogCardImage | null {
  * tenta a seguinte da lista — `fallbackUrl`, depois `alternatives` (ex.: a foto original da marca) — e só então o
  * `placeholder` (a ilustração da categoria).
  */
-export function CatalogPhoto({ image, fallbackUrl, alternatives, placeholder, alt, className }: {
-  image?: CatalogCardImage | null; fallbackUrl?: string | null; alternatives?: (string | null | undefined)[]; placeholder?: ReactNode; alt: string; className?: string;
+export function CatalogPhoto({ image, fallbackUrl, alternatives, placeholder, alt, className, requiredFrame = false }: {
+  requiredFrame?: boolean; image?: CatalogCardImage | null; fallbackUrl?: string | null; alternatives?: (string | null | undefined)[]; placeholder?: ReactNode; alt: string; className?: string;
 }) {
   const crop = image?.mode === "SEMANTIC_CROP" && image.crop ? image : null;
-  const chain = Array.from(new Set([crop ? null : image?.url, fallbackUrl, ...(alternatives ?? [])]
-    .filter((u): u is string => !!u && u !== crop?.url)));
-  const key = [image?.url, fallbackUrl, ...(alternatives ?? [])].join("|");
+  const chain = Array.from(new Set([crop ? null : image?.url, ...(requiredFrame ? [] : [fallbackUrl,image?.sourceUrl,...(alternatives ?? [])])]
+    .map(url => mediaUrl(url?.trim())).filter((u): u is string => !!u && u !== mediaUrl(crop?.url))));
+  const key = [image?.url, fallbackUrl, image?.sourceUrl, ...(alternatives ?? [])].join("|");
   const [failed, setFailed] = useState(0);
   useEffect(() => { setFailed(0); }, [key]);
   const fail = () => setFailed((n) => n + 1);
+  if (requiredFrame && (!image || failed > 0 || image.mode === "SEMANTIC_CROP" && !crop)) return <span role="alert" className="type-caption text-muted p-4">{tr("catalog.framingRequiredError")}</span>;
   if (crop && failed === 0) {
     return (
       <span className={cn("catalog-photo is-cropped", className)} style={{ background: crop.background ?? undefined }} data-mode="semantic-crop">
-        <img src={crop.url} alt={alt} loading="lazy" style={semanticCropStyle(crop.crop!)} onError={fail} />
+        <img src={mediaUrl(crop.url)} alt={alt} loading="lazy" style={semanticCropStyle(crop.crop!)} onError={fail} />
       </span>
     );
   }
   const src = chain[crop ? failed - 1 : failed];
   if (!src) return placeholder ? <>{placeholder}</> : null;
-  const processed = src === image?.url && image?.mode === "PROCESSED";
+  const processed = src === mediaUrl(image?.url) && image?.mode === "PROCESSED";
   return (
     <span className={cn("catalog-photo", processed ? "is-processed" : "is-contained", className)} data-mode={processed ? "processed" : "original"}>
-      <img key={src} src={src} alt={alt} loading="lazy" onError={fail} />
+      <img key={src} src={mediaUrl(src)} alt={alt} loading="lazy" onError={fail} />
     </span>
   );
+}
+
+/** Official source only belongs to this piece while the selected catalogue image remains unchanged. */
+export function pieceCatalogSource(piece: PieceView): string | undefined {
+  const image = (piece.flatLayMetadata as { catalogImage?: CatalogCardImage } | undefined)?.catalogImage;
+  return image && image.url === piece.imageUrl ? image.sourceUrl ?? undefined : undefined;
 }

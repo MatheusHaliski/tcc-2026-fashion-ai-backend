@@ -20,7 +20,7 @@ skinparam class {
 }
 hide empty members
 left to right direction
-title RF47 — Acervo & Busca Catalogada\nDiagrama de classes — gerado do código em 2026-10-06 (scripts/diagramas/v5)
+title RF47 — Acervo & Busca Catalogada\nDiagrama de classes — gerado do código em 2026-10-14 (scripts/diagramas/v5)
 
 package "fai-domain (entidades JPA)" {
   class Brand <<brands>> {
@@ -34,7 +34,7 @@ package "fai-domain (entidades JPA)" {
     +fixtureKey: String
     +sourceConfidence: BigDecimal
     +verifiedAt: Instant
-    .. +2 campos ..
+    .. +3 campos ..
   }
   class BrandAlias <<brand_aliases>> {
     +id: UUID
@@ -53,7 +53,7 @@ package "fai-domain (entidades JPA)" {
     +sourceDomain: String
     +sourceType: CatalogSourceType
     +primary: boolean
-    .. +4 campos ..
+    .. +21 campos ..
   }
   class CatalogIngestionRun <<catalog_ingestion_runs>> {
     +id: UUID
@@ -73,13 +73,13 @@ package "fai-domain (entidades JPA)" {
     +brandId: UUID
     +category: String
     +subcategory: String
+    +variationCode: String
+    +variationStatus: String
+    +variationConfidence: BigDecimal
+    +variationSource: String
+    +attributes: Set<TaxonomyAttribute>
     +productName: String
-    +modelName: String
-    +productCode: String
-    +sku: String
-    +gtin: String
-    +ean: String
-    .. +20 campos ..
+    .. +34 campos ..
   }
   class CatalogProductAlias <<catalog_product_aliases>> {
     +id: UUID
@@ -107,6 +107,8 @@ package "fai-domain (entidades JPA)" {
     +sku: String
     +gtin: String
     +availability: String
+    +price: java.math.BigDecimal
+    .. +1 campos ..
   }
   class WardrobeItem <<wardrobe_items>> {
     +id: UUID
@@ -116,10 +118,10 @@ package "fai-domain (entidades JPA)" {
     +name: String
     +category: String
     +subcategory: String
-    +sex: String
-    +brandName: String
-    +brandLogoUrl: String
-    .. +70 campos ..
+    +variationCode: String
+    +variationStatus: String
+    +variationConfidence: BigDecimal
+    .. +73 campos ..
   }
 }
 package "fai-domain (enums)" {
@@ -167,6 +169,8 @@ package "fai-application" {
     +suggestions()
     +brandSuggestions()
     +catalogBrands()
+    +browse()
+    +summary()
     +product()
     +discover()
     +addToWardrobe()
