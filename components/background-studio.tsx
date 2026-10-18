@@ -181,8 +181,8 @@ export function AuraMaterialPanel({ value, onChange, onSkin, styles, occasions, 
           </div>);
   return (
     <div className="grid gap-3">
-      {rec?.direction && <p className="type-caption text-muted">{rich("backgroundStudio.direcao_recomendada_para", { value: (styles ?? []).join(", ") || t("backgroundStudio.o_look"), value2: direction?.label ?? rec.direction }, { 0: ($c) => <b>{$c}</b> })}{direction?.aura && <Button size="sm" className="ml-2" onClick={() => { onChange({ compositionPreset:null, aura: { variantId: direction.aura!, format: value.aura?.format }, materialId: direction.material ?? null, aiArt: null, uploadUrl: null }); if (direction.skin && onSkin) onSkin(direction.skin); }}>{t("backgroundStudio.aplicar_recomendada")}</Button>}</p>}
       <AuraGuide/>
+      {rec?.direction && <p className="type-caption text-muted">{rich("backgroundStudio.direcao_recomendada_para", { value: (styles ?? []).join(", ") || t("backgroundStudio.o_look"), value2: direction?.label ?? rec.direction }, { 0: ($c) => <b>{$c}</b> })}{direction?.aura && <Button size="sm" className="ml-2" onClick={() => { onChange({ compositionPreset:null, aura: { variantId: direction.aura!, format: value.aura?.format }, materialId: direction.material ?? null, aiArt: null, uploadUrl: null }); if (direction.skin && onSkin) onSkin(direction.skin); }}>{t("backgroundStudio.aplicar_recomendada")}</Button>}</p>}
       <AuraFashionPicker pieceId={pieceId} brandName={brandName} colorHex={colorHex} colorName={colorName}
         value={value.compositionPreset}
         activeFamilies={[...(auraPreset ? [legacyAuraFamily(auraPreset.id)] : []), ...(value.auraHype && value.auraHype !== "OFF" ? ["HYPE" as const] : []), ...(value.auraMetamorphose && value.auraMetamorphose !== "OFF" ? ["METAMORPHOSE" as const] : [])]}
