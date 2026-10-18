@@ -138,6 +138,17 @@ class NativeFashnRuntime:
         points,scores=estimator(bgr)
         return boxes,points,scores
 
+    def person_evidence(self,rgb):
+        """Caixas e poses DWPose das pessoas da foto, para outra tarefa da mesma GPU (medidas do corpo) não carregar um
+        segundo detector. Mesma regra de detected_pose: sem pessoa detectada, nada de pose da imagem inteira."""
+        estimator=self.pipeline.pose_model.pose_estimation
+        bgr=np.ascontiguousarray(rgb[:,:,::-1])
+        boxes=np.asarray(self.detector(estimator.session_det,bgr),float)
+        if boxes.size==0:return np.empty((0,4)),np.empty((0,134,2)),np.empty((0,134))
+        if boxes.ndim!=2 or boxes.shape[1]!=4 or not np.isfinite(boxes).all():raise AlignmentError('INVALID_PERSON_DETECTION')
+        points,scores=estimator(bgr)
+        return boxes,points,scores
+
     def predict(self,instance):
         request=FashnInput.model_validate(instance)
         self.restore()
