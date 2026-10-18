@@ -662,6 +662,8 @@ public class CatalogService {
         String color = firstValid(a.color(), variant == null ? null : variant.getColor(), p.getColor(), Taxonomy.COLORS::containsKey, "black");
         String material = firstValid(a.material(), p.getMaterial(), null, Taxonomy.MATERIALS::contains, "BLEND");
         String sex = firstValid(a.sex(), p.getGender(), null, Taxonomy.SEXES::contains, "UNISSEX");
+        // o Provador guarda a peça sem formulário (sem tamanho): antes a validação recusava com "Corrija os campos destacados"
+        String size = sizeOf(a.size(), p.getCategory());
         List<String> occasion = a.occasion() == null || a.occasion().isEmpty()
                 ? List.of(Taxonomy.allowedOccasions(p.getCategory()).get(0)) : a.occasion();
         List<String> style = a.style() == null || a.style().isEmpty() ? List.of("basic") : a.style();
@@ -675,7 +677,7 @@ public class CatalogService {
         String image = card != null ? String.valueOf(card.get("url"))
                 : chosen == null ? null : chosen.getStoredUrl() != null ? chosen.getStoredUrl() : chosen.getImageUrl();
         WardrobeService.PieceForm form = new WardrobeService.PieceForm(null, true, name, p.getCategory(), p.getSubcategory(), sex,
-                b.getId(), b.getName(), color, material, a.size(), null, occasion, style, List.of(),
+                b.getId(), b.getName(), color, material, size, null, occasion, style, List.of(),
                 a.price() == null ? BigDecimal.ZERO : a.price(), a.visibility(), List.of(), a.notes(), a.condition(), a.purchaseDate(),
                 a.purchaseLocation(), p.getSku(), null, a.forSale(), false, b.getLogoUrl(), "CATALOGO", p.getId().toString(),
                 a.background());
@@ -685,6 +687,21 @@ public class CatalogService {
             view = wardrobe.toggles(user, view.id(), true, null, null);
         }
         return view;
+    }
+
+    /**
+     * Tamanho da peça vinda do catálogo: o código da taxonomia ("m", "br_40", "shoe_40"); a etiqueta crua ("M", "40") vira o
+     * código da categoria; sem tamanho, o padrão do formulário de peça ("m") ou tamanho único fora do vestuário.
+     */
+    static String sizeOf(String raw, String category) {
+        String s = raw == null ? "" : raw.trim().toLowerCase(java.util.Locale.ROOT);
+        boolean shoes = "shoes_piece".equals(category);
+        for (String candidate : new String[]{s, (shoes ? "shoe_" : "br_") + s}) {
+            if (!s.isEmpty() && Taxonomy.SIZES.contains(candidate)) {
+                return candidate;
+            }
+        }
+        return "upper_piece".equals(category) || "lower_piece".equals(category) || "full_body_piece".equals(category) ? "m" : "one_size";
     }
 
     private static String firstValid(String a, String b, String c, java.util.function.Predicate<String> valid, String fallback) {
