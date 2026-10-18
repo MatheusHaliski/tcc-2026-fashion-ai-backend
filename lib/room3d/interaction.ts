@@ -1,8 +1,11 @@
 import * as THREE from "three";
 import { walkArea, type RoomBounds } from "./room-bounds";
+import { CORNERS } from "./camera-views";
+import { DEFAULT_CAMERA_OPTIONS, type CameraOptions } from "./room-settings";
 export type Arm = "Left" | "Right";
 export interface RoomTarget {
-  id: string; kind: "handle" | "piece"; object: THREE.Object3D;
+  /** puxador (porta/gaveta), peça (pegar) ou varão (pendurar de volta a peça que está na mão) */
+  id: string; kind: "handle" | "piece" | "rail"; object: THREE.Object3D;
   available: () => boolean; progress?: (delta: number) => void;
 }
 export interface RoomPlayState { held: string | null; nearMirror: boolean; grip: string | null; ready: boolean }
@@ -13,7 +16,9 @@ export type GoalOutcome = "arrived" | "stuck" | "cancelled";
  * another deliberate press/release drops it. Walking and focus loss preserve clothing. */
 export class RoomInteraction {
   actions = new Map<string, RoomAction>();
-  nearAction: RoomAction | null = null; seated: THREE.Vector3 | null = null;
+  nearAction: RoomAction | null = null;
+  /** sentado: o ponto do quadril (x/z no chão, y = topo do assento) e para onde o assento olha (seatOf/CHAIR) */
+  seated: THREE.Vector3 | null = null; seatYaw = 0;
   moveStick = new THREE.Vector2(); cameraStick = new THREE.Vector2(); cameraYaw = 0; cameraPitch = 0;
   updateNearby() {
     let near: RoomAction | null = null, best = Infinity;
@@ -30,10 +35,16 @@ export class RoomInteraction {
   grip: RoomTarget | null = null; gripArm: Arm = "Right";
   aiming: Arm | null = null; hover: string | null = null; hidden = new Set<string>();
   dropped = new Map<string, THREE.Vector3>(); progress = new Map<string, number>();
+  /** a última peça pendurada de volta num varão (id e quando): ela reaparece no lugar dela balançando no gancho */
+  hungBack: { id: string; at: number } | null = null;
   actor = new THREE.Vector3(0, 0, 1.65); mirror = new THREE.Vector3(2.05, 0, 1.1);
   listeners = new Set<() => void>(); ready = false;
   /** vista da câmera no quarto (0–3, room-bounds.ts): Q/E e os botões de girar a cena (+1 = câmera a leste) */
   view = 0;
+  /** opções da câmera vindas da aba Configurações (vista escolhida, lente, sensibilidade, eixos, corte seco) */
+  camera: CameraOptions = DEFAULT_CAMERA_OPTIONS;
+  /** num canto do teto, girar (Q/E, L1/R1, botões) passa para o canto vizinho: quem guarda a escolha decide */
+  onViewStep: ((step: number) => void) | null = null;
   /**
    * Caminhada até um ponto ("Ir ao espelho", "Voltar ao quarto"): o ponto da vez e os seguintes (contorno de um
    * obstáculo). Qualquer seta ou botão do direcional cancela; sem se aproximar por GOAL_STUCK_S (parado), desiste.
@@ -42,7 +53,10 @@ export class RoomInteraction {
   private goalDone: ((outcome: GoalOutcome) => void) | null = null;
   private goalBest = Infinity; private goalIdle = 0; private goalSide = 0;
   notify() { this.listeners.forEach(listener => listener()); }
-  turn(step: number) { this.view = (((this.view + step) % 4) + 4) % 4; this.notify(); }
+  turn(step: number) {
+    if (CORNERS.includes(this.camera.view) && this.onViewStep) { this.onViewStep(step); return; }
+    this.view = (((this.view + step) % 4) + 4) % 4; this.notify();
+  }
   keyDown(code: string) {
     if (this.keys.has(code)) return;
     this.keys.add(code);
@@ -95,7 +109,11 @@ export class RoomInteraction {
     const arm: Arm = code === "KeyA" ? "Left" : "Right";
     this.aiming = null;
     if (this.held && this.heldArm === arm) {
-      this.dropped.set(this.held, (hand ?? this.actor).clone()); this.held = null;
+      // soltar com a mão no varão pendura de volta (a peça volta ao lugar dela); fora dele, a peça cai no chão
+      const rail = hand ? this.nearest(hand) : null;
+      if (rail?.kind === "rail") { this.hidden.delete(this.held); this.dropped.delete(this.held); this.hungBack = { id: this.held, at: Date.now() }; }
+      else this.dropped.set(this.held, (hand ?? this.actor).clone());
+      this.held = null;
     } else if (this.grip && this.gripArm === arm) { this.grip = null; }
     else if (hand) {
       const target = this.nearest(hand);
@@ -209,4 +227,22 @@ export function stepToward(position: THREE.Vector3, goal: THREE.Vector3, dt: num
   }
   if (side) return stepToward(position, goal, dt, bounds, solids, 0);    // o lado lembrado fechou: escolhe de novo
   return { heading, moved: 0, arrived: false, side: 0 };
+}
+
+/**
+ * Cadeira do quarto: virada 35°, topo do assento a 0,475 m; sentado, o quadril fica 6 cm para trás do centro do assento
+ * (as costas chegam ao espaldar) e 9 cm acima dele (a articulação fica dentro da pelve, não no tecido).
+ */
+export const CHAIR = { yaw: THREE.MathUtils.degToRad(35), seatTop: 0.475, back: 0.06, hip: 0.09 } as const;
+/** Ponto do quadril sentado numa cadeira em `at` (chão): x/z para trás do centro, y = topo do assento. */
+export function seatOf(at: readonly [number, number, number], chair: typeof CHAIR = CHAIR): THREE.Vector3 {
+  return new THREE.Vector3(at[0] - Math.sin(chair.yaw) * chair.back, at[1] + chair.seatTop, at[2] - Math.cos(chair.yaw) * chair.back);
+}
+/**
+ * Sentado: quanto a coxa desce abaixo da horizontal (rad) para o pé tocar o chão com a canela na vertical — quadril
+ * em `hipY`, coxa e canela com os comprimentos do próprio esqueleto e tornozelo a `ankle` do chão. Limitado (pernas
+ * curtas balançam um pouco acima do chão; longas inclinam a coxa para baixo).
+ */
+export function thighDrop(hipY: number, thigh: number, shin: number, ankle: number): number {
+  return Math.asin(THREE.MathUtils.clamp((hipY - shin - ankle) / Math.max(0.05, thigh), -0.35, 0.6));
 }

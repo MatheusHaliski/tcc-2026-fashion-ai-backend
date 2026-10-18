@@ -68,7 +68,7 @@ def write_report(output, records):
     (output / "sources.json").write_text(json.dumps(public, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     fields = ["name", "approach", "status", "license_declared", "url", "queried_at", "gpu_benchmark_executed"]
     with (output / "sources.csv").open("w", encoding="utf-8", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=fields, extrasaction="ignore")
+        writer = csv.DictWriter(stream, fieldnames=fields, extrasaction="ignore", lineterminator="\n")
         writer.writeheader(); writer.writerows(public)
     rows = ["# Pesquisa de vídeo Aura Impersonation", "",
             "Consulta de fontes primárias. Nenhum peso foi baixado, nenhuma foto foi enviada e nenhuma inferência GPU foi executada.", "",

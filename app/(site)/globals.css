@@ -1157,6 +1157,33 @@ html[data-sidebar="collapsed"]:not([data-theme="contrast"]) body::before { opaci
 .room3d[data-mode="mirror"] .room3d-controls-row { grid-template-columns: repeat(2, 36px); }
 .room3d[data-mode="mirror"] .room3d-dpad { grid-template-columns: repeat(3, 36px); grid-template-rows: repeat(3, 36px); }
 .room3d-positions { max-height: min(72vh, 680px); overflow: auto; padding: 10px; border: 1px solid var(--line-soft); border-radius: 14px; background: var(--surface); }
+/* Configurações do quarto (room-settings-panel.tsx): no lugar das abas 2.5D/Lista e da lista de posições, ao lado da cena;
+   no alto, luz, roupa e móvel; abaixo, seções que abrem e fecham (câmera, paredes, ambiente, gráficos, interface…) */
+@media (min-width: 1024px) { .room3d:not([data-mode="mirror"]) { grid-template-columns: minmax(0, 1fr) 320px; } }
+.room3d-side { display: grid; align-content: start; gap: 8px; max-height: min(72vh, 680px); overflow: auto; padding: 12px; border: 1px solid var(--line-soft); border-radius: 14px; background: var(--surface); }
+.room3d-side-flat { max-height: none; }
+.room-settings { display: grid; gap: 12px; }
+.room-settings-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.room-settings-cards { display: grid; gap: 8px; }
+.room-settings-card { display: grid; gap: 8px; padding: 10px; border-radius: 12px; background: var(--surface-2); }
+.room-settings-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.room-settings-range { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px 8px; font-size: 13px; }
+.room-settings-range input { grid-column: 1 / -1; width: 100%; accent-color: var(--ink); }
+.room-settings-range output { grid-row: 1; grid-column: 2; }
+.room-settings-field { display: grid; gap: 4px; font-size: 13px; }
+.room-settings-section { border-top: 1px solid var(--line-soft); padding-top: 8px; }
+.room-settings-section > summary { cursor: pointer; padding: 6px 0; font-weight: 600; list-style-position: inside; }
+.room-settings-section[open] { display: grid; gap: 10px; }
+.room-settings-views { display: flex; flex-wrap: wrap; gap: 6px; }
+.room-settings-views > p { flex-basis: 100%; }
+.room-settings-favorites ol { display: grid; gap: 2px; }
+.room-settings-favorites li { display: flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 8px; }
+.room-settings-favorites li > span { width: 18px; font-weight: 600; }
+.room-settings-favorites li.is-active { background: var(--thread-soft); }
+/* o que o avatar segura (antes na seção "Controlar meu avatar") e o nome da vista ao trocar: avisos no alto da cena */
+.room3d-play-status { position: absolute; top: 10px; left: 10px; max-width: calc(100% - 20px); padding: 5px 12px; border-radius: 999px; background: rgb(20 28 32 / 80%); color: #fff3ce; font-size: 13px; pointer-events: none; }
+.room3d-view-flash { position: absolute; top: 44%; left: 50%; transform: translate(-50%, -50%); padding: 8px 18px; border-radius: 999px; background: rgb(0 0 0 / 62%); color: #fff; font-size: 15px; font-weight: 600; pointer-events: none; }
+.room-gamepad.is-minimal { width: auto; padding: 0; border: 0; background: transparent; box-shadow: none; }
 .room3d-positions ul { display: grid; gap: 2px; }
 .room3d-positions button { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 8px; border-radius: 8px; font-size: 13px; text-align: left; }
 .room3d-positions button:hover, .room3d-positions button[aria-pressed="true"] { background: var(--surface-2); }

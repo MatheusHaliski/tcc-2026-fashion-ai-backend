@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as THREE from "three";
-import { arrowAnywhere, BODY_RADIUS, GOAL_REACHED, moveInRoom, penetration, RoomInteraction, stepToward, WALK_SPEED, type GoalOutcome } from "./interaction";
+import { arrowAnywhere, BODY_RADIUS, GOAL_REACHED, moveInRoom, penetration, RoomInteraction, stepToward, WALK_SPEED, type GoalOutcome, CHAIR, seatOf, thighDrop } from "./interaction";
 import { MIRROR_COLLIDER, MirrorSession, mirrorDistance, mirrorFront, mirrorRoute } from "./mirror-session";
 import { ROOM, walkArea } from "./room-bounds";
 function target(engine: RoomInteraction, id: string, kind: "handle" | "piece", available = true) {
@@ -165,5 +165,22 @@ describe("caminhar até um ponto (Ir ao espelho / Voltar ao quarto)", () => {
     expect(outcome).toBe("stuck"); expect(engine.goal).toBeNull();
     expect(engine.actor.x).toBeCloseTo(walkArea(ROOM).maxX);
     expect((frames - lastMove) / 60).toBeGreaterThan(.9); expect((frames - lastMove) / 60).toBeLessThan(1.2);
+  });
+});
+
+describe("sentar na cadeira do quarto", () => {
+  it("o quadril fica atrás do centro do assento, do lado do espaldar, e acima do topo do assento", () => {
+    const at = [-1.95, 0, 1.75] as const, seat = seatOf(at);
+    const back = new THREE.Vector3(-Math.sin(CHAIR.yaw), 0, -Math.cos(CHAIR.yaw));              // a cadeira olha para +yaw
+    expect(new THREE.Vector3(seat.x - at[0], 0, seat.z - at[2]).normalize().dot(back)).toBeCloseTo(1, 6);
+    expect(Math.hypot(seat.x - at[0], seat.z - at[2])).toBeCloseTo(CHAIR.back, 6);
+    expect(seat.y).toBeCloseTo(CHAIR.seatTop, 6);
+  });
+  it("a coxa desce o bastante para o pé tocar o chão com a canela na vertical, dentro do limite", () => {
+    const hipY = CHAIR.seatTop + CHAIR.hip, thigh = 0.4, shin = 0.41, ankle = 0.08;
+    const drop = thighDrop(hipY, thigh, shin, ankle);
+    expect(hipY - thigh * Math.sin(drop) - shin).toBeCloseTo(ankle, 6);
+    expect(thighDrop(hipY, thigh, 0.1, 0.05)).toBeCloseTo(Math.asin(0.6), 6);                   // perna curta: limite
+    expect(thighDrop(hipY, thigh, 0.7, 0.08)).toBeCloseTo(Math.asin(-0.35), 6);                 // perna longa: limite
   });
 });

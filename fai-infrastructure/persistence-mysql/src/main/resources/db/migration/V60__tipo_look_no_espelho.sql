@@ -1,11 +1,5 @@
 -- Defesa: opções de Tipo de look mantidas em uma tabela e referenciadas pelo Espelho e pelo look salvo.
 -- Idempotente: o MySQL não reverte DDL, então uma tentativa anterior interrompida pode ter deixado objetos para trás.
--- Uma TipoLook de outra estrutura (sem a coluna codigo) já existia em produção: é preservada com outro nome, sem perder dados.
-SET @ddl = IF((SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'TipoLook') > 0
-    AND (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'TipoLook' AND COLUMN_NAME = 'codigo') = 0,
-    'RENAME TABLE TipoLook TO TipoLook_legado_pre_v60', 'SELECT 1');
-PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt;
-
 CREATE TABLE IF NOT EXISTS TipoLook (
     id CHAR(36) PRIMARY KEY,
     codigo VARCHAR(30) NOT NULL UNIQUE,
