@@ -186,6 +186,49 @@ public final class LocalVision {
         return skin / (double) pixels.length;
     }
 
+    /**
+     * Fração dos pixels da máscara que é pele com cor longe da cor mediana do objeto: braço, pescoço, rosto de quem veste
+     * ou segura a peça — não couro caramelo nem tecido nude, que ficam perto da mediana.
+     */
+    public static double foreignSkinShare(int[] px, boolean[] mask) {
+        int[] r = new int[256], g = new int[256], b = new int[256];
+        int n = 0;
+        for (int i = 0; i < px.length; i++) {
+            if (mask[i]) {
+                r[(px[i] >> 16) & 0xFF]++;
+                g[(px[i] >> 8) & 0xFF]++;
+                b[px[i] & 0xFF]++;
+                n++;
+            }
+        }
+        if (n == 0) {
+            return 0;
+        }
+        int mr = median(r, n), mg = median(g, n), mb = median(b, n);
+        long foreign = 0;
+        for (int i = 0; i < px.length; i++) {
+            if (!mask[i]) {
+                continue;
+            }
+            int p = px[i], dr = ((p >> 16) & 0xFF) - mr, dg = ((p >> 8) & 0xFF) - mg, db = (p & 0xFF) - mb;
+            if (dr * dr + dg * dg + db * db > 70 * 70 && skinRatio(new int[]{p}) > 0) {
+                foreign++;
+            }
+        }
+        return (double) foreign / n;
+    }
+
+    private static int median(int[] hist, int n) {
+        int acc = 0;
+        for (int v = 0; v < 256; v++) {
+            acc += hist[v];
+            if (acc * 2 >= n) {
+                return v;
+            }
+        }
+        return 255;
+    }
+
     private static double round(double v) {
         return Math.round(v * 100) / 100.0;
     }

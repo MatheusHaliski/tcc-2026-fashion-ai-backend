@@ -68,4 +68,23 @@ class VtonCatalogControllerTest {
         assertThat(calls).isEqualTo(1);
         assertThat(query).containsExactly(after, "", 100);
     }
+
+    @Test void forcedCategoryFrameCopyNeverReachesTheGpuButTheCursorMovesOn() {
+        CatalogImage authorized = image("/media/catalog/authorized.png", "{\"persistenceDecision\":{\"mode\":\"SOURCE_AUTHORIZED\"}}");
+        CatalogImage forced = image("/media/catalog/forced.png", "{\"persistenceDecision\":{\"mode\":\"FORCED_CATEGORY_FRAME\"}}");
+        rows = List.of(authorized, forced);
+        Map<String, Object> page = controller.feed(user, after, "", 100);
+        assertThat(page.get("items").toString()).contains("/media/catalog/authorized.png").doesNotContain("/media/catalog/forced.png");
+        assertThat(page.get("cursor")).isEqualTo(Map.of("after", after.toString(), "afterId", forced.getId().toString()));
+    }
+
+    private CatalogImage image(String storedUrl, String assetsJson) {
+        CatalogImage image = new CatalogImage();
+        image.assignId(UUID.randomUUID());
+        image.markCreatedAt(after);
+        image.setProductId(UUID.randomUUID());
+        image.setStoredUrl(storedUrl);
+        image.setAssetsJson(assetsJson);
+        return image;
+    }
 }
